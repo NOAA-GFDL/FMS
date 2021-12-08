@@ -258,8 +258,8 @@ subroutine MPP_DO_UPDATE_NEST_FINE_3D_(f_addrs, nest_domain, update, d_type, ke,
 end subroutine MPP_DO_UPDATE_NEST_FINE_3D_
 
 #ifdef VECTOR_FIELD_
-subroutine MPP_DO_UPDATE_NEST_FINE_3D_V_(f_addrsx, f_addrsy, nest_domain, update_x, update_y, d_type, ke, wb_addrsx, wb_addrsy, &
-                                   eb_addrsx, eb_addrsy, sb_addrsx, sb_addrsy, nb_addrsx, nb_addrsy, flags)
+subroutine MPP_DO_UPDATE_NEST_FINE_3D_V_(f_addrsx, f_addrsy, nest_domain, update_x, update_y, d_type, ke, wb_addrsx, &
+                                   wb_addrsy, eb_addrsx, eb_addrsy, sb_addrsx, sb_addrsy, nb_addrsx, nb_addrsy, flags)
   integer(i8_kind),         intent(in) :: f_addrsx(:), f_addrsy(:)
   type(nest_level_type),      intent(in) :: nest_domain
   type(nestSpec),             intent(in) :: update_x, update_y
@@ -442,7 +442,8 @@ subroutine MPP_DO_UPDATE_NEST_FINE_3D_V_(f_addrsx, f_addrsy, nest_domain, update
                     end do
                  end do
               case default
-                 call mpp_error(FATAL, "MPP_DO_UPDATE_NEST_FINE_3D_V X: pack rotate must be ZERO, MINUS_NINETY or NINETY")
+                 call mpp_error(FATAL, &
+                                &  "MPP_DO_UPDATE_NEST_FINE_3D_V X: pack rotate must be ZERO, MINUS_NINETY or NINETY")
               end select
            endif
         end do ! do n = 1, update_x%send(ind_x)%count
@@ -507,7 +508,8 @@ subroutine MPP_DO_UPDATE_NEST_FINE_3D_V_(f_addrsx, f_addrsy, nest_domain, update
                     end do
                  endif
               case default
-                 call mpp_error(FATAL, "MPP_DO_UPDATE_NEST_FINE_3D_V Y: pack rotate must be ZERO, MINUS_NINETY or NINETY")
+                 call mpp_error(FATAL, &
+                                &  "MPP_DO_UPDATE_NEST_FINE_3D_V Y: pack rotate must be ZERO, MINUS_NINETY or NINETY")
               end select
            endif
         end do ! do n = 1, update_x%send(ind_x)%count

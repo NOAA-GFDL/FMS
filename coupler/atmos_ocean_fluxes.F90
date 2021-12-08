@@ -660,7 +660,8 @@ contains
           call mpp_error(FATAL, trim(error_header) // ' No param for ' // trim(name) // trim(error_string))
         elseif (size(gas_fluxes%bc(n)%param(:)) .ne. num_parameters) then
           write (error_string,'(a,i2,a,i2)') ': ', size(gas_fluxes%bc(n)%param(:)), ' given, need ', num_parameters
-          call mpp_error(FATAL, trim(error_header) // ' Wrong number of param for ' // trim(name) // trim(error_string))
+          call mpp_error(FATAL, trim(error_header) // &
+                         &  ' Wrong number of param for ' // trim(name) // trim(error_string))
         endif
       elseif (num_parameters .eq. 0) then
         if (associated(gas_fluxes%bc(n)%param)) then

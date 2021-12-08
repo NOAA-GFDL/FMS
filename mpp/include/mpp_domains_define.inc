@@ -214,12 +214,14 @@
     if(use_extent) then
        ibegin(0) = isg
        do ndiv = 0, ndivs-2
-          if(extent(ndiv) .LE. 0) call mpp_error( FATAL, 'mpp_compute_extent: domain extents must be positive definite.' )
+          if(extent(ndiv) .LE. 0) call mpp_error( FATAL, &
+             &  'mpp_compute_extent: domain extents must be positive definite.' )
           iend(ndiv) = ibegin(ndiv) + extent(ndiv) - 1
           ibegin(ndiv+1) = iend(ndiv) + 1
        enddo
        iend(ndivs-1) = ibegin(ndivs-1) + extent(ndivs-1) - 1
-       if(iend(ndivs-1) .NE. ieg) call mpp_error(FATAL, 'mpp_compute_extent: extent array limits do not match global domain.' )
+       if(iend(ndivs-1) .NE. ieg) call mpp_error(FATAL, &
+          &  'mpp_compute_extent: extent array limits do not match global domain.' )
     else
        do ndiv=0,ndivs-1
           !modified for mirror-symmetry
@@ -319,12 +321,14 @@
     integer              :: halosz, halobegin, haloend
     integer              :: errunit
 
-    if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_DEFINE_DOMAINS1D: You must first call mpp_domains_init.' )
+    if( .NOT.module_is_initialized )call mpp_error( FATAL, &
+       &  'MPP_DEFINE_DOMAINS1D: You must first call mpp_domains_init.' )
     if(size(global_indices(:)) .NE. 2) call mpp_error(FATAL,"mpp_define_domains1D: size of global_indices should be 2")
     !get global indices
     isg = global_indices(1)
     ieg = global_indices(2)
-    if( ndivs.GT.ieg-isg+1 )call mpp_error( FATAL, 'MPP_DEFINE_DOMAINS1D: more divisions requested than rows available.' )
+    if( ndivs.GT.ieg-isg+1 )call mpp_error( FATAL, &
+       &  'MPP_DEFINE_DOMAINS1D: more divisions requested than rows available.' )
     !get the list of PEs on which to assign domains; if pelist is absent use 0..npes-1
     if( PRESENT(pelist) )then
        if( .NOT.any(pelist.EQ.mpp_pe()) )then
@@ -369,7 +373,8 @@
     domain%goffset = 1
     domain%loffset = 1
     if( PRESENT(flags) )then
-       !NEW: obsolete flag global_compute_domain, since ndivs is non-optional and you cannot have global compute and ndivs.NE.1
+       !NEW: obsolete flag global_compute_domain, since ndivs is non-optional and you cannot
+       !have global compute and ndivs.NE.1
        compute_domain_is_global = ndivs.EQ.1
        !if compute domain is global, data domain must also be
        data_domain_is_global    = BTEST(flags,GLOBAL) .OR. compute_domain_is_global
@@ -488,9 +493,11 @@
        "mpp_domains_define.inc(mpp_define_io_domain): io_domain is already defined")
 
     if(mod(layout(1), io_layout(1)) .NE. 0) call mpp_error(FATAL, &
-       "mpp_domains_define.inc(mpp_define_io_domain): "//trim(domain%name)//" domain layout(1) must be divided by io_layout(1)")
+       "mpp_domains_define.inc(mpp_define_io_domain): "//trim(domain%name)// &
+                             & " domain layout(1) must be divided by io_layout(1)")
     if(mod(layout(2), io_layout(2)) .NE. 0) call mpp_error(FATAL, &
-       "mpp_domains_define.inc(mpp_define_io_domain): "//trim(domain%name)//" domain layout(2) must be divided by io_layout(2)")
+       "mpp_domains_define.inc(mpp_define_io_domain): "//trim(domain%name)// &
+                             & " domain layout(2) must be divided by io_layout(2)")
     if(size(domain%x(:)) > 1) call mpp_error(FATAL, &
        "mpp_domains_define.inc(mpp_define_io_domain): "//trim(domain%name)// &
        ": multiple tile per pe is not supported yet for this routine")
@@ -617,7 +624,8 @@
   subroutine mpp_define_domains2D( global_indices, layout, domain, pelist, xflags, yflags,    &
          xhalo, yhalo, xextent, yextent, maskmap, name, symmetry,  memory_size,               &
          whalo, ehalo, shalo, nhalo, is_mosaic, tile_count, tile_id, complete, x_cyclic_offset, y_cyclic_offset )
-    !define 2D data and computational domain on global rectilinear cartesian domain (isg:ieg,jsg:jeg) and assign them to PEs
+    !define 2D data and computational domain on global rectilinear cartesian domain (isg:ieg,jsg:jeg)
+    !and assign them to PEs
     integer,          intent(in)           :: global_indices(:) !<(/ isg, ieg, jsg, jeg /)
     integer,          intent(in)           :: layout(:)
     type(domain2D),   intent(inout)        :: domain
@@ -627,23 +635,31 @@
     logical,          intent(in), optional :: maskmap(0:,0:)
     character(len=*), intent(in), optional :: name
     logical,          intent(in), optional :: symmetry
-    logical,          intent(in), optional :: is_mosaic                  !< indicate if calling mpp_define_domains from mpp_define_mosaic.
+    logical,          intent(in), optional :: is_mosaic                  !< indicate if calling mpp_define_domains
+                                                                         !! from mpp_define_mosaic.
     integer,          intent(in), optional :: memory_size(:)
-    integer,          intent(in), optional :: whalo, ehalo, shalo, nhalo !< halo size for West, East, South and North direction.
+    integer,          intent(in), optional :: whalo, ehalo, shalo, nhalo !< halo size for West, East,
+                                                                         !! South and North direction.
                                                                          !< if whalo and ehalo is not present,
                                                                          !< will take the value of xhalo
                                                                          !< if shalo and nhalo is not present,
                                                                          !< will take the value of yhalo
-    integer, intent(in),          optional :: tile_count                 !< tile number on current pe, default value is 1
-                                                                         !< this is for the situation that multiple tiles on one processor.
+    integer, intent(in),          optional :: tile_count                 !< tile number on current pe,
+                                                                         !! default value is 1
+                                                                         !< this is for the
+                                                                         !< situation that
+                                                                         !multiple tiles on one processor
     integer, intent(in),          optional :: tile_id                    !< tile id
-    logical, intent(in),          optional :: complete                   !< true indicate mpp_define_domain is completed for mosaic definition.
+    logical, intent(in),          optional :: complete                   !< true indicate mpp_define_domain
+                                                                         !! is completed for mosaic definition.
     integer, intent(in),          optional :: x_cyclic_offset            !< offset for x-cyclic boundary condition,
                                                                          !< (0,j) = (ni, mod(j+x_cyclic_offset,nj))
-                                                                         !< (ni+1,j) = ( 1, mod(j+nj-x_cyclic_offset,nj) )
+                                                                         !< (ni+1,j) = ( 1,
+                                                                         !mod(j+nj-x_cyclic_offset,nj) )
     integer, intent(in),          optional :: y_cyclic_offset            !< offset for y-cyclic boundary condition
-                                                                         !< (i,0)    = (mod(i+y_cyclic_offset,ni), nj))
-                                                                         !< (i,nj+1) = (mod(mod(i+ni-y_cyclic_offset,ni), 1) )
+                                                                         !!(i,0)    = (mod(i+y_cyclic_offset,ni), nj))
+                                                                         !!(i,nj+1) =(mod(mod(i+ni-y_cyclic_offset,ni),
+                                                                         !! 1) )
 
     integer              :: i, j, m, n, xhalosz, yhalosz, memory_xsize, memory_ysize
     integer              :: whalosz, ehalosz, shalosz, nhalosz
@@ -665,7 +681,8 @@
     logical              :: send(8), recv(8)
 
     outunit = stdout()
-    if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_DEFINE_DOMAINS2D: You must first call mpp_domains_init.' )
+    if( .NOT.module_is_initialized )call mpp_error( FATAL, &
+       &  'MPP_DEFINE_DOMAINS2D: You must first call mpp_domains_init.' )
     if(PRESENT(name)) then
        if(len_trim(name) > NAME_LENGTH) call mpp_error(FATAL,  &
             "mpp_domains_define.inc(mpp_define_domains2D): the len_trim of optional argument name ="//trim(name)// &
@@ -674,7 +691,8 @@
     endif
     if(size(global_indices(:)) .NE. 4) call mpp_error(FATAL,   &
        "mpp_define_domains2D: size of global_indices should be 4 for "//trim(domain%name) )
-    if(size(layout(:)) .NE. 2) call mpp_error(FATAL,"mpp_define_domains2D: size of layout should be 2 for "//trim(domain%name) )
+    if(size(layout(:)) .NE. 2) call mpp_error(FATAL,"mpp_define_domains2D: size of layout should be 2 for "// &
+       & trim(domain%name) )
 
     ndivx = layout(1); ndivy = layout(2)
     isg = global_indices(1); ieg = global_indices(2); jsg = global_indices(3); jeg = global_indices(4)
@@ -712,7 +730,8 @@
     if(PRESENT(x_cyclic_offset)) x_offset = x_cyclic_offset
     if(PRESENT(y_cyclic_offset)) y_offset = y_cyclic_offset
     if(x_offset*y_offset .NE. 0) call mpp_error(FATAL, &
-       'MPP_DEFINE_DOMAINS2D: At least one of x_cyclic_offset and y_cyclic_offset must be zero for '//trim(domain%name))
+       'MPP_DEFINE_DOMAINS2D: At least one of x_cyclic_offset and y_cyclic_offset must be zero for '// &
+       & trim(domain%name))
 
     !--- x_cyclic_offset and y_cyclic_offset should no larger than the global grid size.
     if(abs(x_offset) > jeg-jsg+1) call mpp_error(FATAL, &
@@ -763,7 +782,8 @@
     mask = .TRUE.
     if( PRESENT(maskmap) )then
        if( size(maskmap,1).NE.ndivx .OR. size(maskmap,2).NE.ndivy ) &
-            call mpp_error( FATAL, 'MPP_DEFINE_DOMAINS2D: maskmap array does not match layout for '//trim(domain%name) )
+            call mpp_error( FATAL, 'MPP_DEFINE_DOMAINS2D: maskmap array does not match layout for '// &
+                           & trim(domain%name) )
        mask(:,:) = maskmap(:,:)
     end if
     !number of unmask domains in layout must equal number of PEs assigned
@@ -830,8 +850,10 @@
              domain%list(m)%x(tile)%compute%end   = iend(i)
              domain%list(m)%y(tile)%compute%begin = jbegin(j)
              domain%list(m)%y(tile)%compute%end   = jend(j)
-             domain%list(m)%x(tile)%compute%size  = domain%list(m)%x(tile)%compute%end - domain%list(m)%x(tile)%compute%begin + 1
-             domain%list(m)%y(tile)%compute%size  = domain%list(m)%y(tile)%compute%end - domain%list(m)%y(tile)%compute%begin + 1
+             domain%list(m)%x(tile)%compute%size  = domain%list(m)%x(tile)%compute%end &
+                                                  & - domain%list(m)%x(tile)%compute%begin + 1
+             domain%list(m)%y(tile)%compute%size  = domain%list(m)%y(tile)%compute%end &
+                                                  & - domain%list(m)%y(tile)%compute%begin + 1
              domain%list(m)%tile_id(tile)         = cur_tile_id
              domain%list(m)%x(tile)%pos           = i
              domain%list(m)%y(tile)%pos           = j
@@ -970,8 +992,8 @@
 
        if(nfold == 1) then
            if( x_offset .NE. 0 .OR. y_offset .NE. 0) call mpp_error(FATAL, &
-                  'MPP_DEFINE_DOMAINS2D: For the foled_north/folded_south/fold_east/folded_west boundary condition,  '// &
-                  'x_cyclic_offset and y_cyclic_offset must be zero for '//trim(domain%name))
+               'MPP_DEFINE_DOMAINS2D: For the foled_north/folded_south/fold_east/folded_west boundary condition,  '//&
+               'x_cyclic_offset and y_cyclic_offset must be zero for '//trim(domain%name))
        endif
        if( BTEST(domain%fold,SOUTH) .OR. BTEST(domain%fold,NORTH) )then
           if( domain%y(tile)%cyclic )call mpp_error( FATAL, &
@@ -979,7 +1001,8 @@
           if( modulo(domain%x(tile)%global%size,2).NE.0 ) &
                call mpp_error( FATAL, 'MPP_DEFINE_DOMAINS: number of points in X must be even ' // &
                   'when there is a fold in Y for '//trim(domain%name) )
-          !check if folded domain boundaries line up in X: compute domains lining up is a sufficient condition for symmetry
+          !check if folded domain boundaries line up in X: compute domains lining up is a sufficient
+          !condition for symmetry
           n = ndivx - 1
           do i = 0,n/2
              if( domain%x(tile)%list(i)%compute%size.NE.domain%x(tile)%list(n-i)%compute%size ) &
@@ -993,7 +1016,8 @@
           if( modulo(domain%y(tile)%global%size,2).NE.0 ) &
                call mpp_error( FATAL, 'MPP_DEFINE_DOMAINS: number of points in Y must be even '//&
                    'when there is a fold in X for '//trim(domain%name) )
-          !check if folded domain boundaries line up in Y: compute domains lining up is a sufficient condition for symmetry
+          !check if folded domain boundaries line up in Y: compute domains lining up is a sufficient
+          !condition for symmetry
           n = ndivy - 1
           do i = 0,n/2
              if( domain%y(tile)%list(i)%compute%size.NE.domain%y(tile)%list(n-i)%compute%size ) &
@@ -1091,7 +1115,8 @@
     !print out decomposition, this didn't consider maskmap.
     if( mpp_pe() .EQ. pes(0) .AND. PRESENT(name) )then
        write(*,*) trim(name)//' domain decomposition'
-       write(*,'(a,i4,a,i4,a,i4,a,i4)')'whalo = ', whalosz, ", ehalo = ", ehalosz, ", shalo = ", shalosz, ", nhalo = ", nhalosz
+       write(*,'(a,i4,a,i4,a,i4,a,i4)')'whalo = ', whalosz, ", ehalo = ", ehalosz, ", shalo = ", shalosz, ", &
+            &  nhalo = ", nhalosz
        write (*,110) (domain%x(1)%list(i)%compute%size, i= 0, layout(1)-1)
        write (*,120) (domain%y(1)%list(i)%compute%size, i= 0, layout(2)-1)
 110    format ('  X-AXIS = ',24i4,/,(11x,24i4))
@@ -1182,8 +1207,10 @@ end subroutine check_message_size
                                 istart1, iend1, jstart1, jend1, istart2, iend2, jstart2, jend2, pe_start, &
                                 pe_end, pelist, whalo, ehalo, shalo, nhalo, xextent, yextent,             &
                                 maskmap, name, memory_size, symmetry, xflags, yflags, tile_id )
-    integer,          intent(in)           :: global_indices(:,:)  ! The size of first indice is 4, (/ isg, ieg, jsg, jeg /)
-                                                                   ! The size of second indice is number of tiles in mosaic.
+    integer,          intent(in)           :: global_indices(:,:)  ! The size of first indice is 4, (/
+                                                                   !! isg, ieg, jsg, jeg /)
+                                                                   ! The size of second indice
+                                                                   ! is number of tiles in mosaic.
     integer,          intent(in)           :: layout(:,:)
     type(domain2D),   intent(inout)        :: domain
     integer,          intent(in)           :: num_tile             ! number of tiles in the mosaic
@@ -1258,8 +1285,10 @@ end subroutine check_message_size
     if(size(pe_start(:)) .NE. num_tile .OR. size(pe_end(:)) .NE. num_tile ) call mpp_error(FATAL, &
          'mpp_domains_define.inc: size of pe_start and/or pe_end is not equal num_tile')
     !--- make sure pe_start and pe_end is in the pelist.
-    if( ANY( pe_start < pes(0) ) ) call mpp_error(FATAL, 'mpp_domains_define.inc: not all the pe_start are in the pelist')
-    if( ANY( pe_end > pes(nlist-1)) ) call mpp_error(FATAL, 'mpp_domains_define.inc: not all the pe_end are in the pelist')
+    if( ANY( pe_start < pes(0) ) ) call mpp_error(FATAL, &
+       &  'mpp_domains_define.inc: not all the pe_start are in the pelist')
+    if( ANY( pe_end > pes(nlist-1)) ) call mpp_error(FATAL, &
+       &  'mpp_domains_define.inc: not all the pe_end are in the pelist')
 
     !--- calculate number of tiles on each pe.
     allocate( ntile_per_pe(0:nlist-1) )
@@ -1423,7 +1452,7 @@ end subroutine check_message_size
           call mpp_define_domains(global_indices(:,n), layout(:,n), domain, pelist=pelist_tile,                   &
                                   whalo=whalo, ehalo=ehalo, shalo=shalo, nhalo=nhalo, xextent=xext, yextent=yext, &
                                   maskmap=mask, name=name, symmetry=is_symmetry, memory_size = memory_size,       &
-                                  is_mosaic = .true., tile_count = tile_count(pe_start(n)), tile_id=tile_id_local(n),   &
+                                  is_mosaic = .true., tile_count = tile_count(pe_start(n)), tile_id=tile_id_local(n), &
                                   complete = n==num_tile)
        end if
        deallocate(mask, xext, yext, pelist_tile)
@@ -1454,8 +1483,10 @@ end subroutine check_message_size
        js1(n) = jstart1(n) + jsgList(t1) - 1; je1(n) = jend1(n) + jsgList(t1) - 1
        is2(n) = istart2(n) + isgList(t2) - 1; ie2(n) = iend2(n) + isgList(t2) - 1
        js2(n) = jstart2(n) + jsgList(t2) - 1; je2(n) = jend2(n) + jsgList(t2) - 1
-       call check_alignment( is1(n), ie1(n), js1(n), je1(n), isgList(t1), iegList(t1), jsgList(t1), jegList(t1), align1(n))
-       call check_alignment( is2(n), ie2(n), js2(n), je2(n), isgList(t2), iegList(t2), jsgList(t2), jegList(t2), align2(n))
+       call check_alignment( is1(n), ie1(n), js1(n), je1(n), isgList(t1), iegList(t1), jsgList(t1), &
+                           &  jegList(t1), align1(n))
+       call check_alignment( is2(n), ie2(n), js2(n), je2(n), isgList(t2), iegList(t2), jsgList(t2), &
+                           &  jegList(t2), align2(n))
        if( (align1(n) == WEST .or. align1(n) == EAST ) .NEQV. (align2(n) == WEST .or. align2(n) == EAST ) )&
              domain%rotated_ninety=.true.
     end do
@@ -1619,8 +1650,8 @@ end subroutine check_message_size
     tMe = 1; tNbr = 1
     folded_north = BTEST(domain%fold,NORTH)
     if( BTEST(domain%fold,SOUTH) .OR. BTEST(domain%fold,EAST) .OR. BTEST(domain%fold,WEST) ) then
-       call mpp_error(FATAL, "mpp_domains_define.inc(compute_overlaps): folded south, east or west boundary condition " // &
-            "is not supported, please use other version of compute_overlaps for "//trim(domain%name))
+       call mpp_error(FATAL,"mpp_domains_define.inc(compute_overlaps): folded south, east or west boundary condition "&
+            &//"is not supported, please use other version of compute_overlaps for "//trim(domain%name))
     endif
 
     nsend = 0
@@ -1859,7 +1890,7 @@ end subroutine check_message_size
              if(ie3 .GE. is3) call fill_overlap_send_nofold(overlap, domain, m, is3, ie3, js3, je3, &
                                     isc, iec, jsc, jec, isg, ieg, dir, ioff, domain%x(tMe)%cyclic, folded)
              if(ie2 .GE. is2) then
-                if(je2 == jeg .AND. jec == jeg .AND. folded_north .AND. (position == CORNER .OR. position == NORTH)) then
+                if(je2 == jeg .AND. jec == jeg .AND. folded_north.AND.(position == CORNER .OR. position == NORTH))then
                    call fill_overlap_send_fold(overlap, domain, m, is2, ie2, js2, je2, isc, iec, jsc, jec, &
                                     isg, ieg, dir, ishift, position, ioff, middle)
                 else
@@ -1940,7 +1971,7 @@ end subroutine check_message_size
                 end if
              end if
              if(x_cyclic_offset == 0 .AND. y_cyclic_offset == 0) then
-                if( je == jeg .AND. jec == jeg .AND. folded_north .AND. (position == CORNER .OR. position == NORTH)) then
+                if( je == jeg .AND. jec == jeg .AND. folded_north .AND.(position == CORNER .OR. position == NORTH))then
                    call fill_overlap_send_fold(overlap, domain, m, is, ie, js, je, isc, iec, jsc, jec, &
                         isg, ieg, dir, ishift, position, ioff, middle, domain%symmetry)
                 else
@@ -1953,7 +1984,7 @@ end subroutine check_message_size
              endif
 
              if(ie2 .GE. is2) then
-                if(je2 == jeg .AND. jec == jeg .AND. folded_north .AND. (position == CORNER .OR. position == NORTH)) then
+                if(je2 == jeg .AND. jec == jeg .AND. folded_north .AND.(position == CORNER .OR. position == NORTH))then
                    call fill_overlap_send_fold(overlap, domain, m, is2, ie2, js2, je2, isc, iec, jsc, jec, &
                                     isg, ieg, dir, ishift, position, ioff, middle, domain%symmetry)
                 else
@@ -2051,7 +2082,7 @@ end subroutine check_message_size
              if(ie3 .GE. is3) call fill_overlap_send_nofold(overlap, domain, m, is3, ie3, js3, je3, &
                                     isc, iec, jsc, jec, isg, ieg, dir, ioff, domain%x(tMe)%cyclic, folded)
              if(ie2 .GE. is2) then
-                if(je2 == jeg .AND. jec == jeg .AND. folded_north .AND. (position == CORNER .OR. position == NORTH)) then
+                if(je2 == jeg .AND. jec == jeg .AND. folded_north .AND.(position == CORNER .OR. position == NORTH))then
                    call fill_overlap_send_fold(overlap, domain, m, is2, ie2, js2, je2, isc, iec, jsc, jec, &
                                     isg, ieg, dir, ishift, position, ioff, middle)
                 else
@@ -2335,8 +2366,8 @@ end subroutine check_message_size
           if(je2 .GE. js2)call fill_overlap(overlap, domain, m, is, ie, js2, je2, isd, ied, jsd, jed, &
                isg, ieg, jsg, jeg, dir)
 
-          if(ie2 .GE. is2 .AND. je2 .GE. js2)call fill_overlap(overlap, domain, m, is2, ie2, js2, je2, isd, ied, jsd, jed, &
-               isg, ieg, jsg, jeg, dir)
+          if(ie2 .GE. is2 .AND. je2 .GE. js2)call fill_overlap(overlap, domain, m, is2, ie2, js2, je2, isd, ied, jsd, &
+               & jed, isg, ieg, jsg, jeg, dir)
 
 
           !recv_w
@@ -2415,8 +2446,8 @@ end subroutine check_message_size
                      isg, ieg, dir, ioff, domain%x(tMe)%cyclic, folded)
              endif
 
-             if(ie3 .GE. is3) call fill_overlap_recv_nofold(overlap, domain, m, is3, ie3, js3, je3, isd3, ied3, jsd3, jed3, &
-                     isg, ieg, dir, ioff, domain%x(tMe)%cyclic, folded)
+             if(ie3 .GE. is3) call fill_overlap_recv_nofold(overlap, domain, m, is3, ie3, js3, je3, isd3, ied3, jsd3, &
+                     & jed3, isg, ieg, dir, ioff, domain%x(tMe)%cyclic, folded)
 
              if(ie2 .GE. is2) then
                 if( jeg .GE. js2 .AND. jeg .LE. je2 .AND. jed2 == jeg .AND. folded_north &
@@ -2625,8 +2656,8 @@ end subroutine check_message_size
                 call fill_overlap_recv_nofold(overlap, domain, m, is, ie, js, je, isd, ied, jsd, jed, &
                      isg, ieg, dir, ioff, domain%x(tMe)%cyclic, folded)
              endif
-             if(ie3 .GE. is3) call fill_overlap_recv_nofold(overlap, domain, m, is3, ie3, js3, je3, isd3, ied3, jsd3, jed3, &
-                     isg, ieg, dir, ioff, domain%x(tMe)%cyclic, folded)
+             if(ie3 .GE. is3) call fill_overlap_recv_nofold(overlap, domain, m, is3, ie3, js3, je3, isd3, ied3, jsd3, &
+                     & jed3, isg, ieg, dir, ioff, domain%x(tMe)%cyclic, folded)
              if(ie2 .GE. is2) then
                 if(jeg .GE. js2 .AND. jeg .LE. je2 .AND. jed2 == jeg .AND. folded_north &
                      .AND. (position == CORNER .OR. position == NORTH)) then
@@ -3013,7 +3044,8 @@ end subroutine check_message_size
        check  => domain%check_N
     case default
        call mpp_error(FATAL, &
-        "mpp_domains_define.inc(compute_overlaps_fold_south): the value of position should be CENTER, EAST, CORNER or NORTH")
+        "mpp_domains_define.inc(compute_overlaps_fold_south): the value of position should be CENTER, EAST, &
+                               &  CORNER or NORTH")
     end select
 
     allocate(overlapList(MAXLIST) )
@@ -3173,7 +3205,8 @@ end subroutine check_message_size
              !--- when the south face is folded, some point at j=nj will be folded.
              !--- the position should be on CORNER or NORTH
              if( js == jsg .AND. (position == CORNER .OR. position == NORTH) &
-                  .AND. ( domain%list(m)%x(tNbr)%compute%begin == isg .OR. domain%list(m)%x(tNbr)%compute%begin-1 .GE. middle)) then
+                  .AND. ( domain%list(m)%x(tNbr)%compute%begin == isg .OR. &
+                        & domain%list(m)%x(tNbr)%compute%begin-1 .GE. middle)) then
                 call insert_update_overlap( overlap, domain%list(m)%pe, &
                                             is, ie, js+1, je, isc, iec, jsc, jec, dir)
                 is = domain%list(m)%x(tNbr)%compute%begin-whalo;    ie = domain%list(m)%x(tNbr)%compute%begin-1
@@ -3233,7 +3266,8 @@ end subroutine check_message_size
           !--- Now calculate the overlapping for fold-edge.
           !--- only position at NORTH and CORNER need to be considered
           if( ( position == NORTH .OR. position == CORNER) ) then
-             if( domain%y(tMe)%data%begin .LE. jsg .AND. jsg .LE. domain%y(tMe)%data%end+jshift )then !fold is within domain
+             if( domain%y(tMe)%data%begin .LE. jsg .AND. jsg .LE. domain%y(tMe)%data%end+jshift )then !fold
+                                                                                                    !! is within domain
                 dir = 3
                 !--- calculate the overlapping for sending
                 if( domain%x(tMe)%pos .LT. (size(domain%x(tMe)%list(:))+1)/2 )then
@@ -3502,7 +3536,8 @@ end subroutine check_message_size
           !--- for folded-south-edge, only need to consider to_pe's south(3) direction
           !--- only position at NORTH and CORNER need to be considered
           if( ( position == NORTH .OR. position == CORNER) ) then
-             if( domain%y(tMe)%data%begin .LE. jsg .AND. jsg .LE. domain%y(tMe)%data%end+jshift )then !fold is within domain
+             if( domain%y(tMe)%data%begin .LE. jsg .AND. jsg .LE. domain%y(tMe)%data%end+jshift )then !fold
+                                                                                                    !! is within domain
                 dir = 3
                 !--- calculating overlapping for receving on north
                 if( domain%x(tMe)%pos .GE. size(domain%x(tMe)%list(:))/2 )then
@@ -3650,7 +3685,8 @@ end subroutine check_message_size
        check  => domain%check_N
     case default
        call mpp_error(FATAL, &
-        "mpp_domains_define.inc(compute_overlaps_fold_west): the value of position should be CENTER, EAST, CORNER or NORTH")
+        "mpp_domains_define.inc(compute_overlaps_fold_west): the value of position should be CENTER, EAST, &
+                               &  CORNER or NORTH")
     end select
 
     !--- overlap is used to store the overlapping temporarily.
@@ -3728,7 +3764,8 @@ end subroutine check_message_size
              !--- when the west face is folded, the south halo points at
              !--- the position should be on CORNER or EAST
              if( is == isg .AND. (position == CORNER .OR. position == EAST) &
-                  .AND. ( domain%list(m)%y(tNbr)%compute%begin == jsg .OR. domain%list(m)%y(tNbr)%compute%begin-1 .GE. middle)) then
+                  .AND. ( domain%list(m)%y(tNbr)%compute%begin == jsg .OR. &
+                  & domain%list(m)%y(tNbr)%compute%begin-1 .GE. middle)) then
                 call insert_update_overlap( overlap, domain%list(m)%pe, &
                                             is+1, ie, js, je, isc, iec, jsc, jec, dir)
                 is = domain%list(m)%x(tNbr)%compute%begin; ie = is
@@ -3866,7 +3903,8 @@ end subroutine check_message_size
           !--- Now calculate the overlapping for fold-edge.
           !--- only position at EAST and CORNER need to be considered
           if( ( position == EAST .OR. position == CORNER) ) then
-             if( domain%x(tMe)%compute%begin-whalo .LE. isg .AND. isg .LE. domain%x(tMe)%data%end+ishift )then !fold is within domain
+             if( domain%x(tMe)%compute%begin-whalo .LE. isg .AND. isg .LE. domain%x(tMe)%data%end+ishift )then !fold
+                                                                                                    !! is within domain
                 dir = 5
                 !--- calculate the overlapping for sending
                 if( domain%y(tMe)%pos .LT. (size(domain%y(tMe)%list(:))+1)/2 )then
@@ -4128,7 +4166,8 @@ end subroutine check_message_size
           !--- for folded-south-edge, only need to consider to_pe's south(3) direction
           !--- only position at EAST and CORNER need to be considered
           if( ( position == EAST .OR. position == CORNER) ) then
-             if( domain%x(tMe)%data%begin .LE. isg .AND. isg .LE. domain%x(tMe)%data%end+ishift )then !fold is within domain
+             if( domain%x(tMe)%data%begin .LE. isg .AND. isg .LE. domain%x(tMe)%data%end+ishift )then !fold
+                                                                                                    !! is within domain
                 dir = 5
                 !--- calculating overlapping for receving on north
                 if( domain%y(tMe)%pos .GE. size(domain%y(tMe)%list(:))/2 )then
@@ -4265,7 +4304,8 @@ end subroutine check_message_size
        check  => domain%check_N
     case default
        call mpp_error(FATAL, &
-        "mpp_domains_define.inc(compute_overlaps_fold_east): the value of position should be CENTER, EAST, CORNER or NORTH")
+        "mpp_domains_define.inc(compute_overlaps_fold_east): the value of position should be CENTER, EAST, &
+                               &  CORNER or NORTH")
     end select
 
     !--- overlap is used to store the overlapping temporarily.
@@ -4377,7 +4417,7 @@ end subroutine check_message_size
                                             is, ie-1, js, je, isc, iec, jsc, jec, dir)
                 !--- consider at i = ieg for east edge.
                 !--- when the data is at corner and not symmetry, j = jsg -1 will get from cyclic condition
-                if(position == CORNER .AND. .NOT. domain%symmetry .AND. domain%list(m)%y(tNbr)%compute%begin == jsg) then
+                if(position == CORNER .AND. .NOT. domain%symmetry .AND. domain%list(m)%y(tNbr)%compute%begin==jsg)then
                    call insert_update_overlap(overlap, domain%list(m)%pe, &
                                               ie, ie, je, je, isc, iec, jsc, jec, dir, .true.)
                 end if
@@ -4489,7 +4529,8 @@ end subroutine check_message_size
           !--- Now calculate the overlapping for fold-edge.
           !--- only position at EAST and CORNER need to be considered
           if( ( position == EAST .OR. position == CORNER) ) then
-             if( domain%x(tMe)%data%begin .LE. ieg .AND. ieg .LE. domain%x(tMe)%data%end+ishift )then !fold is within domain
+             if( domain%x(tMe)%data%begin .LE. ieg .AND. ieg .LE. domain%x(tMe)%data%end+ishift )then !fold
+                                                                                                    !! is within domain
                 dir = 1
                 !--- calculate the overlapping for sending
                 if( domain%y(tMe)%pos .LT. (size(domain%y(tMe)%list(:))+1)/2 )then
@@ -4738,7 +4779,8 @@ end subroutine check_message_size
           !--- for folded-south-edge, only need to consider to_pe's south(3) direction
           !--- only position at EAST and CORNER need to be considered
           if( ( position == EAST .OR. position == CORNER) ) then
-             if( domain%x(tMe)%data%begin .LE. ieg .AND. ieg .LE. domain%x(tMe)%data%end+ishift )then !fold is within domain
+             if( domain%x(tMe)%data%begin .LE. ieg .AND. ieg .LE. domain%x(tMe)%data%end+ishift )then !fold
+                                                                                                    !! is within domain
                 dir = 1
                 !--- calculating overlapping for receving on north
                 if( domain%y(tMe)%pos .GE. size(domain%y(tMe)%list(:))/2 )then
@@ -4945,7 +4987,8 @@ end subroutine check_message_size
     integer                          :: nsend, nrecv, nsend_in, nrecv_in
 
     if( domain%fold .NE. 0) call mpp_error(FATAL, &
-         "mpp_domains_define.inc(set_overlaps): folded domain is not implemented for arbitrary halo update, contact developer")
+         "mpp_domains_define.inc(set_overlaps): folded domain is not implemented for arbitrary halo update, &
+                                &  contact developer")
 
     whalo_in = domain%whalo
     ehalo_in = domain%ehalo
@@ -4981,7 +5024,8 @@ end subroutine check_message_size
     do m = 1, nsend_in
        ptrIn  => overlap_in%send(m)
        if(ptrIn%count .LE. 0) call mpp_error(FATAL, &
-          "mpp_domains_define.inc(set_overlaps): number of overlap for send should be a positive number for"//trim(domain%name) )
+          "mpp_domains_define.inc(set_overlaps): number of overlap for send should be a positive number for"// &
+                                & trim(domain%name) )
        do n = 1, ptrIn%count
           dir = ptrIn%dir(n)
           rotation = ptrIn%rotation(n)
@@ -5285,14 +5329,22 @@ end subroutine check_message_size
        allocate(wCont(n)%refine1(num_contact), wCont(n)%refine2(num_contact) )
        allocate(sCont(n)%refine1(num_contact), sCont(n)%refine2(num_contact) )
        allocate(nCont(n)%refine1(num_contact), nCont(n)%refine2(num_contact) )
-       allocate(eCont(n)%is1(num_contact), eCont(n)%ie1(num_contact), eCont(n)%js1(num_contact), eCont(n)%je1(num_contact))
-       allocate(eCont(n)%is2(num_contact), eCont(n)%ie2(num_contact), eCont(n)%js2(num_contact), eCont(n)%je2(num_contact))
-       allocate(wCont(n)%is1(num_contact), wCont(n)%ie1(num_contact), wCont(n)%js1(num_contact), wCont(n)%je1(num_contact))
-       allocate(wCont(n)%is2(num_contact), wCont(n)%ie2(num_contact), wCont(n)%js2(num_contact), wCont(n)%je2(num_contact))
-       allocate(sCont(n)%is1(num_contact), sCont(n)%ie1(num_contact), sCont(n)%js1(num_contact), sCont(n)%je1(num_contact))
-       allocate(sCont(n)%is2(num_contact), sCont(n)%ie2(num_contact), sCont(n)%js2(num_contact), sCont(n)%je2(num_contact))
-       allocate(nCont(n)%is1(num_contact), nCont(n)%ie1(num_contact), nCont(n)%js1(num_contact), nCont(n)%je1(num_contact))
-       allocate(nCont(n)%is2(num_contact), nCont(n)%ie2(num_contact), nCont(n)%js2(num_contact), nCont(n)%je2(num_contact))
+       allocate(eCont(n)%is1(num_contact), eCont(n)%ie1(num_contact), eCont(n)%js1(num_contact), &
+               &  eCont(n)%je1(num_contact))
+       allocate(eCont(n)%is2(num_contact), eCont(n)%ie2(num_contact), eCont(n)%js2(num_contact), &
+               &  eCont(n)%je2(num_contact))
+       allocate(wCont(n)%is1(num_contact), wCont(n)%ie1(num_contact), wCont(n)%js1(num_contact), &
+               &  wCont(n)%je1(num_contact))
+       allocate(wCont(n)%is2(num_contact), wCont(n)%ie2(num_contact), wCont(n)%js2(num_contact), &
+               &  wCont(n)%je2(num_contact))
+       allocate(sCont(n)%is1(num_contact), sCont(n)%ie1(num_contact), sCont(n)%js1(num_contact), &
+               &  sCont(n)%je1(num_contact))
+       allocate(sCont(n)%is2(num_contact), sCont(n)%ie2(num_contact), sCont(n)%js2(num_contact), &
+               &  sCont(n)%je2(num_contact))
+       allocate(nCont(n)%is1(num_contact), nCont(n)%ie1(num_contact), nCont(n)%js1(num_contact), &
+               &  nCont(n)%je1(num_contact))
+       allocate(nCont(n)%is2(num_contact), nCont(n)%ie2(num_contact), nCont(n)%js2(num_contact), &
+               &  nCont(n)%je2(num_contact))
     end do
 
     !--- set up the east, south, west and north contact for each tile.
@@ -5565,7 +5617,8 @@ end subroutine check_message_size
                    is = max(isc1,isc2); ie = min(iec1,iec2)
                    js = max(jsc1,jsc2); je = min(jec1,jec2)
                    if(ie.GE.is .AND. je.GE.js )then
-                      if(.not. associated(overlapSend(m)%tileMe)) call allocate_update_overlap(overlapSend(m), MAXOVERLAP)
+                      if(.not. associated(overlapSend(m)%tileMe)) call allocate_update_overlap(overlapSend(m), &
+                        &  MAXOVERLAP)
                     call insert_overlap_type(overlapSend(m), domain%list(m)%pe, tMe, tNbr, &
                          is, ie, js, je, dir, rotateSend(n), .true. )
                    endif
@@ -5668,7 +5721,8 @@ end subroutine check_message_size
                    is = max(isd1,isd2); ie = min(ied1,ied2)
                    js = max(jsd1,jsd2); je = min(jed1,jed2)
                    if(ie.GE.is .AND. je.GE.js )then
-                      if(.not. associated(overlapRecv(m)%tileMe)) call allocate_update_overlap(overlapRecv(m), MAXOVERLAP)
+                      if(.not. associated(overlapRecv(m)%tileMe)) call allocate_update_overlap(overlapRecv(m), &
+                        &  MAXOVERLAP)
                     call insert_overlap_type(overlapRecv(m), domain%list(m)%pe, tMe, tNbr, &
                          is, ie, js, je, dir, rotateRecv(n), .true.)
                       count                              = overlapRecv(m)%count
@@ -5737,10 +5791,10 @@ end subroutine check_message_size
                          if(overlapSend(m)%tileMe(l) .NE. tMe) cycle
                          if(overlapSend(m)%tileNbr(l) .NE. tNbr) cycle
                          if(overlapSend(m)%dir(l) .NE. dirlist(n) ) cycle
-                       call insert_overlap_type(domain%update_T%send(nsend2), overlapSend(m)%pe,                     &
-                              overlapSend(m)%tileMe(l), overlapSend(m)%tileNbr(l), overlapSend(m)%is(l), overlapSend(m)%ie(l),  &
-                              overlapSend(m)%js(l), overlapSend(m)%je(l), overlapSend(m)%dir(l), overlapSend(m)%rotation(l),    &
-                            overlapSend(m)%from_contact(l)  )
+                       call insert_overlap_type(domain%update_T%send(nsend2), overlapSend(m)%pe, &
+                              overlapSend(m)%tileMe(l), overlapSend(m)%tileNbr(l), overlapSend(m)%is(l), &
+                              overlapSend(m)%ie(l), overlapSend(m)%js(l), overlapSend(m)%je(l), overlapSend(m)%dir(l),&
+                              overlapSend(m)%rotation(l), overlapSend(m)%from_contact(l)  )
                       end do
                    end do
                 end do
@@ -5804,9 +5858,9 @@ end subroutine check_message_size
                          if(overlapRecv(m)%tileNbr(l) .NE. tNbr) cycle
                          if(overlapRecv(m)%dir(l) .NE. dirlist(n) ) cycle
                        call insert_overlap_type(domain%update_T%recv(nrecv2), overlapRecv(m)%pe, &
-                              overlapRecv(m)%tileMe(l), overlapRecv(m)%tileNbr(l), overlapRecv(m)%is(l), overlapRecv(m)%ie(l),  &
-                              overlapRecv(m)%js(l), overlapRecv(m)%je(l), overlapRecv(m)%dir(l), overlapRecv(m)%rotation(l),    &
-                            overlapRecv(m)%from_contact(l))
+                              overlapRecv(m)%tileMe(l), overlapRecv(m)%tileNbr(l), overlapRecv(m)%is(l), &
+                              overlapRecv(m)%ie(l), overlapRecv(m)%js(l), overlapRecv(m)%je(l), overlapRecv(m)%dir(l),&
+                              overlapRecv(m)%rotation(l), overlapRecv(m)%from_contact(l))
                          count = domain%update_T%recv(nrecv2)%count
                       end do
                    end do
@@ -7490,7 +7544,8 @@ end subroutine mpp_modify_domain1D
 !   <INOUT NAME="domain_out" TYPE="type(domain2D)" > </INOUT>
 
 ! <PUBLICROUTINE>
-subroutine mpp_modify_domain2D(domain_in, domain_out, isc, iec, jsc, jec, isg, ieg, jsg, jeg, whalo, ehalo, shalo, nhalo)
+subroutine mpp_modify_domain2D(domain_in, domain_out, isc, iec, jsc, jec, isg, ieg, jsg, jeg, whalo, ehalo, &
+                              &  shalo, nhalo)
   ! </PUBLICROUTINE>
 type(domain2D), intent(in)    :: domain_in !< The source domain.
 type(domain2D), intent(inout) :: domain_out !< The returned domain.
@@ -7845,7 +7900,8 @@ end subroutine allocate_update_overlap
        overlap%count = overlap%count+1
        count = overlap%count
        if(count > MAXOVERLAP) call mpp_error(FATAL, &
-            "mpp_domains_define.inc(insert_update_overlap): number of overlap is greater than MAXOVERLAP, increase MAXOVERLAP")
+            "mpp_domains_define.inc(insert_update_overlap): number of overlap is greater than MAXOVERLAP, &
+                                   &  increase MAXOVERLAP")
        overlap%is(count) = is
        overlap%ie(count) = ie
        overlap%js(count) = js
@@ -7881,7 +7937,8 @@ subroutine insert_overlap_type(overlap, pe, tileMe, tileNbr, is, ie, js, je, dir
     overlap%count = overlap%count+1
     count = overlap%count
     if(count > MAXOVERLAP) call mpp_error(FATAL, &
-       "mpp_domains_define.inc(insert_overlap_type): number of overlap is greater than MAXOVERLAP, increase MAXOVERLAP")
+       "mpp_domains_define.inc(insert_overlap_type): number of overlap is greater than MAXOVERLAP, &
+                              &  increase MAXOVERLAP")
     overlap%tileMe      (count) = tileMe
     overlap%tileNbr     (count) = tileNbr
     overlap%is          (count) = is

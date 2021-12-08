@@ -356,11 +356,13 @@
 
 
 
-    subroutine mpp_write_meta_axis_r1d( unit, axis, name, units, longname, cartesian, sense, domain, data, min, calendar)
+    subroutine mpp_write_meta_axis_r1d( unit, axis, name, units, longname, cartesian, sense, domain, data, min, &
+                                      &  calendar)
 !load the values in an axistype (still need to call mpp_write)
 !write metadata attributes for axis
 !it is declared intent(inout) so you can nullify pointers in the incoming object if needed
-!the f90 standard doesn't guarantee that intent(out) on a type guarantees that its pointer components will be unassociated
+!the f90 standard doesn't guarantee that intent(out) on a type guarantees that its pointer
+!components will be unassociated
       integer,          intent(in)           :: unit
       type(axistype),   intent(inout)        :: axis
       character(len=*), intent(in)           :: name, units, longname
@@ -532,7 +534,8 @@
           call mpp_write_meta( unit, axis%id, 'domain_decomposition', ival=(/isg,ieg,is,ie/))
           axis%natt = axis%natt + 1
       end if
-      if( verbose )print '(a,2i6,x,a,2i3)', 'MPP_WRITE_META: Wrote axis metadata, pe, unit, axis%name, axis%id, axis%did=', &
+      if( verbose )print '(a,2i6,x,a,2i3)', &
+           'MPP_WRITE_META: Wrote axis metadata, pe, unit, axis%name, axis%id, axis%did=', &
            pe, unit, trim(axis%name), axis%id, axis%did
 
       mpp_file(unit)%ndim = max(1,mpp_file(unit)%ndim + 1)
@@ -545,7 +548,8 @@
 !load the values in an axistype (still need to call mpp_write)
 !write metadata attributes for axis
 !it is declared intent(inout) so you can nullify pointers in the incoming object if needed
-!the f90 standard doesn't guarantee that intent(out) on a type guarantees that its pointer components will be unassociated
+!the f90 standard doesn't guarantee that intent(out) on a type guarantees that its pointer
+!components will be unassociated
       integer,          intent(in)           :: unit
       type(axistype),   intent(inout)        :: axis
       character(len=*), intent(in)           :: name, units, longname
@@ -603,7 +607,8 @@
         call mpp_write_meta( unit, axis%id, 'valid_min', ival=min)
         axis%natt = axis%natt + 1
       endif
-      if( verbose )print '(a,2i6,x,a,2i3)', 'MPP_WRITE_META: Wrote axis metadata, pe, unit, axis%name, axis%id, axis%did=', &
+      if( verbose )print '(a,2i6,x,a,2i3)', &
+           'MPP_WRITE_META: Wrote axis metadata, pe, unit, axis%name, axis%id, axis%did=', &
            pe, unit, trim(axis%name), axis%id, axis%did
 
       mpp_file(unit)%ndim = max(1,mpp_file(unit)%ndim + 1)
@@ -617,7 +622,8 @@
 !load the values in an axistype (still need to call mpp_write)
 !write metadata attributes for axis
 !it is declared intent(inout) so you can nullify pointers in the incoming object if needed
-!the f90 standard doesn't guarantee that intent(out) on a type guarantees that its pointer components will be unassociated
+!the f90 standard doesn't guarantee that intent(out) on a type guarantees that its pointer
+!components will be unassociated
       integer,          intent(in)           :: unit
       type(axistype),   intent(inout)        :: axis
       character(len=*), intent(in)           :: name
@@ -790,17 +796,17 @@
               case(0)
                   error = NF_DEF_VAR( mpp_file(unit)%ncid, field%name, NF_INT, size(field%axes(:)), axis_id, field%id )
               case(1)
-                  error = NF_DEF_VAR( mpp_file(unit)%ncid, field%name, NF_DOUBLE, size(field%axes(:)), axis_id, field%id )
+                  error = NF_DEF_VAR( mpp_file(unit)%ncid, field%name, NF_DOUBLE, size(field%axes(:)),axis_id,field%id)
               case(2)
-                  error = NF_DEF_VAR( mpp_file(unit)%ncid, field%name, NF_FLOAT,  size(field%axes(:)), axis_id, field%id )
+                  error = NF_DEF_VAR( mpp_file(unit)%ncid, field%name, NF_FLOAT,  size(field%axes(:)),axis_id,field%id)
               case(4)
                   if( .NOT.PRESENT(scale) .OR. .NOT.PRESENT(add) ) &
                        call mpp_error( FATAL, 'MPP_WRITE_META_FIELD: scale and add must be supplied when pack=4.' )
-                  error = NF_DEF_VAR( mpp_file(unit)%ncid, field%name, NF_SHORT,  size(field%axes(:)), axis_id, field%id )
+                  error = NF_DEF_VAR( mpp_file(unit)%ncid, field%name, NF_SHORT,  size(field%axes(:)),axis_id,field%id)
               case(8)
                   if( .NOT.PRESENT(scale) .OR. .NOT.PRESENT(add) ) &
                        call mpp_error( FATAL, 'MPP_WRITE_META_FIELD: scale and add must be supplied when pack=8.' )
-                  error = NF_DEF_VAR( mpp_file(unit)%ncid, field%name, NF_BYTE,   size(field%axes(:)), axis_id, field%id )
+                  error = NF_DEF_VAR( mpp_file(unit)%ncid, field%name, NF_BYTE,   size(field%axes(:)),axis_id,field%id)
               case default
                   call mpp_error( FATAL, 'MPP_WRITE_META_FIELD: only legal packing values are 1,2,4,8.' )
           end select
@@ -816,7 +822,8 @@
       else
           varnum = varnum + 1
           field%id = varnum
-          if( PRESENT(pack) )call mpp_error( WARNING, 'MPP_WRITE_META: Packing is currently available only on netCDF files.' )
+          if( PRESENT(pack) )call mpp_error( WARNING, &
+             &  'MPP_WRITE_META: Packing is currently available only on netCDF files.' )
 !write field def
           write( text, '(a,i4,a)' )'FIELD ', field%id, ' name'
           call write_attribute( unit, trim(text), cval=field%name )
@@ -1446,7 +1453,8 @@
          .AND. axis%domain.NE.NULL_DOMAIN1D )then
           call mpp_write_meta( unit, axis%id, 'domain_decomposition', ival=(/isg,ieg,is,ie/) )
       end if
-      if( verbose )print '(a,2i6,x,a,2i3)', 'MPP_WRITE_META: Wrote axis metadata, pe, unit, axis%name, axis%id, axis%did=', &
+      if( verbose )print '(a,2i6,x,a,2i3)', &
+           'MPP_WRITE_META: Wrote axis metadata, pe, unit, axis%name, axis%id, axis%did=', &
            pe, unit, trim(axis%name), axis%id, axis%did
 #else
       call mpp_error( FATAL, 'MPP_READ currently requires use_netCDF option' )

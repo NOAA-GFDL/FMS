@@ -887,7 +887,8 @@ end function rarray_to_char
     delta = end_tick - clocks(id)%tick
     if( delta.LT.0 )then
        errunit = stderr()
-       write( errunit,* )'pe, id, start_tick, end_tick, delta, max_ticks=', pe, id, clocks(id)%tick, end_tick, delta, max_ticks
+       write( errunit,* )'pe, id, start_tick, end_tick, delta, max_ticks=', pe, id, clocks(id)%tick, end_tick, &
+            &  delta, max_ticks
        delta = delta + max_ticks + 1
        call mpp_error( WARNING, 'MPP_CLOCK_END: Clock rollover, assumed single roll.' )
     end if
@@ -927,13 +928,15 @@ end function rarray_to_char
 
     if( .not. mpp_record_timing_data )return
     if( .not.debug .or. (current_clock.EQ.0) )return
-    if( current_clock.LT.0 .OR. current_clock.GT.clock_num )call mpp_error( FATAL, 'MPP_CLOCK_BEGIN: invalid current_clock.' )
+    if( current_clock.LT.0 .OR. current_clock.GT.clock_num )call mpp_error( FATAL, &
+       &  'MPP_CLOCK_BEGIN: invalid current_clock.' )
     if( .NOT.clocks(current_clock)%detailed )return
     call SYSTEM_CLOCK(end_tick)
     n = clocks(current_clock)%events(event_id)%calls + 1
 
     if( n.EQ.MAX_EVENTS )call mpp_error( WARNING, &
-         'MPP_CLOCK: events exceed MAX_EVENTS, ignore detailed profiling data for clock '//trim(clocks(current_clock)%name) )
+         'MPP_CLOCK: events exceed MAX_EVENTS, ignore detailed profiling data for clock '// &
+         & trim(clocks(current_clock)%name) )
     if( n.GT.MAX_EVENTS )return
 
     clocks(current_clock)%events(event_id)%calls = n
@@ -1088,7 +1091,8 @@ end function rarray_to_char
     integer,save :: i
     logical      :: l_open
 
-    call mpp_error(WARNING,'get_unit is deprecated and will be removed in a future release, please use the Fortran intrinsic newunit')
+    call mpp_error(WARNING, 'get_unit is deprecated and will be removed in a future release,'&
+                          & //' please use the Fortran intrinsic newunit')
     do i=10,99
        inquire(unit=i,opened=l_open)
        if(.not.l_open)exit
@@ -1411,8 +1415,8 @@ end function rarray_to_char
                 end if
                 if ( len_trim(str_tmp) == LENGTH ) then
                    write(UNIT=text, FMT='(I5)') length
-                   call mpp_error(FATAL, 'get_ascii_file_num_lines: Length of output string ('//trim(text)//' is too small.&
-                        & Increase the LENGTH value.')
+                   call mpp_error(FATAL, 'get_ascii_file_num_lines: Length of output string ('//trim(text)//&
+                                       & ' is too small. Increase the LENGTH value.')
                 end if
                 num_lines = num_lines + 1
              end do
@@ -1481,8 +1485,8 @@ end function rarray_to_char
                 end if
                 if ( len_trim(str_tmp) == LENGTH ) then
                    write(UNIT=text, FMT='(I5)') length
-                   call mpp_error(FATAL, 'get_ascii_file_num_lines: Length of output string ('//trim(text)//' is too small.&
-                        & Increase the LENGTH value.')
+                   call mpp_error(FATAL, 'get_ascii_file_num_lines: Length of output string ('//trim(text)//&
+                                       & ' is too small. Increase the LENGTH value.')
                 end if
                 if (len_trim(str_tmp) > max_length) max_length = len_trim(str_tmp)
                 num_lines = num_lines + 1
@@ -1564,7 +1568,8 @@ end function rarray_to_char
 
           if ( status .ne. 0 ) then
              write (UNIT=text, FMT='(I5)') status
-             call mpp_error(FATAL, 'READ_ASCII_FILE: Error opening file: '//trim(FILENAME)//'.  (IOSTAT = '//trim(text)//')')
+             call mpp_error(FATAL, 'READ_ASCII_FILE: Error opening file: '// &
+                            & trim(FILENAME)//'.  (IOSTAT = '//trim(text)//')')
           else
 
              if ( num_lines .gt. 0 ) then
@@ -1589,7 +1594,8 @@ end function rarray_to_char
                       endif
                       if ( status .gt. 0 ) then
                          write (UNIT=text, FMT='(I5)') pnum_lines
-                         call mpp_error(FATAL, 'READ_ASCII_FILE: Error reading line '//trim(text)//' in file '//trim(FILENAME)//'.')
+                         call mpp_error(FATAL, 'READ_ASCII_FILE: Error reading line '// &
+                                        & trim(text)//' in file '//trim(FILENAME)//'.')
                       end if
                       if(pnum_lines > num_lines) then
                          call mpp_error(FATAL, 'READ_ASCII_FILE: number of lines in file '//trim(FILENAME)// &
@@ -1597,8 +1603,8 @@ end function rarray_to_char
                       end if
                       if ( len_trim(str_tmp) == LENGTH ) then
                          write(UNIT=text, FMT='(I5)') length
-                         call mpp_error(FATAL, 'READ_ASCII_FILE: Length of output string ('//trim(text)//' is too small.&
-                              & Increase the LENGTH value.')
+                         call mpp_error(FATAL, 'READ_ASCII_FILE: Length of output string ('//trim(text)// &
+                                             & ' is too small. Increase the LENGTH value.')
                       end if
                       Content(pnum_lines) = str_tmp
                       pnum_lines = pnum_lines + 1

@@ -343,7 +343,8 @@ end subroutine init_nonblock_type
   else if((size(field_in,1) .eq. ieg-isg+1+2*xhalo) .and. (size(field_in,2) .eq. jeg-jsg+1+2*yhalo)) then
      field2(is:ie,js:je) = field_in(is-isd+1:ie-isd+1,js-jsd+1:je-jsd+1)
   else
-     print*, 'on pe ', pe, 'domain: ', isc, iec, jsc, jec, isd, ied, jsd, jed, 'size of field: ', size(field_in,1), size(field_in,2)
+     print*, 'on pe ', pe, 'domain: ', isc, iec, jsc, jec, isd, ied, jsd, jed, 'size of field: ', size(field_in,1), &
+             & size(field_in,2)
      call mpp_error(FATAL,'mpp_check_field: '//trim(mesg)//':field is not on compute, data or global domain')
   endif
 
@@ -772,7 +773,8 @@ end subroutine init_nonblock_type
                 exit
              endif
           enddo
-          if(ind == 0) call mpp_error( FATAL, 'MPP_BROADCAST_DOMAIN_NEST_FINE:native is true, but tile_id is found in tile_nest')
+          if(ind == 0) call mpp_error( FATAL, &
+             &  'MPP_BROADCAST_DOMAIN_NEST_FINE:native is true, but tile_id is found in tile_nest')
           nestsize(ind) = size(domain%list(:))
       end if
       call mpp_max(nestsize, num_nest)

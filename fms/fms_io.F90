@@ -524,7 +524,8 @@ integer, private :: isd,ied,jsd,jed  !< data domain
 integer, private :: isg,ieg,jsg,jeg  !< global domain
 character(len=128),      dimension(:), allocatable         :: registered_file !< file names
                                                                             !! registered through register_restart_file
-type(restart_file_type), dimension(:), allocatable         :: files_read  !< store files that are read through read_data
+type(restart_file_type), dimension(:), allocatable         :: files_read  !< store files that are read
+                                                                          !! through read_data
 type(restart_file_type), dimension(:), allocatable, target :: files_write !< store files that
                                                                           !! are written through write_data
 type(domain2d), dimension(max_domains), target, save  :: array_domain
@@ -1087,7 +1088,7 @@ subroutine write_data_3d_new(filename, fieldname, data, domain, no_domain, scala
   if(is_no_domain) then
      if(PRESENT(domain)) &
        call mpp_error(FATAL, &
-                    & 'fms_io(write_data_3d_new): no_domain cannot be .true. when optional argument domain is present.')
+                   & 'fms_io(write_data_3d_new): no_domain cannot be .true. when optional argument domain is present.')
   else if(PRESENT(domain))then
      d_ptr => domain
   else if (ASSOCIATED(Current_domain)) then
@@ -2678,7 +2679,7 @@ subroutine save_compressed_restart(fileObj,restartpath,append,time_level)
       mpp_action = MPP_APPEND
       write_meta_data = .false. ! Assuming meta data is already written when routine is called to append to field data.
       if(time_level < 0.0) then
-        call mpp_error(FATAL, 'fms_io(save_compressed_restart): time_level cannot be negative when append is .true.'// &
+        call mpp_error(FATAL, 'fms_io(save_compressed_restart): time_level cannot be negative when append is .true.'//&
                       ' for file '//trim(fileObj%name))
       endif
     endif
@@ -2921,7 +2922,7 @@ subroutine save_compressed_restart(fileObj,restartpath,append,time_level)
                      fileObj%axes(idx)%nelems(:), tstamp=tlev, default_data=cur_var%default_data)
                 deallocate(r2d)
              else
-                call mpp_error(FATAL, "fms_io(save_restart): There is no pointer associated with the data of field "// &
+                call mpp_error(FATAL, "fms_io(save_restart): There is no pointer associated with the data of field "//&
                        trim(cur_var%name)//" of file "//trim(fileObj%name) )
              endif
           endif
@@ -3030,7 +3031,8 @@ subroutine save_default_restart(fileObj,restartpath)
   type(restart_file_type), intent(inout) :: fileObj
   character(len=336)                     :: restartpath ! The restart file path (dir/file).
 
-  character(len=8)   :: suffix               ! A suffix (like _2) that is appended to the name of files after the first.
+  character(len=8)   :: suffix               ! A suffix (like _2) that is appended to the name of files
+                                             !! after the first.
   integer            :: var_sz, size_in_file ! The size in bytes of each variable and of the
                                              !! variables already in a file.
   integer            :: unit                 ! The mpp unit of the open file.
@@ -3296,7 +3298,8 @@ subroutine save_default_restart(fileObj,restartpath)
            cpack_size = 1
            check_val(k) = mpp_chksum(fileObj%p3dr8(k,j)%p(cur_var%is:cur_var%is+iadd, cur_var%js:cur_var%js+jadd, :) )
         else if ( Associated(fileObj%p4dr(k,j)%p) ) then
-           check_val(k) = mpp_chksum(fileObj%p4dr(k,j)%p(cur_var%is:cur_var%is+iadd, cur_var%js:cur_var%js+jadd, :, :) )
+           check_val(k) = mpp_chksum(fileObj%p4dr(k,j)%p(cur_var%is:cur_var%is+iadd, &
+                    &  cur_var%js:cur_var%js+jadd, :, :) )
         else if ( Associated(fileObj%p0di(k,j)%p) ) then
            check_val(k) = fileObj%p0di(k,j)%p
         else if ( Associated(fileObj%p1di(k,j)%p) ) then
@@ -3407,7 +3410,7 @@ subroutine save_default_restart(fileObj,restartpath)
                  call mpp_write(unit, cur_var%field, r3d,                  tlev)
                  deallocate(r3d)
               else
-                 call mpp_error(FATAL,"fms_io(save_restart): There is no pointer associated with the data of field "// &
+                 call mpp_error(FATAL,"fms_io(save_restart): There is no pointer associated with the data of field "//&
                       & trim(cur_var%name)//" of file "//trim(fileObj%name) )
               end if
            end if
@@ -3837,8 +3840,9 @@ subroutine restore_state_border(fileObj, directory, nonfatal_missing_files)
                     trim(cur_var%name)//" in file "//trim(fileObj%name) )
             end if
             if ((fileObj%is_root_pe) .and. (is_there_a_checksum) .and. (checksum_file(k)/=checksum_data)) then
-              write (mesg,'(a,Z16,a,Z16,a)') "Checksum of input field "// uppercase(trim(varname))//" ", checksum_data,&
-                           " does not match value ", checksum_file(k), " stored in "//uppercase(trim(fileObj%name)//".")
+              write (mesg,'(a,Z16,a,Z16,a)')"Checksum of input field "// uppercase(trim(varname))//" ", checksum_data,&
+                           " does not match value ", checksum_file(k), " stored in "//uppercase(trim(fileObj%name)// &
+                           & ".")
               call mpp_error(FATAL, "fms_io(restore_state_border): "//trim(mesg) )
             endif
           end do
@@ -3944,7 +3948,7 @@ subroutine write_chksum(fileObj, action)
                    trim(cur_var%name)//" of file "//trim(fileObj%name) )
            end if
            outunit = stdout()
-           write(outunit,'(a, I1, a, Z16)')'fms_io('//trim(routine_name)//'): At time level = ', k, ', chksum for "'// &
+           write(outunit,'(a, I1, a, Z16)')'fms_io('//trim(routine_name)//'): At time level = ', k, ', chksum for "'//&
                 trim(cur_var%name)// '" of "'// trim(fileObj%name)// '" = ', data_chksum
 
         enddo
@@ -4555,7 +4559,8 @@ subroutine restore_state_one_field(fileObj, id_field, directory, nonfatal_missin
                  else if( Associated(fileObj%p4dr(k,j)%p) ) then
                     call mpp_read(unit(n), fields(l), fileObj%p4dr(k,j)%p, tlev)
                     if ( is_there_a_checksum ) checksum_data =&
-                         & mpp_chksum(fileObj%p4dr(k,j)%p(cur_var%is:cur_var%is+iadd,cur_var%js:cur_var%js+jadd, :, :) )
+                         & mpp_chksum(fileObj%p4dr(k,j)%p(cur_var%is:cur_var%is+iadd, &
+                                     & cur_var%js:cur_var%js+jadd, :, :) )
                  else if( Associated(fileObj%p0di(k,j)%p) ) then
                     call mpp_read(unit(n), fields(l), r0d, tlev)
                     fileObj%p0di(k,j)%p = r0d
@@ -4677,7 +4682,7 @@ subroutine setup_one_field(fileObj, filename, fieldname, field_siz, index_field,
   if(is_no_domain) then
      if(PRESENT(domain)) &
        call mpp_error(FATAL, &
-                      & 'fms_io(setup_one_field): no_domain cannot be .true. when optional argument domain is present.')
+                     & 'fms_io(setup_one_field): no_domain cannot be .true. when optional argument domain is present.')
   else if(PRESENT(domain))then
      d_ptr => domain
   else if (ASSOCIATED(Current_domain)) then
@@ -4775,7 +4780,7 @@ subroutine setup_one_field(fileObj, filename, fieldname, field_siz, index_field,
 
   if(index_field > 0) then
      cur_var   => fileObj%var(index_field)
-     if(cur_var%siz(1) .NE. field_siz(1) .OR. cur_var%siz(2) .NE. field_siz(2) .OR. cur_var%siz(3) .NE. field_siz(3) ) &
+     if(cur_var%siz(1) .NE. field_siz(1) .OR. cur_var%siz(2) .NE. field_siz(2) .OR. cur_var%siz(3) .NE. field_siz(3)) &
         call mpp_error(FATAL, 'fms_io(setup_one_field): field size mismatch for field '// &
                        trim(fieldname)//' of file '//trim(filename) )
 
@@ -5449,7 +5454,7 @@ subroutine read_data_3d_new(filename,fieldname,data,domain,timelevel, &
   if (PRESENT(no_domain)) THEN
      if(PRESENT(domain) .AND. no_domain) &
        call mpp_error(FATAL, &
-                     & 'fms_io(read_data_3d_new): no_domain cannot be .true. when optional argument domain is present.')
+                    & 'fms_io(read_data_3d_new): no_domain cannot be .true. when optional argument domain is present.')
      is_no_domain = no_domain
   endif
 
@@ -5490,7 +5495,8 @@ subroutine read_data_3d_new(filename,fieldname,data,domain,timelevel, &
          (size(data,2) .NE. cysize .AND. size(data,2) .NE. dysize) )then
        call mpp_error(FATAL,'fms_io(read_data_3d_new): data should be on either compute domain '//&
                             'or data domain when domain is present. '//&
-                            'shape(data)=',shape(data),'  cxsize,cysize,dxsize,dysize=',(/cxsize,cysize,dxsize,dysize/))
+                            'shape(data)=',shape(data),'  cxsize,cysize,dxsize,dysize=',(/cxsize,cysize,dxsize, &
+                                  & dysize/))
      end if
   endif
 
@@ -7158,8 +7164,9 @@ subroutine set_initialized_r2d(fileObj, f_ptr, name, is_set)
 
   if (m>fileObj%nvar .AND. mpp_pe() == mpp_root_pe() ) then
     call mpp_error(NOTE,"fms_io(set_initialized_r2d): Unable to find "// &
-          trim(name)//" queried by pointer, "//"probably because of the suspect comparison of pointers by ASSOCIATED"//&
-                        " when attempting to set initialization.")
+          & trim(name)//" queried by pointer, "//& 
+          & "probably because of the suspect comparison of pointers by ASSOCIATED"//&
+          & " when attempting to set initialization.")
   end if
 
   do m=1,fileObj%nvar
@@ -7205,8 +7212,9 @@ subroutine set_initialized_r3d(fileObj, f_ptr, name, is_set)
 
   if (m>fileObj%nvar .AND. mpp_pe() == mpp_root_pe() ) then
     call mpp_error(NOTE,"fms_io(set_initialized_r3d): Unable to find "// &
-          trim(name)//" queried by pointer, "//"probably because of the suspect comparison of pointers by ASSOCIATED"//&
-                        " when attempting to set initialization.")
+          & trim(name)//" queried by pointer, "// &
+          & "probably because of the suspect comparison of pointers by ASSOCIATED"//&
+          & " when attempting to set initialization.")
   end if
 
   do m=1,fileObj%nvar
@@ -7253,8 +7261,9 @@ subroutine set_initialized_r4d(fileObj, f_ptr, name, is_set)
 
   if (m>fileObj%nvar .AND. mpp_pe() == mpp_root_pe() ) then
     call mpp_error(NOTE,"fms_io(set_initialized_r4d): Unable to find "// &
-          trim(name)//" queried by pointer, "//"probably because of the suspect comparison of pointers by ASSOCIATED"//&
-                        " when attempting to set initialization.")
+          & trim(name)//" queried by pointer, "// &
+          & "probably because of the suspect comparison of pointers by ASSOCIATED"//&
+          & " when attempting to set initialization.")
   end if
 
   do m=1,fileObj%nvar

@@ -43,7 +43,8 @@ function fms_io_unstructured_register_restart_field_r_0d(fileObj, &
     character(len=*),intent(in)           :: fieldname         !<The name of a field.
     real,intent(in),target                :: fdata_0d          !<Some data.
     type(domainUG),intent(in),target      :: domain            !<An unstructured mpp_domain.
-    logical,intent(in),optional           :: mandatory         !<Flag telling if the field is mandatory for the restart.
+    logical,intent(in),optional           :: mandatory         !<Flag telling if the field is mandatory
+                                                               !! for the restart.
     real,intent(in),optional              :: data_default      !<A default value for the data.
     character(len=*),intent(in),optional  :: longname          !<A more descriptive name of the field.
     character(len=*),intent(in),optional  :: units             !<Units for the field.
@@ -161,7 +162,8 @@ function fms_io_unstructured_register_restart_field_r_1d(fileObj, &
     real,dimension(:),intent(in),target   :: fdata_1d          !<Some data.
     integer(INT_KIND),dimension(1)        :: fdata_1d_axes     !<An array describing the axes for the data.
     type(domainUG),intent(in),target      :: domain            !<An unstructured mpp_domain.
-    logical,intent(in),optional           :: mandatory         !<Flag telling if the field is mandatory for the restart.
+    logical,intent(in),optional           :: mandatory         !<Flag telling if the field is mandatory
+                                                               !! for the restart.
     real,intent(in),optional              :: data_default      !<A default value for the data.
     character(len=*),intent(in),optional  :: longname          !<A more descriptive name of the field.
     character(len=*),intent(in),optional  :: units             !<Units for the field.
@@ -280,7 +282,8 @@ function fms_io_unstructured_register_restart_field_r_2d(fileObj, &
     real,dimension(:,:),intent(in),target :: fdata_2d          !<Some data.
     integer(INT_KIND),dimension(2)        :: fdata_2d_axes     !<An array describing the axes for the data.
     type(domainUG),intent(in),target      :: domain            !<An unstructured mpp_domain.
-    logical,intent(in),optional           :: mandatory         !<Flag telling if the field is mandatory for the restart.
+    logical,intent(in),optional           :: mandatory         !<Flag telling if the field is mandatory
+                                                               !! for the restart.
     real,intent(in),optional              :: data_default      !<A default value for the data.
     character(len=*),intent(in),optional  :: longname          !<A more descriptive name of the field.
     character(len=*),intent(in),optional  :: units             !<Units for the field.
@@ -449,7 +452,8 @@ function fms_io_unstructured_register_restart_field_r_3d(fileObj, &
                                                                  !! variable will be written to the restart file.
     logical(INT_KIND),intent(in),optional   :: restart_owns_data !<Tells if the data will be
                                                                  !! deallocated when the restart object is deallocated.
-    integer(INT_KIND)                       :: restart_index     !<Index of the inputted field in the fileObj%var array.
+    integer(INT_KIND)                       :: restart_index     !<Index of the inputted field in the
+                                                                 !! fileObj%var array.
 
    !Local variables
     integer(INT_KIND)                 :: index_field           !<Index of the inputted field in the fileObj%var array.
@@ -630,7 +634,8 @@ function fms_io_unstructured_register_restart_field_r8_2d(fileObj, &
     real(DOUBLE_KIND),dimension(:,:),intent(in),target :: fdata_2d          !<Some data.
     integer(INT_KIND),dimension(2)        :: fdata_2d_axes     !<An array describing the axes for the data.
     type(domainUG),intent(in),target      :: domain            !<An unstructured mpp_domain.
-    logical,intent(in),optional           :: mandatory         !<Flag telling if the field is mandatory for the restart.
+    logical,intent(in),optional           :: mandatory         !<Flag telling if the field is mandatory
+                                                               !! for the restart.
     real(DOUBLE_KIND),intent(in),optional              :: data_default      !<A default value for the data.
     character(len=*),intent(in),optional  :: longname          !<A more descriptive name of the field.
     character(len=*),intent(in),optional  :: units             !<Units for the field.
@@ -804,7 +809,8 @@ function fms_io_unstructured_register_restart_field_r8_3d(fileObj, &
                                                                  !! variable will be written to the restart file.
     logical(INT_KIND),intent(in),optional   :: restart_owns_data !<Tells if the data will be
                                                                  !! deallocated when the restart object is deallocated.
-    integer(INT_KIND)                       :: restart_index     !<Index of the inputted field in the fileObj%var array.
+    integer(INT_KIND)                       :: restart_index     !<Index of the inputted field in the
+                                                                 !! fileObj%var array.
 
    !Local variables
     integer(INT_KIND)                 :: index_field           !<Index of the inputted field in the fileObj%var array.
@@ -986,7 +992,8 @@ function fms_io_unstructured_register_restart_field_i_0d(fileObj, &
     character(len=*),intent(in)           :: fieldname         !<The name of a field.
     integer,intent(in),target             :: fdata_0d          !<Some data.
     type(domainUG),intent(in),target      :: domain            !<An unstructured mpp_domain.
-    logical,intent(in),optional           :: mandatory         !<Flag telling if the field is mandatory for the restart.
+    logical,intent(in),optional           :: mandatory         !<Flag telling if the field is mandatory
+                                                               !! for the restart.
     real,intent(in),optional              :: data_default      !<A default value for the data.
     character(len=*),intent(in),optional  :: longname          !<A more descriptive name of the field.
     character(len=*),intent(in),optional  :: units             !<Units for the field.

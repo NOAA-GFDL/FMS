@@ -45,7 +45,8 @@
       if( stackuse.GT.mpp_domains_stack_size )then
           write( text, '(i8)' )stackuse
           call mpp_error( FATAL, &
-               'MPP_DO_GLOBAL_FIELD user stack overflow: call mpp_domains_set_stack_size('//trim(text)//') from all PEs.' )
+               'MPP_DO_GLOBAL_FIELD user stack overflow: call mpp_domains_set_stack_size('//trim(text)// &
+               & ') from all PEs.' )
       end if
       mpp_domains_stack_hwm = max( mpp_domains_stack_hwm, stackuse )
 
@@ -78,16 +79,19 @@
       if(global_on_this_pe ) then
          if(size(local,3).NE.size(global,3) ) call mpp_error( FATAL, &
               'MPP_GLOBAL_FIELD: mismatch of third dimension size of global and local')
-         if( size(global,1).NE.(domain%x(tile)%global%size+ishift) .OR. size(global,2).NE.(domain%y(tile)%global%size+jshift))then
+         if( size(global,1).NE.(domain%x(tile)%global%size+ishift) .OR. size(global, &
+           & 2).NE.(domain%y(tile)%global%size+jshift))then
             if(xonly) then
                if(size(global,1).NE.(domain%x(tile)%global%size+ishift) .OR. &
                    size(global,2).NE.(domain%y(tile)%compute%size+jshift)) &
-                  call mpp_error( FATAL, 'MPP_GLOBAL_FIELD: incoming arrays do not match domain for xonly global field.' )
+                  call mpp_error( FATAL, &
+                                 &  'MPP_GLOBAL_FIELD: incoming arrays do not match domain for xonly global field.' )
                jpos = -domain%y(tile)%compute%begin + 1
             else if(yonly) then
                if(size(global,1).NE.(domain%x(tile)%compute%size+ishift) .OR. &
                    size(global,2).NE.(domain%y(tile)%global%size+jshift)) &
-                  call mpp_error( FATAL, 'MPP_GLOBAL_FIELD: incoming arrays do not match domain for yonly global field.' )
+                  call mpp_error( FATAL, &
+                                 &  'MPP_GLOBAL_FIELD: incoming arrays do not match domain for yonly global field.' )
                ipos = -domain%x(tile)%compute%begin + 1
             else
                call mpp_error( FATAL, 'MPP_GLOBAL_FIELD: incoming arrays do not match domain.' )
@@ -95,16 +99,19 @@
          endif
       endif
 
-      if( size(local,1).EQ.(domain%x(tile)%compute%size+ishift) .AND. size(local,2).EQ.(domain%y(tile)%compute%size+jshift) )then
+      if( size(local,1).EQ.(domain%x(tile)%compute%size+ishift) .AND. size(local, &
+        & 2).EQ.(domain%y(tile)%compute%size+jshift) )then
          !local is on compute domain
          ioff = -domain%x(tile)%compute%begin + 1
          joff = -domain%y(tile)%compute%begin + 1
-      else if( size(local,1).EQ.(domain%x(tile)%memory%size+ishift) .AND. size(local,2).EQ.(domain%y(tile)%memory%size+jshift) )then
+      else if( size(local,1).EQ.(domain%x(tile)%memory%size+ishift) .AND. size(local, &
+             & 2).EQ.(domain%y(tile)%memory%size+jshift) )then
          !local is on data domain
          ioff = -domain%x(tile)%data%begin + 1
          joff = -domain%y(tile)%data%begin + 1
       else
-         call mpp_error( FATAL, 'MPP_GLOBAL_FIELD_: incoming field array must match either compute domain or memory domain.' )
+         call mpp_error( FATAL, &
+                       & 'MPP_GLOBAL_FIELD_: incoming field array must match either compute domain or memory domain.')
       end if
 
       ke  = size(local,3)
@@ -187,7 +194,7 @@
                do n = 1,nd-1
                   rpos = mod(domain%pos+n,nd)
                   if( domain%list(rpos)%tile_id(1) .NE. tile_id ) cycle
-                  nwords = (domain%list(rpos)%x(1)%compute%size+ishift) * (domain%list(rpos)%y(1)%compute%size+jshift) * ke
+                  nwords = (domain%list(rpos)%x(1)%compute%size+ishift)*(domain%list(rpos)%y(1)%compute%size+jshift)*ke
                   m = 0
                   is = domain%list(rpos)%x(1)%compute%begin; ie = domain%list(rpos)%x(1)%compute%end+ishift
                   js = domain%list(rpos)%y(1)%compute%begin; je = domain%list(rpos)%y(1)%compute%end+jshift
@@ -209,7 +216,7 @@
             do n = 1,nd-1
                rpos = mod(domain%pos+n,nd)
                if( domain%list(rpos)%tile_id(1) .NE. tile_id ) cycle ! global field only within tile
-               nwords = (domain%list(rpos)%x(1)%compute%size+ishift) * (domain%list(rpos)%y(1)%compute%size+jshift) * ke
+               nwords = (domain%list(rpos)%x(1)%compute%size+ishift) * (domain%list(rpos)%y(1)%compute%size+jshift)*ke
                m = 0
                is = domain%list(rpos)%x(1)%compute%begin; ie = domain%list(rpos)%x(1)%compute%end+ishift
                js = domain%list(rpos)%y(1)%compute%begin; je = domain%list(rpos)%y(1)%compute%end+jshift

@@ -63,7 +63,7 @@ function MPP_CHKSUM_INT_RMASK_( var, pelist, mask_val )
   if (mask_val == MPP_FILL_DOUBLE ) then !this is FMS variable field default fill
      ! we've packed an MPP_FILL_
      imask_val = MPP_FILL_INT
-  !!! Current NETCDF fill values (AKA MPP_FILL_*) designed towards CEILING(MPP_FILL_{FLOAT,DOUBLE},kind=4byte)=MPP_FILL_INT
+ !Current NETCDF fill values (AKA MPP_FILL_*) designed towards CEILING(MPP_FILL_{FLOAT,DOUBLE},kind=4byte)=MPP_FILL_INT
   else if ( CEILING(mask_val, i4_kind) == MPP_FILL_INT ) then
      ! we've also packed an MPP_FILL_
      imask_val = MPP_FILL_INT

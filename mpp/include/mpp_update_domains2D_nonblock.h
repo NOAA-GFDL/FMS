@@ -122,7 +122,8 @@ function MPP_START_UPDATE_DOMAINS_3D_( field, domain, flags, position, &
   if(max_ntile>1) then
      if(ntile>MAX_TILES) then
         write( text,'(i2)' ) MAX_TILES
-        call mpp_error(FATAL,'MPP_START_UPDATE_DOMAINS_3D: MAX_TILES='//text//' is less than number of tiles on this pe.' )
+        call mpp_error(FATAL,'MPP_START_UPDATE_DOMAINS_3D: MAX_TILES='// &
+                       & text//' is less than number of tiles on this pe.' )
      endif
      if(.NOT. present(tile_count) ) call mpp_error(FATAL, "MPP_UPDATE_3D: "// &
           "optional argument tile_count should be present when number of tiles on this pe is more than 1")
@@ -196,7 +197,8 @@ function MPP_START_UPDATE_DOMAINS_3D_( field, domain, flags, position, &
              nonblock_data(current_id)%update_shalo .NE. update_shalo .OR. &
              nonblock_data(current_id)%update_nhalo .NE. update_nhalo .OR. &
              nonblock_data(current_id)%update_position .NE. update_position ) then
-           call mpp_error(FATAL,'MPP_START_UPDATE_DOMAINS: mismatch for optional argument for field '//trim(field_name) )
+           call mpp_error(FATAL,'MPP_START_UPDATE_DOMAINS: mismatch for optional argument for field '// &
+                          & trim(field_name) )
         endif
      else
         reuse_id_update = .false.
@@ -221,7 +223,8 @@ function MPP_START_UPDATE_DOMAINS_3D_( field, domain, flags, position, &
 
      ke_max = maxval(ke_list(1:l_size,1:ntile))
      if( domain_update_is_needed(domain, update_whalo, update_ehalo, update_shalo, update_nhalo) )then
-        update => search_update_overlap(domain, update_whalo, update_ehalo, update_shalo, update_nhalo, update_position)
+        update => search_update_overlap(domain, update_whalo, update_ehalo, update_shalo, update_nhalo, &
+                                       &  update_position)
         call mpp_start_do_update(current_id, f_addrs(1:l_size,1:ntile), domain, update, d_type, &
                                  ke_max, ke_list(1:l_size,1:ntile), update_flags, reuse_id_update, field_name )
      endif
@@ -378,7 +381,8 @@ subroutine MPP_COMPLETE_UPDATE_DOMAINS_3D_( id_update, field, domain, flags, pos
   if(max_ntile>1) then
      if(ntile>MAX_TILES) then
         write( text,'(i2)' ) MAX_TILES
-        call mpp_error(FATAL,'MPP_COMPLETE_UPDATE_DOMAINS_3D: MAX_TILES='//text//' is less than number of tiles on this pe.' )
+        call mpp_error(FATAL,'MPP_COMPLETE_UPDATE_DOMAINS_3D: MAX_TILES='// &
+                       & text//' is less than number of tiles on this pe.' )
      endif
      if(.NOT. present(tile_count) ) call mpp_error(FATAL, "MPP_UPDATE_3D: "// &
           "optional argument tile_count should be present when number of tiles on this pe is more than 1")
@@ -402,18 +406,24 @@ subroutine MPP_COMPLETE_UPDATE_DOMAINS_3D_( id_update, field, domain, flags, pos
   ke_list(list,tile) = size(field,3)
 
   !check to make sure the consistency of halo size, position and flags.
-  if( nonblock_data(id_update)%update_flags .NE. update_flags ) call mpp_error(FATAL, "MPP_COMPLETE_UPDATE_DOMAINS_3D: "// &
-       "mismatch of optional argument flag between MPP_COMPLETE_UPDATE_DOMAINS and MPP_START_UPDATE_DOMAINS")
-  if( nonblock_data(id_update)%update_whalo .NE. update_whalo ) call mpp_error(FATAL, "MPP_COMPLETE_UPDATE_DOMAINS_3D: "// &
-       "mismatch of optional argument whalo between MPP_COMPLETE_UPDATE_DOMAINS and MPP_START_UPDATE_DOMAINS")
-  if( nonblock_data(id_update)%update_ehalo .NE. update_ehalo ) call mpp_error(FATAL, "MPP_COMPLETE_UPDATE_DOMAINS_3D: "// &
-       "mismatch of optional argument ehalo between MPP_COMPLETE_UPDATE_DOMAINS and MPP_START_UPDATE_DOMAINS")
-  if( nonblock_data(id_update)%update_shalo .NE. update_shalo ) call mpp_error(FATAL, "MPP_COMPLETE_UPDATE_DOMAINS_3D: "// &
-       "mismatch of optional argument shalo between MPP_COMPLETE_UPDATE_DOMAINS and MPP_START_UPDATE_DOMAINS")
-  if( nonblock_data(id_update)%update_nhalo .NE. update_nhalo ) call mpp_error(FATAL, "MPP_COMPLETE_UPDATE_DOMAINS_3D: "// &
-       "mismatch of optional argument nhalo between MPP_COMPLETE_UPDATE_DOMAINS and MPP_START_UPDATE_DOMAINS")
-  if( nonblock_data(id_update)%update_position .NE. update_position ) call mpp_error(FATAL, "MPP_COMPLETE_UPDATE_DOMAINS_3D: "// &
-       "mismatch of optional argument position between MPP_COMPLETE_UPDATE_DOMAINS and MPP_START_UPDATE_DOMAINS")
+  if( nonblock_data(id_update)%update_flags .NE. update_flags ) &
+       call mpp_error(FATAL, "MPP_COMPLETE_UPDATE_DOMAINS_3D: "// &
+               "mismatch of optional argument flag between MPP_COMPLETE_UPDATE_DOMAINS and MPP_START_UPDATE_DOMAINS")
+  if( nonblock_data(id_update)%update_whalo .NE. update_whalo ) &
+       call mpp_error(FATAL, "MPP_COMPLETE_UPDATE_DOMAINS_3D: "// &
+               "mismatch of optional argument whalo between MPP_COMPLETE_UPDATE_DOMAINS and MPP_START_UPDATE_DOMAINS")
+  if( nonblock_data(id_update)%update_ehalo .NE. update_ehalo ) &
+       call mpp_error(FATAL, "MPP_COMPLETE_UPDATE_DOMAINS_3D: "// &
+               "mismatch of optional argument ehalo between MPP_COMPLETE_UPDATE_DOMAINS and MPP_START_UPDATE_DOMAINS")
+  if( nonblock_data(id_update)%update_shalo .NE. update_shalo ) &
+       call mpp_error(FATAL, "MPP_COMPLETE_UPDATE_DOMAINS_3D: "// &
+               "mismatch of optional argument shalo between MPP_COMPLETE_UPDATE_DOMAINS and MPP_START_UPDATE_DOMAINS")
+  if( nonblock_data(id_update)%update_nhalo .NE. update_nhalo ) &
+       call mpp_error(FATAL, "MPP_COMPLETE_UPDATE_DOMAINS_3D: "// &
+               "mismatch of optional argument nhalo between MPP_COMPLETE_UPDATE_DOMAINS and MPP_START_UPDATE_DOMAINS")
+  if( nonblock_data(id_update)%update_position .NE. update_position ) &
+       call mpp_error(FATAL, "MPP_COMPLETE_UPDATE_DOMAINS_3D: "// &
+             "mismatch of optional argument position between MPP_COMPLETE_UPDATE_DOMAINS and MPP_START_UPDATE_DOMAINS")
 
   if(is_complete) then
      l_size = list
@@ -421,11 +431,13 @@ subroutine MPP_COMPLETE_UPDATE_DOMAINS_3D_( id_update, field, domain, flags, pos
   end if
 
   if(do_update) then
-     if(l_size .NE. nonblock_data(id_update)%nfields) call mpp_error(FATAL, "MPP_COMPLETE_UPDATE_DOMAINS_3D: "// &
+     if(l_size .NE. nonblock_data(id_update)%nfields) &
+        call mpp_error(FATAL, "MPP_COMPLETE_UPDATE_DOMAINS_3D: "// &
              "mismatch of number of fields between mpp_start_update_domains and mpp_complete_update_domains")
      num_update = num_update - 1
      if( domain_update_is_needed(domain, update_whalo, update_ehalo, update_shalo, update_nhalo) ) then
-        update => search_update_overlap(domain, update_whalo, update_ehalo, update_shalo, update_nhalo, update_position)
+        update => search_update_overlap(domain, update_whalo, update_ehalo, update_shalo, update_nhalo, &
+                                       &  update_position)
         ke_max = maxval(ke_list(1:l_size,1:ntile))
         call mpp_complete_do_update(id_update, f_addrs(1:l_size,1:ntile), domain, update, d_type, &
                                     ke_max, ke_list(1:l_size,1:ntile), update_flags)
@@ -606,7 +618,8 @@ function MPP_START_UPDATE_DOMAINS_3D_V_( fieldx, fieldy, domain, flags, gridtype
   if(max_ntile>1) then
      if(ntile>MAX_TILES) then
         write( text,'(i2)' ) MAX_TILES
-        call mpp_error(FATAL,'MPP_START_UPDATE_DOMAINS_V: MAX_TILES='//text//' is less than number of tiles on this pe.' )
+        call mpp_error(FATAL,'MPP_START_UPDATE_DOMAINS_V: MAX_TILES='// &
+                       & text//' is less than number of tiles on this pe.' )
      endif
      if(.NOT. present(tile_count) ) call mpp_error(FATAL, "MPP_UPDATE_3D_V: "// &
           "optional argument tile_count should be present when number of tiles on some pe is more than 1")
@@ -655,7 +668,8 @@ function MPP_START_UPDATE_DOMAINS_3D_V_( fieldx, fieldy, domain, flags, gridtype
      set_mismatch = set_mismatch .OR. (update_nhalo /= nhalosz)
      if(set_mismatch)then
         write( text,'(i2)' ) list
-        call mpp_error(FATAL,'MPP_START_UPDATE_DOMAINS_V: Incompatible field at count '//text//' for group vector update.' )
+        call mpp_error(FATAL,'MPP_START_UPDATE_DOMAINS_V: Incompatible field at count '// &
+                       & text//' for group vector update.' )
      end if
   end if
   if(is_complete) then
@@ -681,14 +695,16 @@ function MPP_START_UPDATE_DOMAINS_3D_V_( fieldx, fieldy, domain, flags, gridtype
              nonblock_data(current_id)%update_shalo .NE. update_shalo .OR. &
              nonblock_data(current_id)%update_nhalo .NE. update_nhalo .OR. &
              nonblock_data(current_id)%update_gridtype .NE. grid_offset_type ) then
-           call mpp_error(FATAL,'MPP_START_UPDATE_DOMAINS_V: mismatch for optional argument for field '//trim(field_name) )
+           call mpp_error(FATAL,'MPP_START_UPDATE_DOMAINS_V: mismatch for optional argument for field '// &
+                          & trim(field_name) )
         endif
      else
         reuse_id_update = .false.
         current_id_update = current_id_update + 1
         current_id = current_id_update
         if( current_id_update > MAX_NONBLOCK_UPDATE ) then
-           write( text,'(a,i8,a,i8)' ) 'num_fields =', current_id_update, ' greater than MAX_NONBLOCK_UPDATE =', MAX_NONBLOCK_UPDATE
+           write( text,'(a,i8,a,i8)' ) 'num_fields =', current_id_update, &
+                &  ' greater than MAX_NONBLOCK_UPDATE =', MAX_NONBLOCK_UPDATE
            call mpp_error(FATAL,'MPP_START_UPDATE_DOMAINS_V: '//trim(text))
         endif
         nonblock_data(current_id)%update_flags = update_flags
@@ -904,19 +920,24 @@ subroutine MPP_COMPLETE_UPDATE_DOMAINS_3D_V_( id_update, fieldx, fieldy, domain,
   end if
 
   !check to make sure the consistency of halo size, position and flags.
-  if( nonblock_data(id_update)%update_flags .NE. update_flags ) call mpp_error(FATAL, "MPP_COMPLETE_UPDATE_DOMAINS_3D_V: "// &
-       "mismatch of optional argument flag between MPP_COMPLETE_UPDATE_DOMAINS and MPP_START_UPDATE_DOMAINS")
-  if( nonblock_data(id_update)%update_whalo .NE. update_whalo ) call mpp_error(FATAL, "MPP_COMPLETE_UPDATE_DOMAINS_3D_V: "// &
-       "mismatch of optional argument whalo between MPP_COMPLETE_UPDATE_DOMAINS and MPP_START_UPDATE_DOMAINS")
-  if( nonblock_data(id_update)%update_ehalo .NE. update_ehalo ) call mpp_error(FATAL, "MPP_COMPLETE_UPDATE_DOMAINS_3D_V: "// &
-       "mismatch of optional argument ehalo between MPP_COMPLETE_UPDATE_DOMAINS and MPP_START_UPDATE_DOMAINS")
-  if( nonblock_data(id_update)%update_shalo .NE. update_shalo ) call mpp_error(FATAL, "MPP_COMPLETE_UPDATE_DOMAINS_3D_V: "// &
-       "mismatch of optional argument shalo between MPP_COMPLETE_UPDATE_DOMAINS and MPP_START_UPDATE_DOMAINS")
-  if( nonblock_data(id_update)%update_nhalo .NE. update_nhalo ) call mpp_error(FATAL, "MPP_COMPLETE_UPDATE_DOMAINS_3D_V: "// &
-       "mismatch of optional argument nhalo between MPP_COMPLETE_UPDATE_DOMAINS and MPP_START_UPDATE_DOMAINS")
+  if( nonblock_data(id_update)%update_flags .NE. update_flags ) &
+       call mpp_error(FATAL, "MPP_COMPLETE_UPDATE_DOMAINS_3D_V: "// &
+               "mismatch of optional argument flag between MPP_COMPLETE_UPDATE_DOMAINS and MPP_START_UPDATE_DOMAINS")
+  if( nonblock_data(id_update)%update_whalo .NE. update_whalo ) &
+       call mpp_error(FATAL, "MPP_COMPLETE_UPDATE_DOMAINS_3D_V: "// &
+               "mismatch of optional argument whalo between MPP_COMPLETE_UPDATE_DOMAINS and MPP_START_UPDATE_DOMAINS")
+  if( nonblock_data(id_update)%update_ehalo .NE. update_ehalo ) &
+       call mpp_error(FATAL, "MPP_COMPLETE_UPDATE_DOMAINS_3D_V: "// &
+               "mismatch of optional argument ehalo between MPP_COMPLETE_UPDATE_DOMAINS and MPP_START_UPDATE_DOMAINS")
+  if( nonblock_data(id_update)%update_shalo .NE. update_shalo ) &
+       call mpp_error(FATAL, "MPP_COMPLETE_UPDATE_DOMAINS_3D_V: "// &
+               "mismatch of optional argument shalo between MPP_COMPLETE_UPDATE_DOMAINS and MPP_START_UPDATE_DOMAINS")
+  if( nonblock_data(id_update)%update_nhalo .NE. update_nhalo ) &
+       call mpp_error(FATAL, "MPP_COMPLETE_UPDATE_DOMAINS_3D_V: "// &
+               "mismatch of optional argument nhalo between MPP_COMPLETE_UPDATE_DOMAINS and MPP_START_UPDATE_DOMAINS")
   if( nonblock_data(id_update)%update_gridtype .NE. grid_offset_type ) &
         call mpp_error(FATAL, "MPP_COMPLETE_UPDATE_DOMAINS_3D_V: "// &
-       "mismatch of optional argument gridtype between MPP_COMPLETE_UPDATE_DOMAINS and MPP_START_UPDATE_DOMAINS")
+             "mismatch of optional argument gridtype between MPP_COMPLETE_UPDATE_DOMAINS and MPP_START_UPDATE_DOMAINS")
 
   max_ntile = domain%max_ntile_pe
   ntile = size(domain%x(:))

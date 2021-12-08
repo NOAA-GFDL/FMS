@@ -502,7 +502,8 @@
                end select
             end if
          end if
-      else if( BTEST(domain%fold,SOUTH) .AND. (.NOT.BTEST(update_flags,SCALAR_BIT)) )then      ! ---southern boundary fold
+      else if( BTEST(domain%fold,SOUTH) .AND. (.NOT.BTEST(update_flags,SCALAR_BIT)) )then      ! ---southern
+                                                                                               !! boundary fold
          ! NOTE: symmetry is assumed for fold-south boundary
          j = domain%y(1)%global%begin
          if( domain%y(1)%data%begin.LE.j .AND. j.LE.domain%y(1)%data%end+shift )then !fold is within domain
@@ -596,7 +597,8 @@
                end select
             end if
          end if
-      else if( BTEST(domain%fold,WEST) .AND. (.NOT.BTEST(update_flags,SCALAR_BIT)) )then      ! ---eastern boundary fold
+      else if( BTEST(domain%fold,WEST) .AND. (.NOT.BTEST(update_flags,SCALAR_BIT)) )then      ! ---eastern
+                                                                                              !! boundary fold
          ! NOTE: symmetry is assumed for fold-west boundary
          i = domain%x(1)%global%begin
          if( domain%x(1)%data%begin.LE.i .AND. i.LE.domain%x(1)%data%end+shift )then !fold is within domain
@@ -690,7 +692,8 @@
                end select
             end if
          end if
-      else if( BTEST(domain%fold,EAST) .AND. (.NOT.BTEST(update_flags,SCALAR_BIT)) )then      ! ---eastern boundary fold
+      else if( BTEST(domain%fold,EAST) .AND. (.NOT.BTEST(update_flags,SCALAR_BIT)) )then      ! ---eastern
+                                                                                              !! boundary fold
          ! NOTE: symmetry is assumed for fold-west boundary
          i = domain%x(1)%global%end+shift
          if( domain%x(1)%data%begin.LE.i .AND. i.LE.domain%x(1)%data%end+shift )then !fold is within domain

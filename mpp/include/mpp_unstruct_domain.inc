@@ -22,13 +22,15 @@
 !> @brief Routines for defining and managing unstructured grids
 
   !#####################################################################
-  subroutine mpp_define_unstruct_domain(UG_domain, SG_domain, npts_tile, grid_nlev, ndivs, npes_io_group, grid_index, name)
+  subroutine mpp_define_unstruct_domain(UG_domain, SG_domain, npts_tile, grid_nlev, ndivs, npes_io_group, &
+                                       &  grid_index, name)
      type(domainUG),   intent(inout) :: UG_domain
      type(domain2d), target,     intent(in) :: SG_domain
      integer,                    intent(in) :: npts_tile(:) ! number of unstructured points on each tile
      integer,                    intent(in) :: grid_nlev(:) ! number of levels in each unstructured grid.
      integer,                    intent(in) :: ndivs
-     integer,                    intent(in) :: npes_io_group  ! number of processors in a io group. Only pe with same tile_id
+     integer,                    intent(in) :: npes_io_group  ! number of processors in a io group. Only
+                                                              !! pe with same tile_id
                                                               ! in the same group
      integer,                    intent(in) :: grid_index(:)
      character(len=*), optional, intent(in) :: name
@@ -46,10 +48,12 @@
      UG_domain%ntiles = ntiles
 
      !--- total number of points must be no less than ndivs
-     if(sum(npts_tile)<ndivs) call mpp_error(FATAL, "mpp_define_unstruct_domain: total number of points is less than ndivs")
+     if(sum(npts_tile)<ndivs) call mpp_error(FATAL, &
+        &  "mpp_define_unstruct_domain: total number of points is less than ndivs")
      !--- We are assuming nlev on each grid is at least one.
      do n = 1, size(grid_nlev(:))
-        if(grid_nlev(n) < 1) call mpp_error(FATAL, "mpp_define_unstruct_domain: grid_nlev at some point is less than 1")
+        if(grid_nlev(n) < 1) call mpp_error(FATAL, &
+           &  "mpp_define_unstruct_domain: grid_nlev at some point is less than 1")
      enddo
 
      !-- costs for each tile.

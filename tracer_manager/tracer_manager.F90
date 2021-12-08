@@ -368,7 +368,8 @@ do n = 1, num_tracer_fields !{
              digit = "_"//trim(digit)
            endif
         else  !}{
-          call mpp_error(FATAL, 'tracer_manager_init: MULTIPLE_TRACER_SET_UP exceeds 100 for '//tracers(n)%tracer_name )
+          call mpp_error(FATAL, 'tracer_manager_init: MULTIPLE_TRACER_SET_UP exceeds 100 for '// &
+                         & tracers(n)%tracer_name )
         endif  !}
 
         select case(model)
@@ -746,7 +747,7 @@ get_tracer_index_integer = NO_TRACER
 
 if (PRESENT(indices)) then
     do i = 1, size(indices(:))
-       if (model == tracers(indices(i))%model .and. lowercase(trim(name)) == trim(tracers(indices(i))%tracer_name)) then
+       if (model == tracers(indices(i))%model .and. lowercase(trim(name)) == trim(tracers(indices(i))%tracer_name))then
            get_tracer_index_integer = i
            exit
        endif

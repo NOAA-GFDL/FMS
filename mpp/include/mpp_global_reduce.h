@@ -59,12 +59,14 @@
 !field is on compute domain
         ioff = isc
         joff = jsc
-    else if( size(field,1).EQ.domain%x(1)%memory%size+ishift .AND. size(field,2).EQ.domain%y(1)%memory%size+jshift )then
+    else if( size(field,1).EQ.domain%x(1)%memory%size+ishift .AND. size(field, &
+           & 2).EQ.domain%y(1)%memory%size+jshift )then
 !field is on data domain
         ioff = domain%x(1)%data%begin
         joff = domain%y(1)%data%begin
     else
-        call mpp_error( FATAL, 'MPP_GLOBAL_REDUCE_: incoming field array must match either compute domain or data domain.' )
+        call mpp_error( FATAL, &
+                       &  'MPP_GLOBAL_REDUCE_: incoming field array must match either compute domain or data domain.' )
     end if
 
 !get your local max/min

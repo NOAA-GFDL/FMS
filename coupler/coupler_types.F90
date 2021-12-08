@@ -2149,7 +2149,8 @@ contains
           & call mpp_error(FATAL, &
                            &  "CT_increment_data_2d_3d: There is an i-direction computational domain size mismatch.")
       if ((var_in%jec-var_in%jsc) /= (var%jec-var%jsc))&
-          & call mpp_error(FATAL, "CT_increment_data_2d_3d: There is a j-direction computational domain size mismatch.")
+          & call mpp_error(FATAL, &
+                           &  "CT_increment_data_2d_3d: There is a j-direction computational domain size mismatch.")
       if ((1+var_in%ke-var_in%ks) /= size(weights,3))&
           & call mpp_error(FATAL, &
                            &  "CT_increment_data_2d_3d: There is a k-direction size mismatch with the weights array.")
@@ -2170,7 +2171,7 @@ contains
         iow = 1 + (var_in%isc - var_in%isd) - var%isc
       else
         call mpp_error(FATAL, &
-                       &  "CT_increment_data_2d_3d: weights array must be the i-size of a computational or data domain.")
+                   &  "CT_increment_data_2d_3d: weights array must be the i-size of a computational or data domain.")
       endif
       if ((1+var%jec-var%jsc) == size(weights,2)) then
         jow = 1 - var%jsc
@@ -2180,7 +2181,7 @@ contains
         jow = 1 + (var_in%jsc - var_in%jsd) - var%jsc
       else
         call mpp_error(FATAL, &
-                       &  "CT_increment_data_2d_3d: weights array must be the j-size of a computational or data domain.")
+                   &  "CT_increment_data_2d_3d: weights array must be the j-size of a computational or data domain.")
       endif
 
       io1 = var_in%isc - var%isc
@@ -3209,7 +3210,8 @@ contains
     !< Open the files
     do n = 1, num_rest_files
         file_is_open(n) = open_file(bc_rest_files(n), trim(dir)// &
-                                                             & rest_file_names(n), io_type, mpp_domain, is_restart=.true.)
+                                                             & rest_file_names(n), io_type, mpp_domain, &
+                                                                              &  is_restart=.true.)
         if (file_is_open(n)) then
              call register_axis_wrapper(bc_rest_files(n), to_read=to_read)
         endif
@@ -3502,7 +3504,8 @@ contains
     !< Open the files
     do n = 1, num_rest_files
         file_is_open(n) = open_file(bc_rest_files(n), trim(dir)// &
-                                                             & rest_file_names(n), io_type, mpp_domain, is_restart=.true.)
+                                                             & rest_file_names(n), io_type, mpp_domain, &
+                                                                              &  is_restart=.true.)
         if (file_is_open(n)) then
 
              if (to_read) then

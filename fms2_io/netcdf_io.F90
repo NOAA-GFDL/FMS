@@ -143,7 +143,8 @@ type, public :: FmsNetcdfFile_t
   integer :: num_compressed_dims !< Number of compressed dimensions.
   logical :: is_diskless !< Flag telling whether this is a diskless file.
   character (len=20) :: time_name
-  type(dimension_information) :: bc_dimensions !<information about the current dimensions for regional restart variables
+  type(dimension_information) :: bc_dimensions !<information about the current dimensions for regional
+                                               !! restart variables
 
 endtype FmsNetcdfFile_t
 
@@ -815,7 +816,8 @@ subroutine netcdf_add_dimension(fileobj, dimension_name, dimension_length, &
   if (fileobj%is_root .and. .not. fileobj%is_readonly) then
     call set_netcdf_mode(fileobj%ncid, define_mode)
     err = nf90_def_dim(fileobj%ncid, trim(dimension_name), dim_len, dimid)
-    call check_netcdf_code(err, "Netcdf_add_dimension: file:"//trim(fileobj%path)//" dimension name:"//trim(dimension_name))
+    call check_netcdf_code(err, "Netcdf_add_dimension: file:"//trim(fileobj%path)//" dimension name:"// &
+                         & trim(dimension_name))
   endif
 end subroutine netcdf_add_dimension
 
@@ -873,7 +875,8 @@ subroutine netcdf_add_variable(fileobj, variable_name, variable_type, dimensions
     if (string_compare(variable_type, "int", .true.)) then
       vtype = nf90_int
     elseif (string_compare(variable_type, "int64", .true.)) then
-      if ( .not. fileobj%allow_int8) call error(trim(fileobj%path)//": 64 bit integers are only supported with 'netcdf4' file format"//&
+      if ( .not. fileobj%allow_int8) call error(trim(fileobj%path)//&
+                                               &": 64 bit integers are only supported with 'netcdf4' file format"//&
                                                &". Set netcdf_default_format='netcdf4' in the fms2_io namelist OR "//&
                                                &"add nc_format='netcdf4' to your open_file call")
       vtype = nf90_int64
@@ -1543,8 +1546,8 @@ subroutine get_variable_dimension_names(fileobj, variable_name, dim_names, &
                    &" and variable:"//trim(variable_name))
       endif
     else
-      call error("get_variable_dimension_names: the variable: "//trim(variable_name)//" in file: "//trim(fileobj%path)//&
-                &" does not any dimensions. ")
+      call error("get_variable_dimension_names: the variable: "//trim(variable_name)//" in file: "//trim(fileobj%path)&
+                & //" does not any dimensions. ")
     endif
     dim_names(:) = ""
     do i = 1, ndims
@@ -1566,8 +1569,8 @@ subroutine get_variable_dimension_names(fileobj, variable_name, dim_names, &
                    &" and variable:"//trim(variable_name))
       endif
     else
-      call error("get_variable_dimension_names: the variable: "//trim(variable_name)//" in file: "//trim(fileobj%path)//&
-                &" does not any dimensions. ")
+      call error("get_variable_dimension_names: the variable: "//trim(variable_name)//" in file: "//trim(fileobj%path)&
+                & //" does not any dimensions. ")
     endif
     dim_names(:) = ""
   endif

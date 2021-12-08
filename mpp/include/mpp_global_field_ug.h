@@ -58,7 +58,8 @@
       if( stackuse.GT.mpp_domains_stack_size )then
           write( text, '(i8)' )stackuse
           call mpp_error( FATAL, &
-               'MPP_DO_GLOBAL_FIELD_UG user stack overflow: call mpp_domains_set_stack_size('//trim(text)//') from all PEs.' )
+               'MPP_DO_GLOBAL_FIELD_UG user stack overflow: call mpp_domains_set_stack_size('//trim(text)// &
+               & ') from all PEs.' )
       end if
       mpp_domains_stack_hwm = max( mpp_domains_stack_hwm, stackuse )
 

@@ -221,8 +221,10 @@ subroutine get_key_name(file_id, key_id, key_name)
    integer, intent(in) :: file_id !< File id of the yaml file to search
    character(len=*), intent(out) :: key_name
 
-   if (.not. is_valid_file_id(file_id)) call mpp_error(FATAL, "The file id in your get_key_name call is invalid! Check your call.")
-   if (.not. is_valid_key_id(file_id, key_id)) call mpp_error(FATAL, "The key id in your get_key_name call is invalid! Check your call.")
+   if (.not. is_valid_file_id(file_id)) call mpp_error(FATAL, &
+       &  "The file id in your get_key_name call is invalid! Check your call.")
+   if (.not. is_valid_key_id(file_id, key_id)) call mpp_error(FATAL, &
+       &  "The key id in your get_key_name call is invalid! Check your call.")
 
    key_name = fms_c2f_string(get_key(file_id, key_id))
 
@@ -234,8 +236,10 @@ subroutine get_key_value(file_id, key_id, key_value)
    integer, intent(in) :: file_id !< File id of the yaml file to search
    character(len=*), intent(out) :: key_value
 
-   if (.not. is_valid_file_id(file_id)) call mpp_error(FATAL, "The file id in your get_key_value call is invalid! Check your call.")
-   if (.not. is_valid_key_id(file_id, key_id)) call mpp_error(FATAL, "The key id in your get_key_value call is invalid! Check your call.")
+   if (.not. is_valid_file_id(file_id)) call mpp_error(FATAL, &
+       &  "The file id in your get_key_value call is invalid! Check your call.")
+   if (.not. is_valid_key_id(file_id, key_id)) call mpp_error(FATAL, &
+       &  "The key id in your get_key_value call is invalid! Check your call.")
 
    key_value = fms_c2f_string(get_value(file_id, key_id))
 
@@ -261,8 +265,10 @@ subroutine get_value_from_key_0d(file_id, block_id, key_name, key_value, is_opti
    optional = .false.
    if (present(is_optional)) optional = is_optional
 
-   if (.not. is_valid_file_id(file_id)) call mpp_error(FATAL, "The file id in your get_value_from_key call is invalid! Check your call.")
-   if (.not. is_valid_block_id(file_id, block_id)) call mpp_error(FATAL, "The block id in your get_value_from_key call is invalid! Check your call.")
+   if (.not. is_valid_file_id(file_id)) call mpp_error(FATAL, &
+       &  "The file id in your get_value_from_key call is invalid! Check your call.")
+   if (.not. is_valid_block_id(file_id, block_id)) call mpp_error(FATAL, &
+       &  "The block id in your get_value_from_key call is invalid! Check your call.")
 
    c_buffer = get_value_from_key_wrap(file_id, block_id, trim(key_name)//c_null_char, sucess)
    if (sucess == 1) then
@@ -271,16 +277,20 @@ subroutine get_value_from_key_0d(file_id, block_id, key_name, key_value, is_opti
      select type (key_value)
        type is (integer(kind=i4_kind))
           read(buffer,*, iostat=err_unit) key_value
-          if (err_unit .ne. 0) call mpp_error(FATAL, "Key:"//trim(key_name)//" Error converting '"//trim(buffer)//"' to i4")
+          if (err_unit .ne. 0) call mpp_error(FATAL, "Key:"// &
+              & trim(key_name)//" Error converting '"//trim(buffer)//"' to i4")
        type is (integer(kind=i8_kind))
           read(buffer,*, iostat=err_unit) key_value
-          if (err_unit .ne. 0) call mpp_error(FATAL, "Key:"//trim(key_name)//" Error converting '"//trim(buffer)//"' to i8")
+          if (err_unit .ne. 0) call mpp_error(FATAL, "Key:"// &
+              & trim(key_name)//" Error converting '"//trim(buffer)//"' to i8")
        type is (real(kind=r4_kind))
           read(buffer,*, iostat=err_unit) key_value
-          if (err_unit .ne. 0) call mpp_error(FATAL, "Key:"//trim(key_name)//" Error converting '"//trim(buffer)//"' to r4")
+          if (err_unit .ne. 0) call mpp_error(FATAL, "Key:"// &
+              & trim(key_name)//" Error converting '"//trim(buffer)//"' to r4")
        type is (real(kind=r8_kind))
           read(buffer,*, iostat=err_unit) key_value
-          if (err_unit .ne. 0) call mpp_error(FATAL, "Key:"//trim(key_name)//" Error converting '"//trim(buffer)//"' to r8")
+          if (err_unit .ne. 0) call mpp_error(FATAL, "Key:"// &
+              & trim(key_name)//" Error converting '"//trim(buffer)//"' to r8")
        type is (character(len=*))
           call string_copy(key_value, buffer)
      class default
@@ -313,8 +323,10 @@ subroutine get_value_from_key_1d(file_id, block_id, key_name, key_value, is_opti
    optional=.false.
    if (present(is_optional)) optional = is_optional
 
-   if (.not. is_valid_file_id(file_id)) call mpp_error(FATAL, "The file id in your get_value_from_key call is invalid! Check your call.")
-   if (.not. is_valid_block_id(file_id, block_id)) call mpp_error(FATAL, "The block id in your get_value_from_key call is invalid! Check your call.")
+   if (.not. is_valid_file_id(file_id)) call mpp_error(FATAL, &
+       &  "The file id in your get_value_from_key call is invalid! Check your call.")
+   if (.not. is_valid_block_id(file_id, block_id)) call mpp_error(FATAL, &
+       &  "The block id in your get_value_from_key call is invalid! Check your call.")
 
    c_buffer = get_value_from_key_wrap(file_id, block_id, trim(key_name)//c_null_char, sucess)
    if (sucess == 1) then
@@ -323,16 +335,20 @@ subroutine get_value_from_key_1d(file_id, block_id, key_name, key_value, is_opti
      select type (key_value)
        type is (integer(kind=i4_kind))
           read(buffer,*, iostat=err_unit) key_value
-          if (err_unit .ne. 0) call mpp_error(FATAL, "Key:"//trim(key_name)//" Error converting '"//trim(buffer)//"' to i4")
+          if (err_unit .ne. 0) call mpp_error(FATAL, "Key:"// &
+              & trim(key_name)//" Error converting '"//trim(buffer)//"' to i4")
        type is (integer(kind=i8_kind))
           read(buffer,*, iostat=err_unit) key_value
-          if (err_unit .ne. 0) call mpp_error(FATAL, "Key:"//trim(key_name)//" Error converting '"//trim(buffer)//"' to i8")
+          if (err_unit .ne. 0) call mpp_error(FATAL, "Key:"// &
+              & trim(key_name)//" Error converting '"//trim(buffer)//"' to i8")
        type is (real(kind=r4_kind))
           read(buffer,*, iostat=err_unit) key_value
-          if (err_unit .ne. 0) call mpp_error(FATAL, "Key:"//trim(key_name)//" Error converting '"//trim(buffer)//"' to r4")
+          if (err_unit .ne. 0) call mpp_error(FATAL, "Key:"// &
+              & trim(key_name)//" Error converting '"//trim(buffer)//"' to r4")
        type is (real(kind=r8_kind))
           read(buffer,*, iostat=err_unit) key_value
-          if (err_unit .ne. 0) call mpp_error(FATAL, "Key:"//trim(key_name)//" Error converting '"//trim(buffer)//"' to r8")
+          if (err_unit .ne. 0) call mpp_error(FATAL, "Key:"// &
+              & trim(key_name)//" Error converting '"//trim(buffer)//"' to r8")
        type is (character(len=*))
           call mpp_error(FATAL, "get_value_from_key 1d string variables are not supported. Contact developers")
      class default
@@ -355,12 +371,14 @@ function get_num_blocks(file_id, block_name, parent_block_id) &
     integer, intent(in), optional :: parent_block_id !< Id of the parent block
     integer :: nblocks
 
-    if (.not. is_valid_file_id(file_id)) call mpp_error(FATAL, "The file id in your get_num_blocks call is invalid! Check your call.")
+    if (.not. is_valid_file_id(file_id)) call mpp_error(FATAL, &
+        &  "The file id in your get_num_blocks call is invalid! Check your call.")
 
     if (.not. present(parent_block_id)) then
        nblocks=get_num_blocks_all(file_id, trim(block_name)//c_null_char)
     else
-       if (.not. is_valid_block_id(file_id, parent_block_id)) call mpp_error(FATAL, "The parent_block id in your get_num_blocks call is invalid! Check your call.")
+       if (.not. is_valid_block_id(file_id, parent_block_id)) call mpp_error(FATAL, &
+           &  "The parent_block id in your get_num_blocks call is invalid! Check your call.")
        nblocks=get_num_blocks_child(file_id, trim(block_name)//c_null_char, parent_block_id)
     endif
 end function get_num_blocks
@@ -376,7 +394,8 @@ subroutine get_block_ids(file_id, block_name, block_ids, parent_block_id)
     integer :: nblocks_id
     integer :: nblocks
 
-    if (.not. is_valid_file_id(file_id)) call mpp_error(FATAL, "The file id in your get_block_ids call is invalid! Check your call.")
+    if (.not. is_valid_file_id(file_id)) call mpp_error(FATAL, &
+        &  "The file id in your get_block_ids call is invalid! Check your call.")
 
     nblocks_id = size(block_ids)
     nblocks = get_num_blocks(file_id, block_name, parent_block_id)
@@ -385,7 +404,8 @@ subroutine get_block_ids(file_id, block_name, block_ids, parent_block_id)
     if (.not. present(parent_block_id)) then
        call get_block_ids_all(file_id, trim(block_name)//c_null_char, block_ids)
     else
-       if (.not. is_valid_block_id(file_id, parent_block_id)) call mpp_error(FATAL, "The parent_block id in your get_block_ids call is invalid! Check your call.")
+       if (.not. is_valid_block_id(file_id, parent_block_id)) call mpp_error(FATAL, &
+           &  "The parent_block id in your get_block_ids call is invalid! Check your call.")
        call get_block_ids_child(file_id, trim(block_name)//c_null_char, block_ids, parent_block_id)
     endif
 end subroutine get_block_ids
@@ -398,8 +418,10 @@ function get_nkeys(file_id, block_id) &
    integer, intent(in) :: block_id !< Id of the parent_block
    integer :: nkeys
 
-    if (.not. is_valid_file_id(file_id)) call mpp_error(FATAL, "The file id in your get_nkeys call is invalid! Check your call.")
-    if (.not. is_valid_block_id(file_id, block_id)) call mpp_error(FATAL, "The block id in your get_nkeys call is invalid! Check your call.")
+    if (.not. is_valid_file_id(file_id)) call mpp_error(FATAL, &
+        &  "The file id in your get_nkeys call is invalid! Check your call.")
+    if (.not. is_valid_block_id(file_id, block_id)) call mpp_error(FATAL, &
+        &  "The block id in your get_nkeys call is invalid! Check your call.")
 
     nkeys = get_nkeys_binding(file_id, block_id)
 end function get_nkeys
@@ -413,8 +435,10 @@ subroutine get_key_ids (file_id, block_id, key_ids)
    integer :: nkey_ids !< Size of key_ids
    integer :: nkeys !< Actual number of keys
 
-   if (.not. is_valid_file_id(file_id)) call mpp_error(FATAL, "The file id in your get_key_ids call is invalid! Check your call.")
-   if (.not. is_valid_block_id(file_id, block_id)) call mpp_error(FATAL, "The block id in your get_key_ids call is invalid! Check your call.")
+   if (.not. is_valid_file_id(file_id)) call mpp_error(FATAL, &
+       &  "The file id in your get_key_ids call is invalid! Check your call.")
+   if (.not. is_valid_block_id(file_id, block_id)) call mpp_error(FATAL, &
+       &  "The block id in your get_key_ids call is invalid! Check your call.")
 
    nkey_ids = size(key_ids)
    nkeys = get_nkeys(file_id, block_id)

@@ -437,7 +437,8 @@ subroutine io_domain_tile_filepath_mangle(dest, source, io_domain_tile_id)
   integer, intent(in) :: io_domain_tile_id !< I/O domain tile id.
 
   if (has_io_domain_tile_string(source)) then
-    call error("The file "//trim(source)//" has already had a domain tile id (.nc.XXXX) added. Check your open_file call.")
+    call error("The file "//trim(source)// &
+             & " has already had a domain tile id (.nc.XXXX) added. Check your open_file call.")
   endif
   write(dest,'(a,i4.4)') trim(source)//".", io_domain_tile_id
 end subroutine io_domain_tile_filepath_mangle
@@ -586,7 +587,8 @@ subroutine parse_mask_table_2d(mask_table, maskmap, modelname)
         if (iocheck > 0) then
             call mpp_error(FATAL, "fms2_io(parse_mask_table_2d): Error in reading mask_list from record variable")
         elseif (iocheck < 0) then
-            call mpp_error(FATAL, "fms2_io(parse_mask_table_2d): Error: mask_list not completely read from record variable")
+            call mpp_error(FATAL, &
+                           &  "fms2_io(parse_mask_table_2d): Error: mask_list not completely read from record variable")
         endif
      enddo
 
@@ -689,7 +691,8 @@ subroutine parse_mask_table_3d(mask_table, maskmap, modelname)
         if (iocheck > 0) then
             call mpp_error(FATAL, "fms2_io(parse_mask_table_3d): Error in reading mask_list from record variable")
         elseif (iocheck < 0) then
-            call mpp_error(FATAL, "fms2_io(parse_mask_table_3d): Error: mask_list not completely read from record variable")
+            call mpp_error(FATAL, &
+                           &  "fms2_io(parse_mask_table_3d): Error: mask_list not completely read from record variable")
         endif
      enddo
 

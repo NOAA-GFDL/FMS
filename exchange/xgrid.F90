@@ -796,7 +796,8 @@ logical,        intent(in)             :: use_higher_order
            if(variable_exists(fileobj, "scale")) then
               allocate(scale(isc:iec))
               write(out_unit, *)"NOTE from load_xgrid(xgrid_mod): field 'scale' exist in the file "// &
-                   trim(grid_file)//", this field will be read and the exchange grid cell area will be multiplied by scale"
+                   trim(grid_file)// &
+                      & ", this field will be read and the exchange grid cell area will be multiplied by scale"
               call read_data(fileobj, "scale", tmp, corner=start, edge_lengths=nread)
               scale = tmp(:,1)
               scale_exist = .true.
@@ -1767,10 +1768,11 @@ subroutine setup_xmap(xmap, grid_ids, grid_domains, grid_file, atm_grid, lnd_ug_
                                           'when first grid is "ATM", atm_grid should be present', FATAL)
               if(grid%is_me-grid%isd_me .NE. 1 .or. grid%ied_me-grid%ie_me .NE. 1 .or.               &
                    grid%js_me-grid%jsd_me .NE. 1 .or. grid%jed_me-grid%je_me .NE. 1 ) call error_mesg( &
-                   'xgrid_mod', 'for non-latlon grid (cubic grid), the halo size should be 1 in all four direction', FATAL)
-              if(.NOT.( ASSOCIATED(atm_grid%dx) .AND. ASSOCIATED(atm_grid%dy) .AND. ASSOCIATED(atm_grid%edge_w) .AND.    &
-                   ASSOCIATED(atm_grid%edge_e) .AND. ASSOCIATED(atm_grid%edge_s) .AND. ASSOCIATED(atm_grid%edge_n) .AND. &
-                   ASSOCIATED(atm_grid%en1) .AND. ASSOCIATED(atm_grid%en2) .AND. ASSOCIATED(atm_grid%vlon) .AND.         &
+                   'xgrid_mod', 'for non-latlon grid (cubic grid), &
+                                                     &  the halo size should be 1 in all four direction', FATAL)
+              if(.NOT.( ASSOCIATED(atm_grid%dx) .AND. ASSOCIATED(atm_grid%dy) .AND. ASSOCIATED(atm_grid%edge_w) .AND. &
+                   ASSOCIATED(atm_grid%edge_e) .AND. ASSOCIATED(atm_grid%edge_s) .AND.ASSOCIATED(atm_grid%edge_n).AND.&
+                   ASSOCIATED(atm_grid%en1) .AND. ASSOCIATED(atm_grid%en2) .AND. ASSOCIATED(atm_grid%vlon) .AND.      &
                    ASSOCIATED(atm_grid%vlat) ) )  call error_mesg( 'xgrid_mod', &
                    'for non-latlon grid (cubic grid), all the fields in atm_grid data type should be allocated', FATAL)
               nxc = grid%ie_me  - grid%is_me  + 1
@@ -1789,9 +1791,9 @@ subroutine setup_xmap(xmap, grid_ids, grid_domains, grid_file, atm_grid, lnd_ug_
                    call error_mesg( 'xgrid_mod', 'incorrect dimension size of atm_grid%en1', FATAL)
               if(size(atm_grid%en2,1) .NE. 3 .OR. size(atm_grid%en2,2) .NE. nxc+1 .OR. size(atm_grid%en2,3) .NE. nyc) &
                    call error_mesg( 'xgrid_mod', 'incorrect dimension size of atm_grid%en2', FATAL)
-              if(size(atm_grid%vlon,1) .NE. 3 .OR. size(atm_grid%vlon,2) .NE. nxc .OR. size(atm_grid%vlon,3) .NE. nyc)   &
+              if(size(atm_grid%vlon,1) .NE. 3 .OR. size(atm_grid%vlon,2) .NE. nxc .OR. size(atm_grid%vlon,3) .NE. nyc)&
                    call error_mesg('xgrid_mod', 'incorrect dimension size of atm_grid%vlon', FATAL)
-              if(size(atm_grid%vlat,1) .NE. 3 .OR. size(atm_grid%vlat,2) .NE. nxc .OR. size(atm_grid%vlat,3) .NE. nyc)   &
+              if(size(atm_grid%vlat,1) .NE. 3 .OR. size(atm_grid%vlat,2) .NE. nxc .OR. size(atm_grid%vlat,3) .NE. nyc)&
                    call error_mesg('xgrid_mod', 'incorrect dimension size of atm_grid%vlat', FATAL)
               allocate(grid%box%dx    (grid%is_me:grid%ie_me,   grid%js_me:grid%je_me+1 ))
               allocate(grid%box%dy    (grid%is_me:grid%ie_me+1, grid%js_me:grid%je_me   ))
@@ -1888,7 +1890,8 @@ subroutine setup_xmap(xmap, grid_ids, grid_domains, grid_file, atm_grid, lnd_ug_
               do i = 1, nxgrid_file
                  xgrid_file = 'INPUT/'//trim(xgrid_filelist(i))
                  if(.not. open_file(fileobj,xgrid_file, "read")) then
-                     call error_mesg('xgrid_mod(setup_xmap)', 'Error when opening xgrid file '//trim(xgrid_file), FATAL)
+                     call error_mesg('xgrid_mod(setup_xmap)', 'Error when opening xgrid file '// &
+                                   & trim(xgrid_file), FATAL)
                  endif
 
                  ! find the tile number of side 1 and side 2 mosaic, which is contained in field contact
@@ -3192,7 +3195,8 @@ subroutine put_side1_to_xgrid(d, grid_id, x, xmap, remap_method, complete)
      endif
 
      if(is_complete) then
-        !--- when exchange_monotonic is true and the side 1 ia atm, will always use monotonic second order conservative.
+        !--- when exchange_monotonic is true and the side 1 ia atm, will always use monotonic
+        !second order conservative.
         if(monotonic_exchange .AND. grid_id == 'ATM') then
            call put_1_to_xgrid_order_2(d_addrs, x_addrs, xmap, isize, jsize, xsize, lsize)
         else if(method == FIRST_ORDER) then
@@ -3296,7 +3300,8 @@ subroutine get_side1_from_xgrid(d, grid_id, x, xmap, complete)
         set_mismatch = set_mismatch .OR. (grid_id_saved /= grid_id)
         if(set_mismatch)then
            write( text,'(i2)' ) lsize
-           call error_mesg ('xgrid_mod', 'Incompatible field at count '//text//' for group get_side1_from_xgrid', FATAL )
+           call error_mesg ('xgrid_mod', 'Incompatible field at count '//text// &
+                          & ' for group get_side1_from_xgrid', FATAL )
         endif
      endif
 
@@ -3750,7 +3755,8 @@ subroutine put_1_to_xgrid_order_2(d_addrs, x_addrs, xmap, isize, jsize, xsize, l
            enddo
            do i=1,xmap%size_put1
               pos = xmap%x1_put(i)%pos
-              x(i) = unpack_buffer(3*pos-2) + unpack_buffer(3*pos-1)*xmap%x1_put(i)%dj + unpack_buffer(3*pos)*xmap%x1_put(i)%di
+              x(i) = unpack_buffer(3*pos-2) + unpack_buffer(3*pos-1)*xmap%x1_put(i)%dj + unpack_buffer(3*pos) &
+                   & * xmap%x1_put(i)%di
            end do
         enddo
      endif
@@ -4774,7 +4780,8 @@ subroutine get_side1_from_xgrid_ug(d, grid_id, x, xmap, complete)
         set_mismatch = set_mismatch .OR. (grid_id_saved /= grid_id)
         if(set_mismatch)then
            write( text,'(i2)' ) lsize
-           call error_mesg ('xgrid_mod', 'Incompatible field at count '//text//' for group get_side1_from_xgrid_ug', FATAL )
+           call error_mesg ('xgrid_mod', 'Incompatible field at count '//text// &
+                          & ' for group get_side1_from_xgrid_ug', FATAL )
         endif
      endif
 
@@ -4854,7 +4861,8 @@ subroutine put_side1_to_xgrid_ug(d, grid_id, x, xmap, complete)
         set_mismatch = set_mismatch .OR. (grid_id_saved /= grid_id)
         if(set_mismatch)then
            write( text,'(i2)' ) lsize
-           call error_mesg ('xgrid_mod', 'Incompatible field at count '//text//' for group put_side1_to_xgrid_ug', FATAL )
+           call error_mesg ('xgrid_mod', 'Incompatible field at count '//text// &
+                          & ' for group put_side1_to_xgrid_ug', FATAL )
         endif
      endif
 

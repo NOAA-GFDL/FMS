@@ -101,7 +101,7 @@ subroutine mpp_define_nest_domains(nest_domain, domain, num_nest, nest_level, ti
                                               !! nest grid (monotonically increasing starting with 7),
                                               !! array containing tile number of the parent grid corresponding
                                               !! to the lower left corner of a given nest
-  integer,                    intent(in   ) :: istart_coarse(:), icount_coarse(:), jstart_coarse(:), jcount_coarse(:) !<start
+  integer, intent(in ) :: istart_coarse(:), icount_coarse(:), jstart_coarse(:), jcount_coarse(:) !<start
                                    !! array containing index in the parent grid of the lower left corner of a given
                                    !! nest, count: array containing span of the nest on the parent grid
   integer,                    intent(in   ) :: npes_nest_tile(:) !< array containing number of pes to allocated
@@ -136,17 +136,24 @@ subroutine mpp_define_nest_domains(nest_domain, domain, num_nest, nest_level, ti
 
   extra_halo_local = 0
   if(present(extra_halo)) then
-     if(extra_halo .NE. 0) call mpp_error(FATAL, "mpp_define_nest_domains.inc: only support extra_halo=0, contact developer")
+     if(extra_halo .NE. 0) call mpp_error(FATAL, &
+        &  "mpp_define_nest_domains.inc: only support extra_halo=0, contact developer")
      extra_halo_local = extra_halo
   endif
 
   !---make sure dimension size is correct
-  if(size(tile_fine(:)) .NE. num_nest) call mpp_error(FATAL, "mpp_define_nest_domains.inc: size(tile_fine) .NE. num_nest")
-  if(size(tile_coarse(:)) .NE. num_nest) call mpp_error(FATAL, "mpp_define_nest_domains.inc: size(tile_coarse) .NE. num_nest")
-  if(size(istart_coarse(:)) .NE. num_nest) call mpp_error(FATAL, "mpp_define_nest_domains.inc: size(istart_coarse) .NE. num_nest")
-  if(size(icount_coarse(:)) .NE. num_nest) call mpp_error(FATAL, "mpp_define_nest_domains.inc: size(icount_coarse) .NE. num_nest")
-  if(size(jstart_coarse(:)) .NE. num_nest) call mpp_error(FATAL, "mpp_define_nest_domains.inc: size(jstart_coarse) .NE. num_nest")
-  if(size(jcount_coarse(:)) .NE. num_nest) call mpp_error(FATAL, "mpp_define_nest_domains.inc: size(jcount_coarse) .NE. num_nest")
+  if(size(tile_fine(:)) .NE. num_nest) call mpp_error(FATAL, &
+     &  "mpp_define_nest_domains.inc: size(tile_fine) .NE. num_nest")
+  if(size(tile_coarse(:)) .NE. num_nest) call mpp_error(FATAL, &
+     &  "mpp_define_nest_domains.inc: size(tile_coarse) .NE. num_nest")
+  if(size(istart_coarse(:)) .NE. num_nest) call mpp_error(FATAL, &
+     &  "mpp_define_nest_domains.inc: size(istart_coarse) .NE. num_nest")
+  if(size(icount_coarse(:)) .NE. num_nest) call mpp_error(FATAL, &
+     &  "mpp_define_nest_domains.inc: size(icount_coarse) .NE. num_nest")
+  if(size(jstart_coarse(:)) .NE. num_nest) call mpp_error(FATAL, &
+     &  "mpp_define_nest_domains.inc: size(jstart_coarse) .NE. num_nest")
+  if(size(jcount_coarse(:)) .NE. num_nest) call mpp_error(FATAL, &
+     &  "mpp_define_nest_domains.inc: size(jcount_coarse) .NE. num_nest")
 
   do n = 1, num_nest
      if(istart_coarse(n) < 1) call mpp_error(FATAL, "mpp_define_nest_domains.inc: istart_coarse < 1")
@@ -162,14 +169,17 @@ subroutine mpp_define_nest_domains(nest_domain, domain, num_nest, nest_level, ti
   !--- make sure the nest level is monotonic and no jumping
   if(nest_level(1) .NE. 1)  call mpp_error(FATAL, "mpp_define_nest_domains.inc: nest_level(1) .NE. 1")
   do n = 2, num_nest
-     if(nest_level(n) < nest_level(n-1)) call mpp_error(FATAL, "mpp_define_nest_domains.inc: nest_level is not monotone increasing")
-     if(nest_level(n) > nest_level(n-1)+1) call mpp_error(FATAL, "mpp_define_nest_domains.inc: nest_level(n) > nest_level(n-1)+1")
+     if(nest_level(n) < nest_level(n-1)) call mpp_error(FATAL, &
+        &  "mpp_define_nest_domains.inc: nest_level is not monotone increasing")
+     if(nest_level(n) > nest_level(n-1)+1) call mpp_error(FATAL, &
+        &  "mpp_define_nest_domains.inc: nest_level(n) > nest_level(n-1)+1")
   enddo
   nlevels = nest_level(num_nest)
 
   !---make sure tile_fine and tile_nest are monotone increasing.
   do n = 2, num_nest
-     if(tile_fine(n) < tile_fine(n-1)) call  mpp_error(FATAL, "mpp_define_nest_domains.inc: tile_fine is not monotone increasing")
+     if(tile_fine(n) < tile_fine(n-1)) call  mpp_error(FATAL, &
+        &  "mpp_define_nest_domains.inc: tile_fine is not monotone increasing")
      if(tile_coarse(n) < tile_coarse(n-1)) call  mpp_error(FATAL, "mpp_define_nest_domains.inc: "// &
                                                            "tile_coarse is not monotone increasing")
   enddo
@@ -334,8 +344,10 @@ subroutine mpp_define_nest_domains(nest_domain, domain, num_nest, nest_level, ti
               nest_domain%nest(l)%jend_coarse(pos) = jend_coarse(n)
               if(l==1) then
                  my_tile_coarse = 1
-              else if((mpp_pe() .GE. pes(pe_start_pos(tile_fine(n))) .AND. mpp_pe() .LE. pes(pe_end_pos(tile_fine(n)))) .OR.  &
-                 (mpp_pe() .GE. pes(pe_start_pos(tile_coarse(n))) .AND. mpp_pe() .LE. pes(pe_end_pos(tile_coarse(n)))) ) then
+              else if( (mpp_pe() .GE. pes(pe_start_pos(tile_fine(n))) .AND. &
+                     &  mpp_pe() .LE. pes(pe_end_pos(tile_fine(n)))) .OR.  &
+                     & (mpp_pe() .GE. pes(pe_start_pos(tile_coarse(n))) .AND. &
+                     &  mpp_pe() .LE. pes(pe_end_pos(tile_coarse(n)))) ) then
                  my_tile_coarse = tile_coarse(n)
               endif
            endif
@@ -386,7 +398,8 @@ subroutine mpp_shift_nest_domains(nest_domain, domain, delta_i_coarse, delta_j_c
 
   extra_halo_local = 0
   if(present(extra_halo)) then
-     if(extra_halo .NE. 0) call mpp_error(FATAL, "shift mpp_define_nest_domains.inc: only support extra_halo=0, contact developer")
+     if(extra_halo .NE. 0) call mpp_error(FATAL, &
+        &  "shift mpp_define_nest_domains.inc: only support extra_halo=0, contact developer")
      extra_halo_local = extra_halo
   endif
 
@@ -394,8 +407,10 @@ subroutine mpp_shift_nest_domains(nest_domain, domain, delta_i_coarse, delta_j_c
   nlevels = nest_level(num_nest)
 
   !---make sure dimension size is correct
-  if(size(delta_i_coarse(:)) .NE. num_nest) call mpp_error(FATAL, "shift mpp_define_nest_domains.inc: size(delta_i_coarse) .NE. num_nest")
-  if(size(delta_j_coarse(:)) .NE. num_nest) call mpp_error(FATAL, "shift mpp_define_nest_domains.inc: size(delta_j_coarse) .NE. num_nest")
+  if(size(delta_i_coarse(:)) .NE. num_nest) call mpp_error(FATAL, &
+     &  "shift mpp_define_nest_domains.inc: size(delta_i_coarse) .NE. num_nest")
+  if(size(delta_j_coarse(:)) .NE. num_nest) call mpp_error(FATAL, &
+     &  "shift mpp_define_nest_domains.inc: size(delta_j_coarse) .NE. num_nest")
 
   ! Step through all nests and apply any modifications
   !  Should only need to modify {i,j}{start,end}_coarse
@@ -435,7 +450,8 @@ subroutine mpp_shift_nest_domains(nest_domain, domain, delta_i_coarse, delta_j_c
             call mpp_error(FATAL, "shift mpp_define_nest_domains.inc:pos .NE. nest_domain%nest(l)%num_nest")
 
         !  The nest may connect to different parent PEs after motion, so this must be recalculated
-        call define_nest_level_type(nest_domain%nest(l), nest_domain%nest(l)%x_refine, nest_domain%nest(l)%y_refine, extra_halo_local)
+        call define_nest_level_type(nest_domain%nest(l), nest_domain%nest(l)%x_refine, &
+                                   &  nest_domain%nest(l)%y_refine, extra_halo_local)
      endif
   enddo
 
@@ -863,7 +879,8 @@ subroutine compute_overlap_coarse_to_fine(nest_domain, overlap, extra_halo, posi
               je_coarse = je_coarse + nhalo
               !--- convert the index to coarse grid index.
               nconvert = convert_index_to_coarse(domain_coarse, 0, 0, tile_coarse, istart_coarse, iend_coarse, &
-                      jstart_coarse, jend_coarse, domain_coarse%ntiles, domain_coarse%tile_id(1), is_coarse, ie_coarse, &
+                      jstart_coarse, jend_coarse, domain_coarse%ntiles, domain_coarse%tile_id(1), is_coarse, &
+                                                                                             &  ie_coarse, &
                    js_coarse, je_coarse, is_convert2, ie_convert2, &
                    js_convert2, je_convert2, rotate2)
               do l = 1, nconvert
@@ -909,9 +926,8 @@ subroutine compute_overlap_coarse_to_fine(nest_domain, overlap, extra_halo, posi
               je_coarse = jstart_coarse
               !--- convert the index to coarse grid index.
               nconvert=convert_index_to_coarse(domain_coarse, 0, 0, tile_coarse, istart_coarse, iend_coarse, &
-                      jstart_coarse, jend_coarse, domain_coarse%ntiles, domain_coarse%tile_id(1), is_coarse, ie_coarse, &
-                   js_coarse, je_coarse, is_convert2, ie_convert2, &
-                   js_convert2, je_convert2, rotate2)
+                      & jstart_coarse, jend_coarse, domain_coarse%ntiles, domain_coarse%tile_id(1), is_coarse, &
+                      & ie_coarse, js_coarse, je_coarse, is_convert2, ie_convert2, js_convert2, je_convert2, rotate2)
               do l = 1, nconvert
                  is_coarse = max(isc_coarse, is_convert2(l))
                  ie_coarse = min(iec_coarse, ie_convert2(l))
@@ -947,9 +963,8 @@ subroutine compute_overlap_coarse_to_fine(nest_domain, overlap, extra_halo, posi
               je_coarse = je_coarse + nhalo
               !--- convert the index to coarse grid index.
               nconvert=convert_index_to_coarse(domain_coarse, 0, 0, tile_coarse, istart_coarse, iend_coarse, &
-                      jstart_coarse, jend_coarse, domain_coarse%ntiles, domain_coarse%tile_id(1), is_coarse, ie_coarse, &
-                   js_coarse, je_coarse, is_convert2, ie_convert2, &
-                   js_convert2, je_convert2, rotate2)
+                       & jstart_coarse, jend_coarse, domain_coarse%ntiles, domain_coarse%tile_id(1), is_coarse, &
+                       & ie_coarse, js_coarse, je_coarse, is_convert2, ie_convert2, js_convert2, je_convert2, rotate2)
               do l = 1, nconvert
                  is_coarse = max(isc_coarse, is_convert2(l))
                  ie_coarse = min(iec_coarse, ie_convert2(l))
@@ -984,9 +999,8 @@ subroutine compute_overlap_coarse_to_fine(nest_domain, overlap, extra_halo, posi
               je_coarse = jend_coarse + nhalo
               !--- convert the index to coarse grid index.
               nconvert=convert_index_to_coarse(domain_coarse, 0, 0, tile_coarse, istart_coarse, iend_coarse, &
-                      jstart_coarse, jend_coarse, domain_coarse%ntiles, domain_coarse%tile_id(1), is_coarse, ie_coarse, &
-                   js_coarse, je_coarse, is_convert2, ie_convert2, &
-                   js_convert2, je_convert2, rotate2)
+                       & jstart_coarse, jend_coarse, domain_coarse%ntiles, domain_coarse%tile_id(1), is_coarse, &
+                       & ie_coarse, js_coarse, je_coarse, is_convert2, ie_convert2, js_convert2, je_convert2, rotate2)
               do l = 1, nconvert
                  is_coarse = max(isc_coarse, is_convert2(l))
                  ie_coarse = min(iec_coarse, ie_convert2(l))
@@ -1296,8 +1310,8 @@ subroutine compute_overlap_fine_to_coarse(nest_domain, overlap, position, name)
            je_you = jstart_coarse + (jel_fine(n)-jstart_fine)/y_refine
            if(mod(jsl_fine(n)-jstart_fine, y_refine) .NE. 0 ) js_you = js_you + 1
            nconvert=convert_index_to_coarse(domain_coarse, ishift, jshift, tile_coarse, istart_coarse, iend_coarse, &
-                      jstart_coarse, jend_coarse, domain_coarse%ntiles, domain_coarse%tile_id(1), is_you, ie_you, js_you, je_you, &
-                      is_convert2, ie_convert2, js_convert2, je_convert2, rotate2)
+                      & jstart_coarse, jend_coarse, domain_coarse%ntiles, domain_coarse%tile_id(1), is_you, ie_you, &
+                      & js_you, je_you, is_convert2, ie_convert2, js_convert2, je_convert2, rotate2)
            do l = 1, nconvert
               is2 = max(is_convert2(l), isc_coarse)
               ie2 = min(ie_convert2(l), iec_coarse+ishift)
@@ -1540,7 +1554,7 @@ function search_C2F_nest_overlap(nest_domain, nest_level, extra_halo, position)
     character(len=128)                    :: name
 
     if(nest_level < 1 .OR. nest_level > nest_domain%num_level) call mpp_error(FATAL, &
-       "mpp_define_nest_domains.inc(search_C2F_nest_overlap): nest_level should be between 1 and nest_domain%num_level")
+      "mpp_define_nest_domains.inc(search_C2F_nest_overlap): nest_level should be between 1 and nest_domain%num_level")
 
     select case(position)
     case (CENTER)
@@ -1553,7 +1567,8 @@ function search_C2F_nest_overlap(nest_domain, nest_level, extra_halo, position)
     case (EAST)
        update_ref => nest_domain%nest(nest_level)%C2F_E
     case default
-       call mpp_error(FATAL,"mpp_define_nest_domains.inc(search_C2F_nest_overlap): position should be CENTER|CORNER|EAST|NORTH")
+       call mpp_error(FATAL, &
+                 & "mpp_define_nest_domains.inc(search_C2F_nest_overlap): position should be CENTER|CORNER|EAST|NORTH")
     end select
 
     search_C2F_nest_overlap => update_ref
@@ -1566,7 +1581,8 @@ function search_C2F_nest_overlap(nest_domain, nest_level, extra_halo, position)
        if(.NOT. ASSOCIATED(search_C2F_nest_overlap%next)) then
           allocate(search_C2F_nest_overlap%next)
           search_C2F_nest_overlap => search_C2F_nest_overlap%next
-          call compute_overlap_coarse_to_fine(nest_domain%nest(nest_level), search_C2F_nest_overlap, extra_halo, position, name)
+          call compute_overlap_coarse_to_fine(nest_domain%nest(nest_level), search_C2F_nest_overlap, &
+                                             &  extra_halo, position, name)
           exit
        else
           search_C2F_nest_overlap => search_C2F_nest_overlap%next
@@ -1587,7 +1603,7 @@ function search_C2F_nest_overlap(nest_domain, nest_level, extra_halo, position)
     type(nestSpec),         pointer       :: search_F2C_nest_overlap
 
     if(nest_level < 1 .OR. nest_level > nest_domain%num_level) call mpp_error(FATAL, &
-       "mpp_define_nest_domains.inc(search_F2C_nest_overlap): nest_level should be between 1 and nest_domain%num_level")
+      "mpp_define_nest_domains.inc(search_F2C_nest_overlap): nest_level should be between 1 and nest_domain%num_level")
 
     select case(position)
     case (CENTER)
@@ -1599,7 +1615,8 @@ function search_C2F_nest_overlap(nest_domain, nest_level, extra_halo, position)
     case (EAST)
        search_F2C_nest_overlap => nest_domain%nest(nest_level)%F2C_E
     case default
-       call mpp_error(FATAL,"mpp_define_nest_domains.inc(search_F2C_nest_overlap): position should be CENTER|CORNER|EAST|NORTH")
+       call mpp_error(FATAL, &
+                 & "mpp_define_nest_domains.inc(search_F2C_nest_overlap): position should be CENTER|CORNER|EAST|NORTH")
     end select
 
   end function search_F2C_nest_overlap
@@ -1759,7 +1776,8 @@ function search_C2F_nest_overlap(nest_domain, nest_level, extra_halo, position)
      type(nestSpec), pointer             :: update => NULL()
 
      if(nest_level < 1 .OR. nest_level > nest_domain%num_level) call mpp_error(FATAL, &
-       "mpp_define_nest_domains.inc(mpp_get_F2C_index_coarse): nest_level should be between 1 and nest_domain%num_level")
+         & "mpp_define_nest_domains.inc(mpp_get_F2C_index_coarse):"// &
+         & "nest_level should be between 1 and nest_domain%num_level")
 
 
      update_position = CENTER
@@ -1775,7 +1793,8 @@ function search_C2F_nest_overlap(nest_domain, nest_level, extra_halo, position)
      case (NORTH)
         update => nest_domain%nest(nest_level)%F2C_N
      case default
-        call mpp_error(FATAL, "mpp_define_nest_domains.inc(mpp_get_F2C_index_coarse): invalid option argument position")
+        call mpp_error(FATAL, &
+                       &  "mpp_define_nest_domains.inc(mpp_get_F2C_index_coarse): invalid option argument position")
      end select
      is_coarse = update%xbegin_c
      ie_coarse = update%xend_c
@@ -1913,7 +1932,8 @@ function search_C2F_nest_overlap(nest_domain, nest_level, extra_halo, position)
 
 
   !> This routine will convert the global coarse grid index to nest grid index.
-  function convert_index_to_nest(domain, ishift, jshift, tile_coarse, istart_coarse, iend_coarse, jstart_coarse, jend_coarse, &
+  function convert_index_to_nest(domain, ishift, jshift, tile_coarse, istart_coarse, iend_coarse, &
+                                &  jstart_coarse, jend_coarse, &
                        ntiles_coarse, tile_in, is_in, ie_in, js_in, je_in, is_out, ie_out, js_out, je_out, rotate_out)
     type(domain2D), intent(in) :: domain
     integer, intent(in)  :: ishift, jshift
@@ -2053,8 +2073,10 @@ function search_C2F_nest_overlap(nest_domain, nest_level, extra_halo, position)
 
   end function convert_index_to_nest
 
-  function convert_index_to_coarse(domain, ishift, jshift, tile_coarse, istart_coarse, iend_coarse, jstart_coarse, jend_coarse, &
-                             ntiles_coarse, tile_in, is_in, ie_in, js_in, je_in, is_out, ie_out, js_out, je_out, rotate_out)
+  function convert_index_to_coarse(domain, ishift, jshift, tile_coarse, istart_coarse, iend_coarse, &
+                                  &  jstart_coarse, jend_coarse, &
+                             ntiles_coarse, tile_in, is_in, ie_in, js_in, je_in, is_out, ie_out, js_out, &
+                                     &  je_out, rotate_out)
     type(domain2D), intent(in) :: domain
     integer, intent(in)  :: ishift, jshift
     integer, intent(in)  :: istart_coarse, iend_coarse, jstart_coarse, jend_coarse
@@ -2194,7 +2216,8 @@ function search_C2F_nest_overlap(nest_domain, nest_level, extra_halo, position)
   end function convert_index_to_coarse
 
 
-  subroutine convert_index_back(domain, ishift, jshift, rotate, is_in, ie_in, js_in, je_in, is_out, ie_out, js_out, je_out)
+  subroutine convert_index_back(domain, ishift, jshift, rotate, is_in, ie_in, js_in, je_in, is_out, ie_out, &
+                               &  js_out, je_out)
     type(domain2D), intent(in) :: domain
     integer, intent(in)  :: ishift, jshift
     integer, intent(in)  :: is_in, ie_in, js_in, je_in, rotate
@@ -2447,7 +2470,8 @@ function search_C2F_nest_overlap(nest_domain, nest_level, extra_halo, position)
      type(domain2d), pointer :: mpp_get_nest_coarse_domain
 
      if(nest_level < 1 .OR. nest_level > nest_domain%num_level) call mpp_error(FATAL, &
-       "mpp_define_nest_domains.inc(mpp_get_nest_coarse_domain): nest_level should be between 1 and nest_domain%num_level")
+        & "mpp_define_nest_domains.inc(mpp_get_nest_coarse_domain):"// &
+        & "nest_level should be between 1 and nest_domain%num_level")
 
      if(.not. nest_domain%nest(nest_level)%on_level) call mpp_error(FATAL, &
        "mpp_define_nest_domains.inc(mpp_get_nest_coarse_domain): nest_domain%nest(nest_level)%on_level is false")
@@ -2461,7 +2485,8 @@ function search_C2F_nest_overlap(nest_domain, nest_level, extra_halo, position)
      type(domain2d), pointer :: mpp_get_nest_fine_domain
 
      if(nest_level < 1 .OR. nest_level > nest_domain%num_level) call mpp_error(FATAL, &
-       "mpp_define_nest_domains.inc(mpp_get_nest_fine_domain): nest_level should be between 1 and nest_domain%num_level")
+       & "mpp_define_nest_domains.inc(mpp_get_nest_fine_domain):"// &
+       & "nest_level should be between 1 and nest_domain%num_level")
 
      if(.not. nest_domain%nest(nest_level)%on_level) call mpp_error(FATAL, &
        "mpp_define_nest_domains.inc(mpp_get_nest_fine_domain): nest_domain%nest(nest_level)%on_level is false")
@@ -2512,7 +2537,8 @@ function search_C2F_nest_overlap(nest_domain, nest_level, extra_halo, position)
      integer,                intent(in) :: nest_level
      integer,               intent(out) :: pelist(:)
      if(nest_level < 1 .OR. nest_level > nest_domain%num_level) call mpp_error(FATAL, &
-       "mpp_define_nest_domains.inc(mpp_get_nest_fine_pelist): nest_level should be between 1 and nest_domain%num_level")
+       & "mpp_define_nest_domains.inc(mpp_get_nest_fine_pelist):"// &
+       & "nest_level should be between 1 and nest_domain%num_level")
 
      if(size(pelist) .NE. size(nest_domain%nest(nest_level)%pelist_fine)) call mpp_error(FATAL, &
        "mpp_define_nest_domains.inc(mpp_get_nest_fine_pelist): size(pelist) "// &
