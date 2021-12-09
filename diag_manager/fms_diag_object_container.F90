@@ -61,21 +61,21 @@ MODULE fms_diag_object_container_mod
 
 
    !> \brief Iterator used to traverse the objects of the container.
-   type, public :: diag_obj_iterator_type
+   type, public :: fms_diag_obj_iterator_type
       type(literator_type) :: liter !!this version based on the FDS linked_list
    contains
       procedure :: has_data => literator_has_data
       procedure :: next => literator_next
       procedure :: get => literator_data
-   end type diag_obj_iterator_type
+   end type fms_diag_obj_iterator_type
 
    interface fms_diag_object_container_type
       module procedure :: diag_object_container_constructor
    end interface fms_diag_object_container_type
 
-   interface diag_obj_iterator_type
+   interface fms_diag_obj_iterator_type
       module procedure :: diag_obj_iterator_constructor
-   end interface diag_obj_iterator_type
+   end interface fms_diag_obj_iterator_type
 
 
 contains
@@ -88,8 +88,8 @@ contains
    function find_diag_object (this, id , iiter) result (riter)
       class (fms_diag_object_container_type), intent (in out) :: this
       integer , intent (in) :: id   !> The id of the object to find.
-      class(diag_obj_iterator_type), intent (in), optional :: iiter !> Iterator over the searchable set, if provided.
-      class(diag_obj_iterator_type) , allocatable :: riter !> The resultant iterator to the object.
+      class(fms_diag_obj_iterator_type), intent (in), optional :: iiter !> Iterator over the searchable set, if provided.
+      class(fms_diag_obj_iterator_type) , allocatable :: riter !> The resultant iterator to the object.
       class(fms_diag_object),  allocatable , target:: tdo  !> A temporaty diagnostic object
       integer :: status                                    !> Status from iterator operations.
       !!
@@ -137,19 +137,19 @@ contains
    function remove_diag_object (this, id, iiter ) result (riter)
       class (fms_diag_object_container_type), intent (in out) :: this
       integer , intent (in) :: id !> The id of the object to remove.
-      class(diag_obj_iterator_type), intent (in), optional :: iiter !> Iterator over the searchable set, if provided.
-      class(diag_obj_iterator_type), allocatable:: riter !> The resultant iterator
+      class(fms_diag_obj_iterator_type), intent (in), optional :: iiter !> Iterator over the searchable set, if provided.
+      class(fms_diag_obj_iterator_type), allocatable:: riter !> The resultant iterator
       class(literator_type), allocatable :: temp_liter !> A temporary iterator
       integer :: status
       if(present (iiter)) then
-        riter = iiter
+         riter = iiter
       else
-        riter = this%iterator() !!An iterator over the entire container
+         riter = this%iterator() !!An iterator over the entire container
       endif
       !Find the object in the container.
       riter = this%find ( id , riter)
       temp_liter = this%the_linked_list%remove( riter%liter%current )
-      riter = diag_obj_iterator_type(temp_liter)
+      riter = fms_diag_obj_iterator_type(temp_liter)
    end function
 
    !> @brief Return the number of objects held in the container.
@@ -163,19 +163,19 @@ contains
    !> @brief Return a pointer to an iterator for the objects in the container.
    function get_iterator (this) result (oliter)
       class (fms_diag_object_container_type), intent (in) :: this
-      class(diag_obj_iterator_type) , allocatable :: oliter !> The reurned iterator to the objects in the container.
-      oliter = diag_obj_iterator_type( this%the_linked_list%get_literator() )
+      class(fms_diag_obj_iterator_type) , allocatable :: oliter !> The reurned iterator to the objects in the container.
+      oliter = fms_diag_obj_iterator_type( this%the_linked_list%get_literator() )
    end function
 
-  !> @brief A consructor for a container's iterator.
+   !> @brief A consructor for a container's iterator.
    function diag_obj_iterator_constructor( iliter ) result (diag_itr)
-    class (literator_type), allocatable :: iliter !> An iterator. Normally the one that the container is based on.
-    class (diag_obj_iterator_type), allocatable :: diag_itr !> The returned diag object iterator.
-    allocate(diag_itr)
-    diag_itr%liter = iliter;
- end function diag_obj_iterator_constructor
+      class (literator_type), allocatable :: iliter !> An iterator. Normally the one that the container is based on.
+      class (fms_diag_obj_iterator_type), allocatable :: diag_itr !> The returned diag object iterator.
+      allocate(diag_itr)
+      diag_itr%liter = iliter;
+   end function diag_obj_iterator_constructor
 
- !> @brief the default consructor for the container.
+   !> @brief the default consructor for the container.
    function diag_object_container_constructor () result (doc)
       type(fms_diag_object_container_type), allocatable :: doc !> The resultant container.
       allocate(doc)
@@ -186,14 +186,14 @@ contains
 
    !> @Return true if there is more data this iterator can access.
    function literator_has_data( this ) result( r )
-      class(diag_obj_iterator_type), intent(in) :: this
+      class(fms_diag_obj_iterator_type), intent(in) :: this
       logical :: r                  !> True if this iterator has data,
       r = this%liter%has_data()
    end function literator_has_data
 
    !> @Move the iterator to the next data.
    function literator_next( this ) result( status )
-      class(diag_obj_iterator_type), intent(in out ) :: this
+      class(fms_diag_obj_iterator_type), intent(in out ) :: this
       integer :: status !> !> Returned status of operation. 0 if the iterator can be moved to the next object.
       status = 0
       status = this%liter%next()
@@ -201,7 +201,7 @@ contains
 
    !> @ Get the current data the iterator is poiting to.
    function  literator_data( this ) result( rdo )
-      class(diag_obj_iterator_type), intent(in) :: this
+      class(fms_diag_obj_iterator_type), intent(in) :: this
       class(fms_diag_object),  pointer :: rdo !> The resultant diagnostic object.
       class(*),  pointer :: gp !> A eneric typed object in the container.
 
@@ -210,7 +210,7 @@ contains
        type is (fms_diag_object)  !! "type is", not the (polymorphic) "class is"
          rdo => gp
        class default
-          CALL  error_mesg ('diag_object_container:literator_data', &
+         CALL  error_mesg ('diag_object_container:literator_data', &
             'Data to be accessed via iterator is not of expected type.',FATAL)
       end select
    end function literator_data

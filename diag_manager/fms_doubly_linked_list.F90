@@ -212,6 +212,7 @@ contains
     !! ' associated(ll%head) :' , associated(ll%head)
     ll%head%next => ll%tail
     ll%tail%prev => ll%head
+    ll%the_size = 0
   end function linked_list_constructor
 
 

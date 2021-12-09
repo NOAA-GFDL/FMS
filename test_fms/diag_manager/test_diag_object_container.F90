@@ -1,0 +1,239 @@
+!***********************************************************************
+!*                   GNU Lesser General Public License
+!*
+!* This file is part of the GFDL Flexible Modeling System (FMS).
+!*
+!* FMS is free software: you can redistribute it and/or modify it under
+!* the terms of the GNU Lesser General Public License as published by
+!* the Free Software Foundation, either version 3 of the License, or (at
+!* your option) any later version.
+!*
+!* FMS is distributed in the hope that it will be useful, but WITHOUT
+!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+!* for more details.
+!*
+!* You should have received a copy of the GNU Lesser General Public
+!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!***********************************************************************
+
+!> @brief  This programs tests the poblic member functions of the fms_diag_object_container class.
+
+module container_aux_test_mod
+  !! This is just some insignificant function to help make string and int combos for testing.
+  public :: combine_str_int
+  contains
+  function combine_str_int (str, num) result (rs)
+    character(:), allocatable, intent (in):: str
+    integer ,    intent (in) :: num
+    character(:), allocatable :: rs
+    character(len_trim(str) + 8) :: tmp
+
+    write (tmp, "(A4,I4)") str,num
+    tmp = trim(tmp)
+    rs = tmp
+  end function combine_str_int
+
+end module container_aux_test_mod
+
+program test_diag_obj_container
+
+  use mpp_mod, only: mpp_init, mpp_exit, mpp_error, FATAL, WARNING
+  use mpp_mod, only : mpp_set_stack_size, mpp_init_test_requests_allocated
+  use mpp_io_mod, only: mpp_io_init
+
+  use fms_diag_object_mod, only : fms_diag_object
+  !use fms_diag_file_mod,  only: fms_diag_file_type
+  use diag_data_mod, only: diag_fields_type
+  use fms_diag_object_container_mod, only : fms_diag_object_container_type, fms_diag_obj_iterator_type
+  use container_aux_test_mod, only : combine_str_int
+  USE time_manager_mod, ONLY: time_type
+
+  implicit  none
+
+  type (fms_diag_object_container_type), allocatable :: container
+  type (fms_diag_object), allocatable , target ::  obj_vec(:)
+  class(fms_diag_object), allocatable , target ::  obj
+  type (fms_diag_object), pointer::   pobj
+  integer :: i, ic_status, id, sum, full_id_sum, ierr
+  class(fms_diag_obj_iterator_type), allocatable :: iter
+  logical :: found
+  integer, parameter :: num_objs = 10
+  !integer, allocatable :: axes(:)
+  integer, dimension(2) :: axes
+  TYPE(time_type)  :: init_time
+
+  character(:), allocatable :: mname, vname
+  type (diag_fields_type)                   :: diag_field
+  logical :: test_passed                    !> Flag indicating if the test_passed
+
+  test_passed = .true.  !! will be set to false if there are any issues.
+
+  call mpp_init(mpp_init_test_requests_allocated)
+  call mpp_io_init()
+  call mpp_set_stack_size(3145746)
+
+  !! Ids will initally be from1 to num_objs, so :
+  full_id_sum = (num_objs * (num_objs + 1)) / 2
+
+  !!Create the container
+  container = fms_diag_object_container_type()
+  !!In diag_manager, one module level container may be used instead of a local one like above.
+
+
+  !! Allocate some test objects.
+  !! NOTE: normally objects will be allocated one at a time with a stament like:
+  !!   allocate(pobj, source = fms_diag_object(argument list ))
+  !! or via constructor like :
+  !!   pobj => fms_diag_object(argument list )
+  !! Once the object ID is set, it should be inserted into the container and then the
+  !!   container will be considered the manager of that object and its memory (unless the object is removed).
+  !! Since type fms_diag_obj doesn't have a proper constructor yet, well be lazy by making array of objects
+  !! ( normal fixed size array the thing whose use we are replacing to begin with ) and consider these particular
+  !! objects to not be managed by the container.
+  allocate(obj_vec(num_objs))
+
+  !! Initialize each object and isnert into container one at a time.
+
+  if( container%size() /= 0) then
+    test_passed = .false.
+    call mpp_error(WARNING, "Container incorrect size. Expected 0 at start")
+  endif
+  do id = 1, num_objs
+    mname = "ATM"
+    vname = "xvar"
+    mname = combine_str_int(mname, id)
+    vname = combine_str_int(vname, id)
+
+    pobj => obj_vec( id ) !!Note use of pointer to obj.
+    call pobj%setID(id)
+    !call obj%register ("test_mod"), "field_x", axes, init_time, &
+        !"a_long_name", units, missing_value, Range, mask_variant, standard_name, &
+        !do_not_log, err_msg, interp_method, tile_count, area, volume, realm)
+    call pobj%register ("test_mod", vname, axes, init_time, "a_long_name")
+
+    !!Insert object into the container.
+    ic_status = container%insert(pobj%get_id(), pobj)
+    if(ic_status .ne. 0)then
+      test_passed = .false.
+      call mpp_error(FATAL, "Container Isertion ERROR for")
+    endif
+  enddo
+
+  if( container%size() /= num_objs) then
+    test_passed = .false.
+    call mpp_error(FATAL, "Container incorrect size after inserts")
+  endif
+
+  !!Search the container for a an object of specified key
+  iter =  container%find(123)
+  if ( iter%has_data() .eqv. .true. ) then
+    test_passed = .false.
+    call mpp_error(FATAL, "Found in container unexpected object of id=123")
+  endif
+
+  !!Again, search the container for a an object of specified key
+  iter = container%find(4)
+  if (iter%has_data() .neqv. .true. ) then
+    test_passed = .false.
+    call mpp_error(FATAL, "Did not fin container object of id=4")
+  endif
+
+  !! Iterate over all the objects in the container;
+  sum = 0
+  iter = container%iterator()
+  do while( iter%has_data() .eqv. .true.)
+      pobj => iter%get()  !!Note use of pointer and pointer assignment is preferred.
+      id =  pobj%get_id( )
+      !! vname =  pobj%get_varname()  !! print ...
+      sum = sum + id
+      ic_status = iter%next()
+  end do
+
+  if( sum  /=  full_id_sum) then
+    test_passed = .false.
+    call mpp_error(FATAL, "Container incorrect id sums via iteration")
+  endif
+
+  if( container%size() /= num_objs) then
+    test_passed = .false.
+    call mpp_error(FATAL, "Container incorrect size after inserts")
+  endif
+
+
+  !! Test a removal ****
+  iter = container%iterator()
+  iter  = container%remove( 4, iter )
+  iter  = container%find(4)
+  !! Verify  the removal , part 1:
+  if (  iter%has_data() .eqv. .true.) then
+    test_passed = .false.
+    call mpp_error(FATAL, "Found object of id = 4 after removing it")
+  endif
+   !! Verify  the removal , part 2 :
+  if (container%size() /= (num_objs - 1)) then
+     test_passed = .false.
+    call mpp_error(FATAL,"the_container%size() \= num_obj -1 after a removal ")
+  endif
+
+   !! Verify  the removal , part 3 :
+   !! Iterate over all the objects in the container AFTER the removal of id=4 object;
+  sum = 0
+  iter = container%iterator()
+  do while( iter%has_data() .eqv. .true.)
+      pobj => iter%get()  !!Note use of pointer and pointer assignment is preferred.
+      id =  pobj%get_id( )
+      !! vname =  pobj%get_varname()  !! print ...
+      sum = sum + id
+      ic_status = iter%next()
+  end do
+  if( sum  /=  full_id_sum - 4) then
+    test_passed = .false.
+    call mpp_error(FATAL, "Container incorrect id sums post removal of 4")
+  endif
+  !! End test a removal ****
+
+  !! Test find and access object in the container
+  iter = container%find(7)
+  if (iter%has_data() .neqv. .true. ) then
+    test_passed = .false.
+    call mpp_error(FATAL, "Container did not find obj of id=7")
+  endif
+  !! Checkk the find results more :
+  pobj => iter%get()
+  if(pobj%get_id() /=  7) then
+    test_passed = .false.
+    call mpp_error(FATAL," Id of returned obejct was not 7 ")
+  endif
+  !!TODO further access tests.
+
+
+  !! Manually clear out the container.
+  !! NOTE: In normal use this is NOT PERFORMED since with its finalize function, the  container
+  !! deallocates all pointers and data it manages. However, the client needs to take care of
+  !! the diag objects the client has decided that the container should not manage.
+  !! In this wierd test case, all the diag objects were originally from a vector (a container itself!)
+  !! and not allocated on the heap one at a time, so this step is needed before program completion.
+  do id = 1, num_objs
+    iter  = container%find(id)
+    if (  iter%has_data() .eqv. .true.) then
+      iter  = container%remove( id, iter )
+    endif
+  end do
+
+  if( container%size() /= 0) then
+    test_passed = .false.
+    call mpp_error(FATAL, "Container incorrect size after clearing")
+  endif
+
+  write (6,*) "Finishing diag_obj_container test."
+
+  !! the container has a finalize/destructor which will
+
+
+deallocate(container)
+
+call MPI_finalize(ierr)
+
+end program test_diag_obj_container
+
