@@ -197,6 +197,8 @@ subroutine fms_register_diag_field_obj &
 !> Grab the information from the diag_table
 !  dobj%diag_field = get_diag_table_field(trim(varname))
 !  dobj%diag_field = diag_yaml%get_diag_field(
+
+  ! TODO :
   if (is_field_type_null(dobj%diag_field)) then
      dobj%diag_id = diag_not_found
      dobj%vartype = diag_null

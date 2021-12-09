@@ -36,10 +36,10 @@ end function get_title
 !> \brief Compares two field type variables
 pure logical function is_field_type_null (in1)
 type(diag_fields_type), intent(in) :: in1
-is_field_type_null = .true.
+is_field_type_null = .false.
 end function is_field_type_null
 
-!!TODO
+!!TODO :
 !> \brief looks for a diag_field based on it's name.
 !! Returns null if field is not found.
 !type(diag_fields_type)function get_diag_table_field (field_name) result (field)
