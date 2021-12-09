@@ -4155,7 +4155,8 @@ integer, intent(in), optional :: remap_method
        endif
        call get_from_xgrid (d2, grid2%id, x_over, xmap) ! get onto side 2's
        if(grid2%on_this_pe) then
-          conservation_check_ug_side1(2) = conservation_check_ug_side1(2) + sum( grid2%area * sum(grid2%frac_area*d2,DIM=3) )
+          conservation_check_ug_side1(2) = conservation_check_ug_side1(2) &
+                                         & + sum( grid2%area * sum(grid2%frac_area*d2,DIM=3) )
        endif
        call put_to_xgrid (d2, grid2%id, x_back, xmap) ! put from side 2's
        if(allocated(d2))deallocate (d2)

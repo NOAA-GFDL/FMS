@@ -56,7 +56,8 @@ call fms2_io_init
 nlon = 144
 nlat = 144
 
-call mpp_define_domains( (/1,nlon,1,nlat/), layout, atm%Domain, xhalo=3, yhalo=3, symmetry=.true., name='test_bc_restart')
+call mpp_define_domains( (/1,nlon,1,nlat/), layout, atm%Domain, xhalo=3, yhalo=3, symmetry=.true., &
+                       &  name='test_bc_restart')
 call mpp_get_data_domain(atm%domain, isd, ied, jsd, jed )
 
 allocate(atm%var2d(isd:ied,jsd:jed))

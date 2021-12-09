@@ -325,8 +325,8 @@ contains
 
           write(stocks_file,'(a)'  ) ' '!blank line
           formatString = '(a,a,a,6x,es22.15)'
-          write(stocks_file,formatString) 'Lost Stocks in the exchange between Ice and Ocean ',trim(STOCK_NAMES(elem)),trim(STOCK_UNITS(elem)),  &
-                                        & f_ice_grid(ISTOCK_OCN) - f_ocn_grid(ISTOCK_OCN) + f_ocn_btf(ISTOCK_OCN)
+          write(stocks_file,formatString) 'Lost Stocks in the exchange between Ice and Ocean ',trim(STOCK_NAMES(elem))&
+                     &,trim(STOCK_UNITS(elem)), f_ice_grid(ISTOCK_OCN) - f_ocn_grid(ISTOCK_OCN) + f_ocn_btf(ISTOCK_OCN)
 
           write(stocks_file,'(a)') ' ' !blank line
           write(stocks_file,'(a)') ' ' !blank line

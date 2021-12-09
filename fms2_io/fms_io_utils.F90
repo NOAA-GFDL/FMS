@@ -588,7 +588,7 @@ subroutine parse_mask_table_2d(mask_table, maskmap, modelname)
             call mpp_error(FATAL, "fms2_io(parse_mask_table_2d): Error in reading mask_list from record variable")
         elseif (iocheck < 0) then
             call mpp_error(FATAL, &
-                           &  "fms2_io(parse_mask_table_2d): Error: mask_list not completely read from record variable")
+                        &  "fms2_io(parse_mask_table_2d): Error: mask_list not completely read from record variable")
         endif
      enddo
 
@@ -692,7 +692,7 @@ subroutine parse_mask_table_3d(mask_table, maskmap, modelname)
             call mpp_error(FATAL, "fms2_io(parse_mask_table_3d): Error in reading mask_list from record variable")
         elseif (iocheck < 0) then
             call mpp_error(FATAL, &
-                           &  "fms2_io(parse_mask_table_3d): Error: mask_list not completely read from record variable")
+                          &  "fms2_io(parse_mask_table_3d): Error: mask_list not completely read from record variable")
         endif
      enddo
 
