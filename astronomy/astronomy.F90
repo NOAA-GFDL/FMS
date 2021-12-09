@@ -1483,7 +1483,8 @@ end subroutine daily_mean_solar_1d
 !! @param [in] <lat> Latitudes of model grid points
 !! @param [in] <time_since_ae> Time of year; autumnal equinox = 0.0, one year = 2 * pi
 !! @param [out] <cosz> Cosine of solar zenith angle
-!! @param [out] <solar> Shortwave flux factor: cosine of zenith angle * daylight fraction / (earth-sun distance squared)
+!! @param [out] <solar> Shortwave flux factor: cosine of zenith angle * daylight fraction /
+!! (earth-sun distance squared)
 subroutine daily_mean_solar_2level (lat, time_since_ae, cosz, solar)
 
 !----------------------------------------------------------------------
@@ -1652,7 +1653,8 @@ end subroutine daily_mean_solar_cal_1d
 !! @param [in] <lat> Latitudes of model grid points
 !! @param [in] <time> Time of year (time_type)
 !! @param [out] <cosz> Cosine of solar zenith angle
-!! @param [out] <solar> Shortwave flux factor: cosine of zenith angle * daylight fraction / (earth-sun distance squared)
+!! @param [out] <solar> Shortwave flux factor: cosine of zenith angle * daylight fraction /
+!! (earth-sun distance squared)
 subroutine daily_mean_solar_cal_2level (lat, time, cosz, solar)
 
 real, dimension(:),  intent(in)   :: lat
@@ -1738,7 +1740,8 @@ end subroutine daily_mean_solar_cal_0d
 !! @param [in] <jnd> Ending index of latitude window
 !! @param [in] <lat> Latitudes of model grid points
 !! @param [out] <cosz> Cosine of solar zenith angle
-!! @param [out] <solar> Shortwave flux factor: cosine of zenith angle * daylight fraction / (earth-sun distance squared)
+!! @param [out] <solar> Shortwave flux factor: cosine of zenith angle * daylight fraction /
+!! (earth-sun distance squared)
 !! @param [out] <fracday> Daylight fraction of time interval
 !! @param [out] <rrsun> Earth-Sun distance (r) relative to semi-major axis of orbital ellipse (a):(a/r)**2
 subroutine annual_mean_solar_2d (js, je, lat, cosz, solar, fracday,  &
@@ -1845,7 +1848,8 @@ end subroutine annual_mean_solar_2d
 !! @param [in] <jnd> Ending index of latitude window
 !! @param [in] <lat> Latitudes of model grid points
 !! @param [out] <cosz> Cosine of solar zenith angle
-!! @param [out] <solar> Shortwave flux factor: cosine of zenith angle * daylight fraction / (earth-sun distance squared)
+!! @param [out] <solar> Shortwave flux factor: cosine of zenith angle * daylight fraction /
+!! (earth-sun distance squared)
 !! @param [out] <fracday> Daylight fraction of time interval
 !! @param [out] <rrsun_out> Earth-Sun distance (r) relative to semi-major axis of orbital ellipse (a):(a/r)**2
 subroutine annual_mean_solar_1d (jst, jnd, lat, cosz, solar,  &

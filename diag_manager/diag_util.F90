@@ -32,7 +32,8 @@ use,intrinsic :: iso_c_binding, only: c_double,c_float,c_int64_t, &
                                       c_int32_t,c_int16_t,c_intptr_t
 
   !   <FUTURE>
-  !     Make an interface <TT>check_bounds_are_exact</TT> for the subroutines <TT>check_bounds_are_exact_static</TT> and
+  !     Make an interface <TT>check_bounds_are_exact</TT> for the subroutines <TT>check_bounds_are_exact_static</TT>
+  !     and
   !     <TT>check_bounds_are_exact_dynamic</TT>.
   !     <PRE>
   !       INTERFACE check_bounds_are_exact
@@ -1732,7 +1733,7 @@ CONTAINS
           CALL write_axis_meta_data(files(file)%file_unit, axes(1:actual_num_axes),fileobj(file), time_ops=time_ops, &
                                    time_axis_registered=files(file)%is_time_axis_registered)
        elseif (fnum_for_domain(file) == "nd") then
-          CALL write_axis_meta_data(files(file)%file_unit, axes(1:actual_num_axes),fileobjnd(file), time_ops=time_ops, &
+          CALL write_axis_meta_data(files(file)%file_unit, axes(1:actual_num_axes),fileobjnd(file), time_ops=time_ops,&
                                    time_axis_registered=files(file)%is_time_axis_registered)
        elseif (fnum_for_domain(file) == "ug") then
           CALL write_axis_meta_data(files(file)%file_unit, axes(1:actual_num_axes),fileobjU(file), time_ops=time_ops, &
@@ -1781,9 +1782,9 @@ CONTAINS
                 !   Create a new file or set mix_snapshot_average_fields=.TRUE. in the namelist diag_manager_nml.
                 ! </ERROR>
                 CALL error_mesg('diag_util_mod::opening_file','file '//TRIM(files(file)%name)// &
-                     & ' can NOT have BOTH time average AND instantaneous fields.'//&
-                     & ' Create a new file or set mix_snapshot_average_fields=.TRUE. in the namelist diag_manager_nml.'&
-                     & , FATAL)
+                     &' can NOT have BOTH time average AND instantaneous fields.'//&
+                     &' Create a new file or set mix_snapshot_average_fields=.TRUE. in the namelist diag_manager_nml.'&
+                     &, FATAL)
              END IF
           END IF
        END IF

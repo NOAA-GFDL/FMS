@@ -28,7 +28,8 @@
 !!
 !! 1. AMIP @link http://www-pcmdi.llnl.gov/amip @endlink from Jan 1979 to Jan 1989 (2 deg x 2 deg)
 !! 2. Reynolds OI @link amip_interp.rey_oi.txt @endlink from Nov 1981 to Jan 1999 (1 deg x 1 deg)
-!! 3. Reynolds EOF @link ftp://podaac.jpl.nasa.gov/pub/sea_surface_temperature/reynolds/rsst/doc/rsst.html @endlink from Jan 1950 to Dec 1998 (2 deg x 2 deg)
+!! 3. Reynolds EOF @link ftp://podaac.jpl.nasa.gov/pub/sea_surface_temperature/reynolds/rsst/doc/rsst.html
+!! @endlink from Jan 1950 to Dec 1998 (2 deg x 2 deg)
 !!
 !! All original data are observed monthly means. This module
 !! interpolates linearly in time between pairs of monthly means.
@@ -501,7 +502,8 @@ if ( .not.use_daily ) then
     if (DEBUG) then
           call get_date(Amip_Time,jhctod(1),jhctod(2),jhctod(3),jhctod(4),jhctod(5),jhctod(6))
           if (mpp_pe() == 0) then
-             write (*,200) 'JHC: use_daily = F, AMIP_Time: ',jhctod(1),jhctod(2),jhctod(3),jhctod(4),jhctod(5),jhctod(6)
+             write (*,200) 'JHC: use_daily = F, AMIP_Time: ',jhctod(1),jhctod(2),jhctod(3),jhctod(4),jhctod(5), &
+                   & jhctod(6)
              write (*,300) 'JHC: use_daily = F, interped SST: ', sst(1,1),sst(5,5),sst(10,10)
           endif
     endif
@@ -512,7 +514,8 @@ if ( .not.use_daily ) then
 ! add by JHC
 else
     call get_date(Amip_Time,jhctod(1),jhctod(2),jhctod(3),jhctod(4),jhctod(5),jhctod(6))
-     if (mpp_pe() == mpp_root_pe()) write(*,200) 'amip_interp_mod: use_daily = T, Amip_Time = ',jhctod(1),jhctod(2),jhctod(3),jhctod(4),jhctod(5),jhctod(6)
+     if (mpp_pe() == mpp_root_pe()) write(*,200) 'amip_interp_mod: use_daily = T, Amip_Time = ',jhctod(1), &
+        & jhctod(2),jhctod(3),jhctod(4),jhctod(5),jhctod(6)
 
     yr = jhctod(1); mo = jhctod(2); dy = jhctod(3)
 

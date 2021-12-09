@@ -443,8 +443,8 @@ end subroutine axis_edges
     do i=2,ia
        if (array(i) < array(i-1)) then
           unit = stdout()
-          write (unit,*) '=> Error: "frac_index" array must be monotonically increasing when searching for nearest value to ',&
-                              value
+          write (unit,*) &
+            '=> Error: "frac_index" array must be monotonically increasing when searching for nearest value to ', value
           write (unit,*) '          array(i) < array(i-1) for i=',i
           write (unit,*) '          array(i) for i=1..ia follows:'
           do ii=1,ia

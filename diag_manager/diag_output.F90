@@ -209,7 +209,8 @@ CONTAINS
     INTEGER, INTENT(in) :: axes(:) !< Array of axis ID's, including the time axis
     class(FmsNetcdfFile_t) , intent(inout) :: fileob !< FMS2_io fileobj
     LOGICAL, INTENT(in), OPTIONAL :: time_ops !< .TRUE. if this file contains any min, max, time_rms, or time_average
-    logical, intent(inout) , optional :: time_axis_registered !< .TRUE. if the time axis was already written to the file
+    logical, intent(inout) , optional :: time_axis_registered !< .TRUE. if the time axis was already
+                                                              !! written to the file
 
     TYPE(domain1d)       :: Domain
     TYPE(domainUG)       :: domainU
@@ -386,8 +387,8 @@ integer :: domain_size, axis_length, axis_pos
                                     lowercase(TRIM(valid_calendar_types(calendar))), &
                                              &  str_len=len_trim(valid_calendar_types(calendar)) )
           IF ( time_ops1 ) THEN
-             call register_variable_attribute(fileob, axis_name, 'bounds', TRIM(axis_name)//'_bnds', str_len=len_trim(TRIM(axis_name)// &
-              & '_bnds'))
+             call register_variable_attribute(fileob, axis_name, 'bounds', TRIM(axis_name)//'_bnds', &
+                                             & str_len=len_trim(TRIM(axis_name)//'_bnds'))
           END IF
           call set_fileobj_time_name(fileob, axis_name)
        ELSE
@@ -428,7 +429,8 @@ integer :: domain_size, axis_length, axis_pos
             & axis_direction, axis_edges, Domain, DomainU, axis_data)
 
        !  ---- write edges attribute to original axis ----
-       call register_variable_attribute(fileob, axis_name_current, "edges",trim(axis_name), str_len=len_trim(axis_name))
+       call register_variable_attribute(fileob, axis_name_current, "edges",trim(axis_name), &
+                                       &  str_len=len_trim(axis_name))
        !  ---- add edges index to axis list ----
        !  ---- assume this is not a time axis ----
        num_axis_in_file = num_axis_in_file + 1
@@ -656,8 +658,8 @@ character(len=128),dimension(size(axes)) :: axis_names
         &  str_len=len_trim(units))
      call register_variable_attribute(fileob,name,"long_name",long_name, str_len=len_trim(long_name))
      IF (present(time_method) ) then
-          call register_variable_attribute(fileob,name,'cell_methods','time: '//trim(time_method), str_len=len_trim('time: '// &
-           & trim(time_method)))
+          call register_variable_attribute(fileob,name,'cell_methods','time: '//trim(time_method), &
+                                         & str_len=len_trim('time: '//trim(time_method)))
      ENDIF
   endif
     !---- write user defined attributes -----

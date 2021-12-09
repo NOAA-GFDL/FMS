@@ -72,7 +72,8 @@ zero = get_num_blocks(yaml_file_id2, "diag_files")
 if (zero .ne. 0) call mpp_error(FATAL, "'diag_files' should not exist in this file")
 
 !< Try the parent block_id optional argument
-nvariables = get_num_blocks(yaml_file_id1, "varlist", parent_block_id=3) !< Number of variables that belong to the atmos_daily file in the diag_table.yaml
+nvariables = get_num_blocks(yaml_file_id1, "varlist", parent_block_id=3) !< Number of variables that belong to the
+                                                                         !! atmos_daily file in the diag_table.yaml
 if (nvariables .ne. 2) call mpp_error(FATAL, "There should only be 2 variables in the atmos_daily file")
 
 !< -----------------------------------
@@ -133,7 +134,8 @@ if (nkeys .ne. 5) call mpp_error(FATAL, "The number of keys was not read correct
 !< Test get_key_ids
 allocate(key_ids(nkeys))
 call get_key_ids(yaml_file_id1, variable_ids(1), key_ids)
-if (key_ids(1) .ne. 10 .or. key_ids(2) .ne. 11 .or. key_ids(3) .ne. 12 .or. key_ids(4) .ne. 13 .or. key_ids(5) .ne. 14) call mpp_error(FATAL, "The key ids obtained are wrong")
+if (key_ids(1) .ne. 10 .or. key_ids(2) .ne. 11 .or. key_ids(3) .ne. 12 .or. key_ids(4) .ne. 13 .or. key_ids(5) .ne.14)&
+  & call mpp_error(FATAL, "The key ids obtained are wrong")
 
 !< -----------------------------------
 

@@ -213,7 +213,8 @@ use platform_mod
      INTEGER :: pow_value !< Power value to use for mean_pow(n) calculations
      CHARACTER(len=50) :: time_method !< time method field from the input file
      ! coordinates of the buffer and counter are (x, y, z, time-of-day)
-     REAL, allocatable, DIMENSION(:,:,:,:) :: buffer !< coordinates of the buffer and counter are (x, y, z, time-of-day)
+     REAL, allocatable, DIMENSION(:,:,:,:) :: buffer !< coordinates of the buffer and counter are (x,
+                                                     !! y, z, time-of-day)
      REAL, allocatable, DIMENSION(:,:,:,:) :: counter !< coordinates of the buffer and counter are (x,
                                                       !! y, z, time-of-day)
      ! the following two counters are used in time-averaging for some

@@ -233,7 +233,7 @@ use platform_mod
        & diag_log_unit, time_unit_list, pelist_name, max_axes, module_is_initialized, max_num_axis_sets,&
        & use_cmor, issue_oor_warnings, oor_warnings_fatal, oor_warning, pack_size,&
        & max_out_per_in_field, flush_nc_files, region_out_use_alt_value, max_field_attributes, output_field_type,&
-       & max_file_attributes, max_axis_attributes, prepend_date, DIAG_FIELD_NOT_FOUND, diag_init_time, diag_data_init, &
+       & max_file_attributes, max_axis_attributes, prepend_date, DIAG_FIELD_NOT_FOUND, diag_init_time, diag_data_init,&
        & use_mpp_io
   USE diag_data_mod, ONLY:  fileobj, fileobjU, fnum_for_domain, fileobjND
   USE diag_table_mod, ONLY: parse_diag_table
@@ -1151,7 +1151,7 @@ CONTAINS
     IF ( PRESENT(volume) ) THEN
        IF ( volume.LE.0 ) THEN
           IF ( fms_error_handler('diag_manager_mod::init_field_cell_measure',&
-              & 'VOLUME field not in diag_table for field '//TRIM(input_fields(output_field%input_field)%module_name)//&
+              &'VOLUME field not in diag_table for field '//TRIM(input_fields(output_field%input_field)%module_name)//&
               & '/'//TRIM(input_fields(output_field%input_field)%field_name), err_msg) ) RETURN
        END IF
     END IF
@@ -1461,7 +1461,7 @@ CONTAINS
 
     IF ( PRESENT(rmask) ) WHERE ( rmask < 0.5 ) mask_out(:, :, 1) = .FALSE.
     IF ( PRESENT(mask) .OR. PRESENT(rmask) ) THEN
-       send_data_2d_r8 = send_data_3d(diag_field_id, field_out, time, is_in=is_in, js_in=js_in, ks_in=1, mask=mask_out,&
+       send_data_2d_r8 =send_data_3d(diag_field_id, field_out, time, is_in=is_in, js_in=js_in, ks_in=1, mask=mask_out,&
             & ie_in=ie_in, je_in=je_in, ke_in=1, weight=weight, err_msg=err_msg)
     ELSE
        send_data_2d_r8 = send_data_3d(diag_field_id, field_out, time, is_in=is_in, js_in=js_in, ks_in=1,&
@@ -2016,7 +2016,7 @@ CONTAINS
                    WRITE (error_string,'(a,"/",a)')&
                         & TRIM(input_fields(diag_field_id)%module_name), &
                         & TRIM(output_fields(out_num)%output_name)
-                   IF (fms_error_handler('diag_manager_mod::send_data_3d', 'module/output_field '//TRIM(error_string)//&
+                   IF(fms_error_handler('diag_manager_mod::send_data_3d', 'module/output_field '//TRIM(error_string)//&
                         & ', variable mask but no missing value defined', err_msg)) THEN
                       DEALLOCATE(oor_mask)
                       RETURN
@@ -2422,7 +2422,7 @@ CONTAINS
                             DO j=l_start(2)+hj, l_end(2)+hj
                                DO i=l_start(1)+hi, l_end(1)+hi
                                   IF ( field(i,j,k) /= missvalue ) THEN
-                                     output_fields(out_num)%count_0d(sample) = output_fields(out_num)%count_0d(sample) &
+                                     output_fields(out_num)%count_0d(sample) = output_fields(out_num)%count_0d(sample)&
                                                                              & + weight1
                                      EXIT outer0
                                   END IF
@@ -2758,7 +2758,7 @@ CONTAINS
              ELSE IF ( reduced_k_range ) THEN
                 ksr = l_start(3)
                 ker = l_end(3)
-                WHERE ( field(f1:f2,f3:f4,ksr:ker) > output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,:,sample) ) &
+                WHERE ( field(f1:f2,f3:f4,ksr:ker) > output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,:,sample) )&
                      & output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,:,sample) = field(f1:f2,f3:f4,ksr:ker)
              ELSE
                 IF ( debug_diag_manager ) THEN
@@ -2771,7 +2771,7 @@ CONTAINS
                       END IF
                    END IF
                 END IF
-                WHERE ( field(f1:f2,f3:f4,ks:ke) > output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample))&
+                WHERE (field(f1:f2,f3:f4,ks:ke) > output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample))&
                      & output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) = field(f1:f2,f3:f4,ks:ke)
              END IF
           END IF
@@ -2814,7 +2814,7 @@ CONTAINS
                    END IF
                 END IF
                 WHERE ( mask(f1:f2,f3:f4,ks:ke) .AND.&
-                     & field(f1:f2,f3:f4,ks:ke) < output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample)) &
+                     & field(f1:f2,f3:f4,ks:ke) < output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample))&
                      & output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) = field(f1:f2,f3:f4,ks:ke)
              END IF
           ELSE
@@ -2837,7 +2837,7 @@ CONTAINS
              ELSE IF ( reduced_k_range ) THEN
                 ksr= l_start(3)
                 ker= l_end(3)
-                WHERE ( field(f1:f2,f3:f4,ksr:ker) < output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,:,sample) ) &
+                WHERE ( field(f1:f2,f3:f4,ksr:ker) < output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,:,sample) )&
                      output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,:,sample) = field(f1:f2,f3:f4,ksr:ker)
              ELSE
                 IF ( debug_diag_manager ) THEN
@@ -2850,7 +2850,7 @@ CONTAINS
                       END IF
                    END IF
                 END IF
-                WHERE ( field(f1:f2,f3:f4,ks:ke) < output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample))&
+                WHERE (field(f1:f2,f3:f4,ks:ke) < output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample))&
                      & output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) = field(f1:f2,f3:f4,ks:ke)
              END IF
           END IF
@@ -2942,7 +2942,7 @@ CONTAINS
           IF ( need_compute ) THEN
              DO j = js, je
                 DO i = is, ie
-                   IF ( l_start(1)+hi <= i .AND. i <= l_end(1)+hi .AND. l_start(2)+hj <= j .AND. j <= l_end(2)+hj ) THEN
+                   IF ( l_start(1)+hi <= i .AND. i <= l_end(1)+hi .AND. l_start(2)+hj <= j .AND. j <= l_end(2)+hj) THEN
                       i1 = i-l_start(1)-hi+1
                       j1 = j-l_start(2)-hj+1
                       output_fields(out_num)%buffer(i1,j1,:,sample) = field(i-is+1+hi,j-js+1+hj,l_start(3):l_end(3))
@@ -3960,7 +3960,7 @@ CONTAINS
                 ! <ERROR STATUS="FATAL">
                 !   Unable to allocate iatt for attribute <name> to module/input_field <module_name>/<field_name>
                 ! </ERROR>
-                CALL error_mesg('diag_manager_mod::diag_field_add_attribute', 'Unable to allocate iatt for attribute "'&
+                CALL error_mesg('diag_manager_mod::diag_field_add_attribute','Unable to allocate iatt for attribute "'&
                      &//TRIM(name)//'" to module/input_field "'//TRIM(input_fields(diag_field_id)%module_name)//'/'&
                      &//TRIM(input_fields(diag_field_id)%field_name)//'"', FATAL)
              END IF
@@ -3986,7 +3986,7 @@ CONTAINS
                 ! <ERROR STATUS="FATAL">
                 !   Unable to allocate fatt for attribute <name> to module/input_field <module_name>/<field_name>
                 ! </ERROR>
-                CALL error_mesg('diag_manager_mod::diag_field_add_attribute', 'Unable to allocate fatt for attribute "'&
+                CALL error_mesg('diag_manager_mod::diag_field_add_attribute','Unable to allocate fatt for attribute "'&
                      &//TRIM(name)//'" to module/input_field "'//TRIM(input_fields(diag_field_id)%module_name)//'/'&
                      &//TRIM(input_fields(diag_field_id)%field_name)//'"', FATAL)
              END IF

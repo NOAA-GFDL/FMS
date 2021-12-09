@@ -188,7 +188,8 @@
 !!         <DD>Currently not used.  Please use the string "all".</DD>
 !!         <DT><TT>CHARACTER(len=50) :: reduction_method</TT></DT>
 !!         <DD>
-!!           The data reduction method to perform prior to writing data to disk.  Valid options are (redundant names are
+!!           The data reduction method to perform prior to writing data to disk.  Valid options
+!!           are (redundant names are
 !!           separated with commas):
 !!           <DL>
 !!             <DT><TT>.TRUE.</TT>, average, avg, mean</DT>
@@ -209,7 +210,8 @@
 !!           a global region.  The regional
 !!           section has the following format:<BR />
 !!           <TT>lat_min, lat_max, lon_min, lon_max, vert_min, vert_max</TT><BR />
-!!           Use <TT>vert_min = -1</TT> and <TT>vert_max = -1</TT> to get the entire vertical axis.  <B><I>NOTE:</I></B>
+!!           Use <TT>vert_min = -1</TT> and <TT>vert_max = -1</TT> to get the entire vertical
+!!           axis.  <B><I>NOTE:</I></B>
 !!           Currently, the defined region <I>MUST</I> be confined to a single tile.
 !!         </DD>
 !!         <DT><TT>INTEGER :: packing</TT></DT>
@@ -375,7 +377,8 @@ CONTAINS
     END IF
 
     ! Read in the base date
-    READ (UNIT=diag_table(2), FMT=*, IOSTAT=mystat) base_year, base_month, base_day, base_hour, base_minute, base_second
+    READ (UNIT=diag_table(2), FMT=*, IOSTAT=mystat) base_year, base_month, base_day, base_hour, base_minute, &
+         &  base_second
     IF ( mystat /= 0 ) THEN
        pstat = mystat
        IF ( fms_error_handler('diag_manager_init', 'Error reading the base date from the diagnostic table.', &
@@ -393,7 +396,8 @@ CONTAINS
        amonth = month_name(base_month)
     ELSE
        ! No calendar - ignore year and month
-       base_time = set_time(NINT(base_hour*SECONDS_PER_HOUR)+NINT(base_minute*SECONDS_PER_MINUTE)+base_second, base_day)
+       base_time = set_time(NINT(base_hour*SECONDS_PER_HOUR)+NINT(base_minute*SECONDS_PER_MINUTE)+base_second, &
+                           &  base_day)
        base_year = 0
        base_month = 0
        amonth = 'day'
@@ -476,8 +480,8 @@ CONTAINS
                         & CALL error_mesg("diag_table_mod::Parse_diag_table",&
                         & TRIM(local_err_msg)//" (line: "//TRIM(line_number)//").",WARNING)
                    CYCLE parser
-                ELSE IF ( (diag_subset_output == DIAG_OTHER .AND. INDEX(lowercase(temp_field%file_name), "ocean").NE.0)&
-                   & .OR. (diag_subset_output == DIAG_OCEAN .AND. INDEX(lowercase(temp_field%file_name), "ocean").EQ.0)&
+                ELSE IF ((diag_subset_output == DIAG_OTHER .AND. INDEX(lowercase(temp_field%file_name), "ocean").NE.0)&
+                   &.OR. (diag_subset_output == DIAG_OCEAN .AND. INDEX(lowercase(temp_field%file_name), "ocean").EQ.0)&
                    &  ) THEN
                    CYCLE parser
                 ELSE IF ( lowercase(TRIM(temp_field%spatial_ops)) == 'none' ) THEN
@@ -627,7 +631,7 @@ CONTAINS
     END IF
     IF ( parse_file_line%iFile_duration_units < 0 .AND. parse_file_line%file_duration > 0 ) THEN
        pstat = 1
-       IF ( fms_error_handler('diag_table_mod::parse_file_line', 'Invalid file duration units in diag_table.',err_msg))&
+       IF (fms_error_handler('diag_table_mod::parse_file_line', 'Invalid file duration units in diag_table.',err_msg))&
             & RETURN
     END IF
 
@@ -678,7 +682,8 @@ CONTAINS
 
   !> @brief Parse a field description line from the <TT>diag_table</TT> file.
   !! @return field_description_type parse_field_line
-  !! @details <TT>parse_field_line</TT> parses a field description line from the <TT>diag_table</TT> file, and returns a
+  !! @details <TT>parse_field_line</TT> parses a field description line from the <TT>diag_table</TT>
+  !! file, and returns a
   !!     <TT>TYPE(field_description_type)</TT>.  The calling function, would then need to call
   !!     the <TT>init_input_field</TT> and
   !!     <TT>init_output_field</TT> to initialize the diagnostic output field.

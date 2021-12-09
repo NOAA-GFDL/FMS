@@ -328,7 +328,8 @@ contains
  seconds_new = modulo(seconds_new,seconds_per_day)
 
  if ( seconds_new < 0 .or. ticks_new < 0) then
-   call error_mesg('function set_time_i','Bad result for time. Contact those responsible for maintaining time_manager',FATAL)
+   call error_mesg('function set_time_i','Bad result for time. Contact those responsible for maintaining time_manager'&
+                  & ,FATAL)
  endif
 
  if(days_new < 0) then
@@ -601,7 +602,8 @@ end subroutine get_time
    return
  endif
 
- increment_time_private = set_time_private(Time_in%seconds+seconds, Time_in%days+days, Time_in%ticks+ticks, Time_out, err_msg)
+ increment_time_private = set_time_private(Time_in%seconds+seconds, Time_in%days+days, Time_in%ticks+ticks, &
+                                          &  Time_out, err_msg)
 
  end function increment_time_private
 
@@ -2149,7 +2151,8 @@ end function get_ticks_per_second
  if(yearx.gt.0) then
    ncenturies = int( yearx/100 )
    nlpyrs     = int( (yearx-ncenturies*100)/4 )
-   dayx       = ncenturies*36524 + (yearx-ncenturies*100)*365 + nlpyrs ! 36524 days in 100 years, year 100 not leap year
+   dayx       = ncenturies*36524 + (yearx-ncenturies*100)*365 + nlpyrs ! 36524 days in 100 years, year 100 not
+                                                                       !! leap year
    if(ncenturies.eq.4) dayx = dayx + 1 ! year 400 is a leap year
  end if
 
@@ -2461,7 +2464,8 @@ end function get_ticks_per_second
  allow_neg_inc_local=.true.; if(present(allow_neg_inc)) allow_neg_inc_local=allow_neg_inc
 
  if(.not.allow_neg_inc_local) then
-   if(oyears < 0 .or. omonths < 0 .or. odays < 0 .or. ohours < 0 .or. ominutes < 0 .or. oseconds < 0 .or. oticks < 0) then
+   if(oyears < 0 .or. omonths < 0 .or. odays < 0 .or. ohours < 0 .or. ominutes < 0 .or. oseconds < 0 .or. &
+    & oticks < 0) then
      write(err_msg_local,10) oyears, omonths, odays, ohours, ominutes, oseconds, oticks
      if(error_handler('function increment_time', err_msg_local, err_msg)) return
    endif
@@ -2559,13 +2563,16 @@ end function get_ticks_per_second
  ! Convert this back into a time.
    select case(calendar_type)
    case(THIRTY_DAY_MONTHS)
-     increment_date_private = set_date_thirty   (cyear, cmonth, cday, chour, cminute, csecond, ctick, Time_out, err_msg)
+     increment_date_private = set_date_thirty (cyear, cmonth, cday, chour, cminute, csecond, ctick, Time_out, err_msg)
    case(NOLEAP)
-     increment_date_private = set_date_no_leap_private  (cyear, cmonth, cday, chour, cminute, csecond, ctick, Time_out, err_msg)
+     increment_date_private = set_date_no_leap_private  (cyear, cmonth, cday, chour, cminute, csecond, ctick, &
+                                                        &  Time_out, err_msg)
    case(JULIAN)
-     increment_date_private = set_date_julian_private   (cyear, cmonth, cday, chour, cminute, csecond, ctick, Time_out, err_msg)
+     increment_date_private = set_date_julian_private   (cyear, cmonth, cday, chour, cminute, csecond, ctick, &
+                                                        &  Time_out, err_msg)
    case(GREGORIAN)
-     increment_date_private = set_date_gregorian(cyear, cmonth, cday, chour, cminute, csecond, ctick, Time_out, err_msg)
+     increment_date_private = set_date_gregorian(cyear, cmonth, cday, chour, cminute, csecond, ctick, Time_out, &
+                                                &  err_msg)
    end select
  endif ! if(mode_2)
 
@@ -2644,7 +2651,8 @@ end function get_ticks_per_second
  allow_neg_inc_local=.true.; if(present(allow_neg_inc)) allow_neg_inc_local=allow_neg_inc
 
  if(.not.allow_neg_inc_local) then
-   if(oyears < 0 .or. omonths < 0 .or. odays < 0 .or. ohours < 0 .or. ominutes < 0 .or. oseconds < 0 .or. oticks < 0) then
+   if(oyears < 0 .or. omonths < 0 .or. odays < 0 .or. ohours < 0 .or. ominutes < 0 .or. oseconds < 0 .or. &
+    & oticks < 0) then
      write(err_msg_local,10) oyears, omonths, odays, ohours, ominutes, oseconds, oticks
      if(error_handler('function decrement_date', err_msg_local, err_msg)) return
    endif
