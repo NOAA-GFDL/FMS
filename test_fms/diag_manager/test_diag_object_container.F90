@@ -18,26 +18,7 @@
 !***********************************************************************
 
 !> @brief  This programs tests the poblic member functions of the fms_diag_object_container class.
-
-module container_aux_test_mod
-  !! This is just some insignificant function to help make string and int combos for testing.
-  public :: combine_str_int
-  contains
-  function combine_str_int (str, num) result (rs)
-    character(:), allocatable, intent (in):: str
-    integer ,    intent (in) :: num
-    character(:), allocatable :: rs
-    character(len_trim(str) + 8) :: tmp
-
-    write (tmp, "(A4,I4)") str,num
-    tmp = trim(tmp)
-    rs = tmp
-  end function combine_str_int
-
-end module container_aux_test_mod
-
 program test_diag_obj_container
-
   use mpp_mod, only: mpp_init, mpp_exit, mpp_error, FATAL, WARNING
   use mpp_mod, only : mpp_set_stack_size, mpp_init_test_requests_allocated
   use mpp_io_mod, only: mpp_io_init
@@ -46,26 +27,30 @@ program test_diag_obj_container
   !use fms_diag_file_mod,  only: fms_diag_file_type
   use diag_data_mod, only: diag_fields_type
   use fms_diag_object_container_mod, only : fms_diag_object_container_type, fms_diag_obj_iterator_type
-  use container_aux_test_mod, only : combine_str_int
   USE time_manager_mod, ONLY: time_type
 
   implicit  none
-
-  type (fms_diag_object_container_type), allocatable :: container
-  type (fms_diag_object), allocatable , target ::  obj_vec(:)
-  class(fms_diag_object), allocatable , target ::  obj
-  type (fms_diag_object), pointer::   pobj
-  integer :: i, ic_status, id, sum, full_id_sum, ierr
-  class(fms_diag_obj_iterator_type), allocatable :: iter
-  logical :: found
-  integer, parameter :: num_objs = 10
-  !integer, allocatable :: axes(:)
+  !!
+  type (fms_diag_object_container_type), allocatable :: container !< Instance of the container
+  class(fms_diag_obj_iterator_type), allocatable :: iter          !< An iterator for the container
+  type (fms_diag_object), allocatable , target ::  obj_vec(:)     !< A vector of objects
+  type (fms_diag_object), pointer::   pobj                        !< A pointer to an object
+  integer, parameter :: num_objs = 10                             !< Total number of objects tested
+  integer ::  full_id_sum                                         !< Sum of all the possible object id values
+  integer :: sum                                                  !< Temp sum of vaalues of id sets
+  !!
+  integer :: ic_status                                            !< A status flag returned from container functions
+  integer :: ierr                                                 !< An error flag
+  !!
+  logical :: test_passed                                          !> Flag indicating if the test_passed
+  !! These fields below used to initialize diag object data. TBD
+  integer :: id
   integer, dimension(2) :: axes
   TYPE(time_type)  :: init_time
+  !!type (diag_fields_type)  :: diag_field
+  character(:), allocatable :: mname, vname, mname_pre, vname_pre
+  !!
 
-  character(:), allocatable :: mname, vname
-  type (diag_fields_type)                   :: diag_field
-  logical :: test_passed                    !> Flag indicating if the test_passed
 
   test_passed = .true.  !! will be set to false if there are any issues.
 
@@ -99,17 +84,15 @@ program test_diag_obj_container
     test_passed = .false.
     call mpp_error(WARNING, "Container incorrect size. Expected 0 at start")
   endif
+  mname_pre = "ATM"
+  vname_pre = "xvar"
   do id = 1, num_objs
-    mname = "ATM"
-    vname = "xvar"
-    mname = combine_str_int(mname, id)
-    vname = combine_str_int(vname, id)
+    call combine_str_int(mname_pre, id, mname)
+    call combine_str_int(vname_pre, id, vname )
 
     pobj => obj_vec( id ) !!Note use of pointer to obj.
     call pobj%setID(id)
-    !call obj%register ("test_mod"), "field_x", axes, init_time, &
-        !"a_long_name", units, missing_value, Range, mask_variant, standard_name, &
-        !do_not_log, err_msg, interp_method, tile_count, area, volume, realm)
+
     call pobj%register ("test_mod", vname, axes, init_time, "a_long_name")
 
     !!Insert object into the container.
@@ -229,11 +212,23 @@ program test_diag_obj_container
   write (6,*) "Finishing diag_obj_container test."
 
   !! the container has a finalize/destructor which will
-
-
 deallocate(container)
 
 call MPI_finalize(ierr)
 
+CONTAINS
+
+subroutine combine_str_int (str, num, rs)
+  character(:), allocatable, intent (in):: str
+  integer ,    intent (in) :: num
+  character(:), allocatable, intent (out) :: rs
+  character(len_trim(str) + 8) :: tmp
+
+  write (tmp, "(A4,I4)") str,num
+  tmp = trim(tmp)
+  rs = tmp
+end subroutine combine_str_int
+
 end program test_diag_obj_container
+
 
