@@ -33,6 +33,7 @@ character(len=:),allocatable :: diag_title !< Basedate array result to return
  diag_title = diag_yaml%diag_title
 end function get_title
 
+!!TODO:
 !> \brief Compares two field type variables
 pure logical function is_field_type_null (in1)
 type(diag_fields_type), intent(in) :: in1
