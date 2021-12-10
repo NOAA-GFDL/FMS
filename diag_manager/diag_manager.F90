@@ -3669,7 +3669,7 @@ CONTAINS
        err_msg_local = ''
        WRITE (err_msg_local,'(ES8.1E2)') CMOR_MISSING_VALUE
        CALL error_mesg('diag_manager_mod::diag_manager_init', 'Using CMOR missing value ('//TRIM(err_msg_local)// &
-        & ').', NOTE)
+            & ').', NOTE)
     END IF
 
     ! How to handle Out of Range Warnings.

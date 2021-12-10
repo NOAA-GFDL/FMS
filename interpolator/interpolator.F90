@@ -290,18 +290,16 @@ integer, parameter :: PRESSURE = 1, SIGMA = 2          !< Flags to indicate wher
 ! Vertical interpolation scheme requires mixing ratio at this time.
 integer, parameter :: NO_CONV = 1, KG_M2 = 2          !< Flags to indicate whether the climatology units
                                                       !! are mixing ratio (kg/kg) or column integral (kg/m2).
-                                                                 !< Vertical interpolation
-                                                                 !! scheme requires mixing ratio at this time.
+                                                      !! Vertical interpolation scheme requires mixing ratio at
+                                                      !! this time.
 
 ! Flags to indicate what to do when the model surface pressure exceeds the  climatology surface pressure level.
-integer, parameter, public :: CONSTANT = 1, ZERO = 2          !< Flags to indicate what to do when the
-                                                              !! model surface pressure
-                                                                           !< exceeds the 
-                                                                           !! climatology surface pressure level.
+integer, parameter, public :: CONSTANT = 1, ZERO = 2  !< Flags to indicate what to do when the model surface
+                                                      !! pressure exceeds the climatology surface pressure level.
 
 ! Flags to indicate the type of vertical interpolation
-integer, parameter, public :: INTERP_WEIGHTED_P = 10, INTERP_LINEAR_P = 20, INTERP_LOG_P = 30     !< Flags
-                                                                      !! to indicate the type of vertical interpolation
+integer, parameter, public :: INTERP_WEIGHTED_P = 10, INTERP_LINEAR_P = 20, INTERP_LOG_P = 30 !< Flags to indicate
+                                                                             !! the type of vertical interpolation
 !--lwh
 
 real, parameter :: TPI = (2.0*PI) ! 4.*acos(0.)

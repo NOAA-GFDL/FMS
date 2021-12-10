@@ -796,8 +796,8 @@ logical,        intent(in)             :: use_higher_order
            if(variable_exists(fileobj, "scale")) then
               allocate(scale(isc:iec))
               write(out_unit, *)"NOTE from load_xgrid(xgrid_mod): field 'scale' exist in the file "// &
-                   trim(grid_file)// &
-                      & ", this field will be read and the exchange grid cell area will be multiplied by scale"
+                  & trim(grid_file)//", this field will be read and the exchange grid cell area will be"// &
+                  & " multiplied by scale"
               call read_data(fileobj, "scale", tmp, corner=start, edge_lengths=nread)
               scale = tmp(:,1)
               scale_exist = .true.
@@ -1767,9 +1767,9 @@ subroutine setup_xmap(xmap, grid_ids, grid_domains, grid_file, atm_grid, lnd_ug_
               if(.NOT. present(atm_grid)) call error_mesg('xgrid_mod', &
                                           'when first grid is "ATM", atm_grid should be present', FATAL)
               if(grid%is_me-grid%isd_me .NE. 1 .or. grid%ied_me-grid%ie_me .NE. 1 .or.               &
-                   grid%js_me-grid%jsd_me .NE. 1 .or. grid%jed_me-grid%je_me .NE. 1 ) call error_mesg( &
-                   'xgrid_mod', 'for non-latlon grid (cubic grid), &
-                                                     &  the halo size should be 1 in all four direction', FATAL)
+                   grid%js_me-grid%jsd_me .NE. 1 .or. grid%jed_me-grid%je_me .NE. 1 ) &
+                       & call error_mesg('xgrid_mod', 'for non-latlon grid (cubic grid), '//&
+                                       & 'the halo size should be 1 in all four direction', FATAL)
               if(.NOT.( ASSOCIATED(atm_grid%dx) .AND. ASSOCIATED(atm_grid%dy) .AND. ASSOCIATED(atm_grid%edge_w) .AND. &
                    ASSOCIATED(atm_grid%edge_e) .AND. ASSOCIATED(atm_grid%edge_s) .AND.ASSOCIATED(atm_grid%edge_n).AND.&
                    ASSOCIATED(atm_grid%en1) .AND. ASSOCIATED(atm_grid%en2) .AND. ASSOCIATED(atm_grid%vlon) .AND.      &

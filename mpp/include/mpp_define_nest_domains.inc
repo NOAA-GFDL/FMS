@@ -879,10 +879,8 @@ subroutine compute_overlap_coarse_to_fine(nest_domain, overlap, extra_halo, posi
               je_coarse = je_coarse + nhalo
               !--- convert the index to coarse grid index.
               nconvert = convert_index_to_coarse(domain_coarse, 0, 0, tile_coarse, istart_coarse, iend_coarse, &
-                      jstart_coarse, jend_coarse, domain_coarse%ntiles, domain_coarse%tile_id(1), is_coarse, &
-                                                                                             &  ie_coarse, &
-                   js_coarse, je_coarse, is_convert2, ie_convert2, &
-                   js_convert2, je_convert2, rotate2)
+                   & jstart_coarse, jend_coarse, domain_coarse%ntiles, domain_coarse%tile_id(1), is_coarse, ie_coarse,&
+                   & js_coarse, je_coarse, is_convert2, ie_convert2, js_convert2, je_convert2, rotate2)
               do l = 1, nconvert
                  is_coarse = max(isc_coarse, is_convert2(l))
                  ie_coarse = min(iec_coarse, ie_convert2(l))
@@ -1932,9 +1930,9 @@ function search_C2F_nest_overlap(nest_domain, nest_level, extra_halo, position)
 
 
   !> This routine will convert the global coarse grid index to nest grid index.
-  function convert_index_to_nest(domain, ishift, jshift, tile_coarse, istart_coarse, iend_coarse, &
-                                &  jstart_coarse, jend_coarse, &
-                       ntiles_coarse, tile_in, is_in, ie_in, js_in, je_in, is_out, ie_out, js_out, je_out, rotate_out)
+  function convert_index_to_nest(domain, ishift, jshift, tile_coarse, istart_coarse, iend_coarse, jstart_coarse, &
+                               & jend_coarse, ntiles_coarse, tile_in, is_in, ie_in, js_in, je_in, is_out, ie_out,&
+                               & js_out, je_out, rotate_out)
     type(domain2D), intent(in) :: domain
     integer, intent(in)  :: ishift, jshift
     integer, intent(in)  :: istart_coarse, iend_coarse, jstart_coarse, jend_coarse
@@ -2073,10 +2071,9 @@ function search_C2F_nest_overlap(nest_domain, nest_level, extra_halo, position)
 
   end function convert_index_to_nest
 
-  function convert_index_to_coarse(domain, ishift, jshift, tile_coarse, istart_coarse, iend_coarse, &
-                                  &  jstart_coarse, jend_coarse, &
-                             ntiles_coarse, tile_in, is_in, ie_in, js_in, je_in, is_out, ie_out, js_out, &
-                                     &  je_out, rotate_out)
+  function convert_index_to_coarse(domain, ishift, jshift, tile_coarse, istart_coarse, iend_coarse, jstart_coarse, &
+                                 & jend_coarse, ntiles_coarse, tile_in, is_in, ie_in, js_in, je_in, is_out, ie_out,&
+                                 & js_out, je_out, rotate_out)
     type(domain2D), intent(in) :: domain
     integer, intent(in)  :: ishift, jshift
     integer, intent(in)  :: istart_coarse, iend_coarse, jstart_coarse, jend_coarse

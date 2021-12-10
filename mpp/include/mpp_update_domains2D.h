@@ -368,10 +368,10 @@
       logical, intent(in), optional :: complete, free
       integer, intent(in), optional :: list_size
       integer, intent(in), optional :: position
-      MPP_TYPE_ :: field3D_in (size(field_in, 1),size(field_in, 2),size(field_in ,3)*size(field_in , &
-                              & 4)*size(field_in ,5))
-      MPP_TYPE_ :: field3D_out(size(field_out,1),size(field_out,2),size(field_out,3)*size(field_out, &
-                              & 4)*size(field_out,5))
+      MPP_TYPE_ :: field3D_in (size(field_in, 1),size(field_in, 2), &
+                             & size(field_in ,3)*size(field_in,4)*size(field_in ,5))
+      MPP_TYPE_ :: field3D_out(size(field_out,1),size(field_out,2), &
+                             & size(field_out,3)*size(field_out,4)*size(field_out,5))
 
       type(DomainCommunicator2D),pointer,optional :: dc_handle
       pointer( ptr_in,  field3D_in  )

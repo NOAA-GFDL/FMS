@@ -215,8 +215,7 @@ use platform_mod
      ! coordinates of the buffer and counter are (x, y, z, time-of-day)
      REAL, allocatable, DIMENSION(:,:,:,:) :: buffer !< coordinates of the buffer and counter are (x,
                                                      !! y, z, time-of-day)
-     REAL, allocatable, DIMENSION(:,:,:,:) :: counter !< coordinates of the buffer and counter are (x,
-                                                      !! y, z, time-of-day)
+     REAL, allocatable, DIMENSION(:,:,:,:) :: counter !< coordinates of the buffer and counter are (x,y,z,time-of-day)
      ! the following two counters are used in time-averaging for some
      ! combination of the field options. Their size is the length of the
      ! diurnal axis; the counters must be tracked separately for each of
@@ -230,8 +229,7 @@ use platform_mod
      !! in each can be different, depending on time step and the number of
      !! diurnal samples.
      INTEGER, allocatable, dimension(:) :: num_elements !< the following two counters are used in time-averaging
-                                                        !! for some
-     !! combination of the field options. Their size is the length of the
+     !! for some combination of the field options. Their size is the length of the
      !! diurnal axis; the counters must be tracked separately for each of
      !! the diurnal interval, because the number of time slices accumulated
      !! in each can be different, depending on time step and the number of

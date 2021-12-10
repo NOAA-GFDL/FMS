@@ -77,8 +77,8 @@
       if(global_on_this_pe ) then
          if(size(local,3).NE.size(global,3) ) call mpp_error( FATAL, &
               'MPP_GLOBAL_FIELD: mismatch of third dimension size of global and local')
-         if( size(global,1).NE.(domain%x(tile)%global%size+ishift) .OR. size(global, &
-           & 2).NE.(domain%y(tile)%global%size+jshift))then
+         if( size(global,1).NE.(domain%x(tile)%global%size+ishift) .OR. &
+             size(global,2).NE.(domain%y(tile)%global%size+jshift))then
             if(xonly) then
                if(size(global,1).NE.(domain%x(tile)%global%size+ishift) .OR. &
                    size(global,2).NE.(domain%y(tile)%compute%size+jshift)) &
@@ -97,13 +97,13 @@
          endif
       endif
 
-      if( size(local,1).EQ.(domain%x(tile)%compute%size+ishift) .AND. size(local, &
-        & 2).EQ.(domain%y(tile)%compute%size+jshift) )then
+      if( size(local,1).EQ.(domain%x(tile)%compute%size+ishift) .AND. &
+          size(local,2).EQ.(domain%y(tile)%compute%size+jshift) )then
          !local is on compute domain
          ioff = -domain%x(tile)%compute%begin + 1
          joff = -domain%y(tile)%compute%begin + 1
-      else if( size(local,1).EQ.(domain%x(tile)%memory%size+ishift) .AND. size(local, &
-             & 2).EQ.(domain%y(tile)%memory%size+jshift) )then
+      else if( size(local,1).EQ.(domain%x(tile)%memory%size+ishift) .AND. &
+               size(local,2).EQ.(domain%y(tile)%memory%size+jshift) )then
          !local is on data domain
          ioff = -domain%x(tile)%data%begin + 1
          joff = -domain%y(tile)%data%begin + 1
@@ -339,8 +339,8 @@
       if(global_on_this_pe ) then
          if(size(local,3).NE.size(global,3) ) call mpp_error( FATAL, &
               'MPP_GLOBAL_FIELD: mismatch of third dimension size of global and local')
-         if( size(global,1).NE.(domain%x(tile)%global%size+ishift) .OR. size(global, &
-           & 2).NE.(domain%y(tile)%global%size+jshift))then
+         if( size(global,1).NE.(domain%x(tile)%global%size+ishift) .OR. &
+             size(global,2).NE.(domain%y(tile)%global%size+jshift))then
             if(xonly) then
                if(size(global,1).NE.(domain%x(tile)%global%size+ishift) .OR. &
                    size(global,2).NE.(domain%y(tile)%compute%size+jshift)) &
@@ -362,13 +362,13 @@
       ! NOTE: Since local is assumed to contiguously match the data domain, this
       !       is not a useful check.  But maybe someday we can support compute
       !       domains.
-      if( size(local,1).EQ.(domain%x(tile)%compute%size+ishift) .AND. size(local, &
-        & 2).EQ.(domain%y(tile)%compute%size+jshift) )then
+      if( size(local,1).EQ.(domain%x(tile)%compute%size+ishift) .AND. &
+          size(local,2).EQ.(domain%y(tile)%compute%size+jshift) )then
          !local is on compute domain
          ioff = -domain%x(tile)%compute%begin
          joff = -domain%y(tile)%compute%begin
-      else if( size(local,1).EQ.(domain%x(tile)%memory%size+ishift) .AND. size(local, &
-             & 2).EQ.(domain%y(tile)%memory%size+jshift) )then
+      else if( size(local,1).EQ.(domain%x(tile)%memory%size+ishift) .AND. &
+               size(local,2).EQ.(domain%y(tile)%memory%size+jshift) )then
          !local is on data domain
          ioff = -domain%x(tile)%data%begin
          joff = -domain%y(tile)%data%begin

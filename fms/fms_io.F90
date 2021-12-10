@@ -4594,8 +4594,7 @@ subroutine restore_state_one_field(fileObj, id_field, directory, nonfatal_missin
               end if
               if ( (is_there_a_checksum ) .and. (checksum_file(k) /= checksum_data) )  then
                 write (mesg,'(a,Z16,a,Z16,a)') "Checksum of input field "// uppercase(trim(varname)), checksum_data,&
-                             " does not match value ", checksum_file(k), "stored in "//uppercase(trim(fileObj%name)// &
-       & "." )
+                          " does not match value ", checksum_file(k), "stored in "//uppercase(trim(fileObj%name)//".")
                 call mpp_error(FATAL, "fms_io(restore_state_one_field): "//trim(mesg) )
               endif
           end do
@@ -4940,7 +4939,7 @@ subroutine write_data_scalar_new(filename, fieldname, data, domain, &
   integer, intent(in), optional          :: tile_count
 
   if(.not.module_is_initialized) call mpp_error(FATAL,'fms_io(write_data_scalar_new):  module not initialized: '// &
-     & fieldname)
+                                              & fieldname)
 
   data_3d(1,1,1) = data
   call write_data_3d_new(filename, fieldname, data_3d,domain, &
@@ -5496,7 +5495,7 @@ subroutine read_data_3d_new(filename,fieldname,data,domain,timelevel, &
        call mpp_error(FATAL,'fms_io(read_data_3d_new): data should be on either compute domain '//&
                             'or data domain when domain is present. '//&
                             'shape(data)=',shape(data),'  cxsize,cysize,dxsize,dysize=',(/cxsize,cysize,dxsize, &
-                                  & dysize/))
+                             dysize/))
      end if
   endif
 
@@ -8579,8 +8578,8 @@ subroutine parse_mask_table_2d(mask_table, maskmap, modelname)
   call mpp_broadcast(mask_list, 2*nmask, mpp_root_pe())
   do n = 1, nmask
      if(debug_mask_list) then
-       write(stdoutunit,*) "==>NOTE from parse_mask_table_2d: ", trim(modelname), " mask_list = ", mask_list(n, &
-            & 1), mask_list(n,2)
+       write(stdoutunit,*) "==>NOTE from parse_mask_table_2d: ", trim(modelname), " mask_list = ", mask_list(n,1), &
+                         & mask_list(n,2)
      endif
      maskmap(mask_list(n,1),mask_list(n,2)) = .false.
   enddo

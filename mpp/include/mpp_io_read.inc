@@ -1029,8 +1029,8 @@
 
            if( .not.isdim )then
 ! for non-dimension variables
-              nv=nv+1; if( nv.GT.mpp_file(unit)%nvar )call mpp_error( FATAL, &
-                          &  'variable index exceeds number of defined variables' )
+              nv=nv+1
+              if( nv.GT.mpp_file(unit)%nvar )call mpp_error(FATAL,'variable index exceeds number of defined variables')
               mpp_file(unit)%Var(nv)%type = type
               mpp_file(unit)%Var(nv)%id = i
               mpp_file(unit)%Var(nv)%name = name

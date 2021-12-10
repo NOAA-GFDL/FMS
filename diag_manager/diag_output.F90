@@ -382,10 +382,10 @@ integer :: domain_size, axis_length, axis_pos
 
           call register_variable_attribute(fileob, axis_name, "calendar_type", &
                                     UPPERCASE(TRIM(valid_calendar_types(calendar))), &
-                                             &  str_len=len_trim(valid_calendar_types(calendar)) )
+                                  & str_len=len_trim(valid_calendar_types(calendar)) )
           call register_variable_attribute(fileob, axis_name, "calendar", &
                                     lowercase(TRIM(valid_calendar_types(calendar))), &
-                                             &  str_len=len_trim(valid_calendar_types(calendar)) )
+                                  & str_len=len_trim(valid_calendar_types(calendar)) )
           IF ( time_ops1 ) THEN
              call register_variable_attribute(fileob, axis_name, 'bounds', TRIM(axis_name)//'_bnds', &
                                              & str_len=len_trim(TRIM(axis_name)//'_bnds'))
@@ -443,11 +443,11 @@ integer :: domain_size, axis_length, axis_pos
           call register_axis(fileob, axis_name, size(axis_data) )
           call register_field(fileob, axis_name, type_str, (/axis_name/) )
           if(trim(axis_units) .ne. "none") call register_variable_attribute(fileob, axis_name, "units", &
-            &  trim(axis_units), str_len=len_trim(axis_units))
+                                              & trim(axis_units), str_len=len_trim(axis_units))
           call register_variable_attribute(fileob, axis_name, "long_name", trim(axis_long_name), &
                                           &  str_len=len_trim(axis_long_name))
           if(trim(axis_cart_name).ne."N") call register_variable_attribute(fileob, axis_name, "axis", &
-            & trim(axis_cart_name), str_len=len_trim(axis_cart_name))
+                                             & trim(axis_cart_name), str_len=len_trim(axis_cart_name))
           select case (axis_direction)
              case (1)
                 call register_variable_attribute(fileob, axis_name, "positive", "up", str_len=len_trim("up"))
@@ -655,7 +655,7 @@ character(len=128),dimension(size(axes)) :: axis_names
                &"Pack values must be 1 or 2. Contact the developers.", FATAL)
      end select
      if (trim(units) .ne. "none") call register_variable_attribute(fileob,name,"units",trim(units), &
-        &  str_len=len_trim(units))
+                                     & str_len=len_trim(units))
      call register_variable_attribute(fileob,name,"long_name",long_name, str_len=len_trim(long_name))
      IF (present(time_method) ) then
           call register_variable_attribute(fileob,name,'cell_methods','time: '//trim(time_method), &
@@ -667,7 +667,7 @@ character(len=128),dimension(size(axes)) :: axis_names
        IF ( PRESENT(attributes) ) THEN
           IF ( num_attributes .GT. 0 .AND. allocated(attributes) ) THEN
              CALL write_attribute_meta(file_unit, num_attributes, attributes, time_method, err_msg, &
-                                      &  fileob=fileob, varname=name)
+                                     & fileob=fileob, varname=name)
              IF ( LEN_TRIM(err_msg) .GT. 0 ) THEN
                 CALL error_mesg('diag_output_mod::write_field_meta_data',&
                      & TRIM(err_msg)//" Contact the developers.", FATAL)
@@ -754,8 +754,8 @@ character(len=128),dimension(size(axes)) :: axis_names
                 RETURN
              END IF
           END IF
-          if (present(varname))call register_variable_attribute(fileob, varname,TRIM(attributes(i)%name)  , &
-             &  attributes(i)%iatt)
+          if (present(varname))call register_variable_attribute(fileob, varname,TRIM(attributes(i)%name), &
+                                                              & attributes(i)%iatt)
        CASE (NF90_FLOAT)
           IF ( .NOT.allocated(attributes(i)%fatt) ) THEN
              IF ( fms_error_handler('diag_output_mod::write_attribute_meta',&
@@ -764,8 +764,8 @@ character(len=128),dimension(size(axes)) :: axis_names
                 RETURN
              END IF
           END IF
-          if (present(varname))call register_variable_attribute(fileob, varname,TRIM(attributes(i)%name)  , &
-             &  real(attributes(i)%fatt,4) )
+          if (present(varname))call register_variable_attribute(fileob, varname,TRIM(attributes(i)%name), &
+                                                              & real(attributes(i)%fatt,4) )
        CASE (NF90_CHAR)
           att_str = attributes(i)%catt
           att_len = attributes(i)%len

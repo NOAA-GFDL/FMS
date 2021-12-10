@@ -258,7 +258,7 @@ MODULE diag_table_mod
   USE constants_mod, ONLY: SECONDS_PER_HOUR, SECONDS_PER_MINUTE
 
   USE diag_data_mod, ONLY: global_descriptor, base_time, base_year, base_month, base_day, base_hour, base_minute, &
-       & base_second, DIAG_OTHER, DIAG_OCEAN, DIAG_ALL, coord_type, append_pelist_name, pelist_name
+                         & base_second, DIAG_OTHER, DIAG_OCEAN, DIAG_ALL, coord_type, append_pelist_name, pelist_name
   USE diag_util_mod, ONLY: init_file, check_duplicate_output_fields, init_input_field, init_output_field
 
   IMPLICIT NONE

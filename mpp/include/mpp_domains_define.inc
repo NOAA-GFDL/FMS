@@ -640,22 +640,20 @@
     integer,          intent(in), optional :: memory_size(:)
     integer,          intent(in), optional :: whalo, ehalo, shalo, nhalo !< halo size for West, East,
                                                                          !! South and North direction.
-                                                                         !< if whalo and ehalo is not present,
-                                                                         !< will take the value of xhalo
-                                                                         !< if shalo and nhalo is not present,
-                                                                         !< will take the value of yhalo
+                                                                         !! if whalo and ehalo is not present,
+                                                                         !! will take the value of xhalo
+                                                                         !! if shalo and nhalo is not present,
+                                                                         !! will take the value of yhalo
     integer, intent(in),          optional :: tile_count                 !< tile number on current pe,
-                                                                         !! default value is 1
-                                                                         !< this is for the
-                                                                         !< situation that
-                                                                         !multiple tiles on one processor
+                                                                         !! default value is 1.
+                                                                         !! this is for the situation that
+                                                                         !! multiple tiles on one processor
     integer, intent(in),          optional :: tile_id                    !< tile id
     logical, intent(in),          optional :: complete                   !< true indicate mpp_define_domain
                                                                          !! is completed for mosaic definition.
     integer, intent(in),          optional :: x_cyclic_offset            !< offset for x-cyclic boundary condition,
-                                                                         !< (0,j) = (ni, mod(j+x_cyclic_offset,nj))
-                                                                         !< (ni+1,j) = ( 1,
-                                                                         !mod(j+nj-x_cyclic_offset,nj) )
+                                                                         !! (0,j) = (ni, mod(j+x_cyclic_offset,nj))
+                                                                         !! (ni+1, j)=(1 ,mod(j+nj-x_cyclic_offset,nj))
     integer, intent(in),          optional :: y_cyclic_offset            !< offset for y-cyclic boundary condition
                                                                          !!(i,0)    = (mod(i+y_cyclic_offset,ni), nj))
                                                                          !!(i,nj+1) =(mod(mod(i+ni-y_cyclic_offset,ni),
@@ -1115,8 +1113,8 @@
     !print out decomposition, this didn't consider maskmap.
     if( mpp_pe() .EQ. pes(0) .AND. PRESENT(name) )then
        write(*,*) trim(name)//' domain decomposition'
-       write(*,'(a,i4,a,i4,a,i4,a,i4)')'whalo = ', whalosz, ", ehalo = ", ehalosz, ", shalo = ", shalosz, ", &
-            &  nhalo = ", nhalosz
+       write(*,'(a,i4,a,i4,a,i4,a,i4)')'whalo = ', whalosz, ", ehalo = ", ehalosz, ", shalo = ", shalosz, &
+                                     & ", nhalo = ", nhalosz
        write (*,110) (domain%x(1)%list(i)%compute%size, i= 0, layout(1)-1)
        write (*,120) (domain%y(1)%list(i)%compute%size, i= 0, layout(2)-1)
 110    format ('  X-AXIS = ',24i4,/,(11x,24i4))
@@ -1207,8 +1205,8 @@ end subroutine check_message_size
                                 istart1, iend1, jstart1, jend1, istart2, iend2, jstart2, jend2, pe_start, &
                                 pe_end, pelist, whalo, ehalo, shalo, nhalo, xextent, yextent,             &
                                 maskmap, name, memory_size, symmetry, xflags, yflags, tile_id )
-    integer,          intent(in)           :: global_indices(:,:)  ! The size of first indice is 4, (/
-                                                                   !! isg, ieg, jsg, jeg /)
+    integer,          intent(in)           :: global_indices(:,:)  ! The size of first indice is 4,
+                                                                   !! (/ isg, ieg, jsg, jeg /)
                                                                    ! The size of second indice
                                                                    ! is number of tiles in mosaic.
     integer,          intent(in)           :: layout(:,:)
@@ -3684,9 +3682,8 @@ end subroutine check_message_size
        update => domain%update_N
        check  => domain%check_N
     case default
-       call mpp_error(FATAL, &
-        "mpp_domains_define.inc(compute_overlaps_fold_west): the value of position should be CENTER, EAST, &
-                               &  CORNER or NORTH")
+       call mpp_error(FATAL, "mpp_domains_define.inc(compute_overlaps_fold_west):"//&
+                           & " the value of position should be CENTER, EAST, CORNER or NORTH")
     end select
 
     !--- overlap is used to store the overlapping temporarily.
@@ -4303,9 +4300,8 @@ end subroutine check_message_size
        update => domain%update_N
        check  => domain%check_N
     case default
-       call mpp_error(FATAL, &
-        "mpp_domains_define.inc(compute_overlaps_fold_east): the value of position should be CENTER, EAST, &
-                               &  CORNER or NORTH")
+       call mpp_error(FATAL, "mpp_domains_define.inc(compute_overlaps_fold_east):"// &
+                           & " the value of position should be CENTER, EAST, CORNER or NORTH")
     end select
 
     !--- overlap is used to store the overlapping temporarily.
@@ -4986,9 +4982,8 @@ end subroutine check_message_size
     type(overlap_type), pointer      :: ptrIn  => NULL()
     integer                          :: nsend, nrecv, nsend_in, nrecv_in
 
-    if( domain%fold .NE. 0) call mpp_error(FATAL, &
-         "mpp_domains_define.inc(set_overlaps): folded domain is not implemented for arbitrary halo update, &
-                                &  contact developer")
+    if( domain%fold .NE. 0) call mpp_error(FATAL, "mpp_domains_define.inc(set_overlaps):"// &
+                               & " folded domain is not implemented for arbitrary halo update, contact developer")
 
     whalo_in = domain%whalo
     ehalo_in = domain%ehalo
@@ -5023,9 +5018,8 @@ end subroutine check_message_size
     !--- setting up overlap.
     do m = 1, nsend_in
        ptrIn  => overlap_in%send(m)
-       if(ptrIn%count .LE. 0) call mpp_error(FATAL, &
-          "mpp_domains_define.inc(set_overlaps): number of overlap for send should be a positive number for"// &
-                                & trim(domain%name) )
+       if(ptrIn%count .LE. 0) call mpp_error(FATAL, "mpp_domains_define.inc(set_overlaps):"// &
+                              " number of overlap for send should be a positive number for"//trim(domain%name) )
        do n = 1, ptrIn%count
           dir = ptrIn%dir(n)
           rotation = ptrIn%rotation(n)
@@ -7899,9 +7893,8 @@ end subroutine allocate_update_overlap
        endif
        overlap%count = overlap%count+1
        count = overlap%count
-       if(count > MAXOVERLAP) call mpp_error(FATAL, &
-            "mpp_domains_define.inc(insert_update_overlap): number of overlap is greater than MAXOVERLAP, &
-                                   &  increase MAXOVERLAP")
+       if(count > MAXOVERLAP) call mpp_error(FATAL, "mpp_domains_define.inc(insert_update_overlap):"//&
+                              & " number of overlap is greater than MAXOVERLAP, increase MAXOVERLAP")
        overlap%is(count) = is
        overlap%ie(count) = ie
        overlap%js(count) = js
@@ -7936,9 +7929,8 @@ subroutine insert_overlap_type(overlap, pe, tileMe, tileNbr, is, ie, js, je, dir
     endif
     overlap%count = overlap%count+1
     count = overlap%count
-    if(count > MAXOVERLAP) call mpp_error(FATAL, &
-       "mpp_domains_define.inc(insert_overlap_type): number of overlap is greater than MAXOVERLAP, &
-                              &  increase MAXOVERLAP")
+    if(count > MAXOVERLAP) call mpp_error(FATAL, "mpp_domains_define.inc(insert_overlap_type):"//&
+                           & " number of overlap is greater than MAXOVERLAP, increase MAXOVERLAP")
     overlap%tileMe      (count) = tileMe
     overlap%tileNbr     (count) = tileNbr
     overlap%is          (count) = is

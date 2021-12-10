@@ -378,8 +378,7 @@ subroutine read_table(data_table)
        if (record(1:1) == '#') cycle
        if (record(1:10) == '          ') cycle
        ntable=ntable+1
-       if (index(lowercase(record), "inside_region") .ne. 0 .or. index(lowercase(record), &
-          &  "outside_region") .ne. 0) then
+       if(index(lowercase(record), "inside_region") .ne. 0 .or. index(lowercase(record), "outside_region") .ne. 0) then
           if(index(lowercase(record), ".false.") .ne. 0 .or. index(lowercase(record), ".true.") .ne. 0 ) then
              ntable_lima = ntable_lima + 1
              read(record,*,err=99) data_entry%gridname, data_entry%fieldname_code, data_entry%fieldname_file, &
@@ -393,7 +392,7 @@ subroutine read_table(data_table)
              ntable_new=ntable_new+1
              read(record,*,err=99) data_entry%gridname, data_entry%fieldname_code, data_entry%fieldname_file, &
                                    data_entry%file_name, data_entry%interpol_method, data_entry%factor, region, &
-                                           &  region_type
+                                 & region_type
              if (data_entry%interpol_method == 'default') then
                 data_entry%interpol_method = default_table%interpol_method
              endif
@@ -431,8 +430,8 @@ subroutine read_table(data_table)
              "data_override: lon_end should be greater than lon_start")
           if(data_entry%lat_end .LE. data_entry%lat_start) call mpp_error(FATAL, &
              "data_override: lat_end should be greater than lat_start")
-       else if (index(lowercase(record), ".false.") .ne. 0 .or. index(lowercase(record), ".true.") .ne. 0 ) then ! old
-                                                                                                              !! format
+       ! old format
+       else if (index(lowercase(record), ".false.") .ne. 0 .or. index(lowercase(record), ".true.") .ne. 0 ) then
           ntable_lima = ntable_lima + 1
           read(record,*,err=99) data_entry%gridname, data_entry%fieldname_code, data_entry%fieldname_file, &
                                    data_entry%file_name, ongrid, data_entry%factor

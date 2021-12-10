@@ -3209,9 +3209,8 @@ contains
 
     !< Open the files
     do n = 1, num_rest_files
-        file_is_open(n) = open_file(bc_rest_files(n), trim(dir)// &
-                                                             & rest_file_names(n), io_type, mpp_domain, &
-                                                                              &  is_restart=.true.)
+        file_is_open(n) = open_file(bc_rest_files(n), trim(dir)//rest_file_names(n), io_type, mpp_domain, &
+                                  & is_restart=.true.)
         if (file_is_open(n)) then
              call register_axis_wrapper(bc_rest_files(n), to_read=to_read)
         endif
@@ -3503,9 +3502,8 @@ contains
 
     !< Open the files
     do n = 1, num_rest_files
-        file_is_open(n) = open_file(bc_rest_files(n), trim(dir)// &
-                                                             & rest_file_names(n), io_type, mpp_domain, &
-                                                                              &  is_restart=.true.)
+        file_is_open(n) = open_file(bc_rest_files(n), trim(dir)//rest_file_names(n), io_type, mpp_domain, &
+                                  & is_restart=.true.)
         if (file_is_open(n)) then
 
              if (to_read) then

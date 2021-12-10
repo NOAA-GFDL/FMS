@@ -43,13 +43,13 @@
 
     call mpp_get_domain_shift(domain, ishift, jshift, position)
 
-    if( size(field,1).EQ.domain%x(tile)%compute%size+ishift .AND. size(field, &
-      & 2).EQ.domain%y(tile)%compute%size+jshift )then
+    if( size(field,1).EQ.domain%x(tile)%compute%size+ishift .AND. &
+      & size(field,2).EQ.domain%y(tile)%compute%size+jshift )then
 !field is on compute domain
         ioff = -domain%x(tile)%compute%begin + 1
         joff = -domain%y(tile)%compute%begin + 1
-    else if( size(field,1).EQ.domain%x(tile)%memory%size+ishift .AND. size(field, &
-           & 2).EQ.domain%y(tile)%memory%size+jshift )then
+    else if( size(field,1).EQ.domain%x(tile)%memory%size+ishift .AND. &
+           & size(field,2).EQ.domain%y(tile)%memory%size+jshift )then
 !field is on data domain
         ioff = -domain%x(tile)%data%begin + 1
         joff = -domain%y(tile)%data%begin + 1
