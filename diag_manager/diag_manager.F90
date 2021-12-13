@@ -226,7 +226,7 @@ use platform_mod
   USE diag_output_mod, ONLY: get_diag_global_att, set_diag_global_att
   USE diag_grid_mod, ONLY: diag_grid_init, diag_grid_end
   USE fms_diag_object_mod, ONLY: fms_diag_object
-  use fms_diag_object_container_mod, ONLY: fms_diag_object_container_type
+  use fms_diag_object_container_mod, ONLY: FmsDiagObjectContainer_t
   USE constants_mod, ONLY: SECONDS_PER_DAY
 
 #ifdef use_netCDF
@@ -262,7 +262,7 @@ use platform_mod
 
   type(time_type) :: Time_end
 
-  TYPE(fms_diag_object_container_type), ALLOCATABLE :: the_diag_object_container
+  TYPE(FmsDiagObjectContainer_t), ALLOCATABLE :: the_diag_object_container
 
   !> @brief Send data over to output fields.
   !!
@@ -3723,7 +3723,7 @@ CONTAINS
     END IF
 
     !!Create the diag_object container; Its a singleton in the diag_data mod
-    the_diag_object_container = fms_diag_object_container_type()
+    the_diag_object_container = FmsDiagObjectContainer_t()
 
     module_is_initialized = .TRUE.
     ! create axis_id for scalars here

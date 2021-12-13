@@ -26,13 +26,13 @@ program test_diag_obj_container
   use fms_diag_object_mod, only : fms_diag_object
   !use fms_diag_file_mod,  only: fms_diag_file_type
   use diag_data_mod, only: diag_fields_type
-  use fms_diag_object_container_mod, only : fms_diag_object_container_type, fms_diag_obj_iterator_type
+  use fms_diag_object_container_mod, only : FmsDiagObjectContainer_t, FmsDiagObjIterator_t
   USE time_manager_mod, ONLY: time_type
 
   implicit  none
   !!
-  type (fms_diag_object_container_type), allocatable :: container !< Instance of the container
-  class(fms_diag_obj_iterator_type), allocatable :: iter          !< An iterator for the container
+  type (FmsDiagObjectContainer_t), allocatable :: container !< Instance of the container
+  class(FmsDiagObjIterator_t), allocatable :: iter          !< An iterator for the container
   type (fms_diag_object), allocatable , target ::  obj_vec(:)     !< A vector of objects
   type (fms_diag_object), pointer::   pobj                        !< A pointer to an object
   integer, parameter :: num_objs = 10                             !< Total number of objects tested
@@ -62,7 +62,7 @@ program test_diag_obj_container
   full_id_sum = (num_objs * (num_objs + 1)) / 2
 
   !!Create the container
-  container = fms_diag_object_container_type()
+  container = FmsDiagObjectContainer_t()
   !!In diag_manager, one module level container may be used instead of a local one like above.
 
 
