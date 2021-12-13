@@ -108,6 +108,7 @@ list(APPEND fms_fortran_src_files
   diag_manager/diag_table.F90
   diag_manager/diag_util.F90
   diag_manager/fms_diag_object.F90
+  diag_manager/fms_diag_yaml.F90
   diag_manager/fms_diag_dlinked_list.F90
   diag_manager/fms_diag_object_container.F90
   drifters/cloud_interpolator.F90
@@ -166,6 +167,7 @@ list(APPEND fms_fortran_src_files
   topography/topography.F90
   tracer_manager/tracer_manager.F90
   tridiagonal/tridiagonal.F90
+  parser/yaml_parser.F90
   libFMS.F90
 )
 
@@ -178,12 +180,15 @@ list(APPEND fms_c_src_files
   mosaic/mosaic_util.c
   mosaic/read_mosaic.c
   mpp/mpp_memuse.c
+  diag_manager/diag_yaml.c
+  parser/yaml_parser_binding.c
 )
 
 # Collect FMS header files
 list(APPEND fms_header_files
   include/file_version.h
   include/fms_platform.h
+  diag_manager/diag_yaml.h
 )
 
 # Standard FMS compiler definitions
