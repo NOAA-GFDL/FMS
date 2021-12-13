@@ -286,7 +286,7 @@ end function get_var_write
 !> \brief Inquiry for diag_yaml_files_var_obj%var_attributes
 pure function get_var_attributes(diag_var_obj) result (res)
  class (diag_yaml_files_var_type), intent(in) :: diag_var_obj !< The object being inquiried
- character (len=255), allocatable :: res (:,:) !< What is returned
+ character (len=MAX_STR_LEN), allocatable :: res (:,:) !< What is returned
  res = diag_var_obj%var_attributes
 end function get_var_attributes
 
