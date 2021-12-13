@@ -38,7 +38,7 @@ MODULE fms_diag_object_container_mod
    USE fms_mod, ONLY: error_mesg, FATAL, WARNING, NOTE
 
    !! Since this version is based on the FDS linked list:
-   use fms_doubly_linked_list_mod, only : FmsDlList_t, FmsDllIterator_t
+   use fms_diag_doubly_linked_list_mod, only : FmsDlList_t, FmsDllIterator_t
 
    implicit none
 

@@ -107,6 +107,9 @@ list(APPEND fms_fortran_src_files
   diag_manager/diag_output.F90
   diag_manager/diag_table.F90
   diag_manager/diag_util.F90
+  diag_manger/diag_object.F90
+  diag_manager/fms_diag_dlinked_list_mod.F90
+  diag_manager/fms_diag_object_conainer_mod.F90
   drifters/cloud_interpolator.F90
   drifters/drifters.F90
   drifters/drifters_comm.F90

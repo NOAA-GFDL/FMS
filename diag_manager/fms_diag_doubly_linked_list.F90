@@ -38,7 +38,7 @@
 
 !> @file
 !> @brief File for @ref fms_doubly_linked_list_mod
-MODULE fms_doubly_linked_list_mod
+MODULE fms_diag_dlinked_list_mod
   USE fms_mod, ONLY: error_mesg, FATAL, WARNING, NOTE
   implicit none
   !!TODO: COnsider setting the access (public,private) to functions, etc.
@@ -319,6 +319,6 @@ contains
   end subroutine destructor
 
 
-end module fms_doubly_linked_list_mod
+end module fms_diag_dlinked_list_mod
 !> @}
 ! close documentation grouping
