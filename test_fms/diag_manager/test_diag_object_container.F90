@@ -17,7 +17,12 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 
-!> @brief  This programs tests the poblic member functions of the fms_diag_object_container class.
+!> @brief  This programs tests the many of the public member functions of the
+!!  FmsDiagObjectContainer_t and FmsDiagObjIterator_t. As these two classes
+!!  are largely wrappers to their underlying classes, it is also
+!!  testing the underlying container and iterator classes. The container
+!!  functions being tested are insert, remove, and size. The use of the iterators
+!!  is also being tested.
 program test_diag_obj_container
   use mpp_mod, only: mpp_init, mpp_exit, mpp_error, FATAL, WARNING
   use mpp_mod, only : mpp_set_stack_size, mpp_init_test_requests_allocated
@@ -58,7 +63,7 @@ program test_diag_obj_container
   call mpp_io_init()
   call mpp_set_stack_size(3145746)
 
-  !! Ids will initally be from1 to num_objs, so :
+  !! Ids will initially be from 1 to num_objs, so :
   full_id_sum = (num_objs * (num_objs + 1)) / 2
 
   !!Create the container
@@ -82,7 +87,7 @@ program test_diag_obj_container
 
   if( container%size() /= 0) then
     test_passed = .false.
-    call mpp_error(WARNING, "Container incorrect size. Expected 0 at start")
+    call mpp_error(FATAL, "Container incorrect size. Expected 0 at start")
   endif
   mname_pre = "ATM"
   vname_pre = "xvar"
@@ -99,13 +104,13 @@ program test_diag_obj_container
     ic_status = container%insert(pobj%get_id(), pobj)
     if(ic_status .ne. 0)then
       test_passed = .false.
-      call mpp_error(FATAL, "Container Isertion ERROR for")
+      call mpp_error(FATAL, "Container Insertion error.")
     endif
   enddo
 
   if( container%size() /= num_objs) then
     test_passed = .false.
-    call mpp_error(FATAL, "Container incorrect size after inserts")
+    call mpp_error(FATAL, "Container has incorrect size after inserts.")
   endif
 
   !!Search the container for a an object of specified key
@@ -119,7 +124,7 @@ program test_diag_obj_container
   iter = container%find(4)
   if (iter%has_data() .neqv. .true. ) then
     test_passed = .false.
-    call mpp_error(FATAL, "Did not fin container object of id=4")
+    call mpp_error(FATAL, "Did not find expected container object of id=4")
   endif
 
   !! Iterate over all the objects in the container;
@@ -135,12 +140,12 @@ program test_diag_obj_container
 
   if( sum  /=  full_id_sum) then
     test_passed = .false.
-    call mpp_error(FATAL, "Container incorrect id sums via iteration")
+    call mpp_error(FATAL, "Id sums via iteration over the container objects is not as expected")
   endif
 
   if( container%size() /= num_objs) then
     test_passed = .false.
-    call mpp_error(FATAL, "Container incorrect size after inserts")
+    call mpp_error(FATAL, "The container size is not as expected post inserts.")
   endif
 
 
@@ -156,7 +161,7 @@ program test_diag_obj_container
    !! Verify  the removal , part 2 :
   if (container%size() /= (num_objs - 1)) then
      test_passed = .false.
-    call mpp_error(FATAL,"the_container%size() \= num_obj -1 after a removal ")
+    call mpp_error(FATAL,"The_container%size() \= num_obj -1 after a removal ")
   endif
 
    !! Verify  the removal , part 3 :
@@ -180,13 +185,13 @@ program test_diag_obj_container
   iter = container%find(7)
   if (iter%has_data() .neqv. .true. ) then
     test_passed = .false.
-    call mpp_error(FATAL, "Container did not find obj of id=7")
+    call mpp_error(FATAL, "Container did not find object of id=7")
   endif
-  !! Checkk the find results more :
+  !! Check the find results more :
   pobj => iter%get()
   if(pobj%get_id() /=  7) then
     test_passed = .false.
-    call mpp_error(FATAL," Id of returned obejct was not 7 ")
+    call mpp_error(FATAL," Id of returned object was not 7 ")
   endif
   !!TODO further access tests.
 
@@ -206,10 +211,10 @@ program test_diag_obj_container
 
   if( container%size() /= 0) then
     test_passed = .false.
-    call mpp_error(FATAL, "Container incorrect size after clearing")
+    call mpp_error(FATAL, "Container is incorrect size after clearing.")
   endif
 
-  write (6,*) "Finishing diag_obj_container test."
+  write (6,*) "Finishing diag_obj_container tests."
 
   !! the container has a finalize/destructor which will
 deallocate(container)
