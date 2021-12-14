@@ -44,13 +44,6 @@ public :: diag_yaml_object_init, diag_yaml_object_end
 
 integer, parameter :: basedate_size = 6
 
-!> @brief Reads the subregion in a yaml file
-!> @ingroup fms_diag_yaml_mod
-interface get_sub_region
-  module procedure get_sub_region_latlon
-  module procedure get_sub_region_index
-end interface get_sub_region
-
 !> @brief Object that holds the information of the diag_yaml
 !> @ingroup fms_diag_yaml_mod
 type diag_yaml_object
@@ -272,38 +265,21 @@ subroutine diag_get_value_from_key(file_id, par_id, key_name, value_name, is_opt
 end subroutine diag_get_value_from_key
 
 !< @brief gets the lat/lon of the sub region to use in a diag_table yaml
-subroutine get_sub_region_latlon(diag_yaml_id, sub_region_id, lat_lon_sub_region)
+subroutine get_sub_region(diag_yaml_id, sub_region_id, sub_region)
   integer, intent(in)  :: diag_yaml_id       !< Id of the diag_table yaml file
   integer, intent(in)  :: sub_region_id      !< Id of the region block to read from
-  real,    intent(out) :: lat_lon_sub_region (NUM_SUB_REGION_ARRAY) !< Array storing the bounds of the sub region
+  class(*),intent(out) :: sub_region (NUM_SUB_REGION_ARRAY) !< Array storing the bounds of the sub region
 
-  call get_value_from_key(diag_yaml_id, sub_region_id, "dim1_begin", lat_lon_sub_region(1), is_optional=.true.)
-  call get_value_from_key(diag_yaml_id, sub_region_id, "dim1_end", lat_lon_sub_region(2), is_optional=.true.)
-  call get_value_from_key(diag_yaml_id, sub_region_id, "dim2_begin", lat_lon_sub_region(3), is_optional=.true.)
-  call get_value_from_key(diag_yaml_id, sub_region_id, "dim2_end", lat_lon_sub_region(4), is_optional=.true.)
-  call get_value_from_key(diag_yaml_id, sub_region_id, "dim3_begin", lat_lon_sub_region(5), is_optional=.true.)
-  call get_value_from_key(diag_yaml_id, sub_region_id, "dim3_end", lat_lon_sub_region(6), is_optional=.true.)
-  call get_value_from_key(diag_yaml_id, sub_region_id, "dim4_begin", lat_lon_sub_region(7), is_optional=.true.)
-  call get_value_from_key(diag_yaml_id, sub_region_id, "dim4_end", lat_lon_sub_region(8), is_optional=.true.)
+  call get_value_from_key(diag_yaml_id, sub_region_id, "dim1_begin", sub_region(1), is_optional=.true.)
+  call get_value_from_key(diag_yaml_id, sub_region_id, "dim1_end", sub_region(2), is_optional=.true.)
+  call get_value_from_key(diag_yaml_id, sub_region_id, "dim2_begin", sub_region(3), is_optional=.true.)
+  call get_value_from_key(diag_yaml_id, sub_region_id, "dim2_end", sub_region(4), is_optional=.true.)
+  call get_value_from_key(diag_yaml_id, sub_region_id, "dim3_begin", sub_region(5), is_optional=.true.)
+  call get_value_from_key(diag_yaml_id, sub_region_id, "dim3_end", sub_region(6), is_optional=.true.)
+  call get_value_from_key(diag_yaml_id, sub_region_id, "dim4_begin", sub_region(7), is_optional=.true.)
+  call get_value_from_key(diag_yaml_id, sub_region_id, "dim4_end", sub_region(8), is_optional=.true.)
 
-end subroutine get_sub_region_latlon
-
-!< @brief gets the indexes of the sub region to use in a diag_table yaml
-subroutine get_sub_region_index(diag_yaml_id, sub_region_id, index_sub_region)
-  integer, intent(in)  :: diag_yaml_id     !< Id of the diag_table yaml file
-  integer, intent(in)  :: sub_region_id    !< Id of the region block to read from
-  integer, intent(out) :: index_sub_region (NUM_SUB_REGION_ARRAY) !< Array storing the index bounds of the sub region
-
-  call get_value_from_key(diag_yaml_id, sub_region_id, "dim1_begin", index_sub_region(1), is_optional=.true.)
-  call get_value_from_key(diag_yaml_id, sub_region_id, "dim1_end", index_sub_region(2), is_optional=.true.)
-  call get_value_from_key(diag_yaml_id, sub_region_id, "dim2_begin", index_sub_region(3), is_optional=.true.)
-  call get_value_from_key(diag_yaml_id, sub_region_id, "dim2_end", index_sub_region(4), is_optional=.true.)
-  call get_value_from_key(diag_yaml_id, sub_region_id, "dim3_begin", index_sub_region(5), is_optional=.true.)
-  call get_value_from_key(diag_yaml_id, sub_region_id, "dim3_end", index_sub_region(6), is_optional=.true.)
-  call get_value_from_key(diag_yaml_id, sub_region_id, "dim4_begin", index_sub_region(7), is_optional=.true.)
-  call get_value_from_key(diag_yaml_id, sub_region_id, "dim4_end", index_sub_region(8), is_optional=.true.)
-
-end subroutine get_sub_region_index
+end subroutine get_sub_region
 
 !< @brief gets the total number of variables in the diag_table yaml file
 !< @return total number of variables
