@@ -14,13 +14,14 @@ program test_fms
  use mpp_mod, only : mpp_error, fatal, note, mpp_init
  use fms_mod, only : fms_init, string, fms_end
  use fms_mod, only : fms_c2f_string
+ use fms_mod, only : fms_cstring2cpointer
  use test_fms_mod
  use, intrinsic :: iso_c_binding
 
  integer :: i !< Integer
  character(len=16) :: answer !< expected answer
  character(len=16) :: test !< Test string
- character(len=:,kind=c_char), pointer :: Cstring !< C string to convert
+ character(kind=c_char) :: Cstring (17)!< C string to convert
  type(c_ptr), pointer :: Cptr !< C pointer to string
 
  call mpp_init()
@@ -50,6 +51,26 @@ program test_fms
  else
          call mpp_error(FATAL, trim(test)//" does not match "//trim(answer))
  endif
+!!!!!!!!!!!!!!!!!!!!
+! Test the c string to c pointer conversion
+ test = "                "
+ answer = '100'
+ Cstring =  "                "
+ Cstring(1) = "1"
+ Cstring(2) = "0"
+ Cstring(3) = "0"
+ Cstring(17) = c_null_char
+ call mpp_error(NOTE,"Testing fms_cstring2cpointer and fms_c2f_string")
+! test = fms_c2f_string(fms_cstring2cpointer(c_char_"100             "//c_null_char))
+ test = fms_c2f_string(Cstring)
+ if (trim(answer) .eq. trim(test)) then
+         call mpp_error(NOTE, trim(test)//" matches "//trim(answer))
+ else
+         call mpp_error(FATAL, trim(test)//" does not match "//trim(answer))
+ endif
+
+
+ 
 
  call fms_end()
  
