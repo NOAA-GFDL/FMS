@@ -132,91 +132,106 @@ end type diag_yaml_files_var_type
 
 contains
 !!!!!!! YAML FILE INQUIRIES !!!!!!!
-!> \brief Inquiry for diag_files_obj%file_fname
+!> @brief Inquiry for diag_files_obj%file_fname
+!! @return file_fname of a diag_yaml_file obj
 pure function get_file_fname (diag_files_obj) result (res)
  class (diag_yaml_files_type), intent(in) :: diag_files_obj !< The object being inquiried
  character (len=:), allocatable :: res !< What is returned
   res = diag_files_obj%file_fname
 end function get_file_fname
-!> \brief Inquiry for diag_files_obj%file_frequnit
+!> @brief Inquiry for diag_files_obj%file_frequnit
+!! @return file_frequnit of a diag_yaml_file_obj
 pure function get_file_frequnit (diag_files_obj) result (res)
  class (diag_yaml_files_type), intent(in) :: diag_files_obj !< The object being inquiried
  character (len=:), allocatable :: res !< What is returned
   res = diag_files_obj%file_frequnit
 end function get_file_frequnit
-!> \brief Inquiry for diag_files_obj%file_freq
+!> @brief Inquiry for diag_files_obj%file_freq
+!! @return file_freq of a diag_yaml_file_obj
 pure function get_file_freq(diag_files_obj) result (res)
  class (diag_yaml_files_type), intent(in) :: diag_files_obj !< The object being inquiried
  integer :: res !< What is returned
   res = diag_files_obj%file_freq
 end function get_file_freq
-!> \brief Inquiry for diag_files_obj%file_timeunit
+!> @brief Inquiry for diag_files_obj%file_timeunit
+!! @return file_timeunit of a diag_yaml_file_obj
 pure function get_file_timeunit (diag_files_obj) result (res)
  class (diag_yaml_files_type), intent(in) :: diag_files_obj !< The object being inquiried
  character (len=:), allocatable :: res !< What is returned
   res = diag_files_obj%file_timeunit
 end function get_file_timeunit
-!> \brief Inquiry for diag_files_obj%file_unlimdim
+!> @brief Inquiry for diag_files_obj%file_unlimdim
+!! @return file_unlimdim of a diag_yaml_file_obj
 pure function get_file_unlimdim(diag_files_obj) result (res)
  class (diag_yaml_files_type), intent(in) :: diag_files_obj !< The object being inquiried
  character (len=:), allocatable :: res !< What is returned
   res = diag_files_obj%file_unlimdim
 end function get_file_unlimdim
-!> \brief Inquiry for diag_files_obj%file_write
+!> @brief Inquiry for diag_files_obj%file_write
+!! @return file_write of a diag_yaml_file_obj
 pure function get_file_write(diag_files_obj) result (res)
  class (diag_yaml_files_type), intent(in) :: diag_files_obj !< The object being inquiried
  logical :: res !< What is returned
   res = diag_files_obj%file_write
 end function get_file_write
-!> \brief Inquiry for diag_files_obj%file_realm
+!> @brief Inquiry for diag_files_obj%file_realm
+!! @return file_realm of a diag_yaml_file_obj
 pure function get_file_realm(diag_files_obj) result (res)
  class (diag_yaml_files_type), intent(in) :: diag_files_obj !< The object being inquiried
  character (:), allocatable :: res !< What is returned
   res = diag_files_obj%file_realm
 end function get_file_realm
-!> \brief Inquiry for diag_files_obj%file_subregion
+!> @brief Inquiry for diag_files_obj%file_subregion
+!! @return file_sub_region of a diag_yaml_file_obj
 pure function get_file_sub_region (diag_files_obj) result (res)
  class (diag_yaml_files_type), intent(in) :: diag_files_obj !< The object being inquiried
  type(sub_region_type) :: res !< What is returned
   res = diag_files_obj%file_sub_region
 end function get_file_sub_region
-!> \brief Inquiry for diag_files_obj%file_new_file_freq
+!> @brief Inquiry for diag_files_obj%file_new_file_freq
+!! @return file_new_file_freq of a diag_yaml_file_obj
 pure function get_file_new_file_freq(diag_files_obj) result (res)
  class (diag_yaml_files_type), intent(in) :: diag_files_obj !< The object being inquiried
  integer :: res !< What is returned
   res = diag_files_obj%file_new_file_freq
 end function get_file_new_file_freq
-!> \brief Inquiry for diag_files_obj%file_new_file_freq_units
+!> @brief Inquiry for diag_files_obj%file_new_file_freq_units
+!! @return file_new_file_freq_units of a diag_yaml_file_obj
 pure function get_file_new_file_freq_units (diag_files_obj) result (res)
  class (diag_yaml_files_type), intent(in) :: diag_files_obj !< The object being inquiried
  character (:), allocatable :: res !< What is returned
   res = diag_files_obj%file_new_file_freq_units
 end function get_file_new_file_freq_units
-!> \brief Inquiry for diag_files_obj%file_start_time
+!> @brief Inquiry for diag_files_obj%file_start_time
+!! @return file_start_time of a diag_yaml_file_obj
 pure function get_file_start_time (diag_files_obj) result (res)
  class (diag_yaml_files_type), intent(in) :: diag_files_obj !< The object being inquiried
  character (len=:), allocatable :: res !< What is returned
   res = diag_files_obj%file_start_time
 end function get_file_start_time
-!> \brief Inquiry for diag_files_obj%file_duration
+!> @brief Inquiry for diag_files_obj%file_duration
+!! @return file_duration of a diag_yaml_file_obj
 pure function get_file_duration (diag_files_obj) result (res)
  class (diag_yaml_files_type), intent(in) :: diag_files_obj !< The object being inquiried
  integer :: res !< What is returned
   res = diag_files_obj%file_duration
 end function get_file_duration
-!> \brief Inquiry for diag_files_obj%file_duration_units
+!> @brief Inquiry for diag_files_obj%file_duration_units
+!! @return file_duration_units of a diag_yaml_file_obj
 pure function get_file_duration_units (diag_files_obj) result (res)
  class (diag_yaml_files_type), intent(in) :: diag_files_obj !< The object being inquiried
   character (:), allocatable :: res !< What is returned
   res = diag_files_obj%file_duration_units
 end function get_file_duration_units
-!> \brief Inquiry for diag_files_obj%file_varlist
+!> @brief Inquiry for diag_files_obj%file_varlist
+!! @return file_varlist of a diag_yaml_file_obj
 pure function get_file_varlist (diag_files_obj) result (res)
  class (diag_yaml_files_type), intent(in) :: diag_files_obj !< The object being inquiried
  character (:), allocatable :: res(:) !< What is returned
   res = diag_files_obj%file_varlist
 end function get_file_varlist
-!> \brief Inquiry for diag_files_obj%file_global_meta
+!> @brief Inquiry for diag_files_obj%file_global_meta
+!! @return file_global_meta of a diag_yaml_file_obj
 pure function get_file_global_meta (diag_files_obj) result (res)
  class (diag_yaml_files_type), intent(in) :: diag_files_obj !< The object being inquiried
  character (:), allocatable :: res(:,:) !< What is returned
@@ -229,61 +244,71 @@ end function get_file_global_meta
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!! YAML VAR INQUIRIES !!!!!!!
-!> \brief Inquiry for diag_yaml_files_var_obj%var_fname
+!> @brief Inquiry for diag_yaml_files_var_obj%var_fname
+!! @return var_fname of a diag_yaml_files_var_obj
 pure function get_var_fname (diag_var_obj) result (res)
  class (diag_yaml_files_var_type), intent(in) :: diag_var_obj !< The object being inquiried
  character (len=:), allocatable :: res !< What is returned
   res = diag_var_obj%var_fname
 end function get_var_fname
-!> \brief Inquiry for diag_yaml_files_var_obj%var_varname
+!> @brief Inquiry for diag_yaml_files_var_obj%var_varname
+!! @return var_varname of a diag_yaml_files_var_obj
 pure function get_var_varname (diag_var_obj) result (res)
  class (diag_yaml_files_var_type), intent(in) :: diag_var_obj !< The object being inquiried
  character (len=:), allocatable :: res !< What is returned
   res = diag_var_obj%var_varname
 end function get_var_varname
-!> \brief Inquiry for diag_yaml_files_var_obj%var_reduction
+!> @brief Inquiry for diag_yaml_files_var_obj%var_reduction
+!! @return var_reduction of a diag_yaml_files_var_obj
 pure function get_var_reduction (diag_var_obj) result (res)
  class (diag_yaml_files_var_type), intent(in) :: diag_var_obj !< The object being inquiried
  character (len=:), allocatable :: res !< What is returned
   res = diag_var_obj%var_reduction
 end function get_var_reduction
-!> \brief Inquiry for diag_yaml_files_var_obj%var_module
+!> @brief Inquiry for diag_yaml_files_var_obj%var_module
+!! @return var_module of a diag_yaml_files_var_obj
 pure function get_var_module (diag_var_obj) result (res)
  class (diag_yaml_files_var_type), intent(in) :: diag_var_obj !< The object being inquiried
  character (len=:), allocatable :: res !< What is returned
   res = diag_var_obj%var_module
 end function get_var_module
-!> \brief Inquiry for diag_yaml_files_var_obj%var_skind
+!> @brief Inquiry for diag_yaml_files_var_obj%var_skind
+!! @return var_skind of a diag_yaml_files_var_obj
 pure function get_var_skind (diag_var_obj) result (res)
  class (diag_yaml_files_var_type), intent(in) :: diag_var_obj !< The object being inquiried
  character (len=:), allocatable :: res !< What is returned
   res = diag_var_obj%var_skind
 end function get_var_skind
-!> \brief Inquiry for diag_yaml_files_var_obj%var_outname
+!> @brief Inquiry for diag_yaml_files_var_obj%var_outname
+!! @return var_outname of a diag_yaml_files_var_obj
 pure function get_var_outname (diag_var_obj) result (res)
  class (diag_yaml_files_var_type), intent(in) :: diag_var_obj !< The object being inquiried
  character (len=:), allocatable :: res !< What is returned
   res = diag_var_obj%var_outname
 end function get_var_outname
-!> \brief Inquiry for diag_yaml_files_var_obj%var_longname
+!> @brief Inquiry for diag_yaml_files_var_obj%var_longname
+!! @return var_longname of a diag_yaml_files_var_obj
 pure function get_var_longname (diag_var_obj) result (res)
  class (diag_yaml_files_var_type), intent(in) :: diag_var_obj !< The object being inquiried
  character (len=:), allocatable :: res !< What is returned
   res = diag_var_obj%var_longname
 end function get_var_longname
-!> \brief Inquiry for diag_yaml_files_var_obj%var_units
+!> @brief Inquiry for diag_yaml_files_var_obj%var_units
+!! @return var_units of a diag_yaml_files_var_obj
 pure function get_var_units (diag_var_obj) result (res)
  class (diag_yaml_files_var_type), intent(in) :: diag_var_obj !< The object being inquiried
  character (len=:), allocatable :: res !< What is returned
   res = diag_var_obj%var_units
 end function get_var_units
-!> \brief Inquiry for diag_yaml_files_var_obj%var_write
+!> @brief Inquiry for diag_yaml_files_var_obj%var_write
+!! @return var_write of a diag_yaml_files_var_obj
 pure function get_var_write (diag_var_obj) result (res)
  class (diag_yaml_files_var_type), intent(in) :: diag_var_obj !< The object being inquiried
  logical :: res !< What is returned
   res = diag_var_obj%var_write
 end function get_var_write
-!> \brief Inquiry for diag_yaml_files_var_obj%var_attributes
+!> @brief Inquiry for diag_yaml_files_var_obj%var_attributes
+!! @return var_attributes of a diag_yaml_files_var_obj
 pure function get_var_attributes(diag_var_obj) result (res)
  class (diag_yaml_files_var_type), intent(in) :: diag_var_obj !< The object being inquiried
  character (len=MAX_STR_LEN), allocatable :: res (:,:) !< What is returned

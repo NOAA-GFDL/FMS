@@ -192,6 +192,7 @@ subroutine fms_register_diag_field_obj &
   allocate(character(len=len(modname)) :: dobj%modname)
   dobj%modname = trim(modname)
 !> Grab the information from the diag_table
+!  TO DO:
 !  dobj%diag_field = get_diag_table_field(trim(varname))
 !  dobj%diag_field = diag_yaml%get_diag_field(
 !  if (is_field_type_null(dobj%diag_field)) then

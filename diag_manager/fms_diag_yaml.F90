@@ -62,7 +62,8 @@ type (diag_yaml_object) :: diag_yaml  !< Obj containing the contents of the diag
 !> @{
 contains
 
-!> @brief Returns the basedate as an integer array
+!> @brief get the basedate of a diag_yaml type
+!! @return the basedate as an integer array
 pure function get_basedate (diag_yaml) result (diag_basedate)
   class (diag_yaml_object), intent(in) :: diag_yaml               !< The diag_yaml
   integer, dimension (basedate_size) :: diag_basedate !< Basedate array result to return
@@ -70,7 +71,8 @@ pure function get_basedate (diag_yaml) result (diag_basedate)
   diag_basedate = diag_yaml%diag_basedate
 end function get_basedate
 
-!> @brief Returns the title of the diag table as an allocated string
+!> @brief get the title of a diag_yaml type
+!! @return the title of the diag table as an allocated string
 pure function get_title (diag_yaml) result (diag_title)
   class (diag_yaml_object), intent(in) :: diag_yaml      !< The diag_yaml
   character(len=:),allocatable :: diag_title !< Basedate array result to return
@@ -81,14 +83,14 @@ end function get_title
 !> @brief Uses the yaml_parser_mod to read in the diag_table and fill in the
 !! diag_yaml object
 subroutine diag_yaml_object_init
-  integer              :: diag_yaml_id !< Id for the diag_table yaml
-  integer              :: nfiles       !< Number of files in the diag_table yaml
-  integer, allocatable :: file_ids(:)  !< Ids of the files in the diag_table yaml
-  integer              :: i, j         !< For do loops
-  integer              :: total_nvars  !< The total number of variables in the diag_table yaml
-  integer              :: var_count    !< The current number of variables added to the diag_yaml obj
-  integer              :: nvars        !< The number of variables in the current file
-  integer, allocatable :: var_ids(:)   !< Ids of the variables in diag_table yaml
+  integer              :: diag_yaml_id     !< Id for the diag_table yaml
+  integer              :: nfiles           !< Number of files in the diag_table yaml
+  integer, allocatable :: diag_file_ids(:) !< Ids of the files in the diag_table yaml
+  integer              :: i, j             !< For do loops
+  integer              :: total_nvars      !< The total number of variables in the diag_table yaml
+  integer              :: var_count        !< The current number of variables added to the diag_yaml obj
+  integer              :: nvars            !< The number of variables in the current file
+  integer, allocatable :: var_ids(:)       !< Ids of the variables in diag_table yaml
 
   diag_yaml_id = open_and_parse_file("diag_table.yaml")
 
@@ -97,21 +99,21 @@ subroutine diag_yaml_object_init
 
   nfiles = get_num_blocks(diag_yaml_id, "diag_files")
   allocate(diag_yaml%diag_files(nfiles))
-  allocate(file_ids(nfiles))
-  call get_block_ids(diag_yaml_id, "diag_files", file_ids)
+  allocate(diag_file_ids(nfiles))
+  call get_block_ids(diag_yaml_id, "diag_files", diag_file_ids)
 
-  total_nvars = get_total_num_vars(diag_yaml_id, file_ids)
+  total_nvars = get_total_num_vars(diag_yaml_id, diag_file_ids)
   allocate(diag_yaml%diag_fields(total_nvars))
 
   var_count = 0
   nfiles_loop: do i = 1, nfiles
     call diag_yaml_files_obj_init(diag_yaml%diag_files(i))
-    call fill_in_diag_files(diag_yaml_id, file_ids(i), diag_yaml%diag_files(i))
+    call fill_in_diag_files(diag_yaml_id, diag_file_ids(i), diag_yaml%diag_files(i))
 
     nvars = 0
-    nvars = get_num_blocks(diag_yaml_id, "varlist", parent_block_id=file_ids(i))
+    nvars = get_num_blocks(diag_yaml_id, "varlist", parent_block_id=diag_file_ids(i))
     allocate(var_ids(nvars))
-    call get_block_ids(diag_yaml_id, "varlist", var_ids, parent_block_id=file_ids(i))
+    call get_block_ids(diag_yaml_id, "varlist", var_ids, parent_block_id=diag_file_ids(i))
     nvars_loop: do j = 1, nvars
       var_count = var_count + 1
       call fill_in_diag_fields(diag_yaml_id, var_ids(j), diag_yaml%diag_fields(var_count))
@@ -119,7 +121,7 @@ subroutine diag_yaml_object_init
     deallocate(var_ids)
   enddo nfiles_loop
 
-  deallocate(file_ids)
+  deallocate(diag_file_ids)
 end subroutine
 
 !> @brief Destroys the diag_yaml object
@@ -139,12 +141,12 @@ subroutine diag_yaml_object_end()
 end subroutine diag_yaml_object_end
 
 !> @brief Fills in a diag_yaml_files_type with the contents of a file block in diag_table.yaml
-subroutine fill_in_diag_files(diag_yaml_id, file_id, fileobj)
+subroutine fill_in_diag_files(diag_yaml_id, diag_file_id, fileobj)
   integer,                    intent(in)    :: diag_yaml_id !< Id of the diag_table.yaml
-  integer,                    intent(in)    :: file_id      !< Id of the file block to read
+  integer,                    intent(in)    :: diag_file_id !< Id of the file block to read
   type(diag_yaml_files_type), intent(inout) :: fileobj      !< diag_yaml_files_type obj to read the contents into
 
-  integer :: nregion          !< Flag indicating of there any regions (0 or 1)
+  integer :: nsubregion       !< Flag indicating of there any regions (0 or 1)
   integer :: sub_region_id(1) !< Id of the sub_region block
   integer :: natt             !< Number of global attributes in the current file
   integer :: global_att_id(1) !< Id of the global attributes block
@@ -153,26 +155,26 @@ subroutine fill_in_diag_files(diag_yaml_id, file_id, fileobj)
 
   integer, allocatable :: key_ids(:) !< Id of the gloabl atttributes key/value pairs
 
-  call diag_get_value_from_key(diag_yaml_id, file_id, "file_name", fileobj%file_fname)
-  call diag_get_value_from_key(diag_yaml_id, file_id, "freq_units", fileobj%file_frequnit)
-  call get_value_from_key(diag_yaml_id, file_id, "freq", fileobj%file_freq)
-  call diag_get_value_from_key(diag_yaml_id, file_id, "unlimdim", fileobj%file_unlimdim)
-  call diag_get_value_from_key(diag_yaml_id, file_id, "time_units", fileobj%file_timeunit)
-  call diag_get_value_from_key(diag_yaml_id, file_id, "write_file", fileobj%string_file_write, is_optional=.true.)
+  call diag_get_value_from_key(diag_yaml_id, diag_file_id, "file_name", fileobj%file_fname)
+  call diag_get_value_from_key(diag_yaml_id, diag_file_id, "freq_units", fileobj%file_frequnit)
+  call get_value_from_key(diag_yaml_id, diag_file_id, "freq", fileobj%file_freq)
+  call diag_get_value_from_key(diag_yaml_id, diag_file_id, "unlimdim", fileobj%file_unlimdim)
+  call diag_get_value_from_key(diag_yaml_id, diag_file_id, "time_units", fileobj%file_timeunit)
+  call diag_get_value_from_key(diag_yaml_id, diag_file_id, "write_file", fileobj%string_file_write, is_optional=.true.)
   if (fileobj%string_file_write .eq. "false") fileobj%file_write = .false.
-  !< Modeling realm?
-  call get_value_from_key(diag_yaml_id, file_id, "new_file_freq", fileobj%file_new_file_freq, is_optional=.true.)
-  call diag_get_value_from_key(diag_yaml_id, file_id, "new_file_freq_units", fileobj%file_new_file_freq_units, &
+  call diag_get_value_from_key(diag_yaml_id, diag_file_id, "realm", fileobj%file_realm, is_optional=.true.)
+  call get_value_from_key(diag_yaml_id, diag_file_id, "new_file_freq", fileobj%file_new_file_freq, is_optional=.true.)
+  call diag_get_value_from_key(diag_yaml_id, diag_file_id, "new_file_freq_units", fileobj%file_new_file_freq_units, &
          is_optional=.true.)
-  call diag_get_value_from_key(diag_yaml_id, file_id, "start_time", fileobj%file_start_time, is_optional=.true.)
-  call get_value_from_key(diag_yaml_id, file_id, "file_duration", fileobj%file_duration, is_optional=.true.)
-  call diag_get_value_from_key(diag_yaml_id, file_id, "file_duration_units", fileobj%file_duration_units, &
+  call diag_get_value_from_key(diag_yaml_id, diag_file_id, "start_time", fileobj%file_start_time, is_optional=.true.)
+  call get_value_from_key(diag_yaml_id, diag_file_id, "file_duration", fileobj%file_duration, is_optional=.true.)
+  call diag_get_value_from_key(diag_yaml_id, diag_file_id, "file_duration_units", fileobj%file_duration_units, &
          is_optional=.true.)
 
-  nregion = 0
-  nregion = get_num_blocks(diag_yaml_id, "sub_region", parent_block_id=file_id)
-  if (nregion .ne. 0) then
-    call get_block_ids(diag_yaml_id, "sub_region", sub_region_id, parent_block_id=file_id)
+  nsubregion = 0
+  nsubregion = get_num_blocks(diag_yaml_id, "sub_region", parent_block_id=diag_file_id)
+  if (nsubregion .eq. 1) then
+    call get_block_ids(diag_yaml_id, "sub_region", sub_region_id, parent_block_id=diag_file_id)
     call diag_get_value_from_key(diag_yaml_id, sub_region_id(1), "grid_type", fileobj%file_sub_region%grid_type)
     if (trim(fileobj%file_sub_region%grid_type) .eq. "latlon") then
       call get_sub_region(diag_yaml_id, sub_region_id(1), fileobj%file_sub_region%lat_lon_sub_region)
@@ -182,12 +184,14 @@ subroutine fill_in_diag_files(diag_yaml_id, file_id, fileobj)
       if (fileobj%file_sub_region%tile .eq. 0) call mpp_error(FATAL, "The tile number is required when defining a "//&
         "subregion. Check your subregion entry for "//trim(fileobj%file_fname))
     endif
+  elseif (nsubregion .ne. 0) then
+    call mpp_error(FATAL, "diag_yaml_object_init: file "//trim(fileobj%file_fname)//" has multiple region blocks")
   endif
 
   natt = 0
-  natt = get_num_blocks(diag_yaml_id, "global_meta", parent_block_id=file_id)
-  if (natt .ne. 0) then
-    call get_block_ids(diag_yaml_id, "global_meta", global_att_id, parent_block_id=file_id)
+  natt = get_num_blocks(diag_yaml_id, "global_meta", parent_block_id=diag_file_id)
+  if (natt .eq. 1) then
+    call get_block_ids(diag_yaml_id, "global_meta", global_att_id, parent_block_id=diag_file_id)
     nkeys = get_nkeys(diag_yaml_id, global_att_id(1))
     allocate(key_ids(nkeys))
     call get_key_ids(diag_yaml_id, global_att_id(1), key_ids)
@@ -198,16 +202,18 @@ subroutine fill_in_diag_files(diag_yaml_id, file_id, fileobj)
       call get_key_value(diag_yaml_id, key_ids(j), fileobj%file_global_meta(j, 2))
     enddo
     deallocate(key_ids)
+  elseif (natt .ne. 0) then
+    call mpp_error(FATAL, "diag_yaml_object_init: file "//trim(fileobj%file_fname)//" has multiple global_meta blocks")
   endif
 
 end subroutine
 
 !> @brief Fills in a diag_yaml_files_var_type with the contents of a variable block in
 !! diag_table.yaml
-subroutine fill_in_diag_fields(file_id, var_id, field)
-  integer,                        intent(in)  :: file_id !< Id of diag_table.yaml file
-  integer,                        intent(in)  :: var_id  !< Id of the variable block in the yaml file
-  type(diag_yaml_files_var_type), intent(out) :: field   !< diag_yaml_files_var_type obj to read the contents into
+subroutine fill_in_diag_fields(diag_file_id, var_id, field)
+  integer,                        intent(in)  :: diag_file_id !< Id of the file block in the yaml file
+  integer,                        intent(in)  :: var_id       !< Id of the variable block in the yaml file
+  type(diag_yaml_files_var_type), intent(out) :: field        !< diag_yaml_files_var_type obj to read the contents into
 
 
   integer :: natt          !< Number of attributes in variable
@@ -218,39 +224,41 @@ subroutine fill_in_diag_fields(file_id, var_id, field)
   integer, allocatable :: key_ids(:) !< Id of each attribute key/value pair
 
   field%var_write = .true.
-  call diag_get_value_from_key(file_id, var_id, "var_name", field%var_varname)
-  call diag_get_value_from_key(file_id, var_id, "reduction", field%var_reduction)
-  call diag_get_value_from_key(file_id, var_id, "module", field%var_module)
-  call diag_get_value_from_key(file_id, var_id, "kind", field%var_skind)
-  call diag_get_value_from_key(file_id, var_id, "write_var", field%string_var_write, is_optional=.true.)
+  call diag_get_value_from_key(diag_file_id, var_id, "var_name", field%var_varname)
+  call diag_get_value_from_key(diag_file_id, var_id, "reduction", field%var_reduction)
+  call diag_get_value_from_key(diag_file_id, var_id, "module", field%var_module)
+  call diag_get_value_from_key(diag_file_id, var_id, "kind", field%var_skind)
+  call diag_get_value_from_key(diag_file_id, var_id, "write_var", field%string_var_write, is_optional=.true.)
   if (trim(field%string_var_write) .eq. "false") field%var_write = .false.
 
-  call diag_get_value_from_key(file_id, var_id, "output_name", field%var_outname)
-  call diag_get_value_from_key(file_id, var_id, "long_name", field%var_longname, is_optional=.true.)
+  call diag_get_value_from_key(diag_file_id, var_id, "output_name", field%var_outname)
+  call diag_get_value_from_key(diag_file_id, var_id, "long_name", field%var_longname, is_optional=.true.)
   !! VAR_UNITS !!
 
   natt = 0
-  natt = get_num_blocks(file_id, "attributes", parent_block_id=var_id)
-  if (natt .ne. 0) then
-    call get_block_ids(file_id, "attributes", var_att_id, parent_block_id=var_id)
-    nkeys = get_nkeys(file_id, var_att_id(1))
+  natt = get_num_blocks(diag_file_id, "attributes", parent_block_id=var_id)
+  if (natt .eq. 1) then
+    call get_block_ids(diag_file_id, "attributes", var_att_id, parent_block_id=var_id)
+    nkeys = get_nkeys(diag_file_id, var_att_id(1))
     allocate(key_ids(nkeys))
-    call get_key_ids(file_id, var_att_id(1), key_ids)
+    call get_key_ids(diag_file_id, var_att_id(1), key_ids)
 
     allocate(field%var_attributes(nkeys, 2))
     do j = 1, nkeys
-      call get_key_name(file_id,  key_ids(j), field%var_attributes(j, 1))
-      call get_key_value(file_id, key_ids(j), field%var_attributes(j, 2))
+      call get_key_name(diag_file_id,  key_ids(j), field%var_attributes(j, 1))
+      call get_key_value(diag_file_id, key_ids(j), field%var_attributes(j, 2))
     enddo
     deallocate(key_ids)
+  elseif (natt .ne. 0) then
+      call mpp_error(FATAL, "diag_yaml_object_init: variable "//trim(field%var_varname)//" has multiple attribute blocks")
   endif
 
 end subroutine
 
-!< @brief diag_manager wrapper to get_value_from_key to use for allocatable
+!> @brief diag_manager wrapper to get_value_from_key to use for allocatable
 !! string variables
-subroutine diag_get_value_from_key(file_id, par_id, key_name, value_name, is_optional)
-  integer,           intent(in) :: file_id     !< Id of the diag_table yaml file
+subroutine diag_get_value_from_key(diag_file_id, par_id, key_name, value_name, is_optional)
+  integer,           intent(in) :: diag_file_id!< Id of the file block in the yaml file
   integer,           intent(in) :: par_id      !< Id of the parent block in the yaml file
   character(len=*),  intent(in) :: key_name    !< Key to look for in the parent block
   character(len=:), allocatable :: value_name  !< Value of the key
@@ -258,13 +266,14 @@ subroutine diag_get_value_from_key(file_id, par_id, key_name, value_name, is_opt
 
   character(len=255) :: buffer !< String buffer to read in to
 
-  call get_value_from_key(file_id, par_id, trim(key_name), buffer, is_optional= is_optional)
+  buffer = "" !< Needs to be initialized for optional keys that are not present
+  call get_value_from_key(diag_file_id, par_id, trim(key_name), buffer, is_optional= is_optional)
   allocate(character(len=len_trim(buffer)) :: value_name)
   value_name = trim(buffer)
 
 end subroutine diag_get_value_from_key
 
-!< @brief gets the lat/lon of the sub region to use in a diag_table yaml
+!> @brief gets the lat/lon of the sub region to use in a diag_table yaml
 subroutine get_sub_region(diag_yaml_id, sub_region_id, sub_region)
   integer, intent(in)  :: diag_yaml_id       !< Id of the diag_table yaml file
   integer, intent(in)  :: sub_region_id      !< Id of the region block to read from
@@ -281,20 +290,20 @@ subroutine get_sub_region(diag_yaml_id, sub_region_id, sub_region)
 
 end subroutine get_sub_region
 
-!< @brief gets the total number of variables in the diag_table yaml file
-!< @return total number of variables
-function get_total_num_vars(diag_yaml_id, file_ids) &
+!> @brief gets the total number of variables in the diag_table yaml file
+!! @return total number of variables
+function get_total_num_vars(diag_yaml_id, diag_file_ids) &
 result(total_nvars)
 
-  integer, intent(in) :: diag_yaml_id   !< Id for the diag_table yaml
-  integer, intent(in) :: file_ids(:)    !< Ids of the files in the diag_table yaml
+  integer, intent(in) :: diag_yaml_id     !< Id for the diag_table yaml
+  integer, intent(in) :: diag_file_ids(:) !< Ids of the files in the diag_table yaml
   integer :: total_nvars
 
   integer :: i !< For do loop
 
   total_nvars = 0
-  do i = 1, size(file_ids,1)
-    total_nvars = total_nvars + get_num_blocks(diag_yaml_id, "varlist", parent_block_id=file_ids(i))
+  do i = 1, size(diag_file_ids,1)
+    total_nvars = total_nvars + get_num_blocks(diag_yaml_id, "varlist", parent_block_id=diag_file_ids(i))
   end do
 end function
 
