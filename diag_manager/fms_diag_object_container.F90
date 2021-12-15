@@ -22,7 +22,7 @@
 !> @brief fms_diag_object_container_mod defines a container for inserting, removing and
 !! searching for <TT>fms_diag_object</TT> instances
 !!
-!> @author Miguel Zuniga Miguel.Zuniga@noaa.gov
+!> @author Miguel Zuniga
 !!
 !! <TT>fms_diag_object_container_mod</TT> defines a container for inserting, removing and
 !! searching for <TT>fms_diag_object</TT> instances.
@@ -33,6 +33,8 @@
 !!
 !> @file
 !> @brief File for @ref fms_diag_object_container_mod
+!> @addtogroup fms_diag_object_container_mod
+!> @{
 MODULE fms_diag_object_container_mod
    use fms_diag_object_mod, only: fms_diag_object
    USE fms_mod, ONLY: error_mesg, FATAL, WARNING, NOTE

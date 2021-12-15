@@ -17,14 +17,14 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 
-!> @defgroup fms_doubly_linked_list_mod fms_doubly_linked_list_mod
+!> @defgroup fms_diag_dlinked_list_mod fms_doubly_linked_list_mod
 !> @ingroup diag_manager
 !> @brief fms_doubly_linked_list_mod defines a generic doubly linked
 !! list class and an iterator class for traversing the list.
 !!
 !> @author Miguel Zuniga
 !!
-!! <TT>fms_doubly_linked_list_mod</TT>  defines a generic doubly linked
+!! <TT>fms_diag_dlinked_list_mod</TT>  defines a generic doubly linked
 !! list class and an iterator class for traversing the list. It is
 !! generic in the sense that the elements or objects it contains are
 !! "class(*)" objects.  If additional typecheking or psossibly a
@@ -37,7 +37,9 @@
 !! by Mark Allen Weiss.
 
 !> @file
-!> @brief File for @ref fms_doubly_linked_list_mod
+!> @brief File for @ref fms_diag_dlinked_list_mod
+!> @addtogroup fms_diag_dlinked_list_mod
+!> @{
 MODULE fms_diag_dlinked_list_mod
   USE fms_mod, ONLY: error_mesg, FATAL, WARNING, NOTE
   implicit none
