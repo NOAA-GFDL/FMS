@@ -10,7 +10,7 @@ jobs:
         distcheck-conf-flags: [--enable-openmp, --disable-openmp, --enable-mixed-mode, --disable-setting-flags ]
         yaml-flag: [ --with-yaml, "" ]
     container:
-      image: ryanmulhall/ubuntu_libfms_gnu
+      image: noaagfdl/ubuntu_libfms_gnu
       env:
         FCFLAGS: "-I/usr/include"
         VERBOSE: 1
