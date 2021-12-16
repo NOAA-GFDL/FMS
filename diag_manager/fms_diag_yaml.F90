@@ -30,7 +30,7 @@
 !> @{
 module fms_diag_yaml_mod
 #ifdef use_yaml
-use fms_diag_yaml_object_mod, only: diag_yaml_files_type, diag_yaml_files_var_type, diag_yaml_files_obj_init, &
+use fms_diag_yaml_object_mod, only: diagYamlFiles_type, diagYamlFilesVar_type, diag_yaml_files_obj_init, &
                                     NUM_SUB_REGION_ARRAY
 use yaml_parser_mod
 use mpp_mod
@@ -46,17 +46,17 @@ integer, parameter :: basedate_size = 6
 
 !> @brief Object that holds the information of the diag_yaml
 !> @ingroup fms_diag_yaml_mod
-type diag_yaml_object
+type diagYamlObject_type
   character(len=:), allocatable, private :: diag_title                   !< Experiment name
   integer, private, dimension (basedate_size) :: diag_basedate           !< basedate array
-  type(diag_yaml_files_type), allocatable, private, dimension (:) :: diag_files!< History file info
-  type(diag_yaml_files_var_type), allocatable, private, dimension (:) :: diag_fields !< Diag fields info
+  type(diagYamlFiles_type), allocatable, private, dimension (:) :: diag_files!< History file info
+  type(diagYamlFilesVar_type), allocatable, private, dimension (:) :: diag_fields !< Diag fields info
   contains
   procedure :: get_title        !< Returns the title
   procedure :: get_basedate     !< Returns the basedate array
-end type diag_yaml_object
+end type diagYamlObject_type
 
-type (diag_yaml_object) :: diag_yaml  !< Obj containing the contents of the diag_table.yaml
+type (diagYamlObject_type) :: diag_yaml  !< Obj containing the contents of the diag_table.yaml
 
 !> @addtogroup fms_diag_yaml_mod
 !> @{
@@ -65,7 +65,7 @@ contains
 !> @brief get the basedate of a diag_yaml type
 !! @return the basedate as an integer array
 pure function get_basedate (diag_yaml) result (diag_basedate)
-  class (diag_yaml_object), intent(in) :: diag_yaml               !< The diag_yaml
+  class (diagYamlObject_type), intent(in) :: diag_yaml               !< The diag_yaml
   integer, dimension (basedate_size) :: diag_basedate !< Basedate array result to return
 
   diag_basedate = diag_yaml%diag_basedate
@@ -74,7 +74,7 @@ end function get_basedate
 !> @brief get the title of a diag_yaml type
 !! @return the title of the diag table as an allocated string
 pure function get_title (diag_yaml) result (diag_title)
-  class (diag_yaml_object), intent(in) :: diag_yaml      !< The diag_yaml
+  class (diagYamlObject_type), intent(in) :: diag_yaml      !< The diag_yaml
   character(len=:),allocatable :: diag_title !< Basedate array result to return
 
   diag_title = diag_yaml%diag_title
@@ -140,11 +140,11 @@ subroutine diag_yaml_object_end()
 
 end subroutine diag_yaml_object_end
 
-!> @brief Fills in a diag_yaml_files_type with the contents of a file block in diag_table.yaml
+!> @brief Fills in a diagYamlFiles_type with the contents of a file block in diag_table.yaml
 subroutine fill_in_diag_files(diag_yaml_id, diag_file_id, fileobj)
   integer,                    intent(in)    :: diag_yaml_id !< Id of the diag_table.yaml
   integer,                    intent(in)    :: diag_file_id !< Id of the file block to read
-  type(diag_yaml_files_type), intent(inout) :: fileobj      !< diag_yaml_files_type obj to read the contents into
+  type(diagYamlFiles_type), intent(inout) :: fileobj      !< diagYamlFiles_type obj to read the contents into
 
   integer :: nsubregion       !< Flag indicating of there any regions (0 or 1)
   integer :: sub_region_id(1) !< Id of the sub_region block
@@ -208,12 +208,12 @@ subroutine fill_in_diag_files(diag_yaml_id, diag_file_id, fileobj)
 
 end subroutine
 
-!> @brief Fills in a diag_yaml_files_var_type with the contents of a variable block in
+!> @brief Fills in a diagYamlFilesVar_type with the contents of a variable block in
 !! diag_table.yaml
 subroutine fill_in_diag_fields(diag_file_id, var_id, field)
   integer,                        intent(in)  :: diag_file_id !< Id of the file block in the yaml file
   integer,                        intent(in)  :: var_id       !< Id of the variable block in the yaml file
-  type(diag_yaml_files_var_type), intent(out) :: field        !< diag_yaml_files_var_type obj to read the contents into
+  type(diagYamlFilesVar_type), intent(out) :: field        !< diagYamlFilesVar_type obj to read the contents into
 
 
   integer :: natt          !< Number of attributes in variable
