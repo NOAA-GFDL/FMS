@@ -89,12 +89,14 @@ contains
    !! is useful for chaining searches, which may be needed if there are key duplicates.
    !! @return In iterator that starts from the inserted object.
    function find_diag_object (this, id , iiter) result (riter)
-      class (FmsDiagObjectContainer_t), intent (in out) :: this
-      integer , intent (in) :: id   !> The id of the object to find.
-      class(FmsDiagObjIterator_t), intent (in), optional :: iiter !> Iterator over the searchable set, if provided.
-      class(FmsDiagObjIterator_t) , allocatable :: riter !> The resultant iterator to the object.
-      class(fms_diag_object),  allocatable , target:: tdo  !> A temporaty diagnostic object
-      integer :: status                                    !> Status from iterator operations.
+     class (FmsDiagObjectContainer_t), intent (in out) :: this
+     !<The instance of the typeclass that this function is bound to.
+      integer , intent (in) :: id   !< The id of the object to find.
+     class(FmsDiagObjIterator_t), intent (in), optional :: iiter
+     !< An (optional) iterator over the searchable set.
+      class(FmsDiagObjIterator_t) , allocatable :: riter !< The resultant iterator to the object.
+      class(fms_diag_object),  allocatable , target:: tdo  !< A temporaty diagnostic object
+      integer :: status                                    !< A status from iterator operations.
       !!
       if(present (iiter)) then
          riter = iiter
@@ -117,10 +119,10 @@ contains
    !! @return A status of -1 if there was an error, and 0 otherwise.
    function insert_diag_object (this, id, obj) result (status)
       class (FmsDiagObjectContainer_t), intent (in out) :: this
-      integer,  intent (in) :: id                     !> The id of the object to insert.
-      class(fms_diag_object) , intent (in out) :: obj !> The object to insert
-      integer :: status                               !> The returned status. 0 for success.
-      class(FmsDllIterator_t), allocatable ::  tliter   !> A temporary iterator.
+      integer,  intent (in) :: id                     !< The id of the object to insert.
+      class(fms_diag_object) , intent (in out) :: obj !< The object to insert
+      integer :: status                               !< The returned status. 0 for success.
+      class(FmsDllIterator_t), allocatable ::  tliter   !< A temporary iterator.
 
       status = -1
       if ( id .ne. obj%get_id() ) then
@@ -138,11 +140,13 @@ contains
    !! If procedure find is used, consider calling remove with the iterator returned from find.
    !! @return In iterator starting from the node that was following the removed node.
    function remove_diag_object (this, id, iiter ) result (riter)
-      class (FmsDiagObjectContainer_t), intent (in out) :: this
-      integer , intent (in) :: id !> The id of the object to remove.
-      class(FmsDiagObjIterator_t), intent (in), optional :: iiter !> Iterator over the searchable set, if provided.
-      class(FmsDiagObjIterator_t), allocatable:: riter !> The resultant iterator
-      class(FmsDllIterator_t), allocatable :: temp_liter !> A temporary iterator
+     class (FmsDiagObjectContainer_t), intent (in out) :: this
+     !<The instance of the class that this function is bound to.
+     integer , intent (in) :: id !< The id of the object to remove.
+     class(FmsDiagObjIterator_t), intent (in), optional :: iiter
+      !< An (optional) iterator over the searchable set.
+      class(FmsDiagObjIterator_t), allocatable:: riter !< The resultant iterator
+      class(FmsDllIterator_t), allocatable :: temp_liter !< A temporary iterator
       integer :: status
       if(present (iiter)) then
          riter = iiter
@@ -158,8 +162,9 @@ contains
    !> @brief  Getter for the number of objects help in the container.
    !! @return Return the number of objects..
    function get_num_objects (this ) result (sz)
-      class (FmsDiagObjectContainer_t), intent (in out) :: this
-      integer :: sz                     !> The returned result - the number of objects in container.
+     class (FmsDiagObjectContainer_t), intent (in out) :: this
+     !< The instance of the typeclass that this function is bound to.
+      integer :: sz                     !< The returned result - the number of objects in container.
       sz = this%the_linked_list%size()
    end function
 
@@ -167,16 +172,18 @@ contains
    !> @brief Return an iterator for the objects in the container.
    !! @return An iterator for the objects in the container.
    function get_iterator (this) result (oliter)
-      class (FmsDiagObjectContainer_t), intent (in) :: this
-      class(FmsDiagObjIterator_t) , allocatable :: oliter !> The reurned iterator to the objects in the container.
+     class (FmsDiagObjectContainer_t), intent (in) :: this
+     !<The instance of the typeclass that this function is bound to.
+      class(FmsDiagObjIterator_t) , allocatable :: oliter !< The reurned iterator.
       oliter = FmsDiagObjIterator_t( this%the_linked_list%get_literator() )
    end function
 
    !> @brief A consructor for a container's iterator.
-   !! @return  A consructor for a container's iterator.
+   !! @return  An for a container's iterator.
    function diag_obj_iterator_constructor( iliter ) result (diag_itr)
-      class (FmsDllIterator_t), allocatable :: iliter !> An iterator. Normally the one that the container is based on.
-      class (FmsDiagObjIterator_t), allocatable :: diag_itr !> The returned diag object iterator.
+     class (FmsDllIterator_t), allocatable :: iliter
+     !< An iterator. Normally the one that the container is based on.
+      class (FmsDiagObjIterator_t), allocatable :: diag_itr !< The returned diag object iterator.
       allocate(diag_itr)
       diag_itr%liter = iliter;
    end function diag_obj_iterator_constructor
@@ -184,7 +191,7 @@ contains
    !> @brief the default consructor for the container.
    !! @return Returns a container.
    function diag_object_container_constructor () result (doc)
-      type(FmsDiagObjectContainer_t), allocatable :: doc !> The resultant container.
+      type(FmsDiagObjectContainer_t), allocatable :: doc !< The resultant container.
       allocate(doc)
       doc%the_linked_list = FmsDlList_t()
       !! print * , "In DOC constructor"
@@ -193,16 +200,18 @@ contains
    !> @brief Determines if there is more data that can be accessed via the iterator.
    !> @return Returns true iff more data can be accessed via the iterator.
    function literator_has_data( this ) result( r )
-      class(FmsDiagObjIterator_t), intent(in) :: this
-      logical :: r                  !> True if this iterator has data,
+     class(FmsDiagObjIterator_t), intent(in) :: this
+     !<The instance of the typeclass that this function is bound to.
+      logical :: r                  !< True if this iterator has data.
       r = this%liter%has_data()
    end function literator_has_data
 
    !> @brief Move the iterator to the next object.
    !! @return Returns a status 0 if sucessful, or -1 if failed.
    function literator_next( this ) result( status )
-      class(FmsDiagObjIterator_t), intent(in out ) :: this
-      integer :: status !> !> Returned status of operation.
+     class(FmsDiagObjIterator_t), intent(in out ) :: this
+     !<The instance of the typeclass that this function is bound to.
+      integer :: status  !< The returned status.
       status = -1
       status = this%liter%next()
    end function literator_next
@@ -212,9 +221,10 @@ contains
    !! this function sholud be called (again).
    !! @return Returns a pointer to the current data.
    function  literator_data( this ) result( rdo )
-      class(FmsDiagObjIterator_t), intent(in) :: this
-      class(fms_diag_object),  pointer :: rdo !> The resultant diagnostic object.
-      class(*),  pointer :: gp !> A eneric typed object in the container.
+     class(FmsDiagObjIterator_t), intent(in) :: this
+     !<The instance of the typeclass that this function is bound to.
+      class(fms_diag_object),  pointer :: rdo !< The resultant diagnostic object.
+      class(*),  pointer :: gp !< A eneric typed object in the container.
 
       rdo => null()
       gp => this%liter%get()
@@ -229,7 +239,9 @@ contains
 
    !> @brief The destructor for the container.
    subroutine destructor(this)
-      type(FmsDiagObjectContainer_t) :: this  !Note for destructors its needs to be type and not class!
+     type(FmsDiagObjectContainer_t) :: this
+     !<The instance of the typeclass that this function is bound to.
+     !! Note in the line above we use "type' and not "class" - needed for destructor definitions.
       deallocate(this%the_linked_list)
    end subroutine destructor
 
