@@ -61,6 +61,7 @@ option(INTERNAL_FILE_NML     "Enable compiler definition -DINTERNAL_FILE_NML"   
 option(ENABLE_QUAD_PRECISION "Enable compiler definition -DENABLE_QUAD_PRECISION"  ON)
 option(GFS_PHYS              "Enable compiler definition -DGFS_PHYS"              OFF)
 option(LARGEFILE             "Enable compiler definition -Duse_LARGEFILE"         OFF)
+option(WITH_YAML             "Enable compiler definition -Duse_yaml"              OFF)
 
 if(32BIT)
   list(APPEND kinds "r4")
@@ -82,6 +83,11 @@ find_package(NetCDF REQUIRED COMPONENTS C Fortran)
 if (OPENMP)
   find_package(OpenMP REQUIRED COMPONENTS C Fortran)
 endif()
+
+if (WITH_YAML)
+  find_package(libyaml REQUIRED)
+  include_directories(${LIBYAML_INCLUDE_DIR})
+endif ()
 
 # Collect FMS Fortran source files
 list(APPEND fms_fortran_src_files
@@ -154,6 +160,7 @@ list(APPEND fms_fortran_src_files
   mpp/mpp_memutils.F90
   mpp/mpp_parameter.F90
   mpp/mpp_utilities.F90
+  parser/yaml_parser.F90
   platform/platform.F90
   random_numbers/mersennetwister.F90
   random_numbers/random_numbers.F90
@@ -175,13 +182,13 @@ list(APPEND fms_fortran_src_files
 # Collect FMS C source files
 list(APPEND fms_c_src_files
   affinity/affinity.c
+  fms/fms_c.c
   mosaic/create_xgrid.c
   mosaic/gradient_c2l.c
   mosaic/interp.c
   mosaic/mosaic_util.c
   mosaic/read_mosaic.c
   mpp/mpp_memuse.c
-  diag_manager/diag_yaml.c
   parser/yaml_parser_binding.c
 )
 
@@ -189,7 +196,7 @@ list(APPEND fms_c_src_files
 list(APPEND fms_header_files
   include/file_version.h
   include/fms_platform.h
-  diag_manager/diag_yaml.h
+  fms/fms_c.h
 )
 
 # Standard FMS compiler definitions
@@ -207,6 +214,10 @@ endif()
 # Additional (optional) compiler definitions
 if(GFS_PHYS)
   list(APPEND fms_defs GFS_PHYS)
+endif()
+
+if(WITH_YAML)
+  list(APPEND fms_defs use_yaml)
 endif()
 
 if(INTERNAL_FILE_NML)
