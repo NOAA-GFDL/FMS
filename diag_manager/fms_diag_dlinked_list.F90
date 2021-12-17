@@ -167,7 +167,7 @@ contains
     class(FmsDlList_t), intent(in out) :: this !<The instance of the class that this function is bound to.
     class(FmsDllIterator_t) , allocatable :: liter  !< The iterator for the remaining list.
     !!
-    type(FmsDlListNode_t), pointer :: nd
+    type(FmsDlListNode_t), pointer :: nd !< The node being removed.
     if(this%the_size /= 0) then
       nd => this%tail%prev
       liter = this%remove( nd )

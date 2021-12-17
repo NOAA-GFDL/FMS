@@ -176,7 +176,7 @@ contains
      class (FmsDiagObjectContainer_t), intent (in) :: this
      !<The instance of the class that this function is bound to.
       class(FmsDiagObjIterator_t) , allocatable :: oliter !< The returned iterator.
-      type(FmsDllIterator_t), allocatable ::  temp_iter !< A temporary linked list iterator
+      class(FmsDllIterator_t), allocatable ::  temp_iter !< A temporary linked list iterator
       temp_iter = this%the_linked_list%get_literator()
       oliter = FmsDiagObjIterator_t( temp_iter )
    end function
