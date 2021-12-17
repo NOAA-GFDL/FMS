@@ -103,7 +103,7 @@ contains
   !! @return Returns an iterator that starts with the newly inserted node.
   function  insert_data( this, t_nd,  d ) result(liter)
     class(FmsDlList_t), intent(in out) :: this !<The instance of the class that this function is bound to.
-    class(FmsDlListNode_t), pointer, intent (in)  :: t_nd  !< The target node.
+    type(FmsDlListNode_t), pointer, intent (in)  :: t_nd  !< The target node.
     class(*), target, intent(in)                  :: d     !< The data to insert.
     class(FmsDllIterator_t), allocatable          :: liter !< A linked list iterator.
     class(FmsDlListNode_t), pointer :: nd              !< The new node that is to "hold" the data.
@@ -152,7 +152,7 @@ contains
     class(FmsDlList_t), intent(in out) :: this !<The instance of the class that this function is bound to.
     class(FmsDllIterator_t), allocatable :: liter  !< The iterator for the remaining list.
     !!
-    class(FmsDlListNode_t), pointer :: nd
+    type(FmsDlListNode_t), pointer :: nd
     if(this%the_size /= 0) then
       nd => this%head%next
       liter =  this%remove(nd)
@@ -167,7 +167,7 @@ contains
     class(FmsDlList_t), intent(in out) :: this !<The instance of the class that this function is bound to.
     class(FmsDllIterator_t) , allocatable :: liter  !< The iterator for the remaining list.
     !!
-    class(FmsDlListNode_t), pointer :: nd
+    type(FmsDlListNode_t), pointer :: nd
     if(this%the_size /= 0) then
       nd => this%tail%prev
       liter = this%remove( nd )
@@ -304,7 +304,7 @@ contains
   !! that the node was holding.
   subroutine clear_all( this  )
     class(FmsDlList_t), intent(inout) :: this !<The instance of the class that this function is bound to.
-    class(FmsDlListNode_t), pointer :: nd              !< A pointer to linked list node.
+    type(FmsDlListNode_t), pointer :: nd              !< A pointer to linked list node.
     class(FmsDllIterator_t), allocatable :: iter       !< A linked list iterator.
     class(*),  pointer  :: pdata                       !< A pointer to the data.
     !
