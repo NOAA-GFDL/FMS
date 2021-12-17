@@ -66,6 +66,7 @@ MODULE fms_diag_dlinked_list_mod
   type, public :: FmsDlList_t
     !! Note we are overriding the default constructor with an
     ! interface of the same name
+  private
     type(FmsDlListNode_t), pointer :: head !< The sentinal (non-data) head node of the linked list. .
     type(FmsDlListNode_t), pointer :: tail !< The sentinel (non-data) tail node of the linked list.
     integer :: the_size               !< The number of data elements in the linked list.
