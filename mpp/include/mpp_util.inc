@@ -1088,7 +1088,7 @@ end function rarray_to_char
     integer,save :: i
     logical      :: l_open
 
-    call mpp_error(WARNING,'get_unit is deprecated and will be removed in a future release, please use the Fortran intrinsic newunit')
+    if (pe == root_pe) call mpp_error(WARNING,'get_unit is deprecated and will be removed in a future release, please use the Fortran intrinsic newunit')
     do i=10,99
        inquire(unit=i,opened=l_open)
        if(.not.l_open)exit
