@@ -166,9 +166,8 @@ CONTAINS
 
    !> @brief Cast the "class(*) input data to the expected type.
    function  get_typed_data( data_in  ) result( rdo )
-      class(*), intent(in), pointer :: data_in
-      !<The object instance to be casted
-      class(TestDummy_t),  pointer :: rdo !< The resultant  object.
+      class(*), intent(in), pointer :: data_in !< An input pointer to the class(*) object.
+      class(TestDummy_t),  pointer :: rdo !< The resultant pointer to the expected underlying object type.
       rdo => null()
 
       select type(data_in)
@@ -182,16 +181,15 @@ CONTAINS
    !> Calcualte the sum of the ids.
    !! Exercises iteration over the list.
    function sum_ids_in_list (list) result (rsum)
-      type (FmsDlList_t), allocatable :: list
-      integer  :: rsum
-      class(FmsDllIterator_t), allocatable :: iter
-      type (TestDummy_t), pointer::   p_td_obj       !< A pointer to a test_dummy object
-      class(*), pointer :: p_obj                     !< A pointer to a class(*) object
-      integer :: ic_status                           !< A list insertion status.
+      type (FmsDlList_t), allocatable :: list !< The linked list instance
+      integer  :: rsum                        !< The resultant sum of ids
+      class(FmsDllIterator_t), allocatable :: iter !< An iterator over the list
+      type (TestDummy_t), pointer::   p_td_obj     !< A pointer to a test_dummy object
+      class(*), pointer :: p_obj                   !< A pointer to a class(*) object
+      integer :: ic_status                         !< A list insertion status.
       !!
       rsum = 0
       iter = list%get_literator()
-
       do while( iter%has_data() .eqv. .true.)
          p_obj => iter%get()
          p_td_obj => get_typed_data (p_obj )

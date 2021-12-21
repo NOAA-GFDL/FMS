@@ -19,17 +19,21 @@
 
 !> @defgroup fms_diag_object_container_mod fms_diag_object_container_mod
 !> @ingroup diag_manager
-!> @brief fms_diag_object_container_mod defines a container for inserting, removing and
-!! searching for <TT>fms_diag_object</TT> instances
+!> @brief fms_diag_object_container_mod defines a container class and iterator class
+!! for inserting, removing and searching for <TT>fms_diag_object</TT> instances
 !!
 !> @author Miguel Zuniga
 !!
 !! <TT>fms_diag_object_container_mod</TT> defines a container for inserting, removing and
-!! searching for <TT>fms_diag_object</TT> instances.
+!! searching for <TT>fms_diag_object</TT> instances. It also defined an iterator for
+!! the data in the container. The value returned by the fms_diag_object function get_id()
+!! is used for search key comparison.
 !!
-!! This version uses the <TT>fms_doubly_linked_list_mod</TT> as the underlying
-!! implementation. Future vesions may change the underlying implementation but
-!! the user interface will not change.
+!! Most of the functions in class FmsDiagObjectContainer_t are simple wrappers over
+!! those of the underlying  <TT>fms_doubly_linked_list_mod</TT> class. The find/search
+!! are a little more than that, and what FmsDiagObjectContainer_t provides over the
+!! underlying liked  list is the search function, type checking, convenience, and a
+!! fixed user interface defined for the intended use.
 !!
 !> @file
 !> @brief File for @ref fms_diag_object_container_mod
@@ -84,7 +88,7 @@ MODULE fms_diag_object_container_mod
 
 contains
 
-   !> @brief Returns an empty itetator if a diag object with this ID was not found.
+   !> @brief Returns an empty iterator if a diag object with this ID was not found.
    !! If the diag object was found, return an iterator with the current object being
    !! the found object, ad the last/anchor being the last/anchor of the container.
    !! Note that this routine can accept an optional iterator as input, which
@@ -137,7 +141,7 @@ contains
    end function
 
    !> @brief Remove and return the first object in the container with the corresponding id .
-   !! Note that if the client code does not already have a referenc to the object being
+   !! Note that if the client code does not already have a reference to the object being
    !! removed, then  the client may want to to use procedure find before using procedure remove.
    !! If procedure find is used, consider calling remove with the iterator returned from find.
    !! @return In iterator starting from the node that was following the removed node.
@@ -221,9 +225,9 @@ contains
       status = this%liter%next()
    end function literator_next
 
-   !> @brief Get the current data the iterator is poiting to.
+   !> @brief Get the current data the iterator is pointing to.
    !! Note the common use case is to call function has_data to decide if
-   !! this function sholud be called (again).
+   !! this function should be called (again).
    !! @return Returns a pointer to the current data.
    function  literator_data( this ) result( rdo )
      class(FmsDiagObjIterator_t), intent(in) :: this

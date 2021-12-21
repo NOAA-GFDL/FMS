@@ -126,12 +126,12 @@ contains
   end function insert_data
 
   !> @brief Remove Node nd from the linked tree.
-  !! @return Return the iterator that begins with the nex node after nd, and ends with
+  !! @return Return the iterator that begins with the next node after nd, and ends with
   !! the list end node. Returns the list iterator if the node cannot be removed.
   function  remove_node( this, nd ) result( litr)
     class(FmsDlList_t), intent(in out) :: this !<The instance of the class that this function is bound to.
     type(FmsDlListNode_t), pointer, intent(in out) :: nd  !< The node to remove from the list.
-    class(FmsDllIterator_t), ALLOCATABLE  :: litr         !< The iterator starting from whthe node that was
+    class(FmsDllIterator_t), ALLOCATABLE  :: litr         !< The iterator starting from the node that was
                                                           !<  following the removed node.
     !Dont even try to remove the head and tail nodes!
     if (.not. ( associated (this%head , nd ) .or. &
@@ -163,10 +163,10 @@ contains
   end function pop_at_back
 
   !> @brief Push (insert) data at the end of the list
-  !> @return Ruturns an iterator that starts at the tail of the list.
+  !> @return Returns an iterator that starts at the tail of the list.
   function push_at_back( this, d ) result(litr)
-    class(FmsDlList_t), intent(in out) :: this !<The instance of the class that this function is bound to.
-    class(*), target, intent(in out) :: d              !< The data to insert.
+    class(FmsDlList_t), intent(in out) :: this   !<The instance of the class that this function is bound to.
+    class(*), target, intent(in out) :: d        !< The data to insert.
     class(FmsDllIterator_t), allocatable :: litr       !< The iterator for the resultant list.
     litr =  this%insert (this%tail, d)
   end function push_at_back
@@ -282,7 +282,7 @@ contains
   !! @return Returns a pointer to the current data.
   function  get_current_node_ptr( this ) result( pn )
     class(FmsDllIterator_t), intent(in) :: this !<The instance of the class that this function is bound to.
-    type(FmsDlListNode_t), pointer :: pn !< The sentinel (non-data) tail node of the linked list.class(*),  pointer  :: rd !< The current data element of the iterator.
+    type(FmsDlListNode_t), pointer :: pn        !< The sentinel (non-data) tail node of the linked list.
     pn  => this%current
   end function get_current_node_ptr
 
@@ -291,8 +291,8 @@ contains
   subroutine clear_all( this  )
     class(FmsDlList_t), intent(inout) :: this !<The instance of the class that this function is bound to.
     type(FmsDlListNode_t), pointer :: nd              !< A pointer to linked list node.
-    class(FmsDllIterator_t), allocatable :: iter       !< A linked list iterator.
-    class(*),  pointer  :: pdata                       !< A pointer to the data.
+    class(FmsDllIterator_t), allocatable :: iter      !< A linked list iterator.
+    class(*),  pointer  :: pdata                      !< A pointer to the data.
     !
     do while( this% the_size /= 0)
       nd => this%head%next
