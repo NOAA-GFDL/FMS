@@ -294,19 +294,7 @@ module mpp_domains_mod
      logical :: is_global !< .true. if domain axis extent covers global domain
   end type domain_axis_spec
 
-  !> One dimensional domain used to manage shared data access between pes
-  !> @ingroup mpp_domains_mod
-  type :: domain1D
-     private
-     type(domain_axis_spec) :: compute, data, global, memory !> index limits for different domains
-     logical :: cyclic
-     type(domain1D), pointer :: list(:) =>NULL() !> list of each pe's domains
-     integer :: pe !<PE to which this domain is assigned
-     integer :: pos !< position of this PE within link list, i.e domain%list(pos)%pe = pe
-     integer :: goffset, loffset !< needed for global sum
-  end type domain1D
-
-  !> Private type used to specify index limits for a domain decomposition
+  !> A private type used to specify index limits for a domain decomposition
   !> @ingroup mpp_domains_mod
   type :: domain1D_spec
      private
@@ -627,6 +615,18 @@ module mpp_domains_mod
      integer            :: request_recv(MAX_REQUEST)
      integer            :: type_recv(MAX_REQUEST)
   end type mpp_group_update_type
+
+  !> One dimensional domain used to manage shared data access between pes
+  !> @ingroup mpp_domains_mod
+  type :: domain1D
+     private
+     type(domain_axis_spec) :: compute, data, global, memory !> index limits for different domains
+     logical :: cyclic
+     type(domain1D), pointer :: list(:) =>NULL() !> list of each pe's domains
+     integer :: pe !<PE to which this domain is assigned
+     integer :: pos !< position of this PE within link list, i.e domain%list(pos)%pe = pe
+     integer :: goffset, loffset !< needed for global sum
+  end type domain1D
 
 !#######################################################################
 

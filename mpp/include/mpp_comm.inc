@@ -20,8 +20,8 @@
 !***********************************************************************
 !> @file
 !> @ingroup mpp_mod
-!> @brief Imports checksum, gather, and scatter routines used for communications and calculations
-!! between PE's in @ref mpp_mod
+!> @brief Imports checksum, gather, and scatter routines from other include files used
+!! for communications and calculations between PE's in @ref mpp_mod
 
 #if defined(use_libMPI)
 #include <mpp_comm_mpi.inc>

@@ -19,10 +19,11 @@
 !***********************************************************************
 
 !> @file
-!> @ingroup mpp_domains_mod
 !> @brief Initialization and finalization routines for @ref mpp_domains_mod as well
 !! as other utility routines.
 
+!> @ingroup mpp_domains_mod
+!> @{
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !                                                                             !
 !                 MPP_DOMAINS: initialization and termination                 !
@@ -962,7 +963,7 @@ end subroutine init_nonblock_type
       end do
 
     end subroutine mpp_broadcast_domain_nest_coarse
-
+!> @}
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !                                                                             !

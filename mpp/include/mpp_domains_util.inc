@@ -20,8 +20,10 @@
 !***********************************************************************
 
 !> @file
-!> @ingroup mpp_domains_mod
 !> @brief Utility routines for getting and setting values in @ref mpp_domains_mod
+
+!> @ingroup mpp_domains_mod
+!> @{
 
   !> @brief Set user stack size.
   !!
@@ -2364,3 +2366,4 @@ end subroutine set_group_update
      mpp_group_update_is_set = (group%nscalar > 0 .OR. group%nvector > 0)
 
   end function mpp_group_update_is_set
+!> @}

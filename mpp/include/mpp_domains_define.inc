@@ -21,10 +21,12 @@
 !***********************************************************************
 
 !> @file
-!> @ingroup mpp_domains_mod
 !> @brief Various routines handling domains in @ref mpp_domains_mod
 
+!> @addtogroup mpp_domains_mod
+!> @{
   !> @brief Instantiates a layout with the given indices and divisions
+  !> @ingroup mpp_define_layout
   subroutine mpp_define_layout2D( global_indices, ndivs, layout )
     integer, intent(in) :: global_indices(:) !< (/ isg, ieg, jsg, jeg /); Defines the global domain.
     integer, intent(in) :: ndivs !< number of divisions to divide global domain
@@ -57,7 +59,7 @@
   !############################################################################
 
   !> Defines a pelist for use with mosaic tiles
-  !! NOTE: The following routine may need to revised to improve the capability.
+  !! @note The following routine may need to revised to improve the capability.
   !!  It is very hard to make it balance for all the situation.
   !!  Hopefully some smart idea will come up someday.
   subroutine mpp_define_mosaic_pelist( sizes, pe_start, pe_end, pelist, costpertile)
@@ -183,7 +185,7 @@
 
 
   !#####################################################################
-  !> computes all extents for a grid
+  !> Computes extents for a grid decomposition with the given indices and divisions
   subroutine mpp_compute_extent(isg,ieg,ndivs,ibegin,iend, extent )
     integer,                 intent(in)          :: isg, ieg, ndivs
     integer, dimension(0:), intent(out)          :: ibegin, iend
@@ -450,8 +452,8 @@
   !################################################################################
   !> Define the layout for IO pe's for the given domain
   subroutine mpp_define_io_domain(domain, io_layout)
-    type(domain2D), intent(inout) :: domain
-    integer,        intent(in   ) :: io_layout(2)
+    type(domain2D), intent(inout) :: domain !< Input 2D domain
+    integer,        intent(in   ) :: io_layout(2) !< 2 value io pe layout to define
     integer                       :: layout(2)
     integer                       :: npes_in_group
     type(domain2D), pointer       :: io_domain=>NULL()
@@ -596,10 +598,11 @@
          xhalo, yhalo, xextent, yextent, maskmap, name, symmetry,  memory_size,               &
          whalo, ehalo, shalo, nhalo, is_mosaic, tile_count, tile_id, complete, x_cyclic_offset, y_cyclic_offset )
     integer,          intent(in)           :: global_indices(:) !<(/ isg, ieg, jsg, jeg /)
-    integer,          intent(in)           :: layout(:)
-    type(domain2D),   intent(inout)        :: domain
-    integer,          intent(in), optional :: pelist(0:)
-    integer,          intent(in), optional :: xflags, yflags, xhalo, yhalo
+    integer,          intent(in)           :: layout(:) !< pe layout
+    type(domain2D),   intent(inout)        :: domain !< 2D domain decomposition to define
+    integer,          intent(in), optional :: pelist(0:) !< current pelist to run on 
+    integer,          intent(in), optional :: xflags, yflags !< directional flag
+    integer,          intent(in), optional :: xhalo, yhalo !< halo sizes for x and y indices
     integer,          intent(in), optional :: xextent(0:), yextent(0:)
     logical,          intent(in), optional :: maskmap(0:,0:)
     character(len=*), intent(in), optional :: name
@@ -8142,3 +8145,4 @@ subroutine set_domain_comm_inf(update)
 
 
 end subroutine set_domain_comm_inf
+!> @}
