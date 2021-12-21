@@ -45,7 +45,7 @@ MODULE fms_diag_dlinked_list_mod
   implicit none
   !!TODO: COnsider setting the access (public,private) to functions, etc.
   !> Linked doubly-linked list node type.
-  type, private :: FmsDlListNode_t
+  type, public:: FmsDlListNode_t
     private
     class(*), pointer :: data => null()        !< The data pointed to by the node.
     type(FmsDlListNode_t), pointer :: next => null() !< A pointer to the previous node.
@@ -54,12 +54,14 @@ MODULE fms_diag_dlinked_list_mod
 
   !> Linked list iterator
   type, public :: FmsDllIterator_t
+  private
     type(FmsDlListNode_t), pointer :: current  !< A pointer to the current node.
     type(FmsDlListNode_t), pointer :: end      !< A sentinel (non-data) node.
   contains
     procedure :: has_data => literator_has_data !< Function returns true is there is data in the iterator.
     procedure :: next => literator_next !< Function moves the iterator to the next data element.
     procedure :: get => literator_data !< Function return a pointer to the current data.
+    procedure :: get_current_node_pointer => get_current_node_ptr !< Return  the current node pointer.
   end type FmsDllIterator_t
 
 
@@ -71,17 +73,16 @@ MODULE fms_diag_dlinked_list_mod
     type(FmsDlListNode_t), pointer :: tail !< The sentinel (non-data) tail node of the linked list.
     integer :: the_size               !< The number of data elements in the linked list.
   contains
-    procedure :: push_front => push_at_front
     procedure :: push_back => push_at_back
-    procedure :: pop_front => pop_at_front
     procedure :: pop_back => pop_at_back
-    procedure :: insert => insert_data
     procedure :: remove => remove_node
     procedure :: get_literator => get_forward_literator
     procedure :: size => get_size
     procedure :: is_empty => is_size_zero
     procedure :: clear => clear_all
     final :: destructor
+    procedure  :: insert => insert_data
+
   end type FmsDlList_t
 
   interface FmsDlListNode_t
@@ -104,8 +105,8 @@ contains
   function  insert_data( this, t_nd,  d ) result(liter)
     class(FmsDlList_t), intent(in out) :: this !<The instance of the class that this function is bound to.
     type(FmsDlListNode_t), pointer, intent (in)  :: t_nd  !< The target node.
-    class(*), target, intent(in)                  :: d     !< The data to insert.
-    class(FmsDllIterator_t), allocatable          :: liter !< A linked list iterator.
+    class(*), target, intent(in)                 :: d     !< The data to insert.
+    class(FmsDllIterator_t), allocatable         :: liter !< A linked list iterator.
     class(FmsDlListNode_t), pointer :: nd              !< The new node that is to "hold" the data.
     allocate(nd)
     nd%data => d
@@ -146,21 +147,6 @@ contains
   end function remove_node
 
 
-  !> @brief Remove the head (first data node) of the list.
-  !! @return Return an iterator to the remaining list.
-  function pop_at_front (this ) result( liter )
-    class(FmsDlList_t), intent(in out) :: this !<The instance of the class that this function is bound to.
-    class(FmsDllIterator_t), allocatable :: liter  !< The iterator for the remaining list.
-    !!
-    type(FmsDlListNode_t), pointer :: nd
-    if(this%the_size /= 0) then
-      nd => this%head%next
-      liter =  this%remove(nd)
-    else
-      liter = this%get_literator()
-    endif
-  end function pop_at_front
-
   !> @brief Remove the tail (last data node) of the list.
   !! @return  Returns an iterator to the remaining list.
   function pop_at_back (this ) result( liter )
@@ -175,16 +161,6 @@ contains
       liter = this%get_literator()
     endif
   end function pop_at_back
-
-
-  !> @brief Push (insert) data at the head of the list.
-  !! @return Returns an iterator that starts with the head of the list.
-  function push_at_front( this, d ) result(litr)
-    class(FmsDlList_t), intent(in out) :: this  !<The instance of the class that this function is bound to.
-    class(*), target, intent(in out) :: d        !< The data to insert.
-    class(FmsDllIterator_t), allocatable :: litr !< The iterator for the resultant list.
-    litr = this%insert (this%head%next, d)
-  end function push_at_front
 
   !> @brief Push (insert) data at the end of the list
   !> @return Ruturns an iterator that starts at the tail of the list.
@@ -299,6 +275,16 @@ contains
       rd => this%current%data
     endif
   end function literator_data
+
+!> @brief Get the current data object pointed to by the iterator.
+  !! function does not allocate or assign the result if
+  !! the user mistakenly called it without data present.
+  !! @return Returns a pointer to the current data.
+  function  get_current_node_ptr( this ) result( pn )
+    class(FmsDllIterator_t), intent(in) :: this !<The instance of the class that this function is bound to.
+    type(FmsDlListNode_t), pointer :: pn !< The sentinel (non-data) tail node of the linked list.class(*),  pointer  :: rd !< The current data element of the iterator.
+    pn  => this%current
+  end function get_current_node_ptr
 
   !> @brief Iterate over all the nodes, remove them and deallocate the client data
   !! that the node was holding.

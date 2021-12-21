@@ -40,7 +40,7 @@ MODULE fms_diag_object_container_mod
    USE fms_mod, ONLY: error_mesg, FATAL, WARNING, NOTE
 
    !! Since this version is based on the FDS linked list:
-   use fms_diag_dlinked_list_mod, only : FmsDlList_t, FmsDllIterator_t
+   use fms_diag_dlinked_list_mod, only : FmsDlList_t, FmsDllIterator_t, FmsDlListNode_t
 
    implicit none
 
@@ -97,8 +97,8 @@ contains
      class(FmsDiagObjIterator_t), intent (in), optional :: iiter
      !< An (optional) iterator over the searchable set.
       class(FmsDiagObjIterator_t) , allocatable :: riter !< The resultant iterator to the object.
-      class(fms_diag_object),  allocatable , target:: tdo  !< A temporaty diagnostic object
-      integer :: status                                    !< A status from iterator operations.
+      class(fms_diag_object),  pointer:: ptdo  !< A pointer to temporaty diagnostic object
+      integer :: status                        !< A status from iterator operations.
       !!
       if(present (iiter)) then
          riter = iiter
@@ -106,8 +106,8 @@ contains
          riter = this%iterator() !!An iterator over the entire container
       endif
       do while( riter%has_data() .eqv. .true.)
-         tdo = riter%get()
-         if(id == tdo%get_id() ) then
+         ptdo => riter%get()
+         if(id == ptdo%get_id() ) then
             EXIT
          end if
          status = riter%next()
@@ -149,6 +149,7 @@ contains
       !< An (optional) iterator over the searchable set.
       class(FmsDiagObjIterator_t), allocatable:: riter !< The resultant iterator
       class(FmsDllIterator_t), allocatable :: temp_liter !< A temporary iterator
+      type(FmsDlListNode_t), pointer :: pn
       if(present (iiter)) then
          riter = iiter
       else
@@ -156,7 +157,8 @@ contains
       endif
       !Find the object in the container.
       riter = this%find ( id , riter)
-      temp_liter = this%the_linked_list%remove( riter%liter%current )
+      pn => riter%liter%get_current_node_pointer()
+      temp_liter = this%the_linked_list%remove( pn )
       riter = FmsDiagObjIterator_t(temp_liter)
    end function
 

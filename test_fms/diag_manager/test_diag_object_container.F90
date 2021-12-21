@@ -17,7 +17,7 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 
-!> @brief  This programs tests the many of the public member functions of the
+!> @brief  This programs tests  public member functions of the
 !!  FmsDiagObjectContainer_t and FmsDiagObjIterator_t. As these two classes
 !!  are largely wrappers to their underlying classes, it is also
 !!  testing the underlying container and iterator classes. The container
@@ -47,7 +47,7 @@ program test_diag_obj_container
   integer :: ic_status                                            !< A status flag returned from container functions
   integer :: ierr                                                 !< An error flag
   !!
-  logical :: test_passed                                          !> Flag indicating if the test_passed
+  logical :: test_passed                                          !< Flag indicating if the test_passed
   !! These fields below used to initialize diag object data. TBD
   integer :: id
   integer, dimension(2) :: axes
@@ -61,7 +61,7 @@ program test_diag_obj_container
 
   call mpp_init(mpp_init_test_requests_allocated)
   call mpp_io_init()
-  call mpp_set_stack_size(3145746)
+  call mpp_set_stack_size(145746)
 
   !! Ids will initially be from 1 to num_objs, so :
   full_id_sum = (num_objs * (num_objs + 1)) / 2
