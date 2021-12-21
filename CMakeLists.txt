@@ -176,6 +176,7 @@ list(APPEND fms_fortran_src_files
 # Collect FMS C source files
 list(APPEND fms_c_src_files
   affinity/affinity.c
+  fms/fms_c.c
   mosaic/create_xgrid.c
   mosaic/gradient_c2l.c
   mosaic/interp.c
@@ -189,6 +190,7 @@ list(APPEND fms_c_src_files
 list(APPEND fms_header_files
   include/file_version.h
   include/fms_platform.h
+  fms/fms_c.h
 )
 
 # Standard FMS compiler definitions
