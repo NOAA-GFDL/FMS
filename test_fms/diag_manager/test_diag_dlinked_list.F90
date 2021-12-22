@@ -124,7 +124,6 @@ program test_diag_dlinked_list
       call mpp_error(FATAL, "The list size is not as expected post inserts.")
    endif
 
-   return
    !! Test a removal from the back (id should be num_objs)
    iter = list%get_literator()
    p_obj => iter%get()
