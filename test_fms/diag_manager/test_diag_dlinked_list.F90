@@ -24,9 +24,10 @@
 !! of a search (or find) function as per the definition of a linked list.
 !! If a search function, additional type cheeking,  or possibly a
 !! slightly different user interface is desired, then consider creating
-!! a wrapper or another class with this one for a member element and
-!! procedures that are trivially implemented by using this class. (See,
-!! for example, class FmsDiagObjectContainer_t).
+!! another iterator and another wrapper, or another class with this one for
+!! a member element and procedures that are trivially implemented by using
+!! this class. (See, for example, class FmsDiagObjectContainer_t and its
+!! associated iterator.
 !!
 !! This version is roughly a Fortran translation of the C++ doubly linked list
 !! class in the book ``Data Structures And Algorithm Analysis in C++",
@@ -54,7 +55,7 @@ program test_diag_dlinked_list
    class(FmsDllIterator_t), allocatable :: iter !< An iterator for the list
    type (TestDummy_t), pointer::   p_td_obj     !< A pointer to a test_dummy object
    class(*), pointer :: p_obj                   !< A pointer to a class(*) object
-   integer, parameter :: num_objs = 4           !< Total number of objects tested
+   integer, parameter :: num_objs = 40          !< Total number of objects tested
    integer ::  full_id_sum                      !< Sum of all the possible object id values
    integer :: sum                               !< Temp sum of vaalues of id sets
    !!
@@ -84,7 +85,9 @@ program test_diag_dlinked_list
    endif
    mname_pre = "ATM"
 
-    !! Initialize num_objs objects and insert into list one at a time :
+  !! Initialize num_objs objects and insert into list one at a time.
+  !! The loop iterator is same as id - created in order to facilitate
+   !! some tests.
    do id = 1, num_objs
       !!Allocate on heap another test dummy object :
       allocate (p_td_obj)
@@ -125,9 +128,10 @@ program test_diag_dlinked_list
    endif
 
    !! Test a removal from the back (id should be num_objs)
-   iter = list%get_literator()
-   p_obj => iter%get()
+   p_obj => find_back_of_list( list)
    iter = list%pop_back()
+   !! Note the client is resposible for managing memory of anything he explicitly
+   !! removes from the list:
    deallocate(p_obj)
    sum = sum_ids_in_list ( list )
    if( sum  /=  full_id_sum - num_objs ) then
@@ -136,12 +140,13 @@ program test_diag_dlinked_list
    endif
 
    !! Repeat - test removal from the back of list (should be (num_objs -1)).
-   iter = list%get_literator()
-   p_obj => iter%get()
+   p_obj => find_back_of_list( list)
    iter = list%pop_back()
+   !! Note the client is resposible for managing memory of anything he explicitly
+   !! removes from the list:
    deallocate(p_obj)
    sum = sum_ids_in_list ( list )
-   if( sum  /=  full_id_sum - num_objs - num_objs -1 ) then
+   if( sum  /=  (full_id_sum - num_objs - (num_objs -1) )) then
       test_passed = .false.
       call mpp_error(FATAL, "Id sums via iteration over the list objects is not as expected")
    endif
@@ -154,7 +159,8 @@ program test_diag_dlinked_list
 
    write (6,*) "Finishing diag_dlinked_list tests."
 
-   !! the list has a finalize/destructor which will
+   !! the list has a finalize/destructor which will deallocate data that is still it list.
+   !! equivalent to calling list%clear() as above.
    deallocate(list)
 
    call MPI_finalize(ierr)
@@ -197,6 +203,25 @@ CONTAINS
          ic_status = iter%next()
       end do
    end function sum_ids_in_list
+
+  !> Calcualate the sum of the ids. This also is a kind of search function,
+   !! so if the provided wrapper is not used, you have to write your own.
+   !! @return a pointer the object at the end of the list, or null if none
+   function find_back_of_list (list) result (p_rdo)
+    type (FmsDlList_t), allocatable :: list !< The linked list instance
+    class(TestDummy_t),  pointer :: p_rdo !< The resultant back of list,
+    class(FmsDllIterator_t), allocatable :: iter !< An iterator over the list
+    class(*), pointer :: p_obj                   !< A pointer to a class(*) object
+    integer :: ic_status                         !< A list insertion status.
+    !!
+    p_rdo => null()
+    iter = list%get_literator()
+    do while( iter%has_data() .eqv. .true.)
+       p_obj => iter%get()
+       p_rdo => get_typed_data (p_obj )
+       ic_status = iter%next()
+    end do
+ end function find_back_of_list
 
  subroutine combine_str_int (str, num, rs)
     character(:), allocatable, intent (in):: str
