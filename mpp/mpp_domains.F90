@@ -620,12 +620,16 @@ module mpp_domains_mod
   !> @ingroup mpp_domains_mod
   type :: domain1D
      private
-     type(domain_axis_spec) :: compute, data, global, memory !> index limits for different domains
-     logical :: cyclic
-     type(domain1D), pointer :: list(:) =>NULL() !> list of each pe's domains
+     type(domain_axis_spec) :: compute !< index limits for compute domain
+     type(domain_axis_spec) :: data    !< index limits for data domain
+     type(domain_axis_spec) :: global  !< index limits for global domain
+     type(domain_axis_spec) :: memory  !< index limits for memory domain
+     logical :: cyclic !< true if domain is cyclic
+     type(domain1D), pointer :: list(:) =>NULL() !< list of each pe's domains
      integer :: pe !<PE to which this domain is assigned
      integer :: pos !< position of this PE within link list, i.e domain%list(pos)%pe = pe
-     integer :: goffset, loffset !< needed for global sum
+     integer :: goffset !< needed for global sum
+     integer :: loffset !< needed for global sum
   end type domain1D
 
 !#######################################################################
@@ -1559,10 +1563,6 @@ module mpp_domains_mod
      module procedure mpp_pass_UG_to_SG_l4_3d
   end interface
 
-
-!!$     module procedure mpp_do_update_ad_i4_3d
-!!$  end interface
-!
   !> @ingroup mpp_domains_mod
   interface mpp_do_update_ad
      module procedure mpp_do_update_ad_r8_3d
@@ -1570,7 +1570,7 @@ module mpp_domains_mod
      module procedure mpp_do_update_ad_r4_3d
      module procedure mpp_do_update_ad_r4_3dv
   end interface
-!
+
 !> Get the boundary data for symmetric domain when the data is at C, E, or N-cell center.<br>
 !! \e mpp_get_boundary is used to get the boundary data for symmetric domain
 !! when the data is at C, E, or N-cell center. For cubic grid, the data should always
