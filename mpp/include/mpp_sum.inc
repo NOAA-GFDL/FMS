@@ -20,8 +20,10 @@
 !***********************************************************************
 
 !> @file
-!> @ingroup mpp
 !> @brief Summation routines for @ref mpp_mod
+
+!> @addtogroup mpp_mod
+!> @{
 !#######################################################################
 
     !> Sums array a when only first element is passed: this routine just converts to a call to MPP_SUM_
@@ -92,3 +94,4 @@
 
       return
     end subroutine MPP_SUM_5D_
+!> @}

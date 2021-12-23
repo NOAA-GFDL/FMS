@@ -19,14 +19,15 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 !> @file
-!> @ingroup mpp
 !> @brief Adjoint summation routines for @ref mpp_mod
+
+!> @addtogroup mpp_mod
 !#######################################################################
 
     !> Sums array a.
     !! when only first element is passed: this routine just converts to a call to MPP_SUM_
     subroutine MPP_SUM_SCALAR_AD_( a, pelist )
-      MPP_TYPE_, intent(inout) :: a
+      MPP_TYPE_, intent(inout) :: a !< scalar value to sum over pelist
       integer, intent(in), optional :: pelist(:)
       MPP_TYPE_ :: b(1)
 
@@ -38,10 +39,11 @@
     end subroutine MPP_SUM_SCALAR_AD_
 
 !#######################################################################
+    !> Sums 2d array across pes
     subroutine MPP_SUM_2D_AD_( a, length, pelist )
-      MPP_TYPE_, intent(inout) :: a(:,:)
-      integer, intent(in) :: length
-      integer, intent(in), optional :: pelist(:)
+      MPP_TYPE_, intent(inout) :: a(:,:) !< 2d array to sum
+      integer, intent(in) :: length !< amount of indices in given 2d array
+      integer, intent(in), optional :: pelist(:) !< pelist to calculate sum across
       MPP_TYPE_ :: a1D(length)
 
       pointer( ptr, a1D )

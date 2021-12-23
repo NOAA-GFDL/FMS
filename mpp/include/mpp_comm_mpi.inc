@@ -19,8 +19,10 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 !> @file
-!> @ingroup mpp
 !> @brief Routines to initialize and finalize @ref mpp_mod with mpi enabled.
+
+!> @addtogroup mpp_mod
+!> @{
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !                                                                             !
@@ -1404,3 +1406,4 @@ subroutine mpp_type_free(dtype)
         call increment_current_clock(EVENT_TYPE_FREE, MPP_TYPE_BYTELEN_)
 
 end subroutine mpp_type_free
+!> @}
