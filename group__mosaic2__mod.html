@@ -33,7 +33,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">FMS
-   &#160;<span id="projectnumber">2021.03.01</span>
+   &#160;<span id="projectnumber">2021.04.0</span>
    </div>
    <div id="projectbrief">Flexible Modeling System</div>
   </td>
@@ -215,19 +215,19 @@ logical&#160;</td><td class="memItemRight" valign="bottom"><b>module_is_initiali
         <tr>
           <td class="memname">subroutine, public mosaic2_mod::calc_mosaic_grid_area </td>
           <td>(</td>
-          <td class="paramtype">real, dimension(:,:), intent(in)&#160;</td>
+          <td class="paramtype">class(*), dimension(:,:), intent(in)&#160;</td>
           <td class="paramname"><em>lon</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">real, dimension(:,:), intent(in)&#160;</td>
+          <td class="paramtype">class(*), dimension(:,:), intent(in)&#160;</td>
           <td class="paramname"><em>lat</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">real, dimension(:,:), intent(inout)&#160;</td>
+          <td class="paramtype">class(*), dimension(:,:), intent(inout)&#160;</td>
           <td class="paramname"><em>area</em>&#160;</td>
         </tr>
         <tr>
@@ -249,7 +249,7 @@ Example usage: call calc_mosaic_grid_area(lon, lat, area) </td></tr>
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="mosaic2_8F90_source.html#l00410">410</a> of file <a class="el" href="mosaic2_8F90_source.html">mosaic2.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="mosaic2_8F90_source.html#l00434">434</a> of file <a class="el" href="mosaic2_8F90_source.html">mosaic2.F90</a>.</p>
 
 </div>
 </div>
@@ -262,19 +262,19 @@ Example usage: call calc_mosaic_grid_area(lon, lat, area) </td></tr>
         <tr>
           <td class="memname">subroutine, public mosaic2_mod::calc_mosaic_grid_great_circle_area </td>
           <td>(</td>
-          <td class="paramtype">real, dimension(:,:), intent(in)&#160;</td>
+          <td class="paramtype">class(*), dimension(:,:), intent(in)&#160;</td>
           <td class="paramname"><em>lon</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">real, dimension(:,:), intent(in)&#160;</td>
+          <td class="paramtype">class(*), dimension(:,:), intent(in)&#160;</td>
           <td class="paramname"><em>lat</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">real, dimension(:,:), intent(inout)&#160;</td>
+          <td class="paramtype">class(*), dimension(:,:), intent(inout)&#160;</td>
           <td class="paramname"><em>area</em>&#160;</td>
         </tr>
         <tr>
@@ -296,7 +296,7 @@ Example usage: call calc_mosaic_grid_great_circle_area(lon, lat, area) </td></tr
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="mosaic2_8F90_source.html#l00437">437</a> of file <a class="el" href="mosaic2_8F90_source.html">mosaic2.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="mosaic2_8F90_source.html#l00483">483</a> of file <a class="el" href="mosaic2_8F90_source.html">mosaic2.F90</a>.</p>
 
 </div>
 </div>
@@ -399,7 +399,7 @@ Example usage: call get_mosaic_contact(mosaic_file, tile1, tile2, istart1, iend1
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="mosaic2_8F90_source.html#l00260">260</a> of file <a class="el" href="mosaic2_8F90_source.html">mosaic2.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="mosaic2_8F90_source.html#l00284">284</a> of file <a class="el" href="mosaic2_8F90_source.html">mosaic2.F90</a>.</p>
 
 </div>
 </div>
@@ -446,7 +446,7 @@ Example usage: call get_mosaic_grid_sizes(mosaic_file, nx, ny) </td></tr>
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="mosaic2_8F90_source.html#l00210">210</a> of file <a class="el" href="mosaic2_8F90_source.html">mosaic2.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="mosaic2_8F90_source.html#l00234">234</a> of file <a class="el" href="mosaic2_8F90_source.html">mosaic2.F90</a>.</p>
 
 </div>
 </div>
@@ -476,7 +476,7 @@ Example usage: call get_mosaic_grid_sizes(mosaic_file, nx, ny) </td></tr>
 <dl class="section return"><dt>Returns</dt><dd>number of contacts in a given file <br  />
 Example usage: ntiles = get_mosaic_ncontacts( mosaic_file) </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="mosaic2_8F90_source.html#l00188">188</a> of file <a class="el" href="mosaic2_8F90_source.html">mosaic2.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="mosaic2_8F90_source.html#l00212">212</a> of file <a class="el" href="mosaic2_8F90_source.html">mosaic2.F90</a>.</p>
 
 </div>
 </div>
@@ -506,7 +506,7 @@ Example usage: ntiles = get_mosaic_ncontacts( mosaic_file) </dd></dl>
 <dl class="section return"><dt>Returns</dt><dd>Number of tiles in given file <br  />
 Example usage: ntiles = get_mosaic_ntiles( mosaic_file) </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="mosaic2_8F90_source.html#l00172">172</a> of file <a class="el" href="mosaic2_8F90_source.html">mosaic2.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="mosaic2_8F90_source.html#l00196">196</a> of file <a class="el" href="mosaic2_8F90_source.html">mosaic2.F90</a>.</p>
 
 </div>
 </div>
@@ -559,7 +559,7 @@ Example usage: ntiles = get_mosaic_ntiles( mosaic_file) </dd></dl>
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="mosaic2_8F90_source.html#l00530">530</a> of file <a class="el" href="mosaic2_8F90_source.html">mosaic2.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="mosaic2_8F90_source.html#l00598">598</a> of file <a class="el" href="mosaic2_8F90_source.html">mosaic2.F90</a>.</p>
 
 </div>
 </div>
@@ -602,7 +602,7 @@ Example usage: ntiles = get_mosaic_ntiles( mosaic_file) </dd></dl>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">real, dimension(:), intent(inout)&#160;</td>
+          <td class="paramtype">class(*), dimension(:), intent(inout)&#160;</td>
           <td class="paramname"><em>area</em>, </td>
         </tr>
         <tr>
@@ -628,7 +628,7 @@ Example usage: ntiles = get_mosaic_ntiles( mosaic_file) </dd></dl>
 <p>Get exchange grid information from mosaic xgrid file. Example usage: </p>
 <pre class="fragment">      call get_mosaic_xgrid(fileobj, nxgrid, i1, j1, i2, j2, area)
 </pre> 
-<p class="definition">Definition at line <a class="el" href="mosaic2_8F90_source.html#l00115">115</a> of file <a class="el" href="mosaic2_8F90_source.html">mosaic2.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="mosaic2_8F90_source.html#l00116">116</a> of file <a class="el" href="mosaic2_8F90_source.html">mosaic2.F90</a>.</p>
 
 </div>
 </div>
@@ -652,7 +652,7 @@ Example usage: ntiles = get_mosaic_ntiles( mosaic_file) </dd></dl>
 <p><br  />
 Example usage: nxgrid = get_mosaic_xgrid_size(xgrid_file) </p>
 
-<p class="definition">Definition at line <a class="el" href="mosaic2_8F90_source.html#l00100">100</a> of file <a class="el" href="mosaic2_8F90_source.html">mosaic2.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="mosaic2_8F90_source.html#l00101">101</a> of file <a class="el" href="mosaic2_8F90_source.html">mosaic2.F90</a>.</p>
 
 </div>
 </div>

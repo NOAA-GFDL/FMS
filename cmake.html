@@ -33,7 +33,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">FMS
-   &#160;<span id="projectnumber">2021.03.01</span>
+   &#160;<span id="projectnumber">2021.04.0</span>
    </div>
    <div id="projectbrief">Flexible Modeling System</div>
   </td>
@@ -103,7 +103,8 @@ $(document).ready(function(){initNavTree('cmake.html',''); initResizable(); });
 <div class="fragment"><div class="line">export FC=mpiifort</div>
 <div class="line">export CC=mpiicc</div>
 </div><!-- fragment --><h3>NetCDF is provided via the <code>nc-config</code> command:</h3>
-<p>``<code> export NetCDF_ROOT=</code>nc-config &ndash;prefix` </p><div class="fragment"><div class="line">## 2. Build and install FMS with CMake</div>
+<p>``<code> export NetCDF_ROOT=</code>nc-config &ndash;prefix` </p><div class="fragment"><div class="line">### If building with yaml parser (-DWITH_YAML)</div>
+</div><!-- fragment --><p>export LIBYAML_ROOT=&lt;your libyaml install directory&gt; </p><div class="fragment"><div class="line">## 2. Build and install FMS with CMake</div>
 <div class="line">`&lt;prefix&gt;` is the full install directory for FMS provided by user</div>
 </div><!-- fragment --><p>cd FMS mkdir -p build &amp;&amp; cd build cmake -DCMAKE_INSTALL_PREFIX=&lt;prefix&gt; .. make -j4 make install ```</p>
 <h3>User configurable options:</h3>
@@ -116,6 +117,7 @@ $(document).ready(function(){initNavTree('cmake.html',''); initResizable(); });
 <div class="line">-DENABLE_QUAD_PRECISION &quot;Enable compiler definition -DENABLE_QUAD_PRECISION&quot; DEFAULT: ON</div>
 <div class="line">-DGFS_PHYS              &quot;Enable compiler definition -DGFS_PHYS&quot;              DEFAULT:OFF</div>
 <div class="line">-DLARGEFILE             &quot;Enable compiler definition -Duse_LARGEFILE&quot;         DEFAULT:OFF</div>
+<div class="line">-DWITH_YAML             &quot;Enable compiler definition -Duse_yaml&quot;              DEFAULT:OFF</div>
 </div><!-- fragment --><h2>3. Installation structure</h2>
 <p>When the above command finishes, the <code>&lt;prefix&gt;</code> will have an <code>include_r4</code> and a <code>lib</code> directory. The <code>lib</code> directory will have these files:</p>
 <div class="fragment"><div class="line">libfms_r4.a</div>

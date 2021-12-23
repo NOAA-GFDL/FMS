@@ -33,7 +33,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">FMS
-   &#160;<span id="projectnumber">2021.03.01</span>
+   &#160;<span id="projectnumber">2021.04.0</span>
    </div>
    <div id="projectbrief">Flexible Modeling System</div>
   </td>
@@ -111,6 +111,10 @@ Private Member Functions</h2></td></tr>
 <tr class="separator:a319e3ddcaac22f061c4c548ea9ba55ae"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:adc7730140b949d91e2bd2c3342b3a407"><td class="memItemLeft" align="right" valign="top">logical function&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="interfacediag__manager__mod_1_1send__data.html#adc7730140b949d91e2bd2c3342b3a407">send_data_3d</a> (diag_field_id, field, time, is_in, js_in, ks_in, mask, rmask, ie_in, je_in, ke_in, weight, err_msg)</td></tr>
 <tr class="separator:adc7730140b949d91e2bd2c3342b3a407"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad19565e137c070583691d73775ef70f3"><td class="memItemLeft" align="right" valign="top">logical function&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="interfacediag__manager__mod_1_1send__data.html#ad19565e137c070583691d73775ef70f3">send_data_0d_r8</a> (diag_field_id, field, time, err_msg)</td></tr>
+<tr class="separator:ad19565e137c070583691d73775ef70f3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6bb44098b729755bfa325bb9025d1028"><td class="memItemLeft" align="right" valign="top">logical function&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="interfacediag__manager__mod_1_1send__data.html#a6bb44098b729755bfa325bb9025d1028">send_data_1d_r8</a> (diag_field_id, field, time, is_in, mask, rmask, ie_in, weight, err_msg)</td></tr>
+<tr class="separator:a6bb44098b729755bfa325bb9025d1028"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6f6cff4f2cd93ae801f4a6855fdc09e7"><td class="memItemLeft" align="right" valign="top">logical function&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="interfacediag__manager__mod_1_1send__data.html#a6f6cff4f2cd93ae801f4a6855fdc09e7">send_data_2d_r8</a> (diag_field_id, field, time, is_in, js_in, mask, rmask, ie_in, je_in, weight, err_msg)</td></tr>
 <tr class="separator:a6f6cff4f2cd93ae801f4a6855fdc09e7"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a3a4a3b20594e6f2fd038bb421f77e586"><td class="memItemLeft" align="right" valign="top">logical function&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="interfacediag__manager__mod_1_1send__data.html#a3a4a3b20594e6f2fd038bb421f77e586">send_data_3d_r8</a> (diag_field_id, field, time, is_in, js_in, ks_in, mask, rmask, ie_in, je_in, ke_in, weight, err_msg)</td></tr>
@@ -134,7 +138,7 @@ Private Member Functions</h2></td></tr>
 <p><b><em>NOTE:</em></b> Most fields are defined in the data domain but use the compute domain. In <code><a class="el" href="interfacediag__manager__mod_1_1send__data.html" title="Send data over to output fields.">send_data</a></code> the field can be passed in either the data domain or in the compute domain. If the data domain is used, the start and end indicies of the compute domain (isc, iec, . . .) should be passed. If the compute domain is used no indices are needed. The indices are for determining halo exclusively. If users want to output the field partially they should use regional output as mentioned above.</p>
 <p>Weight in Time averaging is now supported, each time level may have a different weight. The default of weight is 1. </p>
 
-<p class="definition">Definition at line <a class="el" href="diag__manager_8F90_source.html#l00328">328</a> of file <a class="el" href="diag__manager_8F90_source.html">diag_manager.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="diag__manager_8F90_source.html#l00327">327</a> of file <a class="el" href="diag__manager_8F90_source.html">diag_manager.F90</a>.</p>
 </div><h2 class="groupheader">Member Function/Subroutine Documentation</h2>
 <a id="a6312f419f8938246b09635d0e955d66b"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a6312f419f8938246b09635d0e955d66b">&#9670;&nbsp;</a></span>send_data_0d()</h2>
@@ -183,7 +187,58 @@ Private Member Functions</h2></td></tr>
 </div><div class="memdoc">
 <dl class="section return"><dt>Returns</dt><dd>true if send is successful </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="diag__manager_8F90_source.html#l01240">1240</a> of file <a class="el" href="diag__manager_8F90_source.html">diag_manager.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="diag__manager_8F90_source.html#l01241">1241</a> of file <a class="el" href="diag__manager_8F90_source.html">diag_manager.F90</a>.</p>
+
+</div>
+</div>
+<a id="ad19565e137c070583691d73775ef70f3"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad19565e137c070583691d73775ef70f3">&#9670;&nbsp;</a></span>send_data_0d_r8()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">logical function send_data_0d_r8 </td>
+          <td>(</td>
+          <td class="paramtype">integer, intent(in)&#160;</td>
+          <td class="paramname"><em>diag_field_id</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">real(r8_kind), intent(in)&#160;</td>
+          <td class="paramname"><em>field</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">type(<a class="el" href="structtime__manager__mod_1_1time__type.html">time_type</a>), intent(in), optional&#160;</td>
+          <td class="paramname"><em>time</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">character(len=*), intent(out), optional&#160;</td>
+          <td class="paramname"><em>err_msg</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<dl class="section return"><dt>Returns</dt><dd>true if send is successful </dd></dl>
+
+<p class="definition">Definition at line <a class="el" href="diag__manager_8F90_source.html#l01352">1352</a> of file <a class="el" href="diag__manager_8F90_source.html">diag_manager.F90</a>.</p>
 
 </div>
 </div>
@@ -264,7 +319,88 @@ Private Member Functions</h2></td></tr>
 </div><div class="memdoc">
 <dl class="section return"><dt>Returns</dt><dd>true if send is successful </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="diag__manager_8F90_source.html#l01259">1259</a> of file <a class="el" href="diag__manager_8F90_source.html">diag_manager.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="diag__manager_8F90_source.html#l01260">1260</a> of file <a class="el" href="diag__manager_8F90_source.html">diag_manager.F90</a>.</p>
+
+</div>
+</div>
+<a id="a6bb44098b729755bfa325bb9025d1028"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a6bb44098b729755bfa325bb9025d1028">&#9670;&nbsp;</a></span>send_data_1d_r8()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">logical function send_data_1d_r8 </td>
+          <td>(</td>
+          <td class="paramtype">integer, intent(in)&#160;</td>
+          <td class="paramname"><em>diag_field_id</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">real(r8_kind), dimension(:), intent(in)&#160;</td>
+          <td class="paramname"><em>field</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">type (<a class="el" href="structtime__manager__mod_1_1time__type.html">time_type</a>), intent(in), optional&#160;</td>
+          <td class="paramname"><em>time</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">integer, intent(in), optional&#160;</td>
+          <td class="paramname"><em>is_in</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">logical, dimension(:), intent(in), optional&#160;</td>
+          <td class="paramname"><em>mask</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">real, dimension(:), intent(in), optional&#160;</td>
+          <td class="paramname"><em>rmask</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">integer, intent(in), optional&#160;</td>
+          <td class="paramname"><em>ie_in</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">real, intent(in), optional&#160;</td>
+          <td class="paramname"><em>weight</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">character(len=*), intent(out), optional&#160;</td>
+          <td class="paramname"><em>err_msg</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<dl class="section return"><dt>Returns</dt><dd>true if send is successful </dd></dl>
+
+<p class="definition">Definition at line <a class="el" href="diag__manager_8F90_source.html#l01371">1371</a> of file <a class="el" href="diag__manager_8F90_source.html">diag_manager.F90</a>.</p>
 
 </div>
 </div>
@@ -357,7 +493,7 @@ Private Member Functions</h2></td></tr>
 </div><div class="memdoc">
 <dl class="section return"><dt>Returns</dt><dd>true if send is successful </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="diag__manager_8F90_source.html#l01309">1309</a> of file <a class="el" href="diag__manager_8F90_source.html">diag_manager.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="diag__manager_8F90_source.html#l01310">1310</a> of file <a class="el" href="diag__manager_8F90_source.html">diag_manager.F90</a>.</p>
 
 </div>
 </div>
@@ -379,7 +515,7 @@ Private Member Functions</h2></td></tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">real(kind=8), dimension(:,:), intent(in)&#160;</td>
+          <td class="paramtype">real(r8_kind), dimension(:,:), intent(in)&#160;</td>
           <td class="paramname"><em>field</em>, </td>
         </tr>
         <tr>
@@ -450,7 +586,7 @@ Private Member Functions</h2></td></tr>
 </div><div class="memdoc">
 <dl class="section return"><dt>Returns</dt><dd>true if send is successful </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="diag__manager_8F90_source.html#l01351">1351</a> of file <a class="el" href="diag__manager_8F90_source.html">diag_manager.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="diag__manager_8F90_source.html#l01420">1420</a> of file <a class="el" href="diag__manager_8F90_source.html">diag_manager.F90</a>.</p>
 
 </div>
 </div>
@@ -555,7 +691,7 @@ Private Member Functions</h2></td></tr>
 </div><div class="memdoc">
 <dl class="section return"><dt>Returns</dt><dd>true if send is successful </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="diag__manager_8F90_source.html#l01434">1434</a> of file <a class="el" href="diag__manager_8F90_source.html">diag_manager.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="diag__manager_8F90_source.html#l01503">1503</a> of file <a class="el" href="diag__manager_8F90_source.html">diag_manager.F90</a>.</p>
 
 </div>
 </div>
@@ -577,7 +713,7 @@ Private Member Functions</h2></td></tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">real(kind=8), dimension(:,:,:), intent(in)&#160;</td>
+          <td class="paramtype">real(r8_kind), dimension(:,:,:), intent(in)&#160;</td>
           <td class="paramname"><em>field</em>, </td>
         </tr>
         <tr>
@@ -660,7 +796,7 @@ Private Member Functions</h2></td></tr>
 </div><div class="memdoc">
 <dl class="section return"><dt>Returns</dt><dd>true if send is successful </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="diag__manager_8F90_source.html#l01392">1392</a> of file <a class="el" href="diag__manager_8F90_source.html">diag_manager.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="diag__manager_8F90_source.html#l01461">1461</a> of file <a class="el" href="diag__manager_8F90_source.html">diag_manager.F90</a>.</p>
 
 </div>
 </div>

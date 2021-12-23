@@ -34,11 +34,9 @@ var mpp__io__util_8inc =
     [ "mpp_get_recdimid", "mpp__io__util_8inc.html#a6eaa7677b60766ad1e0184edb401b435", null ],
     [ "mpp_get_time_axis", "mpp__io__util_8inc.html#abb793c32778779f87c89c47ffa93dda5", null ],
     [ "mpp_get_times", "mpp__io__util_8inc.html#a392c2b9c2171d41fa597f7bb574f3ef3", null ],
-    [ "mpp_get_unit_range", "mpp__io__util_8inc.html#ae606ba1e4883da791116a5bab1d35a5d", null ],
     [ "mpp_get_valid", "mpp__io__util_8inc.html#a97926698d7e25ef3fab8a8b625a8d248", null ],
     [ "mpp_io_clock_on", "mpp__io__util_8inc.html#af1f08c05ca92c13fe9792c53af291fa7", null ],
     [ "mpp_io_set_stack_size", "mpp__io__util_8inc.html#a23cb28bd7f446ed5c0a8aea9d0a4ae49", null ],
     [ "mpp_is_dist_ioroot", "mpp__io__util_8inc.html#a7bde0916c4d28721eb4eec73e6773b0c", null ],
-    [ "mpp_is_valid", "mpp__io__util_8inc.html#a95afec25424c357a64d8bf91342097f7", null ],
-    [ "mpp_set_unit_range", "mpp__io__util_8inc.html#a868692802916cba25ba9d3a24002fc82", null ]
+    [ "mpp_is_valid", "mpp__io__util_8inc.html#a95afec25424c357a64d8bf91342097f7", null ]
 ];

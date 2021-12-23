@@ -2,7 +2,6 @@ var group__time__manager__mod =
 [
     [ "time_type", "structtime__manager__mod_1_1time__type.html", [
       [ "days", "structtime__manager__mod_1_1time__type.html#ae527f33d40f16d564f2da72b8509d0f8", null ],
-      [ "dummy", "structtime__manager__mod_1_1time__type.html#afeb5ed6c013d8c98695c30ab926547db", null ],
       [ "seconds", "structtime__manager__mod_1_1time__type.html#a7630151e6c3c2305e0cb0af52a52d2db", null ],
       [ "ticks", "structtime__manager__mod_1_1time__type.html#acbcad8210effad30522e8798bafea19e", null ]
     ] ],
@@ -49,17 +48,16 @@ var group__time__manager__mod =
       [ "set_time_i", "interfacetime__manager__mod_1_1set__time.html#aa88336b180e60ddff914c0f6b9a3684b", null ]
     ] ],
     [ "set_date", "interfacetime__manager__mod_1_1set__date.html", [
-      [ "set_date_c", "interfacetime__manager__mod_1_1set__date.html#a4f340b86eaab412bb4f8dff399362a2e", null ],
-      [ "set_date_i", "interfacetime__manager__mod_1_1set__date.html#a35cd9b807c6de019b35676b24c442155", null ]
+      [ "set_date_c", "interfacetime__manager__mod_1_1set__date.html#a799bb07774ab9c4603f2059d9de7f82b", null ],
+      [ "set_date_i", "interfacetime__manager__mod_1_1set__date.html#a782e7c48f07fc3190f26a64b8701d5ca", null ]
     ] ],
     [ "day_of_year", "group__time__manager__mod.html#ga13dda4f6856e059cab21dd0f0881e600", null ],
     [ "days_in_year", "group__time__manager__mod.html#ga462dc68f1995e86d41808fb5526bf9bf", null ],
     [ "decrement_time", "group__time__manager__mod.html#ga1479e62dcf63419f83ba7dbe33e0f03a", null ],
     [ "error_handler", "group__time__manager__mod.html#gab592dd15307abf3f792cf72a772d7118", null ],
     [ "get_calendar_type", "group__time__manager__mod.html#gad4d5cb71942ebf3f1bb9d4a29a6d9a04", null ],
-    [ "get_date", "group__time__manager__mod.html#ga6c708ea801247812b41b305ee5aeea13", null ],
+    [ "get_date", "group__time__manager__mod.html#ga42ca904e0ef4d8cd59deab75ea8bc048", null ],
     [ "get_date_gregorian", "group__time__manager__mod.html#ga598caa0b76f256ade3f0fe120f6a5c91", null ],
-    [ "get_date_gregorian_old", "group__time__manager__mod.html#ga20cf64e1cd18a3542e1339d2645c919c", null ],
     [ "get_date_julian_private", "group__time__manager__mod.html#ga7cc9c01c1da138c3be10f266127fa5d6", null ],
     [ "get_ticks_per_second", "group__time__manager__mod.html#ga07edc2aeb8850b3371e504f83d0285d1", null ],
     [ "get_time", "group__time__manager__mod.html#ga2b9c941f38e33eba67ee151fe3bd8ee6", null ],
@@ -75,11 +73,10 @@ var group__time__manager__mod =
     [ "safe_rtoi", "group__time__manager__mod.html#gaaf3ed18ce9c9142e0f038189c4ac6a21", null ],
     [ "scalar_time_mult", "group__time__manager__mod.html#ga48c9db18080295254bd46b0908598a5c", null ],
     [ "set_calendar_type", "group__time__manager__mod.html#gae4ed023b8077a6f14fffb764d642e55a", null ],
-    [ "set_date_c", "group__time__manager__mod.html#ga1fe4b3c2c79a5a4d698c65d659443369", null ],
+    [ "set_date_c", "group__time__manager__mod.html#ga28e8bf9214639c7358f165f71fe87954", null ],
     [ "set_date_gregorian", "group__time__manager__mod.html#ga7f34ca591384ab30f3451c2ee7e28d31", null ],
-    [ "set_date_gregorian_old", "group__time__manager__mod.html#gac33d06e47ab40f140cc813d6e494700f", null ],
-    [ "set_date_i", "group__time__manager__mod.html#ga0682ab24c004c2e4373e2dc3d4d8d075", null ],
-    [ "set_date_private", "group__time__manager__mod.html#ga4340e5b65a48fe77e2602d205418f3e9", null ],
+    [ "set_date_i", "group__time__manager__mod.html#ga0f0f8fdbd98353961df0e31b8d4f9eb6", null ],
+    [ "set_date_private", "group__time__manager__mod.html#ga8164c23fbef5e970f2905fa073860202", null ],
     [ "set_ticks_per_second", "group__time__manager__mod.html#ga3f9d6b19f82929805f6983974e93e462", null ],
     [ "set_time_c", "group__time__manager__mod.html#ga24009b65496108d890cce8e9d5f49b69", null ],
     [ "set_time_i", "group__time__manager__mod.html#ga6e4eefaac997bf1ead90175efb43442e", null ],
@@ -97,8 +94,5 @@ var group__time__manager__mod =
     [ "time_scalar_divide", "group__time__manager__mod.html#ga2a56c17818481570d86051158811ed91", null ],
     [ "time_scalar_mult", "group__time__manager__mod.html#ga330ff6e3e8408cd8c0d3d703d56b3fa4", null ],
     [ "valid_calendar_types", "group__time__manager__mod.html#ga40ba58ef6e1c86616e5f8d7e8ebefca3", null ],
-    [ "coded_date", "group__time__manager__mod.html#gacb4370156f8591bf2d258f7b2271dbfd", null ],
-    [ "date_to_day", "group__time__manager__mod.html#gac4edb61a787d8b3ea4d5a7be9f8013a1", null ],
-    [ "days_in_400_year_period", "group__time__manager__mod.html#gaa90f23df128449b5f86be8cc0d1f5467", null ],
-    [ "invalid_date", "group__time__manager__mod.html#ga87b39cce73de9994764bed7563d348b8", null ]
+    [ "days_in_400_year_period", "group__time__manager__mod.html#gaa90f23df128449b5f86be8cc0d1f5467", null ]
 ];

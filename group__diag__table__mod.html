@@ -33,7 +33,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">FMS
-   &#160;<span id="projectnumber">2021.03.01</span>
+   &#160;<span id="projectnumber">2021.04.0</span>
    </div>
    <div id="projectbrief">Flexible Modeling System</div>
   </td>
@@ -116,12 +116,6 @@ Functions/Subroutines</h2></td></tr>
 <tr class="memitem:gadadc44257b97056c277261b4ada5098b"><td class="memItemLeft" align="right" valign="top">subroutine, public&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__diag__table__mod.html#gadadc44257b97056c277261b4ada5098b">parse_diag_table</a> (diag_subset, istat, err_msg)</td></tr>
 <tr class="memdesc:gadadc44257b97056c277261b4ada5098b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Parse the <code>diag_table</code> in preparation for diagnostic output.  <a href="group__diag__table__mod.html#gadadc44257b97056c277261b4ada5098b">More...</a><br /></td></tr>
 <tr class="separator:gadadc44257b97056c277261b4ada5098b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga2c62641aa2049d5693075723f064ced3"><td class="memItemLeft" align="right" valign="top">subroutine&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__diag__table__mod.html#ga2c62641aa2049d5693075723f064ced3">open_diag_table</a> (iunit, iostat, err_msg)</td></tr>
-<tr class="memdesc:ga2c62641aa2049d5693075723f064ced3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Open the <code>diag_table</code> file, and return the Fortran file unit number.  <a href="group__diag__table__mod.html#ga2c62641aa2049d5693075723f064ced3">More...</a><br /></td></tr>
-<tr class="separator:ga2c62641aa2049d5693075723f064ced3"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga22478fef0df32b5365c3278875d0371a"><td class="memItemLeft" align="right" valign="top">subroutine&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__diag__table__mod.html#ga22478fef0df32b5365c3278875d0371a">close_diag_table</a> (iunit)</td></tr>
-<tr class="memdesc:ga22478fef0df32b5365c3278875d0371a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Closes the diag_table file.  <a href="group__diag__table__mod.html#ga22478fef0df32b5365c3278875d0371a">More...</a><br /></td></tr>
-<tr class="separator:ga22478fef0df32b5365c3278875d0371a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga879e2779d113e53e31b3625b322d6bee"><td class="memItemLeft" align="right" valign="top">type(<a class="el" href="structdiag__table__mod_1_1file__description__type.html">file_description_type</a>) function&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__diag__table__mod.html#ga879e2779d113e53e31b3625b322d6bee">parse_file_line</a> (line, istat, err_msg)</td></tr>
 <tr class="memdesc:ga879e2779d113e53e31b3625b322d6bee"><td class="mdescLeft">&#160;</td><td class="mdescRight"><code>parse_file_line</code> parses a file description line from the <code>diag_table</code> file, and returns a <code>TYPE(file_description_type)</code>. The calling function, would then need to call the <code>init_file</code> to initialize the diagnostic output file.  <a href="group__diag__table__mod.html#ga879e2779d113e53e31b3625b322d6bee">More...</a><br /></td></tr>
 <tr class="separator:ga879e2779d113e53e31b3625b322d6bee"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -284,42 +278,6 @@ character(len= *), parameter&#160;</td><td class="memItemRight" valign="bottom">
  temp_local, 1, "days", 1, "hours", "Time"
  "ocean_mod", "temp", "temp", "temp_local", "all", .FALSE., "5 259.5 -59.5 59.5 1 1", 2
        </pre>  <h2 class="groupheader">Function/Subroutine Documentation</h2>
-<a id="ga22478fef0df32b5365c3278875d0371a"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ga22478fef0df32b5365c3278875d0371a">&#9670;&nbsp;</a></span>close_diag_table()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">subroutine diag_table_mod::close_diag_table </td>
-          <td>(</td>
-          <td class="paramtype">integer, intent(in)&#160;</td>
-          <td class="paramname"><em>iunit</em></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">private</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p>Closes the diag_table file. </p>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramdir">[in]</td><td class="paramname">iunit</td><td>Fortran file unit number of the <code>diag_table</code>. </td></tr>
-  </table>
-  </dd>
-</dl>
-
-<p class="definition">Definition at line <a class="el" href="diag__table_8F90_source.html#l00504">504</a> of file <a class="el" href="diag__table_8F90_source.html">diag_table.F90</a>.</p>
-
-</div>
-</div>
 <a id="gae21e54693ac29ba6ea341f068b8a1d5b"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#gae21e54693ac29ba6ea341f068b8a1d5b">&#9670;&nbsp;</a></span>find_unit_ivalue()</h2>
 
@@ -369,7 +327,7 @@ unknown = -1  </li>
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="diag__table_8F90_source.html#l00828">828</a> of file <a class="el" href="diag__table_8F90_source.html">diag_table.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="diag__table_8F90_source.html#l00791">791</a> of file <a class="el" href="diag__table_8F90_source.html">diag_table.F90</a>.</p>
 
 </div>
 </div>
@@ -406,7 +364,7 @@ unknown = -1  </li>
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="diag__table_8F90_source.html#l00792">792</a> of file <a class="el" href="diag__table_8F90_source.html">diag_table.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="diag__table_8F90_source.html#l00755">755</a> of file <a class="el" href="diag__table_8F90_source.html">diag_table.F90</a>.</p>
 
 </div>
 </div>
@@ -443,61 +401,7 @@ unknown = -1  </li>
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="diag__table_8F90_source.html#l00763">763</a> of file <a class="el" href="diag__table_8F90_source.html">diag_table.F90</a>.</p>
-
-</div>
-</div>
-<a id="ga2c62641aa2049d5693075723f064ced3"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ga2c62641aa2049d5693075723f064ced3">&#9670;&nbsp;</a></span>open_diag_table()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">subroutine diag_table_mod::open_diag_table </td>
-          <td>(</td>
-          <td class="paramtype">integer, intent(out)&#160;</td>
-          <td class="paramname"><em>iunit</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">integer, intent(out), optional, target&#160;</td>
-          <td class="paramname"><em>iostat</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">character(len=*), intent(out), optional&#160;</td>
-          <td class="paramname"><em>err_msg</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">private</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p>Open the <code>diag_table</code> file, and return the Fortran file unit number. </p>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramdir">[out]</td><td class="paramname">iunit</td><td>Fortran file unit number of the <code>diag_table</code>. </td></tr>
-    <tr><td class="paramdir">[out]</td><td class="paramname">iostat</td><td>Status of opening file. If iostat == 0, file exists. If iostat &gt; 0, the diag_table file does not exist. </td></tr>
-    <tr><td class="paramdir">[out]</td><td class="paramname">err_msg</td><td>String to hold the return error message. </td></tr>
-  </table>
-  </dd>
-</dl>
-
-<p class="definition">Definition at line <a class="el" href="diag__table_8F90_source.html#l00477">477</a> of file <a class="el" href="diag__table_8F90_source.html">diag_table.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="diag__table_8F90_source.html#l00726">726</a> of file <a class="el" href="diag__table_8F90_source.html">diag_table.F90</a>.</p>
 
 </div>
 </div>
@@ -544,7 +448,7 @@ unknown = -1  </li>
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="diag__table_8F90_source.html#l00289">289</a> of file <a class="el" href="diag__table_8F90_source.html">diag_table.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="diag__table_8F90_source.html#l00288">288</a> of file <a class="el" href="diag__table_8F90_source.html">diag_table.F90</a>.</p>
 
 </div>
 </div>
@@ -599,7 +503,7 @@ unknown = -1  </li>
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="diag__table_8F90_source.html#l00677">677</a> of file <a class="el" href="diag__table_8F90_source.html">diag_table.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="diag__table_8F90_source.html#l00640">640</a> of file <a class="el" href="diag__table_8F90_source.html">diag_table.F90</a>.</p>
 
 </div>
 </div>
@@ -654,7 +558,7 @@ unknown = -1  </li>
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="diag__table_8F90_source.html#l00514">514</a> of file <a class="el" href="diag__table_8F90_source.html">diag_table.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="diag__table_8F90_source.html#l00477">477</a> of file <a class="el" href="diag__table_8F90_source.html">diag_table.F90</a>.</p>
 
 </div>
 </div>

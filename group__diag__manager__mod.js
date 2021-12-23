@@ -2,7 +2,9 @@ var group__diag__manager__mod =
 [
     [ "send_data", "interfacediag__manager__mod_1_1send__data.html", [
       [ "send_data_0d", "interfacediag__manager__mod_1_1send__data.html#a6312f419f8938246b09635d0e955d66b", null ],
+      [ "send_data_0d_r8", "interfacediag__manager__mod_1_1send__data.html#ad19565e137c070583691d73775ef70f3", null ],
       [ "send_data_1d", "interfacediag__manager__mod_1_1send__data.html#a7ce0f095072912437da7aafc18c135c1", null ],
+      [ "send_data_1d_r8", "interfacediag__manager__mod_1_1send__data.html#a6bb44098b729755bfa325bb9025d1028", null ],
       [ "send_data_2d", "interfacediag__manager__mod_1_1send__data.html#a319e3ddcaac22f061c4c548ea9ba55ae", null ],
       [ "send_data_2d_r8", "interfacediag__manager__mod_1_1send__data.html#a6f6cff4f2cd93ae801f4a6855fdc09e7", null ],
       [ "send_data_3d", "interfacediag__manager__mod_1_1send__data.html#adc7730140b949d91e2bd2c3342b3a407", null ],
@@ -50,7 +52,9 @@ var group__diag__manager__mod =
     [ "register_diag_field_scalar", "group__diag__manager__mod.html#gacc8076aa4a0590d3053643efd89ea735", null ],
     [ "register_static_field", "group__diag__manager__mod.html#ga391e6c5a8bd236359bd030890cedbef9", null ],
     [ "send_data_0d", "group__diag__manager__mod.html#ga98310de5593600a83d7e4fa889456b29", null ],
+    [ "send_data_0d_r8", "group__diag__manager__mod.html#ga64b8bd9b19b83a51bf4dce56e92a46de", null ],
     [ "send_data_1d", "group__diag__manager__mod.html#gada4ddad4a5d38ed610f29c6d89fd0ab3", null ],
+    [ "send_data_1d_r8", "group__diag__manager__mod.html#gab18ff9170b9a0a7ec90b3e2d62408926", null ],
     [ "send_data_2d", "group__diag__manager__mod.html#ga186a4a5d7d6d223828cc3f276f2745eb", null ],
     [ "send_data_2d_r8", "group__diag__manager__mod.html#ga563def7751689c949e4a2bc24c91a5f9", null ],
     [ "send_data_3d", "group__diag__manager__mod.html#gac823edb555974a0a04a75e944ef33bfe", null ],

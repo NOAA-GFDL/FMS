@@ -33,7 +33,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">FMS
-   &#160;<span id="projectnumber">2021.03.01</span>
+   &#160;<span id="projectnumber">2021.04.0</span>
    </div>
    <div id="projectbrief">Flexible Modeling System</div>
   </td>
@@ -101,8 +101,7 @@ $(document).ready(function(){initNavTree('xgrid_8F90.html',''); initResizable();
 
 <p>File for <a class="el" href="group__xgrid__mod.html">xgrid_mod</a>.  
 <a href="#details">More...</a></p>
-<div class="textblock"><code>#include &lt;fms_platform.h&gt;</code><br />
-<code>#include &lt;file_version.h&gt;</code><br />
+<div class="textblock"><code>#include &lt;file_version.h&gt;</code><br />
 </div>
 <p><a href="xgrid_8F90_source.html">Go to the source code of this file.</a></p>
 <table class="memberdecls">
@@ -246,28 +245,28 @@ subroutine&#160;</td><td class="memItemRight" valign="bottom"><b>get_1_from_xgri
 <tr class="memitem:ga0061aa4157bfe923bf57ef740fb81ae4"><td class="memItemLeft" align="right" valign="top">
 subroutine&#160;</td><td class="memItemRight" valign="bottom"><b>get_1_from_xgrid_repro</b> (d_addrs, x_addrs, xmap, xsize, lsize)</td></tr>
 <tr class="separator:ga0061aa4157bfe923bf57ef740fb81ae4"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga811ad4662ab1d522cbec5c85ab144af2"><td class="memItemLeft" align="right" valign="top">real function, dimension(3)&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__xgrid__mod.html#ga811ad4662ab1d522cbec5c85ab144af2">conservation_check_side1</a> (d, grid_id, xmap, remap_method)</td></tr>
-<tr class="memdesc:ga811ad4662ab1d522cbec5c85ab144af2"><td class="mdescLeft">&#160;</td><td class="mdescRight"><a class="el" href="interfacexgrid__mod_1_1conservation__check.html" title="Returns three numbers which are the global sum of a variable.">conservation_check</a> - returns three numbers which are the global sum of a variable (1) on its home model grid, (2) after interpolation to the other side grid(s), and (3) after re_interpolation back onto its home side grid(s).  <a href="group__xgrid__mod.html#ga811ad4662ab1d522cbec5c85ab144af2">More...</a><br /></td></tr>
-<tr class="separator:ga811ad4662ab1d522cbec5c85ab144af2"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga086805b918f635c0ddae0f0c3eb48b7a"><td class="memItemLeft" align="right" valign="top">real function, dimension(3)&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__xgrid__mod.html#ga086805b918f635c0ddae0f0c3eb48b7a">conservation_check_side2</a> (d, grid_id, xmap, remap_method)</td></tr>
-<tr class="memdesc:ga086805b918f635c0ddae0f0c3eb48b7a"><td class="mdescLeft">&#160;</td><td class="mdescRight"><a class="el" href="interfacexgrid__mod_1_1conservation__check.html" title="Returns three numbers which are the global sum of a variable.">conservation_check</a> - returns three numbers which are the global sum of a variable (1) on its home model grid, (2) after interpolation to the other side grid(s), and (3) after re_interpolation back onto its home side grid(s).  <a href="group__xgrid__mod.html#ga086805b918f635c0ddae0f0c3eb48b7a">More...</a><br /></td></tr>
-<tr class="separator:ga086805b918f635c0ddae0f0c3eb48b7a"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga53320ba72f7624f5b884ba19ed48178a"><td class="memItemLeft" align="right" valign="top">real function, dimension(3)&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__xgrid__mod.html#ga53320ba72f7624f5b884ba19ed48178a">conservation_check_ug_side1</a> (d, grid_id, xmap, remap_method)</td></tr>
-<tr class="memdesc:ga53320ba72f7624f5b884ba19ed48178a"><td class="mdescLeft">&#160;</td><td class="mdescRight"><a class="el" href="interfacexgrid__mod_1_1conservation__check__ug.html" title="For an unstructured grid, returns three numbers which are the global sum of a variable (1) on its hom...">conservation_check_ug</a> - returns three numbers which are the global sum of a variable (1) on its home model grid, (2) after interpolation to the other side grid(s), and (3) after re_interpolation back onto its home side grid(s).  <a href="group__xgrid__mod.html#ga53320ba72f7624f5b884ba19ed48178a">More...</a><br /></td></tr>
-<tr class="separator:ga53320ba72f7624f5b884ba19ed48178a"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:gabadeea9de74fb4182c1230e3c9b3917e"><td class="memItemLeft" align="right" valign="top">real function, dimension(3)&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__xgrid__mod.html#gabadeea9de74fb4182c1230e3c9b3917e">conservation_check_ug_side2</a> (d, grid_id, xmap, remap_method)</td></tr>
-<tr class="memdesc:gabadeea9de74fb4182c1230e3c9b3917e"><td class="mdescLeft">&#160;</td><td class="mdescRight"><a class="el" href="interfacexgrid__mod_1_1conservation__check__ug.html" title="For an unstructured grid, returns three numbers which are the global sum of a variable (1) on its hom...">conservation_check_ug</a> - returns three numbers which are the global sum of a variable (1) on its home model grid, (2) after interpolation to the other side grid(s), and (3) after re_interpolation back onto its home side grid(s).  <a href="group__xgrid__mod.html#gabadeea9de74fb4182c1230e3c9b3917e">More...</a><br /></td></tr>
-<tr class="separator:gabadeea9de74fb4182c1230e3c9b3917e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:gae2785d035bc42c9f423ee465f6072a4f"><td class="memItemLeft" align="right" valign="top">real(r8_kind) function, dimension(3)&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__xgrid__mod.html#gae2785d035bc42c9f423ee465f6072a4f">conservation_check_side1</a> (d, grid_id, xmap, remap_method)</td></tr>
+<tr class="memdesc:gae2785d035bc42c9f423ee465f6072a4f"><td class="mdescLeft">&#160;</td><td class="mdescRight"><a class="el" href="interfacexgrid__mod_1_1conservation__check.html" title="Returns three numbers which are the global sum of a variable.">conservation_check</a> - returns three numbers which are the global sum of a variable (1) on its home model grid, (2) after interpolation to the other side grid(s), and (3) after re_interpolation back onto its home side grid(s).  <a href="group__xgrid__mod.html#gae2785d035bc42c9f423ee465f6072a4f">More...</a><br /></td></tr>
+<tr class="separator:gae2785d035bc42c9f423ee465f6072a4f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:gadf811247b075d34cda4f9d3e2a824683"><td class="memItemLeft" align="right" valign="top">real(r8_kind) function, dimension(3)&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__xgrid__mod.html#gadf811247b075d34cda4f9d3e2a824683">conservation_check_side2</a> (d, grid_id, xmap, remap_method)</td></tr>
+<tr class="memdesc:gadf811247b075d34cda4f9d3e2a824683"><td class="mdescLeft">&#160;</td><td class="mdescRight"><a class="el" href="interfacexgrid__mod_1_1conservation__check.html" title="Returns three numbers which are the global sum of a variable.">conservation_check</a> - returns three numbers which are the global sum of a variable (1) on its home model grid, (2) after interpolation to the other side grid(s), and (3) after re_interpolation back onto its home side grid(s).  <a href="group__xgrid__mod.html#gadf811247b075d34cda4f9d3e2a824683">More...</a><br /></td></tr>
+<tr class="separator:gadf811247b075d34cda4f9d3e2a824683"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga3ff436170d1d989db19d731df76179a9"><td class="memItemLeft" align="right" valign="top">real(r8_kind) function, dimension(3)&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__xgrid__mod.html#ga3ff436170d1d989db19d731df76179a9">conservation_check_ug_side1</a> (d, grid_id, xmap, remap_method)</td></tr>
+<tr class="memdesc:ga3ff436170d1d989db19d731df76179a9"><td class="mdescLeft">&#160;</td><td class="mdescRight"><a class="el" href="interfacexgrid__mod_1_1conservation__check__ug.html" title="For an unstructured grid, returns three numbers which are the global sum of a variable (1) on its hom...">conservation_check_ug</a> - returns three numbers which are the global sum of a variable (1) on its home model grid, (2) after interpolation to the other side grid(s), and (3) after re_interpolation back onto its home side grid(s).  <a href="group__xgrid__mod.html#ga3ff436170d1d989db19d731df76179a9">More...</a><br /></td></tr>
+<tr class="separator:ga3ff436170d1d989db19d731df76179a9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga807156547e7dd48f1704ae497a3c4572"><td class="memItemLeft" align="right" valign="top">real(r8_kind) function, dimension(3)&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__xgrid__mod.html#ga807156547e7dd48f1704ae497a3c4572">conservation_check_ug_side2</a> (d, grid_id, xmap, remap_method)</td></tr>
+<tr class="memdesc:ga807156547e7dd48f1704ae497a3c4572"><td class="mdescLeft">&#160;</td><td class="mdescRight"><a class="el" href="interfacexgrid__mod_1_1conservation__check__ug.html" title="For an unstructured grid, returns three numbers which are the global sum of a variable (1) on its hom...">conservation_check_ug</a> - returns three numbers which are the global sum of a variable (1) on its home model grid, (2) after interpolation to the other side grid(s), and (3) after re_interpolation back onto its home side grid(s).  <a href="group__xgrid__mod.html#ga807156547e7dd48f1704ae497a3c4572">More...</a><br /></td></tr>
+<tr class="separator:ga807156547e7dd48f1704ae497a3c4572"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:gafdf2e079aab38266765c40c596790757"><td class="memItemLeft" align="right" valign="top">
 subroutine, public&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__xgrid__mod.html#gafdf2e079aab38266765c40c596790757">get_xmap_grid_area</a> (id, xmap, area)</td></tr>
 <tr class="memdesc:gafdf2e079aab38266765c40c596790757"><td class="mdescLeft">&#160;</td><td class="mdescRight">This routine is used to get the grid area of component model with id. <br /></td></tr>
 <tr class="separator:gafdf2e079aab38266765c40c596790757"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga053da0ec33bf223d2464d31002eda074"><td class="memItemLeft" align="right" valign="top">real function, dimension(is:ie, js:je)&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__xgrid__mod.html#ga053da0ec33bf223d2464d31002eda074">grad_zonal_latlon</a> (d, lon, lat, is, ie, js, je, isd, jsd)</td></tr>
-<tr class="memdesc:ga053da0ec33bf223d2464d31002eda074"><td class="mdescLeft">&#160;</td><td class="mdescRight">This function is used to calculate the gradient along zonal direction. Maybe need to setup a limit for the gradient. The grid is assumeed to be regular lat-lon grid.  <a href="group__xgrid__mod.html#ga053da0ec33bf223d2464d31002eda074">More...</a><br /></td></tr>
-<tr class="separator:ga053da0ec33bf223d2464d31002eda074"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga793e97533baa057e5fc5b6f2663ce2ba"><td class="memItemLeft" align="right" valign="top">real function, dimension(is:ie, js:je)&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__xgrid__mod.html#ga793e97533baa057e5fc5b6f2663ce2ba">grad_merid_latlon</a> (d, lat, is, ie, js, je, isd, jsd)</td></tr>
-<tr class="memdesc:ga793e97533baa057e5fc5b6f2663ce2ba"><td class="mdescLeft">&#160;</td><td class="mdescRight">This function is used to calculate the gradient along meridinal direction. Maybe need to setup a limit for the gradient. regular lat-lon grid are assumed.  <a href="group__xgrid__mod.html#ga793e97533baa057e5fc5b6f2663ce2ba">More...</a><br /></td></tr>
-<tr class="separator:ga793e97533baa057e5fc5b6f2663ce2ba"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:gaf7991bd0fcce8ec9b87fbf87b086af9b"><td class="memItemLeft" align="right" valign="top">real(r8_kind) function, dimension(is:ie, js:je)&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__xgrid__mod.html#gaf7991bd0fcce8ec9b87fbf87b086af9b">grad_zonal_latlon</a> (d, lon, lat, is, ie, js, je, isd, jsd)</td></tr>
+<tr class="memdesc:gaf7991bd0fcce8ec9b87fbf87b086af9b"><td class="mdescLeft">&#160;</td><td class="mdescRight">This function is used to calculate the gradient along zonal direction. Maybe need to setup a limit for the gradient. The grid is assumeed to be regular lat-lon grid.  <a href="group__xgrid__mod.html#gaf7991bd0fcce8ec9b87fbf87b086af9b">More...</a><br /></td></tr>
+<tr class="separator:gaf7991bd0fcce8ec9b87fbf87b086af9b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga921dabd98b1ad46af5466e8824cdc6f0"><td class="memItemLeft" align="right" valign="top">real(r8_kind) function, dimension(is:ie, js:je)&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__xgrid__mod.html#ga921dabd98b1ad46af5466e8824cdc6f0">grad_merid_latlon</a> (d, lat, is, ie, js, je, isd, jsd)</td></tr>
+<tr class="memdesc:ga921dabd98b1ad46af5466e8824cdc6f0"><td class="mdescLeft">&#160;</td><td class="mdescRight">This function is used to calculate the gradient along meridinal direction. Maybe need to setup a limit for the gradient. regular lat-lon grid are assumed.  <a href="group__xgrid__mod.html#ga921dabd98b1ad46af5466e8824cdc6f0">More...</a><br /></td></tr>
+<tr class="separator:ga921dabd98b1ad46af5466e8824cdc6f0"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:gaed04b02075e7219dcea14ec794df20c9"><td class="memItemLeft" align="right" valign="top">
 subroutine, public&#160;</td><td class="memItemRight" valign="bottom"><b>get_index_range</b> (xmap, grid_index, is, ie, js, je, km)</td></tr>
 <tr class="separator:gaed04b02075e7219dcea14ec794df20c9"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -380,32 +379,32 @@ logical&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="g
 <tr class="memitem:ga672b3c56b4e3046795ce2792f4b12ce6"><td class="memItemLeft" align="right" valign="top">
 integer&#160;</td><td class="memItemRight" valign="bottom"><b>remapping_method</b></td></tr>
 <tr class="separator:ga672b3c56b4e3046795ce2792f4b12ce6"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga1ff8193d33aacaafdf1797ff978daea1"><td class="memItemLeft" align="right" valign="top">
-real, dimension(:,:), allocatable, public&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__xgrid__mod.html#ga1ff8193d33aacaafdf1797ff978daea1">area_atm_model</a></td></tr>
-<tr class="memdesc:ga1ff8193d33aacaafdf1797ff978daea1"><td class="mdescLeft">&#160;</td><td class="mdescRight">Area elements used inside each model. <br /></td></tr>
-<tr class="separator:ga1ff8193d33aacaafdf1797ff978daea1"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga29d0ead103a82cc841e74a798be7972b"><td class="memItemLeft" align="right" valign="top">
-real, dimension(:,:), allocatable&#160;</td><td class="memItemRight" valign="bottom"><b>area_lnd_model</b></td></tr>
-<tr class="separator:ga29d0ead103a82cc841e74a798be7972b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:gad37a8b69f57d73acc0d2039fceadb260"><td class="memItemLeft" align="right" valign="top">
-real, dimension(:,:), allocatable, public&#160;</td><td class="memItemRight" valign="bottom"><b>area_ocn_model</b></td></tr>
-<tr class="separator:gad37a8b69f57d73acc0d2039fceadb260"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga0f5e8fa705ad393644dadd4f16d4e380"><td class="memItemLeft" align="right" valign="top">
-real, dimension(:,:), allocatable, public&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__xgrid__mod.html#ga0f5e8fa705ad393644dadd4f16d4e380">area_atm_sphere</a></td></tr>
-<tr class="memdesc:ga0f5e8fa705ad393644dadd4f16d4e380"><td class="mdescLeft">&#160;</td><td class="mdescRight">Area elements based on a the spherical model used by the ICE layer. <br /></td></tr>
-<tr class="separator:ga0f5e8fa705ad393644dadd4f16d4e380"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga5d45ffa81c6e8a475c34b9a4c147d7dc"><td class="memItemLeft" align="right" valign="top">
-real, dimension(:,:), allocatable&#160;</td><td class="memItemRight" valign="bottom"><b>area_lnd_sphere</b></td></tr>
-<tr class="separator:ga5d45ffa81c6e8a475c34b9a4c147d7dc"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga13760b65c2019c8c8e4a7038998be022"><td class="memItemLeft" align="right" valign="top">
-real, dimension(:,:), allocatable, public&#160;</td><td class="memItemRight" valign="bottom"><b>area_ocn_sphere</b></td></tr>
-<tr class="separator:ga13760b65c2019c8c8e4a7038998be022"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:gad49659b5e2fc7b1013c03f5e5fc7b828"><td class="memItemLeft" align="right" valign="top">
-real, parameter&#160;</td><td class="memItemRight" valign="bottom"><b>eps</b> = 1.0e-10</td></tr>
-<tr class="separator:gad49659b5e2fc7b1013c03f5e5fc7b828"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:gabe42a642ac64cc83cf79d881802b0304"><td class="memItemLeft" align="right" valign="top">
-real, parameter&#160;</td><td class="memItemRight" valign="bottom"><b>large_number</b> = 1.e20</td></tr>
-<tr class="separator:gabe42a642ac64cc83cf79d881802b0304"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:gaf7762d883f4a7319740194e1d5b62af7"><td class="memItemLeft" align="right" valign="top">
+real(r8_kind), dimension(:,:), allocatable, public&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__xgrid__mod.html#gaf7762d883f4a7319740194e1d5b62af7">area_atm_model</a></td></tr>
+<tr class="memdesc:gaf7762d883f4a7319740194e1d5b62af7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Area elements used inside each model. <br /></td></tr>
+<tr class="separator:gaf7762d883f4a7319740194e1d5b62af7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga62b3f0be3806baab84d5df43c1b57e9a"><td class="memItemLeft" align="right" valign="top">
+real(r8_kind), dimension(:,:), allocatable&#160;</td><td class="memItemRight" valign="bottom"><b>area_lnd_model</b></td></tr>
+<tr class="separator:ga62b3f0be3806baab84d5df43c1b57e9a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga98dfe44094aefd1a5b5fef12d62e6cf3"><td class="memItemLeft" align="right" valign="top">
+real(r8_kind), dimension(:,:), allocatable, public&#160;</td><td class="memItemRight" valign="bottom"><b>area_ocn_model</b></td></tr>
+<tr class="separator:ga98dfe44094aefd1a5b5fef12d62e6cf3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga57c6787700714eaea16d5734bcb7e8ea"><td class="memItemLeft" align="right" valign="top">
+real(r8_kind), dimension(:,:), allocatable, public&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__xgrid__mod.html#ga57c6787700714eaea16d5734bcb7e8ea">area_atm_sphere</a></td></tr>
+<tr class="memdesc:ga57c6787700714eaea16d5734bcb7e8ea"><td class="mdescLeft">&#160;</td><td class="mdescRight">Area elements based on a the spherical model used by the ICE layer. <br /></td></tr>
+<tr class="separator:ga57c6787700714eaea16d5734bcb7e8ea"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga3b3ad4a0311e90a7975b82d0fb970a99"><td class="memItemLeft" align="right" valign="top">
+real(r8_kind), dimension(:,:), allocatable&#160;</td><td class="memItemRight" valign="bottom"><b>area_lnd_sphere</b></td></tr>
+<tr class="separator:ga3b3ad4a0311e90a7975b82d0fb970a99"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga957db9942d70173ff688ab78b9d3a722"><td class="memItemLeft" align="right" valign="top">
+real(r8_kind), dimension(:,:), allocatable, public&#160;</td><td class="memItemRight" valign="bottom"><b>area_ocn_sphere</b></td></tr>
+<tr class="separator:ga957db9942d70173ff688ab78b9d3a722"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga1560d5c54977b4a68ee0507683f0f087"><td class="memItemLeft" align="right" valign="top">
+real(r8_kind), parameter&#160;</td><td class="memItemRight" valign="bottom"><b>eps</b> = 1.0d-10</td></tr>
+<tr class="separator:ga1560d5c54977b4a68ee0507683f0f087"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:gaf001afe20b6467429438b8c867bcf139"><td class="memItemLeft" align="right" valign="top">
+real(r8_kind), parameter&#160;</td><td class="memItemRight" valign="bottom"><b>large_number</b> = 1.d20</td></tr>
+<tr class="separator:gaf001afe20b6467429438b8c867bcf139"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:gad369225c254bc7bda087334ca5d13096"><td class="memItemLeft" align="right" valign="top">
 logical&#160;</td><td class="memItemRight" valign="bottom"><b>module_is_initialized</b> = .FALSE.</td></tr>
 <tr class="separator:gad369225c254bc7bda087334ca5d13096"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -505,13 +504,13 @@ integer&#160;</td><td class="memItemRight" valign="bottom"><b>je_parent</b> =0</
         <tr>
           <td class="memname">logical function xgrid_mod::is_lat_lon </td>
           <td>(</td>
-          <td class="paramtype">real, dimension(:,:), intent(in)&#160;</td>
+          <td class="paramtype">real(r8_kind), dimension(:,:), intent(in)&#160;</td>
           <td class="paramname"><em>lon</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">real, dimension(:,:), intent(in)&#160;</td>
+          <td class="paramtype">real(r8_kind), dimension(:,:), intent(in)&#160;</td>
           <td class="paramname"><em>lat</em>&#160;</td>
         </tr>
         <tr>
@@ -536,7 +535,7 @@ integer&#160;</td><td class="memItemRight" valign="bottom"><b>je_parent</b> =0</
         <tr>
           <td class="memname">subroutine, public xgrid_mod::stock_integrate_2d </td>
           <td>(</td>
-          <td class="paramtype">real, dimension(:,:), intent(in)&#160;</td>
+          <td class="paramtype">real(r8_kind), dimension(:,:), intent(in)&#160;</td>
           <td class="paramname"><em>data</em>, </td>
         </tr>
         <tr>
@@ -548,19 +547,19 @@ integer&#160;</td><td class="memItemRight" valign="bottom"><b>je_parent</b> =0</
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">real, intent(in)&#160;</td>
+          <td class="paramtype">real(r8_kind), intent(in)&#160;</td>
           <td class="paramname"><em>delta_t</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">real, intent(in)&#160;</td>
+          <td class="paramtype">real(r8_kind), intent(in)&#160;</td>
           <td class="paramname"><em>radius</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">real, intent(out)&#160;</td>
+          <td class="paramtype">real(r8_kind), intent(out)&#160;</td>
           <td class="paramname"><em>res</em>, </td>
         </tr>
         <tr>
@@ -617,7 +616,7 @@ integer&#160;</td><td class="memItemRight" valign="bottom"><b>je_parent</b> =0</
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">real, dimension(:,:), intent(in)&#160;</td>
+          <td class="paramtype">real(r8_kind), dimension(:,:), intent(in)&#160;</td>
           <td class="paramname"><em>data</em>, </td>
         </tr>
         <tr>
@@ -629,7 +628,7 @@ integer&#160;</td><td class="memItemRight" valign="bottom"><b>je_parent</b> =0</
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">real, intent(in)&#160;</td>
+          <td class="paramtype">real(r8_kind), intent(in)&#160;</td>
           <td class="paramname"><em>delta_t</em>, </td>
         </tr>
         <tr>
@@ -647,7 +646,7 @@ integer&#160;</td><td class="memItemRight" valign="bottom"><b>je_parent</b> =0</
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">real, intent(in)&#160;</td>
+          <td class="paramtype">real(r8_kind), intent(in)&#160;</td>
           <td class="paramname"><em>radius</em>, </td>
         </tr>
         <tr>
@@ -712,7 +711,7 @@ integer&#160;</td><td class="memItemRight" valign="bottom"><b>je_parent</b> =0</
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">real, dimension(:,:), intent(in)&#160;</td>
+          <td class="paramtype">real(r8_kind), dimension(:,:), intent(in)&#160;</td>
           <td class="paramname"><em>data</em>, </td>
         </tr>
         <tr>
@@ -724,7 +723,7 @@ integer&#160;</td><td class="memItemRight" valign="bottom"><b>je_parent</b> =0</
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">real, intent(in)&#160;</td>
+          <td class="paramtype">real(r8_kind), intent(in)&#160;</td>
           <td class="paramname"><em>delta_t</em>, </td>
         </tr>
         <tr>
@@ -742,7 +741,7 @@ integer&#160;</td><td class="memItemRight" valign="bottom"><b>je_parent</b> =0</
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">real, intent(in)&#160;</td>
+          <td class="paramtype">real(r8_kind), intent(in)&#160;</td>
           <td class="paramname"><em>radius</em>, </td>
         </tr>
         <tr>
@@ -814,13 +813,13 @@ integer&#160;</td><td class="memItemRight" valign="bottom"><b>je_parent</b> =0</
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">real, intent(in)&#160;</td>
+          <td class="paramtype">real(r8_kind), intent(in)&#160;</td>
           <td class="paramname"><em>ref_value</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">real, intent(in)&#160;</td>
+          <td class="paramtype">real(r8_kind), intent(in)&#160;</td>
           <td class="paramname"><em>radius</em>, </td>
         </tr>
         <tr>

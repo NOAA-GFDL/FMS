@@ -31,6 +31,7 @@ var mpp__define__nest__domains_8inc =
     [ "mpp_get_nest_pelist", "mpp__define__nest__domains_8inc.html#a1007fd8e04e6b6d480d27e35c60ad030", null ],
     [ "mpp_is_nest_coarse", "mpp__define__nest__domains_8inc.html#a27cb3312205dbb4f9c3e40f059cccb28", null ],
     [ "mpp_is_nest_fine", "mpp__define__nest__domains_8inc.html#a021e75b8d2366ba66c423ea3eca4f954", null ],
+    [ "mpp_shift_nest_domains", "mpp__define__nest__domains_8inc.html#a6c5e07eb8bcad4c0be8f535a98cc361c", null ],
     [ "print_nest_overlap", "mpp__define__nest__domains_8inc.html#a6be92a682ec15cffc3f8aff2683bfa0b", null ],
     [ "search_c2f_nest_overlap", "mpp__define__nest__domains_8inc.html#a623be6bb041193191d4ef3b3ce4f8d5a", null ],
     [ "search_f2c_nest_overlap", "mpp__define__nest__domains_8inc.html#a4d5ccc0794e6c38c5bbb83348d93f1f1", null ]

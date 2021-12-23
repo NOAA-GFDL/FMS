@@ -33,7 +33,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">FMS
-   &#160;<span id="projectnumber">2021.03.01</span>
+   &#160;<span id="projectnumber">2021.04.0</span>
    </div>
    <div id="projectbrief">Flexible Modeling System</div>
   </td>
@@ -103,19 +103,19 @@ $(document).ready(function(){initNavTree('interfacexgrid__mod_1_1conservation__c
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pri-methods"></a>
 Private Member Functions</h2></td></tr>
-<tr class="memitem:a401d24d4cab59e45dbfc1ae7d1338926"><td class="memItemLeft" align="right" valign="top">real function, dimension(3)&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="interfacexgrid__mod_1_1conservation__check.html#a401d24d4cab59e45dbfc1ae7d1338926">conservation_check_side1</a> (d, grid_id, xmap, remap_method)</td></tr>
-<tr class="memdesc:a401d24d4cab59e45dbfc1ae7d1338926"><td class="mdescLeft">&#160;</td><td class="mdescRight"><a class="el" href="interfacexgrid__mod_1_1conservation__check.html" title="Returns three numbers which are the global sum of a variable.">conservation_check</a> - returns three numbers which are the global sum of a variable (1) on its home model grid, (2) after interpolation to the other side grid(s), and (3) after re_interpolation back onto its home side grid(s).  <a href="interfacexgrid__mod_1_1conservation__check.html#a401d24d4cab59e45dbfc1ae7d1338926">More...</a><br /></td></tr>
-<tr class="separator:a401d24d4cab59e45dbfc1ae7d1338926"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a402ce643078db5a15614e51b0821cf12"><td class="memItemLeft" align="right" valign="top">real function, dimension(3)&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="interfacexgrid__mod_1_1conservation__check.html#a402ce643078db5a15614e51b0821cf12">conservation_check_side2</a> (d, grid_id, xmap, remap_method)</td></tr>
-<tr class="memdesc:a402ce643078db5a15614e51b0821cf12"><td class="mdescLeft">&#160;</td><td class="mdescRight"><a class="el" href="interfacexgrid__mod_1_1conservation__check.html" title="Returns three numbers which are the global sum of a variable.">conservation_check</a> - returns three numbers which are the global sum of a variable (1) on its home model grid, (2) after interpolation to the other side grid(s), and (3) after re_interpolation back onto its home side grid(s).  <a href="interfacexgrid__mod_1_1conservation__check.html#a402ce643078db5a15614e51b0821cf12">More...</a><br /></td></tr>
-<tr class="separator:a402ce643078db5a15614e51b0821cf12"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a231bab92f9349804878f4236f6d238d7"><td class="memItemLeft" align="right" valign="top">real(r8_kind) function, dimension(3)&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="interfacexgrid__mod_1_1conservation__check.html#a231bab92f9349804878f4236f6d238d7">conservation_check_side1</a> (d, grid_id, xmap, remap_method)</td></tr>
+<tr class="memdesc:a231bab92f9349804878f4236f6d238d7"><td class="mdescLeft">&#160;</td><td class="mdescRight"><a class="el" href="interfacexgrid__mod_1_1conservation__check.html" title="Returns three numbers which are the global sum of a variable.">conservation_check</a> - returns three numbers which are the global sum of a variable (1) on its home model grid, (2) after interpolation to the other side grid(s), and (3) after re_interpolation back onto its home side grid(s).  <a href="interfacexgrid__mod_1_1conservation__check.html#a231bab92f9349804878f4236f6d238d7">More...</a><br /></td></tr>
+<tr class="separator:a231bab92f9349804878f4236f6d238d7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2c8de1ae7f082cb78aa428f3668f591d"><td class="memItemLeft" align="right" valign="top">real(r8_kind) function, dimension(3)&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="interfacexgrid__mod_1_1conservation__check.html#a2c8de1ae7f082cb78aa428f3668f591d">conservation_check_side2</a> (d, grid_id, xmap, remap_method)</td></tr>
+<tr class="memdesc:a2c8de1ae7f082cb78aa428f3668f591d"><td class="mdescLeft">&#160;</td><td class="mdescRight"><a class="el" href="interfacexgrid__mod_1_1conservation__check.html" title="Returns three numbers which are the global sum of a variable.">conservation_check</a> - returns three numbers which are the global sum of a variable (1) on its home model grid, (2) after interpolation to the other side grid(s), and (3) after re_interpolation back onto its home side grid(s).  <a href="interfacexgrid__mod_1_1conservation__check.html#a2c8de1ae7f082cb78aa428f3668f591d">More...</a><br /></td></tr>
+<tr class="separator:a2c8de1ae7f082cb78aa428f3668f591d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Returns three numbers which are the global sum of a variable. </p>
 <p>Returns three numbers which are the global sum of a variable (1) on its home model grid, (2) after interpolation to the other side grid(s), and (3) after re_interpolation back onto its home side grid(s). Conservation_check must be called by all PEs to work properly.</p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramdir"></td><td class="paramname">d</td><td>real data </td></tr>
+    <tr><td class="paramdir"></td><td class="paramname">d</td><td>real(r8_kind) data </td></tr>
     <tr><td class="paramdir"></td><td class="paramname">grid_id</td><td>3 character grid ID </td></tr>
     <tr><td class="paramdir">[in,out]</td><td class="paramname">xmap</td><td>exchange grid </td></tr>
     <tr><td class="paramdir">[out]</td><td class="paramname">global</td><td>sum of a variable on home model grid, after side grid interpolation and after reinterpolation</td></tr>
@@ -125,10 +125,10 @@ Private Member Functions</h2></td></tr>
 <p><br  />
 Example usage: </p><div class="fragment"><div class="line"><span class="keyword">call </span>conservation_check(d, grid_id, xmap,remap_order)</div>
 </div><!-- fragment --> 
-<p class="definition">Definition at line <a class="el" href="xgrid_8F90_source.html#l00261">261</a> of file <a class="el" href="xgrid_8F90_source.html">xgrid.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="xgrid_8F90_source.html#l00260">260</a> of file <a class="el" href="xgrid_8F90_source.html">xgrid.F90</a>.</p>
 </div><h2 class="groupheader">Member Function/Subroutine Documentation</h2>
-<a id="a401d24d4cab59e45dbfc1ae7d1338926"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a401d24d4cab59e45dbfc1ae7d1338926">&#9670;&nbsp;</a></span>conservation_check_side1()</h2>
+<a id="a231bab92f9349804878f4236f6d238d7"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a231bab92f9349804878f4236f6d238d7">&#9670;&nbsp;</a></span>conservation_check_side1()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -137,9 +137,9 @@ Example usage: </p><div class="fragment"><div class="line"><span class="keyword"
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">real function, dimension(3) conservation_check_side1 </td>
+          <td class="memname">real(r8_kind) function, dimension(3) conservation_check_side1 </td>
           <td>(</td>
-          <td class="paramtype">real, dimension(:,:), intent(in)&#160;</td>
+          <td class="paramtype">real(r8_kind), dimension(:,:), intent(in)&#160;</td>
           <td class="paramname"><em>d</em>, </td>
         </tr>
         <tr>
@@ -174,7 +174,7 @@ Example usage: </p><div class="fragment"><div class="line"><span class="keyword"
 </div><div class="memdoc">
 
 <p><a class="el" href="interfacexgrid__mod_1_1conservation__check.html" title="Returns three numbers which are the global sum of a variable.">conservation_check</a> - returns three numbers which are the global sum of a variable (1) on its home model grid, (2) after interpolation to the other side grid(s), and (3) after re_interpolation back onto its home side grid(s). </p>
-<dl class="section return"><dt>Returns</dt><dd>real conservation_check_side1 </dd></dl>
+<dl class="section return"><dt>Returns</dt><dd>real(r8_kind) conservation_check_side1 </dd></dl>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramdir">[in]</td><td class="paramname">d</td><td>model data to check </td></tr>
@@ -188,8 +188,8 @@ Example usage: </p><div class="fragment"><div class="line"><span class="keyword"
 
 </div>
 </div>
-<a id="a402ce643078db5a15614e51b0821cf12"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a402ce643078db5a15614e51b0821cf12">&#9670;&nbsp;</a></span>conservation_check_side2()</h2>
+<a id="a2c8de1ae7f082cb78aa428f3668f591d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a2c8de1ae7f082cb78aa428f3668f591d">&#9670;&nbsp;</a></span>conservation_check_side2()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -198,9 +198,9 @@ Example usage: </p><div class="fragment"><div class="line"><span class="keyword"
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">real function, dimension(3) conservation_check_side2 </td>
+          <td class="memname">real(r8_kind) function, dimension(3) conservation_check_side2 </td>
           <td>(</td>
-          <td class="paramtype">real, dimension(:,:,:), intent(in)&#160;</td>
+          <td class="paramtype">real(r8_kind), dimension(:,:,:), intent(in)&#160;</td>
           <td class="paramname"><em>d</em>, </td>
         </tr>
         <tr>
@@ -235,7 +235,7 @@ Example usage: </p><div class="fragment"><div class="line"><span class="keyword"
 </div><div class="memdoc">
 
 <p><a class="el" href="interfacexgrid__mod_1_1conservation__check.html" title="Returns three numbers which are the global sum of a variable.">conservation_check</a> - returns three numbers which are the global sum of a variable (1) on its home model grid, (2) after interpolation to the other side grid(s), and (3) after re_interpolation back onto its home side grid(s). </p>
-<dl class="section return"><dt>Returns</dt><dd>real conservation_check_side2 </dd></dl>
+<dl class="section return"><dt>Returns</dt><dd>real(r8_kind) conservation_check_side2 </dd></dl>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramdir">[in]</td><td class="paramname">d</td><td>model data to check </td></tr>

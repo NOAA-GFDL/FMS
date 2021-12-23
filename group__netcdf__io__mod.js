@@ -149,6 +149,7 @@ var group__netcdf__io__mod =
     [ "check_netcdf_code", "group__netcdf__io__mod.html#gaa1b08fcf27f57f5b3c064e8ba29305e5", null ],
     [ "compressed_start_and_count", "group__netcdf__io__mod.html#ga2fa664e36739f175a1ac20f75032a5f1", null ],
     [ "dimension_exists", "group__netcdf__io__mod.html#ga7f8565a27ff47353809360e47f94a0b2", null ],
+    [ "flush_file", "group__netcdf__io__mod.html#gaa914c02d91e2553f92de8946f12e7d44", null ],
     [ "get_attribute_type", "group__netcdf__io__mod.html#gae49a656fc7d6595b831cf4f716d25d88", null ],
     [ "get_compressed_dimension_index", "group__netcdf__io__mod.html#ga2f390ad760d18e737cc811224c7b16e5", null ],
     [ "get_dimension_id", "group__netcdf__io__mod.html#ga80e0a307f11b5a5ba38b5993c9181c05", null ],

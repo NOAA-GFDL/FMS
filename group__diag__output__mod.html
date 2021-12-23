@@ -33,7 +33,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">FMS
-   &#160;<span id="projectnumber">2021.03.01</span>
+   &#160;<span id="projectnumber">2021.04.0</span>
    </div>
    <div id="projectbrief">Flexible Modeling System</div>
   </td>
@@ -91,7 +91,6 @@ $(document).ready(function(){initNavTree('group__diag__output__mod.html',''); in
 
 <div class="header">
   <div class="summary">
-<a href="#nested-classes">Data Types</a> &#124;
 <a href="#func-members">Functions/Subroutines</a> &#124;
 <a href="#var-members">Variables</a>  </div>
   <div class="headertitle">
@@ -102,47 +101,26 @@ $(document).ready(function(){initNavTree('group__diag__output__mod.html',''); in
 <p>diag_output_mod is an integral part of diag_manager_mod. Its function is to write axis-meta-data, field-meta-data and field data.  
 <a href="#details">More...</a></p>
 <table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
-Data Types</h2></td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">interface &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="interfacediag__output__mod_1_1diag__field__write.html">diag_field_write</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Write diag field using <a class="el" href="group__fms2__io.html">FMS2 IO</a>.  <a href="interfacediag__output__mod_1_1diag__field__write.html#details">More...</a><br /></td></tr>
-<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">interface &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="interfacediag__output__mod_1_1diag__output__init.html">diag_output_init</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Initialize output for writing.  <a href="interfacediag__output__mod_1_1diag__output__init.html#details">More...</a><br /></td></tr>
-<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">interface &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="interfacediag__output__mod_1_1write__axis__meta__data.html">write_axis_meta_data</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Writes axis metadata to a file.  <a href="interfacediag__output__mod_1_1write__axis__meta__data.html#details">More...</a><br /></td></tr>
-<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">interface &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="interfacediag__output__mod_1_1write__field__meta__data.html">write_field_meta_data</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Writes field metadata to a file.  <a href="interfacediag__output__mod_1_1write__field__meta__data.html#details">More...</a><br /></td></tr>
-<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">interface &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="interfacediag__output__mod_1_1write__attribute__meta.html">write_attribute_meta</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Private interface to write metadata for an attribute to a file.  <a href="interfacediag__output__mod_1_1write__attribute__meta.html#details">More...</a><br /></td></tr>
-<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-</table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="func-members"></a>
 Functions/Subroutines</h2></td></tr>
-<tr class="memitem:ga76ad7ec293a0815119e9ef5dab351f25"><td class="memItemLeft" align="right" valign="top">subroutine&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__diag__output__mod.html#ga76ad7ec293a0815119e9ef5dab351f25">diag_output_init_fms2_io</a> (file_name, FORMAT, file_title, file_unit, all_scalar_or_1d, domain, domainU, fileobj, fileobjU, fileobjND, fnum_domain, attributes)</td></tr>
-<tr class="memdesc:ga76ad7ec293a0815119e9ef5dab351f25"><td class="mdescLeft">&#160;</td><td class="mdescRight">Registers the time axis and opens the output file.  <a href="group__diag__output__mod.html#ga76ad7ec293a0815119e9ef5dab351f25">More...</a><br /></td></tr>
-<tr class="separator:ga76ad7ec293a0815119e9ef5dab351f25"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:gaff47be1208377e0143a8e043420d0465"><td class="memItemLeft" align="right" valign="top">subroutine&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__diag__output__mod.html#gaff47be1208377e0143a8e043420d0465">write_axis_meta_data_fms2_io</a> (file_unit, axes, fileob, time_ops, time_axis_registered)</td></tr>
-<tr class="memdesc:gaff47be1208377e0143a8e043420d0465"><td class="mdescLeft">&#160;</td><td class="mdescRight">Write the axis meta data to file.  <a href="group__diag__output__mod.html#gaff47be1208377e0143a8e043420d0465">More...</a><br /></td></tr>
-<tr class="separator:gaff47be1208377e0143a8e043420d0465"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:gadd968acf9ce82dc9063009e41eecda7a"><td class="memItemLeft" align="right" valign="top">type(<a class="el" href="structdiag__data__mod_1_1diag__fieldtype.html">diag_fieldtype</a>) function&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__diag__output__mod.html#gadd968acf9ce82dc9063009e41eecda7a">write_field_meta_data_fms2_io</a> (file_unit, name, axes, units, long_name, range, pack, mval, avg_name, time_method, standard_name, interp_method, attributes, num_attributes, use_UGdomain, fileob)</td></tr>
-<tr class="memdesc:gadd968acf9ce82dc9063009e41eecda7a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Write the field meta data to file.  <a href="group__diag__output__mod.html#gadd968acf9ce82dc9063009e41eecda7a">More...</a><br /></td></tr>
-<tr class="separator:gadd968acf9ce82dc9063009e41eecda7a"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga006c1dd9b4844df111ecf599dac03a73"><td class="memItemLeft" align="right" valign="top">subroutine&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__diag__output__mod.html#ga006c1dd9b4844df111ecf599dac03a73">write_attribute_meta_fms2_io</a> (file_unit, id, num_attributes, attributes, time_method, err_msg, varname, fileob)</td></tr>
-<tr class="memdesc:ga006c1dd9b4844df111ecf599dac03a73"><td class="mdescLeft">&#160;</td><td class="mdescRight">Write out attribute meta data to file.  <a href="group__diag__output__mod.html#ga006c1dd9b4844df111ecf599dac03a73">More...</a><br /></td></tr>
-<tr class="separator:ga006c1dd9b4844df111ecf599dac03a73"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga3c948d95de7021b5b511e4e9371120c2"><td class="memItemLeft" align="right" valign="top">subroutine, public&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__diag__output__mod.html#ga3c948d95de7021b5b511e4e9371120c2">diag_output_init</a> (file_name, file_title, file_unit, domain, domainU, fileobj, fileobjU, fileobjND, fnum_domain, attributes)</td></tr>
+<tr class="memdesc:ga3c948d95de7021b5b511e4e9371120c2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Opens the output file.  <a href="group__diag__output__mod.html#ga3c948d95de7021b5b511e4e9371120c2">More...</a><br /></td></tr>
+<tr class="separator:ga3c948d95de7021b5b511e4e9371120c2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:gae4be5d97b5c60f844df86228b3ab46bb"><td class="memItemLeft" align="right" valign="top">subroutine, public&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__diag__output__mod.html#gae4be5d97b5c60f844df86228b3ab46bb">write_axis_meta_data</a> (file_unit, axes, fileob, time_ops, time_axis_registered)</td></tr>
+<tr class="memdesc:gae4be5d97b5c60f844df86228b3ab46bb"><td class="mdescLeft">&#160;</td><td class="mdescRight">Write the axis meta data to file.  <a href="group__diag__output__mod.html#gae4be5d97b5c60f844df86228b3ab46bb">More...</a><br /></td></tr>
+<tr class="separator:gae4be5d97b5c60f844df86228b3ab46bb"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:gae75520d0052d090a988c5d56e36b6e8f"><td class="memItemLeft" align="right" valign="top">type(<a class="el" href="structdiag__data__mod_1_1diag__fieldtype.html">diag_fieldtype</a>) function, public&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__diag__output__mod.html#gae75520d0052d090a988c5d56e36b6e8f">write_field_meta_data</a> (file_unit, name, axes, units, long_name, range, pack, mval, avg_name, time_method, standard_name, interp_method, attributes, num_attributes, use_UGdomain, fileob)</td></tr>
+<tr class="memdesc:gae75520d0052d090a988c5d56e36b6e8f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Write the field meta data to file.  <a href="group__diag__output__mod.html#gae75520d0052d090a988c5d56e36b6e8f">More...</a><br /></td></tr>
+<tr class="separator:gae75520d0052d090a988c5d56e36b6e8f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:gac022b16344a256e172738d4ca5d95506"><td class="memItemLeft" align="right" valign="top">subroutine&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__diag__output__mod.html#gac022b16344a256e172738d4ca5d95506">write_attribute_meta</a> (file_unit, num_attributes, attributes, time_method, err_msg, varname, fileob)</td></tr>
+<tr class="memdesc:gac022b16344a256e172738d4ca5d95506"><td class="mdescLeft">&#160;</td><td class="mdescRight">Write out attribute meta data to file.  <a href="group__diag__output__mod.html#gac022b16344a256e172738d4ca5d95506">More...</a><br /></td></tr>
+<tr class="separator:gac022b16344a256e172738d4ca5d95506"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:gad319750dc385752038f14d79a36d0d22"><td class="memItemLeft" align="right" valign="top">subroutine, public&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__diag__output__mod.html#gad319750dc385752038f14d79a36d0d22">done_meta_data</a> (file_unit)</td></tr>
 <tr class="memdesc:gad319750dc385752038f14d79a36d0d22"><td class="mdescLeft">&#160;</td><td class="mdescRight">Writes axis data to file.  <a href="group__diag__output__mod.html#gad319750dc385752038f14d79a36d0d22">More...</a><br /></td></tr>
 <tr class="separator:gad319750dc385752038f14d79a36d0d22"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:gad99a258efd56f01927b3ec1ad6f61c45"><td class="memItemLeft" align="right" valign="top">subroutine&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__diag__output__mod.html#gad99a258efd56f01927b3ec1ad6f61c45">diag_field_write_field</a> (field, buffer, static, fileob, file_num, fileobjU, fileobj, fileobjND, fnum_for_domain, time_in)</td></tr>
-<tr class="memdesc:gad99a258efd56f01927b3ec1ad6f61c45"><td class="mdescLeft">&#160;</td><td class="mdescRight">Outputs the diagnostic data to a file using fms2_io taking a field object as input.  <a href="group__diag__output__mod.html#gad99a258efd56f01927b3ec1ad6f61c45">More...</a><br /></td></tr>
-<tr class="separator:gad99a258efd56f01927b3ec1ad6f61c45"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga11abdb82e3dc5fc633352fd9617cad11"><td class="memItemLeft" align="right" valign="top">subroutine&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__diag__output__mod.html#ga11abdb82e3dc5fc633352fd9617cad11">diag_field_write_varname</a> (varname, buffer, static, fileob, file_num, fileobjU, fileobj, fileobjND, fnum_for_domain, time_in)</td></tr>
-<tr class="memdesc:ga11abdb82e3dc5fc633352fd9617cad11"><td class="mdescLeft">&#160;</td><td class="mdescRight">Writes diagnostic data out using fms2_io routine.  <a href="group__diag__output__mod.html#ga11abdb82e3dc5fc633352fd9617cad11">More...</a><br /></td></tr>
-<tr class="separator:ga11abdb82e3dc5fc633352fd9617cad11"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga2c94a63acb23aaf6adac80f99b2ef019"><td class="memItemLeft" align="right" valign="top">subroutine, public&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__diag__output__mod.html#ga2c94a63acb23aaf6adac80f99b2ef019">diag_field_write</a> (varname, buffer, static, file_num, fileobjU, fileobj, fileobjND, fnum_for_domain, time_in)</td></tr>
+<tr class="memdesc:ga2c94a63acb23aaf6adac80f99b2ef019"><td class="mdescLeft">&#160;</td><td class="mdescRight">Writes diagnostic data out using fms2_io routine.  <a href="group__diag__output__mod.html#ga2c94a63acb23aaf6adac80f99b2ef019">More...</a><br /></td></tr>
+<tr class="separator:ga2c94a63acb23aaf6adac80f99b2ef019"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:gad53355722ce2fc05b2f0d319cc87274c"><td class="memItemLeft" align="right" valign="top">subroutine, public&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__diag__output__mod.html#gad53355722ce2fc05b2f0d319cc87274c">diag_write_time</a> (fileob, rtime_value, time_index, time_name)</td></tr>
 <tr class="memdesc:gad53355722ce2fc05b2f0d319cc87274c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Writes the time data to the history file.  <a href="group__diag__output__mod.html#gad53355722ce2fc05b2f0d319cc87274c">More...</a><br /></td></tr>
 <tr class="separator:gad53355722ce2fc05b2f0d319cc87274c"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -157,6 +135,9 @@ subroutine, public&#160;</td><td class="memItemRight" valign="bottom"><a class="
 subroutine, public&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__diag__output__mod.html#ga70c6d24bf70baefa70565540a5a6b7ce">set_diag_global_att</a> (component, gridType, tileName)</td></tr>
 <tr class="memdesc:ga70c6d24bf70baefa70565540a5a6b7ce"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set the global attribute type. <br /></td></tr>
 <tr class="separator:ga70c6d24bf70baefa70565540a5a6b7ce"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga78dd63a7c9c12ab0934e8f9680d6094c"><td class="memItemLeft" align="right" valign="top">subroutine, public&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__diag__output__mod.html#ga78dd63a7c9c12ab0934e8f9680d6094c">diag_flush</a> (file_num, fileobjU, fileobj, fileobjND, fnum_for_domain)</td></tr>
+<tr class="memdesc:ga78dd63a7c9c12ab0934e8f9680d6094c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Flushes the file into disk.  <a href="group__diag__output__mod.html#ga78dd63a7c9c12ab0934e8f9680d6094c">More...</a><br /></td></tr>
+<tr class="separator:ga78dd63a7c9c12ab0934e8f9680d6094c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="var-members"></a>
 Variables</h2></td></tr>
@@ -193,9 +174,6 @@ logical, dimension(max_axis_num)&#160;</td><td class="memItemRight" valign="bott
 <tr class="memitem:ga3431fc881df35752c9d81e10e5c8a66d"><td class="memItemLeft" align="right" valign="top"><a id="ga3431fc881df35752c9d81e10e5c8a66d"></a>
 logical, dimension(max_axis_num)&#160;</td><td class="memItemRight" valign="bottom"><b>edge_axis_flag</b></td></tr>
 <tr class="separator:ga3431fc881df35752c9d81e10e5c8a66d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga4fac6384719ac1f6dac4bbdb91449b47"><td class="memItemLeft" align="right" valign="top"><a id="ga4fac6384719ac1f6dac4bbdb91449b47"></a>
-type(<a class="el" href="structmpp__io__mod_1_1axistype.html">axistype</a>), dimension(max_axis_num), save&#160;</td><td class="memItemRight" valign="bottom"><b>axis_types</b></td></tr>
-<tr class="separator:ga4fac6384719ac1f6dac4bbdb91449b47"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:gad369225c254bc7bda087334ca5d13096"><td class="memItemLeft" align="right" valign="top"><a id="gad369225c254bc7bda087334ca5d13096"></a>
 logical&#160;</td><td class="memItemRight" valign="bottom"><b>module_is_initialized</b> = .FALSE.</td></tr>
 <tr class="separator:gad369225c254bc7bda087334ca5d13096"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -207,107 +185,14 @@ character(len= *), parameter&#160;</td><td class="memItemRight" valign="bottom">
 <p>diag_output_mod is an integral part of diag_manager_mod. Its function is to write axis-meta-data, field-meta-data and field data. </p>
 <dl class="section author"><dt>Author</dt><dd>Seth Underwood </dd></dl>
 <h2 class="groupheader">Function/Subroutine Documentation</h2>
-<a id="gad99a258efd56f01927b3ec1ad6f61c45"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#gad99a258efd56f01927b3ec1ad6f61c45">&#9670;&nbsp;</a></span>diag_field_write_field()</h2>
+<a id="ga2c94a63acb23aaf6adac80f99b2ef019"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ga2c94a63acb23aaf6adac80f99b2ef019">&#9670;&nbsp;</a></span>diag_field_write()</h2>
 
 <div class="memitem">
 <div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">subroutine diag_output_mod::diag_field_write_field </td>
-          <td>(</td>
-          <td class="paramtype">type(<a class="el" href="structdiag__data__mod_1_1diag__fieldtype.html">diag_fieldtype</a>), intent(inout)&#160;</td>
-          <td class="paramname"><em>field</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">real, dimension(:,:,:,:), intent(inout)&#160;</td>
-          <td class="paramname"><em>buffer</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">logical, intent(in), optional&#160;</td>
-          <td class="paramname"><em>static</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">class(<a class="el" href="structnetcdf__io__mod_1_1fmsnetcdffile__t.html">fmsnetcdffile_t</a>), intent(inout), optional, target&#160;</td>
-          <td class="paramname"><em>fileob</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">integer, intent(in), optional&#160;</td>
-          <td class="paramname"><em>file_num</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">type(<a class="el" href="structfms__netcdf__unstructured__domain__io__mod_1_1fmsnetcdfunstructureddomainfile__t.html">fmsnetcdfunstructureddomainfile_t</a>), dimension(:), intent(inout), optional&#160;</td>
-          <td class="paramname"><em>fileobjU</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">type(<a class="el" href="structfms__netcdf__domain__io__mod_1_1fmsnetcdfdomainfile__t.html">fmsnetcdfdomainfile_t</a>), dimension(:), intent(inout), optional&#160;</td>
-          <td class="paramname"><em>fileobj</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">type(<a class="el" href="structnetcdf__io__mod_1_1fmsnetcdffile__t.html">fmsnetcdffile_t</a>), dimension(:), intent(inout), optional&#160;</td>
-          <td class="paramname"><em>fileobjND</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">character(len=2), intent(in), optional&#160;</td>
-          <td class="paramname"><em>fnum_for_domain</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">integer, intent(in), optional&#160;</td>
-          <td class="paramname"><em>time_in</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">private</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p>Outputs the diagnostic data to a file using fms2_io taking a field object as input. </p>
-<p>Write output to the fileob file</p>
-<p>Figure out which file object to write output to</p>
-
-<p class="definition">Definition at line <a class="el" href="diag__output_8F90_source.html#l01163">1163</a> of file <a class="el" href="diag__output_8F90_source.html">diag_output.F90</a>.</p>
-
-</div>
-</div>
-<a id="ga11abdb82e3dc5fc633352fd9617cad11"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ga11abdb82e3dc5fc633352fd9617cad11">&#9670;&nbsp;</a></span>diag_field_write_varname()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">subroutine diag_output_mod::diag_field_write_varname </td>
+          <td class="memname">subroutine, public diag_output_mod::diag_field_write </td>
           <td>(</td>
           <td class="paramtype">character(len=*), intent(in)&#160;</td>
           <td class="paramname"><em>varname</em>, </td>
@@ -321,43 +206,37 @@ character(len= *), parameter&#160;</td><td class="memItemRight" valign="bottom">
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">logical, intent(in), optional&#160;</td>
+          <td class="paramtype">logical, intent(in)&#160;</td>
           <td class="paramname"><em>static</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">class(<a class="el" href="structnetcdf__io__mod_1_1fmsnetcdffile__t.html">fmsnetcdffile_t</a>), intent(inout), optional, target&#160;</td>
-          <td class="paramname"><em>fileob</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">integer, intent(in), optional&#160;</td>
+          <td class="paramtype">integer, intent(in)&#160;</td>
           <td class="paramname"><em>file_num</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">type(<a class="el" href="structfms__netcdf__unstructured__domain__io__mod_1_1fmsnetcdfunstructureddomainfile__t.html">fmsnetcdfunstructureddomainfile_t</a>), dimension(:), intent(inout), optional&#160;</td>
+          <td class="paramtype">type(<a class="el" href="structfms__netcdf__unstructured__domain__io__mod_1_1fmsnetcdfunstructureddomainfile__t.html">fmsnetcdfunstructureddomainfile_t</a>), dimension(:), intent(inout)&#160;</td>
           <td class="paramname"><em>fileobjU</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">type(<a class="el" href="structfms__netcdf__domain__io__mod_1_1fmsnetcdfdomainfile__t.html">fmsnetcdfdomainfile_t</a>), dimension(:), intent(inout), optional&#160;</td>
+          <td class="paramtype">type(<a class="el" href="structfms__netcdf__domain__io__mod_1_1fmsnetcdfdomainfile__t.html">fmsnetcdfdomainfile_t</a>), dimension(:), intent(inout)&#160;</td>
           <td class="paramname"><em>fileobj</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">type(<a class="el" href="structnetcdf__io__mod_1_1fmsnetcdffile__t.html">fmsnetcdffile_t</a>), dimension(:), intent(inout), optional&#160;</td>
+          <td class="paramtype">type(<a class="el" href="structnetcdf__io__mod_1_1fmsnetcdffile__t.html">fmsnetcdffile_t</a>), dimension(:), intent(inout)&#160;</td>
           <td class="paramname"><em>fileobjND</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">character(len=2), intent(in), optional&#160;</td>
+          <td class="paramtype">character(len=2), intent(in)&#160;</td>
           <td class="paramname"><em>fnum_for_domain</em>, </td>
         </tr>
         <tr>
@@ -372,42 +251,103 @@ character(len= *), parameter&#160;</td><td class="memItemRight" valign="bottom">
           <td></td><td></td>
         </tr>
       </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">private</span></span>  </td>
-  </tr>
-</table>
 </div><div class="memdoc">
 
 <p>Writes diagnostic data out using fms2_io routine. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">varname</td><td>Variable name </td></tr>
+    <tr><td class="paramdir">[in,out]</td><td class="paramname">buffer</td><td>Buffer containing the variable data </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">static</td><td>Flag indicating if a variable is static </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">file_num</td><td>Index in the fileobj* types array </td></tr>
+    <tr><td class="paramdir">[in,out]</td><td class="paramname">fileobju</td><td>Array of non domain decomposed fileobj </td></tr>
+    <tr><td class="paramdir">[in,out]</td><td class="paramname">fileobj</td><td>Array of domain decomposed fileobj </td></tr>
+    <tr><td class="paramdir">[in,out]</td><td class="paramname">fileobjnd</td><td>Array of unstructured domain fileobj </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">fnum_for_domain</td><td>String indicating the type of domain "2d" domain decomposed "ug" unstructured domain decomposed "nd" no domain </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">time_in</td><td>Time index </td></tr>
+  </table>
+  </dd>
+</dl>
 <p>Set up the time. Static field and default time is 0</p>
-<p>Write output to the fileob file</p>
+<p>If the variable is 1D, switch the buffer so that n_diurnal_samples is the second dimension (nx, n_diurnal_samples, 1, 1)</p>
+<p>If the variable is 2D, switch the n_diurnal_samples and nz dimension, so local_buffer has dimension (nx, ny, n_diurnal_samples, 1).</p>
 <p>Figure out which file object to write output to</p>
 
-<p class="definition">Definition at line <a class="el" href="diag__output_8F90_source.html#l01238">1238</a> of file <a class="el" href="diag__output_8F90_source.html">diag_output.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="diag__output_8F90_source.html#l00781">781</a> of file <a class="el" href="diag__output_8F90_source.html">diag_output.F90</a>.</p>
 
 </div>
 </div>
-<a id="ga76ad7ec293a0815119e9ef5dab351f25"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ga76ad7ec293a0815119e9ef5dab351f25">&#9670;&nbsp;</a></span>diag_output_init_fms2_io()</h2>
+<a id="ga78dd63a7c9c12ab0934e8f9680d6094c"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ga78dd63a7c9c12ab0934e8f9680d6094c">&#9670;&nbsp;</a></span>diag_flush()</h2>
 
 <div class="memitem">
 <div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">subroutine diag_output_mod::diag_output_init_fms2_io </td>
+          <td class="memname">subroutine, public diag_output_mod::diag_flush </td>
           <td>(</td>
-          <td class="paramtype">character(len=*), intent(in)&#160;</td>
-          <td class="paramname"><em>file_name</em>, </td>
+          <td class="paramtype">integer, intent(in)&#160;</td>
+          <td class="paramname"><em>file_num</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">integer, intent(in)&#160;</td>
-          <td class="paramname"><em>FORMAT</em>, </td>
+          <td class="paramtype">type(<a class="el" href="structfms__netcdf__unstructured__domain__io__mod_1_1fmsnetcdfunstructureddomainfile__t.html">fmsnetcdfunstructureddomainfile_t</a>), dimension(:), intent(inout)&#160;</td>
+          <td class="paramname"><em>fileobjU</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">type(<a class="el" href="structfms__netcdf__domain__io__mod_1_1fmsnetcdfdomainfile__t.html">fmsnetcdfdomainfile_t</a>), dimension(:), intent(inout)&#160;</td>
+          <td class="paramname"><em>fileobj</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">type(<a class="el" href="structnetcdf__io__mod_1_1fmsnetcdffile__t.html">fmsnetcdffile_t</a>), dimension(:), intent(inout)&#160;</td>
+          <td class="paramname"><em>fileobjND</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">character(len=2), intent(in)&#160;</td>
+          <td class="paramname"><em>fnum_for_domain</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Flushes the file into disk. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">file_num</td><td>Index in the fileobj* types array </td></tr>
+    <tr><td class="paramdir">[in,out]</td><td class="paramname">fileobju</td><td>Array of non domain decomposed fileobj </td></tr>
+    <tr><td class="paramdir">[in,out]</td><td class="paramname">fileobj</td><td>Array of domain decomposed fileobj </td></tr>
+    <tr><td class="paramdir">[in,out]</td><td class="paramname">fileobjnd</td><td>Array of unstructured domain fileobj </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">fnum_for_domain</td><td>String indicating the type of domain "2d" domain decomposed "ug" unstructured domain decomposed "nd" no domain </td></tr>
+  </table>
+  </dd>
+</dl>
+
+<p class="definition">Definition at line <a class="el" href="diag__output_8F90_source.html#l00908">908</a> of file <a class="el" href="diag__output_8F90_source.html">diag_output.F90</a>.</p>
+
+</div>
+</div>
+<a id="ga3c948d95de7021b5b511e4e9371120c2"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ga3c948d95de7021b5b511e4e9371120c2">&#9670;&nbsp;</a></span>diag_output_init()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">subroutine, public diag_output_mod::diag_output_init </td>
+          <td>(</td>
+          <td class="paramtype">character(len=*), intent(in)&#160;</td>
+          <td class="paramname"><em>file_name</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
@@ -420,12 +360,6 @@ character(len= *), parameter&#160;</td><td class="memItemRight" valign="bottom">
           <td></td>
           <td class="paramtype">integer, intent(out)&#160;</td>
           <td class="paramname"><em>file_unit</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">logical, intent(in)&#160;</td>
-          <td class="paramname"><em>all_scalar_or_1d</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
@@ -475,40 +409,28 @@ character(len= *), parameter&#160;</td><td class="memItemRight" valign="bottom">
           <td></td><td></td>
         </tr>
       </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">private</span></span>  </td>
-  </tr>
-</table>
 </div><div class="memdoc">
 
-<p>Registers the time axis and opens the output file. </p>
+<p>Opens the output file. </p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramdir">[in]</td><td class="paramname">file_name</td><td>Output file name </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">file_title</td><td>Descriptive title for the file </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">format</td><td>File format (Currently only 'NETCDF' is valid) </td></tr>
     <tr><td class="paramdir">[out]</td><td class="paramname">file_unit</td><td>File unit number assigned to the output file. Needed for subsuquent calls to diag_output_mod </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">domain</td><td>Domain associated with file, if domain decomposed </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">domainu</td><td>The unstructure domain </td></tr>
+    <tr><td class="paramdir">[in,out]</td><td class="paramname">fileobj</td><td>Domain decomposed fileobj </td></tr>
+    <tr><td class="paramdir">[in,out]</td><td class="paramname">fileobju</td><td>Unstructured domain fileobj </td></tr>
+    <tr><td class="paramdir">[in,out]</td><td class="paramname">fileobjnd</td><td>Non domain decomposed fileobj </td></tr>
+    <tr><td class="paramdir">[out]</td><td class="paramname">fnum_domain</td><td>String indicating the type of fileobj was used: "2d" domain decomposed "ug" unstrucuted domain decomposed "nd" no domain </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">attributes</td><td>Array of global attributes to be written to file </td></tr>
   </table>
   </dd>
 </dl>
-<p>If the file name has .tileX or .tileX.nc where X is a one or two digit tile number, removes that suffix from the time name because fms2_io will add it </p><dl class="section note"><dt>Note</dt><dd>If mpp_domains accepts more than 99 tiles, this will need to be updated</dd></dl>
-<p>One-digit tile numbers example </p><pre class="fragment"> filename.tile1.nc
-       09876543210
-          ^  ^
- filename.tile1
-    09876543210
-          ^  ^</pre><p>Two-digit tile numbers example </p><pre class="fragment"> filename.tile10.nc
-        09876543210
-          ^  ^
- filename.tile10
-     09876543210
-          ^  ^</pre><p>If there is a .nc suffix on the file name, removes the .nc</p>
 <p>Checks to make sure that only domain2D or domainUG is used. If both are not null, then FATAL</p>
 <p>Check if there is an io_domain</p>
 
-<p class="definition">Definition at line <a class="el" href="diag__output_8F90_source.html#l00136">136</a> of file <a class="el" href="diag__output_8F90_source.html">diag_output.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="diag__output_8F90_source.html#l00095">95</a> of file <a class="el" href="diag__output_8F90_source.html">diag_output.F90</a>.</p>
 
 </div>
 </div>
@@ -521,7 +443,7 @@ character(len= *), parameter&#160;</td><td class="memItemRight" valign="bottom">
         <tr>
           <td class="memname">subroutine, public diag_output_mod::diag_write_time </td>
           <td>(</td>
-          <td class="paramtype">class(<a class="el" href="structnetcdf__io__mod_1_1fmsnetcdffile__t.html">fmsnetcdffile_t</a>), intent(inout), target&#160;</td>
+          <td class="paramtype">class(<a class="el" href="structnetcdf__io__mod_1_1fmsnetcdffile__t.html">fmsnetcdffile_t</a>), intent(inout)&#160;</td>
           <td class="paramname"><em>fileob</em>, </td>
         </tr>
         <tr>
@@ -564,7 +486,7 @@ character(len= *), parameter&#160;</td><td class="memItemRight" valign="bottom">
 <p>Write the time data</p>
 <p>Cleanup</p>
 
-<p class="definition">Definition at line <a class="el" href="diag__output_8F90_source.html#l01297">1297</a> of file <a class="el" href="diag__output_8F90_source.html">diag_output.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="diag__output_8F90_source.html#l00843">843</a> of file <a class="el" href="diag__output_8F90_source.html">diag_output.F90</a>.</p>
 
 </div>
 </div>
@@ -592,7 +514,7 @@ character(len= *), parameter&#160;</td><td class="memItemRight" valign="bottom">
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="diag__output_8F90_source.html#l01153">1153</a> of file <a class="el" href="diag__output_8F90_source.html">diag_output.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="diag__output_8F90_source.html#l00771">771</a> of file <a class="el" href="diag__output_8F90_source.html">diag_output.F90</a>.</p>
 
 </div>
 </div>
@@ -623,12 +545,12 @@ character(len= *), parameter&#160;</td><td class="memItemRight" valign="bottom">
 <p>Return the axis index number. </p>
 <dl class="section return"><dt>Returns</dt><dd>Integer index </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="diag__output_8F90_source.html#l01321">1321</a> of file <a class="el" href="diag__output_8F90_source.html">diag_output.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="diag__output_8F90_source.html#l00866">866</a> of file <a class="el" href="diag__output_8F90_source.html">diag_output.F90</a>.</p>
 
 </div>
 </div>
-<a id="ga006c1dd9b4844df111ecf599dac03a73"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ga006c1dd9b4844df111ecf599dac03a73">&#9670;&nbsp;</a></span>write_attribute_meta_fms2_io()</h2>
+<a id="gac022b16344a256e172738d4ca5d95506"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#gac022b16344a256e172738d4ca5d95506">&#9670;&nbsp;</a></span>write_attribute_meta()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -637,16 +559,10 @@ character(len= *), parameter&#160;</td><td class="memItemRight" valign="bottom">
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">subroutine diag_output_mod::write_attribute_meta_fms2_io </td>
+          <td class="memname">subroutine diag_output_mod::write_attribute_meta </td>
           <td>(</td>
           <td class="paramtype">integer, intent(in)&#160;</td>
           <td class="paramname"><em>file_unit</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">integer, intent(in)&#160;</td>
-          <td class="paramname"><em>id</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
@@ -701,31 +617,28 @@ character(len= *), parameter&#160;</td><td class="memItemRight" valign="bottom">
 <p>Write out the attribute meta data to file, for field and axes </p><dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramdir">[in]</td><td class="paramname">file_unit</td><td>File unit number </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">id</td><td>ID of field, file, axis to get attribute meta data </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">num_attributes</td><td>Number of attributes to write </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">attributes</td><td>Array of attributes </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">time_method</td><td>To include in cell_methods attribute if present </td></tr>
     <tr><td class="paramdir">[out]</td><td class="paramname">err_msg</td><td>Return error message </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">varname</td><td>The name of the variable </td></tr>
+    <tr><td class="paramdir">[in,out]</td><td class="paramname">fileob</td><td>FMS2_io fileobj </td></tr>
   </table>
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="diag__output_8F90_source.html#l01093">1093</a> of file <a class="el" href="diag__output_8F90_source.html">diag_output.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="diag__output_8F90_source.html#l00712">712</a> of file <a class="el" href="diag__output_8F90_source.html">diag_output.F90</a>.</p>
 
 </div>
 </div>
-<a id="gaff47be1208377e0143a8e043420d0465"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#gaff47be1208377e0143a8e043420d0465">&#9670;&nbsp;</a></span>write_axis_meta_data_fms2_io()</h2>
+<a id="gae4be5d97b5c60f844df86228b3ab46bb"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#gae4be5d97b5c60f844df86228b3ab46bb">&#9670;&nbsp;</a></span>write_axis_meta_data()</h2>
 
 <div class="memitem">
 <div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">subroutine diag_output_mod::write_axis_meta_data_fms2_io </td>
+          <td class="memname">subroutine, public diag_output_mod::write_axis_meta_data </td>
           <td>(</td>
           <td class="paramtype">integer, intent(in)&#160;</td>
           <td class="paramname"><em>file_unit</em>, </td>
@@ -739,7 +652,7 @@ character(len= *), parameter&#160;</td><td class="memItemRight" valign="bottom">
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">class(<a class="el" href="structnetcdf__io__mod_1_1fmsnetcdffile__t.html">fmsnetcdffile_t</a>), intent(inout), target&#160;</td>
+          <td class="paramtype">class(<a class="el" href="structnetcdf__io__mod_1_1fmsnetcdffile__t.html">fmsnetcdffile_t</a>), intent(inout)&#160;</td>
           <td class="paramname"><em>fileob</em>, </td>
         </tr>
         <tr>
@@ -760,11 +673,6 @@ character(len= *), parameter&#160;</td><td class="memItemRight" valign="bottom">
           <td></td><td></td>
         </tr>
       </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">private</span></span>  </td>
-  </tr>
-</table>
 </div><div class="memdoc">
 
 <p>Write the axis meta data to file. </p>
@@ -772,28 +680,37 @@ character(len= *), parameter&#160;</td><td class="memItemRight" valign="bottom">
   <table class="params">
     <tr><td class="paramdir">[in]</td><td class="paramname">file_unit</td><td>File unit number </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">axes</td><td>Array of axis ID's, including the time axis </td></tr>
+    <tr><td class="paramdir">[in,out]</td><td class="paramname">fileob</td><td>FMS2_io fileobj </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">time_ops</td><td>.TRUE. if this file contains any min, max, time_rms, or time_average </td></tr>
+    <tr><td class="paramdir">[in,out]</td><td class="paramname">time_axis_registered</td><td>.TRUE. if the time axis was already written to the file </td></tr>
   </table>
   </dd>
 </dl>
+<p>If the axis is domain decomposed and the type is FmsNetcdfFile_t, this is regional diagnostic So treat it as any other dimension</p>
+<p>For regional subaxis add the "domain_decomposition" attribute, which is added fms2_io for (other) domains with sufficient decomposition info.</p>
+<p>If the axis is domain decomposed and the type is FmsNetcdfDomainFile_t, this is a domain decomposed dimension so register it as one</p>
+<p>If the axis is in unstructured domain and the type is FmsNetcdfUnstructuredDomainFile_t, this is an unstrucutred axis so register it as one</p>
+<p>If the axis is not in a domain, register it as a normal dimension</p>
 <dl class="section note"><dt>Note</dt><dd>Check if the time variable is registered. It's possible that is_time_axis_registered is set to true if using time-templated files because they aren't closed when done writing. An alternative to this set up would be to put variable_exists into the if statement with an .or. so that it gets registered.</dd></dl>
+<p>Add the attributes</p>
+<p>If not a time axis, add the positive attribute and write the data</p>
+<p>Write additional axis attributes, from diag_axis_add_attribute calls</p>
+<p>Write additional attribute (calendar_type) for time axis -&mdash; </p><dl class="section note"><dt>Note</dt><dd>calendar attribute is compliant with CF convention <a href="http://www.cgd.ucar.edu/cms/eaton/netcdf/CF-current.htm#cal">http://www.cgd.ucar.edu/cms/eaton/netcdf/CF-current.htm#cal</a></dd></dl>
+<p>Deallocate attributes</p>
 <p>Add edges axis with fms2_io</p>
 
-<p class="definition">Definition at line <a class="el" href="diag__output_8F90_source.html#l00318">318</a> of file <a class="el" href="diag__output_8F90_source.html">diag_output.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="diag__output_8F90_source.html#l00207">207</a> of file <a class="el" href="diag__output_8F90_source.html">diag_output.F90</a>.</p>
 
 </div>
 </div>
-<a id="gadd968acf9ce82dc9063009e41eecda7a"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#gadd968acf9ce82dc9063009e41eecda7a">&#9670;&nbsp;</a></span>write_field_meta_data_fms2_io()</h2>
+<a id="gae75520d0052d090a988c5d56e36b6e8f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#gae75520d0052d090a988c5d56e36b6e8f">&#9670;&nbsp;</a></span>write_field_meta_data()</h2>
 
 <div class="memitem">
 <div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">type(<a class="el" href="structdiag__data__mod_1_1diag__fieldtype.html">diag_fieldtype</a>) function diag_output_mod::write_field_meta_data_fms2_io </td>
+          <td class="memname">type(<a class="el" href="structdiag__data__mod_1_1diag__fieldtype.html">diag_fieldtype</a>) function, public diag_output_mod::write_field_meta_data </td>
           <td>(</td>
           <td class="paramtype">integer, intent(in)&#160;</td>
           <td class="paramname"><em>file_unit</em>, </td>
@@ -894,11 +811,6 @@ character(len= *), parameter&#160;</td><td class="memItemRight" valign="bottom">
           <td></td><td></td>
         </tr>
       </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">private</span></span>  </td>
-  </tr>
-</table>
 </div><div class="memdoc">
 
 <p>Write the field meta data to file. </p>
@@ -932,7 +844,7 @@ character(len= *), parameter&#160;</td><td class="memItemRight" valign="bottom">
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="diag__output_8F90_source.html#l00799">799</a> of file <a class="el" href="diag__output_8F90_source.html">diag_output.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="diag__output_8F90_source.html#l00454">454</a> of file <a class="el" href="diag__output_8F90_source.html">diag_output.F90</a>.</p>
 
 </div>
 </div>

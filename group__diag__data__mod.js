@@ -10,7 +10,7 @@ var group__diag__data__mod =
     [ "diag_fieldtype", "structdiag__data__mod_1_1diag__fieldtype.html", [
       [ "domain", "structdiag__data__mod_1_1diag__fieldtype.html#a44cfff2babb687954ffc79c677a82a4d", null ],
       [ "domainu", "structdiag__data__mod_1_1diag__fieldtype.html#a2bf199fea43fcabce32d5c97307277c6", null ],
-      [ "field", "structdiag__data__mod_1_1diag__fieldtype.html#adf6b79cff5bcb094d12e28355426bc0d", null ],
+      [ "fieldname", "structdiag__data__mod_1_1diag__fieldtype.html#ae58ee0494572148130118f56628cd0da", null ],
       [ "miss", "structdiag__data__mod_1_1diag__fieldtype.html#a597945674545bf9cc03789adf493b0c1", null ],
       [ "miss_pack", "structdiag__data__mod_1_1diag__fieldtype.html#a2756745a2dd6ae0b4847dd7e9eb1ba19", null ],
       [ "miss_pack_present", "structdiag__data__mod_1_1diag__fieldtype.html#af4971019c897aa745d92102e3fd9e4f4", null ],

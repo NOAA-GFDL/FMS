@@ -33,7 +33,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">FMS
-   &#160;<span id="projectnumber">2021.03.01</span>
+   &#160;<span id="projectnumber">2021.04.0</span>
    </div>
    <div id="projectbrief">Flexible Modeling System</div>
   </td>
@@ -103,12 +103,14 @@ $(document).ready(function(){initNavTree('interfacetime__manager__mod_1_1set__da
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pri-methods"></a>
 Private Member Functions</h2></td></tr>
-<tr class="memitem:a35cd9b807c6de019b35676b24c442155"><td class="memItemLeft" align="right" valign="top">type(<a class="el" href="structtime__manager__mod_1_1time__type.html">time_type</a>) function&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="interfacetime__manager__mod_1_1set__date.html#a35cd9b807c6de019b35676b24c442155">set_date_i</a> (year, month, day, hour, minute, second, tick, err_msg, old_method)</td></tr>
-<tr class="memdesc:a35cd9b807c6de019b35676b24c442155"><td class="mdescLeft">&#160;</td><td class="mdescRight">Calls set_date_private to set days for different calendar types. The added optional argument old_method allows user to choose either the new or old version of set_date_gregorian. The variable old_method is only useful if the calendar type is Gregorian.  <a href="interfacetime__manager__mod_1_1set__date.html#a35cd9b807c6de019b35676b24c442155">More...</a><br /></td></tr>
-<tr class="separator:a35cd9b807c6de019b35676b24c442155"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a4f340b86eaab412bb4f8dff399362a2e"><td class="memItemLeft" align="right" valign="top">type(<a class="el" href="structtime__manager__mod_1_1time__type.html">time_type</a>) function&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="interfacetime__manager__mod_1_1set__date.html#a4f340b86eaab412bb4f8dff399362a2e">set_date_c</a> (string, zero_year_warning, err_msg, allow_rounding, old_method)</td></tr>
-<tr class="memdesc:a4f340b86eaab412bb4f8dff399362a2e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Calls set_date_private for different calendar types when given a string input. The added optional argument old_method allows user to choose either the new or old version of set_date_gregorian. The variable old_method is only useful if the calendar type is Gregorian.  <a href="interfacetime__manager__mod_1_1set__date.html#a4f340b86eaab412bb4f8dff399362a2e">More...</a><br /></td></tr>
-<tr class="separator:a4f340b86eaab412bb4f8dff399362a2e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a782e7c48f07fc3190f26a64b8701d5ca"><td class="memItemLeft" align="right" valign="top"><a id="a782e7c48f07fc3190f26a64b8701d5ca"></a>
+type(<a class="el" href="structtime__manager__mod_1_1time__type.html">time_type</a>) function&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="interfacetime__manager__mod_1_1set__date.html#a782e7c48f07fc3190f26a64b8701d5ca">set_date_i</a> (year, month, day, hour, minute, second, tick, err_msg)</td></tr>
+<tr class="memdesc:a782e7c48f07fc3190f26a64b8701d5ca"><td class="mdescLeft">&#160;</td><td class="mdescRight">Calls set_date_private to set days for different calendar types. <br /></td></tr>
+<tr class="separator:a782e7c48f07fc3190f26a64b8701d5ca"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a799bb07774ab9c4603f2059d9de7f82b"><td class="memItemLeft" align="right" valign="top"><a id="a799bb07774ab9c4603f2059d9de7f82b"></a>
+type(<a class="el" href="structtime__manager__mod_1_1time__type.html">time_type</a>) function&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="interfacetime__manager__mod_1_1set__date.html#a799bb07774ab9c4603f2059d9de7f82b">set_date_c</a> (string, zero_year_warning, err_msg, allow_rounding)</td></tr>
+<tr class="memdesc:a799bb07774ab9c4603f2059d9de7f82b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Calls set_date_private for different calendar types when given a string input. <br /></td></tr>
+<tr class="separator:a799bb07774ab9c4603f2059d9de7f82b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Given an input date in year, month, days, etc., creates a <a class="el" href="structtime__manager__mod_1_1time__type.html" title="Type to represent amounts of time. Implemented as seconds and days to allow for larger intervals.">time_type</a> that represents this time interval from the internally defined base date. </p>
@@ -129,166 +131,13 @@ Example usage: <br  />
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="time__manager_8F90_source.html#l00276">276</a> of file <a class="el" href="time__manager_8F90_source.html">time_manager.F90</a>.</p>
-</div><h2 class="groupheader">Member Function/Subroutine Documentation</h2>
-<a id="a4f340b86eaab412bb4f8dff399362a2e"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a4f340b86eaab412bb4f8dff399362a2e">&#9670;&nbsp;</a></span>set_date_c()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">type(<a class="el" href="structtime__manager__mod_1_1time__type.html">time_type</a>) function set_date_c </td>
-          <td>(</td>
-          <td class="paramtype">character(len=*), intent(in)&#160;</td>
-          <td class="paramname"><em>string</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">logical, intent(in), optional&#160;</td>
-          <td class="paramname"><em>zero_year_warning</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">character(len=*), intent(out), optional&#160;</td>
-          <td class="paramname"><em>err_msg</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">logical, intent(in), optional&#160;</td>
-          <td class="paramname"><em>allow_rounding</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">logical, intent(in), optional&#160;</td>
-          <td class="paramname"><em>old_method</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">private</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p>Calls set_date_private for different calendar types when given a string input. The added optional argument old_method allows user to choose either the new or old version of set_date_gregorian. The variable old_method is only useful if the calendar type is Gregorian. </p>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramdir">[in]</td><td class="paramname">old_method</td><td>option to choose betw the new and old ver of set_date_gregorian. When .true., call set_date_gregorian_old to retrieve the days from the array date_to_day. When .false., call set_date_gregorian to compute the days on the fly. Will be removed with set/get_date_gregorian_old </td></tr>
-  </table>
-  </dd>
-</dl>
-
-<p class="definition">Definition at line <a class="el" href="time__manager_8F90_source.html#l02085">2085</a> of file <a class="el" href="time__manager_8F90_source.html">time_manager.F90</a>.</p>
-
-</div>
-</div>
-<a id="a35cd9b807c6de019b35676b24c442155"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a35cd9b807c6de019b35676b24c442155">&#9670;&nbsp;</a></span>set_date_i()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">type(<a class="el" href="structtime__manager__mod_1_1time__type.html">time_type</a>) function set_date_i </td>
-          <td>(</td>
-          <td class="paramtype">integer, intent(in)&#160;</td>
-          <td class="paramname"><em>year</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">integer, intent(in)&#160;</td>
-          <td class="paramname"><em>month</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">integer, intent(in)&#160;</td>
-          <td class="paramname"><em>day</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">integer, intent(in), optional&#160;</td>
-          <td class="paramname"><em>hour</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">integer, intent(in), optional&#160;</td>
-          <td class="paramname"><em>minute</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">integer, intent(in), optional&#160;</td>
-          <td class="paramname"><em>second</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">integer, intent(in), optional&#160;</td>
-          <td class="paramname"><em>tick</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">character(len=*), intent(out), optional&#160;</td>
-          <td class="paramname"><em>err_msg</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">logical, intent(in), optional&#160;</td>
-          <td class="paramname"><em>old_method</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">private</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p>Calls set_date_private to set days for different calendar types. The added optional argument old_method allows user to choose either the new or old version of set_date_gregorian. The variable old_method is only useful if the calendar type is Gregorian. </p>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramdir">[in]</td><td class="paramname">old_method</td><td>option to choose betw the new and old ver of get_date_gregorian subroutine. When .true., call set_date_gregorian_old to retrieve the timedays from the array date_to_day. When .false., call set_date_gregorian to compute the timedays on the fly. This ption will be removed with get/set_date_gregorian_old </td></tr>
-  </table>
-  </dd>
-</dl>
-
-<p class="definition">Definition at line <a class="el" href="time__manager_8F90_source.html#l02051">2051</a> of file <a class="el" href="time__manager_8F90_source.html">time_manager.F90</a>.</p>
-
-</div>
-</div>
-<hr/>The documentation for this interface was generated from the following file:<ul>
+<p class="definition">Definition at line <a class="el" href="time__manager_8F90_source.html#l00272">272</a> of file <a class="el" href="time__manager_8F90_source.html">time_manager.F90</a>.</p>
+</div><hr/>The documentation for this interface was generated from the following file:<ul>
 <li>time_manager/<a class="el" href="time__manager_8F90_source.html">time_manager.F90</a></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->
-<div class="ttc" id="agroup__fms__mod_html_gae5c7420e421293e2be14717dd7b3d97f"><div class="ttname"><a href="group__fms__mod.html#gae5c7420e421293e2be14717dd7b3d97f">fms_mod::error_mesg</a></div><div class="ttdeci">subroutine, public error_mesg(routine, message, level)</div><div class="ttdoc">Print notes, warnings and error messages; terminates program for warning and error messages....</div><div class="ttdef"><b>Definition:</b> <a href="fms_8F90_source.html#l00474">fms.F90:474</a></div></div>
+<div class="ttc" id="agroup__fms__mod_html_gae5c7420e421293e2be14717dd7b3d97f"><div class="ttname"><a href="group__fms__mod.html#gae5c7420e421293e2be14717dd7b3d97f">fms_mod::error_mesg</a></div><div class="ttdeci">subroutine, public error_mesg(routine, message, level)</div><div class="ttdoc">Print notes, warnings and error messages; terminates program for warning and error messages....</div><div class="ttdef"><b>Definition:</b> <a href="fms_8F90_source.html#l00503">fms.F90:503</a></div></div>
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>

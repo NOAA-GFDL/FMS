@@ -33,7 +33,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">FMS
-   &#160;<span id="projectnumber">2021.03.01</span>
+   &#160;<span id="projectnumber">2021.04.0</span>
    </div>
    <div id="projectbrief">Flexible Modeling System</div>
   </td>
@@ -373,102 +373,103 @@ $(document).ready(function(){initNavTree('mpp__do__update__nonblock_8h_source.ht
 <div class="line"><a name="l00277"></a><span class="lineno">  277</span>&#160;  pointer(ptr_field, field)</div>
 <div class="line"><a name="l00278"></a><span class="lineno">  278</span>&#160; </div>
 <div class="line"><a name="l00279"></a><span class="lineno">  279</span>&#160;  update_edge_only = BTEST(flags, EDGEONLY)</div>
-<div class="line"><a name="l00280"></a><span class="lineno">  280</span>&#160;  recv(1) = BTEST(flags,EAST)</div>
-<div class="line"><a name="l00281"></a><span class="lineno">  281</span>&#160;  recv(3) = BTEST(flags,SOUTH)</div>
-<div class="line"><a name="l00282"></a><span class="lineno">  282</span>&#160;  recv(5) = BTEST(flags,WEST)</div>
-<div class="line"><a name="l00283"></a><span class="lineno">  283</span>&#160;  recv(7) = BTEST(flags,NORTH)</div>
-<div class="line"><a name="l00284"></a><span class="lineno">  284</span>&#160;  if( update_edge_only ) then</div>
-<div class="line"><a name="l00285"></a><span class="lineno">  285</span>&#160;     if( .NOT. (recv(1) .OR. recv(3) .OR. recv(5) .OR. recv(7)) ) then</div>
-<div class="line"><a name="l00286"></a><span class="lineno">  286</span>&#160;        recv(1) = .true.</div>
-<div class="line"><a name="l00287"></a><span class="lineno">  287</span>&#160;        recv(3) = .true.</div>
-<div class="line"><a name="l00288"></a><span class="lineno">  288</span>&#160;        recv(5) = .true.</div>
-<div class="line"><a name="l00289"></a><span class="lineno">  289</span>&#160;        recv(7) = .true.</div>
-<div class="line"><a name="l00290"></a><span class="lineno">  290</span>&#160;     endif</div>
-<div class="line"><a name="l00291"></a><span class="lineno">  291</span>&#160;  else</div>
-<div class="line"><a name="l00292"></a><span class="lineno">  292</span>&#160;     recv(2) = recv(1) .AND. recv(3)</div>
-<div class="line"><a name="l00293"></a><span class="lineno">  293</span>&#160;     recv(4) = recv(3) .AND. recv(5)</div>
-<div class="line"><a name="l00294"></a><span class="lineno">  294</span>&#160;     recv(6) = recv(5) .AND. recv(7)</div>
-<div class="line"><a name="l00295"></a><span class="lineno">  295</span>&#160;     recv(8) = recv(7) .AND. recv(1)</div>
-<div class="line"><a name="l00296"></a><span class="lineno">  296</span>&#160;  endif</div>
-<div class="line"><a name="l00297"></a><span class="lineno">  297</span>&#160;  send    = recv</div>
-<div class="line"><a name="l00298"></a><span class="lineno">  298</span>&#160; </div>
-<div class="line"><a name="l00299"></a><span class="lineno">  299</span>&#160;  ke_sum = sum(ke_list)</div>
-<div class="line"><a name="l00300"></a><span class="lineno">  300</span>&#160;  l_size = size(f_addrs,1)</div>
-<div class="line"><a name="l00301"></a><span class="lineno">  301</span>&#160;  ptr = LOC(mpp_domains_stack_nonblock)</div>
-<div class="line"><a name="l00302"></a><span class="lineno">  302</span>&#160; </div>
-<div class="line"><a name="l00303"></a><span class="lineno">  303</span>&#160;  count = update%nrecv</div>
-<div class="line"><a name="l00304"></a><span class="lineno">  304</span>&#160;  if(count &gt; 0) then</div>
-<div class="line"><a name="l00305"></a><span class="lineno">  305</span>&#160;     call mpp_clock_begin(wait_clock_nonblock)</div>
-<div class="line"><a name="l00306"></a><span class="lineno">  306</span>&#160;     call <a class="code" href="mpp__util__mpi_8inc.html#a09e69243d8c67e6a6e6e4fd9e93d0870">mpp_sync_self</a>(check=EVENT_RECV, request=nonblock_data(id_update)%request_recv(1:count), &amp;</div>
-<div class="line"><a name="l00307"></a><span class="lineno">  307</span>&#160;                        msg_size=nonblock_data(id_update)%size_recv(1:count),                     &amp;</div>
-<div class="line"><a name="l00308"></a><span class="lineno">  308</span>&#160;                        msg_type=nonblock_data(id_update)%type_recv(1:count) )</div>
-<div class="line"><a name="l00309"></a><span class="lineno">  309</span>&#160;     call mpp_clock_end(wait_clock_nonblock)</div>
-<div class="line"><a name="l00310"></a><span class="lineno">  310</span>&#160;#ifdef use_libMPI</div>
-<div class="line"><a name="l00311"></a><span class="lineno">  311</span>&#160;     nonblock_data(id_update)%request_recv(:)    = MPI_REQUEST_NULL</div>
-<div class="line"><a name="l00312"></a><span class="lineno">  312</span>&#160;#else</div>
-<div class="line"><a name="l00313"></a><span class="lineno">  313</span>&#160;     nonblock_data(id_update)%request_recv(:)    = 0</div>
-<div class="line"><a name="l00314"></a><span class="lineno">  314</span>&#160;#endif</div>
-<div class="line"><a name="l00315"></a><span class="lineno">  315</span>&#160;     nonblock_data(id_update)%type_recv(:) = 0</div>
-<div class="line"><a name="l00316"></a><span class="lineno">  316</span>&#160;  endif</div>
-<div class="line"><a name="l00317"></a><span class="lineno">  317</span>&#160; </div>
-<div class="line"><a name="l00318"></a><span class="lineno">  318</span>&#160;  !--unpack the data</div>
-<div class="line"><a name="l00319"></a><span class="lineno">  319</span>&#160;  call mpp_clock_begin(unpk_clock_nonblock)</div>
-<div class="line"><a name="l00320"></a><span class="lineno">  320</span>&#160;!$OMP parallel do schedule(dynamic) default(shared) private(dir,buffer_pos,pos,tMe,is,ie,js,<a class="code" href="group__fms__io__mod.html#gae85b018bca1141b3510db6f38fdc50bf">je</a>,msgsize, &amp;</div>
-<div class="line"><a name="l00321"></a><span class="lineno">  321</span>&#160;!$OMP          ptr_field)</div>
-<div class="line"><a name="l00322"></a><span class="lineno">  322</span>&#160;  do m = update%nrecv, 1, -1</div>
-<div class="line"><a name="l00323"></a><span class="lineno">  323</span>&#160;     if( update%recv(m)%count == 0 )cycle</div>
-<div class="line"><a name="l00324"></a><span class="lineno">  324</span>&#160;     buffer_pos = nonblock_data(id_update)%buffer_pos_recv(m) + nonblock_data(id_update)%size_recv(m)</div>
-<div class="line"><a name="l00325"></a><span class="lineno">  325</span>&#160; </div>
-<div class="line"><a name="l00326"></a><span class="lineno">  326</span>&#160;     pos = buffer_pos</div>
-<div class="line"><a name="l00327"></a><span class="lineno">  327</span>&#160;     do n = update%recv(m)%count, 1, -1</div>
-<div class="line"><a name="l00328"></a><span class="lineno">  328</span>&#160;        dir = update%recv(m)%dir(n)</div>
-<div class="line"><a name="l00329"></a><span class="lineno">  329</span>&#160;        if( recv(dir) ) then</div>
-<div class="line"><a name="l00330"></a><span class="lineno">  330</span>&#160;           tMe = update%recv(m)%tileMe(n)</div>
-<div class="line"><a name="l00331"></a><span class="lineno">  331</span>&#160;           is = update%recv(m)%is(n); ie = update%recv(m)%ie(n)</div>
-<div class="line"><a name="l00332"></a><span class="lineno">  332</span>&#160;           js = update%recv(m)%js(n); <a class="code" href="group__fms__io__mod.html#gae85b018bca1141b3510db6f38fdc50bf">je</a> = update%recv(m)%<a class="code" href="group__fms__io__mod.html#gae85b018bca1141b3510db6f38fdc50bf">je</a>(n)</div>
-<div class="line"><a name="l00333"></a><span class="lineno">  333</span>&#160;           msgsize = (ie-is+1)*(<a class="code" href="group__fms__io__mod.html#gae85b018bca1141b3510db6f38fdc50bf">je</a>-js+1)*ke_sum</div>
-<div class="line"><a name="l00334"></a><span class="lineno">  334</span>&#160;           pos = buffer_pos - msgsize</div>
-<div class="line"><a name="l00335"></a><span class="lineno">  335</span>&#160;           buffer_pos = pos</div>
-<div class="line"><a name="l00336"></a><span class="lineno">  336</span>&#160;           <span class="keywordflow">do</span> l=1, l_size  ! loop over number of fields</div>
-<div class="line"><a name="l00337"></a><span class="lineno">  337</span>&#160;              ptr_field = f_addrs(l, tMe)</div>
-<div class="line"><a name="l00338"></a><span class="lineno">  338</span>&#160;              <span class="keywordflow">do</span> k = 1,ke_list(l,tMe)</div>
-<div class="line"><a name="l00339"></a><span class="lineno">  339</span>&#160;                 <span class="keywordflow">do</span> j = js, <a class="code" href="group__fms__io__mod.html#gae85b018bca1141b3510db6f38fdc50bf">je</a></div>
-<div class="line"><a name="l00340"></a><span class="lineno">  340</span>&#160;                    <span class="keywordflow">do</span> i = is, ie</div>
-<div class="line"><a name="l00341"></a><span class="lineno">  341</span>&#160;                       pos = pos + 1</div>
-<div class="line"><a name="l00342"></a><span class="lineno">  342</span>&#160;                       field(i,j,k) = recv_buffer(pos)</div>
-<div class="line"><a name="l00343"></a><span class="lineno">  343</span>&#160;                    end <span class="keywordflow">do</span></div>
-<div class="line"><a name="l00344"></a><span class="lineno">  344</span>&#160;                 end <span class="keywordflow">do</span></div>
-<div class="line"><a name="l00345"></a><span class="lineno">  345</span>&#160;              end <span class="keywordflow">do</span></div>
-<div class="line"><a name="l00346"></a><span class="lineno">  346</span>&#160;           end <span class="keywordflow">do</span></div>
-<div class="line"><a name="l00347"></a><span class="lineno">  347</span>&#160;        end <span class="keywordflow">if</span></div>
-<div class="line"><a name="l00348"></a><span class="lineno">  348</span>&#160;     end <span class="keywordflow">do</span> ! <span class="keywordflow">do</span> n = 1, update%recv(m)%count</div>
-<div class="line"><a name="l00349"></a><span class="lineno">  349</span>&#160;  end <span class="keywordflow">do</span></div>
-<div class="line"><a name="l00350"></a><span class="lineno">  350</span>&#160;!$OMP end parallel <span class="keywordflow">do</span></div>
-<div class="line"><a name="l00351"></a><span class="lineno">  351</span>&#160;  call mpp_clock_end(unpk_clock_nonblock)</div>
-<div class="line"><a name="l00352"></a><span class="lineno">  352</span>&#160; </div>
-<div class="line"><a name="l00353"></a><span class="lineno">  353</span>&#160;  count = update%nrecv</div>
-<div class="line"><a name="l00354"></a><span class="lineno">  354</span>&#160;  <span class="keywordflow">if</span>(count &gt; 0) then</div>
-<div class="line"><a name="l00355"></a><span class="lineno">  355</span>&#160;     nonblock_data(id_update)%size_recv(:) = 0</div>
-<div class="line"><a name="l00356"></a><span class="lineno">  356</span>&#160;  endif</div>
-<div class="line"><a name="l00357"></a><span class="lineno">  357</span>&#160; </div>
-<div class="line"><a name="l00358"></a><span class="lineno">  358</span>&#160;  count = update%nsend</div>
-<div class="line"><a name="l00359"></a><span class="lineno">  359</span>&#160;  <span class="keywordflow">if</span>(count &gt; 0) then</div>
-<div class="line"><a name="l00360"></a><span class="lineno">  360</span>&#160;     call mpp_clock_begin(wait_clock_nonblock)</div>
-<div class="line"><a name="l00361"></a><span class="lineno">  361</span>&#160;     call <a class="code" href="mpp__util__mpi_8inc.html#a09e69243d8c67e6a6e6e4fd9e93d0870">mpp_sync_self</a>(check=EVENT_SEND, request=nonblock_data(id_update)%request_send(1:count))</div>
-<div class="line"><a name="l00362"></a><span class="lineno">  362</span>&#160;     call mpp_clock_end(wait_clock_nonblock)</div>
-<div class="line"><a name="l00363"></a><span class="lineno">  363</span>&#160;     nonblock_data(id_update)%request_send_count = 0</div>
-<div class="line"><a name="l00364"></a><span class="lineno">  364</span>&#160;<span class="preprocessor">#ifdef use_libMPI</span></div>
-<div class="line"><a name="l00365"></a><span class="lineno">  365</span>&#160;     nonblock_data(id_update)%request_send(:)    = MPI_REQUEST_NULL</div>
-<div class="line"><a name="l00366"></a><span class="lineno">  366</span>&#160;<span class="preprocessor">#else</span></div>
-<div class="line"><a name="l00367"></a><span class="lineno">  367</span>&#160;     nonblock_data(id_update)%request_send(:)    = 0</div>
-<div class="line"><a name="l00368"></a><span class="lineno">  368</span>&#160;<span class="preprocessor">#endif</span></div>
-<div class="line"><a name="l00369"></a><span class="lineno">  369</span>&#160;  endif</div>
-<div class="line"><a name="l00370"></a><span class="lineno">  370</span>&#160; </div>
-<div class="line"><a name="l00371"></a><span class="lineno">  371</span>&#160;!  call init_nonblock_type(nonblock_data(id_update))</div>
-<div class="line"><a name="l00372"></a><span class="lineno">  372</span>&#160; </div>
-<div class="line"><a name="l00373"></a><span class="lineno">  373</span>&#160;  <span class="keywordflow">return</span></div>
-<div class="line"><a name="l00374"></a><span class="lineno">  374</span>&#160; </div>
-<div class="line"><a name="l00375"></a><span class="lineno">  375</span>&#160;end subroutine MPP_COMPLETE_DO_UPDATE_3D_</div>
+<div class="line"><a name="l00280"></a><span class="lineno">  280</span>&#160;  recv = .false.</div>
+<div class="line"><a name="l00281"></a><span class="lineno">  281</span>&#160;  recv(1) = BTEST(flags,EAST)</div>
+<div class="line"><a name="l00282"></a><span class="lineno">  282</span>&#160;  recv(3) = BTEST(flags,SOUTH)</div>
+<div class="line"><a name="l00283"></a><span class="lineno">  283</span>&#160;  recv(5) = BTEST(flags,WEST)</div>
+<div class="line"><a name="l00284"></a><span class="lineno">  284</span>&#160;  recv(7) = BTEST(flags,NORTH)</div>
+<div class="line"><a name="l00285"></a><span class="lineno">  285</span>&#160;  if( update_edge_only ) then</div>
+<div class="line"><a name="l00286"></a><span class="lineno">  286</span>&#160;     if( .NOT. (recv(1) .OR. recv(3) .OR. recv(5) .OR. recv(7)) ) then</div>
+<div class="line"><a name="l00287"></a><span class="lineno">  287</span>&#160;        recv(1) = .true.</div>
+<div class="line"><a name="l00288"></a><span class="lineno">  288</span>&#160;        recv(3) = .true.</div>
+<div class="line"><a name="l00289"></a><span class="lineno">  289</span>&#160;        recv(5) = .true.</div>
+<div class="line"><a name="l00290"></a><span class="lineno">  290</span>&#160;        recv(7) = .true.</div>
+<div class="line"><a name="l00291"></a><span class="lineno">  291</span>&#160;     endif</div>
+<div class="line"><a name="l00292"></a><span class="lineno">  292</span>&#160;  else</div>
+<div class="line"><a name="l00293"></a><span class="lineno">  293</span>&#160;     recv(2) = recv(1) .AND. recv(3)</div>
+<div class="line"><a name="l00294"></a><span class="lineno">  294</span>&#160;     recv(4) = recv(3) .AND. recv(5)</div>
+<div class="line"><a name="l00295"></a><span class="lineno">  295</span>&#160;     recv(6) = recv(5) .AND. recv(7)</div>
+<div class="line"><a name="l00296"></a><span class="lineno">  296</span>&#160;     recv(8) = recv(7) .AND. recv(1)</div>
+<div class="line"><a name="l00297"></a><span class="lineno">  297</span>&#160;  endif</div>
+<div class="line"><a name="l00298"></a><span class="lineno">  298</span>&#160;  send    = recv</div>
+<div class="line"><a name="l00299"></a><span class="lineno">  299</span>&#160; </div>
+<div class="line"><a name="l00300"></a><span class="lineno">  300</span>&#160;  ke_sum = sum(ke_list)</div>
+<div class="line"><a name="l00301"></a><span class="lineno">  301</span>&#160;  l_size = size(f_addrs,1)</div>
+<div class="line"><a name="l00302"></a><span class="lineno">  302</span>&#160;  ptr = LOC(mpp_domains_stack_nonblock)</div>
+<div class="line"><a name="l00303"></a><span class="lineno">  303</span>&#160; </div>
+<div class="line"><a name="l00304"></a><span class="lineno">  304</span>&#160;  count = update%nrecv</div>
+<div class="line"><a name="l00305"></a><span class="lineno">  305</span>&#160;  if(count &gt; 0) then</div>
+<div class="line"><a name="l00306"></a><span class="lineno">  306</span>&#160;     call mpp_clock_begin(wait_clock_nonblock)</div>
+<div class="line"><a name="l00307"></a><span class="lineno">  307</span>&#160;     call <a class="code" href="mpp__util__mpi_8inc.html#a09e69243d8c67e6a6e6e4fd9e93d0870">mpp_sync_self</a>(check=EVENT_RECV, request=nonblock_data(id_update)%request_recv(1:count), &amp;</div>
+<div class="line"><a name="l00308"></a><span class="lineno">  308</span>&#160;                        msg_size=nonblock_data(id_update)%size_recv(1:count),                     &amp;</div>
+<div class="line"><a name="l00309"></a><span class="lineno">  309</span>&#160;                        msg_type=nonblock_data(id_update)%type_recv(1:count) )</div>
+<div class="line"><a name="l00310"></a><span class="lineno">  310</span>&#160;     call mpp_clock_end(wait_clock_nonblock)</div>
+<div class="line"><a name="l00311"></a><span class="lineno">  311</span>&#160;#ifdef use_libMPI</div>
+<div class="line"><a name="l00312"></a><span class="lineno">  312</span>&#160;     nonblock_data(id_update)%request_recv(:)    = MPI_REQUEST_NULL</div>
+<div class="line"><a name="l00313"></a><span class="lineno">  313</span>&#160;#else</div>
+<div class="line"><a name="l00314"></a><span class="lineno">  314</span>&#160;     nonblock_data(id_update)%request_recv(:)    = 0</div>
+<div class="line"><a name="l00315"></a><span class="lineno">  315</span>&#160;#endif</div>
+<div class="line"><a name="l00316"></a><span class="lineno">  316</span>&#160;     nonblock_data(id_update)%type_recv(:) = 0</div>
+<div class="line"><a name="l00317"></a><span class="lineno">  317</span>&#160;  endif</div>
+<div class="line"><a name="l00318"></a><span class="lineno">  318</span>&#160; </div>
+<div class="line"><a name="l00319"></a><span class="lineno">  319</span>&#160;  !--unpack the data</div>
+<div class="line"><a name="l00320"></a><span class="lineno">  320</span>&#160;  call mpp_clock_begin(unpk_clock_nonblock)</div>
+<div class="line"><a name="l00321"></a><span class="lineno">  321</span>&#160;!$OMP parallel do schedule(dynamic) default(shared) private(dir,buffer_pos,pos,tMe,is,ie,js,<a class="code" href="group__fms__io__mod.html#gae85b018bca1141b3510db6f38fdc50bf">je</a>,msgsize, &amp;</div>
+<div class="line"><a name="l00322"></a><span class="lineno">  322</span>&#160;!$OMP          ptr_field)</div>
+<div class="line"><a name="l00323"></a><span class="lineno">  323</span>&#160;  do m = update%nrecv, 1, -1</div>
+<div class="line"><a name="l00324"></a><span class="lineno">  324</span>&#160;     if( update%recv(m)%count == 0 )cycle</div>
+<div class="line"><a name="l00325"></a><span class="lineno">  325</span>&#160;     buffer_pos = nonblock_data(id_update)%buffer_pos_recv(m) + nonblock_data(id_update)%size_recv(m)</div>
+<div class="line"><a name="l00326"></a><span class="lineno">  326</span>&#160; </div>
+<div class="line"><a name="l00327"></a><span class="lineno">  327</span>&#160;     pos = buffer_pos</div>
+<div class="line"><a name="l00328"></a><span class="lineno">  328</span>&#160;     do n = update%recv(m)%count, 1, -1</div>
+<div class="line"><a name="l00329"></a><span class="lineno">  329</span>&#160;        dir = update%recv(m)%dir(n)</div>
+<div class="line"><a name="l00330"></a><span class="lineno">  330</span>&#160;        if( recv(dir) ) then</div>
+<div class="line"><a name="l00331"></a><span class="lineno">  331</span>&#160;           tMe = update%recv(m)%tileMe(n)</div>
+<div class="line"><a name="l00332"></a><span class="lineno">  332</span>&#160;           is = update%recv(m)%is(n); ie = update%recv(m)%ie(n)</div>
+<div class="line"><a name="l00333"></a><span class="lineno">  333</span>&#160;           js = update%recv(m)%js(n); <a class="code" href="group__fms__io__mod.html#gae85b018bca1141b3510db6f38fdc50bf">je</a> = update%recv(m)%<a class="code" href="group__fms__io__mod.html#gae85b018bca1141b3510db6f38fdc50bf">je</a>(n)</div>
+<div class="line"><a name="l00334"></a><span class="lineno">  334</span>&#160;           msgsize = (ie-is+1)*(<a class="code" href="group__fms__io__mod.html#gae85b018bca1141b3510db6f38fdc50bf">je</a>-js+1)*ke_sum</div>
+<div class="line"><a name="l00335"></a><span class="lineno">  335</span>&#160;           pos = buffer_pos - msgsize</div>
+<div class="line"><a name="l00336"></a><span class="lineno">  336</span>&#160;           buffer_pos = pos</div>
+<div class="line"><a name="l00337"></a><span class="lineno">  337</span>&#160;           <span class="keywordflow">do</span> l=1, l_size  ! loop over number of fields</div>
+<div class="line"><a name="l00338"></a><span class="lineno">  338</span>&#160;              ptr_field = f_addrs(l, tMe)</div>
+<div class="line"><a name="l00339"></a><span class="lineno">  339</span>&#160;              <span class="keywordflow">do</span> k = 1,ke_list(l,tMe)</div>
+<div class="line"><a name="l00340"></a><span class="lineno">  340</span>&#160;                 <span class="keywordflow">do</span> j = js, <a class="code" href="group__fms__io__mod.html#gae85b018bca1141b3510db6f38fdc50bf">je</a></div>
+<div class="line"><a name="l00341"></a><span class="lineno">  341</span>&#160;                    <span class="keywordflow">do</span> i = is, ie</div>
+<div class="line"><a name="l00342"></a><span class="lineno">  342</span>&#160;                       pos = pos + 1</div>
+<div class="line"><a name="l00343"></a><span class="lineno">  343</span>&#160;                       field(i,j,k) = recv_buffer(pos)</div>
+<div class="line"><a name="l00344"></a><span class="lineno">  344</span>&#160;                    end <span class="keywordflow">do</span></div>
+<div class="line"><a name="l00345"></a><span class="lineno">  345</span>&#160;                 end <span class="keywordflow">do</span></div>
+<div class="line"><a name="l00346"></a><span class="lineno">  346</span>&#160;              end <span class="keywordflow">do</span></div>
+<div class="line"><a name="l00347"></a><span class="lineno">  347</span>&#160;           end <span class="keywordflow">do</span></div>
+<div class="line"><a name="l00348"></a><span class="lineno">  348</span>&#160;        end <span class="keywordflow">if</span></div>
+<div class="line"><a name="l00349"></a><span class="lineno">  349</span>&#160;     end <span class="keywordflow">do</span> ! <span class="keywordflow">do</span> n = 1, update%recv(m)%count</div>
+<div class="line"><a name="l00350"></a><span class="lineno">  350</span>&#160;  end <span class="keywordflow">do</span></div>
+<div class="line"><a name="l00351"></a><span class="lineno">  351</span>&#160;!$OMP end parallel <span class="keywordflow">do</span></div>
+<div class="line"><a name="l00352"></a><span class="lineno">  352</span>&#160;  call mpp_clock_end(unpk_clock_nonblock)</div>
+<div class="line"><a name="l00353"></a><span class="lineno">  353</span>&#160; </div>
+<div class="line"><a name="l00354"></a><span class="lineno">  354</span>&#160;  count = update%nrecv</div>
+<div class="line"><a name="l00355"></a><span class="lineno">  355</span>&#160;  <span class="keywordflow">if</span>(count &gt; 0) then</div>
+<div class="line"><a name="l00356"></a><span class="lineno">  356</span>&#160;     nonblock_data(id_update)%size_recv(:) = 0</div>
+<div class="line"><a name="l00357"></a><span class="lineno">  357</span>&#160;  endif</div>
+<div class="line"><a name="l00358"></a><span class="lineno">  358</span>&#160; </div>
+<div class="line"><a name="l00359"></a><span class="lineno">  359</span>&#160;  count = update%nsend</div>
+<div class="line"><a name="l00360"></a><span class="lineno">  360</span>&#160;  <span class="keywordflow">if</span>(count &gt; 0) then</div>
+<div class="line"><a name="l00361"></a><span class="lineno">  361</span>&#160;     call mpp_clock_begin(wait_clock_nonblock)</div>
+<div class="line"><a name="l00362"></a><span class="lineno">  362</span>&#160;     call <a class="code" href="mpp__util__mpi_8inc.html#a09e69243d8c67e6a6e6e4fd9e93d0870">mpp_sync_self</a>(check=EVENT_SEND, request=nonblock_data(id_update)%request_send(1:count))</div>
+<div class="line"><a name="l00363"></a><span class="lineno">  363</span>&#160;     call mpp_clock_end(wait_clock_nonblock)</div>
+<div class="line"><a name="l00364"></a><span class="lineno">  364</span>&#160;     nonblock_data(id_update)%request_send_count = 0</div>
+<div class="line"><a name="l00365"></a><span class="lineno">  365</span>&#160;<span class="preprocessor">#ifdef use_libMPI</span></div>
+<div class="line"><a name="l00366"></a><span class="lineno">  366</span>&#160;     nonblock_data(id_update)%request_send(:)    = MPI_REQUEST_NULL</div>
+<div class="line"><a name="l00367"></a><span class="lineno">  367</span>&#160;<span class="preprocessor">#else</span></div>
+<div class="line"><a name="l00368"></a><span class="lineno">  368</span>&#160;     nonblock_data(id_update)%request_send(:)    = 0</div>
+<div class="line"><a name="l00369"></a><span class="lineno">  369</span>&#160;<span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00370"></a><span class="lineno">  370</span>&#160;  endif</div>
+<div class="line"><a name="l00371"></a><span class="lineno">  371</span>&#160; </div>
+<div class="line"><a name="l00372"></a><span class="lineno">  372</span>&#160;!  call init_nonblock_type(nonblock_data(id_update))</div>
+<div class="line"><a name="l00373"></a><span class="lineno">  373</span>&#160; </div>
+<div class="line"><a name="l00374"></a><span class="lineno">  374</span>&#160;  <span class="keywordflow">return</span></div>
+<div class="line"><a name="l00375"></a><span class="lineno">  375</span>&#160; </div>
+<div class="line"><a name="l00376"></a><span class="lineno">  376</span>&#160;end subroutine MPP_COMPLETE_DO_UPDATE_3D_</div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <div class="ttc" id="ampp__util__mpi_8inc_html_a09e69243d8c67e6a6e6e4fd9e93d0870"><div class="ttname"><a href="mpp__util__mpi_8inc.html#a09e69243d8c67e6a6e6e4fd9e93d0870">mpp_sync_self</a></div><div class="ttdeci">subroutine mpp_sync_self(pelist, check, request, msg_size, msg_type)</div><div class="ttdoc">This is to check if current PE's outstanding puts are complete but we can't use shmem_fence because w...</div><div class="ttdef"><b>Definition:</b> <a href="mpp__util__mpi_8inc_source.html#l00169">mpp_util_mpi.inc:169</a></div></div>

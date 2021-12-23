@@ -33,7 +33,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">FMS
-   &#160;<span id="projectnumber">2021.03.01</span>
+   &#160;<span id="projectnumber">2021.04.0</span>
    </div>
    <div id="projectbrief">Flexible Modeling System</div>
   </td>
@@ -102,6 +102,7 @@ $(document).ready(function(){initNavTree('install.html',''); initResizable(); })
 <li>Fortran 2003 standard compiler</li>
 <li>Fortran compiler that supports Cray Pointer</li>
 <li>MPI C and Fortran headers and libraries (optional)</li>
+<li>Libyaml header and libraries (optional)</li>
 <li>Linux or Unix style system</li>
 </ul>
 <h2>Supported Compilers</h2>
@@ -118,8 +119,9 @@ $(document).ready(function(){initNavTree('install.html',''); initResizable(); })
 </div><!-- fragment --><p>When building from a GitHub clone, the user must run <code>autoreconf -i</code> before running the <code>./configure</code> script.</p>
 <p>The <code>./configure</code> script will guess as many compiler options as required to build libFMS. In some cases you may be required to supply additional compiler flags for your system. Additional compiler options can be passed to the build with the <code>CPPFLAGS</code>, <code>CFLAGS</code> and <code>FCFLAGS</code> variable. The <code>./configure</code> option <code>--disable-setting-flags</code> will not guess required compiler flags. Using this configure option will require the user to give all required flags.</p>
 <p>Run <code>./configure --help</code> to see other available configure options.</p>
+<p>For more information on building with autotools and build options please see <a href="https://github.com/NOAA-GFDL/FMS/blob/main/libFMS/BUILD_SYSTEM.md">BUILD_SYSTEM.md</a></p>
 <h3>CMake</h3>
-<p>To build using CMake, follow the instructions in <a href="https://github.com/NOAA-GFDL/FMS/blob/master/CMAKE_INSTRUCTIONS.md">CMAKE_INSTRUCTIONS.mk</a>. Currently the CMake configuration is the most restrictive build option as the compiler flags are immutable.</p>
+<p>To build using CMake, follow the instructions in <a href="https://github.com/NOAA-GFDL/FMS/blob/main/CMAKE_INSTRUCTIONS.md">CMAKE_INSTRUCTIONS.mk</a>. Currently the CMake configuration is the most restrictive build option as the compiler flags are immutable.</p>
 <h3>GFDL MKMF</h3>
 <p>Make Makefile (<a href="https://github.com/NOAA-GFDL/mkmf">MKMF</a>) is the GFDL developed makefile generator application. MKMF uses a list of file, or a list of directories that contain Fortran or C file, a Make template file, and writes a Makefile with the correct dependencies to build a library or executable. To use MKMF to build libFMS, do the following.</p>
 <ol type="1">

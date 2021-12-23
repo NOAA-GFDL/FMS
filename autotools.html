@@ -33,7 +33,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">FMS
-   &#160;<span id="projectnumber">2021.03.01</span>
+   &#160;<span id="projectnumber">2021.04.0</span>
    </div>
    <div id="projectbrief">Flexible Modeling System</div>
   </td>
@@ -138,7 +138,12 @@ $(document).ready(function(){initNavTree('autotools.html',''); initResizable(); 
 <li>&ndash;help prints message showing all options</li>
 </ul>
 <h2>FMS Configure Options</h2>
-<p>Currently there are not FMS specific configure options, but probably we will add some.</p>
+<p>Configure build options for FMS:</p><ul>
+<li><code>--with-yaml</code> : Build with support for yaml input files(requires the libyaml library and headers)</li>
+<li><code>--enable-mixed-mode</code> : Build in mixed precision mode, with default 4 byte reals and 8 byte real overloads</li>
+<li><code>--disable-setting-flags</code> : Build without automatically setting flags during configuration</li>
+<li><code>--with-mpi</code> : Build with MPI support, enabled by default</li>
+</ul>
 <h2>Standard Make Targets</h2>
 <p>Some of the useful make targets include:</p><ul>
 <li>make or make all - build code</li>
