@@ -225,6 +225,9 @@ use platform_mod
   USE diag_table_mod, ONLY: parse_diag_table
   USE diag_output_mod, ONLY: get_diag_global_att, set_diag_global_att
   USE diag_grid_mod, ONLY: diag_grid_init, diag_grid_end
+#ifdef use_yaml
+  use fms_diag_yaml_mod, only: diag_yaml_object_init, diag_yaml_object_end
+#endif
   USE fms_diag_object_mod, ONLY: fms_diag_object, diag_object_placeholder
   USE constants_mod, ONLY: SECONDS_PER_DAY
 
@@ -3470,6 +3473,10 @@ CONTAINS
     if (allocated(fileobj)) deallocate(fileobj)
     if (allocated(fileobjND)) deallocate(fileobjND)
     if (allocated(fnum_for_domain)) deallocate(fnum_for_domain)
+
+#ifdef use_yaml
+    if (use_modern_diag) call diag_yaml_object_end
+#endif
   END SUBROUTINE diag_manager_end
 
   !> @brief Replaces diag_manager_end; close just one file: files(file)
@@ -3684,6 +3691,10 @@ CONTAINS
           prepend_date = .FALSE.
        END IF
     END IF
+
+#ifdef use_yaml
+    if (use_modern_diag) CALL diag_yaml_object_init()
+#endif
 
     CALL parse_diag_table(DIAG_SUBSET=diag_subset_output, ISTAT=mystat, ERR_MSG=err_msg_local)
     IF ( mystat /= 0 ) THEN
