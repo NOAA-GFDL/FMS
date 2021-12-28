@@ -130,6 +130,10 @@ subroutine diag_yaml_object_end()
 
   do i = 1, size(diag_yaml%diag_files, 1)
     if(allocated(diag_yaml%diag_files(i)%file_global_meta)) deallocate(diag_yaml%diag_files(i)%file_global_meta)
+    if(allocated(diag_yaml%diag_files(i)%file_sub_region%lat_lon_sub_region)) &
+    deallocate(diag_yaml%diag_files(i)%file_sub_region%lat_lon_sub_region)
+  if(allocated(diag_yaml%diag_files(i)%file_sub_region%index_sub_region)) &
+    deallocate(diag_yaml%diag_files(i)%file_sub_region%index_sub_region)
   enddo
   if(allocated(diag_yaml%diag_files)) deallocate(diag_yaml%diag_files)
 
@@ -177,8 +181,10 @@ subroutine fill_in_diag_files(diag_yaml_id, diag_file_id, fileobj)
     call get_block_ids(diag_yaml_id, "sub_region", sub_region_id, parent_block_id=diag_file_id)
     call diag_get_value_from_key(diag_yaml_id, sub_region_id(1), "grid_type", fileobj%file_sub_region%grid_type)
     if (trim(fileobj%file_sub_region%grid_type) .eq. "latlon") then
+      allocate(fileobj%file_sub_region%lat_lon_sub_region(8))
       call get_sub_region(diag_yaml_id, sub_region_id(1), fileobj%file_sub_region%lat_lon_sub_region)
     elseif (trim(fileobj%file_sub_region%grid_type) .eq. "index") then
+      allocate(fileobj%file_sub_region%index_sub_region(8))
       call get_sub_region(diag_yaml_id, sub_region_id(1), fileobj%file_sub_region%index_sub_region)
       call get_value_from_key(diag_yaml_id, sub_region_id(1), "tile", fileobj%file_sub_region%tile, is_optional=.true.)
       if (fileobj%file_sub_region%tile .eq. 0) call mpp_error(FATAL, "The tile number is required when defining a "//&

@@ -40,14 +40,14 @@ integer, parameter :: MAX_STR_LEN = 255
 type subRegion_type
      character (len=:), allocatable :: grid_type !< Flag indicating the type of region,
                                                  !! acceptable values are "latlon" and "index"
-     real :: lat_lon_sub_region (NUM_SUB_REGION_ARRAY)  !< Array that stores the grid point bounds for the sub region
-                                                        !! to use if grid_type is set to "latlon"
-                                                        !! [dim1_begin, dim1_end, dim2_begin, dim2_end,
-                                                        !!  dim3_begin, dim3_end, dim4_begin, dim4_end]
-     integer :: index_sub_region (NUM_SUB_REGION_ARRAY) !< Array that stores the index bounds for the sub region to
-                                                        !! to use if grid_type is set to "index"
-                                                        !! [dim1_begin, dim1_end, dim2_begin, dim2_end,
-                                                        !!  dim3_begin, dim3_end, dim4_begin, dim4_end]
+     real, allocatable :: lat_lon_sub_region (:) !< Array that stores the grid point bounds for the sub region
+                                                 !! to use if grid_type is set to "latlon"
+                                                 !! [dim1_begin, dim1_end, dim2_begin, dim2_end,
+                                                 !!  dim3_begin, dim3_end, dim4_begin, dim4_end]
+     integer, allocatable :: index_sub_region (:) !< Array that stores the index bounds for the sub region to
+                                                  !! to use if grid_type is set to "index"
+                                                  !! [dim1_begin, dim1_end, dim2_begin, dim2_end,
+                                                  !!  dim3_begin, dim3_end, dim4_begin, dim4_end]
      integer :: tile !< Tile number of the sub region, required if using the "index" grid type
 
 end type subRegion_type
@@ -76,6 +76,7 @@ type diagYamlFiles_type
                                       !! NOTE: The file_duration_units field must also be present if
                                       !! this field is present.
     character (len=:), allocatable :: file_duration_units !< The file duration units
+    !< Need to use `MAX_STR_LEN` because not all filenames/global attributes are the same length
     character (len=MAX_STR_LEN), dimension(:), allocatable :: file_varlist !< An array of variable names
                                                              !! within a file
     character (len=MAX_STR_LEN), dimension(:,:), allocatable :: file_global_meta !< Array of key(dim=1)
@@ -114,6 +115,7 @@ type diagYamlFilesVar_type
      character (len=:), allocatable :: var_outname !< Name of the variable as written to the file
      character (len=:), allocatable :: var_longname !< Overwrites the long name of the variable
      character (len=:), allocatable :: var_units !< Overwrites the units
+     !< Need to use `MAX_STR_LEN` because not all filenames/global attributes are the same length
      character (len=MAX_STR_LEN), dimension (:, :), allocatable :: var_attributes !< Attributes to overwrite or
                                                                      !! add from diag_yaml
  contains
