@@ -100,3 +100,10 @@ rm -f input.nml diag_table
 touch input.nml
 cp $top_srcdir/test_fms/diag_manager/diagTables/diag_table_25 diag_table
 run_test test_diag_manager_time 1
+
+echo "Test 26: diag_yaml_init"
+touch input.nml
+cp $top_srcdir/test_fms/diag_manager/diagTables/diag_table_26 diag_table.yaml
+run_test test_diag_yaml 1 $parser_skip
+
+. $top_srcdir/test_fms/diag_manager/check_crashes.sh

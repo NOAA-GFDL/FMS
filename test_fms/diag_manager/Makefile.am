@@ -28,11 +28,12 @@ AM_CPPFLAGS = -I$(top_srcdir)/include -I$(MODDIR)
 LDADD = $(top_builddir)/libFMS/libFMS.la
 
 # Build this test program.
-check_PROGRAMS = test_diag_manager test_diag_manager_time
+check_PROGRAMS = test_diag_yaml test_diag_manager test_diag_manager_time
 
 # This is the source code for the test.
 test_diag_manager_SOURCES = test_diag_manager.F90
 test_diag_manager_time_SOURCES = test_diag_manager_time.F90
+test_diag_yaml_SOURCES = test_diag_yaml.F90
 
 # Run the test.
 TESTS = test_diag_manager2.sh
@@ -40,4 +41,12 @@ TESTS = test_diag_manager2.sh
 # Copy over other needed files to the srcdir
 EXTRA_DIST = input.nml_base diagTables test_diag_manager2.sh
 
-CLEANFILES = input.nml *.nc *.out diag_table
+if SKIP_PARSER_TESTS
+skipflag="skip"
+else
+skipflag=""
+endif
+
+TESTS_ENVIRONMENT = parser_skip=${skipflag}
+
+CLEANFILES = *.yaml input.nml *.nc *.out diag_table
