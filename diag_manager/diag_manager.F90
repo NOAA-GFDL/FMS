@@ -236,6 +236,9 @@ use platform_mod
   USE diag_table_mod, ONLY: parse_diag_table
   USE diag_output_mod, ONLY: get_diag_global_att, set_diag_global_att
   USE diag_grid_mod, ONLY: diag_grid_init, diag_grid_end
+#ifdef use_yaml
+  use fms_diag_yaml_mod, only: diag_yaml_object_init, diag_yaml_object_end
+#endif
   USE fms_diag_object_mod, ONLY: fms_diag_object, diag_object_placeholder
   USE constants_mod, ONLY: SECONDS_PER_DAY
   USE fms_diag_outfield_mod, ONLY: fmsDiagOutfieldIndex_type, fmsDiagOutfield_type
@@ -3706,6 +3709,10 @@ CONTAINS
     if (allocated(fileobj)) deallocate(fileobj)
     if (allocated(fileobjND)) deallocate(fileobjND)
     if (allocated(fnum_for_domain)) deallocate(fnum_for_domain)
+
+#ifdef use_yaml
+    if (use_modern_diag) call diag_yaml_object_end
+#endif
   END SUBROUTINE diag_manager_end
 
   !> @brief Replaces diag_manager_end; close just one file: files(file)
@@ -3803,12 +3810,8 @@ CONTAINS
          & max_input_fields, max_axes, do_diag_field_log, write_bytes_in_file, debug_diag_manager,&
          & max_num_axis_sets, max_files, use_cmor, issue_oor_warnings,&
          & oor_warnings_fatal, max_out_per_in_field, flush_nc_files, region_out_use_alt_value, max_field_attributes,&
-<<<<<<< HEAD
          & max_file_attributes, max_axis_attributes, prepend_date, use_mpp_io, field_log_separator,&
-         & use_refactored_send
-=======
-         & max_file_attributes, max_axis_attributes, prepend_date, use_modern_diag, use_mpp_io
->>>>>>> 98bb81e0 (Adds  namelist variable)
+         & use_modern_diag
 
     ! If the module was already initialized do nothing
     IF ( module_is_initialized ) RETURN
@@ -3928,8 +3931,12 @@ CONTAINS
        END IF
     END IF
 
-   CALL parse_diag_table(DIAG_SUBSET=diag_subset_output, ISTAT=mystat, ERR_MSG=err_msg_local)
-   IF ( mystat /= 0 ) THEN
+#ifdef use_yaml
+    if (use_modern_diag) CALL diag_yaml_object_init()
+#endif
+
+    CALL parse_diag_table(DIAG_SUBSET=diag_subset_output, ISTAT=mystat, ERR_MSG=err_msg_local)
+    IF ( mystat /= 0 ) THEN
        IF ( fms_error_handler('diag_manager_mod::diag_manager_init',&
             & 'Error parsing diag_table. '//TRIM(err_msg_local), err_msg) ) RETURN
    END IF

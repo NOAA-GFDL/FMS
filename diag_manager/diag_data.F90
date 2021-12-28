@@ -104,33 +104,6 @@ use platform_mod
 
   !> @}
 
-
-  !> @brief The files type matching a C struct containing diag_yaml information
-    !> @ingroup diag_data_mod
-type, bind(c) :: diag_files_type
-     character (kind=c_char) :: fname (20) !< file name
-     character (kind=c_char) :: frequnit (7) !< the frequency unit
-     integer (c_int)    :: freq !< the frequency of data
-     character (kind=c_char) :: timeunit(7) !< The unit of time
-     character (kind=c_char) :: unlimdim(8) !< The name of the unlimited dimension
-     character (kind=c_char) :: key(8) !< Storage for the key in the yaml file
-end type diag_files_type
-!> @brief The field type matching the C struct for diag_yaml information
-  !> @ingroup diag_data_mod
-type, bind(c) :: diag_fields_type
-     character (kind=c_char) :: fname (20) !< The field/diagnostic name
-     character (kind=c_char) :: var(20) !< The name of the variable
-     character (kind=c_char) :: files(20) !< The files that the diagnostic will be written to
-     integer (c_int)    :: ikind !< The type/kind of the variable
-     character (kind=c_char) :: skind(20) !< The type/kind of the variable
-     character (kind=c_char) :: reduction(20) !< IDK
-     character (kind=c_char) :: all_all(4) !< This has to be "all"
-     character (kind=c_char) :: region(50) !< The region
-     character (kind=c_char) :: regcoord(50) !< Coodinates of the region
-     character (kind=c_char) :: module_location(20) !< The module
-     character (kind=c_char) :: key(8) !< Storage for the key in the yaml file
-end type diag_fields_type
-
   !> @brief Contains the coordinates of the local domain to output.
   !> @ingroup diag_data_mod
   TYPE diag_grid

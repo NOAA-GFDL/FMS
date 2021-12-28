@@ -10,11 +10,9 @@ module fms_diag_object_mod
 use diag_data_mod,  only: diag_null
 use diag_data_mod,  only: r8, r4, i8, i4, string, null_type_int
 use diag_data_mod,  only: diag_null, diag_not_found, diag_not_registered, diag_registered_id
-use diag_data_mod,  only: diag_fields_type, diag_files_type
-use fms_diag_yaml_mod, only: is_field_type_null
-use fms_diag_yaml_mod, only: diag_yaml 
 use diag_axis_mod,  only: diag_axis_type
 use mpp_mod, only: fatal, note, warning, mpp_error
+use fms_diag_yaml_object_mod, only: diagYamlFiles_type, diagYamlFilesVar_type
 use time_manager_mod, ONLY: time_type
 !!!set_time, set_date, get_time, time_type, OPERATOR(>=), OPERATOR(>),&
 !!!       & OPERATOR(<), OPERATOR(==), OPERATOR(/=), OPERATOR(/), OPERATOR(+), ASSIGNMENT(=), get_date, &
@@ -59,8 +57,8 @@ end interface
 
 !> \brief Object that holds all variable information
 type fms_diag_object
-     type (diag_fields_type)                          :: diag_field        !< info from diag_table
-     type (diag_files_type),allocatable, dimension(:) :: diag_file         !< info from diag_table
+     type (diagYamlFilesVar_type), allocatable, dimension(:) :: diag_field !< info from diag_table
+     type (diagYamlFiles_type),     allocatable, dimension(:) :: diag_file  !< info from diag_table
      integer, allocatable, private                    :: diag_id           !< unique id for varable
      class(FmsNetcdfFile_t), dimension (:), pointer   :: fileob => NULL()  !< A pointer to all of the 
                                                                            !! file objects for this variable
@@ -238,13 +236,14 @@ subroutine fms_register_diag_field_obj &
   allocate(character(len=len(modname)) :: dobj%modname)
   dobj%modname = trim(modname)
 !> Grab the information from the diag_table
+!  TO DO:
 !  dobj%diag_field = get_diag_table_field(trim(varname))
 !  dobj%diag_field = diag_yaml%get_diag_field(
-  if (is_field_type_null(dobj%diag_field)) then
-     dobj%diag_id = diag_not_found
-     dobj%vartype = diag_null
-     return
-  endif
+!  if (is_field_type_null(dobj%diag_field)) then
+!     dobj%diag_id = diag_not_found
+!     dobj%vartype = diag_null
+!     return
+!  endif
 !> get the optional arguments if included and the diagnostic is in the diag table
   if (present(longname)) then
      allocate(character(len=len(longname)) :: dobj%longname)
