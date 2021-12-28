@@ -131,9 +131,9 @@ subroutine diag_yaml_object_end()
   do i = 1, size(diag_yaml%diag_files, 1)
     if(allocated(diag_yaml%diag_files(i)%file_global_meta)) deallocate(diag_yaml%diag_files(i)%file_global_meta)
     if(allocated(diag_yaml%diag_files(i)%file_sub_region%lat_lon_sub_region)) &
-    deallocate(diag_yaml%diag_files(i)%file_sub_region%lat_lon_sub_region)
-  if(allocated(diag_yaml%diag_files(i)%file_sub_region%index_sub_region)) &
-    deallocate(diag_yaml%diag_files(i)%file_sub_region%index_sub_region)
+      deallocate(diag_yaml%diag_files(i)%file_sub_region%lat_lon_sub_region)
+    if(allocated(diag_yaml%diag_files(i)%file_sub_region%index_sub_region)) &
+      deallocate(diag_yaml%diag_files(i)%file_sub_region%index_sub_region)
   enddo
   if(allocated(diag_yaml%diag_files)) deallocate(diag_yaml%diag_files)
 
