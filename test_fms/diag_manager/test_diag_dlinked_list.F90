@@ -38,8 +38,6 @@ program test_diag_dlinked_list
    use mpp_io_mod, only: mpp_io_init
 
    use fms_diag_object_mod, only : fms_diag_object
-   !use fms_diag_file_mod,  only: fms_diag_file_type
-   use diag_data_mod, only: diag_fields_type
    use fms_diag_dlinked_list_mod, only : FmsDlList_t, FmsDllIterator_t
 
    implicit  none

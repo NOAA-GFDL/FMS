@@ -29,8 +29,6 @@ program test_diag_obj_container
   use mpp_io_mod, only: mpp_io_init
 
   use fms_diag_object_mod, only : fms_diag_object
-  !use fms_diag_file_mod,  only: fms_diag_file_type
-  use diag_data_mod, only: diag_fields_type
   use fms_diag_object_container_mod, only : FmsDiagObjectContainer_t, FmsDiagObjIterator_t
   USE time_manager_mod, ONLY: time_type
 
