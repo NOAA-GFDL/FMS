@@ -175,7 +175,6 @@ list(APPEND fms_fortran_src_files
   topography/topography.F90
   tracer_manager/tracer_manager.F90
   tridiagonal/tridiagonal.F90
-  parser/yaml_parser.F90
   libFMS.F90
 )
 
