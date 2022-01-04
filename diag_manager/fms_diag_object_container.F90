@@ -56,7 +56,7 @@ MODULE fms_diag_object_container_mod
    !!
    type, public:: FmsDiagObjectContainer_t
    private
-      TYPE (FmsDlList_t), ALLOCATABLE :: the_linked_list !!This version based on the FDS linked_list.
+      TYPE (FmsDlList_t), ALLOCATABLE :: the_linked_list !< This version based on the FDS linked_list.
    contains
       procedure :: insert => insert_diag_object
       procedure :: remove => remove_diag_object
@@ -67,10 +67,10 @@ MODULE fms_diag_object_container_mod
    end type FmsDiagObjectContainer_t
 
 
-   !> \brief Iterator used to traverse the objects of the container.
+   !> @brief Iterator used to traverse the objects of the container.
    type, public :: FmsDiagObjIterator_t
    private
-      type(FmsDllIterator_t) :: liter !!this version based on the FDS linked_list
+      type(FmsDllIterator_t) :: liter !< This version based on the FDS linked_list (and its iterator).
    contains
       procedure :: has_data => literator_has_data
       procedure :: next => literator_next

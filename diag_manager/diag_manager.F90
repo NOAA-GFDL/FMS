@@ -611,8 +611,6 @@ CONTAINS
       endif
     endif
 
-    !! ***  ERROR MISSING ENDIF ???  ***  endif
-
   END FUNCTION register_diag_field_array
 
 
