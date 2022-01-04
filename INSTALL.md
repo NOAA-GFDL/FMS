@@ -9,6 +9,7 @@ The following external libraries are required when building libFMS
 * Fortran 2003 standard compiler
 * Fortran compiler that supports Cray Pointer
 * MPI C and Fortran headers and libraries (optional)
+* Libyaml header and libraries (optional)
 * Linux or Unix style system
 
 ## Supported Compilers
@@ -56,10 +57,13 @@ configure option will require the user to give all required flags.
 
 Run `./configure --help` to see other available configure options.
 
+For more information on building with autotools and build options please see
+ [BUILD_SYSTEM.md](https://github.com/NOAA-GFDL/FMS/blob/main/libFMS/BUILD_SYSTEM.md)
+
 ### CMake
 
 To build using CMake, follow the instructions in
-[CMAKE_INSTRUCTIONS.mk](https://github.com/NOAA-GFDL/FMS/blob/master/CMAKE_INSTRUCTIONS.md).
+[CMAKE_INSTRUCTIONS.mk](https://github.com/NOAA-GFDL/FMS/blob/main/CMAKE_INSTRUCTIONS.md).
 Currently the CMake configuration is the most restrictive build option as the
 compiler flags are immutable.
 
