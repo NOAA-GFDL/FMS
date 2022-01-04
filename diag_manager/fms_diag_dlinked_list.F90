@@ -44,7 +44,7 @@ MODULE fms_diag_dlinked_list_mod
   USE fms_mod, ONLY: error_mesg, FATAL, WARNING, NOTE
   implicit none
   !!TODO: COnsider setting the access (public,private) to functions, etc.
-  !> Linked doubly-linked list node type.
+  !> The doubly-linked list node type.
   type, public:: FmsDlListNode_t
     private
     class(*), pointer :: data => null()        !< The data pointed to by the node.
@@ -64,10 +64,10 @@ MODULE fms_diag_dlinked_list_mod
     procedure :: get_current_node_pointer => get_current_node_ptr !< Return  the current node pointer.
   end type FmsDllIterator_t
 
-
+  !> The doubly-linked list type. Besides the member functions, see the
+  !! associated iterator class ( FmsDllIterator_t) for traversal, and note that
+  !! the default constructor is overriden with an interface of the same name.
   type, public :: FmsDlList_t
-    !! Note we are overriding the default constructor with an
-    ! interface of the same name
   private
     type(FmsDlListNode_t), pointer :: head !< The sentinal (non-data) head node of the linked list. .
     type(FmsDlListNode_t), pointer :: tail !< The sentinel (non-data) tail node of the linked list.

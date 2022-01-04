@@ -158,8 +158,7 @@ subroutine diag_obj_init(ob)
  end select
 end subroutine diag_obj_init
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!> \description Fills in and allocates (when necessary) the values in the diagnostic object
-!
+!> \Description Fills in and allocates (when necessary) the values in the diagnostic object
 subroutine fms_register_diag_field_obj &
                 !(dobj, modname, varname, axes, time, longname, units, missing_value, metadata)
        (dobj, modname, varname, axes, init_time, &
