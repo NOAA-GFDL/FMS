@@ -236,10 +236,14 @@ use platform_mod
   USE diag_table_mod, ONLY: parse_diag_table
   USE diag_output_mod, ONLY: get_diag_global_att, set_diag_global_att
   USE diag_grid_mod, ONLY: diag_grid_init, diag_grid_end
+  USE fms_diag_object_mod, ONLY: fms_diag_object
+  use fms_diag_object_container_mod, ONLY: FmsDiagObjectContainer_t
+
 #ifdef use_yaml
   use fms_diag_yaml_mod, only: diag_yaml_object_init, diag_yaml_object_end
 #endif
   USE fms_diag_object_mod, ONLY: fms_diag_object, diag_object_placeholder
+
   USE constants_mod, ONLY: SECONDS_PER_DAY
   USE fms_diag_outfield_mod, ONLY: fmsDiagOutfieldIndex_type, fmsDiagOutfield_type
   USE fms_diag_fieldbuff_update_mod, ONLY: fieldbuff_update, fieldbuff_copy_missvals, &
@@ -275,6 +279,8 @@ use platform_mod
 #include<file_version.h>
 
   type(time_type) :: Time_end
+
+  TYPE(FmsDiagObjectContainer_t), ALLOCATABLE :: the_diag_object_container
 
   !> @brief Send data over to output fields.
   !!
@@ -448,6 +454,9 @@ CONTAINS
     LOGICAL :: mask_variant1, verbose1
     CHARACTER(len=128) :: msg
     TYPE(time_type) :: diag_file_init_time !< The intial time of the diag_file
+    INTEGER :: status_ic !< used to check the status of insert into container.
+    CLASS(fms_diag_object), ALLOCATABLE , TARGET :: diag_obj  !< the diag object that is (to be) registered
+    TYPE(fms_diag_object), POINTER :: diag_obj_ptr => NULL() !< a pointer to the registered diag_object
 
     ! get stdout unit number
     stdout_unit = stdout()
@@ -616,13 +625,23 @@ CONTAINS
     END IF
 
     if (use_modern_diag) then
-            call diag_object_placeholder(1)%register &
-       (module_name, field_name, axes, init_time, &
-       long_name, units, missing_value, Range, mask_variant, standard_name, &
-       do_not_log, err_msg, interp_method, tile_count, area, volume, realm) !(no metadata here)
+      !! Create a diag object, initialize it with the registered data, and insert
+      !! it ino the diag_obj_container singleton.
+
+      allocate( diag_obj )
+      call diag_obj%register (module_name, field_name, axes, init_time, &
+        long_name, units, missing_value, Range, mask_variant, standard_name, &
+        do_not_log, err_msg, interp_method, tile_count, area, volume, realm) !(no metadata here)
+
+      diag_obj_ptr => diag_obj
+      status_ic = the_diag_object_container%insert(diag_obj_ptr%get_id(), diag_obj_ptr)
+      if(status_ic .ne. 0) then
+         print *, "Insertion ERROR for id ", diag_obj_ptr%get_id()
+      endif
     endif
 
   END FUNCTION register_diag_field_array
+
 
   !> @brief Return field index for subsequent call to send_data.
   !! @return field index for subsequent call to send_data.
@@ -3954,6 +3973,9 @@ CONTAINS
            & 'Missing Value',  FIELD_LOG_SEPARATOR, 'Min Value', FIELD_LOG_SEPARATOR,  &
            & 'Max Value',      FIELD_LOG_SEPARATOR, 'AXES LIST'
     END IF
+
+    !!Create the diag_object container; Its a singleton in the diag_data mod
+    the_diag_object_container = FmsDiagObjectContainer_t()
 
     module_is_initialized = .TRUE.
     ! create axis_id for scalars here

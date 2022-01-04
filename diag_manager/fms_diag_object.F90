@@ -4,12 +4,13 @@ module fms_diag_object_mod
 !! \brief Contains routines for the diag_objects
 !!
 !! \description The diag_manager passes an object back and forth between the diag routines and the users.
-!! The procedures of this object and the types are all in this module.  The fms_dag_object is a type 
+!! The procedures of this object and the types are all in this module.  The fms_dag_object is a type
 !! that contains all of the information of the variable.  It is extended by a type that holds the
 !! appropriate buffer for the data for manipulation.
 use diag_data_mod,  only: diag_null
 use diag_data_mod,  only: r8, r4, i8, i4, string, null_type_int
 use diag_data_mod,  only: diag_null, diag_not_found, diag_not_registered, diag_registered_id
+
 use diag_axis_mod,  only: diag_axis_type
 use mpp_mod, only: fatal, note, warning, mpp_error
 use fms_diag_yaml_object_mod, only: diagYamlFiles_type, diagYamlFilesVar_type
@@ -60,7 +61,7 @@ type fms_diag_object
      type (diagYamlFilesVar_type), allocatable, dimension(:) :: diag_field !< info from diag_table
      type (diagYamlFiles_type),     allocatable, dimension(:) :: diag_file  !< info from diag_table
      integer, allocatable, private                    :: diag_id           !< unique id for varable
-     class(FmsNetcdfFile_t), dimension (:), pointer   :: fileob => NULL()  !< A pointer to all of the 
+     class(FmsNetcdfFile_t), dimension (:), pointer   :: fileob => NULL()  !< A pointer to all of the
                                                                            !! file objects for this variable
      character(len=:), allocatable, dimension(:)      :: metadata          !< metedata for the variable
      logical, private                                 :: static            !< true is this is a static var
@@ -69,12 +70,12 @@ type fms_diag_object
      logical, allocatable, private                    :: local             !< If the output is local
      TYPE(time_type), private                         :: init_time         !< The initial time
      integer,          allocatable, private           :: vartype           !< the type of varaible
-     character(len=:), allocatable, private           :: varname           !< the name of the variable     
-     character(len=:), allocatable, private           :: longname          !< longname of the variable     
-     character(len=:), allocatable, private           :: standname         !< standard name of the variable     
+     character(len=:), allocatable, private           :: varname           !< the name of the variable
+     character(len=:), allocatable, private           :: longname          !< longname of the variable
+     character(len=:), allocatable, private           :: standname         !< standard name of the variable
      character(len=:), allocatable, private           :: units             !< the units
      character(len=:), allocatable, private           :: modname           !< the module
-     character(len=:), allocatable, private           :: realm             !< String to set as the value 
+     character(len=:), allocatable, private           :: realm             !< String to set as the value
                                                                            !! to the modeling_realm attribute
      character(len=:), allocatable, private           :: err_msg           !< An error message
      character(len=:), allocatable, private           :: interp_method     !< The interp method to be used
@@ -105,7 +106,7 @@ type fms_diag_object
      procedure :: get_id => fms_diag_get_id
      procedure :: id => fms_diag_get_id
      procedure :: copy => copy_diag_obj
-     procedure :: register => fms_register_diag_field_obj
+     procedure :: register => fms_register_diag_field_obj !! Merely initialize fields.
      procedure :: setID => set_diag_id
      procedure :: is_registered => diag_ob_registered
      procedure :: set_type => set_vartype
@@ -201,7 +202,7 @@ subroutine diag_obj_init(ob)
  end select
 end subroutine diag_obj_init
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!> \description Fills in and allocates (when necessary) the values in the diagnostic object
+!> \Description Fills in and allocates (when necessary) the values in the diagnostic object
 subroutine fms_register_diag_field_obj &
                 !(dobj, modname, varname, axes, time, longname, units, missing_value, metadata)
        (dobj, modname, varname, axes, init_time, &
@@ -239,11 +240,14 @@ subroutine fms_register_diag_field_obj &
 !  TO DO:
 !  dobj%diag_field = get_diag_table_field(trim(varname))
 !  dobj%diag_field = diag_yaml%get_diag_field(
+  !! TODO : Discuss design. Is this a premature return that somehow should
+  !! indicate a warning or failure to the calling function and/or the log files?
 !  if (is_field_type_null(dobj%diag_field)) then
 !     dobj%diag_id = diag_not_found
 !     dobj%vartype = diag_null
 !     return
 !  endif
+
 !> get the optional arguments if included and the diagnostic is in the diag table
   if (present(longname)) then
      allocate(character(len=len(longname)) :: dobj%longname)
@@ -252,7 +256,7 @@ subroutine fms_register_diag_field_obj &
   if (present(standname)) then
      allocate(character(len=len(standname)) :: dobj%standname)
      dobj%standname = trim(standname)
-  endif  
+  endif
   if (present(units)) then
      allocate(character(len=len(units)) :: dobj%units)
      dobj%units = trim(units)
@@ -276,7 +280,7 @@ subroutine fms_register_diag_field_obj &
                      "The missing value passed to register a diagnostic is not a r8, r4, i8, or i4",&
                      FATAL)
     end select
-  else   
+  else
       dobj%missing_value = DIAG_NULL
   endif
 
@@ -284,6 +288,8 @@ subroutine fms_register_diag_field_obj &
 !     write(6,*)"IKIND for "//trim(varname)//" is ",dobj%diag_field%ikind
 !> Set the registered flag to true
  dobj%registered = .true.
+ ! save it in the diag object container.
+
 end subroutine fms_register_diag_field_obj
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !> \brief Sets the diag_id.  This can only be done if a variable is unregistered
@@ -316,7 +322,7 @@ subroutine set_vartype(objin , var)
      class default
           objin%vartype = null_type_int
           call mpp_error("set_vartype", "The variable"//objin%varname//" is not a supported type "// &
-          " r8, r4, i8, i4, or string.", warning) 
+          " r8, r4, i8, i4, or string.", warning)
  end select
 end subroutine set_vartype
 !> \brief Prints to the screen what type the diag variable is
@@ -354,7 +360,7 @@ end subroutine what_is_vartype
 !!MZ Is this a TODO. Many problems:
 !> \brief Registers the object
 subroutine diag_ob_registered(objin , reg)
- class (fms_diag_object)      , intent(inout):: objin 
+ class (fms_diag_object)      , intent(inout):: objin
  logical                      , intent(in)   :: reg !< If registering, this is true
  objin%registered = reg
 end subroutine diag_ob_registered
@@ -374,11 +380,11 @@ select type (objout)
 !     type (diag_fields_type)                           :: diag_field         !< info from diag_table
 !     type (diag_files_type),allocatable, dimension(:)  :: diag_file          !< info from diag_table
 
-     objout%diag_id = objin%diag_id           
+     objout%diag_id = objin%diag_id
 
 !     class (fms_io_obj), allocatable, dimension(:)    :: fms_fileobj        !< fileobjs
      if (allocated(objin%metadata)) objout%metadata = objin%metadata
-     objout%static = objin%static         
+     objout%static = objin%static
      if (allocated(objin%frequency)) objout%frequency = objin%frequency
      if (allocated(objin%varname)) objout%varname = objin%varname
 end select
@@ -388,7 +394,7 @@ end subroutine copy_diag_obj
 integer function fms_diag_get_id (dobj) result(diag_id)
  class(fms_diag_object)     , intent(inout)            :: dobj
 ! character(*)               , intent(in)               :: varname
-!> Check if the diag_object registration has been done 
+!> Check if the diag_object registration has been done
  if (allocated(dobj%registered)) then
          !> Return the diag_id if the variable has been registered
          diag_id = dobj%diag_id
