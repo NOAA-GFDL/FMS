@@ -225,7 +225,7 @@ use platform_mod
   USE diag_table_mod, ONLY: parse_diag_table
   USE diag_output_mod, ONLY: get_diag_global_att, set_diag_global_att
   USE diag_grid_mod, ONLY: diag_grid_init, diag_grid_end
-  USE fms_diag_object_mod, ONLY: fmsDiagObject_type, diag_object_placeholder
+  USE fms_diag_object_mod, ONLY: fmsDiagObject_type
   use fms_diag_object_container_mod, ONLY: FmsDiagObjectContainer_t
 
 #ifdef use_yaml

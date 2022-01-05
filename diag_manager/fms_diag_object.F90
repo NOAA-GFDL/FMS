@@ -70,6 +70,15 @@ type fmsDiagObject_type
      real(kind=R4_KIND), allocatable,dimension(:)     :: r4data_RANGE      !< The range of r4 data
      real(kind=R8_KIND), allocatable,dimension(:)     :: r8data_RANGE      !< The range of r8 data
      type (diag_axis_type), allocatable, dimension(:) :: axis              !< The axis object
+!> \brief Extends the variable object to work with multiple types of data
+     class(*), allocatable :: vardata0
+     class(*), allocatable, dimension(:) :: vardata1
+     class(*), allocatable, dimension(:,:) :: vardata2
+     class(*), allocatable, dimension(:,:,:) :: vardata3
+     class(*), allocatable, dimension(:,:,:,:) :: vardata4
+     class(*), allocatable, dimension(:,:,:,:,:) :: vardata5
+
+
 
      contains
 !     procedure :: send_data => fms_send_data  !!TODO
@@ -89,43 +98,17 @@ type fmsDiagObject_type
      procedure :: get_varname => diag_obj_get_varname
 
 end type fmsDiagObject_type
-!> \brief Extends the variable object to work with multiple types of data
-type, extends(fmsDiagObject_type) :: fmsDiagObject_type_scalar
-     class(*), allocatable :: vardata
-end type fmsDiagObject_type_scalar
-type, extends(fmsDiagObject_type) :: fmsDiagObject_type_1d
-     class(*), allocatable, dimension(:) :: vardata
-end type fmsDiagObject_type_1d
-type, extends(fmsDiagObject_type) :: fmsDiagObject_type_2d
-     class(*), allocatable, dimension(:,:) :: vardata
-end type fmsDiagObject_type_2d
-type, extends(fmsDiagObject_type) :: fmsDiagObject_type_3d
-     class(*), allocatable, dimension(:,:,:) :: vardata
-end type fmsDiagObject_type_3d
-type, extends(fmsDiagObject_type) :: fmsDiagObject_type_4d
-     class(*), allocatable, dimension(:,:,:,:) :: vardata
-end type fmsDiagObject_type_4d
-type, extends(fmsDiagObject_type) :: fmsDiagObject_type_5d
-     class(*), allocatable, dimension(:,:,:,:,:) :: vardata
-end type fmsDiagObject_type_5d
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! variables !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 type(fmsDiagObject_type) :: null_ob
-type(fmsDiagObject_type_scalar) :: null_sc
-type(fmsDiagObject_type_1d) :: null_1d
-type(fmsDiagObject_type_2d) :: null_2d
-type(fmsDiagObject_type_3d) :: null_3d
-type(fmsDiagObject_type_4d) :: null_4d
-type(fmsDiagObject_type_5d) :: null_5d
 
 integer,private :: MAX_LEN_VARNAME
 integer,private :: MAX_LEN_META
 
-type(fmsDiagObject_type_3d) :: diag_object_placeholder (10)
+!type(fmsDiagObject_type) :: diag_object_placeholder (10)
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-public :: fmsDiagObject_type, fmsDiagObject_type_scalar, fmsDiagObject_type_1d
-public :: fmsDiagObject_type_2d, fmsDiagObject_type_3d, fmsDiagObject_type_4d, fmsDiagObject_type_5d
+public :: fmsDiagObject_type
+public :: null_ob
 public :: copy_diag_obj, fms_diag_get_id
-public :: null_sc, null_1d, null_2d, null_3d, null_4d, null_5d
 public :: fms_diag_object_init
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -140,12 +123,6 @@ subroutine fms_diag_object_init (mlv,mlm)
  MAX_LEN_META = mlm
 !> Initialize the null_d variables
  null_ob%diag_id = DIAG_NULL
- null_sc%diag_id = DIAG_NULL
- null_1d%diag_id = DIAG_NULL
- null_2d%diag_id = DIAG_NULL
- null_3d%diag_id = DIAG_NULL
- null_4d%diag_id = DIAG_NULL
- null_5d%diag_id = DIAG_NULL
 end subroutine fms_diag_object_init
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !> \Description Sets the diag_id to the not registered value.
