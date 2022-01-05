@@ -48,10 +48,10 @@ integer, parameter :: basedate_size = 6
 !> @brief Object that holds the information of the diag_yaml
 !> @ingroup fms_diag_yaml_mod
 type diagYamlObject_type
-  character(len=:), allocatable :: diag_title                   !< Experiment name
-  integer, dimension (basedate_size) :: diag_basedate           !< basedate array
-  type(diagYamlFiles_type), allocatable, dimension (:) :: diag_files!< History file info
-  type(diagYamlFilesVar_type), allocatable, dimension (:) :: diag_fields !< Diag fields info
+  character(len=:), allocatable, private :: diag_title                   !< Experiment name
+  integer, dimension (basedate_size), private :: diag_basedate           !< basedate array
+  type(diagYamlFiles_type), allocatable, private, dimension (:) :: diag_files!< History file info
+  type(diagYamlFilesVar_type), allocatable, private, dimension (:) :: diag_fields !< Diag fields info
   contains
   procedure :: get_title        !< Returns the title
   procedure :: get_basedate     !< Returns the basedate array
