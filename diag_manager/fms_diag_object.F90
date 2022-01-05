@@ -29,7 +29,7 @@ use iso_c_binding
 implicit none
 
 !> \brief Object that holds all variable information
-type fms_diag_object
+type fmsDiagObject_type
      type (diagYamlFilesVar_type), allocatable, dimension(:) :: diag_field !< info from diag_table
      type (diagYamlFiles_type),     allocatable, dimension(:) :: diag_file  !< info from diag_table
      integer, allocatable, private                    :: diag_id           !< unique id for varable
@@ -88,42 +88,42 @@ type fms_diag_object
      procedure :: get_vartype => diag_obj_get_vartype
      procedure :: get_varname => diag_obj_get_varname
 
-end type fms_diag_object
+end type fmsDiagObject_type
 !> \brief Extends the variable object to work with multiple types of data
-type, extends(fms_diag_object) :: fms_diag_object_scalar
+type, extends(fmsDiagObject_type) :: fmsDiagObject_type_scalar
      class(*), allocatable :: vardata
-end type fms_diag_object_scalar
-type, extends(fms_diag_object) :: fms_diag_object_1d
+end type fmsDiagObject_type_scalar
+type, extends(fmsDiagObject_type) :: fmsDiagObject_type_1d
      class(*), allocatable, dimension(:) :: vardata
-end type fms_diag_object_1d
-type, extends(fms_diag_object) :: fms_diag_object_2d
+end type fmsDiagObject_type_1d
+type, extends(fmsDiagObject_type) :: fmsDiagObject_type_2d
      class(*), allocatable, dimension(:,:) :: vardata
-end type fms_diag_object_2d
-type, extends(fms_diag_object) :: fms_diag_object_3d
+end type fmsDiagObject_type_2d
+type, extends(fmsDiagObject_type) :: fmsDiagObject_type_3d
      class(*), allocatable, dimension(:,:,:) :: vardata
-end type fms_diag_object_3d
-type, extends(fms_diag_object) :: fms_diag_object_4d
+end type fmsDiagObject_type_3d
+type, extends(fmsDiagObject_type) :: fmsDiagObject_type_4d
      class(*), allocatable, dimension(:,:,:,:) :: vardata
-end type fms_diag_object_4d
-type, extends(fms_diag_object) :: fms_diag_object_5d
+end type fmsDiagObject_type_4d
+type, extends(fmsDiagObject_type) :: fmsDiagObject_type_5d
      class(*), allocatable, dimension(:,:,:,:,:) :: vardata
-end type fms_diag_object_5d
+end type fmsDiagObject_type_5d
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! variables !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-type(fms_diag_object) :: null_ob
-type(fms_diag_object_scalar) :: null_sc
-type(fms_diag_object_1d) :: null_1d
-type(fms_diag_object_2d) :: null_2d
-type(fms_diag_object_3d) :: null_3d
-type(fms_diag_object_4d) :: null_4d
-type(fms_diag_object_5d) :: null_5d
+type(fmsDiagObject_type) :: null_ob
+type(fmsDiagObject_type_scalar) :: null_sc
+type(fmsDiagObject_type_1d) :: null_1d
+type(fmsDiagObject_type_2d) :: null_2d
+type(fmsDiagObject_type_3d) :: null_3d
+type(fmsDiagObject_type_4d) :: null_4d
+type(fmsDiagObject_type_5d) :: null_5d
 
 integer,private :: MAX_LEN_VARNAME
 integer,private :: MAX_LEN_META
 
-type(fms_diag_object_3d) :: diag_object_placeholder (10)
+type(fmsDiagObject_type_3d) :: diag_object_placeholder (10)
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-public :: fms_diag_object, fms_diag_object_scalar, fms_diag_object_1d
-public :: fms_diag_object_2d, fms_diag_object_3d, fms_diag_object_4d, fms_diag_object_5d
+public :: fmsDiagObject_type, fmsDiagObject_type_scalar, fmsDiagObject_type_1d
+public :: fmsDiagObject_type_2d, fmsDiagObject_type_3d, fmsDiagObject_type_4d, fmsDiagObject_type_5d
 public :: copy_diag_obj, fms_diag_get_id
 public :: null_sc, null_1d, null_2d, null_3d, null_4d, null_5d
 public :: fms_diag_object_init
@@ -150,9 +150,9 @@ end subroutine fms_diag_object_init
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !> \Description Sets the diag_id to the not registered value.
 subroutine diag_obj_init(ob)
- class (fms_diag_object)      , intent(inout)       :: ob
+ class (fmsDiagObject_type)      , intent(inout)       :: ob
  select type (ob)
-  class is (fms_diag_object)
+  class is (fmsDiagObject_type)
      ob%diag_id = diag_not_registered !null_ob%diag_id
      ob%registered = .false.
  end select
@@ -164,7 +164,7 @@ subroutine fms_register_diag_field_obj &
        (dobj, modname, varname, axes, init_time, &
        longname, units, missing_value, varRange, mask_variant, standname, &
        do_not_log, err_msg, interp_method, tile_count, area, volume, realm, metadata)
- class(fms_diag_object)     , intent(inout)            :: dobj
+ class(fmsDiagObject_type)     , intent(inout)            :: dobj
  CHARACTER(len=*), INTENT(in) :: modname !< The module name
  CHARACTER(len=*), INTENT(in) :: varname !< The variable name
  INTEGER, INTENT(in) :: axes(:) !< The axes indicies
@@ -250,7 +250,7 @@ end subroutine fms_register_diag_field_obj
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !> \brief Sets the diag_id.  This can only be done if a variable is unregistered
 subroutine set_diag_id(objin , id)
- class (fms_diag_object) , intent(inout):: objin
+ class (fmsDiagObject_type) , intent(inout):: objin
  integer                                :: id
  if (allocated(objin%registered)) then
      if (objin%registered) then
@@ -262,7 +262,7 @@ subroutine set_diag_id(objin , id)
 end subroutine set_diag_id
 !> \brief Find the type of the variable and store it in the object
 subroutine set_vartype(objin , var)
- class (fms_diag_object) , intent(inout):: objin
+ class (fmsDiagObject_type) , intent(inout):: objin
  class(*)                               :: var
  select type (var)
      type is (real(kind=8))
@@ -283,7 +283,7 @@ subroutine set_vartype(objin , var)
 end subroutine set_vartype
 !> \brief Prints to the screen what type the diag variable is
 subroutine what_is_vartype(objin)
- class (fms_diag_object) , intent(inout):: objin
+ class (fmsDiagObject_type) , intent(inout):: objin
  if (.not. allocated(objin%vartype)) then
      call mpp_error("what_is_vartype", "The variable type has not been set prior to this call", warning)
      return
@@ -316,17 +316,17 @@ end subroutine what_is_vartype
 !!MZ Is this a TODO. Many problems:
 !> \brief Registers the object
 subroutine diag_ob_registered(objin , reg)
- class (fms_diag_object)      , intent(inout):: objin
+ class (fmsDiagObject_type)      , intent(inout):: objin
  logical                      , intent(in)   :: reg !< If registering, this is true
  objin%registered = reg
 end subroutine diag_ob_registered
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !> \brief Copies the calling object into the object that is the argument of the subroutine
 subroutine copy_diag_obj(objin , objout)
- class (fms_diag_object)      , intent(in)                :: objin
- class (fms_diag_object)      , intent(inout) , allocatable :: objout !< The destination of the copy
+ class (fmsDiagObject_type)      , intent(in)                :: objin
+ class (fmsDiagObject_type)      , intent(inout) , allocatable :: objout !< The destination of the copy
 select type (objout)
- class is (fms_diag_object)
+ class is (fmsDiagObject_type)
 
   if (allocated(objin%registered)) then
      objout%registered = objin%registered
@@ -348,7 +348,7 @@ end subroutine copy_diag_obj
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !> \brief Returns the ID integer for a variable
 integer function fms_diag_get_id (dobj) result(diag_id)
- class(fms_diag_object)     , intent(inout)            :: dobj
+ class(fmsDiagObject_type)     , intent(inout)            :: dobj
 ! character(*)               , intent(in)               :: varname
 !> Check if the diag_object registration has been done
  if (allocated(dobj%registered)) then
@@ -366,7 +366,7 @@ end function fms_diag_get_id
 !> A questionmark "?" is set in place of the variable that is not yet allocated
 !>TODO: Add diag_id ?
 function fms_diag_obj_as_string_basic(dobj) result(rslt)
-    class(fms_diag_object), allocatable, intent(in) :: dobj
+    class(fmsDiagObject_type), allocatable, intent(in) :: dobj
     character(:), allocatable :: rslt
     character (len=:), allocatable :: registered, vartype, varname, diag_id
     if ( .not. allocated (dobj)) then
@@ -408,25 +408,25 @@ end function fms_diag_obj_as_string_basic
 
 
 function diag_obj_is_registered (obj) result (rslt)
-    class(fms_diag_object), intent(in) :: obj
+    class(fmsDiagObject_type), intent(in) :: obj
     logical :: rslt
     rslt = obj%registered
 end function diag_obj_is_registered
 
 function diag_obj_is_static (obj) result (rslt)
-    class(fms_diag_object), intent(in) :: obj
+    class(fmsDiagObject_type), intent(in) :: obj
     logical :: rslt
     rslt = obj%static
 end function diag_obj_is_static
 
 function diag_obj_get_vartype (obj) result (rslt)
-    class(fms_diag_object), intent(in) :: obj
+    class(fmsDiagObject_type), intent(in) :: obj
     integer :: rslt
     rslt = obj%vartype
 end function diag_obj_get_vartype
 
 function diag_obj_get_varname(obj) result (rslt)
-    class(fms_diag_object), intent(in) :: obj
+    class(fmsDiagObject_type), intent(in) :: obj
     character(len=len(obj%varname)) :: rslt
     rslt = obj%varname
 end function diag_obj_get_varname
