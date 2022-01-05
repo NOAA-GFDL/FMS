@@ -64,6 +64,7 @@ setup_test()
 
 }
 
+
 rm -f input.nml diag_table
 setup_test 1 "Test 1: Data array is too large in x and y direction"
 setup_test 2 "Test 2: Data array is too large in x direction"
@@ -107,3 +108,16 @@ cp $top_srcdir/test_fms/diag_manager/diagTables/diag_table_26 diag_table.yaml
 run_test test_diag_yaml 1 $parser_skip
 
 . $top_srcdir/test_fms/diag_manager/check_crashes.sh
+
+echo "Test container"
+rm -f input.nml diag_table
+touch input.nml
+cp $top_srcdir/test_fms/diag_manager/diagTables/diag_table_25 diag_table
+run_test test_diag_object_container 1
+
+
+echo "Test linked list "
+rm -f input.nml diag_table
+touch input.nml
+cp $top_srcdir/test_fms/diag_manager/diagTables/diag_table_25 diag_table
+run_test test_diag_dlinked_list 1

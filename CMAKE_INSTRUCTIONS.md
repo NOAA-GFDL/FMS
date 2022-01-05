@@ -22,6 +22,10 @@ export CC=mpiicc
 export NetCDF_ROOT=`nc-config --prefix`
 ```
 
+### If building with yaml parser (-DWITH_YAML)
+```
+export LIBYAML_ROOT=<your libyaml install directory>
+```
 
 ## 2. Build and install FMS with CMake
 `<prefix>` is the full install directory for FMS provided by user
@@ -47,6 +51,7 @@ The following build options are available:
 -DENABLE_QUAD_PRECISION "Enable compiler definition -DENABLE_QUAD_PRECISION" DEFAULT: ON
 -DGFS_PHYS              "Enable compiler definition -DGFS_PHYS"              DEFAULT:OFF
 -DLARGEFILE             "Enable compiler definition -Duse_LARGEFILE"         DEFAULT:OFF
+-DWITH_YAML             "Enable compiler definition -Duse_yaml"              DEFAULT:OFF
 ```
 
 ## 3. Installation structure

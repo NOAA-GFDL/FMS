@@ -28,12 +28,15 @@ AM_CPPFLAGS = -I$(top_srcdir)/include -I$(MODDIR)
 LDADD = $(top_builddir)/libFMS/libFMS.la
 
 # Build this test program.
-check_PROGRAMS = test_diag_yaml test_diag_manager test_diag_manager_time
+check_PROGRAMS = test_diag_manager test_diag_manager_time test_diag_object_container \
+ test_diag_dlinked_list test_diag_yaml
 
 # This is the source code for the test.
 test_diag_manager_SOURCES = test_diag_manager.F90
 test_diag_manager_time_SOURCES = test_diag_manager_time.F90
 test_diag_yaml_SOURCES = test_diag_yaml.F90
+test_diag_object_container_SOURCES = test_diag_object_container.F90
+test_diag_dlinked_list_SOURCES = test_diag_dlinked_list.F90
 
 # Run the test.
 TESTS = test_diag_manager2.sh
