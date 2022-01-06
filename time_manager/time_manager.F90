@@ -80,6 +80,7 @@
 !! </DATA>
 
 !> @file
+!> @ingroup time_manager_mod
 !> @brief File for @ref time_manager_mod
 
 !> @addtogroup time_manager_mod

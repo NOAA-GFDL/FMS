@@ -25,6 +25,7 @@
 !! fixed point data.
 
 !> @file
+!> @ingroup mpp_efp_mod
 !> @brief file for @ref mpp_efp_mod
 
 !> @addtogroup mpp_efp_mod

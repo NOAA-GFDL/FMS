@@ -22,6 +22,7 @@
 !! table lookups and calculations
 
 !> @file
+!> @ingroup sat_vapor_pres_k_mod
 !> @brief File for @ref sat_vapor_pres_k_mod
 
  module sat_vapor_pres_k_mod

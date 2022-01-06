@@ -25,6 +25,7 @@
 !! is provided to calculate grid information needed to calculate gradient.
 
 !> @file
+!> @ingroup gradient_mod
 !> @brief File for @ref gradient_mod
 
 !> @addtogroup gradient_mod

@@ -25,6 +25,7 @@
 !> @author Richard D. Slater
 
 !> @file
+!> @ingroup fm_util_mod
 !> @brief File for @ref fm_util_mod
 
 !> @addtogroup fm_util_mod

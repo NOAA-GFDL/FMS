@@ -26,6 +26,7 @@
 !!  This version uses the Mersenne Twister to generate random numbers on [0, 1].
 
 !> @file
+!> @ingroup random_numbers_mod
 !> @brief File for @ref random_numbers_mod
 
 module random_numbers_mod

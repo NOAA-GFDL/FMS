@@ -30,6 +30,7 @@
 !! (halo values are NOT updated by this module)
 
 !> @file
+!> @ingroup time_interp_external_mod
 !> @brief File for @ref time_interp_external_mod
 
 !> @addtogroup time_interp_external_mod

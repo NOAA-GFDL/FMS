@@ -22,6 +22,7 @@
 !> If needed, these values should be imported from their corresponding mpp module
 
 !> @file
+!> @ingroup mpp_parameter_mod
 !> @brief File for @ref mpp_parameter_mod
 
 !> @addtogroup mpp_parameter_mod

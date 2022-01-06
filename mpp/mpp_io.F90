@@ -304,6 +304,7 @@
 !! @endhtmlonly
 
 !> @file
+!> @ingroup mpp_io_mod
 !> @brief File for @ref mpp_io_mod
 
 !> @addtogroup mpp_io_mod

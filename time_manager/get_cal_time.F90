@@ -22,6 +22,7 @@
 !!  as a character strings, returns time as a time_type variable.
 
 !> @file
+!> @ingroup get_cal_time_mod
 !> @brief File for @ref get_cal_time_mod
 
 !> @addtogroup get_cal_time_mod

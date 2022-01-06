@@ -22,6 +22,7 @@
 !> @author William Cooke <William.Cooke@noaa.gov>
 
 !> @file
+!> @ingroup interpolator_mod
 !> File for @ref interpolator_mod
 
 module interpolator_mod

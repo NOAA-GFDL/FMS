@@ -89,6 +89,7 @@
 !!    email: matumoto@math.keio.ac.jp
 
 !> @file
+!> @ingroup mersennetwister_mod
 !> @brief File for @ref MersenneTwister_mod
 
 !> @addtogroup mersennetwister_mod

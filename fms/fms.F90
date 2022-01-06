@@ -40,6 +40,7 @@
 !!     numbers, commonly used I/O unit numbers, error handling, and timing sections of code.
 
 !> @file
+!> @ingroup fms_mod
 !> @brief File for @ref fms_mod
 
 !> @addtogroup fms_mod

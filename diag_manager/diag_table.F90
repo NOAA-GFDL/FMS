@@ -217,6 +217,7 @@
 !!     </LI>
 
 !> @file
+!> @ingroup diag_table_mod
 !> @brief File for @ref diag_table_mod
 
 MODULE diag_table_mod

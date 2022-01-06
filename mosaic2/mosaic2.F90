@@ -28,6 +28,7 @@
 !! grid information. Each routine will call a C-version routine to get these information.
 
 !> @file
+!> @ingroup mosaic2_mod
 !> @brief File for @ref mosaic2_mod
 
 !> @addtogroup mosaic2_mod

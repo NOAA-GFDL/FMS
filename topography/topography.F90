@@ -36,6 +36,7 @@
 !! in @ref gaussian_topog_mod
 
 !> @file
+!> @ingroup topography_mod
 !> @brief File for @ref topography_mod
 
 module topography_mod

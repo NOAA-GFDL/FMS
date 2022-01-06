@@ -64,6 +64,7 @@
 
 
 !> @file
+!> @ingroup amip_interp_mod
 !> File for amip_interp_mod
 
 !> @addtogroup amip_interp_mod

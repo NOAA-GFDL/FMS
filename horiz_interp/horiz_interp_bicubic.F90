@@ -45,6 +45,7 @@
 !! nicht fur alle interpolierten Daten die gleiche Dimension haben mussen.
 
 !> @file
+!> @ingroup horiz_interp_bicubic_mod
 !> @brief File for @ref horiz_interp_bicubic_mod
 
 module horiz_interp_bicubic_mod

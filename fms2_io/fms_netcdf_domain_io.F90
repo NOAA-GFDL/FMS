@@ -21,6 +21,7 @@
 !> @brief Domain-specific I/O wrappers.
 
 !> @file
+!> @ingroup fms_netcdf_domain_io_mod
 !> @brief File for @ref fms_netcdf_domain_io_mod
 
 !> @addtogroup fms_netcdf_domain_io_mod

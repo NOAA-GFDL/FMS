@@ -23,6 +23,7 @@
 !> Currently only holds one routine for finding global min and max
 
 !> @file
+!> @ingroup mpp_utilities_mod
 !> @brief File for @ref mpp_utilities_mod
 
 !> @addtogroup mpp_utilities_mod

@@ -28,6 +28,7 @@
 !! and ridge-width parameters.
 
 !> @file
+!> @ingroup gaussian_topog_mod
 !> @brief File for @ref gaussian_topog_mod
 
 !> @addtogroup gaussian_topog_mod

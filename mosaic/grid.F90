@@ -21,6 +21,7 @@
 !> @brief Routines for grid calculations
 
 !> @file
+!> @ingroup grid_mod
 !> @brief File for @ref grid_mod
 
 module grid_mod

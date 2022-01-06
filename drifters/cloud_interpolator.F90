@@ -25,6 +25,7 @@
 !! @brief Cloud interpolation routines for use in @ref drifters_mod
 
 !> @file
+!> @ingroup cloud_interpolator_mod
 !> @brief File for @ref cloud_interpolator_mod
 
 !> @addtogroup cloud_interpolator_mod

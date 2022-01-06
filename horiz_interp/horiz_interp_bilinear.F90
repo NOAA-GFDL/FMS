@@ -28,6 +28,7 @@
 !! the input mask to show where output data exists.
 
 !> @file
+!> @ingroup horiz_interp_bilinear_mod
 !> @brief File for @ref horiz_interp_bilinear_mod
 
 module horiz_interp_bilinear_mod

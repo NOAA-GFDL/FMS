@@ -56,6 +56,7 @@
 !! if one recalls tri_invert without changing (A,B,C)
 
 !> @file
+!> @ingroup tridiagonal_mod
 !> @brief File for @ref tridiagonal_mod
 
 !> @addtogroup tridiagonal_mod

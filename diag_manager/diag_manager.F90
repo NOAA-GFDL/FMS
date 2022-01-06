@@ -132,6 +132,7 @@
 !!   </OL>
 
 !> @file
+!> @ingroup diag_manager_mod
 !> @brief File for @ref diag_manager_mod
 
 MODULE diag_manager_mod

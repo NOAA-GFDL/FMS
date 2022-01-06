@@ -24,6 +24,7 @@
 !> @brief Handles the mechanics for adding and removing drifters
 
 !> @file
+!> @ingroup drifters_core_mod
 !> @brief File for @ref drifters_core_mod
 
 module drifters_core_mod

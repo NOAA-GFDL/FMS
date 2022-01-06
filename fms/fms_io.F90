@@ -83,6 +83,7 @@
 !</NAMELIST>
 
 !> @file
+!> @ingroup fms_io_mod
 !> @brief File for @ref fms_io_mod
 
 !> @addtogroup fms_io_mod

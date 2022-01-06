@@ -98,6 +98,7 @@
 !!                                err_msg, es_over_liq)
 
 !> @file
+!> @ingroup sat_vapor_pres_mod
 !> @brief File for @ref sat_vapor_pres_mod
 
 module sat_vapor_pres_mod

@@ -25,6 +25,7 @@
 !! for internal use within @ref mpp_mod and @ref mpp_domains_mod .
 
 !> @file
+!> @ingroup mpp_data_mod
 !> @brief File for @ref mpp_data_mod
 
 !> @addtogroup mpp_data_mod

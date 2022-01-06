@@ -21,6 +21,7 @@
 !> @brief Routines for grid calculations, using @ref fms2_io
 
 !> @file
+!> @ingroup grid2_mod
 !> @brief File for @ref grid2_mod
 
 module grid2_mod

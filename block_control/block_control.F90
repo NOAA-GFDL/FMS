@@ -22,6 +22,7 @@
 !!        calculations
 
 !> @file
+!> @ingroup block_control_mod
 !> @brief File for @ref block_control_mod
 
 module block_control_mod

@@ -28,6 +28,7 @@
 !! as indices in an array.
 
 !> @file
+!> @ingroup time_interp_mod
 !> @brief File for @ref time_interp_mod
 
 module time_interp_mod

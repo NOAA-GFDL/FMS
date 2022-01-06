@@ -16,11 +16,12 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
-!> @defgroup get_grid_version_fms2_io_mod get_grid_version_fms2_io_mod
+!> @defgroup get_grid_version_mod get_grid_version_mod
 !> @ingroup data_override
-!> @brief fms2_io implementations of grid routines for @ref data_override_mod
+!> @brief get_grid implementations and helper routines for @ref data_override_mod
 
 !> @file
+!> @ingroup data_override 
 !> @brief File for @ref get_grid_version_mod
 
 !> @addtogroup get_grid_version_mod

@@ -22,6 +22,7 @@
 !> @endcond
 
 !> @file
+!> @ingroup quicksort_mod
 !> @ingroup drifters
 !> @brief Fortran implementation of quicksort
 !> @author Magnus Lie Hetland

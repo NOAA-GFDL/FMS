@@ -59,6 +59,7 @@
 !! meshes. Meshes need not be smooth and continuous across PE domains, however.
 
 !> @file
+!> @ingroup drifters_mod
 !> @brief File for @ref drifters_mod
 
 !> @addtogroup drifters_mod

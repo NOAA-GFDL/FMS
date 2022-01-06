@@ -21,6 +21,7 @@
 !> @brief Utility routines to be used in @ref monin_obukhov_mod
 
 !> @file
+!> @ingroup monin_obukhov_inter_mod
 !> @brief File for @ref monin_obukhov_inter
 
 !> @addtogroup monin_obukhov_inter

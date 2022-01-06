@@ -147,6 +147,7 @@
 !!  <TT>MPP_TYPE_</TT> is treated in this way.
 
 !> @file
+!> @ingroup mpp_mod
 !> @brief File for @ref mpp_mod
 
 module mpp_mod

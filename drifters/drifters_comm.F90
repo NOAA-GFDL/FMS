@@ -23,6 +23,7 @@
 !> @brief Routines and types to update drifter positions across processor domains
 
 !> @file
+!> @ingroup drifters_comm_mod
 !> @brief File for @ref drifters_comm_mod
 
 module drifters_comm_mod

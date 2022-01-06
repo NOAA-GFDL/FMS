@@ -26,6 +26,7 @@
 !! documentation for more specific argument information.
 
 !> @file
+!> @ingroup fms2_io_mod
 !> @brief File for @ref fms2_io_mod
 
 !> @addtogroup fms2_io_mod

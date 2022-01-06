@@ -89,6 +89,7 @@
 !!     by the <TT>make_xgrids</TT> utility.
 
 !> @file
+!> @ingroup xgrid_mod
 !> @brief File for @ref xgrid_mod
 
 !> @addtogroup xgrid_mod

@@ -29,6 +29,7 @@
 !! use in external user code.
 
 !> @file
+!> @ingroup memutils_mod
 !> @brief File for @ref memutils_mod
 
 !> @addtogroup memutils_mod

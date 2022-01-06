@@ -40,6 +40,7 @@
 !! is different from a call with MODEL_OCEAN and 5.
 
 !> @file
+!> @ingroup tracer_manager_mod
 !> @brief File for @ref tracer_manager_mod
 
 module tracer_manager_mod

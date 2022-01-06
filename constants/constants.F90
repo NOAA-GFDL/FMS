@@ -43,6 +43,7 @@
 !! @endverbatim
 
 !> @file
+!> @ingroup constants_mod
 !> @brief File for @ref constants_mod
 
 !> @addtogroup constants_mod

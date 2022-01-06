@@ -22,6 +22,7 @@
 !! @author Seth Underwood
 
 !> @file
+!> @ingroup diag_util_mod
 !> @brief File for @ref diag_util_mod
 
 MODULE diag_util_mod
