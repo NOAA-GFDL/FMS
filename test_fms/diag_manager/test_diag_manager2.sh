@@ -108,7 +108,6 @@ touch input.nml
 cp $top_srcdir/test_fms/diag_manager/diagTables/diag_table_25 diag_table
 run_test test_diag_object_container 1 skip
 
-
 echo "Test linked list "
 rm -f input.nml diag_table
 touch input.nml
