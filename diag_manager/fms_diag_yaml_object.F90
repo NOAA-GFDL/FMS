@@ -99,6 +99,7 @@ type diagYamlFiles_type
  procedure :: get_file_duration_units
  procedure :: get_file_varlist
  procedure :: get_file_global_meta
+ procedure :: is_global_meta
 
 end type diagYamlFiles_type
 
@@ -129,7 +130,7 @@ type diagYamlFilesVar_type
   procedure :: get_var_units
   procedure :: get_var_write
   procedure :: get_var_attributes
-
+  procedure :: is_var_attributes
 end type diagYamlFilesVar_type
 
 contains
@@ -239,6 +240,15 @@ pure function get_file_global_meta (diag_files_obj) result (res)
  character (:), allocatable :: res(:,:) !< What is returned
   res = diag_files_obj%file_global_meta
 end function get_file_global_meta
+!> @brief Inquiry for whether file_global_meta is allocated
+!! @return Flag indicating if file_global_meta is allocated
+function is_global_meta(diag_files_obj) result(res)
+ class (diagYamlFiles_type), intent(in) :: diag_files_obj !< The object being inquiried
+ logical :: res
+ res = .false.
+ if (allocated(diag_files_obj%file_global_meta)) &
+   res = .true.
+end function
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -316,6 +326,15 @@ pure function get_var_attributes(diag_var_obj) result (res)
  character (len=MAX_STR_LEN), allocatable :: res (:,:) !< What is returned
  res = diag_var_obj%var_attributes
 end function get_var_attributes
+!> @brief Inquiry for whether var_attributes is allocated
+!! @return Flag indicating if var_attributes is allocated
+function is_var_attributes(diag_var_obj) result(res)
+ class (diagYamlFilesVar_type), intent(in) :: diag_var_obj !< The object being inquiried
+ logical :: res
+ res = .false.
+ if (allocated(diag_var_obj%var_attributes)) &
+   res = .true.
+end function is_var_attributes
 
 !> @brief Initializes the non string values of a diagYamlFiles_type to its
 !! default values
@@ -325,8 +344,7 @@ subroutine diag_yaml_files_obj_init(obj)
   obj%file_freq           = 0
   obj%file_write          = .true.
   obj%file_duration       = 0
-  obj%file_sub_region%lat_lon_sub_region = -999.
-  obj%file_sub_region%index_sub_region = -999
+  obj%file_new_file_freq  = 0
   obj%file_sub_region%tile = 0
 end subroutine diag_yaml_files_obj_init
 

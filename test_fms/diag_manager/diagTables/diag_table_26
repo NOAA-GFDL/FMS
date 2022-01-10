@@ -48,8 +48,8 @@ diag_files:
   write_file: true
   varlist:
   - module: test_diag_manager_mod
-    var_name: sst
-    output_name: sst
+    var_name: sstt
+    output_name: sstt
     reduction: average
     kind: float
     long_name: S S T

@@ -40,7 +40,7 @@ implicit none
 private
 
 public :: diag_yaml_object_init, diag_yaml_object_end
-public :: diagYamlObject_type, get_diag_yaml_obj, get_title, get_basedate
+public :: diagYamlObject_type, get_diag_yaml_obj, get_title, get_basedate, get_diag_files, get_diag_fields
 !> @}
 
 integer, parameter :: basedate_size = 6
@@ -49,12 +49,14 @@ integer, parameter :: basedate_size = 6
 !> @ingroup fms_diag_yaml_mod
 type diagYamlObject_type
   character(len=:), allocatable, private :: diag_title                   !< Experiment name
-  integer, dimension (basedate_size), private :: diag_basedate           !< basedate array
+  integer, private, dimension (basedate_size) :: diag_basedate           !< basedate array
   type(diagYamlFiles_type), allocatable, private, dimension (:) :: diag_files!< History file info
   type(diagYamlFilesVar_type), allocatable, private, dimension (:) :: diag_fields !< Diag fields info
   contains
   procedure :: get_title        !< Returns the title
   procedure :: get_basedate     !< Returns the basedate array
+  procedure :: get_diag_files   !< Returns the diag_files array
+  procedure :: get_diag_fields  !< Returns the diag_field array
 end type diagYamlObject_type
 
 type (diagYamlObject_type) :: diag_yaml  !< Obj containing the contents of the diag_table.yaml
@@ -91,6 +93,26 @@ pure function get_title (diag_yaml) &
 
   diag_title = diag_yaml%diag_title
 end function get_title
+
+!> @brief get the diag_files of a diag_yaml type
+!! @return the diag_files
+pure function get_diag_files(diag_yaml) &
+result(diag_files)
+  class (diagYamlObject_type), intent(in) :: diag_yaml               !< The diag_yaml
+  type(diagYamlFiles_type), allocatable, dimension (:) :: diag_files!< History file info
+
+  diag_files = diag_yaml%diag_files
+end function get_diag_files
+
+!> @brief get the diag_fields of a diag_yaml type
+!! @return the diag_fields
+pure function get_diag_fields(diag_yaml) &
+result(diag_fields)
+  class (diagYamlObject_type), intent(in) :: diag_yaml               !< The diag_yaml
+  type(diagYamlFilesVar_type), allocatable, dimension (:) :: diag_fields !< Diag fields info
+
+  diag_fields = diag_yaml%diag_fields
+end function get_diag_fields
 
 !> @brief Uses the yaml_parser_mod to read in the diag_table and fill in the
 !! diag_yaml object
