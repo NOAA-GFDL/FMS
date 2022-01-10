@@ -107,7 +107,8 @@ touch input.nml
 cp $top_srcdir/test_fms/diag_manager/diagTables/diag_table_26 diag_table.yaml
 run_test test_diag_yaml 1 $parser_skip
 
-. $top_srcdir/test_fms/diag_manager/check_crashes.sh
+cp $top_srcdir/test_fms/diag_manager/check_crashes.sh check_crashes_build.sh
+./check_crashes_build.sh
 
 echo "Test container"
 rm -f input.nml diag_table
