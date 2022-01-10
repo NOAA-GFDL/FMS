@@ -28,7 +28,7 @@ program test_diag_obj_container
   use mpp_mod, only : mpp_set_stack_size, mpp_init_test_requests_allocated
   use mpp_io_mod, only: mpp_io_init
 
-  use fms_diag_object_mod, only : fms_diag_object
+  use fms_diag_object_mod, only : fmsDiagObject_type
   use fms_diag_object_container_mod, only : FmsDiagObjectContainer_t, FmsDiagObjIterator_t
   USE time_manager_mod, ONLY: time_type
 
@@ -36,8 +36,8 @@ program test_diag_obj_container
   !!
   type (FmsDiagObjectContainer_t), allocatable :: container !< Instance of the container
   class(FmsDiagObjIterator_t), allocatable :: iter          !< An iterator for the container
-  type (fms_diag_object), allocatable , target ::  obj_vec(:)     !< A vector of objects
-  type (fms_diag_object), pointer::   pobj                        !< A pointer to an object
+  type (fmsDiagObject_type), allocatable , target ::  obj_vec(:)     !< A vector of objects
+  type (fmsDiagObject_type), pointer::   pobj                        !< A pointer to an object
   integer, parameter :: num_objs = 10                             !< Total number of objects tested
   integer ::  full_id_sum                                         !< Sum of all the possible object id values
   integer :: sum                                                  !< Temp sum of vaalues of id sets

@@ -236,13 +236,12 @@ use platform_mod
   USE diag_table_mod, ONLY: parse_diag_table
   USE diag_output_mod, ONLY: get_diag_global_att, set_diag_global_att
   USE diag_grid_mod, ONLY: diag_grid_init, diag_grid_end
-  USE fms_diag_object_mod, ONLY: fms_diag_object
+  USE fms_diag_object_mod, ONLY: fmsDiagObject_type
   use fms_diag_object_container_mod, ONLY: FmsDiagObjectContainer_t
 
 #ifdef use_yaml
   use fms_diag_yaml_mod, only: diag_yaml_object_init, diag_yaml_object_end
 #endif
-  USE fms_diag_object_mod, ONLY: fms_diag_object, diag_object_placeholder
 
   USE constants_mod, ONLY: SECONDS_PER_DAY
   USE fms_diag_outfield_mod, ONLY: fmsDiagOutfieldIndex_type, fmsDiagOutfield_type
@@ -455,8 +454,8 @@ CONTAINS
     CHARACTER(len=128) :: msg
     TYPE(time_type) :: diag_file_init_time !< The intial time of the diag_file
     INTEGER :: status_ic !< used to check the status of insert into container.
-    CLASS(fms_diag_object), ALLOCATABLE , TARGET :: diag_obj  !< the diag object that is (to be) registered
-    TYPE(fms_diag_object), POINTER :: diag_obj_ptr => NULL() !< a pointer to the registered diag_object
+    CLASS(fmsDiagObject_type), ALLOCATABLE , TARGET :: diag_obj  !< the diag object that is (to be) registered
+    TYPE(fmsDiagObject_type), POINTER :: diag_obj_ptr => NULL() !< a pointer to the registered diag_object
 
     ! get stdout unit number
     stdout_unit = stdout()
