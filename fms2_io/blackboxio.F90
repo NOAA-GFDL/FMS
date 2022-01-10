@@ -561,13 +561,14 @@ end subroutine save_domain_restart_wrap
 !> @brief Loop through registered restart variables and read them from
 !!        a netcdf file.
 subroutine restore_domain_state_wrap(fileobj, unlim_dim_level, directory, timestamp, &
-                                     filename)
+                                     filename, ignore_checksum)
 
   type(FmsNetcdfDomainFile_t), intent(in), target :: fileobj !< File object.
   integer, intent(in), optional :: unlim_dim_level !< Unlimited dimension level.
   character(len=*), intent(in), optional :: directory !< Directory to write restart file to.
   character(len=*), intent(in), optional :: timestamp !< Model time.
   character(len=*), intent(in), optional :: filename !< New name for the file.
+  logical,          intent(in), optional :: ignore_checksum !< Checksum data integrity flag.
 
   character(len=256) :: new_name
   type(FmsNetcdfDomainFile_t), target :: new_fileobj
@@ -583,7 +584,7 @@ subroutine restore_domain_state_wrap(fileobj, unlim_dim_level, directory, timest
     p => new_fileobj
     close_new_file = .true.
   endif
-  call restore_domain_state(p, unlim_dim_level)
+  call restore_domain_state(p, unlim_dim_level, ignore_checksum=ignore_checksum)
   if (close_new_file) then
     call close_domain_file(p)
   endif
