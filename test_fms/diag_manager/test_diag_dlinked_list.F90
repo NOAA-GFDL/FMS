@@ -37,7 +37,7 @@ program test_diag_dlinked_list
    use mpp_mod, only : mpp_set_stack_size, mpp_init_test_requests_allocated
    use mpp_io_mod, only: mpp_io_init
 
-   use fms_diag_object_mod, only : fms_diag_object
+   use fms_diag_object_mod, only : fmsDiagObject_type
    use fms_diag_dlinked_list_mod, only : FmsDlList_t, FmsDllIterator_t
 
    implicit  none
