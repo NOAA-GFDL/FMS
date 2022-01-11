@@ -32,6 +32,7 @@ module fms_diag_yaml_mod
 #ifdef use_yaml
 use fms_diag_yaml_object_mod, only: diagYamlFiles_type, diagYamlFilesVar_type, diag_yaml_files_obj_init, &
                                     NUM_SUB_REGION_ARRAY
+use diag_data_mod, only: DIAG_NULL
 use yaml_parser_mod
 use mpp_mod
 
@@ -233,11 +234,11 @@ subroutine fill_in_diag_files(diag_yaml_id, diag_file_id, fileobj)
     call diag_get_value_from_key(diag_yaml_id, sub_region_id(1), "grid_type", fileobj%file_sub_region%grid_type)
     if (trim(fileobj%file_sub_region%grid_type) .eq. "latlon") then
       allocate(fileobj%file_sub_region%lat_lon_sub_region(8))
-      fileobj%file_sub_region%lat_lon_sub_region = -999.
+      fileobj%file_sub_region%lat_lon_sub_region = DIAG_NULL
       call get_sub_region(diag_yaml_id, sub_region_id(1), fileobj%file_sub_region%lat_lon_sub_region)
     elseif (trim(fileobj%file_sub_region%grid_type) .eq. "index") then
       allocate(fileobj%file_sub_region%index_sub_region(8))
-      fileobj%file_sub_region%index_sub_region = -999
+      fileobj%file_sub_region%index_sub_region = DIAG_NULL
       call get_sub_region(diag_yaml_id, sub_region_id(1), fileobj%file_sub_region%index_sub_region)
       call get_value_from_key(diag_yaml_id, sub_region_id(1), "tile", fileobj%file_sub_region%tile, is_optional=.true.)
       if (fileobj%file_sub_region%tile .eq. 0) call mpp_error(FATAL, "The tile number is required when defining a "//&
@@ -415,7 +416,7 @@ subroutine check_new_file_freq(fileobj)
   type(diagYamlFiles_type), intent(inout) :: fileobj      !< diagYamlFiles_type obj to check
 
   if (fileobj%file_new_file_freq > 0) then
-    if (fileobj%file_new_file_freq_units .eq. "") &
+    if (trim(fileobj%file_new_file_freq_units) .eq. "") &
       call mpp_error(FATAL, "new_file_freq_units is required if using new_file_freq. &
         &Check your entry for file:"//trim(fileobj%file_fname))
 
@@ -431,7 +432,7 @@ subroutine check_file_duration(fileobj)
   type(diagYamlFiles_type), intent(inout) :: fileobj      !< diagYamlFiles_type obj to check
 
   if (fileobj%file_duration > 0) then
-    if(fileobj%file_duration_units .eq. "") &
+    if(trim(fileobj%file_duration_units) .eq. "") &
       call mpp_error(FATAL, "file_duration_units is required if using file_duration. &
         &Check your entry for file:"//trim(fileobj%file_fname))
 
