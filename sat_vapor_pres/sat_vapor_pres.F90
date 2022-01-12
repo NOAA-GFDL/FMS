@@ -2627,7 +2627,8 @@ end subroutine sat_vapor_pres_init
        if (ind < 0 .or. ind > nlim) nbad = nbad+1
      enddo
    class default
-     call error_mesg ('sat_vapor_pres_mod::check_1d', 'unsupported kind', FATAL)
+     call error_mesg ('sat_vapor_pres_mod::check_1d',&
+          & 'The temp is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)
    end select
 
  end function check_1d
@@ -2651,7 +2652,8 @@ end subroutine sat_vapor_pres_init
        nbad = nbad + check_1d ( temp(:,j) )
      enddo
    class default
-     call error_mesg ('sat_vapor_pres_mod::check_2d', 'unsupported kind', FATAL)
+     call error_mesg ('sat_vapor_pres_mod::check_2d',&
+          &  'The temp is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)
    end select
 
  end function check_2d
@@ -2670,7 +2672,8 @@ end subroutine sat_vapor_pres_init
    type is (real(kind=r8_kind))
      write(unit,*) 'Bad temperatures (dimension 1): ', (check_1d(temp(i:i)),i=1,size(temp,1))
    class default
-     call error_mesg ('sat_vapor_pres_mod::temp_check_1d', 'unsupported kind', FATAL)
+     call error_mesg ('sat_vapor_pres_mod::temp_check_1d',&
+          & 'The temp is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)
    end select
 
  end subroutine temp_check_1d
@@ -2691,7 +2694,8 @@ end subroutine sat_vapor_pres_init
      write(unit,*) 'Bad temperatures (dimension 1): ', (check_1d(temp(i,:)),i=1,size(temp,1))
      write(unit,*) 'Bad temperatures (dimension 2): ', (check_1d(temp(:,j)),j=1,size(temp,2))
    class default
-     call error_mesg ('sat_vapor_pres_mod::temp_check_2d', 'unsupported kind', FATAL)
+     call error_mesg ('sat_vapor_pres_mod::temp_check_2d',&
+          & 'The temp is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)
    end select
 
  end subroutine temp_check_2d
@@ -2714,7 +2718,8 @@ end subroutine sat_vapor_pres_init
      write(unit,*) 'Bad temperatures (dimension 2): ', (check_2d(temp(:,j,:)),j=1,size(temp,2))
      write(unit,*) 'Bad temperatures (dimension 3): ', (check_2d(temp(:,:,k)),k=1,size(temp,3))
    class default
-     call error_mesg ('sat_vapor_pres_mod::temp_check_3d', 'unsupported kind', FATAL)
+     call error_mesg ('sat_vapor_pres_mod::temp_check_3d',&
+          & 'The temp is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)
    end select
 
  end subroutine temp_check_3d
@@ -2739,7 +2744,8 @@ subroutine show_all_bad_0d ( temp )
      write(unit,'(a,e10.3,a,i6)') 'Bad temperature=',temp,' pe=',mpp_pe()
    endif
  class default
-   call error_mesg ('sat_vapor_pres_mod::show_all_bad_0d', 'unsupported kind', FATAL)
+   call error_mesg ('sat_vapor_pres_mod::show_all_bad_0d',&
+        & 'The temp is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)
  end select
 
  end subroutine show_all_bad_0d
@@ -2768,7 +2774,8 @@ subroutine show_all_bad_0d ( temp )
      endif
    enddo
  class default
-   call error_mesg ('sat_vapor_pres_mod::show_all_bad_1d', 'unsupported kind', FATAL)
+   call error_mesg ('sat_vapor_pres_mod::show_all_bad_1d',&
+        & 'The temp is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)
  end select
 
  end subroutine show_all_bad_1d
@@ -2801,7 +2808,8 @@ subroutine show_all_bad_0d ( temp )
    enddo
    enddo
  class default
-   call error_mesg ('sat_vapor_pres_mod::show_all_bad_2d', 'unsupported kind', FATAL)
+   call error_mesg ('sat_vapor_pres_mod::show_all_bad_2d',&
+        & 'The temp is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)
  end select
 
  end subroutine show_all_bad_2d
@@ -2838,7 +2846,8 @@ subroutine show_all_bad_0d ( temp )
    enddo
    enddo
  class default
-   call error_mesg ('sat_vapor_pres_mod::show_all_bad_3d', 'unsupported kind', FATAL)
+   call error_mesg ('sat_vapor_pres_mod::show_all_bad_3d',&
+        & 'The temp is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)
  end select
 
  end subroutine show_all_bad_3d

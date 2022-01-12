@@ -260,7 +260,8 @@ CONTAINS
        TYPE IS (real(kind=r8_kind))
           diag_global_grid%aglo_lat = TRANSPOSE(aglo_lat)
        CLASS DEFAULT
-          CALL error_mesg('diag_grid_mod::diag_grid_init', 'unsupported kind', FATAL)
+          CALL error_mesg('diag_grid_mod::diag_grid_init',&
+               & 'The a-grid latitude data is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)
        END SELECT
 
        SELECT TYPE (aglo_lon)
@@ -269,7 +270,8 @@ CONTAINS
        TYPE IS (real(kind=r8_kind))
           diag_global_grid%aglo_lon = TRANSPOSE(aglo_lon)
        CLASS DEFAULT
-          CALL error_mesg('diag_grid_mod::diag_grid_init', 'unsupported kind', FATAL)
+          CALL error_mesg('diag_grid_mod::diag_grid_init',&
+               & 'The a-grid longitude data is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)
        END SELECT
     ELSE
        SELECT TYPE (aglo_lat)
@@ -278,7 +280,8 @@ CONTAINS
        TYPE IS (real(kind=r8_kind))
           diag_global_grid%aglo_lat = aglo_lat
        CLASS DEFAULT
-          CALL error_mesg('diag_grid_mod::diag_grid_init', 'unsupported kind', FATAL)
+          CALL error_mesg('diag_grid_mod::diag_grid_init',&
+               & 'The a-grid latitude data is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)
        END SELECT
 
        SELECT TYPE (aglo_lon)
@@ -287,7 +290,8 @@ CONTAINS
        TYPE IS (real(kind=r8_kind))
           diag_global_grid%aglo_lon = aglo_lon
        CLASS DEFAULT
-          CALL error_mesg('diag_grid_mod::diag_grid_init', 'unsupported kind', FATAL)
+          CALL error_mesg('diag_grid_mod::diag_grid_init',&
+               & 'The a-grid longitude data is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)
        END SELECT
     END IF
 
@@ -297,7 +301,8 @@ CONTAINS
     TYPE IS (real(kind=r8_kind))
        diag_global_grid%glo_lat = glo_lat
     CLASS DEFAULT
-       CALL error_mesg('diag_grid_mod::diag_grid_init', 'unsupported kind', FATAL)
+       CALL error_mesg('diag_grid_mod::diag_grid_init',&
+            & 'The grid latitude data is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)
     END SELECT
 
     SELECT TYPE (glo_lon)
@@ -306,7 +311,8 @@ CONTAINS
     TYPE IS (real(kind=r8_kind))
        diag_global_grid%glo_lon = glo_lon
     CLASS DEFAULT
-       CALL error_mesg('diag_grid_mod::diag_grid_init', 'unsupported kind', FATAL)
+       CALL error_mesg('diag_grid_mod::diag_grid_init',&
+            & 'The grid longitude data is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)
     END SELECT
 
     diag_global_grid%dimI = i_dim

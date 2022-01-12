@@ -648,7 +648,8 @@ CONTAINS
           TYPE IS (real(kind=r8_kind))
              missing_value_use = missing_value
           CLASS DEFAULT
-             CALL error_mesg ('diag_manager_mod::register_static_field', 'unsupported kind', FATAL)
+             CALL error_mesg ('diag_manager_mod::register_static_field',&
+                  & 'The missing_value is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)
           END SELECT
        END IF
     END IF
@@ -810,7 +811,8 @@ CONTAINS
        TYPE IS (real(kind=r8_kind))
           range_use = range
        CLASS DEFAULT
-          CALL error_mesg ('diag_manager_mod::register_static_field', 'unsupported kind', FATAL)
+          CALL error_mesg ('diag_manager_mod::register_static_field',&
+               & 'The range is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)
        END SELECT
        input_fields(field)%range = range_use
        ! don't use the range if it is not a valid range
@@ -1299,7 +1301,8 @@ CONTAINS
     TYPE IS (real(kind=r8_kind))
        field_out(1, 1, 1) = field
     CLASS DEFAULT
-       CALL error_mesg ('diag_manager_mod::send_data_0d', 'unsupported kind', FATAL)
+       CALL error_mesg ('diag_manager_mod::send_data_0d',&
+            & 'The field is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)
     END SELECT
 
     send_data_0d = send_data_3d(diag_field_id, field_out, time, err_msg=err_msg)
@@ -1332,7 +1335,8 @@ CONTAINS
     TYPE IS (real(kind=r8_kind))
        field_out(:, 1, 1) = field
     CLASS DEFAULT
-       CALL error_mesg ('diag_manager_mod::send_data_1d', 'unsupported kind', FATAL)
+       CALL error_mesg ('diag_manager_mod::send_data_1d',&
+            & 'The field is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)
     END SELECT
 
     ! Default values for mask
@@ -1349,7 +1353,8 @@ CONTAINS
        TYPE IS (real(kind=r8_kind))
           WHERE (rmask < 0.5) mask_out(:, 1, 1) = .FALSE.
        CLASS DEFAULT
-          CALL error_mesg ('diag_manager_mod::send_data_1d', 'unsupported kind', FATAL)
+          CALL error_mesg ('diag_manager_mod::send_data_1d',&
+               & 'The rmask is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)
        END SELECT
     END IF
 
@@ -1399,7 +1404,8 @@ CONTAINS
     TYPE IS (real(kind=r8_kind))
        field_out(:, :, 1) = field
     CLASS DEFAULT
-       CALL error_mesg ('diag_manager_mod::send_data_2d', 'unsupported kind', FATAL)
+       CALL error_mesg ('diag_manager_mod::send_data_2d',&
+            & 'The field is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)
     END SELECT
 
     ! Default values for mask
@@ -1416,7 +1422,8 @@ CONTAINS
        TYPE IS (real(kind=r8_kind))
           WHERE ( rmask < 0.5 ) mask_out(:, :, 1) = .FALSE.
        CLASS DEFAULT
-          CALL error_mesg ('diag_manager_mod::send_data_2d', 'unsupported kind', FATAL)
+          CALL error_mesg ('diag_manager_mod::send_data_2d',&
+               & 'The rmask is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)
        END SELECT
     END IF
 
@@ -1661,7 +1668,8 @@ CONTAINS
     TYPE IS (real(kind=r8_kind))
        field_out = field
     CLASS DEFAULT
-       CALL error_mesg ('diag_manager_mod::send_data_3d', 'unsupported kind', FATAL)
+       CALL error_mesg ('diag_manager_mod::send_data_3d',&
+            & 'The field is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)
     END SELECT
 
     ! oor_mask is only used for checking out of range values.
@@ -1685,7 +1693,8 @@ CONTAINS
        TYPE IS (real(kind=r8_kind))
           WHERE ( rmask < 0.5_r8_kind ) oor_mask = .FALSE.
        CLASS DEFAULT
-          CALL error_mesg ('diag_manager_mod::send_data_3d', 'unsupported kind', FATAL)
+          CALL error_mesg ('diag_manager_mod::send_data_3d',&
+               & 'The rmask is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)
        END SELECT
     END IF
 
@@ -1793,7 +1802,8 @@ CONTAINS
        TYPE IS (real(kind=r8_kind))
           weight1 = weight
        CLASS DEFAULT
-          CALL error_mesg ('diag_manager_mod::send_data_3d', 'unsupported kind', FATAL)
+          CALL error_mesg ('diag_manager_mod::send_data_3d',&
+               & 'The weight is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)
        END SELECT
     ELSE
        weight1 = 1.
@@ -3153,7 +3163,8 @@ CONTAINS
                    END DO
                 END DO
              CLASS DEFAULT
-                CALL error_mesg ('diag_manager_mod::send_data_3d', 'unsupported kind', FATAL)
+                CALL error_mesg ('diag_manager_mod::send_data_3d',&
+                     & 'The rmask is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)
              END SELECT
           ELSE IF ( reduced_k_range ) THEN
              ksr= l_start(3)
@@ -3180,7 +3191,8 @@ CONTAINS
                    END DO
                 END DO
              CLASS DEFAULT
-                CALL error_mesg ('diag_manager_mod::send_data_3d', 'unsupported kind', FATAL)
+                CALL error_mesg ('diag_manager_mod::send_data_3d',&
+                     & 'The rmask is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)
              END SELECT
           ELSE
              SELECT TYPE (rmask)
@@ -3203,7 +3215,8 @@ CONTAINS
                    END DO
                 END DO
              CLASS DEFAULT
-                CALL error_mesg ('diag_manager_mod::send_data_3d', 'unsupported kind', FATAL)
+                CALL error_mesg ('diag_manager_mod::send_data_3d',&
+                     & 'The rmask is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)
              END SELECT
           END IF
        END IF

@@ -20,7 +20,7 @@
 !> @ingroup constants
 !> @brief Defines useful constants for Earth. Constants are defined as real
 !!   parameters. Constants are accessed through the "use" statement.
-!> @author Bruce Wyman
+!> @author Bin Li
 !!
 !>    Constants have been declared as type REAL, PARAMETER.
 !!

@@ -1220,7 +1220,8 @@ function real_to_time_type(x,err_msg) result(t)
   type is (real(kind=r8_kind))
     a = x/spd
   class default
-    call error_mesg('time_manager_mod::real_to_time_type', 'unsupported kind', FATAL)
+    call error_mesg('time_manager_mod::real_to_time_type',&
+         & 'x is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)
   end select
 
   days = safe_rtoi(a,do_floor)
@@ -1231,7 +1232,8 @@ function real_to_time_type(x,err_msg) result(t)
   type is (real(kind=r8_kind))
     a = x - real(days)*spd
   class default
-    call error_mesg('time_manager_mod::real_to_time_type', 'unsupported kind', FATAL)
+    call error_mesg('time_manager_mod::real_to_time_type',&
+         & 'x is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)
   end select
 
   seconds = safe_rtoi(a,do_floor)
