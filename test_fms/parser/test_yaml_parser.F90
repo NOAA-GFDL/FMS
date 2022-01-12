@@ -116,7 +116,7 @@ if (r4_buffer .ne. real(-999.9, kind=r4_kind)) call mpp_error(FATAL, "fill_value
 
 !! Try get_value_from_key using a r8 buffer
 call get_value_from_key(yaml_file_id1, variable_ids(1), "fill_value", r8_buffer)
-if (abs(r8_buffer - real(-999.9, kind=r8_kind)) .gt. 5e-5) then
+if (abs(r8_buffer - real(-999.9, kind=r8_kind)) .gt. 5d-5) then
   call mpp_error(FATAL, "fill_value was not read correctly as an r8!")
 endif
 
