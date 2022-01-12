@@ -349,6 +349,7 @@ end select
 end subroutine copy_diag_obj
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !> \brief Returns the ID integer for a variable
+!! \return the diag ID
 integer function fms_diag_get_id (dobj) result(diag_id)
  class(fmsDiagObject_type)     , intent(inout)            :: dobj
 ! character(*)               , intent(in)               :: varname
@@ -426,7 +427,8 @@ end function diag_obj_is_static
 
 !> Gets metedata
 !! @return metadata string array, or a single space if metadata is not allocated
-function get_metadata (obj) result(rslt)
+function get_metadata (obj) &
+result(rslt)
      class (fmsDiagObject_type), intent(in) :: obj !< diag object
      character(len=:), allocatable, dimension(:) :: rslt
      if (allocated(obj%metadata)) then
@@ -439,28 +441,32 @@ function get_metadata (obj) result(rslt)
 end function get_metadata
 !> Gets static
 !! @return true if the variable is static
-function get_static (obj) result(rslt)
+function get_static (obj) &
+result(rslt)
      class (fmsDiagObject_type), intent(in) :: obj !< diag object
      logical :: rslt 
      rslt = obj%static
 end function get_static
 !> Gets regisetered
 !! @return true if the object is registered
-function get_registered (obj) result(rslt)
+function get_registered (obj) &
+result(rslt)
      class (fmsDiagObject_type), intent(in) :: obj !< diag object
      logical :: rslt 
      rslt = obj%registered
 end function get_registered
 !> Gets mask variant
 !! @return true if there is a mask variant
-function get_mask_variant (obj) result(rslt)
+function get_mask_variant (obj) &
+result(rslt)
      class (fmsDiagObject_type), intent(in) :: obj !< diag object
      logical :: rslt 
      rslt = obj%mask_variant
 end function get_mask_variant
 !> Gets local
 !! @return true if the variable is a local variable 
-function get_local (obj) result(rslt)
+function get_local (obj) &
+result(rslt)
      class (fmsDiagObject_type), intent(in) :: obj !< diag object
      logical :: rslt 
      rslt = obj%local
@@ -468,28 +474,32 @@ end function get_local
 !> Gets initial time 
 !! @return the initial time
 !! TODO
-!function get_init_time (obj) result(rslt)
+!function get_init_time (obj) &
+!result(rslt)
 !     class (fmsDiagObject_type), intent(in) :: obj !< diag object
 !     TYPE(time_type) :: rslt 
 !
 !end function get_init_time
 !> Gets vartype 
 !! @return  The integer related to the variable type
-function get_vartype (obj) result(rslt)
+function get_vartype (obj) &
+result(rslt)
      class (fmsDiagObject_type), intent(in) :: obj !< diag object
      integer :: rslt 
      rslt = obj%vartype
 end function get_vartype
 !> Gets varname
 !! @return the variable name
-function get_varname (obj) result(rslt)
+function get_varname (obj) &
+result(rslt)
      class (fmsDiagObject_type), intent(in) :: obj !< diag object
      character(len=:), allocatable :: rslt 
      rslt = obj%varname
 end function get_varname
 !> Gets longname
 !! @return the variable long name or a single string if there is no long name
-function get_longname (obj) result(rslt)
+function get_longname (obj) &
+result(rslt)
      class (fmsDiagObject_type), intent(in) :: obj !< diag object
      character(len=:), allocatable :: rslt 
      if (allocated(obj%longname)) then
@@ -500,7 +510,8 @@ function get_longname (obj) result(rslt)
 end function get_longname
 !> Gets standname
 !! @return the standard name
-function get_standname (obj) result(rslt)
+function get_standname (obj) &
+result(rslt)
      class (fmsDiagObject_type), intent(in) :: obj !< diag object
      character(len=:), allocatable :: rslt 
      if (allocated(obj%standname)) then
@@ -511,7 +522,8 @@ function get_standname (obj) result(rslt)
 end function get_standname
 !> Gets units
 !! @return the units
-function get_units (obj) result(rslt)
+function get_units (obj) &
+result(rslt)
      class (fmsDiagObject_type), intent(in) :: obj !< diag object
      character(len=:), allocatable :: rslt 
      if (allocated(obj%units)) then
@@ -522,7 +534,8 @@ function get_units (obj) result(rslt)
 end function get_units
 !> Gets modname
 !! @return the module name that the variable is in
-function get_modname (obj) result(rslt)
+function get_modname (obj) &
+result(rslt)
      class (fmsDiagObject_type), intent(in) :: obj !< diag object
      character(len=:), allocatable :: rslt 
      if (allocated(obj%modname)) then
@@ -533,7 +546,8 @@ function get_modname (obj) result(rslt)
 end function get_modname
 !> Gets realm
 !! @return the variables modeling realm
-function get_realm (obj) result(rslt)
+function get_realm (obj) &
+result(rslt)
      class (fmsDiagObject_type), intent(in) :: obj !< diag object
      character(len=:), allocatable :: rslt 
      if (allocated(obj%realm)) then
@@ -544,7 +558,8 @@ function get_realm (obj) result(rslt)
 end function get_realm
 !> Gets err_msg
 !! @return The error message stored in err_msg
-function get_err_msg (obj) result(rslt)
+function get_err_msg (obj) &
+result(rslt)
      class (fmsDiagObject_type), intent(in) :: obj !< diag object
      character(len=:), allocatable :: rslt 
      if (allocated(obj%err_msg)) then
@@ -555,7 +570,8 @@ function get_err_msg (obj) result(rslt)
 end function get_err_msg
 !> Gets interp_method
 !! @return The interpolation method
-function get_interp_method (obj) result(rslt)
+function get_interp_method (obj) &
+result(rslt)
      class (fmsDiagObject_type), intent(in) :: obj !< diag object
      character(len=:), allocatable :: rslt 
      if (allocated(obj%interp_method)) then
@@ -566,7 +582,8 @@ function get_interp_method (obj) result(rslt)
 end function get_interp_method
 !> Gets frequency
 !! @return the  frequency or DIAG_NULL if obj%frequency is not allocated
-function get_frequency (obj) result(rslt)
+function get_frequency (obj) &
+result(rslt)
      class (fmsDiagObject_type), intent(in) :: obj !< diag object
      integer, allocatable, dimension (:) :: rslt 
      if (allocated(obj%frequency)) then
@@ -579,7 +596,8 @@ function get_frequency (obj) result(rslt)
 end function get_frequency
 !> Gets output_units
 !! @return The units of the output or DIAG_NULL is output_units is not allocated
-function get_output_units (obj) result(rslt)
+function get_output_units (obj) &
+result(rslt)
      class (fmsDiagObject_type), intent(in) :: obj !< diag object
      integer,allocatable, dimension (:) :: rslt 
      if (allocated(obj%output_units)) then
@@ -592,7 +610,8 @@ function get_output_units (obj) result(rslt)
 end function get_output_units
 !> Gets t
 !! @return t 
-function get_t (obj) result(rslt)
+function get_t (obj) &
+result(rslt)
      class (fmsDiagObject_type), intent(in) :: obj !< diag object
      integer :: rslt 
      if (allocated(obj%t)) then
@@ -603,7 +622,8 @@ function get_t (obj) result(rslt)
 end function get_t
 !> Gets tile_count
 !! @return the number of tiles or -1 if tile_count is not allocated
-function get_tile_count (obj) result(rslt)
+function get_tile_count (obj) &
+result(rslt)
      class (fmsDiagObject_type), intent(in) :: obj !< diag object
      integer :: rslt 
      if (allocated(obj%tile_count)) then
@@ -614,7 +634,8 @@ function get_tile_count (obj) result(rslt)
 end function get_tile_count
 !> Gets axis_ids
 !! @return The axis IDs array or a -1 if no axis IDs are set
-function get_axis_ids (obj) result(rslt)
+function get_axis_ids (obj) &
+result(rslt)
      class (fmsDiagObject_type), intent(in) :: obj !< diag object
      integer, allocatable, dimension(:) :: rslt 
      if (allocated(obj%axis_ids)) then
@@ -627,7 +648,8 @@ function get_axis_ids (obj) result(rslt)
 end function get_axis_ids
 !> Gets area
 !! @return the area
-function get_area (obj) result(rslt)
+function get_area (obj) &
+result(rslt)
      class (fmsDiagObject_type), intent(in) :: obj !< diag object
      integer :: rslt 
      if (allocated(obj%area)) then
@@ -638,7 +660,8 @@ function get_area (obj) result(rslt)
 end function get_area
 !> Gets volume
 !! @return the volume or -1 if volume is not allocated
-function get_volume (obj) result(rslt)
+function get_volume (obj) &
+result(rslt)
      class (fmsDiagObject_type), intent(in) :: obj !< diag object
      integer :: rslt
      if (allocated(obj%volume)) then
@@ -649,7 +672,8 @@ function get_volume (obj) result(rslt)
 end function get_volume
 !> Gets missing_value
 !! @return The missing value
-function get_missing_value (obj) result(rslt)
+function get_missing_value (obj) &
+result(rslt)
      class (fmsDiagObject_type), intent(in) :: obj !< diag object
      class(*),allocatable :: rslt
      if (allocated(obj%missing_value)) then
@@ -678,7 +702,8 @@ function get_missing_value (obj) result(rslt)
 end function get_missing_value
 !> Gets data_range
 !! @return the data range
-function get_data_RANGE (obj) result(rslt)
+function get_data_RANGE (obj) &
+result(rslt)
      class (fmsDiagObject_type), intent(in) :: obj !< diag object
      class(*),allocatable :: rslt 
      if (allocated(obj%data_RANGE)) then
@@ -708,7 +733,8 @@ end function get_data_RANGE
 !> Gets axis
 !! @return axis information
 !! TODO
-!function get_axis (obj) result(rslt)
+!function get_axis (obj) &
+!result(rslt)
 !     class (fmsDiagObject_type), intent(in) :: obj !< diag object
 !     type (diag_axis_type), allocatable, dimension(:) :: rslt 
 !
