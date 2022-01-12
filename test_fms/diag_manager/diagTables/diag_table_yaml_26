@@ -1,0 +1,61 @@
+title: test_diag_manager
+base_date: 2 1 1 0 0 0
+diag_files:
+- file_name: wild_card_name%4yr%2mo%2dy%2hr
+  freq: 6
+  freq_units: hours
+  time_units: hours
+  unlimdim: time
+  new_file_freq: 6
+  new_file_freq_units: hours
+  start_time: 2 1 1 0 0 0
+  file_duration: 12
+  file_duration_units: hours
+  write_file: false
+  realm: ATM
+  varlist:
+  - module: test_diag_manager_mod
+    var_name: sst
+    output_name: sst
+    reduction: average
+    kind: float
+    write_var: false
+  global_meta:
+  - is_a_file: true
+- file_name: normal
+  freq: 24
+  freq_units: days
+  time_units: hours
+  unlimdim: records
+  varlist:
+  - module: test_diag_manager_mod
+    var_name: sst
+    output_name: sst
+    reduction: average
+    kind: float
+    write_var: true
+    attributes:
+    - do_sst: .true.
+  sub_region:
+  - grid_type: latlon
+    dim1_begin: 64.0
+    dim3_end: 20.0
+- file_name: normal2
+  freq: 24
+  freq_units: days
+  time_units: hours
+  unlimdim: records
+  write_file: true
+  varlist:
+  - module: test_diag_manager_mod
+    var_name: sstt
+    output_name: sstt
+    reduction: average
+    kind: float
+    long_name: S S T
+  sub_region:
+  - grid_type: index
+    tile: 1
+    dim2_begin: 10
+    dim2_end: 20
+    dim1_begin: 10
