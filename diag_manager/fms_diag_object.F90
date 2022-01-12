@@ -425,7 +425,7 @@ end function diag_obj_is_static
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! Get functions
 
-!> Gets metedata
+!> @brief Gets metedata
 !! @return metadata string array, or a single space if metadata is not allocated
 function get_metadata (obj) &
 result(rslt)
@@ -439,7 +439,7 @@ result(rslt)
        rslt = " "
      endif
 end function get_metadata
-!> Gets static
+!> @brief Gets static
 !! @return true if the variable is static
 function get_static (obj) &
 result(rslt)
@@ -447,7 +447,7 @@ result(rslt)
      logical :: rslt 
      rslt = obj%static
 end function get_static
-!> Gets regisetered
+!> @brief Gets regisetered
 !! @return true if the object is registered
 function get_registered (obj) &
 result(rslt)
@@ -455,7 +455,7 @@ result(rslt)
      logical :: rslt 
      rslt = obj%registered
 end function get_registered
-!> Gets mask variant
+!> @brief Gets mask variant
 !! @return true if there is a mask variant
 function get_mask_variant (obj) &
 result(rslt)
@@ -463,7 +463,7 @@ result(rslt)
      logical :: rslt 
      rslt = obj%mask_variant
 end function get_mask_variant
-!> Gets local
+!> @brief Gets local
 !! @return true if the variable is a local variable 
 function get_local (obj) &
 result(rslt)
@@ -471,7 +471,7 @@ result(rslt)
      logical :: rslt 
      rslt = obj%local
 end function get_local
-!> Gets initial time 
+!> @brief Gets initial time 
 !! @return the initial time
 !! TODO
 !function get_init_time (obj) &
@@ -480,7 +480,7 @@ end function get_local
 !     TYPE(time_type) :: rslt 
 !
 !end function get_init_time
-!> Gets vartype 
+!> @brief Gets vartype 
 !! @return  The integer related to the variable type
 function get_vartype (obj) &
 result(rslt)
@@ -488,7 +488,7 @@ result(rslt)
      integer :: rslt 
      rslt = obj%vartype
 end function get_vartype
-!> Gets varname
+!> @brief Gets varname
 !! @return the variable name
 function get_varname (obj) &
 result(rslt)
@@ -496,7 +496,7 @@ result(rslt)
      character(len=:), allocatable :: rslt 
      rslt = obj%varname
 end function get_varname
-!> Gets longname
+!> @brief Gets longname
 !! @return the variable long name or a single string if there is no long name
 function get_longname (obj) &
 result(rslt)
@@ -508,7 +508,7 @@ result(rslt)
        rslt = " "
      endif
 end function get_longname
-!> Gets standname
+!> @brief Gets standname
 !! @return the standard name
 function get_standname (obj) &
 result(rslt)
@@ -520,7 +520,7 @@ result(rslt)
        rslt = " "
      endif
 end function get_standname
-!> Gets units
+!> @brief Gets units
 !! @return the units
 function get_units (obj) &
 result(rslt)
@@ -532,7 +532,7 @@ result(rslt)
        rslt = " "
      endif
 end function get_units
-!> Gets modname
+!> @brief Gets modname
 !! @return the module name that the variable is in
 function get_modname (obj) &
 result(rslt)
@@ -544,7 +544,7 @@ result(rslt)
        rslt = " "
      endif
 end function get_modname
-!> Gets realm
+!> @brief Gets realm
 !! @return the variables modeling realm
 function get_realm (obj) &
 result(rslt)
@@ -556,7 +556,7 @@ result(rslt)
        rslt = " "
      endif
 end function get_realm
-!> Gets err_msg
+!> @brief Gets err_msg
 !! @return The error message stored in err_msg
 function get_err_msg (obj) &
 result(rslt)
@@ -568,7 +568,7 @@ result(rslt)
        rslt = " "
      endif
 end function get_err_msg
-!> Gets interp_method
+!> @brief Gets interp_method
 !! @return The interpolation method
 function get_interp_method (obj) &
 result(rslt)
@@ -580,7 +580,7 @@ result(rslt)
        rslt = " "
      endif
 end function get_interp_method
-!> Gets frequency
+!> @brief Gets frequency
 !! @return the  frequency or DIAG_NULL if obj%frequency is not allocated
 function get_frequency (obj) &
 result(rslt)
@@ -594,7 +594,7 @@ result(rslt)
        rslt = DIAG_NULL
      endif
 end function get_frequency
-!> Gets output_units
+!> @brief Gets output_units
 !! @return The units of the output or DIAG_NULL is output_units is not allocated
 function get_output_units (obj) &
 result(rslt)
@@ -608,7 +608,7 @@ result(rslt)
        rslt = DIAG_NULL
      endif
 end function get_output_units
-!> Gets t
+!> @brief Gets t
 !! @return t 
 function get_t (obj) &
 result(rslt)
@@ -620,7 +620,7 @@ result(rslt)
        rslt = -999
      endif
 end function get_t
-!> Gets tile_count
+!> @brief Gets tile_count
 !! @return the number of tiles or -1 if tile_count is not allocated
 function get_tile_count (obj) &
 result(rslt)
@@ -632,7 +632,7 @@ result(rslt)
        rslt = -1
      endif
 end function get_tile_count
-!> Gets axis_ids
+!> @brief Gets axis_ids
 !! @return The axis IDs array or a -1 if no axis IDs are set
 function get_axis_ids (obj) &
 result(rslt)
@@ -646,7 +646,7 @@ result(rslt)
        rslt = -1
      endif
 end function get_axis_ids
-!> Gets area
+!> @brief Gets area
 !! @return the area
 function get_area (obj) &
 result(rslt)
@@ -658,7 +658,7 @@ result(rslt)
        rslt = -1
      endif
 end function get_area
-!> Gets volume
+!> @brief Gets volume
 !! @return the volume or -1 if volume is not allocated
 function get_volume (obj) &
 result(rslt)
@@ -670,7 +670,7 @@ result(rslt)
        rslt = -1
      endif
 end function get_volume
-!> Gets missing_value
+!> @brief Gets missing_value
 !! @return The missing value
 function get_missing_value (obj) &
 result(rslt)
@@ -700,7 +700,7 @@ result(rslt)
                  "The missing value is not allocated", FATAL)
        endif
 end function get_missing_value
-!> Gets data_range
+!> @brief Gets data_range
 !! @return the data range
 function get_data_RANGE (obj) &
 result(rslt)
@@ -730,7 +730,7 @@ result(rslt)
                  "The data_RANGE value is not allocated", FATAL)
        endif
 end function get_data_RANGE
-!> Gets axis
+!> @brief Gets axis
 !! @return axis information
 !! TODO
 !function get_axis (obj) &
