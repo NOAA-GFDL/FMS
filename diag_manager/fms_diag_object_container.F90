@@ -56,13 +56,15 @@ MODULE fms_diag_object_container_mod
    !!
    type, public:: FmsDiagObjectContainer_t
    private
-      TYPE (FmsDlList_t), ALLOCATABLE :: the_linked_list !< This version based on the FDS linked_list.
+      TYPE (FmsDlList_t), pointer :: the_linked_list => null() !< This version based on the FDS linked_list.
    contains
       procedure :: insert => insert_diag_object
       procedure :: remove => remove_diag_object
       procedure :: find   => find_diag_object
       procedure :: size   => get_num_objects
       procedure :: iterator  => get_iterator
+      procedure :: initialize => container_initializer
+      procedure :: clear => clear_all
       final :: destructor
    end type FmsDiagObjectContainer_t
 
@@ -76,10 +78,6 @@ MODULE fms_diag_object_container_mod
       procedure :: next => literator_next
       procedure :: get => literator_data
    end type FmsDiagObjIterator_t
-
-   interface FmsDiagObjectContainer_t
-      module procedure :: diag_object_container_constructor
-   end interface FmsDiagObjectContainer_t
 
    interface FmsDiagObjIterator_t
       module procedure :: diag_obj_iterator_constructor
@@ -202,9 +200,19 @@ contains
    function diag_object_container_constructor () result (doc)
       type(FmsDiagObjectContainer_t), allocatable :: doc !< The resultant container.
       allocate(doc)
-      doc%the_linked_list = FmsDlList_t()
-      !! print * , "In DOC constructor"
+      allocate(doc%the_linked_list)
+      call doc%the_linked_list%initialize
    end function diag_object_container_constructor
+
+   subroutine container_initializer( this )
+    class(FmsDiagObjectContainer_t), intent(inout) :: this
+    if( associated(this%the_linked_list) ) then
+       call error_mesg('fms_diag_object_container:','container is already initialized', WARNING)
+    else
+       allocate(this%the_linked_list)
+       call this%the_linked_list%initialize()
+    endif
+   end subroutine container_initializer
 
    !> @brief Determines if there is more data that can be accessed via the iterator.
    !> @return Returns true iff more data can be accessed via the iterator.
@@ -236,22 +244,32 @@ contains
       class(*),  pointer :: gp !< A eneric typed object in the container.
 
       rdo => null()
-      gp => this%liter%get()
+      gp  => this%liter%get()
       select type(gp)
        type is (fms_diag_object)  !! "type is", not the (polymorphic) "class is"
          rdo => gp
        class default
-         CALL  error_mesg ('diag_object_container:literator_data', &
-            'Data to be accessed via iterator is not of expected type.',FATAL)
+         call  error_mesg ('fms_diag_object_container:', &
+            'In literator_data, data to be accessed is not of expected type.',FATAL)
       end select
    end function literator_data
+
+  !> @brief Iterate over all the nodes, remove them and deallocate the client data
+   !! associated wiith the nodes.
+   subroutine clear_all( this  )
+    class(FmsDiagObjectContainer_t), intent(inout) :: this  !<The instance of the class that this function is bound to.
+    call this%the_linked_list%clear()
+   end subroutine clear_all
+
 
    !> @brief The destructor for the container.
    subroutine destructor(this)
      type(FmsDiagObjectContainer_t) :: this
      !<The instance of the class that this function is bound to.
      !Note in the line above we use "type' and not "class" - needed for destructor definitions.
-      deallocate(this%the_linked_list)
+     call  error_mesg ('FMS diag_object_container:', 'Entered destructor.',NOTE)
+     deallocate(this%the_linked_list)
+     this%the_linked_list =>null()
    end subroutine destructor
 
 
