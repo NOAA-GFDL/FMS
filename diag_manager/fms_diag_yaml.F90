@@ -30,8 +30,6 @@
 !> @{
 module fms_diag_yaml_mod
 #ifdef use_yaml
-use fms_diag_yaml_object_mod, only: diagYamlFiles_type, diagYamlFilesVar_type, diag_yaml_files_obj_init, &
-                                    NUM_SUB_REGION_ARRAY
 use diag_data_mod, only: DIAG_NULL
 use yaml_parser_mod
 use mpp_mod
@@ -42,9 +40,112 @@ private
 
 public :: diag_yaml_object_init, diag_yaml_object_end
 public :: diagYamlObject_type, get_diag_yaml_obj, get_title, get_basedate, get_diag_files, get_diag_fields
+public :: diagYamlFiles_type, diagYamlFilesVar_type
 !> @}
 
 integer, parameter :: basedate_size = 6
+integer, parameter :: NUM_SUB_REGION_ARRAY = 8
+integer, parameter :: MAX_STR_LEN = 255
+
+!> @brief type to hold the sub region information about a file
+type subRegion_type
+  character (len=:), allocatable :: grid_type !< Flag indicating the type of region,
+                                              !! acceptable values are "latlon" and "index"
+  real, allocatable :: lat_lon_sub_region (:) !< Array that stores the grid point bounds for the sub region
+                                              !! to use if grid_type is set to "latlon"
+                                              !! [dim1_begin, dim1_end, dim2_begin, dim2_end,
+                                              !!  dim3_begin, dim3_end, dim4_begin, dim4_end]
+  integer, allocatable :: index_sub_region (:) !< Array that stores the index bounds for the sub region to
+                                               !! to use if grid_type is set to "index"
+                                               !! [dim1_begin, dim1_end, dim2_begin, dim2_end,
+                                               !!  dim3_begin, dim3_end, dim4_begin, dim4_end]
+  integer :: tile !< Tile number of the sub region, required if using the "index" grid type
+
+end type subRegion_type
+
+!> @brief type to hold the diag_file information
+type diagYamlFiles_type
+  character (len=:), private, allocatable :: file_fname !< file name
+  character (len=:), private, allocatable :: file_frequnit !< the frequency unit
+  integer, private    :: file_freq !< the frequency of data
+  character (len=:), private, allocatable :: file_timeunit !< The unit of time
+  character (len=:), private, allocatable :: file_unlimdim !< The name of the unlimited dimension
+  logical, private :: file_write !< false if the user doesn't want to the file to be created
+  character (len=:), private, allocatable :: string_file_write !< false if the user doesn’t want the file to be
+                                                               !! created (default is true).
+  character (len=:), private, allocatable :: file_realm !< The modeling realm that the variables come from
+  type(subRegion_type), private :: file_sub_region !< type containing info about the subregion, if any
+  integer, private :: file_new_file_freq !< Frequency for closing the existing file
+  character (len=:), private, allocatable :: file_new_file_freq_units !< Time units for creating a new file.
+                                                                      !! Required if “new_file_freq” used
+  character (len=:), private, allocatable :: file_start_time !< Time to start the file for the first time. Requires
+                                                             !! “new_file_freq”
+  integer, private :: file_duration !< How long the file should receive data after start time
+                                    !! in “file_duration_units”.  This optional field can only
+                                    !! be used if the start_time field is present.  If this field
+                                    !! is absent, then the file duration will be equal to the
+                                    !! frequency for creating new files.
+                                    !! NOTE: The file_duration_units field must also be present if
+                                    !! this field is present.
+  character (len=:), private, allocatable :: file_duration_units !< The file duration units
+  !< Need to use `MAX_STR_LEN` because not all filenames/global attributes are the same length
+  character (len=MAX_STR_LEN), dimension(:), private, allocatable :: file_varlist !< An array of variable names
+                                                                                  !! within a file
+  character (len=MAX_STR_LEN), dimension(:,:), private, allocatable :: file_global_meta !< Array of key(dim=1)
+                                                                                        !! and values(dim=2) to be added as global
+                                                                                        !! meta data to the file
+
+ contains
+ procedure :: get_file_fname
+ procedure :: get_file_frequnit
+ procedure :: get_file_freq
+ procedure :: get_file_timeunit
+ procedure :: get_file_unlimdim
+ procedure :: get_file_write
+ procedure :: get_file_realm
+ procedure :: get_file_sub_region
+ procedure :: get_file_new_file_freq
+ procedure :: get_file_new_file_freq_units
+ procedure :: get_file_start_time
+ procedure :: get_file_duration
+ procedure :: get_file_duration_units
+ procedure :: get_file_varlist
+ procedure :: get_file_global_meta
+ procedure :: is_global_meta
+
+end type diagYamlFiles_type
+
+!> @brief type to hold the info a diag_field
+type diagYamlFilesVar_type
+  character (len=:), private, allocatable :: var_fname !< The field/diagnostic name
+  character (len=:), private, allocatable :: var_varname !< The name of the variable
+  character (len=:), private, allocatable :: var_reduction !< Reduction to be done on var
+  character (len=:), private, allocatable :: var_module !< The module that th variable is in
+  character (len=:), private, allocatable :: var_skind !< The type/kind of the variable
+  character (len=:), private, allocatable :: string_var_write !< false if the user doesn’t want the variable to be
+                                                              !! written to the file (default: true).
+  logical, private :: var_write !< false if the user doesn’t want the variable to be
+                                !! written to the file (default: true).
+  character (len=:), private, allocatable :: var_outname !< Name of the variable as written to the file
+  character (len=:), private, allocatable :: var_longname !< Overwrites the long name of the variable
+  character (len=:), private, allocatable :: var_units !< Overwrites the units
+
+  !< Need to use `MAX_STR_LEN` because not all filenames/global attributes are the same length
+  character (len=MAX_STR_LEN), dimension (:, :), private, allocatable :: var_attributes !< Attributes to overwrite or
+                                                                                        !! add from diag_yaml
+ contains
+  procedure :: get_var_fname
+  procedure :: get_var_varname
+  procedure :: get_var_reduction
+  procedure :: get_var_module
+  procedure :: get_var_skind
+  procedure :: get_var_outname
+  procedure :: get_var_longname
+  procedure :: get_var_units
+  procedure :: get_var_write
+  procedure :: get_var_attributes
+  procedure :: is_var_attributes
+end type diagYamlFilesVar_type
 
 !> @brief Object that holds the information of the diag_yaml
 !> @ingroup fms_diag_yaml_mod
@@ -241,7 +342,7 @@ subroutine fill_in_diag_files(diag_yaml_id, diag_file_id, fileobj)
       fileobj%file_sub_region%index_sub_region = DIAG_NULL
       call get_sub_region(diag_yaml_id, sub_region_id(1), fileobj%file_sub_region%index_sub_region)
       call get_value_from_key(diag_yaml_id, sub_region_id(1), "tile", fileobj%file_sub_region%tile, is_optional=.true.)
-      if (fileobj%file_sub_region%tile .eq. 0) call mpp_error(FATAL, "The tile number is required when defining a "//&
+      if (fileobj%file_sub_region%tile .eq. DIAG_NULL) call mpp_error(FATAL, "The tile number is required when defining a "//&
         "subregion. Check your subregion entry for "//trim(fileobj%file_fname))
     else
       call mpp_error(FATAL, trim(fileobj%file_sub_region%grid_type)//" is not a valid region type. &
@@ -507,6 +608,248 @@ result(is_valid)
     is_valid = .false.
   end select
 end function is_valid_time_units
+
+!!!!!!! YAML FILE INQUIRIES !!!!!!!
+!> @brief Inquiry for diag_files_obj%file_fname
+!! @return file_fname of a diag_yaml_file obj
+pure function get_file_fname (diag_files_obj) &
+result (res)
+ class (diagYamlFiles_type), intent(in) :: diag_files_obj !< The object being inquiried
+ character (len=:), allocatable :: res !< What is returned
+  res = diag_files_obj%file_fname
+end function get_file_fname
+!> @brief Inquiry for diag_files_obj%file_frequnit
+!! @return file_frequnit of a diag_yaml_file_obj
+pure function get_file_frequnit (diag_files_obj) &
+result (res)
+ class (diagYamlFiles_type), intent(in) :: diag_files_obj !< The object being inquiried
+ character (len=:), allocatable :: res !< What is returned
+  res = diag_files_obj%file_frequnit
+end function get_file_frequnit
+!> @brief Inquiry for diag_files_obj%file_freq
+!! @return file_freq of a diag_yaml_file_obj
+pure function get_file_freq(diag_files_obj) &
+result (res)
+ class (diagYamlFiles_type), intent(in) :: diag_files_obj !< The object being inquiried
+ integer :: res !< What is returned
+  res = diag_files_obj%file_freq
+end function get_file_freq
+!> @brief Inquiry for diag_files_obj%file_timeunit
+!! @return file_timeunit of a diag_yaml_file_obj
+pure function get_file_timeunit (diag_files_obj) &
+result (res)
+ class (diagYamlFiles_type), intent(in) :: diag_files_obj !< The object being inquiried
+ character (len=:), allocatable :: res !< What is returned
+  res = diag_files_obj%file_timeunit
+end function get_file_timeunit
+!> @brief Inquiry for diag_files_obj%file_unlimdim
+!! @return file_unlimdim of a diag_yaml_file_obj
+pure function get_file_unlimdim(diag_files_obj) &
+result (res)
+ class (diagYamlFiles_type), intent(in) :: diag_files_obj !< The object being inquiried
+ character (len=:), allocatable :: res !< What is returned
+  res = diag_files_obj%file_unlimdim
+end function get_file_unlimdim
+!> @brief Inquiry for diag_files_obj%file_write
+!! @return file_write of a diag_yaml_file_obj
+pure function get_file_write(diag_files_obj) &
+result (res)
+ class (diagYamlFiles_type), intent(in) :: diag_files_obj !< The object being inquiried
+ logical :: res !< What is returned
+  res = diag_files_obj%file_write
+end function get_file_write
+!> @brief Inquiry for diag_files_obj%file_realm
+!! @return file_realm of a diag_yaml_file_obj
+pure function get_file_realm(diag_files_obj) &
+result (res)
+ class (diagYamlFiles_type), intent(in) :: diag_files_obj !< The object being inquiried
+ character (:), allocatable :: res !< What is returned
+  res = diag_files_obj%file_realm
+end function get_file_realm
+!> @brief Inquiry for diag_files_obj%file_subregion
+!! @return file_sub_region of a diag_yaml_file_obj
+pure function get_file_sub_region (diag_files_obj) &
+result (res)
+ class (diagYamlFiles_type), intent(in) :: diag_files_obj !< The object being inquiried
+ type(subRegion_type) :: res !< What is returned
+  res = diag_files_obj%file_sub_region
+end function get_file_sub_region
+!> @brief Inquiry for diag_files_obj%file_new_file_freq
+!! @return file_new_file_freq of a diag_yaml_file_obj
+pure function get_file_new_file_freq(diag_files_obj) &
+result (res)
+ class (diagYamlFiles_type), intent(in) :: diag_files_obj !< The object being inquiried
+ integer :: res !< What is returned
+  res = diag_files_obj%file_new_file_freq
+end function get_file_new_file_freq
+!> @brief Inquiry for diag_files_obj%file_new_file_freq_units
+!! @return file_new_file_freq_units of a diag_yaml_file_obj
+pure function get_file_new_file_freq_units (diag_files_obj) &
+result (res)
+ class (diagYamlFiles_type), intent(in) :: diag_files_obj !< The object being inquiried
+ character (:), allocatable :: res !< What is returned
+  res = diag_files_obj%file_new_file_freq_units
+end function get_file_new_file_freq_units
+!> @brief Inquiry for diag_files_obj%file_start_time
+!! @return file_start_time of a diag_yaml_file_obj
+pure function get_file_start_time (diag_files_obj) &
+result (res)
+ class (diagYamlFiles_type), intent(in) :: diag_files_obj !< The object being inquiried
+ character (len=:), allocatable :: res !< What is returned
+  res = diag_files_obj%file_start_time
+end function get_file_start_time
+!> @brief Inquiry for diag_files_obj%file_duration
+!! @return file_duration of a diag_yaml_file_obj
+pure function get_file_duration (diag_files_obj) &
+result (res)
+ class (diagYamlFiles_type), intent(in) :: diag_files_obj !< The object being inquiried
+ integer :: res !< What is returned
+  res = diag_files_obj%file_duration
+end function get_file_duration
+!> @brief Inquiry for diag_files_obj%file_duration_units
+!! @return file_duration_units of a diag_yaml_file_obj
+pure function get_file_duration_units (diag_files_obj) &
+result (res)
+ class (diagYamlFiles_type), intent(in) :: diag_files_obj !< The object being inquiried
+  character (:), allocatable :: res !< What is returned
+  res = diag_files_obj%file_duration_units
+end function get_file_duration_units
+!> @brief Inquiry for diag_files_obj%file_varlist
+!! @return file_varlist of a diag_yaml_file_obj
+pure function get_file_varlist (diag_files_obj) &
+result (res)
+ class (diagYamlFiles_type), intent(in) :: diag_files_obj !< The object being inquiried
+ character (:), allocatable :: res(:) !< What is returned
+  res = diag_files_obj%file_varlist
+end function get_file_varlist
+!> @brief Inquiry for diag_files_obj%file_global_meta
+!! @return file_global_meta of a diag_yaml_file_obj
+pure function get_file_global_meta (diag_files_obj) &
+result (res)
+ class (diagYamlFiles_type), intent(in) :: diag_files_obj !< The object being inquiried
+ character (:), allocatable :: res(:,:) !< What is returned
+  res = diag_files_obj%file_global_meta
+end function get_file_global_meta
+!> @brief Inquiry for whether file_global_meta is allocated
+!! @return Flag indicating if file_global_meta is allocated
+function is_global_meta(diag_files_obj) &
+  result(res)
+ class (diagYamlFiles_type), intent(in) :: diag_files_obj !< The object being inquiried
+ logical :: res
+ res = .false.
+ if (allocated(diag_files_obj%file_global_meta)) &
+   res = .true.
+end function
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!! VARIABLES ROUTINES AND FUNCTIONS !!!!!!!
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!! YAML VAR INQUIRIES !!!!!!!
+!> @brief Inquiry for diag_yaml_files_var_obj%var_fname
+!! @return var_fname of a diag_yaml_files_var_obj
+pure function get_var_fname (diag_var_obj) &
+result (res)
+ class (diagYamlFilesVar_type), intent(in) :: diag_var_obj !< The object being inquiried
+ character (len=:), allocatable :: res !< What is returned
+  res = diag_var_obj%var_fname
+end function get_var_fname
+!> @brief Inquiry for diag_yaml_files_var_obj%var_varname
+!! @return var_varname of a diag_yaml_files_var_obj
+pure function get_var_varname (diag_var_obj) &
+result (res)
+ class (diagYamlFilesVar_type), intent(in) :: diag_var_obj !< The object being inquiried
+ character (len=:), allocatable :: res !< What is returned
+  res = diag_var_obj%var_varname
+end function get_var_varname
+!> @brief Inquiry for diag_yaml_files_var_obj%var_reduction
+!! @return var_reduction of a diag_yaml_files_var_obj
+pure function get_var_reduction (diag_var_obj) &
+result (res)
+ class (diagYamlFilesVar_type), intent(in) :: diag_var_obj !< The object being inquiried
+ character (len=:), allocatable :: res !< What is returned
+  res = diag_var_obj%var_reduction
+end function get_var_reduction
+!> @brief Inquiry for diag_yaml_files_var_obj%var_module
+!! @return var_module of a diag_yaml_files_var_obj
+pure function get_var_module (diag_var_obj) &
+result (res)
+ class (diagYamlFilesVar_type), intent(in) :: diag_var_obj !< The object being inquiried
+ character (len=:), allocatable :: res !< What is returned
+  res = diag_var_obj%var_module
+end function get_var_module
+!> @brief Inquiry for diag_yaml_files_var_obj%var_skind
+!! @return var_skind of a diag_yaml_files_var_obj
+pure function get_var_skind (diag_var_obj) &
+result (res)
+ class (diagYamlFilesVar_type), intent(in) :: diag_var_obj !< The object being inquiried
+ character (len=:), allocatable :: res !< What is returned
+  res = diag_var_obj%var_skind
+end function get_var_skind
+!> @brief Inquiry for diag_yaml_files_var_obj%var_outname
+!! @return var_outname of a diag_yaml_files_var_obj
+pure function get_var_outname (diag_var_obj) &
+result (res)
+ class (diagYamlFilesVar_type), intent(in) :: diag_var_obj !< The object being inquiried
+ character (len=:), allocatable :: res !< What is returned
+  res = diag_var_obj%var_outname
+end function get_var_outname
+!> @brief Inquiry for diag_yaml_files_var_obj%var_longname
+!! @return var_longname of a diag_yaml_files_var_obj
+pure function get_var_longname (diag_var_obj) &
+result (res)
+ class (diagYamlFilesVar_type), intent(in) :: diag_var_obj !< The object being inquiried
+ character (len=:), allocatable :: res !< What is returned
+  res = diag_var_obj%var_longname
+end function get_var_longname
+!> @brief Inquiry for diag_yaml_files_var_obj%var_units
+!! @return var_units of a diag_yaml_files_var_obj
+pure function get_var_units (diag_var_obj) &
+result (res)
+ class (diagYamlFilesVar_type), intent(in) :: diag_var_obj !< The object being inquiried
+ character (len=:), allocatable :: res !< What is returned
+  res = diag_var_obj%var_units
+end function get_var_units
+!> @brief Inquiry for diag_yaml_files_var_obj%var_write
+!! @return var_write of a diag_yaml_files_var_obj
+pure function get_var_write (diag_var_obj) &
+result (res)
+ class (diagYamlFilesVar_type), intent(in) :: diag_var_obj !< The object being inquiried
+ logical :: res !< What is returned
+  res = diag_var_obj%var_write
+end function get_var_write
+!> @brief Inquiry for diag_yaml_files_var_obj%var_attributes
+!! @return var_attributes of a diag_yaml_files_var_obj
+pure function get_var_attributes(diag_var_obj) &
+result (res)
+ class (diagYamlFilesVar_type), intent(in) :: diag_var_obj !< The object being inquiried
+ character (len=MAX_STR_LEN), allocatable :: res (:,:) !< What is returned
+ res = diag_var_obj%var_attributes
+end function get_var_attributes
+!> @brief Inquiry for whether var_attributes is allocated
+!! @return Flag indicating if var_attributes is allocated
+function is_var_attributes(diag_var_obj) &
+result(res)
+ class (diagYamlFilesVar_type), intent(in) :: diag_var_obj !< The object being inquiried
+ logical :: res
+ res = .false.
+ if (allocated(diag_var_obj%var_attributes)) &
+   res = .true.
+end function is_var_attributes
+
+!> @brief Initializes the non string values of a diagYamlFiles_type to its
+!! default values
+subroutine diag_yaml_files_obj_init(obj)
+  type(diagYamlFiles_type), intent(out) :: obj !< diagYamlFiles_type object to initialize
+
+  obj%file_freq           = DIAG_NULL
+  obj%file_write          = .true.
+  obj%file_duration       = DIAG_NULL
+  obj%file_new_file_freq  = DIAG_NULL
+  obj%file_sub_region%tile = DIAG_NULL
+end subroutine diag_yaml_files_obj_init
+
 #endif
 end module fms_diag_yaml_mod
 !> @}

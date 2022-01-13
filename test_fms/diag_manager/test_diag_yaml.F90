@@ -24,7 +24,6 @@ program test_diag_yaml
 #ifdef use_yaml
 use FMS_mod, only: fms_init, fms_end
 use fms_diag_yaml_mod
-use fms_diag_yaml_object_mod
 use mpp_mod
 use platform_mod
 
