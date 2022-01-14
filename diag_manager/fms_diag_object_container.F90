@@ -74,9 +74,11 @@ MODULE fms_diag_object_container_mod
    private
       type(FmsDllIterator_t) :: liter !< This version based on the FDS linked_list (and its iterator).
    contains
-      procedure :: has_data => literator_has_data
-      procedure :: next => literator_next
-      procedure :: get => literator_data
+      procedure :: has_data => literator_has_data !< Function returns true if there is data in the iterator.
+      procedure :: next => literator_next !< Function moves the iterator to the next data element. Used in
+                                          !< conjunction with function has_data().
+      procedure :: get => literator_data !< Function return a pointer to the current data. Used in conjunction
+                                         !< with function has_data().
    end type FmsDiagObjIterator_t
 
    interface FmsDiagObjIterator_t
@@ -254,15 +256,24 @@ contains
       end select
    end function literator_data
 
-  !> @brief Iterate over all the nodes, remove them and deallocate the client data
-   !! associated wiith the nodes.
-   subroutine clear_all( this  )
+  !> @brief Iterate over all the nodes and remove them. Also (by overridable default), it deallocates the
+   !! client data associated with the nodes.
+   subroutine clear_all( this,  data_dealloc_flag  )
     class(FmsDiagObjectContainer_t), intent(inout) :: this  !<The instance of the class that this function is bound to.
-    call this%the_linked_list%clear()
+    logical, optional, intent(in) :: data_dealloc_flag    !< If not present or .true., client data is deallocated.
+    logical :: data_dealloc_f    !< Set to data_dealloc_flag if present, otherwise its .true.
+      !
+      data_dealloc_f = .true.
+      if( PRESENT(data_dealloc_flag) ) then
+         data_dealloc_f = data_dealloc_flag
+      endif
+    call this%the_linked_list%clear( data_dealloc_f )
    end subroutine clear_all
 
 
-   !> @brief The destructor for the container.
+   !>  @brief A destructor that deallocates every node and each nodes data element. !Note
+   !! that for the data elements to not be de-allocated, function clear() with the
+   !! appropriate arguments must be called.
    subroutine destructor(this)
      type(FmsDiagObjectContainer_t) :: this
      !<The instance of the class that this function is bound to.

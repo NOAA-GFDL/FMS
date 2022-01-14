@@ -58,9 +58,11 @@ MODULE fms_diag_dlinked_list_mod
       type(FmsDlListNode_t), pointer :: current=>null()  !< A pointer to the current node.
       type(FmsDlListNode_t), pointer :: end =>null()     !< A sentinel (non-data) node.
    contains
-      procedure :: has_data => literator_has_data !< Function returns true is there is data in the iterator.
-      procedure :: next => literator_next !< Function moves the iterator to the next data element.
-      procedure :: get => literator_data !< Function return a pointer to the current data.
+      procedure :: has_data => literator_has_data !< Function returns true if there is data in the iterator.
+      procedure :: next => literator_next !< Function moves the iterator to the next data element. Used in
+                                          !< conjunction with function has_data().
+      procedure :: get => literator_data !< Function return a pointer to the current data. Used in conjunction
+                                          !< with function has_data().
       procedure :: get_current_node_pointer => get_current_node_ptr !< Return  the current node pointer.
    end type FmsDllIterator_t
 
@@ -164,7 +166,7 @@ contains
    function push_at_back( this, d ) result(litr)
       class(FmsDlList_t), intent(in out) :: this   !<The instance of the class that this function is bound to.
       class(*), target, intent(in out) :: d        !< The data to insert.
-      class(FmsDllIterator_t), allocatable :: litr       !< The iterator for the resultant list.
+      class(FmsDllIterator_t), allocatable :: litr  !< The iterator for the resultant list.
       litr =  this%insert (this%tail, d)
    end function push_at_back
 
@@ -183,7 +185,7 @@ contains
    !> @brief Initializer for the linked list.
    !! @return Returns a newly allocated linked list instance.
    subroutine linked_list_initializer( this )
-      class(FmsDlList_t), intent(inout) :: this
+      class(FmsDlList_t), intent(inout) :: this  !<The instance of the class that this function is bound to
       if( associated(this%head) .or. associated(this%tail)) then
          call error_mesg('fms_diag_dlinked_list','linked list is already initalized', WARNING)
       else
@@ -287,8 +289,8 @@ contains
       pn  => this%current
    end function get_current_node_ptr
 
-   !> @brief Iterate over all the nodes, remove them. Also deallocates the client data
-   !! associated wiith the nodes
+   !> @brief Iterate over all the nodes and remove them. Also (by overridable default), it deallocates the
+   !! client data associated with the nodes.
    subroutine clear_all( this, data_dealloc_flag)
       class(FmsDlList_t), intent(inout) :: this !<The instance of the class that this function is bound to.
       logical, optional, intent(in) :: data_dealloc_flag    !< If not present or .true., client data is deallocated.
@@ -317,11 +319,13 @@ contains
       end do
    end subroutine clear_all
 
-   !>  @brief A destructor that deallocates every node and each nodes data element.
+   !>  @brief A destructor that deallocates every node and each nodes data element. !Note
+   !! that for the data elements to not be de-allocated, function clear() (or clear_all() )
+   !! with the appropriate arguments must be called.
    subroutine destructor(this)
       type(FmsDlList_t) :: this  !<The instance of the type that this function is bound to.
       !! Note in the line above we use "type' and not "class" - needed for destructor definitions.
-      !! TODO: This NOTE message may be inaproppriate for this class.
+      !! TODO: This NOTE message below may be inaproppriate for this class.
       call error_mesg('fms_diag_dlinked_list', 'Entered destructor.',NOTE)
       call this%clear()
       deallocate(this%head)

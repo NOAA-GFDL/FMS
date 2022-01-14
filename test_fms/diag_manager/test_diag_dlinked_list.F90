@@ -190,9 +190,9 @@ CONTAINS
       type (FmsDlList_t), intent(inout) , allocatable :: the_list !< The linked list instance
       integer  :: rsum                        !< The resultant sum of ids
       class(FmsDllIterator_t), allocatable :: iter !< An iterator over the list
-      type (TestDummy_t), pointer:: p_td_obj => null()    !< A pointer to a test_dummy object
-      class(*), pointer :: p_obj  => null()                !< A pointer to a class(*) object
-      integer :: ic_status                         !< A list insertion status.
+      type (TestDummy_t), pointer:: p_td_obj => null() !< A pointer to a test_dummy object
+      class(*), pointer :: p_obj  => null()            !< A pointer to a class(*) object
+      integer :: ic_status                             !< A list insertion status.
       !!
       rsum = 0
       iter = the_list%get_literator()
