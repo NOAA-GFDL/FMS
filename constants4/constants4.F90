@@ -68,14 +68,14 @@ real(r4_kind) :: realnumber !< dummy variable to use in HUGE initializations
 !! simulations (<13km) that will tax hardware resources.
 #ifdef SMALL_EARTH
 #if defined(DCMIP) || (defined(HIWPP) && defined(SUPER_K))
- real(r4_kind), public, parameter :: small_fac =  1._r8_kind / 120._r8_kind   ! only needed for supercell test
+ real(r4_kind), public, parameter :: small_fac =  1._r8_kind / 120._r8_kind !< Real(kind=4) variant of small_fac defined in constants/constants.F90
 #elif defined(HIWPP)
- real(r4_kind), public, parameter :: small_fac = 1._r8_kind / 166.7_r8_kind
+ real(r4_kind), public, parameter :: small_fac = 1._r8_kind / 166.7_r8_kind !< Real(kind=4) variant of small_fac defined in constants/constants.F90
 #else
- real(r4_kind), public, parameter :: small_fac = 1._r8_kind / 10._r8_kind
+ real(r4_kind), public, parameter :: small_fac = 1._r8_kind / 10._r8_kind   !< Real(kind=4) variant of small_fac defined in constants/constants.F90
 #endif
 #else
- real(r4_kind), public, parameter :: small_fac = 1._r8_kind
+ real(r4_kind), public, parameter :: small_fac = 1._r8_kind                 !< Real(kind=4) variant of small_fac defined in constants/constants.F90
 #endif
 
 #ifdef GFS_PHYS
