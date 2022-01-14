@@ -36,7 +36,7 @@ type fmsDiagObject_type
      class(FmsNetcdfFile_t), dimension (:), pointer   :: fileob => NULL()  !< A pointer to all of the
                                                                            !! file objects for this variable
      character(len=:), allocatable, dimension(:)      :: metadata          !< metadata for the variable
-     logical, private                                 :: static            !< true is this is a static var
+     logical, allocatable, private                    :: static            !< true if this is a static var
      logical, allocatable, private                    :: registered        !< true when registered
      logical, allocatable, private                    :: mask_variant      !< If there is a mask variant
      logical, allocatable, private                    :: local             !< If the output is local
@@ -81,12 +81,14 @@ type fmsDiagObject_type
      procedure :: copy => copy_diag_obj
      procedure :: register => fms_register_diag_field_obj !! Merely initialize fields.
      procedure :: setID => set_diag_id
-     procedure :: is_registered => diag_ob_registered
      procedure :: set_type => set_vartype
      procedure :: vartype_inq => what_is_vartype
 ! Check functions
      procedure :: is_static => diag_obj_is_static
+     procedure :: is_registered => diag_ob_registered
      procedure :: is_registeredB => diag_obj_is_registered
+     procedure :: is_mask_variant => get_mask_variant
+     procedure :: is_local => get_local
 ! Get functions
      procedure :: get_diag_id => fms_diag_get_id
      procedure :: get_metadata
