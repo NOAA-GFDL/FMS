@@ -79,6 +79,7 @@ char* fms_find_my_string_binding(char** arr, int *n, char *find_me, int *np)
   int *p;       // Array to store the indices
   int i;        // For do loops
 
+  *np = 0;
   is_found = -1;
   while(L != R){
     // Start looking in the midle of the array
