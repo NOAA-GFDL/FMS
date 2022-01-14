@@ -7,7 +7,7 @@ module fms_diag_object_mod
 !! The procedures of this object and the types are all in this module.  The fms_dag_object is a type
 !! that contains all of the information of the variable.  It is extended by a type that holds the
 !! appropriate buffer for the data for manipulation.
-use diag_data_mod,  only: diag_null, CMOR_MISSING_VALUE
+use diag_data_mod,  only: diag_null, CMOR_MISSING_VALUE, diag_null_string
 use diag_data_mod,  only: r8, r4, i8, i4, string, null_type_int
 use diag_data_mod,  only: diag_null, diag_not_found, diag_not_registered, diag_registered_id
 
@@ -436,7 +436,7 @@ result(rslt)
        rslt = obj%metadata
      else
        allocate(character(len=1) :: rslt(1:1))
-       rslt = " "
+       rslt = diag_null_string
      endif
 end function get_metadata
 !> @brief Gets static
@@ -505,7 +505,7 @@ result(rslt)
      if (allocated(obj%longname)) then
        rslt = obj%longname
      else
-       rslt = " "
+       rslt = diag_null_string
      endif
 end function get_longname
 !> @brief Gets standname
@@ -517,7 +517,7 @@ result(rslt)
      if (allocated(obj%standname)) then
        rslt = obj%standname
      else
-       rslt = " "
+       rslt = diag_null_string
      endif
 end function get_standname
 !> @brief Gets units
@@ -529,7 +529,7 @@ result(rslt)
      if (allocated(obj%units)) then
        rslt = obj%units
      else
-       rslt = " "
+       rslt = diag_null_string
      endif
 end function get_units
 !> @brief Gets modname
@@ -541,7 +541,7 @@ result(rslt)
      if (allocated(obj%modname)) then
        rslt = obj%modname
      else
-       rslt = " "
+       rslt = diag_null_string
      endif
 end function get_modname
 !> @brief Gets realm
@@ -553,7 +553,7 @@ result(rslt)
      if (allocated(obj%realm)) then
        rslt = obj%realm
      else
-       rslt = " "
+       rslt = diag_null_string
      endif
 end function get_realm
 !> @brief Gets err_msg
@@ -565,7 +565,7 @@ result(rslt)
      if (allocated(obj%err_msg)) then
        rslt = obj%err_msg
      else
-       rslt = " "
+       rslt = diag_null_string
      endif
 end function get_err_msg
 !> @brief Gets interp_method
@@ -577,7 +577,7 @@ result(rslt)
      if (allocated(obj%interp_method)) then
        rslt = obj%interp_method
      else
-       rslt = " "
+       rslt = diag_null_string
      endif
 end function get_interp_method
 !> @brief Gets frequency

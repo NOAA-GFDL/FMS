@@ -66,6 +66,7 @@ use platform_mod
 
   ! Specify storage limits for fixed size tables used for pointers, etc.
   integer, parameter :: diag_null = -999 !< Integer represening NULL in the diag_object
+  character(len=1), parameter :: diag_null_string = " "
   integer, parameter :: diag_not_found = -1
   integer, parameter :: diag_not_registered = 0
   integer, parameter :: diag_registered_id = 10
