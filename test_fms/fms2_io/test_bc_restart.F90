@@ -91,7 +91,7 @@ if (atm%BCfile_sw_open) then
     call write_restart_bc(atm%fileobj_sw)
     !replace var6 checksum with an incorrect checksum
     if (bad_checksum) then
-      call register_variable_attribute(atm%fileobj_sw, "sst_west", "checksum", "0101010101010101", str_len = 16)
+      call register_variable_attribute(atm%fileobj_sw, "sst_west", "checksum", "101010101", str_len = 9)
     endif
     call close_file(atm%fileobj_sw)
 endif

@@ -83,7 +83,6 @@ integer, dimension(:), allocatable :: dim_sizes
 character(len=256) :: att
 character(len=6), dimension(4) :: names
 character(len=8) :: timestamp
-character(len=16) :: checksum_char = "0101010101010101"
 logical :: ignore_checksum = .false.
 logical :: bad_checksum = .false.
 
@@ -355,9 +354,9 @@ var10_chksum = mpp_chksum(var10, pelist=(/mpp_pe()/))
 
 !replace var6 checksum with an incorrect checksum
 if (bad_checksum) then
-  var6_chksum = 0101010101010101
-  call register_variable_attribute(fileobj , "var6", "checksum", trim(checksum_char), str_len = len(checksum_char))
-  call register_variable_attribute(fileobjv, "var6", "checksum", trim(checksum_char), str_len = len(checksum_char))
+  var6_chksum = 101010101
+  call register_variable_attribute(fileobj , "var6", "checksum", "101010101", str_len = 9)
+  call register_variable_attribute(fileobjv, "var6", "checksum", "101010101", str_len = 9)
 endif
 !Close the file.
 call close_file(fileobj)
