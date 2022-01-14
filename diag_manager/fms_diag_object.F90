@@ -426,7 +426,7 @@ end function diag_obj_is_static
 !! Get functions
 
 !> @brief Gets metedata
-!! @return metadata string array, or a single space if metadata is not allocated
+!! @return copy of metadata string array, or a single space if metadata is not allocated
 function get_metadata (obj) &
 result(rslt)
      class (fmsDiagObject_type), intent(in) :: obj !< diag object
@@ -440,7 +440,7 @@ result(rslt)
      endif
 end function get_metadata
 !> @brief Gets static
-!! @return true if the variable is static
+!! @return copy of variable static
 function get_static (obj) &
 result(rslt)
      class (fmsDiagObject_type), intent(in) :: obj !< diag object
@@ -448,7 +448,7 @@ result(rslt)
      rslt = obj%static
 end function get_static
 !> @brief Gets regisetered
-!! @return true if the object is registered
+!! @return copy of registered
 function get_registered (obj) &
 result(rslt)
      class (fmsDiagObject_type), intent(in) :: obj !< diag object
@@ -456,7 +456,7 @@ result(rslt)
      rslt = obj%registered
 end function get_registered
 !> @brief Gets mask variant
-!! @return true if there is a mask variant
+!! @return copy of mask variant
 function get_mask_variant (obj) &
 result(rslt)
      class (fmsDiagObject_type), intent(in) :: obj !< diag object
@@ -464,7 +464,7 @@ result(rslt)
      rslt = obj%mask_variant
 end function get_mask_variant
 !> @brief Gets local
-!! @return true if the variable is a local variable 
+!! @return copy of local
 function get_local (obj) &
 result(rslt)
      class (fmsDiagObject_type), intent(in) :: obj !< diag object
@@ -472,7 +472,7 @@ result(rslt)
      rslt = obj%local
 end function get_local
 !> @brief Gets initial time 
-!! @return the initial time
+!! @return copy of the initial time
 !! TODO
 !function get_init_time (obj) &
 !result(rslt)
@@ -481,7 +481,7 @@ end function get_local
 !
 !end function get_init_time
 !> @brief Gets vartype 
-!! @return  The integer related to the variable type
+!! @return copy of The integer related to the variable type
 function get_vartype (obj) &
 result(rslt)
      class (fmsDiagObject_type), intent(in) :: obj !< diag object
@@ -489,7 +489,7 @@ result(rslt)
      rslt = obj%vartype
 end function get_vartype
 !> @brief Gets varname
-!! @return the variable name
+!! @return copy of the variable name
 function get_varname (obj) &
 result(rslt)
      class (fmsDiagObject_type), intent(in) :: obj !< diag object
@@ -497,7 +497,7 @@ result(rslt)
      rslt = obj%varname
 end function get_varname
 !> @brief Gets longname
-!! @return the variable long name or a single string if there is no long name
+!! @return copy of the variable long name or a single string if there is no long name
 function get_longname (obj) &
 result(rslt)
      class (fmsDiagObject_type), intent(in) :: obj !< diag object
@@ -509,7 +509,7 @@ result(rslt)
      endif
 end function get_longname
 !> @brief Gets standname
-!! @return the standard name
+!! @return copy of the standard name or an empty string if standname is not allocated
 function get_standname (obj) &
 result(rslt)
      class (fmsDiagObject_type), intent(in) :: obj !< diag object
@@ -521,7 +521,7 @@ result(rslt)
      endif
 end function get_standname
 !> @brief Gets units
-!! @return the units
+!! @return copy of the units or an empty string if not allocated
 function get_units (obj) &
 result(rslt)
      class (fmsDiagObject_type), intent(in) :: obj !< diag object
@@ -533,7 +533,7 @@ result(rslt)
      endif
 end function get_units
 !> @brief Gets modname
-!! @return the module name that the variable is in
+!! @return copy of the module name that the variable is in or an empty string if not allocated
 function get_modname (obj) &
 result(rslt)
      class (fmsDiagObject_type), intent(in) :: obj !< diag object
@@ -545,7 +545,7 @@ result(rslt)
      endif
 end function get_modname
 !> @brief Gets realm
-!! @return the variables modeling realm
+!! @return copy of the variables modeling realm or an empty string if not allocated
 function get_realm (obj) &
 result(rslt)
      class (fmsDiagObject_type), intent(in) :: obj !< diag object
@@ -557,7 +557,7 @@ result(rslt)
      endif
 end function get_realm
 !> @brief Gets err_msg
-!! @return The error message stored in err_msg
+!! @return copy of The error message stored in err_msg or an empty string if not allocated
 function get_err_msg (obj) &
 result(rslt)
      class (fmsDiagObject_type), intent(in) :: obj !< diag object
@@ -569,7 +569,7 @@ result(rslt)
      endif
 end function get_err_msg
 !> @brief Gets interp_method
-!! @return The interpolation method
+!! @return copy of The interpolation method or an empty string if not allocated
 function get_interp_method (obj) &
 result(rslt)
      class (fmsDiagObject_type), intent(in) :: obj !< diag object
@@ -581,7 +581,7 @@ result(rslt)
      endif
 end function get_interp_method
 !> @brief Gets frequency
-!! @return the  frequency or DIAG_NULL if obj%frequency is not allocated
+!! @return copy of the  frequency or DIAG_NULL if obj%frequency is not allocated
 function get_frequency (obj) &
 result(rslt)
      class (fmsDiagObject_type), intent(in) :: obj !< diag object
@@ -595,7 +595,7 @@ result(rslt)
      endif
 end function get_frequency
 !> @brief Gets output_units
-!! @return The units of the output or DIAG_NULL is output_units is not allocated
+!! @return copy of The units of the output or DIAG_NULL is output_units is not allocated
 function get_output_units (obj) &
 result(rslt)
      class (fmsDiagObject_type), intent(in) :: obj !< diag object
@@ -609,7 +609,7 @@ result(rslt)
      endif
 end function get_output_units
 !> @brief Gets t
-!! @return t 
+!! @return copy of t 
 function get_t (obj) &
 result(rslt)
      class (fmsDiagObject_type), intent(in) :: obj !< diag object
@@ -621,7 +621,7 @@ result(rslt)
      endif
 end function get_t
 !> @brief Gets tile_count
-!! @return the number of tiles or -1 if tile_count is not allocated
+!! @return copy of the number of tiles or diag_null if tile_count is not allocated
 function get_tile_count (obj) &
 result(rslt)
      class (fmsDiagObject_type), intent(in) :: obj !< diag object
@@ -629,11 +629,11 @@ result(rslt)
      if (allocated(obj%tile_count)) then
        rslt = obj%tile_count
      else
-       rslt = -1
+       rslt = DIAG_NULL
      endif
 end function get_tile_count
 !> @brief Gets axis_ids
-!! @return The axis IDs array or a -1 if no axis IDs are set
+!! @return copy of The axis IDs array or a diag_null if no axis IDs are set
 function get_axis_ids (obj) &
 result(rslt)
      class (fmsDiagObject_type), intent(in) :: obj !< diag object
@@ -643,11 +643,11 @@ result(rslt)
        rslt = obj%axis_ids
      else
        allocate(rslt(1))
-       rslt = -1
+       rslt = diag_null
      endif
 end function get_axis_ids
 !> @brief Gets area
-!! @return the area
+!! @return copy of the area or diag_null if not allocated
 function get_area (obj) &
 result(rslt)
      class (fmsDiagObject_type), intent(in) :: obj !< diag object
@@ -655,11 +655,11 @@ result(rslt)
      if (allocated(obj%area)) then
        rslt = obj%area
      else
-       rslt = -1
+       rslt = diag_null
      endif
 end function get_area
 !> @brief Gets volume
-!! @return the volume or -1 if volume is not allocated
+!! @return copy of the volume or diag_null if volume is not allocated
 function get_volume (obj) &
 result(rslt)
      class (fmsDiagObject_type), intent(in) :: obj !< diag object
@@ -667,11 +667,11 @@ result(rslt)
      if (allocated(obj%volume)) then
        rslt = obj%volume
      else
-       rslt = -1
+       rslt = diag_null
      endif
 end function get_volume
 !> @brief Gets missing_value
-!! @return The missing value
+!! @return copy of The missing value
 function get_missing_value (obj) &
 result(rslt)
      class (fmsDiagObject_type), intent(in) :: obj !< diag object
@@ -701,7 +701,7 @@ result(rslt)
        endif
 end function get_missing_value
 !> @brief Gets data_range
-!! @return the data range
+!! @return copy of the data range
 function get_data_RANGE (obj) &
 result(rslt)
      class (fmsDiagObject_type), intent(in) :: obj !< diag object
@@ -731,7 +731,7 @@ result(rslt)
        endif
 end function get_data_RANGE
 !> @brief Gets axis
-!! @return axis information
+!! @return copy of axis information
 !! TODO
 !function get_axis (obj) &
 !result(rslt)
