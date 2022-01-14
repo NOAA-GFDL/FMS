@@ -41,8 +41,8 @@ module fms_string_utils_mod
 !> @}
 
   interface
-  !> @brief Sorts an array of pointers (my pointer) of size (p_size) in 
-  !! alphabetical order. 
+  !> @brief Sorts an array of pointers (my pointer) of size (p_size) in
+  !! alphabetical order.
   subroutine fms_sort_this(my_pointer, p_size, indices) bind(c)
     use iso_c_binding
 
@@ -98,7 +98,7 @@ module fms_string_utils_mod
     type(c_ptr), intent(in)       :: my_pointer(*) !< Array of c pointer
     integer,     intent(in)       :: narray        !< Length of the array
     character(len=:), allocatable :: my_array(:)
- 
+
     character(len=:), allocatable :: buffer !< Buffer to store a string
     integer                       :: i      !< For do loops
 
@@ -112,6 +112,7 @@ module fms_string_utils_mod
 
   !> @brief Searches through a SORTED array of pointers for a string
   !! @return the indices where the array was found
+  !! If the string was not found, indices will be indices(1) = -999
   !> <br>Example usage:
   !!     my_pointer = fms_array_to_pointer(my_array)
   !!     call fms_sort_this(my_pointer, n_array, indices)
@@ -131,10 +132,13 @@ module fms_string_utils_mod
 
     if (allocated(ifind)) call mpp_error(FATAL, "The indices array is already allocated. &
     Deallocate it before calling fms_find_my_string")
-    
+
     if (nfind .gt. 0) then
       allocate(ifind(nfind))
       read(buffer,*) ifind
+    else
+      allocate(ifind(1))
+      ifind = -999
     endif
 
   end function fms_find_my_string

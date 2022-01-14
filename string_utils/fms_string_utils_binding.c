@@ -83,16 +83,16 @@ char* fms_find_my_string_binding(char** arr, int *n, char *find_me, int *np)
   while(L != R){
     // Start looking in the midle of the array
 	  m = ceil((L + R) / 2);
-   //printf("L is set to %i from L=%i and R=%i \n", m, L, R);
+    //printf("L is set to %i from L=%i and R=%i \n", m, L, R);
 
-   //printf("Checking %i:%s \n", m, (arr[m]));
+    //printf("Checking %i:%s \n", m, (arr[m]));
 	  is_found = strcmp(find_me,(arr[m]));
 	  if (is_found == 0)
 	  {
       *np = 1;
       p = malloc(sizeof(int) * *np);
       p[*np-1] = m + 1; //Because fortran indices start at 1 ;)
-     //printf("Array found at %i %i %i \n", *np, m, p[*np-1]);
+      //printf("Array found at %i %i %i \n", *np, m, p[*np-1]);
 
       // The string can be found in multiple indices of the array, so look to the left of the index where the string
       // was initially found
@@ -105,7 +105,7 @@ char* fms_find_my_string_binding(char** arr, int *n, char *find_me, int *np)
             *np = *np + 1;
             p = realloc(p, sizeof(int) * *np);
             p[*np-1] = mm + 1;
-           //printf("Array found at %i %i %i\n", *np, mm, p[*np-1]);
+            //printf("Array found at %i %i %i\n", *np, mm, p[*np-1]);
           }
         } else {is_found = -999;} //Done looking
 		  }
@@ -121,7 +121,7 @@ char* fms_find_my_string_binding(char** arr, int *n, char *find_me, int *np)
             *np = *np + 1;
             p = realloc(p, sizeof(int) * *np);
 		        p[*np-1] = mm + 1;
-           //printf("Array found at %i %i %i\n", *np, mm, p[*np-1]);
+            //printf("Array found at %i %i %i\n", *np, mm, p[*np-1]);
          }
         } else {is_found = -999;} //Done looking}
       }
@@ -129,14 +129,14 @@ char* fms_find_my_string_binding(char** arr, int *n, char *find_me, int *np)
       // If find_me is greater than arr[m] (i.e find_me="potato" is greater than arr[m]="banana")
 	  } else if (is_found > 0) {
       // Set the lower bound to start in m (ignore the first half)
-  	  L = m;
-     //printf("L is set to %i \n", L);
+  	  L = m + 1;
+      //printf("L is set to %i \n", L);
     } else
     // If find_me is less than arr[m] (i.e find_me="potato" is less than arr[m] = "soccer")
     {
       // Set the upper bound to start in m (ignore the lower half)
       R = m;
-     //printf("R is set to %i \n", R);
+      //printf("R is set to %i \n", R);
 	}
 
 }

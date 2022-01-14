@@ -64,7 +64,7 @@ program test_fms_string_utils
   print *, "Checking if 'alpha' was found in the array at all the right places"
   call check_my_indices(ifind, (/1/), "alpha")
   deallocate(ifind)
-  
+
   ifind = fms_find_my_string(my_pointer, 10, "beta")
   print *, "Checking if 'beta' was found in the array at all the right places"
   call check_my_indices(ifind, (/2/), "beta")
@@ -77,7 +77,7 @@ program test_fms_string_utils
 
   ifind = fms_find_my_string(my_pointer, 10, "foxtrop")
   print *, "Checking if 'foxtrop' was found in the array at all the right places"
-  call check_my_indices(ifind, (/4,5/), "foxtrop")
+  call check_my_indices(ifind, (/5,4/), "foxtrop")
   deallocate(ifind)
 
   ifind = fms_find_my_string(my_pointer, 10, "golf")
@@ -93,6 +93,11 @@ program test_fms_string_utils
   ifind = fms_find_my_string(my_pointer, 10, "juliet")
   print *, "Checking if 'juliet' was found in the array at all the right places"
   call check_my_indices(ifind, (/10/), "juliet")
+  deallocate(ifind)
+
+  ifind = fms_find_my_string(my_pointer, 10, "tamales")
+  print *, "Checking if 'tamales' was found in the array at all the right places"
+  call check_my_indices(ifind, (/-999/), "tamales")
   deallocate(ifind)
 
   call fms_end()
