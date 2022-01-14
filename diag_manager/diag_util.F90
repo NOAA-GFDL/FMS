@@ -643,8 +643,8 @@ CONTAINS
     CHARACTER(len=1)   :: sep = '|'
     CHARACTER(len=256) :: axis_name, axes_list
     INTEGER :: i
-    REAL :: missing_value_use
-    REAL, DIMENSION(2) :: range_use
+    REAL :: missing_value_use !< Local copy of missing_value
+    REAL, DIMENSION(2) :: range_use !< Local copy of range
 
     IF ( .NOT.do_diag_field_log ) RETURN
     IF ( mpp_pe().NE.mpp_root_pe() ) RETURN
@@ -682,7 +682,7 @@ CONTAINS
           TYPE IS (real(kind=r4_kind))
              missing_value_use = missing_value
           TYPE IS (real(kind=r8_kind))
-             missing_value_use = missing_value
+             missing_value_use = real(missing_value)
           CLASS DEFAULT
              CALL error_mesg ('diag_util_mod::log_diag_field_info',&
                   & 'The missing_value is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)
@@ -698,7 +698,7 @@ CONTAINS
        TYPE IS (real(kind=r4_kind))
           range_use = range
        TYPE IS (real(kind=r8_kind))
-          range_use = range
+          range_use = real(range)
        CLASS DEFAULT
           CALL error_mesg ('diag_util_mod::log_diag_field_info',&
                & 'The range is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)

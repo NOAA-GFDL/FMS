@@ -258,7 +258,7 @@ CONTAINS
        TYPE IS (real(kind=r4_kind))
           diag_global_grid%aglo_lat = TRANSPOSE(aglo_lat)
        TYPE IS (real(kind=r8_kind))
-          diag_global_grid%aglo_lat = TRANSPOSE(aglo_lat)
+          diag_global_grid%aglo_lat = TRANSPOSE(real(aglo_lat))
        CLASS DEFAULT
           CALL error_mesg('diag_grid_mod::diag_grid_init',&
                & 'The a-grid latitude data is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)
@@ -268,7 +268,7 @@ CONTAINS
        TYPE IS (real(kind=r4_kind))
           diag_global_grid%aglo_lon = TRANSPOSE(aglo_lon)
        TYPE IS (real(kind=r8_kind))
-          diag_global_grid%aglo_lon = TRANSPOSE(aglo_lon)
+          diag_global_grid%aglo_lon = TRANSPOSE(real(aglo_lon))
        CLASS DEFAULT
           CALL error_mesg('diag_grid_mod::diag_grid_init',&
                & 'The a-grid longitude data is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)
@@ -278,7 +278,7 @@ CONTAINS
        TYPE IS (real(kind=r4_kind))
           diag_global_grid%aglo_lat = aglo_lat
        TYPE IS (real(kind=r8_kind))
-          diag_global_grid%aglo_lat = aglo_lat
+          diag_global_grid%aglo_lat = real(aglo_lat)
        CLASS DEFAULT
           CALL error_mesg('diag_grid_mod::diag_grid_init',&
                & 'The a-grid latitude data is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)
@@ -288,7 +288,7 @@ CONTAINS
        TYPE IS (real(kind=r4_kind))
           diag_global_grid%aglo_lon = aglo_lon
        TYPE IS (real(kind=r8_kind))
-          diag_global_grid%aglo_lon = aglo_lon
+          diag_global_grid%aglo_lon = real(aglo_lon)
        CLASS DEFAULT
           CALL error_mesg('diag_grid_mod::diag_grid_init',&
                & 'The a-grid longitude data is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)
@@ -299,7 +299,7 @@ CONTAINS
     TYPE IS (real(kind=r4_kind))
        diag_global_grid%glo_lat = glo_lat
     TYPE IS (real(kind=r8_kind))
-       diag_global_grid%glo_lat = glo_lat
+       diag_global_grid%glo_lat = real(glo_lat)
     CLASS DEFAULT
        CALL error_mesg('diag_grid_mod::diag_grid_init',&
             & 'The grid latitude data is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)
@@ -309,7 +309,7 @@ CONTAINS
     TYPE IS (real(kind=r4_kind))
        diag_global_grid%glo_lon = glo_lon
     TYPE IS (real(kind=r8_kind))
-       diag_global_grid%glo_lon = glo_lon
+       diag_global_grid%glo_lon = real(glo_lon)
     CLASS DEFAULT
        CALL error_mesg('diag_grid_mod::diag_grid_init',&
             & 'The grid longitude data is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)

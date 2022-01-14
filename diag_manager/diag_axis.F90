@@ -235,7 +235,7 @@ CONTAINS
     TYPE IS (real(kind=r4_kind))
        Axes(diag_axis_init)%data = DATA(1:axlen)
     TYPE IS (real(kind=r8_kind))
-       Axes(diag_axis_init)%data = DATA(1:axlen)
+       Axes(diag_axis_init)%data = real(DATA(1:axlen))
     CLASS DEFAULT
        CALL error_mesg('diag_axis_mod::diag_axis_init',&
             & 'The axis data is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)
@@ -491,7 +491,7 @@ CONTAINS
     ELSE
        SELECT TYPE (DATA)
        TYPE IS (real(kind=r4_kind))
-          DATA(1:Axes(id)%length) = Axes(id)%data(1:Axes(id)%length)
+          DATA(1:Axes(id)%length) = real(Axes(id)%data(1:Axes(id)%length), kind=r4_kind)
        TYPE IS (real(kind=r8_kind))
           DATA(1:Axes(id)%length) = Axes(id)%data(1:Axes(id)%length)
        CLASS DEFAULT

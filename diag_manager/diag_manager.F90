@@ -622,8 +622,8 @@ CONTAINS
     INTEGER,          OPTIONAL, INTENT(in) :: volume !< Field ID for the volume field associated with this field
     CHARACTER(len=*), OPTIONAL, INTENT(in) :: realm !< String to set as the value to the modeling_realm attribute
 
-    REAL :: missing_value_use
-    REAL, DIMENSION(2) :: range_use
+    REAL :: missing_value_use !< Local copy of missing_value
+    REAL, DIMENSION(2) :: range_use !< Local copy of range
     INTEGER :: field, num_axes, j, out_num, k
     INTEGER, DIMENSION(3) :: siz, local_siz, local_start, local_end ! indices of local domain of global axes
     INTEGER :: tile, file_num
@@ -646,7 +646,7 @@ CONTAINS
           TYPE IS (real(kind=r4_kind))
              missing_value_use = missing_value
           TYPE IS (real(kind=r8_kind))
-             missing_value_use = missing_value
+             missing_value_use = real(missing_value)
           CLASS DEFAULT
              CALL error_mesg ('diag_manager_mod::register_static_field',&
                   & 'The missing_value is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)
@@ -809,7 +809,7 @@ CONTAINS
        TYPE IS (real(kind=r4_kind))
           range_use = range
        TYPE IS (real(kind=r8_kind))
-          range_use = range
+          range_use = real(range)
        CLASS DEFAULT
           CALL error_mesg ('diag_manager_mod::register_static_field',&
                & 'The range is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)
@@ -1286,7 +1286,7 @@ CONTAINS
     TYPE(time_type), INTENT(in), OPTIONAL :: time
     CHARACTER(len=*), INTENT(out), OPTIONAL :: err_msg
 
-    REAL :: field_out(1, 1, 1)
+    REAL :: field_out(1, 1, 1) !< Local copy of field
 
     ! If diag_field_id is < 0 it means that this field is not registered, simply return
     IF ( diag_field_id <= 0 ) THEN
@@ -1299,7 +1299,7 @@ CONTAINS
     TYPE IS (real(kind=r4_kind))
        field_out(1, 1, 1) = field
     TYPE IS (real(kind=r8_kind))
-       field_out(1, 1, 1) = field
+       field_out(1, 1, 1) = real(field)
     CLASS DEFAULT
        CALL error_mesg ('diag_manager_mod::send_data_0d',&
             & 'The field is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)
@@ -1319,8 +1319,8 @@ CONTAINS
     LOGICAL, INTENT(in), DIMENSION(:), OPTIONAL :: mask
     CHARACTER(len=*), INTENT(out), OPTIONAL :: err_msg
 
-    REAL, DIMENSION(SIZE(field(:)), 1, 1) :: field_out
-    LOGICAL, DIMENSION(SIZE(field(:)), 1, 1) ::  mask_out
+    REAL, DIMENSION(SIZE(field(:)), 1, 1) :: field_out !< Local copy of field
+    LOGICAL, DIMENSION(SIZE(field(:)), 1, 1) ::  mask_out !< Local copy of mask
 
     ! If diag_field_id is < 0 it means that this field is not registered, simply return
     IF ( diag_field_id <= 0 ) THEN
@@ -1333,7 +1333,7 @@ CONTAINS
     TYPE IS (real(kind=r4_kind))
        field_out(:, 1, 1) = field
     TYPE IS (real(kind=r8_kind))
-       field_out(:, 1, 1) = field
+       field_out(:, 1, 1) = real(field)
     CLASS DEFAULT
        CALL error_mesg ('diag_manager_mod::send_data_1d',&
             & 'The field is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)
@@ -1349,9 +1349,9 @@ CONTAINS
     IF ( PRESENT(rmask) ) THEN
        SELECT TYPE (rmask)
        TYPE IS (real(kind=r4_kind))
-          WHERE (rmask < 0.5) mask_out(:, 1, 1) = .FALSE.
+          WHERE (rmask < 0.5_r4_kind) mask_out(:, 1, 1) = .FALSE.
        TYPE IS (real(kind=r8_kind))
-          WHERE (rmask < 0.5) mask_out(:, 1, 1) = .FALSE.
+          WHERE (rmask < 0.5_r8_kind) mask_out(:, 1, 1) = .FALSE.
        CLASS DEFAULT
           CALL error_mesg ('diag_manager_mod::send_data_1d',&
                & 'The rmask is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)
@@ -1388,8 +1388,8 @@ CONTAINS
     CLASS(*), INTENT(in), DIMENSION(:,:),OPTIONAL :: rmask
     CHARACTER(len=*), INTENT(out), OPTIONAL :: err_msg
 
-    REAL, DIMENSION(SIZE(field,1),SIZE(field,2),1) :: field_out
-    LOGICAL, DIMENSION(SIZE(field,1),SIZE(field,2),1) ::  mask_out
+    REAL, DIMENSION(SIZE(field,1),SIZE(field,2),1) :: field_out !< Local copy of field
+    LOGICAL, DIMENSION(SIZE(field,1),SIZE(field,2),1) ::  mask_out !< Local copy of mask
 
     ! If diag_field_id is < 0 it means that this field is not registered, simply return
     IF ( diag_field_id <= 0 ) THEN
@@ -1402,7 +1402,7 @@ CONTAINS
     TYPE IS (real(kind=r4_kind))
        field_out(:, :, 1) = field
     TYPE IS (real(kind=r8_kind))
-       field_out(:, :, 1) = field
+       field_out(:, :, 1) = real(field)
     CLASS DEFAULT
        CALL error_mesg ('diag_manager_mod::send_data_2d',&
             & 'The field is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)
@@ -1418,9 +1418,9 @@ CONTAINS
     IF ( PRESENT(rmask) ) THEN
        SELECT TYPE (rmask)
        TYPE IS (real(kind=r4_kind))
-          WHERE ( rmask < 0.5 ) mask_out(:, :, 1) = .FALSE.
+          WHERE ( rmask < 0.5_r4_kind ) mask_out(:, :, 1) = .FALSE.
        TYPE IS (real(kind=r8_kind))
-          WHERE ( rmask < 0.5 ) mask_out(:, :, 1) = .FALSE.
+          WHERE ( rmask < 0.5_r8_kind ) mask_out(:, :, 1) = .FALSE.
        CLASS DEFAULT
           CALL error_mesg ('diag_manager_mod::send_data_2d',&
                & 'The rmask is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)
@@ -1631,7 +1631,7 @@ CONTAINS
     CHARACTER(len=256) :: err_msg_local
     CHARACTER(len=128) :: error_string, error_string1
 
-    REAL, ALLOCATABLE, DIMENSION(:,:,:) :: field_out
+    REAL, ALLOCATABLE, DIMENSION(:,:,:) :: field_out !< Local copy of field
 
     ! If diag_field_id is < 0 it means that this field is not registered, simply return
     IF ( diag_field_id <= 0 ) THEN
@@ -1666,7 +1666,7 @@ CONTAINS
     TYPE IS (real(kind=r4_kind))
        field_out = field
     TYPE IS (real(kind=r8_kind))
-       field_out = field
+       field_out = real(field)
     CLASS DEFAULT
        CALL error_mesg ('diag_manager_mod::send_data_3d',&
             & 'The field is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)
@@ -1800,7 +1800,7 @@ CONTAINS
        TYPE IS (real(kind=r4_kind))
           weight1 = weight
        TYPE IS (real(kind=r8_kind))
-          weight1 = weight
+          weight1 = real(weight)
        CLASS DEFAULT
           CALL error_mesg ('diag_manager_mod::send_data_3d',&
                & 'The weight is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)

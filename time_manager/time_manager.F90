@@ -1218,7 +1218,7 @@ function real_to_time_type(x,err_msg) result(t)
   type is (real(kind=r4_kind))
     a = x/spd
   type is (real(kind=r8_kind))
-    a = x/spd
+    a = real(x)/spd
   class default
     call error_mesg('time_manager_mod::real_to_time_type',&
          & 'x is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)
@@ -1230,7 +1230,7 @@ function real_to_time_type(x,err_msg) result(t)
   type is (real(kind=r4_kind))
     a = x - real(days)*spd
   type is (real(kind=r8_kind))
-    a = x - real(days)*spd
+    a = real(x) - real(days)*spd
   class default
     call error_mesg('time_manager_mod::real_to_time_type',&
          & 'x is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)

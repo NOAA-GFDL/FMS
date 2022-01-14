@@ -488,8 +488,8 @@
  logical,intent(in),                      optional :: es_over_liq
  logical,intent(in),                      optional :: es_over_liq_and_ice
 
- real(kind=r4_kind), allocatable, dimension(:,:,:) :: esloc_r4, desat_r4, denom_r4
- real(kind=r8_kind), allocatable, dimension(:,:,:) :: esloc_r8, desat_r8, denom_r8
+ real(kind=r4_kind), allocatable, dimension(:,:,:) :: esloc_r4, desat_r4, denom_r4 !< Local variables to use when called with r4 arguments
+ real(kind=r8_kind), allocatable, dimension(:,:,:) :: esloc_r8, desat_r8, denom_r8 !< Local variables to use when called with r8 arguments
  integer :: i, j, k
  real    :: hc_loc
  logical :: valid_types = .false. !< For checking if variable types match
@@ -613,7 +613,7 @@
      type is (real(kind=r4_kind))
        hc_loc = hc
      type is (real(kind=r8_kind))
-       hc_loc = hc
+       hc_loc = real(hc)
      end select
    else
      hc_loc = 1.0
@@ -624,7 +624,7 @@
        select type (temp)
        type is (real(kind=r4_kind))
          call lookup_es2_des2_k (temp, esloc_r4, desat_r4, nbad)
-         desat_r4 = desat_r4*hc_loc
+         desat_r4 = desat_r4*real(hc_loc, kind=r4_kind)
        type is (real(kind=r8_kind))
          call lookup_es2_des2_k (temp, esloc_r8, desat_r8, nbad)
          desat_r8 = desat_r8*hc_loc
@@ -642,7 +642,7 @@
        select type (temp)
        type is (real(kind=r4_kind))
          call lookup_es3_des3_k (temp, esloc_r4, desat_r4, nbad)
-         desat_r4 = desat_r4*hc_loc
+         desat_r4 = desat_r4*real(hc_loc, kind=r4_kind)
        type is (real(kind=r8_kind))
          call lookup_es3_des3_k (temp, esloc_r8, desat_r8, nbad)
          desat_r8 = desat_r8*hc_loc
@@ -660,7 +660,7 @@
        select type (temp)
        type is (real(kind=r4_kind))
          call lookup_es_des_k (temp, esloc_r4, desat_r4, nbad)
-         desat_r4 = desat_r4*hc_loc
+         desat_r4 = desat_r4*real(hc_loc, kind=r4_kind)
        type is (real(kind=r8_kind))
          call lookup_es_des_k (temp, esloc_r8, desat_r8, nbad)
          desat_r8 = desat_r8*hc_loc
@@ -677,7 +677,7 @@
 
    select type (temp)
    type is (real(kind=r4_kind))
-     esloc_r4 = esloc_r4*hc_loc
+     esloc_r4 = esloc_r4*real(hc_loc, kind=r4_kind)
    type is (real(kind=r8_kind))
      esloc_r8 = esloc_r8*hc_loc
    end select
@@ -699,23 +699,23 @@
          if (present (q) .and. use_exact_qs) then
            select type (q)
            type is (real(kind=r4_kind))
-             qs = (1.0 + zvir*q)*eps*esloc_r4/press
+             qs = (1.0_r4_kind + real(zvir, kind=r4_kind)*q)*real(eps, kind=r4_kind)*esloc_r4/press
              if (present (dqsdT)) then
                select type (dqsdT)
                type is (real(kind=r4_kind))
-                 dqsdT = (1.0 + zvir*q)*eps*desat_r4/press
+                 dqsdT = (1.0_r4_kind + real(zvir, kind=r4_kind)*q)*real(eps, kind=r4_kind)*desat_r4/press
                end select
              endif
            end select
          else  ! (present(q))
-           denom_r4 = press - (1.0 - eps)*esloc_r4
+           denom_r4 = press - (1.0_r4_kind - real(eps, kind=r4_kind))*esloc_r4
            do k=1,size(qs,3)
              do j=1,size(qs,2)
                do i=1,size(qs,1)
-                 if (denom_r4(i,j,k) > 0.0) then
-                   qs(i,j,k) = eps*esloc_r4(i,j,k)/denom_r4(i,j,k)
+                 if (denom_r4(i,j,k) > 0.0_r4_kind) then
+                   qs(i,j,k) = real(eps, kind=r4_kind)*esloc_r4(i,j,k)/denom_r4(i,j,k)
                  else
-                   qs(i,j,k) = eps
+                   qs(i,j,k) = real(eps, kind=r4_kind)
                  endif
                end do
              end do
@@ -723,7 +723,7 @@
            if (present (dqsdT)) then
              select type (dqsdT)
              type is (real(kind=r4_kind))
-               dqsdT = eps*press*desat_r4/denom_r4**2
+               dqsdT = real(eps, kind=r4_kind)*press*desat_r4/denom_r4**2
              end select
            endif
          endif ! (present(q))
@@ -767,14 +767,14 @@
    else ! (nbad = 0)
      select type (qs)
      type is (real(kind=r4_kind))
-       qs = -999.
+       qs = -999.0_r4_kind
      type is (real(kind=r8_kind))
        qs = -999.
      end select
      if (present (dqsdT)) then
        select type (dqsdT)
        type is (real(kind=r4_kind))
-         dqsdT = -999.
+         dqsdT = -999.0_r4_kind
        type is (real(kind=r8_kind))
          dqsdT = -999.
        end select
@@ -782,7 +782,7 @@
      if (present (esat)) then
        select type (esat)
        type is (real(kind=r4_kind))
-         esat = -999.
+         esat = -999.0_r4_kind
        type is (real(kind=r8_kind))
          esat = -999.
        end select
@@ -813,8 +813,8 @@
  logical,intent(in),                    optional :: es_over_liq
  logical,intent(in),                    optional :: es_over_liq_and_ice
 
- real(kind=r4_kind), allocatable, dimension(:,:) :: esloc_r4, desat_r4, denom_r4
- real(kind=r8_kind), allocatable, dimension(:,:) :: esloc_r8, desat_r8, denom_r8
+ real(kind=r4_kind), allocatable, dimension(:,:) :: esloc_r4, desat_r4, denom_r4 !< Local variables to use when called with r4 arguments
+ real(kind=r8_kind), allocatable, dimension(:,:) :: esloc_r8, desat_r8, denom_r8 !< Local variables to use when called with r8 arguments
  integer :: i, j
  real    :: hc_loc
  logical :: valid_types = .false. !< For checking if variable types match
@@ -938,7 +938,7 @@
      type is (real(kind=r4_kind))
        hc_loc = hc
      type is (real(kind=r8_kind))
-       hc_loc = hc
+       hc_loc = real(hc)
      end select
    else
      hc_loc = 1.0
@@ -949,7 +949,7 @@
        select type (temp)
        type is (real(kind=r4_kind))
          call lookup_es2_des2_k (temp, esloc_r4, desat_r4, nbad)
-         desat_r4 = desat_r4*hc_loc
+         desat_r4 = desat_r4*real(hc_loc, kind=r4_kind)
        type is (real(kind=r8_kind))
          call lookup_es2_des2_k (temp, esloc_r8, desat_r8, nbad)
          desat_r8 = desat_r8*hc_loc
@@ -967,7 +967,7 @@
        select type (temp)
        type is (real(kind=r4_kind))
          call lookup_es3_des3_k (temp, esloc_r4, desat_r4, nbad)
-         desat_r4 = desat_r4*hc_loc
+         desat_r4 = desat_r4*real(hc_loc, kind=r4_kind)
        type is (real(kind=r8_kind))
          call lookup_es3_des3_k (temp, esloc_r8, desat_r8, nbad)
          desat_r8 = desat_r8*hc_loc
@@ -985,7 +985,7 @@
        select type (temp)
        type is (real(kind=r4_kind))
          call lookup_es_des_k (temp, esloc_r4, desat_r4, nbad)
-         desat_r4 = desat_r4*hc_loc
+         desat_r4 = desat_r4*real(hc_loc, kind=r4_kind)
        type is (real(kind=r8_kind))
          call lookup_es_des_k (temp, esloc_r8, desat_r8, nbad)
          desat_r8 = desat_r8*hc_loc
@@ -1002,7 +1002,7 @@
 
    select type (temp)
    type is (real(kind=r4_kind))
-     esloc_r4 = esloc_r4*hc_loc
+     esloc_r4 = esloc_r4*real(hc_loc, kind=r4_kind)
    type is (real(kind=r8_kind))
      esloc_r8 = esloc_r8*hc_loc
    end select
@@ -1024,29 +1024,29 @@
          if (present (q) .and. use_exact_qs) then
            select type (q)
            type is (real(kind=r4_kind))
-             qs = (1.0 + zvir*q)*eps*esloc_r4/press
+             qs = (1.0_r4_kind + real(zvir, kind=r4_kind)*q)*real(eps, kind=r4_kind)*esloc_r4/press
              if (present (dqsdT)) then
                select type (dqsdT)
                type is (real(kind=r4_kind))
-                 dqsdT = (1.0 + zvir*q)*eps*desat_r4/press
+                 dqsdT = (1.0_r4_kind + real(zvir, kind=r4_kind)*q)*real(eps, kind=r4_kind)*desat_r4/press
                end select
              endif
            end select
          else  ! (present(q))
-           denom_r4 = press - (1.0 - eps)*esloc_r4
+           denom_r4 = press - (1.0_r4_kind - real(eps, kind=r4_kind))*esloc_r4
            do j=1,size(qs,2)
              do i=1,size(qs,1)
-               if (denom_r4(i,j) > 0.0) then
-                 qs(i,j) = eps*esloc_r4(i,j)/denom_r4(i,j)
+               if (denom_r4(i,j) > 0.0_r4_kind) then
+                 qs(i,j) = real(eps, kind=r4_kind)*esloc_r4(i,j)/denom_r4(i,j)
                else
-                 qs(i,j) = eps
+                 qs(i,j) = real(eps, kind=r4_kind)
                endif
              end do
            end do
            if (present (dqsdT)) then
              select type (dqsdT)
              type is (real(kind=r4_kind))
-               dqsdT = eps*press*desat_r4/denom_r4**2
+               dqsdT = real(eps, kind=r4_kind)*press*desat_r4/denom_r4**2
              end select
            endif
          endif ! (present(q))
@@ -1088,14 +1088,14 @@
    else ! (nbad = 0)
      select type (qs)
      type is (real(kind=r4_kind))
-       qs = -999.
+       qs = -999.0_r4_kind
      type is (real(kind=r8_kind))
        qs = -999.
      end select
      if (present (dqsdT)) then
        select type (dqsdT)
        type is (real(kind=r4_kind))
-         dqsdT = -999.
+         dqsdT = -999.0_r4_kind
        type is (real(kind=r8_kind))
          dqsdT = -999.
        end select
@@ -1103,7 +1103,7 @@
      if (present (esat)) then
        select type (esat)
        type is (real(kind=r4_kind))
-         esat = -999.
+         esat = -999.0_r4_kind
        type is (real(kind=r8_kind))
          esat = -999.
        end select
@@ -1134,8 +1134,8 @@
  logical,intent(in),                 optional :: es_over_liq
  logical,intent(in),                 optional :: es_over_liq_and_ice
 
- real(kind=r4_kind), allocatable, dimension(:) :: esloc_r4, desat_r4, denom_r4
- real(kind=r8_kind), allocatable, dimension(:) :: esloc_r8, desat_r8, denom_r8
+ real(kind=r4_kind), allocatable, dimension(:) :: esloc_r4, desat_r4, denom_r4 !< Local variables to use when called with r4 arguments
+ real(kind=r8_kind), allocatable, dimension(:) :: esloc_r8, desat_r8, denom_r8 !< Local variables to use when called with r8 arguments
  integer :: i
  real    :: hc_loc
  logical :: valid_types = .false. !< For checking if variable types match
@@ -1259,7 +1259,7 @@
      type is (real(kind=r4_kind))
        hc_loc = hc
      type is (real(kind=r8_kind))
-       hc_loc = hc
+       hc_loc = real(hc)
      end select
    else
      hc_loc = 1.0
@@ -1270,7 +1270,7 @@
        select type (temp)
        type is (real(kind=r4_kind))
          call lookup_es2_des2_k (temp, esloc_r4, desat_r4, nbad)
-         desat_r4 = desat_r4*hc_loc
+         desat_r4 = desat_r4*real(hc_loc, kind=r4_kind)
        type is (real(kind=r8_kind))
          call lookup_es2_des2_k (temp, esloc_r8, desat_r8, nbad)
          desat_r8 = desat_r8*hc_loc
@@ -1288,7 +1288,7 @@
        select type (temp)
        type is (real(kind=r4_kind))
          call lookup_es3_des3_k (temp, esloc_r4, desat_r4, nbad)
-         desat_r4 = desat_r4*hc_loc
+         desat_r4 = desat_r4*real(hc_loc, kind=r4_kind)
        type is (real(kind=r8_kind))
          call lookup_es3_des3_k (temp, esloc_r8, desat_r8, nbad)
          desat_r8 = desat_r8*hc_loc
@@ -1306,7 +1306,7 @@
        select type (temp)
        type is (real(kind=r4_kind))
          call lookup_es_des_k (temp, esloc_r4, desat_r4, nbad)
-         desat_r4 = desat_r4*hc_loc
+         desat_r4 = desat_r4*real(hc_loc, kind=r4_kind)
        type is (real(kind=r8_kind))
          call lookup_es_des_k (temp, esloc_r8, desat_r8, nbad)
          desat_r8 = desat_r8*hc_loc
@@ -1323,7 +1323,7 @@
 
    select type (temp)
    type is (real(kind=r4_kind))
-     esloc_r4 = esloc_r4*hc_loc
+     esloc_r4 = esloc_r4*real(hc_loc, kind=r4_kind)
    type is (real(kind=r8_kind))
      esloc_r8 = esloc_r8*hc_loc
    end select
@@ -1345,27 +1345,27 @@
          if (present (q) .and. use_exact_qs) then
            select type (q)
            type is (real(kind=r4_kind))
-             qs = (1.0 + zvir*q)*eps*esloc_r4/press
+             qs = (1.0_r4_kind + real(zvir, kind=r4_kind)*q)*real(eps, kind=r4_kind)*esloc_r4/press
              if (present (dqsdT)) then
                select type (dqsdT)
                type is (real(kind=r4_kind))
-                 dqsdT = (1.0 + zvir*q)*eps*desat_r4/press
+                 dqsdT = (1.0_r4_kind + real(zvir, kind=r4_kind)*q)*real(eps, kind=r4_kind)*desat_r4/press
                end select
              endif
            end select
          else  ! (present(q))
-           denom_r4 = press - (1.0 - eps)*esloc_r4
+           denom_r4 = press - (1.0_r4_kind - real(eps, kind=r4_kind))*esloc_r4
            do i=1,size(qs,1)
-             if (denom_r4(i) >  0.0) then
-               qs(i) = eps*esloc_r4(i)/denom_r4(i)
+             if (denom_r4(i) >  0.0_r4_kind) then
+               qs(i) = real(eps, kind=r4_kind)*esloc_r4(i)/denom_r4(i)
              else
-               qs(i) = eps
+               qs(i) = real(eps, kind=r4_kind)
              endif
            end do
            if (present (dqsdT)) then
              select type (dqsdT)
              type is (real(kind=r4_kind))
-               dqsdT = eps*press*desat_r4/denom_r4**2
+               dqsdT = real(eps, kind=r4_kind)*press*desat_r4/denom_r4**2
              end select
            endif
          endif ! (present(q))
@@ -1405,14 +1405,14 @@
    else ! (nbad = 0)
      select type (qs)
      type is (real(kind=r4_kind))
-       qs = -999.
+       qs = -999.0_r4_kind
      type is (real(kind=r8_kind))
        qs = -999.
      end select
      if (present (dqsdT)) then
        select type (dqsdT)
        type is (real(kind=r4_kind))
-         dqsdT = -999.
+         dqsdT = -999.0_r4_kind
        type is (real(kind=r8_kind))
          dqsdT = -999.
        end select
@@ -1420,7 +1420,7 @@
      if (present (esat)) then
        select type (esat)
        type is (real(kind=r4_kind))
-         esat = -999.
+         esat = -999.0_r4_kind
        type is (real(kind=r8_kind))
          esat = -999.
        end select
@@ -1451,8 +1451,8 @@
  logical,intent(in),    optional :: es_over_liq
  logical,intent(in),    optional :: es_over_liq_and_ice
 
- real(kind=r4_kind) :: esloc_r4, desat_r4, denom_r4
- real(kind=r8_kind) :: esloc_r8, desat_r8, denom_r8
+ real(kind=r4_kind) :: esloc_r4, desat_r4, denom_r4 !< Local variables to use when called with r4 arguments
+ real(kind=r8_kind) :: esloc_r8, desat_r8, denom_r8 !< Local variables to use when called with r8 arguments
  real    :: hc_loc
  logical :: valid_types = .false. !< For checking if variable types match
 
@@ -1564,7 +1564,7 @@
      type is (real(kind=r4_kind))
        hc_loc = hc
      type is (real(kind=r8_kind))
-       hc_loc = hc
+       hc_loc = real(hc)
      end select
    else
      hc_loc = 1.0
@@ -1575,7 +1575,7 @@
        select type (temp)
        type is (real(kind=r4_kind))
          call lookup_es2_des2_k (temp, esloc_r4, desat_r4, nbad)
-         desat_r4 = desat_r4*hc_loc
+         desat_r4 = desat_r4*real(hc_loc, kind=r4_kind)
        type is (real(kind=r8_kind))
          call lookup_es2_des2_k (temp, esloc_r8, desat_r8, nbad)
          desat_r8 = desat_r8*hc_loc
@@ -1593,7 +1593,7 @@
        select type (temp)
        type is (real(kind=r4_kind))
          call lookup_es3_des3_k (temp, esloc_r4, desat_r4, nbad)
-         desat_r4 = desat_r4*hc_loc
+         desat_r4 = desat_r4*real(hc_loc, kind=r4_kind)
        type is (real(kind=r8_kind))
          call lookup_es3_des3_k (temp, esloc_r8, desat_r8, nbad)
          desat_r8 = desat_r8*hc_loc
@@ -1611,7 +1611,7 @@
        select type (temp)
        type is (real(kind=r4_kind))
          call lookup_es_des_k (temp, esloc_r4, desat_r4, nbad)
-         desat_r4 = desat_r4*hc_loc
+         desat_r4 = desat_r4*real(hc_loc, kind=r4_kind)
        type is (real(kind=r8_kind))
          call lookup_es_des_k (temp, esloc_r8, desat_r8, nbad)
          desat_r8 = desat_r8*hc_loc
@@ -1628,7 +1628,7 @@
 
    select type (temp)
    type is (real(kind=r4_kind))
-     esloc_r4 = esloc_r4*hc_loc
+     esloc_r4 = esloc_r4*real(hc_loc, kind=r4_kind)
    type is (real(kind=r8_kind))
      esloc_r8 = esloc_r8*hc_loc
    end select
@@ -1650,25 +1650,25 @@
          if (present (q) .and. use_exact_qs) then
            select type (q)
            type is (real(kind=r4_kind))
-             qs = (1.0 + zvir*q)*eps*esloc_r4/press
+             qs = (1.0_r4_kind + real(zvir, kind=r4_kind)*q)*real(eps, kind=r4_kind)*esloc_r4/press
              if (present (dqsdT)) then
                select type (dqsdT)
                type is (real(kind=r4_kind))
-                 dqsdT = (1.0 + zvir*q)*eps*desat_r4/press
+                 dqsdT = (1.0_r4_kind + real(zvir, kind=r4_kind)*q)*real(eps, kind=r4_kind)*desat_r4/press
                end select
              endif
            end select
          else  ! (present(q))
-           denom_r4 = press - (1.0 - eps)*esloc_r4
-           if (denom_r4 > 0.0) then
-             qs = eps*esloc_r4/denom_r4
+           denom_r4 = press - (1.0_r4_kind - real(eps, kind=r4_kind))*esloc_r4
+           if (denom_r4 > 0.0_r4_kind) then
+             qs = real(eps, kind=r4_kind)*esloc_r4/denom_r4
            else
-             qs = eps
+             qs = real(eps, kind=r4_kind)
            endif
            if (present (dqsdT)) then
              select type (dqsdT)
              type is (real(kind=r4_kind))
-               dqsdT = eps*press*desat_r4/denom_r4**2
+               dqsdT = real(eps, kind=r4_kind)*press*desat_r4/denom_r4**2
              end select
            endif
          endif ! (present(q))
@@ -1706,14 +1706,14 @@
    else ! (nbad = 0)
      select type (qs)
      type is (real(kind=r4_kind))
-       qs = -999.
+       qs = -999.0_r4_kind
      type is (real(kind=r8_kind))
        qs = -999.
      end select
      if (present (dqsdT)) then
        select type (dqsdT)
        type is (real(kind=r4_kind))
-         dqsdT = -999.
+         dqsdT = -999.0_r4_kind
        type is (real(kind=r8_kind))
          dqsdT = -999.
        end select
@@ -1721,7 +1721,7 @@
      if (present (esat)) then
        select type (esat)
        type is (real(kind=r4_kind))
-         esat = -999.
+         esat = -999.0_r4_kind
        type is (real(kind=r8_kind))
          esat = -999.
        end select
@@ -2121,8 +2121,8 @@
              nbad = nbad+1
            else
              del = tmp-dtres*real(ind)
-             esat(i,j,k) = TABLE(ind+1) + del*(DTABLE(ind+1)+del*D2TABLE(ind+1))
-             desat(i,j,k) = DTABLE(ind+1) + 2.*del*D2TABLE(ind+1)
+             esat(i,j,k) = real(( TABLE(ind+1) + del*(DTABLE(ind+1)+del*D2TABLE(ind+1)) ), kind=r4_kind)
+             desat(i,j,k) = real(( DTABLE(ind+1) + 2.*del*D2TABLE(ind+1) ), kind=r4_kind)
            endif
          enddo
          enddo
@@ -2137,7 +2137,7 @@
          do k = 1, size(temp,3)
          do j = 1, size(temp,2)
          do i = 1, size(temp,1)
-           tmp = temp(i,j,k)-tminl
+           tmp = real(temp(i,j,k))-tminl
            ind = int(dtinvl*(tmp+tepsl))
            if (ind < 0 .or. ind >= table_siz) then
              nbad = nbad+1
@@ -2205,8 +2205,8 @@
              nbad = nbad+1
            else
              del = tmp-dtres*real(ind)
-             esat(i,j) = TABLE(ind+1) + del*(DTABLE(ind+1)+del*D2TABLE(ind+1))
-             desat(i,j) = DTABLE(ind+1) + 2.*del*D2TABLE(ind+1)
+             esat(i,j) = real(( TABLE(ind+1) + del*(DTABLE(ind+1)+del*D2TABLE(ind+1)) ), kind=r4_kind)
+             desat(i,j) = real(( DTABLE(ind+1) + 2.*del*D2TABLE(ind+1) ), kind=r4_kind)
            endif
          enddo
          enddo
@@ -2219,7 +2219,7 @@
        type is (real(kind=r8_kind))
          do j = 1, size(temp,2)
          do i = 1, size(temp,1)
-           tmp = temp(i,j)-tminl
+           tmp = real(temp(i,j))-tminl
            ind = int(dtinvl*(tmp+tepsl))
            if (ind < 0 .or. ind >= table_siz) then
              nbad = nbad+1
@@ -2285,8 +2285,8 @@
              nbad = nbad+1
            else
              del = tmp-dtres*real(ind)
-             esat(i) = TABLE(ind+1) + del*(DTABLE(ind+1)+del*D2TABLE(ind+1))
-             desat(i) = DTABLE(ind+1) + 2.*del*D2TABLE(ind+1)
+             esat(i) = real(( TABLE(ind+1) + del*(DTABLE(ind+1)+del*D2TABLE(ind+1)) ), kind=r4_kind)
+             desat(i) = real(( DTABLE(ind+1) + 2.*del*D2TABLE(ind+1) ), kind=r4_kind)
            endif
          enddo
        end select
@@ -2297,7 +2297,7 @@
        select type (desat)
        type is (real(kind=r8_kind))
          do i = 1, size(temp,1)
-           tmp = temp(i)-tminl
+           tmp = real(temp(i))-tminl
            ind = int(dtinvl*(tmp+tepsl))
            if (ind < 0 .or. ind >= table_siz)  then
              nbad = nbad+1
@@ -2329,7 +2329,7 @@
    type is (real(kind=r4_kind))
      tmp = temp-tminl
    type is (real(kind=r8_kind))
-     tmp = temp-tminl
+     tmp = real(temp)-tminl
    class default
      call error_mesg ('sat_vapor_pres_k_mod::lookup_es_des_k_0d',&
           & 'temp is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)
@@ -2342,7 +2342,7 @@
      del = tmp-dtres*real(ind)
      select type (esat)
      type is (real(kind=r4_kind))
-       esat = TABLE(ind+1)+del*(DTABLE(ind+1)+del*D2TABLE(ind+1))
+       esat = real(( TABLE(ind+1)+del*(DTABLE(ind+1)+del*D2TABLE(ind+1)) ), kind=r4_kind)
      type is (real(kind=r8_kind))
        esat = TABLE(ind+1)+del*(DTABLE(ind+1)+del*D2TABLE(ind+1))
      class default
@@ -2352,7 +2352,7 @@
 
      select type (desat)
      type is (real(kind=r4_kind))
-       desat = DTABLE(ind+1) + 2.*del*D2TABLE(ind+1)
+       desat = real(( DTABLE(ind+1) + 2.*del*D2TABLE(ind+1) ), kind=r4_kind)
      type is (real(kind=r8_kind))
        desat = DTABLE(ind+1) + 2.*del*D2TABLE(ind+1)
      class default
@@ -2405,7 +2405,7 @@
            nbad = nbad+1
          else
            del = tmp-dtres*real(ind)
-           esat(i,j,k) = TABLE(ind+1)+del*(DTABLE(ind+1)+del*D2TABLE(ind+1))
+           esat(i,j,k) = real(( TABLE(ind+1)+del*(DTABLE(ind+1)+del*D2TABLE(ind+1)) ), kind=r4_kind)
          endif
        enddo
        enddo
@@ -2417,7 +2417,7 @@
        do k = 1, size(temp,3)
        do j = 1, size(temp,2)
        do i = 1, size(temp,1)
-         tmp = temp(i,j,k)-tminl
+         tmp = real(temp(i,j,k))-tminl
          ind = int(dtinvl*(tmp+tepsl))
          if (ind < 0 .or. ind >= table_siz)  then
            nbad = nbad+1
@@ -2475,7 +2475,7 @@
            nbad = nbad+1
          else
            del = tmp-dtres*real(ind)
-           desat(i,j,k) = DTABLE(ind+1) + 2.*del*D2TABLE(ind+1)
+           desat(i,j,k) = real(( DTABLE(ind+1) + 2.*del*D2TABLE(ind+1) ), kind=r4_kind)
          endif
        enddo
        enddo
@@ -2487,7 +2487,7 @@
        do k = 1, size(temp,3)
        do j = 1, size(temp,2)
        do i = 1, size(temp,1)
-         tmp = temp(i,j,k)-tminl
+         tmp = real(temp(i,j,k))-tminl
          ind = int(dtinvl*(tmp+tepsl))
          if (ind < 0 .or. ind >= table_siz)  then
            nbad = nbad+1
@@ -2543,7 +2543,7 @@
            nbad = nbad+1
          else
            del = tmp-dtres*real(ind)
-           desat(i,j) = DTABLE(ind+1) + 2.*del*D2TABLE(ind+1)
+           desat(i,j) = real(( DTABLE(ind+1) + 2.*del*D2TABLE(ind+1) ), kind=r4_kind)
          endif
        enddo
        enddo
@@ -2553,7 +2553,7 @@
      type is (real(kind=r8_kind))
        do j = 1, size(temp,2)
        do i = 1, size(temp,1)
-         tmp = temp(i,j)-tminl
+         tmp = real(temp(i,j))-tminl
          ind = int(dtinvl*(tmp+tepsl))
          if (ind < 0 .or. ind >= table_siz)  then
            nbad = nbad+1
@@ -2607,7 +2607,7 @@
            nbad = nbad+1
          else
            del = tmp-dtres*real(ind)
-           esat(i,j) = TABLE(ind+1)+del*(DTABLE(ind+1)+del*D2TABLE(ind+1))
+           esat(i,j) = real(( TABLE(ind+1)+del*(DTABLE(ind+1)+del*D2TABLE(ind+1)) ), kind=r4_kind)
          endif
        enddo
        enddo
@@ -2617,7 +2617,7 @@
      type is (real(kind=r8_kind))
        do j = 1, size(temp,2)
        do i = 1, size(temp,1)
-         tmp = temp(i,j)-tminl
+         tmp = real(temp(i,j))-tminl
          ind = int(dtinvl*(tmp+tepsl))
          if (ind < 0 .or. ind >= table_siz)  then
            nbad = nbad+1
@@ -2670,7 +2670,7 @@
            nbad = nbad+1
          else
            del = tmp-dtres*real(ind)
-           desat(i) = DTABLE(ind+1) + 2.*del*D2TABLE(ind+1)
+           desat(i) = real(( DTABLE(ind+1) + 2.*del*D2TABLE(ind+1) ), kind=r4_kind)
          endif
        enddo
      end select
@@ -2678,7 +2678,7 @@
      select type (desat)
      type is (real(kind=r8_kind))
        do i = 1, size(temp,1)
-         tmp = temp(i)-tminl
+         tmp = real(temp(i))-tminl
          ind = int(dtinvl*(tmp+tepsl))
          if (ind < 0 .or. ind >= table_siz)  then
            nbad = nbad+1
@@ -2730,7 +2730,7 @@
            nbad = nbad+1
          else
            del = tmp-dtres*real(ind)
-           esat(i) = TABLE(ind+1) + del*(DTABLE(ind+1) + del*D2TABLE(ind+1))
+           esat(i) = real(( TABLE(ind+1) + del*(DTABLE(ind+1) + del*D2TABLE(ind+1)) ), kind=r4_kind)
          endif
        enddo
      end select
@@ -2738,7 +2738,7 @@
      select type (esat)
      type is (real(kind=r8_kind))
        do i = 1, size(temp,1)
-         tmp = temp(i)-tminl
+         tmp = real(temp(i))-tminl
          ind = int(dtinvl*(tmp+tepsl))
          if (ind < 0 .or. ind >= table_siz)  then
            nbad = nbad+1
@@ -2765,7 +2765,7 @@
    type is (real(kind=r4_kind))
      tmp = temp-tminl
    type is (real(kind=r8_kind))
-     tmp = temp-tminl
+     tmp = real(temp)-tminl
    class default
      call error_mesg ('sat_vapor_pres_k_mod::lookup_des_k_0d',&
           & 'temp is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)
@@ -2778,7 +2778,7 @@
      del = tmp-dtres*real(ind)
      select type (desat)
      type is (real(kind=r4_kind))
-       desat = DTABLE(ind+1) + 2.*del*D2TABLE(ind+1)
+       desat = real(( DTABLE(ind+1) + 2.*del*D2TABLE(ind+1) ), kind=r4_kind)
      type is (real(kind=r8_kind))
        desat = DTABLE(ind+1) + 2.*del*D2TABLE(ind+1)
      class default
@@ -2802,7 +2802,7 @@
    type is (real(kind=r4_kind))
       tmp = temp-tminl
    type is (real(kind=r8_kind))
-      tmp = temp-tminl
+      tmp = real(temp)-tminl
    class default
       call error_mesg ('sat_vapor_pres_k_mod::lookup_k_0d',&
            & 'temp is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)
@@ -2815,7 +2815,7 @@
      del = tmp-dtres*real(ind)
      select type (esat)
      type is (real(kind=r4_kind))
-        esat = TABLE(ind+1) + del*(DTABLE(ind+1) + del*D2TABLE(ind+1))
+        esat = real(( TABLE(ind+1) + del*(DTABLE(ind+1) + del*D2TABLE(ind+1)) ), kind=r4_kind)
      type is (real(kind=r8_kind))
         esat = TABLE(ind+1) + del*(DTABLE(ind+1) + del*D2TABLE(ind+1))
      class default
@@ -2876,8 +2876,8 @@
              nbad = nbad+1
            else
              del = tmp-dtres*real(ind)
-             esat(i,j,k) = TABLE2(ind+1) + del*(DTABLE2(ind+1)+del*D2TABLE2(ind+1))
-             desat(i,j,k) = DTABLE2(ind+1) + 2.*del*D2TABLE2(ind+1)
+             esat(i,j,k) = real(( TABLE2(ind+1) + del*(DTABLE2(ind+1)+del*D2TABLE2(ind+1)) ), kind=r4_kind)
+             desat(i,j,k) = real(( DTABLE2(ind+1) + 2.*del*D2TABLE2(ind+1) ), kind=r4_kind)
            endif
          enddo
          enddo
@@ -2892,7 +2892,7 @@
          do k = 1, size(temp,3)
          do j = 1, size(temp,2)
          do i = 1, size(temp,1)
-           tmp = temp(i,j,k)-tminl
+           tmp = real(temp(i,j,k))-tminl
            ind = int(dtinvl*(tmp+tepsl))
            if (ind < 0 .or. ind >= table_siz) then
              nbad = nbad+1
@@ -2960,8 +2960,8 @@
              nbad = nbad+1
            else
              del = tmp-dtres*real(ind)
-             esat(i,j) = TABLE2(ind+1) + del*(DTABLE2(ind+1)+del*D2TABLE2(ind+1))
-             desat(i,j) = DTABLE2(ind+1) + 2.*del*D2TABLE2(ind+1)
+             esat(i,j) = real(( TABLE2(ind+1) + del*(DTABLE2(ind+1)+del*D2TABLE2(ind+1)) ), kind=r4_kind)
+             desat(i,j) = real(( DTABLE2(ind+1) + 2.*del*D2TABLE2(ind+1) ), kind=r4_kind)
            endif
          enddo
          enddo
@@ -2974,7 +2974,7 @@
        type is (real(kind=r8_kind))
          do j = 1, size(temp,2)
          do i = 1, size(temp,1)
-           tmp = temp(i,j)-tminl
+           tmp = real(temp(i,j))-tminl
            ind = int(dtinvl*(tmp+tepsl))
            if (ind < 0 .or. ind >= table_siz)  then
              nbad = nbad+1
@@ -3040,8 +3040,8 @@
              nbad = nbad+1
            else
              del = tmp-dtres*real(ind)
-             esat(i) = TABLE2(ind+1) + del*(DTABLE2(ind+1)+del*D2TABLE2(ind+1))
-             desat(i) = DTABLE2(ind+1) + 2.*del*D2TABLE2(ind+1)
+             esat(i) = real(( TABLE2(ind+1) + del*(DTABLE2(ind+1)+del*D2TABLE2(ind+1)) ), kind=r4_kind)
+             desat(i) = real(( DTABLE2(ind+1) + 2.*del*D2TABLE2(ind+1) ), kind=r4_kind)
            endif
          enddo
        end select
@@ -3052,7 +3052,7 @@
        select type (desat)
        type is (real(kind=r8_kind))
          do i = 1, size(temp,1)
-           tmp = temp(i)-tminl
+           tmp = real(temp(i))-tminl
            ind = int(dtinvl*(tmp+tepsl))
            if (ind < 0 .or. ind >= table_siz)  then
              nbad = nbad+1
@@ -3084,7 +3084,7 @@
    type is (real(kind=r4_kind))
      tmp = temp-tminl
    type is (real(kind=r8_kind))
-     tmp = temp-tminl
+     tmp = real(temp)-tminl
    class default
      call error_mesg ('sat_vapor_pres_k_mod::lookup_es2_des2_k_0d',&
           & 'temp is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)
@@ -3097,7 +3097,7 @@
      del = tmp-dtres*real(ind)
      select type (esat)
      type is (real(kind=r4_kind))
-       esat = TABLE2(ind+1) + del*(DTABLE2(ind+1)+del*D2TABLE2(ind+1))
+       esat = real(( TABLE2(ind+1) + del*(DTABLE2(ind+1)+del*D2TABLE2(ind+1)) ), kind=r4_kind)
      type is (real(kind=r8_kind))
        esat = TABLE2(ind+1) + del*(DTABLE2(ind+1)+del*D2TABLE2(ind+1))
      class default
@@ -3107,7 +3107,7 @@
 
      select type (desat)
      type is (real(kind=r4_kind))
-       desat = DTABLE2(ind+1) + 2.*del*D2TABLE2(ind+1)
+       desat = real(( DTABLE2(ind+1) + 2.*del*D2TABLE2(ind+1) ), kind=r4_kind)
      type is (real(kind=r8_kind))
        desat = DTABLE2(ind+1) + 2.*del*D2TABLE2(ind+1)
      class default
@@ -3160,7 +3160,7 @@
            nbad = nbad+1
          else
            del = tmp-dtres*real(ind)
-           esat(i,j,k) = TABLE2(ind+1)+del*(DTABLE2(ind+1)+del*D2TABLE2(ind+1))
+           esat(i,j,k) = real(( TABLE2(ind+1)+del*(DTABLE2(ind+1)+del*D2TABLE2(ind+1)) ), kind=r4_kind)
          endif
        enddo
        enddo
@@ -3172,7 +3172,7 @@
        do k = 1, size(temp,3)
        do j = 1, size(temp,2)
        do i = 1, size(temp,1)
-         tmp = temp(i,j,k)-tminl
+         tmp = real(temp(i,j,k))-tminl
          ind = int(dtinvl*(tmp+tepsl))
          if (ind < 0 .or. ind >= table_siz)  then
            nbad = nbad+1
@@ -3230,7 +3230,7 @@
            nbad = nbad+1
          else
            del = tmp-dtres*real(ind)
-           desat(i,j,k) = DTABLE2(ind+1) + 2.*del*D2TABLE2(ind+1)
+           desat(i,j,k) = real(( DTABLE2(ind+1) + 2.*del*D2TABLE2(ind+1) ), kind=r4_kind)
          endif
        enddo
        enddo
@@ -3242,7 +3242,7 @@
        do k = 1, size(temp,3)
        do j = 1, size(temp,2)
        do i = 1, size(temp,1)
-         tmp = temp(i,j,k)-tminl
+         tmp = real(temp(i,j,k))-tminl
          ind = int(dtinvl*(tmp+tepsl))
          if (ind < 0 .or. ind >= table_siz)  then
            nbad = nbad+1
@@ -3298,7 +3298,7 @@
            nbad = nbad+1
          else
            del = tmp-dtres*real(ind)
-           desat(i,j) = DTABLE2(ind+1) + 2.*del*D2TABLE2(ind+1)
+           desat(i,j) = real(( DTABLE2(ind+1) + 2.*del*D2TABLE2(ind+1) ), kind=r4_kind)
          endif
        enddo
        enddo
@@ -3308,7 +3308,7 @@
      type is (real(kind=r8_kind))
        do j = 1, size(temp,2)
        do i = 1, size(temp,1)
-         tmp = temp(i,j)-tminl
+         tmp = real(temp(i,j))-tminl
          ind = int(dtinvl*(tmp+tepsl))
          if (ind < 0 .or. ind >= table_siz)  then
            nbad = nbad+1
@@ -3362,7 +3362,7 @@
            nbad = nbad+1
          else
            del = tmp-dtres*real(ind)
-           esat(i,j) = TABLE2(ind+1)+del*(DTABLE2(ind+1)+del*D2TABLE2(ind+1))
+           esat(i,j) = real(( TABLE2(ind+1)+del*(DTABLE2(ind+1)+del*D2TABLE2(ind+1)) ), kind=r4_kind)
          endif
        enddo
        enddo
@@ -3372,7 +3372,7 @@
      type is (real(kind=r8_kind))
        do j = 1, size(temp,2)
        do i = 1, size(temp,1)
-         tmp = temp(i,j)-tminl
+         tmp = real(temp(i,j))-tminl
          ind = int(dtinvl*(tmp+tepsl))
          if (ind < 0 .or. ind >= table_siz)  then
            nbad = nbad+1
@@ -3425,7 +3425,7 @@
            nbad = nbad+1
          else
            del = tmp-dtres*real(ind)
-           desat(i) = DTABLE2(ind+1) + 2.*del*D2TABLE2(ind+1)
+           desat(i) = real(( DTABLE2(ind+1) + 2.*del*D2TABLE2(ind+1) ), kind=r4_kind)
          endif
        enddo
      end select
@@ -3433,7 +3433,7 @@
      select type (desat)
      type is (real(kind=r8_kind))
        do i = 1, size(temp,1)
-         tmp = temp(i)-tminl
+         tmp = real(temp(i))-tminl
          ind = int(dtinvl*(tmp+tepsl))
          if (ind < 0 .or. ind >= table_siz)  then
            nbad = nbad+1
@@ -3485,7 +3485,7 @@
            nbad = nbad+1
          else
            del = tmp-dtres*real(ind)
-           esat(i) = TABLE2(ind+1) + del*(DTABLE2(ind+1) + del*D2TABLE2(ind+1))
+           esat(i) = real(( TABLE2(ind+1) + del*(DTABLE2(ind+1) + del*D2TABLE2(ind+1)) ), kind=r4_kind)
          endif
        enddo
      end select
@@ -3493,7 +3493,7 @@
      select type (esat)
      type is (real(kind=r8_kind))
        do i = 1, size(temp,1)
-         tmp = temp(i)-tminl
+         tmp = real(temp(i))-tminl
          ind = int(dtinvl*(tmp+tepsl))
          if (ind < 0 .or. ind >= table_siz)  then
            nbad = nbad+1
@@ -3520,7 +3520,7 @@
    type is (real(kind=r4_kind))
      tmp = temp-tminl
    type is (real(kind=r8_kind))
-     tmp = temp-tminl
+     tmp = real(temp)-tminl
    class default
      call error_mesg ('sat_vapor_pres_k_mod::lookup_des2_k_0d',&
           & 'temp is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)
@@ -3533,7 +3533,7 @@
      del = tmp-dtres*real(ind)
      select type (desat)
      type is (real(kind=r4_kind))
-       desat = DTABLE2(ind+1) + 2.*del*D2TABLE2(ind+1)
+       desat = real(( DTABLE2(ind+1) + 2.*del*D2TABLE2(ind+1) ), kind=r4_kind)
      type is (real(kind=r8_kind))
        desat = DTABLE2(ind+1) + 2.*del*D2TABLE2(ind+1)
      class default
@@ -3557,7 +3557,7 @@
    type is (real(kind=r4_kind))
      tmp = temp-tminl
    type is (real(kind=r8_kind))
-     tmp = temp-tminl
+     tmp = real(temp)-tminl
    class default
       call error_mesg ('sat_vapor_pres_k_mod::lookup_es2_k_0d',&
            & 'temp is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)
@@ -3570,7 +3570,7 @@
      del = tmp-dtres*real(ind)
      select type (esat)
      type is (real(kind=r4_kind))
-       esat = TABLE2(ind+1) + del*(DTABLE2(ind+1) + del*D2TABLE2(ind+1))
+       esat = real(( TABLE2(ind+1) + del*(DTABLE2(ind+1) + del*D2TABLE2(ind+1))), kind=r4_kind)
      type is (real(kind=r8_kind))
        esat = TABLE2(ind+1) + del*(DTABLE2(ind+1) + del*D2TABLE2(ind+1))
      class default
@@ -3633,8 +3633,8 @@
              nbad = nbad+1
            else
              del = tmp-dtres*real(ind)
-             esat(i,j,k) = TABLE3(ind+1) + del*(DTABLE3(ind+1)+del*D2TABLE3(ind+1))
-             desat(i,j,k) = DTABLE3(ind+1) + 2.*del*D2TABLE3(ind+1)
+             esat(i,j,k) = real(( TABLE3(ind+1) + del*(DTABLE3(ind+1)+del*D2TABLE3(ind+1)) ), kind=r4_kind)
+             desat(i,j,k) = real(( DTABLE3(ind+1) + 2.*del*D2TABLE3(ind+1) ), kind=r4_kind)
            endif
          enddo
          enddo
@@ -3649,7 +3649,7 @@
          do k = 1, size(temp,3)
          do j = 1, size(temp,2)
          do i = 1, size(temp,1)
-           tmp = temp(i,j,k)-tminl
+           tmp = real(temp(i,j,k))-tminl
            ind = int(dtinvl*(tmp+tepsl))
            if (ind < 0 .or. ind >= table_siz) then
              nbad = nbad+1
@@ -3717,8 +3717,8 @@
              nbad = nbad+1
            else
              del = tmp-dtres*real(ind)
-             esat(i,j) = TABLE3(ind+1) + del*(DTABLE3(ind+1)+del*D2TABLE3(ind+1))
-             desat(i,j) = DTABLE3(ind+1) + 2.*del*D2TABLE3(ind+1)
+             esat(i,j) = real(( TABLE3(ind+1) + del*(DTABLE3(ind+1)+del*D2TABLE3(ind+1)) ), kind=r4_kind)
+             desat(i,j) = real(( DTABLE3(ind+1) + 2.*del*D2TABLE3(ind+1) ), kind=r4_kind)
            endif
          enddo
          enddo
@@ -3731,7 +3731,7 @@
        type is (real(kind=r8_kind))
          do j = 1, size(temp,2)
          do i = 1, size(temp,1)
-           tmp = temp(i,j)-tminl
+           tmp = real(temp(i,j))-tminl
            ind = int(dtinvl*(tmp+tepsl))
            if (ind < 0 .or. ind >= table_siz)  then
              nbad = nbad+1
@@ -3797,8 +3797,8 @@
              nbad = nbad+1
            else
              del = tmp-dtres*real(ind)
-             esat(i) = TABLE3(ind+1) + del*(DTABLE3(ind+1)+del*D2TABLE3(ind+1))
-             desat(i) = DTABLE3(ind+1) + 2.*del*D2TABLE3(ind+1)
+             esat(i) = real(( TABLE3(ind+1) + del*(DTABLE3(ind+1)+del*D2TABLE3(ind+1)) ), kind=r4_kind)
+             desat(i) = real(( DTABLE3(ind+1) + 2.*del*D2TABLE3(ind+1) ), kind=r4_kind)
            endif
          enddo
        end select
@@ -3809,7 +3809,7 @@
        select type (desat)
        type is (real(kind=r8_kind))
          do i = 1, size(temp,1)
-           tmp = temp(i)-tminl
+           tmp = real(temp(i))-tminl
            ind = int(dtinvl*(tmp+tepsl))
            if (ind < 0 .or. ind >= table_siz)  then
              nbad = nbad+1
@@ -3841,7 +3841,7 @@
    type is (real(kind=r4_kind))
      tmp = temp-tminl
    type is (real(kind=r8_kind))
-     tmp = temp-tminl
+     tmp = real(temp)-tminl
    class default
      call error_mesg ('sat_vapor_pres_k_mod::lookup_es3_des3_k_0d',&
           & 'temp is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)
@@ -3854,7 +3854,7 @@
      del = tmp-dtres*real(ind)
      select type (esat)
      type is (real(kind=r4_kind))
-       esat = TABLE3(ind+1) + del*(DTABLE3(ind+1)+del*D2TABLE3(ind+1))
+       esat = real(( TABLE3(ind+1) + del*(DTABLE3(ind+1)+del*D2TABLE3(ind+1)) ), kind=r4_kind)
      type is (real(kind=r8_kind))
        esat = TABLE3(ind+1) + del*(DTABLE3(ind+1)+del*D2TABLE3(ind+1))
      class default
@@ -3864,7 +3864,7 @@
 
      select type (desat)
      type is (real(kind=r4_kind))
-       desat = DTABLE3(ind+1) + 2.*del*D2TABLE3(ind+1)
+       desat = real(( DTABLE3(ind+1) + 2.*del*D2TABLE3(ind+1) ), kind=r4_kind)
      type is (real(kind=r8_kind))
        desat = DTABLE3(ind+1) + 2.*del*D2TABLE3(ind+1)
      class default
@@ -3917,7 +3917,7 @@
            nbad = nbad+1
          else
            del = tmp-dtres*real(ind)
-           esat(i,j,k) = TABLE3(ind+1)+del*(DTABLE3(ind+1)+del*D2TABLE3(ind+1))
+           esat(i,j,k) = real(( TABLE3(ind+1)+del*(DTABLE3(ind+1)+del*D2TABLE3(ind+1)) ), kind=r4_kind)
          endif
        enddo
        enddo
@@ -3929,7 +3929,7 @@
        do k = 1, size(temp,3)
        do j = 1, size(temp,2)
        do i = 1, size(temp,1)
-         tmp = temp(i,j,k)-tminl
+         tmp = real(temp(i,j,k))-tminl
          ind = int(dtinvl*(tmp+tepsl))
          if (ind < 0 .or. ind >= table_siz)  then
            nbad = nbad+1
@@ -3987,7 +3987,7 @@
            nbad = nbad+1
          else
            del = tmp-dtres*real(ind)
-           desat(i,j,k) = DTABLE3(ind+1) + 2.*del*D2TABLE3(ind+1)
+           desat(i,j,k) = real(( DTABLE3(ind+1) + 2.*del*D2TABLE3(ind+1) ), kind=r4_kind)
          endif
        enddo
        enddo
@@ -3999,7 +3999,7 @@
        do k = 1, size(temp,3)
        do j = 1, size(temp,2)
        do i = 1, size(temp,1)
-         tmp = temp(i,j,k)-tminl
+         tmp = real(temp(i,j,k))-tminl
          ind = int(dtinvl*(tmp+tepsl))
          if (ind < 0 .or. ind >= table_siz)  then
            nbad = nbad+1
@@ -4055,7 +4055,7 @@
            nbad = nbad+1
          else
            del = tmp-dtres*real(ind)
-           desat(i,j) = DTABLE3(ind+1) + 2.*del*D2TABLE3(ind+1)
+           desat(i,j) = real(( DTABLE3(ind+1) + 2.*del*D2TABLE3(ind+1) ), kind=r4_kind)
          endif
        enddo
        enddo
@@ -4065,7 +4065,7 @@
      type is (real(kind=r8_kind))
        do j = 1, size(temp,2)
        do i = 1, size(temp,1)
-         tmp = temp(i,j)-tminl
+         tmp = real(temp(i,j))-tminl
          ind = int(dtinvl*(tmp+tepsl))
          if (ind < 0 .or. ind >= table_siz)  then
            nbad = nbad+1
@@ -4119,7 +4119,7 @@
            nbad = nbad+1
          else
            del = tmp-dtres*real(ind)
-           esat(i,j) = TABLE3(ind+1)+del*(DTABLE3(ind+1)+del*D2TABLE3(ind+1))
+           esat(i,j) = real(( TABLE3(ind+1)+del*(DTABLE3(ind+1)+del*D2TABLE3(ind+1)) ), kind=r4_kind)
          endif
        enddo
        enddo
@@ -4129,7 +4129,7 @@
      type is (real(kind=r8_kind))
        do j = 1, size(temp,2)
        do i = 1, size(temp,1)
-         tmp = temp(i,j)-tminl
+         tmp = real(temp(i,j))-tminl
          ind = int(dtinvl*(tmp+tepsl))
          if (ind < 0 .or. ind >= table_siz)  then
            nbad = nbad+1
@@ -4182,7 +4182,7 @@
            nbad = nbad+1
          else
            del = tmp-dtres*real(ind)
-           desat(i) = DTABLE3(ind+1) + 2.*del*D2TABLE3(ind+1)
+           desat(i) = real(( DTABLE3(ind+1) + 2.*del*D2TABLE3(ind+1) ), kind=r4_kind)
          endif
        enddo
      end select
@@ -4190,7 +4190,7 @@
      select type (desat)
      type is (real(kind=r8_kind))
        do i = 1, size(temp,1)
-         tmp = temp(i)-tminl
+         tmp = real(temp(i))-tminl
          ind = int(dtinvl*(tmp+tepsl))
          if (ind < 0 .or. ind >= table_siz)  then
            nbad = nbad+1
@@ -4242,7 +4242,7 @@
            nbad = nbad+1
          else
            del = tmp-dtres*real(ind)
-           esat(i) = TABLE3(ind+1) + del*(DTABLE3(ind+1) + del*D2TABLE3(ind+1))
+           esat(i) = real(( TABLE3(ind+1) + del*(DTABLE3(ind+1) + del*D2TABLE3(ind+1)) ), kind=r4_kind)
          endif
        enddo
      end select
@@ -4250,7 +4250,7 @@
      select type (esat)
      type is (real(kind=r8_kind))
        do i = 1, size(temp,1)
-         tmp = temp(i)-tminl
+         tmp = real(temp(i))-tminl
          ind = int(dtinvl*(tmp+tepsl))
          if (ind < 0 .or. ind >= table_siz)  then
            nbad = nbad+1
@@ -4277,7 +4277,7 @@
    type is (real(kind=r4_kind))
      tmp = temp-tminl
    type is (real(kind=r8_kind))
-     tmp = temp-tminl
+     tmp = real(temp)-tminl
    class default
      call error_mesg ('sat_vapor_pres_k_mod::lookup_des3_k_0d',&
           & 'temp is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)
@@ -4290,7 +4290,7 @@
      del = tmp-dtres*real(ind)
      select type (desat)
      type is (real(kind=r4_kind))
-       desat = DTABLE3(ind+1) + 2.*del*D2TABLE3(ind+1)
+       desat = real(( DTABLE3(ind+1) + 2.*del*D2TABLE3(ind+1) ), kind=r4_kind)
      type is (real(kind=r8_kind))
        desat = DTABLE3(ind+1) + 2.*del*D2TABLE3(ind+1)
      class default
@@ -4314,7 +4314,7 @@
    type is (real(kind=r4_kind))
      tmp = temp-tminl
    type is (real(kind=r8_kind))
-     tmp = temp-tminl
+     tmp = real(temp)-tminl
    class default
      call error_mesg ('sat_vapor_pres_k_mod::lookup_es3_k_0d',&
           & 'temp is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)
@@ -4327,7 +4327,7 @@
      del = tmp-dtres*real(ind)
      select type (esat)
      type is (real(kind=r4_kind))
-       esat = TABLE3(ind+1) + del*(DTABLE3(ind+1) + del*D2TABLE3(ind+1))
+       esat = real(( TABLE3(ind+1) + del*(DTABLE3(ind+1) + del*D2TABLE3(ind+1))), kind=r4_kind)
      type is (real(kind=r8_kind))
        esat = TABLE3(ind+1) + del*(DTABLE3(ind+1) + del*D2TABLE3(ind+1))
      class default
