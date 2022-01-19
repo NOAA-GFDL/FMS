@@ -2926,7 +2926,7 @@ function length_of_year_gregorian()
 
 type(time_type) :: length_of_year_gregorian
 
-length_of_year_gregorian = set_time(20952, 365)
+length_of_year_gregorian = set_time(20952, 365) !20952 = 86500 * (days_in_400_yrs/400. - (days_in_400_yrs/400))
 
 end function length_of_year_gregorian
 
@@ -2936,7 +2936,7 @@ function length_of_year_julian()
 
 type(time_type) :: length_of_year_julian
 
-length_of_year_julian = set_time(21600, 365)
+length_of_year_julian = set_time(21600, 365) !21600 = (24/4) * 60 * 60
 
 end function length_of_year_julian
 

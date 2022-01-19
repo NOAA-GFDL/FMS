@@ -373,10 +373,10 @@ subroutine mpp_shift_nest_domains(nest_domain, domain, delta_i_coarse, delta_j_c
   integer,                    intent(in   ) :: delta_j_coarse(:) !< Array of deltas of coarse grid in y direction
   integer,          optional, intent(in   ) :: extra_halo  !< Extra halo size
 
-  integer                                   :: n, l, m, my_tile_coarse
+  integer                                   :: n, l, my_tile_coarse
   integer                                   :: num_nest
-  integer                                   :: extra_halo_local, npes_nest_top
-  integer                                   :: nnest, nlevels, ntiles_top, ntiles, pos
+  integer                                   :: extra_halo_local
+  integer                                   :: nlevels, pos
   integer, pointer                          :: nest_level(:)
 
   nest_level => nest_domain%nest_level

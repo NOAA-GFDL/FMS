@@ -219,10 +219,6 @@ private
   public :: mpp_gather, mpp_scatter, mpp_alltoall
   public :: mpp_type, mpp_byte, mpp_type_create, mpp_type_free
 
-  !--- declare external routines used
-  external MPI_BCAST, MPI_ISEND, MPI_RECV, MPI_IRECV, MPI_ALLREDUCE, MPI_ALLTOALL, &
-           MPI_ALLTOALLV, MPI_ALLTOALLW
-
   !*********************************************************************
   !
   !    public data type
