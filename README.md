@@ -63,6 +63,20 @@ infrastructural changes to enable such developments are within the scope of FMS.
 The collaborative software review process of contributed models is therefore an
 essential facet of FMS.
 
+## Dependencies and installation
+
+The following external libraries are required when building libFMS
+
+* NetCDF C and Fortran (77/90) headers and libraries
+* Fortran 2003 standard compiler
+* Fortran compiler that supports Cray Pointer
+* MPI C and Fortran headers and libraries (optional)
+* Libyaml header and libraries (optional)
+* Linux or Unix style system
+
+Please see the [Build and Installation page](http://noaa-gfdl.github.io/FMS/build.html)
+for more information on building with each build system.
+
 ## Documentation
 
 Source code documentation for the FMS code base is available at http://noaa-gfdl.github.io/FMS.

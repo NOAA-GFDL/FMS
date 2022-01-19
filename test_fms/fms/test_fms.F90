@@ -62,7 +62,7 @@ program test_fms
  Cstring(17) = c_null_char
  call mpp_error(NOTE,"Testing fms_cstring2cpointer and fms_c2f_string")
 ! test = fms_c2f_string(fms_cstring2cpointer(c_char_"100             "//c_null_char))
- test = fms_c2f_string(fms_cstring2cpointer(Cstring))
+ test = fms_c2f_string(Cstring)
  if (trim(answer) .eq. trim(test)) then
          call mpp_error(NOTE, trim(test)//" matches "//trim(answer))
  else
