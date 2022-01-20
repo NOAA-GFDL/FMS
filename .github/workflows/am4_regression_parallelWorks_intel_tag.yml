@@ -15,11 +15,11 @@ jobs:
       matrix:
         include:
 # Runs AM4 with intel18 on AM4_intel18 
-                - runname: AM4 build and run with intel 18
-                  runscript: python3 /home/Thomas.Robinson/pw/storage/pw_api_python/AM4_intel18StartClusters.py am4_intel18
+#                - runname: AM4 build and run with intel 18
+#                  runscript: python3 /home/Thomas.Robinson/pw/storage/pw_api_python/AM4_intel18StartClusters.py am4_intel18
 # Runs AM4 using a container to build and run the model with intel 21
                 - runname: AM4 regression with intel 21 and answer check
-                  runscript: python3 /home/Thomas.Robinson/pw/storage/pw_api_python/AM4_intel21StartClusters.py am4_container
+                  runscript: python3 /home/Thomas.Robinson/pw/storage/pw_api_python/AM4_intel21StartClusters.py main
 
     steps:
                 - name: FMS make check on paralellWorks
@@ -34,7 +34,7 @@ jobs:
     strategy:
       matrix:
         include:
-                - cluster: am4_intel18
+#                - cluster: am4_intel18
                 - cluster: am4_container
     steps:
                 - name: Turn off cluster
