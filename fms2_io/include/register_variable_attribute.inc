@@ -18,6 +18,11 @@
 !***********************************************************************
 !> @file
 !> @ingroup fms2_io
+!> @brief Routines to add variable attributes for different dimensions to be used in
+!! the @ref register_variable_attribute interface
+
+!> @addtogroup fms2_io_mod
+!> @{
 
 !> @brief Add an attribute to a variable.
 subroutine register_variable_attribute_0d(fileobj, variable_name, attribute_name, &
@@ -196,3 +201,4 @@ subroutine register_variable_attribute_1d(fileobj, variable_name, attribute_name
     endif
   endif
 end subroutine register_variable_attribute_1d
+!> @}

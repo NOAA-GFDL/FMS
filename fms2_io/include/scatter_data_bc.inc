@@ -18,8 +18,12 @@
 !***********************************************************************
 !> @file
 !> @ingroup fms2_io
+!> @brief Routines for the @ref gather_data_bc interface
 
-!< Root pe reads the data in the netcdf file and scatters it to the other pes
+!> @addtogroup netcdf_io_mod
+!> @{ 
+
+!> Root pe reads the data in the netcdf file and scatters it to the other pes
 subroutine scatter_data_bc_2d(fileobj, varname, vdata, bc_info, unlim_dim_level)
   class(FmsNetcdfFile_t), intent(inout) :: fileobj !< Fms2io netcdf fileobj
   character(len=*), intent(in) :: varname !< Variable name.
@@ -167,7 +171,7 @@ subroutine scatter_data_bc_2d(fileobj, varname, vdata, bc_info, unlim_dim_level)
     end select
 end subroutine scatter_data_bc_2d
 
-!< Root pe reads the data in the netcdf file and scatters it to the other pes
+!> Root pe reads the data in the netcdf file and scatters it to the other pes
 subroutine scatter_data_bc_3d(fileobj, varname, vdata, bc_info, unlim_dim_level)
   class(FmsNetcdfFile_t), intent(inout) :: fileobj !< Fms2io netcdf fileobj
   character(len=*), intent(in) :: varname !< Variable name.

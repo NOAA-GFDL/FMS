@@ -19,6 +19,7 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 !> @file
+!> @ingroup mpp_mod
 !> @brief Routines to initialize and finalize @ref mpp_mod with mpi enabled.
 
 !> @addtogroup mpp_mod

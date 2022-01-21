@@ -18,6 +18,11 @@
 !***********************************************************************
 !> @file
 !> @ingroup fms_io_utils_mod
+!> @brief Routines to return a given arguments data type as a string.
+!! Provides multiple dimensions for @ref get_data_type_string interface.
+
+!> @addtogroup fms_io_utils_mod
+!> @{
 
 !> @brief Return a string describing the input data's type.
 subroutine get_data_type_string_0d(sdata, type_string)

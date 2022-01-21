@@ -17,7 +17,12 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 !> @file
-!> @ingroup fms2_io
+!> @ingroup netcdf_io_mod
+!> @brief Routines for different dimensions to add global attributes in netcdf files for the
+!! @ref register_global_attribute interface
+
+!> @addtogroup netcdf_io_mod
+!> @{
 
 !> @brief Add a global attribute.
 subroutine register_global_attribute_0d(fileobj, &
@@ -112,3 +117,4 @@ subroutine register_global_attribute_1d(fileobj, &
         call check_netcdf_code(err, "register_global_attribute_1d: file:"//trim(fileobj%path)//"- attribute:"//trim(attribute_name))
     endif
 end subroutine register_global_attribute_1d
+!> @}

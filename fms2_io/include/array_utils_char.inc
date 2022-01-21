@@ -21,6 +21,9 @@
 !> @ingroup fms_io_utils_mod
 !> @brief Character array routines used in @ref fms_io_utils_mod
 
+!> @addtogroup fms_io_utils_mod
+!> @{
+
 !> @brief Allocate character arrays using an input array of sizes.
 subroutine allocate_array_char_1d(buf, sizes)
 
@@ -97,5 +100,4 @@ subroutine allocate_array_char_6d(buf, sizes)
   endif
   allocate(buf(sizes(1), sizes(2), sizes(3), sizes(4), sizes(5), sizes(6)))
 end subroutine allocate_array_char_6d
-
-
+!> @}

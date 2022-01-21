@@ -26,3 +26,17 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./gen_docs/html
+      - name: Get release version
+        id: get_release
+        uses: bruceadams/get-release@v1.2.3
+        if: ${{ github.event.action == 'release' }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Tag documentation version
+        id: tag_version
+        custom_tag: ${{ steps.get_release.outputs.tag_name }}-docs
+        uses: mathieudutour/github-tag-action@v6.0
+        if: ${{ github.event.action == 'release' }}
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+

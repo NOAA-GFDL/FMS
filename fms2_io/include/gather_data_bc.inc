@@ -17,7 +17,11 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 !> @file
-!> @ingroup fms2_io
+!> @ingroup netcdf_io_mod
+!> @brief Routines for the @ref gather_data_bc interface
+
+!> @addtogroup netcdf_io_mod
+!> @{ 
 
 !> @brief gathers the 2d vdata from all of the relevant pes into the root_pe and saves it to a
 !! buffer.
@@ -259,3 +263,4 @@ subroutine gather_data_bc_3d(fileobj, vdata, bc_info)
    endif
 
 end subroutine gather_data_bc_3d
+!> @}
