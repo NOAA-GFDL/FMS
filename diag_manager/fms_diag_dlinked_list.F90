@@ -43,7 +43,6 @@
 MODULE fms_diag_dlinked_list_mod
    USE fms_mod, ONLY: error_mesg, FATAL, WARNING, NOTE
    implicit none
-   !!TODO: COnsider setting the access (public,private) to functions, etc.
    !> The doubly-linked list node type.
    type, public:: FmsDlListNode_t
       private
@@ -73,7 +72,7 @@ MODULE fms_diag_dlinked_list_mod
       private
       type(FmsDlListNode_t), pointer :: head=>null() !< The sentinal (non-data) head node of the linked list. .
       type(FmsDlListNode_t), pointer :: tail=>null() !< The sentinel (non-data) tail node of the linked list.
-      integer :: the_size               !< The number of data elements in the linked list.
+      integer :: the_size        !< The number of data elements in the linked list.
    contains
       procedure :: push_back => push_at_back
       procedure :: pop_back => pop_at_back
