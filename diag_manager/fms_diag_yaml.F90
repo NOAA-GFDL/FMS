@@ -30,7 +30,7 @@
 !> @{
 module fms_diag_yaml_mod
 #ifdef use_yaml
-use diag_data_mod, only: DIAG_NULL
+use diag_data_mod, only: DIAG_NULL, DIAG_OCEAN, DIAG_ALL, DIAG_OTHER
 use yaml_parser_mod
 use mpp_mod
 
@@ -218,7 +218,11 @@ end function get_diag_fields
 
 !> @brief Uses the yaml_parser_mod to read in the diag_table and fill in the
 !! diag_yaml object
-subroutine diag_yaml_object_init
+subroutine diag_yaml_object_init(diag_subset_output)
+  integer, intent(in)  :: diag_subset_output !< DIAG_ALL   - Current PE is in the one and only pelist
+                                             !! DIAG_OTHER - Current PE is not in the ocean pelist
+                                             !! DIAG_OCEAN - Current PE is in the ocean pelist
+
   integer              :: diag_yaml_id     !< Id for the diag_table yaml
   integer              :: nfiles           !< Number of files in the diag_table yaml
   integer, allocatable :: diag_file_ids(:) !< Ids of the files in the diag_table yaml
@@ -227,6 +231,7 @@ subroutine diag_yaml_object_init
   integer              :: var_count        !< The current number of variables added to the diag_yaml obj
   integer              :: nvars            !< The number of variables in the current file
   integer, allocatable :: var_ids(:)       !< Ids of the variables in diag_table yaml
+  logical              :: is_ocean         !< Flag indicating if it is an ocean file
 
   diag_yaml_id = open_and_parse_file("diag_table.yaml")
 
@@ -243,6 +248,18 @@ subroutine diag_yaml_object_init
 
   var_count = 0
   nfiles_loop: do i = 1, nfiles
+    !< If you are on two seperate pelists
+    if (diag_subset_output .ne. DIAG_ALL) then
+      is_ocean = .false.
+      call get_value_from_key(diag_yaml_id, diag_file_ids(i), "is_ocean", is_ocean)
+
+      !< If you are on the ocean pelist and the file is not an ocean file, skip the file
+      if (diag_subset_output .eq. DIAG_OCEAN .and. .not. is_ocean) cycle
+
+      !< If you are not on the ocean pelist and the file is ocean, skip the file
+      if(diag_subset_output .eq. DIAG_OTHER .and. is_ocean) cycle
+    endif
+
     call diag_yaml_files_obj_init(diag_yaml%diag_files(i))
     call fill_in_diag_files(diag_yaml_id, diag_file_ids(i), diag_yaml%diag_files(i))
 
