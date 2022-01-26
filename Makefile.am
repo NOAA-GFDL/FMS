@@ -120,7 +120,7 @@ clean-local:
 
 if COV
 check-code-coverage: check
-	-cd ${top_builddir}/test_fms && ./intel_coverage.sh
+	-cd ${top_builddir}/test_fms && chmod +x intel_coverage.sh && ./intel_coverage.sh
 
 .PHONY: check-code-coverage
 

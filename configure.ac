@@ -82,7 +82,7 @@ AS_IF([test ${enable_setting_flags:-yes} = yes],
 AC_ARG_ENABLE([code-coverage],
   [AS_HELP_STRING([--enable-code-coverage],
     [Allow configure to set flags and add check-code-coverage target for code coverage analysis (Default no)])])
-AS_IF([test ${enable_setting_flags:-no} = no],
+AS_IF([test ${enable_code_coverage:-no} = no],
   [enable_code_coverage=no],
   [enable_code_coverage=yes])
 
