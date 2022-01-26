@@ -117,3 +117,13 @@ EXTRA_DIST = README.md #_package_init_cmake
 
 clean-local:
 	-rm -rf .mods
+
+if COV
+check-code-coverage: check
+	-cd ${top_builddir}/test_fms && ./intel_coverage.sh
+
+.PHONY: check-code-coverage
+
+#clean-local:
+#	-rm -rf .mods coverage-data
+endif
