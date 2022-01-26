@@ -1,0 +1,42 @@
+title: test_diag_manager
+base_date: 2 1 1 0 0 0
+diag_files:
+- file_name: file1
+  freq: 6
+  freq_units: hours
+  time_units: hours
+  unlimdim: time
+  varlist:
+  - module: test_diag_manager_mod
+    var_name: sst1
+    output_name: sst1
+    reduction: average
+    kind: float
+- file_name: file2
+  freq: 6
+  freq_units: hours
+  time_units: hours
+  unlimdim: time
+  is_ocean: True
+  varlist:
+  - module: test_diag_manager_mod
+    var_name: sst2
+    output_name: sst2
+    reduction: average
+    kind: float
+- file_name: file3
+  freq: 6
+  freq_units: hours
+  time_units: hours
+  unlimdim: time
+  varlist:
+  - module: test_diag_manager_mod
+    var_name: sst3
+    output_name: sst3
+    reduction: average
+    kind: float
+  - module: test_diag_manager_mod
+    var_name: sst4
+    output_name: sst4
+    reduction: average
+    kind: float
