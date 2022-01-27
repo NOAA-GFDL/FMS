@@ -64,15 +64,16 @@ profmerge -a -prof_dpi fms-global-coverage.dpi src.dpi tests.dpi
 mkdir coverage-report
 cat <<_EOF > coverage-report/fms-coverage.html
 <!DOCTYPE html>
+<html>
 <head>
   <title> FMS Code Coverage </title>
-  FMS Code Coverage
-<html>
+  <h1>FMS Code Coverage</h1>
+</head>
 <body>
 _EOF
 
 # generate code coverage report and links for each (src) subdirectory
-for dir in `find . -maxdepth 1 -mindepth 1 -type d -printf '%f\n' | grep -v test_fms`
+for dir in `find . -maxdepth 1 -mindepth 1 -type d -printf '%f\n' | grep -v test_fms | sort`
 do
   cd $dir
   if [ ! -z "`find . -type f -name "*.spi"`" ] ; then
