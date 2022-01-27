@@ -115,8 +115,6 @@ include $(top_srcdir)/mkmods.mk
 #	-rm -f FMSConfig.cmake FMSConfigVersion.cmake
 EXTRA_DIST = README.md #_package_init_cmake
 
-clean-local:
-	-rm -rf .mods
 
 if COV
 check-code-coverage: check
@@ -124,6 +122,9 @@ check-code-coverage: check
 
 .PHONY: check-code-coverage
 
-#clean-local:
-#	-rm -rf .mods coverage-data
+clean-local:
+	-rm -rf .mods coverage-data coverage-report
+else
+clean-local:
+	-rm -rf .mods
 endif

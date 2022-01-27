@@ -185,13 +185,11 @@ if test "$enable_code_coverage" = yes; then
   if test ! -z "`$FC --version | grep ifort`"; then
     AC_CHECK_PROGS([PROFMERGE],[profmerge])
     AC_CHECK_PROGS([CODECOV], [codecov])
-    AC_CONFIG_FILES([test_fms/intel_coverage.sh])
   else
     AC_MSG_ERROR([Intel compiler and coverage tools required for coverage report])
   fi
 fi
 AM_CONDITIONAL(COV, [test "$enable_code_coverage" = yes])
-
 
 # Require netCDF
 GX_FC_CHECK_MOD([netcdf], [], [], [AC_MSG_ERROR([Can't find the netCDF Fortran module.  Set CPPFLAGS/FCFLAGS])])
@@ -382,6 +380,7 @@ AC_CONFIG_FILES([
   docs/Makefile
   parser/Makefile
   test_fms/test_common.sh
+  test_fms/intel_coverage.sh
   test_fms/Makefile
   test_fms/diag_manager/Makefile
   test_fms/data_override/Makefile

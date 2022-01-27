@@ -215,4 +215,4 @@ test_mpp_domains.$(OBJEXT): compare_data_checksums.mod test_domains_utility_mod.
 
 # Clean up
 CLEANFILES = input.nml input_alternative.nml input_blank.nml empty.nml *.out* *.tst* \
-  ascii* test_numb* *.mod
+  ascii* test_numb* *.mod *.dpi *.spi *.dyn *.spl
