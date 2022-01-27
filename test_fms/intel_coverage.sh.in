@@ -26,7 +26,7 @@ merge_dpis () {
 
   mkdir coverage-data
 
-  for dir in `find . -maxdepth 1 -mindepth 1 -type d -printf '%f\n'`
+  for dir in `find . -maxdepth 1 -mindepth 1 -type d -printf '%f\n' | grep -v test_fms`
   do
     cd $dir
     if [ ! -z "`find . -type f -name "*.dyn" `" ]; then
@@ -62,10 +62,11 @@ profmerge -a -prof_dpi fms-global-coverage.dpi src.dpi tests.dpi
 
 # basic html page to link the reports
 mkdir coverage-report
-cat <<_EOF > coverage-report/index.html
+cat <<_EOF > coverage-report/fms-coverage.html
 <!DOCTYPE html>
 <head>
-  <title> FMS Code Coverage Report </title>
+  <title> FMS Code Coverage </title>
+  FMS Code Coverage
 <html>
 <body>
 _EOF
@@ -79,8 +80,9 @@ do
     codecov -prj $dir -spi pgopti.spi -dpi ../fms-global-coverage.dpi
     mv CODE_COVERAGE.HTML ../coverage-report/$dir
     mv CodeCoverage ../coverage-report/$dir
-    echo "<p><a href=\"${dir}/CODE_COVERAGE.HTML\">${dir}</a></p>" >> index.html
+    echo "<p><a href=\"${dir}/CODE_COVERAGE.HTML\">${dir}</a></p>" >> ../coverage-report/fms-coverage.html
   fi
   cd ..
 done
-echo "<\\body>\n<\\html>" >> index.html
+echo "</body>" >> coverage-report/fms-coverage.html
+echo "</html>" >> coverage-report/fms-coverage.html
