@@ -30,9 +30,10 @@
 !> @{
 module fms_diag_yaml_mod
 #ifdef use_yaml
-use diag_data_mod, only: DIAG_NULL
-use yaml_parser_mod
-use mpp_mod
+use diag_data_mod,   only: DIAG_NULL
+use yaml_parser_mod, only: open_and_parse_file, get_value_from_key, get_num_blocks, get_nkeys, &
+                           get_block_ids, get_key_value, get_key_ids, get_key_name
+use mpp_mod,         only: mpp_error, FATAL
 
 implicit none
 
@@ -96,6 +97,8 @@ type diagYamlFiles_type
                                                                                         !! meta data to the file
 
  contains
+ !> All getter functions (functions named get_x(), for member field named x)
+ !! return copies of the member variables unless explicitly noted.
  procedure :: get_file_fname
  procedure :: get_file_frequnit
  procedure :: get_file_freq
@@ -134,6 +137,8 @@ type diagYamlFilesVar_type
   character (len=MAX_STR_LEN), dimension (:, :), private, allocatable :: var_attributes !< Attributes to overwrite or
                                                                                         !! add from diag_yaml
  contains
+ !> All getter functions (functions named get_x(), for member field named x)
+ !! return copies of the member variables unless explicitly noted.
   procedure :: get_var_fname
   procedure :: get_var_varname
   procedure :: get_var_reduction
