@@ -46,7 +46,7 @@ MODULE fms_diag_dlinked_list_mod
    !> The doubly-linked list node type.
    type, public:: FmsDlListNode_t
       private
-      class(*), pointer :: data => null()        !< The data pointed to by the node.
+      class(*), pointer :: data_ptr => null()        !< The data pointed to by the node.
       type(FmsDlListNode_t), pointer :: next => null() !< A pointer to the previous node.
       type(FmsDlListNode_t), pointer :: prev => null() !< A pointer to the next node.
    end type FmsDlListNode_t
@@ -107,7 +107,7 @@ contains
       class(FmsDllIterator_t), allocatable         :: liter !< A linked list iterator.
       type(FmsDlListNode_t), pointer :: nd              !< The new node that is to "hold" the data.
       allocate(nd)
-      nd%data => d
+      nd%data_ptr => d
      !!  Insert nd into list so that list section [prev node <--> target node ] looks like
       !!  [prev node <--> new nd <--> target node]. The four pointers pointing to and/or
       !! from "new nd" need to be set. Therefore :
@@ -274,7 +274,7 @@ contains
       class(*),  pointer  :: rd !< The current data element of the iterator.
       rd => null()
       if (this%has_data() .eqv. .true.) then
-         rd => this%current%data
+         rd => this%current%data_ptr
       endif
    end function literator_data
 
@@ -304,7 +304,7 @@ contains
       endif
       do while( this% the_size /= 0)
          nd => this%head%next
-         pdata => nd%data
+         pdata => nd%data_ptr
          iter =  this%remove(nd)
          if(data_dealloc_f .eqv. .true.) then
             if (associated(pdata) .eqv. .false.) then

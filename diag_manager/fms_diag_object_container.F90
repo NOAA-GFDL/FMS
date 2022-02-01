@@ -202,6 +202,7 @@ contains
    function diag_object_container_constructor () result (doc)
       type(FmsDiagObjectContainer_t), allocatable :: doc !< The resultant container.
       allocate(doc)
+      doc%the_linked_list => null()
       allocate(doc%the_linked_list)
       call doc%the_linked_list%initialize
    end function diag_object_container_constructor
