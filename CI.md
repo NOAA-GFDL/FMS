@@ -1,9 +1,8 @@
 # CI Information
-  
-This document contains informations on the github action testing for this repository,
-to help contributers deal with any CI failures.
-All CI workflows and checks, and associated container enviroments if applicable are listed below.
-Actions run via Github hosted free runners unless otherwise noted.
+
+The CI workflows and checks, and associated container environments for this repository
+are listed below.
+Actions run via Github-hosted runners unless otherwise noted.
 Required CI for pull requests are listed first.
 
 ## Pull Request CI and checks
@@ -53,16 +52,11 @@ Checks code for line lengths, tabs, and trailing whitespace in accordance with
 the project's [style guide](https://github.com/NOAA-GFDL/FMS/blob/main/CODE_STYLE.md).
 The action is hosted on github [here](https://github.com/NOAA-GFDL/simple_lint).
 
+## Parallelworks CI 
+
 ### Pull Request CI libFMS with intel
 Optional(does not need to pass to merge) intel build test hosted on the parallelworks platform.
 Runs `make check` with intel 18 and 21 compilers for all pull requests.
 
-
-## Tag/Release Automations
-
 ### Tag CI libFMS with AM4 regression
 On testing tag creation, compiles and runs full AM4 model regression testing using the new FMS tag on parallelworks.
-
-### Generate and deploy documention on GH pages
-On release creation, generates a doxygen documentation site and pushes it to the `gh-pages` branch.
-The site is then hosted at [http://noaa-gfdl.github.io/FMS]
