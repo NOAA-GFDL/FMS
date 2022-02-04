@@ -52,11 +52,11 @@ Checks code for line lengths, tabs, and trailing whitespace in accordance with
 the project's [style guide](https://github.com/NOAA-GFDL/FMS/blob/main/CODE_STYLE.md).
 The action is hosted on github [here](https://github.com/NOAA-GFDL/simple_lint).
 
-## Parallelworks CI 
-
+## Parallelworks CI
+The following CI workflows run on self-hosted runners through the parallelworks platform.
 ### Pull Request CI libFMS with intel
 Optional(does not need to pass to merge) intel build test hosted on the parallelworks platform.
 Runs `make check` with intel 18 and 21 compilers for all pull requests.
 
 ### Tag CI libFMS with AM4 regression
-On testing tag creation, compiles and runs full AM4 model regression testing using the new FMS tag on parallelworks.
+On alpha or beta tag creation, compiles and runs full AM4 model regression testing using the new FMS tag on parallelworks.
