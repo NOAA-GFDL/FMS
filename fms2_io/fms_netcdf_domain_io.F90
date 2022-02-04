@@ -636,8 +636,8 @@ subroutine restore_domain_state(fileobj, unlim_dim_level, ignore_checksum)
   integer :: i
   character(len=32) :: chksum_in_file
   character(len=32) :: chksum
-  logical :: chksum_ignore = .FALSE. ! local variable for data integrity checks
-                                     ! default: .FALSE. - checks enabled
+  logical :: chksum_ignore = .FALSE. !< local variable for data integrity checks
+                                     !! default: .FALSE. - checks enabled
   logical :: is_decomposed
 
   if (PRESENT(ignore_checksum)) chksum_ignore = ignore_checksum

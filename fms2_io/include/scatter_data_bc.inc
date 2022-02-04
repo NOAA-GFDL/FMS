@@ -36,8 +36,8 @@ subroutine scatter_data_bc_2d(fileobj, varname, vdata, bc_info, unlim_dim_level,
   integer(kind=i8_kind) :: chksum_val !< Checksum value calculated from the read data
   character(len=32) :: chksum !< Cheksum value converted to a string
   character(len=32) :: chksum_read !< String checksum read in from file
-  logical :: chksum_ignore = .FALSE. ! local variable for data integrity checks
-                                     ! default: .FALSE. - checks enabled
+  logical :: chksum_ignore = .FALSE. !< local variable for data integrity checks
+                                     !! default: .FALSE. - checks enabled
 
   integer :: isc, iec, jsc, jec !< current PE's indices
   integer :: i1, i2, j1, j2 !< current PE's indices relative to the global domain
@@ -188,8 +188,8 @@ subroutine scatter_data_bc_3d(fileobj, varname, vdata, bc_info, unlim_dim_level,
   integer(kind=i8_kind) :: chksum_val !< Checksum value calculated from the read data
   character(len=32) :: chksum !< Cheksum value converted to a string
   character(len=32) :: chksum_read !< String checksum read in from file
-  logical :: chksum_ignore = .FALSE. ! local variable for data integrity checks
-                                     ! default: .FALSE. - checks enabled
+  logical :: chksum_ignore = .FALSE. !< local variable for data integrity checks
+                                     !! default: .FALSE. - checks enabled
 
   integer :: isc, iec, jsc, jec !< current PE's indices
   integer :: i1, i2, j1, j2 !< current PE's indices relative to the global domain
