@@ -132,10 +132,10 @@ CONTAINS
   !! and before the first call to register the fields.
   SUBROUTINE diag_grid_init(domain, glo_lat, glo_lon, aglo_lat, aglo_lon)
     TYPE(domain2d), INTENT(in) :: domain !< The domain to which the grid data corresponds.
-    REAL, INTENT(in), DIMENSION(:,:) :: glo_lat !< The latitude information for the grid tile.
-    REAL, INTENT(in), DIMENSION(:,:) :: glo_lon !< The longitude information for the grid tile.
-    REAL, INTENT(in), DIMENSION(:,:) :: aglo_lat !< The latitude information for the a-grid tile.
-    REAL, INTENT(in), DIMENSION(:,:) :: aglo_lon !< The longitude information for the a-grid tile.
+    CLASS(*), INTENT(in), DIMENSION(:,:) :: glo_lat !< The latitude information for the grid tile.
+    CLASS(*), INTENT(in), DIMENSION(:,:) :: glo_lon !< The longitude information for the grid tile.
+    CLASS(*), INTENT(in), DIMENSION(:,:) :: aglo_lat !< The latitude information for the a-grid tile.
+    CLASS(*), INTENT(in), DIMENSION(:,:) :: aglo_lon !< The longitude information for the a-grid tile.
 
     INTEGER, DIMENSION(1) :: tile
     INTEGER :: ntiles
@@ -254,14 +254,67 @@ CONTAINS
     ! If we are on tile 4 or 5, we need to transpose the grid to get
     ! this to work.
     IF ( tile(1) == 4 .OR. tile(1) == 5 ) THEN
-       diag_global_grid%aglo_lat = TRANSPOSE(aglo_lat)
-       diag_global_grid%aglo_lon = TRANSPOSE(aglo_lon)
+       SELECT TYPE (aglo_lat)
+       TYPE IS (real(kind=r4_kind))
+          diag_global_grid%aglo_lat = TRANSPOSE(aglo_lat)
+       TYPE IS (real(kind=r8_kind))
+          diag_global_grid%aglo_lat = TRANSPOSE(real(aglo_lat))
+       CLASS DEFAULT
+          CALL error_mesg('diag_grid_mod::diag_grid_init',&
+               & 'The a-grid latitude data is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)
+       END SELECT
+
+       SELECT TYPE (aglo_lon)
+       TYPE IS (real(kind=r4_kind))
+          diag_global_grid%aglo_lon = TRANSPOSE(aglo_lon)
+       TYPE IS (real(kind=r8_kind))
+          diag_global_grid%aglo_lon = TRANSPOSE(real(aglo_lon))
+       CLASS DEFAULT
+          CALL error_mesg('diag_grid_mod::diag_grid_init',&
+               & 'The a-grid longitude data is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)
+       END SELECT
     ELSE
-       diag_global_grid%aglo_lat = aglo_lat
-       diag_global_grid%aglo_lon = aglo_lon
+       SELECT TYPE (aglo_lat)
+       TYPE IS (real(kind=r4_kind))
+          diag_global_grid%aglo_lat = aglo_lat
+       TYPE IS (real(kind=r8_kind))
+          diag_global_grid%aglo_lat = real(aglo_lat)
+       CLASS DEFAULT
+          CALL error_mesg('diag_grid_mod::diag_grid_init',&
+               & 'The a-grid latitude data is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)
+       END SELECT
+
+       SELECT TYPE (aglo_lon)
+       TYPE IS (real(kind=r4_kind))
+          diag_global_grid%aglo_lon = aglo_lon
+       TYPE IS (real(kind=r8_kind))
+          diag_global_grid%aglo_lon = real(aglo_lon)
+       CLASS DEFAULT
+          CALL error_mesg('diag_grid_mod::diag_grid_init',&
+               & 'The a-grid longitude data is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)
+       END SELECT
     END IF
-    diag_global_grid%glo_lat = glo_lat
-    diag_global_grid%glo_lon = glo_lon
+
+    SELECT TYPE (glo_lat)
+    TYPE IS (real(kind=r4_kind))
+       diag_global_grid%glo_lat = glo_lat
+    TYPE IS (real(kind=r8_kind))
+       diag_global_grid%glo_lat = real(glo_lat)
+    CLASS DEFAULT
+       CALL error_mesg('diag_grid_mod::diag_grid_init',&
+            & 'The grid latitude data is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)
+    END SELECT
+
+    SELECT TYPE (glo_lon)
+    TYPE IS (real(kind=r4_kind))
+       diag_global_grid%glo_lon = glo_lon
+    TYPE IS (real(kind=r8_kind))
+       diag_global_grid%glo_lon = real(glo_lon)
+    CLASS DEFAULT
+       CALL error_mesg('diag_grid_mod::diag_grid_init',&
+            & 'The grid longitude data is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)
+    END SELECT
+
     diag_global_grid%dimI = i_dim
     diag_global_grid%dimJ = j_dim
     diag_global_grid%adimI = ai_dim

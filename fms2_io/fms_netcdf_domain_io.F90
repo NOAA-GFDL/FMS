@@ -627,15 +627,20 @@ end subroutine save_domain_restart
 
 !> @brief Loop through registered restart variables and read them from
 !!        a netcdf file.
-subroutine restore_domain_state(fileobj, unlim_dim_level)
+subroutine restore_domain_state(fileobj, unlim_dim_level, ignore_checksum)
 
   type(FmsNetcdfDomainFile_t), intent(inout) :: fileobj !< File object.
   integer, intent(in), optional :: unlim_dim_level !< Unlimited dimension level.
+  logical, intent(in), optional :: ignore_checksum !< Checksum data integrity flag.
 
   integer :: i
   character(len=32) :: chksum_in_file
   character(len=32) :: chksum
+  logical :: chksum_ignore = .FALSE. !< local variable for data integrity checks
+                                     !! default: .FALSE. - checks enabled
   logical :: is_decomposed
+
+  if (PRESENT(ignore_checksum)) chksum_ignore = ignore_checksum
 
   if (.not. fileobj%is_restart) then
     call error("file "//trim(fileobj%path)//" is not a restart file. You must set is_restart=.true. in your open_file call.")
@@ -650,46 +655,52 @@ subroutine restore_domain_state(fileobj, unlim_dim_level)
     elseif (associated(fileobj%restart_vars(i)%data2d)) then
       call domain_read_2d(fileobj, fileobj%restart_vars(i)%varname, &
                           fileobj%restart_vars(i)%data2d, unlim_dim_level=unlim_dim_level)
-      chksum = compute_global_checksum(fileobj, fileobj%restart_vars(i)%varname, &
-                                       fileobj%restart_vars(i)%data2d, is_decomposed)
-      if (variable_att_exists(fileobj, fileobj%restart_vars(i)%varname, "checksum") .and. &
-          is_decomposed) then
-        call get_variable_attribute(fileobj, fileobj%restart_vars(i)%varname, &
-                                    "checksum", chksum_in_file)
-        if (.not. string_compare(trim(adjustl(chksum_in_file)), trim(adjustl(chksum)))) then
-          call error("The checksum in the file:"//trim(fileobj%path)//" and variable:"//trim(fileobj%restart_vars(i)%varname)//&
-                     &" does not match the checksum calculated from the data. file:"//trim(adjustl(chksum_in_file))//&
-                     &" from data:"//trim(adjustl(chksum)))
+      if (.not.chksum_ignore) then
+        chksum = compute_global_checksum(fileobj, fileobj%restart_vars(i)%varname, &
+                                         fileobj%restart_vars(i)%data2d, is_decomposed)
+        if (variable_att_exists(fileobj, fileobj%restart_vars(i)%varname, "checksum") .and. &
+            is_decomposed) then
+          call get_variable_attribute(fileobj, fileobj%restart_vars(i)%varname, &
+                                      "checksum", chksum_in_file)
+          if (.not. string_compare(trim(adjustl(chksum_in_file)), trim(adjustl(chksum)))) then
+            call error("The checksum in the file:"//trim(fileobj%path)//" and variable:"//trim(fileobj%restart_vars(i)%varname)//&
+                       &" does not match the checksum calculated from the data. file:"//trim(adjustl(chksum_in_file))//&
+                       &" from data:"//trim(adjustl(chksum)))
+          endif
         endif
       endif
     elseif (associated(fileobj%restart_vars(i)%data3d)) then
       call domain_read_3d(fileobj, fileobj%restart_vars(i)%varname, &
                           fileobj%restart_vars(i)%data3d, unlim_dim_level=unlim_dim_level)
-      chksum = compute_global_checksum(fileobj, fileobj%restart_vars(i)%varname, &
-                                       fileobj%restart_vars(i)%data3d, is_decomposed)
-      if (variable_att_exists(fileobj, fileobj%restart_vars(i)%varname, "checksum") .and. &
-          is_decomposed) then
-        call get_variable_attribute(fileobj, fileobj%restart_vars(i)%varname, &
-                                    "checksum", chksum_in_file(1:len(chksum_in_file)))
-        if (.not. string_compare(trim(adjustl(chksum_in_file)), trim(adjustl(chksum)))) then
-          call error("The checksum in the file:"//trim(fileobj%path)//" and variable:"//trim(fileobj%restart_vars(i)%varname)//&
-                     &" does not match the checksum calculated from the data. file:"//trim(adjustl(chksum_in_file))//&
-                     &" from data:"//trim(adjustl(chksum)))
+      if (.not.chksum_ignore) then
+        chksum = compute_global_checksum(fileobj, fileobj%restart_vars(i)%varname, &
+                                         fileobj%restart_vars(i)%data3d, is_decomposed)
+        if (variable_att_exists(fileobj, fileobj%restart_vars(i)%varname, "checksum") .and. &
+            is_decomposed) then
+          call get_variable_attribute(fileobj, fileobj%restart_vars(i)%varname, &
+                                      "checksum", chksum_in_file(1:len(chksum_in_file)))
+          if (.not. string_compare(trim(adjustl(chksum_in_file)), trim(adjustl(chksum)))) then
+            call error("The checksum in the file:"//trim(fileobj%path)//" and variable:"//trim(fileobj%restart_vars(i)%varname)//&
+                       &" does not match the checksum calculated from the data. file:"//trim(adjustl(chksum_in_file))//&
+                       &" from data:"//trim(adjustl(chksum)))
+          endif
         endif
       endif
     elseif (associated(fileobj%restart_vars(i)%data4d)) then
       call domain_read_4d(fileobj, fileobj%restart_vars(i)%varname, &
                           fileobj%restart_vars(i)%data4d, unlim_dim_level=unlim_dim_level)
-      chksum = compute_global_checksum(fileobj, fileobj%restart_vars(i)%varname, &
-                                       fileobj%restart_vars(i)%data4d, is_decomposed)
-      if (variable_att_exists(fileobj, fileobj%restart_vars(i)%varname, "checksum") .and. &
-          is_decomposed) then
-        call get_variable_attribute(fileobj, fileobj%restart_vars(i)%varname, &
-                                    "checksum", chksum_in_file)
-        if (.not. string_compare(trim(adjustl(chksum_in_file)), trim(adjustl(chksum)))) then
-          call error("The checksum in the file:"//trim(fileobj%path)//" and variable:"//trim(fileobj%restart_vars(i)%varname)//&
-                     &" does not match the checksum calculated from the data. file:"//trim(adjustl(chksum_in_file))//&
-                     &" from data:"//trim(adjustl(chksum)))
+      if (.not.chksum_ignore) then
+        chksum = compute_global_checksum(fileobj, fileobj%restart_vars(i)%varname, &
+                                         fileobj%restart_vars(i)%data4d, is_decomposed)
+        if (variable_att_exists(fileobj, fileobj%restart_vars(i)%varname, "checksum") .and. &
+            is_decomposed) then
+          call get_variable_attribute(fileobj, fileobj%restart_vars(i)%varname, &
+                                      "checksum", chksum_in_file)
+          if (.not. string_compare(trim(adjustl(chksum_in_file)), trim(adjustl(chksum)))) then
+            call error("The checksum in the file:"//trim(fileobj%path)//" and variable:"//trim(fileobj%restart_vars(i)%varname)//&
+                       &" does not match the checksum calculated from the data. file:"//trim(adjustl(chksum_in_file))//&
+                       &" from data:"//trim(adjustl(chksum)))
+          endif
         endif
       endif
     else
