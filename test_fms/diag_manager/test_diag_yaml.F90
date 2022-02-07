@@ -24,7 +24,7 @@ program test_diag_yaml
 #ifdef use_yaml
 use FMS_mod, only: fms_init, fms_end
 use fms_diag_yaml_mod
-use fms_diag_yaml_object_mod
+use diag_data_mod, only: DIAG_NULL
 use mpp_mod
 use platform_mod
 
@@ -174,16 +174,16 @@ subroutine compare_diag_files(res)
   call compare_result("file_write 3", res(3)%get_file_write(), .true.)
 
   call compare_result("file_new_file_freq 1", res(1)%get_file_new_file_freq(), 6)
-  call compare_result("file_new_file_freq 2", res(2)%get_file_new_file_freq(), 0)
-  call compare_result("file_new_file_freq 3", res(3)%get_file_new_file_freq(), 0)
+  call compare_result("file_new_file_freq 2", res(2)%get_file_new_file_freq(), DIAG_NULL)
+  call compare_result("file_new_file_freq 3", res(3)%get_file_new_file_freq(), DIAG_NULL)
 
   call compare_result("file_new_file_freq_units 1", res(1)%get_file_new_file_freq_units(), "hours")
   call compare_result("file_new_file_freq_units 2", res(2)%get_file_new_file_freq_units(), "")
   call compare_result("file_new_file_freq_units 3", res(3)%get_file_new_file_freq_units(), "")
 
   call compare_result("file_duration 1", res(1)%get_file_duration(), 12)
-  call compare_result("file_duration 2", res(2)%get_file_duration(), 0)
-  call compare_result("file_duration 3", res(3)%get_file_duration(), 0)
+  call compare_result("file_duration 2", res(2)%get_file_duration(), DIAG_NULL)
+  call compare_result("file_duration 3", res(3)%get_file_duration(), DIAG_NULL)
 
   call compare_result("file_duration_units 1", res(1)%get_file_duration_units(), "hours")
   call compare_result("file_duration_units 2", res(2)%get_file_duration_units(), "")
