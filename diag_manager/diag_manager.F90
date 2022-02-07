@@ -3974,7 +3974,8 @@ CONTAINS
     END IF
 
     !!Create the diag_object container; Its a singleton in the diag_data mod
-    the_diag_object_container = FmsDiagObjectContainer_t()
+    allocate(the_diag_object_container)
+    call the_diag_object_container%initialize()
 
     module_is_initialized = .TRUE.
     ! create axis_id for scalars here
