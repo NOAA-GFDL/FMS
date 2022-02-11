@@ -25,7 +25,7 @@ use mpp_domains_mod
 use mpp_mod
 use setup
 use platform_mod
-
+use fms_mod, only : check_nml_error
 
 type(Params) :: test_params
 type(domain2d) :: domain
@@ -86,6 +86,9 @@ character(len=8) :: timestamp
 logical :: ignore_checksum = .false.
 logical :: bad_checksum = .false.
 
+integer :: io    !< Error code when reading namelist
+integer :: ierr  !< Error code when reading namelist
+
 namelist /test_atmosphere_io_nml/ bad_checksum, ignore_checksum
 
 !Initialize.
@@ -97,7 +100,8 @@ call mpi_check(err)
 call random_seed()
 call fms2_io_init()
 
-read(input_nml_file, nml=test_atmosphere_io_nml)
+read(input_nml_file, nml=test_atmosphere_io_nml, iostat=io)
+ierr = check_nml_error(io, 'test_atmosphere_io_nml')
 
 if (test_params%debug) then
   if (mpp_pe() .eq. 0) then
