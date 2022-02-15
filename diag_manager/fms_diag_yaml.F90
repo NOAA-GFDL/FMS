@@ -484,7 +484,7 @@ end function
 subroutine check_file_freq(fileobj)
   type(diagYamlFiles_type), intent(inout) :: fileobj      !< diagYamlFiles_type obj to check
 
-  if (fileobj%file_freq < -1 ) &
+  if (.not. (fileobj%file_freq >= -1) ) &
     call mpp_error(FATAL, "freq must be greater than or equal to -1. &
       &Check you entry for"//trim(fileobj%file_fname))
   if(.not. is_valid_time_units(fileobj%file_frequnit)) &
