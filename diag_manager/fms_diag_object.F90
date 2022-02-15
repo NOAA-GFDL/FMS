@@ -94,8 +94,8 @@ type fmsDiagObject_type
      procedure :: is_mask_variant => get_mask_variant
      procedure :: is_local => get_local
 ! Is variable allocated check functions
-     procedure :: has_diag_field
-     procedure :: has_diag_file
+!     procedure :: has_diag_field
+!     procedure :: has_diag_file
      procedure :: has_diag_id
      procedure :: has_fileob
      procedure :: has_metadata
@@ -103,7 +103,7 @@ type fmsDiagObject_type
      procedure :: has_registered
      procedure :: has_mask_variant
      procedure :: has_local
-     procedure :: has_init_time
+!     procedure :: has_init_time
      procedure :: has_vartype
      procedure :: has_varname
      procedure :: has_longname
