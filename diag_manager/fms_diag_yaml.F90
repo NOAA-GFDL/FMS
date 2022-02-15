@@ -979,7 +979,7 @@ end function has_file_duration
 !> @brief Checks if obj%file_duration_units is allocated
 !! @return true if obj%file_duration_units is allocated
 pure logical function has_file_duration_units (obj)
-  type(diagYamlFiles_type), intent(in) :: obj !< diagYamlFiles_type object to initialize
+  class(diagYamlFiles_type), intent(in) :: obj !< diagYamlFiles_type object to initialize
   has_file_duration_units = allocated(obj%file_duration_units)
 end function has_file_duration_units
 !> @brief Checks if obj%file_varlist is allocated
