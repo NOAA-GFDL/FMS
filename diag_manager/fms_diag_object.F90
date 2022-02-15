@@ -34,7 +34,7 @@ implicit none
 type fmsDiagObject_type
 #ifdef use_yaml
      type (diagYamlFilesVar_type), allocatable, dimension(:) :: diag_field !< info from diag_table
-     type (diagYamlFiles_type),     allocatable, dimension(:) :: diag_file  !< info from diag_table
+     type (diagYamlFiles_type),    allocatable, dimension(:) :: diag_file  !< info from diag_table
 #endif
      integer, allocatable, private                    :: diag_id           !< unique id for varable
      class(FmsNetcdfFile_t), dimension (:), pointer   :: fileob => NULL()  !< A pointer to all of the
@@ -777,18 +777,18 @@ end function get_data_RANGE
 !end function get_axis
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!! Allocation checks
-!> @brief Checks if obj%diag_field is allocated
-!! @return true if obj%diag_field is allocated
-logical function has_diag_field (obj)
-  class (fmsDiagObject_type), intent(in) :: obj !< diag object
-  has_diag_field = allocated(obj%diag_field)
-end function has_diag_field
-!> @brief Checks if obj%diag_file is allocated
-!! @return true if obj%diag_file is allocated
-logical function has_diag_file (obj)
-  class (fmsDiagObject_type), intent(in) :: obj !< diag object
-  has_diag_file = allocated(obj%diag_file)
-end function has_diag_file
+!!> @brief Checks if obj%diag_field is allocated
+!!! @return true if obj%diag_field is allocated
+!logical function has_diag_field (obj)
+!  class (fmsDiagObject_type), intent(in) :: obj !< diag object
+!  has_diag_field = allocated(obj%diag_field)
+!end function has_diag_field
+!!> @brief Checks if obj%diag_file is allocated
+!!! @return true if obj%diag_file is allocated
+!logical function has_diag_file (obj)
+!  class (fmsDiagObject_type), intent(in) :: obj !< diag object
+!  has_diag_file = allocated(obj%diag_file)
+!end function has_diag_file
 !> @brief Checks if obj%diag_id is allocated
 !! @return true if obj%diag_id is allocated
 logical function has_diag_id (obj)
@@ -831,12 +831,12 @@ logical function has_local (obj)
   class (fmsDiagObject_type), intent(in) :: obj !< diag object
   has_local = allocated(obj%local)
 end function has_local
-!> @brief Checks if obj%init_time is allocated
-!! @return true if obj%init_time is allocated
-logical function has_init_time (obj)
-  class (fmsDiagObject_type), intent(in) :: obj !< diag object
-  has_init_time = allocated(obj%init_time)
-end function has_init_time
+!!> @brief Checks if obj%init_time is allocated
+!!! @return true if obj%init_time is allocated
+!logical function has_init_time (obj)
+!  class (fmsDiagObject_type), intent(in) :: obj !< diag object
+!  has_init_time = allocated(obj%init_time)
+!end function has_init_time
 !> @brief Checks if obj%vartype is allocated
 !! @return true if obj%vartype is allocated
 logical function has_vartype (obj)
