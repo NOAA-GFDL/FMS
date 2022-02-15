@@ -976,11 +976,11 @@ pure logical function has_file_duration (obj)
   class(diagYamlFiles_type), intent(in) :: obj !< diagYamlFiles_type object to initialize
   has_file_duration = .true.
 end function has_file_duration
-!> @brief Checks if obj%file_duration_units is allocated
-!! @return true if obj%file_duration_units is allocated
+!> @brief obj%file_duration_units is on the stack, so this will retrun true
+!! @return true 
 pure logical function has_file_duration_units (obj)
   class(diagYamlFiles_type), intent(in) :: obj !< diagYamlFiles_type object to initialize
-  has_file_duration_units = allocated(obj%file_duration_units)
+  has_file_duration_units = .true.
 end function has_file_duration_units
 !> @brief Checks if obj%file_varlist is allocated
 !! @return true if obj%file_varlist is allocated
