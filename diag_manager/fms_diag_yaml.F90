@@ -952,11 +952,11 @@ pure logical function has_file_sub_region (obj)
        has_file_sub_region = .false.
   endif
 end function has_file_sub_region
-!> @brief Checks if obj%file_new_file_freq is allocated
-!! @return true if obj%file_new_file_freq is allocated
+!> @brief obj%file_new_file_freq is defined on the stack, so this will return true
+!! @return true 
 pure logical function has_file_new_file_freq (obj)
   class(diagYamlFiles_type), intent(in) :: obj !< diagYamlFiles_type object to initialize
-  has_file_new_file_freq = allocated(obj%file_new_file_freq)
+  has_file_new_file_freq = .true.
 end function has_file_new_file_freq
 !> @brief Checks if obj%file_new_file_freq_units is allocated
 !! @return true if obj%file_new_file_freq_units is allocated
