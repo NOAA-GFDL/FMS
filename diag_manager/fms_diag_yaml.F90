@@ -979,7 +979,7 @@ end function has_file_duration
 !> @brief Checks if obj%file_duration_units is allocated
 !! @return true if obj%file_duration_units is allocated
 pure logical function has_file_duration_units (obj)
-  type(diagYamlfile_duration_type), intent(out) :: obj !< diagYamlfile_duration_type object to initialize
+  type(diagYamlFiles_type), intent(out) :: obj !< diagYamlFiles_type object to initialize
   has_file_duration_units = allocated(obj%file_duration_units)
 end function has_file_duration_units
 !> @brief Checks if obj%file_varlist is allocated
@@ -998,67 +998,67 @@ end function has_file_global_meta
 !> @brief Checks if obj%var_fname is allocated
 !! @return true if obj%var_fname is allocated
 pure logical function has_var_fname (obj)
-  class(diagYamlVar_type), intent(in) :: obj !< diagYamlvar_type object to initialize
+  class(diagYamlFilesVar_type), intent(in) :: obj !< diagYamlvar_type object to initialize
   has_var_fname = allocated(obj%var_fname)
 end function has_var_fname
 !> @brief Checks if obj%var_varname is allocated
 !! @return true if obj%var_varname is allocated
 pure logical function has_var_varname (obj)
-  class(diagYamlVar_type), intent(in) :: obj !< diagYamlvar_type object to initialize
+  class(diagYamlFilesVar_type), intent(in) :: obj !< diagYamlvar_type object to initialize
   has_var_varname = allocated(obj%var_varname)
 end function has_var_varname
 !> @brief Checks if obj%var_reduction is allocated
 !! @return true if obj%var_reduction is allocated
 pure logical function has_var_reduction (obj)
-  class(diagYamlVar_type), intent(in) :: obj !< diagYamlvar_type object to initialize
+  class(diagYamlFilesVar_type), intent(in) :: obj !< diagYamlvar_type object to initialize
   has_var_reduction = allocated(obj%var_reduction)
 end function has_var_reduction
 !> @brief Checks if obj%var_module is allocated
 !! @return true if obj%var_module is allocated
 pure logical function has_var_module (obj)
-  class(diagYamlVar_type), intent(in) :: obj !< diagYamlvar_type object to initialize
+  class(diagYamlFilesVar_type), intent(in) :: obj !< diagYamlvar_type object to initialize
   has_var_module = allocated(obj%var_module)
 end function has_var_module
 !> @brief Checks if obj%var_skind is allocated
 !! @return true if obj%var_skind is allocated
 pure logical function has_var_skind (obj)
-  class(diagYamlVar_type), intent(in) :: obj !< diagYamlvar_type object to initialize
+  class(diagYamlFilesVar_type), intent(in) :: obj !< diagYamlvar_type object to initialize
   has_var_skind = allocated(obj%var_skind)
 end function has_var_skind
 !> @brief Checks if obj%string_var_write is allocated
 !! @return true if obj%string_var_write is allocated
 pure logical function has_string_var_write (obj)
-  class(diagYamlVar_type), intent(in) :: obj !< diagYamlvar_type object to initialize
+  class(diagYamlFilesVar_type), intent(in) :: obj !< diagYamlvar_type object to initialize
   has_string_var_write = allocated(obj%string_var_write)
 end function has_string_var_write
 !> @brief obj%var_write is on the stack, so this returns true
 !! @return true 
 pure logical function has_var_write (obj)
-  class(diagYamlVar_type), intent(in) :: obj !< diagYamlvar_type object to initialize
+  class(diagYamlFilesVar_type), intent(in) :: obj !< diagYamlvar_type object to initialize
   has_var_write = .true.
 end function has_var_write
 !> @brief Checks if obj%var_outname is allocated
 !! @return true if obj%var_outname is allocated
 pure logical function has_var_outname (obj)
-  class(diagYamlVar_type), intent(in) :: obj !< diagYamlvar_type object to initialize
+  class(diagYamlFilesVar_type), intent(in) :: obj !< diagYamlvar_type object to initialize
   has_var_outname = allocated(obj%var_outname)
 end function has_var_outname
 !> @brief Checks if obj%var_longname is allocated
 !! @return true if obj%var_longname is allocated
 pure logical function has_var_longname (obj)
-  class(diagYamlVar_type), intent(in) :: obj !< diagYamlvar_type object to initialize
+  class(diagYamlFilesVar_type), intent(in) :: obj !< diagYamlvar_type object to initialize
   has_var_longname = allocated(obj%var_longname)
 end function has_var_longname
 !> @brief Checks if obj%var_units is allocated
 !! @return true if obj%var_units is allocated
 pure logical function has_var_units (obj)
-  class(diagYamlVar_type), intent(in) :: obj !< diagYamlvar_type object to initialize
+  class(diagYamlFilesVar_type), intent(in) :: obj !< diagYamlvar_type object to initialize
   has_var_units = allocated(obj%var_units)
 end function has_var_units
 !> @brief Checks if obj%var_attributes is allocated
 !! @return true if obj%var_attributes is allocated
 pure logical function has_var_attributes (obj)
-  class(diagYamlVar_type), intent(in) :: obj !< diagYamlvar_type object to initialize
+  class(diagYamlFilesVar_type), intent(in) :: obj !< diagYamlvar_type object to initialize
   has_var_attributes = allocated(obj%var_attributes)
 end function has_var_attributes
 
@@ -1067,25 +1067,25 @@ end function has_var_attributes
 !> @brief Checks if obj%diag_title is allocated
 !! @return true if obj%diag_title is allocated
 pure logical function has_diag_title (obj)
-  class(diagYamlDiag_type), intent(in) :: obj !< diagYamldiag_type object to initialize
+  class(diagYamlObject_type), intent(in) :: obj !< diagYamlObject_type object to initialize
   has_diag_title = allocated(obj%diag_title)
 end function has_diag_title                    
 !> @brief obj%diag_basedate is on the stack, so this is always true
 !! @return true
 pure logical function has_diag_basedate (obj)
-  class(diagYamlDiag_type), intent(in) :: obj !< diagYamldiag_type object to initialize
+  class(diagYamlObject_type), intent(in) :: obj !< diagYamlObject_type object to initialize
   has_diag_basedate = .true.
 end function has_diag_basedate            
 !> @brief Checks if obj%diag_files is allocated
 !! @return true if obj%diag_files is allocated
 pure logical function has_diag_files (obj)
-  class(diagYamlDiag_type), intent(in) :: obj !< diagYamldiag_type object to initialize
+  class(diagYamlObject_type), intent(in) :: obj !< diagYamlObject_type object to initialize
   has_diag_files = allocated(obj%diag_files)
 end function has_diag_files
 !> @brief Checks if obj%diag_fields is allocated
 !! @return true if obj%diag_fields is allocated
 pure logical function has_diag_fields (obj)
-  class(diagYamlDiag_type), intent(in) :: obj !< diagYamldiag_type object to initialize
+  class(diagYamlObject_type), intent(in) :: obj !< diagYamlObject_type object to initialize
   has_diag_fields = allocated(obj%diag_fields)
 end function has_diag_fields  
 

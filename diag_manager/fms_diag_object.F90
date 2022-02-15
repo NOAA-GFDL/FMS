@@ -67,17 +67,13 @@ type fmsDiagObject_type
      class(*), allocatable, private                   :: missing_value     !< The missing fill value
      class(*), allocatable, private                   :: data_RANGE        !< The range of the variable data
      type (diag_axis_type), allocatable, dimension(:) :: axis              !< The axis object
-! data buffers
-     class(*), allocatable :: vardata0                                     
-     class(*), allocatable, dimension(:) :: vardata1
-     class(*), allocatable, dimension(:,:) :: vardata2
-     class(*), allocatable, dimension(:,:,:) :: vardata3
-     class(*), allocatable, dimension(:,:,:,:) :: vardata4
-     class(*), allocatable, dimension(:,:,:,:,:) :: vardata5
-
-
-
-     contains
+     class(*), allocatable :: vardata0                                     !< Scalar data buffer 
+     class(*), allocatable, dimension(:) :: vardata1                       !< 1D data buffer
+     class(*), allocatable, dimension(:,:) :: vardata2                     !< 2D data buffer
+     class(*), allocatable, dimension(:,:,:) :: vardata3                   !< 3D data buffer
+     class(*), allocatable, dimension(:,:,:,:) :: vardata4                 !< 4D data buffer
+     class(*), allocatable, dimension(:,:,:,:,:) :: vardata5               !< 5D data buffer
+    contains
 !     procedure :: send_data => fms_send_data  !!TODO
      procedure :: init_ob => diag_obj_init
      procedure :: get_id => fms_diag_get_id
@@ -94,8 +90,8 @@ type fmsDiagObject_type
      procedure :: is_mask_variant => get_mask_variant
      procedure :: is_local => get_local
 ! Is variable allocated check functions
-!     procedure :: has_diag_field
-!     procedure :: has_diag_file
+!TODO     procedure :: has_diag_field
+!TODO     procedure :: has_diag_file
      procedure :: has_diag_id
      procedure :: has_fileob
      procedure :: has_metadata
@@ -103,7 +99,7 @@ type fmsDiagObject_type
      procedure :: has_registered
      procedure :: has_mask_variant
      procedure :: has_local
-!     procedure :: has_init_time
+!TODO     procedure :: has_init_time
      procedure :: has_vartype
      procedure :: has_varname
      procedure :: has_longname
