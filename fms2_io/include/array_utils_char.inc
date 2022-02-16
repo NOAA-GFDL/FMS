@@ -21,10 +21,9 @@
 !> @ingroup fms_io_utils_mod
 !> @brief Character array routines used in @ref fms_io_utils_mod
 
-!> @addtogroup fms_io_utils_mod
-!> @{
 
 !> @brief Allocate character arrays using an input array of sizes.
+!> @memberof allocate_array 
 subroutine allocate_array_char_1d(buf, sizes)
 
   character(len=*), dimension(:), allocatable, intent(inout) :: buf !< Array that will be allocated.

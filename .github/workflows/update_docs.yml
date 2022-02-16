@@ -19,7 +19,7 @@ jobs:
           sed -i "s/@PACKAGE_VERSION@/$VER/g" gen_docs/Doxyfile
       - name: Install and run doxygen
         run: |
-          sudo apt -y install doxygen
+          sudo apt -y install doxygen graphviz
           doxygen gen_docs/Doxyfile
       - name: Deploy
         uses: peaceiris/actions-gh-pages@v3

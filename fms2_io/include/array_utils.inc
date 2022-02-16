@@ -23,6 +23,7 @@
 !> @{
 
 !> @brief Allocate arrays using an input array of sizes.
+!> @memberof allocate_array
 subroutine allocate_array_i4_kind_1d(buf, sizes)
 
   integer(kind=i4_kind), dimension(:), allocatable, intent(inout) :: buf !< Array that will be allocated.
