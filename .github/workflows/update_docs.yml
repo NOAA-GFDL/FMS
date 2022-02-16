@@ -33,7 +33,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Tag doc branch with current version
-        uses: negz/create-tag@v1
+        uses: simpleactions/create-tag@d5c32a2d86b1f96142bbe1ebe8b3b62b0a0587ff
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          version: docs-${{ steps.get_release.outputs.tag_name }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          tag: docs-${{ steps.get_release.outputs.tag_name }}
+          message: "documentation site generated for the given release"
