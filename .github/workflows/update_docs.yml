@@ -32,11 +32,8 @@ jobs:
         if: ${{ github.event.action == 'release' }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - name: Tag documentation version
-        id: tag_version
-        custom_tag: ${{ steps.get_release.outputs.tag_name }}-docs
-        uses: mathieudutour/github-tag-action@v6.0
-        if: ${{ github.event.action == 'release' }}
+      - name: Tag doc branch with current version
+        uses: negz/create-tag@v1
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-
+          token: ${{ secrets.GITHUB_TOKEN }}
+          version: docs-${{ steps.get_release.outputs.tag_name }}
