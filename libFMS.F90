@@ -216,7 +216,7 @@ module fms
   !! routines that don't conflict with fms2_io
   use fms_mod, only: fms_init, fms_end, error_mesg, fms_error_handler, check_nml_error, &
                      monotonic_array, string_array_index, clock_flag_default, &
-                     print_memory_usage, write_version_number
+                     print_memory_usage, write_version_number, fms_c2f_string, fms_cstring2cpointer
 
   !> horiz_interp
   use horiz_interp_mod, only: horiz_interp, horiz_interp_new, horiz_interp_del, &
@@ -361,7 +361,12 @@ module fms
                      mpp_get_nest_fine_pelist, mpp_get_nest_fine_npes, &
                      mpp_domain_UG_is_tile_root_pe, mpp_deallocate_domainUG, &
                      mpp_get_io_domain_UG_layout, NULL_DOMAIN1D, NULL_DOMAIN2D, &
-                     mpp_create_super_grid_domain
+                     mpp_create_super_grid_domain, mpp_shift_nest_domains
+  !> parser
+#ifdef use_yaml
+  use yaml_parser_mod, only: open_and_parse_file, get_num_blocks, get_block_ids, get_value_from_key, &
+                        get_nkeys, get_key_ids, get_key_name, get_key_value
+#endif
 
   !> platform
   use platform_mod, only: r8_kind, r4_kind, i8_kind, i4_kind, c8_kind, c4_kind, &
