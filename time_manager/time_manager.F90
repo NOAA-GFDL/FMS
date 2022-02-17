@@ -87,7 +87,7 @@
 module time_manager_mod
 
 
-use platform_mod, only: r8_kind
+use platform_mod, only: r4_kind, r8_kind
 use constants_mod, only: rseconds_per_day=>seconds_per_day
 use fms_mod, only: error_mesg, FATAL, WARNING, write_version_number, stdout
 
@@ -1202,7 +1202,7 @@ end function time_type_to_real
 !! @return A filled time type variable, and an error message if an
 !!         error occurs.
 function real_to_time_type(x,err_msg) result(t)
-  real,intent(in) :: x !< Number of seconds.
+  class(*),intent(in) :: x !< Number of seconds.
   character(len=*),intent(out),optional :: err_msg !< Error message.
   type(time_type) :: t
   integer :: days
@@ -1213,9 +1213,29 @@ function real_to_time_type(x,err_msg) result(t)
   real :: tps
   real :: a
   tps = real(ticks_per_second)
-  a = x/spd
+
+  select type (x)
+  type is (real(kind=r4_kind))
+    a = x/spd
+  type is (real(kind=r8_kind))
+    a = real(x)/spd
+  class default
+    call error_mesg('time_manager_mod::real_to_time_type',&
+         & 'x is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)
+  end select
+
   days = safe_rtoi(a,do_floor)
-  a = x - real(days)*spd
+
+  select type (x)
+  type is (real(kind=r4_kind))
+    a = x - real(days)*spd
+  type is (real(kind=r8_kind))
+    a = real(x) - real(days)*spd
+  class default
+    call error_mesg('time_manager_mod::real_to_time_type',&
+         & 'x is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)
+  end select
+
   seconds = safe_rtoi(a,do_floor)
   a = (a - real(seconds))*tps
   ticks = safe_rtoi(a,do_nearest)
