@@ -1,5 +1,3 @@
-#!/bin/sh
-
 #***********************************************************************
 #*                   GNU Lesser General Public License
 #*
@@ -19,33 +17,26 @@
 #* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 #***********************************************************************
 
-# This is part of the GFDL FMS package. This is a shell script to
-# execute tests in the test_fms/fms2_io directory.
+# This is an automake file for the constants directory of the FMS
+# package.
 
-# Author: Uriel Ramirez 07/07/20
-#
-# Set common test settings.
-. ../test-lib.sh
+# Ed Hartnett 2/22/19
 
-# Create and enter output directory
-output_dir
+# Include .h and .mod files.
+AM_CPPFLAGS = -I$(top_srcdir)/include
+AM_FCFLAGS = $(FC_MODINC). $(FC_MODOUT)$(MODDIR)
 
-# run test 1 - standard test
-touch input.nml
-test_expect_success "test bc restart" '
-  mpirun -n 16 ../test_bc_restart
-'
+# Build this uninstalled convenience library.
+noinst_LTLIBRARIES = libparser.la
 
-# run test 2 - test for bad checksum (should fail)
-printf "&test_bc_restart_nml\n bad_checksum=.true.\n /" | cat > input.nml
-test_expect_failure "bad checksum" '
-  mpirun -n 16 ../test_bc_restart
-'
+# The convenience library depends on its source.
+libparser_la_SOURCES = \
+  yaml_parser.F90 \
+  yaml_parser_binding.c
 
-# run test 3 - test for ignoring a bad checksum
-printf "&test_bc_restart_nml\n bad_checksum=.true.\n ignore_checksum=.true./" | cat > input.nml
-test_expect_success "ignore bad checksum" '
-  mpirun -n 16 ../test_bc_restart
-'
+MODFILES = \
+  yaml_parser_mod.$(FC_MODEXT)
+BUILT_SOURCES = $(MODFILES)
+nodist_include_HEADERS = $(MODFILES)
 
-test_done
+include $(top_srcdir)/mkmods.mk

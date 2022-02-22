@@ -1,5 +1,3 @@
-#!/bin/sh
-
 #***********************************************************************
 #*                   GNU Lesser General Public License
 #*
@@ -19,33 +17,38 @@
 #* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 #***********************************************************************
 
-# This is part of the GFDL FMS package. This is a shell script to
-# execute tests in the test_fms/fms2_io directory.
+# This is an automake file for the test_fms/data_override directory of the FMS
+# package.
 
-# Author: Uriel Ramirez 07/07/20
-#
-# Set common test settings.
-. ../test-lib.sh
+# uramirez, Ed Hartnett
 
-# Create and enter output directory
-output_dir
+# Find the needed mod and .inc files.
+AM_CPPFLAGS = -I${top_srcdir}/include -I$(MODDIR)
 
-# run test 1 - standard test
-touch input.nml
-test_expect_success "test bc restart" '
-  mpirun -n 16 ../test_bc_restart
-'
+# Link to the FMS library.
+LDADD = ${top_builddir}/libFMS/libFMS.la
 
-# run test 2 - test for bad checksum (should fail)
-printf "&test_bc_restart_nml\n bad_checksum=.true.\n /" | cat > input.nml
-test_expect_failure "bad checksum" '
-  mpirun -n 16 ../test_bc_restart
-'
+# Build this test program.
+check_PROGRAMS = parser_demo2 test_yaml_parser check_crashes parser_demo
 
-# run test 3 - test for ignoring a bad checksum
-printf "&test_bc_restart_nml\n bad_checksum=.true.\n ignore_checksum=.true./" | cat > input.nml
-test_expect_success "ignore bad checksum" '
-  mpirun -n 16 ../test_bc_restart
-'
+# This is the source code for the test.
+test_yaml_parser_SOURCES = test_yaml_parser.F90
+check_crashes_SOURCES = check_crashes.F90
+parser_demo_SOURCES = parser_demo.F90
+parser_demo2_SOURCES = parser_demo2.F90
 
-test_done
+# Run the test program.
+TESTS = test_yaml_parser.sh
+
+# Include these files with the distribution.
+EXTRA_DIST = test_yaml_parser.sh
+
+if SKIP_PARSER_TESTS
+skipflag="skip"
+else
+skipflag=""
+endif
+
+TESTS_ENVIRONMENT = parser_skip=${skipflag}
+# Clean up
+CLEANFILES = input.nml *.nc* *.out *.yaml

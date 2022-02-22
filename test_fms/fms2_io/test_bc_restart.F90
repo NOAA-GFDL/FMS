@@ -21,9 +21,10 @@
 !conditions restarts
 program test_bc_restart
 
-use   mpp_mod,         only : mpp_init, mpp_exit, mpp_pe, mpp_root_pe, mpp_sync
+use   mpp_mod,         only : mpp_init, mpp_exit, mpp_pe, mpp_root_pe, mpp_sync, input_nml_file
+use   fms_mod,         only : check_nml_error
 use   fms2_io_mod,     only : FmsNetcdfFile_t, fms2_io_init, open_file, register_restart_field, &
-                              read_restart_bc, write_restart_bc, close_file
+                              register_variable_attribute, read_restart_bc, write_restart_bc, close_file
 use   mpp_domains_mod, only : mpp_get_global_domain, mpp_get_data_domain, mpp_get_compute_domain, &
                               mpp_define_domains, mpp_get_global_domain, domain2d, CORNER
 
@@ -41,6 +42,8 @@ type atm_type
    real, allocatable, dimension(:,:,:):: var3d            !< 3d variable data
 end type
 
+integer                               :: io               !< Error code when reading namelist
+integer                               :: ierr             !< Error code when reading namelist
 integer, dimension(2)                 :: layout = (/4,4/) !< Domain layout
 integer                               :: nlon             !< Number of points in x axis
 integer                               :: nlat             !< Number of points in y axis
@@ -50,8 +53,16 @@ integer, allocatable, dimension(:)    :: all_pelist       !< List of pelist asso
 integer                               :: n                !< No description
 type(atm_type)                        :: atm              !< No description
 
+!namelist variables
+logical :: ignore_checksum = .false.
+logical :: bad_checksum = .false.
+namelist /test_bc_restart_nml/ bad_checksum, ignore_checksum
+
 call mpp_init
 call fms2_io_init
+
+read(input_nml_file, nml=test_bc_restart_nml, iostat=io)
+ierr = check_nml_error(io, 'test_bc_restart_nml')
 
 nlon = 144
 nlat = 144
@@ -82,6 +93,10 @@ call register_bcs(atm, atm%fileobj_ne, atm%fileobj_sw, "sst", layout)
 
 if (atm%BCfile_sw_open) then
     call write_restart_bc(atm%fileobj_sw)
+    !replace var6 checksum with an incorrect checksum
+    if (bad_checksum) then
+      call register_variable_attribute(atm%fileobj_sw, "sst_west", "checksum", "101010101", str_len = 9)
+    endif
     call close_file(atm%fileobj_sw)
 endif
 
@@ -105,7 +120,7 @@ atm%BCfile_ne_open = open_file(atm%fileobj_ne, "BCfile_ne.nc", "read", is_restar
 call register_bcs(atm, atm%fileobj_ne, atm%fileobj_sw, "sst", layout)
 
 if (atm%BCfile_sw_open) then
-    call read_restart_bc(atm%fileobj_sw)
+    call read_restart_bc(atm%fileobj_sw, ignore_checksum = ignore_checksum)
     call close_file(atm%fileobj_sw)
 endif
 

@@ -45,6 +45,20 @@ _EOF
   mkdir INPUT
 }
 
+# Run the ongrid test case with 2 halos in x and y
+touch input.nml
+cat <<_EOF > data_table.yaml
+data_table:
+ - gridname          : "OCN"
+   fieldname_code    : "runoff"
+   fieldname_file    : "runoff"
+   file_name         : "INPUT/runoff.daitren.clim.1440x1080.v20180328.nc"
+   interpol_method   : "none"
+   factor            : 1.0
+_EOF
+
+printf '"OCN", "runoff", "runoff", "./INPUT/runoff.daitren.clim.1440x1080.v20180328.nc", "none" ,  1.0' | cat > data_table
+[ ! -d "INPUT" ] && mkdir -p "INPUT"
 setup_test_dir 2
 test_expect_success "data_override on grid with 2 halos in x and y" '
   mpirun -n 6 ./test_data_override_ongrid
