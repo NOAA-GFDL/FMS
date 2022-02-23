@@ -20,13 +20,13 @@
 !> @ingroup fms2_io
 
 !< Root pe reads the data in the netcdf file and scatters it to the other pes
-subroutine scatter_data_bc_2d(fileobj, varname, vdata, bc_info, unlim_dim_level)
+subroutine scatter_data_bc_2d(fileobj, varname, vdata, bc_info, unlim_dim_level, ignore_checksum)
   class(FmsNetcdfFile_t), intent(inout) :: fileobj !< Fms2io netcdf fileobj
   character(len=*), intent(in) :: varname !< Variable name.
   class(*), dimension(:,:), intent(inout) :: vdata !< scattered data
   type(bc_information), intent(inout) :: bc_info !< information about the boundary condition variable
-  integer, intent(in), optional :: unlim_dim_level !< Unlimited dimension
-                                                     !! level.
+  integer, intent(in), optional :: unlim_dim_level !< Unlimited dimension level.
+  logical, intent(in), optional :: ignore_checksum !< Checksum data integrity flag.
 
   real(kind=r8_kind), dimension(:,:), allocatable :: global_buf_r8_kind !< buffer with a data read in from file
   real(kind=r8_kind), dimension(:,:), allocatable :: local_buf_r8_kind !< current pe's portion of the data
@@ -36,6 +36,8 @@ subroutine scatter_data_bc_2d(fileobj, varname, vdata, bc_info, unlim_dim_level)
   integer(kind=i8_kind) :: chksum_val !< Checksum value calculated from the read data
   character(len=32) :: chksum !< Cheksum value converted to a string
   character(len=32) :: chksum_read !< String checksum read in from file
+  logical :: chksum_ignore = .FALSE. !< local variable for data integrity checks
+                                     !! default: .FALSE. - checks enabled
 
   integer :: isc, iec, jsc, jec !< current PE's indices
   integer :: i1, i2, j1, j2 !< current PE's indices relative to the global domain
@@ -43,6 +45,8 @@ subroutine scatter_data_bc_2d(fileobj, varname, vdata, bc_info, unlim_dim_level)
 
   integer :: i_glob !< Size of the global domain in x
   integer :: j_glob !< Size of the global domain in y
+
+  if (PRESENT(ignore_checksum)) chksum_ignore = ignore_checksum
 
   !> Set the indices
   isc = bc_info%indices(1)
@@ -76,7 +80,7 @@ subroutine scatter_data_bc_2d(fileobj, varname, vdata, bc_info, unlim_dim_level)
                               unlim_dim_level=unlim_dim_level, &
                               broadcast=.false.)
          !> If the checksum exists read it and compare it with the calculated from the data that was read
-         if (variable_att_exists(fileobj, varname, "checksum", broadcast=.false.)) then
+         if (.not.chksum_ignore .and. variable_att_exists(fileobj, varname, "checksum", broadcast=.false.)) then
             call get_variable_attribute(fileobj, varname, "checksum", chksum_read, broadcast=.false.)
             chksum_val = mpp_chksum(global_buf_r4_kind, (/mpp_pe()/))
             chksum = ""
@@ -124,7 +128,7 @@ subroutine scatter_data_bc_2d(fileobj, varname, vdata, bc_info, unlim_dim_level)
                               unlim_dim_level=unlim_dim_level, &
                               broadcast=.false.)
          !> If the checksum exists read it and compare it with the calculated from the data that was read
-         if (variable_att_exists(fileobj, varname, "checksum", broadcast=.false.)) then
+         if (.not.chksum_ignore .and. variable_att_exists(fileobj, varname, "checksum", broadcast=.false.)) then
             call get_variable_attribute(fileobj, varname, "checksum", chksum_read, broadcast=.false.)
             chksum_val = mpp_chksum(global_buf_r8_kind, (/mpp_pe()/))
             chksum = ""
@@ -168,13 +172,13 @@ subroutine scatter_data_bc_2d(fileobj, varname, vdata, bc_info, unlim_dim_level)
 end subroutine scatter_data_bc_2d
 
 !< Root pe reads the data in the netcdf file and scatters it to the other pes
-subroutine scatter_data_bc_3d(fileobj, varname, vdata, bc_info, unlim_dim_level)
+subroutine scatter_data_bc_3d(fileobj, varname, vdata, bc_info, unlim_dim_level, ignore_checksum)
   class(FmsNetcdfFile_t), intent(inout) :: fileobj !< Fms2io netcdf fileobj
   character(len=*), intent(in) :: varname !< Variable name.
   class(*), dimension(:,:,:), intent(inout) :: vdata !< scattered data
   type(bc_information), intent(inout) :: bc_info !< information about the boundary condition variable
-  integer, intent(in), optional :: unlim_dim_level !< Unlimited dimension
-                                                     !! level.
+  integer, intent(in), optional :: unlim_dim_level !< Unlimited dimension level.
+  logical, intent(in), optional :: ignore_checksum !< Checksum data integrity flag.
 
   real(kind=r8_kind), dimension(:,:,:), allocatable :: global_buf_r8_kind !< buffer with a data read in from file
   real(kind=r8_kind), dimension(:,:,:), allocatable :: local_buf_r8_kind !< current pe's portion of the data
@@ -184,6 +188,8 @@ subroutine scatter_data_bc_3d(fileobj, varname, vdata, bc_info, unlim_dim_level)
   integer(kind=i8_kind) :: chksum_val !< Checksum value calculated from the read data
   character(len=32) :: chksum !< Cheksum value converted to a string
   character(len=32) :: chksum_read !< String checksum read in from file
+  logical :: chksum_ignore = .FALSE. !< local variable for data integrity checks
+                                     !! default: .FALSE. - checks enabled
 
   integer :: isc, iec, jsc, jec !< current PE's indices
   integer :: i1, i2, j1, j2 !< current PE's indices relative to the global domain
@@ -192,6 +198,8 @@ subroutine scatter_data_bc_3d(fileobj, varname, vdata, bc_info, unlim_dim_level)
   integer :: i_glob !< Size of the global domain in x
   integer :: j_glob !< Size of the global domain in y
   integer :: k_glob !< Size of the z axis
+
+  if (PRESENT(ignore_checksum)) chksum_ignore = ignore_checksum
 
   !> Set the indices
   isc = bc_info%indices(1)
@@ -227,7 +235,7 @@ subroutine scatter_data_bc_3d(fileobj, varname, vdata, bc_info, unlim_dim_level)
                               unlim_dim_level=unlim_dim_level, &
                               broadcast=.false.)
          !> If the checksum exists read it and compare it with the calculated from the data that was read
-         if (variable_att_exists(fileobj, varname, "checksum", broadcast=.false.)) then
+         if (.not.chksum_ignore .and. variable_att_exists(fileobj, varname, "checksum", broadcast=.false.)) then
             call get_variable_attribute(fileobj, varname, "checksum", chksum_read, broadcast=.false.)
             chksum_val = mpp_chksum(global_buf_r4_kind, (/mpp_pe()/))
             chksum = ""
@@ -275,7 +283,7 @@ subroutine scatter_data_bc_3d(fileobj, varname, vdata, bc_info, unlim_dim_level)
                               unlim_dim_level=unlim_dim_level, &
                               broadcast=.false.)
          !> If the checksum exists read it and compare it with the calculated from the data that was read
-         if (variable_att_exists(fileobj, varname, "checksum", broadcast=.false.)) then
+         if (.not.chksum_ignore .and. variable_att_exists(fileobj, varname, "checksum", broadcast=.false.)) then
             call get_variable_attribute(fileobj, varname, "checksum", chksum_read, broadcast=.false.)
             chksum_val = mpp_chksum(global_buf_r8_kind, (/mpp_pe()/))
             chksum = ""

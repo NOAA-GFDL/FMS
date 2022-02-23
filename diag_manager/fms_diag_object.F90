@@ -7,7 +7,7 @@ module fms_diag_object_mod
 !! The procedures of this object and the types are all in this module.  The fms_dag_object is a type
 !! that contains all of the information of the variable.  It is extended by a type that holds the
 !! appropriate buffer for the data for manipulation.
-use diag_data_mod,  only: diag_null
+use diag_data_mod,  only: diag_null, CMOR_MISSING_VALUE, diag_null_string
 use diag_data_mod,  only: r8, r4, i8, i4, string, null_type_int
 use diag_data_mod,  only: diag_null, diag_not_found, diag_not_registered, diag_registered_id
 
@@ -39,8 +39,8 @@ type fmsDiagObject_type
      integer, allocatable, private                    :: diag_id           !< unique id for varable
      class(FmsNetcdfFile_t), dimension (:), pointer   :: fileob => NULL()  !< A pointer to all of the
                                                                            !! file objects for this variable
-     character(len=:), allocatable, dimension(:)      :: metadata          !< metedata for the variable
-     logical, private                                 :: static            !< true is this is a static var
+     character(len=:), allocatable, dimension(:)      :: metadata          !< metadata for the variable
+     logical, allocatable, private                    :: static            !< true if this is a static var
      logical, allocatable, private                    :: registered        !< true when registered
      logical, allocatable, private                    :: mask_variant      !< If there is a mask variant
      logical, allocatable, private                    :: local             !< If the output is local
@@ -64,15 +64,8 @@ type fmsDiagObject_type
      integer, allocatable, private                    :: tile_count        !< The number of tiles
      integer, allocatable, dimension(:), private      :: axis_ids          !< variable axis IDs
      integer, allocatable, private                    :: area, volume      !< The Area and Volume
-     real, private                                    :: missing_value     !< Holds a missing value if none given
-     integer(kind=I4_KIND), allocatable, private      :: i4missing_value   !< The missing i4 fill value
-     integer(kind=I8_KIND), allocatable, private      :: i8missing_value   !< The missing i8 fill value
-     real(kind=R4_KIND), allocatable, private         :: r4missing_value   !< The missing r4 fill value
-     real(kind=R8_KIND), allocatable, private         :: r8missing_value   !< The missing r8 fill value
-     integer(kind=I4_KIND), allocatable,dimension(:)  :: i4data_RANGE      !< The range of i4 data
-     integer(kind=I8_KIND), allocatable,dimension(:)  :: i8data_RANGE      !< The range of i8 data
-     real(kind=R4_KIND), allocatable,dimension(:)     :: r4data_RANGE      !< The range of r4 data
-     real(kind=R8_KIND), allocatable,dimension(:)     :: r8data_RANGE      !< The range of r8 data
+     class(*), allocatable, private                   :: missing_value     !< The missing fill value
+     class(*), allocatable, private                   :: data_RANGE        !< The range of the variable data
      type (diag_axis_type), allocatable, dimension(:) :: axis              !< The axis object
 !> \brief Extends the variable object to work with multiple types of data
      class(*), allocatable :: vardata0
@@ -92,15 +85,41 @@ type fmsDiagObject_type
      procedure :: copy => copy_diag_obj
      procedure :: register => fms_register_diag_field_obj !! Merely initialize fields.
      procedure :: setID => set_diag_id
-     procedure :: is_registered => diag_ob_registered
      procedure :: set_type => set_vartype
      procedure :: vartype_inq => what_is_vartype
-
+! Check functions
      procedure :: is_static => diag_obj_is_static
+     procedure :: is_registered => diag_ob_registered
      procedure :: is_registeredB => diag_obj_is_registered
-     procedure :: get_vartype => diag_obj_get_vartype
-     procedure :: get_varname => diag_obj_get_varname
-
+     procedure :: is_mask_variant => get_mask_variant
+     procedure :: is_local => get_local
+! Get functions
+     procedure :: get_diag_id => fms_diag_get_id
+     procedure :: get_metadata
+     procedure :: get_static
+     procedure :: get_registered
+     procedure :: get_mask_variant
+     procedure :: get_local
+     procedure :: get_vartype
+     procedure :: get_varname
+     procedure :: get_longname
+     procedure :: get_standname
+     procedure :: get_units
+     procedure :: get_modname
+     procedure :: get_realm
+     procedure :: get_err_msg
+     procedure :: get_interp_method
+     procedure :: get_frequency
+     procedure :: get_output_units
+     procedure :: get_t
+     procedure :: get_tile_count
+     procedure :: get_axis_ids
+     procedure :: get_area
+     procedure :: get_volume
+     procedure :: get_missing_value
+     procedure :: get_data_RANGE
+!TODO     procedure :: get_init_time
+!TODO     procedure :: get_axis
 end type fmsDiagObject_type
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! variables !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 type(fmsDiagObject_type) :: null_ob
@@ -205,20 +224,28 @@ subroutine fms_register_diag_field_obj &
   if (present(missing_value)) then
     select type (missing_value)
      type is (integer(kind=i4_kind))
-             dobj%i4missing_value = missing_value
+             allocate(integer(kind=i4_kind) :: dobj%missing_value)
+             dobj%missing_value = missing_value
      type is (integer(kind=i8_kind))
-             dobj%i8missing_value = missing_value
+             allocate(integer(kind=i8_kind) :: dobj%missing_value)
+             dobj%missing_value = missing_value
      type is (real(kind=r4_kind))
-             dobj%r4missing_value = missing_value
+             allocate(integer(kind=r4_kind) :: dobj%missing_value)
+             dobj%missing_value = missing_value
      type is (real(kind=r8_kind))
-             dobj%r8missing_value = missing_value
+             allocate(integer(kind=r8_kind) :: dobj%missing_value)
+             dobj%missing_value = missing_value
      class default
              call mpp_error("fms_register_diag_field_obj", &
                      "The missing value passed to register a diagnostic is not a r8, r4, i8, or i4",&
                      FATAL)
     end select
   else
-      dobj%missing_value = DIAG_NULL
+      allocate(real :: dobj%missing_value)
+      select type (miss => dobj%missing_value)
+       type is (real)
+        miss = real(CMOR_MISSING_VALUE)
+      end select
   endif
 
 !     write(6,*)"IKIND for diag_fields(1) is",dobj%diag_fields(1)%ikind
@@ -328,6 +355,7 @@ end select
 end subroutine copy_diag_obj
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !> \brief Returns the ID integer for a variable
+!! \return the diag ID
 integer function fms_diag_get_id (dobj) result(diag_id)
  class(fmsDiagObject_type)     , intent(inout)            :: dobj
 ! character(*)               , intent(in)               :: varname
@@ -400,17 +428,323 @@ function diag_obj_is_static (obj) result (rslt)
     rslt = obj%static
 end function diag_obj_is_static
 
-function diag_obj_get_vartype (obj) result (rslt)
-    class(fmsDiagObject_type), intent(in) :: obj
-    integer :: rslt
-    rslt = obj%vartype
-end function diag_obj_get_vartype
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! Get functions
 
-function diag_obj_get_varname(obj) result (rslt)
-    class(fmsDiagObject_type), intent(in) :: obj
-    character(len=len(obj%varname)) :: rslt
-    rslt = obj%varname
-end function diag_obj_get_varname
+!> @brief Gets metedata
+!! @return copy of metadata string array, or a single space if metadata is not allocated
+function get_metadata (obj) &
+result(rslt)
+     class (fmsDiagObject_type), intent(in) :: obj !< diag object
+     character(len=:), allocatable, dimension(:) :: rslt
+     if (allocated(obj%metadata)) then
+       allocate(character(len=(len(obj%metadata(1)))) :: rslt (size(obj%metadata)) )
+       rslt = obj%metadata
+     else
+       allocate(character(len=1) :: rslt(1:1))
+       rslt = diag_null_string
+     endif
+end function get_metadata
+!> @brief Gets static
+!! @return copy of variable static
+function get_static (obj) &
+result(rslt)
+     class (fmsDiagObject_type), intent(in) :: obj !< diag object
+     logical :: rslt 
+     rslt = obj%static
+end function get_static
+!> @brief Gets regisetered
+!! @return copy of registered
+function get_registered (obj) &
+result(rslt)
+     class (fmsDiagObject_type), intent(in) :: obj !< diag object
+     logical :: rslt 
+     rslt = obj%registered
+end function get_registered
+!> @brief Gets mask variant
+!! @return copy of mask variant
+function get_mask_variant (obj) &
+result(rslt)
+     class (fmsDiagObject_type), intent(in) :: obj !< diag object
+     logical :: rslt 
+     rslt = obj%mask_variant
+end function get_mask_variant
+!> @brief Gets local
+!! @return copy of local
+function get_local (obj) &
+result(rslt)
+     class (fmsDiagObject_type), intent(in) :: obj !< diag object
+     logical :: rslt 
+     rslt = obj%local
+end function get_local
+!> @brief Gets initial time 
+!! @return copy of the initial time
+!! TODO
+!function get_init_time (obj) &
+!result(rslt)
+!     class (fmsDiagObject_type), intent(in) :: obj !< diag object
+!     TYPE(time_type) :: rslt 
+!
+!end function get_init_time
+!> @brief Gets vartype 
+!! @return copy of The integer related to the variable type
+function get_vartype (obj) &
+result(rslt)
+     class (fmsDiagObject_type), intent(in) :: obj !< diag object
+     integer :: rslt 
+     rslt = obj%vartype
+end function get_vartype
+!> @brief Gets varname
+!! @return copy of the variable name
+function get_varname (obj) &
+result(rslt)
+     class (fmsDiagObject_type), intent(in) :: obj !< diag object
+     character(len=:), allocatable :: rslt 
+     rslt = obj%varname
+end function get_varname
+!> @brief Gets longname
+!! @return copy of the variable long name or a single string if there is no long name
+function get_longname (obj) &
+result(rslt)
+     class (fmsDiagObject_type), intent(in) :: obj !< diag object
+     character(len=:), allocatable :: rslt 
+     if (allocated(obj%longname)) then
+       rslt = obj%longname
+     else
+       rslt = diag_null_string
+     endif
+end function get_longname
+!> @brief Gets standname
+!! @return copy of the standard name or an empty string if standname is not allocated
+function get_standname (obj) &
+result(rslt)
+     class (fmsDiagObject_type), intent(in) :: obj !< diag object
+     character(len=:), allocatable :: rslt 
+     if (allocated(obj%standname)) then
+       rslt = obj%standname
+     else
+       rslt = diag_null_string
+     endif
+end function get_standname
+!> @brief Gets units
+!! @return copy of the units or an empty string if not allocated
+function get_units (obj) &
+result(rslt)
+     class (fmsDiagObject_type), intent(in) :: obj !< diag object
+     character(len=:), allocatable :: rslt 
+     if (allocated(obj%units)) then
+       rslt = obj%units
+     else
+       rslt = diag_null_string
+     endif
+end function get_units
+!> @brief Gets modname
+!! @return copy of the module name that the variable is in or an empty string if not allocated
+function get_modname (obj) &
+result(rslt)
+     class (fmsDiagObject_type), intent(in) :: obj !< diag object
+     character(len=:), allocatable :: rslt 
+     if (allocated(obj%modname)) then
+       rslt = obj%modname
+     else
+       rslt = diag_null_string
+     endif
+end function get_modname
+!> @brief Gets realm
+!! @return copy of the variables modeling realm or an empty string if not allocated
+function get_realm (obj) &
+result(rslt)
+     class (fmsDiagObject_type), intent(in) :: obj !< diag object
+     character(len=:), allocatable :: rslt 
+     if (allocated(obj%realm)) then
+       rslt = obj%realm
+     else
+       rslt = diag_null_string
+     endif
+end function get_realm
+!> @brief Gets err_msg
+!! @return copy of The error message stored in err_msg or an empty string if not allocated
+function get_err_msg (obj) &
+result(rslt)
+     class (fmsDiagObject_type), intent(in) :: obj !< diag object
+     character(len=:), allocatable :: rslt 
+     if (allocated(obj%err_msg)) then
+       rslt = obj%err_msg
+     else
+       rslt = diag_null_string
+     endif
+end function get_err_msg
+!> @brief Gets interp_method
+!! @return copy of The interpolation method or an empty string if not allocated
+function get_interp_method (obj) &
+result(rslt)
+     class (fmsDiagObject_type), intent(in) :: obj !< diag object
+     character(len=:), allocatable :: rslt 
+     if (allocated(obj%interp_method)) then
+       rslt = obj%interp_method
+     else
+       rslt = diag_null_string
+     endif
+end function get_interp_method
+!> @brief Gets frequency
+!! @return copy of the  frequency or DIAG_NULL if obj%frequency is not allocated
+function get_frequency (obj) &
+result(rslt)
+     class (fmsDiagObject_type), intent(in) :: obj !< diag object
+     integer, allocatable, dimension (:) :: rslt 
+     if (allocated(obj%frequency)) then
+       allocate (rslt(size(obj%frequency)))
+       rslt = obj%frequency
+     else
+       allocate (rslt(1))
+       rslt = DIAG_NULL
+     endif
+end function get_frequency
+!> @brief Gets output_units
+!! @return copy of The units of the output or DIAG_NULL is output_units is not allocated
+function get_output_units (obj) &
+result(rslt)
+     class (fmsDiagObject_type), intent(in) :: obj !< diag object
+     integer,allocatable, dimension (:) :: rslt 
+     if (allocated(obj%output_units)) then
+       allocate (rslt(size(obj%output_units)))
+       rslt = obj%output_units
+     else
+       allocate (rslt(1))
+       rslt = DIAG_NULL
+     endif
+end function get_output_units
+!> @brief Gets t
+!! @return copy of t 
+function get_t (obj) &
+result(rslt)
+     class (fmsDiagObject_type), intent(in) :: obj !< diag object
+     integer :: rslt 
+     if (allocated(obj%t)) then
+       rslt = obj%t
+     else
+       rslt = -999
+     endif
+end function get_t
+!> @brief Gets tile_count
+!! @return copy of the number of tiles or diag_null if tile_count is not allocated
+function get_tile_count (obj) &
+result(rslt)
+     class (fmsDiagObject_type), intent(in) :: obj !< diag object
+     integer :: rslt 
+     if (allocated(obj%tile_count)) then
+       rslt = obj%tile_count
+     else
+       rslt = DIAG_NULL
+     endif
+end function get_tile_count
+!> @brief Gets axis_ids
+!! @return copy of The axis IDs array or a diag_null if no axis IDs are set
+function get_axis_ids (obj) &
+result(rslt)
+     class (fmsDiagObject_type), intent(in) :: obj !< diag object
+     integer, allocatable, dimension(:) :: rslt 
+     if (allocated(obj%axis_ids)) then
+       allocate(rslt(size(obj%axis_ids)))
+       rslt = obj%axis_ids
+     else
+       allocate(rslt(1))
+       rslt = diag_null
+     endif
+end function get_axis_ids
+!> @brief Gets area
+!! @return copy of the area or diag_null if not allocated
+function get_area (obj) &
+result(rslt)
+     class (fmsDiagObject_type), intent(in) :: obj !< diag object
+     integer :: rslt 
+     if (allocated(obj%area)) then
+       rslt = obj%area
+     else
+       rslt = diag_null
+     endif
+end function get_area
+!> @brief Gets volume
+!! @return copy of the volume or diag_null if volume is not allocated
+function get_volume (obj) &
+result(rslt)
+     class (fmsDiagObject_type), intent(in) :: obj !< diag object
+     integer :: rslt
+     if (allocated(obj%volume)) then
+       rslt = obj%volume
+     else
+       rslt = diag_null
+     endif
+end function get_volume
+!> @brief Gets missing_value
+!! @return copy of The missing value
+function get_missing_value (obj) &
+result(rslt)
+     class (fmsDiagObject_type), intent(in) :: obj !< diag object
+     class(*),allocatable :: rslt
+     if (allocated(obj%missing_value)) then
+       select type (miss => obj%missing_value)
+         type is (integer(kind=i4_kind))
+             allocate (integer(kind=i4_kind) :: rslt)
+             rslt = miss
+         type is (integer(kind=i8_kind))
+             allocate (integer(kind=i8_kind) :: rslt)
+             rslt = miss
+         type is (real(kind=r4_kind))
+             allocate (integer(kind=i4_kind) :: rslt)
+             rslt = miss
+         type is (real(kind=r8_kind))
+             allocate (integer(kind=i4_kind) :: rslt)
+             rslt = miss
+         class default
+             call mpp_error ("get_missing_value", &
+                     "The missing value is not a r8, r4, i8, or i4",&
+                     FATAL)
+         end select
+       else
+         call mpp_error ("get_missing_value", &
+                 "The missing value is not allocated", FATAL)
+       endif
+end function get_missing_value
+!> @brief Gets data_range
+!! @return copy of the data range
+function get_data_RANGE (obj) &
+result(rslt)
+     class (fmsDiagObject_type), intent(in) :: obj !< diag object
+     class(*),allocatable :: rslt 
+     if (allocated(obj%data_RANGE)) then
+       select type (r => obj%data_RANGE)
+         type is (integer(kind=i4_kind))
+             allocate (integer(kind=i4_kind) :: rslt)
+             rslt = r
+         type is (integer(kind=i8_kind))
+             allocate (integer(kind=i8_kind) :: rslt)
+             rslt = r
+         type is (real(kind=r4_kind))
+             allocate (integer(kind=i4_kind) :: rslt)
+             rslt = r
+         type is (real(kind=r8_kind))
+             allocate (integer(kind=i4_kind) :: rslt)
+             rslt = r
+         class default
+             call mpp_error ("get_data_RANGE", &
+                     "The data_RANGE value is not a r8, r4, i8, or i4",&
+                     FATAL)
+         end select
+       else
+         call mpp_error ("get_data_RANGE", &
+                 "The data_RANGE value is not allocated", FATAL)
+       endif
+end function get_data_RANGE
+!> @brief Gets axis
+!! @return copy of axis information
+!! TODO
+!function get_axis (obj) &
+!result(rslt)
+!     class (fmsDiagObject_type), intent(in) :: obj !< diag object
+!     type (diag_axis_type), allocatable, dimension(:) :: rslt 
+!
+!end function get_axis
 
 
 end module fms_diag_object_mod
