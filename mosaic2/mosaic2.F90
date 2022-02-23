@@ -450,7 +450,7 @@ end function transfer_to_model_index
        type is (real(r4_kind))
          select type(area)
          type is (real(r4_kind))
-           call get_grid_area( nlon, nlat, lon, lat, area)
+           call get_grid_area( nlon, nlat, real(lon, r8_kind), real(lat, r8_kind), real(area, r8_kind))
            valid_types = .true.
          end select
        end select
@@ -500,7 +500,7 @@ end function transfer_to_model_index
        type is (real(r4_kind))
          select type(area)
          type is (real(r4_kind))
-           call get_grid_great_circle_area( nlon, nlat, lon, lat, area)
+           call get_grid_great_circle_area( nlon, nlat, real(lon, r8_kind), real(lat, r8_kind), real(area, r8_kind))
            valid_types = .true.
          end select
        end select
