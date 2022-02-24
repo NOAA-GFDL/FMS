@@ -40,7 +40,6 @@ subroutine get_variable_attribute_0d(fileobj, variable_name, attribute_name, &
   integer :: varid
   integer :: err
   character(len=200) :: append_error_msg !< Msg to be appended to FATAL error message
-  integer :: j
   character(len=1024), dimension(1) :: charbuf !< 1D Character buffer
   logical :: reproduce_null_char_bug !< Local flag indicating to reproduce the mpp_io bug where
                                      !! the null characters were not removed after reading a string attribute

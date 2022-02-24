@@ -284,7 +284,7 @@
       integer, intent(in), optional :: flags
       MPP_TYPE_, intent(in), optional :: default_data
 
-      integer :: i, j, k, m, n, nd, nwords, lpos, rpos, ioff, joff, from_pe, root_pe, tile_id
+      integer :: i, n, nd, ioff, joff, root_pe
       integer :: ke, isc, iec, jsc, jec, is, ie, js, je
       integer :: ipos, jpos
       logical :: xonly, yonly, root_only, global_on_this_pe

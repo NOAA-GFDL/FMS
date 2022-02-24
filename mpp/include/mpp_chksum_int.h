@@ -54,7 +54,7 @@ function MPP_CHKSUM_INT_RMASK_( var, pelist, mask_val )
   integer(KIND=i8_kind) :: i8tmp=0
   !high fidelity error message
   character(LEN=1) :: tmpStr1,tmpStr2,tmpStr3
-  character(LEN=32) :: tmpStr4,tmpStr5
+  character(LEN=32) :: tmpStr4
   character(LEN=512) :: errStr
 
 ! Primary Logic: These first two are the "expected" branches.

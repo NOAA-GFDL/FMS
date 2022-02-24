@@ -96,7 +96,8 @@ public  tracer_manager_init, &
         adjust_mass,         &
         adjust_positive_def, &
         NO_TRACER,           &
-        MAX_TRACER_FIELDS
+        MAX_TRACER_FIELDS,   &
+        set_tracer_method 
 
 !> @brief Function which returns the number assigned to the tracer name.
 !!
@@ -836,10 +837,6 @@ if(mpp_pe()==mpp_root_pe() .and. TRACER_ARRAY(model,n)> 0 ) then
   write(log_unit, *)'----------------------------------------------------'
 endif
 
-900 FORMAT(A,2(1x,E12.6))
-901 FORMAT(E12.6,1x,E12.6)
-
-
 end subroutine print_tracer_info
 
 !#######################################################################
@@ -1122,7 +1119,7 @@ numlevels = size(tracer,3) -1
   if (mpp_pe() == mpp_root_pe() ) write(*,700) 'Tracer ',trim(tracers(n1)%tracer_name),    &
                             ' initialized with surface value of ',surf_value, &
                             ' and vertical multiplier of ',multiplier
-  700 FORMAT (3A,E12.6,A,F10.6)
+  700 FORMAT (3A,E13.6,A,F13.6)
 
 endif ! end of query scheme
 

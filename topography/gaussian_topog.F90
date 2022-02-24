@@ -216,7 +216,6 @@ end function get_gaussian_topog
 subroutine read_namelist
 
    integer :: unit, ierr, io
-   real    :: dtr
 
 !>  read namelist
 

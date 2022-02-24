@@ -29,6 +29,7 @@
 !> @{
 module mpp_utilities_mod
 
+implicit none
 !-----------------------------------------------------------------------
 ! Include variable "version" to be written to log file.
 #include<file_version.h>
@@ -58,19 +59,16 @@ subroutine mpp_array_global_min_max(in_array, tmask,isd,jsd,isc,iec,jsc,jec,nk, 
 
   use mpp_mod,           only: mpp_min, mpp_max, mpp_pe, mpp_sum
 
+  integer,                      intent(in) :: isd,jsd,isc,iec,jsc,jec,nk
   real, dimension(isd:,jsd:,:), intent(in) :: in_array
   real, dimension(isd:,jsd:,:), intent(in) :: tmask
-  integer,                      intent(in) :: isd,jsd,isc,iec,jsc,jec,nk
   real,                         intent(out):: g_min, g_max
   real, dimension(isd:,jsd:),   intent(in) :: geo_x,geo_y
   real, dimension(:),           intent(in) :: geo_z
   real,                         intent(out):: xgmin, ygmin, zgmin, xgmax, ygmax, zgmax
 
-
-
   real    :: tmax, tmin, tmax0, tmin0
   integer :: itmax, jtmax, ktmax, itmin, jtmin, ktmin
-  integer :: igmax, jgmax, kgmax, igmin, jgmin, kgmin
   real    :: fudge
 
   ! arrays to enable vectorization

@@ -388,7 +388,6 @@ subroutine get_amip_sst (Time, Interp, sst, err_msg, lon_model, lat_model)
     type (time_type) :: Udate
     character(len=4) :: yyyy
     integer :: nrecords, ierr, k, yr, mo, dy
-    integer :: siz(4)
     integer, dimension(:), allocatable :: ryr, rmo, rdy
     character(len=30) :: time_unit
     real, dimension(:), allocatable :: timeval
@@ -893,7 +892,7 @@ endif
 
     tice_crit_k = tice_crit
     if ( tice_crit_k < 200. ) tice_crit_k = tice_crit_k + TFREEZE
-    ice_crit = nint((tice_crit_k-TFREEZE)*100.)
+    ice_crit = nint((tice_crit_k-TFREEZE)*100., I2_KIND)
 
 !   ---- set up file dependent variable ----
 !   ----   global file name   ----
@@ -1283,7 +1282,6 @@ endif
      integer(I2_KIND) :: idat(mobs,nobs)
      integer :: nrecords, yr, mo, dy, ierr, k
      integer, dimension(:), allocatable :: ryr, rmo, rdy
-     character(len=38)   :: mesg
      character(len=maxc) :: ncfilename, ncfieldname
      type(FmsNetcdfFile_t), pointer :: fileobj
 
@@ -1359,7 +1357,7 @@ endif
      else
           call fms2_io_read_data(fileobj, ncfieldname, dat, unlim_dim_level=k)
      endif
-     idat =  nint(dat) ! reconstruct packed data for reproducibility
+     idat =  nint(dat, I2_KIND) ! reconstruct packed data for reproducibility
 
    !---- unpacking of data ----
 
@@ -1381,13 +1379,7 @@ endif
         endif
      endif
 
-
      return
-
-10   write (mesg, 20) unit
-     call error_mesg ('read_record in amip_interp_mod', mesg, FATAL)
-
-20   format ('end of file reading unit ',i2,' (sst data)')
 
    end subroutine read_record
 

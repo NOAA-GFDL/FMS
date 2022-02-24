@@ -90,10 +90,6 @@ module horiz_interp_bicubic_mod
 !     dff_xy : x-y-derivative of fc at the fine grid
 
 
-   logical            :: initialized_bicubic = .false.
-
-
-   real, save         :: missing = -1e33
    real               :: tpi
 
    interface fill_xy
