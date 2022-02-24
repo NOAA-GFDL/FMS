@@ -33,7 +33,7 @@ subroutine MPP_START_DO_UPDATE_3D_V_(id_update, f_addrsx, f_addrsy, domain, upda
 
   !---local variable ------------------------------------------
   integer            :: i, j, k, l, is, ie, js, je, n, m
-  integer            :: pos, nlist, msgsize, tile, l_size
+  integer            :: pos, nlist, msgsize, l_size
   integer            :: to_pe, from_pe, buffer_pos
   integer            :: tMe, dir, ke_sum
   logical            :: send(8), recv(8), update_edge_only
@@ -557,7 +557,7 @@ subroutine MPP_COMPLETE_DO_UPDATE_3D_V_(id_update, f_addrsx, f_addrsy, domain, u
   pointer( ptr, recv_buffer )
 
   integer :: i, j, k, l, is, ie, js, je, n, ke_sum, l_size, m
-  integer :: pos, nlist, msgsize, tile, buffer_pos
+  integer :: pos, nlist, msgsize, buffer_pos
   integer :: ind_x, ind_y, nrecv, nsend
   integer :: ind_recv_x(update_x%nrecv+update_y%nrecv), ind_recv_y(update_x%nrecv+update_y%nrecv)
   integer :: start_pos_recv(update_x%nrecv+update_y%nrecv)

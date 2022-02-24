@@ -390,8 +390,6 @@ contains
 
     character(len=*), parameter :: error_header =&
         & '==>Error from coupler_types_mod (coupler_type_copy_1d_2d):'
-    character(len=400)      :: error_msg
-    integer                 :: m, n
 
     if (var_out%num_bcs > 0) then
       ! It is an error if the number of output fields exceeds zero, because it means this
@@ -427,8 +425,6 @@ contains
 
     character(len=*), parameter :: error_header =&
         & '==>Error from coupler_types_mod (coupler_type_copy_1d_3d):'
-    character(len=400)      :: error_msg
-    integer                 :: m, n
 
     if (var_out%num_bcs > 0) then
       ! It is an error if the number of output fields exceeds zero, because it means this
@@ -462,8 +458,6 @@ contains
 
     character(len=*), parameter :: error_header =&
         & '==>Error from coupler_types_mod (coupler_type_copy_2d_2d):'
-    character(len=400)      :: error_msg
-    integer                 :: m, n
 
     if (var_out%num_bcs > 0) then
       ! It is an error if the number of output fields exceeds zero, because it means this
@@ -498,8 +492,6 @@ contains
 
     character(len=*), parameter :: error_header =&
         & '==>Error from coupler_types_mod (coupler_type_copy_2d_3d):'
-    character(len=400)      :: error_msg
-    integer                 :: m, n
 
     if (var_out%num_bcs > 0) then
       ! It is an error if the number of output fields exceeds zero, because it means this
@@ -533,8 +525,6 @@ contains
 
     character(len=*), parameter :: error_header =&
         & '==>Error from coupler_types_mod (coupler_type_copy_3d_2d):'
-    character(len=400)      :: error_msg
-    integer                 :: m, n
 
     if (var_out%num_bcs > 0) then
       ! It is an error if the number of output fields exceeds zero, because it means this
@@ -569,8 +559,6 @@ contains
 
     character(len=*), parameter :: error_header =&
         & '==>Error from coupler_types_mod (coupler_type_copy_3d_3d):'
-    character(len=400)      :: error_msg
-    integer                 :: m, n
 
     if (var_out%num_bcs > 0) then
       ! It is an error if the number of output fields exceeds zero, because it means this
@@ -2394,7 +2382,7 @@ contains
     character(len=400)      :: error_msg
 
     real :: scale
-    integer :: i, j, k, halo, i_off, j_off
+    integer :: i, j, halo, i_off, j_off
 
     if (bc_index <= 0) then
       array_out(:,:) = 0.0
@@ -3566,7 +3554,7 @@ contains
     character(len=80), dimension(max(1,var%num_bcs)) :: rest_file_names
     character(len=80) :: file_nm
     logical :: ocn_rest
-    integer :: f, n, m, id_restart
+    integer :: f, n, m
 
     ocn_rest = .true.
     if (present(ocean_restart)) ocn_rest = ocean_restart

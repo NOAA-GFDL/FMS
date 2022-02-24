@@ -62,6 +62,9 @@ public :: calc_mosaic_grid_great_circle_area
 public :: is_inside_polygon
 
 logical :: module_is_initialized = .true.
+!--- external c routines
+external get_grid_area, get_grid_great_circle_area, grad_c2l, calc_c2l_grid_info
+
 ! Include variable "version" to be written to log file.
 #include<file_version.h>
 
@@ -142,10 +145,10 @@ end subroutine mosaic_init
     call read_compressed(xgrid_file, 'tile2_cell', tile2_cell, start=start, nread=nread, threading=MPP_MULTI)
 
      do n = 1, nxgrid
-       i1(n) = tile1_cell(1,n)
-       j1(n) = tile1_cell(2,n)
-       i2(n) = tile2_cell(1,n)
-       j2(n) = tile2_cell(2,n)
+       i1(n) = int(tile1_cell(1,n))
+       j1(n) = int(tile1_cell(2,n))
+       i2(n) = int(tile2_cell(1,n))
+       j2(n) = int(tile2_cell(2,n))
        area(n) = area(n)/garea
     end do
 
@@ -183,10 +186,6 @@ end subroutine mosaic_init
   function get_mosaic_ncontacts( mosaic_file)
     character(len=*), intent(in) :: mosaic_file !< The file that contains mosaic information.
     integer                      :: get_mosaic_ncontacts
-
-    character(len=len_trim(mosaic_file)+1) :: mfile
-    integer                                :: strlen
-    integer                                :: read_mosaic_ncontacts
 
     if(field_exist(mosaic_file, "contacts") ) then
       get_mosaic_ncontacts = dimension_size(mosaic_file, "ncontact", no_domain=.TRUE.)
@@ -433,7 +432,6 @@ end function transfer_to_model_index
      real, intent(in) :: lon1, lat1
      real, intent(in) :: lon2(:), lat2(:)
      logical          :: is_inside_polygon
-     real, dimension(size(lon2(:))) :: x2, y2, z2
      integer                        :: npts, isinside
      integer                        :: inside_a_polygon
 

@@ -432,11 +432,9 @@ CONTAINS
     CHARACTER(len=*), OPTIONAL, INTENT(in):: realm !< String to set as the value to the modeling_realm attribute
 
     INTEGER :: field, j, ind, file_num, freq
-    INTEGER :: i, cm_ind, cm_file_num
     INTEGER :: output_units
     INTEGER :: stdout_unit
     LOGICAL :: mask_variant1, verbose1
-    LOGICAL :: cm_found
     CHARACTER(len=128) :: msg
 
     ! get stdout unit number
@@ -3515,7 +3513,7 @@ CONTAINS
     INTEGER, INTENT(in) :: file
     TYPE(time_type), INTENT(in) :: time
 
-    INTEGER :: j, i, input_num, freq, status, loop1, loop2
+    INTEGER :: j, i, input_num, freq, status
     INTEGER :: stdout_unit
     LOGICAL :: reduced_k_range, need_compute, local_output
     CHARACTER(len=128) :: message
@@ -3864,7 +3862,6 @@ CONTAINS
     REAL, DIMENSION(:), INTENT(in), OPTIONAL :: rval !< Real attribute value(s)
 
     INTEGER :: istat, length, i, j, this_attribute, out_field
-    CHARACTER(len=1024) :: err_msg
 
     IF ( .NOT.first_send_data_call ) THEN
        ! Call error due to unable to add attribute after send_data called
@@ -4051,9 +4048,6 @@ CONTAINS
     INTEGER, INTENT(in) :: diag_field_id !< ID number for field to add attribute to
     CHARACTER(len=*), INTENT(in) :: att_name !< new attribute name
     REAL, DIMENSION(:), INTENT(in) :: att_value !< new attribute value
-
-    INTEGER :: num_attributes, len
-    CHARACTER(len=512) :: err_msg
 
     CALL diag_field_attribute_init(diag_field_id, att_name, NF90_FLOAT, rval=att_value)
   END SUBROUTINE diag_field_add_attribute_r1d

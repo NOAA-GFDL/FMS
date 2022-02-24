@@ -28,7 +28,6 @@
 !> @addtogroup netcdf_io_mod
 !> @{
 module netcdf_io_mod
-use, intrinsic :: iso_fortran_env
 use netcdf
 use mpp_mod
 use fms_io_utils_mod
@@ -2175,10 +2174,12 @@ end subroutine set_fileobj_time_name
 
 !> @brief Loop through the registered restart variables (including regional
 !! variables) and read them from the netcdf file
-subroutine read_restart_bc(fileobj, unlim_dim_level)
+subroutine read_restart_bc(fileobj, unlim_dim_level, ignore_checksum)
   class(FmsNetcdfFile_t), intent(inout) :: fileobj !< File object
   integer, intent(in), optional :: unlim_dim_level !< Unlimited dimension
                                                      !! level.
+  logical, intent(in), optional :: ignore_checksum !< Checksum data integrity flag.
+
   integer :: i !< No description
 
   if (.not. fileobj%is_restart) then
@@ -2193,11 +2194,15 @@ subroutine read_restart_bc(fileobj, unlim_dim_level)
     if (associated(fileobj%restart_vars(i)%data2d)) then
        call scatter_data_bc (fileobj, fileobj%restart_vars(i)%varname, &
                                 fileobj%restart_vars(i)%data2d, &
-                                fileobj%restart_vars(i)%bc_info)
+                                fileobj%restart_vars(i)%bc_info, &
+                                unlim_dim_level = unlim_dim_level, &
+                                ignore_checksum=ignore_checksum)
     else if (associated(fileobj%restart_vars(i)%data3d)) then
        call scatter_data_bc (fileobj, fileobj%restart_vars(i)%varname, &
                                 fileobj%restart_vars(i)%data3d, &
-                                fileobj%restart_vars(i)%bc_info)
+                                fileobj%restart_vars(i)%bc_info, &
+                                unlim_dim_level = unlim_dim_level, &
+                                ignore_checksum=ignore_checksum)
     endif
   end do
 

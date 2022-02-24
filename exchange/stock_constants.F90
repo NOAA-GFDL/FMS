@@ -172,7 +172,6 @@ contains
   subroutine stocks_report(Time)
     type(time_type)               , intent(in) :: Time !< Model time
 
-    type(time_type) :: timeSinceStart
     type(stock_type) :: stck
     real, dimension(NCOMPS) :: f_value, f_ice_grid, f_ocn_grid, f_ocn_btf, q_start, q_now,c_value
     character(len=80) :: formatString

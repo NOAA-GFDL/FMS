@@ -61,8 +61,6 @@ private
 ! by fms_init
 public :: version
 
-real :: realnumber !< dummy variable to use in HUGE initializations
-
 !! The small_fac parameter is used to alter the radius of the earth to allow one to
 !! examine non-hydrostatic effects without the need to run full-earth high-resolution
 !! simulations (<13km) that will tax hardware resources.
