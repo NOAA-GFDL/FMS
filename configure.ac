@@ -124,7 +124,6 @@ if test "x$enable_docs" = xyes; then
    AC_CONFIG_FILES([docs/Doxyfile])
 fi
 
-
 # Find the C compiler.
 AC_PROG_CC
 AM_PROG_CC_C_O
@@ -378,26 +377,26 @@ AC_CONFIG_FILES([
   random_numbers/Makefile
   libFMS/Makefile
   docs/Makefile
-  test_fms/test-lib.sh
   parser/Makefile
+  test_fms/test-lib.sh
   test_fms/Makefile
-  test_fms/affinity/Makefile
-  test_fms/axis_utils/Makefile
-  test_fms/data_override/Makefile
   test_fms/diag_manager/Makefile
-  test_fms/drifters/Makefile
+  test_fms/data_override/Makefile
   test_fms/exchange/Makefile
-  test_fms/field_manager/Makefile
-  test_fms/fms/Makefile
-  test_fms/fms2_io/Makefile
-  test_fms/horiz_interp/Makefile
+  test_fms/monin_obukhov/Makefile
+  test_fms/drifters/Makefile
   test_fms/interpolator/Makefile
+  test_fms/fms2_io/Makefile
+  test_fms/fms/Makefile
+  test_fms/mpp/Makefile
+  test_fms/mpp_io/Makefile
   test_fms/time_interp/Makefile
   test_fms/time_manager/Makefile
-  test_fms/mpp_io/Makefile
-  test_fms/mpp/Makefile
-  test_fms/monin_obukhov/Makefile
+  test_fms/horiz_interp/Makefile
+  test_fms/field_manager/Makefile
+  test_fms/axis_utils/Makefile
   test_fms/mosaic/Makefile
+  test_fms/affinity/Makefile
   test_fms/coupler/Makefile
   test_fms/parser/Makefile
   FMS.pc
