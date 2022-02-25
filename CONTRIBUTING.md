@@ -35,10 +35,10 @@ uphold this code. Please report unacceptable behavior to
 
 1. Create an issue that describes the change, or feature request
 2. Fork the project
-3. Create a feature branch off an up-do-date `master` branch
+3. Create a feature branch off an up-do-date `main` branch
 4. Update the tests and code
 5. Push the commits to your fork
-6. Submit a pull request to the `master` branch
+6. Submit a pull request to the `main` branch
 
 ## Support
 

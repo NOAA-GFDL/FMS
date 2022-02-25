@@ -43,8 +43,8 @@
 * Inline doxygen descriptions for all member variables.
 
 ## Functions
-* Functions should include a result variable on its own line, that does not have
-  a specific intent.
+* If a function has a result variable, it should be declared on its own line, 
+  and the variable should not be declared with a specific intent.
 * Inline doxygen descriptions for all arguments, except the result variable.
 * Doxygen description on the line(s) before the function definition.  This must
   specify what the function is returning using the `@return` doxygen keyword.
@@ -120,9 +120,7 @@ module example_mod
 
   !> @brief Doxygen description
   !! @return Function return value.
-  function func1(arg1, &
-    & arg2) &
-    & result(res)
+  function func1(arg1, arg2) result(res)
     integer(kind=INT32),intent(in) :: arg1 !< Inline doxygen description
     integer(kind=INT32),intent(in) :: arg2 !< Inline doxygen description
     integer(kind=INT32) :: res
