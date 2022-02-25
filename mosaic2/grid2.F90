@@ -300,7 +300,7 @@ subroutine get_grid_size_for_all_tiles(component,nx,ny)
 
   ! local vars
   integer :: siz(2) ! for the size of external fields
-  character(len=MAX_NAME) :: varname1, varname2
+  character(len=MAX_NAME) :: varname1
 
   varname1 = 'AREA_'//trim(uppercase(component))
 
@@ -368,7 +368,7 @@ subroutine get_grid_cell_area_SG(component, tile, cellarea, domain)
                 'Illegal component name "'//trim(component)//'": must be one of ATM, LND, or OCN')
         end select
         ! convert area to m2
-        cellarea = cellarea*4.*PI*radius**2
+        cellarea = real(cellarea*4.*PI*radius**2, r4_kind)
      case(VERSION_2, VERSION_3)
         if (present(domain)) then
            call mpp_get_compute_domain(domain,xsize=nlon,ysize=nlat)
@@ -441,12 +441,12 @@ subroutine get_grid_comp_area_SG(component,tile,area,domain)
   character(len=MAX_NAME) :: &
      xgrid_name, & ! name of the variable holding xgrid names
      tile_name,  & ! name of the tile
-     xgrid_file, & ! name of the current xgrid file
-     mosaic_name,& ! name of the mosaic
-     tilefile
+     mosaic_name ! name of the mosaic
+  character(len=MAX_FILE) :: &
+     tilefile,   & ! name of current tile file
+     xgrid_file  ! name of the current xgrid file
   character(len=4096)     :: attvalue
   character(len=MAX_NAME), allocatable :: nest_tile_name(:)
-  character(len=MAX_NAME) :: varname1, varname2
   integer :: is,ie,js,je ! boundaries of our domain
   integer :: i0, j0 ! offsets for x and y, respectively
   integer :: num_nest_tile, ntiles
@@ -600,7 +600,7 @@ subroutine get_grid_comp_area_SG(component,tile,area,domain)
         deallocate(nest_tile_name)
      end select ! version
      ! convert area to m2
-     area = area*4.*PI*radius**2
+     area = real(area*4.*PI*radius**2, r4_kind)
   !! R8 version ###################################
   type is (real(r8_kind))
      select case (grid_version   )

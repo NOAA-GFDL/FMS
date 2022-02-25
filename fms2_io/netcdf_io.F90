@@ -31,7 +31,6 @@ module netcdf_io_mod
 #ifndef MAX_NUM_RESTART_VARS_
 #define MAX_NUM_RESTART_VARS_ 250
 #endif
-use, intrinsic :: iso_fortran_env
 use netcdf
 use mpp_mod
 use fms_io_utils_mod
@@ -2196,11 +2195,13 @@ subroutine read_restart_bc(fileobj, unlim_dim_level, ignore_checksum)
        call scatter_data_bc (fileobj, fileobj%restart_vars(i)%varname, &
                                 fileobj%restart_vars(i)%data2d, &
                                 fileobj%restart_vars(i)%bc_info, &
+                                unlim_dim_level = unlim_dim_level, &
                                 ignore_checksum=ignore_checksum)
     else if (associated(fileobj%restart_vars(i)%data3d)) then
        call scatter_data_bc (fileobj, fileobj%restart_vars(i)%varname, &
                                 fileobj%restart_vars(i)%data3d, &
                                 fileobj%restart_vars(i)%bc_info, &
+                                unlim_dim_level = unlim_dim_level, &
                                 ignore_checksum=ignore_checksum)
     endif
   end do

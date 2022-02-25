@@ -225,7 +225,6 @@ subroutine get_grid_version_2(fileobj, mod_name, domain, isc, iec, jsc, jec, lon
   integer            :: isc2, iec2, jsc2, jec2
   character(len=256) :: solo_mosaic_file, grid_file
   real, allocatable  :: tmpx(:,:), tmpy(:,:)
-  type(domain2d)     :: domain2
   logical            :: open_solo_mosaic
   type(FmsNetcdfFile_t) :: mosaicfileobj, tilefileobj
   integer            :: start(2), nread(2)

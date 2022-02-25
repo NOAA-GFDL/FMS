@@ -125,8 +125,8 @@ subroutine domain_write_2d(fileobj, variable_name, vdata, unlim_dim_level, &
   integer :: ydim_index
   integer :: ypos
   integer :: yc_size
-  real(kind=i4_kind) :: fill_i4_kind !< Fill value of a i4_kind variable
-  real(kind=i8_kind) :: fill_i8_kind !< Fill value of a i8_kind variable
+  integer(kind=i4_kind) :: fill_i4_kind !< Fill value of a i4_kind variable
+  integer(kind=i8_kind) :: fill_i8_kind !< Fill value of a i8_kind variable
   real(kind=r4_kind) :: fill_r4_kind !< Fill value of a r4_kind variable
   real(kind=r8_kind) :: fill_r8_kind !< Fill value of a r8_kind variable
   integer :: xgmax !< Ending x index of the global io domain
@@ -419,8 +419,8 @@ subroutine domain_write_3d(fileobj, variable_name, vdata, unlim_dim_level, &
   integer :: ydim_index
   integer :: ypos
   integer :: yc_size
-  real(kind=i4_kind) :: fill_i4_kind !< Fill value of a i4_kind variable
-  real(kind=i8_kind) :: fill_i8_kind !< Fill value of a i8_kind variable
+  integer(kind=i4_kind) :: fill_i4_kind !< Fill value of a i4_kind variable
+  integer(kind=i8_kind) :: fill_i8_kind !< Fill value of a i8_kind variable
   real(kind=r4_kind) :: fill_r4_kind !< Fill value of a r4_kind variable
   real(kind=r8_kind) :: fill_r8_kind !< Fill value of a r8_kind variable
   integer :: xgmax !< Ending x index of the global io domain
@@ -713,8 +713,8 @@ subroutine domain_write_4d(fileobj, variable_name, vdata, unlim_dim_level, &
   integer :: ydim_index
   integer :: ypos
   integer :: yc_size
-  real(kind=i4_kind) :: fill_i4_kind !< Fill value of a i4_kind variable
-  real(kind=i8_kind) :: fill_i8_kind !< Fill value of a i8_kind variable
+  integer(kind=i4_kind) :: fill_i4_kind !< Fill value of a i4_kind variable
+  integer(kind=i8_kind) :: fill_i8_kind !< Fill value of a i8_kind variable
   real(kind=r4_kind) :: fill_r4_kind !< Fill value of a r4_kind variable
   real(kind=r8_kind) :: fill_r8_kind !< Fill value of a r8_kind variable
   integer :: xgmax !< Ending x index of the global io domain
@@ -1007,8 +1007,8 @@ subroutine domain_write_5d(fileobj, variable_name, vdata, unlim_dim_level, &
   integer :: ydim_index
   integer :: ypos
   integer :: yc_size
-  real(kind=i4_kind) :: fill_i4_kind !< Fill value of a i4_kind variable
-  real(kind=i8_kind) :: fill_i8_kind !< Fill value of a i8_kind variable
+  integer(kind=i4_kind) :: fill_i4_kind !< Fill value of a i4_kind variable
+  integer(kind=i8_kind) :: fill_i8_kind !< Fill value of a i8_kind variable
   real(kind=r4_kind) :: fill_r4_kind !< Fill value of a r4_kind variable
   real(kind=r8_kind) :: fill_r8_kind !< Fill value of a r8_kind variable
   integer :: xgmax !< Ending x index of the global io domain

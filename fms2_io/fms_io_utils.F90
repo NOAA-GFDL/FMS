@@ -600,7 +600,7 @@ subroutine parse_mask_table_2d(mask_table, maskmap, modelname)
      maskmap(mask_list(n,1),mask_list(n,2)) = .false.
   enddo
 
-  deallocate(mask_list)
+  deallocate(mask_list, mask_table_contents)
 
 end subroutine parse_mask_table_2d
 
@@ -703,8 +703,7 @@ subroutine parse_mask_table_3d(mask_table, maskmap, modelname)
   do n = 1, nmask
      maskmap(mask_list(n,1),mask_list(n,2),mask_list(n,3)) = .false.
   enddo
-
-  deallocate(mask_list)
+  deallocate(mask_list, mask_table_contents)
 end subroutine parse_mask_table_3d
 
 !> @brief Determine tile_file for structured grid based on filename and current
