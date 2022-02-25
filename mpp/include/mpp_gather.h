@@ -66,7 +66,7 @@ subroutine MPP_GATHER_1DV_(sbuf, ssize, rbuf, rsize, pelist)
    integer,   dimension(:),    intent(in) :: rsize
    integer,   dimension(:),    intent(in), optional :: pelist(:)
 
-   integer :: cnt, l, nproc, pos, op_root
+   integer :: l, nproc, pos, op_root
    integer, allocatable :: pelist2(:)
 
 !  If pelist is provided, the first position must be

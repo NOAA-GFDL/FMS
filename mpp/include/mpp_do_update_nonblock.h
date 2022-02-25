@@ -34,7 +34,7 @@ subroutine MPP_START_DO_UPDATE_3D_(id_update, f_addrs, domain, update, d_type, k
   integer                     :: buffer_pos, msgsize, from_pe, to_pe, pos
   integer                     :: is, ie, js, je, sendsize, recvsize
   logical                     :: send(8), recv(8), update_edge_only
-  integer                     :: l_size, ke_sum, my_id_update
+  integer                     :: l_size, ke_sum
   integer                     :: request
   integer                     :: send_msgsize(MAXLIST)
   character(len=128)          :: text
@@ -265,12 +265,11 @@ subroutine MPP_COMPLETE_DO_UPDATE_3D_(id_update, f_addrs, domain, update, d_type
   integer,             intent(in) :: flags
 
   !--- local variables
-  integer                     :: i, j, k, m, n, l, dir, count, tMe, tNbr
-  integer                     :: buffer_pos, msgsize, from_pe, pos
+  integer                     :: i, j, k, m, n, l, dir, count, tMe
+  integer                     :: buffer_pos, msgsize, pos
   integer                     :: is, ie, js, je
   logical                     :: send(8), recv(8), update_edge_only
-  integer                     :: l_size, ke_sum, sendsize, recvsize
-  character(len=128)          :: text
+  integer                     :: l_size, ke_sum
   MPP_TYPE_                   :: recv_buffer(size(mpp_domains_stack_nonblock(:)))
   MPP_TYPE_                   :: field(update%xbegin:update%xend, update%ybegin:update%yend,ke_max)
   pointer( ptr, recv_buffer )

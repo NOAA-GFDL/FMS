@@ -466,7 +466,7 @@ integer :: unit, ierr, io, seconds, days, jd, id
       if (period == 0) then
         period_time_type = length_of_year()
         call get_time (period_time_type, seconds, days)
-        period = seconds_per_day*days + seconds
+        period = int(seconds_per_day*days + seconds)
       else
         period_time_type = set_time(period,0)
       endif
@@ -533,7 +533,7 @@ integer, intent(out) :: period_out !< Length of year [seconds]
 !    define length of year in seconds.
 !--------------------------------------------------------------------
       call get_time (period_time_type, seconds, days)
-      period_out = seconds_per_day*days + seconds
+      period_out = int(seconds_per_day*days + seconds)
 
 
 end subroutine get_period_integer
@@ -1753,7 +1753,7 @@ real,                    intent(out)   :: rrsun
 !--------------------------------------------------------------------
       real, dimension(size(lat,1),size(lat,2)) :: s,z
       real    :: t
-      integer :: n, i
+      integer :: n
 
 !--------------------------------------------------------------------
 !    if the calculation has not yet been done, do it here.

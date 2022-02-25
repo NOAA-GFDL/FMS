@@ -83,7 +83,7 @@ contains
     character(len=8) , dimension(4) :: z_units
     character(len=3) , dimension(6) :: t_units
     character(len=32) :: name
-    integer :: i,j
+    integer :: i
 
     lon_names = (/'lon','x  '/)
     lat_names = (/'lat','y  '/)
@@ -533,7 +533,7 @@ contains
     real, dimension(:),    intent(in) :: grid1, data1, grid2
     real, dimension(:), intent(inout) :: data2
 
-    integer :: n1, n2, i, n, ext
+    integer :: n1, n2, i, n
     real :: w
 
     n1 = size(grid1(:))
@@ -690,8 +690,7 @@ contains
     real, dimension(:,:),    intent(in) :: grid1, data1, grid2
     real, dimension(:,:), intent(inout) :: data2
 
-    integer :: n1, n2, i, n, k2, ks, ke
-    real :: w
+    integer :: n1, n2, n, k2, ks, ke
 
     n1 = size(grid1,1)
     n2 = size(grid2,1)
@@ -717,8 +716,8 @@ contains
     character(len=*), optional, intent(in) :: method
     real,             optional, intent(in) :: yp1, yp2
 
-    integer           :: n1, n2, m1, m2, k2, i, n, m
-    real              :: w, y1, y2
+    integer           :: n1, n2, m1, m2, k2, n, m
+    real              :: y1, y2
     character(len=32) :: interp_method
     integer           :: ks, ke
     n1 = size(grid1,1)

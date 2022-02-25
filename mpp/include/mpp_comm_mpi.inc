@@ -35,12 +35,10 @@
   integer, optional, intent(in) :: localcomm
   integer, optional, intent(in) :: test_level
   character(len=*), optional, intent(in) :: alt_input_nml_path
-  integer                       :: my_pe, num_pes, len, i, iunit
+  integer                       :: i, iunit
   logical                       :: opened, existed
   integer                       :: io_status
   integer                       :: t_level
-  character(len=5) :: this_pe
-  type(mpp_type), pointer :: dtype
 
   if( module_is_initialized )return
 
@@ -219,7 +217,7 @@ end subroutine mpp_init
 !#######################################################################
   !> To be called at the end of a run
 subroutine mpp_exit()
-  integer :: i, j, k, n, nmax, istat, out_unit, log_unit
+  integer :: i, j, n, nmax, out_unit, log_unit
   real    :: t, tmin, tmax, tavg, tstd
   real    :: m, mmin, mmax, mavg, mstd, t_total
   logical :: opened
@@ -354,7 +352,7 @@ end subroutine mpp_exit
       character(len=*), intent(inout) :: data(:)
       integer, intent(in) :: length, from_pe
       integer, intent(in), optional :: pelist(:)
-      integer :: n, i, from_rank, out_unit
+      integer :: n, i, from_rank
       character    :: str1D(length*size(data(:)))
       pointer(lptr, str1D)
 
@@ -386,6 +384,9 @@ end subroutine mpp_exit
       if( debug .and. (current_clock.NE.0) )call increment_current_clock( EVENT_BROADCAST, length )
       return
     end subroutine mpp_broadcast_char
+
+! defines initialization value for mpp_type data
+#define MPP_TYPE_INIT_VALUE 0.
 
 #undef MPP_TRANSMIT_
 #define MPP_TRANSMIT_ mpp_transmit_real8
@@ -615,6 +616,8 @@ end subroutine mpp_exit
 #include <mpp_transmit_mpi.h>
 #endif
 
+#undef MPP_TYPE_INIT_VALUE
+#define MPP_TYPE_INIT_VALUE 0
 #undef MPP_TRANSMIT_
 #define MPP_TRANSMIT_ mpp_transmit_int8
 #undef MPP_TRANSMIT_SCALAR_
@@ -727,6 +730,8 @@ end subroutine mpp_exit
 #define MPI_TYPE_ MPI_INTEGER4
 #include <mpp_transmit_mpi.h>
 
+#undef MPP_TYPE_INIT_VALUE
+#define MPP_TYPE_INIT_VALUE .false.
 #undef MPP_TRANSMIT_
 #define MPP_TRANSMIT_ mpp_transmit_logical8
 #undef MPP_TRANSMIT_SCALAR_
@@ -838,6 +843,7 @@ end subroutine mpp_exit
 #undef MPI_TYPE_
 #define MPI_TYPE_ MPI_INTEGER4
 #include <mpp_transmit_mpi.h>
+#undef MPP_TYPE_INIT_VALUE
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !                                                                             !
@@ -1266,6 +1272,7 @@ end subroutine mpp_exit
 #define MPI_TYPE_ MPI_REAL8
 #include <mpp_alltoall_mpi.h>
 
+#ifdef OVERLOAD_C4
 #undef MPP_ALLTOALL_
 #undef MPP_ALLTOALLV_
 #undef MPP_ALLTOALLW_
@@ -1279,7 +1286,9 @@ end subroutine mpp_exit
 #define MPP_TYPE_BYTELEN_ 8
 #define MPI_TYPE_ MPI_COMPLEX8
 #include <mpp_alltoall_mpi.h>
+#endif
 
+#ifdef OVERLOAD_C8
 #undef MPP_ALLTOALL_
 #undef MPP_ALLTOALLV_
 #undef MPP_ALLTOALLW_
@@ -1293,6 +1302,7 @@ end subroutine mpp_exit
 #define MPP_TYPE_BYTELEN_ 16
 #define MPI_TYPE_ MPI_COMPLEX16
 #include <mpp_alltoall_mpi.h>
+#endif
 
 #undef MPP_ALLTOALL_
 #undef MPP_ALLTOALLV_

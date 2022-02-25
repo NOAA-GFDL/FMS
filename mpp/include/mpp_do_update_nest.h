@@ -864,7 +864,6 @@ subroutine MPP_DO_UPDATE_NEST_COARSE_3D_V_(f_addrsx_in, f_addrsy_in, f_addrsx_ou
   integer,                    intent(in) :: flags
 
   character(len=8)            :: text
-  type(overlap_type), pointer :: overPtr => NULL()
   integer   :: from_pe, to_pe
   integer   :: m, n, l, i, j, k
   integer   :: is, ie, js, je, l_size

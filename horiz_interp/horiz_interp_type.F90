@@ -117,8 +117,8 @@ contains
  real, intent(in), optional :: missing_value
  real,    intent(in), optional :: mask(:,:)
 
- real :: dsum, npts, buffer_real(3)
- integer :: pe, root_pe, npes, p, buffer_int(2)
+ real :: dsum, buffer_real(3)
+ integer :: pe, root_pe, npes, p, buffer_int(2), npts
 
    pe = mpp_pe()
    root_pe = mpp_root_pe()
@@ -157,7 +157,7 @@ contains
          miss = miss + buffer_int(1)
          npts = npts + buffer_int(2)
       enddo
-      if(npts == 0.) then
+      if(npts == 0) then
          print*, 'Warning: no points is valid'
       else
          avg = dsum/real(npts)

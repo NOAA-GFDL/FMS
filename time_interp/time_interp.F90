@@ -302,7 +302,7 @@ contains
      Year_beg = set_date(year  , 1, 1)
      Year_end = set_date(year+1, 1, 1)
 
-     weight = (Time - Year_beg) // (Year_end - Year_beg)
+     weight = real( (Time - Year_beg) // (Year_end - Year_beg) )
 
  end subroutine time_interp_frac
 
@@ -356,13 +356,13 @@ contains
            year1  = year
            year2  = year+1
            Mid_year2 = year_midpt(year2)
-           weight = (Time - Mid_year) // (Mid_year2 - Mid_year)
+           weight = real( (Time - Mid_year) // (Mid_year2 - Mid_year) )
       else
     ! current time is before mid point of current year
            year2  = year
            year1  = year-1
            Mid_year1 = year_midpt(year1)
-           weight = (Time - Mid_year1) // (Mid_year - Mid_year1)
+           weight = real( (Time - Mid_year1) // (Mid_year - Mid_year1) )
       endif
 
  end subroutine time_interp_year
@@ -655,14 +655,14 @@ character(len=*), intent(out), optional :: err_msg
   if( T>=Timelist(ie) ) then
      ! time is after the end of the portion of the time list within the requested period
      index1 = ie;   index2 = is
-     weight = (T-Timelist(ie))//(Period-(Timelist(ie)-Timelist(is)))
+     weight = real( (T-Timelist(ie))//(Period-(Timelist(ie)-Timelist(is))) )
   else if (T<Timelist(is)) then
      ! time is before the beginning of the portion of the time list within the requested period
      index1 = ie;   index2 = is
-     weight = 1.0-((Timelist(is)-T)//(Period-(Timelist(ie)-Timelist(is))))
+     weight = real( 1.0-((Timelist(is)-T)//(Period-(Timelist(ie)-Timelist(is)))) )
   else
      call bisect(Timelist,T,index1,index2)
-     weight = (T-Timelist(index1)) // (Timelist(index2)-Timelist(index1))
+     weight = real( (T-Timelist(index1)) // (Timelist(index2)-Timelist(index1)) )
   endif
 
 end subroutine time_interp_modulo
@@ -784,7 +784,7 @@ character(len=:),allocatable :: terr, tserr, teerr
 ! time falls on start or between start and end list values
   if ( T >= Ts .and. T < Te ) then
      call bisect(Timelist(1:n),T,index1,index2)
-     weight = (T-Timelist(index1)) // (Timelist(index2)-Timelist(index1))
+     weight = real( (T-Timelist(index1)) // (Timelist(index2)-Timelist(index1)) )
 
 ! time falls before starting list value
   else if ( T < Ts ) then
@@ -799,7 +799,7 @@ character(len=:),allocatable :: terr, tserr, teerr
         deallocate(terr,tserr,teerr)
      endif
      Td = Te-Ts
-     weight = 1. - ((Ts-T) // (Period-Td))
+     weight = real( 1. - ((Ts-T) // (Period-Td)) )
      index1 = n
      index2 = 1
 
@@ -832,7 +832,7 @@ character(len=:),allocatable :: terr, tserr, teerr
         deallocate(terr,tserr,teerr)
      endif
      Td = Te-Ts
-     weight = (T-Te) // (Period-Td)
+     weight = real( (T-Te) // (Period-Td) )
      index1 = n
      index2 = 1
   endif
