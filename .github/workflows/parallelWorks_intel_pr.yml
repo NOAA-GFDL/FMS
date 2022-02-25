@@ -1,4 +1,4 @@
-name: Pull Request CI libFMS with intel18 and intel21
+name: Pull Request CI libFMS with intel21
   
 on: [pull_request,workflow_dispatch]
 jobs:
@@ -9,10 +9,7 @@ jobs:
       max-parallel: 2
       matrix:
         include:
-# Turn this back on when fixed 
-                - runname: FMS with intel 18
-                  runscript: python3 /home/Thomas.Robinson/pw/storage/pw_api_python/PRFMSintel18StartClusters.py $GITHUB_REF
-# Runs on FMS_CONTAINER_CI cluster
+# Runs on FMS_CONTAINER_CI cluster with intel 2021
                 - runname: FMS with intel 2021 container
                   runscript: python3 /home/Thomas.Robinson/pw/storage/pw_api_python/PRFMSintel21StartClusters.py $GITHUB_REF
     steps:
@@ -29,7 +26,7 @@ jobs:
       matrix:
         include:
                 - cluster: FMS_CONTAINER_CI
-                - cluster: fms_intel18_ci
+                  #                - cluster: fms_intel18_ci
     steps:
                 - name: Turn off cluster
                   env:
