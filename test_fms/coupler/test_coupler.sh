@@ -37,9 +37,9 @@ test_expect_success "2D coupler" '
   mpirun -n 1 ./test_coupler_2d
 '
 
-#test_expect_success "3D coupler" '
-#  mpirun -n 1 ./test_coupler_3d
-#'
+test_expect_success "3D coupler" '
+  mpirun -n 1 ./test_coupler_3d
+'
 rm -rf RESTART
 
 test_done
