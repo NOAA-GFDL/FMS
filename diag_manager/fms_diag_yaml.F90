@@ -502,7 +502,7 @@ end subroutine get_sub_region
 
 !> @brief gets the total number of variables in the diag_table yaml file
 !! @return total number of variables
-pure function get_total_num_vars(diag_yaml_id, diag_file_ids) &
+function get_total_num_vars(diag_yaml_id, diag_file_ids) &
 result(total_nvars)
 
   integer, intent(in) :: diag_yaml_id     !< Id for the diag_table yaml
