@@ -218,7 +218,7 @@ CONTAINS
     CHARACTER(len=1)     :: axis_cart_name
     INTEGER              :: axis_direction, axis_edges
     REAL, ALLOCATABLE    :: axis_data(:)
-integer :: domain_size, axis_length, axis_pos
+    integer              :: axis_pos
     INTEGER              :: num_attributes
     TYPE(diag_atttype), DIMENSION(:), ALLOCATABLE :: attributes
     INTEGER              :: calendar, id_axis, id_time_axis
@@ -231,8 +231,6 @@ integer :: domain_size, axis_length, axis_pos
     integer :: istart, iend
     integer :: gstart, cstart, cend !< Start and end of global and compute domains
     integer :: clength !< Length of compute domain
-    integer :: data_size
-    integer, allocatable, dimension(:) :: all_indicies
     character(len=32) :: type_str !< Str indicating the type of the axis data
 
     ! Make sure err_msg is initialized
@@ -477,16 +475,15 @@ class(FmsNetcdfFile_t), intent(inout)     :: fileob
 
     logical :: is_time_bounds !< Flag indicating if the variable is time_bounds
     CHARACTER(len=256) :: standard_name2
-    CHARACTER(len=1280) :: att_str
     TYPE(diag_fieldtype) :: Field
     LOGICAL :: coord_present
-    CHARACTER(len=40) :: aux_axes(SIZE(axes))
+    CHARACTER(len=128) :: aux_axes(SIZE(axes))
     CHARACTER(len=160) :: coord_att
     CHARACTER(len=1024) :: err_msg
 
 character(len=128),dimension(size(axes)) :: axis_names
     REAL :: scale, add
-    INTEGER :: i, indexx, num, ipack, np, att_len
+    INTEGER :: i, indexx, num, ipack, np
     LOGICAL :: use_range
     INTEGER :: axis_indices(SIZE(axes))
     logical :: use_UGdomain_local
@@ -769,8 +766,6 @@ character(len=128),dimension(size(axes)) :: axis_names
   !!     <TT>diag_field_out</TT> call.
   SUBROUTINE done_meta_data(file_unit)
     INTEGER,  INTENT(in)  :: file_unit !< Output file unit number
-
-    INTEGER               :: i
 
     !---- write data for all non-time axes ----
     num_axis_in_file = 0

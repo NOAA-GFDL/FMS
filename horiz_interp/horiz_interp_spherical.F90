@@ -82,7 +82,7 @@ contains
 
   !> Initializes module and writes version number to logfile.out
   subroutine horiz_interp_spherical_init
-    integer :: unit, ierr, io
+    integer :: ierr, io
 
 
     if(module_is_initialized) return
@@ -425,8 +425,8 @@ end subroutine horiz_interp_spherical_init
     real, dimension(Interp%nlon_src, Interp%nlat_src) :: mask_src
     real, dimension(Interp%nlon_dst, Interp%nlat_dst) :: mask_dst
     integer :: nlon_in, nlat_in, nlon_out, nlat_out, num_found
-    integer :: m, n, i, j, k, miss_in, miss_out, i1, i2, j1, j2, iverbose
-    real    :: min_in, max_in, avg_in, min_out, max_out, avg_out, sum
+    integer :: m, n, k, i1, i2, j1, j2, iverbose
+    real    :: sum
     !-----------------------------------------------------------------
 
     iverbose = 0;  if (present(verbose)) iverbose = verbose
@@ -543,7 +543,7 @@ end subroutine horiz_interp_spherical_init
        do i=1,map_dst_xsize
           continue_search=.true.
           step = 1
-          step_size = sqrt(real(map_src_size) )
+          step_size = int( sqrt(real(map_src_size) ))
           do while (continue_search .and. step_size > 0)
              do while (step <= map_src_size .and. continue_search)
                 ! count land points as nearest neighbors

@@ -358,7 +358,7 @@ subroutine fms_init (localcomm, alt_input_nml_path)
 
  integer, intent(in), optional :: localcomm
  character(len=*), intent(in), optional :: alt_input_nml_path
- integer :: unit, ierr, io
+ integer :: ierr, io
  integer :: logunitnum
  integer :: stdout_unit !< Unit number for the stdout file
 
@@ -840,7 +840,6 @@ function cpointer_fortran_conversion (cstring) result(fstring)
  character(len=:), allocatable :: fstring    !< The fortran string returned
  character(len=:,kind=c_char), pointer :: string_buffer !< A temporary pointer to between C and Fortran
  integer(c_size_t) :: length !< The string length
- integer :: i
 
   length = c_strlen(cstring)
   allocate (character(len=length, kind=c_char) :: string_buffer)

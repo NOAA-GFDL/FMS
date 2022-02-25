@@ -49,7 +49,6 @@
       integer, intent(out), optional :: recv_request, send_request
       logical                       :: block_comm
       integer                       :: i
-      MPP_TYPE_, allocatable, save  :: local_data(:) !local copy used by non-parallel code (no SHMEM or MPI)
       integer                       :: comm_tag
       integer                       :: rsize
 

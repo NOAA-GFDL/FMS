@@ -280,7 +280,6 @@ subroutine get_grid_comp_area_SG(component,tile,area,domain)
      tilefile
   character(len=4096)     :: attvalue
   character(len=MAX_NAME), allocatable :: nest_tile_name(:)
-  character(len=MAX_NAME) :: varname1, varname2
   integer :: is,ie,js,je ! boundaries of our domain
   integer :: i0, j0 ! offsets for x and y, respectively
   integer :: num_nest_tile, ntiles
@@ -797,7 +796,6 @@ subroutine get_grid_cell_centers_2D(component, tile, lon, lat, domain)
   real, intent(inout) :: lon(:,:),lat(:,:)
   type(domain2d), intent(in), optional :: domain
   ! local vars
-  character(len=MAX_NAME) :: varname
   character(len=MAX_FILE) :: filename1, filename2
   integer :: nlon, nlat
   integer :: i,j
@@ -952,7 +950,7 @@ subroutine define_cube_mosaic ( component, domain, layout, halo, maskmap )
 
   ! ---- local vars
   character(len=MAX_NAME) :: varname
-  character(len=MAX_FILE) :: mosaic_file
+  character(len=MAX_FILE + len(grid_dir)) :: mosaic_file
   integer :: ntiles     ! number of tiles
   integer :: ncontacts  ! number of contacts between mosaic tiles
   integer :: n
@@ -985,8 +983,8 @@ subroutine define_cube_mosaic ( component, domain, layout, halo, maskmap )
   enddo
 
   varname=trim(lowercase(component))//'_mosaic_file'
-  call read_data(grid_file,varname,mosaic_file)
-  mosaic_file = grid_dir//mosaic_file
+  call read_data(grid_file,varname,mosaic_file(1:MAX_FILE))
+  mosaic_file = grid_dir//mosaic_file(1:MAX_FILE)
 
   ! get the contact information from mosaic file
   ncontacts = get_mosaic_ncontacts(mosaic_file)

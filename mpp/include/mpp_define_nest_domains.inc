@@ -112,11 +112,8 @@ subroutine mpp_define_nest_domains(nest_domain, domain, num_nest, nest_level, ti
                                                !! default is 0 and currently only support extra_halo = 0.
   character(len=*), optional, intent(in   ) :: name !< name of the nest domain
 
-  logical                                   :: concurrent
   integer                                   :: n, l, m, my_tile_coarse
-  integer                                   :: nx_coarse, ny_coarse
-  integer                                   :: nx_fine, ny_fine
-  integer                                   :: npes, npes_level, prev_tile_coarse
+  integer                                   :: npes_level, prev_tile_coarse
   integer                                   :: extra_halo_local, npes_nest_top
   integer, dimension(:), allocatable        :: pes, pe_start_pos, pe_end_pos, pelist_level
   logical, dimension(:), allocatable        :: is_nest_fine, is_nest_coarse
@@ -376,10 +373,10 @@ subroutine mpp_shift_nest_domains(nest_domain, domain, delta_i_coarse, delta_j_c
   integer,                    intent(in   ) :: delta_j_coarse(:) !< Array of deltas of coarse grid in y direction
   integer,          optional, intent(in   ) :: extra_halo  !< Extra halo size
 
-  integer                                   :: n, l, m, my_tile_coarse
+  integer                                   :: n, l, my_tile_coarse
   integer                                   :: num_nest
-  integer                                   :: extra_halo_local, npes_nest_top
-  integer                                   :: nnest, nlevels, ntiles_top, ntiles, pos
+  integer                                   :: extra_halo_local
+  integer                                   :: nlevels, pos
   integer, pointer                          :: nest_level(:)
 
   nest_level => nest_domain%nest_level
@@ -448,14 +445,11 @@ subroutine define_nest_level_type(nest_domain, x_refine, y_refine, extra_halo)
   integer,               intent(in   ) :: x_refine, y_refine
 
   integer                                   :: n
-  integer                                   :: nx_coarse, ny_coarse
-  integer                                   :: nx_fine, ny_fine
   integer                                   :: npes, npes_fine, npes_coarse
-  integer                                   :: extra_halo_local
   integer, allocatable                      :: pes_coarse(:)
   integer, allocatable                      :: pes_fine(:)
   integer, dimension(nest_domain%num_nest)  :: my_nest_id
-  integer                                   :: my_num_nest, nnest
+  integer                                   :: my_num_nest
 
   npes = size(nest_domain%pelist(:))
   npes_coarse = size(nest_domain%domain_coarse%list(:))
@@ -594,18 +588,13 @@ subroutine compute_overlap_coarse_to_fine(nest_domain, overlap, extra_halo, posi
   integer              :: isc_coarse, iec_coarse, jsc_coarse, jec_coarse
   integer              :: is_coarse, ie_coarse, js_coarse, je_coarse
   integer              :: is_coarse2, ie_coarse2, js_coarse2, je_coarse2
-  integer              :: is_convert, ie_convert, js_convert, je_convert, rotate
+  integer              :: rotate
   integer              :: is_convert2(2), ie_convert2(2), js_convert2(2), je_convert2(2), rotate2(2)
   integer              :: isc_fine, iec_fine, jsc_fine, jec_fine
   integer              :: isd_fine, ied_fine, jsd_fine, jed_fine
-  integer              :: isc_east, iec_east, jsc_east, jec_east
-  integer              :: isc_west, iec_west, jsc_west, jec_west
-  integer              :: isc_south, iec_south, jsc_south, jec_south
-  integer              :: isc_north, iec_north, jsc_north, jec_north
   integer              :: x_refine, y_refine, ishift, jshift
-  integer              :: nsend, nrecv, dir, from_pe, l, nn
-  integer              :: is, ie, js, je, msgsize, nconvert
-  integer, allocatable :: msg1(:), msg2(:)
+  integer              :: nsend, nrecv, dir, l, nn
+  integer              :: nconvert
   integer, allocatable :: isl_coarse(:), iel_coarse(:), jsl_coarse(:), jel_coarse(:)
   integer, allocatable :: isl_fine(:), iel_fine(:), jsl_fine(:), jel_fine(:)
   integer, allocatable :: isgl_fine(:), iegl_fine(:), jsgl_fine(:), jegl_fine(:)
@@ -1098,25 +1087,21 @@ subroutine compute_overlap_fine_to_coarse(nest_domain, overlap, position, name)
   type(domain2D), pointer :: domain_fine  =>NULL()
   type(domain2D), pointer :: domain_coarse=>NULL()
   type(overlap_type), allocatable :: overlapList(:)
-  logical              :: is_first
   integer              :: tile_fine, tile_coarse
   integer              :: istart_fine, iend_fine, jstart_fine, jend_fine
   integer              :: istart_coarse, iend_coarse, jstart_coarse, jend_coarse
-  integer              :: whalo, ehalo, shalo, nhalo
   integer              :: npes_fine, npes_coarse, n
   integer              :: isg_fine, ieg_fine, jsg_fine, jeg_fine
   integer              :: isc_coarse, iec_coarse, jsc_coarse, jec_coarse
   integer              :: is_coarse, ie_coarse, js_coarse, je_coarse
-  integer              :: is_fine, ie_fine, js_fine, je_fine
   integer              :: isc_fine, iec_fine, jsc_fine, jec_fine
   integer              :: is_you, ie_you, js_you, je_you
   integer              :: x_refine, y_refine
   integer              :: nsend, nrecv, dir
   integer, allocatable :: isl_coarse(:), iel_coarse(:), jsl_coarse(:), jel_coarse(:)
   integer, allocatable :: isl_fine(:), iel_fine(:), jsl_fine(:), jel_fine(:)
-  integer              :: is_convert, ie_convert, js_convert, je_convert
   integer              :: is_convert2(2), ie_convert2(2), js_convert2(2), je_convert2(2), rotate2(2)
-  integer              :: rotate, is2, ie2, js2, je2, nconvert
+  integer              :: is2, ie2, js2, je2, nconvert
   integer              :: xbegin_c, xend_c, ybegin_c, yend_c
   integer              :: ishift, jshift, l, is3, ie3, js3, je3, nn
 
@@ -1923,7 +1908,7 @@ function search_C2F_nest_overlap(nest_domain, nest_level, extra_halo, position)
     integer, intent(out) :: is_out(:), ie_out(:), js_out(:), je_out(:), rotate_out(:)
     integer              :: convert_index_to_nest
     integer :: is, ie, js, je, tile, isg, ieg, jsg, jeg
-    integer :: ncross, rotate, nout, diff, l, ntiles
+    integer :: ncross, rotate, nout, diff, ntiles
 
     ntiles = ntiles_coarse
     call mpp_get_global_domain(domain, isg, ieg, jsg, jeg)

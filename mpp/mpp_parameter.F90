@@ -123,11 +123,11 @@ module mpp_parameter_mod
   integer, parameter :: ZERO=0, NINETY=90, MINUS_NINETY=-90, ONE_HUNDRED_EIGHTY=180
   integer, parameter :: NONBLOCK_UPDATE_TAG = 2
 
-! DOMAIN_ID_BASE acts as a counter increment for domains as they are defined. It's used in
-! combination with the flag parameter defined above to create a unique identifier for
-! each Domain+flags combination. Therefore, the value of any flag must not exceed DOMAIN_ID_BASE.
-! integer(i8_kind), parameter :: DOMAIN_ID_BASE=INT( 2**(4*i8_kind),KIND=i8_kind )
-  integer(i8_kind), parameter :: DOMAIN_ID_BASE = int(Z'0000000100000000', kind=i8_kind)
+!> @var DOMAIN_ID_BASE acts as a counter increment for domains as they are defined. It's used in
+!! combination with the flag parameter defined above to create a unique identifier for
+!! each Domain+flags combination. Therefore, the value of any flag must not exceed DOMAIN_ID_BASE.
+!! integer(i8_kind), parameter :: DOMAIN_ID_BASE=INT( 2**(4*i8_kind),KIND=i8_kind )
+  integer(i8_kind), parameter :: DOMAIN_ID_BASE = 4294967296_i8_kind !! =(0x100000000)
   integer, parameter :: NON_BITWISE_EXACT_SUM=0
   integer, parameter :: BITWISE_EXACT_SUM=1
   integer, parameter :: BITWISE_EFP_SUM=2

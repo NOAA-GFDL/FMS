@@ -431,7 +431,6 @@ subroutine MPP_DO_GROUP_UPDATE_(group, domain, d_type)
   integer   :: n, l, m, i, j, k, buffer_start_pos, nk
   integer   :: shift, gridtype, midpoint
   integer   :: npack, nunpack, rotation, isd
-  character(len=8)            :: text
 
   MPP_TYPE_ :: buffer(mpp_domains_stack_size)
   MPP_TYPE_ :: field (group%is_s:group%ie_s,group%js_s:group%je_s, group%ksize_s)
@@ -748,8 +747,8 @@ subroutine MPP_COMPLETE_GROUP_UPDATE_(group, domain, d_type)
   MPP_TYPE_,                   intent(in)    :: d_type
 
   integer   :: nsend, nrecv, nscalar, nvector
-  integer   :: k, buffer_pos, msgsize, pos, m, n, l
-  integer   :: is, ie, js, je, dir, ksize, i, j
+  integer   :: k, buffer_pos, pos, m, n, l
+  integer   :: is, ie, js, je, ksize, i, j
   integer   :: shift, gridtype, midpoint, flags_v
   integer   :: nunpack, rotation, buffer_start_pos, nk, isd
   logical   :: recv_y(8)
@@ -963,7 +962,6 @@ end subroutine MPP_RESET_GROUP_UPDATE_FIELD_4D_
 subroutine MPP_RESET_GROUP_UPDATE_FIELD_2D_V_(group, fieldx, fieldy)
   type(mpp_group_update_type), intent(inout) :: group
   MPP_TYPE_,                   intent(in)    :: fieldx(:,:), fieldy(:,:)
-  integer :: indx
 
   group%reset_index_v = group%reset_index_v + 1
 
@@ -983,7 +981,6 @@ end subroutine MPP_RESET_GROUP_UPDATE_FIELD_2D_V_
 subroutine MPP_RESET_GROUP_UPDATE_FIELD_3D_V_(group, fieldx, fieldy)
   type(mpp_group_update_type), intent(inout) :: group
   MPP_TYPE_,                   intent(in)    :: fieldx(:,:,:), fieldy(:,:,:)
-  integer :: indx
 
   group%reset_index_v = group%reset_index_v + 1
 
@@ -1003,7 +1000,6 @@ end subroutine MPP_RESET_GROUP_UPDATE_FIELD_3D_V_
 subroutine MPP_RESET_GROUP_UPDATE_FIELD_4D_V_(group, fieldx, fieldy)
   type(mpp_group_update_type), intent(inout) :: group
   MPP_TYPE_,                   intent(in)    :: fieldx(:,:,:,:), fieldy(:,:,:,:)
-  integer :: indx
 
   group%reset_index_v = group%reset_index_v + 1
 

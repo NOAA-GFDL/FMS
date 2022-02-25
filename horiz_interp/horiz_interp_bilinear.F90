@@ -1275,7 +1275,7 @@ contains
                '           when searching for nearest element to value=',value
           write (unit,*) '           array(i) < array(i-1) for i=',i
           write (unit,*) '           array(i) for i=1..ia follows:'
-          call abort()
+          call mpp_error()
        endif
     enddo
     if (value .lt. array(1) .or. value .gt. array(ia)) then
