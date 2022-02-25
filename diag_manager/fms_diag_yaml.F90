@@ -484,8 +484,8 @@ end function
 subroutine check_file_freq(fileobj)
   type(diagYamlFiles_type), intent(inout) :: fileobj      !< diagYamlFiles_type obj to check
 
-  if (fileobj%file_freq < 1 ) &
-    call mpp_error(FATAL, "freq must be greater than 0. &
+  if (.not. (fileobj%file_freq >= -1) ) &
+    call mpp_error(FATAL, "freq must be greater than or equal to -1. &
       &Check you entry for"//trim(fileobj%file_fname))
   if(.not. is_valid_time_units(fileobj%file_frequnit)) &
     call mpp_error(FATAL, trim(fileobj%file_frequnit)//" is not a valid file_frequnit. &
@@ -574,14 +574,14 @@ subroutine check_field_reduction(field)
   n_diurnal = 0
   pow_value = 0
   ioerror = 0
-  if (field%var_reduction(1:7) .eq. "diurnal") then
+  if (index(field%var_reduction, "diurnal") .ne. 0) then
     READ (UNIT=field%var_reduction(8:LEN_TRIM(field%var_reduction)), FMT=*, IOSTAT=ioerror) n_diurnal
     if (ioerror .ne. 0) &
       call mpp_error(FATAL, "Error getting the number of diurnal samples from "//trim(field%var_reduction))
     if (n_diurnal .le. 0) &
       call mpp_error(FATAL, "Diurnal samples should be greater than 0. &
         & Check your entry for file:"//trim(field%var_varname)//" in file "//trim(field%var_fname))
-  elseif (field%var_reduction(1:3) .eq. "pow") then
+  elseif (index(field%var_reduction, "pow") .ne. 0) then
     READ (UNIT=field%var_reduction(4:LEN_TRIM(field%var_reduction)), FMT=*, IOSTAT=ioerror) pow_value
     if (ioerror .ne. 0) &
       call mpp_error(FATAL, "Error getting the power value from "//trim(field%var_reduction))
