@@ -151,7 +151,7 @@ subroutine compare_diag_files(res)
 
   call compare_result("file_freq 1", res(1)%get_file_freq(), 6)
   call compare_result("file_freq 2", res(2)%get_file_freq(), 24)
-  call compare_result("file_freq 3", res(3)%get_file_freq(), 24)
+  call compare_result("file_freq 3", res(3)%get_file_freq(), -1)
 
   call compare_result("file_frequnit 1", res(1)%get_file_frequnit(), "hours")
   call compare_result("file_frequnit 2", res(2)%get_file_frequnit(), "days")

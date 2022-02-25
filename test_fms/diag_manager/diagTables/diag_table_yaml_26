@@ -41,7 +41,7 @@ diag_files:
     dim1_begin: 64.0
     dim3_end: 20.0
 - file_name: normal2
-  freq: 24
+  freq: -1
   freq_units: days
   time_units: hours
   unlimdim: records
