@@ -211,7 +211,7 @@ contains
 
 !> @brief gets the diag_yaml module variable
 !! @return a copy of the diag_yaml module variable
-function get_diag_yaml_obj() &
+pure function get_diag_yaml_obj() &
 result(res)
   type (diagYamlObject_type) :: res
 
