@@ -211,7 +211,7 @@ contains
 
 !> @brief gets the diag_yaml module variable
 !! @return a copy of the diag_yaml module variable
-function get_diag_yaml_obj() &
+pure function get_diag_yaml_obj() &
 result(res)
   type (diagYamlObject_type) :: res
 
@@ -502,7 +502,7 @@ end subroutine get_sub_region
 
 !> @brief gets the total number of variables in the diag_table yaml file
 !! @return total number of variables
-function get_total_num_vars(diag_yaml_id, diag_file_ids) &
+pure function get_total_num_vars(diag_yaml_id, diag_file_ids) &
 result(total_nvars)
 
   integer, intent(in) :: diag_yaml_id     !< Id for the diag_table yaml
