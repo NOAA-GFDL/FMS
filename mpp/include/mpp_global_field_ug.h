@@ -27,6 +27,7 @@
       MPP_TYPE_ :: global3D(size(global,1),1)
       pointer( lptr,  local3D )
       pointer( gptr, global3D )
+      global = 0
       lptr = LOC( local)
       gptr = LOC(global)
       call mpp_global_field_UG( domain, local3D, global3D, flags, default_data )
@@ -42,10 +43,10 @@
       integer, intent(in), optional :: flags
       MPP_TYPE_, intent(in), optional :: default_data
 
-     integer :: l, k, m, n, nd, nwords, lpos, rpos, ioff, joff, from_pe, tile_id
+      integer :: l, k, m, n, nd, nwords, lpos, rpos, tile_id
       integer :: ke, lsc, lec, ls, le, nword_me
       integer :: ipos, jpos
-      logical :: xonly, yonly, root_only, global_on_this_pe
+      logical :: root_only, global_on_this_pe
       MPP_TYPE_ :: clocal (domain%compute%size*size(local,2))
       MPP_TYPE_ :: cremote(domain%compute%max_size*size(local,2))
       integer :: stackuse
@@ -176,6 +177,7 @@
       MPP_TYPE_ :: global3D(size(global,1),size(global,2)*size(global,3))
       pointer( lptr, local3D  )
       pointer( gptr, global3D )
+      global = 0
       lptr = LOC(local)
       gptr = LOC(global)
       call mpp_global_field_UG( domain, local3D, global3D, flags, default_data )
@@ -192,6 +194,7 @@
       MPP_TYPE_ :: global3D(size(global,1),size(global,2)*size(global,3)*size(global,4))
       pointer( lptr, local3D  )
       pointer( gptr, global3D )
+      global = 0
       lptr = LOC(local)
       gptr = LOC(global)
       call mpp_global_field_UG( domain, local3D, global3D, flags, default_data )

@@ -125,8 +125,6 @@ end subroutine mosaic_init
     real                               :: garea
     real                               :: get_global_area
 
-    logical :: is_mixed_prec
-
     garea = get_global_area()
 
     ! When start and nread present, make sure nread(1) is the same as the size of the data
@@ -169,15 +167,15 @@ end subroutine mosaic_init
     end select
 
      do n = 1, nxgrid
-       i1(n) = tile1_cell(1,n)
-       j1(n) = tile1_cell(2,n)
-       i2(n) = tile2_cell(1,n)
-       j2(n) = tile2_cell(2,n)
+       i1(n) = int(tile1_cell(1,n))
+       j1(n) = int(tile1_cell(2,n))
+       i2(n) = int(tile2_cell(1,n))
+       j2(n) = int(tile2_cell(2,n))
        select type(area)
        type is (real(r4_kind))
-         area(n) = area(n)/garea
+         area(n) = real(area(n)/garea, r4_kind)
        type is (real(r8_kind))
-         area(n) = area(n)/garea
+         area(n) = real(area(n)/garea, r8_kind)
        end select
     end do
 
@@ -527,7 +525,6 @@ end function transfer_to_model_index
      real, intent(in) :: lon1, lat1
      real, intent(in) :: lon2(:), lat2(:)
      logical          :: is_inside_polygon
-     real, dimension(size(lon2(:))) :: x2, y2, z2
      integer                        :: npts, isinside
      integer                        :: inside_a_polygon
 

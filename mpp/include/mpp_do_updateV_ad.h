@@ -42,15 +42,11 @@
       integer :: to_pe, from_pe, midpoint
       integer :: tMe, dir
 
-      integer :: send_start_pos, nsend
-      integer :: send_msgsize(2*MAXLIST)
-      integer :: send_pe(2*MAXLIST)
       integer,    allocatable :: msg1(:), msg2(:)
       logical :: send(8), recv(8), update_edge_only
       MPP_TYPE_ :: buffer(size(mpp_domains_stack(:)))
       pointer(ptr,buffer )
       integer :: buffer_pos
-      character(len=8) :: text
       integer :: buffer_recv_size, shift
       integer :: rank_x, rank_y, ind_x, ind_y, cur_rank
       integer :: nsend_x, nsend_y, nrecv_x, nrecv_y, outunit

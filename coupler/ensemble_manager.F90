@@ -77,7 +77,7 @@ contains
   subroutine ensemble_manager_init()
 
 
-    integer :: i, io_status, ioun, npes, ierr
+    integer :: i, io_status, npes, ierr
 
     namelist /ensemble_nml/ ensemble_size
 

@@ -1011,7 +1011,7 @@ subroutine load_record(field, rec, interp, is_in, ie_in, js_in, je_in, window_id
   ! ---- local vars
   integer :: ib ! index in the array of input buffers
   integer :: isw,iew,jsw,jew ! boundaries of the domain on each window
-  integer :: is_region, ie_region, js_region, je_region, i, j, n
+  integer :: is_region, ie_region, js_region, je_region, i, j
   integer :: start(4), nread(4)
   logical :: need_compute
   real    :: mask_in(size(field%src_data,1),size(field%src_data,2),size(field%src_data,3))
@@ -1321,7 +1321,6 @@ end subroutine realloc_fields
     function get_external_field_missing(index)
 
       integer :: index
-      real :: missing
       real :: get_external_field_missing
 
       if (index .lt. 1 .or. index .gt. num_fields) &

@@ -76,8 +76,6 @@ use field_manager_mod, only : field_manager_init, &
                               fm_exists,          &
                               MODEL_NAMES
 
-use platform_mod, only: r4_kind, r8_kind
-
 implicit none
 private
 
@@ -98,7 +96,8 @@ public  tracer_manager_init, &
         adjust_mass,         &
         adjust_positive_def, &
         NO_TRACER,           &
-        MAX_TRACER_FIELDS
+        MAX_TRACER_FIELDS,   &
+        set_tracer_method 
 
 !> @brief Function which returns the number assigned to the tracer name.
 !!
@@ -838,10 +837,6 @@ if(mpp_pe()==mpp_root_pe() .and. TRACER_ARRAY(model,n)> 0 ) then
   write(log_unit, *)'----------------------------------------------------'
 endif
 
-900 FORMAT(A,2(1x,E12.6))
-901 FORMAT(E12.6,1x,E12.6)
-
-
 end subroutine print_tracer_info
 
 !#######################################################################
@@ -1039,7 +1034,7 @@ subroutine set_tracer_profile(model, n, tracer, err_msg)
 
 integer, intent(in) :: model !< Parameter representing component model in use
 integer, intent(in) :: n !< Tracer number
-class(*), intent(inout), dimension(:,:,:) :: tracer !< Initialized tracer array
+real, intent(inout), dimension(:,:,:) :: tracer !< Initialized tracer array
 character(len=*), intent(out), optional :: err_msg
 
 real    :: surf_value, multiplier
@@ -1065,14 +1060,7 @@ top_value  = surf_value
 bottom_value = surf_value
 multiplier = 1.0
 
-select type (tracer)
-type is (real(kind=r4_kind))
-  tracer = surf_value
-type is (real(kind=r8_kind))
-  tracer = surf_value
-class default
-  call mpp_error(FATAL, "set_tracer_profile : tracer is not one of the supported types of real(kind=4) or real(kind=8)")
-end select
+tracer = surf_value
 
 if ( query_method ( 'profile_type',model,n,scheme,control)) then
 !Change the tracer_number to the tracer_manager version
@@ -1081,14 +1069,7 @@ if ( query_method ( 'profile_type',model,n,scheme,control)) then
     profile_type                   = 'Fixed'
     flag =parse(control,'surface_value',surf_value)
     multiplier = 1.0
-    select type (tracer)
-    type is (real(kind=r4_kind))
-      tracer = surf_value
-    type is (real(kind=r8_kind))
-      tracer = surf_value
-    class default
-      call mpp_error(FATAL, "set_tracer_profile : tracer is not one of the supported types of real(kind=4) or real(kind=8)")
-    end select
+    tracer = surf_value
   endif
 
   if(lowercase(trim(scheme(1:7))).eq.'profile') then
@@ -1121,36 +1102,16 @@ numlevels = size(tracer,3) -1
     select case (tracers(n1)%model)
       case (MODEL_ATMOS)
         multiplier = exp( log (top_value/surf_value) /numlevels)
-        select type (tracer)
-        type is (real(kind=r4_kind))
-          tracer(:,:,1) = surf_value
-          do k = 2, size(tracer,3)
-            tracer(:,:,k) = tracer(:,:,k-1) * multiplier
-          enddo
-        type is (real(kind=r8_kind))
-          tracer(:,:,1) = surf_value
-          do k = 2, size(tracer,3)
-            tracer(:,:,k) = tracer(:,:,k-1) * multiplier
-          enddo
-        class default
-          call mpp_error(FATAL, "set_tracer_profile : tracer is not one of the supported types of real(kind=4) or real(kind=8)")
-        end select
+        tracer(:,:,1) = surf_value
+        do k = 2, size(tracer,3)
+          tracer(:,:,k) = tracer(:,:,k-1) * multiplier
+        enddo
       case (MODEL_OCEAN)
         multiplier = exp( log (bottom_value/surf_value) /numlevels)
-        select type (tracer)
-        type is (real(kind=r4_kind))
-          tracer(:,:,size(tracer,3)) = surf_value
-          do k = size(tracer,3) - 1, 1, -1
-            tracer(:,:,k) = tracer(:,:,k+1) * multiplier
-          enddo
-        type is (real(kind=r8_kind))
-          tracer(:,:,size(tracer,3)) = surf_value
-          do k = size(tracer,3) - 1, 1, -1
-            tracer(:,:,k) = tracer(:,:,k+1) * multiplier
-          enddo
-        class default
-          call mpp_error(FATAL, "set_tracer_profile : tracer is not one of the supported types of real(kind=4) or real(kind=8)")
-        end select
+        tracer(:,:,size(tracer,3)) = surf_value
+        do k = size(tracer,3) - 1, 1, -1
+          tracer(:,:,k) = tracer(:,:,k+1) * multiplier
+        enddo
       case default
     end select
   endif !scheme.eq.profile
@@ -1158,7 +1119,7 @@ numlevels = size(tracer,3) -1
   if (mpp_pe() == mpp_root_pe() ) write(*,700) 'Tracer ',trim(tracers(n1)%tracer_name),    &
                             ' initialized with surface value of ',surf_value, &
                             ' and vertical multiplier of ',multiplier
-  700 FORMAT (3A,E12.6,A,F10.6)
+  700 FORMAT (3A,E13.6,A,F13.6)
 
 endif ! end of query scheme
 

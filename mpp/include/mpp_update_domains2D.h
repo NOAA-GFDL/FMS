@@ -227,6 +227,7 @@
       pointer( ptr_in,  field3D_in  )
       pointer( ptr_out, field3D_out )
 
+      field_out = 0
       ptr_in = 0
       ptr_out = 0
       if(domain_in%initialized) ptr_in  = LOC(field_in )
@@ -257,6 +258,7 @@
       MPP_TYPE_ :: d_type
       integer(i8_kind) :: floc_in, floc_out
 
+      field_out = 0
       floc_in = 0
       floc_out = 0
       if(domain_in%initialized) floc_in = LOC(field_in)
@@ -344,6 +346,7 @@
       pointer( ptr_in,  field3D_in  )
       pointer( ptr_out, field3D_out )
 
+      field_out = 0
       ptr_in = 0
       ptr_out = 0
       if(domain_in%initialized) ptr_in  = LOC(field_in )
@@ -367,6 +370,7 @@
       pointer( ptr_in,  field3D_in  )
       pointer( ptr_out, field3D_out )
 
+      field_out = 0
       ptr_in = 0
       ptr_out = 0
       if(domain_in%initialized) ptr_in  = LOC(field_in )

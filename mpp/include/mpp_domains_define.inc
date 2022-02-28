@@ -168,8 +168,8 @@
     integer,                 intent(in) :: isg, ieg, ndivs
     integer, dimension(:), intent(out)  :: ibegin, iend
 
-    integer :: ndiv, imax, ndmax
-    integer :: is, ie, n
+    integer :: ndiv
+    integer :: is, ie
 
     ie = ieg
     do ndiv=ndivs,1,-1
@@ -312,7 +312,7 @@
     integer, intent(in), optional :: begin_halo, end_halo
 
     logical              :: compute_domain_is_global, data_domain_is_global
-    integer              :: ndiv, n, isg, ieg, i
+    integer              :: ndiv, n, isg, ieg
     integer, allocatable :: pes(:)
     integer              :: ibegin(0:ndivs-1), iend(0:ndivs-1)
     logical              :: mask(0:ndivs-1)
@@ -657,10 +657,7 @@
     integer              :: ibegin(0:layout(1)-1), iend(0:layout(1)-1)
     integer              :: jbegin(0:layout(2)-1), jend(0:layout(2)-1)
     character(len=8)     :: text
-    type(overlapSpec), pointer :: update=>NULL()
     type(overlapSpec), pointer :: check_T => NULL()
-    character(len=1)     :: position
-    integer              :: msgsize, l, p, is, ie, js, je, from_pe
     integer              :: outunit
     logical              :: send(8), recv(8)
 
@@ -1215,10 +1212,6 @@ end subroutine check_message_size
     integer, allocatable :: align1(:), align2(:), is1(:), ie1(:), js1(:), je1(:), is2(:), ie2(:), js2(:), je2(:)
     integer, allocatable :: isgList(:), iegList(:), jsgList(:), jegList(:)
     real,    allocatable :: refine1(:), refine2(:)
-    type(overlapSpec), pointer :: update=>NULL()
-    character(len=1)     :: position
-    integer              :: msgsize, l, p, is, ie, js, je, from_pe
-    integer, allocatable :: msg1(:), msg2(:), msg3(:)
     integer              :: outunit
     logical              :: send(8), recv(8)
 
@@ -5244,7 +5237,7 @@ end subroutine check_message_size
     integer              :: isc, iec, jsc, jec, isd, ied, jsd, jed
     integer              :: isc1, iec1, jsc1, jec1, isc2, iec2, jsc2, jec2
     integer              :: isd1, ied1, jsd1, jed1, isd2, ied2, jsd2, jed2
-    integer              :: is, ie, js, je, ioff, joff, isoff, ieoff, jsoff, jeoff
+    integer              :: is, ie, js, je, ioff, joff
     integer              :: ntiles, max_contact
     integer              :: nlist, list, m, n, l, count, numS, numR
     integer              :: whalo, ehalo, shalo, nhalo
@@ -5896,7 +5889,7 @@ subroutine set_contact_point(domain, position)
 
   integer                         :: ishift, jshift, nlist, list, m, n
   integer                         :: ntileMe, tMe, dir, count, pos, nsend, nrecv
-  integer                         :: isoff1, ieoff1, isoff2, ieoff2, jsoff1, jeoff1, jsoff2, jeoff2
+  integer                         :: isoff1, ieoff1, jsoff1, jeoff1
   type(overlap_type),  pointer    :: ptrIn  => NULL()
   type(overlapSpec),   pointer    :: update_in  => NULL()
   type(overlapSpec),   pointer    :: update_out => NULL()
@@ -6301,7 +6294,7 @@ end subroutine set_check_overlap
 subroutine set_bound_overlap( domain, position )
   type(domain2d), intent(inout) :: domain
   integer,        intent(in)    :: position
-  integer                       :: m, n, l, count, dr, tMe, i
+  integer                       :: m, n, l, count, dr, tMe
   integer, parameter            :: MAXCOUNT = 100
   integer, dimension(MAXCOUNT)  :: dir, rotation, is, ie, js, je, tileMe, index
   integer, dimension(size(domain%x(:)), 4)           :: nrecvl
@@ -6312,9 +6305,6 @@ subroutine set_bound_overlap( domain, position )
   integer                        :: nlist_send, nlist_recv, ishift, jshift
   integer                        :: ism, iem, jsm, jem, nsend, nrecv
   integer                        :: isg, ieg, jsg, jeg, nlist, list
-!  integer                        :: isc1, iec1, jsc1, jec1
-!  integer                        :: isc2, iec2, jsc2, jec2
-  integer                        :: isd, ied, jsd, jed
   integer                        :: npes_x, npes_y, ipos, jpos, inbr, jnbr
   integer                        :: isc, iec, jsc, jec, my_pe
   integer                        :: pe_south1, pe_south2, pe_west0, pe_west1, pe_west2

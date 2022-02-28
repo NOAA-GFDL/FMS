@@ -34,7 +34,7 @@ implicit none
 type fmsDiagObject_type
 #ifdef use_yaml
      type (diagYamlFilesVar_type), allocatable, dimension(:) :: diag_field !< info from diag_table
-     type (diagYamlFiles_type),     allocatable, dimension(:) :: diag_file  !< info from diag_table
+     type (diagYamlFiles_type),    allocatable, dimension(:) :: diag_file  !< info from diag_table
 #endif
      integer, allocatable, private                    :: diag_id           !< unique id for varable
      class(FmsNetcdfFile_t), dimension (:), pointer   :: fileob => NULL()  !< A pointer to all of the
@@ -67,17 +67,13 @@ type fmsDiagObject_type
      class(*), allocatable, private                   :: missing_value     !< The missing fill value
      class(*), allocatable, private                   :: data_RANGE        !< The range of the variable data
      type (diag_axis_type), allocatable, dimension(:) :: axis              !< The axis object
-!> \brief Extends the variable object to work with multiple types of data
-     class(*), allocatable :: vardata0
-     class(*), allocatable, dimension(:) :: vardata1
-     class(*), allocatable, dimension(:,:) :: vardata2
-     class(*), allocatable, dimension(:,:,:) :: vardata3
-     class(*), allocatable, dimension(:,:,:,:) :: vardata4
-     class(*), allocatable, dimension(:,:,:,:,:) :: vardata5
-
-
-
-     contains
+     class(*), allocatable :: vardata0                                     !< Scalar data buffer 
+     class(*), allocatable, dimension(:) :: vardata1                       !< 1D data buffer
+     class(*), allocatable, dimension(:,:) :: vardata2                     !< 2D data buffer
+     class(*), allocatable, dimension(:,:,:) :: vardata3                   !< 3D data buffer
+     class(*), allocatable, dimension(:,:,:,:) :: vardata4                 !< 4D data buffer
+     class(*), allocatable, dimension(:,:,:,:,:) :: vardata5               !< 5D data buffer
+    contains
 !     procedure :: send_data => fms_send_data  !!TODO
      procedure :: init_ob => diag_obj_init
      procedure :: get_id => fms_diag_get_id
@@ -93,6 +89,36 @@ type fmsDiagObject_type
      procedure :: is_registeredB => diag_obj_is_registered
      procedure :: is_mask_variant => get_mask_variant
      procedure :: is_local => get_local
+! Is variable allocated check functions
+!TODO     procedure :: has_diag_field
+!TODO     procedure :: has_diag_file
+     procedure :: has_diag_id
+     procedure :: has_fileob
+     procedure :: has_metadata
+     procedure :: has_static
+     procedure :: has_registered
+     procedure :: has_mask_variant
+     procedure :: has_local
+!TODO     procedure :: has_init_time
+     procedure :: has_vartype
+     procedure :: has_varname
+     procedure :: has_longname
+     procedure :: has_standname
+     procedure :: has_units
+     procedure :: has_modname
+     procedure :: has_realm
+     procedure :: has_err_msg
+     procedure :: has_interp_method
+     procedure :: has_frequency
+     procedure :: has_output_units
+     procedure :: has_t
+     procedure :: has_tile_count
+     procedure :: has_axis_ids
+     procedure :: has_area
+     procedure :: has_volume
+     procedure :: has_missing_value
+     procedure :: has_data_RANGE
+     procedure :: has_axis
 ! Get functions
      procedure :: get_diag_id => fms_diag_get_id
      procedure :: get_metadata
@@ -433,7 +459,7 @@ end function diag_obj_is_static
 
 !> @brief Gets metedata
 !! @return copy of metadata string array, or a single space if metadata is not allocated
-function get_metadata (obj) &
+pure function get_metadata (obj) &
 result(rslt)
      class (fmsDiagObject_type), intent(in) :: obj !< diag object
      character(len=:), allocatable, dimension(:) :: rslt
@@ -447,7 +473,7 @@ result(rslt)
 end function get_metadata
 !> @brief Gets static
 !! @return copy of variable static
-function get_static (obj) &
+pure function get_static (obj) &
 result(rslt)
      class (fmsDiagObject_type), intent(in) :: obj !< diag object
      logical :: rslt 
@@ -455,7 +481,7 @@ result(rslt)
 end function get_static
 !> @brief Gets regisetered
 !! @return copy of registered
-function get_registered (obj) &
+pure function get_registered (obj) &
 result(rslt)
      class (fmsDiagObject_type), intent(in) :: obj !< diag object
      logical :: rslt 
@@ -463,7 +489,7 @@ result(rslt)
 end function get_registered
 !> @brief Gets mask variant
 !! @return copy of mask variant
-function get_mask_variant (obj) &
+pure function get_mask_variant (obj) &
 result(rslt)
      class (fmsDiagObject_type), intent(in) :: obj !< diag object
      logical :: rslt 
@@ -471,7 +497,7 @@ result(rslt)
 end function get_mask_variant
 !> @brief Gets local
 !! @return copy of local
-function get_local (obj) &
+pure function get_local (obj) &
 result(rslt)
      class (fmsDiagObject_type), intent(in) :: obj !< diag object
      logical :: rslt 
@@ -488,7 +514,7 @@ end function get_local
 !end function get_init_time
 !> @brief Gets vartype 
 !! @return copy of The integer related to the variable type
-function get_vartype (obj) &
+pure function get_vartype (obj) &
 result(rslt)
      class (fmsDiagObject_type), intent(in) :: obj !< diag object
      integer :: rslt 
@@ -496,7 +522,7 @@ result(rslt)
 end function get_vartype
 !> @brief Gets varname
 !! @return copy of the variable name
-function get_varname (obj) &
+pure function get_varname (obj) &
 result(rslt)
      class (fmsDiagObject_type), intent(in) :: obj !< diag object
      character(len=:), allocatable :: rslt 
@@ -504,7 +530,7 @@ result(rslt)
 end function get_varname
 !> @brief Gets longname
 !! @return copy of the variable long name or a single string if there is no long name
-function get_longname (obj) &
+pure function get_longname (obj) &
 result(rslt)
      class (fmsDiagObject_type), intent(in) :: obj !< diag object
      character(len=:), allocatable :: rslt 
@@ -516,7 +542,7 @@ result(rslt)
 end function get_longname
 !> @brief Gets standname
 !! @return copy of the standard name or an empty string if standname is not allocated
-function get_standname (obj) &
+pure function get_standname (obj) &
 result(rslt)
      class (fmsDiagObject_type), intent(in) :: obj !< diag object
      character(len=:), allocatable :: rslt 
@@ -528,7 +554,7 @@ result(rslt)
 end function get_standname
 !> @brief Gets units
 !! @return copy of the units or an empty string if not allocated
-function get_units (obj) &
+pure function get_units (obj) &
 result(rslt)
      class (fmsDiagObject_type), intent(in) :: obj !< diag object
      character(len=:), allocatable :: rslt 
@@ -540,7 +566,7 @@ result(rslt)
 end function get_units
 !> @brief Gets modname
 !! @return copy of the module name that the variable is in or an empty string if not allocated
-function get_modname (obj) &
+pure function get_modname (obj) &
 result(rslt)
      class (fmsDiagObject_type), intent(in) :: obj !< diag object
      character(len=:), allocatable :: rslt 
@@ -552,7 +578,7 @@ result(rslt)
 end function get_modname
 !> @brief Gets realm
 !! @return copy of the variables modeling realm or an empty string if not allocated
-function get_realm (obj) &
+pure function get_realm (obj) &
 result(rslt)
      class (fmsDiagObject_type), intent(in) :: obj !< diag object
      character(len=:), allocatable :: rslt 
@@ -564,7 +590,7 @@ result(rslt)
 end function get_realm
 !> @brief Gets err_msg
 !! @return copy of The error message stored in err_msg or an empty string if not allocated
-function get_err_msg (obj) &
+pure function get_err_msg (obj) &
 result(rslt)
      class (fmsDiagObject_type), intent(in) :: obj !< diag object
      character(len=:), allocatable :: rslt 
@@ -576,7 +602,7 @@ result(rslt)
 end function get_err_msg
 !> @brief Gets interp_method
 !! @return copy of The interpolation method or an empty string if not allocated
-function get_interp_method (obj) &
+pure function get_interp_method (obj) &
 result(rslt)
      class (fmsDiagObject_type), intent(in) :: obj !< diag object
      character(len=:), allocatable :: rslt 
@@ -588,7 +614,7 @@ result(rslt)
 end function get_interp_method
 !> @brief Gets frequency
 !! @return copy of the  frequency or DIAG_NULL if obj%frequency is not allocated
-function get_frequency (obj) &
+pure function get_frequency (obj) &
 result(rslt)
      class (fmsDiagObject_type), intent(in) :: obj !< diag object
      integer, allocatable, dimension (:) :: rslt 
@@ -602,7 +628,7 @@ result(rslt)
 end function get_frequency
 !> @brief Gets output_units
 !! @return copy of The units of the output or DIAG_NULL is output_units is not allocated
-function get_output_units (obj) &
+pure function get_output_units (obj) &
 result(rslt)
      class (fmsDiagObject_type), intent(in) :: obj !< diag object
      integer,allocatable, dimension (:) :: rslt 
@@ -616,7 +642,7 @@ result(rslt)
 end function get_output_units
 !> @brief Gets t
 !! @return copy of t 
-function get_t (obj) &
+pure function get_t (obj) &
 result(rslt)
      class (fmsDiagObject_type), intent(in) :: obj !< diag object
      integer :: rslt 
@@ -628,7 +654,7 @@ result(rslt)
 end function get_t
 !> @brief Gets tile_count
 !! @return copy of the number of tiles or diag_null if tile_count is not allocated
-function get_tile_count (obj) &
+pure function get_tile_count (obj) &
 result(rslt)
      class (fmsDiagObject_type), intent(in) :: obj !< diag object
      integer :: rslt 
@@ -640,7 +666,7 @@ result(rslt)
 end function get_tile_count
 !> @brief Gets axis_ids
 !! @return copy of The axis IDs array or a diag_null if no axis IDs are set
-function get_axis_ids (obj) &
+pure function get_axis_ids (obj) &
 result(rslt)
      class (fmsDiagObject_type), intent(in) :: obj !< diag object
      integer, allocatable, dimension(:) :: rslt 
@@ -654,7 +680,7 @@ result(rslt)
 end function get_axis_ids
 !> @brief Gets area
 !! @return copy of the area or diag_null if not allocated
-function get_area (obj) &
+pure function get_area (obj) &
 result(rslt)
      class (fmsDiagObject_type), intent(in) :: obj !< diag object
      integer :: rslt 
@@ -666,7 +692,7 @@ result(rslt)
 end function get_area
 !> @brief Gets volume
 !! @return copy of the volume or diag_null if volume is not allocated
-function get_volume (obj) &
+pure function get_volume (obj) &
 result(rslt)
      class (fmsDiagObject_type), intent(in) :: obj !< diag object
      integer :: rslt
@@ -745,6 +771,181 @@ end function get_data_RANGE
 !     type (diag_axis_type), allocatable, dimension(:) :: rslt 
 !
 !end function get_axis
-
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!! Allocation checks
+!!> @brief Checks if obj%diag_field is allocated
+!!! @return true if obj%diag_field is allocated
+!logical function has_diag_field (obj)
+!  class (fmsDiagObject_type), intent(in) :: obj !< diag object
+!  has_diag_field = allocated(obj%diag_field)
+!end function has_diag_field
+!!> @brief Checks if obj%diag_file is allocated
+!!! @return true if obj%diag_file is allocated
+!logical function has_diag_file (obj)
+!  class (fmsDiagObject_type), intent(in) :: obj !< diag object
+!  has_diag_file = allocated(obj%diag_file)
+!end function has_diag_file
+!> @brief Checks if obj%diag_id is allocated
+!! @return true if obj%diag_id is allocated
+pure logical function has_diag_id (obj)
+  class (fmsDiagObject_type), intent(in) :: obj !< diag object
+  has_diag_id = allocated(obj%diag_id)
+end function has_diag_id
+!> @brief Checks if obj%fileob pointer is associated
+!! @return true if obj%fileob is associated
+pure logical function has_fileob (obj)
+  class (fmsDiagObject_type), intent(in) :: obj !< diag object
+  has_fileob = associated(obj%fileob)
+end function has_fileob
+!> @brief Checks if obj%metadata is allocated
+!! @return true if obj%metadata is allocated
+pure logical function has_metadata (obj)
+  class (fmsDiagObject_type), intent(in) :: obj !< diag object
+  has_metadata = allocated(obj%metadata)
+end function has_metadata
+!> @brief Checks if obj%static is allocated
+!! @return true if obj%static is allocated
+pure logical function has_static (obj)
+  class (fmsDiagObject_type), intent(in) :: obj !< diag object
+  has_static = allocated(obj%static)
+end function has_static
+!> @brief Checks if obj%registered is allocated
+!! @return true if obj%registered is allocated
+pure logical function has_registered (obj)
+  class (fmsDiagObject_type), intent(in) :: obj !< diag object
+  has_registered = allocated(obj%registered)
+end function has_registered
+!> @brief Checks if obj%mask_variant is allocated
+!! @return true if obj%mask_variant is allocated
+pure logical function has_mask_variant (obj)
+  class (fmsDiagObject_type), intent(in) :: obj !< diag object
+  has_mask_variant = allocated(obj%mask_variant)
+end function has_mask_variant
+!> @brief Checks if obj%local is allocated
+!! @return true if obj%local is allocated
+pure logical function has_local (obj)
+  class (fmsDiagObject_type), intent(in) :: obj !< diag object
+  has_local = allocated(obj%local)
+end function has_local
+!!> @brief Checks if obj%init_time is allocated
+!!! @return true if obj%init_time is allocated
+!logical function has_init_time (obj)
+!  class (fmsDiagObject_type), intent(in) :: obj !< diag object
+!  has_init_time = allocated(obj%init_time)
+!end function has_init_time
+!> @brief Checks if obj%vartype is allocated
+!! @return true if obj%vartype is allocated
+pure logical function has_vartype (obj)
+  class (fmsDiagObject_type), intent(in) :: obj !< diag object
+  has_vartype = allocated(obj%vartype)
+end function has_vartype
+!> @brief Checks if obj%varname is allocated
+!! @return true if obj%varname is allocated
+pure logical function has_varname (obj)
+  class (fmsDiagObject_type), intent(in) :: obj !< diag object
+  has_varname = allocated(obj%varname)
+end function has_varname
+!> @brief Checks if obj%longname is allocated
+!! @return true if obj%longname is allocated
+pure logical function has_longname (obj)
+  class (fmsDiagObject_type), intent(in) :: obj !< diag object
+  has_longname = allocated(obj%longname)
+end function has_longname
+!> @brief Checks if obj%standname is allocated
+!! @return true if obj%standname is allocated
+pure logical function has_standname (obj)
+  class (fmsDiagObject_type), intent(in) :: obj !< diag object
+  has_standname = allocated(obj%standname)
+end function has_standname
+!> @brief Checks if obj%units is allocated
+!! @return true if obj%units is allocated
+pure logical function has_units (obj)
+  class (fmsDiagObject_type), intent(in) :: obj !< diag object
+  has_units = allocated(obj%units)
+end function has_units
+!> @brief Checks if obj%modname is allocated
+!! @return true if obj%modname is allocated
+pure logical function has_modname (obj)
+  class (fmsDiagObject_type), intent(in) :: obj !< diag object
+  has_modname = allocated(obj%modname)
+end function has_modname
+!> @brief Checks if obj%realm is allocated
+!! @return true if obj%realm is allocated
+pure logical function has_realm (obj)
+  class (fmsDiagObject_type), intent(in) :: obj !< diag object
+  has_realm = allocated(obj%realm)
+end function has_realm
+!> @brief Checks if obj%err_msg is allocated
+!! @return true if obj%err_msg is allocated
+pure logical function has_err_msg (obj)
+  class (fmsDiagObject_type), intent(in) :: obj !< diag object
+  has_err_msg = allocated(obj%err_msg)
+end function has_err_msg
+!> @brief Checks if obj%interp_method is allocated
+!! @return true if obj%interp_method is allocated
+pure logical function has_interp_method (obj)
+  class (fmsDiagObject_type), intent(in) :: obj !< diag object
+  has_interp_method = allocated(obj%interp_method)
+end function has_interp_method
+!> @brief Checks if obj%frequency is allocated
+!! @return true if obj%frequency is allocated
+pure logical function has_frequency (obj)
+  class (fmsDiagObject_type), intent(in) :: obj !< diag object
+  has_frequency = allocated(obj%frequency)
+end function has_frequency
+!> @brief Checks if obj%output_units is allocated
+!! @return true if obj%output_units is allocated
+pure logical function has_output_units (obj)
+  class (fmsDiagObject_type), intent(in) :: obj !< diag object
+  has_output_units = allocated(obj%output_units)
+end function has_output_units
+!> @brief Checks if obj%t is allocated
+!! @return true if obj%t is allocated
+pure logical function has_t (obj)
+  class (fmsDiagObject_type), intent(in) :: obj !< diag object
+  has_t = allocated(obj%t)
+end function has_t
+!> @brief Checks if obj%tile_count is allocated
+!! @return true if obj%tile_count is allocated
+pure logical function has_tile_count (obj)
+  class (fmsDiagObject_type), intent(in) :: obj !< diag object
+  has_tile_count = allocated(obj%tile_count)
+end function has_tile_count
+!> @brief Checks if obj%axis_ids is allocated
+!! @return true if obj%axis_ids is allocated
+pure logical function has_axis_ids (obj)
+  class (fmsDiagObject_type), intent(in) :: obj !< diag object
+  has_axis_ids = allocated(obj%axis_ids)
+end function has_axis_ids
+!> @brief Checks if obj%area is allocated
+!! @return true if obj%area is allocated
+pure logical function has_area (obj)
+  class (fmsDiagObject_type), intent(in) :: obj !< diag object
+  has_area = allocated(obj%area)
+end function has_area
+!> @brief Checks if obj%volume is allocated
+!! @return true if obj%volume is allocated
+pure logical function has_volume (obj)
+  class (fmsDiagObject_type), intent(in) :: obj !< diag object
+  has_volume = allocated(obj%volume)
+end function has_volume
+!> @brief Checks if obj%missing_value is allocated
+!! @return true if obj%missing_value is allocated
+pure logical function has_missing_value (obj)
+  class (fmsDiagObject_type), intent(in) :: obj !< diag object
+  has_missing_value = allocated(obj%missing_value)
+end function has_missing_value
+!> @brief Checks if obj%data_RANGE is allocated
+!! @return true if obj%data_RANGE is allocated
+pure logical function has_data_RANGE (obj)
+  class (fmsDiagObject_type), intent(in) :: obj !< diag object
+  has_data_RANGE = allocated(obj%data_RANGE)
+end function has_data_RANGE
+!> @brief Checks if obj%axis is allocated
+!! @return true if obj%axis is allocated
+pure logical function has_axis (obj)
+  class (fmsDiagObject_type), intent(in) :: obj !< diag object
+  has_axis = allocated(obj%axis)
+end function has_axis
 
 end module fms_diag_object_mod

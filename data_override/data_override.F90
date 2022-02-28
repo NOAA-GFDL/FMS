@@ -230,7 +230,7 @@ subroutine data_override_init(Atm_domain_in, Ocean_domain_in, Ice_domain_in, Lan
     call write_version_number("DATA_OVERRIDE_MOD", version)
 
 !  Initialize user-provided data table
-    default_table%gridname = 'none'
+    default_table%gridname = 'non'
     default_table%fieldname_code = 'none'
     default_table%fieldname_file = 'none'
     default_table%file_name = 'none'
@@ -686,8 +686,8 @@ subroutine data_override_3d(gridname,fieldname_code,data,time,override,data_inde
   integer :: nxd, nyd, nxc, nyc, nwindows
   integer :: nwindows_x, ipos, jpos, window_size(2)
   integer :: istart, iend, jstart, jend
-  integer :: isw, iew, jsw, jew, n
-  integer :: omp_get_num_threads, omp_get_thread_num, thread_id, window_id
+  integer :: isw, iew, jsw, jew
+  integer :: omp_get_num_threads, window_id
   logical :: need_compute
   real    :: lat_min, lat_max
   integer :: is_src, ie_src, js_src, je_src

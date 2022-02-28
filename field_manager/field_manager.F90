@@ -603,12 +603,12 @@ character(len=64), parameter :: note_header  = '==>Note from ' // trim(module_na
 !        local variables
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 character(len=1024)              :: record
-character(len=fm_path_name_len)  :: control_str
+character(len=fm_string_len)     :: control_str
 character(len=fm_path_name_len)  :: list_name
-character(len=fm_path_name_len)  :: method_name
-character(len=fm_path_name_len)  :: name_str
-character(len=fm_path_name_len)  :: type_str
-character(len=fm_path_name_len)  :: val_name
+character(len=fm_string_len)     :: method_name
+character(len=fm_string_len)     :: name_str
+character(len=fm_string_len)     :: type_str
+character(len=fm_string_len)     :: val_name
 character(len=fm_string_len)     :: tbl_name
 integer                          :: control_array(MAX_FIELDS,3)
 integer                          :: endcont
@@ -1076,7 +1076,6 @@ character(len=64), parameter :: note_header  = '==>Note from ' // trim(module_na
 !        local variables
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 character(len=fm_string_len)   :: method_name
-character(len=fm_string_len)   :: val_list
 character(len=fm_string_len)   :: val_name
 integer, dimension(MAX_FIELDS) :: end_val
 integer, dimension(MAX_FIELDS) :: start_val
@@ -1378,11 +1377,6 @@ integer                      :: find_field_index_new
 character(len=*), intent(in) :: field_name !< The path to the name of the field that an index is
                              !! being requested for.
 
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        local parameters
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-integer :: i
-
 find_field_index_new = NO_FIELD
 
 find_field_index_new = fm_get_index(field_name)
@@ -1482,13 +1476,6 @@ type(method_type),intent(inout) :: methods(:) !< an array of methods for field w
 character(len=17), parameter :: sub_name     = 'get_field_methods'
 character(len=64), parameter :: error_header = '==>Error from ' // trim(module_name)   //  &
                                                '(' // trim(sub_name) // '): '
-
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        local variables
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-character(len=fm_path_name_len), dimension(size(methods(:))) :: control
-character(len=fm_path_name_len), dimension(size(methods(:))) :: method
-logical                                                   :: found_methods
 !   <ERROR MSG="invalid field index" STATUS="FATAL">
 !     The field index is invalid because it is less than 1 or greater than the
 !     number of fields.
@@ -1618,7 +1605,6 @@ character(len=64), parameter :: error_header = '==>Error from ' // trim(module_n
                                                '(' // trim(sub_name) // '): '
 character(len=64), parameter :: warn_header  = '==>Warning from ' // trim(module_name) //  &
                                                '(' // trim(sub_name) // '): '
-integer                      :: ier
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 !        local variables
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -3195,7 +3181,7 @@ character (len=fm_type_name_len)   :: field_type
 integer                            :: count
 integer                            :: error
 integer                            :: index
-integer                            :: n, ier
+integer                            :: n
 integer                            :: shortest
 logical                            :: found
 type (field_def), pointer, save    :: temp_p
@@ -3363,8 +3349,7 @@ character(len=64), parameter :: warn_header  = '==>Warning from ' // trim(module
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 !        local variables
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-type (field_def), pointer, save :: temp_list_p
- integer                         :: out_unit
+integer                         :: out_unit
 
 out_unit = stdout()
 !
@@ -3627,7 +3612,7 @@ character(len=64), parameter :: warn_header  = '==>Warning from ' // trim(module
 !        local variables
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 logical                          :: create_t
-integer                          :: i, ier
+integer                          :: i
 integer                          :: index_t
 integer, pointer, dimension(:)   :: temp_i_value
 character(len=fm_path_name_len)  :: path
@@ -3864,7 +3849,7 @@ character(len=64), parameter :: warn_header  = '==>Warning from ' // trim(module
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 character(len=fm_path_name_len)      :: path
 character(len=fm_field_name_len)     :: base
-integer                              :: i, ier
+integer                              :: i
 integer                              :: index_t
 logical                              :: create_t
 logical, dimension(:), pointer       :: temp_l_value
@@ -4100,7 +4085,7 @@ character(len=64), parameter :: warn_header  = '==>Warning from ' // trim(module
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
 logical                          :: create_t
-integer                          :: i, ier
+integer                          :: i
 integer                          :: index_t
 real, pointer, dimension(:)      :: temp_r_value
 character(len=fm_path_name_len)  :: path
@@ -4337,7 +4322,7 @@ character(len=64), parameter :: warn_header  = '==>Warning from ' // trim(module
 character(len=fm_string_len), dimension(:), pointer :: temp_s_value
 character(len=fm_path_name_len)                     :: path
 character(len=fm_field_name_len)                    :: base
-integer                                             :: i, ier
+integer                                             :: i
 integer                                             :: index_t
 logical                                             :: create_t
 type (field_def),                     save, pointer :: temp_list_p
@@ -4709,13 +4694,6 @@ end function fm_modify_name  !}
 !! all fields and reset the field tree to only the root field.
 subroutine initialize  !{
 !
-!        arguments
-!
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        local variables
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-integer :: ier
-!
 !        Initialize the root field
 !
 if (.not. module_is_initialized) then  !{
@@ -4782,7 +4760,6 @@ character(len=64), parameter :: warn_header  = '==>Warning from ' // trim(module
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 !        local variables
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-integer :: ier
 type (field_def), pointer, save :: dummy_p
 integer                         :: out_unit
 
@@ -5265,10 +5242,7 @@ character(len=64), parameter :: warn_header  = '==>Warning from ' // trim(module
 !        local variables
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 character(len=fm_path_name_len) :: scratch
-integer                         :: depthp1
-integer                         :: first
 integer                         :: i
-integer                         :: last
 integer                         :: n
 type (field_def), pointer, save :: this_field_p
 integer                         :: out_unit

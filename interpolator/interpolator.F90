@@ -264,7 +264,7 @@ integer ::          len, ntime_in, num_fields               !< No description
 ! pletzer real, allocatable :: time_in(:)
 ! sjs real, allocatable :: climdata(:,:,:), climdata2(:,:,:)
 
-character(len=64) :: name, units                              !< No description
+character(len=64) :: units                              !< No description
 integer           :: sense                                        !< No description
 
 integer, parameter :: max_diag_fields = 30                    !< No description
@@ -425,7 +425,6 @@ logical,          intent(out), optional :: single_year_file
 !  clim_units :: A list of the units for the components listed in data_names.
 !
 integer :: io, ierr
-logical :: the_file_exists
 
 if (.not. module_is_initialized) then
   call fms_init
