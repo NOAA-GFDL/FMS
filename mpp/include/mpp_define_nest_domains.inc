@@ -373,7 +373,7 @@ subroutine mpp_define_nest_domains(nest_domain, domain, num_nest, nest_level, ti
 
 end subroutine mpp_define_nest_domains
 
-!>  Based on mpp_define_nest_domains, but just resets positioning of nest 
+!>  Based on mpp_define_nest_domains, but just resets positioning of nest
 !>    Modifies the parent/coarse start and end indices of the nest location
 !!    Computes new overlaps of nest PEs on parent PEs
 !!    Ramstrom/HRD Moving Nest

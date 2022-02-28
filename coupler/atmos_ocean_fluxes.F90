@@ -415,7 +415,7 @@ contains
   !! @throw FATAL, "Flux index, [ind] does not match array index, [n] for [name]"
   !! @throw FATAL, "Problem changing to [name]"
   !! @throw FATAL, "Undefined flux_type given for [name]: [gas_fluxes%bc(n)%flux_type]"
-  !! @throw FATAL, "Undefined implementation given for [name]: 
+  !! @throw FATAL, "Undefined implementation given for [name]:
   !!                [gas_fluxes%bc(n)%flux_type]/implementation/[gas_fluxes%bc(n)%implementation]"
   !! @throw FATAL, "No param for [name]: need [num_parameters]"
   !! @throw FATAL, "Wrong number of param for [name]: [size(gas_fluxes%bc(n)%param(:))] given, need [num_parameters]"

@@ -2,7 +2,7 @@
 # Supported Public Interfaces for FMS
 
 List of supported public interfaces and associated types meant for external use through the 'fms' module.
-Additional information for this module and others can be found in the Doxygen generated documentation. 
+Additional information for this module and others can be found in the Doxygen generated documentation.
 
 ### affinity
 ##### Interfaces

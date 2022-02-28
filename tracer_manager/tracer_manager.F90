@@ -97,7 +97,7 @@ public  tracer_manager_init, &
         adjust_positive_def, &
         NO_TRACER,           &
         MAX_TRACER_FIELDS,   &
-        set_tracer_method 
+        set_tracer_method
 
 !> @brief Function which returns the number assigned to the tracer name.
 !!

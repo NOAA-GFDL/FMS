@@ -202,7 +202,7 @@
 !#output variables
 !"UG_unit_test", "unstructured_real_scalar_field_data", "rsf_diag_1", "unstructured_diag_test", "all", .TRUE., "none",
 ! 1,
-!"UG_unit_test", "unstructured_real_1D_field_data", "unstructured_real_1D_field_data", "unstructured_diag_test", 
+!"UG_unit_test", "unstructured_real_1D_field_data", "unstructured_real_1D_field_data", "unstructured_diag_test",
 !"all", .TRUE., "none", 1,
 !"UG_unit_test", "unstructured_real_2D_field_data", "unstructured_real_2D_field_data", "unstructured_diag_test",
 !"all", .TRUE., "none", 1,
@@ -1102,7 +1102,7 @@ CONTAINS
         integer(kind=i4_kind),dimension(2)                 :: layout_for_full_domain !<Rank layout (2D grid) for the
                                                    !! full 2D structured domain.
                                                    !! Example: 16 ranks -> (16,1) or (8,2) or (4,4) or (2,8) or (1,16)
-        integer(kind=i4_kind),dimension(:),allocatable     :: pe_start !<Array holding the smallest rank id assigned 
+        integer(kind=i4_kind),dimension(:),allocatable     :: pe_start !<Array holding the smallest rank id assigned
                                                                        !! to each 2D structured domain tile.
         integer(kind=i4_kind),dimension(:),allocatable     :: pe_end !<Array holding the largest rank id assigned to
                                                                      !! each 2D structured domain tile.
@@ -1192,7 +1192,7 @@ CONTAINS
        real,allocatable,dimension(:) :: lat, lon
        integer(kind=i4_kind)             :: idlat
        integer(kind=i4_kind)                              :: idlon
-       integer(kind=i4_kind)                              :: rsf_diag_id !<Id returned for a real scalar field 
+       integer(kind=i4_kind)                              :: rsf_diag_id !<Id returned for a real scalar field
                                                                          !! associated with the unstructured grid by
                                                                          !! register_diag_field.
        integer(kind=i4_kind),allocatable,dimension(:)     :: rsf_diag_1d_id !<Id returned for a real 1D array field
@@ -1547,7 +1547,7 @@ allocate(rsf_diag_1d_id(1))
         enddo
 
        !real 3D field.
-!       if(.not.allocated(unstructured_real_3D_field_data_ref) 
+!       if(.not.allocated(unstructured_real_3D_field_data_ref)
 !             allocate(unstructured_real_3D_field_data_ref(unstructured_axis_data_size,nz,cc_axis_size))
 !       do k = 1,cc_axis_size
 !           do j = 1,nz

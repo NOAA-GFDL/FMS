@@ -135,7 +135,7 @@ subroutine check_get_value_from_key_bad_block_id
 
 end subroutine check_get_value_from_key_bad_block_id
 
-!> @brief This is to check if the parser crashes correctly if user tries to open a missing file. 
+!> @brief This is to check if the parser crashes correctly if user tries to open a missing file.
 subroutine check_read_and_parse_file_missing
    integer :: yaml_file_id !< file_id for a yaml file
 

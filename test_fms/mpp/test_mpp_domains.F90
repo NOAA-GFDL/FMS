@@ -7746,7 +7746,7 @@ end subroutine test_halosize_update
              call get_nnest2(domain_coarse, 1, tile_coarse(my_fine_id:my_fine_id), (/iss_c/), (/ies_c/), (/jss_c/), &
                   (/jes_c/), nnest, t_coarse, iadd_coarse, jadd_coarse, rotate_coarse, is_coarse, ie_coarse, &
                   js_coarse, je_coarse)
-             call fill_nest_data(sbufferx2, iss_c, ies_c, jss_c, jes_c, nnest, t_coarse, shift, 0, iadd_coarse, & 
+             call fill_nest_data(sbufferx2, iss_c, ies_c, jss_c, jes_c, nnest, t_coarse, shift, 0, iadd_coarse, &
                   jadd_coarse, rotate_coarse, is_coarse, ie_coarse, js_coarse, je_coarse, 1E3_r8_kind, 2E3_r8_kind, 1,&
                   -1, nx, ny)
              call fill_nest_data(sbuffery2, iss_c, ies_c, jss_c, jes_c, nnest, t_coarse, 0, 0, iadd_coarse, &

@@ -7163,7 +7163,7 @@ subroutine set_initialized_r2d(fileObj, f_ptr, name, is_set)
 
   if (m>fileObj%nvar .AND. mpp_pe() == mpp_root_pe() ) then
     call mpp_error(NOTE,"fms_io(set_initialized_r2d): Unable to find "// &
-          & trim(name)//" queried by pointer, "//& 
+          & trim(name)//" queried by pointer, "//&
           & "probably because of the suspect comparison of pointers by ASSOCIATED"//&
           & " when attempting to set initialization.")
   end if

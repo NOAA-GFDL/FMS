@@ -2254,7 +2254,7 @@ CONTAINS
                                   i1 = i-l_start(1)-hi+1
                                   j1 =  j-l_start(2)-hj+1
                                   IF ( pow_value /= 1 ) THEN
-                                     output_fields(out_num)%buffer(i1,j1,:,sample)= & 
+                                     output_fields(out_num)%buffer(i1,j1,:,sample)= &
                                           & output_fields(out_num)%buffer(i1,j1,:,sample)+ &
                                           & (field(i-is+1+hi,j-js+1+hj,l_start(3):l_end(3))*weight1)**(pow_value)
                                   ELSE
@@ -2566,7 +2566,7 @@ CONTAINS
                       IF( numthreads > 1 .AND. phys_window ) then
                          DO j = js, je
                             DO i = is, ie
-                               IF ( l_start(1)+hi <= i .AND. i <= l_end(1)+hi .AND. l_start(2)+hj <= j .AND. & 
+                               IF ( l_start(1)+hi <= i .AND. i <= l_end(1)+hi .AND. l_start(2)+hj <= j .AND. &
                                   & j <= l_end(2)+hj ) THEN
                                   i1 = i-l_start(1)-hi+1
                                   j1=  j-l_start(2)-hj+1
@@ -2972,7 +2972,7 @@ CONTAINS
                    k1 = k - l_start(3) + 1
                    DO j = js, je
                       DO i = is, ie
-                         IF ( l_start(1)+hi <= i .AND. i <= l_end(1)+hi .AND. l_start(2)+hj <= j .AND. & 
+                         IF ( l_start(1)+hi <= i .AND. i <= l_end(1)+hi .AND. l_start(2)+hj <= j .AND. &
                             & j <= l_end(2)+hj ) THEN
                             i1 = i-l_start(1)-hi+1
                             j1 =  j-l_start(2)-hj+1
