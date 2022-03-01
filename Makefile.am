@@ -115,5 +115,16 @@ include $(top_srcdir)/mkmods.mk
 #	-rm -f FMSConfig.cmake FMSConfigVersion.cmake
 EXTRA_DIST = README.md #_package_init_cmake
 
+
+if COV
+check-code-coverage: check
+	-cd ${top_builddir}/test_fms && chmod +x intel_coverage.sh && ./intel_coverage.sh
+
+.PHONY: check-code-coverage
+
+clean-local:
+	-rm -rf .mods coverage-data coverage-report
+else
 clean-local:
 	-rm -rf .mods
+endif
