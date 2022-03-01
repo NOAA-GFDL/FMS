@@ -357,6 +357,7 @@ AC_CONFIG_FILES([
   libFMS/Makefile
   docs/Makefile
   parser/Makefile
+  string_utils/Makefile
   test_fms/test_common.sh
   test_fms/Makefile
   test_fms/diag_manager/Makefile
@@ -378,6 +379,7 @@ AC_CONFIG_FILES([
   test_fms/affinity/Makefile
   test_fms/coupler/Makefile
   test_fms/parser/Makefile
+  test_fms/string_utils/Makefile
   FMS.pc
   ])
 
