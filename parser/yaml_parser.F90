@@ -284,9 +284,9 @@ subroutine get_value_from_key_0d(file_id, block_id, key_name, key_value, is_opti
        type is (character(len=*))
           call string_copy(key_value, buffer)
        type is (logical)
-          if (index(lowercase(trim(buffer)), "false") > 0) then
+          if (lowercase(trim(buffer)) == "false") then
             key_value = .false.
-          elseif (index(lowercase(trim(buffer)), "true") > 0) then
+          elseif (lowercase(trim(buffer)) == "true") then
             key_value = .true.
           else
             call mpp_error(FATAL, "Key:"//trim(key_name)//" Error converting '"//trim(buffer)//"' to logical")
