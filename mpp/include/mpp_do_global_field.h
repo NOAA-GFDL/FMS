@@ -28,7 +28,7 @@
       MPP_TYPE_, intent(in), optional :: default_data
 
       integer :: i, j, k, m, n, nd, num_words, lpos, rpos, ioff, joff, from_pe, root_pe, tile_id
-      integer :: ke, isc, iec, jsc, jec, is, ie, js, je, nword_me
+      integer :: ke, isc, iec, jsc, jec, is, ie, js, je, num_word_me
       integer :: ipos, jpos
       logical :: xonly, yonly, root_only, global_on_this_pe
       MPP_TYPE_ :: clocal ((domain%x(1)%compute%size+ishift)    *(domain%y(1)%compute%size+jshift)    *size(local,3))
@@ -109,7 +109,7 @@
       isc = domain%x(tile)%compute%begin; iec = domain%x(tile)%compute%end+ishift
       jsc = domain%y(tile)%compute%begin; jec = domain%y(tile)%compute%end+jshift
 
-      nword_me = (iec-isc+1)*(jec-jsc+1)*ke
+      num_word_me = (iec-isc+1)*(jec-jsc+1)*ke
 
 ! make contiguous array from compute domain
       m = 0
@@ -169,7 +169,7 @@
                        * (domain%list(rpos)%y(1)%compute%size+jshift) * ke
              endif
            ! Force use of scalar, integer ptr interface
-             call mpp_transmit( put_data=clocal(1), plen=nword_me, to_pe=domain%x(1)%list(lpos)%pe, &
+             call mpp_transmit( put_data=clocal(1), plen=num_word_me, to_pe=domain%x(1)%list(lpos)%pe, &
                                 get_data=cremote(1), glen=num_words, from_pe=from_pe )
              m = 0
              if (from_pe /= NULL_PE) then
@@ -199,7 +199,7 @@
                        * (domain%list(rpos)%y(1)%compute%size+jshift) * ke
              endif
            ! Force use of scalar, integer pointer interface
-             call mpp_transmit( put_data=clocal(1), plen=nword_me, to_pe=domain%y(1)%list(lpos)%pe, &
+             call mpp_transmit( put_data=clocal(1), plen=num_word_me, to_pe=domain%y(1)%list(lpos)%pe, &
                                 get_data=cremote(1), glen=num_words, from_pe=from_pe )
              m = 0
              if (from_pe /= NULL_PE) then
@@ -220,7 +220,7 @@
          nd = size(domain%list(:))
          if(root_only) then
             if(domain%pe .NE. domain%tile_root_pe) then
-               call mpp_send( clocal(1), plen=nword_me, to_pe=domain%tile_root_pe, tag=COMM_TAG_1 )
+               call mpp_send( clocal(1), plen=num_word_me, to_pe=domain%tile_root_pe, tag=COMM_TAG_1 )
             else
                do n = 1,nd-1
                   rpos = mod(domain%pos+n,nd)
@@ -245,7 +245,7 @@
             do n = 1,nd-1
                lpos = mod(domain%pos+nd-n,nd)
                if( domain%list(lpos)%tile_id(1).NE. tile_id ) cycle ! global field only within tile
-               call mpp_send( clocal(1), plen=nword_me, to_pe=domain%list(lpos)%pe, tag=COMM_TAG_2 )
+               call mpp_send( clocal(1), plen=num_word_me, to_pe=domain%list(lpos)%pe, tag=COMM_TAG_2 )
             end do
             do n = 1,nd-1
                rpos = mod(domain%pos+n,nd)
