@@ -343,8 +343,6 @@ subroutine get_value_from_key_1d(file_id, block_id, key_name, key_value, is_opti
           if (err_unit .ne. 0) call mpp_error(FATAL, "Key:"//trim(key_name)//" Error converting '"//trim(buffer)//"' to r8")
        type is (character(len=*))
           call mpp_error(FATAL, "get_value_from_key 1d string variables are not supported. Contact developers")
-       type is (logical)
-          call mpp_error(FATAL, "get_value_from_key 1d logical variables are not supported. Contact developers")
      class default
        call mpp_error(FATAL, "The type of your buffer in your get_value_from_key call for key "//trim(key_name)//&
                             &" is not supported. Only i4, i8, r4, r8 and strings are supported.")
