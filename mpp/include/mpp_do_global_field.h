@@ -27,7 +27,7 @@
       integer, intent(in), optional :: flags
       MPP_TYPE_, intent(in), optional :: default_data
 
-      integer :: i, j, k, m, n, nd, nwords, lpos, rpos, ioff, joff, from_pe, root_pe, tile_id
+      integer :: i, j, k, m, n, nd, num_words, lpos, rpos, ioff, joff, from_pe, root_pe, tile_id
       integer :: ke, isc, iec, jsc, jec, is, ie, js, je, nword_me
       integer :: ipos, jpos
       logical :: xonly, yonly, root_only, global_on_this_pe
@@ -163,14 +163,14 @@
              from_pe = domain%x(1)%list(rpos)%pe
              rpos = from_pe - root_pe ! for concurrent run, root_pe may not be 0.
              if (from_pe == NULL_PE) then
-                nwords = 0
+                num_words = 0
              else
-                nwords = (domain%list(rpos)%x(1)%compute%size+ishift) &
+                num_words = (domain%list(rpos)%x(1)%compute%size+ishift) &
                        * (domain%list(rpos)%y(1)%compute%size+jshift) * ke
              endif
            ! Force use of scalar, integer ptr interface
              call mpp_transmit( put_data=clocal(1), plen=nword_me, to_pe=domain%x(1)%list(lpos)%pe, &
-                                get_data=cremote(1), glen=nwords, from_pe=from_pe )
+                                get_data=cremote(1), glen=num_words, from_pe=from_pe )
              m = 0
              if (from_pe /= NULL_PE) then
                 is = domain%list(rpos)%x(1)%compute%begin; ie = domain%list(rpos)%x(1)%compute%end+ishift
@@ -193,14 +193,14 @@
              from_pe = domain%y(1)%list(rpos)%pe
              rpos = from_pe - root_pe
              if (from_pe == NULL_PE) then
-                nwords = 0
+                num_words = 0
              else
-                nwords = (domain%list(rpos)%x(1)%compute%size+ishift) &
+                num_words = (domain%list(rpos)%x(1)%compute%size+ishift) &
                        * (domain%list(rpos)%y(1)%compute%size+jshift) * ke
              endif
            ! Force use of scalar, integer pointer interface
              call mpp_transmit( put_data=clocal(1), plen=nword_me, to_pe=domain%y(1)%list(lpos)%pe, &
-                                get_data=cremote(1), glen=nwords, from_pe=from_pe )
+                                get_data=cremote(1), glen=num_words, from_pe=from_pe )
              m = 0
              if (from_pe /= NULL_PE) then
                  js = domain%list(rpos)%y(1)%compute%begin; je = domain%list(rpos)%y(1)%compute%end+jshift
@@ -225,8 +225,8 @@
                do n = 1,nd-1
                   rpos = mod(domain%pos+n,nd)
                   if( domain%list(rpos)%tile_id(1) .NE. tile_id ) cycle
-                  nwords = (domain%list(rpos)%x(1)%compute%size+ishift) * (domain%list(rpos)%y(1)%compute%size+jshift) * ke
-                  call mpp_recv(cremote(1), glen=nwords, from_pe=domain%list(rpos)%pe, tag=COMM_TAG_1 )
+                  num_words = (domain%list(rpos)%x(1)%compute%size+ishift) * (domain%list(rpos)%y(1)%compute%size+jshift) * ke
+                  call mpp_recv(cremote(1), glen=num_words, from_pe=domain%list(rpos)%pe, tag=COMM_TAG_1 )
                   m = 0
                   is = domain%list(rpos)%x(1)%compute%begin; ie = domain%list(rpos)%x(1)%compute%end+ishift
                   js = domain%list(rpos)%y(1)%compute%begin; je = domain%list(rpos)%y(1)%compute%end+jshift
@@ -250,8 +250,8 @@
             do n = 1,nd-1
                rpos = mod(domain%pos+n,nd)
                if( domain%list(rpos)%tile_id(1) .NE. tile_id ) cycle ! global field only within tile
-               nwords = (domain%list(rpos)%x(1)%compute%size+ishift) * (domain%list(rpos)%y(1)%compute%size+jshift) * ke
-               call mpp_recv( cremote(1), glen=nwords, from_pe=domain%list(rpos)%pe, tag=COMM_TAG_2 )
+               num_words = (domain%list(rpos)%x(1)%compute%size+ishift) * (domain%list(rpos)%y(1)%compute%size+jshift) * ke
+               call mpp_recv( cremote(1), glen=num_words, from_pe=domain%list(rpos)%pe, tag=COMM_TAG_2 )
                m = 0
                is = domain%list(rpos)%x(1)%compute%begin; ie = domain%list(rpos)%x(1)%compute%end+ishift
                js = domain%list(rpos)%y(1)%compute%begin; je = domain%list(rpos)%y(1)%compute%end+jshift

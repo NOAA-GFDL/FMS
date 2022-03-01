@@ -43,7 +43,7 @@
       integer, intent(in), optional :: flags
       MPP_TYPE_, intent(in), optional :: default_data
 
-      integer :: l, k, m, n, nd, nwords, lpos, rpos, tile_id
+      integer :: l, k, m, n, nd, num_words, lpos, rpos, tile_id
       integer :: ke, lsc, lec, ls, le, nword_me
       integer :: ipos, jpos
       logical :: root_only, global_on_this_pe
@@ -125,8 +125,8 @@
             do n = 1,nd-1
                rpos = mod(domain%pos+n,nd)
                if( domain%list(rpos)%tile_id .NE. tile_id ) cycle
-               nwords = domain%list(rpos)%compute%size * ke
-               call mpp_recv(cremote(1), glen=nwords, from_pe=domain%list(rpos)%pe, tag=COMM_TAG_1 )
+               num_words = domain%list(rpos)%compute%size * ke
+               call mpp_recv(cremote(1), glen=num_words, from_pe=domain%list(rpos)%pe, tag=COMM_TAG_1 )
                m = 0
                ls = domain%list(rpos)%compute%begin; le = domain%list(rpos)%compute%end
 
@@ -147,8 +147,8 @@
          do n = 1,nd-1
             rpos = mod(domain%pos+n,nd)
             if( domain%list(rpos)%tile_id .NE. tile_id ) cycle ! global field only within tile
-            nwords = domain%list(rpos)%compute%size * ke
-            call mpp_recv( cremote(1), glen=nwords, from_pe=domain%list(rpos)%pe, tag=COMM_TAG_2 )
+            num_words = domain%list(rpos)%compute%size * ke
+            call mpp_recv( cremote(1), glen=num_words, from_pe=domain%list(rpos)%pe, tag=COMM_TAG_2 )
             m = 0
             ls = domain%list(rpos)%compute%begin; le = domain%list(rpos)%compute%end
 

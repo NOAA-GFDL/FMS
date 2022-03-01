@@ -361,7 +361,7 @@
             call mpp_error( FATAL, 'MPP_READ: ndim of text field should be at most 2')
          end select
 
-         if( verbose )print '(a,2i6,i6,12i4)', 'mpp_read_text: PE, unit, nwords, start, axsiz=', pe, unit, len(data), start, axsiz
+         if( verbose )print '(a,2i6,i6,12i4)', 'mpp_read_text: PE, unit, num_words, start, axsiz=', pe, unit, len(data), start, axsiz
 
           select case (field%type)
              case(NF_CHAR)
