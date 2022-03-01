@@ -47,4 +47,4 @@ TESTS = test_mpp_io2.sh \
 EXTRA_DIST = test_mpp_io2.sh test_io_R4_R8.sh test_io_mosaic_R4_R8.sh input_base.nml
 
 # Clean up
-CLEANFILES = input.nml *.nc* *.out
+CLEANFILES = input.nml *.nc* *.out *.dpi *.spi *.dyn *.spl
