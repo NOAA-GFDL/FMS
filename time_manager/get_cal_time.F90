@@ -316,9 +316,9 @@ else if(lowercase(units(1:12)) == 'months since') then
   increment_days = floor(dt/86400)
   increment_seconds = int(dt - increment_days*86400)
 else
-  call error_mesg('get_cal_time','"'//trim(units)//'"'//' is not an acceptable units attribute of time.'// &
-    ' It must begin with: "years since", "months since", "days since", "hours since", "minutes since", &
-            &  or "seconds since"',FATAL)
+  call error_mesg('get_cal_time','"'//trim(units)//'" is not an acceptable units attribute of time.'// &
+            & ' It must begin with: "years since", "months since", "days since", "hours since", "minutes since",'// &
+            & ' or "seconds since"',FATAL)
 endif
 
 if (calendar_in_i /= calendar_tm_i) then

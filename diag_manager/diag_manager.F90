@@ -2836,7 +2836,7 @@ CONTAINS
                 ksr= l_start(3)
                 ker= l_end(3)
                 WHERE ( field(f1:f2,f3:f4,ksr:ker) < output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,:,sample) )&
-                     output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,:,sample) = field(f1:f2,f3:f4,ksr:ker)
+                    & output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,:,sample) = field(f1:f2,f3:f4,ksr:ker)
              ELSE
                 IF ( debug_diag_manager ) THEN
                    CALL update_bounds(out_num, is-hi, ie-hi, js-hj, je-hj, ks, ke)
