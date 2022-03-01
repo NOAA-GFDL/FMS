@@ -46,6 +46,7 @@ integer               :: nkeys           !< number of keys
 integer, allocatable  :: key_ids(:)      !< array of key ids
 character(len=20)     :: key_name        !< the name of the key
 character(len=20)     :: key_value       !< the value of a key
+logical               :: logical_buffer  !< logical buffer
 
 call fms_init
 
@@ -116,6 +117,15 @@ if (r4_buffer .ne. real(-999.9, kind=r4_kind)) call mpp_error(FATAL, "fill_value
 !! Try get_value_from_key using a r8 buffer
 call get_value_from_key(yaml_file_id1, variable_ids(1), "fill_value", r8_buffer)
 if (abs(r8_buffer - real(-999.9, kind=r8_kind)) .gt. 5d-5) call mpp_error(FATAL, "fill_value was not read correctly as an r8!")
+
+!! Try get_value_from_key using a logical buffer
+logical_buffer = .true.
+call get_value_from_key(yaml_file_id2, entries_ids(2), "do_data_bug", logical_buffer)
+if (logical_buffer) call mpp_error(FATAL, "do_data_bug was not read correctly as a logical")
+
+logical_buffer = .false.
+call get_value_from_key(yaml_file_id2, entries_ids(2), "use_data_bug", logical_buffer)
+if (.not. logical_buffer) call mpp_error(FATAL, "use_data_bug was not read correctly as a logical")
 
 !! Try the is_optional argument on an key that does not exist
 string_buffer = ""

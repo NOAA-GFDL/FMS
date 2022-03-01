@@ -46,6 +46,8 @@ data_table:
    lat_end           : 89.8
    lon_start         : 3.4
    lon_end           : 154.4
+   do_data_bug       : false
+   use_data_bug      : True
 _EOF
 
 cat <<_EOF > diag_table.yaml
