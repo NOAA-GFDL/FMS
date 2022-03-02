@@ -79,6 +79,12 @@ AC_ARG_ENABLE([setting-flags],
 AS_IF([test ${enable_setting_flags:-yes} = yes],
   [enable_setting_flags=yes],
   [enable_setting_flags=no])
+AC_ARG_ENABLE([code-coverage],
+  [AS_HELP_STRING([--enable-code-coverage],
+    [Allow configure to set flags and add check-code-coverage target for code coverage analysis (Default no)])])
+AS_IF([test ${enable_code_coverage:-no} = no],
+  [enable_code_coverage=no],
+  [enable_code_coverage=yes])
 
 # Does the user want to build documentation?
 AC_MSG_CHECKING([whether documentation should be build (requires doxygen)])
@@ -174,6 +180,16 @@ if test $with_mpi = yes; then
   GX_FC_CHECK_MOD([mpi], [], [], [AC_MSG_ERROR([Can't find the MPI Fortran module.  Set FC/CPPFLAGS/FCFLAGS])])
   AC_CHECK_FUNC([MPI_init], [], [AC_MSG_ERROR([Can't find the MPI Fortran library.  Set FC/LDFLAGS/LIBS])])
 fi
+# check intel compiler and coverage tools are avaiable if code coverage is enabled
+if test "$enable_code_coverage" = yes; then
+  if test ! -z "`$FC --version | grep ifort`"; then
+    AC_CHECK_PROGS([PROFMERGE],[profmerge])
+    AC_CHECK_PROGS([CODECOV], [codecov])
+  else
+    AC_MSG_ERROR([Intel compiler and coverage tools required for coverage report])
+  fi
+fi
+AM_CONDITIONAL(COV, [test "$enable_code_coverage" = yes])
 
 # Require netCDF
 GX_FC_CHECK_MOD([netcdf], [], [], [AC_MSG_ERROR([Can't find the netCDF Fortran module.  Set CPPFLAGS/FCFLAGS])])
@@ -237,6 +253,12 @@ if test $enable_setting_flags = yes; then
   fi
   if test ! -z "$OPENMP_FCFLAGS"; then
     FCFLAGS="$FCFLAGS $OPENMP_FCFLAGS"
+  fi
+
+  # Add code coverage flags
+  if test $enable_code_coverage = yes; then
+    FCFLAGS="$FCFLAGS -prof-gen=srcpos"
+    CFLAGS="$CFLAGS -prof-gen=srcpos"
   fi
 fi
 
@@ -359,6 +381,7 @@ AC_CONFIG_FILES([
   parser/Makefile
   string_utils/Makefile
   test_fms/test_common.sh
+  test_fms/intel_coverage.sh
   test_fms/Makefile
   test_fms/diag_manager/Makefile
   test_fms/data_override/Makefile
