@@ -6,4 +6,4 @@ SUFFIXES = .$(FC_MODEXT) _mod.$(FC_MODEXT)
 	$(PPFCCOMPILE) -c $<
 	@cp $(MODDIR)/$@ .
 
-CLEANFILES = *.$(FC_MODEXT) $(BUILT_SOURCES:%=$(MODDIR)/%) *__genmod.$(FC_MODEXT) *__genmod.f90
+CLEANFILES = *.$(FC_MODEXT) $(BUILT_SOURCES:%=$(MODDIR)/%) *__genmod.$(FC_MODEXT) *__genmod.f90 *.dyn *.spi *.dpi *.spl
