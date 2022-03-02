@@ -278,7 +278,7 @@ subroutine diag_yaml_object_init(diag_subset_output)
   logical              :: is_ocean         !< Flag indicating if it is an ocean file
   logical, allocatable :: ignore(:)        !< Flag indicating if the diag_file is going to be ignored
   integer              :: actual_num_files !< The actual number of files that were saved
-  integer              :: ii               !! For do loops to keep track of the files that were saved
+  integer              :: file_count       !! The current number of files added to the diag_yaml obj
 
   diag_yaml_id = open_and_parse_file("diag_table.yaml")
 
@@ -320,27 +320,28 @@ subroutine diag_yaml_object_init(diag_subset_output)
   allocate(diag_yaml%diag_fields(total_nvars))
 
   var_count = 0
-  ii = 0
+  file_count = 0
+  !> Loop through the number of nfiles and fill in the diag_yaml obj
   nfiles_loop: do i = 1, nfiles
     if(ignore(i)) cycle
-    ii = ii + 1
-    call diag_yaml_files_obj_init(diag_yaml%diag_files(ii))
-    call fill_in_diag_files(diag_yaml_id, diag_file_ids(i), diag_yaml%diag_files(ii))
+    file_count = file_count + 1
+    call diag_yaml_files_obj_init(diag_yaml%diag_files(file_count))
+    call fill_in_diag_files(diag_yaml_id, diag_file_ids(i), diag_yaml%diag_files(file_count))
 
     nvars = 0
     nvars = get_num_blocks(diag_yaml_id, "varlist", parent_block_id=diag_file_ids(i))
     allocate(var_ids(nvars))
     call get_block_ids(diag_yaml_id, "varlist", var_ids, parent_block_id=diag_file_ids(i))
-    allocate(diag_yaml%diag_files(ii)%file_varlist(nvars))
+    allocate(diag_yaml%diag_files(file_count)%file_varlist(nvars))
     nvars_loop: do j = 1, nvars
       var_count = var_count + 1
       !> Save the filename in the diag_field type
-      diag_yaml%diag_fields(var_count)%var_fname = diag_yaml%diag_files(ii)%file_fname
+      diag_yaml%diag_fields(var_count)%var_fname = diag_yaml%diag_files(file_count)%file_fname
 
       call fill_in_diag_fields(diag_yaml_id, var_ids(j), diag_yaml%diag_fields(var_count))
 
       !> Save the variable name in the diag_file type
-      diag_yaml%diag_files(ii)%file_varlist(j) = diag_yaml%diag_fields(var_count)%var_varname
+      diag_yaml%diag_files(file_count)%file_varlist(j) = diag_yaml%diag_fields(var_count)%var_varname
     enddo nvars_loop
     deallocate(var_ids)
   enddo nfiles_loop
