@@ -50,4 +50,4 @@ EXTRA_DIST = input_base.nml drifters_inp_test_3d.cdl	\
 test_drifters2.sh
 
 # Clean up
-CLEANFILES = *out *__genmod.mod *__genmod.f90 input.nml *.nc
+CLEANFILES = *out *__genmod.mod *__genmod.f90 input.nml *.nc *.dpi *.spi *.dyn *.spl

@@ -51,4 +51,4 @@ endif
 
 TESTS_ENVIRONMENT = parser_skip=${skipflag}
 # Clean up
-CLEANFILES = input.nml *.nc* *.out *.yaml
+CLEANFILES = input.nml *.nc* *.out *.yaml *.dpi *.spi *.dyn *.spl
