@@ -69,4 +69,4 @@ SH_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
                   $(top_srcdir)/tap-driver.sh
 TESTS_ENVIRONMENT = srcdir="$(top_srcdir)"
 
-CLEANFILES = *-files/* *.mod
+CLEANFILES = *.mod *.nc *.nc.* input.nml logfile.000000.out the_mask ascii_test1 *.dpi *.spi *.dyn *.spl *-files/*

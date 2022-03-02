@@ -46,4 +46,4 @@ TESTS_ENVIRONMENT= test_input_path="@TEST_INPUT_PATH@"
 EXTRA_DIST = test_interpolator2.sh
 
 # Clean up
-CLEANFILES = input.nml diag_table
+CLEANFILES = input.nml diag_table *.dpi *.spi *.dyn *.spl

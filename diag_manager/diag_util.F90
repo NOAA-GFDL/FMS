@@ -64,7 +64,6 @@ use,intrinsic :: iso_c_binding, only: c_double,c_float,c_int64_t, &
   USE fms_mod, ONLY: error_mesg, FATAL, WARNING, NOTE, mpp_pe, mpp_root_pe, lowercase, fms_error_handler,&
        & write_version_number, do_cf_compliance
   USE fms_io_mod, ONLY: get_tile_string, return_domain, string
-  USE fms2_io_mod, ONLY: fms2_io_get_instance_filename => get_instance_filename
   USE mpp_domains_mod,ONLY: domain1d, domain2d, mpp_get_compute_domain, null_domain1d, null_domain2d,&
        & OPERATOR(.NE.), OPERATOR(.EQ.), mpp_modify_domain, mpp_get_domain_components,&
        & mpp_get_ntile_count, mpp_get_current_ntile, mpp_get_tile_id, mpp_mosaic_defined, mpp_get_tile_npes,&
@@ -75,7 +74,7 @@ use,intrinsic :: iso_c_binding, only: c_double,c_float,c_int64_t, &
   USE mpp_mod, ONLY: mpp_npes
   USE fms_io_mod, ONLY: get_mosaic_tile_file_ug
   USE constants_mod, ONLY: SECONDS_PER_DAY, SECONDS_PER_HOUR, SECONDS_PER_MINUTE
-use fms2_io_mod
+  USE fms2_io_mod, fms2_io_get_instance_filename => get_instance_filename
 #ifdef use_netCDF
   USE netcdf, ONLY: NF90_CHAR
 #endif
@@ -1534,9 +1533,7 @@ CONTAINS
     INTEGER :: field_num1
     INTEGER :: position
     INTEGER :: dir, edges
-    INTEGER :: ntileMe
     INTEGER :: year, month, day, hour, minute, second
-    INTEGER, ALLOCATABLE :: tile_id(:)
     INTEGER, DIMENSION(1) :: time_axis_id, time_bounds_id
     ! size of this axes array must be at least max num. of
     ! axes per field + 2; the last two elements are for time
@@ -1544,7 +1541,6 @@ CONTAINS
     INTEGER, DIMENSION(6) :: axes
     INTEGER, ALLOCATABLE  :: axesc(:) ! indices if compressed axes associated with the field
     LOGICAL :: time_ops, aux_present, match_aux_name, req_present, match_req_fields
-    CHARACTER(len=7) :: prefix
     CHARACTER(len=7) :: avg_name = 'average'
     CHARACTER(len=128) :: time_units, timeb_units, avg, error_string, filename, aux_name, req_fields, fieldname
     CHARACTER(len=128) :: suffix, base_name
@@ -1555,7 +1551,6 @@ CONTAINS
     TYPE(domain2d) :: domain2
     TYPE(domainUG) :: domainU
     INTEGER :: is, ie, last, ind
-    character(len=2) :: fnum_domain
     class(FmsNetcdfFile_t), pointer    :: fileob
     integer :: actual_num_axes !< The actual number of axes to write including time
 
@@ -2155,7 +2150,6 @@ CONTAINS
     type(time_type), intent(in), optional :: filename_time !< Time used in setting the filename when writting periodic files
 
     LOGICAL :: final_call, do_write, static_write
-    INTEGER :: i, num
     REAL :: dif, time_data(2, 1, 1, 1), dt_time(1, 1, 1, 1), start_dif, end_dif
     REAL :: time_in_file !< Time in file at the beginning of this call
 

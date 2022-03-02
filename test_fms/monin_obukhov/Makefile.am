@@ -45,4 +45,4 @@ TESTS = test_monin_obukhov2.sh
 EXTRA_DIST = test_monin_obukhov2.sh
 
 # Clean up
-CLEANFILES = input.nml *.out
+CLEANFILES = input.nml *.out *.dpi *.spi *.dyn *.spl

@@ -30,4 +30,4 @@ horiz_interp field_manager axis_utils affinity fms2_io parser
 
 # This input file must be distributed, it is turned into
 # test_common.sh by configure.
-EXTRA_DIST = test-lib.sh.in
+EXTRA_DIST = test-lib.sh.in intel_coverage.sh.in

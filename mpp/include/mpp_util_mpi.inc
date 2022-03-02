@@ -38,8 +38,7 @@ subroutine mpp_error_basic( errortype, errormsg )
   integer,                    intent(in) :: errortype
   character(len=*), intent(in), optional :: errormsg
   character(len=512)                     :: text
-  logical                                :: opened
-  integer                                :: istat, errunit
+  integer                                :: errunit
 
   if( .NOT.module_is_initialized )call ABORT()
 
@@ -90,10 +89,9 @@ end subroutine mpp_error_basic
 function get_peset(pelist)
   integer                       :: get_peset
   integer, intent(in), optional :: pelist(:)
-  integer                       :: group, errunit
-  integer                       :: i, n, stride, l
+  integer                       :: errunit
+  integer                       :: i, n
   integer,          allocatable :: sorted(:)
-  character(len=128) :: text
 
   if( .NOT.PRESENT(pelist) )then !set it to current_peset_num
      get_peset = current_peset_num; return
@@ -172,7 +170,7 @@ subroutine mpp_sync_self( pelist, check, request, msg_size, msg_type)
   integer, intent(in   ), optional :: msg_size(:)
   integer, intent(in   ), optional :: msg_type(:)
 
-  integer                       :: i, m, n, stride, my_check, rsize
+  integer                       :: m, my_check, rsize
 
   if( debug .and. (current_clock.NE.0) )call SYSTEM_CLOCK(start_tick)
   my_check = EVENT_SEND

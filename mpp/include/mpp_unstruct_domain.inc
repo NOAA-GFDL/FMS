@@ -34,7 +34,7 @@
      character(len=*), optional, intent(in) :: name
      integer, dimension(size(npts_tile(:))) :: ndivs_tile, pe_start, pe_end
      integer, dimension(0:ndivs-1)          :: ibegin, iend, costs_list
-     integer :: ntiles, ntotal_pts, ndivs_used, max_npts, cur_tile, cur_npts
+     integer :: ntiles, ndivs_used, cur_tile
      integer :: n, ts, te, p, pos, tile_id, ngroup, group_id, my_pos, i
      integer :: npes_in_group, is, ie, ntotal_costs, max_cost, cur_cost, costs_left
      integer :: npts_left, ndiv_left, cur_pos, ndiv, prev_cost, ioff
@@ -722,9 +722,6 @@ subroutine mpp_deallocate_domainUG(domain)
 
    !<Inputs/Outputs
     type(domainUG),intent(inout) :: domain
-
-   !<Local variables
-    integer(i4_kind) :: i !<Loop variable.
 
     if (associated(domain%list)) then
         deallocate(domain%list)

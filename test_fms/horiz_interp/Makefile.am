@@ -46,4 +46,4 @@ TESTS = test_horiz_interp2.sh
 EXTRA_DIST = test_horiz_interp2.sh
 
 # Clean up
-CLEANFILES = input.nml *.out*
+CLEANFILES = input.nml *.out* *.dpi *.spi *.dyn *.spl

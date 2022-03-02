@@ -45,4 +45,4 @@ SH_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
 EXTRA_DIST = test_mosaic2.sh
 
 # Clean up
-CLEANFILES = input.nml *.nc *.out
+CLEANFILES = input.nml *.nc *.out *.dpi *.spi *.dyn *.spl

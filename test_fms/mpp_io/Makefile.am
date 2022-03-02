@@ -51,4 +51,4 @@ SH_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
 EXTRA_DIST = test_mpp_io2.sh test_io_R4_R8.sh test_io_mosaic_R4_R8.sh
 
 # Clean up
-CLEANFILES = *-files/* input.nml *.nc* *.out
+CLEANFILES = *-files/* input.nml *.nc* *.out *.dpi *.spi *.dyn *.spl

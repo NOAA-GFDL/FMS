@@ -235,4 +235,5 @@ test_mpp_domains.$(OBJEXT): compare_data_checksums.mod test_domains_utility_mod.
 test_mpp_nesting.$(OBJEXT): compare_data_checksums.mod test_domains_utility_mod.mod
 
 # Clean up
-CLEANFILES = *-files/* *.nml *.out* *.tst* ascii* test_numb* *.mod
+CLEANFILES = *-files/* *.nml *.out* *.tst* \
+  ascii* test_numb* *.mod *.dpi *.spi *.dyn *.spl

@@ -1140,7 +1140,7 @@ type (time_type), intent(in) :: Time !< integral time stamp at the current time
         rcount = real(field_count(i))
         call mpp_sum (rcount)
         call mpp_sum (field_sum(i))
-        icount = rcount
+        icount = int(rcount, i8_kind)
 
 !-------------------------------------------------------------------------------
 !    verify that all the data expected for an integral has been
@@ -1150,7 +1150,7 @@ type (time_type), intent(in) :: Time !< integral time stamp at the current time
                      ('diag_integral_mod',  &
                       'field_count equals zero for field_name ' //  &
                        field_name(i)(1:len_trim(field_name(i))), FATAL )
-        kount = icount/field_size
+        kount = int(icount/field_size)
         if ((field_size)*kount /= icount) then
            print*,"name,pe,kount,field_size,icount,rcount=",trim(field_name(i)),mpp_pe(),kount,field_size,icount,rcount
            call error_mesg &

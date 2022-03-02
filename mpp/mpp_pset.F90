@@ -460,9 +460,9 @@ contains
     type(mpp_pset_type), intent(in) :: pset
     character(len=*), intent(in) :: caller
     real, intent(in) :: array(:)
-    integer          :: errunit
 
 #ifdef PSET_DEBUG
+    integer :: errunit
     logical :: do_print
     integer(LONG_KIND) :: chksum
 

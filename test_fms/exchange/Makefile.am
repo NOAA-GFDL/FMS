@@ -46,4 +46,4 @@ TESTS = test_xgrid2.sh
 EXTRA_DIST = test_xgrid2.sh
 
 # Clean up
-CLEANFILES = input.nml *.nc *.out
+CLEANFILES = input.nml *.nc *.out *.dpi *.spi *.dyn *.spl

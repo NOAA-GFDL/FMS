@@ -45,4 +45,4 @@ SH_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
 EXTRA_DIST = test_time_interp2.sh
 
 # Clean up
-CLEANFILES = INPUT/* input.nml *.out*
+CLEANFILES = INPUT/* input.nml *.out* *.dpi *.spi *.dyn *.spl
