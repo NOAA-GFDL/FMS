@@ -32,8 +32,7 @@ module ensemble_manager_mod
   use mpp_mod, only : mpp_npes, stdout, stdlog, mpp_error, FATAL
   use mpp_mod, only : mpp_pe, mpp_declare_pelist
   use mpp_mod, only : input_nml_file
-  use fms2_io_mod, only : fms2_io_set_filename_appendix=>set_filename_appendix
-  use fms_io_mod, only  : fms_io_set_filename_appendix=>set_filename_appendix
+  use fms2_io_mod, only : set_filename_appendix
 
   IMPLICIT NONE
 
@@ -410,8 +409,7 @@ contains
        !Append ensemble_id to the restart filenames
 
        !< Both calls are needed for cases where both fms2io/fmsio are used
-       call fms2_io_set_filename_appendix(trim(text))
-       call fms_io_set_filename_appendix(trim(text))
+       call set_filename_appendix(trim(text))
     endif
 
   end subroutine ensemble_pelist_setup
