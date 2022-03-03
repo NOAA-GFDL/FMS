@@ -95,7 +95,8 @@
       allocate(nz_gather(npes))
       call mpp_gather((/nz/), nz_gather, pelist)
       if ( mpp_file(unit)%write_on_this_pe.and.maxloc(nz_gather,1).ne.minloc(nz_gather,1) ) then
-         call mpp_error( FATAL, 'MPP_WRITE_COMPRESSED_2D_: size(data,2) must be consistent across all PEs in io_domain' )
+         call mpp_error( FATAL, &
+                        &  'MPP_WRITE_COMPRESSED_2D_: size(data,2) must be consistent across all PEs in io_domain' )
       end if
       deallocate(nz_gather)
 

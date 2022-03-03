@@ -154,7 +154,8 @@
                   call mpp_do_check(f_addrs(1:l_size,1:ntile), domain, check, d_type, ke, flags, name )
                endif
             endif
-            update => search_update_overlap(domain, update_whalo, update_ehalo, update_shalo, update_nhalo, update_position)
+            update => search_update_overlap(domain, update_whalo, update_ehalo, update_shalo, update_nhalo, &
+                                           &  update_position)
 
             !call mpp_do_update( f_addrs(1:l_size,1:ntile), domain, update, d_type, ke, &
             !                    b_addrs(1:l_size,1:ntile), bsize, flags)
@@ -214,7 +215,8 @@
       return
     end subroutine MPP_UPDATE_DOMAINS_5D_
 
-    subroutine MPP_REDISTRIBUTE_2D_( domain_in, field_in, domain_out, field_out, complete, free, list_size, dc_handle, position )
+    subroutine MPP_REDISTRIBUTE_2D_( domain_in, field_in, domain_out, field_out, complete, free, list_size, &
+                                   &  dc_handle, position )
       type(domain2D), intent(in) :: domain_in, domain_out
       MPP_TYPE_, intent(in)  :: field_in (:,:)
       MPP_TYPE_, intent(out) :: field_out(:,:)
@@ -232,13 +234,15 @@
       ptr_out = 0
       if(domain_in%initialized) ptr_in  = LOC(field_in )
       if(domain_out%initialized) ptr_out = LOC(field_out)
-      call mpp_redistribute( domain_in, field3D_in, domain_out, field3D_out, complete, free, list_size, dc_handle, position )
+      call mpp_redistribute( domain_in, field3D_in, domain_out, field3D_out, complete, free, list_size, &
+                           &  dc_handle, position )
 
       return
     end subroutine MPP_REDISTRIBUTE_2D_
 
 
-    subroutine MPP_REDISTRIBUTE_3D_( domain_in, field_in, domain_out, field_out, complete, free, list_size, dc_handle, position )
+    subroutine MPP_REDISTRIBUTE_3D_( domain_in, field_in, domain_out, field_out, complete, free, list_size, &
+                                   &  dc_handle, position )
       type(domain2D), intent(in) :: domain_in, domain_out
       MPP_TYPE_, intent(in)  :: field_in (:,:,:)
       MPP_TYPE_, intent(out) :: field_out(:,:,:)
@@ -311,7 +315,8 @@
             endif
             if(set_mismatch)then
                write( text,'(i2)' ) l_size
-               call mpp_error(FATAL,'MPP_REDISTRIBUTE_3D: Incompatible field at count '//text//' for group redistribute.' )
+               call mpp_error(FATAL,'MPP_REDISTRIBUTE_3D: Incompatible field at count '// &
+                              & text//' for group redistribute.' )
             endif
          endif
          if(do_redist)then
@@ -332,7 +337,8 @@
     end subroutine MPP_REDISTRIBUTE_3D_
 
 
-    subroutine MPP_REDISTRIBUTE_4D_( domain_in, field_in, domain_out, field_out, complete, free, list_size, dc_handle, position )
+    subroutine MPP_REDISTRIBUTE_4D_( domain_in, field_in, domain_out, field_out, complete, free, list_size, &
+                                   &  dc_handle, position )
       type(domain2D), intent(in) :: domain_in, domain_out
       MPP_TYPE_, intent(in)  :: field_in (:,:,:,:)
       MPP_TYPE_, intent(out) :: field_out(:,:,:,:)
@@ -350,20 +356,24 @@
       ptr_out = 0
       if(domain_in%initialized) ptr_in  = LOC(field_in )
       if(domain_out%initialized) ptr_out = LOC(field_out)
-      call mpp_redistribute( domain_in, field3D_in, domain_out, field3D_out, complete, free, list_size, dc_handle, position  )
+      call mpp_redistribute( domain_in, field3D_in, domain_out, field3D_out, complete, free, list_size, &
+                           &  dc_handle, position  )
 
       return
     end subroutine MPP_REDISTRIBUTE_4D_
 
-    subroutine MPP_REDISTRIBUTE_5D_( domain_in, field_in, domain_out, field_out, complete, free, list_size, dc_handle, position )
+    subroutine MPP_REDISTRIBUTE_5D_( domain_in, field_in, domain_out, field_out, complete, free, list_size, &
+                                   &  dc_handle, position )
       type(domain2D), intent(in) :: domain_in, domain_out
       MPP_TYPE_, intent(in)  :: field_in (:,:,:,:,:)
       MPP_TYPE_, intent(out) :: field_out(:,:,:,:,:)
       logical, intent(in), optional :: complete, free
       integer, intent(in), optional :: list_size
       integer, intent(in), optional :: position
-      MPP_TYPE_ :: field3D_in (size(field_in, 1),size(field_in, 2),size(field_in ,3)*size(field_in ,4)*size(field_in ,5))
-      MPP_TYPE_ :: field3D_out(size(field_out,1),size(field_out,2),size(field_out,3)*size(field_out,4)*size(field_out,5))
+      MPP_TYPE_ :: field3D_in (size(field_in, 1),size(field_in, 2), &
+                             & size(field_in ,3)*size(field_in,4)*size(field_in ,5))
+      MPP_TYPE_ :: field3D_out(size(field_out,1),size(field_out,2), &
+                             & size(field_out,3)*size(field_out,4)*size(field_out,5))
 
       type(DomainCommunicator2D),pointer,optional :: dc_handle
       pointer( ptr_in,  field3D_in  )
@@ -374,7 +384,8 @@
       ptr_out = 0
       if(domain_in%initialized) ptr_in  = LOC(field_in )
       if(domain_out%initialized) ptr_out = LOC(field_out)
-      call mpp_redistribute( domain_in, field3D_in, domain_out, field3D_out, complete, free, list_size, dc_handle, position  )
+      call mpp_redistribute( domain_in, field3D_in, domain_out, field3D_out, complete, free, list_size, &
+                           &  dc_handle, position  )
 
       return
     end subroutine MPP_REDISTRIBUTE_5D_
@@ -561,8 +572,10 @@
                    end if
                 endif
             endif
-            updatex => search_update_overlap(domain, update_whalo, update_ehalo, update_shalo, update_nhalo, position_x)
-            updatey => search_update_overlap(domain, update_whalo, update_ehalo, update_shalo, update_nhalo, position_y)
+            updatex => search_update_overlap(domain, update_whalo, update_ehalo, update_shalo, update_nhalo, &
+                                            &  position_x)
+            updatey => search_update_overlap(domain, update_whalo, update_ehalo, update_shalo, update_nhalo, &
+                                            &  position_y)
             if(exchange_uv) then
                call mpp_do_update(f_addrsx(1:l_size,1:ntile),f_addrsy(1:l_size,1:ntile), domain, updatey, updatex, &
                     d_type,ke, grid_offset_type, flags)

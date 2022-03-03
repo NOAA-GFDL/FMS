@@ -210,13 +210,16 @@ program test_io_mosaic_R4_R8
      call mpp_open( unit, output_file, action=MPP_OVERWR, form=MPP_NETCDF, threading=MPP_MULTI, fileset=MPP_MULTI )
   case("Mult_tile_R4")
      write(output_file, '(a,I4.4)') type//'.tile', my_tile
-     call mpp_open( unit, output_file, action=MPP_OVERWR, form=MPP_NETCDF, threading=MPP_SINGLE, is_root_pe=is_root_pe )
+     call mpp_open( unit, output_file, action=MPP_OVERWR, form=MPP_NETCDF, threading=MPP_SINGLE, &
+                  &  is_root_pe=is_root_pe )
   case("Single_tile_with_group_R4")
      call mpp_define_io_domain(domain, io_layout)
-     call mpp_open( unit, output_file, action=MPP_OVERWR, form=MPP_NETCDF, threading=MPP_MULTI, fileset=MPP_MULTI, domain=domain)
+     call mpp_open( unit, output_file, action=MPP_OVERWR, form=MPP_NETCDF, threading=MPP_MULTI, &
+                  &  fileset=MPP_MULTI, domain=domain)
   case("Mult_tile_with_group_R4")
      write(output_file, '(a,I4.4)') type//'.tile', my_tile
-     call mpp_open( unit, output_file, action=MPP_OVERWR, form=MPP_NETCDF, threading=MPP_MULTI, fileset=MPP_MULTI, domain=domain)
+     call mpp_open( unit, output_file, action=MPP_OVERWR, form=MPP_NETCDF, threading=MPP_MULTI, &
+                  &  fileset=MPP_MULTI, domain=domain)
 
   case default
      call mpp_error(FATAL, "program test_io_mosaic_R4_R8: invaid value of type="//type)
@@ -247,7 +250,8 @@ program test_io_mosaic_R4_R8
      call mpp_open( unit, output_file, action=MPP_RDONLY, form=MPP_NETCDF, threading=MPP_MULTI, &
          fileset=MPP_SINGLE, is_root_pe=is_root_pe )
   case("Single_tile_with_group_R4", "Mult_tile_with_group_R4")
-     call mpp_open( unit, output_file, action=MPP_RDONLY, form=MPP_NETCDF, threading=MPP_MULTI, fileset=MPP_MULTI, domain=domain)
+     call mpp_open( unit, output_file, action=MPP_RDONLY, form=MPP_NETCDF, threading=MPP_MULTI, &
+                  &  fileset=MPP_MULTI, domain=domain)
   case default
      call mpp_error(FATAL, "program test_io_mosaic_R4_R8: invaid value of type="//type)
   end select
@@ -348,13 +352,16 @@ program test_io_mosaic_R4_R8
      call mpp_open( unit, output_file, action=MPP_OVERWR, form=MPP_NETCDF, threading=MPP_MULTI, fileset=MPP_MULTI )
   case("Mult_tile_R8")
      write(output_file, '(a,I4.4)') type//'.tile', my_tile
-     call mpp_open( unit, output_file, action=MPP_OVERWR, form=MPP_NETCDF, threading=MPP_SINGLE, is_root_pe=is_root_pe )
+     call mpp_open( unit, output_file, action=MPP_OVERWR, form=MPP_NETCDF, threading=MPP_SINGLE, &
+                  &  is_root_pe=is_root_pe )
   case("Single_tile_with_group_R8")
      call mpp_define_io_domain(domain, io_layout)
-     call mpp_open( unit, output_file, action=MPP_OVERWR, form=MPP_NETCDF, threading=MPP_MULTI, fileset=MPP_MULTI, domain=domain)
+     call mpp_open( unit, output_file, action=MPP_OVERWR, form=MPP_NETCDF, threading=MPP_MULTI, &
+                  &  fileset=MPP_MULTI, domain=domain)
   case("Mult_tile_with_group_R8")
      write(output_file, '(a,I4.4)') type//'.tile', my_tile
-     call mpp_open( unit, output_file, action=MPP_OVERWR, form=MPP_NETCDF, threading=MPP_MULTI, fileset=MPP_MULTI, domain=domain)
+     call mpp_open( unit, output_file, action=MPP_OVERWR, form=MPP_NETCDF, threading=MPP_MULTI, &
+                  &  fileset=MPP_MULTI, domain=domain)
 
   case default
      call mpp_error(FATAL, "program test_io_mosaic_R4_R8: invaid value of type="//type)
@@ -385,7 +392,8 @@ program test_io_mosaic_R4_R8
      call mpp_open( unit, output_file, action=MPP_RDONLY, form=MPP_NETCDF, threading=MPP_MULTI, &
          fileset=MPP_SINGLE, is_root_pe=is_root_pe )
   case("Single_tile_with_group_R8", "Mult_tile_with_group_R8")
-     call mpp_open( unit, output_file, action=MPP_RDONLY, form=MPP_NETCDF, threading=MPP_MULTI, fileset=MPP_MULTI, domain=domain)
+     call mpp_open( unit, output_file, action=MPP_RDONLY, form=MPP_NETCDF, threading=MPP_MULTI, &
+                  &  fileset=MPP_MULTI, domain=domain)
   case default
      call mpp_error(FATAL, "program test_io_mosaic_R4_R8: invaid value of type="//type)
   end select

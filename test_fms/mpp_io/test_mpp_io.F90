@@ -492,14 +492,17 @@ program test
      call mpp_open( unit, output_file, action=MPP_OVERWR, form=MPP_NETCDF, threading=MPP_MULTI, fileset=MPP_MULTI )
   case("Mult_tile")
      write(output_file, '(a,I4.4)') type//'.tile', my_tile
-     call mpp_open( unit, output_file, action=MPP_OVERWR, form=MPP_NETCDF, threading=MPP_SINGLE, is_root_pe=is_root_pe )
+     call mpp_open( unit, output_file, action=MPP_OVERWR, form=MPP_NETCDF, threading=MPP_SINGLE, &
+                  &  is_root_pe=is_root_pe )
   case("Single_tile_with_group")
      call mpp_define_io_domain(domain, io_layout)
-     call mpp_open( unit, output_file, action=MPP_OVERWR, form=MPP_NETCDF, threading=MPP_MULTI, fileset=MPP_MULTI, domain=domain)
+     call mpp_open( unit, output_file, action=MPP_OVERWR, form=MPP_NETCDF, threading=MPP_MULTI, &
+                  &  fileset=MPP_MULTI, domain=domain)
   case("Mult_tile_with_group")
      write(output_file, '(a,I4.4)') type//'.tile', my_tile
      call mpp_define_io_domain(domain, io_layout)
-     call mpp_open( unit, output_file, action=MPP_OVERWR, form=MPP_NETCDF, threading=MPP_MULTI, fileset=MPP_MULTI, domain=domain)
+     call mpp_open( unit, output_file, action=MPP_OVERWR, form=MPP_NETCDF, threading=MPP_MULTI, &
+                  &  fileset=MPP_MULTI, domain=domain)
 
   case default
      call mpp_error(FATAL, "program test_mpp_io: invaid value of type="//type)
@@ -532,7 +535,8 @@ program test
      call mpp_open( unit, output_file, action=MPP_RDONLY, form=MPP_NETCDF, threading=MPP_MULTI, &
          fileset=MPP_SINGLE, is_root_pe=is_root_pe )
   case("Single_tile_with_group", "Mult_tile_with_group")
-     call mpp_open( unit, output_file, action=MPP_RDONLY, form=MPP_NETCDF, threading=MPP_MULTI, fileset=MPP_MULTI, domain=domain)
+     call mpp_open( unit, output_file, action=MPP_RDONLY, form=MPP_NETCDF, threading=MPP_MULTI, &
+                  &  fileset=MPP_MULTI, domain=domain)
   case default
      call mpp_error(FATAL, "program test_mpp_io: invaid value of type="//type)
   end select

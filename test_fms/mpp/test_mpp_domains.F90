@@ -159,11 +159,13 @@ program test_mpp_domains
   endif
 
   if( test_halosize_performance ) then
-     if (mpp_pe() == mpp_root_pe())  print *, '--------------------> Calling test_halosize_performance <-------------------'
+     if (mpp_pe() == mpp_root_pe())  print *, &
+        &  '--------------------> Calling test_halosize_performance <-------------------'
      call test_halosize_update( 'Folded-north' )
      call test_halosize_update( 'Folded-north symmetry' )
      call test_halosize_update( 'Cubic-Grid' )
-     if (mpp_pe() == mpp_root_pe())  print *, '--------------------> Finished test_halosize_performance <-------------------'
+     if (mpp_pe() == mpp_root_pe())  print *, &
+        &  '--------------------> Finished test_halosize_performance <-------------------'
   endif
 
   if( test_edge_update ) then
@@ -191,13 +193,16 @@ program test_mpp_domains
   if( test_global_sum ) then
       if (mpp_pe() == mpp_root_pe())  print *, '--------------------> Calling test_mpp_global_sum <-------------------'
       call test_mpp_global_sum('Folded-north')
-      if (mpp_pe() == mpp_root_pe())  print *, '--------------------> Finished test_mpp_global_sum <-------------------'
+      if (mpp_pe() == mpp_root_pe())  print *, &
+         &  '--------------------> Finished test_mpp_global_sum <-------------------'
   endif
 
   if( test_cubic_grid_redistribute ) then
-      if (mpp_pe() == mpp_root_pe())  print *, '--------------------> Calling cubic_grid_redistribute <-------------------'
+      if (mpp_pe() == mpp_root_pe())  print *, &
+         &  '--------------------> Calling cubic_grid_redistribute <-------------------'
      call cubic_grid_redistribute()
-      if (mpp_pe() == mpp_root_pe())  print *, '--------------------> Finished cubic_grid_redistribute <-------------------'
+      if (mpp_pe() == mpp_root_pe())  print *, &
+         &  '--------------------> Finished cubic_grid_redistribute <-------------------'
   endif
 
   if(test_boundary) then
@@ -687,7 +692,8 @@ contains
         pe_end(n)   = my_root_pe + n*npes_per_tile-1
      end do
 
-     call define_cubic_mosaic("cubic_grid", domain_ensemble(ensemble_id), (/nx_cubic,nx_cubic,nx_cubic,nx_cubic,nx_cubic,nx_cubic/), &
+     call define_cubic_mosaic("cubic_grid", domain_ensemble(ensemble_id), &
+                              (/nx_cubic,nx_cubic,nx_cubic,nx_cubic,nx_cubic,nx_cubic/), &
                               (/ny_cubic,ny_cubic,ny_cubic,ny_cubic,ny_cubic,ny_cubic/), &
                                 global_indices, layout2D, pe_start, pe_end )
 
@@ -758,7 +764,8 @@ contains
            enddo
         endif
         write(mesg,'(a,i4)') "cubic_grid redistribute to ensemble", n
-        call compare_checksums( x_ens(isc_ens:iec_ens,jsc_ens:jec_ens,:), y(isc_ens:iec_ens,jsc_ens:jec_ens,:), trim(mesg) )
+        call compare_checksums( x_ens(isc_ens:iec_ens,jsc_ens:jec_ens,:), y(isc_ens:iec_ens,jsc_ens:jec_ens,:), &
+                              &  trim(mesg) )
      enddo
 
      deallocate(x, y, x_ens)
@@ -1225,8 +1232,16 @@ contains
           end if
        end do
        ! set the corner value to 0
-       global1_all(1,ny+1,:,:) = 0; global1_all(nx+1,1,:,:) = 0; global1_all(1,1,:,:) = 0; global1_all(nx+1,ny+1,:,:) = 0
-       global2_all(1,ny+1,:,:) = 0; global2_all(nx+1,1,:,:) = 0; global2_all(1,1,:,:) = 0; global2_all(nx+1,ny+1,:,:) = 0
+       global1_all(1,ny+1,:,:) = 0
+       global1_all(nx+1,1,:,:) = 0
+       global1_all(1,1,:,:) = 0
+       global1_all(nx+1,ny+1,:,:) = 0
+
+       global2_all(1,ny+1,:,:) = 0
+       global2_all(nx+1,1,:,:) = 0
+       global2_all(1,1,:,:) = 0
+       global2_all(nx+1,ny+1,:,:) = 0
+
     end if
 
     do n = 1, ntile_per_pe
@@ -1380,8 +1395,10 @@ contains
 
     do n = 1, ntile_per_pe
        if(ntile_per_pe > 1) write(type3, *)trim(type2), " at tile_count = ", n
-       call compare_checksums( x (isd:ied+shift,jsd:jed+shift,:,n),  global1(isd:ied+shift,jsd:jed+shift,:,n), trim(type3)//' X' )
-       call compare_checksums( y (isd:ied+shift,jsd:jed+shift,:,n),  global2(isd:ied+shift,jsd:jed+shift,:,n), trim(type3)//' Y' )
+       call compare_checksums( x (isd:ied+shift,jsd:jed+shift,:,n),  global1(isd:ied+shift,jsd:jed+shift,:,n), &
+                            & trim(type3)//' X' )
+       call compare_checksums( y (isd:ied+shift,jsd:jed+shift,:,n),  global2(isd:ied+shift,jsd:jed+shift,:,n), &
+                            & trim(type3)//' Y' )
     end do
 
     if(ntile_per_pe == 1) then
@@ -1392,14 +1409,22 @@ contains
        call mpp_update_domains( x4, y4, domain, flags=update_flags, gridtype=BGRID_NE, complete=.true.,  name=type2)
        call mpp_clock_end  (id)
 
-       call compare_checksums( x1(isd:ied+shift,jsd:jed+shift,:,1), global1(isd:ied+shift,jsd:jed+shift,:,1), trim(type2)//' X1')
-       call compare_checksums( x2(isd:ied+shift,jsd:jed+shift,:,1), global1(isd:ied+shift,jsd:jed+shift,:,1), trim(type2)//' X2')
-       call compare_checksums( x3(isd:ied+shift,jsd:jed+shift,:,1), global1(isd:ied+shift,jsd:jed+shift,:,1), trim(type2)//' X3')
-       call compare_checksums( x4(isd:ied+shift,jsd:jed+shift,:,1), global1(isd:ied+shift,jsd:jed+shift,:,1), trim(type2)//' X4')
-       call compare_checksums( y1(isd:ied+shift,jsd:jed+shift,:,1), global2(isd:ied+shift,jsd:jed+shift,:,1), trim(type2)//' Y1')
-       call compare_checksums( y2(isd:ied+shift,jsd:jed+shift,:,1), global2(isd:ied+shift,jsd:jed+shift,:,1), trim(type2)//' Y2')
-       call compare_checksums( y3(isd:ied+shift,jsd:jed+shift,:,1), global2(isd:ied+shift,jsd:jed+shift,:,1), trim(type2)//' Y3')
-       call compare_checksums( y4(isd:ied+shift,jsd:jed+shift,:,1), global2(isd:ied+shift,jsd:jed+shift,:,1), trim(type2)//' Y4')
+       call compare_checksums( x1(isd:ied+shift,jsd:jed+shift,:,1), global1(isd:ied+shift,jsd:jed+shift,:,1), &
+                            & trim(type2)//' X1')
+       call compare_checksums( x2(isd:ied+shift,jsd:jed+shift,:,1), global1(isd:ied+shift,jsd:jed+shift,:,1), &
+                            & trim(type2)//' X2')
+       call compare_checksums( x3(isd:ied+shift,jsd:jed+shift,:,1), global1(isd:ied+shift,jsd:jed+shift,:,1), &
+                            & trim(type2)//' X3')
+       call compare_checksums( x4(isd:ied+shift,jsd:jed+shift,:,1), global1(isd:ied+shift,jsd:jed+shift,:,1), &
+                            & trim(type2)//' X4')
+       call compare_checksums( y1(isd:ied+shift,jsd:jed+shift,:,1), global2(isd:ied+shift,jsd:jed+shift,:,1), &
+                            & trim(type2)//' Y1')
+       call compare_checksums( y2(isd:ied+shift,jsd:jed+shift,:,1), global2(isd:ied+shift,jsd:jed+shift,:,1), &
+                            & trim(type2)//' Y2')
+       call compare_checksums( y3(isd:ied+shift,jsd:jed+shift,:,1), global2(isd:ied+shift,jsd:jed+shift,:,1), &
+                            & trim(type2)//' Y3')
+       call compare_checksums( y4(isd:ied+shift,jsd:jed+shift,:,1), global2(isd:ied+shift,jsd:jed+shift,:,1), &
+                            & trim(type2)//' Y4')
 
        !--- arbitrary halo updates ---------------------------------------
        if(wide_halo_x == 0) then
@@ -1419,8 +1444,10 @@ contains
                          x(isc:iec+shift,jsc:jec+shift,:,1) = global1(isc:iec+shift,jsc:jec+shift,:,1)
                          y(isc:iec+shift,jsc:jec+shift,:,1) = global2(isc:iec+shift,jsc:jec+shift,:,1)
 
-                         call fill_halo_zero(local1, wh, eh, sh, nh, shift, shift, isc, iec, jsc, jec, isd, ied, jsd, jed)
-                         call fill_halo_zero(local2, wh, eh, sh, nh, shift, shift, isc, iec, jsc, jec, isd, ied, jsd, jed)
+                         call fill_halo_zero(local1, wh, eh, sh, nh, shift, shift, isc, iec, jsc, jec, isd, &
+                                            &  ied, jsd, jed)
+                         call fill_halo_zero(local2, wh, eh, sh, nh, shift, shift, isc, iec, jsc, jec, isd, &
+                                            &  ied, jsd, jed)
 
                          write(type3,'(a,a,i2,a,i2,a,i2,a,i2)') trim(type2), ' with whalo = ', wh, &
                               ', ehalo = ',eh, ', shalo = ', sh, ', nhalo = ', nh
@@ -2654,8 +2681,8 @@ contains
     !--- compare checksum
        do l = 1, num_fields
           write(text, '(i3.3)') l
-          call compare_checksums(x1(isd:ied+shift,jsd:jed,      :,l),x2(isd:ied+shift,jsd:jed,      :,l),type//' DGRID X'//text)
-          call compare_checksums(y1(isd:ied,      jsd:jed+shift,:,l),y2(isd:ied,      jsd:jed+shift,:,l),type//' DGRID Y'//text)
+          call compare_checksums(x1(isd:ied+shift,jsd:jed, :,l),x2(isd:ied+shift,jsd:jed, :,l),type//' DGRID X'//text)
+          call compare_checksums(y1(isd:ied, jsd:jed+shift,:,l),y2(isd:ied, jsd:jed+shift,:,l),type//' DGRID Y'//text)
        enddo
 
        call mpp_clear_group_update(group_update)
@@ -2692,9 +2719,9 @@ contains
        if( n == num_iter ) then
        do l = 1, num_fields
           write(text, '(i3.3)') l
-          call compare_checksums(a1(isd:ied,      jsd:jed,      :,l),a2(isd:ied,      jsd:jed,      :,l),type//' CENTER '//text)
-          call compare_checksums(x1(isd:ied+shift,jsd:jed,      :,l),x2(isd:ied+shift,jsd:jed,      :,l),type//' CGRID X'//text)
-          call compare_checksums(y1(isd:ied,      jsd:jed+shift,:,l),y2(isd:ied,      jsd:jed+shift,:,l),type//' CGRID Y'//text)
+          call compare_checksums(a1(isd:ied, jsd:jed, :,l),a2(isd:ied, jsd:jed, :,l),type//' CENTER '//text)
+          call compare_checksums(x1(isd:ied+shift,jsd:jed, :,l),x2(isd:ied+shift,jsd:jed, :,l),type//' CGRID X'//text)
+          call compare_checksums(y1(isd:ied, jsd:jed+shift,:,l),y2(isd:ied, jsd:jed+shift,:,l),type//' CGRID Y'//text)
        enddo
        endif
        a1 = 0; x1 = 0; y1 = 0
@@ -2849,9 +2876,12 @@ contains
        if( n == num_iter ) then
        do l = 1, num_fields
           write(text, '(i3.3)') l
-          call compare_checksums(a1(isd:ied+shift,jsd:jed+shift,:,l),a2(isd:ied+shift,jsd:jed+shift,:,l),type//' CORNER '//text)
-          call compare_checksums(x1(isd:ied+shift,jsd:jed+shift,:,l),x2(isd:ied+shift,jsd:jed+shift,:,l),type//' BGRID X'//text)
-          call compare_checksums(y1(isd:ied+shift,jsd:jed+shift,:,l),y2(isd:ied+shift,jsd:jed+shift,:,l),type//' BGRID Y'//text)
+          call compare_checksums(a1(isd:ied+shift,jsd:jed+shift,:,l),a2(isd:ied+shift,jsd:jed+shift,:,l),type//&
+                               & ' CORNER '// text)
+          call compare_checksums(x1(isd:ied+shift,jsd:jed+shift,:,l),x2(isd:ied+shift,jsd:jed+shift,:,l),type//&
+                               & ' BGRID X'// text)
+          call compare_checksums(y1(isd:ied+shift,jsd:jed+shift,:,l),y2(isd:ied+shift,jsd:jed+shift,:,l),type//&
+                               & ' BGRID Y'// text)
        enddo
        endif
 
@@ -2931,7 +2961,8 @@ contains
     end do
 
     do l = 1, num_fields
-       call mpp_update_domains( x2(:,:,:,l), y2(:,:,:,l), domain, gridtype=AGRID, flags=SCALAR_PAIR, complete=l==num_fields)
+       call mpp_update_domains( x2(:,:,:,l), y2(:,:,:,l), domain, gridtype=AGRID, flags=SCALAR_PAIR, &
+                              &  complete=l==num_fields)
     enddo
 
     call mpp_start_group_update(group_update, domain, x1(isc,jsc,1,1))
@@ -2989,7 +3020,8 @@ end subroutine test_group_update
     type(mpp_group_update_type), allocatable :: update_list(:)
 
     if(whalo .ne. ehalo .or. whalo .ne. shalo .or. whalo .ne. nhalo) then
-       call mpp_error(FATAL,"test_mpp_domains: whalo, ehalo, shalo, nhalo must be the same when test_halosize_performance=true")
+       call mpp_error(FATAL, &
+                 & "test_mpp_domains: whalo, ehalo, shalo, nhalo must be the same when test_halosize_performance=true")
     endif
 
     folded_north       = .false.
@@ -3030,7 +3062,8 @@ end subroutine test_group_update
        ny = ny_cubic
        ntiles = 6
        if( mod(npes, ntiles) .ne. 0 ) then
-          call mpp_error(NOTE,'test_halosize_update: npes is not divisible by ntiles, no test is done for '//trim(type) )
+          call mpp_error(NOTE,'test_halosize_update: npes is not divisible by ntiles, no test is done for '// &
+                         & trim(type) )
           return
        endif
        npes_per_tile = npes/ntiles
@@ -3723,7 +3756,8 @@ end subroutine test_halosize_update
 
     data(1-whalo:0,                  1:nyp,:) =      data(nx-whalo+1:nx,        1:ny+jshift,:) ! west
     data(nx+1:nx+ehalo+ishift,       1:nyp,:) =      data(1:ehalo+ishift,       1:ny+jshift,:) ! east
-    if(m1 .GE. 1-whalo) data(1-whalo:m1,  nyp+1:nyp+nhalo,:) = sign*data(whalo+m2:1+ishift:-1, nyp-joff:nyp-nhalo-joff+1:-1,:)
+    if(m1 .GE. 1-whalo) data(1-whalo:m1,  nyp+1:nyp+nhalo,:) = sign*data(whalo+m2:1+ishift:-1, &
+      &  nyp-joff:nyp-nhalo-joff+1:-1,:)
     data(m1+1:nx+m2,       nyp+1:nyp+nhalo,:) = sign*data(nx+ishift:1:-1,       nyp-joff:nyp-nhalo-joff+1:-1,:)
     data(nx+m2+1:nxp+ehalo,nyp+1:nyp+nhalo,:) = sign*data(nx:nx-ehalo+m1+1:-1,  nyp-joff:nyp-nhalo-joff+1:-1,:)
 
@@ -3799,7 +3833,8 @@ end subroutine test_halosize_update
 
     data(1:nxp, 1-shalo:0, :)      = data(1:nxp, ny-shalo+1:ny, :) ! south
     data(1:nxp, ny+1:nyp+nhalo, :) = data(1:nxp, 1:nhalo+jshift,:) ! north
-    if(m1 .GE. 1-shalo) data(nxp+1:nxp+ehalo, 1-shalo:m1, :) = sign*data(nxp-ioff:nxp-ehalo-ioff+1:-1, shalo+m2:1+jshift:-1,:)
+    if(m1 .GE. 1-shalo) data(nxp+1:nxp+ehalo, 1-shalo:m1, :) = sign*data(nxp-ioff:nxp-ehalo-ioff+1:-1, &
+      &  shalo+m2:1+jshift:-1,:)
     data(nxp+1:nxp+ehalo, m1+1:ny+m2, :) = sign*data(nxp-ioff:nxp-ehalo-ioff+1:-1, nyp:1:-1, :)
     data(nxp+1:nxp+ehalo, ny+m2+1:nyp+nhalo,:) = sign*data(nxp-ioff:nxp-ehalo-ioff+1:-1, ny:ny-nhalo+m1+1:-1,:)
 
@@ -4441,52 +4476,57 @@ end subroutine test_halosize_update
 
     select case(tile)
     case(1)
-       data(nxm+1+ioff:nxm+ehalo+ioff,                     1:ny,:) = data_all(1+ioff:ehalo+ioff,              1:ny,:,2) ! east
-       data(nxm+1+ioff:nxm+ehalo+ioff,            ny+1:nym+joff,:) = data_all(1+ioff:ehalo+ioff,         1:ny+joff,:,4) ! east
-       data(1-whalo:0,                                     1:ny,:) = data_all(nx-whalo+1:nx,                  1:ny,:,3) ! west
-       data(1-whalo:0,                            ny+1:nym+joff,:) = data_all(nx-whalo+1:nx,             1:ny+joff,:,5) ! west
-       data(1:nxm+ioff,                               1-shalo:0,:) = data_all(1:nxm+ioff,          nym-shalo+1:nym,:,1) ! south
-       data(1:nxm+ioff,               nym+1+joff:nym+nhalo+joff,:) = data_all(1:nxm+ioff,        1+joff:nhalo+joff,:,1) ! north
-       data(nxm+1+ioff:nxm+ehalo+ioff,                1-shalo:0,:) = data_all(1+ioff:ehalo+ioff,     ny-shalo+1:ny,:,4) ! southeast
-       data(1-whalo:0,                                1-shalo:0,:) = data_all(nx-whalo+1:nx,         ny-shalo+1:ny,:,5) ! southwest
-       data(nxm+1+ioff:nxm+ehalo+ioff,nym+1+joff:nym+nhalo+joff,:) = data_all(1+ioff:ehalo+ioff, 1+joff:nhalo+joff,:,2) ! northeast
-       data(1-whalo:0,                nym+1+joff:nym+nhalo+joff,:) = data_all(nx-whalo+1:nx,     1+joff:nhalo+joff,:,3) ! northwest
+       data(nxm+1+ioff:nxm+ehalo+ioff, 1:ny,:) = data_all(1+ioff:ehalo+ioff, 1:ny,:,2) ! east
+       data(nxm+1+ioff:nxm+ehalo+ioff, ny+1:nym+joff,:) = data_all(1+ioff:ehalo+ioff, 1:ny+joff,:,4) ! east
+       data(1-whalo:0, 1:ny,:) = data_all(nx-whalo+1:nx, 1:ny,:,3) ! west
+       data(1-whalo:0, ny+1:nym+joff,:) = data_all(nx-whalo+1:nx, 1:ny+joff,:,5) ! west
+       data(1:nxm+ioff, 1-shalo:0,:) = data_all(1:nxm+ioff, nym-shalo+1:nym,:,1) ! south
+       data(1:nxm+ioff, nym+1+joff:nym+nhalo+joff,:) = data_all(1:nxm+ioff, 1+joff:nhalo+joff,:,1) ! north
+       data(nxm+1+ioff:nxm+ehalo+ioff, 1-shalo:0,:) = data_all(1+ioff:ehalo+ioff, ny-shalo+1:ny,:,4) ! southeast
+       data(1-whalo:0, 1-shalo:0,:) = data_all(nx-whalo+1:nx, ny-shalo+1:ny,:,5) ! southwest
+       data(nxm+1+ioff:nxm+ehalo+ioff,nym+1+joff:nym+nhalo+joff,:) = &
+                                                  & data_all(1+ioff:ehalo+ioff, 1+joff:nhalo+joff,:,2) ! northeast
+       data(1-whalo:0, nym+1+joff:nym+nhalo+joff,:) = data_all(nx-whalo+1:nx, 1+joff:nhalo+joff,:,3) ! northwest
     case(2)
-       data(nx+1+ioff:nx+ehalo+ioff,              1:ny+joff,:) = data_all(1+ioff:ehalo+ioff,              1:ny+joff,:,3) ! east
-       data(1-whalo:0,                            1:ny+joff,:) = data_all(nxm-whalo+1:nxm,                1:ny+joff,:,1) ! west
-       data(1:nx+ioff,                            1-shalo:0,:) = data_all(1:nx+ioff,                  ny-shalo+1:ny,:,4) ! south
-       data(1:nx+ioff,              ny+1+joff:ny+nhalo+joff,:) = data_all(1:nx+ioff,              1+joff:nhalo+joff,:,4) ! north
-       data(nx+1+ioff:nx+ehalo+ioff,              1-shalo:0,:) = data_all(1+ioff:ehalo+ioff,          ny-shalo+1:ny,:,5) ! southeast
-       data(1-whalo:0,                            1-shalo:0,:) = data_all(nxm-whalo+1:nxm,          nym-shalo+1:nym,:,1) ! southwest
-       data(nx+1+ioff:nx+ehalo+ioff,ny+1+joff:ny+nhalo+joff,:) = data_all(1+ioff:ehalo+ioff,      1+joff:nhalo+joff,:,5) ! northeast
-       data(1-whalo:0,              ny+1+joff:ny+nhalo+joff,:) = data_all(nxm-whalo+1:nxm,  ny+1+joff:ny+nhalo+joff,:,1) ! northwest
+       data(nx+1+ioff:nx+ehalo+ioff, 1:ny+joff,:) = data_all(1+ioff:ehalo+ioff, 1:ny+joff,:,3) ! east
+       data(1-whalo:0, 1:ny+joff,:) = data_all(nxm-whalo+1:nxm, 1:ny+joff,:,1) ! west
+       data(1:nx+ioff, 1-shalo:0,:) = data_all(1:nx+ioff, ny-shalo+1:ny,:,4) ! south
+       data(1:nx+ioff, ny+1+joff:ny+nhalo+joff,:) = data_all(1:nx+ioff, 1+joff:nhalo+joff,:,4) ! north
+       data(nx+1+ioff:nx+ehalo+ioff, 1-shalo:0,:) = data_all(1+ioff:ehalo+ioff, ny-shalo+1:ny,:,5) ! southeast
+       data(1-whalo:0, 1-shalo:0,:) = data_all(nxm-whalo+1:nxm, nym-shalo+1:nym,:,1) ! southwest
+       data(nx+1+ioff:nx+ehalo+ioff,ny+1+joff:ny+nhalo+joff,:) = &
+                                                  & data_all(1+ioff:ehalo+ioff,      1+joff:nhalo+joff,:,5) ! northeast
+       data(1-whalo:0, ny+1+joff:ny+nhalo+joff,:) = data_all(nxm-whalo+1:nxm, ny+1+joff:ny+nhalo+joff,:,1) ! northwest
     case(3)
-       data(nx+1+ioff:nx+ehalo+ioff,              1:ny+joff,:) = data_all(1+ioff:ehalo+ioff,              1:ny+joff,:,1) ! east
-       data(1-whalo:0,                            1:ny+joff,:) = data_all(nx-whalo+1:nx,                  1:ny+joff,:,2) ! west
-       data(1:nx+ioff,                            1-shalo:0,:) = data_all(1:nx+ioff,                  ny-shalo+1:ny,:,5) ! south
-       data(1:nx+ioff,              ny+1+joff:ny+nhalo+joff,:) = data_all(1:nx+ioff,              1+joff:nhalo+joff,:,5) ! north
-       data(nx+1+ioff:nx+ehalo+ioff,              1-shalo:0,:) = data_all(1+ioff:ehalo+ioff,        nym-shalo+1:nym,:,1) ! southeast
-       data(1-whalo:0,                            1-shalo:0,:) = data_all(nx-whalo+1:nx,              ny-shalo+1:ny,:,4) ! southwest
-       data(nx+1+ioff:nx+ehalo+ioff,ny+1+joff:ny+nhalo+joff,:) = data_all(1+ioff:ehalo+ioff,ny+1+joff:ny+nhalo+joff,:,1) ! northeast
-       data(1-whalo:0,              ny+1+joff:ny+nhalo+joff,:) = data_all(nx-whalo+1:nx,          1+joff:nhalo+joff,:,4) ! northwest
+       data(nx+1+ioff:nx+ehalo+ioff, 1:ny+joff,:) = data_all(1+ioff:ehalo+ioff, 1:ny+joff,:,1) ! east
+       data(1-whalo:0, 1:ny+joff,:) = data_all(nx-whalo+1:nx, 1:ny+joff,:,2) ! west
+       data(1:nx+ioff, 1-shalo:0,:) = data_all(1:nx+ioff, ny-shalo+1:ny,:,5) ! south
+       data(1:nx+ioff, ny+1+joff:ny+nhalo+joff,:) = data_all(1:nx+ioff, 1+joff:nhalo+joff,:,5) ! north
+       data(nx+1+ioff:nx+ehalo+ioff, 1-shalo:0,:) = data_all(1+ioff:ehalo+ioff, nym-shalo+1:nym,:,1) ! southeast
+       data(1-whalo:0, 1-shalo:0,:) = data_all(nx-whalo+1:nx, ny-shalo+1:ny,:,4) ! southwest
+       data(nx+1+ioff:nx+ehalo+ioff,ny+1+joff:ny+nhalo+joff,:) = &
+                                                  & data_all(1+ioff:ehalo+ioff,ny+1+joff:ny+nhalo+joff,:,1) ! northeast
+       data(1-whalo:0, ny+1+joff:ny+nhalo+joff,:) = data_all(nx-whalo+1:nx, 1+joff:nhalo+joff,:,4) ! northwest
     case(4)
-       data(nx+1+ioff:nx+ehalo+ioff,              1:ny+joff,:) = data_all(1+ioff:ehalo+ioff,        1:ny+joff,:,5) ! east
-       data(1-whalo:0,                            1:ny+joff,:) = data_all(nxm-whalo+1:nxm,     ny+1:2*ny+joff,:,1) ! west
-       data(1:nx+ioff,                            1-shalo:0,:) = data_all(1:nx+ioff,            ny-shalo+1:ny,:,2) ! south
-       data(1:nx+ioff,              ny+1+joff:ny+nhalo+joff,:) = data_all(1:nx+ioff,        1+joff:nhalo+joff,:,2) ! north
-       data(nx+1+ioff:nx+ehalo+ioff,              1-shalo:0,:) = data_all(1+ioff:ehalo+ioff,    ny-shalo+1:ny,:,3) ! southeast
-       data(1-whalo:0,                            1-shalo:0,:) = data_all(nxm-whalo+1:nxm,      ny-shalo+1:ny,:,1) ! southwest
-       data(nx+1+ioff:nx+ehalo+ioff,ny+1+joff:ny+nhalo+joff,:) = data_all(1+ioff:ehalo+ioff,1+joff:nhalo+joff,:,3) ! northeast
-       data(1-whalo:0,              ny+1+joff:ny+nhalo+joff,:) = data_all(nxm-whalo+1:nxm,  1+joff:nhalo+joff,:,1) ! northwest
+       data(nx+1+ioff:nx+ehalo+ioff, 1:ny+joff,:) = data_all(1+ioff:ehalo+ioff, 1:ny+joff,:,5) ! east
+       data(1-whalo:0, 1:ny+joff,:) = data_all(nxm-whalo+1:nxm, ny+1:2*ny+joff,:,1) ! west
+       data(1:nx+ioff, 1-shalo:0,:) = data_all(1:nx+ioff, ny-shalo+1:ny,:,2) ! south
+       data(1:nx+ioff, ny+1+joff:ny+nhalo+joff,:) = data_all(1:nx+ioff, 1+joff:nhalo+joff,:,2) ! north
+       data(nx+1+ioff:nx+ehalo+ioff, 1-shalo:0,:) = data_all(1+ioff:ehalo+ioff, ny-shalo+1:ny,:,3) ! southeast
+       data(1-whalo:0, 1-shalo:0,:) = data_all(nxm-whalo+1:nxm, ny-shalo+1:ny,:,1) ! southwest
+       data(nx+1+ioff:nx+ehalo+ioff,ny+1+joff:ny+nhalo+joff,:) = &
+                                                  & data_all(1+ioff:ehalo+ioff,1+joff:nhalo+joff,:,3) ! northeast
+       data(1-whalo:0, ny+1+joff:ny+nhalo+joff,:) = data_all(nxm-whalo+1:nxm, 1+joff:nhalo+joff,:,1) ! northwest
     case(5)
-       data(nx+1+ioff:nx+ehalo+ioff,            1:  ny+joff,:) = data_all(1+ioff:ehalo+ioff,   ny+1:2*ny+joff,:,1) ! east
-       data(1-whalo:0,                            1:ny+joff,:) = data_all(nx-whalo+1:nx,            1:ny+joff,:,4) ! west
-       data(1:nx+ioff,                            1-shalo:0,:) = data_all(1:nx+ioff,            ny-shalo+1:ny,:,3) ! south
-       data(1:nx+ioff,              ny+1+joff:ny+nhalo+joff,:) = data_all(1:nx+ioff,        1+joff:nhalo+joff,:,3) ! north
-       data(nx+1+ioff:nx+ehalo+ioff,              1-shalo:0,:) = data_all(1+ioff:ehalo+ioff,    ny-shalo+1:ny,:,1) ! southeast
-       data(1-whalo:0,                            1-shalo:0,:) = data_all(nx-whalo+1:nx,        ny-shalo+1:ny,:,2) ! southwest
-       data(nx+1+ioff:nx+ehalo+ioff,ny+1+joff:ny+nhalo+joff,:) = data_all(1+ioff:ehalo+ioff,1+joff:nhalo+joff,:,1) ! northeast
-       data(1-whalo:0,              ny+1+joff:ny+nhalo+joff,:) = data_all(nx-whalo+1:nx,    1+joff:nhalo+joff,:,2) ! northwest
+       data(nx+1+ioff:nx+ehalo+ioff, 1: ny+joff,:) = data_all(1+ioff:ehalo+ioff, ny+1:2*ny+joff,:,1) ! east
+       data(1-whalo:0, 1:ny+joff,:) = data_all(nx-whalo+1:nx, 1:ny+joff,:,4) ! west
+       data(1:nx+ioff, 1-shalo:0,:) = data_all(1:nx+ioff, ny-shalo+1:ny,:,3) ! south
+       data(1:nx+ioff, ny+1+joff:ny+nhalo+joff,:) = data_all(1:nx+ioff, 1+joff:nhalo+joff,:,3) ! north
+       data(nx+1+ioff:nx+ehalo+ioff, 1-shalo:0,:) = data_all(1+ioff:ehalo+ioff, ny-shalo+1:ny,:,1) ! southeast
+       data(1-whalo:0, 1-shalo:0,:) = data_all(nx-whalo+1:nx, ny-shalo+1:ny,:,2) ! southwest
+       data(nx+1+ioff:nx+ehalo+ioff,ny+1+joff:ny+nhalo+joff,:) = &
+                                                  & data_all(1+ioff:ehalo+ioff,1+joff:nhalo+joff,:,1) ! northeast
+       data(1-whalo:0, ny+1+joff:ny+nhalo+joff,:) = data_all(nx-whalo+1:nx, 1+joff:nhalo+joff,:,2) ! northwest
     end select
 
   end subroutine fill_five_tile_halo
@@ -4649,8 +4689,8 @@ end subroutine test_halosize_update
           call mpp_get_boundary(x(:,:,:,n), domain, sbuffer=sbuffer(:,:,n), wbuffer=wbuffer(:,:,n), &
                                 position=CORNER, tile_count=n  )
        else
-          call mpp_get_boundary(x(:,:,:,n), domain, ebuffer=ebuffer(:,:,n), sbuffer=sbuffer(:,:,n), wbuffer=wbuffer(:,:,n), &
-                                nbuffer=nbuffer(:,:,n), position=CORNER, tile_count=n  )
+          call mpp_get_boundary(x(:,:,:,n), domain, ebuffer=ebuffer(:,:,n), sbuffer=sbuffer(:,:,n), &
+                                wbuffer=wbuffer(:,:,n), nbuffer=nbuffer(:,:,n), position=CORNER, tile_count=n  )
        endif
     end do
 
@@ -4662,10 +4702,10 @@ end subroutine test_halosize_update
           call mpp_get_boundary(x2(:,:,:,n), domain, sbuffer=sbuffer2(:,:,n), wbuffer=wbuffer2(:,:,n), &
                position=CORNER, tile_count=n, complete = .true.  )
        else
-          call mpp_get_boundary(x1(:,:,:,n), domain, ebuffer=ebuffer1(:,:,n), sbuffer=sbuffer1(:,:,n), wbuffer=wbuffer1(:,:,n), &
-               nbuffer=nbuffer1(:,:,n), position=CORNER, tile_count=n, complete = .false.  )
-          call mpp_get_boundary(x2(:,:,:,n), domain, ebuffer=ebuffer2(:,:,n), sbuffer=sbuffer2(:,:,n), wbuffer=wbuffer2(:,:,n), &
-               nbuffer=nbuffer2(:,:,n), position=CORNER, tile_count=n, complete = .true.  )
+          call mpp_get_boundary(x1(:,:,:,n), domain, ebuffer=ebuffer1(:,:,n), sbuffer=sbuffer1(:,:,n), &
+               wbuffer=wbuffer1(:,:,n), nbuffer=nbuffer1(:,:,n), position=CORNER, tile_count=n, complete = .false.  )
+          call mpp_get_boundary(x2(:,:,:,n), domain, ebuffer=ebuffer2(:,:,n), sbuffer=sbuffer2(:,:,n), &
+               wbuffer=wbuffer2(:,:,n), nbuffer=nbuffer2(:,:,n), position=CORNER, tile_count=n, complete = .true.  )
        endif
     end do
 
@@ -4788,7 +4828,8 @@ end subroutine test_halosize_update
     do n = 1, ntile_per_pe
        if(folded_north .or. is_torus) then
           call mpp_get_boundary(x(:,:,:,n), y(:,:,:,n), domain, sbufferx=sbufferx(:,:,n), wbufferx=wbufferx(:,:,n), &
-               sbuffery=sbuffery(:,:,n), wbuffery=wbuffery(:,:,n), gridtype=BGRID_NE, tile_count=n, flags = SCALAR_PAIR  )
+               sbuffery=sbuffery(:,:,n), wbuffery=wbuffery(:,:,n), gridtype=BGRID_NE, tile_count=n, &
+                                &  flags = SCALAR_PAIR  )
        else
           call mpp_get_boundary(x(:,:,:,n), y(:,:,:,n), domain, ebufferx=ebufferx(:,:,n), sbufferx=sbufferx(:,:,n), &
                wbufferx=wbufferx(:,:,n), nbufferx=nbufferx(:,:,n), ebuffery=ebuffery(:,:,n),       &
@@ -4799,18 +4840,18 @@ end subroutine test_halosize_update
 
     do n = 1, ntile_per_pe
        if(folded_north .or. is_torus) then
-          call mpp_get_boundary(x1(:,:,:,n), y1(:,:,:,n), domain, sbufferx=sbufferx1(:,:,n), wbufferx=wbufferx1(:,:,n), &
+          call mpp_get_boundary(x1(:,:,:,n), y1(:,:,:,n), domain, sbufferx=sbufferx1(:,:,n),wbufferx=wbufferx1(:,:,n),&
                sbuffery=sbuffery1(:,:,n), wbuffery=wbuffery1(:,:,n),                           &
                gridtype=BGRID_NE, tile_count=n, flags = SCALAR_PAIR, complete = .false.  )
-          call mpp_get_boundary(x2(:,:,:,n), y2(:,:,:,n), domain, sbufferx=sbufferx2(:,:,n), wbufferx=wbufferx2(:,:,n), &
+          call mpp_get_boundary(x2(:,:,:,n), y2(:,:,:,n), domain, sbufferx=sbufferx2(:,:,n),wbufferx=wbufferx2(:,:,n),&
                sbuffery=sbuffery2(:,:,n), wbuffery=wbuffery2(:,:,n),       &
                gridtype=BGRID_NE, tile_count=n, flags = SCALAR_PAIR, complete = .true.  )
        else
-          call mpp_get_boundary(x1(:,:,:,n), y1(:,:,:,n), domain, ebufferx=ebufferx1(:,:,n), sbufferx=sbufferx1(:,:,n), &
+          call mpp_get_boundary(x1(:,:,:,n), y1(:,:,:,n), domain, ebufferx=ebufferx1(:,:,n),sbufferx=sbufferx1(:,:,n),&
                wbufferx=wbufferx1(:,:,n), nbufferx=nbufferx1(:,:,n), ebuffery=ebuffery1(:,:,n),       &
                sbuffery=sbuffery1(:,:,n), wbuffery=wbuffery1(:,:,n), nbuffery=nbuffery1(:,:,n),       &
                gridtype=BGRID_NE, tile_count=n, flags = SCALAR_PAIR, complete = .false.  )
-          call mpp_get_boundary(x2(:,:,:,n), y2(:,:,:,n), domain, ebufferx=ebufferx2(:,:,n), sbufferx=sbufferx2(:,:,n), &
+          call mpp_get_boundary(x2(:,:,:,n), y2(:,:,:,n), domain, ebufferx=ebufferx2(:,:,n),sbufferx=sbufferx2(:,:,n),&
                wbufferx=wbufferx2(:,:,n), nbufferx=nbufferx2(:,:,n), ebuffery=ebuffery2(:,:,n),       &
                sbuffery=sbuffery2(:,:,n), wbuffery=wbuffery2(:,:,n), nbuffery=nbuffery2(:,:,n),       &
                gridtype=BGRID_NE, tile_count=n, flags = SCALAR_PAIR, complete = .true.  )
@@ -5156,10 +5197,10 @@ end subroutine test_halosize_update
                sbuffery=sbuffery2(:,:,n), gridtype=CGRID_NE, tile_count=n,  &
                complete = .true.  )
        else
-          call mpp_get_boundary(x1(:,:,:,n), y1(:,:,:,n), domain, ebufferx=ebufferx1(:,:,n), wbufferx=wbufferx1(:,:,n), &
+          call mpp_get_boundary(x1(:,:,:,n), y1(:,:,:,n), domain, ebufferx=ebufferx1(:,:,n),wbufferx=wbufferx1(:,:,n),&
                sbuffery=sbuffery1(:,:,n), nbuffery=nbuffery1(:,:,n), gridtype=CGRID_NE, tile_count=n,  &
                complete = .false.  )
-          call mpp_get_boundary(x2(:,:,:,n), y2(:,:,:,n), domain, ebufferx=ebufferx2(:,:,n), wbufferx=wbufferx2(:,:,n), &
+          call mpp_get_boundary(x2(:,:,:,n), y2(:,:,:,n), domain, ebufferx=ebufferx2(:,:,n),wbufferx=wbufferx2(:,:,n),&
                sbuffery=sbuffery2(:,:,n), nbuffery=nbuffery2(:,:,n), gridtype=CGRID_NE, tile_count=n,  &
                complete = .true.  )
        endif
@@ -5319,7 +5360,8 @@ end subroutine test_halosize_update
           end do
        end if
        if(ni(tile) == ni(ln) ) then
-          data(1:ni(tile)+ioff, nj(tile)+1+joff:nj(tile)+nhalo+joff, :) = data1_all(1:ni(ln)+ioff, 1+joff:nhalo+joff, :, ln) ! north
+          data(1:ni(tile)+ioff, nj(tile)+1+joff:nj(tile)+nhalo+joff, :) = &
+                                                  & data1_all(1:ni(ln)+ioff, 1+joff:nhalo+joff, :, ln) ! north
        end if
     else ! tile 1, 3, 5
        lw = tile - 2; le = tile + 1; ls = tile - 1; ln = tile + 2
@@ -5332,7 +5374,8 @@ end subroutine test_halosize_update
           end do
        end if
        if(nj(tile) == nj(le) ) then
-          data(ni(tile)+1+ioff:ni(tile)+ehalo+ioff, 1:nj(tile)+joff, :) = data1_all(1+ioff:ehalo+ioff, 1:nj(le)+joff, :, le) ! east
+          data(ni(tile)+1+ioff:ni(tile)+ehalo+ioff, 1:nj(tile)+joff, :) = &
+                                                  & data1_all(1+ioff:ehalo+ioff, 1:nj(le)+joff, :, le) ! east
        end if
        if(ni(tile) == ni(ls) ) then
           data(1:ni(tile)+ioff, 1-shalo:0, :)     = data1_all(1:ni(ls)+ioff, nj(ls)-shalo+1:nj(ls), :, ls) ! south
@@ -6033,8 +6076,9 @@ end subroutine test_halosize_update
            call mpp_define_domains( (/1,nx,1,ny/), layout, domain, whalo=whalo, ehalo=ehalo, &
                                     shalo=shalo, nhalo=nhalo, name=type, symmetry = .true. )
     case( 'Cyclic symmetry center', 'Cyclic symmetry corner', 'Cyclic symmetry east', 'Cyclic symmetry north' )
-           call mpp_define_domains( (/1,nx,1,ny/), layout, domain, whalo=whalo, ehalo=ehalo, shalo=shalo, nhalo=nhalo, &
-                                    name=type, symmetry = .true., xflags=CYCLIC_GLOBAL_DOMAIN, yflags=CYCLIC_GLOBAL_DOMAIN )
+           call mpp_define_domains( (/1,nx,1,ny/), layout, domain, whalo=whalo, ehalo=ehalo, shalo=shalo, nhalo=nhalo,&
+                                    name=type, symmetry = .true., xflags=CYCLIC_GLOBAL_DOMAIN, &
+                                            &  yflags=CYCLIC_GLOBAL_DOMAIN )
     case default
         call mpp_error( FATAL, 'TEST_MPP_DOMAINS: no such test: '//type//' in test_global_field' )
     end select
@@ -6430,7 +6474,8 @@ end subroutine test_halosize_update
        end if
     case('Ten tile')
        if(mod(npes,10) .NE. 0 .AND. npes .NE. 1 .AND. mod(10,npes) .NE. 0) then
-          call mpp_error(NOTE, 'test_define_mosaic_pelist: npes can not be divided by 10(or reverse), no test for '//type )
+          call mpp_error(NOTE, 'test_define_mosaic_pelist: npes can not be divided by 10(or reverse), no test for '// &
+                         & type )
           return
        end if
        if(mod(10, npes)==0) then

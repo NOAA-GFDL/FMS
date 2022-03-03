@@ -168,7 +168,8 @@ function get_great_circle_algorithm()
       if(trim(attvalue) == "TRUE") then
          get_great_circle_algorithm = .true.
       else if(trim(attvalue) .NE. "FALSE") then
-         call mpp_error(FATAL, module_name//'/get_great_circle_algorithm value of global attribute "great_circle_algorthm" in file'// &
+         call mpp_error(FATAL, module_name//&
+                   '/get_great_circle_algorithm value of global attribute "great_circle_algorthm" in file'// &
                    trim(grid_file)//' should be TRUE or FALSE')
       endif
    endif
@@ -229,8 +230,8 @@ function get_grid_version(fileobj)
     else if(variable_exists(fileobj, 'gridfiles') ) then
        get_grid_version = VERSION_3
     else
-       call mpp_error(FATAL, module_name//'/get_grid_version '//&
-            'Can''t determine the version of the grid spec: none of "x_T", "geolon_t", or "ocn_mosaic_file" exist in file "'//trim(grid_file)//'"')
+       call mpp_error(FATAL, module_name//'/get_grid_version Can''t determine the version of the grid spec:'// &
+                  & ' none of "x_T", "geolon_t", or "ocn_mosaic_file" exist in file "'//trim(grid_file)//'"')
     endif
   endif
 end function get_grid_version
@@ -531,7 +532,7 @@ subroutine get_grid_comp_area_SG(component,tile,area,domain)
                  num_nest_tile = num_nest_tile + 1
                  nest_tile_name(num_nest_tile) = trim(mosaic_name)//'_tile'//char(n+ichar('0'))
               else if(trim(attvalue) .NE. "FALSE") then
-                 call mpp_error(FATAL, module_name//'/get_grid_comp_area value of global attribute nest_grid in file'// &
+                 call mpp_error(FATAL,module_name//'/get_grid_comp_area value of global attribute nest_grid in file'//&
                       trim(tilefile)//' should be TRUE or FALSE')
               endif
            end if
@@ -677,7 +678,7 @@ subroutine get_grid_comp_area_SG(component,tile,area,domain)
                  num_nest_tile = num_nest_tile + 1
                  nest_tile_name(num_nest_tile) = trim(mosaic_name)//'_tile'//char(n+ichar('0'))
               else if(trim(attvalue) .NE. "FALSE") then
-                 call mpp_error(FATAL, module_name//'/get_grid_comp_area value of global attribute nest_grid in file'// &
+                 call mpp_error(FATAL,module_name//'/get_grid_comp_area value of global attribute nest_grid in file'//&
                       trim(tilefile)//' should be TRUE or FALSE')
               endif
            end if
@@ -908,7 +909,8 @@ subroutine get_grid_cell_vertices_2D(component, tile, lonb, latb, domain)
       valid_types = .true.
     end select
   end select
-  if(.not. valid_types) call mpp_error(FATAL, 'get_grid_cell_vertices_2D: invalid types, lonb/latb must be r4_kind or r8_kind')
+  if(.not. valid_types) call mpp_error(FATAL, &
+     &  'get_grid_cell_vertices_2D: invalid types, lonb/latb must be r4_kind or r8_kind')
 
 
   if (present(domain)) then

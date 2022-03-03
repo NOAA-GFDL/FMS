@@ -53,8 +53,10 @@ program test_time_manager
  integer, dimension(days_in_400_year_period) :: coded_date
  integer, dimension(400,12,31) :: date_to_day
 
- logical :: test1 =.true.,test2 =.true.,test3 =.true.,test4 =.true.,test5 =.true.,test6 =.true.,test7 =.true.,test8 =.true.
- logical :: test9 =.true.,test10=.true.,test11=.true.,test12=.true.,test13=.true.,test14=.true.,test15=.true.,test16=.true.
+ logical :: test1 =.true.,test2 =.true.,test3 =.true.,test4 =.true.,test5 =.true.,test6 =.true.,test7 =.true., &
+         & test8 =.true.
+ logical :: test9 =.true.,test10=.true.,test11=.true.,test12=.true.,test13=.true.,test14=.true.,test15=.true., &
+         & test16=.true.
  logical :: test17=.true.,test18=.true.,test19=.true.,test20=.true.
 
  namelist / test_nml / test1 ,test2 ,test3 ,test4 ,test5 ,test6 ,test7 ,test8,  &
@@ -119,11 +121,13 @@ program test_time_manager
   if(test3) then
     write(outunit,'(/,a)') '#################################  test3  #################################'
  !  Test of function time_plus
-    call print_time(set_time(seconds=0, days=2, ticks=5) + set_time(seconds=0, days=2, ticks=6), 'test3.1:', unit=outunit)
+    call print_time(set_time(seconds=0, days=2, ticks=5) + set_time(seconds=0, days=2, ticks=6), 'test3.1:', &
+                   &  unit=outunit)
 
  !  Test of function time_minus
  !  The minus operator for time ensures a positive result. In effect is does this: abs(time1-time2)
-    call print_time(set_time(seconds=0, days=2, ticks=5) - set_time(seconds=0, days=2, ticks=6), 'test3.2:', unit=outunit)
+    call print_time(set_time(seconds=0, days=2, ticks=5) - set_time(seconds=0, days=2, ticks=6), 'test3.2:', &
+                   &  unit=outunit)
 
  !  Test of function time_scalar_mult.  Note that 25000*86399 is greater than huge = 2**31 - 1
     call print_time(2*set_time(seconds=0, days=2, ticks=6), 'test3.3:', unit=outunit)
@@ -409,8 +413,10 @@ program test_time_manager
     write(outunit,'(/,a)') '#################################  test11  #################################'
     call print_time(increment_time(set_time(seconds=0, days=2), seconds=0, days=1),'test11.1:', unit=outunit)
     call print_time(decrement_time(set_time(seconds=0, days=2), seconds=0, days=1),'test11.2:', unit=outunit)
-    call print_time(increment_time(set_time(seconds=0, days=2, ticks=5), seconds=400, days=1, ticks=14),'test11.3:', unit=outunit)
-    call print_time(decrement_time(set_time(seconds=0, days=2, ticks=5), seconds=400, days=1, ticks=14),'test11.4:', unit=outunit)
+    call print_time(increment_time(set_time(seconds=0, days=2, ticks=5), seconds=400, days=1, ticks=14), &
+                   & 'test11.3:', unit=outunit)
+    call print_time(decrement_time(set_time(seconds=0, days=2, ticks=5), seconds=400, days=1, ticks=14), &
+                   & 'test11.4:', unit=outunit)
   endif
  !==============================================================================================
  !  Tests of negative increments in increment_time and decrement_time
@@ -419,8 +425,10 @@ program test_time_manager
     write(outunit,'(/,a)') '#################################  test12  #################################'
     call print_time(increment_time(set_time(seconds=0, days=2), seconds=0, days=-1),'test12.1:', unit=outunit)
     call print_time(decrement_time(set_time(seconds=0, days=2), seconds=0, days=-1),'test12.2:', unit=outunit)
-    call print_time(increment_time(set_time(seconds=0, days=2, ticks=5),seconds=-400,days=-1,ticks=-14),'test12.3:',unit=outunit)
-    call print_time(decrement_time(set_time(seconds=0, days=2, ticks=5),seconds=-400,days=-1,ticks=-14),'test12.4:',unit=outunit)
+    call print_time(increment_time(set_time(seconds=0, days=2, ticks=5),seconds=-400,days=-1,ticks=-14), &
+                   & 'test12.3:',unit=outunit)
+    call print_time(decrement_time(set_time(seconds=0, days=2, ticks=5),seconds=-400,days=-1,ticks=-14), &
+                   & 'test12.4:',unit=outunit)
   endif
  !==============================================================================================
  !  Test of trap for negative time
@@ -603,7 +611,8 @@ program test_time_manager
   write(outunit,'(a,i6)') ' ticks_per_second=',get_ticks_per_second()
 
  !==============================================================================================
- !  Tests the new set/get_date_gregorian by comparing against the old set/get_date_gregorian copied over to this test program
+ !  Tests the new set/get_date_gregorian by comparing against the old set/get_date_gregorian
+ !  copied over to this test program
  !  This test loops through every day up to year 3200
 
   if(test20) then
@@ -612,7 +621,7 @@ program test_time_manager
     write(outunit,'(a)')   '  Test get/set_date_gregorian with get/set_date_gregorian_old'
     write(outunit,'(a,/)') ' ====================================================='
     call set_calendar_type(GREGORIAN)
-    call get_coded_date( coded_date, date_to_day ) ! assign coded_date and date_to_day used by get/set_date_gregorian_old
+    call get_coded_date( coded_date, date_to_day )!assign coded_date and date_to_day used by get/set_date_gregorian_old
 
     ! test the new Gregorian methods and compare with the old methods
     do year=1, 3200
