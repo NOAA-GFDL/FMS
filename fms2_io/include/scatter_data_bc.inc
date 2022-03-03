@@ -86,7 +86,8 @@ subroutine scatter_data_bc_2d(fileobj, varname, vdata, bc_info, unlim_dim_level,
             chksum = ""
             write(chksum, "(Z16)") chksum_val
             if (.not. string_compare(adjustl(chksum), adjustl(chksum_read))) then
-                call error("scatter_data_bc_2d: "//trim(varname)//" chksum_in:"//(chksum)//" chksum_out:"//(chksum_read))
+                call error("scatter_data_bc_2d: "//trim(varname)//" chksum_in:"//(chksum)//" chksum_out:"// &
+                         & (chksum_read))
             endif
          endif
       endif
@@ -241,7 +242,8 @@ subroutine scatter_data_bc_3d(fileobj, varname, vdata, bc_info, unlim_dim_level,
             chksum = ""
             write(chksum, "(Z16)") chksum_val
             if (.not. string_compare(adjustl(chksum), adjustl(chksum_read))) then
-                call error("scatter_data_bc_2d: "//trim(varname)//" chksum_in:"//(chksum)//" chksum_out:"//(chksum_read))
+                call error("scatter_data_bc_2d: "//trim(varname)//" chksum_in:"//(chksum)//" chksum_out:"// &
+                         & (chksum_read))
             endif
          endif
       endif

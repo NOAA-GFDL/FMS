@@ -90,7 +90,8 @@ end interface fill_folded_west_halo
 contains
 
   !> fill the halo region of a 64-bit real array with zeros
-  subroutine fill_halo_zero_r8(data, whalo, ehalo, shalo, nhalo, xshift, yshift, isc, iec, jsc, jec, isd, ied, jsd, jed)
+  subroutine fill_halo_zero_r8(data, whalo, ehalo, shalo, nhalo, xshift, yshift, isc, iec, jsc, jec, isd, ied, &
+                              &  jsd, jed)
     real(kind=r8_kind), dimension(isd:,jsd:,:), intent(inout) :: data
     integer,                         intent(in) :: isc, iec, jsc, jec, isd, ied, jsd, jed
     integer,                         intent(in) :: whalo, ehalo, shalo, nhalo, xshift, yshift
@@ -113,7 +114,8 @@ contains
   end subroutine fill_halo_zero_r8
 
   !> fill the halo region of a 32-bit real array with zeros
-  subroutine fill_halo_zero_r4(data, whalo, ehalo, shalo, nhalo, xshift, yshift, isc, iec, jsc, jec, isd, ied, jsd, jed)
+  subroutine fill_halo_zero_r4(data, whalo, ehalo, shalo, nhalo, xshift, yshift, isc, iec, jsc, jec, isd, ied, &
+                              &  jsd, jed)
     real(kind=r4_kind), dimension(isd:,jsd:,:), intent(inout) :: data
     integer,                         intent(in) :: isc, iec, jsc, jec, isd, ied, jsd, jed
     integer,                         intent(in) :: whalo, ehalo, shalo, nhalo, xshift, yshift
@@ -136,7 +138,8 @@ contains
   end subroutine fill_halo_zero_r4
 
 !> fill the halo region of a 64-bit integer array with zeros
-  subroutine fill_halo_zero_i8(data, whalo, ehalo, shalo, nhalo, xshift, yshift, isc, iec, jsc, jec, isd, ied, jsd, jed)
+  subroutine fill_halo_zero_i8(data, whalo, ehalo, shalo, nhalo, xshift, yshift, isc, iec, jsc, jec, isd, ied, &
+                              &  jsd, jed)
     integer(kind=i8_kind), dimension(isd:,jsd:,:), intent(inout) :: data
     integer,                         intent(in) :: isc, iec, jsc, jec, isd, ied, jsd, jed
     integer,                         intent(in) :: whalo, ehalo, shalo, nhalo, xshift, yshift
@@ -159,7 +162,8 @@ contains
   end subroutine fill_halo_zero_i8
 
 !> fill the halo region of a 32-bit integer array with zeros
-  subroutine fill_halo_zero_i4(data, whalo, ehalo, shalo, nhalo, xshift, yshift, isc, iec, jsc, jec, isd, ied, jsd, jed)
+  subroutine fill_halo_zero_i4(data, whalo, ehalo, shalo, nhalo, xshift, yshift, isc, iec, jsc, jec, isd, ied, &
+                              &  jsd, jed)
     integer(kind=i4_kind), dimension(isd:,jsd:,:), intent(inout) :: data
     integer,                         intent(in) :: isc, iec, jsc, jec, isd, ied, jsd, jed
     integer,                         intent(in) :: whalo, ehalo, shalo, nhalo, xshift, yshift
@@ -212,7 +216,8 @@ contains
   end subroutine fill_regular_refinement_halo_r8
 
   !> fill the halo region of 32-bit array on a regular grid
-  subroutine fill_regular_refinement_halo_r4( data, data_all, ni, nj, tm, te, tse, ts, tsw, tw, tnw, tn, tne, ioff, joff )
+  subroutine fill_regular_refinement_halo_r4( data, data_all, ni, nj, tm, te, tse, ts, tsw, tw, tnw, tn, tne, &
+                                            &  ioff, joff )
     real(kind=r4_kind), dimension(1-whalo:,1-shalo:,:), intent(inout) :: data
     real(kind=r4_kind), dimension(:,:,:,:),             intent(in)    :: data_all
     integer, dimension(:),                intent(in)    :: ni, nj
@@ -269,7 +274,8 @@ contains
   end subroutine fill_regular_refinement_halo_i8
 
 !> fill the halo region of 32-bit integer array on a regular grid
-  subroutine fill_regular_refinement_halo_i4( data, data_all, ni, nj, tm, te, tse, ts, tsw, tw, tnw, tn, tne, ioff, joff )
+  subroutine fill_regular_refinement_halo_i4( data, data_all, ni, nj, tm, te, tse, ts, tsw, tw, tnw, tn, tne, &
+                                            &  ioff, joff )
     integer(kind=i4_kind), dimension(1-whalo:,1-shalo:,:), intent(inout) :: data
     integer(kind=i4_kind), dimension(:,:,:,:),             intent(in)    :: data_all
     integer, dimension(:),                intent(in)    :: ni, nj

@@ -78,10 +78,14 @@ subroutine gradient_cubic(pin, dx, dy, area, edge_w, edge_e, edge_s, edge_n,    
   nx = size(grad_x,1)
   ny = size(grad_x,2)
 
-  if(size(pin,1) .NE. nx+2 .OR. size(pin,2) .NE. ny+2)call mpp_error(FATAL, "gradient_mod:size of pin should be (nx+2, ny+2)")
-  if(size(dx,1) .NE. nx .OR. size(dx,2) .NE. ny+1 ) call mpp_error(FATAL, "gradient_mod: size of dx should be (nx,ny+1)")
-  if(size(dy,1) .NE. nx+1 .OR. size(dy,2) .NE. ny ) call mpp_error(FATAL, "gradient_mod: size of dy should be (nx+1,ny)")
-  if(size(area,1) .NE. nx .OR. size(area,2) .NE. ny ) call mpp_error(FATAL, "gradient_mod: size of area should be (nx,ny)")
+  if(size(pin,1) .NE. nx+2 .OR. size(pin,2) .NE. ny+2)call mpp_error(FATAL, &
+     &  "gradient_mod:size of pin should be (nx+2, ny+2)")
+  if(size(dx,1) .NE. nx .OR. size(dx,2) .NE. ny+1 ) call mpp_error(FATAL, &
+     &  "gradient_mod: size of dx should be (nx,ny+1)")
+  if(size(dy,1) .NE. nx+1 .OR. size(dy,2) .NE. ny ) call mpp_error(FATAL, &
+     &  "gradient_mod: size of dy should be (nx+1,ny)")
+  if(size(area,1) .NE. nx .OR. size(area,2) .NE. ny ) call mpp_error(FATAL, &
+     &  "gradient_mod: size of area should be (nx,ny)")
   if(size(vlon,1) .NE. 3 .OR. size(vlon,2) .NE. nx .OR. size(vlon,3) .NE. ny) &
           call mpp_error(FATAL, "gradient_mod: size of vlon should be (3,nx,ny)")
   if(size(vlat,1) .NE. 3 .OR. size(vlat,2) .NE. nx .OR. size(vlat,3) .NE. ny) &
@@ -119,13 +123,20 @@ subroutine calc_cubic_grid_info(xt, yt, xc, yc, dx, dy, area, edge_w, edge_e, ed
   nxp = nx+1
   nyp = ny+1
 
-  if(size(xt,1) .NE. nx+2 .OR. size(xt,2) .NE. ny+2 ) call mpp_error(FATAL, "gradient_mod: size of xt should be (nx+2,ny+2)")
-  if(size(yt,1) .NE. nx+2 .OR. size(yt,2) .NE. ny+2 ) call mpp_error(FATAL, "gradient_mod: size of yt should be (nx+2,ny+2)")
-  if(size(xc,1) .NE. nxp .OR. size(xc,2) .NE. nyp ) call mpp_error(FATAL, "gradient_mod: size of xc should be (nx+1,ny+1)")
-  if(size(yc,1) .NE. nxp .OR. size(yc,2) .NE. nyp ) call mpp_error(FATAL, "gradient_mod: size of yc should be (nx+1,ny+1)")
-  if(size(dx,1) .NE. nx .OR. size(dx,2) .NE. nyp ) call mpp_error(FATAL, "gradient_mod: size of dx should be (nx,ny+1)")
-  if(size(dy,1) .NE. nxp .OR. size(dy,2) .NE. ny ) call mpp_error(FATAL, "gradient_mod: size of dy should be (nx+1,ny)")
-  if(size(area,1) .NE. nx .OR. size(area,2) .NE. ny ) call mpp_error(FATAL, "gradient_mod: size of area should be (nx,ny)")
+  if(size(xt,1) .NE. nx+2 .OR. size(xt,2) .NE. ny+2 ) call mpp_error(FATAL, &
+     &  "gradient_mod: size of xt should be (nx+2,ny+2)")
+  if(size(yt,1) .NE. nx+2 .OR. size(yt,2) .NE. ny+2 ) call mpp_error(FATAL, &
+     &  "gradient_mod: size of yt should be (nx+2,ny+2)")
+  if(size(xc,1) .NE. nxp .OR. size(xc,2) .NE. nyp ) call mpp_error(FATAL, &
+     &  "gradient_mod: size of xc should be (nx+1,ny+1)")
+  if(size(yc,1) .NE. nxp .OR. size(yc,2) .NE. nyp ) call mpp_error(FATAL, &
+     &  "gradient_mod: size of yc should be (nx+1,ny+1)")
+  if(size(dx,1) .NE. nx .OR. size(dx,2) .NE. nyp ) call mpp_error(FATAL, &
+     &  "gradient_mod: size of dx should be (nx,ny+1)")
+  if(size(dy,1) .NE. nxp .OR. size(dy,2) .NE. ny ) call mpp_error(FATAL, &
+     &  "gradient_mod: size of dy should be (nx+1,ny)")
+  if(size(area,1) .NE. nx .OR. size(area,2) .NE. ny ) call mpp_error(FATAL, &
+     &  "gradient_mod: size of area should be (nx,ny)")
   if(size(vlon,1) .NE. 3 .OR. size(vlon,2) .NE. nx .OR. size(vlon,3) .NE. ny) &
           call mpp_error(FATAL, "gradient_mod: size of vlon should be (3,nx,ny)")
   if(size(vlat,1) .NE. 3 .OR. size(vlat,2) .NE. nx .OR. size(vlat,3) .NE. ny) &

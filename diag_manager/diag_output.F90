@@ -182,7 +182,8 @@ CONTAINS
              call register_global_attribute(fileob, TRIM(attributes(i)%name), attributes(i)%fatt)
           CASE (NF90_CHAR)
 
-             call register_global_attribute(fileob, TRIM(attributes(i)%name), attributes(i)%catt, str_len=len_trim(attributes(i)%catt))
+             call register_global_attribute(fileob, TRIM(attributes(i)%name), attributes(i)%catt, &
+                                           &  str_len=len_trim(attributes(i)%catt))
           CASE default
              ! <ERROR STATUS="FATAL">
              !   Unknown attribute type for attribute <name> to module/input_field <module_name>/<field_name>.
@@ -208,7 +209,8 @@ CONTAINS
     INTEGER, INTENT(in) :: axes(:) !< Array of axis ID's, including the time axis
     class(FmsNetcdfFile_t) , intent(inout) :: fileob !< FMS2_io fileobj
     LOGICAL, INTENT(in), OPTIONAL :: time_ops !< .TRUE. if this file contains any min, max, time_rms, or time_average
-    logical, intent(inout) , optional :: time_axis_registered !< .TRUE. if the time axis was already written to the file
+    logical, intent(inout) , optional :: time_axis_registered !< .TRUE. if the time axis was already
+                                                              !! written to the file
 
     TYPE(domain1d)       :: Domain
     TYPE(domainUG)       :: domainU
@@ -300,7 +302,8 @@ CONTAINS
                 call register_variable_attribute(fileob, axis_name, "domain_decomposition", &
                       (/gstart, gend, cstart, cend/))
              type is (FmsNetcdfDomainFile_t)
-                !> If the axis is domain decomposed and the type is FmsNetcdfDomainFile_t, this is a domain decomposed dimension
+                !> If the axis is domain decomposed and the type is FmsNetcdfDomainFile_t,
+                !! this is a domain decomposed dimension
                 !! so register it as one
                 call register_axis(fileob, axis_name, lowercase(trim(axis_cart_name)), domain_position=axis_pos )
                 call get_global_io_domain_indices(fileob, trim(axis_name), istart, iend)
@@ -310,7 +313,8 @@ CONTAINS
        ELSE IF ( DomainU .NE. null_domainUG) THEN
           select type(fileob)
              type is (FmsNetcdfUnstructuredDomainFile_t)
-               !> If the axis is in unstructured domain and the type is FmsNetcdfUnstructuredDomainFile_t, this is an unstrucutred axis
+               !> If the axis is in unstructured domain and the type is FmsNetcdfUnstructuredDomainFile_t,
+               !! this is an unstrucutred axis
                !! so register it as one
                call register_axis(fileob, axis_name )
           end select
@@ -326,8 +330,10 @@ CONTAINS
        ENDIF !! IF ( Domain .NE. null_domain1d )
 
        if (length <= 0) then
-          !> @note Check if the time variable is registered.  It's possible that is_time_axis_registered is set to true if using
-          !! time-templated files because they aren't closed when done writing.  An alternative to this set up would be to put
+          !> @note Check if the time variable is registered.  It's possible that is_time_axis_registered
+          !! is set to true if using
+          !! time-templated files because they aren't closed when done writing.  An alternative
+          !! to this set up would be to put
           !! variable_exists into the if statement with an .or. so that it gets registered.
           is_time_axis_registered = variable_exists(fileob,trim(axis_name),.true.)
           if (.not. is_time_axis_registered) then
@@ -339,9 +345,12 @@ CONTAINS
        endif !! if (length <= 0)
 
        !> Add the attributes
-       if(trim(axis_units) .ne. "none") call register_variable_attribute(fileob, axis_name, "units", trim(axis_units), str_len=len_trim(axis_units))
-       call register_variable_attribute(fileob, axis_name, "long_name", trim(axis_long_name), str_len=len_trim(axis_long_name))
-       if(trim(axis_cart_name).ne."N") call register_variable_attribute(fileob, axis_name, "axis",trim(axis_cart_name), str_len=len_trim(axis_cart_name))
+       if(trim(axis_units) .ne. "none") call register_variable_attribute(fileob, axis_name, "units", &
+         &  trim(axis_units), str_len=len_trim(axis_units))
+       call register_variable_attribute(fileob, axis_name, "long_name", trim(axis_long_name), &
+                                       &  str_len=len_trim(axis_long_name))
+       if(trim(axis_cart_name).ne."N") call register_variable_attribute(fileob, axis_name, "axis", &
+         & trim(axis_cart_name), str_len=len_trim(axis_cart_name))
 
        if (length > 0 ) then
           !> If not a time axis, add the positive attribute and write the data
@@ -370,11 +379,14 @@ CONTAINS
 
 
           call register_variable_attribute(fileob, axis_name, "calendar_type", &
-                                    UPPERCASE(TRIM(valid_calendar_types(calendar))), str_len=len_trim(valid_calendar_types(calendar)) )
+                                    UPPERCASE(TRIM(valid_calendar_types(calendar))), &
+                                  & str_len=len_trim(valid_calendar_types(calendar)) )
           call register_variable_attribute(fileob, axis_name, "calendar", &
-                                    lowercase(TRIM(valid_calendar_types(calendar))), str_len=len_trim(valid_calendar_types(calendar)) )
+                                    lowercase(TRIM(valid_calendar_types(calendar))), &
+                                  & str_len=len_trim(valid_calendar_types(calendar)) )
           IF ( time_ops1 ) THEN
-             call register_variable_attribute(fileob, axis_name, 'bounds', TRIM(axis_name)//'_bnds', str_len=len_trim(TRIM(axis_name)//'_bnds'))
+             call register_variable_attribute(fileob, axis_name, 'bounds', TRIM(axis_name)//'_bnds', &
+                                             & str_len=len_trim(TRIM(axis_name)//'_bnds'))
           END IF
           call set_fileobj_time_name(fileob, axis_name)
        ELSE
@@ -415,7 +427,8 @@ CONTAINS
             & axis_direction, axis_edges, Domain, DomainU, axis_data)
 
        !  ---- write edges attribute to original axis ----
-       call register_variable_attribute(fileob, axis_name_current, "edges",trim(axis_name), str_len=len_trim(axis_name))
+       call register_variable_attribute(fileob, axis_name_current, "edges",trim(axis_name), &
+                                       &  str_len=len_trim(axis_name))
        !  ---- add edges index to axis list ----
        !  ---- assume this is not a time axis ----
        num_axis_in_file = num_axis_in_file + 1
@@ -427,9 +440,12 @@ CONTAINS
        if (.not.variable_exists(fileob, axis_name)) then
           call register_axis(fileob, axis_name, size(axis_data) )
           call register_field(fileob, axis_name, type_str, (/axis_name/) )
-          if(trim(axis_units) .ne. "none") call register_variable_attribute(fileob, axis_name, "units", trim(axis_units), str_len=len_trim(axis_units))
-          call register_variable_attribute(fileob, axis_name, "long_name", trim(axis_long_name), str_len=len_trim(axis_long_name))
-          if(trim(axis_cart_name).ne."N") call register_variable_attribute(fileob, axis_name, "axis",trim(axis_cart_name), str_len=len_trim(axis_cart_name))
+          if(trim(axis_units) .ne. "none") call register_variable_attribute(fileob, axis_name, "units", &
+                                              & trim(axis_units), str_len=len_trim(axis_units))
+          call register_variable_attribute(fileob, axis_name, "long_name", trim(axis_long_name), &
+                                          &  str_len=len_trim(axis_long_name))
+          if(trim(axis_cart_name).ne."N") call register_variable_attribute(fileob, axis_name, "axis", &
+                                             & trim(axis_cart_name), str_len=len_trim(axis_cart_name))
           select case (axis_direction)
              case (1)
                 call register_variable_attribute(fileob, axis_name, "positive", "up", str_len=len_trim("up"))
@@ -635,17 +651,20 @@ character(len=128),dimension(size(axes)) :: axis_names
           CALL error_mesg('diag_output_mod::write_field_meta_data',&
                &"Pack values must be 1 or 2. Contact the developers.", FATAL)
      end select
-     if (trim(units) .ne. "none") call register_variable_attribute(fileob,name,"units",trim(units), str_len=len_trim(units))
+     if (trim(units) .ne. "none") call register_variable_attribute(fileob,name,"units",trim(units), &
+                                     & str_len=len_trim(units))
      call register_variable_attribute(fileob,name,"long_name",long_name, str_len=len_trim(long_name))
      IF (present(time_method) ) then
-          call register_variable_attribute(fileob,name,'cell_methods','time: '//trim(time_method), str_len=len_trim('time: '//trim(time_method)))
+          call register_variable_attribute(fileob,name,'cell_methods','time: '//trim(time_method), &
+                                         & str_len=len_trim('time: '//trim(time_method)))
      ENDIF
   endif
     !---- write user defined attributes -----
     IF ( PRESENT(num_attributes) ) THEN
        IF ( PRESENT(attributes) ) THEN
           IF ( num_attributes .GT. 0 .AND. allocated(attributes) ) THEN
-             CALL write_attribute_meta(file_unit, num_attributes, attributes, time_method, err_msg, fileob=fileob, varname=name)
+             CALL write_attribute_meta(file_unit, num_attributes, attributes, time_method, err_msg, &
+                                     & fileob=fileob, varname=name)
              IF ( LEN_TRIM(err_msg) .GT. 0 ) THEN
                 CALL error_mesg('diag_output_mod::write_field_meta_data',&
                      & TRIM(err_msg)//" Contact the developers.", FATAL)
@@ -688,11 +707,13 @@ character(len=128),dimension(size(axes)) :: axis_names
          call register_variable_attribute(fileob,name,'coordinates',TRIM(coord_att), str_len=len_trim(coord_att))
     ENDIF
     IF ( TRIM(standard_name2) /= 'none' ) then
-         call register_variable_attribute(fileob,name,'standard_name',TRIM(standard_name2), str_len=len_trim(standard_name2))
+         call register_variable_attribute(fileob,name,'standard_name',TRIM(standard_name2), &
+                                         &  str_len=len_trim(standard_name2))
     ENDIF
     !---- write attribute for interp_method ----
     IF( PRESENT(interp_method) ) THEN
-       call register_variable_attribute(fileob,name,'interp_method', TRIM(interp_method), str_len=len_trim(interp_method))
+       call register_variable_attribute(fileob,name,'interp_method', TRIM(interp_method), &
+                                       &  str_len=len_trim(interp_method))
     END IF
 
     !---- get axis domain ----
@@ -730,7 +751,8 @@ character(len=128),dimension(size(axes)) :: axis_names
                 RETURN
              END IF
           END IF
-          if (present(varname))call register_variable_attribute(fileob, varname,TRIM(attributes(i)%name)  , attributes(i)%iatt)
+          if (present(varname))call register_variable_attribute(fileob, varname,TRIM(attributes(i)%name), &
+                                                              & attributes(i)%iatt)
        CASE (NF90_FLOAT)
           IF ( .NOT.allocated(attributes(i)%fatt) ) THEN
              IF ( fms_error_handler('diag_output_mod::write_attribute_meta',&
@@ -739,7 +761,8 @@ character(len=128),dimension(size(axes)) :: axis_names
                 RETURN
              END IF
           END IF
-          if (present(varname))call register_variable_attribute(fileob, varname,TRIM(attributes(i)%name)  , real(attributes(i)%fatt,4) )
+          if (present(varname))call register_variable_attribute(fileob, varname,TRIM(attributes(i)%name), &
+                                                              & real(attributes(i)%fatt,4) )
        CASE (NF90_CHAR)
           att_str = attributes(i)%catt
           att_len = attributes(i)%len
@@ -749,7 +772,8 @@ character(len=128),dimension(size(axes)) :: axis_names
              att_len = LEN_TRIM(att_str)
           END IF
           if (present(varname))&
-               call register_variable_attribute(fileob, varname,TRIM(attributes(i)%name)  , att_str(1:att_len), str_len=att_len)
+               call register_variable_attribute(fileob, varname,TRIM(attributes(i)%name)  , att_str(1:att_len), &
+                                               &  str_len=att_len)
 
        CASE default
           IF ( fms_error_handler('diag_output_mod::write_attribute_meta', 'Invalid type for attribute '&
@@ -772,7 +796,8 @@ character(len=128),dimension(size(axes)) :: axis_names
   END SUBROUTINE done_meta_data
 
   !> \brief Writes diagnostic data out using fms2_io routine.
-  subroutine diag_field_write (varname, buffer, static, file_num, fileobjU, fileobj, fileobjND, fnum_for_domain, time_in)
+  subroutine diag_field_write (varname, buffer, static, file_num, fileobjU, fileobj, fileobjND, &
+                              &  fnum_for_domain, time_in)
     CHARACTER(len=*), INTENT(in)    :: varname                             !< Variable name
     REAL ,            INTENT(inout) :: buffer(:,:,:,:)                     !< Buffer containing the variable data
     logical,          intent(in)    :: static                              !< Flag indicating if a variable is static

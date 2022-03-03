@@ -67,7 +67,8 @@
         allocate(pelist(npes))
         call mpp_get_pelist(io_domain,pelist)
 
-        if(mpp_pe() == pelist(1)) call READ_RECORD_(unit,field,size(data(:,:)),data,tindex,start_in=start, axsiz_in=nread)
+        if(mpp_pe() == pelist(1)) call READ_RECORD_(unit,field,size(data(:,:)),data,tindex,start_in=start, &
+          &  axsiz_in=nread)
 
         !--- z1l replace mpp_broadcast with mpp_send/mpp_recv to avoid hang in calling MPI_COMM_CREATE
         !---     because size(pelist) might be different for different rank.
@@ -160,7 +161,8 @@
          allocate(pelist(npes))
          call mpp_get_pelist(io_domain,pelist)
 
-         if(mpp_pe() == pelist(1)) call READ_RECORD_(unit,field,size(data(:,:,:)),data,tindex,start_in=start, axsiz_in=nread)
+         if(mpp_pe() == pelist(1)) call READ_RECORD_(unit,field,size(data(:,:,:)),data,tindex,start_in=start, &
+           &  axsiz_in=nread)
 
          !--- z1l replace mpp_broadcast with mpp_send/mpp_recv to avoid hang in calling MPI_COMM_CREATE
          !---  because size(pelist) might be different for different rank.
