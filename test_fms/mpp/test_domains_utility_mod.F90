@@ -201,19 +201,22 @@ subroutine fill_coarse_data_r4(data, rotate, iadd, jadd, is_c, ie_c, js_c, je_c,
            case(ZERO)
               do j = jsl(n), jel(n)+joff
                  do i = isl(n), iel(n)+ioff
-                    buffer(i,j,k) = xadd + dble(tile(n)) + dble(i-iadd(n))*1.d-3 + dble(j-jadd(n))*1.d-6 + dble(k)*1.d-9
+                    buffer(i,j,k) = xadd + dble(tile(n)) + dble(i-iadd(n))*1.d-3 &
+                                  & + dble(j-jadd(n))*1.d-6 + dble(k)*1.d-9
                  enddo
               enddo
            case (NINETY)
               do j = jsl(n), jel(n)+joff
                  do i = isl(n), iel(n)+ioff
-                    buffer(i,j,k) = sign2*(yadd + dble(tile(n)) + dble(j-jadd(n))*1.d-3 + dble(nx-i+iadd(n)+1+ioff)*1.d-6 + dble(k)*1.d-9)
+                    buffer(i,j,k) = sign2*(yadd + dble(tile(n)) + dble(j-jadd(n))*1.d-3 &
+                                  & + dble(nx-i+iadd(n)+1+ioff)*1.d-6 + dble(k)*1.d-9)
                  enddo
               enddo
            case (MINUS_NINETY)
               do j = jsl(n), jel(n)+joff
                  do i = isl(n), iel(n)+ioff
-                    buffer(i,j,k) = sign1*(yadd + dble(tile(n)) + dble(ny-j+jadd(n)+1+joff)*1.d-3 + dble(i-iadd(n))*1.d-6 + dble(k)*1.d-9)
+                    buffer(i,j,k) = sign1*(yadd + dble(tile(n)) + dble(ny-j+jadd(n)+1+joff)*1.d-3 &
+                                  & + dble(i-iadd(n))*1.d-6 + dble(k)*1.d-9)
                  enddo
               enddo
            case default

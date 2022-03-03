@@ -1725,8 +1725,8 @@ contains
           return
        endif
        if( nx_cubic .NE. ny_cubic ) then
-          call mpp_error(NOTE,'update_domains_performance: for Cubic_grid mosaic, nx_cubic does not equal ny_cubic, '//&
-                  'No test is done for Cubic-Grid mosaic. ' )
+          call mpp_error(NOTE,'update_domains_performance: for Cubic_grid mosaic, nx_cubic does not equal ny_cubic, '&
+                  //'No test is done for Cubic-Grid mosaic. ' )
           return
        endif
 
@@ -1891,7 +1891,8 @@ contains
              enddo
           else
              do l = 1, num_fields
-                if(mix_2D_3D) id_update =  mpp_start_update_domains(a1_2D(:,:,l), domain, update_id=id_update, complete=.false.)
+                if(mix_2D_3D) id_update =  mpp_start_update_domains(a1_2D(:,:,l), domain, update_id=id_update, &
+                                                                    complete=.false.)
                 id_update =  mpp_start_update_domains(a1(:,:,:,l), domain, update_id=id_update, complete=l==num_fields)
              enddo
           endif
@@ -2014,8 +2015,8 @@ contains
              enddo
           else
              do l = 1, num_fields
-                if(mix_2D_3D) id_update =  mpp_start_update_domains(a1_2D(:,:,l), b1_2D(:,:,l), domain, gridtype=BGRID_NE, &
-                                update_id=id_update, complete=.false.)
+                if(mix_2D_3D) id_update =  mpp_start_update_domains(a1_2D(:,:,l), b1_2D(:,:,l), domain, &
+                                gridtype=BGRID_NE, update_id=id_update, complete=.false.)
                 id_update =  mpp_start_update_domains(a1(:,:,:,l), b1(:,:,:,l), domain, gridtype=BGRID_NE, &
                                 update_id=id_update, complete=l==num_fields)
              enddo
@@ -3405,7 +3406,8 @@ end subroutine test_halosize_update
           write(outunit,*)'NOTE from test_unstruct_update ==> For Mosaic "', trim(type), &
                '", each tile will be distributed over ', npes_per_tile, ' processors.'
        else
-          call mpp_error(NOTE,'test_unstruct_update: npes should be multiple of ntiles No test is done for '//trim(type))
+          call mpp_error(NOTE,'test_unstruct_update: npes should be multiple of ntiles No test is done for '// &
+                         trim(type))
           return
        endif
        if(layout_cubic(1)*layout_cubic(2) == npes_per_tile) then
@@ -3488,7 +3490,8 @@ end subroutine test_halosize_update
     allocate(ntiles_grid(ntotal_land))
     ntiles_grid = 1
    !--- define the unstructured grid domain
-    call mpp_define_unstruct_domain(UG_domain, SG_domain, npts_tile, ntiles_grid, mpp_npes(), 1, grid_index, name="LAND unstruct")
+    call mpp_define_unstruct_domain(UG_domain, SG_domain, npts_tile, ntiles_grid, mpp_npes(), 1, grid_index, &
+                                    name="LAND unstruct")
     call mpp_get_UG_compute_domain(UG_domain, istart, iend)
 
     !--- figure out lmask according to grid_index
@@ -3775,7 +3778,8 @@ end subroutine test_halosize_update
 
     data(1-whalo:0,                  1:nyp,:) =      data(nx-whalo+1:nx,        1:ny+jshift,:) ! west
     data(nx+1:nx+ehalo+ishift,       1:nyp,:) =      data(1:ehalo+ishift,       1:ny+jshift,:) ! east
-    if(m1 .GE. 1-whalo) data(1-whalo:m1,  nyp+1:nyp+nhalo,:) = sign*data(whalo+m2:1+ishift:-1, nyp-joff:nyp-nhalo-joff+1:-1,:)
+    if(m1 .GE. 1-whalo) &
+      data(1-whalo:m1,  nyp+1:nyp+nhalo,:) = sign*data(whalo+m2:1+ishift:-1, nyp-joff:nyp-nhalo-joff+1:-1,:)
     data(m1+1:nx+m2,       nyp+1:nyp+nhalo,:) = sign*data(nx+ishift:1:-1,       nyp-joff:nyp-nhalo-joff+1:-1,:)
     data(nx+m2+1:nxp+ehalo,nyp+1:nyp+nhalo,:) = sign*data(nx:nx-ehalo+m1+1:-1,  nyp-joff:nyp-nhalo-joff+1:-1,:)
 
