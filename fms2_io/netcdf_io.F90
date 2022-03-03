@@ -28,6 +28,9 @@
 !> @addtogroup netcdf_io_mod
 !> @{
 module netcdf_io_mod
+#ifndef MAX_NUM_RESTART_VARS_
+#define MAX_NUM_RESTART_VARS_ 250
+#endif
 use netcdf
 use mpp_mod
 use fms_io_utils_mod
@@ -45,7 +48,7 @@ integer, parameter :: missing_ncid = -1
 integer, parameter :: missing_rank = -1
 integer, parameter, public :: define_mode = 0
 integer, parameter, public :: data_mode = 1
-integer, parameter, public :: max_num_restart_vars = 200
+integer, parameter, public :: max_num_restart_vars = MAX_NUM_RESTART_VARS_
 integer, parameter, public :: unlimited = nf90_unlimited !> Wrapper to specify unlimited dimension.
 integer, parameter :: dimension_not_found = 0
 integer, parameter, public :: max_num_compressed_dims = 10 !> Maximum number of compressed
