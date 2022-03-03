@@ -9,7 +9,7 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
-      - name: Setup repo 
+      - name: Setup repo
         run: | # do autotool's job for substitutes since we don't need a full build environement
           mkdir gen_docs
           sed 's/@abs_top_builddir@\/docs/gen_docs/' docs/Doxyfile.in > gen_docs/Doxyfile

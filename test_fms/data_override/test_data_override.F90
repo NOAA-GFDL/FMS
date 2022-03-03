@@ -44,7 +44,8 @@ program test
   ! Input data and path_names file for this program is in:
   ! /archive/pjp/unit_tests/test_data_override/lima/exp1
  use           mpp_mod, only: input_nml_file, stdout, mpp_chksum
- use   mpp_domains_mod, only: domain2d, mpp_define_domains, mpp_define_io_domain, mpp_get_compute_domain, mpp_define_layout
+ use   mpp_domains_mod, only: domain2d, mpp_define_domains, mpp_define_io_domain, mpp_get_compute_domain, &
+                           &  mpp_define_layout
  use           fms_mod, only: fms_init, fms_end, mpp_npes, file_exist, check_nml_error
  use           fms_mod, only: error_mesg, FATAL, file_exist, field_exist, field_size
  use  fms_affinity_mod, only: fms_affinity_set
@@ -141,7 +142,8 @@ program test
     call read_data(grid_file, 'ocn_mosaic_file', solo_mosaic_file)
     solo_mosaic_file = 'INPUT/'//trim(solo_mosaic_file)
     call field_size(solo_mosaic_file, 'gridfiles', siz)
-    if( siz(2) .NE. 1) call error_mesg('test_data_override', 'only support single tile mosaic, contact developer', FATAL)
+    if( siz(2) .NE. 1) &
+       call error_mesg('test_data_override', 'only support single tile mosaic, contact developer', FATAL)
     call read_data(solo_mosaic_file, 'gridfiles', tile_file)
     tile_file = 'INPUT/'//trim(tile_file)
     call field_size(tile_file, 'area', siz)
@@ -308,7 +310,7 @@ enddo
 
 contains
 
-!=================================================================================================================================
+!======================================================================================================================
  subroutine get_grid
    real, allocatable, dimension(:,:,:) :: lon_vert_glo, lat_vert_glo
    real, allocatable, dimension(:,:)   :: lon_global, lat_global
@@ -441,7 +443,8 @@ contains
           write(outunit,*)'NOTE from test_unstruct_update ==> For Mosaic "', trim(type), &
                '", each tile will be distributed over ', npes_per_tile, ' processors.'
        else
-          call mpp_error(NOTE,'test_unstruct_update: npes should be multiple of ntiles No test is done for '//trim(type))
+          call mpp_error(NOTE,'test_unstruct_update: npes should be multiple of ntiles No test is done for '// &
+                         & trim(type))
           return
        endif
        if(layout_cubic(1)*layout_cubic(2) == npes_per_tile) then
@@ -533,7 +536,8 @@ contains
     allocate(ntiles_grid(ntotal_land))
     ntiles_grid = 1
    !--- define the unstructured grid domain
-    call mpp_define_unstruct_domain(UG_domain, SG_domain, npts_tile, ntiles_grid, mpp_npes(), 1, grid_index, name="LAND unstruct")
+    call mpp_define_unstruct_domain(UG_domain, SG_domain, npts_tile, ntiles_grid, mpp_npes(), 1, grid_index, &
+                                   &  name="LAND unstruct")
     call mpp_get_UG_compute_domain(UG_domain, istart, iend)
 
     !--- figure out lmask according to grid_index
@@ -819,5 +823,5 @@ contains
 
   end subroutine define_cubic_mosaic
 
-!=================================================================================================================================
+!======================================================================================================================
  end program test

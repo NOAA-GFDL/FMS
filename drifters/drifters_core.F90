@@ -17,7 +17,8 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 !
-! nf95 -r8 -g -I ~/regression/ia64/23-Jun-2005/CM2.1U_Control-1990_E1.k32pe/include/ -D_TEST_DRIFTERS -D_F95 quicksort.F90 drifters_core.F90
+! nf95 -r8 -g -I ~/regression/ia64/23-Jun-2005/CM2.1U_Control-1990_E1.k32pe/include/ -D_TEST_DRIFTERS
+! -D_F95 quicksort.F90 drifters_core.F90
 
 !> @defgroup drifters_core_mod drifters_core_mod
 !> @ingroup drifters
@@ -220,7 +221,8 @@ subroutine drifters_core_remove_and_add(self, indices_to_remove_in, &
 
     ! cannot remove more than there are elements
     if(self%np + n_diff < 0) then
-       ermesg = 'drifters::ERROR attempting to remove more elements than there are elements in drifters_core_remove_and_add'
+       ermesg = 'drifters::ERROR attempting to remove more elements than there are elements in '// &
+               &'drifters_core_remove_and_add'
        return
     endif
 

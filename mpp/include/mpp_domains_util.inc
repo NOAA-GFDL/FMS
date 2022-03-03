@@ -318,10 +318,12 @@
     integer :: i      !< For loops
 
     call mpp_get_global_domain(domain, xbegin=xbegin, xend=xend, ybegin=ybegin, yend=yend, xsize=xsize, ysize=ysize)
-    call mpp_set_global_domain (domain, 2*xbegin-1, 2*xend+1, 2*ybegin-1, 2*yend+1, 2*(xend-xbegin)+3, 2*(yend-ybegin)+3)
+    call mpp_set_global_domain (domain, 2*xbegin-1, 2*xend+1, 2*ybegin-1, 2*yend+1, 2*(xend-xbegin)+3, &
+                               &  2*(yend-ybegin)+3)
 
     call mpp_get_compute_domain(domain, xbegin=xbegin, xend=xend, ybegin=ybegin, yend=yend, xsize=xsize, ysize=ysize)
-    call mpp_set_compute_domain (domain, 2*xbegin-1, 2*xend+1, 2*ybegin-1, 2*yend+1, 2*(xend-xbegin)+3, 2*(yend-ybegin)+3)
+    call mpp_set_compute_domain (domain, 2*xbegin-1, 2*xend+1, 2*ybegin-1, 2*yend+1, 2*(xend-xbegin)+3, &
+                                &  2*(yend-ybegin)+3)
 
     call mpp_get_data_domain(domain, xbegin=xbegin, xend=xend, ybegin=ybegin, yend=yend, xsize=xsize, ysize=ysize)
     call mpp_set_data_domain (domain, 2*xbegin-1, 2*xend+1, 2*ybegin-1, 2*yend+1, 2*(xend-xbegin)+3, 2*(yend-ybegin)+3)
@@ -633,10 +635,12 @@ subroutine mpp_get_domain_extents1D(domain, xextent, yextent)
 
    if(domain%ntiles .NE. 1) call mpp_error(FATAL,"mpp_domains_util.inc(mpp_get_domain_extents1D): "// &
        "ntiles is more than 1, please use mpp_get_domain_extents2D")
-   if(size(xextent) .NE. size(domain%x(1)%list(:)))  call mpp_error(FATAL,"mpp_domains_util.inc(mpp_get_domain_extents1D): "// &
-       "size(xextent) does not equal to size(domain%x(1)%list(:)))")
-   if(size(yextent) .NE. size(domain%y(1)%list(:)))  call mpp_error(FATAL,"mpp_domains_util.inc(mpp_get_domain_extents1D): "// &
-       "size(yextent) does not equal to size(domain%y(1)%list(:)))")
+   if(size(xextent) .NE. size(domain%x(1)%list(:)))  call mpp_error(FATAL, &
+       & "mpp_domains_util.inc(mpp_get_domain_extents1D): "// &
+       & "size(xextent) does not equal to size(domain%x(1)%list(:)))")
+   if(size(yextent) .NE. size(domain%y(1)%list(:)))  call mpp_error(FATAL, &
+       & "mpp_domains_util.inc(mpp_get_domain_extents1D): "// &
+       & "size(yextent) does not equal to size(domain%y(1)%list(:)))")
    do n = 0, size(domain%x(1)%list(:))-1
       xextent(n) = domain%x(1)%list(n)%compute%size
    enddo
@@ -1430,7 +1434,8 @@ end subroutine mpp_get_tile_compute_domains
     count = overlap%count
     if(size(is(:)) .NE. count .OR. size(ie (:)) .NE. count .OR. size(js (:)) .NE. count .OR.  &
        size(je(:)) .NE. count .OR. size(dir(:)) .NE. count .OR. size(rot(:)) .NE. count ) &
-       call mpp_error( FATAL, "mpp_domains_mod(mpp_get_overlap): size mismatch between number of overlap and array size")
+       call mpp_error( FATAL, &
+                      &  "mpp_domains_mod(mpp_get_overlap): size mismatch between number of overlap and array size")
 
     is  = overlap%is      (1:count)
     ie  = overlap%ie      (1:count)

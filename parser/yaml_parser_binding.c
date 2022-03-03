@@ -103,7 +103,7 @@ char *get_value_from_key_wrap(int *file_id, int *block_id, char *key_name, int *
 {
   int i;              /* For loops */
   int j = *file_id;   /* To minimize the typing :) */
- 
+
   *sucess = 0;          /* Flag indicating if the search was sucessful */
 
   for ( i = 1; i <= my_files.files[j].nkeys; i++ )
@@ -262,7 +262,7 @@ bool open_and_parse_file_wrap(char *filename, int *file_id)
     {
     case YAML_KEY_TOKEN:
        {
-        is_key = true; 
+        is_key = true;
         break;
        }
     case YAML_VALUE_TOKEN:
