@@ -26,7 +26,7 @@
 . ../test-lib.sh
 
 if [ ! -z $parser_skip ]; then
-  SKIP_TESTS='test_yaml_parser.[1-22]' 
+  SKIP_TESTS='test_yaml_parser.[1-22]'
 fi
 
 touch input.nml
@@ -92,7 +92,7 @@ test_expect_success "parser_demo" '
   mpirun -n 1 ./parser_demo
 '
 test_expect_success "parser_demo2" '
-  mpirun -n 1 ./parser_demo2 
+  mpirun -n 1 ./parser_demo2
 '
 
 printf "&check_crashes_nml \n missing_file = .true. \n/" | cat > input.nml
