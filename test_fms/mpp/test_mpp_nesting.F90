@@ -3982,7 +3982,7 @@ program test_mpp_nesting
                   (/jes_c/), nnest, t_coarse, iadd_coarse, jadd_coarse, rotate_coarse, is_coarse, ie_coarse, &
                   js_coarse, je_coarse)
              call fill_nest_data(sbuffer2, iss_c, ies_c, jss_c, jes_c, nnest, t_coarse, shift, 0, iadd_coarse, &
-                  jadd_coar rotate_coarse, is_coarse, ie_coarse, js_coarse, je_coarse, 0.0_r4_kind, 0.0_r4_kind, &
+                  jadd_coarse, rotate_coarse, is_coarse, ie_coarse, js_coarse, je_coarse, 0.0_r4_kind, 0.0_r4_kind, &
                   1, 1, nx, ny)
           endif
           call compare_checksums(sbuffer, sbuffer2, trim(type2)//' south buffer coarse to fine scalar CORNER')
