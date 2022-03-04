@@ -41,6 +41,7 @@ check_PROGRAMS = test_mpp \
   test_read_input_nml \
   test_stdout \
   test_stderr \
+  test_stdin \
   test_mpp_get_ascii_lines \
   test_system_clock \
   test_mpp_broadcast \
@@ -63,7 +64,10 @@ check_PROGRAMS = test_mpp \
   test_mpp_alltoall \
   test_mpp_global_field \
   test_mpp_global_field_ug \
-  test_mpp_global_sum_ad
+  test_mpp_global_sum_ad \
+  test_mpp_init_logfile \
+  test_mpp_clock_begin_end_id \
+  test_mpp_nesting
 
 # These are the sources for the tests.
 test_mpp_SOURCES = test_mpp.F90
@@ -71,6 +75,10 @@ test_mpp_domains_SOURCES = \
   compare_data_checksums.F90 \
   test_domains_utility_mod.F90 \
   test_mpp_domains.F90
+test_mpp_nesting_SOURCES = \
+  compare_data_checksums.F90 \
+  test_domains_utility_mod.F90 \
+  test_mpp_nesting.F90
 test_mpp_memuse_SOURCES = test_mpp_memuse.F90
 test_mpp_mem_dump_SOURCES = test_mpp_mem_dump.F90
 test_mpp_memutils_begin_end_SOURCES = test_mpp_memutils_begin_end.F90
@@ -121,6 +129,9 @@ test_mpp_global_field_ug_SOURCES = \
   compare_data_checksums_int.F90 \
   test_mpp_global_field_ug.F90
 test_mpp_global_sum_ad_SOURCES = test_mpp_global_sum_ad.F90
+test_stdin_SOURCES=test_stdin.F90
+test_mpp_init_logfile_SOURCES=test_mpp_init_logfile.F90
+test_mpp_clock_begin_end_id_SOURCES=test_mpp_clock_begin_end_id.F90
 test_super_grid_SOURCES = test_super_grid.F90
 
 # Run the test programs.
@@ -128,13 +139,14 @@ TESTS = test_mpp_domains2.sh \
   test_redistribute_int.sh \
   test_global_arrays.sh  \
   test_mpp2.sh \
-  test_mpp_memuse \
-  test_mpp_mem_dump \
+  test_mpp_memuse.sh \
+  test_mpp_mem_dump.sh \
   test_mpp_memutils_mod.sh \
   test_read_ascii_file.sh \
   test_read_input_nml2.sh \
   test_stdout.sh \
   test_stderr.sh \
+  test_stdin.sh \
   test_mpp_get_ascii_lines2.sh \
   test_system_clock.sh \
   test_mpp_broadcast.sh \
@@ -156,23 +168,28 @@ TESTS = test_mpp_domains2.sh \
   test_mpp_global_field.sh \
   test_mpp_global_field_ug.sh \
   test_mpp_global_sum_ad.sh \
-  test_super_grid.sh
+  test_mpp_init_logfile.sh \
+  test_mpp_clock_begin_end_id.sh \
+  test_super_grid.sh \
+  test_mpp_nesting.sh
+
+# Define test file extensions and log driver
+TEST_EXTENSIONS = .sh
+SH_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
+                  $(top_srcdir)/tap-driver.sh
 
 # These files will also be included in the distribution.
-EXTRA_DIST = input_base.nml \
-  test_mpp_domains2.sh \
+EXTRA_DIST = test_mpp_domains2.sh \
   test_mpp2.sh \
+  test_mpp_memuse.sh \
+  test_mpp_mem_dump.sh \
   test_mpp_memutils_mod.sh \
   test_read_ascii_file.sh \
   test_read_input_nml2.sh \
   test_stdout.sh \
   test_stderr.sh \
+  test_stdin.sh \
   test_mpp_get_ascii_lines2.sh \
-  base_ascii_5 \
-  base_ascii_25 \
-  base_ascii_0 \
-  base_ascii_skip \
-  base_ascii_long \
   test_system_clock.sh \
   test_mpp_broadcast.sh \
   test_clock_init.sh \
@@ -195,7 +212,10 @@ EXTRA_DIST = input_base.nml \
   test_mpp_global_field.sh \
   test_mpp_global_field_ug.sh \
   test_mpp_global_sum_ad.sh \
-  test_super_grid.sh
+  test_mpp_init_logfile.sh \
+  test_mpp_clock_begin_end_id.sh \
+  test_super_grid.sh \
+  test_mpp_nesting.sh
 
 fill_halo.mod: fill_halo.$(OBJEXT)
 compare_data_checksums.mod: compare_data_checksums.$(OBJEXT)
@@ -212,7 +232,8 @@ test_update_domains_performance.$(OBJEXT): compare_data_checksums_int.mod compar
 test_mpp_global_field.$(OBJEXT): compare_data_checksums_int.mod compare_data_checksums.mod
 test_mpp_global_field_ug.$(OBJEXT): compare_data_checksums_int.mod compare_data_checksums.mod
 test_mpp_domains.$(OBJEXT): compare_data_checksums.mod test_domains_utility_mod.mod
+test_mpp_nesting.$(OBJEXT): compare_data_checksums.mod test_domains_utility_mod.mod
 
 # Clean up
-CLEANFILES = input.nml input_alternative.nml input_blank.nml empty.nml *.out* *.tst* \
+CLEANFILES = *-files/* *.nml *.out* *.tst* \
   ascii* test_numb* *.mod *.dpi *.spi *.dyn *.spl

@@ -86,8 +86,32 @@ AS_IF([test ${enable_code_coverage:-no} = no],
   [enable_code_coverage=no],
   [enable_code_coverage=yes])
 
+# user enabled testing with input files
+AC_MSG_CHECKING([whether to enable tests with input files])
+AC_ARG_ENABLE([test-input],
+            [AS_HELP_STRING([--enable-test-input="path/to/input"],
+            [Enable tests using input netcdf files, if present in the given full directory.])])
+AC_MSG_RESULT([$enable_test_input])
+
+# require path to be given
+AS_IF([test "x$enable_test_input" = "xyes"],
+    [AC_MSG_ERROR([Test input enabled, but no directory given with --enable-test-input=/path])],
+    [AS_IF([test "x$enable_test_input" != "xno"],
+        [TEST_INPUT_PATH="$enable_test_input"],[])]
+)
+
+# if set, check directory exists
+AS_IF([test "$TEST_INPUT_PATH" = ""],
+  [],
+  [AS_IF([test -d $TEST_INPUT_PATH],[],
+    [AC_MSG_ERROR([Test input enabled, but directory $TEST_INPUT_PATH not found]) ]
+  )])
+
+# substitute path for input
+AC_SUBST([TEST_INPUT_PATH])
+
 # Does the user want to build documentation?
-AC_MSG_CHECKING([whether documentation should be build (requires doxygen)])
+AC_MSG_CHECKING([whether documentation should be built (requires doxygen)])
 AC_ARG_ENABLE([docs],
               [AS_HELP_STRING([--enable-docs],
                               [enable building of documentation with doxygen.])])
@@ -262,9 +286,6 @@ if test $enable_setting_flags = yes; then
   fi
 fi
 
-# Define an AM_CONDITIONAL to determine if you are on a CRAY
-AM_CONDITIONAL([CRAY], [test `env | grep CRAY | wc -l` -gt 0])
-
 # Find which mpi launcher to use
 AC_CHECK_PROGS([MPI_LAUNCHER],[srun aprun mpirun])
 
@@ -379,7 +400,7 @@ AC_CONFIG_FILES([
   libFMS/Makefile
   docs/Makefile
   parser/Makefile
-  test_fms/test_common.sh
+  test_fms/test-lib.sh
   test_fms/intel_coverage.sh
   test_fms/Makefile
   test_fms/diag_manager/Makefile

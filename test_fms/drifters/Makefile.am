@@ -42,11 +42,15 @@ test_drifters_core_SOURCES = test_drifters_core.F90
 test_quicksort_SOURCES = test_quicksort.F90
 test_drifters_SOURCES = test_drifters.F90
 
+TEST_EXTENSIONS = .sh
+SH_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
+                  $(top_srcdir)/tap-driver.sh
+
 # Run the test programs.
 TESTS = test_drifters2.sh
 
 # Include these files in the distribution.
-EXTRA_DIST = input_base.nml drifters_inp_test_3d.cdl	\
+EXTRA_DIST = drifters_inp_test_3d.cdl	\
 test_drifters2.sh
 
 # Clean up

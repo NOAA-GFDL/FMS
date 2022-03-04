@@ -33,6 +33,11 @@ check_PROGRAMS = test_fms
 
 # These are the sources for the tests.
 test_fms_SOURCES = test_fmsC.c test_fms.F90
+
+TEST_EXTENSIONS = .sh
+SH_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
+                  $(top_srcdir)/tap-driver.sh
+
 # Run the test programs.
 TESTS = test_fms2.sh
 

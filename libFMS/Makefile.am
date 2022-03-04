@@ -65,5 +65,5 @@ libFMS_la_LIBADD += $(top_builddir)/sat_vapor_pres/libsat_vapor_pres.la
 libFMS_la_LIBADD += $(top_builddir)/parser/libparser.la
 libFMS_la_LIBADD += $(top_builddir)/libFMS_mod.la
 
-# At least one source file must be included to please Automake.
-libFMS_la_SOURCES = $(top_builddir)/include/file_version.h
+libFMS_la_SOURCES =
+nodist_EXTRA_libFMS_la_SOURCES = dummy.f90

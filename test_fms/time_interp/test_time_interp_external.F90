@@ -39,7 +39,6 @@ use axis_utils2_mod,           only : axis_edges
 use fms2_io_mod,               only : FmsNetcdfFile_t, fms2_io_init, open_file, close_file, write_data, register_axis
 use fms2_io_mod,               only : register_field, unlimited, register_variable_attribute
 
-
 implicit none
 
 integer            :: id !< Time_interp_external id
