@@ -55,7 +55,6 @@ list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 option(OPENMP    "Build FMS with OpenMP support" OFF)
 option(32BIT     "Build 32-bit (r4) FMS library"  ON)
 option(64BIT     "Build 64-bit (r8) FMS library" OFF)
-option(CONSTANTS  "Build with GFDL constants parameter definitions"  "GFDL")
 
 # Options for compiler definitions
 option(INTERNAL_FILE_NML     "Enable compiler definition -DINTERNAL_FILE_NML"      ON)
@@ -207,6 +206,9 @@ if(HAVE_GETTID)
 endif()
 
 # Additional (optional) compiler definitions
+if(NOT CONSTANTS)
+    set(CONSTANTS GFDL)
+endif()
 if(CONSTANTS STREQUAL "GFS")
   list(APPEND fms_defs GFS_CONSTANTS)
 elseif(CONSTANTS STREQUAL "GEOS")
