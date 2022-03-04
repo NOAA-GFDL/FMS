@@ -51,13 +51,10 @@ program test_mpp_domains
   use mpp_domains_mod, only : mpp_do_group_update, mpp_clear_group_update
   use mpp_domains_mod, only : mpp_start_group_update, mpp_complete_group_update
   use mpp_domains_mod, only : WUPDATE, SUPDATE, mpp_get_compute_domains, &
-                              NONSYMEDGEUPDATE, mpp_get_tile_id
-  use mpp_domains_mod, only : WUPDATE, SUPDATE, mpp_get_compute_domains, NONSYMEDGEUPDATE
+                              NONSYMEDGEUPDATE
   use mpp_domains_mod, only : domainUG, mpp_define_unstruct_domain, mpp_get_UG_domain_tile_id
   use mpp_domains_mod, only : mpp_get_UG_compute_domain, mpp_pass_SG_to_UG, mpp_pass_UG_to_SG
-  use mpp_domains_mod, only : mpp_get_ug_global_domain, mpp_global_field_ug, mpp_get_tile_id
-  use mpp_memutils_mod, only : mpp_memuse_begin, mpp_memuse_end
-  use fms_affinity_mod, only : fms_affinity_set
+  use mpp_domains_mod, only : mpp_global_field_ug
 
   use compare_data_checksums
   use test_domains_utility_mod

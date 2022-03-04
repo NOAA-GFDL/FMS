@@ -33,6 +33,7 @@ program test
   use mpp_io_mod,      only : mpp_get_info, mpp_get_axes, mpp_get_fields, mpp_get_times
   use mpp_io_mod,      only : mpp_read, mpp_io_exit, MPP_APPEND
   use mpp_mod,         only : input_nml_file
+  use fms_mod,         only : check_nml_error
 
 #ifdef use_netCDF
   use netcdf
@@ -82,10 +83,7 @@ program test
   npes = mpp_npes()
 
   read (input_nml_file, test_mpp_io_nml, iostat=io_status)
-
-  if (io_status > 0) then
-    call mpp_error(FATAL,'=>test_mpp_io: Error reading input.nml')
-  endif
+  io_status = check_nml_error(io_status, 'test_mpp_io')
 
   call SYSTEM_CLOCK( count_rate=tks_per_sec )
   if( debug )then
