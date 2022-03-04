@@ -46,10 +46,8 @@ The following build options are available:
 -DOPENMP     "Build FMS with OpenMP support" DEFAULT: OFF
 -D32BIT      "Build 32-bit (r4) FMS library" DEFAULT: ON
 -D64BIT      "Build 64-bit (r8) FMS library" DEFAULT: OFF
--DGFDL_CONSTANTS  "Build with GFDL constants parameter definitions"  ON)
--DGFS_CONSTANTS   "Build with GFS  constants parameter definitions"  OFF)
--DGEOS_CONSTANTS  "Build with GEOS constants parameter definitions"  OFF)
 
+-DCONSTANTS             "Build with <X> constants parameter definitions"     DEFAULT:GFDL  OPTIONS:GFS|GEOS|GFDL
 -DINTERNAL_FILE_NML     "Enable compiler definition -DINTERNAL_FILE_NML"     DEFAULT: ON
 -DENABLE_QUAD_PRECISION "Enable compiler definition -DENABLE_QUAD_PRECISION" DEFAULT: ON
 -DGFS_PHYS              "Enable compiler definition -DGFS_PHYS"              DEFAULT:OFF

@@ -55,9 +55,7 @@ list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 option(OPENMP    "Build FMS with OpenMP support" OFF)
 option(32BIT     "Build 32-bit (r4) FMS library"  ON)
 option(64BIT     "Build 64-bit (r8) FMS library" OFF)
-option(GFDL_CONSTANTS  "Build with GFDL constants parameter definitions"  ON)
-option(GFS_CONSTANTS   "Build with GFS  constants parameter definitions"  OFF)
-option(GEOS_CONSTANTS  "Build with GEOS constants parameter definitions"  OFF)
+option(CONSTANTS  "Build with GFDL constants parameter definitions"  "GFDL")
 
 # Options for compiler definitions
 option(INTERNAL_FILE_NML     "Enable compiler definition -DINTERNAL_FILE_NML"      ON)
@@ -76,20 +74,6 @@ if(NOT kinds)
   message(STATUS "Single Precision 32BIT: ${32BIT}")
   message(STATUS "Double Precision 64BIT: ${64BIT}")
   message(FATAL_ERROR "Either 32BIT or 64BIT should be ON")
-endif()
-
-# Test to make sure only one CONSTANTS type is chosen
-set(COUNTER 0)
-set(ALL_OPTIONS GFDL_CONSTANTS;GFS_CONSTANTS;GEOS_CONSTANTS)
-foreach(option IN LISTS ALL_OPTIONS)
-    if(${option})
-        math(EXPR COUNTER "${COUNTER+1}")
-    endif()
-endforeach()
-if(NOT ${COUNTER})
-    message(SEND_ERROR "No CONSTANTS option chosen, default GFS_CONSTANTS will be used")
-elseif(${COUNTER} GREATER 1)
-    message(FATAL_ERROR "More than one CONSTANTS option was chosen")
 endif()
 
 # Find dependencies
@@ -223,11 +207,11 @@ if(HAVE_GETTID)
 endif()
 
 # Additional (optional) compiler definitions
-if (GFS_CONSTANTS)
+if(CONSTANTS STREQUAL "GFS")
   list(APPEND fms_defs GFS_CONSTANTS)
-else (GEOS_CONSTANTS)
+elseif(CONSTANTS STREQUAL "GEOS")
   list(APPEND fms_defs GEOS_CONSTANTS)
-else(GFDL_CONSTANTS)
+else()
   list(APPEND fms_defs GFDL_CONSTANTS)
 endif()
 
@@ -289,7 +273,8 @@ foreach(kind ${kinds})
   target_include_directories(${libTgt}_f PRIVATE include
                                                  fms
                                                  fms2_io/include
-                                                 mpp/include)
+                                                 mpp/include
+                                                 constants)
   target_compile_definitions(${libTgt}_f PRIVATE "${fms_defs}")
   target_compile_definitions(${libTgt}_f PRIVATE "${${kind}_defs}")
 
