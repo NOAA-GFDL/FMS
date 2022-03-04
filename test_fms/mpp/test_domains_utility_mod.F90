@@ -146,7 +146,7 @@ subroutine fill_coarse_data_r4(data, rotate, iadd, jadd, is_c, ie_c, js_c, je_c,
           enddo
        enddo
     case default
-       call mpp_error(FATAL,"fill_coarse_data_r8: rotate_coarse must be ZERO, NINETY, MINUS_NINETY")
+       call mpp_error(FATAL,"fill_coarse_data_r4: rotate_coarse must be ZERO, NINETY, MINUS_NINETY")
     end select
 
     !---handle cyclic condition
