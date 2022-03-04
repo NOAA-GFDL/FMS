@@ -600,7 +600,7 @@
     integer,          intent(in)           :: global_indices(:) !<(/ isg, ieg, jsg, jeg /)
     integer,          intent(in)           :: layout(:) !< pe layout
     type(domain2D),   intent(inout)        :: domain !< 2D domain decomposition to define
-    integer,          intent(in), optional :: pelist(0:) !< current pelist to run on 
+    integer,          intent(in), optional :: pelist(0:) !< current pelist to run on
     integer,          intent(in), optional :: xflags, yflags !< directional flag
     integer,          intent(in), optional :: xhalo, yhalo !< halo sizes for x and y indices
     integer,          intent(in), optional :: xextent(0:), yextent(0:)

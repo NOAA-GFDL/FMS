@@ -17,7 +17,6 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 !> @file
-!> @ingroup fms2_io_mod
 !> @brief Adds domain decomposed variable for restarts for the @ref register_restart_field
 !! interface
 

@@ -16,14 +16,13 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
-
 !> @file
-!> @ingroup fms_io_utils_mod
 !> @brief Character array routines used in @ref fms_io_utils_mod
 
+!> @addtogroup fms2_io_mod
+!> @{
 
 !> @brief Allocate character arrays using an input array of sizes.
-!> @memberof allocate_array 
 subroutine allocate_array_char_1d(buf, sizes)
 
   character(len=*), dimension(:), allocatable, intent(inout) :: buf !< Array that will be allocated.

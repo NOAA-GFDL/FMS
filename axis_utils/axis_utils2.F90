@@ -19,8 +19,7 @@
 !> @defgroup axis_utils2_mod axis_utils2_mod
 !> @ingroup axis_utils
 !> @brief A set of utilities for manipulating axes and extracting axis attributes.
-!!
-!> FMS2_IO equivalent version of @ref axis_utils_mod.
+!! FMS2_IO equivalent version of @ref axis_utils_mod.
 !> @author M.J. Harrison
 
 !> @file

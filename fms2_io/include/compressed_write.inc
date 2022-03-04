@@ -17,7 +17,6 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 !> @file
-!> @ingroup fms2_io_mod
 !> @brief Compressed write routines for @ref write_data interface
 
 !> @addtogroup fms2_io_mod

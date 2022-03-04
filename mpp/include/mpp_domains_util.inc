@@ -774,7 +774,7 @@ end subroutine mpp_get_layout2D
   !> When domain is symmetry, one extra point maybe needed in
   !!    x- and/or y-direction. This routine will return the shift value based
   !!    on the position
-  !! @code{.F90} 
+  !! @code{.F90}
   !!   call mpp_get_domain_shift( domain, ishift, jshift, position )
   !! @endcode
 subroutine mpp_get_domain_shift(domain, ishift, jshift, position)

@@ -17,13 +17,12 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 !> @file
-!> @ingroup fms_io_utils_mod
+!> @brief Array allocation routines for multiple types for @ref allocate_array interface
 
 !> @addtogroup fms_io_utils
 !> @{
 
 !> @brief Allocate arrays using an input array of sizes.
-!> @memberof allocate_array
 subroutine allocate_array_i4_kind_1d(buf, sizes)
 
   integer(kind=i4_kind), dimension(:), allocatable, intent(inout) :: buf !< Array that will be allocated.

@@ -17,7 +17,6 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 !> @file
-!> @ingroup fms_netcdf_domain_io_mod
 !> @brief Routines for calculating variable checksums across pes for the @ref compute_global_checksum interface
 
 !> @addtogroup fms_netcdf_domain_io_mod

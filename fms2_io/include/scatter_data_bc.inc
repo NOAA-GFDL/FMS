@@ -17,7 +17,6 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 !> @file
-!> @ingroup fms2_io
 !> @brief Routines for the @ref gather_data_bc interface
 
 !> @addtogroup netcdf_io_mod

@@ -17,7 +17,6 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 !> @file
-!> @ingroup fms_io_utils_mod
 !> @brief Routines to return a given arguments data type as a string.
 !! Provides multiple dimensions for @ref get_data_type_string interface.
 
@@ -165,5 +164,4 @@ subroutine get_data_type_string_5d(sdata, type_string)
       call error("unsupported type.")
     end select
 end subroutine get_data_type_string_5d
-
-
+!> @}

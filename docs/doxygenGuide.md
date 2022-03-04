@@ -36,8 +36,8 @@ Simple subroutine/function documentation:
 @code{.F90}
 !> description
 !! continued description
-function foo()
-  integer :: bar !< variable description
+function foo(bar)
+  integer, intent(inout) :: bar !< argument description
   ...
 @endcode
 

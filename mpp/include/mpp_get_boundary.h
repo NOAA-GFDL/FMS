@@ -306,7 +306,7 @@ end subroutine MPP_GET_BOUNDARY_3D_
 
 
 !####################################################################
-!> vector update 
+!> vector update
 subroutine MPP_GET_BOUNDARY_2D_V_(fieldx, fieldy, domain, ebufferx, sbufferx, wbufferx, nbufferx, &
                                   ebuffery, sbuffery, wbuffery, nbuffery, flags, gridtype, &
                                   complete, tile_count)

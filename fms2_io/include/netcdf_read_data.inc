@@ -17,7 +17,6 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 !> @file
-!> @ingroup netcdf_io_mod
 !> @brief Routines for retrieving variable values from netcdf files with different
 !! dimension sizes for the @ref netcdf_read_data interface
 

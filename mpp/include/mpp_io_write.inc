@@ -95,7 +95,7 @@
 !! space axis, otherwise it is a time axis with an unlimited dimension.
 !! Only one time axis is allowed per file.
 !! @code{.F90}
-!!  subroutine mpp_write_meta_field( unit, field, axes, name, units, longname 
+!!  subroutine mpp_write_meta_field( unit, field, axes, name, units, longname
 !!                                   standard_name, min, max, missing, fill, scale, add, pack)
 !!     integer, intent(in) :: unit
 !!     type(fieldtype), intent(out) :: field

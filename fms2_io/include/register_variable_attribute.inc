@@ -17,7 +17,6 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 !> @file
-!> @ingroup fms2_io
 !> @brief Routines to add variable attributes for different dimensions to be used in
 !! the @ref register_variable_attribute interface
 
