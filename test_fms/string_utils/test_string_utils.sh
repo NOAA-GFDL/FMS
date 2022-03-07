@@ -26,8 +26,8 @@
 . ../test-lib.sh
 
 touch input.nml
-test_expect_success "test_strng_utils" '
-  mpirun -n 1 ./test_string_utils
+test_expect_success "test_string_utils" '
+  mpirun -n 1 ./test_string_utils > test_string_utils.out
 '
 
 test_done
