@@ -46,7 +46,7 @@ SH_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
 TESTS = test_diag_manager2.sh
 
 # Copy over other needed files to the srcdir
-EXTRA_DIST = input.nml_base diagTables test_diag_manager2.sh check_crashes.sh
+EXTRA_DIST = diagTables test_diag_manager2.sh check_crashes.sh
 
 if SKIP_PARSER_TESTS
 skipflag="skip"

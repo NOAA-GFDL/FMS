@@ -260,7 +260,7 @@ contains
   !> @brief Iterate over all the nodes and remove them. Also (by overridable default), it deallocates the
    !! client data associated with the nodes.
    subroutine clear_all( this,  data_dealloc_flag  )
-    class(FmsDiagObjectContainer_t), intent(inout) :: this  !<The instance of the class that this function is bound to.
+    class(FmsDiagObjectContainer_t), intent(inout) :: this  !<The instance of the class that this function is bound to
     logical, optional, intent(in) :: data_dealloc_flag    !< If not present or .true., client data is deallocated.
     logical :: data_dealloc_f    !< Set to data_dealloc_flag if present, otherwise its .true.
       !
