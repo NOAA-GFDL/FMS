@@ -30,4 +30,4 @@ test_expect_success "test_strng_utils" '
   mpirun -n 1 ./test_string_utils
 '
 
-run_test test_string_utils 1
+test_done
