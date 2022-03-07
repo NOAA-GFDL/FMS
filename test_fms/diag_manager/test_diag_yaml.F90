@@ -50,8 +50,10 @@ logical :: checking_crashes = .false.!< Flag indicating that you are checking cr
 integer :: i !< For do loops
 integer :: io_status !< The status after reading the input.nml
 
+#ifdef use_yaml
 type(diagYamlFiles_type), allocatable, dimension (:) :: diag_files !< Files from the diag_yaml
 type(diagYamlFilesVar_type), allocatable, dimension(:) :: diag_fields !< Fields from the diag_yaml
+#endif
 
 namelist / check_crashes_nml / checking_crashes
 
