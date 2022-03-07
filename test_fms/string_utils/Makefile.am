@@ -40,5 +40,11 @@ TESTS = test_string_utils.sh
 # Include these files with the distribution.
 EXTRA_DIST = test_string_utils.sh
 
+
+# Define test file extensions and log driver
+TEST_EXTENSIONS = .sh
+SH_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
+                   $(top_srcdir)/tap-driver.sh
+
 # Clean up
 CLEANFILES = input.nml *.out
