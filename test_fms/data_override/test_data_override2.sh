@@ -18,15 +18,32 @@
 #* You should have received a copy of the GNU Lesser General Public
 #* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 #***********************************************************************
-
-# This is part of the GFDL FMS package. This is a shell script to
-# execute tests in the test_fms/data_override directory.
-
-# Ed Hartnett 11/26/19
-# Uriel Ramirez 07/22/20
+#
+# Copyright (c) 2019-2021 Ed Hartnett, Uriel Ramirez, Seth Underwood
 
 # Set common test settings.
-. ../test_common.sh
+. ../test-lib.sh
+
+# Skip test if input not present
+test -z "$test_input_path" && SKIP_TESTS="$SKIP_TESTS $(basename $0 .sh).4"
+
+setup_test_dir () {
+  local halo_size
+  test "$#" = 1 && { halo_size=$1; } ||
+  BUG "required parameter for halo size not present"
+  rm -rf data_table input.nml INPUT
+  cat <<_EOF > data_table
+"OCN", "runoff", "runoff", "./INPUT/runoff.daitren.clim.1440x1080.v20180328.nc", "none" ,  1.0
+_EOF
+
+cat <<_EOF > input.nml
+&test_data_override_ongrid_nml
+  nhalox=${halo_size}
+  nhaloy=${halo_size}
+/
+_EOF
+  mkdir INPUT
+}
 
 # Run the ongrid test case with 2 halos in x and y
 touch input.nml
@@ -42,32 +59,54 @@ _EOF
 
 printf '"OCN", "runoff", "runoff", "./INPUT/runoff.daitren.clim.1440x1080.v20180328.nc", "none" ,  1.0' | cat > data_table
 [ ! -d "INPUT" ] && mkdir -p "INPUT"
-echo "TEST 1"
-run_test test_data_override_ongrid 6
-rm -rf "INPUT"
+setup_test_dir 2
+test_expect_success "data_override on grid with 2 halos in x and y" '
+  mpirun -n 6 ./test_data_override_ongrid
+'
 
-# Run the ongrid test case again with no halos
-printf "&test_data_override_ongrid_nml \n nhalox=0 \n nhaloy=0\n/" | cat > input.nml
-[ ! -d "INPUT" ] && mkdir -p "INPUT"
-echo "TEST 2"
-run_test test_data_override_ongrid 6
-rm -rf "INPUT"
+setup_test_dir 0
+test_expect_success "data_override on grid with no halos" '
+  mpirun -n 6 ./test_data_override_ongrid
+'
 
 # Run the get_grid_v1 test:
-echo "TEST 3"
-run_test test_get_grid_v1 1
+test_expect_success "data_override get_grid_v1" '
+  mpirun -n 1 ./test_get_grid_v1
+'
 
-# Copy to builddir and rename data files for tests.
-#cp $top_srcdir/test_fms/data_override/data_table_base data_table
-#cp $top_srcdir/test_fms/data_override/diag_table_base diag_table
-#cp -r $top_srcdir/test_fms/data_override/INPUT $top_builddir/test_fms/data_override/INPUT
+# Run tests with input if enabled
+if test ! -z "$test_input_path" ; then
+  cp $test_input_path/data_override/INPUT/* ./INPUT
+  cat <<_EOF > diag_table
+test_data_override
+1 3 1 0 0 0
 
-# Both tests are skipped in the bats file, so commented out here.
-#tnum=$( printf "%2.2d" 1 )
-#sed "s/<test_num>/${tnum}/"  $top_srcdir/test_fms/data_override/input_base.nml > input.nml
-#run_test test_data_override 2 skip
+#output files
+"test_data_override",  -1, "days", 1, "days", "time"
 
-#tnum=$( printf "%2.2d" 2 )
-#sed "s/<test_num>/${tnum}/"  $top_srcdir/test_fms/data_override/input_base.nml > input.nml
-#run_test test_data_override 2 skip
+#output variables
+"test_data_override_mod", "sst", "sst", "test_data_override",  "all", .false., "none", 2
+"test_data_override_mod", "ice", "ice", "test_data_override",  "all", .false., "none", 2
+_EOF
+  cat <<_EOF > data_table
+"ICE", "sst_obs",  "SST", "INPUT/sst_ice_clim.nc", .false., 300.0
+"ICE", "sic_obs",  "SIC", "INPUT/sst_ice_clim.nc", .false., 300.0
+"OCN", "sst_obs",  "SST", "INPUT/sst_ice_clim.nc", .false., 300.0
+"LND", "sst_obs",  "SST", "INPUT/sst_ice_clim.nc", .false., 300.0
+_EOF
 
+  test_expect_success "data_override on cubic-grid with input" '
+    mpirun -n 6 ./test_data_override
+  '
+cat <<_EOF > input.nml
+&test_data_override_nml
+   test_num=2
+/
+_EOF
+
+  test_expect_success "data_override on latlon-grid with input" '
+    mpirun -n 6 ./test_data_override
+  '
+fi
+
+test_done

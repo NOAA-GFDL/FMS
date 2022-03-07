@@ -1,5 +1,5 @@
 name: Pull Request CI libFMS with intel21
-  
+
 on: [pull_request,workflow_dispatch]
 jobs:
    parallelWorks:

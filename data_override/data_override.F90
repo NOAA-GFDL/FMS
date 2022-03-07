@@ -277,11 +277,12 @@ subroutine data_override_init(Atm_domain_in, Ocean_domain_in, Ice_domain_in, Lan
  else if(variable_exists(fileobj, "ocn_mosaic_file" ) .OR. variable_exists(fileobj, "gridfiles" ) ) then
    use_get_grid_version = 2
    if(variable_exists(fileobj, "gridfiles" ) ) then
-     if(count_ne_1((ocn_on .OR. ice_on), lnd_on, atm_on)) call mpp_error(FATAL, 'data_override_mod: the grid file ' // &
+     if(count_ne_1((ocn_on .OR. ice_on), lnd_on, atm_on)) call mpp_error(FATAL, 'data_override_mod: the grid file ' //&
           'is a solo mosaic, one and only one of atm_on, lnd_on or ice_on/ocn_on should be true')
    end if
  else
-   call mpp_error(FATAL, 'data_override_mod: none of x_T, geolon_t, ocn_mosaic_file or gridfiles exist in '//trim(grid_file))
+   call mpp_error(FATAL, 'data_override_mod: none of x_T, geolon_t, ocn_mosaic_file or gridfiles exist in '// &
+                  & trim(grid_file))
  endif
 
  if(use_get_grid_version .EQ. 1) then
@@ -377,7 +378,7 @@ subroutine read_table(data_table)
        if (record(1:1) == '#') cycle
        if (record(1:10) == '          ') cycle
        ntable=ntable+1
-       if (index(lowercase(record), "inside_region") .ne. 0 .or. index(lowercase(record), "outside_region") .ne. 0) then
+       if(index(lowercase(record), "inside_region") .ne. 0 .or. index(lowercase(record), "outside_region") .ne. 0) then
           if(index(lowercase(record), ".false.") .ne. 0 .or. index(lowercase(record), ".true.") .ne. 0 ) then
              ntable_lima = ntable_lima + 1
              read(record,*,err=99) data_entry%gridname, data_entry%fieldname_code, data_entry%fieldname_file, &
@@ -390,7 +391,8 @@ subroutine read_table(data_table)
           else
              ntable_new=ntable_new+1
              read(record,*,err=99) data_entry%gridname, data_entry%fieldname_code, data_entry%fieldname_file, &
-                                   data_entry%file_name, data_entry%interpol_method, data_entry%factor, region, region_type
+                                   data_entry%file_name, data_entry%interpol_method, data_entry%factor, region, &
+                                 & region_type
              if (data_entry%interpol_method == 'default') then
                 data_entry%interpol_method = default_table%interpol_method
              endif
@@ -428,7 +430,8 @@ subroutine read_table(data_table)
              "data_override: lon_end should be greater than lon_start")
           if(data_entry%lat_end .LE. data_entry%lat_start) call mpp_error(FATAL, &
              "data_override: lat_end should be greater than lat_start")
-       else if (index(lowercase(record), ".false.") .ne. 0 .or. index(lowercase(record), ".true.") .ne. 0 ) then ! old format
+       ! old format
+       else if (index(lowercase(record), ".false.") .ne. 0 .or. index(lowercase(record), ".true.") .ne. 0 ) then
           ntable_lima = ntable_lima + 1
           read(record,*,err=99) data_entry%gridname, data_entry%fieldname_code, data_entry%fieldname_file, &
                                    data_entry%file_name, ongrid, data_entry%factor
@@ -781,7 +784,8 @@ subroutine data_override_3d(gridname,fieldname_code,data,time,override,data_inde
         use_comp_domain = .true.
         nwindows = (nxc/size(data,1))*(nyc/size(data,2))
      else
-        call mpp_error(FATAL, "data_override: data is not on data domain and compute domain is not divisible by size(data)")
+        call mpp_error(FATAL, &
+                     & "data_override: data is not on data domain and compute domain is not divisible by size(data)")
      endif
      override_array(curr_position)%window_size(1) = size(data,1)
      override_array(curr_position)%window_size(2) = size(data,2)
@@ -897,11 +901,11 @@ subroutine data_override_3d(gridname,fieldname_code,data,time,override,data_inde
            call read_data(fileobj, axis_names(2), lat_tmp)
            ! limit lon_start, lon_end are inside lon_in
            !       lat_start, lat_end are inside lat_in
-           if( data_table(index1)%lon_start < lon_tmp(1) .OR. data_table(index1)%lon_start .GT. lon_tmp(axis_sizes(1))) &
+           if(data_table(index1)%lon_start < lon_tmp(1) .OR. data_table(index1)%lon_start .GT. lon_tmp(axis_sizes(1)))&
               call mpp_error(FATAL, "data_override: lon_start is outside lon_T")
            if( data_table(index1)%lon_end < lon_tmp(1) .OR. data_table(index1)%lon_end .GT. lon_tmp(axis_sizes(1))) &
               call mpp_error(FATAL, "data_override: lon_end is outside lon_T")
-           if( data_table(index1)%lat_start < lat_tmp(1) .OR. data_table(index1)%lat_start .GT. lat_tmp(axis_sizes(2))) &
+           if(data_table(index1)%lat_start < lat_tmp(1) .OR. data_table(index1)%lat_start .GT. lat_tmp(axis_sizes(2)))&
               call mpp_error(FATAL, "data_override: lat_start is outside lat_T")
            if( data_table(index1)%lat_end < lat_tmp(1) .OR. data_table(index1)%lat_end .GT. lat_tmp(axis_sizes(2))) &
               call mpp_error(FATAL, "data_override: lat_end is outside lat_T")

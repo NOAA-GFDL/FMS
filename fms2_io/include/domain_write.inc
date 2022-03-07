@@ -198,7 +198,8 @@ subroutine domain_write_2d(fileobj, variable_name, vdata, unlim_dim_level, &
             global_buf_r8_kind = fill_r8_kind
         endif
       class default
-      call error("unsupported variable type: domain_write_2d: file: "//trim(fileobj%path)//" variable:"//trim(variable_name))
+      call error("unsupported variable type: domain_write_2d: file: "//trim(fileobj%path)//" variable:"// &
+               & trim(variable_name))
     end select
 
     do i = 1, size(fileobj%pelist)
@@ -361,7 +362,8 @@ subroutine domain_write_2d(fileobj, variable_name, vdata, unlim_dim_level, &
         call mpp_sync_self(check=event_send)
         deallocate(buf_r8_kind)
       class default
-        call error("unsupported variable type: domain_write_2d: file: "//trim(fileobj%path)//" variable:"//trim(variable_name))
+        call error("unsupported variable type: domain_write_2d: file: "//trim(fileobj%path)//" variable:"// &
+                 & trim(variable_name))
     end select
   endif
 end subroutine domain_write_2d
@@ -492,7 +494,8 @@ subroutine domain_write_3d(fileobj, variable_name, vdata, unlim_dim_level, &
             global_buf_r8_kind = fill_r8_kind
         endif
       class default
-        call error("unsupported variable type: domain_write_3d: file: "//trim(fileobj%path)//" variable:"//trim(variable_name))
+        call error("unsupported variable type: domain_write_3d: file: "//trim(fileobj%path)//" variable:"// &
+                 & trim(variable_name))
     end select
 
     do i = 1, size(fileobj%pelist)
@@ -655,7 +658,8 @@ subroutine domain_write_3d(fileobj, variable_name, vdata, unlim_dim_level, &
         call mpp_sync_self(check=event_send)
         deallocate(buf_r8_kind)
       class default
-        call error("unsupported variable type: domain_write_3d: file: "//trim(fileobj%path)//" variable:"//trim(variable_name))
+        call error("unsupported variable type: domain_write_3d: file: "//trim(fileobj%path)//" variable:"// &
+                 & trim(variable_name))
     end select
   endif
 end subroutine domain_write_3d
@@ -786,7 +790,8 @@ subroutine domain_write_4d(fileobj, variable_name, vdata, unlim_dim_level, &
             global_buf_r8_kind = fill_r8_kind
         endif
       class default
-        call error("unsupported variable type: domain_write_4d: file: "//trim(fileobj%path)//" variable:"//trim(variable_name))
+        call error("unsupported variable type: domain_write_4d: file: "//trim(fileobj%path)//" variable:"// &
+                 & trim(variable_name))
     end select
 
     do i = 1, size(fileobj%pelist)
@@ -949,7 +954,8 @@ subroutine domain_write_4d(fileobj, variable_name, vdata, unlim_dim_level, &
         call mpp_sync_self(check=event_send)
         deallocate(buf_r8_kind)
       class default
-        call error("unsupported variable type: domain_write_4d: file: "//trim(fileobj%path)//" variable:"//trim(variable_name))
+        call error("unsupported variable type: domain_write_4d: file: "//trim(fileobj%path)//" variable:"// &
+                 & trim(variable_name))
     end select
   endif
 end subroutine domain_write_4d
@@ -1080,7 +1086,8 @@ subroutine domain_write_5d(fileobj, variable_name, vdata, unlim_dim_level, &
             global_buf_r8_kind = fill_r8_kind
         endif
       class default
-        call error("unsupported variable type: domain_write_5d: file: "//trim(fileobj%path)//" variable:"//trim(variable_name))
+        call error("unsupported variable type: domain_write_5d: file: "//trim(fileobj%path)//" variable:"// &
+                 & trim(variable_name))
     end select
 
     do i = 1, size(fileobj%pelist)
@@ -1243,7 +1250,8 @@ subroutine domain_write_5d(fileobj, variable_name, vdata, unlim_dim_level, &
         call mpp_sync_self(check=event_send)
         deallocate(buf_r8_kind)
       class default
-        call error("unsupported variable type: domain_write_5d: file: "//trim(fileobj%path)//" variable:"//trim(variable_name))
+        call error("unsupported variable type: domain_write_5d: file: "//trim(fileobj%path)//" variable:"// &
+                 & trim(variable_name))
     end select
   endif
 end subroutine domain_write_5d

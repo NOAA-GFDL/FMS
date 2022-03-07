@@ -61,6 +61,12 @@ call fms_init()
 read (input_nml_file, check_crashes_nml, iostat=io_status)
 if (io_status > 0) call mpp_error(FATAL,'=>check_crashes: Error reading input.nml')
 
+#endif
+
+#ifndef use_yaml
+if (checking_crashes) call mpp_error(FATAL, "It is crashing!")
+
+#else
 call diag_yaml_object_init
 
 my_yaml = get_diag_yaml_obj()

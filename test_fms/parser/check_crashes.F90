@@ -49,10 +49,10 @@ logical :: get_num_blocks_bad_block_id     = .false.  !< try to send a bad block
 logical :: get_value_from_key_bad_block_id = .false.  !< try to send a bad block_id to get_value_from_key
 
 namelist / check_crashes_nml / missing_file, bad_conversion, missing_key, get_block_ids_bad_id, &
-                               get_key_name_bad_id, get_key_value_bad_id, get_num_blocks_bad_id, get_value_from_key_bad_id, &
-                               get_nkeys_bad_id, get_key_ids_bad_id, &
-                               get_key_name_bad_key_id, get_key_value_bad_key_id, &
-                               get_key_ids_bad_block_id, get_nkeys_bad_block_id, get_block_ids_bad_block_id, get_num_blocks_bad_block_id, &
+                               get_key_name_bad_id, get_key_value_bad_id, get_num_blocks_bad_id, &
+                               get_value_from_key_bad_id, get_nkeys_bad_id, get_key_ids_bad_id, &
+                               get_key_name_bad_key_id, get_key_value_bad_key_id, get_key_ids_bad_block_id, &
+                               get_nkeys_bad_block_id, get_block_ids_bad_block_id,  get_num_blocks_bad_block_id, &
                                get_value_from_key_bad_block_id, &
                                wrong_buffer_size_key_id, wrong_buffer_size_block_id
 
@@ -135,7 +135,7 @@ subroutine check_get_value_from_key_bad_block_id
 
 end subroutine check_get_value_from_key_bad_block_id
 
-!> @brief This is to check if the parser crashes correctly if user tries to open a missing file. 
+!> @brief This is to check if the parser crashes correctly if user tries to open a missing file.
 subroutine check_read_and_parse_file_missing
    integer :: yaml_file_id !< file_id for a yaml file
 

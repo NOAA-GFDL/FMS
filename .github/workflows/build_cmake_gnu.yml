@@ -4,7 +4,7 @@ on: [push, pull_request]
 
 jobs:
   build:
-    runs-on: ubuntu-latest 
+    runs-on: ubuntu-latest
     strategy:
       matrix:
         omp-flags: [ -DOPENMP=on, -DOPENMP=off ]
@@ -16,7 +16,7 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v2
-    - name: Generate makefiles with CMake 
+    - name: Generate makefiles with CMake
       run: cmake $CMAKE_FLAGS .
     - name: Build the library
       run: make
