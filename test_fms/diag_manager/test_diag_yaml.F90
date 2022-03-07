@@ -44,8 +44,6 @@ subroutine compare_result_1d(key_name, res, expected_res)
 end subroutine compare_result_1d
 end interface compare_result
 
-type(diagYamlObject_type) :: my_yaml !< diagYamlObject obtained from diag_yaml_object_init
-type(diagYamlObject_type) :: ans     !< expected diagYamlObject
 logical :: checking_crashes = .false.!< Flag indicating that you are checking crashes
 integer :: i !< For do loops
 integer :: io_status !< The status after reading the input.nml
@@ -53,6 +51,8 @@ integer :: io_status !< The status after reading the input.nml
 #ifdef use_yaml
 type(diagYamlFiles_type), allocatable, dimension (:) :: diag_files !< Files from the diag_yaml
 type(diagYamlFilesVar_type), allocatable, dimension(:) :: diag_fields !< Fields from the diag_yaml
+type(diagYamlObject_type) :: my_yaml !< diagYamlObject obtained from diag_yaml_object_init
+type(diagYamlObject_type) :: ans     !< expected diagYamlObject
 #endif
 
 namelist / check_crashes_nml / checking_crashes
