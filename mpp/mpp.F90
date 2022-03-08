@@ -1113,7 +1113,8 @@ private
   !! Integer checksums on FP data use the F90 <TT>TRANSFER()</TT>
   !! intrinsic.
   !!
-  !! The <LINK SRC="http://www.gfdl.noaa.gov/fms-cgi-bin/cvsweb.cgi/FMS/shared/chksum/chksum.html">serial checksum module</LINK> is superseded
+  !! The <LINK SRC="http://www.gfdl.noaa.gov/fms-cgi-bin/cvsweb.cgi/FMS/shared/chksum/chksum.html">serial
+  !! checksum module</LINK> is superseded
   !! by this function, and is no longer being actively maintained. This
   !! provides identical results on a single-processor job, and to perform
   !! serial checksums on a single processor of a parallel job, you only
@@ -1207,7 +1208,8 @@ private
 !***********************************************************************
   integer, parameter   :: PESET_MAX = 10000
   integer              :: current_peset_max = 32
-  type(communicator), allocatable :: peset(:) !< Will be allocated starting from 0, 0 is a dummy used to hold single-PE "self" communicator
+  type(communicator), allocatable :: peset(:) !< Will be allocated starting from 0, 0 is a dummy used
+                                              !! to hold single-PE "self" communicator
   logical              :: module_is_initialized = .false.
   logical              :: debug = .false.
   integer              :: npes=1, root_pe=0, pe=0

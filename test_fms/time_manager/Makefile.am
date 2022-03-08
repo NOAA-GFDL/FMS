@@ -23,7 +23,7 @@
 # uramirez, Ed Hartnett
 
 # Find the fms_mod.mod file.
-AM_CPPFLAGS = -I$(MODDIR)
+AM_CPPFLAGS = -I$(top_srcdir)/include -I$(MODDIR)
 
 # Link to the FMS library.
 LDADD = $(top_builddir)/libFMS/libFMS.la
@@ -37,8 +37,12 @@ test_time_manager_SOURCES = test_time_manager.F90
 # Run the test program.
 TESTS = test_time_manager2.sh
 
+TEST_EXTENSIONS = .sh
+SH_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
+                  $(top_srcdir)/tap-driver.sh
+
 # These files will be included in the distribution.
-EXTRA_DIST = test_time_manager2.sh input_base.nml
+EXTRA_DIST = test_time_manager2.sh
 
 # Clean up
-CLEANFILES = input.nml *.out* *.dpi *.spi *.dyn *.spl
+CLEANFILES = *.nml *.out* *.dpi *.spi *.dyn *.spl
