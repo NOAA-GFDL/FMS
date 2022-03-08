@@ -20,8 +20,10 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 !> @file
-!> @ingroup mpp_mod
 !> @brief General utility functions for use in @ref mpp_mod
+
+!> @addtogroup mpp_mod
+!> @{
 
 #if defined(use_libMPI)
 #include <mpp_util_mpi.inc>
@@ -1513,3 +1515,4 @@ end function rarray_to_char
     call mpp_broadcast(Content, LENGTH, from_pe, PELIST=PELIST)
 
   end subroutine read_ascii_file
+!> @}

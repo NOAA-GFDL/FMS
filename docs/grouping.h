@@ -21,103 +21,119 @@
 !! Additional doxygen pages can be added here as well
 
 !> @defgroup affinity Affinity
-!! @brief Modules and associated files in the affinity directory
+!> @brief Modules and associated files in the affinity directory
 
 !> @defgroup astronomy Astronomy
-!! @brief Modules and associated files in the astronomy directory
+!> @brief Modules and associated files in the astronomy directory
 
 !> @defgroup axis_utils Axis Utilities
-!! @brief Modules and associated files in the axis_utils directory
+!> @brief Modules and associated files in the axis_utils directory
 
 !> @defgroup amip_interp AMIP Interpolator
-!! @brief Modules and associated files in the amip_interp directory
+!> @brief Modules and associated files in the amip_interp directory
 
 !> @defgroup block_control Block Control
-!! @brief Modules and associated files in the block_control directory
+!> @brief Modules and associated files in the block_control directory
 
 !> @defgroup column_diagnostics Column Diagnostics
-!! @brief Modules and associated files in the column_diagnostics directory
+!> @brief Modules and associated files in the column_diagnostics directory
 
 !> @defgroup constants Constants
-!! @brief Modules and associated files in the constants directory
+!> @brief Modules and associated files in the constants directory
 
 !> @defgroup coupler Coupler
-!! @brief Modules and associated files in the coupler directory
+!> @brief Modules and associated files in the coupler directory
 
 !> @defgroup data_override Data Override
-!! @brief Modules and associated files in the data_override directory
+!> @brief Modules and associated files in the data_override directory
 
 !> @defgroup diag_integral Diag Integral
-!! @brief Modules and associated files in the diag_integral directory
+!> @brief Modules and associated files in the diag_integral directory
 
 !> @defgroup diag_manager Diag Manager
-!! @brief Modules and associated files in the diag_manager directory
+!> @brief Modules and associated files in the diag_manager directory
 
 !> @defgroup drifters Drifters
-!! @brief Modules and associated files in the drifters directory
+!> @brief Modules and associated files in the drifters directory
 
 !> @defgroup exchange Exchange
-!! @brief Modules and associated files in the exchange directory
+!> @brief Modules and associated files in the exchange directory
 
 !> @defgroup field_manager Field Manager
-!! @brief Modules and associated files in the field_manager directory
+!> @brief Modules and associated files in the field_manager directory
 
 !> @defgroup fms FMS
-!! @brief Modules and associated files in the fms directory
+!> @brief Modules and associated files in the fms directory
 
 !> @defgroup fms2_io FMS2 IO
-!! @brief Modules and associated files in the fms2_io directory
+!> @brief Modules and associated files in the fms2_io directory
+!!
+!> Updated IO modules for parallel IO via netcdf files. Replaces the functionality of the IO
+!! routines in mpp_io. fms2_io_mod is the main module for external usage and provides public
+!! interfaces for routines defined throughout this directory, dependent on the
+!! type of file.
 
 !> @defgroup horiz_interp Horizontal Interpolator
-!! @brief Modules and associated files in the horiz_interp directory
+!> @brief Modules and associated files in the horiz_interp directory
 
 !> @defgroup interpolator Interpolator
-!! @brief Modules and associated files in the interpolator directory
+!> @brief Modules and associated files in the interpolator directory
 
 !> @defgroup memutils Memory Utilities
-!! @brief Modules and associated files in the memutils directory
+!> @brief Modules and associated files in the memutils directory
 
 !> @defgroup monin_obukhov Monin Obukhov
-!! @brief Modules and associated files in the monin_obukhov directory
+!> @brief Modules and associated files in the monin_obukhov directory
 
 !> @defgroup mosaic Mosaic
-!! @brief Modules and associated files in the mosaic directory
+!> @brief Modules and associated files in the mosaic directory
 
 !> @defgroup mosaic2 Mosaic2
-!! @brief Modules and associated files in the mosaic2 directory
+!> @brief Modules and associated files in the mosaic2 directory
+!!
+!> Provides a fms2_io equivalent to the mpp_io dependent routines in mosaic
 
 !> @defgroup mpp MPP
-!! @brief Modules and associated files in the mpp directory
+!> @brief Modules and associated files in the mpp directory
+!!
+!> Provides interfaces to facilitate common tasks for parallel computing and
+!! modeling. Originally written to provide interfaces across different message-passing libraries,
+!! it is now used mainly with the MPI standard, and provides wrappers to many MPI
+!! routines. Documentation on serial implementations of routines (usually denoted by _nocommm in
+!! the file name) will be excluded on these module pages, as they are currently unused but mo, but their documentation is still
+!! available in the Files tab.
 
 !> @defgroup platform Platform
-!! @brief Modules and associated files in the platform directory
+!> @brief Modules and associated files in the platform directory
 
 !> @defgroup random_numbers Random Numbers
-!! @brief Modules and associated files in the random_numbers directory
+!> @brief Modules and associated files in the random_numbers directory
 
 !> @defgroup sat_vapor_pres Saturation Vapor Pressure
-!! @brief Modules and associated files in the sat_vapor_pres directory
+!> @brief Modules and associated files in the sat_vapor_pres directory
 
 !> @defgroup time_interp Time Interpolator
-!! @brief Modules and associated files in the time_interp directory
+!> @brief Modules and associated files in the time_interp directory
 
 !> @defgroup time_manager Time Manager
-!! @brief Modules and associated files in the time_manager directory
+!> @brief Modules and associated files in the time_manager directory
 
 !> @defgroup topography Topography
-!! @brief Modules and associated files in the topography directory
+!> @brief Modules and associated files in the topography directory
 
 !> @defgroup tracer_manager Tracer Manager
-!! @brief Modules and associated files in the tracer_manager directory
+!> @brief Modules and associated files in the tracer_manager directory
 
 !> @defgroup tridiagonal Tridiagonal
-!! @brief Modules and associated files in the tridiagonal directory
+!> @brief Modules and associated files in the tridiagonal directory
 
 !> @defgroup libfms FMS Global Module
-!! @brief Modules and associated files in the libfms directory
+!> @brief Modules and associated files in the libfms directory
 
 !> @page build Building and Installation
-!! @brief Information about the build systems and how to build and install
+!> @brief Information about the build systems and how to build and install
 !! @subpage install
+!!
 !! @subpage autotools
+!!
 !! @subpage cmake

@@ -19,15 +19,16 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!                                                                            !
-!                             MPP_WRITE_META                                 !
-!                                                                            !
 !> @file
-!> @ingroup mpp_io_mod
 !> @brief This series of routines is used to describe the contents of the file
 !! being written on <unit>.
-!!
+
+!> @addtogroup mpp_io_mod
+!> @{
+
+! TODO                             	  
+! move this to it's interface, or somewhere esle better than here
+
 !> Each file can contain any number of fields,
 !! which can be functions of 0-3 spatial axes and 0-1 time axes. Axis
 !! descriptors are stored in the <axistype> structure and field
@@ -1732,4 +1733,4 @@
 
       return
     end subroutine fillin_fieldtype
-
+!> @}

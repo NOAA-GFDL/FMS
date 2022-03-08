@@ -19,8 +19,10 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 !> @file
-!> @ingroup mpp
 !> @brief Routines for calculating global integer checksums for the @ref mpp_chksum interface.
+
+!> @addtogroup mpp_mod
+!> @{
 
 !> Calculates integer checksum over pelist
 function MPP_CHKSUM_INT_( var, pelist, mask_val )
@@ -110,3 +112,4 @@ function MPP_CHKSUM_INT_RMASK_( var, pelist, mask_val )
   return
 
 end function MPP_CHKSUM_INT_RMASK_
+!> @}

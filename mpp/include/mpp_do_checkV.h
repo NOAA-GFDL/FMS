@@ -18,8 +18,10 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 !> @file
-!> @ingroup mpp
 !> @brief Updates data domain of 3D field whose computational domains have been computed
+
+!> @addtogroup mpp_domains_mod
+!> @{
 
     !> Updates data domain of 3D field whose computational domains have been computed
     subroutine MPP_DO_CHECK_3D_V_(f_addrsx,f_addrsy, domain, check_x, check_y, &
@@ -529,3 +531,4 @@
       return
 
     end subroutine MPP_DO_CHECK_3D_V_
+!> @}

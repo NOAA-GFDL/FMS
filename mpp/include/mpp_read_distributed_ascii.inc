@@ -18,8 +18,11 @@
 !***********************************************************************
 
 !> @file
-!> @ingroup mpp
 !> @brief Routines for reading distributed ascii files for @ref mpp_io_mod
+
+!> @addtogroup mpp_io_mod
+!> @{
+
 #undef MPP_READ_DISTRIBUTED_ASCII_1D_
 #define MPP_READ_DISTRIBUTED_ASCII_1D_ mpp_read_distributed_ascii_r1D
 #undef MPP_TYPE_
@@ -62,3 +65,4 @@ subroutine mpp_read_distributed_ascii_a1D(unit,fmt,ssize,data,iostat)
   call mpp_broadcast(data,len(data(1)),pelist(1),pelist)
   deallocate(pelist)  ! Don't forget to deallocate pelist
 end subroutine mpp_read_distributed_ascii_a1D
+!> @}

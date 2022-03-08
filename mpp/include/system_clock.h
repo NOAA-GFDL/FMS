@@ -17,7 +17,9 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 !> @file
-!> @ingroup mpp_mod
+
+!> @addtogroup mpp_mod
+!> @{
 
 #if defined(use_libMPI)
 #define SYSTEM_CLOCK system_clock_mpi
@@ -61,3 +63,4 @@ subroutine system_clock_default( count, count_rate, count_max )
       return
     end subroutine system_clock_default
 #endif
+!> @}

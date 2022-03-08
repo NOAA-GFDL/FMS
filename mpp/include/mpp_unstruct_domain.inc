@@ -16,11 +16,11 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
-
 !> @file
-!> @ingroup mpp_domains_mod
 !> @brief Routines for defining and managing unstructured grids
 
+!> @addtogroup mpp_domains_mod
+!> @{
   !#####################################################################
   subroutine mpp_define_unstruct_domain(UG_domain, SG_domain, npts_tile, grid_nlev, ndivs, npes_io_group, grid_index, name)
      type(domainUG),   intent(inout) :: UG_domain
@@ -899,3 +899,4 @@ end subroutine mpp_deallocate_domainUG
 #undef MPP_TYPE_
 #define MPP_TYPE_ integer(i4_kind)
 #include <mpp_global_field_ug.h>
+!> @}

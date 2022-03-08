@@ -20,8 +20,10 @@
 !***********************************************************************
 
 !> @file
-!> @ingroup mpp
 !> @brief MPI implementation of @ref mpp_alltoall routines
+
+!> @addtogroup mpp_mod
+!> @{
 
 !> Wrapper for mpi_alltoall routine, sends data from all to all processes
 subroutine MPP_ALLTOALL_(sbuf, scount, rbuf, rcount, pelist)
@@ -129,3 +131,4 @@ subroutine MPP_ALLTOALLW_(sbuf, ssize, sdispl, stype, &
         call increment_current_clock(EVENT_ALLTOALL, MPP_TYPE_BYTELEN_)
 
 end subroutine MPP_ALLTOALLW_
+!> @}

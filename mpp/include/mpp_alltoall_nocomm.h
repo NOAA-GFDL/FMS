@@ -19,7 +19,6 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 !> @file
-!> @ingroup mpp
 !> @brief @ref mpp_alltoall routine implementations without MPI
 
 !> Sends data from all to all processes, non-mpi version

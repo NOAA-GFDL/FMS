@@ -18,10 +18,10 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
-
 !> @file
-!> @ingroup mpp
-!> @brief Wrapper routine for scalar checksums
+
+!> @addtogroup mpp_mod
+!> @{
 
 !> @brief Wrapper routine for scalar checksums
 !!
@@ -46,3 +46,4 @@ function MPP_CHKSUM_( var, pelist, mask_val )
   end if
       return
     end function MPP_CHKSUM_
+!> @}
