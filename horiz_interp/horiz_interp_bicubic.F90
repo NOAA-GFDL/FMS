@@ -266,10 +266,14 @@ module horiz_interp_bicubic_mod
           else
              Interp%rat_y(i,j) = (yz - Interp%lat_in(jcl))/(Interp%lat_in(jcu) - Interp%lat_in(jcl))
           endif
-!          if(yz.gt.Interp%lat_in(jcu)) call mpp_error(FATAL, ' horiz_interp_bicubic_new_1d_s: yf < ycl, no valid boundary point')
-!          if(yz.lt.Interp%lat_in(jcl)) call mpp_error(FATAL, ' horiz_interp_bicubic_new_1d_s: yf > ycu, no valid boundary point')
-!          if(xz.gt.Interp%lon_in(icu)) call mpp_error(FATAL, ' horiz_interp_bicubic_new_1d_s: xf < xcl, no valid boundary point')
-!          if(xz.lt.Interp%lon_in(icl)) call mpp_error(FATAL, ' horiz_interp_bicubic_new_1d_s: xf > xcu, no valid boundary point')
+!          if(yz.gt.Interp%lat_in(jcu)) call mpp_error(FATAL, ' horiz_interp_bicubic_new_1d_s:
+!          yf < ycl, no valid boundary point')
+!          if(yz.lt.Interp%lat_in(jcl)) call mpp_error(FATAL, ' horiz_interp_bicubic_new_1d_s:
+!          yf > ycu, no valid boundary point')
+!          if(xz.gt.Interp%lon_in(icu)) call mpp_error(FATAL, ' horiz_interp_bicubic_new_1d_s:
+!          xf < xcl, no valid boundary point')
+!          if(xz.lt.Interp%lon_in(icl)) call mpp_error(FATAL, ' horiz_interp_bicubic_new_1d_s:
+!          xf > xcu, no valid boundary point')
         enddo
       enddo
   end subroutine horiz_interp_bicubic_new_1d_s
@@ -411,17 +415,22 @@ module horiz_interp_bicubic_mod
           else
              Interp%rat_y(i,j) = (yz - Interp%lat_in(jcl))/(Interp%lat_in(jcu) - Interp%lat_in(jcl))
           endif
-!          if(yz.gt.lat_in(jcu)) call mpp_error(FATAL, ' horiz_interp_bicubic_new_1d: yf < ycl, no valid boundary point')
-!          if(yz.lt.lat_in(jcl)) call mpp_error(FATAL, ' horiz_interp_bicubic_new_1d: yf > ycu, no valid boundary point')
-!          if(xz.gt.lon_in(icu)) call mpp_error(FATAL, ' horiz_interp_bicubic_new_1d: xf < xcl, no valid boundary point')
-!          if(xz.lt.lon_in(icl)) call mpp_error(FATAL, ' horiz_interp_bicubic_new_1d: xf > xcu, no valid boundary point')
+!          if(yz.gt.lat_in(jcu)) call mpp_error(FATAL, ' horiz_interp_bicubic_new_1d: yf <
+!          ycl, no valid boundary point')
+!          if(yz.lt.lat_in(jcl)) call mpp_error(FATAL, ' horiz_interp_bicubic_new_1d: yf >
+!          ycu, no valid boundary point')
+!          if(xz.gt.lon_in(icu)) call mpp_error(FATAL, ' horiz_interp_bicubic_new_1d: xf <
+!          xcl, no valid boundary point')
+!          if(xz.lt.lon_in(icl)) call mpp_error(FATAL, ' horiz_interp_bicubic_new_1d: xf >
+!          xcu, no valid boundary point')
         enddo
       enddo
 
   end subroutine horiz_interp_bicubic_new_1d
 
   !> @brief Perform bicubic horizontal interpolation
-  subroutine horiz_interp_bicubic( Interp, data_in, data_out, verbose, mask_in, mask_out, missing_value, missing_permit)
+  subroutine horiz_interp_bicubic( Interp, data_in, data_out, verbose, mask_in, mask_out, missing_value, &
+                                 &  missing_permit)
     type (horiz_interp_type), intent(in)        :: Interp
     real, intent(in),  dimension(:,:)           :: data_in
     real, intent(out), dimension(:,:)           :: data_out

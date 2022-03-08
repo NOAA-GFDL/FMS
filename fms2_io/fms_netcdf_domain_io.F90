@@ -396,7 +396,8 @@ function open_domain_file(fileobj, path, mode, domain, nc_format, is_restart, do
         success2 = netcdf_file_open(fileobj2, combined_filepath, mode, nc_format, pelist, &
                                     is_restart, dont_add_res_to_filename)
         if (success2) then
-          call error("The domain decomposed file:"//trim(fileobj%path)//" contains both combined (*.nc) and distributed files (*.nc.XXXX).")
+          call error("The domain decomposed file:"//trim(fileobj%path)// &
+                   & " contains both combined (*.nc) and distributed files (*.nc.XXXX).")
         endif
       endif
     else
@@ -463,20 +464,23 @@ subroutine register_domain_decomposed_dimension(fileobj, dim_name, xory, domain_
   io_domain => mpp_get_io_domain(fileobj%domain)
   if (string_compare(xory, x, .true.)) then
     if (dpos .ne. center .and. dpos .ne. east) then
-      call error("Only domain_position=center or domain_position=EAST is supported for x dimensions. Fix your register_axis call for file:"&
+      call error("Only domain_position=center or domain_position=EAST is supported for x dimensions."// &
+                  & " Fix your register_axis call for file:"&
                   &//trim(fileobj%path)//" and dimension:"//trim(dim_name))
     endif
     call mpp_get_global_domain(io_domain, xsize=domain_size, position=dpos)
     call append_domain_decomposed_dimension(dim_name, dpos, fileobj%xdims, fileobj%nx)
   elseif (string_compare(xory, y, .true.)) then
     if (dpos .ne. center .and. dpos .ne. north) then
-      call error("Only domain_position=center or domain_position=NORTH is supported for y dimensions. Fix your register_axis call for file:"&
+      call error("Only domain_position=center or domain_position=NORTH is supported for y dimensions."// &
+                  & " Fix your register_axis call for file:"&
                   &//trim(fileobj%path)//" and dimension:"//trim(dim_name))
     endif
     call mpp_get_global_domain(io_domain, ysize=domain_size, position=dpos)
     call append_domain_decomposed_dimension(dim_name, dpos, fileobj%ydims, fileobj%ny)
   else
-    call error("The register_axis call for file:"//trim(fileobj%path)//" and dimension:"//trim(dim_name)//" has an unrecognized xory flag value:"&
+    call error("The register_axis call for file:"//trim(fileobj%path)//" and dimension:"//trim(dim_name)// &
+               & " has an unrecognized xory flag value:"&
                &//trim(xory)//" only 'x' and 'y' are allowed.")
   endif
   if (fileobj%is_readonly .or. (fileobj%mode_is_append .and. dimension_exists(fileobj, dim_name))) then
@@ -566,7 +570,8 @@ subroutine save_domain_restart(fileobj, unlim_dim_level)
   logical :: is_decomposed
 
   if (.not. fileobj%is_restart) then
-    call error("file "//trim(fileobj%path)//" is not a restart file. You must set is_restart=.true. in your open_file call.")
+    call error("file "//trim(fileobj%path)// &
+             & " is not a restart file. You must set is_restart=.true. in your open_file call.")
   endif
 
 ! Calculate the variable's checksum and write it to the netcdf file
@@ -639,7 +644,8 @@ subroutine restore_domain_state(fileobj, unlim_dim_level, ignore_checksum)
   if (PRESENT(ignore_checksum)) chksum_ignore = ignore_checksum
 
   if (.not. fileobj%is_restart) then
-    call error("file "//trim(fileobj%path)//" is not a restart file. You must set is_restart=.true. in your open_file call.")
+    call error("file "//trim(fileobj%path)// &
+             & " is not a restart file. You must set is_restart=.true. in your open_file call.")
   endif
   do i = 1, fileobj%num_restart_vars
     if (associated(fileobj%restart_vars(i)%data0d)) then
@@ -659,9 +665,10 @@ subroutine restore_domain_state(fileobj, unlim_dim_level, ignore_checksum)
           call get_variable_attribute(fileobj, fileobj%restart_vars(i)%varname, &
                                       "checksum", chksum_in_file)
           if (.not. string_compare(trim(adjustl(chksum_in_file)), trim(adjustl(chksum)))) then
-            call error("The checksum in the file:"//trim(fileobj%path)//" and variable:"//trim(fileobj%restart_vars(i)%varname)//&
-                       &" does not match the checksum calculated from the data. file:"//trim(adjustl(chksum_in_file))//&
-                       &" from data:"//trim(adjustl(chksum)))
+            call error("The checksum in the file:"//trim(fileobj%path)//" and variable:"// &
+                      & trim(fileobj%restart_vars(i)%varname)// &
+                      &" does not match the checksum calculated from the data. file:"//trim(adjustl(chksum_in_file))//&
+                      &" from data:"//trim(adjustl(chksum)))
           endif
         endif
       endif
@@ -676,9 +683,10 @@ subroutine restore_domain_state(fileobj, unlim_dim_level, ignore_checksum)
           call get_variable_attribute(fileobj, fileobj%restart_vars(i)%varname, &
                                       "checksum", chksum_in_file(1:len(chksum_in_file)))
           if (.not. string_compare(trim(adjustl(chksum_in_file)), trim(adjustl(chksum)))) then
-            call error("The checksum in the file:"//trim(fileobj%path)//" and variable:"//trim(fileobj%restart_vars(i)%varname)//&
-                       &" does not match the checksum calculated from the data. file:"//trim(adjustl(chksum_in_file))//&
-                       &" from data:"//trim(adjustl(chksum)))
+            call error("The checksum in the file:"//trim(fileobj%path)//" and variable:"// &
+                      & trim(fileobj%restart_vars(i)%varname)//&
+                      &" does not match the checksum calculated from the data. file:"//trim(adjustl(chksum_in_file))//&
+                      &" from data:"//trim(adjustl(chksum)))
           endif
         endif
       endif
@@ -693,9 +701,10 @@ subroutine restore_domain_state(fileobj, unlim_dim_level, ignore_checksum)
           call get_variable_attribute(fileobj, fileobj%restart_vars(i)%varname, &
                                       "checksum", chksum_in_file)
           if (.not. string_compare(trim(adjustl(chksum_in_file)), trim(adjustl(chksum)))) then
-            call error("The checksum in the file:"//trim(fileobj%path)//" and variable:"//trim(fileobj%restart_vars(i)%varname)//&
-                       &" does not match the checksum calculated from the data. file:"//trim(adjustl(chksum_in_file))//&
-                       &" from data:"//trim(adjustl(chksum)))
+            call error("The checksum in the file:"//trim(fileobj%path)//" and variable:"// &
+                      & trim(fileobj%restart_vars(i)%varname)//&
+                      &" does not match the checksum calculated from the data. file:"//trim(adjustl(chksum_in_file))//&
+                      &" from data:"//trim(adjustl(chksum)))
           endif
         endif
       endif
@@ -731,7 +740,8 @@ subroutine get_compute_domain_dimension_indices(fileobj, dimname, indices)
       dpos = fileobj%ydims(dpos)%pos
       call mpp_get_compute_domain(io_domain, ybegin=s, yend=e, position=dpos)
     else
-      call error("get_compute_domain_dimension_indices: the input dimension:"//trim(dimname)//" is not domain decomposed.")
+      call error("get_compute_domain_dimension_indices: the input dimension:"//trim(dimname)// &
+               & " is not domain decomposed.")
     endif
   endif
   if (allocated(indices)) then

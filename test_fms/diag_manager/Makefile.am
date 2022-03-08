@@ -38,11 +38,15 @@ test_diag_yaml_SOURCES = test_diag_yaml.F90
 test_diag_object_container_SOURCES = test_diag_object_container.F90
 test_diag_dlinked_list_SOURCES = test_diag_dlinked_list.F90
 
+TEST_EXTENSIONS = .sh
+SH_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
+                  $(top_srcdir)/tap-driver.sh
+
 # Run the test.
 TESTS = test_diag_manager2.sh
 
 # Copy over other needed files to the srcdir
-EXTRA_DIST = input.nml_base diagTables test_diag_manager2.sh check_crashes.sh
+EXTRA_DIST = test_diag_manager2.sh check_crashes.sh
 
 if SKIP_PARSER_TESTS
 skipflag="skip"
@@ -52,4 +56,5 @@ endif
 
 TESTS_ENVIRONMENT = parser_skip=${skipflag}
 
-CLEANFILES = *.yaml input.nml *.nc *.out diag_table *.dpi *.spi *.dyn *.spl
+CLEANFILES = *.yaml input.nml *.nc *.out diag_table* *-files/* *.dpi *.spi *.dyn *.spl
+

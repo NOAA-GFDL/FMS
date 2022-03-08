@@ -25,17 +25,19 @@ use fms_mod,                   only : check_nml_error
 use mpp_mod,                   only : mpp_init, mpp_exit, mpp_npes, stdout, stdlog, FATAL, mpp_error
 use mpp_mod,                   only : input_nml_file, mpp_pe, mpp_root_pe, mpp_sync
 use mpp_domains_mod,           only : mpp_domains_init, domain2d, mpp_define_layout, mpp_define_domains
-use mpp_domains_mod,           only : mpp_global_sum, mpp_global_max, mpp_global_min, BITWISE_EXACT_SUM, mpp_get_compute_domain
+use mpp_domains_mod, only : mpp_global_sum, mpp_global_max, mpp_global_min, BITWISE_EXACT_SUM, mpp_get_compute_domain
 use mpp_domains_mod,           only : mpp_domains_set_stack_size
 use time_interp_external2_mod, only : time_interp_external, time_interp_external_init, get_external_fileobj
-use time_interp_external2_mod, only : time_interp_external_exit, time_interp_external, init_external_field, get_external_field_size
-use time_manager_mod,          only : get_date, set_date, time_manager_init, set_calendar_type, JULIAN, time_type, increment_time
+use time_interp_external2_mod, only : time_interp_external_exit, time_interp_external, init_external_field, &
+                                   &  get_external_field_size
+use time_manager_mod,          only : get_date, set_date, time_manager_init, set_calendar_type, JULIAN, &
+                                   &  time_type, increment_time
 use time_manager_mod,          only : NOLEAP
-use horiz_interp_mod,          only : horiz_interp, horiz_interp_init, horiz_interp_new, horiz_interp_del, horiz_interp_type
+use horiz_interp_mod,          only : horiz_interp, horiz_interp_init, horiz_interp_new, horiz_interp_del, &
+                                    & horiz_interp_type
 use axis_utils2_mod,           only : axis_edges
 use fms2_io_mod,               only : FmsNetcdfFile_t, fms2_io_init, open_file, close_file, write_data, register_axis
 use fms2_io_mod,               only : register_field, unlimited, register_variable_attribute
-
 
 implicit none
 
@@ -206,7 +208,8 @@ enddo
 id = init_external_field(filename,trim(fieldname)//"_random",domain=domain,axis_names=axis_names,&
       verbose=.false., override=.true.)
 
-if (.not. get_external_fileobj(filename, fileobj)) call mpp_error(FATAL, "Couldn't find the fileobj for: "//trim(filename))
+if (.not. get_external_fileobj(filename, fileobj)) call mpp_error(FATAL, "Couldn't find the fileobj for: "// &
+    & trim(filename))
 
 allocate (lon_local_out(isc:iec,jsc:jec))
 allocate (lat_local_out(isc:iec,jsc:jec))

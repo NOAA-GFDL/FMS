@@ -36,7 +36,6 @@ Makefile.in
 /mdate-sh
 /py-compile
 /test-driver
-/tap-driver.sh
 /ylwrap
 *.log
 *.trs

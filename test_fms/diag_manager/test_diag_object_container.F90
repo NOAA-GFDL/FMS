@@ -141,7 +141,8 @@ program test_diag_obj_container
 
   if( sum  /=  full_id_sum) then
     test_passed = .false.
-    call error_mesg('test_diag_object_container', 'Id sums via iteration over the container objects is not as expected',FATAL)
+    call error_mesg('test_diag_object_container', &
+                    'Id sums via iteration over the container objects is not as expected',FATAL)
   endif
 
   if( container%size() /= num_objs) then

@@ -25,26 +25,15 @@
 # Tom Robinson 04/21/2020
 
 # Set common test settings.
-. ../test_common.sh
+. ../test-lib.sh
 
 
-# Run the test for one processor
-run_test test_mpp_pe 1
+# Run the tests
+test_expect_success "get current PE single processor" '
+    mpirun -n 1 ./test_mpp_pe
+'
+test_expect_success "get current PE multiple processor" '
+    mpirun -n 5 ./test_mpp_pe
+'
 
-# If on a Linux system that uses the command `nproc`, run the test
-# with the full number of processors
-
-if [ $(command -v nproc) ]
- # Looks like a linux system
- then
-    # Get the number of available CPUs on the system
-    nProc=$(nproc)
-    if [ ${nProc} -gt 1 ]
-     then
-         # Run the test with all processors
-         run_test test_mpp_pe 2
-    fi
-fi
-
-
-
+test_done

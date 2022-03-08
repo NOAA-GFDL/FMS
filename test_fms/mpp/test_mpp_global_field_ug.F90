@@ -24,7 +24,8 @@ program test_mpp_global_field_ug
   use mpp_mod,         only : mpp_init, mpp_error, FATAL, NOTE, mpp_init_test_requests_allocated
   use mpp_mod,         only : mpp_pe, mpp_npes, mpp_root_pe, mpp_broadcast
   use mpp_domains_mod, only : mpp_domains_init,  mpp_domains_set_stack_size, mpp_domains_exit
-  use mpp_domains_mod, only : mpp_define_layout, mpp_define_mosaic, mpp_get_compute_domain, mpp_get_compute_domains, mpp_get_data_domain
+  use mpp_domains_mod, only : mpp_define_layout, mpp_define_mosaic, mpp_get_compute_domain, &
+                           &  mpp_get_compute_domains, mpp_get_data_domain
   use mpp_domains_mod, only : mpp_get_ug_global_domain, mpp_global_field_ug
   use mpp_domains_mod, only : domain2D, domainUG, mpp_define_unstruct_domain, mpp_get_UG_domain_tile_id
   use mpp_domains_mod, only : mpp_get_UG_compute_domain, mpp_pass_SG_to_UG, mpp_pass_UG_to_SG
@@ -391,7 +392,6 @@ contains
           x2(l,k) = int( gdata(i,j,tile) + k*1e6, kind=i4_kind )
        enddo
     enddo
-
     call mpp_pass_SG_to_UG(UG_domain, a1, x1)
     call compare_checksums_int(x1, x2, type//' SG2UG 3-D data domain')
     call mpp_pass_UG_to_SG(UG_domain, x1, a2)
@@ -498,7 +498,8 @@ contains
           write(*,*)'NOTE from test_unstruct_update ==> For Mosaic "', trim(type), &
                '", each tile will be distributed over ', npes_per_tile, ' processors.'
        else
-          call mpp_error(FATAL,'test_unstruct_update: npes should be multiple of ntiles No test is done for '//trim(type))
+          call mpp_error(FATAL,'test_unstruct_update: npes should be multiple of ntiles No test is done for '// &
+                         & trim(type))
        endif
        if(layout_cubic(1)*layout_cubic(2) == npes_per_tile) then
           layout = layout_cubic
@@ -578,7 +579,8 @@ contains
     allocate(ntiles_grid(ntotal_land))
     ntiles_grid = 1
     !--- define the unstructured grid domain
-    call mpp_define_unstruct_domain(UG_domain, SG_domain, npts_tile, ntiles_grid, mpp_npes(), 1, grid_index, name="LAND unstruct")
+    call mpp_define_unstruct_domain(UG_domain, SG_domain, npts_tile, ntiles_grid, mpp_npes(), 1, grid_index, &
+                                   &  name="LAND unstruct")
     call mpp_get_UG_compute_domain(UG_domain, istart, iend)
 
     !--- figure out lmask according to grid_index

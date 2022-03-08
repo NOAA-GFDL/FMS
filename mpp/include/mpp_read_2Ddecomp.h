@@ -223,7 +223,8 @@
               end if
           end if
       endif
-      if( verbose )print '(a,2i6,i6,12i4)', 'READ_RECORD: PE, unit, num_words, start, axsiz=', pe, unit, num_words, start, axsiz
+      if( verbose )print '(a,2i6,i6,12i4)', 'READ_RECORD: PE, unit, num_words, start, axsiz=', &
+                          & pe, unit, num_words, start, axsiz
 
       call READ_RECORD_CORE_(unit, field, num_words, data, start, axsiz)
 

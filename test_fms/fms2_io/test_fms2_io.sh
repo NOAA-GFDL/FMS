@@ -26,9 +26,26 @@
 # Jessica Liptak
 #
 # Set common test settings.
-. ../test_common.sh
-# Set the test variable
-# make a dummy file for mpp_init to read
-printf "EOF\n&dummy\nEOF" | cat > input.nml
+. ../test-lib.sh
+
+# Create and enter output directory
+output_dir
+
+# Warn if stack size not set
+if test "`ulimit -s`" != "unlimited"; then
+  say "Warning: system stack size not set to unlimited, test may fail"
+fi
+
+# make a dummy input.nml file for mpp_init to read
+cat <<_EOF > input.nml
+&dummy
+  empty=true
+/
+_EOF
+
 # run the tests
-run_test test_fms2_io 6
+test_expect_success "FMS2 IO Test" '
+  mpirun -n 6 ../test_fms2_io
+'
+
+test_done
