@@ -21,7 +21,6 @@
 !! in fms_diag_yaml_mod
 program test_diag_yaml
 
-#ifdef use_yaml
 use FMS_mod, only: fms_init, fms_end
 use fms_diag_yaml_mod
 use diag_data_mod, only: DIAG_NULL, DIAG_ALL
@@ -45,14 +44,16 @@ subroutine compare_result_1d(key_name, res, expected_res)
 end subroutine compare_result_1d
 end interface compare_result
 
-type(diagYamlObject_type) :: my_yaml !< diagYamlObject obtained from diag_yaml_object_init
-type(diagYamlObject_type) :: ans     !< expected diagYamlObject
 logical :: checking_crashes = .false.!< Flag indicating that you are checking crashes
 integer :: i !< For do loops
 integer :: io_status !< The status after reading the input.nml
 
+#ifdef use_yaml
 type(diagYamlFiles_type), allocatable, dimension (:) :: diag_files !< Files from the diag_yaml
 type(diagYamlFilesVar_type), allocatable, dimension(:) :: diag_fields !< Fields from the diag_yaml
+type(diagYamlObject_type) :: my_yaml !< diagYamlObject obtained from diag_yaml_object_init
+type(diagYamlObject_type) :: ans     !< expected diagYamlObject
+#endif
 
 namelist / check_crashes_nml / checking_crashes
 
@@ -61,6 +62,10 @@ call fms_init()
 read (input_nml_file, check_crashes_nml, iostat=io_status)
 if (io_status > 0) call mpp_error(FATAL,'=>check_crashes: Error reading input.nml')
 
+#ifndef use_yaml
+if (checking_crashes) call mpp_error(FATAL, "It is crashing!")
+call fms_end()
+#else
 call diag_yaml_object_init(DIAG_ALL)
 
 my_yaml = get_diag_yaml_obj()

@@ -535,8 +535,8 @@ implicit none
           "test_xgrid: atm_input_file should have a different name from atm_output_file")
      allocate(siz(4))
      call get_variable_size(atminputfileobj, atm_field_name, siz)
-     if(siz(1) .NE. nxa .OR. siz(2) .NE. nya ) call mpp_error(FATAL,"test_xgrid: x- and y-size of field "//trim(atm_field_name) &
-            //" in file "//trim(atm_input_file) //" does not compabile with the grid size" )
+     if(siz(1) .NE. nxa .OR. siz(2) .NE. nya ) call mpp_error(FATAL,"test_xgrid: x- and y-size of field "// &
+            & trim(atm_field_name)//" in file "//trim(atm_input_file) //" does not compabile with the grid size" )
      if(siz(3) > 1) call mpp_error(FATAL,"test_xgrid: number of vertical level of field "//trim(atm_field_name) &
             //" in file "//trim(atm_input_file) //" should be no larger than 1")
      deallocate(siz)
@@ -669,7 +669,8 @@ implicit none
      deallocate(atm_data_out_1, atm_data_out_2, atm_data_out_3)
      deallocate(x_1, x_2)
   else
-     write(out_unit,*) "NOTE from test_xgrid ==> file "//trim(atm_input_file)//" does not exist, no check is done for real(r8_kind) data sets."
+     write(out_unit,*) "NOTE from test_xgrid ==> file "//trim(atm_input_file)// &
+         & " does not exist, no check is done for real(r8_kind) data sets."
   end if
 
   runoff_input_file_exist = open_file(runoffinputfileobj, runoff_input_file, "read", lnd_domain)
@@ -681,8 +682,8 @@ implicit none
           "test_xgrid: runoff_input_file should have a different name from runoff_output_file")
      call get_variable_size(runoffinputfileobj, runoff_field_name, siz )
      deallocate(siz)
-     if(siz(1) .NE. nxl .OR. siz(2) .NE. nyl ) call mpp_error(FATAL,"test_xgrid: x- and y-size of field "//trim(runoff_field_name) &
-            //" in file "//trim(runoff_input_file) //" does not compabile with the grid size" )
+     if(siz(1) .NE. nxl .OR. siz(2) .NE. nyl ) call mpp_error(FATAL,"test_xgrid: x- and y-size of field "// &
+            & trim(runoff_field_name)//" in file "//trim(runoff_input_file) //" does not compabile with the grid size")
      if(siz(3) > 1) call mpp_error(FATAL,"test_xgrid: number of vertical level of field "//trim(runoff_field_name) &
             //" in file "//trim(runoff_input_file) //" should be no larger than 1")
 
@@ -716,7 +717,8 @@ implicit none
      write(out_unit,*) "the global area sum of runoff input data is                    : ", sum_runoff_in
      write(out_unit,*) "the global area sum of runoff output data is                   : ", sum_runoff_out
   else
-     write(out_unit,*) "NOTE from test_xgrid ==> file "//trim(runoff_input_file)//" does not exist, no check is done for real(r8_kind) data sets."
+     write(out_unit,*) "NOTE from test_xgrid ==> file "//trim(runoff_input_file)// &
+         & " does not exist, no check is done for real(r8_kind) data sets."
   end if
 
   ! when num_iter is greater than 0, create random number as input to test the performance of xgrid_mod.
@@ -869,7 +871,8 @@ contains
        call set_frac_area(ice_frac, 'OCN', Xmap_ug)
     endif
 
-!    call setup_xmap(Xmap_runoff_ug, (/ 'LND', 'OCN'/), (/ Lnd_domain, Ice_domain/), grid_file, lnd_ug_domain=UG_domain )
+!    call setup_xmap(Xmap_runoff_ug, (/ 'LND', 'OCN'/), (/ Lnd_domain, Ice_domain/), grid_file,
+!    lnd_ug_domain=UG_domain )
     allocate(atm_data_ug(isc_atm:iec_atm, jsc_atm:jec_atm   ) )
     allocate(atm_data_ug_1(isc_atm:iec_atm, jsc_atm:jec_atm   ) )
     allocate(atm_data_ug_2(isc_atm:iec_atm, jsc_atm:jec_atm   ) )

@@ -23,7 +23,11 @@
 # execute tests in the test_fms/string_utils directory.
 
 # Set common test settings.
-. ../test_common.sh
+. ../test-lib.sh
 
 touch input.nml
-run_test test_string_utils 1
+test_expect_success "test_string_utils" '
+  mpirun -n 1 ./test_string_utils > test_string_utils.out
+'
+
+test_done

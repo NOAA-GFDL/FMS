@@ -397,7 +397,8 @@ contains
         pe_end(n)   = my_root_pe + n*npes_per_tile-1
      end do
 
-     call define_cubic_mosaic("cubic_grid",domain_ensemble(ensemble_id),(/nx_cubic,nx_cubic,nx_cubic,nx_cubic,nx_cubic,nx_cubic/)&
+     call define_cubic_mosaic("cubic_grid",domain_ensemble(ensemble_id), &
+                              (/nx_cubic,nx_cubic,nx_cubic,nx_cubic,nx_cubic,nx_cubic/)&
                              ,(/ny_cubic,ny_cubic,ny_cubic,ny_cubic,ny_cubic,ny_cubic/), &
                                 global_indices, layout2D, pe_start, pe_end )
 
@@ -469,7 +470,7 @@ contains
            enddo
         endif
         write(mesg,'(a,i4)') "cubic_grid redistribute to ensemble", n
-        if(.not.compare_result4( x_ens(isc_ens:iec_ens,jsc_ens:jec_ens,:), y(isc_ens:iec_ens,jsc_ens:jec_ens,:))) call &
+        if(.not.compare_result4( x_ens(isc_ens:iec_ens,jsc_ens:jec_ens,:), y(isc_ens:iec_ens,jsc_ens:jec_ens,:)))call &
            mpp_error(FATAL, "test_mpp_redistribute: failed cubic grid 32-bit check")
      enddo
 
@@ -570,7 +571,8 @@ contains
         pe_end(n)   = my_root_pe + n*npes_per_tile-1
      end do
 
-     call define_cubic_mosaic("cubic_grid",domain_ensemble(ensemble_id),(/nx_cubic,nx_cubic,nx_cubic,nx_cubic,nx_cubic,nx_cubic/)&
+     call define_cubic_mosaic("cubic_grid",domain_ensemble(ensemble_id), &
+                              (/nx_cubic,nx_cubic,nx_cubic,nx_cubic,nx_cubic,nx_cubic/)&
                              ,(/ny_cubic,ny_cubic,ny_cubic,ny_cubic,ny_cubic,ny_cubic/), &
                                 global_indices, layout2D, pe_start, pe_end )
 
@@ -642,7 +644,7 @@ contains
            enddo
         endif
         write(mesg,'(a,i4)') "cubic_grid redistribute to ensemble", n
-        if(.not.compare_result8( x_ens(isc_ens:iec_ens,jsc_ens:jec_ens,:), y(isc_ens:iec_ens,jsc_ens:jec_ens,:))) call &
+        if(.not.compare_result8( x_ens(isc_ens:iec_ens,jsc_ens:jec_ens,:), y(isc_ens:iec_ens,jsc_ens:jec_ens,:)))call &
            mpp_error(FATAL, "test_mpp_redistribute: failed cubic grid 32-bit check")
      enddo
 

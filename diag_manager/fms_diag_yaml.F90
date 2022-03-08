@@ -93,8 +93,9 @@ type diagYamlFiles_type
   character (len=MAX_STR_LEN), dimension(:), private, allocatable :: file_varlist !< An array of variable names
                                                                                   !! within a file
   character (len=MAX_STR_LEN), dimension(:,:), private, allocatable :: file_global_meta !< Array of key(dim=1)
-                                                                                        !! and values(dim=2) to be added as global
-                                                                                        !! meta data to the file
+                                                                                        !! and values(dim=2) to be
+                                                                                        !! added as global meta data to
+                                                                                        !! the file
 
  contains
 
@@ -424,7 +425,8 @@ subroutine fill_in_diag_files(diag_yaml_id, diag_file_id, fileobj)
       fileobj%file_sub_region%index_sub_region = DIAG_NULL
       call get_sub_region(diag_yaml_id, sub_region_id(1), fileobj%file_sub_region%index_sub_region)
       call get_value_from_key(diag_yaml_id, sub_region_id(1), "tile", fileobj%file_sub_region%tile, is_optional=.true.)
-      if (fileobj%file_sub_region%tile .eq. DIAG_NULL) call mpp_error(FATAL, "The tile number is required when defining a "//&
+      if (fileobj%file_sub_region%tile .eq. DIAG_NULL) call mpp_error(FATAL, &
+        "The tile number is required when defining a "//&
         "subregion. Check your subregion entry for "//trim(fileobj%file_fname))
     else
       call mpp_error(FATAL, trim(fileobj%file_sub_region%grid_type)//" is not a valid region type. &
@@ -500,7 +502,8 @@ subroutine fill_in_diag_fields(diag_file_id, var_id, field)
     enddo
     deallocate(key_ids)
   elseif (natt .ne. 0) then
-      call mpp_error(FATAL, "diag_yaml_object_init: variable "//trim(field%var_varname)//" has multiple attribute blocks")
+      call mpp_error(FATAL, "diag_yaml_object_init: variable "//trim(field%var_varname)//&
+                            " has multiple attribute blocks")
   endif
 
 end subroutine

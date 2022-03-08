@@ -185,7 +185,8 @@ contains
       sumc4(2,2) = 1
       if (all(a4 .ne. suma4)) call mpp_error(FATAL, "2D_r4: mpp_sum differs from fortran intrinsic sum")
       if (all(b4 .ne. sumb4)) call mpp_error(FATAL, "2D_r4 with pelist: mpp_sum differs from fortran intrinsic sum")
-      if (all(c4 .ne. sumc4)) call mpp_error(FATAL, "2D_r4 (shorter length): mpp_sum differs from fortran intrinsic sum")
+      if (all(c4 .ne. sumc4)) call mpp_error(FATAL, &
+          &  "2D_r4 (shorter length): mpp_sum differs from fortran intrinsic sum")
     endif
 
   end subroutine test_mpp_sum_2D_r4
@@ -211,7 +212,8 @@ contains
       sumc8(2,2) = 1
       if (all(a8 .ne. suma8)) call mpp_error(FATAL, "2D_r8: mpp_sum differs from fortran intrinsic sum")
       if (all(b8 .ne. sumb8)) call mpp_error(FATAL, "2D_r8 with pelist: mpp_sum differs from fortran intrinsic sum")
-      if (all(c8 .ne. sumc8)) call mpp_error(FATAL, "2D_r8 (shorter length): mpp_sum differs from fortran intrinsic sum")
+      if (all(c8 .ne. sumc8)) call mpp_error(FATAL, &
+          &  "2D_r8 (shorter length): mpp_sum differs from fortran intrinsic sum")
     endif
 
   end subroutine test_mpp_sum_2D_r8
@@ -237,7 +239,8 @@ contains
       sumc4(2,2) = 1
       if (all(a4 .ne. suma4)) call mpp_error(FATAL, "2D_i4: mpp_sum differs from fortran intrinsic sum")
       if (all(b4 .ne. sumb4)) call mpp_error(FATAL, "2D_i4 with pelist: mpp_sum differs from fortran intrinsic sum")
-      if (all(c4 .ne. sumc4)) call mpp_error(FATAL, "2D_i4 (shorter length): mpp_sum differs from fortran intrinsic sum")
+      if (all(c4 .ne. sumc4)) call mpp_error(FATAL, &
+          &  "2D_i4 (shorter length): mpp_sum differs from fortran intrinsic sum")
     endif
 
   end subroutine test_mpp_sum_2D_i4
@@ -263,7 +266,8 @@ contains
       sumc8(2,2) = 1
       if (all(a8 .ne. suma8)) call mpp_error(FATAL, "2D_i8: mpp_sum differs from fortran intrinsic sum")
       if (all(b8 .ne. sumb8)) call mpp_error(FATAL, "2D_i8 with pelist: mpp_sum differs from fortran intrinsic sum")
-      if (all(c8 .ne. sumc8)) call mpp_error(FATAL, "2D_i8 (shorter length): mpp_sum differs from fortran intrinsic sum")
+      if (all(c8 .ne. sumc8)) call mpp_error(FATAL, &
+          &  "2D_i8 (shorter length): mpp_sum differs from fortran intrinsic sum")
     endif
 
   end subroutine test_mpp_sum_2D_i8
@@ -300,7 +304,8 @@ contains
       sumc4(2,2,2) = 1
       if (all(a4 .ne. suma4)) call mpp_error(FATAL, "3D_r4: mpp_sum differs from fortran intrinsic sum")
       if (all(b4 .ne. sumb4)) call mpp_error(FATAL, "3D_r4 with pelist: mpp_sum differs from fortran intrinsic sum")
-      if (all(c4 .ne. sumc4)) call mpp_error(FATAL, "3D_r4 (shorter length): mpp_sum differs from fortran intrinsic sum")
+      if (all(c4 .ne. sumc4)) call mpp_error(FATAL, &
+          &  "3D_r4 (shorter length): mpp_sum differs from fortran intrinsic sum")
     endif
 
   end subroutine test_mpp_sum_3D_r4
@@ -326,7 +331,8 @@ contains
       sumc8(2,2,2) = 1
       if (all(a8 .ne. suma8)) call mpp_error(FATAL, "3D_r8: mpp_sum differs from fortran intrinsic sum")
       if (all(b8 .ne. sumb8)) call mpp_error(FATAL, "3D_r8 with pelist: mpp_sum differs from fortran intrinsic sum")
-      if (all(c8 .ne. sumc8)) call mpp_error(FATAL, "3D_r8 (shorter length): mpp_sum differs from fortran intrinsic sum")
+      if (all(c8 .ne. sumc8)) call mpp_error(FATAL, &
+          &  "3D_r8 (shorter length): mpp_sum differs from fortran intrinsic sum")
     endif
 
   end subroutine test_mpp_sum_3D_r8
@@ -352,7 +358,8 @@ contains
       sumc4(2,2,2) = 1
       if (all(a4 .ne. suma4)) call mpp_error(FATAL, "3D_i4: mpp_sum differs from fortran intrinsic sum")
       if (all(b4 .ne. sumb4)) call mpp_error(FATAL, "3D_i4 with pelist: mpp_sum differs from fortran intrinsic sum")
-      if (all(c4 .ne. sumc4)) call mpp_error(FATAL, "3D_i4 (shorter length): mpp_sum differs from fortran intrinsic sum")
+      if (all(c4 .ne. sumc4)) call mpp_error(FATAL, &
+          &  "3D_i4 (shorter length): mpp_sum differs from fortran intrinsic sum")
     endif
 
   end subroutine test_mpp_sum_3D_i4
@@ -378,7 +385,8 @@ contains
       sumc8(2,2,2) = 1
       if (all(a8 .ne. suma8)) call mpp_error(FATAL, "3D_i8: mpp_sum differs from fortran intrinsic sum")
       if (all(b8 .ne. sumb8)) call mpp_error(FATAL, "3D_i8 with pelist: mpp_sum differs from fortran intrinsic sum")
-      if (all(c8 .ne. sumc8)) call mpp_error(FATAL, "3D_i8 (shorter length): mpp_sum differs from fortran intrinsic sum")
+      if (all(c8 .ne. sumc8)) call mpp_error(FATAL, &
+          &  "3D_i8 (shorter length): mpp_sum differs from fortran intrinsic sum")
     endif
 
   end subroutine test_mpp_sum_3D_i8
@@ -415,7 +423,8 @@ contains
       sumc4(2,2,2,2) = 1
       if (all(a4 .ne. suma4)) call mpp_error(FATAL, "4D_r4: mpp_sum differs from fortran intrinsic sum")
       if (all(b4 .ne. sumb4)) call mpp_error(FATAL, "4D_r4 with pelist: mpp_sum differs from fortran intrinsic sum")
-      if (all(c4 .ne. sumc4)) call mpp_error(FATAL, "4D_r4 (shorter length): mpp_sum differs from fortran intrinsic sum")
+      if (all(c4 .ne. sumc4)) call mpp_error(FATAL, &
+          &  "4D_r4 (shorter length): mpp_sum differs from fortran intrinsic sum")
     endif
 
   end subroutine test_mpp_sum_4D_r4
@@ -441,7 +450,8 @@ contains
       sumc8(2,2,2,2) = 1
       if (all(a8 .ne. suma8)) call mpp_error(FATAL, "4D_r8: mpp_sum differs from fortran intrinsic sum")
       if (all(b8 .ne. sumb8)) call mpp_error(FATAL, "4D_r8 with pelist: mpp_sum differs from fortran intrinsic sum")
-      if (all(c8 .ne. sumc8)) call mpp_error(FATAL, "4D_r8 (shorter length): mpp_sum differs from fortran intrinsic sum")
+      if (all(c8 .ne. sumc8)) call mpp_error(FATAL, &
+          &  "4D_r8 (shorter length): mpp_sum differs from fortran intrinsic sum")
     endif
 
   end subroutine test_mpp_sum_4D_r8
@@ -467,7 +477,8 @@ contains
       sumc4(2,2,2,2) = 1
       if (all(a4 .ne. suma4)) call mpp_error(FATAL, "4D_i4: mpp_sum differs from fortran intrinsic sum")
       if (all(b4 .ne. sumb4)) call mpp_error(FATAL, "4D_i4 with pelist: mpp_sum differs from fortran intrinsic sum")
-      if (all(c4 .ne. sumc4)) call mpp_error(FATAL, "4D_i4 (shorter length): mpp_sum differs from fortran intrinsic sum")
+      if (all(c4 .ne. sumc4)) call mpp_error(FATAL, &
+          &  "4D_i4 (shorter length): mpp_sum differs from fortran intrinsic sum")
     endif
 
   end subroutine test_mpp_sum_4D_i4
@@ -493,7 +504,8 @@ contains
       sumc8(2,2,2,2) = 1
       if (all(a8 .ne. suma8)) call mpp_error(FATAL, "4D_i8: mpp_sum differs from fortran intrinsic sum")
       if (all(b8 .ne. sumb8)) call mpp_error(FATAL, "4D_i8 with pelist: mpp_sum differs from fortran intrinsic sum")
-      if (all(c8 .ne. sumc8)) call mpp_error(FATAL, "4D_i8 (shorter length): mpp_sum differs from fortran intrinsic sum")
+      if (all(c8 .ne. sumc8)) call mpp_error(FATAL, &
+          &  "4D_i8 (shorter length): mpp_sum differs from fortran intrinsic sum")
     endif
 
   end subroutine test_mpp_sum_4D_i8
@@ -530,7 +542,8 @@ contains
       sumc4(2,2,2,2,2) = 1
       if (all(a4 .ne. suma4)) call mpp_error(FATAL, "5D_r4: mpp_sum differs from fortran intrinsic sum")
       if (all(b4 .ne. sumb4)) call mpp_error(FATAL, "5D_r4 with pelist: mpp_sum differs from fortran intrinsic sum")
-      if (all(c4 .ne. sumc4)) call mpp_error(FATAL, "5D_r4 (shorter length): mpp_sum differs from fortran intrinsic sum")
+      if (all(c4 .ne. sumc4)) call mpp_error(FATAL, &
+          &  "5D_r4 (shorter length): mpp_sum differs from fortran intrinsic sum")
     endif
 
   end subroutine test_mpp_sum_5D_r4
@@ -556,7 +569,8 @@ contains
       sumc8(2,2,2,2,2) = 1
       if (all(a8 .ne. suma8)) call mpp_error(FATAL, "5D_r8: mpp_sum differs from fortran intrinsic sum")
       if (all(b8 .ne. sumb8)) call mpp_error(FATAL, "5D_r8 with pelist: mpp_sum differs from fortran intrinsic sum")
-      if (all(c8 .ne. sumc8)) call mpp_error(FATAL, "5D_r8 (shorter length): mpp_sum differs from fortran intrinsic sum")
+      if (all(c8 .ne. sumc8)) call mpp_error(FATAL, &
+          &  "5D_r8 (shorter length): mpp_sum differs from fortran intrinsic sum")
     endif
 
   end subroutine test_mpp_sum_5D_r8
@@ -582,7 +596,8 @@ contains
       sumc4(2,2,2,2,2) = 1
       if (all(a4 .ne. suma4)) call mpp_error(FATAL, "5D_i4: mpp_sum differs from fortran intrinsic sum")
       if (all(b4 .ne. sumb4)) call mpp_error(FATAL, "5D_i4 with pelist: mpp_sum differs from fortran intrinsic sum")
-      if (all(c4 .ne. sumc4)) call mpp_error(FATAL, "5D_i4 (shorter length): mpp_sum differs from fortran intrinsic sum")
+      if (all(c4 .ne. sumc4)) call mpp_error(FATAL, &
+          &  "5D_i4 (shorter length): mpp_sum differs from fortran intrinsic sum")
     endif
 
   end subroutine test_mpp_sum_5D_i4
@@ -608,7 +623,8 @@ contains
       sumc8(2,2,2,2,2) = 1
       if (all(a8 .ne. suma8)) call mpp_error(FATAL, "5D_i8: mpp_sum differs from fortran intrinsic sum")
       if (all(b8 .ne. sumb8)) call mpp_error(FATAL, "5D_i8 with pelist: mpp_sum differs from fortran intrinsic sum")
-      if (all(c8 .ne. sumc8)) call mpp_error(FATAL, "5D_i8 (shorter length): mpp_sum differs from fortran intrinsic sum")
+      if (all(c8 .ne. sumc8)) call mpp_error(FATAL, &
+          &  "5D_i8 (shorter length): mpp_sum differs from fortran intrinsic sum")
     endif
 
   end subroutine test_mpp_sum_5D_i8

@@ -119,7 +119,8 @@ program test_mpp_alltoall
        do i=0, (npes-1)
           do jsend=0, isend-1
              if( rbuf(ii) .ne. real( 10*i+isend*pe+jsend, kind=r4_kind ) ) then
-                write(*,'("PE #",i3,"element",i4,"Expected",f6.0,"but received",f6.0)') pe, ii, real(10*i+nsend*pe+jsend), rbuf(ii)
+                write(*,'("PE #",i3,"element",i4,"Expected",f6.0,"but received",f6.0)') pe, ii, &
+                     &  real(10*i+nsend*pe+jsend), rbuf(ii)
                 call mpp_error(FATAL, 'test_mpp_alltoall failed')
              end if
              ii = ii + 1
@@ -181,7 +182,8 @@ program test_mpp_alltoall
        do i=0, (npes-1)
           do jsend=0, isend-1
              if( rbuf(ii) .ne. real( 10*i+isend*pe+jsend, kind=r8_kind ) ) then
-                write(*,'("PE #",i3,"element",i4,"Expected",f6.0,"but received",f6.0)') pe, ii, real(10*i+nsend*pe+jsend), rbuf(ii)
+                write(*,'("PE #",i3,"element",i4,"Expected",f6.0,"but received",f6.0)') pe, ii, &
+                     &  real(10*i+nsend*pe+jsend), rbuf(ii)
                 call mpp_error(FATAL, 'test_mpp_alltoall failed')
              end if
              ii = ii + 1
@@ -243,7 +245,8 @@ program test_mpp_alltoall
        do i=0, (npes-1)
           do jsend=0, isend-1
              if( rbuf(ii) .ne. real( 10*i+isend*pe+jsend, kind=i4_kind ) ) then
-                write(*,'("PE #",i3,"element",i4,"Expected",i6,"but received",i6)') pe, ii, real(10*i+nsend*pe+jsend), rbuf(ii)
+                write(*,'("PE #",i3,"element",i4,"Expected",i6,"but received",i6)') pe, ii, &
+                     &  real(10*i+nsend*pe+jsend), rbuf(ii)
                 call mpp_error(FATAL, 'test_mpp_alltoall failed')
              end if
              ii = ii + 1
@@ -305,7 +308,8 @@ program test_mpp_alltoall
        do i=0, (npes-1)
           do jsend=0, isend-1
              if( rbuf(ii) .ne. real( 10*i+isend*pe+jsend, kind=i8_kind ) ) then
-                write(*,'("PE #",i3,"element",i4,"Expected",i6,"but received",i6)') pe, ii, real(10*i+nsend*pe+jsend), rbuf(ii)
+                write(*,'("PE #",i3,"element",i4,"Expected",i6,"but received",i6)') pe, ii, &
+                     &  real(10*i+nsend*pe+jsend), rbuf(ii)
                 call mpp_error(FATAL, 'test_mpp_alltoall failed')
              end if
              ii = ii + 1

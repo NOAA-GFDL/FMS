@@ -37,6 +37,10 @@ test_mosaic_SOURCES = test_mosaic.F90
 # Run the test program.
 TESTS = test_mosaic2.sh
 
+TEST_EXTENSIONS = .sh
+SH_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
+                  $(top_srcdir)/tap-driver.sh
+
 # These files are also included in the distribution.
 EXTRA_DIST = test_mosaic2.sh
 

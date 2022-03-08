@@ -23,30 +23,17 @@
 # execute tests in the test_fms/mpp directory.
 
 # Tom Robinson 04/21/2020
+# Ryan Mulhall 2/2021
 
 # Set common test settings.
-. ../test_common.sh
+. ../test-lib.sh
 
-
-# Run the test for one processor
 export NUM_PES=1
-run_test test_mpp_npes ${NUM_PES}
-
-# If on a Linux system that uses the command `nproc`, run the test
-# with the full number of processors
-
-if [ $(command -v nproc) ]
- # Looks like a linux system
- then
-    # Get the number of available CPUs on the system
-    nProc=$(nproc)
-    if [ $nProc -gt 1 ]
-     then
-       export NUM_PES=2
-       # Run the test with all processors
-       run_test test_mpp_npes ${NUM_PES}
-    fi
-fi
-
-
-
+test_expect_success "get number of PEs single processor" '
+    mpirun -n 1 ./test_mpp_npes
+'
+export NUM_PES=2
+test_expect_success "get number of PEs multiple processor" '
+    mpirun -n 2 ./test_mpp_npes
+'
+test_done

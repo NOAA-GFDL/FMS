@@ -39,10 +39,8 @@ program test_io_mosaic_R4_R8
   use mpp_io_mod,      only : MPP_NETCDF, MPP_MULTI, mpp_get_atts, mpp_write, mpp_close
   use mpp_io_mod,      only : mpp_get_info, mpp_get_axes, mpp_get_fields, mpp_get_times
   use mpp_io_mod,      only : mpp_read, mpp_io_exit, MPP_APPEND
-
-#ifdef INTERNAL_FILE_NML
   USE mpp_mod, ONLY: input_nml_file
-#endif
+  use fms_mod,         only : check_nml_error
 
   implicit none
 
@@ -85,19 +83,9 @@ program test_io_mosaic_R4_R8
   call mpp_init(test_level=mpp_init_test_full_init)
   pe = mpp_pe()
   npes = mpp_npes()
-  do
-     inquire( unit=unit, opened=opened )
-     if( .NOT.opened )exit
-     unit = unit + 1
-     if( unit.EQ.100 )call mpp_error( FATAL, 'Unable to locate unit number.' )
-  end do
-  open( unit=unit, file='input.nml', iostat=io_status)
-  read( unit,test_io_mosaic_nml, iostat=io_status )
-  close(unit)
 
-      if (io_status > 0) then
-         call mpp_error(FATAL,'=>test_io_mosaic_R4_R8: Error reading input.nml')
-      endif
+  read (input_nml_file, test_io_mosaic_nml, iostat=io_status)
+  io_status = check_nml_error(io_status, 'test_mpp_io')
 
   call SYSTEM_CLOCK( count_rate=tks_per_sec )
   if( debug )then
@@ -213,13 +201,16 @@ program test_io_mosaic_R4_R8
      call mpp_open( unit, output_file, action=MPP_OVERWR, form=MPP_NETCDF, threading=MPP_MULTI, fileset=MPP_MULTI )
   case("Mult_tile_R4")
      write(output_file, '(a,I4.4)') type//'.tile', my_tile
-     call mpp_open( unit, output_file, action=MPP_OVERWR, form=MPP_NETCDF, threading=MPP_SINGLE, is_root_pe=is_root_pe )
+     call mpp_open( unit, output_file, action=MPP_OVERWR, form=MPP_NETCDF, threading=MPP_SINGLE, &
+                  &  is_root_pe=is_root_pe )
   case("Single_tile_with_group_R4")
      call mpp_define_io_domain(domain, io_layout)
-     call mpp_open( unit, output_file, action=MPP_OVERWR, form=MPP_NETCDF, threading=MPP_MULTI, fileset=MPP_MULTI, domain=domain)
+     call mpp_open( unit, output_file, action=MPP_OVERWR, form=MPP_NETCDF, threading=MPP_MULTI, &
+                  &  fileset=MPP_MULTI, domain=domain)
   case("Mult_tile_with_group_R4")
      write(output_file, '(a,I4.4)') type//'.tile', my_tile
-     call mpp_open( unit, output_file, action=MPP_OVERWR, form=MPP_NETCDF, threading=MPP_MULTI, fileset=MPP_MULTI, domain=domain)
+     call mpp_open( unit, output_file, action=MPP_OVERWR, form=MPP_NETCDF, threading=MPP_MULTI, &
+                  &  fileset=MPP_MULTI, domain=domain)
 
   case default
      call mpp_error(FATAL, "program test_io_mosaic_R4_R8: invaid value of type="//type)
@@ -250,7 +241,8 @@ program test_io_mosaic_R4_R8
      call mpp_open( unit, output_file, action=MPP_RDONLY, form=MPP_NETCDF, threading=MPP_MULTI, &
          fileset=MPP_SINGLE, is_root_pe=is_root_pe )
   case("Single_tile_with_group_R4", "Mult_tile_with_group_R4")
-     call mpp_open( unit, output_file, action=MPP_RDONLY, form=MPP_NETCDF, threading=MPP_MULTI, fileset=MPP_MULTI, domain=domain)
+     call mpp_open( unit, output_file, action=MPP_RDONLY, form=MPP_NETCDF, threading=MPP_MULTI, &
+                  &  fileset=MPP_MULTI, domain=domain)
   case default
      call mpp_error(FATAL, "program test_io_mosaic_R4_R8: invaid value of type="//type)
   end select
@@ -351,13 +343,16 @@ program test_io_mosaic_R4_R8
      call mpp_open( unit, output_file, action=MPP_OVERWR, form=MPP_NETCDF, threading=MPP_MULTI, fileset=MPP_MULTI )
   case("Mult_tile_R8")
      write(output_file, '(a,I4.4)') type//'.tile', my_tile
-     call mpp_open( unit, output_file, action=MPP_OVERWR, form=MPP_NETCDF, threading=MPP_SINGLE, is_root_pe=is_root_pe )
+     call mpp_open( unit, output_file, action=MPP_OVERWR, form=MPP_NETCDF, threading=MPP_SINGLE, &
+                  &  is_root_pe=is_root_pe )
   case("Single_tile_with_group_R8")
      call mpp_define_io_domain(domain, io_layout)
-     call mpp_open( unit, output_file, action=MPP_OVERWR, form=MPP_NETCDF, threading=MPP_MULTI, fileset=MPP_MULTI, domain=domain)
+     call mpp_open( unit, output_file, action=MPP_OVERWR, form=MPP_NETCDF, threading=MPP_MULTI, &
+                  &  fileset=MPP_MULTI, domain=domain)
   case("Mult_tile_with_group_R8")
      write(output_file, '(a,I4.4)') type//'.tile', my_tile
-     call mpp_open( unit, output_file, action=MPP_OVERWR, form=MPP_NETCDF, threading=MPP_MULTI, fileset=MPP_MULTI, domain=domain)
+     call mpp_open( unit, output_file, action=MPP_OVERWR, form=MPP_NETCDF, threading=MPP_MULTI, &
+                  &  fileset=MPP_MULTI, domain=domain)
 
   case default
      call mpp_error(FATAL, "program test_io_mosaic_R4_R8: invaid value of type="//type)
@@ -388,7 +383,8 @@ program test_io_mosaic_R4_R8
      call mpp_open( unit, output_file, action=MPP_RDONLY, form=MPP_NETCDF, threading=MPP_MULTI, &
          fileset=MPP_SINGLE, is_root_pe=is_root_pe )
   case("Single_tile_with_group_R8", "Mult_tile_with_group_R8")
-     call mpp_open( unit, output_file, action=MPP_RDONLY, form=MPP_NETCDF, threading=MPP_MULTI, fileset=MPP_MULTI, domain=domain)
+     call mpp_open( unit, output_file, action=MPP_RDONLY, form=MPP_NETCDF, threading=MPP_MULTI, &
+                  &  fileset=MPP_MULTI, domain=domain)
   case default
      call mpp_error(FATAL, "program test_io_mosaic_R4_R8: invaid value of type="//type)
   end select

@@ -1,7 +1,7 @@
 module test_fms_mod
  use, intrinsic :: iso_c_binding
 
-        interface 
+        interface
                 function strPoint () bind(C,name="strPoint") result(Cstring)
                    use, intrinsic :: iso_c_binding
                         type (c_ptr) :: Cstring !< String returned from this function "100"
@@ -70,8 +70,8 @@ program test_fms
  endif
 
 
- 
+
 
  call fms_end()
- 
+
 end program test_fms

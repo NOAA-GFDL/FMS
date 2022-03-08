@@ -37,8 +37,13 @@ test_interpolator_SOURCES = test_interpolator.F90
 # Run the test program.
 TESTS = test_interpolator2.sh
 
+TEST_EXTENSIONS = .sh
+SH_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
+                  $(top_srcdir)/tap-driver.sh
+TESTS_ENVIRONMENT= test_input_path="@TEST_INPUT_PATH@"
+
 # These files are also included in the distribution.
-EXTRA_DIST = test_interpolator2.sh input_base.nml diag_table_base
+EXTRA_DIST = test_interpolator2.sh
 
 # Clean up
 CLEANFILES = input.nml diag_table *.dpi *.spi *.dyn *.spl
