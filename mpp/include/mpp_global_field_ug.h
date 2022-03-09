@@ -43,8 +43,8 @@
       integer, intent(in), optional :: flags
       MPP_TYPE_, intent(in), optional :: default_data
 
-      integer :: l, k, m, n, nd, nwords, lpos, rpos, tile_id
-      integer :: ke, lsc, lec, ls, le, nword_me
+      integer :: l, k, m, n, nd, num_words, lpos, rpos, tile_id
+      integer :: ke, lsc, lec, ls, le, num_word_me
       integer :: ipos, jpos
       logical :: root_only, global_on_this_pe
       MPP_TYPE_ :: clocal (domain%compute%size*size(local,2))
@@ -59,7 +59,8 @@
       if( stackuse.GT.mpp_domains_stack_size )then
           write( text, '(i8)' )stackuse
           call mpp_error( FATAL, &
-               'MPP_DO_GLOBAL_FIELD_UG user stack overflow: call mpp_domains_set_stack_size('//trim(text)//') from all PEs.' )
+               'MPP_DO_GLOBAL_FIELD_UG user stack overflow: call mpp_domains_set_stack_size('//trim(text)// &
+               & ') from all PEs.' )
       end if
       mpp_domains_stack_hwm = max( mpp_domains_stack_hwm, stackuse )
 
@@ -88,7 +89,7 @@
       ke  = size(local,2)
       lsc = domain%compute%begin; lec = domain%compute%end
 
-      nword_me = (lec-lsc+1)*ke
+      num_word_me = (lec-lsc+1)*ke
 
 ! make contiguous array from compute domain
       m = 0
@@ -120,13 +121,13 @@
       nd = size(domain%list(:))
       if(root_only) then
          if(domain%pe .NE. domain%tile_root_pe) then
-            call mpp_send( clocal(1), plen=nword_me, to_pe=domain%tile_root_pe, tag=COMM_TAG_1 )
+            call mpp_send( clocal(1), plen=num_word_me, to_pe=domain%tile_root_pe, tag=COMM_TAG_1 )
          else
             do n = 1,nd-1
                rpos = mod(domain%pos+n,nd)
                if( domain%list(rpos)%tile_id .NE. tile_id ) cycle
-               nwords = domain%list(rpos)%compute%size * ke
-               call mpp_recv(cremote(1), glen=nwords, from_pe=domain%list(rpos)%pe, tag=COMM_TAG_1 )
+               num_words = domain%list(rpos)%compute%size * ke
+               call mpp_recv(cremote(1), glen=num_words, from_pe=domain%list(rpos)%pe, tag=COMM_TAG_1 )
                m = 0
                ls = domain%list(rpos)%compute%begin; le = domain%list(rpos)%compute%end
 
@@ -142,13 +143,13 @@
          do n = 1,nd-1
             lpos = mod(domain%pos+nd-n,nd)
             if( domain%list(lpos)%tile_id.NE. tile_id ) cycle ! global field only within tile
-            call mpp_send( clocal(1), plen=nword_me, to_pe=domain%list(lpos)%pe, tag=COMM_TAG_2 )
+            call mpp_send( clocal(1), plen=num_word_me, to_pe=domain%list(lpos)%pe, tag=COMM_TAG_2 )
          end do
          do n = 1,nd-1
             rpos = mod(domain%pos+n,nd)
             if( domain%list(rpos)%tile_id .NE. tile_id ) cycle ! global field only within tile
-            nwords = domain%list(rpos)%compute%size * ke
-            call mpp_recv( cremote(1), glen=nwords, from_pe=domain%list(rpos)%pe, tag=COMM_TAG_2 )
+            num_words = domain%list(rpos)%compute%size * ke
+            call mpp_recv( cremote(1), glen=num_words, from_pe=domain%list(rpos)%pe, tag=COMM_TAG_2 )
             m = 0
             ls = domain%list(rpos)%compute%begin; le = domain%list(rpos)%compute%end
 

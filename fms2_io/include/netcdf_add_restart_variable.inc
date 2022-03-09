@@ -421,7 +421,8 @@ subroutine register_restart_region_3d(fileobj, variable_name, vdata, indices, gl
   class(*), dimension(:,:,:), intent(in), target :: vdata !< Pointer to variable data
   integer, dimension(4), intent(in)                 :: indices !< Indices for the halo region for the variable
                                                                !! (starting x, ending x, starting y, ending y)
-  integer, dimension(:), intent(in)                 :: global_size !> Global_size(1:3) == size of the variable in (x,y,z)
+  integer, dimension(:), intent(in)                 :: global_size !> Global_size(1:3) == size of the
+                                                                   !! variable in (x,y,z)
   integer, dimension(:), intent(in)                 :: pelist !> List of pelist that have the data for
                                                               !! the variable
   logical, intent(in)                               :: is_root_pe !> Flag indicating if this is the root_pe

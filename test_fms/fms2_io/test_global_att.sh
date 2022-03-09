@@ -23,10 +23,17 @@
 # Author: Uriel Ramirez 6/30/20
 #
 # Set common test settings.
-. ../test_common.sh
+. ../test-lib.sh
+
+# Create and enter output directory
+output_dir
 
 # make an input.nml for mpp_init to read
 touch input.nml
 
 # run the tests
-run_test test_global_att 1
+test_expect_success "Global attribute test" '
+  mpirun -n 1 ../test_global_att
+'
+
+test_done

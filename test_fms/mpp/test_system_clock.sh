@@ -25,7 +25,10 @@
 # Lauren Chilutti 05/21/2020
 
 # Set common test settings.
-. ../test_common.sh
+. ../test-lib.sh
 
 # Run the test for one processor
-run_test test_system_clock 1
+test_expect_success "system clock functionality" '
+    mpirun -n 1 ./test_system_clock
+'
+test_done

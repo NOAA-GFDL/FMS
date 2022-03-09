@@ -90,8 +90,9 @@ type diagYamlFiles_type
   character (len=MAX_STR_LEN), dimension(:), private, allocatable :: file_varlist !< An array of variable names
                                                                                   !! within a file
   character (len=MAX_STR_LEN), dimension(:,:), private, allocatable :: file_global_meta !< Array of key(dim=1)
-                                                                                        !! and values(dim=2) to be added as global
-                                                                                        !! meta data to the file
+                                                                                        !! and values(dim=2) to be
+                                                                                        !! added as global meta data to
+                                                                                        !! the file
 
  contains
 
@@ -266,7 +267,7 @@ subroutine diag_yaml_object_init(diag_subset_output)
   logical              :: is_ocean         !< Flag indicating if it is an ocean file
   logical, allocatable :: ignore(:)        !< Flag indicating if the diag_file is going to be ignored
   integer              :: actual_num_files !< The actual number of files that were saved
-  integer              :: ii               !! For do loops to keep track of the files that were saved
+  integer              :: file_count       !! The current number of files added to the diag_yaml obj
   logical              :: write_file       !< Flag indicating if the user wants the file to be written
   logical              :: write_var        !< Flag indicating if the user wants the variable to be written
 
@@ -315,20 +316,20 @@ subroutine diag_yaml_object_init(diag_subset_output)
   allocate(diag_yaml%diag_fields(total_nvars))
 
   var_count = 0
-  ii = 0
+  file_count = 0
+  !> Loop through the number of nfiles and fill in the diag_yaml obj
   nfiles_loop: do i = 1, nfiles
     if(ignore(i)) cycle
-    ii = ii + 1
-
-    call diag_yaml_files_obj_init(diag_yaml%diag_files(ii))
-    call fill_in_diag_files(diag_yaml_id, diag_file_ids(i), diag_yaml%diag_files(ii))
+    file_count = file_count + 1
+    call diag_yaml_files_obj_init(diag_yaml%diag_files(file_count))
+    call fill_in_diag_files(diag_yaml_id, diag_file_ids(i), diag_yaml%diag_files(file_count))
 
     nvars = 0
     nvars = get_num_blocks(diag_yaml_id, "varlist", parent_block_id=diag_file_ids(i))
     allocate(var_ids(nvars))
     call get_block_ids(diag_yaml_id, "varlist", var_ids, parent_block_id=diag_file_ids(i))
     file_var_count = 0
-    allocate(diag_yaml%diag_files(ii)%file_varlist(get_total_num_vars(diag_yaml_id, diag_file_ids(i))))
+    allocate(diag_yaml%diag_files(file_count)%file_varlist(get_total_num_vars(diag_yaml_id, diag_file_ids(i))))
     nvars_loop: do j = 1, nvars
       write_var = .true.
       call get_value_from_key(diag_yaml_id, var_ids(j), "write_var", write_var, is_optional=.true.)
@@ -338,12 +339,12 @@ subroutine diag_yaml_object_init(diag_subset_output)
       file_var_count = file_var_count + 1
 
       !> Save the filename in the diag_field type
-      diag_yaml%diag_fields(var_count)%var_fname = diag_yaml%diag_files(ii)%file_fname
+      diag_yaml%diag_fields(var_count)%var_fname = diag_yaml%diag_files(file_count)%file_fname
 
       call fill_in_diag_fields(diag_yaml_id, var_ids(j), diag_yaml%diag_fields(var_count))
 
       !> Save the variable name in the diag_file type
-      diag_yaml%diag_files(ii)%file_varlist(file_var_count) = diag_yaml%diag_fields(var_count)%var_varname
+      diag_yaml%diag_files(file_count)%file_varlist(file_var_count) = diag_yaml%diag_fields(var_count)%var_varname
     enddo nvars_loop
     deallocate(var_ids)
   enddo nfiles_loop
@@ -424,7 +425,8 @@ subroutine fill_in_diag_files(diag_yaml_id, diag_file_id, fileobj)
       fileobj%file_sub_region%index_sub_region = DIAG_NULL
       call get_sub_region(diag_yaml_id, sub_region_id(1), fileobj%file_sub_region%index_sub_region)
       call get_value_from_key(diag_yaml_id, sub_region_id(1), "tile", fileobj%file_sub_region%tile, is_optional=.true.)
-      if (fileobj%file_sub_region%tile .eq. DIAG_NULL) call mpp_error(FATAL, "The tile number is required when defining a "//&
+      if (fileobj%file_sub_region%tile .eq. DIAG_NULL) call mpp_error(FATAL, &
+        "The tile number is required when defining a "//&
         "subregion. Check your subregion entry for "//trim(fileobj%file_fname))
     else
       call mpp_error(FATAL, trim(fileobj%file_sub_region%grid_type)//" is not a valid region type. &
@@ -496,7 +498,8 @@ subroutine fill_in_diag_fields(diag_file_id, var_id, field)
     enddo
     deallocate(key_ids)
   elseif (natt .ne. 0) then
-      call mpp_error(FATAL, "diag_yaml_object_init: variable "//trim(field%var_varname)//" has multiple attribute blocks")
+      call mpp_error(FATAL, "diag_yaml_object_init: variable "//trim(field%var_varname)//&
+                            " has multiple attribute blocks")
   endif
 
 end subroutine

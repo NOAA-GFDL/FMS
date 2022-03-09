@@ -25,23 +25,14 @@
 # Jessica Liptak
 
 # Set common test settings.
-. ../test_common.sh
+. ../test-lib.sh
 # Run the test for one processor
-rm -f input.nml
 touch input.nml
 
-#echo "Running test_mpp_update_domains_ad with 1 pe"
-#run_test test_mpp_update_domains_ad 1
-# If on a Linux system that uses the command `nproc`, run the test
-if [ $(command -v nproc) ]
- # Looks like a linux system
- then
-   # Get the number of available CPUs on the system
-   nProc=$(nproc)
-   if [ ${nProc} -ge 4 ]
-     then
-       # Run the test with 4 pes
-       echo "Running test_mpp_update_domains_ad with 4 pes"
-       run_test test_mpp_update_domains_ad 4
-   fi
-fi
+test_expect_success "update adjoint domains with 1 PE" '
+    mpirun -n 1 ./test_mpp_update_domains_ad
+'
+test_expect_success "update adjoint domains with 4 PEs" '
+    mpirun -n 4 ./test_mpp_update_domains_ad
+'
+test_done

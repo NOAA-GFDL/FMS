@@ -108,7 +108,7 @@ public :: time_interp_init, time_interp, fraction_of_year
 !     5. call time_interp( Time, Timelist, weight, index1, index2 [, modtime] )
 !   </TEMPLATE>
 !   <TEMPLATE>
-!     6. call time_interp( Time, Time_beg, Time_end, Timelist, weight, index1, index2 [,correct_leap_year_inconsistency])
+! 6. call time_interp( Time, Time_beg, Time_end, Timelist, weight, index1, index2 [,correct_leap_year_inconsistency])
 !   </TEMPLATE>
 !   <IN NAME="Time">
 !      The time at which the the weight is computed.
@@ -224,7 +224,8 @@ public :: time_interp_init, time_interp, fraction_of_year
 !!              call time_interp( Time, weight, year1, year2, month1, month2 )
 !!              call time_interp( Time, weight, year1, year2, month1, month2, day1, day2 )
 !!              call time_interp( Time, Timelist, weight, index1, index2 [, modtime] )
-!!              call time_interp( Time, Time_beg, Time_end, Timelist, weight, index1, index2 [,correct_leap_year_inconsistency])
+!!              call time_interp( Time, Time_beg, Time_end, Timelist, weight, index1, index2
+!!              [,correct_leap_year_inconsistency])
 !! @endcode
 !> @ingroup time_interp_mod
 interface time_interp

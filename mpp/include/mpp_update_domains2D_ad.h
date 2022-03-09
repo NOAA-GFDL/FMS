@@ -154,7 +154,8 @@
                   call mpp_do_check(f_addrs(1:l_size,1:ntile), domain, check, d_type, ke, flags, name )
                endif
             endif
-            update => search_update_overlap(domain, update_whalo, update_ehalo, update_shalo, update_nhalo, update_position)
+            update => search_update_overlap(domain, update_whalo, update_ehalo, update_shalo, update_nhalo, &
+                                           &  update_position)
 
             !call mpp_do_update( f_addrs(1:l_size,1:ntile), domain, update, d_type, ke, &
             !                    b_addrs(1:l_size,1:ntile), bsize, flags)
@@ -361,7 +362,8 @@
          set_mismatch = set_mismatch .OR. (update_nhalo /= nhalosz)
          if(set_mismatch)then
             write( text,'(i2)' ) list
-            call mpp_error(FATAL,'MPP_UPDATE_AD_3D_V: Incompatible field at count '//text//' for group vector update.' )
+            call mpp_error(FATAL,'MPP_UPDATE_AD_3D_V: Incompatible field at count '// &
+                           & text//' for group vector update.' )
          end if
       end if
       if(is_complete) then
@@ -397,8 +399,10 @@
                    end if
                 endif
             endif
-            updatex => search_update_overlap(domain, update_whalo, update_ehalo, update_shalo, update_nhalo, position_x)
-            updatey => search_update_overlap(domain, update_whalo, update_ehalo, update_shalo, update_nhalo, position_y)
+            updatex => search_update_overlap(domain, update_whalo, update_ehalo, update_shalo, update_nhalo, &
+                                            &  position_x)
+            updatey => search_update_overlap(domain, update_whalo, update_ehalo, update_shalo, update_nhalo, &
+                                            &  position_y)
             if(exchange_uv) then
                call mpp_do_update_ad(f_addrsx(1:l_size,1:ntile),f_addrsy(1:l_size,1:ntile), domain, updatey, updatex, &
                     d_type,ke, grid_offset_type, flags)

@@ -213,7 +213,8 @@ if(.not.permit_conversion_local) then
                  (trim(calendar_in_c) == 'gregorian'         .and. calendar_tm_i == GREGORIAN)
   if(.not.correct_form) then
     call error_mesg('get_cal_time','calendar not consistent with calendar type in use by time_manager.'// &
-         ' calendar='//trim(calendar_in_c)//'. Type in use by time_manager='//valid_calendar_types(calendar_tm_i),FATAL)
+         ' calendar='//trim(calendar_in_c)//'. Type in use by time_manager='// &
+                          & valid_calendar_types(calendar_tm_i),FATAL)
   endif
 endif
 
@@ -315,14 +316,16 @@ else if(lowercase(units(1:12)) == 'months since') then
   increment_days = floor(dt/86400)
   increment_seconds = int(dt - increment_days*86400)
 else
-  call error_mesg('get_cal_time','"'//trim(units)//'"'//' is not an acceptable units attribute of time.'// &
-    ' It must begin with: "years since", "months since", "days since", "hours since", "minutes since", or "seconds since"',FATAL)
+  call error_mesg('get_cal_time','"'//trim(units)//'" is not an acceptable units attribute of time.'// &
+            & ' It must begin with: "years since", "months since", "days since", "hours since", "minutes since",'// &
+            & ' or "seconds since"',FATAL)
 endif
 
 if (calendar_in_i /= calendar_tm_i) then
     if(calendar_in_i == NO_CALENDAR .or. calendar_tm_i == NO_CALENDAR) then
       call error_mesg('get_cal_time','Cannot do calendar conversion because input calendar is '// &
-       trim(valid_calendar_types(calendar_in_i))//' and time_manager is using '//trim(valid_calendar_types(calendar_tm_i))// &
+       trim(valid_calendar_types(calendar_in_i))//' and time_manager is using '// &
+       trim(valid_calendar_types(calendar_tm_i))// &
        ' Conversion cannot be done if either is NO_CALENDAR',FATAL)
     endif
     call get_date(base_time,year, month, day, hour, minute, second)
@@ -332,8 +335,8 @@ if (calendar_in_i /= calendar_tm_i) then
     get_cal_time = set_date(year,month,day,hour,minute,second, err_msg=err_msg)
     if(err_msg /= '') then
       call error_mesg('get_cal_time','Error in function get_cal_time: '//trim(err_msg)// &
-                      ' Note that the time_manager is using the '//trim(valid_calendar_types(calendar_tm_i))//' calendar '// &
-                      'while the calendar type passed to function get_cal_time is '//calendar_in_c,FATAL)
+               ' Note that the time_manager is using the '//trim(valid_calendar_types(calendar_tm_i))//' calendar '// &
+               'while the calendar type passed to function get_cal_time is '//calendar_in_c,FATAL)
     endif
 else
     get_cal_time = base_time + set_time(increment_seconds, increment_days)

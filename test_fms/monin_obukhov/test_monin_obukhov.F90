@@ -19,7 +19,8 @@
 
 program test_monin_obukhov
 
-  use monin_obukhov_inter, only: monin_obukhov_drag_1d, monin_obukhov_stable_mix, monin_obukhov_diff, monin_obukhov_profile_1d
+  use monin_obukhov_inter, only: monin_obukhov_drag_1d, monin_obukhov_stable_mix, monin_obukhov_diff, &
+                              &  monin_obukhov_profile_1d
   use mpp_mod, only : mpp_error, FATAL, stdout, mpp_init, mpp_exit
 
   implicit none
@@ -232,8 +233,10 @@ program test_monin_obukhov
       zt     = (/ 3.69403636275411e-05, 0.0001, 1.01735489109205e-05, 7.63933834969505e-05, 0.00947346982656289/)
       zq     = (/ 5.72575636226887e-05, 0.0001, 5.72575636226887e-05, 5.72575636226887e-05, 5.72575636226887e-05/)
       u_star = (/ 0.109462510724615, 0.0932942802513508, 0.223232887323184, 0.290918439028557, 0.260087579361467/)
-      b_star = (/ 0.00690834676781433, 0.00428178089592372, 0.00121229800895103, 0.00262353784027441, -0.000570314880866852/)
-      q_star = (/ 0.000110861442197537, 9.44983279664197e-05, 4.17643828631936e-05, 0.000133135421415819, 9.36317815993945e-06/)
+      b_star = (/ 0.00690834676781433, 0.00428178089592372, 0.00121229800895103, 0.00262353784027441, &
+               &  -0.000570314880866852/)
+      q_star = (/ 0.000110861442197537, 9.44983279664197e-05, 4.17643828631936e-05, 0.000133135421415819, &
+               &  9.36317815993945e-06/)
 
       avail = (/ .true., .true.,.true.,.true.,.true. /)
 

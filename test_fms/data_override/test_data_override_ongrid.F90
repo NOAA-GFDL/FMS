@@ -25,11 +25,10 @@ program test_data_override_ongrid
 use   mpp_domains_mod,   only: mpp_define_domains, mpp_define_io_domain, mpp_get_data_domain, &
                                mpp_domains_set_stack_size, mpp_get_compute_domain, domain2d
 use   mpp_mod,           only: mpp_init, mpp_exit, mpp_pe, mpp_root_pe, mpp_error, FATAL, &
-                               input_nml_file
+                               input_nml_file, mpp_sync
 use   data_override_mod, only: data_override_init, data_override
 use   fms2_io_mod,       only: fms2_io_init
 use   time_manager_mod,  only: set_calendar_type, time_type, set_date, NOLEAP
-use   mpi,               only: mpi_barrier, mpi_comm_world
 use   netcdf,            only: nf90_create, nf90_def_dim, nf90_def_var, nf90_enddef, nf90_put_var, &
                                nf90_close, nf90_put_att, nf90_clobber, nf90_64bit_offset, nf90_char, &
                                nf90_double, nf90_unlimited
@@ -124,7 +123,7 @@ if (mpp_pe() .eq. mpp_root_pe()) then
 endif
 
 !< Wait for the root PE to catch up
-call mpi_barrier(mpi_comm_world, err)
+call mpp_sync
 
 !< This is the actual test code:
 

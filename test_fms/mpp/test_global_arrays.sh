@@ -22,35 +22,12 @@
 # This is part of the GFDL FMS package. This is a shell script to
 # execute tests in the test_fms/mpp directory.
 
-# Ryan Mulhall 2020
+# Ryan Mulhall 2/2021
 
 # Set common test settings.
-. ../test_common.sh
+. ../test-lib.sh
 
-skip_test="no"
-
-# Get the number of available CPUs on the system
-if [ $(command -v nproc) ]
-then
-    # Looks like a linux system
-    nProc=$(nproc)
-elif [ $(command -v sysctl) ]
-then
-    # Looks like a Mac OS X system
-    nProc=$(sysctl -n hw.physicalcpu)
-else
-    nProc=-1
-fi
-
-# Do we need to oversubscribe
-if [ ${nProc} -lt 0 ]
-then
-    # Couldn't get the number of CPUs, skip the test.
-    skip_test="skip"
-elif [ $nProc -lt 4 ]
-then
-    # Need to oversubscribe the MPI
-    run_test test_global_arrays 8 $skip_test "true"
-fi
-touch input.nml
-run_test test_global_arrays 8 $skip_test
+test_expect_success "global array functions with mixed precision" '
+    mpirun -n 8 ./test_global_arrays
+'
+test_done
