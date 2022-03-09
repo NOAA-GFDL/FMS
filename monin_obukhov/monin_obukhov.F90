@@ -24,10 +24,6 @@
 !! between the lowest model level and the ground
 !! using Monin-Obukhov scaling
 
-!> @file
-!> @ingroup monin_obukhov_mod
-!> @brief File for @ref monin_obukhov_mod
-
 module monin_obukhov_mod
 
 use constants_mod, only: grav, vonkarm

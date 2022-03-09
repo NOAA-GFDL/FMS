@@ -24,11 +24,6 @@
 !!        radiation packages.
 !> @author Fei Liu
 
-
-!> @file
-!> @ingroup astronomy_mod
-!> @brief File for @ref astronomy_mod
-
 !> @addtogroup astronomy_mod
 !> @{
 module astronomy_mod

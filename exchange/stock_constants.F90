@@ -20,10 +20,6 @@
 !> @ingroup exchange
 !> @brief Parameters, routines, and types for computing stocks in @ref xgrid_mod
 
-!> @file
-!> @ingroup stock_constants_mod
-!> @brief File for @ref stock_constants_mod
-
 !> @addtogroup stock_constants_mod
 !> @{
 module stock_constants_mod

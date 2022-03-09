@@ -22,9 +22,6 @@
 !! FMS2_IO equivalent version of @ref axis_utils_mod.
 !> @author M.J. Harrison
 
-!> @file
-!> @brief File for @ref axis_utils2_mod
-
 !> @addtogroup axis_utils2_mod
 !> @{
 module axis_utils2_mod

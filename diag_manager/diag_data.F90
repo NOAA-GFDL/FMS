@@ -43,10 +43,6 @@
 !!   field with the input_field index, and to the output file with the output_file
 !!   index.
 
-!> @file
-!> @ingroup diag_data_mod
-!> @brief File for @ref diag_data_mod
-
 !> @addtogroup diag_data_mod
 !> @{
 MODULE diag_data_mod

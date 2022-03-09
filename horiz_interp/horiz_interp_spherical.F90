@@ -25,10 +25,6 @@
 !! An optional output mask field may be used in conjunction with
 !! the input mask to show where output data exists.
 
-!> @file
-!> @ingroup horiz_interp_spherical_mod
-!> @brief File for @ref horiz_interp_spherical_mod
-
 !> @addtogroup horiz_interp_spherical_mod
 !> @{
 module horiz_interp_spherical_mod

@@ -25,10 +25,6 @@
 !!    mosaic grid resolution of each tile, mosaic contact information, mosaic exchange
 !!    grid information. Each routine will call a C-version routine to get these information.
 
-!> @file
-!> @ingroup mosaic_mod
-!> @brief File for @ref mosaic_mod
-
 !> @addtogroup mosaic_mod
 !> @{
 module mosaic_mod

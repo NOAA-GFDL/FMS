@@ -216,10 +216,6 @@
 !!       </PRE>
 !!     </LI>
 
-!> @file
-!> @ingroup diag_table_mod
-!> @brief File for @ref diag_table_mod
-
 MODULE diag_table_mod
 
   USE mpp_io_mod, ONLY: mpp_open, MPP_RDONLY

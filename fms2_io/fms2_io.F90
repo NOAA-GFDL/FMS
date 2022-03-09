@@ -24,10 +24,6 @@
 !! @note Documentation for specific routines belonging to this module's interfaces will
 !! be found on this page.
 
-!> @file
-!> @ingroup fms2_io_mod
-!> @brief File for @ref fms2_io_mod
-
 !> @addtogroup fms2_io_mod
 !> @{
 module fms2_io_mod

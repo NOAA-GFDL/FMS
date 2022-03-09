@@ -42,10 +42,6 @@
 !!    geopotential(:,:) = height(:,:) * grav_new
 !! @endverbatim
 
-!> @file
-!> @ingroup constants_mod
-!> @brief File for @ref constants_mod
-
 !> @addtogroup constants_mod
 !> @{
 module constants_mod

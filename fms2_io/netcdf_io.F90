@@ -22,10 +22,6 @@
 !!
 !> Handles type definitions and interfaces for netcdf I/O.
 
-!> @file
-!> @ingroup netcdf_io_mod
-!> @brief File for @ref netcdf_io_mod
-
 !> @addtogroup netcdf_io_mod
 !> @{
 module netcdf_io_mod

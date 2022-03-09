@@ -20,10 +20,6 @@
 !> @ingroup mosaic
 !> @brief Routines for grid calculations
 
-!> @file
-!> @ingroup grid_mod
-!> @brief File for @ref grid_mod
-
 module grid_mod
 
 use mpp_mod, only : mpp_root_pe, uppercase, lowercase, FATAL, NOTE, mpp_error

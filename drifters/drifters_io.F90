@@ -20,10 +20,6 @@
 !> @ingroup drifters
 !> @brief Saves drifter data for postprocessing and restarts
 
-!> @file
-!> @ingroup drifters_io_mod
-!> @brief File for @ref drifters_io_mod
-
 !> @addtogroup drifters_io_mod
 !> @{
 module drifters_io_mod

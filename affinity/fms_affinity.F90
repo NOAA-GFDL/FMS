@@ -25,10 +25,6 @@
 !!
 !! @author Rusty Benson
 
-!> @file
-!> @ingroup fms_affinity_mod
-!> File for @ref fms_affinity_mod
-
 !> @addtogroup fms_affinity_mod
 !> @{
 module fms_affinity_mod

@@ -22,10 +22,6 @@
 !! interpolations.
 !> @author Zhi Liang
 
-!> @file
-!> @ingroup horiz_interp_type_mod
-!> @brief File for @ref horiz_interp_type_mod
-
 !> @addtogroup
 !> @{
 module horiz_interp_type_mod

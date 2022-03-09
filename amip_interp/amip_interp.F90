@@ -112,11 +112,6 @@
 !!                may be useful in accessing model sensitivities.
 !!     Default=0.
 
-
-!> @file
-!> @ingroup amip_interp_mod
-!> File for amip_interp_mod
-
 !> @addtogroup amip_interp_mod
 !> @{
 module amip_interp_mod

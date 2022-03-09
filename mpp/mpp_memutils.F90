@@ -20,10 +20,6 @@
 !> @ingroup mpp
 !> @brief Routines to initialize and report on memory usage during the model run.
 
-!> @file
-!> @ingroup mpp_memutils_mod
-!> @brief File for mpp_memutils_mod
-
 !> @addtogroup mpp_memutils_mod
 !> @{
 module mpp_memutils_mod

@@ -79,10 +79,6 @@
 !!    contains three PRIVATE variables: days, seconds and ticks.
 !! </DATA>
 
-!> @file
-!> @ingroup time_manager_mod
-!> @brief File for @ref time_manager_mod
-
 !> @addtogroup time_manager_mod
 !> @{
 module time_manager_mod

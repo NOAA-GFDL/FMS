@@ -35,10 +35,6 @@
 !! The interfaces get_gaussian_topog and gaussian_topog_init are documented
 !! in @ref gaussian_topog_mod
 
-!> @file
-!> @ingroup topography_mod
-!> @brief File for @ref topography_mod
-
 module topography_mod
 
 use gaussian_topog_mod, only: gaussian_topog_init, get_gaussian_topog

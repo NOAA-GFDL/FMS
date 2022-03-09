@@ -146,10 +146,6 @@
 !!  generic interface. Any of the variables below shown as
 !!  <TT>MPP_TYPE_</TT> is treated in this way.
 
-!> @file
-!> @ingroup mpp_mod
-!> @brief File for @ref mpp_mod
-
 module mpp_mod
 
 ! Define rank(X) for PGI compiler

@@ -24,10 +24,6 @@
 !! Currently only gradient on cubic grid is implemented. Also a public interface
 !! is provided to calculate grid information needed to calculate gradient.
 
-!> @file
-!> @ingroup gradient_mod
-!> @brief File for @ref gradient_mod
-
 !> @addtogroup gradient_mod
 !> @{
 module gradient_mod

@@ -86,10 +86,6 @@
 !!      type(domain1D), public :: NULL_DOMAIN1D
 !!      type(domain2D), public :: NULL_DOMAIN2D
 
-!> @file
-!> @ingroup mpp_domains_mod
-!> @brief File for @ref mpp_domains_mod
-
 !> @addtogroup mpp_domains_mod
 !> @{
 

@@ -21,10 +21,6 @@
 !! @brief Functions and subroutines necessary for the <TT>diag_manager_mod</TT>.
 !! @author Seth Underwood
 
-!> @file
-!> @ingroup diag_util_mod
-!> @brief File for @ref diag_util_mod
-
 MODULE diag_util_mod
 
 use platform_mod

@@ -137,7 +137,7 @@
 
 MODULE diag_manager_mod
 use platform_mod
-
+  ! TODO    convert to a page         
   ! <NAMELIST NAME="diag_manager_nml">
   !   <DATA NAME="append_pelist_name" TYPE="LOGICAL" DEFAULT=".FALSE.">
   !   </DATA>

@@ -22,10 +22,6 @@
 !!
 !> Mainly routines for use via interfaces in @ref fms2_io_mod
 
-!> @file
-!> @ingroup fms_netcdf_unstructured_domain_io_mod
-!> @brief File for @ref fms_netcdf_unstructured_domain_io_mod
-
 module fms_netcdf_unstructured_domain_io_mod
 use,intrinsic :: iso_fortran_env
 use netcdf

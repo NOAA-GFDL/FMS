@@ -21,10 +21,10 @@
 #define _TYP integer
 !> @endcond
 
-!> @file
-!> @ingroup quicksort_mod
+!> @defgroup quicksort quicksort
 !> @ingroup drifters
-!> @brief Fortran implementation of quicksort
+!> @brief Fortran implementation of quicksort to be used in @ref drifters_core
+!!
 !> @author Magnus Lie Hetland
 
 !> Create array partitions for quicksort

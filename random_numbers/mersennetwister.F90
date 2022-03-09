@@ -88,10 +88,6 @@
 !!    http://www.math.keio.ac.jp/matumoto/emt.html
 !!    email: matumoto@math.keio.ac.jp
 
-!> @file
-!> @ingroup mersennetwister_mod
-!> @brief File for @ref MersenneTwister_mod
-
 !> @addtogroup mersennetwister_mod
 !> @{
 module MersenneTwister_mod

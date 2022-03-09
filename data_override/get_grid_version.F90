@@ -20,10 +20,6 @@
 !> @ingroup data_override
 !> @brief get_grid implementations and helper routines for @ref data_override_mod
 
-!> @file
-!> @ingroup get_grid_version_mod
-!> @brief File for @ref get_grid_version_mod
-
 !> @addtogroup get_grid_version_mod
 !> @{
 module get_grid_version_mod
