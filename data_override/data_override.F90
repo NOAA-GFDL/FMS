@@ -42,7 +42,7 @@
 module data_override_mod
 use yaml_parser_mod
 use constants_mod, only: PI
-use mpp_mod, only : mpp_error, FATAL, WARNING, stdout, stdlog, mpp_max
+use mpp_mod, only : mpp_error, FATAL, WARNING, NOTE, stdout, stdlog, mpp_max
 use mpp_mod, only : input_nml_file
 use horiz_interp_mod, only : horiz_interp_init, horiz_interp_new, horiz_interp_type, &
                              assignment(=)
