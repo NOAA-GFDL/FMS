@@ -483,9 +483,6 @@ test_expect_success "wildcard filenames (test $my_test_count)" '
   mpirun -n 1 ../test_diag_manager_time
 '
 
-rm -f input.nml diag_table
-
-touch input.nml
 cat <<_EOF > diag_table
 test_diag_manager
 2 1 1 0 0 0
@@ -497,8 +494,87 @@ test_diag_manager
  "test_diag_manager_mod", "sst", "sst", "test_diurnal",  "all", "diurnal3", "none", 2
  "test_diag_manager_mod", "ice", "ice", "test_diurnal",  "all", "diurnal3", "none", 2
 _EOF
+
 test_expect_success "diurnal test (test $my_test_count)" '
   mpirun -n 1 ../test_diag_manager_time
+'
+
+cat <<_EOF > diag_table.yaml
+title: test_diag_manager
+base_date: 2 1 1 0 0 0
+diag_files:
+- file_name: wild_card_name%4yr%2mo%2dy%2hr
+  freq: 6
+  freq_units: hours
+  time_units: hours
+  unlimdim: time
+  new_file_freq: 6
+  new_file_freq_units: hours
+  start_time: 2 1 1 0 0 0
+  file_duration: 12
+  file_duration_units: hours
+  write_file: false
+  realm: ATM
+  varlist:
+  - module: test_diag_manager_mod
+    var_name: sst
+    output_name: sst
+    reduction: average
+    kind: float
+    write_var: false
+  global_meta:
+  - is_a_file: true
+- file_name: normal
+  freq: 24
+  freq_units: days
+  time_units: hours
+  unlimdim: records
+  varlist:
+  - module: test_diag_manager_mod
+    var_name: sst
+    output_name: sst
+    reduction: average
+    kind: float
+    write_var: true
+    attributes:
+    - do_sst: .true.
+  sub_region:
+  - grid_type: latlon
+    dim1_begin: 64.0
+    dim3_end: 20.0
+- file_name: normal2
+  freq: -1
+  freq_units: days
+  time_units: hours
+  unlimdim: records
+  write_file: true
+  varlist:
+  - module: test_diag_manager_mod
+    var_name: sstt
+    output_name: sstt
+    reduction: average
+    kind: float
+    long_name: S S T
+  sub_region:
+  - grid_type: index
+    tile: 1
+    dim2_begin: 10
+    dim2_end: 20
+    dim1_begin: 10
+_EOF
+cp diag_table.yaml diag_table.yaml_base
+
+test_expect_success "diag_yaml test (test $my_test_count)" '
+  mpirun -n 1 ../test_diag_yaml
+'
+
+. $top_srcdir/test_fms/diag_manager/check_crashes.sh
+
+test_expect_success "test_diag_object_container (test $my_test_count)" '
+  mpirun -n 1 ../test_diag_object_container
+'
+test_expect_success "test_diag_dlinked_list (test $my_test_count)" '
+  mpirun -n 1 ../test_diag_dlinked_list
 '
 
 test_done

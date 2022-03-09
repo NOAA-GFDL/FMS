@@ -17,48 +17,33 @@
 #* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 #***********************************************************************
 
-# This is an automake file for the test_fms/diag_manager directory of the FMS
+# This is an automake file for the test_fms/data_override directory of the FMS
 # package.
-# uramirez, Ed Hartnett
+
+# uramirez
 
 # Find the needed mod and .inc files.
-AM_CPPFLAGS = -I$(top_srcdir)/include -I$(MODDIR)
+AM_CPPFLAGS = -I${top_srcdir}/include -I$(MODDIR)
 
 # Link to the FMS library.
-LDADD = $(top_builddir)/libFMS/libFMS.la
+LDADD = ${top_builddir}/libFMS/libFMS.la
 
 # Build this test program.
-check_PROGRAMS = test_diag_manager test_diag_manager_time test_diag_object_container \
- test_diag_dlinked_list test_diag_yaml
+check_PROGRAMS = test_string_utils
 
 # This is the source code for the test.
-test_diag_manager_SOURCES = test_diag_manager.F90
-test_diag_manager_time_SOURCES = test_diag_manager_time.F90
-test_diag_yaml_SOURCES = test_diag_yaml.F90
-test_diag_object_container_SOURCES = test_diag_object_container.F90
-test_diag_dlinked_list_SOURCES = test_diag_dlinked_list.F90
+test_string_utils_SOURCES = test_string_utils.F90
 
+# Run the test program.
+TESTS = test_string_utils.sh
+
+# Define test file extensions and log driver
 TEST_EXTENSIONS = .sh
 SH_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
-                  $(top_srcdir)/tap-driver.sh
+                   $(top_srcdir)/tap-driver.sh
 
-TEST_EXTENSIONS = .sh
-SH_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
-                  $(top_srcdir)/tap-driver.sh
+# Include these files with the distribution.
+EXTRA_DIST = test_string_utils.sh
 
-# Run the test.
-TESTS = test_diag_manager2.sh
-
-# Copy over other needed files to the srcdir
-EXTRA_DIST = test_diag_manager2.sh check_crashes.sh
-
-if SKIP_PARSER_TESTS
-skipflag="skip"
-else
-skipflag=""
-endif
-
-TESTS_ENVIRONMENT = parser_skip=${skipflag}
-
-CLEANFILES = *.yaml input.nml *.nc *.out diag_table* *-files/* *.dpi *.spi *.dyn *.spl
-
+# Clean up
+CLEANFILES = input.nml *.out

@@ -57,7 +57,7 @@ use platform_mod
        & get_axis_num, get_diag_axis_domain_name, diag_axis_add_attribute,&
        & get_domainUG, axis_compatible_check, axis_is_compressed, &
        & get_compressed_axes_ids, get_axis_reqfld, &
-       & NORTH, EAST, CENTER
+       & NORTH, EAST, CENTER, diag_axis_type
 
   ! Include variable "version" to be written to log file
 #include<file_version.h>

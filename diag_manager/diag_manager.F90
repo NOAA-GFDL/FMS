@@ -233,12 +233,19 @@ use platform_mod
        & diag_log_unit, time_unit_list, pelist_name, max_axes, module_is_initialized, max_num_axis_sets,&
        & use_cmor, issue_oor_warnings, oor_warnings_fatal, oor_warning, pack_size,&
        & max_out_per_in_field, flush_nc_files, region_out_use_alt_value, max_field_attributes, output_field_type,&
-       & max_file_attributes, max_axis_attributes, prepend_date, DIAG_FIELD_NOT_FOUND, diag_init_time, diag_data_init,&
-       & use_mpp_io
+       & max_file_attributes, max_axis_attributes, prepend_date, DIAG_FIELD_NOT_FOUND, diag_init_time,diag_data_init,&
+       & use_mpp_io, use_modern_diag
   USE diag_data_mod, ONLY:  fileobj, fileobjU, fnum_for_domain, fileobjND
   USE diag_table_mod, ONLY: parse_diag_table
   USE diag_output_mod, ONLY: get_diag_global_att, set_diag_global_att
   USE diag_grid_mod, ONLY: diag_grid_init, diag_grid_end
+  USE fms_diag_object_mod, ONLY: fmsDiagObject_type
+  use fms_diag_object_container_mod, ONLY: FmsDiagObjectContainer_t
+
+#ifdef use_yaml
+  use fms_diag_yaml_mod, only: diag_yaml_object_init, diag_yaml_object_end
+#endif
+
   USE constants_mod, ONLY: SECONDS_PER_DAY
 
 #ifdef use_netCDF
@@ -273,6 +280,8 @@ use platform_mod
 #include<file_version.h>
 
   type(time_type) :: Time_end
+
+  TYPE(FmsDiagObjectContainer_t), ALLOCATABLE :: the_diag_object_container
 
   !> @brief Send data over to output fields.
   !!
@@ -436,6 +445,9 @@ CONTAINS
     INTEGER :: stdout_unit
     LOGICAL :: mask_variant1, verbose1
     CHARACTER(len=128) :: msg
+    INTEGER :: status_ic !< used to check the status of insert into container.
+    CLASS(fmsDiagObject_type), ALLOCATABLE , TARGET :: diag_obj  !< the diag object that is (to be) registered
+    TYPE(fmsDiagObject_type), POINTER :: diag_obj_ptr => NULL() !< a pointer to the registered diag_object
 
     ! get stdout unit number
     stdout_unit = stdout()
@@ -593,7 +605,25 @@ CONTAINS
 
        END DO
     END IF
+
+    if (use_modern_diag) then
+      !! Create a diag object, initialize it with the registered data, and insert
+      !! it ino the diag_obj_container singleton.
+
+      allocate( diag_obj )
+      call diag_obj%register (module_name, field_name, axes, init_time, &
+        long_name, units, missing_value, Range, mask_variant, standard_name, &
+        do_not_log, err_msg, interp_method, tile_count, area, volume, realm) !(no metadata here)
+
+      diag_obj_ptr => diag_obj
+      status_ic = the_diag_object_container%insert(diag_obj_ptr%get_id(), diag_obj_ptr)
+      if(status_ic .ne. 0) then
+         print *, "Insertion ERROR for id ", diag_obj_ptr%get_id()
+      endif
+    endif
+
   END FUNCTION register_diag_field_array
+
 
   !> @brief Return field index for subsequent call to send_data.
   !! @return field index for subsequent call to send_data.
@@ -3506,6 +3536,10 @@ CONTAINS
     if (allocated(fileobj)) deallocate(fileobj)
     if (allocated(fileobjND)) deallocate(fileobjND)
     if (allocated(fnum_for_domain)) deallocate(fnum_for_domain)
+
+#ifdef use_yaml
+    if (use_modern_diag) call diag_yaml_object_end
+#endif
   END SUBROUTINE diag_manager_end
 
   !> @brief Replaces diag_manager_end; close just one file: files(file)
@@ -3604,7 +3638,7 @@ CONTAINS
          & max_input_fields, max_axes, do_diag_field_log, write_bytes_in_file, debug_diag_manager,&
          & max_num_axis_sets, max_files, use_cmor, issue_oor_warnings,&
          & oor_warnings_fatal, max_out_per_in_field, flush_nc_files, region_out_use_alt_value, max_field_attributes,&
-         & max_file_attributes, max_axis_attributes, prepend_date, use_mpp_io
+         & max_file_attributes, max_axis_attributes, prepend_date, use_modern_diag, use_mpp_io
 
     ! If the module was already initialized do nothing
     IF ( module_is_initialized ) RETURN
@@ -3724,6 +3758,10 @@ CONTAINS
        END IF
     END IF
 
+#ifdef use_yaml
+    if (use_modern_diag) CALL diag_yaml_object_init()
+#endif
+
     CALL parse_diag_table(DIAG_SUBSET=diag_subset_output, ISTAT=mystat, ERR_MSG=err_msg_local)
     IF ( mystat /= 0 ) THEN
        IF ( fms_error_handler('diag_manager_mod::diag_manager_init',&
@@ -3742,6 +3780,10 @@ CONTAINS
             & 'Missing Value', SEP, 'Min Value',      SEP, 'Max Value',    SEP,&
             & 'AXES LIST'
     END IF
+
+    !!Create the diag_object container; Its a singleton in the diag_data mod
+    allocate(the_diag_object_container)
+    call the_diag_object_container%initialize()
 
     module_is_initialized = .TRUE.
     ! create axis_id for scalars here

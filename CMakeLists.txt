@@ -113,6 +113,10 @@ list(APPEND fms_fortran_src_files
   diag_manager/diag_output.F90
   diag_manager/diag_table.F90
   diag_manager/diag_util.F90
+  diag_manager/fms_diag_object.F90
+  diag_manager/fms_diag_yaml.F90
+  diag_manager/fms_diag_dlinked_list.F90
+  diag_manager/fms_diag_object_container.F90
   drifters/cloud_interpolator.F90
   drifters/drifters.F90
   drifters/drifters_comm.F90
@@ -161,6 +165,7 @@ list(APPEND fms_fortran_src_files
   random_numbers/random_numbers.F90
   sat_vapor_pres/sat_vapor_pres_k.F90
   sat_vapor_pres/sat_vapor_pres.F90
+  string_utils/fms_string_utils.F90
   time_interp/time_interp_external.F90
   time_interp/time_interp_external2.F90
   time_interp/time_interp.F90
@@ -184,6 +189,7 @@ list(APPEND fms_c_src_files
   mosaic/read_mosaic.c
   mpp/mpp_memuse.c
   parser/yaml_parser_binding.c
+  string_utils/fms_string_utils_binding.c
 )
 
 # Collect FMS header files

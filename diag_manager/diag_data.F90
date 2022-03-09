@@ -59,12 +59,35 @@ use platform_mod
   USE netcdf, ONLY: NF_FILL_REAL => NF90_FILL_REAL
 #endif
   use fms2_io_mod
-
+  use  iso_c_binding
   IMPLICIT NONE
 
   PUBLIC
 
   ! Specify storage limits for fixed size tables used for pointers, etc.
+  integer, parameter :: diag_null = -999 !< Integer represening NULL in the diag_object
+  character(len=1), parameter :: diag_null_string = " "
+  integer, parameter :: diag_not_found = -1
+  integer, parameter :: diag_not_registered = 0
+  integer, parameter :: diag_registered_id = 10
+  !> Supported averaging intervals
+  integer, parameter :: monthly = 30
+  integer, parameter :: daily = 24
+  integer, parameter :: diurnal = 2
+  integer, parameter :: yearly = 12
+  integer, parameter :: no_diag_averaging = 0
+  integer, parameter :: instantaneous = 0
+  integer, parameter :: three_hourly = 3
+  integer, parameter :: six_hourly = 6
+  !integer, parameter :: seasonally = 180
+  !> Supported type/kind of the variable
+  !integer, parameter :: r16=16
+  integer, parameter :: r8 = 8
+  integer, parameter :: r4 = 4
+  integer, parameter :: i8 = -8
+  integer, parameter :: i4 = -4
+  integer, parameter :: string = 19 !< s is the 19th letter of the alphabet
+  integer, parameter :: null_type_int = -999
   INTEGER, PARAMETER :: MAX_FIELDS_PER_FILE = 300 !< Maximum number of fields per file.
   INTEGER, PARAMETER :: DIAG_OTHER = 0
   INTEGER, PARAMETER :: DIAG_OCEAN = 1
@@ -329,6 +352,7 @@ use platform_mod
   LOGICAL :: prepend_date = .TRUE. !< Should the history file have the start date prepended to the file name.
                                    !! <TT>.TRUE.</TT> is only supported if the diag_manager_init
                                    !! routine is called with the optional time_init parameter.
+  LOGICAL :: use_modern_diag = .false. !< Namelist flag to use the modernized diag_manager code
   LOGICAL :: use_mpp_io = .false. !< false is fms2_io (default); true is mpp_io
 
   ! <!-- netCDF variable -->
