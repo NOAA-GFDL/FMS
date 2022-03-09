@@ -75,11 +75,11 @@ if (.not. checking_crashes) then
   call compare_result("title", my_yaml%get_title(), "test_diag_manager")
 
   diag_files = my_yaml%get_diag_files()
-  call compare_result("nfiles", size(diag_files), 3) !< the fourth file has file_write = .false. so it doesn't count
+  call compare_result("nfiles", size(diag_files), 3) !< the fourth file has file_write = false so it doesn't count
   call compare_diag_files(diag_files)
 
   diag_fields = my_yaml%get_diag_fields()
-  call compare_result("nfields", size(diag_fields), 3) !< the fourth variable has var_write = .false. so it doesn't count
+  call compare_result("nfields", size(diag_fields), 3) !< the fourth variable has var_write = false so it doesn't count
   call compare_diag_fields(diag_fields)
 
 endif
