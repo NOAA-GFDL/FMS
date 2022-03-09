@@ -373,7 +373,7 @@ subroutine read_table(data_table)
     open(newunit=iunit, file='data_table', action='READ', iostat=io_status)
     if(io_status/=0) then
       if(io_status==29) then
-        call mpp_error(NOTE, 'data_override_mod: data_table file does not exist, if this is not the intent, please add a data_table.')
+        call mpp_error(NOTE, 'data_override_mod: File data_table does not exist.')
       else
         call mpp_error(FATAL, 'data_override_mod: Error in opening file data_table.')
       endif
