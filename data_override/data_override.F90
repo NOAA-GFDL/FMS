@@ -261,6 +261,10 @@ subroutine data_override_init(Atm_domain_in, Ocean_domain_in, Ice_domain_in, Lan
  module_is_initialized = .TRUE.
 
  if ( .NOT. (atm_on .or. ocn_on .or. lnd_on .or. ice_on .or. lndUG_on)) return
+ if (table_size .eq. 0) then 
+    call mpp_error(NOTE, "data_table is empty, not doing any data_overrides")
+    return
+ endif
  call fms2_io_init
 
 ! Test if grid_file is already opened
@@ -367,7 +371,14 @@ subroutine read_table(data_table)
 
 !  Read coupler_table
     open(newunit=iunit, file='data_table', action='READ', iostat=io_status)
-    if(io_status/=0) call mpp_error(FATAL, 'data_override_mod: Error in opening file data_table')
+    if(io_status/=0) then
+      if(io_status==29) then
+        call mpp_error(NOTE, 'data_override_mod: data_table file does not exist, if this is not the intent, please add a data_table.')
+      else
+        call mpp_error(FATAL, 'data_override_mod: Error in opening file data_table.')
+      endif
+    endif
+
 
     ntable = 0
     ntable_lima = 0
@@ -495,35 +506,39 @@ subroutine read_table_yaml(data_table)
     integer :: file_id
 
     file_id = open_and_parse_file("data_table.yaml")
-    nentries = get_num_blocks(file_id, "data_table")
-    allocate(data_table(nentries))
-    allocate(entry_id(nentries))
-    call get_block_ids(file_id, "data_table", entry_id)
+    if (file_id==999) then
+      nentries = 0
+    else
+      nentries = get_num_blocks(file_id, "data_table")
+      allocate(data_table(nentries))
+      allocate(entry_id(nentries))
+      call get_block_ids(file_id, "data_table", entry_id)
 
-    do i = 1, nentries
-       call get_value_from_key(file_id, entry_id(i), "gridname", data_table(i)%gridname)
-       call get_value_from_key(file_id, entry_id(i), "fieldname_code", data_table(i)%fieldname_code)
-       call get_value_from_key(file_id, entry_id(i), "fieldname_file", data_table(i)%fieldname_file)
-       call get_value_from_key(file_id, entry_id(i), "file_name", data_table(i)%file_name)
-       call get_value_from_key(file_id, entry_id(i), "interpol_method", data_table(i)%interpol_method)
-       call get_value_from_key(file_id, entry_id(i), "factor", data_table(i)%factor)
-       call get_value_from_key(file_id, entry_id(i), "region_type", buffer, is_optional=.true.)
+      do i = 1, nentries
+         call get_value_from_key(file_id, entry_id(i), "gridname", data_table(i)%gridname)
+         call get_value_from_key(file_id, entry_id(i), "fieldname_code", data_table(i)%fieldname_code)
+         call get_value_from_key(file_id, entry_id(i), "fieldname_file", data_table(i)%fieldname_file)
+         call get_value_from_key(file_id, entry_id(i), "file_name", data_table(i)%file_name)
+         call get_value_from_key(file_id, entry_id(i), "interpol_method", data_table(i)%interpol_method)
+         call get_value_from_key(file_id, entry_id(i), "factor", data_table(i)%factor)
+         call get_value_from_key(file_id, entry_id(i), "region_type", buffer, is_optional=.true.)
 
-       if(trim(buffer) == "inside_region" ) then
-          data_table(i)%region_type = INSIDE_REGION
-       else if( trim(buffer) == "outside_region" ) then
-          data_table(i)%region_type = OUTSIDE_REGION
-       else
-          data_table(i)%region_type = NO_REGION
-       endif
+         if(trim(buffer) == "inside_region" ) then
+            data_table(i)%region_type = INSIDE_REGION
+         else if( trim(buffer) == "outside_region" ) then
+            data_table(i)%region_type = OUTSIDE_REGION
+         else
+            data_table(i)%region_type = NO_REGION
+         endif
 
-       call get_value_from_key(file_id, entry_id(i), "lon_start", data_table(i)%lon_start, is_optional=.true.)
-       call get_value_from_key(file_id, entry_id(i), "lon_end", data_table(i)%lon_end, is_optional=.true.)
-       call get_value_from_key(file_id, entry_id(i), "lat_start", data_table(i)%lat_start, is_optional=.true.)
-       call get_value_from_key(file_id, entry_id(i), "lat_end", data_table(i)%lat_end, is_optional=.true.)
+         call get_value_from_key(file_id, entry_id(i), "lon_start", data_table(i)%lon_start, is_optional=.true.)
+         call get_value_from_key(file_id, entry_id(i), "lon_end", data_table(i)%lon_end, is_optional=.true.)
+         call get_value_from_key(file_id, entry_id(i), "lat_start", data_table(i)%lat_start, is_optional=.true.)
+         call get_value_from_key(file_id, entry_id(i), "lat_end", data_table(i)%lat_end, is_optional=.true.)
 
-    end do
+      end do
 
+    end if
     table_size = nentries !< Because one variable is not enough
 end subroutine read_table_yaml
 #endif
