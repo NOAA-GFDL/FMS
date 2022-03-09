@@ -18,8 +18,8 @@
 !***********************************************************************
 !----------
 !ug support
-!> @file
-!> @ingroup fms_io_mod
+!> @addtogroup fms_io_mod
+!> @{
 
 !> Return a flag indicating whether the inputted field exists in the inputted
 !!file, where the file is associated with an unstructured mpp domain.
@@ -104,5 +104,4 @@ function fms_io_unstructured_field_exist(file_name, &
 
     return
 end function fms_io_unstructured_field_exist
-
-!----------
+!> @}

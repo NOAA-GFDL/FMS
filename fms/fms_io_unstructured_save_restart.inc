@@ -18,8 +18,8 @@
 !***********************************************************************
 !----------
 !ug support
-!> @file
-!> @ingroup fms_io_mod
+!> @addtogroup fms_io_mod
+!> @{
 
 !>Write out metadata and data for axes and fields to a restart file
 !!associated with an unstructured mpp domain.
@@ -672,5 +672,4 @@ subroutine fms_io_unstructured_save_restart(fileObj, &
 
     return
 end subroutine fms_io_unstructured_save_restart
-
-!----------
+!> @}
