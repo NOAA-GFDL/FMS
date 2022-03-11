@@ -45,7 +45,6 @@
       integer, intent(in), optional :: flags
       integer                       :: n
       integer                       :: io_status, unit
-      logical                       :: opened
 
       if( module_is_initialized )return
       call mpp_init(flags)           !this is a no-op if already initialized
@@ -322,7 +321,8 @@ end subroutine init_nonblock_type
   else if((size(field_in,1) .eq. ieg-isg+1+2*xhalo) .and. (size(field_in,2) .eq. jeg-jsg+1+2*yhalo)) then
      field2(is:ie,js:je) = field_in(is-isd+1:ie-isd+1,js-jsd+1:je-jsd+1)
   else
-     print*, 'on pe ', pe, 'domain: ', isc, iec, jsc, jec, isd, ied, jsd, jed, 'size of field: ', size(field_in,1), size(field_in,2)
+     print*, 'on pe ', pe, 'domain: ', isc, iec, jsc, jec, isd, ied, jsd, jed, 'size of field: ', size(field_in,1), &
+             & size(field_in,2)
      call mpp_error(FATAL,'mpp_check_field: '//trim(mesg)//':field is not on compute, data or global domain')
   endif
 
@@ -593,8 +593,7 @@ end subroutine init_nonblock_type
       type(domain2D), intent(in)    :: domain_in
       type(domain2D), intent(inout) :: domain_out
       integer, allocatable :: pes(:)
-      logical :: native         !true if I'm on the pelist of this domain
-      integer :: listsize, listpos
+      integer :: listpos
       integer :: n
       integer, dimension(12) :: msg, info         !pe and compute domain of each item in list
       integer                :: errunit, npes_in, npes_out, pstart, pend
@@ -751,7 +750,8 @@ end subroutine init_nonblock_type
                 exit
              endif
           enddo
-          if(ind == 0) call mpp_error( FATAL, 'MPP_BROADCAST_DOMAIN_NEST_FINE:native is true, but tile_id is found in tile_nest')
+          if(ind == 0) call mpp_error( FATAL, &
+             &  'MPP_BROADCAST_DOMAIN_NEST_FINE:native is true, but tile_id is found in tile_nest')
           nestsize(ind) = size(domain%list(:))
       end if
       call mpp_max(nestsize, num_nest)
@@ -844,7 +844,7 @@ end subroutine init_nonblock_type
       logical :: native         !true if I'm on the pelist of this domain
       integer :: listsize, listpos
       integer, allocatable :: tile_pesize(:)
-      integer :: n, tile, maxtile
+      integer :: n, maxtile
       integer, dimension(17) :: msg, info         !pe and compute domain of each item in list
       integer                :: errunit
 
@@ -1805,68 +1805,6 @@ end subroutine init_nonblock_type
 #undef MPP_DO_UPDATE_AD_3D_
 #define MPP_DO_UPDATE_AD_3D_ mpp_do_update_ad_i4_3d
 #include <mpp_do_update_ad.h>
-!!$#undef VECTOR_FIELD_
-!!$#define VECTOR_FIELD_
-!!$#undef MPP_TYPE_
-!!$#define MPP_TYPE_ real(r8_kind)
-!!$#undef MPP_DO_UPDATE_AD_3D_
-!!$#define MPP_DO_UPDATE_AD_3D_ mpp_do_update_ad_r8_3d
-!!$#ifdef  VECTOR_FIELD_
-!!$#undef MPP_DO_UPDATE_AD_3D_V_
-!!$#define MPP_DO_UPDATE_AD_3D_V_ mpp_do_update_ad_r8_3dv
-!!$#endif
-!!$#include <mpp_do_update_ad.h>
-!!$#include <mpp_do_updateV_ad.h>
-!!$#undef  VECTOR_FIELD_
-!!$
-!!$#ifdef OVERLOAD_C8
-!!$#undef MPP_TYPE_
-!!$#define MPP_TYPE_ complex(c8_kind)
-!!$#undef MPP_DO_UPDATE_AD_3D_
-!!$#define MPP_DO_UPDATE_AD_3D_ mpp_do_update_ad_c8_3d
-!!$#include <mpp_do_update_ad.h>
-!!$#endif
-!!$
-!!$
-!!$#undef MPP_TYPE_
-!!$#define MPP_TYPE_ integer(i8_kind)
-!!$#undef MPP_DO_UPDATE_AD_3D_
-!!$#define MPP_DO_UPDATE_AD_3D_ mpp_do_update_ad_i8_3d
-!!$#include <mpp_do_update_ad.h>
-!!$
-!!$
-!!$#ifdef OVERLOAD_R4
-!!$#undef  VECTOR_FIELD_
-!!$#define VECTOR_FIELD_
-!!$#undef MPP_TYPE_
-!!$#define MPP_TYPE_ real(r4_kind)
-!!$#undef MPP_DO_UPDATE_AD_3D_
-!!$#define MPP_DO_UPDATE_AD_3D_ mpp_do_update_ad_r4_3d
-!!$#ifdef  VECTOR_FIELD_
-!!$#undef MPP_DO_UPDATE_AD_3D_V_
-!!$#define MPP_DO_UPDATE_AD_3D_V_ mpp_do_update_ad_r4_3dv
-!!$#endif
-!!$#include <mpp_do_update_ad.h>
-!!$#include <mpp_do_updateV_ad.h>
-!!$#endif
-!!$
-!!$#ifdef OVERLOAD_C4
-!!$#undef  VECTOR_FIELD_
-!!$#undef MPP_TYPE_
-!!$#define MPP_TYPE_ complex(c4_kind)
-!!$#undef MPP_DO_UPDATE_AD_3D_
-!!$#define MPP_DO_UPDATE_AD_3D_ mpp_do_update_ad_c4_3d
-!!$#include <mpp_do_update_ad.h>
-!!$#endif
-!!$
-!!$#undef MPP_TYPE_
-!!$#define MPP_TYPE_ integer(i4_kind)
-!!$#undef MPP_DO_UPDATE_AD_3D_
-!!$#define MPP_DO_UPDATE_AD_3D_ mpp_do_update_ad_i4_3d
-!!$#include <mpp_do_update_ad.h>
-
-!bnc
-
 
 !********************************************************
 #undef MPP_TYPE_

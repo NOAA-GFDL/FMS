@@ -169,7 +169,7 @@ module time_interp_external2_mod
     !> @brief Initialize the @ref time_interp_external_mod module
     subroutine time_interp_external_init()
 
-      integer :: ioun, io_status, logunit, ierr
+      integer :: io_status, logunit, ierr
 
       namelist /time_interp_external_nml/ num_io_buffers, debug_this_module, &
                                           max_fields, max_files
@@ -279,7 +279,7 @@ module time_interp_external2_mod
       integer :: init_external_field
 
       real(DOUBLE_KIND) :: slope, intercept
-      integer :: unit,ndim,nvar,natt,ntime,i,j
+      integer :: ndim,ntime,i,j
       integer :: iscomp,iecomp,jscomp,jecomp,isglobal,ieglobal,jsglobal,jeglobal
       integer :: isdata,iedata,jsdata,jedata, dxsize, dysize,dxsize_max,dysize_max
       logical :: verb, transpose_xy,use_comp_domain1
@@ -287,7 +287,7 @@ module time_interp_external2_mod
       character(len=1) :: cart
       character(len=1), dimension(4) :: cart_dir
       character(len=128) :: units, fld_units
-      character(len=128) :: name, msg, calendar_type, timebeg, timeend
+      character(len=128) :: msg, calendar_type, timebeg, timeend
       character(len=128) :: timename, timeunits
       character(len=128), allocatable :: axisname(:)
       integer,            allocatable :: axislen(:)
@@ -591,9 +591,12 @@ module time_interp_external2_mod
       allocate(field(num_fields)%end_time(ntime))
 
       do j=1,ntime
-         field(num_fields)%time(j)       = get_cal_time(tstamp(j),trim(timeunits),trim(calendar_type),permit_calendar_conversion)
-         field(num_fields)%start_time(j) = get_cal_time(tstart(j),trim(timeunits),trim(calendar_type),permit_calendar_conversion)
-         field(num_fields)%end_time(j)   = get_cal_time(  tend(j),trim(timeunits),trim(calendar_type),permit_calendar_conversion)
+         field(num_fields)%time(j)       = get_cal_time(tstamp(j),trim(timeunits),trim(calendar_type), &
+              & permit_calendar_conversion)
+         field(num_fields)%start_time(j) = get_cal_time(tstart(j),trim(timeunits),trim(calendar_type), &
+              & permit_calendar_conversion)
+         field(num_fields)%end_time(j)   = get_cal_time(  tend(j),trim(timeunits),trim(calendar_type), &
+              & permit_calendar_conversion)
       enddo
 
       if (field(num_fields)%modulo_time) then
@@ -770,7 +773,8 @@ module time_interp_external2_mod
 !</IN>
 
     !> 3D interpolation for @ref time_interp_external
-    subroutine time_interp_external_3d(index, time, data, interp,verbose,horz_interp, mask_out, is_in, ie_in, js_in, je_in, window_id)
+    subroutine time_interp_external_3d(index, time, data, interp,verbose,horz_interp, mask_out, is_in, ie_in, &
+                                      &  js_in, je_in, window_id)
 
       integer,                    intent(in)           :: index
       type(time_type),            intent(in)           :: time
@@ -808,7 +812,8 @@ module time_interp_external2_mod
       if (debug_this_module) verb = .true.
 
       if (index < 1.or.index > num_fields) &
-           call mpp_error(FATAL,'invalid index in call to time_interp_ext -- field was not initialized or failed to initialize')
+           call mpp_error(FATAL, &
+                     & 'invalid index in call to time_interp_ext -- field was not initialized or failed to initialize')
 
       isc=field(index)%isc;iec=field(index)%iec
       jsc=field(index)%jsc;jec=field(index)%jec
@@ -951,7 +956,8 @@ module time_interp_external2_mod
       if (debug_this_module) verb = .true.
 
       if (index < 1.or.index > num_fields) &
-           call mpp_error(FATAL,'invalid index in call to time_interp_ext -- field was not initialized or failed to initialize')
+           call mpp_error(FATAL, &
+                     & 'invalid index in call to time_interp_ext -- field was not initialized or failed to initialize')
 
       if (field(index)%siz(4) == 1) then
          ! only one record in the file => time-independent field
@@ -1033,7 +1039,7 @@ subroutine load_record(field, rec, interp, is_in, ie_in, js_in, je_in, window_id
   ! ---- local vars
   integer :: ib ! index in the array of input buffers
   integer :: isw,iew,jsw,jew ! boundaries of the domain on each window
-  integer :: is_region, ie_region, js_region, je_region, i, j, n
+  integer :: is_region, ie_region, js_region, je_region, i, j
   integer :: start(4), nread(4)
   logical :: need_compute
   real    :: mask_in(size(field%src_data,1),size(field%src_data,2),size(field%src_data,3))
@@ -1072,7 +1078,8 @@ subroutine load_record(field, rec, interp, is_in, ie_in, js_in, je_in, window_id
 
   if( field%numwindows > 1) then
      if( .NOT. PRESENT(is_in) .OR. .NOT. PRESENT(ie_in) .OR. .NOT. PRESENT(js_in) .OR. .NOT. PRESENT(je_in) ) then
-        call mpp_error(FATAL, 'time_interp_external(load_record): is_in, ie_in, js_in, je_in must be present when numwindows>1')
+        call mpp_error(FATAL, &
+                  &  'time_interp_external(load_record): is_in, ie_in, js_in, je_in must be present when numwindows>1')
      endif
      isw = isw + is_in - 1
      iew = isw + ie_in - is_in
@@ -1339,7 +1346,6 @@ end subroutine realloc_fields
     function get_external_field_missing(index)
 
       integer :: index
-      real :: missing
       real :: get_external_field_missing
 
       if (index .lt. 1 .or. index .gt. num_fields) &
@@ -1375,7 +1381,7 @@ end subroutine
 
     subroutine time_interp_external_exit()
 
-      integer :: i,j
+      integer :: i
 !
 ! release storage arrays
 !

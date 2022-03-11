@@ -147,7 +147,8 @@ subroutine mpp_exit()
         write( out_unit,'(/a,i6,a)' ) 'Tabulating mpp_clock statistics across ', npes, ' PEs...'
         if( ANY(clocks(1:clock_num)%detailed) ) &
              write( out_unit,'(a)' )'   ... see mpp_clock.out.#### for details on individual PEs.'
-        write( out_unit,'(/32x,a)' ) '      hits          tmin          tmax          tavg          tstd  tfrac grain pemin pemax'
+        write( out_unit,'(/32x,a)' ) &
+             & '      hits          tmin          tmax          tavg          tstd  tfrac grain pemin pemax'
      else
         write( out_unit,'(/37x,a)' ) 'time'
      end if
@@ -246,6 +247,9 @@ end subroutine mpp_exit
 !                BASIC MESSAGE PASSING ROUTINE: mpp_transmit                  !
 !                                                                             !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+! set init value for mpp_type
+#define MPP_TYPE_INIT_VALUE 0.
 
 #undef MPP_TRANSMIT_
 #define MPP_TRANSMIT_ mpp_transmit_real8
@@ -475,6 +479,8 @@ end subroutine mpp_exit
 #include <mpp_transmit_nocomm.h>
 #endif
 
+#undef MPP_TYPE_INIT_VALUE
+#define MPP_TYPE_INIT_VALUE 0
 #undef MPP_TRANSMIT_
 #define MPP_TRANSMIT_ mpp_transmit_int8
 #undef MPP_TRANSMIT_SCALAR_
@@ -587,6 +593,8 @@ end subroutine mpp_exit
 #define MPI_TYPE_ MPI_INTEGER4
 #include <mpp_transmit_nocomm.h>
 
+#undef MPP_TYPE_INIT_VALUE
+#define MPP_TYPE_INIT_VALUE .false.
 #undef MPP_TRANSMIT_
 #define MPP_TRANSMIT_ mpp_transmit_logical8
 #undef MPP_TRANSMIT_SCALAR_
@@ -698,6 +706,7 @@ end subroutine mpp_exit
 #undef MPI_TYPE_
 #define MPI_TYPE_ MPI_INTEGER4
 #include <mpp_transmit_nocomm.h>
+#undef MPP_TYPE_INIT_VALUE
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !                                                                             !

@@ -34,7 +34,8 @@
 !!ideally we would not pass length, but this f77-style call performs better (arrays passed by address, not descriptor)
 !!further, this permits <length> contiguous words from an array of any rank to be passed (avoiding f90 rank conformance check)
 !!caller is responsible for completion checks (mpp_sync_self) before and after
-    subroutine MPP_TRANSMIT_( put_data, put_len, to_pe, get_data, get_len, from_pe, block, tag, recv_request, send_request )
+    subroutine MPP_TRANSMIT_( put_data, put_len, to_pe, get_data, get_len, from_pe, block, tag, recv_request, &
+                            &  send_request )
 
       integer, intent(in) :: put_len, to_pe, get_len, from_pe
       MPP_TYPE_, intent(in)  :: put_data(*)
@@ -57,7 +58,8 @@
       if( debug )then
           call SYSTEM_CLOCK(tick)
           write( outunit,'(a,i18,a,i5,a,2i5,2i8)' )&
-               'T=',tick, ' PE=',pe, ' MPP_TRANSMIT begin: to_pe, from_pe, put_len, get_len=', to_pe, from_pe, put_len, get_len
+               'T=',tick, ' PE=',pe, ' MPP_TRANSMIT begin: to_pe, from_pe, put_len, get_len=', to_pe, from_pe, &
+                       &  put_len, get_len
       end if
 
 !do put first and then get
@@ -120,7 +122,8 @@
       if( debug )then
           call SYSTEM_CLOCK(tick)
           write( outunit,'(a,i18,a,i5,a,2i5,2i8)' )&
-               'T=',tick, ' PE=',pe, ' MPP_TRANSMIT end: to_pe, from_pe, put_len, get_len=', to_pe, from_pe, put_len, get_len
+               'T=',tick, ' PE=',pe, ' MPP_TRANSMIT end: to_pe, from_pe, put_len, get_len=', to_pe, from_pe, &
+                       &  put_len, get_len
       end if
       return
     end subroutine MPP_TRANSMIT_

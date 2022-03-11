@@ -23,7 +23,6 @@
 !> Mainly routines for use via interfaces in @ref fms2_io_mod
 
 module fms_netcdf_unstructured_domain_io_mod
-use,intrinsic :: iso_fortran_env
 use netcdf
 use mpp_domains_mod
 use fms_io_utils_mod

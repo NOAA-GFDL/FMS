@@ -199,6 +199,7 @@ module mpp_domains_mod
 
   !--- public interface from mpp_define_domains.inc
   public :: mpp_define_nest_domains, mpp_get_C2F_index, mpp_get_F2C_index
+  public :: mpp_shift_nest_domains
   public :: mpp_get_nest_coarse_domain, mpp_get_nest_fine_domain
   public :: mpp_is_nest_coarse, mpp_is_nest_fine
   public :: mpp_get_nest_pelist, mpp_get_nest_npes
@@ -330,7 +331,8 @@ module mpp_domains_mod
      integer,         pointer :: dir(:)          => NULL() !< direction ( value 1,2,3,4 = E,S,W,N)
      integer,         pointer :: rotation(:)     => NULL() !< rotation angle.
      integer,         pointer :: index(:)        => NULL() !< for refinement
-     logical,         pointer :: from_contact(:) => NULL() !< indicate if the overlap is computed from define_contact_overlap
+     logical,         pointer :: from_contact(:) => NULL() !< indicate if the overlap is computed from
+                                                           !! define_contact_overlap
   end type overlap_type
 
   !> Private type for overlap specifications
@@ -386,17 +388,24 @@ module mpp_domains_mod
      type(domain1D),     pointer :: y(:)          => NULL() !< y-direction domain decomposition
      type(domain2D_spec),pointer :: list(:)       => NULL() !< domain decomposition on pe list
      type(tile_type),    pointer :: tileList(:)   => NULL() !< store tile information
-     type(overlapSpec),  pointer :: check_C       => NULL() !< send and recv information for boundary consistency check of C-cell
-     type(overlapSpec),  pointer :: check_E       => NULL() !< send and recv information for boundary consistency check of E-cell
-     type(overlapSpec),  pointer :: check_N       => NULL() !< send and recv information for boundary consistency check of N-cell
-     type(overlapSpec),  pointer :: bound_C       => NULL() !< send information for getting boundary value for symmetry domain.
-     type(overlapSpec),  pointer :: bound_E       => NULL() !< send information for getting boundary value for symmetry domain.
-     type(overlapSpec),  pointer :: bound_N       => NULL() !< send information for getting boundary value for symmetry domain.
+     type(overlapSpec),  pointer :: check_C       => NULL() !< send and recv information for boundary
+                                                            !! consistency check of C-cell
+     type(overlapSpec),  pointer :: check_E       => NULL() !< send and recv information for boundary
+                                                            !! consistency check of E-cell
+     type(overlapSpec),  pointer :: check_N       => NULL() !< send and recv information for boundary
+                                                            !! consistency check of N-cell
+     type(overlapSpec),  pointer :: bound_C       => NULL() !< send information for getting boundary
+                                                            !! value for symmetry domain.
+     type(overlapSpec),  pointer :: bound_E       => NULL() !< send information for getting boundary
+                                                            !! value for symmetry domain.
+     type(overlapSpec),  pointer :: bound_N       => NULL() !< send information for getting boundary
+                                                            !! value for symmetry domain.
      type(overlapSpec),  pointer :: update_T      => NULL() !< send and recv information for halo update of T-cell.
      type(overlapSpec),  pointer :: update_E      => NULL() !< send and recv information for halo update of E-cell.
      type(overlapSpec),  pointer :: update_C      => NULL() !< send and recv information for halo update of C-cell.
      type(overlapSpec),  pointer :: update_N      => NULL() !< send and recv information for halo update of N-cell.
-     type(domain2d),     pointer :: io_domain     => NULL() !< domain for IO, will be set through calling mpp_set_io_domain ( this will be changed).
+     type(domain2d),     pointer :: io_domain     => NULL() !< domain for IO, will be set through calling
+                                                            !! mpp_set_io_domain ( this will be changed).
   END TYPE domain2D
 
   !> Type used to represent the contact between tiles.
@@ -443,6 +452,7 @@ module mpp_domains_mod
   type :: nest_domain_type
      character(len=NAME_LENGTH)     :: name
      integer                        :: num_level
+     integer,               pointer :: nest_level(:)    !< Added for moving nest functionality
      type(nest_level_type), pointer :: nest(:) => NULL()
      integer                        :: num_nest
      integer,               pointer :: tile_fine(:), tile_coarse(:)
@@ -665,15 +675,13 @@ module mpp_domains_mod
   integer, parameter :: MAX_ADDRS=512
   integer(i8_kind),dimension(MAX_ADDRS),save :: addrs_sorted=-9999 !< list of sorted local addresses
   integer,           dimension(-1:MAX_ADDRS),save :: addrs_idx=-9999 !< index of address associated with d_comm
-  integer,           dimension(MAX_ADDRS),save :: a_salvage=-9999 !< freed index list of addresses
   integer,                                save :: a_sort_len=0 !< length sorted memory list
   integer,                                save :: n_addrs=0   !< number of memory addresses used
 
-  integer(i8_kind), parameter :: ADDR2_BASE = int(Z'0000000000010000', kind=i8_kind)
+  integer(i8_kind), parameter :: ADDR2_BASE = 65536_i8_kind !< = 0x0000000000010000
   integer, parameter :: MAX_ADDRS2=128
   integer(i8_kind),dimension(MAX_ADDRS2),save :: addrs2_sorted=-9999 !< list of sorted local addresses
   integer,           dimension(-1:MAX_ADDRS2),save :: addrs2_idx=-9999 !< index of addr2 associated with d_comm
-  integer,           dimension(MAX_ADDRS2),save :: a2_salvage=-9999 !< freed indices of addr2
   integer,                                 save :: a2_sort_len=0   !< length sorted memory list
   integer,                                 save :: n_addrs2=0  !< number of memory addresses used
 
@@ -689,17 +697,17 @@ module mpp_domains_mod
   !     Not sure why static d_comm fails during deallocation of derived type members; allocatable works
   !     type(DomainCommunicator2D),dimension(MAX_FIELDS),save,target    :: d_comm !< domain communicators
   type(DomainCommunicator2D),dimension(:),allocatable,save,target :: d_comm  !< domain communicators
-  integer,                   dimension(-1:MAX_FIELDS),save           :: d_comm_idx=-9999 !< index of d_comm associated with sorted addresses
-  integer,                   dimension(MAX_FIELDS),save           :: dc_salvage=-9999 !< freed indices of d_comm
+  integer,                   dimension(-1:MAX_FIELDS),save           :: d_comm_idx=-9999 !< index of
+                                                                             !! d_comm associated with sorted addresses
   integer,                                         save           :: dc_sort_len=0 !< length sorted comm keys
 !! (=num active communicators)
   integer,                                         save           :: n_comm=0  !< number of communicators used
 
   !     integer(i8_kind), parameter :: GT_BASE=2**8
-  integer(i8_kind), parameter :: GT_BASE = int(Z'0000000000000100', kind=i8_kind)
+  integer(i8_kind), parameter :: GT_BASE = 256_i8_kind !0x0000000000000100
 
   !     integer(i8_kind), parameter :: KE_BASE=2**48
-  integer(i8_kind), parameter :: KE_BASE = int(Z'0001000000000000', kind=i8_kind)
+  integer(i8_kind), parameter :: KE_BASE = 281474976710656_i8_kind !0x0001000000000000
 
   integer(i8_kind) :: domain_cnt=0
 

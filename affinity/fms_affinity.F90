@@ -131,6 +131,7 @@ contains
     integer:: th_num
     integer:: indx
 
+    if (.not. module_is_initialized) call fms_affinity_init()
     if (.not. affinity) return
 
     if (strict) then

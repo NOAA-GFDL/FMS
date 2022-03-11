@@ -97,7 +97,8 @@
 
 ! determine the pack_size
       pack_size = size(transfer(doubledata, realarray))
-      if( pack_size .NE. 1 .AND. pack_size .NE. 2) call mpp_error(FATAL,'mpp_io_mod(mpp_io_init): pack_size should be 1 or 2')
+      if( pack_size .NE. 1 .AND. pack_size .NE. 2) call mpp_error(FATAL, &
+         & 'mpp_io_mod(mpp_io_init): pack_size should be 1 or 2')
 
 !initialize default_field
       default_field%name = 'noname'
@@ -139,7 +140,8 @@
 !up to MAXUNITS fortran units and MAXUNITS netCDF units are supported
 !file attributes (opened, format, access, threading, fileset) are saved against the unit number
 !external handles to netCDF units are saved from maxunits+1:2*maxunits
-      allocate( mpp_file(NULLUNIT:2*maxunits) ) !starts at NULLUNIT=-1, used by non-participant PEs in single-threaded I/O
+      allocate( mpp_file(NULLUNIT:2*maxunits) ) !starts at NULLUNIT=-1, used by non-participant PEs in
+                                                !! single-threaded I/O
       mpp_file(:)%name   = ' '
       mpp_file(:)%action    = -1
       mpp_file(:)%format    = -1
@@ -277,7 +279,8 @@
       if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_FLUSH: must first call mpp_io_init.' )
       if( .NOT.mpp_file(unit)%write_on_this_pe) return
       if( .NOT.mpp_file(unit)%opened ) call mpp_error( FATAL, 'MPP_FLUSH: invalid unit number.' )
-      if( .NOT.mpp_file(unit)%initialized )call mpp_error( FATAL, 'MPP_FLUSH: cannot flush a file during writing of metadata.' )
+      if( .NOT.mpp_file(unit)%initialized )call mpp_error( FATAL, &
+         &  'MPP_FLUSH: cannot flush a file during writing of metadata.' )
 
       if( mpp_file(unit)%format.EQ.MPP_NETCDF )then
 #ifdef use_netCDF

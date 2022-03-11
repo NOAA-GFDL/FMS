@@ -17,7 +17,7 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 
-!> @brief  This programs tests diat_manager with the following diag_table
+!> @brief  This programs tests diag_manager with the following diag_table
 !! test_diag_manager
 !! 2 1 1 0 0 0
 !! "ocn%4yr%2mo%2dy%2hr",      1,  "days", 1, "days", "time", 1, "days", "2 1 1 0 0 0"
@@ -41,7 +41,7 @@ integer :: i, j
 integer :: is, ie, js, je
 real, allocatable :: sst(:,:,:), ice(:,:)
 integer :: id_x, id_y, id_z, id_sst, id_ice
-integer :: used
+logical :: used
 
 call fms_init
 call set_calendar_type(JULIAN)
@@ -82,11 +82,6 @@ id_y  = diag_axis_init('y',  y,  'point_N', 'y', long_name='point_N', Domain2=Do
 id_z  = diag_axis_init('z',  z,  'point_Z', 'z', long_name='point_Z')
 id_sst = register_diag_field  ('test_diag_manager_mod', 'sst', (/id_x,id_y,id_z/), Time, 'SST', 'K')
 id_ice = register_diag_field  ('test_diag_manager_mod', 'ice', (/id_x,id_y/), Time, 'ICE', 'm')
-
-! Send the axis data
-used = send_data(id_x, x, Time)
-used = send_data(id_y, y, Time)
-used = send_data(id_z, z, Time)
 
 ! Increase the time and send data
 do i=1,23

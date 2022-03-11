@@ -61,7 +61,8 @@ endif
 end subroutine check_grid_sizes
 
 !> Get global lon and lat of three model (target) grids, with a given file name
-subroutine get_grid_version_1(grid_file, mod_name, domain, isc, iec, jsc, jec, lon, lat, min_lon, max_lon, grid_center_bug)
+subroutine get_grid_version_1(grid_file, mod_name, domain, isc, iec, jsc, jec, lon, lat, min_lon, max_lon, &
+                             &  grid_center_bug)
   character(len=*),            intent(in) :: grid_file !< name of grid file
   character(len=*),            intent(in) :: mod_name !< module name
   type(domain2d),              intent(in) :: domain !< 2D domain
@@ -222,7 +223,6 @@ subroutine get_grid_version_2(fileobj, mod_name, domain, isc, iec, jsc, jec, lon
   integer            :: isc2, iec2, jsc2, jec2
   character(len=256) :: solo_mosaic_file, grid_file
   real, allocatable  :: tmpx(:,:), tmpy(:,:)
-  type(domain2d)     :: domain2
   logical            :: open_solo_mosaic
   type(FmsNetcdfFile_t) :: mosaicfileobj, tilefileobj
   integer            :: start(2), nread(2)
@@ -241,7 +241,8 @@ subroutine get_grid_version_2(fileobj, mod_name, domain, isc, iec, jsc, jec, lon
 
      solo_mosaic_file = 'INPUT/'//trim(solo_mosaic_file)
      if(.not. open_file(mosaicfileobj, solo_mosaic_file, 'read')) then
-        call mpp_error(FATAL, 'data_override_mod(get_grid_version_2: Error in opening solo mosaic file '//trim(solo_mosaic_file))
+        call mpp_error(FATAL, 'data_override_mod(get_grid_version_2: Error in opening solo mosaic file '// &
+                       & trim(solo_mosaic_file))
      endif
      open_solo_mosaic=.true.
   else

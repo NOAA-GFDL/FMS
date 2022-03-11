@@ -83,15 +83,19 @@ end interface
                                                             !! =3, spherical regrid
                                                             !! =4, bicubic regrid
    real,    dimension(:,:), pointer   :: rat_x =>NULL() !< the ratio of coordinates of the dest grid
-                                                        !! (x_dest -x_src_r)/(x_src_l -x_src_r) and (y_dest -y_src_r)/(y_src_l -y_src_r)
+                                                        !! (x_dest -x_src_r)/(x_src_l -x_src_r)
+                                                        !! and (y_dest -y_src_r)/(y_src_l -y_src_r)
    real,    dimension(:,:), pointer   :: rat_y =>NULL() !< the ratio of coordinates of the dest grid
-                                                        !! (x_dest -x_src_r)/(x_src_l -x_src_r) and (y_dest -y_src_r)/(y_src_l -y_src_r)
+                                                        !! (x_dest -x_src_r)/(x_src_l -x_src_r)
+                                                        !! and (y_dest -y_src_r)/(y_src_l -y_src_r)
    real,    dimension(:), pointer     :: lon_in =>NULL()  !< the coordinates of the source grid
    real,    dimension(:), pointer     :: lat_in =>NULL()  !< the coordinates of the source grid
    logical                            :: I_am_initialized=.false.
-   integer                            :: version                            !< indicate conservative interpolation version with value 1 or 2
+   integer                            :: version                            !< indicate conservative
+                                                                            !! interpolation version with value 1 or 2
    !--- The following are for conservative interpolation scheme version 2 ( through xgrid)
-   integer                            :: nxgrid                             !< number of exchange grid between src and dst grid.
+   integer                            :: nxgrid                             !< number of exchange grid
+                                                                            !! between src and dst grid.
    integer, dimension(:), pointer     :: i_src=>NULL()       !< indices in source grid.
    integer, dimension(:), pointer     :: j_src=>NULL()       !< indices in source grid.
    integer, dimension(:), pointer     :: i_dst=>NULL()       !< indices in destination grid.
@@ -114,8 +118,8 @@ contains
  real, intent(in), optional :: missing_value
  real,    intent(in), optional :: mask(:,:)
 
- real :: dsum, npts, buffer_real(3)
- integer :: pe, root_pe, npes, p, buffer_int(2)
+ real :: dsum, buffer_real(3)
+ integer :: pe, root_pe, npes, p, buffer_int(2), npts
 
    pe = mpp_pe()
    root_pe = mpp_root_pe()
@@ -154,7 +158,7 @@ contains
          miss = miss + buffer_int(1)
          npts = npts + buffer_int(2)
       enddo
-      if(npts == 0.) then
+      if(npts == 0) then
          print*, 'Warning: no points is valid'
       else
          avg = dsum/real(npts)
@@ -176,7 +180,7 @@ contains
 
  end subroutine stats
 
-!#################################################################################################################################
+!######################################################################################################################
  subroutine horiz_interp_type_eq(horiz_interp_out, horiz_interp_in)
     type(horiz_interp_type), intent(inout) :: horiz_interp_out
     type(horiz_interp_type), intent(in)    :: horiz_interp_in
@@ -220,7 +224,7 @@ contains
     end if
 
  end subroutine horiz_interp_type_eq
-!#################################################################################################################################
+!######################################################################################################################
 
 end module horiz_interp_type_mod
 !> @}

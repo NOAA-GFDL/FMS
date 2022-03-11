@@ -48,9 +48,10 @@ subroutine register_global_attribute_0d(fileobj, &
                                    trim(attribute_name), &
                                    attribute_value)
             type is (integer(kind=i8_kind))
-                if ( .not. fileobj%allow_int8) call error(trim(fileobj%path)//": 64 bit integers are only supported with 'netcdf4' file format"//&
-                                                       &". Set netcdf_default_format='netcdf4' in the fms2_io namelist OR "//&
-                                                       &"add nc_format='netcdf4' to your open_file call")
+                if ( .not. fileobj%allow_int8) call error(trim(fileobj%path)// &
+                                               & ": 64 bit integers are only supported with 'netcdf4' file format"//  &
+                                               & ". Set netcdf_default_format='netcdf4' in the fms2_io namelist OR "//&
+                                               & "add nc_format='netcdf4' to your open_file call")
                 err = nf90_put_att(fileobj%ncid, &
                                    nf90_global, &
                                    trim(attribute_name), &
@@ -69,7 +70,8 @@ subroutine register_global_attribute_0d(fileobj, &
                 call error("register_global_attribute_0d: unsupported type for "//&
                 trim(attribute_name)//" for file: "//trim(fileobj%path)//"")
         end select
-        call check_netcdf_code(err, "register_global_attribute_0d: file:"//trim(fileobj%path)//"- attribute:"//trim(attribute_name))
+        call check_netcdf_code(err, "register_global_attribute_0d: file:"//trim(fileobj%path)//"- attribute:"// &
+                             & trim(attribute_name))
     endif
 end subroutine register_global_attribute_0d
 !> @brief Add a global attribute.
@@ -92,9 +94,10 @@ subroutine register_global_attribute_1d(fileobj, &
                                    trim(attribute_name), &
                                    attribute_value)
             type is (integer(kind=i8_kind))
-                if ( .not. fileobj%allow_int8) call error(trim(fileobj%path)//": 64 bit integers are only supported with 'netcdf4' file format"//&
-                                                       &". Set netcdf_default_format='netcdf4' in the fms2_io namelist OR "//&
-                                                       &"add nc_format='netcdf4' to your open_file call")
+                if ( .not. fileobj%allow_int8) call error(trim(fileobj%path)// &
+                                                &": 64 bit integers are only supported with 'netcdf4' file format"//&
+                                                &". Set netcdf_default_format='netcdf4' in the fms2_io namelist OR "//&
+                                                &"add nc_format='netcdf4' to your open_file call")
                 err = nf90_put_att(fileobj%ncid, &
                                    nf90_global, &
                                    trim(attribute_name), &
@@ -113,7 +116,8 @@ subroutine register_global_attribute_1d(fileobj, &
                 call error("register_global_attribute_1d: unsupported type for "//&
                 trim(attribute_name)//" for file: "//trim(fileobj%path)//"")
         end select
-        call check_netcdf_code(err, "register_global_attribute_1d: file:"//trim(fileobj%path)//"- attribute:"//trim(attribute_name))
+        call check_netcdf_code(err, "register_global_attribute_1d: file:"//trim(fileobj%path)//"- attribute:"// &
+                             & trim(attribute_name))
     endif
 end subroutine register_global_attribute_1d
 !> @}

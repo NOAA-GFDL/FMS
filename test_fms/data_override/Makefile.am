@@ -36,12 +36,16 @@ test_data_override_SOURCES = test_data_override.F90
 test_data_override_ongrid_SOURCES = test_data_override_ongrid.F90
 test_get_grid_v1_SOURCES = test_get_grid_v1.F90
 
+TEST_EXTENSIONS = .sh
+SH_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
+                  $(top_srcdir)/tap-driver.sh
+TESTS_ENVIRONMENT= test_input_path="@TEST_INPUT_PATH@"
+
 # Run the test program.
 TESTS = test_data_override2.sh
 
 # Include these files with the distribution.
-EXTRA_DIST = input_base.nml diag_table_base data_table_base	\
-test_data_override2.sh
+EXTRA_DIST = test_data_override2.sh
 
 # Clean up
-CLEANFILES = input.nml *.nc* *.out diag_table data_table
+CLEANFILES = input.nml *.nc* *.out diag_table data_table data_table.yaml INPUT/* *.dpi *.spi *.dyn *.spl

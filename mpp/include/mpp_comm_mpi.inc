@@ -36,12 +36,10 @@
   integer, optional, intent(in) :: test_level !< Used to exit initialization at certain stages
                                               !! before completion for testing purposes
   character(len=*), optional, intent(in) :: alt_input_nml_path !< Input path for namelist
-  integer                       :: my_pe, num_pes, len, i, iunit
+  integer                       :: i, iunit
   logical                       :: opened, existed
   integer                       :: io_status
   integer                       :: t_level
-  character(len=5) :: this_pe
-  type(mpp_type), pointer :: dtype
 
   if( module_is_initialized )return
 
@@ -188,7 +186,7 @@ end subroutine mpp_init
 !> Finalizes process termination. To be called at the end of a run.
 !! Certain mpi implementations(openmpi) will fail if this is not called before program termination
 subroutine mpp_exit()
-  integer :: i, j, k, n, nmax, istat, out_unit, log_unit
+  integer :: i, j, n, nmax, out_unit, log_unit
   real    :: t, tmin, tmax, tavg, tstd
   real    :: m, mmin, mmax, mavg, mstd, t_total
   logical :: opened
@@ -212,7 +210,8 @@ subroutine mpp_exit()
         write( out_unit,'(/a,i6,a)' ) 'Tabulating mpp_clock statistics across ', npes, ' PEs...'
         if( ANY(clocks(1:clock_num)%detailed) ) &
              write( out_unit,'(a)' )'   ... see mpp_clock.out.#### for details on individual PEs.'
-        write( out_unit,'(/32x,a)' ) '      hits          tmin          tmax          tavg          tstd  tfrac grain pemin pemax'
+        write( out_unit,'(/32x,a)' ) &
+                & '      hits          tmin          tmax          tavg          tstd  tfrac grain pemin pemax'
      end if
      write( log_unit,'(/37x,a)' ) 'time'
 
@@ -325,7 +324,7 @@ end subroutine mpp_exit
       integer, intent(in) :: length  !< length of given data to broadcast
       integer, intent(in) :: from_pe !< pe to broadcast from
       integer, intent(in), optional :: pelist(:) !< optional pelist to broadcast to
-      integer :: n, i, from_rank, out_unit
+      integer :: n, i, from_rank
       character    :: str1D(length*size(data(:)))
       pointer(lptr, str1D)
 
@@ -357,6 +356,9 @@ end subroutine mpp_exit
       if( debug .and. (current_clock.NE.0) )call increment_current_clock( EVENT_BROADCAST, length )
       return
     end subroutine mpp_broadcast_char
+
+! defines initialization value for mpp_type data
+#define MPP_TYPE_INIT_VALUE 0.
 
 #undef MPP_TRANSMIT_
 #define MPP_TRANSMIT_ mpp_transmit_real8
@@ -586,6 +588,8 @@ end subroutine mpp_exit
 #include <mpp_transmit_mpi.h>
 #endif
 
+#undef MPP_TYPE_INIT_VALUE
+#define MPP_TYPE_INIT_VALUE 0
 #undef MPP_TRANSMIT_
 #define MPP_TRANSMIT_ mpp_transmit_int8
 #undef MPP_TRANSMIT_SCALAR_
@@ -698,6 +702,8 @@ end subroutine mpp_exit
 #define MPI_TYPE_ MPI_INTEGER4
 #include <mpp_transmit_mpi.h>
 
+#undef MPP_TYPE_INIT_VALUE
+#define MPP_TYPE_INIT_VALUE .false.
 #undef MPP_TRANSMIT_
 #define MPP_TRANSMIT_ mpp_transmit_logical8
 #undef MPP_TRANSMIT_SCALAR_
@@ -809,6 +815,7 @@ end subroutine mpp_exit
 #undef MPI_TYPE_
 #define MPI_TYPE_ MPI_INTEGER4
 #include <mpp_transmit_mpi.h>
+#undef MPP_TYPE_INIT_VALUE
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !                                                                             !
@@ -1237,6 +1244,7 @@ end subroutine mpp_exit
 #define MPI_TYPE_ MPI_REAL8
 #include <mpp_alltoall_mpi.h>
 
+#ifdef OVERLOAD_C4
 #undef MPP_ALLTOALL_
 #undef MPP_ALLTOALLV_
 #undef MPP_ALLTOALLW_
@@ -1250,7 +1258,9 @@ end subroutine mpp_exit
 #define MPP_TYPE_BYTELEN_ 8
 #define MPI_TYPE_ MPI_COMPLEX8
 #include <mpp_alltoall_mpi.h>
+#endif
 
+#ifdef OVERLOAD_C8
 #undef MPP_ALLTOALL_
 #undef MPP_ALLTOALLV_
 #undef MPP_ALLTOALLW_
@@ -1264,6 +1274,7 @@ end subroutine mpp_exit
 #define MPP_TYPE_BYTELEN_ 16
 #define MPI_TYPE_ MPI_COMPLEX16
 #include <mpp_alltoall_mpi.h>
+#endif
 
 #undef MPP_ALLTOALL_
 #undef MPP_ALLTOALLV_

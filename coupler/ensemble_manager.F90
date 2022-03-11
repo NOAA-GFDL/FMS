@@ -62,7 +62,8 @@ contains
 !> @brief Initializes @ref ensemble_manager_mod
 !!
 !> @throw FATAL, "ensemble_manager_mod: ensemble_nml variable ensemble_size must be a positive integer"
-!! @throw FATAL, "ensemble_manager_mod: ensemble_nml variable ensemble_size should be no larger than MAX_ENSEMBLE_SIZE, change ensemble_size or increase MAX_ENSEMBLE_SIZE"
+!! @throw FATAL, "ensemble_manager_mod: ensemble_nml variable ensemble_size should be no larger
+!! than MAX_ENSEMBLE_SIZE, change ensemble_size or increase MAX_ENSEMBLE_SIZE"
 !! @throw FATAL, "ensemble_size must be divis by npes"
 !! @throw FATAL, "get_ensemble_pelist: size of pelist 1st index < ensemble_size"
 !! @throw FATAL, "get_ensemble_pelist: size of pelist 2nd index < ocean_npes_pm"
@@ -74,7 +75,7 @@ contains
   subroutine ensemble_manager_init()
 
 
-    integer :: i, io_status, ioun, npes, ierr
+    integer :: i, io_status, npes, ierr
 
     namelist /ensemble_nml/ ensemble_size
 

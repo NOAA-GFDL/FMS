@@ -206,7 +206,7 @@ public :: MPP_CLOCK_SYNC, MPP_CLOCK_DETAILED
 public :: CLOCK_COMPONENT, CLOCK_SUBCOMPONENT, &
           CLOCK_MODULE_DRIVER, CLOCK_MODULE,   &
           CLOCK_ROUTINE, CLOCK_LOOP, CLOCK_INFRA
-public :: fms_c2f_string
+public :: fms_c2f_string, fms_cstring2cpointer
 !public from the old fms_io but not exists here
 public :: string
 
@@ -297,13 +297,27 @@ interface string
    module procedure string_from_integer
    module procedure string_from_real
 end interface
+!> Converts a C string to a Fortran string
+!> @ingroup fms_mod
+interface fms_c2f_string
+   module procedure cstring_fortran_conversion
+   module procedure cpointer_fortran_conversion
+end interface
 !> C functions
   interface
+    !> @brief converts a kind=c_char to type c_ptr
+    pure function fms_cstring2cpointer (cs) result (cp) bind(c, name="cstring2cpointer")
+      import c_char, c_ptr
+        character(kind=c_char), intent(in) :: cs(*) !< C string input
+        type (c_ptr) :: cp !< C pointer
+    end function fms_cstring2cpointer
+
     !> @brief Finds the length of a C-string
     integer(c_size_t) pure function c_strlen(s) bind(c,name="strlen")
       import c_size_t, c_ptr
       type(c_ptr), intent(in), value :: s !< A C-string whose size is desired
     end function
+
     !> @brief Frees a C pointer
     subroutine c_free(ptr) bind(c,name="free")
       import c_ptr
@@ -341,7 +355,7 @@ subroutine fms_init (localcomm, alt_input_nml_path)
 
  integer, intent(in), optional :: localcomm
  character(len=*), intent(in), optional :: alt_input_nml_path
- integer :: unit, ierr, io
+ integer :: ierr, io
  integer :: logunitnum
  integer :: stdout_unit !< Unit number for the stdout file
 
@@ -470,7 +484,7 @@ end subroutine fms_end
 !#######################################################################
 
  !> @brief Print notes, warnings and error messages; terminates program for warning
- !!     and error messages. Usage of @ref mpp_error is preferable. (use error levels NOTE,WARNING,FATAL, see example below)
+ !! and error messages. Usage of @ref mpp_error is preferable. (use error levels NOTE,WARNING,FATAL, see example below)
  !! @details Print notes, warnings and error messages; and terminates the program for
  !!     error messages. This routine is a wrapper around mpp_error, and is provided
  !!     for backward compatibility. This module also publishes mpp_error,
@@ -582,7 +596,8 @@ end subroutine fms_end
 
     ! Everything else is a FATAL
     IF ( (IOSTAT == nml_errors%badType1 .OR. IOSTAT == nml_errors%badType2) .OR. IOSTAT == nml_errors%missingVar ) THEN
-       WRITE (err_str,*) 'Unknown namelist, or mistyped namelist variable in namelist ',TRIM(NML_NAME),', (IOSTAT = ',IOSTAT,')'
+       WRITE (err_str,*) 'Unknown namelist, or mistyped namelist variable in namelist ',TRIM(NML_NAME),', &
+             &  (IOSTAT = ',IOSTAT,')'
        CALL error_mesg ('check_nml_error in fms_mod', err_str, FATAL)
        CALL mpp_sync()
     ELSE
@@ -809,14 +824,20 @@ end function monotonic_array
 
   end function string_from_real
 
+!> \brief Converts a C-string to a pointer and then to a Fortran string
+function cstring_fortran_conversion (cstring) result(fstring)
+ character (kind=c_char), intent(in) :: cstring (*) !< Input C-string
+ character(len=:), allocatable :: fstring    !< The fortran string returned
+ fstring = cpointer_fortran_conversion(fms_cstring2cpointer(cstring))
+end function cstring_fortran_conversion
+
 !> \brief Converts a C-string returned from a TYPE(C_PTR) function to
 !! a fortran string with type character.
-function fms_c2f_string (cstring) result(fstring)
- type (c_ptr) :: cstring
+function cpointer_fortran_conversion (cstring) result(fstring)
+ type (c_ptr), intent(in) :: cstring !< Input C-pointer
  character(len=:), allocatable :: fstring    !< The fortran string returned
  character(len=:,kind=c_char), pointer :: string_buffer !< A temporary pointer to between C and Fortran
  integer(c_size_t) :: length !< The string length
- integer :: i
 
   length = c_strlen(cstring)
   allocate (character(len=length, kind=c_char) :: string_buffer)
@@ -828,8 +849,10 @@ function fms_c2f_string (cstring) result(fstring)
 
  allocate(character(len=length) :: fstring) !> Set the length of fstring
 fstring = string_buffer
+ deallocate(string_buffer)
 
-end function fms_c2f_string
+end function cpointer_fortran_conversion
+
 !#######################################################################
 !> @brief Prints to the log file (or a specified unit) the version id string and
 !!  tag name.

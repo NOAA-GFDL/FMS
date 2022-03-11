@@ -34,7 +34,8 @@
 !!ideally we would not pass length, but this f77-style call performs better (arrays passed by address, not descriptor)
 !!further, this permits <length> contiguous words from an array of any rank to be passed (avoiding f90 rank conformance check)
 !!caller is responsible for completion checks (mpp_sync_self) before and after
-    subroutine MPP_TRANSMIT_( put_data, put_len, to_pe, get_data, get_len, from_pe, block, tag, recv_request, send_request )
+    subroutine MPP_TRANSMIT_( put_data, put_len, to_pe, get_data, get_len, from_pe, block, tag, recv_request, &
+                            &  send_request )
 
       integer, intent(in) :: put_len, to_pe, get_len, from_pe
       MPP_TYPE_, intent(in)  :: put_data(*)
@@ -44,7 +45,6 @@
       integer, intent(out), optional :: recv_request, send_request
       logical                       :: block_comm
       integer                       :: i
-      MPP_TYPE_, allocatable, save  :: local_data(:) !local copy used by non-parallel code (no SHMEM or MPI)
       integer                       :: comm_tag
       integer                       :: rsize
 
@@ -57,7 +57,8 @@
       if( debug )then
           call SYSTEM_CLOCK(tick)
           write( stdout_unit,'(a,i18,a,i6,a,2i6,2i8)' )&
-               'T=',tick, ' PE=',pe, ' MPP_TRANSMIT begin: to_pe, from_pe, put_len, get_len=', to_pe, from_pe, put_len, get_len
+               'T=',tick, ' PE=',pe, ' MPP_TRANSMIT begin: to_pe, from_pe, put_len, get_len=', to_pe, from_pe, &
+                       &  put_len, get_len
       end if
 
       comm_tag = DEFAULT_TAG
@@ -146,7 +147,8 @@
       if( debug )then
           call SYSTEM_CLOCK(tick)
           write( stdout_unit,'(a,i18,a,i6,a,2i6,2i8)' )&
-               'T=',tick, ' PE=',pe, ' MPP_TRANSMIT end: to_pe, from_pe, put_len, get_len=', to_pe, from_pe, put_len, get_len
+               'T=',tick, ' PE=',pe, ' MPP_TRANSMIT end: to_pe, from_pe, put_len, get_len=', to_pe, from_pe, &
+                       &  put_len, get_len
       end if
       return
     end subroutine MPP_TRANSMIT_

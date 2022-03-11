@@ -259,7 +259,8 @@ contains
         ! Check that the flux_type/implementation that we will use
         ! (both possibly given from the field_table) is defined
         implementation_test = fm_util_get_string('implementation', scalar = .true.)
-        if (.not. fm_exists('/coupler_mod/types/' // trim(flux_type_test) //  '/implementation/' // trim(implementation_test))) then
+        if (.not. fm_exists('/coupler_mod/types/' // trim(flux_type_test) //  '/implementation/' // &
+        &  trim(implementation_test))) then
           if (flux_type .eq. flux_type_test) then
             if (implementation .eq. implementation_test) then
               call mpp_error(FATAL, trim(error_header) // ' Should not get here, as it is tested for above')
@@ -411,7 +412,8 @@ contains
   !! @throw FATAL, "Flux index, [ind] does not match array index, [n] for [name]"
   !! @throw FATAL, "Problem changing to [name]"
   !! @throw FATAL, "Undefined flux_type given for [name]: [gas_fluxes%bc(n)%flux_type]"
-  !! @throw FATAL, "Undefined implementation given for [name]: [gas_fluxes%bc(n)%flux_type]/implementation/[gas_fluxes%bc(n)%implementation]"
+  !! @throw FATAL, "Undefined implementation given for [name]:
+  !!                [gas_fluxes%bc(n)%flux_type]/implementation/[gas_fluxes%bc(n)%implementation]"
   !! @throw FATAL, "No param for [name]: need [num_parameters]"
   !! @throw FATAL, "Wrong number of param for [name]: [size(gas_fluxes%bc(n)%param(:))] given, need [num_parameters]"
   !! @throw FATAL, "No params needed for [name] but has size of [size(gas_fluxes%bc(n)%param(:))]"
@@ -583,7 +585,8 @@ contains
 
       gas_fields_ice%bc(n)%name = name
       do m = 1, fm_util_get_length(trim(flux_list) // 'ice/name')
-        gas_fields_ice%bc(n)%field(m)%name = trim(name) // "_" // fm_util_get_string(trim(flux_list) // 'ice/name', index = m)
+        gas_fields_ice%bc(n)%field(m)%name = trim(name) // "_" // fm_util_get_string(trim(flux_list) // &
+                                        &  'ice/name', index = m)
         gas_fields_ice%bc(n)%field(m)%override = .false.
         gas_fields_ice%bc(n)%field(m)%mean     = .false.
       enddo
@@ -591,7 +594,8 @@ contains
       ! Save the units.
       do m = 1, fm_util_get_length(trim(flux_list) // 'flux/name')
         gas_fluxes%bc(n)%field(m)%units =&
-            & fm_util_get_string(trim(fm_util_get_string(trim(flux_list) // 'flux/name', index = m)) // '-units', scalar = .true.)
+            & fm_util_get_string(trim(fm_util_get_string(trim(flux_list) // 'flux/name', index = m)) // &
+            &  '-units', scalar = .true.)
       enddo
       do m = 1, fm_util_get_length(trim(flux_list) // 'atm/name')
         gas_fields_atm%bc(n)%field(m)%units =&
@@ -605,7 +609,8 @@ contains
       ! Save the long names.
       do m = 1, fm_util_get_length(trim(flux_list) // 'flux/name')
         gas_fluxes%bc(n)%field(m)%long_name =&
-            & fm_util_get_string(trim(fm_util_get_string(trim(flux_list) // 'flux/name', index = m)) // '-long_name', scalar = .true.)
+            & fm_util_get_string(trim(fm_util_get_string(trim(flux_list) // 'flux/name', index = m)) // &
+            &  '-long_name', scalar = .true.)
         gas_fluxes%bc(n)%field(m)%long_name = trim(gas_fluxes%bc(n)%field(m)%long_name) // ' for ' // name
       enddo
       do m = 1, fm_util_get_length(trim(flux_list) // 'atm/name')
@@ -652,7 +657,8 @@ contains
           call mpp_error(FATAL, trim(error_header) // ' No param for ' // trim(name) // trim(error_string))
         elseif (size(gas_fluxes%bc(n)%param(:)) .ne. num_parameters) then
           write (error_string,'(a,i2,a,i2)') ': ', size(gas_fluxes%bc(n)%param(:)), ' given, need ', num_parameters
-          call mpp_error(FATAL, trim(error_header) // ' Wrong number of param for ' // trim(name) // trim(error_string))
+          call mpp_error(FATAL, trim(error_header) // &
+                         &  ' Wrong number of param for ' // trim(name) // trim(error_string))
         endif
       elseif (num_parameters .eq. 0) then
         if (associated(gas_fluxes%bc(n)%param)) then
@@ -661,7 +667,8 @@ contains
         endif
       else
         write (error_string,'(a,i2)') ': ', num_parameters
-        call mpp_error(FATAL, trim(error_header) // 'Num_parameters is negative for ' // trim(name) // trim(error_string))
+        call mpp_error(FATAL, trim(error_header) // &
+                       &  'Num_parameters is negative for ' // trim(name) // trim(error_string))
       endif
       num_flags = fm_util_get_integer(trim(flux_list) // '/num_flags', scalar = .true.)
       if (num_flags .gt. 0) then
@@ -960,7 +967,8 @@ contains
     call fm_util_set_value('air_sea_gas_flux_generic/implementation/duce/num_parameters', 1)
 
     if (fm_new_list('air_sea_gas_flux_generic/implementation/johnson') .le. 0) then
-      call mpp_error(FATAL, trim(error_header) // ' Could not set the "air_sea_gas_flux_generic/implementation/johnson" list')
+      call mpp_error(FATAL, trim(error_header) // &
+                     &  ' Could not set the "air_sea_gas_flux_generic/implementation/johnson" list')
     endif
     call fm_util_set_value('air_sea_gas_flux_generic/implementation/johnson/num_parameters', 2)
 
@@ -1041,7 +1049,8 @@ contains
     endif
     call fm_util_set_value('air_sea_gas_flux/implementation/ocmip2/num_parameters', 2)
     if (fm_new_list('air_sea_gas_flux/implementation/ocmip2_data') .le. 0) then
-      call mpp_error(FATAL, trim(error_header) // ' Could not set the "air_sea_gas_flux/implementation/ocmip2_data" list')
+      call mpp_error(FATAL, trim(error_header) // &
+                     &  ' Could not set the "air_sea_gas_flux/implementation/ocmip2_data" list')
     endif
     call fm_util_set_value('air_sea_gas_flux/implementation/ocmip2_data/num_parameters', 2)
     if (fm_new_list('air_sea_gas_flux/implementation/linear') .le. 0) then
@@ -1077,13 +1086,15 @@ contains
       call mpp_error(FATAL, trim(error_header) // ' Could not set the "air_sea_gas_flux/ice" list')
     endif
 
-    call fm_util_set_value('air_sea_gas_flux/ice/name',      'alpha',                                                index = ind_alpha)
-    call fm_util_set_value('air_sea_gas_flux/ice/long_name', 'Solubility from atmosphere times Schmidt number term', index = ind_alpha)
-    call fm_util_set_value('air_sea_gas_flux/ice/units',     'mol/m^3/atm',                                          index = ind_alpha)
+    call fm_util_set_value('air_sea_gas_flux/ice/name', 'alpha', index = ind_alpha)
+    call fm_util_set_value('air_sea_gas_flux/ice/long_name', &
+                          &  'Solubility from atmosphere times Schmidt number term', index = ind_alpha)
+    call fm_util_set_value('air_sea_gas_flux/ice/units', 'mol/m^3/atm', index = ind_alpha)
 
-    call fm_util_set_value('air_sea_gas_flux/ice/name',      'csurf',                                         index = ind_csurf)
-    call fm_util_set_value('air_sea_gas_flux/ice/long_name', 'Ocean concentration times Schmidt number term', index = ind_csurf)
-    call fm_util_set_value('air_sea_gas_flux/ice/units',     'mol/m^3',                                       index = ind_csurf)
+    call fm_util_set_value('air_sea_gas_flux/ice/name', 'csurf', index = ind_csurf)
+    call fm_util_set_value('air_sea_gas_flux/ice/long_name', 'Ocean concentration times Schmidt number term', &
+                          &  index = ind_csurf)
+    call fm_util_set_value('air_sea_gas_flux/ice/units', 'mol/m^3', index = ind_csurf)
 
     ! Add the flux output field(s).
     if (fm_new_list('air_sea_gas_flux/flux') .le. 0) then

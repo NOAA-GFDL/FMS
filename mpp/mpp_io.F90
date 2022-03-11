@@ -188,8 +188,8 @@
 !!
 !!   A set of <I>attributes</I> for each variable is also available. The
 !!   variable definitions and attribute information is written/read by calling
-!!   <LINK SRC="#mpp_write_meta">mpp_write_meta</LINK> or <LINK SRC="#mpp_read_meta">mpp_read_meta</LINK>. A typical calling
-!!   sequence for writing data might be:
+!!   <LINK SRC="#mpp_write_meta">mpp_write_meta</LINK> or <LINK SRC="#mpp_read_meta">mpp_read_meta</LINK>. A typical
+!!   calling sequence for writing data might be:
 !!
 !!   <PRE>
 !!   ...
@@ -291,7 +291,9 @@
 !!   <TT>mpp_get_atts</TT> returns all global attributes for
 !!   the file in the derived type <TT>atttype(natt)</TT>.
 !!   <TT>mpp_get_vars</TT> returns variable types
-!!   (<TT>fieldtype(nvar)</TT>).  Since the record dimension data are not allocated for calls to <LINK SRC="#mpp_write">mpp_write</LINK>, a separate call to  <TT>mpp_get_times</TT> is required to access record dimension data.  Subsequent calls to
+!!   (<TT>fieldtype(nvar)</TT>).  Since the record dimension data are not allocated for calls to
+!!   <LINK SRC="#mpp_write">mpp_write</LINK>, a separate call to  <TT>mpp_get_times</TT> is required to access record
+!!   dimension data.  Subsequent calls to
 !!   <TT>mpp_read</TT> return the field data arrays corresponding to
 !!   the fieldtype.  The <TT>domain</TT> type is an optional
 !!   argument.  If <TT>domain</TT> is omitted, the incoming field

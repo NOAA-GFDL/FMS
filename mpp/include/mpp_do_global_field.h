@@ -27,8 +27,8 @@
       integer, intent(in), optional :: flags
       MPP_TYPE_, intent(in), optional :: default_data
 
-      integer :: i, j, k, m, n, nd, nwords, lpos, rpos, ioff, joff, from_pe, root_pe, tile_id
-      integer :: ke, isc, iec, jsc, jec, is, ie, js, je, nword_me
+      integer :: i, j, k, m, n, nd, num_words, lpos, rpos, ioff, joff, from_pe, root_pe, tile_id
+      integer :: ke, isc, iec, jsc, jec, is, ie, js, je, num_word_me
       integer :: ipos, jpos
       logical :: xonly, yonly, root_only, global_on_this_pe
       MPP_TYPE_ :: clocal ((domain%x(1)%compute%size+ishift)    *(domain%y(1)%compute%size+jshift)    *size(local,3))
@@ -43,7 +43,8 @@
       if( stackuse.GT.mpp_domains_stack_size )then
           write( text, '(i8)' )stackuse
           call mpp_error( FATAL, &
-               'MPP_DO_GLOBAL_FIELD user stack overflow: call mpp_domains_set_stack_size('//trim(text)//') from all PEs.' )
+               'MPP_DO_GLOBAL_FIELD user stack overflow: call mpp_domains_set_stack_size('//trim(text)// &
+               & ') from all PEs.' )
       end if
       mpp_domains_stack_hwm = max( mpp_domains_stack_hwm, stackuse )
 
@@ -76,16 +77,19 @@
       if(global_on_this_pe ) then
          if(size(local,3).NE.size(global,3) ) call mpp_error( FATAL, &
               'MPP_GLOBAL_FIELD: mismatch of third dimension size of global and local')
-         if( size(global,1).NE.(domain%x(tile)%global%size+ishift) .OR. size(global,2).NE.(domain%y(tile)%global%size+jshift))then
+         if( size(global,1).NE.(domain%x(tile)%global%size+ishift) .OR. &
+             size(global,2).NE.(domain%y(tile)%global%size+jshift))then
             if(xonly) then
                if(size(global,1).NE.(domain%x(tile)%global%size+ishift) .OR. &
                    size(global,2).NE.(domain%y(tile)%compute%size+jshift)) &
-                  call mpp_error( FATAL, 'MPP_GLOBAL_FIELD: incoming arrays do not match domain for xonly global field.' )
+                  call mpp_error( FATAL, &
+                                 &  'MPP_GLOBAL_FIELD: incoming arrays do not match domain for xonly global field.' )
                jpos = -domain%y(tile)%compute%begin + 1
             else if(yonly) then
                if(size(global,1).NE.(domain%x(tile)%compute%size+ishift) .OR. &
                    size(global,2).NE.(domain%y(tile)%global%size+jshift)) &
-                  call mpp_error( FATAL, 'MPP_GLOBAL_FIELD: incoming arrays do not match domain for yonly global field.' )
+                  call mpp_error( FATAL, &
+                                 &  'MPP_GLOBAL_FIELD: incoming arrays do not match domain for yonly global field.' )
                ipos = -domain%x(tile)%compute%begin + 1
             else
                call mpp_error( FATAL, 'MPP_GLOBAL_FIELD: incoming arrays do not match domain.' )
@@ -93,23 +97,26 @@
          endif
       endif
 
-      if( size(local,1).EQ.(domain%x(tile)%compute%size+ishift) .AND. size(local,2).EQ.(domain%y(tile)%compute%size+jshift) )then
+      if( size(local,1).EQ.(domain%x(tile)%compute%size+ishift) .AND. &
+          size(local,2).EQ.(domain%y(tile)%compute%size+jshift) )then
          !local is on compute domain
          ioff = -domain%x(tile)%compute%begin + 1
          joff = -domain%y(tile)%compute%begin + 1
-      else if( size(local,1).EQ.(domain%x(tile)%memory%size+ishift) .AND. size(local,2).EQ.(domain%y(tile)%memory%size+jshift) )then
+      else if( size(local,1).EQ.(domain%x(tile)%memory%size+ishift) .AND. &
+               size(local,2).EQ.(domain%y(tile)%memory%size+jshift) )then
          !local is on data domain
          ioff = -domain%x(tile)%data%begin + 1
          joff = -domain%y(tile)%data%begin + 1
       else
-         call mpp_error( FATAL, 'MPP_GLOBAL_FIELD_: incoming field array must match either compute domain or memory domain.' )
+         call mpp_error( FATAL, &
+                       & 'MPP_GLOBAL_FIELD_: incoming field array must match either compute domain or memory domain.')
       end if
 
       ke  = size(local,3)
       isc = domain%x(tile)%compute%begin; iec = domain%x(tile)%compute%end+ishift
       jsc = domain%y(tile)%compute%begin; jec = domain%y(tile)%compute%end+jshift
 
-      nword_me = (iec-isc+1)*(jec-jsc+1)*ke
+      num_word_me = (iec-isc+1)*(jec-jsc+1)*ke
 
 ! make contiguous array from compute domain
       m = 0
@@ -163,14 +170,14 @@
              from_pe = domain%x(1)%list(rpos)%pe
              rpos = from_pe - root_pe ! for concurrent run, root_pe may not be 0.
              if (from_pe == NULL_PE) then
-                nwords = 0
+                num_words = 0
              else
-                nwords = (domain%list(rpos)%x(1)%compute%size+ishift) &
+                num_words = (domain%list(rpos)%x(1)%compute%size+ishift) &
                        * (domain%list(rpos)%y(1)%compute%size+jshift) * ke
              endif
            ! Force use of scalar, integer ptr interface
-             call mpp_transmit( put_data=clocal(1), plen=nword_me, to_pe=domain%x(1)%list(lpos)%pe, &
-                                get_data=cremote(1), glen=nwords, from_pe=from_pe )
+             call mpp_transmit( put_data=clocal(1), plen=num_word_me, to_pe=domain%x(1)%list(lpos)%pe, &
+                                get_data=cremote(1), glen=num_words, from_pe=from_pe )
              m = 0
              if (from_pe /= NULL_PE) then
                 is = domain%list(rpos)%x(1)%compute%begin; ie = domain%list(rpos)%x(1)%compute%end+ishift
@@ -193,14 +200,14 @@
              from_pe = domain%y(1)%list(rpos)%pe
              rpos = from_pe - root_pe
              if (from_pe == NULL_PE) then
-                nwords = 0
+                num_words = 0
              else
-                nwords = (domain%list(rpos)%x(1)%compute%size+ishift) &
+                num_words = (domain%list(rpos)%x(1)%compute%size+ishift) &
                        * (domain%list(rpos)%y(1)%compute%size+jshift) * ke
              endif
            ! Force use of scalar, integer pointer interface
-             call mpp_transmit( put_data=clocal(1), plen=nword_me, to_pe=domain%y(1)%list(lpos)%pe, &
-                                get_data=cremote(1), glen=nwords, from_pe=from_pe )
+             call mpp_transmit( put_data=clocal(1), plen=num_word_me, to_pe=domain%y(1)%list(lpos)%pe, &
+                                get_data=cremote(1), glen=num_words, from_pe=from_pe )
              m = 0
              if (from_pe /= NULL_PE) then
                  js = domain%list(rpos)%y(1)%compute%begin; je = domain%list(rpos)%y(1)%compute%end+jshift
@@ -220,13 +227,14 @@
          nd = size(domain%list(:))
          if(root_only) then
             if(domain%pe .NE. domain%tile_root_pe) then
-               call mpp_send( clocal(1), plen=nword_me, to_pe=domain%tile_root_pe, tag=COMM_TAG_1 )
+               call mpp_send( clocal(1), plen=num_word_me, to_pe=domain%tile_root_pe, tag=COMM_TAG_1 )
             else
                do n = 1,nd-1
                   rpos = mod(domain%pos+n,nd)
                   if( domain%list(rpos)%tile_id(1) .NE. tile_id ) cycle
-                  nwords = (domain%list(rpos)%x(1)%compute%size+ishift) * (domain%list(rpos)%y(1)%compute%size+jshift) * ke
-                  call mpp_recv(cremote(1), glen=nwords, from_pe=domain%list(rpos)%pe, tag=COMM_TAG_1 )
+                  num_words = (domain%list(rpos)%x(1)%compute%size+ishift) * &
+                            & (domain%list(rpos)%y(1)%compute%size+jshift) * ke
+                  call mpp_recv(cremote(1), glen=num_words, from_pe=domain%list(rpos)%pe, tag=COMM_TAG_1 )
                   m = 0
                   is = domain%list(rpos)%x(1)%compute%begin; ie = domain%list(rpos)%x(1)%compute%end+ishift
                   js = domain%list(rpos)%y(1)%compute%begin; je = domain%list(rpos)%y(1)%compute%end+jshift
@@ -245,13 +253,14 @@
             do n = 1,nd-1
                lpos = mod(domain%pos+nd-n,nd)
                if( domain%list(lpos)%tile_id(1).NE. tile_id ) cycle ! global field only within tile
-               call mpp_send( clocal(1), plen=nword_me, to_pe=domain%list(lpos)%pe, tag=COMM_TAG_2 )
+               call mpp_send( clocal(1), plen=num_word_me, to_pe=domain%list(lpos)%pe, tag=COMM_TAG_2 )
             end do
             do n = 1,nd-1
                rpos = mod(domain%pos+n,nd)
                if( domain%list(rpos)%tile_id(1) .NE. tile_id ) cycle ! global field only within tile
-               nwords = (domain%list(rpos)%x(1)%compute%size+ishift) * (domain%list(rpos)%y(1)%compute%size+jshift) * ke
-               call mpp_recv( cremote(1), glen=nwords, from_pe=domain%list(rpos)%pe, tag=COMM_TAG_2 )
+               num_words = (domain%list(rpos)%x(1)%compute%size+ishift) * &
+                         & (domain%list(rpos)%y(1)%compute%size+jshift) * ke
+               call mpp_recv( cremote(1), glen=num_words, from_pe=domain%list(rpos)%pe, tag=COMM_TAG_2 )
                m = 0
                is = domain%list(rpos)%x(1)%compute%begin; ie = domain%list(rpos)%x(1)%compute%end+ishift
                js = domain%list(rpos)%y(1)%compute%begin; je = domain%list(rpos)%y(1)%compute%end+jshift
@@ -284,7 +293,7 @@
       integer, intent(in), optional :: flags
       MPP_TYPE_, intent(in), optional :: default_data
 
-      integer :: i, j, k, m, n, nd, nwords, lpos, rpos, ioff, joff, from_pe, root_pe, tile_id
+      integer :: i, n, nd, ioff, joff, root_pe
       integer :: ke, isc, iec, jsc, jec, is, ie, js, je
       integer :: ipos, jpos
       logical :: xonly, yonly, root_only, global_on_this_pe
@@ -332,16 +341,19 @@
       if(global_on_this_pe ) then
          if(size(local,3).NE.size(global,3) ) call mpp_error( FATAL, &
               'MPP_GLOBAL_FIELD: mismatch of third dimension size of global and local')
-         if( size(global,1).NE.(domain%x(tile)%global%size+ishift) .OR. size(global,2).NE.(domain%y(tile)%global%size+jshift))then
+         if( size(global,1).NE.(domain%x(tile)%global%size+ishift) .OR. &
+             size(global,2).NE.(domain%y(tile)%global%size+jshift))then
             if(xonly) then
                if(size(global,1).NE.(domain%x(tile)%global%size+ishift) .OR. &
                    size(global,2).NE.(domain%y(tile)%compute%size+jshift)) &
-                  call mpp_error( FATAL, 'MPP_GLOBAL_FIELD: incoming arrays do not match domain for xonly global field.' )
+                  call mpp_error( FATAL, &
+                                 &  'MPP_GLOBAL_FIELD: incoming arrays do not match domain for xonly global field.' )
                jpos = -domain%y(tile)%compute%begin + 1
             else if(yonly) then
                if(size(global,1).NE.(domain%x(tile)%compute%size+ishift) .OR. &
                    size(global,2).NE.(domain%y(tile)%global%size+jshift)) &
-                  call mpp_error( FATAL, 'MPP_GLOBAL_FIELD: incoming arrays do not match domain for yonly global field.' )
+                  call mpp_error( FATAL, &
+                                 &  'MPP_GLOBAL_FIELD: incoming arrays do not match domain for yonly global field.' )
                ipos = -domain%x(tile)%compute%begin + 1
             else
                call mpp_error( FATAL, 'MPP_GLOBAL_FIELD: incoming arrays do not match domain.' )
@@ -352,16 +364,19 @@
       ! NOTE: Since local is assumed to contiguously match the data domain, this
       !       is not a useful check.  But maybe someday we can support compute
       !       domains.
-      if( size(local,1).EQ.(domain%x(tile)%compute%size+ishift) .AND. size(local,2).EQ.(domain%y(tile)%compute%size+jshift) )then
+      if( size(local,1).EQ.(domain%x(tile)%compute%size+ishift) .AND. &
+          size(local,2).EQ.(domain%y(tile)%compute%size+jshift) )then
          !local is on compute domain
          ioff = -domain%x(tile)%compute%begin
          joff = -domain%y(tile)%compute%begin
-      else if( size(local,1).EQ.(domain%x(tile)%memory%size+ishift) .AND. size(local,2).EQ.(domain%y(tile)%memory%size+jshift) )then
+      else if( size(local,1).EQ.(domain%x(tile)%memory%size+ishift) .AND. &
+               size(local,2).EQ.(domain%y(tile)%memory%size+jshift) )then
          !local is on data domain
          ioff = -domain%x(tile)%data%begin
          joff = -domain%y(tile)%data%begin
       else
-         call mpp_error( FATAL, 'MPP_GLOBAL_FIELD_: incoming field array must match either compute domain or memory domain.' )
+         call mpp_error( FATAL, &
+                       & 'MPP_GLOBAL_FIELD_: incoming field array must match either compute domain or memory domain.' )
       end if
 
       ke  = size(local,3)

@@ -83,7 +83,7 @@ contains
     type(randomNumberStream), intent(inout) :: stream
     real,                     intent(  out) :: number
 
-    number = getRandomReal(stream%theNumbers)
+    number = real(getRandomReal(stream%theNumbers))
   end subroutine getRandomNumber_Scalar
   ! ---------------------------------------------------------
   !> Draws random 1D array
@@ -95,7 +95,7 @@ contains
     integer :: i
 
     do i = 1, size(numbers)
-      numbers(i) = getRandomReal(stream%theNumbers)
+      numbers(i) = real(getRandomReal(stream%theNumbers))
     end do
   end subroutine getRandomNumber_1D
   ! ---------------------------------------------------------

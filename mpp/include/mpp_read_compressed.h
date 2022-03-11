@@ -67,7 +67,8 @@
         allocate(pelist(npes))
         call mpp_get_pelist(io_domain,pelist)
 
-        if(mpp_pe() == pelist(1)) call READ_RECORD_(unit,field,size(data(:,:)),data,tindex,start_in=start, axsiz_in=nread)
+        if(mpp_pe() == pelist(1)) call READ_RECORD_(unit,field,size(data(:,:)),data,tindex,start_in=start, &
+          &  axsiz_in=nread)
 
         !--- z1l replace mpp_broadcast with mpp_send/mpp_recv to avoid hang in calling MPI_COMM_CREATE
         !---     because size(pelist) might be different for different rank.
@@ -111,7 +112,7 @@
             if ( mpp_pe() == mpp_root_pe() ) then
                print '(A,Z16)', "mpp_read_compressed_2d chksum: "//trim(field%name)//" = ", chk
                !! discuss making fatal after testing/review to match other routines.
-               !! Need to do some nword-counting and digging with pjp
+               !! Need to do some num_word-counting and digging with pjp
                !! this should be if ( chk /= field%checksum ) as it was tested @ulm_201505..
                if ( MOD(chk, field%checksum(1)) /= 0 ) then
                   print '(A,Z16)', "File stored checksum: "//trim(field%name)//" = ", field%checksum(1)
@@ -160,7 +161,8 @@
          allocate(pelist(npes))
          call mpp_get_pelist(io_domain,pelist)
 
-         if(mpp_pe() == pelist(1)) call READ_RECORD_(unit,field,size(data(:,:,:)),data,tindex,start_in=start, axsiz_in=nread)
+         if(mpp_pe() == pelist(1)) call READ_RECORD_(unit,field,size(data(:,:,:)),data,tindex,start_in=start, &
+           &  axsiz_in=nread)
 
          !--- z1l replace mpp_broadcast with mpp_send/mpp_recv to avoid hang in calling MPI_COMM_CREATE
          !---  because size(pelist) might be different for different rank.
@@ -203,7 +205,7 @@
             if ( mpp_pe() == mpp_root_pe() ) then
                print '(A,Z16)', "mpp_read_compressed_3d chksum: "//trim(field%name)//" = ", chk
                !! discuss making fatal after testing/review to match other routines.
-               !! Need to do some nword-counting and digging with pjp
+               !! Need to do some num_word-counting and digging with pjp
                !! this should be if ( chk /= field%checksum ) as it was tested @ulm_201505..
                if ( MOD(chk, field%checksum(1)) /= 0 ) then
                   print '(A,Z16)', "File stored checksum: "//trim(field%name)//" = ", field%checksum(1)

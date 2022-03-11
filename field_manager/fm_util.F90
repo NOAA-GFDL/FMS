@@ -2297,7 +2297,8 @@ endif  !}
 if (present(no_create)) then  !{
   create = .not. no_create
   if (no_create .and. (present(append) .or. present(index))) then  !{
-    call mpp_error(FATAL, trim(error_header) // ' append or index are present when no_create is true for ' // trim(name))
+    call mpp_error(FATAL, trim(error_header) // &
+                   &  ' append or index are present when no_create is true for ' // trim(name))
   endif  !}
 else  !}{
   create = .true.
@@ -2468,7 +2469,8 @@ endif  !}
 if (present(no_create)) then  !{
   create = .not. no_create
   if (no_create .and. (present(append) .or. present(index))) then  !{
-    call mpp_error(FATAL, trim(error_header) // ' append or index are present when no_create is true for ' // trim(name))
+    call mpp_error(FATAL, trim(error_header) // &
+                   &  ' append or index are present when no_create is true for ' // trim(name))
   endif  !}
 else  !}{
   create = .true.
@@ -2639,7 +2641,8 @@ endif  !}
 if (present(no_create)) then  !{
   create = .not. no_create
   if (no_create .and. (present(append) .or. present(index))) then  !{
-    call mpp_error(FATAL, trim(error_header) // ' append or index are present when no_create is true for ' // trim(name))
+    call mpp_error(FATAL, trim(error_header) // &
+                   &  ' append or index are present when no_create is true for ' // trim(name))
   endif  !}
 else  !}{
   create = .true.
@@ -2810,7 +2813,8 @@ endif  !}
 if (present(no_create)) then  !{
   create = .not. no_create
   if (no_create .and. (present(append) .or. present(index))) then  !{
-    call mpp_error(FATAL, trim(error_header) // ' append or index are present when no_create is true for ' // trim(name))
+    call mpp_error(FATAL, trim(error_header) // &
+                   &  ' append or index are present when no_create is true for ' // trim(name))
   endif  !}
 else  !}{
   create = .true.
@@ -3111,9 +3115,11 @@ endif  !}
 !
 
 if (path .ne. save_path) then  !{
-  call mpp_error(FATAL, trim(error_header) // ' Path "' // trim(path) // '" does not match saved path "' // trim(save_path) // '"')
+  call mpp_error(FATAL, trim(error_header) // &
+                 &  ' Path "' // trim(path) // '" does not match saved path "' // trim(save_path) // '"')
 elseif (name .ne. save_name) then  !}{
-  call mpp_error(FATAL, trim(error_header) // ' Name "' // trim(name) // '" does not match saved name "' // trim(save_name) // '"')
+  call mpp_error(FATAL, trim(error_header) // &
+                 &  ' Name "' // trim(name) // '" does not match saved name "' // trim(save_name) // '"')
 endif  !}
 
 !

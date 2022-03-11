@@ -213,7 +213,8 @@ logical                  :: climatological_year !< Is data for year = 0000?
 !Field specific data  for nfields
 character(len=64), pointer :: field_name(:) =>NULL()   !< name of this field
 logical,           pointer :: has_level(:) =>NULL()    !< indicate if the variable has level dimension
-integer,           pointer :: time_init(:,:) =>NULL()  !< second index is the number of time_slices being kept. 2 or ntime.
+integer,           pointer :: time_init(:,:) =>NULL()  !< second index is the number of time_slices being
+                                                       !! kept. 2 or ntime.
 integer,           pointer :: mr(:) =>NULL()           !< Flag for conversion of climatology to mixing ratio.
 integer,           pointer :: out_of_bounds(:) =>NULL()!< Flag for when surface pressure is out of bounds.
 !++lwh
@@ -261,34 +262,41 @@ integer ::          len, ntime_in, num_fields               !< No description
 ! pletzer real, allocatable :: time_in(:)
 ! sjs real, allocatable :: climdata(:,:,:), climdata2(:,:,:)
 
-character(len=64) :: name, units                              !< No description
+character(len=64) :: units                              !< No description
 integer           :: sense                                        !< No description
 
 integer, parameter :: max_diag_fields = 30                    !< No description
 
 ! flags to indicate direction of vertical axis in  data file
-integer, parameter :: INCREASING_DOWNWARD = 1, INCREASING_UPWARD = -1          !< Flags to indicate direction of vertical axis in  data file
+integer, parameter :: INCREASING_DOWNWARD = 1, INCREASING_UPWARD = -1          !< Flags to indicate direction
+                                                                               !! of vertical axis in  data file
 !++lwh
 ! Flags to indicate whether the time interpolation should be linear or some other scheme for seasonal data.
 ! NOTIME indicates that data file has no time axis.
-integer, parameter :: LINEAR = 1, SEASONAL = 2, BILINEAR = 3, NOTIME = 4     !< Flags to indicate whether the time interpolation
-                                                                                               !! should be linear or some other scheme for seasonal data.
-                                                                                               !! NOTIME indicates that data file has no time axis.
+integer, parameter :: LINEAR = 1, SEASONAL = 2, BILINEAR = 3, NOTIME = 4     !< Flags to indicate whether the time
+                                                                             !! interpolation should be linear or some
+                                                                             !! other scheme for seasonal data.
+                                                                             !! NOTIME indicates
+                                                                             !! that data file has no time axis.
 
 ! Flags to indicate where climatology pressure levels are pressure or sigma levels
-integer, parameter :: PRESSURE = 1, SIGMA = 2          !< Flags to indicate where climatology pressure levels are pressure or sigma levels
+integer, parameter :: PRESSURE = 1, SIGMA = 2          !< Flags to indicate where climatology pressure
+                                                       !! levels are pressure or sigma levels
 
 ! Flags to indicate whether the climatology units are mixing ratio (kg/kg) or column integral (kg/m2).
 ! Vertical interpolation scheme requires mixing ratio at this time.
-integer, parameter :: NO_CONV = 1, KG_M2 = 2          !< Flags to indicate whether the climatology units are mixing ratio (kg/kg) or column integral (kg/m2).
-                                                                 !< Vertical interpolation scheme requires mixing ratio at this time.
+integer, parameter :: NO_CONV = 1, KG_M2 = 2          !< Flags to indicate whether the climatology units
+                                                      !! are mixing ratio (kg/kg) or column integral (kg/m2).
+                                                      !! Vertical interpolation scheme requires mixing ratio at
+                                                      !! this time.
 
 ! Flags to indicate what to do when the model surface pressure exceeds the  climatology surface pressure level.
-integer, parameter, public :: CONSTANT = 1, ZERO = 2          !< Flags to indicate what to do when the model surface pressure
-                                                                           !< exceeds the  climatology surface pressure level.
+integer, parameter, public :: CONSTANT = 1, ZERO = 2  !< Flags to indicate what to do when the model surface
+                                                      !! pressure exceeds the climatology surface pressure level.
 
 ! Flags to indicate the type of vertical interpolation
-integer, parameter, public :: INTERP_WEIGHTED_P = 10, INTERP_LINEAR_P = 20, INTERP_LOG_P = 30     !< Flags to indicate the type of vertical interpolation
+integer, parameter, public :: INTERP_WEIGHTED_P = 10, INTERP_LINEAR_P = 20, INTERP_LOG_P = 30 !< Flags to indicate
+                                                                             !! the type of vertical interpolation
 !--lwh
 
 real, parameter :: TPI = (2.0*PI) ! 4.*acos(0.)
@@ -413,16 +421,17 @@ logical,          intent(out), optional :: single_year_file
 !  lonb_mod   :: The corners of the model grid-box longitudes.
 !  latb_mod   :: The corners of the model grid_box latitudes.
 !  data_names :: A list of the names of components within the climatology file which you wish to read.
-!  data_out_of_bounds :: A list of the flags that are to be used in determining what to do if the pressure levels in the model
+!  data_out_of_bounds :: A list of the flags that are to be used in determining what to do
+!  if the pressure levels in the model
 !                        go out of bounds from those of the climatology.
 !  vert_interp:: Flag to determine type of vertical interpolation
 !
 ! INTENT OUT
-!  clim_type  :: An interpolate type containing the necessary file and field data to be passed to the interpolator routine.
+!  clim_type  :: An interpolate type containing the necessary file and field data to be passed
+!  to the interpolator routine.
 !  clim_units :: A list of the units for the components listed in data_names.
 !
 integer :: io, ierr
-logical :: the_file_exists
 
 if (.not. module_is_initialized) then
   call fms_init
@@ -1037,7 +1046,8 @@ if(present(data_names)) then
          clim_type%has_level(j) = .false.
          if(ndim > 2) then
             call get_variable_dimension_names(fileobj, data_names(j), var_dimname(1:ndim))
-            if(trim(var_dimname(3)) == "pfull" .OR. trim(var_dimname(3)) == "sigma_full") clim_type%has_level(j) = .true.
+            if(trim(var_dimname(3)) == "pfull" .OR. trim(var_dimname(3)) == "sigma_full") &
+               & clim_type%has_level(j) = .true.
          endif
 
          units=chomp(units)
@@ -1155,7 +1165,8 @@ subroutine get_axis_latlon_data(fileobj, name, data)
    if(variable_exists(fileobj, name)) then
       call fms2_io_read_data(fileobj, name, data)
    else
-      call mpp_error(FATAL,'get_axis_latlon_data: variable '//trim(name)//' does not exist in file '//trim(fileobj%path) )
+      call mpp_error(FATAL,'get_axis_latlon_data: variable '// &
+                     & trim(name)//' does not exist in file '//trim(fileobj%path) )
    endif
    call get_variable_units(fileobj, name, units)
    select case(units(1:6))
@@ -1163,7 +1174,8 @@ subroutine get_axis_latlon_data(fileobj, name, data)
       data = data*dtr
    case('radian')
    case default
-      call mpp_error(FATAL, "get_axis_latlon_data : Units for '//trim(name)//' not recognised in file "//trim(fileobj%path))
+      call mpp_error(FATAL, "get_axis_latlon_data : Units for '// &
+                     & trim(name)//' not recognised in file "//trim(fileobj%path))
    end select
 
 end subroutine get_axis_latlon_data
@@ -1180,7 +1192,8 @@ subroutine get_axis_level_data(fileobj, name, data, level_type, vertical_indices
    if(variable_exists(fileobj, name)) then
       call fms2_io_read_data(fileobj, name, data)
    else
-      call mpp_error(FATAL,'get_axis_level_data: variable '//trim(name)//' does not exist in file '//trim(fileobj%path) )
+      call mpp_error(FATAL,'get_axis_level_data: variable '// &
+                     & trim(name)//' does not exist in file '//trim(fileobj%path) )
    endif
    call get_variable_units(fileobj, name, units)
    level_type = PRESSURE
@@ -1436,7 +1449,8 @@ climo_diag_id(i+num_clim_diag) =  register_diag_field('climo',clim_type%field_na
 hinterp_id(i+num_clim_diag) =  register_diag_field('hinterp',clim_type%field_name(i),mod_axes(1:2),init_time,&
                                 'interp_'//clim_type%field_name(i),'kg/kg' , missing_value)
 enddo
-! Total number of climatology diagnostics (num_clim_diag). This can be from multiple climatology fields with different spatial axes.
+! Total number of climatology diagnostics (num_clim_diag). This can be from multiple climatology
+! fields with different spatial axes.
 ! It is simply a holder for the diagnostic indices.
 num_clim_diag = num_clim_diag+size(clim_type%field_name(:))
 
@@ -1494,7 +1508,8 @@ character(len=256) :: err_msg
        if (size(clim_type%time_slice) > 1) then
           call time_interp(Time, clim_type%time_slice, clim_type%tweight, taum, taup, modtime=YEAR, err_msg=err_msg )
           if(trim(err_msg) /= '') then
-             call mpp_error(FATAL,'interpolator_timeslice 1: '//trim(err_msg)//' file='//trim(clim_type%file_name), FATAL)
+             call mpp_error(FATAL,'interpolator_timeslice 1: '// &
+                            & trim(err_msg)//' file='//trim(clim_type%file_name), FATAL)
           endif
        else
           taum = 1
@@ -1564,7 +1579,8 @@ character(len=256) :: err_msg
                         climyear, climmonth, climday, climhour, climminute, climsecond)
           month(2) = set_date(yearp, indexp, climday, climhour, climminute, climsecond)
 
-        call time_interp(Time, month, clim_type%tweight3, taum, taup, err_msg=err_msg ) ! tweight3 is the time weight between the months.
+        call time_interp(Time, month, clim_type%tweight3, taum, taup, err_msg=err_msg ) ! tweight3 is
+                                                                                 !! the time weight between the months.
         if ( .not. retain_cm3_bug ) then
            if (taum==2 .and. taup==2) clim_type%tweight3 = 1. ! protect against post-perth time_interp behavior
         end if
@@ -1576,24 +1592,28 @@ character(len=256) :: err_msg
         month(2) = clim_type%time_slice(indexm+climatology*12)
         call get_date(month(1), climyear, climmonth, climday, climhour, climminute, climsecond)
         t_prev = set_date(yearm, climmonth, climday, climhour, climminute, climsecond)
-        call time_interp(t_prev, month, clim_type%tweight1, taum, taup, err_msg=err_msg ) !tweight1 is the time weight between the climatology years.
+        call time_interp(t_prev, month, clim_type%tweight1, taum, taup, err_msg=err_msg ) !tweight1 is
+                                                                      !! the time weight between the climatology years.
         if ( .not. retain_cm3_bug ) then
            if (taum==2 .and. taup==2) clim_type%tweight1 = 1. ! protect against post-perth time_interp behavior
         end if
         if(trim(err_msg) /= '') then
-           call mpp_error(FATAL,'interpolator_timeslice 4: '//trim(err_msg)//' file='//trim(clim_type%file_name), FATAL)
+           call mpp_error(FATAL,'interpolator_timeslice 4: '// &
+                          & trim(err_msg)//' file='//trim(clim_type%file_name), FATAL)
         endif
 
         month(1) = clim_type%time_slice(indexp+(climatology-1)*12)
         month(2) = clim_type%time_slice(indexp+climatology*12)
         call get_date(month(1), climyear, climmonth, climday, climhour, climminute, climsecond)
         t_next = set_date(yearp, climmonth, climday, climhour, climminute, climsecond)
-        call time_interp(t_next, month, clim_type%tweight2, taum, taup, err_msg=err_msg ) !tweight1 is the time weight between the climatology years.
+        call time_interp(t_next, month, clim_type%tweight2, taum, taup, err_msg=err_msg ) !tweight1 is
+                                                                      !! the time weight between the climatology years.
         if ( .not. retain_cm3_bug ) then
            if (taum==2 .and. taup==2) clim_type%tweight2 = 1. ! protect against post-perth time_interp behavior
         end if
         if(trim(err_msg) /= '') then
-           call mpp_error(FATAL,'interpolator_timeslice 5: '//trim(err_msg)//' file='//trim(clim_type%file_name), FATAL)
+           call mpp_error(FATAL,'interpolator_timeslice 5: '// &
+                          & trim(err_msg)//' file='//trim(clim_type%file_name), FATAL)
         endif
 
         if (indexm == clim_type%indexm(1) .and.  &
@@ -1927,7 +1947,8 @@ if ( .not. clim_type%separate_time_vary_calc) then
                         climyear, climmonth, climday, climhour, climminute, climsecond)
           month(2) = set_date(yearp, indexp, climday, climhour, climminute, climsecond)
 
-        call time_interp(Time, month, clim_type%tweight3, taum, taup, err_msg=err_msg ) ! tweight3 is the time weight between the months.
+        call time_interp(Time, month, clim_type%tweight3, taum, taup, err_msg=err_msg ) ! tweight3 is
+                                                                                 !! the time weight between the months.
         if ( .not. retain_cm3_bug ) then
            if (taum==2 .and. taup==2) clim_type%tweight3 = 1. ! protect against post-perth time_interp behavior
         end if
@@ -1939,7 +1960,8 @@ if ( .not. clim_type%separate_time_vary_calc) then
         month(2) = clim_type%time_slice(indexm+climatology*12)
         call get_date(month(1), climyear, climmonth, climday, climhour, climminute, climsecond)
         t_prev = set_date(yearm, climmonth, climday, climhour, climminute, climsecond)
-        call time_interp(t_prev, month, clim_type%tweight1, taum, taup, err_msg=err_msg ) !tweight1 is the time weight between the climatology years.
+        call time_interp(t_prev, month, clim_type%tweight1, taum, taup, err_msg=err_msg ) !tweight1 is
+                                                                      !! the time weight between the climatology years.
         if ( .not. retain_cm3_bug ) then
            if (taum==2 .and. taup==2) clim_type%tweight1 = 1. ! protect against post-perth time_interp behavior
         end if
@@ -1950,7 +1972,8 @@ if ( .not. clim_type%separate_time_vary_calc) then
         month(2) = clim_type%time_slice(indexp+climatology*12)
         call get_date(month(1), climyear, climmonth, climday, climhour, climminute, climsecond)
         t_next = set_date(yearp, climmonth, climday, climhour, climminute, climsecond)
-        call time_interp(t_next, month, clim_type%tweight2, taum, taup, err_msg=err_msg ) !tweight1 is the time weight between the climatology years.
+        call time_interp(t_next, month, clim_type%tweight2, taum, taup, err_msg=err_msg ) !tweight1 is
+                                                                      !! the time weight between the climatology years.
         if ( .not. retain_cm3_bug ) then
            if (taum==2 .and. taup==2) clim_type%tweight2 = 1. ! protect against post-perth time_interp behavior
         end if
@@ -2380,7 +2403,8 @@ if ( .not. clim_type%separate_time_vary_calc) then
                       climyear, climmonth, climday, climhour, climminute, climsecond)
         month(2) = set_date(yearp, indexp, climday, climhour, climminute, climsecond)
 
-        call time_interp(Time, month, clim_type%tweight3, taum, taup, err_msg=err_msg ) ! tweight3 is the time weight between the months.
+        call time_interp(Time, month, clim_type%tweight3, taum, taup, err_msg=err_msg ) ! tweight3 is
+                                                                                 !! the time weight between the months.
         if ( .not. retain_cm3_bug ) then
            if (taum==2 .and. taup==2) clim_type%tweight3 = 1. ! protect against post-perth time_interp behavior
         end if
@@ -2392,7 +2416,8 @@ if ( .not. clim_type%separate_time_vary_calc) then
         month(2) = clim_type%time_slice(indexm+climatology*12)
         call get_date(month(1), climyear, climmonth, climday, climhour, climminute, climsecond)
         t_prev = set_date(yearm, climmonth, climday, climhour, climminute, climsecond)
-        call time_interp(t_prev, month, clim_type%tweight1, taum, taup, err_msg=err_msg ) !tweight1 is the time weight between the climatology years.
+        call time_interp(t_prev, month, clim_type%tweight1, taum, taup, err_msg=err_msg ) !tweight1 is
+                                                                      !! the time weight between the climatology years.
         if ( .not. retain_cm3_bug ) then
            if (taum==2 .and. taup==2) clim_type%tweight1 = 1. ! protect against post-perth time_interp behavior
         end if
@@ -2404,7 +2429,8 @@ if ( .not. clim_type%separate_time_vary_calc) then
         month(2) = clim_type%time_slice(indexp+climatology*12)
         call get_date(month(1), climyear, climmonth, climday, climhour, climminute, climsecond)
         t_next = set_date(yearp, climmonth, climday, climhour, climminute, climsecond)
-        call time_interp(t_next, month, clim_type%tweight2, taum, taup, err_msg=err_msg ) !tweight1 is the time weight between the climatology years.
+        call time_interp(t_next, month, clim_type%tweight2, taum, taup, err_msg=err_msg ) !tweight1 is
+                                                                      !! the time weight between the climatology years.
         if ( .not. retain_cm3_bug ) then
            if (taum==2 .and. taup==2) clim_type%tweight2 = 1. ! protect against post-perth time_interp behavior
         end if
@@ -2825,7 +2851,8 @@ if ( .not. clim_type%separate_time_vary_calc) then
                       climyear, climmonth, climday, climhour, climminute, climsecond)
         month(2) = set_date(yearp, indexp, climday, climhour, climminute, climsecond)
 
-        call time_interp(Time, month, clim_type%tweight3, taum, taup, err_msg=err_msg ) ! tweight3 is the time weight between the months.
+        call time_interp(Time, month, clim_type%tweight3, taum, taup, err_msg=err_msg ) ! tweight3 is
+                                                                                 !! the time weight between the months.
         if ( .not. retain_cm3_bug ) then
            if (taum==2 .and. taup==2) clim_type%tweight3 = 1. ! protect against post-perth time_interp behavior
         end if
@@ -2837,7 +2864,8 @@ if ( .not. clim_type%separate_time_vary_calc) then
         month(2) = clim_type%time_slice(indexm+climatology*12)
         call get_date(month(1), climyear, climmonth, climday, climhour, climminute, climsecond)
         t_prev = set_date(yearm, climmonth, climday, climhour, climminute, climsecond)
-        call time_interp(t_prev, month, clim_type%tweight1, taum, taup, err_msg=err_msg ) !tweight1 is the time weight between the climatology years.
+        call time_interp(t_prev, month, clim_type%tweight1, taum, taup, err_msg=err_msg ) !tweight1 is
+                                                                      !! the time weight between the climatology years.
         if ( .not. retain_cm3_bug ) then
            if (taum==2 .and. taup==2) clim_type%tweight1 = 1. ! protect against post-perth time_interp behavior
         end if
@@ -2849,7 +2877,8 @@ if ( .not. clim_type%separate_time_vary_calc) then
         month(2) = clim_type%time_slice(indexp+climatology*12)
         call get_date(month(1), climyear, climmonth, climday, climhour, climminute, climsecond)
         t_next = set_date(yearp, climmonth, climday, climhour, climminute, climsecond)
-        call time_interp(t_next, month, clim_type%tweight2, taum, taup, err_msg=err_msg ) !tweight1 is the time weight between the climatology years.
+        call time_interp(t_next, month, clim_type%tweight2, taum, taup, err_msg=err_msg ) !tweight1 is
+                                                                      !! the time weight between the climatology years.
         if ( .not. retain_cm3_bug ) then
            if (taum==2 .and. taup==2) clim_type%tweight2 = 1. ! protect against post-perth time_interp behavior
         end if

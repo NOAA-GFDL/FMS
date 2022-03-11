@@ -56,7 +56,7 @@
   !> @brief This function returns the current  standard fortran unit numbers for log messages.
   !!    Log messages, by convention, are written to the file <TT>logfile.out</TT>.
   function stdlog()
-    integer :: stdlog,istat
+    integer :: stdlog
     logical :: opened
     character(len=11) :: this_pe
 !$  logical           :: omp_in_parallel
@@ -408,29 +408,10 @@ end function rarray_to_char
   !#####################################################################
   subroutine mpp_set_root_pe(num)
     integer, intent(in) :: num
-    logical             :: opened
 
     if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_SET_ROOT_PE: You must first call mpp_init.' )
     if( .NOT.(ANY(num.EQ.peset(current_peset_num)%list(:))) ) &
          call mpp_error( FATAL, 'MPP_SET_ROOT_PE: you cannot set a root PE outside the current pelist.' )
-    !actions to take if root_pe has changed:
-    ! open log_unit on new root_pe, close it on old root_pe and point its log_unit to stdout.
-    !      if( num.NE.root_pe )then  !root_pe has changed
-    !          if( pe.EQ.num )then
-    !on the new root_pe
-    !              if( log_unit.NE.out_unit )then
-    !                  inquire( unit=log_unit, opened=opened )
-    !                  if( .NOT.opened )open( unit=log_unit, status='OLD', file=trim(configfile), position='APPEND' )
-    !              end if
-    !          else if( pe.EQ.root_pe )then
-    !on the old root_pe
-    !              if( log_unit.NE.out_unit )then
-    !                  inquire( unit=log_unit, opened=opened )
-    !                  if( opened )close(log_unit)
-    !                  log_unit = out_unit
-    !              end if
-    !          end if
-    !      end if
     root_pe = num
     return
   end subroutine mpp_set_root_pe
@@ -484,7 +465,6 @@ end function rarray_to_char
     !if pelist is omitted, we reset pelist to the world pelist.
     integer, intent(in), optional :: pelist(:)
     logical, intent(in), optional :: no_sync
-    integer                       :: i
 
     if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_SET_CURRENT_PELIST: You must first call mpp_init.' )
     if( PRESENT(pelist) )then
@@ -694,7 +674,6 @@ end function rarray_to_char
     integer                       :: mpp_clock_id
     character(len=*),  intent(in) :: name
     integer, intent(in), optional :: flags, grain
-    integer                       :: i
 
     if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_CLOCK_ID: You must first call mpp_init.')
 
@@ -785,7 +764,8 @@ end function rarray_to_char
     delta = end_tick - clocks(id)%tick
     if( delta.LT.0 )then
        errunit = stderr()
-       write( errunit,* )'pe, id, start_tick, end_tick, delta, max_ticks=', pe, id, clocks(id)%tick, end_tick, delta, max_ticks
+       write( errunit,* )'pe, id, start_tick, end_tick, delta, max_ticks=', pe, id, clocks(id)%tick, end_tick, &
+            &  delta, max_ticks
        delta = delta + max_ticks + 1
        call mpp_error( WARNING, 'MPP_CLOCK_END: Clock rollover, assumed single roll.' )
     end if
@@ -825,13 +805,15 @@ end function rarray_to_char
 
     if( .not. mpp_record_timing_data )return
     if( .not.debug .or. (current_clock.EQ.0) )return
-    if( current_clock.LT.0 .OR. current_clock.GT.clock_num )call mpp_error( FATAL, 'MPP_CLOCK_BEGIN: invalid current_clock.' )
+    if( current_clock.LT.0 .OR. current_clock.GT.clock_num )call mpp_error( FATAL, &
+       &  'MPP_CLOCK_BEGIN: invalid current_clock.' )
     if( .NOT.clocks(current_clock)%detailed )return
     call SYSTEM_CLOCK(end_tick)
     n = clocks(current_clock)%events(event_id)%calls + 1
 
     if( n.EQ.MAX_EVENTS )call mpp_error( WARNING, &
-         'MPP_CLOCK: events exceed MAX_EVENTS, ignore detailed profiling data for clock '//trim(clocks(current_clock)%name) )
+         'MPP_CLOCK: events exceed MAX_EVENTS, ignore detailed profiling data for clock '// &
+         & trim(clocks(current_clock)%name) )
     if( n.GT.MAX_EVENTS )return
 
     clocks(current_clock)%events(event_id)%calls = n
@@ -855,7 +837,7 @@ end function rarray_to_char
     real              :: total_time,total_time_all,total_data
     real              :: msg_size,eff_BW,s
     integer           :: SD_UNIT, total_calls
-    integer           :: i,j,k,ct, msg_cnt
+    integer           :: j,k,ct, msg_cnt
     character(len=2)  :: u
     character(len=20) :: filename
     character(len=20),dimension(MAX_BINS),save :: bin
@@ -903,7 +885,7 @@ end function rarray_to_char
           total_time = clock_summary(ct)%event(k)%total_time
           total_time_all = total_time_all + total_time
           total_data = clock_summary(ct)%event(k)%total_data
-          total_calls = clock_summary(ct)%event(k)%total_cnts
+          total_calls = int(clock_summary(ct)%event(k)%total_cnts)
 
           write(SD_UNIT,1000) clock_summary(ct)%event(k)%name(1:9) // ':'
 
@@ -930,7 +912,7 @@ end function rarray_to_char
                 u = 'MB'
              endif
 
-             msg_cnt = clock_summary(ct)%event(k)%msg_size_cnts(j)
+             msg_cnt = int(clock_summary(ct)%event(k)%msg_size_cnts(j))
              msg_size = &
                   s*(clock_summary(ct)%event(k)%msg_size_sums(j)/real(msg_cnt))
              eff_BW = (1.0e-6)*( clock_summary(ct)%event(k)%msg_size_sums(j) / &
@@ -950,7 +932,7 @@ end function rarray_to_char
 
           total_time = clock_summary(ct)%event(MAX_EVENT_TYPES)%total_time
           total_time_all = total_time_all + total_time
-          total_calls = clock_summary(ct)%event(MAX_EVENT_TYPES)%total_cnts
+          total_calls = int(clock_summary(ct)%event(MAX_EVENT_TYPES)%total_cnts)
 
           write(SD_UNIT,1000) clock_summary(ct)%event(MAX_EVENT_TYPES)%name(1:9) // ':'
 
@@ -986,7 +968,8 @@ end function rarray_to_char
     integer,save :: i
     logical      :: l_open
 
-    call mpp_error(WARNING,'get_unit is deprecated and will be removed in a future release, please use the Fortran intrinsic newunit')
+    if (pe == root_pe) call mpp_error(WARNING, &
+        'get_unit is deprecated and will be removed in a future release, please use the Fortran intrinsic newunit')
     do i=10,99
        inquire(unit=i,opened=l_open)
        if(.not.l_open)exit
@@ -1017,7 +1000,7 @@ end function rarray_to_char
              clock_summary(ct)%event(j)%total_cnts = &
                   clock_summary(ct)%event(j)%total_cnts + 1
 
-             event_size = clocks(ct)%events(j)%bytes(i)
+             event_size = int(clocks(ct)%events(j)%bytes(i))
 
              k = find_bin(event_size)
 
@@ -1307,8 +1290,8 @@ end function rarray_to_char
                 end if
                 if ( len_trim(str_tmp) == LENGTH ) then
                    write(UNIT=text, FMT='(I5)') length
-                   call mpp_error(FATAL, 'get_ascii_file_num_lines: Length of output string ('//trim(text)//' is too small.&
-                        & Increase the LENGTH value.')
+                   call mpp_error(FATAL, 'get_ascii_file_num_lines: Length of output string ('//trim(text)//&
+                                       & ' is too small. Increase the LENGTH value.')
                 end if
                 num_lines = num_lines + 1
              end do
@@ -1377,8 +1360,8 @@ end function rarray_to_char
                 end if
                 if ( len_trim(str_tmp) == LENGTH ) then
                    write(UNIT=text, FMT='(I5)') length
-                   call mpp_error(FATAL, 'get_ascii_file_num_lines: Length of output string ('//trim(text)//' is too small.&
-                        & Increase the LENGTH value.')
+                   call mpp_error(FATAL, 'get_ascii_file_num_lines: Length of output string ('//trim(text)//&
+                                       & ' is too small. Increase the LENGTH value.')
                 end if
                 if (len_trim(str_tmp) > max_length) max_length = len_trim(str_tmp)
                 num_lines = num_lines + 1
@@ -1431,7 +1414,7 @@ end function rarray_to_char
 
     character(len=5) :: text
     logical :: file_exist
-    integer :: status, i, f_unit, log_unit
+    integer :: status, f_unit, log_unit
     integer :: from_pe
     integer :: pnum_lines, num_lines
     character(len=LENGTH) :: str_tmp !< Temporary variable to store line from file
@@ -1459,7 +1442,8 @@ end function rarray_to_char
 
           if ( status .ne. 0 ) then
              write (UNIT=text, FMT='(I5)') status
-             call mpp_error(FATAL, 'READ_ASCII_FILE: Error opening file: '//trim(FILENAME)//'.  (IOSTAT = '//trim(text)//')')
+             call mpp_error(FATAL, 'READ_ASCII_FILE: Error opening file: '// &
+                            & trim(FILENAME)//'.  (IOSTAT = '//trim(text)//')')
           else
 
              if ( num_lines .gt. 0 ) then
@@ -1484,7 +1468,8 @@ end function rarray_to_char
                       endif
                       if ( status .gt. 0 ) then
                          write (UNIT=text, FMT='(I5)') pnum_lines
-                         call mpp_error(FATAL, 'READ_ASCII_FILE: Error reading line '//trim(text)//' in file '//trim(FILENAME)//'.')
+                         call mpp_error(FATAL, 'READ_ASCII_FILE: Error reading line '// &
+                                        & trim(text)//' in file '//trim(FILENAME)//'.')
                       end if
                       if(pnum_lines > num_lines) then
                          call mpp_error(FATAL, 'READ_ASCII_FILE: number of lines in file '//trim(FILENAME)// &
@@ -1492,8 +1477,8 @@ end function rarray_to_char
                       end if
                       if ( len_trim(str_tmp) == LENGTH ) then
                          write(UNIT=text, FMT='(I5)') length
-                         call mpp_error(FATAL, 'READ_ASCII_FILE: Length of output string ('//trim(text)//' is too small.&
-                              & Increase the LENGTH value.')
+                         call mpp_error(FATAL, 'READ_ASCII_FILE: Length of output string ('//trim(text)// &
+                                             & ' is too small. Increase the LENGTH value.')
                       end if
                       Content(pnum_lines) = str_tmp
                       pnum_lines = pnum_lines + 1

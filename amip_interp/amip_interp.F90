@@ -28,7 +28,7 @@
 !!
 !! 1. AMIP http://www.pcmdi.github.io/mips/amip from Jan 1979 to Jan 1989 (2 deg x 2 deg)
 !! 2. Reynolds OI @ref amip_interp.rey_oi.txt from Nov 1981 to Jan 1999 (1 deg x 1 deg)
-!! 3. Reynolds EOF ftp://podaac.jpl.nasa.gov/pub/sea_surface_temperature/reynolds/rsst/doc/rsst.html @endlink from Jan 1950 to Dec 1998 (2 deg x 2 deg)
+!! 3. Reynolds EOF @link ftp://podaac.jpl.nasa.gov/pub/sea_surface_temperature/reynolds/rsst/doc/rsst.html @endlink from Jan 1950 to Dec 1998 (2 deg x 2 deg)
 !!
 !! All original data are observed monthly means. This module
 !! interpolates linearly in time between pairs of monthly means.
@@ -384,7 +384,6 @@ subroutine get_amip_sst (Time, Interp, sst, err_msg, lon_model, lat_model)
     type (time_type) :: Udate
     character(len=4) :: yyyy
     integer :: nrecords, ierr, k, yr, mo, dy
-    integer :: siz(4)
     integer, dimension(:), allocatable :: ryr, rmo, rdy
     character(len=30) :: time_unit
     real, dimension(:), allocatable :: timeval
@@ -497,7 +496,8 @@ if ( .not.use_daily ) then
     if (DEBUG) then
           call get_date(Amip_Time,jhctod(1),jhctod(2),jhctod(3),jhctod(4),jhctod(5),jhctod(6))
           if (mpp_pe() == 0) then
-             write (*,200) 'JHC: use_daily = F, AMIP_Time: ',jhctod(1),jhctod(2),jhctod(3),jhctod(4),jhctod(5),jhctod(6)
+             write (*,200) 'JHC: use_daily = F, AMIP_Time: ',jhctod(1),jhctod(2),jhctod(3),jhctod(4),jhctod(5), &
+                   & jhctod(6)
              write (*,300) 'JHC: use_daily = F, interped SST: ', sst(1,1),sst(5,5),sst(10,10)
           endif
     endif
@@ -508,7 +508,8 @@ if ( .not.use_daily ) then
 ! add by JHC
 else
     call get_date(Amip_Time,jhctod(1),jhctod(2),jhctod(3),jhctod(4),jhctod(5),jhctod(6))
-     if (mpp_pe() == mpp_root_pe()) write(*,200) 'amip_interp_mod: use_daily = T, Amip_Time = ',jhctod(1),jhctod(2),jhctod(3),jhctod(4),jhctod(5),jhctod(6)
+     if (mpp_pe() == mpp_root_pe()) write(*,200) 'amip_interp_mod: use_daily = T, Amip_Time = ',jhctod(1), &
+        & jhctod(2),jhctod(3),jhctod(4),jhctod(5),jhctod(6)
 
     yr = jhctod(1); mo = jhctod(2); dy = jhctod(3)
 
@@ -889,7 +890,7 @@ endif
 
     tice_crit_k = tice_crit
     if ( tice_crit_k < 200. ) tice_crit_k = tice_crit_k + TFREEZE
-    ice_crit = nint((tice_crit_k-TFREEZE)*100.)
+    ice_crit = nint((tice_crit_k-TFREEZE)*100., I2_KIND)
 
 !   ---- set up file dependent variable ----
 !   ----   global file name   ----
@@ -1279,7 +1280,6 @@ endif
      integer(I2_KIND) :: idat(mobs,nobs)
      integer :: nrecords, yr, mo, dy, ierr, k
      integer, dimension(:), allocatable :: ryr, rmo, rdy
-     character(len=38)   :: mesg
      character(len=maxc) :: ncfilename, ncfieldname
      type(FmsNetcdfFile_t), pointer :: fileobj
 
@@ -1355,7 +1355,7 @@ endif
      else
           call fms2_io_read_data(fileobj, ncfieldname, dat, unlim_dim_level=k)
      endif
-     idat =  nint(dat) ! reconstruct packed data for reproducibility
+     idat =  nint(dat, I2_KIND) ! reconstruct packed data for reproducibility
 
    !---- unpacking of data ----
 
@@ -1377,13 +1377,7 @@ endif
         endif
      endif
 
-
      return
-
-10   write (mesg, 20) unit
-     call error_mesg ('read_record in amip_interp_mod', mesg, FATAL)
-
-20   format ('end of file reading unit ',i2,' (sst data)')
 
    end subroutine read_record
 

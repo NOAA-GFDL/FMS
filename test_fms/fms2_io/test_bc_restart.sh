@@ -25,9 +25,27 @@
 # Author: Uriel Ramirez 07/07/20
 #
 # Set common test settings.
-. ../test_common.sh
+. ../test-lib.sh
 
-# make an input.nml for mpp_init to read
+# Create and enter output directory
+output_dir
+
+# run test 1 - standard test
 touch input.nml
+test_expect_success "test bc restart" '
+  mpirun -n 16 ../test_bc_restart
+'
 
-run_test test_bc_restart 16
+# run test 2 - test for bad checksum (should fail)
+printf "&test_bc_restart_nml\n bad_checksum=.true.\n /" | cat > input.nml
+test_expect_failure "bad checksum" '
+  mpirun -n 16 ../test_bc_restart
+'
+
+# run test 3 - test for ignoring a bad checksum
+printf "&test_bc_restart_nml\n bad_checksum=.true.\n ignore_checksum=.true./" | cat > input.nml
+test_expect_success "ignore bad checksum" '
+  mpirun -n 16 ../test_bc_restart
+'
+
+test_done

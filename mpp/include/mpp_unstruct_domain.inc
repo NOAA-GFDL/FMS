@@ -22,19 +22,21 @@
 !> @addtogroup mpp_domains_mod
 !> @{
   !#####################################################################
-  subroutine mpp_define_unstruct_domain(UG_domain, SG_domain, npts_tile, grid_nlev, ndivs, npes_io_group, grid_index, name)
+  subroutine mpp_define_unstruct_domain(UG_domain, SG_domain, npts_tile, grid_nlev, ndivs, npes_io_group, &
+                                       &  grid_index, name)
      type(domainUG),   intent(inout) :: UG_domain
      type(domain2d), target,     intent(in) :: SG_domain
      integer,                    intent(in) :: npts_tile(:) !< number of unstructured points on each tile
      integer,                    intent(in) :: grid_nlev(:) !< number of levels in each unstructured grid.
      integer,                    intent(in) :: ndivs
-     integer,                    intent(in) :: npes_io_group  !< number of processors in a io group. Only pe with same tile_id
-                                                              !! in the same group
+     integer,                    intent(in) :: npes_io_group!< number of processors in a io group.
+                                                            !! Only pe with same tile_id
+                                                            !! in the same group
      integer,                    intent(in) :: grid_index(:)
      character(len=*), optional, intent(in) :: name
      integer, dimension(size(npts_tile(:))) :: ndivs_tile, pe_start, pe_end
      integer, dimension(0:ndivs-1)          :: ibegin, iend, costs_list
-     integer :: ntiles, ntotal_pts, ndivs_used, max_npts, cur_tile, cur_npts
+     integer :: ntiles, ndivs_used, cur_tile
      integer :: n, ts, te, p, pos, tile_id, ngroup, group_id, my_pos, i
      integer :: npes_in_group, is, ie, ntotal_costs, max_cost, cur_cost, costs_left
      integer :: npts_left, ndiv_left, cur_pos, ndiv, prev_cost, ioff
@@ -46,10 +48,12 @@
      UG_domain%ntiles = ntiles
 
      !--- total number of points must be no less than ndivs
-     if(sum(npts_tile)<ndivs) call mpp_error(FATAL, "mpp_define_unstruct_domain: total number of points is less than ndivs")
+     if(sum(npts_tile)<ndivs) call mpp_error(FATAL, &
+        &  "mpp_define_unstruct_domain: total number of points is less than ndivs")
      !--- We are assuming nlev on each grid is at least one.
      do n = 1, size(grid_nlev(:))
-        if(grid_nlev(n) < 1) call mpp_error(FATAL, "mpp_define_unstruct_domain: grid_nlev at some point is less than 1")
+        if(grid_nlev(n) < 1) call mpp_error(FATAL, &
+           &  "mpp_define_unstruct_domain: grid_nlev at some point is less than 1")
      enddo
 
      !-- costs for each tile.
@@ -722,9 +726,6 @@ subroutine mpp_deallocate_domainUG(domain)
 
    !<Inputs/Outputs
     type(domainUG),intent(inout) :: domain
-
-   !<Local variables
-    integer(i4_kind) :: i !<Loop variable.
 
     if (associated(domain%list)) then
         deallocate(domain%list)

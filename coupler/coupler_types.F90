@@ -108,7 +108,8 @@ module coupler_types_mod
   !> @ingroup coupler_types_mod
   type, public :: coupler_3d_bc_type
     integer                                            :: num_bcs = 0  !< The number of boundary condition fields
-    type(coupler_3d_field_type), dimension(:), pointer :: bc => NULL() !< A pointer to the array of boundary condition fields
+    type(coupler_3d_field_type), dimension(:), pointer :: bc => NULL() !< A pointer to the array of boundary
+                                                                       !! condition fields
     logical    :: set = .false.       !< If true, this type has been initialized
     integer    :: isd, isc, iec, ied  !< The i-direction data and computational domain index ranges for this type
     integer    :: jsd, jsc, jec, jed  !< The j-direction data and computational domain index ranges for this type
@@ -161,7 +162,8 @@ module coupler_types_mod
   !> @ingroup coupler_types_mod
   type, public    :: coupler_2d_bc_type
     integer                                            :: num_bcs = 0  !< The number of boundary condition fields
-    type(coupler_2d_field_type), dimension(:), pointer :: bc => NULL() !< A pointer to the array of boundary condition fields
+    type(coupler_2d_field_type), dimension(:), pointer :: bc => NULL() !< A pointer to the array of boundary
+                                                                       !! condition fields
     logical    :: set = .false.       !< If true, this type has been initialized
     integer    :: isd, isc, iec, ied  !< The i-direction data and computational domain index ranges for this type
     integer    :: jsd, jsc, jec, jed  !< The j-direction data and computational domain index ranges for this type
@@ -205,7 +207,8 @@ module coupler_types_mod
   !> @ingroup coupler_types_mod
   type, public    :: coupler_1d_bc_type
     integer                                            :: num_bcs = 0  !< The number of boundary condition fields
-    type(coupler_1d_field_type), dimension(:), pointer :: bc => NULL() !< A pointer to the array of boundary condition fields
+    type(coupler_1d_field_type), dimension(:), pointer :: bc => NULL() !< A pointer to the array of boundary
+                                                                       !! condition fields
     logical    :: set = .false.       !< If true, this type has been initialized
   end type coupler_1d_bc_type
 
@@ -376,15 +379,14 @@ contains
     integer, intent(in)                     :: ie !< upper bound of first dimension
     integer, intent(in)                     :: js !< lower bound of second dimension
     integer, intent(in)                     :: je !< upper bound of second dimension
-    character(len=*), intent(in)            :: diag_name !< name for diagnostic file--if blank, then don't register the fields
+    character(len=*), intent(in)            :: diag_name !< name for diagnostic file--if blank, then
+                                                         !! don't register the fields
     integer, dimension(:), intent(in)       :: axes !< array of axes identifiers for diagnostic variable registration
     type(time_type), intent(in)             :: time !< model time variable for registering diagnostic field
     character(len=*), intent(in), optional  :: suffix !< optional suffix to make the name identifier unique
 
     character(len=*), parameter :: error_header =&
         & '==>Error from coupler_types_mod (coupler_type_copy_1d_2d):'
-    character(len=400)      :: error_msg
-    integer                 :: m, n
 
     if (var_out%num_bcs > 0) then
       ! It is an error if the number of output fields exceeds zero, because it means this
@@ -412,15 +414,14 @@ contains
     integer, intent(in)                     :: js !< lower bound of second dimension
     integer, intent(in)                     :: je !< upper bound of second dimension
     integer, intent(in)                     :: kd !< third dimension
-    character(len=*), intent(in)            :: diag_name !< name for diagnostic file--if blank, then don't register the fields
+    character(len=*), intent(in)            :: diag_name !< name for diagnostic file--if blank, then
+                                                         !! don't register the fields
     integer, dimension(:), intent(in)       :: axes !< array of axes identifiers for diagnostic variable registration
     type(time_type), intent(in)             :: time !< model time variable for registering diagnostic field
     character(len=*), intent(in), optional  :: suffix !< optional suffix to make the name identifier unique
 
     character(len=*), parameter :: error_header =&
         & '==>Error from coupler_types_mod (coupler_type_copy_1d_3d):'
-    character(len=400)      :: error_msg
-    integer                 :: m, n
 
     if (var_out%num_bcs > 0) then
       ! It is an error if the number of output fields exceeds zero, because it means this
@@ -446,15 +447,14 @@ contains
     integer, intent(in)                     :: ie !< upper bound of first dimension
     integer, intent(in)                     :: js !< lower bound of second dimension
     integer, intent(in)                     :: je !< upper bound of second dimension
-    character(len=*), intent(in)            :: diag_name !< name for diagnostic file--if blank, then don't register the fields
+    character(len=*), intent(in)            :: diag_name !< name for diagnostic file--if blank, then
+                                                         !! don't register the fields
     integer, dimension(:), intent(in)       :: axes !< array of axes identifiers for diagnostic variable registration
     type(time_type), intent(in)             :: time !< model time variable for registering diagnostic field
     character(len=*), intent(in), optional  :: suffix !< optional suffix to make the name identifier unique
 
     character(len=*), parameter :: error_header =&
         & '==>Error from coupler_types_mod (coupler_type_copy_2d_2d):'
-    character(len=400)      :: error_msg
-    integer                 :: m, n
 
     if (var_out%num_bcs > 0) then
       ! It is an error if the number of output fields exceeds zero, because it means this
@@ -481,15 +481,14 @@ contains
     integer, intent(in)                     :: js !< lower bound of second dimension
     integer, intent(in)                     :: je !< upper bound of second dimension
     integer, intent(in)                     :: kd !< third dimension
-    character(len=*), intent(in)            :: diag_name !< name for diagnostic file--if blank, then don't register the fields
+    character(len=*), intent(in)            :: diag_name !< name for diagnostic file--if blank, then
+                                                         !! don't register the fields
     integer, dimension(:), intent(in)       :: axes !< array of axes identifiers for diagnostic variable registration
     type(time_type), intent(in)             :: time !< model time variable for registering diagnostic field
     character(len=*), intent(in), optional  :: suffix !< optional suffix to make the name identifier unique
 
     character(len=*), parameter :: error_header =&
         & '==>Error from coupler_types_mod (coupler_type_copy_2d_3d):'
-    character(len=400)      :: error_msg
-    integer                 :: m, n
 
     if (var_out%num_bcs > 0) then
       ! It is an error if the number of output fields exceeds zero, because it means this
@@ -515,15 +514,14 @@ contains
     integer, intent(in)                     :: ie !< upper bound of first dimension
     integer, intent(in)                     :: js !< lower bound of second dimension
     integer, intent(in)                     :: je !< upper bound of second dimension
-    character(len=*), intent(in)            :: diag_name !< name for diagnostic file--if blank, then don't register the fields
+    character(len=*), intent(in)            :: diag_name !< name for diagnostic file--if blank, then
+                                                         !! don't register the fields
     integer, dimension(:), intent(in)       :: axes !< array of axes identifiers for diagnostic variable registration
     type(time_type), intent(in)             :: time !< model time variable for registering diagnostic field
     character(len=*), intent(in), optional  :: suffix !< optional suffix to make the name identifier unique
 
     character(len=*), parameter :: error_header =&
         & '==>Error from coupler_types_mod (coupler_type_copy_3d_2d):'
-    character(len=400)      :: error_msg
-    integer                 :: m, n
 
     if (var_out%num_bcs > 0) then
       ! It is an error if the number of output fields exceeds zero, because it means this
@@ -550,15 +548,14 @@ contains
     integer, intent(in)                     :: js !< lower bound of second dimension
     integer, intent(in)                     :: je !< upper bound of second dimension
     integer, intent(in)                     :: kd !< third dimension
-    character(len=*), intent(in)            :: diag_name !< name for diagnostic file--if blank, then don't register the fields
+    character(len=*), intent(in)            :: diag_name !< name for diagnostic file--if blank, then
+                                                         !! don't register the fields
     integer, dimension(:), intent(in)       :: axes !< array of axes identifiers for diagnostic variable registration
     type(time_type), intent(in)             :: time !< model time variable for registering diagnostic field
     character(len=*), intent(in), optional  :: suffix !< optional suffix to make the name identifier unique
 
     character(len=*), parameter :: error_header =&
         & '==>Error from coupler_types_mod (coupler_type_copy_3d_3d):'
-    character(len=400)      :: error_msg
-    integer                 :: m, n
 
     if (var_out%num_bcs > 0) then
       ! It is an error if the number of output fields exceeds zero, because it means this
@@ -1188,8 +1185,10 @@ contains
                                                            !! that is being copied
     integer,          optional, intent(in)    :: field_index !< The index of the field in the
                                                            !! boundary condition that is being copied
-    character(len=*), optional, intent(in)    :: exclude_flux_type !< A string describing which types of fluxes to exclude from this copy.
-    character(len=*), optional, intent(in)    :: only_flux_type    !< A string describing which types of fluxes to include from this copy.
+    character(len=*), optional, intent(in)    :: exclude_flux_type !< A string describing which types
+                                                                   !! of fluxes to exclude from this copy.
+    character(len=*), optional, intent(in)    :: only_flux_type    !< A string describing which types
+                                                                   !! of fluxes to include from this copy.
     logical,          optional, intent(in)    :: pass_through_ice !< If true, only copy BCs whose
                                                            !! value of pass_through ice matches this
     logical :: copy_bc
@@ -1385,8 +1384,10 @@ contains
                                                          !! that is being copied
     integer,          optional, intent(in)    :: field_index !< The index of the field in the
                                                          !! boundary condition that is being copied
-    character(len=*), optional, intent(in)    :: exclude_flux_type !< A string describing which types of fluxes to exclude from this copy.
-    character(len=*), optional, intent(in)    :: only_flux_type    !< A string describing which types of fluxes to include from this copy.
+    character(len=*), optional, intent(in)    :: exclude_flux_type !< A string describing which types
+                                                                   !! of fluxes to exclude from this copy.
+    character(len=*), optional, intent(in)    :: only_flux_type    !< A string describing which types
+                                                                   !! of fluxes to include from this copy.
     logical,          optional, intent(in)    :: pass_through_ice !< If true, only copy BCs whose
                                                          !! value of pass_through ice matches this
     integer,          optional, intent(in)    :: ind3_start  !< The starting value of the 3rd
@@ -2130,11 +2131,14 @@ contains
     if (n2 >= n1) then
       ! A more consciencious implementation would include a more descriptive error messages.
       if ((var_in%iec-var_in%isc) /= (var%iec-var%isc))&
-          & call mpp_error(FATAL, "CT_increment_data_2d_3d: There is an i-direction computational domain size mismatch.")
+          & call mpp_error(FATAL, &
+                           &  "CT_increment_data_2d_3d: There is an i-direction computational domain size mismatch.")
       if ((var_in%jec-var_in%jsc) /= (var%jec-var%jsc))&
-          & call mpp_error(FATAL, "CT_increment_data_2d_3d: There is a j-direction computational domain size mismatch.")
+          & call mpp_error(FATAL, &
+                           &  "CT_increment_data_2d_3d: There is a j-direction computational domain size mismatch.")
       if ((1+var_in%ke-var_in%ks) /= size(weights,3))&
-          & call mpp_error(FATAL, "CT_increment_data_2d_3d: There is a k-direction size mismatch with the weights array.")
+          & call mpp_error(FATAL, &
+                           &  "CT_increment_data_2d_3d: There is a k-direction size mismatch with the weights array.")
       if ((var_in%isc-var_in%isd < halo) .or. (var_in%ied-var_in%iec < halo))&
           & call mpp_error(FATAL, "CT_increment_data_2d_3d: Excessive i-direction halo size for the input structure.")
       if ((var_in%jsc-var_in%jsd < halo) .or. (var_in%jed-var_in%jec < halo))&
@@ -2151,7 +2155,8 @@ contains
       elseif ((1+var_in%ied-var_in%isd) == size(weights,1)) then
         iow = 1 + (var_in%isc - var_in%isd) - var%isc
       else
-        call mpp_error(FATAL, "CT_increment_data_2d_3d: weights array must be the i-size of a computational or data domain.")
+        call mpp_error(FATAL, &
+                   &  "CT_increment_data_2d_3d: weights array must be the i-size of a computational or data domain.")
       endif
       if ((1+var%jec-var%jsc) == size(weights,2)) then
         jow = 1 - var%jsc
@@ -2160,7 +2165,8 @@ contains
       elseif ((1+var_in%jed-var_in%jsd) == size(weights,2)) then
         jow = 1 + (var_in%jsc - var_in%jsd) - var%jsc
       else
-        call mpp_error(FATAL, "CT_increment_data_2d_3d: weights array must be the j-size of a computational or data domain.")
+        call mpp_error(FATAL, &
+                   &  "CT_increment_data_2d_3d: weights array must be the j-size of a computational or data domain.")
       endif
 
       io1 = var_in%isc - var%isc
@@ -2373,7 +2379,7 @@ contains
     character(len=400)      :: error_msg
 
     real :: scale
-    integer :: i, j, k, halo, i_off, j_off
+    integer :: i, j, halo, i_off, j_off
 
     if (bc_index <= 0) then
       array_out(:,:) = 0.0
@@ -3046,7 +3052,8 @@ contains
   !! @throw FATAL, "axes has less than 2 elements"
   subroutine CT_set_diags_2d(var, diag_name, axes, time)
     type(coupler_2d_bc_type), intent(inout) :: var  !< BC_type structure for which to register diagnostics
-    character(len=*),         intent(in)    :: diag_name !< name for diagnostic file--if blank, then don't register the fields
+    character(len=*),         intent(in)    :: diag_name !< name for diagnostic file--if blank, then
+                                                         !! don't register the fields
     integer, dimension(:),    intent(in)    :: axes !< array of axes identifiers for diagnostic variable registration
     type(time_type),          intent(in)    :: time !< model time variable for registering diagnostic field
 
@@ -3073,7 +3080,8 @@ contains
   !! @throw FATAL, "axes has less than 3 elements"
   subroutine CT_set_diags_3d(var, diag_name, axes, time)
     type(coupler_3d_bc_type), intent(inout) :: var  !< BC_type structure for which to register diagnostics
-    character(len=*),         intent(in)    :: diag_name !< name for diagnostic file--if blank, then don't register the fields
+    character(len=*),         intent(in)    :: diag_name !< name for diagnostic file--if blank, then
+                                                         !! don't register the fields
     integer, dimension(:),    intent(in)    :: axes !< array of axes identifiers for diagnostic variable registration
     type(time_type),          intent(in)    :: time !< model time variable for registering diagnostic field
 
@@ -3186,7 +3194,8 @@ contains
 
     !< Open the files
     do n = 1, num_rest_files
-        file_is_open(n) = open_file(bc_rest_files(n), trim(dir)//rest_file_names(n), io_type, mpp_domain, is_restart=.true.)
+        file_is_open(n) = open_file(bc_rest_files(n), trim(dir)//rest_file_names(n), io_type, mpp_domain, &
+                                  & is_restart=.true.)
         if (file_is_open(n)) then
              call register_axis_wrapper(bc_rest_files(n), to_read=to_read)
         endif
@@ -3393,7 +3402,8 @@ contains
   subroutine mpp_io_CT_register_restarts_to_file_2d(var, file_name, rest_file, mpp_domain, varname_prefix)
     type(coupler_2d_bc_type), intent(inout) :: var  !< BC_type structure to be registered for restarts
     character(len=*),         intent(in)    :: file_name !< The name of the restart file
-    type(restart_file_type),  pointer       :: rest_file !< A (possibly associated) structure describing the restart file
+    type(restart_file_type),  pointer       :: rest_file !< A (possibly associated) structure describing
+                                                         !! the restart file
     type(domain2D),           intent(in)    :: mpp_domain !< The FMS domain to use for this registration call
     character(len=*), optional, intent(in)  :: varname_prefix !< A prefix for the variable name
                                                          !! in the restart file, intended to allow
@@ -3477,7 +3487,8 @@ contains
 
     !< Open the files
     do n = 1, num_rest_files
-        file_is_open(n) = open_file(bc_rest_files(n), trim(dir)//rest_file_names(n), io_type, mpp_domain, is_restart=.true.)
+        file_is_open(n) = open_file(bc_rest_files(n), trim(dir)//rest_file_names(n), io_type, mpp_domain, &
+                                  & is_restart=.true.)
         if (file_is_open(n)) then
 
              if (to_read) then
@@ -3540,7 +3551,7 @@ contains
     character(len=80), dimension(max(1,var%num_bcs)) :: rest_file_names
     character(len=80) :: file_nm
     logical :: ocn_rest
-    integer :: f, n, m, id_restart
+    integer :: f, n, m
 
     ocn_rest = .true.
     if (present(ocean_restart)) ocn_rest = ocean_restart

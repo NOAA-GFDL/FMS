@@ -25,7 +25,7 @@ AC_PREREQ([2.69])
 
 # Initialize with name, version, and support email address.
 AC_INIT([GFDL FMS Library],
-  [2021.04.0-dev],
+  [2022.01.0-dev],
   [gfdl.climate.model.info@noaa.gov],
   [FMS],
   [https://www.gfdl.noaa.gov/fms])
@@ -67,15 +67,51 @@ AC_ARG_WITH([mpi],
 AS_IF([test ${with_mpi:-yes} = yes],
   [with_mpi=yes],
   [with_mpi=no])
+AC_ARG_WITH([yaml],
+  [AS_HELP_STRING([--with-yaml],
+    [Build with YAML support.  This option will be ignored if --disable-fortran-flag-setting is also given. (Default no)])])
+AS_IF([test ${with_yaml:-no} = no],
+  [with_yaml=no],
+  [with_yaml=yes])
 AC_ARG_ENABLE([setting-flags],
   [AS_HELP_STRING([--enable-setting-flags],
     [Allow configure to set some compiler flags.  Disabling this will also disable any other --with or --enable options that set flags, and will only use user-provided falgs. (Default yes)])])
 AS_IF([test ${enable_setting_flags:-yes} = yes],
   [enable_setting_flags=yes],
   [enable_setting_flags=no])
+AC_ARG_ENABLE([code-coverage],
+  [AS_HELP_STRING([--enable-code-coverage],
+    [Allow configure to set flags and add check-code-coverage target for code coverage analysis (Default no)])])
+AS_IF([test ${enable_code_coverage:-no} = no],
+  [enable_code_coverage=no],
+  [enable_code_coverage=yes])
+
+# user enabled testing with input files
+AC_MSG_CHECKING([whether to enable tests with input files])
+AC_ARG_ENABLE([test-input],
+            [AS_HELP_STRING([--enable-test-input="path/to/input"],
+            [Enable tests using input netcdf files, if present in the given full directory.])])
+AC_MSG_RESULT([$enable_test_input])
+
+# require path to be given
+AS_IF([test "x$enable_test_input" = "xyes"],
+    [AC_MSG_ERROR([Test input enabled, but no directory given with --enable-test-input=/path])],
+    [AS_IF([test "x$enable_test_input" != "xno"],
+        [TEST_INPUT_PATH="$enable_test_input"],[])]
+)
+
+# if set, check directory exists
+AS_IF([test "$TEST_INPUT_PATH" = ""],
+  [],
+  [AS_IF([test -d $TEST_INPUT_PATH],[],
+    [AC_MSG_ERROR([Test input enabled, but directory $TEST_INPUT_PATH not found]) ]
+  )])
+
+# substitute path for input
+AC_SUBST([TEST_INPUT_PATH])
 
 # Does the user want to build documentation?
-AC_MSG_CHECKING([whether documentation should be build (requires doxygen)])
+AC_MSG_CHECKING([whether documentation should be built (requires doxygen)])
 AC_ARG_ENABLE([docs],
               [AS_HELP_STRING([--enable-docs],
                               [enable building of documentation with doxygen.])])
@@ -122,6 +158,19 @@ if test $with_mpi = yes; then
   AC_CHECK_FUNC([MPI_Init], [], [AC_MSG_ERROR([Can't find the MPI C library.  Set CC/LDFLAGS/LIBS])])
 fi
 
+# Require yaml
+if test $with_yaml = yes; then
+  AC_CHECK_HEADERS([yaml.h], [], [AC_MSG_ERROR(["Can't find the libYAML C header file.  Set CC/CPPFLAGS/CFLAGS"])])
+  AC_SEARCH_LIBS([yaml_parser_initialize], [yaml], [], [AC_MSG_ERROR(["Can't find the libYAML C library.  Set CC/LDFLAGS/LIBS"])])
+
+  #If the test pass, define use_yaml macro
+  AC_DEFINE([use_yaml], [1], [This is required to use yaml parser])
+
+  AM_CONDITIONAL([SKIP_PARSER_TESTS], false )
+else
+  AM_CONDITIONAL([SKIP_PARSER_TESTS], true )
+fi
+
 # Require netCDF
 AC_CHECK_HEADERS([netcdf.h], [], [AC_MSG_ERROR([Can't find the netCDF C header file.  Set CPPFLAGS/CFLAGS])])
 AC_SEARCH_LIBS([nc_create], [netcdf], [], [AC_MSG_ERROR([Can't find the netCDF C library.  Set LDFLAGS/LIBS])])
@@ -155,6 +204,16 @@ if test $with_mpi = yes; then
   GX_FC_CHECK_MOD([mpi], [], [], [AC_MSG_ERROR([Can't find the MPI Fortran module.  Set FC/CPPFLAGS/FCFLAGS])])
   AC_CHECK_FUNC([MPI_init], [], [AC_MSG_ERROR([Can't find the MPI Fortran library.  Set FC/LDFLAGS/LIBS])])
 fi
+# check intel compiler and coverage tools are avaiable if code coverage is enabled
+if test "$enable_code_coverage" = yes; then
+  if test ! -z "`$FC --version | grep ifort`"; then
+    AC_CHECK_PROGS([PROFMERGE],[profmerge])
+    AC_CHECK_PROGS([CODECOV], [codecov])
+  else
+    AC_MSG_ERROR([Intel compiler and coverage tools required for coverage report])
+  fi
+fi
+AM_CONDITIONAL(COV, [test "$enable_code_coverage" = yes])
 
 # Require netCDF
 GX_FC_CHECK_MOD([netcdf], [], [], [AC_MSG_ERROR([Can't find the netCDF Fortran module.  Set CPPFLAGS/FCFLAGS])])
@@ -219,10 +278,13 @@ if test $enable_setting_flags = yes; then
   if test ! -z "$OPENMP_FCFLAGS"; then
     FCFLAGS="$FCFLAGS $OPENMP_FCFLAGS"
   fi
-fi
 
-# Define an AM_CONDITIONAL to determine if you are on a CRAY
-AM_CONDITIONAL([CRAY], [test `env | grep CRAY | wc -l` -gt 0])
+  # Add code coverage flags
+  if test $enable_code_coverage = yes; then
+    FCFLAGS="$FCFLAGS -prof-gen=srcpos"
+    CFLAGS="$CFLAGS -prof-gen=srcpos"
+  fi
+fi
 
 # Find which mpi launcher to use
 AC_CHECK_PROGS([MPI_LAUNCHER],[srun aprun mpirun])
@@ -337,7 +399,9 @@ AC_CONFIG_FILES([
   random_numbers/Makefile
   libFMS/Makefile
   docs/Makefile
-  test_fms/test_common.sh
+  parser/Makefile
+  test_fms/test-lib.sh
+  test_fms/intel_coverage.sh
   test_fms/Makefile
   test_fms/diag_manager/Makefile
   test_fms/data_override/Makefile
@@ -357,6 +421,7 @@ AC_CONFIG_FILES([
   test_fms/mosaic/Makefile
   test_fms/affinity/Makefile
   test_fms/coupler/Makefile
+  test_fms/parser/Makefile
   FMS.pc
   ])
 

@@ -67,7 +67,8 @@
                call mpp_error( FATAL, 'MPP_REDISTRIBUTE_INIT_COMM: mismatch between field_in and field_out.' )
           ke = ksize_out
       end if
-      if( ke == 0 )call mpp_error( FATAL, 'MPP_REDISTRIBUTE_INIT_COMM: either domain_in or domain_out must be native.' )
+      if( ke == 0 )call mpp_error( FATAL, &
+         &  'MPP_REDISTRIBUTE_INIT_COMM: either domain_in or domain_out must be native.' )
 !check sizes
       if( domain_in%pe /= NULL_PE )then
           if( isize_in /= domain_in%x(1)%data%size .OR. jsize_in /= domain_in%y(1)%data%size ) &
@@ -193,8 +194,9 @@
          mpp_domains_stack_hwm = max( mpp_domains_stack_hwm, msgsize )
          if( mpp_domains_stack_hwm.GT.mpp_domains_stack_size )then
              write( text,'(i8)' )mpp_domains_stack_hwm
-             call mpp_error( FATAL, 'MPP_REDISTRIBUTE_INIT_COMM: mpp_domains_stack overflow, call mpp_domains_set_stack_size(' &
-                  //trim(text)//') from all PEs.' )
+             call mpp_error( FATAL, &
+                  & 'MPP_REDISTRIBUTE_INIT_COMM: mpp_domains_stack overflow, call mpp_domains_set_stack_size(' &
+                  & //trim(text)//') from all PEs.' )
          end if
       end if
 
@@ -257,7 +259,8 @@
         ioff = -domain%x(1)%data%begin + 1
         joff = -domain%y(1)%data%begin + 1
       else
-        call mpp_error(FATAL,'MPP_GLOBAL_FIELD_INIT_COMM: incoming field array must match either compute domain or data domain.')
+        call mpp_error(FATAL, &
+                 & 'MPP_GLOBAL_FIELD_INIT_COMM: incoming field array must match either compute domain or data domain.')
       endif
 
     ! Create unique domain identifier
@@ -416,8 +419,9 @@
          mpp_domains_stack_hwm = max( mpp_domains_stack_hwm, msgsize )
          if( mpp_domains_stack_hwm.GT.mpp_domains_stack_size )then
              write( text,'(i8)' )mpp_domains_stack_hwm
-             call mpp_error( FATAL, 'MPP_GLOBAL_FIELD_INIT_COMM: mpp_domains_stack overflow, call mpp_domains_set_stack_size(' &
-                  //trim(text)//') from all PEs.' )
+             call mpp_error( FATAL, &
+                  & 'MPP_GLOBAL_FIELD_INIT_COMM: mpp_domains_stack overflow, call mpp_domains_set_stack_size(' &
+                  & //trim(text)//') from all PEs.' )
          end if
       end if
 

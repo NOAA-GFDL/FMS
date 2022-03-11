@@ -128,8 +128,8 @@ subroutine domain_write_2d(fileobj, variable_name, vdata, unlim_dim_level, &
   integer :: ydim_index
   integer :: ypos
   integer :: yc_size
-  real(kind=i4_kind) :: fill_i4_kind !< Fill value of a i4_kind variable
-  real(kind=i8_kind) :: fill_i8_kind !< Fill value of a i8_kind variable
+  integer(kind=i4_kind) :: fill_i4_kind !< Fill value of a i4_kind variable
+  integer(kind=i8_kind) :: fill_i8_kind !< Fill value of a i8_kind variable
   real(kind=r4_kind) :: fill_r4_kind !< Fill value of a r4_kind variable
   real(kind=r8_kind) :: fill_r8_kind !< Fill value of a r8_kind variable
   integer :: xgmax !< Ending x index of the global io domain
@@ -201,7 +201,8 @@ subroutine domain_write_2d(fileobj, variable_name, vdata, unlim_dim_level, &
             global_buf_r8_kind = fill_r8_kind
         endif
       class default
-      call error("unsupported variable type: domain_write_2d: file: "//trim(fileobj%path)//" variable:"//trim(variable_name))
+      call error("unsupported variable type: domain_write_2d: file: "//trim(fileobj%path)//" variable:"// &
+               & trim(variable_name))
     end select
 
     do i = 1, size(fileobj%pelist)
@@ -364,7 +365,8 @@ subroutine domain_write_2d(fileobj, variable_name, vdata, unlim_dim_level, &
         call mpp_sync_self(check=event_send)
         deallocate(buf_r8_kind)
       class default
-        call error("unsupported variable type: domain_write_2d: file: "//trim(fileobj%path)//" variable:"//trim(variable_name))
+        call error("unsupported variable type: domain_write_2d: file: "//trim(fileobj%path)//" variable:"// &
+                 & trim(variable_name))
     end select
   endif
 end subroutine domain_write_2d
@@ -422,8 +424,8 @@ subroutine domain_write_3d(fileobj, variable_name, vdata, unlim_dim_level, &
   integer :: ydim_index
   integer :: ypos
   integer :: yc_size
-  real(kind=i4_kind) :: fill_i4_kind !< Fill value of a i4_kind variable
-  real(kind=i8_kind) :: fill_i8_kind !< Fill value of a i8_kind variable
+  integer(kind=i4_kind) :: fill_i4_kind !< Fill value of a i4_kind variable
+  integer(kind=i8_kind) :: fill_i8_kind !< Fill value of a i8_kind variable
   real(kind=r4_kind) :: fill_r4_kind !< Fill value of a r4_kind variable
   real(kind=r8_kind) :: fill_r8_kind !< Fill value of a r8_kind variable
   integer :: xgmax !< Ending x index of the global io domain
@@ -495,7 +497,8 @@ subroutine domain_write_3d(fileobj, variable_name, vdata, unlim_dim_level, &
             global_buf_r8_kind = fill_r8_kind
         endif
       class default
-        call error("unsupported variable type: domain_write_3d: file: "//trim(fileobj%path)//" variable:"//trim(variable_name))
+        call error("unsupported variable type: domain_write_3d: file: "//trim(fileobj%path)//" variable:"// &
+                 & trim(variable_name))
     end select
 
     do i = 1, size(fileobj%pelist)
@@ -658,7 +661,8 @@ subroutine domain_write_3d(fileobj, variable_name, vdata, unlim_dim_level, &
         call mpp_sync_self(check=event_send)
         deallocate(buf_r8_kind)
       class default
-        call error("unsupported variable type: domain_write_3d: file: "//trim(fileobj%path)//" variable:"//trim(variable_name))
+        call error("unsupported variable type: domain_write_3d: file: "//trim(fileobj%path)//" variable:"// &
+                 & trim(variable_name))
     end select
   endif
 end subroutine domain_write_3d
@@ -716,8 +720,8 @@ subroutine domain_write_4d(fileobj, variable_name, vdata, unlim_dim_level, &
   integer :: ydim_index
   integer :: ypos
   integer :: yc_size
-  real(kind=i4_kind) :: fill_i4_kind !< Fill value of a i4_kind variable
-  real(kind=i8_kind) :: fill_i8_kind !< Fill value of a i8_kind variable
+  integer(kind=i4_kind) :: fill_i4_kind !< Fill value of a i4_kind variable
+  integer(kind=i8_kind) :: fill_i8_kind !< Fill value of a i8_kind variable
   real(kind=r4_kind) :: fill_r4_kind !< Fill value of a r4_kind variable
   real(kind=r8_kind) :: fill_r8_kind !< Fill value of a r8_kind variable
   integer :: xgmax !< Ending x index of the global io domain
@@ -789,7 +793,8 @@ subroutine domain_write_4d(fileobj, variable_name, vdata, unlim_dim_level, &
             global_buf_r8_kind = fill_r8_kind
         endif
       class default
-        call error("unsupported variable type: domain_write_4d: file: "//trim(fileobj%path)//" variable:"//trim(variable_name))
+        call error("unsupported variable type: domain_write_4d: file: "//trim(fileobj%path)//" variable:"// &
+                 & trim(variable_name))
     end select
 
     do i = 1, size(fileobj%pelist)
@@ -952,7 +957,8 @@ subroutine domain_write_4d(fileobj, variable_name, vdata, unlim_dim_level, &
         call mpp_sync_self(check=event_send)
         deallocate(buf_r8_kind)
       class default
-        call error("unsupported variable type: domain_write_4d: file: "//trim(fileobj%path)//" variable:"//trim(variable_name))
+        call error("unsupported variable type: domain_write_4d: file: "//trim(fileobj%path)//" variable:"// &
+                 & trim(variable_name))
     end select
   endif
 end subroutine domain_write_4d
@@ -1010,8 +1016,8 @@ subroutine domain_write_5d(fileobj, variable_name, vdata, unlim_dim_level, &
   integer :: ydim_index
   integer :: ypos
   integer :: yc_size
-  real(kind=i4_kind) :: fill_i4_kind !< Fill value of a i4_kind variable
-  real(kind=i8_kind) :: fill_i8_kind !< Fill value of a i8_kind variable
+  integer(kind=i4_kind) :: fill_i4_kind !< Fill value of a i4_kind variable
+  integer(kind=i8_kind) :: fill_i8_kind !< Fill value of a i8_kind variable
   real(kind=r4_kind) :: fill_r4_kind !< Fill value of a r4_kind variable
   real(kind=r8_kind) :: fill_r8_kind !< Fill value of a r8_kind variable
   integer :: xgmax !< Ending x index of the global io domain
@@ -1083,7 +1089,8 @@ subroutine domain_write_5d(fileobj, variable_name, vdata, unlim_dim_level, &
             global_buf_r8_kind = fill_r8_kind
         endif
       class default
-        call error("unsupported variable type: domain_write_5d: file: "//trim(fileobj%path)//" variable:"//trim(variable_name))
+        call error("unsupported variable type: domain_write_5d: file: "//trim(fileobj%path)//" variable:"// &
+                 & trim(variable_name))
     end select
 
     do i = 1, size(fileobj%pelist)
@@ -1246,7 +1253,8 @@ subroutine domain_write_5d(fileobj, variable_name, vdata, unlim_dim_level, &
         call mpp_sync_self(check=event_send)
         deallocate(buf_r8_kind)
       class default
-        call error("unsupported variable type: domain_write_5d: file: "//trim(fileobj%path)//" variable:"//trim(variable_name))
+        call error("unsupported variable type: domain_write_5d: file: "//trim(fileobj%path)//" variable:"// &
+                 & trim(variable_name))
     end select
   endif
 end subroutine domain_write_5d

@@ -143,7 +143,8 @@
        checksum = 0
        check_exist = mpp_find_att(field%Att(:),"checksum")
        if ( check_exist >= 0 ) then
-         if(size(checksum(:)) >size(field%checksum(:))) call mpp_error(FATAL,"size(checksum(:)) >size(field%checksum(:))")
+         if(size(checksum(:)) >size(field%checksum(:))) call mpp_error(FATAL, &
+            & "size(checksum(:)) >size(field%checksum(:))")
          checksum = field%checksum(1:size(checksum(:)))
        endif
      endif

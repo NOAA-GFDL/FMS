@@ -16,6 +16,8 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
+#define _FLATTEN(A) reshape((A), (/size((A))/) )
+
 !> @defgroup cloud_interpolator_mod cloud_interpolator_mod
 !> @ingroup drifters
 !! @brief Cloud interpolation routines for use in @ref drifters_mod

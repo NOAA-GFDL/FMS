@@ -50,7 +50,6 @@ use platform_mod
 
   USE time_manager_mod, ONLY: time_type
   USE mpp_domains_mod, ONLY: domain1d, domain2d, domainUG
-  USE mpp_io_mod, ONLY: fieldtype
   USE fms_mod, ONLY: WARNING, write_version_number
 #ifdef use_netCDF
   ! NF90_FILL_REAL has value of 9.9692099683868690e+36.
@@ -96,12 +95,12 @@ use platform_mod
   !> @brief Diagnostic field type
   !> @ingroup diag_data_mod
   TYPE diag_fieldtype
-     TYPE(fieldtype) :: Field
      TYPE(domain2d) :: Domain
      TYPE(domainUG) :: DomainU
      REAL :: miss, miss_pack
      LOGICAL :: miss_present, miss_pack_present
      INTEGER :: tile_count
+     character(len=128)      :: fieldname !< Fieldname
   END TYPE diag_fieldtype
 
   !> @brief Attribute type for diagnostic fields
@@ -211,8 +210,9 @@ use platform_mod
      INTEGER :: pow_value !< Power value to use for mean_pow(n) calculations
      CHARACTER(len=50) :: time_method !< time method field from the input file
      ! coordinates of the buffer and counter are (x, y, z, time-of-day)
-     REAL, allocatable, DIMENSION(:,:,:,:) :: buffer !< coordinates of the buffer and counter are (x, y, z, time-of-day)
-     REAL, allocatable, DIMENSION(:,:,:,:) :: counter !< coordinates of the buffer and counter are (x, y, z, time-of-day)
+     REAL, allocatable, DIMENSION(:,:,:,:) :: buffer !< coordinates of the buffer and counter are (x,
+                                                     !! y, z, time-of-day)
+     REAL, allocatable, DIMENSION(:,:,:,:) :: counter !< coordinates of the buffer and counter are (x,y,z,time-of-day)
      ! the following two counters are used in time-averaging for some
      ! combination of the field options. Their size is the length of the
      ! diurnal axis; the counters must be tracked separately for each of
@@ -225,8 +225,8 @@ use platform_mod
      !! the diurnal interval, because the number of time slices accumulated
      !! in each can be different, depending on time step and the number of
      !! diurnal samples.
-     INTEGER, allocatable, dimension(:) :: num_elements !< the following two counters are used in time-averaging for some
-     !! combination of the field options. Their size is the length of the
+     INTEGER, allocatable, dimension(:) :: num_elements !< the following two counters are used in time-averaging
+     !! for some combination of the field options. Their size is the length of the
      !! diurnal axis; the counters must be tracked separately for each of
      !! the diurnal interval, because the number of time slices accumulated
      !! in each can be different, depending on time step and the number of
@@ -296,7 +296,8 @@ use platform_mod
   INTEGER :: max_files = 31 !< Maximum number of output files allowed.  Increase via diag_manager_nml.
   INTEGER :: max_output_fields = 300 !< Maximum number of output fields.  Increase via diag_manager_nml.
   INTEGER :: max_input_fields = 600 !< Maximum number of input fields.  Increase via diag_manager_nml.
-  INTEGER :: max_out_per_in_field = 150 !< Maximum number of output_fields per input_field.  Increase via diag_manager_nml.
+  INTEGER :: max_out_per_in_field = 150 !< Maximum number of output_fields per input_field.  Increase
+                                        !! via diag_manager_nml.
   INTEGER :: max_axes = 60 !< Maximum number of independent axes.
   LOGICAL :: do_diag_field_log = .FALSE.
   LOGICAL :: write_bytes_in_file = .FALSE.
@@ -318,7 +319,8 @@ use platform_mod
                                                !! The values are defined as <TT>GLO_REG_VAL</TT>
                                                !! (-999) and <TT>GLO_REG_VAL_ALT</TT> (-1) in <TT>diag_data_mod</TT>.
 
-  INTEGER :: max_field_attributes = 4 !< Maximum number of user definable attributes per field. Liptak: Changed from 2 to 4 20170718
+  INTEGER :: max_field_attributes = 4 !< Maximum number of user definable attributes per field. Liptak:
+                                      !! Changed from 2 to 4 20170718
   INTEGER :: max_file_attributes = 2 !< Maximum number of user definable global attributes per file.
   INTEGER :: max_axis_attributes = 4 !< Maximum number of user definable attributes per axis.
   LOGICAL :: prepend_date = .TRUE. !< Should the history file have the start date prepended to the file name.
@@ -357,7 +359,8 @@ use platform_mod
   type(FmsNetcdfUnstructuredDomainFile_t),allocatable, target :: fileobjU(:)
   type(FmsNetcdfDomainFile_t),allocatable, target :: fileobj(:)
   type(FmsNetcdfFile_t),allocatable, target :: fileobjND(:)
-  character(len=2),allocatable :: fnum_for_domain(:) !< If this file number in the array is for the "unstructured" or "2d" domain
+  character(len=2),allocatable :: fnum_for_domain(:) !< If this file number in the array is for the "unstructured"
+                                                     !! or "2d" domain
 
   ! <!-- Even More Variables -->
   TYPE(time_type) :: time_zero

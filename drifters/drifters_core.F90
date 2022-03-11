@@ -212,7 +212,8 @@ subroutine drifters_core_remove_and_add(self, indices_to_remove_in, &
 
     ! cannot remove more than there are elements
     if(self%np + n_diff < 0) then
-       ermesg = 'drifters::ERROR attempting to remove more elements than there are elements in drifters_core_remove_and_add'
+       ermesg = 'drifters::ERROR attempting to remove more elements than there are elements in '// &
+               &'drifters_core_remove_and_add'
        return
     endif
 

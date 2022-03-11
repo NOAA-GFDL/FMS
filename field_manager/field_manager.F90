@@ -600,12 +600,12 @@ character(len=64), parameter :: note_header  = '==>Note from ' // trim(module_na
 !        local variables
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 character(len=1024)              :: record
-character(len=fm_path_name_len)  :: control_str
+character(len=fm_string_len)     :: control_str
 character(len=fm_path_name_len)  :: list_name
-character(len=fm_path_name_len)  :: method_name
-character(len=fm_path_name_len)  :: name_str
-character(len=fm_path_name_len)  :: type_str
-character(len=fm_path_name_len)  :: val_name
+character(len=fm_string_len)     :: method_name
+character(len=fm_string_len)     :: name_str
+character(len=fm_string_len)     :: type_str
+character(len=fm_string_len)     :: val_name
 character(len=fm_string_len)     :: tbl_name
 integer                          :: control_array(MAX_FIELDS,3)
 integer                          :: endcont
@@ -709,7 +709,8 @@ do while (.TRUE.)
              text_names%mod_name = lowercase(trim(text_names_short%mod_name))
              text_names%fld_name = lowercase(trim(text_names_short%mod_name))
            case(2)
-! If there is only the method_type string then the last 2 strings need to be blank and there are only 2 '"' in the record.
+! If there is only the method_type string then the last 2 strings need to be blank and there
+! are only 2 '"' in the record.
              read(record,*,end=79,err=79) text_names_short
              text_names%fld_type = lowercase(trim(text_names_short%fld_type))
              text_names%mod_name = lowercase(trim(text_names_short%mod_name))
@@ -854,7 +855,8 @@ do while (.TRUE.)
           control_str = text_method_short%method_name
 
         case(2)
-! If there is only the method_type string then the last 2 strings need to be blank and there are only 2 '"' in the record.
+! If there is only the method_type string then the last 2 strings need to be blank and there
+! are only 2 '"' in the record.
           read(record,*,end=99,err=99) text_method_very_short
           fields(num_fields)%methods(m)%method_type = lowercase(trim(text_method_very_short%method_type))
           fields(num_fields)%methods(m)%method_name = " "
@@ -1031,7 +1033,8 @@ do i=1,num_fields-1
        fields(i)%model      == fields(num_fields)%model      .and. &
        fields(i)%field_name == fields(num_fields)%field_name ) then
     if (mpp_pe() .eq. mpp_root_pe()) then
-      call mpp_error(WARNING,'Error in field_manager_mod. Duplicate field name: Field type='//trim(fields(i)%field_type)// &
+      call mpp_error(WARNING,'Error in field_manager_mod. Duplicate field name: Field type='//&
+         trim(fields(i)%field_type)// &
          ',  Model='//trim(MODEL_NAMES(fields(i)%model))// &
          ',  Duplicated name='//trim(fields(i)%field_name))
     endif
@@ -1073,7 +1076,6 @@ character(len=64), parameter :: note_header  = '==>Note from ' // trim(module_na
 !        local variables
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 character(len=fm_string_len)   :: method_name
-character(len=fm_string_len)   :: val_list
 character(len=fm_string_len)   :: val_name
 integer, dimension(MAX_FIELDS) :: end_val
 integer, dimension(MAX_FIELDS) :: start_val
@@ -1199,7 +1201,8 @@ do i = 1, num_elem
 
       if ( scan(val_name, set_nonexp ) > 0 ) then
         if (verb .gt. verb_level_warn) then
-!     <ERROR MSG="First character of value is numerical but the value does not appear to be numerical." STATUS="WARNING">
+!     <ERROR MSG="First character of value is numerical but the value does not appear to be
+!     numerical." STATUS="WARNING">
 !       The value may not be numerical. This is a warning as the user may wish to use a value of 2nd_order.
 !     </ERROR>
           call mpp_error(WARNING, trim(warn_header)//                                  &
@@ -1375,11 +1378,6 @@ integer                      :: find_field_index_new
 character(len=*), intent(in) :: field_name !< The path to the name of the field that an index is
                              !! being requested for.
 
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        local parameters
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-integer :: i
-
 find_field_index_new = NO_FIELD
 
 find_field_index_new = fm_get_index(field_name)
@@ -1479,13 +1477,6 @@ type(method_type),intent(inout) :: methods(:) !< an array of methods for field w
 character(len=17), parameter :: sub_name     = 'get_field_methods'
 character(len=64), parameter :: error_header = '==>Error from ' // trim(module_name)   //  &
                                                '(' // trim(sub_name) // '): '
-
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        local variables
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-character(len=fm_path_name_len), dimension(size(methods(:))) :: control
-character(len=fm_path_name_len), dimension(size(methods(:))) :: method
-logical                                                   :: found_methods
 !   <ERROR MSG="invalid field index" STATUS="FATAL">
 !     The field index is invalid because it is less than 1 or greater than the
 !     number of fields.
@@ -1615,7 +1606,6 @@ character(len=64), parameter :: error_header = '==>Error from ' // trim(module_n
                                                '(' // trim(sub_name) // '): '
 character(len=64), parameter :: warn_header  = '==>Warning from ' // trim(module_name) //  &
                                                '(' // trim(sub_name) // '): '
-integer                      :: ier
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 !        local variables
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -3192,7 +3182,7 @@ character (len=fm_type_name_len)   :: field_type
 integer                            :: count
 integer                            :: error
 integer                            :: index
-integer                            :: n, ier
+integer                            :: n
 integer                            :: shortest
 logical                            :: found
 type (field_def), pointer, save    :: temp_p
@@ -3360,8 +3350,7 @@ character(len=64), parameter :: warn_header  = '==>Warning from ' // trim(module
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 !        local variables
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-type (field_def), pointer, save :: temp_list_p
- integer                         :: out_unit
+integer                         :: out_unit
 
 out_unit = stdout()
 !
@@ -3624,7 +3613,7 @@ character(len=64), parameter :: warn_header  = '==>Warning from ' // trim(module
 !        local variables
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 logical                          :: create_t
-integer                          :: i, ier
+integer                          :: i
 integer                          :: index_t
 integer, pointer, dimension(:)   :: temp_i_value
 character(len=fm_path_name_len)  :: path
@@ -3861,7 +3850,7 @@ character(len=64), parameter :: warn_header  = '==>Warning from ' // trim(module
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 character(len=fm_path_name_len)      :: path
 character(len=fm_field_name_len)     :: base
-integer                              :: i, ier
+integer                              :: i
 integer                              :: index_t
 logical                              :: create_t
 logical, dimension(:), pointer       :: temp_l_value
@@ -4097,7 +4086,7 @@ character(len=64), parameter :: warn_header  = '==>Warning from ' // trim(module
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
 logical                          :: create_t
-integer                          :: i, ier
+integer                          :: i
 integer                          :: index_t
 real, pointer, dimension(:)      :: temp_r_value
 character(len=fm_path_name_len)  :: path
@@ -4334,7 +4323,7 @@ character(len=64), parameter :: warn_header  = '==>Warning from ' // trim(module
 character(len=fm_string_len), dimension(:), pointer :: temp_s_value
 character(len=fm_path_name_len)                     :: path
 character(len=fm_field_name_len)                    :: base
-integer                                             :: i, ier
+integer                                             :: i
 integer                                             :: index_t
 logical                                             :: create_t
 type (field_def),                     save, pointer :: temp_list_p
@@ -4706,13 +4695,6 @@ end function fm_modify_name  !}
 !! all fields and reset the field tree to only the root field.
 subroutine initialize  !{
 !
-!        arguments
-!
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        local variables
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-integer :: ier
-!
 !        Initialize the root field
 !
 if (.not. module_is_initialized) then  !{
@@ -4779,7 +4761,6 @@ character(len=64), parameter :: warn_header  = '==>Warning from ' // trim(module
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 !        local variables
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-integer :: ier
 type (field_def), pointer, save :: dummy_p
 integer                         :: out_unit
 
@@ -5262,10 +5243,7 @@ character(len=64), parameter :: warn_header  = '==>Warning from ' // trim(module
 !        local variables
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 character(len=fm_path_name_len) :: scratch
-integer                         :: depthp1
-integer                         :: first
 integer                         :: i
-integer                         :: last
 integer                         :: n
 type (field_def), pointer, save :: this_field_p
 integer                         :: out_unit
