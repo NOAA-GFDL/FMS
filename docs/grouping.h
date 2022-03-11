@@ -131,6 +131,9 @@
 !> @defgroup libfms FMS Global Module
 !> @brief Modules and associated files in the libfms directory
 
+!> @defgroup parser Parser
+!> @brief Modules and associated files for the yaml parser
+
 !> @page build Building and Installation
 !> @brief Information about the build systems and how to build and install
 !! @subpage install

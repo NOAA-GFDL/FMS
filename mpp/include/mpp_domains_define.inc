@@ -24,7 +24,6 @@
 !> @addtogroup mpp_domains_mod
 !> @{
   !> @brief Instantiates a layout with the given indices and divisions
-  !> @ingroup mpp_define_layout
   subroutine mpp_define_layout2D( global_indices, ndivs, layout )
     integer, intent(in) :: global_indices(:) !< (/ isg, ieg, jsg, jeg /); Defines the global domain.
     integer, intent(in) :: ndivs !< number of divisions to divide global domain
@@ -155,9 +154,10 @@
 
   end subroutine mpp_define_mosaic_pelist
 
-  !-- The following implementation is different from mpp_compute_extents
-  !-- The last block might have most points
   !> Computes the extents of a grid block
+  !!
+  !> Tis implementation is different from mpp_compute_extents
+  !! The last block might have most points
   subroutine mpp_compute_block_extent(isg,ieg,ndivs,ibegin,iend)
     integer,                 intent(in) :: isg, ieg, ndivs
     integer, dimension(:), intent(out)  :: ibegin, iend
@@ -1548,8 +1548,8 @@ end subroutine check_message_size
   end subroutine mpp_define_mosaic
 
 !#####################################################################
+  !> Accessor function for value of mosaic_defined
   logical function mpp_mosaic_defined()
-  ! Accessor function for value of mosaic_defined
     mpp_mosaic_defined = mosaic_defined
   end function mpp_mosaic_defined
 !#####################################################################
@@ -2968,10 +2968,10 @@ end subroutine check_message_size
   end subroutine fill_overlap
 
   !####################################################################################
+  !> Computes remote domain overlaps
+  !! assumes only one in each direction
+  !! will calculate the overlapping for T,E,C,N-cell seperately.
   subroutine compute_overlaps_fold_south( domain, position, ishift, jshift)
-    !computes remote domain overlaps
-    !assumes only one in each direction
-    !will calculate the overlapping for T,E,C,N-cell seperately.
     type(domain2D), intent(inout) :: domain
     integer, intent(in)           :: position, ishift, jshift
 
@@ -3609,10 +3609,10 @@ end subroutine check_message_size
   end subroutine compute_overlaps_fold_south
 
   !####################################################################################
+  !> Computes remote domain overlaps
+  !! assumes only one in each direction
+  !! will calculate the overlapping for T,E,C,N-cell seperately.
   subroutine compute_overlaps_fold_west( domain, position, ishift, jshift)
-    !computes remote domain overlaps
-    !assumes only one in each direction
-    !will calculate the overlapping for T,E,C,N-cell seperately.
     type(domain2D), intent(inout) :: domain
     integer, intent(in)           :: position, ishift, jshift
 
@@ -4228,11 +4228,11 @@ end subroutine check_message_size
   end subroutine compute_overlaps_fold_west
 
   !###############################################################################
+  !> computes remote domain overlaps
+  !! assumes only one in each direction
+  !! will calculate the overlapping for T,E,C,N-cell seperately.
+  !! here assume fold-east and y-cyclic boundary condition
   subroutine compute_overlaps_fold_east( domain, position, ishift, jshift )
-    !computes remote domain overlaps
-    !assumes only one in each direction
-    !will calculate the overlapping for T,E,C,N-cell seperately.
-    !here assume fold-east and y-cyclic boundary condition
     type(domain2D), intent(inout) :: domain
     integer, intent(in)           :: position, ishift, jshift
 
@@ -4920,7 +4920,7 @@ end subroutine check_message_size
 
 
   !#####################################################################################
-  ! add offset to the index
+  !> add offset to the index
   subroutine apply_cyclic_offset(lstart, lend, offset, gstart, gend, gsize)
     integer, intent(inout) :: lstart, lend
     integer, intent(in   ) :: offset, gstart, gend, gsize
@@ -4937,12 +4937,12 @@ end subroutine check_message_size
   end subroutine apply_cyclic_offset
 
   !###################################################################################
-  ! this routine setup the overlapping for mpp_update_domains for arbitrary halo update.
-  ! should be the halo size defined in mpp_define_domains.
-  ! xhalo_out, yhalo_out should not be exactly the same as xhalo_in, yhalo_in
-  ! currently we didn't consider about tripolar grid situation, because in the folded north
-  ! region, the overlapping is specified through list of points, not through rectangular.
-  ! But will return back to solve this problem in the future.
+  !> this routine sets up the overlapping for mpp_update_domains for arbitrary halo update.
+  !! should be the halo size defined in mpp_define_domains.
+  !! xhalo_out, yhalo_out should not be exactly the same as xhalo_in, yhalo_in
+  !! currently we didn't consider about tripolar grid situation, because in the folded north
+  !! region, the overlapping is specified through list of points, not through rectangular.
+  !! But will return back to solve this problem in the future.
   subroutine set_overlaps(domain, overlap_in, overlap_out, whalo_out, ehalo_out, shalo_out, nhalo_out)
     type(domain2d),    intent(in)    :: domain
     type(overlapSpec), intent(in)    :: overlap_in
@@ -5236,22 +5236,22 @@ end subroutine check_message_size
   end subroutine set_single_overlap
 
   !###################################################################################
-  !--- compute the overlapping between tiles for the T-cell.
+  !> compute the overlapping between tiles for the T-cell.
   subroutine define_contact_point( domain, position, num_contact, tile1, tile2, align1, align2, &
        refine1, refine2, istart1, iend1, jstart1, jend1, istart2, iend2, jstart2, jend2,        &
        isgList, iegList, jsgList, jegList )
     type(domain2D),     intent(inout) :: domain
     integer,               intent(in) :: position
-    integer,               intent(in) :: num_contact      ! number of contact regions
-    integer, dimension(:), intent(in) :: tile1, tile2     ! tile number
-    integer, dimension(:), intent(in) :: align1, align2   ! align direction of contact region
-    real,    dimension(:), intent(in) :: refine1, refine2 ! refinement between tiles
-    integer, dimension(:), intent(in) :: istart1, iend1   ! i-index in tile_1 of contact region
-    integer, dimension(:), intent(in) :: jstart1, jend1   ! j-index in tile_1 of contact region
-    integer, dimension(:), intent(in) :: istart2, iend2   ! i-index in tile_2 of contact region
-    integer, dimension(:), intent(in) :: jstart2, jend2   ! j-index in tile_2 of contact region
-    integer, dimension(:), intent(in) :: isgList, iegList ! i-global domain of each tile
-    integer, dimension(:), intent(in) :: jsgList, jegList ! j-global domain of each tile
+    integer,               intent(in) :: num_contact      !< number of contact regions
+    integer, dimension(:), intent(in) :: tile1, tile2     !< tile number
+    integer, dimension(:), intent(in) :: align1, align2   !< align direction of contact region
+    real,    dimension(:), intent(in) :: refine1, refine2 !< refinement between tiles
+    integer, dimension(:), intent(in) :: istart1, iend1   !< i-index in tile_1 of contact region
+    integer, dimension(:), intent(in) :: jstart1, jend1   !< j-index in tile_1 of contact region
+    integer, dimension(:), intent(in) :: istart2, iend2   !< i-index in tile_2 of contact region
+    integer, dimension(:), intent(in) :: jstart2, jend2   !< j-index in tile_2 of contact region
+    integer, dimension(:), intent(in) :: isgList, iegList !< i-global domain of each tile
+    integer, dimension(:), intent(in) :: jsgList, jegList !< j-global domain of each tile
 
     integer              :: isc, iec, jsc, jec, isd, ied, jsd, jed
     integer              :: isc1, iec1, jsc1, jec1, isc2, iec2, jsc2, jec2
@@ -5868,7 +5868,7 @@ end subroutine check_message_size
   end subroutine define_contact_point
 
 !##############################################################################
-!--- always fill the contact according to index order.
+!> always fill the contact according to index order.
 subroutine fill_contact(Contact, tile, is1, ie1, js1, je1, is2, ie2, js2, je2, align1, align2, refine1, refine2 )
   type(contact_type), intent(inout) :: Contact
   integer,            intent(in)    :: tile
@@ -5911,7 +5911,7 @@ subroutine fill_contact(Contact, tile, is1, ie1, js1, je1, is2, ie2, js2, je2, a
 end subroutine fill_contact
 
 !############################################################################
-! this routine sets the overlapping between tiles for E,C,N-cell based on T-cell overlapping
+!> this routine sets the overlapping between tiles for E,C,N-cell based on T-cell overlapping
 subroutine set_contact_point(domain, position)
   type(domain2d), intent(inout) :: domain
   integer,           intent(in) :: position
@@ -6155,9 +6155,9 @@ subroutine set_contact_point(domain, position)
 
 end subroutine set_contact_point
 
-!--- set up the overlapping for boundary check if the domain is symmetry. The check will be
-!--- done on current pe for east boundary for E-cell, north boundary for N-cell,
-!--- East and North boundary for C-cell
+!> set up the overlapping for boundary check if the domain is symmetry. The check will be
+!! done on current pe for east boundary for E-cell, north boundary for N-cell,
+!! East and North boundary for C-cell
 subroutine set_check_overlap( domain, position )
 type(domain2d),    intent(in) :: domain
 integer,           intent(in) :: position
@@ -6319,7 +6319,7 @@ if(nrecv>0) call deallocate_overlap_type(overlap)
 end subroutine set_check_overlap
 
 !#############################################################################
-!--- set up the overlapping for boundary if the domain is symmetry.
+!> set up the overlapping for boundary if the domain is symmetry.
 subroutine set_bound_overlap( domain, position )
   type(domain2d), intent(inout) :: domain
   integer,        intent(in)    :: position
@@ -7453,14 +7453,8 @@ end subroutine check_alignment
 !              MPP_MODIFY_DOMAIN: modify extent of domain                     !
 !                                                                             !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-! <SUBROUTINE NAME="mpp_modify_domain1D" INTERFACE="mpp_modify_domain">
-!   <IN NAME="domain_in" TYPE="type(domain1D)" > </IN>
-!   <IN NAME="hbegin,hend" TYPE="integer,optional" > </IN>
-!   <IN NAME="cbegin,cend" TYPE="integer,optional" > </IN>
-!   <IN NAME="gbegin,gend" TYPE="integer,optional" > </IN>
-!   <INOUT NAME="domain_out" TYPE="type(domain1D)" > </INOUT>
 
-! <PUBLICROUTINE>
+!> @brief Modifies the exents of a domain
 subroutine mpp_modify_domain1D(domain_in,domain_out,cbegin,cend,gbegin,gend, hbegin, hend)
   ! </PUBLICROUTINE>
 type(domain1D), intent(in)    :: domain_in !< The source domain.
@@ -7494,21 +7488,9 @@ if(present(gend))   domain_out%global%end = gend
 domain_out%global%size = domain_out%global%end - domain_out%global%begin + 1
 
 end subroutine mpp_modify_domain1D
-! </SUBROUTINE>
 
 !#######################################################################
-!----------------------------------------------------------------------------------
-! <SUBROUTINE NAME="mpp_modify_domain2D" INTERFACE="mpp_modify_domain">
-!   <IN NAME="domain_in" TYPE="type(domain2D)" > </IN>
-!   <IN NAME="isc,iec" TYPE="integer,optional" > </IN>
-!   <IN NAME="jsc,jec" TYPE="integer,optional" > </IN>
-!   <IN NAME="isg,ieg" TYPE="integer,optional" > </IN>
-!   <IN NAME="jsg,jeg" TYPE="integer,optional" > </IN>
-!   <IN NAME="whalo,ehalo" TYPE="integer,optional" > </IN>
-!   <IN NAME="shalo,nhalo" TYPE="integer,optional" > </IN>
-!   <INOUT NAME="domain_out" TYPE="type(domain2D)" > </INOUT>
 
-! <PUBLICROUTINE>
 subroutine mpp_modify_domain2D(domain_in, domain_out, isc, iec, jsc, jec, isg, ieg, jsg, jeg, whalo, ehalo, &
                               &  shalo, nhalo)
   ! </PUBLICROUTINE>
@@ -7744,7 +7726,7 @@ subroutine insert_check_overlap(overlap, pe, tileMe, dir, rotation, is, ie, js, 
 end subroutine insert_check_overlap
 
 !#######################################################################
-!--- this routine add the overlap_in into overlap_out
+!> this routine adds the overlap_in into overlap_out
 subroutine add_check_overlap( overlap_out, overlap_in)
   type(overlap_type), intent(inout) :: overlap_out
   type(overlap_type), intent(in   ) :: overlap_in

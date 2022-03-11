@@ -178,14 +178,6 @@ end subroutine init_nonblock_type
 !              MPP_CHECK_FIELD: Check parallel                                !
 !                                                                             !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-! <SUBROUTINE NAME="mpp_check_field_3D" INTERFACE="mpp_check_field">
-!   <IN NAME="field_in" TYPE="real, dimension(:,:,:)" > </IN>
-!   <IN NAME="pelist1, pelist2" TYPE="integer, dimension(:)" > </IN>
-!   <IN NAME="domain" TYPE="type(domain2d)" > </IN>
-!   <IN NAME="mesg" TYPE="character(len=*)" > </IN>
-!   <IN NAME="w_halo, s_halo, e_halo, n_halo" TYPE="integer, optional" > </IN>
-!   <IN NAME="force_abort" TYPE="logical,optional" > </IN>
-! </SUBROUTINE>
 
   !> This routine is used to do parallel checking for 3d data between n and m pe. The comparison is
   !! is done on pelist2. When size of pelist2 is 1, we can check the halo; otherwise,
@@ -468,10 +460,10 @@ end subroutine init_nonblock_type
     subroutine mpp_broadcast_domain_1( domain )
       type(domain2D), intent(inout) :: domain
       integer, allocatable :: pes(:)
-      logical :: native         !true if I'm on the pelist of this domain
+      logical :: native         !> true if I'm on the pelist of this domain
       integer :: listsize, listpos
       integer :: n
-      integer, dimension(12) :: msg, info         !pe and compute domain of each item in list
+      integer, dimension(12) :: msg, info  !> pe and compute domain of each item in list
       integer                :: errunit
 
       errunit = stderr()
@@ -595,7 +587,7 @@ end subroutine init_nonblock_type
       integer, allocatable :: pes(:)
       integer :: listpos
       integer :: n
-      integer, dimension(12) :: msg, info         !pe and compute domain of each item in list
+      integer, dimension(12) :: msg, info !< pe and compute domain of each item in list
       integer                :: errunit, npes_in, npes_out, pstart, pend
 
       errunit = stderr()
@@ -722,10 +714,10 @@ end subroutine init_nonblock_type
       type(domain2D), intent(inout) :: domain
       integer,        intent(in)    :: tile_nest(:)
       integer, allocatable :: pes(:)
-      logical :: native         !true if I'm on the pelist of this domain
+      logical :: native         !< true if I'm on the pelist of this domain
       integer :: listsize, listpos, nestsize(size(tile_nest(:)))
       integer :: n, tile, ind, num_nest
-      integer, dimension(15) :: msg, info         !pe and compute domain of each item in list
+      integer, dimension(15) :: msg, info         !< pe and compute domain of each item in list
       integer                :: errunit
 
       errunit = stderr()
@@ -841,11 +833,11 @@ end subroutine init_nonblock_type
       type(domain2D), intent(inout) :: domain
       integer,        intent(in)    :: tile_coarse
       integer, allocatable :: pes(:)
-      logical :: native         !true if I'm on the pelist of this domain
+      logical :: native         !< true if I'm on the pelist of this domain
       integer :: listsize, listpos
       integer, allocatable :: tile_pesize(:)
       integer :: n, maxtile
-      integer, dimension(17) :: msg, info         !pe and compute domain of each item in list
+      integer, dimension(17) :: msg, info         !< pe and compute domain of each item in list
       integer                :: errunit
 
       errunit = stderr()

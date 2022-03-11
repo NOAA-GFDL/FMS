@@ -450,8 +450,7 @@ end function rarray_to_char
   !! current pelist must call it.
   !!
   !! In MPI, this call may hang unless <TT>pelist</TT> has been previous
-  !! declared using <LINK
-  !! SRC="#mpp_declare_pelist"><TT>mpp_declare_pelist</TT></LINK>.
+  !! declared using @ref mpp_declare_pelist
   !!
   !! If the argument <TT>pelist</TT> is absent, the current pelist is
   !! set to the "world" pelist, of all PEs in the job.

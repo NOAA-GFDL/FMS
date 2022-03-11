@@ -27,6 +27,9 @@
 !> @defgroup mpp_mod mpp_mod
 !> @ingroup mpp
 !> @brief This module defines interfaces for common operations using message-passing libraries.
+!! Any type-less arguments in the documentation are MPP_TYPE_ which is defined by the pre-processor
+!! to create multiple subroutines out of one implementation for use in an interface. See the note
+!! below for more information
 !!
 !> @author V. Balaji <"V.Balaji@noaa.gov">
 !!
@@ -136,7 +139,7 @@
 !! </DESCRIPTION>
 !! <br/>
 !!
-!!  F90 is a strictly-typed language, and the syntax pass of the
+!!  @note F90 is a strictly-typed language, and the syntax pass of the
 !!  compiler requires matching of type, kind and rank (TKR). Most calls
 !!  listed here use a generic type, shown here as <TT>MPP_TYPE_</TT>. This
 !!  is resolved in the pre-processor stage to any of a variety of
@@ -403,6 +406,8 @@ private
      module procedure mpp_error_rs_rs
   end interface
   !> Takes a given integer or real array and returns it as a string
+  !> @param[in] array An array of integers or reals
+  !> @returns string equivalent of given array
   !> @ingroup mpp_mod
   interface array_to_char
      module procedure iarray_to_char
@@ -521,7 +526,7 @@ private
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
   !> @brief Reduction operations.
-  !>    Find the max of scalar a the PEs in pelist
+  !>    Find the max of scalar a from the PEs in pelist
   !!    result is also automatically broadcast to all PEs
   !!    @code{.F90}
   !!            call  mpp_max( a, pelist )
@@ -542,8 +547,16 @@ private
      module procedure mpp_max_int4_1d
   end interface
 
-  !> @brief Get minimum value out of the PEs in pelist
-  !> Result is also broadcast to all PEs
+  !> @brief Reduction operations.
+  !>    Find the min of scalar a from the PEs in pelist
+  !!    result is also automatically broadcast to all PEs
+  !!    @code{.F90}
+  !!            call  mpp_min( a, pelist )
+  !!    @endcode
+  !> @param a <TT>real</TT> or <TT>integer</TT>, of 4-byte of 8-byte kind.
+  !> @param pelist If <TT>pelist</TT> is omitted, the context is assumed to be the
+  !!    current pelist. This call implies synchronization across the PEs in
+  !!    <TT>pelist</TT>, or the current pelist if <TT>pelist</TT> is absent.
   !> @ingroup mpp_mod
   interface mpp_min
      module procedure mpp_min_real8_0d
@@ -693,6 +706,11 @@ private
 
   !> @brief Scatter information to the given pelist
   !> @ingroup mpp_mod
+  !!
+  !! Generic MPP_TYPE_ implentations:
+  !! <li> @ref mpp_scatter_pelist_ </li>
+  !! <li> @ref mpp_scatter_pelist_ </li>
+  !! <li> @ref mpp_scatter_pelist_ </li>
   interface mpp_scatter
      module procedure mpp_scatter_pelist_int4_2d
      module procedure mpp_scatter_pelist_int4_3d
@@ -706,6 +724,14 @@ private
   !> @brief Scatter a vector across all PEs
   !!
   !> Transpose the vector and PE index
+  !! Wrapper for the MPI_alltoall function, includes more generic _V and _W
+  !! versions if given displacements/data types
+  !!
+  !! Generic MPP_TYPE_ implentations:
+  !! <li> @ref mpp_alltoall_ </li>
+  !! <li> @ref mpp_alltoallv_ </li>
+  !! <li> @ref mpp_alltoallw_ </li>
+  !!
   !> @ingroup mpp_mod
   interface mpp_alltoall
      module procedure mpp_alltoall_int4
@@ -873,7 +899,7 @@ private
      module procedure mpp_transmit_logical4_4d
      module procedure mpp_transmit_logical4_5d
   end interface
-  !> @brief Recieve data to another PE
+  !> @brief Recieve data from another PE
   !!
   !> @param[out] get_data scalar or array to get written with received data
   !> @param get_len size of array to recv from get_data
@@ -1100,20 +1126,17 @@ private
   !!
   !> \e mpp_chksum is a parallel checksum routine that returns an
   !! identical answer for the same array irrespective of how it has been
-  !! partitioned across processors. \eint_kind is the KIND
+  !! partitioned across processors. \e int_kind is the KIND
   !! parameter corresponding to long integers (see discussion on
   !! OS-dependent preprocessor directives) defined in
-  !! the file platform.F90. \eMPP_TYPE_ corresponds to any
-  !! 4-byte and 8-byte variant of \einteger, \ereal, \ecomplex, \elogical
+  !! the file platform.F90. \e MPP_TYPE_ corresponds to any
+  !! 4-byte and 8-byte variant of \e integer, \e real, \e complex, \e logical
   !! variables, of rank 0 to 5.
   !!
   !! Integer checksums on FP data use the F90 <TT>TRANSFER()</TT>
   !! intrinsic.
   !!
-  !! The <LINK SRC="http://www.gfdl.noaa.gov/fms-cgi-bin/cvsweb.cgi/FMS/shared/chksum/chksum.html">serial
-  !! checksum module</LINK> is superseded
-  !! by this function, and is no longer being actively maintained. This
-  !! provides identical results on a single-processor job, and to perform
+  !! This provides identical results on a single-processor job, and to perform
   !! serial checksums on a single processor of a parallel job, you only
   !! need to use the optional <TT>pelist</TT> argument.
   !! <PRE>
@@ -1141,6 +1164,12 @@ private
   !! @param pelist Optional list of PE's to include in checksum calculation if not using
   !! current pelist
   !! @return Parallel checksum of var across given or implicit pelist
+  !! 
+  !! Generic MPP_TYPE_ implentations:
+  !! <li> @ref mpp_chksum_</li>
+  !! <li> @ref mpp_chksum_int_</li>
+  !! <li> @ref mpp_chksum_int_rmask</li>
+  !! 
   !> @ingroup mpp_mod
   interface mpp_chksum
      module procedure mpp_chksum_i8_1d

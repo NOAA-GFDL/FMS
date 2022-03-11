@@ -911,6 +911,7 @@ module mpp_domains_mod
      module procedure mpp_copy_domain2D
   end interface mpp_copy_domain
   !> Deallocate given 1D or 2D domain
+  !> @param domain an allocated @ref domain1D or @ref domain2D
   !> @ingroup mpp_domains_mod
   interface mpp_deallocate_domain
      module procedure mpp_deallocate_domain1D

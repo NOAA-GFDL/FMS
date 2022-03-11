@@ -16,6 +16,8 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
+!> addtogroup mpp_mod
+!> @{
 
 !> @brief Scatter data from one pe to the specified pes.
 !!
@@ -152,3 +154,4 @@ subroutine MPP_SCATTER_PELIST_3D_(is, ie, js, je, nk, pelist, array_seg, data, i
    return
 
 end subroutine MPP_SCATTER_PELIST_3D_
+!> @}
