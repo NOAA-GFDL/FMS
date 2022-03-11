@@ -84,12 +84,14 @@
 !! allocate(buffer (is_f:ie_f, js_f:je_f,nz))
 !! call mpp_update_nest_coarse(x, nest_domain, buffer)
 !
-!! call mpp_define_nest_domains (nest_domain, domain, num_nest, nest_level, tile_fine, tile_coarse, &
-!!                               istart_coarse, icount_coarse, jstart_coarse, jcount_coarse, &
+!! call mpp_define_nest_domains (nest_domain, domain, num_nest, nest_level, tile_fine, tile_coarse,
+!!                               istart_coarse, icount_coarse, jstart_coarse, jcount_coarse,
 !!                                    npes_nest_tile, x_refine, y_refine, extra_halo, name)
+!!
 !! @endcode
 !!
 !> @note Currently the contact will be limited to overlap contact.
+!!
 subroutine mpp_define_nest_domains(nest_domain, domain, num_nest, nest_level, tile_fine, tile_coarse, &
                                   istart_coarse, icount_coarse, jstart_coarse, jcount_coarse, npes_nest_tile, &
                                   x_refine, y_refine, extra_halo, name)

@@ -19,7 +19,7 @@
 !> @file
 !> @brief Character array routines used in @ref fms_io_utils_mod
 
-!> @addtogroup fms2_io_mod
+!> @addtogroup fms_io_utils_mod
 !> @{
 
 !> @brief Allocate character arrays using an input array of sizes.

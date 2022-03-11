@@ -51,7 +51,8 @@
 !> @brief Modules and associated files in the diag_integral directory
 
 !> @defgroup diag_manager Diag Manager
-!> @brief Modules and associated files in the diag_manager directory
+!> @brief Modules and associated files in the diag_manager directory.
+!! See below for additional information on diag_tables.
 
 !> @defgroup drifters Drifters
 !> @brief Modules and associated files in the drifters directory

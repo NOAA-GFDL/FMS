@@ -134,7 +134,7 @@
 !!     <LI>When namelist variable <TT>debug_diag_manager = .true.</TT> array
 !!         bounds are checked in @ref send_data.</LI>
 !!     <LI>Coordinate attributes can be written in the output file if the
-!!         argument "<TT>aux</TT>" is given in @ref diag_axis_mod#diag_axis_init . The
+!!         argument "aux" is given in @ref diag_axis_mod#diag_axis_init . The
 !!         corresponding fields (geolat/geolon) should also be written to the
 !!         same file.</LI>
 !!   </OL>
@@ -145,7 +145,6 @@
 
 MODULE diag_manager_mod
 use platform_mod
-  ! TODO    convert to a page         
   ! <NAMELIST NAME="diag_manager_nml">
   !   <DATA NAME="append_pelist_name" TYPE="LOGICAL" DEFAULT=".FALSE.">
   !   </DATA>

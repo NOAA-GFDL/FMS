@@ -19,7 +19,7 @@
 !> @file
 !> @brief Array allocation routines for multiple types for @ref allocate_array interface
 
-!> @addtogroup fms_io_utils
+!> @addtogroup fms_io_utils_mod
 !> @{
 
 !> @brief Allocate arrays using an input array of sizes.
