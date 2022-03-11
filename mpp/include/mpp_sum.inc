@@ -60,7 +60,7 @@
       MPP_TYPE_, intent(inout) :: a(:,:,:) !< 3d array to sum
       integer, intent(in) :: length !< amount of indices in given 3d array
       integer, intent(in), optional :: pelist(:) !< pelist to calculate sum across
-      MPP_TYPE_, intent(inout) :: a(:,:,:)
+      MPP_TYPE_ :: a1D(length)
 
       pointer( ptr, a1D )
       ptr = LOC(a)
@@ -75,7 +75,7 @@
       MPP_TYPE_, intent(inout) :: a(:,:,:,:) !< 4d array to sum
       integer, intent(in) :: length !< amount of indices in given 4d array
       integer, intent(in), optional :: pelist(:) !< pelist to calculate sum across
-      MPP_TYPE_, intent(inout) :: a(:,:,:,:)
+      MPP_TYPE_ :: a1D(length)
 
       pointer( ptr, a1D )
       ptr = LOC(a)

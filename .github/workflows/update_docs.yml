@@ -26,16 +26,3 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./gen_docs/html
-      - name: Get release version
-        id: get_release
-        uses: bruceadams/get-release@v1.2.3
-        if: ${{ github.event.action == 'release' }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - name: Tag doc branch with current version
-        uses: simpleactions/create-tag@d5c32a2d86b1f96142bbe1ebe8b3b62b0a0587ff
-        if: ${{ github.event.action == 'release' }}
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          tag: docs-${{ steps.get_release.outputs.tag_name }}
-          message: "documentation site generated for the given release"
