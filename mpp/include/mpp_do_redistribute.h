@@ -16,6 +16,8 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
+!> @addtogroup mpp_domains_mod
+!> @{
     subroutine MPP_DO_REDISTRIBUTE_3D_( f_in, f_out, d_comm, d_type )
       integer(i8_kind), intent(in)         :: f_in(:), f_out(:)
       type(DomainCommunicator2D), intent(in) :: d_comm
@@ -109,3 +111,4 @@
 
       call mpp_sync_self()
     end subroutine MPP_DO_REDISTRIBUTE_3D_
+!> @}

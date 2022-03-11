@@ -1303,7 +1303,10 @@ module mpp_domains_mod
      module procedure mpp_complete_do_update_i4_3d
   end interface
 
-
+  !> Constructor for the @ref mpp_group_update_type which is
+  !! then used with @ref mpp_start_group_update
+  !!
+  !> @param
   !> @ingroup mpp_domains_mod
   interface mpp_create_group_update
      module procedure mpp_create_group_update_r4_2d
@@ -1326,12 +1329,24 @@ module mpp_domains_mod
      module procedure mpp_do_group_update_r8
   end interface mpp_do_group_update
 
+  !> Starts non-blocking group update
+  !! Must be followed up with a call to @ref mpp_complete_group_update
+  !! @ref mpp_group_update_type can be created with @ref mpp_create_group_update
+  !!
+  !> @param[inout] type(mpp_group_update_type) group type created for group update
+  !> @param[inout] type(domain2D) domain to update
   !> @ingroup mpp_domains_mod
   interface mpp_start_group_update
      module procedure mpp_start_group_update_r4
      module procedure mpp_start_group_update_r8
   end interface mpp_start_group_update
 
+  !> Completes a pending non-blocking group update
+  !! Must follow a call to @ref mpp_start_group_update
+  !!
+  !> @param[inout] type(mpp_group_update_type) group
+  !> @param[inout] type(domain2D) domain
+  !> @param[in] d_type data type
   !> @ingroup mpp_domains_mod
   interface mpp_complete_group_update
      module procedure mpp_complete_group_update_r4
@@ -1355,7 +1370,7 @@ module mpp_domains_mod
   end interface mpp_reset_group_update_field
 
   !> Pass the data from coarse grid to fill the buffer to be ready to be interpolated
-  !! nto fine grid.
+  !! onto fine grid.
   !! <br>Example usage:
   !!
   !!                call mpp_update_nest_fine(field, nest_domain, wbuffer, ebuffer, sbuffer,
@@ -1447,6 +1462,8 @@ module mpp_domains_mod
      module procedure mpp_update_nest_coarse_i4_4d
   end interface
 
+  !> @brief Used by @ref mpp_update_nest_coarse to perform domain updates
+  !!
   !> @ingroup mpp_domains_mod
   interface mpp_do_update_nest_coarse
      module procedure mpp_do_update_nest_coarse_r8_3d
@@ -1474,7 +1491,13 @@ module mpp_domains_mod
     module procedure mpp_get_F2C_index_coarse
   end interface
 
-  !> Send domain to every pe
+  !> Broadcasts domain to every pe. Only useful outside the context of it's own pelist
+  !!
+  !> <br>Example usage:
+  !!                    call mpp_broadcast_domain(domain)
+  !!                    call mpp_broadcast_domain(domain_in, domain_out)
+  !!                    call mpp_broadcast_domain(domain, tile_coarse) ! nested domains
+  !!
   !> @ingroup mpp_domains_mod
   interface mpp_broadcast_domain
     module procedure mpp_broadcast_domain_1
@@ -1524,7 +1547,7 @@ module mpp_domains_mod
 #endif
      module procedure mpp_do_update_i4_3d
   end interface
-
+  !> Private interface to updates data domain of 3D field whose computational domains have been computed
   !> @ingroup mpp_domains_mod
   interface mpp_do_check
      module procedure mpp_do_check_r8_3d
@@ -1557,6 +1580,10 @@ module mpp_domains_mod
      module procedure mpp_pass_SG_to_UG_l4_3d
   end interface
 
+  !> Passes a data field from a structured grid to an unstructured grid
+  !! <br>Example usage:
+  !!
+  !!            call mpp_pass_SG_to_UG(SG_domain, field_SG, field_UG)
   !> @ingroup mpp_domains_mod
   interface mpp_pass_UG_to_SG
      module procedure mpp_pass_UG_to_SG_r8_2d
@@ -1569,6 +1596,11 @@ module mpp_domains_mod
      module procedure mpp_pass_UG_to_SG_l4_3d
   end interface
 
+  !> Passes a data field from a unstructured grid to an structured grid
+  !! <br>Example usage:
+  !!
+  !!            call mpp_pass_UG_to_SG(UG_domain, field_UG, field_SG)
+  !!
   !> @ingroup mpp_domains_mod
   interface mpp_do_update_ad
      module procedure mpp_do_update_ad_r8_3d
@@ -1578,7 +1610,7 @@ module mpp_domains_mod
   end interface
 
 !> Get the boundary data for symmetric domain when the data is at C, E, or N-cell center.<br>
-!! \e mpp_get_boundary is used to get the boundary data for symmetric domain
+!! @ref mpp_get_boundary is used to get the boundary data for symmetric domain
 !! when the data is at C, E, or N-cell center. For cubic grid, the data should always
 !! at C-cell center.
 !! <br>Example usage:
@@ -1825,6 +1857,7 @@ module mpp_domains_mod
      module procedure mpp_global_field2D_l4_5d_ad
   end interface
 
+!> Private helper interface used by @ref mpp_global_field
 !> @ingroup mpp_domains_mod
   interface mpp_do_global_field
      module procedure mpp_do_global_field2D_r8_3d
@@ -1856,6 +1889,7 @@ module mpp_domains_mod
      module procedure mpp_do_global_field2D_a2a_l4_3d
   end interface
 
+!> Same functionality as @ref mpp_global_field but for unstructured domains
 !> @ingroup mpp_domains_mod
   interface mpp_global_field_ug
      module procedure mpp_global_field2D_ug_r8_2d
@@ -1892,7 +1926,7 @@ module mpp_domains_mod
      module procedure mpp_do_global_field2D_l4_3d_ad
   end interface
 
-!> Global max/min of domain-decomposed arrays.<br>
+!> Global max of domain-decomposed arrays.<br>
 !! \e mpp_global_max is used to get the maximum value of a
 !! domain-decomposed array on each PE. \e MPP_TYPE_can be of type
 !! \e integer or \e real; of 4-byte or 8-byte kind; of rank
@@ -1928,6 +1962,22 @@ module mpp_domains_mod
      module procedure mpp_global_max_i4_5d
   end interface
 
+!> Global min of domain-decomposed arrays.<br>
+!! \e mpp_global_min is used to get the minimum value of a
+!! domain-decomposed array on each PE. \e MPP_TYPE_can be of type
+!! \e integer or \e real; of 4-byte or 8-byte kind; of rank
+!! up to 5. The dimension of \e locus must equal the rank of \e field.<br>
+!!<br>
+!! All PEs in a domain decomposition must call \e mpp_global_min,
+!! and each will have the result upon exit.
+!! The function \e mpp_global_max, with an identical syntax. is also available.
+!!
+!! @param domain 2D domain
+!! @param field field data dimensioned on either the compute or data domains of 'domain'
+!! @param locus If present, van be used to retrieve the location of the minimum
+!!
+!! <br>Example usage:
+!!              mpp_global_min( domain, field, locus )
 !> @ingroup mpp_domains_mod
   interface mpp_global_min
      module procedure mpp_global_min_r8_2d

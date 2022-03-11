@@ -17,6 +17,8 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
+!> @addtogroup mpp_domains_mod
+!> @{
     !> Updates data domain of 2D field whose computational domains have been computed
     subroutine MPP_UPDATE_DOMAINS_AD_2D_( field, domain, flags, complete, position, &
                                        whalo, ehalo, shalo, nhalo, name, tile_count)
@@ -464,3 +466,4 @@
       return
     end subroutine MPP_UPDATE_DOMAINS_AD_5D_V_
 #endif /* VECTOR_FIELD_ */
+!> @}

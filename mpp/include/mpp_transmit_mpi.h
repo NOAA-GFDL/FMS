@@ -21,7 +21,8 @@
 !                                  MPP_TRANSMIT                               !
 !                                                                             !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
+!> @addtogroup mpp_mod
+!> @{
 !> A message-passing routine intended to be reminiscent equally of both MPI and SHMEM
 !! put_data and get_data are contiguous MPP_TYPE_ arrays
 !!at each call, your put_data array is put to   to_pe's get_data
@@ -192,6 +193,6 @@
       if( debug .and. (current_clock.NE.0) )call increment_current_clock( EVENT_BROADCAST, length*MPP_TYPE_BYTELEN_ )
       return
     end subroutine MPP_BROADCAST_
-
+!> @}
 !####################################################################################
 #include <mpp_transmit.inc>

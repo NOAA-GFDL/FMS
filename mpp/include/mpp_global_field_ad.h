@@ -19,7 +19,8 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
-
+!> @addtogroup mpp_domains_mod
+!> @{
     !> Get a global field from a local field
     !! local field may be on compute OR data domain
     subroutine MPP_GLOBAL_FIELD_2D_AD_( domain, local, global, flags, position,tile_count, default_data)
@@ -98,3 +99,4 @@
       gptr = LOC(global)
       call mpp_global_field_ad( domain, local3D, global3D, flags, position,tile_count, default_data )
     end subroutine MPP_GLOBAL_FIELD_5D_AD_
+!> @}

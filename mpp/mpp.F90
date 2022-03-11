@@ -79,9 +79,8 @@
 !!     <li> Performance to be not significantly lower than any native API. </li>
 !!    </ol>
 !!
-!!   This module is used to develop higher-level calls for <LINK
-!!   SRC="mpp_domains.html">domain decomposition</LINK> and <LINK
-!!   SRC="mpp_io.html">parallel I/O</LINK>.
+!!   This module is used to develop higher-level calls for
+!!   domain decomposition (@ref mpp_domains) and parallel I/O (@ref fms2_io)
 !! <br/>
 !!   Parallel computing is initially daunting, but it soon becomes
 !!   second nature, much the way many of us can now write vector code
@@ -93,7 +92,7 @@
 !!   function calls are particularly subtle, since it is not always obvious
 !!   from looking at a call what synchronization between execution streams
 !!   it implies. An example of erroneous code would be a global barrier
-!!   call (see <LINK SRC="#mpp_sync">mpp_sync</LINK> below) placed
+!!   call (see @ref mpp_sync below) placed
 !!   within a code block that not all PEs will execute, e.g:
 !!
 !!   <PRE>
@@ -581,8 +580,8 @@ private
   !! bit-reproducible. In any case, changing the processor count changes
   !! the data layout, and thus very likely the order of operations. For
   !! bit-reproducible sums of distributed arrays, consider using the
-  !! <TT>mpp_global_sum</TT> routine provided by the <LINK
-  !! SRC="mpp_domains.html"><TT>mpp_domains</TT></LINK> module.
+  !! <TT>mpp_global_sum</TT> routine provided by the
+  !! @ref mpp_domains module.
   !!
   !! The <TT>bit_reproducible</TT> flag provided in earlier versions of
   !! this routine has been removed.
@@ -683,8 +682,19 @@ private
 #endif
   end interface
 
-  !> @brief Gather information onto root pe
+  !> @brief Gather data sent from pelist onto the root pe
+  !! Wrapper for MPI_gather, can be used with and without indices
   !> @ingroup mpp_mod
+  !!
+  !> @param sbuf MPP_TYPE_ data buffer to send
+  !> @param rbuf MPP_TYPE_ data buffer to receive
+  !> @param pelist integer(:) optional pelist to gather from, defaults to current
+  !>
+  !> <BR> Example usage:
+  !!
+  !!                    call mpp_gather(send_buffer,recv_buffer, pelist)
+  !!                    call mpp_gather(is, ie, js, je, pelist, array_seg, data, is_root_pe)
+  !!
   interface mpp_gather
      module procedure mpp_gather_logical_1d
      module procedure mpp_gather_int4_1d
@@ -704,13 +714,23 @@ private
      module procedure mpp_gather_pelist_real8_3d
   end interface
 
-  !> @brief Scatter information to the given pelist
+  !> @brief Scatter (ie - is) * (je - js) contiguous elements of array data from the designated root pe
+  !! into contigous members of array segment in each pe that is included in the pelist argument.
   !> @ingroup mpp_mod
   !!
-  !! Generic MPP_TYPE_ implentations:
-  !! <li> @ref mpp_scatter_pelist_ </li>
-  !! <li> @ref mpp_scatter_pelist_ </li>
-  !! <li> @ref mpp_scatter_pelist_ </li>
+  !> @param is, ie integer start and end index of the first dimension of the segment array
+  !> @param je, js integer start and end index of the second dimension of the segment array
+  !> @param pelist integer(:) the PE list of target pes, needs to be monotonically increasing
+  !> @param array_seg MPP_TYPE_ 2D array that the data is to be copied into
+  !> @param data MPP_TYPE_ the source array
+  !> @param is_root_pe logical true if calling from root pe
+  !> @param ishift integer offsets specifying the first elelement in the data array
+  !> @param nk integer size of third dimension for 3D calls
+  !!
+  !> <BR> Example usage:
+  !!
+  !!                    call mpp_scatter(is, ie, js, je, pelist, segment, data, .true.)
+  !!
   interface mpp_scatter
      module procedure mpp_scatter_pelist_int4_2d
      module procedure mpp_scatter_pelist_int4_3d
@@ -800,8 +820,8 @@ private
   !!    portability is a concern, it is best avoided).<BR/>
   !!    <TT>ALL_PES</TT>: is used for broadcast operations.
   !!
-  !!    It is recommended that <LINK
-  !!    SRC="#mpp_broadcast"><TT>mpp_broadcast</TT></LINK> be used for
+  !!    It is recommended that
+  !!    @ref mpp_broadcast be used for
   !!    broadcasts.
   !!
   !!    The following example illustrates the use of
@@ -1044,8 +1064,8 @@ private
   !! contiguous block from a multi-dimensional array may be passed by its
   !! starting address and its length, as in <TT>f77</TT>.
   !!
-  !! Global broadcasts through the <TT>ALL_PES</TT> argument to <LINK
-  !! SRC="#mpp_transmit"><TT>mpp_transmit</TT></LINK> are still provided for
+  !! Global broadcasts through the <TT>ALL_PES</TT> argument to
+  !! @ref mpp_transmit are still provided for
   !! backward-compatibility.
   !!
   !! If <TT>pelist</TT> is omitted, the context is assumed to be the
@@ -1164,12 +1184,12 @@ private
   !! @param pelist Optional list of PE's to include in checksum calculation if not using
   !! current pelist
   !! @return Parallel checksum of var across given or implicit pelist
-  !! 
+  !!
   !! Generic MPP_TYPE_ implentations:
   !! <li> @ref mpp_chksum_</li>
   !! <li> @ref mpp_chksum_int_</li>
-  !! <li> @ref mpp_chksum_int_rmask</li>
-  !! 
+  !! <li> @ref mpp_chksum_int_rmask_</li>
+  !!
   !> @ingroup mpp_mod
   interface mpp_chksum
      module procedure mpp_chksum_i8_1d

@@ -19,7 +19,8 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
-
+!> @addtogroup mpp_domains_mod
+!> @{
     !> Updates data domain of 3D field whose computational domains have been computed
     subroutine MPP_DO_UPDATE_AD_3D_V_(f_addrsx,f_addrsy, domain, update_x, update_y, &
                                    d_type, ke, gridtype, flags)
@@ -1293,3 +1294,4 @@
       return
 
     end subroutine MPP_DO_UPDATE_AD_3D_V_
+!> @}

@@ -17,6 +17,8 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
+!> @addtogroup mpp_domains_mod
+!> @{
 
 !> This routine is used to retrieve scalar boundary data for symmetric domain.
 subroutine MPP_GET_BOUNDARY_2D_(field, domain, ebuffer, sbuffer, wbuffer, nbuffer, flags, &
@@ -741,3 +743,4 @@ subroutine MPP_GET_BOUNDARY_3D_V_(fieldx, fieldy, domain, ebufferx, sbufferx, wb
   end if
 
 end subroutine MPP_GET_BOUNDARY_3D_V_
+!> @}

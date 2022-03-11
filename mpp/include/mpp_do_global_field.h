@@ -16,6 +16,8 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
+!> @addtogroup mpp_domains_mod
+!> @{
 
       !> Gets a global field from a local field
       !! local field may be on compute OR data domain
@@ -519,3 +521,4 @@
       call mpp_sync_self()
 
     end subroutine MPP_DO_GLOBAL_FIELD_A2A_3D_
+!> @}

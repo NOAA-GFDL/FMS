@@ -28,7 +28,7 @@
       integer(i8_kind),         intent(in) :: f_addrs(:,:)
       type(domain2D),             intent(in) :: domain
       type(overlapSpec),          intent(in) :: check
-      MPP_TYPE_,                  intent(in) :: d_type  ! creates unique interface
+      MPP_TYPE_,                  intent(in) :: d_type  !<creates unique interface
       integer,                    intent(in) :: ke
       integer, optional,          intent(in) :: flags
       character(len=*), optional, intent(in) :: name

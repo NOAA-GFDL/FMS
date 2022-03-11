@@ -20,6 +20,7 @@
     !! result is also automatically broadcast: all PEs have the sum in a at the end
     !! we are using f77-style call: array passed by address and not descriptor; further,
     !! the f90 conformance check is avoided.
+    !> @ingroup mpp_mod
     subroutine MPP_SUM_( a, length, pelist )
       integer, intent(in) :: length
       integer, intent(in), optional :: pelist(:)
