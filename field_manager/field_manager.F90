@@ -509,14 +509,14 @@ end  type field_names_type
 
 !> @brief Private type for internal use
 !> @ingroup field_manager_mod
-type, private :: field_names_type_short 
+type, private :: field_names_type_short
   character(len=fm_field_name_len)                    :: fld_type
   character(len=fm_field_name_len)                    :: mod_name
 end type field_names_type_short
 
 !> @brief Private type for internal use
 !> @ingroup field_manager_mod
-type, private :: field_def  
+type, private :: field_def
   character (len=fm_field_name_len)                   :: name
   integer                                             :: index
   type (field_def), pointer                           :: parent => NULL()
