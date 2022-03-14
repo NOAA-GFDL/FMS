@@ -71,9 +71,6 @@ type diagYamlFiles_type
   integer, private    :: file_freq !< the frequency of data
   character (len=:), private, allocatable :: file_timeunit !< The unit of time
   character (len=:), private, allocatable :: file_unlimdim !< The name of the unlimited dimension
-  logical, private :: file_write !< false if the user doesn't want to the file to be created
-  character (len=:), private, allocatable :: string_file_write !< false if the user doesn’t want the file to be
-                                                               !! created (default is true).
   character (len=:), private, allocatable :: file_realm !< The modeling realm that the variables come from
   type(subRegion_type), private :: file_sub_region !< type containing info about the subregion, if any
   integer, private :: file_new_file_freq !< Frequency for closing the existing file
@@ -105,7 +102,6 @@ type diagYamlFiles_type
  procedure :: get_file_freq
  procedure :: get_file_timeunit
  procedure :: get_file_unlimdim
- procedure :: get_file_write
  procedure :: get_file_realm
  procedure :: get_file_sub_region
  procedure :: get_file_new_file_freq
@@ -123,8 +119,6 @@ type diagYamlFiles_type
  procedure :: has_file_freq 
  procedure :: has_file_timeunit 
  procedure :: has_file_unlimdim 
- procedure :: has_file_write 
- procedure :: has_string_file_write 
  procedure :: has_file_realm 
  procedure :: has_file_sub_region 
  procedure :: has_file_new_file_freq 
@@ -144,10 +138,6 @@ type diagYamlFilesVar_type
   character (len=:), private, allocatable :: var_reduction !< Reduction to be done on var
   character (len=:), private, allocatable :: var_module !< The module that th variable is in
   character (len=:), private, allocatable :: var_skind !< The type/kind of the variable
-  character (len=:), private, allocatable :: string_var_write !< false if the user doesn’t want the variable to be
-                                                              !! written to the file (default: true).
-  logical, private :: var_write !< false if the user doesn’t want the variable to be
-                                !! written to the file (default: true).
   character (len=:), private, allocatable :: var_outname !< Name of the variable as written to the file
   character (len=:), private, allocatable :: var_longname !< Overwrites the long name of the variable
   character (len=:), private, allocatable :: var_units !< Overwrites the units
@@ -166,7 +156,6 @@ type diagYamlFilesVar_type
   procedure :: get_var_outname
   procedure :: get_var_longname
   procedure :: get_var_units
-  procedure :: get_var_write
   procedure :: get_var_attributes
   procedure :: is_var_attributes
 
@@ -175,8 +164,6 @@ type diagYamlFilesVar_type
   procedure :: has_var_reduction 
   procedure :: has_var_module 
   procedure :: has_var_skind 
-  procedure :: has_string_var_write 
-  procedure :: has_var_write 
   procedure :: has_var_outname 
   procedure :: has_var_longname 
   procedure :: has_var_units 
@@ -273,12 +260,15 @@ subroutine diag_yaml_object_init(diag_subset_output)
   integer              :: i, j             !< For do loops
   integer              :: total_nvars      !< The total number of variables in the diag_table yaml
   integer              :: var_count        !< The current number of variables added to the diag_yaml obj
+  integer              :: file_var_count   !< The current number of variables added in the diag_file
   integer              :: nvars            !< The number of variables in the current file
   integer, allocatable :: var_ids(:)       !< Ids of the variables in diag_table yaml
   logical              :: is_ocean         !< Flag indicating if it is an ocean file
   logical, allocatable :: ignore(:)        !< Flag indicating if the diag_file is going to be ignored
   integer              :: actual_num_files !< The actual number of files that were saved
   integer              :: file_count       !! The current number of files added to the diag_yaml obj
+  logical              :: write_file       !< Flag indicating if the user wants the file to be written
+  logical              :: write_var        !< Flag indicating if the user wants the variable to be written
 
   diag_yaml_id = open_and_parse_file("diag_table.yaml")
 
@@ -295,7 +285,6 @@ subroutine diag_yaml_object_init(diag_subset_output)
   total_nvars = 0
   !< If you are on two seperate pelists
   if(diag_subset_output .ne. DIAG_ALL) then
-    actual_num_files = 0
     do i = 1, nfiles
       is_ocean = .false.
       call get_value_from_key(diag_yaml_id, diag_file_ids(i), "is_ocean", is_ocean, is_optional=.true.)
@@ -304,17 +293,22 @@ subroutine diag_yaml_object_init(diag_subset_output)
 
       !< If you are not on the ocean pelist and the file is ocean, skip the file
       if(diag_subset_output .eq. DIAG_OTHER .and. is_ocean) ignore(i) = .true.
+    enddo
+  endif
 
-      if (.not. ignore(i)) then
+  !< Determine how many files are in the diag_yaml, ignoring those with write_file = False
+  actual_num_files = 0
+  do i = 1, nfiles
+    write_file = .true.
+    call get_value_from_key(diag_yaml_id, diag_file_ids(i), "write_file", write_file, is_optional=.true.)
+    if(.not. write_file) ignore(i) = .true.
+
+    if (.not. ignore(i)) then
         actual_num_files = actual_num_files + 1
         !< If ignoring the file, ignore the fields in that file too!
-        total_nvars = total_nvars + get_num_blocks(diag_yaml_id, "varlist", parent_block_id=diag_file_ids(i))
-      endif
-    enddo
-  else
-    actual_num_files = nfiles
-    total_nvars = get_total_num_vars(diag_yaml_id, diag_file_ids)
-  endif
+        total_nvars = total_nvars + get_total_num_vars(diag_yaml_id, diag_file_ids(i))
+    endif
+  enddo
 
   allocate(diag_yaml%diag_files(actual_num_files))
   allocate(diag_yaml%diag_fields(total_nvars))
@@ -332,16 +326,23 @@ subroutine diag_yaml_object_init(diag_subset_output)
     nvars = get_num_blocks(diag_yaml_id, "varlist", parent_block_id=diag_file_ids(i))
     allocate(var_ids(nvars))
     call get_block_ids(diag_yaml_id, "varlist", var_ids, parent_block_id=diag_file_ids(i))
-    allocate(diag_yaml%diag_files(file_count)%file_varlist(nvars))
+    file_var_count = 0
+    allocate(diag_yaml%diag_files(file_count)%file_varlist(get_total_num_vars(diag_yaml_id, diag_file_ids(i))))
     nvars_loop: do j = 1, nvars
+      write_var = .true.
+      call get_value_from_key(diag_yaml_id, var_ids(j), "write_var", write_var, is_optional=.true.)
+      if (.not. write_var) cycle
+
       var_count = var_count + 1
+      file_var_count = file_var_count + 1
+
       !> Save the filename in the diag_field type
       diag_yaml%diag_fields(var_count)%var_fname = diag_yaml%diag_files(file_count)%file_fname
 
       call fill_in_diag_fields(diag_yaml_id, var_ids(j), diag_yaml%diag_fields(var_count))
 
       !> Save the variable name in the diag_file type
-      diag_yaml%diag_files(file_count)%file_varlist(j) = diag_yaml%diag_fields(var_count)%var_varname
+      diag_yaml%diag_files(file_count)%file_varlist(file_var_count) = diag_yaml%diag_fields(var_count)%var_varname
     enddo nvars_loop
     deallocate(var_ids)
   enddo nfiles_loop
@@ -394,8 +395,6 @@ subroutine fill_in_diag_files(diag_yaml_id, diag_file_id, fileobj)
   call diag_get_value_from_key(diag_yaml_id, diag_file_id, "time_units", fileobj%file_timeunit)
   call check_file_time_units(fileobj)
 
-  call diag_get_value_from_key(diag_yaml_id, diag_file_id, "write_file", fileobj%string_file_write, is_optional=.true.)
-  if (fileobj%string_file_write .eq. "false") fileobj%file_write = .false.
   call diag_get_value_from_key(diag_yaml_id, diag_file_id, "realm", fileobj%file_realm, is_optional=.true.)
   call check_file_realm(fileobj)
 
@@ -469,7 +468,6 @@ subroutine fill_in_diag_fields(diag_file_id, var_id, field)
 
   integer, allocatable :: key_ids(:) !< Id of each attribute key/value pair
 
-  field%var_write = .true.
   call diag_get_value_from_key(diag_file_id, var_id, "var_name", field%var_varname)
   call diag_get_value_from_key(diag_file_id, var_id, "reduction", field%var_reduction)
   call check_field_reduction(field)
@@ -477,9 +475,6 @@ subroutine fill_in_diag_fields(diag_file_id, var_id, field)
   call diag_get_value_from_key(diag_file_id, var_id, "module", field%var_module)
   call diag_get_value_from_key(diag_file_id, var_id, "kind", field%var_skind)
   call check_field_kind(field)
-
-  call diag_get_value_from_key(diag_file_id, var_id, "write_var", field%string_var_write, is_optional=.true.)
-  if (trim(field%string_var_write) .eq. "false") field%var_write = .false.
 
   call diag_get_value_from_key(diag_file_id, var_id, "output_name", field%var_outname)
   call diag_get_value_from_key(diag_file_id, var_id, "long_name", field%var_longname, is_optional=.true.)
@@ -542,18 +537,28 @@ end subroutine get_sub_region
 
 !> @brief gets the total number of variables in the diag_table yaml file
 !! @return total number of variables
-function get_total_num_vars(diag_yaml_id, diag_file_ids) &
+function get_total_num_vars(diag_yaml_id, diag_file_id) &
 result(total_nvars)
 
   integer, intent(in) :: diag_yaml_id     !< Id for the diag_table yaml
-  integer, intent(in) :: diag_file_ids(:) !< Ids of the files in the diag_table yaml
+  integer, intent(in) :: diag_file_id     !< Id of the file in the diag_table yaml
   integer :: total_nvars
 
   integer :: i !< For do loop
+  integer :: nvars !< Number of variables in a file
+  integer, allocatable :: var_ids(:) !< Id of the variables in the file block of the yaml file
+  logical :: var_write !< Flag indicating if the user wants the variable to be written
 
+  nvars = get_num_blocks(diag_yaml_id, "varlist", parent_block_id=diag_file_id)
+  allocate(var_ids(nvars))
+  call get_block_ids(diag_yaml_id, "varlist", var_ids, parent_block_id=diag_file_id)
+
+  !< Loop through all the variables in the diag_file block and only count those that don't have write_var=false
   total_nvars = 0
-  do i = 1, size(diag_file_ids,1)
-    total_nvars = total_nvars + get_num_blocks(diag_yaml_id, "varlist", parent_block_id=diag_file_ids(i))
+  do i = 1, nvars
+    var_write = .true.
+    call get_value_from_key(diag_yaml_id, var_ids(i), "write_var", var_write, is_optional=.true.)
+    if (var_write) total_nvars = total_nvars + 1
   end do
 end function
 
@@ -732,14 +737,6 @@ result (res)
  character (len=:), allocatable :: res !< What is returned
   res = diag_files_obj%file_unlimdim
 end function get_file_unlimdim
-!> @brief Inquiry for diag_files_obj%file_write
-!! @return file_write of a diag_yaml_file_obj
-pure function get_file_write(diag_files_obj) &
-result (res)
- class (diagYamlFiles_type), intent(in) :: diag_files_obj !< The object being inquiried
- logical :: res !< What is returned
-  res = diag_files_obj%file_write
-end function get_file_write
 !> @brief Inquiry for diag_files_obj%file_realm
 !! @return file_realm of a diag_yaml_file_obj
 pure function get_file_realm(diag_files_obj) &
@@ -893,14 +890,6 @@ result (res)
  character (len=:), allocatable :: res !< What is returned
   res = diag_var_obj%var_units
 end function get_var_units
-!> @brief Inquiry for diag_yaml_files_var_obj%var_write
-!! @return var_write of a diag_yaml_files_var_obj
-pure function get_var_write (diag_var_obj) &
-result (res)
- class (diagYamlFilesVar_type), intent(in) :: diag_var_obj !< The object being inquiried
- logical :: res !< What is returned
-  res = diag_var_obj%var_write
-end function get_var_write
 !> @brief Inquiry for diag_yaml_files_var_obj%var_attributes
 !! @return var_attributes of a diag_yaml_files_var_obj
 pure function get_var_attributes(diag_var_obj) &
@@ -926,7 +915,6 @@ subroutine diag_yaml_files_obj_init(obj)
   type(diagYamlFiles_type), intent(out) :: obj !< diagYamlFiles_type object to initialize
 
   obj%file_freq           = DIAG_NULL
-  obj%file_write          = .true.
   obj%file_duration       = DIAG_NULL
   obj%file_new_file_freq  = DIAG_NULL
   obj%file_sub_region%tile = DIAG_NULL
@@ -968,12 +956,6 @@ pure logical function has_file_write (obj)
   class(diagYamlFiles_type), intent(in) :: obj !< diagYamlFiles_type object to initialize
   has_file_write = .true.
 end function has_file_write
-!> @brief Checks if obj%string_file_write is allocated
-!! @return true if obj%string_file_write is allocated
-pure logical function has_string_file_write (obj)
-  class(diagYamlFiles_type), intent(in) :: obj !< diagYamlFiles_type object to initialize
-  has_string_file_write = allocated(obj%string_file_write)
-end function has_string_file_write
 !> @brief Checks if obj%file_realm is allocated
 !! @return true if obj%file_realm is allocated
 pure logical function has_file_realm (obj)
@@ -1065,12 +1047,6 @@ pure logical function has_var_skind (obj)
   class(diagYamlFilesVar_type), intent(in) :: obj !< diagYamlvar_type object to initialize
   has_var_skind = allocated(obj%var_skind)
 end function has_var_skind
-!> @brief Checks if obj%string_var_write is allocated
-!! @return true if obj%string_var_write is allocated
-pure logical function has_string_var_write (obj)
-  class(diagYamlFilesVar_type), intent(in) :: obj !< diagYamlvar_type object to initialize
-  has_string_var_write = allocated(obj%string_var_write)
-end function has_string_var_write
 !> @brief obj%var_write is on the stack, so this returns true
 !! @return true 
 pure logical function has_var_write (obj)

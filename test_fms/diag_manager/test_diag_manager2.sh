@@ -523,7 +523,6 @@ diag_files:
   start_time: 2 1 1 0 0 0
   file_duration: 12
   file_duration_units: hours
-  write_file: false
   realm: ATM
   varlist:
   - module: test_diag_manager_mod
@@ -531,7 +530,6 @@ diag_files:
     output_name: sst
     reduction: average
     kind: float
-    write_var: false
   global_meta:
   - is_a_file: true
 - file_name: normal
@@ -565,12 +563,25 @@ diag_files:
     reduction: average
     kind: float
     long_name: S S T
+  - module: test_diag_manager_mod
+    var_name: sstt2
+    output_name: sstt2
+    reduction: average
+    kind: float
+    long_name: S S T
+    write_var: false
   sub_region:
   - grid_type: index
     tile: 1
     dim2_begin: 10
     dim2_end: 20
     dim1_begin: 10
+- file_name: normal3
+  freq: -1
+  freq_units: days
+  time_units: hours
+  unlimdim: records
+  write_file: false
 _EOF
 cp diag_table.yaml diag_table.yaml_base
 
