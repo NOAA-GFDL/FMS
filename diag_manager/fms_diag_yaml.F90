@@ -295,7 +295,6 @@ subroutine diag_yaml_object_init(diag_subset_output)
 
       !< If you are not on the ocean pelist and the file is ocean, skip the file
       if(diag_subset_output .eq. DIAG_OTHER .and. is_ocean) ignore(i) = .true.
-
     enddo
   endif
 
