@@ -3950,7 +3950,7 @@ CONTAINS
     END IF
 
 #ifdef use_yaml
-    if (use_modern_diag) CALL diag_yaml_object_init()
+    if (use_modern_diag) CALL diag_yaml_object_init(diag_subset_output)
 #endif
 
     CALL parse_diag_table(DIAG_SUBSET=diag_subset_output, ISTAT=mystat, ERR_MSG=err_msg_local)

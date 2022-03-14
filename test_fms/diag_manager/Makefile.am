@@ -30,7 +30,7 @@ LDADD = $(top_builddir)/libFMS/libFMS.la
 # Build this test program.
 check_PROGRAMS = test_diag_manager test_diag_manager_time test_diag_object_container \
                  test_diag_update_buffer test_diag_dlinked_list \
-                 test_diag_dlinked_list test_diag_yaml
+                 test_diag_yaml test_diag_ocean
 
 # This is the source code for the test.
 test_diag_manager_SOURCES = test_diag_manager.F90
@@ -39,6 +39,7 @@ test_diag_update_buffer_SOURCES= test_diag_update_buffer.F90
 test_diag_yaml_SOURCES = test_diag_yaml.F90
 test_diag_object_container_SOURCES = test_diag_object_container.F90
 test_diag_dlinked_list_SOURCES = test_diag_dlinked_list.F90
+test_diag_ocean_SOURCES = test_diag_ocean.F90
 
 TEST_EXTENSIONS = .sh
 SH_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \

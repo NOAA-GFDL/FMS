@@ -24,7 +24,7 @@ program test_diag_yaml
 #ifdef use_yaml
 use FMS_mod, only: fms_init, fms_end
 use fms_diag_yaml_mod
-use diag_data_mod, only: DIAG_NULL
+use diag_data_mod, only: DIAG_NULL, DIAG_ALL
 use mpp_mod
 use platform_mod
 
@@ -61,7 +61,11 @@ call fms_init()
 read (input_nml_file, check_crashes_nml, iostat=io_status)
 if (io_status > 0) call mpp_error(FATAL,'=>check_crashes: Error reading input.nml')
 
-call diag_yaml_object_init
+#ifndef use_yaml
+if (checking_crashes) call mpp_error(FATAL, "It is crashing!")
+call fms_end()
+#else
+call diag_yaml_object_init(DIAG_ALL)
 
 my_yaml = get_diag_yaml_obj()
 

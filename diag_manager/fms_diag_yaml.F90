@@ -30,7 +30,7 @@
 !> @{
 module fms_diag_yaml_mod
 #ifdef use_yaml
-use diag_data_mod,   only: DIAG_NULL
+use diag_data_mod,   only: DIAG_NULL, DIAG_OCEAN, DIAG_ALL, DIAG_OTHER
 use yaml_parser_mod, only: open_and_parse_file, get_value_from_key, get_num_blocks, get_nkeys, &
                            get_block_ids, get_key_value, get_key_ids, get_key_name
 use mpp_mod,         only: mpp_error, FATAL
@@ -97,6 +97,7 @@ type diagYamlFiles_type
                                                                                         !! meta data to the file
 
  contains
+
  !> All getter functions (functions named get_x(), for member field named x)
  !! return copies of the member variables unless explicitly noted.
  procedure :: get_file_fname
@@ -260,7 +261,12 @@ end function get_diag_fields
 
 !> @brief Uses the yaml_parser_mod to read in the diag_table and fill in the
 !! diag_yaml object
-subroutine diag_yaml_object_init
+subroutine diag_yaml_object_init(diag_subset_output)
+  integer, intent(in)  :: diag_subset_output !< DIAG_ALL   - Current PE is in the one and only pelist
+                                             !! DIAG_OTHER - Current PE is not in the ocean pelist
+                                             !! and there are multiple pelists
+                                             !! DIAG_OCEAN - Current PE is in the ocean pelist
+                                             !! and there are multiple pelists
   integer              :: diag_yaml_id     !< Id for the diag_table yaml
   integer              :: nfiles           !< Number of files in the diag_table yaml
   integer, allocatable :: diag_file_ids(:) !< Ids of the files in the diag_table yaml
@@ -269,6 +275,10 @@ subroutine diag_yaml_object_init
   integer              :: var_count        !< The current number of variables added to the diag_yaml obj
   integer              :: nvars            !< The number of variables in the current file
   integer, allocatable :: var_ids(:)       !< Ids of the variables in diag_table yaml
+  logical              :: is_ocean         !< Flag indicating if it is an ocean file
+  logical, allocatable :: ignore(:)        !< Flag indicating if the diag_file is going to be ignored
+  integer              :: actual_num_files !< The actual number of files that were saved
+  integer              :: file_count       !! The current number of files added to the diag_yaml obj
 
   diag_yaml_id = open_and_parse_file("diag_table.yaml")
 
@@ -276,32 +286,62 @@ subroutine diag_yaml_object_init
   call get_value_from_key(diag_yaml_id, 0, "base_date", diag_yaml%diag_basedate)
 
   nfiles = get_num_blocks(diag_yaml_id, "diag_files")
-  allocate(diag_yaml%diag_files(nfiles))
   allocate(diag_file_ids(nfiles))
+  allocate(ignore(nfiles))
+
   call get_block_ids(diag_yaml_id, "diag_files", diag_file_ids)
 
-  total_nvars = get_total_num_vars(diag_yaml_id, diag_file_ids)
+  ignore = .false.
+  total_nvars = 0
+  !< If you are on two seperate pelists
+  if(diag_subset_output .ne. DIAG_ALL) then
+    actual_num_files = 0
+    do i = 1, nfiles
+      is_ocean = .false.
+      call get_value_from_key(diag_yaml_id, diag_file_ids(i), "is_ocean", is_ocean, is_optional=.true.)
+      !< If you are on the ocean pelist and the file is not an ocean file, skip the file
+      if (diag_subset_output .eq. DIAG_OCEAN .and. .not. is_ocean) ignore(i) = .true.
+
+      !< If you are not on the ocean pelist and the file is ocean, skip the file
+      if(diag_subset_output .eq. DIAG_OTHER .and. is_ocean) ignore(i) = .true.
+
+      if (.not. ignore(i)) then
+        actual_num_files = actual_num_files + 1
+        !< If ignoring the file, ignore the fields in that file too!
+        total_nvars = total_nvars + get_num_blocks(diag_yaml_id, "varlist", parent_block_id=diag_file_ids(i))
+      endif
+    enddo
+  else
+    actual_num_files = nfiles
+    total_nvars = get_total_num_vars(diag_yaml_id, diag_file_ids)
+  endif
+
+  allocate(diag_yaml%diag_files(actual_num_files))
   allocate(diag_yaml%diag_fields(total_nvars))
 
   var_count = 0
+  file_count = 0
+  !> Loop through the number of nfiles and fill in the diag_yaml obj
   nfiles_loop: do i = 1, nfiles
-    call diag_yaml_files_obj_init(diag_yaml%diag_files(i))
-    call fill_in_diag_files(diag_yaml_id, diag_file_ids(i), diag_yaml%diag_files(i))
+    if(ignore(i)) cycle
+    file_count = file_count + 1
+    call diag_yaml_files_obj_init(diag_yaml%diag_files(file_count))
+    call fill_in_diag_files(diag_yaml_id, diag_file_ids(i), diag_yaml%diag_files(file_count))
 
     nvars = 0
     nvars = get_num_blocks(diag_yaml_id, "varlist", parent_block_id=diag_file_ids(i))
     allocate(var_ids(nvars))
     call get_block_ids(diag_yaml_id, "varlist", var_ids, parent_block_id=diag_file_ids(i))
-    allocate(diag_yaml%diag_files(i)%file_varlist(nvars))
+    allocate(diag_yaml%diag_files(file_count)%file_varlist(nvars))
     nvars_loop: do j = 1, nvars
       var_count = var_count + 1
       !> Save the filename in the diag_field type
-      diag_yaml%diag_fields(var_count)%var_fname = diag_yaml%diag_files(i)%file_fname
+      diag_yaml%diag_fields(var_count)%var_fname = diag_yaml%diag_files(file_count)%file_fname
 
       call fill_in_diag_fields(diag_yaml_id, var_ids(j), diag_yaml%diag_fields(var_count))
 
       !> Save the variable name in the diag_file type
-      diag_yaml%diag_files(i)%file_varlist(j) = diag_yaml%diag_fields(var_count)%var_varname
+      diag_yaml%diag_files(file_count)%file_varlist(j) = diag_yaml%diag_fields(var_count)%var_varname
     enddo nvars_loop
     deallocate(var_ids)
   enddo nfiles_loop
