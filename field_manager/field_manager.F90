@@ -428,6 +428,9 @@ interface fm_loop_over_list
 end interface
 
 character(len=17), parameter :: module_name       = 'field_manager_mod'
+character(len=33), parameter :: error_header      = '==>Error from '//trim(module_name)//': '
+character(len=35), parameter :: warn_header       = '==>Warning from '//trim(module_name)//': '
+character(len=32), parameter :: note_header       = '==>Note from '//trim(module_name)//': '
 character(len=1),  parameter :: bracket_left      = '['
 character(len=1),  parameter :: bracket_right     = ']'
 character(len=1),  parameter :: comma             = ","
