@@ -38,6 +38,7 @@ module fms_string_utils_mod
   public :: fms_pointer_to_array
   public :: fms_sort_this
   public :: fms_find_my_string
+  public :: fms_find_unique
 !> @}
 
   interface
@@ -66,6 +67,18 @@ module fms_string_utils_mod
 
     type(c_ptr) :: indices
   end function fms_find_my_string_binding
+
+  !> @brief c function that finds the number of unique strings in a SORTED array of c pointers
+  !! @return number of unique strings
+  function fms_find_unique(my_pointer, p_size) bind(c)&
+  result(ntimes)
+    use iso_c_binding
+
+    type(c_ptr),            intent(in) :: my_pointer(*)     !< Array of sorted c pointer
+    integer(kind=c_int),    intent(in) :: p_size            !< Size of the array
+    integer(kind=c_int) :: ntimes
+
+  end function fms_find_unique
 
   end interface
 

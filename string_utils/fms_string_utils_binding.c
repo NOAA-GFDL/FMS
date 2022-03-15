@@ -162,3 +162,20 @@ char* fms_find_my_string_binding(char** arr, int *n, char *find_me, int *np)
   strcpy(string_p, string);
   return string_p;
 }
+
+// Finds the number of unique strings in an array
+int fms_find_unique(char** arr, int *n)
+{
+  int i;
+  int nfind;
+
+  nfind=1;
+  //printf("n is %i", *n);
+  for(i=1; i<*n; i++){
+    //printf("Comparing %s and %s \n",arr[i], arr[i-1]);
+    if (strcmp(arr[i], arr[i-1]) != 0){ nfind = nfind + 1;}
+  }
+
+  //printf("nfind=%i",nfind);
+  return nfind;
+}
