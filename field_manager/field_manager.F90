@@ -175,9 +175,6 @@ module field_manager_mod
 !
 ! <REVIEWER EMAIL="John.Dunne@noaa.gov"> John P. Dunne
 ! </REVIEWER>
-!
-! <HISTORY
-!  SRC="http://www.gfdl.noaa.gov/fms-cgi-bin/cvsweb.cgi/FMS/shared/field_manager/field_manager.F90"/>
 
 use    mpp_mod, only : mpp_error,   &
                        FATAL,       &
@@ -194,8 +191,6 @@ use fms2_io_mod, only: file_exists
 implicit none
 private
 
-! Include variable "version" to be written to log file.
-#include<file_version.h>
 logical            :: module_is_initialized  = .false.
 
 public :: field_manager_init   !< (nfields, [table_name]) returns number of fields
