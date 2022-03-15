@@ -541,20 +541,6 @@ integer,                      intent(out), optional :: nfields !< number of fiel
 character(len=fm_string_len), intent(in), optional :: table_name !< Name of the field table, default
                                                                  !! is 'field_table'
 
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        local parameters
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-character(len=18), parameter :: sub_name     = 'field_manager_init'
-character(len=64), parameter :: error_header = '==>Error from ' // trim(module_name)   //  &
-                                               '(' // trim(sub_name) // '): '
-character(len=64), parameter :: warn_header  = '==>Warning from ' // trim(module_name) //  &
-                                               '(' // trim(sub_name) // '): '
-character(len=64), parameter :: note_header  = '==>Note from ' // trim(module_name)    //  &
-                                               '(' // trim(sub_name) // '): '
-
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        local variables
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 character(len=1024)              :: record
 character(len=fm_string_len)     :: control_str
 character(len=fm_path_name_len)  :: list_name
@@ -950,20 +936,6 @@ character(len=*), intent(in)    :: method_name_in !< The name of the method that
 character(len=*), intent(inout) :: val_name_in !< The value or values that will be parsed and
                                                !! used as the value when creating a new field or fields.
 
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        local parameters
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-character(len=8),  parameter :: sub_name     = 'new_name'
-character(len=64), parameter :: error_header = '==>Error from ' // trim(module_name)   //  &
-                                               '(' // trim(sub_name) // '): '
-character(len=64), parameter :: warn_header  = '==>Warning from ' // trim(module_name) //  &
-                                               '(' // trim(sub_name) // '): '
-character(len=64), parameter :: note_header  = '==>Note from ' // trim(module_name)    //  &
-                                               '(' // trim(sub_name) // '): '
-
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        local variables
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 character(len=fm_string_len)   :: method_name
 character(len=fm_string_len)   :: val_name
 integer, dimension(MAX_FIELDS) :: end_val
@@ -1152,21 +1124,11 @@ enddo
 
 end subroutine new_name
 
-!#######################################################################
-!#######################################################################
-
 !> @brief Destructor for field manager.
 !!
 !> This subroutine writes to the logfile that the user is exiting field_manager and
 !! changes the initialized flag to false.
 subroutine field_manager_end
-
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        local parameters
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-character(len=17), parameter :: sub_name     = 'field_manager_end'
-character(len=64), parameter :: note_header  = '==>Note from ' // trim(module_name)    //  &
-                                               '(' // trim(sub_name) // '): '
 
 integer :: unit
 
@@ -1256,17 +1218,6 @@ character (len=*),intent(out) :: fld_name !< name of the field
 integer, intent(out) :: model !< number indicating which model is used
 integer, intent(out) :: num_methods !< number of methods
 
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        local parameters
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-character(len=14), parameter :: sub_name     = 'get_field_info'
-character(len=64), parameter :: error_header = '==>Error from ' // trim(module_name)   //  &
-                                               '(' // trim(sub_name) // '): '
-
-!   <ERROR MSG="invalid field index" STATUS="FATAL">
-!     The field index is invalid because it is less than 1 or greater than the
-!     number of fields.
-!   </ERROR>
 if (n < 1 .or. n > num_fields) call mpp_error(FATAL,trim(error_header)//'Invalid field index')
 
 fld_type    = fields(n)%field_type
@@ -1286,17 +1237,6 @@ integer,           intent(in)    :: n !< index of field
 integer,           intent(in)    :: m !< index of method
 type(method_type) ,intent(inout) :: method !< the m-th method of field with index n
 
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        local parameters
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-character(len=16), parameter :: sub_name     = 'get_field_method'
-character(len=64), parameter :: error_header = '==>Error from ' // trim(module_name)   //  &
-                                               '(' // trim(sub_name) // '): '
-
-!   <ERROR MSG="invalid field index" STATUS="FATAL">
-!     The field index is invalid because it is less than 1 or greater than the
-!     number of fields.
-!   </ERROR>
 if (n < 1 .or. n > num_fields) call mpp_error(FATAL,trim(error_header)//'Invalid field index')
 if (m < 1 .or. m > fields(n)%num_methods) call mpp_error(FATAL,trim(error_header)//'Invalid method index')
 
@@ -1406,21 +1346,8 @@ type (field_def), pointer    :: list_p
 type (field_def), pointer    :: parent_p !< A pointer to the parent of the field that is to be created
 character(len=*), intent(in) :: name !< The name of the field that is to be created
 
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        local parameters
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-character(len=12), parameter :: sub_name     = 'create_field'
-character(len=64), parameter :: error_header = '==>Error from ' // trim(module_name)   //  &
-                                               '(' // trim(sub_name) // '): '
-character(len=64), parameter :: warn_header  = '==>Warning from ' // trim(module_name) //  &
-                                               '(' // trim(sub_name) // '): '
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        local variables
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 integer                      :: error, out_unit
-!
 !        Check for fatal errors which should never arise
-!
 out_unit = stdout()
 if (.not. associated(parent_p)) then
 
@@ -1784,17 +1711,6 @@ character(len=*), intent(in)     :: path !< path to the list of interest
 type (field_def), pointer        :: relative_p !< pointer to the list to which "path" is relative to
 logical,          intent(in)     :: create !< If the list does not exist, it will be created if set to true
 
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        local parameters
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-character(len=9),  parameter :: sub_name     = 'find_list'
-character(len=64), parameter :: warn_header  = '==>Warning from ' // trim(module_name) //  &
-                                               '(' // trim(sub_name) // '): '
-character(len=64), parameter :: note_header  = '==>Note from ' // trim(module_name)    //  &
-                                               '(' // trim(sub_name) // '): '
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        local variables
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 character(len=fm_path_name_len)  :: working_path
 character(len=fm_path_name_len)  :: rest
 character(len=fm_field_name_len) :: this_list
@@ -1926,28 +1842,14 @@ function  fm_change_root(name)                                        &
 logical        :: success
 character(len=*), intent(in)  :: name !< name of the field which the user wishes to become the root.
 
-
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        local parameters
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-character(len=14), parameter :: sub_name     = 'fm_change_root'
-character(len=64), parameter :: warn_header  = '==>Warning from ' // trim(module_name) //  &
-                                               '(' // trim(sub_name) // '): '
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        local variables
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 type (field_def), pointer, save :: temp_list_p
 integer :: out_unit
-!
 !        Initialize the field manager if needed
-!
 if (.not. module_is_initialized) then
   call initialize
 endif
 out_unit = stdout()
-!
 !        Must supply a field field name
-!
 if (name .eq. ' ') then
   if (verb .gt. verb_level_warn) then
     write (out_unit,*) trim(warn_header), 'Must supply a field name'
@@ -1999,11 +1901,6 @@ logical function  fm_dump_list(name, recursive, unit) result (success)
                                              !! fields will be performed.
   integer, intent(in), optional :: unit !< file to print to
 
-  ! ---- local parameters
-  character(len=12), parameter :: sub_name     = 'fm_dump_list'
-  character(len=64), parameter :: warn_header  = '==>Warning from ' // trim(module_name) //  &
-                                               '(' // trim(sub_name) // '): '
-  ! ---- local variables
   logical                         :: recursive_t
   type (field_def), pointer, save :: temp_list_p
   integer                         :: out_unit
@@ -2074,28 +1971,15 @@ function  fm_get_index(name)                        &
 integer        :: index
 character(len=*), intent(in) :: name !< The name of a field that the user wishes to get an index for
 
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        local parameters
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-character(len=12), parameter :: sub_name     = 'fm_get_index'
-character(len=64), parameter :: warn_header  = '==>Warning from ' // trim(module_name) //  &
-                                               '(' // trim(sub_name) // '): '
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        local variables
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 type (field_def), pointer, save :: temp_field_p
 integer                         :: out_unit
 
 out_unit = stdout()
-!
 !        Initialize the field manager if needed
-!
 if (.not. module_is_initialized) then
   call initialize
 endif
-!
 !        Must supply a field field name
-!
 if (name .eq. ' ') then
   if (verb .gt. verb_level_warn) then
     write (out_unit,*) trim(warn_header), 'Must supply a field name'
@@ -2172,28 +2056,15 @@ function  fm_get_length(name)                        &
 integer                      :: length
 character(len=*), intent(in) :: name !< The name of a list or entry that the user wishes to get the length of
 
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        local parameters
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-character(len=13), parameter :: sub_name     = 'fm_get_length'
-character(len=64), parameter :: warn_header  = '==>Warning from ' // trim(module_name) //  &
-                                               '(' // trim(sub_name) // '): '
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        local variables
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 type (field_def), pointer, save :: temp_field_p
 integer                         :: out_unit
 
 out_unit = stdout()
-!
 !        Initialize the field manager if needed
-!
 if (.not. module_is_initialized) then
   call initialize
 endif
-!
 !        Must supply a field name
-!
 if (name .eq. ' ') then
   if (verb .gt. verb_level_warn) then
     write (out_unit,*) trim(warn_header), 'Must supply a field name'
@@ -2234,28 +2105,15 @@ function  fm_get_type(name)                        &
 character(len=8)             :: name_field_type
 character(len=*), intent(in) :: name !< The name of a field that the user wishes to find the type of
 
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        local parameters
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-character(len=11), parameter :: sub_name     = 'fm_get_type'
-character(len=64), parameter :: warn_header  = '==>Warning from ' // trim(module_name) //  &
-                                               '(' // trim(sub_name) // '): '
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        local variables
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 type (field_def), pointer, save :: temp_field_p
 integer                         :: out_unit
 
 out_unit = stdout()
-!
 !        Initialize the field manager if needed
-!
 if (.not. module_is_initialized) then
   call initialize
 endif
-!
 !        Must supply a field name
-!
 if (name .eq. ' ') then
   if (verb .gt. verb_level_warn) then
     write (out_unit,*) trim(warn_header), 'Must supply a field name'
@@ -2289,29 +2147,16 @@ character(len=*), intent(in)           :: name !< The name of a field that the u
 integer,          intent(out)          :: value !< The value associated with the named field.
 integer,          intent(in), optional :: index !< An optional index to retrieve a single value from an array.
 
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        local parameters
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-character(len=20), parameter :: sub_name     = 'fm_get_value_integer'
-character(len=64), parameter :: warn_header  = '==>Warning from ' // trim(module_name) //  &
-                                               '(' // trim(sub_name) // '): '
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        local variables
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 integer                         :: index_t
 type (field_def), pointer, save :: temp_field_p
 integer                         :: out_unit
 
 out_unit = stdout()
-!
 !        Initialize the field manager if needed
-!
 if (.not. module_is_initialized) then
   call initialize
 endif
-!
 !        Must supply a field field name
-!
 if (name .eq. ' ') then
   if (verb .gt. verb_level_warn) then
     write (out_unit,*) trim(warn_header), 'Must supply a field name'
@@ -2385,29 +2230,16 @@ character(len=*), intent(in)           :: name !< The name of a field that the u
 logical,          intent(out)          :: value !< The value associated with the named field
 integer,          intent(in), optional :: index !< An optional index to retrieve a single value from an array.
 
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        local parameters
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-character(len=20), parameter :: sub_name     = 'fm_get_value_logical'
-character(len=64), parameter :: warn_header  = '==>Warning from ' // trim(module_name) //  &
-                                               '(' // trim(sub_name) // '): '
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        local variables
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 integer                         :: index_t
 type (field_def), pointer, save :: temp_field_p
 integer                         :: out_unit
 
 out_unit = stdout()
-!
 !        Initialize the field manager if needed
-!
 if (.not. module_is_initialized) then
   call initialize
 endif
-!
 !        Must supply a field field name
-!
 if (name .eq. ' ') then
   if (verb .gt. verb_level_warn) then
     write (out_unit,*) trim(warn_header), 'Must supply a field name'
@@ -2484,29 +2316,16 @@ character(len=*), intent(in)           :: name !< The name of a field that the u
 real,             intent(out)          :: value !< The value associated with the named field
 integer,          intent(in), optional :: index !< An optional index to retrieve a single value from an array.
 
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        local parameters
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-character(len=17), parameter :: sub_name     = 'fm_get_value_real'
-character(len=64), parameter :: warn_header  = '==>Warning from ' // trim(module_name) //  &
-                                               '(' // trim(sub_name) // '): '
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        local variables
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 integer                         :: index_t
 type (field_def), pointer, save :: temp_field_p
 integer                         :: out_unit
 
 out_unit = stdout()
-!
 !        Initialize the field manager if needed
-!
 if (.not. module_is_initialized) then
   call initialize
 endif
-!
 !        Must supply a field field name
-!
 if (name .eq. ' ') then
   if (verb .gt. verb_level_warn) then
     write (out_unit,*) trim(warn_header), 'Must supply a field name'
@@ -2581,29 +2400,16 @@ character(len=*), intent(in)           :: name !< The name of a field that the u
 character(len=*), intent(out)          :: value !< The value associated with the named field
 integer,          intent(in), optional :: index !< An optional index to retrieve a single value from an array.
 
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        local parameters
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-character(len=19), parameter :: sub_name     = 'fm_get_value_string'
-character(len=64), parameter :: warn_header  = '==>Warning from ' // trim(module_name) //  &
-                                               '(' // trim(sub_name) // '): '
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        local variables
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 integer                         :: index_t
 type (field_def), pointer, save :: temp_field_p
 integer                         :: out_unit
 
 out_unit = stdout()
-!
 !        Initialize the field manager if needed
-!
 if (.not. module_is_initialized) then
   call initialize
 endif
-!
 !        Must supply a field field name
-!
 if (name .eq. ' ') then
   if (verb .gt. verb_level_warn) then
     write (out_unit,*) trim(warn_header), 'Must supply a field name'
@@ -2684,17 +2490,6 @@ type (fm_array_list_def), pointer  :: return_p
 integer,          intent(in)       :: dim !< The dimension of lists
 character(len=*), intent(in)       :: lists(dim) !< A list of fields to find common fields of
 
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        local parameters
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-character(len=15), parameter :: sub_name     = 'fm_intersection'
-character(len=64), parameter :: error_header = '==>Error from ' // trim(module_name)   //  &
-                                               '(' // trim(sub_name) // '): '
-character(len=64), parameter :: warn_header  = '==>Warning from ' // trim(module_name) //  &
-                                               '(' // trim(sub_name) // '): '
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        local variables
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 character (len=fm_field_name_len)  :: name
 character (len=fm_field_name_len),                          &
         dimension(:), allocatable  :: names
@@ -2953,15 +2748,6 @@ character(len=*), intent(in)           :: name !< Name of a list that user wishe
 logical,          intent(in), optional :: create !< If present and true, create the list if it does not exist
 logical,          intent(in), optional :: keep !< If present and true, make this list the current list
 
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        local parameters
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-character(len=11), parameter :: sub_name     = 'fm_new_list'
-character(len=64), parameter :: warn_header  = '==>Warning from ' // trim(module_name) //  &
-                                               '(' // trim(sub_name) // '): '
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        local variables
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 logical                          :: create_t
 logical                          :: keep_t
 character(len=fm_path_name_len)  :: path
@@ -3043,15 +2829,6 @@ integer,          intent(in), optional :: index !< The index to an array of valu
 logical,          intent(in), optional :: append !< If present and .true., then append the value to
       !! an array of the present values. If present and .true., then index cannot be greater than 0.
 
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        local parameters
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-character(len=20), parameter :: sub_name     = 'fm_new_value_integer'
-character(len=64), parameter :: warn_header  = '==>Warning from ' // trim(module_name) //  &
-                                               '(' // trim(sub_name) // '): '
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        local variables
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 logical                          :: create_t
 integer                          :: i
 integer                          :: index_t
@@ -3232,15 +3009,6 @@ integer,          intent(in), optional :: index !< The index to an array of valu
 logical,          intent(in), optional :: append !< If present and .true., then append the value to
       !! an array of the present values. If present and .true., then index cannot be greater than 0.
 
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        local parameters
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-character(len=20), parameter :: sub_name     = 'fm_new_value_logical'
-character(len=64), parameter :: warn_header  = '==>Warning from ' // trim(module_name) //  &
-                                               '(' // trim(sub_name) // '): '
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        local variables
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 character(len=fm_path_name_len)      :: path
 character(len=fm_field_name_len)     :: base
 integer                              :: i
@@ -3414,16 +3182,6 @@ integer,          intent(in), optional :: index !< The index to an array of valu
                                                 !! wishes to apply a new value.
 logical,          intent(in), optional :: append !< If present and .true., then append the value to
       !! an array of the present values. If present and .true., then index cannot be greater than 0.
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        local parameters
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-
-character(len=17), parameter :: sub_name     = 'fm_new_value_real'
-character(len=64), parameter :: warn_header  = '==>Warning from ' // trim(module_name) //  &
-                                               '(' // trim(sub_name) // '): '
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        local variables
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
 logical                          :: create_t
 integer                          :: i
@@ -3604,16 +3362,6 @@ logical,          intent(in), optional :: create !< If present and .true., then 
 integer,          intent(in), optional :: index !< The index to an array of values that the user
                                                 !! wishes to apply a new value.
 logical,          intent(in), optional :: append !< If present and .true., then append the value to
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        local parameters
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-
-character(len=19), parameter :: sub_name     = 'fm_new_value_string'
-character(len=64), parameter :: warn_header  = '==>Warning from ' // trim(module_name) //  &
-                                               '(' // trim(sub_name) // '): '
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        local variables
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
 character(len=fm_string_len), dimension(:), pointer :: temp_s_value
 character(len=fm_path_name_len)                     :: path
@@ -3992,15 +3740,7 @@ logical                       :: success
 character(len=*), intent(in)  :: name !< name of a list that the user wishes to change to
 character(len=*), intent(out) :: method_name !< name of a parameter associated with the named field
 character(len=*), intent(out) :: method_control !< value of parameters associated with the named field
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        local parameters
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-character(len=15), parameter :: sub_name     = 'fm_query_method'
-character(len=64), parameter :: warn_header  = '==>Warning from ' // trim(module_name) //  &
-                                               '(' // trim(sub_name) // '): '
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        local variables
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+
 character(len=fm_path_name_len) :: path
 character(len=fm_path_name_len) :: base
 character(len=fm_path_name_len) :: name_loc
@@ -4070,11 +3810,6 @@ character(len=*), intent(in)  :: name !<  name of a list that the user wishes to
 character(len=*), intent(out) :: method_name !< name of a parameter associated with the named field
 character(len=*), intent(out) :: method_control !< value of parameters associated with the named field
 
-! local parameters
-character(len=12), parameter :: sub_name     = 'query_method'
-character(len=64), parameter :: warn_header  = '==>Warning from ' // trim(module_name) //  &
-                                               '(' // trim(sub_name) // '): '
-! local variables
 integer                         :: i
 character(len=64)               :: scratch
 type (field_def), pointer :: this_field_p
@@ -4177,17 +3912,6 @@ character(len=*), intent(in)           :: suffix !< suffix that will be added to
                                                  !! field is copied
 logical,          intent(in), optional :: create !< flag to create new list if applicable
 
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        local parameters
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-character(len=12), parameter :: sub_name     = 'fm_copy_list'
-character(len=64), parameter :: error_header = '==>Error from ' // trim(module_name)   //  &
-                                               '(' // trim(sub_name) // '): '
-character(len=64), parameter :: warn_header  = '==>Warning from ' // trim(module_name) //  &
-                                               '(' // trim(sub_name) // '): '
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        local variables
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 character(len=fm_string_len), dimension(MAX_FIELD_METHODS) :: control
 character(len=fm_string_len), dimension(MAX_FIELD_METHODS) :: method
 character(len=fm_string_len)                               :: head
@@ -4296,15 +4020,6 @@ character(len=*), intent(in)                :: list_name !< The name of a list t
 character(len=*), intent(out), dimension(:) :: methods !< An array of the methods associated with list_name
 character(len=*), intent(out), dimension(:) :: control !< An array of the parameters associated with methods
 
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        local parameters
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-character(len=15), parameter :: sub_name     = 'fm_find_methods'
-character(len=64), parameter :: warn_header  = '==>Warning from ' // trim(module_name) //  &
-                                               '(' // trim(sub_name) // '): '
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        local variables
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 integer                         :: num_meth
 logical                         :: recursive_t
 type (field_def), pointer, save :: temp_list_p
@@ -4355,15 +4070,7 @@ logical,          intent(in)                :: recursive !< If true, search recu
 integer,          intent(inout)             :: num_meth !< The number of methods found
 character(len=*), intent(out), dimension(:) :: method !< The methods associated with the field pointed to by list_p
 character(len=*), intent(out), dimension(:) :: control !< The control parameters for the methods found
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        local parameters
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-character(len=11), parameter :: sub_name     = 'find_method'
-character(len=64), parameter :: warn_header  = '==>Warning from ' // trim(module_name) //  &
-                                               '(' // trim(sub_name) // '): '
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        local variables
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+
 character(len=fm_path_name_len) :: scratch
 integer                         :: i
 integer                         :: n
@@ -4472,24 +4179,10 @@ end function find_method
 subroutine  fm_set_verbosity(verbosity)
 integer, intent(in), optional :: verbosity !< The level of verbosity required by user
 
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!       local parameters
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-
-character(len=16), parameter :: sub_name     = 'fm_set_verbosity'
-character(len=64), parameter :: note_header  = '==>Note from ' // trim(module_name)    //  &
-                                               '(' // trim(sub_name) // '): '
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        local variables
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 integer                         :: out_unit
 
 out_unit = stdout()
-
-!
 !       Check whether an argument has been given
-!
-
 if (present(verbosity)) then
 
   if (verbosity .le. 0) then
