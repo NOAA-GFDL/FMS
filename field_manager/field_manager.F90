@@ -236,8 +236,6 @@ public :: fm_query_method      !< (name, method_name, method_control) return suc
 public :: fm_find_methods      !< (list, methods, control) return success and name and
                                !! control strings.
 public :: fm_copy_list         !< (list, suffix, [create]) return index
-public :: fm_set_verbosity     !< ([verbosity])
-
 private :: create_field        ! (list_p, name) return field pointer
 private :: dump_list           ! (list_p, recursive, depth) return success
 private :: find_base           ! (field, path, base)
@@ -515,11 +513,6 @@ character(len=50)                :: set_nonexp = "ABCDFGHIJKLMNOPQRSTUVWXYZabcdf
 ! the string setnum then the string may be a number.
 character(len=13)                :: setnum     = "0123456789+-."
 integer                          :: num_fields         = 0
-integer                          :: verb               = 0
-integer                          :: verb_level_warn    = 0
-integer                          :: verb_level_note    = 0
-integer                          :: default_verbosity  = 0
-integer                          :: max_verbosity      = 1
 type (field_def), pointer        :: loop_list_p        => NULL()
 type (field_def), pointer        :: current_list_p     => NULL()
 type (field_def), pointer        :: root_p             => NULL()
@@ -593,13 +586,7 @@ else
    tbl_name = trim(table_name)
 endif
 if (.not. file_exists(trim(tbl_name))) then
-  if (mpp_pe() == mpp_root_pe()) then
-    if (verb .gt. verb_level_warn) then
-      call mpp_error(NOTE, trim(warn_header)//                       &
-         'No field table ('//trim(tbl_name)//') available, so no fields are being registered.')
-    endif
-  endif
-if(present(nfields)) nfields = 0
+  if(present(nfields)) nfields = 0
   return
 endif
 
@@ -656,11 +643,6 @@ do while (.TRUE.)
 
    list_name = list_sep//trim(text_names%mod_name)//list_sep//trim(text_names%fld_type)//&
                list_sep//trim(text_names%fld_name)
-   if (mpp_pe() == mpp_root_pe() ) then
-     if (verb .gt. verb_level_note) then
-       call mpp_error(NOTE, trim(note_header)//'Creating list name = '//trim(list_name))
-     endif
-   endif
 
    index_list_name = fm_new_list(list_name, create = .true.)
    if ( index_list_name == NO_FIELD ) &
@@ -864,13 +846,6 @@ do while (.TRUE.)
          m = m + 1
       enddo
    else
-
-      if (mpp_pe() == 0) then
-         if (verb .gt. verb_level_warn) then
-           call mpp_error(WARNING, trim(warn_header)//                              &
-                'Field with identical name and model name duplicate found, skipping')
-          endif
-      endif
       flag_method = .TRUE.
       do while (flag_method)
          read(iunit,'(A)',end=99,err=99) record
@@ -888,8 +863,6 @@ if(io_status/=0) call mpp_error(FATAL, 'field_manager_mod: Error in closing file
 
 
 if(present(nfields)) nfields = num_fields
-if (verb .gt. verb_level_warn) &
-  fm_success= fm_dump_list("/", .true.)
 
 default_method%method_type = 'none'
 default_method%method_name = 'none'
@@ -1044,15 +1017,7 @@ do i = 1, num_elem
 
 ! If there is a letter in the name it may only be e or E
 
-      if ( scan(val_name, set_nonexp ) > 0 ) then
-        if (verb .gt. verb_level_warn) then
-          call mpp_error(WARNING, trim(warn_header)//                                  &
-               'First character of value is numerical but the value does not appear to be numerical.')
-          call mpp_error(WARNING, 'Name = '// trim(list_name)// list_sep//                &
-               trim(method_name)// ' Value = '// trim(val_name))
-        endif
-
-      else
+      if ( scan(val_name, set_nonexp ) .le. 0 ) then
 ! It is real if there is a . in the name or the value appears exponential
         if ( scan(val_name, '.') > 0 .or. scan(val_name, 'e') > 0 .or. scan(val_name, 'E') > 0) then
           read(val_name, *) val_real
@@ -1112,13 +1077,6 @@ do i = 1, num_elem
                             ' for '//trim(list_name))
 
   end select
-
-  if (mpp_pe() == mpp_root_pe() ) then
-    if (verb .gt. verb_level_note) then
-      out_unit = stdout()
-      write (out_unit,*) trim(note_header), 'Creating new value = ', trim(method_name), ' ', trim(val_name)
-    endif
-  endif
 
 enddo
 
@@ -1349,24 +1307,11 @@ character(len=*), intent(in) :: name !< The name of the field that is to be crea
 integer                      :: error, out_unit
 !        Check for fatal errors which should never arise
 out_unit = stdout()
-if (.not. associated(parent_p)) then
-
-  if (verb .gt. verb_level_warn) then
-    write (out_unit,*) trim(warn_header), 'Unnassociated pointer'  &
-                   , ' for ', trim(name)
-  endif
+if (.not. associated(parent_p) .or. name .eq. ' ') then
   nullify(list_p)
   return
 endif
 
-if (name .eq. ' ') then
-  if (verb .gt. verb_level_warn) then
-    write (out_unit,*) trim(warn_header), 'Empty name for '        &
-                   , trim(name)
-  endif
-  nullify(list_p)
-  return
-endif
 !        Allocate space for the new list
 allocate(list_p, stat = error)
 if (error .ne. 0) then
@@ -1426,9 +1371,6 @@ logical recursive function dump_list(list_p, recursive, depth, out_unit) result(
                                      !! the field being printed
   integer, intent(in)       :: out_unit !< unit number to print to
 
-  ! ---- local constants
-  character(len=64), parameter :: warn_header  = '==>Warning from ' // trim(module_name) // '(dump_list): '
-  ! ---- local variables
   integer                             :: depthp1
   integer                             :: j
   character(len=fm_field_name_len)    :: num, scratch
@@ -1440,10 +1382,8 @@ logical recursive function dump_list(list_p, recursive, depth, out_unit) result(
   ! Check for a valid list
   success = .false.
   if (.not. associated(list_p)) then
-    if (verb > verb_level_warn) write (out_unit,*) trim(warn_header), 'Invalid list pointer'
     return
   elseif (list_p%field_type .ne. list_type) then
-    if (verb > verb_level_warn) write (out_unit,*) trim(warn_header), trim(list_p%name), ' is not a list'
     return
   endif
 
@@ -1536,9 +1476,6 @@ logical recursive function dump_list(list_p, recursive, depth, out_unit) result(
          endif
 
      case default
-         if (verb .gt. verb_level_warn) then
-            write (out_unit,*) trim(warn_header), 'Undefined type for ', trim(this_field_p%name)
-         endif
          success = .false.
          exit
 
@@ -1760,21 +1697,12 @@ else
 !        Create the list if so requested
         this_list_p => make_list(working_path_p, this_list)
         if (.not. associated(this_list_p)) then
-          if (verb .gt. verb_level_warn) then
-            write (out_unit,*) trim(warn_header), 'List "',       &
-                 trim(this_list), '" could not be created in ',   &
-                 trim(path)
-          endif
           nullify(list_p)
           return
         endif
       else
 !        Otherwise, return an error
 
-        if (verb .gt. verb_level_note) then
-          write (out_unit,*) trim(note_header), 'List "',         &
-               trim(this_list), '" does not exist in ', trim(path)
-        endif
         nullify(list_p)
         return
       endif
@@ -1785,10 +1713,6 @@ else
       working_path_p => this_list_p
       working_path = rest
     else
-      if (verb .gt. verb_level_warn) then
-        write (out_unit,*) trim(warn_header), '"',                &
-             trim(this_list), '" is not a list in ', trim(path)
-      endif
       nullify(list_p)
       return
     endif
@@ -1851,9 +1775,6 @@ endif
 out_unit = stdout()
 !        Must supply a field field name
 if (name .eq. ' ') then
-  if (verb .gt. verb_level_warn) then
-    write (out_unit,*) trim(warn_header), 'Must supply a field name'
-  endif
   success = .false.
   return
 endif
@@ -1880,10 +1801,6 @@ if (associated(temp_list_p)) then
   success = .true.
 else
 !        Couldn't find the list
-  if (verb .gt. verb_level_warn) then
-    write (out_unit,*) trim(warn_header),                      &
-         'Could not find list ', trim(name)
-  endif
   success = .false.
 endif
 
@@ -1925,10 +1842,6 @@ logical function  fm_dump_list(name, recursive, unit) result (success)
     if (associated(temp_list_p)) then
        success = .true.
     else
-       ! Error following the path
-       if (verb .gt. verb_level_warn) then
-          write (out_unit,*) trim(warn_header), 'Could not follow path for ', trim(name)
-       endif
        success = .false.
     endif
   endif
@@ -1981,9 +1894,6 @@ if (.not. module_is_initialized) then
 endif
 !        Must supply a field field name
 if (name .eq. ' ') then
-  if (verb .gt. verb_level_warn) then
-    write (out_unit,*) trim(warn_header), 'Must supply a field name'
-  endif
   index = NO_FIELD
   return
 endif
@@ -1993,10 +1903,6 @@ if (associated(temp_field_p)) then
 !        Set the index
   index = temp_field_p%index
 else
-!        Error following the path
-  if (verb .gt. verb_level_warn) then
-    write (out_unit,*) trim(warn_header), 'Could not follow path for ', trim(name)
-  endif
   index = NO_FIELD
 endif
 
@@ -2066,9 +1972,6 @@ if (.not. module_is_initialized) then
 endif
 !        Must supply a field name
 if (name .eq. ' ') then
-  if (verb .gt. verb_level_warn) then
-    write (out_unit,*) trim(warn_header), 'Must supply a field name'
-  endif
   length = 0
   return
 endif
@@ -2083,11 +1986,6 @@ if (associated(temp_field_p)) then
     length = temp_field_p%max_index
   endif
 else
-!        Error following the path
-  if (verb .gt. verb_level_warn) then
-    write (out_unit,*) trim(warn_header),                            &
-         'Could not follow path for ', trim(name)
-  endif
   length = 0
 endif
 
@@ -2115,9 +2013,6 @@ if (.not. module_is_initialized) then
 endif
 !        Must supply a field name
 if (name .eq. ' ') then
-  if (verb .gt. verb_level_warn) then
-    write (out_unit,*) trim(warn_header), 'Must supply a field name'
-  endif
   name_field_type = ' '
   return
 endif
@@ -2128,11 +2023,6 @@ if (associated(temp_field_p)) then
 !        Set the field type
   name_field_type = field_type_name(temp_field_p%field_type)
 else
-!        Error following the path
-  if (verb .gt. verb_level_warn) then
-    write (out_unit,*) trim(warn_header),                            &
-         'Could not follow path for ', trim(name)
-  endif
   name_field_type = ' '
 endif
 
@@ -2158,9 +2048,6 @@ if (.not. module_is_initialized) then
 endif
 !        Must supply a field field name
 if (name .eq. ' ') then
-  if (verb .gt. verb_level_warn) then
-    write (out_unit,*) trim(warn_header), 'Must supply a field name'
-  endif
   value = 0
   success = .false.
   return
@@ -2177,22 +2064,8 @@ temp_field_p => get_field(name, current_list_p)
 if (associated(temp_field_p)) then
 !        check that the field is the correct type
   if (temp_field_p%field_type .eq. integer_type) then
-    if (index_t .lt. 1) then
-!        Index is not positive
-      if (verb .gt. verb_level_warn) then
-        write (out_unit,*) trim(warn_header),                   &
-             'Optional index for ', trim(name),                 &
-             ' not positive: ', index_t
-      endif
-      value = 0
-      success = .false.
-    elseif (index_t .gt. temp_field_p%max_index) then
-!        Index is too large
-      if (verb .gt. verb_level_warn) then
-        write (out_unit,*) trim(warn_header),                        &
-             'Optional index for ', trim(name),                      &
-             ' too large: ', index_t, ' > ', temp_field_p%max_index
-      endif
+    if (index_t .lt. 1 .or. index_t .gt. temp_field_p%max_index) then
+!        Index is not positive or index too large
       value = 0
       success = .false.
     else
@@ -2202,19 +2075,10 @@ if (associated(temp_field_p)) then
     endif
   else
 !        Field not corrcet type
-    if (verb .gt. verb_level_warn) then
-      write (out_unit,*) trim(warn_header),                          &
-           'Field not type integer ', trim(name)
-    endif
     value = 0
     success = .false.
   endif
 else
-!        Error following the path
-  if (verb .gt. verb_level_warn) then
-    write (out_unit,*) trim(warn_header),                            &
-         'Could not follow path for ', trim(name)
-  endif
   value = 0
   success = .false.
 endif
@@ -2241,9 +2105,6 @@ if (.not. module_is_initialized) then
 endif
 !        Must supply a field field name
 if (name .eq. ' ') then
-  if (verb .gt. verb_level_warn) then
-    write (out_unit,*) trim(warn_header), 'Must supply a field name'
-  endif
   value = .false.
   success = .false.
   return
@@ -2261,26 +2122,10 @@ if (associated(temp_field_p)) then
 !        check that the field is the correct type
   if (temp_field_p%field_type .eq. logical_type) then
 
-    if (index_t .lt. 1) then
-!        Index is not positive
-      if (verb .gt. verb_level_warn) then
-        write (out_unit,*) trim(warn_header),                   &
-             'Optional index for ', trim(name),                 &
-             ' not positive: ', index_t
-      endif
+    if (index_t .lt. 1 .or. index_t .gt. temp_field_p%max_index) then
+!        Index is not positive or too large
       value = .false.
       success = .false.
-
-    elseif (index_t .gt. temp_field_p%max_index) then
-!        Index is too large
-      if (verb .gt. verb_level_warn) then
-        write (out_unit,*) trim(warn_header),                        &
-             'Optional index for ', trim(name),                      &
-             ' too large: ', index_t, ' > ', temp_field_p%max_index
-      endif
-      value = .false.
-      success = .false.
-
     else
 !        extract the value
       value = temp_field_p%l_value(index_t)
@@ -2288,19 +2133,10 @@ if (associated(temp_field_p)) then
     endif
   else
 !        Field not correct type
-    if (verb .gt. verb_level_warn) then
-      write (out_unit,*) trim(warn_header),                          &
-           'Field not type logical ', trim(name)
-    endif
     value = .false.
     success = .false.
   endif
 else
-!        Error following the path
-  if (verb .gt. verb_level_warn) then
-    write (out_unit,*) trim(warn_header),                            &
-         'Could not follow path for ', trim(name)
-  endif
   value = .false.
   success = .false.
 endif
@@ -2327,9 +2163,6 @@ if (.not. module_is_initialized) then
 endif
 !        Must supply a field field name
 if (name .eq. ' ') then
-  if (verb .gt. verb_level_warn) then
-    write (out_unit,*) trim(warn_header), 'Must supply a field name'
-  endif
   value = 0.0
   success = .false.
   return
@@ -2346,23 +2179,8 @@ temp_field_p => get_field(name, current_list_p)
 if (associated(temp_field_p)) then
 !        check that the field is the correct type
   if (temp_field_p%field_type .eq. real_type) then
-    if (index_t .lt. 1) then
-!        Index is not positive
-      if (verb .gt. verb_level_warn) then
-        write (out_unit,*) trim(warn_header),                        &
-             'Optional index for ', trim(name),                      &
-             ' not positive: ', index_t
-      endif
-      value = 0.0
-      success = .false.
-
-    elseif (index_t .gt. temp_field_p%max_index) then
-!        Index is too large
-      if (verb .gt. verb_level_warn) then
-        write (out_unit,*) trim(warn_header),                        &
-             'Optional index for ', trim(name),                      &
-             ' too large: ', index_t, ' > ', temp_field_p%max_index
-      endif
+    if (index_t .lt. 1 .or. index_t .gt. temp_field_p%max_index) then
+!        Index is not positive or is too large
       value = 0.0
       success = .false.
     else
@@ -2371,20 +2189,10 @@ if (associated(temp_field_p)) then
       success = .true.
     endif
   else
-!        Field not correct type
-    if (verb .gt. verb_level_warn) then
-      write (out_unit,*) trim(warn_header),                          &
-           'Field not type real ', trim(name)
-    endif
     value = 0.0
     success = .false.
   endif
 else
-!        Error following the path
-  if (verb .gt. verb_level_warn) then
-    write (out_unit,*) trim(warn_header),                            &
-         'Could not follow path for ', trim(name)
-  endif
   value = 0.0
   success = .false.
 endif
@@ -2411,9 +2219,6 @@ if (.not. module_is_initialized) then
 endif
 !        Must supply a field field name
 if (name .eq. ' ') then
-  if (verb .gt. verb_level_warn) then
-    write (out_unit,*) trim(warn_header), 'Must supply a field name'
-  endif
   value = ''
   success = .false.
   return
@@ -2430,23 +2235,8 @@ temp_field_p => get_field(name, current_list_p)
 if (associated(temp_field_p)) then
 !        check that the field is the correct type
   if (temp_field_p%field_type .eq. string_type) then
-    if (index_t .lt. 1) then
-!        Index is not positive
-      if (verb .gt. verb_level_warn) then
-        write (out_unit,*) trim(warn_header),                        &
-             'Optional index for ', trim(name),                      &
-             ' not positive: ', index_t
-      endif
-      value = ''
-      success = .false.
-
-    elseif (index_t .gt. temp_field_p%max_index) then
-!        Index is too large
-      if (verb .gt. verb_level_warn) then
-        write (out_unit,*) trim(warn_header),                        &
-             'Optional index for ', trim(name),                      &
-             ' too large: ', index_t, ' > ', temp_field_p%max_index
-      endif
+    if (index_t .lt. 1 or. index_t .gt. temp_field_p%max_index) then
+!        Index is not positive or is too large
       value = ''
       success = .false.
     else
@@ -2456,19 +2246,10 @@ if (associated(temp_field_p)) then
     endif
   else
 !        Field not correct type
-    if (verb .gt. verb_level_warn) then
-      write (out_unit,*) trim(warn_header),                          &
-           'Field not type string ', trim(name)
-    endif
     value = ''
     success = .false.
   endif
 else
-!        Error following the path
-  if (verb .gt. verb_level_warn) then
-    write (out_unit,*) trim(warn_header),                            &
-         'Could not follow path for ', trim(name)
-  endif
   value = ''
   success = .false.
 endif
@@ -2512,9 +2293,6 @@ if (.not. module_is_initialized) then
 endif
 !        return error if dimension if bad
 if (dim .le. 0) then
-  if (verb .gt. verb_level_warn) then
-    write (out_unit,*) trim(warn_header), 'Non-positive dimension: ', dim
-  endif
   nullify(return_p)
   return
 endif
@@ -2525,20 +2303,11 @@ shortest = 0
 do n = 1, dim
   temp_p => find_list(lists(n), current_list_p, .false.)
   if (associated(temp_p)) then
-    if (count .eq. -1) then
+    if (count .eq. -1 .or. count .gt. temp_p%length) then
       count = temp_p%length
       shortest = n
-    else
-      if (count .gt. temp_p%length) then
-        count = temp_p%length
-        shortest = n
-      endif
     endif
   else
-    if (verb .gt. verb_level_warn) then
-      write (out_unit,*) trim(warn_header),                          &
-                         'List does not exist: "', trim(lists(n)), '"'
-    endif
     nullify(return_p)
     return
   endif
@@ -2656,11 +2425,6 @@ else
     loop_list_p => loop_list_p%first_field
     success = set_list_stuff()
   else
-!        Error following the path
-    if (verb .gt. verb_level_warn) then
-      write (out_unit,*) trim(warn_header),                        &
-           'Could not follow path for ', trim(list)
-    endif
     success = .false.
   endif
 endif
@@ -2762,9 +2526,6 @@ if (.not. module_is_initialized) then
 endif
 !        Must supply a field list name
 if (name .eq. ' ') then
-  if (verb .gt. verb_level_warn) then
-    write (out_unit,*) trim(warn_header), 'Must supply a list name'
-  endif
   index = NO_FIELD
   return
 endif
@@ -2795,19 +2556,9 @@ if (associated(temp_list_p)) then
     endif
     index = temp_list_p%index
   else
-!        Error in making the list
-    if (verb .gt. verb_level_warn) then
-      write (out_unit,*) trim(warn_header),                        &
-           'Could not create list ', trim(name)
-    endif
     index = NO_FIELD
   endif
 else
-!        Error following the path
-  if (verb .gt. verb_level_warn) then
-    write (out_unit,*) trim(warn_header),                  &
-         'Could not follow path for ', trim(name)
-  endif
   index = NO_FIELD
 endif
 
@@ -2846,9 +2597,6 @@ if (.not. module_is_initialized) then
 endif
 !        Must supply a field name
 if (name .eq. ' ') then
-  if (verb .gt. verb_level_warn) then
-    write (out_unit,*) trim(warn_header), 'Must supply a field name'
-  endif
   field_index = NO_FIELD
   return
 endif
@@ -2861,10 +2609,6 @@ endif
 !        Check that append is not true and index non-positive
 if (present(index) .and. present(append)) then
   if (append .and. index .gt. 0) then
-    if (verb .gt. verb_level_warn) then
-      write (out_unit,*) trim(warn_header),                          &
-           'Index and Append both set for ', trim(name)
-    endif
     field_index = NO_FIELD
     return
   endif
@@ -2874,11 +2618,6 @@ if (present(index)) then
   index_t = index
   if (index_t .lt. 0) then
 !        Index is negative
-    if (verb .gt. verb_level_warn) then
-      write (out_unit,*) trim(warn_header),                     &
-           'Optional index for ', trim(name),                   &
-           ' negative: ', index_t
-    endif
     field_index = NO_FIELD
     return
   endif
@@ -2906,14 +2645,6 @@ if (associated(temp_list_p)) then
       !  slm: why would we reset index? Is it not an error to have a "list" defined
       !  with different types in more than one place?
       temp_field_p%max_index = 0
-      if (temp_field_p%field_type /= null_type ) then
-        if (verb .gt. verb_level_warn) then
-          write (out_unit,*) trim(warn_header),                   &
-               'Changing type of ', trim(name), ' from ',         &
-               trim(field_type_name(temp_field_p%field_type)),    &
-               ' to ', trim(field_type_name(integer_type))
-        endif
-      endif
     endif
 !        Assign the type
     temp_field_p%field_type = integer_type
@@ -2926,21 +2657,12 @@ if (associated(temp_list_p)) then
 
     if (index_t .gt. temp_field_p%max_index + 1) then
 !        Index too large
-      if (verb .gt. verb_level_warn) then
-        write (out_unit,*) trim(warn_header),                   &
-             'Index too large for ', trim(name), ': ', index_t
-      endif
       field_index = NO_FIELD
       return
 
     elseif (index_t .eq. 0 .and.                                &
             temp_field_p%max_index .gt. 0) then
 !        Can't set non-null field to null
-      if (verb .gt. verb_level_warn) then
-        write (out_unit,*) trim(warn_header),                   &
-             'Trying to nullify a non-null field: ',            &
-             trim(name)
-      endif
       field_index = NO_FIELD
       return
 
@@ -2973,21 +2695,9 @@ if (associated(temp_list_p)) then
     field_index = temp_field_p%index
 
   else
-!        Error in making the field
-    if (verb .gt. verb_level_warn) then
-      write (out_unit,*) trim(warn_header),                     &
-           'Could not create integer value field ',             &
-           trim(name)
-    endif
     field_index = NO_FIELD
   endif
 else
-!        Error following the path
-  if (verb .gt. verb_level_warn) then
-    write (out_unit,*) trim(warn_header),                       &
-         'Could not follow path for ',                          &
-         trim(name)
-  endif
   field_index = NO_FIELD
 endif
 
@@ -3026,9 +2736,6 @@ if (.not. module_is_initialized) then
 endif
 !        Must supply a field name
 if (name .eq. ' ') then
-  if (verb .gt. verb_level_warn) then
-    write (out_unit,*) trim(warn_header), 'Must supply a field name'
-  endif
   field_index = NO_FIELD
   return
 endif
@@ -3041,10 +2748,6 @@ endif
 !        Check that append is not true and index greater than 0
 if (present(index) .and. present(append)) then
   if (append .and. index .gt. 0) then
-    if (verb .gt. verb_level_warn) then
-      write (out_unit,*) trim(warn_header),                          &
-           'Index and Append both set for ', trim(name)
-    endif
     field_index = NO_FIELD
     return
   endif
@@ -3054,11 +2757,6 @@ if (present(index)) then
   index_t = index
   if (index_t .lt. 0) then
 !        Index is negative
-    if (verb .gt. verb_level_warn) then
-      write (out_unit,*) trim(warn_header),                     &
-           'Optional index for ', trim(name),                   &
-           ' negative: ', index_t
-    endif
     field_index = NO_FIELD
     return
   endif
@@ -3080,14 +2778,6 @@ if (associated(temp_list_p)) then
 !        If not then reset max_index to 0
     if (temp_field_p%field_type /= logical_type ) then
         temp_field_p%max_index = 0
-      if (temp_field_p%field_type /= null_type ) then
-        if (verb .gt. verb_level_warn) then
-          write (out_unit,*) trim(warn_header),                   &
-               'Changing type of ', trim(name), ' from ',         &
-               trim(field_type_name(temp_field_p%field_type)),    &
-               ' to ', trim(field_type_name(logical_type))
-        endif
-      endif
     endif
 !        Assign the type
     temp_field_p%field_type = logical_type
@@ -3100,20 +2790,12 @@ if (associated(temp_list_p)) then
 
     if (index_t .gt. temp_field_p%max_index + 1) then
 !        Index too large
-      if (verb .gt. verb_level_warn) then
-        write (out_unit,*) trim(warn_header),                   &
-             'Index too large for ', trim(name), ': ', index_t
-      endif
       field_index = NO_FIELD
       return
 
     elseif (index_t .eq. 0 .and.                                &
             temp_field_p%max_index .gt. 0) then
 !        Can't set non-null field to null
-      if (verb .gt. verb_level_warn) then
-        write (out_unit,*) trim(warn_header),                   &
-             'Trying to nullify a non-null field: ', trim(name)
-      endif
       field_index = NO_FIELD
       return
 
@@ -3147,21 +2829,9 @@ if (associated(temp_list_p)) then
     endif
     field_index = temp_field_p%index
   else
-!        Error in making the field
-    if (verb .gt. verb_level_warn) then
-      write (out_unit,*) trim(warn_header),                     &
-           'Could not create logical value field ',             &
-           trim(name)
-    endif
     field_index = NO_FIELD
   endif
 else
-!        Error following the path
-  if (verb .gt. verb_level_warn) then
-    write (out_unit,*) trim(warn_header),                       &
-         'Could not follow path for ',                          &
-         trim(name)
-  endif
   field_index = NO_FIELD
 endif
 
@@ -3200,9 +2870,6 @@ if (.not. module_is_initialized) then
 endif
 !        Must supply a field name
 if (name .eq. ' ') then
-  if (verb .gt. verb_level_warn) then
-    write (out_unit,*) trim(warn_header), 'Must supply a field name'
-  endif
   field_index = NO_FIELD
   return
 endif
@@ -3215,10 +2882,6 @@ endif
 !        Check that append is not true and index greater than 0
 if (present(index) .and. present(append)) then
   if (append .and. index .gt. 0) then
-    if (verb .gt. verb_level_warn) then
-      write (out_unit,*) trim(warn_header),                          &
-           'Index and Append both set for ', trim(name)
-    endif
     field_index = NO_FIELD
     return
   endif
@@ -3228,11 +2891,6 @@ if (present(index)) then
   index_t = index
   if (index_t .lt. 0) then
 !        Index is negative
-    if (verb .gt. verb_level_warn) then
-      write (out_unit,*) trim(warn_header),                     &
-           'Optional index for ', trim(name),                   &
-           ' negative: ', index_t
-    endif
     field_index = NO_FIELD
     return
   endif
@@ -3267,14 +2925,6 @@ if (associated(temp_list_p)) then
       ! Or, alternatively, if string follows a real value, should not be the entire
       ! array converted to string type?
       temp_field_p%max_index = 0
-      if (temp_field_p%field_type /= null_type ) then
-        if (verb .gt. verb_level_warn) then
-          write (out_unit,*) trim(warn_header),                   &
-               'Changing type of ', trim(name), ' from ',         &
-               trim(field_type_name(temp_field_p%field_type)),    &
-               ' to ', trim(field_type_name(real_type))
-        endif
-      endif
     endif
 !        Assign the type
     temp_field_p%field_type = real_type
@@ -3286,20 +2936,11 @@ if (associated(temp_list_p)) then
     endif
     if (index_t .gt. temp_field_p%max_index + 1) then
 !        Index too large
-      if (verb .gt. verb_level_warn) then
-        write (out_unit,*) trim(warn_header),                   &
-             'Index too large for ', trim(name), ': ', index_t
-      endif
       field_index = NO_FIELD
       return
     elseif (index_t .eq. 0 .and.                                &
             temp_field_p%max_index .gt. 0) then
 !        Can't set non-null field to null
-      if (verb .gt. verb_level_warn) then
-        write (out_unit,*) trim(warn_header),                   &
-             'Trying to nullify a non-null field: ',            &
-             trim(name)
-      endif
       field_index = NO_FIELD
       return
     elseif (.not. associated(temp_field_p%r_value) .and.        &
@@ -3331,18 +2972,10 @@ if (associated(temp_list_p)) then
     field_index = temp_field_p%index
   else
 !        Error in making the field
-    if (verb .gt. verb_level_warn) then
-      write (out_unit,*) trim(warn_header),                        &
-           'Could not create real value field ', trim(name)
-    endif
     field_index = NO_FIELD
   endif
 else
 !        Error following the path
-  if (verb .gt. verb_level_warn) then
-    write (out_unit,*) trim(warn_header),                          &
-         'Could not follow path for ', trim(name)
-  endif
   field_index = NO_FIELD
 endif
 
@@ -3380,9 +3013,6 @@ if (.not. module_is_initialized) then
 endif
 !        Must supply a field name
 if (name .eq. ' ') then
-  if (verb .gt. verb_level_warn) then
-    write (out_unit,*) trim(warn_header), 'Must supply a field name'
-  endif
   field_index = NO_FIELD
   return
 endif
@@ -3395,10 +3025,6 @@ endif
 !        Check that append is not true and index greater than 0
 if (present(index) .and. present(append)) then
   if (append .and. index .gt. 0) then
-    if (verb .gt. verb_level_warn) then
-      write (out_unit,*) trim(warn_header),                     &
-           'Index and Append both set for ', trim(name)
-    endif
     field_index = NO_FIELD
     return
   endif
@@ -3408,11 +3034,6 @@ if (present(index)) then
   index_t = index
   if (index_t .lt. 0) then
 !        Index is negative
-    if (verb .gt. verb_level_warn) then
-      write (out_unit,*) trim(warn_header),                     &
-           'Optional index for ', trim(name),                   &
-           ' negative: ', index_t
-    endif
     field_index = NO_FIELD
     return
   endif
@@ -3434,14 +3055,6 @@ if (associated(temp_list_p)) then
 !        If not then reset max_index to 0
     if (temp_field_p%field_type /= string_type ) then
         temp_field_p%max_index = 0
-      if (temp_field_p%field_type /= null_type ) then
-        if (verb .gt. verb_level_warn) then
-          write (out_unit,*) trim(warn_header),                   &
-               'Changing type of ', trim(name), ' from ',         &
-               trim(field_type_name(temp_field_p%field_type)),    &
-               ' to ', trim(field_type_name(string_type))
-        endif
-      endif
     endif
 !        Assign the type
     temp_field_p%field_type = string_type
@@ -3454,21 +3067,12 @@ if (associated(temp_list_p)) then
 
     if (index_t .gt. temp_field_p%max_index + 1) then
 !        Index too large
-      if (verb .gt. verb_level_warn) then
-        write (out_unit,*) trim(warn_header),                   &
-             'Index too large for ', trim(name), ': ', index_t
-      endif
       field_index = NO_FIELD
       return
 
     elseif (index_t .eq. 0 .and.                                &
             temp_field_p%max_index .gt. 0) then
 !        Can't set non-null field to null
-      if (verb .gt. verb_level_warn) then
-        write (out_unit,*) trim(warn_header),                   &
-             'Trying to nullify a non-null field: ',            &
-             trim(name)
-      endif
       field_index = NO_FIELD
       return
 
@@ -3503,19 +3107,10 @@ if (associated(temp_list_p)) then
     field_index = temp_field_p%index
   else
 !        Error in making the field
-    if (verb .gt. verb_level_warn) then
-      write (out_unit,*) trim(warn_header),                     &
-           'Could not create string value field ',              &
-           trim(name)
-    endif
     field_index = NO_FIELD
   endif
 else
 !        Error following the path
-  if (verb .gt. verb_level_warn) then
-    write (out_unit,*) trim(warn_header),                       &
-         'Could not follow path for ', trim(name)
-  endif
   field_index = NO_FIELD
 endif
 
@@ -3698,10 +3293,6 @@ out_unit = stdout()
 dummy_p => find_field(name, this_list_p )
 if (associated(dummy_p)) then
 !        This list is already specified, return an error
-  if (verb .gt. verb_level_warn) then
-    write (out_unit,*) trim(warn_header), 'List ',                 &
-         trim(name), ' already exists'
-  endif
   list_p => dummy_p
   return
 endif
@@ -3709,10 +3300,6 @@ endif
 nullify(list_p)
 list_p => create_field(this_list_p, name)
 if (.not. associated(list_p)) then
-  if (verb .gt. verb_level_warn) then
-    write (out_unit,*) trim(warn_header),                          &
-         'Could not create field ', trim(name)
-  endif
   nullify(list_p)
   return
 endif
@@ -3788,9 +3375,6 @@ else
 
   else
 !        Error following the path
-    if (verb .gt. verb_level_warn) then
-      write (out_unit,*) trim(warn_header), 'Could not follow path for ', trim(path)
-    endif
     success = .false.
   endif
 endif
@@ -3818,15 +3402,7 @@ integer                         :: out_unit
 out_unit = stdout()
 
 !  Check for a valid list
-if (.not. associated(list_p)) then
-  if (verb .gt. verb_level_warn) then
-    write (out_unit,*) trim(warn_header), 'Invalid list pointer'
-  endif
-  success = .false.
-elseif (list_p%field_type .ne. list_type) then
-  if (verb .gt. verb_level_warn) then
-    write (out_unit,*) trim(warn_header), trim(list_p%name)//' is not a list'
-  endif
+if (.not. associated(list_p) .or. list_p%field_type .ne. list_type) then
   success = .false.
 else
 
@@ -3867,9 +3443,6 @@ else
         enddo
 
     case default
-        if (verb .gt. verb_level_warn) then
-          write (out_unit,*) trim(warn_header), 'Undefined type for ', trim(this_field_p%name)
-        endif
         success = .false.
         exit
 
@@ -3953,9 +3526,6 @@ else
     success = .true.
   else
 !        Error following the path
-    if (verb .gt. verb_level_warn) then
-      write (out_unit,*) trim(warn_header), 'Could not follow path for ', trim(list_name)
-    endif
     success = .false.
   endif
 endif
@@ -4045,9 +3615,6 @@ else
     success = .true.
   else
 !        Error following the path
-    if (verb .gt. verb_level_warn) then
-      write (out_unit,*) trim(warn_header), 'Could not follow path for ', trim(list_name)
-    endif
     success = .false.
   endif
 endif
@@ -4079,15 +3646,7 @@ integer                         :: out_unit
 
 out_unit = stdout()
 !        Check for a valid list
-if (.not. associated(list_p)) then
-  if (verb .gt. verb_level_warn) then
-    write (out_unit,*) trim(warn_header), 'Invalid list pointer'
-  endif
-  success = .false.
-elseif (list_p%field_type .ne. list_type) then
-  if (verb .gt. verb_level_warn) then
-    write (out_unit,*) trim(warn_header), trim(list_p%name), ' is not a list'
-  endif
+if (.not. associated(list_p) .or. list_p%field_type .ne. list_type) then
   success = .false.
 else
 !        set the default return value
@@ -4153,9 +3712,6 @@ else
 
 
     case default
-        if (verb .gt. verb_level_warn) then
-          write (out_unit,*) trim(warn_header), 'Undefined type for ', trim(this_field_p%name)
-        endif
         success = .false.
         exit
 
@@ -4166,49 +3722,6 @@ else
 endif
 
 end function find_method
-
-!> A subroutine to set the verbosity of the field manager output.
-!!
-!> This subroutine will set the level of verbosity in the module.
-!! Currently, verbosity is either on (1) or off (0). However,
-!! in the future, "on" may have more granularity. If no argument
-!! is given, then, if verbosity is on it will be turned off, and
-!! is off, will be turned to the default on level.
-!! If verbosity is negative then it is turned off.
-!! Values greater than the maximum will be set to the maximum.
-subroutine  fm_set_verbosity(verbosity)
-integer, intent(in), optional :: verbosity !< The level of verbosity required by user
-
-integer                         :: out_unit
-
-out_unit = stdout()
-!       Check whether an argument has been given
-if (present(verbosity)) then
-
-  if (verbosity .le. 0) then
-    verb = 0
-  elseif (verbosity .ge. max_verbosity) then
-    verb = max_verbosity
-  else
-    verb = verbosity
-  endif
-
-else
-
-  if (verb .eq. 0) then
-    verb = default_verbosity
-  else
-    verb = 0
-  endif
-
-endif
-
-write (out_unit,*)
-write (out_unit,*) trim(note_header),                          &
-     'Verbosity now at level ', verb
-write (out_unit,*)
-
-end subroutine  fm_set_verbosity
 
 end module field_manager_mod
 !> @}
