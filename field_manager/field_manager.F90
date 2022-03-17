@@ -1088,16 +1088,6 @@ end subroutine new_name
 !! changes the initialized flag to false.
 subroutine field_manager_end
 
-integer :: unit
-
-call write_version_number("FIELD_MANAGER_MOD", version)
-if ( mpp_pe() == mpp_root_pe() ) then
-   unit = stdlog()
-   write (unit,'(/,(a))') trim(note_header), 'Exiting field_manager, have a nice day ...'
-   unit = stdout()
-   write (unit,'(/,(a))') trim(note_header), 'Exiting field_manager, have a nice day ...'
-endif
-
 module_is_initialized = .false.
 
 end subroutine field_manager_end
@@ -1109,17 +1099,7 @@ subroutine strip_front_blanks(name)
 
 character(len=*), intent(inout) :: name !< name to remove whitespace from
 
-integer :: i, j
-
-j = 1
-do i = 1,len_trim(name)
-   if ( .not. (name(i:i) .eq. space .or.                        &
-               name(i:i) .eq. tab)) then
-    j = i
-    exit
-  endif
-enddo
-name = name(j:)
+name = trim(adjustl(name))
 end subroutine strip_front_blanks
 
 !> @brief Function to return the index of the field
