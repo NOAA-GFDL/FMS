@@ -234,7 +234,7 @@ use platform_mod
        & use_cmor, issue_oor_warnings, oor_warnings_fatal, oor_warning, pack_size,&
        & max_out_per_in_field, flush_nc_files, region_out_use_alt_value, max_field_attributes, output_field_type,&
        & max_file_attributes, max_axis_attributes, prepend_date, DIAG_FIELD_NOT_FOUND, diag_init_time,diag_data_init,&
-       & use_mpp_io, use_modern_diag
+       & use_mpp_io, use_modern_diag, diag_null
   USE diag_data_mod, ONLY:  fileobj, fileobjU, fnum_for_domain, fileobjND
   USE diag_table_mod, ONLY: parse_diag_table
   USE diag_output_mod, ONLY: get_diag_global_att, set_diag_global_att
@@ -393,19 +393,23 @@ CONTAINS
   INTEGER FUNCTION register_diag_field_scalar(module_name, field_name, init_time, &
        & long_name, units, missing_value, range, standard_name, do_not_log, err_msg,&
        & area, volume, realm)
-    CHARACTER(len=*), INTENT(in) :: module_name, field_name
-    TYPE(time_type), OPTIONAL, INTENT(in) :: init_time
-    CHARACTER(len=*), OPTIONAL, INTENT(in) :: long_name, units, standard_name
-    REAL, OPTIONAL, INTENT(in) :: missing_value
-    REAL,  DIMENSION(2), OPTIONAL, INTENT(in) :: RANGE ! TODO Add class *
-    LOGICAL, OPTIONAL, INTENT(in) :: do_not_log !< if TRUE, field information is not logged
-    CHARACTER(len=*), OPTIONAL, INTENT(out):: err_msg
-    INTEGER, OPTIONAL, INTENT(in) :: area, volume
-    CHARACTER(len=*), OPTIONAL, INTENT(in):: realm !< String to set as the value to the modeling_realm attribute
+    CHARACTER(len=*),           INTENT(in) :: module_name   !< Module where the field comes from
+    CHARACTER(len=*),           INTENT(in) :: field_name    !< Name of the field
+    TYPE(time_type),  OPTIONAL, INTENT(in) :: init_time     !< Time to start writing data from
+    CHARACTER(len=*), OPTIONAL, INTENT(in) :: long_name     !< Long_name to add as a variable attribute
+    CHARACTER(len=*), OPTIONAL, INTENT(in) :: units         !< Units to add as a variable_attribute
+    CHARACTER(len=*), OPTIONAL, INTENT(in) :: standard_name !< Standard_name to name the variable in the file
+    REAL,             OPTIONAL, INTENT(in) :: missing_value !< Missing value to add as a variable attribute
+    REAL,             OPTIONAL, INTENT(in) :: range(2)      !< Range to add a variable attribute
+    LOGICAL,          OPTIONAL, INTENT(in) :: do_not_log    !< If TRUE, field information is not logged
+    CHARACTER(len=*), OPTIONAL, INTENT(out):: err_msg       !< Error_msg from call
+    INTEGER,          OPTIONAL, INTENT(in) :: area          !< Id of the area field
+    INTEGER,          OPTIONAL, INTENT(in) :: volume        !< Id of the volume field
+    CHARACTER(len=*), OPTIONAL, INTENT(in) :: realm         !< String to set as the modeling_realm attribute
 
     if (use_modern_diag) then
       register_diag_field_scalar = register_diag_field_scalar_modern(module_name, field_name, init_time, &
-      & long_name=long_name, units=units, missing_value=missing_value, range=range, standard_name=standard_name, &
+      & long_name=long_name, units=units, missing_value=missing_value, var_range=range, standard_name=standard_name, &
       & do_not_log=do_not_log, err_msg=err_msg, area=area, volume=volume, realm=realm)
     else
       register_diag_field_scalar = register_diag_field_scalar_old(module_name, field_name, init_time, &
@@ -419,26 +423,31 @@ CONTAINS
   INTEGER FUNCTION register_diag_field_array(module_name, field_name, axes, init_time, &
        & long_name, units, missing_value, range, mask_variant, standard_name, verbose,&
        & do_not_log, err_msg, interp_method, tile_count, area, volume, realm)
-    CHARACTER(len=*), INTENT(in) :: module_name, field_name
-    INTEGER, INTENT(in) :: axes(:)
-    TYPE(time_type), INTENT(in) :: init_time
-    CHARACTER(len=*), OPTIONAL, INTENT(in) :: long_name, units, standard_name
-    REAL, OPTIONAL, INTENT(in) :: missing_value, RANGE(2) ! TODO Add class *
-    LOGICAL, OPTIONAL, INTENT(in) :: mask_variant,verbose
-    LOGICAL, OPTIONAL, INTENT(in) :: do_not_log !< if TRUE, field info is not logged
-    CHARACTER(len=*), OPTIONAL, INTENT(out):: err_msg
+    CHARACTER(len=*),           INTENT(in) :: module_name   !< Module where the field comes from
+    CHARACTER(len=*),           INTENT(in) :: field_name    !< Name of the field
+    INTEGER,                    INTENT(in) :: axes(:)       !< Ids corresponding to the variable axis
+    TYPE(time_type),  OPTIONAL, INTENT(in) :: init_time     !< Time to start writing data from
+    CHARACTER(len=*), OPTIONAL, INTENT(in) :: long_name     !< Long_name to add as a variable attribute
+    CHARACTER(len=*), OPTIONAL, INTENT(in) :: units         !< Units to add as a variable_attribute
+    REAL,             OPTIONAL, INTENT(in) :: missing_value !< Missing value to add as a variable attribute
+    REAL,             OPTIONAL, INTENT(in) :: range(2)      !< Range to add a variable attribute
+    LOGICAL,          OPTIONAL, INTENT(in) :: mask_variant  !< Mask variant
+    CHARACTER(len=*), OPTIONAL, INTENT(in) :: standard_name !< Standard_name to name the variable in the file
+    LOGICAL,          OPTIONAL, INTENT(in) :: verbose       !< Print more information
+    LOGICAL,          OPTIONAL, INTENT(in) :: do_not_log    !< If TRUE, field information is not logged
+    CHARACTER(len=*), OPTIONAL, INTENT(out):: err_msg       !< Error_msg from call
     CHARACTER(len=*), OPTIONAL, INTENT(in) :: interp_method !< The interp method to be used when
                                                             !! regridding the field in post-processing.
                                                             !! Valid options are "conserve_order1",
                                                             !! "conserve_order2", and "none".
-    INTEGER, OPTIONAL, INTENT(in) :: tile_count
-    INTEGER, OPTIONAL, INTENT(in) :: area !< diag_field_id containing the cell area field
-    INTEGER, OPTIONAL, INTENT(in) :: volume !< diag_field_id containing the cell volume field
-    CHARACTER(len=*), OPTIONAL, INTENT(in):: realm !< String to set as the value to the modeling_realm attribute
+    INTEGER,          OPTIONAL, INTENT(in) :: tile_count    !< The current tile number
+    INTEGER,          OPTIONAL, INTENT(in) :: area          !< Id of the area field
+    INTEGER,          OPTIONAL, INTENT(in) :: volume        !< Id of the volume field
+    CHARACTER(len=*), OPTIONAL, INTENT(in) :: realm         !< String to set as the modeling_realm attribute
 
     if (use_modern_diag) then
       register_diag_field_array = register_diag_field_array_modern(module_name, field_name, axes, init_time, &
-       & long_name=long_name, units=units, missing_value=missing_value, range=range, mask_variant=mask_variant, &
+       & long_name=long_name, units=units, missing_value=missing_value, var_range=range, mask_variant=mask_variant, &
        & standard_name=standard_name, verbose=verbose, do_not_log=do_not_log, err_msg=err_msg, &
        & interp_method=interp_method, tile_count=tile_count, area=area, volume=volume, realm=realm)
     else
@@ -452,46 +461,56 @@ end function register_diag_field_array
   !> @brief Registers a scalar field
   !! @return field index for subsequent call to send_data.
   INTEGER FUNCTION register_diag_field_scalar_modern(module_name, field_name, init_time, &
-       & long_name, units, missing_value, range, standard_name, do_not_log, err_msg,&
+       & long_name, units, missing_value, var_range, standard_name, do_not_log, err_msg,&
        & area, volume, realm)
-    CHARACTER(len=*), INTENT(in) :: module_name, field_name
-    TYPE(time_type), OPTIONAL, INTENT(in) :: init_time
-    CHARACTER(len=*), OPTIONAL, INTENT(in) :: long_name, units, standard_name
-    REAL, OPTIONAL, INTENT(in) :: missing_value
-    REAL,  DIMENSION(2), OPTIONAL, INTENT(in) :: RANGE
-    LOGICAL, OPTIONAL, INTENT(in) :: do_not_log !< if TRUE, field information is not logged
-    CHARACTER(len=*), OPTIONAL, INTENT(out):: err_msg
-    INTEGER, OPTIONAL, INTENT(in) :: area, volume
-    CHARACTER(len=*), OPTIONAL, INTENT(in):: realm !< String to set as the value to the modeling_realm attribute
+    CHARACTER(len=*),           INTENT(in) :: module_name   !< Module where the field comes from
+    CHARACTER(len=*),           INTENT(in) :: field_name    !< Name of the field
+    TYPE(time_type),  OPTIONAL, INTENT(in) :: init_time     !< Time to start writing data from
+    CHARACTER(len=*), OPTIONAL, INTENT(in) :: long_name     !< Long_name to add as a variable attribute
+    CHARACTER(len=*), OPTIONAL, INTENT(in) :: units         !< Units to add as a variable_attribute
+    CHARACTER(len=*), OPTIONAL, INTENT(in) :: standard_name !< Standard_name to name the variable in the file
+    REAL,             OPTIONAL, INTENT(in) :: missing_value !< Missing value to add as a variable attribute
+    REAL,             OPTIONAL, INTENT(in) :: var_range(2)  !< Range to add a variable attribute
+    LOGICAL,          OPTIONAL, INTENT(in) :: do_not_log    !< If TRUE, field information is not logged
+    CHARACTER(len=*), OPTIONAL, INTENT(out):: err_msg       !< Error_msg from call
+    INTEGER,          OPTIONAL, INTENT(in) :: area          !< Id of the area field
+    INTEGER,          OPTIONAL, INTENT(in) :: volume        !< Id of the volume field
+    CHARACTER(len=*), OPTIONAL, INTENT(in) :: realm         !< String to set as the modeling_realm attribute
 
     ! TODO: Check if the diag_field is in the yaml, if it is not return diag_null. If it is fill in the diag_obj
+    register_diag_field_scalar_modern = diag_null
 
   end function register_diag_field_scalar_modern
 
     !> @brief Registers an array field
   !> @return field index for subsequent call to send_data.
   INTEGER FUNCTION register_diag_field_array_modern(module_name, field_name, axes, init_time, &
-       & long_name, units, missing_value, range, mask_variant, standard_name, verbose,&
+       & long_name, units, missing_value, var_range, mask_variant, standard_name, verbose,&
        & do_not_log, err_msg, interp_method, tile_count, area, volume, realm)
-    CHARACTER(len=*), INTENT(in) :: module_name, field_name
-    INTEGER, INTENT(in) :: axes(:)
-    TYPE(time_type), INTENT(in) :: init_time
-    CHARACTER(len=*), OPTIONAL, INTENT(in) :: long_name, units, standard_name
-    REAL, OPTIONAL, INTENT(in) :: missing_value, RANGE(2)
-    LOGICAL, OPTIONAL, INTENT(in) :: mask_variant,verbose
-    LOGICAL, OPTIONAL, INTENT(in) :: do_not_log !< if TRUE, field info is not logged
-    CHARACTER(len=*), OPTIONAL, INTENT(out):: err_msg
+    CHARACTER(len=*),           INTENT(in) :: module_name   !< Module where the field comes from
+    CHARACTER(len=*),           INTENT(in) :: field_name    !< Name of the field
+    INTEGER,                    INTENT(in) :: axes(:)       !< Ids corresponding to the variable axis
+    TYPE(time_type),  OPTIONAL, INTENT(in) :: init_time     !< Time to start writing data from
+    CHARACTER(len=*), OPTIONAL, INTENT(in) :: long_name     !< Long_name to add as a variable attribute
+    CHARACTER(len=*), OPTIONAL, INTENT(in) :: units         !< Units to add as a variable_attribute
+    REAL,             OPTIONAL, INTENT(in) :: missing_value !< Missing value to add as a variable attribute
+    REAL,             OPTIONAL, INTENT(in) :: var_range(2)  !< Range to add a variable attribute
+    LOGICAL,          OPTIONAL, INTENT(in) :: mask_variant  !< Mask variant
+    CHARACTER(len=*), OPTIONAL, INTENT(in) :: standard_name !< Standard_name to name the variable in the file
+    LOGICAL,          OPTIONAL, INTENT(in) :: verbose       !< Print more information
+    LOGICAL,          OPTIONAL, INTENT(in) :: do_not_log    !< If TRUE, field information is not logged
+    CHARACTER(len=*), OPTIONAL, INTENT(out):: err_msg       !< Error_msg from call
     CHARACTER(len=*), OPTIONAL, INTENT(in) :: interp_method !< The interp method to be used when
                                                             !! regridding the field in post-processing.
                                                             !! Valid options are "conserve_order1",
                                                             !! "conserve_order2", and "none".
-    INTEGER, OPTIONAL, INTENT(in) :: tile_count
-    INTEGER, OPTIONAL, INTENT(in) :: area !< diag_field_id containing the cell area field
-    INTEGER, OPTIONAL, INTENT(in) :: volume !< diag_field_id containing the cell volume field
-    CHARACTER(len=*), OPTIONAL, INTENT(in):: realm !< String to set as the value to the modeling_realm attribute
+    INTEGER,          OPTIONAL, INTENT(in) :: tile_count    !< The current tile number
+    INTEGER,          OPTIONAL, INTENT(in) :: area          !< Id of the area field
+    INTEGER,          OPTIONAL, INTENT(in) :: volume        !< Id of the volume field
+    CHARACTER(len=*), OPTIONAL, INTENT(in) :: realm         !< String to set as the modeling_realm attribute
 
     ! TODO: Check if the diag_field is in the yaml, if it is not return diag_null. If it is fill in the diag_obj
-
+    register_diag_field_array_modern = diag_null
    end function register_diag_field_array_modern
 
   !> @brief Registers a scalar field
@@ -499,15 +518,19 @@ end function register_diag_field_array
   INTEGER FUNCTION register_diag_field_scalar_old(module_name, field_name, init_time, &
        & long_name, units, missing_value, range, standard_name, do_not_log, err_msg,&
        & area, volume, realm)
-    CHARACTER(len=*), INTENT(in) :: module_name, field_name
-    TYPE(time_type), OPTIONAL, INTENT(in) :: init_time
-    CHARACTER(len=*), OPTIONAL, INTENT(in) :: long_name, units, standard_name
-    REAL, OPTIONAL, INTENT(in) :: missing_value
-    REAL,  DIMENSION(2), OPTIONAL, INTENT(in) :: RANGE
-    LOGICAL, OPTIONAL, INTENT(in) :: do_not_log !< if TRUE, field information is not logged
-    CHARACTER(len=*), OPTIONAL, INTENT(out):: err_msg
-    INTEGER, OPTIONAL, INTENT(in) :: area, volume
-    CHARACTER(len=*), OPTIONAL, INTENT(in):: realm !< String to set as the value to the modeling_realm attribute
+    CHARACTER(len=*),           INTENT(in) :: module_name   !< Module where the field comes from
+    CHARACTER(len=*),           INTENT(in) :: field_name    !< Name of the field
+    TYPE(time_type),  OPTIONAL, INTENT(in) :: init_time     !< Time to start writing data from
+    CHARACTER(len=*), OPTIONAL, INTENT(in) :: long_name     !< Long_name to add as a variable attribute
+    CHARACTER(len=*), OPTIONAL, INTENT(in) :: units         !< Units to add as a variable_attribute
+    CHARACTER(len=*), OPTIONAL, INTENT(in) :: standard_name !< Standard_name to name the variable in the file
+    REAL,             OPTIONAL, INTENT(in) :: missing_value !< Missing value to add as a variable attribute
+    REAL,             OPTIONAL, INTENT(in) :: range(2)      !< Range to add a variable attribute
+    LOGICAL,          OPTIONAL, INTENT(in) :: do_not_log    !< If TRUE, field information is not logged
+    CHARACTER(len=*), OPTIONAL, INTENT(out):: err_msg       !< Error_msg from call
+    INTEGER,          OPTIONAL, INTENT(in) :: area          !< Id of the area field
+    INTEGER,          OPTIONAL, INTENT(in) :: volume        !< Id of the volume field
+    CHARACTER(len=*), OPTIONAL, INTENT(in) :: realm         !< String to set as the modeling_realm attribute
 
     IF ( PRESENT(err_msg) ) err_msg = ''
 
@@ -526,22 +549,27 @@ end function register_diag_field_array
 INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, init_time, &
        & long_name, units, missing_value, range, mask_variant, standard_name, verbose,&
        & do_not_log, err_msg, interp_method, tile_count, area, volume, realm)
-    CHARACTER(len=*), INTENT(in) :: module_name, field_name
-    INTEGER, INTENT(in) :: axes(:)
-    TYPE(time_type), INTENT(in) :: init_time
-    CHARACTER(len=*), OPTIONAL, INTENT(in) :: long_name, units, standard_name
-    REAL, OPTIONAL, INTENT(in) :: missing_value, RANGE(2)
-    LOGICAL, OPTIONAL, INTENT(in) :: mask_variant,verbose
-    LOGICAL, OPTIONAL, INTENT(in) :: do_not_log !< if TRUE, field info is not logged
-    CHARACTER(len=*), OPTIONAL, INTENT(out):: err_msg
+    CHARACTER(len=*),           INTENT(in) :: module_name   !< Module where the field comes from
+    CHARACTER(len=*),           INTENT(in) :: field_name    !< Name of the field
+    INTEGER,                    INTENT(in) :: axes(:)       !< Ids corresponding to the variable axis
+    TYPE(time_type),  OPTIONAL, INTENT(in) :: init_time     !< Time to start writing data from
+    CHARACTER(len=*), OPTIONAL, INTENT(in) :: long_name     !< Long_name to add as a variable attribute
+    CHARACTER(len=*), OPTIONAL, INTENT(in) :: units         !< Units to add as a variable_attribute
+    REAL,             OPTIONAL, INTENT(in) :: missing_value !< Missing value to add as a variable attribute
+    REAL,             OPTIONAL, INTENT(in) :: range(2)      !< Range to add a variable attribute
+    LOGICAL,          OPTIONAL, INTENT(in) :: mask_variant  !< Mask variant
+    CHARACTER(len=*), OPTIONAL, INTENT(in) :: standard_name !< Standard_name to name the variable in the file
+    LOGICAL,          OPTIONAL, INTENT(in) :: verbose       !< Print more information
+    LOGICAL,          OPTIONAL, INTENT(in) :: do_not_log    !< If TRUE, field information is not logged
+    CHARACTER(len=*), OPTIONAL, INTENT(out):: err_msg       !< Error_msg from call
     CHARACTER(len=*), OPTIONAL, INTENT(in) :: interp_method !< The interp method to be used when
                                                             !! regridding the field in post-processing.
                                                             !! Valid options are "conserve_order1",
                                                             !! "conserve_order2", and "none".
-    INTEGER, OPTIONAL, INTENT(in) :: tile_count
-    INTEGER, OPTIONAL, INTENT(in) :: area !< diag_field_id containing the cell area field
-    INTEGER, OPTIONAL, INTENT(in) :: volume !< diag_field_id containing the cell volume field
-    CHARACTER(len=*), OPTIONAL, INTENT(in):: realm !< String to set as the value to the modeling_realm attribute
+    INTEGER,          OPTIONAL, INTENT(in) :: tile_count    !< The current tile number
+    INTEGER,          OPTIONAL, INTENT(in) :: area          !< Id of the area field
+    INTEGER,          OPTIONAL, INTENT(in) :: volume        !< Id of the volume field
+    CHARACTER(len=*), OPTIONAL, INTENT(in) :: realm         !< String to set as the modeling_realm attribute
 
     INTEGER :: field, j, ind, file_num, freq
     INTEGER :: output_units
