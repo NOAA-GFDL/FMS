@@ -567,15 +567,6 @@ if (module_is_initialized) then
    return
 endif
 
-#ifdef PRESERVE_UNIT_CASE
-! <ERROR MSG="Preserving the unit's case is experimental." STATUS="NOTE">
-!   The case of the units in the field_table is preserved.  This option is
-!   still experimental.  It is possible other model components expect the units
-!   to be lowercase.  Please notify the developers if any issues are discovered.
-! </ERROR>
-call mpp_error(NOTE,trim(note_header)//"Preserving the unit's case is experimental.")
-#endif
-
 num_fields = 0
 call initialize
 
@@ -719,20 +710,8 @@ do while (.TRUE.)
           read(record,*,end=99,err=99) text_method_short
           fields(num_fields)%methods(m)%method_type =&
                & lowercase(trim(text_method_short%method_type))
-#ifdef PRESERVE_UNIT_CASE
-
-          if ( trim(fields(num_fields)%methods(m)%method_type) == 'units' ) then
-             ! Do not lowercase if units
-             fields(num_fields)%methods(m)%method_name =&
-                  & trim(text_method_short%method_name)
-          else
-             fields(num_fields)%methods(m)%method_name =&
-                  & lowercase(trim(text_method_short%method_name))
-          end if
-#else
           fields(num_fields)%methods(m)%method_name =&
                & lowercase(trim(text_method_short%method_name))
-#endif
           fields(num_fields)%methods(m)%method_control = " "
 
           type_str    = text_method_short%method_type
