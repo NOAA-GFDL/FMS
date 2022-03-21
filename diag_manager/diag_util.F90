@@ -42,9 +42,9 @@ use,intrinsic :: iso_c_binding, only: c_double,c_float,c_int64_t, &
 
   USE diag_data_mod, ONLY: output_fields, input_fields, files, do_diag_field_log, diag_log_unit,&
        & VERY_LARGE_AXIS_LENGTH, time_zero, VERY_LARGE_FILE_FREQ, END_OF_RUN, EVERY_TIME,&
-       & DIAG_SECONDS, DIAG_MINUTES, DIAG_HOURS, DIAG_DAYS, DIAG_MONTHS, DIAG_YEARS, base_time,&
-       & time_unit_list, max_files, base_year, base_month, base_day, base_hour, base_minute,&
-       & base_second, num_files, max_files, max_fields_per_file, max_out_per_in_field,&
+       & DIAG_SECONDS, DIAG_MINUTES, DIAG_HOURS, DIAG_DAYS, DIAG_MONTHS, DIAG_YEARS, get_base_time,&
+       & time_unit_list, max_files, get_base_year, get_base_month, get_base_day, get_base_hour, get_base_minute,&
+       & get_base_second, num_files, max_files, max_fields_per_file, max_out_per_in_field,&
        & max_input_fields,num_input_fields, max_output_fields, num_output_fields, coord_type,&
        & mix_snapshot_average_fields, global_descriptor, CMOR_MISSING_VALUE, use_cmor, pack_size,&
        & debug_diag_manager, flush_nc_files, output_field_type, max_field_attributes, max_file_attributes,&
@@ -1194,7 +1194,7 @@ END SUBROUTINE check_bounds_are_exact_dynamic
     files(num_files)%long_name = TRIM(long_name)
     files(num_files)%num_fields = 0
     files(num_files)%local = .FALSE.
-    files(num_files)%last_flush = base_time
+    files(num_files)%last_flush = get_base_time()
     files(num_files)%file_unit = -1
     files(num_files)%new_file_freq = new_file_freq1
     files(num_files)%new_file_freq_units = new_file_freq_units1
@@ -1208,7 +1208,7 @@ END SUBROUTINE check_bounds_are_exact_dynamic
     IF ( PRESENT(start_time) ) THEN
        files(num_files)%start_time = start_time
     ELSE
-       files(num_files)%start_time = base_time
+       files(num_files)%start_time = get_base_time()
     END IF
     files(num_files)%next_open=diag_time_inc(files(num_files)%start_time,new_file_freq1,new_file_freq_units1)
     files(num_files)%close_time = diag_time_inc(files(num_files)%start_time,file_duration1, file_duration_units1)
@@ -1222,8 +1222,8 @@ END SUBROUTINE check_bounds_are_exact_dynamic
     END IF
 
     ! add time_axis_id and time_bounds_id here
-    WRITE(time_units_str, 11) TRIM(time_unit_list(files(num_files)%time_units)), base_year,&
-         & base_month, base_day, base_hour, base_minute, base_second
+    WRITE(time_units_str, 11) TRIM(time_unit_list(files(num_files)%time_units)), get_base_year(),&
+         & get_base_month(), get_base_day(), get_base_hour(), get_base_minute(), get_base_second()
 11  FORMAT(a, ' since ', i4.4, '-', i2.2, '-', i2.2, ' ', i2.2, ':', i2.2, ':', i2.2)
     files(num_files)%time_axis_id = diag_axis_init (TRIM(long_name), tdata, time_units_str, 'T',&
          & TRIM(long_name) , set_name=TRIM(name) )
@@ -1738,8 +1738,8 @@ END SUBROUTINE check_bounds_are_exact_dynamic
     match_req_fields = .FALSE.
 
     ! Here is where time_units string must be set up; time since base date
-    WRITE (time_units, 11) TRIM(time_unit_list(files(file)%time_units)), base_year,&
-         & base_month, base_day, base_hour, base_minute, base_second
+    WRITE (time_units, 11) TRIM(time_unit_list(files(file)%time_units)), get_base_year(),&
+         & get_base_month(), get_base_day(), get_base_hour(), get_base_minute(), get_base_second()
 11  FORMAT(A, ' since ', I4.4, '-', I2.2, '-', I2.2, ' ', I2.2, ':', I2.2, ':', I2.2)
     base_name = files(file)%name
     IF ( files(file)%new_file_freq < VERY_LARGE_FILE_FREQ ) THEN
@@ -2332,7 +2332,7 @@ END SUBROUTINE check_bounds_are_exact_dynamic
     static_write = .FALSE.
     IF ( PRESENT(static_write_in) ) static_write = static_write_in
 !> dif is the time as a real that is evaluated
-    dif = get_date_dif(time, base_time, files(file)%time_units)
+    dif = get_date_dif(time, get_base_time(), files(file)%time_units)
 
     ! get file_unit, open new file and close curent file if necessary
     IF ( .NOT.static_write .OR. files(file)%file_unit < 0 ) &
@@ -2367,9 +2367,9 @@ END SUBROUTINE check_bounds_are_exact_dynamic
     IF ( .NOT.output_fields(field)%written_once ) output_fields(field)%written_once = .TRUE.
     ! *** inserted this line because start_dif < 0 for static fields ***
     IF ( .NOT.output_fields(field)%static ) THEN
-       start_dif = get_date_dif(output_fields(field)%last_output, base_time,files(file)%time_units)
+       start_dif = get_date_dif(output_fields(field)%last_output, get_base_time(),files(file)%time_units)
        IF ( .NOT.mix_snapshot_average_fields ) THEN
-          end_dif = get_date_dif(output_fields(field)%next_output, base_time, files(file)%time_units)
+          end_dif = get_date_dif(output_fields(field)%next_output, get_base_time(), files(file)%time_units)
        ELSE
           end_dif = dif
        END IF

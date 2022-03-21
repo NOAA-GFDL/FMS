@@ -30,7 +30,7 @@
 !> @{
 module fms_diag_yaml_mod
 #ifdef use_yaml
-use diag_data_mod,   only: DIAG_NULL, DIAG_OCEAN, DIAG_ALL, DIAG_OTHER
+use diag_data_mod,   only: DIAG_NULL, DIAG_OCEAN, DIAG_ALL, DIAG_OTHER, set_base_time
 use yaml_parser_mod, only: open_and_parse_file, get_value_from_key, get_num_blocks, get_nkeys, &
                            get_block_ids, get_key_value, get_key_ids, get_key_name
 use mpp_mod,         only: mpp_error, FATAL
@@ -274,6 +274,7 @@ subroutine diag_yaml_object_init(diag_subset_output)
 
   call diag_get_value_from_key(diag_yaml_id, 0, "title", diag_yaml%diag_title)
   call get_value_from_key(diag_yaml_id, 0, "base_date", diag_yaml%diag_basedate)
+  call set_base_time(diag_yaml%diag_basedate)
 
   nfiles = get_num_blocks(diag_yaml_id, "diag_files")
   allocate(diag_file_ids(nfiles))

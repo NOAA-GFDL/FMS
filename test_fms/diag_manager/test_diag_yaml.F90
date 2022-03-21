@@ -24,7 +24,9 @@ program test_diag_yaml
 #ifdef use_yaml
 use FMS_mod, only: fms_init, fms_end
 use fms_diag_yaml_mod
-use diag_data_mod, only: DIAG_NULL, DIAG_ALL
+use diag_data_mod, only: DIAG_NULL, DIAG_ALL, get_base_year, get_base_month, get_base_day, get_base_hour, &
+                       & get_base_minute, get_base_second, diag_data_init
+use  time_manager_mod, only: set_calendar_type, JULIAN
 use mpp_mod
 use platform_mod
 
@@ -65,12 +67,17 @@ if (io_status > 0) call mpp_error(FATAL,'=>check_crashes: Error reading input.nm
 if (checking_crashes) call mpp_error(FATAL, "It is crashing!")
 call fms_end()
 #else
+
+call set_calendar_type(JULIAN)
+call diag_data_init()
 call diag_yaml_object_init(DIAG_ALL)
 
 my_yaml = get_diag_yaml_obj()
 
 if (.not. checking_crashes) then
   call compare_result("base_date", my_yaml%get_basedate(), (/2, 1, 1, 0, 0 , 0 /))
+  call check_base_time()
+
   call compare_result("title", my_yaml%get_title(), "test_diag_manager")
 
   diag_files = my_yaml%get_diag_files()
@@ -217,6 +224,20 @@ subroutine compare_diag_files(res)
   if (res(3)%is_global_meta()) call mpp_error(FATAL, "The global meta for the third file was set?")
 
 end subroutine compare_diag_files
+
+!> @brief Check if the base_time saved in diag_data is correct
+subroutine check_base_time()
+  integer :: base_time_mod_var(6) !< The base_time obtained from diag_data
+
+  base_time_mod_var(1) = get_base_year()
+  base_time_mod_var(2) = get_base_month()
+  base_time_mod_var(3) = get_base_day()
+  base_time_mod_var(4) = get_base_hour()
+  base_time_mod_var(5) = get_base_minute()
+  base_time_mod_var(6) = get_base_second()
+
+  call compare_result("base_time", base_time_mod_var, (/2, 1, 1, 0, 0 ,0 /))
+end subroutine check_base_time
 
 #endif
 end program test_diag_yaml

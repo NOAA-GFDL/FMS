@@ -223,8 +223,8 @@ use platform_mod
   USE diag_data_mod, ONLY: max_files, CMOR_MISSING_VALUE, DIAG_OTHER, DIAG_OCEAN, DIAG_ALL, EVERY_TIME,&
        & END_OF_RUN, DIAG_SECONDS, DIAG_MINUTES, DIAG_HOURS, DIAG_DAYS, DIAG_MONTHS, DIAG_YEARS, num_files,&
        & max_input_fields, max_output_fields, num_output_fields, EMPTY, FILL_VALUE, null_axis_id,&
-       & MAX_VALUE, MIN_VALUE, base_time, base_year, base_month, base_day,&
-       & base_hour, base_minute, base_second, global_descriptor, coord_type, files, input_fields,&
+       & MAX_VALUE, MIN_VALUE, get_base_time, get_base_year, get_base_month, get_base_day,&
+       & get_base_hour, get_base_minute, get_base_second, global_descriptor, coord_type, files, input_fields,&
        & output_fields, Time_zero, append_pelist_name, mix_snapshot_average_fields,&
        & first_send_data_call, do_diag_field_log, write_bytes_in_file, debug_diag_manager,&
        & diag_log_unit, time_unit_list, pelist_name, max_axes, module_is_initialized, max_num_axis_sets,&
@@ -3941,7 +3941,7 @@ CONTAINS
        diag_init_time = set_date(time_init(1), time_init(2), time_init(3), time_init(4),&
             & time_init(5), time_init(6))
     ELSE
-       diag_init_time = base_time
+       diag_init_time = get_base_time()
        IF ( prepend_date .EQV. .TRUE. ) THEN
           CALL error_mesg('diag_manager_mod::diag_manager_init',&
                & 'prepend_date only supported when diag_manager_init is called with time_init present.', NOTE)
@@ -3952,13 +3952,13 @@ CONTAINS
 #ifdef use_yaml
     if (use_modern_diag) CALL diag_yaml_object_init(diag_subset_output)
 #endif
-
-    CALL parse_diag_table(DIAG_SUBSET=diag_subset_output, ISTAT=mystat, ERR_MSG=err_msg_local)
-    IF ( mystat /= 0 ) THEN
+   if (.not. use_modern_diag) then
+     CALL parse_diag_table(DIAG_SUBSET=diag_subset_output, ISTAT=mystat, ERR_MSG=err_msg_local)
+     IF ( mystat /= 0 ) THEN
        IF ( fms_error_handler('diag_manager_mod::diag_manager_init',&
             & 'Error parsing diag_table. '//TRIM(err_msg_local), err_msg) ) RETURN
-   END IF
-
+     END IF
+   endif
     !initialize files%bytes_written to zero
     files(:)%bytes_written = 0
 
@@ -3983,18 +3983,6 @@ CONTAINS
     RETURN
   END SUBROUTINE diag_manager_init
 
-  !> @brief Return base time for diagnostics.
-  !! @return time_type get_base_time
-  !! @details Return base time for diagnostics (note: base time must be >= model time).
-  TYPE(time_type) FUNCTION get_base_time ()
-    ! <ERROR STATUS="FATAL">
-    !   MODULE has not been initialized
-    ! </ERROR>
-    IF ( .NOT.module_is_initialized ) CALL error_mesg('diag_manager_mod::get_base_time', &
-         & 'module has not been initialized', FATAL)
-    get_base_time = base_time
-  END FUNCTION get_base_time
-
   !> @brief Return base date for diagnostics.
   !! @details Return date information for diagnostic reference time.
   SUBROUTINE get_base_date(year, month, day, hour, minute, second)
@@ -4003,12 +3991,12 @@ CONTAINS
     ! <ERROR STATUS="FATAL">module has not been initialized</ERROR>
     IF (.NOT.module_is_initialized) CALL error_mesg ('diag_manager_mod::get_base_date', &
          & 'module has not been initialized', FATAL)
-    year   = base_year
-    month  = base_month
-    day    = base_day
-    hour   = base_hour
-    minute = base_minute
-    second = base_second
+    year   = get_base_year()
+    month  = get_base_month()
+    day    = get_base_day()
+    hour   = get_base_hour()
+    minute = get_base_minute()
+    second = get_base_second()
   END SUBROUTINE get_base_date
 
   !> @brief Determine whether data is needed for the current model time step.

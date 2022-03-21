@@ -48,11 +48,12 @@
 MODULE diag_data_mod
 use platform_mod
 
-  USE time_manager_mod, ONLY: time_type
+  USE time_manager_mod, ONLY: get_calendar_type, NO_CALENDAR, set_date, set_time, month_name, time_type
+  USE constants_mod, ONLY: SECONDS_PER_HOUR, SECONDS_PER_MINUTE
   USE mpp_domains_mod, ONLY: domain1d, domain2d, domainUG
-  USE fms_mod, ONLY: WARNING, write_version_number
   USE fms_diag_bbox_mod, ONLY: fmsDiagIbounds_type
-
+  USE fms_mod, ONLY: write_version_number
+  use mpp_mod, ONLY: mpp_error, FATAL, WARNING, mpp_pe, mpp_root_pe, stdlog
   ! NF90_FILL_REAL has value of 9.9692099683868690e+36.
   USE netcdf, ONLY: NF_FILL_REAL => NF90_FILL_REAL
   use fms2_io_mod
@@ -370,8 +371,10 @@ use platform_mod
   ! <!-- Global data for all files -->
   TYPE(time_type) :: diag_init_time !< Time diag_manager_init called.  If init_time not included in
                                     !! diag_manager_init call, then same as base_time
-  TYPE(time_type) :: base_time
-  INTEGER :: base_year, base_month, base_day, base_hour, base_minute, base_second
+  TYPE(time_type), private :: base_time !< The base_time read from diag_table
+  logical, private :: base_time_set !< Flag indicating that the base_time is set
+                                    !! This is to prevent users from calling set_base_time multiple times
+  INTEGER, private :: base_year, base_month, base_day, base_hour, base_minute, base_second
   CHARACTER(len = 256):: global_descriptor
 
   ! <!-- ALLOCATABLE variables -->
@@ -405,10 +408,112 @@ CONTAINS
 
     ! Write version number out to log file
     call write_version_number("DIAG_DATA_MOD", version)
+    module_is_initialized = .true.
+    base_time_set = .false.
+
   END SUBROUTINE diag_data_init
 
+  !> @brief Set the module variable base_time
+  subroutine set_base_time(base_time_int)
+    integer :: base_time_int(6) !< base_time as an array [year month day hour min sec]
 
+    CHARACTER(len=9) :: amonth !< Month name
+    INTEGER :: stdlog_unit !< Fortran file unit number for the stdlog file.
 
+    if (.not. module_is_initialized) call mpp_error(FATAL, "set_base_time: diag_data is not initialized")
+    if (base_time_set) call mpp_error(FATAL, "set_base_time: the base_time is already set!")
+
+    base_year = base_time_int(1)
+    base_month = base_time_int(2)
+    base_day = base_time_int(3)
+    base_hour = base_time_int(4)
+    base_minute = base_time_int(5)
+    base_second = base_time_int(6)
+
+    ! Set up the time type for base time
+    IF ( get_calendar_type() /= NO_CALENDAR ) THEN
+      IF ( base_year==0 .OR. base_month==0 .OR. base_day==0 ) THEN
+         call mpp_error(FATAL, 'diag_data_mod::set_base_time'//&
+            &  'The base_year/month/day can not equal zero')
+      END IF
+      base_time = set_date(base_year, base_month, base_day, base_hour, base_minute, base_second)
+      amonth = month_name(base_month)
+    ELSE
+      ! No calendar - ignore year and month
+      base_time = set_time(NINT(base_hour*SECONDS_PER_HOUR)+NINT(base_minute*SECONDS_PER_MINUTE)+base_second, &
+                          &  base_day)
+      base_year = 0
+      base_month = 0
+      amonth = 'day'
+    END IF
+
+    ! get the stdlog unit number
+    stdlog_unit = stdlog()
+
+    IF ( mpp_pe() == mpp_root_pe() ) THEN
+      WRITE (stdlog_unit,'("base date used = ",I4,1X,A,2I3,2(":",I2.2)," gmt")') base_year, TRIM(amonth), base_day, &
+           & base_hour, base_minute, base_second
+    END IF
+
+    base_time_set = .true.
+
+  end subroutine set_base_time
+
+  !> @brief gets the module variable base_time
+  !> @return the base_time
+  function get_base_time() &
+  result(res)
+     TYPE(time_type) :: res
+     res = base_time
+  end function get_base_time
+
+  !> @brief gets the module variable base_year
+  !> @return the base_year
+  function get_base_year() &
+    result(res)
+    integer :: res
+    res = base_year
+  end function get_base_year
+
+  !> @brief gets the module variable base_month
+  !> @return the base_month
+  function get_base_month() &
+    result(res)
+    integer :: res
+    res = base_month
+  end function get_base_month
+
+  !> @brief gets the module variable base_day
+  !> @return the base_day
+  function get_base_day() &
+    result(res)
+    integer :: res
+    res = base_day
+  end function get_base_day
+
+  !> @brief gets the module variable base_hour
+  !> @return the base_hour
+  function get_base_hour() &
+    result(res)
+    integer :: res
+    res = base_hour
+  end function get_base_hour
+
+  !> @brief gets the module variable base_minute
+  !> @return the base_minute
+  function get_base_minute() &
+    result(res)
+    integer :: res
+    res = base_minute
+  end function get_base_minute
+
+  !> @brief gets the module variable base_second
+  !> @return the base_second
+  function get_base_second() &
+    result(res)
+    integer :: res
+    res = base_second
+  end function get_base_second
 END MODULE diag_data_mod
 !> @}
 ! close documentation grouping
