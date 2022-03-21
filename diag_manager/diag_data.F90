@@ -353,8 +353,6 @@ use platform_mod
                                    !! <TT>.TRUE.</TT> is only supported if the diag_manager_init
                                    !! routine is called with the optional time_init parameter.
   LOGICAL :: use_modern_diag = .false. !< Namelist flag to use the modernized diag_manager code
-  LOGICAL :: use_mpp_io = .false. !< false is fms2_io (default); true is mpp_io
-
   ! <!-- netCDF variable -->
 
 #ifdef use_netCDF

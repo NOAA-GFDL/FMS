@@ -201,9 +201,6 @@ use platform_mod
   !     The values are defined as <TT>GLO_REG_VAL</TT> (-999) and <TT>GLO_REG_VAL_ALT</TT>
   !     (-1) in <TT>diag_data_mod</TT>.
   !   </DATA>
-  !   <DATA NAME="use_mpp_io" TYPE="LOGICAL" DEFAULT=".false.">
-  !    Set to true, diag_manager uses mpp_io.  Default is fms2_io.
-  !   </DATA>
   ! </NAMELIST>
 
   USE time_manager_mod, ONLY: set_time, set_date, get_time, time_type, OPERATOR(>=), OPERATOR(>),&
@@ -234,7 +231,7 @@ use platform_mod
        & use_cmor, issue_oor_warnings, oor_warnings_fatal, oor_warning, pack_size,&
        & max_out_per_in_field, flush_nc_files, region_out_use_alt_value, max_field_attributes, output_field_type,&
        & max_file_attributes, max_axis_attributes, prepend_date, DIAG_FIELD_NOT_FOUND, diag_init_time,diag_data_init,&
-       & use_mpp_io, use_modern_diag
+       & use_modern_diag
   USE diag_data_mod, ONLY:  fileobj, fileobjU, fnum_for_domain, fileobjND
   USE diag_table_mod, ONLY: parse_diag_table
   USE diag_output_mod, ONLY: get_diag_global_att, set_diag_global_att
@@ -3638,7 +3635,7 @@ CONTAINS
          & max_input_fields, max_axes, do_diag_field_log, write_bytes_in_file, debug_diag_manager,&
          & max_num_axis_sets, max_files, use_cmor, issue_oor_warnings,&
          & oor_warnings_fatal, max_out_per_in_field, flush_nc_files, region_out_use_alt_value, max_field_attributes,&
-         & max_file_attributes, max_axis_attributes, prepend_date, use_modern_diag, use_mpp_io
+         & max_file_attributes, max_axis_attributes, prepend_date, use_modern_diag
 
     ! If the module was already initialized do nothing
     IF ( module_is_initialized ) RETURN
@@ -3727,21 +3724,14 @@ CONTAINS
     DO j = 1, max_input_fields
       ALLOCATE(input_fields(j)%output_fields(MAX_OUT_PER_IN_FIELD))
     END DO
+!> Allocate files
     ALLOCATE(files(max_files))
-    if (.not.use_mpp_io) then
-      ALLOCATE(fileobjU(max_files))
-      ALLOCATE(fileobj(max_files))
-      ALLOCATE(fileobjND(max_files))
-      ALLOCATE(fnum_for_domain(max_files))
+    ALLOCATE(fileobjU(max_files))
+    ALLOCATE(fileobj(max_files))
+    ALLOCATE(fileobjND(max_files))
+    ALLOCATE(fnum_for_domain(max_files))
     !> Initialize fnum_for_domain with "dn" which stands for done
-      fnum_for_domain(:) = "dn"
-       CALL error_mesg('diag_manager_mod::diag_manager_init',&
-               & 'diag_manager is using fms2_io', NOTE)
-    else
-       CALL error_mesg('diag_manager_mod::diag_manager_init',&
-             &'MPP_IO is no longer supported.  Please remove use_mpp_io from diag_manager_nml namelist',&
-              &FATAL)
-    endif
+    fnum_for_domain(:) = "dn"
     ALLOCATE(pelist(mpp_npes()))
     CALL mpp_get_current_pelist(pelist, pelist_name)
 
