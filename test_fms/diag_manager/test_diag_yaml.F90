@@ -23,7 +23,9 @@ program test_diag_yaml
 
 use FMS_mod, only: fms_init, fms_end
 use fms_diag_yaml_mod
-use diag_data_mod, only: DIAG_NULL, DIAG_ALL
+use diag_data_mod, only: DIAG_NULL, DIAG_ALL, get_base_year, get_base_month, get_base_day, get_base_hour, &
+                       & get_base_minute, get_base_second, diag_data_init
+use  time_manager_mod, only: set_calendar_type, JULIAN
 use mpp_mod
 use platform_mod
 
@@ -66,20 +68,25 @@ if (io_status > 0) call mpp_error(FATAL,'=>check_crashes: Error reading input.nm
 if (checking_crashes) call mpp_error(FATAL, "It is crashing!")
 call fms_end()
 #else
+
+call set_calendar_type(JULIAN)
+call diag_data_init()
 call diag_yaml_object_init(DIAG_ALL)
 
 my_yaml = get_diag_yaml_obj()
 
 if (.not. checking_crashes) then
   call compare_result("base_date", my_yaml%get_basedate(), (/2, 1, 1, 0, 0 , 0 /))
+  call check_base_time()
+
   call compare_result("title", my_yaml%get_title(), "test_diag_manager")
 
   diag_files = my_yaml%get_diag_files()
-  call compare_result("nfiles", size(diag_files), 3)
+  call compare_result("nfiles", size(diag_files), 3) !< the fourth file has file_write = false so it doesn't count
   call compare_diag_files(diag_files)
 
   diag_fields = my_yaml%get_diag_fields()
-  call compare_result("nfields", size(diag_fields), 3)
+  call compare_result("nfields", size(diag_fields), 3) !< the fourth variable has var_write = false so it doesn't count
   call compare_diag_fields(diag_fields)
 
 endif
@@ -117,10 +124,6 @@ subroutine compare_diag_fields(res)
   call compare_result("var_skind 1", res(1)%get_var_skind(), "float")
   call compare_result("var_skind 2", res(2)%get_var_skind(), "float")
   call compare_result("var_skind 3", res(3)%get_var_skind(), "float")
-
-  call compare_result("var_write 1", res(1)%get_var_write(), .false.)
-  call compare_result("var_write 2", res(2)%get_var_write(), .true.)
-  call compare_result("var_write 3", res(3)%get_var_write(), .true.)
 
   call compare_result("var_outname 1", res(1)%get_var_outname(), "sst")
   call compare_result("var_outname 2", res(2)%get_var_outname(), "sst")
@@ -174,10 +177,6 @@ subroutine compare_diag_files(res)
   call compare_result("file_realm 2", res(2)%get_file_realm(), "")
   call compare_result("file_realm 3", res(3)%get_file_realm(), "")
 
-  call compare_result("file_write 1", res(1)%get_file_write(), .false.)
-  call compare_result("file_write 2", res(2)%get_file_write(), .true.)
-  call compare_result("file_write 3", res(3)%get_file_write(), .true.)
-
   call compare_result("file_new_file_freq 1", res(1)%get_file_new_file_freq(), 6)
   call compare_result("file_new_file_freq 2", res(2)%get_file_new_file_freq(), DIAG_NULL)
   call compare_result("file_new_file_freq 3", res(3)%get_file_new_file_freq(), DIAG_NULL)
@@ -226,6 +225,20 @@ subroutine compare_diag_files(res)
   if (res(3)%is_global_meta()) call mpp_error(FATAL, "The global meta for the third file was set?")
 
 end subroutine compare_diag_files
+
+!> @brief Check if the base_time saved in diag_data is correct
+subroutine check_base_time()
+  integer :: base_time_mod_var(6) !< The base_time obtained from diag_data
+
+  base_time_mod_var(1) = get_base_year()
+  base_time_mod_var(2) = get_base_month()
+  base_time_mod_var(3) = get_base_day()
+  base_time_mod_var(4) = get_base_hour()
+  base_time_mod_var(5) = get_base_minute()
+  base_time_mod_var(6) = get_base_second()
+
+  call compare_result("base_time", base_time_mod_var, (/2, 1, 1, 0, 0 ,0 /))
+end subroutine check_base_time
 
 #endif
 end program test_diag_yaml

@@ -33,6 +33,7 @@ program test_fms_string_utils
   integer, allocatable :: my_ids(:) !< Array of indices
   integer :: i !< For do loops
   integer, allocatable :: ifind(:) !< Array of indices where a string was found
+  integer :: nunique !< Number of unique strings in an array of strings
 
   call fms_init()
 
@@ -55,6 +56,11 @@ program test_fms_string_utils
   end do
 
   my_pointer = fms_array_to_pointer(my_array)
+
+  print *, "Check if fms_find_unique works without sorting the array first!"
+  nunique = fms_find_unique(my_pointer, 10)
+  if (nunique .ne. 7) call mpp_error(FATAL, "The number of unique strings in your array is not correct")
+
   call fms_sort_this(my_pointer, 10, my_ids)
   my_sorted_array = fms_pointer_to_array(my_pointer, 10)
   print *, "Checking if the array was sorted correctly"
@@ -99,6 +105,10 @@ program test_fms_string_utils
   print *, "Checking if 'tamales' was found in the array at all the right places"
   call check_my_indices(ifind, (/-999/), "tamales")
   deallocate(ifind)
+
+  nunique = fms_find_unique(my_pointer, 10)
+  print *, "Checking if fms_find_unique determines the correct number of unique strings"
+  if (nunique .ne. 7) call mpp_error(FATAL, "The number of unique strings in your array is not correct")
 
   call fms_end()
 
