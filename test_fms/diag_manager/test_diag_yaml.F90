@@ -23,7 +23,7 @@ program test_diag_yaml
 
 use FMS_mod, only: fms_init, fms_end
 use fms_diag_yaml_mod
-use diag_data_mod, only: DIAG_NULL
+use diag_data_mod, only: DIAG_NULL, DIAG_ALL
 use mpp_mod
 use platform_mod
 
@@ -66,7 +66,7 @@ if (io_status > 0) call mpp_error(FATAL,'=>check_crashes: Error reading input.nm
 if (checking_crashes) call mpp_error(FATAL, "It is crashing!")
 call fms_end()
 #else
-call diag_yaml_object_init
+call diag_yaml_object_init(DIAG_ALL)
 
 my_yaml = get_diag_yaml_obj()
 
@@ -75,11 +75,11 @@ if (.not. checking_crashes) then
   call compare_result("title", my_yaml%get_title(), "test_diag_manager")
 
   diag_files = my_yaml%get_diag_files()
-  call compare_result("nfiles", size(diag_files), 3)
+  call compare_result("nfiles", size(diag_files), 3) !< the fourth file has file_write = false so it doesn't count
   call compare_diag_files(diag_files)
 
   diag_fields = my_yaml%get_diag_fields()
-  call compare_result("nfields", size(diag_fields), 3)
+  call compare_result("nfields", size(diag_fields), 3) !< the fourth variable has var_write = false so it doesn't count
   call compare_diag_fields(diag_fields)
 
 endif
@@ -117,10 +117,6 @@ subroutine compare_diag_fields(res)
   call compare_result("var_skind 1", res(1)%get_var_skind(), "float")
   call compare_result("var_skind 2", res(2)%get_var_skind(), "float")
   call compare_result("var_skind 3", res(3)%get_var_skind(), "float")
-
-  call compare_result("var_write 1", res(1)%get_var_write(), .false.)
-  call compare_result("var_write 2", res(2)%get_var_write(), .true.)
-  call compare_result("var_write 3", res(3)%get_var_write(), .true.)
 
   call compare_result("var_outname 1", res(1)%get_var_outname(), "sst")
   call compare_result("var_outname 2", res(2)%get_var_outname(), "sst")
@@ -173,10 +169,6 @@ subroutine compare_diag_files(res)
   call compare_result("file_realm 1", res(1)%get_file_realm(), "ATM")
   call compare_result("file_realm 2", res(2)%get_file_realm(), "")
   call compare_result("file_realm 3", res(3)%get_file_realm(), "")
-
-  call compare_result("file_write 1", res(1)%get_file_write(), .false.)
-  call compare_result("file_write 2", res(2)%get_file_write(), .true.)
-  call compare_result("file_write 3", res(3)%get_file_write(), .true.)
 
   call compare_result("file_new_file_freq 1", res(1)%get_file_new_file_freq(), 6)
   call compare_result("file_new_file_freq 2", res(2)%get_file_new_file_freq(), DIAG_NULL)
