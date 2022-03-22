@@ -10,7 +10,7 @@ jobs:
         distcheck-conf-flags: [--enable-openmp, --disable-openmp, --enable-mixed-mode, --disable-setting-flags ]
         yaml-flag: [ --with-yaml, "" ]
     container:
-      image: ryanmulhall/hpc-me.ubuntu20.04
+      image: ryanmulhall/hpc-me.ubuntu20.04:intel2021.05
       env:
         VERBOSE: 1
         DISTCHECK_CONFIGURE_FLAGS: "${{ matrix.distcheck-conf-flags }} ${{ matrix.yaml-flag }}"
