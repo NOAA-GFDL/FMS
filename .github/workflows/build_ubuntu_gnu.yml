@@ -10,9 +10,8 @@ jobs:
         distcheck-conf-flags: [--enable-openmp, --disable-openmp, --enable-mixed-mode, --disable-setting-flags ]
         yaml-flag: [ --with-yaml, "" ]
     container:
-      image: noaagfdl/ubuntu_libfms_gnu
+      image: ryanmulhall/hpc-me.ubuntu20.04
       env:
-        FCFLAGS: "-I/usr/include"
         VERBOSE: 1
         DISTCHECK_CONFIGURE_FLAGS: "${{ matrix.distcheck-conf-flags }} ${{ matrix.yaml-flag }}"
     steps:
