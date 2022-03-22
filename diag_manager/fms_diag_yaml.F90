@@ -473,7 +473,7 @@ subroutine fill_in_diag_fields(diag_file_id, var_id, field)
   call diag_get_value_from_key(diag_file_id, var_id, "kind", field%var_skind)
   call check_field_kind(field)
 
-  call diag_get_value_from_key(diag_file_id, var_id, "output_name", field%var_outname)
+  call diag_get_value_from_key(diag_file_id, var_id, "output_name", field%var_outname, is_optional=.true.)
   call diag_get_value_from_key(diag_file_id, var_id, "long_name", field%var_longname, is_optional=.true.)
   !! VAR_UNITS !!
 
