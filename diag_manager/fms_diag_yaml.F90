@@ -89,6 +89,12 @@ type diagYamlFiles_type
   !< Need to use `MAX_STR_LEN` because not all filenames/global attributes are the same length
   character (len=MAX_STR_LEN), dimension(:), private, allocatable :: file_varlist !< An array of variable names
                                                                                   !! within a file
+  integer, dimension(:), private, allocatable :: file_var_index !< An array of the variable indicies in the 
+                                                                 !! diag_object.  This should be the same size as
+                                                                 !! `file_varlist`
+  logical, dimension(:), private, allocatable :: file_var_reg   !< Array corresponding to `file_varlist`, .true. 
+                                                                 !! if the variable has been registered and 
+                                                                 !! `file_var_index` has been set for the variable
   character (len=MAX_STR_LEN), dimension(:,:), private, allocatable :: file_global_meta !< Array of key(dim=1)
                                                                                         !! and values(dim=2) to be
                                                                                         !! added as global meta data to
@@ -329,6 +335,12 @@ subroutine diag_yaml_object_init(diag_subset_output)
     call get_block_ids(diag_yaml_id, "varlist", var_ids, parent_block_id=diag_file_ids(i))
     file_var_count = 0
     allocate(diag_yaml%diag_files(file_count)%file_varlist(get_total_num_vars(diag_yaml_id, diag_file_ids(i))))
+    allocate(diag_yaml%diag_files(file_count)%file_var_index &
+                                  (size(diag_yaml%diag_files(file_count)%file_varlist)))
+    allocate(diag_yaml%diag_files(file_count)%file_var_reg &
+                                  (size(diag_yaml%diag_files(file_count)%file_varlist)))
+!> Initialize file_var_reg to be all .false.
+    diag_yaml%diag_files(file_count)%file_var_reg = .False.
     nvars_loop: do j = 1, nvars
       write_var = .true.
       call get_value_from_key(diag_yaml_id, var_ids(j), "write_var", write_var, is_optional=.true.)
