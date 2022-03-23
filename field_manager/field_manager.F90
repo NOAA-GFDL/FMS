@@ -1169,9 +1169,6 @@ subroutine get_field_methods(n,methods)
 integer,          intent(in)  :: n !< field index
 type(method_type),intent(inout) :: methods(:) !< an array of methods for field with index n
 
-character(len=17), parameter :: sub_name     = 'get_field_methods'
-character(len=64), parameter :: error_header = '==>Error from ' // trim(module_name)   //  &
-                                               '(' // trim(sub_name) // '): '
   if (n < 1 .or. n > num_fields) &
     call mpp_error(FATAL,trim(error_header)//'Invalid field index')
 
