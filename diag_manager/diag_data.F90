@@ -353,9 +353,6 @@ use platform_mod
                                    !! <TT>.TRUE.</TT> is only supported if the diag_manager_init
                                    !! routine is called with the optional time_init parameter.
   LOGICAL :: use_modern_diag = .false. !< Namelist flag to use the modernized diag_manager code
-  LOGICAL :: use_mpp_io = .false. !< false is fms2_io (default); true is mpp_io
-  LOGICAL :: use_refactored_send = .false. !< Namelist flag to use refactored send_data math funcitons.
-
   ! <!-- netCDF variable -->
 
   REAL :: FILL_VALUE = NF_FILL_REAL !< Fill value used.  Value will be <TT>NF90_FILL_REAL</TT> if using the

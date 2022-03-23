@@ -45,7 +45,6 @@ setup_test () {
 &diag_manager_nml
    max_field_attributes=3
    debug_diag_manager=.true.
-   use_mpp_io = .false.
 /
 
 &ensemble_nml
