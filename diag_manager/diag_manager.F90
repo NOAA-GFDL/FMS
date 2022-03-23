@@ -201,9 +201,6 @@ use platform_mod
   !     The values are defined as <TT>GLO_REG_VAL</TT> (-999) and <TT>GLO_REG_VAL_ALT</TT>
   !     (-1) in <TT>diag_data_mod</TT>.
   !   </DATA>
-  !   <DATA NAME="use_mpp_io" TYPE="LOGICAL" DEFAULT=".false.">
-  !    Set to true, diag_manager uses mpp_io.  Default is fms2_io.
-  !   </DATA>
   ! </NAMELIST>
 
   USE time_manager_mod, ONLY: set_time, set_date, get_time, time_type, OPERATOR(>=), OPERATOR(>),&
@@ -226,15 +223,16 @@ use platform_mod
   USE diag_data_mod, ONLY: max_files, CMOR_MISSING_VALUE, DIAG_OTHER, DIAG_OCEAN, DIAG_ALL, EVERY_TIME,&
        & END_OF_RUN, DIAG_SECONDS, DIAG_MINUTES, DIAG_HOURS, DIAG_DAYS, DIAG_MONTHS, DIAG_YEARS, num_files,&
        & max_input_fields, max_output_fields, num_output_fields, EMPTY, FILL_VALUE, null_axis_id,&
-       & MAX_VALUE, MIN_VALUE, base_time, base_year, base_month, base_day,&
-       & base_hour, base_minute, base_second, global_descriptor, coord_type, files, input_fields,&
+       & MAX_VALUE, MIN_VALUE, get_base_time, get_base_year, get_base_month, get_base_day,&
+       & get_base_hour, get_base_minute, get_base_second, global_descriptor, coord_type, files, input_fields,&
        & output_fields, Time_zero, append_pelist_name, mix_snapshot_average_fields,&
        & first_send_data_call, do_diag_field_log, write_bytes_in_file, debug_diag_manager,&
        & diag_log_unit, time_unit_list, pelist_name, max_axes, module_is_initialized, max_num_axis_sets,&
        & use_cmor, issue_oor_warnings, oor_warnings_fatal, oor_warning, pack_size,&
        & max_out_per_in_field, flush_nc_files, region_out_use_alt_value, max_field_attributes, output_field_type,&
        & max_file_attributes, max_axis_attributes, prepend_date, DIAG_FIELD_NOT_FOUND, diag_init_time,diag_data_init,&
-       & use_mpp_io, use_modern_diag, diag_null
+       & use_modern_diag, diag_null
+  
   USE diag_data_mod, ONLY:  fileobj, fileobjU, fnum_for_domain, fileobjND
   USE diag_table_mod, ONLY: parse_diag_table
   USE diag_output_mod, ONLY: get_diag_global_att, set_diag_global_att
@@ -3748,7 +3746,7 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
          & max_input_fields, max_axes, do_diag_field_log, write_bytes_in_file, debug_diag_manager,&
          & max_num_axis_sets, max_files, use_cmor, issue_oor_warnings,&
          & oor_warnings_fatal, max_out_per_in_field, flush_nc_files, region_out_use_alt_value, max_field_attributes,&
-         & max_file_attributes, max_axis_attributes, prepend_date, use_modern_diag, use_mpp_io
+         & max_file_attributes, max_axis_attributes, prepend_date, use_modern_diag
 
     ! If the module was already initialized do nothing
     IF ( module_is_initialized ) RETURN
@@ -3837,21 +3835,14 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
     DO j = 1, max_input_fields
       ALLOCATE(input_fields(j)%output_fields(MAX_OUT_PER_IN_FIELD))
     END DO
+!> Allocate files
     ALLOCATE(files(max_files))
-    if (.not.use_mpp_io) then
-      ALLOCATE(fileobjU(max_files))
-      ALLOCATE(fileobj(max_files))
-      ALLOCATE(fileobjND(max_files))
-      ALLOCATE(fnum_for_domain(max_files))
+    ALLOCATE(fileobjU(max_files))
+    ALLOCATE(fileobj(max_files))
+    ALLOCATE(fileobjND(max_files))
+    ALLOCATE(fnum_for_domain(max_files))
     !> Initialize fnum_for_domain with "dn" which stands for done
-      fnum_for_domain(:) = "dn"
-       CALL error_mesg('diag_manager_mod::diag_manager_init',&
-               & 'diag_manager is using fms2_io', NOTE)
-    else
-       CALL error_mesg('diag_manager_mod::diag_manager_init',&
-             &'MPP_IO is no longer supported.  Please remove use_mpp_io from diag_manager_nml namelist',&
-              &FATAL)
-    endif
+    fnum_for_domain(:) = "dn"
     ALLOCATE(pelist(mpp_npes()))
     CALL mpp_get_current_pelist(pelist, pelist_name)
 
@@ -3860,7 +3851,7 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
        diag_init_time = set_date(time_init(1), time_init(2), time_init(3), time_init(4),&
             & time_init(5), time_init(6))
     ELSE
-       diag_init_time = base_time
+       diag_init_time = get_base_time()
        IF ( prepend_date .EQV. .TRUE. ) THEN
           CALL error_mesg('diag_manager_mod::diag_manager_init',&
                & 'prepend_date only supported when diag_manager_init is called with time_init present.', NOTE)
@@ -3871,13 +3862,13 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
 #ifdef use_yaml
     if (use_modern_diag) CALL diag_yaml_object_init(diag_subset_output)
 #endif
-
-    CALL parse_diag_table(DIAG_SUBSET=diag_subset_output, ISTAT=mystat, ERR_MSG=err_msg_local)
-    IF ( mystat /= 0 ) THEN
+   if (.not. use_modern_diag) then
+     CALL parse_diag_table(DIAG_SUBSET=diag_subset_output, ISTAT=mystat, ERR_MSG=err_msg_local)
+     IF ( mystat /= 0 ) THEN
        IF ( fms_error_handler('diag_manager_mod::diag_manager_init',&
             & 'Error parsing diag_table. '//TRIM(err_msg_local), err_msg) ) RETURN
-    END IF
-
+     END IF
+   endif
     !initialize files%bytes_written to zero
     files(:)%bytes_written = 0
 
@@ -3901,18 +3892,6 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
     RETURN
   END SUBROUTINE diag_manager_init
 
-  !> @brief Return base time for diagnostics.
-  !! @return time_type get_base_time
-  !! @details Return base time for diagnostics (note: base time must be >= model time).
-  TYPE(time_type) FUNCTION get_base_time ()
-    ! <ERROR STATUS="FATAL">
-    !   MODULE has not been initialized
-    ! </ERROR>
-    IF ( .NOT.module_is_initialized ) CALL error_mesg('diag_manager_mod::get_base_time', &
-         & 'module has not been initialized', FATAL)
-    get_base_time = base_time
-  END FUNCTION get_base_time
-
   !> @brief Return base date for diagnostics.
   !! @details Return date information for diagnostic reference time.
   SUBROUTINE get_base_date(year, month, day, hour, minute, second)
@@ -3921,12 +3900,12 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
     ! <ERROR STATUS="FATAL">module has not been initialized</ERROR>
     IF (.NOT.module_is_initialized) CALL error_mesg ('diag_manager_mod::get_base_date', &
          & 'module has not been initialized', FATAL)
-    year   = base_year
-    month  = base_month
-    day    = base_day
-    hour   = base_hour
-    minute = base_minute
-    second = base_second
+    year   = get_base_year()
+    month  = get_base_month()
+    day    = get_base_day()
+    hour   = get_base_hour()
+    minute = get_base_minute()
+    second = get_base_second()
   END SUBROUTINE get_base_date
 
   !> @brief Determine whether data is needed for the current model time step.

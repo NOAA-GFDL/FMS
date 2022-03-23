@@ -162,3 +162,25 @@ char* fms_find_my_string_binding(char** arr, int *n, char *find_me, int *np)
   strcpy(string_p, string);
   return string_p;
 }
+
+/*!
+ * @brief Finds the number of unique strings in an array
+ * @param[in]  arr Array of strings
+ * @param[in]  n   Size of the array
+ * @return Number of unique strings in an array
+ */
+int fms_find_unique(char** arr, int *n)
+{
+  int i; // For loops
+  int nfind; // Number of unique strings in an array
+  int * ids = calloc(*n, sizeof(int)); // Array of integers initialized to 0
+
+  fms_sort_this(arr, n, ids);
+
+  nfind=1;
+  for(i=1; i<*n; i++){
+    if (strcmp(arr[i], arr[i-1]) != 0){ nfind = nfind + 1;}
+  }
+
+  return nfind;
+}
