@@ -53,7 +53,91 @@ MODULE fms_send_data_statfun_mod
 
   END TYPE STATFUN_CFG_T
 
+  ABSTRACT INTERFACE
+  FUNCTION weigh_field ( field_val, weight, pow_value )
+    REAL, INTENT(in) :: field_val
+    REAL, INTENT(in) :: weight
+    INTEGER, INTENT(in) :: pow_value
+    REAL :: weigh_field
+  END FUNCTION weigh_field
+  END INTERFACE
+
+  ABSTRACT INTERFACE
+  FUNCTION weigh_field_3d ( field_val, weight, pow_value )
+    REAL, INTENT(in) :: field_val(:,:,:)
+    REAL, INTENT(in) :: weight
+    INTEGER, INTENT(in) :: pow_value
+    REAL, DIMENSION(:,:,:), ALLOCATABLE :: weigh_field_3d
+  END FUNCTION weigh_field_3d
+  END INTERFACE
+
   CONTAINS
+
+  PURE FUNCTION weigh_field_p1 ( field_val, weight, pow_value )
+  REAL, INTENT(in) :: weight
+  REAL, INTENT(in) :: field_val
+  INTEGER, INTENT(in) :: pow_value
+  weigh_field_p1 = field_val * weight
+  END FUNCTION weigh_field_p1
+
+  PURE FUNCTION weigh_field_p2 ( field_val, weight,  pow_value  )
+  REAL, INTENT(in) :: weight
+  REAL, INTENT(in) :: field_val
+  INTEGER, INTENT(in) :: pow_value
+  REAL :: fTw
+  fTw =  field_val * weight
+  weigh_field_p2 = fTw * fTw
+  END FUNCTION weigh_field_p2
+
+  PURE FUNCTION weigh_field_pp ( field_val, weight, pow_value  )
+  REAL, INTENT(in) :: weight
+  REAL, INTENT(in) :: field_val
+  INTEGER, INTENT(in) :: pow_value
+  weigh_field_pp = (field_val * weight) ** pow_val
+  END FUNCTION weigh_field_pp
+
+PURE FUNCTION weigh_field_p1_1d ( field_val, weight, pow_value )
+  REAL, INTENT(in) :: field_val(:)
+  REAL, INTENT(in) :: weight
+  INTEGER, INTENT(in) :: pow_value
+  INTEGER :: i
+  REAL, DIMENSION(:), ALLOCATABLE :: weigh_field_p1_1d
+  ALLOCATE(weigh_field_p1_1d(size(field_val)))
+  DO i = i, size(field_val)
+    weigh_field_p1_1d(i) = field_val(i) * weight
+  END DO
+  END FUNCTION weigh_field_p1_1d
+
+  PURE FUNCTION weigh_field_p1_3d ( field_val, weight, pow_value )
+  REAL, INTENT(in) :: field_val(:,:,:)
+  REAL, INTENT(in) :: weight
+  INTEGER, INTENT(in) :: pow_value
+  INTEGER :: i
+  REAL, DIMENSION(:,:,:), ALLOCATABLE :: weigh_field_p1_3d
+  ALLOCATE(weigh_field_p1_3d, mold=field_val)
+    weigh_field_p1_3d = field_val * weight
+  END FUNCTION weigh_field_p1_3d
+
+  PURE FUNCTION weigh_field_p2_3d ( field_val, weight, pow_value )
+  REAL, INTENT(in) :: field_val(:,:,:)
+  REAL, INTENT(in) :: weight
+  INTEGER, INTENT(in) :: pow_value
+  INTEGER :: i
+  REAL, DIMENSION(:,:,:), ALLOCATABLE :: weigh_field_p2_3d
+  ALLOCATE(weigh_field_p2_3d, mold=field_val)
+  weigh_field_p2_3d = field_val * fiedl_val * weight * weight
+  END FUNCTION weigh_field_p2_3d
+
+  PURE FUNCTION weigh_field_pp_3d ( field_val, weight, pow_value )
+  REAL, INTENT(in) :: field_val(:,:,:)
+  REAL, INTENT(in) :: weight
+  INTEGER, INTENT(in) :: pow_value
+  INTEGER :: i
+  REAL, DIMENSION(:,:,:), ALLOCATABLE :: weigh_field_pp_3d
+  ALLOCATE(weigh_field_pp_3d, mold=field_val)
+    weigh_field_pp_3d = (field_val * weight) ** pow_val
+  END FUNCTION weigh_field_pp_3d
+
 
   FUNCTION AVERAGE_THE_FIELD (diag_field_id, field, out_num, mask, weight, &
       & l_start, l_end, cfg, err_msg,  err_msg_local) result( succeded )
@@ -86,7 +170,23 @@ MODULE fms_send_data_statfun_mod
     INTEGER :: omp_get_level !< OMP function
 #endif
 
-    pow_value = output_fields(out_num)%pow_value
+  procedure (weigh_field), pointer :: wf_ptr => null ()
+  procedure (weigh_field_3d), pointer :: wf3d_ptr => null ()
+
+  pow_value = output_fields(out_num)%pow_value
+
+  if ( pow_val == 1 ) then
+    wf_ptr => weigh_field_p1
+    wf3d_ptr => weigh_field_p1_3d
+  else if ( pow_val == 2 ) then
+    wf_ptr => weigh_field_p2
+    wf3d_ptr => weigh_field_p2_3d
+  else
+    wf_ptr => weigh_field_pp
+    wf3d_ptr => weigh_field_pp_3d
+  end if
+
+
     phys_window = output_fields(out_num)%phys_window
     need_compute = output_fields(out_num)%need_compute
     reduced_k_range = output_fields(out_num)%reduced_k_range
@@ -107,6 +207,8 @@ MODULE fms_send_data_statfun_mod
     f4 = cfg%f4
     weight1 = cfg%weight1
     missvalue = cfg%missvalue
+
+
 
     IF ( input_fields(diag_field_id)%mask_variant ) THEN
       IF ( need_compute ) THEN
@@ -137,7 +239,7 @@ MODULE fms_send_data_statfun_mod
           END IF
           IF( numthreads>1 .AND. phys_window ) then
             IF ( reduced_k_range ) THEN
-              DO 1000, k= ksr, ker
+              NORMAL1: DO k= ksr, ker
                 k1= k - ksr + 1
                 DO j=js, je
                   DO i=is, ie
@@ -156,27 +258,21 @@ MODULE fms_send_data_statfun_mod
                     END IF
                   END DO
                 END DO
-  1000        END DO
+              END DO NORMAL1
             ELSE
-              DO k=ks, ke
+              NORMAL2: DO k=ks, ke
                 DO j=js, je
                   DO i=is, ie
-                    IF ( mask(i-is+1+hi, j-js+1+hj, k) ) THEN
-                      IF ( pow_value /= 1 ) THEN
-                        output_fields(out_num)%buffer(i-hi,j-hj,k,sample) =&
-                          & output_fields(out_num)%buffer(i-hi,j-hj,k,sample) +&
-                          & (field(i-is+1+hi,j-js+1+hj,k)*weight1)**(pow_value)
-                      ELSE
-                        output_fields(out_num)%buffer(i-hi,j-hj,k,sample) =&
-                          & output_fields(out_num)%buffer(i-hi,j-hj,k,sample) +&
-                          & field(i-is+1+hi,j-js+1+hj,k)*weight1
-                      END IF
-                      output_fields(out_num)%counter(i-hi,j-hj,k,sample) =&
-                        &output_fields(out_num)%counter(i-hi,j-hj,k,sample) + weight1
+                    IF ( mask(i-is+1+hi, j-js+1+hj, k) ) THEN  !!Includes removal of ( pow_value /= 1 ) ifhten
+                        ASSOCIATE( ofb => output_fields(out_num)%buffer (i-hi,j-hj,k,sample) , &
+                          & ofc => output_fields(out_num)%counter(i-hi,j-hj,k,sample))
+                          ofb = ofb + (field(i-is+1+hi,j-js+1+hj,k) * weight1) ** pow_value
+                          ofc = ofc + weight1
+                        END ASSOCIATE
                     END IF
                   END DO
                 END DO
-              END DO
+              END DO NORMAL2
             END IF
           ELSE  !$OMP CRITICAL
             IF ( reduced_k_range ) THEN
@@ -185,15 +281,9 @@ MODULE fms_send_data_statfun_mod
                 DO j=js, je
                   DO i=is, ie
                     IF ( mask(i-is+1+hi, j-js+1+hj, k) ) THEN
-                      IF ( pow_value /= 1 ) THEN
-                        output_fields(out_num)%buffer(i-hi,j-hj,k1,sample) =&
-                          & output_fields(out_num)%buffer(i-hi,j-hj,k1,sample) +&
-                          & (field(i-is+1+hi, j-js+1+hj, k) * weight1)**(pow_value)
-                      ELSE
-                        output_fields(out_num)%buffer(i-hi,j-hj,k1,sample) =&
-                          & output_fields(out_num)%buffer(i-hi,j-hj,k1,sample) +&
-                          & field(i-is+1+hi, j-js+1+hj, k) * weight1
-                      END IF
+                      output_fields(out_num)%buffer(i-hi,j-hj,k1,sample) =&
+                          & output_fields(out_num)%buffer(i-hi,j-hj,k1,sample) + &
+                          & wf_ptr (field(i-is+1+hi, j-js+1+hj, k),  weight1, pow_value)
                       output_fields(out_num)%counter(i-hi,j-hj,k1,sample) =&
                         & output_fields(out_num)%counter(i-hi,j-hj,k1,sample) + weight1
                     END IF
@@ -205,15 +295,9 @@ MODULE fms_send_data_statfun_mod
                 DO j=js, je
                   DO i=is, ie
                     IF ( mask(i-is+1+hi, j-js+1+hj, k) ) THEN
-                      IF ( pow_value /= 1 ) THEN
-                        output_fields(out_num)%buffer(i-hi,j-hj,k,sample) =&
-                          & output_fields(out_num)%buffer(i-hi,j-hj,k,sample) +&
-                          & (field(i-is+1+hi,j-js+1+hj,k)*weight1)**(pow_value)
-                      ELSE
-                        output_fields(out_num)%buffer(i-hi,j-hj,k,sample) =&
-                          & output_fields(out_num)%buffer(i-hi,j-hj,k,sample) +&
-                          & field(i-is+1+hi,j-js+1+hj,k)*weight1
-                      END IF
+                      output_fields(out_num)%buffer(i-hi,j-hj,k,sample) = &
+                          & output_fields(out_num)%buffer(i-hi,j-hj,k,sample) +  &
+                          & wf_ptr( field(i-is+1+hi,j-js+1+hj,k), weight1, pow_value)
                       output_fields(out_num)%counter(i-hi,j-hj,k,sample) =&
                         &output_fields(out_num)%counter(i-hi,j-hj,k,sample) + weight1
                     END IF
@@ -256,15 +340,9 @@ MODULE fms_send_data_statfun_mod
                       i1 = i-l_start(1)-hi+1
                       j1=  j-l_start(2)-hj+1
                       IF ( mask(i-is+1+hi, j-js+1+hj, k) ) THEN
-                        IF ( pow_value /= 1 ) THEN
                           output_fields(out_num)%buffer(i1,j1,k1,sample) =&
                             & output_fields(out_num)%buffer(i1,j1,k1,sample) +&
-                            & (field(i-is+1+hi,j-js+1+hj,k) * weight1)**(pow_value)
-                        ELSE
-                          output_fields(out_num)%buffer(i1,j1,k1,sample) =&
-                            & output_fields(out_num)%buffer(i1,j1,k1,sample) +&
-                            & field(i-is+1+hi,j-js+1+hj,k) * weight1
-                        END IF
+                            & wf_ptr( field(i-is+1+hi,j-js+1+hj,k),  weight1, pow_value)
                       ELSE
                         output_fields(out_num)%buffer(i1,j1,k1,sample) = missvalue
                       END IF
@@ -282,15 +360,9 @@ MODULE fms_send_data_statfun_mod
                       i1 = i-l_start(1)-hi+1
                       j1=  j-l_start(2)-hj+1
                       IF ( mask(i-is+1+hi, j-js+1+hj, k) ) THEN
-                        IF ( pow_value /= 1 ) THEN
                           output_fields(out_num)%buffer(i1,j1,k1,sample) =&
-                            & output_fields(out_num)%buffer(i1,j1,k1,sample) +&
-                            & (field(i-is+1+hi,j-js+1+hj,k) * weight1)**(pow_value)
-                        ELSE
-                          output_fields(out_num)%buffer(i1,j1,k1,sample) =&
-                            & output_fields(out_num)%buffer(i1,j1,k1,sample) +&
-                            & field(i-is+1+hi,j-js+1+hj,k) * weight1
-                        END IF
+                            & output_fields(out_num)%buffer(i1,j1,k1,sample) + &
+                            & wf_ptr( field(i-is+1+hi,j-js+1+hj,k), weight1, pow_value)
                       ELSE
                         output_fields(out_num)%buffer(i1,j1,k1,sample) = missvalue
                       END IF
@@ -315,15 +387,9 @@ MODULE fms_send_data_statfun_mod
                 DO j=js, je
                   DO i=is, ie
                     IF ( mask(i-is+1+hi,j-js+1+hj,k) ) THEN
-                      IF ( pow_value /= 1 ) THEN
                         output_fields(out_num)%buffer(i-hi,j-hj,k1,sample) =&
-                          & output_fields(out_num)%buffer(i-hi,j-hj,k1,sample) +&
-                          & (field(i-is+1+hi,j-js+1+hj,k) * weight1)**(pow_value)
-                      ELSE
-                        output_fields(out_num)%buffer(i-hi,j-hj,k1,sample) =&
-                          & output_fields(out_num)%buffer(i-hi,j-hj,k1,sample) +&
-                          & field(i-is+1+hi,j-js+1+hj,k) * weight1
-                      END IF
+                          & output_fields(out_num)%buffer(i-hi,j-hj,k1,sample)+ &
+                          & wf_ptr (field(i-is+1+hi,j-js+1+hj,k), weight1, pow_value)
                     ELSE
                       output_fields(out_num)%buffer(i-hi,j-hj,k1,sample)= missvalue
                     END IF
@@ -336,15 +402,9 @@ MODULE fms_send_data_statfun_mod
                 DO j=js, je
                   DO i=is, ie
                     IF ( mask(i-is+1+hi,j-js+1+hj,k) ) THEN
-                      IF ( pow_value /= 1 ) THEN
-                        output_fields(out_num)%buffer(i-hi,j-hj,k1,sample) =&
-                          & output_fields(out_num)%buffer(i-hi,j-hj,k1,sample) +&
-                          & (field(i-is+1+hi,j-js+1+hj,k) * weight1)**(pow_value)
-                      ELSE
-                        output_fields(out_num)%buffer(i-hi,j-hj,k1,sample) =&
-                          & output_fields(out_num)%buffer(i-hi,j-hj,k1,sample) +&
-                          & field(i-is+1+hi,j-js+1+hj,k) * weight1
-                      END IF
+                      output_fields(out_num)%buffer(i-hi,j-hj,k1,sample) =&
+                        & output_fields(out_num)%buffer(i-hi,j-hj,k1,sample)+ &
+                        & wf_ptr ( field(i-is+1+hi,j-js+1+hj,k) ,weight1, pow_value)
                     ELSE
                       output_fields(out_num)%buffer(i-hi,j-hj,k1,sample)= missvalue
                     END IF
@@ -368,15 +428,9 @@ MODULE fms_send_data_statfun_mod
                 DO j=js, je
                   DO i=is, ie
                     IF ( mask(i-is+1+hi,j-js+1+hj,k) ) THEN
-                      IF ( pow_value /= 1 ) THEN
-                        output_fields(out_num)%buffer(i-hi,j-hj,k,sample) =&
-                          & output_fields(out_num)%buffer(i-hi,j-hj,k,sample) +&
-                          & (field(i-is+1+hi,j-js+1+hj,k) * weight1)**(pow_value)
-                      ELSE
-                        output_fields(out_num)%buffer(i-hi,j-hj,k,sample) =&
-                          & output_fields(out_num)%buffer(i-hi,j-hj,k,sample) +&
-                          & field(i-is+1+hi,j-js+1+hj,k) * weight1
-                      END IF
+                        output_fields(out_num)%buffer(i-hi,j-hj,k,sample) = &
+                          & output_fields(out_num)%buffer(i-hi,j-hj,k,sample)+ &
+                          & wf_ptr ( field(i-is+1+hi,j-js+1+hj,k), weight1, pow_value)
                     ELSE
                       output_fields(out_num)%buffer(i-hi,j-hj,k,sample)= missvalue
                     END IF
@@ -388,15 +442,9 @@ MODULE fms_send_data_statfun_mod
                 DO j=js, je
                   DO i=is, ie
                     IF ( mask(i-is+1+hi,j-js+1+hj,k) ) THEN
-                      IF ( pow_value /= 1 ) THEN
-                        output_fields(out_num)%buffer(i-hi,j-hj,k,sample) =&
-                          & output_fields(out_num)%buffer(i-hi,j-hj,k,sample) +&
-                          & (field(i-is+1+hi,j-js+1+hj,k) * weight1)**(pow_value)
-                      ELSE
-                        output_fields(out_num)%buffer(i-hi,j-hj,k,sample) =&
-                          & output_fields(out_num)%buffer(i-hi,j-hj,k,sample) +&
-                          & field(i-is+1+hi,j-js+1+hj,k) * weight1
-                      END IF
+                      output_fields(out_num)%buffer(i-hi,j-hj,k,sample) =&
+                        & output_fields(out_num)%buffer(i-hi,j-hj,k,sample)+ &
+                        & wf_ptr ( field(i-is+1+hi,j-js+1+hj,k), weight1, pow_value)
                     ELSE
                       output_fields(out_num)%buffer(i-hi,j-hj,k,sample)= missvalue
                     END IF
@@ -435,15 +483,11 @@ MODULE fms_send_data_statfun_mod
                     & j <= l_end(2)+hj ) THEN
                     i1 = i-l_start(1)-hi+1
                     j1 =  j-l_start(2)-hj+1
-                    IF ( pow_value /= 1 ) THEN
                       output_fields(out_num)%buffer(i1,j1,:,sample)= &
                         & output_fields(out_num)%buffer(i1,j1,:,sample)+ &
-                        & (field(i-is+1+hi,j-js+1+hj,l_start(3):l_end(3))*weight1)**(pow_value)
-                    ELSE
-                      output_fields(out_num)%buffer(i1,j1,:,sample)= &
-                        & output_fields(out_num)%buffer(i1,j1,:,sample)+ &
-                        & field(i-is+1+hi,j-js+1+hj,l_start(3):l_end(3))*weight1
-                    END IF
+                        & weigh_field_pp_1d(field(i-is+1+hi,j-js+1+hj,l_start(3):l_end(3)), weight1,pow_value)
+                        !& (field(i-is+1+hi,j-js+1+hj,l_start(3):l_end(3))*weight1)**(pow_value)
+
                   END IF
                 END DO
               END DO
@@ -493,16 +537,10 @@ MODULE fms_send_data_statfun_mod
             ELSE  !$OMP CRITICAL
               ksr= l_start(3)
               ker= l_end(3)
-              IF ( pow_value /= 1 ) THEN
                 output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,:,sample) =&
                   & output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,:,sample) +&
-                  & (field(f1:f2,f3:f4,ksr:ker)*weight1)**(pow_value)
-              ELSE
-                output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,:,sample) =&
-                  & output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,:,sample) +&
-                  & field(f1:f2,f3:f4,ksr:ker)*weight1
+                  & wf3d_ptr( field(f1:f2,f3:f4,ksr:ker), weight1, pow_value)
               END IF  !$OMP END CRITICAL
-            END IF
           ELSE
             IF ( debug_diag_manager ) THEN
               CALL update_bounds(out_num, is-hi, ie-hi, js-hj, je-hj, ks, ke)
