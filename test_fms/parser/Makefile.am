@@ -43,6 +43,11 @@ TESTS = test_yaml_parser.sh
 # Include these files with the distribution.
 EXTRA_DIST = test_yaml_parser.sh
 
+# Define test file extensions and log driver
+TEST_EXTENSIONS = .sh
+SH_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
+                  $(top_srcdir)/tap-driver.sh
+
 if SKIP_PARSER_TESTS
 skipflag="skip"
 else
@@ -51,4 +56,4 @@ endif
 
 TESTS_ENVIRONMENT = parser_skip=${skipflag}
 # Clean up
-CLEANFILES = input.nml *.nc* *.out *.yaml
+CLEANFILES = input.nml *.nc* *.out *.yaml *.dpi *.spi *.dyn *.spl

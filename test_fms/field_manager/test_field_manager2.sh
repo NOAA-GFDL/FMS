@@ -25,10 +25,33 @@
 # Ed Hartnett 11/29/19
 
 # Set common test settings.
-. ../test_common.sh
+. ../test-lib.sh
 
 # Copy files for test.
-cp $top_srcdir/test_fms/field_manager/input_base.nml input.nml
-cp $top_srcdir/test_fms/field_manager/field_table_base field_table
+cat <<_EOF > field_table
+# Simplified field table to run the field table unit tests
+ "TRACER", "ocean_mod", "biotic1"
+           "diff_horiz", "linear", "slope=ok"
+           "longname", "biotic one" /
+ "TRACER", "ocean_mod", "age_ctl" /
+ "TRACER", "atmos_mod","radon"
+           "longname","radon-222"
+           "units","VMR*1E21"
+           "profile_type","fixed","surface_value=0.0E+00"
+           "convection","all"/
+ "TRACER", "land_mod", "sphum"
+           "longname",     "specific humidity"
+            "units",        "kg/kg" /
+_EOF
 
-run_test test_field_manager 2
+cat <<_EOF > input.nml
+&test_field_manager
+
+/
+_EOF
+
+test_expect_success "field manager functional" '
+  mpirun -n 2 ./test_field_manager
+'
+
+test_done

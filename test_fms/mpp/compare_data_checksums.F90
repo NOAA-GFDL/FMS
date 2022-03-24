@@ -57,7 +57,7 @@ contains
 
     do j = 1, size(a,2)
       do i = 1, size(a,1)
-        if(a(i,j) .ne. b(i,j)) then
+        if(abs(a(i,j) - b(i,j)) .gt. 1e-5) then
           print*, "a =", a(i,j)
           print*, "b =", b(i,j)
           write(*,'(a,i3,a,i3,a,i3,a,f20.9,a,f20.9)')"at the pe ", mpp_pe(), &
@@ -90,24 +90,23 @@ contains
     ! z1l can not call mpp_sync here since there might be different number of tiles on each pe.
      call mpp_sync_self()
      pe = mpp_pe()
-
      if(size(a,1) .ne. size(b,1) .or. size(a,2) .ne. size(b,2) .or. size(a,3) .ne. size(b,3) ) &
        call mpp_error(FATAL,'compare_checkums_3d_r4: sizes of a and b do not match')
 
      do k = 1, size(a,3)
        do j = 1, size(a,2)
           do i = 1, size(a,1)
-             if(a(i,j,k) .ne. b(i,j,k)) then
+             if(abs(a(i,j,k) - b(i,j,k)) .gt. 1e-5) then
                 write(*,'(a,i3,a,i3,a,i3,a,i3,a,f20.9,a,f20.9)') trim(string)//" at pe ", mpp_pe(), &
                      ", at point (",i,", ", j, ", ", k, "), a = ", a(i,j,k), ", b = ", b(i,j,k)
-                call mpp_error(FATAL, trim(string)//': mismatch in checksums at data point.')
+                call mpp_error(FATAL, trim(string)//': mismatch in values at data point.')
              endif
           enddo
        enddo
      enddo
 
-     sum1 = mpp_chksum( a, (/pe/) )
-     sum2 = mpp_chksum( b, (/pe/) )
+     sum1 = mpp_chksum( a , (/pe/) )
+     sum2 = mpp_chksum( b , (/pe/) )
 
      if( sum1.EQ.sum2 )then
        if( pe.EQ.mpp_root_pe() )call mpp_error( NOTE, trim(string)//': OK.' )

@@ -25,20 +25,13 @@
 # Jessica Liptak
 
 # Set common test settings.
-. ../test_common.sh
+. ../test-lib.sh
 # Run the test for one processor
-echo "Running test_update_domains_performance with 1 pe"
-run_test test_update_domains_performance 1
-# If on a Linux system that uses the command `nproc`, run the test
-if [ $(command -v nproc) ]
- # Looks like a linux system
- then
-   # Get the number of available CPUs on the system
-   nProc=$(nproc)
-   if [ ${nProc} -ge 6 ]
-     then
-       # Run the test with 2 pes
-       echo "Running test_update_domains_performance with 6 pes"
-       run_test test_update_domains_performance 6
-   fi
-fi
+test_expect_success "domain update performance with 1 PE" '
+    mpirun -n 1 ./test_update_domains_performance
+'
+# Run the test with 6 pes
+test_expect_success "domain update performance with 6 PEs" '
+    mpirun -n 6 ./test_update_domains_performance
+'
+test_done

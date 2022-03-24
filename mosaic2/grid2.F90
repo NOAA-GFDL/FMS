@@ -169,7 +169,8 @@ function get_great_circle_algorithm()
       if(trim(attvalue) == "TRUE") then
          get_great_circle_algorithm = .true.
       else if(trim(attvalue) .NE. "FALSE") then
-         call mpp_error(FATAL, module_name//'/get_great_circle_algorithm value of global attribute "great_circle_algorthm" in file'// &
+         call mpp_error(FATAL, module_name//&
+                   '/get_great_circle_algorithm value of global attribute "great_circle_algorthm" in file'// &
                    trim(grid_file)//' should be TRUE or FALSE')
       endif
    endif
@@ -230,8 +231,8 @@ function get_grid_version(fileobj)
     else if(variable_exists(fileobj, 'gridfiles') ) then
        get_grid_version = VERSION_GRIDFILES
     else
-       call mpp_error(FATAL, module_name//'/get_grid_version '//&
-            'Can''t determine the version of the grid spec: none of "x_T", "geolon_t", or "ocn_mosaic_file" exist in file "'//trim(grid_file)//'"')
+       call mpp_error(FATAL, module_name//'/get_grid_version Can''t determine the version of the grid spec:'// &
+                  & ' none of "x_T", "geolon_t", or "ocn_mosaic_file" exist in file "'//trim(grid_file)//'"')
     endif
   endif
 end function get_grid_version
@@ -301,7 +302,7 @@ subroutine get_grid_size_for_all_tiles(component,nx,ny)
 
   ! local vars
   integer :: siz(2) ! for the size of external fields
-  character(len=MAX_NAME) :: varname1, varname2
+  character(len=MAX_NAME) :: varname1
 
   varname1 = 'AREA_'//trim(uppercase(component))
 
@@ -369,7 +370,7 @@ subroutine get_grid_cell_area_SG(component, tile, cellarea, domain)
                 'Illegal component name "'//trim(component)//'": must be one of ATM, LND, or OCN')
         end select
         ! convert area to m2
-        cellarea = cellarea*4.*PI*radius**2
+        cellarea = real(cellarea*4.*PI*radius**2, r4_kind)
      case(VERSION_OCN_MOSAIC_FILE, VERSION_GRIDFILES)
         if (present(domain)) then
            call mpp_get_compute_domain(domain,xsize=nlon,ysize=nlat)
@@ -442,12 +443,12 @@ subroutine get_grid_comp_area_SG(component,tile,area,domain)
   character(len=MAX_NAME) :: &
      xgrid_name, & ! name of the variable holding xgrid names
      tile_name,  & ! name of the tile
-     xgrid_file, & ! name of the current xgrid file
-     mosaic_name,& ! name of the mosaic
-     tilefile
+     mosaic_name ! name of the mosaic
+  character(len=MAX_FILE) :: &
+     tilefile,   & ! name of current tile file
+     xgrid_file  ! name of the current xgrid file
   character(len=4096)     :: attvalue
   character(len=MAX_NAME), allocatable :: nest_tile_name(:)
-  character(len=MAX_NAME) :: varname1, varname2
   integer :: is,ie,js,je ! boundaries of our domain
   integer :: i0, j0 ! offsets for x and y, respectively
   integer :: num_nest_tile, ntiles
@@ -532,7 +533,7 @@ subroutine get_grid_comp_area_SG(component,tile,area,domain)
                  num_nest_tile = num_nest_tile + 1
                  nest_tile_name(num_nest_tile) = trim(mosaic_name)//'_tile'//char(n+ichar('0'))
               else if(trim(attvalue) .NE. "FALSE") then
-                 call mpp_error(FATAL, module_name//'/get_grid_comp_area value of global attribute nest_grid in file'// &
+                 call mpp_error(FATAL,module_name//'/get_grid_comp_area value of global attribute nest_grid in file'//&
                       trim(tilefile)//' should be TRUE or FALSE')
               endif
            end if
@@ -601,7 +602,7 @@ subroutine get_grid_comp_area_SG(component,tile,area,domain)
         deallocate(nest_tile_name)
      end select ! version
      ! convert area to m2
-     area = area*4.*PI*radius**2
+     area = real(area*4.*PI*radius**2, r4_kind)
   !! R8 version ###################################
   type is (real(r8_kind))
      select case (grid_version   )
@@ -678,7 +679,7 @@ subroutine get_grid_comp_area_SG(component,tile,area,domain)
                  num_nest_tile = num_nest_tile + 1
                  nest_tile_name(num_nest_tile) = trim(mosaic_name)//'_tile'//char(n+ichar('0'))
               else if(trim(attvalue) .NE. "FALSE") then
-                 call mpp_error(FATAL, module_name//'/get_grid_comp_area value of global attribute nest_grid in file'// &
+                 call mpp_error(FATAL,module_name//'/get_grid_comp_area value of global attribute nest_grid in file'//&
                       trim(tilefile)//' should be TRUE or FALSE')
               endif
            end if
@@ -909,7 +910,8 @@ subroutine get_grid_cell_vertices_2D(component, tile, lonb, latb, domain)
       valid_types = .true.
     end select
   end select
-  if(.not. valid_types) call mpp_error(FATAL, 'get_grid_cell_vertices_2D: invalid types, lonb/latb must be r4_kind or r8_kind')
+  if(.not. valid_types) call mpp_error(FATAL, &
+     &  'get_grid_cell_vertices_2D: invalid types, lonb/latb must be r4_kind or r8_kind')
 
 
   if (present(domain)) then

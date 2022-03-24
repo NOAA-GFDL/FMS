@@ -32,7 +32,8 @@ use,intrinsic :: iso_c_binding, only: c_double,c_float,c_int64_t, &
                                       c_int32_t,c_int16_t,c_intptr_t
 
   !   <FUTURE>
-  !     Make an interface <TT>check_bounds_are_exact</TT> for the subroutines <TT>check_bounds_are_exact_static</TT> and
+  !     Make an interface <TT>check_bounds_are_exact</TT> for the subroutines <TT>check_bounds_are_exact_static</TT>
+  !     and
   !     <TT>check_bounds_are_exact_dynamic</TT>.
   !     <PRE>
   !       INTERFACE check_bounds_are_exact
@@ -64,7 +65,6 @@ use,intrinsic :: iso_c_binding, only: c_double,c_float,c_int64_t, &
   USE fms_mod, ONLY: error_mesg, FATAL, WARNING, NOTE, mpp_pe, mpp_root_pe, lowercase, fms_error_handler,&
        & write_version_number, do_cf_compliance
   USE fms_io_mod, ONLY: get_tile_string, return_domain, string
-  USE fms2_io_mod, ONLY: fms2_io_get_instance_filename => get_instance_filename
   USE mpp_domains_mod,ONLY: domain1d, domain2d, mpp_get_compute_domain, null_domain1d, null_domain2d,&
        & OPERATOR(.NE.), OPERATOR(.EQ.), mpp_modify_domain, mpp_get_domain_components,&
        & mpp_get_ntile_count, mpp_get_current_ntile, mpp_get_tile_id, mpp_mosaic_defined, mpp_get_tile_npes,&
@@ -75,7 +75,7 @@ use,intrinsic :: iso_c_binding, only: c_double,c_float,c_int64_t, &
   USE mpp_mod, ONLY: mpp_npes
   USE fms_io_mod, ONLY: get_mosaic_tile_file_ug
   USE constants_mod, ONLY: SECONDS_PER_DAY, SECONDS_PER_HOUR, SECONDS_PER_MINUTE
-use fms2_io_mod
+  USE fms2_io_mod, fms2_io_get_instance_filename => get_instance_filename
 #ifdef use_netCDF
   USE netcdf, ONLY: NF90_CHAR
 #endif
@@ -144,7 +144,8 @@ CONTAINS
     REAL, ALLOCATABLE :: subaxis_z(:) !< containing local coordinates in x,y,z axes
     CHARACTER(len=128) :: msg
     INTEGER :: ishift, jshift
-    INTEGER :: grv !< Value used to determine if the region defined in the diag_table is for the whole axis, or a sub-axis
+    INTEGER :: grv !< Value used to determine if the region defined in the diag_table is for the whole
+                   !! axis, or a sub-axis
     CHARACTER(len=128), DIMENSION(2) :: axis_domain_name
 
     !initilization for local output
@@ -725,12 +726,14 @@ CONTAINS
     output_fields(out_num)%kmax = MAX(output_fields(out_num)%kmax, upper_k)
   END SUBROUTINE update_bounds
 
-  !> @brief Checks if the array indices for <TT>output_fields(out_num)</TT> are outside the <TT>output_fields(out_num)%buffer</TT> upper
+  !> @brief Checks if the array indices for <TT>output_fields(out_num)</TT> are outside the
+  !! <TT>output_fields(out_num)%buffer</TT> upper
   !!     and lower bounds.
   SUBROUTINE check_out_of_bounds(out_num, diag_field_id, err_msg)
     INTEGER, INTENT(in) :: out_num !< Output field ID number.
     INTEGER, INTENT(in) :: diag_field_id !< Input field ID number.
-    CHARACTER(len=*), INTENT(out) :: err_msg !< Return status of <TT>check_out_of_bounds</TT>.  An empty error string indicates the x, y, and z indices are not outside the
+    CHARACTER(len=*), INTENT(out) :: err_msg !< Return status of <TT>check_out_of_bounds</TT>.  An empty
+                                             !! error string indicates the x, y, and z indices are not outside the
                                              !!     buffer array boundaries.
 
     CHARACTER(len=128) :: error_string1, error_string2
@@ -771,7 +774,8 @@ CONTAINS
 
   END SUBROUTINE check_out_of_bounds
 
-  !> @brief  Check if the array indices for <TT>output_fields(out_num)</TT> are equal to the <TT>output_fields(out_num)%buffer</TT>
+  !> @brief  Check if the array indices for <TT>output_fields(out_num)</TT> are equal to the
+  !! <TT>output_fields(out_num)%buffer</TT>
   !!     upper and lower bounds.
   SUBROUTINE check_bounds_are_exact_dynamic(out_num, diag_field_id, Time, err_msg)
     INTEGER, INTENT(in) :: out_num !< Output field ID number.
@@ -837,7 +841,8 @@ CONTAINS
     END IF
   END SUBROUTINE check_bounds_are_exact_dynamic
 
-  !> @brief Check if the array indices for <TT>output_fields(out_num)</TT> are equal to the <TT>output_fields(out_num)%buffer</TT>
+  !> @brief Check if the array indices for <TT>output_fields(out_num)</TT> are equal to the
+  !! <TT>output_fields(out_num)%buffer</TT>
   !!     upper and lower bounds.
   SUBROUTINE check_bounds_are_exact_static(out_num, diag_field_id, err_msg)
     INTEGER, INTENT(in) :: out_num !< Output field ID
@@ -1246,7 +1251,8 @@ CONTAINS
     INTEGER :: num_fields, i, method_selected, l1
     INTEGER :: ioerror
     REAL :: pow_value
-    INTEGER :: grv !< Value used to determine if the region defined in the diag_table is for the whole axis, or a sub-axis
+    INTEGER :: grv !< Value used to determine if the region defined in the diag_table is for the whole
+                   !! axis, or a sub-axis
     CHARACTER(len=128) :: error_msg
     CHARACTER(len=50) :: t_method
     character(len=256) :: tmp_name
@@ -1279,7 +1285,8 @@ CONTAINS
        ELSE
           WRITE (error_msg,'(A,"/",A)') TRIM(module_name),TRIM(field_name)
        END IF
-       ! <ERROR STATUS="FATAL">module_name/field_name <module_name>/<field_name>[/tile_count=<tile_count>] NOT registered</ERROR>
+       ! <ERROR STATUS="FATAL">module_name/field_name <module_name>/<field_name>[/tile_count=<tile_count>]
+       ! NOT registered</ERROR>
        CALL error_mesg('diag_util_mod::init_output_field',&
             & 'module_name/field_name '//TRIM(error_msg)//' NOT registered', FATAL)
     END IF
@@ -1289,7 +1296,8 @@ CONTAINS
          & input_fields(in_num)%num_output_fields + 1
     IF ( input_fields(in_num)%num_output_fields > max_out_per_in_field ) THEN
        ! <ERROR STATUS="FATAL">
-       !   MAX_OUT_PER_IN_FIELD = <MAX_OUT_PER_IN_FIELD> exceeded for <module_name>/<field_name>, increase MAX_OUT_PER_IN_FIELD
+       !   MAX_OUT_PER_IN_FIELD = <MAX_OUT_PER_IN_FIELD> exceeded for <module_name>/<field_name>,
+       !   increase MAX_OUT_PER_IN_FIELD
        !   in the diag_manager_nml namelist.
        ! </ERROR>
        WRITE (UNIT=error_msg,FMT=*) MAX_OUT_PER_IN_FIELD
@@ -1344,7 +1352,8 @@ CONTAINS
        !   MAX_FIELDS_PER_FILE = <MAX_FIELDS_PER_FILE> exceeded.  Increase MAX_FIELDS_PER_FILE in diag_data.F90.
        ! </ERROR>
        CALL error_mesg('diag_util_mod::init_output_field',&
-            & 'MAX_FIELDS_PER_FILE = '//TRIM(error_msg)//' exceeded.  Increase MAX_FIELDS_PER_FILE in diag_data.F90.', FATAL)
+            & 'MAX_FIELDS_PER_FILE = '//TRIM(error_msg)// &
+             & ' exceeded.  Increase MAX_FIELDS_PER_FILE in diag_data.F90.', FATAL)
     END IF
     num_fields = files(file_num)%num_fields
     files(file_num)%fields(num_fields) = out_num
@@ -1526,7 +1535,8 @@ CONTAINS
     ! WARNING: Assumes that all data structures are fully initialized
     INTEGER, INTENT(in) :: file !< File ID.
     TYPE(time_type), INTENT(in) :: time !< Time for the file time stamp
-    TYPE(time_type), INTENT(in), optional :: filename_time !< Time used in setting the filename when writting periodic files
+    TYPE(time_type), INTENT(in), optional :: filename_time !< Time used in setting the filename when
+                                                           !! writting periodic files
 
     TYPE(time_type) :: fname_time !< Time used in setting the filename when writting periodic files
     REAL, DIMENSION(2) :: DATA
@@ -1534,9 +1544,7 @@ CONTAINS
     INTEGER :: field_num1
     INTEGER :: position
     INTEGER :: dir, edges
-    INTEGER :: ntileMe
     INTEGER :: year, month, day, hour, minute, second
-    INTEGER, ALLOCATABLE :: tile_id(:)
     INTEGER, DIMENSION(1) :: time_axis_id, time_bounds_id
     ! size of this axes array must be at least max num. of
     ! axes per field + 2; the last two elements are for time
@@ -1544,7 +1552,6 @@ CONTAINS
     INTEGER, DIMENSION(6) :: axes
     INTEGER, ALLOCATABLE  :: axesc(:) ! indices if compressed axes associated with the field
     LOGICAL :: time_ops, aux_present, match_aux_name, req_present, match_req_fields
-    CHARACTER(len=7) :: prefix
     CHARACTER(len=7) :: avg_name = 'average'
     CHARACTER(len=128) :: time_units, timeb_units, avg, error_string, filename, aux_name, req_fields, fieldname
     CHARACTER(len=128) :: suffix, base_name
@@ -1555,7 +1562,6 @@ CONTAINS
     TYPE(domain2d) :: domain2
     TYPE(domainUG) :: domainU
     INTEGER :: is, ie, last, ind
-    character(len=2) :: fnum_domain
     class(FmsNetcdfFile_t), pointer    :: fileob
     integer :: actual_num_axes !< The actual number of axes to write including time
 
@@ -1659,10 +1665,6 @@ CONTAINS
           WRITE (error_string,'(A,"/",A)') TRIM(input_fields(input_field_num)%module_name),&
                & TRIM(input_fields(input_field_num)%field_name)
           IF(mpp_pe() .EQ. mpp_root_pe()) THEN
-             ! <ERROR STATUS="WARNING">
-             !   module/field_name (<input_fields(input_field_num)%module_name>/<input_fields(input_field_num)%field_name>)
-             !   NOT registered
-             ! </ERROR>
              CALL error_mesg('diag_util_mod::opening_file',&
                   & 'module/field_name ('//TRIM(error_string)//') NOT registered', WARNING)
           END IF
@@ -1726,7 +1728,7 @@ CONTAINS
           CALL write_axis_meta_data(files(file)%file_unit, axes(1:actual_num_axes),fileobj(file), time_ops=time_ops, &
                                    time_axis_registered=files(file)%is_time_axis_registered)
        elseif (fnum_for_domain(file) == "nd") then
-          CALL write_axis_meta_data(files(file)%file_unit, axes(1:actual_num_axes),fileobjnd(file), time_ops=time_ops, &
+          CALL write_axis_meta_data(files(file)%file_unit, axes(1:actual_num_axes),fileobjnd(file), time_ops=time_ops,&
                                    time_axis_registered=files(file)%is_time_axis_registered)
        elseif (fnum_for_domain(file) == "ug") then
           CALL write_axis_meta_data(files(file)%file_unit, axes(1:actual_num_axes),fileobjU(file), time_ops=time_ops, &
@@ -1774,9 +1776,10 @@ CONTAINS
                 !   <files(file)%name> can NOT have BOTH time average AND instantaneous fields.
                 !   Create a new file or set mix_snapshot_average_fields=.TRUE. in the namelist diag_manager_nml.
                 ! </ERROR>
-                CALL error_mesg('diag_util_mod::opening_file','file '//&
-                     & TRIM(files(file)%name)//' can NOT have BOTH time average AND instantaneous fields.'//&
-                     & ' Create a new file or set mix_snapshot_average_fields=.TRUE. in the namelist diag_manager_nml.' , FATAL)
+                CALL error_mesg('diag_util_mod::opening_file','file '//TRIM(files(file)%name)// &
+                     &' can NOT have BOTH time average AND instantaneous fields.'//&
+                     &' Create a new file or set mix_snapshot_average_fields=.TRUE. in the namelist diag_manager_nml.'&
+                     &, FATAL)
              END IF
           END IF
        END IF
@@ -1940,7 +1943,8 @@ CONTAINS
        !   found in file <file_name>
        ! </ERROR>
        IF ( mpp_pe() == mpp_root_pe() ) CALL error_mesg('diag_util_mod::opening_file',&
-            &'one axis has auxiliary but the corresponding field is NOT found in file '//TRIM(files(file)%name), WARNING)
+            &'one axis has auxiliary but the corresponding field is NOT found in file '// &
+             & TRIM(files(file)%name), WARNING)
     END IF
     IF( req_present .AND. .NOT.match_req_fields ) THEN
        ! <ERROR STATUS="FATAL">
@@ -2152,10 +2156,10 @@ CONTAINS
     TYPE(time_type), INTENT(in) :: time !< Current model time.
     LOGICAL, OPTIONAL, INTENT(in):: final_call_in !< <TT>.TRUE.</TT> if this is the last write for file.
     LOGICAL, OPTIONAL, INTENT(in):: static_write_in !< <TT>.TRUE.</TT> if static fields are to be written to file.
-    type(time_type), intent(in), optional :: filename_time !< Time used in setting the filename when writting periodic files
+    type(time_type), intent(in), optional :: filename_time !< Time used in setting the filename when
+                                                           !! writting periodic files
 
     LOGICAL :: final_call, do_write, static_write
-    INTEGER :: i, num
     REAL :: dif, time_data(2, 1, 1, 1), dt_time(1, 1, 1, 1), start_dif, end_dif
     REAL :: time_in_file !< Time in file at the beginning of this call
 
@@ -2257,7 +2261,8 @@ CONTAINS
     TYPE(time_type), INTENT(in) :: time !< Current model time.
     LOGICAL, INTENT(out) :: do_write !< <TT>.TRUE.</TT> if file is expecting more data to write,
                                      !! <TT>.FALSE.</TT> otherwise.
-    TYPE(time_type), INTENT(in), optional :: filename_time !< Time used in setting the filename when writting periodic files
+    TYPE(time_type), INTENT(in), optional :: filename_time !< Time used in setting the filename when
+                                                           !! writting periodic files
 
     IF ( time >= files(file)%start_time ) THEN
        IF ( files(file)%file_unit < 0 ) THEN ! need to open a new file
@@ -2283,7 +2288,8 @@ CONTAINS
                 !   check file duration and frequency
                 ! </ERROR>
                 CALL error_mesg('diag_util_mod::check_and_open',&
-                     & files(file)%name//' has close time GREATER than next_open time, check file duration and frequency',FATAL)
+                     & files(file)%name// &
+                      & ' has close time GREATER than next_open time, check file duration and frequency',FATAL)
              END IF
           END IF ! no need to open new file, simply return file_unit
        END IF
@@ -2486,7 +2492,8 @@ CONTAINS
           ! <ERROR STATUS="FATAL">
           !   Unable to allocate memory for file attributes
           ! </ERROR>
-          IF ( fms_error_handler('diag_util_mod::attribute_init_file', 'Unable to allocate memory for file attributes', err_msg) ) THEN
+          IF ( fms_error_handler('diag_util_mod::attribute_init_file', &
+             &  'Unable to allocate memory for file attributes', err_msg) ) THEN
              RETURN
           END IF
        ELSE

@@ -1,0 +1,330 @@
+# Test framework for FMS.
+#
+#***********************************************************************
+#                   GNU Lesser General Public License
+#
+# This file is part of the GFDL Flexible Modeling System (FMS).
+#
+# FMS is free software: you can redistribute it and/or modify it under
+# the terms of the GNU Lesser General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or (at
+# your option) any later version.
+#
+# FMS is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# for more details.
+#
+# You should have received a copy of the GNU Lesser General Public
+# License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+#***********************************************************************
+#
+# Copyright (c)  2005 Junio C Hamano
+#                2020-2021 Seth Underwood
+#
+# This test package is based on Junio's work for the Git test library.
+# Thank you Junio.
+
+# Useful locations
+top_srcdir='@abs_top_srcdir@'
+top_buildir='@abs_top_builddir@'
+
+TEST_NAME="$(basename "$0" .sh)"
+TEST_NUMBER="${TEST_NAME%%-*}"
+TEST_NUMBER="${TEST_NUMBER#t}"
+
+exec 7>&2
+# For now, write all output
+#if test -n "$VERBOSE"
+#then
+  exec 4>&2 3>&1
+#else
+#  exec 4>/dev/null 3>/dev/null
+#fi
+
+test_count=0
+test_success=0
+test_failure=0
+
+EXIT_OK=
+
+test_start_ () {
+   test_count=$((test_count+1))
+}
+
+test_finish_ () {
+  echo >&3 ""
+}
+
+say_color() {
+  test -z "$1" && test -n "$quiet" && return
+  shift
+  printf "%s\n" "$*"
+}
+
+say () {
+  say_color info "$*"
+}
+
+error () {
+  say_color error "error: $*"
+  EXIT_OK=t
+  exit 1
+}
+
+BUG () {
+  error >&7 "bug in test script: $*"
+}
+
+die () {
+  code=$?
+  # This is responsible for running the atexit commands even when a
+  # test script run with '--immediate' fails, or when the user hits
+  # ctrl-C, i.e. when 'test_done' is not invoked at all.
+  test_atexit_handler || code=$?
+  if test -n "$EXIT_OK"
+  then
+    exit $code
+  else
+    echo >&5 "FATAL: Unexpected exit with code $code"
+    exit 1
+  fi
+}
+
+# Possibly wrapping the mpirun command.
+mpirun () {
+# Set the name of the mpi launcher for use in test scripts.
+  local mpi_launcher='@MPI_LAUNCHER@'
+  local oversubscribe='@OVERSUBSCRIBE@'
+  # Check if running with MPI: if so, the mpi_launcher will point to a command
+  command -v "$mpi_launcher" 2>&1 > /dev/null
+  if test $? -eq 0
+  then
+    # use `command` to keep from reusing this function
+    eval "command ${mpi_launcher} $oversubscribe $@"
+  else
+    # Not running with MPI, find the command, and run it (with options).
+    for arg in $@
+    do
+      # Check if $arg is an executable command.  We will assume this is the executable
+      # and everything after the executable is an option to the executable.
+      case "$arg" in
+        -*)
+          # We have an option.  Skip this
+          shift
+          continue
+          ;;
+        *)
+          command -v $arg 2>&1 > /dev/null
+          if test $? -eq 0
+          then
+            # We have an executable file
+            eval "$@"
+            break
+          fi
+          shift
+          ;;
+      esac
+    done
+  fi
+
+}
+
+test_ok_ () {
+  test_success=$(($test_success + 1))
+  say_color "" "ok $test_count - $@"
+}
+
+test_failure_ () {
+  test_failure=$(($test_failure + 1))
+  say_color error "not ok $test_count - $1"
+  shift
+  printf '%s\n' "$*" | sed -e 's/^/#	/'
+}
+
+test_known_broken_ok_ () {
+  test_fixed=$(($test_fixed+1))
+  say_color error "ok $test_count - $@ # TODO known breakage vanished"
+}
+
+test_known_broken_failure_ () {
+  test_broken=$(($test_broken+1))
+  say_color warn "not ok $test_count - $@ # TODO known breakage"
+}
+
+trace_level_=0
+want_trace_ () {
+  test "$trace" = t && {
+    test "$verbose" = t || test "$verbose_log" = t
+  }
+}
+
+# This is a separate function because some tests use
+# "return" to end a test_expect_success block early
+# (and we want to make sure we run any cleanup like
+# "set +x").
+test_eval_inner_ () {
+  # Do not add anything extra (including LF) after '$*'
+  eval "
+    want_trace_ && trace_level_=$(($trace_level_+1)) && set -x
+    $*"
+}
+
+test_eval_ () {
+# If "-x" tracing is in effect, then we want to avoid polluting stderr
+# with non-test commands. But once in "set -x" mode, we cannot prevent
+# the shell from printing the "set +x" to turn it off (nor the saving
+# of $? before that). But we can make sure that the output goes to
+# /dev/null.
+#
+# There are a few subtleties here:
+#
+#   - we have to redirect descriptor 4 in addition to 2, to cover
+#     BASH_XTRACEFD
+#
+#   - the actual eval has to come before the redirection block (since
+#     it needs to see descriptor 4 to set up its stderr)
+#
+#   - likewise, any error message we print must be outside the block to
+#     access descriptor 4
+#
+#   - checking $? has to come immediately after the eval, but it must
+#     be _inside_ the block to avoid polluting the "set -x" output
+#
+  test_eval_inner_ "$@" </dev/null >&3 2>&4
+  {
+    test_eval_ret_=$?
+    if want_trace_
+    then
+      test 1 = $trace_level_ && set +x
+      trace_level_=$(($trace_level_-1))
+    fi
+  } 2>/dev/null 4>&2
+
+  if test "$test_eval_ret_" != 0
+  then
+    say_color error >&4 "error: last command exited with \$?=$test_eval_ret_"
+  fi
+  return $test_eval_ret_
+}
+
+test_run_ () {
+  test_cleanup=:
+  expecting_failure=$2
+
+  test_eval_ "$1"
+  eval_ret=$?
+  if test $eval_ret = 0 || test -n "$expecting_failure" && test "$test_cleanup" != ":"
+  then
+    test_eval_ "$test_cleanup"
+  fi
+  return "$eval_ret"
+}
+
+match_pattern_list_ () {
+  arg="$1"
+  shift
+  test -z "$*" && return 1
+  for pattern_
+  do
+    # modified original logic to be able to work with more than one digit test numbers
+    # check test name matches
+    pInd=`expr index $arg '.'`
+    tNameArg=`expr substr $arg 1 $pInd`
+    tNamePattern=`expr substr $pattern_ 1 $pInd`
+    test "$tNameArg" != "$tNamePattern" && break
+    isRange="`expr index $pattern_ '-'`"
+    # individual test num
+    if test $isRange -eq 0 ; then
+      say "is range.."
+      if test "$pattern_" = "$arg" ; then
+          return 0
+      fi
+    # num range
+    else
+      # get numbers from range and arg
+      num=${arg##*.}
+      range=${pattern_##*.}
+
+      mid=`expr index $range '-'`
+      len=`expr $mid - 2`
+      first="`expr substr $range 2 $len`"
+
+      beg=`expr $mid + 1`
+      len=`expr length $range`
+      len=`expr $len - $beg`
+      last="`expr substr $range $beg $len`"
+      # check range is valid
+      if test $num == *[!0-9]* -o $first == *[!0-9]* -o $last == *[!0-9]* -o $first -ge $last ; then
+          say "Warning: SKIP_TESTS contains an invalid range in $pattern_"
+          break
+      fi
+      if test $num -ge $first -a $num -le $last ; then
+          return 0
+      fi
+    fi
+  done
+  return 1
+}
+
+test_skip_ () {
+  local to_skip=
+  local skipped_reason=
+  if match_pattern_list_ $TEST_NAME.$test_count $SKIP_TESTS
+  then
+    to_skip=t
+    skipped_reason="SKIP_TESTS"
+  fi
+  if test -z "$to_skip"
+  then
+    false
+  else
+    say_color skip "ok $test_count # skip $1 ($skipped_reason)"
+    : true
+  fi
+}
+
+test_expect_failure () {
+  test_start_
+  test "$#" = 2 ||
+    BUG "not 2 or 3 parameters to test-expect-failure"
+  if ! test_skip_ "$@"
+  then
+    if test_run_ "$2" expecting_failure
+    then
+      test_known_broken_ok_ "$1"
+    else
+      test_known_broken_failure_ "$1"
+    fi
+  fi
+  test_finish_
+}
+
+test_expect_success () {
+  test_start_
+  test "$#" = 2 || BUG "test_expect_success requires 2 parameters"
+  if ! test_skip_ "$@"
+  then
+    say "expecting success of $TEST_NAME.$test_count '$1': $2"
+    if test_run_ "$2"
+    then
+      test_ok_ "$1"
+    else
+      test_failure_ "$@"
+    fi
+  fi
+  test_finish_
+}
+
+test_done () {
+  EXIT_OK=t
+  say "1..$test_count"
+}
+# creates and enters output dir and deletes previous if present
+output_dir () {
+  if test -d "$TEST_NAME-files" ; then
+    rm -r "$TEST_NAME-files"
+  fi
+  mkdir "$TEST_NAME-files"
+  cd "$TEST_NAME-files"
+}

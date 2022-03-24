@@ -136,7 +136,8 @@ contains
      end if
 
      if ( mpp_chksum(a(1:n2),(/pe/)) .NE. mpp_chksum(c) ) then
-       call mpp_error(FATAL, 'Test mpp_chksum fails: a whole array and a distributed array did not give identical checksums')
+       call mpp_error(FATAL, &
+                     & 'Test mpp_chksum fails: a whole array and a distributed array did not give identical checksums')
      else
        print *, 'For pe=', pe, ' chksum(a(1:1024))=chksum(c(1:1024))='
      endif

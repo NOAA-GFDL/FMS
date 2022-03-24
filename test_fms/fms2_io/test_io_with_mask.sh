@@ -25,7 +25,10 @@
 # Author: Uriel Ramirez 07/07/20
 #
 # Set common test settings.
-. ../test_common.sh
+. ../test-lib.sh
+
+# Create and enter output directory
+output_dir
 
 # make an input.nml for mpp_init to read
 touch input.nml
@@ -40,6 +43,7 @@ touch input.nml
 # . ----- . ----- .
 # | (3,1) | (3,2) |
 # . ----- . ----- .
+
 printf "1\n2,3\n1,1" | cat > the_mask
 
 # For example, if you have a grid that is 60 by 60 and a layout of 2,3
@@ -54,4 +58,8 @@ printf "1\n2,3\n1,1" | cat > the_mask
 # 5 ranks and nothing is going to be done for x: 1-30 y: 1-20
 
 # run the tests
-run_test test_io_with_mask 5
+test_expect_success "Test FMS2 IO using a mask" '
+  mpirun -n 5 ../test_io_with_mask
+'
+
+test_done

@@ -792,6 +792,7 @@
 !                                                                             !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
+#define MPP_TYPE_INIT_VALUE 0.
 #undef MPP_GLOBAL_FIELD_2D_
 #define MPP_GLOBAL_FIELD_2D_ mpp_global_field2D_r8_2d
 #undef MPP_GLOBAL_FIELD_3D_
@@ -818,6 +819,8 @@
 #include <mpp_global_field.h>
 #endif
 
+#undef MPP_TYPE_INIT_VALUE
+#define MPP_TYPE_INIT_VALUE 0
 #undef MPP_GLOBAL_FIELD_2D_
 #define MPP_GLOBAL_FIELD_2D_ mpp_global_field2D_i8_2d
 #undef MPP_GLOBAL_FIELD_3D_
@@ -830,6 +833,8 @@
 #define MPP_TYPE_ integer(i8_kind)
 #include <mpp_global_field.h>
 
+#undef MPP_TYPE_INIT_VALUE
+#define MPP_TYPE_INIT_VALUE .false.
 #undef MPP_GLOBAL_FIELD_2D_
 #define MPP_GLOBAL_FIELD_2D_ mpp_global_field2D_l8_2d
 #undef MPP_GLOBAL_FIELD_3D_
@@ -842,6 +847,8 @@
 #define MPP_TYPE_ logical(l8_kind)
 #include <mpp_global_field.h>
 
+#undef MPP_TYPE_INIT_VALUE
+#define MPP_TYPE_INIT_VALUE 0.
 #undef MPP_GLOBAL_FIELD_2D_
 #define MPP_GLOBAL_FIELD_2D_ mpp_global_field2D_r4_2d
 #undef MPP_GLOBAL_FIELD_3D_
@@ -868,6 +875,8 @@
 #include <mpp_global_field.h>
 #endif
 
+#undef MPP_TYPE_INIT_VALUE
+#define MPP_TYPE_INIT_VALUE 0
 #undef MPP_GLOBAL_FIELD_2D_
 #define MPP_GLOBAL_FIELD_2D_ mpp_global_field2D_i4_2d
 #undef MPP_GLOBAL_FIELD_3D_
@@ -880,6 +889,8 @@
 #define MPP_TYPE_ integer(i4_kind)
 #include <mpp_global_field.h>
 
+#undef MPP_TYPE_INIT_VALUE
+#define MPP_TYPE_INIT_VALUE .false.
 #undef MPP_GLOBAL_FIELD_2D_
 #define MPP_GLOBAL_FIELD_2D_ mpp_global_field2D_l4_2d
 #undef MPP_GLOBAL_FIELD_3D_
@@ -891,8 +902,10 @@
 #undef MPP_TYPE_
 #define MPP_TYPE_ logical(l4_kind)
 #include <mpp_global_field.h>
+#undef MPP_TYPE_INIT_VALUE
 
 !****************************************************
+#define MPP_TYPE_INIT_VALUE 0.
 #undef MPP_GLOBAL_FIELD_2D_AD_
 #define MPP_GLOBAL_FIELD_2D_AD_ mpp_global_field2D_r8_2d_ad
 #undef MPP_GLOBAL_FIELD_3D_AD_
@@ -919,6 +932,8 @@
 #include <mpp_global_field_ad.h>
 #endif
 
+#undef MPP_TYPE_INIT_VALUE
+#define MPP_TYPE_INIT_VALUE 0
 #undef MPP_GLOBAL_FIELD_2D_AD_
 #define MPP_GLOBAL_FIELD_2D_AD_ mpp_global_field2D_i8_2d_ad
 #undef MPP_GLOBAL_FIELD_3D_AD_
@@ -931,6 +946,8 @@
 #define MPP_TYPE_ integer(i8_kind)
 #include <mpp_global_field_ad.h>
 
+#undef MPP_TYPE_INIT_VALUE
+#define MPP_TYPE_INIT_VALUE .false.
 #undef MPP_GLOBAL_FIELD_2D_AD_
 #define MPP_GLOBAL_FIELD_2D_AD_ mpp_global_field2D_l8_2d_ad
 #undef MPP_GLOBAL_FIELD_3D_AD_
@@ -943,6 +960,8 @@
 #define MPP_TYPE_ logical(l8_kind)
 #include <mpp_global_field_ad.h>
 
+#undef MPP_TYPE_INIT_VALUE
+#define MPP_TYPE_INIT_VALUE 0.
 #undef MPP_GLOBAL_FIELD_2D_AD_
 #define MPP_GLOBAL_FIELD_2D_AD_ mpp_global_field2D_r4_2d_ad
 #undef MPP_GLOBAL_FIELD_3D_AD_
@@ -969,6 +988,8 @@
 #include <mpp_global_field_ad.h>
 #endif
 
+#undef MPP_TYPE_INIT_VALUE
+#define MPP_TYPE_INIT_VALUE 0
 #undef MPP_GLOBAL_FIELD_2D_AD_
 #define MPP_GLOBAL_FIELD_2D_AD_ mpp_global_field2D_i4_2d_ad
 #undef MPP_GLOBAL_FIELD_3D_AD_
@@ -981,6 +1002,8 @@
 #define MPP_TYPE_ integer(i4_kind)
 #include <mpp_global_field_ad.h>
 
+#undef MPP_TYPE_INIT_VALUE
+#define MPP_TYPE_INIT_VALUE .false.
 #undef MPP_GLOBAL_FIELD_2D_AD_
 #define MPP_GLOBAL_FIELD_2D_AD_ mpp_global_field2D_l4_2d_ad
 #undef MPP_GLOBAL_FIELD_3D_AD_
@@ -992,6 +1015,7 @@
 #undef MPP_TYPE_
 #define MPP_TYPE_ logical(l4_kind)
 #include <mpp_global_field_ad.h>
+#undef MPP_TYPE_INIT_VALUE
 
 !****************************************************
 #undef MPP_DO_GLOBAL_FIELD_3D_

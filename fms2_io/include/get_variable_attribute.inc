@@ -40,7 +40,6 @@ subroutine get_variable_attribute_0d(fileobj, variable_name, attribute_name, &
   integer :: varid
   integer :: err
   character(len=200) :: append_error_msg !< Msg to be appended to FATAL error message
-  integer :: j
   character(len=1024), dimension(1) :: charbuf !< 1D Character buffer
   logical :: reproduce_null_char_bug !< Local flag indicating to reproduce the mpp_io bug where
                                      !! the null characters were not removed after reading a string attribute
@@ -65,9 +64,10 @@ subroutine get_variable_attribute_0d(fileobj, variable_name, attribute_name, &
       type is (integer(kind=i4_kind))
         err = nf90_get_att(fileobj%ncid, varid, trim(attribute_name), attribute_value)
       type is (integer(kind=i8_kind))
-        if ( .not. fileobj%allow_int8) call error(trim(fileobj%path)//": 64 bit integers are only supported with 'netcdf4' file format"//&
-                                                 &". Set netcdf_default_format='netcdf4' in the fms2_io namelist OR "//&
-                                                 &"add nc_format='netcdf4' to your open_file call")
+        if ( .not. fileobj%allow_int8) call error(trim(fileobj%path)// &
+                                           & ": 64 bit integers are only supported with 'netcdf4' file format"//&
+                                           &". Set netcdf_default_format='netcdf4' in the fms2_io namelist OR "//&
+                                           &"add nc_format='netcdf4' to your open_file call")
         err = nf90_get_att(fileobj%ncid, varid, trim(attribute_name), attribute_value)
       type is (real(kind=r4_kind))
         err = nf90_get_att(fileobj%ncid, varid, trim(attribute_name), attribute_value)
@@ -133,9 +133,10 @@ subroutine get_variable_attribute_1d(fileobj, variable_name, attribute_name, &
       type is (integer(kind=i4_kind))
         err = nf90_get_att(fileobj%ncid, varid, trim(attribute_name), attribute_value)
       type is (integer(kind=i8_kind))
-        if ( .not. fileobj%allow_int8) call error(trim(fileobj%path)//": 64 bit integers are only supported with 'netcdf4' file format"//&
-                                                 &". Set netcdf_default_format='netcdf4' in the fms2_io namelist OR "//&
-                                                 &"add nc_format='netcdf4' to your open_file call")
+        if ( .not. fileobj%allow_int8) call error(trim(fileobj%path)// &
+                                                &": 64 bit integers are only supported with 'netcdf4' file format"//&
+                                                &". Set netcdf_default_format='netcdf4' in the fms2_io namelist OR "//&
+                                                &"add nc_format='netcdf4' to your open_file call")
         err = nf90_get_att(fileobj%ncid, varid, trim(attribute_name), attribute_value)
       type is (real(kind=r4_kind))
         err = nf90_get_att(fileobj%ncid, varid, trim(attribute_name), attribute_value)

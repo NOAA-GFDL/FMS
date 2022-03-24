@@ -17,7 +17,7 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 
-!> @brief  This programs tests diat_manager with the following diag_table
+!> @brief  This programs tests diag_manager with the following diag_table
 !! test_diag_manager
 !! 2 1 1 0 0 0
 !! "ocn%4yr%2mo%2dy%2hr",      1,  "days", 1, "days", "time", 1, "days", "2 1 1 0 0 0"
@@ -41,7 +41,7 @@ integer :: i, j
 integer :: is, ie, js, je
 real, allocatable :: sst(:,:,:), ice(:,:)
 integer :: id_x, id_y, id_z, id_sst, id_ice
-integer :: used
+logical :: used
 
 call fms_init
 call set_calendar_type(JULIAN)

@@ -25,15 +25,21 @@
 # Tom Robinson 03/02/2021
 
 # Set common test settings.
-. ../test_common.sh
+. ../test-lib.sh
+
+setup_test () {
+  rm -rf RESTART && mkdir -p RESTART
 
 # Create the base input.nml file needed for the tests
 cat <<_EOF > input.nml
 &test_fms_nml
 /
 _EOF
+}
 
 # Test the structured grid
-rm -rf RESTART && mkdir RESTART
-run_test test_fms 6
-
+setup_test
+test_expect_success "test structured grid" '
+  mpirun -n 6 ./test_fms
+'
+test_done

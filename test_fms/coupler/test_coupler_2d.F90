@@ -89,8 +89,8 @@ endif
 
 !> Write the file with new io
 call set_up_coupler_type(bc_type, data_grid, appendix="new", to_read=.false.)
-call coupler_type_register_restarts(bc_type, bc_rest_files, num_rest_files, domain, to_read=.false., ocean_restart=.false., &
-                                    & directory="RESTART/")
+call coupler_type_register_restarts(bc_type, bc_rest_files, num_rest_files, domain, to_read=.false., &
+                                   & ocean_restart=.false., directory="RESTART/")
 
 do i = 1, bc_type%num_bcs
    call write_restart(bc_rest_files(i))
@@ -99,8 +99,8 @@ enddo
 
 !< Now read the file back!
 call set_up_coupler_type(bc_type_read, data_grid, appendix="new", to_read=.true.)
-call coupler_type_register_restarts(bc_type_read, bc_rest_files, num_rest_files, domain, to_read=.true., ocean_restart=.false.,&
-                                    & directory="RESTART/")
+call coupler_type_register_restarts(bc_type_read, bc_rest_files, num_rest_files, domain, to_read=.true., &
+                                  & ocean_restart=.false., directory="RESTART/")
 
 do i = 1, bc_type_read%num_bcs
    call read_restart(bc_rest_files(i))
@@ -201,8 +201,8 @@ subroutine compare_answers(bc_type_read, bc_type)
    do i=1, bc_type%num_bcs
       do j = 1, bc_type%bc(i)%num_fields
          if (sum(bc_type%bc(i)%field(j)%values) .ne. sum(bc_type_read%bc(i)%field(j)%values)) then
-             call mpp_error(FATAL, "test_coupler_2d: Answers do not match for: "//trim(bc_type%bc(i)%ice_restart_file)//&
-                            &" var: "//trim(bc_type%bc(i)%field(j)%name))
+             call mpp_error(FATAL, "test_coupler_2d: Answers do not match for: "//trim(bc_type%bc(i)%ice_restart_file)&
+                            & //" var: "//trim(bc_type%bc(i)%field(j)%name))
          endif
       end do
    end do
