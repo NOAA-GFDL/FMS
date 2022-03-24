@@ -3868,7 +3868,11 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
       allocate(diag_objs(get_num_unique_fields()))
       registered_variables = 0
     endif
+#else
+    if (use_modern_diag) &
+      call mpp_error(FATAL, "You need to compile with -Duse_yaml if diag_manager_nml::use_modern_diag=.true.")
 #endif
+
    if (.not. use_modern_diag) then
      CALL parse_diag_table(DIAG_SUBSET=diag_subset_output, ISTAT=mystat, ERR_MSG=err_msg_local)
      IF ( mystat /= 0 ) THEN
