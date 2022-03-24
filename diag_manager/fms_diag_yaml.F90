@@ -56,14 +56,14 @@ integer, parameter :: MAX_STR_LEN = 255
 type varList
   character(len=255), allocatable :: var_name(:) !< Array of diag_field
   type(c_ptr), allocatable :: var_pointer(:) !< Array of pointers
-  integer, allocatable :: ids(:) !< Array of ids
+  integer, allocatable :: diag_field_indices(:) !< Index of the field in the diag_field array
 end type
 
 !> @brief type to hold an array of sorted diag_files
 type fileList
   character(len=255), allocatable :: file_name(:) !< Array of diag_field
   type(c_ptr), allocatable :: file_pointer(:) !< Array of pointers
-  integer, allocatable :: ids(:) !< Array of ids
+  integer, allocatable :: diag_file_indices(:)  !< Index of the file in the diag_file array
 end type
 
 !> @brief type to hold the sub region information about a file
@@ -335,9 +335,9 @@ subroutine diag_yaml_object_init(diag_subset_output)
   allocate(diag_yaml%diag_files(actual_num_files))
   allocate(diag_yaml%diag_fields(total_nvars))
   allocate(variable_list%var_name(total_nvars))
-  allocate(variable_list%ids(total_nvars))
+  allocate(variable_list%diag_field_indices(total_nvars))
   allocate(file_list%file_name(actual_num_files))
-  allocate(file_list%ids(actual_num_files))
+  allocate(file_list%diag_file_indices(actual_num_files))
 
   var_count = 0
   file_count = 0
@@ -350,7 +350,7 @@ subroutine diag_yaml_object_init(diag_subset_output)
 
     !> Save the file name in the file_list
     file_list%file_name(file_count) = trim(diag_yaml%diag_files(file_count)%file_fname)//c_null_char
-    file_list%ids(file_count) = file_count
+    file_list%diag_file_indices(file_count) = file_count
 
     nvars = 0
     nvars = get_num_blocks(diag_yaml_id, "varlist", parent_block_id=diag_file_ids(i))
@@ -376,17 +376,17 @@ subroutine diag_yaml_object_init(diag_subset_output)
 
       !> Save the variable name in the variable_list
       variable_list%var_name(var_count) = trim(diag_yaml%diag_fields(var_count)%var_varname)//c_null_char
-      variable_list%ids(var_count) = var_count
+      variable_list%diag_field_indices(var_count) = var_count
     enddo nvars_loop
     deallocate(var_ids)
   enddo nfiles_loop
 
   !> Sort the file list in alphabetical order
   file_list%file_pointer = fms_array_to_pointer(file_list%file_name)
-  call fms_sort_this(file_list%file_pointer, actual_num_files, file_list%ids)
+  call fms_sort_this(file_list%file_pointer, actual_num_files, file_list%diag_file_indices)
 
   variable_list%var_pointer = fms_array_to_pointer(variable_list%var_name)
-  call fms_sort_this(variable_list%var_pointer, total_nvars, variable_list%ids)
+  call fms_sort_this(variable_list%var_pointer, total_nvars, variable_list%diag_field_indices)
 
   deallocate(diag_file_ids)
 end subroutine
@@ -412,11 +412,11 @@ subroutine diag_yaml_object_end()
 
   if(allocated(file_list%file_pointer)) deallocate(file_list%file_pointer)
   if(allocated(file_list%file_name)) deallocate(file_list%file_name)
-  if(allocated(file_list%ids)) deallocate(file_list%ids)
+  if(allocated(file_list%diag_file_indices)) deallocate(file_list%diag_file_indices)
 
   if(allocated(variable_list%var_pointer)) deallocate(variable_list%var_pointer)
   if(allocated(variable_list%var_name)) deallocate(variable_list%var_name)
-  if(allocated(variable_list%ids)) deallocate(variable_list%ids)
+  if(allocated(variable_list%diag_field_indices)) deallocate(variable_list%diag_field_indices)
 
 end subroutine diag_yaml_object_end
 
