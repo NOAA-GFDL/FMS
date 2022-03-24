@@ -3870,7 +3870,8 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
     endif
 #else
     if (use_modern_diag) &
-      call mpp_error(FATAL, "You need to compile with -Duse_yaml if diag_manager_nml::use_modern_diag=.true.")
+      call error_mseg("diag_manager_mod::diag_manager_init", &
+                       & "You need to compile with -Duse_yaml if diag_manager_nml::use_modern_diag=.true.", FATAL)
 #endif
 
    if (.not. use_modern_diag) then
