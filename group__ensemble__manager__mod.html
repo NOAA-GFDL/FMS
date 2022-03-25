@@ -33,7 +33,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">FMS
-   &#160;<span id="projectnumber">2021.04.0</span>
+   &#160;<span id="projectnumber">2022.01.0</span>
    </div>
    <div id="projectbrief">Flexible Modeling System</div>
   </td>
@@ -195,20 +195,20 @@ integer&#160;</td><td class="memItemRight" valign="bottom"><b>ice_npes_pm</b> =0
 <dl class="exception"><dt>Exceptions</dt><dd>
   <table class="exception">
     <tr><td class="paramname">FATAL,ensemble_manager_mod: ensemble_nml variable ensemble_size must be a positive integer</td><td></td></tr>
-    <tr><td class="paramname">FATAL,ensemble_manager_mod: ensemble_nml variable ensemble_size should be no larger than MAX_ENSEMBLE_SIZE, change ensemble_size or increase MAX_ENSEMBLE_SIZE</td><td></td></tr>
-    <tr><td class="paramname">FATAL,ensemble_size must be divis by npes</td><td></td></tr>
-    <tr><td class="paramname">FATAL,get_ensemble_pelist: size of pelist 1st index &lt; ensemble_size</td><td></td></tr>
-    <tr><td class="paramname">FATAL,get_ensemble_pelist: size of pelist 2nd index &lt; ocean_npes_pm</td><td></td></tr>
-    <tr><td class="paramname">FATAL,get_ensemble_pelist: size of pelist 2nd index &lt; atmos_npes_pm</td><td></td></tr>
-    <tr><td class="paramname">FATAL,get_ensemble_pelist: size of pelist 2nd index &lt; land_npes_pm</td><td></td></tr>
-    <tr><td class="paramname">FATAL,get_ensemble_pelist: size of pelist 2nd index &lt; ice_npes_pm</td><td></td></tr>
-    <tr><td class="paramname">FATAL,get_ensemble_pelist: unknown argument name=[name]</td><td></td></tr>
-    <tr><td class="paramname">FATAL,get_ensemble_pelist: size of pelist 2nd index &lt; total_npes_pm</td><td></td></tr>
+    <tr><td class="paramname">FATAL,"ensemble_manager_mod</td><td>ensemble_nml variable ensemble_size should be no larger than MAX_ENSEMBLE_SIZE, change ensemble_size or increase MAX_ENSEMBLE_SIZE"
+ @throw FATAL, "ensemble_size must be divis by npes"
+ @throw FATAL, "get_ensemble_pelist: size of pelist 1st index &lt; ensemble_size"
+ @throw FATAL, "get_ensemble_pelist: size of pelist 2nd index &lt; ocean_npes_pm"
+ @throw FATAL, "get_ensemble_pelist: size of pelist 2nd index &lt; atmos_npes_pm"
+ @throw FATAL, "get_ensemble_pelist: size of pelist 2nd index &lt; land_npes_pm"
+ @throw FATAL, "get_ensemble_pelist: size of pelist 2nd index &lt; ice_npes_pm"
+ @throw FATAL, "get_ensemble_pelist: unknown argument name=[name]"
+ @throw FATAL, "get_ensemble_pelist: size of pelist 2nd index &lt; total_npes_pm" </td></tr>
   </table>
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="ensemble__manager_8F90_source.html#l00078">78</a> of file <a class="el" href="ensemble__manager_8F90_source.html">ensemble_manager.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="ensemble__manager_8F90_source.html#l00079">79</a> of file <a class="el" href="ensemble__manager_8F90_source.html">ensemble_manager.F90</a>.</p>
 
 </div>
 </div>
@@ -289,7 +289,7 @@ integer&#160;</td><td class="memItemRight" valign="bottom"><b>ice_npes_pm</b> =0
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="ensemble__manager_8F90_source.html#l00237">237</a> of file <a class="el" href="ensemble__manager_8F90_source.html">ensemble_manager.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="ensemble__manager_8F90_source.html#l00238">238</a> of file <a class="el" href="ensemble__manager_8F90_source.html">ensemble_manager.F90</a>.</p>
 
 </div>
 </div>
@@ -338,7 +338,7 @@ integer&#160;</td><td class="memItemRight" valign="bottom"><b>ice_npes_pm</b> =0
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="ensemble__manager_8F90_source.html#l00188">188</a> of file <a class="el" href="ensemble__manager_8F90_source.html">ensemble_manager.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="ensemble__manager_8F90_source.html#l00189">189</a> of file <a class="el" href="ensemble__manager_8F90_source.html">ensemble_manager.F90</a>.</p>
 
 </div>
 </div>
@@ -357,7 +357,7 @@ integer&#160;</td><td class="memItemRight" valign="bottom"><b>ice_npes_pm</b> =0
 <p>Getter function for ensemble_id. </p>
 <dl class="section return"><dt>Returns</dt><dd>integer of ensemble id </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="ensemble__manager_8F90_source.html#l00108">108</a> of file <a class="el" href="ensemble__manager_8F90_source.html">ensemble_manager.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="ensemble__manager_8F90_source.html#l00109">109</a> of file <a class="el" href="ensemble__manager_8F90_source.html">ensemble_manager.F90</a>.</p>
 
 </div>
 </div>
@@ -396,7 +396,7 @@ integer&#160;</td><td class="memItemRight" valign="bottom"><b>ice_npes_pm</b> =0
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="ensemble__manager_8F90_source.html#l00129">129</a> of file <a class="el" href="ensemble__manager_8F90_source.html">ensemble_manager.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="ensemble__manager_8F90_source.html#l00130">130</a> of file <a class="el" href="ensemble__manager_8F90_source.html">ensemble_manager.F90</a>.</p>
 
 </div>
 </div>
@@ -415,7 +415,7 @@ integer&#160;</td><td class="memItemRight" valign="bottom"><b>ice_npes_pm</b> =0
 <p>Returns ensemble size integer array. </p>
 <dl class="section return"><dt>Returns</dt><dd>integer array of sizes </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="ensemble__manager_8F90_source.html#l00115">115</a> of file <a class="el" href="ensemble__manager_8F90_source.html">ensemble_manager.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="ensemble__manager_8F90_source.html#l00116">116</a> of file <a class="el" href="ensemble__manager_8F90_source.html">ensemble_manager.F90</a>.</p>
 
 </div>
 </div>

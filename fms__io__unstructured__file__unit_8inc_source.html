@@ -33,7 +33,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">FMS
-   &#160;<span id="projectnumber">2021.04.0</span>
+   &#160;<span id="projectnumber">2022.01.0</span>
    </div>
    <div id="projectbrief">Flexible Modeling System</div>
   </td>
@@ -131,33 +131,34 @@ $(document).ready(function(){initNavTree('fms__io__unstructured__file__unit_8inc
 <div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;   <span class="comment">!Local variables</span></div>
 <div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;    <span class="keywordtype">logical(INT_KIND)</span>  :: found_file<span class="comment">  !&lt;Flag telling if the file exists.</span></div>
 <div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;    <span class="keywordtype">character(len=256)</span> :: actual_file<span class="comment"> !&lt;Name of the found file.</span></div>
-<div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;    <span class="keywordtype">logical(INT_KIND)</span>  :: read_dist<span class="comment">   !&lt;Flag telling if the file is &quot;distributed&quot; (has IO domain tile id appended to the end).</span></div>
-<div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;    <span class="keywordtype">integer(INT_KIND)</span>  :: nfile<span class="comment">       !&lt;Index of the inputted file in the &quot;files_read&quot; module array.</span></div>
-<div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160; </div>
-<div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;   <span class="comment">!Get the actual name of the file, searching for all possible variants. If</span></div>
-<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;   <span class="comment">!the file is not found, then throw a fatal error.</span></div>
-<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;    found_file = <a class="code" href="fms__io__unstructured__get__file__name_8inc.html#a4eeea16ed549432b88a3133332c91bad">fms_io_unstructured_get_file_name</a>(filename, &amp;</div>
-<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;                                                   actual_file, &amp;</div>
-<div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;                                                   read_dist, &amp;</div>
-<div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;                                                   domain)</div>
-<div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;    <span class="keywordflow">if</span> (.not. found_file) <span class="keywordflow">then</span></div>
-<div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;        <span class="keyword">call </span>mpp_error(fatal, &amp;</div>
-<div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;                       <span class="stringliteral">&quot;fms_io_unstructured_file_unit: file &quot;</span> &amp;</div>
-<div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;                       //trim(filename)//<span class="stringliteral">&quot; and corresponding variants are&quot;</span> &amp;</div>
-<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;                       //<span class="stringliteral">&quot; not found.&quot;</span>)</div>
-<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;<span class="keywordflow">    endif</span></div>
-<div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160; </div>
-<div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;   <span class="comment">!Get the file unit for the input file.</span></div>
-<div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;    <span class="keyword">call </span><a class="code" href="fms__io__unstructured__get__file__unit_8inc.html#a75c0b6f2a887ddc435ac59adfcacc67a">fms_io_unstructured_get_file_unit</a>(actual_file, &amp;</div>
-<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;                                           funit, &amp;</div>
-<div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;                                           nfile, &amp;</div>
-<div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;                                           read_dist, &amp;</div>
-<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;                                           domain)</div>
-<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160; </div>
-<div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;    <span class="keywordflow">return</span></div>
-<div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;<span class="keyword">end subroutine </span><a class="code" href="fms__io__unstructured__file__unit_8inc.html#afc8104d0d2dfa616718bf4990042ce57">fms_io_unstructured_file_unit</a></div>
-<div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160; </div>
-<div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;<span class="comment">!----------</span></div>
+<div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;    <span class="keywordtype">logical(INT_KIND)</span>  :: read_dist<span class="comment">   !&lt;Flag telling if the file is &quot;distributed&quot; (has IO domain</span></div>
+<div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;<span class="comment">                                      !! tile id appended to the end).</span></div>
+<div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;    <span class="keywordtype">integer(INT_KIND)</span>  :: nfile<span class="comment">       !&lt;Index of the inputted file in the &quot;files_read&quot; module array.</span></div>
+<div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160; </div>
+<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;   <span class="comment">!Get the actual name of the file, searching for all possible variants. If</span></div>
+<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;   <span class="comment">!the file is not found, then throw a fatal error.</span></div>
+<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;    found_file = <a class="code" href="fms__io__unstructured__get__file__name_8inc.html#a4eeea16ed549432b88a3133332c91bad">fms_io_unstructured_get_file_name</a>(filename, &amp;</div>
+<div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;                                                   actual_file, &amp;</div>
+<div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;                                                   read_dist, &amp;</div>
+<div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;                                                   domain)</div>
+<div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;    <span class="keywordflow">if</span> (.not. found_file) <span class="keywordflow">then</span></div>
+<div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;        <span class="keyword">call </span>mpp_error(fatal, &amp;</div>
+<div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;                       <span class="stringliteral">&quot;fms_io_unstructured_file_unit: file &quot;</span> &amp;</div>
+<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;                       //trim(filename)//<span class="stringliteral">&quot; and corresponding variants are&quot;</span> &amp;</div>
+<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;                       //<span class="stringliteral">&quot; not found.&quot;</span>)</div>
+<div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;<span class="keywordflow">    endif</span></div>
+<div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160; </div>
+<div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;   <span class="comment">!Get the file unit for the input file.</span></div>
+<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;    <span class="keyword">call </span><a class="code" href="fms__io__unstructured__get__file__unit_8inc.html#a75c0b6f2a887ddc435ac59adfcacc67a">fms_io_unstructured_get_file_unit</a>(actual_file, &amp;</div>
+<div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;                                           funit, &amp;</div>
+<div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;                                           nfile, &amp;</div>
+<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;                                           read_dist, &amp;</div>
+<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;                                           domain)</div>
+<div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160; </div>
+<div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;    <span class="keywordflow">return</span></div>
+<div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;<span class="keyword">end subroutine </span><a class="code" href="fms__io__unstructured__file__unit_8inc.html#afc8104d0d2dfa616718bf4990042ce57">fms_io_unstructured_file_unit</a></div>
+<div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160; </div>
+<div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;<span class="comment">!----------</span></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <div class="ttc" id="afms__io__unstructured__get__file__name_8inc_html_a4eeea16ed549432b88a3133332c91bad"><div class="ttname"><a href="fms__io__unstructured__get__file__name_8inc.html#a4eeea16ed549432b88a3133332c91bad">fms_io_unstructured_get_file_name</a></div><div class="ttdeci">logical(int_kind) function fms_io_unstructured_get_file_name(orig_file, actual_file, read_dist, domain)</div><div class="ttdoc">For an inputted file name, check if it or any of its variants exist. For a file named &quot;foo&quot;,...</div><div class="ttdef"><b>Definition:</b> <a href="fms__io__unstructured__get__file__name_8inc_source.html#l00050">fms_io_unstructured_get_file_name.inc:50</a></div></div>

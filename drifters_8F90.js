@@ -31,6 +31,5 @@ var drifters_8F90 =
     [ "drifters_set_pe_neighbors", "drifters_8F90.html#gaa90f5c5c61f3e1f0a686b87cece0c1d6", null ],
     [ "drifters_set_v_axes", "drifters_8F90.html#ga2d38270021bffd79cb60096459b3ae7e", null ],
     [ "drifters_write_restart", "drifters_8F90.html#ga3e7db869b8b17f17d7c07b3c2b0cc5c2", null ],
-    [ "drft_empty_array", "drifters_8F90.html#gaf26fa2821e2ce97bfea449e938765130", null ],
     [ "max_str_len", "drifters_8F90.html#a1deae3499c01f406598cfab42c72fc63", null ]
 ];

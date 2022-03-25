@@ -55,6 +55,6 @@ var group__fms__netcdf__domain__io__mod =
     [ "open_domain_file", "group__fms__netcdf__domain__io__mod.html#ga4438b03cbe5f49da5d02d71a5edd30b3", null ],
     [ "register_domain_decomposed_dimension", "group__fms__netcdf__domain__io__mod.html#ga787c352da9d13a4c24c36f231abfa0a2", null ],
     [ "register_domain_variable", "group__fms__netcdf__domain__io__mod.html#gad29887d12b8e6c6ff9410613b5cb1de0", null ],
-    [ "restore_domain_state", "group__fms__netcdf__domain__io__mod.html#gae61d9ed35345e6f5713d7c322c45faf4", null ],
+    [ "restore_domain_state", "group__fms__netcdf__domain__io__mod.html#ga9b0bc8c0bb14573119e69333279dcb93", null ],
     [ "save_domain_restart", "group__fms__netcdf__domain__io__mod.html#ga243dbca03d9c9ef6047785b74f2c5b20", null ]
 ];

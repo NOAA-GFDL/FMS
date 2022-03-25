@@ -33,7 +33,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">FMS
-   &#160;<span id="projectnumber">2021.04.0</span>
+   &#160;<span id="projectnumber">2022.01.0</span>
    </div>
    <div id="projectbrief">Flexible Modeling System</div>
   </td>
@@ -127,32 +127,34 @@ $(document).ready(function(){initNavTree('mpp__write__unlimited__axis_8h_source.
 <div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160; </div>
 <div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;      call mpp_clock_begin(mpp_write_clock)</div>
 <div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160; </div>
-<div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;      if( .NOT.module_is_initialized )call mpp_error( FATAL, <span class="stringliteral">&#39;MPP_WRITE_UNLIMITED_AXIS_1D_: must first call mpp_io_init.&#39;</span> )</div>
-<div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;      if( .NOT.mpp_file(unit)%valid )call mpp_error( FATAL, <span class="stringliteral">&#39;MPP_WRITE_UNLIMITED_AXIS_1D_: invalid unit number.&#39;</span> )</div>
-<div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160; </div>
-<div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;      io_domain=&gt;mpp_get_io_domain(domain)</div>
-<div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;      if (.not. ASSOCIATED(io_domain)) call mpp_error( FATAL, <span class="stringliteral">&#39;MPP_WRITE_UNLIMITED_AXIS_1D_: io_domain must be defined.&#39;</span> )</div>
-<div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;      npes = mpp_get_domain_npes(io_domain)</div>
-<div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;      allocate(pelist(npes))</div>
-<div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;      call mpp_get_pelist(io_domain,pelist)</div>
-<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160; </div>
-<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;      nelems = sum(nelems_io(:))</div>
+<div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;      if( .NOT.module_is_initialized )call mpp_error( FATAL, &amp;</div>
+<div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;         &amp;  <span class="stringliteral">&#39;MPP_WRITE_UNLIMITED_AXIS_1D_: must first call mpp_io_init.&#39;</span> )</div>
+<div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;      if( .NOT.mpp_file(unit)%valid )call mpp_error( FATAL, <span class="stringliteral">&#39;MPP_WRITE_UNLIMITED_AXIS_1D_: invalid unit number.&#39;</span> )</div>
+<div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160; </div>
+<div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;      io_domain=&gt;mpp_get_io_domain(domain)</div>
+<div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;      if (.not. ASSOCIATED(io_domain)) call mpp_error( FATAL, &amp;</div>
+<div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;          &amp;  <span class="stringliteral">&#39;MPP_WRITE_UNLIMITED_AXIS_1D_: io_domain must be defined.&#39;</span> )</div>
+<div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;      npes = mpp_get_domain_npes(io_domain)</div>
+<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;      allocate(pelist(npes))</div>
+<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;      call mpp_get_pelist(io_domain,pelist)</div>
 <div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160; </div>
-<div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;      if(mpp_file(unit)%write_on_this_pe) allocate(rbuff(nelems))</div>
+<div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;      nelems = sum(nelems_io(:))</div>
 <div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160; </div>
-<div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;   !  Note that the gatherV implied here is asymmetric; only root needs to know the vector of recv size</div>
-<div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;      call mpp_gather(data,size(data),rbuff,nelems_io(:),pelist)</div>
-<div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160; </div>
-<div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;      <span class="keywordflow">if</span>(mpp_file(unit)%write_on_this_pe) then</div>
-<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;         field%size(1) = nelems  ! Correct the field size now that we have all the data</div>
-<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;         call write_record(unit, field, nelems, rbuff)</div>
-<div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;         deallocate(rbuff)</div>
-<div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;      endif</div>
-<div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;      deallocate(pelist)</div>
-<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160; </div>
-<div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;      call mpp_clock_end(mpp_write_clock)</div>
-<div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;      <span class="keywordflow">return</span></div>
-<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;    end subroutine MPP_WRITE_UNLIMITED_AXIS_1D_</div>
+<div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;      if(mpp_file(unit)%write_on_this_pe) allocate(rbuff(nelems))</div>
+<div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160; </div>
+<div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;   !  Note that the gatherV implied here is asymmetric; only root needs to know the vector of recv size</div>
+<div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;      call mpp_gather(data,size(data),rbuff,nelems_io(:),pelist)</div>
+<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160; </div>
+<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;      <span class="keywordflow">if</span>(mpp_file(unit)%write_on_this_pe) then</div>
+<div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;         field%size(1) = nelems  ! Correct the field size now that we have all the data</div>
+<div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;         call write_record(unit, field, nelems, rbuff)</div>
+<div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;         deallocate(rbuff)</div>
+<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;      endif</div>
+<div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;      deallocate(pelist)</div>
+<div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160; </div>
+<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;      call mpp_clock_end(mpp_write_clock)</div>
+<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;      <span class="keywordflow">return</span></div>
+<div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;    end subroutine MPP_WRITE_UNLIMITED_AXIS_1D_</div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->

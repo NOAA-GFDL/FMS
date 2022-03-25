@@ -15,7 +15,7 @@ var fms__netcdf__domain__io_8F90 =
     [ "open_domain_file", "fms__netcdf__domain__io_8F90.html#ga4438b03cbe5f49da5d02d71a5edd30b3", null ],
     [ "register_domain_decomposed_dimension", "fms__netcdf__domain__io_8F90.html#ga787c352da9d13a4c24c36f231abfa0a2", null ],
     [ "register_domain_variable", "fms__netcdf__domain__io_8F90.html#gad29887d12b8e6c6ff9410613b5cb1de0", null ],
-    [ "restore_domain_state", "fms__netcdf__domain__io_8F90.html#gae61d9ed35345e6f5713d7c322c45faf4", null ],
+    [ "restore_domain_state", "fms__netcdf__domain__io_8F90.html#ga9b0bc8c0bb14573119e69333279dcb93", null ],
     [ "save_domain_restart", "fms__netcdf__domain__io_8F90.html#ga243dbca03d9c9ef6047785b74f2c5b20", null ],
     [ "default_domain_position", "fms__netcdf__domain__io_8F90.html#gaf0fec4d903929e5fb3892177c77f74c6", null ],
     [ "domain_axis_att_name", "fms__netcdf__domain__io_8F90.html#gace069f4a49be73e66960ce9ae8970d93", null ],

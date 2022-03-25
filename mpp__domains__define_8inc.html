@@ -33,7 +33,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">FMS
-   &#160;<span id="projectnumber">2021.04.0</span>
+   &#160;<span id="projectnumber">2022.01.0</span>
    </div>
    <div id="projectbrief">Flexible Modeling System</div>
   </td>
@@ -365,7 +365,7 @@ subroutine&#160;</td><td class="memItemRight" valign="bottom"><b>set_domain_comm
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="mpp__domains__define_8inc_source.html#l00293">293</a> of file <a class="el" href="mpp__domains__define_8inc_source.html">mpp_domains_define.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="mpp__domains__define_8inc_source.html#l00295">295</a> of file <a class="el" href="mpp__domains__define_8inc_source.html">mpp_domains_define.inc</a>.</p>
 
 </div>
 </div>
@@ -531,16 +531,16 @@ subroutine&#160;</td><td class="memItemRight" valign="bottom"><b>set_domain_comm
     <tr><td class="paramdir">[in]</td><td class="paramname">global_indices</td><td>(/ isg, ieg, jsg, jeg /)</td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">is_mosaic</td><td>indicate if calling mpp_define_domains from mpp_define_mosaic.</td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">nhalo</td><td>halo size for West, East, South and North direction. if whalo and ehalo is not present, will take the value of xhalo if shalo and nhalo is not present, will take the value of yhalo</td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">tile_count</td><td>tile number on current pe, default value is 1 this is for the situation that multiple tiles on one processor.</td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">tile_count</td><td>tile number on current pe, default value is 1. this is for the situation that multiple tiles on one processor</td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">tile_id</td><td>tile id</td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">complete</td><td>true indicate mpp_define_domain is completed for mosaic definition.</td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">x_cyclic_offset</td><td>offset for x-cyclic boundary condition, (0,j) = (ni, mod(j+x_cyclic_offset,nj)) (ni+1,j) = ( 1, mod(j+nj-x_cyclic_offset,nj) )</td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">y_cyclic_offset</td><td>offset for y-cyclic boundary condition (i,0) = (mod(i+y_cyclic_offset,ni), nj)) (i,nj+1) = (mod(mod(i+ni-y_cyclic_offset,ni), 1) ) </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">x_cyclic_offset</td><td>offset for x-cyclic boundary condition, (0,j) = (ni, mod(j+x_cyclic_offset,nj)) (ni+1, j)=(1 ,mod(j+nj-x_cyclic_offset,nj))</td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">y_cyclic_offset</td><td>offset for y-cyclic boundary condition (i,0) = (mod(i+y_cyclic_offset,ni), nj)) (i,nj+1) =(mod(mod(i+ni-y_cyclic_offset,ni), 1) ) </td></tr>
   </table>
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="mpp__domains__define_8inc_source.html#l00620">620</a> of file <a class="el" href="mpp__domains__define_8inc_source.html">mpp_domains_define.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="mpp__domains__define_8inc_source.html#l00627">627</a> of file <a class="el" href="mpp__domains__define_8inc_source.html">mpp_domains_define.inc</a>.</p>
 
 </div>
 </div>
@@ -661,7 +661,7 @@ subroutine&#160;</td><td class="memItemRight" valign="bottom"><b>set_domain_comm
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="mpp__domains__define_8inc_source.html#l07446">7446</a> of file <a class="el" href="mpp__domains__define_8inc_source.html">mpp_domains_define.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="mpp__domains__define_8inc_source.html#l07484">7484</a> of file <a class="el" href="mpp__domains__define_8inc_source.html">mpp_domains_define.inc</a>.</p>
 
 </div>
 </div>
@@ -773,7 +773,7 @@ subroutine&#160;</td><td class="memItemRight" valign="bottom"><b>set_domain_comm
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="mpp__domains__define_8inc_source.html#l07494">7494</a> of file <a class="el" href="mpp__domains__define_8inc_source.html">mpp_domains_define.inc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="mpp__domains__define_8inc_source.html#l07533">7533</a> of file <a class="el" href="mpp__domains__define_8inc_source.html">mpp_domains_define.inc</a>.</p>
 
 </div>
 </div>

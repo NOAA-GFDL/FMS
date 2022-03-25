@@ -6,7 +6,6 @@ var group__mpp =
     [ "mpp_io_mod", "group__mpp__io__mod.html", "group__mpp__io__mod" ],
     [ "mpp_memutils_mod", "group__mpp__memutils__mod.html", "group__mpp__memutils__mod" ],
     [ "mpp_mod", "group__mpp__mod.html", "group__mpp__mod" ],
-    [ "mpp_parameter_mod", "group__mpp__parameter__mod.html", "group__mpp__parameter__mod" ],
     [ "mpp_utilities_mod", "group__mpp__utilities__mod.html", "group__mpp__utilities__mod" ],
     [ "mpp_comm.inc", "mpp__comm_8inc.html", null ],
     [ "mpp_comm_mpi.inc", "mpp__comm__mpi_8inc.html", null ],

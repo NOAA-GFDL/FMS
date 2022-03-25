@@ -81,7 +81,6 @@ var xgrid_8F90 =
     [ "id_setup_xmap", "xgrid_8F90.html#gad1594ddf538926d3d06b468fad302f40", null ],
     [ "ie_nest", "xgrid_8F90.html#gac2a1d8ab60184394cb7a3216fb9bea38", null ],
     [ "ie_parent", "xgrid_8F90.html#ga44a54d82abd8a1525246eefbb442a530", null ],
-    [ "init", "xgrid_8F90.html#ga918992f5441500892b62fc6dd3dc69ee", null ],
     [ "interp_method", "xgrid_8F90.html#gaa4d2fac28a8463186ad117328bed5f0d", null ],
     [ "is_nest", "xgrid_8F90.html#gae153b6105fa6b9cf34b01e2d372e1e73", null ],
     [ "is_parent", "xgrid_8F90.html#gaba4755cbaa4df3aaa6e9f27a70a9ea32", null ],
@@ -103,6 +102,5 @@ var xgrid_8F90 =
     [ "use_mpp_io", "xgrid_8F90.html#ga6354efeadfde9254bc8a3c2698bff1a0", null ],
     [ "version1", "xgrid_8F90.html#gad6eb423a451ce62211b16316cbfa0a80", null ],
     [ "version2", "xgrid_8F90.html#gab2573a7511aef52a4530ec538eb49d26", null ],
-    [ "xgrid_clocks_on", "xgrid_8F90.html#ga26b39423029951349a30d2a090c7ceaa", null ],
-    [ "xgrid_log", "xgrid_8F90.html#ga2de59aeadc4abb07771504795698c7ad", null ]
+    [ "xgrid_clocks_on", "xgrid_8F90.html#ga26b39423029951349a30d2a090c7ceaa", null ]
 ];

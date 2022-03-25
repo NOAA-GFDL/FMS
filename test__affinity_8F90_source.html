@@ -33,7 +33,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">FMS
-   &#160;<span id="projectnumber">2021.04.0</span>
+   &#160;<span id="projectnumber">2022.01.0</span>
    </div>
    <div id="projectbrief">Flexible Modeling System</div>
   </td>
@@ -117,42 +117,45 @@ $(document).ready(function(){initNavTree('test__affinity_8F90_source.html',''); 
 <div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160; </div>
 <div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160;<span class="comment">!--- FMS modules</span></div>
 <div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160; <span class="keywordtype">use </span>mpp_mod,          <span class="keywordtype">only</span>: input_nml_file, <a class="code" href="interfacempp__mod_1_1mpp__error.html">mpp_error</a>, <a class="code" href="mpp__util_8inc.html#acfeba7de56f9dd6000b3fd78f9d56c50">mpp_pe</a>, mpp_root_pe, fatal</div>
-<div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160; <span class="keywordtype">use </span>fms_affinity_mod</div>
-<div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160; </div>
-<div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160;<span class="comment">!--- namelist parameters</span></div>
-<div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160; <span class="keywordtype">character(len=15)</span> :: component=<span class="stringliteral">&#39;COMPONENT      &#39;</span></div>
-<div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160; <span class="keywordtype">integer</span>:: nthreads   = 2</div>
-<div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160; <span class="keywordtype">logical</span>:: use_hyper_thread = .false.</div>
-<div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160; namelist /test_affinity_nml/ component, nthreads, use_hyper_thread</div>
-<div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160; </div>
-<div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;<span class="comment">!--- program vars</span></div>
-<div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160; <span class="keywordtype">integer</span>:: io_status</div>
-<div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160; <span class="keywordtype">integer</span>:: conc_threads</div>
-<div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160; <span class="keywordtype">character(len=32)</span>:: h_name</div>
-<div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160; </div>
-<div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;<span class="comment">!-----------------------------------------------------------------------</span></div>
-<div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;<span class="comment">!--- print initial test message</span></div>
-<div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;    print *, <span class="stringliteral">&#39;&#39;</span></div>
-<div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;    print *, <span class="stringliteral">&#39;*** Testing affinity placement within FMS library...&#39;</span></div>
-<div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;<span class="comment">!--- initialize affinity</span></div>
-<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;    <span class="keyword">call </span><a class="code" href="group__fms__affinity__mod.html#ga78a042dc1e444c6cb142e03d2c1f5345">fms_affinity_init</a>()</div>
-<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160; </div>
-<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;    <span class="keyword">read</span>(input_nml_file,test_affinity_nml, iostat=io_status)</div>
-<div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;    <span class="keywordflow">if</span> (io_status &gt; 0) <span class="keywordflow">then</span></div>
-<div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;      <span class="keyword">call </span><a class="code" href="interfacempp__mod_1_1mpp__error.html">mpp_error</a>(fatal, <span class="stringliteral">&#39;=&gt; test_affinity: Error reading input.nml&#39;</span>)</div>
-<div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;<span class="keywordflow">    endif</span></div>
-<div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160; </div>
-<div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;    <span class="keyword">call </span><a class="code" href="group__fms__affinity__mod.html#gaee9fe9116c8a7ddbdcc6ed836b218755">fms_affinity_set</a> (component, use_hyper_thread, nthreads)</div>
-<div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160; </div>
-<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;<span class="comment">!--- print success or failure message</span></div>
-<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;    <span class="keywordflow">if</span> (<a class="code" href="mpp__util_8inc.html#acfeba7de56f9dd6000b3fd78f9d56c50">mpp_pe</a>() == mpp_root_pe()) print *, <span class="stringliteral">&#39;*** SUCCESS!&#39;</span></div>
-<div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160; </div>
-<div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;<span class="keyword">end program </span>test_affinity</div>
+<div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160; <span class="keywordtype">use </span>fms_mod,          <span class="keywordtype">only</span>: <a class="code" href="group__fms__mod.html#ga76099928e3f2e58ea5efe717c7809fce">fms_init</a>, fms_end</div>
+<div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160; <span class="keywordtype">use </span>fms_affinity_mod</div>
+<div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160; </div>
+<div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;<span class="comment">!--- namelist parameters</span></div>
+<div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160; <span class="keywordtype">character(len=15)</span> :: component=<span class="stringliteral">&#39;COMPONENT      &#39;</span></div>
+<div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160; <span class="keywordtype">integer</span>:: nthreads   = 2</div>
+<div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160; <span class="keywordtype">logical</span>:: use_hyper_thread = .false.</div>
+<div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160; namelist /test_affinity_nml/ component, nthreads, use_hyper_thread</div>
+<div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160; </div>
+<div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;<span class="comment">!--- program vars</span></div>
+<div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160; <span class="keywordtype">integer</span>:: io_status</div>
+<div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160; <span class="keywordtype">integer</span>:: conc_threads</div>
+<div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160; <span class="keywordtype">character(len=32)</span>:: h_name</div>
+<div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160; </div>
+<div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;     <span class="keyword">call </span><a class="code" href="group__fms__mod.html#ga76099928e3f2e58ea5efe717c7809fce">fms_init</a>()</div>
+<div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160; </div>
+<div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;<span class="comment">!-----------------------------------------------------------------------</span></div>
+<div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;<span class="comment">!--- print initial test message</span></div>
+<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;    print *, <span class="stringliteral">&#39;&#39;</span></div>
+<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;    print *, <span class="stringliteral">&#39;*** Testing affinity placement within FMS library...&#39;</span></div>
+<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160; </div>
+<div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;    <span class="keyword">read</span>(input_nml_file,test_affinity_nml, iostat=io_status)</div>
+<div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;    <span class="keywordflow">if</span> (io_status &gt; 0) <span class="keywordflow">then</span></div>
+<div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;      <span class="keyword">call </span><a class="code" href="interfacempp__mod_1_1mpp__error.html">mpp_error</a>(fatal, <span class="stringliteral">&#39;=&gt; test_affinity: Error reading input.nml&#39;</span>)</div>
+<div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;<span class="keywordflow">    endif</span></div>
+<div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160; </div>
+<div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;    <span class="keyword">call </span><a class="code" href="group__fms__affinity__mod.html#gaee9fe9116c8a7ddbdcc6ed836b218755">fms_affinity_set</a> (component, use_hyper_thread, nthreads)</div>
+<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160; </div>
+<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;<span class="comment">!--- print success or failure message</span></div>
+<div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;    <span class="keywordflow">if</span> (<a class="code" href="mpp__util_8inc.html#acfeba7de56f9dd6000b3fd78f9d56c50">mpp_pe</a>() == mpp_root_pe()) print *, <span class="stringliteral">&#39;*** SUCCESS!&#39;</span></div>
+<div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160; </div>
+<div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;    <span class="keyword">call </span>fms_end()</div>
+<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160; </div>
+<div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;<span class="keyword">end program </span>test_affinity</div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
-<div class="ttc" id="agroup__fms__affinity__mod_html_ga78a042dc1e444c6cb142e03d2c1f5345"><div class="ttname"><a href="group__fms__affinity__mod.html#ga78a042dc1e444c6cb142e03d2c1f5345">fms_affinity_mod::fms_affinity_init</a></div><div class="ttdeci">subroutine, public fms_affinity_init()</div><div class="ttdoc">Initialization routine for affinity handling.</div><div class="ttdef"><b>Definition:</b> <a href="fms__affinity_8F90_source.html#l00095">fms_affinity.F90:95</a></div></div>
-<div class="ttc" id="ainterfacempp__mod_1_1mpp__error_html"><div class="ttname"><a href="interfacempp__mod_1_1mpp__error.html">mpp_mod::mpp_error</a></div><div class="ttdoc">Error handler.</div><div class="ttdef"><b>Definition:</b> <a href="mpp_8F90_source.html#l00386">mpp.F90:386</a></div></div>
+<div class="ttc" id="ainterfacempp__mod_1_1mpp__error_html"><div class="ttname"><a href="interfacempp__mod_1_1mpp__error.html">mpp_mod::mpp_error</a></div><div class="ttdoc">Error handler.</div><div class="ttdef"><b>Definition:</b> <a href="mpp_8F90_source.html#l00383">mpp.F90:383</a></div></div>
 <div class="ttc" id="agroup__fms__affinity__mod_html_gaee9fe9116c8a7ddbdcc6ed836b218755"><div class="ttname"><a href="group__fms__affinity__mod.html#gaee9fe9116c8a7ddbdcc6ed836b218755">fms_affinity_mod::fms_affinity_set</a></div><div class="ttdeci">subroutine, public fms_affinity_set(component, use_hyper_thread, nthreads)</div><div class="ttdoc">Routine to set affinity for a component.</div><div class="ttdef"><b>Definition:</b> <a href="fms__affinity_8F90_source.html#l00122">fms_affinity.F90:122</a></div></div>
+<div class="ttc" id="agroup__fms__mod_html_ga76099928e3f2e58ea5efe717c7809fce"><div class="ttname"><a href="group__fms__mod.html#ga76099928e3f2e58ea5efe717c7809fce">fms_mod::fms_init</a></div><div class="ttdeci">subroutine, public fms_init(localcomm, alt_input_nml_path)</div><div class="ttdoc">Initializes the FMS module and also calls the initialization routines for all modules in the MPP pack...</div><div class="ttdef"><b>Definition:</b> <a href="fms_8F90_source.html#l00354">fms.F90:354</a></div></div>
 <div class="ttc" id="ampp__util_8inc_html_acfeba7de56f9dd6000b3fd78f9d56c50"><div class="ttname"><a href="mpp__util_8inc.html#acfeba7de56f9dd6000b3fd78f9d56c50">mpp_pe</a></div><div class="ttdeci">integer function mpp_pe()</div><div class="ttdoc">Returns processor ID. This returns the unique ID associated with a PE. This number runs between 0 and...</div><div class="ttdef"><b>Definition:</b> <a href="mpp__util_8inc_source.html#l00440">mpp_util.inc:440</a></div></div>
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->

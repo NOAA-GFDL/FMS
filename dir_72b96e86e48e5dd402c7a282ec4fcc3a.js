@@ -8,7 +8,7 @@ var dir_72b96e86e48e5dd402c7a282ec4fcc3a =
     [ "mpp_io.F90", "mpp__io_8F90.html", "mpp__io_8F90" ],
     [ "mpp_memuse.c", "mpp__memuse_8c_source.html", null ],
     [ "mpp_memutils.F90", "mpp__memutils_8F90.html", "mpp__memutils_8F90" ],
-    [ "mpp_parameter.F90", "mpp__parameter_8F90.html", "mpp__parameter_8F90" ],
+    [ "mpp_parameter.F90", "mpp__parameter_8F90_source.html", null ],
     [ "mpp_pset.F90", "mpp__pset_8F90_source.html", null ],
     [ "mpp_utilities.F90", "mpp__utilities_8F90.html", "mpp__utilities_8F90" ]
 ];

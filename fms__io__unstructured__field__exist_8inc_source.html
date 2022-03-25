@@ -33,7 +33,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">FMS
-   &#160;<span id="projectnumber">2021.04.0</span>
+   &#160;<span id="projectnumber">2022.01.0</span>
    </div>
    <div id="projectbrief">Flexible Modeling System</div>
   </td>
@@ -131,81 +131,84 @@ $(document).ready(function(){initNavTree('fms__io__unstructured__field__exist_8i
 <div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;    <span class="keywordtype">logical(INT_KIND)</span>           :: does_field_exist<span class="comment"> !&lt;Flag telling if the inputted field exists in the inputted file.</span></div>
 <div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160; </div>
 <div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;   <span class="comment">!Local variables</span></div>
-<div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;    <span class="keywordtype">logical(INT_KIND)</span>                        :: file_exist<span class="comment"> !&lt;Flag telling if the inputted file or one of its variants exists.</span></div>
-<div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;    <span class="keywordtype">character(len=256)</span>                       :: fname<span class="comment">      !&lt;Actual name of the found file.</span></div>
-<div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;    <span class="keywordtype">logical(INT_KIND)</span>                        :: read_dist<span class="comment">  !&lt;Flag telling if the file is &quot;distributed&quot; (has IO domain tile id appended onto the end).</span></div>
-<div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;    <span class="keywordtype">integer(INT_KIND)</span>                        :: funit<span class="comment">      !&lt;A file unit.</span></div>
-<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;    <span class="keywordtype">integer(INT_KIND)</span>                        :: nfile<span class="comment">      !&lt;Index of the inputted file in the &quot;files_read&quot; module array.</span></div>
-<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;    <span class="keywordtype">integer(INT_KIND)</span>                        :: i<span class="comment">          !&lt;Loop variable.</span></div>
-<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;    <span class="keywordtype">integer(INT_KIND)</span>                        :: ndim<span class="comment">       !&lt;Number of dimensions in a file.</span></div>
-<div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;    <span class="keywordtype">integer(INT_KIND)</span>                        :: nvar<span class="comment">       !&lt;Number of fields in a file.</span></div>
-<div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;    <span class="keywordtype">integer(INT_KIND)</span>                        :: natt<span class="comment">       !&lt;Number of attributes in a file.</span></div>
-<div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;    <span class="keywordtype">integer(INT_KIND)</span>                        :: ntime<span class="comment">      !&lt;Number of time levels in a file.</span></div>
-<div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;    <span class="keywordtype">character(len=64)</span>                        :: tmp_name<span class="comment">   !&lt;Name of a field.</span></div>
-<div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;    <span class="keywordtype">type</span>(fieldtype),<span class="keywordtype">dimension(:)</span>,<span class="keywordtype">allocatable</span> :: fields<span class="comment">     !&lt;An array of fields found in the input file.</span></div>
-<div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160; </div>
-<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160; </div>
-<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;   <span class="comment">!Set default return value for the function.</span></div>
-<div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;    does_field_exist = .false.</div>
+<div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;    <span class="keywordtype">logical(INT_KIND)</span>                        :: file_exist<span class="comment"> !&lt;Flag telling if the inputted file</span></div>
+<div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;<span class="comment">                                                           !! or one of its variants exists.</span></div>
+<div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;    <span class="keywordtype">character(len=256)</span>                       :: fname<span class="comment">      !&lt;Actual name of the found file.</span></div>
+<div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;    <span class="keywordtype">logical(INT_KIND)</span>                        :: read_dist<span class="comment">  !&lt;Flag telling if the file is &quot;distributed&quot;</span></div>
+<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;<span class="comment">                                                           !! (has IO domain tile id appended onto the end).</span></div>
+<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;    <span class="keywordtype">integer(INT_KIND)</span>                        :: funit<span class="comment">      !&lt;A file unit.</span></div>
+<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;    <span class="keywordtype">integer(INT_KIND)</span>                        :: nfile<span class="comment">      !&lt;Index of the inputted file in</span></div>
+<div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;<span class="comment">                                                           !! the &quot;files_read&quot; module array.</span></div>
+<div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;    <span class="keywordtype">integer(INT_KIND)</span>                        :: i<span class="comment">          !&lt;Loop variable.</span></div>
+<div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;    <span class="keywordtype">integer(INT_KIND)</span>                        :: ndim<span class="comment">       !&lt;Number of dimensions in a file.</span></div>
+<div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;    <span class="keywordtype">integer(INT_KIND)</span>                        :: nvar<span class="comment">       !&lt;Number of fields in a file.</span></div>
+<div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;    <span class="keywordtype">integer(INT_KIND)</span>                        :: natt<span class="comment">       !&lt;Number of attributes in a file.</span></div>
+<div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;    <span class="keywordtype">integer(INT_KIND)</span>                        :: ntime<span class="comment">      !&lt;Number of time levels in a file.</span></div>
+<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;    <span class="keywordtype">character(len=64)</span>                        :: tmp_name<span class="comment">   !&lt;Name of a field.</span></div>
+<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;    <span class="keywordtype">type</span>(fieldtype),<span class="keywordtype">dimension(:)</span>,<span class="keywordtype">allocatable</span> :: fields<span class="comment">     !&lt;An array of fields found in the input file.</span></div>
+<div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160; </div>
 <div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160; </div>
-<div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;   <span class="comment">!Return if the inputted field name is in valid.</span></div>
-<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;    <span class="keywordflow">if</span> (len_trim(field_name) .eq. 0) <span class="keywordflow">then</span></div>
-<div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;        <span class="keywordflow">return</span></div>
-<div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;<span class="keywordflow">    endif</span></div>
-<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;    <span class="keywordflow">if</span> (field_name(1:1) .eq. <span class="stringliteral">&#39; &#39;</span>) <span class="keywordflow">then</span></div>
+<div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;   <span class="comment">!Set default return value for the function.</span></div>
+<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;    does_field_exist = .false.</div>
+<div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160; </div>
+<div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;   <span class="comment">!Return if the inputted field name is in valid.</span></div>
+<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;    <span class="keywordflow">if</span> (len_trim(field_name) .eq. 0) <span class="keywordflow">then</span></div>
 <div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;        <span class="keywordflow">return</span></div>
 <div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;<span class="keywordflow">    endif</span></div>
-<div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160; </div>
-<div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;   <span class="comment">!Check if the file exists.</span></div>
-<div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;    file_exist = <a class="code" href="fms__io__unstructured__get__file__name_8inc.html#a4eeea16ed549432b88a3133332c91bad">fms_io_unstructured_get_file_name</a>(file_name, &amp;</div>
-<div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;                                                   fname, &amp;</div>
-<div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;                                                   read_dist, &amp;</div>
-<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;                                                   domain)</div>
-<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160; </div>
-<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;    <span class="keywordflow">if</span> (file_exist) <span class="keywordflow">then</span></div>
-<div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160; </div>
-<div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;       <span class="comment">!Get the file unit for the input file.</span></div>
-<div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;        <span class="keyword">call </span><a class="code" href="fms__io__unstructured__get__file__unit_8inc.html#a75c0b6f2a887ddc435ac59adfcacc67a">fms_io_unstructured_get_file_unit</a>(fname, &amp;</div>
-<div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;                                               funit, &amp;</div>
-<div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;                                               nfile, &amp;</div>
-<div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;                                               read_dist, &amp;</div>
-<div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;                                               domain)</div>
-<div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160; </div>
-<div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;       <span class="comment">!Get the number of dimensions, fields, attributes and time levels</span></div>
-<div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;       <span class="comment">!for the file.</span></div>
-<div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;        <span class="keyword">call </span><a class="code" href="mpp__io__util_8inc.html#a1b259a1037e7498382c529cf0e545c9b">mpp_get_info</a>(funit, &amp;</div>
-<div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;                          ndim, &amp;</div>
-<div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;                          nvar, &amp;</div>
-<div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;                          natt, &amp;</div>
-<div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160;                          ntime)</div>
-<div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160; </div>
-<div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160;       <span class="comment">!Create an array of all fields contained in the file.</span></div>
-<div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;        <span class="keyword">allocate</span>(fields(nvar))</div>
-<div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160;        <span class="keyword">call </span><a class="code" href="mpp__io__util_8inc.html#a9d312dd6a9a8382c846fd8f15ce2c7de">mpp_get_fields</a>(funit, &amp;</div>
-<div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160;                            fields)</div>
-<div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160; </div>
-<div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160;       <span class="comment">!Loop through the fields to see if the inputted field name matches</span></div>
-<div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;       <span class="comment">!any of the fields from the file.</span></div>
-<div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;        <span class="keywordflow">do</span> i = 1,nvar</div>
-<div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160;            <span class="keyword">call </span>mpp_get_atts(fields(i), &amp;</div>
-<div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160;                              name=tmp_name)</div>
-<div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160;            <span class="keywordflow">if</span> (lowercase(trim(tmp_name)) .eq. lowercase(trim(field_name))) <span class="keywordflow">then</span></div>
-<div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160;                does_field_exist = .true.</div>
-<div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160;<span class="keywordflow">            endif</span></div>
-<div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160;<span class="keywordflow">        enddo</span></div>
-<div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160; </div>
-<div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160;       <span class="comment">!Deallocate local allocatable.</span></div>
-<div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160;        <span class="keyword">deallocate</span>(fields)</div>
-<div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160;<span class="keywordflow">    endif</span></div>
-<div class="line"><a name="l00104"></a><span class="lineno">  104</span>&#160; </div>
-<div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160;    <span class="keywordflow">return</span></div>
-<div class="line"><a name="l00106"></a><span class="lineno">  106</span>&#160;<span class="keyword">end function </span><a class="code" href="fms__io__unstructured__field__exist_8inc.html#a883d713cc10bc734f032bf0304349d86">fms_io_unstructured_field_exist</a></div>
+<div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;    <span class="keywordflow">if</span> (field_name(1:1) .eq. <span class="stringliteral">&#39; &#39;</span>) <span class="keywordflow">then</span></div>
+<div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;        <span class="keywordflow">return</span></div>
+<div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;<span class="keywordflow">    endif</span></div>
+<div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160; </div>
+<div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;   <span class="comment">!Check if the file exists.</span></div>
+<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;    file_exist = <a class="code" href="fms__io__unstructured__get__file__name_8inc.html#a4eeea16ed549432b88a3133332c91bad">fms_io_unstructured_get_file_name</a>(file_name, &amp;</div>
+<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;                                                   fname, &amp;</div>
+<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;                                                   read_dist, &amp;</div>
+<div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;                                                   domain)</div>
+<div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160; </div>
+<div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;    <span class="keywordflow">if</span> (file_exist) <span class="keywordflow">then</span></div>
+<div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160; </div>
+<div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;       <span class="comment">!Get the file unit for the input file.</span></div>
+<div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;        <span class="keyword">call </span><a class="code" href="fms__io__unstructured__get__file__unit_8inc.html#a75c0b6f2a887ddc435ac59adfcacc67a">fms_io_unstructured_get_file_unit</a>(fname, &amp;</div>
+<div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;                                               funit, &amp;</div>
+<div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;                                               nfile, &amp;</div>
+<div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;                                               read_dist, &amp;</div>
+<div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;                                               domain)</div>
+<div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160; </div>
+<div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;       <span class="comment">!Get the number of dimensions, fields, attributes and time levels</span></div>
+<div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;       <span class="comment">!for the file.</span></div>
+<div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;        <span class="keyword">call </span><a class="code" href="mpp__io__util_8inc.html#a1b259a1037e7498382c529cf0e545c9b">mpp_get_info</a>(funit, &amp;</div>
+<div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160;                          ndim, &amp;</div>
+<div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;                          nvar, &amp;</div>
+<div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160;                          natt, &amp;</div>
+<div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;                          ntime)</div>
+<div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160; </div>
+<div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160;       <span class="comment">!Create an array of all fields contained in the file.</span></div>
+<div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;        <span class="keyword">allocate</span>(fields(nvar))</div>
+<div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160;        <span class="keyword">call </span><a class="code" href="mpp__io__util_8inc.html#a9d312dd6a9a8382c846fd8f15ce2c7de">mpp_get_fields</a>(funit, &amp;</div>
+<div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;                            fields)</div>
+<div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160; </div>
+<div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160;       <span class="comment">!Loop through the fields to see if the inputted field name matches</span></div>
+<div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160;       <span class="comment">!any of the fields from the file.</span></div>
+<div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160;        <span class="keywordflow">do</span> i = 1,nvar</div>
+<div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160;            <span class="keyword">call </span>mpp_get_atts(fields(i), &amp;</div>
+<div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160;                              name=tmp_name)</div>
+<div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160;            <span class="keywordflow">if</span> (lowercase(trim(tmp_name)) .eq. lowercase(trim(field_name))) <span class="keywordflow">then</span></div>
+<div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160;                does_field_exist = .true.</div>
+<div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160;<span class="keywordflow">            endif</span></div>
+<div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160;<span class="keywordflow">        enddo</span></div>
+<div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160; </div>
+<div class="line"><a name="l00104"></a><span class="lineno">  104</span>&#160;       <span class="comment">!Deallocate local allocatable.</span></div>
+<div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160;        <span class="keyword">deallocate</span>(fields)</div>
+<div class="line"><a name="l00106"></a><span class="lineno">  106</span>&#160;<span class="keywordflow">    endif</span></div>
 <div class="line"><a name="l00107"></a><span class="lineno">  107</span>&#160; </div>
-<div class="line"><a name="l00108"></a><span class="lineno">  108</span>&#160;<span class="comment">!----------</span></div>
+<div class="line"><a name="l00108"></a><span class="lineno">  108</span>&#160;    <span class="keywordflow">return</span></div>
+<div class="line"><a name="l00109"></a><span class="lineno">  109</span>&#160;<span class="keyword">end function </span><a class="code" href="fms__io__unstructured__field__exist_8inc.html#a883d713cc10bc734f032bf0304349d86">fms_io_unstructured_field_exist</a></div>
+<div class="line"><a name="l00110"></a><span class="lineno">  110</span>&#160; </div>
+<div class="line"><a name="l00111"></a><span class="lineno">  111</span>&#160;<span class="comment">!----------</span></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <div class="ttc" id="afms__io__unstructured__get__file__name_8inc_html_a4eeea16ed549432b88a3133332c91bad"><div class="ttname"><a href="fms__io__unstructured__get__file__name_8inc.html#a4eeea16ed549432b88a3133332c91bad">fms_io_unstructured_get_file_name</a></div><div class="ttdeci">logical(int_kind) function fms_io_unstructured_get_file_name(orig_file, actual_file, read_dist, domain)</div><div class="ttdoc">For an inputted file name, check if it or any of its variants exist. For a file named &quot;foo&quot;,...</div><div class="ttdef"><b>Definition:</b> <a href="fms__io__unstructured__get__file__name_8inc_source.html#l00050">fms_io_unstructured_get_file_name.inc:50</a></div></div>
-<div class="ttc" id="ampp__io__util_8inc_html_a9d312dd6a9a8382c846fd8f15ce2c7de"><div class="ttname"><a href="mpp__io__util_8inc.html#a9d312dd6a9a8382c846fd8f15ce2c7de">mpp_get_fields</a></div><div class="ttdeci">subroutine mpp_get_fields(unit, variables)</div><div class="ttdoc">Copy variable information from file (excluding data)</div><div class="ttdef"><b>Definition:</b> <a href="mpp__io__util_8inc_source.html#l00219">mpp_io_util.inc:219</a></div></div>
+<div class="ttc" id="ampp__io__util_8inc_html_a9d312dd6a9a8382c846fd8f15ce2c7de"><div class="ttname"><a href="mpp__io__util_8inc.html#a9d312dd6a9a8382c846fd8f15ce2c7de">mpp_get_fields</a></div><div class="ttdeci">subroutine mpp_get_fields(unit, variables)</div><div class="ttdoc">Copy variable information from file (excluding data)</div><div class="ttdef"><b>Definition:</b> <a href="mpp__io__util_8inc_source.html#l00220">mpp_io_util.inc:220</a></div></div>
 <div class="ttc" id="afms__io__unstructured__get__file__unit_8inc_html_a75c0b6f2a887ddc435ac59adfcacc67a"><div class="ttname"><a href="fms__io__unstructured__get__file__unit_8inc.html#a75c0b6f2a887ddc435ac59adfcacc67a">fms_io_unstructured_get_file_unit</a></div><div class="ttdeci">subroutine fms_io_unstructured_get_file_unit(filename, funit, index_file, read_dist, domain)</div><div class="ttdoc">Return the file unit and index in the &quot;files_read&quot; module array for the inputted file....</div><div class="ttdef"><b>Definition:</b> <a href="fms__io__unstructured__get__file__unit_8inc_source.html#l00032">fms_io_unstructured_get_file_unit.inc:32</a></div></div>
 <div class="ttc" id="afms__io__unstructured__field__exist_8inc_html_a883d713cc10bc734f032bf0304349d86"><div class="ttname"><a href="fms__io__unstructured__field__exist_8inc.html#a883d713cc10bc734f032bf0304349d86">fms_io_unstructured_field_exist</a></div><div class="ttdeci">logical(int_kind) function fms_io_unstructured_field_exist(file_name, field_name, domain)</div><div class="ttdoc">Return a flag indicating whether the inputted field exists in the inputted file, where the file is as...</div><div class="ttdef"><b>Definition:</b> <a href="fms__io__unstructured__field__exist_8inc_source.html#l00030">fms_io_unstructured_field_exist.inc:30</a></div></div>
 <div class="ttc" id="ampp__io__util_8inc_html_a1b259a1037e7498382c529cf0e545c9b"><div class="ttname"><a href="mpp__io__util_8inc.html#a1b259a1037e7498382c529cf0e545c9b">mpp_get_info</a></div><div class="ttdeci">subroutine mpp_get_info(unit, ndim, nvar, natt, ntime)</div><div class="ttdoc">Get some general information about a file.</div><div class="ttdef"><b>Definition:</b> <a href="mpp__io__util_8inc_source.html#l00052">mpp_io_util.inc:52</a></div></div>

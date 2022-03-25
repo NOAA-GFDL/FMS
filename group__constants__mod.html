@@ -33,7 +33,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">FMS
-   &#160;<span id="projectnumber">2021.04.0</span>
+   &#160;<span id="projectnumber">2022.01.0</span>
    </div>
    <div id="projectbrief">Flexible Modeling System</div>
   </td>
@@ -110,9 +110,6 @@ subroutine, public&#160;</td><td class="memItemRight" valign="bottom"><a class="
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="var-members"></a>
 Variables</h2></td></tr>
-<tr class="memitem:ga3c1cf37785f22b9dcc987c4be3ee488e"><td class="memItemLeft" align="right" valign="top"><a id="ga3c1cf37785f22b9dcc987c4be3ee488e"></a>
-real, parameter, public&#160;</td><td class="memItemRight" valign="bottom"><b>small_fac</b> = 1._r8_kind</td></tr>
-<tr class="separator:ga3c1cf37785f22b9dcc987c4be3ee488e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga4a9bc4832415870f8640fd6d3f81e346"><td class="memItemLeft" align="right" valign="top"><a id="ga4a9bc4832415870f8640fd6d3f81e346"></a>
 real, parameter, public&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__constants__mod.html#ga4a9bc4832415870f8640fd6d3f81e346">radius</a> = 6371.0e+3_r8_kind * small_fac</td></tr>
 <tr class="memdesc:ga4a9bc4832415870f8640fd6d3f81e346"><td class="mdescLeft">&#160;</td><td class="mdescRight">Radius of the Earth [m]. <br /></td></tr>
@@ -287,7 +284,7 @@ real, parameter, public&#160;</td><td class="memItemRight" valign="bottom"><a cl
 <tr class="separator:ga1764f0d57d4ec5a2c12847ab43a37b46"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:gaba6e84d2fb2dd7ec9d1df699b5264570"><td class="memItemLeft" align="right" valign="top"><a id="gaba6e84d2fb2dd7ec9d1df699b5264570"></a>
 real, parameter, public&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__constants__mod.html#gaba6e84d2fb2dd7ec9d1df699b5264570">radcon</a> = ((1.0E+02*GRAV)/(1.0E+04*CP_AIR))*SECONDS_PER_DAY</td></tr>
-<tr class="memdesc:gaba6e84d2fb2dd7ec9d1df699b5264570"><td class="mdescLeft">&#160;</td><td class="mdescRight">Factor used to convert flux divergence to heating rate in degrees per day [deg sec/(cm day)]. <br /></td></tr>
+<tr class="memdesc:gaba6e84d2fb2dd7ec9d1df699b5264570"><td class="mdescLeft">&#160;</td><td class="mdescRight">Factor used to convert flux divergence to heating rate in degrees per day [deg sec/(m day)]. <br /></td></tr>
 <tr class="separator:gaba6e84d2fb2dd7ec9d1df699b5264570"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga7aea51f59d8e8ef20e6a20559b93a7f4"><td class="memItemLeft" align="right" valign="top"><a id="ga7aea51f59d8e8ef20e6a20559b93a7f4"></a>
 real, parameter, public&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__constants__mod.html#ga7aea51f59d8e8ef20e6a20559b93a7f4">radcon_mks</a> = (GRAV/CP_AIR)*SECONDS_PER_DAY</td></tr>

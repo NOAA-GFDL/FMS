@@ -33,7 +33,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">FMS
-   &#160;<span id="projectnumber">2021.04.0</span>
+   &#160;<span id="projectnumber">2022.01.0</span>
    </div>
    <div id="projectbrief">Flexible Modeling System</div>
   </td>
@@ -426,10 +426,6 @@ integer(i8_kind), dimension(max_addrs), save&#160;</td><td class="memItemRight" 
 integer, dimension(-1:max_addrs), save&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__mpp__domains__mod.html#gad168f04cdf660cf1ce8c94cf8a98b8fa">addrs_idx</a> =-9999</td></tr>
 <tr class="memdesc:gad168f04cdf660cf1ce8c94cf8a98b8fa"><td class="mdescLeft">&#160;</td><td class="mdescRight">index of address associated with d_comm <br /></td></tr>
 <tr class="separator:gad168f04cdf660cf1ce8c94cf8a98b8fa"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga31f27f05a973e5d468b33d64f3067dbf"><td class="memItemLeft" align="right" valign="top">
-integer, dimension(max_addrs), save&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__mpp__domains__mod.html#ga31f27f05a973e5d468b33d64f3067dbf">a_salvage</a> =-9999</td></tr>
-<tr class="memdesc:ga31f27f05a973e5d468b33d64f3067dbf"><td class="mdescLeft">&#160;</td><td class="mdescRight">freed index list of addresses <br /></td></tr>
-<tr class="separator:ga31f27f05a973e5d468b33d64f3067dbf"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:gaa16e484ee91975bde30e0319cb8c254a"><td class="memItemLeft" align="right" valign="top">
 integer, save&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__mpp__domains__mod.html#gaa16e484ee91975bde30e0319cb8c254a">a_sort_len</a> =0</td></tr>
 <tr class="memdesc:gaa16e484ee91975bde30e0319cb8c254a"><td class="mdescLeft">&#160;</td><td class="mdescRight">length sorted memory list <br /></td></tr>
@@ -439,7 +435,8 @@ integer, save&#160;</td><td class="memItemRight" valign="bottom"><a class="el" h
 <tr class="memdesc:gaf9b019af4cd0799a2fe088bbb9924714"><td class="mdescLeft">&#160;</td><td class="mdescRight">number of memory addresses used <br /></td></tr>
 <tr class="separator:gaf9b019af4cd0799a2fe088bbb9924714"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga8d2408ca0e4d38f43b39a41be91c585d"><td class="memItemLeft" align="right" valign="top">
-integer(i8_kind), parameter&#160;</td><td class="memItemRight" valign="bottom"><b>addr2_base</b> = int(Z'0000000000010000', kind=i8_kind)</td></tr>
+integer(i8_kind), parameter&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__mpp__domains__mod.html#ga8d2408ca0e4d38f43b39a41be91c585d">addr2_base</a> = 65536_i8_kind</td></tr>
+<tr class="memdesc:ga8d2408ca0e4d38f43b39a41be91c585d"><td class="mdescLeft">&#160;</td><td class="mdescRight">= 0x0000000000010000 <br /></td></tr>
 <tr class="separator:ga8d2408ca0e4d38f43b39a41be91c585d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:gad29b686f0863651b365bebccffa43f9c"><td class="memItemLeft" align="right" valign="top">
 integer, parameter&#160;</td><td class="memItemRight" valign="bottom"><b>max_addrs2</b> =128</td></tr>
@@ -452,10 +449,6 @@ integer(i8_kind), dimension(max_addrs2), save&#160;</td><td class="memItemRight"
 integer, dimension(-1:max_addrs2), save&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__mpp__domains__mod.html#ga9248978800afa9b2c0d8dbe556a8731b">addrs2_idx</a> =-9999</td></tr>
 <tr class="memdesc:ga9248978800afa9b2c0d8dbe556a8731b"><td class="mdescLeft">&#160;</td><td class="mdescRight">index of addr2 associated with d_comm <br /></td></tr>
 <tr class="separator:ga9248978800afa9b2c0d8dbe556a8731b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:gacbde167698488fe2bd384ec8f5290e2a"><td class="memItemLeft" align="right" valign="top">
-integer, dimension(max_addrs2), save&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__mpp__domains__mod.html#gacbde167698488fe2bd384ec8f5290e2a">a2_salvage</a> =-9999</td></tr>
-<tr class="memdesc:gacbde167698488fe2bd384ec8f5290e2a"><td class="mdescLeft">&#160;</td><td class="mdescRight">freed indices of addr2 <br /></td></tr>
-<tr class="separator:gacbde167698488fe2bd384ec8f5290e2a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga0f5cfc0567f861d5b4c7677d757378ec"><td class="memItemLeft" align="right" valign="top">
 integer, save&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__mpp__domains__mod.html#ga0f5cfc0567f861d5b4c7677d757378ec">a2_sort_len</a> =0</td></tr>
 <tr class="memdesc:ga0f5cfc0567f861d5b4c7677d757378ec"><td class="mdescLeft">&#160;</td><td class="mdescRight">length sorted memory list <br /></td></tr>
@@ -498,10 +491,6 @@ type(domaincommunicator2d), dimension(:), allocatable, target, save&#160;</td><t
 integer, dimension(-1:max_fields), save&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__mpp__domains__mod.html#ga7dbfa62be3b801c65e170b723fd2f2ca">d_comm_idx</a> =-9999</td></tr>
 <tr class="memdesc:ga7dbfa62be3b801c65e170b723fd2f2ca"><td class="mdescLeft">&#160;</td><td class="mdescRight">index of d_comm associated with sorted addresses <br /></td></tr>
 <tr class="separator:ga7dbfa62be3b801c65e170b723fd2f2ca"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:gac742f73f9a46d0c20f40213fe9755c0f"><td class="memItemLeft" align="right" valign="top">
-integer, dimension(max_fields), save&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__mpp__domains__mod.html#gac742f73f9a46d0c20f40213fe9755c0f">dc_salvage</a> =-9999</td></tr>
-<tr class="memdesc:gac742f73f9a46d0c20f40213fe9755c0f"><td class="mdescLeft">&#160;</td><td class="mdescRight">freed indices of d_comm <br /></td></tr>
-<tr class="separator:gac742f73f9a46d0c20f40213fe9755c0f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:gabb443acf75a7b186a08a609406e980c5"><td class="memItemLeft" align="right" valign="top">
 integer, save&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__mpp__domains__mod.html#gabb443acf75a7b186a08a609406e980c5">dc_sort_len</a> =0</td></tr>
 <tr class="memdesc:gabb443acf75a7b186a08a609406e980c5"><td class="mdescLeft">&#160;</td><td class="mdescRight">length sorted comm keys (=num active communicators) <br /></td></tr>
@@ -511,10 +500,10 @@ integer, save&#160;</td><td class="memItemRight" valign="bottom"><a class="el" h
 <tr class="memdesc:ga97b1bde225dd14b9316699e42322c787"><td class="mdescLeft">&#160;</td><td class="mdescRight">number of communicators used <br /></td></tr>
 <tr class="separator:ga97b1bde225dd14b9316699e42322c787"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga2f3196a24b389c406ae36316aacbace0"><td class="memItemLeft" align="right" valign="top">
-integer(i8_kind), parameter&#160;</td><td class="memItemRight" valign="bottom"><b>gt_base</b> = int(Z'0000000000000100', kind=i8_kind)</td></tr>
+integer(i8_kind), parameter&#160;</td><td class="memItemRight" valign="bottom"><b>gt_base</b> = 256_i8_kind</td></tr>
 <tr class="separator:ga2f3196a24b389c406ae36316aacbace0"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga65e9f23990925b10083d7e49adbf3717"><td class="memItemLeft" align="right" valign="top">
-integer(i8_kind), parameter&#160;</td><td class="memItemRight" valign="bottom"><b>ke_base</b> = int(Z'0001000000000000', kind=i8_kind)</td></tr>
+integer(i8_kind), parameter&#160;</td><td class="memItemRight" valign="bottom"><b>ke_base</b> = 281474976710656_i8_kind</td></tr>
 <tr class="separator:ga65e9f23990925b10083d7e49adbf3717"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga9064af8fc148e653bc2b03a4c3d70c49"><td class="memItemLeft" align="right" valign="top">
 integer(i8_kind)&#160;</td><td class="memItemRight" valign="bottom"><b>domain_cnt</b> =0</td></tr>

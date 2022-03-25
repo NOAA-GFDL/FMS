@@ -184,7 +184,7 @@ var group__netcdf__io__mod =
     [ "netcdf_restore_state", "group__netcdf__io__mod.html#ga057de75c09e46adae9c3ac38b9026c4c", null ],
     [ "netcdf_save_restart", "group__netcdf__io__mod.html#gab32dc288fa0b8987a932f73f0d411fe6", null ],
     [ "netcdf_save_restart_wrap", "group__netcdf__io__mod.html#gac167dfc2bfff3a09f9fa37e6e6444854", null ],
-    [ "read_restart_bc", "group__netcdf__io__mod.html#ga5d3ebbbfc26e7a1b191ebd6eeb545929", null ],
+    [ "read_restart_bc", "group__netcdf__io__mod.html#ga2309617c284b8fed35b42ec8cae6d611", null ],
     [ "register_compressed_dimension", "group__netcdf__io__mod.html#ga8779a55a22d09959af7d1e93e101ca5f", null ],
     [ "set_netcdf_mode", "group__netcdf__io__mod.html#ga56db12e1a539a8e37929119a2796ecb3", null ],
     [ "variable_att_exists", "group__netcdf__io__mod.html#ga881ad796d4e2724a2fe4203f2544d849", null ],

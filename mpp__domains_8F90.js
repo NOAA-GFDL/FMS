@@ -1,9 +1,7 @@
 var mpp__domains_8F90 =
 [
     [ "mpp_do_global_field_a2a", "interfacempp__domains__mod_1_1mpp__do__global__field__a2a.html", "interfacempp__domains__mod_1_1mpp__do__global__field__a2a" ],
-    [ "a2_salvage", "mpp__domains_8F90.html#gacbde167698488fe2bd384ec8f5290e2a", null ],
     [ "a2_sort_len", "mpp__domains_8F90.html#ga0f5cfc0567f861d5b4c7677d757378ec", null ],
-    [ "a_salvage", "mpp__domains_8F90.html#ga31f27f05a973e5d468b33d64f3067dbf", null ],
     [ "a_sort_len", "mpp__domains_8F90.html#gaa16e484ee91975bde30e0319cb8c254a", null ],
     [ "addr2_base", "mpp__domains_8F90.html#ga8d2408ca0e4d38f43b39a41be91c585d", null ],
     [ "addrs2_idx", "mpp__domains_8F90.html#ga9248978800afa9b2c0d8dbe556a8731b", null ],
@@ -15,7 +13,6 @@ var mpp__domains_8F90 =
     [ "current_id_update", "mpp__domains_8F90.html#ga0a2ac882937ffa606d7fdcc30b54ab2a", null ],
     [ "d_comm", "mpp__domains_8F90.html#gac4adb900ffc350cc350fa5f7d4c146a4", null ],
     [ "d_comm_idx", "mpp__domains_8F90.html#ga7dbfa62be3b801c65e170b723fd2f2ca", null ],
-    [ "dc_salvage", "mpp__domains_8F90.html#gac742f73f9a46d0c20f40213fe9755c0f", null ],
     [ "dc_sort_len", "mpp__domains_8F90.html#gabb443acf75a7b186a08a609406e980c5", null ],
     [ "dckey_sorted", "mpp__domains_8F90.html#gac2df004f093dcfa56b46042e2acc3ee8", null ],
     [ "debug", "mpp__domains_8F90.html#ga10ad802b9b18b53988493d3b9e8412a0", null ],

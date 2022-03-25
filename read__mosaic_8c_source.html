@@ -33,7 +33,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">FMS
-   &#160;<span id="projectnumber">2021.04.0</span>
+   &#160;<span id="projectnumber">2022.01.0</span>
    </div>
    <div id="projectbrief">Flexible Modeling System</div>
   </td>
@@ -150,7 +150,7 @@ $(document).ready(function(){initNavTree('read__mosaic_8c_source.html',''); init
 <div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;<span class="keywordtype">void</span> get_file_dir(<span class="keyword">const</span> <span class="keywordtype">char</span> *file, <span class="keywordtype">char</span> *dir)</div>
 <div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;{</div>
 <div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;  <span class="keywordtype">int</span> len;</div>
-<div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;  <span class="keywordtype">char</span> *strptr = NULL;</div>
+<div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;  <span class="keyword">const</span> <span class="keywordtype">char</span> *strptr = NULL;</div>
 <div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160; </div>
 <div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;  <span class="comment">/* get the diretory */</span></div>
 <div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160; </div>
@@ -355,13 +355,13 @@ $(document).ready(function(){initNavTree('read__mosaic_8c_source.html',''); init
 <div class="line"><a name="l00259"></a><span class="lineno">  259</span>&#160;  <span class="keywordflow">switch</span> (vartype) {</div>
 <div class="line"><a name="l00260"></a><span class="lineno">  260</span>&#160;    <span class="keywordflow">case</span> NC_DOUBLE:<span class="keywordflow">case</span> NC_FLOAT:</div>
 <div class="line"><a name="l00261"></a><span class="lineno">  261</span>&#160;<span class="preprocessor">#ifdef OVERLOAD_R4</span></div>
-<div class="line"><a name="l00262"></a><span class="lineno">  262</span>&#160;      status = nc_get_var_float(ncid, varid, data);</div>
+<div class="line"><a name="l00262"></a><span class="lineno">  262</span>&#160;      status = nc_get_var_float(ncid, varid, (<span class="keywordtype">float</span> *)data);</div>
 <div class="line"><a name="l00263"></a><span class="lineno">  263</span>&#160;<span class="preprocessor">#else</span></div>
-<div class="line"><a name="l00264"></a><span class="lineno">  264</span>&#160;      status = nc_get_var_double(ncid, varid, data);</div>
+<div class="line"><a name="l00264"></a><span class="lineno">  264</span>&#160;      status = nc_get_var_double(ncid, varid, (<span class="keywordtype">double</span> *)data);</div>
 <div class="line"><a name="l00265"></a><span class="lineno">  265</span>&#160;<span class="preprocessor">#endif</span></div>
 <div class="line"><a name="l00266"></a><span class="lineno">  266</span>&#160;      <span class="keywordflow">break</span>;</div>
 <div class="line"><a name="l00267"></a><span class="lineno">  267</span>&#160;    <span class="keywordflow">case</span> NC_INT:</div>
-<div class="line"><a name="l00268"></a><span class="lineno">  268</span>&#160;      status = nc_get_var_int(ncid, varid, data);</div>
+<div class="line"><a name="l00268"></a><span class="lineno">  268</span>&#160;      status = nc_get_var_int(ncid, varid, (<span class="keywordtype">int</span> *)data);</div>
 <div class="line"><a name="l00269"></a><span class="lineno">  269</span>&#160;      <span class="keywordflow">break</span>;</div>
 <div class="line"><a name="l00270"></a><span class="lineno">  270</span>&#160;    <span class="keywordflow">default</span>:</div>
 <div class="line"><a name="l00271"></a><span class="lineno">  271</span>&#160;      sprintf(msg, <span class="stringliteral">&quot;get_var_data: field %s in file %s has an invalid type, &quot;</span></div>
@@ -415,13 +415,13 @@ $(document).ready(function(){initNavTree('read__mosaic_8c_source.html',''); init
 <div class="line"><a name="l00319"></a><span class="lineno">  319</span>&#160;  <span class="keywordflow">switch</span> (vartype) {</div>
 <div class="line"><a name="l00320"></a><span class="lineno">  320</span>&#160;    <span class="keywordflow">case</span> NC_DOUBLE:<span class="keywordflow">case</span> NC_FLOAT:</div>
 <div class="line"><a name="l00321"></a><span class="lineno">  321</span>&#160;<span class="preprocessor">#ifdef OVERLOAD_R4</span></div>
-<div class="line"><a name="l00322"></a><span class="lineno">  322</span>&#160;      status = nc_get_vara_float(ncid, varid, start, nread, data);</div>
+<div class="line"><a name="l00322"></a><span class="lineno">  322</span>&#160;      status = nc_get_vara_float(ncid, varid, start, nread, (<span class="keywordtype">float</span> *)data);</div>
 <div class="line"><a name="l00323"></a><span class="lineno">  323</span>&#160;<span class="preprocessor">#else</span></div>
-<div class="line"><a name="l00324"></a><span class="lineno">  324</span>&#160;      status = nc_get_vara_double(ncid, varid, start, nread, data);</div>
+<div class="line"><a name="l00324"></a><span class="lineno">  324</span>&#160;      status = nc_get_vara_double(ncid, varid, start, nread, (<span class="keywordtype">double</span> *)data);</div>
 <div class="line"><a name="l00325"></a><span class="lineno">  325</span>&#160;<span class="preprocessor">#endif</span></div>
 <div class="line"><a name="l00326"></a><span class="lineno">  326</span>&#160;      <span class="keywordflow">break</span>;</div>
 <div class="line"><a name="l00327"></a><span class="lineno">  327</span>&#160;    <span class="keywordflow">case</span> NC_INT:</div>
-<div class="line"><a name="l00328"></a><span class="lineno">  328</span>&#160;      status = nc_get_vara_int(ncid, varid, start, nread, data);</div>
+<div class="line"><a name="l00328"></a><span class="lineno">  328</span>&#160;      status = nc_get_vara_int(ncid, varid, start, nread, (<span class="keywordtype">int</span> *)data);</div>
 <div class="line"><a name="l00329"></a><span class="lineno">  329</span>&#160;      <span class="keywordflow">break</span>;</div>
 <div class="line"><a name="l00330"></a><span class="lineno">  330</span>&#160;    <span class="keywordflow">default</span>:</div>
 <div class="line"><a name="l00331"></a><span class="lineno">  331</span>&#160;      sprintf(msg, <span class="stringliteral">&quot;get_var_data_region: field %s in file %s has an invalid type, &quot;</span></div>

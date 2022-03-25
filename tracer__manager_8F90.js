@@ -16,7 +16,7 @@ var tracer__manager_8F90 =
     [ "query_method", "tracer__manager_8F90.html#ga518fe1424557bbe2aa3586f42f418e23", null ],
     [ "register_tracers", "tracer__manager_8F90.html#gac4a2b2cfb680df283bf8419f8151d336", null ],
     [ "set_tracer_atts", "tracer__manager_8F90.html#gaa41e661c3f5c63d375f7d4eafd82a96e", null ],
-    [ "set_tracer_method", "tracer__manager_8F90.html#gaed2c43ae4503ec690cf3fabb0dac94a5", null ],
+    [ "set_tracer_method", "tracer__manager_8F90.html#ga265ed73f474555edfc2befa97a5ccd83", null ],
     [ "set_tracer_profile", "tracer__manager_8F90.html#ga70e9a23f86dbd85b7c2ad28cc43b6c65", null ],
     [ "tracer_manager_end", "tracer__manager_8F90.html#ga239bf26810a219b45a50da1cd127ab05", null ],
     [ "tracer_manager_init", "tracer__manager_8F90.html#gad8158f9c1b49acb5c1d4e7e544af3628", null ],

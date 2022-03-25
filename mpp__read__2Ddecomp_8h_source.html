@@ -33,7 +33,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">FMS
-   &#160;<span id="projectnumber">2021.04.0</span>
+   &#160;<span id="projectnumber">2022.01.0</span>
    </div>
    <div id="projectbrief">Flexible Modeling System</div>
   </td>
@@ -112,26 +112,26 @@ $(document).ready(function(){initNavTree('mpp__read__2Ddecomp_8h_source.html',''
 <div class="line"><a name="l00016"></a><span class="lineno">   16</span>&#160;!* You should have received a copy of the GNU Lesser General Public</div>
 <div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160;!* License along with FMS.  If not, see &lt;http:<span class="comment">//www.gnu.org/licenses/&gt;.</span></div>
 <div class="line"><a name="l00018"></a><span class="lineno">   18</span>&#160;!***********************************************************************</div>
-<div class="line"><a name="l00019"></a><span class="lineno">   19</span>&#160;    subroutine READ_RECORD_CORE_(unit, field, nwords, data, start, axsiz)</div>
+<div class="line"><a name="l00019"></a><span class="lineno">   19</span>&#160;    subroutine READ_RECORD_CORE_(unit, field, num_words, data, start, axsiz)</div>
 <div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160;      integer,         intent(in)    :: unit</div>
 <div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160;      type(fieldtype), intent(in)    :: field</div>
-<div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160;      integer,         intent(in)    :: nwords</div>
-<div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160;      MPP_TYPE_,        intent(inout) :: data(nwords)</div>
+<div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160;      integer,         intent(in)    :: num_words</div>
+<div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160;      MPP_TYPE_,        intent(inout) :: data(num_words)</div>
 <div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;      integer,         intent(in)    :: start(:), axsiz(:)</div>
 <div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160; </div>
-<div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160;      integer(i2_kind) :: i2vals(nwords)</div>
+<div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160;      integer(i2_kind) :: i2vals(num_words)</div>
 <div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;!rab used in conjunction with transfer intrinsic to determine size of a variable</div>
 <div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;      integer(KIND=1) :: one_byte(8)</div>
 <div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;      integer         :: word_sz</div>
-<div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;      integer(i4_kind) :: ivals(nwords)</div>
-<div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;      real(r4_kind) :: rvals(nwords)</div>
+<div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;      integer(i4_kind) :: ivals(num_words)</div>
+<div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;      real(r4_kind) :: rvals(num_words)</div>
 <div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160; </div>
-<div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;      real(r8_kind) :: r8vals(nwords)</div>
+<div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;      real(r8_kind) :: r8vals(num_words)</div>
 <div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;      pointer( ptr1, i2vals )</div>
 <div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;      pointer( ptr2, ivals )</div>
 <div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;      pointer( ptr3, rvals )</div>
 <div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;      pointer( ptr4, r8vals )</div>
-<div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;      if (mpp_io_stack_size &lt; nwords) call <a class="code" href="mpp__io__util_8inc.html#a23cb28bd7f446ed5c0a8aea9d0a4ae49">mpp_io_set_stack_size</a>(nwords)</div>
+<div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;      if (mpp_io_stack_size &lt; num_words) call <a class="code" href="mpp__io__util_8inc.html#a23cb28bd7f446ed5c0a8aea9d0a4ae49">mpp_io_set_stack_size</a>(num_words)</div>
 <div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160; </div>
 <div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;#ifdef use_netCDF</div>
 <div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;      word_sz = size(transfer(data(1),one_byte))</div>
@@ -204,7 +204,7 @@ $(document).ready(function(){initNavTree('mpp__read__2Ddecomp_8h_source.html',''
 <div class="line"><a name="l00108"></a><span class="lineno">  108</span>&#160;    end subroutine READ_RECORD_CORE_</div>
 <div class="line"><a name="l00109"></a><span class="lineno">  109</span>&#160; </div>
 <div class="line"><a name="l00110"></a><span class="lineno">  110</span>&#160; </div>
-<div class="line"><a name="l00111"></a><span class="lineno">  111</span>&#160;    subroutine READ_RECORD_( unit, field, nwords, data, time_level, domain, position, tile_count, start_in, axsiz_in )</div>
+<div class="line"><a name="l00111"></a><span class="lineno">  111</span>&#160;    subroutine READ_RECORD_( unit, field, num_words, data, time_level, domain, position, tile_count, start_in, axsiz_in )</div>
 <div class="line"><a name="l00112"></a><span class="lineno">  112</span>&#160;!routine that is finally called by all mpp_read routines to perform the read</div>
 <div class="line"><a name="l00113"></a><span class="lineno">  113</span>&#160;!a non-netCDF record contains:</div>
 <div class="line"><a name="l00114"></a><span class="lineno">  114</span>&#160;!      field ID</div>
@@ -221,9 +221,9 @@ $(document).ready(function(){initNavTree('mpp__read__2Ddecomp_8h_source.html',''
 <div class="line"><a name="l00125"></a><span class="lineno">  125</span>&#160;!   with a timestamp of NULLTIME. There is no check in the code to prevent</div>
 <div class="line"><a name="l00126"></a><span class="lineno">  126</span>&#160;!   the user from repeatedly writing a static field.</div>
 <div class="line"><a name="l00127"></a><span class="lineno">  127</span>&#160; </div>
-<div class="line"><a name="l00128"></a><span class="lineno">  128</span>&#160;      integer,         intent(in)             :: unit, nwords</div>
+<div class="line"><a name="l00128"></a><span class="lineno">  128</span>&#160;      integer,         intent(in)             :: unit, num_words</div>
 <div class="line"><a name="l00129"></a><span class="lineno">  129</span>&#160;      type(fieldtype), intent(in)             :: field</div>
-<div class="line"><a name="l00130"></a><span class="lineno">  130</span>&#160;      MPP_TYPE_,      intent(inout)           :: data(nwords)</div>
+<div class="line"><a name="l00130"></a><span class="lineno">  130</span>&#160;      MPP_TYPE_,      intent(inout)           :: data(num_words)</div>
 <div class="line"><a name="l00131"></a><span class="lineno">  131</span>&#160;      integer,        intent(in),    optional :: time_level</div>
 <div class="line"><a name="l00132"></a><span class="lineno">  132</span>&#160;      type(domain2D), intent(in),    optional :: domain</div>
 <div class="line"><a name="l00133"></a><span class="lineno">  133</span>&#160;      integer,        intent(in),    optional :: position, tile_count</div>
@@ -319,171 +319,172 @@ $(document).ready(function(){initNavTree('mpp__read__2Ddecomp_8h_source.html',''
 <div class="line"><a name="l00223"></a><span class="lineno">  223</span>&#160;              end if</div>
 <div class="line"><a name="l00224"></a><span class="lineno">  224</span>&#160;          end if</div>
 <div class="line"><a name="l00225"></a><span class="lineno">  225</span>&#160;      endif</div>
-<div class="line"><a name="l00226"></a><span class="lineno">  226</span>&#160;      if( <a class="code" href="group__amip__interp__mod.html#ga9e8dcf56a77b1b156ccc0fa7e082a46b">verbose</a> )print &#39;(a,2i6,i6,12i4)&#39;, &#39;READ_RECORD: PE, unit, nwords, start, axsiz=&#39;, pe, unit, nwords, start, axsiz</div>
-<div class="line"><a name="l00227"></a><span class="lineno">  227</span>&#160; </div>
-<div class="line"><a name="l00228"></a><span class="lineno">  228</span>&#160;      call READ_RECORD_CORE_(unit, field, nwords, data, start, axsiz)</div>
-<div class="line"><a name="l00229"></a><span class="lineno">  229</span>&#160; </div>
-<div class="line"><a name="l00230"></a><span class="lineno">  230</span>&#160;      return</div>
-<div class="line"><a name="l00231"></a><span class="lineno">  231</span>&#160;    end subroutine READ_RECORD_</div>
-<div class="line"><a name="l00232"></a><span class="lineno">  232</span>&#160; </div>
-<div class="line"><a name="l00233"></a><span class="lineno">  233</span>&#160;    subroutine MPP_READ_2DDECOMP_2D_( unit, field, domain, data, tindex, tile_count )</div>
-<div class="line"><a name="l00234"></a><span class="lineno">  234</span>&#160;      integer, intent(in) :: unit</div>
-<div class="line"><a name="l00235"></a><span class="lineno">  235</span>&#160;      type(fieldtype), intent(in) :: field</div>
-<div class="line"><a name="l00236"></a><span class="lineno">  236</span>&#160;      type(domain2D), intent(in) :: domain</div>
-<div class="line"><a name="l00237"></a><span class="lineno">  237</span>&#160;      MPP_TYPE_, intent(inout) :: data(:,:)</div>
-<div class="line"><a name="l00238"></a><span class="lineno">  238</span>&#160;      integer, intent(in), optional :: tindex, tile_count</div>
-<div class="line"><a name="l00239"></a><span class="lineno">  239</span>&#160;      MPP_TYPE_ :: data3D(size(data,1),size(data,2),1)</div>
-<div class="line"><a name="l00240"></a><span class="lineno">  240</span>&#160;      pointer( ptr, data3D )</div>
-<div class="line"><a name="l00241"></a><span class="lineno">  241</span>&#160;      ptr = LOC(data)</div>
-<div class="line"><a name="l00242"></a><span class="lineno">  242</span>&#160;      call mpp_read( unit, field, domain, data3D, tindex, tile_count)</div>
-<div class="line"><a name="l00243"></a><span class="lineno">  243</span>&#160;      return</div>
-<div class="line"><a name="l00244"></a><span class="lineno">  244</span>&#160;    end subroutine MPP_READ_2DDECOMP_2D_</div>
-<div class="line"><a name="l00245"></a><span class="lineno">  245</span>&#160; </div>
-<div class="line"><a name="l00246"></a><span class="lineno">  246</span>&#160;    subroutine MPP_READ_2DDECOMP_3D_( unit, field, domain, data, tindex, tile_count )</div>
-<div class="line"><a name="l00247"></a><span class="lineno">  247</span>&#160;!mpp_read reads &lt;data&gt; which has the domain decomposition &lt;domain&gt;</div>
-<div class="line"><a name="l00248"></a><span class="lineno">  248</span>&#160;      integer,           intent(in) :: unit</div>
-<div class="line"><a name="l00249"></a><span class="lineno">  249</span>&#160;      type(fieldtype),   intent(in) :: field</div>
-<div class="line"><a name="l00250"></a><span class="lineno">  250</span>&#160;      type(domain2D),    intent(in) :: domain</div>
-<div class="line"><a name="l00251"></a><span class="lineno">  251</span>&#160;      MPP_TYPE_,      intent(inout) :: data(:,:,:)</div>
-<div class="line"><a name="l00252"></a><span class="lineno">  252</span>&#160;      integer, intent(in), optional :: tindex, tile_count</div>
-<div class="line"><a name="l00253"></a><span class="lineno">  253</span>&#160; </div>
-<div class="line"><a name="l00254"></a><span class="lineno">  254</span>&#160;      MPP_TYPE_, allocatable :: cdata(:,:,:)</div>
-<div class="line"><a name="l00255"></a><span class="lineno">  255</span>&#160;      MPP_TYPE_, allocatable :: gdata(:)</div>
-<div class="line"><a name="l00256"></a><span class="lineno">  256</span>&#160;      integer :: len, lenx,leny,lenz,i,j,k,n</div>
-<div class="line"><a name="l00257"></a><span class="lineno">  257</span>&#160;!NEW: data may be on compute OR data domain</div>
-<div class="line"><a name="l00258"></a><span class="lineno">  258</span>&#160;      logical :: data_has_halos, halos_are_global, x_is_global, y_is_global</div>
-<div class="line"><a name="l00259"></a><span class="lineno">  259</span>&#160;      integer :: is, ie, js, <a class="code" href="group__fms__io__mod.html#gae85b018bca1141b3510db6f38fdc50bf">je</a>, isd, ied, jsd, <a class="code" href="group__fms__io__mod.html#gad4afab643d50b32ca35e2995dae649fa">jed</a>, isg, ieg, jsg, <a class="code" href="group__fms__io__mod.html#gacdcb373c251e060179c3f0508c2929e6">jeg</a>, ism, iem, jsm, jem</div>
-<div class="line"><a name="l00260"></a><span class="lineno">  260</span>&#160;      integer :: ioff, joff, position</div>
-<div class="line"><a name="l00261"></a><span class="lineno">  261</span>&#160; </div>
-<div class="line"><a name="l00262"></a><span class="lineno">  262</span>&#160;      call mpp_clock_begin(mpp_read_clock)</div>
-<div class="line"><a name="l00263"></a><span class="lineno">  263</span>&#160; </div>
-<div class="line"><a name="l00264"></a><span class="lineno">  264</span>&#160;      if (.NOT. present(tindex) .AND. mpp_file(unit)%time_level .ne. -1) &amp;</div>
-<div class="line"><a name="l00265"></a><span class="lineno">  265</span>&#160;      call mpp_error(FATAL, &#39;MPP_READ: need to specify a time level for data with time axis&#39;)</div>
-<div class="line"><a name="l00266"></a><span class="lineno">  266</span>&#160; </div>
-<div class="line"><a name="l00267"></a><span class="lineno">  267</span>&#160;      if( .NOT.module_is_initialized )call mpp_error( FATAL, &#39;MPP_READ: must first call mpp_io_init.&#39; )</div>
-<div class="line"><a name="l00268"></a><span class="lineno">  268</span>&#160;      if( .NOT.mpp_file(unit)%opened )call mpp_error( FATAL, &#39;MPP_READ: invalid unit number.&#39; )</div>
-<div class="line"><a name="l00269"></a><span class="lineno">  269</span>&#160; </div>
-<div class="line"><a name="l00270"></a><span class="lineno">  270</span>&#160;      call mpp_get_compute_domain( domain, is,  ie,  js,  <a class="code" href="group__fms__io__mod.html#gae85b018bca1141b3510db6f38fdc50bf">je</a>, tile_count=tile_count )</div>
-<div class="line"><a name="l00271"></a><span class="lineno">  271</span>&#160;      call mpp_get_data_domain   ( domain, isd, ied, jsd, <a class="code" href="group__fms__io__mod.html#gad4afab643d50b32ca35e2995dae649fa">jed</a>, x_is_global=x_is_global, &amp;</div>
-<div class="line"><a name="l00272"></a><span class="lineno">  272</span>&#160;                                   y_is_global=y_is_global, tile_count=tile_count )</div>
-<div class="line"><a name="l00273"></a><span class="lineno">  273</span>&#160;      call mpp_get_memory_domain ( domain, ism, iem, jsm, jem )</div>
-<div class="line"><a name="l00274"></a><span class="lineno">  274</span>&#160;      call mpp_get_global_domain ( domain, isg, ieg, jsg, <a class="code" href="group__fms__io__mod.html#gacdcb373c251e060179c3f0508c2929e6">jeg</a>, tile_count=tile_count )</div>
-<div class="line"><a name="l00275"></a><span class="lineno">  275</span>&#160; </div>
-<div class="line"><a name="l00276"></a><span class="lineno">  276</span>&#160;      ! when domain is symmetry, extra point is needed for <a class="code" href="group__xgrid__mod.html#ga0d6740065d2355a4ac54b90c8c4545fb">some</a> data on x/y direction</div>
-<div class="line"><a name="l00277"></a><span class="lineno">  277</span>&#160;      position = CENTER</div>
-<div class="line"><a name="l00278"></a><span class="lineno">  278</span>&#160;      if(mpp_domain_is_symmetry(domain)) then</div>
-<div class="line"><a name="l00279"></a><span class="lineno">  279</span>&#160;         if( size(data,1).EQ.ie-is+1 .AND. size(data,2).EQ.<a class="code" href="group__fms__io__mod.html#gae85b018bca1141b3510db6f38fdc50bf">je</a>-js+1 ) then  ! CENTER</div>
-<div class="line"><a name="l00280"></a><span class="lineno">  280</span>&#160;            data_has_halos = .FALSE.</div>
-<div class="line"><a name="l00281"></a><span class="lineno">  281</span>&#160;         else if( size(data,1).EQ.ie-is+2 .AND. size(data,2).EQ.<a class="code" href="group__fms__io__mod.html#gae85b018bca1141b3510db6f38fdc50bf">je</a>-js+1 ) then ! EAST</div>
-<div class="line"><a name="l00282"></a><span class="lineno">  282</span>&#160;            data_has_halos = .FALSE.</div>
-<div class="line"><a name="l00283"></a><span class="lineno">  283</span>&#160;            position = EAST</div>
-<div class="line"><a name="l00284"></a><span class="lineno">  284</span>&#160;            ie = ie + 1</div>
-<div class="line"><a name="l00285"></a><span class="lineno">  285</span>&#160;         else if( size(data,1).EQ.ie-is+1 .AND. size(data,2).EQ.<a class="code" href="group__fms__io__mod.html#gae85b018bca1141b3510db6f38fdc50bf">je</a>-js+2 ) then ! NORTH</div>
-<div class="line"><a name="l00286"></a><span class="lineno">  286</span>&#160;            position = NORTH</div>
-<div class="line"><a name="l00287"></a><span class="lineno">  287</span>&#160;            data_has_halos = .FALSE.</div>
-<div class="line"><a name="l00288"></a><span class="lineno">  288</span>&#160;            <a class="code" href="group__fms__io__mod.html#gae85b018bca1141b3510db6f38fdc50bf">je</a> = <a class="code" href="group__fms__io__mod.html#gae85b018bca1141b3510db6f38fdc50bf">je</a> + 1</div>
-<div class="line"><a name="l00289"></a><span class="lineno">  289</span>&#160;         else if( size(data,1).EQ.ie-is+2 .AND. size(data,2).EQ.<a class="code" href="group__fms__io__mod.html#gae85b018bca1141b3510db6f38fdc50bf">je</a>-js+2 ) then ! CORNER</div>
-<div class="line"><a name="l00290"></a><span class="lineno">  290</span>&#160;            position = CORNER</div>
-<div class="line"><a name="l00291"></a><span class="lineno">  291</span>&#160;            data_has_halos = .FALSE.</div>
-<div class="line"><a name="l00292"></a><span class="lineno">  292</span>&#160;            ie = ie + 1;   <a class="code" href="group__fms__io__mod.html#gae85b018bca1141b3510db6f38fdc50bf">je</a> = <a class="code" href="group__fms__io__mod.html#gae85b018bca1141b3510db6f38fdc50bf">je</a> + 1</div>
-<div class="line"><a name="l00293"></a><span class="lineno">  293</span>&#160;         else if( size(data,1).EQ.iem-ism+1 .AND. size(data,2).EQ.jem-jsm+1 )then ! CENTER</div>
-<div class="line"><a name="l00294"></a><span class="lineno">  294</span>&#160;            data_has_halos = .TRUE.</div>
-<div class="line"><a name="l00295"></a><span class="lineno">  295</span>&#160;         else if( size(data,1).EQ.iem-ism+2 .AND. size(data,2).EQ.jem-jsm+1 )then ! EAST</div>
-<div class="line"><a name="l00296"></a><span class="lineno">  296</span>&#160;            position = EAST</div>
-<div class="line"><a name="l00297"></a><span class="lineno">  297</span>&#160;            data_has_halos = .TRUE.</div>
-<div class="line"><a name="l00298"></a><span class="lineno">  298</span>&#160;            ie = ie + 1</div>
-<div class="line"><a name="l00299"></a><span class="lineno">  299</span>&#160;         else if( size(data,1).EQ.iem-ism+1 .AND. size(data,2).EQ.jem-jsm+2 )then ! NORTH</div>
-<div class="line"><a name="l00300"></a><span class="lineno">  300</span>&#160;            position = NORTH</div>
-<div class="line"><a name="l00301"></a><span class="lineno">  301</span>&#160;            data_has_halos = .TRUE.</div>
-<div class="line"><a name="l00302"></a><span class="lineno">  302</span>&#160;            <a class="code" href="group__fms__io__mod.html#gae85b018bca1141b3510db6f38fdc50bf">je</a> = <a class="code" href="group__fms__io__mod.html#gae85b018bca1141b3510db6f38fdc50bf">je</a> + 1</div>
-<div class="line"><a name="l00303"></a><span class="lineno">  303</span>&#160;         else if( size(data,1).EQ.iem-ism+2 .AND. size(data,2).EQ.jem-jsm+2 )then ! CORNER</div>
-<div class="line"><a name="l00304"></a><span class="lineno">  304</span>&#160;            position = CORNER</div>
-<div class="line"><a name="l00305"></a><span class="lineno">  305</span>&#160;            data_has_halos = .TRUE.</div>
-<div class="line"><a name="l00306"></a><span class="lineno">  306</span>&#160;            ie = ie + 1;  <a class="code" href="group__fms__io__mod.html#gae85b018bca1141b3510db6f38fdc50bf">je</a> = <a class="code" href="group__fms__io__mod.html#gae85b018bca1141b3510db6f38fdc50bf">je</a> + 1</div>
-<div class="line"><a name="l00307"></a><span class="lineno">  307</span>&#160;         else</div>
-<div class="line"><a name="l00308"></a><span class="lineno">  308</span>&#160;            call mpp_error( FATAL, &#39;MPP_READ: when domain is symmetry, data must be either on &#39; &amp;</div>
-<div class="line"><a name="l00309"></a><span class="lineno">  309</span>&#160;                      <span class="comment">//&#39;compute domain or data domain with the consideration of shifting.&#39; )</span></div>
-<div class="line"><a name="l00310"></a><span class="lineno">  310</span>&#160;         end if</div>
-<div class="line"><a name="l00311"></a><span class="lineno">  311</span>&#160;      else</div>
-<div class="line"><a name="l00312"></a><span class="lineno">  312</span>&#160;         if( size(data,1).EQ.ie-is+1 .AND. size(data,2).EQ.<a class="code" href="group__fms__io__mod.html#gae85b018bca1141b3510db6f38fdc50bf">je</a>-js+1 )then</div>
-<div class="line"><a name="l00313"></a><span class="lineno">  313</span>&#160;            data_has_halos = .FALSE.</div>
-<div class="line"><a name="l00314"></a><span class="lineno">  314</span>&#160;         else if( size(data,1).EQ.iem-ism+1 .AND. size(data,2).EQ.jem-jsm+1 )then</div>
-<div class="line"><a name="l00315"></a><span class="lineno">  315</span>&#160;            data_has_halos = .TRUE.</div>
-<div class="line"><a name="l00316"></a><span class="lineno">  316</span>&#160;         else</div>
-<div class="line"><a name="l00317"></a><span class="lineno">  317</span>&#160;            call mpp_error( FATAL, &#39;MPP_READ: data must be either on compute domain or data domain.&#39; )</div>
-<div class="line"><a name="l00318"></a><span class="lineno">  318</span>&#160;         end if</div>
-<div class="line"><a name="l00319"></a><span class="lineno">  319</span>&#160;      endif</div>
-<div class="line"><a name="l00320"></a><span class="lineno">  320</span>&#160;      halos_are_global = x_is_global .AND. y_is_global</div>
-<div class="line"><a name="l00321"></a><span class="lineno">  321</span>&#160;      if( npes.GT.1 .AND. mpp_file(unit)%threading.EQ.MPP_SINGLE )then</div>
-<div class="line"><a name="l00322"></a><span class="lineno">  322</span>&#160;          if( halos_are_global )then !you can read directly into data array</div>
-<div class="line"><a name="l00323"></a><span class="lineno">  323</span>&#160;              if( pe.EQ.0 )call READ_RECORD_( unit, field, size(data(:,:,:)), data, tindex )</div>
-<div class="line"><a name="l00324"></a><span class="lineno">  324</span>&#160;          else</div>
-<div class="line"><a name="l00325"></a><span class="lineno">  325</span>&#160;              lenx=size(data,1)</div>
-<div class="line"><a name="l00326"></a><span class="lineno">  326</span>&#160;              leny=size(data,2)</div>
-<div class="line"><a name="l00327"></a><span class="lineno">  327</span>&#160;              lenz=size(data,3)</div>
-<div class="line"><a name="l00328"></a><span class="lineno">  328</span>&#160;              len=lenx*leny*lenz</div>
-<div class="line"><a name="l00329"></a><span class="lineno">  329</span>&#160;              allocate(gdata(len))</div>
-<div class="line"><a name="l00330"></a><span class="lineno">  330</span>&#160;! read field on pe 0 and pass to all pes</div>
-<div class="line"><a name="l00331"></a><span class="lineno">  331</span>&#160;              if( pe.EQ.0 ) call READ_RECORD_( unit, field, len, gdata, tindex )</div>
-<div class="line"><a name="l00332"></a><span class="lineno">  332</span>&#160;! broadcasting global array, this can be expensive!</div>
-<div class="line"><a name="l00333"></a><span class="lineno">  333</span>&#160;              call mpp_transmit( put_data=gdata(1), plen=len, to_pe=ALL_PES, &amp;</div>
-<div class="line"><a name="l00334"></a><span class="lineno">  334</span>&#160;                                 get_data=gdata(1), glen=len, from_pe=0 )</div>
-<div class="line"><a name="l00335"></a><span class="lineno">  335</span>&#160;              ioff = is; joff = js</div>
-<div class="line"><a name="l00336"></a><span class="lineno">  336</span>&#160;              if( data_has_halos )then</div>
-<div class="line"><a name="l00337"></a><span class="lineno">  337</span>&#160;                  ioff = isd; joff = jsd</div>
-<div class="line"><a name="l00338"></a><span class="lineno">  338</span>&#160;              end if</div>
-<div class="line"><a name="l00339"></a><span class="lineno">  339</span>&#160;              do k=1,size(data,3)</div>
-<div class="line"><a name="l00340"></a><span class="lineno">  340</span>&#160;                 do j=js,<a class="code" href="group__fms__io__mod.html#gae85b018bca1141b3510db6f38fdc50bf">je</a></div>
-<div class="line"><a name="l00341"></a><span class="lineno">  341</span>&#160;                    do i=is,ie</div>
-<div class="line"><a name="l00342"></a><span class="lineno">  342</span>&#160;                       n=(i-isg+1) + (j-jsg)*lenx + (k-1)*lenx*leny</div>
-<div class="line"><a name="l00343"></a><span class="lineno">  343</span>&#160;                       data(i-ioff+1,j-joff+1,k)=gdata(n)</div>
-<div class="line"><a name="l00344"></a><span class="lineno">  344</span>&#160;                    enddo</div>
-<div class="line"><a name="l00345"></a><span class="lineno">  345</span>&#160;                 enddo</div>
-<div class="line"><a name="l00346"></a><span class="lineno">  346</span>&#160;              enddo</div>
-<div class="line"><a name="l00347"></a><span class="lineno">  347</span>&#160;              deallocate(gdata)</div>
-<div class="line"><a name="l00348"></a><span class="lineno">  348</span>&#160;              call <a class="code" href="mpp__util__mpi_8inc.html#a09e69243d8c67e6a6e6e4fd9e93d0870">mpp_sync_self</a>() ! ensure MPI_ISEND is done.</div>
-<div class="line"><a name="l00349"></a><span class="lineno">  349</span>&#160;          end if</div>
-<div class="line"><a name="l00350"></a><span class="lineno">  350</span>&#160;      else if( data_has_halos )then</div>
-<div class="line"><a name="l00351"></a><span class="lineno">  351</span>&#160;! for uniprocessor or multithreaded read</div>
-<div class="line"><a name="l00352"></a><span class="lineno">  352</span>&#160;! read compute domain as contiguous data</div>
-<div class="line"><a name="l00353"></a><span class="lineno">  353</span>&#160; </div>
-<div class="line"><a name="l00354"></a><span class="lineno">  354</span>&#160;          allocate( cdata(is:ie,js:<a class="code" href="group__fms__io__mod.html#gae85b018bca1141b3510db6f38fdc50bf">je</a>,size(data,3)) )</div>
-<div class="line"><a name="l00355"></a><span class="lineno">  355</span>&#160;          call READ_RECORD_(unit,field,size(cdata(:,:,:)),cdata,tindex,domain,position,tile_count)</div>
-<div class="line"><a name="l00356"></a><span class="lineno">  356</span>&#160; </div>
-<div class="line"><a name="l00357"></a><span class="lineno">  357</span>&#160;          data(is-isd+1:ie-isd+1,js-jsd+1:<a class="code" href="group__fms__io__mod.html#gae85b018bca1141b3510db6f38fdc50bf">je</a>-jsd+1,:) = cdata(:,:,:)</div>
-<div class="line"><a name="l00358"></a><span class="lineno">  358</span>&#160;          deallocate(cdata)</div>
-<div class="line"><a name="l00359"></a><span class="lineno">  359</span>&#160;      else</div>
-<div class="line"><a name="l00360"></a><span class="lineno">  360</span>&#160;          call READ_RECORD_(unit,field,size(data(:,:,:)),data,tindex,domain,position,tile_count)</div>
-<div class="line"><a name="l00361"></a><span class="lineno">  361</span>&#160;      end if</div>
-<div class="line"><a name="l00362"></a><span class="lineno">  362</span>&#160; </div>
-<div class="line"><a name="l00363"></a><span class="lineno">  363</span>&#160;      call mpp_clock_end(mpp_read_clock)</div>
-<div class="line"><a name="l00364"></a><span class="lineno">  364</span>&#160; </div>
-<div class="line"><a name="l00365"></a><span class="lineno">  365</span>&#160;      return</div>
-<div class="line"><a name="l00366"></a><span class="lineno">  366</span>&#160;    end subroutine MPP_READ_2DDECOMP_3D_</div>
-<div class="line"><a name="l00367"></a><span class="lineno">  367</span>&#160; </div>
+<div class="line"><a name="l00226"></a><span class="lineno">  226</span>&#160;      if( <a class="code" href="group__amip__interp__mod.html#ga9e8dcf56a77b1b156ccc0fa7e082a46b">verbose</a> )print &#39;(a,2i6,i6,12i4)&#39;, &#39;READ_RECORD: PE, unit, num_words, start, axsiz=&#39;, &amp;</div>
+<div class="line"><a name="l00227"></a><span class="lineno">  227</span>&#160;                          &amp; pe, unit, num_words, start, axsiz</div>
+<div class="line"><a name="l00228"></a><span class="lineno">  228</span>&#160; </div>
+<div class="line"><a name="l00229"></a><span class="lineno">  229</span>&#160;      call READ_RECORD_CORE_(unit, field, num_words, data, start, axsiz)</div>
+<div class="line"><a name="l00230"></a><span class="lineno">  230</span>&#160; </div>
+<div class="line"><a name="l00231"></a><span class="lineno">  231</span>&#160;      return</div>
+<div class="line"><a name="l00232"></a><span class="lineno">  232</span>&#160;    end subroutine READ_RECORD_</div>
+<div class="line"><a name="l00233"></a><span class="lineno">  233</span>&#160; </div>
+<div class="line"><a name="l00234"></a><span class="lineno">  234</span>&#160;    subroutine MPP_READ_2DDECOMP_2D_( unit, field, domain, data, tindex, tile_count )</div>
+<div class="line"><a name="l00235"></a><span class="lineno">  235</span>&#160;      integer, intent(in) :: unit</div>
+<div class="line"><a name="l00236"></a><span class="lineno">  236</span>&#160;      type(fieldtype), intent(in) :: field</div>
+<div class="line"><a name="l00237"></a><span class="lineno">  237</span>&#160;      type(domain2D), intent(in) :: domain</div>
+<div class="line"><a name="l00238"></a><span class="lineno">  238</span>&#160;      MPP_TYPE_, intent(inout) :: data(:,:)</div>
+<div class="line"><a name="l00239"></a><span class="lineno">  239</span>&#160;      integer, intent(in), optional :: tindex, tile_count</div>
+<div class="line"><a name="l00240"></a><span class="lineno">  240</span>&#160;      MPP_TYPE_ :: data3D(size(data,1),size(data,2),1)</div>
+<div class="line"><a name="l00241"></a><span class="lineno">  241</span>&#160;      pointer( ptr, data3D )</div>
+<div class="line"><a name="l00242"></a><span class="lineno">  242</span>&#160;      ptr = LOC(data)</div>
+<div class="line"><a name="l00243"></a><span class="lineno">  243</span>&#160;      call mpp_read( unit, field, domain, data3D, tindex, tile_count)</div>
+<div class="line"><a name="l00244"></a><span class="lineno">  244</span>&#160;      return</div>
+<div class="line"><a name="l00245"></a><span class="lineno">  245</span>&#160;    end subroutine MPP_READ_2DDECOMP_2D_</div>
+<div class="line"><a name="l00246"></a><span class="lineno">  246</span>&#160; </div>
+<div class="line"><a name="l00247"></a><span class="lineno">  247</span>&#160;    subroutine MPP_READ_2DDECOMP_3D_( unit, field, domain, data, tindex, tile_count )</div>
+<div class="line"><a name="l00248"></a><span class="lineno">  248</span>&#160;!mpp_read reads &lt;data&gt; which has the domain decomposition &lt;domain&gt;</div>
+<div class="line"><a name="l00249"></a><span class="lineno">  249</span>&#160;      integer,           intent(in) :: unit</div>
+<div class="line"><a name="l00250"></a><span class="lineno">  250</span>&#160;      type(fieldtype),   intent(in) :: field</div>
+<div class="line"><a name="l00251"></a><span class="lineno">  251</span>&#160;      type(domain2D),    intent(in) :: domain</div>
+<div class="line"><a name="l00252"></a><span class="lineno">  252</span>&#160;      MPP_TYPE_,      intent(inout) :: data(:,:,:)</div>
+<div class="line"><a name="l00253"></a><span class="lineno">  253</span>&#160;      integer, intent(in), optional :: tindex, tile_count</div>
+<div class="line"><a name="l00254"></a><span class="lineno">  254</span>&#160; </div>
+<div class="line"><a name="l00255"></a><span class="lineno">  255</span>&#160;      MPP_TYPE_, allocatable :: cdata(:,:,:)</div>
+<div class="line"><a name="l00256"></a><span class="lineno">  256</span>&#160;      MPP_TYPE_, allocatable :: gdata(:)</div>
+<div class="line"><a name="l00257"></a><span class="lineno">  257</span>&#160;      integer :: len, lenx,leny,lenz,i,j,k,n</div>
+<div class="line"><a name="l00258"></a><span class="lineno">  258</span>&#160;!NEW: data may be on compute OR data domain</div>
+<div class="line"><a name="l00259"></a><span class="lineno">  259</span>&#160;      logical :: data_has_halos, halos_are_global, x_is_global, y_is_global</div>
+<div class="line"><a name="l00260"></a><span class="lineno">  260</span>&#160;      integer :: is, ie, js, <a class="code" href="group__fms__io__mod.html#gae85b018bca1141b3510db6f38fdc50bf">je</a>, isd, ied, jsd, <a class="code" href="group__fms__io__mod.html#gad4afab643d50b32ca35e2995dae649fa">jed</a>, isg, ieg, jsg, <a class="code" href="group__fms__io__mod.html#gacdcb373c251e060179c3f0508c2929e6">jeg</a>, ism, iem, jsm, jem</div>
+<div class="line"><a name="l00261"></a><span class="lineno">  261</span>&#160;      integer :: ioff, joff, position</div>
+<div class="line"><a name="l00262"></a><span class="lineno">  262</span>&#160; </div>
+<div class="line"><a name="l00263"></a><span class="lineno">  263</span>&#160;      call mpp_clock_begin(mpp_read_clock)</div>
+<div class="line"><a name="l00264"></a><span class="lineno">  264</span>&#160; </div>
+<div class="line"><a name="l00265"></a><span class="lineno">  265</span>&#160;      if (.NOT. present(tindex) .AND. mpp_file(unit)%time_level .ne. -1) &amp;</div>
+<div class="line"><a name="l00266"></a><span class="lineno">  266</span>&#160;      call mpp_error(FATAL, &#39;MPP_READ: need to specify a time level for data with time axis&#39;)</div>
+<div class="line"><a name="l00267"></a><span class="lineno">  267</span>&#160; </div>
+<div class="line"><a name="l00268"></a><span class="lineno">  268</span>&#160;      if( .NOT.module_is_initialized )call mpp_error( FATAL, &#39;MPP_READ: must first call mpp_io_init.&#39; )</div>
+<div class="line"><a name="l00269"></a><span class="lineno">  269</span>&#160;      if( .NOT.mpp_file(unit)%opened )call mpp_error( FATAL, &#39;MPP_READ: invalid unit number.&#39; )</div>
+<div class="line"><a name="l00270"></a><span class="lineno">  270</span>&#160; </div>
+<div class="line"><a name="l00271"></a><span class="lineno">  271</span>&#160;      call mpp_get_compute_domain( domain, is,  ie,  js,  <a class="code" href="group__fms__io__mod.html#gae85b018bca1141b3510db6f38fdc50bf">je</a>, tile_count=tile_count )</div>
+<div class="line"><a name="l00272"></a><span class="lineno">  272</span>&#160;      call mpp_get_data_domain   ( domain, isd, ied, jsd, <a class="code" href="group__fms__io__mod.html#gad4afab643d50b32ca35e2995dae649fa">jed</a>, x_is_global=x_is_global, &amp;</div>
+<div class="line"><a name="l00273"></a><span class="lineno">  273</span>&#160;                                   y_is_global=y_is_global, tile_count=tile_count )</div>
+<div class="line"><a name="l00274"></a><span class="lineno">  274</span>&#160;      call mpp_get_memory_domain ( domain, ism, iem, jsm, jem )</div>
+<div class="line"><a name="l00275"></a><span class="lineno">  275</span>&#160;      call mpp_get_global_domain ( domain, isg, ieg, jsg, <a class="code" href="group__fms__io__mod.html#gacdcb373c251e060179c3f0508c2929e6">jeg</a>, tile_count=tile_count )</div>
+<div class="line"><a name="l00276"></a><span class="lineno">  276</span>&#160; </div>
+<div class="line"><a name="l00277"></a><span class="lineno">  277</span>&#160;      ! when domain is symmetry, extra point is needed for <a class="code" href="group__xgrid__mod.html#ga0d6740065d2355a4ac54b90c8c4545fb">some</a> data on x/y direction</div>
+<div class="line"><a name="l00278"></a><span class="lineno">  278</span>&#160;      position = CENTER</div>
+<div class="line"><a name="l00279"></a><span class="lineno">  279</span>&#160;      if(mpp_domain_is_symmetry(domain)) then</div>
+<div class="line"><a name="l00280"></a><span class="lineno">  280</span>&#160;         if( size(data,1).EQ.ie-is+1 .AND. size(data,2).EQ.<a class="code" href="group__fms__io__mod.html#gae85b018bca1141b3510db6f38fdc50bf">je</a>-js+1 ) then  ! CENTER</div>
+<div class="line"><a name="l00281"></a><span class="lineno">  281</span>&#160;            data_has_halos = .FALSE.</div>
+<div class="line"><a name="l00282"></a><span class="lineno">  282</span>&#160;         else if( size(data,1).EQ.ie-is+2 .AND. size(data,2).EQ.<a class="code" href="group__fms__io__mod.html#gae85b018bca1141b3510db6f38fdc50bf">je</a>-js+1 ) then ! EAST</div>
+<div class="line"><a name="l00283"></a><span class="lineno">  283</span>&#160;            data_has_halos = .FALSE.</div>
+<div class="line"><a name="l00284"></a><span class="lineno">  284</span>&#160;            position = EAST</div>
+<div class="line"><a name="l00285"></a><span class="lineno">  285</span>&#160;            ie = ie + 1</div>
+<div class="line"><a name="l00286"></a><span class="lineno">  286</span>&#160;         else if( size(data,1).EQ.ie-is+1 .AND. size(data,2).EQ.<a class="code" href="group__fms__io__mod.html#gae85b018bca1141b3510db6f38fdc50bf">je</a>-js+2 ) then ! NORTH</div>
+<div class="line"><a name="l00287"></a><span class="lineno">  287</span>&#160;            position = NORTH</div>
+<div class="line"><a name="l00288"></a><span class="lineno">  288</span>&#160;            data_has_halos = .FALSE.</div>
+<div class="line"><a name="l00289"></a><span class="lineno">  289</span>&#160;            <a class="code" href="group__fms__io__mod.html#gae85b018bca1141b3510db6f38fdc50bf">je</a> = <a class="code" href="group__fms__io__mod.html#gae85b018bca1141b3510db6f38fdc50bf">je</a> + 1</div>
+<div class="line"><a name="l00290"></a><span class="lineno">  290</span>&#160;         else if( size(data,1).EQ.ie-is+2 .AND. size(data,2).EQ.<a class="code" href="group__fms__io__mod.html#gae85b018bca1141b3510db6f38fdc50bf">je</a>-js+2 ) then ! CORNER</div>
+<div class="line"><a name="l00291"></a><span class="lineno">  291</span>&#160;            position = CORNER</div>
+<div class="line"><a name="l00292"></a><span class="lineno">  292</span>&#160;            data_has_halos = .FALSE.</div>
+<div class="line"><a name="l00293"></a><span class="lineno">  293</span>&#160;            ie = ie + 1;   <a class="code" href="group__fms__io__mod.html#gae85b018bca1141b3510db6f38fdc50bf">je</a> = <a class="code" href="group__fms__io__mod.html#gae85b018bca1141b3510db6f38fdc50bf">je</a> + 1</div>
+<div class="line"><a name="l00294"></a><span class="lineno">  294</span>&#160;         else if( size(data,1).EQ.iem-ism+1 .AND. size(data,2).EQ.jem-jsm+1 )then ! CENTER</div>
+<div class="line"><a name="l00295"></a><span class="lineno">  295</span>&#160;            data_has_halos = .TRUE.</div>
+<div class="line"><a name="l00296"></a><span class="lineno">  296</span>&#160;         else if( size(data,1).EQ.iem-ism+2 .AND. size(data,2).EQ.jem-jsm+1 )then ! EAST</div>
+<div class="line"><a name="l00297"></a><span class="lineno">  297</span>&#160;            position = EAST</div>
+<div class="line"><a name="l00298"></a><span class="lineno">  298</span>&#160;            data_has_halos = .TRUE.</div>
+<div class="line"><a name="l00299"></a><span class="lineno">  299</span>&#160;            ie = ie + 1</div>
+<div class="line"><a name="l00300"></a><span class="lineno">  300</span>&#160;         else if( size(data,1).EQ.iem-ism+1 .AND. size(data,2).EQ.jem-jsm+2 )then ! NORTH</div>
+<div class="line"><a name="l00301"></a><span class="lineno">  301</span>&#160;            position = NORTH</div>
+<div class="line"><a name="l00302"></a><span class="lineno">  302</span>&#160;            data_has_halos = .TRUE.</div>
+<div class="line"><a name="l00303"></a><span class="lineno">  303</span>&#160;            <a class="code" href="group__fms__io__mod.html#gae85b018bca1141b3510db6f38fdc50bf">je</a> = <a class="code" href="group__fms__io__mod.html#gae85b018bca1141b3510db6f38fdc50bf">je</a> + 1</div>
+<div class="line"><a name="l00304"></a><span class="lineno">  304</span>&#160;         else if( size(data,1).EQ.iem-ism+2 .AND. size(data,2).EQ.jem-jsm+2 )then ! CORNER</div>
+<div class="line"><a name="l00305"></a><span class="lineno">  305</span>&#160;            position = CORNER</div>
+<div class="line"><a name="l00306"></a><span class="lineno">  306</span>&#160;            data_has_halos = .TRUE.</div>
+<div class="line"><a name="l00307"></a><span class="lineno">  307</span>&#160;            ie = ie + 1;  <a class="code" href="group__fms__io__mod.html#gae85b018bca1141b3510db6f38fdc50bf">je</a> = <a class="code" href="group__fms__io__mod.html#gae85b018bca1141b3510db6f38fdc50bf">je</a> + 1</div>
+<div class="line"><a name="l00308"></a><span class="lineno">  308</span>&#160;         else</div>
+<div class="line"><a name="l00309"></a><span class="lineno">  309</span>&#160;            call mpp_error( FATAL, &#39;MPP_READ: when domain is symmetry, data must be either on &#39; &amp;</div>
+<div class="line"><a name="l00310"></a><span class="lineno">  310</span>&#160;                      <span class="comment">//&#39;compute domain or data domain with the consideration of shifting.&#39; )</span></div>
+<div class="line"><a name="l00311"></a><span class="lineno">  311</span>&#160;         end if</div>
+<div class="line"><a name="l00312"></a><span class="lineno">  312</span>&#160;      else</div>
+<div class="line"><a name="l00313"></a><span class="lineno">  313</span>&#160;         if( size(data,1).EQ.ie-is+1 .AND. size(data,2).EQ.<a class="code" href="group__fms__io__mod.html#gae85b018bca1141b3510db6f38fdc50bf">je</a>-js+1 )then</div>
+<div class="line"><a name="l00314"></a><span class="lineno">  314</span>&#160;            data_has_halos = .FALSE.</div>
+<div class="line"><a name="l00315"></a><span class="lineno">  315</span>&#160;         else if( size(data,1).EQ.iem-ism+1 .AND. size(data,2).EQ.jem-jsm+1 )then</div>
+<div class="line"><a name="l00316"></a><span class="lineno">  316</span>&#160;            data_has_halos = .TRUE.</div>
+<div class="line"><a name="l00317"></a><span class="lineno">  317</span>&#160;         else</div>
+<div class="line"><a name="l00318"></a><span class="lineno">  318</span>&#160;            call mpp_error( FATAL, &#39;MPP_READ: data must be either on compute domain or data domain.&#39; )</div>
+<div class="line"><a name="l00319"></a><span class="lineno">  319</span>&#160;         end if</div>
+<div class="line"><a name="l00320"></a><span class="lineno">  320</span>&#160;      endif</div>
+<div class="line"><a name="l00321"></a><span class="lineno">  321</span>&#160;      halos_are_global = x_is_global .AND. y_is_global</div>
+<div class="line"><a name="l00322"></a><span class="lineno">  322</span>&#160;      if( npes.GT.1 .AND. mpp_file(unit)%threading.EQ.MPP_SINGLE )then</div>
+<div class="line"><a name="l00323"></a><span class="lineno">  323</span>&#160;          if( halos_are_global )then !you can read directly into data array</div>
+<div class="line"><a name="l00324"></a><span class="lineno">  324</span>&#160;              if( pe.EQ.0 )call READ_RECORD_( unit, field, size(data(:,:,:)), data, tindex )</div>
+<div class="line"><a name="l00325"></a><span class="lineno">  325</span>&#160;          else</div>
+<div class="line"><a name="l00326"></a><span class="lineno">  326</span>&#160;              lenx=size(data,1)</div>
+<div class="line"><a name="l00327"></a><span class="lineno">  327</span>&#160;              leny=size(data,2)</div>
+<div class="line"><a name="l00328"></a><span class="lineno">  328</span>&#160;              lenz=size(data,3)</div>
+<div class="line"><a name="l00329"></a><span class="lineno">  329</span>&#160;              len=lenx*leny*lenz</div>
+<div class="line"><a name="l00330"></a><span class="lineno">  330</span>&#160;              allocate(gdata(len))</div>
+<div class="line"><a name="l00331"></a><span class="lineno">  331</span>&#160;! read field on pe 0 and pass to all pes</div>
+<div class="line"><a name="l00332"></a><span class="lineno">  332</span>&#160;              if( pe.EQ.0 ) call READ_RECORD_( unit, field, len, gdata, tindex )</div>
+<div class="line"><a name="l00333"></a><span class="lineno">  333</span>&#160;! broadcasting global array, this can be expensive!</div>
+<div class="line"><a name="l00334"></a><span class="lineno">  334</span>&#160;              call mpp_transmit( put_data=gdata(1), plen=len, to_pe=ALL_PES, &amp;</div>
+<div class="line"><a name="l00335"></a><span class="lineno">  335</span>&#160;                                 get_data=gdata(1), glen=len, from_pe=0 )</div>
+<div class="line"><a name="l00336"></a><span class="lineno">  336</span>&#160;              ioff = is; joff = js</div>
+<div class="line"><a name="l00337"></a><span class="lineno">  337</span>&#160;              if( data_has_halos )then</div>
+<div class="line"><a name="l00338"></a><span class="lineno">  338</span>&#160;                  ioff = isd; joff = jsd</div>
+<div class="line"><a name="l00339"></a><span class="lineno">  339</span>&#160;              end if</div>
+<div class="line"><a name="l00340"></a><span class="lineno">  340</span>&#160;              do k=1,size(data,3)</div>
+<div class="line"><a name="l00341"></a><span class="lineno">  341</span>&#160;                 do j=js,<a class="code" href="group__fms__io__mod.html#gae85b018bca1141b3510db6f38fdc50bf">je</a></div>
+<div class="line"><a name="l00342"></a><span class="lineno">  342</span>&#160;                    do i=is,ie</div>
+<div class="line"><a name="l00343"></a><span class="lineno">  343</span>&#160;                       n=(i-isg+1) + (j-jsg)*lenx + (k-1)*lenx*leny</div>
+<div class="line"><a name="l00344"></a><span class="lineno">  344</span>&#160;                       data(i-ioff+1,j-joff+1,k)=gdata(n)</div>
+<div class="line"><a name="l00345"></a><span class="lineno">  345</span>&#160;                    enddo</div>
+<div class="line"><a name="l00346"></a><span class="lineno">  346</span>&#160;                 enddo</div>
+<div class="line"><a name="l00347"></a><span class="lineno">  347</span>&#160;              enddo</div>
+<div class="line"><a name="l00348"></a><span class="lineno">  348</span>&#160;              deallocate(gdata)</div>
+<div class="line"><a name="l00349"></a><span class="lineno">  349</span>&#160;              call <a class="code" href="mpp__util__mpi_8inc.html#a09e69243d8c67e6a6e6e4fd9e93d0870">mpp_sync_self</a>() ! ensure MPI_ISEND is done.</div>
+<div class="line"><a name="l00350"></a><span class="lineno">  350</span>&#160;          end if</div>
+<div class="line"><a name="l00351"></a><span class="lineno">  351</span>&#160;      else if( data_has_halos )then</div>
+<div class="line"><a name="l00352"></a><span class="lineno">  352</span>&#160;! for uniprocessor or multithreaded read</div>
+<div class="line"><a name="l00353"></a><span class="lineno">  353</span>&#160;! read compute domain as contiguous data</div>
+<div class="line"><a name="l00354"></a><span class="lineno">  354</span>&#160; </div>
+<div class="line"><a name="l00355"></a><span class="lineno">  355</span>&#160;          allocate( cdata(is:ie,js:<a class="code" href="group__fms__io__mod.html#gae85b018bca1141b3510db6f38fdc50bf">je</a>,size(data,3)) )</div>
+<div class="line"><a name="l00356"></a><span class="lineno">  356</span>&#160;          call READ_RECORD_(unit,field,size(cdata(:,:,:)),cdata,tindex,domain,position,tile_count)</div>
+<div class="line"><a name="l00357"></a><span class="lineno">  357</span>&#160; </div>
+<div class="line"><a name="l00358"></a><span class="lineno">  358</span>&#160;          data(is-isd+1:ie-isd+1,js-jsd+1:<a class="code" href="group__fms__io__mod.html#gae85b018bca1141b3510db6f38fdc50bf">je</a>-jsd+1,:) = cdata(:,:,:)</div>
+<div class="line"><a name="l00359"></a><span class="lineno">  359</span>&#160;          deallocate(cdata)</div>
+<div class="line"><a name="l00360"></a><span class="lineno">  360</span>&#160;      else</div>
+<div class="line"><a name="l00361"></a><span class="lineno">  361</span>&#160;          call READ_RECORD_(unit,field,size(data(:,:,:)),data,tindex,domain,position,tile_count)</div>
+<div class="line"><a name="l00362"></a><span class="lineno">  362</span>&#160;      end if</div>
+<div class="line"><a name="l00363"></a><span class="lineno">  363</span>&#160; </div>
+<div class="line"><a name="l00364"></a><span class="lineno">  364</span>&#160;      call mpp_clock_end(mpp_read_clock)</div>
+<div class="line"><a name="l00365"></a><span class="lineno">  365</span>&#160; </div>
+<div class="line"><a name="l00366"></a><span class="lineno">  366</span>&#160;      return</div>
+<div class="line"><a name="l00367"></a><span class="lineno">  367</span>&#160;    end subroutine MPP_READ_2DDECOMP_3D_</div>
 <div class="line"><a name="l00368"></a><span class="lineno">  368</span>&#160; </div>
-<div class="line"><a name="l00369"></a><span class="lineno">  369</span>&#160;    subroutine MPP_READ_2DDECOMP_4D_( unit, field, domain, data, tindex, tile_count )</div>
-<div class="line"><a name="l00370"></a><span class="lineno">  370</span>&#160;      integer, intent(in) :: unit</div>
-<div class="line"><a name="l00371"></a><span class="lineno">  371</span>&#160;      type(fieldtype), intent(in) :: field</div>
-<div class="line"><a name="l00372"></a><span class="lineno">  372</span>&#160;      type(domain2D), intent(in) :: domain</div>
-<div class="line"><a name="l00373"></a><span class="lineno">  373</span>&#160;      MPP_TYPE_, intent(inout) :: data(:,:,:,:)</div>
-<div class="line"><a name="l00374"></a><span class="lineno">  374</span>&#160;      integer, intent(in), optional :: tindex, tile_count</div>
-<div class="line"><a name="l00375"></a><span class="lineno">  375</span>&#160;      MPP_TYPE_ :: data3D(size(data,1),size(data,2),size(data,3)*size(data,4))</div>
-<div class="line"><a name="l00376"></a><span class="lineno">  376</span>&#160;      pointer( ptr, data3D )</div>
-<div class="line"><a name="l00377"></a><span class="lineno">  377</span>&#160;      ptr = LOC(data)</div>
-<div class="line"><a name="l00378"></a><span class="lineno">  378</span>&#160;      call mpp_read( unit, field, domain, data3D, tindex, tile_count)</div>
-<div class="line"><a name="l00379"></a><span class="lineno">  379</span>&#160;      return</div>
-<div class="line"><a name="l00380"></a><span class="lineno">  380</span>&#160;    end subroutine MPP_READ_2DDECOMP_4D_</div>
+<div class="line"><a name="l00369"></a><span class="lineno">  369</span>&#160; </div>
+<div class="line"><a name="l00370"></a><span class="lineno">  370</span>&#160;    subroutine MPP_READ_2DDECOMP_4D_( unit, field, domain, data, tindex, tile_count )</div>
+<div class="line"><a name="l00371"></a><span class="lineno">  371</span>&#160;      integer, intent(in) :: unit</div>
+<div class="line"><a name="l00372"></a><span class="lineno">  372</span>&#160;      type(fieldtype), intent(in) :: field</div>
+<div class="line"><a name="l00373"></a><span class="lineno">  373</span>&#160;      type(domain2D), intent(in) :: domain</div>
+<div class="line"><a name="l00374"></a><span class="lineno">  374</span>&#160;      MPP_TYPE_, intent(inout) :: data(:,:,:,:)</div>
+<div class="line"><a name="l00375"></a><span class="lineno">  375</span>&#160;      integer, intent(in), optional :: tindex, tile_count</div>
+<div class="line"><a name="l00376"></a><span class="lineno">  376</span>&#160;      MPP_TYPE_ :: data3D(size(data,1),size(data,2),size(data,3)*size(data,4))</div>
+<div class="line"><a name="l00377"></a><span class="lineno">  377</span>&#160;      pointer( ptr, data3D )</div>
+<div class="line"><a name="l00378"></a><span class="lineno">  378</span>&#160;      ptr = LOC(data)</div>
+<div class="line"><a name="l00379"></a><span class="lineno">  379</span>&#160;      call mpp_read( unit, field, domain, data3D, tindex, tile_count)</div>
+<div class="line"><a name="l00380"></a><span class="lineno">  380</span>&#160;      return</div>
+<div class="line"><a name="l00381"></a><span class="lineno">  381</span>&#160;    end subroutine MPP_READ_2DDECOMP_4D_</div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
-<div class="ttc" id="agroup__fms__io__mod_html_gad4afab643d50b32ca35e2995dae649fa"><div class="ttname"><a href="group__fms__io__mod.html#gad4afab643d50b32ca35e2995dae649fa">fms_io_mod::jed</a></div><div class="ttdeci">integer, private jed</div><div class="ttdoc">data domain</div><div class="ttdef"><b>Definition:</b> <a href="fms__io_8F90_source.html#l00519">fms_io.F90:519</a></div></div>
-<div class="ttc" id="agroup__fms__io__mod_html_gacdcb373c251e060179c3f0508c2929e6"><div class="ttname"><a href="group__fms__io__mod.html#gacdcb373c251e060179c3f0508c2929e6">fms_io_mod::jeg</a></div><div class="ttdeci">integer, private jeg</div><div class="ttdoc">global domain</div><div class="ttdef"><b>Definition:</b> <a href="fms__io_8F90_source.html#l00520">fms_io.F90:520</a></div></div>
-<div class="ttc" id="ampp__util__mpi_8inc_html_a09e69243d8c67e6a6e6e4fd9e93d0870"><div class="ttname"><a href="mpp__util__mpi_8inc.html#a09e69243d8c67e6a6e6e4fd9e93d0870">mpp_sync_self</a></div><div class="ttdeci">subroutine mpp_sync_self(pelist, check, request, msg_size, msg_type)</div><div class="ttdoc">This is to check if current PE's outstanding puts are complete but we can't use shmem_fence because w...</div><div class="ttdef"><b>Definition:</b> <a href="mpp__util__mpi_8inc_source.html#l00169">mpp_util_mpi.inc:169</a></div></div>
-<div class="ttc" id="agroup__amip__interp__mod_html_ga9e8dcf56a77b1b156ccc0fa7e082a46b"><div class="ttname"><a href="group__amip__interp__mod.html#ga9e8dcf56a77b1b156ccc0fa7e082a46b">amip_interp_mod::verbose</a></div><div class="ttdeci">integer verbose</div><div class="ttdoc">0 &lt;= verbose &lt;= 3</div><div class="ttdef"><b>Definition:</b> <a href="amip__interp_8F90_source.html#l00276">amip_interp.F90:276</a></div></div>
-<div class="ttc" id="agroup__xgrid__mod_html_ga0d6740065d2355a4ac54b90c8c4545fb"><div class="ttname"><a href="group__xgrid__mod.html#ga0d6740065d2355a4ac54b90c8c4545fb">xgrid_mod::some</a></div><div class="ttdeci">subroutine, public some(xmap, some_arr, grid_id)</div><div class="ttdoc">Returns logical associating exchange grid cells with given side two grid.</div><div class="ttdef"><b>Definition:</b> <a href="xgrid_8F90_source.html#l03359">xgrid.F90:3359</a></div></div>
+<div class="ttc" id="agroup__fms__io__mod_html_gad4afab643d50b32ca35e2995dae649fa"><div class="ttname"><a href="group__fms__io__mod.html#gad4afab643d50b32ca35e2995dae649fa">fms_io_mod::jed</a></div><div class="ttdeci">integer, private jed</div><div class="ttdoc">data domain</div><div class="ttdef"><b>Definition:</b> <a href="fms__io_8F90_source.html#l00523">fms_io.F90:523</a></div></div>
+<div class="ttc" id="agroup__fms__io__mod_html_gacdcb373c251e060179c3f0508c2929e6"><div class="ttname"><a href="group__fms__io__mod.html#gacdcb373c251e060179c3f0508c2929e6">fms_io_mod::jeg</a></div><div class="ttdeci">integer, private jeg</div><div class="ttdoc">global domain</div><div class="ttdef"><b>Definition:</b> <a href="fms__io_8F90_source.html#l00524">fms_io.F90:524</a></div></div>
+<div class="ttc" id="ampp__util__mpi_8inc_html_a09e69243d8c67e6a6e6e4fd9e93d0870"><div class="ttname"><a href="mpp__util__mpi_8inc.html#a09e69243d8c67e6a6e6e4fd9e93d0870">mpp_sync_self</a></div><div class="ttdeci">subroutine mpp_sync_self(pelist, check, request, msg_size, msg_type)</div><div class="ttdoc">This is to check if current PE's outstanding puts are complete but we can't use shmem_fence because w...</div><div class="ttdef"><b>Definition:</b> <a href="mpp__util__mpi_8inc_source.html#l00167">mpp_util_mpi.inc:167</a></div></div>
+<div class="ttc" id="agroup__amip__interp__mod_html_ga9e8dcf56a77b1b156ccc0fa7e082a46b"><div class="ttname"><a href="group__amip__interp__mod.html#ga9e8dcf56a77b1b156ccc0fa7e082a46b">amip_interp_mod::verbose</a></div><div class="ttdeci">integer verbose</div><div class="ttdoc">0 &lt;= verbose &lt;= 3</div><div class="ttdef"><b>Definition:</b> <a href="amip__interp_8F90_source.html#l00277">amip_interp.F90:277</a></div></div>
+<div class="ttc" id="agroup__xgrid__mod_html_ga0d6740065d2355a4ac54b90c8c4545fb"><div class="ttname"><a href="group__xgrid__mod.html#ga0d6740065d2355a4ac54b90c8c4545fb">xgrid_mod::some</a></div><div class="ttdeci">subroutine, public some(xmap, some_arr, grid_id)</div><div class="ttdoc">Returns logical associating exchange grid cells with given side two grid.</div><div class="ttdef"><b>Definition:</b> <a href="xgrid_8F90_source.html#l03355">xgrid.F90:3355</a></div></div>
 <div class="ttc" id="agroup__diag__axis__mod_html_gaaeb334bb35e9472f0707b4cca84eede6"><div class="ttname"><a href="group__diag__axis__mod.html#gaaeb334bb35e9472f0707b4cca84eede6">diag_axis_mod::axes</a></div><div class="ttdeci">type(diag_axis_type), dimension(:), allocatable, save axes</div><div class="ttdoc">global storage for all defined axes</div><div class="ttdef"><b>Definition:</b> <a href="diag__axis_8F90_source.html#l00077">diag_axis.F90:77</a></div></div>
-<div class="ttc" id="agroup__fms__io__mod_html_gae85b018bca1141b3510db6f38fdc50bf"><div class="ttname"><a href="group__fms__io__mod.html#gae85b018bca1141b3510db6f38fdc50bf">fms_io_mod::je</a></div><div class="ttdeci">integer, private je</div><div class="ttdoc">compute domain</div><div class="ttdef"><b>Definition:</b> <a href="fms__io_8F90_source.html#l00518">fms_io.F90:518</a></div></div>
-<div class="ttc" id="ampp__io__util_8inc_html_a23cb28bd7f446ed5c0a8aea9d0a4ae49"><div class="ttname"><a href="mpp__io__util_8inc.html#a23cb28bd7f446ed5c0a8aea9d0a4ae49">mpp_io_set_stack_size</a></div><div class="ttdeci">subroutine mpp_io_set_stack_size(n)</div><div class="ttdoc">Set the mpp_io_stack variable to be at least n LONG words long.</div><div class="ttdef"><b>Definition:</b> <a href="mpp__io__util_8inc_source.html#l00562">mpp_io_util.inc:562</a></div></div>
+<div class="ttc" id="agroup__fms__io__mod_html_gae85b018bca1141b3510db6f38fdc50bf"><div class="ttname"><a href="group__fms__io__mod.html#gae85b018bca1141b3510db6f38fdc50bf">fms_io_mod::je</a></div><div class="ttdeci">integer, private je</div><div class="ttdoc">compute domain</div><div class="ttdef"><b>Definition:</b> <a href="fms__io_8F90_source.html#l00522">fms_io.F90:522</a></div></div>
+<div class="ttc" id="ampp__io__util_8inc_html_a23cb28bd7f446ed5c0a8aea9d0a4ae49"><div class="ttname"><a href="mpp__io__util_8inc.html#a23cb28bd7f446ed5c0a8aea9d0a4ae49">mpp_io_set_stack_size</a></div><div class="ttdeci">subroutine mpp_io_set_stack_size(n)</div><div class="ttdoc">Set the mpp_io_stack variable to be at least n LONG words long.</div><div class="ttdef"><b>Definition:</b> <a href="mpp__io__util_8inc_source.html#l00563">mpp_io_util.inc:563</a></div></div>
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>

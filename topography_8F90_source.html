@@ -33,7 +33,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">FMS
-   &#160;<span id="projectnumber">2021.04.0</span>
+   &#160;<span id="projectnumber">2022.01.0</span>
    </div>
    <div id="projectbrief">Flexible Modeling System</div>
   </td>
@@ -845,233 +845,232 @@ $(document).ready(function(){initNavTree('topography_8F90_source.html',''); init
 <div class="line"><a name="l00749"></a><span class="lineno">  749</span>&#160; <span class="keyword">subroutine </span>input_data ( indx, xdat, ydat, zdat )</div>
 <div class="line"><a name="l00750"></a><span class="lineno">  750</span>&#160; <span class="keywordtype">integer</span>, <span class="keywordtype">intent(in)</span> :: indx</div>
 <div class="line"><a name="l00751"></a><span class="lineno">  751</span>&#160;<span class="keywordtype"> real</span>, <span class="keywordtype">intent(out)</span> :: xdat(ipts+1), ydat(jpts+1), zdat(ipts,jpts)</div>
-<div class="line"><a name="l00752"></a><span class="lineno">  752</span>&#160; <span class="keywordtype">integer</span> :: nc</div>
-<div class="line"><a name="l00753"></a><span class="lineno">  753</span>&#160; </div>
-<div class="line"><a name="l00754"></a><span class="lineno">  754</span>&#160;  <span class="keywordflow">if</span>( file_is_opened(indx) ) <span class="keywordflow">then</span></div>
-<div class="line"><a name="l00755"></a><span class="lineno">  755</span>&#160;     <span class="keyword">call </span><a class="code" href="interfacefms2__io__mod_1_1read__data.html">read_data</a>(<a class="code" href="group__topography__mod.html#gae4d1dece93092ed78e188eb1da5bba60">fileobj</a>(indx), <span class="stringliteral">&#39;xdat&#39;</span>, xdat)</div>
-<div class="line"><a name="l00756"></a><span class="lineno">  756</span>&#160;     <span class="keyword">call </span><a class="code" href="interfacefms2__io__mod_1_1read__data.html">read_data</a>(<a class="code" href="group__topography__mod.html#gae4d1dece93092ed78e188eb1da5bba60">fileobj</a>(indx), <span class="stringliteral">&#39;ydat&#39;</span>, ydat)</div>
-<div class="line"><a name="l00757"></a><span class="lineno">  757</span>&#160;     <span class="keyword">call </span><a class="code" href="interfacefms2__io__mod_1_1read__data.html">read_data</a>(<a class="code" href="group__topography__mod.html#gae4d1dece93092ed78e188eb1da5bba60">fileobj</a>(indx), <span class="stringliteral">&#39;zdat&#39;</span>, zdat)</div>
-<div class="line"><a name="l00758"></a><span class="lineno">  758</span>&#160;<span class="keywordflow">  endif</span></div>
-<div class="line"><a name="l00759"></a><span class="lineno">  759</span>&#160; </div>
-<div class="line"><a name="l00760"></a><span class="lineno">  760</span>&#160; <span class="keyword">end subroutine </span>input_data</div>
-<div class="line"><a name="l00761"></a><span class="lineno">  761</span>&#160; </div>
-<div class="line"><a name="l00762"></a><span class="lineno">  762</span>&#160;<span class="comment">!#######################################################################</span></div>
-<div class="line"><a name="l00763"></a><span class="lineno">  763</span>&#160; </div>
-<div class="line"><a name="l00764"></a><span class="lineno">  764</span>&#160; <span class="keyword">subroutine </span>interp_water_1d ( blon, blat, zout, do_ocean )</div>
-<div class="line"><a name="l00765"></a><span class="lineno">  765</span>&#160;<span class="keywordtype"> real</span>   , <span class="keywordtype">intent(in)</span>  :: blon(:), blat(:)</div>
-<div class="line"><a name="l00766"></a><span class="lineno">  766</span>&#160;<span class="keywordtype"> real</span>   , <span class="keywordtype">intent(out)</span> :: zout(:,:)</div>
-<div class="line"><a name="l00767"></a><span class="lineno">  767</span>&#160; <span class="keywordtype">logical</span>, <span class="keywordtype">intent(in)</span>, <span class="keywordtype">optional</span> :: do_ocean</div>
-<div class="line"><a name="l00768"></a><span class="lineno">  768</span>&#160;<span class="keywordtype"> real</span> :: xdat(ipts+1), ydat(jpts+1), zdat(ipts,jpts)</div>
-<div class="line"><a name="l00769"></a><span class="lineno">  769</span>&#160;    <span class="keyword">call </span>input_data ( water_index, xdat, ydat, zdat )</div>
-<div class="line"><a name="l00770"></a><span class="lineno">  770</span>&#160; </div>
-<div class="line"><a name="l00771"></a><span class="lineno">  771</span>&#160;<span class="comment">! only use designated ocean points</span></div>
-<div class="line"><a name="l00772"></a><span class="lineno">  772</span>&#160;    <span class="keywordflow">if</span> (<span class="keyword">present</span>(do_ocean)) <span class="keywordflow">then</span></div>
-<div class="line"><a name="l00773"></a><span class="lineno">  773</span>&#160;        <span class="keywordflow">if</span> (do_ocean) <span class="keyword">call </span>determine_ocean_points (zdat)</div>
-<div class="line"><a name="l00774"></a><span class="lineno">  774</span>&#160;<span class="keywordflow">    endif</span></div>
-<div class="line"><a name="l00775"></a><span class="lineno">  775</span>&#160; </div>
-<div class="line"><a name="l00776"></a><span class="lineno">  776</span>&#160;<span class="comment">! interpolate onto output grid</span></div>
-<div class="line"><a name="l00777"></a><span class="lineno">  777</span>&#160;    <span class="keyword">call </span><a class="code" href="interfacehoriz__interp__mod_1_1horiz__interp.html">horiz_interp</a> ( zdat, xdat, ydat, blon, blat, zout )</div>
-<div class="line"><a name="l00778"></a><span class="lineno">  778</span>&#160; </div>
-<div class="line"><a name="l00779"></a><span class="lineno">  779</span>&#160; <span class="keyword">end subroutine </span>interp_water_1d</div>
-<div class="line"><a name="l00780"></a><span class="lineno">  780</span>&#160; </div>
-<div class="line"><a name="l00781"></a><span class="lineno">  781</span>&#160;<span class="comment">!#######################################################################</span></div>
-<div class="line"><a name="l00782"></a><span class="lineno">  782</span>&#160; </div>
-<div class="line"><a name="l00783"></a><span class="lineno">  783</span>&#160; <span class="keyword">subroutine </span>interp_water_2d ( blon, blat, zout, do_ocean )</div>
-<div class="line"><a name="l00784"></a><span class="lineno">  784</span>&#160;<span class="keywordtype"> real</span>   , <span class="keywordtype">intent(in)</span>  :: blon(:,:), blat(:,:)</div>
-<div class="line"><a name="l00785"></a><span class="lineno">  785</span>&#160;<span class="keywordtype"> real</span>   , <span class="keywordtype">intent(out)</span> :: zout(:,:)</div>
-<div class="line"><a name="l00786"></a><span class="lineno">  786</span>&#160; <span class="keywordtype">logical</span>, <span class="keywordtype">intent(in)</span>, <span class="keywordtype">optional</span> :: do_ocean</div>
-<div class="line"><a name="l00787"></a><span class="lineno">  787</span>&#160;<span class="keywordtype"> real</span> :: xdat(ipts+1), ydat(jpts+1), zdat(ipts,jpts)</div>
-<div class="line"><a name="l00788"></a><span class="lineno">  788</span>&#160; </div>
-<div class="line"><a name="l00789"></a><span class="lineno">  789</span>&#160;    <span class="keyword">call </span>input_data ( water_index, xdat, ydat, zdat )</div>
-<div class="line"><a name="l00790"></a><span class="lineno">  790</span>&#160; </div>
-<div class="line"><a name="l00791"></a><span class="lineno">  791</span>&#160;<span class="comment">! only use designated ocean points</span></div>
-<div class="line"><a name="l00792"></a><span class="lineno">  792</span>&#160;    <span class="keywordflow">if</span> (<span class="keyword">present</span>(do_ocean)) <span class="keywordflow">then</span></div>
-<div class="line"><a name="l00793"></a><span class="lineno">  793</span>&#160;        <span class="keywordflow">if</span> (do_ocean) <span class="keyword">call </span>determine_ocean_points (zdat)</div>
-<div class="line"><a name="l00794"></a><span class="lineno">  794</span>&#160;<span class="keywordflow">    endif</span></div>
-<div class="line"><a name="l00795"></a><span class="lineno">  795</span>&#160; </div>
-<div class="line"><a name="l00796"></a><span class="lineno">  796</span>&#160;<span class="comment">! interpolate onto output grid</span></div>
-<div class="line"><a name="l00797"></a><span class="lineno">  797</span>&#160;    <span class="keyword">call </span><a class="code" href="interfacehoriz__interp__mod_1_1horiz__interp.html">horiz_interp</a> ( zdat, xdat, ydat, blon, blat, zout )</div>
-<div class="line"><a name="l00798"></a><span class="lineno">  798</span>&#160; </div>
-<div class="line"><a name="l00799"></a><span class="lineno">  799</span>&#160; <span class="keyword">end subroutine </span>interp_water_2d</div>
-<div class="line"><a name="l00800"></a><span class="lineno">  800</span>&#160; </div>
-<div class="line"><a name="l00801"></a><span class="lineno">  801</span>&#160;<span class="comment">!#######################################################################</span></div>
-<div class="line"><a name="l00802"></a><span class="lineno">  802</span>&#160; </div>
-<div class="line"><a name="l00803"></a><span class="lineno">  803</span>&#160; <span class="keyword">subroutine </span>determine_ocean_points ( pctwater )</div>
-<div class="line"><a name="l00804"></a><span class="lineno">  804</span>&#160;<span class="keywordtype"> real</span>, <span class="keywordtype">intent(inout)</span> :: pctwater(:,:)</div>
-<div class="line"><a name="l00805"></a><span class="lineno">  805</span>&#160; <span class="keywordtype">logical</span> :: ocean(size(pctwater,1),size(pctwater,2))</div>
-<div class="line"><a name="l00806"></a><span class="lineno">  806</span>&#160; <span class="keywordtype">integer</span> :: i, j, m, n, im, ip, jm, jp, new</div>
-<div class="line"><a name="l00807"></a><span class="lineno">  807</span>&#160; </div>
-<div class="line"><a name="l00808"></a><span class="lineno">  808</span>&#160;<span class="keywordtype"> real</span> :: ocean_pct_crit = .500</div>
-<div class="line"><a name="l00809"></a><span class="lineno">  809</span>&#160; </div>
-<div class="line"><a name="l00810"></a><span class="lineno">  810</span>&#160;  <span class="comment">! resolution of the grid</span></div>
-<div class="line"><a name="l00811"></a><span class="lineno">  811</span>&#160;    m = <span class="keyword">size</span>(pctwater,1)</div>
-<div class="line"><a name="l00812"></a><span class="lineno">  812</span>&#160;    n = <span class="keyword">size</span>(pctwater,2)</div>
-<div class="line"><a name="l00813"></a><span class="lineno">  813</span>&#160; </div>
-<div class="line"><a name="l00814"></a><span class="lineno">  814</span>&#160;  <span class="comment">! the 1/6 degree navy percent water data set</span></div>
-<div class="line"><a name="l00815"></a><span class="lineno">  815</span>&#160;  <span class="comment">! designates ocean grid boxes as 100 percent water</span></div>
-<div class="line"><a name="l00816"></a><span class="lineno">  816</span>&#160;  <span class="comment">! all other grid boxes have &lt;= 99 percent water</span></div>
-<div class="line"><a name="l00817"></a><span class="lineno">  817</span>&#160; </div>
-<div class="line"><a name="l00818"></a><span class="lineno">  818</span>&#160;  <span class="comment">! set a mask for ocean grid boxes</span></div>
-<div class="line"><a name="l00819"></a><span class="lineno">  819</span>&#160;    ocean = (pctwater &gt; .999)</div>
-<div class="line"><a name="l00820"></a><span class="lineno">  820</span>&#160;    new = count(ocean)</div>
-<div class="line"><a name="l00821"></a><span class="lineno">  821</span>&#160; </div>
-<div class="line"><a name="l00822"></a><span class="lineno">  822</span>&#160;  <span class="comment">! set land grid boxes that have sufficient amount of water</span></div>
-<div class="line"><a name="l00823"></a><span class="lineno">  823</span>&#160;  <span class="comment">! to ocean grid boxes when they are adjacent to ocean points</span></div>
-<div class="line"><a name="l00824"></a><span class="lineno">  824</span>&#160;  <span class="comment">! iterate until there are no new ocean points</span></div>
-<div class="line"><a name="l00825"></a><span class="lineno">  825</span>&#160;    <span class="keywordflow">do</span></div>
-<div class="line"><a name="l00826"></a><span class="lineno">  826</span>&#160;    <span class="keywordflow">if</span> (new == 0) <span class="keywordflow">exit</span></div>
-<div class="line"><a name="l00827"></a><span class="lineno">  827</span>&#160;    new = 0</div>
-<div class="line"><a name="l00828"></a><span class="lineno">  828</span>&#160; </div>
-<div class="line"><a name="l00829"></a><span class="lineno">  829</span>&#160;       <span class="keywordflow">do</span> j = 1, n</div>
-<div class="line"><a name="l00830"></a><span class="lineno">  830</span>&#160;       <span class="keywordflow">do</span> i = 1, m</div>
-<div class="line"><a name="l00831"></a><span class="lineno">  831</span>&#160;          <span class="keywordflow">if</span> (.not.ocean(i,j) .and. pctwater(i,j) &gt; ocean_pct_crit) <span class="keywordflow">then</span></div>
-<div class="line"><a name="l00832"></a><span class="lineno">  832</span>&#160;             im = i-1; ip = i+1; jm = j-1; jp = j+1</div>
-<div class="line"><a name="l00833"></a><span class="lineno">  833</span>&#160;             <span class="keywordflow">if</span> (im == 0)   im = m</div>
-<div class="line"><a name="l00834"></a><span class="lineno">  834</span>&#160;             <span class="keywordflow">if</span> (ip == m+1) ip = 1</div>
-<div class="line"><a name="l00835"></a><span class="lineno">  835</span>&#160;             <span class="keywordflow">if</span> (jm == 0)   jm = 1</div>
-<div class="line"><a name="l00836"></a><span class="lineno">  836</span>&#160;             <span class="keywordflow">if</span> (jp == n+1) jp = n</div>
-<div class="line"><a name="l00837"></a><span class="lineno">  837</span>&#160;           <span class="comment">! check the 8 grid boxes that surround this grid box</span></div>
-<div class="line"><a name="l00838"></a><span class="lineno">  838</span>&#160;             <span class="keywordflow">if</span> (ocean(im,j ) .or. ocean(ip,j ) .or. ocean(i ,jm) .or. ocean(i ,jp) .or. &amp;</div>
-<div class="line"><a name="l00839"></a><span class="lineno">  839</span>&#160;                 ocean(im,jm) .or. ocean(ip,jm) .or. ocean(ip,jp) .or. ocean(im,jp)) <span class="keywordflow">then</span></div>
-<div class="line"><a name="l00840"></a><span class="lineno">  840</span>&#160;                 ocean(i,j) = .true.</div>
-<div class="line"><a name="l00841"></a><span class="lineno">  841</span>&#160;                 new = new + 1</div>
-<div class="line"><a name="l00842"></a><span class="lineno">  842</span>&#160;<span class="keywordflow">             endif</span></div>
-<div class="line"><a name="l00843"></a><span class="lineno">  843</span>&#160;<span class="keywordflow">          endif</span></div>
+<div class="line"><a name="l00752"></a><span class="lineno">  752</span>&#160; </div>
+<div class="line"><a name="l00753"></a><span class="lineno">  753</span>&#160;  <span class="keywordflow">if</span>( file_is_opened(indx) ) <span class="keywordflow">then</span></div>
+<div class="line"><a name="l00754"></a><span class="lineno">  754</span>&#160;     <span class="keyword">call </span><a class="code" href="interfacefms2__io__mod_1_1read__data.html">read_data</a>(<a class="code" href="group__topography__mod.html#gae4d1dece93092ed78e188eb1da5bba60">fileobj</a>(indx), <span class="stringliteral">&#39;xdat&#39;</span>, xdat)</div>
+<div class="line"><a name="l00755"></a><span class="lineno">  755</span>&#160;     <span class="keyword">call </span><a class="code" href="interfacefms2__io__mod_1_1read__data.html">read_data</a>(<a class="code" href="group__topography__mod.html#gae4d1dece93092ed78e188eb1da5bba60">fileobj</a>(indx), <span class="stringliteral">&#39;ydat&#39;</span>, ydat)</div>
+<div class="line"><a name="l00756"></a><span class="lineno">  756</span>&#160;     <span class="keyword">call </span><a class="code" href="interfacefms2__io__mod_1_1read__data.html">read_data</a>(<a class="code" href="group__topography__mod.html#gae4d1dece93092ed78e188eb1da5bba60">fileobj</a>(indx), <span class="stringliteral">&#39;zdat&#39;</span>, zdat)</div>
+<div class="line"><a name="l00757"></a><span class="lineno">  757</span>&#160;<span class="keywordflow">  endif</span></div>
+<div class="line"><a name="l00758"></a><span class="lineno">  758</span>&#160; </div>
+<div class="line"><a name="l00759"></a><span class="lineno">  759</span>&#160; <span class="keyword">end subroutine </span>input_data</div>
+<div class="line"><a name="l00760"></a><span class="lineno">  760</span>&#160; </div>
+<div class="line"><a name="l00761"></a><span class="lineno">  761</span>&#160;<span class="comment">!#######################################################################</span></div>
+<div class="line"><a name="l00762"></a><span class="lineno">  762</span>&#160; </div>
+<div class="line"><a name="l00763"></a><span class="lineno">  763</span>&#160; <span class="keyword">subroutine </span>interp_water_1d ( blon, blat, zout, do_ocean )</div>
+<div class="line"><a name="l00764"></a><span class="lineno">  764</span>&#160;<span class="keywordtype"> real</span>   , <span class="keywordtype">intent(in)</span>  :: blon(:), blat(:)</div>
+<div class="line"><a name="l00765"></a><span class="lineno">  765</span>&#160;<span class="keywordtype"> real</span>   , <span class="keywordtype">intent(out)</span> :: zout(:,:)</div>
+<div class="line"><a name="l00766"></a><span class="lineno">  766</span>&#160; <span class="keywordtype">logical</span>, <span class="keywordtype">intent(in)</span>, <span class="keywordtype">optional</span> :: do_ocean</div>
+<div class="line"><a name="l00767"></a><span class="lineno">  767</span>&#160;<span class="keywordtype"> real</span> :: xdat(ipts+1), ydat(jpts+1), zdat(ipts,jpts)</div>
+<div class="line"><a name="l00768"></a><span class="lineno">  768</span>&#160;    <span class="keyword">call </span>input_data ( water_index, xdat, ydat, zdat )</div>
+<div class="line"><a name="l00769"></a><span class="lineno">  769</span>&#160; </div>
+<div class="line"><a name="l00770"></a><span class="lineno">  770</span>&#160;<span class="comment">! only use designated ocean points</span></div>
+<div class="line"><a name="l00771"></a><span class="lineno">  771</span>&#160;    <span class="keywordflow">if</span> (<span class="keyword">present</span>(do_ocean)) <span class="keywordflow">then</span></div>
+<div class="line"><a name="l00772"></a><span class="lineno">  772</span>&#160;        <span class="keywordflow">if</span> (do_ocean) <span class="keyword">call </span>determine_ocean_points (zdat)</div>
+<div class="line"><a name="l00773"></a><span class="lineno">  773</span>&#160;<span class="keywordflow">    endif</span></div>
+<div class="line"><a name="l00774"></a><span class="lineno">  774</span>&#160; </div>
+<div class="line"><a name="l00775"></a><span class="lineno">  775</span>&#160;<span class="comment">! interpolate onto output grid</span></div>
+<div class="line"><a name="l00776"></a><span class="lineno">  776</span>&#160;    <span class="keyword">call </span><a class="code" href="interfacehoriz__interp__mod_1_1horiz__interp.html">horiz_interp</a> ( zdat, xdat, ydat, blon, blat, zout )</div>
+<div class="line"><a name="l00777"></a><span class="lineno">  777</span>&#160; </div>
+<div class="line"><a name="l00778"></a><span class="lineno">  778</span>&#160; <span class="keyword">end subroutine </span>interp_water_1d</div>
+<div class="line"><a name="l00779"></a><span class="lineno">  779</span>&#160; </div>
+<div class="line"><a name="l00780"></a><span class="lineno">  780</span>&#160;<span class="comment">!#######################################################################</span></div>
+<div class="line"><a name="l00781"></a><span class="lineno">  781</span>&#160; </div>
+<div class="line"><a name="l00782"></a><span class="lineno">  782</span>&#160; <span class="keyword">subroutine </span>interp_water_2d ( blon, blat, zout, do_ocean )</div>
+<div class="line"><a name="l00783"></a><span class="lineno">  783</span>&#160;<span class="keywordtype"> real</span>   , <span class="keywordtype">intent(in)</span>  :: blon(:,:), blat(:,:)</div>
+<div class="line"><a name="l00784"></a><span class="lineno">  784</span>&#160;<span class="keywordtype"> real</span>   , <span class="keywordtype">intent(out)</span> :: zout(:,:)</div>
+<div class="line"><a name="l00785"></a><span class="lineno">  785</span>&#160; <span class="keywordtype">logical</span>, <span class="keywordtype">intent(in)</span>, <span class="keywordtype">optional</span> :: do_ocean</div>
+<div class="line"><a name="l00786"></a><span class="lineno">  786</span>&#160;<span class="keywordtype"> real</span> :: xdat(ipts+1), ydat(jpts+1), zdat(ipts,jpts)</div>
+<div class="line"><a name="l00787"></a><span class="lineno">  787</span>&#160; </div>
+<div class="line"><a name="l00788"></a><span class="lineno">  788</span>&#160;    <span class="keyword">call </span>input_data ( water_index, xdat, ydat, zdat )</div>
+<div class="line"><a name="l00789"></a><span class="lineno">  789</span>&#160; </div>
+<div class="line"><a name="l00790"></a><span class="lineno">  790</span>&#160;<span class="comment">! only use designated ocean points</span></div>
+<div class="line"><a name="l00791"></a><span class="lineno">  791</span>&#160;    <span class="keywordflow">if</span> (<span class="keyword">present</span>(do_ocean)) <span class="keywordflow">then</span></div>
+<div class="line"><a name="l00792"></a><span class="lineno">  792</span>&#160;        <span class="keywordflow">if</span> (do_ocean) <span class="keyword">call </span>determine_ocean_points (zdat)</div>
+<div class="line"><a name="l00793"></a><span class="lineno">  793</span>&#160;<span class="keywordflow">    endif</span></div>
+<div class="line"><a name="l00794"></a><span class="lineno">  794</span>&#160; </div>
+<div class="line"><a name="l00795"></a><span class="lineno">  795</span>&#160;<span class="comment">! interpolate onto output grid</span></div>
+<div class="line"><a name="l00796"></a><span class="lineno">  796</span>&#160;    <span class="keyword">call </span><a class="code" href="interfacehoriz__interp__mod_1_1horiz__interp.html">horiz_interp</a> ( zdat, xdat, ydat, blon, blat, zout )</div>
+<div class="line"><a name="l00797"></a><span class="lineno">  797</span>&#160; </div>
+<div class="line"><a name="l00798"></a><span class="lineno">  798</span>&#160; <span class="keyword">end subroutine </span>interp_water_2d</div>
+<div class="line"><a name="l00799"></a><span class="lineno">  799</span>&#160; </div>
+<div class="line"><a name="l00800"></a><span class="lineno">  800</span>&#160;<span class="comment">!#######################################################################</span></div>
+<div class="line"><a name="l00801"></a><span class="lineno">  801</span>&#160; </div>
+<div class="line"><a name="l00802"></a><span class="lineno">  802</span>&#160; <span class="keyword">subroutine </span>determine_ocean_points ( pctwater )</div>
+<div class="line"><a name="l00803"></a><span class="lineno">  803</span>&#160;<span class="keywordtype"> real</span>, <span class="keywordtype">intent(inout)</span> :: pctwater(:,:)</div>
+<div class="line"><a name="l00804"></a><span class="lineno">  804</span>&#160; <span class="keywordtype">logical</span> :: ocean(size(pctwater,1),size(pctwater,2))</div>
+<div class="line"><a name="l00805"></a><span class="lineno">  805</span>&#160; <span class="keywordtype">integer</span> :: i, j, m, n, im, ip, jm, jp, new</div>
+<div class="line"><a name="l00806"></a><span class="lineno">  806</span>&#160; </div>
+<div class="line"><a name="l00807"></a><span class="lineno">  807</span>&#160;<span class="keywordtype"> real</span> :: ocean_pct_crit = .500</div>
+<div class="line"><a name="l00808"></a><span class="lineno">  808</span>&#160; </div>
+<div class="line"><a name="l00809"></a><span class="lineno">  809</span>&#160;  <span class="comment">! resolution of the grid</span></div>
+<div class="line"><a name="l00810"></a><span class="lineno">  810</span>&#160;    m = <span class="keyword">size</span>(pctwater,1)</div>
+<div class="line"><a name="l00811"></a><span class="lineno">  811</span>&#160;    n = <span class="keyword">size</span>(pctwater,2)</div>
+<div class="line"><a name="l00812"></a><span class="lineno">  812</span>&#160; </div>
+<div class="line"><a name="l00813"></a><span class="lineno">  813</span>&#160;  <span class="comment">! the 1/6 degree navy percent water data set</span></div>
+<div class="line"><a name="l00814"></a><span class="lineno">  814</span>&#160;  <span class="comment">! designates ocean grid boxes as 100 percent water</span></div>
+<div class="line"><a name="l00815"></a><span class="lineno">  815</span>&#160;  <span class="comment">! all other grid boxes have &lt;= 99 percent water</span></div>
+<div class="line"><a name="l00816"></a><span class="lineno">  816</span>&#160; </div>
+<div class="line"><a name="l00817"></a><span class="lineno">  817</span>&#160;  <span class="comment">! set a mask for ocean grid boxes</span></div>
+<div class="line"><a name="l00818"></a><span class="lineno">  818</span>&#160;    ocean = (pctwater &gt; .999)</div>
+<div class="line"><a name="l00819"></a><span class="lineno">  819</span>&#160;    new = count(ocean)</div>
+<div class="line"><a name="l00820"></a><span class="lineno">  820</span>&#160; </div>
+<div class="line"><a name="l00821"></a><span class="lineno">  821</span>&#160;  <span class="comment">! set land grid boxes that have sufficient amount of water</span></div>
+<div class="line"><a name="l00822"></a><span class="lineno">  822</span>&#160;  <span class="comment">! to ocean grid boxes when they are adjacent to ocean points</span></div>
+<div class="line"><a name="l00823"></a><span class="lineno">  823</span>&#160;  <span class="comment">! iterate until there are no new ocean points</span></div>
+<div class="line"><a name="l00824"></a><span class="lineno">  824</span>&#160;    <span class="keywordflow">do</span></div>
+<div class="line"><a name="l00825"></a><span class="lineno">  825</span>&#160;    <span class="keywordflow">if</span> (new == 0) <span class="keywordflow">exit</span></div>
+<div class="line"><a name="l00826"></a><span class="lineno">  826</span>&#160;    new = 0</div>
+<div class="line"><a name="l00827"></a><span class="lineno">  827</span>&#160; </div>
+<div class="line"><a name="l00828"></a><span class="lineno">  828</span>&#160;       <span class="keywordflow">do</span> j = 1, n</div>
+<div class="line"><a name="l00829"></a><span class="lineno">  829</span>&#160;       <span class="keywordflow">do</span> i = 1, m</div>
+<div class="line"><a name="l00830"></a><span class="lineno">  830</span>&#160;          <span class="keywordflow">if</span> (.not.ocean(i,j) .and. pctwater(i,j) &gt; ocean_pct_crit) <span class="keywordflow">then</span></div>
+<div class="line"><a name="l00831"></a><span class="lineno">  831</span>&#160;             im = i-1; ip = i+1; jm = j-1; jp = j+1</div>
+<div class="line"><a name="l00832"></a><span class="lineno">  832</span>&#160;             <span class="keywordflow">if</span> (im == 0)   im = m</div>
+<div class="line"><a name="l00833"></a><span class="lineno">  833</span>&#160;             <span class="keywordflow">if</span> (ip == m+1) ip = 1</div>
+<div class="line"><a name="l00834"></a><span class="lineno">  834</span>&#160;             <span class="keywordflow">if</span> (jm == 0)   jm = 1</div>
+<div class="line"><a name="l00835"></a><span class="lineno">  835</span>&#160;             <span class="keywordflow">if</span> (jp == n+1) jp = n</div>
+<div class="line"><a name="l00836"></a><span class="lineno">  836</span>&#160;           <span class="comment">! check the 8 grid boxes that surround this grid box</span></div>
+<div class="line"><a name="l00837"></a><span class="lineno">  837</span>&#160;             <span class="keywordflow">if</span> (ocean(im,j ) .or. ocean(ip,j ) .or. ocean(i ,jm) .or. ocean(i ,jp) .or. &amp;</div>
+<div class="line"><a name="l00838"></a><span class="lineno">  838</span>&#160;                 ocean(im,jm) .or. ocean(ip,jm) .or. ocean(ip,jp) .or. ocean(im,jp)) <span class="keywordflow">then</span></div>
+<div class="line"><a name="l00839"></a><span class="lineno">  839</span>&#160;                 ocean(i,j) = .true.</div>
+<div class="line"><a name="l00840"></a><span class="lineno">  840</span>&#160;                 new = new + 1</div>
+<div class="line"><a name="l00841"></a><span class="lineno">  841</span>&#160;<span class="keywordflow">             endif</span></div>
+<div class="line"><a name="l00842"></a><span class="lineno">  842</span>&#160;<span class="keywordflow">          endif</span></div>
+<div class="line"><a name="l00843"></a><span class="lineno">  843</span>&#160;<span class="keywordflow">       enddo</span></div>
 <div class="line"><a name="l00844"></a><span class="lineno">  844</span>&#160;<span class="keywordflow">       enddo</span></div>
-<div class="line"><a name="l00845"></a><span class="lineno">  845</span>&#160;<span class="keywordflow">       enddo</span></div>
-<div class="line"><a name="l00846"></a><span class="lineno">  846</span>&#160;      <span class="comment">!print *, &#39;new=&#39;,new</span></div>
-<div class="line"><a name="l00847"></a><span class="lineno">  847</span>&#160; </div>
-<div class="line"><a name="l00848"></a><span class="lineno">  848</span>&#160;<span class="keywordflow">    enddo</span></div>
-<div class="line"><a name="l00849"></a><span class="lineno">  849</span>&#160; </div>
-<div class="line"><a name="l00850"></a><span class="lineno">  850</span>&#160;  <span class="comment">! final step is to elimate water percentage if land</span></div>
-<div class="line"><a name="l00851"></a><span class="lineno">  851</span>&#160;    <span class="keywordflow">where</span> (.not.ocean) pctwater = 0.</div>
-<div class="line"><a name="l00852"></a><span class="lineno">  852</span>&#160; </div>
-<div class="line"><a name="l00853"></a><span class="lineno">  853</span>&#160; <span class="keyword">end subroutine </span>determine_ocean_points</div>
-<div class="line"><a name="l00854"></a><span class="lineno">  854</span>&#160; </div>
-<div class="line"><a name="l00855"></a><span class="lineno">  855</span>&#160;<span class="comment">!#######################################################################</span><span class="comment"></span></div>
-<div class="line"><a name="l00856"></a><span class="lineno">  856</span>&#160;<span class="comment">!&gt; @brief Reads the namelist file, write namelist to log file,</span></div>
-<div class="line"><a name="l00857"></a><span class="lineno">  857</span>&#160;<span class="comment">!! and initializes constants</span></div>
-<div class="line"><a name="l00858"></a><span class="lineno">  858</span>&#160;<span class="keyword">subroutine </span><a class="code" href="group__topography__mod.html#ga1507b133d0b6d8fcc8767a45cb8b826e">read_namelist</a></div>
-<div class="line"><a name="l00859"></a><span class="lineno"><a class="line" href="group__topography__mod.html#ga1507b133d0b6d8fcc8767a45cb8b826e">  859</a></span>&#160; </div>
-<div class="line"><a name="l00860"></a><span class="lineno">  860</span>&#160;   <span class="keywordtype">integer</span> :: unit, ierr, io</div>
-<div class="line"><a name="l00861"></a><span class="lineno">  861</span>&#160; </div>
-<div class="line"><a name="l00862"></a><span class="lineno">  862</span>&#160;<span class="comment">!  read namelist</span></div>
-<div class="line"><a name="l00863"></a><span class="lineno">  863</span>&#160; </div>
-<div class="line"><a name="l00864"></a><span class="lineno">  864</span>&#160;   <span class="keyword">read</span> (input_nml_file, topography_nml, iostat=io)</div>
-<div class="line"><a name="l00865"></a><span class="lineno">  865</span>&#160;   ierr = <a class="code" href="group__fms__mod.html#ga05e7686befc1e49d2be9bdb81d479a76">check_nml_error</a>(io,<span class="stringliteral">&#39;topography_nml&#39;</span>)</div>
-<div class="line"><a name="l00866"></a><span class="lineno">  866</span>&#160; </div>
-<div class="line"><a name="l00867"></a><span class="lineno">  867</span>&#160;<span class="comment">!  write version and namelist to log file</span></div>
-<div class="line"><a name="l00868"></a><span class="lineno">  868</span>&#160; </div>
-<div class="line"><a name="l00869"></a><span class="lineno">  869</span>&#160;   <span class="keywordflow">if</span> (<a class="code" href="mpp__util_8inc.html#acfeba7de56f9dd6000b3fd78f9d56c50">mpp_pe</a>() == mpp_root_pe()) <span class="keywordflow">then</span></div>
-<div class="line"><a name="l00870"></a><span class="lineno">  870</span>&#160;     unit = <a class="code" href="mpp__util_8inc.html#a8e5518df9532bae0241f53ab542294a2">stdlog</a>()</div>
-<div class="line"><a name="l00871"></a><span class="lineno">  871</span>&#160;     <span class="keyword">write</span> (unit, nml=topography_nml)</div>
-<div class="line"><a name="l00872"></a><span class="lineno">  872</span>&#160;<span class="keywordflow">   endif</span></div>
-<div class="line"><a name="l00873"></a><span class="lineno">  873</span>&#160; </div>
-<div class="line"><a name="l00874"></a><span class="lineno">  874</span>&#160;<span class="keyword">end subroutine </span><a class="code" href="group__topography__mod.html#ga1507b133d0b6d8fcc8767a45cb8b826e">read_namelist</a></div>
-<div class="line"><a name="l00875"></a><span class="lineno">  875</span>&#160; </div>
-<div class="line"><a name="l00876"></a><span class="lineno">  876</span>&#160;<span class="keyword">end module </span>topography_mod</div>
-<div class="line"><a name="l00877"></a><span class="lineno">  877</span>&#160; </div>
-<div class="line"><a name="l00878"></a><span class="lineno">  878</span>&#160;<span class="comment">! &lt;INFO&gt;</span></div>
-<div class="line"><a name="l00879"></a><span class="lineno">  879</span>&#160; </div>
-<div class="line"><a name="l00880"></a><span class="lineno">  880</span>&#160;<span class="comment">!   &lt;TESTPROGRAM NAME=&quot;&quot;&gt;</span></div>
-<div class="line"><a name="l00881"></a><span class="lineno">  881</span>&#160;<span class="comment">!</span></div>
-<div class="line"><a name="l00882"></a><span class="lineno">  882</span>&#160;<span class="comment">!  To run this program you will need the topography and percent water</span></div>
-<div class="line"><a name="l00883"></a><span class="lineno">  883</span>&#160;<span class="comment">!  data sets and use the following namelist (in the input nml file).</span></div>
-<div class="line"><a name="l00884"></a><span class="lineno">  884</span>&#160;<span class="comment">!</span></div>
-<div class="line"><a name="l00885"></a><span class="lineno">  885</span>&#160;<span class="comment">!   &amp;amp;gaussian_topog_nml</span></div>
-<div class="line"><a name="l00886"></a><span class="lineno">  886</span>&#160;<span class="comment">!     height = 5000., 3000., 3000., 3000.,</span></div>
-<div class="line"><a name="l00887"></a><span class="lineno">  887</span>&#160;<span class="comment">!     olon   =   90.,  255.,  285.,    0.,</span></div>
-<div class="line"><a name="l00888"></a><span class="lineno">  888</span>&#160;<span class="comment">!     olat   =   45.,   45.,  -15.,  -90.,</span></div>
-<div class="line"><a name="l00889"></a><span class="lineno">  889</span>&#160;<span class="comment">!     wlon   =   15.,   10.,    5.,  180.,</span></div>
-<div class="line"><a name="l00890"></a><span class="lineno">  890</span>&#160;<span class="comment">!     wlat   =   15.,   25.,   25.,   20., /</span></div>
-<div class="line"><a name="l00891"></a><span class="lineno">  891</span>&#160;<span class="comment">!</span></div>
-<div class="line"><a name="l00892"></a><span class="lineno">  892</span>&#160;<span class="comment">!  program test</span></div>
-<div class="line"><a name="l00893"></a><span class="lineno">  893</span>&#160;<span class="comment">!</span></div>
-<div class="line"><a name="l00894"></a><span class="lineno">  894</span>&#160;<span class="comment">!  ! test program for topography and gaussian_topog modules</span></div>
-<div class="line"><a name="l00895"></a><span class="lineno">  895</span>&#160;<span class="comment">!  &lt;PRE&gt;</span></div>
-<div class="line"><a name="l00896"></a><span class="lineno">  896</span>&#160;<span class="comment">!  use topography_mod</span></div>
-<div class="line"><a name="l00897"></a><span class="lineno">  897</span>&#160;<span class="comment">!  implicit none</span></div>
-<div class="line"><a name="l00898"></a><span class="lineno">  898</span>&#160;<span class="comment">!</span></div>
-<div class="line"><a name="l00899"></a><span class="lineno">  899</span>&#160;<span class="comment">!  integer, parameter :: nlon=24, nlat=18</span></div>
-<div class="line"><a name="l00900"></a><span class="lineno">  900</span>&#160;<span class="comment">!  real :: x(nlon), y(nlat), xb(nlon+1), yb(nlat+1), z(nlon,nlat)</span></div>
-<div class="line"><a name="l00901"></a><span class="lineno">  901</span>&#160;<span class="comment">!  real :: hpi, rtd</span></div>
-<div class="line"><a name="l00902"></a><span class="lineno">  902</span>&#160;<span class="comment">!  integer :: i,j</span></div>
-<div class="line"><a name="l00903"></a><span class="lineno">  903</span>&#160;<span class="comment">!  logical :: a</span></div>
-<div class="line"><a name="l00904"></a><span class="lineno">  904</span>&#160;<span class="comment">!</span></div>
-<div class="line"><a name="l00905"></a><span class="lineno">  905</span>&#160;<span class="comment">!  ! gaussian mountain parameters</span></div>
-<div class="line"><a name="l00906"></a><span class="lineno">  906</span>&#160;<span class="comment">!  real, parameter :: ht=4000.</span></div>
-<div class="line"><a name="l00907"></a><span class="lineno">  907</span>&#160;<span class="comment">!  real, parameter :: x0=90., y0=45. ! origin in degrees</span></div>
-<div class="line"><a name="l00908"></a><span class="lineno">  908</span>&#160;<span class="comment">!  real, parameter :: xw=15., yw=15. ! half-width in degees</span></div>
-<div class="line"><a name="l00909"></a><span class="lineno">  909</span>&#160;<span class="comment">!  real, parameter :: xr=30., yr= 0. ! ridge-width in degrees</span></div>
-<div class="line"><a name="l00910"></a><span class="lineno">  910</span>&#160;<span class="comment">!</span></div>
-<div class="line"><a name="l00911"></a><span class="lineno">  911</span>&#160;<span class="comment">!  ! create lat/lon grid in radians</span></div>
-<div class="line"><a name="l00912"></a><span class="lineno">  912</span>&#160;<span class="comment">!    hpi = acos(0.0)</span></div>
-<div class="line"><a name="l00913"></a><span class="lineno">  913</span>&#160;<span class="comment">!    rtd = 90./hpi ! rad to deg</span></div>
-<div class="line"><a name="l00914"></a><span class="lineno">  914</span>&#160;<span class="comment">!    do i=1,nlon</span></div>
-<div class="line"><a name="l00915"></a><span class="lineno">  915</span>&#160;<span class="comment">!      xb(i) = 4.*hpi*real(i-1)/real(nlon)</span></div>
-<div class="line"><a name="l00916"></a><span class="lineno">  916</span>&#160;<span class="comment">!    enddo</span></div>
-<div class="line"><a name="l00917"></a><span class="lineno">  917</span>&#160;<span class="comment">!      xb(nlon+1) = xb(1)+4.*hpi</span></div>
-<div class="line"><a name="l00918"></a><span class="lineno">  918</span>&#160;<span class="comment">!      yb(1) = -hpi</span></div>
-<div class="line"><a name="l00919"></a><span class="lineno">  919</span>&#160;<span class="comment">!    do j=2,nlat</span></div>
-<div class="line"><a name="l00920"></a><span class="lineno">  920</span>&#160;<span class="comment">!      yb(j) = yb(j-1) + 2.*hpi/real(nlat)</span></div>
-<div class="line"><a name="l00921"></a><span class="lineno">  921</span>&#160;<span class="comment">!    enddo</span></div>
-<div class="line"><a name="l00922"></a><span class="lineno">  922</span>&#160;<span class="comment">!      yb(nlat+1) = hpi</span></div>
-<div class="line"><a name="l00923"></a><span class="lineno">  923</span>&#160;<span class="comment">!  ! mid-point of grid boxes</span></div>
-<div class="line"><a name="l00924"></a><span class="lineno">  924</span>&#160;<span class="comment">!    x(1:nlon) = 0.5*(xb(1:nlon)+xb(2:nlon+1))</span></div>
-<div class="line"><a name="l00925"></a><span class="lineno">  925</span>&#160;<span class="comment">!    y(1:nlat) = 0.5*(yb(1:nlat)+yb(2:nlat+1))</span></div>
-<div class="line"><a name="l00926"></a><span class="lineno">  926</span>&#160;<span class="comment">!  ! test topography_mod routines</span></div>
-<div class="line"><a name="l00927"></a><span class="lineno">  927</span>&#160;<span class="comment">!    a = get_topog_mean(xb,yb,z)</span></div>
-<div class="line"><a name="l00928"></a><span class="lineno">  928</span>&#160;<span class="comment">!    call printz (&#39;get_topog_mean&#39;)</span></div>
-<div class="line"><a name="l00929"></a><span class="lineno">  929</span>&#160;<span class="comment">!</span></div>
-<div class="line"><a name="l00930"></a><span class="lineno">  930</span>&#160;<span class="comment">!    a = get_water_frac(xb,yb,z)</span></div>
-<div class="line"><a name="l00931"></a><span class="lineno">  931</span>&#160;<span class="comment">!    z = z*100. ! in percent</span></div>
-<div class="line"><a name="l00932"></a><span class="lineno">  932</span>&#160;<span class="comment">!    call printz (&#39;get_water_frac&#39;)</span></div>
-<div class="line"><a name="l00933"></a><span class="lineno">  933</span>&#160;<span class="comment">!</span></div>
-<div class="line"><a name="l00934"></a><span class="lineno">  934</span>&#160;<span class="comment">!    a = get_ocean_frac(xb,yb,z)</span></div>
-<div class="line"><a name="l00935"></a><span class="lineno">  935</span>&#160;<span class="comment">!    z = z*100. ! in percent</span></div>
-<div class="line"><a name="l00936"></a><span class="lineno">  936</span>&#160;<span class="comment">!    call printz (&#39;get_ocean_frac&#39;)</span></div>
-<div class="line"><a name="l00937"></a><span class="lineno">  937</span>&#160;<span class="comment">!</span></div>
-<div class="line"><a name="l00938"></a><span class="lineno">  938</span>&#160;<span class="comment">!  ! test gaussian_topog_mod routines</span></div>
-<div class="line"><a name="l00939"></a><span class="lineno">  939</span>&#160;<span class="comment">!    a = .true.</span></div>
-<div class="line"><a name="l00940"></a><span class="lineno">  940</span>&#160;<span class="comment">!    z = get_gaussian_topog(x,y,ht,x0,y0,xw,yw,xr,yr)</span></div>
-<div class="line"><a name="l00941"></a><span class="lineno">  941</span>&#160;<span class="comment">!    call printz (&#39;get_gaussian_topog&#39;)</span></div>
-<div class="line"><a name="l00942"></a><span class="lineno">  942</span>&#160;<span class="comment">!</span></div>
-<div class="line"><a name="l00943"></a><span class="lineno">  943</span>&#160;<span class="comment">!    call gaussian_topog_init (x,y,z)</span></div>
-<div class="line"><a name="l00944"></a><span class="lineno">  944</span>&#160;<span class="comment">!    call printz (&#39;gaussian_topog_init&#39;)</span></div>
-<div class="line"><a name="l00945"></a><span class="lineno">  945</span>&#160;<span class="comment">!</span></div>
-<div class="line"><a name="l00946"></a><span class="lineno">  946</span>&#160;<span class="comment">!  contains</span></div>
-<div class="line"><a name="l00947"></a><span class="lineno">  947</span>&#160;<span class="comment">!</span></div>
-<div class="line"><a name="l00948"></a><span class="lineno">  948</span>&#160;<span class="comment">!  ! simple printout of topog/water array</span></div>
-<div class="line"><a name="l00949"></a><span class="lineno">  949</span>&#160;<span class="comment">!    subroutine printz (lab)</span></div>
-<div class="line"><a name="l00950"></a><span class="lineno">  950</span>&#160;<span class="comment">!    character(len=*), intent(in) :: lab</span></div>
-<div class="line"><a name="l00951"></a><span class="lineno">  951</span>&#160;<span class="comment">!     if (a) then</span></div>
-<div class="line"><a name="l00952"></a><span class="lineno">  952</span>&#160;<span class="comment">!        print &#39;(/a)&#39;, trim(lab)</span></div>
-<div class="line"><a name="l00953"></a><span class="lineno">  953</span>&#160;<span class="comment">!     else</span></div>
-<div class="line"><a name="l00954"></a><span class="lineno">  954</span>&#160;<span class="comment">!        print &#39;(/a)&#39;, &#39;no data available: &#39;//trim(lab)</span></div>
-<div class="line"><a name="l00955"></a><span class="lineno">  955</span>&#160;<span class="comment">!        return</span></div>
-<div class="line"><a name="l00956"></a><span class="lineno">  956</span>&#160;<span class="comment">!     endif</span></div>
-<div class="line"><a name="l00957"></a><span class="lineno">  957</span>&#160;<span class="comment">!      ! print full grid</span></div>
-<div class="line"><a name="l00958"></a><span class="lineno">  958</span>&#160;<span class="comment">!        print &#39;(3x,25i5)&#39;, (nint(x(i)*rtd),i=1,nlon)</span></div>
-<div class="line"><a name="l00959"></a><span class="lineno">  959</span>&#160;<span class="comment">!      do j=nlat,1,-1</span></div>
-<div class="line"><a name="l00960"></a><span class="lineno">  960</span>&#160;<span class="comment">!        print &#39;(i3,25i5)&#39;, nint(y(j)*rtd), (nint(z(i,j)),i=1,nlon)</span></div>
-<div class="line"><a name="l00961"></a><span class="lineno">  961</span>&#160;<span class="comment">!      enddo</span></div>
-<div class="line"><a name="l00962"></a><span class="lineno">  962</span>&#160;<span class="comment">!    end subroutine printz</span></div>
-<div class="line"><a name="l00963"></a><span class="lineno">  963</span>&#160;<span class="comment">!</span></div>
-<div class="line"><a name="l00964"></a><span class="lineno">  964</span>&#160;<span class="comment">!  end program test</span></div>
-<div class="line"><a name="l00965"></a><span class="lineno">  965</span>&#160;<span class="comment">!   &lt;/PRE&gt;</span></div>
-<div class="line"><a name="l00966"></a><span class="lineno">  966</span>&#160;<span class="comment">!   &lt;/TESTPROGRAM&gt;</span></div>
-<div class="line"><a name="l00967"></a><span class="lineno">  967</span>&#160; </div>
-<div class="line"><a name="l00968"></a><span class="lineno">  968</span>&#160;<span class="comment">!   &lt;BUG&gt;</span></div>
-<div class="line"><a name="l00969"></a><span class="lineno">  969</span>&#160;<span class="comment">!      Water mask produces some possible erroneous water points along</span></div>
-<div class="line"><a name="l00970"></a><span class="lineno">  970</span>&#160;<span class="comment">!      the coast of Antarctic (at about 90W).</span></div>
-<div class="line"><a name="l00971"></a><span class="lineno">  971</span>&#160;<span class="comment">!   &lt;/BUG&gt;</span></div>
-<div class="line"><a name="l00972"></a><span class="lineno">  972</span>&#160; </div>
-<div class="line"><a name="l00973"></a><span class="lineno">  973</span>&#160;<span class="comment">!   &lt;FUTURE&gt;Use of netcdf data sets. &lt;/FUTURE&gt;</span></div>
-<div class="line"><a name="l00974"></a><span class="lineno">  974</span>&#160;<span class="comment">!   &lt;FUTURE&gt;Incorporate other topography and ocean data sets. &lt;/FUTURE&gt;</span></div>
-<div class="line"><a name="l00975"></a><span class="lineno">  975</span>&#160;<span class="comment">!</span></div>
-<div class="line"><a name="l00976"></a><span class="lineno">  976</span>&#160;<span class="comment">! &lt;/INFO&gt;</span><span class="comment"></span></div>
-<div class="line"><a name="l00977"></a><span class="lineno">  977</span>&#160;<span class="comment">!&gt; @}</span></div>
-<div class="line"><a name="l00978"></a><span class="lineno">  978</span>&#160;<span class="comment">! close documentation grouping</span></div>
+<div class="line"><a name="l00845"></a><span class="lineno">  845</span>&#160;      <span class="comment">!print *, &#39;new=&#39;,new</span></div>
+<div class="line"><a name="l00846"></a><span class="lineno">  846</span>&#160; </div>
+<div class="line"><a name="l00847"></a><span class="lineno">  847</span>&#160;<span class="keywordflow">    enddo</span></div>
+<div class="line"><a name="l00848"></a><span class="lineno">  848</span>&#160; </div>
+<div class="line"><a name="l00849"></a><span class="lineno">  849</span>&#160;  <span class="comment">! final step is to elimate water percentage if land</span></div>
+<div class="line"><a name="l00850"></a><span class="lineno">  850</span>&#160;    <span class="keywordflow">where</span> (.not.ocean) pctwater = 0.</div>
+<div class="line"><a name="l00851"></a><span class="lineno">  851</span>&#160; </div>
+<div class="line"><a name="l00852"></a><span class="lineno">  852</span>&#160; <span class="keyword">end subroutine </span>determine_ocean_points</div>
+<div class="line"><a name="l00853"></a><span class="lineno">  853</span>&#160; </div>
+<div class="line"><a name="l00854"></a><span class="lineno">  854</span>&#160;<span class="comment">!#######################################################################</span><span class="comment"></span></div>
+<div class="line"><a name="l00855"></a><span class="lineno">  855</span>&#160;<span class="comment">!&gt; @brief Reads the namelist file, write namelist to log file,</span></div>
+<div class="line"><a name="l00856"></a><span class="lineno">  856</span>&#160;<span class="comment">!! and initializes constants</span></div>
+<div class="line"><a name="l00857"></a><span class="lineno">  857</span>&#160;<span class="keyword">subroutine </span><a class="code" href="group__topography__mod.html#ga1507b133d0b6d8fcc8767a45cb8b826e">read_namelist</a></div>
+<div class="line"><a name="l00858"></a><span class="lineno"><a class="line" href="group__topography__mod.html#ga1507b133d0b6d8fcc8767a45cb8b826e">  858</a></span>&#160; </div>
+<div class="line"><a name="l00859"></a><span class="lineno">  859</span>&#160;   <span class="keywordtype">integer</span> :: unit, ierr, io</div>
+<div class="line"><a name="l00860"></a><span class="lineno">  860</span>&#160; </div>
+<div class="line"><a name="l00861"></a><span class="lineno">  861</span>&#160;<span class="comment">!  read namelist</span></div>
+<div class="line"><a name="l00862"></a><span class="lineno">  862</span>&#160; </div>
+<div class="line"><a name="l00863"></a><span class="lineno">  863</span>&#160;   <span class="keyword">read</span> (input_nml_file, topography_nml, iostat=io)</div>
+<div class="line"><a name="l00864"></a><span class="lineno">  864</span>&#160;   ierr = <a class="code" href="group__fms__mod.html#ga05e7686befc1e49d2be9bdb81d479a76">check_nml_error</a>(io,<span class="stringliteral">&#39;topography_nml&#39;</span>)</div>
+<div class="line"><a name="l00865"></a><span class="lineno">  865</span>&#160; </div>
+<div class="line"><a name="l00866"></a><span class="lineno">  866</span>&#160;<span class="comment">!  write version and namelist to log file</span></div>
+<div class="line"><a name="l00867"></a><span class="lineno">  867</span>&#160; </div>
+<div class="line"><a name="l00868"></a><span class="lineno">  868</span>&#160;   <span class="keywordflow">if</span> (<a class="code" href="mpp__util_8inc.html#acfeba7de56f9dd6000b3fd78f9d56c50">mpp_pe</a>() == mpp_root_pe()) <span class="keywordflow">then</span></div>
+<div class="line"><a name="l00869"></a><span class="lineno">  869</span>&#160;     unit = <a class="code" href="mpp__util_8inc.html#a8e5518df9532bae0241f53ab542294a2">stdlog</a>()</div>
+<div class="line"><a name="l00870"></a><span class="lineno">  870</span>&#160;     <span class="keyword">write</span> (unit, nml=topography_nml)</div>
+<div class="line"><a name="l00871"></a><span class="lineno">  871</span>&#160;<span class="keywordflow">   endif</span></div>
+<div class="line"><a name="l00872"></a><span class="lineno">  872</span>&#160; </div>
+<div class="line"><a name="l00873"></a><span class="lineno">  873</span>&#160;<span class="keyword">end subroutine </span><a class="code" href="group__topography__mod.html#ga1507b133d0b6d8fcc8767a45cb8b826e">read_namelist</a></div>
+<div class="line"><a name="l00874"></a><span class="lineno">  874</span>&#160; </div>
+<div class="line"><a name="l00875"></a><span class="lineno">  875</span>&#160;<span class="keyword">end module </span>topography_mod</div>
+<div class="line"><a name="l00876"></a><span class="lineno">  876</span>&#160; </div>
+<div class="line"><a name="l00877"></a><span class="lineno">  877</span>&#160;<span class="comment">! &lt;INFO&gt;</span></div>
+<div class="line"><a name="l00878"></a><span class="lineno">  878</span>&#160; </div>
+<div class="line"><a name="l00879"></a><span class="lineno">  879</span>&#160;<span class="comment">!   &lt;TESTPROGRAM NAME=&quot;&quot;&gt;</span></div>
+<div class="line"><a name="l00880"></a><span class="lineno">  880</span>&#160;<span class="comment">!</span></div>
+<div class="line"><a name="l00881"></a><span class="lineno">  881</span>&#160;<span class="comment">!  To run this program you will need the topography and percent water</span></div>
+<div class="line"><a name="l00882"></a><span class="lineno">  882</span>&#160;<span class="comment">!  data sets and use the following namelist (in the input nml file).</span></div>
+<div class="line"><a name="l00883"></a><span class="lineno">  883</span>&#160;<span class="comment">!</span></div>
+<div class="line"><a name="l00884"></a><span class="lineno">  884</span>&#160;<span class="comment">!   &amp;amp;gaussian_topog_nml</span></div>
+<div class="line"><a name="l00885"></a><span class="lineno">  885</span>&#160;<span class="comment">!     height = 5000., 3000., 3000., 3000.,</span></div>
+<div class="line"><a name="l00886"></a><span class="lineno">  886</span>&#160;<span class="comment">!     olon   =   90.,  255.,  285.,    0.,</span></div>
+<div class="line"><a name="l00887"></a><span class="lineno">  887</span>&#160;<span class="comment">!     olat   =   45.,   45.,  -15.,  -90.,</span></div>
+<div class="line"><a name="l00888"></a><span class="lineno">  888</span>&#160;<span class="comment">!     wlon   =   15.,   10.,    5.,  180.,</span></div>
+<div class="line"><a name="l00889"></a><span class="lineno">  889</span>&#160;<span class="comment">!     wlat   =   15.,   25.,   25.,   20., /</span></div>
+<div class="line"><a name="l00890"></a><span class="lineno">  890</span>&#160;<span class="comment">!</span></div>
+<div class="line"><a name="l00891"></a><span class="lineno">  891</span>&#160;<span class="comment">!  program test</span></div>
+<div class="line"><a name="l00892"></a><span class="lineno">  892</span>&#160;<span class="comment">!</span></div>
+<div class="line"><a name="l00893"></a><span class="lineno">  893</span>&#160;<span class="comment">!  ! test program for topography and gaussian_topog modules</span></div>
+<div class="line"><a name="l00894"></a><span class="lineno">  894</span>&#160;<span class="comment">!  &lt;PRE&gt;</span></div>
+<div class="line"><a name="l00895"></a><span class="lineno">  895</span>&#160;<span class="comment">!  use topography_mod</span></div>
+<div class="line"><a name="l00896"></a><span class="lineno">  896</span>&#160;<span class="comment">!  implicit none</span></div>
+<div class="line"><a name="l00897"></a><span class="lineno">  897</span>&#160;<span class="comment">!</span></div>
+<div class="line"><a name="l00898"></a><span class="lineno">  898</span>&#160;<span class="comment">!  integer, parameter :: nlon=24, nlat=18</span></div>
+<div class="line"><a name="l00899"></a><span class="lineno">  899</span>&#160;<span class="comment">!  real :: x(nlon), y(nlat), xb(nlon+1), yb(nlat+1), z(nlon,nlat)</span></div>
+<div class="line"><a name="l00900"></a><span class="lineno">  900</span>&#160;<span class="comment">!  real :: hpi, rtd</span></div>
+<div class="line"><a name="l00901"></a><span class="lineno">  901</span>&#160;<span class="comment">!  integer :: i,j</span></div>
+<div class="line"><a name="l00902"></a><span class="lineno">  902</span>&#160;<span class="comment">!  logical :: a</span></div>
+<div class="line"><a name="l00903"></a><span class="lineno">  903</span>&#160;<span class="comment">!</span></div>
+<div class="line"><a name="l00904"></a><span class="lineno">  904</span>&#160;<span class="comment">!  ! gaussian mountain parameters</span></div>
+<div class="line"><a name="l00905"></a><span class="lineno">  905</span>&#160;<span class="comment">!  real, parameter :: ht=4000.</span></div>
+<div class="line"><a name="l00906"></a><span class="lineno">  906</span>&#160;<span class="comment">!  real, parameter :: x0=90., y0=45. ! origin in degrees</span></div>
+<div class="line"><a name="l00907"></a><span class="lineno">  907</span>&#160;<span class="comment">!  real, parameter :: xw=15., yw=15. ! half-width in degees</span></div>
+<div class="line"><a name="l00908"></a><span class="lineno">  908</span>&#160;<span class="comment">!  real, parameter :: xr=30., yr= 0. ! ridge-width in degrees</span></div>
+<div class="line"><a name="l00909"></a><span class="lineno">  909</span>&#160;<span class="comment">!</span></div>
+<div class="line"><a name="l00910"></a><span class="lineno">  910</span>&#160;<span class="comment">!  ! create lat/lon grid in radians</span></div>
+<div class="line"><a name="l00911"></a><span class="lineno">  911</span>&#160;<span class="comment">!    hpi = acos(0.0)</span></div>
+<div class="line"><a name="l00912"></a><span class="lineno">  912</span>&#160;<span class="comment">!    rtd = 90./hpi ! rad to deg</span></div>
+<div class="line"><a name="l00913"></a><span class="lineno">  913</span>&#160;<span class="comment">!    do i=1,nlon</span></div>
+<div class="line"><a name="l00914"></a><span class="lineno">  914</span>&#160;<span class="comment">!      xb(i) = 4.*hpi*real(i-1)/real(nlon)</span></div>
+<div class="line"><a name="l00915"></a><span class="lineno">  915</span>&#160;<span class="comment">!    enddo</span></div>
+<div class="line"><a name="l00916"></a><span class="lineno">  916</span>&#160;<span class="comment">!      xb(nlon+1) = xb(1)+4.*hpi</span></div>
+<div class="line"><a name="l00917"></a><span class="lineno">  917</span>&#160;<span class="comment">!      yb(1) = -hpi</span></div>
+<div class="line"><a name="l00918"></a><span class="lineno">  918</span>&#160;<span class="comment">!    do j=2,nlat</span></div>
+<div class="line"><a name="l00919"></a><span class="lineno">  919</span>&#160;<span class="comment">!      yb(j) = yb(j-1) + 2.*hpi/real(nlat)</span></div>
+<div class="line"><a name="l00920"></a><span class="lineno">  920</span>&#160;<span class="comment">!    enddo</span></div>
+<div class="line"><a name="l00921"></a><span class="lineno">  921</span>&#160;<span class="comment">!      yb(nlat+1) = hpi</span></div>
+<div class="line"><a name="l00922"></a><span class="lineno">  922</span>&#160;<span class="comment">!  ! mid-point of grid boxes</span></div>
+<div class="line"><a name="l00923"></a><span class="lineno">  923</span>&#160;<span class="comment">!    x(1:nlon) = 0.5*(xb(1:nlon)+xb(2:nlon+1))</span></div>
+<div class="line"><a name="l00924"></a><span class="lineno">  924</span>&#160;<span class="comment">!    y(1:nlat) = 0.5*(yb(1:nlat)+yb(2:nlat+1))</span></div>
+<div class="line"><a name="l00925"></a><span class="lineno">  925</span>&#160;<span class="comment">!  ! test topography_mod routines</span></div>
+<div class="line"><a name="l00926"></a><span class="lineno">  926</span>&#160;<span class="comment">!    a = get_topog_mean(xb,yb,z)</span></div>
+<div class="line"><a name="l00927"></a><span class="lineno">  927</span>&#160;<span class="comment">!    call printz (&#39;get_topog_mean&#39;)</span></div>
+<div class="line"><a name="l00928"></a><span class="lineno">  928</span>&#160;<span class="comment">!</span></div>
+<div class="line"><a name="l00929"></a><span class="lineno">  929</span>&#160;<span class="comment">!    a = get_water_frac(xb,yb,z)</span></div>
+<div class="line"><a name="l00930"></a><span class="lineno">  930</span>&#160;<span class="comment">!    z = z*100. ! in percent</span></div>
+<div class="line"><a name="l00931"></a><span class="lineno">  931</span>&#160;<span class="comment">!    call printz (&#39;get_water_frac&#39;)</span></div>
+<div class="line"><a name="l00932"></a><span class="lineno">  932</span>&#160;<span class="comment">!</span></div>
+<div class="line"><a name="l00933"></a><span class="lineno">  933</span>&#160;<span class="comment">!    a = get_ocean_frac(xb,yb,z)</span></div>
+<div class="line"><a name="l00934"></a><span class="lineno">  934</span>&#160;<span class="comment">!    z = z*100. ! in percent</span></div>
+<div class="line"><a name="l00935"></a><span class="lineno">  935</span>&#160;<span class="comment">!    call printz (&#39;get_ocean_frac&#39;)</span></div>
+<div class="line"><a name="l00936"></a><span class="lineno">  936</span>&#160;<span class="comment">!</span></div>
+<div class="line"><a name="l00937"></a><span class="lineno">  937</span>&#160;<span class="comment">!  ! test gaussian_topog_mod routines</span></div>
+<div class="line"><a name="l00938"></a><span class="lineno">  938</span>&#160;<span class="comment">!    a = .true.</span></div>
+<div class="line"><a name="l00939"></a><span class="lineno">  939</span>&#160;<span class="comment">!    z = get_gaussian_topog(x,y,ht,x0,y0,xw,yw,xr,yr)</span></div>
+<div class="line"><a name="l00940"></a><span class="lineno">  940</span>&#160;<span class="comment">!    call printz (&#39;get_gaussian_topog&#39;)</span></div>
+<div class="line"><a name="l00941"></a><span class="lineno">  941</span>&#160;<span class="comment">!</span></div>
+<div class="line"><a name="l00942"></a><span class="lineno">  942</span>&#160;<span class="comment">!    call gaussian_topog_init (x,y,z)</span></div>
+<div class="line"><a name="l00943"></a><span class="lineno">  943</span>&#160;<span class="comment">!    call printz (&#39;gaussian_topog_init&#39;)</span></div>
+<div class="line"><a name="l00944"></a><span class="lineno">  944</span>&#160;<span class="comment">!</span></div>
+<div class="line"><a name="l00945"></a><span class="lineno">  945</span>&#160;<span class="comment">!  contains</span></div>
+<div class="line"><a name="l00946"></a><span class="lineno">  946</span>&#160;<span class="comment">!</span></div>
+<div class="line"><a name="l00947"></a><span class="lineno">  947</span>&#160;<span class="comment">!  ! simple printout of topog/water array</span></div>
+<div class="line"><a name="l00948"></a><span class="lineno">  948</span>&#160;<span class="comment">!    subroutine printz (lab)</span></div>
+<div class="line"><a name="l00949"></a><span class="lineno">  949</span>&#160;<span class="comment">!    character(len=*), intent(in) :: lab</span></div>
+<div class="line"><a name="l00950"></a><span class="lineno">  950</span>&#160;<span class="comment">!     if (a) then</span></div>
+<div class="line"><a name="l00951"></a><span class="lineno">  951</span>&#160;<span class="comment">!        print &#39;(/a)&#39;, trim(lab)</span></div>
+<div class="line"><a name="l00952"></a><span class="lineno">  952</span>&#160;<span class="comment">!     else</span></div>
+<div class="line"><a name="l00953"></a><span class="lineno">  953</span>&#160;<span class="comment">!        print &#39;(/a)&#39;, &#39;no data available: &#39;//trim(lab)</span></div>
+<div class="line"><a name="l00954"></a><span class="lineno">  954</span>&#160;<span class="comment">!        return</span></div>
+<div class="line"><a name="l00955"></a><span class="lineno">  955</span>&#160;<span class="comment">!     endif</span></div>
+<div class="line"><a name="l00956"></a><span class="lineno">  956</span>&#160;<span class="comment">!      ! print full grid</span></div>
+<div class="line"><a name="l00957"></a><span class="lineno">  957</span>&#160;<span class="comment">!        print &#39;(3x,25i5)&#39;, (nint(x(i)*rtd),i=1,nlon)</span></div>
+<div class="line"><a name="l00958"></a><span class="lineno">  958</span>&#160;<span class="comment">!      do j=nlat,1,-1</span></div>
+<div class="line"><a name="l00959"></a><span class="lineno">  959</span>&#160;<span class="comment">!        print &#39;(i3,25i5)&#39;, nint(y(j)*rtd), (nint(z(i,j)),i=1,nlon)</span></div>
+<div class="line"><a name="l00960"></a><span class="lineno">  960</span>&#160;<span class="comment">!      enddo</span></div>
+<div class="line"><a name="l00961"></a><span class="lineno">  961</span>&#160;<span class="comment">!    end subroutine printz</span></div>
+<div class="line"><a name="l00962"></a><span class="lineno">  962</span>&#160;<span class="comment">!</span></div>
+<div class="line"><a name="l00963"></a><span class="lineno">  963</span>&#160;<span class="comment">!  end program test</span></div>
+<div class="line"><a name="l00964"></a><span class="lineno">  964</span>&#160;<span class="comment">!   &lt;/PRE&gt;</span></div>
+<div class="line"><a name="l00965"></a><span class="lineno">  965</span>&#160;<span class="comment">!   &lt;/TESTPROGRAM&gt;</span></div>
+<div class="line"><a name="l00966"></a><span class="lineno">  966</span>&#160; </div>
+<div class="line"><a name="l00967"></a><span class="lineno">  967</span>&#160;<span class="comment">!   &lt;BUG&gt;</span></div>
+<div class="line"><a name="l00968"></a><span class="lineno">  968</span>&#160;<span class="comment">!      Water mask produces some possible erroneous water points along</span></div>
+<div class="line"><a name="l00969"></a><span class="lineno">  969</span>&#160;<span class="comment">!      the coast of Antarctic (at about 90W).</span></div>
+<div class="line"><a name="l00970"></a><span class="lineno">  970</span>&#160;<span class="comment">!   &lt;/BUG&gt;</span></div>
+<div class="line"><a name="l00971"></a><span class="lineno">  971</span>&#160; </div>
+<div class="line"><a name="l00972"></a><span class="lineno">  972</span>&#160;<span class="comment">!   &lt;FUTURE&gt;Use of netcdf data sets. &lt;/FUTURE&gt;</span></div>
+<div class="line"><a name="l00973"></a><span class="lineno">  973</span>&#160;<span class="comment">!   &lt;FUTURE&gt;Incorporate other topography and ocean data sets. &lt;/FUTURE&gt;</span></div>
+<div class="line"><a name="l00974"></a><span class="lineno">  974</span>&#160;<span class="comment">!</span></div>
+<div class="line"><a name="l00975"></a><span class="lineno">  975</span>&#160;<span class="comment">! &lt;/INFO&gt;</span><span class="comment"></span></div>
+<div class="line"><a name="l00976"></a><span class="lineno">  976</span>&#160;<span class="comment">!&gt; @}</span></div>
+<div class="line"><a name="l00977"></a><span class="lineno">  977</span>&#160;<span class="comment">! close documentation grouping</span></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <div class="ttc" id="ainterfacehoriz__interp__mod_1_1horiz__interp_html"><div class="ttname"><a href="interfacehoriz__interp__mod_1_1horiz__interp.html">horiz_interp_mod::horiz_interp</a></div><div class="ttdoc">Subroutine for performing the horizontal interpolation between two grids.</div><div class="ttdef"><b>Definition:</b> <a href="horiz__interp_8F90_source.html#l00191">horiz_interp.F90:191</a></div></div>
@@ -1080,16 +1079,16 @@ $(document).ready(function(){initNavTree('topography_8F90_source.html',''); init
 <div class="ttc" id="ainterfacetopography__mod_1_1get__ocean__mask_html"><div class="ttname"><a href="interfacetopography__mod_1_1get__ocean__mask.html">topography_mod::get_ocean_mask</a></div><div class="ttdoc">Returns a land-ocean mask in a grid box.</div><div class="ttdef"><b>Definition:</b> <a href="topography_8F90_source.html#l00148">topography.F90:148</a></div></div>
 <div class="ttc" id="ainterfacefms2__io__mod_1_1read__data_html"><div class="ttname"><a href="interfacefms2__io__mod_1_1read__data.html">fms2_io_mod::read_data</a></div><div class="ttdoc">Read data from a defined field in a file.</div><div class="ttdef"><b>Definition:</b> <a href="fms2__io_8F90_source.html#l00277">fms2_io.F90:277</a></div></div>
 <div class="ttc" id="ainterfacetopography__mod_1_1get__ocean__frac_html"><div class="ttname"><a href="interfacetopography__mod_1_1get__ocean__frac.html">topography_mod::get_ocean_frac</a></div><div class="ttdoc">Returns fractional area covered by ocean in a grid box. Returns fractional area covered by ocean in t...</div><div class="ttdef"><b>Definition:</b> <a href="topography_8F90_source.html#l00128">topography.F90:128</a></div></div>
-<div class="ttc" id="agroup__topography__mod_html_ga1507b133d0b6d8fcc8767a45cb8b826e"><div class="ttname"><a href="group__topography__mod.html#ga1507b133d0b6d8fcc8767a45cb8b826e">topography_mod::read_namelist</a></div><div class="ttdeci">subroutine read_namelist</div><div class="ttdoc">Reads the namelist file, write namelist to log file, and initializes constants.</div><div class="ttdef"><b>Definition:</b> <a href="topography_8F90_source.html#l00859">topography.F90:859</a></div></div>
+<div class="ttc" id="agroup__topography__mod_html_ga1507b133d0b6d8fcc8767a45cb8b826e"><div class="ttname"><a href="group__topography__mod.html#ga1507b133d0b6d8fcc8767a45cb8b826e">topography_mod::read_namelist</a></div><div class="ttdeci">subroutine read_namelist</div><div class="ttdoc">Reads the namelist file, write namelist to log file, and initializes constants.</div><div class="ttdef"><b>Definition:</b> <a href="topography_8F90_source.html#l00858">topography.F90:858</a></div></div>
 <div class="ttc" id="agroup__gaussian__topog__mod_html_ga5fd9e8166dec60386040936b308551a2"><div class="ttname"><a href="group__gaussian__topog__mod.html#ga5fd9e8166dec60386040936b308551a2">gaussian_topog_mod::get_gaussian_topog</a></div><div class="ttdeci">real function, dimension(size(lon, 1), size(lat, 1)), public get_gaussian_topog(lon, lat, height, olond, olatd, wlond, wlatd, rlond, rlatd)</div><div class="ttdoc">Returns a simple surface height field that consists of a single Gaussian-shaped mountain.</div><div class="ttdef"><b>Definition:</b> <a href="gaussian__topog_8F90_source.html#l00171">gaussian_topog.F90:171</a></div></div>
 <div class="ttc" id="agroup__topography__mod_html_ga8dfc06175bed5760949b23b5523595fe"><div class="ttname"><a href="group__topography__mod.html#ga8dfc06175bed5760949b23b5523595fe">topography_mod::get_topog_stdev_1d</a></div><div class="ttdeci">logical function get_topog_stdev_1d(blon, blat, stdev)</div><div class="ttdoc">Returns a standard deviation of higher resolution topography with the given model grid boxes.</div><div class="ttdef"><b>Definition:</b> <a href="topography_8F90_source.html#l00329">topography.F90:329</a></div></div>
 <div class="ttc" id="agroup__fms__mod_html_ga05e7686befc1e49d2be9bdb81d479a76"><div class="ttname"><a href="group__fms__mod.html#ga05e7686befc1e49d2be9bdb81d479a76">fms_mod::check_nml_error</a></div><div class="ttdeci">integer function, public check_nml_error(IOSTAT, NML_NAME)</div><div class="ttdoc">Checks the iostat argument that is returned after reading a namelist and determines if the error code...</div><div class="ttdef"><b>Definition:</b> <a href="fms_8F90_source.html#l00585">fms.F90:585</a></div></div>
 <div class="ttc" id="ainterfacefms2__io__mod_1_1open__file_html"><div class="ttname"><a href="interfacefms2__io__mod_1_1open__file.html">fms2_io_mod::open_file</a></div><div class="ttdoc">Opens a given netcdf or domain file.</div><div class="ttdef"><b>Definition:</b> <a href="fms2__io_8F90_source.html#l00124">fms2_io.F90:124</a></div></div>
-<div class="ttc" id="ainterfacempp__mod_1_1mpp__error_html"><div class="ttname"><a href="interfacempp__mod_1_1mpp__error.html">mpp_mod::mpp_error</a></div><div class="ttdoc">Error handler.</div><div class="ttdef"><b>Definition:</b> <a href="mpp_8F90_source.html#l00386">mpp.F90:386</a></div></div>
+<div class="ttc" id="ainterfacempp__mod_1_1mpp__error_html"><div class="ttname"><a href="interfacempp__mod_1_1mpp__error.html">mpp_mod::mpp_error</a></div><div class="ttdoc">Error handler.</div><div class="ttdef"><b>Definition:</b> <a href="mpp_8F90_source.html#l00383">mpp.F90:383</a></div></div>
 <div class="ttc" id="agroup__topography__mod_html_gab81ac0a2946c1fbb836d52f9c479cb6b"><div class="ttname"><a href="group__topography__mod.html#gab81ac0a2946c1fbb836d52f9c479cb6b">topography_mod::get_water_frac_2d</a></div><div class="ttdeci">logical function get_water_frac_2d(blon, blat, water_frac)</div><div class="ttdef"><b>Definition:</b> <a href="topography_8F90_source.html#l00511">topography.F90:511</a></div></div>
 <div class="ttc" id="ainterfacehoriz__interp__mod_1_1horiz__interp__new_html"><div class="ttname"><a href="interfacehoriz__interp__mod_1_1horiz__interp__new.html">horiz_interp_mod::horiz_interp_new</a></div><div class="ttdoc">Allocates space and initializes a derived-type variable that contains pre-computed interpolation indi...</div><div class="ttdef"><b>Definition:</b> <a href="horiz__interp_8F90_source.html#l00127">horiz_interp.F90:127</a></div></div>
 <div class="ttc" id="agroup__topography__mod_html_ga46e8e70b2a4eac6ee224b3a7a3ddf097"><div class="ttname"><a href="group__topography__mod.html#ga46e8e70b2a4eac6ee224b3a7a3ddf097">topography_mod::get_ocean_mask_1d</a></div><div class="ttdeci">logical function get_ocean_mask_1d(blon, blat, ocean_mask)</div><div class="ttdoc">Returns a land-ocean mask in a grid box.</div><div class="ttdef"><b>Definition:</b> <a href="topography_8F90_source.html#l00431">topography.F90:431</a></div></div>
-<div class="ttc" id="agroup__horiz__interp__mod_html_ga01331e97bf44a5092a0a174a71b0029a"><div class="ttname"><a href="group__horiz__interp__mod.html#ga01331e97bf44a5092a0a174a71b0029a">horiz_interp_mod::horiz_interp_del</a></div><div class="ttdeci">subroutine, public horiz_interp_del(Interp)</div><div class="ttdoc">Deallocates memory used by &quot;horiz_interp_type&quot; variables. Must be called before reinitializing with h...</div><div class="ttdef"><b>Definition:</b> <a href="horiz__interp_8F90_source.html#l01025">horiz_interp.F90:1025</a></div></div>
+<div class="ttc" id="agroup__horiz__interp__mod_html_ga01331e97bf44a5092a0a174a71b0029a"><div class="ttname"><a href="group__horiz__interp__mod.html#ga01331e97bf44a5092a0a174a71b0029a">horiz_interp_mod::horiz_interp_del</a></div><div class="ttdeci">subroutine, public horiz_interp_del(Interp)</div><div class="ttdoc">Deallocates memory used by &quot;horiz_interp_type&quot; variables. Must be called before reinitializing with h...</div><div class="ttdef"><b>Definition:</b> <a href="horiz__interp_8F90_source.html#l01027">horiz_interp.F90:1027</a></div></div>
 <div class="ttc" id="ainterfacetopography__mod_1_1get__water__frac_html"><div class="ttname"><a href="interfacetopography__mod_1_1get__water__frac.html">topography_mod::get_water_frac</a></div><div class="ttdoc">Returns fractional area covered by water.</div><div class="ttdef"><b>Definition:</b> <a href="topography_8F90_source.html#l00167">topography.F90:167</a></div></div>
 <div class="ttc" id="agroup__topography__mod_html_ga8613d2fe80592d54cb724bf8179d3fd1"><div class="ttname"><a href="group__topography__mod.html#ga8613d2fe80592d54cb724bf8179d3fd1">topography_mod::get_water_mask_2d</a></div><div class="ttdeci">logical function get_water_mask_2d(blon, blat, water_mask)</div><div class="ttdef"><b>Definition:</b> <a href="topography_8F90_source.html#l00568">topography.F90:568</a></div></div>
 <div class="ttc" id="ainterfacetopography__mod_1_1get__topog__mean_html"><div class="ttname"><a href="interfacetopography__mod_1_1get__topog__mean.html">topography_mod::get_topog_mean</a></div><div class="ttdoc">Returns a &quot;realistic&quot; mean surface height field.</div><div class="ttdef"><b>Definition:</b> <a href="topography_8F90_source.html#l00085">topography.F90:85</a></div></div>
@@ -1099,7 +1098,7 @@ $(document).ready(function(){initNavTree('topography_8F90_source.html',''); init
 <div class="ttc" id="agroup__fms__mod_html_gae5c7420e421293e2be14717dd7b3d97f"><div class="ttname"><a href="group__fms__mod.html#gae5c7420e421293e2be14717dd7b3d97f">fms_mod::error_mesg</a></div><div class="ttdeci">subroutine, public error_mesg(routine, message, level)</div><div class="ttdoc">Print notes, warnings and error messages; terminates program for warning and error messages....</div><div class="ttdef"><b>Definition:</b> <a href="fms_8F90_source.html#l00503">fms.F90:503</a></div></div>
 <div class="ttc" id="agroup__topography__mod_html_ga09fe24f3dafa596c267b95a3b469f301"><div class="ttname"><a href="group__topography__mod.html#ga09fe24f3dafa596c267b95a3b469f301">topography_mod::get_topog_mean_1d</a></div><div class="ttdeci">logical function get_topog_mean_1d(blon, blat, zmean)</div><div class="ttdoc">Returns a &quot;realistic&quot; mean surface height field.</div><div class="ttdef"><b>Definition:</b> <a href="topography_8F90_source.html#l00273">topography.F90:273</a></div></div>
 <div class="ttc" id="ainterfacetopography__mod_1_1get__water__mask_html"><div class="ttname"><a href="interfacetopography__mod_1_1get__water__mask.html">topography_mod::get_water_mask</a></div><div class="ttdoc">Returns a land-water mask in a grid box.</div><div class="ttdef"><b>Definition:</b> <a href="topography_8F90_source.html#l00186">topography.F90:186</a></div></div>
-<div class="ttc" id="agroup__constants__mod_html_gadc909cc70e4e20bc99fc3d3c53125808"><div class="ttname"><a href="group__constants__mod.html#gadc909cc70e4e20bc99fc3d3c53125808">constants_mod::pi</a></div><div class="ttdeci">real, parameter, public pi</div><div class="ttdoc">Ratio of circle circumference to diameter [N/A].</div><div class="ttdef"><b>Definition:</b> <a href="constants_8F90_source.html#l00104">constants.F90:104</a></div></div>
+<div class="ttc" id="agroup__constants__mod_html_gadc909cc70e4e20bc99fc3d3c53125808"><div class="ttname"><a href="group__constants__mod.html#gadc909cc70e4e20bc99fc3d3c53125808">constants_mod::pi</a></div><div class="ttdeci">real, parameter, public pi</div><div class="ttdoc">Ratio of circle circumference to diameter [N/A].</div><div class="ttdef"><b>Definition:</b> <a href="constants_8F90_source.html#l00107">constants.F90:107</a></div></div>
 <div class="ttc" id="ampp__util_8inc_html_a8e5518df9532bae0241f53ab542294a2"><div class="ttname"><a href="mpp__util_8inc.html#a8e5518df9532bae0241f53ab542294a2">stdlog</a></div><div class="ttdeci">integer function stdlog()</div><div class="ttdoc">This function returns the current standard fortran unit numbers for log messages. Log messages,...</div><div class="ttdef"><b>Definition:</b> <a href="mpp__util_8inc_source.html#l00106">mpp_util.inc:106</a></div></div>
 <div class="ttc" id="ampp__util_8inc_html_acfeba7de56f9dd6000b3fd78f9d56c50"><div class="ttname"><a href="mpp__util_8inc.html#acfeba7de56f9dd6000b3fd78f9d56c50">mpp_pe</a></div><div class="ttdeci">integer function mpp_pe()</div><div class="ttdoc">Returns processor ID. This returns the unique ID associated with a PE. This number runs between 0 and...</div><div class="ttdef"><b>Definition:</b> <a href="mpp__util_8inc_source.html#l00440">mpp_util.inc:440</a></div></div>
 <div class="ttc" id="agroup__topography__mod_html_ga8f6023f3f9642f052adce17be3d06f8e"><div class="ttname"><a href="group__topography__mod.html#ga8f6023f3f9642f052adce17be3d06f8e">topography_mod::get_water_frac_1d</a></div><div class="ttdeci">logical function get_water_frac_1d(blon, blat, water_frac)</div><div class="ttdoc">Returns the percent of water in a grid box.</div><div class="ttdef"><b>Definition:</b> <a href="topography_8F90_source.html#l00488">topography.F90:488</a></div></div>

@@ -33,7 +33,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">FMS
-   &#160;<span id="projectnumber">2021.04.0</span>
+   &#160;<span id="projectnumber">2022.01.0</span>
    </div>
    <div id="projectbrief">Flexible Modeling System</div>
   </td>
@@ -191,45 +191,46 @@ $(document).ready(function(){initNavTree('mpp__write__compressed_8h_source.html'
 <div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160;      allocate(nz_gather(npes))</div>
 <div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160;      call mpp_gather((/nz/), nz_gather, pelist)</div>
 <div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160;      if ( mpp_file(unit)%write_on_this_pe.and.maxloc(nz_gather,1).ne.minloc(nz_gather,1) ) then</div>
-<div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160;         call mpp_error( FATAL, &#39;MPP_WRITE_COMPRESSED_2D_: size(data,2) must be consistent across all PEs in io_domain&#39; )</div>
-<div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160;      end if</div>
-<div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160;      deallocate(nz_gather)</div>
-<div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160; </div>
-<div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160;      if(mpp_file(unit)%write_on_this_pe ) allocate(rbuff(nz,nelems))</div>
-<div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160;      allocate(sbuff(nz,mynelems))</div>
-<div class="line"><a name="l00104"></a><span class="lineno">  104</span>&#160; </div>
-<div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160;      ! this matrix inversion makes for easy gather to the IO root</div>
-<div class="line"><a name="l00106"></a><span class="lineno">  106</span>&#160;      ! and a clear, concise unpack</div>
-<div class="line"><a name="l00107"></a><span class="lineno">  107</span>&#160;      do j=1,mynelems</div>
-<div class="line"><a name="l00108"></a><span class="lineno">  108</span>&#160;        do i=1,nz</div>
-<div class="line"><a name="l00109"></a><span class="lineno">  109</span>&#160;          sbuff(i,j) = data(j,i)</div>
-<div class="line"><a name="l00110"></a><span class="lineno">  110</span>&#160;      enddo; enddo</div>
-<div class="line"><a name="l00111"></a><span class="lineno">  111</span>&#160; </div>
-<div class="line"><a name="l00112"></a><span class="lineno">  112</span>&#160;   !  Note that the gatherV implied here is asymmetric; only root needs to know the vector of recv size</div>
-<div class="line"><a name="l00113"></a><span class="lineno">  113</span>&#160;      sptr = LOC(sbuff)</div>
-<div class="line"><a name="l00114"></a><span class="lineno">  114</span>&#160;      rptr = 0</div>
-<div class="line"><a name="l00115"></a><span class="lineno">  115</span>&#160;      if(mpp_file(unit)%write_on_this_pe ) rptr = LOC(rbuff)</div>
-<div class="line"><a name="l00116"></a><span class="lineno">  116</span>&#160;      call mpp_gather(sbuff1D,size(sbuff),rbuff1D,nz*nelems_io(:),pelist)</div>
-<div class="line"><a name="l00117"></a><span class="lineno">  117</span>&#160; </div>
-<div class="line"><a name="l00118"></a><span class="lineno">  118</span>&#160;      if(mpp_file(unit)%write_on_this_pe ) then</div>
-<div class="line"><a name="l00119"></a><span class="lineno">  119</span>&#160;         allocate(cdata(nelems,nz))</div>
-<div class="line"><a name="l00120"></a><span class="lineno">  120</span>&#160;         cdata = fill</div>
-<div class="line"><a name="l00121"></a><span class="lineno">  121</span>&#160;         do j=1,nz</div>
-<div class="line"><a name="l00122"></a><span class="lineno">  122</span>&#160;           do i=1,nelems</div>
-<div class="line"><a name="l00123"></a><span class="lineno">  123</span>&#160;             cdata(i,j) = rbuff(j,i)</div>
-<div class="line"><a name="l00124"></a><span class="lineno">  124</span>&#160;         enddo; enddo</div>
-<div class="line"><a name="l00125"></a><span class="lineno">  125</span>&#160;         ! cludge for now; need resizing accessor</div>
-<div class="line"><a name="l00126"></a><span class="lineno">  126</span>&#160;         field%size(1) = nelems</div>
-<div class="line"><a name="l00127"></a><span class="lineno">  127</span>&#160;         call WRITE_RECORD_( unit, field, nelems*nz, cdata, tstamp)</div>
-<div class="line"><a name="l00128"></a><span class="lineno">  128</span>&#160;         deallocate(rbuff,cdata)</div>
-<div class="line"><a name="l00129"></a><span class="lineno">  129</span>&#160;      endif</div>
-<div class="line"><a name="l00130"></a><span class="lineno">  130</span>&#160; </div>
-<div class="line"><a name="l00131"></a><span class="lineno">  131</span>&#160;      deallocate(sbuff,pelist)</div>
-<div class="line"><a name="l00132"></a><span class="lineno">  132</span>&#160; </div>
-<div class="line"><a name="l00133"></a><span class="lineno">  133</span>&#160;      call mpp_clock_end(mpp_write_clock)</div>
-<div class="line"><a name="l00134"></a><span class="lineno">  134</span>&#160; </div>
-<div class="line"><a name="l00135"></a><span class="lineno">  135</span>&#160;      return</div>
-<div class="line"><a name="l00136"></a><span class="lineno">  136</span>&#160;    end subroutine MPP_WRITE_COMPRESSED_2D_</div>
+<div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160;         call mpp_error( FATAL, &amp;</div>
+<div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160;                        &amp;  &#39;MPP_WRITE_COMPRESSED_2D_: size(data,2) must be consistent across all PEs in io_domain&#39; )</div>
+<div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160;      end if</div>
+<div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160;      deallocate(nz_gather)</div>
+<div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160; </div>
+<div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160;      if(mpp_file(unit)%write_on_this_pe ) allocate(rbuff(nz,nelems))</div>
+<div class="line"><a name="l00104"></a><span class="lineno">  104</span>&#160;      allocate(sbuff(nz,mynelems))</div>
+<div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160; </div>
+<div class="line"><a name="l00106"></a><span class="lineno">  106</span>&#160;      ! this matrix inversion makes for easy gather to the IO root</div>
+<div class="line"><a name="l00107"></a><span class="lineno">  107</span>&#160;      ! and a clear, concise unpack</div>
+<div class="line"><a name="l00108"></a><span class="lineno">  108</span>&#160;      do j=1,mynelems</div>
+<div class="line"><a name="l00109"></a><span class="lineno">  109</span>&#160;        do i=1,nz</div>
+<div class="line"><a name="l00110"></a><span class="lineno">  110</span>&#160;          sbuff(i,j) = data(j,i)</div>
+<div class="line"><a name="l00111"></a><span class="lineno">  111</span>&#160;      enddo; enddo</div>
+<div class="line"><a name="l00112"></a><span class="lineno">  112</span>&#160; </div>
+<div class="line"><a name="l00113"></a><span class="lineno">  113</span>&#160;   !  Note that the gatherV implied here is asymmetric; only root needs to know the vector of recv size</div>
+<div class="line"><a name="l00114"></a><span class="lineno">  114</span>&#160;      sptr = LOC(sbuff)</div>
+<div class="line"><a name="l00115"></a><span class="lineno">  115</span>&#160;      rptr = 0</div>
+<div class="line"><a name="l00116"></a><span class="lineno">  116</span>&#160;      if(mpp_file(unit)%write_on_this_pe ) rptr = LOC(rbuff)</div>
+<div class="line"><a name="l00117"></a><span class="lineno">  117</span>&#160;      call mpp_gather(sbuff1D,size(sbuff),rbuff1D,nz*nelems_io(:),pelist)</div>
+<div class="line"><a name="l00118"></a><span class="lineno">  118</span>&#160; </div>
+<div class="line"><a name="l00119"></a><span class="lineno">  119</span>&#160;      if(mpp_file(unit)%write_on_this_pe ) then</div>
+<div class="line"><a name="l00120"></a><span class="lineno">  120</span>&#160;         allocate(cdata(nelems,nz))</div>
+<div class="line"><a name="l00121"></a><span class="lineno">  121</span>&#160;         cdata = fill</div>
+<div class="line"><a name="l00122"></a><span class="lineno">  122</span>&#160;         do j=1,nz</div>
+<div class="line"><a name="l00123"></a><span class="lineno">  123</span>&#160;           do i=1,nelems</div>
+<div class="line"><a name="l00124"></a><span class="lineno">  124</span>&#160;             cdata(i,j) = rbuff(j,i)</div>
+<div class="line"><a name="l00125"></a><span class="lineno">  125</span>&#160;         enddo; enddo</div>
+<div class="line"><a name="l00126"></a><span class="lineno">  126</span>&#160;         ! cludge for now; need resizing accessor</div>
+<div class="line"><a name="l00127"></a><span class="lineno">  127</span>&#160;         field%size(1) = nelems</div>
+<div class="line"><a name="l00128"></a><span class="lineno">  128</span>&#160;         call WRITE_RECORD_( unit, field, nelems*nz, cdata, tstamp)</div>
+<div class="line"><a name="l00129"></a><span class="lineno">  129</span>&#160;         deallocate(rbuff,cdata)</div>
+<div class="line"><a name="l00130"></a><span class="lineno">  130</span>&#160;      endif</div>
+<div class="line"><a name="l00131"></a><span class="lineno">  131</span>&#160; </div>
+<div class="line"><a name="l00132"></a><span class="lineno">  132</span>&#160;      deallocate(sbuff,pelist)</div>
+<div class="line"><a name="l00133"></a><span class="lineno">  133</span>&#160; </div>
+<div class="line"><a name="l00134"></a><span class="lineno">  134</span>&#160;      call mpp_clock_end(mpp_write_clock)</div>
+<div class="line"><a name="l00135"></a><span class="lineno">  135</span>&#160; </div>
+<div class="line"><a name="l00136"></a><span class="lineno">  136</span>&#160;      return</div>
+<div class="line"><a name="l00137"></a><span class="lineno">  137</span>&#160;    end subroutine MPP_WRITE_COMPRESSED_2D_</div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->

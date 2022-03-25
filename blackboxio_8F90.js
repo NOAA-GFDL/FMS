@@ -12,7 +12,7 @@ var blackboxio_8F90 =
     [ "new_domain_file", "blackboxio_8F90.html#gad34df91f2c77dc99c6c29664cd22700c", null ],
     [ "new_netcdf_file", "blackboxio_8F90.html#ga141bd2e24303cda7da3ed94f78617642", null ],
     [ "new_unstructured_domain_file", "blackboxio_8F90.html#ga97d399a2f806859e9eb19524c3c13eb6", null ],
-    [ "restore_domain_state_wrap", "blackboxio_8F90.html#gac3d4f607d809bb29a3ae6529a951bd4a", null ],
+    [ "restore_domain_state_wrap", "blackboxio_8F90.html#gad834e6646b05b4f861848550c5f7c6c5", null ],
     [ "save_domain_restart_wrap", "blackboxio_8F90.html#ga7effa56c64251096b7bc7b422ee6b1d2", null ],
     [ "tempfile", "blackboxio_8F90.html#ga85ecac5f7bcdd8a8a4d5d1dce797dea7", null ],
     [ "unstructured_write_restart_wrap", "blackboxio_8F90.html#ga2c07bf56b42dfb6772ee4896c4a47e66", null ],

@@ -224,10 +224,10 @@ var group__xgrid__mod =
     [ "xgrid_init", "group__xgrid__mod.html#gaed7666b9fdf6c25272786857c6bb13ca", null ],
     [ "area_atm_model", "group__xgrid__mod.html#gaf7762d883f4a7319740194e1d5b62af7", null ],
     [ "area_atm_sphere", "group__xgrid__mod.html#ga57c6787700714eaea16d5734bcb7e8ea", null ],
-    [ "init", "group__xgrid__mod.html#ga918992f5441500892b62fc6dd3dc69ee", null ],
     [ "interp_method", "group__xgrid__mod.html#gaa4d2fac28a8463186ad117328bed5f0d", null ],
     [ "make_exchange_reproduce", "group__xgrid__mod.html#gaa02c6335e406f210158cb8f7d8a5681d", null ],
     [ "nsubset", "group__xgrid__mod.html#ga2012aa7cd254e768415dd15e6672388d", null ],
+    [ "remapping_method", "group__xgrid__mod.html#ga672b3c56b4e3046795ce2792f4b12ce6", null ],
     [ "use_mpp_io", "group__xgrid__mod.html#ga6354efeadfde9254bc8a3c2698bff1a0", null ],
     [ "version1", "group__xgrid__mod.html#gad6eb423a451ce62211b16316cbfa0a80", null ],
     [ "version2", "group__xgrid__mod.html#gab2573a7511aef52a4530ec538eb49d26", null ]

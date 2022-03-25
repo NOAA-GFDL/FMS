@@ -817,17 +817,15 @@ var group__mpp__domains__mod =
     [ "mpp_nullify_domain_list", "interfacempp__domains__mod_1_1mpp__nullify__domain__list.html", [
       [ "nullify_domain2d_list", "interfacempp__domains__mod_1_1mpp__nullify__domain__list.html#a6cf25b2a58be097824066ad5ea5c6fee", null ]
     ] ],
-    [ "a2_salvage", "group__mpp__domains__mod.html#gacbde167698488fe2bd384ec8f5290e2a", null ],
     [ "a2_sort_len", "group__mpp__domains__mod.html#ga0f5cfc0567f861d5b4c7677d757378ec", null ],
-    [ "a_salvage", "group__mpp__domains__mod.html#ga31f27f05a973e5d468b33d64f3067dbf", null ],
     [ "a_sort_len", "group__mpp__domains__mod.html#gaa16e484ee91975bde30e0319cb8c254a", null ],
+    [ "addr2_base", "group__mpp__domains__mod.html#ga8d2408ca0e4d38f43b39a41be91c585d", null ],
     [ "addrs2_idx", "group__mpp__domains__mod.html#ga9248978800afa9b2c0d8dbe556a8731b", null ],
     [ "addrs2_sorted", "group__mpp__domains__mod.html#gae1eb3f2f125cb84be7058744e1d0cae3", null ],
     [ "addrs_idx", "group__mpp__domains__mod.html#gad168f04cdf660cf1ce8c94cf8a98b8fa", null ],
     [ "addrs_sorted", "group__mpp__domains__mod.html#gaecbe008efb38f3bdac748e4d6d339dfa", null ],
     [ "d_comm", "group__mpp__domains__mod.html#gac4adb900ffc350cc350fa5f7d4c146a4", null ],
     [ "d_comm_idx", "group__mpp__domains__mod.html#ga7dbfa62be3b801c65e170b723fd2f2ca", null ],
-    [ "dc_salvage", "group__mpp__domains__mod.html#gac742f73f9a46d0c20f40213fe9755c0f", null ],
     [ "dc_sort_len", "group__mpp__domains__mod.html#gabb443acf75a7b186a08a609406e980c5", null ],
     [ "dckey_sorted", "group__mpp__domains__mod.html#gac2df004f093dcfa56b46042e2acc3ee8", null ],
     [ "debug_message_passing", "group__mpp__domains__mod.html#ga640f19150a4437d553bd0ba3f4dbc7e6", null ],

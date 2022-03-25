@@ -33,7 +33,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">FMS
-   &#160;<span id="projectnumber">2021.04.0</span>
+   &#160;<span id="projectnumber">2022.01.0</span>
    </div>
    <div id="projectbrief">Flexible Modeling System</div>
   </td>
@@ -129,13 +129,13 @@ $(document).ready(function(){initNavTree('system__clock_8h_source.html',''); ini
 <div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;      <span class="keywordflow">if</span>(first_call_system_clock_mpi)then</div>
 <div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;         first_call_system_clock_mpi=.false.</div>
 <div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;         <a class="code" href="group__mpp__mod.html#gac3a154eecf45212d83b67ce0de9688e3">mpi_count0</a> = MPI_WTime()</div>
-<div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;         <a class="code" href="group__mpp__mod.html#ga6d30282025bd05fcceb23b54057e35bb">mpi_tick_rate</a> = 1.d0/MPI_WTick()</div>
+<div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;         <a class="code" href="group__mpp__mod.html#ga6d30282025bd05fcceb23b54057e35bb">mpi_tick_rate</a> = real(1.d0/MPI_WTick(), r8_kind)</div>
 <div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;      endif</div>
 <div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;      if( PRESENT(count) )then</div>
-<div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;          count = (MPI_WTime()-<a class="code" href="group__mpp__mod.html#gac3a154eecf45212d83b67ce0de9688e3">mpi_count0</a>)*<a class="code" href="group__mpp__mod.html#ga6d30282025bd05fcceb23b54057e35bb">mpi_tick_rate</a></div>
+<div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;          count = <span class="keywordtype">int</span>((MPI_WTime()-<a class="code" href="group__mpp__mod.html#gac3a154eecf45212d83b67ce0de9688e3">mpi_count0</a>)*<a class="code" href="group__mpp__mod.html#ga6d30282025bd05fcceb23b54057e35bb">mpi_tick_rate</a>, i8_kind)</div>
 <div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;      end if</div>
 <div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;      if( PRESENT(count_rate) )then</div>
-<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;          count_rate = <a class="code" href="group__mpp__mod.html#ga6d30282025bd05fcceb23b54057e35bb">mpi_tick_rate</a></div>
+<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;          count_rate = <span class="keywordtype">int</span>(<a class="code" href="group__mpp__mod.html#ga6d30282025bd05fcceb23b54057e35bb">mpi_tick_rate</a>, i8_kind)</div>
 <div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;      end if</div>
 <div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;      if( PRESENT(count_max) )then</div>
 <div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;          count_max = maxtick-1</div>
@@ -159,8 +159,8 @@ $(document).ready(function(){initNavTree('system__clock_8h_source.html',''); ini
 <div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;<span class="preprocessor">#endif</span></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
-<div class="ttc" id="agroup__mpp__mod_html_gac3a154eecf45212d83b67ce0de9688e3"><div class="ttname"><a href="group__mpp__mod.html#gac3a154eecf45212d83b67ce0de9688e3">mpp_mod::mpi_count0</a></div><div class="ttdeci">real(r8_kind) mpi_count0</div><div class="ttdoc">use to prevent integer overflow</div><div class="ttdef"><b>Definition:</b> <a href="mpp_8F90_source.html#l01220">mpp.F90:1220</a></div></div>
-<div class="ttc" id="agroup__mpp__mod_html_ga6d30282025bd05fcceb23b54057e35bb"><div class="ttname"><a href="group__mpp__mod.html#ga6d30282025bd05fcceb23b54057e35bb">mpp_mod::mpi_tick_rate</a></div><div class="ttdeci">real(r8_kind) mpi_tick_rate</div><div class="ttdoc">clock rate for mpi_wtick()</div><div class="ttdef"><b>Definition:</b> <a href="mpp_8F90_source.html#l01221">mpp.F90:1221</a></div></div>
+<div class="ttc" id="agroup__mpp__mod_html_gac3a154eecf45212d83b67ce0de9688e3"><div class="ttname"><a href="group__mpp__mod.html#gac3a154eecf45212d83b67ce0de9688e3">mpp_mod::mpi_count0</a></div><div class="ttdeci">real(r8_kind) mpi_count0</div><div class="ttdoc">use to prevent integer overflow</div><div class="ttdef"><b>Definition:</b> <a href="mpp_8F90_source.html#l01219">mpp.F90:1219</a></div></div>
+<div class="ttc" id="agroup__mpp__mod_html_ga6d30282025bd05fcceb23b54057e35bb"><div class="ttname"><a href="group__mpp__mod.html#ga6d30282025bd05fcceb23b54057e35bb">mpp_mod::mpi_tick_rate</a></div><div class="ttdeci">real(r8_kind) mpi_tick_rate</div><div class="ttdoc">clock rate for mpi_wtick()</div><div class="ttdef"><b>Definition:</b> <a href="mpp_8F90_source.html#l01220">mpp.F90:1220</a></div></div>
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>

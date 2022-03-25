@@ -10,8 +10,6 @@ var horiz__interp__bicubic_8F90 =
     [ "horiz_interp_bicubic_new_1d_s", "horiz__interp__bicubic_8F90.html#gadf4fc972175bed63defa451b6d5c39ed", null ],
     [ "indl", "horiz__interp__bicubic_8F90.html#gac5c14ec4bdc77a63bae594f2b08b0a16", null ],
     [ "indu", "horiz__interp__bicubic_8F90.html#gaa1135f151062aaf25109e3c43503d91b", null ],
-    [ "initialized_bicubic", "horiz__interp__bicubic_8F90.html#gadba056c70686efe3ab531c36e8dbd5f9", null ],
-    [ "missing", "horiz__interp__bicubic_8F90.html#gaae2b141af40f90318cff70ae696c085d", null ],
     [ "module_is_initialized", "horiz__interp__bicubic_8F90.html#gad369225c254bc7bda087334ca5d13096", null ],
     [ "tpi", "horiz__interp__bicubic_8F90.html#ga2534cc66e5bcd33a139b2ce924a6ace9", null ],
     [ "verbose_bicubic", "horiz__interp__bicubic_8F90.html#gacaebba92202a26030548938a4544b95a", null ]

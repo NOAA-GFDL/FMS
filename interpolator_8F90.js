@@ -48,7 +48,6 @@ var interpolator_8F90 =
     [ "max_diag_fields", "interpolator_8F90.html#ga64fa514c9bb82d62614398a2a0c5ea00", null ],
     [ "missing_value", "interpolator_8F90.html#ga6ecc1c7c833ba76ed79be22d5d3818f8", null ],
     [ "module_is_initialized", "interpolator_8F90.html#gad369225c254bc7bda087334ca5d13096", null ],
-    [ "name", "interpolator_8F90.html#gac3ed562e08b05623e5b41db82a0c02e0", null ],
     [ "ndim", "interpolator_8F90.html#ga2478bde0940afdb5975a61635ece1163", null ],
     [ "nlat", "interpolator_8F90.html#ga01f6e84ee319a3ff6ad71e39d5d877a4", null ],
     [ "nlatb", "interpolator_8F90.html#gaa719bb9b17a2b5742dc7a799f94b4dfa", null ],

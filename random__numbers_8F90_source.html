@@ -33,7 +33,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">FMS
-   &#160;<span id="projectnumber">2021.04.0</span>
+   &#160;<span id="projectnumber">2022.01.0</span>
    </div>
    <div id="projectbrief">Flexible Modeling System</div>
   </td>
@@ -182,7 +182,7 @@ $(document).ready(function(){initNavTree('random__numbers_8F90_source.html','');
 <div class="line"><a name="l00086"></a><span class="lineno"><a class="line" href="group__random__numbers__mod.html#ga24e0b1d085cde2650d9f231c2e291b8d">   86</a></span>&#160;    <span class="keywordtype">type</span>(<a class="code" href="structrandom__numbers__mod_1_1randomnumberstream.html">randomnumberstream</a>), <span class="keywordtype">intent(inout)</span> :: stream</div>
 <div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;<span class="keywordtype">    real</span>,                     <span class="keywordtype">intent(  out)</span> :: number</div>
 <div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160; </div>
-<div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160;    number = getrandomreal(stream%theNumbers)</div>
+<div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160;    number = real(getrandomreal(stream%theNumbers))</div>
 <div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;  <span class="keyword">end subroutine </span><a class="code" href="group__random__numbers__mod.html#ga24e0b1d085cde2650d9f231c2e291b8d">getrandomnumber_scalar</a></div>
 <div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160;  <span class="comment">! ---------------------------------------------------------</span><span class="comment"></span></div>
 <div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;<span class="comment">  !&gt; Draws random 1D array</span></div>
@@ -194,7 +194,7 @@ $(document).ready(function(){initNavTree('random__numbers_8F90_source.html','');
 <div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160;    <span class="keywordtype">integer</span> :: i</div>
 <div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160; </div>
 <div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160;    <span class="keywordflow">do</span> i = 1, <span class="keyword">size</span>(numbers)</div>
-<div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160;      numbers(i) = getrandomreal(stream%theNumbers)</div>
+<div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160;      numbers(i) = real(getrandomreal(stream%theNumbers))</div>
 <div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160;<span class="keywordflow">    end do</span></div>
 <div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160;  <span class="keyword">end subroutine </span><a class="code" href="group__random__numbers__mod.html#ga2c80a6c2e9df2929326e8f5fc740585b">getrandomnumber_1d</a></div>
 <div class="line"><a name="l00104"></a><span class="lineno">  104</span>&#160;  <span class="comment">! ---------------------------------------------------------</span><span class="comment"></span></div>

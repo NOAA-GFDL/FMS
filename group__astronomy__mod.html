@@ -33,7 +33,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">FMS
-   &#160;<span id="projectnumber">2021.04.0</span>
+   &#160;<span id="projectnumber">2022.01.0</span>
    </div>
    <div id="projectbrief">Flexible Modeling System</div>
   </td>
@@ -372,7 +372,7 @@ integer&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="g
 <dl class="section return"><dt>Returns</dt><dd>Orbital position relative to NH autumnal equinox [radians] </dd></dl>
 <p>Define orbital tables indices bracketing current orbital time (int and int_1). Define table index distance between the lower table value (int) and the actual orbital time (x). Define orbital position as being x of the way between int and int_1. Renormalize angle to be within the range 0 to 2*pi.</p>
 
-<p class="definition">Definition at line <a class="el" href="astronomy_8F90_source.html#l02071">2071</a> of file <a class="el" href="astronomy_8F90_source.html">astronomy.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="astronomy_8F90_source.html#l02078">2078</a> of file <a class="el" href="astronomy_8F90_source.html">astronomy.F90</a>.</p>
 
 </div>
 </div>
@@ -458,7 +458,7 @@ integer&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="g
 <p>place output fields into 1-D arrays for return to calling routine.</p>
 <p>if the calculation has been done, simply return the module variables contain the results at the desired latitudes.</p>
 
-<p class="definition">Definition at line <a class="el" href="astronomy_8F90_source.html#l01850">1850</a> of file <a class="el" href="astronomy_8F90_source.html">astronomy.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="astronomy_8F90_source.html#l01857">1857</a> of file <a class="el" href="astronomy_8F90_source.html">astronomy.F90</a>.</p>
 
 </div>
 </div>
@@ -546,7 +546,7 @@ integer&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="g
 <p>increment the points computed counter. set flag to end execution once values have been calculated for all points owned by the processor.</p>
 <p>if the calculation has been done, return the appropriate module variables.</p>
 
-<p class="definition">Definition at line <a class="el" href="astronomy_8F90_source.html#l01743">1743</a> of file <a class="el" href="astronomy_8F90_source.html">astronomy.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="astronomy_8F90_source.html#l01749">1749</a> of file <a class="el" href="astronomy_8F90_source.html">astronomy.F90</a>.</p>
 
 </div>
 </div>
@@ -610,7 +610,7 @@ integer&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="g
 <p>place output fields into 1-D arrays for return to calling routine.</p>
 <p>if the calculation has been done, print an error message since this subroutine should be called only once.</p>
 
-<p class="definition">Definition at line <a class="el" href="astronomy_8F90_source.html#l01910">1910</a> of file <a class="el" href="astronomy_8F90_source.html">astronomy.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="astronomy_8F90_source.html#l01917">1917</a> of file <a class="el" href="astronomy_8F90_source.html">astronomy.F90</a>.</p>
 
 </div>
 </div>
@@ -631,7 +631,7 @@ integer&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="g
 <p>deallocate module variables.</p>
 <p>mark the module as uninitialized.</p>
 
-<p class="definition">Definition at line <a class="el" href="astronomy_8F90_source.html#l01966">1966</a> of file <a class="el" href="astronomy_8F90_source.html">astronomy.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="astronomy_8F90_source.html#l01973">1973</a> of file <a class="el" href="astronomy_8F90_source.html">astronomy.F90</a>.</p>
 
 </div>
 </div>
@@ -688,7 +688,7 @@ integer&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="g
 <p>If annual mean radiation is desired, then latb will be present. allocate arrays to hold the needed astronomical factors. define the total number of points that the processor is responsible for.</p>
 <p>Mark the module as initialized.</p>
 
-<p class="definition">Definition at line <a class="el" href="astronomy_8F90_source.html#l00408">408</a> of file <a class="el" href="astronomy_8F90_source.html">astronomy.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="astronomy_8F90_source.html#l00411">411</a> of file <a class="el" href="astronomy_8F90_source.html">astronomy.F90</a>.</p>
 
 </div>
 </div>
@@ -759,7 +759,7 @@ integer&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="g
 <p>call daily_mean_solar_2d to calculate astronomy fields.</p>
 <p>return output fields to scalars for return to calling routine.</p>
 
-<p class="definition">Definition at line <a class="el" href="astronomy_8F90_source.html#l01530">1530</a> of file <a class="el" href="astronomy_8F90_source.html">astronomy.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="astronomy_8F90_source.html#l01534">1534</a> of file <a class="el" href="astronomy_8F90_source.html">astronomy.F90</a>.</p>
 
 </div>
 </div>
@@ -830,7 +830,7 @@ integer&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="g
 <p>call daily_mean_solar_2d to calculate astronomy fields.</p>
 <p>place output fields into 1-d arguments for return to calling routine.</p>
 
-<p class="definition">Definition at line <a class="el" href="astronomy_8F90_source.html#l01441">1441</a> of file <a class="el" href="astronomy_8F90_source.html">astronomy.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="astronomy_8F90_source.html#l01444">1444</a> of file <a class="el" href="astronomy_8F90_source.html">astronomy.F90</a>.</p>
 
 </div>
 </div>
@@ -906,7 +906,7 @@ integer&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="g
 <p>Define the orbital angle (location in year), solar declination, half-day length and earth sun distance factor. Use functions contained in this module.</p>
 <p>Where the entire day is dark, define cosz to be zero. otherwise use the standard formula. Define the daylight fraction and earth- sun distance.</p>
 
-<p class="definition">Definition at line <a class="el" href="astronomy_8F90_source.html#l01383">1383</a> of file <a class="el" href="astronomy_8F90_source.html">astronomy.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="astronomy_8F90_source.html#l01386">1386</a> of file <a class="el" href="astronomy_8F90_source.html">astronomy.F90</a>.</p>
 
 </div>
 </div>
@@ -970,7 +970,7 @@ integer&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="g
 <p>call daily_mean_solar_2d to calculate astronomy fields.</p>
 <p>place output fields into 1-d arguments for return to calling routine.</p>
 
-<p class="definition">Definition at line <a class="el" href="astronomy_8F90_source.html#l01485">1485</a> of file <a class="el" href="astronomy_8F90_source.html">astronomy.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="astronomy_8F90_source.html#l01489">1489</a> of file <a class="el" href="astronomy_8F90_source.html">astronomy.F90</a>.</p>
 
 </div>
 </div>
@@ -1041,7 +1041,7 @@ integer&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="g
 <p>call daily_mean_solar_cal_2d to convert the time_types to reals and then calculate the astronomy fields.</p>
 <p>place output fields into scalar arguments for return to calling routine.</p>
 
-<p class="definition">Definition at line <a class="el" href="astronomy_8F90_source.html#l01697">1697</a> of file <a class="el" href="astronomy_8F90_source.html">astronomy.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="astronomy_8F90_source.html#l01702">1702</a> of file <a class="el" href="astronomy_8F90_source.html">astronomy.F90</a>.</p>
 
 </div>
 </div>
@@ -1112,7 +1112,7 @@ integer&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="g
 <p>call daily_mean_solar_cal_2d to convert the time_types to reals and then calculate the astronomy fields.</p>
 <p>place output fields into 1-d arguments for return to calling routine.</p>
 
-<p class="definition">Definition at line <a class="el" href="astronomy_8F90_source.html#l01611">1611</a> of file <a class="el" href="astronomy_8F90_source.html">astronomy.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="astronomy_8F90_source.html#l01615">1615</a> of file <a class="el" href="astronomy_8F90_source.html">astronomy.F90</a>.</p>
 
 </div>
 </div>
@@ -1186,7 +1186,7 @@ integer&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="g
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="astronomy_8F90_source.html#l01571">1571</a> of file <a class="el" href="astronomy_8F90_source.html">astronomy.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="astronomy_8F90_source.html#l01575">1575</a> of file <a class="el" href="astronomy_8F90_source.html">astronomy.F90</a>.</p>
 
 </div>
 </div>
@@ -1250,7 +1250,7 @@ integer&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="g
 <p>call daily_mean_solar_cal_2d to convert the time_types to reals and then calculate the astronomy fields.</p>
 <p>place output fields into 1-d arguments for return to calling routine.</p>
 
-<p class="definition">Definition at line <a class="el" href="astronomy_8F90_source.html#l01654">1654</a> of file <a class="el" href="astronomy_8F90_source.html">astronomy.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="astronomy_8F90_source.html#l01659">1659</a> of file <a class="el" href="astronomy_8F90_source.html">astronomy.F90</a>.</p>
 
 </div>
 </div>
@@ -1287,7 +1287,7 @@ integer&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="g
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>Solar declination angle [radians] </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="astronomy_8F90_source.html#l02106">2106</a> of file <a class="el" href="astronomy_8F90_source.html">astronomy.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="astronomy_8F90_source.html#l02113">2113</a> of file <a class="el" href="astronomy_8F90_source.html">astronomy.F90</a>.</p>
 
 </div>
 </div>
@@ -1393,7 +1393,7 @@ integer&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="g
 <p>call diurnal_solar_2d to calculate astronomy fields.</p>
 <p>place output fields into scalars for return to calling routine.</p>
 
-<p class="definition">Definition at line <a class="el" href="astronomy_8F90_source.html#l01107">1107</a> of file <a class="el" href="astronomy_8F90_source.html">astronomy.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="astronomy_8F90_source.html#l01110">1110</a> of file <a class="el" href="astronomy_8F90_source.html">astronomy.F90</a>.</p>
 
 </div>
 </div>
@@ -1499,7 +1499,7 @@ integer&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="g
 <p>call diurnal_solar_2d to calculate astronomy fields.</p>
 <p>place output fields into 1-d arguments for return to calling routine.</p>
 
-<p class="definition">Definition at line <a class="el" href="astronomy_8F90_source.html#l01041">1041</a> of file <a class="el" href="astronomy_8F90_source.html">astronomy.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="astronomy_8F90_source.html#l01044">1044</a> of file <a class="el" href="astronomy_8F90_source.html">astronomy.F90</a>.</p>
 
 </div>
 </div>
@@ -1615,7 +1615,7 @@ integer&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="g
 <p>if instantaneous values are desired, define cosz at time t.</p>
 <p>Check that cosz is not negative, if desired.</p>
 
-<p class="definition">Definition at line <a class="el" href="astronomy_8F90_source.html#l00818">818</a> of file <a class="el" href="astronomy_8F90_source.html">astronomy.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="astronomy_8F90_source.html#l00821">821</a> of file <a class="el" href="astronomy_8F90_source.html">astronomy.F90</a>.</p>
 
 </div>
 </div>
@@ -1714,7 +1714,7 @@ integer&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="g
 <p>Call diurnal_solar_cal_2d to convert the time_types to reals and then calculate the astronomy fields.</p>
 <p>Place output fields into 1-d arguments for return to calling routine.</p>
 
-<p class="definition">Definition at line <a class="el" href="astronomy_8F90_source.html#l01321">1321</a> of file <a class="el" href="astronomy_8F90_source.html">astronomy.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="astronomy_8F90_source.html#l01324">1324</a> of file <a class="el" href="astronomy_8F90_source.html">astronomy.F90</a>.</p>
 
 </div>
 </div>
@@ -1814,7 +1814,7 @@ integer&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="g
 <p>Call diurnal_solar_cal_2d to convert the time_types to reals and then calculate the astronomy fields.</p>
 <p>Place output fields into 1-d arguments for return to calling routine.</p>
 
-<p class="definition">Definition at line <a class="el" href="astronomy_8F90_source.html#l01253">1253</a> of file <a class="el" href="astronomy_8F90_source.html">astronomy.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="astronomy_8F90_source.html#l01256">1256</a> of file <a class="el" href="astronomy_8F90_source.html">astronomy.F90</a>.</p>
 
 </div>
 </div>
@@ -1922,7 +1922,7 @@ integer&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="g
 <p>Convert optional time_type variable dt_time (length of averaging period) to a real variable dt with the function universal_time.</p>
 <p>Call diurnal_solar_2d to calculate astronomy fields, with or without the optional argument dt.</p>
 
-<p class="definition">Definition at line <a class="el" href="astronomy_8F90_source.html#l01171">1171</a> of file <a class="el" href="astronomy_8F90_source.html">astronomy.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="astronomy_8F90_source.html#l01174">1174</a> of file <a class="el" href="astronomy_8F90_source.html">astronomy.F90</a>.</p>
 
 </div>
 </div>
@@ -1974,7 +1974,7 @@ integer&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="g
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="astronomy_8F90_source.html#l00669">669</a> of file <a class="el" href="astronomy_8F90_source.html">astronomy.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="astronomy_8F90_source.html#l00672">672</a> of file <a class="el" href="astronomy_8F90_source.html">astronomy.F90</a>.</p>
 
 </div>
 </div>
@@ -2016,7 +2016,7 @@ integer&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="g
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="astronomy_8F90_source.html#l00517">517</a> of file <a class="el" href="astronomy_8F90_source.html">astronomy.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="astronomy_8F90_source.html#l00520">520</a> of file <a class="el" href="astronomy_8F90_source.html">astronomy.F90</a>.</p>
 
 </div>
 </div>
@@ -2058,7 +2058,7 @@ integer&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="g
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="astronomy_8F90_source.html#l00546">546</a> of file <a class="el" href="astronomy_8F90_source.html">astronomy.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="astronomy_8F90_source.html#l00549">549</a> of file <a class="el" href="astronomy_8F90_source.html">astronomy.F90</a>.</p>
 
 </div>
 </div>
@@ -2131,7 +2131,7 @@ integer&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="g
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="astronomy_8F90_source.html#l00771">771</a> of file <a class="el" href="astronomy_8F90_source.html">astronomy.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="astronomy_8F90_source.html#l00774">774</a> of file <a class="el" href="astronomy_8F90_source.html">astronomy.F90</a>.</p>
 
 </div>
 </div>
@@ -2178,7 +2178,7 @@ integer&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="g
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="astronomy_8F90_source.html#l02180">2180</a> of file <a class="el" href="astronomy_8F90_source.html">astronomy.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="astronomy_8F90_source.html#l02187">2187</a> of file <a class="el" href="astronomy_8F90_source.html">astronomy.F90</a>.</p>
 
 </div>
 </div>
@@ -2228,7 +2228,7 @@ integer&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="g
 <p>adjust latitude so that its tangent will be defined.</p>
 <p>define the cosine of the half-day length. adjust for cases of all daylight or all night.</p>
 
-<p class="definition">Definition at line <a class="el" href="astronomy_8F90_source.html#l02132">2132</a> of file <a class="el" href="astronomy_8F90_source.html">astronomy.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="astronomy_8F90_source.html#l02139">2139</a> of file <a class="el" href="astronomy_8F90_source.html">astronomy.F90</a>.</p>
 
 </div>
 </div>
@@ -2256,7 +2256,7 @@ integer&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="g
 <p>allocate the orbital angle array, sized by the namelist parameter num_angles, defining the annual cycle resolution of the earth's orbit. define some constants to be used.</p>
 <p>define the orbital angle at each of the num_angles locations in the orbit.</p>
 
-<p class="definition">Definition at line <a class="el" href="astronomy_8F90_source.html#l02002">2002</a> of file <a class="el" href="astronomy_8F90_source.html">astronomy.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="astronomy_8F90_source.html#l02009">2009</a> of file <a class="el" href="astronomy_8F90_source.html">astronomy.F90</a>.</p>
 
 </div>
 </div>
@@ -2284,7 +2284,7 @@ integer&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="g
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="astronomy_8F90_source.html#l02216">2216</a> of file <a class="el" href="astronomy_8F90_source.html">astronomy.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="astronomy_8F90_source.html#l02223">2223</a> of file <a class="el" href="astronomy_8F90_source.html">astronomy.F90</a>.</p>
 
 </div>
 </div>
@@ -2322,7 +2322,7 @@ integer&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="g
 <dl class="section return"><dt>Returns</dt><dd>The inverse of the square of the earth-sun distance relative to the mean distance [dimensionless] </dd></dl>
 <p>define the earth-sun distance (r) and then return the inverse of its square (r_inv_squared) to the calling routine.</p>
 
-<p class="definition">Definition at line <a class="el" href="astronomy_8F90_source.html#l02040">2040</a> of file <a class="el" href="astronomy_8F90_source.html">astronomy.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="astronomy_8F90_source.html#l02047">2047</a> of file <a class="el" href="astronomy_8F90_source.html">astronomy.F90</a>.</p>
 
 </div>
 </div>
@@ -2377,7 +2377,7 @@ integer&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="g
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="astronomy_8F90_source.html#l00620">620</a> of file <a class="el" href="astronomy_8F90_source.html">astronomy.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="astronomy_8F90_source.html#l00623">623</a> of file <a class="el" href="astronomy_8F90_source.html">astronomy.F90</a>.</p>
 
 </div>
 </div>
@@ -2419,7 +2419,7 @@ integer&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="g
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="astronomy_8F90_source.html#l00568">568</a> of file <a class="el" href="astronomy_8F90_source.html">astronomy.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="astronomy_8F90_source.html#l00571">571</a> of file <a class="el" href="astronomy_8F90_source.html">astronomy.F90</a>.</p>
 
 </div>
 </div>
@@ -2455,7 +2455,7 @@ integer&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="g
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="astronomy_8F90_source.html#l00592">592</a> of file <a class="el" href="astronomy_8F90_source.html">astronomy.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="astronomy_8F90_source.html#l00595">595</a> of file <a class="el" href="astronomy_8F90_source.html">astronomy.F90</a>.</p>
 
 </div>
 </div>
@@ -2529,7 +2529,7 @@ integer&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="g
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="astronomy_8F90_source.html#l00720">720</a> of file <a class="el" href="astronomy_8F90_source.html">astronomy.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="astronomy_8F90_source.html#l00723">723</a> of file <a class="el" href="astronomy_8F90_source.html">astronomy.F90</a>.</p>
 
 </div>
 </div>
@@ -2557,7 +2557,7 @@ integer&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="g
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="astronomy_8F90_source.html#l02231">2231</a> of file <a class="el" href="astronomy_8F90_source.html">astronomy.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="astronomy_8F90_source.html#l02238">2238</a> of file <a class="el" href="astronomy_8F90_source.html">astronomy.F90</a>.</p>
 
 </div>
 </div>
