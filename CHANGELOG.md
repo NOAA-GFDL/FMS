@@ -5,7 +5,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0),
 and this project uses `yyyy.rr[.pp]`, where `yyyy` is the year a patch is released,
 `rr` is a sequential release number (starting from `01`), and an optional two-digit
 sequential patch number (starting from `01`).
-## [2022.01] - 2022-TODO    	
+## [2022.01] - 2022-03-25
 ### Known Issues
 - The MPICH MPI implementation is unsupported when used alongside GCC 10 or 11 due to compilation issues with the mixed precision reals. MPICH can still be used to compile FMS with GCC 9 or earlier, or with other compilers.
 - GCC 11.1.0 is unsupported due to compilation issues with `select type`. The issue appears to be resolved in later GCC releases
