@@ -26,7 +26,9 @@
 module fms_diag_file_mod
 use mpp_mod
 use fms2_io_mod
+#ifdef use_yaml
 use fms_diag_yaml_mod, only: diagYamlFiles_type
+#endif
 
 implicit none
 private
@@ -40,7 +42,9 @@ type :: fmsDiagFile_type
   integer :: id !< The number associated with this file in the larger array of files
   class(FmsNetcdfFile_t), allocatable :: fileobj !< fms2_io file object for this history file 
   character(len=1) :: file_domain_type !< (I don't think we will need this)
+#ifdef use_yaml
   type(diagYamlFiles_type), pointer :: diag_yaml => null() !< Pointer to the diag_yaml data
+#endif
   character(len=:) , dimension(:), allocatable :: file_metadata_from_model !< File metadata that comes from
                                                                            !! the model.
   character(len=var_string_len), dimension(:), allocatable :: var_list !< List of the variables by name
@@ -48,7 +52,9 @@ type :: fmsDiagFile_type
 contains
   procedure, public :: has_file_metadata_from_model
   procedure, public :: has_fileobj
+#ifdef use_yaml
   procedure, public :: has_diag_yaml
+#endif
   procedure, public :: has_var_ids
   procedure, public :: has_var_list
   procedure, public :: get_id
@@ -77,12 +83,14 @@ pure logical function has_fileobj (obj)
   class(fmsDiagFile_type), intent(in) :: obj !< The file object
   has_fileobj = allocated(obj%fileobj)
 end function has_fileobj
+#ifdef use_yaml
 !> \brief Logical function to determine if the variable diag_yaml has been allocated or associated
 !! \return .True. if diag_yaml exists .False. if diag_yaml has not been set
 pure logical function has_diag_yaml (obj)
   class(fmsDiagFile_type), intent(in) :: obj !< The file object
   has_diag_yaml = associated(obj%diag_yaml)
 end function has_diag_yaml
+#endif
 !> \brief Logical function to determine if the variable var_ids has been allocated or associated
 !! \return .True. if var_ids exists .False. if var_ids has not been set
 pure logical function has_var_ids (obj)
@@ -122,11 +130,13 @@ end function get_file_domain_type
 !! TODO
 !!> \brief Returns a copy of the value of diag_yaml
 !!! \return A copy of diag_yaml
+!#ifdef use_yaml
 !pure function get_diag_yaml (obj) result (res)
 !  class(fmsDiagFile_type), intent(in) :: obj !< The file object
 !  type(diagYamlFiles_type) :: res
 !  res = obj%diag_yaml
 !end function get_diag_yaml
+!#endif
 !> \brief Returns a copy of the value of file_metadata_from_model
 !! \return A copy of file_metadata_from_model
 pure function get_file_metadata_from_model (obj) result (res)
