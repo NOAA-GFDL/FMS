@@ -28,17 +28,11 @@ program test_mpp_chksum
   implicit none
 
   integer :: test_num = 1
-  !integer :: num_files = 36
-  !character(len=32) :: dir = "./"
-  character(len=32) :: safefile = "test_mpp_chksum_output.txt.out"
-  integer :: nx = 96, ny = 96, npz = 32
-!  integer :: nx = 32, ny = 32, npz = 16
-  logical :: debug = .true. !< turns on debug output, writes to safefile
+  integer :: nx = 96, ny = 96, npz = 63
+  logical :: debug = .false.
   integer :: npes, root, pe, ierr
 
-  namelist /test_mpp_chksum_nml/ test_num !, nx, ny, npz, debug, safefile
-  !namelist /base_nml/ num_files, dir, safefile, debug, nx, ny, npz
-  !namelist /second_nml/ num_files, dir, safefile, debug, nx, ny, npz
+  namelist /test_mpp_chksum_nml/ test_num
 
   call mpp_init
 
@@ -170,8 +164,8 @@ program test_mpp_chksum
     character(len=4) :: fn
     type(domain2d) :: domain
     integer, dimension(2) :: layout
-    integer, allocatable :: check_buff(:)
-    integer, dimension(4) :: pelist
+    integer(kind=i8_kind), allocatable :: check_root(:), check_pe(:)
+    integer(kind=i8_kind)              :: check_num
 
     call mpp_set_current_pelist()
     call mpp_domains_init()
@@ -204,59 +198,21 @@ program test_mpp_chksum
         enddo
       enddo
 
-    !do nfile = 1,num_files
-    !  fnum = 999 + nfile
-    !  write(fn,'(i4)')  fnum
-    !  if (debug) write(6,*) trim(dir)//'/fort.'//fn
-    !  open(20,file=trim(dir)//'/fort.'//fn)
-    !  read(20,*) isg(nfile),ieg(nfile),jsg(nfile),jeg(nfile),km
-    !  num_entry = (ieg(nfile)-isg(nfile)+1)*(jeg(nfile)-jsg(nfile)+1)*km
-    !  do ne = 1,num_entry
-    !    l = l + 1
-    !    read(20,*) i,j,k,temp8
-    !    u8_safe(i,j,k) = temp8
-    !    u8_safe1d(l) = temp8
-    !  enddo
-    !  rewind(20)
-    !  read(20,*)
-    !  do ne = 1,num_entry
-    !    m = m + 1
-    !    read(20,*) i,j,k,temp4
-    !    u4_safe(i,j,k) = temp4
-    !    u4_safe1d(m) = temp4
-    !  enddo
-    !  close(20)
-    !enddo
-      if (debug) then
-        open (10,file=trim(safefile))
-        do k = 1,npz
-         do j = 1,ny
-          do i = 1,nx
-           write(10,'(3(i5,2x))') i,j,k
-           write(10,*) u4_safe(i,j,k)
-          enddo
-         enddo
-        enddo
-        close(10)
-      endif
     endif ! end root section
 
-    call mpp_define_layout( (/ 1, nx, 1, ny /), mpp_npes(), layout)
+    !--- split up data by pe
+    isc = nx/npes * pe  + 1
+    iec = nx/npes * (pe+1)
+    jsc = ny/npes * pe + 1
+    jec = ny/npes * (pe+1)
+    if(iec == nx-1) iec = iec + 1
+    if(jec == ny-1) jec = jec + 1
+    if(debug) print *, 'pe', pe, 'bounds:', isc, iec, jsc, jec
 
-    call mpp_define_domains( (/ 1, nx, 1, ny /), layout, domain)
-    call mpp_get_compute_domain(domain, isc, iec, jsc, jec)
-
-    if (mpp_pe() == mpp_root_pe()) write(6,*) 'Root-pe here at sync'
-
-    !call mpp_sync()
+    call mpp_sync()
 
     !--- all pes read in their data chunk
-
-    !fnum = 1000 + mpp_pe()
-    !write(fn,'(i4)')  fnum
-    !if (debug) write(6,*) trim(dir)//'/fort.'//fn
-    !open(20,file=trim(dir)//'/fort.'//fn)
-    !read(20,*) isc,iec,jsc,jec,km
+    !--- uses same value scheme as global
     allocate (u4(nx,ny,npz))
     allocate (u8(nx,ny,npz))
     do k = 1,npz
@@ -272,71 +228,64 @@ program test_mpp_chksum
       enddo
     enddo
 
-    !num_entry = (iec-isc+1)*(jec-jsc+1)*km
-    !do ne = 1,num_entry
-    !  read(20,*) i,j,k,temp8
-    !  u8(i,j,k) = temp8
-    !enddo
-    !rewind(20)
-    !read(20,*)
-    !do ne = 1,num_entry
-    !  read(20,*) i,j,k,temp4
-    !  u4(i,j,k) = temp4
-    !enddo
-    !close(20)
-    !allocate(check_buff(0:npes-1))
-
-    !! r8 sums
+    !--- check output of r8 sums
+    allocate(check_root(4))
     if (mpp_pe() == mpp_root_pe()) then
-      !check_buff(pe) = mpp_chksum(u8)
-      !print *, mpp_chksum(u8)
-      !call mpp_broadcast( check_buff, npes, root)
-!!      print *, u8_safe
-      if( debug) then
+      !! unified checksums
+      check_root(1) = mpp_chksum(u8_safe, (/0/) )
+      check_root(2) = mpp_chksum(u8_safe1d, (/0/) )
+      check_root(3) = mpp_chksum(u8_safe1d(nx*ny*npz:1:-1), (/0/))
+      if( check_root(1) .ne. check_root(2) .or. check_root(2) .ne. check_root(3) ) &
+          call mpp_error(FATAL,'test_mpp_chksum: r8 single pe checksums do not match')
+      !! distributed
+      check_root(4) = mpp_chksum(u8)
+      call mpp_broadcast( check_root, 4, root)
+      if(debug) then
         print *, 'KIND=8 chksums'
-        print *, 'unified chksum is      :', mpp_chksum(u8_safe,   (/0/))
-        print *, 'unified 1D chksum is   :', mpp_chksum(u8_safe1d, (/0/))
-        print *, 'unified 1D-R chksum is :', mpp_chksum(u8_safe1d(nx*ny*npz:1:-1), (/0/))
+        print *, 'unified chksum is      :', check_root(1)
+        print *, 'unified 1D chksum is   :', check_root(2)
+        print *, 'unified 1D-R chksum is :', check_root(3)
+        print *, 'distributed checksum is:', check_root(4)
       endif
-
-      !!- check root sums match then check pe sums
-
-      !call mpp_transmit( mpp_chksum(u8), 1, pe, root_rbuf, 1, ALL_PES)
-      !call mpp_broadcast()
     else
-      !!- send pe sums
-
-       ! print *, 'distributed checksum is:',mpp_chksum(u8)
-      !call mpp_broadcast( check_buff, npes, root)
-      !check_buff(pe) = mpp_chksum(u8)
-      !open(10,file="/dev/null")
-      !write(10,*) mpp_chksum(u8)
-      !close(10)
-      !call mpp_transmit( mpp_chksum(u8), 1, pe, pe_rbuf, 1, root)
+      check_num = mpp_chksum(u8)
+      call mpp_broadcast( check_root, 4, root)
+      if(check_num .ne. check_root(4)) &
+        call mpp_error(FATAL, 'test_mpp_chksum: r8 distributed does not match root')
     endif
+    print *, 'all', mpp_chksum(u8)
 
-    !!call mpp_sync()
-    !! r4 sums
+    call mpp_sync()
+    check_root = 0
+
+    !--- check output of r4 sums
     if (mpp_pe() == mpp_root_pe()) then
+      !! unified checksums
+      check_root(1) = mpp_chksum(u4_safe, (/0/) )
+      check_root(2) = mpp_chksum(u4_safe1d, (/0/) )
+      check_root(3) = mpp_chksum(u4_safe1d(nx*ny*npz:1:-1), (/0/))
+      if( check_root(1) .ne. check_root(2) .or. check_root(2) .ne. check_root(3) ) &
+          call mpp_error(FATAL,'test_mpp_chksum: r8 single pe checksums do not match')
+      !! distributed
+      check_root(4) = mpp_chksum(u4)
+      call mpp_broadcast( check_root, 4, root)
       if(debug) then
         print *, 'KIND=4 chksums'
-        print *, 'unified chksum is      :', mpp_chksum(u4_safe,   (/0/))
-        print *, 'unified 1D chksum is   :', mpp_chksum(u4_safe1d, (/0/))
-        print *, 'unified 1D-R chksum is :', mpp_chksum(u4_safe1d(nx*ny*npz:1:-1), (/0/))
-       ! print *, 'distributed checksum is:', mpp_chksum(u4)
+        print *, 'unified chksum is      :', check_root(1)
+        print *, 'unified 1D chksum is   :', check_root(2)
+        print *, 'unified 1D-R chksum is :', check_root(3)
+        print *, 'distributed checksum is:', check_root(4)
       endif
-      !! - check sums match and pe sums
     else
-      !!- send pe sums
-
-      !open(10,file="/dev/null")
-      !write(10,*) mpp_chksum(u4)
-      !print *, pe, mpp_chksum(u4)
-      !close(10)
+      check_num = mpp_chksum(u4)
+      call mpp_broadcast( check_root, 4, root)
+      if(debug) print *, pe, check_root, check_num
+      if(check_root(4) .ne. check_num) call mpp_error(FATAL, 'test_mpp_chksum: r4 distributed does not match root')
     endif
 
-    !return
-    !call mpp_sync()
+    !! integer
+    call mpp_sync()
+
     km = npz
     allocate (sumi4(nx * ny * npz))
     allocate (sumi8(nx * ny * npz))
@@ -355,52 +304,51 @@ program test_mpp_chksum
      enddo
     enddo
 
-    if (mpp_pe() == mpp_root_pe()) then
-      print *, 'INTEGER chksums'
-      print *, 'distributed i4   array chksum:', mpp_chksum(int(sumi4,kind=i8_kind))
-      call mpp_sync()
-      print *, 'distributed i4-R array chksum:', mpp_chksum(int(sumi4(nx*ny*npz:1:-1),kind=i8_kind))
-      call mpp_sync()
-      print *, 'distributed i8   array chksum:', mpp_chksum(sumi8)
-      call mpp_sync()
-      print *, 'distributed i4   value chksum:', mpp_chksum(int(sumi43d,kind=i8_kind))
-      call mpp_sync()
-      print *, 'distributed i4-R value chksum:', mpp_chksum(int(sumi43d(iec:isc:-1,jec:jsc:-1,km:1:-1),kind=i8_kind))
-      call mpp_sync()
-      print *, 'distributed i8   value chksum:', mpp_chksum(sumi83d)
-    else
-      !call mpp_sync
-      !open(10,file="/dev/null")
-      !write(10,*) mpp_chksum(int(sumi4,kind=i8_kind))
-      print *, mpp_chksum(int(sumi4,kind=i8_kind))
-      call mpp_sync()
-      !write(10,*) mpp_chksum(int(sumi4(num_entry:1:-1),kind=i8_kind))
-      print *, mpp_chksum(int(sumi4(nx*ny*npz:1:-1),kind=i8_kind))
-      call mpp_sync()
-      !write(10,*) mpp_chksum(sumi8)
-      print *, mpp_chksum(sumi8)
-      call mpp_sync()
-      !write(10,*) mpp_chksum(int(sumi43d,kind=i8_kind))
-      print *, mpp_chksum(int(sumi43d,kind=i8_kind))
-      call mpp_sync()
-      !write(10,*) mpp_chksum(int(sumi43d(iec:isc:-1,jec:jsc:-1,km:1:-1),kind=i8_kind))
-      print *, mpp_chksum(int(sumi43d(iec:isc:-1,jec:jsc:-1,km:1:-1),kind=i8_kind))
-      call mpp_sync()
-      !write(10,*) mpp_chksum(sumi83d)
-      !call mpp_Sync()
-      print *, mpp_chksum(sumi83d)
-      !close(10)
-    endif
-    !!call mpp_sync()
+    deallocate(check_root)
+    allocate(check_root(6))
+    allocate(check_pe(6))
 
-    !!write(6,'(a,i4,2x,i,2x,i)') 'transfer function changes size of sumi8 array: ',mpp_pe(), size_bef, size_aft
-  !  if (debug) then
-  !    write(1000+mpp_pe(),'(i)') sumi8(:)
-  !    write(2000+mpp_pe(),'(i)') sumi83d(:,:,:)
-  !    write(3000+mpp_pe(),'(i)') sumi4(:)
-  !    write(4000+mpp_pe(),'(i)') sumi43d(:,:,:)
-  !  endif
-    !!call mpp_domains_exit()
+    if (mpp_pe() == mpp_root_pe()) then
+
+      check_root(1) = mpp_chksum(int(sumi4,kind=i8_kind))
+      call mpp_sync()
+      check_root(2) = mpp_chksum(int(sumi4(nx*ny*npz:1:-1),kind=i8_kind))
+      call mpp_sync()
+      check_root(3) = mpp_chksum(sumi8)
+      call mpp_sync()
+      check_root(4) = mpp_chksum(int(sumi43d,kind=i8_kind))
+      call mpp_sync()
+      check_root(5) = mpp_chksum(int(sumi43d(iec:isc:-1,jec:jsc:-1,km:1:-1),kind=i8_kind))
+      call mpp_sync()
+      check_root(6) = mpp_chksum(sumi83d)
+      call mpp_broadcast(check_root, 6, root)
+      if(debug) then
+        print *, 'INTEGER chksums'
+        print *, 'distributed i4   array chksum:', check_root(1)
+        print *, 'distributed i4-R array chksum:', check_root(2)
+        print *, 'distributed i8   array chksum:', check_root(3)
+        print *, 'distributed i4   value chksum:', check_root(4)
+        print *, 'distributed i4-R value chksum:', check_root(5)
+        print *, 'distributed i8   value chksum:', check_root(6)
+      endif
+    else
+      check_pe(1) = mpp_chksum(int(sumi4,kind=i8_kind))
+      call mpp_sync()
+      check_pe(2) = mpp_chksum(int(sumi4(nx*ny*npz:1:-1),kind=i8_kind))
+      call mpp_sync()
+      check_pe(3) = mpp_chksum(sumi8)
+      call mpp_sync()
+      check_pe(4) = mpp_chksum(int(sumi43d,kind=i8_kind))
+      call mpp_sync()
+      check_pe(5) = mpp_chksum(int(sumi43d(iec:isc:-1,jec:jsc:-1,km:1:-1),kind=i8_kind))
+      call mpp_sync()
+      check_pe(6) = mpp_chksum(sumi83d)
+
+      call mpp_broadcast(check_root, 6, root)
+      if(debug) print *, 'pe:', pe, check_pe
+
+      if( any(check_root .ne. check_pe) ) call mpp_error(FATAL, 'test_mpp_chksum: int checksums do not match')
+    endif
 
   end subroutine
 end program
