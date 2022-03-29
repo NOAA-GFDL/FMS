@@ -365,20 +365,21 @@ subroutine read_table(data_table)
     type(data_type)  :: data_entry
 
     logical               :: ongrid
+    logical               :: table_exists !< Flag indicating existence of data_table
     character(len=128)    :: region, region_type
 
     integer :: sunit
 
 !  Read coupler_table
-    open(newunit=iunit, file='data_table', action='READ', iostat=io_status)
-    if(io_status/=0) then
-      if(io_status==29) then
-        call mpp_error(NOTE, 'data_override_mod: File data_table does not exist.')
-      else
-        call mpp_error(FATAL, 'data_override_mod: Error in opening file data_table.')
-      endif
-    endif
+    inquire(file='data_table', EXIST=table_exists)
+    if (.not. table_exists) then
+      call mpp_error(NOTE, 'data_override_mod: File data_table does not exist.')
+      table_size = 0
+      return
+    end if
 
+    open(newunit=iunit, file='data_table', action='READ', iostat=io_status)
+    if(io_status/=0) call mpp_error(FATAL, 'data_override_mod: Error in opening file data_table.')
 
     ntable = 0
     ntable_lima = 0
