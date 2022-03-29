@@ -238,10 +238,9 @@ use platform_mod
   USE diag_output_mod, ONLY: get_diag_global_att, set_diag_global_att
   USE diag_grid_mod, ONLY: diag_grid_init, diag_grid_end
   USE fms_diag_object_mod, ONLY: fmsDiagObject_type
-  use fms_diag_object_container_mod, ONLY: FmsDiagObjectContainer_t
 
 #ifdef use_yaml
-  use fms_diag_yaml_mod, only: diag_yaml_object_init, diag_yaml_object_end
+  use fms_diag_yaml_mod, only: diag_yaml_object_init, diag_yaml_object_end, get_num_unique_fields
 #endif
 
   USE constants_mod, ONLY: SECONDS_PER_DAY
@@ -280,7 +279,8 @@ use platform_mod
 
   type(time_type) :: Time_end
 
-  TYPE(FmsDiagObjectContainer_t), ALLOCATABLE :: the_diag_object_container
+  TYPE(fmsDiagObject_type), ALLOCATABLE :: diag_objs(:) !< Array of diag objects, one for each registered variable
+  integer :: registered_variables !< Number of registered variables
 
   !> @brief Send data over to output fields.
   !!
@@ -3824,7 +3824,10 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
     if (allocated(fnum_for_domain)) deallocate(fnum_for_domain)
 
 #ifdef use_yaml
-    if (use_modern_diag) call diag_yaml_object_end
+    if (use_modern_diag) then
+      call diag_yaml_object_end
+      if (allocated(diag_objs)) deallocate(diag_objs)
+    endif
 #endif
   END SUBROUTINE diag_manager_end
 
@@ -4037,8 +4040,17 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
     END IF
 
 #ifdef use_yaml
-    if (use_modern_diag) CALL diag_yaml_object_init(diag_subset_output)
+    if (use_modern_diag) then
+      CALL diag_yaml_object_init(diag_subset_output)
+      allocate(diag_objs(get_num_unique_fields()))
+      registered_variables = 0
+    endif
+#else
+    if (use_modern_diag) &
+      call error_mesg("diag_manager_mod::diag_manager_init", &
+                       & "You need to compile with -Duse_yaml if diag_manager_nml::use_modern_diag=.true.", FATAL)
 #endif
+
    if (.not. use_modern_diag) then
      CALL parse_diag_table(DIAG_SUBSET=diag_subset_output, ISTAT=mystat, ERR_MSG=err_msg_local)
      IF ( mystat /= 0 ) THEN
@@ -4059,10 +4071,6 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
            & 'Missing Value',  FIELD_LOG_SEPARATOR, 'Min Value', FIELD_LOG_SEPARATOR,  &
            & 'Max Value',      FIELD_LOG_SEPARATOR, 'AXES LIST'
     END IF
-
-    !!Create the diag_object container; Its a singleton in the diag_data mod
-    allocate(the_diag_object_container)
-    call the_diag_object_container%initialize()
 
     module_is_initialized = .TRUE.
     ! create axis_id for scalars here

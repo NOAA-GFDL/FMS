@@ -88,6 +88,8 @@ if (.not. checking_crashes) then
   call compare_result("nfields", size(diag_fields), 3) !< the fourth variable has var_write = false so it doesn't count
   call compare_diag_fields(diag_fields)
 
+  !< Check that get_num_unique_fields is getting the correct number of unique fields
+  call compare_result("number of unique fields", get_num_unique_fields(), 2)
 endif
 deallocate(diag_files)
 deallocate(diag_fields)

@@ -34,6 +34,8 @@ use diag_data_mod,   only: DIAG_NULL, DIAG_OCEAN, DIAG_ALL, DIAG_OTHER, set_base
 use yaml_parser_mod, only: open_and_parse_file, get_value_from_key, get_num_blocks, get_nkeys, &
                            get_block_ids, get_key_value, get_key_ids, get_key_name
 use mpp_mod,         only: mpp_error, FATAL
+use, intrinsic :: iso_c_binding, only : c_ptr, c_null_char
+use fms_string_utils_mod, only: fms_array_to_pointer, fms_find_my_string, fms_sort_this, fms_find_unique
 
 implicit none
 
@@ -42,11 +44,27 @@ private
 public :: diag_yaml_object_init, diag_yaml_object_end
 public :: diagYamlObject_type, get_diag_yaml_obj, get_title, get_basedate, get_diag_files, get_diag_fields
 public :: diagYamlFiles_type, diagYamlFilesVar_type
+public :: get_num_unique_fields
+
 !> @}
 
 integer, parameter :: basedate_size = 6
 integer, parameter :: NUM_SUB_REGION_ARRAY = 8
 integer, parameter :: MAX_STR_LEN = 255
+
+!> @brief type to hold an array of sorted diag_fiels
+type varList_type
+  character(len=255), allocatable :: var_name(:) !< Array of diag_field
+  type(c_ptr), allocatable :: var_pointer(:) !< Array of pointers
+  integer, allocatable :: diag_field_indices(:) !< Index of the field in the diag_field array
+end type
+
+!> @brief type to hold an array of sorted diag_files
+type fileList_type
+  character(len=255), allocatable :: file_name(:) !< Array of diag_field
+  type(c_ptr), allocatable :: file_pointer(:) !< Array of pointers
+  integer, allocatable :: diag_file_indices(:)  !< Index of the file in the diag_file array
+end type
 
 !> @brief type to hold the sub region information about a file
 type subRegion_type
@@ -192,6 +210,8 @@ type diagYamlObject_type
 end type diagYamlObject_type
 
 type (diagYamlObject_type) :: diag_yaml  !< Obj containing the contents of the diag_table.yaml
+type (varList_type), save :: variable_list !< List of all the variables in the diag_table.yaml
+type (fileList_type), save :: file_list !< List of all files in the diag_table.yaml
 
 !> @addtogroup fms_diag_yaml_mod
 !> @{
@@ -313,6 +333,10 @@ subroutine diag_yaml_object_init(diag_subset_output)
 
   allocate(diag_yaml%diag_files(actual_num_files))
   allocate(diag_yaml%diag_fields(total_nvars))
+  allocate(variable_list%var_name(total_nvars))
+  allocate(variable_list%diag_field_indices(total_nvars))
+  allocate(file_list%file_name(actual_num_files))
+  allocate(file_list%diag_file_indices(actual_num_files))
 
   var_count = 0
   file_count = 0
@@ -322,6 +346,10 @@ subroutine diag_yaml_object_init(diag_subset_output)
     file_count = file_count + 1
     call diag_yaml_files_obj_init(diag_yaml%diag_files(file_count))
     call fill_in_diag_files(diag_yaml_id, diag_file_ids(i), diag_yaml%diag_files(file_count))
+
+    !> Save the file name in the file_list
+    file_list%file_name(file_count) = trim(diag_yaml%diag_files(file_count)%file_fname)//c_null_char
+    file_list%diag_file_indices(file_count) = file_count
 
     nvars = 0
     nvars = get_num_blocks(diag_yaml_id, "varlist", parent_block_id=diag_file_ids(i))
@@ -344,9 +372,20 @@ subroutine diag_yaml_object_init(diag_subset_output)
 
       !> Save the variable name in the diag_file type
       diag_yaml%diag_files(file_count)%file_varlist(file_var_count) = diag_yaml%diag_fields(var_count)%var_varname
+
+      !> Save the variable name in the variable_list
+      variable_list%var_name(var_count) = trim(diag_yaml%diag_fields(var_count)%var_varname)//c_null_char
+      variable_list%diag_field_indices(var_count) = var_count
     enddo nvars_loop
     deallocate(var_ids)
   enddo nfiles_loop
+
+  !> Sort the file list in alphabetical order
+  file_list%file_pointer = fms_array_to_pointer(file_list%file_name)
+  call fms_sort_this(file_list%file_pointer, actual_num_files, file_list%diag_file_indices)
+
+  variable_list%var_pointer = fms_array_to_pointer(variable_list%var_name)
+  call fms_sort_this(variable_list%var_pointer, total_nvars, variable_list%diag_field_indices)
 
   deallocate(diag_file_ids)
 end subroutine
@@ -369,6 +408,14 @@ subroutine diag_yaml_object_end()
     if(allocated(diag_yaml%diag_fields(i)%var_attributes)) deallocate(diag_yaml%diag_fields(i)%var_attributes)
   enddo
   if(allocated(diag_yaml%diag_fields)) deallocate(diag_yaml%diag_fields)
+
+  if(allocated(file_list%file_pointer)) deallocate(file_list%file_pointer)
+  if(allocated(file_list%file_name)) deallocate(file_list%file_name)
+  if(allocated(file_list%diag_file_indices)) deallocate(file_list%diag_file_indices)
+
+  if(allocated(variable_list%var_pointer)) deallocate(variable_list%var_pointer)
+  if(allocated(variable_list%var_name)) deallocate(variable_list%var_name)
+  if(allocated(variable_list%diag_field_indices)) deallocate(variable_list%diag_field_indices)
 
 end subroutine diag_yaml_object_end
 
@@ -1106,6 +1153,14 @@ pure logical function has_diag_fields (obj)
   has_diag_fields = allocated(obj%diag_fields)
 end function has_diag_fields  
 
+!> @brief Determine the number of unique diag_fields in the diag_yaml_object
+!! @return The number of unique diag_fields
+function get_num_unique_fields() &
+  result(nfields)
+  integer :: nfields
+  nfields = fms_find_unique(variable_list%var_pointer, size(variable_list%var_pointer))
+
+end function get_num_unique_fields
 
 #endif
 end module fms_diag_yaml_mod
