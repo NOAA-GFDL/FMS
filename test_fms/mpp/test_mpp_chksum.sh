@@ -36,12 +36,12 @@ test_expect_success "mpp_chksum simple functionality" '
 '
 
 sed -i 's/test_num = 1/test_num = 2/' input.nml
-test_expect_success "mpp integer checksums with mixed precision" '
+test_expect_success "mpp integer checksums" '
     mpirun -n 4 ./test_mpp_chksum
 '
 
 sed -i 's/test_num = 2/test_num = 3/' input.nml
-test_expect_success "mpp real checksums with mixed precision" '
+test_expect_success "mpp_chksum with mixed precision" '
     mpirun -n 4 ./test_mpp_chksum
 '
 test_done

@@ -18,9 +18,9 @@
 !***********************************************************************
 !> @author Ryan Mulhall
 !> @email gfdl.climate.model.info@noaa.gov
-!> @brief Test mpp_chksum with mixed precision integers
-!> @description Tests mpp_chksum with 8 and 4 byte integer arrays with
-!> normal and distributed checksums
+!> @brief Test mpp_chksum routines 
+!> @description Tests mpp_chksum with 8 and 4 byte integer and real arrays with
+!> single pe and distributed checksums
 program test_mpp_chksum
 
   use fms
@@ -53,7 +53,6 @@ program test_mpp_chksum
     call mpp_error(FATAL, 'test_mpp_chksum: invalid test number given')
   endif
 
-  !call mpp_exit
   call MPI_FINALIZE
 
   contains
@@ -168,8 +167,6 @@ program test_mpp_chksum
     integer(kind=i8_kind)              :: check_num
 
     call mpp_set_current_pelist()
-    call mpp_domains_init()
-    call mpp_domains_set_stack_size(3145746)
 
   !--- root pe reads in all data
     if (mpp_pe() == mpp_root_pe()) then
@@ -198,7 +195,7 @@ program test_mpp_chksum
         enddo
       enddo
 
-    endif ! end root section
+    endif
 
     !--- split up data by pe
     isc = nx/npes * pe  + 1
@@ -253,7 +250,6 @@ program test_mpp_chksum
       if(check_num .ne. check_root(4)) &
         call mpp_error(FATAL, 'test_mpp_chksum: r8 distributed does not match root')
     endif
-    print *, 'all', mpp_chksum(u8)
 
     call mpp_sync()
     check_root = 0
