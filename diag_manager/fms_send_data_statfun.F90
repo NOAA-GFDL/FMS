@@ -290,11 +290,9 @@ PURE FUNCTION weigh_field_1d_p1 ( field_val, weight, pow_value )
                 DO j=js, je
                   DO i=is, ie
                     IF ( mask(i-is+1+hi, j-js+1+hj, k) ) THEN
-                      output_fields(out_num)%buffer(i-hi,j-hj,k1,sample) =&
-                        & output_fields(out_num)%buffer(i-hi,j-hj,k1,sample) +&
+                      ofb(i-hi,j-hj,k1,sample) = ofb(i-hi,j-hj,k1,sample) +&
                         & fwf_0d_ptr (field(i-is+1+hi, j-js+1+hj, k), weight1, pow_value)
-                      output_fields(out_num)%counter(i-hi,j-hj,k1,sample) =&
-                        & output_fields(out_num)%counter(i-hi,j-hj,k1,sample) + weight1
+                      ofc(i-hi,j-hj,k1,sample) = ofc(i-hi,j-hj,k1,sample) + weight1
                     END IF
                   END DO
                 END DO
@@ -319,11 +317,9 @@ PURE FUNCTION weigh_field_1d_p1 ( field_val, weight, pow_value )
                 DO j=js, je
                   DO i=is, ie
                     IF ( mask(i-is+1+hi, j-js+1+hj, k) ) THEN
-                      output_fields(out_num)%buffer(i-hi,j-hj,k1,sample) =&
-                          & output_fields(out_num)%buffer(i-hi,j-hj,k1,sample) + &
+                      ofb(i-hi,j-hj,k1,sample) = ofb(i-hi,j-hj,k1,sample) + &
                           & fwf_0d_ptr (field(i-is+1+hi, j-js+1+hj, k),  weight1, pow_value)
-                      output_fields(out_num)%counter(i-hi,j-hj,k1,sample) =&
-                        & output_fields(out_num)%counter(i-hi,j-hj,k1,sample) + weight1
+                      ofc(i-hi,j-hj,k1,sample) = ofc(i-hi,j-hj,k1,sample) + weight1
                     END IF
                   END DO
                 END DO
@@ -333,11 +329,9 @@ PURE FUNCTION weigh_field_1d_p1 ( field_val, weight, pow_value )
                 DO j=js, je
                   DO i=is, ie
                     IF ( mask(i-is+1+hi, j-js+1+hj, k) ) THEN
-                      output_fields(out_num)%buffer(i-hi,j-hj,k,sample) = &
-                          & output_fields(out_num)%buffer(i-hi,j-hj,k,sample) +  &
+                      ofb(i-hi,j-hj,k,sample) = ofb(i-hi,j-hj,k,sample) +  &
                           & fwf_0d_ptr( field(i-is+1+hi,j-js+1+hj,k), weight1, pow_value)
-                      output_fields(out_num)%counter(i-hi,j-hj,k,sample) =&
-                        &output_fields(out_num)%counter(i-hi,j-hj,k,sample) + weight1
+                      ofc(i-hi,j-hj,k,sample) = ofc(i-hi,j-hj,k,sample) + weight1
                     END IF
                   END DO
                 END DO
@@ -378,11 +372,10 @@ PURE FUNCTION weigh_field_1d_p1 ( field_val, weight, pow_value )
                       i1 = i-l_start(1)-hi+1
                       j1=  j-l_start(2)-hj+1
                       IF ( mask(i-is+1+hi, j-js+1+hj, k) ) THEN
-                          output_fields(out_num)%buffer(i1,j1,k1,sample) =&
-                            & output_fields(out_num)%buffer(i1,j1,k1,sample) +&
+                          ofb(i1,j1,k1,sample) = ofb(i1,j1,k1,sample) +&
                             & fwf_0d_ptr( field(i-is+1+hi,j-js+1+hj,k),  weight1, pow_value)
                       ELSE
-                        output_fields(out_num)%buffer(i1,j1,k1,sample) = missvalue
+                        ofb(i1,j1,k1,sample) = missvalue
                       END IF
                     END IF
                   END DO
@@ -398,11 +391,10 @@ PURE FUNCTION weigh_field_1d_p1 ( field_val, weight, pow_value )
                       i1 = i-l_start(1)-hi+1
                       j1=  j-l_start(2)-hj+1
                       IF ( mask(i-is+1+hi, j-js+1+hj, k) ) THEN
-                          output_fields(out_num)%buffer(i1,j1,k1,sample) =&
-                            & output_fields(out_num)%buffer(i1,j1,k1,sample) + &
+                          ofb(i1,j1,k1,sample) = ofb(i1,j1,k1,sample) + &
                             & fwf_0d_ptr( field(i-is+1+hi,j-js+1+hj,k), weight1, pow_value)
                       ELSE
-                        output_fields(out_num)%buffer(i1,j1,k1,sample) = missvalue
+                        ofb(i1,j1,k1,sample) = missvalue
                       END IF
                     END IF
                   END DO
@@ -425,11 +417,10 @@ PURE FUNCTION weigh_field_1d_p1 ( field_val, weight, pow_value )
                 DO j=js, je
                   DO i=is, ie
                     IF ( mask(i-is+1+hi,j-js+1+hj,k) ) THEN
-                        output_fields(out_num)%buffer(i-hi,j-hj,k1,sample) =&
-                          & output_fields(out_num)%buffer(i-hi,j-hj,k1,sample)+ &
+                        ofb(i-hi,j-hj,k1,sample) = ofb(i-hi,j-hj,k1,sample) + &
                           & fwf_0d_ptr (field(i-is+1+hi,j-js+1+hj,k), weight1, pow_value)
                     ELSE
-                      output_fields(out_num)%buffer(i-hi,j-hj,k1,sample)= missvalue
+                      ofb(i-hi,j-hj,k1,sample)= missvalue
                     END IF
                   END DO
                 END DO
@@ -440,11 +431,10 @@ PURE FUNCTION weigh_field_1d_p1 ( field_val, weight, pow_value )
                 DO j=js, je
                   DO i=is, ie
                     IF ( mask(i-is+1+hi,j-js+1+hj,k) ) THEN
-                      output_fields(out_num)%buffer(i-hi,j-hj,k1,sample) =&
-                        & output_fields(out_num)%buffer(i-hi,j-hj,k1,sample)+ &
+                      ofb(i-hi,j-hj,k1,sample) = ofb(i-hi,j-hj,k1,sample) + &
                         & fwf_0d_ptr ( field(i-is+1+hi,j-js+1+hj,k) ,weight1, pow_value)
                     ELSE
-                      output_fields(out_num)%buffer(i-hi,j-hj,k1,sample)= missvalue
+                      ofb(i-hi,j-hj,k1,sample)= missvalue
                     END IF
                   END DO
                 END DO
@@ -466,11 +456,10 @@ PURE FUNCTION weigh_field_1d_p1 ( field_val, weight, pow_value )
                 DO j=js, je
                   DO i=is, ie
                     IF ( mask(i-is+1+hi,j-js+1+hj,k) ) THEN
-                        output_fields(out_num)%buffer(i-hi,j-hj,k,sample) = &
-                          & output_fields(out_num)%buffer(i-hi,j-hj,k,sample)+ &
+                        ofb(i-hi,j-hj,k,sample) = ofb(i-hi,j-hj,k,sample) + &
                           & fwf_0d_ptr ( field(i-is+1+hi,j-js+1+hj,k), weight1, pow_value)
                     ELSE
-                      output_fields(out_num)%buffer(i-hi,j-hj,k,sample)= missvalue
+                      ofb(i-hi,j-hj,k,sample)= missvalue
                     END IF
                   END DO
                 END DO
@@ -480,11 +469,10 @@ PURE FUNCTION weigh_field_1d_p1 ( field_val, weight, pow_value )
                 DO j=js, je
                   DO i=is, ie
                     IF ( mask(i-is+1+hi,j-js+1+hj,k) ) THEN
-                      output_fields(out_num)%buffer(i-hi,j-hj,k,sample) =&
-                        & output_fields(out_num)%buffer(i-hi,j-hj,k,sample)+ &
+                      ofb(i-hi,j-hj,k,sample) = ofb(i-hi,j-hj,k,sample) + &
                         & fwf_0d_ptr ( field(i-is+1+hi,j-js+1+hj,k), weight1, pow_value)
                     ELSE
-                      output_fields(out_num)%buffer(i-hi,j-hj,k,sample)= missvalue
+                      ofb(i-hi,j-hj,k,sample)= missvalue
                     END IF
                   END DO
                 END DO
@@ -521,11 +509,8 @@ PURE FUNCTION weigh_field_1d_p1 ( field_val, weight, pow_value )
                     & j <= l_end(2)+hj ) THEN
                     i1 = i-l_start(1)-hi+1
                     j1 =  j-l_start(2)-hj+1
-                      output_fields(out_num)%buffer(i1,j1,:,sample)= &
-                        & output_fields(out_num)%buffer(i1,j1,:,sample)+ &
-                        & weigh_field_pp_1d(field(i-is+1+hi,j-js+1+hj,l_start(3):l_end(3)), weight1,pow_value)
-                        !& (field(i-is+1+hi,j-js+1+hj,l_start(3):l_end(3))*weight1)**(pow_value)
-
+                      ofb(i1,j1,:,sample)=  ofb(i1,j1,:,sample)+ &
+                        & fwf_1d_ptr(field(i-is+1+hi,j-js+1+hj,l_start(3):l_end(3)), weight1,pow_value)
                   END IF
                 END DO
               END DO
@@ -536,11 +521,8 @@ PURE FUNCTION weigh_field_1d_p1 ( field_val, weight, pow_value )
                     & j <= l_end(2)+hj ) THEN
                     i1 = i-l_start(1)-hi+1
                     j1 =  j-l_start(2)-hj+1
-                    output_fields(out_num)%buffer(i1,j1,:,sample)= &
-                        & output_fields(out_num)%buffer(i1,j1,:,sample)+ &
+                    ofb(i1,j1,:,sample) = ofb(i1,j1,:,sample) + &
                         & fwf_1d_ptr(field(i-is+1+hi,j-js+1+hj,l_start(3):l_end(3)),weight1, pow_value)
-                        !!& (field(i-is+1+hi,j-js+1+hj,l_start(3):l_end(3))*weight1)**(pow_value)
-
                   END IF
                 END DO
               END DO  !$OMP END CRITICAL
@@ -551,7 +533,6 @@ PURE FUNCTION weigh_field_1d_p1 ( field_val, weight, pow_value )
                   & j <= l_end(2)+hj ) THEN
                   output_fields(out_num)%num_elements(sample)=&
                     & output_fields(out_num)%num_elements(sample)+l_end(3)-l_start(3)+1
-
                 END IF
               END DO
             END DO !$OMP END CRITICAL
@@ -559,16 +540,12 @@ PURE FUNCTION weigh_field_1d_p1 ( field_val, weight, pow_value )
             IF (numthreads>1 .AND. phys_window) then
               ksr= l_start(3)
               ker= l_end(3)
-              output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,:,sample) =&
-                  & output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,:,sample) +&
+              ofb(is-hi:ie-hi,js-hj:je-hj,:,sample) = ofb(is-hi:ie-hi,js-hj:je-hj,:,sample) +&
                   & fwf_3d_ptr (field(f1:f2,f3:f4,ksr:ker), weight1, pow_value)
-                  !!& (field(f1:f2,f3:f4,ksr:ker)*weight1)**(pow_value)
-
             ELSE  !$OMP CRITICAL
               ksr= l_start(3)
               ker= l_end(3)
-                output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,:,sample) =&
-                  & output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,:,sample) +&
+                ofb(is-hi:ie-hi,js-hj:je-hj,:,sample) = ofb(is-hi:ie-hi,js-hj:je-hj,:,sample) +&
                   & fwf_3D_ptr( field(f1:f2,f3:f4,ksr:ker), weight1, pow_value)
               END IF  !$OMP END CRITICAL
           ELSE
@@ -584,14 +561,13 @@ PURE FUNCTION weigh_field_1d_p1 ( field_val, weight, pow_value )
             END IF
             !!TODO: DWhat is difference in two below?
             IF (numthreads>1 .AND. phys_window) then
-                output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) =&
-                  & output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) +&
+                ofb(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) =&
+                  & ofb(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) +&
                   & fwf_3d_ptr(field(f1:f2,f3:f4,ks:ke), weight1, pow_value)
             ELSE  !$OMP CRITICAL
-                output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) =&
-                  & output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) +&
+                ofb(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) =&
+                  & ofb(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) +&
                   fwf_3d_ptr(field(f1:f2,f3:f4,ks:ke), weight1 , pow_value)
-                  !!& (field(f1:f2,f3:f4,ks:ke)*weight1)**(pow_value)
             END IF
           END IF  !$OMP CRITICAL
           IF ( .NOT.phys_window ) output_fields(out_num)%count_0d(sample) =&
@@ -610,11 +586,10 @@ PURE FUNCTION weigh_field_1d_p1 ( field_val, weight, pow_value )
                       i1 = i-l_start(1)-hi+1
                       j1=  j-l_start(2)-hj+1
                       IF ( field(i-is+1+hi,j-js+1+hj,k) /= missvalue ) THEN
-                          output_fields(out_num)%buffer(i1,j1,k1,sample) =&
-                            & output_fields(out_num)%buffer(i1,j1,k1,sample) +&
+                          ofb(i1,j1,k1,sample) = ofb(i1,j1,k1,sample) + &
                             & fwf_0d_ptr(field(i-is+1+hi,j-js+1+hj,k), weight1, pow_value)
                       ELSE
-                        output_fields(out_num)%buffer(i1,j1,k1,sample) = missvalue
+                        ofb(i1,j1,k1,sample) = missvalue
                       END IF
                     END IF
                   END DO
@@ -630,12 +605,10 @@ PURE FUNCTION weigh_field_1d_p1 ( field_val, weight, pow_value )
                       i1 = i-l_start(1)-hi+1
                       j1=  j-l_start(2)-hj+1
                       IF ( field(i-is+1+hi,j-js+1+hj,k) /= missvalue ) THEN
-                        output_fields(out_num)%buffer(i1,j1,k1,sample) =&
-                          & output_fields(out_num)%buffer(i1,j1,k1,sample) +&
+                        ofb(i1,j1,k1,sample) = ofb(i1,j1,k1,sample) + &
                           & fwf_0d_ptr(field(i-is+1+hi,j-js+1+hj,k), weight1, pow_value)
-                          !& (field(i-is+1+hi,j-js+1+hj,k) * weight1)**(pow_value)
                       ELSE
-                        output_fields(out_num)%buffer(i1,j1,k1,sample) = missvalue
+                        ofb(i1,j1,k1,sample) = missvalue
                       END IF
                     END IF
                   END DO
@@ -673,13 +646,10 @@ PURE FUNCTION weigh_field_1d_p1 ( field_val, weight, pow_value )
                 DO j=js, je
                   DO i=is, ie
                     IF ( field(i-is+1+hi,j-js+1+hj,k) /= missvalue ) THEN
-                      output_fields(out_num)%buffer(i-hi,j-hj,k1,sample) =&
-                          & output_fields(out_num)%buffer(i-hi,j-hj,k1,sample) +&
+                      ofb(i-hi,j-hj,k1,sample) =  ofb(i-hi,j-hj,k1,sample) + &
                           & fwf_0d_ptr(field(i-is+1+hi,j-js+1+hj,k), weight1, pow_value)
-                          !& (field(i-is+1+hi,j-js+1+hj,k) * weight1)**(pow_value)
-
                     ELSE
-                      output_fields(out_num)%buffer(i-hi,j-hj,k1,sample) = missvalue
+                      ofb(i-hi,j-hj,k1,sample) = missvalue
                     END IF
                   END DO
                 END DO
@@ -692,11 +662,10 @@ PURE FUNCTION weigh_field_1d_p1 ( field_val, weight, pow_value )
                 DO j=js, je
                   DO i=is, ie
                     IF ( field(i-is+1+hi,j-js+1+hj,k) /= missvalue ) THEN
-                      output_fields(out_num)%buffer(i-hi,j-hj,k1,sample) =&
-                        & output_fields(out_num)%buffer(i-hi,j-hj,k1,sample) +&
+                      ofb(i-hi,j-hj,k1,sample) = ofb(i-hi,j-hj,k1,sample) +&
                         & fwf_0d_ptr(field(i-is+1+hi,j-js+1+hj,k), weight1, pow_value)
                     ELSE
-                      output_fields(out_num)%buffer(i-hi,j-hj,k1,sample) = missvalue
+                      ofb(i-hi,j-hj,k1,sample) = missvalue
                     END IF
                   END DO
                 END DO
@@ -730,12 +699,10 @@ PURE FUNCTION weigh_field_1d_p1 ( field_val, weight, pow_value )
                 DO j=js, je
                   DO i=is, ie
                     IF ( field(i-is+1+hi,j-js+1+hj,k) /= missvalue )  THEN
-                      output_fields(out_num)%buffer(i-hi,j-hj,k,sample) =&
-                          & output_fields(out_num)%buffer(i-hi,j-hj,k,sample) +&
+                      ofb(i-hi,j-hj,k,sample) = ofb(i-hi,j-hj,k,sample) +&
                           & fwf_0d_ptr(field(i-is+1+hi,j-js+1+hj,k), weight1, pow_value)
-                          !& (field(i-is+1+hi,j-js+1+hj,k) * weight1)**(pow_value)
                     ELSE
-                      output_fields(out_num)%buffer(i-hi,j-hj,k,sample) = missvalue
+                      ofb(i-hi,j-hj,k,sample) = missvalue
                     END IF
                   END DO
                 END DO
@@ -745,11 +712,10 @@ PURE FUNCTION weigh_field_1d_p1 ( field_val, weight, pow_value )
                 DO j=js, je
                   DO i=is, ie
                     IF ( field(i-is+1+hi,j-js+1+hj,k) /= missvalue )  THEN
-                      output_fields(out_num)%buffer(i-hi,j-hj,k,sample) =&
-                          & output_fields(out_num)%buffer(i-hi,j-hj,k,sample) +&
+                      ofb(i-hi,j-hj,k,sample) = ofb(i-hi,j-hj,k,sample) +&
                           & fwf_0d_ptr(field(i-is+1+hi,j-js+1+hj,k), weight1, pow_value)
                     ELSE
-                      output_fields(out_num)%buffer(i-hi,j-hj,k,sample) = missvalue
+                      ofb(i-hi,j-hj,k,sample) = missvalue
                     END IF
                   END DO
                 END DO
@@ -776,11 +742,8 @@ PURE FUNCTION weigh_field_1d_p1 ( field_val, weight, pow_value )
                     & j <= l_end(2)+hj ) THEN
                     i1 = i-l_start(1)-hi+1
                     j1=  j-l_start(2)-hj+1
-                    output_fields(out_num)%buffer(i1,j1,:,sample)= &
-                        & output_fields(out_num)%buffer(i1,j1,:,sample) +&
+                    ofb(i1,j1,:,sample) = ofb(i1,j1,:,sample) + &
                         & fwf_1d_ptr(field(i-is+1+hi,j-js+1+hj,l_start(3):l_end(3)), weight1, pow_value)
-                        !!& (field(i-is+1+hi,j-js+1+hj,l_start(3):l_end(3))*weight1)**(pow_value)
-
                   END IF
                 END DO
               END DO
@@ -791,8 +754,7 @@ PURE FUNCTION weigh_field_1d_p1 ( field_val, weight, pow_value )
                     & j <= l_end(2)+hj ) THEN
                     i1 = i-l_start(1)-hi+1
                     j1=  j-l_start(2)-hj+1
-                    output_fields(out_num)%buffer(i1,j1,:,sample)= &
-                        & output_fields(out_num)%buffer(i1,j1,:,sample) +&
+                    ofb(i1,j1,:,sample)= ofb(i1,j1,:,sample) +&
                         & fwf_1d_ptr(field(i-is+1+hi,j-js+1+hj,l_start(3):l_end(3)), weight1, pow_value)
                   END IF
                 END DO
@@ -812,14 +774,13 @@ PURE FUNCTION weigh_field_1d_p1 ( field_val, weight, pow_value )
             ksr= l_start(3)
             ker= l_end(3)
             IF( numthreads > 1 .AND. phys_window ) then
-              output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,:,sample) =&
-                  & output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,:,sample) + &
+              ofb(is-hi:ie-hi,js-hj:je-hj,:,sample) =&
+                  & ofb(is-hi:ie-hi,js-hj:je-hj,:,sample) + &
                   & fwf_3d_ptr(field(f1:f2,f3:f4,ksr:ker), weight1, pow_value)
             ELSE  !$OMP CRITICAL
-                output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,:,sample) =&
-                  & output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,:,sample) + &
+                ofb(is-hi:ie-hi,js-hj:je-hj,:,sample) =&
+                  & ofb(is-hi:ie-hi,js-hj:je-hj,:,sample) + &
                   & fwf_3d_ptr(field(f1:f2,f3:f4,ksr:ker), weight1, pow_value)
-                  !& (field(f1:f2,f3:f4,ksr:ker)*weight1)**(pow_value)
             END IF
           ELSE
             IF ( debug_diag_manager ) THEN
@@ -833,12 +794,12 @@ PURE FUNCTION weigh_field_1d_p1 ( field_val, weight, pow_value )
               END IF
             END IF
             IF( numthreads > 1 .AND. phys_window ) then
-              output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) =&
-                  & output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) +&
+              ofb(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) =&
+                  & ofb(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) +&
                   & fwf_3d_ptr(field(f1:f2,f3:f4,ks:ke), weight1, pow_value)
             ELSE  !$OMP CRITICAL
-              output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) =&
-                  & output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) +&
+              ofb(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) =&
+                  & ofb(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) +&
                   & fwf_3d_ptr(field(f1:f2,f3:f4,ks:ke), weight1, pow_value)
               !!  !$OMP END CRITICAL
             END IF
