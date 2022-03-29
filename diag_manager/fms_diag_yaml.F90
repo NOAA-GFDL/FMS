@@ -53,14 +53,14 @@ integer, parameter :: NUM_SUB_REGION_ARRAY = 8
 integer, parameter :: MAX_STR_LEN = 255
 
 !> @brief type to hold an array of sorted diag_fiels
-type varList
+type varList_type
   character(len=255), allocatable :: var_name(:) !< Array of diag_field
   type(c_ptr), allocatable :: var_pointer(:) !< Array of pointers
   integer, allocatable :: diag_field_indices(:) !< Index of the field in the diag_field array
 end type
 
 !> @brief type to hold an array of sorted diag_files
-type fileList
+type fileList_type
   character(len=255), allocatable :: file_name(:) !< Array of diag_field
   type(c_ptr), allocatable :: file_pointer(:) !< Array of pointers
   integer, allocatable :: diag_file_indices(:)  !< Index of the file in the diag_file array
@@ -211,8 +211,8 @@ type diagYamlObject_type
 end type diagYamlObject_type
 
 type (diagYamlObject_type) :: diag_yaml  !< Obj containing the contents of the diag_table.yaml
-type (varList), save :: variable_list !< List of all the variables in the diag_table.yaml
-type (fileList), save :: file_list !< List of all files in the diag_table.yaml
+type (varList_type), save :: variable_list !< List of all the variables in the diag_table.yaml
+type (fileList_type), save :: file_list !< List of all files in the diag_table.yaml
 
 !> @addtogroup fms_diag_yaml_mod
 !> @{
