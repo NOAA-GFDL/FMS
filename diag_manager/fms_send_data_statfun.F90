@@ -253,6 +253,8 @@ PURE FUNCTION weigh_field_1d_p1 ( field_val, weight, pow_value )
     missvalue = cfg%missvalue
 
 
+    ASSOCIATE( ofb => output_fields(out_num)%buffer , &
+      & ofc => output_fields(out_num)%counter)
 
     IF ( input_fields(diag_field_id)%mask_variant ) THEN
       IF ( need_compute ) THEN
@@ -288,15 +290,9 @@ PURE FUNCTION weigh_field_1d_p1 ( field_val, weight, pow_value )
                 DO j=js, je
                   DO i=is, ie
                     IF ( mask(i-is+1+hi, j-js+1+hj, k) ) THEN
-                      IF ( pow_value /= 1 ) THEN
-                        output_fields(out_num)%buffer(i-hi,j-hj,k1,sample) =&
-                          & output_fields(out_num)%buffer(i-hi,j-hj,k1,sample) +&
-                          & (field(i-is+1+hi, j-js+1+hj, k) * weight1)**(pow_value)
-                      ELSE
-                        output_fields(out_num)%buffer(i-hi,j-hj,k1,sample) =&
-                          & output_fields(out_num)%buffer(i-hi,j-hj,k1,sample) +&
-                          & field(i-is+1+hi, j-js+1+hj, k) * weight1
-                      END IF
+                      output_fields(out_num)%buffer(i-hi,j-hj,k1,sample) =&
+                        & output_fields(out_num)%buffer(i-hi,j-hj,k1,sample) +&
+                        & fwf_0d_ptr (field(i-is+1+hi, j-js+1+hj, k), weight1, pow_value)
                       output_fields(out_num)%counter(i-hi,j-hj,k1,sample) =&
                         & output_fields(out_num)%counter(i-hi,j-hj,k1,sample) + weight1
                     END IF
@@ -307,12 +303,10 @@ PURE FUNCTION weigh_field_1d_p1 ( field_val, weight, pow_value )
               NORMAL2: DO k=ks, ke
                 DO j=js, je
                   DO i=is, ie
-                    IF ( mask(i-is+1+hi, j-js+1+hj, k) ) THEN  !!Includes removal of ( pow_value /= 1 ) ifhten
-                        ASSOCIATE( ofb => output_fields(out_num)%buffer (i-hi,j-hj,k,sample) , &
-                          & ofc => output_fields(out_num)%counter(i-hi,j-hj,k,sample))
-                          ofb = ofb + (field(i-is+1+hi,j-js+1+hj,k) * weight1) ** pow_value
-                          ofc = ofc + weight1
-                        END ASSOCIATE
+                    IF ( mask(i-is+1+hi, j-js+1+hj, k) ) THEN
+                      ofb(i-hi,j-hj,k,sample) = ofb(i-hi,j-hj,k,sample) + &
+                        & fwf_0d_ptr (field(i-is+1+hi,j-js+1+hj,k), weight1,  pow_value)
+                      ofc(i-hi,j-hj,k,sample) = ofc(i-hi,j-hj,k,sample) + weight1
                     END IF
                   END DO
                 END DO
@@ -854,6 +848,7 @@ PURE FUNCTION weigh_field_1d_p1 ( field_val, weight, pow_value )
         END IF
       END IF ! if mask present
     END IF  !if mask_variant  !$OMP CRITICAL
+    END ASSOCIATE
     IF ( .NOT.need_compute .AND. .NOT.reduced_k_range )&
       & output_fields(out_num)%num_elements(sample) =&
       & output_fields(out_num)%num_elements(sample) + (ie-is+1)*(je-js+1)*(ke-ks+1)
