@@ -7,16 +7,15 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        distcheck-conf-flags: [--enable-openmp, --disable-openmp, --enable-mixed-mode, --disable-setting-flags ]
+        distcheck-conf-flags: [--enable-openmp, --disable-openmp, --enable-mixed-mode, --disable-setting-flags, --with-mpi=no ]
         yaml-flag: [ --with-yaml, "" ]
     container:
-      image: ryanmulhall/hpc-me.ubuntu-minimal:intel
+      image: noaagfdl/ubuntu_libfms_gnu
       env:
-        VERBOSE: 1
+        FCFLAGS: "-I/usr/include"
+        TEST_VERBOSE: 1
         DISTCHECK_CONFIGURE_FLAGS: "${{ matrix.distcheck-conf-flags }} ${{ matrix.yaml-flag }}"
     steps:
-    - name: Set up image environment
-      run: . /opt/intel/oneapi/setvars.sh
     - name: Checkout code
       uses: actions/checkout@v2
     - name: Prepare GNU autoconf for build
@@ -28,6 +27,6 @@ jobs:
       if: ${{ matrix.distcheck-conf-flags == '--disable-setting-flags' }}
       run: ./configure ${DISTCHECK_CONFIGURE_FLAGS}
       env:
-        FCFLAGS: "-fdefault-real-8 -fdefault-double-8 -fcray-pointer -ffree-line-length-none -I/usr/include ${FCFLAGS}"
+        FCFLAGS: "-fdefault-real-8 -fdefault-double-8 -fcray-pointer -ffree-line-length-none -I/usr/include"
     - name: Build the library
       run: make -j distcheck
