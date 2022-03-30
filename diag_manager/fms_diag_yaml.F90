@@ -89,7 +89,6 @@ type diagYamlFiles_type
   integer, private    :: file_freq !< the frequency of data
   character (len=:), private, allocatable :: file_timeunit !< The unit of time
   character (len=:), private, allocatable :: file_unlimdim !< The name of the unlimited dimension
-  character (len=:), private, allocatable :: file_realm !< The modeling realm that the variables come from
   type(subRegion_type), private :: file_sub_region !< type containing info about the subregion, if any
   integer, private :: file_new_file_freq !< Frequency for closing the existing file
   character (len=:), private, allocatable :: file_new_file_freq_units !< Time units for creating a new file.
@@ -120,7 +119,6 @@ type diagYamlFiles_type
  procedure :: get_file_freq
  procedure :: get_file_timeunit
  procedure :: get_file_unlimdim
- procedure :: get_file_realm
  procedure :: get_file_sub_region
  procedure :: get_file_new_file_freq
  procedure :: get_file_new_file_freq_units
@@ -137,7 +135,6 @@ type diagYamlFiles_type
  procedure :: has_file_freq 
  procedure :: has_file_timeunit 
  procedure :: has_file_unlimdim 
- procedure :: has_file_realm 
  procedure :: has_file_sub_region 
  procedure :: has_file_new_file_freq 
  procedure :: has_file_new_file_freq_units 
@@ -443,9 +440,6 @@ subroutine fill_in_diag_files(diag_yaml_id, diag_file_id, fileobj)
   call diag_get_value_from_key(diag_yaml_id, diag_file_id, "time_units", fileobj%file_timeunit)
   call check_file_time_units(fileobj)
 
-  call diag_get_value_from_key(diag_yaml_id, diag_file_id, "realm", fileobj%file_realm, is_optional=.true.)
-  call check_file_realm(fileobj)
-
   call get_value_from_key(diag_yaml_id, diag_file_id, "new_file_freq", fileobj%file_new_file_freq, is_optional=.true.)
   call diag_get_value_from_key(diag_yaml_id, diag_file_id, "new_file_freq_units", fileobj%file_new_file_freq_units, &
          is_optional=.true.)
@@ -524,7 +518,7 @@ subroutine fill_in_diag_fields(diag_file_id, var_id, field)
   call diag_get_value_from_key(diag_file_id, var_id, "kind", field%var_skind)
   call check_field_kind(field)
 
-  call diag_get_value_from_key(diag_file_id, var_id, "output_name", field%var_outname)
+  call diag_get_value_from_key(diag_file_id, var_id, "output_name", field%var_outname, is_optional=.true.)
   call diag_get_value_from_key(diag_file_id, var_id, "long_name", field%var_longname, is_optional=.true.)
   !! VAR_UNITS !!
 
@@ -632,20 +626,6 @@ subroutine check_file_time_units (fileobj)
       &The acceptable values are seconds, minuts, hours, days, months, years. &
       &Check your entry for file:"//trim(fileobj%file_fname))
 end subroutine check_file_time_units
-
-!> @brief This checks if the realm in a diag file is valid and crashes if it isn't
-subroutine check_file_realm(fileobj)
-  type(diagYamlFiles_type), intent(inout) :: fileobj      !< diagYamlFiles_type obj to checK
-
-  select case (TRIM(fileobj%file_realm))
-  case ("ATM", "OCN", "LND", "ICE", "")
-  case default
-    call mpp_error(FATAL, trim(fileobj%file_realm)//" is an invalid realm! &
-      &The acceptable values are ATM, OCN, LND, ICE. &
-      &Check your entry for file:"//trim(fileobj%file_fname))
-  end select
-
-end subroutine check_file_realm
 
 !> @brief This checks if the new file frequency in a diag file is valid and crashes if it isn't
 subroutine check_new_file_freq(fileobj)
@@ -785,14 +765,6 @@ result (res)
  character (len=:), allocatable :: res !< What is returned
   res = diag_files_obj%file_unlimdim
 end function get_file_unlimdim
-!> @brief Inquiry for diag_files_obj%file_realm
-!! @return file_realm of a diag_yaml_file_obj
-pure function get_file_realm(diag_files_obj) &
-result (res)
- class (diagYamlFiles_type), intent(in) :: diag_files_obj !< The object being inquiried
- character (:), allocatable :: res !< What is returned
-  res = diag_files_obj%file_realm
-end function get_file_realm
 !> @brief Inquiry for diag_files_obj%file_subregion
 !! @return file_sub_region of a diag_yaml_file_obj
 pure function get_file_sub_region (diag_files_obj) &
@@ -1004,12 +976,6 @@ pure logical function has_file_write (obj)
   class(diagYamlFiles_type), intent(in) :: obj !< diagYamlFiles_type object to initialize
   has_file_write = .true.
 end function has_file_write
-!> @brief Checks if obj%file_realm is allocated
-!! @return true if obj%file_realm is allocated
-pure logical function has_file_realm (obj)
-  class(diagYamlFiles_type), intent(in) :: obj !< diagYamlFiles_type object to initialize
-  has_file_realm = allocated(obj%file_realm)
-end function has_file_realm
 !> @brief Checks if obj%file_sub_region is being used and has the sub region variables allocated
 !! @return true if obj%file_sub_region sub region variables are allocated
 pure logical function has_file_sub_region (obj)

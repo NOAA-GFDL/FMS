@@ -174,10 +174,6 @@ subroutine compare_diag_files(res)
   call compare_result("file_unlimdim 2", res(2)%get_file_unlimdim(), "records")
   call compare_result("file_unlimdim 3", res(3)%get_file_unlimdim(), "records")
 
-  call compare_result("file_realm 1", res(1)%get_file_realm(), "ATM")
-  call compare_result("file_realm 2", res(2)%get_file_realm(), "")
-  call compare_result("file_realm 3", res(3)%get_file_realm(), "")
-
   call compare_result("file_new_file_freq 1", res(1)%get_file_new_file_freq(), 6)
   call compare_result("file_new_file_freq 2", res(2)%get_file_new_file_freq(), DIAG_NULL)
   call compare_result("file_new_file_freq 3", res(3)%get_file_new_file_freq(), DIAG_NULL)
