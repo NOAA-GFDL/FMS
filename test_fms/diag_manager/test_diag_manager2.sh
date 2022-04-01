@@ -522,7 +522,6 @@ diag_files:
   start_time: 2 1 1 0 0 0
   file_duration: 12
   file_duration_units: hours
-  realm: ATM
   varlist:
   - module: test_diag_manager_mod
     var_name: sst
