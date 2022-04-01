@@ -54,8 +54,7 @@ use time_interp_external2_mod, only:time_interp_external_init, &
                                    reset_src_data_region, &
                                    NO_REGION, INSIDE_REGION, OUTSIDE_REGION,     &
                                    get_external_fileobj
-use fms_mod, only: write_version_number, field_exist, lowercase, check_nml_error
-use axis_utils_mod, only: get_axis_bounds
+use fms_mod, only: write_version_number, lowercase, check_nml_error
 use axis_utils2_mod,  only : nearest_index, axis_edges
 use mpp_domains_mod, only : domain2d, mpp_get_compute_domain, NULL_DOMAIN2D,operator(.NE.),operator(.EQ.)
 use mpp_domains_mod, only : mpp_get_global_domain, mpp_get_data_domain
