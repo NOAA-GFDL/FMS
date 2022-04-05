@@ -82,7 +82,7 @@ if (test_numb == 1 .or. test_numb == 2 .or. test_numb == 4) then
 else if (test_numb.eq.3) then
   ! Test 3: Tests with an invalid pelist_name_in pass as an argument. An invalid
   ! pelist_name_in would be one who's size is greater than local pelist_name
-  current_pelist_name_len_plus1 = LEN(mpp_get_current_pelist_name())
+  current_pelist_name_len_plus1 = LEN(mpp_get_current_pelist_name()) + 1
   allocate(character(len=current_pelist_name_len_plus1) :: toobig)
   call read_input_nml(pelist_name_in=toobig)
                                                           ! Call read_input_nml

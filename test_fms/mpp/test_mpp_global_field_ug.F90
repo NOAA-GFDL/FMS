@@ -392,7 +392,6 @@ contains
           x2(l,k) = int( gdata(i,j,tile) + k*1e6, kind=i4_kind )
        enddo
     enddo
-
     call mpp_pass_SG_to_UG(UG_domain, a1, x1)
     call compare_checksums_int(x1, x2, type//' SG2UG 3-D data domain')
     call mpp_pass_UG_to_SG(UG_domain, x1, a2)

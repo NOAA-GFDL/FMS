@@ -23,7 +23,7 @@ cmake_minimum_required(VERSION 3.12 FATAL_ERROR)
 
 # Define the CMake project
 project(FMS
-  VERSION 2021.04.0
+  VERSION 2022.01.0
   DESCRIPTION  "GFDL FMS Library"
   HOMEPAGE_URL "https://www.gfdl.noaa.gov/fms"
   LANGUAGES C Fortran)
@@ -52,9 +52,10 @@ endif()
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
 # Build options
-option(OPENMP    "Build FMS with OpenMP support" OFF)
-option(32BIT     "Build 32-bit (r4) FMS library"  ON)
-option(64BIT     "Build 64-bit (r8) FMS library" OFF)
+option(OPENMP "Build FMS with OpenMP support"        OFF)
+option(32BIT  "Build 32-bit (r4) FMS library"         ON)
+option(64BIT  "Build 64-bit (r8) FMS library"        OFF)
+option(FPIC   "Build with position independent code" OFF)
 
 # Options for compiler definitions
 option(INTERNAL_FILE_NML     "Enable compiler definition -DINTERNAL_FILE_NML"      ON)
@@ -87,6 +88,11 @@ endif()
 if (WITH_YAML)
   find_package(libyaml REQUIRED)
   include_directories(${LIBYAML_INCLUDE_DIR})
+endif ()
+
+# Enables position independent code (i.e., -fPIC)
+if (FPIC)
+  set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 endif ()
 
 # Collect FMS Fortran source files

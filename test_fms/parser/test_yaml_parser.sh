@@ -23,7 +23,11 @@
 # execute tests in the test_fms/parser directory.
 
 # Set common test settings.
-. ../test_common.sh
+. ../test-lib.sh
+
+if [ ! -z $parser_skip ]; then
+  SKIP_TESTS='test_yaml_parser.[1-21]'
+fi
 
 touch input.nml
 
@@ -81,140 +85,105 @@ diag_files:
        module: "moist"
 _EOF
 
-run_test test_yaml_parser 1 $parser_skip
-run_test parser_demo 1 $parser_skip
-run_test parser_demo2 1 $parser_skip
-
-printf "&check_crashes_nml \n missing_file = .true. \n/" | cat > input.nml
-run_test check_crashes 1 $parser_skip && echo "It worked?"
-if [ $? -eq 0 ]; then
-  echo "The test should have failed"
-  exit 3
-fi
+test_expect_success "test_yaml_parser" '
+  mpirun -n 1 ./test_yaml_parser
+'
+test_expect_success "parser_demo" '
+  mpirun -n 1 ./parser_demo
+'
+test_expect_success "parser_demo2" '
+  mpirun -n 1 ./parser_demo2
+'
 
 printf "&check_crashes_nml \n bad_conversion = .true. \n/" | cat > input.nml
-run_test check_crashes 1 $parser_skip && echo "It worked?"
-if [ $? -eq 0 ]; then
-  echo "The test should have failed"
-  exit 3
-fi
+test_expect_failure "bad conversion" '
+  mpirun -n 1 ./check_crashes
+'
 
 printf "&check_crashes_nml \n missing_key = .true. \n/" | cat > input.nml
-run_test check_crashes 1 $parser_skip && echo "It worked?"
-if [ $? -eq 0 ]; then
-  echo "The test should have failed"
-  exit 3
-fi
+test_expect_failure "missing key" '
+  mpirun -n 1 ./check_crashes
+'
 
 printf "&check_crashes_nml \n get_block_ids_bad_id = .true. \n/" | cat > input.nml
-run_test check_crashes 1 $parser_skip && echo "It worked?"
-if [ $? -eq 0 ]; then
-  echo "The test should have failed"
-  exit 3
-fi
+test_expect_failure "get_block_ids bad id" '
+  mpirun -n 1 ./check_crashes
+'
 
 printf "&check_crashes_nml \n get_num_blocks_bad_id = .true. \n/" | cat > input.nml
-run_test check_crashes 1 $parser_skip && echo "It worked?"
-if [ $? -eq 0 ]; then
-  echo "The test should have failed"
-  exit 3
-fi
+test_expect_failure "get_num_blocks bad id" '
+  mpirun -n 1 ./check_crashes
+'
 
 printf "&check_crashes_nml \n get_nkeys_bad_id = .true. \n/" | cat > input.nml
-run_test check_crashes 1 $parser_skip && echo "It worked?"
-if [ $? -eq 0 ]; then
-  echo "The test should have failed"
-  exit 3
-fi
+test_expect_failure "get_nkeys bad id" '
+  mpirun -n 1 ./check_crashes
+'
 
 printf "&check_crashes_nml \n get_key_ids_bad_id = .true. \n/" | cat > input.nml
-run_test check_crashes 1 $parser_skip && echo "It worked?"
-if [ $? -eq 0 ]; then
-  echo "The test should have failed"
-  exit 3
-fi
+test_expect_failure "get_key_ids bad id" '
+  mpirun -n 1 ./check_crashes
+'
 
 printf "&check_crashes_nml \n get_key_name_bad_id = .true. \n/" | cat > input.nml
-run_test check_crashes 1 $parser_skip && echo "It worked?"
-if [ $? -eq 0 ]; then
-  echo "The test should have failed"
-  exit 3
-fi
+test_expect_failure "get_key_name bad id" '
+  mpirun -n 1 ./check_crashes
+'
 
 printf "&check_crashes_nml \n get_key_value_bad_id = .true. \n/" | cat > input.nml
-run_test check_crashes 1 $parser_skip && echo "It worked?"
-if [ $? -eq 0 ]; then
-  echo "The test should have failed"
-  exit 3
-fi
+test_expect_failure "get_key_value bad id" '
+  mpirun -n 1 ./check_crashes
+'
 
 printf "&check_crashes_nml \n get_value_from_key_bad_id = .true. \n/" | cat > input.nml
-run_test check_crashes 1 $parser_skip && echo "It worked?"
-if [ $? -eq 0 ]; then
-  echo "The test should have failed"
-  exit 3
-fi
+test_expect_failure "get_value_from_key bad id" '
+  mpirun -n 1 ./check_crashes
+'
 
 printf "&check_crashes_nml \n get_key_name_bad_key_id = .true. \n/" | cat > input.nml
-run_test check_crashes 1 $parser_skip && echo "It worked?"
-if [ $? -eq 0 ]; then
-  echo "The test should have failed"
-  exit 3
-fi
+test_expect_failure "get_key_name bad key id" '
+  mpirun -n 1 ./check_crashes
+'
 
 printf "&check_crashes_nml \n get_key_value_bad_key_id = .true. \n/" | cat > input.nml
-run_test check_crashes 1 $parser_skip && echo "It worked?"
-if [ $? -eq 0 ]; then
-  echo "The test should have failed"
-  exit 3
-fi
+test_expect_failure "get_key_value bad key id" '
+  mpirun -n 1 ./check_crashes
+'
 
 ###
 printf "&check_crashes_nml \n get_key_ids_bad_block_id = .true. \n/" | cat > input.nml
-run_test check_crashes 1 $parser_skip && echo "It worked?"
-if [ $? -eq 0 ]; then
-  echo "The test should have failed"
-  exit 3
-fi
+test_expect_failure "get_key_ids bad block id" '
+  mpirun -n 1 ./check_crashes
+'
 
 printf "&check_crashes_nml \n get_nkeys_bad_block_id = .true. \n/" | cat > input.nml
-run_test check_crashes 1 $parser_skip && echo "It worked?"
-if [ $? -eq 0 ]; then
-  echo "The test should have failed"
-  exit 3
-fi
+test_expect_failure "get_nkeys bad block id" '
+  mpirun -n 1 ./check_crashes
+'
 
 printf "&check_crashes_nml \n get_block_ids_bad_block_id = .true. \n/" | cat > input.nml
-run_test check_crashes 1 $parser_skip && echo "It worked?"
-if [ $? -eq 0 ]; then
-  echo "The test should have failed"
-  exit 3
-fi
+test_expect_failure "get_block_ids bad block id" '
+  mpirun -n 1 ./check_crashes
+'
 
 printf "&check_crashes_nml \n get_num_blocks_bad_block_id = .true. \n/" | cat > input.nml
-run_test check_crashes 1 $parser_skip && echo "It worked?"
-if [ $? -eq 0 ]; then
-  echo "The test should have failed"
-  exit 3
-fi
+test_expect_failure "get_num_blocks bad block id" '
+  mpirun -n 1 ./check_crashes
+'
 
 printf "&check_crashes_nml \n get_value_from_key_bad_block_id = .true. \n/" | cat > input.nml
-run_test check_crashes 1 $parser_skip && echo "It worked?"
-if [ $? -eq 0 ]; then
-  echo "The test should have failed"
-  exit 3
-fi
+test_expect_failure "get_value_from_key bad block id" '
+  mpirun -n 1 ./check_crashes
+'
 
 printf "&check_crashes_nml \n wrong_buffer_size_key_id = .true. \n/" | cat > input.nml
-run_test check_crashes 1 && echo "It worked?"
-if [ $? -eq 0 ]; then
-  echo "The test should have failed"
-  exit 3
-fi
+test_expect_failure "wrong buffer size key id" '
+  mpirun -n 1 ./check_crashes
+'
 
 printf "&check_crashes_nml \n wrong_buffer_size_block_id = .true. \n/" | cat > input.nml
-run_test check_crashes 1 && echo "It worked?"
-if [ $? -eq 0 ]; then
-  echo "The test should have failed"
-  exit 3
-fi
+test_expect_failure "wrong buffer size block id" '
+  mpirun -n 1 ./check_crashes
+'
+
+test_done

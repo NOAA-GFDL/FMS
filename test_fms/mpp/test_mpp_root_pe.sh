@@ -26,22 +26,13 @@
 
 
 # Set common test settings.
-. ../test_common.sh
+. ../test-lib.sh
 
-
-# Run the test with one processor
-run_test test_mpp_root_pe 1
-
-# If on a Linux system that uses the command `nproc`,
-# Run the test with multiple processors
-if [ $(command -v nproc) ]
-  # Looks like a linux system
-  then
-  # Get the number of available CPUs on the system
-  nProc=$(nproc)
-  if [ ${nProc} -gt 1 ]
-  then
-    # Run the test with multiple processors
-    run_test test_mpp_root_pe 2
-  fi
-fi
+# Run the test
+test_expect_success "get correct root PE single processor" '
+    mpirun -n 1 ./test_mpp_root_pe
+'
+test_expect_success "get correct root PE multiple processor" '
+    mpirun -n 2 ./test_mpp_root_pe
+'
+test_done

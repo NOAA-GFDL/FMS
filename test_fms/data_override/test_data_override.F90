@@ -94,7 +94,6 @@ program test
 
  integer                           :: stdoutunit
  integer                           :: num_threads = 1
- integer                           :: omp_get_num_threads
  integer                           :: isw, iew, jsw, jew
  integer, allocatable              :: is_win(:), js_win(:)
  integer                           :: nx_dom, ny_dom, nx_win, ny_win
@@ -124,6 +123,8 @@ program test
  call constants_init
  call set_calendar_type(NOLEAP)
  call diag_manager_init
+
+ call mpp_domains_set_stack_size(800000)
 
  rad_to_deg = 180./pi
 
@@ -208,9 +209,9 @@ if( mod( ny_dom, window(2) ) .NE. 0 ) call error_mesg('test_data_override', &
 
 nwindows = window(1)*window(2)
 !$ call omp_set_num_threads(nthreads)
-!$OMP PARALLEL
-!$ call fms_affinity_set("test_data_override", .FALSE., omp_get_num_threads() )
-!$OMP END PARALLEL
+!!$OMP PARALLEL
+!!$ call fms_affinity_set("test_data_override", .FALSE., omp_get_num_threads() )
+!!$OMP END PARALLEL
 
 nx_win = nx_dom/window(1)
 ny_win = ny_dom/window(2)

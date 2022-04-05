@@ -26,15 +26,20 @@
 # Uriel Ramirez 07/22/20
 
 # Set common test settings.
-. ../test_common.sh
+. ../test-lib.sh
 
 # Run the ongrid test case with 2 halos in x and y
 touch input.nml
 
-rm -rf RESTART
 mkdir RESTART
-run_test test_coupler_2d 1
 
-run_test test_coupler_3d 1
+test_expect_success "2D coupler" '
+  mpirun -n 1 ./test_coupler_2d
+'
 
+test_expect_success "3D coupler" '
+  mpirun -n 1 ./test_coupler_3d
+'
 rm -rf RESTART
+
+test_done

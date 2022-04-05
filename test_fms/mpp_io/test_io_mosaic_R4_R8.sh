@@ -25,36 +25,14 @@
 # Ryan Mulhall
 
 # Set common test settings.
-. ../test_common.sh
+. ../test-lib.sh
 
-skip_test="no"
-
-# Copy file for test.
+# create and enter directory for in/output
+output_dir
 touch input.nml
-cp $top_srcdir/test_fms/mpp_io/input_base.nml input.nml
 
+test_expect_success "mpp_io mosaics with mixed precision" '
+    mpirun -n 12 ../test_io_mosaic_R4_R8
+'
 
-# Get the number of available CPUs on the system
-if [ $(command -v nproc) ]
-then
-   # Looks like a linux system
-   nProc=$(nproc)
-elif [ $(command -v sysctl) ]
-then
-   # Looks like a Mac OS X system
-   nProc=$(sysctl -n hw.physicalcpu)
-else
-   nProc=-1
-fi
-
-if [ $nProc -lt 0 ]
-then
-   # Couldn't get the number of CPUs, skip the test.
-   skip_test="skip"
-elif [ $nProc -lt 12 ]
-then
-   # Need to oversubscribe the MPI
-   run_test test_io_mosaic_R4_R8 12 $skip_test "true"
-fi
-
-run_test test_io_mosaic_R4_R8 12 $skip_test
+test_done

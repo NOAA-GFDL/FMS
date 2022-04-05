@@ -25,25 +25,15 @@
 # Jessica Liptak
 
 # Set common test settings.
-. ../test_common.sh
+. ../test-lib.sh
 
 touch input.nml
-# Run the test for one processor
-echo "Running test_peset with 1 pe"
-run_test test_peset 1
 
-# If on a Linux system that uses the command `nproc`, run the test
-# with the full number of processors
-
-if [ $(command -v nproc) ]
- # Looks like a linux system
- then
-   # Get the number of available CPUs on the system
-   nProc=$(nproc)
-   if [ ${nProc} -gt 1 ]
-     then
-       # Run the test with all processors
-       echo "Running test_peset with 2 pes"
-       run_test test_peset 2
-   fi
-fi
+# Run the tests
+test_expect_success "test peset with 1 PE" '
+    mpirun -n 1 ./test_peset
+'
+test_expect_success "test peset with 2 PEs" '
+    mpirun -n 2 ./test_peset
+'
+test_done
