@@ -26,7 +26,7 @@ jobs:
       if: ${{ matrix.conf-flags == '--disable-setting-flags' }}
       run: ./configure  ${DISTCHECK_CONFIGURE_FLAGS}
       env:
-        FCFLAGS: "-fdefault-real-8 -fdefault-double-8 -fcray-pointer -ffree-line-length-none -I/usr/include $FCFLAGS"
+        FCFLAGS: "-fdefault-real-8 -fdefault-double-8 -fcray-pointer -ffree-line-length-none -I/usr/include"
     - name: Build the library
       run: make -j distcheck
       if: ${{ matrix.conf-flags != '--with-mpi=no' }}
