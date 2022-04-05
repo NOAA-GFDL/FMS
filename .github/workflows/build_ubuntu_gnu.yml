@@ -10,7 +10,7 @@ jobs:
         conf-flags: [--disable-openmp, --enable-mixed-mode, --disable-setting-flags, --with-mpi=no]
         yaml-flag:  [--with-yaml, ""]
     container:
-      image: noaagfdl/ubuntu_libfms_gnu
+      image: ryanmulhall/hpc-me.ubuntu-minimal:gnu-input 
       env:
         TEST_VERBOSE: 1
         DISTCHECK_CONFIGURE_FLAGS: "${{ matrix.conf-flags }} ${{ matrix.yaml-flag }}"
@@ -21,12 +21,12 @@ jobs:
       run: autoreconf -if
     - name: Configure the build
       if: ${{ matrix.conf-flags != '--disable-setting-flags' }}
-      run: ./configure  ${DISTCHECK_CONFIGURE_FLAGS}
+      run: ./configure --enable-test-input=/home/unit_tests_input ${DISTCHECK_CONFIGURE_FLAGS}
     - name: Configure the build with compiler flags
       if: ${{ matrix.conf-flags == '--disable-setting-flags' }}
-      run: ./configure  ${DISTCHECK_CONFIGURE_FLAGS}
+      run: ./configure --enable-test-input=/home/unit_tests_input ${DISTCHECK_CONFIGURE_FLAGS}
       env:
-        FCFLAGS: "-fdefault-real-8 -fdefault-double-8 -fcray-pointer -ffree-line-length-none -I/usr/include"
+        FCFLAGS: "-fdefault-real-8 -fdefault-double-8 -fcray-pointer -ffree-line-length-none -I/usr/include $FCFLAGS"
     - name: Build the library
       run: make -j distcheck
       if: ${{ matrix.conf-flags != '--with-mpi=no' }}
