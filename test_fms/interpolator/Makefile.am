@@ -39,7 +39,7 @@ TESTS = test_interpolator2.sh
 
 TEST_EXTENSIONS = .sh
 SH_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
-                  $(top_srcdir)/tap-driver.sh
+                  $(abs_top_srcdir)/test_fms/tap-driver.sh
 TESTS_ENVIRONMENT= test_input_path="@TEST_INPUT_PATH@"
 
 # These files are also included in the distribution.
