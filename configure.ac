@@ -40,7 +40,6 @@ AC_CANONICAL_TARGET
 AC_CONFIG_MACRO_DIR([m4])
 
 AM_INIT_AUTOMAKE([foreign dist-zip subdir-objects])
-AC_REQUIRE_AUX_FILE([tap-driver.sh])
 
 # Set up libtool.
 LT_PREREQ([2.4])
