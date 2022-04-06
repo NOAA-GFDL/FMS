@@ -113,16 +113,17 @@ character(len=*), parameter :: &
 integer, parameter :: &
      MAX_NAME = 256,  & !< max length of the variable names
      MAX_FILE = 1024, & !< max length of the file names
-     VERSION_0 = 0,   &
-     VERSION_1 = 1,   &
-     VERSION_2 = 2,   &
-     VERSION_3 = 3
+     VERSION_GEOLON_T        = 0,   & !< indicates gelon_t variable is present in grid_file
+     VERSION_X_T             = 1,   & !< indicates x_t variable is present in grid_file
+     VERSION_OCN_MOSAIC_FILE = 2,   & !< indicates ocn_mosaic_file variable is present in grid_file
+     VERSION_GRIDFILES       = 3      !< indicates gridfiles variable is present in grid_file
 
 integer, parameter :: BUFSIZE = 1048576  !< This is used to control memory usage in get_grid_comp_area
                                          !! We may change this to a namelist variable is needed.
 
 ! ==== module variables ======================================================
-integer :: grid_version = -1
+integer :: grid_version = -1 !< Value to indicate what type of grid file is being read,
+                             !! based on which variables are present
 logical :: great_circle_algorithm = .FALSE.
 logical :: module_is_initialized = .FALSE.
 logical :: grid_spec_exists = .TRUE.
@@ -142,15 +143,15 @@ subroutine grid_init
    call open_grid_file(gridfileobj, grid_file)
    great_circle_algorithm = get_great_circle_algorithm()
    grid_version = get_grid_version(gridfileobj)
-   if (grid_version == VERSION_2) call open_component_mosaics
-   if (grid_version == VERSION_3) call assign_component_mosaics
+   if (grid_version == VERSION_OCN_MOSAIC_FILE) call open_component_mosaics
+   if (grid_version == VERSION_GRIDFILES) call assign_component_mosaics
    module_is_initialized = .TRUE.
 end subroutine grid_init
 
 !> @brief Shutdown the grid2 module
 subroutine grid_end
    if (grid_spec_exists) then
-       if (grid_version == VERSION_2) call close_component_mosaics
+       if (grid_version == VERSION_OCN_MOSAIC_FILE) call close_component_mosaics
        call close_file(gridfileobj)
    endif
 end subroutine grid_end
@@ -168,7 +169,8 @@ function get_great_circle_algorithm()
       if(trim(attvalue) == "TRUE") then
          get_great_circle_algorithm = .true.
       else if(trim(attvalue) .NE. "FALSE") then
-         call mpp_error(FATAL, module_name//'/get_great_circle_algorithm value of global attribute "great_circle_algorthm" in file'// &
+         call mpp_error(FATAL, module_name//&
+                   '/get_great_circle_algorithm value of global attribute "great_circle_algorthm" in file'// &
                    trim(grid_file)//' should be TRUE or FALSE')
       endif
    endif
@@ -221,16 +223,16 @@ function get_grid_version(fileobj)
 
   if(grid_version<0) then
     if(variable_exists(fileobj, 'geolon_t')) then
-       get_grid_version = VERSION_0
+       get_grid_version = VERSION_GEOLON_T
     else if(variable_exists(fileobj, 'x_T')) then
-       get_grid_version = VERSION_1
+       get_grid_version = VERSION_X_T
     else if(variable_exists(fileobj, 'ocn_mosaic_file') ) then
-       get_grid_version = VERSION_2
+       get_grid_version = VERSION_OCN_MOSAIC_FILE
     else if(variable_exists(fileobj, 'gridfiles') ) then
-       get_grid_version = VERSION_3
+       get_grid_version = VERSION_GRIDFILES
     else
-       call mpp_error(FATAL, module_name//'/get_grid_version '//&
-            'Can''t determine the version of the grid spec: none of "x_T", "geolon_t", or "ocn_mosaic_file" exist in file "'//trim(grid_file)//'"')
+       call mpp_error(FATAL, module_name//'/get_grid_version Can''t determine the version of the grid spec:'// &
+                  & ' none of "x_T", "geolon_t", or "ocn_mosaic_file" exist in file "'//trim(grid_file)//'"')
     endif
   endif
 end function get_grid_version
@@ -286,9 +288,9 @@ subroutine get_grid_ntiles(component,ntiles)
   integer, intent(out) :: ntiles !< Number of tiles
 
   select case (grid_version)
-  case(VERSION_0,VERSION_1)
+  case(VERSION_GEOLON_T,VERSION_X_T)
      ntiles = 1
-  case(VERSION_2, VERSION_3)
+  case(VERSION_OCN_MOSAIC_FILE, VERSION_GRIDFILES)
      ntiles = get_mosaic_ntiles(mosaic_fileobj(get_component_number(trim(component))))
   end select
 end subroutine get_grid_ntiles
@@ -300,18 +302,18 @@ subroutine get_grid_size_for_all_tiles(component,nx,ny)
 
   ! local vars
   integer :: siz(2) ! for the size of external fields
-  character(len=MAX_NAME) :: varname1, varname2
+  character(len=MAX_NAME) :: varname1
 
   varname1 = 'AREA_'//trim(uppercase(component))
 
   select case (grid_version)
-  case(VERSION_0,VERSION_1)
+  case(VERSION_GEOLON_T,VERSION_X_T)
      if (.not. grid_spec_exists) then
        call mpp_error(FATAL, 'grid2_mod(get_grid_size_for_all_tiles): grid_spec does not exist')
      end if
      call get_variable_size(gridfileobj, varname1, siz)
      nx(1) = siz(1); ny(1)=siz(2)
-  case(VERSION_2, VERSION_3) ! mosaic file
+  case(VERSION_OCN_MOSAIC_FILE, VERSION_GRIDFILES) ! mosaic file
      call get_mosaic_grid_sizes(mosaic_fileobj(get_component_number(trim(component))),nx,ny)
   end select
 end subroutine get_grid_size_for_all_tiles
@@ -354,7 +356,7 @@ subroutine get_grid_cell_area_SG(component, tile, cellarea, domain)
   !! R4 argument
   type is (real(r4_kind))
      select case(grid_version)
-     case(VERSION_0,VERSION_1)
+     case(VERSION_GEOLON_T,VERSION_X_T)
         if (.not. grid_spec_exists) then
           call mpp_error(FATAL, 'grid2_mod(get_grid_cell_area_SG): grid_spec does not exist')
         end if
@@ -368,8 +370,8 @@ subroutine get_grid_cell_area_SG(component, tile, cellarea, domain)
                 'Illegal component name "'//trim(component)//'": must be one of ATM, LND, or OCN')
         end select
         ! convert area to m2
-        cellarea = cellarea*4.*PI*radius**2
-     case(VERSION_2, VERSION_3)
+        cellarea = real(cellarea*4.*PI*radius**2, r4_kind)
+     case(VERSION_OCN_MOSAIC_FILE, VERSION_GRIDFILES)
         if (present(domain)) then
            call mpp_get_compute_domain(domain,xsize=nlon,ysize=nlat)
         else
@@ -387,7 +389,7 @@ subroutine get_grid_cell_area_SG(component, tile, cellarea, domain)
   !! R8 argument
   type is (real(r8_kind))
      select case(grid_version)
-     case(VERSION_0,VERSION_1)
+     case(VERSION_GEOLON_T,VERSION_X_T)
         if (.not. grid_spec_exists) then
           call mpp_error(FATAL, 'grid2_mod(get_grid_cell_area_SG): grid_spec does not exist')
         end if
@@ -402,7 +404,7 @@ subroutine get_grid_cell_area_SG(component, tile, cellarea, domain)
         end select
         ! convert area to m2
         cellarea = cellarea*4.*PI*radius**2
-     case(VERSION_2, VERSION_3)
+     case(VERSION_OCN_MOSAIC_FILE, VERSION_GRIDFILES)
         if (present(domain)) then
            call mpp_get_compute_domain(domain,xsize=nlon,ysize=nlat)
         else
@@ -441,12 +443,12 @@ subroutine get_grid_comp_area_SG(component,tile,area,domain)
   character(len=MAX_NAME) :: &
      xgrid_name, & ! name of the variable holding xgrid names
      tile_name,  & ! name of the tile
-     xgrid_file, & ! name of the current xgrid file
-     mosaic_name,& ! name of the mosaic
-     tilefile
+     mosaic_name ! name of the mosaic
+  character(len=MAX_FILE) :: &
+     tilefile,   & ! name of current tile file
+     xgrid_file  ! name of the current xgrid file
   character(len=4096)     :: attvalue
   character(len=MAX_NAME), allocatable :: nest_tile_name(:)
-  character(len=MAX_NAME) :: varname1, varname2
   integer :: is,ie,js,je ! boundaries of our domain
   integer :: i0, j0 ! offsets for x and y, respectively
   integer :: num_nest_tile, ntiles
@@ -458,7 +460,7 @@ subroutine get_grid_comp_area_SG(component,tile,area,domain)
   select type(area)
   type is (real(r4_kind))
      select case (grid_version   )
-     case(VERSION_0,VERSION_1)
+     case(VERSION_GEOLON_T,VERSION_X_T)
         if (.not. grid_spec_exists) then
           call mpp_error(FATAL, 'grid2_mod(get_grid_comp_area_SG): grid_spec does not exist')
         end if
@@ -477,7 +479,7 @@ subroutine get_grid_comp_area_SG(component,tile,area,domain)
            call mpp_error(FATAL, module_name//'/get_grid_comp_area'//&
                 'Illegal component name "'//trim(component)//'": must be one of ATM, LND, or OCN')
         end select
-     case(VERSION_2, VERSION_3) ! mosaic gridspec
+     case(VERSION_OCN_MOSAIC_FILE, VERSION_GRIDFILES) ! mosaic gridspec
         select case (component)
         case ('ATM')
            ! just read the grid cell area and return
@@ -531,7 +533,7 @@ subroutine get_grid_comp_area_SG(component,tile,area,domain)
                  num_nest_tile = num_nest_tile + 1
                  nest_tile_name(num_nest_tile) = trim(mosaic_name)//'_tile'//char(n+ichar('0'))
               else if(trim(attvalue) .NE. "FALSE") then
-                 call mpp_error(FATAL, module_name//'/get_grid_comp_area value of global attribute nest_grid in file'// &
+                 call mpp_error(FATAL,module_name//'/get_grid_comp_area value of global attribute nest_grid in file'//&
                       trim(tilefile)//' should be TRUE or FALSE')
               endif
            end if
@@ -600,11 +602,11 @@ subroutine get_grid_comp_area_SG(component,tile,area,domain)
         deallocate(nest_tile_name)
      end select ! version
      ! convert area to m2
-     area = area*4.*PI*radius**2
+     area = real(area*4.*PI*radius**2, r4_kind)
   !! R8 version ###################################
   type is (real(r8_kind))
      select case (grid_version   )
-     case(VERSION_0,VERSION_1)
+     case(VERSION_GEOLON_T,VERSION_X_T)
         if (.not. grid_spec_exists) then
           call mpp_error(FATAL, 'grid2_mod(get_grid_comp_area_SG): grid_spec does not exist')
         end if
@@ -623,7 +625,7 @@ subroutine get_grid_comp_area_SG(component,tile,area,domain)
            call mpp_error(FATAL, module_name//'/get_grid_comp_area'//&
                 'Illegal component name "'//trim(component)//'": must be one of ATM, LND, or OCN')
         end select
-     case(VERSION_2, VERSION_3) ! mosaic gridspec
+     case(VERSION_OCN_MOSAIC_FILE, VERSION_GRIDFILES) ! mosaic gridspec
         select case (component)
         case ('ATM')
            ! just read the grid cell area and return
@@ -677,7 +679,7 @@ subroutine get_grid_comp_area_SG(component,tile,area,domain)
                  num_nest_tile = num_nest_tile + 1
                  nest_tile_name(num_nest_tile) = trim(mosaic_name)//'_tile'//char(n+ichar('0'))
               else if(trim(attvalue) .NE. "FALSE") then
-                 call mpp_error(FATAL, module_name//'/get_grid_comp_area value of global attribute nest_grid in file'// &
+                 call mpp_error(FATAL,module_name//'/get_grid_comp_area value of global attribute nest_grid in file'//&
                       trim(tilefile)//' should be TRUE or FALSE')
               endif
            end if
@@ -814,7 +816,7 @@ subroutine get_grid_cell_vertices_1D(component, tile, glonb, glatb)
   endif
 
   select case(grid_version)
-  case(VERSION_0)
+  case(VERSION_GEOLON_T)
      if (.not. grid_spec_exists) then
        call mpp_error(FATAL, 'grid2_mod(get_grid_cell_vertices_1D): grid_spec does not exist')
      end if
@@ -826,7 +828,7 @@ subroutine get_grid_cell_vertices_1D(component, tile, glonb, glatb)
         call read_data(gridfileobj, "gridlon_vert_t", glonb)
         call read_data(gridfileobj, "gridlat_vert_t", glatb)
      end select
-  case(VERSION_1)
+  case(VERSION_X_T)
      if (.not. grid_spec_exists) then
        call mpp_error(FATAL, 'grid2_mod(get_grid_cell_vertices_1D): grid_spec does not exist')
      end if
@@ -852,7 +854,7 @@ subroutine get_grid_cell_vertices_1D(component, tile, glonb, glatb)
         glatb(nlat+1) = y_vert_t(1,nlat,2)
         deallocate(x_vert_t, y_vert_t)
      end select
-  case(VERSION_2, VERSION_3)
+  case(VERSION_OCN_MOSAIC_FILE, VERSION_GRIDFILES)
      ! get the name of the grid file for the component and tile
      tilefile = read_file_name(mosaic_fileobj(get_component_number(trim(component))), 'gridfiles',tile)
      call open_grid_file(tilefileobj, grid_dir//tilefile)
@@ -908,7 +910,8 @@ subroutine get_grid_cell_vertices_2D(component, tile, lonb, latb, domain)
       valid_types = .true.
     end select
   end select
-  if(.not. valid_types) call mpp_error(FATAL, 'get_grid_cell_vertices_2D: invalid types, lonb/latb must be r4_kind or r8_kind')
+  if(.not. valid_types) call mpp_error(FATAL, &
+     &  'get_grid_cell_vertices_2D: invalid types, lonb/latb must be r4_kind or r8_kind')
 
 
   if (present(domain)) then
@@ -941,7 +944,7 @@ subroutine get_grid_cell_vertices_2D(component, tile, lonb, latb, domain)
 
      !! use lonb, latb as r4
      select case(grid_version)
-     case(VERSION_0)
+     case(VERSION_GEOLON_T)
        if (.not. grid_spec_exists) then
          call mpp_error(FATAL, 'grid2_mod(get_grid_cell_vertices_2D): grid_spec does not exist')
        end if
@@ -974,7 +977,7 @@ subroutine get_grid_cell_vertices_2D(component, tile, lonb, latb, domain)
              call read_data(gridfileobj, "geolat_vert_t", latb)
            endif
        end select
-     case(VERSION_1)
+     case(VERSION_X_T)
        if (.not. grid_spec_exists) then
          call mpp_error(FATAL, 'grid2_mod(get_grid_cell_vertices_2D): grid_spec does not exist')
        end if
@@ -1010,7 +1013,7 @@ subroutine get_grid_cell_vertices_2D(component, tile, lonb, latb, domain)
           latb(nlon+1,nlat+1) = y_vert_t_r4(nlon,nlat,3)
           deallocate(x_vert_t_r4, y_vert_t_r4)
        end select
-     case(VERSION_2, VERSION_3)
+     case(VERSION_OCN_MOSAIC_FILE, VERSION_GRIDFILES)
        ! get the name of the grid file for the component and tile
        tilefile = read_file_name(mosaic_fileobj(get_component_number(trim(component))), 'gridfiles',tile)
        call open_grid_file(tilefileobj, grid_dir//tilefile)
@@ -1058,7 +1061,7 @@ subroutine get_grid_cell_vertices_2D(component, tile, lonb, latb, domain)
 
      !! use lonb, latb as r8
      select case(grid_version)
-     case(VERSION_0)
+     case(VERSION_GEOLON_T)
        if (.not. grid_spec_exists) then
          call mpp_error(FATAL, 'grid2_mod(get_grid_cell_vertices_2D): grid_spec does not exist')
        end if
@@ -1091,7 +1094,7 @@ subroutine get_grid_cell_vertices_2D(component, tile, lonb, latb, domain)
              call read_data(gridfileobj, "geolat_vert_t", latb)
            endif
        end select
-     case(VERSION_1)
+     case(VERSION_X_T)
        if (.not. grid_spec_exists) then
          call mpp_error(FATAL, 'grid2_mod(get_grid_cell_vertices_2D): grid_spec does not exist')
        end if
@@ -1127,7 +1130,7 @@ subroutine get_grid_cell_vertices_2D(component, tile, lonb, latb, domain)
           latb(nlon+1,nlat+1) = y_vert_t_r8(nlon,nlat,3)
           deallocate(x_vert_t_r8, y_vert_t_r8)
        end select
-     case(VERSION_2, VERSION_3)
+     case(VERSION_OCN_MOSAIC_FILE, VERSION_GRIDFILES)
        ! get the name of the grid file for the component and tile
        tilefile = read_file_name(mosaic_fileobj(get_component_number(trim(component))), 'gridfiles',tile)
        call open_grid_file(tilefileobj, grid_dir//tilefile)
@@ -1235,7 +1238,7 @@ subroutine get_grid_cell_centers_1D(component, tile, glon, glat)
   endif
 
   select case(grid_version)
-  case(VERSION_0)
+  case(VERSION_GEOLON_T)
      if (.not. grid_spec_exists) then
        call mpp_error(FATAL, 'grid2_mod(get_grid_cell_centers_1D): grid_spec does not exist')
      end if
@@ -1247,7 +1250,7 @@ subroutine get_grid_cell_centers_1D(component, tile, glon, glat)
         call read_data(gridfileobj, "gridlon_t", glon)
         call read_data(gridfileobj, "gridlat_t", glat)
      end select
-  case(VERSION_1)
+  case(VERSION_X_T)
      if (.not. grid_spec_exists) then
        call mpp_error(FATAL, 'grid2_mod(get_grid_cell_centers_1D): grid_spec does not exist')
      end if
@@ -1259,7 +1262,7 @@ subroutine get_grid_cell_centers_1D(component, tile, glon, glat)
         call read_data(gridfileobj, "grid_x_T", glon)
         call read_data(gridfileobj, "grid_y_T", glat)
      end select
-  case(VERSION_2, VERSION_3)
+  case(VERSION_OCN_MOSAIC_FILE, VERSION_GRIDFILES)
      ! get the name of the grid file for the component and tile
      tilefile = read_file_name(mosaic_fileobj(get_component_number(trim(component))), 'gridfiles',tile)
      call open_grid_file(tilefileobj, grid_dir//tilefile)
@@ -1323,7 +1326,7 @@ subroutine get_grid_cell_centers_2D(component, tile, lon, lat, domain)
   endif
 
   select case(grid_version)
-  case(VERSION_0)
+  case(VERSION_GEOLON_T)
      if (.not. grid_spec_exists) then
        call mpp_error(FATAL, 'grid2_mod(get_grid_cell_centers_2D): grid_spec does not exist')
      end if
@@ -1348,7 +1351,7 @@ subroutine get_grid_cell_centers_2D(component, tile, lon, lat, domain)
         call read_data(gridfileobj, 'geolon_t', lon)
         call read_data(gridfileobj, 'geolat_t', lat)
      end select
-  case(VERSION_1)
+  case(VERSION_X_T)
      if (.not. grid_spec_exists) then
        call mpp_error(FATAL, 'grid2_mod(get_grid_cell_centers_2D): grid_spec does not exist')
      end if
@@ -1373,7 +1376,7 @@ subroutine get_grid_cell_centers_2D(component, tile, lon, lat, domain)
         call read_data(gridfileobj, 'x_T', lon)
         call read_data(gridfileobj, 'y_T', lat)
      end select
-  case(VERSION_2, VERSION_3) ! mosaic grid file
+  case(VERSION_OCN_MOSAIC_FILE, VERSION_GRIDFILES) ! mosaic grid file
      ! get the name of the grid file for the component and tile
      tilefile = read_file_name(mosaic_fileobj(get_component_number(trim(component))), 'gridfiles',tile)
      call open_grid_file(tilefileobj, grid_dir//tilefile)

@@ -33,7 +33,7 @@ subroutine MPP_START_DO_UPDATE_3D_V_(id_update, f_addrsx, f_addrsy, domain, upda
 
   !---local variable ------------------------------------------
   integer            :: i, j, k, l, is, ie, js, je, n, m
-  integer            :: pos, nlist, msgsize, tile, l_size
+  integer            :: pos, nlist, msgsize, l_size
   integer            :: to_pe, from_pe, buffer_pos
   integer            :: tMe, dir, ke_sum
   logical            :: send(8), recv(8), update_edge_only
@@ -557,7 +557,7 @@ subroutine MPP_COMPLETE_DO_UPDATE_3D_V_(id_update, f_addrsx, f_addrsy, domain, u
   pointer( ptr, recv_buffer )
 
   integer :: i, j, k, l, is, ie, js, je, n, ke_sum, l_size, m
-  integer :: pos, nlist, msgsize, tile, buffer_pos
+  integer :: pos, nlist, msgsize, buffer_pos
   integer :: ind_x, ind_y, nrecv, nsend
   integer :: ind_recv_x(update_x%nrecv+update_y%nrecv), ind_recv_y(update_x%nrecv+update_y%nrecv)
   integer :: start_pos_recv(update_x%nrecv+update_y%nrecv)
@@ -741,7 +741,8 @@ subroutine MPP_COMPLETE_DO_UPDATE_3D_V_(id_update, f_addrsx, f_addrsy, domain, u
               if( is.GT.domain%x(1)%data%begin )then
 
                  if( 2*is-domain%x(1)%data%begin.GT.domain%x(1)%data%end+shift ) &
-                      call mpp_error( FATAL, 'MPP_COMPLETE_DO_UPDATE_V: folded-north BGRID_NE west edge ubound error.' )
+                      call mpp_error( FATAL, &
+                                     &  'MPP_COMPLETE_DO_UPDATE_V: folded-north BGRID_NE west edge ubound error.' )
                      do l=1,l_size
                         ptr_fieldx = f_addrsx(l, 1)
                         ptr_fieldy = f_addrsy(l, 1)
@@ -758,7 +759,8 @@ subroutine MPP_COMPLETE_DO_UPDATE_3D_V_(id_update, f_addrsx, f_addrsy, domain, u
               is = domain%x(1)%global%begin
               if( is.GT.domain%x(1)%data%begin )then
                  if( 2*is-domain%x(1)%data%begin-1.GT.domain%x(1)%data%end ) &
-                      call mpp_error( FATAL, 'MPP_COMPLETE_DO_UPDATE_V: folded-north CGRID_NE west edge ubound error.' )
+                      call mpp_error( FATAL, &
+                                     &  'MPP_COMPLETE_DO_UPDATE_V: folded-north CGRID_NE west edge ubound error.' )
                  do l=1,l_size
                     ptr_fieldy = f_addrsy(l, 1)
                     do k = 1,ke_list(l,tMe)
@@ -835,7 +837,8 @@ subroutine MPP_COMPLETE_DO_UPDATE_3D_V_(id_update, f_addrsx, f_addrsy, domain, u
               is = domain%x(1)%global%begin
               if( is.GT.domain%x(1)%data%begin )then
                  if( 2*is-domain%x(1)%data%begin.GT.domain%x(1)%data%end+shift ) &
-                      call mpp_error( FATAL, 'MPP_COMPLETE_DO_UPDATE_V: folded-south BGRID_NE west edge ubound error.' )
+                      call mpp_error( FATAL, &
+                                     &  'MPP_COMPLETE_DO_UPDATE_V: folded-south BGRID_NE west edge ubound error.' )
                  do l=1,l_size
                     ptr_fieldx = f_addrsx(l, 1)
                     ptr_fieldy = f_addrsy(l, 1)
@@ -851,7 +854,8 @@ subroutine MPP_COMPLETE_DO_UPDATE_3D_V_(id_update, f_addrsx, f_addrsy, domain, u
               is = domain%x(1)%global%begin
               if( is.GT.domain%x(1)%data%begin )then
                  if( 2*is-domain%x(1)%data%begin-1.GT.domain%x(1)%data%end ) &
-                      call mpp_error( FATAL, 'MPP_COMPLETE_DO_UPDATE_V: folded-south CGRID_NE west edge ubound error.' )
+                      call mpp_error( FATAL, &
+                                     &  'MPP_COMPLETE_DO_UPDATE_V: folded-south CGRID_NE west edge ubound error.' )
                  do l=1,l_size
                     ptr_fieldy = f_addrsy(l, 1)
                     do k = 1,ke_list(l,tMe)
@@ -929,7 +933,8 @@ subroutine MPP_COMPLETE_DO_UPDATE_3D_V_(id_update, f_addrsx, f_addrsy, domain, u
               if( js.GT.domain%y(1)%data%begin )then
 
                  if( 2*js-domain%y(1)%data%begin.GT.domain%y(1)%data%end+shift ) &
-                      call mpp_error( FATAL, 'MPP_COMPLETE_DO__UPDATE_V: folded-west BGRID_NE west edge ubound error.' )
+                      call mpp_error( FATAL, &
+                                     &  'MPP_COMPLETE_DO__UPDATE_V: folded-west BGRID_NE west edge ubound error.' )
                  do l=1,l_size
                     ptr_fieldx = f_addrsx(l, 1)
                     ptr_fieldy = f_addrsy(l, 1)
@@ -945,7 +950,8 @@ subroutine MPP_COMPLETE_DO_UPDATE_3D_V_(id_update, f_addrsx, f_addrsy, domain, u
               js = domain%y(1)%global%begin
               if( js.GT.domain%y(1)%data%begin )then
                  if( 2*js-domain%y(1)%data%begin-1.GT.domain%y(1)%data%end ) &
-                      call mpp_error( FATAL, 'MPP_COMPLETE_DO__UPDATE_V: folded-west CGRID_NE west edge ubound error.' )
+                      call mpp_error( FATAL, &
+                                     &  'MPP_COMPLETE_DO__UPDATE_V: folded-west CGRID_NE west edge ubound error.' )
                  do l=1,l_size
                     ptr_fieldx = f_addrsx(l, 1)
                     do k = 1,ke_list(l,tMe)
@@ -1023,7 +1029,8 @@ subroutine MPP_COMPLETE_DO_UPDATE_3D_V_(id_update, f_addrsx, f_addrsy, domain, u
               if( js.GT.domain%y(1)%data%begin )then
 
                  if( 2*js-domain%y(1)%data%begin.GT.domain%y(1)%data%end+shift ) &
-                      call mpp_error( FATAL, 'MPP_COMPLETE_DO__UPDATE_V: folded-east BGRID_NE west edge ubound error.' )
+                      call mpp_error( FATAL, &
+                                     &  'MPP_COMPLETE_DO__UPDATE_V: folded-east BGRID_NE west edge ubound error.' )
                  do l=1,l_size
                     ptr_fieldx = f_addrsx(l, 1)
                     ptr_fieldy = f_addrsy(l, 1)
@@ -1039,7 +1046,8 @@ subroutine MPP_COMPLETE_DO_UPDATE_3D_V_(id_update, f_addrsx, f_addrsy, domain, u
               js = domain%y(1)%global%begin
               if( js.GT.domain%y(1)%data%begin )then
                  if( 2*js-domain%y(1)%data%begin-1.GT.domain%y(1)%data%end ) &
-                      call mpp_error( FATAL, 'MPP_COMPLETE_DO__UPDATE_V: folded-east CGRID_NE west edge ubound error.' )
+                      call mpp_error( FATAL, &
+                                     &  'MPP_COMPLETE_DO__UPDATE_V: folded-east CGRID_NE west edge ubound error.' )
                  do l=1,l_size
                     ptr_fieldx = f_addrsx(l, 1)
                     do k = 1,ke_list(l,tMe)

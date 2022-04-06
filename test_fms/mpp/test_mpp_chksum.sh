@@ -22,37 +22,26 @@
 # This is part of the GFDL FMS package. This is a shell script to
 # execute tests in the test_fms/mpp directory.
 
-# Ed Hartnett 11/29/19
+# Ryan Mulhall 2/2021
 
 # Set common test settings.
-. ../test_common.sh
+. ../test-lib.sh
 
-skip_test="no"
+echo "&test_mpp_chksum_nml" > input.nml
+echo "test_num = 1" >> input.nml
+echo "/" >> input.nml
 
-# Get the number of available CPUs on the system
-if [ $(command -v nproc) ]
-then
-    # Looks like a linux system
-    nProc=$(nproc)
-elif [ $(command -v sysctl) ]
-then
-    # Looks like a Mac OS X system
-    nProc=$(sysctl -n hw.physicalcpu)
-else
-    nProc=-1
-fi
+test_expect_success "mpp_chksum simple functionality" '
+    mpirun -n 4 ./test_mpp_chksum
+'
 
-# Do we need to oversubscribe
-if [ ${nProc} -lt 0 ]
-then
-    # Couldn't get the number of CPUs, skip the test.
-    skip_test="skip"
-elif [ $nProc -lt 4 ]
-then
-    # Need to oversubscribe the MPI
-    run_test test_chksum_int 4 $skip_test "true"
-fi
+sed -i 's/test_num = 1/test_num = 2/' input.nml
+test_expect_success "mpp integer checksums" '
+    mpirun -n 4 ./test_mpp_chksum
+'
 
-touch input.nml
-run_test test_chksum_int 4 $skip_test
-
+sed -i 's/test_num = 2/test_num = 3/' input.nml
+test_expect_success "mpp_chksum with mixed precision" '
+    mpirun -n 4 ./test_mpp_chksum
+'
+test_done

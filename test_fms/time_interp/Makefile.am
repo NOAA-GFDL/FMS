@@ -38,8 +38,11 @@ test_time_interp_external_SOURCES = test_time_interp_external.F90
 # Run the test programs.
 TESTS = test_time_interp2.sh
 
+TEST_EXTENSIONS = .sh
+SH_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
+                  $(top_srcdir)/tap-driver.sh
 # These files will also be included in the distribution.
 EXTRA_DIST = test_time_interp2.sh
 
 # Clean up
-CLEANFILES = input.nml *.out*
+CLEANFILES = INPUT/* input.nml *.out* *.dpi *.spi *.dyn *.spl

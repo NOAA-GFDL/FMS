@@ -25,13 +25,36 @@
 # Ed Hartnett 11/29/19
 
 # Set common test settings.
-. ../test_common.sh
+. ../test-lib.sh
 
-# Copy files for test.
-cp $top_srcdir/test_fms/interpolator/input_base.nml input.nml
-cp $top_srcdir/test_fms/interpolator/diag_table_base diag_table
+# Tests to skip if input files not present
+if test ! -z "$test_input_path" ; then
+  rm -rf INPUT && mkdir INPUT
+  cp $test_input_path/interpolator/INPUT/* INPUT
+else
+  SKIP_TESTS="$SKIP_TESTS $(basename $0 .sh).1"
+fi
 
-# Test is skipped in bats file.
-run_test test_interpolator 2 skip
+# Create files for test.
+cat <<_EOF  > diag_table
+test_diag_manager_01
+1 3 1 0 0 0
 
+#output files
+ "diag_test_01",  1, "days", 1, "days", "time"
 
+#output variables
+ "test_diag_manager_mod", "dat1", "dat1", "diag_test_01",  "all", .false., "none", 2
+_EOF
+
+cat <<_EOF > input.nml
+&interpolator_nml
+/
+_EOF
+
+# Run test
+test_expect_success "test interpolator" '
+    mpirun -n 2 ./test_interpolator
+'
+
+test_done

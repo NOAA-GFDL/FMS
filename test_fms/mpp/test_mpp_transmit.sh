@@ -23,9 +23,13 @@
 # execute tests in the test_fms/mpp directory.
 
 # Lauren Chilutti 09/09/2020
+# Ryan Mulhall 2/2021
 
 # Set common test settings.
-. ../test_common.sh
+. ../test-lib.sh
 
 # Run the test for 5 processors
-run_test test_mpp_transmit 6
+test_expect_success "mpp transmit with mixed precision" '
+    mpirun -n 6 ./test_mpp_transmit
+'
+test_done

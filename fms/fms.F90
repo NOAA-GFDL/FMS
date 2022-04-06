@@ -358,7 +358,7 @@ subroutine fms_init (localcomm, alt_input_nml_path)
 
  integer, intent(in), optional :: localcomm
  character(len=*), intent(in), optional :: alt_input_nml_path
- integer :: unit, ierr, io
+ integer :: ierr, io
  integer :: logunitnum
  integer :: stdout_unit !< Unit number for the stdout file
 
@@ -487,7 +487,7 @@ end subroutine fms_end
 !#######################################################################
 
  !> @brief Print notes, warnings and error messages; terminates program for warning
- !!     and error messages. Usage of @ref mpp_error is preferable. (use error levels NOTE,WARNING,FATAL, see example below)
+ !! and error messages. Usage of @ref mpp_error is preferable. (use error levels NOTE,WARNING,FATAL, see example below)
  !! @details Print notes, warnings and error messages; and terminates the program for
  !!     error messages. This routine is a wrapper around mpp_error, and is provided
  !!     for backward compatibility. This module also publishes mpp_error,
@@ -599,7 +599,8 @@ end subroutine fms_end
 
     ! Everything else is a FATAL
     IF ( (IOSTAT == nml_errors%badType1 .OR. IOSTAT == nml_errors%badType2) .OR. IOSTAT == nml_errors%missingVar ) THEN
-       WRITE (err_str,*) 'Unknown namelist, or mistyped namelist variable in namelist ',TRIM(NML_NAME),', (IOSTAT = ',IOSTAT,')'
+       WRITE (err_str,*) 'Unknown namelist, or mistyped namelist variable in namelist ',TRIM(NML_NAME),', &
+             &  (IOSTAT = ',IOSTAT,')'
        CALL error_mesg ('check_nml_error in fms_mod', err_str, FATAL)
        CALL mpp_sync()
     ELSE
@@ -840,7 +841,6 @@ function cpointer_fortran_conversion (cstring) result(fstring)
  character(len=:), allocatable :: fstring    !< The fortran string returned
  character(len=:,kind=c_char), pointer :: string_buffer !< A temporary pointer to between C and Fortran
  integer(c_size_t) :: length !< The string length
- integer :: i
 
   length = c_strlen(cstring)
   allocate (character(len=length, kind=c_char) :: string_buffer)

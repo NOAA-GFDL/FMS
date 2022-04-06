@@ -34,8 +34,6 @@ module coupler_types_mod
   use fms2_io_mod,       only: get_variable_attribute, get_dimension_size, get_dimension_names
   use fms2_io_mod,       only: register_variable_attribute, get_variable_dimension_names
   use fms2_io_mod,       only: get_variable_num_dimensions
-  use fms_io_mod,        only: restart_file_type, fms_io_register_restart_field=>register_restart_field
-  use fms_io_mod,        only: query_initialized, restore_state
   use time_manager_mod,  only: time_type
   use diag_manager_mod,  only: register_diag_field, send_data
   use data_override_mod, only: data_override
@@ -97,8 +95,6 @@ module coupler_types_mod
     integer                           :: atm_tr_index = 0 !< atm_tr_index
     character(len=128)                :: ice_restart_file = ' ' !< ice_restart_file
     character(len=128)                :: ocean_restart_file = ' ' !< ocean_restart_file
-    type(restart_file_type), pointer  :: rest_type => NULL() !< A pointer to the restart_file_type
-                                                             !! that is used for this field.
     type(FmsNetcdfDomainFile_t), pointer :: fms2_io_rest_type => NULL() !< A pointer to the restart_file_type
                                                                         !! That is used for this field
     logical                           :: use_atm_pressure !< use_atm_pressure
@@ -111,7 +107,8 @@ module coupler_types_mod
   !> @ingroup coupler_types_mod
   type, public :: coupler_3d_bc_type
     integer                                            :: num_bcs = 0  !< The number of boundary condition fields
-    type(coupler_3d_field_type), dimension(:), pointer :: bc => NULL() !< A pointer to the array of boundary condition fields
+    type(coupler_3d_field_type), dimension(:), pointer :: bc => NULL() !< A pointer to the array of boundary
+                                                                       !! condition fields
     logical    :: set = .false.       !< If true, this type has been initialized
     integer    :: isd, isc, iec, ied  !< The i-direction data and computational domain index ranges for this type
     integer    :: jsd, jsc, jec, jed  !< The j-direction data and computational domain index ranges for this type
@@ -150,8 +147,6 @@ module coupler_types_mod
     integer                           :: atm_tr_index = 0 !< atm_tr_index
     character(len=128)                :: ice_restart_file = ' ' !< ice_restart_file
     character(len=128)                :: ocean_restart_file = ' ' !< ocean_restart_file
-    type(restart_file_type), pointer  :: rest_type => NULL() !< A pointer to the restart_file_type
-                                                             !! that is used for this field.
     type(FmsNetcdfDomainFile_t), pointer :: fms2_io_rest_type => NULL() !< A pointer to the restart_file_type
                                                                         !! That is used for this field
     logical                           :: use_atm_pressure !< use_atm_pressure
@@ -164,7 +159,8 @@ module coupler_types_mod
   !> @ingroup coupler_types_mod
   type, public    :: coupler_2d_bc_type
     integer                                            :: num_bcs = 0  !< The number of boundary condition fields
-    type(coupler_2d_field_type), dimension(:), pointer :: bc => NULL() !< A pointer to the array of boundary condition fields
+    type(coupler_2d_field_type), dimension(:), pointer :: bc => NULL() !< A pointer to the array of boundary
+                                                                       !! condition fields
     logical    :: set = .false.       !< If true, this type has been initialized
     integer    :: isd, isc, iec, ied  !< The i-direction data and computational domain index ranges for this type
     integer    :: jsd, jsc, jec, jed  !< The j-direction data and computational domain index ranges for this type
@@ -208,7 +204,8 @@ module coupler_types_mod
   !> @ingroup coupler_types_mod
   type, public    :: coupler_1d_bc_type
     integer                                            :: num_bcs = 0  !< The number of boundary condition fields
-    type(coupler_1d_field_type), dimension(:), pointer :: bc => NULL() !< A pointer to the array of boundary condition fields
+    type(coupler_1d_field_type), dimension(:), pointer :: bc => NULL() !< A pointer to the array of boundary
+                                                                       !! condition fields
     logical    :: set = .false.       !< If true, this type has been initialized
   end type coupler_1d_bc_type
 
@@ -318,9 +315,6 @@ module coupler_types_mod
   !! in restart files.
   !> @ingroup coupler_types_mod
   interface coupler_type_register_restarts
-    module procedure mpp_io_CT_register_restarts_2d, mpp_io_CT_register_restarts_3d
-    module procedure mpp_io_CT_register_restarts_to_file_2d, mpp_io_CT_register_restarts_to_file_3d
-
     module procedure CT_register_restarts_2d, CT_register_restarts_3d
   end interface coupler_type_register_restarts
 
@@ -328,7 +322,6 @@ module coupler_types_mod
   !! been saved in restart files.
   !> @ingroup coupler_types_mod
   interface coupler_type_restore_state
-    module procedure mpp_io_CT_restore_state_2d, mpp_io_CT_restore_state_3d
     module procedure CT_restore_state_2d, CT_restore_state_3d
   end interface coupler_type_restore_state
 
@@ -379,15 +372,14 @@ contains
     integer, intent(in)                     :: ie !< upper bound of first dimension
     integer, intent(in)                     :: js !< lower bound of second dimension
     integer, intent(in)                     :: je !< upper bound of second dimension
-    character(len=*), intent(in)            :: diag_name !< name for diagnostic file--if blank, then don't register the fields
+    character(len=*), intent(in)            :: diag_name !< name for diagnostic file--if blank, then
+                                                         !! don't register the fields
     integer, dimension(:), intent(in)       :: axes !< array of axes identifiers for diagnostic variable registration
     type(time_type), intent(in)             :: time !< model time variable for registering diagnostic field
     character(len=*), intent(in), optional  :: suffix !< optional suffix to make the name identifier unique
 
     character(len=*), parameter :: error_header =&
         & '==>Error from coupler_types_mod (coupler_type_copy_1d_2d):'
-    character(len=400)      :: error_msg
-    integer                 :: m, n
 
     if (var_out%num_bcs > 0) then
       ! It is an error if the number of output fields exceeds zero, because it means this
@@ -415,15 +407,14 @@ contains
     integer, intent(in)                     :: js !< lower bound of second dimension
     integer, intent(in)                     :: je !< upper bound of second dimension
     integer, intent(in)                     :: kd !< third dimension
-    character(len=*), intent(in)            :: diag_name !< name for diagnostic file--if blank, then don't register the fields
+    character(len=*), intent(in)            :: diag_name !< name for diagnostic file--if blank, then
+                                                         !! don't register the fields
     integer, dimension(:), intent(in)       :: axes !< array of axes identifiers for diagnostic variable registration
     type(time_type), intent(in)             :: time !< model time variable for registering diagnostic field
     character(len=*), intent(in), optional  :: suffix !< optional suffix to make the name identifier unique
 
     character(len=*), parameter :: error_header =&
         & '==>Error from coupler_types_mod (coupler_type_copy_1d_3d):'
-    character(len=400)      :: error_msg
-    integer                 :: m, n
 
     if (var_out%num_bcs > 0) then
       ! It is an error if the number of output fields exceeds zero, because it means this
@@ -449,15 +440,14 @@ contains
     integer, intent(in)                     :: ie !< upper bound of first dimension
     integer, intent(in)                     :: js !< lower bound of second dimension
     integer, intent(in)                     :: je !< upper bound of second dimension
-    character(len=*), intent(in)            :: diag_name !< name for diagnostic file--if blank, then don't register the fields
+    character(len=*), intent(in)            :: diag_name !< name for diagnostic file--if blank, then
+                                                         !! don't register the fields
     integer, dimension(:), intent(in)       :: axes !< array of axes identifiers for diagnostic variable registration
     type(time_type), intent(in)             :: time !< model time variable for registering diagnostic field
     character(len=*), intent(in), optional  :: suffix !< optional suffix to make the name identifier unique
 
     character(len=*), parameter :: error_header =&
         & '==>Error from coupler_types_mod (coupler_type_copy_2d_2d):'
-    character(len=400)      :: error_msg
-    integer                 :: m, n
 
     if (var_out%num_bcs > 0) then
       ! It is an error if the number of output fields exceeds zero, because it means this
@@ -484,15 +474,14 @@ contains
     integer, intent(in)                     :: js !< lower bound of second dimension
     integer, intent(in)                     :: je !< upper bound of second dimension
     integer, intent(in)                     :: kd !< third dimension
-    character(len=*), intent(in)            :: diag_name !< name for diagnostic file--if blank, then don't register the fields
+    character(len=*), intent(in)            :: diag_name !< name for diagnostic file--if blank, then
+                                                         !! don't register the fields
     integer, dimension(:), intent(in)       :: axes !< array of axes identifiers for diagnostic variable registration
     type(time_type), intent(in)             :: time !< model time variable for registering diagnostic field
     character(len=*), intent(in), optional  :: suffix !< optional suffix to make the name identifier unique
 
     character(len=*), parameter :: error_header =&
         & '==>Error from coupler_types_mod (coupler_type_copy_2d_3d):'
-    character(len=400)      :: error_msg
-    integer                 :: m, n
 
     if (var_out%num_bcs > 0) then
       ! It is an error if the number of output fields exceeds zero, because it means this
@@ -518,15 +507,14 @@ contains
     integer, intent(in)                     :: ie !< upper bound of first dimension
     integer, intent(in)                     :: js !< lower bound of second dimension
     integer, intent(in)                     :: je !< upper bound of second dimension
-    character(len=*), intent(in)            :: diag_name !< name for diagnostic file--if blank, then don't register the fields
+    character(len=*), intent(in)            :: diag_name !< name for diagnostic file--if blank, then
+                                                         !! don't register the fields
     integer, dimension(:), intent(in)       :: axes !< array of axes identifiers for diagnostic variable registration
     type(time_type), intent(in)             :: time !< model time variable for registering diagnostic field
     character(len=*), intent(in), optional  :: suffix !< optional suffix to make the name identifier unique
 
     character(len=*), parameter :: error_header =&
         & '==>Error from coupler_types_mod (coupler_type_copy_3d_2d):'
-    character(len=400)      :: error_msg
-    integer                 :: m, n
 
     if (var_out%num_bcs > 0) then
       ! It is an error if the number of output fields exceeds zero, because it means this
@@ -553,15 +541,14 @@ contains
     integer, intent(in)                     :: js !< lower bound of second dimension
     integer, intent(in)                     :: je !< upper bound of second dimension
     integer, intent(in)                     :: kd !< third dimension
-    character(len=*), intent(in)            :: diag_name !< name for diagnostic file--if blank, then don't register the fields
+    character(len=*), intent(in)            :: diag_name !< name for diagnostic file--if blank, then
+                                                         !! don't register the fields
     integer, dimension(:), intent(in)       :: axes !< array of axes identifiers for diagnostic variable registration
     type(time_type), intent(in)             :: time !< model time variable for registering diagnostic field
     character(len=*), intent(in), optional  :: suffix !< optional suffix to make the name identifier unique
 
     character(len=*), parameter :: error_header =&
         & '==>Error from coupler_types_mod (coupler_type_copy_3d_3d):'
-    character(len=400)      :: error_msg
-    integer                 :: m, n
 
     if (var_out%num_bcs > 0) then
       ! It is an error if the number of output fields exceeds zero, because it means this
@@ -1191,8 +1178,10 @@ contains
                                                            !! that is being copied
     integer,          optional, intent(in)    :: field_index !< The index of the field in the
                                                            !! boundary condition that is being copied
-    character(len=*), optional, intent(in)    :: exclude_flux_type !< A string describing which types of fluxes to exclude from this copy.
-    character(len=*), optional, intent(in)    :: only_flux_type    !< A string describing which types of fluxes to include from this copy.
+    character(len=*), optional, intent(in)    :: exclude_flux_type !< A string describing which types
+                                                                   !! of fluxes to exclude from this copy.
+    character(len=*), optional, intent(in)    :: only_flux_type    !< A string describing which types
+                                                                   !! of fluxes to include from this copy.
     logical,          optional, intent(in)    :: pass_through_ice !< If true, only copy BCs whose
                                                            !! value of pass_through ice matches this
     logical :: copy_bc
@@ -1388,8 +1377,10 @@ contains
                                                          !! that is being copied
     integer,          optional, intent(in)    :: field_index !< The index of the field in the
                                                          !! boundary condition that is being copied
-    character(len=*), optional, intent(in)    :: exclude_flux_type !< A string describing which types of fluxes to exclude from this copy.
-    character(len=*), optional, intent(in)    :: only_flux_type    !< A string describing which types of fluxes to include from this copy.
+    character(len=*), optional, intent(in)    :: exclude_flux_type !< A string describing which types
+                                                                   !! of fluxes to exclude from this copy.
+    character(len=*), optional, intent(in)    :: only_flux_type    !< A string describing which types
+                                                                   !! of fluxes to include from this copy.
     logical,          optional, intent(in)    :: pass_through_ice !< If true, only copy BCs whose
                                                          !! value of pass_through ice matches this
     integer,          optional, intent(in)    :: ind3_start  !< The starting value of the 3rd
@@ -2133,11 +2124,14 @@ contains
     if (n2 >= n1) then
       ! A more consciencious implementation would include a more descriptive error messages.
       if ((var_in%iec-var_in%isc) /= (var%iec-var%isc))&
-          & call mpp_error(FATAL, "CT_increment_data_2d_3d: There is an i-direction computational domain size mismatch.")
+          & call mpp_error(FATAL, &
+                           &  "CT_increment_data_2d_3d: There is an i-direction computational domain size mismatch.")
       if ((var_in%jec-var_in%jsc) /= (var%jec-var%jsc))&
-          & call mpp_error(FATAL, "CT_increment_data_2d_3d: There is a j-direction computational domain size mismatch.")
+          & call mpp_error(FATAL, &
+                           &  "CT_increment_data_2d_3d: There is a j-direction computational domain size mismatch.")
       if ((1+var_in%ke-var_in%ks) /= size(weights,3))&
-          & call mpp_error(FATAL, "CT_increment_data_2d_3d: There is a k-direction size mismatch with the weights array.")
+          & call mpp_error(FATAL, &
+                           &  "CT_increment_data_2d_3d: There is a k-direction size mismatch with the weights array.")
       if ((var_in%isc-var_in%isd < halo) .or. (var_in%ied-var_in%iec < halo))&
           & call mpp_error(FATAL, "CT_increment_data_2d_3d: Excessive i-direction halo size for the input structure.")
       if ((var_in%jsc-var_in%jsd < halo) .or. (var_in%jed-var_in%jec < halo))&
@@ -2154,7 +2148,8 @@ contains
       elseif ((1+var_in%ied-var_in%isd) == size(weights,1)) then
         iow = 1 + (var_in%isc - var_in%isd) - var%isc
       else
-        call mpp_error(FATAL, "CT_increment_data_2d_3d: weights array must be the i-size of a computational or data domain.")
+        call mpp_error(FATAL, &
+                   &  "CT_increment_data_2d_3d: weights array must be the i-size of a computational or data domain.")
       endif
       if ((1+var%jec-var%jsc) == size(weights,2)) then
         jow = 1 - var%jsc
@@ -2163,7 +2158,8 @@ contains
       elseif ((1+var_in%jed-var_in%jsd) == size(weights,2)) then
         jow = 1 + (var_in%jsc - var_in%jsd) - var%jsc
       else
-        call mpp_error(FATAL, "CT_increment_data_2d_3d: weights array must be the j-size of a computational or data domain.")
+        call mpp_error(FATAL, &
+                   &  "CT_increment_data_2d_3d: weights array must be the j-size of a computational or data domain.")
       endif
 
       io1 = var_in%isc - var%isc
@@ -2376,7 +2372,7 @@ contains
     character(len=400)      :: error_msg
 
     real :: scale
-    integer :: i, j, k, halo, i_off, j_off
+    integer :: i, j, halo, i_off, j_off
 
     if (bc_index <= 0) then
       array_out(:,:) = 0.0
@@ -3049,7 +3045,8 @@ contains
   !! @throw FATAL, "axes has less than 2 elements"
   subroutine CT_set_diags_2d(var, diag_name, axes, time)
     type(coupler_2d_bc_type), intent(inout) :: var  !< BC_type structure for which to register diagnostics
-    character(len=*),         intent(in)    :: diag_name !< name for diagnostic file--if blank, then don't register the fields
+    character(len=*),         intent(in)    :: diag_name !< name for diagnostic file--if blank, then
+                                                         !! don't register the fields
     integer, dimension(:),    intent(in)    :: axes !< array of axes identifiers for diagnostic variable registration
     type(time_type),          intent(in)    :: time !< model time variable for registering diagnostic field
 
@@ -3076,7 +3073,8 @@ contains
   !! @throw FATAL, "axes has less than 3 elements"
   subroutine CT_set_diags_3d(var, diag_name, axes, time)
     type(coupler_3d_bc_type), intent(inout) :: var  !< BC_type structure for which to register diagnostics
-    character(len=*),         intent(in)    :: diag_name !< name for diagnostic file--if blank, then don't register the fields
+    character(len=*),         intent(in)    :: diag_name !< name for diagnostic file--if blank, then
+                                                         !! don't register the fields
     integer, dimension(:),    intent(in)    :: axes !< array of axes identifiers for diagnostic variable registration
     type(time_type),          intent(in)    :: time !< model time variable for registering diagnostic field
 
@@ -3189,7 +3187,8 @@ contains
 
     !< Open the files
     do n = 1, num_rest_files
-        file_is_open(n) = open_file(bc_rest_files(n), trim(dir)//rest_file_names(n), io_type, mpp_domain, is_restart=.true.)
+        file_is_open(n) = open_file(bc_rest_files(n), trim(dir)//rest_file_names(n), io_type, mpp_domain, &
+                                  & is_restart=.true.)
         if (file_is_open(n)) then
              call register_axis_wrapper(bc_rest_files(n), to_read=to_read)
         endif
@@ -3331,96 +3330,7 @@ contains
         call register_axis_wrapper_write(fileobj, nz)
     endif
 
-  end subroutine
-
-  !! @brief Register the fields in a coupler_2d_bc_type to be saved in restart files
-  !!
-  !! This subroutine registers the fields in a coupler_2d_bc_type to be saved in restart files
-  !! specified in the field table.
-  subroutine mpp_io_CT_register_restarts_2d(var, bc_rest_files, num_rest_files, mpp_domain, ocean_restart)
-    type(coupler_2d_bc_type), intent(inout) :: var  !< BC_type structure to be registered for restarts
-    type(restart_file_type),  dimension(:), pointer :: bc_rest_files !< Structures describing the restart files
-    integer,                  intent(out) :: num_rest_files !< The number of restart files to use
-    type(domain2D),           intent(in)  :: mpp_domain     !< The FMS domain to use for this registration call
-    logical,        optional, intent(in)  :: ocean_restart  !< If true, use the ocean restart file name.
-
-    character(len=80), dimension(max(1,var%num_bcs)) :: rest_file_names
-    character(len=80) :: file_nm
-    logical :: ocn_rest
-    integer :: f, n, m
-
-    ocn_rest = .true.
-    if (present(ocean_restart)) ocn_rest = ocean_restart
-
-    ! Determine the number and names of the restart files
-    num_rest_files = 0
-    do n = 1, var%num_bcs
-      if (var%bc(n)%num_fields <= 0) cycle
-      file_nm = trim(var%bc(n)%ice_restart_file)
-      if (ocn_rest) file_nm = trim(var%bc(n)%ocean_restart_file)
-      do f = 1, num_rest_files
-        if (trim(file_nm) == trim(rest_file_names(f))) exit
-      enddo
-      if (f>num_rest_files) then
-        num_rest_files = num_rest_files + 1
-        rest_file_names(f) = trim(file_nm)
-      endif
-    enddo
-
-    if (num_rest_files == 0) return
-
-    ! Register the fields with the restart files
-    allocate(bc_rest_files(num_rest_files))
-    do n = 1, var%num_bcs
-      if (var%bc(n)%num_fields <= 0) cycle
-
-      file_nm = trim(var%bc(n)%ice_restart_file)
-      if (ocn_rest) file_nm = trim(var%bc(n)%ocean_restart_file)
-      do f = 1, num_rest_files
-        if (trim(file_nm) == trim(rest_file_names(f))) exit
-      enddo
-
-      var%bc(n)%rest_type => bc_rest_files(f)
-      do m = 1, var%bc(n)%num_fields
-        var%bc(n)%field(m)%id_rest = fms_io_register_restart_field(bc_rest_files(f),&
-            & rest_file_names(f), var%bc(n)%field(m)%name, var%bc(n)%field(m)%values,&
-            & mpp_domain, mandatory=.not.var%bc(n)%field(m)%may_init )
-      enddo
-    enddo
-  end subroutine mpp_io_CT_register_restarts_2d
-
-  !! @brief Register the fields in a coupler_2d_bc_type to be saved to restart files
-  !!
-  !! This subroutine  registers the  fields in  a coupler_2d_bc_type  to be  saved in  the specified
-  !! restart file.
-  subroutine mpp_io_CT_register_restarts_to_file_2d(var, file_name, rest_file, mpp_domain, varname_prefix)
-    type(coupler_2d_bc_type), intent(inout) :: var  !< BC_type structure to be registered for restarts
-    character(len=*),         intent(in)    :: file_name !< The name of the restart file
-    type(restart_file_type),  pointer       :: rest_file !< A (possibly associated) structure describing the restart file
-    type(domain2D),           intent(in)    :: mpp_domain !< The FMS domain to use for this registration call
-    character(len=*), optional, intent(in)  :: varname_prefix !< A prefix for the variable name
-                                                         !! in the restart file, intended to allow
-                                                         !! multiple BC_type variables to use the
-                                                         !! same restart files.
-
-    character(len=128) :: var_name
-    integer :: n, m
-
-    ! Register the fields with the restart file
-    if (.not.associated(rest_file)) allocate(rest_file)
-    do n = 1, var%num_bcs
-      if (var%bc(n)%num_fields <= 0) cycle
-
-      var%bc(n)%rest_type => rest_file
-      do m = 1, var%bc(n)%num_fields
-        var_name = trim(var%bc(n)%field(m)%name)
-        if (present(varname_prefix)) var_name = trim(varname_prefix)//trim(var_name)
-        var%bc(n)%field(m)%id_rest = fms_io_register_restart_field(rest_file,&
-            & file_name, var_name, var%bc(n)%field(m)%values,&
-            & mpp_domain, mandatory=.not.var%bc(n)%field(m)%may_init )
-      enddo
-    enddo
-  end subroutine mpp_io_CT_register_restarts_to_file_2d
+  end subroutine register_axis_wrapper
 
   !! @brief Register the fields in a coupler_3d_bc_type to be saved in restart files
   !! This subroutine registers the fields in a coupler_2d_bc_type to be saved in restart files
@@ -3480,7 +3390,8 @@ contains
 
     !< Open the files
     do n = 1, num_rest_files
-        file_is_open(n) = open_file(bc_rest_files(n), trim(dir)//rest_file_names(n), io_type, mpp_domain, is_restart=.true.)
+        file_is_open(n) = open_file(bc_rest_files(n), trim(dir)//rest_file_names(n), io_type, mpp_domain, &
+                                  & is_restart=.true.)
         if (file_is_open(n)) then
 
              if (to_read) then
@@ -3528,93 +3439,6 @@ contains
     enddo !< num_bcs
 
   end subroutine CT_register_restarts_3d
-
-  !! @brief Register the fields in a coupler_3d_bc_type to be saved to restart files
-  !!
-  !! This subroutine registers the fields in a coupler_3d_bc_type to be saved in restart files
-  !! specified in the field table.
-  subroutine mpp_io_CT_register_restarts_3d(var, bc_rest_files, num_rest_files, mpp_domain, ocean_restart)
-    type(coupler_3d_bc_type), intent(inout) :: var  !< BC_type structure to be registered for restarts
-    type(restart_file_type),  dimension(:), pointer :: bc_rest_files !< Structures describing the restart files
-    integer,                  intent(out)   :: num_rest_files !< The number of restart files to use
-    type(domain2D),           intent(in)    :: mpp_domain     !< The FMS domain to use for this registration call
-    logical,        optional, intent(in)    :: ocean_restart  !< If true, use the ocean restart file name.
-
-    character(len=80), dimension(max(1,var%num_bcs)) :: rest_file_names
-    character(len=80) :: file_nm
-    logical :: ocn_rest
-    integer :: f, n, m, id_restart
-
-    ocn_rest = .true.
-    if (present(ocean_restart)) ocn_rest = ocean_restart
-
-    ! Determine the number and names of the restart files
-    num_rest_files = 0
-    do n = 1, var%num_bcs
-      if (var%bc(n)%num_fields <= 0) cycle
-      file_nm = trim(var%bc(n)%ice_restart_file)
-      if (ocn_rest) file_nm = trim(var%bc(n)%ocean_restart_file)
-      do f = 1, num_rest_files
-        if (trim(file_nm) == trim(rest_file_names(f))) exit
-      enddo
-      if (f>num_rest_files) then
-        num_rest_files = num_rest_files + 1
-        rest_file_names(f) = trim(file_nm)
-      endif
-    enddo
-
-    if (num_rest_files == 0) return
-
-    ! Register the fields with the restart files
-    allocate(bc_rest_files(num_rest_files))
-    do n = 1, var%num_bcs
-      if (var%bc(n)%num_fields <= 0) cycle
-      file_nm = trim(var%bc(n)%ice_restart_file)
-      if (ocn_rest) file_nm = trim(var%bc(n)%ocean_restart_file)
-      do f = 1, num_rest_files
-        if (trim(file_nm) == trim(rest_file_names(f))) exit
-      enddo
-
-      var%bc(n)%rest_type => bc_rest_files(f)
-      do m = 1, var%bc(n)%num_fields
-        var%bc(n)%field(m)%id_rest = fms_io_register_restart_field(bc_rest_files(f),&
-            & rest_file_names(f), var%bc(n)%field(m)%name, var%bc(n)%field(m)%values,&
-            & mpp_domain, mandatory=.not.var%bc(n)%field(m)%may_init )
-      enddo
-    enddo
-  end subroutine mpp_io_CT_register_restarts_3d
-
-  !> @brief Register the fields in a coupler_3d_bc_type to be saved to restart files
-  !!
-  !! Registers the fields in a coupler_3d_bc_type to be saved in the specified restart file.
-  subroutine mpp_io_CT_register_restarts_to_file_3d(var, file_name, rest_file, mpp_domain, varname_prefix)
-    type(coupler_3d_bc_type), intent(inout) :: var  !< BC_type structure to be registered for restarts
-    character(len=*),         intent(in)  :: file_name !< The name of the restart file
-    type(restart_file_type),  pointer     :: rest_file !< A (possibly associated) structure describing the restart file
-    type(domain2D),           intent(in)  :: mpp_domain !< The FMS domain to use for this registration call
-    character(len=*), optional, intent(in)  :: varname_prefix !< A prefix for the variable name
-                                                    !! in the restart file, intended to allow
-                                                    !! multiple BC_type variables to use the
-                                                    !! same restart files.
-
-    character(len=128) :: var_name
-    integer :: n, m
-
-    ! Register the fields with the restart file
-    if (.not.associated(rest_file)) allocate(rest_file)
-    do n = 1, var%num_bcs
-      if (var%bc(n)%num_fields <= 0) cycle
-
-      var%bc(n)%rest_type => rest_file
-      do m = 1, var%bc(n)%num_fields
-        var_name = trim(var%bc(n)%field(m)%name)
-        if (present(varname_prefix)) var_name = trim(varname_prefix)//trim(var_name)
-        var%bc(n)%field(m)%id_rest = fms_io_register_restart_field(rest_file,&
-            & file_name, var_name, var%bc(n)%field(m)%values,&
-            & mpp_domain, mandatory=.not.var%bc(n)%field(m)%may_init )
-      enddo
-    enddo
-  end subroutine mpp_io_CT_register_restarts_to_file_3d
 
   subroutine CT_restore_state_2d(var, use_fms2_io, directory, all_or_nothing, all_required, test_by_field)
     type(coupler_2d_bc_type), intent(inout) :: var  !< BC_type structure to restore from restart files
@@ -3677,76 +3501,6 @@ contains
       endif
     endif
   end subroutine CT_restore_state_2d
-
-  !> @brief Reads in fields from restart files into a coupler_2d_bc_type
-  !!
-  !! This subroutine reads in the fields in a coupler_2d_bc_type that have been saved in restart
-  !! files.
-  subroutine mpp_io_CT_restore_state_2d(var, directory, all_or_nothing, all_required, test_by_field)
-    type(coupler_2d_bc_type), intent(inout) :: var  !< BC_type structure to restore from restart files
-    character(len=*), optional, intent(in)  :: directory !< A directory where the restart files should
-                                                    !! be found.  The default for FMS is 'INPUT'.
-    logical,        optional, intent(in)    :: all_or_nothing !< If true and there are non-mandatory
-                                                    !! restart fields, it is still an error if some
-                                                    !! fields are read successfully but others are not.
-    logical,        optional, intent(in)    :: all_required !< If true, all fields must be successfully
-                                                    !! read from the restart file, even if they were
-                                                    !! registered as not mandatory.
-    logical,        optional, intent(in)    :: test_by_field !< If true, all or none of the variables
-                                                    !! in a single field must be read successfully.
-
-    integer :: n, m, num_fld
-    character(len=80) :: unset_varname
-    logical :: any_set, all_set, all_var_set, any_var_set, var_set
-
-    any_set = .false.
-    all_set = .true.
-    num_fld = 0
-    unset_varname = ""
-
-    do n = 1, var%num_bcs
-      any_var_set = .false.
-      all_var_set = .true.
-      do m = 1, var%bc(n)%num_fields
-        var_set = .false.
-        if (var%bc(n)%field(m)%id_rest > 0) then
-          var_set = query_initialized(var%bc(n)%rest_type, var%bc(n)%field(m)%id_rest)
-          if (.not.var_set) then
-            call restore_state(var%bc(n)%rest_type, var%bc(n)%field(m)%id_rest,&
-                & directory=directory, nonfatal_missing_files=.true.)
-            var_set = query_initialized(var%bc(n)%rest_type, var%bc(n)%field(m)%id_rest)
-          endif
-        endif
-
-        if (.not.var_set) unset_varname = trim(var%bc(n)%field(m)%name)
-        if (var_set) any_set = .true.
-        if (all_set) all_set = var_set
-        if (var_set) any_var_set = .true.
-        if (all_var_set) all_var_set = var_set
-      enddo
-
-      num_fld = num_fld + var%bc(n)%num_fields
-      if ((var%bc(n)%num_fields > 0) .and. present(test_by_field)) then
-        if (test_by_field .and. (all_var_set .neqv. any_var_set)) call mpp_error(FATAL,&
-            & "mpp_io_CT_restore_state_2d: test_by_field is true, and "//&
-            & trim(unset_varname)//" was not read but some other fields in "//&
-            & trim(trim(var%bc(n)%name))//" were.")
-      endif
-    enddo
-
-    if ((num_fld > 0) .and. present(all_or_nothing)) then
-      if (all_or_nothing .and. (all_set .neqv. any_set)) call mpp_error(FATAL,&
-          & "mpp_io_CT_restore_state_2d: all_or_nothing is true, and "//&
-          & trim(unset_varname)//" was not read but some other fields were.")
-    endif
-
-    if (present(all_required)) then
-      if (all_required .and. .not.all_set) then
-        call mpp_error(FATAL, "mpp_io_CT_restore_state_2d: all_required is true, but "//&
-            & trim(unset_varname)//" was not read from its restart file.")
-      endif
-    endif
-  end subroutine mpp_io_CT_restore_state_2d
 
   !> @brief Read in fields from restart files into a coupler_3d_bc_type
   !!
@@ -3814,78 +3568,6 @@ contains
       endif
     endif
   end subroutine CT_restore_state_3d
-
-  !> @brief Read in fields from restart files into a coupler_3d_bc_type
-  !!
-  !! This subroutine reads in the fields in a coupler_3d_bc_type that have been saved in restart
-  !! files.
-  subroutine mpp_io_CT_restore_state_3d(var, directory, all_or_nothing, all_required, test_by_field)
-    type(coupler_3d_bc_type), intent(inout) :: var  !< BC_type structure to restore from restart files
-    character(len=*), optional, intent(in)  :: directory !< A directory where the restart files should
-                                                    !! be found.  The default for FMS is 'INPUT'.
-    logical,        optional, intent(in)    :: all_or_nothing !< If true and there are non-mandatory
-                                                    !! restart fields, it is still an error if some
-                                                    !! fields are read successfully but others are not.
-    logical,        optional, intent(in)    :: all_required !< If true, all fields must be successfully
-                                                    !! read from the restart file, even if they were
-                                                    !! registered as not mandatory.
-    logical,        optional, intent(in)    :: test_by_field !< If true, all or none of the variables
-                                                    !! in a single field must be read successfully.
-
-    integer :: n, m, num_fld
-    character(len=80) :: unset_varname
-    logical :: any_set, all_set, all_var_set, any_var_set, var_set
-
-    any_set = .false.
-    all_set = .true.
-    num_fld = 0
-    unset_varname = ""
-
-    do n = 1, var%num_bcs
-      any_var_set = .false.
-      all_var_set = .true.
-      do m = 1, var%bc(n)%num_fields
-        var_set = .false.
-        if (var%bc(n)%field(m)%id_rest > 0) then
-          var_set = query_initialized(var%bc(n)%rest_type, var%bc(n)%field(m)%id_rest)
-          if (.not.var_set) then
-            call restore_state(var%bc(n)%rest_type, var%bc(n)%field(m)%id_rest,&
-                & directory=directory, nonfatal_missing_files=.true.)
-            var_set = query_initialized(var%bc(n)%rest_type, var%bc(n)%field(m)%id_rest)
-          endif
-        endif
-
-        if (.not.var_set) unset_varname = trim(var%bc(n)%field(m)%name)
-
-        if (var_set) any_set = .true.
-        if (all_set) all_set = var_set
-        if (var_set) any_var_set = .true.
-        if (all_var_set) all_var_set = var_set
-      enddo
-
-      num_fld = num_fld + var%bc(n)%num_fields
-      if ((var%bc(n)%num_fields > 0) .and. present(test_by_field)) then
-        if (test_by_field .and. (all_var_set .neqv. any_var_set)) call mpp_error(FATAL,&
-            & "mpp_io_CT_restore_state_3d: test_by_field is true, and "//&
-            & trim(unset_varname)//" was not read but some other fields in "//&
-            & trim(trim(var%bc(n)%name))//" were.")
-      endif
-    enddo
-
-    if ((num_fld > 0) .and. present(all_or_nothing)) then
-      if (all_or_nothing .and. (all_set .neqv. any_set)) call mpp_error(FATAL,&
-          & "mpp_io_CT_restore_state_3d: all_or_nothing is true, and "//&
-          & trim(unset_varname)//" was not read but some other fields were.")
-    endif
-
-    if (present(all_required)) then
-      if (all_required .and. .not.all_set) then
-        call mpp_error(FATAL, "mpp_io_CT_restore_state_3d: all_required is true, but "//&
-            & trim(unset_varname)//" was not read from its restart file.")
-      endif
-    endif
-  end subroutine mpp_io_CT_restore_state_3d
-
 
   !> @brief Potentially override the values in a coupler_2d_bc_type
   subroutine CT_data_override_2d(gridname, var, Time)

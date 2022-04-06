@@ -154,8 +154,8 @@ program test_update_domains_performance
           return
         endif
         if( nx_cubic .NE. ny_cubic ) then
-          call mpp_error(NOTE,'update_domains_performance_r8: for Cubic_grid mosaic, nx_cubic does not equal ny_cubic, '//&
-                        'No test is done for Cubic-Grid mosaic. ' )
+          call mpp_error(NOTE,'update_domains_performance_r8:'// &
+                   ' for Cubic_grid mosaic, nx_cubic does not equal ny_cubic, No test is done for Cubic-Grid mosaic. ')
           return
         endif
 
@@ -760,8 +760,8 @@ program test_update_domains_performance
           return
         endif
         if( nx_cubic .NE. ny_cubic ) then
-          call mpp_error(NOTE,'update_domains_performance_r4: for Cubic_grid mosaic, nx_cubic does not equal ny_cubic, '//&
-                         'No test is done for Cubic-Grid mosaic. ' )
+          call mpp_error(NOTE,'update_domains_performance_r4:'//&
+                  ' for Cubic_grid mosaic, nx_cubic does not equal ny_cubic, No test is done for Cubic-Grid mosaic. ' )
           return
         endif
 
@@ -942,7 +942,8 @@ program test_update_domains_performance
 
         call mpp_clock_begin(id2)
         do l = 1, num_fields
-          if(mix_2D_3D) call mpp_complete_update_domains(id_update, a1_2D(:,:,l), domain, complete=.false., tile_count=1)
+          if(mix_2D_3D) call mpp_complete_update_domains(id_update, a1_2D(:,:,l), domain, complete=.false., &
+            &  tile_count=1)
           call mpp_complete_update_domains(id_update, a1(:,:,:,l), domain, complete=l==num_fields, tile_count=1)
         enddo
         call mpp_clock_end  (id2)
@@ -1359,8 +1360,8 @@ program test_update_domains_performance
           return
         endif
         if( nx_cubic .NE. ny_cubic ) then
-          call mpp_error(NOTE,'update_domains_performance_r8: for Cubic_grid mosaic, nx_cubic does not equal ny_cubic, '//&
-                        'No test is done for Cubic-Grid mosaic. ' )
+          call mpp_error(NOTE,'update_domains_performance_r8:'//&
+                  ' for Cubic_grid mosaic, nx_cubic does not equal ny_cubic, No test is done for Cubic-Grid mosaic. ' )
           return
         endif
 
@@ -1620,8 +1621,8 @@ program test_update_domains_performance
           return
         endif
         if( nx_cubic .NE. ny_cubic ) then
-          call mpp_error(NOTE,'update_domains_performance_r8: for Cubic_grid mosaic, nx_cubic does not equal ny_cubic, '//&
-                        'No test is done for Cubic-Grid mosaic. ' )
+          call mpp_error(NOTE,'update_domains_performance_r8:'//&
+                 ' for Cubic_grid mosaic, nx_cubic does not equal ny_cubic, No test is done for Cubic-Grid mosaic. ' )
           return
         endif
 

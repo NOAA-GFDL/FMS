@@ -749,7 +749,6 @@ end interface
  subroutine input_data ( indx, xdat, ydat, zdat )
  integer, intent(in) :: indx
  real, intent(out) :: xdat(ipts+1), ydat(jpts+1), zdat(ipts,jpts)
- integer :: nc
 
   if( file_is_opened(indx) ) then
      call read_data(fileobj(indx), 'xdat', xdat)

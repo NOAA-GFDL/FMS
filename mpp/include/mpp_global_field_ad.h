@@ -33,6 +33,7 @@
       MPP_TYPE_ :: global3D(size(global,1),size(global,2),1)
       pointer( lptr,  local3D )
       pointer( gptr, global3D )
+      local = MPP_TYPE_INIT_VALUE
       lptr = LOC( local)
       gptr = LOC(global)
       call mpp_global_field_ad( domain, local3D, global3D, flags, position,tile_count, default_data )
@@ -73,6 +74,7 @@
       MPP_TYPE_ :: global3D(size(global,1),size(global,2),size(global,3)*size(local,4))
       pointer( lptr, local3D  )
       pointer( gptr, global3D )
+      local = MPP_TYPE_INIT_VALUE
       lptr = LOC(local)
       gptr = LOC(global)
       call mpp_global_field_ad( domain, local3D, global3D, flags, position,tile_count, default_data )
@@ -91,6 +93,7 @@
       MPP_TYPE_ :: global3D(size(global,1),size(global,2),size(global,3)*size(global,4)*size(local,5))
       pointer( lptr, local3D  )
       pointer( gptr, global3D )
+      local = MPP_TYPE_INIT_VALUE
       lptr = LOC(local)
       gptr = LOC(global)
       call mpp_global_field_ad( domain, local3D, global3D, flags, position,tile_count, default_data )

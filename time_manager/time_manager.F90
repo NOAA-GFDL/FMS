@@ -87,7 +87,7 @@
 module time_manager_mod
 
 
-use platform_mod, only: r4_kind, r8_kind
+use platform_mod, only: r8_kind
 use constants_mod, only: rseconds_per_day=>seconds_per_day
 use fms_mod, only: error_mesg, FATAL, WARNING, write_version_number, stdout
 
@@ -328,7 +328,8 @@ contains
  seconds_new = modulo(seconds_new,seconds_per_day)
 
  if ( seconds_new < 0 .or. ticks_new < 0) then
-   call error_mesg('function set_time_i','Bad result for time. Contact those responsible for maintaining time_manager',FATAL)
+   call error_mesg('function set_time_i','Bad result for time. Contact those responsible for maintaining time_manager'&
+                  & ,FATAL)
  endif
 
  if(days_new < 0) then
@@ -601,7 +602,8 @@ end subroutine get_time
    return
  endif
 
- increment_time_private = set_time_private(Time_in%seconds+seconds, Time_in%days+days, Time_in%ticks+ticks, Time_out, err_msg)
+ increment_time_private = set_time_private(Time_in%seconds+seconds, Time_in%days+days, Time_in%ticks+ticks, &
+                                          &  Time_out, err_msg)
 
  end function increment_time_private
 
@@ -995,9 +997,9 @@ if(.not.module_is_initialized) call time_manager_init
 ! ticks could be up to ticks_per_second-1
 
 tick_prod = dble(time%ticks) * dble(n)
-num_sec   = tick_prod/dble(ticks_per_second)
+num_sec   = int(tick_prod/dble(ticks_per_second))
 sec_prod  = dble(time%seconds) * dble(n) + num_sec
-ticks     = tick_prod - num_sec * ticks_per_second
+ticks     = int(tick_prod - num_sec * ticks_per_second)
 
 ! If sec_prod is large compared to precision of double precision, things
 ! can go bad.  Need to warn and abort on this.
@@ -1009,8 +1011,8 @@ if(sec_prod /= 0.0) then
       'Insufficient precision to handle scalar product in time_scalar_mult; contact developer',FATAL)
 end if
 
-days = sec_prod / dble(seconds_per_day)
-seconds = sec_prod - dble(days) * dble(seconds_per_day)
+days = int(sec_prod / dble(seconds_per_day))
+seconds = int(sec_prod - dble(days) * dble(seconds_per_day))
 
 time_scalar_mult = set_time(seconds, time%days * n + days, ticks)
 
@@ -1087,7 +1089,7 @@ d1 = time1%days * dble(seconds_per_day) + dble(time1%seconds) + time1%ticks/dble
 d2 = time2%days * dble(seconds_per_day) + dble(time2%seconds) + time2%ticks/dble(ticks_per_second)
 
 ! Get integer quotient of this, check carefully to avoid round-off problems.
-time_divide = d1 / d2
+time_divide = int(d1 / d2)
 
 ! Verify time_divide*time2 is <= time1 and (time_divide + 1)*time2 is > time1
 if(time_divide * time2 > time1 .or. (time_divide + 1) * time2 <= time1) &
@@ -1193,8 +1195,8 @@ type(time_type), intent(in) :: time
 
 if(.not.module_is_initialized) call time_manager_init
 
-time_type_to_real = dble(time%days) * 86400.d0 + dble(time%seconds) + &
-     dble(time%ticks)/dble(ticks_per_second)
+time_type_to_real = real(dble(time%days) * 86400.d0 + dble(time%seconds) + &
+     dble(time%ticks)/dble(ticks_per_second), kind=r8_kind)
 
 end function time_type_to_real
 
@@ -1202,7 +1204,7 @@ end function time_type_to_real
 !! @return A filled time type variable, and an error message if an
 !!         error occurs.
 function real_to_time_type(x,err_msg) result(t)
-  class(*),intent(in) :: x !< Number of seconds.
+  real,intent(in) :: x !< Number of seconds.
   character(len=*),intent(out),optional :: err_msg !< Error message.
   type(time_type) :: t
   integer :: days
@@ -1213,29 +1215,9 @@ function real_to_time_type(x,err_msg) result(t)
   real :: tps
   real :: a
   tps = real(ticks_per_second)
-
-  select type (x)
-  type is (real(kind=r4_kind))
-    a = x/spd
-  type is (real(kind=r8_kind))
-    a = real(x)/spd
-  class default
-    call error_mesg('time_manager_mod::real_to_time_type',&
-         & 'x is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)
-  end select
-
+  a = x/spd
   days = safe_rtoi(a,do_floor)
-
-  select type (x)
-  type is (real(kind=r4_kind))
-    a = x - real(days)*spd
-  type is (real(kind=r8_kind))
-    a = real(x) - real(days)*spd
-  class default
-    call error_mesg('time_manager_mod::real_to_time_type',&
-         & 'x is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)
-  end select
-
+  a = x - real(days)*spd
   seconds = safe_rtoi(a,do_floor)
   a = (a - real(seconds))*tps
   ticks = safe_rtoi(a,do_nearest)
@@ -1313,9 +1295,9 @@ dticks_per_second = dble(ticks_per_second)
 d = time%days*dseconds_per_day*dticks_per_second + dble(time%seconds)*dticks_per_second + dble(time%ticks)
 div = d/dble(n)
 
-days = div/(dseconds_per_day*dticks_per_second)
-seconds = div/dticks_per_second - days*dseconds_per_day
-ticks = div - (days*dseconds_per_day + dble(seconds))*dticks_per_second
+days = int(div/(dseconds_per_day*dticks_per_second))
+seconds = int(div/dticks_per_second - days*dseconds_per_day)
+ticks = int(div - (days*dseconds_per_day + dble(seconds))*dticks_per_second)
 time_scalar_divide = set_time(seconds, days, ticks)
 
 ! Need to make sure that roundoff isn't killing this
@@ -1483,8 +1465,6 @@ subroutine set_calendar_type(type, err_msg)
 
 integer, intent(in) :: type
 character(len=*), intent(out), optional :: err_msg
-integer :: iday, days_this_month, year, month, day
-logical :: leap
 character(len=256) :: err_msg_local
 
 if(.not.module_is_initialized) call time_manager_init()
@@ -2169,7 +2149,8 @@ end function get_ticks_per_second
  if(yearx.gt.0) then
    ncenturies = int( yearx/100 )
    nlpyrs     = int( (yearx-ncenturies*100)/4 )
-   dayx       = ncenturies*36524 + (yearx-ncenturies*100)*365 + nlpyrs ! 36524 days in 100 years, year 100 not leap year
+   dayx       = ncenturies*36524 + (yearx-ncenturies*100)*365 + nlpyrs ! 36524 days in 100 years, year 100 not
+                                                                       !! leap year
    if(ncenturies.eq.4) dayx = dayx + 1 ! year 400 is a leap year
  end if
 
@@ -2481,7 +2462,8 @@ end function get_ticks_per_second
  allow_neg_inc_local=.true.; if(present(allow_neg_inc)) allow_neg_inc_local=allow_neg_inc
 
  if(.not.allow_neg_inc_local) then
-   if(oyears < 0 .or. omonths < 0 .or. odays < 0 .or. ohours < 0 .or. ominutes < 0 .or. oseconds < 0 .or. oticks < 0) then
+   if(oyears < 0 .or. omonths < 0 .or. odays < 0 .or. ohours < 0 .or. ominutes < 0 .or. oseconds < 0 .or. &
+    & oticks < 0) then
      write(err_msg_local,10) oyears, omonths, odays, ohours, ominutes, oseconds, oticks
      if(error_handler('function increment_time', err_msg_local, err_msg)) return
    endif
@@ -2579,13 +2561,16 @@ end function get_ticks_per_second
  ! Convert this back into a time.
    select case(calendar_type)
    case(THIRTY_DAY_MONTHS)
-     increment_date_private = set_date_thirty   (cyear, cmonth, cday, chour, cminute, csecond, ctick, Time_out, err_msg)
+     increment_date_private = set_date_thirty (cyear, cmonth, cday, chour, cminute, csecond, ctick, Time_out, err_msg)
    case(NOLEAP)
-     increment_date_private = set_date_no_leap_private  (cyear, cmonth, cday, chour, cminute, csecond, ctick, Time_out, err_msg)
+     increment_date_private = set_date_no_leap_private  (cyear, cmonth, cday, chour, cminute, csecond, ctick, &
+                                                        &  Time_out, err_msg)
    case(JULIAN)
-     increment_date_private = set_date_julian_private   (cyear, cmonth, cday, chour, cminute, csecond, ctick, Time_out, err_msg)
+     increment_date_private = set_date_julian_private   (cyear, cmonth, cday, chour, cminute, csecond, ctick, &
+                                                        &  Time_out, err_msg)
    case(GREGORIAN)
-     increment_date_private = set_date_gregorian(cyear, cmonth, cday, chour, cminute, csecond, ctick, Time_out, err_msg)
+     increment_date_private = set_date_gregorian(cyear, cmonth, cday, chour, cminute, csecond, ctick, Time_out, &
+                                                &  err_msg)
    end select
  endif ! if(mode_2)
 
@@ -2664,7 +2649,8 @@ end function get_ticks_per_second
  allow_neg_inc_local=.true.; if(present(allow_neg_inc)) allow_neg_inc_local=allow_neg_inc
 
  if(.not.allow_neg_inc_local) then
-   if(oyears < 0 .or. omonths < 0 .or. odays < 0 .or. ohours < 0 .or. ominutes < 0 .or. oseconds < 0 .or. oticks < 0) then
+   if(oyears < 0 .or. omonths < 0 .or. odays < 0 .or. ohours < 0 .or. ominutes < 0 .or. oseconds < 0 .or. &
+    & oticks < 0) then
      write(err_msg_local,10) oyears, omonths, odays, ohours, ominutes, oseconds, oticks
      if(error_handler('function decrement_date', err_msg_local, err_msg)) return
    endif
@@ -2947,11 +2933,8 @@ end function length_of_year_thirty
 function length_of_year_gregorian()
 
 type(time_type) :: length_of_year_gregorian
-integer :: days, seconds
 
-days = days_in_400_year_period / 400
-seconds = 86400*(days_in_400_year_period/400. - days)
-length_of_year_gregorian = set_time(seconds, days)
+length_of_year_gregorian = set_time(20952, 365) !20952 = 86500 * (days_in_400_yrs/400. - (days_in_400_yrs/400))
 
 end function length_of_year_gregorian
 
@@ -2961,7 +2944,7 @@ function length_of_year_julian()
 
 type(time_type) :: length_of_year_julian
 
-length_of_year_julian = set_time((24 / 4) * 60 * 60, 365)
+length_of_year_julian = set_time(21600, 365) !21600 = (24/4) * 60 * 60
 
 end function length_of_year_julian
 
@@ -2997,7 +2980,7 @@ end
 ! START OF days_in_year BLOCK
 ! <FUNCTION NAME="days_in_year">
 
-!> @brief Retruns the number of days in the calendar year corresponding to the date represented by
+!> @brief Returns the number of days in the calendar year corresponding to the date represented by
 !! time for the default calendar.
 !> @returns The number of days in this year for the default calendar type.
 function days_in_year(Time)
