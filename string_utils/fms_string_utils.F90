@@ -265,7 +265,7 @@ contains
     if (i < 1 ) i = len_trim(source)
 
     if (len_trim(source(1:i)) .gt. len(dest)) then
-      call error("The input destination string is not big enough to" &
+      call mpp_error(FATAL, "The input destination string is not big enough to" &
                  //" to hold the input source string.")
     endif
     dest = ""
