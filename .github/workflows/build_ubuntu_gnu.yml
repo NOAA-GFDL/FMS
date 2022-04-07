@@ -30,3 +30,15 @@ jobs:
         FCFLAGS: "-fdefault-real-8 -fdefault-double-8 -fcray-pointer -ffree-line-length-none -I/usr/include"
     - name: Build the library
       run: make -j distcheck
+    - name: Trigger FMScoupler build CI on updates to main
+      if: github.repository == 'rem1776/FMS' ## && github.ref_protected == 'true'
+      uses: actions/github-script@v6
+      with:
+        github-token: ${{ secrets.PAT_TOKEN }}
+        script: |
+          await github.rest.actions.createWorkflowDispatch({
+            owner: 'rem1776'
+            repo: 'FMScoupler'
+            workflow_id: 'build.yml'
+            ref: 'main'
+          })
