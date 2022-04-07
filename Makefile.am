@@ -41,9 +41,9 @@ SUBDIRS = \
   memutils \
   fms2_io \
   mosaic2 \
+  string_utils \
   fms \
   parser \
-  string_utils \
   affinity \
   mosaic \
   time_manager \

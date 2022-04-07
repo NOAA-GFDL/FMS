@@ -184,3 +184,8 @@ int fms_find_unique(char** arr, int *n)
 
   return nfind;
 }
+
+char * cstring2cpointer (char * cs)
+{
+	return cs;
+}
