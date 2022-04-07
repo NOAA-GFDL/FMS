@@ -400,6 +400,7 @@ AC_CONFIG_FILES([
   libFMS/Makefile
   docs/Makefile
   parser/Makefile
+  string_utils/Makefile
   test_fms/test-lib.sh
   test_fms/intel_coverage.sh
   test_fms/Makefile
@@ -422,6 +423,7 @@ AC_CONFIG_FILES([
   test_fms/affinity/Makefile
   test_fms/coupler/Makefile
   test_fms/parser/Makefile
+  test_fms/string_utils/Makefile
   FMS.pc
   ])
 
