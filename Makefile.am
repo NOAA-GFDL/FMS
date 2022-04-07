@@ -39,9 +39,9 @@ SUBDIRS = \
   mpp \
   constants \
   memutils \
+  string_utils \
   fms2_io \
   mosaic2 \
-  string_utils \
   fms \
   parser \
   affinity \
