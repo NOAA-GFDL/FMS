@@ -41,6 +41,7 @@ module fms_string_utils_mod
   public :: fms_c2f_string
   public :: fms_cstring2cpointer
   public :: string
+  public :: string_copy
 !> @}
 
   interface
@@ -243,6 +244,33 @@ contains
     return
 
   end function string_from_real
+
+  !> @brief Safely copy a string from one buffer to another.
+  subroutine string_copy(dest, source, check_for_null)
+    character(len=*), intent(inout) :: dest !< Destination string.
+    character(len=*), intent(in) :: source !< Source string.
+    logical, intent(in), optional :: check_for_null !<Flag indicating to test for null character
+
+    integer :: i
+    logical :: check_null
+
+    check_null = .false.
+    if (present(check_for_null)) check_null = check_for_null
+
+    i = 0
+    if (check_null) then
+      i = index(source, char(0)) - 1
+    endif
+
+    if (i < 1 ) i = len_trim(source)
+
+    if (len_trim(source(1:i)) .gt. len(dest)) then
+      call error("The input destination string is not big enough to" &
+                 //" to hold the input source string.")
+    endif
+    dest = ""
+    dest = adjustl(trim(source(1:i)))
+  end subroutine string_copy
 
 end module fms_string_utils_mod
 !> @}

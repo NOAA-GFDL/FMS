@@ -36,6 +36,7 @@ use mpp_domains_mod, only: domain2D, domainUG, mpp_get_ntile_count, &
                            mpp_get_current_ntile, mpp_get_tile_id, &
                            mpp_get_UG_domain_ntiles, mpp_get_UG_domain_tile_id
 use platform_mod
+use fms_string_utils_mod, only: string_copy
 implicit none
 private
 
@@ -217,36 +218,6 @@ subroutine openmp_thread_trap()
     endif
 #endif
 end subroutine openmp_thread_trap
-
-
-!> @brief Safely copy a string from one buffer to another.
-subroutine string_copy(dest, source, check_for_null)
-  character(len=*), intent(inout) :: dest !< Destination string.
-  character(len=*), intent(in) :: source !< Source string.
-  logical, intent(in), optional :: check_for_null !<Flag indicating to test for null character
-
-  integer :: i
-  logical :: check_null
-
-  check_null = .false.
-  if (present(check_for_null)) check_null = check_for_null
-
-  i = 0
-  if (check_null) then
-     i = index(source, char(0)) - 1
-  endif
-
-  if (i < 1 ) i = len_trim(source)
-
-  if (len_trim(source(1:i)) .gt. len(dest)) then
-    call error("The input destination string is not big enough to" &
-                 //" to hold the input source string.")
-  endif
-  dest = ""
-  dest = adjustl(trim(source(1:i)))
-
-end subroutine string_copy
-
 
 !> @brief Compare strings.
 !! @return Flag telling if the strings are the same.
