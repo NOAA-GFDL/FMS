@@ -40,5 +40,5 @@ jobs:
             owner: 'rem1776'
             repo: 'FMScoupler'
             workflow_id: 'build.yml'
-            ref: 'main'
+            ref: 'coupler-webhook'
           })
