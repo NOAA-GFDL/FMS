@@ -30,8 +30,14 @@ jobs:
         FCFLAGS: "-fdefault-real-8 -fdefault-double-8 -fcray-pointer -ffree-line-length-none -I/usr/include"
     - name: Build the library
       run: make -j distcheck
-    - name: Trigger FMScoupler build CI on updates to main
-      if: github.repository == 'rem1776/FMS' ## && github.ref_protected == 'true'
+  # triggers the coupler's CI to check it still compiles successfully with FMS
+  # only runs on updates to main
+  trigger-coupler-ci:
+    runs-on: ubuntu-latest
+    needs: [build]
+    steps:
+    - name: Send webhook
+      if: github.repository == 'rem1776/FMS' # && github.ref == 'refs/heads/main'
       uses: actions/github-script@v6
       with:
         github-token: ${{ secrets.PAT_TOKEN }}
