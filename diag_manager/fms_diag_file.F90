@@ -49,7 +49,14 @@ type :: fmsDiagFile_type
                                                                            !! the model.
   character(len=var_string_len), dimension(:), allocatable :: var_list !< List of the variables by name
   integer, dimension(:), allocatable :: var_ids !< Variable IDs corresponding to var_list
-contains
+  integer, dimension(:), private, allocatable :: var_index !< An array of the variable indicies in the 
+                                                                 !! diag_object.  This should be the same size as
+                                                                 !! `file_varlist`
+  logical, dimension(:), private, allocatable :: var_reg   !< Array corresponding to `file_varlist`, .true. 
+                                                                 !! if the variable has been registered and 
+                                                                 !! `file_var_index` has been set for the variable
+
+ contains
   procedure, public :: has_file_metadata_from_model
   procedure, public :: has_fileobj
 #ifdef use_yaml

@@ -89,12 +89,6 @@ type diagYamlFiles_type
   !< Need to use `MAX_STR_LEN` because not all filenames/global attributes are the same length
   character (len=MAX_STR_LEN), dimension(:), private, allocatable :: file_varlist !< An array of variable names
                                                                                   !! within a file
-  integer, dimension(:), private, allocatable :: file_var_index !< An array of the variable indicies in the 
-                                                                 !! diag_object.  This should be the same size as
-                                                                 !! `file_varlist`
-  logical, dimension(:), private, allocatable :: file_var_reg   !< Array corresponding to `file_varlist`, .true. 
-                                                                 !! if the variable has been registered and 
-                                                                 !! `file_var_index` has been set for the variable
   character (len=MAX_STR_LEN), dimension(:,:), private, allocatable :: file_global_meta !< Array of key(dim=1)
                                                                                         !! and values(dim=2) to be
                                                                                         !! added as global meta data to
