@@ -79,6 +79,7 @@ test_expect_success "data_override get_grid_v1" '
 # Run tests with input if enabled
 if test ! -z "$test_input_path" ; then
   cp $test_input_path/data_override/INPUT/* ./INPUT
+  ls INPUT
   printf "****************DATA COPY STATUS****************\n$?"
   cat <<_EOF > diag_table
 test_data_override
