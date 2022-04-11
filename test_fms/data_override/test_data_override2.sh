@@ -24,6 +24,8 @@
 # Set common test settings.
 . ../test-lib.sh
 
+set -x                                                                                                                         
+
 # Skip test if input not present
 test -z "$test_input_path" && SKIP_TESTS="$SKIP_TESTS $(basename $0 .sh).4"
 
@@ -77,6 +79,7 @@ test_expect_success "data_override get_grid_v1" '
 # Run tests with input if enabled
 if test ! -z "$test_input_path" ; then
   cp $test_input_path/data_override/INPUT/* ./INPUT
+  printf "****************DATA COPY STATUS****************\n$?"
   cat <<_EOF > diag_table
 test_data_override
 1 3 1 0 0 0
