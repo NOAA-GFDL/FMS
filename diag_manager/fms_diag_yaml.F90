@@ -1136,7 +1136,8 @@ end function get_num_unique_fields
 function find_diag_field(diag_field_name) &
 result(indices)
 
-  character(len=*), intent(in) :: diag_field_name
+  character(len=*), intent(in) :: diag_field_name !< diag_field name to search for
+
   integer, allocatable :: indices(:)
 
   indices = fms_find_my_string(variable_list%var_pointer, size(variable_list%var_pointer), &
