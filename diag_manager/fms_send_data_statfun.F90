@@ -49,7 +49,7 @@ MODULE fms_send_data_statfun_mod
     INTEGER :: twohi !< halo size in x direction
     INTEGER :: twohj !< halo size in y direction
     INTEGER :: sample !< index along the diurnal time axis
-    LOGICAL :: missvalue_present
+
 
   END TYPE STATFUN_CFG_T
 
@@ -174,27 +174,29 @@ PURE FUNCTION weigh_field_1d_p1 ( field_val, weight, pow_value )
   END FUNCTION weigh_field_3d_pp
 
 
-  FUNCTION AVERAGE_THE_FIELD (diag_field_id, field, out_num, mask, weight, &
-      & l_start, l_end, cfg, err_msg,  err_msg_local) result( succeded )
+  FUNCTION AVERAGE_THE_FIELD (diag_field_id, field, out_num, &
+      & mask, weight1, sample, missvalue, missvalue_present, &
+      & l_start, l_end, idx_cfg, err_msg,  err_msg_local) result( succeded )
     INTEGER, INTENT(in) :: diag_field_id
     REAL, DIMENSION(:,:,:), INTENT(in) :: field
     INTEGER, INTENT(in) :: out_num
     LOGICAL, DIMENSION(:,:,:), INTENT(in), OPTIONAL :: mask
-    INTEGER, DIMENSION(3) :: l_start !< local start indices on 3 axes for regional output
-    INTEGER, DIMENSION(3) :: l_end !< local end indices on 3 axes for regional output
+    REAL, INTENT(in) :: weight1
+    REAL, INTENT(in), OPTIONAL :: missvalue   !!TODO: optional?
+    LOGICAL, INTENT(in) :: missvalue_present
+    INTEGER, DIMENSION(3), INTENT(in)  :: l_start !< local start indices on 3 axes for regional output
+    INTEGER, DIMENSION(3), INTENT(in)  :: l_end !< local end indices on 3 axes for regional output
     CHARACTER(len=*), INTENT(inout), OPTIONAL :: err_msg
-    TYPE(STATFUN_CFG_T), INTENT(in) :: cfg
+    TYPE(STATFUN_CFG_T), INTENT(in) :: idx_cfg
     CHARACTER(len=256), INTENT(inout) :: err_msg_local
     LOGICAL :: succeded
 
-    LOGICAL, ALLOCATABLE, DIMENSION(:,:,:) :: oor_mask
+    !!LOGICAL, ALLOCATABLE, DIMENSION(:,:,:) :: oor_mask
     CHARACTER(len=128):: error_string
-
 
     ! Power value for rms or pow(x) calculations
     INTEGER :: pow_value , ksr, ker, is, js, ks, ie, je, ke, hi, hj, sample, f1, f2, f3, f4
     LOGICAL :: phys_window , need_compute , reduced_k_range
-    REAL :: weight1, missvalue
 
     INTEGER :: i, j, k,  i1, j1, k1
 
@@ -234,29 +236,26 @@ PURE FUNCTION weigh_field_1d_p1 ( field_val, weight, pow_value )
     phys_window = output_fields(out_num)%phys_window
     need_compute = output_fields(out_num)%need_compute
     reduced_k_range = output_fields(out_num)%reduced_k_range
+
     ksr= l_start(3)
     ker= l_end(3)
-    is = cfg%is
-    js = cfg%js
-    ks = cfg%ks
-    ie = cfg%ie
-    je = cfg%je
-    ke = cfg%ke
-    hi = cfg%hi
-    hj = cfg%hj
-    sample = cfg%sample
-    f1 = cfg%f1
-    f2 = cfg%f2
-    f3 = cfg%f3
-    f4 = cfg%f4
-    weight1 = cfg%weight1
-    missvalue = cfg%missvalue
-
+    is = idx_cfg%is
+    js = idx_cfg%js
+    ks = idx_cfg%ks
+    ie = idx_cfg%ie
+    je = idx_cfg%je
+    ke = idx_cfg%ke
+    hi = idx_cfg%hi
+    hj = idx_cfg%hj
+    f1 = idx_cfg%f1
+    f2 = idx_cfg%f2
+    f3 = idx_cfg%f3
+    f4 = idx_cfg%f4
 
     ASSOCIATE( ofb => output_fields(out_num)%buffer , &
       & ofc => output_fields(out_num)%counter)
 
-    IF ( input_fields(diag_field_id)%mask_variant ) THEN
+    MASK_VAR_IF: IF ( input_fields(diag_field_id)%mask_variant ) THEN
       IF ( need_compute ) THEN
         WRITE (error_string,'(a,"/",a)')  &
           & TRIM(input_fields(diag_field_id)%module_name), &
@@ -272,7 +271,7 @@ PURE FUNCTION weigh_field_1d_p1 ( field_val, weight, pow_value )
       ! Should reduced_k_range data be supported with the mask_variant option   ?????
       ! If not, error message should be produced and the reduced_k_range loop below eliminated
       IF ( PRESENT(mask) ) THEN
-        IF ( cfg%missvalue_present ) THEN
+        IF ( missvalue_present ) THEN !!TODO: (section: section( mask_varian .eq. true + mask present) )
           IF ( debug_diag_manager ) THEN
             CALL update_bounds(out_num, is-hi, ie-hi, js-hj, je-hj, ks, ke)
             CALL check_out_of_bounds(out_num, diag_field_id, err_msg=err_msg_local)
@@ -284,8 +283,8 @@ PURE FUNCTION weigh_field_1d_p1 ( field_val, weight, pow_value )
             END IF
           END IF
           IF( numthreads>1 .AND. phys_window ) then
-            IF ( reduced_k_range ) THEN
-              NORMAL1: DO k= ksr, ker
+            REDU_KR1_IF: IF ( reduced_k_range ) THEN
+              DO k= ksr, ker
                 k1= k - ksr + 1
                 DO j=js, je
                   DO i=is, ie
@@ -296,9 +295,9 @@ PURE FUNCTION weigh_field_1d_p1 ( field_val, weight, pow_value )
                     END IF
                   END DO
                 END DO
-              END DO NORMAL1
+              END DO
             ELSE
-              NORMAL2: DO k=ks, ke
+              DO k=ks, ke
                 DO j=js, je
                   DO i=is, ie
                     IF ( mask(i-is+1+hi, j-js+1+hj, k) ) THEN
@@ -308,10 +307,10 @@ PURE FUNCTION weigh_field_1d_p1 ( field_val, weight, pow_value )
                     END IF
                   END DO
                 END DO
-              END DO NORMAL2
-            END IF
+              END DO
+            END IF REDU_KR1_IF
           ELSE  !$OMP CRITICAL
-            IF ( reduced_k_range ) THEN
+            REDU_KR2_IF: IF ( reduced_k_range ) THEN
               DO k= ksr, ker
                 k1= k - ksr + 1
                 DO j=js, je
@@ -336,7 +335,7 @@ PURE FUNCTION weigh_field_1d_p1 ( field_val, weight, pow_value )
                   END DO
                 END DO
               END DO
-            END IF  !$OMP END CRITICAL
+            END IF REDU_KR2_IF !$OMP END CRITICAL
           END IF
         ELSE
           WRITE (error_string,'(a,"/",a)')&
@@ -358,9 +357,9 @@ PURE FUNCTION weigh_field_1d_p1 ( field_val, weight, pow_value )
             RETURN
         END IF
       END IF
-    ELSE ! mask_variant=false
-      IF ( PRESENT(mask) ) THEN
-        IF ( cfg%missvalue_present ) THEN
+    ELSE !! MASK_VAR_IF
+      MASK_PRESENT_IF: IF ( PRESENT(mask) ) THEN
+        MVAL_PRESENT_IF: IF ( missvalue_present ) THEN !!section: (mask_varian .eq. false + mask present + missvalue present)
           IF ( need_compute ) THEN
             IF (numthreads>1 .AND. phys_window) then
               DO k = l_start(3), l_end(3)
@@ -488,7 +487,7 @@ PURE FUNCTION weigh_field_1d_p1 ( field_val, weight, pow_value )
               & output_fields(out_num)%count_0d(sample)+weight1
           END IF!$OMP END CRITICAL
 
-        ELSE ! missing value NOT present
+        ELSE !!MVAL_PRESENT_IF (section: mask_varian .eq. false + mask present + miss value not present)
           IF (   (.NOT.ALL(mask(f1:f2,f3:f4,ks:ke)) .AND. mpp_pe() .EQ. mpp_root_pe()).AND.&
             &  .NOT.input_fields(diag_field_id)%issued_mask_ignore_warning ) THEN
             ! <ERROR STATUS="WARNING">
@@ -503,14 +502,14 @@ PURE FUNCTION weigh_field_1d_p1 ( field_val, weight, pow_value )
           END IF
           IF ( need_compute ) THEN
             IF (numthreads>1 .AND. phys_window) then
-              DO j = js, je
+              DO j = js, je !!TODO: What is diff in next two secs?
                 DO i = is, ie
                   IF ( l_start(1)+hi <= i .AND. i <= l_end(1)+hi .AND. l_start(2)+hj <= j .AND. &
                     & j <= l_end(2)+hj ) THEN
                     i1 = i-l_start(1)-hi+1
                     j1 =  j-l_start(2)-hj+1
-                      ofb(i1,j1,:,sample)=  ofb(i1,j1,:,sample)+ &
-                        & fwf_1d_ptr(field(i-is+1+hi,j-js+1+hj,l_start(3):l_end(3)), weight1,pow_value)
+                    ofb(i1,j1,:,sample)=  ofb(i1,j1,:,sample)+ &
+                        & fwf_1d_ptr(field(i-is+1+hi,j-js+1+hj,l_start(3):l_end(3)), weight1, pow_value)
                   END IF
                 END DO
               END DO
@@ -522,7 +521,7 @@ PURE FUNCTION weigh_field_1d_p1 ( field_val, weight, pow_value )
                     i1 = i-l_start(1)-hi+1
                     j1 =  j-l_start(2)-hj+1
                     ofb(i1,j1,:,sample) = ofb(i1,j1,:,sample) + &
-                        & fwf_1d_ptr(field(i-is+1+hi,j-js+1+hj,l_start(3):l_end(3)),weight1, pow_value)
+                        & fwf_1d_ptr(field(i-is+1+hi,j-js+1+hj,l_start(3):l_end(3)), weight1, pow_value)
                   END IF
                 END DO
               END DO  !$OMP END CRITICAL
@@ -538,15 +537,15 @@ PURE FUNCTION weigh_field_1d_p1 ( field_val, weight, pow_value )
             END DO !$OMP END CRITICAL
           ELSE IF ( reduced_k_range ) THEN
             IF (numthreads>1 .AND. phys_window) then
-              ksr= l_start(3)
+              ksr= l_start(3)  !!TODO. What is deff in these two secs below.
               ker= l_end(3)
               ofb(is-hi:ie-hi,js-hj:je-hj,:,sample) = ofb(is-hi:ie-hi,js-hj:je-hj,:,sample) +&
                   & fwf_3d_ptr (field(f1:f2,f3:f4,ksr:ker), weight1, pow_value)
             ELSE  !$OMP CRITICAL
               ksr= l_start(3)
               ker= l_end(3)
-                ofb(is-hi:ie-hi,js-hj:je-hj,:,sample) = ofb(is-hi:ie-hi,js-hj:je-hj,:,sample) +&
-                  & fwf_3D_ptr( field(f1:f2,f3:f4,ksr:ker), weight1, pow_value)
+              ofb(is-hi:ie-hi,js-hj:je-hj,:,sample) = ofb(is-hi:ie-hi,js-hj:je-hj,:,sample) +&
+                  & fwf_3D_ptr (field(f1:f2,f3:f4,ksr:ker), weight1, pow_value)
               END IF  !$OMP END CRITICAL
           ELSE
             IF ( debug_diag_manager ) THEN
@@ -559,7 +558,7 @@ PURE FUNCTION weigh_field_1d_p1 ( field_val, weight, pow_value )
                 END IF
               END IF
             END IF
-            !!TODO: DWhat is difference in two below?
+            !!TODO: What is difference in two below?
             IF (numthreads>1 .AND. phys_window) then
                 ofb(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) =&
                   & ofb(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) +&
@@ -572,9 +571,9 @@ PURE FUNCTION weigh_field_1d_p1 ( field_val, weight, pow_value )
           END IF  !$OMP CRITICAL
           IF ( .NOT.phys_window ) output_fields(out_num)%count_0d(sample) =&
             & output_fields(out_num)%count_0d(sample) + weight1  !$OMP END CRITICAL
-        END IF
-      ELSE ! mask NOT present
-        IF ( cfg%missvalue_present ) THEN
+        END IF MVAL_PRESENT_IF
+      ELSE !!MASK_PRESENT_IF (section: mask_variant .eq. false + mask not present + missvalue)
+        MVAL_PRESENT2_IF: IF (missvalue_present ) THEN
           IF ( need_compute ) THEN
             if( numthreads>1 .AND. phys_window ) then
               DO k = l_start(3), l_end(3)
@@ -675,6 +674,7 @@ PURE FUNCTION weigh_field_1d_p1 ( field_val, weight, pow_value )
               k1=k-ksr+1
               DO j=f3, f4
                 DO i=f1, f2
+                  !! TODO: verify this below
                   IF ( field(i,j,k) /= missvalue ) THEN
                     output_fields(out_num)%count_0d(sample) = output_fields(out_num)%count_0d(sample) &
                       & + weight1
@@ -733,8 +733,8 @@ PURE FUNCTION weigh_field_1d_p1 ( field_val, weight, pow_value )
               END DO
             END DO outer1 !$OMP END CRITICAL
           END IF
-        ELSE ! no missing value defined, No mask
-          IF ( need_compute ) THEN
+        ELSE !MVAL_PRESENT2_IF (section:  mask_variant .eq. false + mask not present + missvalue not present)
+          NEED_COMP_IF: IF ( need_compute ) THEN
             IF( numthreads > 1 .AND. phys_window ) then
               DO j = js, je
                 DO i = is, ie
@@ -770,7 +770,7 @@ PURE FUNCTION weigh_field_1d_p1 ( field_val, weight, pow_value )
               END DO
             END DO  !$OMP END CRITICAL
             ! Accumulate time average
-          ELSE IF ( reduced_k_range ) THEN
+          ELSE IF ( reduced_k_range ) THEN !!NEED_COMP_IF
             ksr= l_start(3)
             ker= l_end(3)
             IF( numthreads > 1 .AND. phys_window ) then
@@ -782,7 +782,7 @@ PURE FUNCTION weigh_field_1d_p1 ( field_val, weight, pow_value )
                   & ofb(is-hi:ie-hi,js-hj:je-hj,:,sample) + &
                   & fwf_3d_ptr(field(f1:f2,f3:f4,ksr:ker), weight1, pow_value)
             END IF
-          ELSE
+          ELSE !!!!NEED_COMP_IF
             IF ( debug_diag_manager ) THEN
               CALL update_bounds(out_num, is-hi, ie-hi, js-hj, je-hj, ks, ke)
               CALL check_out_of_bounds(out_num, diag_field_id, err_msg=err_msg_local)
@@ -803,12 +803,12 @@ PURE FUNCTION weigh_field_1d_p1 ( field_val, weight, pow_value )
                   & fwf_3d_ptr(field(f1:f2,f3:f4,ks:ke), weight1, pow_value)
               !!  !$OMP END CRITICAL
             END IF
-          END IF  !$OMP CRITICAL
+          END IF NEED_COMP_IF !$OMP CRITICAL
           IF ( .NOT.phys_window ) output_fields(out_num)%count_0d(sample) =&
             & output_fields(out_num)%count_0d(sample) + weight1  !$OMP END CRITICAL
-        END IF
-      END IF ! if mask present
-    END IF  !if mask_variant  !$OMP CRITICAL
+        END IF MVAL_PRESENT2_IF
+      END IF MASK_PRESENT_IF ! if mask present
+    END IF MASK_VAR_IF  !$OMP CRITICAL
     END ASSOCIATE
     IF ( .NOT.need_compute .AND. .NOT.reduced_k_range )&
       & output_fields(out_num)%num_elements(sample) =&

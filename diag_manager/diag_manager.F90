@@ -1930,7 +1930,7 @@ CONTAINS
        ! Take care of submitted field data
        IF ( average ) THEN
          temp_result = average_the_field(diag_field_id, field, out_num, mask, weight, &
-           & l_start, l_end, cfg, err_msg, err_msg_local)
+           & sample, missvalue, missvalue_present, l_start, l_end, cfg, err_msg, err_msg_local)
           IF (temp_result .eqv. .FALSE.) THEN
             DEALLOCATE(oor_mask)
             RETURN
