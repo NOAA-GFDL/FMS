@@ -43,9 +43,10 @@ By default, FMS is built without `OpenMP` and in `single precision (r4)`
 
 The following build options are available:
 ```
--DOPENMP   "Build FMS with OpenMP support" DEFAULT: OFF
--D32BIT    "Build 32-bit (r4) FMS library" DEFAULT: ON
--D64BIT    "Build 64-bit (r8) FMS library" DEFAULT: OFF
+-DOPENMP   "Build FMS with OpenMP support"        DEFAULT: OFF
+-D32BIT    "Build 32-bit (r4) FMS library"        DEFAULT: ON
+-D64BIT    "Build 64-bit (r8) FMS library"        DEFAULT: OFF
+-DFPIC     "Build with position independent code" DEFAULT: OFF
 
 -DINTERNAL_FILE_NML     "Enable compiler definition -DINTERNAL_FILE_NML"     DEFAULT: ON
 -DENABLE_QUAD_PRECISION "Enable compiler definition -DENABLE_QUAD_PRECISION" DEFAULT: ON

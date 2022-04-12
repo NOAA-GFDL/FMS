@@ -89,6 +89,8 @@ if (.not. checking_crashes) then
   call compare_result("nfields", size(diag_fields), 3) !< the fourth variable has var_write = false so it doesn't count
   call compare_diag_fields(diag_fields)
 
+  !< Check that get_num_unique_fields is getting the correct number of unique fields
+  call compare_result("number of unique fields", get_num_unique_fields(), 2)
 endif
 deallocate(diag_files)
 deallocate(diag_fields)
@@ -172,10 +174,6 @@ subroutine compare_diag_files(res)
   call compare_result("file_unlimdim 1", res(1)%get_file_unlimdim(), "time")
   call compare_result("file_unlimdim 2", res(2)%get_file_unlimdim(), "records")
   call compare_result("file_unlimdim 3", res(3)%get_file_unlimdim(), "records")
-
-  call compare_result("file_realm 1", res(1)%get_file_realm(), "ATM")
-  call compare_result("file_realm 2", res(2)%get_file_realm(), "")
-  call compare_result("file_realm 3", res(3)%get_file_realm(), "")
 
   call compare_result("file_new_file_freq 1", res(1)%get_file_new_file_freq(), 6)
   call compare_result("file_new_file_freq 2", res(2)%get_file_new_file_freq(), DIAG_NULL)
