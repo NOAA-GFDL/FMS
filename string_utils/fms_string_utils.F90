@@ -239,7 +239,7 @@ contains
     real, intent(in) :: r !< Real number to be converted to a string
     character(len=32) :: string_from_real
 
-    write(string_from_real,*) a
+    write(string_from_real,*) r
 
     return
 
