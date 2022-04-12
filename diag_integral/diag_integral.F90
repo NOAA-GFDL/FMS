@@ -35,7 +35,7 @@ use time_manager_mod, only:  time_type, get_time, set_time,  &
                              operator(==), operator(>=),     &
                              operator(/=)
 use mpp_mod,          only:  input_nml_file
-use fms_mod,          only:  open_file, error_mesg, &
+use fms_mod,          only:  error_mesg, &
                              check_nml_error, &
                              fms_init, &
                              mpp_pe, mpp_root_pe,&
@@ -344,7 +344,7 @@ real,dimension(:,:), intent(in), optional :: area_in
           file_name = ensemble_file_name(file_name)
         endif
         nc = len_trim(file_name)
-        diag_unit = open_file (file_name(1:nc), action='write')
+        open(newunit=diag_unit, file=file_name(1:nc), action='write')
       endif
 
 !-------------------------------------------------------------------------------
@@ -917,6 +917,7 @@ type (time_type), intent(in) :: Time
 !    deallocate module variables.
 !-------------------------------------------------------------------------------
       deallocate (area)
+      if (diag_unit /= 0) close(diag_unit)
 
 !-------------------------------------------------------------------------------
 !    mark the module as uninitialized.

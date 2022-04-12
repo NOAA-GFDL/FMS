@@ -17,35 +17,33 @@
 #* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 #***********************************************************************
 
-# This is an automake file for the constants directory of the FMS
+# This is an automake file for the test_fms/data_override directory of the FMS
 # package.
 
-# Ed Hartnett 2/22/19
+# uramirez
 
-# Include .h and .mod files.
-AM_CPPFLAGS = -I$(top_srcdir)/include
-AM_FCFLAGS = $(FC_MODINC). $(FC_MODOUT)$(MODDIR)
+# Find the needed mod and .inc files.
+AM_CPPFLAGS = -I${top_srcdir}/include -I$(MODDIR)
 
-# Build this uninstalled convenience library.
-noinst_LTLIBRARIES = libconstants.la
+# Link to the FMS library.
+LDADD = ${top_builddir}/libFMS/libFMS.la
 
-# The convenience library depends on its source.
-libconstants_la_SOURCES = \
-  fmsconstants.F90 \
-  gfdl_constants.h \
-  gfs_constants.h \
-  geos_constants.h \
-  constants.F90
+# Build this test program.
+check_PROGRAMS = test_string_utils
 
-FMSconstants.$(FC_MODEXT): gfdl_constants.h gfs_constants.h geos_constants.h
-constants_mod.$(FC_MODEXT): fmsconstants.$(FC_MODEXT)
+# This is the source code for the test.
+test_string_utils_SOURCES = test_string_utils.F90
 
-# Mod files are built and then installed as headers
-MODFILES = \
-  fmsconstants.$(FC_MODEXT) \
-  constants_mod.$(FC_MODEXT)
+# Run the test program.
+TESTS = test_string_utils.sh
 
-BUILT_SOURCES = $(MODFILES)
-nodist_include_HEADERS = $(MODFILES)
+# Define test file extensions and log driver
+TEST_EXTENSIONS = .sh
+SH_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
+                   $(top_srcdir)/tap-driver.sh
 
-include $(top_srcdir)/mkmods.mk
+# Include these files with the distribution.
+EXTRA_DIST = test_string_utils.sh
+
+# Clean up
+CLEANFILES = input.nml *.out

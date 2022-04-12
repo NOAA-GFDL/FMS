@@ -122,6 +122,9 @@
 !> @defgroup topography Topography
 !> @brief Modules and associated files in the topography directory
 
+!> @defgroup string_utils String Utils
+!> @brief Modules and associated files in the string_utils directory
+
 !> @defgroup tracer_manager Tracer Manager
 !> @brief Modules and associated files in the tracer_manager directory
 

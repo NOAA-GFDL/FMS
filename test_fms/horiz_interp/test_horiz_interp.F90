@@ -54,10 +54,8 @@ implicit none
   real, allocatable, dimension(:,:) :: lon2D_src, lat2D_src, lon2D_dst, lat2D_dst
   real, allocatable, dimension(:,:) :: data_src, data1_dst, data2_dst, data3_dst, data4_dst
 
-  call constants_init
-  call mpp_init
-  call mpp_domains_init
   call fms_init
+  call constants_init
   call horiz_interp_init
 
   !--- read namelist

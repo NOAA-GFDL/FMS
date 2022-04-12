@@ -35,14 +35,15 @@ endif
 # Make targets will be run in each subdirectory. Order is significant.
 SUBDIRS = \
   platform \
-  constants \
   tridiagonal \
   mpp \
+  constants \
   memutils \
   fms2_io \
   mosaic2 \
   fms \
   parser \
+  string_utils \
   affinity \
   mosaic \
   time_manager \

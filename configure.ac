@@ -25,7 +25,7 @@ AC_PREREQ([2.69])
 
 # Initialize with name, version, and support email address.
 AC_INIT([GFDL FMS Library],
-  [2022.01.0-dev],
+  [2022.02.0-dev],
   [gfdl.climate.model.info@noaa.gov],
   [FMS],
   [https://www.gfdl.noaa.gov/fms])
@@ -400,6 +400,7 @@ AC_CONFIG_FILES([
   libFMS/Makefile
   docs/Makefile
   parser/Makefile
+  string_utils/Makefile
   test_fms/test-lib.sh
   test_fms/intel_coverage.sh
   test_fms/Makefile
@@ -422,6 +423,7 @@ AC_CONFIG_FILES([
   test_fms/affinity/Makefile
   test_fms/coupler/Makefile
   test_fms/parser/Makefile
+  test_fms/string_utils/Makefile
   FMS.pc
   ])
 

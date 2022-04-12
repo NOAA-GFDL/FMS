@@ -1,3 +1,5 @@
+#!/bin/sh
+
 #***********************************************************************
 #*                   GNU Lesser General Public License
 #*
@@ -17,35 +19,15 @@
 #* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 #***********************************************************************
 
-# This is an automake file for the constants directory of the FMS
-# package.
+# This is part of the GFDL FMS package. This is a shell script to
+# execute tests in the test_fms/string_utils directory.
 
-# Ed Hartnett 2/22/19
+# Set common test settings.
+. ../test-lib.sh
 
-# Include .h and .mod files.
-AM_CPPFLAGS = -I$(top_srcdir)/include
-AM_FCFLAGS = $(FC_MODINC). $(FC_MODOUT)$(MODDIR)
+touch input.nml
+test_expect_success "test_string_utils" '
+  mpirun -n 1 ./test_string_utils > test_string_utils.out
+'
 
-# Build this uninstalled convenience library.
-noinst_LTLIBRARIES = libconstants.la
-
-# The convenience library depends on its source.
-libconstants_la_SOURCES = \
-  fmsconstants.F90 \
-  gfdl_constants.h \
-  gfs_constants.h \
-  geos_constants.h \
-  constants.F90
-
-FMSconstants.$(FC_MODEXT): gfdl_constants.h gfs_constants.h geos_constants.h
-constants_mod.$(FC_MODEXT): fmsconstants.$(FC_MODEXT)
-
-# Mod files are built and then installed as headers
-MODFILES = \
-  fmsconstants.$(FC_MODEXT) \
-  constants_mod.$(FC_MODEXT)
-
-BUILT_SOURCES = $(MODFILES)
-nodist_include_HEADERS = $(MODFILES)
-
-include $(top_srcdir)/mkmods.mk
+test_done

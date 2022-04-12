@@ -20,31 +20,20 @@
 # This is an automake file for the constants directory of the FMS
 # package.
 
-# Ed Hartnett 2/22/19
-
 # Include .h and .mod files.
 AM_CPPFLAGS = -I$(top_srcdir)/include
 AM_FCFLAGS = $(FC_MODINC). $(FC_MODOUT)$(MODDIR)
 
 # Build this uninstalled convenience library.
-noinst_LTLIBRARIES = libconstants.la
+noinst_LTLIBRARIES = libstring_utils.la
 
 # The convenience library depends on its source.
-libconstants_la_SOURCES = \
-  fmsconstants.F90 \
-  gfdl_constants.h \
-  gfs_constants.h \
-  geos_constants.h \
-  constants.F90
+libstring_utils_la_SOURCES = \
+  fms_string_utils.F90 \
+  fms_string_utils_binding.c
 
-FMSconstants.$(FC_MODEXT): gfdl_constants.h gfs_constants.h geos_constants.h
-constants_mod.$(FC_MODEXT): fmsconstants.$(FC_MODEXT)
-
-# Mod files are built and then installed as headers
 MODFILES = \
-  fmsconstants.$(FC_MODEXT) \
-  constants_mod.$(FC_MODEXT)
-
+  fms_string_utils_mod.$(FC_MODEXT)
 BUILT_SOURCES = $(MODFILES)
 nodist_include_HEADERS = $(MODFILES)
 
