@@ -221,8 +221,7 @@ contains
   end function cpointer_fortran_conversion
 
   !> @brief Converts an integer to a string
-  !!
-  !> This has been updated from the fms_io function.
+  !> @return The integer as a string
   function string_from_integer(i) result (res)
     integer, intent(in) :: i !< Integer to be converted to a string
     character(:),allocatable :: res !< String converted frominteger
@@ -235,8 +234,9 @@ contains
 
   !#######################################################################
   !> @brief Converts a real to a string
-  function string_from_real(a)
-    real, intent(in) :: a
+  !> @return The real number as a string
+  function string_from_real(r)
+    real, intent(in) :: r !< Real number to be converted to a string
     character(len=32) :: string_from_real
 
     write(string_from_real,*) a

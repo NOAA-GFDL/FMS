@@ -185,6 +185,11 @@ int fms_find_unique(char** arr, int *n)
   return nfind;
 }
 
+/*!
+ * @brief Returns a c string pointer
+ * @param[in] cs  Input c string pointer
+ * @return c string pointer
+ */
 char * cstring2cpointer (char * cs)
 {
 	return cs;
