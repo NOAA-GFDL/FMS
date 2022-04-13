@@ -32,11 +32,14 @@
 !> @addtogroup fms_diag_dlinked_list_mod
 !> @{
 MODULE fms_send_data_statfun_mod
-   use platform_mod
+  use platform_mod
+    USE mpp_mod, ONLY: mpp_pe, mpp_root_pe
+
    USE fms_mod, ONLY: error_mesg, FATAL, WARNING, NOTE, stdout, stdlog, write_version_number,&
    & fms_error_handler
    USE diag_data_mod, ONLY:  input_fields, output_fields, debug_diag_manager
-   use diag_util_mod, ONLY: check_out_of_bounds
+   use diag_util_mod, ONLY: check_out_of_bounds, update_bounds
+
 
    TYPE STATFUN_IDX_CFG_T
       INTEGER :: f1,f2,f3,f4
