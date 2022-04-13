@@ -232,12 +232,13 @@ use platform_mod
        & max_out_per_in_field, flush_nc_files, region_out_use_alt_value, max_field_attributes, output_field_type,&
        & max_file_attributes, max_axis_attributes, prepend_date, DIAG_FIELD_NOT_FOUND, diag_init_time,diag_data_init,&
        & use_modern_diag, diag_null
-  
+
   USE diag_data_mod, ONLY:  fileobj, fileobjU, fnum_for_domain, fileobjND
   USE diag_table_mod, ONLY: parse_diag_table
   USE diag_output_mod, ONLY: get_diag_global_att, set_diag_global_att
   USE diag_grid_mod, ONLY: diag_grid_init, diag_grid_end
   USE fms_diag_object_mod, ONLY: fmsDiagObject_type
+  use fms_send_data_statfun_mod ,ONLY: statfun_idx_cfg_t, average_the_field, sample_the_field
 
 #ifdef use_yaml
   use fms_diag_yaml_mod, only: diag_yaml_object_init, diag_yaml_object_end, get_num_unique_fields
@@ -1691,7 +1692,7 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
     CHARACTER(len=128) :: error_string, error_string1
 
     logical :: temp_result
-    TYPE(statfun_cfg_t) :: cfg
+    TYPE(statfun_idx_cfg_t) :: idx_cfg
 
     ! If diag_field_id is < 0 it means tha t this field is not registered, simply return
     IF ( diag_field_id <= 0 ) THEN
@@ -2034,333 +2035,37 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
           END IF
        END IF
 
+       idx_cfg%is = is
+       idx_cfg%js = js
+       idx_cfg%ks = ks
+       idx_cfg%ie = ie
+       idx_cfg%je = je
+       idx_cfg%ke = ke
+       idx_cfg%hi = hi
+       idx_cfg%hj = hj
+       idx_cfg%f1 = f1
+       idx_cfg%f2 = f2
+       idx_cfg%f3 = f3
+       idx_cfg%f4 = f4
+
        ! Take care of submitted field data
-       IF ( average ) THEN
+       AVERAGE_IF: IF ( average ) THEN
          temp_result = average_the_field(diag_field_id, field, out_num, mask, weight, &
-           & sample, missvalue, missvalue_present, l_start, l_end, cfg, err_msg, err_msg_local)
+           & sample, missvalue, missvalue_present, l_start, l_end, idx_cfg, err_msg, err_msg_local)
           IF (temp_result .eqv. .FALSE.) THEN
             DEALLOCATE(oor_mask)
             RETURN
-          ENDIF
+          END IF
 
         ! Add processing for Max and Min
-       ELSE IF ( time_max ) THEN
-          IF ( PRESENT(mask) ) THEN
-             IF ( need_compute ) THEN
-                DO k = l_start(3), l_end(3)
-                   k1 = k - l_start(3) + 1
-                   DO j = js, je
-                      DO i = is, ie
-                         IF ( l_start(1)+hi <= i .AND. i <= l_end(1)+hi .AND. l_start(2)+hj <= j .AND. &
-                            & j <= l_end(2)+hj ) THEN
-                            i1 = i-l_start(1)-hi+1
-                            j1=  j-l_start(2)-hj+1
-                            IF ( mask(i-is+1+hi,j-js+1+hj,k) .AND.&
-                                 & field(i-is+1+hi,j-js+1+hj,k)>output_fields(out_num)%buffer(i1,j1,k1,sample)) THEN
-                               output_fields(out_num)%buffer(i1,j1,k1,sample) = field(i-is+1+hi,j-js+1+hj,k)
-                            END IF
-                         END IF
-                      END DO
-                   END DO
-                END DO
-                ! Maximum time value with masking
-             ELSE IF ( reduced_k_range ) THEN
-                ksr = l_start(3)
-                ker = l_end(3)
-                WHERE ( mask(f1:f2,f3:f4,ksr:ker) .AND. &
-                     & field(f1:f2,f3:f4,ksr:ker) > output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,:,sample))&
-                     & output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,:,sample) = field(f1:f2,f3:f4,ksr:ker)
-             ELSE
-                IF ( debug_diag_manager ) THEN
-                   CALL update_bounds(out_num, is-hi, ie-hi, js-hj, je-hj, ks, ke)
-                   CALL check_out_of_bounds(out_num, diag_field_id, err_msg=err_msg_local)
-                   IF ( err_msg_local /= '' ) THEN
-                      IF ( fms_error_handler('diag_manager_mod::send_data_3d', err_msg_local, err_msg) ) THEN
-                         DEALLOCATE(oor_mask)
-                         RETURN
-                      END IF
-                   END IF
-                END IF
-                WHERE ( mask(f1:f2,f3:f4,ks:ke) .AND.&
-                     & field(f1:f2,f3:f4,ks:ke)>output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample))&
-                     & output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) = field(f1:f2,f3:f4,ks:ke)
-             END IF
-          ELSE
-             IF ( need_compute ) THEN
-                DO k = l_start(3), l_end(3)
-                   k1 = k - l_start(3) + 1
-                   DO j = js, je
-                      DO i = is, ie
-                         IF(l_start(1)+hi <= i .AND. i <= l_end(1)+hi .AND. l_start(2)+hj <= j .AND. &
-                          & j <= l_end(2)+hj ) THEN
-                            i1 = i-l_start(1)-hi+1
-                            j1 =  j-l_start(2)-hj+1
-                            IF ( field(i-is+1+hi,j-js+1+hj,k) > output_fields(out_num)%buffer(i1,j1,k1,sample) ) THEN
-                               output_fields(out_num)%buffer(i1,j1,k1,sample) = field(i-is+1+hi,j-js+1+hj,k)
-                            END IF
-                         END IF
-                      END DO
-                   END DO
-                END DO
-                ! Maximum time value
-             ELSE IF ( reduced_k_range ) THEN
-                ksr = l_start(3)
-                ker = l_end(3)
-                WHERE ( field(f1:f2,f3:f4,ksr:ker) > output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,:,sample) )&
-                     & output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,:,sample) = field(f1:f2,f3:f4,ksr:ker)
-             ELSE
-                IF ( debug_diag_manager ) THEN
-                   CALL update_bounds(out_num, is-hi, ie-hi, js-hj, je-hj, ks, ke)
-                   CALL check_out_of_bounds(out_num, diag_field_id, err_msg=err_msg_local)
-                   IF ( err_msg_local /= '' ) THEN
-                      IF ( fms_error_handler('diag_manager_mod::send_data_3d', err_msg_local, err_msg) ) THEN
-                         DEALLOCATE(oor_mask)
-                         RETURN
-                      END IF
-                   END IF
-                END IF
-                WHERE (field(f1:f2,f3:f4,ks:ke) > output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample))&
-                     & output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) = field(f1:f2,f3:f4,ks:ke)
-             END IF
-          END IF
-          output_fields(out_num)%count_0d(sample) = 1
-        !END TIME MAX
-       ELSE IF ( time_min ) THEN
-          IF ( PRESENT(mask) ) THEN
-             IF ( need_compute ) THEN
-                DO k = l_start(3), l_end(3)
-                   k1 = k - l_start(3) + 1
-                   DO j = js, je
-                      DO i = is, ie
-                         IF ( l_start(1)+hi <= i .AND. i <= l_end(1)+hi .AND. l_start(2)+hj <= j .AND. &
-                            & j <= l_end(2)+hj ) THEN
-                            i1 = i-l_start(1)-hi+1
-                            j1 =  j-l_start(2)-hj+1
-                            IF ( mask(i-is+1+hi,j-js+1+hj,k) .AND.&
-                                 & field(i-is+1+hi,j-js+1+hj,k) < output_fields(out_num)%buffer(i1,j1,k1,sample) ) THEN
-                               output_fields(out_num)%buffer(i1,j1,k1,sample) = field(i-is+1+hi,j-js+1+hj,k)
-                            END IF
-                         END IF
-                      END DO
-                   END DO
-                END DO
-                ! Minimum time value with masking
-             ELSE IF ( reduced_k_range ) THEN
-                ksr= l_start(3)
-                ker= l_end(3)
-                WHERE ( mask(f1:f2,f3:f4,ksr:ker) .AND.&
-                     & field(f1:f2,f3:f4,ksr:ker) < output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,:,sample)) &
-                     & output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,:,sample) = field(f1:f2,f3:f4,ksr:ker)
-             ELSE
-                IF ( debug_diag_manager ) THEN
-                   CALL update_bounds(out_num, is-hi, ie-hi, js-hj, je-hj, ks, ke)
-                   CALL check_out_of_bounds(out_num, diag_field_id, err_msg=err_msg_local)
-                   IF ( err_msg_local /= '' ) THEN
-                      IF ( fms_error_handler('diag_manager_mod::send_data_3d', err_msg_local, err_msg) ) THEN
-                         DEALLOCATE(oor_mask)
-                         RETURN
-                      END IF
-                   END IF
-                END IF
-                WHERE ( mask(f1:f2,f3:f4,ks:ke) .AND.&
-                     & field(f1:f2,f3:f4,ks:ke) < output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample))&
-                     & output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) = field(f1:f2,f3:f4,ks:ke)
-             END IF
-          ELSE
-             IF ( need_compute ) THEN
-                DO k = l_start(3), l_end(3)
-                   k1 = k - l_start(3) + 1
-                   DO j = js, je
-                      DO i = is, ie
-                         IF ( l_start(1)+hi <=i.AND.i<=l_end(1)+hi.AND.l_start(2)+hj<=j.AND.j<=l_end(2)+hj) THEN
-                            i1 = i-l_start(1)-hi+1
-                            j1=  j-l_start(2)-hj+1
-                            IF ( field(i-is+1+hi,j-js+1+hj,k) < output_fields(out_num)%buffer(i1,j1,k1,sample) ) THEN
-                               output_fields(out_num)%buffer(i1,j1,k1,sample) = field(i-is+1+hi,j-js+1+hj,k)
-                            END IF
-                         END IF
-                      END DO
-                   END DO
-                END DO
-                ! Minimum time value
-             ELSE IF ( reduced_k_range ) THEN
-                ksr= l_start(3)
-                ker= l_end(3)
-                WHERE ( field(f1:f2,f3:f4,ksr:ker) < output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,:,sample) )&
-                    & output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,:,sample) = field(f1:f2,f3:f4,ksr:ker)
-             ELSE
-                IF ( debug_diag_manager ) THEN
-                   CALL update_bounds(out_num, is-hi, ie-hi, js-hj, je-hj, ks, ke)
-                   CALL check_out_of_bounds(out_num, diag_field_id, err_msg=err_msg_local)
-                   IF ( err_msg_local /= '' ) THEN
-                      IF ( fms_error_handler('diag_manager_mod::send_data_3d', err_msg_local, err_msg) ) THEN
-                         DEALLOCATE(oor_mask)
-                         RETURN
-                      END IF
-                   END IF
-                END IF
-                WHERE (field(f1:f2,f3:f4,ks:ke) < output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample))&
-                     & output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) = field(f1:f2,f3:f4,ks:ke)
-             END IF
-          END IF
-          output_fields(out_num)%count_0d(sample) = 1
-
-       !! END_TIME_MIN
-       ELSE IF ( time_sum ) THEN
-          IF ( PRESENT(mask) ) THEN
-             IF ( need_compute ) THEN
-                DO k = l_start(3), l_end(3)
-                   k1 = k - l_start(3) + 1
-                   DO j = js, je
-                      DO i = is, ie
-                         IF ( l_start(1)+hi <= i .AND. i <= l_end(1)+hi .AND. l_start(2)+hj <= j .AND. &
-                            & j <= l_end(2)+hj ) THEN
-                            i1 = i-l_start(1)-hi+1
-                            j1 =  j-l_start(2)-hj+1
-                            IF ( mask(i-is+1+hi,j-js+1+hj,k) ) THEN
-                               output_fields(out_num)%buffer(i1,j1,k1,sample) = &
-                                    output_fields(out_num)%buffer(i1,j1,k1,sample) + &
-                                    field(i-is+1+hi,j-js+1+hj,k)
-                            END IF
-                         END IF
-                      END DO
-                   END DO
-                END DO
-                ! Minimum time value with masking
-             ELSE IF ( reduced_k_range ) THEN
-                ksr= l_start(3)
-                ker= l_end(3)
-                output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,:,sample) = &
-                     &   output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,:,sample) + &
-                     &   field(f1:f2,f3:f4,ksr:ker)
-             ELSE
-                IF ( debug_diag_manager ) THEN
-                   CALL update_bounds(out_num, is-hi, ie-hi, js-hj, je-hj, ks, ke)
-                   CALL check_out_of_bounds(out_num, diag_field_id, err_msg=err_msg_local)
-                   IF ( err_msg_local /= '' ) THEN
-                      IF ( fms_error_handler('diag_manager_mod::send_data_3d', err_msg_local, err_msg) ) THEN
-                         DEALLOCATE(oor_mask)
-                         RETURN
-                      END IF
-                   END IF
-                END IF
-                WHERE ( mask(f1:f2,f3:f4,ks:ke) ) &
-                     & output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) = &
-                     &  output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) + &
-                     &  field(f1:f2,f3:f4,ks:ke)
-             END IF
-          ELSE
-             IF ( need_compute ) THEN
-                DO k = l_start(3), l_end(3)
-                   k1 = k - l_start(3) + 1
-                   DO j = js, je
-                      DO i = is, ie
-                         IF ( l_start(1)+hi <=i.AND.i<=l_end(1)+hi.AND.l_start(2)+hj<=j.AND.j<=l_end(2)+hj) THEN
-                            i1 = i-l_start(1)-hi+1
-                            j1=  j-l_start(2)-hj+1
-                            output_fields(out_num)%buffer(i1,j1,k1,sample) = &
-                               &    output_fields(out_num)%buffer(i1,j1,k1,sample) + &
-                               &    field(i-is+1+hi,j-js+1+hj,k)
-                         END IF
-                      END DO
-                   END DO
-                END DO
-             ELSE IF ( reduced_k_range ) THEN
-                ksr= l_start(3)
-                ker= l_end(3)
-                output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,:,sample) = &
-                     &  output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,:,sample) + &
-                     &  field(f1:f2,f3:f4,ksr:ker)
-             ELSE
-                IF ( debug_diag_manager ) THEN
-                   CALL update_bounds(out_num, is-hi, ie-hi, js-hj, je-hj, ks, ke)
-                   CALL check_out_of_bounds(out_num, diag_field_id, err_msg=err_msg_local)
-                   IF ( err_msg_local /= '' ) THEN
-                      IF ( fms_error_handler('diag_manager_mod::send_data_3d', err_msg_local, err_msg) ) THEN
-                         DEALLOCATE(oor_mask)
-                         RETURN
-                      END IF
-                   END IF
-                END IF
-                output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) = &
-                &    output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) + &
-                &    field(f1:f2,f3:f4,ks:ke)
-             END IF
-          END IF
-          output_fields(out_num)%count_0d(sample) = 1
-        !END time_sum
-       ELSE  ! ( not average, not min, not max, not sum )
-          output_fields(out_num)%count_0d(sample) = 1
-          IF ( need_compute ) THEN
-             DO j = js, je
-                DO i = is, ie
-                   IF ( l_start(1)+hi <= i .AND. i <= l_end(1)+hi .AND. l_start(2)+hj <= j .AND. j <= l_end(2)+hj) THEN
-                      i1 = i-l_start(1)-hi+1
-                      j1 = j-l_start(2)-hj+1
-                      output_fields(out_num)%buffer(i1,j1,:,sample) = field(i-is+1+hi,j-js+1+hj,l_start(3):l_end(3))
-                   END IF
-                END DO
-             END DO
-             ! instantaneous output
-          ELSE IF ( reduced_k_range ) THEN
-             ksr = l_start(3)
-             ker = l_end(3)
-             output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,:,sample) = field(f1:f2,f3:f4,ksr:ker)
-          ELSE
-             IF ( debug_diag_manager ) THEN
-                CALL update_bounds(out_num, is-hi, ie-hi, js-hj, je-hj, ks, ke)
-                CALL check_out_of_bounds(out_num, diag_field_id, err_msg=err_msg_local)
-                IF ( err_msg_local /= '' ) THEN
-                   IF ( fms_error_handler('diag_manager_mod::send_data_3d', err_msg_local, err_msg) ) THEN
-                      DEALLOCATE(oor_mask)
-                      RETURN
-                   END IF
-                END IF
-             END IF
-             output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) = field(f1:f2,f3:f4,ks:ke)
-          END IF
-
-          IF ( PRESENT(mask) .AND. missvalue_present ) THEN
-             IF ( need_compute ) THEN
-                DO k = l_start(3), l_end(3)
-                   k1 = k - l_start(3) + 1
-                   DO j = js, je
-                      DO i = is, ie
-                         IF ( l_start(1)+hi <= i .AND. i <= l_end(1)+hi .AND. l_start(2)+hj <= j .AND. &
-                            & j <= l_end(2)+hj ) THEN
-                            i1 = i-l_start(1)-hi+1
-                            j1 =  j-l_start(2)-hj+1
-                            IF ( .NOT.mask(i-is+1+hi,j-js+1+hj,k) )&
-                                 & output_fields(out_num)%buffer(i1,j1,k1,sample) = missvalue
-                         END IF
-                      END DO
-                   END DO
-                END DO
-             ELSE IF ( reduced_k_range ) THEN
-                ksr= l_start(3)
-                ker= l_end(3)
-                DO k=ksr, ker
-                   k1= k - ksr + 1
-                   DO j=js, je
-                      DO i=is, ie
-                         IF ( .NOT.mask(i-is+1+hi,j-js+1+hj,k) ) &
-                              & output_fields(out_num)%buffer(i-hi,j-hj,k1,sample)= missvalue
-                      END DO
-                   END DO
-                END DO
-             ELSE
-                DO k=ks, ke
-                   DO j=js, je
-                      DO i=is, ie
-                         IF ( .NOT.mask(i-is+1+hi,j-js+1+hj,k) )&
-                              & output_fields(out_num)%buffer(i-hi,j-hj,k,sample)= missvalue
-                      END DO
-                   END DO
-                END DO
-             END IF
-          END IF
-        !!end else
-       END IF !average
+        ELSE
+          temp_result = sample_the_field(diag_field_id, field, out_num, mask, &
+          & sample, missvalue, missvalue_present, l_start, l_end, idx_cfg, err_msg, err_msg_local)
+          IF (temp_result .eqv. .FALSE.) THEN
+            DEALLOCATE(oor_mask)
+            RETURN
+         END IF
+       END IF AVERAGE_IF
 
        IF ( output_fields(out_num)%static .AND. .NOT.need_compute .AND. debug_diag_manager ) THEN
           CALL check_bounds_are_exact_static(out_num, diag_field_id, err_msg=err_msg_local)
