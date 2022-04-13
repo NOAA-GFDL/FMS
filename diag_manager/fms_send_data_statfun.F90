@@ -348,7 +348,7 @@ CONTAINS
             END IF
          ELSE !! MASK_VAR_IF
             MASK_PRESENT_IF: IF ( PRESENT(mask) ) THEN
-               MVAL_PRESENT_IF: IF ( missvalue_present ) THEN !!section: (mask_varian .eq. false + mask present + missvalue present)
+               MVAL_PRESENT_IF: IF ( missvalue_present ) THEN !!section:(mask_var false +mask present +missval prsnt)
                   IF ( need_compute ) THEN
                      IF (numthreads>1 .AND. phys_window) then
                         DO k = l_start(3), l_end(3)
@@ -639,8 +639,8 @@ CONTAINS
                            DO j=l_start(2)+hj, l_end(2)+hj
                               DO i=l_start(1)+hi, l_end(1)+hi
                                  IF ( field(i,j,k) /= missvalue ) THEN
-                                    output_fields(out_num)%count_0d(sample) = output_fields(out_num)%count_0d(sample)&
-                                    & + weight1
+                                    output_fields(out_num)%count_0d(sample) = &
+                                    output_fields(out_num)%count_0d(sample) + weight1
                                     EXIT outer0
                                  END IF
                               END DO
@@ -691,8 +691,8 @@ CONTAINS
                            DO i=f1, f2
                               !! TODO: verify this below
                               IF ( field(i,j,k) /= missvalue ) THEN
-                                 output_fields(out_num)%count_0d(sample) = output_fields(out_num)%count_0d(sample) &
-                                 & + weight1
+                                 output_fields(out_num)%count_0d(sample) = &
+                                 output_fields(out_num)%count_0d(sample) + weight1
                                  EXIT outer3
                               END IF
                            END DO
@@ -744,8 +744,8 @@ CONTAINS
                         DO j=f3, f4
                            DO i=f1, f2
                               IF ( field(i,j,k) /= missvalue ) THEN
-                                 output_fields(out_num)%count_0d(sample) = output_fields(out_num)%count_0d(sample) &
-                                 & + weight1
+                                 output_fields(out_num)%count_0d(sample) = &
+                                 output_fields(out_num)%count_0d(sample)  + weight1
                                  EXIT outer1
                               END IF
                            END DO
@@ -814,7 +814,7 @@ CONTAINS
                         CALL update_bounds(out_num, is-hi, ie-hi, js-hj, je-hj, ks, ke)
                         CALL check_out_of_bounds(out_num, diag_field_id, err_msg=err_msg_local)
                         IF ( err_msg_local /= '' ) THEN
-                           IF ( fms_error_handler('diag_manager_mod::send_data_3d', err_msg_local, err_msg) ) THEN
+                           IF (fms_error_handler('diag_manager_mod::send_data_3d', err_msg_local, err_msg) ) THEN
                               succeded = .FALSE.
                               RETURN
                            END IF
@@ -1192,7 +1192,7 @@ CONTAINS
             IF ( need_compute ) THEN
                DO j = js, je
                   DO i = is, ie
-                     IF ( l_start(1)+hi <= i .AND. i <= l_end(1)+hi .AND. l_start(2)+hj <= j .AND. j <= l_end(2)+hj) THEN
+                     IF (l_start(1)+hi<= i .AND. i<= l_end(1)+hi .AND. l_start(2)+hj<= j .AND. j<= l_end(2)+hj) THEN
                         i1 = i-l_start(1)-hi+1
                         j1 = j-l_start(2)-hj+1
                         OFB(i1,j1,:,sample) = field(i-is+1+hi,j-js+1+hj,l_start(3):l_end(3))
