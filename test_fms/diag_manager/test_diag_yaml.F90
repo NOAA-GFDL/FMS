@@ -164,9 +164,9 @@ subroutine compare_diag_fields(res)
   call compare_result("var_module 2", res(2)%get_var_module(), "test_diag_manager_mod")
   call compare_result("var_module 3", res(3)%get_var_module(), "test_diag_manager_mod")
 
-  call compare_result("var_skind 1", res(1)%get_var_skind(), "float")
-  call compare_result("var_skind 2", res(2)%get_var_skind(), "float")
-  call compare_result("var_skind 3", res(3)%get_var_skind(), "float")
+  call compare_result("var_skind 1", res(1)%get_var_skind(), "r4")
+  call compare_result("var_skind 2", res(2)%get_var_skind(), "r4")
+  call compare_result("var_skind 3", res(3)%get_var_skind(), "r4")
 
   call compare_result("var_outname 1", res(1)%get_var_outname(), "sst")
   call compare_result("var_outname 2", res(2)%get_var_outname(), "sst")
