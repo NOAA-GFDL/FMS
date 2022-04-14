@@ -216,7 +216,7 @@ module fms
   !! routines that don't conflict with fms2_io
   use fms_mod, only: fms_init, fms_end, error_mesg, fms_error_handler, check_nml_error, &
                      monotonic_array, string_array_index, clock_flag_default, &
-                     print_memory_usage, write_version_number, fms_c2f_string, fms_cstring2cpointer
+                     print_memory_usage, write_version_number
 
   !> horiz_interp
   use horiz_interp_mod, only: horiz_interp, horiz_interp_new, horiz_interp_del, &
@@ -382,6 +382,10 @@ module fms
                                 lookup_es3, lookup_des3, lookup_es3_des3, &
                                 lookup_es_des, compute_qs, compute_mrs, &
                                 escomp, descomp
+  !> string_utils
+  use fms_string_utils_mod, only: string, fms_array_to_pointer, fms_pointer_to_array, fms_sort_this, &
+                                  fms_find_my_string, fms_find_unique, fms_c2f_string, fms_cstring2cpointer, &
+                                  string_copy
 
   !> time_interp
   use time_interp_mod, only: time_interp_init, time_interp, fraction_of_year, &
