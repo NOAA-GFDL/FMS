@@ -8,12 +8,12 @@ jobs:
     strategy:
       matrix:
         conf-flags: [--disable-openmp, --enable-mixed-mode, --disable-setting-flags, --with-mpi=no]
-        yaml-flag:  [--with-yaml, ""]
+        input-flag:  [--with-yaml, --enable-test-input=/home/unit_tests_input]
     container:
       image: ryanmulhall/hpc-me.ubuntu-minimal:gnu-input 
       env:
         TEST_VERBOSE: 1
-        DISTCHECK_CONFIGURE_FLAGS: "--enable-test-input=/home/unit_tests_input ${{ matrix.conf-flags }} ${{ matrix.yaml-flag }}"
+        DISTCHECK_CONFIGURE_FLAGS: "${{ matrix.conf-flags }} ${{ matrix.yaml-flag }}"
     steps:
     - name: Checkout code
       uses: actions/checkout@v2
