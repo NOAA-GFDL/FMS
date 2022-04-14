@@ -28,7 +28,6 @@
 !> @{
 module fms_string_utils_mod
   use, intrinsic :: iso_c_binding
-  use fms_mod, only: fms_c2f_string
   use mpp_mod
 
   implicit none
@@ -39,6 +38,10 @@ module fms_string_utils_mod
   public :: fms_sort_this
   public :: fms_find_my_string
   public :: fms_find_unique
+  public :: fms_c2f_string
+  public :: fms_cstring2cpointer
+  public :: string
+  public :: string_copy
 !> @}
 
   interface
@@ -80,11 +83,44 @@ module fms_string_utils_mod
 
   end function fms_find_unique
 
-  end interface
+  !> @brief converts a kind=c_char to type c_ptr
+  pure function fms_cstring2cpointer (cs) result (cp) bind(c, name="cstring2cpointer")
+   import c_char, c_ptr
+   character(kind=c_char), intent(in) :: cs(*) !< C string input
+   type (c_ptr) :: cp !< C pointer
+  end function fms_cstring2cpointer
 
-  !> @addtogroup fms_string_utils_mod
-  !> @{
-  contains
+  !> @brief Finds the length of a C-string
+  integer(c_size_t) pure function c_strlen(s) bind(c,name="strlen")
+    import c_size_t, c_ptr
+    type(c_ptr), intent(in), value :: s !< A C-string whose size is desired
+  end function
+
+  !> @brief Frees a C pointer
+  subroutine c_free(ptr) bind(c,name="free")
+    import c_ptr
+    type(c_ptr), value :: ptr !< A C-pointer to free
+  end subroutine
+
+end interface
+
+!> Converts a C string to a Fortran string
+!> @ingroup fms_mod
+interface fms_c2f_string
+  module procedure cstring_fortran_conversion
+  module procedure cpointer_fortran_conversion
+end interface
+
+!> Converts a number to a string
+!> @ingroup fms_mod
+interface string
+   module procedure string_from_integer
+   module procedure string_from_real
+end interface
+
+!> @addtogroup fms_string_utils_mod
+!> @{
+contains
 
   !> @brief Converts a character array to an array of c pointers!
   !! @return An array of c pointers
@@ -155,6 +191,86 @@ module fms_string_utils_mod
     endif
 
   end function fms_find_my_string
+
+  !> \brief Converts a C-string to a pointer and then to a Fortran string
+  function cstring_fortran_conversion (cstring) result(fstring)
+    character (kind=c_char), intent(in) :: cstring (*) !< Input C-string
+    character(len=:), allocatable :: fstring    !< The fortran string returned
+    fstring = cpointer_fortran_conversion(fms_cstring2cpointer(cstring))
+  end function cstring_fortran_conversion
+
+  !> \brief Converts a C-string returned from a TYPE(C_PTR) function to
+  !! a fortran string with type character.
+  function cpointer_fortran_conversion (cstring) result(fstring)
+    type (c_ptr), intent(in) :: cstring !< Input C-pointer
+    character(len=:), allocatable :: fstring    !< The fortran string returned
+    character(len=:,kind=c_char), pointer :: string_buffer !< A temporary pointer to between C and Fortran
+    integer(c_size_t) :: length !< The string length
+
+    length = c_strlen(cstring)
+    allocate (character(len=length, kind=c_char) :: string_buffer)
+    block
+      character(len=length,kind=c_char), pointer :: s
+      call c_f_pointer(cstring,s)  ! Recovers a view of the C string
+      string_buffer = s                   ! Copies the string contents
+    end block
+
+    allocate(character(len=length) :: fstring) !> Set the length of fstring
+    fstring = string_buffer
+    deallocate(string_buffer)
+  end function cpointer_fortran_conversion
+
+  !> @brief Converts an integer to a string
+  !> @return The integer as a string
+  function string_from_integer(i) result (res)
+    integer, intent(in) :: i !< Integer to be converted to a string
+    character(:),allocatable :: res !< String converted frominteger
+    character(range(i)+2) :: tmp !< Temp string that is set to correct size
+    write(tmp,'(i0)') i
+    res = trim(tmp)
+   return
+
+  end function string_from_integer
+
+  !#######################################################################
+  !> @brief Converts a real to a string
+  !> @return The real number as a string
+  function string_from_real(r)
+    real, intent(in) :: r !< Real number to be converted to a string
+    character(len=32) :: string_from_real
+
+    write(string_from_real,*) r
+
+    return
+
+  end function string_from_real
+
+  !> @brief Safely copy a string from one buffer to another.
+  subroutine string_copy(dest, source, check_for_null)
+    character(len=*), intent(inout) :: dest !< Destination string.
+    character(len=*), intent(in) :: source !< Source string.
+    logical, intent(in), optional :: check_for_null !<Flag indicating to test for null character
+
+    integer :: i
+    logical :: check_null
+
+    check_null = .false.
+    if (present(check_for_null)) check_null = check_for_null
+
+    i = 0
+    if (check_null) then
+      i = index(source, char(0)) - 1
+    endif
+
+    if (i < 1 ) i = len_trim(source)
+
+    if (len_trim(source(1:i)) .gt. len(dest)) then
+      call mpp_error(FATAL, "The input destination string is not big enough to" &
+                 //" to hold the input source string.")
+    endif
+    dest = ""
+    dest = adjustl(trim(source(1:i)))
+  end subroutine string_copy
 
 end module fms_string_utils_mod
 !> @}
