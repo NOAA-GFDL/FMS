@@ -664,10 +664,10 @@ subroutine check_field_kind(field)
   type(diagYamlFilesVar_type), intent(in) :: field        !< diagYamlFilesVar_type obj to read the contents into
 
   select case (TRIM(field%var_skind))
-  case ("double", "float")
+  case ("r4", "r8", "i4", "i8")
   case default
     call mpp_error(FATAL, trim(field%var_skind)//" is an invalid kind! &
-      &The acceptable values are double and float. &
+      &The acceptable values are r4, r8, i4, i8. &
       &Check your entry for file:"//trim(field%var_varname)//" in file "//trim(field%var_fname))
   end select
 
