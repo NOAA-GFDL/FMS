@@ -187,7 +187,7 @@ module mpp_mod
 implicit none
 private
 
-  !--- public paramters  -----------------------------------------------
+  !--- public parameters  -----------------------------------------------
   public :: MPP_VERBOSE, MPP_DEBUG, ALL_PES, ANY_PE, NULL_PE, NOTE, WARNING, FATAL
   public :: MPP_CLOCK_SYNC, MPP_CLOCK_DETAILED, CLOCK_COMPONENT, CLOCK_SUBCOMPONENT
   public :: CLOCK_MODULE_DRIVER, CLOCK_MODULE, CLOCK_ROUTINE, CLOCK_LOOP, CLOCK_INFRA
@@ -201,9 +201,6 @@ private
   public :: mpp_init_test_full_init, mpp_init_test_init_true_only, mpp_init_test_peset_allocated
   public :: mpp_init_test_clocks_init, mpp_init_test_datatype_list_init, mpp_init_test_logfile_init
   public :: mpp_init_test_read_namelist, mpp_init_test_etc_unit, mpp_init_test_requests_allocated
-
-  !--- public data from mpp_data_mod ------------------------------
-!  public :: request
 
   !--- public interface from mpp_util.h ------------------------------
   public :: stdin, stdout, stderr, stdlog, lowercase, uppercase, mpp_error, mpp_error_state
@@ -1116,7 +1113,8 @@ private
   !! Integer checksums on FP data use the F90 <TT>TRANSFER()</TT>
   !! intrinsic.
   !!
-  !! The <LINK SRC="http://www.gfdl.noaa.gov/fms-cgi-bin/cvsweb.cgi/FMS/shared/chksum/chksum.html">serial checksum module</LINK> is superseded
+  !! The <LINK SRC="http://www.gfdl.noaa.gov/fms-cgi-bin/cvsweb.cgi/FMS/shared/chksum/chksum.html">serial
+  !! checksum module</LINK> is superseded
   !! by this function, and is no longer being actively maintained. This
   !! provides identical results on a single-processor job, and to perform
   !! serial checksums on a single processor of a parallel job, you only
@@ -1210,7 +1208,8 @@ private
 !***********************************************************************
   integer, parameter   :: PESET_MAX = 10000
   integer              :: current_peset_max = 32
-  type(communicator), allocatable :: peset(:) !< Will be allocated starting from 0, 0 is a dummy used to hold single-PE "self" communicator
+  type(communicator), allocatable :: peset(:) !< Will be allocated starting from 0, 0 is a dummy used
+                                              !! to hold single-PE "self" communicator
   logical              :: module_is_initialized = .false.
   logical              :: debug = .false.
   integer              :: npes=1, root_pe=0, pe=0

@@ -42,7 +42,7 @@
 module data_override_mod
 use yaml_parser_mod
 use constants_mod, only: PI
-use mpp_mod, only : mpp_error, FATAL, WARNING, stdout, stdlog, mpp_max
+use mpp_mod, only : mpp_error, FATAL, WARNING, NOTE, stdout, stdlog, mpp_max
 use mpp_mod, only : input_nml_file
 use horiz_interp_mod, only : horiz_interp_init, horiz_interp_new, horiz_interp_type, &
                              assignment(=)
@@ -54,8 +54,7 @@ use time_interp_external2_mod, only:time_interp_external_init, &
                                    reset_src_data_region, &
                                    NO_REGION, INSIDE_REGION, OUTSIDE_REGION,     &
                                    get_external_fileobj
-use fms_mod, only: write_version_number, field_exist, lowercase, check_nml_error
-use axis_utils_mod, only: get_axis_bounds
+use fms_mod, only: write_version_number, lowercase, check_nml_error
 use axis_utils2_mod,  only : nearest_index, axis_edges
 use mpp_domains_mod, only : domain2d, mpp_get_compute_domain, NULL_DOMAIN2D,operator(.NE.),operator(.EQ.)
 use mpp_domains_mod, only : mpp_get_global_domain, mpp_get_data_domain
@@ -230,7 +229,7 @@ subroutine data_override_init(Atm_domain_in, Ocean_domain_in, Ice_domain_in, Lan
     call write_version_number("DATA_OVERRIDE_MOD", version)
 
 !  Initialize user-provided data table
-    default_table%gridname = 'none'
+    default_table%gridname = 'non'
     default_table%fieldname_code = 'none'
     default_table%fieldname_file = 'none'
     default_table%file_name = 'none'
@@ -261,6 +260,10 @@ subroutine data_override_init(Atm_domain_in, Ocean_domain_in, Ice_domain_in, Lan
  module_is_initialized = .TRUE.
 
  if ( .NOT. (atm_on .or. ocn_on .or. lnd_on .or. ice_on .or. lndUG_on)) return
+ if (table_size .eq. 0) then 
+    call mpp_error(NOTE, "data_table is empty, not doing any data_overrides")
+    return
+ endif
  call fms2_io_init
 
 ! Test if grid_file is already opened
@@ -277,11 +280,12 @@ subroutine data_override_init(Atm_domain_in, Ocean_domain_in, Ice_domain_in, Lan
  else if(variable_exists(fileobj, "ocn_mosaic_file" ) .OR. variable_exists(fileobj, "gridfiles" ) ) then
    use_get_grid_version = 2
    if(variable_exists(fileobj, "gridfiles" ) ) then
-     if(count_ne_1((ocn_on .OR. ice_on), lnd_on, atm_on)) call mpp_error(FATAL, 'data_override_mod: the grid file ' // &
+     if(count_ne_1((ocn_on .OR. ice_on), lnd_on, atm_on)) call mpp_error(FATAL, 'data_override_mod: the grid file ' //&
           'is a solo mosaic, one and only one of atm_on, lnd_on or ice_on/ocn_on should be true')
    end if
  else
-   call mpp_error(FATAL, 'data_override_mod: none of x_T, geolon_t, ocn_mosaic_file or gridfiles exist in '//trim(grid_file))
+   call mpp_error(FATAL, 'data_override_mod: none of x_T, geolon_t, ocn_mosaic_file or gridfiles exist in '// &
+                  & trim(grid_file))
  endif
 
  if(use_get_grid_version .EQ. 1) then
@@ -360,13 +364,21 @@ subroutine read_table(data_table)
     type(data_type)  :: data_entry
 
     logical               :: ongrid
+    logical               :: table_exists !< Flag indicating existence of data_table
     character(len=128)    :: region, region_type
 
     integer :: sunit
 
 !  Read coupler_table
+    inquire(file='data_table', EXIST=table_exists)
+    if (.not. table_exists) then
+      call mpp_error(NOTE, 'data_override_mod: File data_table does not exist.')
+      table_size = 0
+      return
+    end if
+
     open(newunit=iunit, file='data_table', action='READ', iostat=io_status)
-    if(io_status/=0) call mpp_error(FATAL, 'data_override_mod: Error in opening file data_table')
+    if(io_status/=0) call mpp_error(FATAL, 'data_override_mod: Error in opening file data_table.')
 
     ntable = 0
     ntable_lima = 0
@@ -377,7 +389,7 @@ subroutine read_table(data_table)
        if (record(1:1) == '#') cycle
        if (record(1:10) == '          ') cycle
        ntable=ntable+1
-       if (index(lowercase(record), "inside_region") .ne. 0 .or. index(lowercase(record), "outside_region") .ne. 0) then
+       if(index(lowercase(record), "inside_region") .ne. 0 .or. index(lowercase(record), "outside_region") .ne. 0) then
           if(index(lowercase(record), ".false.") .ne. 0 .or. index(lowercase(record), ".true.") .ne. 0 ) then
              ntable_lima = ntable_lima + 1
              read(record,*,err=99) data_entry%gridname, data_entry%fieldname_code, data_entry%fieldname_file, &
@@ -390,7 +402,8 @@ subroutine read_table(data_table)
           else
              ntable_new=ntable_new+1
              read(record,*,err=99) data_entry%gridname, data_entry%fieldname_code, data_entry%fieldname_file, &
-                                   data_entry%file_name, data_entry%interpol_method, data_entry%factor, region, region_type
+                                   data_entry%file_name, data_entry%interpol_method, data_entry%factor, region, &
+                                 & region_type
              if (data_entry%interpol_method == 'default') then
                 data_entry%interpol_method = default_table%interpol_method
              endif
@@ -428,7 +441,8 @@ subroutine read_table(data_table)
              "data_override: lon_end should be greater than lon_start")
           if(data_entry%lat_end .LE. data_entry%lat_start) call mpp_error(FATAL, &
              "data_override: lat_end should be greater than lat_start")
-       else if (index(lowercase(record), ".false.") .ne. 0 .or. index(lowercase(record), ".true.") .ne. 0 ) then ! old format
+       ! old format
+       else if (index(lowercase(record), ".false.") .ne. 0 .or. index(lowercase(record), ".true.") .ne. 0 ) then
           ntable_lima = ntable_lima + 1
           read(record,*,err=99) data_entry%gridname, data_entry%fieldname_code, data_entry%fieldname_file, &
                                    data_entry%file_name, ongrid, data_entry%factor
@@ -492,35 +506,39 @@ subroutine read_table_yaml(data_table)
     integer :: file_id
 
     file_id = open_and_parse_file("data_table.yaml")
-    nentries = get_num_blocks(file_id, "data_table")
-    allocate(data_table(nentries))
-    allocate(entry_id(nentries))
-    call get_block_ids(file_id, "data_table", entry_id)
+    if (file_id==999) then
+      nentries = 0
+    else
+      nentries = get_num_blocks(file_id, "data_table")
+      allocate(data_table(nentries))
+      allocate(entry_id(nentries))
+      call get_block_ids(file_id, "data_table", entry_id)
 
-    do i = 1, nentries
-       call get_value_from_key(file_id, entry_id(i), "gridname", data_table(i)%gridname)
-       call get_value_from_key(file_id, entry_id(i), "fieldname_code", data_table(i)%fieldname_code)
-       call get_value_from_key(file_id, entry_id(i), "fieldname_file", data_table(i)%fieldname_file)
-       call get_value_from_key(file_id, entry_id(i), "file_name", data_table(i)%file_name)
-       call get_value_from_key(file_id, entry_id(i), "interpol_method", data_table(i)%interpol_method)
-       call get_value_from_key(file_id, entry_id(i), "factor", data_table(i)%factor)
-       call get_value_from_key(file_id, entry_id(i), "region_type", buffer, is_optional=.true.)
+      do i = 1, nentries
+         call get_value_from_key(file_id, entry_id(i), "gridname", data_table(i)%gridname)
+         call get_value_from_key(file_id, entry_id(i), "fieldname_code", data_table(i)%fieldname_code)
+         call get_value_from_key(file_id, entry_id(i), "fieldname_file", data_table(i)%fieldname_file)
+         call get_value_from_key(file_id, entry_id(i), "file_name", data_table(i)%file_name)
+         call get_value_from_key(file_id, entry_id(i), "interpol_method", data_table(i)%interpol_method)
+         call get_value_from_key(file_id, entry_id(i), "factor", data_table(i)%factor)
+         call get_value_from_key(file_id, entry_id(i), "region_type", buffer, is_optional=.true.)
 
-       if(trim(buffer) == "inside_region" ) then
-          data_table(i)%region_type = INSIDE_REGION
-       else if( trim(buffer) == "outside_region" ) then
-          data_table(i)%region_type = OUTSIDE_REGION
-       else
-          data_table(i)%region_type = NO_REGION
-       endif
+         if(trim(buffer) == "inside_region" ) then
+            data_table(i)%region_type = INSIDE_REGION
+         else if( trim(buffer) == "outside_region" ) then
+            data_table(i)%region_type = OUTSIDE_REGION
+         else
+            data_table(i)%region_type = NO_REGION
+         endif
 
-       call get_value_from_key(file_id, entry_id(i), "lon_start", data_table(i)%lon_start, is_optional=.true.)
-       call get_value_from_key(file_id, entry_id(i), "lon_end", data_table(i)%lon_end, is_optional=.true.)
-       call get_value_from_key(file_id, entry_id(i), "lat_start", data_table(i)%lat_start, is_optional=.true.)
-       call get_value_from_key(file_id, entry_id(i), "lat_end", data_table(i)%lat_end, is_optional=.true.)
+         call get_value_from_key(file_id, entry_id(i), "lon_start", data_table(i)%lon_start, is_optional=.true.)
+         call get_value_from_key(file_id, entry_id(i), "lon_end", data_table(i)%lon_end, is_optional=.true.)
+         call get_value_from_key(file_id, entry_id(i), "lat_start", data_table(i)%lat_start, is_optional=.true.)
+         call get_value_from_key(file_id, entry_id(i), "lat_end", data_table(i)%lat_end, is_optional=.true.)
 
-    end do
+      end do
 
+    end if
     table_size = nentries !< Because one variable is not enough
 end subroutine read_table_yaml
 #endif
@@ -686,8 +704,8 @@ subroutine data_override_3d(gridname,fieldname_code,data,time,override,data_inde
   integer :: nxd, nyd, nxc, nyc, nwindows
   integer :: nwindows_x, ipos, jpos, window_size(2)
   integer :: istart, iend, jstart, jend
-  integer :: isw, iew, jsw, jew, n
-  integer :: omp_get_num_threads, omp_get_thread_num, thread_id, window_id
+  integer :: isw, iew, jsw, jew
+  integer :: omp_get_num_threads, window_id
   logical :: need_compute
   real    :: lat_min, lat_max
   integer :: is_src, ie_src, js_src, je_src
@@ -781,7 +799,8 @@ subroutine data_override_3d(gridname,fieldname_code,data,time,override,data_inde
         use_comp_domain = .true.
         nwindows = (nxc/size(data,1))*(nyc/size(data,2))
      else
-        call mpp_error(FATAL, "data_override: data is not on data domain and compute domain is not divisible by size(data)")
+        call mpp_error(FATAL, &
+                     & "data_override: data is not on data domain and compute domain is not divisible by size(data)")
      endif
      override_array(curr_position)%window_size(1) = size(data,1)
      override_array(curr_position)%window_size(2) = size(data,2)
@@ -897,11 +916,11 @@ subroutine data_override_3d(gridname,fieldname_code,data,time,override,data_inde
            call read_data(fileobj, axis_names(2), lat_tmp)
            ! limit lon_start, lon_end are inside lon_in
            !       lat_start, lat_end are inside lat_in
-           if( data_table(index1)%lon_start < lon_tmp(1) .OR. data_table(index1)%lon_start .GT. lon_tmp(axis_sizes(1))) &
+           if(data_table(index1)%lon_start < lon_tmp(1) .OR. data_table(index1)%lon_start .GT. lon_tmp(axis_sizes(1)))&
               call mpp_error(FATAL, "data_override: lon_start is outside lon_T")
            if( data_table(index1)%lon_end < lon_tmp(1) .OR. data_table(index1)%lon_end .GT. lon_tmp(axis_sizes(1))) &
               call mpp_error(FATAL, "data_override: lon_end is outside lon_T")
-           if( data_table(index1)%lat_start < lat_tmp(1) .OR. data_table(index1)%lat_start .GT. lat_tmp(axis_sizes(2))) &
+           if(data_table(index1)%lat_start < lat_tmp(1) .OR. data_table(index1)%lat_start .GT. lat_tmp(axis_sizes(2)))&
               call mpp_error(FATAL, "data_override: lat_start is outside lat_T")
            if( data_table(index1)%lat_end < lat_tmp(1) .OR. data_table(index1)%lat_end .GT. lat_tmp(axis_sizes(2))) &
               call mpp_error(FATAL, "data_override: lat_end is outside lat_T")

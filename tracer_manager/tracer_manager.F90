@@ -76,8 +76,6 @@ use field_manager_mod, only : field_manager_init, &
                               fm_exists,          &
                               MODEL_NAMES
 
-use platform_mod, only: r4_kind, r8_kind
-
 implicit none
 private
 
@@ -98,7 +96,8 @@ public  tracer_manager_init, &
         adjust_mass,         &
         adjust_positive_def, &
         NO_TRACER,           &
-        MAX_TRACER_FIELDS
+        MAX_TRACER_FIELDS,   &
+        set_tracer_method
 
 !> @brief Function which returns the number assigned to the tracer name.
 !!
@@ -269,7 +268,8 @@ do n=1,nfields
 !   <ERROR MSG="MAX_TRACER_FIELDS exceeded" STATUS="FATAL">
 !     The maximum number of tracer fields has been exceeded.
 !   </ERROR>
-         if(num_tracer_fields > MAX_TRACER_FIELDS) call mpp_error(FATAL,'tracer_manager_init: MAX_TRACER_FIELDS exceeded')
+         if(num_tracer_fields > MAX_TRACER_FIELDS) call mpp_error(FATAL, &
+            & 'tracer_manager_init: MAX_TRACER_FIELDS exceeded')
          TRACER_ARRAY(model,total_tracers(model))  = num_tracer_fields
          tracers(num_tracer_fields)%model          = model
          tracers(num_tracer_fields)%tracer_name    = name
@@ -369,7 +369,8 @@ do n = 1, num_tracer_fields !{
              digit = "_"//trim(digit)
            endif
         else  !}{
-          call mpp_error(FATAL, 'tracer_manager_init: MULTIPLE_TRACER_SET_UP exceeds 100 for '//tracers(n)%tracer_name )
+          call mpp_error(FATAL, 'tracer_manager_init: MULTIPLE_TRACER_SET_UP exceeds 100 for '// &
+                         & tracers(n)%tracer_name )
         endif  !}
 
         select case(model)
@@ -658,7 +659,8 @@ j = TRACER_ARRAY(model,i)
 !   <ERROR MSG="index array size too small in get_tracer_indices" STATUS="FATAL">
 !     The global index array is too small and cannot contain all the tracer numbers.
 !   </ERROR>
-         if (n > size(ind(:))) call mpp_error(FATAL,'get_tracer_indices : index array size too small in get_tracer_indices')
+         if (n > size(ind(:))) call mpp_error(FATAL, &
+             & 'get_tracer_indices : index array size too small in get_tracer_indices')
          ind(n) = i
       endif
 
@@ -746,7 +748,7 @@ get_tracer_index_integer = NO_TRACER
 
 if (PRESENT(indices)) then
     do i = 1, size(indices(:))
-       if (model == tracers(indices(i))%model .and. lowercase(trim(name)) == trim(tracers(indices(i))%tracer_name)) then
+       if (model == tracers(indices(i))%model .and. lowercase(trim(name)) == trim(tracers(indices(i))%tracer_name))then
            get_tracer_index_integer = i
            exit
        endif
@@ -837,10 +839,6 @@ if(mpp_pe()==mpp_root_pe() .and. TRACER_ARRAY(model,n)> 0 ) then
   write(log_unit, *) 'Tracer is_prognostic : ', tracers(i)%is_prognostic
   write(log_unit, *)'----------------------------------------------------'
 endif
-
-900 FORMAT(A,2(1x,E12.6))
-901 FORMAT(E12.6,1x,E12.6)
-
 
 end subroutine print_tracer_info
 
@@ -1039,7 +1037,7 @@ subroutine set_tracer_profile(model, n, tracer, err_msg)
 
 integer, intent(in) :: model !< Parameter representing component model in use
 integer, intent(in) :: n !< Tracer number
-class(*), intent(inout), dimension(:,:,:) :: tracer !< Initialized tracer array
+real, intent(inout), dimension(:,:,:) :: tracer !< Initialized tracer array
 character(len=*), intent(out), optional :: err_msg
 
 real    :: surf_value, multiplier
@@ -1065,14 +1063,7 @@ top_value  = surf_value
 bottom_value = surf_value
 multiplier = 1.0
 
-select type (tracer)
-type is (real(kind=r4_kind))
-  tracer = surf_value
-type is (real(kind=r8_kind))
-  tracer = surf_value
-class default
-  call mpp_error(FATAL, "set_tracer_profile : tracer is not one of the supported types of real(kind=4) or real(kind=8)")
-end select
+tracer = surf_value
 
 if ( query_method ( 'profile_type',model,n,scheme,control)) then
 !Change the tracer_number to the tracer_manager version
@@ -1081,14 +1072,7 @@ if ( query_method ( 'profile_type',model,n,scheme,control)) then
     profile_type                   = 'Fixed'
     flag =parse(control,'surface_value',surf_value)
     multiplier = 1.0
-    select type (tracer)
-    type is (real(kind=r4_kind))
-      tracer = surf_value
-    type is (real(kind=r8_kind))
-      tracer = surf_value
-    class default
-      call mpp_error(FATAL, "set_tracer_profile : tracer is not one of the supported types of real(kind=4) or real(kind=8)")
-    end select
+    tracer = surf_value
   endif
 
   if(lowercase(trim(scheme(1:7))).eq.'profile') then
@@ -1105,7 +1089,8 @@ if ( query_method ( 'profile_type',model,n,scheme,control)) then
       case (MODEL_OCEAN)
         flag =parse(control,'bottom_value',bottom_value)
         if(mpp_pe() == mpp_root_pe() .and. flag == 0) &
-           call mpp_error(NOTE,'set_tracer_profile : Parameter bottom_value needs to be defined for the tracer profile.')
+           call mpp_error(NOTE, &
+                          & 'set_tracer_profile : Parameter bottom_value needs to be defined for the tracer profile.')
       case default
 !   Should there be a NOTE or WARNING message here?
     end select
@@ -1121,36 +1106,16 @@ numlevels = size(tracer,3) -1
     select case (tracers(n1)%model)
       case (MODEL_ATMOS)
         multiplier = exp( log (top_value/surf_value) /numlevels)
-        select type (tracer)
-        type is (real(kind=r4_kind))
-          tracer(:,:,1) = surf_value
-          do k = 2, size(tracer,3)
-            tracer(:,:,k) = tracer(:,:,k-1) * multiplier
-          enddo
-        type is (real(kind=r8_kind))
-          tracer(:,:,1) = surf_value
-          do k = 2, size(tracer,3)
-            tracer(:,:,k) = tracer(:,:,k-1) * multiplier
-          enddo
-        class default
-          call mpp_error(FATAL, "set_tracer_profile : tracer is not one of the supported types of real(kind=4) or real(kind=8)")
-        end select
+        tracer(:,:,1) = surf_value
+        do k = 2, size(tracer,3)
+          tracer(:,:,k) = tracer(:,:,k-1) * multiplier
+        enddo
       case (MODEL_OCEAN)
         multiplier = exp( log (bottom_value/surf_value) /numlevels)
-        select type (tracer)
-        type is (real(kind=r4_kind))
-          tracer(:,:,size(tracer,3)) = surf_value
-          do k = size(tracer,3) - 1, 1, -1
-            tracer(:,:,k) = tracer(:,:,k+1) * multiplier
-          enddo
-        type is (real(kind=r8_kind))
-          tracer(:,:,size(tracer,3)) = surf_value
-          do k = size(tracer,3) - 1, 1, -1
-            tracer(:,:,k) = tracer(:,:,k+1) * multiplier
-          enddo
-        class default
-          call mpp_error(FATAL, "set_tracer_profile : tracer is not one of the supported types of real(kind=4) or real(kind=8)")
-        end select
+        tracer(:,:,size(tracer,3)) = surf_value
+        do k = size(tracer,3) - 1, 1, -1
+          tracer(:,:,k) = tracer(:,:,k+1) * multiplier
+        enddo
       case default
     end select
   endif !scheme.eq.profile
@@ -1158,7 +1123,7 @@ numlevels = size(tracer,3) -1
   if (mpp_pe() == mpp_root_pe() ) write(*,700) 'Tracer ',trim(tracers(n1)%tracer_name),    &
                             ' initialized with surface value of ',surf_value, &
                             ' and vertical multiplier of ',multiplier
-  700 FORMAT (3A,E12.6,A,F10.6)
+  700 FORMAT (3A,E13.6,A,F13.6)
 
 endif ! end of query scheme
 

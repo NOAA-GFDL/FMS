@@ -16,7 +16,7 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
-    subroutine WRITE_RECORD_( unit, field, nwords, data, time_in, domain, tile_count)
+    subroutine WRITE_RECORD_( unit, field, num_words, data, time_in, domain, tile_count)
 !routine that is finally called by all mpp_write routines to perform the write
 !a non-netCDF record contains:
 !      field ID
@@ -33,9 +33,9 @@
 !   with a timestamp of NULLTIME. There is no check in the code to prevent
 !   the user from repeatedly writing a static field.
 
-      integer,           intent(in)           :: unit, nwords
+      integer,           intent(in)           :: unit, num_words
       type(fieldtype),   intent(in)           :: field
-      MPP_TYPE_,         intent(in)           :: data(nwords)
+      MPP_TYPE_,         intent(in)           :: data(num_words)
       MPP_TYPE_,         intent(in), optional :: time_in
       type(domain2D),    intent(in), optional :: domain
       integer,           intent(in), optional :: tile_count
@@ -44,14 +44,14 @@
       integer :: time_level
       logical :: newtime
       integer :: subdomain(4)
-      integer :: packed_data(nwords)
+      integer :: packed_data(num_words)
       integer :: i, is, ie, js, je
 
-      real(r4_kind) :: data_r4(nwords)
+      real(r4_kind) :: data_r4(num_words)
       pointer( ptr1, data_r4)
       pointer( ptr2, packed_data)
 
-      if (mpp_io_stack_size < nwords) call mpp_io_set_stack_size(nwords)
+      if (mpp_io_stack_size < num_words) call mpp_io_set_stack_size(num_words)
 
       if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_WRITE: must first call mpp_io_init.' )
       if( .NOT.mpp_file(unit)%write_on_this_pe) return
@@ -130,7 +130,8 @@
 !write time information if new time
           if( newtime )then
               if( KIND(time).EQ.r8_kind )then
-                  error = NF_PUT_VAR1_DOUBLE( mpp_file(unit)%ncid, mpp_file(unit)%id, mpp_file(unit:unit)%time_level, time )
+                  error = NF_PUT_VAR1_DOUBLE( mpp_file(unit)%ncid, mpp_file(unit)%id, mpp_file(unit:unit)%time_level,&
+                                            & time )
               else if( KIND(time).EQ.r4_kind )then
                  error = NF90_PUT_VAR ( mpp_file(unit)%ncid, mpp_file(unit)%id, time)
               end if

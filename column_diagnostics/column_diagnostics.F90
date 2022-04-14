@@ -491,7 +491,7 @@ integer, dimension(:), intent(in)  :: diag_j    !< j coordinate of current diagn
       integer           :: hour   !< integers defining the current time
       integer           :: minute !< integers defining the current time
       integer           :: second !< integers defining the current time
-      character(len=8)  :: mon    !< character string for the current month
+      character(len=9)  :: mon    !< character string for the current month
       character(len=64) :: header !< title for the output
 
 !--------------------------------------------------------------------

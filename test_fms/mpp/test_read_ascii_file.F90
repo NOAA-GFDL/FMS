@@ -102,7 +102,7 @@ program test_read_ascii_file
       filename = "input.nml"
       num_lines = get_ascii_file_num_lines(filename, str_length)
       allocate(test_array(num_lines))
-      call read_ascii_file(filename, 0, test_array)
+      call read_ascii_file(filename,0, test_array)
     else if (test_numb == 6) then
       filename = "input.nml"
       num_lines = get_ascii_file_num_lines(filename, str_length)

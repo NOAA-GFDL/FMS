@@ -25,7 +25,10 @@
 # U Ramirez 03/16/2021
 
 # Set common test settings.
-. ../test_common.sh
+. ../test-lib.sh
 
 touch input.nml
-run_test test_super_grid 6
+test_expect_success "super grid domain creation" '
+  mpirun -n 6 ./test_super_grid
+'
+test_done

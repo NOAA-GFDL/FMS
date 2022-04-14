@@ -431,7 +431,6 @@ subroutine MPP_DO_GROUP_UPDATE_(group, domain, d_type)
   integer   :: n, l, m, i, j, k, buffer_start_pos, nk
   integer   :: shift, gridtype, midpoint
   integer   :: npack, nunpack, rotation, isd
-  character(len=8)            :: text
 
   MPP_TYPE_ :: buffer(mpp_domains_stack_size)
   MPP_TYPE_ :: field (group%is_s:group%ie_s,group%js_s:group%je_s, group%ksize_s)
@@ -748,8 +747,8 @@ subroutine MPP_COMPLETE_GROUP_UPDATE_(group, domain, d_type)
   MPP_TYPE_,                   intent(in)    :: d_type
 
   integer   :: nsend, nrecv, nscalar, nvector
-  integer   :: k, buffer_pos, msgsize, pos, m, n, l
-  integer   :: is, ie, js, je, dir, ksize, i, j
+  integer   :: k, buffer_pos, pos, m, n, l
+  integer   :: is, ie, js, je, ksize, i, j
   integer   :: shift, gridtype, midpoint, flags_v
   integer   :: nunpack, rotation, buffer_start_pos, nk, isd
   logical   :: recv_y(8)
@@ -963,16 +962,17 @@ end subroutine MPP_RESET_GROUP_UPDATE_FIELD_4D_
 subroutine MPP_RESET_GROUP_UPDATE_FIELD_2D_V_(group, fieldx, fieldy)
   type(mpp_group_update_type), intent(inout) :: group
   MPP_TYPE_,                   intent(in)    :: fieldx(:,:), fieldy(:,:)
-  integer :: indx
 
   group%reset_index_v = group%reset_index_v + 1
 
   if(group%reset_index_v > group%nvector) &
      call mpp_error(FATAL, "MPP_RESET_GROUP_UPDATE_FIELD_2D_V_: group%reset_index_v > group%nvector")
   if(size(fieldx,1) .NE. group%isize_x .OR. size(fieldx,2) .NE. group%jsize_x .OR. group%ksize_v .NE. 1) &
-     call mpp_error(FATAL, "MPP_RESET_GROUP_UPDATE_FIELD_2D_V_: size of fieldx does not match the size stored in group")
+     call mpp_error(FATAL, &
+                    &  "MPP_RESET_GROUP_UPDATE_FIELD_2D_V_: size of fieldx does not match the size stored in group")
   if(size(fieldy,1) .NE. group%isize_y .OR. size(fieldy,2) .NE. group%jsize_y ) &
-     call mpp_error(FATAL, "MPP_RESET_GROUP_UPDATE_FIELD_2D_V_: size of fieldy does not match the size stored in group")
+     call mpp_error(FATAL, &
+                    &  "MPP_RESET_GROUP_UPDATE_FIELD_2D_V_: size of fieldy does not match the size stored in group")
 
   group%addrs_x(group%reset_index_v) = LOC(fieldx)
   group%addrs_y(group%reset_index_v) = LOC(fieldy)
@@ -983,16 +983,17 @@ end subroutine MPP_RESET_GROUP_UPDATE_FIELD_2D_V_
 subroutine MPP_RESET_GROUP_UPDATE_FIELD_3D_V_(group, fieldx, fieldy)
   type(mpp_group_update_type), intent(inout) :: group
   MPP_TYPE_,                   intent(in)    :: fieldx(:,:,:), fieldy(:,:,:)
-  integer :: indx
 
   group%reset_index_v = group%reset_index_v + 1
 
   if(group%reset_index_v > group%nvector) &
      call mpp_error(FATAL, "MPP_RESET_GROUP_UPDATE_FIELD_3D_V_: group%reset_index_v > group%nvector")
   if(size(fieldx,1) .NE. group%isize_x .OR. size(fieldx,2) .NE. group%jsize_x .OR. size(fieldx,3) .NE. group%ksize_v) &
-     call mpp_error(FATAL, "MPP_RESET_GROUP_UPDATE_FIELD_3D_V_: size of fieldx does not match the size stored in group")
+     call mpp_error(FATAL, &
+                    &  "MPP_RESET_GROUP_UPDATE_FIELD_3D_V_: size of fieldx does not match the size stored in group")
   if(size(fieldy,1) .NE. group%isize_y .OR. size(fieldy,2) .NE. group%jsize_y .OR. size(fieldy,3) .NE. group%ksize_v) &
-     call mpp_error(FATAL, "MPP_RESET_GROUP_UPDATE_FIELD_3D_V_: size of fieldy does not match the size stored in group")
+     call mpp_error(FATAL, &
+                    &  "MPP_RESET_GROUP_UPDATE_FIELD_3D_V_: size of fieldy does not match the size stored in group")
 
   group%addrs_x(group%reset_index_v) = LOC(fieldx)
   group%addrs_y(group%reset_index_v) = LOC(fieldy)
@@ -1003,7 +1004,6 @@ end subroutine MPP_RESET_GROUP_UPDATE_FIELD_3D_V_
 subroutine MPP_RESET_GROUP_UPDATE_FIELD_4D_V_(group, fieldx, fieldy)
   type(mpp_group_update_type), intent(inout) :: group
   MPP_TYPE_,                   intent(in)    :: fieldx(:,:,:,:), fieldy(:,:,:,:)
-  integer :: indx
 
   group%reset_index_v = group%reset_index_v + 1
 
@@ -1011,10 +1011,12 @@ subroutine MPP_RESET_GROUP_UPDATE_FIELD_4D_V_(group, fieldx, fieldy)
      call mpp_error(FATAL, "MPP_RESET_GROUP_UPDATE_FIELD_4D_V_: group%reset_index_v > group%nvector")
   if(size(fieldx,1) .NE. group%isize_x .OR. size(fieldx,2) .NE. group%jsize_x .OR. &
               size(fieldx,3)*size(fieldx,4) .NE. group%ksize_v) &
-     call mpp_error(FATAL, "MPP_RESET_GROUP_UPDATE_FIELD_4D_V_: size of fieldx does not match the size stored in group")
+     call mpp_error(FATAL, &
+                    &  "MPP_RESET_GROUP_UPDATE_FIELD_4D_V_: size of fieldx does not match the size stored in group")
   if(size(fieldy,1) .NE. group%isize_y .OR. size(fieldy,2) .NE. group%jsize_y .OR. &
               size(fieldy,3)*size(fieldy,4) .NE. group%ksize_v) &
-     call mpp_error(FATAL, "MPP_RESET_GROUP_UPDATE_FIELD_4D_V_: size of fieldy does not match the size stored in group")
+     call mpp_error(FATAL, &
+                    &  "MPP_RESET_GROUP_UPDATE_FIELD_4D_V_: size of fieldy does not match the size stored in group")
 
   group%addrs_x(group%reset_index_v) = LOC(fieldx)
   group%addrs_y(group%reset_index_v) = LOC(fieldy)

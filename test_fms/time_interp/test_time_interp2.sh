@@ -25,16 +25,22 @@
 # Ed Hartnett 11/29/19
 
 # Set common test settings.
-. ../test_common.sh
+. ../test-lib.sh
 
 # Copy file for test.
 touch input.nml
 
-# Run the test.
-run_test test_time_interp 2
-
-# Run the time_interp_external test
 rm -rf INPUT
 mkdir INPUT
-run_test test_time_interp_external 2
+# Run the test.
+test_expect_success "test time interpolation" '
+  mpirun -n 2 ./test_time_interp
+'
 rm -rf INPUT
+mkdir INPUT
+
+test_expect_success "test time interpolation external" '
+  mpirun -n 2 ./test_time_interp_external
+'
+
+test_done

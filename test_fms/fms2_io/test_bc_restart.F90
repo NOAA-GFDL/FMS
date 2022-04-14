@@ -22,6 +22,7 @@
 program test_bc_restart
 
 use   mpp_mod,         only : mpp_init, mpp_exit, mpp_pe, mpp_root_pe, mpp_sync, input_nml_file
+use   fms_mod,         only : check_nml_error
 use   fms2_io_mod,     only : FmsNetcdfFile_t, fms2_io_init, open_file, register_restart_field, &
                               register_variable_attribute, read_restart_bc, write_restart_bc, close_file
 use   mpp_domains_mod, only : mpp_get_global_domain, mpp_get_data_domain, mpp_get_compute_domain, &
@@ -41,6 +42,8 @@ type atm_type
    real, allocatable, dimension(:,:,:):: var3d            !< 3d variable data
 end type
 
+integer                               :: io               !< Error code when reading namelist
+integer                               :: ierr             !< Error code when reading namelist
 integer, dimension(2)                 :: layout = (/4,4/) !< Domain layout
 integer                               :: nlon             !< Number of points in x axis
 integer                               :: nlat             !< Number of points in y axis
@@ -58,12 +61,14 @@ namelist /test_bc_restart_nml/ bad_checksum, ignore_checksum
 call mpp_init
 call fms2_io_init
 
-read(input_nml_file, nml=test_bc_restart_nml)
+read(input_nml_file, nml=test_bc_restart_nml, iostat=io)
+ierr = check_nml_error(io, 'test_bc_restart_nml')
 
 nlon = 144
 nlat = 144
 
-call mpp_define_domains( (/1,nlon,1,nlat/), layout, atm%Domain, xhalo=3, yhalo=3, symmetry=.true., name='test_bc_restart')
+call mpp_define_domains( (/1,nlon,1,nlat/), layout, atm%Domain, xhalo=3, yhalo=3, symmetry=.true., &
+                       &  name='test_bc_restart')
 call mpp_get_data_domain(atm%domain, isd, ied, jsd, jed )
 
 allocate(atm%var2d(isd:ied,jsd:jed))
