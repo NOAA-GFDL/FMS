@@ -232,7 +232,7 @@ use platform_mod
        & max_out_per_in_field, flush_nc_files, region_out_use_alt_value, max_field_attributes, output_field_type,&
        & max_file_attributes, max_axis_attributes, prepend_date, DIAG_FIELD_NOT_FOUND, diag_init_time,diag_data_init,&
        & use_modern_diag, diag_null
-  
+
   USE diag_data_mod, ONLY:  fileobj, fileobjU, fnum_for_domain, fileobjND
   USE diag_table_mod, ONLY: parse_diag_table
   USE diag_output_mod, ONLY: get_diag_global_att, set_diag_global_att
@@ -240,7 +240,7 @@ use platform_mod
   USE fms_diag_object_mod, ONLY: fmsDiagObject_type
 
 #ifdef use_yaml
-  use fms_diag_yaml_mod, only: diag_yaml_object_init, diag_yaml_object_end, get_num_unique_fields
+  use fms_diag_yaml_mod, only: diag_yaml_object_init, diag_yaml_object_end, get_num_unique_fields, find_diag_field
 #endif
 
   USE constants_mod, ONLY: SECONDS_PER_DAY
@@ -470,8 +470,23 @@ end function register_diag_field_array
     INTEGER,          OPTIONAL, INTENT(in) :: volume        !< Id of the volume field
     CHARACTER(len=*), OPTIONAL, INTENT(in) :: realm         !< String to set as the modeling_realm attribute
 
-    ! TODO: Check if the diag_field is in the yaml, if it is not return diag_null. If it is fill in the diag_obj
-    register_diag_field_scalar_modern = diag_null
+#ifdef use_yaml
+    integer, allocatable :: diag_file_indices(:) !< indices where the field was found
+
+    diag_file_indices = find_diag_field(field_name)
+    if (diag_file_indices(1) .eq. diag_null) then
+      !< The field was not found in the table, so return diag_null
+      register_diag_field_scalar_modern = diag_null
+      deallocate(diag_file_indices)
+      return
+    endif
+
+    registered_variables = registered_variables + 1
+    register_diag_field_scalar_modern = registered_variables
+
+    !< TO DO: Fill in the diag_obj
+    deallocate(diag_file_indices)
+#endif
 
   end function register_diag_field_scalar_modern
 
@@ -502,8 +517,24 @@ end function register_diag_field_array
     INTEGER,          OPTIONAL, INTENT(in) :: volume        !< Id of the volume field
     CHARACTER(len=*), OPTIONAL, INTENT(in) :: realm         !< String to set as the modeling_realm attribute
 
-    ! TODO: Check if the diag_field is in the yaml, if it is not return diag_null. If it is fill in the diag_obj
-    register_diag_field_array_modern = diag_null
+#ifdef use_yaml
+    integer, allocatable :: diag_file_indices(:) !< indices where the field was found
+
+    diag_file_indices = find_diag_field(field_name)
+    if (diag_file_indices(1) .eq. diag_null) then
+      !< The field was not found in the table, so return diag_null
+      register_diag_field_array_modern = diag_null
+      deallocate(diag_file_indices)
+      return
+    endif
+
+    registered_variables = registered_variables + 1
+    register_diag_field_array_modern = registered_variables
+
+    !< TO DO: Fill in the diag_obj
+    deallocate(diag_file_indices)
+#endif
+
    end function register_diag_field_array_modern
 
   !> @brief Registers a scalar field

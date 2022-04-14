@@ -44,7 +44,7 @@ private
 public :: diag_yaml_object_init, diag_yaml_object_end
 public :: diagYamlObject_type, get_diag_yaml_obj, get_title, get_basedate, get_diag_files, get_diag_fields
 public :: diagYamlFiles_type, diagYamlFilesVar_type
-public :: get_num_unique_fields
+public :: get_num_unique_fields, find_diag_field, get_diag_fields_entries, get_diag_files_entries
 
 !> @}
 
@@ -1128,6 +1128,73 @@ function get_num_unique_fields() &
 
 end function get_num_unique_fields
 
+!> @brief Determines if a diag_field is in the diag_yaml_object
+!! @return Indices of the locations where the field was found
+function find_diag_field(diag_field_name) &
+result(indices)
+
+  character(len=*), intent(in) :: diag_field_name !< diag_field name to search for
+
+  integer, allocatable :: indices(:)
+
+  indices = fms_find_my_string(variable_list%var_pointer, size(variable_list%var_pointer), &
+                               & diag_field_name//c_null_char)
+end function find_diag_field
+
+!> @brief Gets the diag_field entries corresponding to the indices of the sorted variable_list
+!! @return Array of diag_fields
+function get_diag_fields_entries(indices) &
+  result(diag_field)
+
+  integer, intent(in) :: indices(:) !< Indices of the field in the sorted variable_list array
+  type(diagYamlFilesVar_type), dimension (:), allocatable :: diag_field
+
+  integer :: i !< For do loops
+  integer :: field_id !< Indices of the field in the diag_yaml array
+
+  allocate(diag_field(size(indices)))
+
+  do i = 1, size(indices)
+    field_id = variable_list%diag_field_indices(indices(i))
+    diag_field(i) = diag_yaml%diag_fields(field_id)
+  end do
+
+end function get_diag_fields_entries
+
+!> @brief Gets the diag_files entries corresponding to the indices of the sorted variable_list
+!! @return Array of diag_files
+function get_diag_files_entries(indices) &
+  result(diag_file)
+
+  integer, intent(in) :: indices(:) !< Indices of the field in the sorted variable_list
+  type(diagYamlFiles_type), dimension (:), allocatable :: diag_file
+
+  integer :: i !< For do loops
+  integer :: field_id !< Indices of the field in the diag_yaml array
+  integer :: file_id !< Indices of the file in the diag_yaml array
+  character(len=120) :: filename !< Filename of the field
+  integer, allocatable :: file_indices(:) !< Indices of the file in the sorted variable_list
+
+  allocate(diag_file(size(indices)))
+
+  do i = 1, size(indices)
+    field_id = variable_list%diag_field_indices(indices(i))
+    filename = diag_yaml%diag_fields(field_id)%var_fname
+
+    file_indices = fms_find_my_string(file_list%file_pointer, size(file_list%file_pointer), &
+      & trim(filename)//c_null_char)
+
+    if (size(file_indices) .ne. 1) &
+      & call mpp_error(FATAL, "get_diag_files_entries: Error getting the correct number of file indices!")
+
+    if (file_indices(1) .eq. diag_null) &
+      & call mpp_error(FATAL, "get_diag_files_entries: Error finding the filename in the diag_files")
+
+    file_id = file_list%diag_file_indices(file_indices(1))
+    diag_file(i) = diag_yaml%diag_files(file_id)
+  end do
+
+end function get_diag_files_entries
 #endif
 end module fms_diag_yaml_mod
 !> @}
