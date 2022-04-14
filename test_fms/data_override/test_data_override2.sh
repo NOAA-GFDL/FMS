@@ -108,6 +108,7 @@ _EOF
   test_expect_success "data_override on latlon-grid with input" '
     mpirun -n 6 ./test_data_override
   '
+  rm -rf INPUT *.nc # remove any leftover files to reduce size
 fi
 
 test_done
