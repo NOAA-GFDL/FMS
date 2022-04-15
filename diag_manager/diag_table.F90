@@ -18,8 +18,10 @@
 !***********************************************************************
 !> @defgroup diag_table_mod diag_table_mod
 !> @ingroup diag_manager
-!! @brief <TT>diag_table_mod</TT> is a set of subroutines use to parse out the data from a <TT>diag_table</TT>.  This module
-!!   will also setup the arrays required to store the information by counting the number of input fields, output files, and
+!! @brief <TT>diag_table_mod</TT> is a set of subroutines use to parse out the data from a
+!! <TT>diag_table</TT>.  This module
+!!   will also setup the arrays required to store the information by counting the number of
+!!   input fields, output files, and
 !!   files.
 !! @author Seth Underwood
 !!
@@ -27,27 +29,36 @@
 !!   needed for the <TT>diag_manager_mod</TT> to correctly write out the model history files.
 !!
 !!   The <I>diagnostics table</I> allows users to specify sampling rates and the choice of fields at run time.  The
-!!   <TT>diag_table</TT> file consists of comma-separated ASCII values.  The <TT>diag_table</TT> essentially has three sections:
-!!   <B>Global</B>, <B>File</B>, and <B>Field</B> sections.  The <B>Global</B> section must be the first two lines of the file,
+!!   <TT>diag_table</TT> file consists of comma-separated ASCII values.  The <TT>diag_table</TT>
+!!   essentially has three sections:
+!!   <B>Global</B>, <B>File</B>, and <B>Field</B> sections.  The <B>Global</B> section must
+!!   be the first two lines of the file,
 !!   whereas the <B>File</B> and <B>Field</B> sections can be inter mixed to allow the file to be organized as desired.
-!!   Comments can be added to the <TT>diag_table</TT> file by using the hash symbol (#) as the first character in the line.
+!!   Comments can be added to the <TT>diag_table</TT> file by using the hash symbol (#) as
+!!   the first character in the line.
 !!
-!!   All errors in the <TT>diag_table</TT> will throw a <TT>FATAL</TT> error.  A simple utility <TT>diag_table_chk</TT>has been
-!!   added to the FRE tools suite to check a <TT>diag_table</TT> for errors.  A brief usage statement can be obtained by running
-!!   <TT>diag_table_chk --help</TT>, and a man page like description can views by running <TT>perldoc diag_table_chk</TT>.
+!!   All errors in the <TT>diag_table</TT> will throw a <TT>FATAL</TT> error.  A simple utility
+!!   <TT>diag_table_chk</TT>has been
+!!   added to the FRE tools suite to check a <TT>diag_table</TT> for errors.  A brief usage
+!!   statement can be obtained by running
+!!   <TT>diag_table_chk --help</TT>, and a man page like description can views by running <TT>perldoc
+!!   diag_table_chk</TT>.
 !!
 !!   Below is a description of the three sections.
 !!   <OL>
 !!     <LI>
-!!       <B>Global Section:</B>  The first two lines of the <TT>diag_table</TT> must contain the <I>title</I> and the <I>base
-!!       date</I> of the experiment respectively.  The <I>title</I> must be a Fortran CHARACTER string.  The <I>base date</I>
+!!       <B>Global Section:</B>  The first two lines of the <TT>diag_table</TT> must contain
+!!       the <I>title</I> and the <I>base
+!!       date</I> of the experiment respectively.  The <I>title</I> must be a Fortran CHARACTER
+!!       string.  The <I>base date</I>
 !!       is the reference time used for the time units, and must be greater than or equal to the model start time.
 !!       The <I>base date</I> consists of six space-separated integer in the following format.<BR />
 !!       <TT> year month day hour minute second </TT><BR />
 !!     </LI>
 !!     <LI>
 !!       <B>File Section:</B> File lines contain 6 required and 5 optional fields (optional fields are surrounded with
-!!       square brackets ([]).  File lines can be intermixed with the field lines, but the file must be defined before any
+!!       square brackets ([]).  File lines can be intermixed with the field lines, but the
+!!       file must be defined before any
 !!       fields that are to be written to the file.  File lines have the following format:<BR />
 !!         "file_name", output_freq, "output_freq_units", file_format, "time_axis_units", "time_axis_name"
 !!         [, new_file_freq, "new_file_freq_units"[, "start_time"[, file_duration, "file_duration_units"]]]
@@ -58,9 +69,12 @@
 !!         <DD>
 !!           Output file name without the trailing <TT>".nc"</TT>.
 !!
-!!           A single file description can produce multiple files using special time string suffix keywords.  This time string
-!!           will append the time strings to the base file name each time a new file is opened.  They syntax for the time string
-!!           suffix keywords are <TT>%#tt</TT> Where <TT>#</TT> is a mandatory single digit number specifying the width of the
+!!           A single file description can produce multiple files using special time string
+!!           suffix keywords.  This time string
+!!           will append the time strings to the base file name each time a new file is opened.
+!!            They syntax for the time string
+!!           suffix keywords are <TT>%#tt</TT> Where <TT>#</TT> is a mandatory single digit
+!!           number specifying the width of the
 !!           field, and <TT>tt</TT> can be as follows:
 !!           <UL>
 !!             <LI><TT>yr</TT>  Years</LI>
@@ -70,9 +84,12 @@
 !!             <LI><TT>mi</TT>  Minutes</LI>
 !!             <LI><TT>sc</TT>  Seconds</LI>
 !!           </UL>
-!!           Thus, a file name of <TT>file2_yr_dy%1yr%3dy</TT> will have a base file name of <TT>file2_yr_dy_1_001</TT> if the
-!!           file is created on year 1 day 1 of the model run.  <B><I>NOTE:</I></B> The time suffix keywords must be used if the
-!!           optional fields <TT>new_file_freq</TT> and <TT>new_file_freq_units</TT> are used, otherwise a <TT>FATAL</TT> error
+!!           Thus, a file name of <TT>file2_yr_dy%1yr%3dy</TT> will have a base file name of
+!!           <TT>file2_yr_dy_1_001</TT> if the
+!!           file is created on year 1 day 1 of the model run.  <B><I>NOTE:</I></B> The time
+!!           suffix keywords must be used if the
+!!           optional fields <TT>new_file_freq</TT> and <TT>new_file_freq_units</TT> are used,
+!!           otherwise a <TT>FATAL</TT> error
 !!           will occur.
 !!         </DD>
 !!
@@ -103,7 +120,8 @@
 !!         </DD>
 !!         <DT><TT>CHARACTER(len=128) :: time_axis_name</TT></DT>
 !!         <DD>
-!!           Axis name for the output file time axis.  The character sting must contain the string 'time'. (mixed upper and
+!!           Axis name for the output file time axis.  The character sting must contain the
+!!           string 'time'. (mixed upper and
 !!           lowercase allowed.)
 !!         </DD>
 !!         <DT><TT>INTEGER, OPTIONAL :: new_file_freq</TT></DT>
@@ -113,36 +131,45 @@
 !!         <DT><TT>CHARACTER(len=10), OPTIONAL :: new_file_freq_units</TT></DT>
 !!         <DD>
 !!           Time units for creating a new file.  Can be either <TT>years</TT>, <TT>months</TT>, <TT>days</TT>,
-!!           <TT>minutes</TT>, <TT>hours</TT>, or <TT>seconds</TT>.  <B><I>NOTE:</I></B> If the <TT>new_file_freq</TT> field is
+!!           <TT>minutes</TT>, <TT>hours</TT>, or <TT>seconds</TT>.  <B><I>NOTE:</I></B> If
+!!           the <TT>new_file_freq</TT> field is
 !!           present, then this field must also be present.
 !!         </DD>
 !!         <DT><TT>CHARACTER(len=25), OPTIONAL :: start_time</TT></DT>
 !!         <DD>
-!!           Time to start the file for the first time.  The format of this string is the same as the <I>global date</I>.  <B><I>
-!!           NOTE:</I></B> The <TT>new_file_freq</TT> and the <TT>new_file_freq_units</TT> fields must be present to use this field.
+!!           Time to start the file for the first time.  The format of this string is the same
+!!           as the <I>global date</I>.  <B><I>
+!!           NOTE:</I></B> The <TT>new_file_freq</TT> and the <TT>new_file_freq_units</TT>
+!!           fields must be present to use this field.
 !!         </DD>
 !!         <DT><TT>INTEGER, OPTIONAL :: file_duration</TT></DT>
 !!         <DD>
-!!           How long file should receive data after start time in <TT>file_duration_units</TT>.  This optional field can only
-!!           be used if the <TT>start_time</TT> field is present.  If this field is absent, then the file duration will be equal
-!!           to the frequency for creating new files.  <B><I>NOTE:</I></B> The <TT>file_duration_units</TT> field must also be
+!!           How long file should receive data after start time in <TT>file_duration_units</TT>.
+!!            This optional field can only
+!!           be used if the <TT>start_time</TT> field is present.  If this field is absent,
+!!           then the file duration will be equal
+!!           to the frequency for creating new files.  <B><I>NOTE:</I></B> The <TT>file_duration_units</TT>
+!!           field must also be
 !!           present if this field is present.
 !!         </DD>
 !!         <DT><TT>CHARACTER(len=10), OPTIONAL :: file_duration_units</TT></DT>
 !!         <DD>
 !!           File duration units. Can be either <TT>years</TT>, <TT>months</TT>, <TT>days</TT>,
-!!           <TT>minutes</TT>, <TT>hours</TT>, or <TT>seconds</TT>.  <B><I>NOTE:</I></B> If the <TT>file_duration</TT> field is
+!!           <TT>minutes</TT>, <TT>hours</TT>, or <TT>seconds</TT>.  <B><I>NOTE:</I></B> If
+!!           the <TT>file_duration</TT> field is
 !!           present, then this field must also be present.
 !!         </DD>
 !!       </DL>
 !!     </LI>
 !!     <LI>
-!!       <B>Field Section:</B> Field lines contain 8 fields.  Field lines can be intermixed with file lines.  Fields line can contain
+!!       <B>Field Section:</B> Field lines contain 8 fields.  Field lines can be intermixed
+!!       with file lines.  Fields line can contain
 !!       fields that are not written to any files.  The file name for these fields is <TT>null</TT>.
 !!
 !!       Field lines have the following format:<BR />
 !!       <PRE>
-!! "module_name", "field_name", "output_name", "file_name", "time_sampling", "reduction_method", "regional_section", packing
+!! "module_name", "field_name", "output_name", "file_name", "time_sampling", "reduction_method",
+!! "regional_section", packing
 !!       </PRE>
 !!       with the following descriptions.
 !!       <DL>
@@ -161,7 +188,8 @@
 !!         <DD>Currently not used.  Please use the string "all".</DD>
 !!         <DT><TT>CHARACTER(len=50) :: reduction_method</TT></DT>
 !!         <DD>
-!!           The data reduction method to perform prior to writing data to disk.  Valid options are (redundant names are
+!!           The data reduction method to perform prior to writing data to disk.  Valid options
+!!           are (redundant names are
 !!           separated with commas):
 !!           <DL>
 !!             <DT><TT>.TRUE.</TT>, average, avg, mean</DT>
@@ -169,7 +197,8 @@
 !!             <DT><TT>.FALSE.</TT>, none</DT>
 !!             <DD>No reduction performed.  Write current time step value only.</DD>
 !!             <DT>rms</DT> <DD>Calculate the root mean square from the last time written to the current time.</DD>
-!!             <DT>pow##</DT> <DD>Calculate the mean of the power ## from the last time written to the current time.</DD>
+!!             <DT>pow##</DT> <DD>Calculate the mean of the power ## from the last time written
+!!             to the current time.</DD>
 !!             <DT>min</DT> <DD>Minimum value from last write to current time.</DD>
 !!             <DT>max</DT> <DD>Maximum value from last write to current time.</DD>
 !!             <DT>diurnal##</DT> <DD>## diurnal averages</DD>
@@ -177,10 +206,12 @@
 !!         </DD>
 !!         <DT><TT>CHARACTER(len=50) :: regional_section</TT></DT>
 !!         <DD>
-!!           Bounds of the regional section to capture.  A value of <TT>none</TT> indicates a global region.  The regional
+!!           Bounds of the regional section to capture.  A value of <TT>none</TT> indicates
+!!           a global region.  The regional
 !!           section has the following format:<BR />
 !!           <TT>lat_min, lat_max, lon_min, lon_max, vert_min, vert_max</TT><BR />
-!!           Use <TT>vert_min = -1</TT> and <TT>vert_max = -1</TT> to get the entire vertical axis.  <B><I>NOTE:</I></B>
+!!           Use <TT>vert_min = -1</TT> and <TT>vert_max = -1</TT> to get the entire vertical
+!!           axis.  <B><I>NOTE:</I></B>
 !!           Currently, the defined region <I>MUST</I> be confined to a single tile.
 !!         </DD>
 !!         <DT><TT>INTEGER :: packing</TT></DT>
@@ -226,8 +257,8 @@ MODULE diag_table_mod
   USE time_manager_mod, ONLY: get_calendar_type, NO_CALENDAR, set_date, set_time, month_name, time_type
   USE constants_mod, ONLY: SECONDS_PER_HOUR, SECONDS_PER_MINUTE
 
-  USE diag_data_mod, ONLY: global_descriptor, base_time, base_year, base_month, base_day, base_hour, base_minute, base_second,&
-       & DIAG_OTHER, DIAG_OCEAN, DIAG_ALL, coord_type, append_pelist_name, pelist_name
+  USE diag_data_mod, ONLY: global_descriptor, base_time, base_year, base_month, base_day, base_hour, base_minute, &
+                         & base_second, DIAG_OTHER, DIAG_OCEAN, DIAG_ALL, coord_type, append_pelist_name, pelist_name
   USE diag_util_mod, ONLY: init_file, check_duplicate_output_fields, init_input_field, init_output_field
 
   IMPLICIT NONE
@@ -277,12 +308,16 @@ MODULE diag_table_mod
 CONTAINS
 
   !> @brief Parse the <TT>diag_table</TT> in preparation for diagnostic output.
-  !! @details <TT>parse_diag_table</TT> is the public interface to parse the diag_table, and setup the arrays needed to store the
-  !!     requested diagnostics from the <TT>diag_table</TT>.  <TT>parse_diag_table</TT> will return a non-zero <TT>istat</TT> if
+  !! @details <TT>parse_diag_table</TT> is the public interface to parse the diag_table, and
+  !! setup the arrays needed to store the
+  !!     requested diagnostics from the <TT>diag_table</TT>.  <TT>parse_diag_table</TT> will
+  !!     return a non-zero <TT>istat</TT> if
   !!     a problem parsing the <TT>diag_table</TT>.
   !!
-  !!     NOT YET IMPLEMENTED: <TT>parse_diag_table</TT> will parse through the <TT>diag_table</TT> twice.  The first pass, will be
-  !!     to get a good "guess" of array sizes.  These arrays, that will hold the requested diagnostic fields and files, will then be
+  !!     NOT YET IMPLEMENTED: <TT>parse_diag_table</TT> will parse through the <TT>diag_table</TT>
+  !!     twice.  The first pass, will be
+  !!     to get a good "guess" of array sizes.  These arrays, that will hold the requested
+  !!     diagnostic fields and files, will then be
   !!     allocated to the size of the "guess" plus a slight increase.
   SUBROUTINE parse_diag_table(diag_subset, istat, err_msg)
     INTEGER, INTENT(in), OPTIONAL :: diag_subset !< Diagnostic sampling subset.
@@ -337,28 +372,32 @@ CONTAINS
     READ (UNIT=diag_table(1), FMT=*, IOSTAT=mystat) global_descriptor
     IF ( mystat /= 0 ) THEN
        pstat = mystat
-       IF ( fms_error_handler('diag_table_mod::parse_diag_table', 'Error reading the global descriptor from the diagnostic table.',&
-            & err_msg) ) RETURN
+       IF ( fms_error_handler('diag_table_mod::parse_diag_table', &
+            'Error reading the global descriptor from the diagnostic table.', err_msg) ) RETURN
     END IF
 
     ! Read in the base date
-    READ (UNIT=diag_table(2), FMT=*, IOSTAT=mystat) base_year, base_month, base_day, base_hour, base_minute, base_second
+    READ (UNIT=diag_table(2), FMT=*, IOSTAT=mystat) base_year, base_month, base_day, base_hour, base_minute, &
+         &  base_second
     IF ( mystat /= 0 ) THEN
        pstat = mystat
-       IF ( fms_error_handler('diag_manager_init', 'Error reading the base date from the diagnostic table.', err_msg) ) RETURN
+       IF ( fms_error_handler('diag_manager_init', 'Error reading the base date from the diagnostic table.', &
+          &  err_msg) ) RETURN
     END IF
 
     ! Set up the time type for base time
     IF ( get_calendar_type() /= NO_CALENDAR ) THEN
        IF ( base_year==0 .OR. base_month==0 .OR. base_day==0 ) THEN
           pstat = 101
-          IF ( fms_error_handler('diag_table_mod::parse_diag_table', 'The base_year/month/day can not equal zero', err_msg) ) RETURN
+          IF ( fms_error_handler('diag_table_mod::parse_diag_table', &
+             &  'The base_year/month/day can not equal zero', err_msg) ) RETURN
        END IF
        base_time = set_date(base_year, base_month, base_day, base_hour, base_minute, base_second)
        amonth = month_name(base_month)
     ELSE
        ! No calendar - ignore year and month
-       base_time = set_time(NINT(base_hour*SECONDS_PER_HOUR)+NINT(base_minute*SECONDS_PER_MINUTE)+base_second, base_day)
+       base_time = set_time(NINT(base_hour*SECONDS_PER_HOUR)+NINT(base_minute*SECONDS_PER_MINUTE)+base_second, &
+                           &  base_day)
        base_year = 0
        base_month = 0
        amonth = 'day'
@@ -409,16 +448,20 @@ CONTAINS
                         & CALL error_mesg("diag_table_mod::parse_diag_table",&
                         & TRIM(local_err_msg)//" (line: "//TRIM(line_number)//").", WARNING)
                    CYCLE parser
-                ELSE IF ( (diag_subset_output == DIAG_OTHER .AND. INDEX(lowercase(temp_file%file_name), "ocean") .NE. 0).OR.&
-                     &    (diag_subset_output == DIAG_OCEAN .AND. INDEX(lowercase(temp_file%file_name), "ocean") .EQ. 0) ) THEN
+                ELSE IF ( (diag_subset_output == DIAG_OTHER .AND. INDEX(lowercase(temp_file%file_name), "ocean").NE.0)&
+                   & .OR. (diag_subset_output == DIAG_OCEAN .AND. INDEX(lowercase(temp_file%file_name), "ocean").EQ.0)&
+                   &  ) THEN
                    CYCLE parser
-                ELSE IF ( temp_file%new_file_freq > 0 ) THEN ! Call the init_file subroutine.  The '1' is for the tile_count
-                   CALL init_file(temp_file%file_name, temp_file%output_freq, temp_file%iOutput_freq_units, temp_file%file_format,&
-                        & temp_file%iTime_units, temp_file%long_name, 1, temp_file%new_file_freq, temp_file%iNew_file_freq_units,&
-                        & temp_file%start_time, temp_file%file_duration, temp_file%iFile_duration_units, temp_file%filename_time_bounds)
+                ELSE IF ( temp_file%new_file_freq > 0 ) THEN ! Call the init_file subroutine.  The '1'
+                                                             !! is for the tile_count
+                   CALL init_file(temp_file%file_name, temp_file%output_freq, temp_file%iOutput_freq_units, &
+                        & temp_file%file_format, temp_file%iTime_units, temp_file%long_name, 1, &
+                        & temp_file%new_file_freq, temp_file%iNew_file_freq_units,&
+                        & temp_file%start_time, temp_file%file_duration, temp_file%iFile_duration_units, &
+                        &  temp_file%filename_time_bounds)
                 ELSE
-                   CALL init_file(temp_file%file_name, temp_file%output_freq, temp_file%iOutput_freq_units, temp_file%file_format,&
-                        & temp_file%iTime_units, temp_file%long_name, 1)
+                   CALL init_file(temp_file%file_name, temp_file%output_freq, temp_file%iOutput_freq_units, &
+                        & temp_file%file_format, temp_file%iTime_units, temp_file%long_name, 1)
                 END IF
 
                 ! Increment number of files
@@ -437,17 +480,18 @@ CONTAINS
                         & CALL error_mesg("diag_table_mod::Parse_diag_table",&
                         & TRIM(local_err_msg)//" (line: "//TRIM(line_number)//").",WARNING)
                    CYCLE parser
-                ELSE IF ( (diag_subset_output == DIAG_OTHER .AND. INDEX(lowercase(temp_field%file_name), "ocean") .NE. 0).OR.&
-                     &    (diag_subset_output == DIAG_OCEAN .AND. INDEX(lowercase(temp_field%file_name), "ocean") .EQ. 0) ) THEN
+                ELSE IF ((diag_subset_output == DIAG_OTHER .AND. INDEX(lowercase(temp_field%file_name), "ocean").NE.0)&
+                   &.OR. (diag_subset_output == DIAG_OCEAN .AND. INDEX(lowercase(temp_field%file_name), "ocean").EQ.0)&
+                   &  ) THEN
                    CYCLE parser
                 ELSE IF ( lowercase(TRIM(temp_field%spatial_ops)) == 'none' ) THEN
                    CALL init_input_field(temp_field%module_name, temp_field%field_name, 1)
-                   CALL init_output_field(temp_field%module_name, temp_field%field_name, temp_field%output_name, temp_field%file_name,&
-                        & temp_field%time_method, temp_field%pack, 1)
+                   CALL init_output_field(temp_field%module_name, temp_field%field_name, temp_field%output_name, &
+                        & temp_field%file_name, temp_field%time_method, temp_field%pack, 1)
                 ELSE
                    CALL init_input_field(temp_field%module_name, temp_field%field_name, 1)
-                   CALL init_output_field(temp_field%module_name, temp_field%field_name, temp_field%output_name, temp_field%file_name,&
-                        & temp_field%time_method, temp_field%pack, 1, temp_field%regional_coords)
+                   CALL init_output_field(temp_field%module_name, temp_field%field_name, temp_field%output_name, &
+                        & temp_field%file_name, temp_field%time_method, temp_field%pack, 1, temp_field%regional_coords)
                 END IF
 
                 ! Increment number of fields
@@ -470,15 +514,18 @@ CONTAINS
   END SUBROUTINE parse_diag_table
 
   !> @brief <TT>parse_file_line</TT> parses a file description line from the <TT>diag_table</TT> file, and returns a
-  !!     <TT>TYPE(file_description_type)</TT>.  The calling function, would then need to call the <TT>init_file</TT> to initialize
+  !!     <TT>TYPE(file_description_type)</TT>.  The calling function, would then need to call
+  !!     the <TT>init_file</TT> to initialize
   !!     the diagnostic output file.
   !! @return file_description_type parse_file_line
   TYPE(file_description_type) FUNCTION parse_file_line(line, istat, err_msg)
     CHARACTER(len=*), INTENT(in) :: line !< Line to parse from the <TT>diag_table</TT> file.
     INTEGER, INTENT(out), OPTIONAL, TARGET :: istat !< Return state of the function.  A value of 0 indicates success.
                                                     !! A positive value indicates a <TT>FATAL</TT> error occurred,
-                                                    !! and a negative value indicates a <TT>WARNING</TT> should be issued.
-    CHARACTER(len=*), INTENT(out), OPTIONAL :: err_msg !< Error string to include in the <TT>FATAL</TT> or <TT>WARNING</TT> message.
+                                                    !! and a negative value indicates a <TT>WARNING</TT>
+                                                    !! should be issued.
+    CHARACTER(len=*), INTENT(out), OPTIONAL :: err_msg !< Error string to include in the <TT>FATAL</TT>
+                                                       !! or <TT>WARNING</TT> message.
 
     INTEGER, TARGET :: mystat
     INTEGER, POINTER :: pstat
@@ -501,14 +548,15 @@ CONTAINS
     parse_file_line%filename_time_bounds = ''
 
     ! Read in the file description line..
-    READ (line, FMT=*, IOSTAT=mystat) parse_file_line%file_name, parse_file_line%output_freq, parse_file_line%output_freq_units,&
+    READ (line, FMT=*, IOSTAT=mystat) parse_file_line%file_name, parse_file_line%output_freq, &
+         & parse_file_line%output_freq_units,&
          & parse_file_line%file_format, parse_file_line%time_units, parse_file_line%long_name,&
          & parse_file_line%new_file_freq, parse_file_line%new_file_freq_units, parse_file_line%start_time_s,&
          & parse_file_line%file_duration, parse_file_line%file_duration_units, parse_file_line%filename_time_bounds
     IF ( mystat > 0 ) THEN
        pstat = mystat
-       IF ( fms_error_handler('diag_table_mod::parse_file_line', 'Incorrect file description format in diag_table.', err_msg) )&
-            & RETURN
+       IF ( fms_error_handler('diag_table_mod::parse_file_line', 'Incorrect file description format in diag_table.', &
+                             & err_msg) ) RETURN
     END IF
 
     ! Check for unallowed characters in strings
@@ -555,8 +603,9 @@ CONTAINS
     ! Verify values / formats are correct
     IF ( parse_file_line%file_format > 2 .OR. parse_file_line%file_format < 1 ) THEN
        pstat = 1
-       IF ( fms_error_handler('diag_table_mod::parse_file_line', 'Invalid file format for file description in the diag_table.',&
-            & err_msg) ) RETURN
+       IF ( fms_error_handler('diag_table_mod::parse_file_line', &
+                            & 'Invalid file format for file description in the diag_table.',&
+                            & err_msg) ) RETURN
     END IF
 
     ! check for known units
@@ -572,17 +621,17 @@ CONTAINS
     END IF
     IF ( parse_file_line%iOutput_freq_units < 0 ) THEN
        pstat = 1
-       IF ( fms_error_handler('diag_table_mod::parse_file_line', 'Invalid output frequency units in diag_table.', err_msg) )&
-            & RETURN
+       IF ( fms_error_handler('diag_table_mod::parse_file_line', 'Invalid output frequency units in diag_table.', &
+                            &  err_msg) ) RETURN
     END IF
     IF ( parse_file_line%iNew_file_freq_units < 0 .AND. parse_file_line%new_file_freq > 0 ) THEN
        pstat = 1
-       IF ( fms_error_handler('diag_table_mod::parse_file_line', 'Invalid new file frequency units in diag_table.', err_msg) )&
-            & RETURN
+       IF ( fms_error_handler('diag_table_mod::parse_file_line', 'Invalid new file frequency units in diag_table.', &
+                             & err_msg) ) RETURN
     END IF
     IF ( parse_file_line%iFile_duration_units < 0 .AND. parse_file_line%file_duration > 0 ) THEN
        pstat = 1
-       IF ( fms_error_handler('diag_table_mod::parse_file_line', 'Invalid file duration units in diag_table.', err_msg) )&
+       IF (fms_error_handler('diag_table_mod::parse_file_line', 'Invalid file duration units in diag_table.',err_msg))&
             & RETURN
     END IF
 
@@ -633,15 +682,19 @@ CONTAINS
 
   !> @brief Parse a field description line from the <TT>diag_table</TT> file.
   !! @return field_description_type parse_field_line
-  !! @details <TT>parse_field_line</TT> parses a field description line from the <TT>diag_table</TT> file, and returns a
-  !!     <TT>TYPE(field_description_type)</TT>.  The calling function, would then need to call the <TT>init_input_field</TT> and
+  !! @details <TT>parse_field_line</TT> parses a field description line from the <TT>diag_table</TT>
+  !! file, and returns a
+  !!     <TT>TYPE(field_description_type)</TT>.  The calling function, would then need to call
+  !!     the <TT>init_input_field</TT> and
   !!     <TT>init_output_field</TT> to initialize the diagnostic output field.
   TYPE(field_description_type) FUNCTION parse_field_line(line, istat, err_msg)
     CHARACTER(len=*), INTENT(in) :: line !< Line to parse from the <TT>diag_table</TT> file.
     INTEGER, INTENT(out), OPTIONAL, TARGET :: istat !< Return state of the function.  A value of 0 indicates success.
                                                     !! A positive value indicates a <TT>FATAL</TT> error occurred,
-                                                    !! and a negative value indicates a <TT>WARNING</TT> should be issued.
-    CHARACTER(len=*), OPTIONAL, INTENT(out) :: err_msg !< Error string to include in the <TT>FATAL</TT> or <TT>WARNING</TT> message.
+                                                    !! and a negative value indicates a <TT>WARNING</TT>
+                                                    !! should be issued.
+    CHARACTER(len=*), OPTIONAL, INTENT(out) :: err_msg !< Error string to include in the <TT>FATAL</TT>
+                                                       !! or <TT>WARNING</TT> message.
 
     INTEGER, TARGET :: mystat
     INTEGER, POINTER :: pstat
@@ -653,9 +706,9 @@ CONTAINS
     END IF
     pstat = 0 ! default success return value
 
-    READ (line, FMT=*, IOSTAT=mystat) parse_field_line%module_name, parse_field_line%field_name, parse_field_line%output_name,&
-         & parse_field_line%file_name, parse_field_line%time_sampling, parse_field_line%time_method, parse_field_line%spatial_ops,&
-         & parse_field_line%pack
+    READ (line, FMT=*, IOSTAT=mystat) parse_field_line%module_name, parse_field_line%field_name, &
+         & parse_field_line%output_name, parse_field_line%file_name, parse_field_line%time_sampling, &
+         & parse_field_line%time_method, parse_field_line%spatial_ops, parse_field_line%pack
     IF ( mystat /= 0 ) THEN
        pstat = 1
        IF ( fms_error_handler('diag_table_mod::parse_field_line',&
@@ -720,7 +773,8 @@ CONTAINS
 
   !> @brief Determines if a line from the diag_table file is a file
   !! @return Logical is_a_file
-  !! @details <TT>is_a_file</TT> checks a diag_table line to determine if the line describes a file.  If the line describes a file, the
+  !! @details <TT>is_a_file</TT> checks a diag_table line to determine if the line describes
+  !! a file.  If the line describes a file, the
   !!     <TT>is_a_file</TT> will return <TT>.TRUE.</TT>.  Otherwise, it will return <TT>.FALSE.</TT>
   PURE LOGICAL FUNCTION is_a_file(line)
     CHARACTER(len=*), INTENT(in) :: line !< String containing the <TT>diag_table</TT> line.
@@ -730,14 +784,16 @@ CONTAINS
     INTEGER :: mystat !< IO status from read
 
 #if defined __PATHSCALE__ || defined _CRAYFTN
-    ! This portion is to 'fix' pathscale's and Cray's Fortran compilers inability to handle the FMT=* correctly in the read
+    ! This portion is to 'fix' pathscale's and Cray's Fortran compilers inability to handle
+    ! the FMT=* correctly in the read
     ! statement.
     CHARACTER(len=10) :: secondString
     INTEGER :: comma1, comma2, linelen
 
     linelen = LEN(line)
     comma1 = INDEX(line,',') + 1 ! +1 to go past the comma
-    comma2 = INDEX(line(comma1:linelen),',') + comma1 - 2 ! -2 to get rid of +1 in comma1 and to get 1 character before the comma
+    comma2 = INDEX(line(comma1:linelen),',') + comma1 - 2 ! -2 to get rid of +1 in comma1 and to get
+                                                          !! 1 character before the comma
 
     secondString = ADJUSTL(line(comma1:comma2))
     READ (UNIT=secondString, FMT='(I)', IOSTAT=mystat) second

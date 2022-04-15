@@ -44,7 +44,6 @@
       integer :: to_pe, from_pe, pos, msgsize
       integer :: n, l_size, l, m, i, j, k
       integer :: is, ie, js, je, tMe, dir
-      integer :: start, start1, start2, index, is1, ie1, js1, je1, ni, nj, total
       integer :: buffer_recv_size, nlist, outunit
       integer :: send_start_pos
       integer :: send_msgsize(MAXLIST)

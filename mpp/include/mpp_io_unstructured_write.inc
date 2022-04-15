@@ -35,12 +35,16 @@ subroutine mpp_io_unstructured_write_r8_1D(funit, &
                                            default_data)
 
    !Inputs/outputs
-    integer(i4_kind),intent(in)                   :: funit        !<A file unit for the to which the data will be written
+    integer(i4_kind),intent(in)                   :: funit        !<A file unit for the to which the
+                                                                  !! data will be written
     type(fieldtype),intent(inout)                 :: field        !<A field whose data will be written
-    type(domainUG),intent(inout)                  :: domain       !<An unstructured mpp domain associatd with the inputted file
+    type(domainUG),intent(inout)                  :: domain       !<An unstructured mpp domain associatd
+                                                                  !! with the inputted file
     real(KIND=r8_kind),dimension(:),intent(inout) :: fdata        !<The data that will be written to the file
-    integer,dimension(:),intent(in)               :: nelems_io    !<Number of grid points in the compressed dimension for each rank (correct
-                                                                  !!sizes only exist for the root rank of I/O domain pelist)
+    integer,dimension(:),intent(in)               :: nelems_io    !<Number of grid points in the compressed
+                                                                  !! dimension for each rank (correct
+                                                                  !!sizes only exist for the
+                                                                  !!root rank of I/O domain pelist)
     real(KIND=r8_kind),intent(in),optional        :: tstamp       !<A time value
     real(KIND=r8_kind),intent(in), optional       :: default_data !<Fill value for the inputted field
 
@@ -49,10 +53,13 @@ subroutine mpp_io_unstructured_write_r8_1D(funit, &
     type(domainUG),pointer                      :: io_domain      !<Pointer to the unstructured I/O domain
     integer(i4_kind)                            :: io_domain_npes !<The total number of ranks in an I/O domain pelist
     integer(i4_kind),dimension(:),allocatable   :: pelist         !<A pelist
-    integer(i4_kind)                            :: nelems         !<Total number of data points (sum(nelems_io)) to be written
+    integer(i4_kind)                            :: nelems         !<Total number of data points (sum(nelems_io))
+                                                                  !! to be written
                                                                   !!by the root rank of the pelist
-    real(KIND=r8_kind),dimension(:),allocatable :: rbuff          !<Buffer used to gather the data onto the root rank of the pelist
-    real(KIND=r8_kind),dimension(:),allocatable :: cdata          !<Array used to write the data to the file after the gather is performed
+    real(KIND=r8_kind),dimension(:),allocatable :: rbuff          !<Buffer used to gather the data onto
+                                                                  !! the root rank of the pelist
+    real(KIND=r8_kind),dimension(:),allocatable :: cdata          !<Array used to write the data to the
+                                                                  !! file after the gather is performed
     integer(i4_kind)                            :: i              !<Loop variable
 
    !Start the mpp timer.
@@ -163,12 +170,16 @@ subroutine mpp_io_unstructured_write_r8_2D(funit, &
                                            default_data)
 
    !Inputs/outputs
-    integer(i4_kind),intent(in)                     :: funit        !<A file unit for the to which the data will be written
+    integer(i4_kind),intent(in)                     :: funit        !<A file unit for the to which the
+                                                                    !! data will be written
     type(fieldtype),intent(inout)                   :: field        !<A field whose data will be written
-    type(domainUG),intent(inout)                    :: domain       !<An unstructured mpp domain associatd with the inputted file
+    type(domainUG),intent(inout)                    :: domain       !<An unstructured mpp domain associatd
+                                                                    !! with the inputted file
     real(KIND=r8_kind),dimension(:,:),intent(inout) :: fdata        !<The data that will be written to the file
-    integer,dimension(:),intent(in)                 :: nelems_io    !<Number of grid points in the compressed dimension for each rank
-                                                                    !!(correct sizes only exist for the root rank of I/O domain pelist)
+    integer,dimension(:),intent(in)                 :: nelems_io    !<Number of grid points in the compressed
+                                                                    !! dimension for each rank
+                                                                    !!(correct sizes only exist
+                                                                    !!for the root rank of I/O domain pelist)
     real(KIND=r8_kind),intent(in),optional          :: tstamp       !<A time value
     real(KIND=r8_kind),intent(in), optional         :: default_data !<Fill value for the inputted field
 
@@ -177,15 +188,23 @@ subroutine mpp_io_unstructured_write_r8_2D(funit, &
     type(domainUG),pointer                        :: io_domain      !<Pointer to the unstructured I/O domain
     integer(i4_kind)                              :: io_domain_npes !<The total number of ranks in an I/O domain pelist
     integer(i4_kind),dimension(:),allocatable     :: pelist         !<A pelist
-    integer(i4_kind)                              :: dim_size_1     !<Number of data points in the first dimension (size(fdata,1))
-    integer(i4_kind)                              :: dim_size_2     !<Number of data points in the second dimension (size(fdata,2))
-    real(KIND=r8_kind),dimension(:),allocatable   :: sbuff          !<Buffer used to gather the data onto the root rank of the pelist
-    integer(i4_kind)                              :: nelems         !<Total number of data points (sum(nelems_io)) to be written
+    integer(i4_kind)                              :: dim_size_1     !<Number of data points in the first
+                                                                    !! dimension (size(fdata,1))
+    integer(i4_kind)                              :: dim_size_2     !<Number of data points in the second
+                                                                    !! dimension (size(fdata,2))
+    real(KIND=r8_kind),dimension(:),allocatable   :: sbuff          !<Buffer used to gather the data
+                                                                    !! onto the root rank of the pelist
+    integer(i4_kind)                              :: nelems         !<Total number of data points (sum(nelems_io))
+                                                                    !! to be written
                                                                     !!by the root rank of the pelist
-    real(KIND=r8_kind),dimension(:),allocatable   :: rbuff          !<Buffer used to gather the data onto the root rank of the pelist
-    real(KIND=r8_kind),dimension(:,:),allocatable :: cdata          !<Array used to write the data to the file after the gather is performed
-    integer(i4_kind)                              :: offset_r       !<Offset for rbuff used to reorder data before netCDF write
-    integer(i4_kind)                              :: offset_c       !<Offset for cdata used to reorder data before netCDF write
+    real(KIND=r8_kind),dimension(:),allocatable   :: rbuff          !<Buffer used to gather the data
+                                                                    !! onto the root rank of the pelist
+    real(KIND=r8_kind),dimension(:,:),allocatable :: cdata          !<Array used to write the data to
+                                                                    !! the file after the gather is performed
+    integer(i4_kind)                              :: offset_r       !<Offset for rbuff used to reorder
+                                                                    !! data before netCDF write
+    integer(i4_kind)                              :: offset_c       !<Offset for cdata used to reorder
+                                                                    !! data before netCDF write
     integer(i4_kind)                              :: i              !<Loop variable
     integer(i4_kind)                              :: j              !<Loop variable
     integer(i4_kind)                              :: k              !<Loop variable
@@ -322,30 +341,45 @@ subroutine mpp_io_unstructured_write_r8_3D(funit, &
                                            default_data)
 
    !Inputs/outputs
-    integer(i4_kind),intent(in)                       :: funit        !<A file unit for the to which the data will be written
+    integer(i4_kind),intent(in)                       :: funit        !<A file unit for the to which
+                                                                      !! the data will be written
     type(fieldtype),intent(inout)                     :: field        !<A field whose data will be written
-    type(domainUG),intent(inout)                      :: domain       !<An unstructured mpp domain associatd with the inputted file
+    type(domainUG),intent(inout)                      :: domain       !<An unstructured mpp domain associatd
+                                                                      !! with the inputted file
     real(KIND=r8_kind),dimension(:,:,:),intent(inout) :: fdata        !<The data that will be written to the file
-    integer,dimension(:),intent(in)                   :: nelems_io    !<Number of grid points in the compressed dimension for each rank
-                                                                      !!(correct sizes only exist for the root rank of I/O domain pelist)
+    integer,dimension(:),intent(in)                   :: nelems_io    !<Number of grid points in the
+                                                                      !! compressed dimension for each rank
+                                                                      !!(correct sizes only
+                                                                      !!exist for the root rank of I/O domain pelist)
     real(KIND=r8_kind),intent(in),optional            :: tstamp       !<A time value
     real(KIND=r8_kind),intent(in), optional           :: default_data !<Fill value for the inputted field
 
    !Local variables
-    real(KIND=r8_kind)                              :: fill           !<Fill value for the inputted field (defaults: zero)
+    real(KIND=r8_kind)                              :: fill           !<Fill value for the inputted field
+                                                                      !! (defaults: zero)
     type(domainUG),pointer                          :: io_domain      !<Pointer to the unstructured I/O domain
-    integer(i4_kind)                                :: io_domain_npes !<The total number of ranks in an I/O domain pelist
+    integer(i4_kind)                                :: io_domain_npes !<The total number of ranks in
+                                                                      !! an I/O domain pelist
     integer(i4_kind),dimension(:),allocatable       :: pelist         !<A pelist
-    integer(i4_kind)                                :: dim_size_1     !<Number of data points in the first dimension (size(fdata,1))
-    integer(i4_kind)                                :: dim_size_2     !<Number of data points in the second dimension (size(fdata,2))
-    integer(i4_kind)                                :: dim_size_3     !<Number of data points in the second dimension (size(fdata,3))
-    real(KIND=r8_kind),dimension(:),allocatable     :: sbuff          !<Buffer used to gather the data onto the root rank of the pelist
-    integer(i4_kind)                                :: nelems         !<Total number of data points (sum(nelems_io)) to be written
+    integer(i4_kind)                                :: dim_size_1     !<Number of data points in the
+                                                                      !! first dimension (size(fdata,1))
+    integer(i4_kind)                                :: dim_size_2     !<Number of data points in the
+                                                                      !! second dimension (size(fdata,2))
+    integer(i4_kind)                                :: dim_size_3     !<Number of data points in the
+                                                                      !! second dimension (size(fdata,3))
+    real(KIND=r8_kind),dimension(:),allocatable     :: sbuff          !<Buffer used to gather the data
+                                                                      !! onto the root rank of the pelist
+    integer(i4_kind)                                :: nelems         !<Total number of data points (sum(nelems_io))
+                                                                      !! to be written
                                                                       !!by the root rank of the pelist
-    real(KIND=r8_kind),dimension(:),allocatable     :: rbuff          !<Buffer used to gather the data onto the root rank of the pelist
-    real(KIND=r8_kind),dimension(:,:,:),allocatable :: cdata          !<Array used to write the data to the file after the gather is performed
-    integer(i4_kind)                                :: offset_r       !<Offset for rbuff used to reorder data before netCDF write
-    integer(i4_kind)                                :: offset_c       !<Offset for cdata used to reorder data before netCDF write
+    real(KIND=r8_kind),dimension(:),allocatable     :: rbuff          !<Buffer used to gather the data
+                                                                      !! onto the root rank of the pelist
+    real(KIND=r8_kind),dimension(:,:,:),allocatable :: cdata          !<Array used to write the data
+                                                                      !! to the file after the gather is performed
+    integer(i4_kind)                                :: offset_r       !<Offset for rbuff used to reorder
+                                                                      !! data before netCDF write
+    integer(i4_kind)                                :: offset_c       !<Offset for cdata used to reorder
+                                                                      !! data before netCDF write
     integer(i4_kind)                                :: i              !<Loop variable
     integer(i4_kind)                                :: j              !<Loop variable
     integer(i4_kind)                                :: k              !<Loop variable
@@ -491,12 +525,17 @@ subroutine mpp_io_unstructured_write_r8_4D(funit, &
                                            default_data)
 
    !Inputs/outputs
-    integer(i4_kind),intent(in)                         :: funit        !<A file unit for the to which the data will be written
+    integer(i4_kind),intent(in)                         :: funit        !<A file unit for the to which
+                                                                        !! the data will be written
     type(fieldtype),intent(inout)                       :: field        !<A field whose data will be written
-    type(domainUG),intent(inout)                        :: domain       !<An unstructured mpp domain associatd with the inputted file
+    type(domainUG),intent(inout)                        :: domain       !<An unstructured mpp domain
+                                                                        !! associatd with the inputted file
     real(KIND=r8_kind),dimension(:,:,:,:),intent(inout) :: fdata        !<The data that will be written to the file
-    integer,dimension(:),intent(in),optional            :: nelems_io_in !<Number of grid points in the unstructured dimension for each rank
-                                                                        !!(correct sizes only exist for the root rank of I/O domain pelist)
+    integer,dimension(:),intent(in),optional            :: nelems_io_in !<Number of grid points in the
+                                                                        !! unstructured dimension for each rank
+                                                                        !!(correct sizes only
+                                                                        !!(cexist for the root
+                                                                        !!rank of I/O domain pelist
     real(KIND=r8_kind),intent(in),optional              :: tstamp       !<A time value
     real(KIND=r8_kind),intent(in), optional             :: default_data !<Fill value for the inputted field
 
@@ -505,17 +544,27 @@ subroutine mpp_io_unstructured_write_r8_4D(funit, &
     type(domainUG),pointer                      :: io_domain        !<Pointer to the unstructured I/O domain
     integer(i4_kind)                            :: io_domain_npes   !<The total number of ranks in an I/O domain pelist
     integer(i4_kind),dimension(:),allocatable   :: pelist           !<A pelist
-    integer(i4_kind),dimension(:),allocatable   :: nelems_io        !<Number of grid points in the unstructured dimension for each rank
-    integer(i4_kind)                            :: compute_size     !<Size of the unstructured compute domain for the current rank
-    integer(i4_kind)                            :: size_fdata_dim_2 !<Number of data points in a non-unstructured dimension (size(fdata,2))
-    integer(i4_kind)                            :: size_fdata_dim_3 !<Number of data points in a non-unstructured dimension (size(fdata,3))
-    integer(i4_kind)                            :: size_fdata_dim_4 !<Number of data points in a non-unstructured dimension (size(fdata,3))
-    integer(i4_kind)                            :: mynelems         !<Number of data points in the unstructured dimension (size(fdata,1))
-    real(KIND=r8_kind),dimension(:),allocatable :: sbuff            !<Buffer used to gather the data onto the root rank of the pelist
-    integer(i4_kind)                            :: nelems           !<Total number of data points (sum(nelems_io)) to be written
+    integer(i4_kind),dimension(:),allocatable   :: nelems_io        !<Number of grid points in the unstructured
+                                                                    !! dimension for each rank
+    integer(i4_kind)                            :: compute_size     !<Size of the unstructured compute
+                                                                    !! domain for the current rank
+    integer(i4_kind)                            :: size_fdata_dim_2 !<Number of data points in a non-unstructured
+                                                                    !! dimension (size(fdata,2))
+    integer(i4_kind)                            :: size_fdata_dim_3 !<Number of data points in a non-unstructured
+                                                                    !! dimension (size(fdata,3))
+    integer(i4_kind)                            :: size_fdata_dim_4 !<Number of data points in a non-unstructured
+                                                                    !! dimension (size(fdata,3))
+    integer(i4_kind)                            :: mynelems         !<Number of data points in the unstructured
+                                                                    !! dimension (size(fdata,1))
+    real(KIND=r8_kind),dimension(:),allocatable :: sbuff            !<Buffer used to gather the data
+                                                                    !! onto the root rank of the pelist
+    integer(i4_kind)                            :: nelems           !<Total number of data points (sum(nelems_io))
+                                                                    !! to be written
                                                                     !!by the root rank of the pelist
-    real(KIND=r8_kind),dimension(:),allocatable :: rbuff            !<Buffer to gather the data onto root rank of pelist
-    real(KIND=r8_kind),dimension(:,:,:,:),allocatable :: cdata      !<Array  to write the data to file after gather is performed
+    real(KIND=r8_kind),dimension(:),allocatable :: rbuff            !<Buffer to gather the data onto
+                                                                    !! root rank of pelist
+    real(KIND=r8_kind),dimension(:,:,:,:),allocatable :: cdata      !<Array  to write the data to file
+                                                                    !! after gather is performed
     integer(i4_kind)                            :: i                !<Loop variable
     integer(i4_kind)                            :: j                !<Loop variable
     integer(i4_kind)                            :: k                !<Loop variable
@@ -682,12 +731,16 @@ subroutine mpp_io_unstructured_write_r4_1D(funit, &
                                            default_data)
 
    !Inputs/outputs
-    integer(i4_kind),intent(in)                   :: funit        !<A file unit for the to which the data will be written
+    integer(i4_kind),intent(in)                   :: funit        !<A file unit for the to which the
+                                                                  !! data will be written
     type(fieldtype),intent(inout)                 :: field        !<A field whose data will be written
-    type(domainUG),intent(inout)                  :: domain       !<An unstructured mpp domain associatd with the inputted file
+    type(domainUG),intent(inout)                  :: domain       !<An unstructured mpp domain associatd
+                                                                  !! with the inputted file
     real(KIND=r4_kind),dimension(:),intent(inout) :: fdata        !<The data that will be written to the file
-    integer,dimension(:),intent(in)               :: nelems_io    !<Number of grid points in the compressed dimension for each rank (correct
-                                                                  !!sizes only exist for the root rank of I/O domain pelist)
+    integer,dimension(:),intent(in)               :: nelems_io    !<Number of grid points in the compressed
+                                                                  !! dimension for each rank (correct
+                                                                  !!sizes only exist for the
+                                                                  !!root rank of I/O domain pelist)
     real(KIND=r4_kind),intent(in),optional        :: tstamp       !<A time value
     real(KIND=r4_kind),intent(in), optional       :: default_data !<Fill value for the inputted field
 
@@ -696,10 +749,13 @@ subroutine mpp_io_unstructured_write_r4_1D(funit, &
     type(domainUG),pointer                      :: io_domain      !<Pointer to the unstructured I/O domain
     integer(i4_kind)                            :: io_domain_npes !<The total number of ranks in an I/O domain pelist
     integer(i4_kind),dimension(:),allocatable   :: pelist         !<A pelist
-    integer(i4_kind)                            :: nelems         !<Total number of data points (sum(nelems_io)) to be written
+    integer(i4_kind)                            :: nelems         !<Total number of data points (sum(nelems_io))
+                                                                  !! to be written
                                                                   !!by the root rank of the pelist
-    real(KIND=r4_kind),dimension(:),allocatable :: rbuff          !<Buffer used to gather the data onto the root rank of the pelist
-    real(KIND=r4_kind),dimension(:),allocatable :: cdata          !<Array used to write the data to the file after the gather is performed
+    real(KIND=r4_kind),dimension(:),allocatable :: rbuff          !<Buffer used to gather the data onto
+                                                                  !! the root rank of the pelist
+    real(KIND=r4_kind),dimension(:),allocatable :: cdata          !<Array used to write the data to the
+                                                                  !! file after the gather is performed
     integer(i4_kind)                            :: i              !<Loop variable
 
    !Start the mpp timer.
@@ -810,12 +866,16 @@ subroutine mpp_io_unstructured_write_r4_2D(funit, &
                                            default_data)
 
    !Inputs/outputs
-    integer(i4_kind),intent(in)                     :: funit        !<A file unit for the to which the data will be written
+    integer(i4_kind),intent(in)                     :: funit        !<A file unit for the to which the
+                                                                    !! data will be written
     type(fieldtype),intent(inout)                   :: field        !<A field whose data will be written
-    type(domainUG),intent(inout)                    :: domain       !<An unstructured mpp domain associatd with the inputted file
+    type(domainUG),intent(inout)                    :: domain       !<An unstructured mpp domain associatd
+                                                                    !! with the inputted file
     real(KIND=r4_kind),dimension(:,:),intent(inout) :: fdata        !<The data that will be written to the file
-    integer,dimension(:),intent(in)                 :: nelems_io    !<Number of grid points in the compressed dimension for each rank
-                                                                    !!(correct sizes only exist for the root rank of I/O domain pelist)
+    integer,dimension(:),intent(in)                 :: nelems_io    !<Number of grid points in the compressed
+                                                                    !! dimension for each rank
+                                                                    !!(correct sizes only exist
+                                                                    !!for the root rank of I/O domain pelist)
     real(KIND=r4_kind),intent(in),optional          :: tstamp       !<A time value
     real(KIND=r4_kind),intent(in), optional         :: default_data !<Fill value for the inputted field
 
@@ -824,15 +884,23 @@ subroutine mpp_io_unstructured_write_r4_2D(funit, &
     type(domainUG),pointer                        :: io_domain      !<Pointer to the unstructured I/O domain
     integer(i4_kind)                              :: io_domain_npes !<The total number of ranks in an I/O domain pelist
     integer(i4_kind),dimension(:),allocatable     :: pelist         !<A pelist
-    integer(i4_kind)                              :: dim_size_1     !<Number of data points in the first dimension (size(fdata,1))
-    integer(i4_kind)                              :: dim_size_2     !<Number of data points in the second dimension (size(fdata,2))
-    real(KIND=r4_kind),dimension(:),allocatable   :: sbuff          !<Buffer used to gather the data onto the root rank of the pelist
-    integer(i4_kind)                              :: nelems         !<Total number of data points (sum(nelems_io)) to be written
+    integer(i4_kind)                              :: dim_size_1     !<Number of data points in the first
+                                                                    !! dimension (size(fdata,1))
+    integer(i4_kind)                              :: dim_size_2     !<Number of data points in the second
+                                                                    !! dimension (size(fdata,2))
+    real(KIND=r4_kind),dimension(:),allocatable   :: sbuff          !<Buffer used to gather the data
+                                                                    !! onto the root rank of the pelist
+    integer(i4_kind)                              :: nelems         !<Total number of data points (sum(nelems_io))
+                                                                    !! to be written
                                                                     !!by the root rank of the pelist
-    real(KIND=r4_kind),dimension(:),allocatable   :: rbuff          !<Buffer used to gather the data onto the root rank of the pelist
-    real(KIND=r4_kind),dimension(:,:),allocatable :: cdata          !<Array used to write the data to the file after the gather is performed
-    integer(i4_kind)                              :: offset_r       !<Offset for rbuff used to reorder data before netCDF write
-    integer(i4_kind)                              :: offset_c       !<Offset for cdata used to reorder data before netCDF write
+    real(KIND=r4_kind),dimension(:),allocatable   :: rbuff          !<Buffer used to gather the data
+                                                                    !! onto the root rank of the pelist
+    real(KIND=r4_kind),dimension(:,:),allocatable :: cdata          !<Array used to write the data to
+                                                                    !! the file after the gather is performed
+    integer(i4_kind)                              :: offset_r       !<Offset for rbuff used to reorder
+                                                                    !! data before netCDF write
+    integer(i4_kind)                              :: offset_c       !<Offset for cdata used to reorder
+                                                                    !! data before netCDF write
     integer(i4_kind)                              :: i              !<Loop variable
     integer(i4_kind)                              :: j              !<Loop variable
     integer(i4_kind)                              :: k              !<Loop variable
@@ -969,30 +1037,45 @@ subroutine mpp_io_unstructured_write_r4_3D(funit, &
                                            default_data)
 
    !Inputs/outputs
-    integer(i4_kind),intent(in)                       :: funit        !<A file unit for the to which the data will be written
+    integer(i4_kind),intent(in)                       :: funit        !<A file unit for the to which
+                                                                      !! the data will be written
     type(fieldtype),intent(inout)                     :: field        !<A field whose data will be written
-    type(domainUG),intent(inout)                      :: domain       !<An unstructured mpp domain associatd with the inputted file
+    type(domainUG),intent(inout)                      :: domain       !<An unstructured mpp domain associatd
+                                                                      !! with the inputted file
     real(KIND=r4_kind),dimension(:,:,:),intent(inout) :: fdata        !<The data that will be written to the file
-    integer,dimension(:),intent(in)                   :: nelems_io    !<Number of grid points in the compressed dimension for each rank
-                                                                      !!(correct sizes only exist for the root rank of I/O domain pelist)
+    integer,dimension(:),intent(in)                   :: nelems_io    !<Number of grid points in the
+                                                                      !! compressed dimension for each rank
+                                                                      !!(correct sizes only
+                                                                      !!exist for the root rank of I/O domain pelist)
     real(KIND=r4_kind),intent(in),optional            :: tstamp       !<A time value
     real(KIND=r4_kind),intent(in), optional           :: default_data !<Fill value for the inputted field
 
    !Local variables
-    real(KIND=r4_kind)                              :: fill           !<Fill value for the inputted field (defaults: zero)
+    real(KIND=r4_kind)                              :: fill           !<Fill value for the inputted field
+                                                                      !! (defaults: zero)
     type(domainUG),pointer                          :: io_domain      !<Pointer to the unstructured I/O domain
-    integer(i4_kind)                                :: io_domain_npes !<The total number of ranks in an I/O domain pelist
+    integer(i4_kind)                                :: io_domain_npes !<The total number of ranks in
+                                                                      !! an I/O domain pelist
     integer(i4_kind),dimension(:),allocatable       :: pelist         !<A pelist
-    integer(i4_kind)                                :: dim_size_1     !<Number of data points in the first dimension (size(fdata,1))
-    integer(i4_kind)                                :: dim_size_2     !<Number of data points in the second dimension (size(fdata,2))
-    integer(i4_kind)                                :: dim_size_3     !<Number of data points in the second dimension (size(fdata,3))
-    real(KIND=r4_kind),dimension(:),allocatable     :: sbuff          !<Buffer used to gather the data onto the root rank of the pelist
-    integer(i4_kind)                                :: nelems         !<Total number of data points (sum(nelems_io)) to be written
+    integer(i4_kind)                                :: dim_size_1     !<Number of data points in the
+                                                                      !! first dimension (size(fdata,1))
+    integer(i4_kind)                                :: dim_size_2     !<Number of data points in the
+                                                                      !! second dimension (size(fdata,2))
+    integer(i4_kind)                                :: dim_size_3     !<Number of data points in the
+                                                                      !! second dimension (size(fdata,3))
+    real(KIND=r4_kind),dimension(:),allocatable     :: sbuff          !<Buffer used to gather the data
+                                                                      !! onto the root rank of the pelist
+    integer(i4_kind)                                :: nelems         !<Total number of data points (sum(nelems_io))
+                                                                      !! to be written
                                                                       !!by the root rank of the pelist
-    real(KIND=r4_kind),dimension(:),allocatable     :: rbuff          !<Buffer used to gather the data onto the root rank of the pelist
-    real(KIND=r4_kind),dimension(:,:,:),allocatable :: cdata          !<Array used to write the data to the file after the gather is performed
-    integer(i4_kind)                                :: offset_r       !<Offset for rbuff used to reorder data before netCDF write
-    integer(i4_kind)                                :: offset_c       !<Offset for cdata used to reorder data before netCDF write
+    real(KIND=r4_kind),dimension(:),allocatable     :: rbuff          !<Buffer used to gather the data
+                                                                      !! onto the root rank of the pelist
+    real(KIND=r4_kind),dimension(:,:,:),allocatable :: cdata          !<Array used to write the data
+                                                                      !! to the file after the gather is performed
+    integer(i4_kind)                                :: offset_r       !<Offset for rbuff used to reorder
+                                                                      !! data before netCDF write
+    integer(i4_kind)                                :: offset_c       !<Offset for cdata used to reorder
+                                                                      !! data before netCDF write
     integer(i4_kind)                                :: i              !<Loop variable
     integer(i4_kind)                                :: j              !<Loop variable
     integer(i4_kind)                                :: k              !<Loop variable
@@ -1138,12 +1221,17 @@ subroutine mpp_io_unstructured_write_r4_4D(funit, &
                                            default_data)
 
    !Inputs/outputs
-    integer(i4_kind),intent(in)                         :: funit        !<A file unit for the to which the data will be written
+    integer(i4_kind),intent(in)                         :: funit        !<A file unit for the to which
+                                                                        !! the data will be written
     type(fieldtype),intent(inout)                       :: field        !<A field whose data will be written
-    type(domainUG),intent(inout)                        :: domain       !<An unstructured mpp domain associatd with the inputted file
+    type(domainUG),intent(inout)                        :: domain       !<An unstructured mpp domain
+                                                                        !! associatd with the inputted file
     real(KIND=r4_kind),dimension(:,:,:,:),intent(inout) :: fdata        !<The data that will be written to the file
-    integer,dimension(:),intent(in),optional            :: nelems_io_in !<Number of grid points in the unstructured dimension for each rank
-                                                                        !!(correct sizes only exist for the root rank of I/O domain pelist)
+    integer,dimension(:),intent(in),optional            :: nelems_io_in !<Number of grid points in the
+                                                                        !! unstructured dimension for each rank
+                                                                        !!(correct sizes only
+                                                                        !!(cexist for the root
+                                                                        !!rank of I/O domain pelist
     real(KIND=r4_kind),intent(in),optional              :: tstamp       !<A time value
     real(KIND=r4_kind),intent(in), optional             :: default_data !<Fill value for the inputted field
 
@@ -1152,17 +1240,27 @@ subroutine mpp_io_unstructured_write_r4_4D(funit, &
     type(domainUG),pointer                      :: io_domain        !<Pointer to the unstructured I/O domain
     integer(i4_kind)                            :: io_domain_npes   !<The total number of ranks in an I/O domain pelist
     integer(i4_kind),dimension(:),allocatable   :: pelist           !<A pelist
-    integer(i4_kind),dimension(:),allocatable   :: nelems_io        !<Number of grid points in the unstructured dimension for each rank
-    integer(i4_kind)                            :: compute_size     !<Size of the unstructured compute domain for the current rank
-    integer(i4_kind)                            :: size_fdata_dim_2 !<Number of data points in a non-unstructured dimension (size(fdata,2))
-    integer(i4_kind)                            :: size_fdata_dim_3 !<Number of data points in a non-unstructured dimension (size(fdata,3))
-    integer(i4_kind)                            :: size_fdata_dim_4 !<Number of data points in a non-unstructured dimension (size(fdata,3))
-    integer(i4_kind)                            :: mynelems         !<Number of data points in the unstructured dimension (size(fdata,1))
-    real(KIND=r4_kind),dimension(:),allocatable :: sbuff            !<Buffer used to gather the data onto the root rank of the pelist
-    integer(i4_kind)                            :: nelems           !<Total number of data points (sum(nelems_io)) to be written
+    integer(i4_kind),dimension(:),allocatable   :: nelems_io        !<Number of grid points in the unstructured
+                                                                    !! dimension for each rank
+    integer(i4_kind)                            :: compute_size     !<Size of the unstructured compute
+                                                                    !! domain for the current rank
+    integer(i4_kind)                            :: size_fdata_dim_2 !<Number of data points in a non-unstructured
+                                                                    !! dimension (size(fdata,2))
+    integer(i4_kind)                            :: size_fdata_dim_3 !<Number of data points in a non-unstructured
+                                                                    !! dimension (size(fdata,3))
+    integer(i4_kind)                            :: size_fdata_dim_4 !<Number of data points in a non-unstructured
+                                                                    !! dimension (size(fdata,3))
+    integer(i4_kind)                            :: mynelems         !<Number of data points in the unstructured
+                                                                    !! dimension (size(fdata,1))
+    real(KIND=r4_kind),dimension(:),allocatable :: sbuff            !<Buffer used to gather the data
+                                                                    !! onto the root rank of the pelist
+    integer(i4_kind)                            :: nelems           !<Total number of data points (sum(nelems_io))
+                                                                    !! to be written
                                                                     !!by the root rank of the pelist
-    real(KIND=r4_kind),dimension(:),allocatable :: rbuff            !<Buffer to gather the data onto root rank of pelist
-    real(KIND=r4_kind),dimension(:,:,:,:),allocatable :: cdata      !<Array  to write the data to file after gather is performed
+    real(KIND=r4_kind),dimension(:),allocatable :: rbuff            !<Buffer to gather the data onto
+                                                                    !! root rank of pelist
+    real(KIND=r4_kind),dimension(:,:,:,:),allocatable :: cdata      !<Array  to write the data to file
+                                                                    !! after gather is performed
     integer(i4_kind)                            :: i                !<Loop variable
     integer(i4_kind)                            :: j                !<Loop variable
     integer(i4_kind)                            :: k                !<Loop variable

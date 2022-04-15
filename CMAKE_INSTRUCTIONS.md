@@ -22,6 +22,10 @@ export CC=mpiicc
 export NetCDF_ROOT=`nc-config --prefix`
 ```
 
+### If building with yaml parser (-DWITH_YAML)
+```
+export LIBYAML_ROOT=<your libyaml install directory>
+```
 
 ## 2. Build and install FMS with CMake
 `<prefix>` is the full install directory for FMS provided by user
@@ -39,14 +43,17 @@ By default, FMS is built without `OpenMP` and in `single precision (r4)`
 
 The following build options are available:
 ```
--DOPENMP   "Build FMS with OpenMP support" DEFAULT: OFF
--D32BIT    "Build 32-bit (r4) FMS library" DEFAULT: ON
--D64BIT    "Build 64-bit (r8) FMS library" DEFAULT: OFF
+-DOPENMP   "Build FMS with OpenMP support"        DEFAULT: OFF
+-D32BIT    "Build 32-bit (r4) FMS library"        DEFAULT: ON
+-D64BIT    "Build 64-bit (r8) FMS library"        DEFAULT: OFF
+-DFPIC     "Build with position independent code" DEFAULT: OFF
 
+-DCONSTANTS             "Build with <X> constants parameter definitions"     DEFAULT:GFDL  OPTIONS:GFS|GEOS|GFDL
 -DINTERNAL_FILE_NML     "Enable compiler definition -DINTERNAL_FILE_NML"     DEFAULT: ON
 -DENABLE_QUAD_PRECISION "Enable compiler definition -DENABLE_QUAD_PRECISION" DEFAULT: ON
 -DGFS_PHYS              "Enable compiler definition -DGFS_PHYS"              DEFAULT:OFF
 -DLARGEFILE             "Enable compiler definition -Duse_LARGEFILE"         DEFAULT:OFF
+-DWITH_YAML             "Enable compiler definition -Duse_yaml"              DEFAULT:OFF
 ```
 
 ## 3. Installation structure

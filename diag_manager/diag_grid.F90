@@ -77,9 +77,11 @@ use platform_mod
   type, private :: diag_global_grid_type
      REAL, allocatable, DIMENSION(:,:) :: glo_lat !< The latitude values on the global grid.
      REAL, allocatable, DIMENSION(:,:) :: glo_lon !< The longitude values on the global grid.
-     REAL, allocatable, DIMENSION(:,:) :: aglo_lat !< The latitude values on the global a-grid.  Here we expect isc-1:iec+1 and
+     REAL, allocatable, DIMENSION(:,:) :: aglo_lat !< The latitude values on the global a-grid.  Here
+                                                   !! we expect isc-1:iec+1 and
                                                    !! jsc=1:jec+1 to be passed in.
-     REAL, allocatable, DIMENSION(:,:) :: aglo_lon !< The longitude values on the global a-grid.  Here we expec isc-1:iec+j and
+     REAL, allocatable, DIMENSION(:,:) :: aglo_lon !< The longitude values on the global a-grid.  Here
+                                                   !! we expec isc-1:iec+j and
                                                    !! jsc-1:jec+1 to be passed in.
      INTEGER :: myXbegin !< The starting index of the compute domain on the current PE.
      INTEGER :: myYbegin !< The starting index of the compute domain on the current PE.

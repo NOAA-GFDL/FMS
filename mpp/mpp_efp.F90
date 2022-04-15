@@ -257,8 +257,8 @@ function mpp_reproducing_sum_r4_2d(array, isr, ier, jsr, jer, EFP_sum, reproduci
 
   array_r8 = array
 
-  sum = mpp_reproducing_sum_r8_2d(array_r8, isr, ier, jsr, jer, EFP_sum, reproducing, &
-                            overflow_check, err)
+  sum = real(mpp_reproducing_sum_r8_2d(array_r8, isr, ier, jsr, jer, EFP_sum, reproducing, &
+                            overflow_check, err), r4_kind)
 
   return
 
@@ -697,7 +697,7 @@ subroutine mpp_efp_list_sum_across_PEs(EFPs, nval, errors)
     do n=1,NUMINT ; EFPs(i)%v(n) = ints(n,i) ; enddo
     if (present(errors)) errors(i) = overflow_error
     if (overflow_error) then
-      write (mesg,'("mpp_efp_list_sum_across_PEs error at ",i6," val was ",ES12.6, ", prec_error = ",ES12.6)') &
+      write (mesg,'("mpp_efp_list_sum_across_PEs error at ",i6," val was ",ES13.6, ", prec_error = ",ES13.6)') &
              i, mpp_efp_to_real(EFPs(i)), real(prec_error)
       if(mpp_pe()==mpp_root_pe()) call mpp_error(WARNING, mesg)
     endif

@@ -19,16 +19,17 @@
 #* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 #***********************************************************************
 
-# This is part of the GFDL FMS package. This is a shell script to
-# execute tests in the test_fms/axis_utils directory.
-
-# Ed Hartnett 11/26/19
+# Copyright 2021 Seth Underwood
 
 # Set common test settings.
-. ../test_common.sh
+. ../test-lib.sh
 
-# Write the namelist file.
+# Prepare the directory to run the tests.
 touch input.nml
 
 # Run the test.
-run_test test_axis_utils 2
+test_expect_success "Test AXIS utils" '
+  mpirun -n 2 ./test_axis_utils
+'
+
+test_done

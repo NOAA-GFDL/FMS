@@ -42,15 +42,11 @@
       integer :: to_pe, from_pe, midpoint
       integer :: tMe, dir
 
-      integer :: send_start_pos, nsend
-      integer :: send_msgsize(2*MAXLIST)
-      integer :: send_pe(2*MAXLIST)
       integer,    allocatable :: msg1(:), msg2(:)
       logical :: send(8), recv(8), update_edge_only
       MPP_TYPE_ :: buffer(size(mpp_domains_stack(:)))
       pointer(ptr,buffer )
       integer :: buffer_pos
-      character(len=8) :: text
       integer :: buffer_recv_size, shift
       integer :: rank_x, rank_y, ind_x, ind_y, cur_rank
       integer :: nsend_x, nsend_y, nrecv_x, nrecv_y, outunit
@@ -502,7 +498,8 @@
                end select
             end if
          end if
-      else if( BTEST(domain%fold,SOUTH) .AND. (.NOT.BTEST(update_flags,SCALAR_BIT)) )then      ! ---southern boundary fold
+      else if( BTEST(domain%fold,SOUTH) .AND. (.NOT.BTEST(update_flags,SCALAR_BIT)) )then      ! ---southern
+                                                                                               !! boundary fold
          ! NOTE: symmetry is assumed for fold-south boundary
          j = domain%y(1)%global%begin
          if( domain%y(1)%data%begin.LE.j .AND. j.LE.domain%y(1)%data%end+shift )then !fold is within domain
@@ -596,7 +593,8 @@
                end select
             end if
          end if
-      else if( BTEST(domain%fold,WEST) .AND. (.NOT.BTEST(update_flags,SCALAR_BIT)) )then      ! ---eastern boundary fold
+      else if( BTEST(domain%fold,WEST) .AND. (.NOT.BTEST(update_flags,SCALAR_BIT)) )then      ! ---eastern
+                                                                                              !! boundary fold
          ! NOTE: symmetry is assumed for fold-west boundary
          i = domain%x(1)%global%begin
          if( domain%x(1)%data%begin.LE.i .AND. i.LE.domain%x(1)%data%end+shift )then !fold is within domain
@@ -690,7 +688,8 @@
                end select
             end if
          end if
-      else if( BTEST(domain%fold,EAST) .AND. (.NOT.BTEST(update_flags,SCALAR_BIT)) )then      ! ---eastern boundary fold
+      else if( BTEST(domain%fold,EAST) .AND. (.NOT.BTEST(update_flags,SCALAR_BIT)) )then      ! ---eastern
+                                                                                              !! boundary fold
          ! NOTE: symmetry is assumed for fold-west boundary
          i = domain%x(1)%global%end+shift
          if( domain%x(1)%data%begin.LE.i .AND. i.LE.domain%x(1)%data%end+shift )then !fold is within domain

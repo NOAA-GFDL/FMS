@@ -206,7 +206,8 @@ contains
     call mpp_global_field( domain, x, gcheck, flags=XUPDATE, position=position )
     !call mpp_clock_end(id)
     !> compare checksums between global and x arrays
-    call compare_checksums( global1(1:ni,js:je), gcheck(1:ni,js:je), type//' mpp_global_field xupdate only on r4 data domain' )
+    call compare_checksums( global1(1:ni,js:je), gcheck(1:ni,js:je), type// &
+                         & ' mpp_global_field xupdate only on r4 data domain' )
 
     !> yupdate
     gcheck = zero
@@ -214,7 +215,8 @@ contains
     call mpp_global_field( domain, x, gcheck, flags=YUPDATE, position=position )
     !call mpp_clock_end(id)
     !> compare checksums between global and x arrays
-    call compare_checksums( global1(is:ie,1:nj), gcheck(is:ie,1:nj), type//' mpp_global_field yupdate only on r4 data domain' )
+    call compare_checksums( global1(is:ie,1:nj), gcheck(is:ie,1:nj), type// &
+                         & ' mpp_global_field yupdate only on r4 data domain' )
     !call mpp_clock_begin(id)
     call mpp_global_field( domain, x, gcheck, position=position )
     !call mpp_clock_end(id)
@@ -241,7 +243,8 @@ contains
     call mpp_global_field( domain, x(is:ie,js:je), gcheck, flags=XUPDATE, position=position )
     !call mpp_clock_end(id)
     !> compare checksums between global and x arrays
-    call compare_checksums( global1(1:ni,js:je), gcheck(1:ni,js:je), type//' mpp_global_field xupdate only on r4 compute domain' )
+    call compare_checksums( global1(1:ni,js:je), gcheck(1:ni,js:je), type// &
+                         & ' mpp_global_field xupdate only on r4 compute domain' )
 
     !> yupdate
     gcheck = zero
@@ -249,7 +252,8 @@ contains
     call mpp_global_field( domain, x(is:ie,js:je), gcheck, flags=YUPDATE, position=position )
     !call mpp_clock_end(id)
     !> compare checksums between global and x arrays
-    call compare_checksums( global1(is:ie,1:nj), gcheck(is:ie,1:nj), type//' mpp_global_field yupdate only on r4 compute domain' )
+    call compare_checksums( global1(is:ie,1:nj), gcheck(is:ie,1:nj), type// &
+                         & ' mpp_global_field yupdate only on r4 compute domain' )
 
     deallocate(global1, gcheck, x)
 
@@ -354,7 +358,8 @@ contains
     call mpp_global_field( domain, x, gcheck, flags=XUPDATE, position=position )
     !call mpp_clock_end(id)
     !> compare checksums between global and x arrays
-    call compare_checksums( global1(1:ni,js:je), gcheck(1:ni,js:je), type//' mpp_global_field xupdate only on r8 data domain' )
+    call compare_checksums( global1(1:ni,js:je), gcheck(1:ni,js:je), type// &
+                         & ' mpp_global_field xupdate only on r8 data domain' )
 
     !> yupdate
     gcheck = zero
@@ -362,7 +367,8 @@ contains
     call mpp_global_field( domain, x, gcheck, flags=YUPDATE, position=position )
     !call mpp_clock_end(id)
     !> compare checksums between global and x arrays
-    call compare_checksums( global1(is:ie,1:nj), gcheck(is:ie,1:nj), type//' mpp_global_field yupdate only on r8 data domain' )
+    call compare_checksums( global1(is:ie,1:nj), gcheck(is:ie,1:nj), type// &
+                         & ' mpp_global_field yupdate only on r8 data domain' )
     !call mpp_clock_begin(id)
     call mpp_global_field( domain, x, gcheck, position=position )
     !call mpp_clock_end(id)
@@ -389,7 +395,8 @@ contains
     call mpp_global_field( domain, x(is:ie,js:je), gcheck, flags=XUPDATE, position=position )
     !call mpp_clock_end(id)
     !> compare checksums between global and x arrays
-    call compare_checksums( global1(1:ni,js:je), gcheck(1:ni,js:je), type//' mpp_global_field xupdate only on r8 compute domain' )
+    call compare_checksums( global1(1:ni,js:je), gcheck(1:ni,js:je), type// &
+                         & ' mpp_global_field xupdate only on r8 compute domain' )
 
     !> yupdate
     gcheck = zero
@@ -397,7 +404,8 @@ contains
     call mpp_global_field( domain, x(is:ie,js:je), gcheck, flags=YUPDATE, position=position )
     !call mpp_clock_end(id)
     !> compare checksums between global and x arrays
-    call compare_checksums( global1(is:ie,1:nj), gcheck(is:ie,1:nj), type//' mpp_global_field yupdate only on r8 compute domain' )
+    call compare_checksums( global1(is:ie,1:nj), gcheck(is:ie,1:nj), type// &
+                         & ' mpp_global_field yupdate only on r8 compute domain' )
 
     deallocate(global1, gcheck, x)
 
@@ -502,7 +510,8 @@ contains
     call mpp_global_field( domain, x, gcheck, flags=XUPDATE, position=position )
     !call mpp_clock_end(id)
     !> compare checksums between global and x arrays
-    call compare_checksums_int( global1(1:ni,js:je), gcheck(1:ni,js:je), type//' mpp_global_field xupdate only on i4 data domain' )
+    call compare_checksums_int( global1(1:ni,js:je), gcheck(1:ni,js:je), type// &
+                             & ' mpp_global_field xupdate only on i4 data domain' )
 
     !> yupdate
     gcheck = zero
@@ -510,7 +519,8 @@ contains
     call mpp_global_field( domain, x, gcheck, flags=YUPDATE, position=position )
     !call mpp_clock_end(id)
     !> compare checksums between global and x arrays
-    call compare_checksums_int( global1(is:ie,1:nj), gcheck(is:ie,1:nj), type//' mpp_global_field yupdate only on i4 data domain' )
+    call compare_checksums_int( global1(is:ie,1:nj), gcheck(is:ie,1:nj), type// &
+                             & ' mpp_global_field yupdate only on i4 data domain' )
     !call mpp_clock_begin(id)
     call mpp_global_field( domain, x, gcheck, position=position )
     !call mpp_clock_end(id)
@@ -537,7 +547,8 @@ contains
     call mpp_global_field( domain, x(is:ie,js:je), gcheck, flags=XUPDATE, position=position )
     !call mpp_clock_end(id)
     !> compare checksums between global and x arrays
-    call compare_checksums_int( global1(1:ni,js:je), gcheck(1:ni,js:je), type//' mpp_global_field xupdate only on i4 compute domain' )
+    call compare_checksums_int( global1(1:ni,js:je), gcheck(1:ni,js:je), type// &
+                             & ' mpp_global_field xupdate only on i4 compute domain' )
 
     !> yupdate
     gcheck = zero
@@ -545,7 +556,8 @@ contains
     call mpp_global_field( domain, x(is:ie,js:je), gcheck, flags=YUPDATE, position=position )
     !call mpp_clock_end(id)
     !> compare checksums between global and x arrays
-    call compare_checksums_int( global1(is:ie,1:nj), gcheck(is:ie,1:nj), type//' mpp_global_field yupdate only on i4 compute domain' )
+    call compare_checksums_int( global1(is:ie,1:nj), gcheck(is:ie,1:nj), type// &
+                             & ' mpp_global_field yupdate only on i4 compute domain' )
 
     deallocate(global1, gcheck, x)
 
@@ -650,7 +662,8 @@ contains
     call mpp_global_field( domain, x, gcheck, flags=XUPDATE, position=position )
     !call mpp_clock_end(id)
     !> compare checksums between global and x arrays
-    call compare_checksums_int( global1(1:ni,js:je), gcheck(1:ni,js:je), type//' mpp_global_field xupdate only on i8 data domain' )
+    call compare_checksums_int( global1(1:ni,js:je), gcheck(1:ni,js:je), type// &
+                             & ' mpp_global_field xupdate only on i8 data domain' )
 
     !> yupdate
     gcheck = zero
@@ -658,7 +671,8 @@ contains
     call mpp_global_field( domain, x, gcheck, flags=YUPDATE, position=position )
     !call mpp_clock_end(id)
     !> compare checksums between global and x arrays
-    call compare_checksums_int( global1(is:ie,1:nj), gcheck(is:ie,1:nj), type//' mpp_global_field yupdate only on i8 data domain' )
+    call compare_checksums_int( global1(is:ie,1:nj), gcheck(is:ie,1:nj), type// &
+                             & ' mpp_global_field yupdate only on i8 data domain' )
     !call mpp_clock_begin(id)
     call mpp_global_field( domain, x, gcheck, position=position )
     !call mpp_clock_end(id)
@@ -685,7 +699,8 @@ contains
     call mpp_global_field( domain, x(is:ie,js:je), gcheck, flags=XUPDATE, position=position )
     !call mpp_clock_end(id)
     !> compare checksums between global and x arrays
-    call compare_checksums_int( global1(1:ni,js:je), gcheck(1:ni,js:je), type//' mpp_global_field xupdate only on i8 compute domain' )
+    call compare_checksums_int( global1(1:ni,js:je), gcheck(1:ni,js:je), type// &
+                             & ' mpp_global_field xupdate only on i8 compute domain' )
 
     !> yupdate
     gcheck = zero
@@ -693,7 +708,8 @@ contains
     call mpp_global_field( domain, x(is:ie,js:je), gcheck, flags=YUPDATE, position=position )
     !call mpp_clock_end(id)
     !> compare checksums between global and x arrays
-    call compare_checksums_int( global1(is:ie,1:nj), gcheck(is:ie,1:nj), type//' mpp_global_field yupdate only on i8 compute domain' )
+    call compare_checksums_int( global1(is:ie,1:nj), gcheck(is:ie,1:nj), type// &
+                             & ' mpp_global_field yupdate only on i8 compute domain' )
 
     deallocate(global1, gcheck, x)
 
@@ -799,7 +815,8 @@ contains
     call mpp_global_field( domain, x, gcheck, flags=XUPDATE, position=position )
     !call mpp_clock_end(id)
     !> compare checksums between global and x arrays
-    call compare_checksums( global1(1:ni,js:je,:), gcheck(1:ni,js:je,:),type//' mpp_global_field xupdate only on r4 data domain' )
+    call compare_checksums( global1(1:ni,js:je,:), gcheck(1:ni,js:je,:),type// &
+                         & ' mpp_global_field xupdate only on r4 data domain' )
 
     !> yupdate
     gcheck = zero
@@ -807,7 +824,8 @@ contains
     call mpp_global_field( domain, x, gcheck, flags=YUPDATE, position=position )
     !call mpp_clock_end(id)
     !> compare checksums between global and x arrays
-    call compare_checksums( global1(is:ie,1:nj,:), gcheck(is:ie,1:nj,:),type//' mpp_global_field yupdate only on r4 data domain' )
+    call compare_checksums( global1(is:ie,1:nj,:), gcheck(is:ie,1:nj,:),type// &
+                         & ' mpp_global_field yupdate only on r4 data domain' )
 
     !call mpp_clock_begin(id)
     call mpp_global_field( domain, x, gcheck, position=position )
@@ -946,7 +964,8 @@ contains
     call mpp_global_field( domain, x, gcheck, flags=XUPDATE, position=position )
     !call mpp_clock_end(id)
     !> compare checksums between global and x arrays
-    call compare_checksums( global1(1:ni,js:je,:), gcheck(1:ni,js:je,:),type//' mpp_global_field xupdate only on r8 data domain' )
+    call compare_checksums( global1(1:ni,js:je,:), gcheck(1:ni,js:je,:),type// &
+                         & ' mpp_global_field xupdate only on r8 data domain' )
 
     !> yupdate
     gcheck = zero
@@ -954,7 +973,8 @@ contains
     call mpp_global_field( domain, x, gcheck, flags=YUPDATE, position=position )
     !call mpp_clock_end(id)
     !> compare checksums between global and x arrays
-    call compare_checksums( global1(is:ie,1:nj,:), gcheck(is:ie,1:nj,:),type//' mpp_global_field yupdate only on r8 data domain' )
+    call compare_checksums( global1(is:ie,1:nj,:), gcheck(is:ie,1:nj,:),type// &
+                         & ' mpp_global_field yupdate only on r8 data domain' )
 
     !call mpp_clock_begin(id)
     call mpp_global_field( domain, x, gcheck, position=position )
@@ -1093,7 +1113,8 @@ contains
     call mpp_global_field( domain, x, gcheck, flags=XUPDATE, position=position )
     !call mpp_clock_end(id)
     !> compare checksums between global and x arrays
-    call compare_checksums_int( global1(1:ni,js:je,:), gcheck(1:ni,js:je,:),type//' mpp_global_field xupdate only on i4 data domain' )
+    call compare_checksums_int( global1(1:ni,js:je,:), gcheck(1:ni,js:je,:),type// &
+                             & ' mpp_global_field xupdate only on i4 data domain' )
 
     !> yupdate
     gcheck = zero
@@ -1101,7 +1122,8 @@ contains
     call mpp_global_field( domain, x, gcheck, flags=YUPDATE, position=position )
     !call mpp_clock_end(id)
     !> compare checksums between global and x arrays
-    call compare_checksums_int( global1(is:ie,1:nj,:), gcheck(is:ie,1:nj,:),type//' mpp_global_field yupdate only on i4 data domain' )
+    call compare_checksums_int( global1(is:ie,1:nj,:), gcheck(is:ie,1:nj,:),type// &
+                             & ' mpp_global_field yupdate only on i4 data domain' )
 
     !call mpp_clock_begin(id)
     call mpp_global_field( domain, x, gcheck, position=position )
@@ -1240,7 +1262,8 @@ contains
     call mpp_global_field( domain, x, gcheck, flags=XUPDATE, position=position )
     !call mpp_clock_end(id)
     !> compare checksums between global and x arrays
-    call compare_checksums_int( global1(1:ni,js:je,:), gcheck(1:ni,js:je,:),type//' mpp_global_field xupdate only on i8 data domain' )
+    call compare_checksums_int( global1(1:ni,js:je,:), gcheck(1:ni,js:je,:),type// &
+                             & ' mpp_global_field xupdate only on i8 data domain' )
 
     !> yupdate
     gcheck = zero
@@ -1248,7 +1271,8 @@ contains
     call mpp_global_field( domain, x, gcheck, flags=YUPDATE, position=position )
     !call mpp_clock_end(id)
     !> compare checksums between global and x arrays
-    call compare_checksums_int( global1(is:ie,1:nj,:), gcheck(is:ie,1:nj,:),type//' mpp_global_field yupdate only on i8 data domain' )
+    call compare_checksums_int( global1(is:ie,1:nj,:), gcheck(is:ie,1:nj,:),type// &
+                             & ' mpp_global_field yupdate only on i8 data domain' )
 
     !call mpp_clock_begin(id)
     call mpp_global_field( domain, x, gcheck, position=position )

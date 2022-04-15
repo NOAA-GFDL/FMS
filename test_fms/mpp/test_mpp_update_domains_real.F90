@@ -212,7 +212,8 @@ module test_mpp_update_domains_real
     call compare_checksums( x4r8(is:ied,js:jed,:), globalr8(is:ied,js:jed,:), domain_type//' partial x4r8' )
 
     !--- test vector update for FOLDED and MASKED case.
-    if(domain_type == 'Simple' .or. domain_type == 'Simple symmetry' .or. domain_type == 'Cyclic' .or. domain_type == 'Cyclic symmetry') then
+    if(domain_type == 'Simple' .or. domain_type == 'Simple symmetry' .or. domain_type == 'Cyclic' .or. &
+     & domain_type == 'Cyclic symmetry') then
       deallocate(xr8,x1r8,x2r8,x3r8,x4r8)
       return
     end if
@@ -605,7 +606,8 @@ module test_mpp_update_domains_real
    call compare_checksums( x4r4(is:ied,js:jed,:), globalr4(is:ied,js:jed,:), domain_type//' partial x4r4' )
 
    !--- test vector update for FOLDED and MASKED case.
-   if(domain_type == 'Simple' .or. domain_type == 'Simple symmetry' .or. domain_type == 'Cyclic' .or. domain_type == 'Cyclic symmetry') then
+   if(domain_type == 'Simple' .or. domain_type == 'Simple symmetry' .or. domain_type == 'Cyclic' .or. &
+    & domain_type == 'Cyclic symmetry') then
       deallocate(xr4,x1r4,x2r4,x3r4,x4r4)
       return
    end if

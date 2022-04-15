@@ -46,6 +46,7 @@ integer               :: nkeys           !< number of keys
 integer, allocatable  :: key_ids(:)      !< array of key ids
 character(len=20)     :: key_name        !< the name of the key
 character(len=20)     :: key_value       !< the value of a key
+logical               :: logical_buffer  !< logical buffer
 
 call fms_init
 
@@ -72,7 +73,8 @@ zero = get_num_blocks(yaml_file_id2, "diag_files")
 if (zero .ne. 0) call mpp_error(FATAL, "'diag_files' should not exist in this file")
 
 !< Try the parent block_id optional argument
-nvariables = get_num_blocks(yaml_file_id1, "varlist", parent_block_id=3) !< Number of variables that belong to the atmos_daily file in the diag_table.yaml
+nvariables = get_num_blocks(yaml_file_id1, "varlist", parent_block_id=3) !< Number of variables that belong to the
+                                                                         !! atmos_daily file in the diag_table.yaml
 if (nvariables .ne. 2) call mpp_error(FATAL, "There should only be 2 variables in the atmos_daily file")
 
 !< -----------------------------------
@@ -115,7 +117,18 @@ if (r4_buffer .ne. real(-999.9, kind=r4_kind)) call mpp_error(FATAL, "fill_value
 
 !! Try get_value_from_key using a r8 buffer
 call get_value_from_key(yaml_file_id1, variable_ids(1), "fill_value", r8_buffer)
-if (r8_buffer .ne. real(-999.9, kind=r8_kind)) call mpp_error(FATAL, "fill_value was not read correctly as an r8!")
+if (abs(r8_buffer - real(-999.9, kind=r8_kind)) .gt. 5d-5) then
+  call mpp_error(FATAL, "fill_value was not read correctly as an r8!")
+endif
+
+!! Try get_value_from_key using a logical buffer
+logical_buffer = .true.
+call get_value_from_key(yaml_file_id2, entries_ids(2), "do_data_bug", logical_buffer)
+if (logical_buffer) call mpp_error(FATAL, "do_data_bug was not read correctly as a logical")
+
+logical_buffer = .false.
+call get_value_from_key(yaml_file_id2, entries_ids(2), "use_data_bug", logical_buffer)
+if (.not. logical_buffer) call mpp_error(FATAL, "use_data_bug was not read correctly as a logical")
 
 !! Try the is_optional argument on an key that does not exist
 string_buffer = ""
@@ -133,7 +146,8 @@ if (nkeys .ne. 5) call mpp_error(FATAL, "The number of keys was not read correct
 !< Test get_key_ids
 allocate(key_ids(nkeys))
 call get_key_ids(yaml_file_id1, variable_ids(1), key_ids)
-if (key_ids(1) .ne. 10 .or. key_ids(2) .ne. 11 .or. key_ids(3) .ne. 12 .or. key_ids(4) .ne. 13 .or. key_ids(5) .ne. 14) call mpp_error(FATAL, "The key ids obtained are wrong")
+if (key_ids(1) .ne. 10 .or. key_ids(2) .ne. 11 .or. key_ids(3) .ne. 12 .or. key_ids(4) .ne. 13 .or. key_ids(5) .ne.14)&
+  & call mpp_error(FATAL, "The key ids obtained are wrong")
 
 !< -----------------------------------
 

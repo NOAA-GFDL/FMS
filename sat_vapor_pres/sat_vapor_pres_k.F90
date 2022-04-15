@@ -488,8 +488,10 @@
  logical,intent(in),                      optional :: es_over_liq
  logical,intent(in),                      optional :: es_over_liq_and_ice
 
- real(kind=r4_kind), allocatable, dimension(:,:,:) :: esloc_r4, desat_r4, denom_r4 !< Local variables to use when called with r4 arguments
- real(kind=r8_kind), allocatable, dimension(:,:,:) :: esloc_r8, desat_r8, denom_r8 !< Local variables to use when called with r8 arguments
+ real(kind=r4_kind), allocatable, dimension(:,:,:) :: esloc_r4, desat_r4, denom_r4 !< Local variables to use
+                                                                                   !! when called with r4 arguments
+ real(kind=r8_kind), allocatable, dimension(:,:,:) :: esloc_r8, desat_r8, denom_r8 !< Local variables to use
+                                                                                   !! when called with r8 arguments
  integer :: i, j, k
  real    :: hc_loc
  logical :: valid_types = .false. !< For checking if variable types match
@@ -514,7 +516,8 @@
    end select
    if ( .not. valid_types ) then
      call error_mesg ('sat_vapor_pres_k_mod::compute_qs_k_0d',&
-          & 'temp is not one of the supported types of real(kind=4) or real(kind=8) OR temp, press and qs types do not match', FATAL)
+          & 'temp is not one of the supported types of real(kind=4) or real(kind=8) OR' &
+            //' temp, press and qs types do not match', FATAL)
    end if
 
    if (present(q)) then
@@ -534,7 +537,8 @@
    end if
    if ( .not. valid_types ) then
      call error_mesg ('sat_vapor_pres_k_mod::compute_qs_k_0d',&
-          & 'temp is not one of the supported types of real(kind=4) or real(kind=8) OR temp and q types do not match', FATAL)
+          & 'temp is not one of the supported types of real(kind=4) or real(kind=8) OR' &
+            //' temp and q types do not match', FATAL)
    end if
 
    if (present(hc)) then
@@ -554,7 +558,8 @@
    end if
    if ( .not. valid_types ) then
      call error_mesg ('sat_vapor_pres_k_mod::compute_qs_k_0d',&
-          & 'temp is not one of the supported types of real(kind=4) or real(kind=8) OR temp and hc types do not match', FATAL)
+          & 'temp is not one of the supported types of real(kind=4) or real(kind=8) OR' &
+            //' temp and hc types do not match', FATAL)
    end if
 
    if (present(dqsdT)) then
@@ -574,7 +579,8 @@
    end if
    if ( .not. valid_types ) then
      call error_mesg ('sat_vapor_pres_k_mod::compute_qs_k_0d',&
-          & 'temp is not one of the supported types of real(kind=4) or real(kind=8) OR temp and dqsdT types do not match', FATAL)
+          & 'temp is not one of the supported types of real(kind=4) or real(kind=8) OR' &
+            //' temp and dqsdT types do not match', FATAL)
    end if
 
    if (present(esat)) then
@@ -594,7 +600,8 @@
    end if
    if ( .not. valid_types ) then
      call error_mesg ('sat_vapor_pres_k_mod::compute_qs_k_0d',&
-          & 'temp is not one of the supported types of real(kind=4) or real(kind=8) OR temp and esat types do not match', FATAL)
+          & 'temp is not one of the supported types of real(kind=4) or real(kind=8) OR' &
+            //' temp and esat types do not match', FATAL)
    end if
 
    select type (temp)
@@ -813,8 +820,10 @@
  logical,intent(in),                    optional :: es_over_liq
  logical,intent(in),                    optional :: es_over_liq_and_ice
 
- real(kind=r4_kind), allocatable, dimension(:,:) :: esloc_r4, desat_r4, denom_r4 !< Local variables to use when called with r4 arguments
- real(kind=r8_kind), allocatable, dimension(:,:) :: esloc_r8, desat_r8, denom_r8 !< Local variables to use when called with r8 arguments
+ real(kind=r4_kind), allocatable, dimension(:,:) :: esloc_r4, desat_r4, denom_r4 !< Local variables to use
+                                                                                 !! when called with r4 arguments
+ real(kind=r8_kind), allocatable, dimension(:,:) :: esloc_r8, desat_r8, denom_r8 !< Local variables to use
+                                                                                 !! when called with r8 arguments
  integer :: i, j
  real    :: hc_loc
  logical :: valid_types = .false. !< For checking if variable types match
@@ -839,7 +848,8 @@
    end select
    if ( .not. valid_types ) then
      call error_mesg ('sat_vapor_pres_k_mod::compute_qs_k_0d',&
-          & 'temp is not one of the supported types of real(kind=4) or real(kind=8) OR temp, press and qs types do not match', FATAL)
+          & 'temp is not one of the supported types of real(kind=4) or real(kind=8) OR' &
+            //' temp, press and qs types do not match', FATAL)
    end if
 
    if (present(q)) then
@@ -859,7 +869,8 @@
    end if
    if ( .not. valid_types ) then
      call error_mesg ('sat_vapor_pres_k_mod::compute_qs_k_0d',&
-          & 'temp is not one of the supported types of real(kind=4) or real(kind=8) OR temp and q types do not match', FATAL)
+          & 'temp is not one of the supported types of real(kind=4) or real(kind=8) OR' &
+            //' temp and q types do not match', FATAL)
    end if
 
    if (present(hc)) then
@@ -879,7 +890,8 @@
    end if
    if ( .not. valid_types ) then
      call error_mesg ('sat_vapor_pres_k_mod::compute_qs_k_0d',&
-          & 'temp is not one of the supported types of real(kind=4) or real(kind=8) OR temp and hc types do not match', FATAL)
+          & 'temp is not one of the supported types of real(kind=4) or real(kind=8) OR' &
+            //' temp and hc types do not match', FATAL)
    end if
 
    if (present(dqsdT)) then
@@ -899,7 +911,8 @@
    end if
    if ( .not. valid_types ) then
      call error_mesg ('sat_vapor_pres_k_mod::compute_qs_k_0d',&
-          & 'temp is not one of the supported types of real(kind=4) or real(kind=8) OR temp and dqsdT types do not match', FATAL)
+          & 'temp is not one of the supported types of real(kind=4) or real(kind=8) OR' &
+            //' temp and dqsdT types do not match', FATAL)
    end if
 
    if (present(esat)) then
@@ -919,7 +932,8 @@
    end if
    if ( .not. valid_types ) then
      call error_mesg ('sat_vapor_pres_k_mod::compute_qs_k_0d',&
-          & 'temp is not one of the supported types of real(kind=4) or real(kind=8) OR temp and esat types do not match', FATAL)
+          & 'temp is not one of the supported types of real(kind=4) or real(kind=8) OR' &
+            //' temp and esat types do not match', FATAL)
    end if
 
    select type (temp)
@@ -1134,8 +1148,10 @@
  logical,intent(in),                 optional :: es_over_liq
  logical,intent(in),                 optional :: es_over_liq_and_ice
 
- real(kind=r4_kind), allocatable, dimension(:) :: esloc_r4, desat_r4, denom_r4 !< Local variables to use when called with r4 arguments
- real(kind=r8_kind), allocatable, dimension(:) :: esloc_r8, desat_r8, denom_r8 !< Local variables to use when called with r8 arguments
+ real(kind=r4_kind), allocatable, dimension(:) :: esloc_r4, desat_r4, denom_r4 !< Local variables to use
+                                                                               !! when called with r4 arguments
+ real(kind=r8_kind), allocatable, dimension(:) :: esloc_r8, desat_r8, denom_r8 !< Local variables to use
+                                                                               !! when called with r8 arguments
  integer :: i
  real    :: hc_loc
  logical :: valid_types = .false. !< For checking if variable types match
@@ -1160,7 +1176,8 @@
    end select
    if ( .not. valid_types ) then
      call error_mesg ('sat_vapor_pres_k_mod::compute_qs_k_0d',&
-          & 'temp is not one of the supported types of real(kind=4) or real(kind=8) OR temp, press and qs types do not match', FATAL)
+          & 'temp is not one of the supported types of real(kind=4) or real(kind=8) OR' &
+            //' temp, press and qs types do not match', FATAL)
    end if
 
    if (present(q)) then
@@ -1180,7 +1197,8 @@
    end if
    if ( .not. valid_types ) then
      call error_mesg ('sat_vapor_pres_k_mod::compute_qs_k_0d',&
-          & 'temp is not one of the supported types of real(kind=4) or real(kind=8) OR temp and q types do not match', FATAL)
+          & 'temp is not one of the supported types of real(kind=4) or real(kind=8) OR' &
+            //' temp and q types do not match', FATAL)
    end if
 
    if (present(hc)) then
@@ -1200,7 +1218,8 @@
    end if
    if ( .not. valid_types ) then
      call error_mesg ('sat_vapor_pres_k_mod::compute_qs_k_0d',&
-          & 'temp is not one of the supported types of real(kind=4) or real(kind=8) OR temp and hc types do not match', FATAL)
+          & 'temp is not one of the supported types of real(kind=4) or real(kind=8) OR' &
+            //' temp and hc types do not match', FATAL)
    end if
 
    if (present(dqsdT)) then
@@ -1220,7 +1239,8 @@
    end if
    if ( .not. valid_types ) then
      call error_mesg ('sat_vapor_pres_k_mod::compute_qs_k_0d',&
-          & 'temp is not one of the supported types of real(kind=4) or real(kind=8) OR temp and dqsdT types do not match', FATAL)
+          & 'temp is not one of the supported types of real(kind=4) or real(kind=8) OR' &
+            //' temp and dqsdT types do not match', FATAL)
    end if
 
    if (present(esat)) then
@@ -1240,7 +1260,8 @@
    end if
    if ( .not. valid_types ) then
      call error_mesg ('sat_vapor_pres_k_mod::compute_qs_k_0d',&
-          & 'temp is not one of the supported types of real(kind=4) or real(kind=8) OR temp and esat types do not match', FATAL)
+          & 'temp is not one of the supported types of real(kind=4) or real(kind=8) OR' &
+            //' temp and esat types do not match', FATAL)
    end if
 
    select type (temp)
@@ -1476,7 +1497,8 @@
    end select
    if ( .not. valid_types ) then
      call error_mesg ('sat_vapor_pres_k_mod::compute_qs_k_0d',&
-          & 'temp is not one of the supported types of real(kind=4) or real(kind=8) OR temp, press and qs types do not match', FATAL)
+          & 'temp is not one of the supported types of real(kind=4) or real(kind=8) OR' &
+            //' temp, press and qs types do not match', FATAL)
    end if
 
    if (present(q)) then
@@ -1496,7 +1518,8 @@
    end if
    if ( .not. valid_types ) then
      call error_mesg ('sat_vapor_pres_k_mod::compute_qs_k_0d',&
-          & 'temp is not one of the supported types of real(kind=4) or real(kind=8) OR temp and q types do not match', FATAL)
+          & 'temp is not one of the supported types of real(kind=4) or real(kind=8) OR' &
+            //' temp and q types do not match', FATAL)
    end if
 
    if (present(hc)) then
@@ -1516,7 +1539,8 @@
    end if
    if ( .not. valid_types ) then
      call error_mesg ('sat_vapor_pres_k_mod::compute_qs_k_0d',&
-          & 'temp is not one of the supported types of real(kind=4) or real(kind=8) OR temp and hc types do not match', FATAL)
+          & 'temp is not one of the supported types of real(kind=4) or real(kind=8) OR' &
+            //' temp and hc types do not match', FATAL)
    end if
 
    if (present(dqsdT)) then
@@ -1536,7 +1560,8 @@
    end if
    if ( .not. valid_types ) then
      call error_mesg ('sat_vapor_pres_k_mod::compute_qs_k_0d',&
-          & 'temp is not one of the supported types of real(kind=4) or real(kind=8) OR temp and dqsdT types do not match', FATAL)
+          & 'temp is not one of the supported types of real(kind=4) or real(kind=8) OR' &
+            //' temp and dqsdT types do not match', FATAL)
    end if
 
    if (present(esat)) then
@@ -1556,7 +1581,8 @@
    end if
    if ( .not. valid_types ) then
      call error_mesg ('sat_vapor_pres_k_mod::compute_qs_k_0d',&
-          & 'temp is not one of the supported types of real(kind=4) or real(kind=8) OR temp and esat types do not match', FATAL)
+          & 'temp is not one of the supported types of real(kind=4) or real(kind=8) OR' &
+            //' temp and esat types do not match', FATAL)
    end if
 
    if (present(hc)) then
@@ -2101,7 +2127,8 @@
    end select
    if ( .not. valid_types ) then
      call error_mesg ('sat_vapor_pres_k_mod::lookup_es_des_k_3d',&
-          & 'temp is not one of the supported types of real(kind=4) or real(kind=8) OR temp, esat and desat types do not match', FATAL)
+          & 'temp is not one of the supported types of real(kind=4) or real(kind=8) OR' &
+            //' temp, esat and desat types do not match', FATAL)
    end if
 
    nbad = 0
@@ -2186,7 +2213,8 @@
    end select
    if ( .not. valid_types ) then
      call error_mesg ('sat_vapor_pres_k_mod::lookup_es_des_k_2d',&
-          & 'temp is not one of the supported types of real(kind=4) or real(kind=8) OR temp, esat and desat types do not match', FATAL)
+          & 'temp is not one of the supported types of real(kind=4) or real(kind=8) OR' &
+            //' temp, esat and desat types do not match', FATAL)
    end if
 
    nbad = 0
@@ -2267,7 +2295,8 @@
    end select
    if ( .not. valid_types ) then
      call error_mesg ('sat_vapor_pres_k_mod::lookup_es_des_k_1d',&
-          & 'temp is not one of the supported types of real(kind=4) or real(kind=8) OR temp, esat and desat types do not match', FATAL)
+          & 'temp is not one of the supported types of real(kind=4) or real(kind=8) OR' &
+            //' temp, esat and desat types do not match', FATAL)
    end if
 
    nbad = 0
@@ -2387,7 +2416,8 @@
    end select
    if ( .not. valid_types ) then
       call error_mesg ('sat_vapor_pres_k_mod::lookup_k_3d',&
-           & 'temp is not one of the supported types of real(kind=4) or real(kind=8) OR temp and esat types do not match', FATAL)
+           & 'temp is not one of the supported types of real(kind=4) or real(kind=8) OR' &
+             //' temp and esat types do not match', FATAL)
    end if
 
    nbad = 0
@@ -2457,7 +2487,8 @@
    end select
    if ( .not. valid_types ) then
      call error_mesg ('sat_vapor_pres_k_mod::lookup_des_k_3d',&
-          & 'temp is not one of the supported types of real(kind=4) or real(kind=8) OR temp and desat types do not match', FATAL)
+          & 'temp is not one of the supported types of real(kind=4) or real(kind=8) OR' &
+            //' temp and desat types do not match', FATAL)
    end if
 
    nbad = 0
@@ -2526,7 +2557,8 @@
    end select
    if ( .not. valid_types ) then
      call error_mesg ('sat_vapor_pres_k_mod::lookup_des_k_2d',&
-          & 'temp is not one of the supported types of real(kind=4) or real(kind=8) OR temp and desat types do not match', FATAL)
+          & 'temp is not one of the supported types of real(kind=4) or real(kind=8) OR' &
+            //' temp and desat types do not match', FATAL)
    end if
 
    nbad = 0
@@ -2590,7 +2622,8 @@
    end select
    if ( .not. valid_types ) then
       call error_mesg ('sat_vapor_pres_k_mod::lookup_k_2d',&
-           & 'temp is not one of the supported types of real(kind=4) or real(kind=8) OR temp and esat types do not match', FATAL)
+           & 'temp is not one of the supported types of real(kind=4) or real(kind=8) OR' &
+             //' temp and esat types do not match', FATAL)
    end if
 
    nbad = 0
@@ -2654,7 +2687,8 @@
    end select
    if ( .not. valid_types ) then
      call error_mesg ('sat_vapor_pres_k_mod::lookup_des_k_1d',&
-          & 'temp is not one of the supported types of real(kind=4) or real(kind=8) OR temp and desat types do not match', FATAL)
+          & 'temp is not one of the supported types of real(kind=4) or real(kind=8) OR' &
+            //' temp and desat types do not match', FATAL)
    end if
 
    nbad = 0
@@ -2714,7 +2748,8 @@
    end select
    if ( .not. valid_types ) then
       call error_mesg ('sat_vapor_pres_k_mod::lookup_k_1d',&
-           & 'temp is not one of the supported types of real(kind=4) or real(kind=8) OR temp and esat types do not match', FATAL)
+           & 'temp is not one of the supported types of real(kind=4) or real(kind=8) OR' &
+             //' temp and esat types do not match', FATAL)
    end if
 
    nbad = 0
@@ -2856,7 +2891,8 @@
    end select
    if ( .not. valid_types ) then
      call error_mesg ('sat_vapor_pres_k_mod::lookup_es2_des2_k_3d',&
-          & 'temp is not one of the supported types of real(kind=4) or real(kind=8) OR temp, esat and desat types do not match', FATAL)
+          & 'temp is not one of the supported types of real(kind=4) or real(kind=8) OR' &
+            //' temp, esat and desat types do not match', FATAL)
    end if
 
    nbad = 0
@@ -2941,7 +2977,8 @@
    end select
    if ( .not. valid_types ) then
      call error_mesg ('sat_vapor_pres_k_mod::lookup_es2_des2_k_2d',&
-          & 'temp is not one of the supported types of real(kind=4) or real(kind=8) OR temp, esat and desat types do not match', FATAL)
+          & 'temp is not one of the supported types of real(kind=4) or real(kind=8) OR' &
+            //' temp, esat and desat types do not match', FATAL)
    end if
 
    nbad = 0
@@ -3022,7 +3059,8 @@
    end select
    if ( .not. valid_types ) then
      call error_mesg ('sat_vapor_pres_k_mod::lookup_es2_des2_k_1d',&
-          & 'temp is not one of the supported types of real(kind=4) or real(kind=8) OR temp, esat and desat types do not match', FATAL)
+          & 'temp is not one of the supported types of real(kind=4) or real(kind=8) OR' &
+            //' temp, esat and desat types do not match', FATAL)
    end if
 
    nbad = 0
@@ -3142,7 +3180,8 @@
    end select
    if ( .not. valid_types ) then
       call error_mesg ('sat_vapor_pres_k_mod::lookup_es2_k_3d',&
-           & 'temp is not one of the supported types of real(kind=4) or real(kind=8) OR temp and esat types do not match', FATAL)
+           & 'temp is not one of the supported types of real(kind=4) or real(kind=8) OR' &
+             //' temp and esat types do not match', FATAL)
    end if
 
    nbad = 0
@@ -3212,7 +3251,8 @@
    end select
    if ( .not. valid_types ) then
      call error_mesg ('sat_vapor_pres_k_mod::lookup_des2_k_3d',&
-          & 'temp is not one of the supported types of real(kind=4) or real(kind=8) OR temp and desat types do not match', FATAL)
+          & 'temp is not one of the supported types of real(kind=4) or real(kind=8) OR' &
+            //' temp and desat types do not match', FATAL)
    end if
 
    nbad = 0
@@ -3281,7 +3321,8 @@
    end select
    if ( .not. valid_types ) then
      call error_mesg ('sat_vapor_pres_k_mod::lookup_des2_k_2d',&
-          & 'temp is not one of the supported types of real(kind=4) or real(kind=8) OR temp and desat types do not match', FATAL)
+          & 'temp is not one of the supported types of real(kind=4) or real(kind=8) OR' &
+            //' temp and desat types do not match', FATAL)
    end if
 
    nbad = 0
@@ -3345,7 +3386,8 @@
    end select
    if ( .not. valid_types ) then
       call error_mesg ('sat_vapor_pres_k_mod::lookup_es2_k_2d',&
-           & 'temp is not one of the supported types of real(kind=4) or real(kind=8) OR temp and esat types do not match', FATAL)
+           & 'temp is not one of the supported types of real(kind=4) or real(kind=8) OR' &
+             //' temp and esat types do not match', FATAL)
    end if
 
    nbad = 0
@@ -3409,7 +3451,8 @@
    end select
    if ( .not. valid_types ) then
      call error_mesg ('sat_vapor_pres_k_mod::lookup_des2_k_1d',&
-          & 'temp is not one of the supported types of real(kind=4) or real(kind=8) OR temp and desat types do not match', FATAL)
+          & 'temp is not one of the supported types of real(kind=4) or real(kind=8) OR' &
+            //' temp and desat types do not match', FATAL)
    end if
 
    nbad = 0
@@ -3469,7 +3512,8 @@
    end select
    if ( .not. valid_types ) then
       call error_mesg ('sat_vapor_pres_k_mod::lookup_es2_k_1d',&
-           & 'temp is not one of the supported types of real(kind=4) or real(kind=8) OR temp and esat types do not match', FATAL)
+           & 'temp is not one of the supported types of real(kind=4) or real(kind=8) OR' &
+             //' temp and esat types do not match', FATAL)
    end if
 
    nbad = 0
@@ -3613,7 +3657,8 @@
    end select
    if ( .not. valid_types ) then
      call error_mesg ('sat_vapor_pres_k_mod::lookup_es3_des3_k_3d',&
-          & 'temp is not one of the supported types of real(kind=4) or real(kind=8) OR temp, esat and desat types do not match', FATAL)
+          & 'temp is not one of the supported types of real(kind=4) or real(kind=8) OR' &
+            //' temp, esat and desat types do not match', FATAL)
    end if
 
    nbad = 0
@@ -3698,7 +3743,8 @@
    end select
    if ( .not. valid_types ) then
      call error_mesg ('sat_vapor_pres_k_mod::lookup_es3_des3_k_2d',&
-          & 'temp is not one of the supported types of real(kind=4) or real(kind=8) OR temp, esat and desat types do not match', FATAL)
+          & 'temp is not one of the supported types of real(kind=4) or real(kind=8) OR' &
+            //' temp, esat and desat types do not match', FATAL)
    end if
 
    nbad = 0
@@ -3779,7 +3825,8 @@
    end select
    if ( .not. valid_types ) then
      call error_mesg ('sat_vapor_pres_k_mod::lookup_es3_des3_k_1d',&
-          & 'temp is not one of the supported types of real(kind=4) or real(kind=8) OR temp, esat and desat types do not match', FATAL)
+          & 'temp is not one of the supported types of real(kind=4) or real(kind=8) OR' &
+            //' temp, esat and desat types do not match', FATAL)
    end if
 
    nbad = 0
@@ -3899,7 +3946,8 @@
    end select
    if ( .not. valid_types ) then
       call error_mesg ('sat_vapor_pres_k_mod::lookup_es3_k_3d',&
-           & 'temp is not one of the supported types of real(kind=4) or real(kind=8) OR temp and esat types do not match', FATAL)
+           & 'temp is not one of the supported types of real(kind=4) or real(kind=8) OR' &
+             //' temp and esat types do not match', FATAL)
    end if
 
    nbad = 0
@@ -3969,7 +4017,8 @@
    end select
    if ( .not. valid_types ) then
      call error_mesg ('sat_vapor_pres_k_mod::lookup_des3_k_3d',&
-          & 'temp is not one of the supported types of real(kind=4) or real(kind=8) OR temp and desat types do not match', FATAL)
+          & 'temp is not one of the supported types of real(kind=4) or real(kind=8) OR' &
+            //' temp and desat types do not match', FATAL)
    end if
 
    nbad = 0
@@ -4038,7 +4087,8 @@
    end select
    if ( .not. valid_types ) then
      call error_mesg ('sat_vapor_pres_k_mod::lookup_des3_k_2d',&
-          & 'temp is not one of the supported types of real(kind=4) or real(kind=8) OR temp and desat types do not match', FATAL)
+          & 'temp is not one of the supported types of real(kind=4) or real(kind=8) OR' &
+            //' temp and desat types do not match', FATAL)
    end if
 
    nbad = 0
@@ -4102,7 +4152,8 @@
    end select
    if ( .not. valid_types ) then
       call error_mesg ('sat_vapor_pres_k_mod::lookup_es3_k_2d',&
-           & 'temp is not one of the supported types of real(kind=4) or real(kind=8) OR temp and esat types do not match', FATAL)
+           & 'temp is not one of the supported types of real(kind=4) or real(kind=8) OR' &
+             //' temp and esat types do not match', FATAL)
    end if
 
    nbad = 0
@@ -4166,7 +4217,8 @@
    end select
    if ( .not. valid_types ) then
      call error_mesg ('sat_vapor_pres_k_mod::lookup_des3_k_1d',&
-          & 'temp is not one of the supported types of real(kind=4) or real(kind=8) OR temp and desat types do not match', FATAL)
+          & 'temp is not one of the supported types of real(kind=4) or real(kind=8) OR' &
+            //' temp and desat types do not match', FATAL)
    end if
 
    nbad = 0
@@ -4226,7 +4278,8 @@
    end select
    if ( .not. valid_types ) then
       call error_mesg ('sat_vapor_pres_k_mod::lookup_es3_k_1d',&
-           & 'temp is not one of the supported types of real(kind=4) or real(kind=8) OR temp and esat types do not match', FATAL)
+           & 'temp is not one of the supported types of real(kind=4) or real(kind=8) OR' &
+             //' temp and esat types do not match', FATAL)
    end if
 
    nbad = 0

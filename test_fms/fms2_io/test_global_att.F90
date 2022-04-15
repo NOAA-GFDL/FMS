@@ -95,21 +95,25 @@ else
 endif
 
 !< Compares the values read with the expected values
-if (buf_r8_kind /= real(7., kind=r8_kind)) call mpp_error(FATAL, "test_global_att-"//trim(my_format(i))//": error reading buf_r8_kind")
+if (buf_r8_kind /= real(7., kind=r8_kind)) call mpp_error(FATAL, "test_global_att-"// &
+    & trim(my_format(i))//": error reading buf_r8_kind")
 if (buf_r8_kind_1d(1) /= real(7., kind=r8_kind) .or. buf_r8_kind_1d(2) /= real(9., kind=r8_kind)) &
      call mpp_error(FATAL, "test_global_att-"//trim(my_format(i))//": error reading buf_r8_kind_1d")
 
-if (buf_r4_kind /= real(4., kind=r4_kind)) call mpp_error(FATAL, "test_global_att-"//trim(my_format(i))//": error reading buf_r4_kind")
+if (buf_r4_kind /= real(4., kind=r4_kind)) call mpp_error(FATAL, "test_global_att-"// &
+    & trim(my_format(i))//": error reading buf_r4_kind")
 if (buf_r4_kind_1d(1) /= real(4., kind=r4_kind) .or. buf_r4_kind_1d(2) /= real(6., kind=r4_kind)) &
     call mpp_error(FATAL, "test_global_att-"//trim(my_format(i))//": error reading buf_r4_kind_1d")
 
-if (buf_i4_kind /= int(3, kind=i4_kind)) call mpp_error(FATAL, "test_global_att-"//trim(my_format(i))//": error reading buf_i4_kind")
+if (buf_i4_kind /= int(3, kind=i4_kind)) call mpp_error(FATAL, "test_global_att-"// &
+    & trim(my_format(i))//": error reading buf_i4_kind")
 if (buf_i4_kind_1d(1) /= int(3, kind=i4_kind) .or. buf_i4_kind_1d(2) /= int(5, kind=i4_kind)) &
     call mpp_error(FATAL, "test_global_att-"//trim(my_format(i))//": error reading buf_i4_kind_1d")
 
 !< int8 is only supported with the "netcdf4" type
 if(i .eq. 3) then
-   if (buf_i8_kind /= int(2, kind=i8_kind)) call mpp_error(FATAL, "test_global_att-"//trim(my_format(i))//": error reading buf_i8_kind")
+   if (buf_i8_kind /= int(2, kind=i8_kind)) call mpp_error(FATAL, "test_global_att-"// &
+       & trim(my_format(i))//": error reading buf_i8_kind")
    if (buf_i8_kind_1d(1) /= int(2, kind=i8_kind) .or. buf_i8_kind_1d(2) /= int(4, kind=i8_kind)) &
        & call mpp_error(FATAL, "test_global_att-"//trim(my_format(i))//": error reading buf_i8_kind_1d")
 endif

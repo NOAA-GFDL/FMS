@@ -2829,7 +2829,8 @@ subroutine show_all_bad_0d ( temp )
    do i=1,size(temp,1)
      ind = int(dtinv*(temp(i,j,k)-tmin+teps))
      if (ind < 0 .or. ind > nlim) then
-       write(unit,'(a,e10.3,a,i4,a,i4,a,i4,a,i6)') 'Bad temperature=',temp(i,j,k),'  at i=',i,' j=',j,' k=',k,' pe=',mpp_pe()
+       write(unit,'(a,e10.3,a,i4,a,i4,a,i4,a,i6)') 'Bad temperature=',temp(i,j,k),&
+            &'  at i=',i,' j=',j,' k=',k,' pe=',mpp_pe()
      endif
    enddo
    enddo
@@ -2840,7 +2841,8 @@ subroutine show_all_bad_0d ( temp )
    do i=1,size(temp,1)
      ind = int(dtinv*(temp(i,j,k)-tmin+teps))
      if (ind < 0 .or. ind > nlim) then
-       write(unit,'(a,e10.3,a,i4,a,i4,a,i4,a,i6)') 'Bad temperature=',temp(i,j,k),'  at i=',i,' j=',j,' k=',k,' pe=',mpp_pe()
+       write(unit,'(a,e10.3,a,i4,a,i4,a,i4,a,i6)') 'Bad temperature=',temp(i,j,k),&
+            &'  at i=',i,' j=',j,' k=',k,' pe=',mpp_pe()
      endif
    enddo
    enddo

@@ -35,10 +35,11 @@ endif
 # Make targets will be run in each subdirectory. Order is significant.
 SUBDIRS = \
   platform \
-  constants \
   tridiagonal \
   mpp \
+  constants \
   memutils \
+  string_utils \
   fms2_io \
   mosaic2 \
   fms \
@@ -83,9 +84,9 @@ AM_FCFLAGS = $(FC_MODINC). $(FC_MODOUT)$(MODDIR)
 noinst_LTLIBRARIES = libFMS_mod.la
 libFMS_mod_la_SOURCES = libFMS.F90
 
-fms.$(FC_MODEXT): .mods/*_mod.$(FC_MODEXT) 
+fms.$(FC_MODEXT): .mods/*_mod.$(FC_MODEXT)
 
-nodist_include_HEADERS = libFMS_mod.la 
+nodist_include_HEADERS = libFMS_mod.la
 
 include $(top_srcdir)/mkmods.mk
 
@@ -115,5 +116,16 @@ include $(top_srcdir)/mkmods.mk
 #	-rm -f FMSConfig.cmake FMSConfigVersion.cmake
 EXTRA_DIST = README.md #_package_init_cmake
 
+
+if COV
+check-code-coverage: check
+	-cd ${top_builddir}/test_fms && chmod +x intel_coverage.sh && ./intel_coverage.sh
+
+.PHONY: check-code-coverage
+
+clean-local:
+	-rm -rf .mods coverage-data coverage-report
+else
 clean-local:
 	-rm -rf .mods
+endif

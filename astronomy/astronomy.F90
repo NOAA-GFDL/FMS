@@ -129,7 +129,8 @@ public       &
 !! @param [in] <time> Time at which astronomical values are desired (time_type variable) [seconds, days]
 !! @param [out] <cosz> Cosine of solar zenith angle, set to zero when entire period is in darkness [dimensionless]
 !! @param [out] <fracday> Daylight fraction of time interval [dimensionless]
-!! @param [out] <rrsun> Earth-Sun distance (r) relative to semi-major axis of orbital ellipse (a):(a/r)**2 [dimensionless]
+!! @param [out] <rrsun> Earth-Sun distance (r) relative to semi-major axis of orbital ellipse
+!! (a):(a/r)**2 [dimensionless]
 !! @param [in] <dt> OPTIONAL: Time interval after gmt over which the astronomical variables are to be
 !!                  averaged. this produces averaged output rather than instantaneous. [radians], (1 day = 2 * pi)
 !! @param [in] <dt_time> OPTIONAL: Time interval after gmt over which the astronomical variables are to be
@@ -190,8 +191,10 @@ end interface
 !! @param [in] <time> Time at which astronomical values are desired (time_type variable) [seconds, days]
 !! @param [out] <cosz> Cosine of solar zenith angle, set to zero when entire period is in darkness [dimensionless]
 !! @param [out] <fracday> Daylight fraction of time interval [dimensionless]
-!! @param [out] <rrsun> Earth-Sun distance (r) relative to semi-major axis of orbital ellipse (a):(a/r)**2 [dimensionless]
-!! @param [out] <solar> shortwave flux factor: cosine of zenith angle * daylight fraction / (earth-sun distance squared) [dimensionless]
+!! @param [out] <rrsun> Earth-Sun distance (r) relative to semi-major axis of orbital ellipse
+!! (a):(a/r)**2 [dimensionless]
+!! @param [out] <solar> shortwave flux factor: cosine of zenith angle * daylight fraction /
+!! (earth-sun distance squared) [dimensionless]
 !> @ingroup astronomy_mod
 interface daily_mean_solar
    module procedure daily_mean_solar_2d
@@ -466,7 +469,7 @@ integer :: unit, ierr, io, seconds, days, jd, id
       if (period == 0) then
         period_time_type = length_of_year()
         call get_time (period_time_type, seconds, days)
-        period = seconds_per_day*days + seconds
+        period = int(seconds_per_day*days + seconds)
       else
         period_time_type = set_time(period,0)
       endif
@@ -533,7 +536,7 @@ integer, intent(out) :: period_out !< Length of year [seconds]
 !    define length of year in seconds.
 !--------------------------------------------------------------------
       call get_time (period_time_type, seconds, days)
-      period_out = seconds_per_day*days + seconds
+      period_out = int(seconds_per_day*days + seconds)
 
 
 end subroutine get_period_integer
@@ -1480,7 +1483,8 @@ end subroutine daily_mean_solar_1d
 !! @param [in] <lat> Latitudes of model grid points
 !! @param [in] <time_since_ae> Time of year; autumnal equinox = 0.0, one year = 2 * pi
 !! @param [out] <cosz> Cosine of solar zenith angle
-!! @param [out] <solar> Shortwave flux factor: cosine of zenith angle * daylight fraction / (earth-sun distance squared)
+!! @param [out] <solar> Shortwave flux factor: cosine of zenith angle * daylight fraction /
+!! (earth-sun distance squared)
 subroutine daily_mean_solar_2level (lat, time_since_ae, cosz, solar)
 
 !----------------------------------------------------------------------
@@ -1649,7 +1653,8 @@ end subroutine daily_mean_solar_cal_1d
 !! @param [in] <lat> Latitudes of model grid points
 !! @param [in] <time> Time of year (time_type)
 !! @param [out] <cosz> Cosine of solar zenith angle
-!! @param [out] <solar> Shortwave flux factor: cosine of zenith angle * daylight fraction / (earth-sun distance squared)
+!! @param [out] <solar> Shortwave flux factor: cosine of zenith angle * daylight fraction /
+!! (earth-sun distance squared)
 subroutine daily_mean_solar_cal_2level (lat, time, cosz, solar)
 
 real, dimension(:),  intent(in)   :: lat
@@ -1735,7 +1740,8 @@ end subroutine daily_mean_solar_cal_0d
 !! @param [in] <jnd> Ending index of latitude window
 !! @param [in] <lat> Latitudes of model grid points
 !! @param [out] <cosz> Cosine of solar zenith angle
-!! @param [out] <solar> Shortwave flux factor: cosine of zenith angle * daylight fraction / (earth-sun distance squared)
+!! @param [out] <solar> Shortwave flux factor: cosine of zenith angle * daylight fraction /
+!! (earth-sun distance squared)
 !! @param [out] <fracday> Daylight fraction of time interval
 !! @param [out] <rrsun> Earth-Sun distance (r) relative to semi-major axis of orbital ellipse (a):(a/r)**2
 subroutine annual_mean_solar_2d (js, je, lat, cosz, solar, fracday,  &
@@ -1753,7 +1759,7 @@ real,                    intent(out)   :: rrsun
 !--------------------------------------------------------------------
       real, dimension(size(lat,1),size(lat,2)) :: s,z
       real    :: t
-      integer :: n, i
+      integer :: n
 
 !--------------------------------------------------------------------
 !    if the calculation has not yet been done, do it here.
@@ -1842,7 +1848,8 @@ end subroutine annual_mean_solar_2d
 !! @param [in] <jnd> Ending index of latitude window
 !! @param [in] <lat> Latitudes of model grid points
 !! @param [out] <cosz> Cosine of solar zenith angle
-!! @param [out] <solar> Shortwave flux factor: cosine of zenith angle * daylight fraction / (earth-sun distance squared)
+!! @param [out] <solar> Shortwave flux factor: cosine of zenith angle * daylight fraction /
+!! (earth-sun distance squared)
 !! @param [out] <fracday> Daylight fraction of time interval
 !! @param [out] <rrsun_out> Earth-Sun distance (r) relative to semi-major axis of orbital ellipse (a):(a/r)**2
 subroutine annual_mean_solar_1d (jst, jnd, lat, cosz, solar,  &
@@ -2141,7 +2148,7 @@ real, dimension(size(latitude,1),size(latitude,2))   :: h
 !---------------------------------------------------------------------
       real, dimension (size(latitude,1),size(latitude,2)):: &
                                                   cos_half_day, & !< Cosine of half-day length [dimensionless]
-                                                                                                  lat !< Model latitude, adjusted so that it is never 0.5*pi or -0.5*pi
+                                                  lat !< Model latitude, adjusted so that it is never 0.5*pi or -0.5*pi
       real :: tan_dec !< tangent of solar declination [dimensionless]
       real :: eps = 1.0E-05 !< small increment
 

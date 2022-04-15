@@ -172,7 +172,6 @@ contains
   subroutine stocks_report(Time)
     type(time_type)               , intent(in) :: Time !< Model time
 
-    type(time_type) :: timeSinceStart
     type(stock_type) :: stck
     real, dimension(NCOMPS) :: f_value, f_ice_grid, f_ocn_grid, f_ocn_btf, q_start, q_now,c_value
     character(len=80) :: formatString
@@ -180,7 +179,8 @@ contains
     real    :: days
     integer :: diagID , comp,elem,i
     integer, parameter :: initID = -2 !< initial value for diag IDs. Must not be equal to the value
-                                      !! that register_diag_field returns when it can't register the filed -- otherwise the registration
+                                      !! that register_diag_field returns when it can't register
+                                      !! the filed -- otherwise the registration
                                       !! is attempted every time this subroutine is called
 
     integer, dimension(NCOMPS,NELEMS), save :: f_valueDiagID = initID
@@ -286,10 +286,11 @@ contains
              if (DiagID > 0)  used = send_data(DiagID, diagField, Time)
 
 
-             !             formatString = '(a,a,a,i16,2x,es22.15,2x,es22.15,2x,es22.15,2x,es22.15,2x,es22.15,2x,es22.15)'
+             ! formatString = '(a,a,a,i16,2x,es22.15,2x,es22.15,2x,es22.15,2x,es22.15,2x,es22.15,2x,es22.15)'
              !
              !             write(stocks_file,formatString) trim(COMP_NAMES(comp)),STOCK_NAMES(elem),STOCK_UNITS(elem) &
-             !                  ,hours, q_now, q_now-q_start, f_value, f_value - (q_now - q_start), (f_value - (q_now - q_start))/q_start
+             !                  ,hours, q_now, q_now-q_start, f_value, f_value - (q_now - q_start),
+             !                  (f_value - (q_now - q_start))/q_start
 
 
           endif
@@ -302,9 +303,11 @@ contains
 !          write(stocks_file,'(a)'  )   ' '!blank line
 !          write(stocks_file,'(a,30x,a,20x,a,20x,a,20x,a)') 'Component ','ATM','LND','ICE','OCN'
 !          write(stocks_file,'(55x,a,20x,a,20x,a,20x,a)')  'ATM','LND','ICE','OCN'
-!          write(stocks_file,'(a,f12.3,12x,a,20x,a,20x,a,20x,a)') 't = TimeSinceStart[days]= ',days,'ATM','LND','ICE','OCN'
+!          write(stocks_file,'(a,f12.3,12x,a,20x,a,20x,a,20x,a)') 't = TimeSinceStart[days]=
+!          ',days,'ATM','LND','ICE','OCN'
 
-          write(stocks_file,'(a,a,40x,a,20x,a,20x,a,20x,a)') 'Stocks of ',trim(STOCK_NAMES(elem)),'ATM','LND','ICE','OCN'
+          write(stocks_file,'(a,a,40x,a,20x,a,20x,a,20x,a)') 'Stocks of ',trim(STOCK_NAMES(elem)),'ATM','LND', &
+               & 'ICE','OCN'
           formatString = '(a,a,2x,es22.15,2x,es22.15,2x,es22.15,2x,es22.15)'
 
           write(stocks_file,formatString) 'Total =S(t)               ',STOCK_UNITS(elem),&
@@ -316,12 +319,13 @@ contains
           write(stocks_file,formatString) 'Diff  =F(t) - (S(t)-S(0)) ',STOCK_UNITS(elem),&
                ( f_value(i) - c_value(i), i=1,NCOMPS)
           write(stocks_file,formatString) 'Error =Diff/S(0)          ','[NonDim]    ', &
-               ((f_value(i) - c_value(i))/(1+q_start(i)), i=1,NCOMPS)  !added 1 to avoid div by zero. Assuming q_start large
+               ((f_value(i) - c_value(i))/(1+q_start(i)), i=1,NCOMPS)  !added 1 to avoid div by zero.
+                                                                       !! Assuming q_start large
 
           write(stocks_file,'(a)'  ) ' '!blank line
           formatString = '(a,a,a,6x,es22.15)'
-          write(stocks_file,formatString) 'Lost Stocks in the exchange between Ice and Ocean ',trim(STOCK_NAMES(elem)),trim(STOCK_UNITS(elem)),  &
-               f_ice_grid(ISTOCK_OCN) - f_ocn_grid(ISTOCK_OCN) + f_ocn_btf(ISTOCK_OCN)
+          write(stocks_file,formatString) 'Lost Stocks in the exchange between Ice and Ocean ',trim(STOCK_NAMES(elem))&
+                     &,trim(STOCK_UNITS(elem)), f_ice_grid(ISTOCK_OCN) - f_ocn_grid(ISTOCK_OCN) + f_ocn_btf(ISTOCK_OCN)
 
           write(stocks_file,'(a)') ' ' !blank line
           write(stocks_file,'(a)') ' ' !blank line

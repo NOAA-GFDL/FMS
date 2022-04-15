@@ -130,6 +130,10 @@
  *
  */
 
+/** @defgroup string_utils String Utils
+ *
+ */
+
 /** @defgroup time_interp Time Interpolator
  *
  */

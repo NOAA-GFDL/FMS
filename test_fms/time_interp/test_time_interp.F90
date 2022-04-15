@@ -166,7 +166,8 @@ program test_time_interp
  write(outunit,'()')
 
  do ntest=1,num_Time
-   call time_interp(Time(ntest), Time_beg, Time_end, Timelist, weight, index1, index2, correct_leap_year_inconsistency=.true.)
+   call time_interp(Time(ntest), Time_beg, Time_end, Timelist, weight, index1, index2, &
+                   &  correct_leap_year_inconsistency=.true.)
    call print_date(Time(ntest),' Time =')
    write(outunit,99) index1,index2,weight
    write(outunit,'()')
@@ -204,7 +205,8 @@ program test_time_interp
  write(outunit,'()')
 
  do ntest=1,num_Time
-   call time_interp(Time(ntest), Time_beg, Time_end, Timelist, weight, index1, index2, correct_leap_year_inconsistency=.true.)
+   call time_interp(Time(ntest), Time_beg, Time_end, Timelist, weight, index1, index2, &
+                   &  correct_leap_year_inconsistency=.true.)
    call print_date(Time(ntest),' Time=')
    write(outunit,99) index1,index2,weight
    write(outunit,'()')
@@ -232,7 +234,8 @@ program test_time_interp
    call print_date(Time(1),' Time=')
    call time_interp(Time(1), Timelist, weight, index1, index2, modtime=YEAR)
    write(outunit,89) 'time_interp_list with modtime=YEAR:   ', index1,index2,weight
-   call time_interp(Time(1), Time_beg, Time_end, Timelist, weight, index1, index2, correct_leap_year_inconsistency=.true.)
+   call time_interp(Time(1), Time_beg, Time_end, Timelist, weight, index1, index2, &
+                   &  correct_leap_year_inconsistency=.true.)
    write(outunit,89) 'time_interp_modulo: ', index1,index2,weight
    write(outunit,'()')
  enddo

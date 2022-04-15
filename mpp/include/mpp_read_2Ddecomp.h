@@ -16,26 +16,26 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
-    subroutine READ_RECORD_CORE_(unit, field, nwords, data, start, axsiz)
+    subroutine READ_RECORD_CORE_(unit, field, num_words, data, start, axsiz)
       integer,         intent(in)    :: unit
       type(fieldtype), intent(in)    :: field
-      integer,         intent(in)    :: nwords
-      MPP_TYPE_,        intent(inout) :: data(nwords)
+      integer,         intent(in)    :: num_words
+      MPP_TYPE_,        intent(inout) :: data(num_words)
       integer,         intent(in)    :: start(:), axsiz(:)
 
-      integer(i2_kind) :: i2vals(nwords)
+      integer(i2_kind) :: i2vals(num_words)
 !rab used in conjunction with transfer intrinsic to determine size of a variable
       integer(KIND=1) :: one_byte(8)
       integer         :: word_sz
-      integer(i4_kind) :: ivals(nwords)
-      real(r4_kind) :: rvals(nwords)
+      integer(i4_kind) :: ivals(num_words)
+      real(r4_kind) :: rvals(num_words)
 
-      real(r8_kind) :: r8vals(nwords)
+      real(r8_kind) :: r8vals(num_words)
       pointer( ptr1, i2vals )
       pointer( ptr2, ivals )
       pointer( ptr3, rvals )
       pointer( ptr4, r8vals )
-      if (mpp_io_stack_size < nwords) call mpp_io_set_stack_size(nwords)
+      if (mpp_io_stack_size < num_words) call mpp_io_set_stack_size(num_words)
 
 #ifdef use_netCDF
       word_sz = size(transfer(data(1),one_byte))
@@ -108,7 +108,7 @@
     end subroutine READ_RECORD_CORE_
 
 
-    subroutine READ_RECORD_( unit, field, nwords, data, time_level, domain, position, tile_count, start_in, axsiz_in )
+    subroutine READ_RECORD_( unit, field, num_words, data, time_level, domain, position, tile_count, start_in, axsiz_in )
 !routine that is finally called by all mpp_read routines to perform the read
 !a non-netCDF record contains:
 !      field ID
@@ -125,9 +125,9 @@
 !   with a timestamp of NULLTIME. There is no check in the code to prevent
 !   the user from repeatedly writing a static field.
 
-      integer,         intent(in)             :: unit, nwords
+      integer,         intent(in)             :: unit, num_words
       type(fieldtype), intent(in)             :: field
-      MPP_TYPE_,      intent(inout)           :: data(nwords)
+      MPP_TYPE_,      intent(inout)           :: data(num_words)
       integer,        intent(in),    optional :: time_level
       type(domain2D), intent(in),    optional :: domain
       integer,        intent(in),    optional :: position, tile_count
@@ -223,9 +223,10 @@
               end if
           end if
       endif
-      if( verbose )print '(a,2i6,i6,12i4)', 'READ_RECORD: PE, unit, nwords, start, axsiz=', pe, unit, nwords, start, axsiz
+      if( verbose )print '(a,2i6,i6,12i4)', 'READ_RECORD: PE, unit, num_words, start, axsiz=', &
+                          & pe, unit, num_words, start, axsiz
 
-      call READ_RECORD_CORE_(unit, field, nwords, data, start, axsiz)
+      call READ_RECORD_CORE_(unit, field, num_words, data, start, axsiz)
 
       return
     end subroutine READ_RECORD_
