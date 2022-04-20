@@ -283,6 +283,10 @@ if test $enable_setting_flags = yes; then
     FCFLAGS="$FCFLAGS -prof-gen=srcpos"
     CFLAGS="$CFLAGS -prof-gen=srcpos"
   fi
+  # add yaml flag
+  if test $with_yaml = yes; then
+    LDFLAGS="$LDFLAGS -lyaml"
+  fi
 fi
 
 # Find which mpi launcher to use
