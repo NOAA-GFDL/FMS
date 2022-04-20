@@ -55,10 +55,6 @@ program test   !test various aspects of mpp_mod
     call test_mpp_max()
   if( pe.EQ.root ) print *, '------------------> Finished test_mpp_max <------------------'
 
-  if( pe.EQ.root ) print *, '------------------> Calling test_mpp_chksum <------------------'
-    call test_mpp_chksum()
-  if( pe.EQ.root ) print *, '------------------> Finished test_mpp_chksum <------------------'
-
 !test of pointer sharing
   if( pe.EQ.root )then
       allocate( d(n) )
@@ -112,41 +108,6 @@ contains
 
    end subroutine test_mpp_max
 
-  subroutine test_mpp_chksum()
-
-   if( modulo(n,npes).EQ.0 )then  !only set up for even division
-     n2 = 1024
-     a = 0.d0
-     if( pe.EQ.root )call random_number(a(1:n2))
-
-     call mpp_sync()
-     call mpp_transmit( put_data=a(1), plen=n2, to_pe=ALL_PES, &
-                        get_data=a(1), glen=n2, from_pe=root )
-     call mpp_sync_self ()
-
-     m= n2/npes
-
-     allocate( c(m) )
-     c = a(pe*m+1:pe*m+m)
-
-     if( pe.EQ.root )then
-        print *
-        print *, '------------------ > Test mpp_chksum <------------------ '
-        print *, 'This test shows that a whole array and a distributed array give identical checksums.'
-     end if
-
-     if ( mpp_chksum(a(1:n2),(/pe/)) .NE. mpp_chksum(c) ) then
-       call mpp_error(FATAL, &
-                     & 'Test mpp_chksum fails: a whole array and a distributed array did not give identical checksums')
-     else
-       print *, 'For pe=', pe, ' chksum(a(1:1024))=chksum(c(1:1024))='
-     endif
-
-   else
-     call mpp_error(FATAL, 'Test mpp_chksum: cannot run this test since n cannot be evenly by npes')
-   end if
-
-  end subroutine test_mpp_chksum
 
   subroutine test_shared_pointers(locd,n)
     integer(i8_kind), intent(in) :: locd

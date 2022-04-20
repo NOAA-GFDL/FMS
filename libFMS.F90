@@ -361,7 +361,12 @@ module fms
                      mpp_get_nest_fine_pelist, mpp_get_nest_fine_npes, &
                      mpp_domain_UG_is_tile_root_pe, mpp_deallocate_domainUG, &
                      mpp_get_io_domain_UG_layout, NULL_DOMAIN1D, NULL_DOMAIN2D, &
-                     mpp_create_super_grid_domain
+                     mpp_create_super_grid_domain, mpp_shift_nest_domains
+  !> parser
+#ifdef use_yaml
+  use yaml_parser_mod, only: open_and_parse_file, get_num_blocks, get_block_ids, get_value_from_key, &
+                        get_nkeys, get_key_ids, get_key_name, get_key_value
+#endif
 
   !> platform
   use platform_mod, only: r8_kind, r4_kind, i8_kind, i4_kind, c8_kind, c4_kind, &
@@ -377,6 +382,10 @@ module fms
                                 lookup_es3, lookup_des3, lookup_es3_des3, &
                                 lookup_es_des, compute_qs, compute_mrs, &
                                 escomp, descomp
+  !> string_utils
+  use fms_string_utils_mod, only: string, fms_array_to_pointer, fms_pointer_to_array, fms_sort_this, &
+                                  fms_find_my_string, fms_find_unique, fms_c2f_string, fms_cstring2cpointer, &
+                                  string_copy
 
   !> time_interp
   use time_interp_mod, only: time_interp_init, time_interp, fraction_of_year, &

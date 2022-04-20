@@ -60,7 +60,7 @@ test_expect_failure "freq is less than -1" '
   mpirun -n 1 ../test_diag_yaml
 '
 
-sed 's/kind: float/kind: mullions/g' diag_table.yaml_base > diag_table.yaml
+sed 's/kind: r4/kind: mullions/g' diag_table.yaml_base > diag_table.yaml
 test_expect_failure "kind is not valid" '
   mpirun -n 1 ../test_diag_yaml
 '
