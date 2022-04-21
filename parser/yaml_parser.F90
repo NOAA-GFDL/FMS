@@ -30,7 +30,7 @@ module yaml_parser_mod
 
 #ifdef use_yaml
 use fms_mod, only: fms_c2f_string
-use fms_io_utils_mod, only: string_copy
+use fms_string_utils_mod, only: string_copy
 use platform_mod
 use mpp_mod
 use iso_c_binding

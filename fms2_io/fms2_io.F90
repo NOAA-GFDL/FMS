@@ -103,7 +103,6 @@ public :: get_filename_appendix
 public :: set_filename_appendix
 public :: get_instance_filename
 public :: nullify_filename_appendix
-public :: string2
 public :: flush_file
 !> @}
 

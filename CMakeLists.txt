@@ -167,6 +167,7 @@ list(APPEND fms_fortran_src_files
   random_numbers/random_numbers.F90
   sat_vapor_pres/sat_vapor_pres_k.F90
   sat_vapor_pres/sat_vapor_pres.F90
+  string_utils/fms_string_utils.F90
   time_interp/time_interp_external.F90
   time_interp/time_interp_external2.F90
   time_interp/time_interp.F90
@@ -182,7 +183,6 @@ list(APPEND fms_fortran_src_files
 # Collect FMS C source files
 list(APPEND fms_c_src_files
   affinity/affinity.c
-  fms/fms_c.c
   mosaic/create_xgrid.c
   mosaic/gradient_c2l.c
   mosaic/interp.c
@@ -190,13 +190,13 @@ list(APPEND fms_c_src_files
   mosaic/read_mosaic.c
   mpp/mpp_memuse.c
   parser/yaml_parser_binding.c
+  string_utils/fms_string_utils_binding.c
 )
 
 # Collect FMS header files
 list(APPEND fms_header_files
   include/file_version.h
   include/fms_platform.h
-  fms/fms_c.h
 )
 
 # Standard FMS compiler definitions
@@ -212,6 +212,19 @@ if(HAVE_GETTID)
 endif()
 
 # Additional (optional) compiler definitions
+if(NOT CONSTANTS)
+    set(CONSTANTS GFDL)
+endif()
+if(CONSTANTS STREQUAL "GFS")
+  list(APPEND fms_defs GFS_CONSTANTS)
+elseif(CONSTANTS STREQUAL "GEOS")
+  list(APPEND fms_defs GEOS_CONSTANTS)
+elseif(CONSTANTS STREQUAL "GFDL")
+  list(APPEND fms_defs GFDL_CONSTANTS)
+else()
+  message(FATAL_ERROR "CONSTANTS=${CONSTANTS} option not supported")
+endif()
+
 if(GFS_PHYS)
   list(APPEND fms_defs GFS_PHYS)
 endif()
@@ -270,7 +283,8 @@ foreach(kind ${kinds})
   target_include_directories(${libTgt}_f PRIVATE include
                                                  fms
                                                  fms2_io/include
-                                                 mpp/include)
+                                                 mpp/include
+                                                 constants)
   target_compile_definitions(${libTgt}_f PRIVATE "${fms_defs}")
   target_compile_definitions(${libTgt}_f PRIVATE "${${kind}_defs}")
 
