@@ -50,19 +50,18 @@ module fms_diag_axis_object_mod
   end type fms_domain_t
 
   !> @brief Type to hold the 1d domain
-
   type, extends(fms_domain_t) :: fms_domain1d_t
-     type(domain1d) :: Domain
+     type(domain1d) :: Domain !< 1d Domain of the axis
   end type
 
   !> @brief Type to hold the 2d domain
   type, extends(fms_domain_t) :: fms_domain2d_t
-    type(domain2d) :: Domain2
+    type(domain2d) :: Domain2 !< 2d Domain of an "X" or "Y" axis
   end type
 
   !> @brief Type to hold the unstructured domain
   type, extends(fms_domain_t) :: fms_domainUG_t
-    type(domainUG) :: DomainUG
+    type(domainUG) :: DomainUG !< Domain of "U" axis
   end type
 
   !> @brief Type to hold the subaxis
