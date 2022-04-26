@@ -31,17 +31,25 @@
   !    subroutine mpp_init( flags, in, out, err, log )
   !      integer, optional, intent(in) :: flags, in, out, err, log
 !> @brief Initialize the @ref mpp_mod module
-subroutine mpp_init( flags,localcomm, alt_input_nml_path )
+subroutine mpp_init( flags, localcomm, test_level, alt_input_nml_path )
   integer, optional, intent(in) :: flags
   integer, optional, intent(in) :: localcomm ! dummy here, used only in MPI
+  integer, optional, intent(in) :: test_level
   character(len=*), optional, intent(in) :: alt_input_nml_path
   integer                       :: my_pe, num_pes, len, i, logunit
   logical                       :: opened, existed
   integer                       :: io_status
+  integer                       :: t_level
 
   if( module_is_initialized )return
 
   module_is_initialized = .TRUE.
+  if(present(test_level)) then
+    t_level = test_level
+  else
+    t_level = -1
+  endif
+  if(t_level == 0) return
 
   allocate(peset(0:0))
   !PEsets: make defaults illegal
@@ -56,11 +64,13 @@ subroutine mpp_init( flags,localcomm, alt_input_nml_path )
   peset(0)%id = 0
   world_peset_num = 0
   current_peset_num = world_peset_num !initialize current PEset to world
+  if(t_level == 1) return
 
   !initialize clocks
   call SYSTEM_CLOCK( count=tick0, count_rate=ticks_per_sec, count_max=max_ticks )
   tick_rate = 1./ticks_per_sec
   clock0 = mpp_clock_id( 'Total runtime', flags=MPP_CLOCK_SYNC )
+  if(t_level == 2) return
 
   ! Initialize mpp_datatypes
   ! NOTE: mpp_datatypes is unused in serial mode; this is an empty list
@@ -85,6 +95,7 @@ subroutine mpp_init( flags,localcomm, alt_input_nml_path )
      debug   = flags.EQ.MPP_DEBUG
      verbose = flags.EQ.MPP_VERBOSE .OR. debug
   end if
+  if(t_level == 3) return
 
   call mpp_init_logfile()
   if (present(alt_input_nml_path)) then
@@ -92,12 +103,14 @@ subroutine mpp_init( flags,localcomm, alt_input_nml_path )
   else
      call read_input_nml
   end if
+  if(t_level == 4) return
 
   !--- read namelist
   read (input_nml_file, mpp_nml, iostat=io_status)
   if (io_status > 0) then
      call mpp_error(FATAL,'=>mpp_init: Error reading mpp_nml')
   endif
+  if(t_level == 5) return
 
 ! non-root pe messages written to other location than stdout()
   if (trim(etcfile) /= '/dev/null') then
@@ -1220,6 +1233,16 @@ end subroutine mpp_exit
 #define MPP_TYPE_CREATE_ mpp_type_create_real8
 #define MPP_TYPE_ real(r8_kind)
 #define MPI_TYPE_ MPI_REAL8
+#include <mpp_type_nocomm.h>
+
+#define MPP_TYPE_CREATE_ mpp_type_create_cmplx4
+#define MPP_TYPE_ complex(c4_kind)
+#define MPI_TYPE_ MPI_COMPLEX8
+#include <mpp_type_nocomm.h>
+
+#define MPP_TYPE_CREATE_ mpp_type_create_cmplx8
+#define MPP_TYPE_ complex(c8_kind)
+#define MPI_TYPE_ MPI_COMPLEX16
 #include <mpp_type_nocomm.h>
 
 #define MPP_TYPE_CREATE_ mpp_type_create_logical4

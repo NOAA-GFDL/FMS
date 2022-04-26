@@ -27,8 +27,21 @@
 # Set common test settings.
 . ../test-lib.sh
 
-touch input.nml
-test_expect_success "mpp integer checksums with mixed precision" '
-    mpirun -n 4 ./test_chksum_int
+echo "&test_mpp_chksum_nml" > input.nml
+echo "test_num = 1" >> input.nml
+echo "/" >> input.nml
+
+test_expect_success "mpp_chksum simple functionality" '
+    mpirun -n 4 ./test_mpp_chksum
+'
+
+sed -i 's/test_num = 1/test_num = 2/' input.nml
+test_expect_success "mpp integer checksums" '
+    mpirun -n 4 ./test_mpp_chksum
+'
+
+sed -i 's/test_num = 2/test_num = 3/' input.nml
+test_expect_success "mpp_chksum with mixed precision" '
+    mpirun -n 4 ./test_mpp_chksum
 '
 test_done
