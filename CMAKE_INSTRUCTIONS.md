@@ -48,6 +48,7 @@ The following build options are available:
 -D64BIT    "Build 64-bit (r8) FMS library"        DEFAULT: OFF
 -DFPIC     "Build with position independent code" DEFAULT: OFF
 
+-DCONSTANTS             "Build with <X> constants parameter definitions"     DEFAULT:GFDL  OPTIONS:GFS|GEOS|GFDL
 -DINTERNAL_FILE_NML     "Enable compiler definition -DINTERNAL_FILE_NML"     DEFAULT: ON
 -DENABLE_QUAD_PRECISION "Enable compiler definition -DENABLE_QUAD_PRECISION" DEFAULT: ON
 -DGFS_PHYS              "Enable compiler definition -DGFS_PHYS"              DEFAULT:OFF

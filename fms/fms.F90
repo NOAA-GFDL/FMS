@@ -164,6 +164,7 @@ use fms_io_mod, only : fms_io_init, fms_io_exit, field_size, &
 use fms2_io_mod, only: fms2_io_init
 use memutils_mod, only: print_memuse_stats, memutils_init
 use grid2_mod, only: grid_init, grid_end
+use fms_string_utils_mod, only: fms_c2f_string, fms_cstring2cpointer, string
 
 use, intrinsic :: iso_c_binding
 
@@ -293,40 +294,6 @@ integer, public :: clock_flag_default
                                                   !! written to log once
 
 !> @}
-
-!> Converts a number to a string
-!> @ingroup fms_mod
-interface string
-   module procedure string_from_integer
-   module procedure string_from_real
-end interface
-!> Converts a C string to a Fortran string
-!> @ingroup fms_mod
-interface fms_c2f_string
-   module procedure cstring_fortran_conversion
-   module procedure cpointer_fortran_conversion
-end interface
-!> C functions
-  interface
-    !> @brief converts a kind=c_char to type c_ptr
-    pure function fms_cstring2cpointer (cs) result (cp) bind(c, name="cstring2cpointer")
-      import c_char, c_ptr
-        character(kind=c_char), intent(in) :: cs(*) !< C string input
-        type (c_ptr) :: cp !< C pointer
-    end function fms_cstring2cpointer
-
-    !> @brief Finds the length of a C-string
-    integer(c_size_t) pure function c_strlen(s) bind(c,name="strlen")
-      import c_size_t, c_ptr
-      type(c_ptr), intent(in), value :: s !< A C-string whose size is desired
-    end function
-
-    !> @brief Frees a C pointer
-    subroutine c_free(ptr) bind(c,name="free")
-      import c_ptr
-      type(c_ptr), value :: ptr !< A C-pointer to free
-    end subroutine
-  end interface
 
 !> @addtogroup fms_mod
 !> @{
@@ -800,61 +767,6 @@ integer :: i
   endif
 
 end function monotonic_array
-
-!! Functions from the old fms_io
-  !> @brief Converts an integer to a string
-  !!
-  !> This has been updated from the fms_io function.
-  function string_from_integer(i) result (res)
-    integer, intent(in) :: i !< Integer to be converted to a string
-    character(:),allocatable :: res !< String converted frominteger
-    character(range(i)+2) :: tmp !< Temp string that is set to correct size
-    write(tmp,'(i0)') i
-    res = trim(tmp)
-   return
-
-  end function string_from_integer
-
-  !#######################################################################
-  !> @brief Converts a real to a string
-  function string_from_real(a)
-    real, intent(in) :: a
-    character(len=32) :: string_from_real
-
-    write(string_from_real,*) a
-
-    return
-
-  end function string_from_real
-
-!> \brief Converts a C-string to a pointer and then to a Fortran string
-function cstring_fortran_conversion (cstring) result(fstring)
- character (kind=c_char), intent(in) :: cstring (*) !< Input C-string
- character(len=:), allocatable :: fstring    !< The fortran string returned
- fstring = cpointer_fortran_conversion(fms_cstring2cpointer(cstring))
-end function cstring_fortran_conversion
-
-!> \brief Converts a C-string returned from a TYPE(C_PTR) function to
-!! a fortran string with type character.
-function cpointer_fortran_conversion (cstring) result(fstring)
- type (c_ptr), intent(in) :: cstring !< Input C-pointer
- character(len=:), allocatable :: fstring    !< The fortran string returned
- character(len=:,kind=c_char), pointer :: string_buffer !< A temporary pointer to between C and Fortran
- integer(c_size_t) :: length !< The string length
-
-  length = c_strlen(cstring)
-  allocate (character(len=length, kind=c_char) :: string_buffer)
-    block
-      character(len=length,kind=c_char), pointer :: s
-      call c_f_pointer(cstring,s)  ! Recovers a view of the C string
-      string_buffer = s                   ! Copies the string contents
-    end block
-
- allocate(character(len=length) :: fstring) !> Set the length of fstring
-fstring = string_buffer
- deallocate(string_buffer)
-
-end function cpointer_fortran_conversion
 
 !#######################################################################
 !> @brief Prints to the log file (or a specified unit) the version id string and
