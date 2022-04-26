@@ -2050,7 +2050,7 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
 
        ! Take care of submitted field data
        AVERAGE_IF: IF ( average ) THEN
-         temp_result = average_the_field(diag_field_id, field, out_num, mask, weight, &
+         temp_result = average_the_field(diag_field_id, field, out_num, mask, weight1, &
            & sample, missvalue, missvalue_present, l_start, l_end, idx_cfg, err_msg, err_msg_local)
           IF (temp_result .eqv. .FALSE.) THEN
             DEALLOCATE(oor_mask)

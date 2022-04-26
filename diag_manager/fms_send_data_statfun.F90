@@ -119,7 +119,8 @@ CONTAINS
       INTEGER, INTENT(in) :: pow_value
       INTEGER :: i
       REAL, DIMENSION(:), ALLOCATABLE :: weigh_field_1d_p2
-      !!TODO :verify the allocate
+      !!TODO:verify the allocate
+      !!TODO: name change: weigh_field (weight_the_feild) -- >> weight_the_field
       ALLOCATE(weigh_field_1d_p2, mold=field_val)
       DO i = 1, size(field_val)
          weigh_field_1d_p2(i) = field_val(i) * field_val(i) * weight * weight
@@ -190,6 +191,7 @@ CONTAINS
       ! Power value for rms or pow(x) calculations
       INTEGER :: pow_value, ksr, ker, is, js, ks, ie, je, ke, hi, hj, f1, f2, f3, f4
       LOGICAL :: phys_window , need_compute , reduced_k_range
+      !!TODO: name change PHYS_WINDOWS -->> ? OMP subsetted data
 
       INTEGER :: i, j, k,  i1, j1, k1
 
@@ -204,7 +206,7 @@ CONTAINS
       procedure (weigh_field), pointer :: fwf_0d_ptr => null ()
       !! A pointer to the 3D filed weighn function.
       procedure (weigh_field_1d), pointer :: fwf_1d_ptr => null ()
-!! A pointer to the 3D filed weighn function.
+      !! A pointer to the 3D filed weighn function.
       procedure (weigh_field_3d), pointer :: fwf_3d_ptr => null ()
 
       pow_value = output_fields(out_num)%pow_value
@@ -241,6 +243,17 @@ CONTAINS
       f2 = idx_cfg%f2
       f3 = idx_cfg%f3
       f4 = idx_cfg%f4
+
+!$OMP CRITICAL
+      input_fields(diag_field_id)%numthreads = 1
+      active_omp_level=0
+#if defined(_OPENMP)
+      input_fields(diag_field_id)%numthreads = omp_get_num_threads()
+      input_fields(diag_field_id)%active_omp_level = omp_get_level()
+#endif
+      numthreads = input_fields(diag_field_id)%numthreads
+      active_omp_level = input_fields(diag_field_id)%active_omp_level
+!$OMP END CRITICAL
 
       ASSOCIATE( ofb => output_fields(out_num)%buffer , &
       & ofc => output_fields(out_num)%counter)
@@ -286,7 +299,7 @@ CONTAINS
                               END DO
                            END DO
                         END DO
-                     ELSE
+                     ELSE !!REDU_KR1_IF  !!TODO more labels; in-between labels
                         DO k=ks, ke
                            DO j=js, je
                               DO i=is, ie
@@ -315,6 +328,7 @@ CONTAINS
                            END DO
                         END DO
                      ELSE
+                        print *, "LOCf1"
                         DO k=ks, ke
                            DO j=js, je
                               DO i=is, ie
