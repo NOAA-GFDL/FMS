@@ -9,7 +9,7 @@ sequential patch number (starting from `01`).
 ## [2022.02] - 2022-04-29
 ### Known Issues
 - If using GCC 10 or higher as well as MPICH, compilation errors will occur unless `-fallow-argument-mismatch` is included in the Fortran compiler flags
-- GCC 11.1.0 is unsupported due to compilation issues with select type.
+- GCC 11.1.0 is unsupported due to compilation issues with select type. The issue is resolved in later GCC releases.
 ### Added
 - STRING_UTILS: Adds a module, `fms_string_utils_mod`, for common string operations throughout FMS
 - LIBFMS: makes recently added routines available through the global `fms` module
