@@ -83,7 +83,6 @@ endif()
 find_package(MPI REQUIRED COMPONENTS C Fortran)
 find_package(NetCDF REQUIRED COMPONENTS C Fortran)
 
-
 # Check for the OpenMP library and set the required compile flags
 if (OPENMP)
   find_package(OpenMP REQUIRED COMPONENTS C Fortran)
@@ -259,6 +258,9 @@ if(APPLE)
   list(APPEND fms_defs __APPLE__)
 endif()
 
+# Obtain compiler-specific flags
+include(fms_compiler_flags)
+
 foreach(kind ${kinds})
 
   set(libTgt fms_${kind})
@@ -291,7 +293,6 @@ foreach(kind ${kinds})
 
   string(TOLOWER ${CMAKE_BUILD_TYPE} build_type)
   if (NOT build_type STREQUAL debug)
-    include(fms_compiler_flags)
     set_target_properties(${libTgt}_f PROPERTIES COMPILE_FLAGS
                                                "${${kind}_flags}")
   endif()

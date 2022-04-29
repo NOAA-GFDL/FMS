@@ -291,13 +291,13 @@ if test $enable_setting_flags = yes; then
   fi
   # individual mixed precision overloads
   if test $enable_overload_r4 = yes; then
-    AC_DEFINE([OVERLOAD_R4], [1], [Set to overload the R4 Fortran routines])
+    AC_DEFINE([OVERLOAD_R4], [1], [Set to overload with the R4 Fortran routines])
   fi
   if test $enable_overload_c4 = yes; then
-    AC_DEFINE([OVERLOAD_C4], [1], [Set to overload the C4 Fortran routines])
+    AC_DEFINE([OVERLOAD_C4], [1], [Set to overload with the C4 Fortran routines])
   fi
   if test $enable_overload_c8 = yes; then
-    AC_DEFINE([OVERLOAD_C8], [1], [Set to overload the C8 Fortran routines])
+    AC_DEFINE([OVERLOAD_C8], [1], [Set to overload with the C8 Fortran routines])
   fi
   if test $enable_8byte_int = yes; then
     AC_DEFINE([no_8byte_integers], [1], [Set to disable 8 byte integer Fortran routines])
