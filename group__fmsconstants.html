@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.17"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>FMS: FMSconstants</title>
+<title>FMS: FMSConstants</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -33,7 +33,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">FMS
-   &#160;<span id="projectnumber">2022.01.0</span>
+   &#160;<span id="projectnumber">2022.02.0</span>
    </div>
    <div id="projectbrief">Flexible Modeling System</div>
   </td>
@@ -91,15 +91,29 @@ $(document).ready(function(){initNavTree('group__fmsconstants.html',''); initRes
 
 <div class="header">
   <div class="headertitle">
-<div class="title">FMSconstants<div class="ingroups"><a class="el" href="group__libfms.html">FMS Global Module</a></div></div>  </div>
+<div class="title">FMSConstants<div class="ingroups"><a class="el" href="group__libfms.html">FMS Global Module</a></div></div>  </div>
 </div><!--header-->
 <div class="contents">
 
-<p>Essentially a copy of <a class="el" href="group__constants__mod.html">constants_mod</a> for external usage alongside <a class="el" href="group__libfms.html">FMS Global Module</a>.  
+<p>Defines useful constants for Earth. Constants are defined as real.  
 <a href="#details">More...</a></p>
-<p>Essentially a copy of <a class="el" href="group__constants__mod.html">constants_mod</a> for external usage alongside <a class="el" href="group__libfms.html">FMS Global Module</a>. </p>
-<p>See <a class="el" href="group__constants__mod.html">constants_mod</a> for individual parameter information. </p>
-</div><!-- contents -->
+<p>Defines useful constants for Earth. Constants are defined as real. </p>
+<p>FMSconstants have been declared as REAL(kind=sizeof(rvar)), PARAMETER.</p>
+<p>The value of a constant defined and used from here cannot be changed in a users program. New constants can be defined in terms of values from the FMSconstants module and their includes using a parameter statement.<br  />
+<br  />
+</p>
+<p>The currently support contant systems are: GFDL constants (<a class="el" href="gfdl__constants_8h_source.html">gfdl_constants.h</a>) GEOS constants (<a class="el" href="geos__constants_8h_source.html">geos_constants.h</a>) GFS constants (<a class="el" href="gfs__constants_8h_source.html">gfs_constants.h</a>) <br  />
+<br  />
+</p>
+<p>The name given to a particular constant may be changed.<br  />
+<br  />
+</p>
+<p>Constants can only be used on the right side on an assignment statement (their value can not be reassigned).</p>
+<p>Example:</p>
+<pre class="fragment">    use FMSConstants, only:  TFREEZE, grav_new =&gt; GRAV
+    real, parameter :: grav_inv = 1.0 / grav_new
+    tempc(:,:,:) = tempk(:,:,:) - TFREEZE
+    geopotential(:,:) = height(:,:) * grav_new</pre> </div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->

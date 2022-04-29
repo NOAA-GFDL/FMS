@@ -23,8 +23,5 @@ var fms__io__utils_8F90 =
     [ "restart_filepath_mangle", "fms__io__utils_8F90.html#ga341c74a8c8df5190de10e05dc4092550", null ],
     [ "set_filename_appendix", "fms__io__utils_8F90.html#ga899ffaee79bff8effd01a7cf6f23940b", null ],
     [ "string_compare", "fms__io__utils_8F90.html#ga903b8517432214a95f6c4abc57756fac", null ],
-    [ "string_copy", "fms__io__utils_8F90.html#ga54969ab10f27be5137288c2edc6fc5c3", null ],
-    [ "string_from_integer2", "fms__io__utils_8F90.html#gaf499c55d6867766ed12bf574e7192db4", null ],
-    [ "string_from_real2", "fms__io__utils_8F90.html#ga5c9a69bd4bd0556f1d62479642215c03", null ],
     [ "filename_appendix", "fms__io__utils_8F90.html#a2ab027d1684dae60d93197395daa91df", null ]
 ];

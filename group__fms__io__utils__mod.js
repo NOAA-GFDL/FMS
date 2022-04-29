@@ -7,10 +7,6 @@ var group__fms__io__utils__mod =
       [ "head", "structfms__io__utils__mod_1_1char__linked__list.html#ac92e852526f5476f05f3228ba314b973", null ],
       [ "string", "structfms__io__utils__mod_1_1char__linked__list.html#a97e727b516248b76c8fe204a53b49f52", null ]
     ] ],
-    [ "string2", "interfacefms__io__utils__mod_1_1string2.html", [
-      [ "string_from_integer2", "interfacefms__io__utils__mod_1_1string2.html#a91c0d494a3aaa882cf916087380b936e", null ],
-      [ "string_from_real2", "interfacefms__io__utils__mod_1_1string2.html#a10278a744cbccf5fbcd06c6837964801", null ]
-    ] ],
     [ "parse_mask_table", "interfacefms__io__utils__mod_1_1parse__mask__table.html", [
       [ "parse_mask_table_2d", "interfacefms__io__utils__mod_1_1parse__mask__table.html#a80f47a37c42ad204c8120bf543b69e25", null ],
       [ "parse_mask_table_3d", "interfacefms__io__utils__mod_1_1parse__mask__table.html#abd955c030cf562b9a24a14855e8b1063", null ]
@@ -121,6 +117,5 @@ var group__fms__io__utils__mod =
     [ "parse_mask_table_3d", "group__fms__io__utils__mod.html#gab30638a23fea863dbca2978ff1ac8f80", null ],
     [ "restart_filepath_mangle", "group__fms__io__utils__mod.html#ga341c74a8c8df5190de10e05dc4092550", null ],
     [ "set_filename_appendix", "group__fms__io__utils__mod.html#ga899ffaee79bff8effd01a7cf6f23940b", null ],
-    [ "string_compare", "group__fms__io__utils__mod.html#ga903b8517432214a95f6c4abc57756fac", null ],
-    [ "string_copy", "group__fms__io__utils__mod.html#ga54969ab10f27be5137288c2edc6fc5c3", null ]
+    [ "string_compare", "group__fms__io__utils__mod.html#ga903b8517432214a95f6c4abc57756fac", null ]
 ];

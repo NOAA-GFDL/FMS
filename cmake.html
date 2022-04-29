@@ -33,7 +33,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">FMS
-   &#160;<span id="projectnumber">2022.01.0</span>
+   &#160;<span id="projectnumber">2022.02.0</span>
    </div>
    <div id="projectbrief">Flexible Modeling System</div>
   </td>
@@ -109,10 +109,12 @@ $(document).ready(function(){initNavTree('cmake.html',''); initResizable(); });
 </div><!-- fragment --><p>cd FMS mkdir -p build &amp;&amp; cd build cmake -DCMAKE_INSTALL_PREFIX=&lt;prefix&gt; .. make -j4 make install ```</p>
 <h3>User configurable options:</h3>
 <p>By default, FMS is built without <code>OpenMP</code> and in <code>single precision (r4)</code></p>
-<p>The following build options are available: </p><div class="fragment"><div class="line">-DOPENMP   &quot;Build FMS with OpenMP support&quot; DEFAULT: OFF</div>
-<div class="line">-D32BIT    &quot;Build 32-bit (r4) FMS library&quot; DEFAULT: ON</div>
-<div class="line">-D64BIT    &quot;Build 64-bit (r8) FMS library&quot; DEFAULT: OFF</div>
+<p>The following build options are available: </p><div class="fragment"><div class="line">-DOPENMP   &quot;Build FMS with OpenMP support&quot;        DEFAULT: OFF</div>
+<div class="line">-D32BIT    &quot;Build 32-bit (r4) FMS library&quot;        DEFAULT: ON</div>
+<div class="line">-D64BIT    &quot;Build 64-bit (r8) FMS library&quot;        DEFAULT: OFF</div>
+<div class="line">-DFPIC     &quot;Build with position independent code&quot; DEFAULT: OFF</div>
 <div class="line"> </div>
+<div class="line">-DCONSTANTS             &quot;Build with &lt;X&gt; constants parameter definitions&quot;     DEFAULT:GFDL  OPTIONS:GFS|GEOS|GFDL</div>
 <div class="line">-DINTERNAL_FILE_NML     &quot;Enable compiler definition -DINTERNAL_FILE_NML&quot;     DEFAULT: ON</div>
 <div class="line">-DENABLE_QUAD_PRECISION &quot;Enable compiler definition -DENABLE_QUAD_PRECISION&quot; DEFAULT: ON</div>
 <div class="line">-DGFS_PHYS              &quot;Enable compiler definition -DGFS_PHYS&quot;              DEFAULT:OFF</div>

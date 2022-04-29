@@ -29,6 +29,7 @@ var files_dup =
     [ "platform", "dir_c5a52a81292cf9a5167198f4f346d6d9.html", "dir_c5a52a81292cf9a5167198f4f346d6d9" ],
     [ "random_numbers", "dir_c02e289f7dbc8afba65b165d2cea3bda.html", "dir_c02e289f7dbc8afba65b165d2cea3bda" ],
     [ "sat_vapor_pres", "dir_e541841244919820195777b3825418e7.html", "dir_e541841244919820195777b3825418e7" ],
+    [ "string_utils", "dir_bba3294ab36dba832ed1d8d22ccb0761.html", "dir_bba3294ab36dba832ed1d8d22ccb0761" ],
     [ "test_fms", "dir_94c44810bc013f6d2d1f1c8b40850cd6.html", "dir_94c44810bc013f6d2d1f1c8b40850cd6" ],
     [ "time_interp", "dir_6af41e4ee932d0e3dffa40bfce7c0fa8.html", "dir_6af41e4ee932d0e3dffa40bfce7c0fa8" ],
     [ "time_manager", "dir_e4baa7f80acbc9ad07d694f3aacd8c3b.html", "dir_e4baa7f80acbc9ad07d694f3aacd8c3b" ],

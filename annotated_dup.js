@@ -204,16 +204,10 @@ var annotated_dup =
       [ "get_data_type_string", "interfacefms__io__utils__mod_1_1get__data__type__string.html", "interfacefms__io__utils__mod_1_1get__data__type__string" ],
       [ "get_mosaic_tile_file", "interfacefms__io__utils__mod_1_1get__mosaic__tile__file.html", "interfacefms__io__utils__mod_1_1get__mosaic__tile__file" ],
       [ "parse_mask_table", "interfacefms__io__utils__mod_1_1parse__mask__table.html", "interfacefms__io__utils__mod_1_1parse__mask__table" ],
-      [ "put_array_section", "interfacefms__io__utils__mod_1_1put__array__section.html", "interfacefms__io__utils__mod_1_1put__array__section" ],
-      [ "string2", "interfacefms__io__utils__mod_1_1string2.html", "interfacefms__io__utils__mod_1_1string2" ]
+      [ "put_array_section", "interfacefms__io__utils__mod_1_1put__array__section.html", "interfacefms__io__utils__mod_1_1put__array__section" ]
     ] ],
     [ "fms_mod", null, [
-      [ "c_free", "interfacefms__mod_1_1c__free.html", "interfacefms__mod_1_1c__free" ],
-      [ "c_strlen", "interfacefms__mod_1_1c__strlen.html", "interfacefms__mod_1_1c__strlen" ],
-      [ "fms_c2f_string", "interfacefms__mod_1_1fms__c2f__string.html", "interfacefms__mod_1_1fms__c2f__string" ],
-      [ "fms_cstring2cpointer", "interfacefms__mod_1_1fms__cstring2cpointer.html", "interfacefms__mod_1_1fms__cstring2cpointer" ],
-      [ "nml_errors_type", "structfms__mod_1_1nml__errors__type.html", "structfms__mod_1_1nml__errors__type" ],
-      [ "string", "interfacefms__mod_1_1string.html", "interfacefms__mod_1_1string" ]
+      [ "nml_errors_type", "structfms__mod_1_1nml__errors__type.html", "structfms__mod_1_1nml__errors__type" ]
     ] ],
     [ "fms_netcdf_domain_io_mod", null, [
       [ "compute_global_checksum", "interfacefms__netcdf__domain__io__mod_1_1compute__global__checksum.html", "interfacefms__netcdf__domain__io__mod_1_1compute__global__checksum" ],
@@ -222,6 +216,16 @@ var annotated_dup =
     ] ],
     [ "fms_netcdf_unstructured_domain_io_mod", null, [
       [ "fmsnetcdfunstructureddomainfile_t", "structfms__netcdf__unstructured__domain__io__mod_1_1fmsnetcdfunstructureddomainfile__t.html", "structfms__netcdf__unstructured__domain__io__mod_1_1fmsnetcdfunstructureddomainfile__t" ]
+    ] ],
+    [ "fms_string_utils_mod", null, [
+      [ "c_free", "interfacefms__string__utils__mod_1_1c__free.html", "interfacefms__string__utils__mod_1_1c__free" ],
+      [ "c_strlen", "interfacefms__string__utils__mod_1_1c__strlen.html", "interfacefms__string__utils__mod_1_1c__strlen" ],
+      [ "fms_c2f_string", "interfacefms__string__utils__mod_1_1fms__c2f__string.html", "interfacefms__string__utils__mod_1_1fms__c2f__string" ],
+      [ "fms_cstring2cpointer", "interfacefms__string__utils__mod_1_1fms__cstring2cpointer.html", "interfacefms__string__utils__mod_1_1fms__cstring2cpointer" ],
+      [ "fms_find_my_string_binding", "interfacefms__string__utils__mod_1_1fms__find__my__string__binding.html", "interfacefms__string__utils__mod_1_1fms__find__my__string__binding" ],
+      [ "fms_find_unique", "interfacefms__string__utils__mod_1_1fms__find__unique.html", "interfacefms__string__utils__mod_1_1fms__find__unique" ],
+      [ "fms_sort_this", "interfacefms__string__utils__mod_1_1fms__sort__this.html", "interfacefms__string__utils__mod_1_1fms__sort__this" ],
+      [ "string", "interfacefms__string__utils__mod_1_1string.html", "interfacefms__string__utils__mod_1_1string" ]
     ] ],
     [ "grid2_mod", null, [
       [ "get_grid_cell_area", "interfacegrid2__mod_1_1get__grid__cell__area.html", "interfacegrid2__mod_1_1get__grid__cell__area" ],

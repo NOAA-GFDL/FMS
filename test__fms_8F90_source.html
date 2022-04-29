@@ -33,7 +33,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">FMS
-   &#160;<span id="projectnumber">2022.01.0</span>
+   &#160;<span id="projectnumber">2022.02.0</span>
    </div>
    <div id="projectbrief">Flexible Modeling System</div>
   </td>
@@ -108,9 +108,9 @@ $(document).ready(function(){initNavTree('test__fms_8F90_source.html',''); initR
 <div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160; </div>
 <div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160;<span class="keyword">program</span> test_fms</div>
 <div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160; <span class="keywordtype">use </span>mpp_mod, <span class="keywordtype">only</span> : <a class="code" href="interfacempp__mod_1_1mpp__error.html">mpp_error</a>, fatal, note, <a class="code" href="mpp__comm__mpi_8inc.html#a271b4c9584f2b514df4439086add4198">mpp_init</a></div>
-<div class="line"><a name="l00015"></a><span class="lineno">   15</span>&#160; <span class="keywordtype">use </span>fms_mod, <span class="keywordtype">only</span> : <a class="code" href="group__fms__mod.html#ga76099928e3f2e58ea5efe717c7809fce">fms_init</a>, <a class="code" href="interfacefms__mod_1_1string.html">string</a>, fms_end</div>
-<div class="line"><a name="l00016"></a><span class="lineno">   16</span>&#160; <span class="keywordtype">use </span>fms_mod, <span class="keywordtype">only</span> : <a class="code" href="interfacefms__mod_1_1fms__c2f__string.html">fms_c2f_string</a></div>
-<div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160; <span class="keywordtype">use </span>fms_mod, <span class="keywordtype">only</span> : <a class="code" href="interfacefms__mod_1_1fms__cstring2cpointer.html">fms_cstring2cpointer</a></div>
+<div class="line"><a name="l00015"></a><span class="lineno">   15</span>&#160; <span class="keywordtype">use </span>fms_mod, <span class="keywordtype">only</span> : <a class="code" href="group__fms__mod.html#ga76099928e3f2e58ea5efe717c7809fce">fms_init</a>, string, fms_end</div>
+<div class="line"><a name="l00016"></a><span class="lineno">   16</span>&#160; <span class="keywordtype">use </span>fms_mod, <span class="keywordtype">only</span> : fms_c2f_string</div>
+<div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160; <span class="keywordtype">use </span>fms_mod, <span class="keywordtype">only</span> : fms_cstring2cpointer</div>
 <div class="line"><a name="l00018"></a><span class="lineno">   18</span>&#160; <span class="keywordtype">use </span>test_fms_mod</div>
 <div class="line"><a name="l00019"></a><span class="lineno">   19</span>&#160; use, <span class="keywordtype">intrinsic</span> :: iso_c_binding</div>
 <div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160; </div>
@@ -127,7 +127,7 @@ $(document).ready(function(){initNavTree('test__fms_8F90_source.html',''); initR
 <div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160; answer = <span class="stringliteral">&quot;          &quot;</span></div>
 <div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160; answer = <span class="stringliteral">&#39;100&#39;</span></div>
 <div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160; i = 100</div>
-<div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160; test = <a class="code" href="interfacefms__mod_1_1string.html">string</a>(i)</div>
+<div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160; test = string(i)</div>
 <div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160; <span class="keyword">write</span> (6,*) <span class="stringliteral">&quot;Integer test = &quot;</span>, trim(test)</div>
 <div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160; <span class="keywordflow">if</span> (trim(answer) .eq. trim(test)) <span class="keywordflow">then</span></div>
 <div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;         <span class="keyword">call </span><a class="code" href="interfacempp__mod_1_1mpp__error.html">mpp_error</a>(note, trim(test)//<span class="stringliteral">&quot; matches &quot;</span>//trim(answer))</div>
@@ -139,7 +139,7 @@ $(document).ready(function(){initNavTree('test__fms_8F90_source.html',''); initR
 <div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160; test = <span class="stringliteral">&quot;                &quot;</span></div>
 <div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160; answer = <span class="stringliteral">&#39;100&#39;</span></div>
 <div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;<span class="comment">! Cptr = strPoint()</span></div>
-<div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160; test = <a class="code" href="interfacefms__mod_1_1fms__c2f__string.html">fms_c2f_string</a>(strpoint())</div>
+<div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160; test = fms_c2f_string(strpoint())</div>
 <div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160; </div>
 <div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160; <span class="keyword">write</span> (6,*) <span class="stringliteral">&quot;Cstring test = &quot;</span>, trim(test)</div>
 <div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160; <span class="keywordflow">if</span> (trim(answer) .eq. trim(test)) <span class="keywordflow">then</span></div>
@@ -158,7 +158,7 @@ $(document).ready(function(){initNavTree('test__fms_8F90_source.html',''); initR
 <div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160; cstring(17) = c_null_char</div>
 <div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160; <span class="keyword">call </span><a class="code" href="interfacempp__mod_1_1mpp__error.html">mpp_error</a>(note,<span class="stringliteral">&quot;Testing fms_cstring2cpointer and fms_c2f_string&quot;</span>)</div>
 <div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;<span class="comment">! test = fms_c2f_string(fms_cstring2cpointer(c_char_&quot;100             &quot;//c_null_char))</span></div>
-<div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160; test = <a class="code" href="interfacefms__mod_1_1fms__c2f__string.html">fms_c2f_string</a>(cstring)</div>
+<div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160; test = fms_c2f_string(cstring)</div>
 <div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160; <span class="keywordflow">if</span> (trim(answer) .eq. trim(test)) <span class="keywordflow">then</span></div>
 <div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;         <span class="keyword">call </span><a class="code" href="interfacempp__mod_1_1mpp__error.html">mpp_error</a>(note, trim(test)//<span class="stringliteral">&quot; matches &quot;</span>//trim(answer))</div>
 <div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160; <span class="keywordflow">else</span></div>
@@ -173,12 +173,9 @@ $(document).ready(function(){initNavTree('test__fms_8F90_source.html',''); initR
 <div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;<span class="keyword">end program </span>test_fms</div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
-<div class="ttc" id="ainterfacefms__mod_1_1string_html"><div class="ttname"><a href="interfacefms__mod_1_1string.html">fms_mod::string</a></div><div class="ttdoc">Converts a number to a string.</div><div class="ttdef"><b>Definition:</b> <a href="fms_8F90_source.html#l00299">fms.F90:299</a></div></div>
 <div class="ttc" id="ainterfacempp__mod_1_1mpp__error_html"><div class="ttname"><a href="interfacempp__mod_1_1mpp__error.html">mpp_mod::mpp_error</a></div><div class="ttdoc">Error handler.</div><div class="ttdef"><b>Definition:</b> <a href="mpp_8F90_source.html#l00383">mpp.F90:383</a></div></div>
 <div class="ttc" id="ampp__comm__mpi_8inc_html_a271b4c9584f2b514df4439086add4198"><div class="ttname"><a href="mpp__comm__mpi_8inc.html#a271b4c9584f2b514df4439086add4198">mpp_init</a></div><div class="ttdeci">subroutine mpp_init(flags, localcomm, test_level, alt_input_nml_path)</div><div class="ttdoc">Initialize the mpp_mod module.</div><div class="ttdef"><b>Definition:</b> <a href="mpp__comm__mpi_8inc_source.html#l00034">mpp_comm_mpi.inc:34</a></div></div>
-<div class="ttc" id="agroup__fms__mod_html_ga76099928e3f2e58ea5efe717c7809fce"><div class="ttname"><a href="group__fms__mod.html#ga76099928e3f2e58ea5efe717c7809fce">fms_mod::fms_init</a></div><div class="ttdeci">subroutine, public fms_init(localcomm, alt_input_nml_path)</div><div class="ttdoc">Initializes the FMS module and also calls the initialization routines for all modules in the MPP pack...</div><div class="ttdef"><b>Definition:</b> <a href="fms_8F90_source.html#l00354">fms.F90:354</a></div></div>
-<div class="ttc" id="ainterfacefms__mod_1_1fms__cstring2cpointer_html"><div class="ttname"><a href="interfacefms__mod_1_1fms__cstring2cpointer.html">fms_mod::fms_cstring2cpointer</a></div><div class="ttdoc">C functions.</div><div class="ttdef"><b>Definition:</b> <a href="fms_8F90_source.html#l00312">fms.F90:312</a></div></div>
-<div class="ttc" id="ainterfacefms__mod_1_1fms__c2f__string_html"><div class="ttname"><a href="interfacefms__mod_1_1fms__c2f__string.html">fms_mod::fms_c2f_string</a></div><div class="ttdoc">Converts a C string to a Fortran string.</div><div class="ttdef"><b>Definition:</b> <a href="fms_8F90_source.html#l00305">fms.F90:305</a></div></div>
+<div class="ttc" id="agroup__fms__mod_html_ga76099928e3f2e58ea5efe717c7809fce"><div class="ttname"><a href="group__fms__mod.html#ga76099928e3f2e58ea5efe717c7809fce">fms_mod::fms_init</a></div><div class="ttdeci">subroutine, public fms_init(localcomm, alt_input_nml_path)</div><div class="ttdoc">Initializes the FMS module and also calls the initialization routines for all modules in the MPP pack...</div><div class="ttdef"><b>Definition:</b> <a href="fms_8F90_source.html#l00321">fms.F90:321</a></div></div>
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
