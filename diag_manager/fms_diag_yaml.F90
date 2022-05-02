@@ -355,8 +355,6 @@ subroutine diag_yaml_object_init(diag_subset_output)
     call get_block_ids(diag_yaml_id, "varlist", var_ids, parent_block_id=diag_file_ids(i))
     file_var_count = 0
     allocate(diag_yaml%diag_files(file_count)%file_varlist(get_total_num_vars(diag_yaml_id, diag_file_ids(i))))
-    allocate(diag_yaml%diag_files(file_count)%file_var_index &
-                                  (size(diag_yaml%diag_files(file_count)%file_varlist)))
     allocate(diag_yaml%diag_files(file_count)%file_var_reg &
                                   (size(diag_yaml%diag_files(file_count)%file_varlist)))
 !> Initialize file_var_reg to be all .false.
