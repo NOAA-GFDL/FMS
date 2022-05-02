@@ -72,11 +72,12 @@ type subRegion_type
   character (len=:), allocatable :: grid_type   !< Flag indicating the type of region,
                                                 !! acceptable values are "latlon" and "index"
   class(*),          allocatable :: corner1(:)  !< (x, y) coordinates of the first corner of the region
-  class(*),          allocatable :: corner2(:)  !< (x, y) coordinates/indices of the first corner of the region
-  class(*),          allocatable :: corner3(:)  !< (x, y) coordinates/indices of the first corner of the region
-  class(*),          allocatable :: corner4(:)  !< (x, y) coordinates/indices of the first corner of the region
+  class(*),          allocatable :: corner2(:)  !< (x, y) coordinates/indices of the second corner of the region
+  class(*),          allocatable :: corner3(:)  !< (x, y) coordinates/indices of the third corner of the region
+  class(*),          allocatable :: corner4(:)  !< (x, y) coordinates/indices of the fourth corner of the region
   class(*),          allocatable :: zbounds(:)  !< bounds of the z axis (zbegin, zend)
-  integer                        :: tile        !< Tile number of the sub region, required if using the "index" grid type
+  integer                        :: tile        !< Tile number of the sub region
+                                                !! required if using the "index" grid type
 
 end type subRegion_type
 
