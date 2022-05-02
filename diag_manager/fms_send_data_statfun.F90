@@ -291,7 +291,7 @@ CONTAINS
                            k1= k - ksr + 1
                            DO j=js, je
                               DO i=is, ie
-                                 IF ( mask(i-is+1+hi, j-js+1+hj, k) ) THEN
+                                 IF ( mask(i-is+1+hi, j-js+1+hj, k) ) THEN 
                                     ofb(i-hi,j-hj,k1,sample) = ofb(i-hi,j-hj,k1,sample) +&
                                     & fwf_0d_ptr (field(i-is+1+hi, j-js+1+hj, k), weight1, pow_value)
                                     ofc(i-hi,j-hj,k1,sample) = ofc(i-hi,j-hj,k1,sample) + weight1
@@ -299,7 +299,7 @@ CONTAINS
                               END DO
                            END DO
                         END DO
-                     ELSE !!REDU_KR1_IF  !!TODO more labels; in-between labels
+                     ELSE REDU_KR1_IF  !!TODO more labels; in-between labels
                         DO k=ks, ke
                            DO j=js, je
                               DO i=is, ie
@@ -327,8 +327,7 @@ CONTAINS
                               END DO
                            END DO
                         END DO
-                     ELSE
-                        print *, "LOCf1"
+                     ELSE REDU_KR2_IF
                         DO k=ks, ke
                            DO j=js, je
                               DO i=is, ie
