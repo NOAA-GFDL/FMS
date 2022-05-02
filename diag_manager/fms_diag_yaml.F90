@@ -36,6 +36,7 @@ use yaml_parser_mod, only: open_and_parse_file, get_value_from_key, get_num_bloc
 use mpp_mod,         only: mpp_error, FATAL
 use, intrinsic :: iso_c_binding, only : c_ptr, c_null_char
 use fms_string_utils_mod, only: fms_array_to_pointer, fms_find_my_string, fms_sort_this, fms_find_unique
+use platform_mod, only: r4_kind, i4_kind
 
 implicit none
 
@@ -68,17 +69,14 @@ end type
 
 !> @brief type to hold the sub region information about a file
 type subRegion_type
-  character (len=:), allocatable :: grid_type !< Flag indicating the type of region,
-                                              !! acceptable values are "latlon" and "index"
-  real, allocatable :: lat_lon_sub_region (:) !< Array that stores the grid point bounds for the sub region
-                                              !! to use if grid_type is set to "latlon"
-                                              !! [dim1_begin, dim1_end, dim2_begin, dim2_end,
-                                              !!  dim3_begin, dim3_end, dim4_begin, dim4_end]
-  integer, allocatable :: index_sub_region (:) !< Array that stores the index bounds for the sub region to
-                                               !! to use if grid_type is set to "index"
-                                               !! [dim1_begin, dim1_end, dim2_begin, dim2_end,
-                                               !!  dim3_begin, dim3_end, dim4_begin, dim4_end]
-  integer :: tile !< Tile number of the sub region, required if using the "index" grid type
+  character (len=:), allocatable :: grid_type   !< Flag indicating the type of region,
+                                                !! acceptable values are "latlon" and "index"
+  class(*),          allocatable :: corner1(:)  !< (x, y) coordinates of the first corner of the region
+  class(*),          allocatable :: corner2(:)  !< (x, y) coordinates/indices of the first corner of the region
+  class(*),          allocatable :: corner3(:)  !< (x, y) coordinates/indices of the first corner of the region
+  class(*),          allocatable :: corner4(:)  !< (x, y) coordinates/indices of the first corner of the region
+  class(*),          allocatable :: zbounds(:)  !< bounds of the z axis (zbegin, zend)
+  integer                        :: tile        !< Tile number of the sub region, required if using the "index" grid type
 
 end type subRegion_type
 
@@ -217,11 +215,11 @@ contains
 
 !> @brief gets the diag_yaml module variable
 !! @return a copy of the diag_yaml module variable
-pure function get_diag_yaml_obj() &
+function get_diag_yaml_obj() &
 result(res)
   type (diagYamlObject_type) :: res
 
-   res = diag_yaml
+  res= diag_yaml
 end function get_diag_yaml_obj
 
 !> @brief get the basedate of a diag_yaml type
@@ -246,7 +244,7 @@ end function get_title
 
 !> @brief get the diag_files of a diag_yaml type
 !! @return the diag_files
-pure function get_diag_files(diag_yaml) &
+function get_diag_files(diag_yaml) &
 result(diag_files)
   class (diagYamlObject_type), intent(in) :: diag_yaml               !< The diag_yaml
   type(diagYamlFiles_type), allocatable, dimension (:) :: diag_files!< History file info
@@ -395,10 +393,7 @@ subroutine diag_yaml_object_end()
   do i = 1, size(diag_yaml%diag_files, 1)
     if(allocated(diag_yaml%diag_files(i)%file_varlist)) deallocate(diag_yaml%diag_files(i)%file_varlist)
     if(allocated(diag_yaml%diag_files(i)%file_global_meta)) deallocate(diag_yaml%diag_files(i)%file_global_meta)
-    if(allocated(diag_yaml%diag_files(i)%file_sub_region%lat_lon_sub_region)) &
-      deallocate(diag_yaml%diag_files(i)%file_sub_region%lat_lon_sub_region)
-    if(allocated(diag_yaml%diag_files(i)%file_sub_region%index_sub_region)) &
-      deallocate(diag_yaml%diag_files(i)%file_sub_region%index_sub_region)
+    call sub_region_end(diag_yaml%diag_files(i)%file_sub_region)
   enddo
   if(allocated(diag_yaml%diag_files)) deallocate(diag_yaml%diag_files)
 
@@ -416,6 +411,18 @@ subroutine diag_yaml_object_end()
   if(allocated(variable_list%diag_field_indices)) deallocate(variable_list%diag_field_indices)
 
 end subroutine diag_yaml_object_end
+
+!> @brief Deallocate the subregion type
+subroutine sub_region_end(sub_region)
+  type(subRegion_type), intent(inout) :: sub_region !< Sub_region type to deallocate
+
+  if(allocated(sub_region%corner1)) deallocate(sub_region%corner1)
+  if(allocated(sub_region%corner2)) deallocate(sub_region%corner2)
+  if(allocated(sub_region%corner3)) deallocate(sub_region%corner3)
+  if(allocated(sub_region%corner4)) deallocate(sub_region%corner4)
+  if(allocated(sub_region%zbounds)) deallocate(sub_region%zbounds)
+
+end subroutine sub_region_end
 
 !> @brief Fills in a diagYamlFiles_type with the contents of a file block in diag_table.yaml
 subroutine fill_in_diag_files(diag_yaml_id, diag_file_id, fileobj)
@@ -457,23 +464,7 @@ subroutine fill_in_diag_files(diag_yaml_id, diag_file_id, fileobj)
   if (nsubregion .eq. 1) then
     call get_block_ids(diag_yaml_id, "sub_region", sub_region_id, parent_block_id=diag_file_id)
     call diag_get_value_from_key(diag_yaml_id, sub_region_id(1), "grid_type", fileobj%file_sub_region%grid_type)
-    if (trim(fileobj%file_sub_region%grid_type) .eq. "latlon") then
-      allocate(fileobj%file_sub_region%lat_lon_sub_region(8))
-      fileobj%file_sub_region%lat_lon_sub_region = DIAG_NULL
-      call get_sub_region(diag_yaml_id, sub_region_id(1), fileobj%file_sub_region%lat_lon_sub_region)
-    elseif (trim(fileobj%file_sub_region%grid_type) .eq. "index") then
-      allocate(fileobj%file_sub_region%index_sub_region(8))
-      fileobj%file_sub_region%index_sub_region = DIAG_NULL
-      call get_sub_region(diag_yaml_id, sub_region_id(1), fileobj%file_sub_region%index_sub_region)
-      call get_value_from_key(diag_yaml_id, sub_region_id(1), "tile", fileobj%file_sub_region%tile, is_optional=.true.)
-      if (fileobj%file_sub_region%tile .eq. DIAG_NULL) call mpp_error(FATAL, &
-        "The tile number is required when defining a "//&
-        "subregion. Check your subregion entry for "//trim(fileobj%file_fname))
-    else
-      call mpp_error(FATAL, trim(fileobj%file_sub_region%grid_type)//" is not a valid region type. &
-      &The acceptable values are latlon and index. &
-      &Check your entry for file:"//trim(fileobj%file_fname))
-    endif
+    call get_sub_region(diag_yaml_id, sub_region_id(1), fileobj%file_sub_region, fileobj%file_fname)
   elseif (nsubregion .ne. 0) then
     call mpp_error(FATAL, "diag_yaml_object_init: file "//trim(fileobj%file_fname)//" has multiple region blocks")
   endif
@@ -564,19 +555,43 @@ subroutine diag_get_value_from_key(diag_file_id, par_id, key_name, value_name, i
 end subroutine diag_get_value_from_key
 
 !> @brief gets the lat/lon of the sub region to use in a diag_table yaml
-subroutine get_sub_region(diag_yaml_id, sub_region_id, sub_region)
-  integer, intent(in)  :: diag_yaml_id       !< Id of the diag_table yaml file
-  integer, intent(in)  :: sub_region_id      !< Id of the region block to read from
-  class(*),intent(out) :: sub_region (NUM_SUB_REGION_ARRAY) !< Array storing the bounds of the sub region
+subroutine get_sub_region(diag_yaml_id, sub_region_id, sub_region, fname)
+  integer,             intent(in)    :: diag_yaml_id       !< Id of the diag_table yaml file
+  integer,             intent(in)    :: sub_region_id      !< Id of the region block to read from
+  type(subRegion_type),intent(inout) :: sub_region         !< Type that stores the sub_region
+  character(len=*),    intent(in)    :: fname              !< filename of the subregion (for error messages)
 
-  call get_value_from_key(diag_yaml_id, sub_region_id, "dim1_begin", sub_region(1), is_optional=.true.)
-  call get_value_from_key(diag_yaml_id, sub_region_id, "dim1_end", sub_region(2), is_optional=.true.)
-  call get_value_from_key(diag_yaml_id, sub_region_id, "dim2_begin", sub_region(3), is_optional=.true.)
-  call get_value_from_key(diag_yaml_id, sub_region_id, "dim2_end", sub_region(4), is_optional=.true.)
-  call get_value_from_key(diag_yaml_id, sub_region_id, "dim3_begin", sub_region(5), is_optional=.true.)
-  call get_value_from_key(diag_yaml_id, sub_region_id, "dim3_end", sub_region(6), is_optional=.true.)
-  call get_value_from_key(diag_yaml_id, sub_region_id, "dim4_begin", sub_region(7), is_optional=.true.)
-  call get_value_from_key(diag_yaml_id, sub_region_id, "dim4_end", sub_region(8), is_optional=.true.)
+  select case (trim(sub_region%grid_type))
+  case ("latlon")
+    allocate(real(kind=r4_kind) :: sub_region%corner1(2))
+    allocate(real(kind=r4_kind) :: sub_region%corner2(2))
+    allocate(real(kind=r4_kind) :: sub_region%corner3(2))
+    allocate(real(kind=r4_kind) :: sub_region%corner4(2))
+    allocate(real(kind=r4_kind) :: sub_region%zbounds(2))
+  case ("index")
+    allocate(real(kind=i4_kind) :: sub_region%corner1(2))
+    allocate(real(kind=i4_kind) :: sub_region%corner2(2))
+    allocate(real(kind=i4_kind) :: sub_region%corner3(2))
+    allocate(real(kind=i4_kind) :: sub_region%corner4(2))
+    allocate(real(kind=i4_kind) :: sub_region%zbounds(2))
+
+    call get_value_from_key(diag_yaml_id, sub_region_id, "tile", sub_region%tile, is_optional=.true.)
+    if (sub_region%tile .eq. DIAG_NULL) call mpp_error(FATAL, &
+      "The tile number is required when defining a "//&
+      "subregion. Check your subregion entry for "//trim(fname))
+  case default
+    call mpp_error(FATAL, trim(sub_region%grid_type)//" is not a valid region type. &
+    &The acceptable values are latlon and index. &
+    &Check your entry for file:"//trim(fname))
+  end select
+
+  call get_value_from_key(diag_yaml_id, sub_region_id, "corner1", sub_region%corner1)
+  call get_value_from_key(diag_yaml_id, sub_region_id, "corner2", sub_region%corner2)
+  call get_value_from_key(diag_yaml_id, sub_region_id, "corner3", sub_region%corner3)
+  call get_value_from_key(diag_yaml_id, sub_region_id, "corner4", sub_region%corner4)
+
+  sub_region%zbounds = DIAG_NULL
+  call get_value_from_key(diag_yaml_id, sub_region_id, "zbounds", sub_region%zbounds, is_optional=.true.)
 
 end subroutine get_sub_region
 
@@ -770,7 +785,7 @@ result (res)
 end function get_file_unlimdim
 !> @brief Inquiry for diag_files_obj%file_subregion
 !! @return file_sub_region of a diag_yaml_file_obj
-pure function get_file_sub_region (diag_files_obj) &
+function get_file_sub_region (diag_files_obj) &
 result (res)
  class (diagYamlFiles_type), intent(in) :: diag_files_obj !< The object being inquiried
  type(subRegion_type) :: res !< What is returned
@@ -983,9 +998,7 @@ end function has_file_write
 !! @return true if obj%file_sub_region sub region variables are allocated
 pure logical function has_file_sub_region (obj)
   class(diagYamlFiles_type), intent(in) :: obj !< diagYamlFiles_type object to initialize
-  if ( (allocated(obj%file_sub_region%grid_type) .and. allocated(obj%file_sub_region%lat_lon_sub_region)) &
-   .or.(allocated(obj%file_sub_region%grid_type) .and. allocated(obj%file_sub_region%index_sub_region)))  &
-   then
+  if ( trim(obj%file_sub_region%grid_type) .eq. "latlon" .or. trim(obj%file_sub_region%grid_type) .eq. "index") then
        has_file_sub_region = .true.
   else
        has_file_sub_region = .false.
