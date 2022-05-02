@@ -384,7 +384,7 @@ fi
 # Check if gcc >=10 is used with mpich
 # adds compiler arg needed for mpich compilation if found
 AC_MSG_CHECKING([if gcc 10 or greater is loaded with mpich])
-if [ test -n "`$FC --version | grep GNU | grep 1.\..\..`" && test -n "which $FC | grep mpich" ]; then
+if [ test "`$FC --version | grep GNU | grep -E ' 1[0-9]\.[0-9]*\.[0-9]*$'`" -a "`which $FC | grep -i mpich`" ]; then
   AC_MSG_RESULT([yes])
   AC_MSG_WARN([Adding -fallow-argument-mismatch to FCFLAGS to allow compilation with gcc >=10 and mpich])
   FCFLAGS="$FCFLAGS -fallow-argument-mismatch"
