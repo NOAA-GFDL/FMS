@@ -2283,8 +2283,10 @@ subroutine flush_file(fileobj)
 
   integer :: err !< Netcdf error code
 
-  err = nf90_sync(fileobj%ncid)
-  call check_netcdf_code(err, "Flush_file: File:"//trim(fileobj%path))
+  if (fileobj%is_root) then
+    err = nf90_sync(fileobj%ncid)
+    call check_netcdf_code(err, "Flush_file: File:"//trim(fileobj%path))
+  endif
 end subroutine flush_file
 
 end module netcdf_io_mod

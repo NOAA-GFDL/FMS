@@ -512,13 +512,12 @@ diag_files:
   start_time: 2 1 1 0 0 0
   file_duration: 12
   file_duration_units: hours
-  realm: ATM
   varlist:
   - module: test_diag_manager_mod
     var_name: sst
     output_name: sst
     reduction: average
-    kind: float
+    kind: r4
   global_meta:
   - is_a_file: true
 - file_name: normal
@@ -531,7 +530,7 @@ diag_files:
     var_name: sst
     output_name: sst
     reduction: average
-    kind: float
+    kind: r4
     write_var: true
     attributes:
     - do_sst: .true.
@@ -550,13 +549,13 @@ diag_files:
     var_name: sstt
     output_name: sstt
     reduction: average
-    kind: float
+    kind: r4
     long_name: S S T
   - module: test_diag_manager_mod
     var_name: sstt2
     output_name: sstt2
     reduction: average
-    kind: float
+    kind: r4
     long_name: S S T
     write_var: false
   sub_region:
@@ -595,7 +594,7 @@ diag_files:
     var_name: sst1
     output_name: sst1
     reduction: average
-    kind: float
+    kind: r4
 - file_name: file2
   freq: 6
   freq_units: hours
@@ -607,7 +606,7 @@ diag_files:
     var_name: sst2
     output_name: sst2
     reduction: average
-    kind: float
+    kind: r4
 - file_name: file3
   freq: 6
   freq_units: hours
@@ -618,12 +617,12 @@ diag_files:
     var_name: sst3
     output_name: sst3
     reduction: average
-    kind: float
+    kind: r4
   - module: test_diag_manager_mod
     var_name: sst4
     output_name: sst4
     reduction: average
-    kind: float
+    kind: r4
 _EOF
 test_expect_success "Test the diag_ocean feature in diag_manager_init (test $my_test_count)" '
   mpirun -n 2 ../test_diag_ocean

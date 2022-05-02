@@ -23,7 +23,7 @@ cmake_minimum_required(VERSION 3.12 FATAL_ERROR)
 
 # Define the CMake project
 project(FMS
-  VERSION 2021.04.0
+  VERSION 2022.01.0
   DESCRIPTION  "GFDL FMS Library"
   HOMEPAGE_URL "https://www.gfdl.noaa.gov/fms"
   LANGUAGES C Fortran)
@@ -52,9 +52,10 @@ endif()
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
 # Build options
-option(OPENMP    "Build FMS with OpenMP support" OFF)
-option(32BIT     "Build 32-bit (r4) FMS library"  ON)
-option(64BIT     "Build 64-bit (r8) FMS library" OFF)
+option(OPENMP "Build FMS with OpenMP support"        OFF)
+option(32BIT  "Build 32-bit (r4) FMS library"         ON)
+option(64BIT  "Build 64-bit (r8) FMS library"        OFF)
+option(FPIC   "Build with position independent code" OFF)
 
 # Options for compiler definitions
 option(INTERNAL_FILE_NML     "Enable compiler definition -DINTERNAL_FILE_NML"      ON)
@@ -87,6 +88,11 @@ endif()
 if (WITH_YAML)
   find_package(libyaml REQUIRED)
   include_directories(${LIBYAML_INCLUDE_DIR})
+endif ()
+
+# Enables position independent code (i.e., -fPIC)
+if (FPIC)
+  set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 endif ()
 
 # Collect FMS Fortran source files
@@ -182,7 +188,6 @@ list(APPEND fms_fortran_src_files
 # Collect FMS C source files
 list(APPEND fms_c_src_files
   affinity/affinity.c
-  fms/fms_c.c
   mosaic/create_xgrid.c
   mosaic/gradient_c2l.c
   mosaic/interp.c
@@ -197,7 +202,6 @@ list(APPEND fms_c_src_files
 list(APPEND fms_header_files
   include/file_version.h
   include/fms_platform.h
-  fms/fms_c.h
 )
 
 # Standard FMS compiler definitions
@@ -213,6 +217,19 @@ if(HAVE_GETTID)
 endif()
 
 # Additional (optional) compiler definitions
+if(NOT CONSTANTS)
+    set(CONSTANTS GFDL)
+endif()
+if(CONSTANTS STREQUAL "GFS")
+  list(APPEND fms_defs GFS_CONSTANTS)
+elseif(CONSTANTS STREQUAL "GEOS")
+  list(APPEND fms_defs GEOS_CONSTANTS)
+elseif(CONSTANTS STREQUAL "GFDL")
+  list(APPEND fms_defs GFDL_CONSTANTS)
+else()
+  message(FATAL_ERROR "CONSTANTS=${CONSTANTS} option not supported")
+endif()
+
 if(GFS_PHYS)
   list(APPEND fms_defs GFS_PHYS)
 endif()
@@ -271,7 +288,8 @@ foreach(kind ${kinds})
   target_include_directories(${libTgt}_f PRIVATE include
                                                  fms
                                                  fms2_io/include
-                                                 mpp/include)
+                                                 mpp/include
+                                                 constants)
   target_compile_definitions(${libTgt}_f PRIVATE "${fms_defs}")
   target_compile_definitions(${libTgt}_f PRIVATE "${${kind}_defs}")
 

@@ -212,7 +212,6 @@ use platform_mod
 
   USE fms_mod, ONLY: error_mesg, FATAL, WARNING, NOTE, stdout, stdlog, write_version_number,&
        & fms_error_handler, check_nml_error, lowercase
-  USE fms_io_mod, ONLY: get_instance_filename
   USE diag_axis_mod, ONLY: diag_axis_init, get_axis_length, get_axis_num, get_domain2d, get_tile_count,&
        & diag_axis_add_attribute, axis_compatible_check, CENTER, NORTH, EAST
   USE diag_util_mod, ONLY: get_subfield_size, log_diag_field_info, update_bounds,&
@@ -232,16 +231,15 @@ use platform_mod
        & max_out_per_in_field, flush_nc_files, region_out_use_alt_value, max_field_attributes, output_field_type,&
        & max_file_attributes, max_axis_attributes, prepend_date, DIAG_FIELD_NOT_FOUND, diag_init_time,diag_data_init,&
        & use_modern_diag, diag_null
-  
+
   USE diag_data_mod, ONLY:  fileobj, fileobjU, fnum_for_domain, fileobjND
   USE diag_table_mod, ONLY: parse_diag_table
   USE diag_output_mod, ONLY: get_diag_global_att, set_diag_global_att
   USE diag_grid_mod, ONLY: diag_grid_init, diag_grid_end
   USE fms_diag_object_mod, ONLY: fmsDiagObject_type
-  use fms_diag_object_container_mod, ONLY: FmsDiagObjectContainer_t
 
 #ifdef use_yaml
-  use fms_diag_yaml_mod, only: diag_yaml_object_init, diag_yaml_object_end
+  use fms_diag_yaml_mod, only: diag_yaml_object_init, diag_yaml_object_end, get_num_unique_fields, find_diag_field
 #endif
 
   USE constants_mod, ONLY: SECONDS_PER_DAY
@@ -279,7 +277,8 @@ use platform_mod
 
   type(time_type) :: Time_end
 
-  TYPE(FmsDiagObjectContainer_t), ALLOCATABLE :: the_diag_object_container
+  TYPE(fmsDiagObject_type), ALLOCATABLE :: diag_objs(:) !< Array of diag objects, one for each registered variable
+  integer :: registered_variables !< Number of registered variables
 
   !> @brief Send data over to output fields.
   !!
@@ -475,8 +474,23 @@ end function register_diag_field_array
     INTEGER,          OPTIONAL, INTENT(in) :: volume        !< Id of the volume field
     CHARACTER(len=*), OPTIONAL, INTENT(in) :: realm         !< String to set as the modeling_realm attribute
 
-    ! TODO: Check if the diag_field is in the yaml, if it is not return diag_null. If it is fill in the diag_obj
-    register_diag_field_scalar_modern = diag_null
+#ifdef use_yaml
+    integer, allocatable :: diag_file_indices(:) !< indices where the field was found
+
+    diag_file_indices = find_diag_field(field_name)
+    if (diag_file_indices(1) .eq. diag_null) then
+      !< The field was not found in the table, so return diag_null
+      register_diag_field_scalar_modern = diag_null
+      deallocate(diag_file_indices)
+      return
+    endif
+
+    registered_variables = registered_variables + 1
+    register_diag_field_scalar_modern = registered_variables
+
+    !< TO DO: Fill in the diag_obj
+    deallocate(diag_file_indices)
+#endif
 
   end function register_diag_field_scalar_modern
 
@@ -507,8 +521,24 @@ end function register_diag_field_array
     INTEGER,          OPTIONAL, INTENT(in) :: volume        !< Id of the volume field
     CHARACTER(len=*), OPTIONAL, INTENT(in) :: realm         !< String to set as the modeling_realm attribute
 
-    ! TODO: Check if the diag_field is in the yaml, if it is not return diag_null. If it is fill in the diag_obj
-    register_diag_field_array_modern = diag_null
+#ifdef use_yaml
+    integer, allocatable :: diag_file_indices(:) !< indices where the field was found
+
+    diag_file_indices = find_diag_field(field_name)
+    if (diag_file_indices(1) .eq. diag_null) then
+      !< The field was not found in the table, so return diag_null
+      register_diag_field_array_modern = diag_null
+      deallocate(diag_file_indices)
+      return
+    endif
+
+    registered_variables = registered_variables + 1
+    register_diag_field_array_modern = registered_variables
+
+    !< TO DO: Fill in the diag_obj
+    deallocate(diag_file_indices)
+#endif
+
    end function register_diag_field_array_modern
 
   !> @brief Registers a scalar field
@@ -3646,7 +3676,10 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
     if (allocated(fnum_for_domain)) deallocate(fnum_for_domain)
 
 #ifdef use_yaml
-    if (use_modern_diag) call diag_yaml_object_end
+    if (use_modern_diag) then
+      call diag_yaml_object_end
+      if (allocated(diag_objs)) deallocate(diag_objs)
+    endif
 #endif
   END SUBROUTINE diag_manager_end
 
@@ -3860,8 +3893,17 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
     END IF
 
 #ifdef use_yaml
-    if (use_modern_diag) CALL diag_yaml_object_init(diag_subset_output)
+    if (use_modern_diag) then
+      CALL diag_yaml_object_init(diag_subset_output)
+      allocate(diag_objs(get_num_unique_fields()))
+      registered_variables = 0
+    endif
+#else
+    if (use_modern_diag) &
+      call error_mesg("diag_manager_mod::diag_manager_init", &
+                       & "You need to compile with -Duse_yaml if diag_manager_nml::use_modern_diag=.true.", FATAL)
 #endif
+
    if (.not. use_modern_diag) then
      CALL parse_diag_table(DIAG_SUBSET=diag_subset_output, ISTAT=mystat, ERR_MSG=err_msg_local)
      IF ( mystat /= 0 ) THEN
@@ -3881,10 +3923,6 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
             & 'Missing Value', SEP, 'Min Value',      SEP, 'Max Value',    SEP,&
             & 'AXES LIST'
     END IF
-
-    !!Create the diag_object container; Its a singleton in the diag_data mod
-    allocate(the_diag_object_container)
-    call the_diag_object_container%initialize()
 
     module_is_initialized = .TRUE.
     ! create axis_id for scalars here

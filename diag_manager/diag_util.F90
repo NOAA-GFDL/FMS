@@ -63,8 +63,7 @@ use,intrinsic :: iso_c_binding, only: c_double,c_float,c_int64_t, &
   USE diag_output_mod, ONLY: diag_field_write, diag_write_time !<fms2_io
   USE diag_grid_mod, ONLY: get_local_indexes
   USE fms_mod, ONLY: error_mesg, FATAL, WARNING, NOTE, mpp_pe, mpp_root_pe, lowercase, fms_error_handler,&
-       & write_version_number, do_cf_compliance
-  USE fms_io_mod, ONLY: get_tile_string, return_domain, string
+       & string, write_version_number
   USE mpp_domains_mod,ONLY: domain1d, domain2d, mpp_get_compute_domain, null_domain1d, null_domain2d,&
        & OPERATOR(.NE.), OPERATOR(.EQ.), mpp_modify_domain, mpp_get_domain_components,&
        & mpp_get_ntile_count, mpp_get_current_ntile, mpp_get_tile_id, mpp_mosaic_defined, mpp_get_tile_npes,&
@@ -73,9 +72,8 @@ use,intrinsic :: iso_c_binding, only: c_double,c_float,c_int64_t, &
        & increment_time, get_calendar_type, get_date, get_time, leap_year, OPERATOR(-),&
        & OPERATOR(<), OPERATOR(>=), OPERATOR(<=), OPERATOR(==)
   USE mpp_mod, ONLY: mpp_npes
-  USE fms_io_mod, ONLY: get_mosaic_tile_file_ug
   USE constants_mod, ONLY: SECONDS_PER_DAY, SECONDS_PER_HOUR, SECONDS_PER_MINUTE
-  USE fms2_io_mod, fms2_io_get_instance_filename => get_instance_filename
+  USE fms2_io_mod
 #ifdef use_netCDF
   USE netcdf, ONLY: NF90_CHAR
 #endif
@@ -1598,7 +1596,7 @@ CONTAINS
 
     ! Add ensemble ID to filename
     fname=base_name
-    call fms2_io_get_instance_filename(fname, base_name)
+    call get_instance_filename(fname, base_name)
 
     ! Set the filename
     filename = TRIM(base_name)//TRIM(suffix)
@@ -1920,19 +1918,11 @@ CONTAINS
             & cart_name, dir, edges, Domain, domainU, DATA)
        CALL get_diag_axis( time_bounds_id(1), timeb_name, timeb_units, timeb_longname,&
             & cart_name, dir, edges, Domain, domainU, DATA)
-       IF ( do_cf_compliance() ) THEN
-          ! CF Compliance requires the unit on the _bnds axis is the same as 'time'
-          files(file)%f_bounds =  write_field_meta_data(files(file)%file_unit,&
-               & TRIM(time_name)//'_bnds', (/time_bounds_id,time_axis_id/),&
-               & time_units, TRIM(time_name)//' axis boundaries', pack=pack_size , &
-               & fileob=fileob)
-       ELSE
-          files(file)%f_bounds =  write_field_meta_data(files(file)%file_unit,&
-               & TRIM(time_name)//'_bnds', (/time_bounds_id,time_axis_id/),&
-               & TRIM(time_unit_list(files(file)%time_units)),&
-               & TRIM(time_name)//' axis boundaries', pack=pack_size, &
-               & fileob=fileob)
-       END IF
+       ! CF Compliance requires the unit on the _bnds axis is the same as 'time'
+       files(file)%f_bounds =  write_field_meta_data(files(file)%file_unit,&
+            & TRIM(time_name)//'_bnds', (/time_bounds_id,time_axis_id/),&
+            & time_units, TRIM(time_name)//' axis boundaries', pack=pack_size , &
+            & fileob=fileob)
     END IF
     ! Let lower levels know that all meta data has been sent
     call done_meta_data(files(file)%file_unit)

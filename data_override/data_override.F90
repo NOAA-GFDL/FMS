@@ -42,7 +42,7 @@
 module data_override_mod
 use yaml_parser_mod
 use constants_mod, only: PI
-use mpp_mod, only : mpp_error, FATAL, WARNING, stdout, stdlog, mpp_max
+use mpp_mod, only : mpp_error, FATAL, WARNING, NOTE, stdout, stdlog, mpp_max
 use mpp_mod, only : input_nml_file
 use horiz_interp_mod, only : horiz_interp_init, horiz_interp_new, horiz_interp_type, &
                              assignment(=)
@@ -54,8 +54,7 @@ use time_interp_external2_mod, only:time_interp_external_init, &
                                    reset_src_data_region, &
                                    NO_REGION, INSIDE_REGION, OUTSIDE_REGION,     &
                                    get_external_fileobj
-use fms_mod, only: write_version_number, field_exist, lowercase, check_nml_error
-use axis_utils_mod, only: get_axis_bounds
+use fms_mod, only: write_version_number, lowercase, check_nml_error
 use axis_utils2_mod,  only : nearest_index, axis_edges
 use mpp_domains_mod, only : domain2d, mpp_get_compute_domain, NULL_DOMAIN2D,operator(.NE.),operator(.EQ.)
 use mpp_domains_mod, only : mpp_get_global_domain, mpp_get_data_domain
@@ -261,6 +260,10 @@ subroutine data_override_init(Atm_domain_in, Ocean_domain_in, Ice_domain_in, Lan
  module_is_initialized = .TRUE.
 
  if ( .NOT. (atm_on .or. ocn_on .or. lnd_on .or. ice_on .or. lndUG_on)) return
+ if (table_size .eq. 0) then 
+    call mpp_error(NOTE, "data_table is empty, not doing any data_overrides")
+    return
+ endif
  call fms2_io_init
 
 ! Test if grid_file is already opened
@@ -361,13 +364,21 @@ subroutine read_table(data_table)
     type(data_type)  :: data_entry
 
     logical               :: ongrid
+    logical               :: table_exists !< Flag indicating existence of data_table
     character(len=128)    :: region, region_type
 
     integer :: sunit
 
 !  Read coupler_table
+    inquire(file='data_table', EXIST=table_exists)
+    if (.not. table_exists) then
+      call mpp_error(NOTE, 'data_override_mod: File data_table does not exist.')
+      table_size = 0
+      return
+    end if
+
     open(newunit=iunit, file='data_table', action='READ', iostat=io_status)
-    if(io_status/=0) call mpp_error(FATAL, 'data_override_mod: Error in opening file data_table')
+    if(io_status/=0) call mpp_error(FATAL, 'data_override_mod: Error in opening file data_table.')
 
     ntable = 0
     ntable_lima = 0
@@ -495,35 +506,39 @@ subroutine read_table_yaml(data_table)
     integer :: file_id
 
     file_id = open_and_parse_file("data_table.yaml")
-    nentries = get_num_blocks(file_id, "data_table")
-    allocate(data_table(nentries))
-    allocate(entry_id(nentries))
-    call get_block_ids(file_id, "data_table", entry_id)
+    if (file_id==999) then
+      nentries = 0
+    else
+      nentries = get_num_blocks(file_id, "data_table")
+      allocate(data_table(nentries))
+      allocate(entry_id(nentries))
+      call get_block_ids(file_id, "data_table", entry_id)
 
-    do i = 1, nentries
-       call get_value_from_key(file_id, entry_id(i), "gridname", data_table(i)%gridname)
-       call get_value_from_key(file_id, entry_id(i), "fieldname_code", data_table(i)%fieldname_code)
-       call get_value_from_key(file_id, entry_id(i), "fieldname_file", data_table(i)%fieldname_file)
-       call get_value_from_key(file_id, entry_id(i), "file_name", data_table(i)%file_name)
-       call get_value_from_key(file_id, entry_id(i), "interpol_method", data_table(i)%interpol_method)
-       call get_value_from_key(file_id, entry_id(i), "factor", data_table(i)%factor)
-       call get_value_from_key(file_id, entry_id(i), "region_type", buffer, is_optional=.true.)
+      do i = 1, nentries
+         call get_value_from_key(file_id, entry_id(i), "gridname", data_table(i)%gridname)
+         call get_value_from_key(file_id, entry_id(i), "fieldname_code", data_table(i)%fieldname_code)
+         call get_value_from_key(file_id, entry_id(i), "fieldname_file", data_table(i)%fieldname_file)
+         call get_value_from_key(file_id, entry_id(i), "file_name", data_table(i)%file_name)
+         call get_value_from_key(file_id, entry_id(i), "interpol_method", data_table(i)%interpol_method)
+         call get_value_from_key(file_id, entry_id(i), "factor", data_table(i)%factor)
+         call get_value_from_key(file_id, entry_id(i), "region_type", buffer, is_optional=.true.)
 
-       if(trim(buffer) == "inside_region" ) then
-          data_table(i)%region_type = INSIDE_REGION
-       else if( trim(buffer) == "outside_region" ) then
-          data_table(i)%region_type = OUTSIDE_REGION
-       else
-          data_table(i)%region_type = NO_REGION
-       endif
+         if(trim(buffer) == "inside_region" ) then
+            data_table(i)%region_type = INSIDE_REGION
+         else if( trim(buffer) == "outside_region" ) then
+            data_table(i)%region_type = OUTSIDE_REGION
+         else
+            data_table(i)%region_type = NO_REGION
+         endif
 
-       call get_value_from_key(file_id, entry_id(i), "lon_start", data_table(i)%lon_start, is_optional=.true.)
-       call get_value_from_key(file_id, entry_id(i), "lon_end", data_table(i)%lon_end, is_optional=.true.)
-       call get_value_from_key(file_id, entry_id(i), "lat_start", data_table(i)%lat_start, is_optional=.true.)
-       call get_value_from_key(file_id, entry_id(i), "lat_end", data_table(i)%lat_end, is_optional=.true.)
+         call get_value_from_key(file_id, entry_id(i), "lon_start", data_table(i)%lon_start, is_optional=.true.)
+         call get_value_from_key(file_id, entry_id(i), "lon_end", data_table(i)%lon_end, is_optional=.true.)
+         call get_value_from_key(file_id, entry_id(i), "lat_start", data_table(i)%lat_start, is_optional=.true.)
+         call get_value_from_key(file_id, entry_id(i), "lat_end", data_table(i)%lat_end, is_optional=.true.)
 
-    end do
+      end do
 
+    end if
     table_size = nentries !< Because one variable is not enough
 end subroutine read_table_yaml
 #endif

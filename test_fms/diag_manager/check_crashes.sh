@@ -26,76 +26,71 @@
 
 printf "&check_crashes_nml \n checking_crashes = .true. \n/" | cat > input.nml
 sed '/tile/d' diag_table.yaml_base > diag_table.yaml
-test_expect_failure "Missing tile when using the 'index' grid type" '                                                
-  mpirun -n 1 ../test_diag_yaml                                                                             
-' 
+test_expect_failure "Missing tile when using the 'index' grid type" '
+  mpirun -n 1 ../test_diag_yaml
+'
 
 sed '/new_file_freq_units/d' diag_table.yaml_base > diag_table.yaml
-test_expect_failure "Missing new_file_freq_units when using new_file_freq_units" '                                                
-  mpirun -n 1 ../test_diag_yaml                                                                             
-' 
+test_expect_failure "Missing new_file_freq_units when using new_file_freq_units" '
+  mpirun -n 1 ../test_diag_yaml
+'
 
 sed 's/new_file_freq_units: hours/new_file_freq_units: mullions/g' diag_table.yaml_base > diag_table.yaml
-test_expect_failure "new_file_freq_units is not valid" '                                                
-  mpirun -n 1 ../test_diag_yaml                                                                             
-' 
+test_expect_failure "new_file_freq_units is not valid" '
+  mpirun -n 1 ../test_diag_yaml
+'
 
 sed '/file_duration_units/d' diag_table.yaml_base > diag_table.yaml
-test_expect_failure "Missing file_duration_units when using file_duration" '                                                
-  mpirun -n 1 ../test_diag_yaml                                                                             
-' 
+test_expect_failure "Missing file_duration_units when using file_duration" '
+  mpirun -n 1 ../test_diag_yaml
+'
 
 sed 's/file_duration_units: hours/file_duration_units: mullions/g' diag_table.yaml_base > diag_table.yaml
-test_expect_failure "file_duration_units is not valid" '                                                
-  mpirun -n 1 ../test_diag_yaml                                                                             
-' 
+test_expect_failure "file_duration_units is not valid" '
+  mpirun -n 1 ../test_diag_yaml
+'
 
 sed 's/freq_units: hours/freq_units: mullions/g' diag_table.yaml_base > diag_table.yaml
-test_expect_failure "freq units is not valid" '                                                
-  mpirun -n 1 ../test_diag_yaml                                                                             
-' 
+test_expect_failure "freq units is not valid" '
+  mpirun -n 1 ../test_diag_yaml
+'
 
 sed 's/freq: 6/freq: -666/g' diag_table.yaml_base > diag_table.yaml
-test_expect_failure "freq is less than -1" '                                                
-  mpirun -n 1 ../test_diag_yaml                                                                             
-' 
+test_expect_failure "freq is less than -1" '
+  mpirun -n 1 ../test_diag_yaml
+'
 
-sed 's/realm: ATM/realm: mullions/g' diag_table.yaml_base > diag_table.yaml
-test_expect_failure "realm is not valid" '                                                
-  mpirun -n 1 ../test_diag_yaml                                                                             
-' 
-
-sed 's/kind: float/kind: mullions/g' diag_table.yaml_base > diag_table.yaml
-test_expect_failure "kind is not valid" '                                                
-  mpirun -n 1 ../test_diag_yaml                                                                             
-' 
+sed 's/kind: r4/kind: mullions/g' diag_table.yaml_base > diag_table.yaml
+test_expect_failure "kind is not valid" '
+  mpirun -n 1 ../test_diag_yaml
+'
 
 sed 's/reduction: average/reduction: mullions/g' diag_table.yaml_base > diag_table.yaml
-test_expect_failure "reduction is not valid" '                                                
-  mpirun -n 1 ../test_diag_yaml                                                                             
-' 
+test_expect_failure "reduction is not valid" '
+  mpirun -n 1 ../test_diag_yaml
+'
 
 sed 's/reduction: average/reduction: diurnal0/g' diag_table.yaml_base > diag_table.yaml
-test_expect_failure "diurnal samples is less than 0" '                                                
-  mpirun -n 1 ../test_diag_yaml                                                                             
-' 
+test_expect_failure "diurnal samples is less than 0" '
+  mpirun -n 1 ../test_diag_yaml
+'
 
 sed 's/reduction: average/reduction: diurnal99r/g' diag_table.yaml_base > diag_table.yaml
-test_expect_failure "diurnal samples is not an integer" '                                                
-  mpirun -n 1 ../test_diag_yaml                                                                             
-' 
+test_expect_failure "diurnal samples is not an integer" '
+  mpirun -n 1 ../test_diag_yaml
+'
 
 sed 's/reduction: average/reduction: pow0/g' diag_table.yaml_base > diag_table.yaml
-test_expect_failure "power value is less than 0" '                                                
-  mpirun -n 1 ../test_diag_yaml                                                                             
-' 
+test_expect_failure "power value is less than 0" '
+  mpirun -n 1 ../test_diag_yaml
+'
 
 sed 's/reduction: average/reduction: pow99r/g' diag_table.yaml_base > diag_table.yaml
-test_expect_failure "power value is not an integer" '                                                
-  mpirun -n 1 ../test_diag_yaml                                                                             
-' 
+test_expect_failure "power value is not an integer" '
+  mpirun -n 1 ../test_diag_yaml
+'
 
 sed 's/grid_type: latlon/grid_type: ice_cream/g' diag_table.yaml_base > diag_table.yaml
-test_expect_failure "the sub_region grid_type is not valid" '                                                
-  mpirun -n 1 ../test_diag_yaml                                                                             
-' 
+test_expect_failure "the sub_region grid_type is not valid" '
+  mpirun -n 1 ../test_diag_yaml
+'

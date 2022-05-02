@@ -30,7 +30,7 @@ module yaml_parser_mod
 
 #ifdef use_yaml
 use fms_mod, only: fms_c2f_string
-use fms_io_utils_mod, only: string_copy
+use fms_string_utils_mod, only: string_copy
 use platform_mod
 use mpp_mod
 use iso_c_binding
@@ -207,9 +207,16 @@ function open_and_parse_file(filename) &
 
    character(len=*), intent(in) :: filename !< Filename of the yaml file
    logical :: sucess !< Flag indicating if the read was sucessful
+   logical :: yaml_exists !< Flag indicating whether the yaml exists
 
    integer :: file_id
 
+   inquire(file=trim(filename), EXIST=yaml_exists)
+   if (.not. yaml_exists) then
+      file_id = 999
+      call mpp_error(NOTE, "The yaml file:"//trim(filename)//" does not exist, hopefully this is your intent!")
+      return
+   end if 
    sucess = open_and_parse_file_wrap(trim(filename)//c_null_char, file_id)
    if (.not. sucess) call mpp_error(FATAL, "Error opening the yaml file:"//trim(filename)//". Check the file!")
 

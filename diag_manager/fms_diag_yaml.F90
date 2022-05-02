@@ -34,6 +34,8 @@ use diag_data_mod,   only: DIAG_NULL, DIAG_OCEAN, DIAG_ALL, DIAG_OTHER, set_base
 use yaml_parser_mod, only: open_and_parse_file, get_value_from_key, get_num_blocks, get_nkeys, &
                            get_block_ids, get_key_value, get_key_ids, get_key_name
 use mpp_mod,         only: mpp_error, FATAL
+use, intrinsic :: iso_c_binding, only : c_ptr, c_null_char
+use fms_string_utils_mod, only: fms_array_to_pointer, fms_find_my_string, fms_sort_this, fms_find_unique
 
 implicit none
 
@@ -42,11 +44,27 @@ private
 public :: diag_yaml_object_init, diag_yaml_object_end
 public :: diagYamlObject_type, get_diag_yaml_obj, get_title, get_basedate, get_diag_files, get_diag_fields
 public :: diagYamlFiles_type, diagYamlFilesVar_type
+public :: get_num_unique_fields, find_diag_field, get_diag_fields_entries, get_diag_files_entries
+
 !> @}
 
 integer, parameter :: basedate_size = 6
 integer, parameter :: NUM_SUB_REGION_ARRAY = 8
 integer, parameter :: MAX_STR_LEN = 255
+
+!> @brief type to hold an array of sorted diag_fiels
+type varList_type
+  character(len=255), allocatable :: var_name(:) !< Array of diag_field
+  type(c_ptr), allocatable :: var_pointer(:) !< Array of pointers
+  integer, allocatable :: diag_field_indices(:) !< Index of the field in the diag_field array
+end type
+
+!> @brief type to hold an array of sorted diag_files
+type fileList_type
+  character(len=255), allocatable :: file_name(:) !< Array of diag_field
+  type(c_ptr), allocatable :: file_pointer(:) !< Array of pointers
+  integer, allocatable :: diag_file_indices(:)  !< Index of the file in the diag_file array
+end type
 
 !> @brief type to hold the sub region information about a file
 type subRegion_type
@@ -71,7 +89,6 @@ type diagYamlFiles_type
   integer, private    :: file_freq !< the frequency of data
   character (len=:), private, allocatable :: file_timeunit !< The unit of time
   character (len=:), private, allocatable :: file_unlimdim !< The name of the unlimited dimension
-  character (len=:), private, allocatable :: file_realm !< The modeling realm that the variables come from
   type(subRegion_type), private :: file_sub_region !< type containing info about the subregion, if any
   integer, private :: file_new_file_freq !< Frequency for closing the existing file
   character (len=:), private, allocatable :: file_new_file_freq_units !< Time units for creating a new file.
@@ -103,7 +120,6 @@ type diagYamlFiles_type
  procedure :: get_file_freq
  procedure :: get_file_timeunit
  procedure :: get_file_unlimdim
- procedure :: get_file_realm
  procedure :: get_file_sub_region
  procedure :: get_file_new_file_freq
  procedure :: get_file_new_file_freq_units
@@ -120,7 +136,6 @@ type diagYamlFiles_type
  procedure :: has_file_freq 
  procedure :: has_file_timeunit 
  procedure :: has_file_unlimdim 
- procedure :: has_file_realm 
  procedure :: has_file_sub_region 
  procedure :: has_file_new_file_freq 
  procedure :: has_file_new_file_freq_units 
@@ -193,6 +208,8 @@ type diagYamlObject_type
 end type diagYamlObject_type
 
 type (diagYamlObject_type) :: diag_yaml  !< Obj containing the contents of the diag_table.yaml
+type (varList_type), save :: variable_list !< List of all the variables in the diag_table.yaml
+type (fileList_type), save :: file_list !< List of all files in the diag_table.yaml
 
 !> @addtogroup fms_diag_yaml_mod
 !> @{
@@ -314,6 +331,10 @@ subroutine diag_yaml_object_init(diag_subset_output)
 
   allocate(diag_yaml%diag_files(actual_num_files))
   allocate(diag_yaml%diag_fields(total_nvars))
+  allocate(variable_list%var_name(total_nvars))
+  allocate(variable_list%diag_field_indices(total_nvars))
+  allocate(file_list%file_name(actual_num_files))
+  allocate(file_list%diag_file_indices(actual_num_files))
 
   var_count = 0
   file_count = 0
@@ -323,6 +344,10 @@ subroutine diag_yaml_object_init(diag_subset_output)
     file_count = file_count + 1
     call diag_yaml_files_obj_init(diag_yaml%diag_files(file_count))
     call fill_in_diag_files(diag_yaml_id, diag_file_ids(i), diag_yaml%diag_files(file_count))
+
+    !> Save the file name in the file_list
+    file_list%file_name(file_count) = trim(diag_yaml%diag_files(file_count)%file_fname)//c_null_char
+    file_list%diag_file_indices(file_count) = file_count
 
     nvars = 0
     nvars = get_num_blocks(diag_yaml_id, "varlist", parent_block_id=diag_file_ids(i))
@@ -351,9 +376,20 @@ subroutine diag_yaml_object_init(diag_subset_output)
 
       !> Save the variable name in the diag_file type
       diag_yaml%diag_files(file_count)%file_varlist(file_var_count) = diag_yaml%diag_fields(var_count)%var_varname
+
+      !> Save the variable name in the variable_list
+      variable_list%var_name(var_count) = trim(diag_yaml%diag_fields(var_count)%var_varname)//c_null_char
+      variable_list%diag_field_indices(var_count) = var_count
     enddo nvars_loop
     deallocate(var_ids)
   enddo nfiles_loop
+
+  !> Sort the file list in alphabetical order
+  file_list%file_pointer = fms_array_to_pointer(file_list%file_name)
+  call fms_sort_this(file_list%file_pointer, actual_num_files, file_list%diag_file_indices)
+
+  variable_list%var_pointer = fms_array_to_pointer(variable_list%var_name)
+  call fms_sort_this(variable_list%var_pointer, total_nvars, variable_list%diag_field_indices)
 
   deallocate(diag_file_ids)
 end subroutine
@@ -376,6 +412,14 @@ subroutine diag_yaml_object_end()
     if(allocated(diag_yaml%diag_fields(i)%var_attributes)) deallocate(diag_yaml%diag_fields(i)%var_attributes)
   enddo
   if(allocated(diag_yaml%diag_fields)) deallocate(diag_yaml%diag_fields)
+
+  if(allocated(file_list%file_pointer)) deallocate(file_list%file_pointer)
+  if(allocated(file_list%file_name)) deallocate(file_list%file_name)
+  if(allocated(file_list%diag_file_indices)) deallocate(file_list%diag_file_indices)
+
+  if(allocated(variable_list%var_pointer)) deallocate(variable_list%var_pointer)
+  if(allocated(variable_list%var_name)) deallocate(variable_list%var_name)
+  if(allocated(variable_list%diag_field_indices)) deallocate(variable_list%diag_field_indices)
 
 end subroutine diag_yaml_object_end
 
@@ -402,9 +446,6 @@ subroutine fill_in_diag_files(diag_yaml_id, diag_file_id, fileobj)
   call diag_get_value_from_key(diag_yaml_id, diag_file_id, "unlimdim", fileobj%file_unlimdim)
   call diag_get_value_from_key(diag_yaml_id, diag_file_id, "time_units", fileobj%file_timeunit)
   call check_file_time_units(fileobj)
-
-  call diag_get_value_from_key(diag_yaml_id, diag_file_id, "realm", fileobj%file_realm, is_optional=.true.)
-  call check_file_realm(fileobj)
 
   call get_value_from_key(diag_yaml_id, diag_file_id, "new_file_freq", fileobj%file_new_file_freq, is_optional=.true.)
   call diag_get_value_from_key(diag_yaml_id, diag_file_id, "new_file_freq_units", fileobj%file_new_file_freq_units, &
@@ -485,7 +526,7 @@ subroutine fill_in_diag_fields(diag_file_id, var_id, field)
   call diag_get_value_from_key(diag_file_id, var_id, "kind", field%var_skind)
   call check_field_kind(field)
 
-  call diag_get_value_from_key(diag_file_id, var_id, "output_name", field%var_outname)
+  call diag_get_value_from_key(diag_file_id, var_id, "output_name", field%var_outname, is_optional=.true.)
   call diag_get_value_from_key(diag_file_id, var_id, "long_name", field%var_longname, is_optional=.true.)
   !! VAR_UNITS !!
 
@@ -595,20 +636,6 @@ subroutine check_file_time_units (fileobj)
       &Check your entry for file:"//trim(fileobj%file_fname))
 end subroutine check_file_time_units
 
-!> @brief This checks if the realm in a diag file is valid and crashes if it isn't
-subroutine check_file_realm(fileobj)
-  type(diagYamlFiles_type), intent(inout) :: fileobj      !< diagYamlFiles_type obj to checK
-
-  select case (TRIM(fileobj%file_realm))
-  case ("ATM", "OCN", "LND", "ICE", "")
-  case default
-    call mpp_error(FATAL, trim(fileobj%file_realm)//" is an invalid realm! &
-      &The acceptable values are ATM, OCN, LND, ICE. &
-      &Check your entry for file:"//trim(fileobj%file_fname))
-  end select
-
-end subroutine check_file_realm
-
 !> @brief This checks if the new file frequency in a diag file is valid and crashes if it isn't
 subroutine check_new_file_freq(fileobj)
   type(diagYamlFiles_type), intent(inout) :: fileobj      !< diagYamlFiles_type obj to check
@@ -646,10 +673,10 @@ subroutine check_field_kind(field)
   type(diagYamlFilesVar_type), intent(in) :: field        !< diagYamlFilesVar_type obj to read the contents into
 
   select case (TRIM(field%var_skind))
-  case ("double", "float")
+  case ("r4", "r8", "i4", "i8")
   case default
     call mpp_error(FATAL, trim(field%var_skind)//" is an invalid kind! &
-      &The acceptable values are double and float. &
+      &The acceptable values are r4, r8, i4, i8. &
       &Check your entry for file:"//trim(field%var_varname)//" in file "//trim(field%var_fname))
   end select
 
@@ -747,14 +774,6 @@ result (res)
  character (len=:), allocatable :: res !< What is returned
   res = diag_files_obj%file_unlimdim
 end function get_file_unlimdim
-!> @brief Inquiry for diag_files_obj%file_realm
-!! @return file_realm of a diag_yaml_file_obj
-pure function get_file_realm(diag_files_obj) &
-result (res)
- class (diagYamlFiles_type), intent(in) :: diag_files_obj !< The object being inquiried
- character (:), allocatable :: res !< What is returned
-  res = diag_files_obj%file_realm
-end function get_file_realm
 !> @brief Inquiry for diag_files_obj%file_subregion
 !! @return file_sub_region of a diag_yaml_file_obj
 pure function get_file_sub_region (diag_files_obj) &
@@ -966,12 +985,6 @@ pure logical function has_file_write (obj)
   class(diagYamlFiles_type), intent(in) :: obj !< diagYamlFiles_type object to initialize
   has_file_write = .true.
 end function has_file_write
-!> @brief Checks if obj%file_realm is allocated
-!! @return true if obj%file_realm is allocated
-pure logical function has_file_realm (obj)
-  class(diagYamlFiles_type), intent(in) :: obj !< diagYamlFiles_type object to initialize
-  has_file_realm = allocated(obj%file_realm)
-end function has_file_realm
 !> @brief Checks if obj%file_sub_region is being used and has the sub region variables allocated
 !! @return true if obj%file_sub_region sub region variables are allocated
 pure logical function has_file_sub_region (obj)
@@ -1115,7 +1128,82 @@ pure logical function has_diag_fields (obj)
   has_diag_fields = allocated(obj%diag_fields)
 end function has_diag_fields  
 
+!> @brief Determine the number of unique diag_fields in the diag_yaml_object
+!! @return The number of unique diag_fields
+function get_num_unique_fields() &
+  result(nfields)
+  integer :: nfields
+  nfields = fms_find_unique(variable_list%var_pointer, size(variable_list%var_pointer))
 
+end function get_num_unique_fields
+
+!> @brief Determines if a diag_field is in the diag_yaml_object
+!! @return Indices of the locations where the field was found
+function find_diag_field(diag_field_name) &
+result(indices)
+
+  character(len=*), intent(in) :: diag_field_name !< diag_field name to search for
+
+  integer, allocatable :: indices(:)
+
+  indices = fms_find_my_string(variable_list%var_pointer, size(variable_list%var_pointer), &
+                               & diag_field_name//c_null_char)
+end function find_diag_field
+
+!> @brief Gets the diag_field entries corresponding to the indices of the sorted variable_list
+!! @return Array of diag_fields
+function get_diag_fields_entries(indices) &
+  result(diag_field)
+
+  integer, intent(in) :: indices(:) !< Indices of the field in the sorted variable_list array
+  type(diagYamlFilesVar_type), dimension (:), allocatable :: diag_field
+
+  integer :: i !< For do loops
+  integer :: field_id !< Indices of the field in the diag_yaml array
+
+  allocate(diag_field(size(indices)))
+
+  do i = 1, size(indices)
+    field_id = variable_list%diag_field_indices(indices(i))
+    diag_field(i) = diag_yaml%diag_fields(field_id)
+  end do
+
+end function get_diag_fields_entries
+
+!> @brief Gets the diag_files entries corresponding to the indices of the sorted variable_list
+!! @return Array of diag_files
+function get_diag_files_entries(indices) &
+  result(diag_file)
+
+  integer, intent(in) :: indices(:) !< Indices of the field in the sorted variable_list
+  type(diagYamlFiles_type), dimension (:), allocatable :: diag_file
+
+  integer :: i !< For do loops
+  integer :: field_id !< Indices of the field in the diag_yaml array
+  integer :: file_id !< Indices of the file in the diag_yaml array
+  character(len=120) :: filename !< Filename of the field
+  integer, allocatable :: file_indices(:) !< Indices of the file in the sorted variable_list
+
+  allocate(diag_file(size(indices)))
+
+  do i = 1, size(indices)
+    field_id = variable_list%diag_field_indices(indices(i))
+    filename = diag_yaml%diag_fields(field_id)%var_fname
+
+    file_indices = fms_find_my_string(file_list%file_pointer, size(file_list%file_pointer), &
+      & trim(filename)//c_null_char)
+
+    if (size(file_indices) .ne. 1) &
+      & call mpp_error(FATAL, "get_diag_files_entries: Error getting the correct number of file indices!")
+
+    if (file_indices(1) .eq. diag_null) &
+      & call mpp_error(FATAL, "get_diag_files_entries: Error finding the filename in the diag_files")
+
+    file_id = file_list%diag_file_indices(file_indices(1))
+    diag_file(i) = diag_yaml%diag_files(file_id)
+  end do
+
+end function get_diag_files_entries
 #endif
 end module fms_diag_yaml_mod
 !> @}

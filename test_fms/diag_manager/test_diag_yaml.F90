@@ -49,6 +49,7 @@ end interface compare_result
 logical :: checking_crashes = .false.!< Flag indicating that you are checking crashes
 integer :: i !< For do loops
 integer :: io_status !< The status after reading the input.nml
+integer, allocatable :: indices(:) !< Array of indices
 
 #ifdef use_yaml
 type(diagYamlFiles_type), allocatable, dimension (:) :: diag_files !< Files from the diag_yaml
@@ -89,9 +90,51 @@ if (.not. checking_crashes) then
   call compare_result("nfields", size(diag_fields), 3) !< the fourth variable has var_write = false so it doesn't count
   call compare_diag_fields(diag_fields)
 
+  !< Check that get_num_unique_fields is getting the correct number of unique fields
+  call compare_result("number of unique fields", get_num_unique_fields(), 2)
+
+  deallocate(diag_files)
+  deallocate(diag_fields)
+
+  indices = find_diag_field("sst")
+  print *, "sst was found in ", indices
+  if (size(indices) .ne. 2) &
+    call mpp_error(FATAL, 'sst was supposed to be found twice!')
+  if (indices(1) .ne. 2 .and. indices(2) .ne. 1) &
+    call mpp_error(FATAL, 'sst was supposed to be found in indices 1 and 2')
+
+  diag_fields = get_diag_fields_entries(indices)
+  call compare_result("sst - nfields", size(diag_fields), 2)
+  call compare_result("sst - fieldname", diag_fields(1)%get_var_varname(), "sst")
+  call compare_result("sst - fieldname", diag_fields(2)%get_var_varname(), "sst")
+  deallocate(diag_fields)
+
+  diag_files = get_diag_files_entries(indices)
+  call compare_result("sst - nfiles", size(diag_files), 2)
+  call compare_result("sst - filename", diag_files(1)%get_file_fname(), "normal")
+  call compare_result("sst - filename", diag_files(2)%get_file_fname(), "wild_card_name%4yr%2mo%2dy%2hr")
+  deallocate(diag_files)
+  deallocate(indices)
+
+  indices = find_diag_field("sstt")
+  print *, "sstt was found in ", indices
+  if (size(indices) .ne. 1) &
+    call mpp_error(FATAL, 'sstt was supposed to be found twice!')
+  if (indices(1) .ne. 3) &
+    call mpp_error(FATAL, 'sstt was supposed to be found in indices 1 and 2')
+  deallocate(indices)
+
+  indices = find_diag_field("sstt2") !< This is in diag_table but it has write_var = false
+  print *, "sstt2 was found in ", indices
+  if (indices(1) .ne. -999) &
+    call mpp_error(FATAL, "sstt2 is not in the diag_table!")
+
+  indices = find_diag_field("tamales")
+  print *, "tamales was found in ", indices
+  if (indices(1) .ne. -999) &
+    call mpp_error(FATAL, "tamales is not in the diag_table!")
+
 endif
-deallocate(diag_files)
-deallocate(diag_fields)
 
 call diag_yaml_object_end
 
@@ -121,9 +164,9 @@ subroutine compare_diag_fields(res)
   call compare_result("var_module 2", res(2)%get_var_module(), "test_diag_manager_mod")
   call compare_result("var_module 3", res(3)%get_var_module(), "test_diag_manager_mod")
 
-  call compare_result("var_skind 1", res(1)%get_var_skind(), "float")
-  call compare_result("var_skind 2", res(2)%get_var_skind(), "float")
-  call compare_result("var_skind 3", res(3)%get_var_skind(), "float")
+  call compare_result("var_skind 1", res(1)%get_var_skind(), "r4")
+  call compare_result("var_skind 2", res(2)%get_var_skind(), "r4")
+  call compare_result("var_skind 3", res(3)%get_var_skind(), "r4")
 
   call compare_result("var_outname 1", res(1)%get_var_outname(), "sst")
   call compare_result("var_outname 2", res(2)%get_var_outname(), "sst")
@@ -172,10 +215,6 @@ subroutine compare_diag_files(res)
   call compare_result("file_unlimdim 1", res(1)%get_file_unlimdim(), "time")
   call compare_result("file_unlimdim 2", res(2)%get_file_unlimdim(), "records")
   call compare_result("file_unlimdim 3", res(3)%get_file_unlimdim(), "records")
-
-  call compare_result("file_realm 1", res(1)%get_file_realm(), "ATM")
-  call compare_result("file_realm 2", res(2)%get_file_realm(), "")
-  call compare_result("file_realm 3", res(3)%get_file_realm(), "")
 
   call compare_result("file_new_file_freq 1", res(1)%get_file_new_file_freq(), 6)
   call compare_result("file_new_file_freq 2", res(2)%get_file_new_file_freq(), DIAG_NULL)

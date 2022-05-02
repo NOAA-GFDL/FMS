@@ -69,8 +69,8 @@ type(FmsNetcdfFile_t) :: fileobj !< fileobj
 character(len=12)  :: axis_names(4) !< axis_names
 real, allocatable  :: data_in(:,:)  !< data added to file
 
-call constants_init
 call mpp_init
+call constants_init
 call fms2_io_init
 call mpp_domains_init
 call time_interp_external_init
