@@ -25,7 +25,7 @@ AC_PREREQ([2.69])
 
 # Initialize with name, version, and support email address.
 AC_INIT([GFDL FMS Library],
-  [2022.02.0-dev],
+  [2022.02.0],
   [gfdl.climate.model.info@noaa.gov],
   [FMS],
   [https://www.gfdl.noaa.gov/fms])

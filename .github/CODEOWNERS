@@ -25,7 +25,7 @@
 # These owners will be the default owners for all the files in the
 # repository.  Unless a later match is found, these owners
 # will be requested for a review when a PR is opened.
-*          @wrongkindofdoctor @thomas-robinson @bensonr @rem1776
+*          @thomas-robinson @bensonr @rem1776
 
 # GNU autotools files
 Makefile.am      @uramirez8707 @rem1776
@@ -42,8 +42,8 @@ cmake            @mlee03 @ngs333
 /.gitlab/        @GFDL-Eric @rem1776
 
 # Testing files
-/.gitlab-ci.yml  @uramirez8707 @mlee03 @bensonr @thomas-robinson @wrongkindofdoctor @rem1776
-/test_fms/       @uramirez8707 @mlee03 @bensonr @thomas-robinson @wrongkindofdoctor @rem1776
+/.gitlab-ci.yml  @uramirez8707 @mlee03 @bensonr @thomas-robinson @rem1776
+/test_fms/       @uramirez8707 @mlee03 @bensonr @thomas-robinson @rem1776
 
 # Specific component directories
 /affinity/          @bensonr
@@ -60,12 +60,12 @@ cmake            @mlee03 @ngs333
 
 /fv3gfs/          @bensonr
 
-/fms/             @wrongkindofdoctor @thomas-robinson @rem1776
-/test_fms/fms/    @wrongkindofdoctor @thomas-robinson @rem1776
+/fms/             @thomas-robinson @rem1776
+/test_fms/fms/    @thomas-robinson @rem1776
 /fms2/            @uramirez8707 @GFDL-Eric
 /test_fms/fms2/   @uramirez8707 @GFDL-Eric
 
 /libFMS/           @thomas-robinson @rem1776
 
-/mpp/              @wrongkindofdoctor @thomas-robinson @bensonr
-/test_fms/mpp/     @wrongkindofdoctor @thomas-robinson @bensonr @rem1776
+/mpp/              @thomas-robinson @bensonr
+/test_fms/mpp/     @thomas-robinson @bensonr @rem1776
