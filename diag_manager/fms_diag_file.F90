@@ -24,10 +24,10 @@
 !! a pointer to the information from the diag yaml, additional metadata that comes from the model, and a
 !! list of the variables and their variable IDs that are in the file.
 module fms_diag_file_mod
-use mpp_mod
-use fms2_io_mod
+!use mpp_mod
+use fms2_io_mod, only: FmsNetcdfFile_t, FmsNetcdfUnstructuredDomainFile_t, FmsNetcdfDomainFile_t
 #ifdef use_yaml
-use fms_diag_yaml_mod, only: diagYamlFiles_type
+use fms_diag_yaml_mod, only: diagYamlObject_type
 #endif
 
 implicit none
@@ -43,7 +43,7 @@ type :: fmsDiagFile_type
   class(FmsNetcdfFile_t), allocatable :: fileobj !< fms2_io file object for this history file 
   character(len=1) :: file_domain_type !< (I don't think we will need this)
 #ifdef use_yaml
-  type(diagYamlFiles_type), pointer :: diag_yaml => null() !< Pointer to the diag_yaml data
+  type(diagYamlObject_type), pointer :: diag_yaml => null() !< Pointer to the diag_yaml data
 #endif
   character(len=:) , dimension(:), allocatable :: file_metadata_from_model !< File metadata that comes from
                                                                            !! the model.

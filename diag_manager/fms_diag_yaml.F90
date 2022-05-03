@@ -207,7 +207,7 @@ type diagYamlObject_type
 
 end type diagYamlObject_type
 
-type (diagYamlObject_type) :: diag_yaml  !< Obj containing the contents of the diag_table.yaml
+type (diagYamlObject_type), target :: diag_yaml  !< Obj containing the contents of the diag_table.yaml
 type (varList_type), save :: variable_list !< List of all the variables in the diag_table.yaml
 type (fileList_type), save :: file_list !< List of all files in the diag_table.yaml
 

@@ -15,7 +15,7 @@ use diag_axis_mod,  only: diag_axis_type
 use mpp_mod, only: fatal, note, warning, mpp_error
 #ifdef use_yaml
 use fms_diag_yaml_mod, only:  diagYamlFilesVar_type
-use fms_diag_files_mod, only: fmsDiagFile_type 
+use fms_diag_file_mod, only: fmsDiagFile_type 
 #endif
 use time_manager_mod, ONLY: time_type
 !!!set_time, set_date, get_time, time_type, OPERATOR(>=), OPERATOR(>),&
@@ -88,7 +88,9 @@ type fmsDiagObject_type
 ! Is variable allocated check functions
 !TODO     procedure :: has_diag_field
      procedure :: has_diag_id
+#ifdef use_yaml
      procedure :: has_diag_files
+#endif
      procedure :: has_metadata
      procedure :: has_static
      procedure :: has_registered
@@ -776,12 +778,14 @@ pure logical function has_diag_id (obj)
   class (fmsDiagObject_type), intent(in) :: obj !< diag object
   has_diag_id = allocated(obj%diag_id)
 end function has_diag_id
+#ifdef use_yaml
 !> @brief Checks if obj%diag_files pointer is associated
 !! @return true if obj%diag_files is associated
 pure logical function has_diag_files (obj)
   class (fmsDiagObject_type), intent(in) :: obj !< diag object
-  has_diag_files = associated(obj%fileob)
+  has_diag_files = associated(obj%diag_files)
 end function has_diag_files
+#endif
 !> @brief Checks if obj%metadata is allocated
 !! @return true if obj%metadata is allocated
 pure logical function has_metadata (obj)
