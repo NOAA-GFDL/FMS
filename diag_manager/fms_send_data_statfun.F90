@@ -273,7 +273,7 @@ CONTAINS
 
             ! Should reduced_k_range data be supported with the mask_variant option   ?????
             ! If not, error message should be produced and the reduced_k_range loop below eliminated
-            IF ( PRESENT(mask) ) THEN
+            PRESENT_MASK_IF: IF ( PRESENT(mask) ) THEN
                IF ( missvalue_present ) THEN !!TODO: (section: section( mask_varian .eq. true + mask present) )
                   IF ( debug_diag_manager ) THEN
                      CALL update_bounds(out_num, is-hi, ie-hi, js-hj, je-hj, ks, ke)
@@ -291,7 +291,7 @@ CONTAINS
                            k1= k - ksr + 1
                            DO j=js, je
                               DO i=is, ie
-                                 IF ( mask(i-is+1+hi, j-js+1+hj, k) ) THEN 
+                                 IF ( mask(i-is+1+hi, j-js+1+hj, k) ) THEN
                                     ofb(i-hi,j-hj,k1,sample) = ofb(i-hi,j-hj,k1,sample) +&
                                     & fwf_0d_ptr (field(i-is+1+hi, j-js+1+hj, k), weight1, pow_value)
                                     ofc(i-hi,j-hj,k1,sample) = ofc(i-hi,j-hj,k1,sample) + weight1
@@ -299,7 +299,7 @@ CONTAINS
                               END DO
                            END DO
                         END DO
-                     ELSE REDU_KR1_IF  !!TODO more labels; in-between labels
+                     ELSE REDU_KR1_IF
                         DO k=ks, ke
                            DO j=js, je
                               DO i=is, ie
@@ -352,7 +352,7 @@ CONTAINS
                      RETURN
                   END IF
                END IF
-            ELSE  ! no mask present
+            ELSE PRESENT_MASK_IF ! no mask present
                WRITE (error_string,'(a,"/",a)')&
                & TRIM(input_fields(diag_field_id)%module_name), &
                & TRIM(output_fields(out_num)%output_name)
@@ -361,8 +361,8 @@ CONTAINS
                   succeded = .FALSE.
                   RETURN
                END IF
-            END IF
-         ELSE !! MASK_VAR_IF
+            END IF PRESENT_MASK_IF
+         ELSE MASK_VAR_IF
             MASK_PRESENT_IF: IF ( PRESENT(mask) ) THEN
                MVAL_PRESENT_IF: IF ( missvalue_present ) THEN !!section:(mask_var false +mask present +missval prsnt)
                   IF ( need_compute ) THEN
@@ -596,10 +596,10 @@ CONTAINS
                   & output_fields(out_num)%count_0d(sample) + weight1
 !$OMP END CRITICAL
                END IF MVAL_PRESENT_IF
-            ELSE !!MASK_PRESENT_IF (section: mask_variant .eq. false + mask not present + missvalue)
+            ELSE MASK_PRESENT_IF !!(section: mask_variant .eq. false + mask not present + missvalue)
                MVAL_PRESENT2_IF: IF (missvalue_present ) THEN
                   IF ( need_compute ) THEN
-                     if( numthreads>1 .AND. phys_window ) then
+                     NTAPW_IF: If( numthreads>1 .AND. phys_window ) then
                         DO k = l_start(3), l_end(3)
                            k1 = k - l_start(3) + 1
                            DO j = js, je
@@ -618,7 +618,7 @@ CONTAINS
                               END DO
                            END DO
                         END DO
-                     ELSE
+                     ELSE NTAPW_IF
 !$OMP CRITICAL
                         DO k = l_start(3), l_end(3)
                            k1 = k - l_start(3) + 1
@@ -639,7 +639,7 @@ CONTAINS
                            END DO
                         END DO
 !$OMP END CRITICAL
-                     END IF
+                     END IF NTAPW_IF
 !$OMP CRITICAL
                      DO j = js, je
                         DO i = is, ie
@@ -769,7 +769,7 @@ CONTAINS
                      END DO outer1
 !$OMP END CRITICAL
                   END IF
-               ELSE !MVAL_PRESENT2_IF (section:  mask_variant .eq. false + mask not present + missvalue not present)
+               ELSE MVAL_PRESENT2_IF !!(section:  mask_variant .eq. false + mask not present + missvalue not present)
                   NEED_COMP_IF: IF ( need_compute ) THEN
                      IF( numthreads > 1 .AND. phys_window ) then
                         DO j = js, je
@@ -959,7 +959,7 @@ CONTAINS
 
          ! Add processing for Max and Min
          TIME_IF: IF ( time_max ) THEN
-            IF ( PRESENT(mask) ) THEN
+            PRESENT_MASK_IF: IF ( PRESENT(mask) ) THEN
                IF ( need_compute ) THEN
                   DO k = l_start(3), l_end(3)
                      k1 = k - l_start(3) + 1
@@ -999,7 +999,7 @@ CONTAINS
                   & field(f1:f2,f3:f4,ks:ke)>OFB(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample))&
                   & OFB(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) = field(f1:f2,f3:f4,ks:ke)
                END IF
-            ELSE
+            ELSE PRESENT_MASK_IF
                IF ( need_compute ) THEN
                   DO k = l_start(3), l_end(3)
                      k1 = k - l_start(3) + 1
@@ -1036,11 +1036,11 @@ CONTAINS
                   WHERE (field(f1:f2,f3:f4,ks:ke) > OFB(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample))&
                   & OFB(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) = field(f1:f2,f3:f4,ks:ke)
                END IF
-            END IF
+            END IF PRESENT_MASK_IF
             output_fields(out_num)%count_0d(sample) = 1
             !END TIME MAX
-         ELSE IF ( time_min ) THEN   !!TiME_IF
-            IF ( PRESENT(mask) ) THEN
+         ELSE IF ( time_min ) THEN TiME_IF
+            PRESENT_MASK2_IF: IF ( PRESENT(mask) ) THEN
                IF ( need_compute ) THEN
                   DO k = l_start(3), l_end(3)
                      k1 = k - l_start(3) + 1
@@ -1080,7 +1080,7 @@ CONTAINS
                   & field(f1:f2,f3:f4,ks:ke) < OFB(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample))&
                   & OFB(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) = field(f1:f2,f3:f4,ks:ke)
                END IF
-            ELSE
+            ELSE PRESENT_MASK2_IF
                IF ( need_compute ) THEN
                   DO k = l_start(3), l_end(3)
                      k1 = k - l_start(3) + 1
@@ -1116,12 +1116,12 @@ CONTAINS
                   WHERE (field(f1:f2,f3:f4,ks:ke) < OFB(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample))&
                   & OFB(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) = field(f1:f2,f3:f4,ks:ke)
                END IF
-            END IF
+            END IF PRESENT_MASK2_IF
             output_fields(out_num)%count_0d(sample) = 1
 
             !! END_TIME_MIN
-         ELSE IF ( time_sum ) THEN  !!TIME_IF
-            IF ( PRESENT(mask) ) THEN
+         ELSE IF ( time_sum ) THEN TIME_IF
+            PRESENT_MASK3_IF: IF ( PRESENT(mask) ) THEN
                IF ( need_compute ) THEN
                   DO k = l_start(3), l_end(3)
                      k1 = k - l_start(3) + 1
@@ -1163,7 +1163,7 @@ CONTAINS
                   &  OFB(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) + &
                   &  field(f1:f2,f3:f4,ks:ke)
                END IF
-            ELSE
+            ELSE PRESENT_MASK3_IF
                IF ( need_compute ) THEN
                   DO k = l_start(3), l_end(3)
                      k1 = k - l_start(3) + 1
@@ -1200,10 +1200,10 @@ CONTAINS
                   &    OFB(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) + &
                   &    field(f1:f2,f3:f4,ks:ke)
                END IF
-            END IF
+            END IF PRESENT_MASK3_IF
             output_fields(out_num)%count_0d(sample) = 1
             !END time_sum
-         ELSE  ! ( not average, not min, not max, not sum )  !!TIME_IF
+         ELSE TIME_IF !! ( not average, not min, not max, not sum )
             output_fields(out_num)%count_0d(sample) = 1
             IF ( need_compute ) THEN
                DO j = js, je
