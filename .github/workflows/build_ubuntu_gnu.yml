@@ -37,7 +37,7 @@ jobs:
     needs: [build]
     steps:
     - name: Send webhook
-      if: github.repository == 'NOAA-GFDL/FMS' && github.ref == 'refs/heads/main'
+      if: github.repository == 'NOAA-GFDL/FMS' && github.ref == 'refs/heads/main' && github.event_name == 'push'
       uses: actions/github-script@v6
       with:
         github-token: ${{ secrets.PAT_TOKEN }}
