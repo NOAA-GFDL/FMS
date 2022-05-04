@@ -37,14 +37,14 @@ jobs:
     needs: [build]
     steps:
     - name: Send webhook
-      if: github.repository == 'rem1776/FMS' && github.ref == 'refs/heads/coupler-webhook'
+      if: github.repository == 'NOAA-GFDL/FMS' && github.ref == 'refs/heads/main'
       uses: actions/github-script@v6
       with:
         github-token: ${{ secrets.PAT_TOKEN }}
         script: |
           await github.rest.actions.createWorkflowDispatch({
-            owner: 'rem1776',
+            owner: 'NOAA-GFDL',
             repo: 'FMScoupler',
             workflow_id: 'build.yml',
-            ref: 'refs/heads/fms-webhook'
+            ref: 'refs/heads/main'
           })
