@@ -1720,7 +1720,6 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
     LOGICAL, ALLOCATABLE, DIMENSION(:,:,:) :: oor_mask
     CHARACTER(len=256) :: err_msg_local
     CHARACTER(len=128) :: error_string, error_string1
-
     logical :: temp_result
     TYPE(statfun_idx_cfg_t) :: idx_cfg
 
@@ -2078,10 +2077,11 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
        idx_cfg%f3 = f3
        idx_cfg%f4 = f4
 
+
        ! Take care of submitted field data
        AVERAGE_IF: IF ( average ) THEN
          temp_result = average_the_field(diag_field_id, field, out_num, mask, weight1, &
-           & sample, missvalue, missvalue_present, l_start, l_end, idx_cfg, err_msg, err_msg_local)
+           & sample, missvalue, missvalue_present, l_start, l_end, idx_cfg, err_msg, err_msg_local )
           IF (temp_result .eqv. .FALSE.) THEN
             DEALLOCATE(oor_mask)
             RETURN
@@ -2090,7 +2090,7 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
         ! Add processing for Max and Min
         ELSE
           temp_result = sample_the_field(diag_field_id, field, out_num, mask, &
-          & sample, missvalue, missvalue_present, l_start, l_end, idx_cfg, err_msg, err_msg_local)
+            & sample, missvalue, missvalue_present, l_start, l_end, idx_cfg, err_msg, err_msg_local)
           IF (temp_result .eqv. .FALSE.) THEN
             DEALLOCATE(oor_mask)
             RETURN

@@ -32,14 +32,17 @@
 !> @addtogroup fms_diag_dlinked_list_mod
 !> @{
 MODULE fms_send_data_statfun_mod
+
   use platform_mod
-    USE mpp_mod, ONLY: mpp_pe, mpp_root_pe
+   USE mpp_mod, ONLY: mpp_pe, mpp_root_pe
 
    USE fms_mod, ONLY: error_mesg, FATAL, WARNING, NOTE, stdout, stdlog, write_version_number,&
    & fms_error_handler
    USE diag_data_mod, ONLY:  input_fields, output_fields, debug_diag_manager
    use diag_util_mod, ONLY: check_out_of_bounds, update_bounds
+   use fms_diag_weight_procs_mod  !!  ONLY :: type(FmsWeightProcCfg_t)
 
+   IMPLICIT NONE
 
    TYPE STATFUN_IDX_CFG_T
       INTEGER :: f1,f2,f3,f4
@@ -48,128 +51,12 @@ MODULE fms_send_data_statfun_mod
       INTEGER :: hj !< halo size in y direction
    END TYPE STATFUN_IDX_CFG_T
 
-   ABSTRACT INTERFACE
-      FUNCTION weigh_field ( field_val, weight, pow_value )
-         REAL, INTENT(in) :: field_val
-         REAL, INTENT(in) :: weight
-         INTEGER, INTENT(in) :: pow_value
-         REAL :: weigh_field
-      END FUNCTION weigh_field
-   END INTERFACE
-
-   ABSTRACT INTERFACE
-      FUNCTION weigh_field_3d ( field_val, weight, pow_value )
-         REAL, INTENT(in) :: field_val(:,:,:)
-         REAL, INTENT(in) :: weight
-         INTEGER, INTENT(in) :: pow_value
-         REAL, DIMENSION(:,:,:), ALLOCATABLE :: weigh_field_3d
-      END FUNCTION weigh_field_3d
-   END INTERFACE
-
-
-   ABSTRACT INTERFACE
-      FUNCTION weigh_field_1d ( field_val, weight, pow_value )
-         REAL, INTENT(in) :: field_val(:)
-         REAL, INTENT(in) :: weight
-         INTEGER, INTENT(in) :: pow_value
-         REAL, DIMENSION(:), ALLOCATABLE :: weigh_field_1d
-      END FUNCTION weigh_field_1d
-   END INTERFACE
-
-CONTAINS
-
-   PURE FUNCTION weigh_field_0d_p1 ( field_val, weight, pow_value )
-      REAL, INTENT(in) :: weight
-      REAL, INTENT(in) :: field_val
-      INTEGER, INTENT(in) :: pow_value
-      weigh_field_0d_p1 = field_val * weight
-   END FUNCTION weigh_field_0d_p1
-
-   PURE FUNCTION weigh_field_0d_p2 ( field_val, weight,  pow_value  )
-      REAL, INTENT(in) :: weight
-      REAL, INTENT(in) :: field_val
-      INTEGER, INTENT(in) :: pow_value
-      REAL :: fTw
-      fTw =  field_val * weight
-      weigh_field_0d_p2 = fTw * fTw
-   END FUNCTION weigh_field_0d_p2
-
-   PURE FUNCTION weigh_field_0d_pp ( field_val, weight, pow_value  )
-      REAL, INTENT(in) :: weight
-      REAL, INTENT(in) :: field_val
-      INTEGER, INTENT(in) :: pow_value
-      weigh_field_0d_pp = (field_val * weight) ** pow_value
-   END FUNCTION weigh_field_0d_pp
-
-   PURE FUNCTION weigh_field_1d_p1 ( field_val, weight, pow_value )
-      REAL, INTENT(in) :: field_val(:)
-      REAL, INTENT(in) :: weight
-      INTEGER, INTENT(in) :: pow_value
-      INTEGER :: i
-      REAL, DIMENSION(:), ALLOCATABLE :: weigh_field_1d_p1
-      ALLOCATE(weigh_field_1d_p1(size(field_val)))
-      DO i = 1, size(field_val)
-         weigh_field_1d_p1(i) = field_val(i) * weight
-      END DO
-   END FUNCTION weigh_field_1d_p1
-
-   PURE FUNCTION weigh_field_1d_p2 ( field_val, weight, pow_value )
-      REAL, INTENT(in) :: field_val(:)
-      REAL, INTENT(in) :: weight
-      INTEGER, INTENT(in) :: pow_value
-      INTEGER :: i
-      REAL, DIMENSION(:), ALLOCATABLE :: weigh_field_1d_p2
-      !!TODO:verify the allocate
-      !!TODO: name change: weigh_field (weight_the_feild) -- >> weight_the_field
-      ALLOCATE(weigh_field_1d_p2, mold=field_val)
-      DO i = 1, size(field_val)
-         weigh_field_1d_p2(i) = field_val(i) * field_val(i) * weight * weight
-      END DO
-   END FUNCTION weigh_field_1d_p2
-
-   PURE FUNCTION weigh_field_1d_pp ( field_val, weight, pow_value )
-      REAL, INTENT(in) :: field_val(:)
-      REAL, INTENT(in) :: weight
-      INTEGER, INTENT(in) :: pow_value
-      INTEGER :: i
-      REAL, DIMENSION(:), ALLOCATABLE :: weigh_field_1d_pp
-      ALLOCATE(weigh_field_1d_pp(size(field_val)))
-      DO i = 1, size(field_val)
-         weigh_field_1d_pp(i) = (field_val(i) * weight) ** pow_value
-      END DO
-   END FUNCTION weigh_field_1d_pp
-
-   PURE FUNCTION weigh_field_3d_p1 ( field_val, weight, pow_value )
-      REAL, INTENT(in) :: field_val(:,:,:)
-      REAL, INTENT(in) :: weight
-      INTEGER, INTENT(in) :: pow_value
-      REAL, DIMENSION(:,:,:), ALLOCATABLE :: weigh_field_3d_p1
-      ALLOCATE(weigh_field_3d_p1, mold=field_val)
-      weigh_field_3d_p1 = field_val * weight
-   END FUNCTION weigh_field_3d_p1
-
-   PURE FUNCTION weigh_field_3d_p2 ( field_val, weight, pow_value )
-      REAL, INTENT(in) :: field_val(:,:,:)
-      REAL, INTENT(in) :: weight
-      INTEGER, INTENT(in) :: pow_value
-      REAL, DIMENSION(:,:,:), ALLOCATABLE :: weigh_field_3d_p2
-      ALLOCATE(weigh_field_3d_p2, mold=field_val)
-      weigh_field_3d_p2 = field_val * field_val * weight * weight
-   END FUNCTION weigh_field_3d_p2
-
-   PURE FUNCTION weigh_field_3d_pp ( field_val, weight, pow_value )
-      REAL, INTENT(in) :: field_val(:,:,:)
-      REAL, INTENT(in) :: weight
-      INTEGER, INTENT(in) :: pow_value
-      REAL, DIMENSION(:,:,:), ALLOCATABLE :: weigh_field_3d_pp
-      ALLOCATE(weigh_field_3d_pp, mold=field_val)
-      weigh_field_3d_pp = (field_val * weight) ** pow_value
-   END FUNCTION weigh_field_3d_pp
+   CONTAINS
 
 
    FUNCTION AVERAGE_THE_FIELD (diag_field_id, field, out_num, &
-   & mask, weight1, sample, missvalue, missvalue_present, &
-   & l_start, l_end, idx_cfg, err_msg,  err_msg_local) result( succeded )
+      & mask, weight1, sample, missvalue, missvalue_present, &
+      & l_start, l_end, idx_cfg, err_msg,  err_msg_local ) result( succeded )
       INTEGER, INTENT(in) :: diag_field_id
       REAL, DIMENSION(:,:,:), INTENT(in) :: field
       INTEGER, INTENT(in) :: out_num
@@ -181,8 +68,9 @@ CONTAINS
       INTEGER, DIMENSION(3), INTENT(in)  :: l_start !< local start indices on 3 axes for regional output
       INTEGER, DIMENSION(3), INTENT(in)  :: l_end !< local end indices on 3 axes for regional output
       CHARACTER(len=*), INTENT(inout), OPTIONAL :: err_msg
-      TYPE(STATFUN_IDX_CFG_T), INTENT(in) :: idx_cfg
       CHARACTER(len=256), INTENT(inout) :: err_msg_local
+      TYPE(STATFUN_IDX_CFG_T), INTENT(in) :: idx_cfg
+
       LOGICAL :: succeded
 
       !!LOGICAL, ALLOCATABLE, DIMENSION(:,:,:) :: oor_mask
@@ -193,6 +81,9 @@ CONTAINS
       LOGICAL :: phys_window , need_compute , reduced_k_range
       !!TODO: name change PHYS_WINDOWS -->> ? OMP subsetted data
 
+      TYPE(FmsWeightProcCfg_t), allocatable :: weight_procs
+
+
       INTEGER :: i, j, k,  i1, j1, k1
 
       INTEGER :: numthreads
@@ -202,27 +93,15 @@ CONTAINS
       INTEGER :: omp_get_level !< OMP function
 #endif
 
-      !!A pointer to the field weighing function.
-      procedure (weigh_field), pointer :: fwf_0d_ptr => null ()
-      !! A pointer to the 3D filed weighn function.
-      procedure (weigh_field_1d), pointer :: fwf_1d_ptr => null ()
-      !! A pointer to the 3D filed weighn function.
-      procedure (weigh_field_3d), pointer :: fwf_3d_ptr => null ()
 
       pow_value = output_fields(out_num)%pow_value
+      ALLOCATE(weight_procs)
+      call weight_procs%initialize (pow_value)
 
-      if ( pow_value == 1 ) then
-         fwf_0d_ptr => weigh_field_0d_p1
-         fwf_1D_ptr => weigh_field_1d_p1
-         fwf_3D_ptr => weigh_field_3d_p1
-      else if ( pow_value == 2 ) then
-         fwf_0d_ptr => weigh_field_0d_p2
-         fwf_1d_ptr => weigh_field_1d_p2
-         fwf_3D_ptr => weigh_field_3d_p2
+      if(  output_fields(out_num)%pow_value /= weight_procs%pow_value)then
+        print *, "they are not equal"
       else
-         fwf_0d_ptr => weigh_field_0d_pp
-         fwf_1D_ptr => weigh_field_1d_pp
-         fwf_3D_ptr => weigh_field_3d_pp
+        print *, "they are equal"
       end if
 
       phys_window = output_fields(out_num)%phys_window
@@ -293,7 +172,7 @@ CONTAINS
                               DO i=is, ie
                                  IF ( mask(i-is+1+hi, j-js+1+hj, k) ) THEN
                                     ofb(i-hi,j-hj,k1,sample) = ofb(i-hi,j-hj,k1,sample) +&
-                                    & fwf_0d_ptr (field(i-is+1+hi, j-js+1+hj, k), weight1, pow_value)
+                                    & weight_procs%fwf_0d_ptr (field(i-is+1+hi, j-js+1+hj, k), weight1, pow_value)
                                     ofc(i-hi,j-hj,k1,sample) = ofc(i-hi,j-hj,k1,sample) + weight1
                                  END IF
                               END DO
@@ -305,7 +184,7 @@ CONTAINS
                               DO i=is, ie
                                  IF ( mask(i-is+1+hi, j-js+1+hj, k) ) THEN
                                     ofb(i-hi,j-hj,k,sample) = ofb(i-hi,j-hj,k,sample) + &
-                                    & fwf_0d_ptr (field(i-is+1+hi,j-js+1+hj,k), weight1,  pow_value)
+                                    & weight_procs%fwf_0d_ptr (field(i-is+1+hi,j-js+1+hj,k), weight1,  pow_value)
                                     ofc(i-hi,j-hj,k,sample) = ofc(i-hi,j-hj,k,sample) + weight1
                                  END IF
                               END DO
@@ -321,7 +200,7 @@ CONTAINS
                               DO i=is, ie
                                  IF ( mask(i-is+1+hi, j-js+1+hj, k) ) THEN
                                     ofb(i-hi,j-hj,k1,sample) = ofb(i-hi,j-hj,k1,sample) + &
-                                    & fwf_0d_ptr (field(i-is+1+hi, j-js+1+hj, k),  weight1, pow_value)
+                                    & weight_procs%fwf_0d_ptr (field(i-is+1+hi, j-js+1+hj, k),  weight1, pow_value)
                                     ofc(i-hi,j-hj,k1,sample) = ofc(i-hi,j-hj,k1,sample) + weight1
                                  END IF
                               END DO
@@ -333,7 +212,7 @@ CONTAINS
                               DO i=is, ie
                                  IF ( mask(i-is+1+hi, j-js+1+hj, k) ) THEN
                                     ofb(i-hi,j-hj,k,sample) = ofb(i-hi,j-hj,k,sample) +  &
-                                    & fwf_0d_ptr( field(i-is+1+hi,j-js+1+hj,k), weight1, pow_value)
+                                    & weight_procs%fwf_0d_ptr( field(i-is+1+hi,j-js+1+hj,k), weight1, pow_value)
                                     ofc(i-hi,j-hj,k,sample) = ofc(i-hi,j-hj,k,sample) + weight1
                                  END IF
                               END DO
@@ -377,7 +256,7 @@ CONTAINS
                                     j1=  j-l_start(2)-hj+1
                                     IF ( mask(i-is+1+hi, j-js+1+hj, k) ) THEN
                                        ofb(i1,j1,k1,sample) = ofb(i1,j1,k1,sample) +&
-                                       & fwf_0d_ptr( field(i-is+1+hi,j-js+1+hj,k),  weight1, pow_value)
+                                       & weight_procs%fwf_0d_ptr( field(i-is+1+hi,j-js+1+hj,k),  weight1, pow_value)
                                     ELSE
                                        ofb(i1,j1,k1,sample) = missvalue
                                     END IF
@@ -397,7 +276,7 @@ CONTAINS
                                     j1=  j-l_start(2)-hj+1
                                     IF ( mask(i-is+1+hi, j-js+1+hj, k) ) THEN
                                        ofb(i1,j1,k1,sample) = ofb(i1,j1,k1,sample) + &
-                                       & fwf_0d_ptr( field(i-is+1+hi,j-js+1+hj,k), weight1, pow_value)
+                                       & weight_procs%fwf_0d_ptr( field(i-is+1+hi,j-js+1+hj,k), weight1, pow_value)
                                     ELSE
                                        ofb(i1,j1,k1,sample) = missvalue
                                     END IF
@@ -426,7 +305,7 @@ CONTAINS
                               DO i=is, ie
                                  IF ( mask(i-is+1+hi,j-js+1+hj,k) ) THEN
                                     ofb(i-hi,j-hj,k1,sample) = ofb(i-hi,j-hj,k1,sample) + &
-                                    & fwf_0d_ptr (field(i-is+1+hi,j-js+1+hj,k), weight1, pow_value)
+                                    & weight_procs%fwf_0d_ptr (field(i-is+1+hi,j-js+1+hj,k), weight1, pow_value)
                                  ELSE
                                     ofb(i-hi,j-hj,k1,sample)= missvalue
                                  END IF
@@ -441,7 +320,7 @@ CONTAINS
                               DO i=is, ie
                                  IF ( mask(i-is+1+hi,j-js+1+hj,k) ) THEN
                                     ofb(i-hi,j-hj,k1,sample) = ofb(i-hi,j-hj,k1,sample) + &
-                                    & fwf_0d_ptr ( field(i-is+1+hi,j-js+1+hj,k) ,weight1, pow_value)
+                                    & weight_procs%fwf_0d_ptr ( field(i-is+1+hi,j-js+1+hj,k) ,weight1, pow_value)
                                  ELSE
                                     ofb(i-hi,j-hj,k1,sample)= missvalue
                                  END IF
@@ -467,7 +346,7 @@ CONTAINS
                               DO i=is, ie
                                  IF ( mask(i-is+1+hi,j-js+1+hj,k) ) THEN
                                     ofb(i-hi,j-hj,k,sample) = ofb(i-hi,j-hj,k,sample) + &
-                                    & fwf_0d_ptr ( field(i-is+1+hi,j-js+1+hj,k), weight1, pow_value)
+                                    & weight_procs%fwf_0d_ptr ( field(i-is+1+hi,j-js+1+hj,k), weight1, pow_value)
                                  ELSE
                                     ofb(i-hi,j-hj,k,sample)= missvalue
                                  END IF
@@ -481,7 +360,7 @@ CONTAINS
                               DO i=is, ie
                                  IF ( mask(i-is+1+hi,j-js+1+hj,k) ) THEN
                                     ofb(i-hi,j-hj,k,sample) = ofb(i-hi,j-hj,k,sample) + &
-                                    & fwf_0d_ptr ( field(i-is+1+hi,j-js+1+hj,k), weight1, pow_value)
+                                    & weight_procs%fwf_0d_ptr ( field(i-is+1+hi,j-js+1+hj,k), weight1, pow_value)
                                  ELSE
                                     ofb(i-hi,j-hj,k,sample)= missvalue
                                  END IF
@@ -523,7 +402,7 @@ CONTAINS
                                  i1 = i-l_start(1)-hi+1
                                  j1 =  j-l_start(2)-hj+1
                                  ofb(i1,j1,:,sample)=  ofb(i1,j1,:,sample)+ &
-                                 & fwf_1d_ptr(field(i-is+1+hi,j-js+1+hj,l_start(3):l_end(3)), weight1, pow_value)
+                                 & weight_procs%fwf_1d_ptr(field(i-is+1+hi,j-js+1+hj,l_start(3):l_end(3)), weight1, pow_value)
                               END IF
                            END DO
                         END DO
@@ -536,7 +415,7 @@ CONTAINS
                                  i1 = i-l_start(1)-hi+1
                                  j1 =  j-l_start(2)-hj+1
                                  ofb(i1,j1,:,sample) = ofb(i1,j1,:,sample) + &
-                                 & fwf_1d_ptr(field(i-is+1+hi,j-js+1+hj,l_start(3):l_end(3)), weight1, pow_value)
+                                 & weight_procs%fwf_1d_ptr(field(i-is+1+hi,j-js+1+hj,l_start(3):l_end(3)), weight1, pow_value)
                               END IF
                            END DO
                         END DO
@@ -558,13 +437,13 @@ CONTAINS
                         ksr= l_start(3)  !!TODO. What is deff in these two secs below.
                         ker= l_end(3)
                         ofb(is-hi:ie-hi,js-hj:je-hj,:,sample) = ofb(is-hi:ie-hi,js-hj:je-hj,:,sample) +&
-                        & fwf_3d_ptr (field(f1:f2,f3:f4,ksr:ker), weight1, pow_value)
+                        & weight_procs%fwf_3d_ptr (field(f1:f2,f3:f4,ksr:ker), weight1, pow_value)
                      ELSE
 !$OMP CRITICAL
                         ksr= l_start(3)
                         ker= l_end(3)
                         ofb(is-hi:ie-hi,js-hj:je-hj,:,sample) = ofb(is-hi:ie-hi,js-hj:je-hj,:,sample) +&
-                        & fwf_3D_ptr (field(f1:f2,f3:f4,ksr:ker), weight1, pow_value)
+                        & weight_procs%fwf_3D_ptr (field(f1:f2,f3:f4,ksr:ker), weight1, pow_value)
 !$OMP END CRITICAL
                      END IF
                   ELSE
@@ -582,12 +461,12 @@ CONTAINS
                      IF (numthreads>1 .AND. phys_window) then
                         ofb(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) =&
                         & ofb(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) +&
-                        & fwf_3d_ptr(field(f1:f2,f3:f4,ks:ke), weight1, pow_value)
+                        & weight_procs%fwf_3d_ptr(field(f1:f2,f3:f4,ks:ke), weight1, pow_value)
                      ELSE
 !$OMP CRITICAL
                         ofb(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) =&
                         & ofb(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) +&
-                           fwf_3d_ptr(field(f1:f2,f3:f4,ks:ke), weight1 , pow_value)
+                           weight_procs%fwf_3d_ptr(field(f1:f2,f3:f4,ks:ke), weight1 , pow_value)
 !$OMP END CRITICAL
                      END IF
                   END IF
@@ -610,7 +489,7 @@ CONTAINS
                                     j1=  j-l_start(2)-hj+1
                                     IF ( field(i-is+1+hi,j-js+1+hj,k) /= missvalue ) THEN
                                        ofb(i1,j1,k1,sample) = ofb(i1,j1,k1,sample) + &
-                                       & fwf_0d_ptr(field(i-is+1+hi,j-js+1+hj,k), weight1, pow_value)
+                                       & weight_procs%fwf_0d_ptr(field(i-is+1+hi,j-js+1+hj,k), weight1, pow_value)
                                     ELSE
                                        ofb(i1,j1,k1,sample) = missvalue
                                     END IF
@@ -630,7 +509,7 @@ CONTAINS
                                     j1=  j-l_start(2)-hj+1
                                     IF ( field(i-is+1+hi,j-js+1+hj,k) /= missvalue ) THEN
                                        ofb(i1,j1,k1,sample) = ofb(i1,j1,k1,sample) + &
-                                       & fwf_0d_ptr(field(i-is+1+hi,j-js+1+hj,k), weight1, pow_value)
+                                       & weight_procs%fwf_0d_ptr(field(i-is+1+hi,j-js+1+hj,k), weight1, pow_value)
                                     ELSE
                                        ofb(i1,j1,k1,sample) = missvalue
                                     END IF
@@ -656,7 +535,7 @@ CONTAINS
                               DO i=l_start(1)+hi, l_end(1)+hi
                                  IF ( field(i,j,k) /= missvalue ) THEN
                                     output_fields(out_num)%count_0d(sample) = &
-                                    output_fields(out_num)%count_0d(sample) + weight1
+                                       output_fields(out_num)%count_0d(sample) + weight1
                                     EXIT outer0
                                  END IF
                               END DO
@@ -674,7 +553,7 @@ CONTAINS
                               DO i=is, ie
                                  IF ( field(i-is+1+hi,j-js+1+hj,k) /= missvalue ) THEN
                                     ofb(i-hi,j-hj,k1,sample) =  ofb(i-hi,j-hj,k1,sample) + &
-                                    & fwf_0d_ptr(field(i-is+1+hi,j-js+1+hj,k), weight1, pow_value)
+                                    & weight_procs%fwf_0d_ptr(field(i-is+1+hi,j-js+1+hj,k), weight1, pow_value)
                                  ELSE
                                     ofb(i-hi,j-hj,k1,sample) = missvalue
                                  END IF
@@ -691,7 +570,7 @@ CONTAINS
                               DO i=is, ie
                                  IF ( field(i-is+1+hi,j-js+1+hj,k) /= missvalue ) THEN
                                     ofb(i-hi,j-hj,k1,sample) = ofb(i-hi,j-hj,k1,sample) +&
-                                    & fwf_0d_ptr(field(i-is+1+hi,j-js+1+hj,k), weight1, pow_value)
+                                    & weight_procs%fwf_0d_ptr(field(i-is+1+hi,j-js+1+hj,k), weight1, pow_value)
                                  ELSE
                                     ofb(i-hi,j-hj,k1,sample) = missvalue
                                  END IF
@@ -708,7 +587,7 @@ CONTAINS
                               !! TODO: verify this below
                               IF ( field(i,j,k) /= missvalue ) THEN
                                  output_fields(out_num)%count_0d(sample) = &
-                                 output_fields(out_num)%count_0d(sample) + weight1
+                                    output_fields(out_num)%count_0d(sample) + weight1
                                  EXIT outer3
                               END IF
                            END DO
@@ -732,7 +611,7 @@ CONTAINS
                               DO i=is, ie
                                  IF ( field(i-is+1+hi,j-js+1+hj,k) /= missvalue )  THEN
                                     ofb(i-hi,j-hj,k,sample) = ofb(i-hi,j-hj,k,sample) +&
-                                    & fwf_0d_ptr(field(i-is+1+hi,j-js+1+hj,k), weight1, pow_value)
+                                    & weight_procs%fwf_0d_ptr(field(i-is+1+hi,j-js+1+hj,k), weight1, pow_value)
                                  ELSE
                                     ofb(i-hi,j-hj,k,sample) = missvalue
                                  END IF
@@ -746,7 +625,7 @@ CONTAINS
                               DO i=is, ie
                                  IF ( field(i-is+1+hi,j-js+1+hj,k) /= missvalue )  THEN
                                     ofb(i-hi,j-hj,k,sample) = ofb(i-hi,j-hj,k,sample) +&
-                                    & fwf_0d_ptr(field(i-is+1+hi,j-js+1+hj,k), weight1, pow_value)
+                                    & weight_procs%fwf_0d_ptr(field(i-is+1+hi,j-js+1+hj,k), weight1, pow_value)
                                  ELSE
                                     ofb(i-hi,j-hj,k,sample) = missvalue
                                  END IF
@@ -761,7 +640,7 @@ CONTAINS
                            DO i=f1, f2
                               IF ( field(i,j,k) /= missvalue ) THEN
                                  output_fields(out_num)%count_0d(sample) = &
-                                 output_fields(out_num)%count_0d(sample)  + weight1
+                                    output_fields(out_num)%count_0d(sample)  + weight1
                                  EXIT outer1
                               END IF
                            END DO
@@ -779,7 +658,7 @@ CONTAINS
                                  i1 = i-l_start(1)-hi+1
                                  j1=  j-l_start(2)-hj+1
                                  ofb(i1,j1,:,sample) = ofb(i1,j1,:,sample) + &
-                                 & fwf_1d_ptr(field(i-is+1+hi,j-js+1+hj,l_start(3):l_end(3)), weight1, pow_value)
+                                 & weight_procs%fwf_1d_ptr(field(i-is+1+hi,j-js+1+hj,l_start(3):l_end(3)), weight1, pow_value)
                               END IF
                            END DO
                         END DO
@@ -792,7 +671,7 @@ CONTAINS
                                  i1 = i-l_start(1)-hi+1
                                  j1=  j-l_start(2)-hj+1
                                  ofb(i1,j1,:,sample)= ofb(i1,j1,:,sample) +&
-                                 & fwf_1d_ptr(field(i-is+1+hi,j-js+1+hj,l_start(3):l_end(3)), weight1, pow_value)
+                                 & weight_procs%fwf_1d_ptr(field(i-is+1+hi,j-js+1+hj,l_start(3):l_end(3)), weight1, pow_value)
                               END IF
                            END DO
                         END DO
@@ -816,12 +695,12 @@ CONTAINS
                      IF( numthreads > 1 .AND. phys_window ) then
                         ofb(is-hi:ie-hi,js-hj:je-hj,:,sample) =&
                         & ofb(is-hi:ie-hi,js-hj:je-hj,:,sample) + &
-                        & fwf_3d_ptr(field(f1:f2,f3:f4,ksr:ker), weight1, pow_value)
+                        & weight_procs%fwf_3d_ptr(field(f1:f2,f3:f4,ksr:ker), weight1, pow_value)
                      ELSE
 !$OMP CRITICAL
                         ofb(is-hi:ie-hi,js-hj:je-hj,:,sample) =&
                         & ofb(is-hi:ie-hi,js-hj:je-hj,:,sample) + &
-                        & fwf_3d_ptr(field(f1:f2,f3:f4,ksr:ker), weight1, pow_value)
+                        & weight_procs%fwf_3d_ptr(field(f1:f2,f3:f4,ksr:ker), weight1, pow_value)
 !$OMP END CRITICAL
                      END IF
 
@@ -839,12 +718,12 @@ CONTAINS
                      IF( numthreads > 1 .AND. phys_window ) then
                         ofb(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) =&
                         & ofb(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) +&
-                        & fwf_3d_ptr(field(f1:f2,f3:f4,ks:ke), weight1, pow_value)
+                        & weight_procs%fwf_3d_ptr(field(f1:f2,f3:f4,ks:ke), weight1, pow_value)
                      ELSE
 !$OMP CRITICAL
                         ofb(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) =&
                         & ofb(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) +&
-                        & fwf_3d_ptr(field(f1:f2,f3:f4,ks:ke), weight1, pow_value)
+                        & weight_procs%fwf_3d_ptr(field(f1:f2,f3:f4,ks:ke), weight1, pow_value)
                         !!
 !$OMP END CRITICAL
                      END IF
@@ -873,59 +752,36 @@ CONTAINS
    END FUNCTION AVERAGE_THE_FIELD
 
    FUNCTION SAMPLE_THE_FIELD (diag_field_id, field, out_num, &
-    & mask, sample, missvalue, missvalue_present, &
-    & l_start, l_end, idx_cfg, err_msg,  err_msg_local) result( succeded )
-       INTEGER, INTENT(in) :: diag_field_id
-       REAL, DIMENSION(:,:,:), INTENT(in) :: field
-       INTEGER, INTENT(in) :: out_num
-       LOGICAL, DIMENSION(:,:,:), INTENT(in), OPTIONAL :: mask
-       INTEGER, INTENT(in) :: sample
-       REAL, INTENT(in), OPTIONAL :: missvalue   !!TODO: optional?
-       LOGICAL, INTENT(in) :: missvalue_present
-       INTEGER, DIMENSION(3), INTENT(in)  :: l_start !< local start indices on 3 axes for regional output
-       INTEGER, DIMENSION(3), INTENT(in)  :: l_end !< local end indices on 3 axes for regional output
-       CHARACTER(len=*), INTENT(inout), OPTIONAL :: err_msg
-       TYPE(STATFUN_IDX_CFG_T), INTENT(in) :: idx_cfg
-       CHARACTER(len=256), INTENT(inout) :: err_msg_local
-       LOGICAL :: succeded
+   & mask, sample, missvalue, missvalue_present, &
+   & l_start, l_end, idx_cfg, err_msg,  err_msg_local) result( succeded )
+      INTEGER, INTENT(in) :: diag_field_id
+      REAL, DIMENSION(:,:,:), INTENT(in) :: field
+      INTEGER, INTENT(in) :: out_num
+      LOGICAL, DIMENSION(:,:,:), INTENT(in), OPTIONAL :: mask
+      INTEGER, INTENT(in) :: sample
+      REAL, INTENT(in), OPTIONAL :: missvalue   !!TODO: optional?
+      LOGICAL, INTENT(in) :: missvalue_present
+      INTEGER, DIMENSION(3), INTENT(in)  :: l_start !< local start indices on 3 axes for regional output
+      INTEGER, DIMENSION(3), INTENT(in)  :: l_end !< local end indices on 3 axes for regional output
+      CHARACTER(len=*), INTENT(inout), OPTIONAL :: err_msg
+      CHARACTER(len=256), INTENT(inout) :: err_msg_local
+      TYPE(STATFUN_IDX_CFG_T), INTENT(in) :: idx_cfg
+      LOGICAL :: succeded
 
-       !!LOGICAL, ALLOCATABLE, DIMENSION(:,:,:) :: oor_mask
-       CHARACTER(len=128):: error_string
+      !!LOGICAL, ALLOCATABLE, DIMENSION(:,:,:) :: oor_mask
+      CHARACTER(len=128):: error_string
 
-       ! Power value for rms or pow(x) calculations
-       INTEGER :: pow_value, ksr, ker, is, js, ks, ie, je, ke, hi, hj, f1, f2, f3, f4
-       LOGICAL :: phys_window , need_compute , reduced_k_range
+      ! Power value for rms or pow(x) calculations
+      INTEGER :: pow_value, ksr, ker, is, js, ks, ie, je, ke, hi, hj, f1, f2, f3, f4
+      LOGICAL :: phys_window , need_compute , reduced_k_range
 
-       INTEGER :: i, j, k, i1, j1, k1
+      INTEGER :: i, j, k, i1, j1, k1
 
-       LOGICAL :: time_rms, time_max, time_min, time_sum
+      LOGICAL :: time_rms, time_max, time_min, time_sum
 #if defined(_OPENMP)
       INTEGER :: omp_get_num_threads !< OMP function
       INTEGER :: omp_get_level !< OMP function
 #endif
-
-!!A pointer to the field weighing function.
-      procedure (weigh_field), pointer :: fwf_0d_ptr => null ()
-!! A pointer to the 3D filed weighn function.
-      procedure (weigh_field_1d), pointer :: fwf_1d_ptr => null ()
-!! A pointer to the 3D filed weighn function.
-      procedure (weigh_field_3d), pointer :: fwf_3d_ptr => null ()
-
-      pow_value = output_fields(out_num)%pow_value
-
-      if ( pow_value == 1 ) then
-         fwf_0d_ptr => weigh_field_0d_p1
-         fwf_1D_ptr => weigh_field_1d_p1
-         fwf_3D_ptr => weigh_field_3d_p1
-      else if ( pow_value == 2 ) then
-         fwf_0d_ptr => weigh_field_0d_p2
-         fwf_1d_ptr => weigh_field_1d_p2
-         fwf_3D_ptr => weigh_field_3d_p2
-      else
-         fwf_0d_ptr => weigh_field_0d_pp
-         fwf_1D_ptr => weigh_field_1d_pp
-         fwf_3D_ptr => weigh_field_3d_pp
-      end if
 
       phys_window = output_fields(out_num)%phys_window
       need_compute = output_fields(out_num)%need_compute
