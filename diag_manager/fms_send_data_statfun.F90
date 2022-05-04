@@ -402,7 +402,8 @@ MODULE fms_send_data_statfun_mod
                                  i1 = i-l_start(1)-hi+1
                                  j1 =  j-l_start(2)-hj+1
                                  ofb(i1,j1,:,sample)=  ofb(i1,j1,:,sample)+ &
-                                 & weight_procs%fwf_1d_ptr(field(i-is+1+hi,j-js+1+hj,l_start(3):l_end(3)), weight1, pow_value)
+                                 & weight_procs%fwf_1d_ptr(field(i-is+1+hi,j-js+1+hj,l_start(3):l_end(3)), weight1,&
+                                 & pow_value)
                               END IF
                            END DO
                         END DO
@@ -415,7 +416,8 @@ MODULE fms_send_data_statfun_mod
                                  i1 = i-l_start(1)-hi+1
                                  j1 =  j-l_start(2)-hj+1
                                  ofb(i1,j1,:,sample) = ofb(i1,j1,:,sample) + &
-                                 & weight_procs%fwf_1d_ptr(field(i-is+1+hi,j-js+1+hj,l_start(3):l_end(3)), weight1, pow_value)
+                                 & weight_procs%fwf_1d_ptr(field(i-is+1+hi,j-js+1+hj,l_start(3):l_end(3)), weight1, &
+                                 & pow_value)
                               END IF
                            END DO
                         END DO
@@ -648,7 +650,7 @@ MODULE fms_send_data_statfun_mod
                      END DO outer1
 !$OMP END CRITICAL
                   END IF
-               ELSE MVAL_PRESENT2_IF !!(section:  mask_variant .eq. false + mask not present + missvalue not present)
+               ELSE MVAL_PRESENT2_IF !!(section: mask_variant .eq. false + mask not present + missvalue not present)
                   NEED_COMP_IF: IF ( need_compute ) THEN
                      IF( numthreads > 1 .AND. phys_window ) then
                         DO j = js, je
@@ -658,7 +660,8 @@ MODULE fms_send_data_statfun_mod
                                  i1 = i-l_start(1)-hi+1
                                  j1=  j-l_start(2)-hj+1
                                  ofb(i1,j1,:,sample) = ofb(i1,j1,:,sample) + &
-                                 & weight_procs%fwf_1d_ptr(field(i-is+1+hi,j-js+1+hj,l_start(3):l_end(3)), weight1, pow_value)
+                                 & weight_procs%fwf_1d_ptr(field(i-is+1+hi,j-js+1+hj,l_start(3):l_end(3)), weight1,&
+                                 & pow_value)
                               END IF
                            END DO
                         END DO
@@ -671,7 +674,8 @@ MODULE fms_send_data_statfun_mod
                                  i1 = i-l_start(1)-hi+1
                                  j1=  j-l_start(2)-hj+1
                                  ofb(i1,j1,:,sample)= ofb(i1,j1,:,sample) +&
-                                 & weight_procs%fwf_1d_ptr(field(i-is+1+hi,j-js+1+hj,l_start(3):l_end(3)), weight1, pow_value)
+                                 & weight_procs%fwf_1d_ptr(field(i-is+1+hi,j-js+1+hj,l_start(3):l_end(3)), weight1,&
+                                 & pow_value)
                               END IF
                            END DO
                         END DO

@@ -32,8 +32,8 @@ MODULE fms_diag_weight_procs_mod
    TYPE :: FmsWeightProcCfg_t
       INTEGER :: pow_value
       procedure (weigh_field), pointer, nopass:: fwf_0d_ptr   !! A pointer to the field weighing function.
-      procedure (weigh_field_1d),  pointer, nopass:: fwf_1d_ptr    !! A pointer to the 3D field weight function.
-      procedure (weigh_field_3d), pointer, nopass :: fwf_3d_ptr   !! A pointer to the 3D field weight function.
+      procedure (weigh_field_1d),  pointer, nopass:: fwf_1d_ptr !! A pointer to the 3D field weight function.
+      procedure (weigh_field_3d), pointer, nopass :: fwf_3d_ptr !! A pointer to the 3D field weight function.
    CONTAINS
       procedure :: initialize => initialize_weight_proc_cfg
    END TYPE FmsWeightProcCfg_t
