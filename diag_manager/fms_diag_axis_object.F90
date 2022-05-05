@@ -19,7 +19,8 @@
 
 !> @defgroup fms_diag_axis_object_mod fms_diag_axis_object_mod
 !> @ingroup diag_manager
-!! @brief fms_diag_axis_object_mod stores the diag_axis_object
+!! @brief fms_diag_axis_object_mod stores the diag axis object, a diag domain
+!! object, and a subaxis object.
 
 !> @file
 !> @brief File for @ref diag_axis_object_mod
@@ -36,31 +37,31 @@ module fms_diag_axis_object_mod
 
   PRIVATE
 
-  public :: diag_axis_t, diag_axis_init, set_subaxis
+  public :: diagAxis_t, diag_axis_init, set_subaxis
   !> @}
 
   !> @brief Type to hold the domain info for an axis
   !! This type was created to avoid having to send in "Domain", "Domain2", "DomainUG" as arguments into subroutines
-  !! and instead only 1 class(fms_domain_t) argument can be send
+  !! and instead only 1 class(diagDomain_t) argument can be send
   !> @ingroup diag_axis_object_mod
-  type fms_domain_t
+  type diagDomain_t
     contains
       procedure :: set => set_axis_domain
       procedure :: length => get_length
-  end type fms_domain_t
+  end type diagDomain_t
 
   !> @brief Type to hold the 1d domain
-  type, extends(fms_domain_t) :: fms_domain1d_t
+  type, extends(diagDomain_t) :: diagDomain1d_t
      type(domain1d) :: Domain !< 1d Domain of the axis
   end type
 
   !> @brief Type to hold the 2d domain
-  type, extends(fms_domain_t) :: fms_domain2d_t
+  type, extends(diagDomain_t) :: diagDomain2d_t
     type(domain2d) :: Domain2 !< 2d Domain of an "X" or "Y" axis
   end type
 
   !> @brief Type to hold the unstructured domain
-  type, extends(fms_domain_t) :: fms_domainUG_t
+  type, extends(diagDomain_t) :: diagDomainUg_t
     type(domainUG) :: DomainUG !< Domain of "U" axis
   end type
 
@@ -77,7 +78,7 @@ module fms_diag_axis_object_mod
 
   !> @brief Type to hold the diagnostic axis description.
   !> @ingroup diag_axis_object_mod
-  TYPE diag_axis_t
+  TYPE diagAxis_t
      CHARACTER(len=:),   ALLOCATABLE, private :: axis_name       !< Name of the axis
      CHARACTER(len=:),   ALLOCATABLE, private :: units           !< Units of the axis
      CHARACTER(len=:),   ALLOCATABLE, private :: long_name       !< Long_name attribute of the axis
@@ -86,7 +87,7 @@ module fms_diag_axis_object_mod
      !< TO DO this can be a dlinked to avoid having limits
      type(subaxis_t)                , private :: subaxis(3)      !< Array of subaxis
      integer                        , private :: nsubaxis        !< Number of subaxis
-     class(fms_domain_t),ALLOCATABLE, private :: axis_domain     !< Domain
+     class(diagDomain_t),ALLOCATABLE, private :: axis_domain     !< Domain
      INTEGER                        , private :: length          !< Global axis length
      INTEGER                        , private :: direction       !< Direction of the axis 0, 1, -1
      INTEGER                        , private :: edges           !< Axis ID for the previously defined "edges axis"
@@ -109,7 +110,7 @@ module fms_diag_axis_object_mod
      ! PROCEDURE :: write_axis_data
      ! PROCEDURE :: get_fileobj_type_needed (use the domain to figure out what fms2 fileobj to use)
      ! Get/has/is subroutines as needed
-  END TYPE diag_axis_t
+  END TYPE diagAxis_t
 
   !> @addtogroup fms_diag_yaml_mod
   !> @{
@@ -119,11 +120,11 @@ module fms_diag_axis_object_mod
   !> @brief Initialize the axis
   subroutine diag_axis_init(obj, name, axis_data, units, cart_name, long_name, direction,&
   & set_name, edges, Domain, Domain2, DomainU, aux, req, tile_count, domain_position )
-    class(diag_axis_t)                       :: obj             !< Diag_axis obj
+    class(diagAxis_t),  INTENT(out)          :: obj             !< Diag_axis obj
     CHARACTER(len=*),   INTENT(in)           :: name            !< Name of the axis
     class(*),           INTENT(in)           :: axis_data(:)    !< Array of coordinate values
     CHARACTER(len=*),   INTENT(in)           :: units           !< Units for the axis
-    CHARACTER(len=*),   INTENT(in)           :: cart_name       !< Cartesian axis ("X", "Y", "Z", "T", "U", "N")
+    CHARACTER(len=1),   INTENT(in)           :: cart_name       !< Cartesian axis ("X", "Y", "Z", "T", "U", "N")
     CHARACTER(len=*),   INTENT(in), OPTIONAL :: long_name       !< Long name for the axis.
     CHARACTER(len=*),   INTENT(in), OPTIONAL :: set_name        !< Name of the parent axis, if it is a subaxis
     INTEGER,            INTENT(in), OPTIONAL :: direction       !< Indicates the direction of the axis
@@ -156,13 +157,13 @@ module fms_diag_axis_object_mod
 
     !< TO DO check the presence of multiple Domains
     if (present(Domain)) then
-      allocate(fms_domain1d_t :: obj%axis_domain)
+      allocate(diagDomain1d_t :: obj%axis_domain)
       call obj%axis_domain%set(Domain=Domain)
     else if (present(Domain2)) then
-      allocate(fms_domain2d_t :: obj%axis_domain)
+      allocate(diagDomain2d_t :: obj%axis_domain)
       call obj%axis_domain%set(Domain2=Domain2)
     else if (present(DomainU)) then
-      allocate(fms_domainUG_t :: obj%axis_domain)
+      allocate(diagDomainUg_t :: obj%axis_domain)
       call obj%axis_domain%set(DomainU=DomainU)
     endif
 
@@ -193,7 +194,7 @@ module fms_diag_axis_object_mod
   !> @return axis length
   function get_axis_length(obj) &
   result (axis_length)
-    class(diag_axis_t), intent(inout) :: obj !< diag_axis obj
+    class(diagAxis_t), intent(inout) :: obj !< diag_axis obj
     integer                           :: axis_length
 
     axis_length = obj%length
@@ -205,7 +206,7 @@ module fms_diag_axis_object_mod
 
   !> @brief Set the subaxis of the axis obj
   subroutine set_subaxis(obj, bounds)
-    class(diag_axis_t), INTENT(INOUT) :: obj       !< diag_axis obj
+    class(diagAxis_t), INTENT(INOUT) :: obj       !< diag_axis obj
     class(*),           INTENT(INOUT) :: bounds(:) !< bound of the subaxis
 
     integer :: i !< For do loops
@@ -236,14 +237,14 @@ module fms_diag_axis_object_mod
   !> @return Length of the 2D domain
   function get_length(obj, cart_axis, domain_position) &
   result (length)
-    class(fms_domain_t), INTENT(INOUT) :: obj       !< diag_axis obj
+    class(diagDomain_t), INTENT(INOUT) :: obj       !< diag_axis obj
     character(len=*),    INTENT(IN)    :: cart_axis !< cart_axis of the axis
     integer,             INTENT(IN)    :: domain_position !< Domain position (CENTER, NORTH, EAST)
 
     integer :: length
 
     select type (obj)
-    type is(fms_domain2d_t)
+    type is(diagDomain2d_t)
       if (trim(cart_axis) == "X") call mpp_get_compute_domain(obj%Domain2, xsize=length, position=domain_position)
       if (trim(cart_axis) == "Y") call mpp_get_compute_domain(obj%Domain2, ysize=length, position=domain_position)
     end select
@@ -253,23 +254,23 @@ module fms_diag_axis_object_mod
 
   !> @brief Set the axis domain
   subroutine set_axis_domain(obj, Domain, Domain2, DomainU)
-    class(fms_domain_t) :: obj !< fms_domain obj
+    class(diagDomain_t) :: obj !< fms_domain obj
     TYPE(domain1d),     INTENT(in),  OPTIONAL :: Domain  !< 1d domain
     TYPE(domain2d),     INTENT(in),  OPTIONAL :: Domain2 !< 2d domain
     TYPE(domainUG),     INTENT(in),  OPTIONAL :: DomainU !< Unstructured domain
 
     select type(obj)
-    type is (fms_domain1d_t)
+    type is (diagDomain1d_t)
       obj%Domain = Domain
-    type is (fms_domain2d_t)
+    type is (diagDomain2d_t)
       obj%Domain2 = Domain2
-    type is (fms_domainUG_t)
+    type is (diagDomainUg_t)
       obj%DomainUG = DomainU
     end select
   end subroutine set_axis_domain
 
   !!!!!!!!!!!!!!!!! OTHER FUNCTIONS/SUBROUTINES !!!!!!!!!!!!!!!!!
-  !> @brief Copy a allocatable string
+  !> @brief Copy to an allocatable string
   !> @return Allocated string
   !> TO DO Move this somewhere else?
   function diag_copy_string(string_in) &
