@@ -157,6 +157,10 @@ type diagYamlFilesVar_type
   character (len=:), private, allocatable :: var_outname !< Name of the variable as written to the file
   character (len=:), private, allocatable :: var_longname !< Overwrites the long name of the variable
   character (len=:), private, allocatable :: var_units !< Overwrites the units
+  integer          , private              :: n_diurnal !< Number of diurnal samples
+                                                       !! 0 if var_reduction is not "diurnalXX"
+  integer          , private              :: pow_value !< The power value
+                                                       !! 0 if pow_value is not "powXX"
 
   !< Need to use `MAX_STR_LEN` because not all filenames/global attributes are the same length
   character (len=MAX_STR_LEN), dimension (:, :), private, allocatable :: var_attributes !< Attributes to overwrite or
@@ -173,6 +177,8 @@ type diagYamlFilesVar_type
   procedure :: get_var_longname
   procedure :: get_var_units
   procedure :: get_var_attributes
+  procedure :: get_n_diurnal
+  procedure :: get_pow_value
   procedure :: is_var_attributes
 
   procedure :: has_var_fname 
@@ -677,8 +683,9 @@ subroutine check_field_kind(field)
 end subroutine check_field_kind
 
 !> @brief This checks if the reduction of a diag field is valid and crashes if it isn't
+!! If the reduction method is diurnalXX or powXX, it gets the number of diurnal sample and the power value
 subroutine check_field_reduction(field)
-  type(diagYamlFilesVar_type), intent(in) :: field        !< diagYamlFilesVar_type obj to read the contents into
+  type(diagYamlFilesVar_type), intent(inout) :: field        !< diagYamlFilesVar_type obj to read the contents into
 
   integer :: n_diurnal !< number of diurnal samples
   integer :: pow_value !< The power value
@@ -710,6 +717,9 @@ subroutine check_field_reduction(field)
         &Check your entry for file:"//trim(field%var_varname)//" in file "//trim(field%var_fname))
     end select
   endif
+
+  field%n_diurnal = n_diurnal
+  field%pow_value = pow_value
 end subroutine check_field_reduction
 
 !> @brief This checks if a time unit is valid
@@ -921,6 +931,22 @@ result (res)
  character (len=MAX_STR_LEN), allocatable :: res (:,:) !< What is returned
  res = diag_var_obj%var_attributes
 end function get_var_attributes
+!> @brief Inquiry for diag_yaml_files_var_obj%n_diurnal
+!! @return the number of diurnal samples of a diag_yaml_files_var_obj
+pure function get_n_diurnal(diag_var_obj) &
+result (res)
+  class (diagYamlFilesVar_type), intent(in) :: diag_var_obj !< The object being inquiried
+  integer :: res !< What is returned
+  res = diag_var_obj%n_diurnal
+end function get_n_diurnal
+!> @brief Inquiry for diag_yaml_files_var_obj%pow_value
+!! @return the pow_value of a diag_yaml_files_var_obj
+pure function get_pow_value(diag_var_obj) &
+result (res)
+  class (diagYamlFilesVar_type), intent(in) :: diag_var_obj !< The object being inquiried
+  integer :: res !< What is returned
+  res = diag_var_obj%pow_value
+end function get_pow_value
 !> @brief Inquiry for whether var_attributes is allocated
 !! @return Flag indicating if var_attributes is allocated
 function is_var_attributes(diag_var_obj) &
