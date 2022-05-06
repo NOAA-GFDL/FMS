@@ -118,10 +118,10 @@ module fms_diag_axis_object_mod
 
   !!!!!!!!!!!!!!!!! DIAG AXIS PROCEDURES !!!!!!!!!!!!!!!!!
   !> @brief Initialize the axis
-  subroutine diag_axis_init(obj, name, axis_data, units, cart_name, long_name, direction,&
+  subroutine diag_axis_init(obj, axis_name, axis_data, units, cart_name, long_name, direction,&
   & set_name, edges, Domain, Domain2, DomainU, aux, req, tile_count, domain_position )
     class(diagAxis_t),  INTENT(out)          :: obj             !< Diag_axis obj
-    CHARACTER(len=*),   INTENT(in)           :: name            !< Name of the axis
+    CHARACTER(len=*),   INTENT(in)           :: axis_name       !< Name of the axis
     class(*),           INTENT(in)           :: axis_data(:)    !< Array of coordinate values
     CHARACTER(len=*),   INTENT(in)           :: units           !< Units for the axis
     CHARACTER(len=1),   INTENT(in)           :: cart_name       !< Cartesian axis ("X", "Y", "Z", "T", "U", "N")
@@ -138,10 +138,10 @@ module fms_diag_axis_object_mod
     INTEGER,            INTENT(in), OPTIONAL :: tile_count      !< Number of tiles
     INTEGER,            INTENT(in), OPTIONAL :: domain_position !< Domain position, "NORTH" or "EAST"
 
-    obj%axis_name = diag_copy_string(name)
-    obj%units = diag_copy_string(units)
-    obj%cart_name = diag_copy_string(cart_name) !< TO DO Check for valid cart_names
-    if (present(long_name)) obj%long_name = diag_copy_string(long_name)
+    obj%axis_name = trim(axis_name)
+    obj%units = trim(units)
+    obj%cart_name = trim(cart_name) !< TO DO Check for valid cart_names
+    if (present(long_name)) obj%long_name = trim(long_name)
 
     select type (axis_data)
     type is (real(kind=r8_kind))
@@ -184,8 +184,8 @@ module fms_diag_axis_object_mod
     obj%edges = 0
     if (present(edges)) obj%edges = edges
 
-    if (present(aux)) obj%aux = diag_copy_string(aux)
-    if (present(req)) obj%req = diag_copy_string(req)
+    if (present(aux)) obj%aux = trim(aux)
+    if (present(req)) obj%req = trim(req)
 
     obj%nsubaxis = 0
   end subroutine diag_axis_init
@@ -268,20 +268,6 @@ module fms_diag_axis_object_mod
       obj%DomainUG = DomainU
     end select
   end subroutine set_axis_domain
-
-  !!!!!!!!!!!!!!!!! OTHER FUNCTIONS/SUBROUTINES !!!!!!!!!!!!!!!!!
-  !> @brief Copy to an allocatable string
-  !> @return Allocated string
-  !> TO DO Move this somewhere else?
-  function diag_copy_string(string_in) &
-  result(string_out)
-    character(len=*),             INTENT(IN) :: string_in !< String to copy
-    character(len=:), ALLOCATABLE            :: string_out
-
-    allocate(character(len=len_trim(string_in)) :: string_out)
-    string_out = trim(string_in)
-
-  end function
 
 end module fms_diag_axis_object_mod
 !> @}
