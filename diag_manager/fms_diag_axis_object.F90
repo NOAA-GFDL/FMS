@@ -197,10 +197,12 @@ module fms_diag_axis_object_mod
     class(diagAxis_t), intent(inout) :: obj !< diag_axis obj
     integer                           :: axis_length
 
-    axis_length = obj%length
-
     !< If the axis is domain decomposed axis_length will be set to the length for the current PE:
-    if (allocated(obj%axis_domain)) axis_length = obj%axis_domain%length(obj%cart_name, obj%domain_position)
+    if (allocated(obj%axis_domain)) then
+      axis_length = obj%axis_domain%length(obj%cart_name, obj%domain_position, obj%length)
+    else
+      axis_length = obj%length
+    endif
 
   end function
 
@@ -235,11 +237,12 @@ module fms_diag_axis_object_mod
 
   !> @brief Get the length of a 2D domain
   !> @return Length of the 2D domain
-  function get_length(obj, cart_axis, domain_position) &
+  function get_length(obj, cart_axis, domain_position, global_length) &
   result (length)
     class(diagDomain_t), INTENT(INOUT) :: obj       !< diag_axis obj
     character(len=*),    INTENT(IN)    :: cart_axis !< cart_axis of the axis
     integer,             INTENT(IN)    :: domain_position !< Domain position (CENTER, NORTH, EAST)
+    integer,             INTENT(IN)    :: global_length !< global_length of the axis
 
     integer :: length
 
@@ -247,6 +250,9 @@ module fms_diag_axis_object_mod
     type is(diagDomain2d_t)
       if (trim(cart_axis) == "X") call mpp_get_compute_domain(obj%Domain2, xsize=length, position=domain_position)
       if (trim(cart_axis) == "Y") call mpp_get_compute_domain(obj%Domain2, ysize=length, position=domain_position)
+    class default
+      !< If domain is 1D or UG, just set it to the global length
+      length = global_length
     end select
   end function
 
