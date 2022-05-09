@@ -75,7 +75,7 @@ type subRegion_type
   class(*),          allocatable :: corner2(:)  !< (x, y) coordinates/indices of the second corner of the region
   class(*),          allocatable :: corner3(:)  !< (x, y) coordinates/indices of the third corner of the region
   class(*),          allocatable :: corner4(:)  !< (x, y) coordinates/indices of the fourth corner of the region
-  integer,                       :: zbounds(2)  !< indices of the z axis limits (zbegin, zend)
+  integer                        :: zbounds(2)  !< indices of the z axis limits (zbegin, zend)
   integer                        :: tile        !< Tile number of the sub region
                                                 !! required if using the "index" grid type
 
