@@ -190,6 +190,8 @@ type diagYamlFilesVar_type
   procedure :: has_var_longname 
   procedure :: has_var_units 
   procedure :: has_var_attributes 
+  procedure :: has_n_diurnal
+  procedure :: has_pow_value
 
 end type diagYamlFilesVar_type
 
@@ -1120,8 +1122,18 @@ pure logical function has_var_attributes (obj)
   class(diagYamlFilesVar_type), intent(in) :: obj !< diagYamlvar_type object to initialize
   has_var_attributes = allocated(obj%var_attributes)
 end function has_var_attributes
-
-
+!> @brief Checks if obj%n_diurnal is set
+!! @return true if obj%n_diurnal is set
+pure logical function has_n_diurnal(obj)
+  class(diagYamlFilesVar_type), intent(in) :: obj !< diagYamlvar_type object to inquire
+  has_n_diurnal = (obj%n_diurnal .ne. 0)
+end function has_n_diurnal
+!> @brief Checks if obj%pow_value is set
+!! @return true if obj%pow_value is set
+pure logical function has_pow_value(obj)
+  class(diagYamlFilesVar_type), intent(in) :: obj !< diagYamlvar_type object to inquire
+  has_pow_value = (obj%pow_value .ne. 0)
+end function has_pow_value
 
 !> @brief Checks if obj%diag_title is allocated
 !! @return true if obj%diag_title is allocated
