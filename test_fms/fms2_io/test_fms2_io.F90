@@ -73,9 +73,7 @@ call mpi_barrier(mpi_comm_world, err)
 call mpi_check(err)
 
 read(input_nml_file, nml=test_fms2_io_nml, iostat=err)
-err = check_nml_error(err, 'test_atmosphere_io_nml')
-
-print *, nx, ny, nz
+err = check_nml_error(err, 'test_fms2_io_nml')
 
 !Define command line arguments.
 parser = get_parser()
