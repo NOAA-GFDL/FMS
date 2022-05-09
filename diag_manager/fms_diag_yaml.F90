@@ -75,7 +75,7 @@ type subRegion_type
   class(*),          allocatable :: corner2(:)  !< (x, y) coordinates/indices of the second corner of the region
   class(*),          allocatable :: corner3(:)  !< (x, y) coordinates/indices of the third corner of the region
   class(*),          allocatable :: corner4(:)  !< (x, y) coordinates/indices of the fourth corner of the region
-  class(*),          allocatable :: zbounds(:)  !< bounds of the z axis (zbegin, zend)
+  integer,                       :: zbounds(2)  !< indices of the z axis limits (zbegin, zend)
   integer                        :: tile        !< Tile number of the sub region
                                                 !! required if using the "index" grid type
 
@@ -421,7 +421,6 @@ subroutine sub_region_end(sub_region)
   if(allocated(sub_region%corner2)) deallocate(sub_region%corner2)
   if(allocated(sub_region%corner3)) deallocate(sub_region%corner3)
   if(allocated(sub_region%corner4)) deallocate(sub_region%corner4)
-  if(allocated(sub_region%zbounds)) deallocate(sub_region%zbounds)
 
 end subroutine sub_region_end
 
@@ -568,13 +567,11 @@ subroutine get_sub_region(diag_yaml_id, sub_region_id, sub_region, fname)
     allocate(real(kind=r4_kind) :: sub_region%corner2(2))
     allocate(real(kind=r4_kind) :: sub_region%corner3(2))
     allocate(real(kind=r4_kind) :: sub_region%corner4(2))
-    allocate(real(kind=r4_kind) :: sub_region%zbounds(2))
   case ("index")
     allocate(real(kind=i4_kind) :: sub_region%corner1(2))
     allocate(real(kind=i4_kind) :: sub_region%corner2(2))
     allocate(real(kind=i4_kind) :: sub_region%corner3(2))
     allocate(real(kind=i4_kind) :: sub_region%corner4(2))
-    allocate(real(kind=i4_kind) :: sub_region%zbounds(2))
 
     call get_value_from_key(diag_yaml_id, sub_region_id, "tile", sub_region%tile, is_optional=.true.)
     if (sub_region%tile .eq. DIAG_NULL) call mpp_error(FATAL, &
