@@ -28,11 +28,11 @@ program test_mpp_chksum
   implicit none
 
   integer :: test_num = 1
-  integer :: nx = 64, ny = 64, npz = 63
+  integer :: nx = 96, ny = 96, npz = 63
   logical :: debug = .false.
   integer :: npes, root, pe, ierr
 
-  namelist /test_mpp_chksum_nml/ test_num
+  namelist /test_mpp_chksum_nml/ test_num, nx, ny
 
   call mpp_init
 
