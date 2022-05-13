@@ -24,10 +24,11 @@
 !! a pointer to the information from the diag yaml, additional metadata that comes from the model, and a
 !! list of the variables and their variable IDs that are in the file.
 module fms_diag_file_object_mod
-!use mpp_mod
+!use mpp_mod, only: mpp_error, FATAL
 use fms2_io_mod, only: FmsNetcdfFile_t, FmsNetcdfUnstructuredDomainFile_t, FmsNetcdfDomainFile_t
 #ifdef use_yaml
-use fms_diag_yaml_mod, only: diagYamlObject_type
+use fms_diag_yaml_mod, only: diag_yaml, diagYamlObject_type
+
 #endif
 
 implicit none
@@ -57,6 +58,7 @@ type :: fmsDiagFile_type
                                                                  !! `file_var_index` has been set for the variable
 
  contains
+
   procedure, public :: has_file_metadata_from_model
   procedure, public :: has_fileobj
 #ifdef use_yaml
@@ -71,13 +73,31 @@ type :: fmsDiagFile_type
   procedure, public :: get_file_metadata_from_model
   procedure, public :: get_var_list
   procedure, public :: get_var_ids
-
 end type fmsDiagFile_type
 
 type(fmsDiagFile_type), dimension (:), allocatable, target :: FMS_diag_files !< The array of diag files
 
 contains
 
+!< @brief Allocates the number of files and sets an ID based for each file
+!! @return true if there are files allocated in the YAML object
+logical function fms_diag_files_object_init ()
+ integer :: nFiles !< Number of files in the diag yaml
+ integer :: i !< Looping iterator
+ if (diag_yaml%has_diag_files()) then
+        nFiles = diag_yaml%size_diag_files()
+        allocate (FMS_diag_files(nFiles))
+        set_ids: do i=1,nFiles
+                FMS_diag_files(i)%diag_yaml => diag_yaml
+                FMS_diag_files(i)%id = i
+        enddo set_ids
+        fms_diag_files_object_init = .true.
+ else
+        fms_diag_files_object_init = .false.
+!        mpp_error("fms_diag_files_object_init: The diag_table.yaml file has not been correctly parsed.",&
+!                   FATAL)
+ endif
+end function fms_diag_files_object_init
 !> \brief Logical function to determine if the variable file_metadata_from_model has been allocated or associated
 !! \return .True. if file_metadata_from_model exists .False. if file_metadata_from_model has not been set
 pure logical function has_file_metadata_from_model (obj)
