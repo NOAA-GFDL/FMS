@@ -18,12 +18,12 @@
 !***********************************************************************
 !> @defgroup fms_diag_output_yaml_mod fms_diag_output_yaml_mod
 !> @ingroup diag_manager
-!! @brief fms_diag_file_mod handles the file objects data, functions, and subroutines.
+!! @brief fms_diag_file_object_mod handles the file objects data, functions, and subroutines.
 !! @author Tom Robinson
 !! @description The fmsDiagFile_type contains the information for each history file to be written.  It has
 !! a pointer to the information from the diag yaml, additional metadata that comes from the model, and a
 !! list of the variables and their variable IDs that are in the file.
-module fms_diag_file_mod
+module fms_diag_file_object_mod
 !use mpp_mod
 use fms2_io_mod, only: FmsNetcdfFile_t, FmsNetcdfUnstructuredDomainFile_t, FmsNetcdfDomainFile_t
 #ifdef use_yaml
@@ -169,4 +169,4 @@ pure function get_var_ids (obj) result (res)
 end function get_var_ids
 
 
-end module fms_diag_file_mod
+end module fms_diag_file_object_mod

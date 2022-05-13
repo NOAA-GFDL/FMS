@@ -15,7 +15,7 @@ use diag_axis_mod,  only: diag_axis_type
 use mpp_mod, only: fatal, note, warning, mpp_error
 #ifdef use_yaml
 use fms_diag_yaml_mod, only:  diagYamlFilesVar_type
-use fms_diag_file_mod, only: fmsDiagFile_type 
+use fms_diag_file_object_mod, only: fmsDiagFile_type 
 #endif
 use time_manager_mod, ONLY: time_type
 !!!set_time, set_date, get_time, time_type, OPERATOR(>=), OPERATOR(>),&
