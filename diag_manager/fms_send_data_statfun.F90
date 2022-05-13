@@ -63,7 +63,7 @@ MODULE fms_send_data_statfun_mod
       LOGICAL, DIMENSION(:,:,:), INTENT(in), OPTIONAL :: mask
       REAL, INTENT(in) :: weight1
       INTEGER, INTENT(in) :: sample
-      REAL, INTENT(in), OPTIONAL :: missvalue   !!TODO: optional?
+      REAL, INTENT(in), OPTIONAL :: missvalue
       LOGICAL, INTENT(in) :: missvalue_present
       INTEGER, DIMENSION(3), INTENT(in)  :: l_start !< local start indices on 3 axes for regional output
       INTEGER, DIMENSION(3), INTENT(in)  :: l_end !< local end indices on 3 axes for regional output
@@ -79,10 +79,9 @@ MODULE fms_send_data_statfun_mod
       ! Power value for rms or pow(x) calculations
       INTEGER :: pow_value, ksr, ker, is, js, ks, ie, je, ke, hi, hj, f1, f2, f3, f4
       LOGICAL :: phys_window , need_compute , reduced_k_range
-      !!TODO: name change PHYS_WINDOWS -->> ? OMP subsetted data
+      !!TODO: name change PHYS_WINDOWS -->> ? OMP subsetted data, See output_fields
 
       TYPE(FmsWeightProcCfg_t), allocatable :: weight_procs
-
 
       INTEGER :: i, j, k,  i1, j1, k1
 
@@ -97,12 +96,6 @@ MODULE fms_send_data_statfun_mod
       pow_value = output_fields(out_num)%pow_value
       ALLOCATE(weight_procs)
       call weight_procs%initialize (pow_value)
-
-      if(  output_fields(out_num)%pow_value /= weight_procs%pow_value)then
-        print *, "they are not equal"
-      else
-        print *, "they are equal"
-      end if
 
       phys_window = output_fields(out_num)%phys_window
       need_compute = output_fields(out_num)%need_compute
@@ -153,7 +146,7 @@ MODULE fms_send_data_statfun_mod
             ! Should reduced_k_range data be supported with the mask_variant option   ?????
             ! If not, error message should be produced and the reduced_k_range loop below eliminated
             PRESENT_MASK_IF: IF ( PRESENT(mask) ) THEN
-               IF ( missvalue_present ) THEN !!TODO: (section: section( mask_varian .eq. true + mask present) )
+               IF ( missvalue_present ) THEN !!(section: mask_varian .eq. true + mask present)
                   IF ( debug_diag_manager ) THEN
                      CALL update_bounds(out_num, is-hi, ie-hi, js-hj, je-hj, ks, ke)
                      CALL check_out_of_bounds(out_num, diag_field_id, err_msg=err_msg_local)
@@ -225,8 +218,7 @@ MODULE fms_send_data_statfun_mod
                   WRITE (error_string,'(a,"/",a)')&
                   & TRIM(input_fields(diag_field_id)%module_name), &
                   & TRIM(output_fields(out_num)%output_name)
-                  IF(fms_error_handler('diag_manager_mod::send_data_3d', 'module/output_field '//TRIM(error_string)//&
-                  & ', variable mask but no missing value defined', err_msg)) THEN
+                  IF(fms_error_handler('diag_manager_mod::send_data_3d', 'module/output_field '//TRIM(error_string)// ', variable mask but no missing value defined', err_msg)) THEN
                      succeded = .FALSE.
                      RETURN
                   END IF
@@ -243,8 +235,8 @@ MODULE fms_send_data_statfun_mod
             END IF PRESENT_MASK_IF
          ELSE MASK_VAR_IF
             MASK_PRESENT_IF: IF ( PRESENT(mask) ) THEN
-               MVAL_PRESENT_IF: IF ( missvalue_present ) THEN !!section:(mask_var false +mask present +missval prsnt)
-                  IF ( need_compute ) THEN
+               MISSVAL_PR_1_IF: IF ( missvalue_present ) THEN !!section:(mask_var false +mask present +missval prsnt)
+                  NDCMP_RKR_1_IF: IF ( need_compute ) THEN
                      IF (numthreads>1 .AND. phys_window) then
                         DO k = l_start(3), l_end(3)
                            k1 = k-l_start(3)+1
@@ -292,12 +284,12 @@ MODULE fms_send_data_statfun_mod
                            IF ( l_start(1)+hi <= i .AND. i <= l_end(1)+hi .AND. l_start(2)+hj <= j .AND. &
                            & j <= l_end(2)+hj ) THEN
                               output_fields(out_num)%num_elements(sample) = &
-                                 output_fields(out_num)%num_elements(sample) + l_end(3) - l_start(3) + 1
+                                & output_fields(out_num)%num_elements(sample) + l_end(3) - l_start(3) + 1
                            END IF
                         END DO
                      END DO
 !$OMP END CRITICAL
-                  ELSE IF ( reduced_k_range ) THEN
+                  ELSE IF ( reduced_k_range ) THEN NDCMP_RKR_1_IF
                      IF (numthreads>1 .AND. phys_window) then
                         DO k=ksr, ker
                            k1 = k - ksr + 1
@@ -329,7 +321,7 @@ MODULE fms_send_data_statfun_mod
                         END DO
 !$OMP END CRITICAL
                      END IF
-                  ELSE
+                  ELSE NDCMP_RKR_1_IF
                      IF ( debug_diag_manager ) THEN
                         CALL update_bounds(out_num, is-hi, ie-hi, js-hj, je-hj, ks, ke)
                         CALL check_out_of_bounds(out_num, diag_field_id, err_msg=err_msg_local)
@@ -369,7 +361,7 @@ MODULE fms_send_data_statfun_mod
                         END DO
 !$OMP END CRITICAL
                      END IF
-                  END IF
+                  END IF NDCMP_RKR_1_IF
 !$OMP CRITICAL
                   IF ( need_compute .AND. .NOT.phys_window ) THEN
                      IF ( ANY(mask(l_start(1)+hi:l_end(1)+hi,l_start(2)+hj:l_end(2)+hj,l_start(3):l_end(3))) ) &
@@ -380,7 +372,7 @@ MODULE fms_send_data_statfun_mod
                      & output_fields(out_num)%count_0d(sample)+weight1
                   END IF
 !$OMP END CRITICAL
-               ELSE !!MVAL_PRESENT_IF (section: mask_varian .eq. false + mask present + miss value not present)
+               ELSE MISSVAL_PR_1_IF !! (section: mask_varian .eq. false + mask present + miss value not present)
                   IF (   (.NOT.ALL(mask(f1:f2,f3:f4,ks:ke)) .AND. mpp_pe() .EQ. mpp_root_pe()).AND.&
                   &  .NOT.input_fields(diag_field_id)%issued_mask_ignore_warning ) THEN
                      ! <ERROR STATUS="WARNING">
@@ -393,9 +385,9 @@ MODULE fms_send_data_statfun_mod
                      & trim(input_fields(diag_field_id)%module_name), WARNING)
                      input_fields(diag_field_id)%issued_mask_ignore_warning = .TRUE.
                   END IF
-                  IF ( need_compute ) THEN
+                  NDCMP_RKR_2_IF: IF ( need_compute ) THEN
                      IF (numthreads>1 .AND. phys_window) then
-                        DO j = js, je !!TODO: What is diff in next two secs?
+                        DO j = js, je
                            DO i = is, ie
                               IF ( l_start(1)+hi <= i .AND. i <= l_end(1)+hi .AND. l_start(2)+hj <= j .AND. &
                               & j <= l_end(2)+hj ) THEN
@@ -434,9 +426,9 @@ MODULE fms_send_data_statfun_mod
                         END DO
                      END DO
 !$OMP END CRITICAL
-                  ELSE IF ( reduced_k_range ) THEN
+                  ELSE IF ( reduced_k_range ) THEN NDCMP_RKR_2_IF
                      IF (numthreads>1 .AND. phys_window) then
-                        ksr= l_start(3)  !!TODO. What is deff in these two secs below.
+                        ksr= l_start(3)
                         ker= l_end(3)
                         ofb(is-hi:ie-hi,js-hj:je-hj,:,sample) = ofb(is-hi:ie-hi,js-hj:je-hj,:,sample) +&
                         & weight_procs%fwf_3d_ptr (field(f1:f2,f3:f4,ksr:ker), weight1, pow_value)
@@ -448,7 +440,7 @@ MODULE fms_send_data_statfun_mod
                         & weight_procs%fwf_3D_ptr (field(f1:f2,f3:f4,ksr:ker), weight1, pow_value)
 !$OMP END CRITICAL
                      END IF
-                  ELSE
+                  ELSE NDCMP_RKR_2_IF
                      IF ( debug_diag_manager ) THEN
                         CALL update_bounds(out_num, is-hi, ie-hi, js-hj, je-hj, ks, ke)
                         CALL check_out_of_bounds(out_num, diag_field_id, err_msg=err_msg_local)
@@ -459,7 +451,6 @@ MODULE fms_send_data_statfun_mod
                            END IF
                         END IF
                      END IF
-                     !!TODO: What is difference in two below?
                      IF (numthreads>1 .AND. phys_window) then
                         ofb(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) =&
                         & ofb(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) +&
@@ -468,18 +459,18 @@ MODULE fms_send_data_statfun_mod
 !$OMP CRITICAL
                         ofb(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) =&
                         & ofb(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) +&
-                           weight_procs%fwf_3d_ptr(field(f1:f2,f3:f4,ks:ke), weight1 , pow_value)
+                          & weight_procs%fwf_3d_ptr(field(f1:f2,f3:f4,ks:ke), weight1 , pow_value)
 !$OMP END CRITICAL
                      END IF
-                  END IF
+                  END IF NDCMP_RKR_2_IF
 !$OMP CRITICAL
                   IF ( .NOT.phys_window ) output_fields(out_num)%count_0d(sample) =&
                   & output_fields(out_num)%count_0d(sample) + weight1
 !$OMP END CRITICAL
-               END IF MVAL_PRESENT_IF
+               END IF MISSVAL_PR_1_IF
             ELSE MASK_PRESENT_IF !!(section: mask_variant .eq. false + mask not present + missvalue)
-               MVAL_PRESENT2_IF: IF (missvalue_present ) THEN
-                  IF ( need_compute ) THEN
+               MISSVAL_PR_2_IF: IF (missvalue_present ) THEN
+                  NDCMP_RKR_3_IF: IF ( need_compute ) THEN
                      NTAPW_IF: If( numthreads>1 .AND. phys_window ) then
                         DO k = l_start(3), l_end(3)
                            k1 = k - l_start(3) + 1
@@ -532,20 +523,20 @@ MODULE fms_send_data_statfun_mod
                         END DO
                      END DO
                      IF ( .NOT.phys_window ) THEN
-                        outer0: DO k = l_start(3), l_end(3)
+                        DO k = l_start(3), l_end(3)
                            DO j=l_start(2)+hj, l_end(2)+hj
                               DO i=l_start(1)+hi, l_end(1)+hi
                                  IF ( field(i,j,k) /= missvalue ) THEN
                                     output_fields(out_num)%count_0d(sample) = &
-                                       output_fields(out_num)%count_0d(sample) + weight1
-                                    EXIT outer0
+                                      & output_fields(out_num)%count_0d(sample) + weight1
+                                    EXIT
                                  END IF
                               END DO
                            END DO
-                        END DO outer0
+                        END DO
                      END IF
 !$OMP END CRITICAL
-                  ELSE IF ( reduced_k_range ) THEN
+                  ELSE IF ( reduced_k_range ) THEN NDCMP_RKR_3_IF
                      if( numthreads>1 .AND. phys_window ) then
                         ksr= l_start(3)
                         ker= l_end(3)
@@ -582,21 +573,21 @@ MODULE fms_send_data_statfun_mod
 !$OMP END CRITICAL
                      END IF
 !$OMP CRITICAL
-                     outer3: DO k = ksr, ker
+                     DO k = ksr, ker
                         k1=k-ksr+1
                         DO j=f3, f4
                            DO i=f1, f2
                               !! TODO: verify this below
                               IF ( field(i,j,k) /= missvalue ) THEN
                                  output_fields(out_num)%count_0d(sample) = &
-                                    output_fields(out_num)%count_0d(sample) + weight1
-                                 EXIT outer3
+                                    & output_fields(out_num)%count_0d(sample) + weight1
+                                 EXIT
                               END IF
                            END DO
                         END DO
-                     END DO outer3
+                     END DO
 !$OMP END CRITICAL
-                  ELSE
+                  ELSE NDCMP_RKR_3_IF
                      IF ( debug_diag_manager ) THEN
                         CALL update_bounds(out_num, is-hi, ie-hi, js-hj, je-hj, ks, ke)
                         CALL check_out_of_bounds(out_num, diag_field_id, err_msg=err_msg_local)
@@ -637,21 +628,21 @@ MODULE fms_send_data_statfun_mod
 !$OMP END CRITICAL
                      END IF
 !$OMP CRITICAL
-                     outer1: DO k=ks, ke
+                     DO k=ks, ke
                         DO j=f3, f4
                            DO i=f1, f2
                               IF ( field(i,j,k) /= missvalue ) THEN
                                  output_fields(out_num)%count_0d(sample) = &
-                                    output_fields(out_num)%count_0d(sample)  + weight1
-                                 EXIT outer1
+                                    & output_fields(out_num)%count_0d(sample)  + weight1
+                                 EXIT
                               END IF
                            END DO
                         END DO
-                     END DO outer1
+                     END DO
 !$OMP END CRITICAL
-                  END IF
-               ELSE MVAL_PRESENT2_IF !!(section: mask_variant .eq. false + mask not present + missvalue not present)
-                  NEED_COMP_IF: IF ( need_compute ) THEN
+                  END IF NDCMP_RKR_3_IF
+               ELSE MISSVAL_PR_2_IF !!(section: mask_variant .eq. false + mask not present + missvalue not present)
+                  NDCMP_RKR_4_IF: IF ( need_compute ) THEN
                      IF( numthreads > 1 .AND. phys_window ) then
                         DO j = js, je
                            DO i = is, ie
@@ -693,7 +684,7 @@ MODULE fms_send_data_statfun_mod
                      END DO
 !$OMP END CRITICAL
                      ! Accumulate time average
-                  ELSE IF ( reduced_k_range ) THEN !!NEED_COMP_IF
+                  ELSE IF ( reduced_k_range ) THEN NDCMP_RKR_4_IF
                      ksr= l_start(3)
                      ker= l_end(3)
                      IF( numthreads > 1 .AND. phys_window ) then
@@ -708,7 +699,7 @@ MODULE fms_send_data_statfun_mod
 !$OMP END CRITICAL
                      END IF
 
-                  ELSE
+                  ELSE NDCMP_RKR_4_IF
                      IF ( debug_diag_manager ) THEN
                         CALL update_bounds(out_num, is-hi, ie-hi, js-hj, je-hj, ks, ke)
                         CALL check_out_of_bounds(out_num, diag_field_id, err_msg=err_msg_local)
@@ -731,12 +722,12 @@ MODULE fms_send_data_statfun_mod
                         !!
 !$OMP END CRITICAL
                      END IF
-                  END IF NEED_COMP_IF
+                  END IF NDCMP_RKR_4_IF
 !$OMP CRITICAL
                   IF ( .NOT.phys_window ) output_fields(out_num)%count_0d(sample) =&
                   & output_fields(out_num)%count_0d(sample) + weight1
 !$OMP END CRITICAL
-               END IF MVAL_PRESENT2_IF
+               END IF MISSVAL_PR_2_IF
             END IF MASK_PRESENT_IF ! if mask present
          END IF MASK_VAR_IF
       END ASSOCIATE
@@ -819,7 +810,7 @@ MODULE fms_send_data_statfun_mod
 
          ! Add processing for Max and Min
          TIME_IF: IF ( time_max ) THEN
-            PRESENT_MASK_IF: IF ( PRESENT(mask) ) THEN
+            MASK_PRSNT_1_IF: IF ( PRESENT(mask) ) THEN
                IF ( need_compute ) THEN
                   DO k = l_start(3), l_end(3)
                      k1 = k - l_start(3) + 1
@@ -859,7 +850,7 @@ MODULE fms_send_data_statfun_mod
                   & field(f1:f2,f3:f4,ks:ke)>OFB(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample))&
                   & OFB(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) = field(f1:f2,f3:f4,ks:ke)
                END IF
-            ELSE PRESENT_MASK_IF
+            ELSE MASK_PRSNT_1_IF
                IF ( need_compute ) THEN
                   DO k = l_start(3), l_end(3)
                      k1 = k - l_start(3) + 1
@@ -896,11 +887,11 @@ MODULE fms_send_data_statfun_mod
                   WHERE (field(f1:f2,f3:f4,ks:ke) > OFB(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample))&
                   & OFB(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) = field(f1:f2,f3:f4,ks:ke)
                END IF
-            END IF PRESENT_MASK_IF
+            END IF MASK_PRSNT_1_IF
             output_fields(out_num)%count_0d(sample) = 1
             !END TIME MAX
          ELSE IF ( time_min ) THEN TiME_IF
-            PRESENT_MASK2_IF: IF ( PRESENT(mask) ) THEN
+            MASK_PRSNT_2_IF: IF ( PRESENT(mask) ) THEN
                IF ( need_compute ) THEN
                   DO k = l_start(3), l_end(3)
                      k1 = k - l_start(3) + 1
@@ -940,7 +931,7 @@ MODULE fms_send_data_statfun_mod
                   & field(f1:f2,f3:f4,ks:ke) < OFB(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample))&
                   & OFB(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) = field(f1:f2,f3:f4,ks:ke)
                END IF
-            ELSE PRESENT_MASK2_IF
+            ELSE MASK_PRSNT_2_IF
                IF ( need_compute ) THEN
                   DO k = l_start(3), l_end(3)
                      k1 = k - l_start(3) + 1
@@ -976,12 +967,12 @@ MODULE fms_send_data_statfun_mod
                   WHERE (field(f1:f2,f3:f4,ks:ke) < OFB(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample))&
                   & OFB(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) = field(f1:f2,f3:f4,ks:ke)
                END IF
-            END IF PRESENT_MASK2_IF
+            END IF MASK_PRSNT_2_IF
             output_fields(out_num)%count_0d(sample) = 1
 
             !! END_TIME_MIN
          ELSE IF ( time_sum ) THEN TIME_IF
-            PRESENT_MASK3_IF: IF ( PRESENT(mask) ) THEN
+            MASK_PRSNT_3_IF: IF ( PRESENT(mask) ) THEN
                IF ( need_compute ) THEN
                   DO k = l_start(3), l_end(3)
                      k1 = k - l_start(3) + 1
@@ -1023,7 +1014,7 @@ MODULE fms_send_data_statfun_mod
                   &  OFB(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) + &
                   &  field(f1:f2,f3:f4,ks:ke)
                END IF
-            ELSE PRESENT_MASK3_IF
+            ELSE MASK_PRSNT_3_IF
                IF ( need_compute ) THEN
                   DO k = l_start(3), l_end(3)
                      k1 = k - l_start(3) + 1
@@ -1060,7 +1051,7 @@ MODULE fms_send_data_statfun_mod
                   &    OFB(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) + &
                   &    field(f1:f2,f3:f4,ks:ke)
                END IF
-            END IF PRESENT_MASK3_IF
+            END IF MASK_PRSNT_3_IF
             output_fields(out_num)%count_0d(sample) = 1
             !END time_sum
          ELSE TIME_IF !! ( not average, not min, not max, not sum )
