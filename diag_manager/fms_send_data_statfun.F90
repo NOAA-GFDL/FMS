@@ -218,7 +218,9 @@ MODULE fms_send_data_statfun_mod
                   WRITE (error_string,'(a,"/",a)')&
                   & TRIM(input_fields(diag_field_id)%module_name), &
                   & TRIM(output_fields(out_num)%output_name)
-                  IF(fms_error_handler('diag_manager_mod::send_data_3d', 'module/output_field '//TRIM(error_string)// ', variable mask but no missing value defined', err_msg)) THEN
+                  IF(fms_error_handler('diag_manager_mod::send_data_3d', &
+                    & 'module/output_field '//TRIM(error_string)//', variable mask but no missing value defined', &
+                    & err_msg)) THEN
                      succeded = .FALSE.
                      RETURN
                   END IF
