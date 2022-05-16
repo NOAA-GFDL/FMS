@@ -116,6 +116,7 @@ type diagYamlFiles_type
 
  !> All getter functions (functions named get_x(), for member field named x)
  !! return copies of the member variables unless explicitly noted.
+ procedure :: size_file_varlist
  procedure :: get_file_fname
  procedure :: get_file_frequnit
  procedure :: get_file_freq
@@ -742,6 +743,13 @@ result(is_valid)
 end function is_valid_time_units
 
 !!!!!!! YAML FILE INQUIRIES !!!!!!!
+!> @brief Finds the number of variables in the file_varlist
+!! @return the size of the diag_files_obj%file_varlist array
+integer pure function size_file_varlist (diag_files_obj)
+ class (diagYamlFiles_type), intent(in) :: diag_files_obj !< The object being inquiried
+ size_file_varlist = size(diag_files_obj%file_varlist)
+end function size_file_varlist
+
 !> @brief Inquiry for diag_files_obj%file_fname
 !! @return file_fname of a diag_yaml_file obj
 pure function get_file_fname (diag_files_obj) &
