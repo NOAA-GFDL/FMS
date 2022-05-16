@@ -113,6 +113,7 @@ contains
 !< @brief Allocates the number of files and sets an ID based for each file
 !! @return true if there are files allocated in the YAML object
 logical function fms_diag_files_object_init ()
+#ifdef use_yaml
  integer :: nFiles !< Number of files in the diag yaml
  integer :: i !< Looping iterator
  if (diag_yaml%has_diag_files()) then
@@ -128,6 +129,9 @@ logical function fms_diag_files_object_init ()
 !        mpp_error("fms_diag_files_object_init: The diag_table.yaml file has not been correctly parsed.",&
 !                   FATAL)
  endif
+#else
+fms_diag_files_object_init = .false.
+#endif
 end function fms_diag_files_object_init
 !> \brief Logical function to determine if the variable file_metadata_from_model has been allocated or associated
 !! \return .True. if file_metadata_from_model exists .False. if file_metadata_from_model has not been set
@@ -219,7 +223,7 @@ pure function get_var_ids (obj) result (res)
   res = obj%var_ids
 end function get_var_ids
 !!!!!!!!! Functions from diag_yaml_file
-
+#ifdef use_yaml
 !> \brief Returns a copy of file_fname from the yaml object
 !! \return Copy of file_fname
 pure function get_file_fname (obj) result(res)
@@ -403,5 +407,5 @@ pure function has_file_global_meta (obj) result(res)
  logical :: res
   res = obj%diag_yaml%diag_files(obj%id)%has_file_global_meta()
 end function has_file_global_meta
-
+#endif
 end module fms_diag_file_object_mod
