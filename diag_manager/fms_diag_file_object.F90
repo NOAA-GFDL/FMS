@@ -34,7 +34,9 @@ use fms_diag_yaml_mod, only: diag_yaml, diagYamlObject_type, diagYamlFiles_type
 implicit none
 private
 
-public :: fmsDiagFile_type, FMS_diag_files
+public :: fmsDiagFile_type, FMS_diag_files, fms_diag_files_object_init, fms_diag_files_object_initialized
+
+logical :: fms_diag_files_object_initialized = .false.
 
 integer, parameter :: var_string_len = 25
 
