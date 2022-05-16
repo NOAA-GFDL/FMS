@@ -27,6 +27,7 @@ module fms_diag_file_object_mod
 !use mpp_mod, only: mpp_error, FATAL
 use fms2_io_mod, only: FmsNetcdfFile_t, FmsNetcdfUnstructuredDomainFile_t, FmsNetcdfDomainFile_t
 #ifdef use_yaml
+use diag_data_mod, only: DIAG_NULL
 use fms_diag_yaml_file_mod, only: diag_yaml, diagYamlObject_type, diagYamlFiles_type
 
 #endif
@@ -48,7 +49,6 @@ type :: fmsDiagFile_type
 #endif
   character(len=:) , dimension(:), allocatable :: file_metadata_from_model !< File metadata that comes from
                                                                            !! the model.
-  character(len=var_string_len), dimension(:), allocatable :: var_list !< List of the variables by name
   integer, dimension(:), allocatable :: var_ids !< Variable IDs corresponding to var_list
   integer, dimension(:), private, allocatable :: var_index !< An array of the variable indicies in the 
                                                                  !! diag_object.  This should be the same size as
@@ -65,43 +65,43 @@ type :: fmsDiagFile_type
   procedure, public :: has_diag_yaml_file
 #endif
   procedure, public :: has_var_ids
-  procedure, public :: has_var_list
   procedure, public :: get_id
 ! TODO  procedure, public :: get_fileobj ! TODO
   procedure, public :: get_file_domain_type
 ! TODO  procedure, public :: get_diag_yaml_file ! TODO
   procedure, public :: get_file_metadata_from_model
-  procedure, public :: get_var_list
   procedure, public :: get_var_ids
 ! The following fuctions come will use the yaml inquiry functions
 #ifdef use_yaml
- procedure :: get_file_fname
- procedure :: get_file_frequnit
- procedure :: get_file_freq
- procedure :: get_file_timeunit
- procedure :: get_file_unlimdim
+ procedure, public :: get_var_list
+ procedure, public :: get_file_fname
+ procedure, public :: get_file_frequnit
+ procedure, public :: get_file_freq
+ procedure, public :: get_file_timeunit
+ procedure, public :: get_file_unlimdim
 !! TODO get functions for sub region stuff
-! procedure :: get_file_sub_region
- procedure :: get_file_new_file_freq
- procedure :: get_file_new_file_freq_units
- procedure :: get_file_start_time
- procedure :: get_file_duration
- procedure :: get_file_duration_units
- procedure :: get_file_varlist
- procedure :: get_file_global_meta
- procedure :: has_file_fname 
- procedure :: has_file_frequnit 
- procedure :: has_file_freq 
- procedure :: has_file_timeunit 
- procedure :: has_file_unlimdim 
- procedure :: has_file_sub_region 
- procedure :: has_file_new_file_freq 
- procedure :: has_file_new_file_freq_units 
- procedure :: has_file_start_time 
- procedure :: has_file_duration 
- procedure :: has_file_duration_units 
- procedure :: has_file_varlist 
- procedure :: has_file_global_meta 
+! procedure, public :: get_file_sub_region
+ procedure, public :: get_file_new_file_freq
+ procedure, public :: get_file_new_file_freq_units
+ procedure, public :: get_file_start_time
+ procedure, public :: get_file_duration
+ procedure, public :: get_file_duration_units
+ procedure, public :: get_file_varlist
+ procedure, public :: get_file_global_meta
+ procedure, public :: has_var_list
+ procedure, public :: has_file_fname 
+ procedure, public :: has_file_frequnit 
+ procedure, public :: has_file_freq 
+ procedure, public :: has_file_timeunit 
+ procedure, public :: has_file_unlimdim 
+ procedure, public :: has_file_sub_region 
+ procedure, public :: has_file_new_file_freq 
+ procedure, public :: has_file_new_file_freq_units 
+ procedure, public :: has_file_start_time 
+ procedure, public :: has_file_duration 
+ procedure, public :: has_file_duration_units 
+ procedure, public :: has_file_varlist 
+ procedure, public :: has_file_global_meta 
 #endif
 
 end type fmsDiagFile_type
@@ -119,10 +119,18 @@ logical function fms_diag_files_object_init ()
  if (diag_yaml_file%has_diag_files()) then
         nFiles = diag_yaml_file%size_diag_files()
         allocate (FMS_diag_files(nFiles))
-        set_ids: do i=1,nFiles
+        set_ids_loop: do i= 1,nFiles
                 FMS_diag_files(i)%diag_yaml_file => diag_yaml%diag_files(i)
                 FMS_diag_files(i)%id = i
-        enddo set_ids
+                FMS_diag_files(i)%var_list => diag_yaml%diag_files(i)%var_list
+                allocate(FMS_diag_files(i)%var_ids(size(diag_yaml%diag_files(i)%var_list)))
+                allocate(FMS_diag_files(i)%var_index(size(diag_yaml%diag_files(i)%var_list)))
+                allocate(FMS_diag_files(i)%var_reg(size(diag_yaml%diag_files(i)%var_list)))
+                !! Initialize the integer arrays
+                FMS_diag_files(i)%var_ids = DIAG_NULL
+                FMS_diag_files(i)%var_reg = .FALSE.
+                FMS_diag_files(i)%var_index = DIAG_NULL
+        enddo set_ids_loop
         fms_diag_files_object_init = .true.
  else
         fms_diag_files_object_init = .false.
@@ -159,12 +167,6 @@ pure logical function has_var_ids (obj)
   class(fmsDiagFile_type), intent(in) :: obj !< The file object
   has_var_ids = allocated(obj%var_ids)
 end function has_var_ids
-!> \brief Logical function to determine if the variable var_list has been allocated or associated
-!! \return .True. if var_list exists .False. if var_list has not been set
-pure logical function has_var_list (obj)
-  class(fmsDiagFile_type), intent(in) :: obj !< The file object
-  has_var_list = allocated(obj%var_list)
-end function has_var_list
 !> \brief Returns a copy of the value of id
 !! \return A copy of id
 pure function get_id (obj) result (res)
@@ -206,14 +208,6 @@ pure function get_file_metadata_from_model (obj) result (res)
   character(len=:), dimension(:), allocatable :: res
   res = obj%file_metadata_from_model
 end function get_file_metadata_from_model
-!> \brief Returns a copy of the value of var_list
-!! \return A copy of var_list
-pure function get_var_list (obj) result (res)
-  class(fmsDiagFile_type), intent(in) :: obj !< The file object
-  character(len=:), dimension(:), allocatable :: res
-!  allocate(character(len=len(obj%var_list(1))), dimension (size(obj%var_list(1))) :: res) 
-  res = obj%var_list
-end function get_var_list
 !> \brief Returns a copy of the value of var_ids
 !! \return A copy of var_ids
 pure function get_var_ids (obj) result (res)
@@ -224,6 +218,13 @@ pure function get_var_ids (obj) result (res)
 end function get_var_ids
 !!!!!!!!! Functions from diag_yaml_file
 #ifdef use_yaml
+!> \brief Returns a copy of the value of var_list
+!! \return A copy of var_list
+pure function get_var_list (obj) result (res)
+  class(fmsDiagFile_type), intent(in) :: obj !< The file object
+  character(len=:), dimension(:), allocatable :: res
+  res = obj%diag_yaml_file%get_var_list()
+end function get_var_list
 !> \brief Returns a copy of file_fname from the yaml object
 !! \return Copy of file_fname
 pure function get_file_fname (obj) result(res)
@@ -316,6 +317,12 @@ pure function get_file_global_meta (obj) result(res)
  character (len=:), allocatable, dimension(:,:) :: res
   res = obj%diag_yaml_file%get_file_global_meta()
 end function get_file_global_meta
+!> \brief Logical function to determine if the variable var_list has been allocated or associated
+!! \return .True. if var_list exists .False. if var_list has not been set
+pure logical function has_var_list (obj)
+  class(fmsDiagFile_type), intent(in) :: obj !< The file object
+  has_var_list = obj%diag_yaml_file%has_var_list()
+end function has_var_list
 !> \brief Checks if file_fname is allocated in the yaml object
 !! \return true if file_fname is allocated
 pure function has_file_fname (obj) result(res)
