@@ -23,7 +23,7 @@ cmake_minimum_required(VERSION 3.12 FATAL_ERROR)
 
 # Define the CMake project
 project(FMS
-  VERSION 2022.01.0
+  VERSION 2022.02.0
   DESCRIPTION  "GFDL FMS Library"
   HOMEPAGE_URL "https://www.gfdl.noaa.gov/fms"
   LANGUAGES C Fortran)
@@ -121,6 +121,7 @@ list(APPEND fms_fortran_src_files
   diag_manager/diag_util.F90
   diag_manager/fms_diag_object.F90
   diag_manager/fms_diag_yaml.F90
+  diag_manager/fms_diag_axis_object.F90
   diag_manager/fms_diag_dlinked_list.F90
   diag_manager/fms_diag_object_container.F90
   diag_manager/fms_send_data_statfun.F90

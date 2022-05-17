@@ -5,6 +5,29 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0),
 and this project uses `yyyy.rr[.pp]`, where `yyyy` is the year a patch is released,
 `rr` is a sequential release number (starting from `01`), and an optional two-digit
 sequential patch number (starting from `01`).
+
+## [2022.02] - 2022-04-29
+### Known Issues
+- If using GCC 10 or higher as well as MPICH, compilation errors will occur unless `-fallow-argument-mismatch` is included in the Fortran compiler flags
+- GCC 11.1.0 is unsupported due to compilation issues with select type. The issue is resolved in later GCC releases.
+### Added
+- STRING_UTILS: Adds a module, `fms_string_utils_mod`, for common string operations throughout FMS
+- LIBFMS: makes recently added routines available through the global `fms` module
+- CMAKE: Adds build option for position independent code
+- CONSTANTS: Adds macros to load constants for different modeling systems/uses between GFDL, GEOS and GFS. Can be selected in cmake with `-DCONSTANTS=<GEOS|GFDL|GFS>`
+### Changed
+- STRING_UTILS: Refactored string routine definitions from fms_mod and fms2_io_mod to be located in fms_string_utils_mod
+- CONSTANTS: Makes fmsconstants.F90 contain the constant definitions, with constants_mod refactored to hold the same values
+- MOSAIC2: changes grid 'version' names and documentation to be more descriptive
+### Removed
+- FMS_MOD: Removes fms_c.c and fms_c.h files from the fms directory
+### Fixed
+- FMS2_IO: Fixed bug casuing non-root pe's to fail during the flush_file routine
+### Tag Commit Hashes
+- 2022.02-alpha1 270c2a4e1a94229a2ae6b1e431c473589b6e15c3
+- 2022.02-alpha2 7768ad1d4941b92ec8f40d34b1b517f5bde3df4e
+- 2022.02-beta1  689579eea6bf7a25c64e8b823551ec588be90984
+
 ## [2022.01] - 2022-03-25
 ### Known Issues
 - The MPICH MPI implementation is unsupported when used alongside GCC 10 or 11 due to compilation issues with the mixed precision reals. MPICH can still be used to compile FMS with GCC 9 or earlier, or with other compilers.

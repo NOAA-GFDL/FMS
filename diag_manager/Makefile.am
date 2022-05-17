@@ -40,6 +40,7 @@ libdiag_manager_la_SOURCES = \
   diag_util.F90 \
   fms_diag_yaml.F90 \
   fms_diag_object.F90 \
+  fms_diag_axis_object.F90 \
   fms_diag_object_container.F90 \
   fms_diag_dlinked_list.F90 \
   fms_send_data_statfun.F90 \
@@ -55,12 +56,13 @@ diag_table_mod.$(FC_MODEXT): diag_data_mod.$(FC_MODEXT) diag_util_mod.$(FC_MODEX
 fms_diag_yaml_mod.$(FC_MODEXT): diag_data_mod.$(FC_MODEXT) diag_util_mod.$(FC_MODEXT)
 fms_diag_object_mod.$(FC_MODEXT): diag_data_mod.$(FC_MODEXT) diag_axis_mod.$(FC_MODEXT) fms_diag_yaml_mod.$(FC_MODEXT)
 fms_diag_object_container_mod.$(FC_MODEXT): fms_diag_object_mod.$(FC_MODEXT) fms_diag_dlinked_list_mod.$(FC_MODEXT)
-fms_send_data_statfun_mod.$(FC_MODEXT): diag_data_mod.$(FC_MODEXT) diag_util_mod.$(FC_MODEXT) \
-																																								fms_diag_weight_procs_mod.$(FC_MODEXT)
+fms_send_data_statfun_mod.$(FC_MODEXT): diag_data_mod.$(FC_MODEXT) diag_util_mod.$(FC_MODEXT)
+fms_diag_axis_object_mod.$(FC_MODEXT): diag_data_mod.$(FC_MODEXT)
 diag_manager_mod.$(FC_MODEXT): diag_axis_mod.$(FC_MODEXT) diag_data_mod.$(FC_MODEXT) diag_util_mod.$(FC_MODEXT) \
                                diag_output_mod.$(FC_MODEXT) diag_grid_mod.$(FC_MODEXT) diag_table_mod.$(FC_MODEXT) \
                                fms_diag_object_mod.$(FC_MODEXT) fms_diag_yaml_mod.$(FC_MODEXT) \
-                               fms_diag_object_container_mod.$(FC_MODEXT) fms_send_data_statfun_mod.$(FC_MODEXT)
+                               fms_diag_object_container_mod.$(FC_MODEXT) fms_diag_axis_object_mod.$(FC_MODEXT) \
+				fms_send_data_statfun_mod.$(FC_MODEXT)
 
 # Mod files are built and then installed as headers.
 MODFILES = \
@@ -72,10 +74,11 @@ MODFILES = \
   diag_table_mod.$(FC_MODEXT) \
   fms_diag_yaml_mod.$(FC_MODEXT) \
   fms_diag_object_mod.$(FC_MODEXT) \
+  fms_diag_axis_object_mod.$(FC_MODEXT) \
   fms_diag_dlinked_list_mod.$(FC_MODEXT) \
   fms_diag_object_container_mod.$(FC_MODEXT) \
   fms_send_data_statfun_mod.$(FC_MODEXT) \
-		fms_diag_weight_procs_mod.$(FC_MODEXT) \
+  fms_diag_weight_procs_mod.$(FC_MODEXT) \
   diag_manager_mod.$(FC_MODEXT)
 
 nodist_include_HEADERS = $(MODFILES)
