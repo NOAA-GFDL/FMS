@@ -35,6 +35,8 @@
 !> @addtogroup fms_diag_weight_procs_mod
 !> @{
 MODULE fms_diag_weight_procs_mod
+  use platform_mod
+
    IMPLICIT NONE
 
    !> Interface for the scalar field wheighting functions.
