@@ -635,4 +635,8 @@ test_expect_success "test_diag_dlinked_list (test $my_test_count)" '
   mpirun -n 1 ../test_diag_dlinked_list
 '
 
+test_expect_success "test_send_data_statfun (test $my_test_count)" '
+  mpirun -n 1 ../test_send_data_statfun
+'
+
 test_done

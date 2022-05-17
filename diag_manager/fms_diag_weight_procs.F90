@@ -200,3 +200,5 @@ CONTAINS
 
 
 END MODULE fms_diag_weight_procs_mod
+!> @}
+! close documentation grouping
