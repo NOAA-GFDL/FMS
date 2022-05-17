@@ -65,6 +65,9 @@ program test_send_data_statfun
    out_num = 1
    sample = 1
 
+   allocate(input_fields(1))
+   allocate(output_fields(1))
+
    call init_input_output_fields_cfg(diag_field_id, out_num)
 
    call init_field_values (field, 10,10,10)
