@@ -23,8 +23,6 @@ program test_send_data_statfun
    use mpp_io_mod, only: mpp_io_init
    use fms_mod, ONLY: error_mesg, FATAL,NOTE
 
-   USE time_manager_mod, ONLY: time_type
-
    use diag_data_mod, only:  input_fields, output_fields
    use fms_diag_weight_procs_mod !! only:  FmsWeightProcCfg_t
    use fms_send_data_statfun_mod
@@ -36,8 +34,6 @@ program test_send_data_statfun
    !!
    logical :: test_passed                                          !< Flag indicating if the test_passed
    !! These fields below used to initialize diag object data. TBD
-   integer, dimension(2) :: axes
-   !!type (diag_fields_type)  :: diag_field
    logical :: temp_result
    REAL, DIMENSION(10,10,10) :: field
    TYPE(statfun_idx_cfg_t) :: idx_cfg
@@ -45,8 +41,7 @@ program test_send_data_statfun
    INTEGER:: diag_field_id, out_num
    INTEGER:: sample !!diurnal_index
    REAL :: weight
-   TYPE (time_type):: time
-   INTEGER:: is_in, js_in, ks_in,ie_in,je_in, ke_in
+   INTEGER:: hi, hj  !!for halo sizes
    LOGICAL, DIMENSION(10,10,10) :: mask
    REAL, DIMENSION(10,10,10) :: rmask
    CHARACTER(len=128) :: err_msg, err_msg_local
@@ -64,44 +59,62 @@ program test_send_data_statfun
    diag_field_id = 1
    out_num = 1
    sample = 1
+   weight = 1.0
 
    allocate(input_fields(1))
    allocate(output_fields(1))
 
-   call init_input_output_fields_cfg(diag_field_id, out_num)
+   call init_input_output_fields_cfg(diag_field_id, out_num,1)
 
    call init_field_values (field, 10,10,10)
 
+   call init_output_field_values(out_num)
+
    test_passed = .true.  !! will be set to false if there are any issues.
 
-   idx_cfg%is = 3
-   idx_cfg%js = 3
-   idx_cfg%ks = 3
-   idx_cfg%ie = 8
-   idx_cfg%je = 8
-   idx_cfg%ke = 8
-   idx_cfg%hi = 1
-   idx_cfg%hj = 2
-   idx_cfg%f1 = 1
-   idx_cfg%f2 = 1
-   idx_cfg%f3 = 1
-   idx_cfg%f4 = 1
-   l_start(1) = 3
-   l_start(2) = 2
-   l_start(3) = 3
-   l_end(1)  = 8
-   l_end(2) = 8
-   l_end(3) = 8
+   hi = 0 !!halo size i
+   hj = 0 !!halo size j
+   idx_cfg%is = 1 + hi
+   idx_cfg%js = 1 + hj
+   idx_cfg%ks = 1
+   idx_cfg%ie = 10 - hi
+   idx_cfg%je = 10 - hj
+   idx_cfg%ke = 10
+   idx_cfg%hi = hi
+   idx_cfg%hj = hj
+   idx_cfg%f1 = 1 + hi
+   idx_cfg%f2 = 10 - hi
+   idx_cfg%f3 = 1 + hj
+   idx_cfg%f4 = 10 -hj
+   l_start(1) = 1 !!local (to PE) start inddex
+   l_start(2) = 1
+   l_start(3) = 1
+   l_end(1)  = 10
+   l_end(2) = 10
+   l_end(3) = 10
 
    missvalue = 1.0e-5
-   missvalue_present = .true.
 
+   !! Case: mask_var=false & missval not present & mask not present & not_reduced_k_range
+   missvalue_present = .false.
    temp_result = average_the_field(diag_field_id, field, out_num, mask, weight, &
    & sample, missvalue, missvalue_present, l_start, l_end, idx_cfg, err_msg, err_msg_local )
+   call check_results_1(output_fields(out_num)%buffer(:,:,:,sample))
    IF (temp_result .eqv. .FALSE.) THEN
       DEALLOCATE(oor_mask)
       RETURN
    endif
+
+   missvalue_present = .true.
+
+  ! temp_result = average_the_field(diag_field_id, field, out_num, mask, weight, &
+   !& sample, missvalue, missvalue_present, l_start, l_end, idx_cfg, err_msg, err_msg_local )
+   !IF (temp_result .eqv. .FALSE.) THEN
+   !   DEALLOCATE(oor_mask)
+   !   RETURN
+   !endif
+
+   call print_output_field_values(1)
 
    call error_mesg('test_send_data_statfun', 'Test has finished',NOTE)
 
@@ -109,9 +122,10 @@ program test_send_data_statfun
 
 CONTAINS
 
-   subroutine init_input_output_fields_cfg( field_id, out_num )
+   subroutine init_input_output_fields_cfg( field_id, out_num, pow_val )
       integer, intent(in):: field_id
       integer, intent(in) :: out_num
+      integer, intent(in) ::pow_val
       integer :: sample
       sample = 1
 
@@ -122,7 +136,7 @@ CONTAINS
       input_fields(diag_field_id)%issued_mask_ignore_warning = .true.
 
       !!values of input_fields used by the tests
-      output_fields(out_num)%pow_value = 2
+      output_fields(out_num)%pow_value = pow_val
 
       output_fields(out_num)%output_name = 'X'
       output_fields(out_num)%phys_window = .false.
@@ -143,11 +157,18 @@ CONTAINS
       DO i = 1, NX
          DO j = 1, NY
             DO k = 1, NZ
-               field(i,j,k) = 1.1
+               field(i,j,k) = one_dim_from_three(i,j,k,NX,NY,NZ)
             END DO
          END DO
       END DO
    end subroutine init_field_values
+
+   subroutine init_output_field_values (onum)
+    INTEGER, INTENT(IN) :: onum
+    output_fields(onum)%buffer = 0
+    output_fields(onum)%counter = 0
+    output_fields(onum)%count_0d = 0
+  end subroutine init_output_field_values
 
    subroutine check_field_value(field, buffer, counter, NX, NY, NZ)
       REAL, DIMENSION(:,:,:), INTENT(IN) :: field
@@ -156,8 +177,45 @@ CONTAINS
       REAL, DIMENSION(:,:,:,:), INTENT(IN) :: counter
    end subroutine check_field_value
 
+   subroutine print_output_field_values (onum)
+    INTEGER, INTENT(IN) :: onum
+    INTEGER i,j,k
+    DO i = 1,10
+      DO j=i,10
+        print "(10f10.1)",output_fields(onum)%buffer(i,j,:,1)
+      end do
+    end do
+  end subroutine print_output_field_values
 
+  subroutine check_results_1(buff)
+    REAL, DIMENSION(:,:,:), INTENT(IN) :: buff
+    INTEGER :: NX,NY,NZ
+    INTEGER :: i,j,k
+    LOGICAL :: pass
 
+    pass = .true.
+    NX = size(buff,1)
+    NY= size(buff,2)
+    NZ= size(buff,3)
+    DO i = 1, NX
+      DO j = 1, NY
+         DO k = 1, NZ
+          if ( one_dim_from_three(i,j,k,NX,NY,NZ)  /= buff(i,j,k) ) then
+            pass = .false.
+          end if
+         END DO
+      END DO
+   END DO
+   if ( pass .eqv. .false.) then
+    call error_mesg('check_results_1', 'Test has failed',FATAL)
+   end if
+  end subroutine check_results_1
+
+  pure integer function one_dim_from_three(i,j,k,NX,NY,NZ)
+  INTEGER, INTENT(IN) :: i, j, k
+  INTEGER, INTENT(IN) :: NX, NY, NZ
+  one_dim_from_three =  (k-1) * NX * NY + (j-1) * NX + i
+end function one_dim_from_three
 
 end program test_send_data_statfun
 

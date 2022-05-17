@@ -145,8 +145,8 @@ MODULE fms_send_data_statfun_mod
 
             ! Should reduced_k_range data be supported with the mask_variant option   ?????
             ! If not, error message should be produced and the reduced_k_range loop below eliminated
-            PRESENT_MASK_IF: IF ( PRESENT(mask) ) THEN
-               IF ( missvalue_present ) THEN !!(section: mask_varian .eq. true + mask present)
+            MASK_PR_1_IF: IF ( PRESENT(mask) ) THEN
+               MISSVAL_PR_1_IF: IF ( missvalue_present ) THEN !!(section: mask_varian .eq. true + mask present)
                   IF ( debug_diag_manager ) THEN
                      CALL update_bounds(out_num, is-hi, ie-hi, js-hj, je-hj, ks, ke)
                      CALL check_out_of_bounds(out_num, diag_field_id, err_msg=err_msg_local)
@@ -157,6 +157,7 @@ MODULE fms_send_data_statfun_mod
                         END IF
                      END IF
                   END IF
+                  !!
                   IF( numthreads>1 .AND. phys_window ) then
                      REDU_KR1_IF: IF ( reduced_k_range ) THEN
                         DO k= ksr, ker
@@ -214,7 +215,7 @@ MODULE fms_send_data_statfun_mod
                      END IF REDU_KR2_IF
 !$OMP END CRITICAL
                   END IF
-               ELSE
+               ELSE MISSVAL_PR_1_IF
                   WRITE (error_string,'(a,"/",a)')&
                   & TRIM(input_fields(diag_field_id)%module_name), &
                   & TRIM(output_fields(out_num)%output_name)
@@ -224,8 +225,8 @@ MODULE fms_send_data_statfun_mod
                      succeded = .FALSE.
                      RETURN
                   END IF
-               END IF
-            ELSE PRESENT_MASK_IF ! no mask present
+               END IF  MISSVAL_PR_1_IF
+            ELSE MASK_PR_1_IF ! no mask present
                WRITE (error_string,'(a,"/",a)')&
                & TRIM(input_fields(diag_field_id)%module_name), &
                & TRIM(output_fields(out_num)%output_name)
@@ -234,10 +235,10 @@ MODULE fms_send_data_statfun_mod
                   succeded = .FALSE.
                   RETURN
                END IF
-            END IF PRESENT_MASK_IF
+            END IF MASK_PR_1_IF
          ELSE MASK_VAR_IF
-            MASK_PRESENT_IF: IF ( PRESENT(mask) ) THEN
-               MISSVAL_PR_1_IF: IF ( missvalue_present ) THEN !!section:(mask_var false +mask present +missval prsnt)
+            MASK_PR_2_IF: IF ( PRESENT(mask) ) THEN
+               MISSVAL_PR_2_IF: IF ( missvalue_present ) THEN !!section:(mask_var false +mask present +missval prsnt)
                   NDCMP_RKR_1_IF: IF ( need_compute ) THEN
                      IF (numthreads>1 .AND. phys_window) then
                         DO k = l_start(3), l_end(3)
@@ -374,7 +375,7 @@ MODULE fms_send_data_statfun_mod
                      & output_fields(out_num)%count_0d(sample)+weight1
                   END IF
 !$OMP END CRITICAL
-               ELSE MISSVAL_PR_1_IF !! (section: mask_varian .eq. false + mask present + miss value not present)
+               ELSE MISSVAL_PR_2_IF !! (section: mask_varian .eq. false + mask present + miss value not present)
                   IF (   (.NOT.ALL(mask(f1:f2,f3:f4,ks:ke)) .AND. mpp_pe() .EQ. mpp_root_pe()).AND.&
                   &  .NOT.input_fields(diag_field_id)%issued_mask_ignore_warning ) THEN
                      ! <ERROR STATUS="WARNING">
@@ -469,9 +470,9 @@ MODULE fms_send_data_statfun_mod
                   IF ( .NOT.phys_window ) output_fields(out_num)%count_0d(sample) =&
                   & output_fields(out_num)%count_0d(sample) + weight1
 !$OMP END CRITICAL
-               END IF MISSVAL_PR_1_IF
-            ELSE MASK_PRESENT_IF !!(section: mask_variant .eq. false + mask not present + missvalue)
-               MISSVAL_PR_2_IF: IF (missvalue_present ) THEN
+               END IF MISSVAL_PR_2_IF
+            ELSE MASK_PR_2_IF !!(section: mask_variant .eq. false + mask not present + missvalue)
+               MISSVAL_PR_3_IF: IF (missvalue_present ) THEN
                   NDCMP_RKR_3_IF: IF ( need_compute ) THEN
                      NTAPW_IF: If( numthreads>1 .AND. phys_window ) then
                         DO k = l_start(3), l_end(3)
@@ -643,7 +644,7 @@ MODULE fms_send_data_statfun_mod
                      END DO
 !$OMP END CRITICAL
                   END IF NDCMP_RKR_3_IF
-               ELSE MISSVAL_PR_2_IF !!(section: mask_variant .eq. false + mask not present + missvalue not present)
+               ELSE MISSVAL_PR_3_IF !!(section: mask_variant .eq. false + mask not present + missvalue not present)
                   NDCMP_RKR_4_IF: IF ( need_compute ) THEN
                      IF( numthreads > 1 .AND. phys_window ) then
                         DO j = js, je
@@ -729,8 +730,8 @@ MODULE fms_send_data_statfun_mod
                   IF ( .NOT.phys_window ) output_fields(out_num)%count_0d(sample) =&
                   & output_fields(out_num)%count_0d(sample) + weight1
 !$OMP END CRITICAL
-               END IF MISSVAL_PR_2_IF
-            END IF MASK_PRESENT_IF ! if mask present
+               END IF MISSVAL_PR_3_IF
+            END IF MASK_PR_2_IF ! if mask present
          END IF MASK_VAR_IF
       END ASSOCIATE
 
