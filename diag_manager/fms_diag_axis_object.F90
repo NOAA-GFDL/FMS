@@ -336,6 +336,7 @@ module fms_diag_axis_object_mod
     id = number_of_axis
   end function
 
+  !> @brief Check if a cart_name is valid and crashes if it isn't
   subroutine check_if_valid_cart_name(cart_name)
     character(len=*), intent(in) :: cart_name
 
@@ -347,6 +348,7 @@ module fms_diag_axis_object_mod
     end select
   end subroutine check_if_valid_cart_name
 
+  !> @brief Check if a domain_position is valid and crashes if it isn't
   subroutine check_if_valid_domain_position(domain_position)
     integer, INTENT(IN) :: domain_position
 
@@ -358,6 +360,7 @@ module fms_diag_axis_object_mod
     end select
   end subroutine check_if_valid_domain_position
 
+  !> @brief Check if a direction is valid and crashes if it isn't
   subroutine check_if_valid_direction(direction)
     integer, INTENT(IN) :: direction
 
@@ -369,6 +372,7 @@ module fms_diag_axis_object_mod
     end select
   end subroutine check_if_valid_direction
 
+  !> @brief Check if the edges id is valid and crashes if it isn't
   subroutine check_if_valid_edges(edges)
     integer, INTENT(IN) :: edges
 
