@@ -45,7 +45,7 @@ libdiag_manager_la_SOURCES = \
   fms_diag_dlinked_list.F90
 
 # Some mods are dependant on other mods in this dir.
-diag_axis_mod.$(FC_MODEXT): diag_data_mod.$(FC_MODEXT)
+diag_axis_mod.$(FC_MODEXT): diag_data_mod.$(FC_MODEXT) fms_diag_axis_object_mod.$(FC_MODEXT)
 diag_output_mod.$(FC_MODEXT): diag_axis_mod.$(FC_MODEXT) diag_data_mod.$(FC_MODEXT)
 diag_util_mod.$(FC_MODEXT): diag_data_mod.$(FC_MODEXT) diag_axis_mod.$(FC_MODEXT) diag_output_mod.$(FC_MODEXT) \
                             diag_grid_mod.$(FC_MODEXT)
