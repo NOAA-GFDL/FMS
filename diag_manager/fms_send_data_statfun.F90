@@ -68,7 +68,7 @@ MODULE fms_send_data_statfun_mod
       INTEGER, DIMENSION(3), INTENT(in)  :: l_start !< local start indices on 3 axes for regional output
       INTEGER, DIMENSION(3), INTENT(in)  :: l_end !< local end indices on 3 axes for regional output
       CHARACTER(len=*), INTENT(inout), OPTIONAL :: err_msg
-      CHARACTER(len=256), INTENT(inout) :: err_msg_local
+      CHARACTER(len=*), INTENT(inout) :: err_msg_local
       TYPE(STATFUN_IDX_CFG_T), INTENT(in) :: idx_cfg
 
       LOGICAL :: succeded
