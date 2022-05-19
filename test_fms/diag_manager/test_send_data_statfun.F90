@@ -102,7 +102,6 @@ program test_send_data_statfun
    call check_results_1(output_fields(out_num)%buffer(:,:,:,sample))
    IF (temp_result .eqv. .FALSE.) THEN
       DEALLOCATE(oor_mask)
-      RETURN
    endif
 
    missvalue_present = .true.
@@ -111,7 +110,6 @@ program test_send_data_statfun
    !& sample, missvalue, missvalue_present, l_start, l_end, idx_cfg, err_msg, err_msg_local )
    !IF (temp_result .eqv. .FALSE.) THEN
    !   DEALLOCATE(oor_mask)
-   !   RETURN
    !endif
 
    call print_output_field_values(1)
