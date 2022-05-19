@@ -584,10 +584,10 @@ subroutine get_sub_region(diag_yaml_id, sub_region_id, sub_region, grid_type, fn
     allocate(real(kind=r4_kind) :: sub_region%corner4(2))
   case ("index")
     sub_region%grid_type = index_gridtype
-    allocate(real(kind=i4_kind) :: sub_region%corner1(2))
-    allocate(real(kind=i4_kind) :: sub_region%corner2(2))
-    allocate(real(kind=i4_kind) :: sub_region%corner3(2))
-    allocate(real(kind=i4_kind) :: sub_region%corner4(2))
+    allocate(integer(kind=i4_kind) :: sub_region%corner1(2))
+    allocate(integer(kind=i4_kind) :: sub_region%corner2(2))
+    allocate(integer(kind=i4_kind) :: sub_region%corner3(2))
+    allocate(integer(kind=i4_kind) :: sub_region%corner4(2))
 
     call get_value_from_key(diag_yaml_id, sub_region_id, "tile", sub_region%tile, is_optional=.true.)
     if (sub_region%tile .eq. DIAG_NULL) call mpp_error(FATAL, &
