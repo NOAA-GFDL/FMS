@@ -73,10 +73,7 @@ type subRegion_type
   INTEGER                        :: grid_type   !< Flag indicating the type of region,
                                                 !! acceptable values are latlon_gridtype, index_gridtype,
                                                 !! null_gridtype
-  class(*),          allocatable :: corner1(:)  !< (x, y) coordinates of the first corner of the region
-  class(*),          allocatable :: corner2(:)  !< (x, y) coordinates/indices of the second corner of the region
-  class(*),          allocatable :: corner3(:)  !< (x, y) coordinates/indices of the third corner of the region
-  class(*),          allocatable :: corner4(:)  !< (x, y) coordinates/indices of the fourth corner of the region
+  class(*),          allocatable :: corners(:,:)!< (x, y) coordinates of the four corner of the region
   integer                        :: zbounds(2)  !< indices of the z axis limits (zbegin, zend)
   integer                        :: tile        !< Tile number of the sub region
                                                 !! required if using the "index" grid type
@@ -404,7 +401,8 @@ subroutine diag_yaml_object_end()
   do i = 1, size(diag_yaml%diag_files, 1)
     if(allocated(diag_yaml%diag_files(i)%file_varlist)) deallocate(diag_yaml%diag_files(i)%file_varlist)
     if(allocated(diag_yaml%diag_files(i)%file_global_meta)) deallocate(diag_yaml%diag_files(i)%file_global_meta)
-    call sub_region_end(diag_yaml%diag_files(i)%file_sub_region)
+    if(allocated(diag_yaml%diag_files(i)%file_sub_region%corners)) &
+      deallocate(diag_yaml%diag_files(i)%file_sub_region%corners)
   enddo
   if(allocated(diag_yaml%diag_files)) deallocate(diag_yaml%diag_files)
 
@@ -422,17 +420,6 @@ subroutine diag_yaml_object_end()
   if(allocated(variable_list%diag_field_indices)) deallocate(variable_list%diag_field_indices)
 
 end subroutine diag_yaml_object_end
-
-!> @brief Deallocate the subregion type
-subroutine sub_region_end(sub_region)
-  type(subRegion_type), intent(inout) :: sub_region !< Sub_region type to deallocate
-
-  if(allocated(sub_region%corner1)) deallocate(sub_region%corner1)
-  if(allocated(sub_region%corner2)) deallocate(sub_region%corner2)
-  if(allocated(sub_region%corner3)) deallocate(sub_region%corner3)
-  if(allocated(sub_region%corner4)) deallocate(sub_region%corner4)
-
-end subroutine sub_region_end
 
 !> @brief Fills in a diagYamlFiles_type with the contents of a file block in diag_table.yaml
 subroutine fill_in_diag_files(diag_yaml_id, diag_file_id, fileobj)
@@ -578,16 +565,10 @@ subroutine get_sub_region(diag_yaml_id, sub_region_id, sub_region, grid_type, fn
   select case (trim(grid_type))
   case ("latlon")
     sub_region%grid_type = latlon_gridtype
-    allocate(real(kind=r4_kind) :: sub_region%corner1(2))
-    allocate(real(kind=r4_kind) :: sub_region%corner2(2))
-    allocate(real(kind=r4_kind) :: sub_region%corner3(2))
-    allocate(real(kind=r4_kind) :: sub_region%corner4(2))
+    allocate(real(kind=r4_kind) :: sub_region%corners(4,2))
   case ("index")
     sub_region%grid_type = index_gridtype
-    allocate(integer(kind=i4_kind) :: sub_region%corner1(2))
-    allocate(integer(kind=i4_kind) :: sub_region%corner2(2))
-    allocate(integer(kind=i4_kind) :: sub_region%corner3(2))
-    allocate(integer(kind=i4_kind) :: sub_region%corner4(2))
+    allocate(integer(kind=i4_kind) :: sub_region%corners(4,2))
 
     call get_value_from_key(diag_yaml_id, sub_region_id, "tile", sub_region%tile, is_optional=.true.)
     if (sub_region%tile .eq. DIAG_NULL) call mpp_error(FATAL, &
@@ -599,10 +580,10 @@ subroutine get_sub_region(diag_yaml_id, sub_region_id, sub_region, grid_type, fn
     &Check your entry for file:"//trim(fname))
   end select
 
-  call get_value_from_key(diag_yaml_id, sub_region_id, "corner1", sub_region%corner1)
-  call get_value_from_key(diag_yaml_id, sub_region_id, "corner2", sub_region%corner2)
-  call get_value_from_key(diag_yaml_id, sub_region_id, "corner3", sub_region%corner3)
-  call get_value_from_key(diag_yaml_id, sub_region_id, "corner4", sub_region%corner4)
+  call get_value_from_key(diag_yaml_id, sub_region_id, "corner1", sub_region%corners(1,:))
+  call get_value_from_key(diag_yaml_id, sub_region_id, "corner2", sub_region%corners(2,:))
+  call get_value_from_key(diag_yaml_id, sub_region_id, "corner3", sub_region%corners(3,:))
+  call get_value_from_key(diag_yaml_id, sub_region_id, "corner4", sub_region%corners(4,:))
 
   sub_region%zbounds = DIAG_NULL
   call get_value_from_key(diag_yaml_id, sub_region_id, "zbounds", sub_region%zbounds, is_optional=.true.)
