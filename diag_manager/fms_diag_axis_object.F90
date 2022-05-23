@@ -162,7 +162,7 @@ module fms_diag_axis_object_mod
     end select
 
     if (present(Domain)) then
-      if (present(Domain2) .and. present(DomainU)) call mpp_error(FATAL, &
+      if (present(Domain2) .or. present(DomainU)) call mpp_error(FATAL, &
         "The presence of Domain with any other domain type is prohibited. "//&
         "Check you diag_axis_init call for axis_name:"//trim(axis_name))
       allocate(diagDomain1d_t :: obj%axis_domain)
