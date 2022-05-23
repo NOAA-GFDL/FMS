@@ -38,6 +38,7 @@ module fms_diag_axis_object_mod
   PRIVATE
 
   public :: diagAxis_t, set_subaxis, modern_diag_axis_init, fms_diag_axis_object_init, fms_diag_axis_object_end
+  public :: axis_obj
   !> @}
 
   !> @brief Type to hold the domain info for an axis
@@ -112,9 +113,9 @@ module fms_diag_axis_object_mod
      ! Get/has/is subroutines as needed
   END TYPE diagAxis_t
 
-  integer                        :: number_of_axis !< Number of axis that has been registered
-  type(diagAxis_t), ALLOCATABLE  :: axis_obj(:)    !< Diag_axis objects
-  logical                        :: module_is_initialized !< Flag indicating if the module is initialized
+  integer                                :: number_of_axis !< Number of axis that has been registered
+  type(diagAxis_t), ALLOCATABLE, TARGET  :: axis_obj(:)    !< Diag_axis objects
+  logical                                :: module_is_initialized !< Flag indicating if the module is initialized
 
   !> @addtogroup fms_diag_yaml_mod
   !> @{
@@ -328,6 +329,9 @@ module fms_diag_axis_object_mod
     integer :: id
 
     number_of_axis = number_of_axis + 1
+
+    if (number_of_axis > max_axes) call mpp_error(FATAL, &
+      &"diag_axis_init: max_axes exceeded, increase via diag_manager_nml")
 
     call axis_obj(number_of_axis)%register(axis_name, axis_data, units, cart_name, long_name=long_name, &
     & direction=direction, set_name=set_name, edges=edges, Domain=Domain, Domain2=Domain2, DomainU=DomainU, aux=aux, &
