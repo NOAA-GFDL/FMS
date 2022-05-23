@@ -187,6 +187,9 @@ use    mpp_mod, only : mpp_error,   &
 use    fms_mod, only : lowercase,   &
                        write_version_number
 use fms2_io_mod, only: file_exists
+#ifdef use_yaml
+use yaml_parser_mod
+#endif
 
 implicit none
 private
@@ -498,7 +501,11 @@ end type field_def
 !> @addtogroup field_manager_mod
 !> @{
 
+#ifdef use_yaml
+type(field_mgr_type), dimension(:), allocatable, private :: fields
+#else
 type(field_mgr_type), private :: fields(MAX_FIELDS)
+#endif
 
 character(len=fm_path_name_len)  :: loop_list
 character(len=fm_type_name_len)  :: field_type_name(num_types)
