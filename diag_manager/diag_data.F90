@@ -103,6 +103,9 @@ use platform_mod
                                              !! diag_table to indicate to use the full axis instead of a sub-axis
   REAL, PARAMETER :: CMOR_MISSING_VALUE = 1.0e20 !< CMOR standard missing value
   INTEGER, PARAMETER :: DIAG_FIELD_NOT_FOUND = -1 !< Return value for a diag_field that isn't found in the diag_table
+  INTEGER, PARAMETER :: latlon_gridtype = 1
+  INTEGER, PARAMETER :: index_gridtype = 2
+  INTEGER, PARAMETER :: null_gridtype = DIAG_NULL
 
   !> @}
 
