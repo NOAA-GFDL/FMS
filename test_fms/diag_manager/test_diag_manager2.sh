@@ -536,8 +536,10 @@ diag_files:
     - do_sst: .true.
   sub_region:
   - grid_type: latlon
-    dim1_begin: 64.0
-    dim3_end: 20.0
+    corner1: -80, 0
+    corner2: -80, 75
+    corner3: -60, 0
+    corner4: -60, 75
 - file_name: normal2
   freq: -1
   freq_units: days
@@ -561,9 +563,10 @@ diag_files:
   sub_region:
   - grid_type: index
     tile: 1
-    dim2_begin: 10
-    dim2_end: 20
-    dim1_begin: 10
+    corner1: 10, 15
+    corner2: 20, 15
+    corner3: 10, 25
+    corner4: 20, 25
 - file_name: normal3
   freq: -1
   freq_units: days
