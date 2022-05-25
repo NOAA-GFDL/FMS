@@ -18,11 +18,21 @@ If it is desired to interpolate the data to a region of the model grid. The foll
 - **lat_start:** The starting longitude in the same units as the grid data in the file
 - **lon_end:** The ending longitude in the same units as the grid data in the file
 
-#### 2. Converting legacy data_table to data_table.yaml
+#### 2. How to use it?
+In order to use the yaml data format, [libyaml](https://github.com/yaml/libyaml) needs to be installed and linked with FMS. Additionally, FMS must be compiled with -Duse_yaml macro. If using autotools, you can add `--with-yaml`, which will add the macro for you and check that libyaml is linked correctly.
+```
+./configure --with-yaml
+```
+
+If using cmake, you can use `-DWITH_YAML`. 
+```
+cmake -DWITH_YAML=on;
+```
+#### 3. Converting legacy data_table to data_table.yaml
 To convert legacy data_table to data_table.yaml, the python script, [`data_table_to_yaml.py`](https://github.com/NOAA-GFDL/fms_yaml_tools/blob/main/data_table/data_table_to_yaml.py), can be used. Additionally, the python script, [`is_valid_data_table_yaml.py`](https://github.com/NOAA-GFDL/fms_yaml_tools/blob/main/data_table/is_valid_data_table_yaml.py), can be used to check if your data_table.yaml file is valid. 
 
-#### 3. Examples
-**3.1** The following example is going to bilnearly interpolate `sic_obs` to the `ICE` grid using the `sic` data from the file: `INPUT/hadisst_ice.data.nc`, multiply by a factor of `0.01`, and interpolate to the model time. 
+#### 4. Examples
+**4.1** The following example is going to bilnearly interpolate `sic_obs` to the `ICE` grid using the `sic` data from the file: `INPUT/hadisst_ice.data.nc`, multiply by a factor of `0.01`, and interpolate to the model time. 
 
 In the **legacy format**, the data_table will look like:
 ```
@@ -55,7 +65,7 @@ Additionally, it is required to call data_override_init (in this case with the I
 call data_override_init(Ice_domain_in=Ice_domain)
 ```
 
-**3.2** The following example is going to simply multiply `sic_obs` by a factor of 0.01.
+**4.2** The following example is going to simply multiply `sic_obs` by a factor of 0.01.
 
 In the **legacy format**, the data_table will look like:
 ```
@@ -86,7 +96,7 @@ Additionally, it is required to call data_override_init (in this case with the I
 call data_override_init(Ice_domain_in=Ice_domain)
 ```
 
-**3.3** The following example is an `ongrid` case where it will simply read the `runoff` data in the `./INPUT/runoff.daitren.clim.nc` file, multiply it by a factor of `1.0` and interpolate to the model time. It assumes that "runoff" in the netcdf file is in the ocean grid.
+**4.3** The following example is an `ongrid` case where it will simply read the `runoff` data in the `./INPUT/runoff.daitren.clim.nc` file, multiply it by a factor of `1.0` and interpolate to the model time. It assumes that "runoff" in the netcdf file is in the ocean grid.
 
 In the **legacy format**, the data_table will look like:
 ```
