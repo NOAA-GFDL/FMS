@@ -42,11 +42,11 @@ In the **legacy format**, the data_table will look like:
 In the **yaml format**, the data_table will look like
 ```
 data_table:
- - gridname          : "ICE"
-   fieldname_code    : "sic_obs"
-   fieldname_file    : "sic"
-   file_name         : "INPUT/hadisst_ice.data.nc"
-   interpol_method   : "bilinear"
+ - gridname          : ICE
+   fieldname_code    : sic_obs
+   fieldname_file    : sic
+   file_name         : INPUT/hadisst_ice.data.nc
+   interpol_method   : bilinear
    factor            : 0.01
 ```
 Which corresponds to the following model code:
@@ -75,8 +75,8 @@ In the **legacy format**, the data_table will look like:
 In the **yaml format**, the data_table will look like:
 ```
 data_table:
- - gridname          : "ICE"
-   fieldname_code    : "sit_obs"
+ - gridname          : ICE
+   fieldname_code    : sit_obs
    factor            : 0.01
 ```
 
@@ -106,11 +106,11 @@ In the **legacy format**, the data_table will look like:
 In the **yaml format**, the data_table will look like:
 ```
 data_table:
- - gridname          : "OCN"
-   fieldname_code    : "runoff"
-   fieldname_file    : "runoff"
-   file_name         : "INPUT/runoff.daitren.clim.nc"
-   interpol_method   : "none"
+ - gridname          : OCN
+   fieldname_code    : runoff
+   fieldname_file    : runoff
+   file_name         : INPUT/runoff.daitren.clim.nc
+   interpol_method   : none
    factor            : 1.0
 ```
 
