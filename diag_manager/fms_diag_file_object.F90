@@ -43,7 +43,7 @@ integer, parameter :: var_string_len = 25
 type :: fmsDiagFile_type
  private
   integer :: id !< The number associated with this file in the larger array of files
-  class(FmsNetcdfFile_t), allocatable :: fileobj !< fms2_io file object for this history file 
+  class(FmsNetcdfFile_t), allocatable :: fileobj !< fms2_io file object for this history file
   character(len=1) :: file_domain_type !< (I don't think we will need this)
 #ifdef use_yaml
   type(diagYamlFiles_type), pointer :: diag_yaml_file => null() !< Pointer to the diag_yaml_file data
@@ -51,11 +51,11 @@ type :: fmsDiagFile_type
   character(len=:) , dimension(:), allocatable :: file_metadata_from_model !< File metadata that comes from
                                                                            !! the model.
   integer, dimension(:), allocatable :: var_ids !< Variable IDs corresponding to file_varlist
-  integer, dimension(:), private, allocatable :: var_index !< An array of the variable indicies in the 
+  integer, dimension(:), private, allocatable :: var_index !< An array of the variable indicies in the
                                                                  !! diag_object.  This should be the same size as
                                                                  !! `file_varlist`
-  logical, dimension(:), private, allocatable :: var_reg   !< Array corresponding to `file_varlist`, .true. 
-                                                                 !! if the variable has been registered and 
+  logical, dimension(:), private, allocatable :: var_reg   !< Array corresponding to `file_varlist`, .true.
+                                                                 !! if the variable has been registered and
                                                                  !! `file_var_index` has been set for the variable
 
  contains
@@ -88,19 +88,19 @@ type :: fmsDiagFile_type
  procedure, public :: get_file_duration_units
  procedure, public :: get_file_varlist
  procedure, public :: get_file_global_meta
- procedure, public :: has_file_fname 
- procedure, public :: has_file_frequnit 
- procedure, public :: has_file_freq 
- procedure, public :: has_file_timeunit 
- procedure, public :: has_file_unlimdim 
- procedure, public :: has_file_sub_region 
- procedure, public :: has_file_new_file_freq 
- procedure, public :: has_file_new_file_freq_units 
- procedure, public :: has_file_start_time 
- procedure, public :: has_file_duration 
- procedure, public :: has_file_duration_units 
- procedure, public :: has_file_varlist 
- procedure, public :: has_file_global_meta 
+ procedure, public :: has_file_fname
+ procedure, public :: has_file_frequnit
+ procedure, public :: has_file_freq
+ procedure, public :: has_file_timeunit
+ procedure, public :: has_file_unlimdim
+ procedure, public :: has_file_sub_region
+ procedure, public :: has_file_new_file_freq
+ procedure, public :: has_file_new_file_freq_units
+ procedure, public :: has_file_start_time
+ procedure, public :: has_file_duration
+ procedure, public :: has_file_duration_units
+ procedure, public :: has_file_varlist
+ procedure, public :: has_file_global_meta
 #endif
 
 end type fmsDiagFile_type

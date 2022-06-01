@@ -3898,7 +3898,7 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
       CALL diag_yaml_object_init(diag_subset_output)
       allocate(diag_objs(get_num_unique_fields()))
       registered_variables = 0
-      fms_diag_files_object_initialized = fms_diag_files_object_init () 
+      fms_diag_files_object_initialized = fms_diag_files_object_init ()
     endif
 #else
     if (use_modern_diag) &
