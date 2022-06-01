@@ -237,10 +237,11 @@ use platform_mod
   USE diag_output_mod, ONLY: get_diag_global_att, set_diag_global_att
   USE diag_grid_mod, ONLY: diag_grid_init, diag_grid_end
   USE fms_diag_object_mod, ONLY: fmsDiagObject_type
-
+  USE fms_diag_file_object_mod, only: fms_diag_files_object_initialized
 #ifdef use_yaml
   use fms_diag_yaml_mod, only: diag_yaml_object_init, diag_yaml_object_end, get_num_unique_fields, find_diag_field
   use fms_diag_axis_object_mod, only: fms_diag_axis_object_end, fms_diag_axis_object_init
+  use fms_diag_file_object_mod, only: fms_diag_files_object_init
 #endif
 
   USE constants_mod, ONLY: SECONDS_PER_DAY
@@ -3900,6 +3901,7 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
       CALL fms_diag_axis_object_init()
       allocate(diag_objs(get_num_unique_fields()))
       registered_variables = 0
+      fms_diag_files_object_initialized = fms_diag_files_object_init ()
     endif
 #else
     if (use_modern_diag) &
