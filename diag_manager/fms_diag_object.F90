@@ -14,17 +14,14 @@ use diag_data_mod,  only: diag_null, diag_not_found, diag_not_registered, diag_r
 use diag_axis_mod,  only: diag_axis_type
 use mpp_mod, only: fatal, note, warning, mpp_error
 #ifdef use_yaml
-use fms_diag_yaml_mod, only: diagYamlFiles_type, diagYamlFilesVar_type
+use fms_diag_yaml_mod, only:  diagYamlFilesVar_type
+use fms_diag_file_object_mod, only: fmsDiagFile_type 
 #endif
 use time_manager_mod, ONLY: time_type
 !!!set_time, set_date, get_time, time_type, OPERATOR(>=), OPERATOR(>),&
 !!!       & OPERATOR(<), OPERATOR(==), OPERATOR(/=), OPERATOR(/), OPERATOR(+), ASSIGNMENT(=), get_date, &
 !!!       & get_ticks_per_second
 
-!use diag_util_mod,  only: int_to_cs, logical_to_cs
-!USE diag_data_mod, ONLY: fileobjU, fileobj, fnum_for_domain, fileobjND
-
-use fms2_io_mod
 use platform_mod
 use iso_c_binding
 
@@ -33,12 +30,11 @@ implicit none
 !> \brief Object that holds all variable information
 type fmsDiagObject_type
 #ifdef use_yaml
-     type (diagYamlFilesVar_type), allocatable, dimension(:) :: diag_field !< info from diag_table
-     type (diagYamlFiles_type),    allocatable, dimension(:) :: diag_file  !< info from diag_table
+     type (diagYamlFilesVar_type), allocatable, dimension(:) :: diag_field !< info from diag_table for this variable
+     type (fmsDiagFile_type), pointer, dimension(:)   :: diag_files        !< Array pointing to files that contain
+                                                                           !! the objects variable
 #endif
      integer, allocatable, private                    :: diag_id           !< unique id for varable
-     class(FmsNetcdfFile_t), dimension (:), pointer   :: fileob => NULL()  !< A pointer to all of the
-                                                                           !! file objects for this variable
      character(len=:), allocatable, dimension(:)      :: metadata          !< metadata for the variable
      logical, allocatable, private                    :: static            !< true if this is a static var
      logical, allocatable, private                    :: registered        !< true when registered
@@ -91,9 +87,10 @@ type fmsDiagObject_type
      procedure :: is_local => get_local
 ! Is variable allocated check functions
 !TODO     procedure :: has_diag_field
-!TODO     procedure :: has_diag_file
      procedure :: has_diag_id
-     procedure :: has_fileob
+#ifdef use_yaml
+     procedure :: has_diag_files
+#endif
      procedure :: has_metadata
      procedure :: has_static
      procedure :: has_registered
@@ -367,12 +364,8 @@ select type (objout)
   else
      call mpp_error("copy_diag_obj", "You can only copy objects that have been registered",warning)
   endif
-!     type (diag_fields_type)                           :: diag_field         !< info from diag_table
-!     type (diag_files_type),allocatable, dimension(:)  :: diag_file          !< info from diag_table
-
      objout%diag_id = objin%diag_id
 
-!     class (fms_io_obj), allocatable, dimension(:)    :: fms_fileobj        !< fileobjs
      if (allocated(objin%metadata)) objout%metadata = objin%metadata
      objout%static = objin%static
      if (allocated(objin%frequency)) objout%frequency = objin%frequency
@@ -779,24 +772,20 @@ end function get_data_RANGE
 !  class (fmsDiagObject_type), intent(in) :: obj !< diag object
 !  has_diag_field = allocated(obj%diag_field)
 !end function has_diag_field
-!!> @brief Checks if obj%diag_file is allocated
-!!! @return true if obj%diag_file is allocated
-!logical function has_diag_file (obj)
-!  class (fmsDiagObject_type), intent(in) :: obj !< diag object
-!  has_diag_file = allocated(obj%diag_file)
-!end function has_diag_file
 !> @brief Checks if obj%diag_id is allocated
 !! @return true if obj%diag_id is allocated
 pure logical function has_diag_id (obj)
   class (fmsDiagObject_type), intent(in) :: obj !< diag object
   has_diag_id = allocated(obj%diag_id)
 end function has_diag_id
-!> @brief Checks if obj%fileob pointer is associated
-!! @return true if obj%fileob is associated
-pure logical function has_fileob (obj)
+#ifdef use_yaml
+!> @brief Checks if obj%diag_files pointer is associated
+!! @return true if obj%diag_files is associated
+pure logical function has_diag_files (obj)
   class (fmsDiagObject_type), intent(in) :: obj !< diag object
-  has_fileob = associated(obj%fileob)
-end function has_fileob
+  has_diag_files = associated(obj%diag_files)
+end function has_diag_files
+#endif
 !> @brief Checks if obj%metadata is allocated
 !! @return true if obj%metadata is allocated
 pure logical function has_metadata (obj)
