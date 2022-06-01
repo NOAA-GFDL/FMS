@@ -113,30 +113,30 @@ contains
 !! @return true if there are files allocated in the YAML object
 logical function fms_diag_files_object_init ()
 #ifdef use_yaml
- integer :: nFiles !< Number of files in the diag yaml
- integer :: i !< Looping iterator
- if (diag_yaml%has_diag_files()) then
-        nFiles = diag_yaml%size_diag_files()
-        allocate (FMS_diag_files(nFiles))
-        set_ids_loop: do i= 1,nFiles
-                FMS_diag_files(i)%diag_yaml_file => diag_yaml%diag_files(i)
-                FMS_diag_files(i)%id = i
-                allocate(FMS_diag_files(i)%var_ids(diag_yaml%diag_files(i)%size_file_varlist()))
-                allocate(FMS_diag_files(i)%var_index(diag_yaml%diag_files(i)%size_file_varlist()))
-                allocate(FMS_diag_files(i)%var_reg(diag_yaml%diag_files(i)%size_file_varlist()))
-                !! Initialize the integer arrays
-                FMS_diag_files(i)%var_ids = DIAG_NULL
-                FMS_diag_files(i)%var_reg = .FALSE.
-                FMS_diag_files(i)%var_index = DIAG_NULL
-        enddo set_ids_loop
-        fms_diag_files_object_init = .true.
- else
-        fms_diag_files_object_init = .false.
-!        mpp_error("fms_diag_files_object_init: The diag_table.yaml file has not been correctly parsed.",&
-!                   FATAL)
- endif
+  integer :: nFiles !< Number of files in the diag yaml
+  integer :: i !< Looping iterator
+  if (diag_yaml%has_diag_files()) then
+   nFiles = diag_yaml%size_diag_files()
+   allocate (FMS_diag_files(nFiles))
+   set_ids_loop: do i= 1,nFiles
+     FMS_diag_files(i)%diag_yaml_file => diag_yaml%diag_files(i)
+     FMS_diag_files(i)%id = i
+     allocate(FMS_diag_files(i)%var_ids(diag_yaml%diag_files(i)%size_file_varlist()))
+     allocate(FMS_diag_files(i)%var_index(diag_yaml%diag_files(i)%size_file_varlist()))
+     allocate(FMS_diag_files(i)%var_reg(diag_yaml%diag_files(i)%size_file_varlist()))
+     !! Initialize the integer arrays
+     FMS_diag_files(i)%var_ids = DIAG_NULL
+     FMS_diag_files(i)%var_reg = .FALSE.
+     FMS_diag_files(i)%var_index = DIAG_NULL
+   enddo set_ids_loop
+   fms_diag_files_object_init = .true.
+  else
+   fms_diag_files_object_init = .false.
+!  mpp_error("fms_diag_files_object_init: The diag_table.yaml file has not been correctly parsed.",&
+!    FATAL)
+  endif
 #else
-fms_diag_files_object_init = .false.
+  fms_diag_files_object_init = .false.
 #endif
 end function fms_diag_files_object_init
 !> \brief Logical function to determine if the variable file_metadata_from_model has been allocated or associated
