@@ -37,7 +37,7 @@ module fms_diag_axis_object_mod
 
   PRIVATE
 
-  public :: diagAxis_t, set_subaxis, modern_diag_axis_init, fms_diag_axis_object_init, fms_diag_axis_object_end
+  public :: diagAxis_t, set_subaxis, fms_diag_axis_init, fms_diag_axis_object_init, fms_diag_axis_object_end
   public :: axis_obj
   !> @}
 
@@ -306,7 +306,7 @@ module fms_diag_axis_object_mod
   !> @brief Wrapper for the register_diag_axis subroutine. This is needed to keep the diag_axis_init
   !! interface the same
   !> @return Axis id
-  FUNCTION modern_diag_axis_init(axis_name, axis_data, units, cart_name, long_name, direction,&
+  FUNCTION fms_diag_axis_init(axis_name, axis_data, units, cart_name, long_name, direction,&
     & set_name, edges, Domain, Domain2, DomainU, aux, req, tile_count, domain_position ) &
     & result(id)
 
