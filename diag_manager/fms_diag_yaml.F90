@@ -43,16 +43,17 @@ implicit none
 
 private
 
+public :: diag_yaml
 public :: diag_yaml_object_init, diag_yaml_object_end
 public :: diagYamlObject_type, get_diag_yaml_obj, get_title, get_basedate, get_diag_files, get_diag_fields
 public :: diagYamlFiles_type, diagYamlFilesVar_type
 public :: get_num_unique_fields, find_diag_field, get_diag_fields_entries, get_diag_files_entries
-
 !> @}
 
 integer, parameter :: basedate_size = 6
 integer, parameter :: NUM_SUB_REGION_ARRAY = 8
 integer, parameter :: MAX_STR_LEN = 255
+
 
 !> @brief type to hold an array of sorted diag_fiels
 type varList_type
@@ -112,6 +113,7 @@ type diagYamlFiles_type
 
  !> All getter functions (functions named get_x(), for member field named x)
  !! return copies of the member variables unless explicitly noted.
+ procedure :: size_file_varlist
  procedure :: get_file_fname
  procedure :: get_file_frequnit
  procedure :: get_file_freq
@@ -197,9 +199,11 @@ end type diagYamlFilesVar_type
 type diagYamlObject_type
   character(len=:), allocatable, private :: diag_title                   !< Experiment name
   integer, private, dimension (basedate_size) :: diag_basedate           !< basedate array
-  type(diagYamlFiles_type), allocatable, private, dimension (:) :: diag_files!< History file info
+  type(diagYamlFiles_type), allocatable, public, dimension (:) :: diag_files!< History file info
   type(diagYamlFilesVar_type), allocatable, private, dimension (:) :: diag_fields !< Diag fields info
   contains
+  procedure :: size_diag_files
+
   procedure :: get_title        !< Returns the title
   procedure :: get_basedate     !< Returns the basedate array
   procedure :: get_diag_files   !< Returns the diag_files array
@@ -212,7 +216,7 @@ type diagYamlObject_type
 
 end type diagYamlObject_type
 
-type (diagYamlObject_type) :: diag_yaml  !< Obj containing the contents of the diag_table.yaml
+type (diagYamlObject_type), target :: diag_yaml  !< Obj containing the contents of the diag_table.yaml
 type (varList_type), save :: variable_list !< List of all the variables in the diag_table.yaml
 type (fileList_type), save :: file_list !< List of all files in the diag_table.yaml
 
@@ -238,6 +242,17 @@ result (diag_basedate)
 
   diag_basedate = diag_yaml%diag_basedate
 end function get_basedate
+
+!> @brief Find the number of files listed in the diag yaml
+!! @return the number of files in the diag yaml
+pure integer function size_diag_files(diag_yaml)
+  class (diagYamlObject_type), intent(in) :: diag_yaml      !< The diag_yaml
+  if (diag_yaml%has_diag_files()) then
+    size_diag_files = size(diag_yaml%diag_files)
+  else
+    size_diag_files = 0
+  endif
+end function size_diag_files
 
 !> @brief get the title of a diag_yaml type
 !! @return the title of the diag table as an allocated string
@@ -740,6 +755,13 @@ result(is_valid)
 end function is_valid_time_units
 
 !!!!!!! YAML FILE INQUIRIES !!!!!!!
+!> @brief Finds the number of variables in the file_varlist
+!! @return the size of the diag_files_obj%file_varlist array
+integer pure function size_file_varlist (diag_files_obj)
+ class (diagYamlFiles_type), intent(in) :: diag_files_obj !< The object being inquiried
+ size_file_varlist = size(diag_files_obj%file_varlist)
+end function size_file_varlist
+
 !> @brief Inquiry for diag_files_obj%file_fname
 !! @return file_fname of a diag_yaml_file obj
 pure function get_file_fname (diag_files_obj) &
