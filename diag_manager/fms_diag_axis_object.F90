@@ -211,64 +211,88 @@ module fms_diag_axis_object_mod
   end subroutine register_diag_axis_obj
 
   !> @brief Write the axis meta data to an open fileobj
-  subroutine write_axis_metadata(obj, fileobj)
-    class(diagAxis_t),      INTENT(IN)    :: obj       !< diag_axis obj
-    class(FmsNetcdfFile_t), INTENT(INOUT) :: fileobj   !< Fms2_io fileobj to write the data to
+  subroutine write_axis_metadata(obj, fileobj, sub_axis_id)
+    class(diagAxis_t),      INTENT(IN)    :: obj         !< diag_axis obj
+    class(FmsNetcdfFile_t), INTENT(INOUT) :: fileobj     !< Fms2_io fileobj to write the data to
+    integer, OPTIONAL,      INTENT(IN)    :: sub_axis_id !< ID of the sub_axis, if it exists
 
     character(len=:), ALLOCATABLE :: axis_edges_name !< Name of the edges, if it exist
+    character(len=:), ALLOCATABLE :: axis_name       !< Name of the axis
+    integer                       :: axis_length      !< Size of the axis
+
+    if (present(sub_axis_id)) then
+      axis_name  = obj%subaxis(sub_axis_id)%subaxis_name
+      axis_length = obj%subaxis(sub_axis_id)%ending_index - obj%subaxis(sub_axis_id)%starting_index + 1
+    else
+      axis_name = obj%axis_name
+      axis_length = obj%length
+    endif
 
     select type (fileobj)
       type is (FmsNetcdfFile_t)
-        call register_axis(fileobj, obj%axis_name, obj%length)
+        call register_axis(fileobj, axis_name, axis_length)
       type is (FmsNetcdfDomainFile_t)
         !< Add the axis as a dimension
         select case (obj%fileobj_type)
         case (NO_DOMAIN) !< Domain decomposed fileobjs can have axis that are not domain decomposed (i.e "Z" axis)
-          call register_axis(fileobj, obj%axis_name, obj%length)
+          call register_axis(fileobj, axis_name, axis_length)
         case (TWO_D_DOMAIN)
-          call register_axis(fileobj, obj%axis_name, obj%cart_name, domain_position=obj%domain_position)
+          call register_axis(fileobj, axis_name, obj%cart_name, domain_position=obj%domain_position)
         end select
       type is (FmsNetcdfUnstructuredDomainFile_t)
         select case (obj%fileobj_type)
         case (NO_DOMAIN) !< Domain decomposed fileobjs can have axis that are not domain decomposed (i.e "Z" axis)
-          call register_axis(fileobj, obj%axis_name, obj%length)
+          call register_axis(fileobj, axis_name, axis_length)
         case (UG_DOMAIN)
-          call register_axis(fileobj, obj%axis_name)
+          call register_axis(fileobj, axis_name)
         end select
     end select
 
     !< Add the axis as a variable and write its metada
-    call register_field(fileobj, obj%axis_name, obj%data_type, (/obj%axis_name/))
-    call register_variable_attribute(fileobj, obj%axis_name, "longname", obj%long_name, &
+    call register_field(fileobj, axis_name, obj%data_type, (/axis_name/))
+    call register_variable_attribute(fileobj, axis_name, "longname", obj%long_name, &
       str_len=len_trim(obj%long_name))
 
     if (obj%cart_name .NE. "N") &
-      call register_variable_attribute(fileobj, obj%axis_name, "axis", obj%cart_name, str_len=1)
+      call register_variable_attribute(fileobj, axis_name, "axis", obj%cart_name, str_len=1)
 
     if (trim(obj%units) .NE. "none") &
-      call register_variable_attribute(fileobj, obj%axis_name, "units", obj%units, str_len=len_trim(obj%units))
+      call register_variable_attribute(fileobj, axis_name, "units", obj%units, str_len=len_trim(obj%units))
 
     select case (obj%direction)
     case (-1)
-      call register_variable_attribute(fileobj, obj%axis_name, "positive", "up", str_len=2)
+      call register_variable_attribute(fileobj, axis_name, "positive", "up", str_len=2)
     case (1)
-      call register_variable_attribute(fileobj, obj%axis_name, "positive", "down", str_len=4)
+      call register_variable_attribute(fileobj, axis_name, "positive", "down", str_len=4)
     end select
 
     if (obj%edges > 0) then
       axis_edges_name = axis_obj(obj%edges)%axis_name
-      call register_variable_attribute(fileobj, obj%axis_name, "edges", axis_edges_name, &
+      call register_variable_attribute(fileobj, axis_name, "edges", axis_edges_name, &
         str_len=len_trim(axis_edges_name))
     endif
 
   end subroutine write_axis_metadata
 
   !> @brief Write the axis data to an open fileobj
-  subroutine write_axis_data(obj, fileobj)
+  subroutine write_axis_data(obj, fileobj, sub_axis_id)
     class(diagAxis_t),      INTENT(IN)    :: obj       !< diag_axis obj
     class(FmsNetcdfFile_t), INTENT(INOUT) :: fileobj   !< Fms2_io fileobj to write the data to
+    integer, OPTIONAL,      INTENT(IN)    :: sub_axis_id !< ID of the sub_axis, if it exists
 
-    call write_data(fileobj, obj%axis_name, obj%axis_data)
+    character(len=:), ALLOCATABLE :: axis_name !< Name of the axis
+    integer                       :: i         !< Starting index of a sub_axis
+    integer                       :: j         !< Ending index of a sub_axis
+
+    if (present(sub_axis_id)) then
+      axis_name  = obj%subaxis(sub_axis_id)%subaxis_name
+      i = obj%subaxis(sub_axis_id)%starting_index
+      j = obj%subaxis(sub_axis_id)%ending_index
+
+      call write_data(fileobj, axis_name, obj%axis_data(i:j))
+    else
+      call write_data(fileobj, obj%axis_name, obj%axis_data)
+    endif
   end subroutine write_axis_data
 
   !> @brief Get the length of the axis
