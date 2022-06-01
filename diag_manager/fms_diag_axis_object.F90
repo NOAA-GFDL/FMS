@@ -29,15 +29,16 @@
 !> @{
 module fms_diag_axis_object_mod
   use mpp_domains_mod, only:  domain1d, domain2d, domainUG, mpp_get_compute_domain, CENTER, &
-                            & mpp_get_compute_domain
+                            & mpp_get_compute_domain, NORTH, EAST
   use platform_mod,    only:  r8_kind, r4_kind
-  use diag_data_mod,   only:  diag_atttype
-  use mpp_mod,         only:  FATAL, mpp_error
+  use diag_data_mod,   only:  diag_atttype, max_axes
+  use mpp_mod,         only:  FATAL, mpp_error, uppercase
   implicit none
 
   PRIVATE
 
-  public :: diagAxis_t, diag_axis_init, set_subaxis
+  public :: diagAxis_t, set_subaxis, fms_diag_axis_init, fms_diag_axis_object_init, fms_diag_axis_object_end
+  public :: axis_obj
   !> @}
 
   !> @brief Type to hold the domain info for an axis
@@ -97,11 +98,11 @@ module fms_diag_axis_object_mod
      INTEGER                        , private :: tile_count      !< The number of tiles
      TYPE(diag_atttype),allocatable , private :: attributes(:)   !< Array to hold user definable attributes
      INTEGER                        , private :: num_attributes  !< Number of defined attibutes
-     INTEGER                        , private :: domain_position !< The position in the doman (NORTH or EAST or CENTER)
+     INTEGER                        , private :: domain_position !< The position in the doman (NORTH, EAST or CENTER)
 
      contains
 
-     PROCEDURE :: register => diag_axis_init
+     PROCEDURE :: register => register_diag_axis_obj
      PROCEDURE :: axis_length => get_axis_length
      PROCEDURE :: set_subaxis
 
@@ -112,13 +113,17 @@ module fms_diag_axis_object_mod
      ! Get/has/is subroutines as needed
   END TYPE diagAxis_t
 
+  integer                                :: number_of_axis !< Number of axis that has been registered
+  type(diagAxis_t), ALLOCATABLE, TARGET  :: axis_obj(:)    !< Diag_axis objects
+  logical                                :: module_is_initialized !< Flag indicating if the module is initialized
+
   !> @addtogroup fms_diag_yaml_mod
   !> @{
   contains
 
   !!!!!!!!!!!!!!!!! DIAG AXIS PROCEDURES !!!!!!!!!!!!!!!!!
   !> @brief Initialize the axis
-  subroutine diag_axis_init(obj, axis_name, axis_data, units, cart_name, long_name, direction,&
+  subroutine register_diag_axis_obj(obj, axis_name, axis_data, units, cart_name, long_name, direction,&
   & set_name, edges, Domain, Domain2, DomainU, aux, req, tile_count, domain_position )
     class(diagAxis_t),  INTENT(out)          :: obj             !< Diag_axis obj
     CHARACTER(len=*),   INTENT(in)           :: axis_name       !< Name of the axis
@@ -140,7 +145,9 @@ module fms_diag_axis_object_mod
 
     obj%axis_name = trim(axis_name)
     obj%units = trim(units)
-    obj%cart_name = trim(cart_name) !< TO DO Check for valid cart_names
+    obj%cart_name = uppercase(cart_name)
+    call check_if_valid_cart_name(obj%cart_name)
+
     if (present(long_name)) obj%long_name = trim(long_name)
 
     select type (axis_data)
@@ -155,11 +162,16 @@ module fms_diag_axis_object_mod
                           &  Currently only r4 and r8 data is supported.")
     end select
 
-    !< TO DO check the presence of multiple Domains
     if (present(Domain)) then
+      if (present(Domain2) .or. present(DomainU)) call mpp_error(FATAL, &
+        "The presence of Domain with any other domain type is prohibited. "//&
+        "Check you diag_axis_init call for axis_name:"//trim(axis_name))
       allocate(diagDomain1d_t :: obj%axis_domain)
       call obj%axis_domain%set(Domain=Domain)
     else if (present(Domain2)) then
+        if (present(DomainU)) call mpp_error(FATAL, &
+        "The presence of Domain2 with any other domain type is prohibited. "//&
+        "Check you diag_axis_init call for axis_name:"//trim(axis_name))
       allocate(diagDomain2d_t :: obj%axis_domain)
       call obj%axis_domain%set(Domain2=Domain2)
     else if (present(DomainU)) then
@@ -170,25 +182,25 @@ module fms_diag_axis_object_mod
     obj%tile_count = 1
     if (present(tile_count)) obj%tile_count = tile_count
 
-    !< TO DO Check for valid domain_position
     obj%domain_position = CENTER
     if (present(domain_position)) obj%domain_position = domain_position
+    call check_if_valid_domain_position(obj%domain_position)
 
     obj%length = size(axis_data)
 
-    !< TO DO Check for valid direction
     obj%direction = 0
     if (present(direction)) obj%direction = direction
+    call check_if_valid_direction(obj%direction)
 
-    !< TO DO Check if id is valid and with the same parameters
     obj%edges = 0
     if (present(edges)) obj%edges = edges
+    call check_if_valid_edges(obj%edges)
 
     if (present(aux)) obj%aux = trim(aux)
     if (present(req)) obj%req = trim(req)
 
     obj%nsubaxis = 0
-  end subroutine diag_axis_init
+  end subroutine register_diag_axis_obj
 
   !> @brief Get the length of the axis
   !> @return axis length
@@ -275,6 +287,103 @@ module fms_diag_axis_object_mod
     end select
   end subroutine set_axis_domain
 
+  subroutine fms_diag_axis_object_init()
+
+    if (module_is_initialized) return
+
+    number_of_axis = 0
+    allocate(axis_obj(max_axes))
+
+    module_is_initialized = .true.
+  end subroutine fms_diag_axis_object_init
+
+  subroutine fms_diag_axis_object_end()
+    deallocate(axis_obj)
+
+    module_is_initialized = .false.
+  end subroutine fms_diag_axis_object_end
+
+  !> @brief Wrapper for the register_diag_axis subroutine. This is needed to keep the diag_axis_init
+  !! interface the same
+  !> @return Axis id
+  FUNCTION fms_diag_axis_init(axis_name, axis_data, units, cart_name, long_name, direction,&
+    & set_name, edges, Domain, Domain2, DomainU, aux, req, tile_count, domain_position ) &
+    & result(id)
+
+    CHARACTER(len=*),   INTENT(in)           :: axis_name       !< Name of the axis
+    REAL,               INTENT(in)           :: axis_data(:)    !< Array of coordinate values
+    CHARACTER(len=*),   INTENT(in)           :: units           !< Units for the axis
+    CHARACTER(len=1),   INTENT(in)           :: cart_name       !< Cartesian axis ("X", "Y", "Z", "T", "U", "N")
+    CHARACTER(len=*),   INTENT(in), OPTIONAL :: long_name       !< Long name for the axis.
+    CHARACTER(len=*),   INTENT(in), OPTIONAL :: set_name        !< Name of the parent axis, if it is a subaxis
+    INTEGER,            INTENT(in), OPTIONAL :: direction       !< Indicates the direction of the axis
+    INTEGER,            INTENT(in), OPTIONAL :: edges           !< Axis ID for the previously defined "edges axis"
+    TYPE(domain1d),     INTENT(in), OPTIONAL :: Domain          !< 1D domain
+    TYPE(domain2d),     INTENT(in), OPTIONAL :: Domain2         !< 2D domain
+    TYPE(domainUG),     INTENT(in), OPTIONAL :: DomainU         !< Unstructured domain
+    CHARACTER(len=*),   INTENT(in), OPTIONAL :: aux             !< Auxiliary name, can only be <TT>geolon_t</TT>
+                                                                !! or <TT>geolat_t</TT>
+    CHARACTER(len=*),   INTENT(in), OPTIONAL :: req             !< Required field names.
+    INTEGER,            INTENT(in), OPTIONAL :: tile_count      !< Number of tiles
+    INTEGER,            INTENT(in), OPTIONAL :: domain_position !< Domain position, "NORTH" or "EAST"
+    integer :: id
+
+    number_of_axis = number_of_axis + 1
+
+    if (number_of_axis > max_axes) call mpp_error(FATAL, &
+      &"diag_axis_init: max_axes exceeded, increase via diag_manager_nml")
+
+    call axis_obj(number_of_axis)%register(axis_name, axis_data, units, cart_name, long_name=long_name, &
+    & direction=direction, set_name=set_name, edges=edges, Domain=Domain, Domain2=Domain2, DomainU=DomainU, aux=aux, &
+    & req=req, tile_count=tile_count, domain_position=domain_position)
+
+    id = number_of_axis
+  end function
+
+  !> @brief Check if a cart_name is valid and crashes if it isn't
+  subroutine check_if_valid_cart_name(cart_name)
+    character(len=*), intent(in) :: cart_name
+
+    select case (cart_name)
+    case ("X", "Y", "Z", "T", "U", "N")
+    case default
+      call mpp_error(FATAL, "diag_axit_init: Invalid cart_name: "//cart_name//&
+                             "The acceptable values are X, Y, Z, T, U, N.")
+    end select
+  end subroutine check_if_valid_cart_name
+
+  !> @brief Check if a domain_position is valid and crashes if it isn't
+  subroutine check_if_valid_domain_position(domain_position)
+    integer, INTENT(IN) :: domain_position
+
+    select case (domain_position)
+    case (CENTER, NORTH, EAST)
+    case default
+        call mpp_error(FATAL, "diag_axit_init: Invalid domain_positon. "&
+                             "The acceptable values are NORTH, EAST, CENTER")
+    end select
+  end subroutine check_if_valid_domain_position
+
+  !> @brief Check if a direction is valid and crashes if it isn't
+  subroutine check_if_valid_direction(direction)
+    integer, INTENT(IN) :: direction
+
+    select case(direction)
+    case(-1, 0, 1)
+    case default
+      call mpp_error(FATAL, "diag_axit_init: Invalid direction. "&
+                             "The acceptable values are-1 0 1")
+    end select
+  end subroutine check_if_valid_direction
+
+  !> @brief Check if the edges id is valid and crashes if it isn't
+  subroutine check_if_valid_edges(edges)
+    integer, INTENT(IN) :: edges
+
+    if (edges < 0 .or. edges > number_of_axis) &
+       call mpp_error(FATAL, "diag_axit_init: The edge axis has not been defined. "&
+                             "Call diag_axis_init for the edge axis first")
+  end subroutine check_if_valid_edges
 end module fms_diag_axis_object_mod
 !> @}
 ! close documentation grouping

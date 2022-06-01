@@ -648,4 +648,73 @@ test_expect_success "test_diag_dlinked_list (test $my_test_count)" '
   mpirun -n 1 ../test_diag_dlinked_list
 '
 
+printf "&diag_manager_nml \n use_modern_diag = .true. \n/" | cat > input.nml
+cat <<_EOF > diag_table.yaml
+title: test_diag_manager
+base_date: 2 1 1 0 0 0
+
+diag_files:
+- file_name: file1
+  freq: 6
+  freq_units: hours
+  time_units: hours
+  unlimdim: time
+  varlist:
+  - module: ocn_mod
+    var_name: var1
+    reduction: average
+    kind: r4
+  - module: ocn_mod
+    var_name: var2
+    output_name: potato
+    reduction: average
+    kind: r4
+- file_name: file2
+  freq: 6
+  freq_units: hours
+  time_units: hours
+  unlimdim: time
+  varlist:
+  - module: atm_mod
+    var_name: var3
+    reduction: average
+    kind: r4
+  - module: atm_mod
+    var_name: var4
+    output_name: i_on_a_sphere
+    reduction: average
+    kind: r8
+  - module: atm_mod
+    var_name: var6
+    reduction: average
+    kind: r8
+- file_name: file3
+  freq: 6
+  freq_units: hours
+  time_units: hours
+  unlimdim: time
+  varlist:
+  - module: lnd_mod
+    var_name: var5
+    reduction: average
+    kind: r4
+  - module: lnd_mod
+    var_name: var7
+    reduction: average
+    kind: r4
+- file_name: file4
+  freq: 6
+  freq_units: hours
+  time_units: hours
+  unlimdim: time
+  varlist:
+  - module: lnd_mod
+    var_name: var6
+    reduction: average
+    kind: r4
+_EOF
+
+test_expect_success "Test the modern diag manager end to end (test $my_test_count)" '
+  mpirun -n 6 ../test_modern_diag
+'
 test_done
