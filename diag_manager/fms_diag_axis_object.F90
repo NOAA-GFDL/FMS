@@ -505,7 +505,7 @@ module fms_diag_axis_object_mod
         !< If they are different domains, one of them can be NO_DOMAIN
         !! i.e a variable can have axis that are domain decomposed (x,y) and an axis that isn't (z)
         if (domain_type .eq. NO_DOMAIN .or. axis_obj(j)%type_of_domain .eq. NO_DOMAIN ) then
-          !< Update the filobj_type and domain, if needed
+          !< Update the domain_type and domain, if needed
           if (axis_obj(j)%type_of_domain .eq. TWO_D_DOMAIN .or. axis_obj(j)%type_of_domain .eq. UG_DOMAIN) then
             domain_type = axis_obj(j)%type_of_domain
             domain => axis_obj(j)%axis_domain
