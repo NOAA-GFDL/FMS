@@ -31,7 +31,8 @@ module fms_diag_axis_object_mod
   use mpp_domains_mod, only:  domain1d, domain2d, domainUG, mpp_get_compute_domain, CENTER, &
                             & mpp_get_compute_domain, NORTH, EAST
   use platform_mod,    only:  r8_kind, r4_kind
-  use diag_data_mod,   only:  diag_atttype, max_axes, NO_DOMAIN, TWO_D_DOMAIN, UG_DOMAIN
+  use diag_data_mod,   only:  diag_atttype, max_axes, NO_DOMAIN, TWO_D_DOMAIN, UG_DOMAIN, &
+                              direction_down, direction_up
   use mpp_mod,         only:  FATAL, mpp_error, uppercase
   use fms2_io_mod,     only:  FmsNetcdfFile_t, FmsNetcdfDomainFile_t, FmsNetcdfUnstructuredDomainFile_t, &
                             & register_axis, register_field, register_variable_attribute, write_data
@@ -270,7 +271,7 @@ module fms_diag_axis_object_mod
     select case (obj%direction)
     case (direction_up)
       call register_variable_attribute(fileobj, axis_name, "positive", "up", str_len=2)
-    case (direction_down))
+    case (direction_down)
       call register_variable_attribute(fileobj, axis_name, "positive", "down", str_len=4)
     end select
 
