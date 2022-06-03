@@ -237,7 +237,7 @@ use platform_mod
   USE diag_output_mod, ONLY: get_diag_global_att, set_diag_global_att
   USE diag_grid_mod, ONLY: diag_grid_init, diag_grid_end
   USE fms_diag_object_mod, ONLY: fmsDiagObject_type
-  use fms_send_data_statfun_mod ,ONLY: statfun_idx_cfg_t, average_the_field, sample_the_field
+  use fms_send_data_statfun_mod ,ONLY: fms_diag_field_procs_t
 
 #ifdef use_yaml
   use fms_diag_yaml_mod, only: diag_yaml_object_init, diag_yaml_object_end, get_num_unique_fields, find_diag_field
@@ -1721,7 +1721,7 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
     CHARACTER(len=256) :: err_msg_local
     CHARACTER(len=128) :: error_string, error_string1
     logical :: temp_result
-    TYPE(statfun_idx_cfg_t) :: idx_cfg
+    TYPE(fms_diag_field_procs_t), allocatable :: sprocs_obj
 
     ! If diag_field_id is < 0 it means tha t this field is not registered, simply return
     IF ( diag_field_id <= 0 ) THEN
@@ -2064,24 +2064,23 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
           END IF
        END IF
 
-       idx_cfg%is = is
-       idx_cfg%js = js
-       idx_cfg%ks = ks
-       idx_cfg%ie = ie
-       idx_cfg%je = je
-       idx_cfg%ke = ke
-       idx_cfg%hi = hi
-       idx_cfg%hj = hj
-       idx_cfg%f1 = f1
-       idx_cfg%f2 = f2
-       idx_cfg%f3 = f3
-       idx_cfg%f4 = f4
 
+       allocate(sprocs_obj)
+       call sprocs_obj%initialize(is, js, ks, ie, je, je, &
+        &  hi, hj, f1, f2, f3, f4, &
+        &  output_fields(out_num)%pow_value, output_fields(out_num)%phys_window, &
+        &  output_fields(out_num)%need_compute,output_fields(out_num)%reduced_k_range, &
+        &  output_fields(out_num)%time_rms,  output_fields(out_num)%time_max, &
+        &  output_fields(out_num)%time_min,  output_fields(out_num)%time_sum)
+
+       !!class(*),  pointer, INTENT(inout) :: ofb_in =>  output_fields(out_num)%buffer
 
        ! Take care of submitted field data
        AVERAGE_IF: IF ( average ) THEN
-         temp_result = average_the_field(diag_field_id, field, out_num, mask, weight1, &
-           & sample, missvalue, missvalue_present, l_start, l_end, idx_cfg, err_msg, err_msg_local )
+         temp_result = sprocs_obj%average_the_field(diag_field_id, field, out_num, &
+         & output_fields(out_num)%buffer, output_fields(out_num)%counter, &
+         & mask, weight1, sample, missvalue, missvalue_present, &
+         & l_start, l_end, err_msg, err_msg_local )
           IF (temp_result .eqv. .FALSE.) THEN
             DEALLOCATE(oor_mask)
             RETURN
@@ -2089,8 +2088,8 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
 
         ! Add processing for Max and Min
         ELSE
-          temp_result = sample_the_field(diag_field_id, field, out_num, mask, &
-            & sample, missvalue, missvalue_present, l_start, l_end, idx_cfg, err_msg, err_msg_local)
+          temp_result = sprocs_obj%sample_the_field(diag_field_id, field, out_num, mask, &
+            & sample, missvalue, missvalue_present, l_start, l_end, err_msg, err_msg_local)
           IF (temp_result .eqv. .FALSE.) THEN
             DEALLOCATE(oor_mask)
             RETURN

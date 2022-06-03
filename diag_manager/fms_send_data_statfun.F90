@@ -33,33 +33,86 @@
 !> @{
 MODULE fms_send_data_statfun_mod
 
-  use platform_mod
+   use platform_mod
    USE mpp_mod, ONLY: mpp_pe, mpp_root_pe
 
    USE fms_mod, ONLY: error_mesg, FATAL, WARNING, NOTE, stdout, stdlog, write_version_number,&
    & fms_error_handler
    USE diag_data_mod, ONLY:  input_fields, output_fields, debug_diag_manager
    use diag_util_mod, ONLY: check_out_of_bounds, update_bounds
-   use fms_diag_weight_procs_mod !!, ONLY :: FmsWeightProcCfg_t
 
    IMPLICIT NONE
 
-   TYPE STATFUN_IDX_CFG_T
+   TYPE, public :: fms_diag_field_procs_t
+      private
       INTEGER :: f1,f2,f3,f4
-      INTEGER ::  is, js, ks, ie, je, ke
+      INTEGER :: is, js, ks, ie, je, ke
       INTEGER :: hi !< halo size in x direction
       INTEGER :: hj !< halo size in y direction
-   END TYPE STATFUN_IDX_CFG_T
+      INTEGER :: pow_value   ! Power value for rms or pow(x) calculations
+      LOGICAL :: phys_window   !!TODO: name change PHYS_WINDOWS -->> ? OMP subsetted data, See output_fields
+      LOGICAL :: need_compute
+      LOGICAL :: reduced_k_range
+      LOGICAL :: time_rms, time_max, time_min, time_sum
+   contains
+      procedure :: initialize => initialize_imp
+      procedure :: average_the_field => average_the_field_imp
+      procedure :: sample_the_field => sample_the_field_imp
+   end type fms_diag_field_procs_t
 
-   CONTAINS
+CONTAINS
+
+   SUBROUTINE initialize_imp (this, is, js , ks, ie, je, ke, hi, hj, f1, f2, f3, f4, &
+       & pow_value,  phys_window, need_compute, reduced_k_range, &
+       & time_rms, time_max, time_min, time_sum )
+    CLASS(fms_diag_field_procs_t), INTENT(inout)  :: this
+    INTEGER :: is, js, ks, ie, je, ke
+    INTEGER :: hi, hj
+    INTEGER :: f1, f2, f3, f4
+    INTEGER :: pow_value
+    LOGICAL :: phys_window , need_compute , reduced_k_range
+    LOGICAL :: time_rms, time_max, time_min, time_sum
+
+    this%is = is
+    this%js = js
+    this%ks = ks
+    this%ie = ie
+    this%je = je
+    this%ke = ke
+
+    this%hi = hi
+    this%hj = hj
+
+    this%f1 = f1
+    this%f2 = f2
+    this%f3 = f3
+    this%f4 = f4
+
+    this%pow_value = pow_value
+    this%phys_window = phys_window
+    this%need_compute = need_compute
+    this%reduced_k_range =reduced_k_range
+
+    !Is this output field the rms? If so, then average is also .TRUE.
+    this%time_rms = time_rms
+    this%time_max = time_max
+    this%time_min = time_min
+    ! Sum output over time interval
+    this%time_sum = time_sum
+
+    END SUBROUTINE initialize_imp
 
 
-   FUNCTION AVERAGE_THE_FIELD (diag_field_id, field, out_num, &
-      & mask, weight1, sample, missvalue, missvalue_present, &
-      & l_start, l_end, idx_cfg, err_msg,  err_msg_local ) result( succeded )
+   FUNCTION AVERAGE_THE_FIELD_IMP(this, diag_field_id, field, out_num, ofb, ofc, &
+   & mask, weight1, sample, missvalue, missvalue_present, &
+   & l_start, l_end, err_msg,  err_msg_local ) result( succeded )
+      CLASS(fms_diag_field_procs_t) , INTENT(inout) :: this
       INTEGER, INTENT(in) :: diag_field_id
       REAL, DIMENSION(:,:,:), INTENT(in) :: field
       INTEGER, INTENT(in) :: out_num
+      REAL, allocatable, DIMENSION(:,:,:,:), INTENT(inout) :: ofb
+      !class(*),  pointer, INTENT(inout) :: ofb_in  !!TODO:
+      REAL, allocatable, DIMENSION(:,:,:,:), INTENT(inout) :: ofc
       LOGICAL, DIMENSION(:,:,:), INTENT(in), OPTIONAL :: mask
       REAL, INTENT(in) :: weight1
       INTEGER, INTENT(in) :: sample
@@ -69,20 +122,20 @@ MODULE fms_send_data_statfun_mod
       INTEGER, DIMENSION(3), INTENT(in)  :: l_end !< local end indices on 3 axes for regional output
       CHARACTER(len=*), INTENT(inout), OPTIONAL :: err_msg
       CHARACTER(len=*), INTENT(inout) :: err_msg_local
-      TYPE(STATFUN_IDX_CFG_T), INTENT(in) :: idx_cfg
 
       LOGICAL :: succeded
 
       !!LOGICAL, ALLOCATABLE, DIMENSION(:,:,:) :: oor_mask
       CHARACTER(len=128):: error_string
 
-      ! Power value for rms or pow(x) calculations
-      INTEGER :: pow_value, ksr, ker, is, js, ks, ie, je, ke, hi, hj, f1, f2, f3, f4
+      !! TODO: if possible
+      !!TYPE(FmsWeightProcCfg_t), allocatable :: weight_procs
+
+       ! Power value for rms or pow(x) calculations
+      INTEGER :: pow_value, is, js, ks, ie, je, ke, hi, hj, f1, f2, f3, f4
       LOGICAL :: phys_window , need_compute , reduced_k_range
-      !!TODO: name change PHYS_WINDOWS -->> ? OMP subsetted data, See output_fields
 
-      TYPE(FmsWeightProcCfg_t), allocatable :: weight_procs
-
+      INTEGER :: ksr, ker
       INTEGER :: i, j, k,  i1, j1, k1
 
       INTEGER :: numthreads
@@ -93,28 +146,29 @@ MODULE fms_send_data_statfun_mod
 #endif
 
 
-      pow_value = output_fields(out_num)%pow_value
-      ALLOCATE(weight_procs)
-      call weight_procs%initialize (pow_value)
+      !REAL, DIMENSION(:,:,:,:), pointer :: ofb
+      !select type (ofb_in)
+      ! type is ( buff_r_4d_t)
+      !   ofb => ofb_in%buffer
+      ! class default
+      !   stop 'Error in type selection'
+      !end select
 
-      phys_window = output_fields(out_num)%phys_window
-      need_compute = output_fields(out_num)%need_compute
-      reduced_k_range = output_fields(out_num)%reduced_k_range
 
       ksr= l_start(3)
       ker= l_end(3)
-      is = idx_cfg%is
-      js = idx_cfg%js
-      ks = idx_cfg%ks
-      ie = idx_cfg%ie
-      je = idx_cfg%je
-      ke = idx_cfg%ke
-      hi = idx_cfg%hi
-      hj = idx_cfg%hj
-      f1 = idx_cfg%f1
-      f2 = idx_cfg%f2
-      f3 = idx_cfg%f3
-      f4 = idx_cfg%f4
+      is = this%is
+      js = this%js
+      ks = this%ks
+      ie = this%ie
+      je = this%je
+      ke = this%ke
+      hi = this%hi
+      hj = this%hj
+      f1 = this%f1
+      f2 = this%f2
+      f3 = this%f3
+      f4 = this%f4
 
 !$OMP CRITICAL
       input_fields(diag_field_id)%numthreads = 1
@@ -127,26 +181,201 @@ MODULE fms_send_data_statfun_mod
       active_omp_level = input_fields(diag_field_id)%active_omp_level
 !$OMP END CRITICAL
 
-      ASSOCIATE( ofb => output_fields(out_num)%buffer , &
-      & ofc => output_fields(out_num)%counter)
+      MASK_VAR_IF: IF ( input_fields(diag_field_id)%mask_variant ) THEN
+         IF ( need_compute ) THEN
+            WRITE (error_string,'(a,"/",a)')  &
+            & TRIM(input_fields(diag_field_id)%module_name), &
+            & TRIM(output_fields(out_num)%output_name)
+            IF ( fms_error_handler('diag_manager_mod::send_data_3d', 'module/output_field '//TRIM(error_string)//&
+            & ', regional output NOT supported with mask_variant', err_msg)) THEN
+               !!DEALLOCATE(oor_mask)
+               succeded = .FALSE.
+               RETURN
+            END IF
+         END IF
 
-         MASK_VAR_IF: IF ( input_fields(diag_field_id)%mask_variant ) THEN
-            IF ( need_compute ) THEN
-               WRITE (error_string,'(a,"/",a)')  &
+         ! Should reduced_k_range data be supported with the mask_variant option   ?????
+         ! If not, error message should be produced and the reduced_k_range loop below eliminated
+         MASK_PR_1_IF: IF ( PRESENT(mask) ) THEN
+            MISSVAL_PR_1_IF: IF ( missvalue_present ) THEN !!(section: mask_varian .eq. true + mask present)
+               IF ( debug_diag_manager ) THEN
+                  CALL update_bounds(out_num, is-hi, ie-hi, this%js-hj, this%je-hj, ks, ke)
+                  CALL check_out_of_bounds(out_num, diag_field_id, err_msg=err_msg_local)
+                  IF ( err_msg_local /= '' ) THEN
+                     IF ( fms_error_handler('diag_manager_mod::send_data_3d', err_msg_local, err_msg) ) THEN
+                        succeded = .FALSE.
+                        RETURN
+                     END IF
+                  END IF
+               END IF
+               !!
+               IF( numthreads>1 .AND. phys_window ) then
+                  REDU_KR1_IF: IF ( reduced_k_range ) THEN
+                     DO k= ksr, ker
+                        k1= k - ksr + 1
+                        DO j=js, je
+                           DO i=is, ie
+                              IF ( mask(i-is+1+hi, j-js+1+hj, k) ) THEN
+                                 ofb(i-hi,j-hj,k1,sample) = ofb(i-hi,j-hj,k1,sample) +&
+                                 & (field(i-is+1+hi, j-js+1+hj, k) * weight1 ) ** pow_value
+                                 ofc(i-hi,j-hj,k1,sample) = ofc(i-hi,j-hj,k1,sample) + weight1
+                              END IF
+                           END DO
+                        END DO
+                     END DO
+                  ELSE REDU_KR1_IF
+                     DO k=ks, ke
+                        DO j=js, je
+                           DO i=is, ie
+                              IF ( mask(i-is+1+hi, j-js+1+hj, k) ) THEN
+                                 ofb(i-hi,j-hj,k,sample) = ofb(i-hi,j-hj,k,sample) + &
+                                 & (field(i-is+1+hi,j-js+1+hj,k) * weight1) ** pow_value
+                                 ofc(i-hi,j-hj,k,sample) = ofc(i-hi,j-hj,k,sample) + weight1
+                              END IF
+                           END DO
+                        END DO
+                     END DO
+                  END IF REDU_KR1_IF
+               ELSE
+!$OMP CRITICAL
+                  REDU_KR2_IF: IF ( reduced_k_range ) THEN
+                     DO k= ksr, ker
+                        k1= k - ksr + 1
+                        DO j=js, je
+                           DO i=is, ie
+                              IF ( mask(i-is+1+hi, j-js+1+hj, k) ) THEN
+                                 ofb(i-hi,j-hj,k1,sample) = ofb(i-hi,j-hj,k1,sample) + &
+                                 & (field(i-is+1+hi, j-js+1+hj, k) * weight1 ) ** pow_value
+                                 ofc(i-hi,j-hj,k1,sample) = ofc(i-hi,j-hj,k1,sample) + weight1
+                              END IF
+                           END DO
+                        END DO
+                     END DO
+                  ELSE REDU_KR2_IF
+                     DO k=ks, ke
+                        DO j=js, je
+                           DO i=is, ie
+                              IF ( mask(i-is+1+hi, j-js+1+hj, k) ) THEN !!USE WHERE
+                                 ofb(i-hi,j-hj,k,sample) = ofb(i-hi,j-hj,k,sample) +  &
+                                 & ( field(i-is+1+hi,j-js+1+hj,k) * weight1 ) ** pow_value
+                                 ofc(i-hi,j-hj,k,sample) = ofc(i-hi,j-hj,k,sample) + weight1
+                              END IF
+                           END DO
+                        END DO
+                     END DO
+                  END IF REDU_KR2_IF
+!$OMP END CRITICAL
+               END IF
+            ELSE MISSVAL_PR_1_IF
+               WRITE (error_string,'(a,"/",a)')&
                & TRIM(input_fields(diag_field_id)%module_name), &
                & TRIM(output_fields(out_num)%output_name)
-               IF ( fms_error_handler('diag_manager_mod::send_data_3d', 'module/output_field '//TRIM(error_string)//&
-               & ', regional output NOT supported with mask_variant', err_msg)) THEN
-                  !!DEALLOCATE(oor_mask)
+               IF(fms_error_handler('diag_manager_mod::send_data_3d', &
+               & 'module/output_field '//TRIM(error_string)//', variable mask but no missing value defined', &
+               & err_msg)) THEN
                   succeded = .FALSE.
                   RETURN
                END IF
+            END IF  MISSVAL_PR_1_IF
+         ELSE MASK_PR_1_IF ! no mask present
+            WRITE (error_string,'(a,"/",a)')&
+            & TRIM(input_fields(diag_field_id)%module_name), &
+            & TRIM(output_fields(out_num)%output_name)
+            IF(fms_error_handler('diag_manager_mod::send_data_3d','module/output_field '//TRIM(error_string)//&
+            & ', variable mask but no mask given', err_msg)) THEN
+               succeded = .FALSE.
+               RETURN
             END IF
-
-            ! Should reduced_k_range data be supported with the mask_variant option   ?????
-            ! If not, error message should be produced and the reduced_k_range loop below eliminated
-            MASK_PR_1_IF: IF ( PRESENT(mask) ) THEN
-               MISSVAL_PR_1_IF: IF ( missvalue_present ) THEN !!(section: mask_varian .eq. true + mask present)
+         END IF MASK_PR_1_IF
+      ELSE MASK_VAR_IF
+         MASK_PR_2_IF: IF ( PRESENT(mask) ) THEN
+            MISSVAL_PR_2_IF: IF ( missvalue_present ) THEN !!section:(mask_var false +mask present +missval prsnt)
+               NDCMP_RKR_1_IF: IF ( need_compute ) THEN
+                  IF (numthreads>1 .AND. phys_window) then
+                     DO k = l_start(3), l_end(3)
+                        k1 = k-l_start(3)+1
+                        DO j = js, je
+                           DO i = is, ie
+                              IF ( l_start(1)+hi <= i .AND. i <= l_end(1)+hi .AND. l_start(2)+hj <= j .AND. &
+                              & j <= l_end(2)+hj ) THEN
+                                 i1 = i-l_start(1)-hi+1
+                                 j1=  j-l_start(2)-hj+1
+                                 IF ( mask(i-is+1+hi, j-js+1+hj, k) ) THEN
+                                    ofb(i1,j1,k1,sample) = ofb(i1,j1,k1,sample) +&
+                                    & ( field(i-is+1+hi,j-js+1+hj,k) * weight1 ) ** pow_value
+                                 ELSE
+                                    ofb(i1,j1,k1,sample) = missvalue
+                                 END IF
+                              END IF
+                           END DO
+                        END DO
+                     END DO
+                  ELSE
+!$OMP CRITICAL
+                     DO k = l_start(3), l_end(3)
+                        k1 = k-l_start(3)+1
+                        DO j = js, je
+                           DO i = is, ie
+                              IF ( l_start(1)+hi <= i .AND. i <= l_end(1)+hi .AND. l_start(2)+hj <= j .AND. &
+                              & j <= l_end(2)+hj ) THEN
+                                 i1 = i-l_start(1)-hi+1
+                                 j1=  j-l_start(2)-hj+1
+                                 IF ( mask(i-is+1+hi, j-js+1+hj, k) ) THEN
+                                    ofb(i1,j1,k1,sample) = ofb(i1,j1,k1,sample) + &
+                                    & ( field(i-is+1+hi,j-js+1+hj,k) * weight1 ) ** pow_value
+                                 ELSE
+                                    ofb(i1,j1,k1,sample) = missvalue
+                                 END IF
+                              END IF
+                           END DO
+                        END DO
+                     END DO
+!$OMP END CRITICAL
+                  ENDIF
+!$OMP CRITICAL
+                  DO j = js, je
+                     DO i = is, ie
+                        IF ( l_start(1)+hi <= i .AND. i <= l_end(1)+hi .AND. l_start(2)+hj <= j .AND. &
+                        & j <= l_end(2)+hj ) THEN
+                           output_fields(out_num)%num_elements(sample) = &
+                           & output_fields(out_num)%num_elements(sample) + l_end(3) - l_start(3) + 1
+                        END IF
+                     END DO
+                  END DO
+!$OMP END CRITICAL
+               ELSE IF ( reduced_k_range ) THEN NDCMP_RKR_1_IF
+                  IF (numthreads>1 .AND. phys_window) then
+                     DO k=ksr, ker
+                        k1 = k - ksr + 1
+                        DO j=js, je
+                           DO i=is, ie
+                              IF ( mask(i-is+1+hi,j-js+1+hj,k) ) THEN
+                                 ofb(i-hi,j-hj,k1,sample) = ofb(i-hi,j-hj,k1,sample) + &
+                                 & (field(i-is+1+hi,j-js+1+hj,k) * weight1) ** pow_value
+                              ELSE
+                                 ofb(i-hi,j-hj,k1,sample)= missvalue
+                              END IF
+                           END DO
+                        END DO
+                     END DO
+                  ELSE
+!$OMP CRITICAL
+                     DO k=ksr, ker
+                        k1 = k - ksr + 1
+                        DO j=js, je
+                           DO i=is, ie
+                              IF ( mask(i-is+1+hi,j-js+1+hj,k) ) THEN
+                                 ofb(i-hi,j-hj,k1,sample) = ofb(i-hi,j-hj,k1,sample) + &
+                                 & ( field(i-is+1+hi,j-js+1+hj,k) * weight1 ) **  pow_value
+                              ELSE
+                                 ofb(i-hi,j-hj,k1,sample)= missvalue
+                              END IF
+                           END DO
+                        END DO
+                     END DO
+!$OMP END CRITICAL
+                  END IF
+               ELSE NDCMP_RKR_1_IF
                   IF ( debug_diag_manager ) THEN
                      CALL update_bounds(out_num, is-hi, ie-hi, js-hj, je-hj, ks, ke)
                      CALL check_out_of_bounds(out_num, diag_field_id, err_msg=err_msg_local)
@@ -157,583 +386,400 @@ MODULE fms_send_data_statfun_mod
                         END IF
                      END IF
                   END IF
-                  !!
-                  IF( numthreads>1 .AND. phys_window ) then
-                     REDU_KR1_IF: IF ( reduced_k_range ) THEN
-                        DO k= ksr, ker
-                           k1= k - ksr + 1
-                           DO j=js, je
-                              DO i=is, ie
-                                 IF ( mask(i-is+1+hi, j-js+1+hj, k) ) THEN
-                                    ofb(i-hi,j-hj,k1,sample) = ofb(i-hi,j-hj,k1,sample) +&
-                                    & weight_procs%fwf_0d_ptr (field(i-is+1+hi, j-js+1+hj, k), weight1, pow_value)
-                                    ofc(i-hi,j-hj,k1,sample) = ofc(i-hi,j-hj,k1,sample) + weight1
-                                 END IF
-                              END DO
+                  IF (numthreads>1 .AND. phys_window) then
+                     DO k=ks, ke
+                        DO j=js, je
+                           DO i=is, ie
+                              IF ( mask(i-is+1+hi,j-js+1+hj,k) ) THEN
+                                 ofb(i-hi,j-hj,k,sample) = ofb(i-hi,j-hj,k,sample) + &
+                                 & ( field(i-is+1+hi,j-js+1+hj,k) * weight1) ** pow_value
+                              ELSE
+                                 ofb(i-hi,j-hj,k,sample)= missvalue
+                              END IF
                            END DO
                         END DO
-                     ELSE REDU_KR1_IF
-                        DO k=ks, ke
-                           DO j=js, je
-                              DO i=is, ie
-                                 IF ( mask(i-is+1+hi, j-js+1+hj, k) ) THEN
-                                    ofb(i-hi,j-hj,k,sample) = ofb(i-hi,j-hj,k,sample) + &
-                                    & weight_procs%fwf_0d_ptr (field(i-is+1+hi,j-js+1+hj,k), weight1,  pow_value)
-                                    ofc(i-hi,j-hj,k,sample) = ofc(i-hi,j-hj,k,sample) + weight1
-                                 END IF
-                              END DO
-                           END DO
-                        END DO
-                     END IF REDU_KR1_IF
+                     END DO
                   ELSE
-!$OMP CRITICAL
-                     REDU_KR2_IF: IF ( reduced_k_range ) THEN
-                        DO k= ksr, ker
-                           k1= k - ksr + 1
-                           DO j=js, je
-                              DO i=is, ie
-                                 IF ( mask(i-is+1+hi, j-js+1+hj, k) ) THEN
-                                    ofb(i-hi,j-hj,k1,sample) = ofb(i-hi,j-hj,k1,sample) + &
-                                    & weight_procs%fwf_0d_ptr (field(i-is+1+hi, j-js+1+hj, k),  weight1, pow_value)
-                                    ofc(i-hi,j-hj,k1,sample) = ofc(i-hi,j-hj,k1,sample) + weight1
-                                 END IF
-                              END DO
-                           END DO
-                        END DO
-                     ELSE REDU_KR2_IF
-                        DO k=ks, ke
-                           DO j=js, je
-                              DO i=is, ie
-                                 IF ( mask(i-is+1+hi, j-js+1+hj, k) ) THEN
-                                    ofb(i-hi,j-hj,k,sample) = ofb(i-hi,j-hj,k,sample) +  &
-                                    & weight_procs%fwf_0d_ptr( field(i-is+1+hi,j-js+1+hj,k), weight1, pow_value)
-                                    ofc(i-hi,j-hj,k,sample) = ofc(i-hi,j-hj,k,sample) + weight1
-                                 END IF
-                              END DO
-                           END DO
-                        END DO
-                     END IF REDU_KR2_IF
-!$OMP END CRITICAL
-                  END IF
-               ELSE MISSVAL_PR_1_IF
-                  WRITE (error_string,'(a,"/",a)')&
-                  & TRIM(input_fields(diag_field_id)%module_name), &
-                  & TRIM(output_fields(out_num)%output_name)
-                  IF(fms_error_handler('diag_manager_mod::send_data_3d', &
-                    & 'module/output_field '//TRIM(error_string)//', variable mask but no missing value defined', &
-                    & err_msg)) THEN
-                     succeded = .FALSE.
-                     RETURN
-                  END IF
-               END IF  MISSVAL_PR_1_IF
-            ELSE MASK_PR_1_IF ! no mask present
-               WRITE (error_string,'(a,"/",a)')&
-               & TRIM(input_fields(diag_field_id)%module_name), &
-               & TRIM(output_fields(out_num)%output_name)
-               IF(fms_error_handler('diag_manager_mod::send_data_3d','module/output_field '//TRIM(error_string)//&
-               & ', variable mask but no mask given', err_msg)) THEN
-                  succeded = .FALSE.
-                  RETURN
-               END IF
-            END IF MASK_PR_1_IF
-         ELSE MASK_VAR_IF
-            MASK_PR_2_IF: IF ( PRESENT(mask) ) THEN
-               MISSVAL_PR_2_IF: IF ( missvalue_present ) THEN !!section:(mask_var false +mask present +missval prsnt)
-                  NDCMP_RKR_1_IF: IF ( need_compute ) THEN
-                     IF (numthreads>1 .AND. phys_window) then
-                        DO k = l_start(3), l_end(3)
-                           k1 = k-l_start(3)+1
-                           DO j = js, je
-                              DO i = is, ie
-                                 IF ( l_start(1)+hi <= i .AND. i <= l_end(1)+hi .AND. l_start(2)+hj <= j .AND. &
-                                 & j <= l_end(2)+hj ) THEN
-                                    i1 = i-l_start(1)-hi+1
-                                    j1=  j-l_start(2)-hj+1
-                                    IF ( mask(i-is+1+hi, j-js+1+hj, k) ) THEN
-                                       ofb(i1,j1,k1,sample) = ofb(i1,j1,k1,sample) +&
-                                       & weight_procs%fwf_0d_ptr( field(i-is+1+hi,j-js+1+hj,k),  weight1, pow_value)
-                                    ELSE
-                                       ofb(i1,j1,k1,sample) = missvalue
-                                    END IF
-                                 END IF
-                              END DO
-                           END DO
-                        END DO
-                     ELSE
-!$OMP CRITICAL
-                        DO k = l_start(3), l_end(3)
-                           k1 = k-l_start(3)+1
-                           DO j = js, je
-                              DO i = is, ie
-                                 IF ( l_start(1)+hi <= i .AND. i <= l_end(1)+hi .AND. l_start(2)+hj <= j .AND. &
-                                 & j <= l_end(2)+hj ) THEN
-                                    i1 = i-l_start(1)-hi+1
-                                    j1=  j-l_start(2)-hj+1
-                                    IF ( mask(i-is+1+hi, j-js+1+hj, k) ) THEN
-                                       ofb(i1,j1,k1,sample) = ofb(i1,j1,k1,sample) + &
-                                       & weight_procs%fwf_0d_ptr( field(i-is+1+hi,j-js+1+hj,k), weight1, pow_value)
-                                    ELSE
-                                       ofb(i1,j1,k1,sample) = missvalue
-                                    END IF
-                                 END IF
-                              END DO
-                           END DO
-                        END DO
-!$OMP END CRITICAL
-                     ENDIF
-!$OMP CRITICAL
-                     DO j = js, je
-                        DO i = is, ie
-                           IF ( l_start(1)+hi <= i .AND. i <= l_end(1)+hi .AND. l_start(2)+hj <= j .AND. &
-                           & j <= l_end(2)+hj ) THEN
-                              output_fields(out_num)%num_elements(sample) = &
-                                & output_fields(out_num)%num_elements(sample) + l_end(3) - l_start(3) + 1
-                           END IF
-                        END DO
-                     END DO
-!$OMP END CRITICAL
-                  ELSE IF ( reduced_k_range ) THEN NDCMP_RKR_1_IF
-                     IF (numthreads>1 .AND. phys_window) then
-                        DO k=ksr, ker
-                           k1 = k - ksr + 1
-                           DO j=js, je
-                              DO i=is, ie
-                                 IF ( mask(i-is+1+hi,j-js+1+hj,k) ) THEN
-                                    ofb(i-hi,j-hj,k1,sample) = ofb(i-hi,j-hj,k1,sample) + &
-                                    & weight_procs%fwf_0d_ptr (field(i-is+1+hi,j-js+1+hj,k), weight1, pow_value)
-                                 ELSE
-                                    ofb(i-hi,j-hj,k1,sample)= missvalue
-                                 END IF
-                              END DO
-                           END DO
-                        END DO
-                     ELSE
-!$OMP CRITICAL
-                        DO k=ksr, ker
-                           k1 = k - ksr + 1
-                           DO j=js, je
-                              DO i=is, ie
-                                 IF ( mask(i-is+1+hi,j-js+1+hj,k) ) THEN
-                                    ofb(i-hi,j-hj,k1,sample) = ofb(i-hi,j-hj,k1,sample) + &
-                                    & weight_procs%fwf_0d_ptr ( field(i-is+1+hi,j-js+1+hj,k) ,weight1, pow_value)
-                                 ELSE
-                                    ofb(i-hi,j-hj,k1,sample)= missvalue
-                                 END IF
-                              END DO
-                           END DO
-                        END DO
-!$OMP END CRITICAL
-                     END IF
-                  ELSE NDCMP_RKR_1_IF
-                     IF ( debug_diag_manager ) THEN
-                        CALL update_bounds(out_num, is-hi, ie-hi, js-hj, je-hj, ks, ke)
-                        CALL check_out_of_bounds(out_num, diag_field_id, err_msg=err_msg_local)
-                        IF ( err_msg_local /= '' ) THEN
-                           IF ( fms_error_handler('diag_manager_mod::send_data_3d', err_msg_local, err_msg) ) THEN
-                              succeded = .FALSE.
-                              RETURN
-                           END IF
-                        END IF
-                     END IF
-                     IF (numthreads>1 .AND. phys_window) then
-                        DO k=ks, ke
-                           DO j=js, je
-                              DO i=is, ie
-                                 IF ( mask(i-is+1+hi,j-js+1+hj,k) ) THEN
-                                    ofb(i-hi,j-hj,k,sample) = ofb(i-hi,j-hj,k,sample) + &
-                                    & weight_procs%fwf_0d_ptr ( field(i-is+1+hi,j-js+1+hj,k), weight1, pow_value)
-                                 ELSE
-                                    ofb(i-hi,j-hj,k,sample)= missvalue
-                                 END IF
-                              END DO
-                           END DO
-                        END DO
-                     ELSE
-!$OMP CRITICAL
-                        DO k=ks, ke
-                           DO j=js, je
-                              DO i=is, ie
-                                 IF ( mask(i-is+1+hi,j-js+1+hj,k) ) THEN
-                                    ofb(i-hi,j-hj,k,sample) = ofb(i-hi,j-hj,k,sample) + &
-                                    & weight_procs%fwf_0d_ptr ( field(i-is+1+hi,j-js+1+hj,k), weight1, pow_value)
-                                 ELSE
-                                    ofb(i-hi,j-hj,k,sample)= missvalue
-                                 END IF
-                              END DO
-                           END DO
-                        END DO
-!$OMP END CRITICAL
-                     END IF
-                  END IF NDCMP_RKR_1_IF
-!$OMP CRITICAL
-                  IF ( need_compute .AND. .NOT.phys_window ) THEN
-                     IF ( ANY(mask(l_start(1)+hi:l_end(1)+hi,l_start(2)+hj:l_end(2)+hj,l_start(3):l_end(3))) ) &
-                     & output_fields(out_num)%count_0d(sample) =&
-                     & output_fields(out_num)%count_0d(sample) + weight1
-                  ELSE
-                     IF ( ANY(mask(f1:f2,f3:f4,ks:ke)) ) output_fields(out_num)%count_0d(sample) =&
-                     & output_fields(out_num)%count_0d(sample)+weight1
-                  END IF
-!$OMP END CRITICAL
-               ELSE MISSVAL_PR_2_IF !! (section: mask_varian .eq. false + mask present + miss value not present)
-                  IF (   (.NOT.ALL(mask(f1:f2,f3:f4,ks:ke)) .AND. mpp_pe() .EQ. mpp_root_pe()).AND.&
-                  &  .NOT.input_fields(diag_field_id)%issued_mask_ignore_warning ) THEN
-                     ! <ERROR STATUS="WARNING">
-                     !   Mask will be ignored since missing values were not specified for field <field_name>
-                     !   in module <module_name>
-                     ! </ERROR>
-                     CALL error_mesg('diag_manager_mod::send_data_3d',&
-                     & 'Mask will be ignored since missing values were not specified for field '//&
-                     & trim(input_fields(diag_field_id)%field_name)//' in module '//&
-                     & trim(input_fields(diag_field_id)%module_name), WARNING)
-                     input_fields(diag_field_id)%issued_mask_ignore_warning = .TRUE.
-                  END IF
-                  NDCMP_RKR_2_IF: IF ( need_compute ) THEN
-                     IF (numthreads>1 .AND. phys_window) then
-                        DO j = js, je
-                           DO i = is, ie
-                              IF ( l_start(1)+hi <= i .AND. i <= l_end(1)+hi .AND. l_start(2)+hj <= j .AND. &
-                              & j <= l_end(2)+hj ) THEN
-                                 i1 = i-l_start(1)-hi+1
-                                 j1 =  j-l_start(2)-hj+1
-                                 ofb(i1,j1,:,sample)=  ofb(i1,j1,:,sample)+ &
-                                 & weight_procs%fwf_1d_ptr(field(i-is+1+hi,j-js+1+hj,l_start(3):l_end(3)), weight1,&
-                                 & pow_value)
-                              END IF
-                           END DO
-                        END DO
-                     ELSE
-!$OMP CRITICAL
-                        DO j = js, je
-                           DO i = is, ie
-                              IF ( l_start(1)+hi <= i .AND. i <= l_end(1)+hi .AND. l_start(2)+hj <= j .AND. &
-                              & j <= l_end(2)+hj ) THEN
-                                 i1 = i-l_start(1)-hi+1
-                                 j1 =  j-l_start(2)-hj+1
-                                 ofb(i1,j1,:,sample) = ofb(i1,j1,:,sample) + &
-                                 & weight_procs%fwf_1d_ptr(field(i-is+1+hi,j-js+1+hj,l_start(3):l_end(3)), weight1, &
-                                 & pow_value)
-                              END IF
-                           END DO
-                        END DO
-!$OMP END CRITICAL
-                     END IF
-!$OMP CRITICAL
-                     DO j = js, je
-                        DO i = is, ie
-                           IF ( l_start(1)+hi <= i .AND. i <= l_end(1)+hi .AND. l_start(2)+hj <= j .AND. &
-                           & j <= l_end(2)+hj ) THEN
-                              output_fields(out_num)%num_elements(sample)=&
-                              & output_fields(out_num)%num_elements(sample)+l_end(3)-l_start(3)+1
-                           END IF
-                        END DO
-                     END DO
-!$OMP END CRITICAL
-                  ELSE IF ( reduced_k_range ) THEN NDCMP_RKR_2_IF
-                     IF (numthreads>1 .AND. phys_window) then
-                        ksr= l_start(3)
-                        ker= l_end(3)
-                        ofb(is-hi:ie-hi,js-hj:je-hj,:,sample) = ofb(is-hi:ie-hi,js-hj:je-hj,:,sample) +&
-                        & weight_procs%fwf_3d_ptr (field(f1:f2,f3:f4,ksr:ker), weight1, pow_value)
-                     ELSE
-!$OMP CRITICAL
-                        ksr= l_start(3)
-                        ker= l_end(3)
-                        ofb(is-hi:ie-hi,js-hj:je-hj,:,sample) = ofb(is-hi:ie-hi,js-hj:je-hj,:,sample) +&
-                        & weight_procs%fwf_3D_ptr (field(f1:f2,f3:f4,ksr:ker), weight1, pow_value)
-!$OMP END CRITICAL
-                     END IF
-                  ELSE NDCMP_RKR_2_IF
-                     IF ( debug_diag_manager ) THEN
-                        CALL update_bounds(out_num, is-hi, ie-hi, js-hj, je-hj, ks, ke)
-                        CALL check_out_of_bounds(out_num, diag_field_id, err_msg=err_msg_local)
-                        IF ( err_msg_local /= '') THEN
-                           IF ( fms_error_handler('diag_manager_mod::send_data_3d', err_msg_local, err_msg) ) THEN
-                              succeded = .FALSE.
-                              RETURN
-                           END IF
-                        END IF
-                     END IF
-                     IF (numthreads>1 .AND. phys_window) then
-                        ofb(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) =&
-                        & ofb(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) +&
-                        & weight_procs%fwf_3d_ptr(field(f1:f2,f3:f4,ks:ke), weight1, pow_value)
-                     ELSE
-!$OMP CRITICAL
-                        ofb(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) =&
-                        & ofb(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) +&
-                          & weight_procs%fwf_3d_ptr(field(f1:f2,f3:f4,ks:ke), weight1 , pow_value)
-!$OMP END CRITICAL
-                     END IF
-                  END IF NDCMP_RKR_2_IF
-!$OMP CRITICAL
-                  IF ( .NOT.phys_window ) output_fields(out_num)%count_0d(sample) =&
-                  & output_fields(out_num)%count_0d(sample) + weight1
-!$OMP END CRITICAL
-               END IF MISSVAL_PR_2_IF
-            ELSE MASK_PR_2_IF !!(section: mask_variant .eq. false + mask not present + missvalue)
-               MISSVAL_PR_3_IF: IF (missvalue_present ) THEN
-                  NDCMP_RKR_3_IF: IF ( need_compute ) THEN
-                     NTAPW_IF: If( numthreads>1 .AND. phys_window ) then
-                        DO k = l_start(3), l_end(3)
-                           k1 = k - l_start(3) + 1
-                           DO j = js, je
-                              DO i = is, ie
-                                 IF ( l_start(1)+hi <= i .AND. i <= l_end(1)+hi .AND. l_start(2)+hj <= j .AND. &
-                                 & j <= l_end(2)+hj) THEN
-                                    i1 = i-l_start(1)-hi+1
-                                    j1=  j-l_start(2)-hj+1
-                                    IF ( field(i-is+1+hi,j-js+1+hj,k) /= missvalue ) THEN
-                                       ofb(i1,j1,k1,sample) = ofb(i1,j1,k1,sample) + &
-                                       & weight_procs%fwf_0d_ptr(field(i-is+1+hi,j-js+1+hj,k), weight1, pow_value)
-                                    ELSE
-                                       ofb(i1,j1,k1,sample) = missvalue
-                                    END IF
-                                 END IF
-                              END DO
-                           END DO
-                        END DO
-                     ELSE NTAPW_IF
-!$OMP CRITICAL
-                        DO k = l_start(3), l_end(3)
-                           k1 = k - l_start(3) + 1
-                           DO j = js, je
-                              DO i = is, ie
-                                 IF ( l_start(1)+hi <= i .AND. i <= l_end(1)+hi .AND. l_start(2)+hj <= j .AND. &
-                                 & j <= l_end(2)+hj) THEN
-                                    i1 = i-l_start(1)-hi+1
-                                    j1=  j-l_start(2)-hj+1
-                                    IF ( field(i-is+1+hi,j-js+1+hj,k) /= missvalue ) THEN
-                                       ofb(i1,j1,k1,sample) = ofb(i1,j1,k1,sample) + &
-                                       & weight_procs%fwf_0d_ptr(field(i-is+1+hi,j-js+1+hj,k), weight1, pow_value)
-                                    ELSE
-                                       ofb(i1,j1,k1,sample) = missvalue
-                                    END IF
-                                 END IF
-                              END DO
-                           END DO
-                        END DO
-!$OMP END CRITICAL
-                     END IF NTAPW_IF
-!$OMP CRITICAL
-                     DO j = js, je
-                        DO i = is, ie
-                           IF ( l_start(1)+hi <= i .AND. i <= l_end(1)+hi .AND. l_start(2)+hj <= j .AND. &
-                           & j <= l_end(2)+hj) THEN
-                              output_fields(out_num)%num_elements(sample) =&
-                              & output_fields(out_num)%num_elements(sample) + l_end(3) - l_start(3) + 1
-                           END IF
-                        END DO
-                     END DO
-                     IF ( .NOT.phys_window ) THEN
-                        DO k = l_start(3), l_end(3)
-                           DO j=l_start(2)+hj, l_end(2)+hj
-                              DO i=l_start(1)+hi, l_end(1)+hi
-                                 IF ( field(i,j,k) /= missvalue ) THEN
-                                    output_fields(out_num)%count_0d(sample) = &
-                                      & output_fields(out_num)%count_0d(sample) + weight1
-                                    EXIT
-                                 END IF
-                              END DO
-                           END DO
-                        END DO
-                     END IF
-!$OMP END CRITICAL
-                  ELSE IF ( reduced_k_range ) THEN NDCMP_RKR_3_IF
-                     if( numthreads>1 .AND. phys_window ) then
-                        ksr= l_start(3)
-                        ker= l_end(3)
-                        DO k = ksr, ker
-                           k1 = k - ksr + 1
-                           DO j=js, je
-                              DO i=is, ie
-                                 IF ( field(i-is+1+hi,j-js+1+hj,k) /= missvalue ) THEN
-                                    ofb(i-hi,j-hj,k1,sample) =  ofb(i-hi,j-hj,k1,sample) + &
-                                    & weight_procs%fwf_0d_ptr(field(i-is+1+hi,j-js+1+hj,k), weight1, pow_value)
-                                 ELSE
-                                    ofb(i-hi,j-hj,k1,sample) = missvalue
-                                 END IF
-                              END DO
-                           END DO
-                        END DO
-                     else
-!$OMP CRITICAL
-                        ksr= l_start(3)
-                        ker= l_end(3)
-                        DO k = ksr, ker
-                           k1 = k - ksr + 1
-                           DO j=js, je
-                              DO i=is, ie
-                                 IF ( field(i-is+1+hi,j-js+1+hj,k) /= missvalue ) THEN
-                                    ofb(i-hi,j-hj,k1,sample) = ofb(i-hi,j-hj,k1,sample) +&
-                                    & weight_procs%fwf_0d_ptr(field(i-is+1+hi,j-js+1+hj,k), weight1, pow_value)
-                                 ELSE
-                                    ofb(i-hi,j-hj,k1,sample) = missvalue
-                                 END IF
-                              END DO
-                           END DO
-                        END DO
-!$OMP END CRITICAL
-                     END IF
-!$OMP CRITICAL
-                     DO k = ksr, ker
-                        k1=k-ksr+1
-                        DO j=f3, f4
-                           DO i=f1, f2
-                              !! TODO: verify this below
-                              IF ( field(i,j,k) /= missvalue ) THEN
-                                 output_fields(out_num)%count_0d(sample) = &
-                                    & output_fields(out_num)%count_0d(sample) + weight1
-                                 EXIT
-                              END IF
-                           END DO
-                        END DO
-                     END DO
-!$OMP END CRITICAL
-                  ELSE NDCMP_RKR_3_IF
-                     IF ( debug_diag_manager ) THEN
-                        CALL update_bounds(out_num, is-hi, ie-hi, js-hj, je-hj, ks, ke)
-                        CALL check_out_of_bounds(out_num, diag_field_id, err_msg=err_msg_local)
-                        IF ( err_msg_local /= '' ) THEN
-                           IF ( fms_error_handler('diag_manager_mod::send_data_3d', err_msg_local, err_msg) ) THEN
-                              succeded = .FALSE.
-                              RETURN
-                           END IF
-                        END IF
-                     END IF
-                     IF( numthreads > 1 .AND. phys_window ) then
-                        DO k=ks, ke
-                           DO j=js, je
-                              DO i=is, ie
-                                 IF ( field(i-is+1+hi,j-js+1+hj,k) /= missvalue )  THEN
-                                    ofb(i-hi,j-hj,k,sample) = ofb(i-hi,j-hj,k,sample) +&
-                                    & weight_procs%fwf_0d_ptr(field(i-is+1+hi,j-js+1+hj,k), weight1, pow_value)
-                                 ELSE
-                                    ofb(i-hi,j-hj,k,sample) = missvalue
-                                 END IF
-                              END DO
-                           END DO
-                        END DO
-                     ELSE
-!$OMP CRITICAL
-                        DO k=ks, ke
-                           DO j=js, je
-                              DO i=is, ie
-                                 IF ( field(i-is+1+hi,j-js+1+hj,k) /= missvalue )  THEN
-                                    ofb(i-hi,j-hj,k,sample) = ofb(i-hi,j-hj,k,sample) +&
-                                    & weight_procs%fwf_0d_ptr(field(i-is+1+hi,j-js+1+hj,k), weight1, pow_value)
-                                 ELSE
-                                    ofb(i-hi,j-hj,k,sample) = missvalue
-                                 END IF
-                              END DO
-                           END DO
-                        END DO
-!$OMP END CRITICAL
-                     END IF
 !$OMP CRITICAL
                      DO k=ks, ke
-                        DO j=f3, f4
-                           DO i=f1, f2
-                              IF ( field(i,j,k) /= missvalue ) THEN
-                                 output_fields(out_num)%count_0d(sample) = &
-                                    & output_fields(out_num)%count_0d(sample)  + weight1
-                                 EXIT
+                        DO j=js, je
+                           DO i=is, ie
+                              IF ( mask(i-is+1+hi,j-js+1+hj,k) ) THEN
+                                 ofb(i-hi,j-hj,k,sample) = ofb(i-hi,j-hj,k,sample) + &
+                                 & ( field(i-is+1+hi,j-js+1+hj,k) * weight1) ** pow_value
+                              ELSE
+                                 ofb(i-hi,j-hj,k,sample)= missvalue
                               END IF
                            END DO
                         END DO
                      END DO
 !$OMP END CRITICAL
-                  END IF NDCMP_RKR_3_IF
-               ELSE MISSVAL_PR_3_IF !!(section: mask_variant .eq. false + mask not present + missvalue not present)
-                  NDCMP_RKR_4_IF: IF ( need_compute ) THEN
-                     IF( numthreads > 1 .AND. phys_window ) then
-                        DO j = js, je
-                           DO i = is, ie
-                              IF ( l_start(1)+hi <= i .AND. i <= l_end(1)+hi .AND. l_start(2)+hj <= j .AND. &
-                              & j <= l_end(2)+hj ) THEN
-                                 i1 = i-l_start(1)-hi+1
-                                 j1=  j-l_start(2)-hj+1
-                                 ofb(i1,j1,:,sample) = ofb(i1,j1,:,sample) + &
-                                 & weight_procs%fwf_1d_ptr(field(i-is+1+hi,j-js+1+hj,l_start(3):l_end(3)), weight1,&
-                                 & pow_value)
-                              END IF
-                           END DO
-                        END DO
-                     ELSE
+                  END IF
+               END IF NDCMP_RKR_1_IF
 !$OMP CRITICAL
-                        DO j = js, je
-                           DO i = is, ie
-                              IF ( l_start(1)+hi <= i .AND. i <= l_end(1)+hi .AND. l_start(2)+hj <= j .AND. &
-                              & j <= l_end(2)+hj ) THEN
-                                 i1 = i-l_start(1)-hi+1
-                                 j1=  j-l_start(2)-hj+1
-                                 ofb(i1,j1,:,sample)= ofb(i1,j1,:,sample) +&
-                                 & weight_procs%fwf_1d_ptr(field(i-is+1+hi,j-js+1+hj,l_start(3):l_end(3)), weight1,&
-                                 & pow_value)
-                              END IF
-                           END DO
-                        END DO
+               IF ( need_compute .AND. .NOT.phys_window ) THEN
+                  IF ( ANY(mask(l_start(1)+hi:l_end(1)+hi,l_start(2)+hj:l_end(2)+hj,l_start(3):l_end(3))) ) &
+                  & output_fields(out_num)%count_0d(sample) =&
+                  & output_fields(out_num)%count_0d(sample) + weight1
+               ELSE
+                  IF ( ANY(mask(f1:f2,f3:f4,ks:ke)) ) output_fields(out_num)%count_0d(sample) =&
+                  & output_fields(out_num)%count_0d(sample)+weight1
+               END IF
 !$OMP END CRITICAL
-                     END IF
+            ELSE MISSVAL_PR_2_IF !! (section: mask_varian .eq. false + mask present + miss value not present)
+               IF (   (.NOT.ALL(mask(f1:f2,f3:f4,ks:ke)) .AND. mpp_pe() .EQ. mpp_root_pe()).AND.&
+               &  .NOT.input_fields(diag_field_id)%issued_mask_ignore_warning ) THEN
+                  ! <ERROR STATUS="WARNING">
+                  !   Mask will be ignored since missing values were not specified for field <field_name>
+                  !   in module <module_name>
+                  ! </ERROR>
+                  CALL error_mesg('diag_manager_mod::send_data_3d',&
+                  & 'Mask will be ignored since missing values were not specified for field '//&
+                  & trim(input_fields(diag_field_id)%field_name)//' in module '//&
+                  & trim(input_fields(diag_field_id)%module_name), WARNING)
+                  input_fields(diag_field_id)%issued_mask_ignore_warning = .TRUE.
+               END IF
+               NDCMP_RKR_2_IF: IF ( need_compute ) THEN
+                  IF (numthreads>1 .AND. phys_window) then
+                     DO j = js, je
+                        DO i = is, ie
+                           IF ( l_start(1)+hi <= i .AND. i <= l_end(1)+hi .AND. l_start(2)+hj <= j .AND. &
+                           & j <= l_end(2)+hj ) THEN
+                              i1 = i-l_start(1)-hi+1
+                              j1 =  j-l_start(2)-hj+1
+                              ofb(i1,j1,:,sample)=  ofb(i1,j1,:,sample)+ &
+                              & (field(i-is+1+hi,j-js+1+hj,l_start(3):l_end(3)) * weight1 ) ** pow_value
+                           END IF
+                        END DO
+                     END DO
+                  ELSE
 !$OMP CRITICAL
                      DO j = js, je
                         DO i = is, ie
                            IF ( l_start(1)+hi <= i .AND. i <= l_end(1)+hi .AND. l_start(2)+hj <= j .AND. &
                            & j <= l_end(2)+hj ) THEN
-                              output_fields(out_num)%num_elements(sample) =&
-                              & output_fields(out_num)%num_elements(sample)+l_end(3)-l_start(3)+1
+                              i1 = i-l_start(1)-hi+1
+                              j1 =  j-l_start(2)-hj+1
+                              ofb(i1,j1,:,sample) = ofb(i1,j1,:,sample) + &
+                              & (field(i-is+1+hi,j-js+1+hj,l_start(3):l_end(3)) + weight1 ) ** pow_value
                            END IF
                         END DO
                      END DO
 !$OMP END CRITICAL
-                     ! Accumulate time average
-                  ELSE IF ( reduced_k_range ) THEN NDCMP_RKR_4_IF
+                  END IF
+!$OMP CRITICAL
+                  DO j = js, je
+                     DO i = is, ie
+                        IF ( l_start(1)+hi <= i .AND. i <= l_end(1)+hi .AND. l_start(2)+hj <= j .AND. &
+                        & j <= l_end(2)+hj ) THEN
+                           output_fields(out_num)%num_elements(sample)=&
+                           & output_fields(out_num)%num_elements(sample)+l_end(3)-l_start(3)+1
+                        END IF
+                     END DO
+                  END DO
+!$OMP END CRITICAL
+               ELSE IF ( reduced_k_range ) THEN NDCMP_RKR_2_IF
+                  IF (numthreads>1 .AND. phys_window) then
                      ksr= l_start(3)
                      ker= l_end(3)
-                     IF( numthreads > 1 .AND. phys_window ) then
-                        ofb(is-hi:ie-hi,js-hj:je-hj,:,sample) =&
-                        & ofb(is-hi:ie-hi,js-hj:je-hj,:,sample) + &
-                        & weight_procs%fwf_3d_ptr(field(f1:f2,f3:f4,ksr:ker), weight1, pow_value)
-                     ELSE
+                     ofb(is-hi:ie-hi,js-hj:je-hj,:,sample) = ofb(is-hi:ie-hi,js-hj:je-hj,:,sample) +&
+                     & (field(f1:f2,f3:f4,ksr:ker) * weight1) ** pow_value
+                  ELSE
 !$OMP CRITICAL
-                        ofb(is-hi:ie-hi,js-hj:je-hj,:,sample) =&
-                        & ofb(is-hi:ie-hi,js-hj:je-hj,:,sample) + &
-                        & weight_procs%fwf_3d_ptr(field(f1:f2,f3:f4,ksr:ker), weight1, pow_value)
+                     ksr= l_start(3)
+                     ker= l_end(3)
+                     ofb(is-hi:ie-hi,js-hj:je-hj,:,sample) = ofb(is-hi:ie-hi,js-hj:je-hj,:,sample) +&
+                     & (field(f1:f2,f3:f4,ksr:ker) * weight1) ** pow_value
 !$OMP END CRITICAL
-                     END IF
-
-                  ELSE NDCMP_RKR_4_IF
-                     IF ( debug_diag_manager ) THEN
-                        CALL update_bounds(out_num, is-hi, ie-hi, js-hj, je-hj, ks, ke)
-                        CALL check_out_of_bounds(out_num, diag_field_id, err_msg=err_msg_local)
-                        IF ( err_msg_local /= '' ) THEN
-                           IF (fms_error_handler('diag_manager_mod::send_data_3d', err_msg_local, err_msg) ) THEN
-                              succeded = .FALSE.
-                              RETURN
-                           END IF
+                  END IF
+               ELSE NDCMP_RKR_2_IF
+                  IF ( debug_diag_manager ) THEN
+                     CALL update_bounds(out_num, is-hi, ie-hi, js-hj, je-hj, ks, ke)
+                     CALL check_out_of_bounds(out_num, diag_field_id, err_msg=err_msg_local)
+                     IF ( err_msg_local /= '') THEN
+                        IF ( fms_error_handler('diag_manager_mod::send_data_3d', err_msg_local, err_msg) ) THEN
+                           succeded = .FALSE.
+                           RETURN
                         END IF
                      END IF
-                     IF( numthreads > 1 .AND. phys_window ) then
-                        ofb(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) =&
-                        & ofb(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) +&
-                        & weight_procs%fwf_3d_ptr(field(f1:f2,f3:f4,ks:ke), weight1, pow_value)
-                     ELSE
+                  END IF
+                  IF (numthreads>1 .AND. phys_window) then
+                     ofb(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) =&
+                     & ofb(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) +&
+                     & (field(f1:f2,f3:f4,ks:ke) * weight1) ** pow_value
+                  ELSE
 !$OMP CRITICAL
-                        ofb(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) =&
-                        & ofb(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) +&
-                        & weight_procs%fwf_3d_ptr(field(f1:f2,f3:f4,ks:ke), weight1, pow_value)
-                        !!
+                     ofb(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) =&
+                     & ofb(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) +&
+                     & (field(f1:f2,f3:f4,ks:ke) * weight1) ** pow_value
 !$OMP END CRITICAL
+                  END IF
+               END IF NDCMP_RKR_2_IF
+!$OMP CRITICAL
+               IF ( .NOT.phys_window ) output_fields(out_num)%count_0d(sample) =&
+               & output_fields(out_num)%count_0d(sample) + weight1
+!$OMP END CRITICAL
+            END IF MISSVAL_PR_2_IF
+         ELSE MASK_PR_2_IF !!(section: mask_variant .eq. false + mask not present + missvalue)
+            MISSVAL_PR_3_IF: IF (missvalue_present ) THEN
+               NDCMP_RKR_3_IF: IF ( need_compute ) THEN
+                  NTAPW_IF: If( numthreads>1 .AND. phys_window ) then
+                     DO k = l_start(3), l_end(3)
+                        k1 = k - l_start(3) + 1
+                        DO j = js, je
+                           DO i = is, ie
+                              IF ( l_start(1)+hi <= i .AND. i <= l_end(1)+hi .AND. l_start(2)+hj <= j .AND. &
+                              & j <= l_end(2)+hj) THEN
+                                 i1 = i-l_start(1)-hi+1
+                                 j1=  j-l_start(2)-hj+1
+                                 IF ( field(i-is+1+hi,j-js+1+hj,k) /= missvalue ) THEN
+                                    ofb(i1,j1,k1,sample) = ofb(i1,j1,k1,sample) + &
+                                    & (field(i-is+1+hi,j-js+1+hj,k) * weight1) ** pow_value
+                                 ELSE
+                                    ofb(i1,j1,k1,sample) = missvalue
+                                 END IF
+                              END IF
+                           END DO
+                        END DO
+                     END DO
+                  ELSE NTAPW_IF
+!$OMP CRITICAL
+                     DO k = l_start(3), l_end(3)
+                        k1 = k - l_start(3) + 1
+                        DO j = js, je
+                           DO i = is, ie
+                              IF ( l_start(1)+hi <= i .AND. i <= l_end(1)+hi .AND. l_start(2)+hj <= j .AND. &
+                              & j <= l_end(2)+hj) THEN
+                                 i1 = i-l_start(1)-hi+1
+                                 j1=  j-l_start(2)-hj+1
+                                 IF ( field(i-is+1+hi,j-js+1+hj,k) /= missvalue ) THEN
+                                    ofb(i1,j1,k1,sample) = ofb(i1,j1,k1,sample) + &
+                                    & (field(i-is+1+hi,j-js+1+hj,k) * weight1) ** pow_value
+                                 ELSE
+                                    ofb(i1,j1,k1,sample) = missvalue
+                                 END IF
+                              END IF
+                           END DO
+                        END DO
+                     END DO
+!$OMP END CRITICAL
+                  END IF NTAPW_IF
+!$OMP CRITICAL
+                  DO j = js, je
+                     DO i = is, ie
+                        IF ( l_start(1)+hi <= i .AND. i <= l_end(1)+hi .AND. l_start(2)+hj <= j .AND. &
+                        & j <= l_end(2)+hj) THEN
+                           output_fields(out_num)%num_elements(sample) =&
+                           & output_fields(out_num)%num_elements(sample) + l_end(3) - l_start(3) + 1
+                        END IF
+                     END DO
+                  END DO
+                  IF ( .NOT.phys_window ) THEN
+                     DO k = l_start(3), l_end(3)
+                        DO j=l_start(2)+hj, l_end(2)+hj
+                           DO i=l_start(1)+hi, l_end(1)+hi
+                              IF ( field(i,j,k) /= missvalue ) THEN
+                                 output_fields(out_num)%count_0d(sample) = &
+                                 & output_fields(out_num)%count_0d(sample) + weight1
+                                 EXIT
+                              END IF
+                           END DO
+                        END DO
+                     END DO
+                  END IF
+!$OMP END CRITICAL
+               ELSE IF ( reduced_k_range ) THEN NDCMP_RKR_3_IF
+                  if( numthreads>1 .AND. phys_window ) then
+                     ksr= l_start(3)
+                     ker= l_end(3)
+                     DO k = ksr, ker
+                        k1 = k - ksr + 1
+                        DO j=js, je
+                           DO i=is, ie
+                              IF ( field(i-is+1+hi,j-js+1+hj,k) /= missvalue ) THEN
+                                 ofb(i-hi,j-hj,k1,sample) =  ofb(i-hi,j-hj,k1,sample) + &
+                                 & (field(i-is+1+hi,j-js+1+hj,k) * weight1) ** pow_value
+                              ELSE
+                                 ofb(i-hi,j-hj,k1,sample) = missvalue
+                              END IF
+                           END DO
+                        END DO
+                     END DO
+                  else
+!$OMP CRITICAL
+                     ksr= l_start(3)
+                     ker= l_end(3)
+                     DO k = ksr, ker
+                        k1 = k - ksr + 1
+                        DO j=js, je
+                           DO i=is, ie
+                              IF ( field(i-is+1+hi,j-js+1+hj,k) /= missvalue ) THEN
+                                 ofb(i-hi,j-hj,k1,sample) = ofb(i-hi,j-hj,k1,sample) +&
+                                 & (field(i-is+1+hi,j-js+1+hj,k) * weight1) ** pow_value
+                              ELSE
+                                 ofb(i-hi,j-hj,k1,sample) = missvalue
+                              END IF
+                           END DO
+                        END DO
+                     END DO
+!$OMP END CRITICAL
+                  END IF
+!$OMP CRITICAL
+                  DO k = ksr, ker
+                     k1=k-ksr+1
+                     DO j=f3, f4
+                        DO i=f1, f2
+                           !! TODO: verify this below
+                           IF ( field(i,j,k) /= missvalue ) THEN
+                              output_fields(out_num)%count_0d(sample) = &
+                              & output_fields(out_num)%count_0d(sample) + weight1
+                              EXIT
+                           END IF
+                        END DO
+                     END DO
+                  END DO
+!$OMP END CRITICAL
+               ELSE NDCMP_RKR_3_IF
+                  IF ( debug_diag_manager ) THEN
+                     CALL update_bounds(out_num, is-hi, ie-hi, js-hj, je-hj, ks, ke)
+                     CALL check_out_of_bounds(out_num, diag_field_id, err_msg=err_msg_local)
+                     IF ( err_msg_local /= '' ) THEN
+                        IF ( fms_error_handler('diag_manager_mod::send_data_3d', err_msg_local, err_msg) ) THEN
+                           succeded = .FALSE.
+                           RETURN
+                        END IF
                      END IF
-                  END IF NDCMP_RKR_4_IF
+                  END IF
+                  IF( numthreads > 1 .AND. phys_window ) then
+                     DO k=ks, ke
+                        DO j=js, je
+                           DO i=is, ie
+                              IF ( field(i-is+1+hi,j-js+1+hj,k) /= missvalue )  THEN
+                                 ofb(i-hi,j-hj,k,sample) = ofb(i-hi,j-hj,k,sample) +&
+                                 & (field(i-is+1+hi,j-js+1+hj,k) * weight1) ** pow_value
+                              ELSE
+                                 ofb(i-hi,j-hj,k,sample) = missvalue
+                              END IF
+                           END DO
+                        END DO
+                     END DO
+                  ELSE
 !$OMP CRITICAL
-                  IF ( .NOT.phys_window ) output_fields(out_num)%count_0d(sample) =&
-                  & output_fields(out_num)%count_0d(sample) + weight1
+                     DO k=ks, ke
+                        DO j=js, je
+                           DO i=is, ie
+                              IF ( field(i-is+1+hi,j-js+1+hj,k) /= missvalue )  THEN
+                                 ofb(i-hi,j-hj,k,sample) = ofb(i-hi,j-hj,k,sample) +&
+                                 & (field(i-is+1+hi,j-js+1+hj,k) * weight1) ** pow_value
+                              ELSE
+                                 ofb(i-hi,j-hj,k,sample) = missvalue
+                              END IF
+                           END DO
+                        END DO
+                     END DO
 !$OMP END CRITICAL
-               END IF MISSVAL_PR_3_IF
-            END IF MASK_PR_2_IF ! if mask present
-         END IF MASK_VAR_IF
-      END ASSOCIATE
+                  END IF
+!$OMP CRITICAL
+                  DO k=ks, ke
+                     DO j=f3, f4
+                        DO i=f1, f2
+                           IF ( field(i,j,k) /= missvalue ) THEN
+                              output_fields(out_num)%count_0d(sample) = &
+                              & output_fields(out_num)%count_0d(sample)  + weight1
+                              EXIT
+                           END IF
+                        END DO
+                     END DO
+                  END DO
+!$OMP END CRITICAL
+               END IF NDCMP_RKR_3_IF
+            ELSE MISSVAL_PR_3_IF !!(section: mask_variant .eq. false + mask not present + missvalue not present)
+               NDCMP_RKR_4_IF: IF ( need_compute ) THEN
+                  IF( numthreads > 1 .AND. phys_window ) then
+                     DO j = js, je
+                        DO i = is, ie
+                           IF ( l_start(1)+hi <= i .AND. i <= l_end(1)+hi .AND. l_start(2)+hj <= j .AND. &
+                           & j <= l_end(2)+hj ) THEN
+                              i1 = i-l_start(1)-hi+1
+                              j1=  j-l_start(2)-hj+1
+                              ofb(i1,j1,:,sample) = ofb(i1,j1,:,sample) + &
+                              & (field(i-is+1+hi,j-js+1+hj,l_start(3):l_end(3)) + weight1 ) ** pow_value
+                           END IF
+                        END DO
+                     END DO
+                  ELSE
+!$OMP CRITICAL
+                     DO j = js, je
+                        DO i = is, ie
+                           IF ( l_start(1)+hi <= i .AND. i <= l_end(1)+hi .AND. l_start(2)+hj <= j .AND. &
+                           & j <= l_end(2)+hj ) THEN
+                              i1 = i-l_start(1)-hi+1
+                              j1=  j-l_start(2)-hj+1
+                              ofb(i1,j1,:,sample)= ofb(i1,j1,:,sample) +&
+                              & (field(i-is+1+hi,j-js+1+hj,l_start(3):l_end(3)) * weight1 ) ** pow_value
+                           END IF
+                        END DO
+                     END DO
+!$OMP END CRITICAL
+                  END IF
+!$OMP CRITICAL
+                  DO j = js, je
+                     DO i = is, ie
+                        IF ( l_start(1)+hi <= i .AND. i <= l_end(1)+hi .AND. l_start(2)+hj <= j .AND. &
+                        & j <= l_end(2)+hj ) THEN
+                           output_fields(out_num)%num_elements(sample) =&
+                           & output_fields(out_num)%num_elements(sample)+l_end(3)-l_start(3)+1
+                        END IF
+                     END DO
+                  END DO
+!$OMP END CRITICAL
+                  ! Accumulate time average
+               ELSE IF ( reduced_k_range ) THEN NDCMP_RKR_4_IF
+                  ksr= l_start(3)
+                  ker= l_end(3)
+                  IF( numthreads > 1 .AND. phys_window ) then
+                     ofb(is-hi:ie-hi,js-hj:je-hj,:,sample) =&
+                     & ofb(is-hi:ie-hi,js-hj:je-hj,:,sample) + &
+                     & (field(f1:f2,f3:f4,ksr:ker) * weight1) ** pow_value
+                  ELSE
+!$OMP CRITICAL
+                     ofb(is-hi:ie-hi,js-hj:je-hj,:,sample) =&
+                     & ofb(is-hi:ie-hi,js-hj:je-hj,:,sample) + &
+                     & (field(f1:f2,f3:f4,ksr:ker) * weight1) ** pow_value
+!$OMP END CRITICAL
+                  END IF
+
+               ELSE NDCMP_RKR_4_IF
+                  IF ( debug_diag_manager ) THEN
+                     CALL update_bounds(out_num, is-hi, ie-hi, js-hj, je-hj, ks, ke)
+                     CALL check_out_of_bounds(out_num, diag_field_id, err_msg=err_msg_local)
+                     IF ( err_msg_local /= '' ) THEN
+                        IF (fms_error_handler('diag_manager_mod::send_data_3d', err_msg_local, err_msg) ) THEN
+                           succeded = .FALSE.
+                           RETURN
+                        END IF
+                     END IF
+                  END IF
+                  IF( numthreads > 1 .AND. phys_window ) then
+                     ofb(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) =&
+                     & ofb(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) +&
+                     & (field(f1:f2,f3:f4,ks:ke) * weight1) ** pow_value
+                  ELSE
+!$OMP CRITICAL
+                     ofb(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) =&
+                     & ofb(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) +&
+                     & (field(f1:f2,f3:f4,ks:ke) * weight1) ** pow_value
+                     !!
+!$OMP END CRITICAL
+                  END IF
+               END IF NDCMP_RKR_4_IF
+!$OMP CRITICAL
+               IF ( .NOT.phys_window ) output_fields(out_num)%count_0d(sample) =&
+               & output_fields(out_num)%count_0d(sample) + weight1
+!$OMP END CRITICAL
+            END IF MISSVAL_PR_3_IF
+         END IF MASK_PR_2_IF ! if mask present
+      END IF MASK_VAR_IF
 
 !$OMP CRITICAL
       IF ( .NOT.need_compute .AND. .NOT.reduced_k_range )&
@@ -747,11 +793,12 @@ MODULE fms_send_data_statfun_mod
       succeded = .TRUE.
       RETURN
 
-   END FUNCTION AVERAGE_THE_FIELD
+   END FUNCTION AVERAGE_THE_FIELD_IMP
 
-   FUNCTION SAMPLE_THE_FIELD (diag_field_id, field, out_num, &
+   FUNCTION SAMPLE_THE_FIELD_IMP (this, diag_field_id, field, out_num, &
    & mask, sample, missvalue, missvalue_present, &
-   & l_start, l_end, idx_cfg, err_msg,  err_msg_local) result( succeded )
+   & l_start, l_end, err_msg,  err_msg_local) result( succeded )
+      CLASS(fms_diag_field_procs_t), INTENT(inout)  :: this
       INTEGER, INTENT(in) :: diag_field_id
       REAL, DIMENSION(:,:,:), INTENT(in) :: field
       INTEGER, INTENT(in) :: out_num
@@ -763,16 +810,17 @@ MODULE fms_send_data_statfun_mod
       INTEGER, DIMENSION(3), INTENT(in)  :: l_end !< local end indices on 3 axes for regional output
       CHARACTER(len=*), INTENT(inout), OPTIONAL :: err_msg
       CHARACTER(len=256), INTENT(inout) :: err_msg_local
-      TYPE(STATFUN_IDX_CFG_T), INTENT(in) :: idx_cfg
       LOGICAL :: succeded
 
       !!LOGICAL, ALLOCATABLE, DIMENSION(:,:,:) :: oor_mask
       CHARACTER(len=128):: error_string
 
       ! Power value for rms or pow(x) calculations
-      INTEGER :: pow_value, ksr, ker, is, js, ks, ie, je, ke, hi, hj, f1, f2, f3, f4
+      INTEGER :: pow_value, is, js, ks, ie, je, ke, hi, hj, f1, f2, f3, f4
       LOGICAL :: phys_window , need_compute , reduced_k_range
 
+
+      INTEGER :: ksr, ker
       INTEGER :: i, j, k, i1, j1, k1
 
       LOGICAL :: time_rms, time_max, time_min, time_sum
@@ -785,29 +833,26 @@ MODULE fms_send_data_statfun_mod
       need_compute = output_fields(out_num)%need_compute
       reduced_k_range = output_fields(out_num)%reduced_k_range
 
-      ! Is this output field the rms?
-      ! If so, then average is also .TRUE.
-      time_rms = output_fields(out_num)%time_rms
-      ! Looking for max and min value of this field over the sampling interval?
-      time_max = output_fields(out_num)%time_max
-      time_min = output_fields(out_num)%time_min
-      ! Sum output over time interval
-      time_sum = output_fields(out_num)%time_sum
+      time_rms = this%time_rms
+      time_max = this%time_max
+      time_min = this%time_min
+      time_sum = this%time_sum
 
       ksr= l_start(3)
       ker= l_end(3)
-      is = idx_cfg%is
-      js = idx_cfg%js
-      ks = idx_cfg%ks
-      ie = idx_cfg%ie
-      je = idx_cfg%je
-      ke = idx_cfg%ke
-      hi = idx_cfg%hi
-      hj = idx_cfg%hj
-      f1 = idx_cfg%f1
-      f2 = idx_cfg%f2
-      f3 = idx_cfg%f3
-      f4 = idx_cfg%f4
+
+      is = this%is
+      js = this%js
+      ks = this%ks
+      ie = this%ie
+      je = this%je
+      ke = this%ke
+      hi = this%hi
+      hj = this%hj
+      f1 = this%f1
+      f2 = this%f2
+      f3 = this%f3
+      f4 = this%f4
 
       ASSOCIATE( OFB => output_fields(out_num)%buffer)
 
@@ -1076,6 +1121,7 @@ MODULE fms_send_data_statfun_mod
                OFB(is-hi:ie-hi,js-hj:je-hj,:,sample) = field(f1:f2,f3:f4,ksr:ker)
             ELSE
                IF ( debug_diag_manager ) THEN
+                  !!TODO update_bounds and chck_out_of_bounds may need mods for new diag
                   CALL update_bounds(out_num, is-hi, ie-hi, js-hj, je-hj, ks, ke)
                   CALL check_out_of_bounds(out_num, diag_field_id, err_msg=err_msg_local)
                   IF ( err_msg_local /= '' ) THEN
@@ -1133,7 +1179,7 @@ MODULE fms_send_data_statfun_mod
       succeded = .TRUE.
       RETURN
 
-   END FUNCTION SAMPLE_THE_FIELD
+   END FUNCTION SAMPLE_THE_FIELD_IMP
 END MODULE fms_send_data_statfun_mod
 !> @}
 ! close documentation grouping
