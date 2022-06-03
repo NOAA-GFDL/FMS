@@ -255,6 +255,17 @@ subroutine fms_register_diag_field_obj &
 !     return
 !  endif
 
+!> TO DO: Add all the info from the diag_axis obj
+!! axes will need to be changed to optional, so this subroutine can be used for both scalar and array fields
+!! the domain_type and domain will be need to added to the dobj
+! if (present(axes))
+!    dobj%axes => axes ! or something
+!    call get_domain_and_domain_type(dobj%axes, dobj%domain_type, dobj%domain, dobj%varname)
+     !! Send all the axes_info to the diag_files
+! else
+!    dobj%domain_type = NO_DOMAIN
+! endif
+
 !> get the optional arguments if included and the diagnostic is in the diag table
   if (present(longname)) then
      allocate(character(len=len(longname)) :: dobj%longname)

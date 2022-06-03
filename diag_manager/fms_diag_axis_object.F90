@@ -31,14 +31,17 @@ module fms_diag_axis_object_mod
   use mpp_domains_mod, only:  domain1d, domain2d, domainUG, mpp_get_compute_domain, CENTER, &
                             & mpp_get_compute_domain, NORTH, EAST
   use platform_mod,    only:  r8_kind, r4_kind
-  use diag_data_mod,   only:  diag_atttype, max_axes
+  use diag_data_mod,   only:  diag_atttype, max_axes, NO_DOMAIN, TWO_D_DOMAIN, UG_DOMAIN, &
+                              direction_down, direction_up
   use mpp_mod,         only:  FATAL, mpp_error, uppercase
+  use fms2_io_mod,     only:  FmsNetcdfFile_t, FmsNetcdfDomainFile_t, FmsNetcdfUnstructuredDomainFile_t, &
+                            & register_axis, register_field, register_variable_attribute, write_data
   implicit none
 
   PRIVATE
 
-  public :: diagAxis_t, set_subaxis, fms_diag_axis_init, fms_diag_axis_object_init, fms_diag_axis_object_end
-  public :: axis_obj
+  public :: diagAxis_t, set_subaxis, fms_diag_axis_init, fms_diag_axis_object_init, fms_diag_axis_object_end, &
+          & get_domain_and_domain_type, axis_obj
   !> @}
 
   !> @brief Type to hold the domain info for an axis
@@ -85,10 +88,13 @@ module fms_diag_axis_object_mod
      CHARACTER(len=:),   ALLOCATABLE, private :: long_name       !< Long_name attribute of the axis
      CHARACTER(len=1)               , private :: cart_name       !< Cartesian name "X", "Y", "Z", "T", "U", "N"
      CLASS(*),           ALLOCATABLE, private :: axis_data(:)    !< Data of the axis
+     CHARACTER(len=:),   ALLOCATABLE, private :: type_of_data    !< The type of the axis_data ("float" or "double")
      !< TO DO this can be a dlinked to avoid having limits
      type(subaxis_t)                , private :: subaxis(3)      !< Array of subaxis
      integer                        , private :: nsubaxis        !< Number of subaxis
      class(diagDomain_t),ALLOCATABLE, private :: axis_domain     !< Domain
+     INTEGER                        , private :: type_of_domain  !< The type of domain ("NO_DOMAIN", "TWO_D_DOMAIN",
+                                                                 !! or "UG_DOMAIN")
      INTEGER                        , private :: length          !< Global axis length
      INTEGER                        , private :: direction       !< Direction of the axis 0, 1, -1
      INTEGER                        , private :: edges           !< Axis ID for the previously defined "edges axis"
@@ -105,11 +111,10 @@ module fms_diag_axis_object_mod
      PROCEDURE :: register => register_diag_axis_obj
      PROCEDURE :: axis_length => get_axis_length
      PROCEDURE :: set_subaxis
+     PROCEDURE :: write_axis_metadata
+     PROCEDURE :: write_axis_data
 
      ! TO DO:
-     ! PROCEDURE :: write_axis_metadata
-     ! PROCEDURE :: write_axis_data
-     ! PROCEDURE :: get_fileobj_type_needed (use the domain to figure out what fms2 fileobj to use)
      ! Get/has/is subroutines as needed
   END TYPE diagAxis_t
 
@@ -154,14 +159,17 @@ module fms_diag_axis_object_mod
     type is (real(kind=r8_kind))
       allocate(real(kind=r8_kind) :: obj%axis_data(size(axis_data)))
       obj%axis_data = axis_data
+      obj%type_of_data = "double" !< This is what fms2_io expects in the register_field call
     type is (real(kind=r4_kind))
       allocate(real(kind=r4_kind) :: obj%axis_data(size(axis_data)))
       obj%axis_data = axis_data
+      obj%type_of_data = "float" !< This is what fms2_io expects in the register_field call
     class default
       call mpp_error(FATAL, "The axis_data in your diag_axis_init call is not a supported type. &
                           &  Currently only r4 and r8 data is supported.")
     end select
 
+    obj%type_of_domain = NO_DOMAIN
     if (present(Domain)) then
       if (present(Domain2) .or. present(DomainU)) call mpp_error(FATAL, &
         "The presence of Domain with any other domain type is prohibited. "//&
@@ -174,9 +182,11 @@ module fms_diag_axis_object_mod
         "Check you diag_axis_init call for axis_name:"//trim(axis_name))
       allocate(diagDomain2d_t :: obj%axis_domain)
       call obj%axis_domain%set(Domain2=Domain2)
+      obj%type_of_domain = TWO_D_DOMAIN
     else if (present(DomainU)) then
       allocate(diagDomainUg_t :: obj%axis_domain)
       call obj%axis_domain%set(DomainU=DomainU)
+      obj%type_of_domain = UG_DOMAIN
     endif
 
     obj%tile_count = 1
@@ -201,6 +211,96 @@ module fms_diag_axis_object_mod
 
     obj%nsubaxis = 0
   end subroutine register_diag_axis_obj
+
+  !> @brief Write the axis meta data to an open fileobj
+  subroutine write_axis_metadata(obj, fileobj, sub_axis_id)
+    class(diagAxis_t), target, INTENT(IN)    :: obj         !< diag_axis obj
+    class(FmsNetcdfFile_t),    INTENT(INOUT) :: fileobj     !< Fms2_io fileobj to write the data to
+    integer, OPTIONAL,         INTENT(IN)    :: sub_axis_id !< ID of the sub_axis, if it exists
+
+    character(len=:), ALLOCATABLE :: axis_edges_name !< Name of the edges, if it exist
+    character(len=:), pointer     :: axis_name       !< Name of the axis
+    integer                       :: axis_length      !< Size of the axis
+
+    if (present(sub_axis_id)) then
+      axis_name  => obj%subaxis(sub_axis_id)%subaxis_name
+      axis_length = obj%subaxis(sub_axis_id)%ending_index - obj%subaxis(sub_axis_id)%starting_index + 1
+    else
+      axis_name => obj%axis_name
+      axis_length = obj%length
+    endif
+
+    !< Add the axis as a dimension in the netcdf file based on the type of axis_domain and the fileobj type
+    select type (fileobj)
+      type is (FmsNetcdfFile_t)
+        !< Here the axis is not domain decomposed (i.e z_axis)
+        call register_axis(fileobj, axis_name, axis_length)
+      type is (FmsNetcdfDomainFile_t)
+        select case (obj%type_of_domain)
+        case (NO_DOMAIN)
+          !< Here the fileobj is domain decomposed, but the axis is not
+          !! Domain decomposed fileobjs can have axis that are not domain decomposed (i.e "Z" axis)
+          call register_axis(fileobj, axis_name, axis_length)
+        case (TWO_D_DOMAIN)
+          !< Here the axis is domain decomposed
+          call register_axis(fileobj, axis_name, obj%cart_name, domain_position=obj%domain_position)
+        end select
+      type is (FmsNetcdfUnstructuredDomainFile_t)
+        select case (obj%type_of_domain)
+        case (NO_DOMAIN)
+          !< Here the fileobj is in the unstructured domain, but the axis is not
+          !< Unstructured domain fileobjs can have axis that are not domain decomposed (i.e "Z" axis)
+          call register_axis(fileobj, axis_name, axis_length)
+        case (UG_DOMAIN)
+          !< Here the axis is in a unstructured domain
+          call register_axis(fileobj, axis_name)
+        end select
+    end select
+
+    !< Add the axis as a variable and write its metada
+    call register_field(fileobj, axis_name, obj%type_of_data, (/axis_name/))
+    call register_variable_attribute(fileobj, axis_name, "longname", obj%long_name, &
+      str_len=len_trim(obj%long_name))
+
+    if (obj%cart_name .NE. "N") &
+      call register_variable_attribute(fileobj, axis_name, "axis", obj%cart_name, str_len=1)
+
+    if (trim(obj%units) .NE. "none") &
+      call register_variable_attribute(fileobj, axis_name, "units", obj%units, str_len=len_trim(obj%units))
+
+    select case (obj%direction)
+    case (direction_up)
+      call register_variable_attribute(fileobj, axis_name, "positive", "up", str_len=2)
+    case (direction_down)
+      call register_variable_attribute(fileobj, axis_name, "positive", "down", str_len=4)
+    end select
+
+    if (obj%edges > 0) then
+      axis_edges_name = axis_obj(obj%edges)%axis_name
+      call register_variable_attribute(fileobj, axis_name, "edges", axis_edges_name, &
+        str_len=len_trim(axis_edges_name))
+    endif
+
+  end subroutine write_axis_metadata
+
+  !> @brief Write the axis data to an open fileobj
+  subroutine write_axis_data(obj, fileobj, sub_axis_id)
+    class(diagAxis_t),      INTENT(IN)    :: obj       !< diag_axis obj
+    class(FmsNetcdfFile_t), INTENT(INOUT) :: fileobj   !< Fms2_io fileobj to write the data to
+    integer, OPTIONAL,      INTENT(IN)    :: sub_axis_id !< ID of the sub_axis, if it exists
+
+    integer                       :: i         !< Starting index of a sub_axis
+    integer                       :: j         !< Ending index of a sub_axis
+
+    if (present(sub_axis_id)) then
+      i = obj%subaxis(sub_axis_id)%starting_index
+      j = obj%subaxis(sub_axis_id)%ending_index
+
+      call write_data(fileobj, obj%subaxis(sub_axis_id)%subaxis_name, obj%axis_data(i:j))
+    else
+      call write_data(fileobj, obj%axis_name, obj%axis_data)
+    endif
+  end subroutine write_axis_data
 
   !> @brief Get the length of the axis
   !> @return axis length
@@ -384,6 +484,38 @@ module fms_diag_axis_object_mod
        call mpp_error(FATAL, "diag_axit_init: The edge axis has not been defined. "&
                              "Call diag_axis_init for the edge axis first")
   end subroutine check_if_valid_edges
+
+  !> @brief Loop through a variable's axis_id to determine and return the domain type and domain to use
+  subroutine get_domain_and_domain_type(axis_id, domain_type, domain, var_name)
+    integer,                      INTENT(IN)  :: axis_id(:)    !< Array of axis ids
+    integer,                      INTENT(OUT) :: domain_type   !< fileobj_type to use
+    CLASS(diagDomain_t), POINTER, INTENT(OUT) :: domain        !< Domain
+    character(len=*),             INTENT(IN)  :: var_name      !< Name of the variable (for error messages)
+
+    integer :: i !< For do loops
+    integer :: j !< axis_id(i) (for less typing)
+
+    domain_type = NO_DOMAIN
+    domain => null()
+
+    do i = 1, size(axis_id)
+      j = axis_id(i)
+      !< Check that all the axis are in the same domain
+      if (domain_type .ne. axis_obj(j)%type_of_domain) then
+        !< If they are different domains, one of them can be NO_DOMAIN
+        !! i.e a variable can have axis that are domain decomposed (x,y) and an axis that isn't (z)
+        if (domain_type .eq. NO_DOMAIN .or. axis_obj(j)%type_of_domain .eq. NO_DOMAIN ) then
+          !< Update the domain_type and domain, if needed
+          if (axis_obj(j)%type_of_domain .eq. TWO_D_DOMAIN .or. axis_obj(j)%type_of_domain .eq. UG_DOMAIN) then
+            domain_type = axis_obj(j)%type_of_domain
+            domain => axis_obj(j)%axis_domain
+          endif
+        else
+          call mpp_error(FATAL, "The variable:"//trim(var_name)//" has axis that are not in the same domain")
+        endif
+      endif
+    enddo
+  end subroutine get_domain_and_domain_type
 end module fms_diag_axis_object_mod
 !> @}
 ! close documentation grouping
