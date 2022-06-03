@@ -1,5 +1,5 @@
 name: Test coupler build
-on: [push, pull_request]
+on: [pull_request]
 
 jobs:
   coupler-build:
