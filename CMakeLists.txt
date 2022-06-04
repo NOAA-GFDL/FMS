@@ -121,6 +121,7 @@ list(APPEND fms_fortran_src_files
   diag_manager/diag_util.F90
   diag_manager/fms_diag_object.F90
   diag_manager/fms_diag_yaml.F90
+  diag_manager/fms_diag_file_object.F90
   diag_manager/fms_diag_axis_object.F90
   diag_manager/fms_diag_dlinked_list.F90
   diag_manager/fms_diag_object_container.F90

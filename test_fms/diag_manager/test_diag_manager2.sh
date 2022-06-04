@@ -536,8 +536,10 @@ diag_files:
     - do_sst: .true.
   sub_region:
   - grid_type: latlon
-    dim1_begin: 64.0
-    dim3_end: 20.0
+    corner1: -80, 0
+    corner2: -80, 75
+    corner3: -60, 0
+    corner4: -60, 75
 - file_name: normal2
   freq: -1
   freq_units: days
@@ -561,9 +563,10 @@ diag_files:
   sub_region:
   - grid_type: index
     tile: 1
-    dim2_begin: 10
-    dim2_end: 20
-    dim1_begin: 10
+    corner1: 10, 15
+    corner2: 20, 15
+    corner3: 10, 25
+    corner4: 20, 25
 - file_name: normal3
   freq: -1
   freq_units: days
@@ -637,6 +640,76 @@ test_expect_success "test_diag_dlinked_list (test $my_test_count)" '
 
 test_expect_success "test_send_data_statfun (test $my_test_count)" '
   mpirun -n 1 ../test_send_data_statfun
+'
+
+printf "&diag_manager_nml \n use_modern_diag = .true. \n/" | cat > input.nml
+cat <<_EOF > diag_table.yaml
+title: test_diag_manager
+base_date: 2 1 1 0 0 0
+
+diag_files:
+- file_name: file1
+  freq: 6
+  freq_units: hours
+  time_units: hours
+  unlimdim: time
+  varlist:
+  - module: ocn_mod
+    var_name: var1
+    reduction: average
+    kind: r4
+  - module: ocn_mod
+    var_name: var2
+    output_name: potato
+    reduction: average
+    kind: r4
+- file_name: file2
+  freq: 6
+  freq_units: hours
+  time_units: hours
+  unlimdim: time
+  varlist:
+  - module: atm_mod
+    var_name: var3
+    reduction: average
+    kind: r4
+  - module: atm_mod
+    var_name: var4
+    output_name: i_on_a_sphere
+    reduction: average
+    kind: r8
+  - module: atm_mod
+    var_name: var6
+    reduction: average
+    kind: r8
+- file_name: file3
+  freq: 6
+  freq_units: hours
+  time_units: hours
+  unlimdim: time
+  varlist:
+  - module: lnd_mod
+    var_name: var5
+    reduction: average
+    kind: r4
+  - module: lnd_mod
+    var_name: var7
+    reduction: average
+    kind: r4
+- file_name: file4
+  freq: 6
+  freq_units: hours
+  time_units: hours
+  unlimdim: time
+  varlist:
+  - module: lnd_mod
+    var_name: var6
+    reduction: average
+    kind: r4
+_EOF
+
+test_expect_success "Test the modern diag manager end to end (test $my_test_count)" '
+  mpirun -n 6 ../test_modern_diag
 '
 
 test_done
