@@ -63,44 +63,44 @@ MODULE fms_send_data_statfun_mod
 CONTAINS
 
    SUBROUTINE initialize_imp (this, is, js , ks, ie, je, ke, hi, hj, f1, f2, f3, f4, &
-       & pow_value,  phys_window, need_compute, reduced_k_range, &
-       & time_rms, time_max, time_min, time_sum )
-    CLASS(fms_diag_field_procs_t), INTENT(inout)  :: this
-    INTEGER :: is, js, ks, ie, je, ke
-    INTEGER :: hi, hj
-    INTEGER :: f1, f2, f3, f4
-    INTEGER :: pow_value
-    LOGICAL :: phys_window , need_compute , reduced_k_range
-    LOGICAL :: time_rms, time_max, time_min, time_sum
+   & pow_value,  phys_window, need_compute, reduced_k_range, &
+   & time_rms, time_max, time_min, time_sum )
+      CLASS(fms_diag_field_procs_t), INTENT(inout)  :: this
+      INTEGER :: is, js, ks, ie, je, ke
+      INTEGER :: hi, hj
+      INTEGER :: f1, f2, f3, f4
+      INTEGER :: pow_value
+      LOGICAL :: phys_window , need_compute , reduced_k_range
+      LOGICAL :: time_rms, time_max, time_min, time_sum
 
-    this%is = is
-    this%js = js
-    this%ks = ks
-    this%ie = ie
-    this%je = je
-    this%ke = ke
+      this%is = is
+      this%js = js
+      this%ks = ks
+      this%ie = ie
+      this%je = je
+      this%ke = ke
 
-    this%hi = hi
-    this%hj = hj
+      this%hi = hi
+      this%hj = hj
 
-    this%f1 = f1
-    this%f2 = f2
-    this%f3 = f3
-    this%f4 = f4
+      this%f1 = f1
+      this%f2 = f2
+      this%f3 = f3
+      this%f4 = f4
 
-    this%pow_value = pow_value
-    this%phys_window = phys_window
-    this%need_compute = need_compute
-    this%reduced_k_range =reduced_k_range
+      this%pow_value = pow_value
+      this%phys_window = phys_window
+      this%need_compute = need_compute
+      this%reduced_k_range =reduced_k_range
 
-    !Is this output field the rms? If so, then average is also .TRUE.
-    this%time_rms = time_rms
-    this%time_max = time_max
-    this%time_min = time_min
-    ! Sum output over time interval
-    this%time_sum = time_sum
+      !Is this output field the rms? If so, then average is also .TRUE.
+      this%time_rms = time_rms
+      this%time_max = time_max
+      this%time_min = time_min
+      ! Sum output over time interval
+      this%time_sum = time_sum
 
-    END SUBROUTINE initialize_imp
+   END SUBROUTINE initialize_imp
 
 
    FUNCTION AVERAGE_THE_FIELD_IMP(this, diag_field_id, field, out_num, ofb, ofc, &
@@ -131,7 +131,7 @@ CONTAINS
       !! TODO: if possible
       !!TYPE(FmsWeightProcCfg_t), allocatable :: weight_procs
 
-       ! Power value for rms or pow(x) calculations
+      ! Power value for rms or pow(x) calculations
       INTEGER :: pow_value, is, js, ks, ie, je, ke, hi, hj, f1, f2, f3, f4
       LOGICAL :: phys_window , need_compute , reduced_k_range
 
@@ -153,7 +153,6 @@ CONTAINS
       ! class default
       !   stop 'Error in type selection'
       !end select
-
 
       ksr= l_start(3)
       ker= l_end(3)
@@ -203,7 +202,7 @@ CONTAINS
          MASK_PR_1_IF: IF ( PRESENT(mask) ) THEN
             MISSVAL_PR_1_IF: IF ( missvalue_present ) THEN !!(section: mask_varian .eq. true + mask present)
                IF ( debug_diag_manager ) THEN
-                  CALL update_bounds(out_num, is-hi, ie-hi, this%js-hj, this%je-hj, ks, ke)
+                  CALL update_bounds(out_num, is-hi, ie-hi, js-hj, je-hj, ks, ke)
                   CALL check_out_of_bounds(out_num, diag_field_id, err_msg=err_msg_local)
                   IF ( err_msg_local /= '' ) THEN
                      IF ( fms_error_handler('diag_manager_mod::send_data_3d', err_msg_local, err_msg) ) THEN
@@ -221,7 +220,7 @@ CONTAINS
                            DO i=is, ie
                               IF ( mask(i-is+1+hi, j-js+1+hj, k) ) THEN
                                  ofb(i-hi,j-hj,k1,sample) = ofb(i-hi,j-hj,k1,sample) +&
-                                 & (field(i-is+1+hi, j-js+1+hj, k) * weight1 ) ** pow_value
+                                 & (field(i-is+1+hi, j-js+1+hj, k) * weight1) ** pow_value
                                  ofc(i-hi,j-hj,k1,sample) = ofc(i-hi,j-hj,k1,sample) + weight1
                               END IF
                            END DO
@@ -249,7 +248,7 @@ CONTAINS
                            DO i=is, ie
                               IF ( mask(i-is+1+hi, j-js+1+hj, k) ) THEN
                                  ofb(i-hi,j-hj,k1,sample) = ofb(i-hi,j-hj,k1,sample) + &
-                                 & (field(i-is+1+hi, j-js+1+hj, k) * weight1 ) ** pow_value
+                                 & (field(i-is+1+hi, j-js+1+hj, k) * weight1) ** pow_value
                                  ofc(i-hi,j-hj,k1,sample) = ofc(i-hi,j-hj,k1,sample) + weight1
                               END IF
                            END DO
@@ -259,9 +258,9 @@ CONTAINS
                      DO k=ks, ke
                         DO j=js, je
                            DO i=is, ie
-                              IF ( mask(i-is+1+hi, j-js+1+hj, k) ) THEN !!USE WHERE
+                              IF ( mask(i-is+1+hi, j-js+1+hj, k) ) THEN
                                  ofb(i-hi,j-hj,k,sample) = ofb(i-hi,j-hj,k,sample) +  &
-                                 & ( field(i-is+1+hi,j-js+1+hj,k) * weight1 ) ** pow_value
+                                 & ( field(i-is+1+hi,j-js+1+hj,k) * weight1) ** pow_value
                                  ofc(i-hi,j-hj,k,sample) = ofc(i-hi,j-hj,k,sample) + weight1
                               END IF
                            END DO
@@ -306,7 +305,7 @@ CONTAINS
                                  j1=  j-l_start(2)-hj+1
                                  IF ( mask(i-is+1+hi, j-js+1+hj, k) ) THEN
                                     ofb(i1,j1,k1,sample) = ofb(i1,j1,k1,sample) +&
-                                    & ( field(i-is+1+hi,j-js+1+hj,k) * weight1 ) ** pow_value
+                                    & ( field(i-is+1+hi,j-js+1+hj,k) * weight1) ** pow_value
                                  ELSE
                                     ofb(i1,j1,k1,sample) = missvalue
                                  END IF
@@ -326,7 +325,7 @@ CONTAINS
                                  j1=  j-l_start(2)-hj+1
                                  IF ( mask(i-is+1+hi, j-js+1+hj, k) ) THEN
                                     ofb(i1,j1,k1,sample) = ofb(i1,j1,k1,sample) + &
-                                    & ( field(i-is+1+hi,j-js+1+hj,k) * weight1 ) ** pow_value
+                                    & ( field(i-is+1+hi,j-js+1+hj,k) * weight1) ** pow_value
                                  ELSE
                                     ofb(i1,j1,k1,sample) = missvalue
                                  END IF
@@ -370,7 +369,7 @@ CONTAINS
                            DO i=is, ie
                               IF ( mask(i-is+1+hi,j-js+1+hj,k) ) THEN
                                  ofb(i-hi,j-hj,k1,sample) = ofb(i-hi,j-hj,k1,sample) + &
-                                 & ( field(i-is+1+hi,j-js+1+hj,k) * weight1 ) **  pow_value
+                                 & ( field(i-is+1+hi,j-js+1+hj,k) * weight1) ** pow_value
                               ELSE
                                  ofb(i-hi,j-hj,k1,sample)= missvalue
                               END IF
@@ -452,7 +451,7 @@ CONTAINS
                               i1 = i-l_start(1)-hi+1
                               j1 =  j-l_start(2)-hj+1
                               ofb(i1,j1,:,sample)=  ofb(i1,j1,:,sample)+ &
-                              & (field(i-is+1+hi,j-js+1+hj,l_start(3):l_end(3)) * weight1 ) ** pow_value
+                              & (field(i-is+1+hi,j-js+1+hj,l_start(3):l_end(3)) * weight1) ** pow_value
                            END IF
                         END DO
                      END DO
@@ -465,7 +464,7 @@ CONTAINS
                               i1 = i-l_start(1)-hi+1
                               j1 =  j-l_start(2)-hj+1
                               ofb(i1,j1,:,sample) = ofb(i1,j1,:,sample) + &
-                              & (field(i-is+1+hi,j-js+1+hj,l_start(3):l_end(3)) * weight1 ) ** pow_value
+                              & (field(i-is+1+hi,j-js+1+hj,l_start(3):l_end(3)) * weight1) ** pow_value
                            END IF
                         END DO
                      END DO
@@ -707,7 +706,7 @@ CONTAINS
                               i1 = i-l_start(1)-hi+1
                               j1=  j-l_start(2)-hj+1
                               ofb(i1,j1,:,sample) = ofb(i1,j1,:,sample) + &
-                              & (field(i-is+1+hi,j-js+1+hj,l_start(3):l_end(3)) * weight1 ) ** pow_value
+                              & (field(i-is+1+hi,j-js+1+hj,l_start(3):l_end(3)) * weight1) ** pow_value
                            END IF
                         END DO
                      END DO
@@ -720,7 +719,7 @@ CONTAINS
                               i1 = i-l_start(1)-hi+1
                               j1=  j-l_start(2)-hj+1
                               ofb(i1,j1,:,sample)= ofb(i1,j1,:,sample) +&
-                              & (field(i-is+1+hi,j-js+1+hj,l_start(3):l_end(3)) * weight1 ) ** pow_value
+                              & (field(i-is+1+hi,j-js+1+hj,l_start(3):l_end(3)) * weight1) ** pow_value
                            END IF
                         END DO
                      END DO
