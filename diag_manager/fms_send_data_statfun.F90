@@ -169,6 +169,10 @@ CONTAINS
       f2 = this%f2
       f3 = this%f3
       f4 = this%f4
+      pow_value = this%pow_value
+      phys_window = this%phys_window
+      reduced_k_range = this%reduced_k_range
+      need_compute = this%need_compute
 
 !$OMP CRITICAL
       input_fields(diag_field_id)%numthreads = 1
@@ -829,15 +833,6 @@ CONTAINS
       INTEGER :: omp_get_level !< OMP function
 #endif
 
-      phys_window = output_fields(out_num)%phys_window
-      need_compute = output_fields(out_num)%need_compute
-      reduced_k_range = output_fields(out_num)%reduced_k_range
-
-      time_rms = this%time_rms
-      time_max = this%time_max
-      time_min = this%time_min
-      time_sum = this%time_sum
-
       ksr= l_start(3)
       ker= l_end(3)
 
@@ -853,6 +848,14 @@ CONTAINS
       f2 = this%f2
       f3 = this%f3
       f4 = this%f4
+
+      time_rms = this%time_rms
+      time_max = this%time_max
+      time_min = this%time_min
+      time_sum = this%time_sum
+
+      reduced_k_range = this%reduced_k_range
+      need_compute = this%need_compute
 
       ASSOCIATE( OFB => output_fields(out_num)%buffer)
 
