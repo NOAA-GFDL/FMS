@@ -465,7 +465,7 @@ CONTAINS
                               i1 = i-l_start(1)-hi+1
                               j1 =  j-l_start(2)-hj+1
                               ofb(i1,j1,:,sample) = ofb(i1,j1,:,sample) + &
-                              & (field(i-is+1+hi,j-js+1+hj,l_start(3):l_end(3)) + weight1 ) ** pow_value
+                              & (field(i-is+1+hi,j-js+1+hj,l_start(3):l_end(3)) * weight1 ) ** pow_value
                            END IF
                         END DO
                      END DO
@@ -707,7 +707,7 @@ CONTAINS
                               i1 = i-l_start(1)-hi+1
                               j1=  j-l_start(2)-hj+1
                               ofb(i1,j1,:,sample) = ofb(i1,j1,:,sample) + &
-                              & (field(i-is+1+hi,j-js+1+hj,l_start(3):l_end(3)) + weight1 ) ** pow_value
+                              & (field(i-is+1+hi,j-js+1+hj,l_start(3):l_end(3)) * weight1 ) ** pow_value
                            END IF
                         END DO
                      END DO
