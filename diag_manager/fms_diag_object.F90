@@ -8,15 +8,16 @@ module fms_diag_object_mod
 !! that contains all of the information of the variable.  It is extended by a type that holds the
 !! appropriate buffer for the data for manipulation.
 use diag_data_mod,  only: diag_null, CMOR_MISSING_VALUE, diag_null_string
-use diag_data_mod,  only: r8, r4, i8, i4, string, null_type_int
+use diag_data_mod,  only: r8, r4, i8, i4, string, null_type_int, NO_DOMAIN
 use diag_data_mod,  only: diag_null, diag_not_found, diag_not_registered, diag_registered_id
 
 use diag_axis_mod,  only: diag_axis_type
 use mpp_mod, only: fatal, note, warning, mpp_error
 #ifdef use_yaml
-use fms_diag_yaml_mod, only:  diagYamlFilesVar_type
-use fms_diag_file_object_mod, only: fmsDiagFile_type 
+use fms_diag_yaml_mod, only:  diagYamlFilesVar_type, get_diag_fields_entries, get_diag_files_id
+use fms_diag_file_object_mod, only: fmsDiagFile_type, FMS_diag_files
 #endif
+use fms_diag_axis_object_mod, only: diagDomain_t, get_domain_and_domain_type
 use time_manager_mod, ONLY: time_type
 !!!set_time, set_date, get_time, time_type, OPERATOR(>=), OPERATOR(>),&
 !!!       & OPERATOR(<), OPERATOR(==), OPERATOR(/=), OPERATOR(/), OPERATOR(+), ASSIGNMENT(=), get_date, &
@@ -31,8 +32,8 @@ implicit none
 type fmsDiagObject_type
 #ifdef use_yaml
      type (diagYamlFilesVar_type), allocatable, dimension(:) :: diag_field !< info from diag_table for this variable
-     type (fmsDiagFile_type), pointer, dimension(:)   :: diag_files        !< Array pointing to files that contain
-                                                                           !! the objects variable
+     integer,                      allocatable, dimension(:) :: file_ids   !< Ids of the FMS_diag_files the variable
+                                                                           !! belongs to
 #endif
      integer, allocatable, private                    :: diag_id           !< unique id for varable
      character(len=:), allocatable, dimension(:)      :: metadata          !< metadata for the variable
@@ -58,11 +59,13 @@ type fmsDiagObject_type
      integer, allocatable, dimension(:), private      :: output_units
      integer, allocatable, private                    :: t
      integer, allocatable, private                    :: tile_count        !< The number of tiles
-     integer, allocatable, dimension(:), private      :: axis_ids          !< variable axis IDs
+     integer, pointer, dimension(:), private          :: axis_ids          !< variable axis IDs
+     class(diagDomain_t), pointer,   private          :: domain            !< Domain
+     INTEGER                         , private        :: type_of_domain    !< The type of domain ("NO_DOMAIN",
+                                                                           !! "TWO_D_DOMAIN", or "UG_DOMAIN")
      integer, allocatable, private                    :: area, volume      !< The Area and Volume
      class(*), allocatable, private                   :: missing_value     !< The missing fill value
      class(*), allocatable, private                   :: data_RANGE        !< The range of the variable data
-     type (diag_axis_type), allocatable, dimension(:) :: axis              !< The axis object
      class(*), allocatable :: vardata0                                     !< Scalar data buffer 
      class(*), allocatable, dimension(:) :: vardata1                       !< 1D data buffer
      class(*), allocatable, dimension(:,:) :: vardata2                     !< 2D data buffer
@@ -88,9 +91,6 @@ type fmsDiagObject_type
 ! Is variable allocated check functions
 !TODO     procedure :: has_diag_field
      procedure :: has_diag_id
-#ifdef use_yaml
-     procedure :: has_diag_files
-#endif
      procedure :: has_metadata
      procedure :: has_static
      procedure :: has_registered
@@ -110,12 +110,10 @@ type fmsDiagObject_type
      procedure :: has_output_units
      procedure :: has_t
      procedure :: has_tile_count
-     procedure :: has_axis_ids
      procedure :: has_area
      procedure :: has_volume
      procedure :: has_missing_value
      procedure :: has_data_RANGE
-     procedure :: has_axis
 ! Get functions
      procedure :: get_diag_id => fms_diag_get_id
      procedure :: get_metadata
@@ -136,7 +134,6 @@ type fmsDiagObject_type
      procedure :: get_output_units
      procedure :: get_t
      procedure :: get_tile_count
-     procedure :: get_axis_ids
      procedure :: get_area
      procedure :: get_volume
      procedure :: get_missing_value
@@ -184,75 +181,75 @@ end subroutine diag_obj_init
 !> \Description Fills in and allocates (when necessary) the values in the diagnostic object
 subroutine fms_register_diag_field_obj &
                 !(dobj, modname, varname, axes, time, longname, units, missing_value, metadata)
-       (dobj, modname, varname, axes, init_time, &
+       (dobj, modname, varname, init_time, diag_field_indices, axes, &
        longname, units, missing_value, varRange, mask_variant, standname, &
        do_not_log, err_msg, interp_method, tile_count, area, volume, realm, metadata)
- class(fmsDiagObject_type)     , intent(inout)            :: dobj
- CHARACTER(len=*), INTENT(in) :: modname !< The module name
- CHARACTER(len=*), INTENT(in) :: varname !< The variable name
- INTEGER, INTENT(in) :: axes(:) !< The axes indicies
- TYPE(time_type), INTENT(in) :: init_time !< Initial time
- CHARACTER(len=*), OPTIONAL, INTENT(in) :: longname !< THe variables long name
- CHARACTER(len=*), OPTIONAL, INTENT(in) :: units !< The units of the variables
- CHARACTER(len=*), OPTIONAL, INTENT(in) :: standname !< The variables stanard name
- class(*), OPTIONAL, INTENT(in) :: missing_value
- class(*), OPTIONAL, INTENT(in) :: varRANGE(2)
- LOGICAL, OPTIONAL, INTENT(in) :: mask_variant
- LOGICAL, OPTIONAL, INTENT(in) :: do_not_log !< if TRUE, field info is not logged
- CHARACTER(len=*), OPTIONAL, INTENT(out):: err_msg !< Error message to be passed back up
- CHARACTER(len=*), OPTIONAL, INTENT(in) :: interp_method !< The interp method to be used when
-                                                         !! regridding the field in post-processing.
-                                                         !! Valid options are "conserve_order1",
-                                                         !! "conserve_order2", and "none".
- INTEGER, OPTIONAL, INTENT(in) :: tile_count !< the number of tiles
- INTEGER, OPTIONAL, INTENT(in) :: area !< diag_field_id containing the cell area field
- INTEGER, OPTIONAL, INTENT(in) :: volume !< diag_field_id containing the cell volume field
- CHARACTER(len=*), OPTIONAL, INTENT(in):: realm !< String to set as the value to the modeling_realm attribute
- character(len=*), optional, intent(in), dimension(:)     :: metadata !< metedata for the variable
 
+ class(fmsDiagObject_type),      INTENT(inout) :: dobj                  !< Diaj_obj to fill
+ CHARACTER(len=*),               INTENT(in)    :: modname               !< The module name
+ CHARACTER(len=*),               INTENT(in)    :: varname               !< The variable name
+ TYPE(time_type),                INTENT(in)    :: init_time             !< Initial time
+ integer,                        INTENT(in)    :: diag_field_indices(:) !< Array of indices to the field
+                                                                        !! in the yaml object
+ INTEGER, TARGET,  OPTIONAL,     INTENT(in)    :: axes(:)               !< The axes indicies
+ CHARACTER(len=*), OPTIONAL,     INTENT(in)    :: longname              !< THe variables long name
+ CHARACTER(len=*), OPTIONAL,     INTENT(in)    :: units                 !< The units of the variables
+ CHARACTER(len=*), OPTIONAL,     INTENT(in)    :: standname             !< The variables stanard name
+ class(*),         OPTIONAL,     INTENT(in)    :: missing_value         !< Missing value to add as a attribute
+ class(*),         OPTIONAL,     INTENT(in)    :: varRANGE(2)           !< Range to add as a attribute
+ LOGICAL,          OPTIONAL,     INTENT(in)    :: mask_variant          !< Mask
+ LOGICAL,          OPTIONAL,     INTENT(in)    :: do_not_log            !< if TRUE, field info is not logged
+ CHARACTER(len=*), OPTIONAL,     INTENT(out)   :: err_msg               !< Error message to be passed back up
+ CHARACTER(len=*), OPTIONAL,     INTENT(in)    :: interp_method         !< The interp method to be used when
+                                                                        !! regridding the field in post-processing.
+                                                                        !! Valid options are "conserve_order1",
+                                                                        !! "conserve_order2", and "none".
+ INTEGER,          OPTIONAL,     INTENT(in)    :: tile_count            !< the number of tiles
+ INTEGER,          OPTIONAL,     INTENT(in)    :: area                  !< diag_field_id of the cell area field
+ INTEGER,          OPTIONAL,     INTENT(in)    :: volume                !< diag_field_id of the cell volume field
+ CHARACTER(len=*), OPTIONAL,     INTENT(in)    :: realm                 !< String to set as the value to the
+                                                                        !! modeling_realm attribute
+ character(len=*), optional,     INTENT(in)    :: metadata(:)           !< metedata for the variable
+
+ integer :: i !< For do loops
+ integer :: j !< dobj%file_ids(i) (for less typing :)
+
+#ifdef use_yaml
 !> Fill in information from the register call
-  allocate(character(len=MAX_LEN_VARNAME) :: dobj%varname)
   dobj%varname = trim(varname)
-  allocate(character(len=len(modname)) :: dobj%modname)
   dobj%modname = trim(modname)
-!> Grab the information from the diag_table
-!  TO DO:
-!  dobj%diag_field = get_diag_table_field(trim(varname))
-!  dobj%diag_field = diag_yaml%get_diag_field(
-  !! TODO : Discuss design. Is this a premature return that somehow should
-  !! indicate a warning or failure to the calling function and/or the log files?
-!  if (is_field_type_null(dobj%diag_field)) then
-!     dobj%diag_id = diag_not_found
-!     dobj%vartype = diag_null
-!     return
-!  endif
 
-!> TO DO: Add all the info from the diag_axis obj
-!! axes will need to be changed to optional, so this subroutine can be used for both scalar and array fields
-!! the domain_type and domain will be need to added to the dobj
-! if (present(axes))
-!    dobj%axes => axes ! or something
-!    call get_domain_and_domain_type(dobj%axes, dobj%domain_type, dobj%domain, dobj%varname)
-     !! Send all the axes_info to the diag_files
-! else
-!    dobj%domain_type = NO_DOMAIN
-! endif
+!> Fill in diag_field and find the ids of the files that this variable is in
+  dobj%diag_field = get_diag_fields_entries(diag_field_indices)
+  dobj%file_ids   = get_diag_files_id(diag_field_indices)
+
+  if (present(axes)) then
+    dobj%axis_ids => axes
+    call get_domain_and_domain_type(dobj%axis_ids, dobj%type_of_domain, dobj%domain, dobj%varname)
+    do i = 1, size(dobj%file_ids)
+       j = dobj%file_ids(i)
+       call FMS_diag_files(j)%set_file_domain(dobj%domain, dobj%type_of_domain)
+       call FMS_diag_files(j)%add_axes(axes)
+    enddo
+     !> TO DO:
+     !!     Mark the field as registered in the diag_files
+  else
+     !> The variable is a scalar
+    dobj%type_of_domain = NO_DOMAIN
+    dobj%domain => null()
+  endif
 
 !> get the optional arguments if included and the diagnostic is in the diag table
   if (present(longname)) then
-     allocate(character(len=len(longname)) :: dobj%longname)
      dobj%longname = trim(longname)
   endif
   if (present(standname)) then
-     allocate(character(len=len(standname)) :: dobj%standname)
      dobj%standname = trim(standname)
   endif
   if (present(units)) then
-     allocate(character(len=len(units)) :: dobj%units)
      dobj%units = trim(units)
   endif
   if (present(metadata)) then
-     allocate(character(len=MAX_LEN_META) :: dobj%metadata(size(metadata)))
      dobj%metadata = metadata
   endif
   if (present(missing_value)) then
@@ -282,12 +279,8 @@ subroutine fms_register_diag_field_obj &
       end select
   endif
 
-!     write(6,*)"IKIND for diag_fields(1) is",dobj%diag_fields(1)%ikind
-!     write(6,*)"IKIND for "//trim(varname)//" is ",dobj%diag_field%ikind
-!> Set the registered flag to true
  dobj%registered = .true.
- ! save it in the diag object container.
-
+#endif
 end subroutine fms_register_diag_field_obj
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !> \brief Sets the diag_id.  This can only be done if a variable is unregistered
@@ -668,20 +661,6 @@ result(rslt)
        rslt = DIAG_NULL
      endif
 end function get_tile_count
-!> @brief Gets axis_ids
-!! @return copy of The axis IDs array or a diag_null if no axis IDs are set
-pure function get_axis_ids (obj) &
-result(rslt)
-     class (fmsDiagObject_type), intent(in) :: obj !< diag object
-     integer, allocatable, dimension(:) :: rslt 
-     if (allocated(obj%axis_ids)) then
-       allocate(rslt(size(obj%axis_ids)))
-       rslt = obj%axis_ids
-     else
-       allocate(rslt(1))
-       rslt = diag_null
-     endif
-end function get_axis_ids
 !> @brief Gets area
 !! @return copy of the area or diag_null if not allocated
 pure function get_area (obj) &
@@ -789,14 +768,6 @@ pure logical function has_diag_id (obj)
   class (fmsDiagObject_type), intent(in) :: obj !< diag object
   has_diag_id = allocated(obj%diag_id)
 end function has_diag_id
-#ifdef use_yaml
-!> @brief Checks if obj%diag_files pointer is associated
-!! @return true if obj%diag_files is associated
-pure logical function has_diag_files (obj)
-  class (fmsDiagObject_type), intent(in) :: obj !< diag object
-  has_diag_files = associated(obj%diag_files)
-end function has_diag_files
-#endif
 !> @brief Checks if obj%metadata is allocated
 !! @return true if obj%metadata is allocated
 pure logical function has_metadata (obj)
@@ -911,12 +882,6 @@ pure logical function has_tile_count (obj)
   class (fmsDiagObject_type), intent(in) :: obj !< diag object
   has_tile_count = allocated(obj%tile_count)
 end function has_tile_count
-!> @brief Checks if obj%axis_ids is allocated
-!! @return true if obj%axis_ids is allocated
-pure logical function has_axis_ids (obj)
-  class (fmsDiagObject_type), intent(in) :: obj !< diag object
-  has_axis_ids = allocated(obj%axis_ids)
-end function has_axis_ids
 !> @brief Checks if obj%area is allocated
 !! @return true if obj%area is allocated
 pure logical function has_area (obj)
@@ -941,11 +906,4 @@ pure logical function has_data_RANGE (obj)
   class (fmsDiagObject_type), intent(in) :: obj !< diag object
   has_data_RANGE = allocated(obj%data_RANGE)
 end function has_data_RANGE
-!> @brief Checks if obj%axis is allocated
-!! @return true if obj%axis is allocated
-pure logical function has_axis (obj)
-  class (fmsDiagObject_type), intent(in) :: obj !< diag object
-  has_axis = allocated(obj%axis)
-end function has_axis
-
 end module fms_diag_object_mod

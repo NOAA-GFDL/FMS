@@ -56,6 +56,7 @@ type(diagYamlFiles_type), allocatable, dimension (:) :: diag_files !< Files from
 type(diagYamlFilesVar_type), allocatable, dimension(:) :: diag_fields !< Fields from the diag_yaml
 type(diagYamlObject_type) :: my_yaml !< diagYamlObject obtained from diag_yaml_object_init
 type(diagYamlObject_type) :: ans     !< expected diagYamlObject
+integer, ALLOCATABLE :: diag_files_ids(:) !< Ids of the diag_files
 #endif
 
 namelist / check_crashes_nml / checking_crashes
@@ -109,7 +110,11 @@ if (.not. checking_crashes) then
   call compare_result("sst - fieldname", diag_fields(2)%get_var_varname(), "sst")
   deallocate(diag_fields)
 
-  diag_files = get_diag_files_entries(indices)
+  diag_files_ids = get_diag_files_id(indices)
+  allocate(diag_files(size(diag_files_ids)))
+
+  diag_files(1) = my_yaml%diag_files(diag_files_ids(1))
+  diag_files(2) = my_yaml%diag_files(diag_files_ids(2))
   call compare_result("sst - nfiles", size(diag_files), 2)
   call compare_result("sst - filename", diag_files(1)%get_file_fname(), "normal")
   call compare_result("sst - filename", diag_files(2)%get_file_fname(), "wild_card_name%4yr%2mo%2dy%2hr")

@@ -41,7 +41,7 @@ module fms_diag_axis_object_mod
   PRIVATE
 
   public :: diagAxis_t, set_subaxis, fms_diag_axis_init, fms_diag_axis_object_init, fms_diag_axis_object_end, &
-          & get_domain_and_domain_type, axis_obj
+          & get_domain_and_domain_type, axis_obj, diagDomain_t, sub_axis_objs
   !> @}
 
   !> @brief Type to hold the domain info for an axis
@@ -76,6 +76,7 @@ module fms_diag_axis_object_mod
     INTEGER                       :: starting_index !< Starting index of the subaxis relative to the parent axis
     INTEGER                       :: ending_index   !< Ending index of the subaxis relative to the parent axis
     class(*)        , ALLOCATABLE :: bounds         !< Bounds of the subaxis (lat/lon or indices)
+    INTEGER                       :: parent_axis_id !< Id of the parent_axis
     contains
       procedure :: exists => check_if_subaxis_exists
   END TYPE subaxis_t
@@ -121,6 +122,8 @@ module fms_diag_axis_object_mod
   integer                                :: number_of_axis !< Number of axis that has been registered
   type(diagAxis_t), ALLOCATABLE, TARGET  :: axis_obj(:)    !< Diag_axis objects
   logical                                :: module_is_initialized !< Flag indicating if the module is initialized
+  integer                                :: nsubaxis_objs  !< Number of sub_axis that has been registered
+  type(subaxis_t), ALLOCATABLE, Target   :: sub_axis_objs(:) !< Registered sub_axis objects
 
   !> @addtogroup fms_diag_yaml_mod
   !> @{
@@ -319,9 +322,13 @@ module fms_diag_axis_object_mod
   end function
 
   !> @brief Set the subaxis of the axis obj
-  subroutine set_subaxis(obj, bounds)
-    class(diagAxis_t), INTENT(INOUT) :: obj       !< diag_axis obj
+  !> @return A sub_axis id corresponding to the indices of the sub_axes in the sub_axes_objs array
+  function set_subaxis(obj, bounds) &
+  result(sub_axes_id)
+    class(diagAxis_t),  INTENT(INOUT) :: obj       !< diag_axis obj
     class(*),           INTENT(INOUT) :: bounds(:) !< bound of the subaxis
+
+    integer :: sub_axes_id
 
     integer :: i !< For do loops
 
@@ -332,7 +339,11 @@ module fms_diag_axis_object_mod
 
     !< TO DO: everything
     obj%nsubaxis = obj%nsubaxis + 1
-  end subroutine
+
+    nsubaxis_objs = nsubaxis_objs + 1
+    sub_axes_id = nsubaxis_objs
+    !< TO DO: set the parent_axis_id
+  end function
 
   !!!!!!!!!!!!!!!!!! SUB AXIS PROCEDURES !!!!!!!!!!!!!!!!!
   !> @brief Check if a subaxis was already defined
