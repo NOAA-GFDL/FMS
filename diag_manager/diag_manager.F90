@@ -1721,7 +1721,7 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
     LOGICAL :: time_max, time_min, time_rms, time_sum
     LOGICAL :: missvalue_present
     LOGICAL, ALLOCATABLE, DIMENSION(:,:,:) :: oor_mask
-    CHARACTER(len=128) :: err_msg_local  !!TODO: 256 or 128 chars?
+    CHARACTER(len=256) :: err_msg_local  !!TODO: 256 or 128 chars?
     CHARACTER(len=128) :: error_string, error_string1
     logical :: temp_result
     TYPE(fms_diag_field_procs_t), allocatable :: sprocs_obj
