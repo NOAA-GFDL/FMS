@@ -40,7 +40,6 @@ MODULE fms_send_data_statfun_mod
    & fms_error_handler
    USE diag_data_mod, ONLY:  input_fields, output_fields, debug_diag_manager
    use diag_util_mod, ONLY: check_out_of_bounds, update_bounds
-   use fms_diag_weight_procs_mod
 
    IMPLICIT NONE
 
