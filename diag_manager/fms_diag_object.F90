@@ -250,6 +250,7 @@ subroutine fms_register_diag_field_obj &
      dobj%units = trim(units)
   endif
   if (present(metadata)) then
+     allocate(character(len=MAX_LEN_META) :: dobj%metadata(size(metadata)))
      dobj%metadata = metadata
   endif
   if (present(missing_value)) then
