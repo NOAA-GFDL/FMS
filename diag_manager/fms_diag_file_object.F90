@@ -426,6 +426,9 @@ subroutine set_file_domain(obj, domain, type_of_domain)
   integer,                 INTENT(in)          :: type_of_domain !< fileobj_type to use
   CLASS(diagDomain_t),     INTENT(in), target  :: domain         !< Domain
 
+  !! If this a sub_regional, don't do anything here
+  if (obj%type_of_domain .eq. SUB_REGIONAL) return
+
   if (type_of_domain .ne. obj%type_of_domain) then
   !! If the current type_of_domain in the file obj is not the same as the variable calling this subroutine
 
