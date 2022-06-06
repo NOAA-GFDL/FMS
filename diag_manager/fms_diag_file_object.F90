@@ -50,7 +50,8 @@ type :: fmsDiagFile_type
 #endif
   integer                                      :: type_of_domain !< The type of domain to use to open the file
                                                                  !! NO_DOMAIN, TWO_D_DOMAIN, UG_DOMAIN, SUB_REGIONAL
-  class(diagDomain_t), pointer                 :: domain         !< The domain to use, null if NO_DOMAIN or SUB_REGIONAL
+  class(diagDomain_t), pointer                 :: domain         !< The domain to use,
+                                                                 !! null if NO_DOMAIN or SUB_REGIONAL
   character(len=:) , dimension(:), allocatable :: file_metadata_from_model !< File metadata that comes from
                                                                            !! the model.
   integer, dimension(:), allocatable :: var_ids !< Variable IDs corresponding to file_varlist
@@ -65,12 +66,12 @@ type :: fmsDiagFile_type
   integer :: number_of_axis !< Number of axis in the file
 
  contains
-  procedure, public :: set_file_domain
-  procedure, public :: add_axes
   procedure, public :: has_file_metadata_from_model
   procedure, public :: has_fileobj
 #ifdef use_yaml
   procedure, public :: has_diag_yaml_file
+  procedure, public :: set_file_domain
+  procedure, public :: add_axes
 #endif
   procedure, public :: has_var_ids
   procedure, public :: get_id
@@ -448,6 +449,7 @@ subroutine set_file_domain(obj, domain, type_of_domain)
 
 end subroutine set_file_domain
 
+!> @brief Loops through a variable's axis_ids and adds them to the FMSDiagFile object if they don't exist
 subroutine add_axes(obj, axis_ids)
   class(fmsDiagFile_type), intent(inout)       :: obj            !< The file object
   integer,                 INTENT(in)          :: axis_ids(:)    !< Array of axes_ids
