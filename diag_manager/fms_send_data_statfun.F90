@@ -40,6 +40,7 @@ MODULE fms_send_data_statfun_mod
    & fms_error_handler
    USE diag_data_mod, ONLY:  input_fields, output_fields, debug_diag_manager
    use diag_util_mod, ONLY: check_out_of_bounds, update_bounds
+   use fms_diag_weight_procs_mod
 
    IMPLICIT NONE
 
@@ -59,7 +60,6 @@ MODULE fms_send_data_statfun_mod
       procedure :: average_the_field => average_the_field_imp
       procedure :: sample_the_field => sample_the_field_imp
    end type fms_diag_field_procs_t
-
 CONTAINS
 
    SUBROUTINE initialize_imp (this, is, js , ks, ie, je, ke, hi, hj, f1, f2, f3, f4, &
@@ -144,7 +144,6 @@ CONTAINS
       INTEGER :: omp_get_num_threads !< OMP function
       INTEGER :: omp_get_level !< OMP function
 #endif
-
 
       !REAL, DIMENSION(:,:,:,:), pointer :: ofb
       !select type (ofb_in)
@@ -798,6 +797,7 @@ CONTAINS
 
    END FUNCTION AVERAGE_THE_FIELD_IMP
 
+
    FUNCTION SAMPLE_THE_FIELD_IMP (this, diag_field_id, field, out_num, &
    & mask, sample, missvalue, missvalue_present, &
    & l_start, l_end, err_msg,  err_msg_local) result( succeded )
@@ -819,8 +819,8 @@ CONTAINS
       CHARACTER(len=128):: error_string
 
       ! Power value for rms or pow(x) calculations
-      INTEGER :: pow_value, is, js, ks, ie, je, ke, hi, hj, f1, f2, f3, f4
-      LOGICAL :: phys_window , need_compute , reduced_k_range
+      INTEGER :: is, js, ks, ie, je, ke, hi, hj, f1, f2, f3, f4
+      LOGICAL :: need_compute , reduced_k_range
 
 
       INTEGER :: ksr, ker

@@ -458,7 +458,7 @@ setup_test
 test_expect_success "Unstructured grid (test $my_test_count)" '
   mpirun -n 1 ../test_diag_manager
 '
-
+my_test_count=24
 # test_diag_manager_time
 cat <<_EOF > diag_table
 test_diag_manager
@@ -494,6 +494,7 @@ test_diag_manager
  "test_diag_manager_mod", "ice", "ice", "test_diurnal",  "all", "diurnal3", "none", 2
 _EOF
 
+my_test_count=25
 test_expect_success "diurnal test (test $my_test_count)" '
   mpirun -n 1 ../test_diag_manager_time
 '
@@ -576,6 +577,7 @@ diag_files:
 _EOF
 cp diag_table.yaml diag_table.yaml_base
 
+my_test_count=26
 test_expect_success "diag_yaml test (test $my_test_count)" '
   mpirun -n 1 ../test_diag_yaml
 '
@@ -627,17 +629,23 @@ diag_files:
     reduction: average
     kind: r4
 _EOF
+
+my_test_count=41
 test_expect_success "Test the diag_ocean feature in diag_manager_init (test $my_test_count)" '
   mpirun -n 2 ../test_diag_ocean
 '
 
+my_test_count=42
 test_expect_success "test_diag_object_container (test $my_test_count)" '
   mpirun -n 1 ../test_diag_object_container
 '
+
+my_test_count=43
 test_expect_success "test_diag_dlinked_list (test $my_test_count)" '
   mpirun -n 1 ../test_diag_dlinked_list
 '
 
+my_test_count=44
 test_expect_success "test_send_data_statfun (test $my_test_count)" '
   mpirun -n 1 ../test_send_data_statfun
 '
@@ -708,6 +716,7 @@ diag_files:
     kind: r4
 _EOF
 
+my_test_count=45
 test_expect_success "Test the modern diag manager end to end (test $my_test_count)" '
   mpirun -n 6 ../test_modern_diag
 '
