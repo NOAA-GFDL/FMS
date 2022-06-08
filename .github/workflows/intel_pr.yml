@@ -10,6 +10,7 @@ jobs:
         CFLAGS:  "-I/libs/include"
         FCFLAGS: "-I/libs/include"
         LDFLAGS: "-L/libs/lib"
+        TEST_VERBOSE: 1
     steps:
     - name: Cache dependencies
       id: cache
@@ -42,6 +43,4 @@ jobs:
     - name: Compile
       run: make -j || make # parallel builds sometimes fail
     - name: Run test suite
-      run: make -j check
-      env:
-        TEST_VERBOSE: 1
+      run: make -j check LD_LIBRARY_PATH="/libs/lib:$LD_LIBRARY_PATH"
