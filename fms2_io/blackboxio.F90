@@ -20,9 +20,6 @@
 !> @ingroup fms2_io
 !> @brief File utility functions for use within @ref fms2_io
 
-!> @file
-!> @brief File for @ref blackboxio
-
 !> @addtogroup blackboxio
 !> @{
 module blackboxio

@@ -19,10 +19,10 @@
 !> @defgroup axis_utils_mod axis_utils_mod
 !> @ingroup axis_utils
 !> @brief A set of utilities for manipulating axes and extracting axis attributes,
+!! A more recent version of this module using the updated fms2_io is available, @ref axis_utils2
+!! but this module should be used if still using @ref mpp_io
+!!
 !> @author M.J. Harrison
-
-!> @file
-!> @brief File for @ref axis_utils_mod
 
 !> @addtogroup axis_utils_mod
 !> @{

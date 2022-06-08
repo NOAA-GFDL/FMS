@@ -24,9 +24,6 @@
 !! termination while interfacing with the field manager.
 !> @author Richard D. Slater
 
-!> @file
-!> @brief File for @ref fm_util_mod
-
 !> @addtogroup fm_util_mod
 !> @{
 module fm_util_mod  !{

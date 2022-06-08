@@ -17,7 +17,11 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 !> @file
-!> @ingroup fms_netcdf_domain_io_mod
+!> @brief Adds domain decomposed variable for restarts for the @ref register_restart_field
+!! interface
+
+!> @addtogroup fms2_io_mod
+!> @{
 
 !> @brief Add a domain decomposed variable.
 subroutine register_domain_restart_variable_0d(fileobj, variable_name, vdata, &
@@ -110,3 +114,4 @@ subroutine register_domain_restart_variable_5d(fileobj, variable_name, vdata, &
 
   call netcdf_add_restart_variable(fileobj, variable_name, vdata, dimensions,is_optional)
 end subroutine register_domain_restart_variable_5d
+!> @}

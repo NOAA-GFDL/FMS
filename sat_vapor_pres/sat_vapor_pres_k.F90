@@ -21,9 +21,6 @@
 !> @brief Kernel module to be used by @ref sat_vapor_pres_mod for
 !! table lookups and calculations
 
-!> @file
-!> @brief File for @ref sat_vapor_pres_k_mod
-
  module sat_vapor_pres_k_mod
 
 ! This module is what I (pjp) think a kernel should be.

@@ -88,9 +88,6 @@
 !!     J_OCN_ATMxOCN, and AREA_ATMxOCN</TT>.  These fields may be generated
 !!     by the <TT>make_xgrids</TT> utility.
 
-!> @file
-!> @brief File for @ref xgrid_mod
-
 !> @addtogroup xgrid_mod
 !> @{
 module xgrid_mod
