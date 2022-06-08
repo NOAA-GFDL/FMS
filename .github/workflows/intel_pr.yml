@@ -1,0 +1,47 @@
+on: [push, pull_request]
+jobs:
+  Code-Coverage:
+    runs-on: ubuntu-latest
+    container:
+      image: intel/oneapi-hpckit:devel-ubuntu20.04
+      env:
+        CC: mpiicc
+        FC: mpiifort
+        CFLAGS:  "-I/libs/include"
+        FCFLAGS: "-I/libs/include"
+        LDFLAGS: "-L/libs/lib"
+    steps:
+    - name: Cache dependencies
+      id: cache
+      uses: actions/cache@v3
+      with:
+        path: /libs
+        key: ${{ runner.os }}-intel-libs
+    - name: Install packages for building 
+      run: apt update && apt install -y autoconf libtool automake zlibc zlib1g-dev
+    - if: steps.cache.outputs.cache-hit != 'true'
+      name: Build netcdf
+      run: |
+        mkdir /libs
+        wget https://hdf-wordpress-1.s3.amazonaws.com/wp-content/uploads/manual/HDF5/HDF5_1_12_2/source/hdf5-1.12.2.tar.gz
+        tar xf hdf5-1.12.2.tar.gz && cd hdf5-1.12.2
+        ./configure --prefix=/libs
+        make -j install && cd ..
+        wget https://github.com/Unidata/netcdf-c/archive/refs/tags/v4.8.1.tar.gz
+        tar xf v4.8.1.tar.gz && cd netcdf-c-4.8.1
+        ./configure --prefix=/libs --enable-remote-fortran-bootstrap
+        make -j install
+        # sets this here to pass embeded configure checks(needs var from image)
+        export LD_LIBRARY_PATH="/libs/lib:$LD_LIBRARY_PATH"
+        make -j -k build-netcdf-fortran
+        make -j install-netcdf-fortran && cd
+    - name: checkout
+      uses: actions/checkout@v2
+    - name: Configure
+      run: autoreconf -if ./configure.ac && ./configure #--with-yaml
+    - name: Compile
+      run: make -j || make # parallel builds sometimes fail
+    - name: Run test suite
+      run: make -j check
+      env:
+        TEST_VERBOSE: 1
