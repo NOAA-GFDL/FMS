@@ -11,6 +11,7 @@ jobs:
         FCFLAGS: "-I/libs/include"
         LDFLAGS: "-L/libs/lib"
         TEST_VERBOSE: 1
+        I_MPI_FABRICS: "shm" # needed for mpi in image
     steps:
     - name: Cache dependencies
       id: cache
