@@ -33,6 +33,11 @@ TEST_NAME="$(basename "$0" .sh)"
 TEST_NUMBER="${TEST_NAME%%-*}"
 TEST_NUMBER="${TEST_NUMBER#t}"
 
+# if using intel with a limited stack size, sets to run smaller tests
+if [ "$($FC --version | grep ifort)" -a "$(ulimit -s)" != "unlimited" 2> /dev/null ]; then
+  STACK_LIMITED=1
+fi
+
 exec 7>&2
 # For now, write all output
 #if test -n "$VERBOSE"
