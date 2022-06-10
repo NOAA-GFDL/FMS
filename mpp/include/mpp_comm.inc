@@ -19,9 +19,11 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 !> @file
-!> @ingroup mpp
-!> @brief Imports checksum, gather, and scatter routines used for communications and calculations
-!! between PE's in @ref mpp_mod
+!> @brief Imports checksum, gather, and scatter routines from other include files used
+!! for communications and calculations between PE's in @ref mpp_mod
+
+!> @addtogroup mpp_mod
+!> @{
 
 #if defined(use_libMPI)
 #include <mpp_comm_mpi.inc>
@@ -444,4 +446,4 @@
 #define MPP_SCATTER_PELIST_2D_ mpp_scatter_pelist_real8_2d
 #define MPP_SCATTER_PELIST_3D_ mpp_scatter_pelist_real8_3d
 #include <mpp_scatter.h>
-
+!> @}
