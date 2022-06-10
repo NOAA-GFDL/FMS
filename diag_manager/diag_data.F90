@@ -202,6 +202,12 @@ use platform_mod
      CHARACTER(len=10) :: filename_time_bounds
   END TYPE file_type
 
+TYPE, public :: fms_diag_buff_intervals_t
+  INTEGER :: imin, imax
+  INTEGER :: jmin, jmax
+  INTEGER :: kmin, kmax
+END TYPE fms_diag_buff_intervals_t
+
   !> @brief Type to hold the input field description
   !> @ingroup diag_data_mod
   TYPE input_field_type
@@ -276,7 +282,8 @@ use platform_mod
      TYPE(diag_grid) :: output_grid
      LOGICAL :: local_output, need_compute, phys_window, written_once
      LOGICAL :: reduced_k_range
-     INTEGER :: imin, imax, jmin, jmax, kmin, kmax
+     !! INTEGER :: imin, imax, jmin, jmax, kmin, kmax
+     TYPE(fms_diag_buff_intervals_t) ntval
      TYPE(time_type) :: Time_of_prev_field_data
      TYPE(diag_atttype), allocatable, dimension(:) :: attributes
      INTEGER :: num_attributes

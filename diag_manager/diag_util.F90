@@ -53,7 +53,7 @@ use,intrinsic :: iso_c_binding, only: c_double,c_float,c_int64_t, &
        & debug_diag_manager, flush_nc_files, output_field_type, max_field_attributes, max_file_attributes,&
        & file_type, prepend_date, region_out_use_alt_value, GLO_REG_VAL, GLO_REG_VAL_ALT,&
        & DIAG_FIELD_NOT_FOUND, diag_init_time
-  USE diag_data_mod, ONLY: fileobjU, fileobj, fnum_for_domain, fileobjND
+  USE diag_data_mod, ONLY: fileobjU, fileobj, fnum_for_domain, fileobjND, fms_diag_buff_intervals_t
   USE diag_axis_mod, ONLY: get_diag_axis_data, get_axis_global_length, get_diag_axis_cart,&
        & get_domain1d, get_domain2d, diag_subaxes_init, diag_axis_init, get_diag_axis, get_axis_aux,&
        & get_axes_shift, get_diag_axis_name, get_diag_axis_domain_name, get_domainUG, &
@@ -706,182 +706,186 @@ CONTAINS
          & TRIM(axes_list)
   END SUBROUTINE log_diag_field_info
 
-  !> @brief Update the <TT>output_fields</TT> x, y, and z min and max boundaries (array indices).
-  SUBROUTINE update_bounds(out_num, lower_i, upper_i, lower_j, upper_j, lower_k, upper_k)
-    INTEGER, INTENT(in) :: out_num !< output field ID
-    INTEGER, INTENT(in) :: lower_i !< Lower i bound.
-    INTEGER, INTENT(in) :: upper_i !< Upper i bound.
-    INTEGER, INTENT(in) :: lower_j !< Lower j bound.
-    INTEGER, INTENT(in) :: upper_j !< Upper j bound.
-    INTEGER, INTENT(in) :: lower_k !< Lower k bound.
-    INTEGER, INTENT(in) :: upper_k !< Upper k bound.
 
-    output_fields(out_num)%imin = MIN(output_fields(out_num)%imin, lower_i)
-    output_fields(out_num)%imax = MAX(output_fields(out_num)%imax, upper_i)
-    output_fields(out_num)%jmin = MIN(output_fields(out_num)%jmin, lower_j)
-    output_fields(out_num)%jmax = MAX(output_fields(out_num)%jmax, upper_j)
-    output_fields(out_num)%kmin = MIN(output_fields(out_num)%kmin, lower_k)
-    output_fields(out_num)%kmax = MAX(output_fields(out_num)%kmax, upper_k)
-  END SUBROUTINE update_bounds
+!> @brief Update the <TT>output_fields</TT> x, y, and z min and max boundaries (array indices).
+SUBROUTINE update_bounds(ntval, lower_i, upper_i, lower_j, upper_j, lower_k, upper_k)
+  TYPE  (fms_diag_buff_intervals_t) :: ntval
+  INTEGER, INTENT(in) :: lower_i !< Lower i bound.
+  INTEGER, INTENT(in) :: upper_i !< Upper i bound.
+  INTEGER, INTENT(in) :: lower_j !< Lower j bound.
+  INTEGER, INTENT(in) :: upper_j !< Upper j bound.
+  INTEGER, INTENT(in) :: lower_k !< Lower k bound.
+  INTEGER, INTENT(in) :: upper_k !< Upper k bound.
 
-  !> @brief Checks if the array indices for <TT>output_fields(out_num)</TT> are outside the
-  !! <TT>output_fields(out_num)%buffer</TT> upper
-  !!     and lower bounds.
-  SUBROUTINE check_out_of_bounds(out_num, diag_field_id, err_msg)
-    INTEGER, INTENT(in) :: out_num !< Output field ID number.
-    INTEGER, INTENT(in) :: diag_field_id !< Input field ID number.
-    CHARACTER(len=*), INTENT(out) :: err_msg !< Return status of <TT>check_out_of_bounds</TT>.  An empty
-                                             !! error string indicates the x, y, and z indices are not outside the
-                                             !!     buffer array boundaries.
+  ntval%imin = MIN(ntval%imin, lower_i)
+  ntval%imax = MAX(ntval%imax, upper_i)
+  ntval%jmin = MIN(ntval%jmin, lower_j)
+  ntval%jmax = MAX(ntval%jmax, upper_j)
+  ntval%kmin = MIN(ntval%kmin, lower_k)
+  ntval%kmax = MAX(ntval%kmax, upper_k)
+END SUBROUTINE update_bounds
 
-    CHARACTER(len=128) :: error_string1, error_string2
+!> @brief Checks if the array indices for <TT>output_fields(out_num)</TT> are outside the
+!! <TT>output_fields(out_num)%buffer</TT> upper
+!!     and lower bounds.
+SUBROUTINE check_out_of_bounds(buffer, ntval, output_name, diag_field_id, err_msg)
+  REAL, INTENT(in), DIMENSION(:,:,:,:) :: buffer
+  TYPE (fms_diag_buff_intervals_t)     :: ntval
+  CHARACTER(len=*), INTENT(out) :: output_name
+  INTEGER, INTENT(in) :: diag_field_id !< Input field ID number.
+  CHARACTER(len=*), INTENT(out) :: err_msg !< Return status of <TT>check_out_of_bounds</TT>.  An empty
+  !! error string indicates the x, y, and z indices are not outside the
+  !!     buffer array boundaries.
 
-    IF (   output_fields(out_num)%imin < LBOUND(output_fields(out_num)%buffer,1) .OR.&
-         & output_fields(out_num)%imax > UBOUND(output_fields(out_num)%buffer,1) .OR.&
-         & output_fields(out_num)%jmin < LBOUND(output_fields(out_num)%buffer,2) .OR.&
-         & output_fields(out_num)%jmax > UBOUND(output_fields(out_num)%buffer,2) .OR.&
-         & output_fields(out_num)%kmin < LBOUND(output_fields(out_num)%buffer,3) .OR.&
-         & output_fields(out_num)%kmax > UBOUND(output_fields(out_num)%buffer,3) ) THEN
-       WRITE(error_string1,'(a,"/",a)') TRIM(input_fields(diag_field_id)%module_name),&
-            & TRIM(output_fields(out_num)%output_name)
-       error_string2 ='Buffer bounds=   :   ,   :   ,   :     Actual bounds=   :   ,   :   ,   :   '
-       WRITE(error_string2(15:17),'(i3)') LBOUND(output_fields(out_num)%buffer,1)
-       WRITE(error_string2(19:21),'(i3)') UBOUND(output_fields(out_num)%buffer,1)
-       WRITE(error_string2(23:25),'(i3)') LBOUND(output_fields(out_num)%buffer,2)
-       WRITE(error_string2(27:29),'(i3)') UBOUND(output_fields(out_num)%buffer,2)
-       WRITE(error_string2(31:33),'(i3)') LBOUND(output_fields(out_num)%buffer,3)
-       WRITE(error_string2(35:37),'(i3)') UBOUND(output_fields(out_num)%buffer,3)
-       WRITE(error_string2(54:56),'(i3)') output_fields(out_num)%imin
-       WRITE(error_string2(58:60),'(i3)') output_fields(out_num)%imax
-       WRITE(error_string2(62:64),'(i3)') output_fields(out_num)%jmin
-       WRITE(error_string2(66:68),'(i3)') output_fields(out_num)%jmax
-       WRITE(error_string2(70:72),'(i3)') output_fields(out_num)%kmin
-       WRITE(error_string2(74:76),'(i3)') output_fields(out_num)%kmax
-       err_msg = 'module/output_field='//TRIM(error_string1)//&
-            & '  Bounds of buffer exceeded.  '//TRIM(error_string2)
-       !   imax, imin, etc need to be reset in case the program is not terminated.
-       output_fields(out_num)%imax = 0
-       output_fields(out_num)%imin = VERY_LARGE_AXIS_LENGTH
-       output_fields(out_num)%jmax = 0
-       output_fields(out_num)%jmin = VERY_LARGE_AXIS_LENGTH
-       output_fields(out_num)%kmax = 0
-       output_fields(out_num)%kmin = VERY_LARGE_AXIS_LENGTH
-    ELSE
-       err_msg = ''
-    END IF
+  CHARACTER(len=128) :: error_string1, error_string2
 
-  END SUBROUTINE check_out_of_bounds
+  IF (   ntval%imin < LBOUND(buffer,1) .OR.&
+  & ntval%imax > UBOUND(buffer,1) .OR.&
+  & ntval%jmin < LBOUND(buffer,2) .OR.&
+  & ntval%jmax > UBOUND(buffer,2) .OR.&
+  & ntval%kmin < LBOUND(buffer,3) .OR.&
+  & ntval%kmax > UBOUND(buffer,3) ) THEN
+     WRITE(error_string1,'(a,"/",a)') TRIM(input_fields(diag_field_id)%module_name),&
+     & TRIM(output_name)
+     error_string2 ='Buffer bounds=   :   ,   :   ,   :     Actual bounds=   :   ,   :   ,   :   '
+     WRITE(error_string2(15:17),'(i3)') LBOUND(buffer,1)
+     WRITE(error_string2(19:21),'(i3)') UBOUND(buffer,1)
+     WRITE(error_string2(23:25),'(i3)') LBOUND(buffer,2)
+     WRITE(error_string2(27:29),'(i3)') UBOUND(buffer,2)
+     WRITE(error_string2(31:33),'(i3)') LBOUND(buffer,3)
+     WRITE(error_string2(35:37),'(i3)') UBOUND(buffer,3)
+     WRITE(error_string2(54:56),'(i3)') ntval%imin
+     WRITE(error_string2(58:60),'(i3)') ntval%imax
+     WRITE(error_string2(62:64),'(i3)') ntval%jmin
+     WRITE(error_string2(66:68),'(i3)') ntval%jmax
+     WRITE(error_string2(70:72),'(i3)') ntval%kmin
+     WRITE(error_string2(74:76),'(i3)') ntval%kmax
+     err_msg = 'module/output_field='//TRIM(error_string1)//&
+     & '  Bounds of buffer exceeded.  '//TRIM(error_string2)
+     !   imax, imin, etc need to be reset in case the program is not terminated.
+     ntval%imax = 0
+     ntval%imin = VERY_LARGE_AXIS_LENGTH
+     ntval%jmax = 0
+     ntval%jmin = VERY_LARGE_AXIS_LENGTH
+     ntval%kmax = 0
+     ntval%kmin = VERY_LARGE_AXIS_LENGTH
+  ELSE
+     err_msg = ''
+  END IF
+
+END SUBROUTINE check_out_of_bounds
 
   !> @brief  Check if the array indices for <TT>output_fields(out_num)</TT> are equal to the
   !! <TT>output_fields(out_num)%buffer</TT>
   !!     upper and lower bounds.
-  SUBROUTINE check_bounds_are_exact_dynamic(out_num, diag_field_id, Time, err_msg)
-    INTEGER, INTENT(in) :: out_num !< Output field ID number.
-    INTEGER, INTENT(in) :: diag_field_id !< Input field ID number.
-    TYPE(time_type), INTENT(in) :: Time !< Time to use in check.  The check is only performed if
-                                        !! <TT>output_fields(out_num)%Time_of_prev_field_data</TT> is not
-                                        !! equal to <TT>Time</TT> or <TT>Time_zero</TT>.
-    CHARACTER(len=*), INTENT(out) :: err_msg !< Return status of <TT>check_bounds_are_exact_dynamic</TT>.
-                                             !! An empty error string indicates the x, y, and z indices are
-                                             !!     equal to the buffer array boundaries.
+SUBROUTINE check_bounds_are_exact_dynamic(out_num, diag_field_id, Time, err_msg)
+  INTEGER, INTENT(in) :: out_num !< Output field ID number.
+  INTEGER, INTENT(in) :: diag_field_id !< Input field ID number.
+  TYPE(time_type), INTENT(in) :: Time !< Time to use in check.  The check is only performed if
+                                      !! <TT>output_fields(out_num)%Time_of_prev_field_data</TT> is not
+                                      !! equal to <TT>Time</TT> or <TT>Time_zero</TT>.
+  CHARACTER(len=*), INTENT(out) :: err_msg !< Return status of <TT>check_bounds_are_exact_dynamic</TT>.
+                                           !! An empty error string indicates the x, y, and z indices are
+                                           !!     equal to the buffer array boundaries.
 
-    CHARACTER(len=128) :: error_string1, error_string2
-    LOGICAL :: do_check
+  CHARACTER(len=128) :: error_string1, error_string2
+  LOGICAL :: do_check
 
-    err_msg = ''
+  err_msg = ''
 
-    ! Check bounds only when the value of Time changes. When windows are used,
-    ! a change in Time indicates that a new loop through the windows has begun,
-    !  so a check of the previous loop can be done.
-    IF ( Time == output_fields(out_num)%Time_of_prev_field_data ) THEN
-       do_check = .FALSE.
-    ELSE
-       IF ( output_fields(out_num)%Time_of_prev_field_data == Time_zero ) THEN
-          ! It may or may not be OK to check, I don't know how to tell.
-          ! Check will be done on subsequent calls anyway.
-          do_check = .FALSE.
-       ELSE
-          do_check = .TRUE.
-       END IF
-       output_fields(out_num)%Time_of_prev_field_data = Time
-    END IF
+  ! Check bounds only when the value of Time changes. When windows are used,
+  ! a change in Time indicates that a new loop through the windows has begun,
+  !  so a check of the previous loop can be done.
+  IF ( Time == output_fields(out_num)%Time_of_prev_field_data ) THEN
+     do_check = .FALSE.
+  ELSE
+     IF ( output_fields(out_num)%Time_of_prev_field_data == Time_zero ) THEN
+        ! It may or may not be OK to check, I don't know how to tell.
+        ! Check will be done on subsequent calls anyway.
+        do_check = .FALSE.
+     ELSE
+        do_check = .TRUE.
+     END IF
+     output_fields(out_num)%Time_of_prev_field_data = Time
+  END IF
 
-    IF ( do_check ) THEN
-       IF (   output_fields(out_num)%imin /= LBOUND(output_fields(out_num)%buffer,1) .OR.&
-            & output_fields(out_num)%imax /= UBOUND(output_fields(out_num)%buffer,1) .OR.&
-            & output_fields(out_num)%jmin /= LBOUND(output_fields(out_num)%buffer,2) .OR.&
-            & output_fields(out_num)%jmax /= UBOUND(output_fields(out_num)%buffer,2) .OR.&
-            & output_fields(out_num)%kmin /= LBOUND(output_fields(out_num)%buffer,3) .OR.&
-            & output_fields(out_num)%kmax /= UBOUND(output_fields(out_num)%buffer,3) ) THEN
-          WRITE(error_string1,'(a,"/",a)') TRIM(input_fields(diag_field_id)%module_name),&
-               & TRIM(output_fields(out_num)%output_name)
-          error_string2 ='Buffer bounds=   :   ,   :   ,   :     Actual bounds=   :   ,   :   ,   :   '
-          WRITE(error_string2(15:17),'(i3)') LBOUND(output_fields(out_num)%buffer,1)
-          WRITE(error_string2(19:21),'(i3)') UBOUND(output_fields(out_num)%buffer,1)
-          WRITE(error_string2(23:25),'(i3)') LBOUND(output_fields(out_num)%buffer,2)
-          WRITE(error_string2(27:29),'(i3)') UBOUND(output_fields(out_num)%buffer,2)
-          WRITE(error_string2(31:33),'(i3)') LBOUND(output_fields(out_num)%buffer,3)
-          WRITE(error_string2(35:37),'(i3)') UBOUND(output_fields(out_num)%buffer,3)
-          WRITE(error_string2(54:56),'(i3)') output_fields(out_num)%imin
-          WRITE(error_string2(58:60),'(i3)') output_fields(out_num)%imax
-          WRITE(error_string2(62:64),'(i3)') output_fields(out_num)%jmin
-          WRITE(error_string2(66:68),'(i3)') output_fields(out_num)%jmax
-          WRITE(error_string2(70:72),'(i3)') output_fields(out_num)%kmin
-          WRITE(error_string2(74:76),'(i3)') output_fields(out_num)%kmax
-          err_msg = TRIM(error_string1)//' Bounds of data do not match those of buffer. '//TRIM(error_string2)
-       END IF
-       output_fields(out_num)%imax = 0
-       output_fields(out_num)%imin = VERY_LARGE_AXIS_LENGTH
-       output_fields(out_num)%jmax = 0
-       output_fields(out_num)%jmin = VERY_LARGE_AXIS_LENGTH
-       output_fields(out_num)%kmax = 0
-       output_fields(out_num)%kmin = VERY_LARGE_AXIS_LENGTH
-    END IF
-  END SUBROUTINE check_bounds_are_exact_dynamic
+  IF ( do_check ) THEN
+     IF (   output_fields(out_num)%ntval%imin /= LBOUND(output_fields(out_num)%buffer,1) .OR.&
+          & output_fields(out_num)%ntval%imax /= UBOUND(output_fields(out_num)%buffer,1) .OR.&
+          & output_fields(out_num)%ntval%jmin /= LBOUND(output_fields(out_num)%buffer,2) .OR.&
+          & output_fields(out_num)%ntval%jmax /= UBOUND(output_fields(out_num)%buffer,2) .OR.&
+          & output_fields(out_num)%ntval%kmin /= LBOUND(output_fields(out_num)%buffer,3) .OR.&
+          & output_fields(out_num)%ntval%kmax /= UBOUND(output_fields(out_num)%buffer,3) ) THEN
+        WRITE(error_string1,'(a,"/",a)') TRIM(input_fields(diag_field_id)%module_name),&
+             & TRIM(output_fields(out_num)%output_name)
+        error_string2 ='Buffer bounds=   :   ,   :   ,   :     Actual bounds=   :   ,   :   ,   :   '
+        WRITE(error_string2(15:17),'(i3)') LBOUND(output_fields(out_num)%buffer,1)
+        WRITE(error_string2(19:21),'(i3)') UBOUND(output_fields(out_num)%buffer,1)
+        WRITE(error_string2(23:25),'(i3)') LBOUND(output_fields(out_num)%buffer,2)
+        WRITE(error_string2(27:29),'(i3)') UBOUND(output_fields(out_num)%buffer,2)
+        WRITE(error_string2(31:33),'(i3)') LBOUND(output_fields(out_num)%buffer,3)
+        WRITE(error_string2(35:37),'(i3)') UBOUND(output_fields(out_num)%buffer,3)
+        WRITE(error_string2(54:56),'(i3)') output_fields(out_num)%ntval%imin
+        WRITE(error_string2(58:60),'(i3)') output_fields(out_num)%ntval%imax
+        WRITE(error_string2(62:64),'(i3)') output_fields(out_num)%ntval%jmin
+        WRITE(error_string2(66:68),'(i3)') output_fields(out_num)%ntval%jmax
+        WRITE(error_string2(70:72),'(i3)') output_fields(out_num)%ntval%kmin
+        WRITE(error_string2(74:76),'(i3)') output_fields(out_num)%ntval%kmax
+        err_msg = TRIM(error_string1)//' Bounds of data do not match those of buffer. '//TRIM(error_string2)
+     END IF
+     output_fields(out_num)%ntval%imax = 0
+     output_fields(out_num)%ntval%imin = VERY_LARGE_AXIS_LENGTH
+     output_fields(out_num)%ntval%jmax = 0
+     output_fields(out_num)%ntval%jmin = VERY_LARGE_AXIS_LENGTH
+     output_fields(out_num)%ntval%kmax = 0
+     output_fields(out_num)%ntval%kmin = VERY_LARGE_AXIS_LENGTH
+  END IF
+END SUBROUTINE check_bounds_are_exact_dynamic
 
   !> @brief Check if the array indices for <TT>output_fields(out_num)</TT> are equal to the
   !! <TT>output_fields(out_num)%buffer</TT>
   !!     upper and lower bounds.
-  SUBROUTINE check_bounds_are_exact_static(out_num, diag_field_id, err_msg)
-    INTEGER, INTENT(in) :: out_num !< Output field ID
-    INTEGER, INTENT(in) :: diag_field_id !< Input field ID.
-    CHARACTER(len=*), INTENT(out) :: err_msg
+SUBROUTINE check_bounds_are_exact_static(out_num, diag_field_id, err_msg)
+  INTEGER, INTENT(in) :: out_num !< Output field ID
+  INTEGER, INTENT(in) :: diag_field_id !< Input field ID.
+  CHARACTER(len=*), INTENT(out) :: err_msg
 
-    CHARACTER(len=128)  :: error_string1, error_string2
+  CHARACTER(len=128)  :: error_string1, error_string2
 
-    err_msg = ''
+  err_msg = ''
 
-    IF (   output_fields(out_num)%imin /= LBOUND(output_fields(out_num)%buffer,1) .OR.&
-         & output_fields(out_num)%imax /= UBOUND(output_fields(out_num)%buffer,1) .OR.&
-         & output_fields(out_num)%jmin /= LBOUND(output_fields(out_num)%buffer,2) .OR.&
-         & output_fields(out_num)%jmax /= UBOUND(output_fields(out_num)%buffer,2) .OR.&
-         & output_fields(out_num)%kmin /= LBOUND(output_fields(out_num)%buffer,3) .OR.&
-         & output_fields(out_num)%kmax /= UBOUND(output_fields(out_num)%buffer,3) ) THEN
-       WRITE(error_string1,'(a,"/",a)') TRIM(input_fields(diag_field_id)%module_name),&
-            & TRIM(output_fields(out_num)%output_name)
-       error_string2 ='Buffer bounds=   :   ,   :   ,   :     Actual bounds=   :   ,   :   ,   :   '
-       WRITE(error_string2(15:17),'(i3)') LBOUND(output_fields(out_num)%buffer,1)
-       WRITE(error_string2(19:21),'(i3)') UBOUND(output_fields(out_num)%buffer,1)
-       WRITE(error_string2(23:25),'(i3)') LBOUND(output_fields(out_num)%buffer,2)
-       WRITE(error_string2(27:29),'(i3)') UBOUND(output_fields(out_num)%buffer,2)
-       WRITE(error_string2(31:33),'(i3)') LBOUND(output_fields(out_num)%buffer,3)
-       WRITE(error_string2(35:37),'(i3)') UBOUND(output_fields(out_num)%buffer,3)
-       WRITE(error_string2(54:56),'(i3)') output_fields(out_num)%imin
-       WRITE(error_string2(58:60),'(i3)') output_fields(out_num)%imax
-       WRITE(error_string2(62:64),'(i3)') output_fields(out_num)%jmin
-       WRITE(error_string2(66:68),'(i3)') output_fields(out_num)%jmax
-       WRITE(error_string2(70:72),'(i3)') output_fields(out_num)%kmin
-       WRITE(error_string2(74:76),'(i3)') output_fields(out_num)%kmax
-       err_msg = TRIM(error_string1)//' Bounds of data do not match those of buffer. '//TRIM(error_string2)
-    END IF
-    output_fields(out_num)%imax = 0
-    output_fields(out_num)%imin = VERY_LARGE_AXIS_LENGTH
-    output_fields(out_num)%jmax = 0
-    output_fields(out_num)%jmin = VERY_LARGE_AXIS_LENGTH
-    output_fields(out_num)%kmax = 0
-    output_fields(out_num)%kmin = VERY_LARGE_AXIS_LENGTH
+  IF (   output_fields(out_num)%ntval%imin /= LBOUND(output_fields(out_num)%buffer,1) .OR.&
+       & output_fields(out_num)%ntval%imax /= UBOUND(output_fields(out_num)%buffer,1) .OR.&
+       & output_fields(out_num)%ntval%jmin /= LBOUND(output_fields(out_num)%buffer,2) .OR.&
+       & output_fields(out_num)%ntval%jmax /= UBOUND(output_fields(out_num)%buffer,2) .OR.&
+       & output_fields(out_num)%ntval%kmin /= LBOUND(output_fields(out_num)%buffer,3) .OR.&
+       & output_fields(out_num)%ntval%kmax /= UBOUND(output_fields(out_num)%buffer,3) ) THEN
+     WRITE(error_string1,'(a,"/",a)') TRIM(input_fields(diag_field_id)%module_name),&
+          & TRIM(output_fields(out_num)%output_name)
+     error_string2 ='Buffer bounds=   :   ,   :   ,   :     Actual bounds=   :   ,   :   ,   :   '
+     WRITE(error_string2(15:17),'(i3)') LBOUND(output_fields(out_num)%buffer,1)
+     WRITE(error_string2(19:21),'(i3)') UBOUND(output_fields(out_num)%buffer,1)
+     WRITE(error_string2(23:25),'(i3)') LBOUND(output_fields(out_num)%buffer,2)
+     WRITE(error_string2(27:29),'(i3)') UBOUND(output_fields(out_num)%buffer,2)
+     WRITE(error_string2(31:33),'(i3)') LBOUND(output_fields(out_num)%buffer,3)
+     WRITE(error_string2(35:37),'(i3)') UBOUND(output_fields(out_num)%buffer,3)
+     WRITE(error_string2(54:56),'(i3)') output_fields(out_num)%ntval%imin
+     WRITE(error_string2(58:60),'(i3)') output_fields(out_num)%ntval%imax
+     WRITE(error_string2(62:64),'(i3)') output_fields(out_num)%ntval%jmin
+     WRITE(error_string2(66:68),'(i3)') output_fields(out_num)%ntval%jmax
+     WRITE(error_string2(70:72),'(i3)') output_fields(out_num)%ntval%kmin
+     WRITE(error_string2(74:76),'(i3)') output_fields(out_num)%ntval%kmax
+     err_msg = TRIM(error_string1)//' Bounds of data do not match those of buffer. '//TRIM(error_string2)
+  END IF
+  output_fields(out_num)%ntval%imax = 0
+  output_fields(out_num)%ntval%imin = VERY_LARGE_AXIS_LENGTH
+  output_fields(out_num)%ntval%jmax = 0
+  output_fields(out_num)%ntval%jmin = VERY_LARGE_AXIS_LENGTH
+  output_fields(out_num)%ntval%kmax = 0
+  output_fields(out_num)%ntval%kmin = VERY_LARGE_AXIS_LENGTH
 
-  END SUBROUTINE check_bounds_are_exact_static
+END SUBROUTINE check_bounds_are_exact_static
+
 
   !> @brief Initialize the output file.
   SUBROUTINE init_file(name, output_freq, output_units, format, time_units, long_name, tile_count,&
@@ -1366,12 +1370,12 @@ CONTAINS
     output_fields(out_num)%num_axes = 0
     output_fields(out_num)%total_elements = 0
     output_fields(out_num)%region_elements = 0
-    output_fields(out_num)%imax = 0
-    output_fields(out_num)%jmax = 0
-    output_fields(out_num)%kmax = 0
-    output_fields(out_num)%imin = VERY_LARGE_AXIS_LENGTH
-    output_fields(out_num)%jmin = VERY_LARGE_AXIS_LENGTH
-    output_fields(out_num)%kmin = VERY_LARGE_AXIS_LENGTH
+    output_fields(out_num)%ntval%imax = 0
+    output_fields(out_num)%ntval%jmax = 0
+    output_fields(out_num)%ntval%kmax = 0
+    output_fields(out_num)%ntval%imin = VERY_LARGE_AXIS_LENGTH
+    output_fields(out_num)%ntval%jmin = VERY_LARGE_AXIS_LENGTH
+    output_fields(out_num)%ntval%kmin = VERY_LARGE_AXIS_LENGTH
 
     ! initialize the size of the diurnal axis to 1
     output_fields(out_num)%n_diurnal_samples = 1

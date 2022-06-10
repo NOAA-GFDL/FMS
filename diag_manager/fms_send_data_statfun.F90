@@ -33,13 +33,14 @@
 !> @{
 MODULE fms_send_data_statfun_mod
 
-   use platform_mod
+   USE platform_mod
    USE mpp_mod, ONLY: mpp_pe, mpp_root_pe
+   USE time_manager_mod, ONLY: time_type
 
    USE fms_mod, ONLY: error_mesg, FATAL, WARNING, NOTE, stdout, stdlog, write_version_number,&
    & fms_error_handler
-   USE diag_data_mod, ONLY:  input_fields, output_fields, debug_diag_manager
-   use diag_util_mod, ONLY: check_out_of_bounds, update_bounds
+   USE diag_data_mod, ONLY:  input_fields, output_fields, debug_diag_manager, fms_diag_buff_intervals_t
+   USE diag_util_mod, ONLY: check_out_of_bounds, update_bounds
 
    IMPLICIT NONE
 
@@ -59,6 +60,11 @@ MODULE fms_send_data_statfun_mod
       procedure :: average_the_field => average_the_field_imp
       procedure :: sample_the_field => sample_the_field_imp
    end type fms_diag_field_procs_t
+
+
+
+
+
 CONTAINS
 
    SUBROUTINE initialize_imp (this, is, js , ks, ie, je, ke, hi, hj, f1, f2, f3, f4, &
@@ -102,8 +108,8 @@ CONTAINS
    END SUBROUTINE initialize_imp
 
 
-   FUNCTION AVERAGE_THE_FIELD_IMP(this, diag_field_id, field, out_num, ofb, ofc, &
-   & mask, weight1, sample, missvalue, missvalue_present, &
+   FUNCTION AVERAGE_THE_FIELD_IMP(this, diag_field_id, field, out_num, ofb, ofc, ntval, &
+   & output_name, mask, weight1, sample, missvalue, missvalue_present, &
    & l_start, l_end, err_msg,  err_msg_local ) result( succeded )
       CLASS(fms_diag_field_procs_t) , INTENT(inout) :: this
       INTEGER, INTENT(in) :: diag_field_id
@@ -112,6 +118,8 @@ CONTAINS
       REAL, allocatable, DIMENSION(:,:,:,:), INTENT(inout) :: ofb
       !class(*),  pointer, INTENT(inout) :: ofb_in  !!TODO:
       REAL, allocatable, DIMENSION(:,:,:,:), INTENT(inout) :: ofc
+      TYPE(fms_diag_buff_intervals_t), INTENT(inout) :: ntval
+      CHARACTER(len=*), INTENT(out), OPTIONAL :: output_name
       LOGICAL, DIMENSION(:,:,:), INTENT(in), OPTIONAL :: mask
       REAL, INTENT(in) :: weight1
       INTEGER, INTENT(in) :: sample
@@ -171,7 +179,7 @@ CONTAINS
       reduced_k_range = this%reduced_k_range
       need_compute = this%need_compute
 
-!$OMP CRITICAL
+      !$OMP CRITICAL
       input_fields(diag_field_id)%numthreads = 1
       active_omp_level=0
 #if defined(_OPENMP)
@@ -180,7 +188,7 @@ CONTAINS
 #endif
       numthreads = input_fields(diag_field_id)%numthreads
       active_omp_level = input_fields(diag_field_id)%active_omp_level
-!$OMP END CRITICAL
+      !$OMP END CRITICAL
 
       MASK_VAR_IF: IF ( input_fields(diag_field_id)%mask_variant ) THEN
          IF ( need_compute ) THEN
@@ -200,8 +208,8 @@ CONTAINS
          MASK_PR_1_IF: IF ( PRESENT(mask) ) THEN
             MISSVAL_PR_1_IF: IF ( missvalue_present ) THEN !!(section: mask_varian .eq. true + mask present)
                IF ( debug_diag_manager ) THEN
-                  CALL update_bounds(out_num, is-hi, ie-hi, js-hj, je-hj, ks, ke)
-                  CALL check_out_of_bounds(out_num, diag_field_id, err_msg=err_msg_local)
+                  CALL update_bounds(ntval, is-hi, ie-hi, js-hj, je-hj, ks, ke)
+                  CALL check_out_of_bounds(ofb, ntval, output_name, diag_field_id, err_msg=err_msg_local)
                   IF ( err_msg_local /= '' ) THEN
                      IF ( fms_error_handler('diag_manager_mod::send_data_3d', err_msg_local, err_msg) ) THEN
                         succeded = .FALSE.
@@ -238,7 +246,7 @@ CONTAINS
                      END DO
                   END IF REDU_KR1_IF
                ELSE
-!$OMP CRITICAL
+                  !$OMP CRITICAL
                   REDU_KR2_IF: IF ( reduced_k_range ) THEN
                      DO k= ksr, ker
                         k1= k - ksr + 1
@@ -265,7 +273,7 @@ CONTAINS
                         END DO
                      END DO
                   END IF REDU_KR2_IF
-!$OMP END CRITICAL
+                  !$OMP END CRITICAL
                END IF
             ELSE MISSVAL_PR_1_IF
                WRITE (error_string,'(a,"/",a)')&
@@ -312,7 +320,7 @@ CONTAINS
                         END DO
                      END DO
                   ELSE
-!$OMP CRITICAL
+                     !$OMP CRITICAL
                      DO k = l_start(3), l_end(3)
                         k1 = k-l_start(3)+1
                         DO j = js, je
@@ -331,9 +339,9 @@ CONTAINS
                            END DO
                         END DO
                      END DO
-!$OMP END CRITICAL
+                     !$OMP END CRITICAL
                   ENDIF
-!$OMP CRITICAL
+                  !$OMP CRITICAL
                   DO j = js, je
                      DO i = is, ie
                         IF ( l_start(1)+hi <= i .AND. i <= l_end(1)+hi .AND. l_start(2)+hj <= j .AND. &
@@ -343,7 +351,7 @@ CONTAINS
                         END IF
                      END DO
                   END DO
-!$OMP END CRITICAL
+                  !$OMP END CRITICAL
                ELSE IF ( reduced_k_range ) THEN NDCMP_RKR_1_IF
                   IF (numthreads>1 .AND. phys_window) then
                      DO k=ksr, ker
@@ -360,7 +368,7 @@ CONTAINS
                         END DO
                      END DO
                   ELSE
-!$OMP CRITICAL
+                     !$OMP CRITICAL
                      DO k=ksr, ker
                         k1 = k - ksr + 1
                         DO j=js, je
@@ -374,12 +382,12 @@ CONTAINS
                            END DO
                         END DO
                      END DO
-!$OMP END CRITICAL
+                     !$OMP END CRITICAL
                   END IF
                ELSE NDCMP_RKR_1_IF
                   IF ( debug_diag_manager ) THEN
-                     CALL update_bounds(out_num, is-hi, ie-hi, js-hj, je-hj, ks, ke)
-                     CALL check_out_of_bounds(out_num, diag_field_id, err_msg=err_msg_local)
+                     CALL update_bounds(ntval, is-hi, ie-hi, js-hj, je-hj, ks, ke)
+                     CALL check_out_of_bounds(ofb, ntval, output_name, diag_field_id, err_msg=err_msg_local)
                      IF ( err_msg_local /= '' ) THEN
                         IF ( fms_error_handler('diag_manager_mod::send_data_3d', err_msg_local, err_msg) ) THEN
                            succeded = .FALSE.
@@ -401,7 +409,7 @@ CONTAINS
                         END DO
                      END DO
                   ELSE
-!$OMP CRITICAL
+                     !$OMP CRITICAL
                      DO k=ks, ke
                         DO j=js, je
                            DO i=is, ie
@@ -414,10 +422,10 @@ CONTAINS
                            END DO
                         END DO
                      END DO
-!$OMP END CRITICAL
+                     !$OMP END CRITICAL
                   END IF
                END IF NDCMP_RKR_1_IF
-!$OMP CRITICAL
+               !$OMP CRITICAL
                IF ( need_compute .AND. .NOT.phys_window ) THEN
                   IF ( ANY(mask(l_start(1)+hi:l_end(1)+hi,l_start(2)+hj:l_end(2)+hj,l_start(3):l_end(3))) ) &
                   & output_fields(out_num)%count_0d(sample) =&
@@ -426,7 +434,7 @@ CONTAINS
                   IF ( ANY(mask(f1:f2,f3:f4,ks:ke)) ) output_fields(out_num)%count_0d(sample) =&
                   & output_fields(out_num)%count_0d(sample)+weight1
                END IF
-!$OMP END CRITICAL
+               !$OMP END CRITICAL
             ELSE MISSVAL_PR_2_IF !! (section: mask_varian .eq. false + mask present + miss value not present)
                IF (   (.NOT.ALL(mask(f1:f2,f3:f4,ks:ke)) .AND. mpp_pe() .EQ. mpp_root_pe()).AND.&
                &  .NOT.input_fields(diag_field_id)%issued_mask_ignore_warning ) THEN
@@ -454,7 +462,7 @@ CONTAINS
                         END DO
                      END DO
                   ELSE
-!$OMP CRITICAL
+                     !$OMP CRITICAL
                      DO j = js, je
                         DO i = is, ie
                            IF ( l_start(1)+hi <= i .AND. i <= l_end(1)+hi .AND. l_start(2)+hj <= j .AND. &
@@ -466,9 +474,9 @@ CONTAINS
                            END IF
                         END DO
                      END DO
-!$OMP END CRITICAL
+                     !$OMP END CRITICAL
                   END IF
-!$OMP CRITICAL
+                  !$OMP CRITICAL
                   DO j = js, je
                      DO i = is, ie
                         IF ( l_start(1)+hi <= i .AND. i <= l_end(1)+hi .AND. l_start(2)+hj <= j .AND. &
@@ -478,7 +486,7 @@ CONTAINS
                         END IF
                      END DO
                   END DO
-!$OMP END CRITICAL
+                  !$OMP END CRITICAL
                ELSE IF ( reduced_k_range ) THEN NDCMP_RKR_2_IF
                   IF (numthreads>1 .AND. phys_window) then
                      ksr= l_start(3)
@@ -486,17 +494,17 @@ CONTAINS
                      ofb(is-hi:ie-hi,js-hj:je-hj,:,sample) = ofb(is-hi:ie-hi,js-hj:je-hj,:,sample) +&
                      & (field(f1:f2,f3:f4,ksr:ker) * weight1) ** pow_value
                   ELSE
-!$OMP CRITICAL
+                     !$OMP CRITICAL
                      ksr= l_start(3)
                      ker= l_end(3)
                      ofb(is-hi:ie-hi,js-hj:je-hj,:,sample) = ofb(is-hi:ie-hi,js-hj:je-hj,:,sample) +&
                      & (field(f1:f2,f3:f4,ksr:ker) * weight1) ** pow_value
-!$OMP END CRITICAL
+                     !$OMP END CRITICAL
                   END IF
                ELSE NDCMP_RKR_2_IF
                   IF ( debug_diag_manager ) THEN
-                     CALL update_bounds(out_num, is-hi, ie-hi, js-hj, je-hj, ks, ke)
-                     CALL check_out_of_bounds(out_num, diag_field_id, err_msg=err_msg_local)
+                     CALL update_bounds(ntval, is-hi, ie-hi, js-hj, je-hj, ks, ke)
+                     CALL check_out_of_bounds(ofb, ntval, output_name, diag_field_id, err_msg=err_msg_local)
                      IF ( err_msg_local /= '') THEN
                         IF ( fms_error_handler('diag_manager_mod::send_data_3d', err_msg_local, err_msg) ) THEN
                            succeded = .FALSE.
@@ -509,17 +517,17 @@ CONTAINS
                      & ofb(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) +&
                      & (field(f1:f2,f3:f4,ks:ke) * weight1) ** pow_value
                   ELSE
-!$OMP CRITICAL
+                     !$OMP CRITICAL
                      ofb(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) =&
                      & ofb(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) +&
                      & (field(f1:f2,f3:f4,ks:ke) * weight1) ** pow_value
-!$OMP END CRITICAL
+                     !$OMP END CRITICAL
                   END IF
                END IF NDCMP_RKR_2_IF
-!$OMP CRITICAL
+               !$OMP CRITICAL
                IF ( .NOT.phys_window ) output_fields(out_num)%count_0d(sample) =&
                & output_fields(out_num)%count_0d(sample) + weight1
-!$OMP END CRITICAL
+               !$OMP END CRITICAL
             END IF MISSVAL_PR_2_IF
          ELSE MASK_PR_2_IF !!(section: mask_variant .eq. false + mask not present + missvalue)
             MISSVAL_PR_3_IF: IF (missvalue_present ) THEN
@@ -544,7 +552,7 @@ CONTAINS
                         END DO
                      END DO
                   ELSE NTAPW_IF
-!$OMP CRITICAL
+                     !$OMP CRITICAL
                      DO k = l_start(3), l_end(3)
                         k1 = k - l_start(3) + 1
                         DO j = js, je
@@ -563,9 +571,9 @@ CONTAINS
                            END DO
                         END DO
                      END DO
-!$OMP END CRITICAL
+                     !$OMP END CRITICAL
                   END IF NTAPW_IF
-!$OMP CRITICAL
+                  !$OMP CRITICAL
                   DO j = js, je
                      DO i = is, ie
                         IF ( l_start(1)+hi <= i .AND. i <= l_end(1)+hi .AND. l_start(2)+hj <= j .AND. &
@@ -588,7 +596,7 @@ CONTAINS
                         END DO
                      END DO
                   END IF
-!$OMP END CRITICAL
+                  !$OMP END CRITICAL
                ELSE IF ( reduced_k_range ) THEN NDCMP_RKR_3_IF
                   if( numthreads>1 .AND. phys_window ) then
                      ksr= l_start(3)
@@ -607,7 +615,7 @@ CONTAINS
                         END DO
                      END DO
                   else
-!$OMP CRITICAL
+                     !$OMP CRITICAL
                      ksr= l_start(3)
                      ker= l_end(3)
                      DO k = ksr, ker
@@ -623,9 +631,9 @@ CONTAINS
                            END DO
                         END DO
                      END DO
-!$OMP END CRITICAL
+                     !$OMP END CRITICAL
                   END IF
-!$OMP CRITICAL
+                  !$OMP CRITICAL
                   DO k = ksr, ker
                      k1=k-ksr+1
                      DO j=f3, f4
@@ -639,11 +647,11 @@ CONTAINS
                         END DO
                      END DO
                   END DO
-!$OMP END CRITICAL
+                  !$OMP END CRITICAL
                ELSE NDCMP_RKR_3_IF
                   IF ( debug_diag_manager ) THEN
-                     CALL update_bounds(out_num, is-hi, ie-hi, js-hj, je-hj, ks, ke)
-                     CALL check_out_of_bounds(out_num, diag_field_id, err_msg=err_msg_local)
+                     CALL update_bounds(ntval, is-hi, ie-hi, js-hj, je-hj, ks, ke)
+                     CALL check_out_of_bounds(ofb, ntval, output_name, diag_field_id, err_msg=err_msg_local)
                      IF ( err_msg_local /= '' ) THEN
                         IF ( fms_error_handler('diag_manager_mod::send_data_3d', err_msg_local, err_msg) ) THEN
                            succeded = .FALSE.
@@ -665,7 +673,7 @@ CONTAINS
                         END DO
                      END DO
                   ELSE
-!$OMP CRITICAL
+                     !$OMP CRITICAL
                      DO k=ks, ke
                         DO j=js, je
                            DO i=is, ie
@@ -678,9 +686,9 @@ CONTAINS
                            END DO
                         END DO
                      END DO
-!$OMP END CRITICAL
+                     !$OMP END CRITICAL
                   END IF
-!$OMP CRITICAL
+                  !$OMP CRITICAL
                   DO k=ks, ke
                      DO j=f3, f4
                         DO i=f1, f2
@@ -692,7 +700,7 @@ CONTAINS
                         END DO
                      END DO
                   END DO
-!$OMP END CRITICAL
+                  !$OMP END CRITICAL
                END IF NDCMP_RKR_3_IF
             ELSE MISSVAL_PR_3_IF !!(section: mask_variant .eq. false + mask not present + missvalue not present)
                NDCMP_RKR_4_IF: IF ( need_compute ) THEN
@@ -709,7 +717,7 @@ CONTAINS
                         END DO
                      END DO
                   ELSE
-!$OMP CRITICAL
+                     !$OMP CRITICAL
                      DO j = js, je
                         DO i = is, ie
                            IF ( l_start(1)+hi <= i .AND. i <= l_end(1)+hi .AND. l_start(2)+hj <= j .AND. &
@@ -721,9 +729,9 @@ CONTAINS
                            END IF
                         END DO
                      END DO
-!$OMP END CRITICAL
+                     !$OMP END CRITICAL
                   END IF
-!$OMP CRITICAL
+                  !$OMP CRITICAL
                   DO j = js, je
                      DO i = is, ie
                         IF ( l_start(1)+hi <= i .AND. i <= l_end(1)+hi .AND. l_start(2)+hj <= j .AND. &
@@ -733,7 +741,7 @@ CONTAINS
                         END IF
                      END DO
                   END DO
-!$OMP END CRITICAL
+                  !$OMP END CRITICAL
                   ! Accumulate time average
                ELSE IF ( reduced_k_range ) THEN NDCMP_RKR_4_IF
                   ksr= l_start(3)
@@ -743,17 +751,17 @@ CONTAINS
                      & ofb(is-hi:ie-hi,js-hj:je-hj,:,sample) + &
                      & (field(f1:f2,f3:f4,ksr:ker) * weight1) ** pow_value
                   ELSE
-!$OMP CRITICAL
+                     !$OMP CRITICAL
                      ofb(is-hi:ie-hi,js-hj:je-hj,:,sample) =&
                      & ofb(is-hi:ie-hi,js-hj:je-hj,:,sample) + &
                      & (field(f1:f2,f3:f4,ksr:ker) * weight1) ** pow_value
-!$OMP END CRITICAL
+                     !$OMP END CRITICAL
                   END IF
 
                ELSE NDCMP_RKR_4_IF
                   IF ( debug_diag_manager ) THEN
-                     CALL update_bounds(out_num, is-hi, ie-hi, js-hj, je-hj, ks, ke)
-                     CALL check_out_of_bounds(out_num, diag_field_id, err_msg=err_msg_local)
+                     CALL update_bounds(ntval, is-hi, ie-hi, js-hj, je-hj, ks, ke)
+                     CALL check_out_of_bounds(ofb, ntval, output_name, diag_field_id, err_msg=err_msg_local)
                      IF ( err_msg_local /= '' ) THEN
                         IF (fms_error_handler('diag_manager_mod::send_data_3d', err_msg_local, err_msg) ) THEN
                            succeded = .FALSE.
@@ -766,30 +774,30 @@ CONTAINS
                      & ofb(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) +&
                      & (field(f1:f2,f3:f4,ks:ke) * weight1) ** pow_value
                   ELSE
-!$OMP CRITICAL
+                     !$OMP CRITICAL
                      ofb(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) =&
                      & ofb(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) +&
                      & (field(f1:f2,f3:f4,ks:ke) * weight1) ** pow_value
                      !!
-!$OMP END CRITICAL
+                     !$OMP END CRITICAL
                   END IF
                END IF NDCMP_RKR_4_IF
-!$OMP CRITICAL
+               !$OMP CRITICAL
                IF ( .NOT.phys_window ) output_fields(out_num)%count_0d(sample) =&
                & output_fields(out_num)%count_0d(sample) + weight1
-!$OMP END CRITICAL
+               !$OMP END CRITICAL
             END IF MISSVAL_PR_3_IF
          END IF MASK_PR_2_IF ! if mask present
       END IF MASK_VAR_IF
 
-!$OMP CRITICAL
+      !$OMP CRITICAL
       IF ( .NOT.need_compute .AND. .NOT.reduced_k_range )&
       & output_fields(out_num)%num_elements(sample) =&
       & output_fields(out_num)%num_elements(sample) + (ie-is+1)*(je-js+1)*(ke-ks+1)
       IF ( reduced_k_range ) &
       & output_fields(out_num)%num_elements(sample) = output_fields(out_num)%num_elements(sample) +&
       & (ie-is+1)*(je-js+1)*(ker-ksr+1)
-!$OMP END CRITICAL
+      !$OMP END CRITICAL
 
       succeded = .TRUE.
       RETURN
@@ -797,13 +805,16 @@ CONTAINS
    END FUNCTION AVERAGE_THE_FIELD_IMP
 
 
-   FUNCTION SAMPLE_THE_FIELD_IMP (this, diag_field_id, field, out_num, &
+   FUNCTION SAMPLE_THE_FIELD_IMP (this, diag_field_id, field, out_num, ofb, ntval, output_name, &
    & mask, sample, missvalue, missvalue_present, &
    & l_start, l_end, err_msg,  err_msg_local) result( succeded )
       CLASS(fms_diag_field_procs_t), INTENT(inout)  :: this
       INTEGER, INTENT(in) :: diag_field_id
       REAL, DIMENSION(:,:,:), INTENT(in) :: field
       INTEGER, INTENT(in) :: out_num
+      REAL, allocatable, DIMENSION(:,:,:,:), INTENT(inout) :: ofb
+      TYPE(fms_diag_buff_intervals_t), INTENT(inout) :: ntval
+      CHARACTER(len=*), INTENT(inout) :: output_name
       LOGICAL, DIMENSION(:,:,:), INTENT(in), OPTIONAL :: mask
       INTEGER, INTENT(in) :: sample
       REAL, INTENT(in), OPTIONAL :: missvalue   !!TODO: optional?
@@ -855,8 +866,6 @@ CONTAINS
       reduced_k_range = this%reduced_k_range
       need_compute = this%need_compute
 
-      ASSOCIATE( OFB => output_fields(out_num)%buffer)
-
          ! Add processing for Max and Min
          TIME_IF: IF ( time_max ) THEN
             MASK_PRSNT_1_IF: IF ( PRESENT(mask) ) THEN
@@ -886,8 +895,8 @@ CONTAINS
                   & OFB(is-hi:ie-hi,js-hj:je-hj,:,sample) = field(f1:f2,f3:f4,ksr:ker)
                ELSE
                   IF ( debug_diag_manager ) THEN
-                     CALL update_bounds(out_num, is-hi, ie-hi, js-hj, je-hj, ks, ke)
-                     CALL check_out_of_bounds(out_num, diag_field_id, err_msg=err_msg_local)
+                     CALL update_bounds(ntval, is-hi, ie-hi, js-hj, je-hj, ks, ke)
+                     CALL check_out_of_bounds(ofb, ntval, output_name,  diag_field_id, err_msg=err_msg_local)
                      IF ( err_msg_local /= '' ) THEN
                         IF ( fms_error_handler('diag_manager_mod::send_data_3d', err_msg_local, err_msg) ) THEN
                            succeded = .FALSE.
@@ -924,8 +933,8 @@ CONTAINS
                   & OFB(is-hi:ie-hi,js-hj:je-hj,:,sample) = field(f1:f2,f3:f4,ksr:ker)
                ELSE
                   IF ( debug_diag_manager ) THEN
-                     CALL update_bounds(out_num, is-hi, ie-hi, js-hj, je-hj, ks, ke)
-                     CALL check_out_of_bounds(out_num, diag_field_id, err_msg=err_msg_local)
+                     CALL update_bounds(ntval, is-hi, ie-hi, js-hj, je-hj, ks, ke)
+                     CALL check_out_of_bounds(ofb, ntval, output_name, diag_field_id, err_msg=err_msg_local)
                      IF ( err_msg_local /= '' ) THEN
                         IF ( fms_error_handler('diag_manager_mod::send_data_3d', err_msg_local, err_msg) ) THEN
                            succeded = .FALSE.
@@ -967,8 +976,8 @@ CONTAINS
                   & OFB(is-hi:ie-hi,js-hj:je-hj,:,sample) = field(f1:f2,f3:f4,ksr:ker)
                ELSE
                   IF ( debug_diag_manager ) THEN
-                     CALL update_bounds(out_num, is-hi, ie-hi, js-hj, je-hj, ks, ke)
-                     CALL check_out_of_bounds(out_num, diag_field_id, err_msg=err_msg_local)
+                     CALL update_bounds(ntval, is-hi, ie-hi, js-hj, je-hj, ks, ke)
+                     CALL check_out_of_bounds(ofb, ntval, output_name, diag_field_id, err_msg=err_msg_local)
                      IF ( err_msg_local /= '' ) THEN
                         IF ( fms_error_handler('diag_manager_mod::send_data_3d', err_msg_local, err_msg) ) THEN
                            succeded = .FALSE.
@@ -1004,8 +1013,8 @@ CONTAINS
                   & OFB(is-hi:ie-hi,js-hj:je-hj,:,sample) = field(f1:f2,f3:f4,ksr:ker)
                ELSE
                   IF ( debug_diag_manager ) THEN
-                     CALL update_bounds(out_num, is-hi, ie-hi, js-hj, je-hj, ks, ke)
-                     CALL check_out_of_bounds(out_num, diag_field_id, err_msg=err_msg_local)
+                     CALL update_bounds(ntval, is-hi, ie-hi, js-hj, je-hj, ks, ke)
+                     CALL check_out_of_bounds(ofb, ntval, output_name, diag_field_id, err_msg=err_msg_local)
                      IF ( err_msg_local /= '' ) THEN
                         IF ( fms_error_handler('diag_manager_mod::send_data_3d', err_msg_local, err_msg) ) THEN
                            succeded = .FALSE.
@@ -1049,8 +1058,8 @@ CONTAINS
                   &   field(f1:f2,f3:f4,ksr:ker)
                ELSE
                   IF ( debug_diag_manager ) THEN
-                     CALL update_bounds(out_num, is-hi, ie-hi, js-hj, je-hj, ks, ke)
-                     CALL check_out_of_bounds(out_num, diag_field_id, err_msg=err_msg_local)
+                     CALL update_bounds(ntval, is-hi, ie-hi, js-hj, je-hj, ks, ke)
+                     CALL check_out_of_bounds(ofb, ntval, output_name, diag_field_id, err_msg=err_msg_local)
                      IF ( err_msg_local /= '' ) THEN
                         IF ( fms_error_handler('diag_manager_mod::send_data_3d', err_msg_local, err_msg) ) THEN
                            succeded = .FALSE.
@@ -1087,8 +1096,8 @@ CONTAINS
                   &  field(f1:f2,f3:f4,ksr:ker)
                ELSE
                   IF ( debug_diag_manager ) THEN
-                     CALL update_bounds(out_num, is-hi, ie-hi, js-hj, je-hj, ks, ke)
-                     CALL check_out_of_bounds(out_num, diag_field_id, err_msg=err_msg_local)
+                     CALL update_bounds(ntval, is-hi, ie-hi, js-hj, je-hj, ks, ke)
+                     CALL check_out_of_bounds(ofb, ntval, output_name, diag_field_id, err_msg=err_msg_local)
                      IF ( err_msg_local /= '' ) THEN
                         IF ( fms_error_handler('diag_manager_mod::send_data_3d', err_msg_local, err_msg) ) THEN
                            succeded = .FALSE.
@@ -1123,8 +1132,8 @@ CONTAINS
             ELSE
                IF ( debug_diag_manager ) THEN
                   !!TODO update_bounds and chck_out_of_bounds may need mods for new diag
-                  CALL update_bounds(out_num, is-hi, ie-hi, js-hj, je-hj, ks, ke)
-                  CALL check_out_of_bounds(out_num, diag_field_id, err_msg=err_msg_local)
+                  CALL update_bounds(ntval, is-hi, ie-hi, js-hj, je-hj, ks, ke)
+                  CALL check_out_of_bounds(ofb, ntval, output_name, diag_field_id, err_msg=err_msg_local)
                   IF ( err_msg_local /= '' ) THEN
                      IF ( fms_error_handler('diag_manager_mod::send_data_3d', err_msg_local, err_msg) ) THEN
                         succeded = .FALSE.
@@ -1175,12 +1184,12 @@ CONTAINS
                END IF
             END IF
          END IF TIME_IF
-      END ASSOCIATE
-
       succeded = .TRUE.
       RETURN
 
    END FUNCTION SAMPLE_THE_FIELD_IMP
 END MODULE fms_send_data_statfun_mod
+
 !> @}
 ! close documentation grouping
+
