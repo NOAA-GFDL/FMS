@@ -20,11 +20,11 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 
+    !> Sums array a over the PEs in pelist (all PEs if this argument is omitted)
+    !! result is also automatically broadcast: all PEs have the sum in a at the end
+    !! we are using f77-style call: array passed by address and not descriptor; further,
+    !! the f90 conformance check is avoided.
     subroutine MPP_SUM_AD_( a, length, pelist )
-!sums array a over the PEs in pelist (all PEs if this argument is omitted)
-!result is also automatically broadcast: all PEs have the sum in a at the end
-  !we are using f77-style call: array passed by address and not descriptor; further,
-  !the f90 conformance check is avoided.
       integer, intent(in) :: length
       integer, intent(in), optional :: pelist(:)
       MPP_TYPE_, intent(inout) :: a(*)

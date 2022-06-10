@@ -83,9 +83,6 @@
 ! </DATA>
 !</NAMELIST>
 
-!> @file
-!> @brief File for @ref fms_io_mod
-
 !> @addtogroup fms_io_mod
 !> @{
 module fms_io_mod

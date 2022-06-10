@@ -21,9 +21,10 @@
 !***********************************************************************
 
 !> @file
-!> @ingroup mpp_domains_mod
 !> @brief Routines for domain communications via @ref domaincommunicator2d
 
+!> @addtogroup mpp_domains_mod
+!> @{
     function mpp_redistribute_init_comm(domain_in,l_addrs_in, domain_out,l_addrs_out, &
                                         isize_in,jsize_in,ksize_in,isize_out,jsize_out,ksize_out) RESULT(d_comm)
       type(DomainCommunicator2D), pointer       :: d_comm
@@ -205,7 +206,7 @@
 
     end function mpp_redistribute_init_comm
 
-
+    !> initializes a @ref DomainCommunicator2D type for use in @ref mpp_global_field
     function mpp_global_field_init_comm(domain,l_addr,isize_g,jsize_g,isize_l, &
                                         jsize_l, ksize,l_addr2,flags, position) RESULT(d_comm)
       type(DomainCommunicator2D), pointer       :: d_comm
@@ -749,6 +750,4 @@
          endif
        end if
     end function set_domain_id
-
-
-!#######################################################################
+!> @}

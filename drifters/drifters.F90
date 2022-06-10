@@ -16,7 +16,6 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
-!FDOC_TAG_GFDL fdoc.pl generated xml skeleton
 
 #include "fms_switches.h"
 #define _FLATTEN(A) reshape((A), (/size((A))/) )
@@ -57,9 +56,6 @@
 !! Another fundamental assumption is that the (e.g. velocity) fields are structured,
 !! on a per PE domain basis. There is no support for locally nested or unstrucured
 !! meshes. Meshes need not be smooth and continuous across PE domains, however.
-
-!> @file
-!> @brief File for @ref drifters_mod
 
 !> @addtogroup drifters_mod
 !> @{

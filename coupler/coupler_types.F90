@@ -21,9 +21,6 @@
 !> @brief This module contains type declarations for the coupler.
 !> @author Richard Slater, John Dunne
 
-!> @file
-!> @brief File for @ref coupler_types_mod
-
 !> @addtogroup coupler_types_mod
 !> @{
 module coupler_types_mod
