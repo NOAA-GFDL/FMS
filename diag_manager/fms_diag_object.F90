@@ -40,6 +40,7 @@ type fmsDiagObject_type
      logical, allocatable, private                    :: static            !< true if this is a static var
      logical, allocatable, private                    :: registered        !< true when registered
      logical, allocatable, private                    :: mask_variant      !< If there is a mask variant
+     logical, allocatable, private                    :: do_not_log        !< .true. if no need to log the diag_field
      logical, allocatable, private                    :: local             !< If the output is local
      TYPE(time_type), private                         :: init_time         !< The initial time
      integer,          allocatable, private           :: vartype           !< the type of varaible
@@ -50,7 +51,6 @@ type fmsDiagObject_type
      character(len=:), allocatable, private           :: modname           !< the module
      character(len=:), allocatable, private           :: realm             !< String to set as the value
                                                                            !! to the modeling_realm attribute
-     character(len=:), allocatable, private           :: err_msg           !< An error message
      character(len=:), allocatable, private           :: interp_method     !< The interp method to be used
                                                             !! when regridding the field in post-processing.
                                                             !! Valid options are "conserve_order1",
@@ -65,7 +65,7 @@ type fmsDiagObject_type
                                                                            !! "TWO_D_DOMAIN", or "UG_DOMAIN")
      integer, allocatable, private                    :: area, volume      !< The Area and Volume
      class(*), allocatable, private                   :: missing_value     !< The missing fill value
-     class(*), allocatable, private                   :: data_RANGE        !< The range of the variable data
+     class(*), allocatable, private                   :: data_RANGE(:)     !< The range of the variable data
      class(*), allocatable :: vardata0                                     !< Scalar data buffer 
      class(*), allocatable, dimension(:) :: vardata1                       !< 1D data buffer
      class(*), allocatable, dimension(:,:) :: vardata2                     !< 2D data buffer
@@ -104,7 +104,6 @@ type fmsDiagObject_type
      procedure :: has_units
      procedure :: has_modname
      procedure :: has_realm
-     procedure :: has_err_msg
      procedure :: has_interp_method
      procedure :: has_frequency
      procedure :: has_output_units
@@ -128,7 +127,6 @@ type fmsDiagObject_type
      procedure :: get_units
      procedure :: get_modname
      procedure :: get_realm
-     procedure :: get_err_msg
      procedure :: get_interp_method
      procedure :: get_frequency
      procedure :: get_output_units
@@ -188,7 +186,7 @@ subroutine fms_register_diag_field_obj &
  class(fmsDiagObject_type),      INTENT(inout) :: dobj                  !< Diaj_obj to fill
  CHARACTER(len=*),               INTENT(in)    :: modname               !< The module name
  CHARACTER(len=*),               INTENT(in)    :: varname               !< The variable name
- TYPE(time_type),                INTENT(in)    :: init_time             !< Initial time
+ TYPE(time_type),                INTENT(in)    :: init_time             !< Initial time !< TO DO
  integer,                        INTENT(in)    :: diag_field_indices(:) !< Array of indices to the field
                                                                         !! in the yaml object
  INTEGER, TARGET,  OPTIONAL,     INTENT(in)    :: axes(:)               !< The axes indicies
@@ -240,15 +238,17 @@ subroutine fms_register_diag_field_obj &
   endif
 
 !> get the optional arguments if included and the diagnostic is in the diag table
-  if (present(longname)) then
-     dobj%longname = trim(longname)
+  if (present(longname))      dobj%longname      = trim(longname)
+  if (present(standname))     dobj%standname     = trim(standname)
+  if (present(units))         dobj%units         = trim(units)
+  if (present(realm))         dobj%realm         = trim(realm)
+  if (present(interp_method)) dobj%interp_method = trim(interp_method)
+  if (present(tile_count)) then
+    dobj%tile_count = tile_count
+  else
+    dobj%tile_count = diag_null
   endif
-  if (present(standname)) then
-     dobj%standname = trim(standname)
-  endif
-  if (present(units)) then
-     dobj%units = trim(units)
-  endif
+
   if (present(metadata)) then
      allocate(character(len=MAX_LEN_META) :: dobj%metadata(size(metadata)))
      dobj%metadata = metadata
@@ -278,6 +278,65 @@ subroutine fms_register_diag_field_obj &
        type is (real)
         miss = real(CMOR_MISSING_VALUE)
       end select
+  endif
+
+  if (present(varRANGE)) then
+    select type (varRANGE)
+     type is (integer(kind=i4_kind))
+             allocate(integer(kind=i4_kind) :: dobj%data_RANGE(2))
+             dobj%data_RANGE = varRANGE
+     type is (integer(kind=i8_kind))
+             allocate(integer(kind=i8_kind) :: dobj%data_RANGE(2))
+             dobj%data_RANGE = varRANGE
+     type is (real(kind=r4_kind))
+             allocate(integer(kind=r4_kind) :: dobj%data_RANGE(2))
+             dobj%data_RANGE = varRANGE
+     type is (real(kind=r8_kind))
+             allocate(integer(kind=r8_kind) :: dobj%data_RANGE(2))
+             dobj%data_RANGE = varRANGE
+     class default
+             call mpp_error("fms_register_diag_field_obj", &
+                     "The varRange passed to register a diagnostic is not a r8, r4, i8, or i4",&
+                     FATAL)
+    end select
+  else
+      allocate(real :: dobj%data_RANGE(2))
+      select type (varRANGE => dobj%data_RANGE)
+       type is (real)
+        varRANGE = real(CMOR_MISSING_VALUE)
+      end select
+  endif
+
+  if (present(area)) then
+    if (area < 0) call mpp_error("fms_register_diag_field_obj", &
+                     "The area id passed with field_name"//trim(varname)//" has not been registered."&
+                     "Check that there is a register_diag_field call for the AREA measure and that is in the"&
+                     "diag_table.yaml", FATAL)
+    dobj%area = area
+  else
+    dobj%area = diag_null
+  endif
+
+  if (present(volume)) then
+    if (volume < 0) call mpp_error("fms_register_diag_field_obj", &
+                     "The volume id passed with field_name"//trim(varname)//" has not been registered."&
+                     "Check that there is a register_diag_field call for the VOLUME measure and that is in the"&
+                     "diag_table.yaml", FATAL)
+    dobj%volume = volume
+  else
+    dobj%volume = diag_null
+  endif
+
+  if (present(mask_variant)) then
+    dobj%mask_variant = mask_variant
+  else
+    dobj%mask_variant = .false.
+  endif
+
+  if (present(do_not_log)) then
+    dobj%do_not_log = do_not_log
+  else
+    dobj%do_not_log = .false.
   endif
 
  dobj%registered = .true.
@@ -586,18 +645,6 @@ result(rslt)
        rslt = diag_null_string
      endif
 end function get_realm
-!> @brief Gets err_msg
-!! @return copy of The error message stored in err_msg or an empty string if not allocated
-pure function get_err_msg (obj) &
-result(rslt)
-     class (fmsDiagObject_type), intent(in) :: obj !< diag object
-     character(len=:), allocatable :: rslt 
-     if (allocated(obj%err_msg)) then
-       rslt = obj%err_msg
-     else
-       rslt = diag_null_string
-     endif
-end function get_err_msg
 !> @brief Gets interp_method
 !! @return copy of The interpolation method or an empty string if not allocated
 pure function get_interp_method (obj) &
@@ -721,20 +768,20 @@ end function get_missing_value
 function get_data_RANGE (obj) &
 result(rslt)
      class (fmsDiagObject_type), intent(in) :: obj !< diag object
-     class(*),allocatable :: rslt 
+     class(*),allocatable :: rslt(:) 
      if (allocated(obj%data_RANGE)) then
        select type (r => obj%data_RANGE)
          type is (integer(kind=i4_kind))
-             allocate (integer(kind=i4_kind) :: rslt)
+             allocate (integer(kind=i4_kind) :: rslt(2))
              rslt = r
          type is (integer(kind=i8_kind))
-             allocate (integer(kind=i8_kind) :: rslt)
+             allocate (integer(kind=i8_kind) :: rslt(2))
              rslt = r
          type is (real(kind=r4_kind))
-             allocate (integer(kind=i4_kind) :: rslt)
+             allocate (integer(kind=i4_kind) :: rslt(2))
              rslt = r
          type is (real(kind=r8_kind))
-             allocate (integer(kind=i4_kind) :: rslt)
+             allocate (integer(kind=i4_kind) :: rslt(2))
              rslt = r
          class default
              call mpp_error ("get_data_RANGE", &
@@ -847,12 +894,6 @@ pure logical function has_realm (obj)
   class (fmsDiagObject_type), intent(in) :: obj !< diag object
   has_realm = allocated(obj%realm)
 end function has_realm
-!> @brief Checks if obj%err_msg is allocated
-!! @return true if obj%err_msg is allocated
-pure logical function has_err_msg (obj)
-  class (fmsDiagObject_type), intent(in) :: obj !< diag object
-  has_err_msg = allocated(obj%err_msg)
-end function has_err_msg
 !> @brief Checks if obj%interp_method is allocated
 !! @return true if obj%interp_method is allocated
 pure logical function has_interp_method (obj)
