@@ -36,9 +36,6 @@
 !! A field can be overriden globally (by default) or users can specify one or two regions in which
 !! data_override will take place, field values outside the region will not be affected.
 
-!> @file
-!> @brief File for @ref data_override_mod
-
 module data_override_mod
 use yaml_parser_mod
 use constants_mod, only: PI

@@ -19,8 +19,10 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 !> @file
-!> @ingroup mpp_io_mod
 !> @brief Parallel file read routines for structured grids for use in @ref mpp_io_mod
+
+!> @addtogroup mpp_io_mod
+!> @{
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !                                                                      !
@@ -1315,5 +1317,4 @@
       end if
       return
     end subroutine mpp_get_tavg_info
-
-!#######################################################################
+!> @}

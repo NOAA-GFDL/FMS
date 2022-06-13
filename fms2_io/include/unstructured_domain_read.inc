@@ -17,7 +17,10 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 !> @file
-!> @ingroup fms_netcdf_unstructured_domain_io_mod
+!> @brief Routines for reading unstructured domain data, used in @ref read_data interface
+
+!> @addtogroup fms2_io_mod
+!> @{
 
 !> @brief Wrapper to distinguish interfaces.
 subroutine unstructured_domain_read_0d(fileobj, &
@@ -214,3 +217,4 @@ subroutine unstructured_domain_read_5d(fileobj, &
                         edge_lengths, &
                         broadcast)
 end subroutine unstructured_domain_read_5d
+!> @}

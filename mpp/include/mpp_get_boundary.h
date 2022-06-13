@@ -17,8 +17,10 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
-! this routine is used to retrieve scalar boundary data for symmetric domain.
+!> @addtogroup mpp_domains_mod
+!> @{
 
+!> This routine is used to retrieve scalar boundary data for symmetric domain.
 subroutine MPP_GET_BOUNDARY_2D_(field, domain, ebuffer, sbuffer, wbuffer, nbuffer, flags, &
                                 position, complete, tile_count)
   type(domain2D),       intent(in)   :: domain
@@ -301,7 +303,7 @@ end subroutine MPP_GET_BOUNDARY_3D_
 
 
 !####################################################################
-! vector update
+!> vector update
 subroutine MPP_GET_BOUNDARY_2D_V_(fieldx, fieldy, domain, ebufferx, sbufferx, wbufferx, nbufferx, &
                                   ebuffery, sbuffery, wbuffery, nbuffery, flags, gridtype, &
                                   complete, tile_count)
@@ -741,3 +743,4 @@ subroutine MPP_GET_BOUNDARY_3D_V_(fieldx, fieldy, domain, ebufferx, sbufferx, wb
   end if
 
 end subroutine MPP_GET_BOUNDARY_3D_V_
+!> @}

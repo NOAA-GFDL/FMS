@@ -18,12 +18,11 @@
 !***********************************************************************
 
 !> @file
-!> @ingroup mpp_io_mod
 !> @brief Parallel file writes for unstructured grids, used in @ref mpp_io_mod
-!----------
-!ug support
 
-!------------------------------------------------------------------------------
+!> @addtogroup mpp_io_mod
+!> @{
+
 !>Write data for a 1D field associated with an unstructured mpp domain to a
 !!restart file.
 subroutine mpp_io_unstructured_write_r8_1D(funit, &
@@ -1410,7 +1409,4 @@ subroutine mpp_io_unstructured_write_r4_4D(funit, &
 
     return
 end subroutine mpp_io_unstructured_write_r4_4D
-
-!------------------------------------------------------------------------------
-
-!----------
+!> @}

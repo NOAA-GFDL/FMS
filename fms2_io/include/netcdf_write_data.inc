@@ -17,7 +17,11 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 !> @file
-!> @ingroup fms2_io
+!> @brief Routines for writing variable values to netcdf files with different
+!! dimension sizes for the @ref netcdf_write_data interface
+
+!> @addtogroup netcdf_io_mod
+!> @{
 
 !> @brief Write data to a variable in a netcdf file.
 subroutine netcdf_write_data_0d(fileobj, variable_name, variable_data, unlim_dim_level, &

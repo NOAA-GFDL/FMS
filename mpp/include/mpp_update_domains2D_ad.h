@@ -17,9 +17,11 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
+!> @addtogroup mpp_domains_mod
+!> @{
+    !> Updates data domain of 2D field whose computational domains have been computed
     subroutine MPP_UPDATE_DOMAINS_AD_2D_( field, domain, flags, complete, position, &
                                        whalo, ehalo, shalo, nhalo, name, tile_count)
-!updates data domain of 2D field whose computational domains have been computed
       MPP_TYPE_,        intent(inout)        :: field(:,:)
       type(domain2D),   intent(inout)        :: domain
       integer,          intent(in), optional :: flags
@@ -37,9 +39,9 @@
       return
     end subroutine MPP_UPDATE_DOMAINS_AD_2D_
 
+    !> Updates data domain of 3D field whose computational domains have been computed
     subroutine MPP_UPDATE_DOMAINS_AD_3D_( field, domain, flags, complete, position, &
                                        whalo, ehalo, shalo, nhalo, name, tile_count)
-!updates data domain of 3D field whose computational domains have been computed
       MPP_TYPE_,        intent(inout)        :: field(:,:,:)
       type(domain2D),   intent(inout)        :: domain
       integer,          intent(in), optional :: flags
@@ -174,9 +176,9 @@
 
     end subroutine MPP_UPDATE_DOMAINS_AD_3D_
 
+    !> Updates data domain of 4D field whose computational domains have been computed
     subroutine MPP_UPDATE_DOMAINS_AD_4D_( field, domain, flags, complete, position, &
                                        whalo, ehalo, shalo, nhalo, name, tile_count )
-!updates data domain of 4D field whose computational domains have been computed
       MPP_TYPE_,        intent(inout)        :: field(:,:,:,:)
       type(domain2D),   intent(inout)        :: domain
       integer,          intent(in), optional :: flags
@@ -194,9 +196,9 @@
       return
     end subroutine MPP_UPDATE_DOMAINS_AD_4D_
 
+   !> Updates data domain of 5D field whose computational domains have been computed
     subroutine MPP_UPDATE_DOMAINS_AD_5D_( field, domain, flags, complete, position, &
                                        whalo, ehalo, shalo, nhalo, name, tile_count )
-!updates data domain of 5D field whose computational domains have been computed
       MPP_TYPE_,        intent(inout)        :: field(:,:,:,:,:)
       type(domain2D),   intent(inout)        :: domain
       integer,          intent(in), optional :: flags
@@ -464,3 +466,4 @@
       return
     end subroutine MPP_UPDATE_DOMAINS_AD_5D_V_
 #endif /* VECTOR_FIELD_ */
+!> @}

@@ -17,7 +17,11 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 !> @file
-!> @ingroup fms2_io
+!> @brief Routines for retrieving variable attribute values from netcdf files with different
+!! dimension sizes for the @ref get_variable_attribute interface
+
+!> @addtogroup netcdf_io_mod
+!> @{
 
 !> @brief Get the value of a variable's attribute.
 subroutine get_variable_attribute_0d(fileobj, variable_name, attribute_name, &
@@ -169,3 +173,4 @@ subroutine get_variable_attribute_1d(fileobj, variable_name, attribute_name, &
       call error("unsupported attribute type: "//trim(append_error_msg))
   end select
 end subroutine get_variable_attribute_1d
+!> @}

@@ -18,8 +18,9 @@
 !***********************************************************************
 !----------
 !ug support
-!> @file
-!> @ingroup fms_io_mod
+
+!> @addtogroup fms_io_mod
+!> @{
 
 !>Get the size of the dimensions of a field from a file associated with an
 !!unstructured mpp domain.
@@ -195,3 +196,4 @@ subroutine fms_io_unstructured_get_field_size(filename, &
 
     return
 end subroutine fms_io_unstructured_get_field_size
+!> @}

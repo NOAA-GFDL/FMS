@@ -1,3 +1,5 @@
+! -*-f90-*-
+
 !***********************************************************************
 !*                   GNU Lesser General Public License
 !*
@@ -17,9 +19,12 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 !> @file
-!> @ingroup mpp
 !> @brief Routines for calculating global integer checksums for the @ref mpp_chksum interface.
 
+!> @addtogroup mpp_mod
+!> @{
+
+!> Calculates integer checksum over pelist
 function MPP_CHKSUM_INT_( var, pelist, mask_val )
   integer(i8_kind) :: MPP_CHKSUM_INT_
   MPP_TYPE_, intent(in) :: var MPP_RANK_
@@ -41,8 +46,7 @@ function MPP_CHKSUM_INT_( var, pelist, mask_val )
     end function MPP_CHKSUM_INT_
 
 
-!Handles real mask for easier implimentation
-! until exists full integer vartypes...
+!> Handles real mask for easier implementation
 function MPP_CHKSUM_INT_RMASK_( var, pelist, mask_val )
   integer(KIND=i8_kind) :: MPP_CHKSUM_INT_RMASK_
   MPP_TYPE_, intent(in) :: var MPP_RANK_
@@ -108,3 +112,4 @@ function MPP_CHKSUM_INT_RMASK_( var, pelist, mask_val )
   return
 
 end function MPP_CHKSUM_INT_RMASK_
+!> @}

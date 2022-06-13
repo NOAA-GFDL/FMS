@@ -35,9 +35,6 @@
 !! missing input data. An optional output mask field may be used in conjunction with
 !! the input mask to show where output data exists.
 
-!> @file
-!> @brief File for @ref horiz_interp_mod
-
 module horiz_interp_mod
 
 !-----------------------------------------------------------------------
