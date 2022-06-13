@@ -244,9 +244,8 @@ subroutine fms_register_diag_field_obj &
   if (present(realm))         dobj%realm         = trim(realm)
   if (present(interp_method)) dobj%interp_method = trim(interp_method)
   if (present(tile_count)) then
+    allocate(dobj%tile_count)
     dobj%tile_count = tile_count
-  else
-    dobj%tile_count = diag_null
   endif
 
   if (present(metadata)) then
@@ -312,9 +311,8 @@ subroutine fms_register_diag_field_obj &
                      "The area id passed with field_name"//trim(varname)//" has not been registered."&
                      "Check that there is a register_diag_field call for the AREA measure and that is in the"&
                      "diag_table.yaml", FATAL)
+    allocate(dobj%area)
     dobj%area = area
-  else
-    dobj%area = diag_null
   endif
 
   if (present(volume)) then
@@ -322,21 +320,18 @@ subroutine fms_register_diag_field_obj &
                      "The volume id passed with field_name"//trim(varname)//" has not been registered."&
                      "Check that there is a register_diag_field call for the VOLUME measure and that is in the"&
                      "diag_table.yaml", FATAL)
+    allocate(dobj%volume)
     dobj%volume = volume
-  else
-    dobj%volume = diag_null
   endif
 
   if (present(mask_variant)) then
+    allocate(dobj%mask_variant)
     dobj%mask_variant = mask_variant
-  else
-    dobj%mask_variant = .false.
   endif
 
   if (present(do_not_log)) then
+    allocate(dobj%do_not_log)
     dobj%do_not_log = do_not_log
-  else
-    dobj%do_not_log = .false.
   endif
 
  dobj%registered = .true.
