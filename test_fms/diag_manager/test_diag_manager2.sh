@@ -457,7 +457,7 @@ test_diag_manager_23
 _EOF
 setup_test
 test_expect_success "Unstructured grid (test $my_test_count)" '
-  mpirun -n 1 ../test_diag_manager
+  mpirun -n 2 ../test_diag_manager
 '
 
 # test_diag_manager_time
