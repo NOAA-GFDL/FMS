@@ -186,8 +186,10 @@ return ;
 error:
     fprintf(stderr, "YAML_OUTPUT: No output YAML written.  Failed to emit event %d: %s\n", event->type, emitter->problem);
 }
-/* \brief Writes a 1 level YAML using the toplevel struct.  Writes out each key/value of the struct.
- * Ignores the level2key if one is given.  If a key is null, then the kay/value pair is not written.
+/* \brief Writes a YAML.  Writes out each key/value of the struct.
+ * If a struct has a level2key, then that key is written as a sequence.   
+ * If a key is null, then the kay/value pair is not written.
+ * Users must pass in the size of each struct array for level 2. 3, or 4.  The top level size should be 1.
  */
 void write_yaml (int asize, struct fmsyamloutkeys *topkeys, struct fmsyamloutvalues *topvals, int a2size, struct fmsyamloutkeys *l2keys, struct fmsyamloutvalues *l2vals, int a3size, struct fmsyamloutkeys *l3keys, struct fmsyamloutvalues *l3vals,int a4size, struct fmsyamloutkeys *l4keys, struct fmsyamloutvalues *l4vals){
   yaml_emitter_t emitter;
@@ -207,8 +209,9 @@ if (!yaml_emitter_emit(&emitter, &event)) goto error;
         1, YAML_ANY_MAPPING_STYLE);
     if (!yaml_emitter_emit(&emitter, &event)) goto error;
 
-/* start write the top level */
+/* write the top level */
  write_keys_vals_yaml (&emitter, &event , 0, topkeys, topvals);
+
  /* Check for the next level key */
  if (topkeys->level2key[0] !='\0') {
   /* Start the secodn level event */
@@ -229,6 +232,31 @@ if (!yaml_emitter_emit(&emitter, &event)) goto error;
     write_keys_vals_yaml (&emitter, &event , s2, l2keys, l2vals);
     yaml_mapping_end_event_initialize(&event);
     if (!yaml_emitter_emit(&emitter, &event)) goto error;
+
+  /* Next level keys */
+  if (l2keys->level2key[0] !='\0') {
+    /* Start the third level event */
+    yaml_scalar_event_initialize(&event, NULL, (yaml_char_t *)YAML_STR_TAG,
+    (yaml_char_t *)l2keys->level2key, strlen(l2keys->level2key), 1, 0,
+    YAML_PLAIN_SCALAR_STYLE);
+    if (!yaml_emitter_emit(&emitter, &event)) goto error;
+    /* Start the sequencing */
+    yaml_sequence_start_event_initialize(&event, NULL, (yaml_char_t *)YAML_SEQ_TAG,
+        1, YAML_ANY_SEQUENCE_STYLE);
+    if (!yaml_emitter_emit(&emitter, &event)) goto error;
+    /* loop through the structs */
+    for (int s3 = 0 ; s3 < a2size ; s3++){
+      yaml_mapping_start_event_initialize(&event, NULL, (yaml_char_t *)YAML_MAP_TAG,
+          1, YAML_ANY_MAPPING_STYLE);
+      if (!yaml_emitter_emit(&emitter, &event)) goto error;
+      /* call the write function */
+      write_keys_vals_yaml (&emitter, &event , s3, l3keys, l3vals);
+      yaml_mapping_end_event_initialize(&event);
+      if (!yaml_emitter_emit(&emitter, &event)) goto error;
+    }
+    yaml_sequence_end_event_initialize(&event);
+    if (!yaml_emitter_emit(&emitter, &event)) goto error;
+   }
   }
   yaml_sequence_end_event_initialize(&event);
   if (!yaml_emitter_emit(&emitter, &event)) goto error;
