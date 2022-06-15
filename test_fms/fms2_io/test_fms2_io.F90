@@ -25,6 +25,7 @@ use mpp_mod
 use mpp_domains_mod
 use fms2_io_mod
 use platform_mod
+use fms_mod, only: check_nml_error, input_nml_file
 implicit none
 
 character(len=8), parameter :: green = achar(27)//"[1;32m"
@@ -37,9 +38,9 @@ integer, parameter :: ntiles = 6
 
 type(Parser_t) :: parser
 logical, dimension(3) :: tests
-integer :: nx
-integer :: ny
-integer :: nz
+integer :: nx = 96
+integer :: ny = 96
+integer :: nz = 30
 logical :: debug
 character(len=32) :: buf
 integer :: err
@@ -58,6 +59,9 @@ type(domain2d) :: atmosphere_domain
 type(domainug) :: land_domain
 integer :: i
 
+namelist / test_fms2_io_nml / nx, ny, nz
+
+
 !Initialize mpp.
 call mpp_init()
 my_rank = mpp_pe()
@@ -67,6 +71,9 @@ if (my_rank .eq. 0) then
 endif
 call mpi_barrier(mpi_comm_world, err)
 call mpi_check(err)
+
+read(input_nml_file, nml=test_fms2_io_nml, iostat=err)
+err = check_nml_error(err, 'test_fms2_io_nml')
 
 !Define command line arguments.
 parser = get_parser()
@@ -86,9 +93,6 @@ call parse_args(parser)
 
 !Set defaults.
 tests(:) = .true.
-nx = 36
-ny = 36
-nz = 10
 io_layout(:) = 1
 ocn_io_layout(:) = 1
 npes_group = 1

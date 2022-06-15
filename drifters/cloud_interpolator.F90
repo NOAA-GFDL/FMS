@@ -16,17 +16,11 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
-! nf95 -r8 -g -I ~/regression/ia64/23-Jun-2005/CM2.1U_Control-1990_E1.k32pe/include/ -D_TEST_CLOUD_INTERPOLATOR
-! -D_F95 cloud_interpolator.F90
-
 #define _FLATTEN(A) reshape((A), (/size((A))/) )
 
 !> @defgroup cloud_interpolator_mod cloud_interpolator_mod
 !> @ingroup drifters
 !! @brief Cloud interpolation routines for use in @ref drifters_mod
-
-!> @file
-!> @brief File for @ref cloud_interpolator_mod
 
 !> @addtogroup cloud_interpolator_mod
 !> @{

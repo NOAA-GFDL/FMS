@@ -16,6 +16,8 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
+!> @addtogroup mpp_domains_mod
+!> @{
     subroutine MPP_GLOBAL_FIELD_UG_2D_( domain, local, global, flags, default_data)
       type(domainUG), intent(in) :: domain
       MPP_TYPE_, intent(in)  ::  local(:)
@@ -200,6 +202,4 @@
       gptr = LOC(global)
       call mpp_global_field_UG( domain, local3D, global3D, flags, default_data )
     end subroutine MPP_GLOBAL_FIELD_UG_5D_
-
-
-
+!> @}

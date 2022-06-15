@@ -24,9 +24,6 @@
 !> Mainly includes interfaces and type definitions for reproducing operations with extended
 !! fixed point data.
 
-!> @file
-!> @brief file for @ref mpp_efp_mod
-
 !> @addtogroup mpp_efp_mod
 !> @{
 module mpp_efp_mod

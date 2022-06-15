@@ -97,9 +97,6 @@
 !!              call compute_mrs (temp, press, mrs, mr, hc, dmrsdT, esat,
 !!                                err_msg, es_over_liq)
 
-!> @file
-!> @brief File for @ref sat_vapor_pres_mod
-
 module sat_vapor_pres_mod
 
 !-----------------------------------------------------------------------

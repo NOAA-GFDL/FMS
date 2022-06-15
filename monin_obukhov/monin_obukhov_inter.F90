@@ -20,9 +20,6 @@
 !> @ingroup monin_obukhov
 !> @brief Utility routines to be used in @ref monin_obukhov_mod
 
-!> @file
-!> @brief File for @ref monin_obukhov_inter
-
 !> @addtogroup monin_obukhov_inter
 !> @{
 module monin_obukhov_inter

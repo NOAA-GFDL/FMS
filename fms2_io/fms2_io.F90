@@ -20,13 +20,7 @@
 !> @ingroup fms2_io
 !> @brief An updated library for parallel IO to replace @ref mpp_io_mod. This module contains
 !! the public API for fms2 I/O interfaces and routines defined throughout this directory.
-!!
-!> Provides public interfaces for routines within @ref fms2_io.
-!! Interfaces and example usages are listed below, see individual routine
-!! documentation for more specific argument information.
-
-!> @file
-!> @brief File for @ref fms2_io_mod
+!! A conversion guide for replacing mpp/fms_io code with this module is available below.
 
 !> @addtogroup fms2_io_mod
 !> @{
@@ -119,6 +113,10 @@ public :: flush_file
 !!
 !! Opens a domain netcdf file of type @ref fmsnetcdfdomainfile_t or
 !! @ref fmsnetcdfunstructureddomainfile_t at the given file path name and 2D or unstructured domain.
+!! @note For individual documentation on the listed routines, please see the appropriate helper module.
+!! For netcdf files with a structured domain: @ref fms_netcdf_domain_io_mod.
+!! For netcdf files with an unstructured domain: @ref fms_netcdf_unstructured_domain_io_mod.
+!! For generic netcdf: @ref netcdf_io_mod.
 !> @ingroup fms2_io_mod
 interface open_file
   module procedure netcdf_file_open_wrap
@@ -140,8 +138,9 @@ end interface open_file
 !!              io_success = open_virtual_file(fileobj, domain, "filename")
 !!
 !! Opens a virtual domain file through @ref fmsnetcdfdomainfile_t or
-!! - @ref fmsnetcdfunstructureddomainfile_t for a given 2D domain at an optional path <br>
+!! @ref fmsnetcdfunstructureddomainfile_t for a given 2D domain at an optional path <br>
 !!
+!! @note For individual documentation on the listed routines, please see the appropriate helper module: @ref blackboxio
 !> @ingroup fms2_io_mod
 interface open_virtual_file
   module procedure create_diskless_netcdf_file_wrap
@@ -158,6 +157,10 @@ end interface open_virtual_file
 !!
 !! Closes any given fileobj opened via @ref open_file or @ref open_virtual_file
 !!
+!! @note For individual documentation on the listed routines, please see the appropriate helper module.
+!! For netcdf files with a structured domain: @ref fms_netcdf_domain_io_mod.
+!! For netcdf files with an unstructured domain: @ref fms_netcdf_unstructured_domain_io_mod.
+!! For generic netcdf: @ref netcdf_io_mod.
 !> @ingroup fms2_io_mod
 interface close_file
   module procedure netcdf_file_close_wrap
@@ -178,6 +181,10 @@ end interface close_file
 !!
 !! Adds a dimension named "lon" with length n to a given netcdf file.<br>
 !!
+!! @note For individual documentation on the listed routines, please see the appropriate helper module.
+!! For netcdf files with a structured domain: @ref fms_netcdf_domain_io_mod.
+!! For netcdf files with an unstructured domain: @ref fms_netcdf_unstructured_domain_io_mod.
+!! For generic netcdf: @ref netcdf_io_mod.
 !> @ingroup fms2_io_mod
 interface register_axis
   module procedure netcdf_add_dimension
@@ -196,6 +203,10 @@ end interface register_axis
 !! The size of dimension name list provided is the amount of ranks for the created
 !! field, scalar if list not provided.
 !!
+!! @note For individual documentation on the listed routines, please see the appropriate helper module.
+!! For netcdf files with a structured domain: @ref fms_netcdf_domain_io_mod.
+!! For netcdf files with an unstructured domain: @ref fms_netcdf_unstructured_domain_io_mod.
+!! For generic netcdf: @ref netcdf_io_mod.
 !> @ingroup fms2_io_mod
 interface register_field
   module procedure netcdf_add_variable_wrap
@@ -211,6 +222,10 @@ end interface register_field
 !! Creates a restart variable and sets it to the values from data_ptr, corresponding to
 !! the list of dimension names. Rank of data_ptr must equal the amount of corresponding dimensions.
 !!
+!! @note For individual documentation on the listed routines, please see the appropriate helper module.
+!! For netcdf files with a structured domain: @ref fms_netcdf_domain_io_mod.
+!! For netcdf files with an unstructured domain: @ref fms_netcdf_unstructured_domain_io_mod.
+!! For generic netcdf: @ref netcdf_io_mod.
 !> @ingroup fms2_io_mod
 interface register_restart_field
   module procedure netcdf_add_restart_variable_0d_wrap
@@ -301,6 +316,10 @@ end interface read_data
 !!
 !! Writes previously registered restart fields to the given restart file
 !!
+!! @note For individual documentation on the listed routines, please see the appropriate helper module.
+!! For netcdf files with a structured domain: @ref fms_netcdf_domain_io_mod.
+!! For netcdf files with an unstructured domain: @ref fms_netcdf_unstructured_domain_io_mod.
+!! For generic netcdf: @ref netcdf_io_mod.
 !> @ingroup fms2_io_mod
 interface write_restart
   module procedure netcdf_save_restart_wrap
@@ -316,6 +335,7 @@ end interface write_restart
 !! Creates a new restart file, with the provided timestamp and filename, out of the registered
 !! restart fields in the given restart file.
 !!
+!! @note For individual documentation on the listed routines, please see the appropriate helper module: @ref blackboxio
 !> @ingroup fms2_io_mod
 interface write_new_restart
   module procedure netcdf_save_restart_wrap2
@@ -328,6 +348,9 @@ end interface write_new_restart
 !!              call read_restart(fileobj)
 !! Reads registered restart variables from fileobj
 !!
+!! @note For individual documentation on the listed routines, please see the appropriate helper module.
+!! For netcdf files with a structured domain: @ref fms_netcdf_domain_io_mod.
+!! For generic netcdf: @ref netcdf_io_mod.
 !> @ingroup fms2_io_mod
 interface read_restart
   module procedure netcdf_restore_state
@@ -335,6 +358,12 @@ interface read_restart
 end interface read_restart
 
 !> @brief Read registered restarts from a new file
+!! Optionally takes directory to write to, model time and filename
+!> <br>Example usage:
+!!              call read_new_restart(fileobj, unlimted_dimension_level)
+!!
+!!              call read_new_restart(fileobj, unlimited_dimension_level, directory, timestamp, filename)
+!! @note For individual documentation on the listed routines, please see the appropriate helper module: @ref blackboxio
 !> @ingroup fms2_io_mod
 interface read_new_restart
   module procedure netcdf_restore_state_wrap

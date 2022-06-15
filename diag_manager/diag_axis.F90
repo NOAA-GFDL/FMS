@@ -26,9 +26,6 @@
 !! Users first create axis ID by calling diag_axis_init, then use this axis ID in
 !! register_diag_field.
 
-!> @file
-!> @brief File for @ref diag_axis_mod
-
 !> @addtogroup diag_axis_mod
 !> @{
 MODULE diag_axis_mod
@@ -42,7 +39,8 @@ use platform_mod
        & fms_error_handler, FATAL, NOTE
   USE diag_data_mod, ONLY: diag_axis_type, max_subaxes, max_axes,&
        & max_num_axis_sets, max_axis_attributes, debug_diag_manager,&
-       & first_send_data_call, diag_atttype
+       & first_send_data_call, diag_atttype, use_modern_diag
+  USE fms_diag_axis_object_mod, ONLY: fms_diag_axis_init
 #ifdef use_netCDF
   USE netcdf, ONLY: NF90_INT, NF90_FLOAT, NF90_CHAR
 #endif
@@ -57,7 +55,7 @@ use platform_mod
        & get_axis_num, get_diag_axis_domain_name, diag_axis_add_attribute,&
        & get_domainUG, axis_compatible_check, axis_is_compressed, &
        & get_compressed_axes_ids, get_axis_reqfld, &
-       & NORTH, EAST, CENTER
+       & NORTH, EAST, CENTER, diag_axis_type
 
   ! Include variable "version" to be written to log file
 #include<file_version.h>
@@ -139,6 +137,12 @@ CONTAINS
        CALL write_version_number("DIAG_AXIS_MOD", version)
     ENDIF
 
+    if (use_modern_diag) then
+      diag_axis_init = fms_diag_axis_init(name, DATA, units, cart_name, long_name=long_name, direction=direction,&
+       & set_name=set_name, edges=edges, Domain=Domain, Domain2=Domain2, DomainU=DomainU, aux=aux, req=req, &
+       & tile_count=tile_count, domain_position=domain_position )
+      return
+    endif
     IF ( PRESENT(tile_count)) THEN
        tile = tile_count
     ELSE

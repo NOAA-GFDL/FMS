@@ -45,7 +45,6 @@ setup_test () {
 &diag_manager_nml
    max_field_attributes=3
    debug_diag_manager=.true.
-   use_mpp_io = .false.
 /
 
 &ensemble_nml
@@ -483,9 +482,6 @@ test_expect_success "wildcard filenames (test $my_test_count)" '
   mpirun -n 1 ../test_diag_manager_time
 '
 
-rm -f input.nml diag_table
-
-touch input.nml
 cat <<_EOF > diag_table
 test_diag_manager
 2 1 1 0 0 0
@@ -497,8 +493,218 @@ test_diag_manager
  "test_diag_manager_mod", "sst", "sst", "test_diurnal",  "all", "diurnal3", "none", 2
  "test_diag_manager_mod", "ice", "ice", "test_diurnal",  "all", "diurnal3", "none", 2
 _EOF
+
 test_expect_success "diurnal test (test $my_test_count)" '
   mpirun -n 1 ../test_diag_manager_time
 '
 
+cat <<_EOF > diag_table.yaml
+title: test_diag_manager
+base_date: 2 1 1 0 0 0
+diag_files:
+- file_name: wild_card_name%4yr%2mo%2dy%2hr
+  freq: 6
+  freq_units: hours
+  time_units: hours
+  unlimdim: time
+  new_file_freq: 6
+  new_file_freq_units: hours
+  start_time: 2 1 1 0 0 0
+  file_duration: 12
+  file_duration_units: hours
+  varlist:
+  - module: test_diag_manager_mod
+    var_name: sst
+    output_name: sst
+    reduction: average
+    kind: r4
+  global_meta:
+  - is_a_file: true
+- file_name: normal
+  freq: 24
+  freq_units: days
+  time_units: hours
+  unlimdim: records
+  varlist:
+  - module: test_diag_manager_mod
+    var_name: sst
+    output_name: sst
+    reduction: average
+    kind: r4
+    write_var: true
+    attributes:
+    - do_sst: .true.
+  sub_region:
+  - grid_type: latlon
+    corner1: -80, 0
+    corner2: -80, 75
+    corner3: -60, 0
+    corner4: -60, 75
+- file_name: normal2
+  freq: -1
+  freq_units: days
+  time_units: hours
+  unlimdim: records
+  write_file: true
+  varlist:
+  - module: test_diag_manager_mod
+    var_name: sstt
+    output_name: sstt
+    reduction: average
+    kind: r4
+    long_name: S S T
+  - module: test_diag_manager_mod
+    var_name: sstt2
+    output_name: sstt2
+    reduction: average
+    kind: r4
+    long_name: S S T
+    write_var: false
+  sub_region:
+  - grid_type: index
+    tile: 1
+    corner1: 10, 15
+    corner2: 20, 15
+    corner3: 10, 25
+    corner4: 20, 25
+- file_name: normal3
+  freq: -1
+  freq_units: days
+  time_units: hours
+  unlimdim: records
+  write_file: false
+_EOF
+cp diag_table.yaml diag_table.yaml_base
+
+test_expect_success "diag_yaml test (test $my_test_count)" '
+  mpirun -n 1 ../test_diag_yaml
+'
+
+. $top_srcdir/test_fms/diag_manager/check_crashes.sh
+
+printf "&diag_manager_nml \n use_modern_diag = .true. \n/" | cat > input.nml
+cat <<_EOF > diag_table.yaml
+title: test_diag_manager
+base_date: 2 1 1 0 0 0
+diag_files:
+- file_name: file1
+  freq: 6
+  freq_units: hours
+  time_units: hours
+  unlimdim: time
+  varlist:
+  - module: test_diag_manager_mod
+    var_name: sst1
+    output_name: sst1
+    reduction: average
+    kind: r4
+- file_name: file2
+  freq: 6
+  freq_units: hours
+  time_units: hours
+  unlimdim: time
+  is_ocean: True
+  varlist:
+  - module: test_diag_manager_mod
+    var_name: sst2
+    output_name: sst2
+    reduction: average
+    kind: r4
+- file_name: file3
+  freq: 6
+  freq_units: hours
+  time_units: hours
+  unlimdim: time
+  varlist:
+  - module: test_diag_manager_mod
+    var_name: sst3
+    output_name: sst3
+    reduction: average
+    kind: r4
+  - module: test_diag_manager_mod
+    var_name: sst4
+    output_name: sst4
+    reduction: average
+    kind: r4
+_EOF
+test_expect_success "Test the diag_ocean feature in diag_manager_init (test $my_test_count)" '
+  mpirun -n 2 ../test_diag_ocean
+'
+
+test_expect_success "test_diag_object_container (test $my_test_count)" '
+  mpirun -n 1 ../test_diag_object_container
+'
+test_expect_success "test_diag_dlinked_list (test $my_test_count)" '
+  mpirun -n 1 ../test_diag_dlinked_list
+'
+
+printf "&diag_manager_nml \n use_modern_diag = .true. \n/" | cat > input.nml
+cat <<_EOF > diag_table.yaml
+title: test_diag_manager
+base_date: 2 1 1 0 0 0
+
+diag_files:
+- file_name: file1
+  freq: 6
+  freq_units: hours
+  time_units: hours
+  unlimdim: time
+  varlist:
+  - module: ocn_mod
+    var_name: var1
+    reduction: average
+    kind: r4
+  - module: ocn_mod
+    var_name: var2
+    output_name: potato
+    reduction: average
+    kind: r4
+- file_name: file2
+  freq: 6
+  freq_units: hours
+  time_units: hours
+  unlimdim: time
+  varlist:
+  - module: atm_mod
+    var_name: var3
+    reduction: average
+    kind: r4
+  - module: atm_mod
+    var_name: var4
+    output_name: i_on_a_sphere
+    reduction: average
+    kind: r8
+  - module: atm_mod
+    var_name: var6
+    reduction: average
+    kind: r8
+- file_name: file3
+  freq: 6
+  freq_units: hours
+  time_units: hours
+  unlimdim: time
+  varlist:
+  - module: lnd_mod
+    var_name: var5
+    reduction: average
+    kind: r4
+  - module: lnd_mod
+    var_name: var7
+    reduction: average
+    kind: r4
+- file_name: file4
+  freq: 6
+  freq_units: hours
+  time_units: hours
+  unlimdim: time
+  varlist:
+  - module: lnd_mod
+    var_name: var6
+    reduction: average
+    kind: r4
+_EOF
+
+test_expect_success "Test the modern diag manager end to end (test $my_test_count)" '
+  mpirun -n 6 ../test_modern_diag
+'
 test_done
