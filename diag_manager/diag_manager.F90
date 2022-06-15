@@ -401,8 +401,8 @@ CONTAINS
     CHARACTER(len=*), OPTIONAL, INTENT(in) :: realm         !< String to set as the modeling_realm attribute
 
     ! Fatal error if range is present and its extent is not 2.
-    IF ( PRESENT(var_range) ) THEN
-       IF ( SIZE(var_range) .NE. 2 ) THEN
+    IF ( PRESENT(range) ) THEN
+       IF ( SIZE(range) .NE. 2 ) THEN
           ! <ERROR STATUS="FATAL">extent of range should be 2</ERROR>
           CALL error_mesg ('diag_manager_mod::register_diag_field', 'extent of range should be 2', FATAL)
        END IF
@@ -447,8 +447,8 @@ CONTAINS
     CHARACTER(len=*), OPTIONAL, INTENT(in) :: realm         !< String to set as the modeling_realm attribute
 
     ! Fatal error if range is present and its extent is not 2.
-    IF ( PRESENT(var_range) ) THEN
-       IF ( SIZE(var_range) .NE. 2 ) THEN
+    IF ( PRESENT(range) ) THEN
+       IF ( SIZE(range) .NE. 2 ) THEN
           ! <ERROR STATUS="FATAL">extent of range should be 2</ERROR>
           CALL error_mesg ('diag_manager_mod::register_diag_field', 'extent of range should be 2', FATAL)
        END IF
