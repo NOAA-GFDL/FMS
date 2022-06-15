@@ -631,8 +631,8 @@ CONTAINS
     INTEGER, DIMENSION(:), INTENT(in) :: axes !< Axis IDs
     CHARACTER(len=*), OPTIONAL, INTENT(in) :: long_name !< Long name for field.
     CHARACTER(len=*), OPTIONAL, INTENT(in) :: units !< Unit of field.
-    REAL, OPTIONAL, INTENT(in) :: missing_value !< Missing value value.
-    REAL, DIMENSION(2), OPTIONAL, INTENT(IN) :: range !< Valid range of values for field.
+    CLASS(*), OPTIONAL, INTENT(in) :: missing_value !< Missing value value.
+    CLASS(*), DIMENSION(:), OPTIONAL, INTENT(IN) :: range !< Valid range of values for field.
     LOGICAL, OPTIONAL, INTENT(in) :: dynamic !< <TT>.TRUE.</TT> if field is not static.
 
     ! ---- local vars
@@ -642,9 +642,19 @@ CONTAINS
     CHARACTER(len=1)   :: sep = '|'
     CHARACTER(len=256) :: axis_name, axes_list
     INTEGER :: i
+    REAL :: missing_value_use !< Local copy of missing_value
+    REAL, DIMENSION(2) :: range_use !< Local copy of range
 
     IF ( .NOT.do_diag_field_log ) RETURN
     IF ( mpp_pe().NE.mpp_root_pe() ) RETURN
+
+    ! Fatal error if range is present and its extent is not 2.
+    IF ( PRESENT(range) ) THEN
+       IF ( SIZE(range) .NE. 2 ) THEN
+          ! <ERROR STATUS="FATAL">extent of range should be 2</ERROR>
+          CALL error_mesg ('diag_util_mod::log_diag_field_info', 'extent of range should be 2', FATAL)
+       END IF
+    END IF
 
     lmodule = TRIM(module_name)
     lfield = TRIM(field_name)
@@ -667,15 +677,33 @@ CONTAINS
        IF ( use_cmor ) THEN
           WRITE (lmissval,*) CMOR_MISSING_VALUE
        ELSE
-          WRITE (lmissval,*) missing_value
+          SELECT TYPE (missing_value)
+          TYPE IS (real(kind=r4_kind))
+             missing_value_use = missing_value
+          TYPE IS (real(kind=r8_kind))
+             missing_value_use = real(missing_value)
+          CLASS DEFAULT
+             CALL error_mesg ('diag_util_mod::log_diag_field_info',&
+                  & 'The missing_value is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)
+          END SELECT
+          WRITE (lmissval,*) missing_value_use
        END IF
     ELSE
        lmissval = ''
     ENDIF
 
     IF ( PRESENT(range) ) THEN
-       WRITE (lmin,*) range(1)
-       WRITE (lmax,*) range(2)
+       SELECT TYPE (range)
+       TYPE IS (real(kind=r4_kind))
+          range_use = range
+       TYPE IS (real(kind=r8_kind))
+          range_use = real(range)
+       CLASS DEFAULT
+          CALL error_mesg ('diag_util_mod::log_diag_field_info',&
+               & 'The range is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)
+       END SELECT
+       WRITE (lmin,*) range_use(1)
+       WRITE (lmax,*) range_use(2)
     ELSE
        lmin = ''
        lmax = ''
