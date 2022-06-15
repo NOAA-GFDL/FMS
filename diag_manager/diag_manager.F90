@@ -574,14 +574,6 @@ end function register_diag_field_array
 
     IF ( PRESENT(err_msg) ) err_msg = ''
 
-    ! Fatal error if range is present and its extent is not 2.
-    IF ( PRESENT(range) ) THEN
-       IF ( SIZE(range) .NE. 2 ) THEN
-          ! <ERROR STATUS="FATAL">extent of range should be 2</ERROR>
-          CALL error_mesg ('diag_manager_mod::register_diag_field', 'extent of range should be 2', FATAL)
-       END IF
-    END IF
-
     IF ( PRESENT(init_time) ) THEN
        register_diag_field_scalar_old = register_diag_field_array(module_name, field_name,&
             & (/null_axis_id/), init_time,long_name, units, missing_value, range, &
@@ -641,14 +633,6 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
     END IF
 
     IF ( PRESENT(err_msg) ) err_msg = ''
-
-    ! Fatal error if range is present and its extent is not 2.
-    IF ( PRESENT(range) ) THEN
-       IF ( SIZE(range) .NE. 2 ) THEN
-          ! <ERROR STATUS="FATAL">extent of range should be 2</ERROR>
-          CALL error_mesg ('diag_manager_mod::register_diag_field', 'extent of range should be 2', FATAL)
-       END IF
-    END IF
 
     ! Call register static, then set static back to false
     register_diag_field_array_old = register_static_field(module_name, field_name, axes,&
