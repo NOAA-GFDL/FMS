@@ -463,7 +463,7 @@ end function register_diag_field_array
     CHARACTER(len=*), OPTIONAL, INTENT(in) :: units         !< Units to add as a variable_attribute
     CHARACTER(len=*), OPTIONAL, INTENT(in) :: standard_name !< Standard_name to name the variable in the file
     CLASS(*),         OPTIONAL, INTENT(in) :: missing_value !< Missing value to add as a variable attribute
-    CLASS(*)          OPTIONAL, INTENT(in) :: var_range(:)  !< Range to add a variable attribute
+    CLASS(*),         OPTIONAL, INTENT(in) :: var_range(:)  !< Range to add a variable attribute
     LOGICAL,          OPTIONAL, INTENT(in) :: do_not_log    !< If TRUE, field information is not logged
     CHARACTER(len=*), OPTIONAL, INTENT(out):: err_msg       !< Error_msg from call
     INTEGER,          OPTIONAL, INTENT(in) :: area          !< Id of the area field
