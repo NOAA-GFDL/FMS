@@ -37,7 +37,6 @@ test_diag_manager_SOURCES = test_diag_manager.F90
 test_diag_manager_time_SOURCES = test_diag_manager_time.F90
 test_diag_update_buffer_SOURCES= test_diag_update_buffer.F90
 test_diag_yaml_SOURCES = test_diag_yaml.F90
-test_diag_object_container_SOURCES = test_diag_object_container.F90
 test_diag_dlinked_list_SOURCES = test_diag_dlinked_list.F90
 test_diag_ocean_SOURCES = test_diag_ocean.F90
 test_modern_diag_SOURCES = test_modern_diag.F90

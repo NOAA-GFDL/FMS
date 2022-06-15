@@ -473,21 +473,25 @@ end function register_diag_field_array
     CHARACTER(len=*), OPTIONAL, INTENT(in) :: realm         !< String to set as the modeling_realm attribute
 
 #ifdef use_yaml
-    integer, allocatable :: diag_file_indices(:) !< indices where the field was found
+    integer, allocatable :: diag_field_indices(:) !< indices where the field was found
 
-    diag_file_indices = find_diag_field(field_name)
-    if (diag_file_indices(1) .eq. diag_null) then
+    diag_field_indices = find_diag_field(field_name)
+    if (diag_field_indices(1) .eq. diag_null) then
       !< The field was not found in the table, so return diag_null
       register_diag_field_scalar_modern = diag_null
-      deallocate(diag_file_indices)
+      deallocate(diag_field_indices)
       return
     endif
 
     registered_variables = registered_variables + 1
     register_diag_field_scalar_modern = registered_variables
 
-    !< TO DO: Fill in the diag_obj
-    deallocate(diag_file_indices)
+    call diag_objs(registered_variables)%setID(registered_variables)
+    call diag_objs(registered_variables)%register(module_name, field_name, init_time, diag_field_indices, &
+      & longname=long_name, units=units, missing_value=missing_value, varrange=var_range, &
+      & standname=standard_name, do_not_log=do_not_log, err_msg=err_msg, &
+      & area=area, volume=volume, realm=realm)
+    deallocate(diag_field_indices)
 #endif
 
   end function register_diag_field_scalar_modern
@@ -520,21 +524,25 @@ end function register_diag_field_array
     CHARACTER(len=*), OPTIONAL, INTENT(in) :: realm         !< String to set as the modeling_realm attribute
 
 #ifdef use_yaml
-    integer, allocatable :: diag_file_indices(:) !< indices where the field was found
+    integer, allocatable :: diag_field_indices(:) !< indices of diag_field yaml where the field was found
 
-    diag_file_indices = find_diag_field(field_name)
-    if (diag_file_indices(1) .eq. diag_null) then
+    diag_field_indices = find_diag_field(field_name)
+    if (diag_field_indices(1) .eq. diag_null) then
       !< The field was not found in the table, so return diag_null
       register_diag_field_array_modern = diag_null
-      deallocate(diag_file_indices)
+      deallocate(diag_field_indices)
       return
     endif
 
     registered_variables = registered_variables + 1
     register_diag_field_array_modern = registered_variables
 
-    !< TO DO: Fill in the diag_obj
-    deallocate(diag_file_indices)
+    call diag_objs(registered_variables)%setID(registered_variables)
+    call diag_objs(registered_variables)%register(module_name, field_name, init_time, diag_field_indices, axes,  &
+      & longname=long_name, units=units, missing_value=missing_value, varrange=var_range, &
+      & mask_variant=mask_variant, standname=standard_name, do_not_log=do_not_log, err_msg=err_msg, &
+      & interp_method=interp_method, tile_count=tile_count, area=area, volume=volume, realm=realm)
+    deallocate(diag_field_indices)
 #endif
 
    end function register_diag_field_array_modern
