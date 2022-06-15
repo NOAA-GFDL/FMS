@@ -27,9 +27,6 @@
 !! An optional output mask field may be used in conjunction with
 !! the input mask to show where output data exists.
 
-!> @file
-!> @brief File for @ref horiz_interp_bilinear_mod
-
 module horiz_interp_bilinear_mod
 
   use mpp_mod,               only: mpp_error, FATAL, stdout, mpp_pe, mpp_root_pe

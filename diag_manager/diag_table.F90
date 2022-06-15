@@ -247,9 +247,6 @@
 !!       </PRE>
 !!     </LI>
 
-!> @file
-!> @brief File for @ref diag_table_mod
-
 MODULE diag_table_mod
 
   USE fms2_io_mod, ONLY: ascii_read

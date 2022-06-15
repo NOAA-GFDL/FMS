@@ -152,9 +152,6 @@
 !! authors of code to allow modification of their routines.
 !!
 
-!> @file
-!> @brief File for @ref field_manager_mod
-
 !> @addtogroup field_manager_mod
 !> @{
 module field_manager_mod

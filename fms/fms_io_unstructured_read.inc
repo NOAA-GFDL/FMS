@@ -18,8 +18,8 @@
 !***********************************************************************
 !----------
 !ug support
-!> @file
 !> @ingroup fms_io_mod
+!> @{
 
 !------------------------------------------------------------------------------
 !>Read in a scalar field from a file associated with an unstructured mpp
@@ -473,7 +473,4 @@ subroutine fms_io_unstructured_read_i_2D(filename, &
 
     return
 end subroutine fms_io_unstructured_read_i_2D
-
-!------------------------------------------------------------------------------
-
-!----------
+!> @}

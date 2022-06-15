@@ -21,9 +21,11 @@
 !***********************************************************************
 
 !> @file
-!> @ingroup mpp_domains_mod
 !> @brief Routines for use in @ref mpp_domains_mod for routines utilizing
 !! domains with nested grids
+
+!> @addtogroup mpp_domains_mod
+!> @{
 
 !#############################################################################
 !> @brief Set up a domain to pass data between aligned coarse and fine grid of nested model.
@@ -82,12 +84,14 @@
 !! allocate(buffer (is_f:ie_f, js_f:je_f,nz))
 !! call mpp_update_nest_coarse(x, nest_domain, buffer)
 !
-!! call mpp_define_nest_domains (nest_domain, domain, num_nest, nest_level, tile_fine, tile_coarse, &
-!!                               istart_coarse, icount_coarse, jstart_coarse, jcount_coarse, &
+!! call mpp_define_nest_domains (nest_domain, domain, num_nest, nest_level, tile_fine, tile_coarse,
+!!                               istart_coarse, icount_coarse, jstart_coarse, jcount_coarse,
 !!                                    npes_nest_tile, x_refine, y_refine, extra_halo, name)
+!!
 !! @endcode
 !!
 !> @note Currently the contact will be limited to overlap contact.
+!!
 subroutine mpp_define_nest_domains(nest_domain, domain, num_nest, nest_level, tile_fine, tile_coarse, &
                                   istart_coarse, icount_coarse, jstart_coarse, jcount_coarse, npes_nest_tile, &
                                   x_refine, y_refine, extra_halo, name)
@@ -456,9 +460,9 @@ end subroutine mpp_shift_nest_domains
 
 
 subroutine define_nest_level_type(nest_domain, x_refine, y_refine, extra_halo)
-  type(nest_level_type), intent(inout) :: nest_domain
-  integer,               intent(in   ) :: extra_halo
-  integer,               intent(in   ) :: x_refine, y_refine
+  type(nest_level_type), intent(inout) :: nest_domain !< nest domain to be defined
+  integer,               intent(in   ) :: extra_halo !< halo value
+  integer,               intent(in   ) :: x_refine, y_refine !< x and y refinements
 
   integer                                   :: n
   integer                                   :: npes, npes_fine, npes_coarse
@@ -1086,8 +1090,8 @@ subroutine compute_overlap_coarse_to_fine(nest_domain, overlap, extra_halo, posi
 end subroutine compute_overlap_coarse_to_fine
 
 !###############################################################################
-!-- This routine will compute the send and recv information between overlapped nesting
-!-- region. The data is assumed on T-cell center.
+!> This routine will compute the send and recv information between overlapped nesting
+!! region. The data is assumed on T-cell center.
 subroutine compute_overlap_fine_to_coarse(nest_domain, overlap, position, name)
   type(nest_level_type),  intent(inout) :: nest_domain
   type(nestSpec),         intent(inout) :: overlap
@@ -2561,3 +2565,4 @@ function search_C2F_nest_overlap(nest_domain, nest_level, extra_halo, position)
      mpp_is_nest_coarse = nest_domain%nest(nest_level)%is_coarse_pe
 
   end function mpp_is_nest_coarse
+!> @}
