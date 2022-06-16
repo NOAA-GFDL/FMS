@@ -155,12 +155,16 @@
 !> @addtogroup field_manager_mod
 !> @{
 module field_manager_mod
+#ifndef use_yaml
 #ifndef MAXFIELDS_
 #define MAXFIELDS_ 250
 #endif
+#endif
 
+#ifndef use_yaml
 #ifndef MAXFIELDMETHODS_
 #define MAXFIELDMETHODS_ 250
+#endif
 #endif
 
 !
@@ -188,7 +192,7 @@ use    fms_mod, only : lowercase,   &
                        write_version_number
 use fms2_io_mod, only: file_exists
 #ifdef use_yaml
-use yaml_parser_mod
+use fm_yaml_mod
 #endif
 
 implicit none
@@ -275,13 +279,6 @@ character(len=11), parameter, public, dimension(NUM_MODELS) :: &
    MODEL_NAMES=(/'atmospheric','oceanic    ','land       ','ice        ','coupler    '/)
 
 !> @}
-
-!> @brief List of field names
-!> @ingroup field_manager_mod
-type, public :: fm_array_list_def
-  character (len=fm_field_name_len), dimension(:), pointer :: names => NULL()
-  integer                                                  :: length
-end type  fm_array_list_def
 
 !> @brief This method_type is a way to allow a component module to alter the parameters it needs
 !! for various tracers.
@@ -431,17 +428,14 @@ character(len=17), parameter :: module_name       = 'field_manager_mod'
 character(len=33), parameter :: error_header      = '==>Error from '//trim(module_name)//': '
 character(len=35), parameter :: warn_header       = '==>Warning from '//trim(module_name)//': '
 character(len=32), parameter :: note_header       = '==>Note from '//trim(module_name)//': '
-character(len=1),  parameter :: bracket_left      = '['
-character(len=1),  parameter :: bracket_right     = ']'
 character(len=1),  parameter :: comma             = ","
+character(len=1),  parameter :: list_sep          = '/'
+#ifndef use_yaml
 character(len=1),  parameter :: comment           = '#'
 character(len=1),  parameter :: dquote            = '"'
 character(len=1),  parameter :: equal             = '='
-character(len=1),  parameter :: list_sep          = '/'
-character(len=1),  parameter :: space             = ' '
 character(len=1),  parameter :: squote            = "'"
-character(len=1),  parameter :: tab               = char(9) ! ASCII
-
+#endif
 integer,           parameter :: null_type         = 0
 integer,           parameter :: integer_type      = 1
 integer,           parameter :: list_type         = 2
@@ -449,20 +443,26 @@ integer,           parameter :: logical_type      = 3
 integer,           parameter :: real_type         = 4
 integer,           parameter :: string_type       = 5
 integer,           parameter :: num_types         = 5
-integer,           parameter :: line_len          = 256
 integer,           parameter :: array_increment   = 10
+#ifndef use_yaml
 integer,           parameter :: MAX_FIELDS        = MAXFIELDS_
 integer,           parameter :: MAX_FIELD_METHODS = MAXFIELDMETHODS_
+#endif
 
 !> @brief Private type for internal use
 !> @ingroup field_manager_mod
 type, private :: field_mgr_type
   character(len=fm_field_name_len)                    :: field_type
-  character(len=fm_string_len)                    :: field_name
+  character(len=fm_string_len)                        :: field_name
   integer                                             :: model, num_methods
+#ifdef use_yaml
+  type(method_type), dimension(:), allocatable        :: methods
+#else
   type(method_type)                                   :: methods(MAX_FIELD_METHODS)
+#endif
 end type field_mgr_type
 
+#ifndef use_yaml
 !> @brief Private type for internal use
 !> @ingroup field_manager_mod
 type, private :: field_names_type
@@ -477,6 +477,7 @@ type, private :: field_names_type_short
   character(len=fm_field_name_len)                    :: fld_type
   character(len=fm_field_name_len)                    :: mod_name
 end type field_names_type_short
+#endif
 
 !> @brief Private type for internal use
 !> @ingroup field_manager_mod
@@ -527,6 +528,248 @@ type (field_def), target, save   :: root
 
 contains
 
+#ifdef use_yaml
+
+subroutine field_manager_init(nfields, table_name)
+integer,                      intent(out), optional :: nfields !< number of fields
+character(len=fm_string_len), intent(in), optional :: table_name !< Name of the field table, default
+
+character(len=fm_string_len)    :: tbl_name !< field_table yaml file
+character(len=fm_string_len)    :: method_control !< field_table yaml file
+integer                         :: h, i, j, k, l !< dummy integer buffer
+type (fmTable_t)                :: my_table       !< the field table
+integer                         :: model
+character(len=fm_path_name_len) :: list_name
+integer                         :: current_field
+integer                         :: index_list_name
+integer                         :: trim_method_control
+logical                         :: fm_success
+
+if (module_is_initialized) then
+   if(present(nfields)) nfields = num_fields
+   return
+endif
+
+call initialize
+
+if (.not.PRESENT(table_name)) then
+   tbl_name = 'field_table.yaml'
+else
+   tbl_name = trim(table_name)
+endif
+if (.not. file_exists(trim(tbl_name))) then
+  if(present(nfields)) nfields = 0
+  return
+endif
+
+
+my_table = fmTable_t(trim(tbl_name))
+call my_table%get_blocks
+call my_table%create_children
+do h=1,my_table%nchildren
+  do i=1,my_table%children(h)%nchildren
+    do j=1,my_table%children(h)%children(i)%nchildren
+      num_fields = num_fields + 1
+    end do
+  end do
+end do
+
+allocate(fields(num_fields))
+
+current_field = 0
+do h=1,my_table%nchildren
+  do i=1,my_table%children(h)%nchildren
+    select case (my_table%children(h)%children(i)%name)
+    case ('coupler_mod')
+       model = MODEL_COUPLER
+    case ('atmos_mod')
+       model = MODEL_ATMOS
+    case ('ocean_mod')
+       model = MODEL_OCEAN
+    case ('land_mod')
+       model = MODEL_LAND
+    case ('ice_mod')
+       model = MODEL_ICE
+    case default
+      call mpp_error(FATAL, trim(error_header)//'The model name is unrecognised : '//trim(my_table%children(h)%children(i)%name))
+    end select
+    do j=1,my_table%children(h)%children(i)%nchildren
+      current_field = current_field + 1
+      list_name = list_sep//trim(my_table%children(h)%children(i)%name)//list_sep//trim(my_table%children(h)%name)//&
+               list_sep//trim(my_table%children(h)%children(i)%children(j)%name)
+      index_list_name = fm_new_list(list_name, create = .true.)
+      if ( index_list_name == NO_FIELD ) &
+        call mpp_error(FATAL, trim(error_header)//'Could not set field list for '//trim(list_name))
+      fm_success = fm_change_list(list_name)
+      fields(current_field)%model       = model
+      fields(current_field)%field_name  = lowercase(trim(my_table%children(h)%children(i)%children(j)%name))
+      fields(current_field)%field_type  = lowercase(trim(my_table%children(h)%name))
+      fields(current_field)%num_methods = size(my_table%children(h)%children(i)%children(j)%key_ids)
+      allocate(fields(current_field)%methods(fields(current_field)%num_methods))
+      do k=1,size(my_table%children(h)%children(i)%children(j)%keys)
+        fields(current_field)%methods(k)%method_type = lowercase(trim(my_table%children(h)%children(i)%children(j)%keys(k)))
+        fields(current_field)%methods(k)%method_name = lowercase(trim(my_table%children(h)%children(i)%children(j)%values(k)))
+        fields(current_field)%methods(k)%method_control = ""
+        call new_name(list_name, fields(current_field)%methods(k)%method_type, fields(current_field)%methods(k)%method_name )
+      end do
+      if (my_table%children(h)%children(i)%children(j)%nchildren .gt. 0) then
+        do k=1,my_table%children(h)%children(i)%children(j)%nchildren
+          method_control = " "
+          method_control = trim(fields(current_field)%methods(k)%method_control)
+          do l=1,size(my_table%children(h)%children(i)%children(j)%children(k)%keys)
+            method_control = trim(method_control)//trim(my_table%children(h)%children(i)%children(j)%children(k)%keys(l))//"="//trim(my_table%children(h)%children(i)%children(j)%children(k)%values(l))//","
+            if (l .eq. size(my_table%children(h)%children(i)%children(j)%children(k)%keys)) then
+              trim_method_control = len_trim(method_control)
+              fields(current_field)%methods(k)%method_control = method_control(1:trim_method_control)
+            end if
+          end do
+          call new_name(list_name, my_table%children(h)%children(i)%children(j)%children(k)%paramname, fields(current_field)%methods(k)%method_control)
+        end do
+      end if
+    end do
+  end do
+end do
+
+if (present(nfields)) nfields = num_fields
+call my_table%destruct
+end subroutine field_manager_init
+
+!> @brief Subroutine to add new values to list parameters.
+!!
+!> This subroutine uses input strings list_name, method_name
+!! and val_name_in to add new values to the list. Given
+!! list_name a new list item is created that is named
+!! method_name and is given the value or values in
+!! val_name_in. If there is more than 1 value in
+!! val_name_in, these values should be  comma-separated.
+subroutine new_name ( list_name, method_name_in , val_name_in)
+character(len=*), intent(in)    :: list_name !< The name of the field that is of interest here.
+character(len=*), intent(in)    :: method_name_in !< The name of the method that values are
+                                                  !! being supplied for.
+character(len=*), intent(inout) :: val_name_in !< The value or values that will be parsed and
+                                               !! used as the value when creating a new field or fields.
+
+character(len=fm_string_len)       :: method_name
+character(len=fm_string_len)       :: val_name
+integer, dimension(:), allocatable :: end_val
+integer, dimension(:), allocatable :: start_val
+integer                            :: i
+integer                            :: index_t
+integer                            :: num_elem
+integer                            :: out_unit
+integer                            :: val_int
+integer                            :: val_type
+logical                            :: append_new
+logical                            :: val_logic
+real                               :: val_real
+integer                            :: length
+
+call strip_front_blanks(val_name_in)
+method_name = trim(method_name_in)
+call strip_front_blanks(method_name)
+
+index_t  = 1
+num_elem = 1
+append_new = .false.
+
+! If the array of values being passed in is a comma delimited list then count
+! the number of elements.
+
+do i = 1, len_trim(val_name_in)
+  if ( val_name_in(i:i) == comma ) then
+    num_elem = num_elem + 1
+  endif
+enddo
+
+allocate(start_val(num_elem))
+allocate(end_val(num_elem))
+start_val(1) = 1
+end_val(:) = len_trim(val_name_in)
+
+num_elem = 1
+do i = 1, len_trim(val_name_in)
+  if ( val_name_in(i:i) == comma ) then
+    end_val(num_elem) = i-1
+    start_val(num_elem+1) = i+1
+    num_elem = num_elem + 1
+  endif
+enddo
+
+do i = 1, num_elem
+
+  if ( i .gt. 1 .or. index_t .eq. 0 ) then
+    append_new = .true.
+    index_t = 0 ! If append is true then index must be <= 0
+  endif
+  val_type = string_type  ! Assume it is a string
+  val_name = val_name_in(start_val(i):end_val(i))
+  call strip_front_blanks(val_name)
+
+  if ( scan(val_name(1:1), setnum ) > 0 ) then
+    if ( scan(val_name, set_nonexp ) .le. 0 ) then
+      if ( scan(val_name, '.') > 0 .or. scan(val_name, 'e') > 0 .or. scan(val_name, 'E') > 0) then
+        read(val_name, *) val_real
+        val_type = real_type
+      else
+        read(val_name, *) val_int
+        val_type = integer_type
+      endif
+    endif
+  endif
+
+  if ( len_trim(val_name) == 1 .or. len_trim(val_name) == 3) then
+    if ( val_name == 't' .or. val_name == 'T' .or. val_name == '.t.' .or. val_name == '.T.' ) then
+      val_logic = .TRUE.
+      val_type = logical_type
+    endif
+    if ( val_name == 'f' .or. val_name == 'F' .or. val_name == '.f.' .or. val_name == '.F.' ) then
+      val_logic = .FALSE.
+      val_type = logical_type
+    endif
+  endif
+  if ( trim(lowercase(val_name)) == 'true' .or. trim(lowercase(val_name)) == '.true.' ) then
+    val_logic = .TRUE.
+    val_type = logical_type
+  endif
+  if ( trim(lowercase(val_name)) == 'false' .or. trim(lowercase(val_name)) == '.false.' ) then
+    val_logic = .FALSE.
+    val_type = logical_type
+  endif
+
+  select case(val_type)
+
+    case (integer_type)
+      if ( fm_new_value( method_name, val_int, create = .true., index = index_t, append = append_new ) < 0 ) &
+        call mpp_error(FATAL, trim(error_header)//'Could not set "' // trim(val_name) // '" for '//trim(method_name)//&
+                              ' (I) for '//trim(list_name))
+
+    case (logical_type)
+      if ( fm_new_value( method_name, val_logic, create = .true., index = index_t, append = append_new) < 0 ) &
+        call mpp_error(FATAL, trim(error_header)//'Could not set "' // trim(val_name) // '" for '//trim(method_name)//&
+                              ' (L) for '//trim(list_name))
+
+    case (real_type)
+      if ( fm_new_value( method_name, val_real, create = .true., index = index_t, append = append_new) < 0 ) &
+        call mpp_error(FATAL, trim(error_header)//'Could not set "' // trim(val_name) // '" for '//trim(method_name)//&
+                              ' (R) for '//trim(list_name))
+
+    case (string_type)
+      if ( fm_new_value( method_name, val_name, create = .true., index = index_t, append = append_new) < 0 ) &
+        call mpp_error(FATAL, trim(error_header)//'Could not set "' // trim(val_name) // '" for '//trim(method_name)//&
+                              ' (S) for '//trim(list_name))
+    case default
+      call mpp_error(FATAL, trim(error_header)//'Could not find a valid type to set the '//trim(method_name)//&
+                            ' for '//trim(list_name))
+
+  end select
+
+enddo
+  deallocate(start_val)
+  deallocate(end_val)
+
+end subroutine new_name
+#else  
+
 !> @brief Routine to initialize the field manager.
 !!
 !> This routine reads from a file containing formatted strings.
@@ -574,7 +817,6 @@ if (module_is_initialized) then
    return
 endif
 
-num_fields = 0
 call initialize
 
 if (.not.PRESENT(table_name)) then
@@ -1066,6 +1308,7 @@ do i = 1, num_elem
 enddo
 
 end subroutine new_name
+#endif
 
 !> @brief Destructor for field manager.
 !!
@@ -1073,7 +1316,18 @@ end subroutine new_name
 !! changes the initialized flag to false.
 subroutine field_manager_end
 
+#ifdef use_yaml
+integer :: j
+#endif
+
 module_is_initialized = .false.
+
+#ifdef use_yaml
+do j=1,size(fields)
+  deallocate(fields(j)%methods)
+end do
+deallocate(fields)
+#endif
 
 end subroutine field_manager_end
 
@@ -2197,7 +2451,7 @@ temp_field_p => get_field(name, current_list_p)
 if (associated(temp_field_p)) then
 !        check that the field is the correct type
   if (temp_field_p%field_type .eq. string_type) then
-    if (index_t .lt. 1 or. index_t .gt. temp_field_p%max_index) then
+    if (index_t .lt. 1 .or. index_t .gt. temp_field_p%max_index) then
 !        Index is not positive or is too large
       value = ''
       success = .false.
@@ -3314,8 +3568,8 @@ character(len=*), intent(in)           :: suffix !< suffix that will be added to
                                                  !! field is copied
 logical,          intent(in), optional :: create !< flag to create new list if applicable
 
-character(len=fm_string_len), dimension(MAX_FIELD_METHODS) :: control
-character(len=fm_string_len), dimension(MAX_FIELD_METHODS) :: method
+character(len=fm_string_len), dimension(:), allocatable    :: control
+character(len=fm_string_len), dimension(:), allocatable    :: method
 character(len=fm_string_len)                               :: head
 character(len=fm_string_len)                               :: list_name_new
 character(len=fm_string_len)                               :: tail
@@ -3360,10 +3614,8 @@ else
 endif
 !        Find the list
 if (success) then
-  method(:) = ' '
-  control(:) = ' '
   found_methods = fm_find_methods(trim(list_name), method, control)
-  do n = 1, MAX_FIELD_METHODS
+  do n = 1, size(method)
     if (LEN_TRIM(method(n)) > 0 ) then
       index = fm_new_list(trim(list_name_new)//list_sep//method(n), create = create)
       call find_base(method(n), head, tail)
