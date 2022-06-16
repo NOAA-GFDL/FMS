@@ -400,6 +400,14 @@ CONTAINS
     INTEGER,          OPTIONAL, INTENT(in) :: volume        !< Id of the volume field
     CHARACTER(len=*), OPTIONAL, INTENT(in) :: realm         !< String to set as the modeling_realm attribute
 
+    ! Fatal error if range is present and its extent is not 2.
+    IF ( PRESENT(range) ) THEN
+       IF ( SIZE(range) .NE. 2 ) THEN
+          ! <ERROR STATUS="FATAL">extent of range should be 2</ERROR>
+          CALL error_mesg ('diag_manager_mod::register_diag_field', 'extent of range should be 2', FATAL)
+       END IF
+    END IF
+
     if (use_modern_diag) then
       register_diag_field_scalar = register_diag_field_scalar_modern(module_name, field_name, init_time, &
       & long_name=long_name, units=units, missing_value=missing_value, var_range=range, standard_name=standard_name, &
@@ -437,6 +445,14 @@ CONTAINS
     INTEGER,          OPTIONAL, INTENT(in) :: area          !< Id of the area field
     INTEGER,          OPTIONAL, INTENT(in) :: volume        !< Id of the volume field
     CHARACTER(len=*), OPTIONAL, INTENT(in) :: realm         !< String to set as the modeling_realm attribute
+
+    ! Fatal error if range is present and its extent is not 2.
+    IF ( PRESENT(range) ) THEN
+       IF ( SIZE(range) .NE. 2 ) THEN
+          ! <ERROR STATUS="FATAL">extent of range should be 2</ERROR>
+          CALL error_mesg ('diag_manager_mod::register_diag_field', 'extent of range should be 2', FATAL)
+       END IF
+    END IF
 
     if (use_modern_diag) then
       register_diag_field_array = register_diag_field_array_modern(module_name, field_name, axes, init_time, &
@@ -485,14 +501,6 @@ end function register_diag_field_array
     register_diag_field_scalar_modern = registered_variables
 
     !< TO DO: Fill in the diag_obj
-    ! Fatal error if range is present and its extent is not 2.
-    IF ( PRESENT(var_range) ) THEN
-       IF ( SIZE(var_range) .NE. 2 ) THEN
-          ! <ERROR STATUS="FATAL">extent of range should be 2</ERROR>
-          CALL error_mesg ('diag_manager_mod::register_diag_field', 'extent of range should be 2', FATAL)
-       END IF
-    END IF
-
     deallocate(diag_file_indices)
 #endif
 
@@ -540,13 +548,6 @@ end function register_diag_field_array
     register_diag_field_array_modern = registered_variables
 
     !< TO DO: Fill in the diag_obj
-    ! Fatal error if range is present and its extent is not 2.
-    IF ( PRESENT(var_range) ) THEN
-       IF ( SIZE(var_range) .NE. 2 ) THEN
-          ! <ERROR STATUS="FATAL">extent of range should be 2</ERROR>
-          CALL error_mesg ('diag_manager_mod::register_diag_field', 'extent of range should be 2', FATAL)
-       END IF
-    END IF
     deallocate(diag_file_indices)
 #endif
 
@@ -572,14 +573,6 @@ end function register_diag_field_array
     CHARACTER(len=*), OPTIONAL, INTENT(in) :: realm         !< String to set as the modeling_realm attribute
 
     IF ( PRESENT(err_msg) ) err_msg = ''
-
-    ! Fatal error if range is present and its extent is not 2.
-    IF ( PRESENT(range) ) THEN
-       IF ( SIZE(range) .NE. 2 ) THEN
-          ! <ERROR STATUS="FATAL">extent of range should be 2</ERROR>
-          CALL error_mesg ('diag_manager_mod::register_diag_field', 'extent of range should be 2', FATAL)
-       END IF
-    END IF
 
     IF ( PRESENT(init_time) ) THEN
        register_diag_field_scalar_old = register_diag_field_array(module_name, field_name,&
@@ -640,14 +633,6 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
     END IF
 
     IF ( PRESENT(err_msg) ) err_msg = ''
-
-    ! Fatal error if range is present and its extent is not 2.
-    IF ( PRESENT(range) ) THEN
-       IF ( SIZE(range) .NE. 2 ) THEN
-          ! <ERROR STATUS="FATAL">extent of range should be 2</ERROR>
-          CALL error_mesg ('diag_manager_mod::register_diag_field', 'extent of range should be 2', FATAL)
-       END IF
-    END IF
 
     ! Call register static, then set static back to false
     register_diag_field_array_old = register_static_field(module_name, field_name, axes,&
