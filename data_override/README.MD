@@ -1,6 +1,12 @@
 @ingroup data_override_mod
 
-### Data_override
+# Data_override
+
+### Contents
+- [YAML Data Table format](README.MD#1-yaml-data-table-format)
+- [How to use it?](README.MD#2-how-to-use-it)
+- [Converting legacy data_table to data_table.yaml](README.MD#3-converting-legacy-data_table-to-data_tableyaml)
+- [Examples](README.MD#4-examples)
 
 #### 1. YAML Data Table format:
 Each entry in the data_table has the following key values:
