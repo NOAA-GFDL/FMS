@@ -286,6 +286,7 @@ foreach(kind ${kinds})
                                                  fms
                                                  fms2_io/include
                                                  mpp/include
+                                                 constants4
                                                  constants)
   target_compile_definitions(${libTgt}_f PRIVATE "${fms_defs}")
   target_compile_definitions(${libTgt}_f PRIVATE "${${kind}_defs}")
