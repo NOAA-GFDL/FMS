@@ -40,7 +40,7 @@ use platform_mod
   USE diag_data_mod, ONLY: diag_axis_type, max_subaxes, max_axes,&
        & max_num_axis_sets, max_axis_attributes, debug_diag_manager,&
        & first_send_data_call, diag_atttype, use_modern_diag
-  USE fms_diag_axis_object_mod, ONLY: fms_diag_axis_init
+  USE fms_diag_axis_object_mod, ONLY: fms_diag_axis_init, fms_diag_axis_add_attribute
 #ifdef use_netCDF
   USE netcdf, ONLY: NF90_INT, NF90_FLOAT, NF90_CHAR
 #endif
@@ -1049,7 +1049,11 @@ CONTAINS
     CHARACTER(len=*), INTENT(in) :: att_name
     REAL, INTENT(in) :: att_value
 
-    CALL diag_axis_add_attribute_r1d(diag_axis_id, att_name, (/ att_value /))
+    if (use_modern_diag) then
+      call fms_diag_axis_add_attribute(diag_axis_id, att_name, (/ att_value /))
+    else
+      CALL diag_axis_add_attribute_r1d(diag_axis_id, att_name, (/ att_value /))
+    endif
   END SUBROUTINE diag_axis_add_attribute_scalar_r
 
   SUBROUTINE diag_axis_add_attribute_scalar_i(diag_axis_id, att_name, att_value)
@@ -1057,7 +1061,11 @@ CONTAINS
     CHARACTER(len=*), INTENT(in) :: att_name
     INTEGER, INTENT(in) :: att_value
 
-    CALL diag_axis_add_attribute_i1d(diag_axis_id, att_name, (/ att_value /))
+    if (use_modern_diag) then
+      call fms_diag_axis_add_attribute(diag_axis_id, att_name, (/ att_value /))
+    else
+      CALL diag_axis_add_attribute_i1d(diag_axis_id, att_name, (/ att_value /))
+    endif
   END SUBROUTINE diag_axis_add_attribute_scalar_i
 
   SUBROUTINE diag_axis_add_attribute_scalar_c(diag_axis_id, att_name, att_value)
@@ -1065,7 +1073,11 @@ CONTAINS
     CHARACTER(len=*), INTENT(in) :: att_name
     CHARACTER(len=*), INTENT(in) :: att_value
 
-    CALL diag_axis_attribute_init(diag_axis_id, att_name, NF90_CHAR, cval=att_value)
+    if (use_modern_diag) then
+      call fms_diag_axis_add_attribute(diag_axis_id, att_name, (/ att_value /))
+    else
+      CALL diag_axis_attribute_init(diag_axis_id, att_name, NF90_CHAR, cval=att_value)
+    endif
   END SUBROUTINE diag_axis_add_attribute_scalar_c
 
   SUBROUTINE diag_axis_add_attribute_r1d(diag_axis_id, att_name, att_value)
@@ -1073,15 +1085,22 @@ CONTAINS
     CHARACTER(len=*), INTENT(in) :: att_name
     REAL, DIMENSION(:), INTENT(in) :: att_value
 
-    CALL diag_axis_attribute_init(diag_axis_id, att_name, NF90_FLOAT, rval=att_value)
+    if (use_modern_diag) then
+      call fms_diag_axis_add_attribute(diag_axis_id, att_name, att_value)
+    else
+      CALL diag_axis_attribute_init(diag_axis_id, att_name, NF90_FLOAT, rval=att_value)
+    endif
   END SUBROUTINE diag_axis_add_attribute_r1d
 
   SUBROUTINE diag_axis_add_attribute_i1d(diag_axis_id, att_name, att_value)
     INTEGER, INTENT(in) :: diag_axis_id
     CHARACTER(len=*), INTENT(in) :: att_name
     INTEGER, DIMENSION(:), INTENT(in) :: att_value
-
-    CALL diag_axis_attribute_init(diag_axis_id, att_name, NF90_INT, ival=att_value)
+    if (use_modern_diag) then
+      call fms_diag_axis_add_attribute(diag_axis_id, att_name, att_value)
+    else
+      CALL diag_axis_attribute_init(diag_axis_id, att_name, NF90_INT, ival=att_value)
+    endif
   END SUBROUTINE diag_axis_add_attribute_i1d
 
   !> @brief Allocates memory in out_file for the attributes.  Will <TT>FATAL</TT> if err_msg is not included

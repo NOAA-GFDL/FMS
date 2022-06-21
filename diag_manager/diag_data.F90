@@ -311,6 +311,12 @@ use platform_mod
      CHARACTER(len=128)   :: tile_name='N/A'
   END TYPE diag_global_att_type
 
+  !> @brief Type to hold the attributes of the field/axis/file
+  !> @ingroup diag_data_mod
+  type fmsDiagAttribute_type
+    class(*), allocatable         :: att_value(:) !< Value of the attribute
+    character(len=:), allocatable :: att_name     !< Name of the attribute
+  end type fmsDiagAttribute_type
 ! Include variable "version" to be written to log file.
 #include<file_version.h>
 
