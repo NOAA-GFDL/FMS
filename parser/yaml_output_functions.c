@@ -232,28 +232,27 @@ if (!yaml_emitter_emit(&emitter, &event)) goto error;
     write_keys_vals_yaml (&emitter, &event , s2, l2keys, l2vals);
     yaml_mapping_end_event_initialize(&event);
     if (!yaml_emitter_emit(&emitter, &event)) goto error;
-
   /* Next level keys */
-  if (l2keys->level2key[0] !='\0') {
-    /* Start the third level event */
-    yaml_scalar_event_initialize(&event, NULL, (yaml_char_t *)YAML_STR_TAG,
-    (yaml_char_t *)l2keys->level2key, strlen(l2keys->level2key), 1, 0,
-    YAML_PLAIN_SCALAR_STYLE);
-    if (!yaml_emitter_emit(&emitter, &event)) goto error;
-    /* Start the sequencing */
-    yaml_sequence_start_event_initialize(&event, NULL, (yaml_char_t *)YAML_SEQ_TAG,
-        1, YAML_ANY_SEQUENCE_STYLE);
-    if (!yaml_emitter_emit(&emitter, &event)) goto error;
+    if (l2keys->level2key[0] !='\0') {
+     /* Start the third level event */
+     yaml_scalar_event_initialize(&event, NULL, (yaml_char_t *)YAML_STR_TAG,
+     (yaml_char_t *)l2keys->level2key, strlen(l2keys->level2key), 1, 0,
+     YAML_PLAIN_SCALAR_STYLE);
+     if (!yaml_emitter_emit(&emitter, &event)) goto error;
+     /* Start the sequencing */
+     yaml_sequence_start_event_initialize(&event, NULL, (yaml_char_t *)YAML_SEQ_TAG,
+         1, YAML_ANY_SEQUENCE_STYLE);
+     if (!yaml_emitter_emit(&emitter, &event)) goto error;
     /* loop through the structs */
-    for (int s3 = 0 ; s3 < a2size ; s3++){
+     for (int s3 = 0 ; s3 < a3size ; s3++){
       yaml_mapping_start_event_initialize(&event, NULL, (yaml_char_t *)YAML_MAP_TAG,
           1, YAML_ANY_MAPPING_STYLE);
       if (!yaml_emitter_emit(&emitter, &event)) goto error;
       /* call the write function */
       write_keys_vals_yaml (&emitter, &event , s3, l3keys, l3vals);
       yaml_mapping_end_event_initialize(&event);
-      if (!yaml_emitter_emit(&emitter, &event)) goto error;
-    }
+      if (!yaml_emitter_emit(&emitter, &event)) goto error;	
+     }
     yaml_sequence_end_event_initialize(&event);
     if (!yaml_emitter_emit(&emitter, &event)) goto error;
    }
@@ -283,10 +282,15 @@ error:
 }	
 
 int main () {
+	int fs = 2;
+        int vs = 3;
 	struct fmsyamloutkeys k;
 	struct fmsyamloutvalues v;
-        struct fmsyamloutkeys k2[2];
-        struct fmsyamloutvalues v2[2];
+        struct fmsyamloutkeys k2[fs];
+        struct fmsyamloutvalues v2[fs];
+        struct fmsyamloutkeys k3[fs*vs];
+        struct fmsyamloutvalues v3[fs*vs];
+
 	int i;
 
 	i = 1;
@@ -313,7 +317,51 @@ int main () {
         strcpy(v2[1].val3,"Auevoir");
         strcpy(k2[1].level2key,"");
 
-        write_yaml (i, &k, &v, 2, k2, v2, 0, NULL, NULL, 0, NULL, NULL);
+	strcpy(k3[0].key1,"z");
+        strcpy(v3[0].val1,"Z");
+        strcpy(k3[0].key2,"y");
+        strcpy(v3[0].val2,"y");
+        strcpy(k3[0].key3,"X");
+        strcpy(v3[0].val3,"x");
+        strcpy(k3[0].level2key,"");
+        strcpy(k3[1].key1,"v");
+        strcpy(v3[1].val1,"V");
+        strcpy(k3[1].key2,"w");
+        strcpy(v3[1].val2,"W");
+        strcpy(k3[1].key3,"u");
+        strcpy(v3[1].val3,"U");
+        strcpy(k3[1].level2key,"");
+        strcpy(k3[2].key1,"n");
+        strcpy(v3[2].val1,"3");
+        strcpy(k3[2].key2,"shouldnt");
+        strcpy(v3[2].val2,"be");
+        strcpy(k3[2].level2key,"");
+
+
+	strcpy(k3[3].key1,"a");
+        strcpy(v3[3].val1,"1");
+        strcpy(k3[3].key2,"b");
+        strcpy(v3[3].val2,"2");
+        strcpy(k3[3].key3,"c");
+        strcpy(v3[3].val3,"3");
+        strcpy(k3[3].level2key,"");
+        strcpy(k3[4].key1,"d");
+        strcpy(v3[4].val1,"4");
+        strcpy(k3[4].key2,"e");
+        strcpy(v3[4].val2,"5");
+        strcpy(k3[4].key3,"f");
+        strcpy(v3[4].val3,"f");
+        strcpy(k3[4].level2key,"");
+        strcpy(k3[5].key1,"g");
+        strcpy(v3[5].val1,"G");
+        strcpy(k3[5].key2,"h");
+        strcpy(v3[5].val2,"H");
+        strcpy(k3[5].key3,"I");
+        strcpy(v3[5].val3,"i");
+        strcpy(k3[5].level2key,"");
+
+
+        write_yaml (i, &k, &v, fs, k2, v2, fs*vs, k3, v3, 0, NULL, NULL);
  return 0;
 }
 /* ifdef use_yaml */
