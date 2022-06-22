@@ -36,11 +36,15 @@ jobs:
         # sets this here to pass embeded configure checks(needs var from image)
         export LD_LIBRARY_PATH="/libs/lib:$LD_LIBRARY_PATH"
         make -j -k build-netcdf-fortran
-        make -j install-netcdf-fortran && cd
+        make -j install-netcdf-fortran
+        wget https://github.com/yaml/libyaml/releases/download/0.2.5/yaml-0.2.5.tar.gz
+        tar xf yaml-0.2.5.tar.gz && cd yaml-0.2.5
+        ./configure --prefix=/libs
+        make -j install && cd
     - name: checkout
       uses: actions/checkout@v2
     - name: Configure
-      run: autoreconf -if ./configure.ac && ./configure #--with-yaml
+      run: autoreconf -if ./configure.ac && ./configure --with-yaml
     - name: Compile
       run: make -j || make # parallel builds sometimes fail
       env:
