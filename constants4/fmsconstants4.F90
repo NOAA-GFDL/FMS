@@ -58,6 +58,8 @@ module FMSconstantsR4
   !--- default scoping
   implicit none
 
+#define RKIND r4_kind
+
 !--- set a default for the FMSConstantsR4
 #if !defined(GFDL_CONSTANTS) && !defined(GFS_CONSTANTS) && !defined(GEOS_CONSTANTS)
 #define GFDL_CONSTANTS
