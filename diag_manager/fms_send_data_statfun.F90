@@ -107,23 +107,34 @@ CONTAINS
 
    END SUBROUTINE initialize_imp
 
+    !! count_0d <= output_fields(out_num)%count_0d(sample)
+    !! num_elements <= output_fields(out_num)%num_elements(sample)
+    !! field_name <= input_field(diag_field_id)%field_name
+    !! module_name <= input_fields(diag_field_id)%module_name
+    !! Note used as passed be refrence since may be modified:
+    !! issued_mask_ignore_warning <= input_fields(diag_field_id)%issued_mask_ignore_warning
 
-   FUNCTION AVERAGE_THE_FIELD_IMP(this, diag_field_id, field, out_num, ofb, ofc, ntval, &
-   & output_name, mask, weight1, sample, missvalue, missvalue_present, &
-   & l_start, l_end, err_msg,  err_msg_local ) result( succeded )
+   FUNCTION AVERAGE_THE_FIELD_IMP(this, diag_field_id, field, sample, &
+    & ofb, ofc, ntval, count_0d, num_elements, output_name, &
+    & field_name, module_name, issued_mask_ignore_warning, &
+    & mask, weight1, missvalue, missvalue_present, &
+    & l_start, l_end, err_msg,  err_msg_local ) result( succeded )
       CLASS(fms_diag_field_procs_t) , INTENT(inout) :: this
       INTEGER, INTENT(in) :: diag_field_id
       REAL, DIMENSION(:,:,:), INTENT(in) :: field
-      INTEGER, INTENT(in) :: out_num
       REAL, allocatable, DIMENSION(:,:,:,:), INTENT(inout) :: ofb
-      !class(*),  pointer, INTENT(inout) :: ofb_in  !!TODO:
       REAL, allocatable, DIMENSION(:,:,:,:), INTENT(inout) :: ofc
       TYPE(fms_diag_buff_intervals_t), INTENT(inout) :: ntval
-      CHARACTER(len=*), INTENT(out), OPTIONAL :: output_name
+      INTEGER, INTENT(in) :: sample
+      REAL, INTENT(inout) :: count_0d
+      INTEGER, INTENT(inout) :: num_elements
+      CHARACTER(len=*), INTENT(IN) :: output_name
+      CHARACTER(len=*), INTENT(IN) :: field_name
+       LOGICAL :: issued_mask_ignore_warning
+      CHARACTER(len=*), INTENT(IN) :: module_name
       LOGICAL, DIMENSION(:,:,:), INTENT(in), OPTIONAL :: mask
       REAL, INTENT(in) :: weight1
-      INTEGER, INTENT(in) :: sample
-      REAL, INTENT(in), OPTIONAL :: missvalue
+      REAL, INTENT(in) :: missvalue
       LOGICAL, INTENT(in) :: missvalue_present
       INTEGER, DIMENSION(3), INTENT(in)  :: l_start !< local start indices on 3 axes for regional output
       INTEGER, DIMENSION(3), INTENT(in)  :: l_end !< local end indices on 3 axes for regional output
@@ -132,11 +143,7 @@ CONTAINS
 
       LOGICAL :: succeded
 
-      !!LOGICAL, ALLOCATABLE, DIMENSION(:,:,:) :: oor_mask
       CHARACTER(len=128):: error_string
-
-      !! TODO: if possible
-      !!TYPE(FmsWeightProcCfg_t), allocatable :: weight_procs
 
       ! Power value for rms or pow(x) calculations
       INTEGER :: pow_value, is, js, ks, ie, je, ke, hi, hj, f1, f2, f3, f4
@@ -192,9 +199,7 @@ CONTAINS
 
       MASK_VAR_IF: IF ( input_fields(diag_field_id)%mask_variant ) THEN
          IF ( need_compute ) THEN
-            WRITE (error_string,'(a,"/",a)')  &
-            & TRIM(input_fields(diag_field_id)%module_name), &
-            & TRIM(output_fields(out_num)%output_name)
+            WRITE (error_string,'(a,"/",a)') TRIM(module_name), TRIM(output_name)
             IF ( fms_error_handler('diag_manager_mod::send_data_3d', 'module/output_field '//TRIM(error_string)//&
             & ', regional output NOT supported with mask_variant', err_msg)) THEN
                !!DEALLOCATE(oor_mask)
@@ -209,7 +214,7 @@ CONTAINS
             MISSVAL_PR_1_IF: IF ( missvalue_present ) THEN !!(section: mask_varian .eq. true + mask present)
                IF ( debug_diag_manager ) THEN
                   CALL update_bounds(ntval, is-hi, ie-hi, js-hj, je-hj, ks, ke)
-                  CALL check_out_of_bounds(ofb, ntval, output_name, diag_field_id, err_msg=err_msg_local)
+                  CALL check_out_of_bounds(ofb, ntval, output_name, module_name, err_msg=err_msg_local)
                   IF ( err_msg_local /= '' ) THEN
                      IF ( fms_error_handler('diag_manager_mod::send_data_3d', err_msg_local, err_msg) ) THEN
                         succeded = .FALSE.
@@ -276,9 +281,7 @@ CONTAINS
                   !$OMP END CRITICAL
                END IF
             ELSE MISSVAL_PR_1_IF
-               WRITE (error_string,'(a,"/",a)')&
-               & TRIM(input_fields(diag_field_id)%module_name), &
-               & TRIM(output_fields(out_num)%output_name)
+               WRITE (error_string,'(a,"/",a)') TRIM(module_name), TRIM(output_name)
                IF(fms_error_handler('diag_manager_mod::send_data_3d', &
                & 'module/output_field '//TRIM(error_string)//', variable mask but no missing value defined', &
                & err_msg)) THEN
@@ -287,9 +290,7 @@ CONTAINS
                END IF
             END IF  MISSVAL_PR_1_IF
          ELSE MASK_PR_1_IF ! no mask present
-            WRITE (error_string,'(a,"/",a)')&
-            & TRIM(input_fields(diag_field_id)%module_name), &
-            & TRIM(output_fields(out_num)%output_name)
+            WRITE (error_string,'(a,"/",a)') TRIM(module_name), TRIM(output_name)
             IF(fms_error_handler('diag_manager_mod::send_data_3d','module/output_field '//TRIM(error_string)//&
             & ', variable mask but no mask given', err_msg)) THEN
                succeded = .FALSE.
@@ -346,8 +347,7 @@ CONTAINS
                      DO i = is, ie
                         IF ( l_start(1)+hi <= i .AND. i <= l_end(1)+hi .AND. l_start(2)+hj <= j .AND. &
                         & j <= l_end(2)+hj ) THEN
-                           output_fields(out_num)%num_elements(sample) = &
-                           & output_fields(out_num)%num_elements(sample) + l_end(3) - l_start(3) + 1
+                           num_elements = num_elements + l_end(3) - l_start(3) + 1
                         END IF
                      END DO
                   END DO
@@ -387,7 +387,7 @@ CONTAINS
                ELSE NDCMP_RKR_1_IF
                   IF ( debug_diag_manager ) THEN
                      CALL update_bounds(ntval, is-hi, ie-hi, js-hj, je-hj, ks, ke)
-                     CALL check_out_of_bounds(ofb, ntval, output_name, diag_field_id, err_msg=err_msg_local)
+                     CALL check_out_of_bounds(ofb, ntval, output_name, module_name, err_msg=err_msg_local)
                      IF ( err_msg_local /= '' ) THEN
                         IF ( fms_error_handler('diag_manager_mod::send_data_3d', err_msg_local, err_msg) ) THEN
                            succeded = .FALSE.
@@ -428,25 +428,23 @@ CONTAINS
                !$OMP CRITICAL
                IF ( need_compute .AND. .NOT.phys_window ) THEN
                   IF ( ANY(mask(l_start(1)+hi:l_end(1)+hi,l_start(2)+hj:l_end(2)+hj,l_start(3):l_end(3))) ) &
-                  & output_fields(out_num)%count_0d(sample) =&
-                  & output_fields(out_num)%count_0d(sample) + weight1
+                  count_0d = count_0d + weight1
                ELSE
-                  IF ( ANY(mask(f1:f2,f3:f4,ks:ke)) ) output_fields(out_num)%count_0d(sample) =&
-                  & output_fields(out_num)%count_0d(sample)+weight1
+                  IF ( ANY(mask(f1:f2,f3:f4,ks:ke)) ) count_0d = count_0d + weight1
                END IF
                !$OMP END CRITICAL
             ELSE MISSVAL_PR_2_IF !! (section: mask_varian .eq. false + mask present + miss value not present)
                IF (   (.NOT.ALL(mask(f1:f2,f3:f4,ks:ke)) .AND. mpp_pe() .EQ. mpp_root_pe()).AND.&
-               &  .NOT.input_fields(diag_field_id)%issued_mask_ignore_warning ) THEN
+               &  .NOT.issued_mask_ignore_warning ) THEN
                   ! <ERROR STATUS="WARNING">
                   !   Mask will be ignored since missing values were not specified for field <field_name>
                   !   in module <module_name>
                   ! </ERROR>
                   CALL error_mesg('diag_manager_mod::send_data_3d',&
                   & 'Mask will be ignored since missing values were not specified for field '//&
-                  & trim(input_fields(diag_field_id)%field_name)//' in module '//&
-                  & trim(input_fields(diag_field_id)%module_name), WARNING)
-                  input_fields(diag_field_id)%issued_mask_ignore_warning = .TRUE.
+                  & trim(field_name)//' in module '//&
+                  & trim(module_name), WARNING)
+                  issued_mask_ignore_warning = .TRUE.
                END IF
                NDCMP_RKR_2_IF: IF ( need_compute ) THEN
                   IF (numthreads>1 .AND. phys_window) then
@@ -481,8 +479,7 @@ CONTAINS
                      DO i = is, ie
                         IF ( l_start(1)+hi <= i .AND. i <= l_end(1)+hi .AND. l_start(2)+hj <= j .AND. &
                         & j <= l_end(2)+hj ) THEN
-                           output_fields(out_num)%num_elements(sample)=&
-                           & output_fields(out_num)%num_elements(sample)+l_end(3)-l_start(3)+1
+                           num_elements = num_elements + l_end(3)-l_start(3)+1
                         END IF
                      END DO
                   END DO
@@ -504,7 +501,7 @@ CONTAINS
                ELSE NDCMP_RKR_2_IF
                   IF ( debug_diag_manager ) THEN
                      CALL update_bounds(ntval, is-hi, ie-hi, js-hj, je-hj, ks, ke)
-                     CALL check_out_of_bounds(ofb, ntval, output_name, diag_field_id, err_msg=err_msg_local)
+                     CALL check_out_of_bounds(ofb, ntval, output_name, module_name, err_msg=err_msg_local)
                      IF ( err_msg_local /= '') THEN
                         IF ( fms_error_handler('diag_manager_mod::send_data_3d', err_msg_local, err_msg) ) THEN
                            succeded = .FALSE.
@@ -525,8 +522,7 @@ CONTAINS
                   END IF
                END IF NDCMP_RKR_2_IF
                !$OMP CRITICAL
-               IF ( .NOT.phys_window ) output_fields(out_num)%count_0d(sample) =&
-               & output_fields(out_num)%count_0d(sample) + weight1
+               IF ( .NOT.phys_window ) count_0d = count_0d + weight1
                !$OMP END CRITICAL
             END IF MISSVAL_PR_2_IF
          ELSE MASK_PR_2_IF !!(section: mask_variant .eq. false + mask not present + missvalue)
@@ -578,8 +574,7 @@ CONTAINS
                      DO i = is, ie
                         IF ( l_start(1)+hi <= i .AND. i <= l_end(1)+hi .AND. l_start(2)+hj <= j .AND. &
                         & j <= l_end(2)+hj) THEN
-                           output_fields(out_num)%num_elements(sample) =&
-                           & output_fields(out_num)%num_elements(sample) + l_end(3) - l_start(3) + 1
+                           num_elements = num_elements + l_end(3) - l_start(3) + 1
                         END IF
                      END DO
                   END DO
@@ -588,8 +583,7 @@ CONTAINS
                         DO j=l_start(2)+hj, l_end(2)+hj
                            DO i=l_start(1)+hi, l_end(1)+hi
                               IF ( field(i,j,k) /= missvalue ) THEN
-                                 output_fields(out_num)%count_0d(sample) = &
-                                 & output_fields(out_num)%count_0d(sample) + weight1
+                                 count_0d = count_0d + weight1
                                  EXIT
                               END IF
                            END DO
@@ -640,8 +634,7 @@ CONTAINS
                         DO i=f1, f2
                            !! TODO: verify this below
                            IF ( field(i,j,k) /= missvalue ) THEN
-                              output_fields(out_num)%count_0d(sample) = &
-                              & output_fields(out_num)%count_0d(sample) + weight1
+                              count_0d = count_0d + weight1
                               EXIT
                            END IF
                         END DO
@@ -651,7 +644,7 @@ CONTAINS
                ELSE NDCMP_RKR_3_IF
                   IF ( debug_diag_manager ) THEN
                      CALL update_bounds(ntval, is-hi, ie-hi, js-hj, je-hj, ks, ke)
-                     CALL check_out_of_bounds(ofb, ntval, output_name, diag_field_id, err_msg=err_msg_local)
+                     CALL check_out_of_bounds(ofb, ntval, output_name, module_name, err_msg=err_msg_local)
                      IF ( err_msg_local /= '' ) THEN
                         IF ( fms_error_handler('diag_manager_mod::send_data_3d', err_msg_local, err_msg) ) THEN
                            succeded = .FALSE.
@@ -693,8 +686,7 @@ CONTAINS
                      DO j=f3, f4
                         DO i=f1, f2
                            IF ( field(i,j,k) /= missvalue ) THEN
-                              output_fields(out_num)%count_0d(sample) = &
-                              & output_fields(out_num)%count_0d(sample)  + weight1
+                              count_0d = count_0d + weight1
                               EXIT
                            END IF
                         END DO
@@ -736,8 +728,7 @@ CONTAINS
                      DO i = is, ie
                         IF ( l_start(1)+hi <= i .AND. i <= l_end(1)+hi .AND. l_start(2)+hj <= j .AND. &
                         & j <= l_end(2)+hj ) THEN
-                           output_fields(out_num)%num_elements(sample) =&
-                           & output_fields(out_num)%num_elements(sample)+l_end(3)-l_start(3)+1
+                           num_elements = num_elements + l_end(3)-l_start(3)+1
                         END IF
                      END DO
                   END DO
@@ -761,7 +752,7 @@ CONTAINS
                ELSE NDCMP_RKR_4_IF
                   IF ( debug_diag_manager ) THEN
                      CALL update_bounds(ntval, is-hi, ie-hi, js-hj, je-hj, ks, ke)
-                     CALL check_out_of_bounds(ofb, ntval, output_name, diag_field_id, err_msg=err_msg_local)
+                     CALL check_out_of_bounds(ofb, ntval, output_name, module_name, err_msg=err_msg_local)
                      IF ( err_msg_local /= '' ) THEN
                         IF (fms_error_handler('diag_manager_mod::send_data_3d', err_msg_local, err_msg) ) THEN
                            succeded = .FALSE.
@@ -783,20 +774,15 @@ CONTAINS
                   END IF
                END IF NDCMP_RKR_4_IF
                !$OMP CRITICAL
-               IF ( .NOT.phys_window ) output_fields(out_num)%count_0d(sample) =&
-               & output_fields(out_num)%count_0d(sample) + weight1
+               IF ( .NOT.phys_window ) count_0d = count_0d + weight1
                !$OMP END CRITICAL
             END IF MISSVAL_PR_3_IF
          END IF MASK_PR_2_IF ! if mask present
       END IF MASK_VAR_IF
 
       !$OMP CRITICAL
-      IF ( .NOT.need_compute .AND. .NOT.reduced_k_range )&
-      & output_fields(out_num)%num_elements(sample) =&
-      & output_fields(out_num)%num_elements(sample) + (ie-is+1)*(je-js+1)*(ke-ks+1)
-      IF ( reduced_k_range ) &
-      & output_fields(out_num)%num_elements(sample) = output_fields(out_num)%num_elements(sample) +&
-      & (ie-is+1)*(je-js+1)*(ker-ksr+1)
+      IF ( .NOT.need_compute .AND. .NOT.reduced_k_range ) num_elements = num_elements + (ie-is+1)*(je-js+1)*(ke-ks+1)
+      IF ( reduced_k_range ) num_elements = num_elements +  (ie-is+1)*(je-js+1)*(ker-ksr+1)
       !$OMP END CRITICAL
 
       succeded = .TRUE.
@@ -805,27 +791,26 @@ CONTAINS
    END FUNCTION AVERAGE_THE_FIELD_IMP
 
 
-   FUNCTION SAMPLE_THE_FIELD_IMP (this, diag_field_id, field, out_num, ofb, ntval, output_name, &
-   & mask, sample, missvalue, missvalue_present, &
+   FUNCTION SAMPLE_THE_FIELD_IMP (this, diag_field_id, field, sample, ofb, ntval, &
+   & count_0d, output_name, module_name, mask,  missvalue, missvalue_present, &
    & l_start, l_end, err_msg,  err_msg_local) result( succeded )
       CLASS(fms_diag_field_procs_t), INTENT(inout)  :: this
       INTEGER, INTENT(in) :: diag_field_id
       REAL, DIMENSION(:,:,:), INTENT(in) :: field
-      INTEGER, INTENT(in) :: out_num
+      INTEGER, INTENT(in) :: sample
       REAL, allocatable, DIMENSION(:,:,:,:), INTENT(inout) :: ofb
       TYPE(fms_diag_buff_intervals_t), INTENT(inout) :: ntval
-      CHARACTER(len=*), INTENT(inout) :: output_name
+      REAL, INTENT(inout) :: count_0d
+      CHARACTER(len=*), INTENT(in) :: output_name
+      CHARACTER(len=*), INTENT(in) :: module_name
       LOGICAL, DIMENSION(:,:,:), INTENT(in), OPTIONAL :: mask
-      INTEGER, INTENT(in) :: sample
-      REAL, INTENT(in), OPTIONAL :: missvalue   !!TODO: optional?
+      REAL, INTENT(in) :: missvalue
       LOGICAL, INTENT(in) :: missvalue_present
       INTEGER, DIMENSION(3), INTENT(in)  :: l_start !< local start indices on 3 axes for regional output
       INTEGER, DIMENSION(3), INTENT(in)  :: l_end !< local end indices on 3 axes for regional output
       CHARACTER(len=*), INTENT(inout), OPTIONAL :: err_msg
       CHARACTER(len=*), INTENT(inout) :: err_msg_local
       LOGICAL :: succeded
-
-      !!LOGICAL, ALLOCATABLE, DIMENSION(:,:,:) :: oor_mask
       CHARACTER(len=128):: error_string
 
       ! Power value for rms or pow(x) calculations
@@ -896,7 +881,7 @@ CONTAINS
                ELSE
                   IF ( debug_diag_manager ) THEN
                      CALL update_bounds(ntval, is-hi, ie-hi, js-hj, je-hj, ks, ke)
-                     CALL check_out_of_bounds(ofb, ntval, output_name,  diag_field_id, err_msg=err_msg_local)
+                     CALL check_out_of_bounds(ofb, ntval, output_name,  module_name, err_msg=err_msg_local)
                      IF ( err_msg_local /= '' ) THEN
                         IF ( fms_error_handler('diag_manager_mod::send_data_3d', err_msg_local, err_msg) ) THEN
                            succeded = .FALSE.
@@ -934,7 +919,7 @@ CONTAINS
                ELSE
                   IF ( debug_diag_manager ) THEN
                      CALL update_bounds(ntval, is-hi, ie-hi, js-hj, je-hj, ks, ke)
-                     CALL check_out_of_bounds(ofb, ntval, output_name, diag_field_id, err_msg=err_msg_local)
+                     CALL check_out_of_bounds(ofb, ntval, output_name, module_name, err_msg=err_msg_local)
                      IF ( err_msg_local /= '' ) THEN
                         IF ( fms_error_handler('diag_manager_mod::send_data_3d', err_msg_local, err_msg) ) THEN
                            succeded = .FALSE.
@@ -946,7 +931,7 @@ CONTAINS
                   & OFB(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) = field(f1:f2,f3:f4,ks:ke)
                END IF
             END IF MASK_PRSNT_1_IF
-            output_fields(out_num)%count_0d(sample) = 1
+            count_0d = 1
             !END TIME MAX
          ELSE IF ( time_min ) THEN TiME_IF
             MASK_PRSNT_2_IF: IF ( PRESENT(mask) ) THEN
@@ -977,7 +962,7 @@ CONTAINS
                ELSE
                   IF ( debug_diag_manager ) THEN
                      CALL update_bounds(ntval, is-hi, ie-hi, js-hj, je-hj, ks, ke)
-                     CALL check_out_of_bounds(ofb, ntval, output_name, diag_field_id, err_msg=err_msg_local)
+                     CALL check_out_of_bounds(ofb, ntval, output_name, module_name, err_msg=err_msg_local)
                      IF ( err_msg_local /= '' ) THEN
                         IF ( fms_error_handler('diag_manager_mod::send_data_3d', err_msg_local, err_msg) ) THEN
                            succeded = .FALSE.
@@ -1014,7 +999,7 @@ CONTAINS
                ELSE
                   IF ( debug_diag_manager ) THEN
                      CALL update_bounds(ntval, is-hi, ie-hi, js-hj, je-hj, ks, ke)
-                     CALL check_out_of_bounds(ofb, ntval, output_name, diag_field_id, err_msg=err_msg_local)
+                     CALL check_out_of_bounds(ofb, ntval, output_name, module_name, err_msg=err_msg_local)
                      IF ( err_msg_local /= '' ) THEN
                         IF ( fms_error_handler('diag_manager_mod::send_data_3d', err_msg_local, err_msg) ) THEN
                            succeded = .FALSE.
@@ -1026,7 +1011,7 @@ CONTAINS
                   & OFB(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) = field(f1:f2,f3:f4,ks:ke)
                END IF
             END IF MASK_PRSNT_2_IF
-            output_fields(out_num)%count_0d(sample) = 1
+            count_0d = 1
 
             !! END_TIME_MIN
          ELSE IF ( time_sum ) THEN TIME_IF
@@ -1059,7 +1044,7 @@ CONTAINS
                ELSE
                   IF ( debug_diag_manager ) THEN
                      CALL update_bounds(ntval, is-hi, ie-hi, js-hj, je-hj, ks, ke)
-                     CALL check_out_of_bounds(ofb, ntval, output_name, diag_field_id, err_msg=err_msg_local)
+                     CALL check_out_of_bounds(ofb, ntval, output_name, module_name, err_msg=err_msg_local)
                      IF ( err_msg_local /= '' ) THEN
                         IF ( fms_error_handler('diag_manager_mod::send_data_3d', err_msg_local, err_msg) ) THEN
                            succeded = .FALSE.
@@ -1097,7 +1082,7 @@ CONTAINS
                ELSE
                   IF ( debug_diag_manager ) THEN
                      CALL update_bounds(ntval, is-hi, ie-hi, js-hj, je-hj, ks, ke)
-                     CALL check_out_of_bounds(ofb, ntval, output_name, diag_field_id, err_msg=err_msg_local)
+                     CALL check_out_of_bounds(ofb, ntval, output_name, module_name, err_msg=err_msg_local)
                      IF ( err_msg_local /= '' ) THEN
                         IF ( fms_error_handler('diag_manager_mod::send_data_3d', err_msg_local, err_msg) ) THEN
                            succeded = .FALSE.
@@ -1110,10 +1095,10 @@ CONTAINS
                   &    field(f1:f2,f3:f4,ks:ke)
                END IF
             END IF MASK_PRSNT_3_IF
-            output_fields(out_num)%count_0d(sample) = 1
+            count_0d = 1
             !END time_sum
          ELSE TIME_IF !! ( not average, not min, not max, not sum )
-            output_fields(out_num)%count_0d(sample) = 1
+            count_0d = 1
             IF ( need_compute ) THEN
                DO j = js, je
                   DO i = is, ie
@@ -1133,7 +1118,7 @@ CONTAINS
                IF ( debug_diag_manager ) THEN
                   !!TODO update_bounds and chck_out_of_bounds may need mods for new diag
                   CALL update_bounds(ntval, is-hi, ie-hi, js-hj, je-hj, ks, ke)
-                  CALL check_out_of_bounds(ofb, ntval, output_name, diag_field_id, err_msg=err_msg_local)
+                  CALL check_out_of_bounds(ofb, ntval, output_name, module_name, err_msg=err_msg_local)
                   IF ( err_msg_local /= '' ) THEN
                      IF ( fms_error_handler('diag_manager_mod::send_data_3d', err_msg_local, err_msg) ) THEN
                         succeded = .FALSE.

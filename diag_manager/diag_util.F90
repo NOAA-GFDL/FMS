@@ -725,11 +725,11 @@ END SUBROUTINE update_bounds
 !> @brief Checks if the array indices for <TT>output_fields(out_num)</TT> are outside the
 !! <TT>output_fields(out_num)%buffer</TT> upper
 !!     and lower bounds.
-SUBROUTINE check_out_of_bounds(buffer, ntval, output_name, diag_field_id, err_msg)
+SUBROUTINE check_out_of_bounds(buffer, ntval, output_name, module_name, err_msg)
   REAL, INTENT(in), DIMENSION(:,:,:,:) :: buffer
   TYPE (fms_diag_buff_intervals_t)     :: ntval
-  CHARACTER(len=*), INTENT(out) :: output_name
-  INTEGER, INTENT(in) :: diag_field_id !< Input field ID number.
+  CHARACTER(len=*), INTENT(in) :: output_name
+  CHARACTER(len=*), INTENT(in) :: module_name
   CHARACTER(len=*), INTENT(out) :: err_msg !< Return status of <TT>check_out_of_bounds</TT>.  An empty
   !! error string indicates the x, y, and z indices are not outside the
   !!     buffer array boundaries.
@@ -742,7 +742,7 @@ SUBROUTINE check_out_of_bounds(buffer, ntval, output_name, diag_field_id, err_ms
   & ntval%jmax > UBOUND(buffer,2) .OR.&
   & ntval%kmin < LBOUND(buffer,3) .OR.&
   & ntval%kmax > UBOUND(buffer,3) ) THEN
-     WRITE(error_string1,'(a,"/",a)') TRIM(input_fields(diag_field_id)%module_name),&
+     WRITE(error_string1,'(a,"/",a)') TRIM(module_name),&
      & TRIM(output_name)
      error_string2 ='Buffer bounds=   :   ,   :   ,   :     Actual bounds=   :   ,   :   ,   :   '
      WRITE(error_string2(15:17),'(i3)') LBOUND(buffer,1)

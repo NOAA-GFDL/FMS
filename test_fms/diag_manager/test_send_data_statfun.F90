@@ -97,10 +97,13 @@ program test_send_data_statfun
 
    !! Case: mask_var=false & missval not present & mask not present & not_reduced_k_range
    missvalue_present = .false.
-   temp_result = sprocs_obj%average_the_field(diag_field_id, field, out_num, &
+   temp_result = sprocs_obj%average_the_field(diag_field_id, field, sample, &
       & output_fields(out_num)%buffer, output_fields(out_num)%counter, &
-      & output_fields(out_num)%ntval,  output_fields(out_num)%output_name, &
-      & mask, weight, sample, missvalue, missvalue_present, &
+      & output_fields(out_num)%ntval,  output_fields(out_num)%count_0d(sample), &
+      & output_fields(out_num)%num_elements(sample), output_fields(out_num)%output_name, &
+      & input_fields(diag_field_id)%field_name, input_fields(diag_field_id)%module_name, &
+      & input_fields(diag_field_id)%issued_mask_ignore_warning,&
+      & mask, weight, missvalue, missvalue_present, &
       l_start, l_end, err_msg, err_msg_local )
    call check_results_1(output_fields(out_num)%buffer(:,:,:,sample))
 

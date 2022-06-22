@@ -2087,10 +2087,13 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
 
        ! Take care of submitted field data
        AVERAGE_IF: IF ( average ) THEN
-          temp_result = sprocs_obj%average_the_field(diag_field_id, field, out_num, &
+          temp_result = sprocs_obj%average_the_field(diag_field_id, field, sample, &
           & output_fields(out_num)%buffer, output_fields(out_num)%counter, &
-          & output_fields(out_num)%ntval,  output_fields(out_num)%output_name, &
-          & mask, weight1, sample, missvalue, missvalue_present, &
+          & output_fields(out_num)%ntval,  output_fields(out_num)%count_0d(sample), &
+          & output_fields(out_num)%num_elements(sample), output_fields(out_num)%output_name, &
+          & input_fields(diag_field_id)%field_name, input_fields(diag_field_id)%module_name, &
+          & input_fields(diag_field_id)%issued_mask_ignore_warning, &
+          & mask, weight1, missvalue, missvalue_present, &
           & l_start, l_end, err_msg, err_msg_local )
           IF (temp_result .eqv. .FALSE.) THEN
              DEALLOCATE(oor_mask)
@@ -2099,10 +2102,11 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
 
           ! Add processing for Max and Min
        ELSE
-          temp_result = sprocs_obj%sample_the_field(diag_field_id, field, out_num, &
-          & output_fields(out_num)%buffer, output_fields(out_num)%ntval, &
-          &  output_fields(out_num)%output_name,  mask, &
-          & sample, missvalue, missvalue_present, l_start, l_end, err_msg, err_msg_local)
+          temp_result = sprocs_obj%sample_the_field(diag_field_id, field, &
+          & sample,  output_fields(out_num)%buffer, output_fields(out_num)%ntval, &
+          & output_fields(out_num)%count_0d(sample), &
+          & output_fields(out_num)%output_name,input_fields(diag_field_id)%module_name, mask, &
+          & missvalue, missvalue_present, l_start, l_end, err_msg, err_msg_local)
           IF (temp_result .eqv. .FALSE.) THEN
              DEALLOCATE(oor_mask)
              RETURN
