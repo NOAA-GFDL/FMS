@@ -101,6 +101,7 @@ use platform_mod
   INTEGER, PARAMETER :: NO_DOMAIN    = 1 !< Use the FmsNetcdfFile_t fileobj
   INTEGER, PARAMETER :: TWO_D_DOMAIN = 2 !< Use the FmsNetcdfDomainFile_t fileobj
   INTEGER, PARAMETER :: UG_DOMAIN    = 3 !< Use the FmsNetcdfUnstructuredDomainFile_t fileobj
+  INTEGER, PARAMETER :: SUB_REGIONAL = 4 !< This is a file with a sub_region use the FmsNetcdfFile_t fileobj
   INTEGER, PARAMETER :: DIRECTION_UP   = 1  !< The axis points up if positive
   INTEGER, PARAMETER :: DIRECTION_DOWN = -1 !< The axis points down if positive
   INTEGER, PARAMETER :: GLO_REG_VAL = -999 !< Value used in the region specification of the diag_table

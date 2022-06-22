@@ -636,16 +636,11 @@ test_expect_success "Test the diag_ocean feature in diag_manager_init (test $my_
 '
 
 my_test_count=42
-test_expect_success "test_diag_object_container (test $my_test_count)" '
-  mpirun -n 1 ../test_diag_object_container
-'
-
-my_test_count=43
 test_expect_success "test_diag_dlinked_list (test $my_test_count)" '
   mpirun -n 1 ../test_diag_dlinked_list
 '
 
-my_test_count=44
+my_test_count=43
 test_expect_success "test_send_data_statfun (test $my_test_count)" '
   mpirun -n 1 ../test_send_data_statfun
 '
