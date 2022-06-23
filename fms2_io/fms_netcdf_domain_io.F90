@@ -20,9 +20,6 @@
 !> @ingroup fms2_io
 !> @brief Domain-specific I/O wrappers.
 
-!> @file
-!> @brief File for @ref fms_netcdf_domain_io_mod
-
 !> @addtogroup fms_netcdf_domain_io_mod
 !> @{
 module fms_netcdf_domain_io_mod

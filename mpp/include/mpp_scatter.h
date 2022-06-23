@@ -16,35 +16,22 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
-  ! <SUBROUTINE NAME="MPP_SCATTER_PELIST_2D_">
-  !   <OVERVIEW>
-  !     Scatter data from one pe to the specified pes.
-  !   </OVERVIEW>
-  !   <TEMPLATE>
-  !     SUBROUTINE MPP_SCATTER_PELIST_2D_(is, ie, js, je, pelist, array_seg, data, is_root_pe, &
-  !					  ishift, jshift)
-  !   </TEMPLATE>
-  !   <DESCRIPTION>
-  !		   Scatter (ie - is) * (je - js) contiguous elements of array data from the designated root pe
-  !		   into contigous members of array segment in each pe that is included in the pelist argument.
-  !   </DESCRIPTION>
-  !   <IN NAME="is, ie" TYPE="INTEGER">Start and end index of the first dimension of the segment array</IN>
-  !   <IN NAME="js, je" TYPE="INTEGER">Start and end index of the second dimension of the segment array</IN>
-  !   <IN NAME="pelist" TYPE="INTEGER()">The PE list of of target pes, Needs to be in monotonic increasing order.
-  !		The root pe is allowed to be included (see input is_root_pe). If a pe is absent in this list then
-  !             its segment array is not updated. </IN>
-  !   <IN NAME="array_seg" TYPE="REAL(:)">The 2D array that the data is to be copied into</IN>
-  !   <IN NAME="data" TYPE="REAL(:)">The source array.</IN>
-  !   <IN NAME="is_root_pe" TYPE="LOGICAL" > True if the calee is root pe, false otherwise. </IN>
-  !   <IN NAME="ishift, jshift" TYPE="INTEGER" > Offsets specifying the first element in data array.</IN>
+
+!> addtogroup mpp_mod
+!> @{
+
+!> @brief Scatter data from one pe to the specified pes.
+!!
+!> Scatter (ie - is) * (je - js) contiguous elements of array data from the designated root pe
+!! into contigous members of array segment in each pe that is included in the pelist argument.
 subroutine MPP_SCATTER_PELIST_2D_(is, ie, js, je, pelist, array_seg, data, is_root_pe, &
                                   ishift, jshift)
-   integer,                           intent(in)    :: is, ie, js, je
-   integer,   dimension(:),           intent(in)    :: pelist
-   MPP_TYPE_, dimension(is:ie,js:je), intent(inout)    :: array_seg
-   MPP_TYPE_, dimension(:,:),         intent(in) :: data
-   logical,                           intent(in)    :: is_root_pe
-   integer,   optional,               intent(in)    :: ishift, jshift
+   integer,                           intent(in)    :: is, ie, js, je !< indices of segment array
+   integer,   dimension(:),           intent(in)    :: pelist!<PE list of target pes, must be in monotonic increasing order
+   MPP_TYPE_, dimension(is:ie,js:je), intent(inout)    :: array_seg !< 2D array of output data
+   MPP_TYPE_, dimension(:,:),         intent(in) :: data !< 2D array of input data
+   logical,                           intent(in)    :: is_root_pe !< true if calling from root
+   integer,   optional,               intent(in)    :: ishift, jshift !< Offsets of array elements
 
    MPP_TYPE_ ::  arr3D(size(array_seg,1),size(array_seg,2),1)
    MPP_TYPE_ :: data3D(size(     data,1),size(     data,2),1)
@@ -168,3 +155,4 @@ subroutine MPP_SCATTER_PELIST_3D_(is, ie, js, je, nk, pelist, array_seg, data, i
    return
 
 end subroutine MPP_SCATTER_PELIST_3D_
+!> @}

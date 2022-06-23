@@ -24,9 +24,6 @@
 !! mpp_data_nocomm.inc for use in @ref mpp modules. This module is mainly
 !! for internal use within @ref mpp_mod and @ref mpp_domains_mod .
 
-!> @file
-!> @brief File for @ref mpp_data_mod
-
 !> @addtogroup mpp_data_mod
 !> @{
 module mpp_data_mod

@@ -17,7 +17,11 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 !> @file
-!> @ingroup fms2_io
+!> @brief Routines for retrieving variable values from netcdf files with different
+!! dimension sizes for the @ref netcdf_read_data interface
+
+!> @addtogroup netcdf_io_mod
+!> @{
 
 !> @brief Read in data from a variable in a netcdf file.
 subroutine netcdf_read_data_0d(fileobj, variable_name, buf, unlim_dim_level, &
@@ -621,3 +625,4 @@ subroutine netcdf_read_data_5d(fileobj, variable_name, buf, unlim_dim_level, &
     end select
   endif
 end subroutine netcdf_read_data_5d
+!> @}

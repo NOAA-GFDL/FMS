@@ -16,7 +16,6 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
-
 !> @defgroup diag_grid_mod diag_grid_mod
 !> @ingroup diag_manager
 !> @brief diag_grid_mod is a set of procedures to work with the
@@ -36,9 +35,6 @@
 !!   are registered that will output only regions.  <TT>get_local_indexes</TT>
 !!   is to be called by the <TT>diag_manager_mod</TT> to discover the
 !!   global indexes defining a subregion on the tile.
-
-!> @file
-!> @brief File for @ref diag_grid_mod
 
 MODULE diag_grid_mod
 use platform_mod

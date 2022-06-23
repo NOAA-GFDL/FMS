@@ -21,31 +21,15 @@
 !> @link http://www.gfdl.noaa.gov/fms-cgi-bin/cvsweb.cgi/FMS/
 !> @brief A software package that provides a set of simple interfaces for
 !!   modelers to perform computations related to time and dates.
-!> The changes between the lima revision and this revision are more
-!! extensive that all those between antwerp and lima.
-!! A brief description of these changes follows.
 !!
-!! <LI> Added option to set the smallest time increment to something less than one second.
-!!    This is controlled by calling the pubic subroutine set_ticks_per_second. </LI>
+!! Optional error flag can be used in calling arguments of public routines.
+!! This allows the using routine to terminate the program. It is likely that more
+!! diagnostic information is available from the user than from time_manager alone.
+!! If the error flag is present then it is the responsibility of the using
+!! routine to test it and add additional information to the error message.
 !!
-!! <LI>Gregorian calendar fixed.</LI>
-!!
-!! <LI>Optional error flag added to calling arguments of public routines.
-!!    This allows the using routine to terminate the program. It is likely that more
-!!    diagnostic information is available from the user than from time_manager alone.
-!!    If the error flag is present then it is the responsibility of the using
-!!    routine to test it and add additional information to the error message.</LI>
-!!
-!! <LI>Removed the restriction that time increments be positive in routines that increment or decrement
-!!    time and date. The option to prohibit negative increments can be turned on via optional argument.</LI>
-!!
-!! <LI>subroutine set_date_c modified to handle strings that include only hours or only hours and minutes.
-!!    This complies with CF convensions.</LI>
-!!
-!! <LI>Made calendar specific routines private.
-!!    They are not used, and should not be used, by any using code.</LI>
-!!
-!! <LI>Error messages made more informative.</LI>
+!! Calendar specific routines are private.
+!! They are not used, and should not be used, by any using code.
 !!
 !! The module defines a type that can be used to represent discrete
 !! times (accurate to one second) and to map these times into dates
@@ -73,14 +57,6 @@
 !! A tick cannot be larger than 1 second, which also is the default.
 !! The number of ticks per second is set via pubic subroutine set_ticks_per_second.
 !! For example, ticks_per_second = 1000  will set the tick to one millisecond.
-
-!! <DATA NAME="time_type" TYPE="derived type">
-!!    Derived-type data variable used to store time and date quantities. It
-!!    contains three PRIVATE variables: days, seconds and ticks.
-!! </DATA>
-
-!> @file
-!> @brief File for @ref time_manager_mod
 
 !> @addtogroup time_manager_mod
 !> @{
