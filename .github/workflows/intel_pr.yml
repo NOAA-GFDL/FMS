@@ -12,6 +12,7 @@ jobs:
         LDFLAGS: "-L/libs/lib"
         TEST_VERBOSE: 1
         I_MPI_FABRICS: "shm" # needed for mpi in image
+        SKIP_TESTS: "test_mpp_update_domains.1 test_update_domains_performance.1" # TODO oneapi fails on domain updates with one pe when using shm
     steps:
     - name: Cache dependencies
       id: cache
@@ -47,7 +48,5 @@ jobs:
       run: autoreconf -if ./configure.ac && ./configure --with-yaml
     - name: Compile
       run: make -j || make # parallel builds sometimes fail
-      env:
-        SKIP_TESTS: "test_mpp_update_domains.1 test_update_domains_performance.1" # TODO oneapi fails on domain updates with one pe when using shm
     - name: Run test suite
-      run: make -j check LD_LIBRARY_PATH="/libs/lib:$LD_LIBRARY_PATH"
+      run: make -j check LD_LIBRARY_PATH="/libs/lib:$LD_LIBRARY_PATH" SKIP_TESTS="$SKIP_TESTS"
