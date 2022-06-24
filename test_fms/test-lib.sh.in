@@ -232,13 +232,12 @@ match_pattern_list_ () {
     pInd=`expr index $arg '.'`
     tNameArg=`expr substr $arg 1 $pInd`
     tNamePattern=`expr substr $pattern_ 1 $pInd`
-    test "$tNameArg" != "$tNamePattern" && break
     isRange="`expr index $pattern_ '-'`"
     # individual test num
     if test $isRange -eq 0 ; then
       say "is range.."
       if test "$pattern_" = "$arg" ; then
-          return 0
+           test "$tNameArg" = "$tNamePattern" && return 0
       fi
     # num range
     else
