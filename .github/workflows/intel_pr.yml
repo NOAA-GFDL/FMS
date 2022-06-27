@@ -1,6 +1,6 @@
 on: [push, pull_request]
 jobs:
-  Code-Coverage:
+  intel-autotools:
     runs-on: ubuntu-latest
     container:
       image: intel/oneapi-hpckit:devel-ubuntu20.04
@@ -12,7 +12,9 @@ jobs:
         LDFLAGS: "-L/libs/lib"
         TEST_VERBOSE: 1
         I_MPI_FABRICS: "shm" # needed for mpi in image
-        SKIP_TESTS: "test_mpp_update_domains.1 test_update_domains_performance.1" # TODO oneapi fails on domain updates with one pe when using shm
+        # Skips tests with 1 pe domain updates
+        # intel bug causes failures with shm option(required by container)
+        SKIP_TESTS: "test_mpp_update_domains.1 test_update_domains_performance.1 test_diag_manager2.23"
     steps:
     - name: Cache dependencies
       id: cache
