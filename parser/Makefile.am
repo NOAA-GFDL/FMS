@@ -37,7 +37,7 @@ libparser_la_SOURCES = \
   yaml_parser_binding.c
 
 MODFILES = \
-  yaml_parser_mod.$(FC_MODEXT)
+  yaml_parser_mod.$(FC_MODEXT) \
   fms_yaml_output_mod.$(FC_MODEXT)
 
 BUILT_SOURCES = $(MODFILES)
