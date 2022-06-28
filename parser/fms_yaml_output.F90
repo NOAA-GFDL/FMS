@@ -1,4 +1,23 @@
-module fms_yaml_output
+!***********************************************************************
+!*                   GNU Lesser General Public License
+!*
+!* This file is part of the GFDL Flexible Modeling System (FMS).
+!*
+!* FMS is free software: you can redistribute it and/or modify it under
+!* the terms of the GNU Lesser General Public License as published by
+!* the Free Software Foundation, either version 3 of the License, or (at
+!* your option) any later version.
+!*
+!* FMS is distributed in the hope that it will be useful, but WITHOUT
+!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+!* for more details.
+!*
+!* You should have received a copy of the GNU Lesser General Public
+!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!***********************************************************************
+module fms_yaml_output_mod
+#ifdef use_yaml
 
 use iso_c_binding
 implicit none
@@ -61,17 +80,5 @@ end subroutine write_yaml_from_struct_3
 
 end interface
 
-contains
-
-subroutine copy_string (dest, str_in)
- character (c_char), intent (out) :: dest (:) !< C String to be copied into
- character (len=*), intent (in) :: str_in !< Fortran string to copy to C string
- integer :: i !< for looping
-  dest = c_null_char
-  do i = 1, len(trim(str_in))
-    dest(i) = str_in(i:i)
-  enddo
-end subroutine copy_string
-
-
-end module fms_yaml_output
+#endif
+end module fms_yaml_output_mod

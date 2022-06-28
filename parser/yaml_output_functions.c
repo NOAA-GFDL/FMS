@@ -16,7 +16,7 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
  **********************************************************************/
-
+#ifdef use_yaml
 
 #include <stdio.h>
 #include <yaml.h>
@@ -285,87 +285,4 @@ error:
     yaml_emitter_delete(&emitter);
   
 }	
-
-/*int main () {
-	struct fmsyamloutkeys k;
-	struct fmsyamloutvalues v;
-        int fs = 2; /* files */
-/*        struct fmsyamloutkeys k2[fs];
-        struct fmsyamloutvalues v2[fs];
-        int n31 = 2; /*n variables in file 1 */
-/*	int n32 = 3; /*n variables in file 2 */
-/*	int n3ar [fs]; /* array with the number of variables for each file */
-/*	struct fmsyamloutkeys k3[n31+n32]; /*variables */
-/*        struct fmsyamloutvalues v3[n31+n32];
-
-	int i;
-
-	i = 1;
-	strcpy(k.key1,"English");
-	strcpy(v.val1,"Hello");
-	strcpy(k.key2,"Spanish");
-        strcpy(v.val2,"Hola");
-	strcpy(k.key3,"French");
-        strcpy(v.val3,"Bonjour");
-	strcpy(k.key15,"");
-        strcpy(k.level2key,"Outro");
-
-	strcpy(k2[0].key1,"English");
-	strcpy(v2[0].val1,"Goodbye");
-	strcpy(k2[0].key2,"Spanish");
-        strcpy(v2[0].val2,"Adios");
-        strcpy(k2[0].key7,"French");
-        strcpy(v2[0].val7,"Au revoir");
-	strcpy(k2[0].level2key,"nextLev");
-	strcpy(k2[1].key1,"Eng");
-        strcpy(v2[1].val1,"Goo");
-        strcpy(k2[1].key2,"ish");
-        strcpy(v2[1].val2,"dios");
-        strcpy(k2[1].key13,"Frch");
-        strcpy(v2[1].val13,"Auevoir");
-        strcpy(k2[1].level2key,"nextLev");
-
-	strcpy(k3[0].key1,"z");
-        strcpy(v3[0].val1,"Z");
-        strcpy(k3[0].key2,"y");
-        strcpy(v3[0].val2,"y");
-        strcpy(k3[0].key3,"X");
-        strcpy(v3[0].val3,"x");
-        strcpy(k3[0].level2key,"");
-        strcpy(k3[1].key1,"v");
-        strcpy(v3[1].val1,"V");
-        strcpy(k3[1].key2,"w");
-        strcpy(v3[1].val2,"W");
-        strcpy(k3[1].key10,"u");
-        strcpy(v3[1].val10,"U");
-        strcpy(k3[1].level2key,"");
-
-
-	strcpy(k3[2].key1,"a");
-        strcpy(v3[2].val1,"1");
-        strcpy(k3[2].key2,"b");
-        strcpy(v3[2].val2,"2");
-        strcpy(k3[2].key3,"c");
-        strcpy(v3[2].val3,"3");
-        strcpy(k3[2].level2key,"");
-        strcpy(k3[4].key1,"d");
-        strcpy(v3[4].val1,"4");
-        strcpy(k3[4].key2,"e");
-        strcpy(v3[4].val2,"5");
-        strcpy(k3[4].key3,"f");
-        strcpy(v3[4].val3,"f");
-        strcpy(k3[4].level2key,"");
-        strcpy(k3[3].key1,"g");
-        strcpy(v3[3].val1,"G");
-        strcpy(k3[3].key2,"h");
-        strcpy(v3[3].val2,"H");
-        strcpy(k3[3].key3,"I");
-        strcpy(v3[3].val3,"i");
-        strcpy(k3[3].level2key,"");
-	n3ar[0] = n31 ;
-	n3ar[1] = n32 ;
-
-        write_yaml (i, &k, &v, fs, k2, v2, (n31+n32), n3ar, k3, v3);
- return 0;
-}*/
-/* ifdef use_yaml */
+#endif
