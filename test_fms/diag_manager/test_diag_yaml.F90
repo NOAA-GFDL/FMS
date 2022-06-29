@@ -99,7 +99,7 @@ if (.not. checking_crashes) then
   deallocate(diag_files)
   deallocate(diag_fields)
 
-  indices = find_diag_field("sst")
+  indices = find_diag_field("sst", "test_diag_manager_mod")
   print *, "sst was found in ", indices
   if (size(indices) .ne. 2) &
     call mpp_error(FATAL, 'sst was supposed to be found twice!')
@@ -123,7 +123,7 @@ if (.not. checking_crashes) then
   deallocate(diag_files)
   deallocate(indices)
 
-  indices = find_diag_field("sstt")
+  indices = find_diag_field("sstt", "test_diag_manager_mod")
   print *, "sstt was found in ", indices
   if (size(indices) .ne. 1) &
     call mpp_error(FATAL, 'sstt was supposed to be found twice!')
@@ -131,12 +131,12 @@ if (.not. checking_crashes) then
     call mpp_error(FATAL, 'sstt was supposed to be found in indices 1 and 2')
   deallocate(indices)
 
-  indices = find_diag_field("sstt2") !< This is in diag_table but it has write_var = false
+  indices = find_diag_field("sstt2", "test_diag_manager_mod") !< This is in diag_table but it has write_var = false
   print *, "sstt2 was found in ", indices
   if (indices(1) .ne. -999) &
     call mpp_error(FATAL, "sstt2 is not in the diag_table!")
 
-  indices = find_diag_field("tamales")
+  indices = find_diag_field("tamales", "test_diag_manager_mod")
   print *, "tamales was found in ", indices
   if (indices(1) .ne. -999) &
     call mpp_error(FATAL, "tamales is not in the diag_table!")

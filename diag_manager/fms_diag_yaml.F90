@@ -391,8 +391,9 @@ subroutine diag_yaml_object_init(diag_subset_output)
       !> Save the variable name in the diag_file type
       diag_yaml%diag_files(file_count)%file_varlist(file_var_count) = diag_yaml%diag_fields(var_count)%var_varname
 
-      !> Save the variable name in the variable_list
-      variable_list%var_name(var_count) = trim(diag_yaml%diag_fields(var_count)%var_varname)//c_null_char
+      !> Save the variable name and the module name in the variable_list
+      variable_list%var_name(var_count) = trim(diag_yaml%diag_fields(var_count)%var_varname)//&
+                                        ":"//trim(diag_yaml%diag_fields(var_count)%var_module)//c_null_char
       variable_list%diag_field_indices(var_count) = var_count
     enddo nvars_loop
     deallocate(var_ids)
@@ -1191,15 +1192,16 @@ end function get_num_unique_fields
 
 !> @brief Determines if a diag_field is in the diag_yaml_object
 !! @return Indices of the locations where the field was found
-function find_diag_field(diag_field_name) &
+function find_diag_field(diag_field_name, module_name) &
 result(indices)
 
   character(len=*), intent(in) :: diag_field_name !< diag_field name to search for
+  character(len=*), intent(in) :: module_name     !< Name of the module, the variable is in
 
   integer, allocatable :: indices(:)
 
   indices = fms_find_my_string(variable_list%var_pointer, size(variable_list%var_pointer), &
-                               & diag_field_name//c_null_char)
+                               & trim(diag_field_name)//":"//trim(module_name)//c_null_char)
 end function find_diag_field
 
 !> @brief Gets the diag_field entries corresponding to the indices of the sorted variable_list

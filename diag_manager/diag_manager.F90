@@ -475,7 +475,7 @@ end function register_diag_field_array
 #ifdef use_yaml
     integer, allocatable :: diag_field_indices(:) !< indices where the field was found
 
-    diag_field_indices = find_diag_field(field_name)
+    diag_field_indices = find_diag_field(field_name, module_name)
     if (diag_field_indices(1) .eq. diag_null) then
       !< The field was not found in the table, so return diag_null
       register_diag_field_scalar_modern = diag_null
@@ -526,7 +526,7 @@ end function register_diag_field_array
 #ifdef use_yaml
     integer, allocatable :: diag_field_indices(:) !< indices of diag_field yaml where the field was found
 
-    diag_field_indices = find_diag_field(field_name)
+    diag_field_indices = find_diag_field(field_name, module_name)
     if (diag_field_indices(1) .eq. diag_null) then
       !< The field was not found in the table, so return diag_null
       register_diag_field_array_modern = diag_null
