@@ -313,6 +313,15 @@ use platform_mod
      CHARACTER(len=128)   :: tile_name='N/A'
   END TYPE diag_global_att_type
 
+  !> @brief Type to hold the attributes of the field/axis/file
+  !> @ingroup diag_data_mod
+  type fmsDiagAttribute_type
+    class(*), allocatable         :: att_value(:) !< Value of the attribute
+    character(len=:), allocatable :: att_name     !< Name of the attribute
+
+    contains
+      procedure :: add => fms_add_attribute
+  end type fmsDiagAttribute_type
 ! Include variable "version" to be written to log file.
 #include<file_version.h>
 
@@ -520,6 +529,34 @@ CONTAINS
     integer :: res
     res = base_second
   end function get_base_second
+
+  subroutine fms_add_attribute(obj, att_name, att_value)
+    class(fmsDiagAttribute_type), intent(inout) :: obj          !< Diag attribute type
+    character(len=*),             intent(in)    :: att_name     !< Name of the attribute
+    class(*),                     intent(in)    :: att_value(:) !< The attribute value to add
+
+    integer :: natt !< the size of att_value
+
+    natt = size(att_value)
+    obj%att_name = att_name
+    select type (att_value)
+    type is (integer(kind=i4_kind))
+      allocate(integer(kind=i4_kind) :: obj%att_value(natt))
+      obj%att_value = att_value
+    type is (integer(kind=i8_kind))
+      allocate(integer(kind=i8_kind) :: obj%att_value(natt))
+      obj%att_value = att_value
+    type is (real(kind=r4_kind))
+      allocate(real(kind=r4_kind) :: obj%att_value(natt))
+      obj%att_value = att_value
+    type is (real(kind=r8_kind))
+      allocate(real(kind=r8_kind) :: obj%att_value(natt))
+      obj%att_value = att_value
+    type is (character(len=*))
+      allocate(character(len=len(att_value)) :: obj%att_value(natt))
+      obj%att_value = att_value
+    end select
+  end subroutine fms_add_attribute
 END MODULE diag_data_mod
 !> @}
 ! close documentation grouping

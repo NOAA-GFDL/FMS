@@ -544,7 +544,7 @@ result(rslt)
      class (fmsDiagObject_type), intent(in) :: obj !< diag object
      character(len=:), allocatable, dimension(:) :: rslt
      if (allocated(obj%metadata)) then
-       allocate(character(len=(len(obj%metadata(1)))) :: rslt (size(obj%metadata)) )
+       allocate(character(len=(len(obj%metadata))) :: rslt (size(obj%metadata)) )
        rslt = obj%metadata
      else
        allocate(character(len=1) :: rslt(1:1))
