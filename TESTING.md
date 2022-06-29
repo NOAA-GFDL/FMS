@@ -1,0 +1,44 @@
+# Testing Suite
+
+FMS includes a suite of MPI unit tests using the testing infrastructure included in the GNU autotools build system
+in order to check the functionality of the library's modules.
+
+It consists of programs in the test_fms/ directory, with shell scripts to handle directory set up and input files.
+test_lib.sh.in and tap-driver.sh provide additional helper functions used in the scripts and manage output.
+
+#### Running the suite
+
+To run the testing suite:
+
+1. Configure with autotools
+```
+mkdir build # create a build directory in FMS
+autoreconf -if ../configure.ac
+../configure <configure options>
+```
+
+1. Build and run suite
+```
+make check
+```
+This will compile any code not already compiled and then proceed to run the test scripts.
+
+
+#### Debugging Output and Test Options
+
+Setting the environement variable TEST_VERBOSE will direct output to stdout as the test runs, while setting VERBOSE will only output on failure.
+Logs are created for each test as well, with the name <test script name>.log in it's corresponding test_fms/ directory.
+
+To run an individual test:
+```
+make check -C test\_fms/\<test directory\> TESTS=\<test script name\>
+```
+
+Some options that effect the test suite can be set by passing options to the ./configure script that creates the makefiles
+for the build system:
+
+-    `--enable-code-coverage` allows for compilation with flags for coverage information.
+     If enabled a coverage report can be generated with `make check-code-coverage`
+-    `--enable-test-input=/path/to/input` turns on test scripts that require input netcdf files (interpolator, exchange grid).
+     This option is mainly used internally and in automated testing since we do not host the input data publicly.
+-    `--with-yaml` compile with yaml input and enable it's associated tests
