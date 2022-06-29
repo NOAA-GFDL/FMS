@@ -24,7 +24,7 @@ jobs:
     - name: Install packages for building 
       run: apt update && apt install -y autoconf libtool automake zlibc zlib1g-dev
     - if: steps.cache.outputs.cache-hit != 'true'
-    - name: Build netcdf
+      name: Build netcdf
       run: |
         mkdir /libs
         wget https://hdf-wordpress-1.s3.amazonaws.com/wp-content/uploads/manual/HDF5/HDF5_1_12_2/source/hdf5-1.12.2.tar.gz
