@@ -8,13 +8,12 @@ jobs:
         CC: mpiicc
         FC: mpiifort
         CFLAGS:  "-I/libs/include"
-        FCFLAGS: "-I/libs/include"
+        FCFLAGS: "-I/libs/include -g -traceback"
         LDFLAGS: "-L/libs/lib"
         TEST_VERBOSE: 1
         I_MPI_FABRICS: "shm" # needed for mpi in image
-        # Skips tests with 1 pe domain updates
-        # intel bug causes failures with shm option(required by container)
-        SKIP_TESTS: "test_mpp_update_domains.1 test_update_domains_performance.1 test_diag_manager2.23"
+        # intel bug causes some failures with shm option(required in container)
+        SKIP_TESTS: "test_mpp_update_domains.1 test_update_domains_performance.1 test_diag_manager2.23 test_mpp_io2.1 test_io_R4_R8.1"
     steps:
     - name: Cache dependencies
       id: cache
@@ -25,7 +24,7 @@ jobs:
     - name: Install packages for building 
       run: apt update && apt install -y autoconf libtool automake zlibc zlib1g-dev
     - if: steps.cache.outputs.cache-hit != 'true'
-      name: Build netcdf
+    - name: Build netcdf
       run: |
         mkdir /libs
         wget https://hdf-wordpress-1.s3.amazonaws.com/wp-content/uploads/manual/HDF5/HDF5_1_12_2/source/hdf5-1.12.2.tar.gz
@@ -36,7 +35,7 @@ jobs:
         tar xf v4.8.1.tar.gz && cd netcdf-c-4.8.1
         ./configure --prefix=/libs --enable-remote-fortran-bootstrap
         make -j install
-        # sets this here to pass embeded configure checks(needs var from image)
+        # sets this here to pass embeded configure checks
         export LD_LIBRARY_PATH="/libs/lib:$LD_LIBRARY_PATH"
         make -j -k build-netcdf-fortran
         make -j install-netcdf-fortran
@@ -49,6 +48,6 @@ jobs:
     - name: Configure
       run: autoreconf -if ./configure.ac && ./configure --with-yaml
     - name: Compile
-      run: make -j || make # parallel builds sometimes fail
+      run: make -j || make
     - name: Run test suite
-      run: make -j check LD_LIBRARY_PATH="/libs/lib:$LD_LIBRARY_PATH" SKIP_TESTS="$SKIP_TESTS"
+      run: make -j check LD_LIBRARY_PATH="/libs/lib:$LD_LIBRARY_PATH" SKIP_TESTS="$SKIP_TESTS" VERBOSE=1
