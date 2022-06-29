@@ -13,7 +13,7 @@ jobs:
         TEST_VERBOSE: 1
         I_MPI_FABRICS: "shm" # needed for mpi in image
         # intel bug causes some failures with shm option(required in container)
-        SKIP_TESTS: "test_mpp_update_domains.1 test_update_domains_performance.1 test_diag_manager2.23 test_mpp_io2.1 test_io_R4_R8.1"
+        SKIP_TESTS: "test_mpp_update_domains.1 test_update_domains_performance.1 test_diag_manager2.23"
     steps:
     - name: Cache dependencies
       id: cache
@@ -50,4 +50,4 @@ jobs:
     - name: Compile
       run: make -j || make
     - name: Run test suite
-      run: make -j check LD_LIBRARY_PATH="/libs/lib:$LD_LIBRARY_PATH" SKIP_TESTS="$SKIP_TESTS" VERBOSE=1
+      run: make check LD_LIBRARY_PATH="/libs/lib:$LD_LIBRARY_PATH" SKIP_TESTS="$SKIP_TESTS" VERBOSE=1
