@@ -6,7 +6,7 @@ in order to check the functionality of the library's modules.
 It consists of programs in the test_fms/ directory, with shell scripts to handle directory set up and input files.
 test_lib.sh.in and tap-driver.sh provide additional helper functions used in the scripts and manage output.
 
-### Running the Tests 
+### Running the Tests
 
 1. Configure with autotools
 ```
@@ -29,6 +29,11 @@ Logs are created for each test as well, with the name \<test script name\>.log i
 To run an individual test:
 ```
 make check -C test_fms/<test directory> TESTS=<test script name>
+```
+
+SKIP_TESTS can be set to in order to skip specific tests in a script. It uses the script name and test number, and takes ranges as well:
+```
+SKIP_TESTS="test_name.4 test_name.[1-3]"
 ```
 
 Some options that effect the test suite can be set by passing options to the ./configure script that creates the makefiles
