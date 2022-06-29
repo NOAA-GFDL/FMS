@@ -30,9 +30,9 @@
 module fms_diag_axis_object_mod
   use mpp_domains_mod, only:  domain1d, domain2d, domainUG, mpp_get_compute_domain, CENTER, &
                             & mpp_get_compute_domain, NORTH, EAST
-  use platform_mod,    only:  r8_kind, r4_kind
+  use platform_mod,    only:  r8_kind, r4_kind, i4_kind, i8_kind
   use diag_data_mod,   only:  diag_atttype, max_axes, NO_DOMAIN, TWO_D_DOMAIN, UG_DOMAIN, &
-                              direction_down, direction_up
+                              direction_down, direction_up, fmsDiagAttribute_type, max_axis_attributes
   use mpp_mod,         only:  FATAL, mpp_error, uppercase
   use fms2_io_mod,     only:  FmsNetcdfFile_t, FmsNetcdfDomainFile_t, FmsNetcdfUnstructuredDomainFile_t, &
                             & register_axis, register_field, register_variable_attribute, write_data
@@ -41,7 +41,7 @@ module fms_diag_axis_object_mod
   PRIVATE
 
   public :: diagAxis_t, set_subaxis, fms_diag_axis_init, fms_diag_axis_object_init, fms_diag_axis_object_end, &
-          & get_domain_and_domain_type, axis_obj, diagDomain_t, sub_axis_objs
+          & get_domain_and_domain_type, axis_obj, diagDomain_t, sub_axis_objs, fms_diag_axis_add_attribute
   !> @}
 
   !> @brief Type to hold the domain info for an axis
@@ -103,12 +103,13 @@ module fms_diag_axis_object_mod
                                                                  !! or <TT>geolat_t</TT>
      CHARACTER(len=128)             , private :: req             !< Required field names.
      INTEGER                        , private :: tile_count      !< The number of tiles
-     TYPE(diag_atttype),allocatable , private :: attributes(:)   !< Array to hold user definable attributes
+     TYPE(fmsDiagAttribute_type),allocatable , private :: attributes(:) !< Array to hold user definable attributes
      INTEGER                        , private :: num_attributes  !< Number of defined attibutes
      INTEGER                        , private :: domain_position !< The position in the doman (NORTH, EAST or CENTER)
 
      contains
 
+     PROCEDURE :: add_axis_attribute
      PROCEDURE :: register => register_diag_axis_obj
      PROCEDURE :: axis_length => get_axis_length
      PROCEDURE :: set_subaxis
@@ -213,7 +214,25 @@ module fms_diag_axis_object_mod
     if (present(req)) obj%req = trim(req)
 
     obj%nsubaxis = 0
+    obj%num_attributes = 0
   end subroutine register_diag_axis_obj
+
+  !> @brief Add an attribute to an axis
+  subroutine add_axis_attribute(obj, att_name, att_value)
+    class(diagAxis_t),INTENT(INOUT) :: obj          !< diag_axis obj
+    character(len=*), intent(in)    :: att_name     !< Name of the attribute
+    class(*),         intent(in)    :: att_value(:) !< The attribute value to add
+
+    integer :: j    !< obj%num_attributes (for less typing)
+
+    if (.not. allocated(obj%attributes)) &
+      allocate(obj%attributes(max_axis_attributes))
+
+    obj%num_attributes = obj%num_attributes + 1
+
+    j = obj%num_attributes
+    call obj%attributes(j)%add(att_name, att_value)
+  end subroutine add_axis_attribute
 
   !> @brief Write the axis meta data to an open fileobj
   subroutine write_axis_metadata(obj, fileobj, sub_axis_id)
@@ -223,7 +242,8 @@ module fms_diag_axis_object_mod
 
     character(len=:), ALLOCATABLE :: axis_edges_name !< Name of the edges, if it exist
     character(len=:), pointer     :: axis_name       !< Name of the axis
-    integer                       :: axis_length      !< Size of the axis
+    integer                       :: axis_length     !< Size of the axis
+    integer                       :: i               !< For do loops
 
     if (present(sub_axis_id)) then
       axis_name  => obj%subaxis(sub_axis_id)%subaxis_name
@@ -282,6 +302,13 @@ module fms_diag_axis_object_mod
       axis_edges_name = axis_obj(obj%edges)%axis_name
       call register_variable_attribute(fileobj, axis_name, "edges", axis_edges_name, &
         str_len=len_trim(axis_edges_name))
+    endif
+
+    if(allocated(obj%attributes)) then
+      do i = 1, size(obj%attributes)
+        call register_variable_attribute(fileobj, axis_name, obj%attributes(i)%att_name, &
+          & obj%attributes(i)%att_value)
+      enddo
     endif
 
   end subroutine write_axis_metadata
@@ -450,6 +477,18 @@ module fms_diag_axis_object_mod
 
     id = number_of_axis
   end function
+
+  !> @brief Add an attribute to an axis
+  subroutine fms_diag_axis_add_attribute(axis_id, att_name, att_value)
+    integer,          intent(in) :: axis_id      !< Id of the axis to add the attribute to
+    character(len=*), intent(in) :: att_name     !< Name of the attribute
+    class(*),         intent(in) :: att_value(:) !< The attribute value to add
+
+    if (axis_id < 0 .and. axis_id > number_of_axis) &
+      call mpp_error(FATAL, "diag_axis_add_attribute: The axis_id is not valid")
+
+    call axis_obj(axis_id)%add_axis_attribute(att_name, att_value)
+  end subroutine fms_diag_axis_add_attribute
 
   !> @brief Check if a cart_name is valid and crashes if it isn't
   subroutine check_if_valid_cart_name(cart_name)
