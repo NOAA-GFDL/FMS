@@ -147,7 +147,8 @@ integer,private :: MAX_LEN_VARNAME
 integer,private :: MAX_LEN_META
 logical,private :: module_is_initialized = .false. !< Flag indicating if the module is initialized
 
-TYPE(fmsDiagObject_type), private, ALLOCATABLE, target :: diag_objs(:) !< Array of diag objects, one for each registered variable
+TYPE(fmsDiagObject_type), private, ALLOCATABLE, target :: diag_objs(:) !< Array of diag objects
+                                                                       !! one for each registered variable
 integer, private :: registered_variables !< Number of registered variables
 
 !type(fmsDiagObject_type) :: diag_object_placeholder (10)
@@ -178,10 +179,10 @@ subroutine fms_diag_object_init (mlv,mlm)
  MAX_LEN_META = mlm
 !> Initialize the null_d variables
  null_ob%diag_id = DIAG_NULL
-
+#ifdef use_yaml
  allocate(diag_objs(get_num_unique_fields()))
  registered_variables = 0
-
+#endif
  module_is_initialized = .true.
 end subroutine fms_diag_object_init
 
@@ -1057,8 +1058,8 @@ end function has_data_RANGE
     fms_register_diag_field_array = registered_variables
 
     call diag_objs(registered_variables)%setID(registered_variables)
-    call diag_objs(registered_variables)%register(module_name, field_name, diag_field_indices, init_time=init_time, axes=axes,  &
-      & longname=long_name, units=units, missing_value=missing_value, varrange=var_range, &
+    call diag_objs(registered_variables)%register(module_name, field_name, diag_field_indices, init_time=init_time, &
+      & axes=axes, longname=long_name, units=units, missing_value=missing_value, varrange=var_range, &
       & mask_variant=mask_variant, standname=standard_name, do_not_log=do_not_log, err_msg=err_msg, &
       & interp_method=interp_method, tile_count=tile_count, area=area, volume=volume, realm=realm)
     deallocate(diag_field_indices)
