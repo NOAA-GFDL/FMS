@@ -59,7 +59,13 @@ struct fmsyamloutvalues {
         char val14 [255];
         char val15 [255];
 } fmsyamloutvalues;
-
+/* \breif Writes the key/value pairs of the fmsyamloutkeys and fmsyamloutvalues structs
+ * \param emitter The libyaml emitter for this file
+ * \param event The libyaml eent pointer
+ * \param aindex The index of keys and vals that are being written currently
+ * \param keys The keys to be written
+ * \param vals The values correcponding to keys
+ */
 void write_keys_vals_yaml (yaml_emitter_t * emitter, yaml_event_t * event , int aindex, struct fmsyamloutkeys *keys, struct fmsyamloutvalues *vals){
     if (keys[aindex].key1[0] !='\0')  {
       yaml_scalar_event_initialize(event, NULL, (yaml_char_t *)YAML_STR_TAG,
@@ -186,25 +192,42 @@ return ;
 error:
     fprintf(stderr, "YAML_OUTPUT: No output YAML written.  Failed to emit event %d: %s\n", event->type, emitter->problem);
 }
-/* \brief Writes a YAML.  Writes out each key/value of the struct.
- * If a struct has a level2key, then that key is written as a sequence.   
+/* \description Writes a YAML.
+ * In this function, the YAML can have one key per "level" that has an array of keys.
+ * If a struct has a level2key, then that key is written as a sequence. If level2key is empty, no second level is written.
  * If a key is null, then the kay/value pair is not written.
- * Users must pass in the size of each struct array for level 2. 3, or 4.  The top level size should be 1.
+ * Users must pass in the size of each struct array for level 2 or 3.
+ * L3 arrays are essentially 2D arrays in 1D and the number of elements can change between each instance, so the user must pass
+ * the array `neach` which has the number of elements per instance.
+ * The top level size must be 1 (for now).
+ * \param yamlname The name of the output yaml file
+ * \param asize The size of the top level array (must be 1)
+ * \param topkeys The Keys for the top level of the yaml
+ * \param topvals The values corresponding to the topkeys
+ * \param a2size The size of the second level arrays and n3each
+ * \param l2keys The keys for the second level of the yaml
+ * \param l2vals The values corresponding to l2keys
+ * \param a3size The full size of the l3 arrays
+ * \param n3each Array that has the number of elements for each l2 array's third level elements
+ * \param l3keys The keys for the third level of the yaml
+ * \param l3vals The values corresponding to l3keys
  */
-void write_yaml_from_struct_3 (int asize, struct fmsyamloutkeys *topkeys, struct fmsyamloutvalues *topvals, int a2size, struct fmsyamloutkeys *l2keys, struct fmsyamloutvalues *l2vals, int a3size, int * n3each, struct fmsyamloutkeys *l3keys, struct fmsyamloutvalues *l3vals){
-  yaml_emitter_t emitter;
-  yaml_event_t event;
-  char buffer[64];
-  int s3count = 0;
+void write_yaml_from_struct_3 (char *yamlname, int asize, struct fmsyamloutkeys *topkeys, struct fmsyamloutvalues *topvals, int a2size, struct fmsyamloutkeys *l2keys, struct fmsyamloutvalues *l2vals, int a3size, int * n3each, struct fmsyamloutkeys *l3keys, struct fmsyamloutvalues *l3vals){
+  yaml_emitter_t emitter; /* libyaml emitter */
+  yaml_event_t event; /* libyaml event for the output yaml */
+  int s3count = 0; /* A counter to keep track of the number of level 3 arrays output */
+  FILE * yamlout; /* The file for the YAML output. */
+  /* open the yaml output file. Only 1 core should do this */
+    yamlout = fopen(yamlname,"w");
   /* Start the emmitter */  
     yaml_emitter_initialize(&emitter);
-    yaml_emitter_set_output_file(&emitter, stdout);
+    yaml_emitter_set_output_file(&emitter, yamlout);
 
     yaml_stream_start_event_initialize(&event, YAML_UTF8_ENCODING);
-if (!yaml_emitter_emit(&emitter, &event)) goto error;
+    if (!yaml_emitter_emit(&emitter, &event)) goto error;
 
     yaml_document_start_event_initialize(&event, NULL, NULL, NULL, 0);
-if (!yaml_emitter_emit(&emitter, &event)) goto error;
+    if (!yaml_emitter_emit(&emitter, &event)) goto error;
 /* start the event (top level) */
     yaml_mapping_start_event_initialize(&event, NULL, (yaml_char_t *)YAML_MAP_TAG,
         1, YAML_ANY_MAPPING_STYLE);
@@ -217,8 +240,8 @@ if (!yaml_emitter_emit(&emitter, &event)) goto error;
  if (topkeys->level2key[0] !='\0') {
   /* Start the secodn level event */
   yaml_scalar_event_initialize(&event, NULL, (yaml_char_t *)YAML_STR_TAG,
-  (yaml_char_t *)topkeys->level2key, strlen(topkeys->level2key), 1, 0, 
-  YAML_PLAIN_SCALAR_STYLE);
+      (yaml_char_t *)topkeys->level2key, strlen(topkeys->level2key), 1, 0, 
+      YAML_PLAIN_SCALAR_STYLE);
   if (!yaml_emitter_emit(&emitter, &event)) goto error;
   /* Start the sequencing */
   yaml_sequence_start_event_initialize(&event, NULL, (yaml_char_t *)YAML_SEQ_TAG,
@@ -281,7 +304,9 @@ if (!yaml_emitter_emit(&emitter, &event)) goto error;
 
     return;
 error:
-    fprintf(stderr, "YAML_OUTPUT: No output YAML written.  Failed to emit event %d: %s\n", event.type, emitter.problem);
+    /* Write a warning to stderr and srdout */
+    fprintf(stderr, "WARNING: YAML_OUTPUT: No output %s written.  Failed to emit event %d: %s\n", yamlname, event.type, emitter.problem);
+    fprintf(stdout, "WARNING: YAML_OUTPUT: No output %s written.  Failed to emit event %d: %s\n", yamlname, event.type, emitter.problem);
     yaml_emitter_delete(&emitter);
   
 }	
