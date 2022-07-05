@@ -301,13 +301,13 @@ if (!yaml_emitter_emit(&emitter, &event)) goto error;
 if (!yaml_emitter_emit(&emitter, &event)) goto error;
 
     yaml_emitter_delete(&emitter);
-
+    fclose(yamlout);
     return;
 error:
     /* Write a warning to stderr and srdout */
     fprintf(stderr, "WARNING: YAML_OUTPUT: No output %s written.  Failed to emit event %d: %s\n", yamlname, event.type, emitter.problem);
     fprintf(stdout, "WARNING: YAML_OUTPUT: No output %s written.  Failed to emit event %d: %s\n", yamlname, event.type, emitter.problem);
     yaml_emitter_delete(&emitter);
-  
+    fclose(yamlout);
 }	
 #endif

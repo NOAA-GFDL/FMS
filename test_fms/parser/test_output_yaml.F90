@@ -59,8 +59,14 @@ program test_output_yaml
 
 use fms_yaml_output_mod
 use fms_string_utils_mod
+use mpp_mod
+use fms_mod
 implicit none
 
+integer, parameter :: yaml_len = 500
+character (len=9) :: filename = "test.yaml"
+character(c_char) :: c_filename(10)
+character(len=21) :: ref_yaml_name="reference_output.yaml"
 type (fmsYamlOutKeys_type), allocatable :: k1 (:)
 type (fmsYamlOutValues_type), allocatable :: v1 (:)
 type (fmsYamlOutKeys_type), allocatable :: k2 (:)
@@ -69,11 +75,13 @@ type (fmsYamlOutKeys_type), allocatable :: k3 (:)
 type (fmsYamlOutValues_type), allocatable :: v3 (:)
 integer :: a1size = 1
 integer :: a2 = 3
-integer :: a3 
+integer :: a3
 integer,allocatable :: a3each (:)
-character(len=:), allocatable :: yaml_reference
+character(len=yaml_len) :: yaml_reference
+character(len=yaml_len) :: yaml_output_read
 character(len=string_len_parameter) :: tmpstr
 integer :: i !< for looping
+ call fms_init
 !> Set the number of "third level" elements and calculate a3
 allocate (a3each(a2))
 a3each(1) = 2
@@ -149,7 +157,34 @@ call fms_f2c_string (v3(6)%val10,"cake")
 call fms_f2c_string (k3(6)%key11,"topping")
 call fms_f2c_string (v3(6)%val11,"frosting")
 !> Write the yaml
-call write_yaml_from_struct_3 (1, k1, v1, a2, k2, v2, 0, a3each, k3, v3)
+call write_yaml_from_struct_3 (filename, 1, k1, v1, a2, k2, v2, a3, a3each, k3, v3)
+!> Check yaml output against reference
+if (mpp_pe() == mpp_root_pe() ) then
+  do i = 1,yaml_len
+    yaml_reference(i:i) = " "
+    yaml_output_read(i:i) = " "
+  enddo
+ write (6,*) "open "//ref_yaml_name
+  open(unit=29, file=ref_yaml_name, status="old", access="stream")
+ write (6,*) "read "//ref_yaml_name
+  read(29,iostat=i) yaml_reference
+ write (6,*) "open "//filename
+  open(unit=28, file=filename, status="old", access="stream")
+ write (6,*) "read "//filename
+  read(28,iostat=i) yaml_output_read
+  write(6,*) yaml_reference
+  write(6,*) yaml_output_read
+  if (trim(yaml_reference) .ne. trim (yaml_output_read)) then
+    do i = 1,max(len(trim(yaml_output_read)), len(trim(yaml_reference)))
+        if (yaml_reference(i:i) .ne. yaml_output_read(i:i)) &
+        write (6,*) "index = ",i,&
+        " yaml_reference = ",yaml_reference(i:i),&
+        " yaml_output_read = ", yaml_output_read(i:i)
+    enddo
+    call mpp_error(fatal,"yaml_reference and yaml_output_read do not match")
+  endif
+endif
+call fms_end
 #endif
 end program test_output_yaml
 

@@ -117,6 +117,7 @@ order:
     sauce: A1
   - dessert: cake
     topping: frosting
+...
 _EOF
 
 test_expect_success "test_yaml_parser" '
