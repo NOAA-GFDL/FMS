@@ -574,7 +574,7 @@ module fms_diag_axis_object_mod
     INTEGER, INTENT(in) :: axis_id !< Axis ID of the axis to the length of
     integer :: axis_length
 
-    if (axis_length < 0 .and. axis_length > number_of_axis) &
+    if (axis_id < 0 .and. axis_id > number_of_axis) &
       call mpp_error(FATAL, "fms_get_axis_length: The axis_id is not valid")
 
     axis_length = axis_obj(axis_id)%axis_length()
