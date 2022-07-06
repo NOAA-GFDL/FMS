@@ -10,7 +10,8 @@ module fms_diag_object_mod
 use diag_data_mod,  only: diag_null, CMOR_MISSING_VALUE, diag_null_string
 use diag_data_mod,  only: r8, r4, i8, i4, string, null_type_int, NO_DOMAIN
 use diag_data_mod,  only: max_field_attributes, fmsDiagAttribute_type
-use diag_data_mod,  only: diag_null, diag_not_found, diag_not_registered, diag_registered_id
+use diag_data_mod,  only: diag_null, diag_not_found, diag_not_registered, diag_registered_id, &
+                         &DIAG_FIELD_NOT_FOUND
 
 use diag_axis_mod,  only: diag_axis_type
 use mpp_mod, only: fatal, note, warning, mpp_error
@@ -1159,6 +1160,7 @@ INTEGER FUNCTION fms_get_diag_field_id(module_name, field_name)
 
   integer :: i !< For do loops
 
+  fms_get_diag_field_id = DIAG_FIELD_NOT_FOUND
   do i = 1, registered_variables
     if (diag_objs(i)%get_varname() .eq. trim(field_name) .and. &
         diag_objs(i)%get_modname() .eq. trim(module_name)) then
