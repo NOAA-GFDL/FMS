@@ -85,6 +85,10 @@ Configure build options for FMS:
 * `--enable-mixed-mode` : Build in mixed precision mode, with default 4 byte reals and 8 byte real overloads
 * `--disable-setting-flags` : Build without automatically setting flags during configuration
 * `--with-mpi` : Build with MPI support, enabled by default
+* `--enable-overload-r4` : Compiles with 4 byte real routine overloads
+* `--enable-overload-c4` : Compiles with 4 byte complex routine overloads
+* `--enable-overload-c8` : Compiles with 8 byte complex routine overloads
+* `--disable-8byte-int`  : Compiles with only 4 byte integer routines
 
 ## Standard Make Targets
 
