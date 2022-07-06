@@ -25,7 +25,8 @@ use   mpp_domains_mod,  only: domain2d, mpp_domains_set_stack_size, mpp_define_d
                               mpp_define_mosaic, domainug, mpp_get_compute_domains, mpp_define_unstruct_domain, &
                               mpp_get_compute_domain, mpp_get_data_domain, mpp_get_UG_domain_grid_index, &
                               mpp_get_UG_compute_domain
-use   diag_manager_mod, only: diag_manager_init, diag_manager_end, diag_axis_init, register_diag_field
+use   diag_manager_mod, only: diag_manager_init, diag_manager_end, diag_axis_init, register_diag_field, &
+                              diag_axis_add_attribute
 use   fms_mod,          only: fms_init, fms_end
 use   mpp_mod,          only: FATAL, mpp_error, mpp_npes, mpp_pe, mpp_root_pe, mpp_broadcast
 use   time_manager_mod, only: time_type, set_calendar_type, set_date, JULIAN, set_time
@@ -107,6 +108,11 @@ id_ug = diag_axis_init("grid_index",  real(ug_dim_data), "none", "U", long_name=
                          set_name="land", DomainU=land_domain, aux="geolon_t geolat_t")
 
 id_z  = diag_axis_init('z',  z,  'point_Z', 'z', long_name='point_Z')
+call diag_axis_add_attribute (id_z, 'formula', 'p(n,k,j,i) = ap(k) + b(k)*ps(n,j,i)')
+call diag_axis_add_attribute (id_z, 'integer', 10)
+call diag_axis_add_attribute (id_z, '1d integer', (/10, 10/))
+call diag_axis_add_attribute (id_z, 'real', 10.)
+call diag_axis_add_attribute (id_x, '1d real', (/10./))
 
 if (id_x  .ne. 1) call mpp_error(FATAL, "The x axis does not have the expected id")
 if (id_y  .ne. 2) call mpp_error(FATAL, "The y axis does not have the expected id")
@@ -123,8 +129,11 @@ id_var3 = register_diag_field  ('atm_mod', 'var3', (/id_x3, id_y3/), Time, 'Var 
 id_var4 = register_diag_field  ('atm_mod', 'var4', (/id_x3, id_y3, id_z/), Time, &
                                 '3D var in a cube sphere domain', 'mullions')
 id_var5 = register_diag_field  ('lnd_mod', 'var5', (/id_ug/), Time, 'Var in a UG domain', 'mullions')
-id_var6 = register_diag_field  ('lnd_mod', 'var6', (/id_z/), Time, 'Var not domain decomposed', 'mullions')
-id_var7 = register_diag_field  ('lnd_mod', 'var7', Time, 'Some scalar var', 'mullions')
+id_var6 = register_diag_field  ('atm_mod', 'var6', (/id_z/), Time, 'Var not domain decomposed', 'mullions')
+
+!< This has the same name as var1, but it should have a different id because the module is different
+!! so it should have its own diag_obj
+id_var7 = register_diag_field  ('lnd_mod', 'var1', Time, 'Some scalar var', 'mullions')
 
 if (id_var1  .ne. 1) call mpp_error(FATAL, "var1 does not have the expected id")
 if (id_var2  .ne. 2) call mpp_error(FATAL, "var2 does not have the expected id")

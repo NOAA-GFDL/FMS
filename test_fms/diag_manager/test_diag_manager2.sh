@@ -706,7 +706,7 @@ diag_files:
   unlimdim: time
   varlist:
   - module: lnd_mod
-    var_name: var6
+    var_name: var1
     reduction: average
     kind: r4
 _EOF
