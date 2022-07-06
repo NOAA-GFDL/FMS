@@ -462,7 +462,7 @@ subroutine add_axes(obj, axis_ids)
   do i = 1, size(axis_ids)
     do j = 1, obj%number_of_axis
       !> Check if the axis already exists, if it does leave this do loop
-      if (axis_ids(i) .eq. obj%axis_ids(j)) exit
+      if (axis_ids(i) .eq. obj%axis_ids(j)) return
     enddo
 
     !> If the axis does not exist add it to the list
