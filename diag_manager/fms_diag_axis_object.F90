@@ -42,7 +42,7 @@ module fms_diag_axis_object_mod
 
   public :: diagAxis_t, set_subaxis, fms_diag_axis_init, fms_diag_axis_object_init, fms_diag_axis_object_end, &
           & get_domain_and_domain_type, axis_obj, diagDomain_t, sub_axis_objs, fms_diag_axis_add_attribute, &
-          & DIAGDOMAIN2D_T
+          & DIAGDOMAIN2D_T, fms_get_axis_length
   !> @}
 
   !> @brief Type to hold the domain info for an axis
@@ -568,6 +568,17 @@ module fms_diag_axis_object_mod
       endif
     enddo
   end subroutine get_domain_and_domain_type
+
+  function fms_get_axis_length(axis_id)&
+  result(axis_length)
+    INTEGER, INTENT(in) :: axis_id !< Axis ID of the axis to the length of
+    integer :: axis_length
+
+    if (axis_length < 0 .and. axis_length > number_of_axis) &
+      call mpp_error(FATAL, "fms_get_axis_length: The axis_id is not valid")
+
+    axis_length = axis_obj(axis_id)%axis_length()
+  end function fms_get_axis_length
 end module fms_diag_axis_object_mod
 !> @}
 ! close documentation grouping
