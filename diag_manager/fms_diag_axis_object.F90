@@ -41,7 +41,8 @@ module fms_diag_axis_object_mod
   PRIVATE
 
   public :: diagAxis_t, set_subaxis, fms_diag_axis_init, fms_diag_axis_object_init, fms_diag_axis_object_end, &
-          & get_domain_and_domain_type, axis_obj, diagDomain_t, sub_axis_objs, fms_diag_axis_add_attribute
+          & get_domain_and_domain_type, axis_obj, diagDomain_t, sub_axis_objs, fms_diag_axis_add_attribute, &
+          & DIAGDOMAIN2D_T
   !> @}
 
   !> @brief Type to hold the domain info for an axis
@@ -556,7 +557,7 @@ module fms_diag_axis_object_mod
         !! i.e a variable can have axis that are domain decomposed (x,y) and an axis that isn't (z)
         if (domain_type .eq. NO_DOMAIN .or. axis_obj(j)%type_of_domain .eq. NO_DOMAIN ) then
           !< Update the domain_type and domain, if needed
-          if (axis_obj(j)%type_of_domain .eq. TWO_D_DOMAIN .or. axis_obj(j)%type_of_domain .eq. UG_DOMAIN) then
+          if ((axis_obj(j)%type_of_domain .eq. TWO_D_DOMAIN  .and. size(axis_id) > 2).or. axis_obj(j)%type_of_domain .eq. UG_DOMAIN) then
             domain_type = axis_obj(j)%type_of_domain
             domain => axis_obj(j)%axis_domain
           endif

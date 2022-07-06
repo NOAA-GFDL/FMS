@@ -165,6 +165,7 @@ public :: fms_register_diag_field_scalar
 public :: fms_register_static_field
 public :: fms_diag_field_add_attribute
 public :: get_diag_obj_from_id
+public :: fms_get_diag_field_id
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
  CONTAINS
@@ -1149,4 +1150,22 @@ subroutine fms_diag_field_add_attribute(diag_field_id, att_name, att_value)
   call obj%attributes(obj%num_attributes)%add(att_name, att_value)
   nullify(obj)
 end subroutine fms_diag_field_add_attribute
+
+!> @brief Determines the diag_obj id corresponding to a module name and field_name
+!> @return diag_obj id
+INTEGER FUNCTION fms_get_diag_field_id(module_name, field_name)
+  CHARACTER(len=*), INTENT(in) :: module_name !< Module name that registered the variable
+  CHARACTER(len=*), INTENT(in) :: field_name !< Variable name
+
+  integer :: i !< For do loops
+
+  do i = 1, registered_variables
+    if (diag_objs(i)%get_varname() .eq. trim(field_name) .and. &
+        diag_objs(i)%get_modname() .eq. trim(module_name)) then
+          fms_get_diag_field_id = i
+          return
+    endif
+  enddo
+end function fms_get_diag_field_id
+
 end module fms_diag_object_mod
