@@ -59,6 +59,20 @@ struct fmsyamloutvalues {
         char val14 [255];
         char val15 [255];
 } fmsyamloutvalues;
+
+/* \breif Prints a warning message that the yaml was not written correctly
+ * \param emitter The libyaml emitter for this file
+ * \param event The libyaml eent pointer
+ * \param yamlname The name of the yaml file
+ * \param keys yamlout The file pointer for the yaml file
+ */
+void error(char * yamlname ,yaml_event_t * event, yaml_emitter_t * emitter, FILE * yamlout){
+  /* Write a warning to stderr and srdout */
+  fprintf(stderr, "WARNING: YAML_OUTPUT: No output %s written.  Failed to emit event %d: %s\n", yamlname, event->type, emitter->problem);
+  fprintf(stdout, "WARNING: YAML_OUTPUT: No output %s written.  Failed to emit event %d: %s\n", yamlname, event->type, emitter->problem);
+  yaml_emitter_delete(&emitter);
+  fclose(yamlout);
+}
 /* \breif Writes the key/value pairs of the fmsyamloutkeys and fmsyamloutvalues structs
  * \param emitter The libyaml emitter for this file
  * \param event The libyaml eent pointer
@@ -229,27 +243,27 @@ void write_yaml_from_struct_3 (char *yamlname, int asize, struct fmsyamloutkeys 
 
   yaml_stream_start_event_initialize(&event, YAML_UTF8_ENCODING);
   if (!yaml_emitter_emit(&emitter, &event)){
- 	error(yamlname, event, emitter, yamlout);
+ 	error(yamlname, &event, &emitter, yamlout);
 	return;
   }
 
   yaml_document_start_event_initialize(&event, NULL, NULL, NULL, 0);
   if (!yaml_emitter_emit(&emitter, &event)){
- 	error(yamlname, event, emitter, yamlout);
+ 	error(yamlname, &event, &emitter, yamlout);
 	return;
   }
 /* start the event (top level) */
   yaml_mapping_start_event_initialize(&event, NULL, (yaml_char_t *)YAML_MAP_TAG,
                                         1, YAML_ANY_MAPPING_STYLE);
   if (!yaml_emitter_emit(&emitter, &event)){
- 	error(yamlname, event, emitter, yamlout);
+ 	error(yamlname, &event, &emitter, yamlout);
 	return;
   }
 
 /* write the top level */
   write_keys_vals_yaml (&emitter, &event , 0, topkeys, topvals);
   if (!yaml_emitter_emit(&emitter, &event)){
- 	error(yamlname, event, emitter, yamlout);
+ 	error(yamlname, &event, &emitter, yamlout);
 	return;
   }
 
@@ -260,14 +274,14 @@ void write_yaml_from_struct_3 (char *yamlname, int asize, struct fmsyamloutkeys 
       				 (yaml_char_t *)topkeys->level2key, strlen(topkeys->level2key), 1, 0,
       				 YAML_PLAIN_SCALAR_STYLE);
     if (!yaml_emitter_emit(&emitter, &event)){
- 	error(yamlname, event, emitter, yamlout);
+ 	error(yamlname, &event, &emitter, yamlout);
 	return;
     }
   /* Start the sequencing */
     yaml_sequence_start_event_initialize(&event, NULL, (yaml_char_t *)YAML_SEQ_TAG,
       					 1, YAML_ANY_SEQUENCE_STYLE);
     if (!yaml_emitter_emit(&emitter, &event)){
-  	error(yamlname, event, emitter, yamlout);
+  	error(yamlname, &event, &emitter, yamlout);
 	return;
     }
   /* loop through the structs */
@@ -275,13 +289,13 @@ void write_yaml_from_struct_3 (char *yamlname, int asize, struct fmsyamloutkeys 
       yaml_mapping_start_event_initialize(&event, NULL, (yaml_char_t *)YAML_MAP_TAG,
         				  1, YAML_ANY_MAPPING_STYLE);
       if (!yaml_emitter_emit(&emitter, &event)){
- 	error(yamlname, event, emitter, yamlout);
+ 	error(yamlname, &event, &emitter, yamlout);
 	return;
       }
       /* call the write function */
       write_keys_vals_yaml (&emitter, &event , s2, l2keys, l2vals);
       if (!yaml_emitter_emit(&emitter, &event)){
-	error(yamlname, event, emitter, yamlout);
+	error(yamlname, &event, &emitter, yamlout);
 	return;
       }
       /* Next level keys */
@@ -291,14 +305,14 @@ void write_yaml_from_struct_3 (char *yamlname, int asize, struct fmsyamloutkeys 
      		(yaml_char_t *)l2keys->level2key, strlen(l2keys->level2key), 1, 0,
      		YAML_PLAIN_SCALAR_STYLE);
      	if (!yaml_emitter_emit(&emitter, &event)){
- 		error(yamlname, event, emitter, yamlout);
+ 		error(yamlname, &event, &emitter, yamlout);
 		return;
  	}
      	/* Start the sequencing */
      	yaml_sequence_start_event_initialize(&event, NULL, (yaml_char_t *)YAML_SEQ_TAG,
          		1, YAML_ANY_SEQUENCE_STYLE);
      	if (!yaml_emitter_emit(&emitter, &event)){
- 		error(yamlname, event, emitter, yamlout);
+ 		error(yamlname, &event, &emitter, yamlout);
 		return;
         }
     	/* loop through the structs */
@@ -308,37 +322,37 @@ void write_yaml_from_struct_3 (char *yamlname, int asize, struct fmsyamloutkeys 
       	  yaml_mapping_start_event_initialize(&event, NULL, (yaml_char_t *)YAML_MAP_TAG,
           			1, YAML_ANY_MAPPING_STYLE);
       	  if (!yaml_emitter_emit(&emitter, &event)){
- 		error(yamlname, event, emitter, yamlout);
+ 		error(yamlname, &event, &emitter, yamlout);
 		return;
 	  }
       	  /* call the write function */
       	  write_keys_vals_yaml (&emitter, &event , s3, l3keys, l3vals);
           if (!yaml_emitter_emit(&emitter, &event)){
- 		error(yamlname, event, emitter, yamlout);
+ 		error(yamlname, &event, &emitter, yamlout);
 		return;
           }
       	  yaml_mapping_end_event_initialize(&event);
       	  if (!yaml_emitter_emit(&emitter, &event)){
- 		error(yamlname, event, emitter, yamlout);
+ 		error(yamlname, &event, &emitter, yamlout);
 		return;
 	  }
 	  s3count ++;
      	}
         yaml_sequence_end_event_initialize(&event);
         if (!yaml_emitter_emit(&emitter, &event)){
- 		error(yamlname, event, emitter, yamlout);
+ 		error(yamlname, &event, &emitter, yamlout);
 		return;
         }
       } /* if (l2keys->level2key[0] !='\0') */
       yaml_mapping_end_event_initialize(&event);
       if (!yaml_emitter_emit(&emitter, &event)){
- 	error(yamlname, event, emitter, yamlout);
+ 	error(yamlname, &event, &emitter, yamlout);
 	return;
       }
     }/* for s2 loop */
     yaml_sequence_end_event_initialize(&event);
     if (!yaml_emitter_emit(&emitter, &event)){
- 	error(yamlname, event, emitter, yamlout);
+ 	error(yamlname, &event, &emitter, yamlout);
 	return;
     }
 
@@ -347,32 +361,24 @@ void write_yaml_from_struct_3 (char *yamlname, int asize, struct fmsyamloutkeys 
   /* end the emitter */
   yaml_mapping_end_event_initialize(&event);
   if (!yaml_emitter_emit(&emitter, &event)){
- 	error(yamlname, event, emitter, yamlout);
+ 	error(yamlname, &event, &emitter, yamlout);
 	return;
   }
 
   yaml_document_end_event_initialize(&event, 0);
   if (!yaml_emitter_emit(&emitter, &event)){
- 	error(yamlname, event, emitter, yamlout);
+ 	error(yamlname, &event, &emitter, yamlout);
 	return;
   }
   yaml_stream_end_event_initialize(&event);
   if (!yaml_emitter_emit(&emitter, &event)){
- 	error(yamlname, event, emitter, yamlout);
+ 	error(yamlname, &event, &emitter, yamlout);
 	return;
   }
 
   yaml_emitter_delete(&emitter);
   fclose(yamlout);
   return;
-}
-
-void error(char * yamlname ,yaml_event_t * event, yaml_emitter_t * emitter, FILE * yamlout){
-  /* Write a warning to stderr and srdout */
-  fprintf(stderr, "WARNING: YAML_OUTPUT: No output %s written.  Failed to emit event %d: %s\n", yamlname, event.type, emitter.problem);
-  fprintf(stdout, "WARNING: YAML_OUTPUT: No output %s written.  Failed to emit event %d: %s\n", yamlname, event.type, emitter.problem);
-  yaml_emitter_delete(&emitter);
-  fclose(yamlout);
 }
 
 #endif
