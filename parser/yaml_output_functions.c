@@ -73,6 +73,11 @@ void error(char * yamlname ,yaml_event_t * event, yaml_emitter_t * emitter, FILE
   yaml_emitter_delete(emitter);
   fclose(yamlout);
 }
+void keyerror(yaml_event_t * event, yaml_emitter_t * emitter){
+  /* Write a warning to stderr and srdout */
+  fprintf(stderr, "WARNING: YAML_OUTPUT: Failed to emit event %d: %s\n", event->type, emitter->problem);
+  fprintf(stdout, "WARNING: YAML_OUTPUT: Failed to emit event %d: %s\n", event->type, emitter->problem);
+}
 /* \breif Writes the key/value pairs of the fmsyamloutkeys and fmsyamloutvalues structs
  * \param emitter The libyaml emitter for this file
  * \param event The libyaml eent pointer
@@ -87,125 +92,215 @@ void write_keys_vals_yaml (yaml_emitter_t * emitter, yaml_event_t * event , int 
     yaml_scalar_event_initialize(event, NULL, (yaml_char_t *)YAML_STR_TAG,
         (yaml_char_t *)keys[aindex].key1, strlen(keys[aindex].key1), 1, 0, YAML_PLAIN_SCALAR_STYLE);
     /* Check for errors */
-    if (!yaml_emitter_emit(emitter, event)) return;
+    if (!yaml_emitter_emit(emitter, event)){
+      keyerror(event, emitter);
+      return;
+    }
     /* Write the value */
     yaml_scalar_event_initialize(event, NULL, (yaml_char_t *)YAML_STR_TAG,
         (yaml_char_t *)vals[aindex].val1, strlen(vals[aindex].val1), 1, 0, YAML_PLAIN_SCALAR_STYLE);
     /* check for errors */
-    if (!yaml_emitter_emit(emitter, event)) return;
+    if (!yaml_emitter_emit(emitter, event)){
+      keyerror(event, emitter);
+      return;
+    }
   }
   /* Repeat for all possible keys */
   if (keys[aindex].key2[0] !='\0')  {
     yaml_scalar_event_initialize(event, NULL, (yaml_char_t *)YAML_STR_TAG,
         (yaml_char_t *)keys[aindex].key2, strlen(keys[aindex].key2), 1, 0, YAML_PLAIN_SCALAR_STYLE);
-    if (!yaml_emitter_emit(emitter, event)) return;
+    if (!yaml_emitter_emit(emitter, event)){
+      keyerror(event, emitter);
+      return;
+    }
     yaml_scalar_event_initialize(event, NULL, (yaml_char_t *)YAML_STR_TAG,
         (yaml_char_t *)vals[aindex].val2, strlen(vals[aindex].val2), 1, 0, YAML_PLAIN_SCALAR_STYLE);
-    if (!yaml_emitter_emit(emitter, event)) return;
+    if (!yaml_emitter_emit(emitter, event)){
+      keyerror(event, emitter);
+      return;
+    }
   }
   if (keys[aindex].key3[0] !='\0')  {
     yaml_scalar_event_initialize(event, NULL, (yaml_char_t *)YAML_STR_TAG,
       (yaml_char_t *)keys[aindex].key3, strlen(keys[aindex].key3), 1, 0, YAML_PLAIN_SCALAR_STYLE);
-    if (!yaml_emitter_emit(emitter, event)) return;
+    if (!yaml_emitter_emit(emitter, event)){
+      keyerror(event, emitter);
+      return;
+    }
     yaml_scalar_event_initialize(event, NULL, (yaml_char_t *)YAML_STR_TAG,
       (yaml_char_t *)vals[aindex].val3, strlen(vals[aindex].val3), 1, 0, YAML_PLAIN_SCALAR_STYLE);
-    if (!yaml_emitter_emit(emitter, event)) return;
+    if (!yaml_emitter_emit(emitter, event)){
+      keyerror(event, emitter);
+      return;
+    }
   }
   if (keys[aindex].key4[0] !='\0')  {
     yaml_scalar_event_initialize(event, NULL, (yaml_char_t *)YAML_STR_TAG,
       (yaml_char_t *)keys[aindex].key4, strlen(keys[aindex].key4), 1, 0, YAML_PLAIN_SCALAR_STYLE);
-    if (!yaml_emitter_emit(emitter, event)) return;
+    if (!yaml_emitter_emit(emitter, event)){
+      keyerror(event, emitter);
+      return;
+    }
     yaml_scalar_event_initialize(event, NULL, (yaml_char_t *)YAML_STR_TAG,
       (yaml_char_t *)vals[aindex].val4, strlen(vals[aindex].val4), 1, 0, YAML_PLAIN_SCALAR_STYLE);
-    if (!yaml_emitter_emit(emitter, event)) return;
+    if (!yaml_emitter_emit(emitter, event)){
+      keyerror(event, emitter);
+      return;
+    }
   }
   if (keys[aindex].key5[0] !='\0')  {
     yaml_scalar_event_initialize(event, NULL, (yaml_char_t *)YAML_STR_TAG,
       (yaml_char_t *)keys[aindex].key5, strlen(keys[aindex].key5), 1, 0, YAML_PLAIN_SCALAR_STYLE);
-    if (!yaml_emitter_emit(emitter, event)) return;
+    if (!yaml_emitter_emit(emitter, event)){
+      keyerror(event, emitter);
+      return;
+    }
     yaml_scalar_event_initialize(event, NULL, (yaml_char_t *)YAML_STR_TAG,
       (yaml_char_t *)vals[aindex].val5, strlen(vals[aindex].val5), 1, 0, YAML_PLAIN_SCALAR_STYLE);
-    if (!yaml_emitter_emit(emitter, event)) return;
+    if (!yaml_emitter_emit(emitter, event)){
+      keyerror(event, emitter);
+      return;
+    }
   }
   if (keys[aindex].key6[0] !='\0')  {
     yaml_scalar_event_initialize(event, NULL, (yaml_char_t *)YAML_STR_TAG,
       (yaml_char_t *)keys[aindex].key6, strlen(keys[aindex].key6), 1, 0, YAML_PLAIN_SCALAR_STYLE);
-    if (!yaml_emitter_emit(emitter, event)) return;
+    if (!yaml_emitter_emit(emitter, event)){
+      keyerror(event, emitter);
+      return;
+    }
     yaml_scalar_event_initialize(event, NULL, (yaml_char_t *)YAML_STR_TAG,
       (yaml_char_t *)vals[aindex].val6, strlen(vals[aindex].val6), 1, 0, YAML_PLAIN_SCALAR_STYLE);
-    if (!yaml_emitter_emit(emitter, event)) return;
+    if (!yaml_emitter_emit(emitter, event)){
+      keyerror(event, emitter);
+      return;
+    }
   }
   if (keys[aindex].key7[0] !='\0')  {
     yaml_scalar_event_initialize(event, NULL, (yaml_char_t *)YAML_STR_TAG,
       (yaml_char_t *)keys[aindex].key7, strlen(keys[aindex].key7), 1, 0, YAML_PLAIN_SCALAR_STYLE);
-    if (!yaml_emitter_emit(emitter, event)) return;
+    if (!yaml_emitter_emit(emitter, event)){
+      keyerror(event, emitter);
+      return;
+    }
     yaml_scalar_event_initialize(event, NULL, (yaml_char_t *)YAML_STR_TAG,
       (yaml_char_t *)vals[aindex].val7, strlen(vals[aindex].val7), 1, 0, YAML_PLAIN_SCALAR_STYLE);
-    if (!yaml_emitter_emit(emitter, event)) return;
+    if (!yaml_emitter_emit(emitter, event)){
+      keyerror(event, emitter);
+      return;
+    }
   }
   if (keys[aindex].key8[0] !='\0')  {
     yaml_scalar_event_initialize(event, NULL, (yaml_char_t *)YAML_STR_TAG,
       (yaml_char_t *)keys[aindex].key8, strlen(keys[aindex].key8), 1, 0, YAML_PLAIN_SCALAR_STYLE);
-    if (!yaml_emitter_emit(emitter, event)) return;
+    if (!yaml_emitter_emit(emitter, event)){
+      keyerror(event, emitter);
+      return;
+    }
     yaml_scalar_event_initialize(event, NULL, (yaml_char_t *)YAML_STR_TAG,
       (yaml_char_t *)vals[aindex].val8, strlen(vals[aindex].val8), 1, 0, YAML_PLAIN_SCALAR_STYLE);
-    if (!yaml_emitter_emit(emitter, event)) return;
+    if (!yaml_emitter_emit(emitter, event)){
+      keyerror(event, emitter);
+      return;
+    }
   }
   if (keys[aindex].key9[0] !='\0')  {
     yaml_scalar_event_initialize(event, NULL, (yaml_char_t *)YAML_STR_TAG,
       (yaml_char_t *)keys[aindex].key9, strlen(keys[aindex].key9), 1, 0, YAML_PLAIN_SCALAR_STYLE);
-    if (!yaml_emitter_emit(emitter, event)) return;
+    if (!yaml_emitter_emit(emitter, event)){
+      keyerror(event, emitter);
+      return;
+    }
     yaml_scalar_event_initialize(event, NULL, (yaml_char_t *)YAML_STR_TAG,
       (yaml_char_t *)vals[aindex].val9, strlen(vals[aindex].val9), 1, 0, YAML_PLAIN_SCALAR_STYLE);
-    if (!yaml_emitter_emit(emitter, event)) return;
+    if (!yaml_emitter_emit(emitter, event)){
+      keyerror(event, emitter);
+      return;
+    }
   }
   if (keys[aindex].key10[0] !='\0')  {
     yaml_scalar_event_initialize(event, NULL, (yaml_char_t *)YAML_STR_TAG,
       (yaml_char_t *)keys[aindex].key10, strlen(keys[aindex].key10), 1, 0, YAML_PLAIN_SCALAR_STYLE);
-    if (!yaml_emitter_emit(emitter, event)) return;
+    if (!yaml_emitter_emit(emitter, event)){
+      keyerror(event, emitter);
+      return;
+    }
     yaml_scalar_event_initialize(event, NULL, (yaml_char_t *)YAML_STR_TAG,
       (yaml_char_t *)vals[aindex].val10, strlen(vals[aindex].val10), 1, 0, YAML_PLAIN_SCALAR_STYLE);
-    if (!yaml_emitter_emit(emitter, event)) return;
+    if (!yaml_emitter_emit(emitter, event)){
+      keyerror(event, emitter);
+      return;
+    }
   }
   if (keys[aindex].key11[0] !='\0')  {
     yaml_scalar_event_initialize(event, NULL, (yaml_char_t *)YAML_STR_TAG,
       (yaml_char_t *)keys[aindex].key11, strlen(keys[aindex].key11), 1, 0, YAML_PLAIN_SCALAR_STYLE);
-    if (!yaml_emitter_emit(emitter, event)) return;
+    if (!yaml_emitter_emit(emitter, event)){
+      keyerror(event, emitter);
+      return;
+    }
     yaml_scalar_event_initialize(event, NULL, (yaml_char_t *)YAML_STR_TAG,
       (yaml_char_t *)vals[aindex].val11, strlen(vals[aindex].val11), 1, 0, YAML_PLAIN_SCALAR_STYLE);
-    if (!yaml_emitter_emit(emitter, event)) return;
+    if (!yaml_emitter_emit(emitter, event)){
+      keyerror(event, emitter);
+      return;
+    }
   }
   if (keys[aindex].key12[0] !='\0')  {
     yaml_scalar_event_initialize(event, NULL, (yaml_char_t *)YAML_STR_TAG,
       (yaml_char_t *)keys[aindex].key12, strlen(keys[aindex].key12), 1, 0, YAML_PLAIN_SCALAR_STYLE);
-    if (!yaml_emitter_emit(emitter, event)) return;
+    if (!yaml_emitter_emit(emitter, event)){
+      keyerror(event, emitter);
+      return;
+    }
     yaml_scalar_event_initialize(event, NULL, (yaml_char_t *)YAML_STR_TAG,
       (yaml_char_t *)vals[aindex].val12, strlen(vals[aindex].val12), 1, 0, YAML_PLAIN_SCALAR_STYLE);
-    if (!yaml_emitter_emit(emitter, event)) return;
+    if (!yaml_emitter_emit(emitter, event)){
+      keyerror(event, emitter);
+      return;
+    }
   }
   if (keys[aindex].key13[0] !='\0')  {
     yaml_scalar_event_initialize(event, NULL, (yaml_char_t *)YAML_STR_TAG,
       (yaml_char_t *)keys[aindex].key13, strlen(keys[aindex].key13), 1, 0, YAML_PLAIN_SCALAR_STYLE);
-    if (!yaml_emitter_emit(emitter, event)) return;
+    if (!yaml_emitter_emit(emitter, event)){
+      keyerror(event, emitter);
+      return;
+    }
     yaml_scalar_event_initialize(event, NULL, (yaml_char_t *)YAML_STR_TAG,
       (yaml_char_t *)vals[aindex].val13, strlen(vals[aindex].val13), 1, 0, YAML_PLAIN_SCALAR_STYLE);
-    if (!yaml_emitter_emit(emitter, event)) return;
+    if (!yaml_emitter_emit(emitter, event)){
+      keyerror(event, emitter);
+      return;
+    }
   }
   if (keys[aindex].key14[0] !='\0')  {
     yaml_scalar_event_initialize(event, NULL, (yaml_char_t *)YAML_STR_TAG,
       (yaml_char_t *)keys[aindex].key14, strlen(keys[aindex].key14), 1, 0, YAML_PLAIN_SCALAR_STYLE);
-    if (!yaml_emitter_emit(emitter, event)) return;
+    if (!yaml_emitter_emit(emitter, event)){
+      keyerror(event, emitter);
+      return;
+    }
     yaml_scalar_event_initialize(event, NULL, (yaml_char_t *)YAML_STR_TAG,
       (yaml_char_t *)vals[aindex].val14, strlen(vals[aindex].val14), 1, 0, YAML_PLAIN_SCALAR_STYLE);
-    if (!yaml_emitter_emit(emitter, event)) return;
+    if (!yaml_emitter_emit(emitter, event)){
+      keyerror(event, emitter);
+      return;
+    }
   }
   if (keys[aindex].key15[0] !='\0')  {
     yaml_scalar_event_initialize(event, NULL, (yaml_char_t *)YAML_STR_TAG,
       (yaml_char_t *)keys[aindex].key15, strlen(keys[aindex].key15), 1, 0, YAML_PLAIN_SCALAR_STYLE);
-    if (!yaml_emitter_emit(emitter, event)) return;
+    if (!yaml_emitter_emit(emitter, event)){
+      keyerror(event, emitter);
+      return;
+    }
     yaml_scalar_event_initialize(event, NULL, (yaml_char_t *)YAML_STR_TAG,
       (yaml_char_t *)vals[aindex].val15, strlen(vals[aindex].val15), 1, 0, YAML_PLAIN_SCALAR_STYLE);
-    if (!yaml_emitter_emit(emitter, event)) return;
+    if (!yaml_emitter_emit(emitter, event)){
+      keyerror(event, emitter);
+      return;
+    }
   }
 
 return ;
@@ -240,7 +335,6 @@ void write_yaml_from_struct_3 (char *yamlname, int asize, struct fmsyamloutkeys 
   /* Start the emmitter */
   yaml_emitter_initialize(&emitter);
   yaml_emitter_set_output_file(&emitter, yamlout);
-
   yaml_stream_start_event_initialize(&event, YAML_UTF8_ENCODING);
   if (!yaml_emitter_emit(&emitter, &event)){
  	error(yamlname, &event, &emitter, yamlout);
@@ -262,11 +356,6 @@ void write_yaml_from_struct_3 (char *yamlname, int asize, struct fmsyamloutkeys 
 
 /* write the top level */
   write_keys_vals_yaml (&emitter, &event , 0, topkeys, topvals);
-  if (!yaml_emitter_emit(&emitter, &event)){
- 	error(yamlname, &event, &emitter, yamlout);
-	return;
-  }
-
     /* Check for the next level key */
   if (topkeys->level2key[0] !='\0') {
   /* Start the secodn level event */
@@ -294,10 +383,6 @@ void write_yaml_from_struct_3 (char *yamlname, int asize, struct fmsyamloutkeys 
       }
       /* call the write function */
       write_keys_vals_yaml (&emitter, &event , s2, l2keys, l2vals);
-      if (!yaml_emitter_emit(&emitter, &event)){
-	error(yamlname, &event, &emitter, yamlout);
-	return;
-      }
       /* Next level keys */
       if (l2keys->level2key[0] !='\0') {
         /* Start the third level event */
@@ -327,11 +412,7 @@ void write_yaml_from_struct_3 (char *yamlname, int asize, struct fmsyamloutkeys 
 	  }
       	  /* call the write function */
       	  write_keys_vals_yaml (&emitter, &event , s3, l3keys, l3vals);
-          if (!yaml_emitter_emit(&emitter, &event)){
- 		error(yamlname, &event, &emitter, yamlout);
-		return;
-          }
-      	  yaml_mapping_end_event_initialize(&event);
+	  yaml_mapping_end_event_initialize(&event);
       	  if (!yaml_emitter_emit(&emitter, &event)){
  		error(yamlname, &event, &emitter, yamlout);
 		return;
@@ -375,7 +456,6 @@ void write_yaml_from_struct_3 (char *yamlname, int asize, struct fmsyamloutkeys 
  	error(yamlname, &event, &emitter, yamlout);
 	return;
   }
-
   yaml_emitter_delete(&emitter);
   fclose(yamlout);
   return;
