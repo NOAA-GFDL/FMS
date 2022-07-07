@@ -70,7 +70,7 @@ void error(char * yamlname ,yaml_event_t * event, yaml_emitter_t * emitter, FILE
   /* Write a warning to stderr and srdout */
   fprintf(stderr, "WARNING: YAML_OUTPUT: No output %s written.  Failed to emit event %d: %s\n", yamlname, event->type, emitter->problem);
   fprintf(stdout, "WARNING: YAML_OUTPUT: No output %s written.  Failed to emit event %d: %s\n", yamlname, event->type, emitter->problem);
-  yaml_emitter_delete(&emitter);
+  yaml_emitter_delete(emitter);
   fclose(yamlout);
 }
 /* \breif Writes the key/value pairs of the fmsyamloutkeys and fmsyamloutvalues structs
