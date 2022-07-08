@@ -16,16 +16,20 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
-! module within MPP for handling PSETs:
-! PSET: Persistent Shared-memory Execution Thread
-!
-! AUTHOR: V. Balaji (v.balaji@noaa.gov)
-! DATE: 2006-01-15
 #ifdef test_mpp_pset
 !PSET_DEBUG is always turned on in the test program
 #define PSET_DEBUG
 #endif
 
+!> @defgroup mpp_pset_mod mpp_pset_mod
+!> @ingroup mpp
+!> @brief Handles PSETs(Persistent Shared-memory Execution Threads) for mpp modules
+!!
+!! @author V. Balaji (v.balaji@noaa.gov)
+!! @date 2006-01-15
+
+!> @addtogroup mpp_pset_mod mpp_pset_mod
+!> @{
 module mpp_pset_mod
 #include <fms_platform.h>
   use mpp_mod, only: mpp_pe, mpp_npes, mpp_root_pe, mpp_send, mpp_recv, &
@@ -579,3 +583,4 @@ contains
   end subroutine mpp_pset_get_root_pelist
 
 end module mpp_pset_mod
+!> @}

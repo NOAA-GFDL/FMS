@@ -21,9 +21,6 @@
 !> @brief Given a time increment as a real number, and base time and calendar
 !!  as a character strings, returns time as a time_type variable.
 
-!> @file
-!> @brief File for @ref get_cal_time_mod
-
 !> @addtogroup get_cal_time_mod
 !> @{
 module get_cal_time_mod

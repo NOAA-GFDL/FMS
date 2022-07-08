@@ -21,6 +21,9 @@
 
 cmake_minimum_required(VERSION 3.12 FATAL_ERROR)
 
+# add build type for debug, overrides default flags (set with $FCFLAGS, $CFLAGS)
+set(CMAKE_Fortran_FLAGS_DEBUG)
+
 # Define the CMake project
 project(FMS
   VERSION 2022.02.0
@@ -168,6 +171,7 @@ list(APPEND fms_fortran_src_files
   mpp/mpp_parameter.F90
   mpp/mpp_utilities.F90
   parser/yaml_parser.F90
+  parser/fms_yaml_output.F90
   platform/platform.F90
   random_numbers/mersennetwister.F90
   random_numbers/random_numbers.F90
@@ -196,6 +200,7 @@ list(APPEND fms_c_src_files
   mosaic/read_mosaic.c
   mpp/mpp_memuse.c
   parser/yaml_parser_binding.c
+  parser/yaml_output_functions.c
   string_utils/fms_string_utils_binding.c
 )
 
@@ -294,8 +299,11 @@ foreach(kind ${kinds})
   target_compile_definitions(${libTgt}_f PRIVATE "${fms_defs}")
   target_compile_definitions(${libTgt}_f PRIVATE "${${kind}_defs}")
 
-  set_target_properties(${libTgt}_f PROPERTIES COMPILE_FLAGS
+  string(TOLOWER ${CMAKE_BUILD_TYPE} build_type)
+  if (NOT build_type STREQUAL debug)
+    set_target_properties(${libTgt}_f PROPERTIES COMPILE_FLAGS
                                                "${${kind}_flags}")
+  endif()
   set_target_properties(${libTgt}_f PROPERTIES Fortran_MODULE_DIRECTORY
                                                ${moduleDir})
 
@@ -304,6 +312,14 @@ foreach(kind ${kinds})
 
   if(OpenMP_Fortran_FOUND)
     target_link_libraries(${libTgt}_f PRIVATE OpenMP::OpenMP_Fortran)
+  endif()
+
+  # Check if gnu 10 or higher with mpich
+  if ( CMAKE_Fortran_COMPILER_VERSION MATCHES "1[0-9]\.[0-9]*\.[0-9]*" AND CMAKE_Fortran_COMPILER_ID MATCHES "GNU")
+    if(MPI_C_COMPILER MATCHES ".*mpich.*" )
+      message(STATUS "Adding -fallow-argument-mismatch flag to compile with GCC >=10 and MPICH")
+      set_target_properties(${libTgt}_f PROPERTIES COMPILE_FLAGS "-fallow-argument-mismatch -w")
+    endif()
   endif()
 
   # FMS (C + Fortran)

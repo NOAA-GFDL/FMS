@@ -39,6 +39,7 @@ module fms_string_utils_mod
   public :: fms_find_my_string
   public :: fms_find_unique
   public :: fms_c2f_string
+  public :: fms_f2c_string
   public :: fms_cstring2cpointer
   public :: string
   public :: string_copy
@@ -219,6 +220,23 @@ contains
     fstring = string_buffer
     deallocate(string_buffer)
   end function cpointer_fortran_conversion
+
+!> @brief Copies a Fortran string into a C string and puts c_null_char in any trailing spaces
+  subroutine fms_f2c_string (dest, str_in)
+    character (c_char), intent (out) :: dest (:) !< C String to be copied into
+    character (len=*), intent (in) :: str_in !< Fortran string to copy to C string
+    integer :: i !< for looping
+!> Drop an error if the C string is not large enough to hold the input and the c_null_char at the end.
+    if (len(trim(str_in)) .ge. size(dest)) call mpp_error(FATAL, &
+      "The string "//trim(str_in)//" is larger than the destination C string")
+!> Copy c_null_char into each spot in dest
+    dest = c_null_char
+!> Loop though and put each character of the Fortran string into the C string array
+    do i = 1, len(trim(str_in))
+      dest(i) = str_in(i:i)
+    enddo
+end subroutine fms_f2c_string
+
 
   !> @brief Converts an integer to a string
   !> @return The integer as a string

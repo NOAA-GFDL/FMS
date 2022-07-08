@@ -20,9 +20,6 @@
 !> @ingroup fms2_io
 !> @brief Misc. utility routines for use in @ref fms2_io
 
-!> @file
-!> @brief File for @ref fms_io_utils_mod
-
 !> @addtogroup fms_io_utils_mod
 !> @{
 module fms_io_utils_mod

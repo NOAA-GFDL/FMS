@@ -29,13 +29,14 @@ AM_CPPFLAGS = -I${top_srcdir}/include -I$(MODDIR)
 LDADD = ${top_builddir}/libFMS/libFMS.la
 
 # Build this test program.
-check_PROGRAMS = parser_demo2 test_yaml_parser check_crashes parser_demo
+check_PROGRAMS = parser_demo2 test_yaml_parser check_crashes parser_demo test_output_yaml
 
 # This is the source code for the test.
 test_yaml_parser_SOURCES = test_yaml_parser.F90
 check_crashes_SOURCES = check_crashes.F90
 parser_demo_SOURCES = parser_demo.F90
 parser_demo2_SOURCES = parser_demo2.F90
+test_output_yaml_SOURCES = test_output_yaml.F90
 
 # Run the test program.
 TESTS = test_yaml_parser.sh

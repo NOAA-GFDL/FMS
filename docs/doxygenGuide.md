@@ -1,6 +1,6 @@
-# Documentation Style Guide
+# Documentation Style and Building Guide
 
-Best practices for documenting FMS code with Doxygen.
+Best practices for documenting FMS code with Doxygen, as well as instructions for generating the site.
 
 ### Basics
 
@@ -36,8 +36,8 @@ Simple subroutine/function documentation:
 @code{.F90}
 !> description
 !! continued description
-function foo()
-  integer :: bar !< variable description
+function foo(bar)
+  integer, intent(inout) :: bar !< argument description
   ...
 @endcode
 
@@ -119,3 +119,24 @@ end type typename
 !> @{
 ...
 @endcode
+
+
+### Generating the Doxygen Site
+
+The site can be generated from the source code either manually (must have doxygen installed),
+or through a github action.
+
+To generate it manually from the repository:
+```
+autoreconf -it
+./configure --enable-docs
+make -C docs
+```
+
+To have the site generated through a github action, you can go to the *Actions* tab
+on your forked FMS repository. From there you can click on *Select Workflow* and select the
+*Generate and deploy documentationon GH pages* action. This will show all previous runs, and will
+display a button to run the doxygen workflow on whichever branch is desired. After completion, the page will be available at:
+\<your github username\>.github.io/FMS
+
+If not available, settings for the site can be found in the forked repositories *Settings* tab, under *Pages*.

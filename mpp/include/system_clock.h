@@ -17,16 +17,18 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 !> @file
-!> @ingroup mpp_mod
+
+!> @addtogroup mpp_mod
+!> @{
 
 #if defined(use_libMPI)
 #define SYSTEM_CLOCK system_clock_mpi
 
 !#######################################################################
+!> There can be one ONE baseline count0 and this routine is
+!! included in multiple places.
+!! mimics F90 SYSTEM_CLOCK intrinsic
 subroutine system_clock_mpi( count, count_rate, count_max )
-! There can be one ONE baseline count0 and this routine is
-! included in multiple places.
-!mimics F90 SYSTEM_CLOCK intrinsic
       integer(i8_kind), intent(out), optional :: count, count_rate, count_max
 !count must return a number between 0 and count_max
       integer(i8_kind), parameter :: maxtick=HUGE(count_max)
@@ -61,3 +63,4 @@ subroutine system_clock_default( count, count_rate, count_max )
       return
     end subroutine system_clock_default
 #endif
+!> @}
