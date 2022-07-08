@@ -32,10 +32,14 @@ noinst_LTLIBRARIES = libparser.la
 # The convenience library depends on its source.
 libparser_la_SOURCES = \
   yaml_parser.F90 \
+  fms_yaml_output.F90 \
+  yaml_output_functions.c \
   yaml_parser_binding.c
 
 MODFILES = \
-  yaml_parser_mod.$(FC_MODEXT)
+  yaml_parser_mod.$(FC_MODEXT) \
+  fms_yaml_output_mod.$(FC_MODEXT)
+
 BUILT_SOURCES = $(MODFILES)
 nodist_include_HEADERS = $(MODFILES)
 
