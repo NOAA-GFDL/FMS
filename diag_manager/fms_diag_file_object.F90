@@ -26,11 +26,12 @@
 module fms_diag_file_object_mod
 !use mpp_mod, only: mpp_error, FATAL
 use fms2_io_mod, only: FmsNetcdfFile_t, FmsNetcdfUnstructuredDomainFile_t, FmsNetcdfDomainFile_t
-use diag_data_mod, only: DIAG_NULL
+use diag_data_mod, only: DIAG_NULL, NO_DOMAIN, max_axes, SUB_REGIONAL
 #ifdef use_yaml
 use fms_diag_yaml_mod, only: diag_yaml, diagYamlObject_type, diagYamlFiles_type
 #endif
-
+use fms_diag_axis_object_mod, only: diagDomain_t
+use mpp_mod, only: mpp_error, FATAL
 implicit none
 private
 
@@ -44,10 +45,13 @@ type :: fmsDiagFile_type
  private
   integer :: id !< The number associated with this file in the larger array of files
   class(FmsNetcdfFile_t), allocatable :: fileobj !< fms2_io file object for this history file
-  character(len=1) :: file_domain_type !< (I don't think we will need this)
 #ifdef use_yaml
   type(diagYamlFiles_type), pointer :: diag_yaml_file => null() !< Pointer to the diag_yaml_file data
 #endif
+  integer                                      :: type_of_domain !< The type of domain to use to open the file
+                                                                 !! NO_DOMAIN, TWO_D_DOMAIN, UG_DOMAIN, SUB_REGIONAL
+  class(diagDomain_t), pointer                 :: domain         !< The domain to use,
+                                                                 !! null if NO_DOMAIN or SUB_REGIONAL
   character(len=:) , dimension(:), allocatable :: file_metadata_from_model !< File metadata that comes from
                                                                            !! the model.
   integer, dimension(:), allocatable :: var_ids !< Variable IDs corresponding to file_varlist
@@ -57,18 +61,21 @@ type :: fmsDiagFile_type
   logical, dimension(:), private, allocatable :: var_reg   !< Array corresponding to `file_varlist`, .true.
                                                                  !! if the variable has been registered and
                                                                  !! `file_var_index` has been set for the variable
+  integer, dimension(:), allocatable :: axis_ids !< Array of axis ids in the file
+  integer, dimension(:), allocatable :: sub_axis_ids !< Array of axis ids in the file
+  integer :: number_of_axis !< Number of axis in the file
 
  contains
-
   procedure, public :: has_file_metadata_from_model
   procedure, public :: has_fileobj
 #ifdef use_yaml
   procedure, public :: has_diag_yaml_file
+  procedure, public :: set_file_domain
+  procedure, public :: add_axes
 #endif
   procedure, public :: has_var_ids
   procedure, public :: get_id
 ! TODO  procedure, public :: get_fileobj ! TODO
-  procedure, public :: get_file_domain_type
 ! TODO  procedure, public :: get_diag_yaml_file ! TODO
   procedure, public :: get_file_metadata_from_model
   procedure, public :: get_var_ids
@@ -128,6 +135,23 @@ logical function fms_diag_files_object_init ()
      FMS_diag_files(i)%var_ids = DIAG_NULL
      FMS_diag_files(i)%var_reg = .FALSE.
      FMS_diag_files(i)%var_index = DIAG_NULL
+
+     !> These will be set in a set_file_domain
+     FMS_diag_files(i)%type_of_domain = NO_DOMAIN
+     FMS_diag_files(i)%domain => null()
+
+     !> This will be set in a add_axes
+     allocate(FMS_diag_files(i)%axis_ids(max_axes))
+
+     !> If the file has a sub_regional, define it as one and allocate the sub_axis_ids array.
+     !! This will be set in a add_axes
+     if (FMS_diag_files(i)%has_file_sub_region()) then
+      FMS_diag_files(i)%type_of_domain = SUB_REGIONAL
+      allocate(FMS_diag_files(i)%sub_axis_ids(max_axes))
+      FMS_diag_files(i)%sub_axis_ids = diag_null
+     endif
+
+     FMS_diag_files(i)%number_of_axis = 0
    enddo set_ids_loop
    fms_diag_files_object_init = .true.
   else
@@ -181,13 +205,6 @@ end function get_id
 !  class(FmsNetcdfFile_t) :: res
 !  res = obj%fileobj
 !end function get_fileobj
-!> \brief Returns a copy of the value of file_domain_type
-!! \return A copy of file_domain_type
-pure function get_file_domain_type (obj) result (res)
-  class(fmsDiagFile_type), intent(in) :: obj !< The file object
-  character(1) :: res
-  res = obj%file_domain_type
-end function get_file_domain_type
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! TODO
 !!> \brief Returns a copy of the value of diag_yaml_file
@@ -399,5 +416,64 @@ pure function has_file_global_meta (obj) result(res)
  logical :: res
   res = obj%diag_yaml_file%has_file_global_meta()
 end function has_file_global_meta
+
+!> @brief Set the domain and the type_of_domain for a file
+!> @details This subroutine is going to be called once by every variable in the file
+!! in register_diag_field. It will update the domain and the type_of_domain if needed and verify that
+!! all the variables are in the same domain
+subroutine set_file_domain(obj, domain, type_of_domain)
+  class(fmsDiagFile_type), intent(inout)       :: obj            !< The file object
+  integer,                 INTENT(in)          :: type_of_domain !< fileobj_type to use
+  CLASS(diagDomain_t),     INTENT(in), target  :: domain         !< Domain
+
+  !! If this a sub_regional, don't do anything here
+  if (obj%type_of_domain .eq. SUB_REGIONAL) return
+
+  if (type_of_domain .ne. obj%type_of_domain) then
+  !! If the current type_of_domain in the file obj is not the same as the variable calling this subroutine
+
+    if (type_of_domain .eq. NO_DOMAIN .or. obj%type_of_domain .eq. NO_DOMAIN) then
+    !! If they are not the same then one of them can be NO_DOMAIN
+    !! (i.e a file can have variables that are not domain decomposed and variables that are)
+
+      if (type_of_domain .ne. NO_DOMAIN) then
+      !! Update the file's type_of_domain and domain if needed
+        obj%type_of_domain = type_of_domain
+        obj%domain => domain
+      endif
+
+    else
+    !! If they are not the same and of them is not NO_DOMAIN, then crash because the variables don't have the
+    !! same domain (i.e a file has a variable is that in a 2D domain and one that is in a UG domain)
+
+      call mpp_error(FATAL, "The file: "//obj%get_file_fname()//" has variables that are not in the same domain")
+    endif
+  endif
+
+end subroutine set_file_domain
+
+!> @brief Loops through a variable's axis_ids and adds them to the FMSDiagFile object if they don't exist
+subroutine add_axes(obj, axis_ids)
+  class(fmsDiagFile_type), intent(inout)       :: obj            !< The file object
+  integer,                 INTENT(in)          :: axis_ids(:)    !< Array of axes_ids
+
+  integer :: i, j !< For do loops
+
+  do i = 1, size(axis_ids)
+    do j = 1, obj%number_of_axis
+      !> Check if the axis already exists, if it does leave this do loop
+      if (axis_ids(i) .eq. obj%axis_ids(j)) exit
+    enddo
+
+    !> If the axis does not exist add it to the list
+    obj%number_of_axis = obj%number_of_axis + 1
+    obj%axis_ids(obj%number_of_axis) = axis_ids(i)
+
+    !> If this is a sub_regional file, set up the sub_axes
+    !> TO DO:
+    !!
+  enddo
+
+end subroutine add_axes
 #endif
 end module fms_diag_file_object_mod

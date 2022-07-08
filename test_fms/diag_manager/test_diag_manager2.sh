@@ -631,9 +631,6 @@ test_expect_success "Test the diag_ocean feature in diag_manager_init (test $my_
   mpirun -n 2 ../test_diag_ocean
 '
 
-test_expect_success "test_diag_object_container (test $my_test_count)" '
-  mpirun -n 1 ../test_diag_object_container
-'
 test_expect_success "test_diag_dlinked_list (test $my_test_count)" '
   mpirun -n 1 ../test_diag_dlinked_list
 '
@@ -699,7 +696,7 @@ diag_files:
   unlimdim: time
   varlist:
   - module: lnd_mod
-    var_name: var6
+    var_name: var1
     reduction: average
     kind: r4
 _EOF
