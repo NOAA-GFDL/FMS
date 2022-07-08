@@ -459,7 +459,7 @@ subroutine fill_in_diag_files(diag_yaml_id, diag_file_id, fileobj)
 
   integer, allocatable :: key_ids(:) !< Id of the gloabl atttributes key/value pairs
   character(len=:), ALLOCATABLE :: grid_type !< grid_type as it is read in from the yaml
-  character(len=:), ALLOCATABLE :: buffer    !< buffer to store an freq_units as it is read from the yaml
+  character(len=:), ALLOCATABLE :: buffer    !< buffer to store any *_units as it is read from the yaml
 
   call diag_get_value_from_key(diag_yaml_id, diag_file_id, "file_name", fileobj%file_fname)
   call diag_get_value_from_key(diag_yaml_id, diag_file_id, "freq_units", buffer)
@@ -477,6 +477,7 @@ subroutine fill_in_diag_files(diag_yaml_id, diag_file_id, fileobj)
          is_optional=.true.)
   call check_new_file_freq(fileobj, buffer)
 
+  deallocate(buffer)
   call diag_get_value_from_key(diag_yaml_id, diag_file_id, "start_time", fileobj%file_start_time, is_optional=.true.)
   call get_value_from_key(diag_yaml_id, diag_file_id, "file_duration", fileobj%file_duration, is_optional=.true.)
   call diag_get_value_from_key(diag_yaml_id, diag_file_id, "file_duration_units", buffer, &
