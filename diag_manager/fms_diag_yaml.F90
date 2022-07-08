@@ -1020,7 +1020,9 @@ subroutine diag_yaml_files_obj_init(obj)
 
   obj%file_freq           = DIAG_NULL
   obj%file_duration       = DIAG_NULL
+  obj%file_duration_units = DIAG_NULL
   obj%file_new_file_freq  = DIAG_NULL
+  obj%file_new_file_freq_units = DIAG_NULL
   obj%file_sub_region%tile = DIAG_NULL
 end subroutine diag_yaml_files_obj_init
 

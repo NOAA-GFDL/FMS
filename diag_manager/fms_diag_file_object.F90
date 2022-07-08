@@ -509,7 +509,8 @@ subroutine add_start_time(obj, start_time)
       call mpp_error(FATAL, "The variables associated with the file:"//obj%get_file_fname()//" have"&
       &" different start_time")
   else
-    !> If the obj%start_time is equal to the base_time, simply update it with the start_time and set up the *_output variables
+    !> If the obj%start_time is equal to the base_time,
+    !! simply update it with the start_time and set up the *_output variables
     obj%start_time = start_time
     obj%last_output = start_time
     obj%next_output = diag_time_inc(start_time, obj%get_file_freq(), obj%get_file_frequnit())
