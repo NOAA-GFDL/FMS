@@ -40,18 +40,26 @@ integer :: i, table_i, type_i, model_i, var_i, var_j, attr_j !< counters
 !> @}
 ! close documentation grouping
 
+!> @brief This type represents the entirety of the field table.
+!> This type contains the file id of the yaml file, the field types within this table, and the following methods:
+!! getting blocks, creating children (field types), and self destruction. 
+!> @ingroup fm_yaml_mod
 type, public :: fmTable_t
   integer                       :: yfid                    !< file id of a yaml file
   character(len=11)             :: blockname="field_table" !< name of the root block
   integer                       :: nchildren               !< number of field types
   integer, allocatable          :: child_ids(:)            !< array of type ids
-  type (fmType_t), allocatable  :: children(:)             !< models in this type
+  type (fmType_t), allocatable  :: children(:)             !< field types in this table
   contains
     procedure :: get_blocks => get_blocks_fmTable_t
     procedure :: destruct => destruct_fmTable_t
     procedure :: create_children => create_children_fmTable_t
 end type fmTable_t
 
+!> @brief This type represents the entries for a specific field type, e.g. a tracer.
+!> This type contains the name of the field type, the block id, the models within this field type,
+!! and the following methods: getting blocks, getting the name, creating children (models), and self destruction. 
+!> @ingroup fm_yaml_mod
 type, public :: fmType_t
   integer                       :: yfid                !< file id of a yaml file
   integer                       :: id                  !< block id of this type
@@ -67,6 +75,10 @@ type, public :: fmType_t
     procedure :: create_children => create_children_fmType_t
 end type fmType_t
 
+!> @brief This type represents the entries for a given model, e.g. land, ocean, atmosphere.
+!> This type contains the name of the model, the block id, the variables within this model,
+!! and the following methods: getting blocks, getting the name, creating children (variables), and self destruction. 
+!> @ingroup fm_yaml_mod
 type, public :: fmModel_t
   integer                       :: yfid                !< file id of a yaml file
   integer                       :: id                  !< block id of this model
@@ -82,6 +94,11 @@ type, public :: fmModel_t
     procedure :: create_children => create_children_fmModel_t
 end type fmModel_t
 
+!> @brief This type represents the entries for a given variable, e.g. dust.
+!> This type contains the name of the variable, the block id, the key / value pairs for this variable's parameters,
+!! any applicable subparameters, and the following methods:
+!! getting blocks, getting names and properties, creating children (subparameters), and self destruction. 
+!> @ingroup fm_yaml_mod
 type, public :: fmVar_t
   integer                                     :: yfid                  !< file id of a yaml file
   integer                                     :: id                    !< block id of this var
@@ -100,6 +117,10 @@ type, public :: fmVar_t
     procedure :: create_children => create_children_fmVar_t
 end type fmVar_t
 
+!> @brief This type represents the subparameters for a given variable parameter.
+!> This type contains the name of the associated parameter, the key / value pairs for this subparameter,
+!! and the following methods: getting names and properties, and self destruction. 
+!> @ingroup fm_yaml_mod
 type, public :: fmAttr_t
   integer                                     :: yfid                  !< file id of a yaml file
   integer                                     :: id                    !< block id of this var
@@ -111,28 +132,45 @@ type, public :: fmAttr_t
     procedure :: get_names_and_props => get_name_fmAttr_t
 end type fmAttr_t
 
+!> @brief Interface to construct the fmTable type.
+!> @ingroup fm_yaml_mod
 interface fmTable_t
   module procedure construct_fmTable_t
 end interface fmTable_t
 
+!> @brief Interface to construct the fmType type.
+!> @ingroup fm_yaml_mod
 interface fmType_t
   module procedure construct_fmType_t
 end interface fmType_t
 
+!> @brief Interface to construct the fmModel type.
+!> @ingroup fm_yaml_mod
 interface fmModel_t
   module procedure construct_fmModel_t
 end interface fmModel_t
 
+!> @brief Interface to construct the fmVar type.
+!> @ingroup fm_yaml_mod
 interface fmVar_t
   module procedure construct_fmVar_t
 end interface fmVar_t
 
+!> @brief Interface to construct the fmAttr type.
+!> @ingroup fm_yaml_mod
 interface fmAttr_t
   module procedure construct_fmAttr_t
 end interface fmAttr_t
 
 contains
 
+!> @addtogroup fm_yaml_mod
+!> @{
+
+!> @brief Function to construct the fmTable_t type.
+!!
+!> Given an optional filename, construct the fmTable type using routines from the yaml parser.
+!! @returns the fmTable type
 function construct_fmTable_t(filename) result(this)
   type (fmTable_t)                       :: this     !< the field table
   character(len=*), intent(in), optional :: filename !< the name of the yaml file
@@ -146,6 +184,10 @@ function construct_fmTable_t(filename) result(this)
   allocate(this%child_ids(this%nchildren))
 end function construct_fmTable_t
 
+!> @brief Function to construct the fmType_t type.
+!!
+!> Given the appropriate block id, construct the fmType type using routines from the yaml parser.
+!! @returns the fmType type
 function construct_fmType_t(in_yfid, in_id) result(this)
   type (fmType_t)     :: this    !< the type object
   integer, intent(in) :: in_yfid !< yaml file id
@@ -157,6 +199,10 @@ function construct_fmType_t(in_yfid, in_id) result(this)
   allocate(this%child_ids(this%nchildren))
 end function construct_fmType_t
 
+!> @brief Function to construct the fmModel_t type.
+!!
+!> Given the appropriate block id, construct the fmModel type using routines from the yaml parser.
+!! @returns the fmModel type
 function construct_fmModel_t(in_yfid, in_id) result(this)
   type (fmModel_t)    :: this    !< the model object
   integer, intent(in) :: in_yfid !< yaml file id
@@ -168,6 +214,10 @@ function construct_fmModel_t(in_yfid, in_id) result(this)
   allocate(this%child_ids(this%nchildren))
 end function construct_fmModel_t
 
+!> @brief Function to construct the fmVar_t type.
+!!
+!> Given the appropriate block id, construct the fmVar type using routines from the yaml parser.
+!! @returns the fmVar type
 function construct_fmVar_t(in_yfid, in_id) result(this)
   type (fmVar_t)      :: this    !< the var object
   integer, intent(in) :: in_yfid !< yaml file id
@@ -179,6 +229,10 @@ function construct_fmVar_t(in_yfid, in_id) result(this)
   allocate(this%child_ids(this%nchildren))
 end function construct_fmVar_t
 
+!> @brief Function to construct the fmAttr_t type.
+!!
+!> Given the appropriate block id, construct the fmAttr type using routines from the yaml parser.
+!! @returns the fmAttr type
 function construct_fmAttr_t(in_yfid, in_id) result(this)
   type (fmAttr_t)      :: this    !< the var object
   integer, intent(in) :: in_yfid !< yaml file id
@@ -188,6 +242,9 @@ function construct_fmAttr_t(in_yfid, in_id) result(this)
   this%id = in_id
 end function construct_fmAttr_t
 
+!> @brief Subroutine to destruct the fmTable_t type.
+!!
+!> Deallocates this type's allocatables and calls the destruct routine for this type's children.
 subroutine destruct_fmTable_t(this)
   class (fmTable_t) :: this       !< the field table
 
@@ -200,6 +257,9 @@ subroutine destruct_fmTable_t(this)
   if (allocated(this%children)) deallocate(this%children)
 end subroutine destruct_fmTable_t
 
+!> @brief Subroutine to destruct the fmType_t type.
+!!
+!> Deallocates this type's allocatables and calls the destruct routine for this type's children.
 subroutine destruct_fmType_t(this)
   class (fmType_t) :: this !< type object
 
@@ -213,6 +273,9 @@ subroutine destruct_fmType_t(this)
   if (allocated(this%children)) deallocate(this%children)
 end subroutine destruct_fmType_t
 
+!> @brief Subroutine to destruct the fmModel_t type.
+!!
+!> Deallocates this type's allocatables and calls the destruct routine for this type's children.
 subroutine destruct_fmModel_t(this)
   class (fmModel_t) :: this !< model object
 
@@ -226,6 +289,9 @@ subroutine destruct_fmModel_t(this)
   if (allocated(this%children)) deallocate(this%children)
 end subroutine destruct_fmModel_t
 
+!> @brief Subroutine to destruct the fmVar_t type.
+!!
+!> Deallocates this type's allocatables and calls the destruct routine for this type's children.
 subroutine destruct_fmVar_t(this)
   class (fmVar_t) :: this !< variable object
 
@@ -242,6 +308,9 @@ subroutine destruct_fmVar_t(this)
   if (allocated(this%children)) deallocate(this%children)
 end subroutine destruct_fmVar_t
 
+!> @brief Subroutine to destruct the fmAttr_t type.
+!!
+!> Deallocates this type's allocatables.
 subroutine destruct_fmAttr_t(this)
   class (fmAttr_t) :: this !< variable object
 
@@ -250,18 +319,22 @@ subroutine destruct_fmAttr_t(this)
   if (allocated(this%values)) deallocate(this%values)
 end subroutine destruct_fmAttr_t
 
+!> @brief gets the block ids for children of this type.
 subroutine get_blocks_fmTable_t(this)
   class (fmTable_t) :: this !< field table object
 
   call get_block_ids(this%yfid, this%blockname, this%child_ids)
 end subroutine get_blocks_fmTable_t
 
+!> @brief gets the block ids for children of this type.
 subroutine get_blocks_fmType_t(this)
   class (fmType_t) :: this !< type object
 
   call get_block_ids(this%yfid, this%blockname, this%child_ids, this%id)
 end subroutine get_blocks_fmType_t
 
+!> @brief Gets the name of this field type and adds it to the fmType_t.
+!! Note that there should only be one key value pair (which is why the get_key_value call uses key_ids(1)).
 subroutine get_name_fmType_t(this)
   class (fmType_t)     :: this !< type object
   integer              :: nkeys !< numkeys
@@ -275,12 +348,15 @@ subroutine get_name_fmType_t(this)
   this%name = trim(key_value)
 end subroutine get_name_fmType_t
 
+!> @brief gets the block ids for children of this type.
 subroutine get_blocks_fmModel_t(this)
   class (fmModel_t) :: this !< model object
 
   call get_block_ids(this%yfid, this%blockname, this%child_ids, this%id)
 end subroutine get_blocks_fmModel_t
 
+!> @brief Gets the name of this model and adds it to the fmModel_t.
+!! Note that there should only be one key value pair (which is why the get_key_value call uses key_ids(1)).
 subroutine get_name_fmModel_t(this)
   class (fmModel_t)    :: this !< model object
   integer              :: nkeys !< numkeys
@@ -294,12 +370,16 @@ subroutine get_name_fmModel_t(this)
   this%name = trim(key_value)
 end subroutine get_name_fmModel_t
 
+!> @brief gets the block ids for children of this type.
 subroutine get_blocks_fmVar_t(this)
   class (fmVar_t) :: this !< variable object
 
   call get_block_ids(this%yfid, this%blockname, this%child_ids, this%id)
 end subroutine get_blocks_fmVar_t
 
+!> @brief Gets the name of this variable as well as the associated parameters and adds them to fmVar_t.
+!! Note that the length of the character arrays for the parameter names and values are allocatable.
+!! This is why they are read twice.
 subroutine get_name_fmVar_t(this)
   class (fmVar_t)      :: this       !< variable object
   integer              :: nkeys      !< numkeys
@@ -336,6 +416,9 @@ subroutine get_name_fmVar_t(this)
   end if
 end subroutine get_name_fmVar_t
 
+!> @brief Gets the name of the parameter and the key value pairs for the subparameters and adds them to fmAttr_t.
+!! Note that the length of the character arrays for the subparameter names and values are allocatable.
+!! This is why they are read twice.
 subroutine get_name_fmAttr_t(this)
   class (fmAttr_t)     :: this       !< variable object
   integer              :: nkeys      !< numkeys
@@ -370,6 +453,10 @@ subroutine get_name_fmAttr_t(this)
   end do
 end subroutine get_name_fmAttr_t
 
+!> @brief Creates the children (fmType_t) of this type (fmTable_t).
+!!
+!! Note that this includes the creation function as well as the routines necessary to populate the child type,
+!! including calling the create_children routine for the child type (this makes it somewhat recursive).
 subroutine create_children_fmTable_t(this)
   class (fmTable_t) :: this !< the field table
 
@@ -382,6 +469,10 @@ subroutine create_children_fmTable_t(this)
   end do
 end subroutine create_children_fmTable_t
 
+!> @brief Creates the children (fmModel_t) of this type (fmType_t).
+!!
+!! Note that this includes the creation function as well as the routines necessary to populate the child type,
+!! including calling the create_children routine for the child type (this makes it somewhat recursive).
 subroutine create_children_fmType_t(this)
   class (fmType_t) :: this !< type object
 
@@ -394,6 +485,10 @@ subroutine create_children_fmType_t(this)
   end do
 end subroutine create_children_fmType_t
 
+!> @brief Creates the children (fmVar_t) of this type (fmModel_t).
+!!
+!! Note that this includes the creation function as well as the routines necessary to populate the child type,
+!! including calling the create_children routine for the child type (this makes it somewhat recursive).
 subroutine create_children_fmModel_t(this)
   class (fmModel_t) :: this !< model object
 
@@ -406,6 +501,9 @@ subroutine create_children_fmModel_t(this)
   end do
 end subroutine create_children_fmModel_t
 
+!> @brief Creates the children (fmAttr_t) of this type (fmVar_t).
+!!
+!! Note that this includes the creation function as well as the routines necessary to populate the child type.
 subroutine create_children_fmVar_t(this)
   class (fmVar_t) :: this !< var object
 
@@ -419,3 +517,5 @@ subroutine create_children_fmVar_t(this)
 end subroutine create_children_fmVar_t
 #endif
 end module fm_yaml_mod
+!> @}
+! close documentation grouping

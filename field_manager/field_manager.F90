@@ -530,9 +530,16 @@ contains
 
 #ifdef use_yaml
 
+!> @brief Routine to initialize the field manager.
+!!
+!> This routine reads from a file containing yaml paramaters.
+!! These yaml parameters contain information on which schemes are
+!! needed within various modules. The field manager does not
+!! initialize any of those schemes however. It simply holds the
+!! information and is queried by the appropriate  module.
 subroutine field_manager_init(nfields, table_name)
-integer,                      intent(out), optional :: nfields !< number of fields
-character(len=fm_string_len), intent(in), optional :: table_name !< Name of the field table, default
+integer,                      intent(out), optional :: nfields    !< number of fields
+character(len=fm_string_len), intent(in),  optional :: table_name !< Name of the field table, default
 
 character(len=fm_string_len)    :: tbl_name !< field_table yaml file
 character(len=fm_string_len)    :: method_control !< field_table yaml file
@@ -1312,7 +1319,7 @@ end subroutine new_name
 
 !> @brief Destructor for field manager.
 !!
-!> This subroutine writes to the logfile that the user is exiting field_manager and
+!> This subroutine deallocates allocated variables (if allocated) and
 !! changes the initialized flag to false.
 subroutine field_manager_end
 
@@ -1324,9 +1331,9 @@ module_is_initialized = .false.
 
 #ifdef use_yaml
 do j=1,size(fields)
-  deallocate(fields(j)%methods)
+  if(allocated(fields(j)%methods)) deallocate(fields(j)%methods)
 end do
-deallocate(fields)
+if(allocated(fields)) deallocate(fields)
 #endif
 
 end subroutine field_manager_end
