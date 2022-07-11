@@ -27,7 +27,7 @@ module fms_diag_file_object_mod
 use fms2_io_mod, only: FmsNetcdfFile_t, FmsNetcdfUnstructuredDomainFile_t, FmsNetcdfDomainFile_t
 use diag_data_mod, only: DIAG_NULL, NO_DOMAIN, max_axes, SUB_REGIONAL, get_base_time
 use diag_util_mod, only: diag_time_inc
-use time_manager_mod, only: time_type, operator(/=)
+use time_manager_mod, only: time_type, operator(/=), operator(==)
 #ifdef use_yaml
 use fms_diag_yaml_mod, only: diag_yaml, diagYamlObject_type, diagYamlFiles_type
 #endif
@@ -502,6 +502,10 @@ end subroutine add_axes
 subroutine add_start_time(obj, start_time)
   class(fmsDiagFile_type), intent(inout)       :: obj            !< The file object
   TYPE(time_type),         intent(in)          :: start_time     !< Start time to add to the fileobj
+
+  !< If the start_time sent in is equal to the base_time return because
+  !! obj%start_time was already set to the base_time
+  if (start_time .eq. get_base_time()) return
 
   if (obj%start_time .ne. get_base_time()) then
     !> If the obj%start_time is not equal to the base_time from the diag_table
