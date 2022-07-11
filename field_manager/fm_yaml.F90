@@ -40,59 +40,20 @@ integer :: i, table_i, type_i, model_i, var_i, var_j, attr_j !< counters
 !> @}
 ! close documentation grouping
 
-!> @brief This type represents the entirety of the field table.
-!> This type contains the file id of the yaml file, the field types within this table, and the following methods:
-!! getting blocks, creating children (field types), and self destruction. 
+!> @brief This type represents the subparameters for a given variable parameter.
+!> This type contains the name of the associated parameter, the key / value pairs for this subparameter,
+!! and the following methods: getting names and properties, and self destruction. 
 !> @ingroup fm_yaml_mod
-type, public :: fmTable_t
-  integer                       :: yfid                    !< file id of a yaml file
-  character(len=11)             :: blockname="field_table" !< name of the root block
-  integer                       :: nchildren               !< number of field types
-  integer, allocatable          :: child_ids(:)            !< array of type ids
-  type (fmType_t), allocatable  :: children(:)             !< field types in this table
+type, public :: fmAttr_t
+  integer                                     :: yfid                  !< file id of a yaml file
+  integer                                     :: id                    !< block id of this var
+  character(len=:), allocatable               :: paramname             !< name of associated parameter  
+  character(len=:), dimension(:), allocatable :: keys                  !< name of the variable
+  character(len=:), dimension(:), allocatable :: values                !< name of the variable
   contains
-    procedure :: get_blocks => get_blocks_fmTable_t
-    procedure :: destruct => destruct_fmTable_t
-    procedure :: create_children => create_children_fmTable_t
-end type fmTable_t
-
-!> @brief This type represents the entries for a specific field type, e.g. a tracer.
-!> This type contains the name of the field type, the block id, the models within this field type,
-!! and the following methods: getting blocks, getting the name, creating children (models), and self destruction. 
-!> @ingroup fm_yaml_mod
-type, public :: fmType_t
-  integer                       :: yfid                !< file id of a yaml file
-  integer                       :: id                  !< block id of this type
-  character(len=:), allocatable :: name                !< name of the type
-  character(len=7)              :: blockname="modlist" !< name of the root block
-  integer                       :: nchildren           !< number of model types
-  integer, allocatable          :: child_ids(:)        !< array of model ids
-  type (fmModel_t), allocatable :: children(:)         !< models in this type
-  contains
-    procedure :: get_blocks => get_blocks_fmType_t
-    procedure :: destruct => destruct_fmType_t
-    procedure :: get_name => get_name_fmType_t
-    procedure :: create_children => create_children_fmType_t
-end type fmType_t
-
-!> @brief This type represents the entries for a given model, e.g. land, ocean, atmosphere.
-!> This type contains the name of the model, the block id, the variables within this model,
-!! and the following methods: getting blocks, getting the name, creating children (variables), and self destruction. 
-!> @ingroup fm_yaml_mod
-type, public :: fmModel_t
-  integer                       :: yfid                !< file id of a yaml file
-  integer                       :: id                  !< block id of this model
-  character(len=:), allocatable :: name                !< name of the model
-  character(len=7)              :: blockname="varlist" !< name of the root block
-  integer                       :: nchildren           !< number of var types
-  integer, allocatable          :: child_ids(:)        !< array of var ids
-  type (fmVar_t), allocatable   :: children(:)         !< variables in this model
-  contains
-    procedure :: get_blocks => get_blocks_fmModel_t
-    procedure :: destruct => destruct_fmModel_t
-    procedure :: get_name => get_name_fmModel_t
-    procedure :: create_children => create_children_fmModel_t
-end type fmModel_t
+    procedure :: destruct => destruct_fmAttr_t
+    procedure :: get_names_and_props => get_name_fmAttr_t
+end type fmAttr_t
 
 !> @brief This type represents the entries for a given variable, e.g. dust.
 !> This type contains the name of the variable, the block id, the key / value pairs for this variable's parameters,
@@ -117,20 +78,59 @@ type, public :: fmVar_t
     procedure :: create_children => create_children_fmVar_t
 end type fmVar_t
 
-!> @brief This type represents the subparameters for a given variable parameter.
-!> This type contains the name of the associated parameter, the key / value pairs for this subparameter,
-!! and the following methods: getting names and properties, and self destruction. 
+!> @brief This type represents the entries for a given model, e.g. land, ocean, atmosphere.
+!> This type contains the name of the model, the block id, the variables within this model,
+!! and the following methods: getting blocks, getting the name, creating children (variables), and self destruction. 
 !> @ingroup fm_yaml_mod
-type, public :: fmAttr_t
-  integer                                     :: yfid                  !< file id of a yaml file
-  integer                                     :: id                    !< block id of this var
-  character(len=:), allocatable               :: paramname             !< name of associated parameter  
-  character(len=:), dimension(:), allocatable :: keys                  !< name of the variable
-  character(len=:), dimension(:), allocatable :: values                !< name of the variable
+type, public :: fmModel_t
+  integer                       :: yfid                !< file id of a yaml file
+  integer                       :: id                  !< block id of this model
+  character(len=:), allocatable :: name                !< name of the model
+  character(len=7)              :: blockname="varlist" !< name of the root block
+  integer                       :: nchildren           !< number of var types
+  integer, allocatable          :: child_ids(:)        !< array of var ids
+  type (fmVar_t), allocatable   :: children(:)         !< variables in this model
   contains
-    procedure :: destruct => destruct_fmAttr_t
-    procedure :: get_names_and_props => get_name_fmAttr_t
-end type fmAttr_t
+    procedure :: get_blocks => get_blocks_fmModel_t
+    procedure :: destruct => destruct_fmModel_t
+    procedure :: get_name => get_name_fmModel_t
+    procedure :: create_children => create_children_fmModel_t
+end type fmModel_t
+
+!> @brief This type represents the entries for a specific field type, e.g. a tracer.
+!> This type contains the name of the field type, the block id, the models within this field type,
+!! and the following methods: getting blocks, getting the name, creating children (models), and self destruction. 
+!> @ingroup fm_yaml_mod
+type, public :: fmType_t
+  integer                       :: yfid                !< file id of a yaml file
+  integer                       :: id                  !< block id of this type
+  character(len=:), allocatable :: name                !< name of the type
+  character(len=7)              :: blockname="modlist" !< name of the root block
+  integer                       :: nchildren           !< number of model types
+  integer, allocatable          :: child_ids(:)        !< array of model ids
+  type (fmModel_t), allocatable :: children(:)         !< models in this type
+  contains
+    procedure :: get_blocks => get_blocks_fmType_t
+    procedure :: destruct => destruct_fmType_t
+    procedure :: get_name => get_name_fmType_t
+    procedure :: create_children => create_children_fmType_t
+end type fmType_t
+
+!> @brief This type represents the entirety of the field table.
+!> This type contains the file id of the yaml file, the field types within this table, and the following methods:
+!! getting blocks, creating children (field types), and self destruction. 
+!> @ingroup fm_yaml_mod
+type, public :: fmTable_t
+  integer                       :: yfid                    !< file id of a yaml file
+  character(len=11)             :: blockname="field_table" !< name of the root block
+  integer                       :: nchildren               !< number of field types
+  integer, allocatable          :: child_ids(:)            !< array of type ids
+  type (fmType_t), allocatable  :: children(:)             !< field types in this table
+  contains
+    procedure :: get_blocks => get_blocks_fmTable_t
+    procedure :: destruct => destruct_fmTable_t
+    procedure :: create_children => create_children_fmTable_t
+end type fmTable_t
 
 !> @brief Interface to construct the fmTable type.
 !> @ingroup fm_yaml_mod
