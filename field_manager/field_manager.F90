@@ -198,6 +198,7 @@ use fm_yaml_mod
 implicit none
 private
 
+#include<file_version.h>
 logical            :: module_is_initialized  = .false.
 
 public :: field_manager_init   !< (nfields, [table_name]) returns number of fields
@@ -598,7 +599,8 @@ do h=1,my_table%nchildren
     case ('ice_mod')
        model = MODEL_ICE
     case default
-      call mpp_error(FATAL, trim(error_header)//'The model name is unrecognised : '//trim(my_table%children(h)%children(i)%name))
+      call mpp_error(FATAL, trim(error_header)//'The model name is unrecognised : &
+        &'//trim(my_table%children(h)%children(i)%name))
     end select
     do j=1,my_table%children(h)%children(i)%nchildren
       current_field = current_field + 1
@@ -614,23 +616,29 @@ do h=1,my_table%nchildren
       fields(current_field)%num_methods = size(my_table%children(h)%children(i)%children(j)%key_ids)
       allocate(fields(current_field)%methods(fields(current_field)%num_methods))
       do k=1,size(my_table%children(h)%children(i)%children(j)%keys)
-        fields(current_field)%methods(k)%method_type = lowercase(trim(my_table%children(h)%children(i)%children(j)%keys(k)))
-        fields(current_field)%methods(k)%method_name = lowercase(trim(my_table%children(h)%children(i)%children(j)%values(k)))
+        fields(current_field)%methods(k)%method_type = &
+          lowercase(trim(my_table%children(h)%children(i)%children(j)%keys(k)))
+        fields(current_field)%methods(k)%method_name = &
+          lowercase(trim(my_table%children(h)%children(i)%children(j)%values(k)))
         fields(current_field)%methods(k)%method_control = ""
-        call new_name(list_name, fields(current_field)%methods(k)%method_type, fields(current_field)%methods(k)%method_name )
+        call new_name(list_name, fields(current_field)%methods(k)%method_type,&
+          fields(current_field)%methods(k)%method_name )
       end do
       if (my_table%children(h)%children(i)%children(j)%nchildren .gt. 0) then
         do k=1,my_table%children(h)%children(i)%children(j)%nchildren
           method_control = " "
           method_control = trim(fields(current_field)%methods(k)%method_control)
           do l=1,size(my_table%children(h)%children(i)%children(j)%children(k)%keys)
-            method_control = trim(method_control)//trim(my_table%children(h)%children(i)%children(j)%children(k)%keys(l))//"="//trim(my_table%children(h)%children(i)%children(j)%children(k)%values(l))//","
+            method_control = trim(method_control)//&
+              &trim(my_table%children(h)%children(i)%children(j)%children(k)%keys(l))//"="//&
+              &trim(my_table%children(h)%children(i)%children(j)%children(k)%values(l))//","
             if (l .eq. size(my_table%children(h)%children(i)%children(j)%children(k)%keys)) then
               trim_method_control = len_trim(method_control)
               fields(current_field)%methods(k)%method_control = method_control(1:trim_method_control)
             end if
           end do
-          call new_name(list_name, my_table%children(h)%children(i)%children(j)%children(k)%paramname, fields(current_field)%methods(k)%method_control)
+          call new_name(list_name, my_table%children(h)%children(i)%children(j)%children(k)%paramname, &
+            fields(current_field)%methods(k)%method_control)
         end do
       end if
     end do
