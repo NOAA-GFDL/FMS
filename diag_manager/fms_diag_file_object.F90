@@ -169,6 +169,7 @@ logical function fms_diag_files_object_init ()
      obj%last_output = get_base_time()
      obj%next_output = diag_time_inc(obj%start_time, obj%get_file_freq(), obj%get_file_frequnit())
      obj%next_next_output = diag_time_inc(obj%next_output, obj%get_file_freq(), obj%get_file_frequnit())
+     obj%next_open = get_base_time()
 
      nullify(obj)
    enddo set_ids_loop
