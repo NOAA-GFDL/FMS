@@ -303,7 +303,7 @@ end type Ptr3Di
 type restart_file_type
    private
    integer                                  :: unit = -1 ! mpp_io unit for netcdf file
-   character(len=128)                       :: name = ''
+   character(len=256)                       :: name = ''
    integer                                  :: register_id = 0
    integer                                  :: nvar = 0
    integer                                  :: natt = 0
