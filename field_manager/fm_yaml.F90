@@ -413,6 +413,8 @@ subroutine get_name_fmVar_t(this)
       this%keys(var_j-1) = trim(key_name)
       this%values(var_j-1) = trim(key_value)
     end do
+  else
+    allocate(this%key_ids(0))
   end if
 end subroutine get_name_fmVar_t
 

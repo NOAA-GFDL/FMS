@@ -544,14 +544,17 @@ character(len=fm_string_len), intent(in),  optional :: table_name !< Name of the
 
 character(len=fm_string_len)    :: tbl_name !< field_table yaml file
 character(len=fm_string_len)    :: method_control !< field_table yaml file
-integer                         :: h, i, j, k, l !< dummy integer buffer
+integer                         :: h, i, j, k, l, m !< dummy integer buffer
 type (fmTable_t)                :: my_table       !< the field table
 integer                         :: model
 character(len=fm_path_name_len) :: list_name
+character(len=fm_string_len)    :: subparamvalue
 integer                         :: current_field
 integer                         :: index_list_name
 integer                         :: trim_method_control
+integer                         :: subparamindex
 logical                         :: fm_success
+logical                         :: subparams
 
 if (module_is_initialized) then
    if(present(nfields)) nfields = num_fields
@@ -615,30 +618,38 @@ do h=1,my_table%nchildren
       fields(current_field)%field_type  = lowercase(trim(my_table%children(h)%name))
       fields(current_field)%num_methods = size(my_table%children(h)%children(i)%children(j)%key_ids)
       allocate(fields(current_field)%methods(fields(current_field)%num_methods))
-      do k=1,size(my_table%children(h)%children(i)%children(j)%keys)
-        fields(current_field)%methods(k)%method_type = &
-          lowercase(trim(my_table%children(h)%children(i)%children(j)%keys(k)))
-        fields(current_field)%methods(k)%method_name = &
-          lowercase(trim(my_table%children(h)%children(i)%children(j)%values(k)))
-        fields(current_field)%methods(k)%method_control = ""
-        call new_name(list_name, fields(current_field)%methods(k)%method_type,&
-          fields(current_field)%methods(k)%method_name )
-      end do
-      if (my_table%children(h)%children(i)%children(j)%nchildren .gt. 0) then
-        do k=1,my_table%children(h)%children(i)%children(j)%nchildren
-          method_control = " "
-          method_control = trim(fields(current_field)%methods(k)%method_control)
-          do l=1,size(my_table%children(h)%children(i)%children(j)%children(k)%keys)
-            method_control = trim(method_control)//&
-              &trim(my_table%children(h)%children(i)%children(j)%children(k)%keys(l))//"="//&
-              &trim(my_table%children(h)%children(i)%children(j)%children(k)%values(l))//","
-            if (l .eq. size(my_table%children(h)%children(i)%children(j)%children(k)%keys)) then
-              trim_method_control = len_trim(method_control)
-              fields(current_field)%methods(k)%method_control = method_control(1:trim_method_control)
+      if(fields(current_field)%num_methods.gt.0) then
+        if (my_table%children(h)%children(i)%children(j)%nchildren .gt. 0) subparams = .true.
+        do k=1,size(my_table%children(h)%children(i)%children(j)%keys)
+          fields(current_field)%methods(k)%method_type = &
+            lowercase(trim(my_table%children(h)%children(i)%children(j)%keys(k)))
+          fields(current_field)%methods(k)%method_name = &
+            lowercase(trim(my_table%children(h)%children(i)%children(j)%values(k)))
+          if (.not.subparams) then
+            call new_name(list_name, fields(current_field)%methods(k)%method_type,&
+              fields(current_field)%methods(k)%method_name )
+          else
+            subparamindex=-1
+            do l=1,my_table%children(h)%children(i)%children(j)%nchildren
+              if(trim(my_table%children(h)%children(i)%children(j)%children(l)%paramname).eq.&
+                trim(fields(current_field)%methods(k)%method_type)) subparamindex = l
+              exit
+            end do
+            if (subparamindex.eq.-1) then
+              call new_name(list_name, fields(current_field)%methods(k)%method_type,&
+                fields(current_field)%methods(k)%method_name )
+            else
+              do m=1,size(my_table%children(h)%children(i)%children(j)%children(l)%keys)
+                method_control = " "
+                subparamvalue = " "
+                method_control = trim(fields(current_field)%methods(k)%method_type)//"/"//&
+                  &trim(fields(current_field)%methods(k)%method_name)//"/"//&
+                  &trim(my_table%children(h)%children(i)%children(j)%children(subparamindex)%keys(m))
+                subparamvalue = trim(my_table%children(h)%children(i)%children(j)%children(subparamindex)%values(m))
+                call new_name(list_name, method_control, subparamvalue)
+              end do
             end if
-          end do
-          call new_name(list_name, my_table%children(h)%children(i)%children(j)%children(k)%paramname, &
-            fields(current_field)%methods(k)%method_control)
+          end if
         end do
       end if
     end do
@@ -1735,7 +1746,6 @@ integer :: length
 !        Check for the last occurrence of the list separator in name
 ! The following max function is to work around an error in the IBM compiler for len_trim
 length = max(len_trim(name),0)
-
 if (length .eq. 0) then
 
    !       Empty name, so return empty path and base
