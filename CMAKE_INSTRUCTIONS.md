@@ -52,6 +52,9 @@ make install
 ### User configurable options:
 By default, FMS is built without `OpenMP` and in `single precision (r4)`
 
+The 64BIT and 32BIT precision options will build distinct libraries when enabled with the given default
+real size, libfms_r4 or libfms_r8.
+
 The following build options are available:
 ```
 -DOPENMP   "Build FMS with OpenMP support"        DEFAULT: OFF
