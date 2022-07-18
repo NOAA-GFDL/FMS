@@ -640,11 +640,6 @@ test_expect_success "test_diag_dlinked_list (test $my_test_count)" '
   mpirun -n 1 ../test_diag_dlinked_list
 '
 
-my_test_count=43
-test_expect_success "test_send_data_statfun (test $my_test_count)" '
-  mpirun -n 1 ../test_send_data_statfun
-'
-
 printf "&diag_manager_nml \n use_modern_diag = .true. \n/" | cat > input.nml
 cat <<_EOF > diag_table.yaml
 title: test_diag_manager
@@ -711,7 +706,7 @@ diag_files:
     kind: r4
 _EOF
 
-my_test_count=45
+my_test_count=43
 test_expect_success "Test the modern diag manager end to end (test $my_test_count)" '
   mpirun -n 6 ../test_modern_diag
 '

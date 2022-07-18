@@ -1,0 +1,5 @@
+
+"fortran.ignoreWarning.fortls": true,
+"editor.bracketPairColorization.enabled": true
+"fortran-ls.maxLineLength": 120
+"workbench.localHistory.enabled":false
