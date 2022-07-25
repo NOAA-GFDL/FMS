@@ -96,6 +96,35 @@ allocate(v2(a2))
 allocate(k3(a3))
 allocate(v3(a3))
 
+!> Initialize all the above allocated structures
+!! to have "" in character arrays. Needed for correct
+!! running in Intel compiler
+do i = 1, a1size
+  call initialize_key_struct(k1(i))
+end do
+
+do i = 1, a2
+  call initialize_key_struct(k2(i))
+end do
+
+do i = 1, a3
+  call initialize_key_struct(k3(i))
+end do
+
+do i = 1, a1size
+  call initialize_val_struct(v1(i))
+end do
+
+do i = 1, a2
+  call initialize_val_struct(v2(i))
+end do
+
+do i = 1, a3
+  call initialize_val_struct(v3(i))
+end do
+
+
+
 !> Copy the strings into the key/value pairings
 call fms_f2c_string (k1(1)%key1,"name")
 call fms_f2c_string (v1(1)%val1,"time to eat")
@@ -185,6 +214,50 @@ if (mpp_pe() == mpp_root_pe() ) then
   endif
 endif
 call fms_end
+
+CONTAINS
+
+!! Initialize one instance of the fmsYamlOutKeys_type structure.
+subroutine initialize_key_struct( yk )
+  type (fmsYamlOutKeys_type), intent(inout) :: yk !< Instance of the stucture
+  call fms_f2c_string (yk%key1,"")
+  call fms_f2c_string (yk%key2,"")
+  call fms_f2c_string (yk%key3,"")
+  call fms_f2c_string (yk%key4,"")
+  call fms_f2c_string (yk%key5,"")
+  call fms_f2c_string (yk%key6,"")
+  call fms_f2c_string (yk%key7,"")
+  call fms_f2c_string (yk%key8,"")
+  call fms_f2c_string (yk%key9,"")
+  call fms_f2c_string (yk%key10,"")
+  call fms_f2c_string (yk%key11,"")
+  call fms_f2c_string (yk%key12,"")
+  call fms_f2c_string (yk%key13,"")
+  call fms_f2c_string (yk%key14,"")
+  call fms_f2c_string (yk%key15,"")
+  call fms_f2c_string(yk%level2key,"")
+end subroutine initialize_key_struct
+
+!! Initialize one instance of the fmsYamlOutValues_type structure.
+subroutine initialize_val_struct( yv)
+  type (fmsYamlOutValues_type), intent(inout):: yv !< Instance of the stucture
+  call fms_f2c_string (yv%val1,"")
+  call fms_f2c_string (yv%val2,"")
+  call fms_f2c_string (yv%val3,"")
+  call fms_f2c_string (yv%val4,"")
+  call fms_f2c_string (yv%val5,"")
+  call fms_f2c_string (yv%val6,"")
+  call fms_f2c_string (yv%val7,"")
+  call fms_f2c_string (yv%val8,"")
+  call fms_f2c_string (yv%val9,"")
+  call fms_f2c_string (yv%val10,"")
+  call fms_f2c_string (yv%val11,"")
+  call fms_f2c_string (yv%val12,"")
+  call fms_f2c_string (yv%val13,"")
+  call fms_f2c_string (yv%val14,"")
+  call fms_f2c_string (yv%val15,"")
+end subroutine initialize_val_struct
+
 #endif
 end program test_output_yaml
 
