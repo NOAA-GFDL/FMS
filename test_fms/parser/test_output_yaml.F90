@@ -55,7 +55,6 @@
 !! \end verbatim
 !! Great, now I have to create this long yaml for testing, lol.
 program test_output_yaml
-#define use_yaml
 #ifdef use_yaml
 
 use fms_yaml_output_mod
