@@ -1078,8 +1078,8 @@ INTEGER FUNCTION fms_register_static_field(module_name, field_name, axes, long_n
     CHARACTER(len=*),               OPTIONAL, INTENT(in) :: long_name     !< Longname to be added as a attribute
     CHARACTER(len=*),               OPTIONAL, INTENT(in) :: units         !< Units to be added as a attribute
     CHARACTER(len=*),               OPTIONAL, INTENT(in) :: standard_name !< Standard name to be added as a attribute
-    real,                           OPTIONAL, INTENT(in) :: missing_value !< Missing value to be added as a attribute
-    real,             DIMENSION(2), OPTIONAL, INTENT(in) :: range         !< Range to be added as a attribute
+    class(*),                       OPTIONAL, INTENT(in) :: missing_value !< Missing value to be added as a attribute
+    class(*),         DIMENSION(:), OPTIONAL, INTENT(in) :: range         !< Range to be added as a attribute
     LOGICAL,                        OPTIONAL, INTENT(in) :: mask_variant  !< Flag indicating if the field is has
                                                                           !! a mask variant
     LOGICAL,                        OPTIONAL, INTENT(in) :: DYNAMIC       !< Flag indicating if the field is dynamic
