@@ -43,16 +43,17 @@ implicit none
 
 private
 
+public :: diag_yaml
 public :: diag_yaml_object_init, diag_yaml_object_end
 public :: diagYamlObject_type, get_diag_yaml_obj, get_title, get_basedate, get_diag_files, get_diag_fields
 public :: diagYamlFiles_type, diagYamlFilesVar_type
-public :: get_num_unique_fields, find_diag_field, get_diag_fields_entries, get_diag_files_entries
-
+public :: get_num_unique_fields, find_diag_field, get_diag_fields_entries, get_diag_files_id
 !> @}
 
 integer, parameter :: basedate_size = 6
 integer, parameter :: NUM_SUB_REGION_ARRAY = 8
 integer, parameter :: MAX_STR_LEN = 255
+
 
 !> @brief type to hold an array of sorted diag_fiels
 type varList_type
@@ -113,6 +114,7 @@ type diagYamlFiles_type
 
  !> All getter functions (functions named get_x(), for member field named x)
  !! return copies of the member variables unless explicitly noted.
+ procedure :: size_file_varlist
  procedure :: get_file_fname
  procedure :: get_file_frequnit
  procedure :: get_file_freq
@@ -198,9 +200,11 @@ end type diagYamlFilesVar_type
 type diagYamlObject_type
   character(len=:), allocatable, private :: diag_title                   !< Experiment name
   integer, private, dimension (basedate_size) :: diag_basedate           !< basedate array
-  type(diagYamlFiles_type), allocatable, private, dimension (:) :: diag_files!< History file info
+  type(diagYamlFiles_type), allocatable, public, dimension (:) :: diag_files!< History file info
   type(diagYamlFilesVar_type), allocatable, private, dimension (:) :: diag_fields !< Diag fields info
   contains
+  procedure :: size_diag_files
+
   procedure :: get_title        !< Returns the title
   procedure :: get_basedate     !< Returns the basedate array
   procedure :: get_diag_files   !< Returns the diag_files array
@@ -213,7 +217,7 @@ type diagYamlObject_type
 
 end type diagYamlObject_type
 
-type (diagYamlObject_type) :: diag_yaml  !< Obj containing the contents of the diag_table.yaml
+type (diagYamlObject_type), target :: diag_yaml  !< Obj containing the contents of the diag_table.yaml
 type (varList_type), save :: variable_list !< List of all the variables in the diag_table.yaml
 type (fileList_type), save :: file_list !< List of all files in the diag_table.yaml
 
@@ -239,6 +243,17 @@ result (diag_basedate)
 
   diag_basedate = diag_yaml%diag_basedate
 end function get_basedate
+
+!> @brief Find the number of files listed in the diag yaml
+!! @return the number of files in the diag yaml
+pure integer function size_diag_files(diag_yaml)
+  class (diagYamlObject_type), intent(in) :: diag_yaml      !< The diag_yaml
+  if (diag_yaml%has_diag_files()) then
+    size_diag_files = size(diag_yaml%diag_files)
+  else
+    size_diag_files = 0
+  endif
+end function size_diag_files
 
 !> @brief get the title of a diag_yaml type
 !! @return the title of the diag table as an allocated string
@@ -377,8 +392,9 @@ subroutine diag_yaml_object_init(diag_subset_output)
       !> Save the variable name in the diag_file type
       diag_yaml%diag_files(file_count)%file_varlist(file_var_count) = diag_yaml%diag_fields(var_count)%var_varname
 
-      !> Save the variable name in the variable_list
-      variable_list%var_name(var_count) = trim(diag_yaml%diag_fields(var_count)%var_varname)//c_null_char
+      !> Save the variable name and the module name in the variable_list
+      variable_list%var_name(var_count) = trim(diag_yaml%diag_fields(var_count)%var_varname)//&
+                                        ":"//trim(diag_yaml%diag_fields(var_count)%var_module)//c_null_char
       variable_list%diag_field_indices(var_count) = var_count
     enddo nvars_loop
     deallocate(var_ids)
@@ -742,6 +758,13 @@ result(is_valid)
 end function is_valid_time_units
 
 !!!!!!! YAML FILE INQUIRIES !!!!!!!
+!> @brief Finds the number of variables in the file_varlist
+!! @return the size of the diag_files_obj%file_varlist array
+integer pure function size_file_varlist (diag_files_obj)
+ class (diagYamlFiles_type), intent(in) :: diag_files_obj !< The object being inquiried
+ size_file_varlist = size(diag_files_obj%file_varlist)
+end function size_file_varlist
+
 !> @brief Inquiry for diag_files_obj%file_fname
 !! @return file_fname of a diag_yaml_file obj
 pure function get_file_fname (diag_files_obj) &
@@ -1171,15 +1194,16 @@ end function get_num_unique_fields
 
 !> @brief Determines if a diag_field is in the diag_yaml_object
 !! @return Indices of the locations where the field was found
-function find_diag_field(diag_field_name) &
+function find_diag_field(diag_field_name, module_name) &
 result(indices)
 
   character(len=*), intent(in) :: diag_field_name !< diag_field name to search for
+  character(len=*), intent(in) :: module_name     !< Name of the module, the variable is in
 
   integer, allocatable :: indices(:)
 
   indices = fms_find_my_string(variable_list%var_pointer, size(variable_list%var_pointer), &
-                               & diag_field_name//c_null_char)
+                               & trim(diag_field_name)//":"//trim(module_name)//c_null_char)
 end function find_diag_field
 
 !> @brief Gets the diag_field entries corresponding to the indices of the sorted variable_list
@@ -1202,40 +1226,41 @@ function get_diag_fields_entries(indices) &
 
 end function get_diag_fields_entries
 
-!> @brief Gets the diag_files entries corresponding to the indices of the sorted variable_list
-!! @return Array of diag_files
-function get_diag_files_entries(indices) &
-  result(diag_file)
+!> @brief Finds the indices of the diag_yaml%diag_files(:) corresponding to fields in variable_list(indices)
+!! @return indices of the diag_yaml%diag_files(:)
+function get_diag_files_id(indices) &
+  result(file_id)
 
   integer, intent(in) :: indices(:) !< Indices of the field in the sorted variable_list
-  type(diagYamlFiles_type), dimension (:), allocatable :: diag_file
+  integer, allocatable :: file_id(:)
 
+  integer :: field_id !< Indices of the field in the diag_yaml field array
   integer :: i !< For do loops
-  integer :: field_id !< Indices of the field in the diag_yaml array
-  integer :: file_id !< Indices of the file in the diag_yaml array
   character(len=120) :: filename !< Filename of the field
   integer, allocatable :: file_indices(:) !< Indices of the file in the sorted variable_list
 
-  allocate(diag_file(size(indices)))
+  allocate(file_id(size(indices)))
 
   do i = 1, size(indices)
     field_id = variable_list%diag_field_indices(indices(i))
+    !< Get the filename of the field
     filename = diag_yaml%diag_fields(field_id)%var_fname
 
+    !< File indice of that file in the array of list of sorted files
     file_indices = fms_find_my_string(file_list%file_pointer, size(file_list%file_pointer), &
       & trim(filename)//c_null_char)
 
     if (size(file_indices) .ne. 1) &
-      & call mpp_error(FATAL, "get_diag_files_entries: Error getting the correct number of file indices!")
+      & call mpp_error(FATAL, "get_diag_files_id: Error getting the correct number of file indices!")
 
     if (file_indices(1) .eq. diag_null) &
-      & call mpp_error(FATAL, "get_diag_files_entries: Error finding the filename in the diag_files")
+      & call mpp_error(FATAL, "get_diag_files_id: Error finding the filename in the diag_files yaml")
 
-    file_id = file_list%diag_file_indices(file_indices(1))
-    diag_file(i) = diag_yaml%diag_files(file_id)
+    !< Get the index of the file in the diag_yaml file
+    file_id(i) = file_list%diag_file_indices(file_indices(1))
   end do
 
-end function get_diag_files_entries
+end function get_diag_files_id
 #endif
 end module fms_diag_yaml_mod
 !> @}

@@ -26,9 +26,6 @@
 !! Users first create axis ID by calling diag_axis_init, then use this axis ID in
 !! register_diag_field.
 
-!> @file
-!> @brief File for @ref diag_axis_mod
-
 !> @addtogroup diag_axis_mod
 !> @{
 MODULE diag_axis_mod
@@ -42,7 +39,8 @@ use platform_mod
        & fms_error_handler, FATAL, NOTE
   USE diag_data_mod, ONLY: diag_axis_type, max_subaxes, max_axes,&
        & max_num_axis_sets, max_axis_attributes, debug_diag_manager,&
-       & first_send_data_call, diag_atttype
+       & first_send_data_call, diag_atttype, use_modern_diag
+  USE fms_diag_axis_object_mod, ONLY: fms_diag_axis_init, fms_diag_axis_add_attribute
 #ifdef use_netCDF
   USE netcdf, ONLY: NF90_INT, NF90_FLOAT, NF90_CHAR
 #endif
@@ -113,7 +111,7 @@ CONTAINS
   INTEGER FUNCTION diag_axis_init(name, DATA, units, cart_name, long_name, direction,&
        & set_name, edges, Domain, Domain2, DomainU, aux, req, tile_count, domain_position )
     CHARACTER(len=*), INTENT(in) :: name !< Short name for axis
-    REAL, DIMENSION(:), INTENT(in) :: DATA !< Array of coordinate values
+    CLASS(*), DIMENSION(:), INTENT(in) :: DATA !< Array of coordinate values
     CHARACTER(len=*), INTENT(in) :: units !< Units for the axis
     CHARACTER(len=*), INTENT(in) :: cart_name !< Cartesian axis ("X", "Y", "Z", "T")
     CHARACTER(len=*), INTENT(in), OPTIONAL :: long_name !< Long name for the axis.
@@ -139,6 +137,12 @@ CONTAINS
        CALL write_version_number("DIAG_AXIS_MOD", version)
     ENDIF
 
+    if (use_modern_diag) then
+      diag_axis_init = fms_diag_axis_init(name, DATA, units, cart_name, long_name=long_name, direction=direction,&
+       & set_name=set_name, edges=edges, Domain=Domain, Domain2=Domain2, DomainU=DomainU, aux=aux, req=req, &
+       & tile_count=tile_count, domain_position=domain_position )
+      return
+    endif
     IF ( PRESENT(tile_count)) THEN
        tile = tile_count
     ELSE
@@ -231,7 +235,15 @@ CONTAINS
 
     ! Initialize Axes(diag_axis_init)
     Axes(diag_axis_init)%name   = TRIM(name)
-    Axes(diag_axis_init)%data   = DATA(1:axlen)
+    SELECT TYPE (DATA)
+    TYPE IS (real(kind=r4_kind))
+       Axes(diag_axis_init)%data = DATA(1:axlen)
+    TYPE IS (real(kind=r8_kind))
+       Axes(diag_axis_init)%data = real(DATA(1:axlen))
+    CLASS DEFAULT
+       CALL error_mesg('diag_axis_mod::diag_axis_init',&
+            & 'The axis data is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)
+    END SELECT
     Axes(diag_axis_init)%units  = units
     Axes(diag_axis_init)%length = axlen
     Axes(diag_axis_init)%set    = set
@@ -460,7 +472,7 @@ CONTAINS
     INTEGER, INTENT(out) :: direction !< Direction of data. (See <TT>@ref diag_axis_init</TT> for a description of
                                       !! allowed values)
     INTEGER, INTENT(out) :: edges !< Axis ID for the previously defined "edges axis".
-    REAL, DIMENSION(:), INTENT(out) :: DATA !< Array of coordinate values for this axis.
+    CLASS(*), DIMENSION(:), INTENT(out) :: DATA !< Array of coordinate values for this axis.
     INTEGER, INTENT(out), OPTIONAL :: num_attributes
     TYPE(diag_atttype), ALLOCATABLE, DIMENSION(:), INTENT(out), OPTIONAL :: attributes
     INTEGER, INTENT(out), OPTIONAL :: domain_position
@@ -481,7 +493,15 @@ CONTAINS
        ! <ERROR STATUS="FATAL">array data is too small.</ERROR>
        CALL error_mesg('diag_axis_mod::get_diag_axis', 'array data is too small', FATAL)
     ELSE
-       DATA(1:Axes(id)%length) = Axes(id)%data(1:Axes(id)%length)
+       SELECT TYPE (DATA)
+       TYPE IS (real(kind=r4_kind))
+          DATA(1:Axes(id)%length) = real(Axes(id)%data(1:Axes(id)%length), kind=r4_kind)
+       TYPE IS (real(kind=r8_kind))
+          DATA(1:Axes(id)%length) = Axes(id)%data(1:Axes(id)%length)
+       CLASS DEFAULT
+          CALL error_mesg('diag_axis_mod::get_diag_axis',&
+               & 'The axis data is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)
+       END SELECT
     END IF
     IF ( PRESENT(num_attributes) ) THEN
        num_attributes = Axes(id)%num_attributes
@@ -1029,7 +1049,11 @@ CONTAINS
     CHARACTER(len=*), INTENT(in) :: att_name
     REAL, INTENT(in) :: att_value
 
-    CALL diag_axis_add_attribute_r1d(diag_axis_id, att_name, (/ att_value /))
+    if (use_modern_diag) then
+      call fms_diag_axis_add_attribute(diag_axis_id, att_name, (/ att_value /))
+    else
+      CALL diag_axis_add_attribute_r1d(diag_axis_id, att_name, (/ att_value /))
+    endif
   END SUBROUTINE diag_axis_add_attribute_scalar_r
 
   SUBROUTINE diag_axis_add_attribute_scalar_i(diag_axis_id, att_name, att_value)
@@ -1037,7 +1061,11 @@ CONTAINS
     CHARACTER(len=*), INTENT(in) :: att_name
     INTEGER, INTENT(in) :: att_value
 
-    CALL diag_axis_add_attribute_i1d(diag_axis_id, att_name, (/ att_value /))
+    if (use_modern_diag) then
+      call fms_diag_axis_add_attribute(diag_axis_id, att_name, (/ att_value /))
+    else
+      CALL diag_axis_add_attribute_i1d(diag_axis_id, att_name, (/ att_value /))
+    endif
   END SUBROUTINE diag_axis_add_attribute_scalar_i
 
   SUBROUTINE diag_axis_add_attribute_scalar_c(diag_axis_id, att_name, att_value)
@@ -1045,7 +1073,11 @@ CONTAINS
     CHARACTER(len=*), INTENT(in) :: att_name
     CHARACTER(len=*), INTENT(in) :: att_value
 
-    CALL diag_axis_attribute_init(diag_axis_id, att_name, NF90_CHAR, cval=att_value)
+    if (use_modern_diag) then
+      call fms_diag_axis_add_attribute(diag_axis_id, att_name, (/ att_value /))
+    else
+      CALL diag_axis_attribute_init(diag_axis_id, att_name, NF90_CHAR, cval=att_value)
+    endif
   END SUBROUTINE diag_axis_add_attribute_scalar_c
 
   SUBROUTINE diag_axis_add_attribute_r1d(diag_axis_id, att_name, att_value)
@@ -1053,15 +1085,22 @@ CONTAINS
     CHARACTER(len=*), INTENT(in) :: att_name
     REAL, DIMENSION(:), INTENT(in) :: att_value
 
-    CALL diag_axis_attribute_init(diag_axis_id, att_name, NF90_FLOAT, rval=att_value)
+    if (use_modern_diag) then
+      call fms_diag_axis_add_attribute(diag_axis_id, att_name, att_value)
+    else
+      CALL diag_axis_attribute_init(diag_axis_id, att_name, NF90_FLOAT, rval=att_value)
+    endif
   END SUBROUTINE diag_axis_add_attribute_r1d
 
   SUBROUTINE diag_axis_add_attribute_i1d(diag_axis_id, att_name, att_value)
     INTEGER, INTENT(in) :: diag_axis_id
     CHARACTER(len=*), INTENT(in) :: att_name
     INTEGER, DIMENSION(:), INTENT(in) :: att_value
-
-    CALL diag_axis_attribute_init(diag_axis_id, att_name, NF90_INT, ival=att_value)
+    if (use_modern_diag) then
+      call fms_diag_axis_add_attribute(diag_axis_id, att_name, att_value)
+    else
+      CALL diag_axis_attribute_init(diag_axis_id, att_name, NF90_INT, ival=att_value)
+    endif
   END SUBROUTINE diag_axis_add_attribute_i1d
 
   !> @brief Allocates memory in out_file for the attributes.  Will <TT>FATAL</TT> if err_msg is not included

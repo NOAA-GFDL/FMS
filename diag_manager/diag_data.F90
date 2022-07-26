@@ -43,9 +43,6 @@
 !!   field with the input_field index, and to the output file with the output_file
 !!   index.
 
-!> @file
-!> @brief File for @ref diag_data_mod
-
 !> @addtogroup diag_data_mod
 !> @{
 MODULE diag_data_mod
@@ -101,6 +98,12 @@ use platform_mod
   INTEGER, PARAMETER :: DIAG_SECONDS = 1, DIAG_MINUTES = 2, DIAG_HOURS = 3
   INTEGER, PARAMETER :: DIAG_DAYS = 4, DIAG_MONTHS = 5, DIAG_YEARS = 6
   INTEGER, PARAMETER :: MAX_SUBAXES = 10
+  INTEGER, PARAMETER :: NO_DOMAIN    = 1 !< Use the FmsNetcdfFile_t fileobj
+  INTEGER, PARAMETER :: TWO_D_DOMAIN = 2 !< Use the FmsNetcdfDomainFile_t fileobj
+  INTEGER, PARAMETER :: UG_DOMAIN    = 3 !< Use the FmsNetcdfUnstructuredDomainFile_t fileobj
+  INTEGER, PARAMETER :: SUB_REGIONAL = 4 !< This is a file with a sub_region use the FmsNetcdfFile_t fileobj
+  INTEGER, PARAMETER :: DIRECTION_UP   = 1  !< The axis points up if positive
+  INTEGER, PARAMETER :: DIRECTION_DOWN = -1 !< The axis points down if positive
   INTEGER, PARAMETER :: GLO_REG_VAL = -999 !< Value used in the region specification of the diag_table
                                            !! to indicate to use the full axis instead of a sub-axis
   INTEGER, PARAMETER :: GLO_REG_VAL_ALT = -1 !< Alternate value used in the region specification of the
@@ -309,6 +312,15 @@ use platform_mod
      CHARACTER(len=128)   :: tile_name='N/A'
   END TYPE diag_global_att_type
 
+  !> @brief Type to hold the attributes of the field/axis/file
+  !> @ingroup diag_data_mod
+  type fmsDiagAttribute_type
+    class(*), allocatable         :: att_value(:) !< Value of the attribute
+    character(len=:), allocatable :: att_name     !< Name of the attribute
+
+    contains
+      procedure :: add => fms_add_attribute
+  end type fmsDiagAttribute_type
 ! Include variable "version" to be written to log file.
 #include<file_version.h>
 
@@ -520,6 +532,34 @@ CONTAINS
     integer :: res
     res = base_second
   end function get_base_second
+
+  subroutine fms_add_attribute(obj, att_name, att_value)
+    class(fmsDiagAttribute_type), intent(inout) :: obj          !< Diag attribute type
+    character(len=*),             intent(in)    :: att_name     !< Name of the attribute
+    class(*),                     intent(in)    :: att_value(:) !< The attribute value to add
+
+    integer :: natt !< the size of att_value
+
+    natt = size(att_value)
+    obj%att_name = att_name
+    select type (att_value)
+    type is (integer(kind=i4_kind))
+      allocate(integer(kind=i4_kind) :: obj%att_value(natt))
+      obj%att_value = att_value
+    type is (integer(kind=i8_kind))
+      allocate(integer(kind=i8_kind) :: obj%att_value(natt))
+      obj%att_value = att_value
+    type is (real(kind=r4_kind))
+      allocate(real(kind=r4_kind) :: obj%att_value(natt))
+      obj%att_value = att_value
+    type is (real(kind=r8_kind))
+      allocate(real(kind=r8_kind) :: obj%att_value(natt))
+      obj%att_value = att_value
+    type is (character(len=*))
+      allocate(character(len=len(att_value)) :: obj%att_value(natt))
+      obj%att_value = att_value
+    end select
+  end subroutine fms_add_attribute
 END MODULE diag_data_mod
 !> @}
 ! close documentation grouping

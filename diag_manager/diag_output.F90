@@ -23,9 +23,6 @@
 !!   field-meta-data and field data.
 !! @author Seth Underwood
 
-!> @file
-!> @brief File for @ref diag_output_mod
-
 !> @addtogroup diag_output_mod
 !> @{
 MODULE diag_output_mod

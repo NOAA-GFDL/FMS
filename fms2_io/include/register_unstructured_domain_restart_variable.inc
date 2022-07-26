@@ -17,7 +17,11 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 !> @file
-!> @ingroup fms_netcdf_unstructured_domain_io_mod
+!> @brief Adds restart variable for unstructured domains for different dimension to be used in
+!! the @ref register_restart_field interface
+
+!> @addtogroup fms2_io_mod
+!> @{
 
 !> @brief Add a domain decomposed variable.
 subroutine register_unstructured_domain_restart_variable_0d(fileobj, variable_name, vdata, &
@@ -107,3 +111,4 @@ subroutine register_unstructured_domain_restart_variable_5d(fileobj, variable_na
 
   call netcdf_add_restart_variable(fileobj, variable_name, vdata, dimensions, is_optional)
 end subroutine register_unstructured_domain_restart_variable_5d
+!> @}

@@ -44,9 +44,6 @@
 !! Alle benotigten Felder werden extern von MOM verwaltet, da sie
 !! nicht fur alle interpolierten Daten die gleiche Dimension haben mussen.
 
-!> @file
-!> @brief File for @ref horiz_interp_bicubic_mod
-
 module horiz_interp_bicubic_mod
 
   use mpp_mod,               only: mpp_error, FATAL, stdout, mpp_pe, mpp_root_pe

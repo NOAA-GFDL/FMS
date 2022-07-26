@@ -56,6 +56,7 @@ type(diagYamlFiles_type), allocatable, dimension (:) :: diag_files !< Files from
 type(diagYamlFilesVar_type), allocatable, dimension(:) :: diag_fields !< Fields from the diag_yaml
 type(diagYamlObject_type) :: my_yaml !< diagYamlObject obtained from diag_yaml_object_init
 type(diagYamlObject_type) :: ans     !< expected diagYamlObject
+integer, ALLOCATABLE :: diag_files_ids(:) !< Ids of the diag_files
 #endif
 
 namelist / check_crashes_nml / checking_crashes
@@ -96,7 +97,7 @@ if (.not. checking_crashes) then
   deallocate(diag_files)
   deallocate(diag_fields)
 
-  indices = find_diag_field("sst")
+  indices = find_diag_field("sst", "test_diag_manager_mod")
   print *, "sst was found in ", indices
   if (size(indices) .ne. 2) &
     call mpp_error(FATAL, 'sst was supposed to be found twice!')
@@ -109,14 +110,18 @@ if (.not. checking_crashes) then
   call compare_result("sst - fieldname", diag_fields(2)%get_var_varname(), "sst")
   deallocate(diag_fields)
 
-  diag_files = get_diag_files_entries(indices)
+  diag_files_ids = get_diag_files_id(indices)
+  allocate(diag_files(size(diag_files_ids)))
+
+  diag_files(1) = my_yaml%diag_files(diag_files_ids(1))
+  diag_files(2) = my_yaml%diag_files(diag_files_ids(2))
   call compare_result("sst - nfiles", size(diag_files), 2)
   call compare_result("sst - filename", diag_files(1)%get_file_fname(), "normal")
   call compare_result("sst - filename", diag_files(2)%get_file_fname(), "wild_card_name%4yr%2mo%2dy%2hr")
   deallocate(diag_files)
   deallocate(indices)
 
-  indices = find_diag_field("sstt")
+  indices = find_diag_field("sstt", "test_diag_manager_mod")
   print *, "sstt was found in ", indices
   if (size(indices) .ne. 1) &
     call mpp_error(FATAL, 'sstt was supposed to be found twice!')
@@ -124,12 +129,12 @@ if (.not. checking_crashes) then
     call mpp_error(FATAL, 'sstt was supposed to be found in indices 1 and 2')
   deallocate(indices)
 
-  indices = find_diag_field("sstt2") !< This is in diag_table but it has write_var = false
+  indices = find_diag_field("sstt2", "test_diag_manager_mod") !< This is in diag_table but it has write_var = false
   print *, "sstt2 was found in ", indices
   if (indices(1) .ne. -999) &
     call mpp_error(FATAL, "sstt2 is not in the diag_table!")
 
-  indices = find_diag_field("tamales")
+  indices = find_diag_field("tamales", "test_diag_manager_mod")
   print *, "tamales was found in ", indices
   if (indices(1) .ne. -999) &
     call mpp_error(FATAL, "tamales is not in the diag_table!")

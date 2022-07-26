@@ -16,8 +16,11 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
-! This subroutine pass data from unstructured domain2d to domain.
-! First only implement for data at grid cell center.
+!> @addtogroup mpp_domains_mod
+!> @{
+
+!> This subroutine pass data from unstructured domain2d to domain.
+!! First only implement for data at grid cell center.
 SUBROUTINE mpp_pass_SG_to_UG_2D_(UG_domain, field_SG, field_UG)
   type(domainUG), intent(in) :: UG_domain
   MPP_TYPE_,          intent(inout) :: field_UG(:)
@@ -119,8 +122,8 @@ SUBROUTINE mpp_pass_SG_to_UG_3D_(UG_domain, field_SG, field_UG)
 end SUBROUTINE mpp_pass_SG_to_UG_3D_
 
 
-! This subroutine pass data from unstructured domain2d to domain.
-! First only implement for data at grid cell center.
+!> This subroutine pass data from unstructured domain2d to domain.
+!! First only implement for data at grid cell center.
 SUBROUTINE mpp_pass_UG_to_SG_2D_(UG_domain, field_UG, field_SG)
   type(domainUG), intent(in) :: UG_domain
   MPP_TYPE_,             intent(in) :: field_UG(:)
@@ -221,3 +224,4 @@ SUBROUTINE mpp_pass_UG_to_SG_3D_(UG_domain, field_UG, field_SG)
   call mpp_sync_self( )
 
 end SUBROUTINE mpp_pass_UG_to_SG_3D_
+!> @}

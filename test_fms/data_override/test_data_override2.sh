@@ -49,11 +49,11 @@ _EOF
 touch input.nml
 cat <<_EOF > data_table.yaml
 data_table:
- - gridname          : "OCN"
-   fieldname_code    : "runoff"
-   fieldname_file    : "runoff"
-   file_name         : "INPUT/runoff.daitren.clim.1440x1080.v20180328.nc"
-   interpol_method   : "none"
+ - gridname          : OCN
+   fieldname_code    : runoff
+   fieldname_file    : runoff
+   file_name         : INPUT/runoff.daitren.clim.1440x1080.v20180328.nc
+   interpol_method   : none
    factor            : 1.0
 _EOF
 

@@ -19,10 +19,12 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
+!> @addtogroup mpp_domains_mod
+!> @{
 
+    !> Gets a global field from a local field
+    !! local field may be on compute OR data domain
     subroutine MPP_DO_GLOBAL_FIELD_3D_AD_( domain, local, global, tile, ishift, jshift, flags, default_data)
-!get a global field from a local field
-!local field may be on compute OR data domain
       type(domain2D), intent(in)    :: domain
       MPP_TYPE_, intent(inout)         ::  local(:,:,:)
       integer, intent(in)           :: tile, ishift, jshift
@@ -278,3 +280,4 @@
 
       return
     end subroutine MPP_DO_GLOBAL_FIELD_3D_AD_
+!> @}

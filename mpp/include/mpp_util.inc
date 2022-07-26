@@ -20,8 +20,10 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 !> @file
-!> @ingroup mpp_mod
 !> @brief General utility functions for use in @ref mpp_mod
+
+!> @addtogroup mpp_mod
+!> @{
 
 #if defined(use_libMPI)
 #include <mpp_util_mpi.inc>
@@ -29,18 +31,6 @@
 #include <mpp_util_nocomm.inc>
 #endif
 
-  !#####################################################################
-  ! <FUNCTION NAME="stdin">
-  !  <OVERVIEW>
-  !    Standard fortran unit numbers.
-  !  </OVERVIEW>
-  !  <DESCRIPTION>
-  !    This function returns the current standard fortran unit numbers for input.
-  !  </DESCRIPTION>
-  !  <TEMPLATE>
-  !   stdin()
-  !  </TEMPLATE>
-  ! </FUNCTION>
   !> @brief This function returns the current standard fortran unit numbers for input.
   function stdin()
     integer :: stdin
@@ -48,18 +38,6 @@
     return
   end function stdin
 
-  !#####################################################################
-  ! <FUNCTION NAME="stdout">
-  !  <OVERVIEW>
-  !    Standard fortran unit numbers.
-  !  </OVERVIEW>
-  !  <DESCRIPTION>
-  !    This function returns the current  standard fortran unit numbers for output.
-  !  </DESCRIPTION>
-  !  <TEMPLATE>
-  !   stdout()
-  !  </TEMPLATE>
-  ! </FUNCTION>
   !> @brief This function returns the current  standard fortran unit numbers for output.
   function stdout()
     integer :: stdout
@@ -68,18 +46,6 @@
     return
   end function stdout
 
-  !#####################################################################
-  ! <FUNCTION NAME="stderr">
-  !  <OVERVIEW>
-  !    Standard fortran unit numbers.
-  !  </OVERVIEW>
-  !  <DESCRIPTION>
-  !    This function returns the current standard fortran unit numbers for error messages.
-  !  </DESCRIPTION>
-  !  <TEMPLATE>
-  !   stderr()
-  !  </TEMPLATE>
-  ! </FUNCTION>
   !> @brief This function returns the current standard fortran unit numbers for error messages.
   function stderr()
     integer :: stderr
@@ -87,19 +53,6 @@
     return
   end function stderr
 
-  !#####################################################################
-  ! <FUNCTION NAME="stdlog">
-  !  <OVERVIEW>
-  !    Standard fortran unit numbers.
-  !  </OVERVIEW>
-  !  <DESCRIPTION>
-  !    This function returns the current  standard fortran unit numbers for log messages.
-  !    Log messages, by convention, are written to the file <TT>logfile.out</TT>.
-  !  </DESCRIPTION>
-  !  <TEMPLATE>
-  !    stdlog()
-  !  </TEMPLATE>
-  ! </FUNCTION>
   !> @brief This function returns the current  standard fortran unit numbers for log messages.
   !!    Log messages, by convention, are written to the file <TT>logfile.out</TT>.
   function stdlog()
@@ -415,23 +368,8 @@ integer :: i, len_tmp, len_string
 
 end function rarray_to_char
 
-  !#####################################################################
-  ! <FUNCTION NAME="mpp_pe">
-  !  <OVERVIEW>
-  !    Returns processor ID.
-  !  </OVERVIEW>
-  !  <DESCRIPTION>
-  !    This returns the unique ID associated with a PE. This number runs
-  !    between 0 and <TT>npes-1</TT>, where <TT>npes</TT> is the total
-  !    processor count, returned by <TT>mpp_npes</TT>. For a uniprocessor
-  !    application this will always return 0.
-  !  </DESCRIPTION>
-  !  <TEMPLATE>
-  !    mpp_pe()
-  !  </TEMPLATE>
-  ! </FUNCTION>
-
   !> @brief Returns processor ID.
+  !!
   !> This returns the unique ID associated with a PE. This number runs
   !! between 0 and <TT>npes-1</TT>, where <TT>npes</TT> is the total
   !! processor count, returned by <TT>mpp_npes</TT>. For a uniprocessor
@@ -445,18 +383,7 @@ end function rarray_to_char
   end function mpp_pe
 
   !#####################################################################
-  ! <FUNCTION NAME="mpp_npes">
-  !  <OVERVIEW>
-  !    Returns processor count for current pelist.
-  !  </OVERVIEW>
-  !  <DESCRIPTION>
-  !    This returns the number of PEs in the current pelist. For a
-  !    uniprocessor application, this will always return 1.
-  !  </DESCRIPTION>
-  !  <TEMPLATE>
-  !    mpp_npes()
-  !  </TEMPLATE>
-  ! </FUNCTION>
+
   !> @brief Returns processor count for current pelist
   !!
   !> This returns the number of PEs in the current pelist. For a uniprocessor application,
@@ -489,29 +416,18 @@ end function rarray_to_char
     return
   end subroutine mpp_set_root_pe
 
-  !#####################################################################
-  ! <SUBROUTINE NAME="mpp_declare_pelist">
-  !  <OVERVIEW>
-  !    Declare a pelist.
-  !  </OVERVIEW>
-  !  <DESCRIPTION>
-  !    This call is written specifically to accommodate a MPI restriction
-  !    that requires a parent communicator to create a child communicator, In
-  !    other words: a pelist cannot go off and declare a communicator, but
-  !    every PE in the parent, including those not in pelist(:), must get
-  !    together for the <TT>MPI_COMM_CREATE</TT> call. The parent is
-  !    typically <TT>MPI_COMM_WORLD</TT>, though it could also be a subset
-  !    that includes all PEs in <TT>pelist</TT>.
-  !
-  !    This call implies synchronization across the PEs in the current
-  !    pelist, of which <TT>pelist</TT> is a subset.
-  !  </DESCRIPTION>
-  !  <TEMPLATE>
-  !   call mpp_declare_pelist( pelist,name )
-  !  </TEMPLATE>
-  !  <IN NAME="pelist" DIM="(:)" TYPE="integer"></IN>
-  ! </SUBROUTINE>
-
+  !> @brief Declare a pelist.
+  !!
+  !> This call is written specifically to accommodate a MPI restriction
+  !! that requires a parent communicator to create a child communicator, In
+  !! other words: a pelist cannot go off and declare a communicator, but
+  !! every PE in the parent, including those not in pelist(:), must get
+  !! together for the <TT>MPI_COMM_CREATE</TT> call. The parent is
+  !! typically <TT>MPI_COMM_WORLD</TT>, though it could also be a subset
+  !! that includes all PEs in <TT>pelist</TT>.
+  !!
+  !! This call implies synchronization across the PEs in the current
+  !! pelist, of which <TT>pelist</TT> is a subset.
   subroutine mpp_declare_pelist( pelist, name )
     integer,                    intent(in) :: pelist(:)
     character(len=*), intent(in), optional :: name
@@ -525,29 +441,19 @@ end function rarray_to_char
   end subroutine mpp_declare_pelist
 
   !#####################################################################
-  ! <SUBROUTINE NAME="mpp_set_current_pelist">
-  !  <OVERVIEW>
-  !    Set context pelist.
-  !  </OVERVIEW>
-  !  <DESCRIPTION>
-  !    This call sets the value of the current pelist, which is the
-  !    context for all subsequent "global" calls where the optional
-  !    <TT>pelist</TT> argument is omitted. All the PEs that are to be in the
-  !    current pelist must call it.
-  !
-  !    In MPI, this call may hang unless <TT>pelist</TT> has been previous
-  !    declared using <LINK
-  !    SRC="#mpp_declare_pelist"><TT>mpp_declare_pelist</TT></LINK>.
-  !
-  !    If the argument <TT>pelist</TT> is absent, the current pelist is
-  !    set to the "world" pelist, of all PEs in the job.
-  !  </DESCRIPTION>
-  !  <TEMPLATE>
-  !    call mpp_set_current_pelist( pelist )
-  !  </TEMPLATE>
-  !  <IN NAME="pliest" TYPE="integer"></IN>
-  ! </SUBROUTINE>
 
+  !> @brief Set context pelist
+  !!
+  !! This call sets the value of the current pelist, which is the
+  !! context for all subsequent "global" calls where the optional
+  !! <TT>pelist</TT> argument is omitted. All the PEs that are to be in the
+  !! current pelist must call it.
+  !!
+  !! In MPI, this call may hang unless <TT>pelist</TT> has been previous
+  !! declared using @ref mpp_declare_pelist
+  !!
+  !! If the argument <TT>pelist</TT> is absent, the current pelist is
+  !! set to the "world" pelist, of all PEs in the job.
   subroutine mpp_set_current_pelist( pelist, no_sync )
     !Once we branch off into a PE subset, we want subsequent "global" calls to
     !sync only across this subset. This is declared as the current pelist (peset(current_peset_num)%list)
@@ -604,110 +510,101 @@ end function rarray_to_char
   !                        PERFORMANCE PROFILING CALLS                          !
   !                                                                             !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  ! <SUBROUTINE NAME="mpp_clock_set_grain">
-  !  <OVERVIEW>
-  !    Set the level of granularity of timing measurements.
-  !  </OVERVIEW>
-  !  <DESCRIPTION>
-  !    This routine and three other routines, mpp_clock_id, mpp_clock_begin(id),
-  !    and mpp_clock_end(id) may be used to time parallel code sections, and
-  !    extract parallel statistics. Clocks are identified by names, which
-  !    should be unique in the first 32 characters. The <TT>mpp_clock_id</TT>
-  !    call initializes a clock of a given name and returns an integer
-  !    <TT>id</TT>. This <TT>id</TT> can be used by subsequent
-  !    <TT>mpp_clock_begin</TT> and <TT>mpp_clock_end</TT> calls set around a
-  !    code section to be timed. Example:
-  !    <PRE>
-  !    integer :: id
-  !    id = mpp_clock_id( 'Atmosphere' )
-  !    call mpp_clock_begin(id)
-  !    call atmos_model()
-  !    call mpp_clock_end()
-  !    </PRE>
-  !     Two flags may be used to alter the behaviour of
-  !     <TT>mpp_clock</TT>. If the flag <TT>MPP_CLOCK_SYNC</TT> is turned on
-  !     by <TT>mpp_clock_id</TT>, the clock calls <TT>mpp_sync</TT> across all
-  !     the PEs in the current pelist at the top of the timed code section,
-  !     but allows each PE to complete the code section (and reach
-  !     <TT>mpp_clock_end</TT>) at different times. This allows us to measure
-  !     load imbalance for a given code section. Statistics are written to
-  !     <TT>stdout</TT> by <TT>mpp_exit</TT>.
-  !
-  !     The flag <TT>MPP_CLOCK_DETAILED</TT> may be turned on by
-  !     <TT>mpp_clock_id</TT> to get detailed communication
-  !     profiles. Communication events of the types <TT>SEND, RECV, BROADCAST,
-  !     REDUCE</TT> and <TT>WAIT</TT> are separately measured for data volume
-  !     and time. Statistics are written to <TT>stdout</TT> by
-  !     <TT>mpp_exit</TT>, and individual PE info is also written to the file
-  !     <TT>mpp_clock.out.####</TT> where <TT>####</TT> is the PE id given by
-  !     <TT>mpp_pe</TT>.
-  !
-  !     The flags <TT>MPP_CLOCK_SYNC</TT> and <TT>MPP_CLOCK_DETAILED</TT> are
-  !     integer parameters available by use association, and may be summed to
-  !     turn them both on.
-  !
-  !     While the nesting of clocks is allowed, please note that turning on
-  !     the non-optional flags on inner clocks has certain subtle issues.
-  !     Turning on <TT>MPP_CLOCK_SYNC</TT> on an inner
-  !     clock may distort outer clock measurements of load imbalance. Turning
-  !     on <TT>MPP_CLOCK_DETAILED</TT> will stop detailed measurements on its
-  !     outer clock, since only one detailed clock may be active at one time.
-  !     Also, detailed clocks only time a certain number of events per clock
-  !     (currently 40000) to conserve memory. If this array overflows, a
-  !     warning message is printed, and subsequent events for this clock are
-  !     not timed.
-  !
-  !     Timings are done using the <TT>f90</TT> standard
-  !     <TT>SYSTEM_CLOCK</TT> intrinsic.
-  !
-  !     The resolution of SYSTEM_CLOCK is often too coarse for use except
-  !     across large swaths of code. On SGI systems this is transparently
-  !     overloaded with a higher resolution clock made available in a
-  !     non-portable fortran interface made available by
-  !     <TT>nsclock.c</TT>. This approach will eventually be extended to other
-  !     platforms.
-  !
-  !     New behaviour added at the Havana release allows the user to embed
-  !     profiling calls at varying levels of granularity all over the code,
-  !     and for any particular run, set a threshold of granularity so that
-  !     finer-grained clocks become dormant.
-  !
-  !     The threshold granularity is held in the private module variable
-  !     <TT>clock_grain</TT>. This value may be modified by the call
-  !     <TT>mpp_clock_set_grain</TT>, and affect clocks initiated by
-  !     subsequent calls to <TT>mpp_clock_id</TT>. The value of
-  !     <TT>clock_grain</TT> is set to an arbitrarily large number initially.
-  !
-  !     Clocks initialized by <TT>mpp_clock_id</TT> can set a new optional
-  !     argument <TT>grain</TT> setting their granularity level. Clocks check
-  !     this level against the current value of <TT>clock_grain</TT>, and are
-  !     only triggered if they are <I>at or below ("coarser than")</I> the
-  !     threshold. Finer-grained clocks are dormant for that run.
-  !
-  !The following grain levels are pre-defined:
-  !
-  !<pre>
-  !!predefined clock granularities, but you can use any integer
-  !!using CLOCK_LOOP and above may distort coarser-grain measurements
-  !  integer, parameter, public :: CLOCK_COMPONENT=1 !component level, e.g model, exchange
-  !  integer, parameter, public :: CLOCK_SUBCOMPONENT=11 !top level within a model component, e.g dynamics, physics
-  !  integer, parameter, public :: CLOCK_MODULE=21 !module level, e.g main subroutine of a physics module
-  !  integer, parameter, public :: CLOCK_ROUTINE=31 !level of individual subroutine or function
-  !  integer, parameter, public :: CLOCK_LOOP=41 !loops or blocks within a routine
-  !  integer, parameter, public :: CLOCK_INFRA=51 !infrastructure level, e.g halo update
-  !</pre>
-  !
-  !     Note that subsequent changes to <TT>clock_grain</TT> do not
-  !     change the status of already initiated clocks, and that if the
-  !     optional <TT>grain</TT> argument is absent, the clock is always
-  !     triggered. This guarantees backward compatibility.
-  !  </DESCRIPTION>
-  !  <TEMPLATE>
-  !     call mpp_clock_set_grain( grain )
-  !  </TEMPLATE>
-  !  <IN NAME="grain" TYPE="integer"></IN>
-  ! </SUBROUTINE>
 
+  !> @brief Set the level of granularity of timing measurements.
+  !!
+  !> This routine and three other routines, mpp_clock_id, mpp_clock_begin(id),
+  !!    and mpp_clock_end(id) may be used to time parallel code sections, and
+  !!    extract parallel statistics. Clocks are identified by names, which
+  !!    should be unique in the first 32 characters. The <TT>mpp_clock_id</TT>
+  !!    call initializes a clock of a given name and returns an integer
+  !!    <TT>id</TT>. This <TT>id</TT> can be used by subsequent
+  !!    <TT>mpp_clock_begin</TT> and <TT>mpp_clock_end</TT> calls set around a
+  !!    code section to be timed. Example:
+  !!    <PRE>
+  !!    integer :: id
+  !!    id = mpp_clock_id( 'Atmosphere' )
+  !!    call mpp_clock_begin(id)
+  !!    call atmos_model()
+  !!    call mpp_clock_end()
+  !!    </PRE>
+  !!     Two flags may be used to alter the behaviour of
+  !!     <TT>mpp_clock</TT>. If the flag <TT>MPP_CLOCK_SYNC</TT> is turned on
+  !!     by <TT>mpp_clock_id</TT>, the clock calls <TT>mpp_sync</TT> across all
+  !!     the PEs in the current pelist at the top of the timed code section,
+  !!     but allows each PE to complete the code section (and reach
+  !!     <TT>mpp_clock_end</TT>) at different times. This allows us to measure
+  !!     load imbalance for a given code section. Statistics are written to
+  !!     <TT>stdout</TT> by <TT>mpp_exit</TT>.
+  !!
+  !!     The flag <TT>MPP_CLOCK_DETAILED</TT> may be turned on by
+  !!     <TT>mpp_clock_id</TT> to get detailed communication
+  !!     profiles. Communication events of the types <TT>SEND, RECV, BROADCAST,
+  !!     REDUCE</TT> and <TT>WAIT</TT> are separately measured for data volume
+  !!     and time. Statistics are written to <TT>stdout</TT> by
+  !!     <TT>mpp_exit</TT>, and individual PE info is also written to the file
+  !!     <TT>mpp_clock.out.####</TT> where <TT>####</TT> is the PE id given by
+  !!     <TT>mpp_pe</TT>.
+  !!
+  !!     The flags <TT>MPP_CLOCK_SYNC</TT> and <TT>MPP_CLOCK_DETAILED</TT> are
+  !!     integer parameters available by use association, and may be summed to
+  !!     turn them both on.
+  !!
+  !!     While the nesting of clocks is allowed, please note that turning on
+  !!     the non-optional flags on inner clocks has certain subtle issues.
+  !!     Turning on <TT>MPP_CLOCK_SYNC</TT> on an inner
+  !!     clock may distort outer clock measurements of load imbalance. Turning
+  !!     on <TT>MPP_CLOCK_DETAILED</TT> will stop detailed measurements on its
+  !!     outer clock, since only one detailed clock may be active at one time.
+  !!     Also, detailed clocks only time a certain number of events per clock
+  !!     (currently 40000) to conserve memory. If this array overflows, a
+  !!     warning message is printed, and subsequent events for this clock are
+  !!     not timed.
+  !!
+  !!     Timings are done using the <TT>f90</TT> standard
+  !!     <TT>SYSTEM_CLOCK</TT> intrinsic.
+  !!
+  !!     The resolution of SYSTEM_CLOCK is often too coarse for use except
+  !!     across large swaths of code. On SGI systems this is transparently
+  !!     overloaded with a higher resolution clock made available in a
+  !!     non-portable fortran interface made available by
+  !!     <TT>nsclock.c</TT>. This approach will eventually be extended to other
+  !!     platforms.
+  !!
+  !!     New behaviour added at the Havana release allows the user to embed
+  !!     profiling calls at varying levels of granularity all over the code,
+  !!     and for any particular run, set a threshold of granularity so that
+  !!     finer-grained clocks become dormant.
+  !!
+  !!     The threshold granularity is held in the private module variable
+  !!     <TT>clock_grain</TT>. This value may be modified by the call
+  !!     <TT>mpp_clock_set_grain</TT>, and affect clocks initiated by
+  !!     subsequent calls to <TT>mpp_clock_id</TT>. The value of
+  !!     <TT>clock_grain</TT> is set to an arbitrarily large number initially.
+  !!
+  !!     Clocks initialized by <TT>mpp_clock_id</TT> can set a new optional
+  !!     argument <TT>grain</TT> setting their granularity level. Clocks check
+  !!     this level against the current value of <TT>clock_grain</TT>, and are
+  !!     only triggered if they are <I>at or below ("coarser than")</I> the
+  !!     threshold. Finer-grained clocks are dormant for that run.
+  !!
+  !!The following grain levels are pre-defined:
+  !!
+  !!<pre>
+  !!!predefined clock granularities, but you can use any integer
+  !!!using CLOCK_LOOP and above may distort coarser-grain measurements
+  !!  integer, parameter, public :: CLOCK_COMPONENT=1 !component level, e.g model, exchange
+  !!  integer, parameter, public :: CLOCK_SUBCOMPONENT=11 !top level within a model component, e.g dynamics, physics
+  !!  integer, parameter, public :: CLOCK_MODULE=21 !module level, e.g main subroutine of a physics module
+  !!  integer, parameter, public :: CLOCK_ROUTINE=31 !level of individual subroutine or function
+  !!  integer, parameter, public :: CLOCK_LOOP=41 !loops or blocks within a routine
+  !!  integer, parameter, public :: CLOCK_INFRA=51 !infrastructure level, e.g halo update
+  !!</pre>
+  !!
+  !!     Note that subsequent changes to <TT>clock_grain</TT> do not
+  !!     change the status of already initiated clocks, and that if the
+  !!     optional <TT>grain</TT> argument is absent, the clock is always
+  !!     triggered. This guarantees backward compatibility.
   subroutine mpp_clock_set_grain( grain )
     integer, intent(in) :: grain
     !set the granularity of times: only clocks whose grain is lower than
@@ -771,7 +668,7 @@ end function rarray_to_char
   end subroutine clock_init
 
   !#####################################################################
-    !return an ID for a new or existing clock
+  !> Return an ID for a new or existing clock
   function mpp_clock_id( name, flags, grain )
     integer                       :: mpp_clock_id
     character(len=*),  intent(in) :: name
@@ -1165,8 +1062,8 @@ end function rarray_to_char
   end subroutine sum_clock_data
 
   !#####################################################################
-  ! This routine will double the size of peset and copy the original peset data
-  ! into the expanded one. The maximum allowed to expand is PESET_MAX.
+  !> This routine will double the size of peset and copy the original peset data
+  !! into the expanded one. The maximum allowed to expand is PESET_MAX.
   subroutine expand_peset()
      integer :: old_peset_max,n
      type(communicator), allocatable :: peset_old(:)
@@ -1278,16 +1175,14 @@ end function rarray_to_char
 !
 
 !-----------------------------------------------------------------------
-! subroutine READ_INPUT_NML
-!
-!
-! Reads an existing input nml file into a character array and broadcasts
-! it to the non-root mpi-tasks. This allows the use of reads from an
-! internal file for namelist settings (requires 2003 compliant compiler)
-!
-! read(input_nml_file, nml=<name_nml>, iostat=status)
-!
-!
+
+!> Reads an existing input nml file into a character array and broadcasts
+!! it to the non-root mpi-tasks. This allows the use of reads from an
+!! internal file for namelist settings (requires 2003 compliant compiler)
+!!
+!! read(input_nml_file, nml=<name_nml>, iostat=status)
+!!
+!!
   subroutine read_input_nml(pelist_name_in, alt_input_nml_path)
 
 ! Include variable "version" to be written to log file.
@@ -1495,19 +1390,18 @@ end function rarray_to_char
   ! subroutine READ_ASCII_FILE
   !
   !
-  ! Reads any ascii file into a character array and broadcasts
-  ! it to the non-root mpi-tasks.  Based off READ_INPUT_NML.
-  !
-  ! Passed in 'Content' array, must be of the form:
-  ! character(len=LENGTH), dimension(:), allocatable :: array_name
-  !
-  ! Reads from this array must be done in a do loop over the number of
-  ! lines, i.e.:
-  !
-  ! do i=1, num_lines
-  !    read (UNIT=array_name(i), FMT=*) var1, var2, ...
-  ! end do
-  !
+  !> Reads any ascii file into a character array and broadcasts
+  !! it to the non-root mpi-tasks.  Based off READ_INPUT_NML.
+  !!
+  !! Passed in 'Content' array, must be of the form:
+  !! character(len=LENGTH), dimension(:), allocatable :: array_name
+  !!
+  !! Reads from this array must be done in a do loop over the number of
+  !! lines, i.e.:
+  !!
+  !! do i=1, num_lines
+  !!    read (UNIT=array_name(i), FMT=*) var1, var2, ...
+  !! end do
   subroutine read_ascii_file(FILENAME, LENGTH, Content, PELIST)
     character(len=*),    intent(in)               :: FILENAME
     integer,             intent(in)               :: LENGTH
@@ -1605,3 +1499,4 @@ end function rarray_to_char
     call mpp_broadcast(Content, LENGTH, from_pe, PELIST=PELIST)
 
   end subroutine read_ascii_file
+!> @}
