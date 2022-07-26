@@ -17,28 +17,33 @@
 #* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 #***********************************************************************
 
-# This is an automake file for the constants directory of the FMS
+# This is an automake file for the constants4 directory of the FMS
 # package.
 
-# Ed Hartnett 2/22/19
+# Ryan Mulhall 7/22 
 
 # Include .h and .mod files.
 AM_CPPFLAGS = -I$(top_srcdir)/include
 AM_FCFLAGS = $(FC_MODINC). $(FC_MODOUT)$(MODDIR)
 
 # Build this uninstalled convenience library.
-noinst_LTLIBRARIES = libparser.la
+noinst_LTLIBRARIES = libconstants4.la
 
 # The convenience library depends on its source.
-libparser_la_SOURCES = \
-  yaml_parser.F90 \
-  fms_yaml_output.F90 \
-  yaml_output_functions.c \
-  yaml_parser_binding.c
+libconstants4_la_SOURCES = \
+  fmsconstantsr4.F90 \
+  gfdl_constantsR4.h \
+  gfs_constantsR4.h \
+  geos_constantsR4.h \
+  constantsr4.F90
 
+fmsconstantsr4.$(FC_MODEXT): gfdl_constantsR4.h gfs_constantsR4.h geos_constantsR4.h
+constantsr4_mod.$(FC_MODEXT): fmsconstantsr4.$(FC_MODEXT)
+
+# Mod files are built and then installed as headers
 MODFILES = \
-  yaml_parser_mod.$(FC_MODEXT) \
-  fms_yaml_output_mod.$(FC_MODEXT)
+  fmsconstantsr4.$(FC_MODEXT) \
+  constantsr4_mod.$(FC_MODEXT)
 
 BUILT_SOURCES = $(MODFILES)
 nodist_include_HEADERS = $(MODFILES)

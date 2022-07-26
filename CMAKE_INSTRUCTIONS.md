@@ -27,6 +27,17 @@ export NetCDF_ROOT=`nc-config --prefix`
 export LIBYAML_ROOT=<your libyaml install directory>
 ```
 
+### Setting custom flags with the bash shell
+To override the default compiler flags:
+```
+export FCFLAGS="<fortran flags>"
+export CFLAGS="<c flags>"
+```
+In addition, the flag below must be included with the cmake command:
+```
+cmake <any other options> -DCMAKE_BUILD_TYPE=Debug ..
+```
+
 ## 2. Build and install FMS with CMake
 `<prefix>` is the full install directory for FMS provided by user
 
@@ -40,6 +51,9 @@ make install
 
 ### User configurable options:
 By default, FMS is built without `OpenMP` and in `single precision (r4)`
+
+The 64BIT and 32BIT precision options will build distinct libraries when enabled with the given default
+real size, libfms_r4 or libfms_r8.
 
 The following build options are available:
 ```
