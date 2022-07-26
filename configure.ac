@@ -28,7 +28,7 @@ AC_INIT([GFDL FMS Library],
   [2022.03.0-dev],
   [gfdl.climate.model.info@noaa.gov],
   [FMS],
-  [https://www.gfdl.noaa.gov/fms])
+  [https://www.github.com/NOAA-GFDL/FMS])
 
 # Find out about the host we're building on.
 AC_CANONICAL_HOST
@@ -85,6 +85,31 @@ AC_ARG_ENABLE([code-coverage],
 AS_IF([test ${enable_code_coverage:-no} = no],
   [enable_code_coverage=no],
   [enable_code_coverage=yes])
+# individual mixed precision overload macros
+AC_ARG_ENABLE([overload-r4],
+  [AS_HELP_STRING([--enable-overload-r4],
+    [Enables the OVERLOAD_R4 macro to compile with 4 byte real routine overloads. (Default no)])])
+AS_IF([test ${enable_overload_r4:-no} = yes],
+  [enable_overload_r4=yes],
+  [enable_overload_r4=no])
+AC_ARG_ENABLE([overload-c4],
+  [AS_HELP_STRING([--enable-overload-c4],
+    [Enables the OVERLOAD_C4 macro to compile with 4 byte complex routine overloads. (Default no)])])
+AS_IF([test ${enable_overload_c4:-no} = yes],
+  [enable_overload_c4=yes],
+  [enable_overload_c4=no])
+AC_ARG_ENABLE([overload-c8],
+  [AS_HELP_STRING([--enable-overload-c8],
+    [Enables the OVERLOAD_C8 macro to compile with 8 byte real routine overloads. (Default no)])])
+AS_IF([test ${enable_overload_c8:-no} = yes],
+  [enable_overload_c8=yes],
+  [enable_overload_c8=no])
+AC_ARG_ENABLE([8byte-int],
+  [AS_HELP_STRING([--disable-8byte-int],
+    [Enables the no_8byte_integers macro to compile with only 4 byte integer routines. (Default no)])])
+AS_IF([test ${enable_8byte_int:-no} = yes],
+  [enable_8byte_int=yes],
+  [enable_8byte_int=no])
 
 # user enabled testing with input files
 AC_MSG_CHECKING([whether to enable tests with input files])
@@ -264,6 +289,19 @@ if test $enable_setting_flags = yes; then
     GX_FC_DEFAULT_REAL_KIND8_FLAG([dnl
       FCFLAGS="$FCFLAGS $FC_DEFAULT_REAL_KIND8_FLAG"])
   fi
+  # individual mixed precision overloads
+  if test $enable_overload_r4 = yes; then
+    AC_DEFINE([OVERLOAD_R4], [1], [Set to overload with the R4 Fortran routines])
+  fi
+  if test $enable_overload_c4 = yes; then
+    AC_DEFINE([OVERLOAD_C4], [1], [Set to overload with the C4 Fortran routines])
+  fi
+  if test $enable_overload_c8 = yes; then
+    AC_DEFINE([OVERLOAD_C8], [1], [Set to overload with the C8 Fortran routines])
+  fi
+  if test $enable_8byte_int = yes; then
+    AC_DEFINE([no_8byte_integers], [1], [Set to disable 8 byte integer Fortran routines])
+  fi
 
   # Add Cray Pointer support flag
   if test ! -z "$FC_CRAY_POINTER_FLAG"; then
@@ -343,6 +381,16 @@ by this version of FMS due to a bug in the compiler. Please use a different vers
 else
   AC_MSG_RESULT([no])
 fi
+# Check if gcc >=10 is used with mpich
+# adds compiler arg needed for mpich compilation if found
+AC_MSG_CHECKING([if gcc 10 or greater is loaded with mpich])
+if [ test "`$FC --version | grep GNU | grep -E ' 1[0-9]\.[0-9]*\.[0-9]*$'`" -a "`which $FC | grep -i mpich`" ]; then
+  AC_MSG_RESULT([yes])
+  AC_MSG_WARN([Adding -fallow-argument-mismatch to FCFLAGS to allow compilation with gcc >=10 and mpich])
+  FCFLAGS="$FCFLAGS -fallow-argument-mismatch"
+else
+  AC_MSG_RESULT([no])
+fi
 
 #####
 # Create output variables from various
@@ -371,6 +419,7 @@ AC_CONFIG_FILES([
   time_interp/Makefile
   time_manager/Makefile
   constants/Makefile
+  constants4/Makefile
   platform/Makefile
   fms/Makefile
   fms2_io/Makefile
