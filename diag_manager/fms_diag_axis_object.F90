@@ -569,6 +569,8 @@ module fms_diag_axis_object_mod
     enddo
   end subroutine get_domain_and_domain_type
 
+  !> @brief Gets the length of the axis based on the axis_id
+  !> @return Axis_length
   function fms_get_axis_length(axis_id)&
   result(axis_length)
     INTEGER, INTENT(in) :: axis_id !< Axis ID of the axis to the length of

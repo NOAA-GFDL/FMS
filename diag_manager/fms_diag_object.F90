@@ -1154,17 +1154,20 @@ end subroutine fms_diag_field_add_attribute
 
 !> @brief Determines the diag_obj id corresponding to a module name and field_name
 !> @return diag_obj id
-INTEGER FUNCTION fms_get_diag_field_id(module_name, field_name)
+PURE FUNCTION fms_get_diag_field_id(module_name, field_name) &
+  result(diag_field_id)
+
   CHARACTER(len=*), INTENT(in) :: module_name !< Module name that registered the variable
   CHARACTER(len=*), INTENT(in) :: field_name !< Variable name
 
+  integer :: diag_field_id
   integer :: i !< For do loops
 
-  fms_get_diag_field_id = DIAG_FIELD_NOT_FOUND
+  diag_field_id = DIAG_FIELD_NOT_FOUND
   do i = 1, registered_variables
     if (diag_objs(i)%get_varname() .eq. trim(field_name) .and. &
         diag_objs(i)%get_modname() .eq. trim(module_name)) then
-          fms_get_diag_field_id = i
+          diag_field_id = i
           return
     endif
   enddo
