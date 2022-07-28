@@ -10,7 +10,7 @@ sequential patch number (starting from `01`).
 ### Known Issues
 - If using GCC 10 or higher as well as MPICH, compilation errors will occur unless `-fallow-argument-mismatch` is included in the Fortran compiler flags(the flag will now be added automatically if building with autotools or CMake). 
 - GCC 11.1.0 is unsupported due to compilation issues with select type. The issue is resolved in later GCC releases.
-- Current diag_manager does not add "tileX" to the filename when using a cube sphere, which leads to trouble when trying to combine the files and regrid them (if the region is in two different tiles)
+- When outputting sub-region diagnostics, the current diag_manager does not add "tileX" to the filename when using a cube sphere. This leads to trouble when trying to combine the files and regrid them (if the region is in two different tiles)
 ### Added
 - BUILD: Adds checks to autotools and cmake build files to solve compilation issues with GCC 10 and greater. Also adds a debug build type for CMake to allow for overriding compiler flags, and individual override flags for mixed precision routines.
 - DOCS: Additional information added for building and testing FMS with the build systems; renamed and moved autotools build document.
