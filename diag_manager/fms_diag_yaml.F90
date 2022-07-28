@@ -644,7 +644,8 @@ result(total_nvars)
   end do
 end function
 
-!> @brief This checks if the file frequency in a diag file is valid and crashes if it isn't
+!> @brief This checks if the file frequency and file frequency units in a diag file are valid and
+!! sets the integer equivalent
 subroutine set_file_freq(fileobj, file_frequnit)
   type(diagYamlFiles_type), intent(inout) :: fileobj         !< diagYamlFiles_type obj to check
   character(len=*),         intent(in)    :: file_frequnit   !< File_freq_units as it is read from the diag_table
@@ -652,18 +653,19 @@ subroutine set_file_freq(fileobj, file_frequnit)
   if (.not. (fileobj%file_freq >= -1) ) &
     call mpp_error(FATAL, "freq must be greater than or equal to -1. &
       &Check you entry for"//trim(fileobj%file_fname))
-  call set_valid_time_units(file_frequnit, fileobj%file_frequnit, "frequnit for file:"//trim(fileobj%file_fname))
+  fileobj%file_frequnit = set_valid_time_units(file_frequnit, "frequnit for file:"//trim(fileobj%file_fname))
 end subroutine set_file_freq
 
-!> @brief This checks if the time unit in a diag file is valid and crashes if it isn't
+!> @brief This checks if the time unit in a diag file is valid and sets the integer equivalent
 subroutine set_file_time_units (fileobj, file_timeunit)
   type(diagYamlFiles_type), intent(inout) :: fileobj       !< diagYamlFiles_type obj to checK
   character(len=*),         intent(in)    :: file_timeunit !< file_timeunit as it is read from the diag_table
 
-  call set_valid_time_units(file_timeunit, fileobj%file_timeunit, "timeunit for file:"//trim(fileobj%file_fname))
+ fileobj%file_timeunit = set_valid_time_units(file_timeunit, "timeunit for file:"//trim(fileobj%file_fname))
 end subroutine set_file_time_units
 
-!> @brief This checks if the new file frequency in a diag file is valid and crashes if it isn't
+!> @brief This checks if the new file frequency and the new file frequency units in a diag file are valid
+!! and sets the integer equivalent
 subroutine set_new_file_freq(fileobj, file_new_file_freq_units)
   type(diagYamlFiles_type), intent(inout) :: fileobj      !< diagYamlFiles_type obj to check
   character(len=*),         intent(in)    :: file_new_file_freq_units !< new file freq units as it is read from
@@ -673,12 +675,13 @@ subroutine set_new_file_freq(fileobj, file_new_file_freq_units)
       call mpp_error(FATAL, "new_file_freq_units is required if using new_file_freq. &
         &Check your entry for file:"//trim(fileobj%file_fname))
 
-    call set_valid_time_units(file_new_file_freq_units, fileobj%file_new_file_freq_units, &
+    fileobj%file_new_file_freq_units = set_valid_time_units(file_new_file_freq_units, &
       "new_file_freq_units for file:"//trim(fileobj%file_fname))
   endif
 end subroutine set_new_file_freq
 
-!> @brief This checks if the file duration in a diag file is valid and crashes if it isn't
+!> @brief This checks if the file duration and the file duration units in a diag file are valid
+!! and sets the integer equivalent
 subroutine set_file_duration(fileobj, file_duration_units)
   type(diagYamlFiles_type), intent(inout) :: fileobj             !< diagYamlFiles_type obj to check
   character(len=*),         intent(in)    :: file_duration_units !< file_duration as it is read from the diag_table
@@ -688,7 +691,7 @@ subroutine set_file_duration(fileobj, file_duration_units)
       call mpp_error(FATAL, "file_duration_units is required if using file_duration. &
         &Check your entry for file:"//trim(fileobj%file_fname))
 
-    call set_valid_time_units(file_duration_units, fileobj%file_duration_units, &
+    fileobj%file_duration_units = set_valid_time_units(file_duration_units, &
       "file_duration_units for file:"//trim(fileobj%file_fname))
   endif
 end subroutine set_file_duration
@@ -748,14 +751,15 @@ subroutine check_field_reduction(field)
 end subroutine check_field_reduction
 
 !> @brief This checks if a time unit is valid and if it is, it assigns the integer equivalent
-subroutine set_valid_time_units(time_units, time_units_int, error_msg)
+!! @return The integer equivalent to the time units
+function set_valid_time_units(time_units, error_msg) &
+result(time_units_int)
+
   character(len=*), intent(in)  :: time_units      !< The time_units as a string
-  integer,          intent(out) :: time_units_int  !< The integer equivalent of the time_units
   character(len=*), intent(in)  :: error_msg       !< Error message to append
 
-  logical :: is_valid
+  integer                       :: time_units_int  !< The integer equivalent of the time_units
 
-  is_valid = .true. !< This will be set to false, if the time_units are not valid
   select case (TRIM(time_units))
   case ("seconds")
     time_units_int = DIAG_SECONDS
@@ -774,7 +778,7 @@ subroutine set_valid_time_units(time_units, time_units_int, error_msg)
     call mpp_error(FATAL, trim(error_msg)//" is not valid. Acceptable values are "&
                    "seconds, minutes, hours, days, months, years")
   end select
-end subroutine set_valid_time_units
+end function set_valid_time_units
 
 !!!!!!! YAML FILE INQUIRIES !!!!!!!
 !> @brief Finds the number of variables in the file_varlist
