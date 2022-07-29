@@ -18,10 +18,11 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
-
 !> @file
-!> @ingroup mpp_domains_mod
 !> @brief Routines for calculating data from distributed arrays
+
+!> @addtogroup mpp_domains_mod
+!> @{
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !                                                                             !
@@ -1145,3 +1146,4 @@
 #define MPP_TYPE_ logical(l4_kind)
 #include <mpp_do_global_field_ad.h>
 #undef LOGICAL_VARIABLE
+!> @}

@@ -40,12 +40,8 @@
 // skips doc parsing for includes and license
 
 /**
- * \file
- * \brief Routines to set and get thread CPU affinity
- * Get, set, and helper functions for thread CPU affinity to be interfaced
- * in fortran via fms_affinity_mod
- * \author @bensonr
- * \ingroup affinity
+ * \addtogroup affinity
+ * \@{
  */
 
 /**
@@ -146,3 +142,4 @@ int set_cpu_affinity(int cpu)
 #endif
   return 0;
 }
+///@}

@@ -21,9 +21,6 @@
 !> @brief This module contains type declarations for the coupler.
 !> @author Richard Slater, John Dunne
 
-!> @file
-!> @brief File for @ref coupler_types_mod
-
 !> @addtogroup coupler_types_mod
 !> @{
 module coupler_types_mod
@@ -42,6 +39,7 @@ module coupler_types_mod
   use mpp_domains_mod,   only: domain2D, mpp_redistribute
   use mpp_mod,           only: mpp_error, FATAL, mpp_chksum
 
+  use iso_fortran_env, only : int32, int64  !To get mpp_chksum value
 
   implicit none
   private
@@ -3619,6 +3617,7 @@ contains
 
     character(len=120) :: var_name
     integer :: m, n
+    integer(kind=int64) :: chks ! A checksum for the field
 
     do n = 1, var%num_bcs
       do m = 1, var%bc(n)%num_fields
@@ -3627,8 +3626,8 @@ contains
         else
           var_name = trim(var%bc(n)%field(m)%name)
         endif
-        write(outunit, '("   CHECKSUM:: ",A40," = ",Z20)') trim(var_name),&
-            & mpp_chksum(var%bc(n)%field(m)%values(var%isc:var%iec,var%jsc:var%jec) )
+        chks = mpp_chksum(var%bc(n)%field(m)%values(var%isc:var%iec,var%jsc:var%jec))
+        if(outunit.ne.0) write(outunit, '("   CHECKSUM:: ",A40," = ",Z20)') trim(var_name), chks
       enddo
     enddo
   end subroutine CT_write_chksums_2d
@@ -3641,6 +3640,7 @@ contains
 
     character(len=120) :: var_name
     integer :: m, n
+    integer(kind=int64) :: chks ! A checksum for the field
 
     do n = 1, var%num_bcs
       do m = 1, var%bc(n)%num_fields
@@ -3649,8 +3649,8 @@ contains
         else
           var_name = trim(var%bc(n)%field(m)%name)
         endif
-        write(outunit, '("   CHECKSUM:: ",A40," = ",Z20)') var_name,&
-            & mpp_chksum(var%bc(n)%field(m)%values(var%isc:var%iec,var%jsc:var%jec,:) )
+        chks = mpp_chksum(var%bc(n)%field(m)%values(var%isc:var%iec,var%jsc:var%jec,:))
+        if(outunit.ne.0) write(outunit, '("   CHECKSUM:: ",A40," = ",Z20)') trim(var_name), chks
       enddo
     enddo
   end subroutine CT_write_chksums_3d

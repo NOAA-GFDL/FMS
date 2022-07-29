@@ -26,9 +26,6 @@
 !! Users first create axis ID by calling diag_axis_init, then use this axis ID in
 !! register_diag_field.
 
-!> @file
-!> @brief File for @ref diag_axis_mod
-
 !> @addtogroup diag_axis_mod
 !> @{
 MODULE diag_axis_mod
@@ -113,7 +110,7 @@ CONTAINS
   INTEGER FUNCTION diag_axis_init(name, DATA, units, cart_name, long_name, direction,&
        & set_name, edges, Domain, Domain2, DomainU, aux, req, tile_count, domain_position )
     CHARACTER(len=*), INTENT(in) :: name !< Short name for axis
-    REAL, DIMENSION(:), INTENT(in) :: DATA !< Array of coordinate values
+    CLASS(*), DIMENSION(:), INTENT(in) :: DATA !< Array of coordinate values
     CHARACTER(len=*), INTENT(in) :: units !< Units for the axis
     CHARACTER(len=*), INTENT(in) :: cart_name !< Cartesian axis ("X", "Y", "Z", "T")
     CHARACTER(len=*), INTENT(in), OPTIONAL :: long_name !< Long name for the axis.
@@ -231,7 +228,15 @@ CONTAINS
 
     ! Initialize Axes(diag_axis_init)
     Axes(diag_axis_init)%name   = TRIM(name)
-    Axes(diag_axis_init)%data   = DATA(1:axlen)
+    SELECT TYPE (DATA)
+    TYPE IS (real(kind=r4_kind))
+       Axes(diag_axis_init)%data = DATA(1:axlen)
+    TYPE IS (real(kind=r8_kind))
+       Axes(diag_axis_init)%data = real(DATA(1:axlen))
+    CLASS DEFAULT
+       CALL error_mesg('diag_axis_mod::diag_axis_init',&
+            & 'The axis data is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)
+    END SELECT
     Axes(diag_axis_init)%units  = units
     Axes(diag_axis_init)%length = axlen
     Axes(diag_axis_init)%set    = set
@@ -460,7 +465,7 @@ CONTAINS
     INTEGER, INTENT(out) :: direction !< Direction of data. (See <TT>@ref diag_axis_init</TT> for a description of
                                       !! allowed values)
     INTEGER, INTENT(out) :: edges !< Axis ID for the previously defined "edges axis".
-    REAL, DIMENSION(:), INTENT(out) :: DATA !< Array of coordinate values for this axis.
+    CLASS(*), DIMENSION(:), INTENT(out) :: DATA !< Array of coordinate values for this axis.
     INTEGER, INTENT(out), OPTIONAL :: num_attributes
     TYPE(diag_atttype), ALLOCATABLE, DIMENSION(:), INTENT(out), OPTIONAL :: attributes
     INTEGER, INTENT(out), OPTIONAL :: domain_position
@@ -481,7 +486,15 @@ CONTAINS
        ! <ERROR STATUS="FATAL">array data is too small.</ERROR>
        CALL error_mesg('diag_axis_mod::get_diag_axis', 'array data is too small', FATAL)
     ELSE
-       DATA(1:Axes(id)%length) = Axes(id)%data(1:Axes(id)%length)
+       SELECT TYPE (DATA)
+       TYPE IS (real(kind=r4_kind))
+          DATA(1:Axes(id)%length) = real(Axes(id)%data(1:Axes(id)%length), kind=r4_kind)
+       TYPE IS (real(kind=r8_kind))
+          DATA(1:Axes(id)%length) = Axes(id)%data(1:Axes(id)%length)
+       CLASS DEFAULT
+          CALL error_mesg('diag_axis_mod::get_diag_axis',&
+               & 'The axis data is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)
+       END SELECT
     END IF
     IF ( PRESENT(num_attributes) ) THEN
        num_attributes = Axes(id)%num_attributes

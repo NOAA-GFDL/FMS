@@ -20,9 +20,6 @@
 !> @ingroup mosaic2
 !> @brief Routines for grid calculations, using @ref fms2_io
 
-!> @file
-!> @brief File for @ref grid2_mod
-
 module grid2_mod
 
 use mpp_mod, only : mpp_root_pe, mpp_error, uppercase, lowercase, FATAL, NOTE

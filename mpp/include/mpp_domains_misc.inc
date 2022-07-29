@@ -19,37 +19,28 @@
 !***********************************************************************
 
 !> @file
-!> @ingroup mpp_domains_mod
 !> @brief Initialization and finalization routines for @ref mpp_domains_mod as well
 !! as other utility routines.
 
+!> @ingroup mpp_domains_mod
+!> @{
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !                                                                             !
 !                 MPP_DOMAINS: initialization and termination                 !
 !                                                                             !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-! <SUBROUTINE NAME="mpp_domains_init">
-!  <OVERVIEW>
-!    Initialize domain decomp package.
-!  </OVERVIEW>
-!  <DESCRIPTION>
-!    Called to initialize the <TT>mpp_domains_mod</TT> package.
-!
-!    <TT>flags</TT> can be set to <TT>MPP_VERBOSE</TT> to have
-!    <TT>mpp_domains_mod</TT> keep you informed of what it's up
-!    to. <TT>MPP_DEBUG</TT> returns even more information for debugging.
-!
-!    <TT>mpp_domains_init</TT> will call <TT>mpp_init</TT>, to make sure
-!    <LINK SRC="mpp.html"><TT>mpp_mod</TT></LINK> is initialized. (Repeated
-!    calls to <TT>mpp_init</TT> do no harm, so don't worry if you already
-!    called it).
-!  </DESCRIPTION>
-!  <TEMPLATE>
-!    call mpp_domains_init(flags)
-!  </TEMPLATE>
-!  <IN NAME="flags" TYPE="integer"></IN>
-! </SUBROUTINE>
+    !> @brief Initialize domain decomp package.
+    !!
+    !> Called to initialize the <TT>mpp_domains_mod</TT> package.
+    !! <TT>flags</TT> can be set to <TT>MPP_VERBOSE</TT> to have
+    !! <TT>mpp_domains_mod</TT> keep you informed of what it's up
+    !! to. <TT>MPP_DEBUG</TT> returns even more information for debugging.
+    !!
+    !! <TT>mpp_domains_init</TT> will call <TT>mpp_init</TT>, to make sure
+    !! <TT>@ref mpp_mod</TT> is initialized. (Repeated
+    !! calls to <TT>@ref mpp_init</TT> do no harm, so don't worry if you already
+    !! called it).
     subroutine mpp_domains_init(flags)
       integer, intent(in), optional :: flags
       integer                       :: n
@@ -168,18 +159,10 @@ subroutine init_nonblock_type( nonblock_obj )
 end subroutine init_nonblock_type
 
 !#####################################################################
-! <SUBROUTINE NAME="mpp_domains_exit">
-!  <OVERVIEW>
-!    Exit <TT>mpp_domains_mod</TT>.
-!  </OVERVIEW>
-!  <DESCRIPTION>
-!    Serves no particular purpose, but is provided should you require to
-!    re-initialize <TT>mpp_domains_mod</TT>, for some odd reason.
-!  </DESCRIPTION>
-!  <TEMPLATE>
-!    call mpp_domains_exit()
-!  </TEMPLATE>
-! </SUBROUTINE>
+
+    !> @brief Exit <TT>mpp_domains_mod</TT>.
+    !! Serves no particular purpose, but is provided should you require to
+    !! re-initialize <TT>mpp_domains_mod</TT>, for some odd reason.
     subroutine mpp_domains_exit()
       integer :: unit
       if( .NOT.module_is_initialized )return
@@ -195,32 +178,24 @@ end subroutine init_nonblock_type
 !              MPP_CHECK_FIELD: Check parallel                                !
 !                                                                             !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-! <SUBROUTINE NAME="mpp_check_field_3D" INTERFACE="mpp_check_field">
-!   <IN NAME="field_in" TYPE="real, dimension(:,:,:)" > </IN>
-!   <IN NAME="pelist1, pelist2" TYPE="integer, dimension(:)" > </IN>
-!   <IN NAME="domain" TYPE="type(domain2d)" > </IN>
-!   <IN NAME="mesg" TYPE="character(len=*)" > </IN>
-!   <IN NAME="w_halo, s_halo, e_halo, n_halo" TYPE="integer, optional" > </IN>
-!   <IN NAME="force_abort" TYPE="logical,optional" > </IN>
-! </SUBROUTINE>
 
+  !> This routine is used to do parallel checking for 3d data between n and m pe. The comparison is
+  !! is done on pelist2. When size of pelist2 is 1, we can check the halo; otherwise,
+  !! halo can not be checked.
   subroutine mpp_check_field_3D(field_in, pelist1, pelist2, domain, mesg, &
                                  w_halo, s_halo, e_halo, n_halo, force_abort, position  )
-!  This routine is used to do parallel checking for 3d data between n and m pe. The comparison is
-!  is done on pelist2. When size of pelist2 is 1, we can check the halo; otherwise,
-!  halo can not be checked.
 
-  real, dimension(:,:,:), intent(in)  :: field_in ! field to be checked
-  integer, dimension(:), intent(in) :: pelist1, pelist2 ! pe list for the two groups
-  type(domain2d),        intent(in) :: domain   ! domain for each pe
-  character(len=*),     intent(in)  :: mesg     ! message to be printed out
-                                               ! if differences found
+  real, dimension(:,:,:), intent(in)  :: field_in !< field to be checked
+  integer, dimension(:), intent(in) :: pelist1, pelist2 !< pe list for the two groups
+  type(domain2d),        intent(in) :: domain   !< domain for each pe
+  character(len=*),     intent(in)  :: mesg     !< message to be printed out
+                                                !! if differences found
   integer, intent(in), optional     :: w_halo,  s_halo, e_halo, n_halo
-                                       ! halo size for west, south, east and north
-  logical, intent(in), optional     :: force_abort   ! when true, call mpp_error if any difference
-                                                    ! found. default value is false.
-  integer, intent(in), optional     :: position    ! when domain is symmetry, only value = CENTER is
-                                                   ! implemented.
+                                       !< halo size for west, south, east and north
+  logical, intent(in), optional     :: force_abort   !< when true, call mpp_error if any difference
+                                                     !! found. default value is false.
+  integer, intent(in), optional     :: position    !< when domain is symmetry, only value = CENTER is
+                                                   !! implemented.
 
     integer :: k
     character(len=256) :: temp_mesg
@@ -236,26 +211,23 @@ end subroutine init_nonblock_type
 
 
 !#####################################################################################
-! <SUBROUTINE NAME="mpp_check_field_2D" INTERFACE="mpp_check_field">
-!   <IN NAME="field_in" TYPE="real, dimension(:,:)" > </IN>
-! </SUBROUTINE>
+
+  !> This routine is used to do parallel checking for 2d data between n and m pe. The comparison is
+  !! is done on pelist2. When size of pelist2 is 1, we can check the halo; otherwise,
+  !! halo can not be checked.
   subroutine mpp_check_field_2d(field_in, pelist1, pelist2, domain, mesg, &
                                  w_halo, s_halo, e_halo, n_halo,force_abort, position  )
-!  This routine is used to do parallel checking for 2d data between n and m pe. The comparison is
-!  is done on pelist2. When size of pelist2 is 1, we can check the halo; otherwise,
-!  halo can not be checked.
 
-  real, dimension(:,:), intent(in)  :: field_in ! field to be checked
-  integer, dimension(:), intent(in) :: pelist1, pelist2 ! pe list for the two groups
-  type(domain2d),        intent(in) :: domain   ! domain for each pe
-  character(len=*),     intent(in)  :: mesg     ! message to be printed out
-                                               ! if differences found
-  integer, intent(in), optional     :: w_halo,  s_halo, e_halo, n_halo
-                                       ! halo size for west, south, east and north
-  logical, intent(in), optional     :: force_abort   ! when, call mpp_error if any difference
-                                                    ! found. default value is false.
-  integer, intent(in), optional     :: position    ! when domain is symmetry, only value = CENTER is
-                                                   ! implemented.
+  real, dimension(:,:), intent(in)  :: field_in !< field to be checked
+  integer, dimension(:), intent(in) :: pelist1, pelist2 !< pe list for the two groups
+  type(domain2d),        intent(in) :: domain   !< domain for each pe
+  character(len=*),     intent(in)  :: mesg     !< message to be printed out
+                                                !! if differences found
+  integer, intent(in), optional     :: w_halo,  s_halo, e_halo, n_halo !< halo size for west, south, east and north
+  logical, intent(in), optional     :: force_abort   !< when true, call mpp_error if any difference
+                                                     !! found. default value is false.
+  integer, intent(in), optional     :: position    !< when domain is symmetry, only value = CENTER is
+                                                   !! implemented.
 
      if(present(position)) then
         if(position .NE. CENTER .AND. domain%symmetry) call mpp_error(FATAL,  &
@@ -279,21 +251,20 @@ end subroutine init_nonblock_type
 
 !####################################################################################
 
+  !> This routine is used to check field between running on 1 pe (pelist2) and
+  !! n pe(pelist1). The need_to_be_checked data is sent to the pelist2 and All the
+  !! comparison is done on pelist2.
   subroutine mpp_check_field_2d_type1(field_in, pelist1, pelist2, domain, mesg, &
                                  w_halo, s_halo, e_halo, n_halo,force_abort  )
-!  This routine is used to check field between running on 1 pe (pelist2) and
-!  n pe(pelist1). The need_to_be_checked data is sent to the pelist2 and All the
-!  comparison is done on pelist2.
 
-  real, dimension(:,:), intent(in)  :: field_in ! field to be checked
-  integer, dimension(:), intent(in) :: pelist1, pelist2 ! pe list for the two groups
-  type(domain2d),        intent(in) :: domain   ! domain for each pe
-  character(len=*),     intent(in)  :: mesg     ! message to be printed out
-                                               ! if differences found
-  integer, intent(in), optional     :: w_halo,  s_halo, e_halo, n_halo
-                                       ! halo size for west, south, east and north
-  logical, intent(in), optional     :: force_abort   ! when, call mpp_error if any difference
-                                                    ! found. default value is false.
+  real, dimension(:,:), intent(in)  :: field_in !< field to be checked
+  integer, dimension(:), intent(in) :: pelist1, pelist2 !< pe list for the two groups
+  type(domain2d),        intent(in) :: domain   !< domain for each pe
+  character(len=*),     intent(in)  :: mesg     !< message to be printed out
+                                                !! if differences found
+  integer, intent(in), optional     :: w_halo,  s_halo, e_halo, n_halo !< halo size for west, south, east and north
+  logical, intent(in), optional     :: force_abort   !< when, call mpp_error if any difference
+                                                     !! found. default value is false.
 ! some local data
 
   integer                :: pe,npes, p
@@ -412,17 +383,17 @@ end subroutine init_nonblock_type
 
 !####################################################################
 
+  !> This routine is used to check field between running on m pe (root pe) and
+  !! n pe. This routine can not check halo.
   subroutine mpp_check_field_2d_type2(field_in, pelist1, pelist2, domain, mesg,force_abort)
-!  This routine is used to check field between running on m pe (root pe) and
-!  n pe. This routine can not check halo.
 
   real, dimension(:,:),  intent(in) :: field_in
   type(domain2d),        intent(in) :: domain
   integer, dimension(:), intent(in) :: pelist1
   integer, dimension(:), intent(in) :: pelist2
   character(len=*),      intent(in) :: mesg
-  logical, intent(in), optional     :: force_abort   ! when, call mpp_error if any difference
-                                                    ! found. default value is false.
+  logical, intent(in), optional     :: force_abort   !< when, call mpp_error if any difference
+                                                     !! found. default value is false.
 ! some local variables
   logical                :: check_success, error_exit
   real, dimension(:,:), allocatable :: field1, field2
@@ -485,14 +456,14 @@ end subroutine init_nonblock_type
 !                                                                             !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
+    !> broadcast domain (useful only outside the context of its own pelist)
     subroutine mpp_broadcast_domain_1( domain )
-!broadcast domain (useful only outside the context of its own pelist)
       type(domain2D), intent(inout) :: domain
       integer, allocatable :: pes(:)
-      logical :: native         !true if I'm on the pelist of this domain
+      logical :: native         !> true if I'm on the pelist of this domain
       integer :: listsize, listpos
       integer :: n
-      integer, dimension(12) :: msg, info         !pe and compute domain of each item in list
+      integer, dimension(12) :: msg, info  !> pe and compute domain of each item in list
       integer                :: errunit
 
       errunit = stderr()
@@ -609,14 +580,14 @@ end subroutine init_nonblock_type
 
 
 !##############################################################################
+    !> Broadcast domain (useful only outside the context of its own pelist)
     subroutine mpp_broadcast_domain_2( domain_in, domain_out )
-!broadcast domain (useful only outside the context of its own pelist)
       type(domain2D), intent(in)    :: domain_in
       type(domain2D), intent(inout) :: domain_out
       integer, allocatable :: pes(:)
       integer :: listpos
       integer :: n
-      integer, dimension(12) :: msg, info         !pe and compute domain of each item in list
+      integer, dimension(12) :: msg, info !< pe and compute domain of each item in list
       integer                :: errunit, npes_in, npes_out, pstart, pend
 
       errunit = stderr()
@@ -738,15 +709,15 @@ end subroutine init_nonblock_type
 
     end subroutine mpp_broadcast_domain_2
 
+    !> Broadcast fine nested domain (useful only outside the context of its own pelist)
     subroutine mpp_broadcast_domain_nest_fine( domain, tile_nest )
-!broadcast domain (useful only outside the context of its own pelist)
       type(domain2D), intent(inout) :: domain
       integer,        intent(in)    :: tile_nest(:)
       integer, allocatable :: pes(:)
-      logical :: native         !true if I'm on the pelist of this domain
+      logical :: native         !< true if I'm on the pelist of this domain
       integer :: listsize, listpos, nestsize(size(tile_nest(:)))
       integer :: n, tile, ind, num_nest
-      integer, dimension(15) :: msg, info         !pe and compute domain of each item in list
+      integer, dimension(15) :: msg, info         !< pe and compute domain of each item in list
       integer                :: errunit
 
       errunit = stderr()
@@ -857,16 +828,16 @@ end subroutine init_nonblock_type
 
     end subroutine mpp_broadcast_domain_nest_fine
 
+    !> Broadcast nested domain (useful only outside the context of its own pelist)
     subroutine mpp_broadcast_domain_nest_coarse( domain, tile_coarse )
-!broadcast domain (useful only outside the context of its own pelist)
       type(domain2D), intent(inout) :: domain
       integer,        intent(in)    :: tile_coarse
       integer, allocatable :: pes(:)
-      logical :: native         !true if I'm on the pelist of this domain
+      logical :: native         !< true if I'm on the pelist of this domain
       integer :: listsize, listpos
       integer, allocatable :: tile_pesize(:)
       integer :: n, maxtile
-      integer, dimension(17) :: msg, info         !pe and compute domain of each item in list
+      integer, dimension(17) :: msg, info         !< pe and compute domain of each item in list
       integer                :: errunit
 
       errunit = stderr()
@@ -984,7 +955,7 @@ end subroutine init_nonblock_type
       end do
 
     end subroutine mpp_broadcast_domain_nest_coarse
-
+!> @}
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !                                                                             !

@@ -32,7 +32,7 @@ program test_mpp_chksum
   logical :: debug = .false.
   integer :: npes, root, pe, ierr
 
-  namelist /test_mpp_chksum_nml/ test_num
+  namelist /test_mpp_chksum_nml/ test_num, nx, ny
 
   call mpp_init
 
