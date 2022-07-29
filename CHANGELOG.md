@@ -6,10 +6,30 @@ and this project uses `yyyy.rr[.pp]`, where `yyyy` is the year a patch is releas
 `rr` is a sequential release number (starting from `01`), and an optional two-digit
 sequential patch number (starting from `01`).
 
+## [2022.03] - 2022-08-01
+### Known Issues
+- If using GCC 10 or higher as well as MPICH, compilation errors will occur unless `-fallow-argument-mismatch` is included in the Fortran compiler flags(the flag will now be added automatically if building with autotools or CMake). 
+- GCC 11.1.0 is unsupported due to compilation issues with select type. The issue is resolved in later GCC releases.
+- When outputting sub-region diagnostics, the current diag_manager does not add "tileX" to the filename when using a cube sphere. This leads to trouble when trying to combine the files and regrid them (if the region is in two different tiles)
+### Added
+- BUILD: Adds checks to autotools and cmake build files to solve compilation issues with GCC 10 and greater. Also adds a debug build type for CMake to allow for overriding compiler flags, and individual override flags for mixed precision routines.
+- DOCS: Additional information added for building and testing FMS with the build systems; renamed and moved autotools build document.
+- YAML: Adds support for writing yaml files through the `fms_yaml_output_mod` module
+### Changed
+- MIXED MODE: Expands support for mixed precision reals to the constants files, diag_manager, sat_vapor_pres, time_manager, and tracer_manager
+- FMS_IO: Increased the character length for restart file names to allow for longer paths
+### Fixed 
+- COUPLER: Fixes global checksum being written to stdout by every core instead of just the root
+- DOCS: Fixed parsing issues with include and header files, adds class diagrams and layout improvements
+### Tag Commit Hashes
+- 2022.03-alpha1 62588548a5ecbdce7dbf857542ed272f7b2c971f
+- 2022.03-beta1  8a4ad847122c7cc597a1f2626290b46af44b143a
+
 ## [2022.02] - 2022-04-29
 ### Known Issues
 - If using GCC 10 or higher as well as MPICH, compilation errors will occur unless `-fallow-argument-mismatch` is included in the Fortran compiler flags
 - GCC 11.1.0 is unsupported due to compilation issues with select type. The issue is resolved in later GCC releases.
+- Current diag_manager does not add "tileX" to the filename when using a cube sphere, which leads to trouble when trying to combine the files and regrid them (if the region is in two different tiles)
 ### Added
 - STRING_UTILS: Adds a module, `fms_string_utils_mod`, for common string operations throughout FMS
 - LIBFMS: makes recently added routines available through the global `fms` module
