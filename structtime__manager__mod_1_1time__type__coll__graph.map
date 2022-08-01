@@ -1,0 +1,4 @@
+<map id="time_type" name="time_type">
+<area shape="rect" id="node1" title="Type to represent amounts of time. Implemented as seconds and days to allow for larger intervals." alt="" coords="5,124,93,151"/>
+<area shape="rect" id="node2" title=" " alt="" coords="15,5,83,32"/>
+</map>

@@ -1,0 +1,6 @@
+<map id="diag_global_grid_type" name="diag_global_grid_type">
+<area shape="rect" id="node1" title="Private type to hold the model&#39;s global grid data, and other grid information for use in this module." alt="" coords="129,241,294,268"/>
+<area shape="rect" id="node2" title=" " alt="" coords="5,5,153,32"/>
+<area shape="rect" id="node3" title=" " alt="" coords="177,5,245,32"/>
+<area shape="rect" id="node4" title=" " alt="" coords="297,5,344,32"/>
+</map>

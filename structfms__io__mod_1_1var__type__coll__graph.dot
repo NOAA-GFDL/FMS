@@ -1,0 +1,61 @@
+digraph "var_type"
+{
+ // INTERACTIVE_SVG=YES
+ // LATEX_PDF_SIZE
+  edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
+  node [fontname="Helvetica",fontsize="10",shape=record];
+  rankdir="LR";
+  Node1 [label="var_type",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled", fontcolor="black",tooltip=" "];
+  Node2 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" mandatory\nis_dimvar\ndomain_present\ninitialized\nread_only\nowns_data" ,fontname="Helvetica"];
+  Node2 [label="logical",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
+  Node3 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" domain_ug" ,fontname="Helvetica"];
+  Node3 [label="type(domainug), pointer",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
+  Node4 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" field" ,fontname="Helvetica"];
+  Node4 [label="fieldtype",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$group__mpp__io__mod.html#structmpp__io__mod_1_1fieldtype",tooltip=" "];
+  Node5 -> Node4 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" checksum" ,fontname="Helvetica"];
+  Node5 [label="integer(i8_kind), dimension(3)",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
+  Node6 -> Node4 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" longname\nstandard_name" ,fontname="Helvetica"];
+  Node6 [label="character(len=256)",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
+  Node7 -> Node4 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" att" ,fontname="Helvetica"];
+  Node7 [label="atttype",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$group__mpp__io__mod.html#structmpp__io__mod_1_1atttype",tooltip=" "];
+  Node8 -> Node7 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" name" ,fontname="Helvetica"];
+  Node8 [label="character(len=128)",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
+  Node9 -> Node7 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" fatt" ,fontname="Helvetica"];
+  Node9 [label="real",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
+  Node10 -> Node7 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" type\nlen" ,fontname="Helvetica"];
+  Node10 [label="integer",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
+  Node11 -> Node7 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" catt" ,fontname="Helvetica"];
+  Node11 [label="character(len=max_att\l_length)",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
+  Node12 -> Node4 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" axes" ,fontname="Helvetica"];
+  Node12 [label="axistype",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$group__mpp__io__mod.html#structmpp__io__mod_1_1axistype",tooltip=" "];
+  Node13 -> Node12 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" domain" ,fontname="Helvetica"];
+  Node13 [label="domain1d",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$group__mpp__domains__mod.html#structmpp__domains__mod_1_1domain1d",tooltip="One dimensional domain used to manage shared data access between pes."];
+  Node2 -> Node13 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" cyclic" ,fontname="Helvetica"];
+  Node13 -> Node13 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" list" ,fontname="Helvetica"];
+  Node14 -> Node13 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" memory\nglobal\ncompute\ndata" ,fontname="Helvetica"];
+  Node14 [label="domain_axis_spec",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$group__mpp__domains__mod.html#structmpp__domains__mod_1_1domain__axis__spec",tooltip="Used to specify index limits along an axis of a domain."];
+  Node2 -> Node14 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" is_global" ,fontname="Helvetica"];
+  Node10 -> Node14 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" max_size\nsize\nbegin\nend" ,fontname="Helvetica"];
+  Node10 -> Node13 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" pe\ngoffset\npos\nloffset" ,fontname="Helvetica"];
+  Node6 -> Node12 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" longname\ncompressed" ,fontname="Helvetica"];
+  Node7 -> Node12 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" att" ,fontname="Helvetica"];
+  Node15 -> Node12 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" cartesian" ,fontname="Helvetica"];
+  Node15 [label="character(len=8)",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
+  Node8 -> Node12 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" units\nname\nname_bounds" ,fontname="Helvetica"];
+  Node9 -> Node12 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" data_bounds\ndata" ,fontname="Helvetica"];
+  Node10 -> Node12 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" natt\nsense\ndid\nshift\ntype\nid\nidata\nlen" ,fontname="Helvetica"];
+  Node16 -> Node12 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" calendar" ,fontname="Helvetica"];
+  Node16 [label="character(len=24)",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
+  Node8 -> Node4 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" units\nname" ,fontname="Helvetica"];
+  Node10 -> Node4 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" size\nnatt\ntime_axis_index\nposition\npack\nndim\ntype\nid" ,fontname="Helvetica"];
+  Node9 -> Node4 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" fill\nscale\nmissing\nadd\nmin\nmax" ,fontname="Helvetica"];
+  Node17 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" field_dimension_sizes" ,fontname="Helvetica"];
+  Node17 [label="integer(int_kind),\l dimension(nidx)",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
+  Node12 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" axis" ,fontname="Helvetica"];
+  Node18 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" field_dimension_order" ,fontname="Helvetica"];
+  Node18 [label="integer(int_kind),\l dimension(5)",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
+  Node15 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" compressed_axis" ,fontname="Helvetica"];
+  Node8 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" longname\nunits\nname" ,fontname="Helvetica"];
+  Node10 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" y_halo\npelist\nx_halo\njshift\nposition\nishift\njs\nid_axes\ndomain_idx\nis\n..." ,fontname="Helvetica"];
+  Node9 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" default_data\nbuffer" ,fontname="Helvetica"];
+}

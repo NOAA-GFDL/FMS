@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.17"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>FMS: coupler/ensemble_manager.F90 Source File</title>
+<title>FMS: coupler/ensemble_manager.F90 (1640fde1a51a73f97748f150eb84bf49e472aeca) Source File</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -33,7 +33,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">FMS
-   &#160;<span id="projectnumber">2022.02.0</span>
+   &#160;<span id="projectnumber">2022.03.00</span>
    </div>
    <div id="projectbrief">Flexible Modeling System</div>
   </td>
@@ -94,7 +94,7 @@ $(document).ready(function(){initNavTree('ensemble__manager_8F90_source.html',''
 <div class="title">ensemble_manager.F90</div>  </div>
 </div><!--header-->
 <div class="contents">
-<a href="ensemble__manager_8F90.html">Go to the documentation of this file.</a><div class="fragment"><div class="line"><a name="l00001"></a><span class="lineno">    1</span>&#160;<span class="comment">!***********************************************************************</span></div>
+<div class="fragment"><div class="line"><a name="l00001"></a><span class="lineno">    1</span>&#160;<span class="comment">!***********************************************************************</span></div>
 <div class="line"><a name="l00002"></a><span class="lineno">    2</span>&#160;<span class="comment">!*                   GNU Lesser General Public License</span></div>
 <div class="line"><a name="l00003"></a><span class="lineno">    3</span>&#160;<span class="comment">!*</span></div>
 <div class="line"><a name="l00004"></a><span class="lineno">    4</span>&#160;<span class="comment">!* This file is part of the GFDL Flexible Modeling System (FMS).</span></div>
@@ -116,424 +116,422 @@ $(document).ready(function(){initNavTree('ensemble__manager_8F90_source.html',''
 <div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160;<span class="comment">!&gt; @ingroup coupler</span></div>
 <div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160;<span class="comment">!&gt; @brief Routines for setting up and managing ensembles and ensemble pe lists.</span></div>
 <div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160;<span class="comment"></span> </div>
-<div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160;<span class="comment">!&gt; @file</span></div>
-<div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;<span class="comment">!&gt; @brief File for @ref ensemble_manager_mod</span></div>
-<div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160;<span class="comment"></span> </div>
-<div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160;<span class="comment">!&gt; @addtogroup ensemble_manager_mod</span></div>
-<div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;<span class="comment">!&gt; @{</span></div>
-<div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;<span class="keyword">module</span> ensemble_manager_mod</div>
-<div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160; </div>
-<div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160; </div>
-<div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;  <span class="keywordtype">use </span>fms_mod, <span class="keywordtype">only</span> : <a class="code" href="group__fms__mod.html#ga05e7686befc1e49d2be9bdb81d479a76">check_nml_error</a></div>
-<div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;  <span class="keywordtype">use </span>mpp_mod, <span class="keywordtype">only</span> : <a class="code" href="mpp__util_8inc.html#abf546cd336d5c539e445fb884f98ab6b">mpp_npes</a>, <a class="code" href="mpp__util_8inc.html#a172901d39c9b0cf14aa83b1e94fdf21b">stdout</a>, <a class="code" href="mpp__util_8inc.html#a8e5518df9532bae0241f53ab542294a2">stdlog</a>, <a class="code" href="interfacempp__mod_1_1mpp__error.html">mpp_error</a>, fatal</div>
-<div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;  <span class="keywordtype">use </span>mpp_mod, <span class="keywordtype">only</span> : <a class="code" href="mpp__util_8inc.html#acfeba7de56f9dd6000b3fd78f9d56c50">mpp_pe</a>, mpp_declare_pelist</div>
-<div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;  <span class="keywordtype">use </span>mpp_mod, <span class="keywordtype">only</span> : input_nml_file</div>
-<div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;  <span class="keywordtype">use </span>fms2_io_mod, <span class="keywordtype">only</span> : fms2_io_set_filename_appendix=&gt;set_filename_appendix</div>
-<div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;  <span class="keywordtype">use </span>fms_io_mod, <span class="keywordtype">only</span>  : fms_io_set_filename_appendix=&gt;set_filename_appendix</div>
-<div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160; </div>
-<div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;  <span class="keywordtype">IMPLICIT NONE</span></div>
-<div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160; </div>
-<div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;  <span class="keywordtype">private</span></div>
+<div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160;<span class="comment">!&gt; @addtogroup ensemble_manager_mod</span></div>
+<div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;<span class="comment">!&gt; @{</span></div>
+<div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160;<span class="keyword">module</span> ensemble_manager_mod</div>
+<div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160; </div>
+<div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160; </div>
+<div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;  <span class="keywordtype">use </span>fms_mod, <span class="keywordtype">only</span> : <a class="code" href="group__fms__mod.html#ga05e7686befc1e49d2be9bdb81d479a76">check_nml_error</a></div>
+<div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;  <span class="keywordtype">use </span>mpp_mod, <span class="keywordtype">only</span> : <a class="code" href="group__mpp__mod.html#gabf546cd336d5c539e445fb884f98ab6b">mpp_npes</a>, <a class="code" href="group__mpp__mod.html#ga172901d39c9b0cf14aa83b1e94fdf21b">stdout</a>, <a class="code" href="group__mpp__mod.html#ga8e5518df9532bae0241f53ab542294a2">stdlog</a>, <a class="code" href="group__mpp__mod.html#interfacempp__mod_1_1mpp__error">mpp_error</a>, fatal</div>
+<div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;  <span class="keywordtype">use </span>mpp_mod, <span class="keywordtype">only</span> : <a class="code" href="group__mpp__mod.html#gacfeba7de56f9dd6000b3fd78f9d56c50">mpp_pe</a>, <a class="code" href="group__mpp__mod.html#gada061a5778228965b5ccfc693c4dc892">mpp_declare_pelist</a></div>
+<div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;  <span class="keywordtype">use </span>mpp_mod, <span class="keywordtype">only</span> : input_nml_file</div>
+<div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;  <span class="keywordtype">use </span>fms2_io_mod, <span class="keywordtype">only</span> : fms2_io_set_filename_appendix=&gt;set_filename_appendix</div>
+<div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;  <span class="keywordtype">use </span>fms_io_mod, <span class="keywordtype">only</span>  : fms_io_set_filename_appendix=&gt;set_filename_appendix</div>
+<div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160; </div>
+<div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;  <span class="keywordtype">IMPLICIT NONE</span></div>
+<div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160; </div>
+<div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;  <span class="keywordtype">private</span></div>
+<div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160; </div>
+<div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;  <span class="keywordtype">integer</span>, <span class="keywordtype">parameter</span> :: MAX_ENSEMBLE_SIZE = 100</div>
+<div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160; </div>
 <div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160; </div>
-<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;  <span class="keywordtype">integer</span>, <span class="keywordtype">parameter</span> :: MAX_ENSEMBLE_SIZE = 100</div>
-<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160; </div>
-<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160; </div>
-<div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;  <span class="keywordtype">integer</span>, <span class="keywordtype">allocatable</span>, <span class="keywordtype">dimension(:,:)</span> :: ensemble_pelist</div>
-<div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;  <span class="keywordtype">integer</span>, <span class="keywordtype">allocatable</span>, <span class="keywordtype">dimension(:,:)</span> :: ensemble_pelist_ocean</div>
-<div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;  <span class="keywordtype">integer</span>, <span class="keywordtype">allocatable</span>, <span class="keywordtype">dimension(:,:)</span> :: ensemble_pelist_atmos</div>
-<div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;  <span class="keywordtype">integer</span>, <span class="keywordtype">allocatable</span>, <span class="keywordtype">dimension(:,:)</span> :: ensemble_pelist_land</div>
-<div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;  <span class="keywordtype">integer</span>, <span class="keywordtype">allocatable</span>, <span class="keywordtype">dimension(:,:)</span> :: ensemble_pelist_ice</div>
-<div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;  <span class="keywordtype">integer</span>, <span class="keywordtype">allocatable</span>, <span class="keywordtype">dimension(:)</span>   :: ensemble_pelist_ocean_filter</div>
-<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;  <span class="keywordtype">integer</span>, <span class="keywordtype">allocatable</span>, <span class="keywordtype">dimension(:)</span>   :: ensemble_pelist_atmos_filter</div>
-<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;  <span class="keywordtype">integer</span>, <span class="keywordtype">allocatable</span>, <span class="keywordtype">dimension(:)</span>   :: ensemble_pelist_land_filter</div>
-<div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;  <span class="keywordtype">integer</span>, <span class="keywordtype">allocatable</span>, <span class="keywordtype">dimension(:)</span>   :: ensemble_pelist_ice_filter</div>
-<div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160; </div>
-<div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;  <span class="keywordtype">integer</span> :: ensemble_size = 1</div>
-<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;  <span class="keywordtype">integer</span> :: ensemble_id = 1</div>
-<div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;  <span class="keywordtype">integer</span> :: pe, total_npes_pm=0,ocean_npes_pm=0,atmos_npes_pm=0</div>
-<div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;  <span class="keywordtype">integer</span> :: land_npes_pm=0,ice_npes_pm=0</div>
-<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160; </div>
-<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;  <span class="keywordtype">public</span> :: <a class="code" href="group__ensemble__manager__mod.html#gacdbbf5369191eab58e691d63639ee1b1">ensemble_manager_init</a>, <a class="code" href="group__ensemble__manager__mod.html#ga20ee0e034451b23cd2beb511eb8c8803">get_ensemble_id</a>, <a class="code" href="group__ensemble__manager__mod.html#ga2ba619f4454819b2fe6412ddba2e47c1">get_ensemble_size</a>, <a class="code" href="group__ensemble__manager__mod.html#gade5bdc874e12defb1b1d6fc971e8fdb1">get_ensemble_pelist</a></div>
-<div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;  <span class="keywordtype">public</span> :: <a class="code" href="group__ensemble__manager__mod.html#ga978f35356297a1a43c77c2467bdcbfc9">ensemble_pelist_setup</a></div>
-<div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;  <span class="keywordtype">public</span> :: <a class="code" href="group__ensemble__manager__mod.html#gafbf614c62aef080ef4702355c7705258">get_ensemble_filter_pelist</a></div>
-<div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;<span class="keyword">contains</span></div>
-<div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;<span class="comment"></span> </div>
-<div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;<span class="comment">!&gt; @brief Initializes @ref ensemble_manager_mod</span></div>
-<div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;<span class="comment">!!</span></div>
-<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;<span class="comment">!&gt; @throw FATAL, &quot;ensemble_manager_mod: ensemble_nml variable ensemble_size must be a positive integer&quot;</span></div>
-<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;<span class="comment">!! @throw FATAL, &quot;ensemble_manager_mod: ensemble_nml variable ensemble_size should be no larger</span></div>
-<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;<span class="comment">!! than MAX_ENSEMBLE_SIZE, change ensemble_size or increase MAX_ENSEMBLE_SIZE&quot;</span></div>
-<div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;<span class="comment">!! @throw FATAL, &quot;ensemble_size must be divis by npes&quot;</span></div>
-<div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;<span class="comment">!! @throw FATAL, &quot;get_ensemble_pelist: size of pelist 1st index &lt; ensemble_size&quot;</span></div>
-<div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;<span class="comment">!! @throw FATAL, &quot;get_ensemble_pelist: size of pelist 2nd index &lt; ocean_npes_pm&quot;</span></div>
-<div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;<span class="comment">!! @throw FATAL, &quot;get_ensemble_pelist: size of pelist 2nd index &lt; atmos_npes_pm&quot;</span></div>
-<div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;<span class="comment">!! @throw FATAL, &quot;get_ensemble_pelist: size of pelist 2nd index &lt; land_npes_pm&quot;</span></div>
-<div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;<span class="comment">!! @throw FATAL, &quot;get_ensemble_pelist: size of pelist 2nd index &lt; ice_npes_pm&quot;</span></div>
-<div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;<span class="comment">!! @throw FATAL, &quot;get_ensemble_pelist: unknown argument name=[name]&quot;</span></div>
-<div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;<span class="comment">!! @throw FATAL, &quot;get_ensemble_pelist: size of pelist 2nd index &lt; total_npes_pm&quot;</span></div>
-<div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;  <span class="keyword">subroutine </span><a class="code" href="group__ensemble__manager__mod.html#gacdbbf5369191eab58e691d63639ee1b1">ensemble_manager_init</a>()</div>
-<div class="line"><a name="l00079"></a><span class="lineno"><a class="line" href="group__ensemble__manager__mod.html#gacdbbf5369191eab58e691d63639ee1b1">   79</a></span>&#160; </div>
-<div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160; </div>
-<div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;    <span class="keywordtype">integer</span> :: i, io_status, npes, ierr</div>
-<div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160; </div>
-<div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;    namelist /ensemble_nml/ ensemble_size</div>
+<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;  <span class="keywordtype">integer</span>, <span class="keywordtype">allocatable</span>, <span class="keywordtype">dimension(:,:)</span> :: ensemble_pelist</div>
+<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;  <span class="keywordtype">integer</span>, <span class="keywordtype">allocatable</span>, <span class="keywordtype">dimension(:,:)</span> :: ensemble_pelist_ocean</div>
+<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;  <span class="keywordtype">integer</span>, <span class="keywordtype">allocatable</span>, <span class="keywordtype">dimension(:,:)</span> :: ensemble_pelist_atmos</div>
+<div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;  <span class="keywordtype">integer</span>, <span class="keywordtype">allocatable</span>, <span class="keywordtype">dimension(:,:)</span> :: ensemble_pelist_land</div>
+<div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;  <span class="keywordtype">integer</span>, <span class="keywordtype">allocatable</span>, <span class="keywordtype">dimension(:,:)</span> :: ensemble_pelist_ice</div>
+<div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;  <span class="keywordtype">integer</span>, <span class="keywordtype">allocatable</span>, <span class="keywordtype">dimension(:)</span>   :: ensemble_pelist_ocean_filter</div>
+<div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;  <span class="keywordtype">integer</span>, <span class="keywordtype">allocatable</span>, <span class="keywordtype">dimension(:)</span>   :: ensemble_pelist_atmos_filter</div>
+<div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;  <span class="keywordtype">integer</span>, <span class="keywordtype">allocatable</span>, <span class="keywordtype">dimension(:)</span>   :: ensemble_pelist_land_filter</div>
+<div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;  <span class="keywordtype">integer</span>, <span class="keywordtype">allocatable</span>, <span class="keywordtype">dimension(:)</span>   :: ensemble_pelist_ice_filter</div>
+<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160; </div>
+<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;  <span class="keywordtype">integer</span> :: ensemble_size = 1</div>
+<div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;  <span class="keywordtype">integer</span> :: ensemble_id = 1</div>
+<div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;  <span class="keywordtype">integer</span> :: pe, total_npes_pm=0,ocean_npes_pm=0,atmos_npes_pm=0</div>
+<div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;  <span class="keywordtype">integer</span> :: land_npes_pm=0,ice_npes_pm=0</div>
+<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160; </div>
+<div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;  <span class="keywordtype">public</span> :: <a class="code" href="group__ensemble__manager__mod.html#gacdbbf5369191eab58e691d63639ee1b1">ensemble_manager_init</a>, <a class="code" href="group__ensemble__manager__mod.html#ga20ee0e034451b23cd2beb511eb8c8803">get_ensemble_id</a>, <a class="code" href="group__ensemble__manager__mod.html#ga2ba619f4454819b2fe6412ddba2e47c1">get_ensemble_size</a>, <a class="code" href="group__ensemble__manager__mod.html#gade5bdc874e12defb1b1d6fc971e8fdb1">get_ensemble_pelist</a></div>
+<div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;  <span class="keywordtype">public</span> :: <a class="code" href="group__ensemble__manager__mod.html#ga978f35356297a1a43c77c2467bdcbfc9">ensemble_pelist_setup</a></div>
+<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;  <span class="keywordtype">public</span> :: <a class="code" href="group__ensemble__manager__mod.html#gafbf614c62aef080ef4702355c7705258">get_ensemble_filter_pelist</a></div>
+<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;<span class="keyword">contains</span></div>
+<div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;<span class="comment"></span> </div>
+<div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;<span class="comment">!&gt; @brief Initializes @ref ensemble_manager_mod</span></div>
+<div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;<span class="comment">!!</span></div>
+<div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;<span class="comment">!&gt; @throw FATAL, &quot;ensemble_manager_mod: ensemble_nml variable ensemble_size must be a positive integer&quot;</span></div>
+<div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;<span class="comment">!! @throw FATAL, &quot;ensemble_manager_mod: ensemble_nml variable ensemble_size should be no larger</span></div>
+<div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;<span class="comment">!! than MAX_ENSEMBLE_SIZE, change ensemble_size or increase MAX_ENSEMBLE_SIZE&quot;</span></div>
+<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;<span class="comment">!! @throw FATAL, &quot;ensemble_size must be divis by npes&quot;</span></div>
+<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;<span class="comment">!! @throw FATAL, &quot;get_ensemble_pelist: size of pelist 1st index &lt; ensemble_size&quot;</span></div>
+<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;<span class="comment">!! @throw FATAL, &quot;get_ensemble_pelist: size of pelist 2nd index &lt; ocean_npes_pm&quot;</span></div>
+<div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;<span class="comment">!! @throw FATAL, &quot;get_ensemble_pelist: size of pelist 2nd index &lt; atmos_npes_pm&quot;</span></div>
+<div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;<span class="comment">!! @throw FATAL, &quot;get_ensemble_pelist: size of pelist 2nd index &lt; land_npes_pm&quot;</span></div>
+<div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;<span class="comment">!! @throw FATAL, &quot;get_ensemble_pelist: size of pelist 2nd index &lt; ice_npes_pm&quot;</span></div>
+<div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;<span class="comment">!! @throw FATAL, &quot;get_ensemble_pelist: unknown argument name=[name]&quot;</span></div>
+<div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;<span class="comment">!! @throw FATAL, &quot;get_ensemble_pelist: size of pelist 2nd index &lt; total_npes_pm&quot;</span></div>
+<div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;  <span class="keyword">subroutine </span><a class="code" href="group__ensemble__manager__mod.html#gacdbbf5369191eab58e691d63639ee1b1">ensemble_manager_init</a>()</div>
+<div class="line"><a name="l00076"></a><span class="lineno"><a class="line" href="group__ensemble__manager__mod.html#gacdbbf5369191eab58e691d63639ee1b1">   76</a></span>&#160; </div>
+<div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160; </div>
+<div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;    <span class="keywordtype">integer</span> :: i, io_status, npes, ierr</div>
+<div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160; </div>
+<div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;    namelist /ensemble_nml/ ensemble_size</div>
+<div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160; </div>
+<div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;    <span class="keyword">read</span> (input_nml_file, ensemble_nml, iostat=io_status)</div>
+<div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;    ierr = <a class="code" href="group__fms__mod.html#ga05e7686befc1e49d2be9bdb81d479a76">check_nml_error</a>(io_status, <span class="stringliteral">&#39;ensemble_nml&#39;</span>)</div>
 <div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160; </div>
-<div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;    <span class="keyword">read</span> (input_nml_file, ensemble_nml, iostat=io_status)</div>
-<div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160;    ierr = <a class="code" href="group__fms__mod.html#ga05e7686befc1e49d2be9bdb81d479a76">check_nml_error</a>(io_status, <span class="stringliteral">&#39;ensemble_nml&#39;</span>)</div>
-<div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160; </div>
-<div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160;    <span class="keywordflow">if</span>(ensemble_size &lt; 1) <span class="keyword">call </span><a class="code" href="interfacempp__mod_1_1mpp__error.html">mpp_error</a>(fatal, &amp;</div>
-<div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160;       <span class="stringliteral">&#39;ensemble_manager_mod: ensemble_nml variable ensemble_size must be a positive integer&#39;</span>)</div>
-<div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;    <span class="keywordflow">if</span>(ensemble_size &gt; max_ensemble_size)  <span class="keyword">call </span><a class="code" href="interfacempp__mod_1_1mpp__error.html">mpp_error</a>(fatal, &amp;</div>
-<div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160;       <span class="stringliteral">&#39;ensemble_manager_mod: ensemble_nml variable ensemble_size should be no larger than MAX_ENSEMBLE_SIZE, &#39;</span>// &amp;</div>
-<div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;       <span class="stringliteral">&#39;change ensemble_size or increase MAX_ENSEMBLE_SIZE&#39;</span>)</div>
-<div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160; </div>
-<div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160;    pe = <a class="code" href="mpp__util_8inc.html#acfeba7de56f9dd6000b3fd78f9d56c50">mpp_pe</a>()</div>
-<div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160;    npes = <a class="code" href="mpp__util_8inc.html#abf546cd336d5c539e445fb884f98ab6b">mpp_npes</a>()</div>
-<div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160;    <span class="keywordflow">if</span> (npes &lt; ensemble_size) <span class="keywordflow">then</span></div>
-<div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160;      <span class="keyword">call </span><a class="code" href="interfacempp__mod_1_1mpp__error.html">mpp_error</a>(fatal,<span class="stringliteral">&#39;npes must be &gt;= ensemble_size&#39;</span>)</div>
-<div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160;<span class="keywordflow">    endif</span></div>
-<div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160;    total_npes_pm = npes/ensemble_size</div>
-<div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160;    <span class="keywordflow">if</span> (mod(npes, total_npes_pm) /= 0) <span class="keyword">call </span><a class="code" href="interfacempp__mod_1_1mpp__error.html">mpp_error</a>(fatal,<span class="stringliteral">&#39;ensemble_size must be divis by npes&#39;</span>)</div>
-<div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160; </div>
-<div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160;    <span class="keyword">call </span>mpp_declare_pelist((/(i,i=0,npes-1)/),<span class="stringliteral">&#39;_ens0&#39;</span>) <span class="comment">! for ensemble driver</span></div>
-<div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160; </div>
-<div class="line"><a name="l00104"></a><span class="lineno">  104</span>&#160;  <span class="keyword">end subroutine </span><a class="code" href="group__ensemble__manager__mod.html#gacdbbf5369191eab58e691d63639ee1b1">ensemble_manager_init</a></div>
-<div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160;<span class="comment"></span> </div>
-<div class="line"><a name="l00106"></a><span class="lineno">  106</span>&#160;<span class="comment">  !&gt; @brief Getter function for ensemble_id</span></div>
-<div class="line"><a name="l00107"></a><span class="lineno">  107</span>&#160;<span class="comment">  !! @return integer of ensemble id</span></div>
-<div class="line"><a name="l00108"></a><span class="lineno">  108</span>&#160;  <span class="keyword">function </span><a class="code" href="group__ensemble__manager__mod.html#ga20ee0e034451b23cd2beb511eb8c8803">get_ensemble_id</a>()</div>
-<div class="line"><a name="l00109"></a><span class="lineno"><a class="line" href="group__ensemble__manager__mod.html#ga20ee0e034451b23cd2beb511eb8c8803">  109</a></span>&#160;    <span class="keywordtype">integer</span> :: <a class="code" href="group__ensemble__manager__mod.html#ga20ee0e034451b23cd2beb511eb8c8803">get_ensemble_id</a></div>
-<div class="line"><a name="l00110"></a><span class="lineno">  110</span>&#160;    <a class="code" href="group__ensemble__manager__mod.html#ga20ee0e034451b23cd2beb511eb8c8803">get_ensemble_id</a> = ensemble_id</div>
-<div class="line"><a name="l00111"></a><span class="lineno">  111</span>&#160;  <span class="keyword">end function </span><a class="code" href="group__ensemble__manager__mod.html#ga20ee0e034451b23cd2beb511eb8c8803">get_ensemble_id</a></div>
-<div class="line"><a name="l00112"></a><span class="lineno">  112</span>&#160;<span class="comment"></span> </div>
-<div class="line"><a name="l00113"></a><span class="lineno">  113</span>&#160;<span class="comment">  !&gt; @brief Returns ensemble size integer array</span></div>
-<div class="line"><a name="l00114"></a><span class="lineno">  114</span>&#160;<span class="comment">  !! @return integer array of sizes</span></div>
-<div class="line"><a name="l00115"></a><span class="lineno">  115</span>&#160;  <span class="keyword">function </span><a class="code" href="group__ensemble__manager__mod.html#ga2ba619f4454819b2fe6412ddba2e47c1">get_ensemble_size</a>()</div>
-<div class="line"><a name="l00116"></a><span class="lineno"><a class="line" href="group__ensemble__manager__mod.html#ga2ba619f4454819b2fe6412ddba2e47c1">  116</a></span>&#160; </div>
-<div class="line"><a name="l00117"></a><span class="lineno">  117</span>&#160;    <span class="keywordtype">integer</span>, <span class="keywordtype">dimension(6)</span> :: <a class="code" href="group__ensemble__manager__mod.html#ga2ba619f4454819b2fe6412ddba2e47c1">get_ensemble_size</a></div>
-<div class="line"><a name="l00118"></a><span class="lineno">  118</span>&#160; </div>
-<div class="line"><a name="l00119"></a><span class="lineno">  119</span>&#160;    <a class="code" href="group__ensemble__manager__mod.html#ga2ba619f4454819b2fe6412ddba2e47c1">get_ensemble_size</a>(1) = ensemble_size</div>
-<div class="line"><a name="l00120"></a><span class="lineno">  120</span>&#160;    <a class="code" href="group__ensemble__manager__mod.html#ga2ba619f4454819b2fe6412ddba2e47c1">get_ensemble_size</a>(2) = total_npes_pm</div>
-<div class="line"><a name="l00121"></a><span class="lineno">  121</span>&#160;    <a class="code" href="group__ensemble__manager__mod.html#ga2ba619f4454819b2fe6412ddba2e47c1">get_ensemble_size</a>(3) = ocean_npes_pm</div>
-<div class="line"><a name="l00122"></a><span class="lineno">  122</span>&#160;    <a class="code" href="group__ensemble__manager__mod.html#ga2ba619f4454819b2fe6412ddba2e47c1">get_ensemble_size</a>(4) = atmos_npes_pm</div>
-<div class="line"><a name="l00123"></a><span class="lineno">  123</span>&#160;    <a class="code" href="group__ensemble__manager__mod.html#ga2ba619f4454819b2fe6412ddba2e47c1">get_ensemble_size</a>(5) = land_npes_pm</div>
-<div class="line"><a name="l00124"></a><span class="lineno">  124</span>&#160;    <a class="code" href="group__ensemble__manager__mod.html#ga2ba619f4454819b2fe6412ddba2e47c1">get_ensemble_size</a>(6) = ice_npes_pm</div>
-<div class="line"><a name="l00125"></a><span class="lineno">  125</span>&#160; </div>
-<div class="line"><a name="l00126"></a><span class="lineno">  126</span>&#160;  <span class="keyword">end function </span><a class="code" href="group__ensemble__manager__mod.html#ga2ba619f4454819b2fe6412ddba2e47c1">get_ensemble_size</a></div>
-<div class="line"><a name="l00127"></a><span class="lineno">  127</span>&#160;<span class="comment"></span> </div>
-<div class="line"><a name="l00128"></a><span class="lineno">  128</span>&#160;<span class="comment">  !&gt; @brief Gets pe list for current ensemble or a given ensemble component.</span></div>
-<div class="line"><a name="l00129"></a><span class="lineno">  129</span>&#160;  <span class="keyword">subroutine </span><a class="code" href="group__ensemble__manager__mod.html#gade5bdc874e12defb1b1d6fc971e8fdb1">get_ensemble_pelist</a>(pelist, name)</div>
-<div class="line"><a name="l00130"></a><span class="lineno"><a class="line" href="group__ensemble__manager__mod.html#gade5bdc874e12defb1b1d6fc971e8fdb1">  130</a></span>&#160; </div>
-<div class="line"><a name="l00131"></a><span class="lineno">  131</span>&#160;    <span class="keywordtype">integer</span>, <span class="keywordtype">intent(inout)</span> :: pelist(:,:)<span class="comment"> !&lt; Ensemble pelist</span></div>
-<div class="line"><a name="l00132"></a><span class="lineno">  132</span>&#160;    <span class="keywordtype">character(len=*)</span>, <span class="keywordtype">intent(in)</span>, <span class="keywordtype">optional</span>  :: name<span class="comment"> !&lt; Component name.</span></div>
+<div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;    <span class="keywordflow">if</span>(ensemble_size &lt; 1) <span class="keyword">call </span><a class="code" href="group__mpp__mod.html#interfacempp__mod_1_1mpp__error">mpp_error</a>(fatal, &amp;</div>
+<div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160;       <span class="stringliteral">&#39;ensemble_manager_mod: ensemble_nml variable ensemble_size must be a positive integer&#39;</span>)</div>
+<div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;    <span class="keywordflow">if</span>(ensemble_size &gt; max_ensemble_size)  <span class="keyword">call </span><a class="code" href="group__mpp__mod.html#interfacempp__mod_1_1mpp__error">mpp_error</a>(fatal, &amp;</div>
+<div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160;       <span class="stringliteral">&#39;ensemble_manager_mod: ensemble_nml variable ensemble_size should be no larger than MAX_ENSEMBLE_SIZE, &#39;</span>// &amp;</div>
+<div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160;       <span class="stringliteral">&#39;change ensemble_size or increase MAX_ENSEMBLE_SIZE&#39;</span>)</div>
+<div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160; </div>
+<div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160;    pe = <a class="code" href="group__mpp__mod.html#gacfeba7de56f9dd6000b3fd78f9d56c50">mpp_pe</a>()</div>
+<div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;    npes = <a class="code" href="group__mpp__mod.html#gabf546cd336d5c539e445fb884f98ab6b">mpp_npes</a>()</div>
+<div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;    <span class="keywordflow">if</span> (npes &lt; ensemble_size) <span class="keywordflow">then</span></div>
+<div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160;      <span class="keyword">call </span><a class="code" href="group__mpp__mod.html#interfacempp__mod_1_1mpp__error">mpp_error</a>(fatal,<span class="stringliteral">&#39;npes must be &gt;= ensemble_size&#39;</span>)</div>
+<div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160;<span class="keywordflow">    endif</span></div>
+<div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160;    total_npes_pm = npes/ensemble_size</div>
+<div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160;    <span class="keywordflow">if</span> (mod(npes, total_npes_pm) /= 0) <span class="keyword">call </span><a class="code" href="group__mpp__mod.html#interfacempp__mod_1_1mpp__error">mpp_error</a>(fatal,<span class="stringliteral">&#39;ensemble_size must be divis by npes&#39;</span>)</div>
+<div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160; </div>
+<div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160;    <span class="keyword">call </span><a class="code" href="group__mpp__mod.html#gada061a5778228965b5ccfc693c4dc892">mpp_declare_pelist</a>((/(i,i=0,npes-1)/),<span class="stringliteral">&#39;_ens0&#39;</span>) <span class="comment">! for ensemble driver</span></div>
+<div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160; </div>
+<div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160;  <span class="keyword">end subroutine </span><a class="code" href="group__ensemble__manager__mod.html#gacdbbf5369191eab58e691d63639ee1b1">ensemble_manager_init</a></div>
+<div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160;<span class="comment"></span> </div>
+<div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160;<span class="comment">  !&gt; @brief Getter function for ensemble_id</span></div>
+<div class="line"><a name="l00104"></a><span class="lineno">  104</span>&#160;<span class="comment">  !! @return integer of ensemble id</span></div>
+<div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160;  <span class="keyword">function </span><a class="code" href="group__ensemble__manager__mod.html#ga20ee0e034451b23cd2beb511eb8c8803">get_ensemble_id</a>()</div>
+<div class="line"><a name="l00106"></a><span class="lineno"><a class="line" href="group__ensemble__manager__mod.html#ga20ee0e034451b23cd2beb511eb8c8803">  106</a></span>&#160;    <span class="keywordtype">integer</span> :: <a class="code" href="group__ensemble__manager__mod.html#ga20ee0e034451b23cd2beb511eb8c8803">get_ensemble_id</a></div>
+<div class="line"><a name="l00107"></a><span class="lineno">  107</span>&#160;    <a class="code" href="group__ensemble__manager__mod.html#ga20ee0e034451b23cd2beb511eb8c8803">get_ensemble_id</a> = ensemble_id</div>
+<div class="line"><a name="l00108"></a><span class="lineno">  108</span>&#160;  <span class="keyword">end function </span><a class="code" href="group__ensemble__manager__mod.html#ga20ee0e034451b23cd2beb511eb8c8803">get_ensemble_id</a></div>
+<div class="line"><a name="l00109"></a><span class="lineno">  109</span>&#160;<span class="comment"></span> </div>
+<div class="line"><a name="l00110"></a><span class="lineno">  110</span>&#160;<span class="comment">  !&gt; @brief Returns ensemble size integer array</span></div>
+<div class="line"><a name="l00111"></a><span class="lineno">  111</span>&#160;<span class="comment">  !! @return integer array of sizes</span></div>
+<div class="line"><a name="l00112"></a><span class="lineno">  112</span>&#160;  <span class="keyword">function </span><a class="code" href="group__ensemble__manager__mod.html#ga2ba619f4454819b2fe6412ddba2e47c1">get_ensemble_size</a>()</div>
+<div class="line"><a name="l00113"></a><span class="lineno"><a class="line" href="group__ensemble__manager__mod.html#ga2ba619f4454819b2fe6412ddba2e47c1">  113</a></span>&#160; </div>
+<div class="line"><a name="l00114"></a><span class="lineno">  114</span>&#160;    <span class="keywordtype">integer</span>, <span class="keywordtype">dimension(6)</span> :: <a class="code" href="group__ensemble__manager__mod.html#ga2ba619f4454819b2fe6412ddba2e47c1">get_ensemble_size</a></div>
+<div class="line"><a name="l00115"></a><span class="lineno">  115</span>&#160; </div>
+<div class="line"><a name="l00116"></a><span class="lineno">  116</span>&#160;    <a class="code" href="group__ensemble__manager__mod.html#ga2ba619f4454819b2fe6412ddba2e47c1">get_ensemble_size</a>(1) = ensemble_size</div>
+<div class="line"><a name="l00117"></a><span class="lineno">  117</span>&#160;    <a class="code" href="group__ensemble__manager__mod.html#ga2ba619f4454819b2fe6412ddba2e47c1">get_ensemble_size</a>(2) = total_npes_pm</div>
+<div class="line"><a name="l00118"></a><span class="lineno">  118</span>&#160;    <a class="code" href="group__ensemble__manager__mod.html#ga2ba619f4454819b2fe6412ddba2e47c1">get_ensemble_size</a>(3) = ocean_npes_pm</div>
+<div class="line"><a name="l00119"></a><span class="lineno">  119</span>&#160;    <a class="code" href="group__ensemble__manager__mod.html#ga2ba619f4454819b2fe6412ddba2e47c1">get_ensemble_size</a>(4) = atmos_npes_pm</div>
+<div class="line"><a name="l00120"></a><span class="lineno">  120</span>&#160;    <a class="code" href="group__ensemble__manager__mod.html#ga2ba619f4454819b2fe6412ddba2e47c1">get_ensemble_size</a>(5) = land_npes_pm</div>
+<div class="line"><a name="l00121"></a><span class="lineno">  121</span>&#160;    <a class="code" href="group__ensemble__manager__mod.html#ga2ba619f4454819b2fe6412ddba2e47c1">get_ensemble_size</a>(6) = ice_npes_pm</div>
+<div class="line"><a name="l00122"></a><span class="lineno">  122</span>&#160; </div>
+<div class="line"><a name="l00123"></a><span class="lineno">  123</span>&#160;  <span class="keyword">end function </span><a class="code" href="group__ensemble__manager__mod.html#ga2ba619f4454819b2fe6412ddba2e47c1">get_ensemble_size</a></div>
+<div class="line"><a name="l00124"></a><span class="lineno">  124</span>&#160;<span class="comment"></span> </div>
+<div class="line"><a name="l00125"></a><span class="lineno">  125</span>&#160;<span class="comment">  !&gt; @brief Gets pe list for current ensemble or a given ensemble component.</span></div>
+<div class="line"><a name="l00126"></a><span class="lineno">  126</span>&#160;  <span class="keyword">subroutine </span><a class="code" href="group__ensemble__manager__mod.html#gade5bdc874e12defb1b1d6fc971e8fdb1">get_ensemble_pelist</a>(pelist, name)</div>
+<div class="line"><a name="l00127"></a><span class="lineno"><a class="line" href="group__ensemble__manager__mod.html#gade5bdc874e12defb1b1d6fc971e8fdb1">  127</a></span>&#160; </div>
+<div class="line"><a name="l00128"></a><span class="lineno">  128</span>&#160;    <span class="keywordtype">integer</span>, <span class="keywordtype">intent(inout)</span> :: pelist(:,:)<span class="comment"> !&lt; Ensemble pelist</span></div>
+<div class="line"><a name="l00129"></a><span class="lineno">  129</span>&#160;    <span class="keywordtype">character(len=*)</span>, <span class="keywordtype">intent(in)</span>, <span class="keywordtype">optional</span>  :: name<span class="comment"> !&lt; Component name.</span></div>
+<div class="line"><a name="l00130"></a><span class="lineno">  130</span>&#160; </div>
+<div class="line"><a name="l00131"></a><span class="lineno">  131</span>&#160;    <span class="keywordflow">if</span> (<span class="keyword">size</span>(pelist,1) &lt; ensemble_size) &amp;</div>
+<div class="line"><a name="l00132"></a><span class="lineno">  132</span>&#160;         <span class="keyword">call </span><a class="code" href="group__mpp__mod.html#interfacempp__mod_1_1mpp__error">mpp_error</a>(fatal,<span class="stringliteral">&#39;get_ensemble_pelist: size of pelist 1st index &lt; ensemble_size&#39;</span>)</div>
 <div class="line"><a name="l00133"></a><span class="lineno">  133</span>&#160; </div>
-<div class="line"><a name="l00134"></a><span class="lineno">  134</span>&#160;    <span class="keywordflow">if</span> (<span class="keyword">size</span>(pelist,1) &lt; ensemble_size) &amp;</div>
-<div class="line"><a name="l00135"></a><span class="lineno">  135</span>&#160;         <span class="keyword">call </span><a class="code" href="interfacempp__mod_1_1mpp__error.html">mpp_error</a>(fatal,<span class="stringliteral">&#39;get_ensemble_pelist: size of pelist 1st index &lt; ensemble_size&#39;</span>)</div>
-<div class="line"><a name="l00136"></a><span class="lineno">  136</span>&#160; </div>
-<div class="line"><a name="l00137"></a><span class="lineno">  137</span>&#160;    <span class="keywordflow">if</span>(<span class="keyword">present</span>(name)) <span class="keywordflow">then</span></div>
-<div class="line"><a name="l00138"></a><span class="lineno">  138</span>&#160;       <span class="keywordflow">select case</span>(name)</div>
-<div class="line"><a name="l00139"></a><span class="lineno">  139</span>&#160;       <span class="keywordflow">case</span>(<span class="stringliteral">&#39;ocean&#39;</span>)</div>
-<div class="line"><a name="l00140"></a><span class="lineno">  140</span>&#160;          <span class="keywordflow">if</span> (<span class="keyword">size</span>(pelist,2) &lt; ocean_npes_pm)&amp;</div>
-<div class="line"><a name="l00141"></a><span class="lineno">  141</span>&#160;               <span class="keyword">call </span><a class="code" href="interfacempp__mod_1_1mpp__error.html">mpp_error</a>(fatal,<span class="stringliteral">&#39;get_ensemble_pelist: size of pelist 2nd index &lt; ocean_npes_pm&#39;</span>)</div>
-<div class="line"><a name="l00142"></a><span class="lineno">  142</span>&#160;          pelist = 0</div>
-<div class="line"><a name="l00143"></a><span class="lineno">  143</span>&#160;          pelist(1:ensemble_size,1:ocean_npes_pm) = &amp;</div>
-<div class="line"><a name="l00144"></a><span class="lineno">  144</span>&#160;               ensemble_pelist_ocean(1:ensemble_size,1:ocean_npes_pm)</div>
-<div class="line"><a name="l00145"></a><span class="lineno">  145</span>&#160; </div>
-<div class="line"><a name="l00146"></a><span class="lineno">  146</span>&#160;       <span class="keywordflow">case</span>(<span class="stringliteral">&#39;atmos&#39;</span>)</div>
-<div class="line"><a name="l00147"></a><span class="lineno">  147</span>&#160;          <span class="keywordflow">if</span> (<span class="keyword">size</span>(pelist,2) &lt; atmos_npes_pm)&amp;</div>
-<div class="line"><a name="l00148"></a><span class="lineno">  148</span>&#160;               <span class="keyword">call </span><a class="code" href="interfacempp__mod_1_1mpp__error.html">mpp_error</a>(fatal,<span class="stringliteral">&#39;get_ensemble_pelist: size of pelist 2nd index &lt; atmos_npes_pm&#39;</span>)</div>
-<div class="line"><a name="l00149"></a><span class="lineno">  149</span>&#160;          pelist = 0</div>
-<div class="line"><a name="l00150"></a><span class="lineno">  150</span>&#160;          pelist(1:ensemble_size,1:atmos_npes_pm) = &amp;</div>
-<div class="line"><a name="l00151"></a><span class="lineno">  151</span>&#160;               ensemble_pelist_atmos(1:ensemble_size,1:atmos_npes_pm)</div>
-<div class="line"><a name="l00152"></a><span class="lineno">  152</span>&#160; </div>
-<div class="line"><a name="l00153"></a><span class="lineno">  153</span>&#160;       <span class="keywordflow">case</span>(<span class="stringliteral">&#39;land&#39;</span>)</div>
-<div class="line"><a name="l00154"></a><span class="lineno">  154</span>&#160;          <span class="keywordflow">if</span> (<span class="keyword">size</span>(pelist,2) &lt; land_npes_pm)&amp;</div>
-<div class="line"><a name="l00155"></a><span class="lineno">  155</span>&#160;               <span class="keyword">call </span><a class="code" href="interfacempp__mod_1_1mpp__error.html">mpp_error</a>(fatal,<span class="stringliteral">&#39;get_ensemble_pelist: size of pelist 2nd index &lt; land_npes_pm&#39;</span>)</div>
-<div class="line"><a name="l00156"></a><span class="lineno">  156</span>&#160;          pelist = 0</div>
-<div class="line"><a name="l00157"></a><span class="lineno">  157</span>&#160;          pelist(1:ensemble_size,1:land_npes_pm) = &amp;</div>
-<div class="line"><a name="l00158"></a><span class="lineno">  158</span>&#160;               ensemble_pelist_land(1:ensemble_size,1:land_npes_pm)</div>
-<div class="line"><a name="l00159"></a><span class="lineno">  159</span>&#160; </div>
-<div class="line"><a name="l00160"></a><span class="lineno">  160</span>&#160;       <span class="keywordflow">case</span>(<span class="stringliteral">&#39;ice&#39;</span>)</div>
-<div class="line"><a name="l00161"></a><span class="lineno">  161</span>&#160;          <span class="keywordflow">if</span> (<span class="keyword">size</span>(pelist,2) &lt; ice_npes_pm)&amp;</div>
-<div class="line"><a name="l00162"></a><span class="lineno">  162</span>&#160;               <span class="keyword">call </span><a class="code" href="interfacempp__mod_1_1mpp__error.html">mpp_error</a>(fatal,<span class="stringliteral">&#39;get_ensemble_pelist: size of pelist 2nd index &lt; ice_npes_pm&#39;</span>)</div>
-<div class="line"><a name="l00163"></a><span class="lineno">  163</span>&#160;          pelist = 0</div>
-<div class="line"><a name="l00164"></a><span class="lineno">  164</span>&#160;          pelist(1:ensemble_size,1:ice_npes_pm) = &amp;</div>
-<div class="line"><a name="l00165"></a><span class="lineno">  165</span>&#160;               ensemble_pelist_ice(1:ensemble_size,1:ice_npes_pm)</div>
-<div class="line"><a name="l00166"></a><span class="lineno">  166</span>&#160; </div>
-<div class="line"><a name="l00167"></a><span class="lineno">  167</span>&#160;<span class="keywordflow">       case default</span></div>
-<div class="line"><a name="l00168"></a><span class="lineno">  168</span>&#160;          <span class="keyword">call </span><a class="code" href="interfacempp__mod_1_1mpp__error.html">mpp_error</a>(fatal,<span class="stringliteral">&#39;get_ensemble_pelist: unknown argument name=&#39;</span>//name)</div>
-<div class="line"><a name="l00169"></a><span class="lineno">  169</span>&#160;<span class="keywordflow">       end select</span></div>
-<div class="line"><a name="l00170"></a><span class="lineno">  170</span>&#160;    <span class="keywordflow">else</span></div>
-<div class="line"><a name="l00171"></a><span class="lineno">  171</span>&#160;       <span class="keywordflow">if</span> (<span class="keyword">size</span>(pelist,2) &lt; total_npes_pm)&amp;</div>
-<div class="line"><a name="l00172"></a><span class="lineno">  172</span>&#160;            <span class="keyword">call </span><a class="code" href="interfacempp__mod_1_1mpp__error.html">mpp_error</a>(fatal,<span class="stringliteral">&#39;get_ensemble_pelist: size of pelist 2nd index &lt; total_npes_pm&#39;</span>)</div>
-<div class="line"><a name="l00173"></a><span class="lineno">  173</span>&#160;       pelist = 0</div>
-<div class="line"><a name="l00174"></a><span class="lineno">  174</span>&#160;       pelist(1:ensemble_size,1:total_npes_pm) = &amp;</div>
-<div class="line"><a name="l00175"></a><span class="lineno">  175</span>&#160;            ensemble_pelist(1:ensemble_size,1:total_npes_pm)</div>
-<div class="line"><a name="l00176"></a><span class="lineno">  176</span>&#160;<span class="keywordflow">    endif</span></div>
-<div class="line"><a name="l00177"></a><span class="lineno">  177</span>&#160; </div>
-<div class="line"><a name="l00178"></a><span class="lineno">  178</span>&#160;    <span class="keywordflow">return</span></div>
-<div class="line"><a name="l00179"></a><span class="lineno">  179</span>&#160;  <span class="keyword">end subroutine </span><a class="code" href="group__ensemble__manager__mod.html#gade5bdc874e12defb1b1d6fc971e8fdb1">get_ensemble_pelist</a></div>
-<div class="line"><a name="l00180"></a><span class="lineno">  180</span>&#160;<span class="comment"></span> </div>
-<div class="line"><a name="l00181"></a><span class="lineno">  181</span>&#160;<span class="comment">!&gt; @brief Gets filter pelist for a given ensemble component.</span></div>
-<div class="line"><a name="l00182"></a><span class="lineno">  182</span>&#160;<span class="comment">!!</span></div>
-<div class="line"><a name="l00183"></a><span class="lineno">  183</span>&#160;<span class="comment">!! @throw FATAL, &quot;get_ensemble_filter_pelist: size of pelist argument &lt; ensemble_size * ocean_npes_pm&quot;</span></div>
-<div class="line"><a name="l00184"></a><span class="lineno">  184</span>&#160;<span class="comment">!! @throw FATAL, &quot;get_ensemble_filter_pelist: size of pelist argument &lt; ensemble_size * atmos_npes_pm&quot;</span></div>
-<div class="line"><a name="l00185"></a><span class="lineno">  185</span>&#160;<span class="comment">!! @throw FATAL, &quot;get_ensemble_filter_pelist: size of pelist argument &lt; ensemble_size * land_npes_pm&quot;</span></div>
-<div class="line"><a name="l00186"></a><span class="lineno">  186</span>&#160;<span class="comment">!! @throw FATAL, &quot;get_ensemble_filter_pelist: size of pelist argument &lt; ensemble_size * ice_npes_pm&quot;</span></div>
-<div class="line"><a name="l00187"></a><span class="lineno">  187</span>&#160;<span class="comment">!! @throw FATAL, &quot;get_ensemble_filter_pelist: unknown argument name=[name]&quot;</span></div>
-<div class="line"><a name="l00188"></a><span class="lineno">  188</span>&#160;  <span class="keyword">subroutine </span><a class="code" href="group__ensemble__manager__mod.html#gafbf614c62aef080ef4702355c7705258">get_ensemble_filter_pelist</a>(pelist, name)</div>
-<div class="line"><a name="l00189"></a><span class="lineno"><a class="line" href="group__ensemble__manager__mod.html#gafbf614c62aef080ef4702355c7705258">  189</a></span>&#160; </div>
-<div class="line"><a name="l00190"></a><span class="lineno">  190</span>&#160;    <span class="keywordtype">integer</span>, <span class="keywordtype">intent(inout)</span> :: pelist(:)<span class="comment"> !&lt; Returned filter pe list</span></div>
-<div class="line"><a name="l00191"></a><span class="lineno">  191</span>&#160;    <span class="keywordtype">character(len=*)</span>, <span class="keywordtype">intent(in)</span>  :: name<span class="comment"> !&lt; Ensemble component name</span></div>
-<div class="line"><a name="l00192"></a><span class="lineno">  192</span>&#160; </div>
-<div class="line"><a name="l00193"></a><span class="lineno">  193</span>&#160;    <span class="keywordflow">select case</span>(name)</div>
-<div class="line"><a name="l00194"></a><span class="lineno">  194</span>&#160;    <span class="keywordflow">case</span>(<span class="stringliteral">&#39;ocean&#39;</span>)</div>
-<div class="line"><a name="l00195"></a><span class="lineno">  195</span>&#160;       <span class="keywordflow">if</span> (<span class="keyword">size</span>(pelist) &lt; ensemble_size * ocean_npes_pm)&amp;</div>
-<div class="line"><a name="l00196"></a><span class="lineno">  196</span>&#160;            <span class="keyword">call </span><a class="code" href="interfacempp__mod_1_1mpp__error.html">mpp_error</a>(fatal,<span class="stringliteral">&#39;get_ensemble_filter_pelist: size of pelist argument &lt; ensemble_size * ocean_npes_pm&#39;</span>)</div>
-<div class="line"><a name="l00197"></a><span class="lineno">  197</span>&#160;       pelist = 0</div>
-<div class="line"><a name="l00198"></a><span class="lineno">  198</span>&#160;       pelist(1:ensemble_size*ocean_npes_pm) = &amp;</div>
-<div class="line"><a name="l00199"></a><span class="lineno">  199</span>&#160;            ensemble_pelist_ocean_filter(1:ensemble_size*ocean_npes_pm)</div>
-<div class="line"><a name="l00200"></a><span class="lineno">  200</span>&#160; </div>
-<div class="line"><a name="l00201"></a><span class="lineno">  201</span>&#160;    <span class="keywordflow">case</span>(<span class="stringliteral">&#39;atmos&#39;</span>)</div>
-<div class="line"><a name="l00202"></a><span class="lineno">  202</span>&#160;       <span class="keywordflow">if</span> (<span class="keyword">size</span>(pelist) &lt; ensemble_size * atmos_npes_pm)&amp;</div>
-<div class="line"><a name="l00203"></a><span class="lineno">  203</span>&#160;            <span class="keyword">call </span><a class="code" href="interfacempp__mod_1_1mpp__error.html">mpp_error</a>(fatal,<span class="stringliteral">&#39;get_ensemble_filter_pelist: size of pelist argument &lt; ensemble_size * atmos_npes_pm&#39;</span>)</div>
-<div class="line"><a name="l00204"></a><span class="lineno">  204</span>&#160;       pelist = 0</div>
-<div class="line"><a name="l00205"></a><span class="lineno">  205</span>&#160;       pelist(1:ensemble_size*atmos_npes_pm) = &amp;</div>
-<div class="line"><a name="l00206"></a><span class="lineno">  206</span>&#160;            ensemble_pelist_atmos_filter(1:ensemble_size*atmos_npes_pm)</div>
-<div class="line"><a name="l00207"></a><span class="lineno">  207</span>&#160; </div>
-<div class="line"><a name="l00208"></a><span class="lineno">  208</span>&#160;    <span class="keywordflow">case</span>(<span class="stringliteral">&#39;land&#39;</span>)</div>
-<div class="line"><a name="l00209"></a><span class="lineno">  209</span>&#160;       <span class="keywordflow">if</span> (<span class="keyword">size</span>(pelist) &lt; ensemble_size * land_npes_pm)&amp;</div>
-<div class="line"><a name="l00210"></a><span class="lineno">  210</span>&#160;            <span class="keyword">call </span><a class="code" href="interfacempp__mod_1_1mpp__error.html">mpp_error</a>(fatal,<span class="stringliteral">&#39;get_ensemble_filter_pelist: size of pelist argument &lt; ensemble_size * land_npes_pm&#39;</span>)</div>
-<div class="line"><a name="l00211"></a><span class="lineno">  211</span>&#160;       pelist = 0</div>
-<div class="line"><a name="l00212"></a><span class="lineno">  212</span>&#160;       pelist(1:ensemble_size*land_npes_pm) = &amp;</div>
-<div class="line"><a name="l00213"></a><span class="lineno">  213</span>&#160;            ensemble_pelist_land_filter(1:ensemble_size*land_npes_pm)</div>
-<div class="line"><a name="l00214"></a><span class="lineno">  214</span>&#160; </div>
-<div class="line"><a name="l00215"></a><span class="lineno">  215</span>&#160;    <span class="keywordflow">case</span>(<span class="stringliteral">&#39;ice&#39;</span>)</div>
-<div class="line"><a name="l00216"></a><span class="lineno">  216</span>&#160;       <span class="keywordflow">if</span> (<span class="keyword">size</span>(pelist) &lt; ensemble_size * ice_npes_pm)&amp;</div>
-<div class="line"><a name="l00217"></a><span class="lineno">  217</span>&#160;            <span class="keyword">call </span><a class="code" href="interfacempp__mod_1_1mpp__error.html">mpp_error</a>(fatal,<span class="stringliteral">&#39;get_ensemble_filter_pelist: size of pelist argument &lt; ensemble_size * ice_npes_pm&#39;</span>)</div>
-<div class="line"><a name="l00218"></a><span class="lineno">  218</span>&#160;       pelist = 0</div>
-<div class="line"><a name="l00219"></a><span class="lineno">  219</span>&#160;       pelist(1:ensemble_size*ice_npes_pm) = &amp;</div>
-<div class="line"><a name="l00220"></a><span class="lineno">  220</span>&#160;            ensemble_pelist_ice_filter(1:ensemble_size*ice_npes_pm)</div>
-<div class="line"><a name="l00221"></a><span class="lineno">  221</span>&#160; </div>
-<div class="line"><a name="l00222"></a><span class="lineno">  222</span>&#160;<span class="keywordflow">    case default</span></div>
-<div class="line"><a name="l00223"></a><span class="lineno">  223</span>&#160;       <span class="keyword">call </span><a class="code" href="interfacempp__mod_1_1mpp__error.html">mpp_error</a>(fatal,<span class="stringliteral">&#39;get_ensemble_filter_pelist: unknown argument name=&#39;</span>//name)</div>
-<div class="line"><a name="l00224"></a><span class="lineno">  224</span>&#160;<span class="keywordflow">    end select</span></div>
-<div class="line"><a name="l00225"></a><span class="lineno">  225</span>&#160; </div>
+<div class="line"><a name="l00134"></a><span class="lineno">  134</span>&#160;    <span class="keywordflow">if</span>(<span class="keyword">present</span>(name)) <span class="keywordflow">then</span></div>
+<div class="line"><a name="l00135"></a><span class="lineno">  135</span>&#160;       <span class="keywordflow">select case</span>(name)</div>
+<div class="line"><a name="l00136"></a><span class="lineno">  136</span>&#160;       <span class="keywordflow">case</span>(<span class="stringliteral">&#39;ocean&#39;</span>)</div>
+<div class="line"><a name="l00137"></a><span class="lineno">  137</span>&#160;          <span class="keywordflow">if</span> (<span class="keyword">size</span>(pelist,2) &lt; ocean_npes_pm)&amp;</div>
+<div class="line"><a name="l00138"></a><span class="lineno">  138</span>&#160;               <span class="keyword">call </span><a class="code" href="group__mpp__mod.html#interfacempp__mod_1_1mpp__error">mpp_error</a>(fatal,<span class="stringliteral">&#39;get_ensemble_pelist: size of pelist 2nd index &lt; ocean_npes_pm&#39;</span>)</div>
+<div class="line"><a name="l00139"></a><span class="lineno">  139</span>&#160;          pelist = 0</div>
+<div class="line"><a name="l00140"></a><span class="lineno">  140</span>&#160;          pelist(1:ensemble_size,1:ocean_npes_pm) = &amp;</div>
+<div class="line"><a name="l00141"></a><span class="lineno">  141</span>&#160;               ensemble_pelist_ocean(1:ensemble_size,1:ocean_npes_pm)</div>
+<div class="line"><a name="l00142"></a><span class="lineno">  142</span>&#160; </div>
+<div class="line"><a name="l00143"></a><span class="lineno">  143</span>&#160;       <span class="keywordflow">case</span>(<span class="stringliteral">&#39;atmos&#39;</span>)</div>
+<div class="line"><a name="l00144"></a><span class="lineno">  144</span>&#160;          <span class="keywordflow">if</span> (<span class="keyword">size</span>(pelist,2) &lt; atmos_npes_pm)&amp;</div>
+<div class="line"><a name="l00145"></a><span class="lineno">  145</span>&#160;               <span class="keyword">call </span><a class="code" href="group__mpp__mod.html#interfacempp__mod_1_1mpp__error">mpp_error</a>(fatal,<span class="stringliteral">&#39;get_ensemble_pelist: size of pelist 2nd index &lt; atmos_npes_pm&#39;</span>)</div>
+<div class="line"><a name="l00146"></a><span class="lineno">  146</span>&#160;          pelist = 0</div>
+<div class="line"><a name="l00147"></a><span class="lineno">  147</span>&#160;          pelist(1:ensemble_size,1:atmos_npes_pm) = &amp;</div>
+<div class="line"><a name="l00148"></a><span class="lineno">  148</span>&#160;               ensemble_pelist_atmos(1:ensemble_size,1:atmos_npes_pm)</div>
+<div class="line"><a name="l00149"></a><span class="lineno">  149</span>&#160; </div>
+<div class="line"><a name="l00150"></a><span class="lineno">  150</span>&#160;       <span class="keywordflow">case</span>(<span class="stringliteral">&#39;land&#39;</span>)</div>
+<div class="line"><a name="l00151"></a><span class="lineno">  151</span>&#160;          <span class="keywordflow">if</span> (<span class="keyword">size</span>(pelist,2) &lt; land_npes_pm)&amp;</div>
+<div class="line"><a name="l00152"></a><span class="lineno">  152</span>&#160;               <span class="keyword">call </span><a class="code" href="group__mpp__mod.html#interfacempp__mod_1_1mpp__error">mpp_error</a>(fatal,<span class="stringliteral">&#39;get_ensemble_pelist: size of pelist 2nd index &lt; land_npes_pm&#39;</span>)</div>
+<div class="line"><a name="l00153"></a><span class="lineno">  153</span>&#160;          pelist = 0</div>
+<div class="line"><a name="l00154"></a><span class="lineno">  154</span>&#160;          pelist(1:ensemble_size,1:land_npes_pm) = &amp;</div>
+<div class="line"><a name="l00155"></a><span class="lineno">  155</span>&#160;               ensemble_pelist_land(1:ensemble_size,1:land_npes_pm)</div>
+<div class="line"><a name="l00156"></a><span class="lineno">  156</span>&#160; </div>
+<div class="line"><a name="l00157"></a><span class="lineno">  157</span>&#160;       <span class="keywordflow">case</span>(<span class="stringliteral">&#39;ice&#39;</span>)</div>
+<div class="line"><a name="l00158"></a><span class="lineno">  158</span>&#160;          <span class="keywordflow">if</span> (<span class="keyword">size</span>(pelist,2) &lt; ice_npes_pm)&amp;</div>
+<div class="line"><a name="l00159"></a><span class="lineno">  159</span>&#160;               <span class="keyword">call </span><a class="code" href="group__mpp__mod.html#interfacempp__mod_1_1mpp__error">mpp_error</a>(fatal,<span class="stringliteral">&#39;get_ensemble_pelist: size of pelist 2nd index &lt; ice_npes_pm&#39;</span>)</div>
+<div class="line"><a name="l00160"></a><span class="lineno">  160</span>&#160;          pelist = 0</div>
+<div class="line"><a name="l00161"></a><span class="lineno">  161</span>&#160;          pelist(1:ensemble_size,1:ice_npes_pm) = &amp;</div>
+<div class="line"><a name="l00162"></a><span class="lineno">  162</span>&#160;               ensemble_pelist_ice(1:ensemble_size,1:ice_npes_pm)</div>
+<div class="line"><a name="l00163"></a><span class="lineno">  163</span>&#160; </div>
+<div class="line"><a name="l00164"></a><span class="lineno">  164</span>&#160;<span class="keywordflow">       case default</span></div>
+<div class="line"><a name="l00165"></a><span class="lineno">  165</span>&#160;          <span class="keyword">call </span><a class="code" href="group__mpp__mod.html#interfacempp__mod_1_1mpp__error">mpp_error</a>(fatal,<span class="stringliteral">&#39;get_ensemble_pelist: unknown argument name=&#39;</span>//name)</div>
+<div class="line"><a name="l00166"></a><span class="lineno">  166</span>&#160;<span class="keywordflow">       end select</span></div>
+<div class="line"><a name="l00167"></a><span class="lineno">  167</span>&#160;    <span class="keywordflow">else</span></div>
+<div class="line"><a name="l00168"></a><span class="lineno">  168</span>&#160;       <span class="keywordflow">if</span> (<span class="keyword">size</span>(pelist,2) &lt; total_npes_pm)&amp;</div>
+<div class="line"><a name="l00169"></a><span class="lineno">  169</span>&#160;            <span class="keyword">call </span><a class="code" href="group__mpp__mod.html#interfacempp__mod_1_1mpp__error">mpp_error</a>(fatal,<span class="stringliteral">&#39;get_ensemble_pelist: size of pelist 2nd index &lt; total_npes_pm&#39;</span>)</div>
+<div class="line"><a name="l00170"></a><span class="lineno">  170</span>&#160;       pelist = 0</div>
+<div class="line"><a name="l00171"></a><span class="lineno">  171</span>&#160;       pelist(1:ensemble_size,1:total_npes_pm) = &amp;</div>
+<div class="line"><a name="l00172"></a><span class="lineno">  172</span>&#160;            ensemble_pelist(1:ensemble_size,1:total_npes_pm)</div>
+<div class="line"><a name="l00173"></a><span class="lineno">  173</span>&#160;<span class="keywordflow">    endif</span></div>
+<div class="line"><a name="l00174"></a><span class="lineno">  174</span>&#160; </div>
+<div class="line"><a name="l00175"></a><span class="lineno">  175</span>&#160;    <span class="keywordflow">return</span></div>
+<div class="line"><a name="l00176"></a><span class="lineno">  176</span>&#160;  <span class="keyword">end subroutine </span><a class="code" href="group__ensemble__manager__mod.html#gade5bdc874e12defb1b1d6fc971e8fdb1">get_ensemble_pelist</a></div>
+<div class="line"><a name="l00177"></a><span class="lineno">  177</span>&#160;<span class="comment"></span> </div>
+<div class="line"><a name="l00178"></a><span class="lineno">  178</span>&#160;<span class="comment">!&gt; @brief Gets filter pelist for a given ensemble component.</span></div>
+<div class="line"><a name="l00179"></a><span class="lineno">  179</span>&#160;<span class="comment">!!</span></div>
+<div class="line"><a name="l00180"></a><span class="lineno">  180</span>&#160;<span class="comment">!! @throw FATAL, &quot;get_ensemble_filter_pelist: size of pelist argument &lt; ensemble_size * ocean_npes_pm&quot;</span></div>
+<div class="line"><a name="l00181"></a><span class="lineno">  181</span>&#160;<span class="comment">!! @throw FATAL, &quot;get_ensemble_filter_pelist: size of pelist argument &lt; ensemble_size * atmos_npes_pm&quot;</span></div>
+<div class="line"><a name="l00182"></a><span class="lineno">  182</span>&#160;<span class="comment">!! @throw FATAL, &quot;get_ensemble_filter_pelist: size of pelist argument &lt; ensemble_size * land_npes_pm&quot;</span></div>
+<div class="line"><a name="l00183"></a><span class="lineno">  183</span>&#160;<span class="comment">!! @throw FATAL, &quot;get_ensemble_filter_pelist: size of pelist argument &lt; ensemble_size * ice_npes_pm&quot;</span></div>
+<div class="line"><a name="l00184"></a><span class="lineno">  184</span>&#160;<span class="comment">!! @throw FATAL, &quot;get_ensemble_filter_pelist: unknown argument name=[name]&quot;</span></div>
+<div class="line"><a name="l00185"></a><span class="lineno">  185</span>&#160;  <span class="keyword">subroutine </span><a class="code" href="group__ensemble__manager__mod.html#gafbf614c62aef080ef4702355c7705258">get_ensemble_filter_pelist</a>(pelist, name)</div>
+<div class="line"><a name="l00186"></a><span class="lineno"><a class="line" href="group__ensemble__manager__mod.html#gafbf614c62aef080ef4702355c7705258">  186</a></span>&#160; </div>
+<div class="line"><a name="l00187"></a><span class="lineno">  187</span>&#160;    <span class="keywordtype">integer</span>, <span class="keywordtype">intent(inout)</span> :: pelist(:)<span class="comment"> !&lt; Returned filter pe list</span></div>
+<div class="line"><a name="l00188"></a><span class="lineno">  188</span>&#160;    <span class="keywordtype">character(len=*)</span>, <span class="keywordtype">intent(in)</span>  :: name<span class="comment"> !&lt; Ensemble component name</span></div>
+<div class="line"><a name="l00189"></a><span class="lineno">  189</span>&#160; </div>
+<div class="line"><a name="l00190"></a><span class="lineno">  190</span>&#160;    <span class="keywordflow">select case</span>(name)</div>
+<div class="line"><a name="l00191"></a><span class="lineno">  191</span>&#160;    <span class="keywordflow">case</span>(<span class="stringliteral">&#39;ocean&#39;</span>)</div>
+<div class="line"><a name="l00192"></a><span class="lineno">  192</span>&#160;       <span class="keywordflow">if</span> (<span class="keyword">size</span>(pelist) &lt; ensemble_size * ocean_npes_pm)&amp;</div>
+<div class="line"><a name="l00193"></a><span class="lineno">  193</span>&#160;            <span class="keyword">call </span><a class="code" href="group__mpp__mod.html#interfacempp__mod_1_1mpp__error">mpp_error</a>(fatal,<span class="stringliteral">&#39;get_ensemble_filter_pelist: size of pelist argument &lt; ensemble_size * ocean_npes_pm&#39;</span>)</div>
+<div class="line"><a name="l00194"></a><span class="lineno">  194</span>&#160;       pelist = 0</div>
+<div class="line"><a name="l00195"></a><span class="lineno">  195</span>&#160;       pelist(1:ensemble_size*ocean_npes_pm) = &amp;</div>
+<div class="line"><a name="l00196"></a><span class="lineno">  196</span>&#160;            ensemble_pelist_ocean_filter(1:ensemble_size*ocean_npes_pm)</div>
+<div class="line"><a name="l00197"></a><span class="lineno">  197</span>&#160; </div>
+<div class="line"><a name="l00198"></a><span class="lineno">  198</span>&#160;    <span class="keywordflow">case</span>(<span class="stringliteral">&#39;atmos&#39;</span>)</div>
+<div class="line"><a name="l00199"></a><span class="lineno">  199</span>&#160;       <span class="keywordflow">if</span> (<span class="keyword">size</span>(pelist) &lt; ensemble_size * atmos_npes_pm)&amp;</div>
+<div class="line"><a name="l00200"></a><span class="lineno">  200</span>&#160;            <span class="keyword">call </span><a class="code" href="group__mpp__mod.html#interfacempp__mod_1_1mpp__error">mpp_error</a>(fatal,<span class="stringliteral">&#39;get_ensemble_filter_pelist: size of pelist argument &lt; ensemble_size * atmos_npes_pm&#39;</span>)</div>
+<div class="line"><a name="l00201"></a><span class="lineno">  201</span>&#160;       pelist = 0</div>
+<div class="line"><a name="l00202"></a><span class="lineno">  202</span>&#160;       pelist(1:ensemble_size*atmos_npes_pm) = &amp;</div>
+<div class="line"><a name="l00203"></a><span class="lineno">  203</span>&#160;            ensemble_pelist_atmos_filter(1:ensemble_size*atmos_npes_pm)</div>
+<div class="line"><a name="l00204"></a><span class="lineno">  204</span>&#160; </div>
+<div class="line"><a name="l00205"></a><span class="lineno">  205</span>&#160;    <span class="keywordflow">case</span>(<span class="stringliteral">&#39;land&#39;</span>)</div>
+<div class="line"><a name="l00206"></a><span class="lineno">  206</span>&#160;       <span class="keywordflow">if</span> (<span class="keyword">size</span>(pelist) &lt; ensemble_size * land_npes_pm)&amp;</div>
+<div class="line"><a name="l00207"></a><span class="lineno">  207</span>&#160;            <span class="keyword">call </span><a class="code" href="group__mpp__mod.html#interfacempp__mod_1_1mpp__error">mpp_error</a>(fatal,<span class="stringliteral">&#39;get_ensemble_filter_pelist: size of pelist argument &lt; ensemble_size * land_npes_pm&#39;</span>)</div>
+<div class="line"><a name="l00208"></a><span class="lineno">  208</span>&#160;       pelist = 0</div>
+<div class="line"><a name="l00209"></a><span class="lineno">  209</span>&#160;       pelist(1:ensemble_size*land_npes_pm) = &amp;</div>
+<div class="line"><a name="l00210"></a><span class="lineno">  210</span>&#160;            ensemble_pelist_land_filter(1:ensemble_size*land_npes_pm)</div>
+<div class="line"><a name="l00211"></a><span class="lineno">  211</span>&#160; </div>
+<div class="line"><a name="l00212"></a><span class="lineno">  212</span>&#160;    <span class="keywordflow">case</span>(<span class="stringliteral">&#39;ice&#39;</span>)</div>
+<div class="line"><a name="l00213"></a><span class="lineno">  213</span>&#160;       <span class="keywordflow">if</span> (<span class="keyword">size</span>(pelist) &lt; ensemble_size * ice_npes_pm)&amp;</div>
+<div class="line"><a name="l00214"></a><span class="lineno">  214</span>&#160;            <span class="keyword">call </span><a class="code" href="group__mpp__mod.html#interfacempp__mod_1_1mpp__error">mpp_error</a>(fatal,<span class="stringliteral">&#39;get_ensemble_filter_pelist: size of pelist argument &lt; ensemble_size * ice_npes_pm&#39;</span>)</div>
+<div class="line"><a name="l00215"></a><span class="lineno">  215</span>&#160;       pelist = 0</div>
+<div class="line"><a name="l00216"></a><span class="lineno">  216</span>&#160;       pelist(1:ensemble_size*ice_npes_pm) = &amp;</div>
+<div class="line"><a name="l00217"></a><span class="lineno">  217</span>&#160;            ensemble_pelist_ice_filter(1:ensemble_size*ice_npes_pm)</div>
+<div class="line"><a name="l00218"></a><span class="lineno">  218</span>&#160; </div>
+<div class="line"><a name="l00219"></a><span class="lineno">  219</span>&#160;<span class="keywordflow">    case default</span></div>
+<div class="line"><a name="l00220"></a><span class="lineno">  220</span>&#160;       <span class="keyword">call </span><a class="code" href="group__mpp__mod.html#interfacempp__mod_1_1mpp__error">mpp_error</a>(fatal,<span class="stringliteral">&#39;get_ensemble_filter_pelist: unknown argument name=&#39;</span>//name)</div>
+<div class="line"><a name="l00221"></a><span class="lineno">  221</span>&#160;<span class="keywordflow">    end select</span></div>
+<div class="line"><a name="l00222"></a><span class="lineno">  222</span>&#160; </div>
+<div class="line"><a name="l00223"></a><span class="lineno">  223</span>&#160; </div>
+<div class="line"><a name="l00224"></a><span class="lineno">  224</span>&#160;    <span class="keywordflow">return</span></div>
+<div class="line"><a name="l00225"></a><span class="lineno">  225</span>&#160;  <span class="keyword">end subroutine </span><a class="code" href="group__ensemble__manager__mod.html#gafbf614c62aef080ef4702355c7705258">get_ensemble_filter_pelist</a></div>
 <div class="line"><a name="l00226"></a><span class="lineno">  226</span>&#160; </div>
-<div class="line"><a name="l00227"></a><span class="lineno">  227</span>&#160;    <span class="keywordflow">return</span></div>
-<div class="line"><a name="l00228"></a><span class="lineno">  228</span>&#160;  <span class="keyword">end subroutine </span><a class="code" href="group__ensemble__manager__mod.html#gafbf614c62aef080ef4702355c7705258">get_ensemble_filter_pelist</a></div>
-<div class="line"><a name="l00229"></a><span class="lineno">  229</span>&#160; </div>
-<div class="line"><a name="l00230"></a><span class="lineno">  230</span>&#160;<span class="comment">!nnz: I think the following block of code should be contained in a subroutine</span></div>
-<div class="line"><a name="l00231"></a><span class="lineno">  231</span>&#160;<span class="comment">!     to consolidate and ensure the consistency of declaring the various pelists.</span><span class="comment"></span></div>
-<div class="line"><a name="l00232"></a><span class="lineno">  232</span>&#160;<span class="comment">!&gt; @brief Sets up pe list for an ensemble.</span></div>
-<div class="line"><a name="l00233"></a><span class="lineno">  233</span>&#160;<span class="comment">!!</span></div>
-<div class="line"><a name="l00234"></a><span class="lineno">  234</span>&#160;<span class="comment">!! @throw FATAL, &quot;ensemble_manager_mod: land_npes &gt; atmos_npes&quot;</span></div>
-<div class="line"><a name="l00235"></a><span class="lineno">  235</span>&#160;<span class="comment">!! @throw FATAL, &quot;ensemble_manager_mod: ice_npes &gt; atmos_npes&quot;</span></div>
-<div class="line"><a name="l00236"></a><span class="lineno">  236</span>&#160;  <span class="keyword">subroutine </span><a class="code" href="group__ensemble__manager__mod.html#ga978f35356297a1a43c77c2467bdcbfc9">ensemble_pelist_setup</a>(concurrent, atmos_npes, ocean_npes, land_npes, ice_npes, &amp;</div>
-<div class="line"><a name="l00237"></a><span class="lineno">  237</span>&#160;                                   Atm_pelist, Ocean_pelist, Land_pelist, Ice_pelist)</div>
-<div class="line"><a name="l00238"></a><span class="lineno"><a class="line" href="group__ensemble__manager__mod.html#ga978f35356297a1a43c77c2467bdcbfc9">  238</a></span>&#160;    <span class="keywordtype">logical</span>, <span class="keywordtype">intent(in)</span>                  :: concurrent</div>
-<div class="line"><a name="l00239"></a><span class="lineno">  239</span>&#160;    <span class="keywordtype">integer</span>, <span class="keywordtype">intent(in)</span>                  :: atmos_npes, ocean_npes</div>
-<div class="line"><a name="l00240"></a><span class="lineno">  240</span>&#160;    <span class="keywordtype">integer</span>, <span class="keywordtype">intent(in)</span>                  :: land_npes, ice_npes</div>
-<div class="line"><a name="l00241"></a><span class="lineno">  241</span>&#160;    <span class="keywordtype">integer</span>, <span class="keywordtype">dimension(:)</span>, <span class="keywordtype">intent(inout)</span> :: atm_pelist, ocean_pelist</div>
-<div class="line"><a name="l00242"></a><span class="lineno">  242</span>&#160;    <span class="keywordtype">integer</span>, <span class="keywordtype">dimension(:)</span>, <span class="keywordtype">intent(inout)</span> :: land_pelist, ice_pelist</div>
-<div class="line"><a name="l00243"></a><span class="lineno">  243</span>&#160;    <span class="keywordtype">integer</span>           :: atmos_pe_start, atmos_pe_end, ocean_pe_start, ocean_pe_end</div>
-<div class="line"><a name="l00244"></a><span class="lineno">  244</span>&#160;    <span class="keywordtype">integer</span>           :: land_pe_start, land_pe_end, ice_pe_start, ice_pe_end</div>
-<div class="line"><a name="l00245"></a><span class="lineno">  245</span>&#160;    <span class="keywordtype">character(len=10)</span> :: pelist_name, text</div>
-<div class="line"><a name="l00246"></a><span class="lineno">  246</span>&#160;    <span class="keywordtype">integer</span>           :: npes, n, m ,i</div>
-<div class="line"><a name="l00247"></a><span class="lineno">  247</span>&#160; </div>
-<div class="line"><a name="l00248"></a><span class="lineno">  248</span>&#160;    npes = total_npes_pm</div>
-<div class="line"><a name="l00249"></a><span class="lineno">  249</span>&#160; </div>
-<div class="line"><a name="l00250"></a><span class="lineno">  250</span>&#160;    <span class="comment">! make sure land_npes and ice_npes are not greater than atmos_npes</span></div>
-<div class="line"><a name="l00251"></a><span class="lineno">  251</span>&#160;    <span class="keywordflow">if</span>(land_npes &gt; atmos_npes) <span class="keyword">call </span><a class="code" href="interfacempp__mod_1_1mpp__error.html">mpp_error</a>(fatal, <span class="stringliteral">&#39;ensemble_manager_mod: land_npes &gt; atmos_npes&#39;</span>)</div>
-<div class="line"><a name="l00252"></a><span class="lineno">  252</span>&#160;    <span class="keywordflow">if</span>(ice_npes  &gt; atmos_npes) <span class="keyword">call </span><a class="code" href="interfacempp__mod_1_1mpp__error.html">mpp_error</a>(fatal, <span class="stringliteral">&#39;ensemble_manager_mod: ice_npes &gt; atmos_npes&#39;</span>)</div>
-<div class="line"><a name="l00253"></a><span class="lineno">  253</span>&#160; </div>
-<div class="line"><a name="l00254"></a><span class="lineno">  254</span>&#160;    <span class="keyword">allocate</span>(ensemble_pelist(ensemble_size,total_npes_pm))</div>
-<div class="line"><a name="l00255"></a><span class="lineno">  255</span>&#160;    <span class="keyword">allocate</span>(ensemble_pelist_ocean(1:ensemble_size, 1:ocean_npes) )</div>
-<div class="line"><a name="l00256"></a><span class="lineno">  256</span>&#160;    <span class="keyword">allocate</span>(ensemble_pelist_atmos(1:ensemble_size, 1:atmos_npes) )</div>
-<div class="line"><a name="l00257"></a><span class="lineno">  257</span>&#160;    <span class="keyword">allocate</span>(ensemble_pelist_land(1:ensemble_size, 1:land_npes) )</div>
-<div class="line"><a name="l00258"></a><span class="lineno">  258</span>&#160;    <span class="keyword">allocate</span>(ensemble_pelist_ice(1:ensemble_size, 1:ice_npes) )</div>
-<div class="line"><a name="l00259"></a><span class="lineno">  259</span>&#160; </div>
-<div class="line"><a name="l00260"></a><span class="lineno">  260</span>&#160;    atmos_pe_start = 0</div>
-<div class="line"><a name="l00261"></a><span class="lineno">  261</span>&#160;    ocean_pe_start = 0</div>
-<div class="line"><a name="l00262"></a><span class="lineno">  262</span>&#160;    land_pe_start = 0</div>
-<div class="line"><a name="l00263"></a><span class="lineno">  263</span>&#160;    ice_pe_start = 0</div>
-<div class="line"><a name="l00264"></a><span class="lineno">  264</span>&#160;    <span class="keywordflow">if</span>( concurrent .OR. atmos_npes+ocean_npes == npes )<span class="keywordflow">then</span></div>
-<div class="line"><a name="l00265"></a><span class="lineno">  265</span>&#160;       ocean_pe_start = ensemble_size*atmos_npes</div>
-<div class="line"><a name="l00266"></a><span class="lineno">  266</span>&#160;<span class="keywordflow">    endif</span></div>
-<div class="line"><a name="l00267"></a><span class="lineno">  267</span>&#160;    <span class="keywordflow">do</span> n=1,ensemble_size</div>
-<div class="line"><a name="l00268"></a><span class="lineno">  268</span>&#160;       atmos_pe_end = atmos_pe_start + atmos_npes - 1</div>
-<div class="line"><a name="l00269"></a><span class="lineno">  269</span>&#160;       ocean_pe_end = ocean_pe_start + ocean_npes - 1</div>
-<div class="line"><a name="l00270"></a><span class="lineno">  270</span>&#160;       land_pe_end  = land_pe_start  + land_npes  - 1</div>
-<div class="line"><a name="l00271"></a><span class="lineno">  271</span>&#160;       ice_pe_end   = ice_pe_start   + ice_npes   - 1</div>
-<div class="line"><a name="l00272"></a><span class="lineno">  272</span>&#160;       ensemble_pelist_atmos(n, 1:atmos_npes) = (/(i,i=atmos_pe_start,atmos_pe_end)/)</div>
-<div class="line"><a name="l00273"></a><span class="lineno">  273</span>&#160;       ensemble_pelist_ocean(n, 1:ocean_npes) = (/(i,i=ocean_pe_start,ocean_pe_end)/)</div>
-<div class="line"><a name="l00274"></a><span class="lineno">  274</span>&#160;       ensemble_pelist_land(n, 1:land_npes) = (/(i,i=land_pe_start, land_pe_end)/)</div>
-<div class="line"><a name="l00275"></a><span class="lineno">  275</span>&#160;       ensemble_pelist_ice(n, 1:ice_npes) = (/(i,i=ice_pe_start,  ice_pe_end)/)</div>
-<div class="line"><a name="l00276"></a><span class="lineno">  276</span>&#160;       ensemble_pelist(n, 1:atmos_npes)       = ensemble_pelist_atmos(n, 1:atmos_npes)</div>
-<div class="line"><a name="l00277"></a><span class="lineno">  277</span>&#160;       <span class="keywordflow">if</span>( concurrent .OR. atmos_npes+ocean_npes == npes ) &amp;</div>
-<div class="line"><a name="l00278"></a><span class="lineno">  278</span>&#160;            ensemble_pelist(n, atmos_npes+1:npes)  = ensemble_pelist_ocean(n, 1:ocean_npes)</div>
-<div class="line"><a name="l00279"></a><span class="lineno">  279</span>&#160;       <span class="keywordflow">if</span>(any(ensemble_pelist(n,:) == pe)) ensemble_id = n</div>
-<div class="line"><a name="l00280"></a><span class="lineno">  280</span>&#160;       <span class="keyword">write</span>(pelist_name,<span class="stringliteral">&#39;(a,i2.2)&#39;</span>)  <span class="stringliteral">&#39;_ens&#39;</span>,n</div>
-<div class="line"><a name="l00281"></a><span class="lineno">  281</span>&#160;       <span class="keyword">call </span>mpp_declare_pelist(ensemble_pelist(n,:), trim(pelist_name))</div>
-<div class="line"><a name="l00282"></a><span class="lineno">  282</span>&#160;       atmos_pe_start = atmos_pe_end + 1</div>
-<div class="line"><a name="l00283"></a><span class="lineno">  283</span>&#160;       ocean_pe_start = ocean_pe_end + 1</div>
-<div class="line"><a name="l00284"></a><span class="lineno">  284</span>&#160;       land_pe_start  = atmos_pe_start</div>
-<div class="line"><a name="l00285"></a><span class="lineno">  285</span>&#160;       ice_pe_start   = atmos_pe_start</div>
-<div class="line"><a name="l00286"></a><span class="lineno">  286</span>&#160;<span class="keywordflow">    enddo</span></div>
-<div class="line"><a name="l00287"></a><span class="lineno">  287</span>&#160; </div>
-<div class="line"><a name="l00288"></a><span class="lineno">  288</span>&#160;    atm_pelist(:)   = ensemble_pelist_atmos(ensemble_id,:)</div>
-<div class="line"><a name="l00289"></a><span class="lineno">  289</span>&#160;    ocean_pelist(:) = ensemble_pelist_ocean(ensemble_id,:)</div>
-<div class="line"><a name="l00290"></a><span class="lineno">  290</span>&#160;    land_pelist(:)  = ensemble_pelist_land(ensemble_id,:)</div>
-<div class="line"><a name="l00291"></a><span class="lineno">  291</span>&#160;    ice_pelist(:)   = ensemble_pelist_ice(ensemble_id,:)</div>
+<div class="line"><a name="l00227"></a><span class="lineno">  227</span>&#160;<span class="comment">!nnz: I think the following block of code should be contained in a subroutine</span></div>
+<div class="line"><a name="l00228"></a><span class="lineno">  228</span>&#160;<span class="comment">!     to consolidate and ensure the consistency of declaring the various pelists.</span><span class="comment"></span></div>
+<div class="line"><a name="l00229"></a><span class="lineno">  229</span>&#160;<span class="comment">!&gt; @brief Sets up pe list for an ensemble.</span></div>
+<div class="line"><a name="l00230"></a><span class="lineno">  230</span>&#160;<span class="comment">!!</span></div>
+<div class="line"><a name="l00231"></a><span class="lineno">  231</span>&#160;<span class="comment">!! @throw FATAL, &quot;ensemble_manager_mod: land_npes &gt; atmos_npes&quot;</span></div>
+<div class="line"><a name="l00232"></a><span class="lineno">  232</span>&#160;<span class="comment">!! @throw FATAL, &quot;ensemble_manager_mod: ice_npes &gt; atmos_npes&quot;</span></div>
+<div class="line"><a name="l00233"></a><span class="lineno">  233</span>&#160;  <span class="keyword">subroutine </span><a class="code" href="group__ensemble__manager__mod.html#ga978f35356297a1a43c77c2467bdcbfc9">ensemble_pelist_setup</a>(concurrent, atmos_npes, ocean_npes, land_npes, ice_npes, &amp;</div>
+<div class="line"><a name="l00234"></a><span class="lineno">  234</span>&#160;                                   Atm_pelist, Ocean_pelist, Land_pelist, Ice_pelist)</div>
+<div class="line"><a name="l00235"></a><span class="lineno"><a class="line" href="group__ensemble__manager__mod.html#ga978f35356297a1a43c77c2467bdcbfc9">  235</a></span>&#160;    <span class="keywordtype">logical</span>, <span class="keywordtype">intent(in)</span>                  :: concurrent</div>
+<div class="line"><a name="l00236"></a><span class="lineno">  236</span>&#160;    <span class="keywordtype">integer</span>, <span class="keywordtype">intent(in)</span>                  :: atmos_npes, ocean_npes</div>
+<div class="line"><a name="l00237"></a><span class="lineno">  237</span>&#160;    <span class="keywordtype">integer</span>, <span class="keywordtype">intent(in)</span>                  :: land_npes, ice_npes</div>
+<div class="line"><a name="l00238"></a><span class="lineno">  238</span>&#160;    <span class="keywordtype">integer</span>, <span class="keywordtype">dimension(:)</span>, <span class="keywordtype">intent(inout)</span> :: atm_pelist, ocean_pelist</div>
+<div class="line"><a name="l00239"></a><span class="lineno">  239</span>&#160;    <span class="keywordtype">integer</span>, <span class="keywordtype">dimension(:)</span>, <span class="keywordtype">intent(inout)</span> :: land_pelist, ice_pelist</div>
+<div class="line"><a name="l00240"></a><span class="lineno">  240</span>&#160;    <span class="keywordtype">integer</span>           :: atmos_pe_start, atmos_pe_end, ocean_pe_start, ocean_pe_end</div>
+<div class="line"><a name="l00241"></a><span class="lineno">  241</span>&#160;    <span class="keywordtype">integer</span>           :: land_pe_start, land_pe_end, ice_pe_start, ice_pe_end</div>
+<div class="line"><a name="l00242"></a><span class="lineno">  242</span>&#160;    <span class="keywordtype">character(len=10)</span> :: pelist_name, text</div>
+<div class="line"><a name="l00243"></a><span class="lineno">  243</span>&#160;    <span class="keywordtype">integer</span>           :: npes, n, m ,i</div>
+<div class="line"><a name="l00244"></a><span class="lineno">  244</span>&#160; </div>
+<div class="line"><a name="l00245"></a><span class="lineno">  245</span>&#160;    npes = total_npes_pm</div>
+<div class="line"><a name="l00246"></a><span class="lineno">  246</span>&#160; </div>
+<div class="line"><a name="l00247"></a><span class="lineno">  247</span>&#160;    <span class="comment">! make sure land_npes and ice_npes are not greater than atmos_npes</span></div>
+<div class="line"><a name="l00248"></a><span class="lineno">  248</span>&#160;    <span class="keywordflow">if</span>(land_npes &gt; atmos_npes) <span class="keyword">call </span><a class="code" href="group__mpp__mod.html#interfacempp__mod_1_1mpp__error">mpp_error</a>(fatal, <span class="stringliteral">&#39;ensemble_manager_mod: land_npes &gt; atmos_npes&#39;</span>)</div>
+<div class="line"><a name="l00249"></a><span class="lineno">  249</span>&#160;    <span class="keywordflow">if</span>(ice_npes  &gt; atmos_npes) <span class="keyword">call </span><a class="code" href="group__mpp__mod.html#interfacempp__mod_1_1mpp__error">mpp_error</a>(fatal, <span class="stringliteral">&#39;ensemble_manager_mod: ice_npes &gt; atmos_npes&#39;</span>)</div>
+<div class="line"><a name="l00250"></a><span class="lineno">  250</span>&#160; </div>
+<div class="line"><a name="l00251"></a><span class="lineno">  251</span>&#160;    <span class="keyword">allocate</span>(ensemble_pelist(ensemble_size,total_npes_pm))</div>
+<div class="line"><a name="l00252"></a><span class="lineno">  252</span>&#160;    <span class="keyword">allocate</span>(ensemble_pelist_ocean(1:ensemble_size, 1:ocean_npes) )</div>
+<div class="line"><a name="l00253"></a><span class="lineno">  253</span>&#160;    <span class="keyword">allocate</span>(ensemble_pelist_atmos(1:ensemble_size, 1:atmos_npes) )</div>
+<div class="line"><a name="l00254"></a><span class="lineno">  254</span>&#160;    <span class="keyword">allocate</span>(ensemble_pelist_land(1:ensemble_size, 1:land_npes) )</div>
+<div class="line"><a name="l00255"></a><span class="lineno">  255</span>&#160;    <span class="keyword">allocate</span>(ensemble_pelist_ice(1:ensemble_size, 1:ice_npes) )</div>
+<div class="line"><a name="l00256"></a><span class="lineno">  256</span>&#160; </div>
+<div class="line"><a name="l00257"></a><span class="lineno">  257</span>&#160;    atmos_pe_start = 0</div>
+<div class="line"><a name="l00258"></a><span class="lineno">  258</span>&#160;    ocean_pe_start = 0</div>
+<div class="line"><a name="l00259"></a><span class="lineno">  259</span>&#160;    land_pe_start = 0</div>
+<div class="line"><a name="l00260"></a><span class="lineno">  260</span>&#160;    ice_pe_start = 0</div>
+<div class="line"><a name="l00261"></a><span class="lineno">  261</span>&#160;    <span class="keywordflow">if</span>( concurrent .OR. atmos_npes+ocean_npes == npes )<span class="keywordflow">then</span></div>
+<div class="line"><a name="l00262"></a><span class="lineno">  262</span>&#160;       ocean_pe_start = ensemble_size*atmos_npes</div>
+<div class="line"><a name="l00263"></a><span class="lineno">  263</span>&#160;<span class="keywordflow">    endif</span></div>
+<div class="line"><a name="l00264"></a><span class="lineno">  264</span>&#160;    <span class="keywordflow">do</span> n=1,ensemble_size</div>
+<div class="line"><a name="l00265"></a><span class="lineno">  265</span>&#160;       atmos_pe_end = atmos_pe_start + atmos_npes - 1</div>
+<div class="line"><a name="l00266"></a><span class="lineno">  266</span>&#160;       ocean_pe_end = ocean_pe_start + ocean_npes - 1</div>
+<div class="line"><a name="l00267"></a><span class="lineno">  267</span>&#160;       land_pe_end  = land_pe_start  + land_npes  - 1</div>
+<div class="line"><a name="l00268"></a><span class="lineno">  268</span>&#160;       ice_pe_end   = ice_pe_start   + ice_npes   - 1</div>
+<div class="line"><a name="l00269"></a><span class="lineno">  269</span>&#160;       ensemble_pelist_atmos(n, 1:atmos_npes) = (/(i,i=atmos_pe_start,atmos_pe_end)/)</div>
+<div class="line"><a name="l00270"></a><span class="lineno">  270</span>&#160;       ensemble_pelist_ocean(n, 1:ocean_npes) = (/(i,i=ocean_pe_start,ocean_pe_end)/)</div>
+<div class="line"><a name="l00271"></a><span class="lineno">  271</span>&#160;       ensemble_pelist_land(n, 1:land_npes) = (/(i,i=land_pe_start, land_pe_end)/)</div>
+<div class="line"><a name="l00272"></a><span class="lineno">  272</span>&#160;       ensemble_pelist_ice(n, 1:ice_npes) = (/(i,i=ice_pe_start,  ice_pe_end)/)</div>
+<div class="line"><a name="l00273"></a><span class="lineno">  273</span>&#160;       ensemble_pelist(n, 1:atmos_npes)       = ensemble_pelist_atmos(n, 1:atmos_npes)</div>
+<div class="line"><a name="l00274"></a><span class="lineno">  274</span>&#160;       <span class="keywordflow">if</span>( concurrent .OR. atmos_npes+ocean_npes == npes ) &amp;</div>
+<div class="line"><a name="l00275"></a><span class="lineno">  275</span>&#160;            ensemble_pelist(n, atmos_npes+1:npes)  = ensemble_pelist_ocean(n, 1:ocean_npes)</div>
+<div class="line"><a name="l00276"></a><span class="lineno">  276</span>&#160;       <span class="keywordflow">if</span>(any(ensemble_pelist(n,:) == pe)) ensemble_id = n</div>
+<div class="line"><a name="l00277"></a><span class="lineno">  277</span>&#160;       <span class="keyword">write</span>(pelist_name,<span class="stringliteral">&#39;(a,i2.2)&#39;</span>)  <span class="stringliteral">&#39;_ens&#39;</span>,n</div>
+<div class="line"><a name="l00278"></a><span class="lineno">  278</span>&#160;       <span class="keyword">call </span><a class="code" href="group__mpp__mod.html#gada061a5778228965b5ccfc693c4dc892">mpp_declare_pelist</a>(ensemble_pelist(n,:), trim(pelist_name))</div>
+<div class="line"><a name="l00279"></a><span class="lineno">  279</span>&#160;       atmos_pe_start = atmos_pe_end + 1</div>
+<div class="line"><a name="l00280"></a><span class="lineno">  280</span>&#160;       ocean_pe_start = ocean_pe_end + 1</div>
+<div class="line"><a name="l00281"></a><span class="lineno">  281</span>&#160;       land_pe_start  = atmos_pe_start</div>
+<div class="line"><a name="l00282"></a><span class="lineno">  282</span>&#160;       ice_pe_start   = atmos_pe_start</div>
+<div class="line"><a name="l00283"></a><span class="lineno">  283</span>&#160;<span class="keywordflow">    enddo</span></div>
+<div class="line"><a name="l00284"></a><span class="lineno">  284</span>&#160; </div>
+<div class="line"><a name="l00285"></a><span class="lineno">  285</span>&#160;    atm_pelist(:)   = ensemble_pelist_atmos(ensemble_id,:)</div>
+<div class="line"><a name="l00286"></a><span class="lineno">  286</span>&#160;    ocean_pelist(:) = ensemble_pelist_ocean(ensemble_id,:)</div>
+<div class="line"><a name="l00287"></a><span class="lineno">  287</span>&#160;    land_pelist(:)  = ensemble_pelist_land(ensemble_id,:)</div>
+<div class="line"><a name="l00288"></a><span class="lineno">  288</span>&#160;    ice_pelist(:)   = ensemble_pelist_ice(ensemble_id,:)</div>
+<div class="line"><a name="l00289"></a><span class="lineno">  289</span>&#160; </div>
+<div class="line"><a name="l00290"></a><span class="lineno">  290</span>&#160;    <span class="comment">!    write(pelist_name,&#39;(a,i2.2)&#39;)  &#39;_ocn_ens&#39;,ensemble_id</span></div>
+<div class="line"><a name="l00291"></a><span class="lineno">  291</span>&#160;    <span class="comment">!    call mpp_declare_pelist(Ocean%pelist , trim(pelist_name) )</span></div>
 <div class="line"><a name="l00292"></a><span class="lineno">  292</span>&#160; </div>
-<div class="line"><a name="l00293"></a><span class="lineno">  293</span>&#160;    <span class="comment">!    write(pelist_name,&#39;(a,i2.2)&#39;)  &#39;_ocn_ens&#39;,ensemble_id</span></div>
-<div class="line"><a name="l00294"></a><span class="lineno">  294</span>&#160;    <span class="comment">!    call mpp_declare_pelist(Ocean%pelist , trim(pelist_name) )</span></div>
-<div class="line"><a name="l00295"></a><span class="lineno">  295</span>&#160; </div>
-<div class="line"><a name="l00296"></a><span class="lineno">  296</span>&#160;    <span class="comment">!    write(pelist_name,&#39;(a,i2.2)&#39;)  &#39;_atm_ens&#39;,ensemble_id</span></div>
-<div class="line"><a name="l00297"></a><span class="lineno">  297</span>&#160;    <span class="comment">!    call mpp_declare_pelist(Atm%pelist , trim(pelist_name) )</span></div>
-<div class="line"><a name="l00298"></a><span class="lineno">  298</span>&#160;    <span class="comment">!</span></div>
-<div class="line"><a name="l00299"></a><span class="lineno">  299</span>&#160;    <span class="comment">!nnz: The above is sufficient for non-concurrent mode.</span></div>
-<div class="line"><a name="l00300"></a><span class="lineno">  300</span>&#160;    <span class="comment">!     BUT</span></div>
-<div class="line"><a name="l00301"></a><span class="lineno">  301</span>&#160;    <span class="comment">!     For atmosphere_init to work in ensemble, concurrent mode</span></div>
-<div class="line"><a name="l00302"></a><span class="lineno">  302</span>&#160;    <span class="comment">!     the following Atm_pelist should be declared (per ensemble member)</span></div>
-<div class="line"><a name="l00303"></a><span class="lineno">  303</span>&#160;    <span class="comment">!     instead of the above Atm%pelist!</span></div>
-<div class="line"><a name="l00304"></a><span class="lineno">  304</span>&#160;    <span class="comment">!</span></div>
-<div class="line"><a name="l00305"></a><span class="lineno">  305</span>&#160;    <span class="comment">!   allocate( Atm_pelist(1:ensemble_size, 1:atmos_npes) )</span></div>
-<div class="line"><a name="l00306"></a><span class="lineno">  306</span>&#160;    <span class="comment">!   do n=1,ensemble_size</span></div>
-<div class="line"><a name="l00307"></a><span class="lineno">  307</span>&#160;    <span class="comment">!       do i=1, atmos_npes</span></div>
-<div class="line"><a name="l00308"></a><span class="lineno">  308</span>&#160;    <span class="comment">!          Atm_pelist(n, i) = ensemble_pelist(n, i)</span></div>
-<div class="line"><a name="l00309"></a><span class="lineno">  309</span>&#160;    <span class="comment">!       enddo</span></div>
-<div class="line"><a name="l00310"></a><span class="lineno">  310</span>&#160;    <span class="comment">!       write(pelist_name,&#39;(a,i2.2)&#39;)  &#39;_atm_ens&#39;,n</span></div>
-<div class="line"><a name="l00311"></a><span class="lineno">  311</span>&#160;    <span class="comment">!       call mpp_declare_pelist(Atm_pelist(n,:) , trim(pelist_name) )</span></div>
-<div class="line"><a name="l00312"></a><span class="lineno">  312</span>&#160;    <span class="comment">!    enddo</span></div>
-<div class="line"><a name="l00313"></a><span class="lineno">  313</span>&#160;    <span class="comment">!</span></div>
-<div class="line"><a name="l00314"></a><span class="lineno">  314</span>&#160;    <span class="comment">!     The way I understand this with the help of Totalview is:</span></div>
-<div class="line"><a name="l00315"></a><span class="lineno">  315</span>&#160;    <span class="comment">!     With mpp_declare_pelist(Atm%pelist)</span></div>
-<div class="line"><a name="l00316"></a><span class="lineno">  316</span>&#160;    <span class="comment">!     When we are in fv_arrays_init when mp_init(comID) is called</span></div>
-<div class="line"><a name="l00317"></a><span class="lineno">  317</span>&#160;    <span class="comment">!     comID is the same for the atmospheric PE&#39;s for both ensemble members</span></div>
-<div class="line"><a name="l00318"></a><span class="lineno">  318</span>&#160;    <span class="comment">!     since peset(5)%id is the same (7) for those PE&#39;s, so the PE count is double what it should be inside</span></div>
-<div class="line"><a name="l00319"></a><span class="lineno">  319</span>&#160;    <span class="comment">!     mp_init().</span></div>
-<div class="line"><a name="l00320"></a><span class="lineno">  320</span>&#160;    <span class="comment">!     It is also true that for Ocean PE&#39;s, peset(4)%id is the same (6) for Ocean PE&#39;s in both ensemble members</span></div>
-<div class="line"><a name="l00321"></a><span class="lineno">  321</span>&#160;    <span class="comment">!     but for Ocean it is not a problem because Ocean is not trying to create new communicators</span></div>
-<div class="line"><a name="l00322"></a><span class="lineno">  322</span>&#160;    <span class="comment">!     from this peset whereas ATM does (vis mp_init).</span></div>
+<div class="line"><a name="l00293"></a><span class="lineno">  293</span>&#160;    <span class="comment">!    write(pelist_name,&#39;(a,i2.2)&#39;)  &#39;_atm_ens&#39;,ensemble_id</span></div>
+<div class="line"><a name="l00294"></a><span class="lineno">  294</span>&#160;    <span class="comment">!    call mpp_declare_pelist(Atm%pelist , trim(pelist_name) )</span></div>
+<div class="line"><a name="l00295"></a><span class="lineno">  295</span>&#160;    <span class="comment">!</span></div>
+<div class="line"><a name="l00296"></a><span class="lineno">  296</span>&#160;    <span class="comment">!nnz: The above is sufficient for non-concurrent mode.</span></div>
+<div class="line"><a name="l00297"></a><span class="lineno">  297</span>&#160;    <span class="comment">!     BUT</span></div>
+<div class="line"><a name="l00298"></a><span class="lineno">  298</span>&#160;    <span class="comment">!     For atmosphere_init to work in ensemble, concurrent mode</span></div>
+<div class="line"><a name="l00299"></a><span class="lineno">  299</span>&#160;    <span class="comment">!     the following Atm_pelist should be declared (per ensemble member)</span></div>
+<div class="line"><a name="l00300"></a><span class="lineno">  300</span>&#160;    <span class="comment">!     instead of the above Atm%pelist!</span></div>
+<div class="line"><a name="l00301"></a><span class="lineno">  301</span>&#160;    <span class="comment">!</span></div>
+<div class="line"><a name="l00302"></a><span class="lineno">  302</span>&#160;    <span class="comment">!   allocate( Atm_pelist(1:ensemble_size, 1:atmos_npes) )</span></div>
+<div class="line"><a name="l00303"></a><span class="lineno">  303</span>&#160;    <span class="comment">!   do n=1,ensemble_size</span></div>
+<div class="line"><a name="l00304"></a><span class="lineno">  304</span>&#160;    <span class="comment">!       do i=1, atmos_npes</span></div>
+<div class="line"><a name="l00305"></a><span class="lineno">  305</span>&#160;    <span class="comment">!          Atm_pelist(n, i) = ensemble_pelist(n, i)</span></div>
+<div class="line"><a name="l00306"></a><span class="lineno">  306</span>&#160;    <span class="comment">!       enddo</span></div>
+<div class="line"><a name="l00307"></a><span class="lineno">  307</span>&#160;    <span class="comment">!       write(pelist_name,&#39;(a,i2.2)&#39;)  &#39;_atm_ens&#39;,n</span></div>
+<div class="line"><a name="l00308"></a><span class="lineno">  308</span>&#160;    <span class="comment">!       call mpp_declare_pelist(Atm_pelist(n,:) , trim(pelist_name) )</span></div>
+<div class="line"><a name="l00309"></a><span class="lineno">  309</span>&#160;    <span class="comment">!    enddo</span></div>
+<div class="line"><a name="l00310"></a><span class="lineno">  310</span>&#160;    <span class="comment">!</span></div>
+<div class="line"><a name="l00311"></a><span class="lineno">  311</span>&#160;    <span class="comment">!     The way I understand this with the help of Totalview is:</span></div>
+<div class="line"><a name="l00312"></a><span class="lineno">  312</span>&#160;    <span class="comment">!     With mpp_declare_pelist(Atm%pelist)</span></div>
+<div class="line"><a name="l00313"></a><span class="lineno">  313</span>&#160;    <span class="comment">!     When we are in fv_arrays_init when mp_init(comID) is called</span></div>
+<div class="line"><a name="l00314"></a><span class="lineno">  314</span>&#160;    <span class="comment">!     comID is the same for the atmospheric PE&#39;s for both ensemble members</span></div>
+<div class="line"><a name="l00315"></a><span class="lineno">  315</span>&#160;    <span class="comment">!     since peset(5)%id is the same (7) for those PE&#39;s, so the PE count is double what it should be inside</span></div>
+<div class="line"><a name="l00316"></a><span class="lineno">  316</span>&#160;    <span class="comment">!     mp_init().</span></div>
+<div class="line"><a name="l00317"></a><span class="lineno">  317</span>&#160;    <span class="comment">!     It is also true that for Ocean PE&#39;s, peset(4)%id is the same (6) for Ocean PE&#39;s in both ensemble members</span></div>
+<div class="line"><a name="l00318"></a><span class="lineno">  318</span>&#160;    <span class="comment">!     but for Ocean it is not a problem because Ocean is not trying to create new communicators</span></div>
+<div class="line"><a name="l00319"></a><span class="lineno">  319</span>&#160;    <span class="comment">!     from this peset whereas ATM does (vis mp_init).</span></div>
+<div class="line"><a name="l00320"></a><span class="lineno">  320</span>&#160;    <span class="comment">!</span></div>
+<div class="line"><a name="l00321"></a><span class="lineno">  321</span>&#160;    <span class="comment">!     Who sets peset(i)%id ? Can it be modified to assign different %id for the two subsets.</span></div>
+<div class="line"><a name="l00322"></a><span class="lineno">  322</span>&#160;    <span class="comment">!     peset(i)%id = 0 for Ocean PE&#39;s on ATM pesets and for ATM PE&#39;s on Ocean pesets.</span></div>
 <div class="line"><a name="l00323"></a><span class="lineno">  323</span>&#160;    <span class="comment">!</span></div>
-<div class="line"><a name="l00324"></a><span class="lineno">  324</span>&#160;    <span class="comment">!     Who sets peset(i)%id ? Can it be modified to assign different %id for the two subsets.</span></div>
-<div class="line"><a name="l00325"></a><span class="lineno">  325</span>&#160;    <span class="comment">!     peset(i)%id = 0 for Ocean PE&#39;s on ATM pesets and for ATM PE&#39;s on Ocean pesets.</span></div>
+<div class="line"><a name="l00324"></a><span class="lineno">  324</span>&#160;    <span class="comment">!     With mpp_declare_pelist(Atm_pelist(n,:)) n=1,...,ensemble_size</span></div>
+<div class="line"><a name="l00325"></a><span class="lineno">  325</span>&#160;    <span class="comment">!     we get separate pesets for each ATM ensemble member and each with a different %id and mp_init is cured.</span></div>
 <div class="line"><a name="l00326"></a><span class="lineno">  326</span>&#160;    <span class="comment">!</span></div>
-<div class="line"><a name="l00327"></a><span class="lineno">  327</span>&#160;    <span class="comment">!     With mpp_declare_pelist(Atm_pelist(n,:)) n=1,...,ensemble_size</span></div>
-<div class="line"><a name="l00328"></a><span class="lineno">  328</span>&#160;    <span class="comment">!     we get separate pesets for each ATM ensemble member and each with a different %id and mp_init is cured.</span></div>
-<div class="line"><a name="l00329"></a><span class="lineno">  329</span>&#160;    <span class="comment">!</span></div>
-<div class="line"><a name="l00330"></a><span class="lineno">  330</span>&#160;    <span class="comment">!     There is also a matter of precedence. If we have both calls</span></div>
-<div class="line"><a name="l00331"></a><span class="lineno">  331</span>&#160;    <span class="comment">!     call mpp_declare_pelist(Atm%pelist , trim(pelist_name) )</span></div>
-<div class="line"><a name="l00332"></a><span class="lineno">  332</span>&#160;    <span class="comment">!     and</span></div>
-<div class="line"><a name="l00333"></a><span class="lineno">  333</span>&#160;    <span class="comment">!     call mpp_declare_pelist(Atm_pelist(n,:) , trim(pelist_name) )</span></div>
-<div class="line"><a name="l00334"></a><span class="lineno">  334</span>&#160;    <span class="comment">!     then concurrent run fails because with call mpp_set_current_pelist( Atm%pelist   )</span></div>
-<div class="line"><a name="l00335"></a><span class="lineno">  335</span>&#160;    <span class="comment">!     peset(i) is searched for i=1,2,... and the first pelist that matches argument, its peset is set as current.</span></div>
-<div class="line"><a name="l00336"></a><span class="lineno">  336</span>&#160;    <span class="comment">!</span></div>
-<div class="line"><a name="l00337"></a><span class="lineno">  337</span>&#160;    <span class="comment">!     To be consistent with ATM and OCEAN we can do the following</span></div>
-<div class="line"><a name="l00338"></a><span class="lineno">  338</span>&#160;    <span class="comment">!     (eventhough mpp_declare_pelist(Ocean%pelist) is adequate right now.)</span></div>
-<div class="line"><a name="l00339"></a><span class="lineno">  339</span>&#160; </div>
-<div class="line"><a name="l00340"></a><span class="lineno">  340</span>&#160;    <span class="keywordflow">if</span>( concurrent )<span class="keywordflow">then</span></div>
-<div class="line"><a name="l00341"></a><span class="lineno">  341</span>&#160;       <span class="keywordflow">do</span> n=1,ensemble_size</div>
-<div class="line"><a name="l00342"></a><span class="lineno">  342</span>&#160;          <span class="keyword">write</span>(pelist_name,<span class="stringliteral">&#39;(a,i2.2)&#39;</span>)  <span class="stringliteral">&#39;atm_ens&#39;</span>,n</div>
-<div class="line"><a name="l00343"></a><span class="lineno">  343</span>&#160;          <span class="keyword">call </span>mpp_declare_pelist(ensemble_pelist_atmos(n,:) , trim(pelist_name) )</div>
-<div class="line"><a name="l00344"></a><span class="lineno">  344</span>&#160;          <span class="keyword">write</span>(pelist_name,<span class="stringliteral">&#39;(a,i2.2)&#39;</span>)  <span class="stringliteral">&#39;ocn_ens&#39;</span>,n</div>
-<div class="line"><a name="l00345"></a><span class="lineno">  345</span>&#160;          <span class="keyword">call </span>mpp_declare_pelist(ensemble_pelist_ocean(n,:) , trim(pelist_name) )</div>
-<div class="line"><a name="l00346"></a><span class="lineno">  346</span>&#160;          <span class="keyword">write</span>(pelist_name,<span class="stringliteral">&#39;(a,i2.2)&#39;</span>)  <span class="stringliteral">&#39;lnd_ens&#39;</span>,n</div>
-<div class="line"><a name="l00347"></a><span class="lineno">  347</span>&#160;          <span class="keyword">call </span>mpp_declare_pelist(ensemble_pelist_land(n,:) , trim(pelist_name) )</div>
-<div class="line"><a name="l00348"></a><span class="lineno">  348</span>&#160;          <span class="keyword">write</span>(pelist_name,<span class="stringliteral">&#39;(a,i2.2)&#39;</span>)  <span class="stringliteral">&#39;ice_ens&#39;</span>,n</div>
-<div class="line"><a name="l00349"></a><span class="lineno">  349</span>&#160;          <span class="keyword">call </span>mpp_declare_pelist(ensemble_pelist_ice(n,:) , trim(pelist_name) )</div>
-<div class="line"><a name="l00350"></a><span class="lineno">  350</span>&#160;<span class="keywordflow">       enddo</span></div>
-<div class="line"><a name="l00351"></a><span class="lineno">  351</span>&#160;    <span class="keywordflow">else</span></div>
-<div class="line"><a name="l00352"></a><span class="lineno">  352</span>&#160;       <span class="keyword">write</span>(pelist_name,<span class="stringliteral">&#39;(a,i2.2)&#39;</span>)  <span class="stringliteral">&#39;atm_ens&#39;</span>,ensemble_id</div>
-<div class="line"><a name="l00353"></a><span class="lineno">  353</span>&#160;       <span class="keyword">call </span>mpp_declare_pelist(atm_pelist , trim(pelist_name) )</div>
-<div class="line"><a name="l00354"></a><span class="lineno">  354</span>&#160;       <span class="keyword">write</span>(pelist_name,<span class="stringliteral">&#39;(a,i2.2)&#39;</span>)  <span class="stringliteral">&#39;ocn_ens&#39;</span>,ensemble_id</div>
-<div class="line"><a name="l00355"></a><span class="lineno">  355</span>&#160;       <span class="keyword">call </span>mpp_declare_pelist(ocean_pelist , trim(pelist_name) )</div>
-<div class="line"><a name="l00356"></a><span class="lineno">  356</span>&#160;       <span class="keyword">write</span>(pelist_name,<span class="stringliteral">&#39;(a,i2.2)&#39;</span>)  <span class="stringliteral">&#39;lnd_ens&#39;</span>,ensemble_id</div>
-<div class="line"><a name="l00357"></a><span class="lineno">  357</span>&#160;       <span class="keyword">call </span>mpp_declare_pelist(land_pelist , trim(pelist_name) )</div>
-<div class="line"><a name="l00358"></a><span class="lineno">  358</span>&#160;       <span class="keyword">write</span>(pelist_name,<span class="stringliteral">&#39;(a,i2.2)&#39;</span>)  <span class="stringliteral">&#39;ice_ens&#39;</span>,ensemble_id</div>
-<div class="line"><a name="l00359"></a><span class="lineno">  359</span>&#160;       <span class="keyword">call </span>mpp_declare_pelist(ice_pelist , trim(pelist_name) )</div>
-<div class="line"><a name="l00360"></a><span class="lineno">  360</span>&#160;<span class="keywordflow">    endif</span></div>
-<div class="line"><a name="l00361"></a><span class="lineno">  361</span>&#160; </div>
-<div class="line"><a name="l00362"></a><span class="lineno">  362</span>&#160;    ocean_npes_pm = ocean_npes</div>
-<div class="line"><a name="l00363"></a><span class="lineno">  363</span>&#160;    atmos_npes_pm = atmos_npes</div>
-<div class="line"><a name="l00364"></a><span class="lineno">  364</span>&#160;    land_npes_pm  = land_npes</div>
-<div class="line"><a name="l00365"></a><span class="lineno">  365</span>&#160;    ice_npes_pm   = ice_npes</div>
-<div class="line"><a name="l00366"></a><span class="lineno">  366</span>&#160; </div>
-<div class="line"><a name="l00367"></a><span class="lineno">  367</span>&#160;    <span class="comment">!Declare pelist of all Ocean, Atmos, Land and Ice pes across all ensembles ( filters )</span></div>
-<div class="line"><a name="l00368"></a><span class="lineno">  368</span>&#160;    <span class="keyword">allocate</span>(ensemble_pelist_ocean_filter(ensemble_size * ocean_npes_pm))</div>
-<div class="line"><a name="l00369"></a><span class="lineno">  369</span>&#160;    <span class="keyword">allocate</span>(ensemble_pelist_atmos_filter(ensemble_size * atmos_npes_pm))</div>
-<div class="line"><a name="l00370"></a><span class="lineno">  370</span>&#160;    <span class="keyword">allocate</span>(ensemble_pelist_land_filter(ensemble_size * land_npes_pm))</div>
-<div class="line"><a name="l00371"></a><span class="lineno">  371</span>&#160;    <span class="keyword">allocate</span>(ensemble_pelist_ice_filter(ensemble_size * ice_npes_pm))</div>
-<div class="line"><a name="l00372"></a><span class="lineno">  372</span>&#160;    <span class="keywordflow">do</span> n=1,ensemble_size</div>
-<div class="line"><a name="l00373"></a><span class="lineno">  373</span>&#160;       <span class="keywordflow">do</span> m=1,ocean_npes_pm</div>
-<div class="line"><a name="l00374"></a><span class="lineno">  374</span>&#160;          i=(n-1)*ocean_npes_pm + m</div>
-<div class="line"><a name="l00375"></a><span class="lineno">  375</span>&#160;          ensemble_pelist_ocean_filter(i) = ensemble_pelist_ocean(n,m)</div>
-<div class="line"><a name="l00376"></a><span class="lineno">  376</span>&#160;<span class="keywordflow">       enddo</span></div>
-<div class="line"><a name="l00377"></a><span class="lineno">  377</span>&#160;       <span class="keywordflow">do</span> m=1,atmos_npes_pm</div>
-<div class="line"><a name="l00378"></a><span class="lineno">  378</span>&#160;          i=(n-1)*atmos_npes_pm + m</div>
-<div class="line"><a name="l00379"></a><span class="lineno">  379</span>&#160;          ensemble_pelist_atmos_filter(i) = ensemble_pelist_atmos(n,m)</div>
-<div class="line"><a name="l00380"></a><span class="lineno">  380</span>&#160;<span class="keywordflow">       enddo</span></div>
-<div class="line"><a name="l00381"></a><span class="lineno">  381</span>&#160;       <span class="keywordflow">do</span> m=1,land_npes_pm</div>
-<div class="line"><a name="l00382"></a><span class="lineno">  382</span>&#160;          i=(n-1)*land_npes_pm + m</div>
-<div class="line"><a name="l00383"></a><span class="lineno">  383</span>&#160;          ensemble_pelist_land_filter(i)  = ensemble_pelist_land(n,m)</div>
-<div class="line"><a name="l00384"></a><span class="lineno">  384</span>&#160;<span class="keywordflow">       enddo</span></div>
-<div class="line"><a name="l00385"></a><span class="lineno">  385</span>&#160;       <span class="keywordflow">do</span> m=1,ice_npes_pm</div>
-<div class="line"><a name="l00386"></a><span class="lineno">  386</span>&#160;          i=(n-1)*ice_npes_pm + m</div>
-<div class="line"><a name="l00387"></a><span class="lineno">  387</span>&#160;          ensemble_pelist_ice_filter(i)   = ensemble_pelist_ice(n,m)</div>
-<div class="line"><a name="l00388"></a><span class="lineno">  388</span>&#160;<span class="keywordflow">       enddo</span></div>
-<div class="line"><a name="l00389"></a><span class="lineno">  389</span>&#160;<span class="keywordflow">    enddo</span></div>
+<div class="line"><a name="l00327"></a><span class="lineno">  327</span>&#160;    <span class="comment">!     There is also a matter of precedence. If we have both calls</span></div>
+<div class="line"><a name="l00328"></a><span class="lineno">  328</span>&#160;    <span class="comment">!     call mpp_declare_pelist(Atm%pelist , trim(pelist_name) )</span></div>
+<div class="line"><a name="l00329"></a><span class="lineno">  329</span>&#160;    <span class="comment">!     and</span></div>
+<div class="line"><a name="l00330"></a><span class="lineno">  330</span>&#160;    <span class="comment">!     call mpp_declare_pelist(Atm_pelist(n,:) , trim(pelist_name) )</span></div>
+<div class="line"><a name="l00331"></a><span class="lineno">  331</span>&#160;    <span class="comment">!     then concurrent run fails because with call mpp_set_current_pelist( Atm%pelist   )</span></div>
+<div class="line"><a name="l00332"></a><span class="lineno">  332</span>&#160;    <span class="comment">!     peset(i) is searched for i=1,2,... and the first pelist that matches argument, its peset is set as current.</span></div>
+<div class="line"><a name="l00333"></a><span class="lineno">  333</span>&#160;    <span class="comment">!</span></div>
+<div class="line"><a name="l00334"></a><span class="lineno">  334</span>&#160;    <span class="comment">!     To be consistent with ATM and OCEAN we can do the following</span></div>
+<div class="line"><a name="l00335"></a><span class="lineno">  335</span>&#160;    <span class="comment">!     (eventhough mpp_declare_pelist(Ocean%pelist) is adequate right now.)</span></div>
+<div class="line"><a name="l00336"></a><span class="lineno">  336</span>&#160; </div>
+<div class="line"><a name="l00337"></a><span class="lineno">  337</span>&#160;    <span class="keywordflow">if</span>( concurrent )<span class="keywordflow">then</span></div>
+<div class="line"><a name="l00338"></a><span class="lineno">  338</span>&#160;       <span class="keywordflow">do</span> n=1,ensemble_size</div>
+<div class="line"><a name="l00339"></a><span class="lineno">  339</span>&#160;          <span class="keyword">write</span>(pelist_name,<span class="stringliteral">&#39;(a,i2.2)&#39;</span>)  <span class="stringliteral">&#39;atm_ens&#39;</span>,n</div>
+<div class="line"><a name="l00340"></a><span class="lineno">  340</span>&#160;          <span class="keyword">call </span><a class="code" href="group__mpp__mod.html#gada061a5778228965b5ccfc693c4dc892">mpp_declare_pelist</a>(ensemble_pelist_atmos(n,:) , trim(pelist_name) )</div>
+<div class="line"><a name="l00341"></a><span class="lineno">  341</span>&#160;          <span class="keyword">write</span>(pelist_name,<span class="stringliteral">&#39;(a,i2.2)&#39;</span>)  <span class="stringliteral">&#39;ocn_ens&#39;</span>,n</div>
+<div class="line"><a name="l00342"></a><span class="lineno">  342</span>&#160;          <span class="keyword">call </span><a class="code" href="group__mpp__mod.html#gada061a5778228965b5ccfc693c4dc892">mpp_declare_pelist</a>(ensemble_pelist_ocean(n,:) , trim(pelist_name) )</div>
+<div class="line"><a name="l00343"></a><span class="lineno">  343</span>&#160;          <span class="keyword">write</span>(pelist_name,<span class="stringliteral">&#39;(a,i2.2)&#39;</span>)  <span class="stringliteral">&#39;lnd_ens&#39;</span>,n</div>
+<div class="line"><a name="l00344"></a><span class="lineno">  344</span>&#160;          <span class="keyword">call </span><a class="code" href="group__mpp__mod.html#gada061a5778228965b5ccfc693c4dc892">mpp_declare_pelist</a>(ensemble_pelist_land(n,:) , trim(pelist_name) )</div>
+<div class="line"><a name="l00345"></a><span class="lineno">  345</span>&#160;          <span class="keyword">write</span>(pelist_name,<span class="stringliteral">&#39;(a,i2.2)&#39;</span>)  <span class="stringliteral">&#39;ice_ens&#39;</span>,n</div>
+<div class="line"><a name="l00346"></a><span class="lineno">  346</span>&#160;          <span class="keyword">call </span><a class="code" href="group__mpp__mod.html#gada061a5778228965b5ccfc693c4dc892">mpp_declare_pelist</a>(ensemble_pelist_ice(n,:) , trim(pelist_name) )</div>
+<div class="line"><a name="l00347"></a><span class="lineno">  347</span>&#160;<span class="keywordflow">       enddo</span></div>
+<div class="line"><a name="l00348"></a><span class="lineno">  348</span>&#160;    <span class="keywordflow">else</span></div>
+<div class="line"><a name="l00349"></a><span class="lineno">  349</span>&#160;       <span class="keyword">write</span>(pelist_name,<span class="stringliteral">&#39;(a,i2.2)&#39;</span>)  <span class="stringliteral">&#39;atm_ens&#39;</span>,ensemble_id</div>
+<div class="line"><a name="l00350"></a><span class="lineno">  350</span>&#160;       <span class="keyword">call </span><a class="code" href="group__mpp__mod.html#gada061a5778228965b5ccfc693c4dc892">mpp_declare_pelist</a>(atm_pelist , trim(pelist_name) )</div>
+<div class="line"><a name="l00351"></a><span class="lineno">  351</span>&#160;       <span class="keyword">write</span>(pelist_name,<span class="stringliteral">&#39;(a,i2.2)&#39;</span>)  <span class="stringliteral">&#39;ocn_ens&#39;</span>,ensemble_id</div>
+<div class="line"><a name="l00352"></a><span class="lineno">  352</span>&#160;       <span class="keyword">call </span><a class="code" href="group__mpp__mod.html#gada061a5778228965b5ccfc693c4dc892">mpp_declare_pelist</a>(ocean_pelist , trim(pelist_name) )</div>
+<div class="line"><a name="l00353"></a><span class="lineno">  353</span>&#160;       <span class="keyword">write</span>(pelist_name,<span class="stringliteral">&#39;(a,i2.2)&#39;</span>)  <span class="stringliteral">&#39;lnd_ens&#39;</span>,ensemble_id</div>
+<div class="line"><a name="l00354"></a><span class="lineno">  354</span>&#160;       <span class="keyword">call </span><a class="code" href="group__mpp__mod.html#gada061a5778228965b5ccfc693c4dc892">mpp_declare_pelist</a>(land_pelist , trim(pelist_name) )</div>
+<div class="line"><a name="l00355"></a><span class="lineno">  355</span>&#160;       <span class="keyword">write</span>(pelist_name,<span class="stringliteral">&#39;(a,i2.2)&#39;</span>)  <span class="stringliteral">&#39;ice_ens&#39;</span>,ensemble_id</div>
+<div class="line"><a name="l00356"></a><span class="lineno">  356</span>&#160;       <span class="keyword">call </span><a class="code" href="group__mpp__mod.html#gada061a5778228965b5ccfc693c4dc892">mpp_declare_pelist</a>(ice_pelist , trim(pelist_name) )</div>
+<div class="line"><a name="l00357"></a><span class="lineno">  357</span>&#160;<span class="keywordflow">    endif</span></div>
+<div class="line"><a name="l00358"></a><span class="lineno">  358</span>&#160; </div>
+<div class="line"><a name="l00359"></a><span class="lineno">  359</span>&#160;    ocean_npes_pm = ocean_npes</div>
+<div class="line"><a name="l00360"></a><span class="lineno">  360</span>&#160;    atmos_npes_pm = atmos_npes</div>
+<div class="line"><a name="l00361"></a><span class="lineno">  361</span>&#160;    land_npes_pm  = land_npes</div>
+<div class="line"><a name="l00362"></a><span class="lineno">  362</span>&#160;    ice_npes_pm   = ice_npes</div>
+<div class="line"><a name="l00363"></a><span class="lineno">  363</span>&#160; </div>
+<div class="line"><a name="l00364"></a><span class="lineno">  364</span>&#160;    <span class="comment">!Declare pelist of all Ocean, Atmos, Land and Ice pes across all ensembles ( filters )</span></div>
+<div class="line"><a name="l00365"></a><span class="lineno">  365</span>&#160;    <span class="keyword">allocate</span>(ensemble_pelist_ocean_filter(ensemble_size * ocean_npes_pm))</div>
+<div class="line"><a name="l00366"></a><span class="lineno">  366</span>&#160;    <span class="keyword">allocate</span>(ensemble_pelist_atmos_filter(ensemble_size * atmos_npes_pm))</div>
+<div class="line"><a name="l00367"></a><span class="lineno">  367</span>&#160;    <span class="keyword">allocate</span>(ensemble_pelist_land_filter(ensemble_size * land_npes_pm))</div>
+<div class="line"><a name="l00368"></a><span class="lineno">  368</span>&#160;    <span class="keyword">allocate</span>(ensemble_pelist_ice_filter(ensemble_size * ice_npes_pm))</div>
+<div class="line"><a name="l00369"></a><span class="lineno">  369</span>&#160;    <span class="keywordflow">do</span> n=1,ensemble_size</div>
+<div class="line"><a name="l00370"></a><span class="lineno">  370</span>&#160;       <span class="keywordflow">do</span> m=1,ocean_npes_pm</div>
+<div class="line"><a name="l00371"></a><span class="lineno">  371</span>&#160;          i=(n-1)*ocean_npes_pm + m</div>
+<div class="line"><a name="l00372"></a><span class="lineno">  372</span>&#160;          ensemble_pelist_ocean_filter(i) = ensemble_pelist_ocean(n,m)</div>
+<div class="line"><a name="l00373"></a><span class="lineno">  373</span>&#160;<span class="keywordflow">       enddo</span></div>
+<div class="line"><a name="l00374"></a><span class="lineno">  374</span>&#160;       <span class="keywordflow">do</span> m=1,atmos_npes_pm</div>
+<div class="line"><a name="l00375"></a><span class="lineno">  375</span>&#160;          i=(n-1)*atmos_npes_pm + m</div>
+<div class="line"><a name="l00376"></a><span class="lineno">  376</span>&#160;          ensemble_pelist_atmos_filter(i) = ensemble_pelist_atmos(n,m)</div>
+<div class="line"><a name="l00377"></a><span class="lineno">  377</span>&#160;<span class="keywordflow">       enddo</span></div>
+<div class="line"><a name="l00378"></a><span class="lineno">  378</span>&#160;       <span class="keywordflow">do</span> m=1,land_npes_pm</div>
+<div class="line"><a name="l00379"></a><span class="lineno">  379</span>&#160;          i=(n-1)*land_npes_pm + m</div>
+<div class="line"><a name="l00380"></a><span class="lineno">  380</span>&#160;          ensemble_pelist_land_filter(i)  = ensemble_pelist_land(n,m)</div>
+<div class="line"><a name="l00381"></a><span class="lineno">  381</span>&#160;<span class="keywordflow">       enddo</span></div>
+<div class="line"><a name="l00382"></a><span class="lineno">  382</span>&#160;       <span class="keywordflow">do</span> m=1,ice_npes_pm</div>
+<div class="line"><a name="l00383"></a><span class="lineno">  383</span>&#160;          i=(n-1)*ice_npes_pm + m</div>
+<div class="line"><a name="l00384"></a><span class="lineno">  384</span>&#160;          ensemble_pelist_ice_filter(i)   = ensemble_pelist_ice(n,m)</div>
+<div class="line"><a name="l00385"></a><span class="lineno">  385</span>&#160;<span class="keywordflow">       enddo</span></div>
+<div class="line"><a name="l00386"></a><span class="lineno">  386</span>&#160;<span class="keywordflow">    enddo</span></div>
+<div class="line"><a name="l00387"></a><span class="lineno">  387</span>&#160; </div>
+<div class="line"><a name="l00388"></a><span class="lineno">  388</span>&#160;    <span class="keyword">write</span>(pelist_name,<span class="stringliteral">&#39;(a)&#39;</span>)  <span class="stringliteral">&#39;ocn_filter&#39;</span></div>
+<div class="line"><a name="l00389"></a><span class="lineno">  389</span>&#160;    <span class="keyword">call </span><a class="code" href="group__mpp__mod.html#gada061a5778228965b5ccfc693c4dc892">mpp_declare_pelist</a>(ensemble_pelist_ocean_filter, trim(pelist_name) )</div>
 <div class="line"><a name="l00390"></a><span class="lineno">  390</span>&#160; </div>
-<div class="line"><a name="l00391"></a><span class="lineno">  391</span>&#160;    <span class="keyword">write</span>(pelist_name,<span class="stringliteral">&#39;(a)&#39;</span>)  <span class="stringliteral">&#39;ocn_filter&#39;</span></div>
-<div class="line"><a name="l00392"></a><span class="lineno">  392</span>&#160;    <span class="keyword">call </span>mpp_declare_pelist(ensemble_pelist_ocean_filter, trim(pelist_name) )</div>
+<div class="line"><a name="l00391"></a><span class="lineno">  391</span>&#160;    <span class="keyword">write</span>(pelist_name,<span class="stringliteral">&#39;(a)&#39;</span>)  <span class="stringliteral">&#39;atm_filter&#39;</span></div>
+<div class="line"><a name="l00392"></a><span class="lineno">  392</span>&#160;    <span class="keyword">call </span><a class="code" href="group__mpp__mod.html#gada061a5778228965b5ccfc693c4dc892">mpp_declare_pelist</a>(ensemble_pelist_atmos_filter, trim(pelist_name) )</div>
 <div class="line"><a name="l00393"></a><span class="lineno">  393</span>&#160; </div>
-<div class="line"><a name="l00394"></a><span class="lineno">  394</span>&#160;    <span class="keyword">write</span>(pelist_name,<span class="stringliteral">&#39;(a)&#39;</span>)  <span class="stringliteral">&#39;atm_filter&#39;</span></div>
-<div class="line"><a name="l00395"></a><span class="lineno">  395</span>&#160;    <span class="keyword">call </span>mpp_declare_pelist(ensemble_pelist_atmos_filter, trim(pelist_name) )</div>
+<div class="line"><a name="l00394"></a><span class="lineno">  394</span>&#160;    <span class="keyword">write</span>(pelist_name,<span class="stringliteral">&#39;(a)&#39;</span>)  <span class="stringliteral">&#39;lnd_filter&#39;</span></div>
+<div class="line"><a name="l00395"></a><span class="lineno">  395</span>&#160;    <span class="keyword">call </span><a class="code" href="group__mpp__mod.html#gada061a5778228965b5ccfc693c4dc892">mpp_declare_pelist</a>(ensemble_pelist_land_filter,  trim(pelist_name) )</div>
 <div class="line"><a name="l00396"></a><span class="lineno">  396</span>&#160; </div>
-<div class="line"><a name="l00397"></a><span class="lineno">  397</span>&#160;    <span class="keyword">write</span>(pelist_name,<span class="stringliteral">&#39;(a)&#39;</span>)  <span class="stringliteral">&#39;lnd_filter&#39;</span></div>
-<div class="line"><a name="l00398"></a><span class="lineno">  398</span>&#160;    <span class="keyword">call </span>mpp_declare_pelist(ensemble_pelist_land_filter,  trim(pelist_name) )</div>
+<div class="line"><a name="l00397"></a><span class="lineno">  397</span>&#160;    <span class="keyword">write</span>(pelist_name,<span class="stringliteral">&#39;(a)&#39;</span>)  <span class="stringliteral">&#39;ice_filter&#39;</span></div>
+<div class="line"><a name="l00398"></a><span class="lineno">  398</span>&#160;    <span class="keyword">call </span><a class="code" href="group__mpp__mod.html#gada061a5778228965b5ccfc693c4dc892">mpp_declare_pelist</a>(ensemble_pelist_ice_filter,   trim(pelist_name) )</div>
 <div class="line"><a name="l00399"></a><span class="lineno">  399</span>&#160; </div>
-<div class="line"><a name="l00400"></a><span class="lineno">  400</span>&#160;    <span class="keyword">write</span>(pelist_name,<span class="stringliteral">&#39;(a)&#39;</span>)  <span class="stringliteral">&#39;ice_filter&#39;</span></div>
-<div class="line"><a name="l00401"></a><span class="lineno">  401</span>&#160;    <span class="keyword">call </span>mpp_declare_pelist(ensemble_pelist_ice_filter,   trim(pelist_name) )</div>
-<div class="line"><a name="l00402"></a><span class="lineno">  402</span>&#160; </div>
-<div class="line"><a name="l00403"></a><span class="lineno">  403</span>&#160;    <span class="comment">!</span></div>
-<div class="line"><a name="l00404"></a><span class="lineno">  404</span>&#160;    <span class="comment">!Rename output files to identify the ensemble</span></div>
-<div class="line"><a name="l00405"></a><span class="lineno">  405</span>&#160;    <span class="comment">!If ensemble_size=1 do not rename files so that the same coupler</span></div>
-<div class="line"><a name="l00406"></a><span class="lineno">  406</span>&#160;    <span class="comment">!can be used for non-ensemble experiments</span></div>
-<div class="line"><a name="l00407"></a><span class="lineno">  407</span>&#160;    <span class="comment">!</span></div>
-<div class="line"><a name="l00408"></a><span class="lineno">  408</span>&#160;    <span class="keywordflow">if</span> (ensemble_size &gt; 1) <span class="keywordflow">then</span></div>
-<div class="line"><a name="l00409"></a><span class="lineno">  409</span>&#160;       <span class="keyword">write</span>( text,<span class="stringliteral">&#39;(a,i2.2)&#39;</span> ) <span class="stringliteral">&#39;ens_&#39;</span>, ensemble_id</div>
-<div class="line"><a name="l00410"></a><span class="lineno">  410</span>&#160;       <span class="comment">!Append ensemble_id to the restart filenames</span></div>
-<div class="line"><a name="l00411"></a><span class="lineno">  411</span>&#160; </div>
-<div class="line"><a name="l00412"></a><span class="lineno">  412</span>&#160;       <span class="comment">!&lt; Both calls are needed for cases where both fms2io/fmsio are used</span></div>
-<div class="line"><a name="l00413"></a><span class="lineno">  413</span>&#160;       <span class="keyword">call </span>fms2_io_set_filename_appendix(trim(text))</div>
-<div class="line"><a name="l00414"></a><span class="lineno">  414</span>&#160;       <span class="keyword">call </span>fms_io_set_filename_appendix(trim(text))</div>
-<div class="line"><a name="l00415"></a><span class="lineno">  415</span>&#160;<span class="keywordflow">    endif</span></div>
+<div class="line"><a name="l00400"></a><span class="lineno">  400</span>&#160;    <span class="comment">!</span></div>
+<div class="line"><a name="l00401"></a><span class="lineno">  401</span>&#160;    <span class="comment">!Rename output files to identify the ensemble</span></div>
+<div class="line"><a name="l00402"></a><span class="lineno">  402</span>&#160;    <span class="comment">!If ensemble_size=1 do not rename files so that the same coupler</span></div>
+<div class="line"><a name="l00403"></a><span class="lineno">  403</span>&#160;    <span class="comment">!can be used for non-ensemble experiments</span></div>
+<div class="line"><a name="l00404"></a><span class="lineno">  404</span>&#160;    <span class="comment">!</span></div>
+<div class="line"><a name="l00405"></a><span class="lineno">  405</span>&#160;    <span class="keywordflow">if</span> (ensemble_size &gt; 1) <span class="keywordflow">then</span></div>
+<div class="line"><a name="l00406"></a><span class="lineno">  406</span>&#160;       <span class="keyword">write</span>( text,<span class="stringliteral">&#39;(a,i2.2)&#39;</span> ) <span class="stringliteral">&#39;ens_&#39;</span>, ensemble_id</div>
+<div class="line"><a name="l00407"></a><span class="lineno">  407</span>&#160;       <span class="comment">!Append ensemble_id to the restart filenames</span></div>
+<div class="line"><a name="l00408"></a><span class="lineno">  408</span>&#160; </div>
+<div class="line"><a name="l00409"></a><span class="lineno">  409</span>&#160;       <span class="comment">!&lt; Both calls are needed for cases where both fms2io/fmsio are used</span></div>
+<div class="line"><a name="l00410"></a><span class="lineno">  410</span>&#160;       <span class="keyword">call </span>fms2_io_set_filename_appendix(trim(text))</div>
+<div class="line"><a name="l00411"></a><span class="lineno">  411</span>&#160;       <span class="keyword">call </span>fms_io_set_filename_appendix(trim(text))</div>
+<div class="line"><a name="l00412"></a><span class="lineno">  412</span>&#160;<span class="keywordflow">    endif</span></div>
+<div class="line"><a name="l00413"></a><span class="lineno">  413</span>&#160; </div>
+<div class="line"><a name="l00414"></a><span class="lineno">  414</span>&#160;  <span class="keyword">end subroutine </span><a class="code" href="group__ensemble__manager__mod.html#ga978f35356297a1a43c77c2467bdcbfc9">ensemble_pelist_setup</a></div>
+<div class="line"><a name="l00415"></a><span class="lineno">  415</span>&#160; </div>
 <div class="line"><a name="l00416"></a><span class="lineno">  416</span>&#160; </div>
-<div class="line"><a name="l00417"></a><span class="lineno">  417</span>&#160;  <span class="keyword">end subroutine </span><a class="code" href="group__ensemble__manager__mod.html#ga978f35356297a1a43c77c2467bdcbfc9">ensemble_pelist_setup</a></div>
-<div class="line"><a name="l00418"></a><span class="lineno">  418</span>&#160; </div>
-<div class="line"><a name="l00419"></a><span class="lineno">  419</span>&#160; </div>
-<div class="line"><a name="l00420"></a><span class="lineno">  420</span>&#160;<span class="keyword">end module </span>ensemble_manager_mod<span class="comment"></span></div>
-<div class="line"><a name="l00421"></a><span class="lineno">  421</span>&#160;<span class="comment">!&gt; @}</span></div>
-<div class="line"><a name="l00422"></a><span class="lineno">  422</span>&#160;<span class="comment">! close documentation grouping</span></div>
+<div class="line"><a name="l00417"></a><span class="lineno">  417</span>&#160;<span class="keyword">end module </span>ensemble_manager_mod<span class="comment"></span></div>
+<div class="line"><a name="l00418"></a><span class="lineno">  418</span>&#160;<span class="comment">!&gt; @}</span></div>
+<div class="line"><a name="l00419"></a><span class="lineno">  419</span>&#160;<span class="comment">! close documentation grouping</span></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
-<div class="ttc" id="agroup__ensemble__manager__mod_html_gacdbbf5369191eab58e691d63639ee1b1"><div class="ttname"><a href="group__ensemble__manager__mod.html#gacdbbf5369191eab58e691d63639ee1b1">ensemble_manager_mod::ensemble_manager_init</a></div><div class="ttdeci">subroutine, public ensemble_manager_init()</div><div class="ttdoc">Initializes ensemble_manager_mod.</div><div class="ttdef"><b>Definition:</b> <a href="ensemble__manager_8F90_source.html#l00079">ensemble_manager.F90:79</a></div></div>
-<div class="ttc" id="ampp__util_8inc_html_a172901d39c9b0cf14aa83b1e94fdf21b"><div class="ttname"><a href="mpp__util_8inc.html#a172901d39c9b0cf14aa83b1e94fdf21b">stdout</a></div><div class="ttdeci">integer function stdout()</div><div class="ttdoc">This function returns the current standard fortran unit numbers for output.</div><div class="ttdef"><b>Definition:</b> <a href="mpp__util_8inc_source.html#l00065">mpp_util.inc:65</a></div></div>
-<div class="ttc" id="agroup__fms__mod_html_ga05e7686befc1e49d2be9bdb81d479a76"><div class="ttname"><a href="group__fms__mod.html#ga05e7686befc1e49d2be9bdb81d479a76">fms_mod::check_nml_error</a></div><div class="ttdeci">integer function, public check_nml_error(IOSTAT, NML_NAME)</div><div class="ttdoc">Checks the iostat argument that is returned after reading a namelist and determines if the error code...</div><div class="ttdef"><b>Definition:</b> <a href="fms_8F90_source.html#l00552">fms.F90:552</a></div></div>
-<div class="ttc" id="ainterfacempp__mod_1_1mpp__error_html"><div class="ttname"><a href="interfacempp__mod_1_1mpp__error.html">mpp_mod::mpp_error</a></div><div class="ttdoc">Error handler.</div><div class="ttdef"><b>Definition:</b> <a href="mpp_8F90_source.html#l00383">mpp.F90:383</a></div></div>
-<div class="ttc" id="agroup__ensemble__manager__mod_html_ga20ee0e034451b23cd2beb511eb8c8803"><div class="ttname"><a href="group__ensemble__manager__mod.html#ga20ee0e034451b23cd2beb511eb8c8803">ensemble_manager_mod::get_ensemble_id</a></div><div class="ttdeci">integer function, public get_ensemble_id()</div><div class="ttdoc">Getter function for ensemble_id.</div><div class="ttdef"><b>Definition:</b> <a href="ensemble__manager_8F90_source.html#l00109">ensemble_manager.F90:109</a></div></div>
-<div class="ttc" id="agroup__ensemble__manager__mod_html_gade5bdc874e12defb1b1d6fc971e8fdb1"><div class="ttname"><a href="group__ensemble__manager__mod.html#gade5bdc874e12defb1b1d6fc971e8fdb1">ensemble_manager_mod::get_ensemble_pelist</a></div><div class="ttdeci">subroutine, public get_ensemble_pelist(pelist, name)</div><div class="ttdoc">Gets pe list for current ensemble or a given ensemble component.</div><div class="ttdef"><b>Definition:</b> <a href="ensemble__manager_8F90_source.html#l00130">ensemble_manager.F90:130</a></div></div>
-<div class="ttc" id="agroup__ensemble__manager__mod_html_ga2ba619f4454819b2fe6412ddba2e47c1"><div class="ttname"><a href="group__ensemble__manager__mod.html#ga2ba619f4454819b2fe6412ddba2e47c1">ensemble_manager_mod::get_ensemble_size</a></div><div class="ttdeci">integer function, dimension(6), public get_ensemble_size()</div><div class="ttdoc">Returns ensemble size integer array.</div><div class="ttdef"><b>Definition:</b> <a href="ensemble__manager_8F90_source.html#l00116">ensemble_manager.F90:116</a></div></div>
-<div class="ttc" id="agroup__ensemble__manager__mod_html_gafbf614c62aef080ef4702355c7705258"><div class="ttname"><a href="group__ensemble__manager__mod.html#gafbf614c62aef080ef4702355c7705258">ensemble_manager_mod::get_ensemble_filter_pelist</a></div><div class="ttdeci">subroutine, public get_ensemble_filter_pelist(pelist, name)</div><div class="ttdoc">Gets filter pelist for a given ensemble component.</div><div class="ttdef"><b>Definition:</b> <a href="ensemble__manager_8F90_source.html#l00189">ensemble_manager.F90:189</a></div></div>
-<div class="ttc" id="ampp__util_8inc_html_a8e5518df9532bae0241f53ab542294a2"><div class="ttname"><a href="mpp__util_8inc.html#a8e5518df9532bae0241f53ab542294a2">stdlog</a></div><div class="ttdeci">integer function stdlog()</div><div class="ttdoc">This function returns the current standard fortran unit numbers for log messages. Log messages,...</div><div class="ttdef"><b>Definition:</b> <a href="mpp__util_8inc_source.html#l00106">mpp_util.inc:106</a></div></div>
-<div class="ttc" id="ampp__util_8inc_html_abf546cd336d5c539e445fb884f98ab6b"><div class="ttname"><a href="mpp__util_8inc.html#abf546cd336d5c539e445fb884f98ab6b">mpp_npes</a></div><div class="ttdeci">integer function mpp_npes()</div><div class="ttdoc">Returns processor count for current pelist.</div><div class="ttdef"><b>Definition:</b> <a href="mpp__util_8inc_source.html#l00465">mpp_util.inc:465</a></div></div>
-<div class="ttc" id="agroup__ensemble__manager__mod_html_ga978f35356297a1a43c77c2467bdcbfc9"><div class="ttname"><a href="group__ensemble__manager__mod.html#ga978f35356297a1a43c77c2467bdcbfc9">ensemble_manager_mod::ensemble_pelist_setup</a></div><div class="ttdeci">subroutine, public ensemble_pelist_setup(concurrent, atmos_npes, ocean_npes, land_npes, ice_npes, Atm_pelist, Ocean_pelist, Land_pelist, Ice_pelist)</div><div class="ttdoc">Sets up pe list for an ensemble.</div><div class="ttdef"><b>Definition:</b> <a href="ensemble__manager_8F90_source.html#l00238">ensemble_manager.F90:238</a></div></div>
-<div class="ttc" id="ampp__util_8inc_html_acfeba7de56f9dd6000b3fd78f9d56c50"><div class="ttname"><a href="mpp__util_8inc.html#acfeba7de56f9dd6000b3fd78f9d56c50">mpp_pe</a></div><div class="ttdeci">integer function mpp_pe()</div><div class="ttdoc">Returns processor ID. This returns the unique ID associated with a PE. This number runs between 0 and...</div><div class="ttdef"><b>Definition:</b> <a href="mpp__util_8inc_source.html#l00440">mpp_util.inc:440</a></div></div>
+<div class="ttc" id="agroup__ensemble__manager__mod_html_gacdbbf5369191eab58e691d63639ee1b1"><div class="ttname"><a href="group__ensemble__manager__mod.html#gacdbbf5369191eab58e691d63639ee1b1">ensemble_manager_mod::ensemble_manager_init</a></div><div class="ttdeci">subroutine, public ensemble_manager_init()</div><div class="ttdoc">Initializes ensemble_manager_mod.</div><div class="ttdef"><b>Definition:</b> <a href="ensemble__manager_8F90_source.html#l00076">ensemble_manager.F90:76</a></div></div>
+<div class="ttc" id="agroup__mpp__mod_html_gabf546cd336d5c539e445fb884f98ab6b"><div class="ttname"><a href="group__mpp__mod.html#gabf546cd336d5c539e445fb884f98ab6b">mpp_npes</a></div><div class="ttdeci">integer function mpp_npes()</div><div class="ttdoc">Returns processor count for current pelist.</div><div class="ttdef"><b>Definition:</b> <a href="mpp__util_8inc_source.html#l00392">mpp_util.inc:392</a></div></div>
+<div class="ttc" id="agroup__fms__mod_html_ga05e7686befc1e49d2be9bdb81d479a76"><div class="ttname"><a href="group__fms__mod.html#ga05e7686befc1e49d2be9bdb81d479a76">fms_mod::check_nml_error</a></div><div class="ttdeci">integer function, public check_nml_error(IOSTAT, NML_NAME)</div><div class="ttdoc">Checks the iostat argument that is returned after reading a namelist and determines if the error code...</div><div class="ttdef"><b>Definition:</b> <a href="fms_8F90_source.html#l00549">fms.F90:549</a></div></div>
+<div class="ttc" id="agroup__ensemble__manager__mod_html_ga20ee0e034451b23cd2beb511eb8c8803"><div class="ttname"><a href="group__ensemble__manager__mod.html#ga20ee0e034451b23cd2beb511eb8c8803">ensemble_manager_mod::get_ensemble_id</a></div><div class="ttdeci">integer function, public get_ensemble_id()</div><div class="ttdoc">Getter function for ensemble_id.</div><div class="ttdef"><b>Definition:</b> <a href="ensemble__manager_8F90_source.html#l00106">ensemble_manager.F90:106</a></div></div>
+<div class="ttc" id="agroup__ensemble__manager__mod_html_gade5bdc874e12defb1b1d6fc971e8fdb1"><div class="ttname"><a href="group__ensemble__manager__mod.html#gade5bdc874e12defb1b1d6fc971e8fdb1">ensemble_manager_mod::get_ensemble_pelist</a></div><div class="ttdeci">subroutine, public get_ensemble_pelist(pelist, name)</div><div class="ttdoc">Gets pe list for current ensemble or a given ensemble component.</div><div class="ttdef"><b>Definition:</b> <a href="ensemble__manager_8F90_source.html#l00127">ensemble_manager.F90:127</a></div></div>
+<div class="ttc" id="agroup__mpp__mod_html_gada061a5778228965b5ccfc693c4dc892"><div class="ttname"><a href="group__mpp__mod.html#gada061a5778228965b5ccfc693c4dc892">mpp_declare_pelist</a></div><div class="ttdeci">subroutine mpp_declare_pelist(pelist, name)</div><div class="ttdoc">Declare a pelist.</div><div class="ttdef"><b>Definition:</b> <a href="mpp__util_8inc_source.html#l00432">mpp_util.inc:432</a></div></div>
+<div class="ttc" id="agroup__mpp__mod_html_interfacempp__mod_1_1mpp__error"><div class="ttname"><a href="group__mpp__mod.html#interfacempp__mod_1_1mpp__error">mpp_mod::mpp_error</a></div><div class="ttdoc">Error handler.</div><div class="ttdef"><b>Definition:</b> <a href="mpp_8F90_source.html#l00382">mpp.F90:382</a></div></div>
+<div class="ttc" id="agroup__mpp__mod_html_gacfeba7de56f9dd6000b3fd78f9d56c50"><div class="ttname"><a href="group__mpp__mod.html#gacfeba7de56f9dd6000b3fd78f9d56c50">mpp_pe</a></div><div class="ttdeci">integer function mpp_pe()</div><div class="ttdoc">Returns processor ID.</div><div class="ttdef"><b>Definition:</b> <a href="mpp__util_8inc_source.html#l00378">mpp_util.inc:378</a></div></div>
+<div class="ttc" id="agroup__ensemble__manager__mod_html_ga2ba619f4454819b2fe6412ddba2e47c1"><div class="ttname"><a href="group__ensemble__manager__mod.html#ga2ba619f4454819b2fe6412ddba2e47c1">ensemble_manager_mod::get_ensemble_size</a></div><div class="ttdeci">integer function, dimension(6), public get_ensemble_size()</div><div class="ttdoc">Returns ensemble size integer array.</div><div class="ttdef"><b>Definition:</b> <a href="ensemble__manager_8F90_source.html#l00113">ensemble_manager.F90:113</a></div></div>
+<div class="ttc" id="agroup__mpp__mod_html_ga172901d39c9b0cf14aa83b1e94fdf21b"><div class="ttname"><a href="group__mpp__mod.html#ga172901d39c9b0cf14aa83b1e94fdf21b">stdout</a></div><div class="ttdeci">integer function stdout()</div><div class="ttdoc">This function returns the current standard fortran unit numbers for output.</div><div class="ttdef"><b>Definition:</b> <a href="mpp__util_8inc_source.html#l00043">mpp_util.inc:43</a></div></div>
+<div class="ttc" id="agroup__mpp__mod_html_ga8e5518df9532bae0241f53ab542294a2"><div class="ttname"><a href="group__mpp__mod.html#ga8e5518df9532bae0241f53ab542294a2">stdlog</a></div><div class="ttdeci">integer function stdlog()</div><div class="ttdoc">This function returns the current standard fortran unit numbers for log messages. Log messages,...</div><div class="ttdef"><b>Definition:</b> <a href="mpp__util_8inc_source.html#l00059">mpp_util.inc:59</a></div></div>
+<div class="ttc" id="agroup__ensemble__manager__mod_html_gafbf614c62aef080ef4702355c7705258"><div class="ttname"><a href="group__ensemble__manager__mod.html#gafbf614c62aef080ef4702355c7705258">ensemble_manager_mod::get_ensemble_filter_pelist</a></div><div class="ttdeci">subroutine, public get_ensemble_filter_pelist(pelist, name)</div><div class="ttdoc">Gets filter pelist for a given ensemble component.</div><div class="ttdef"><b>Definition:</b> <a href="ensemble__manager_8F90_source.html#l00186">ensemble_manager.F90:186</a></div></div>
+<div class="ttc" id="agroup__ensemble__manager__mod_html_ga978f35356297a1a43c77c2467bdcbfc9"><div class="ttname"><a href="group__ensemble__manager__mod.html#ga978f35356297a1a43c77c2467bdcbfc9">ensemble_manager_mod::ensemble_pelist_setup</a></div><div class="ttdeci">subroutine, public ensemble_pelist_setup(concurrent, atmos_npes, ocean_npes, land_npes, ice_npes, Atm_pelist, Ocean_pelist, Land_pelist, Ice_pelist)</div><div class="ttdoc">Sets up pe list for an ensemble.</div><div class="ttdef"><b>Definition:</b> <a href="ensemble__manager_8F90_source.html#l00235">ensemble_manager.F90:235</a></div></div>
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><a class="el" href="dir_20b0608602243d131fd015750b2c98b2.html">coupler</a></li><li class="navelem"><a class="el" href="ensemble__manager_8F90.html">ensemble_manager.F90</a></li>
+    <li class="navelem"><a class="el" href="dir_20b0608602243d131fd015750b2c98b2.html">coupler</a></li><li class="navelem"><b>ensemble_manager.F90</b></li>
     <li class="footer">Generated by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="doxygen.png" alt="doxygen"/></a> 1.8.17 </li>

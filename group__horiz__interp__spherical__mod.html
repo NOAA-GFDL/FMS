@@ -33,7 +33,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">FMS
-   &#160;<span id="projectnumber">2022.02.0</span>
+   &#160;<span id="projectnumber">2022.03.00</span>
    </div>
    <div id="projectbrief">Flexible Modeling System</div>
   </td>
@@ -103,6 +103,15 @@ $(document).ready(function(){initNavTree('group__horiz__interp__spherical__mod.h
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="func-members"></a>
 Functions/Subroutines</h2></td></tr>
+<tr class="memitem:ga87a32976984e523531c341dd8b59080d"><td class="memItemLeft" align="right" valign="top"><a id="ga87a32976984e523531c341dd8b59080d"></a>
+subroutine&#160;</td><td class="memItemRight" valign="bottom"><b>full_search</b> (theta_src, phi_src, theta_dst, phi_dst, map_src_add, map_src_dist, num_found, num_neighbors, max_src_dist)</td></tr>
+<tr class="separator:ga87a32976984e523531c341dd8b59080d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga68ac4c75faf63cfe48163f811ea22c60"><td class="memItemLeft" align="right" valign="top">subroutine, public&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__horiz__interp__spherical__mod.html#ga68ac4c75faf63cfe48163f811ea22c60">horiz_interp_spherical</a> (Interp, data_in, data_out, verbose, mask_in, mask_out, missing_value)</td></tr>
+<tr class="memdesc:ga68ac4c75faf63cfe48163f811ea22c60"><td class="mdescLeft">&#160;</td><td class="mdescRight">Subroutine for performing the horizontal interpolation between two grids. horiz_interp_spherical_new must be called before calling this routine.  <a href="group__horiz__interp__spherical__mod.html#ga68ac4c75faf63cfe48163f811ea22c60">More...</a><br /></td></tr>
+<tr class="separator:ga68ac4c75faf63cfe48163f811ea22c60"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga7b97dabd2ce5186c47f8cab78eac1fc8"><td class="memItemLeft" align="right" valign="top">subroutine, public&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__horiz__interp__spherical__mod.html#ga7b97dabd2ce5186c47f8cab78eac1fc8">horiz_interp_spherical_del</a> (Interp)</td></tr>
+<tr class="memdesc:ga7b97dabd2ce5186c47f8cab78eac1fc8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Deallocates memory used by "horiz_interp_type" variables. Must be called before reinitializing with horiz_interp_spherical_new.  <a href="group__horiz__interp__spherical__mod.html#ga7b97dabd2ce5186c47f8cab78eac1fc8">More...</a><br /></td></tr>
+<tr class="separator:ga7b97dabd2ce5186c47f8cab78eac1fc8"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga6513966ac443fb40cabb48e474037d03"><td class="memItemLeft" align="right" valign="top"><a id="ga6513966ac443fb40cabb48e474037d03"></a>
 subroutine, public&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__horiz__interp__spherical__mod.html#ga6513966ac443fb40cabb48e474037d03">horiz_interp_spherical_init</a></td></tr>
 <tr class="memdesc:ga6513966ac443fb40cabb48e474037d03"><td class="mdescLeft">&#160;</td><td class="mdescRight">Initializes module and writes version number to logfile.out. <br /></td></tr>
@@ -110,42 +119,36 @@ subroutine, public&#160;</td><td class="memItemRight" valign="bottom"><a class="
 <tr class="memitem:ga508cd30f1ffc233b61ca24aebe92702d"><td class="memItemLeft" align="right" valign="top">subroutine, public&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__horiz__interp__spherical__mod.html#ga508cd30f1ffc233b61ca24aebe92702d">horiz_interp_spherical_new</a> (Interp, lon_in, lat_in, lon_out, lat_out, num_nbrs, max_dist, src_modulo)</td></tr>
 <tr class="memdesc:ga508cd30f1ffc233b61ca24aebe92702d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Initialization routine.  <a href="group__horiz__interp__spherical__mod.html#ga508cd30f1ffc233b61ca24aebe92702d">More...</a><br /></td></tr>
 <tr class="separator:ga508cd30f1ffc233b61ca24aebe92702d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga68ac4c75faf63cfe48163f811ea22c60"><td class="memItemLeft" align="right" valign="top">subroutine, public&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__horiz__interp__spherical__mod.html#ga68ac4c75faf63cfe48163f811ea22c60">horiz_interp_spherical</a> (Interp, data_in, data_out, verbose, mask_in, mask_out, missing_value)</td></tr>
-<tr class="memdesc:ga68ac4c75faf63cfe48163f811ea22c60"><td class="mdescLeft">&#160;</td><td class="mdescRight">Subroutine for performing the horizontal interpolation between two grids. horiz_interp_spherical_new must be called before calling this routine.  <a href="group__horiz__interp__spherical__mod.html#ga68ac4c75faf63cfe48163f811ea22c60">More...</a><br /></td></tr>
-<tr class="separator:ga68ac4c75faf63cfe48163f811ea22c60"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga957578fb429fac25f67a661f85e3a3cf"><td class="memItemLeft" align="right" valign="top"><a id="ga957578fb429fac25f67a661f85e3a3cf"></a>
 subroutine, public&#160;</td><td class="memItemRight" valign="bottom"><b>horiz_interp_spherical_wght</b> (Interp, wt, verbose, mask_in, mask_out, missing_value)</td></tr>
 <tr class="separator:ga957578fb429fac25f67a661f85e3a3cf"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga7b97dabd2ce5186c47f8cab78eac1fc8"><td class="memItemLeft" align="right" valign="top">subroutine, public&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__horiz__interp__spherical__mod.html#ga7b97dabd2ce5186c47f8cab78eac1fc8">horiz_interp_spherical_del</a> (Interp)</td></tr>
-<tr class="memdesc:ga7b97dabd2ce5186c47f8cab78eac1fc8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Deallocates memory used by "horiz_interp_type" variables. Must be called before reinitializing with horiz_interp_spherical_new.  <a href="group__horiz__interp__spherical__mod.html#ga7b97dabd2ce5186c47f8cab78eac1fc8">More...</a><br /></td></tr>
-<tr class="separator:ga7b97dabd2ce5186c47f8cab78eac1fc8"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga001a9438168e183c4a95d5c3e342405c"><td class="memItemLeft" align="right" valign="top"><a id="ga001a9438168e183c4a95d5c3e342405c"></a>
 subroutine&#160;</td><td class="memItemRight" valign="bottom"><b>radial_search</b> (theta_src, phi_src, theta_dst, phi_dst, map_src_xsize, map_src_ysize, map_src_add, map_src_dist, num_found, num_neighbors, max_src_dist, src_is_modulo)</td></tr>
 <tr class="separator:ga001a9438168e183c4a95d5c3e342405c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:gaba93fc3aa2a8621b41d3f6a31655c6c6"><td class="memItemLeft" align="right" valign="top"><a id="gaba93fc3aa2a8621b41d3f6a31655c6c6"></a>
-logical function&#160;</td><td class="memItemRight" valign="bottom"><b>update_dest_neighbors</b> (map_src_add, map_src_dist, src_add, d, num_found, min_nbrs)</td></tr>
-<tr class="separator:gaba93fc3aa2a8621b41d3f6a31655c6c6"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:gae12401afd2eadf8f8998c4d96739cd9d"><td class="memItemLeft" align="right" valign="top"><a id="gae12401afd2eadf8f8998c4d96739cd9d"></a>
 real function&#160;</td><td class="memItemRight" valign="bottom"><b>spherical_distance</b> (theta1, phi1, theta2, phi2)</td></tr>
 <tr class="separator:gae12401afd2eadf8f8998c4d96739cd9d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga87a32976984e523531c341dd8b59080d"><td class="memItemLeft" align="right" valign="top"><a id="ga87a32976984e523531c341dd8b59080d"></a>
-subroutine&#160;</td><td class="memItemRight" valign="bottom"><b>full_search</b> (theta_src, phi_src, theta_dst, phi_dst, map_src_add, map_src_dist, num_found, num_neighbors, max_src_dist)</td></tr>
-<tr class="separator:ga87a32976984e523531c341dd8b59080d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:gaba93fc3aa2a8621b41d3f6a31655c6c6"><td class="memItemLeft" align="right" valign="top"><a id="gaba93fc3aa2a8621b41d3f6a31655c6c6"></a>
+logical function&#160;</td><td class="memItemRight" valign="bottom"><b>update_dest_neighbors</b> (map_src_add, map_src_dist, src_add, d, num_found, min_nbrs)</td></tr>
+<tr class="separator:gaba93fc3aa2a8621b41d3f6a31655c6c6"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="var-members"></a>
 Variables</h2></td></tr>
-<tr class="memitem:ga973d82fd674e76cef9b20a14bc2abadf"><td class="memItemLeft" align="right" valign="top"><a id="ga973d82fd674e76cef9b20a14bc2abadf"></a>
-real, parameter&#160;</td><td class="memItemRight" valign="bottom"><b>max_dist_default</b> = 0.1</td></tr>
-<tr class="separator:ga973d82fd674e76cef9b20a14bc2abadf"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:gaeef2901ef58e73d2f2b9215de5fc2187"><td class="memItemLeft" align="right" valign="top"><a id="gaeef2901ef58e73d2f2b9215de5fc2187"></a>
-integer, parameter&#160;</td><td class="memItemRight" valign="bottom"><b>num_nbrs_default</b> = 4</td></tr>
-<tr class="separator:gaeef2901ef58e73d2f2b9215de5fc2187"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:gada0f320ed2fbd4682d69848e3802f9d2"><td class="memItemLeft" align="right" valign="top"><a id="gada0f320ed2fbd4682d69848e3802f9d2"></a>
-real, parameter&#160;</td><td class="memItemRight" valign="bottom"><b>large</b> =1.e20</td></tr>
-<tr class="separator:gada0f320ed2fbd4682d69848e3802f9d2"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga346dfa0d5fa42a082ffa7681c5755c01"><td class="memItemLeft" align="right" valign="top"><a id="ga346dfa0d5fa42a082ffa7681c5755c01"></a>
 real, parameter&#160;</td><td class="memItemRight" valign="bottom"><b>epsln</b> =1.e-10</td></tr>
 <tr class="separator:ga346dfa0d5fa42a082ffa7681c5755c01"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:gada0f320ed2fbd4682d69848e3802f9d2"><td class="memItemLeft" align="right" valign="top"><a id="gada0f320ed2fbd4682d69848e3802f9d2"></a>
+real, parameter&#160;</td><td class="memItemRight" valign="bottom"><b>large</b> =1.e20</td></tr>
+<tr class="separator:gada0f320ed2fbd4682d69848e3802f9d2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga973d82fd674e76cef9b20a14bc2abadf"><td class="memItemLeft" align="right" valign="top"><a id="ga973d82fd674e76cef9b20a14bc2abadf"></a>
+real, parameter&#160;</td><td class="memItemRight" valign="bottom"><b>max_dist_default</b> = 0.1</td></tr>
+<tr class="separator:ga973d82fd674e76cef9b20a14bc2abadf"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:gad369225c254bc7bda087334ca5d13096"><td class="memItemLeft" align="right" valign="top"><a id="gad369225c254bc7bda087334ca5d13096"></a>
+logical&#160;</td><td class="memItemRight" valign="bottom"><b>module_is_initialized</b> = .FALSE.</td></tr>
+<tr class="separator:gad369225c254bc7bda087334ca5d13096"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:gaeef2901ef58e73d2f2b9215de5fc2187"><td class="memItemLeft" align="right" valign="top"><a id="gaeef2901ef58e73d2f2b9215de5fc2187"></a>
+integer, parameter&#160;</td><td class="memItemRight" valign="bottom"><b>num_nbrs_default</b> = 4</td></tr>
+<tr class="separator:gaeef2901ef58e73d2f2b9215de5fc2187"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga8a5f299eef1abe4c0df23ebd220ce83e"><td class="memItemLeft" align="right" valign="top"><a id="ga8a5f299eef1abe4c0df23ebd220ce83e"></a>
 integer&#160;</td><td class="memItemRight" valign="bottom"><b>pe</b></td></tr>
 <tr class="separator:ga8a5f299eef1abe4c0df23ebd220ce83e"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -156,9 +159,6 @@ integer&#160;</td><td class="memItemRight" valign="bottom"><b>root_pe</b></td></
 character(len=32)&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__horiz__interp__spherical__mod.html#gabf353472de82554fcbc7ffdb9ca24a8d">search_method</a> = &quot;radial_search&quot;</td></tr>
 <tr class="memdesc:gabf353472de82554fcbc7ffdb9ca24a8d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Namelist variable to indicate the searching method to find the nearest neighbor points. Its value can be "radial_search" and "full_search", with default value "radial_search". when search_method is "radial_search", the search may be not quite accurate for some cases. Normally the search will be ok if you chose suitable max_dist. When search_method is "full_search", it will be always accurate, but will be slower comparing to "radial_search". Normally these two search algorithm will produce same results other than order of operation. "radial_search" are recommended to use. The purpose to add "full_search" is in case you think you interpolation results is not right, you have other option to verify. <br /></td></tr>
 <tr class="separator:gabf353472de82554fcbc7ffdb9ca24a8d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:gad369225c254bc7bda087334ca5d13096"><td class="memItemLeft" align="right" valign="top"><a id="gad369225c254bc7bda087334ca5d13096"></a>
-logical&#160;</td><td class="memItemRight" valign="bottom"><b>module_is_initialized</b> = .FALSE.</td></tr>
-<tr class="separator:gad369225c254bc7bda087334ca5d13096"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <p>Performs spatial interpolation between grids using inverse-distance-weighted scheme. This module can interpolate data from rectangular/tripolar grid to rectangular/tripolar grid. The interpolation scheme is inverse-distance-weighted scheme. There is an optional mask field for missing input data. An optional output mask field may be used in conjunction with the input mask to show where output data exists. </p>
@@ -172,7 +172,7 @@ logical&#160;</td><td class="memItemRight" valign="bottom"><b>module_is_initiali
         <tr>
           <td class="memname">subroutine, public horiz_interp_spherical_mod::horiz_interp_spherical </td>
           <td>(</td>
-          <td class="paramtype">type(<a class="el" href="structhoriz__interp__type__mod_1_1horiz__interp__type.html">horiz_interp_type</a>), intent(in)&#160;</td>
+          <td class="paramtype">type(<a class="el" href="group__horiz__interp__type__mod.html#structhoriz__interp__type__mod_1_1horiz__interp__type">horiz_interp_type</a>), intent(in)&#160;</td>
           <td class="paramname"><em>Interp</em>, </td>
         </tr>
         <tr>
@@ -233,7 +233,7 @@ logical&#160;</td><td class="memItemRight" valign="bottom"><b>module_is_initiali
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="horiz__interp__spherical_8F90_source.html#l00277">277</a> of file <a class="el" href="horiz__interp__spherical_8F90_source.html">horiz_interp_spherical.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="horiz__interp__spherical_8F90_source.html#l00274">274</a> of file <a class="el" href="horiz__interp__spherical_8F90_source.html">horiz_interp_spherical.F90</a>.</p>
 
 </div>
 </div>
@@ -246,7 +246,7 @@ logical&#160;</td><td class="memItemRight" valign="bottom"><b>module_is_initiali
         <tr>
           <td class="memname">subroutine, public horiz_interp_spherical_mod::horiz_interp_spherical_del </td>
           <td>(</td>
-          <td class="paramtype">type (<a class="el" href="structhoriz__interp__type__mod_1_1horiz__interp__type.html">horiz_interp_type</a>), intent(inout)&#160;</td>
+          <td class="paramtype">type (<a class="el" href="group__horiz__interp__type__mod.html#structhoriz__interp__type__mod_1_1horiz__interp__type">horiz_interp_type</a>), intent(inout)&#160;</td>
           <td class="paramname"><em>Interp</em></td><td>)</td>
           <td></td>
         </tr>
@@ -261,7 +261,7 @@ logical&#160;</td><td class="memItemRight" valign="bottom"><b>module_is_initiali
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="horiz__interp__spherical_8F90_source.html#l00503">503</a> of file <a class="el" href="horiz__interp__spherical_8F90_source.html">horiz_interp_spherical.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="horiz__interp__spherical_8F90_source.html#l00500">500</a> of file <a class="el" href="horiz__interp__spherical_8F90_source.html">horiz_interp_spherical.F90</a>.</p>
 
 </div>
 </div>
@@ -274,7 +274,7 @@ logical&#160;</td><td class="memItemRight" valign="bottom"><b>module_is_initiali
         <tr>
           <td class="memname">subroutine, public horiz_interp_spherical_mod::horiz_interp_spherical_new </td>
           <td>(</td>
-          <td class="paramtype">type(<a class="el" href="structhoriz__interp__type__mod_1_1horiz__interp__type.html">horiz_interp_type</a>), intent(inout)&#160;</td>
+          <td class="paramtype">type(<a class="el" href="group__horiz__interp__type__mod.html#structhoriz__interp__type__mod_1_1horiz__interp__type">horiz_interp_type</a>), intent(inout)&#160;</td>
           <td class="paramname"><em>Interp</em>, </td>
         </tr>
         <tr>
@@ -342,7 +342,7 @@ logical&#160;</td><td class="memItemRight" valign="bottom"><b>module_is_initiali
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="horiz__interp__spherical_8F90_source.html#l00107">107</a> of file <a class="el" href="horiz__interp__spherical_8F90_source.html">horiz_interp_spherical.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="horiz__interp__spherical_8F90_source.html#l00104">104</a> of file <a class="el" href="horiz__interp__spherical_8F90_source.html">horiz_interp_spherical.F90</a>.</p>
 
 </div>
 </div>

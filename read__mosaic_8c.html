@@ -33,7 +33,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">FMS
-   &#160;<span id="projectnumber">2022.02.0</span>
+   &#160;<span id="projectnumber">2022.03.00</span>
    </div>
    <div id="projectbrief">Flexible Modeling System</div>
   </td>
@@ -97,7 +97,7 @@ $(document).ready(function(){initNavTree('read__mosaic_8c.html',''); initResizab
 <div class="title">read_mosaic.c File Reference<div class="ingroups"><a class="el" href="group__mosaic.html">Mosaic</a></div></div>  </div>
 </div><!--header-->
 <div class="contents">
-
+<h3 class="version">(1640fde1a51a73f97748f150eb84bf49e472aeca)</h3>
 <p>Support for reading mosaic netcdf grid files.  
 <a href="#details">More...</a></p>
 <div class="textblock"><code>#include &lt;stdlib.h&gt;</code><br />
@@ -107,6 +107,12 @@ $(document).ready(function(){initNavTree('read__mosaic_8c.html',''); initResizab
 <code>#include &quot;read_mosaic.h&quot;</code><br />
 <code>#include &quot;constant.h&quot;</code><br />
 <code>#include &quot;mosaic_util.h&quot;</code><br />
+</div><div class="textblock"><div class="dynheader">
+Include dependency graph for read_mosaic.c:</div>
+<div class="dyncontent">
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="read__mosaic_8c__incl.svg" width="100%" height="384"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+</div>
+</div>
 </div>
 <p><a href="read__mosaic_8c_source.html">Go to the source code of this file.</a></p>
 <table class="memberdecls">
@@ -118,18 +124,21 @@ Macros</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="func-members"></a>
 Functions</h2></td></tr>
-<tr class="memitem:a53ec3fc7428e07ef48101aa73aba5bf2"><td class="memItemLeft" align="right" valign="top"><a id="a53ec3fc7428e07ef48101aa73aba5bf2"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>handle_netcdf_error</b> (const char *msg, int status)</td></tr>
-<tr class="separator:a53ec3fc7428e07ef48101aa73aba5bf2"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a05a7efd911fa67ab1db08291be3d5424"><td class="memItemLeft" align="right" valign="top"><a id="a05a7efd911fa67ab1db08291be3d5424"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>get_file_dir</b> (const char *file, char *dir)</td></tr>
-<tr class="separator:a05a7efd911fa67ab1db08291be3d5424"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a745b2705c6a929b626eefb40a119fe01"><td class="memItemLeft" align="right" valign="top"><a id="a745b2705c6a929b626eefb40a119fe01"></a>
 int&#160;</td><td class="memItemRight" valign="bottom"><b>field_exist</b> (const char *file, const char *name)</td></tr>
 <tr class="separator:a745b2705c6a929b626eefb40a119fe01"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab6f333670eb93f738b0035bb8ae8ee32"><td class="memItemLeft" align="right" valign="top"><a id="ab6f333670eb93f738b0035bb8ae8ee32"></a>
 int&#160;</td><td class="memItemRight" valign="bottom"><b>get_dimlen</b> (const char *file, const char *name)</td></tr>
 <tr class="separator:ab6f333670eb93f738b0035bb8ae8ee32"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a05a7efd911fa67ab1db08291be3d5424"><td class="memItemLeft" align="right" valign="top"><a id="a05a7efd911fa67ab1db08291be3d5424"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>get_file_dir</b> (const char *file, char *dir)</td></tr>
+<tr class="separator:a05a7efd911fa67ab1db08291be3d5424"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a693f8e41b7a86668eb7c984bb3c48b68"><td class="memItemLeft" align="right" valign="top"><a id="a693f8e41b7a86668eb7c984bb3c48b68"></a>
+double&#160;</td><td class="memItemRight" valign="bottom"><b>get_global_area</b> (void)</td></tr>
+<tr class="separator:a693f8e41b7a86668eb7c984bb3c48b68"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3048a9a4caf67224feb0af073945a933"><td class="memItemLeft" align="right" valign="top"><a id="a3048a9a4caf67224feb0af073945a933"></a>
+double&#160;</td><td class="memItemRight" valign="bottom"><b>get_global_area_</b> (void)</td></tr>
+<tr class="separator:a3048a9a4caf67224feb0af073945a933"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:acc7058fbc6e93d5e195510ccfe868962"><td class="memItemLeft" align="right" valign="top"><a id="acc7058fbc6e93d5e195510ccfe868962"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>get_string_data</b> (const char *file, const char *name, char *data)</td></tr>
 <tr class="separator:acc7058fbc6e93d5e195510ccfe868962"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -145,66 +154,63 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>get_var_data_region</
 <tr class="memitem:a55835488e802c05d9c4f4fc7369c1a00"><td class="memItemLeft" align="right" valign="top"><a id="a55835488e802c05d9c4f4fc7369c1a00"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>get_var_text_att</b> (const char *file, const char *name, const char *attname, char *att)</td></tr>
 <tr class="separator:a55835488e802c05d9c4f4fc7369c1a00"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a889b389da4bff6f0a20b019ea76c4f04"><td class="memItemLeft" align="right" valign="top"><a id="a889b389da4bff6f0a20b019ea76c4f04"></a>
-int&#160;</td><td class="memItemRight" valign="bottom"><b>read_mosaic_xgrid_size_</b> (const char *xgrid_file)</td></tr>
-<tr class="separator:a889b389da4bff6f0a20b019ea76c4f04"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a6bfd9924ddef0dd56bf858c4e51887b3"><td class="memItemLeft" align="right" valign="top"><a id="a6bfd9924ddef0dd56bf858c4e51887b3"></a>
-int&#160;</td><td class="memItemRight" valign="bottom"><b>read_mosaic_xgrid_size</b> (const char *xgrid_file)</td></tr>
-<tr class="separator:a6bfd9924ddef0dd56bf858c4e51887b3"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a693f8e41b7a86668eb7c984bb3c48b68"><td class="memItemLeft" align="right" valign="top"><a id="a693f8e41b7a86668eb7c984bb3c48b68"></a>
-double&#160;</td><td class="memItemRight" valign="bottom"><b>get_global_area</b> (void)</td></tr>
-<tr class="separator:a693f8e41b7a86668eb7c984bb3c48b68"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a3048a9a4caf67224feb0af073945a933"><td class="memItemLeft" align="right" valign="top"><a id="a3048a9a4caf67224feb0af073945a933"></a>
-double&#160;</td><td class="memItemRight" valign="bottom"><b>get_global_area_</b> (void)</td></tr>
-<tr class="separator:a3048a9a4caf67224feb0af073945a933"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a5a025c82e8a37fa16ae93457380477d4"><td class="memItemLeft" align="right" valign="top"><a id="a5a025c82e8a37fa16ae93457380477d4"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>read_mosaic_xgrid_order1_</b> (const char *xgrid_file, int *i1, int *j1, int *i2, int *j2, double *area)</td></tr>
-<tr class="separator:a5a025c82e8a37fa16ae93457380477d4"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab254237297c6092b839a29347f651ef8"><td class="memItemLeft" align="right" valign="top"><a id="ab254237297c6092b839a29347f651ef8"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>read_mosaic_xgrid_order1</b> (const char *xgrid_file, int *i1, int *j1, int *i2, int *j2, double *area)</td></tr>
-<tr class="separator:ab254237297c6092b839a29347f651ef8"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a6b93aecd18687adbd7e14768a6efe8af"><td class="memItemLeft" align="right" valign="top"><a id="a6b93aecd18687adbd7e14768a6efe8af"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>read_mosaic_xgrid_order1_region_</b> (const char *xgrid_file, int *i1, int *j1, int *i2, int *j2, double *area, int *isc, int *iec)</td></tr>
-<tr class="separator:a6b93aecd18687adbd7e14768a6efe8af"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a9728db16801e0b9008f26c442ed47ce7"><td class="memItemLeft" align="right" valign="top"><a id="a9728db16801e0b9008f26c442ed47ce7"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>read_mosaic_xgrid_order1_region</b> (const char *xgrid_file, int *i1, int *j1, int *i2, int *j2, double *area, int *isc, int *iec)</td></tr>
-<tr class="separator:a9728db16801e0b9008f26c442ed47ce7"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a62d63d8537bf4f33d9d8902cf713cd7a"><td class="memItemLeft" align="right" valign="top"><a id="a62d63d8537bf4f33d9d8902cf713cd7a"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>read_mosaic_xgrid_order2_</b> (const char *xgrid_file, int *i1, int *j1, int *i2, int *j2, double *area, double *di, double *dj)</td></tr>
-<tr class="separator:a62d63d8537bf4f33d9d8902cf713cd7a"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a070fc541ae80876f7da249dc7c64914a"><td class="memItemLeft" align="right" valign="top"><a id="a070fc541ae80876f7da249dc7c64914a"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>read_mosaic_xgrid_order2</b> (const char *xgrid_file, int *i1, int *j1, int *i2, int *j2, double *area, double *di, double *dj)</td></tr>
-<tr class="separator:a070fc541ae80876f7da249dc7c64914a"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a33389885b29e4e67888137c376c2c3a1"><td class="memItemLeft" align="right" valign="top"><a id="a33389885b29e4e67888137c376c2c3a1"></a>
-int&#160;</td><td class="memItemRight" valign="bottom"><b>read_mosaic_ntiles_</b> (const char *mosaic_file)</td></tr>
-<tr class="separator:a33389885b29e4e67888137c376c2c3a1"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:afec00c4d25f45032167ce8232f9370cb"><td class="memItemLeft" align="right" valign="top"><a id="afec00c4d25f45032167ce8232f9370cb"></a>
-int&#160;</td><td class="memItemRight" valign="bottom"><b>read_mosaic_ntiles</b> (const char *mosaic_file)</td></tr>
-<tr class="separator:afec00c4d25f45032167ce8232f9370cb"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad46c2d80e71060378a3fff5b3f7eb323"><td class="memItemLeft" align="right" valign="top"><a id="ad46c2d80e71060378a3fff5b3f7eb323"></a>
-int&#160;</td><td class="memItemRight" valign="bottom"><b>read_mosaic_ncontacts_</b> (const char *mosaic_file)</td></tr>
-<tr class="separator:ad46c2d80e71060378a3fff5b3f7eb323"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a95f1dd70c7bafa992a59363544f83406"><td class="memItemLeft" align="right" valign="top"><a id="a95f1dd70c7bafa992a59363544f83406"></a>
-int&#160;</td><td class="memItemRight" valign="bottom"><b>read_mosaic_ncontacts</b> (const char *mosaic_file)</td></tr>
-<tr class="separator:a95f1dd70c7bafa992a59363544f83406"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:afb61af49ba63d142209083a74cc01bca"><td class="memItemLeft" align="right" valign="top"><a id="afb61af49ba63d142209083a74cc01bca"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>read_mosaic_grid_sizes_</b> (const char *mosaic_file, int *nx, int *ny)</td></tr>
-<tr class="separator:afb61af49ba63d142209083a74cc01bca"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:acad5d27b902b316a93642ea6468d4b8a"><td class="memItemLeft" align="right" valign="top"><a id="acad5d27b902b316a93642ea6468d4b8a"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>read_mosaic_grid_sizes</b> (const char *mosaic_file, int *nx, int *ny)</td></tr>
-<tr class="separator:acad5d27b902b316a93642ea6468d4b8a"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a461c4239fc2b074573fb1b15ec54f35a"><td class="memItemLeft" align="right" valign="top"><a id="a461c4239fc2b074573fb1b15ec54f35a"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>read_mosaic_contact_</b> (const char *mosaic_file, int *tile1, int *tile2, int *istart1, int *iend1, int *jstart1, int *jend1, int *istart2, int *iend2, int *jstart2, int *jend2)</td></tr>
-<tr class="separator:a461c4239fc2b074573fb1b15ec54f35a"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a0879ad3782288545b309fbd5bf0051d0"><td class="memItemLeft" align="right" valign="top"><a id="a0879ad3782288545b309fbd5bf0051d0"></a>
-int&#160;</td><td class="memItemRight" valign="bottom"><b>transfer_to_model_index</b> (int istart_in, int iend_in, int *istart_out, int *iend_out, int refine_ratio)</td></tr>
-<tr class="separator:a0879ad3782288545b309fbd5bf0051d0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a53ec3fc7428e07ef48101aa73aba5bf2"><td class="memItemLeft" align="right" valign="top"><a id="a53ec3fc7428e07ef48101aa73aba5bf2"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>handle_netcdf_error</b> (const char *msg, int status)</td></tr>
+<tr class="separator:a53ec3fc7428e07ef48101aa73aba5bf2"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af8018a9e8dedaee73eaa56e6c6f5647d"><td class="memItemLeft" align="right" valign="top"><a id="af8018a9e8dedaee73eaa56e6c6f5647d"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>read_mosaic_contact</b> (const char *mosaic_file, int *tile1, int *tile2, int *istart1, int *iend1, int *jstart1, int *jend1, int *istart2, int *iend2, int *jstart2, int *jend2)</td></tr>
 <tr class="separator:af8018a9e8dedaee73eaa56e6c6f5647d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a461c4239fc2b074573fb1b15ec54f35a"><td class="memItemLeft" align="right" valign="top"><a id="a461c4239fc2b074573fb1b15ec54f35a"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>read_mosaic_contact_</b> (const char *mosaic_file, int *tile1, int *tile2, int *istart1, int *iend1, int *jstart1, int *jend1, int *istart2, int *iend2, int *jstart2, int *jend2)</td></tr>
+<tr class="separator:a461c4239fc2b074573fb1b15ec54f35a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a4a42ece03eb9a3252dd4c4df0704ab98"><td class="memItemLeft" align="right" valign="top"><a id="a4a42ece03eb9a3252dd4c4df0704ab98"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>read_mosaic_grid_data</b> (const char *mosaic_file, const char *name, int nx, int ny, double *data, unsigned int level, int ioff, int joff)</td></tr>
 <tr class="separator:a4a42ece03eb9a3252dd4c4df0704ab98"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:acad5d27b902b316a93642ea6468d4b8a"><td class="memItemLeft" align="right" valign="top"><a id="acad5d27b902b316a93642ea6468d4b8a"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>read_mosaic_grid_sizes</b> (const char *mosaic_file, int *nx, int *ny)</td></tr>
+<tr class="separator:acad5d27b902b316a93642ea6468d4b8a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:afb61af49ba63d142209083a74cc01bca"><td class="memItemLeft" align="right" valign="top"><a id="afb61af49ba63d142209083a74cc01bca"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>read_mosaic_grid_sizes_</b> (const char *mosaic_file, int *nx, int *ny)</td></tr>
+<tr class="separator:afb61af49ba63d142209083a74cc01bca"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a95f1dd70c7bafa992a59363544f83406"><td class="memItemLeft" align="right" valign="top"><a id="a95f1dd70c7bafa992a59363544f83406"></a>
+int&#160;</td><td class="memItemRight" valign="bottom"><b>read_mosaic_ncontacts</b> (const char *mosaic_file)</td></tr>
+<tr class="separator:a95f1dd70c7bafa992a59363544f83406"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad46c2d80e71060378a3fff5b3f7eb323"><td class="memItemLeft" align="right" valign="top"><a id="ad46c2d80e71060378a3fff5b3f7eb323"></a>
+int&#160;</td><td class="memItemRight" valign="bottom"><b>read_mosaic_ncontacts_</b> (const char *mosaic_file)</td></tr>
+<tr class="separator:ad46c2d80e71060378a3fff5b3f7eb323"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:afec00c4d25f45032167ce8232f9370cb"><td class="memItemLeft" align="right" valign="top"><a id="afec00c4d25f45032167ce8232f9370cb"></a>
+int&#160;</td><td class="memItemRight" valign="bottom"><b>read_mosaic_ntiles</b> (const char *mosaic_file)</td></tr>
+<tr class="separator:afec00c4d25f45032167ce8232f9370cb"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a33389885b29e4e67888137c376c2c3a1"><td class="memItemLeft" align="right" valign="top"><a id="a33389885b29e4e67888137c376c2c3a1"></a>
+int&#160;</td><td class="memItemRight" valign="bottom"><b>read_mosaic_ntiles_</b> (const char *mosaic_file)</td></tr>
+<tr class="separator:a33389885b29e4e67888137c376c2c3a1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab254237297c6092b839a29347f651ef8"><td class="memItemLeft" align="right" valign="top"><a id="ab254237297c6092b839a29347f651ef8"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>read_mosaic_xgrid_order1</b> (const char *xgrid_file, int *i1, int *j1, int *i2, int *j2, double *area)</td></tr>
+<tr class="separator:ab254237297c6092b839a29347f651ef8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5a025c82e8a37fa16ae93457380477d4"><td class="memItemLeft" align="right" valign="top"><a id="a5a025c82e8a37fa16ae93457380477d4"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>read_mosaic_xgrid_order1_</b> (const char *xgrid_file, int *i1, int *j1, int *i2, int *j2, double *area)</td></tr>
+<tr class="separator:a5a025c82e8a37fa16ae93457380477d4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9728db16801e0b9008f26c442ed47ce7"><td class="memItemLeft" align="right" valign="top"><a id="a9728db16801e0b9008f26c442ed47ce7"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>read_mosaic_xgrid_order1_region</b> (const char *xgrid_file, int *i1, int *j1, int *i2, int *j2, double *area, int *isc, int *iec)</td></tr>
+<tr class="separator:a9728db16801e0b9008f26c442ed47ce7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6b93aecd18687adbd7e14768a6efe8af"><td class="memItemLeft" align="right" valign="top"><a id="a6b93aecd18687adbd7e14768a6efe8af"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>read_mosaic_xgrid_order1_region_</b> (const char *xgrid_file, int *i1, int *j1, int *i2, int *j2, double *area, int *isc, int *iec)</td></tr>
+<tr class="separator:a6b93aecd18687adbd7e14768a6efe8af"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a070fc541ae80876f7da249dc7c64914a"><td class="memItemLeft" align="right" valign="top"><a id="a070fc541ae80876f7da249dc7c64914a"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>read_mosaic_xgrid_order2</b> (const char *xgrid_file, int *i1, int *j1, int *i2, int *j2, double *area, double *di, double *dj)</td></tr>
+<tr class="separator:a070fc541ae80876f7da249dc7c64914a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a62d63d8537bf4f33d9d8902cf713cd7a"><td class="memItemLeft" align="right" valign="top"><a id="a62d63d8537bf4f33d9d8902cf713cd7a"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>read_mosaic_xgrid_order2_</b> (const char *xgrid_file, int *i1, int *j1, int *i2, int *j2, double *area, double *di, double *dj)</td></tr>
+<tr class="separator:a62d63d8537bf4f33d9d8902cf713cd7a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6bfd9924ddef0dd56bf858c4e51887b3"><td class="memItemLeft" align="right" valign="top"><a id="a6bfd9924ddef0dd56bf858c4e51887b3"></a>
+int&#160;</td><td class="memItemRight" valign="bottom"><b>read_mosaic_xgrid_size</b> (const char *xgrid_file)</td></tr>
+<tr class="separator:a6bfd9924ddef0dd56bf858c4e51887b3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a889b389da4bff6f0a20b019ea76c4f04"><td class="memItemLeft" align="right" valign="top"><a id="a889b389da4bff6f0a20b019ea76c4f04"></a>
+int&#160;</td><td class="memItemRight" valign="bottom"><b>read_mosaic_xgrid_size_</b> (const char *xgrid_file)</td></tr>
+<tr class="separator:a889b389da4bff6f0a20b019ea76c4f04"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0879ad3782288545b309fbd5bf0051d0"><td class="memItemLeft" align="right" valign="top"><a id="a0879ad3782288545b309fbd5bf0051d0"></a>
+int&#160;</td><td class="memItemRight" valign="bottom"><b>transfer_to_model_index</b> (int istart_in, int iend_in, int *istart_out, int *iend_out, int refine_ratio)</td></tr>
+<tr class="separator:a0879ad3782288545b309fbd5bf0051d0"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Support for reading mosaic netcdf grid files. </p>

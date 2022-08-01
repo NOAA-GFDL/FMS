@@ -1,0 +1,6 @@
+<map id="drifters_core_type" name="drifters_core_type">
+<area shape="rect" id="node1" title="Core data needed for drifters. Be sure to update drifters_core_new, drifters_core_del and drifters_co..." alt="" coords="147,139,286,165"/>
+<area shape="rect" id="node2" title=" " alt="" coords="5,5,169,32"/>
+<area shape="rect" id="node3" title=" " alt="" coords="193,5,240,32"/>
+<area shape="rect" id="node4" title=" " alt="" coords="277,5,345,32"/>
+</map>

@@ -1,0 +1,9 @@
+digraph "Graphical Class Hierarchy"
+{
+ // INTERACTIVE_SVG=YES
+ // LATEX_PDF_SIZE
+  edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
+  node [fontname="Helvetica",fontsize="10",shape=record];
+  rankdir="LR";
+  Node0 [label="c_strlen",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$interfacefms__string__utils__mod_1_1c__strlen.html",tooltip="Finds the length of a C-string."];
+}

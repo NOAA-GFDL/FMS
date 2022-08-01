@@ -1,0 +1,10 @@
+<map id="interpolate_type" name="interpolate_type">
+<area shape="rect" id="node1" title="Redundant climatology data between fields." alt="" coords="520,611,649,637"/>
+<area shape="rect" id="node2" title=" " alt="" coords="7,693,72,720"/>
+<area shape="rect" id="node5" href="$group__horiz__interp__type__mod.html#structhoriz__interp__type__mod_1_1horiz__interp__type" title=" " alt="" coords="245,611,380,637"/>
+<area shape="rect" id="node3" href="$group__time__manager__mod.html#structtime__manager__mod_1_1time__type" title="Type to represent amounts of time. Implemented as seconds and days to allow for larger intervals." alt="" coords="269,5,357,32"/>
+<area shape="rect" id="node4" title=" " alt="" coords="5,204,73,231"/>
+<area shape="rect" id="node6" title=" " alt="" coords="16,520,63,547"/>
+<area shape="rect" id="node7" title=" " alt="" coords="243,776,383,803"/>
+<area shape="rect" id="node8" title=" " alt="" coords="233,827,392,853"/>
+</map>

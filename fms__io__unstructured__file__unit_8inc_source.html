@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.17"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>FMS: fms/fms_io_unstructured_file_unit.inc Source File</title>
+<title>FMS: fms/fms_io_unstructured_file_unit.inc (1640fde1a51a73f97748f150eb84bf49e472aeca) Source File</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -33,7 +33,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">FMS
-   &#160;<span id="projectnumber">2022.02.0</span>
+   &#160;<span id="projectnumber">2022.03.00</span>
    </div>
    <div id="projectbrief">Flexible Modeling System</div>
   </td>
@@ -94,7 +94,7 @@ $(document).ready(function(){initNavTree('fms__io__unstructured__file__unit_8inc
 <div class="title">fms_io_unstructured_file_unit.inc</div>  </div>
 </div><!--header-->
 <div class="contents">
-<a href="fms__io__unstructured__file__unit_8inc.html">Go to the documentation of this file.</a><div class="fragment"><div class="line"><a name="l00001"></a><span class="lineno">    1</span>&#160;<span class="comment">!***********************************************************************</span></div>
+<div class="fragment"><div class="line"><a name="l00001"></a><span class="lineno">    1</span>&#160;<span class="comment">!***********************************************************************</span></div>
 <div class="line"><a name="l00002"></a><span class="lineno">    2</span>&#160;<span class="comment">!*                   GNU Lesser General Public License</span></div>
 <div class="line"><a name="l00003"></a><span class="lineno">    3</span>&#160;<span class="comment">!*</span></div>
 <div class="line"><a name="l00004"></a><span class="lineno">    4</span>&#160;<span class="comment">!* This file is part of the GFDL Flexible Modeling System (FMS).</span></div>
@@ -114,15 +114,15 @@ $(document).ready(function(){initNavTree('fms__io__unstructured__file__unit_8inc
 <div class="line"><a name="l00018"></a><span class="lineno">   18</span>&#160;<span class="comment">!***********************************************************************</span></div>
 <div class="line"><a name="l00019"></a><span class="lineno">   19</span>&#160;<span class="comment">!----------</span></div>
 <div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160;<span class="comment">!ug support</span><span class="comment"></span></div>
-<div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160;<span class="comment">!&gt; @file</span></div>
-<div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160;<span class="comment">!&gt; @ingroup fms_io_mod</span></div>
+<div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160;<span class="comment">!&gt; @addtogroup fms_io_mod</span></div>
+<div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160;<span class="comment">!&gt; @{</span></div>
 <div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160;<span class="comment"></span> </div>
 <div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;<span class="comment">!&gt;Find the file unit for an inputted file, searching for its variants.  If the</span></div>
 <div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160;<span class="comment">!!file is not found, then throw a fatal error.</span></div>
-<div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160;<span class="keyword">subroutine </span><a class="code" href="fms__io__unstructured__file__unit_8inc.html#afc8104d0d2dfa616718bf4990042ce57">fms_io_unstructured_file_unit</a>(filename, &amp;</div>
+<div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160;<span class="keyword">subroutine </span><a class="code" href="group__fms__io__mod.html#gafc8104d0d2dfa616718bf4990042ce57">fms_io_unstructured_file_unit</a>(filename, &amp;</div>
 <div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;                                         funit, &amp;</div>
 <div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;                                         domain)</div>
-<div class="line"><a name="l00029"></a><span class="lineno"><a class="line" href="fms__io__unstructured__file__unit_8inc.html#afc8104d0d2dfa616718bf4990042ce57">   29</a></span>&#160; </div>
+<div class="line"><a name="l00029"></a><span class="lineno"><a class="line" href="group__fms__io__mod.html#gafc8104d0d2dfa616718bf4990042ce57">   29</a></span>&#160; </div>
 <div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;   <span class="comment">!Inputs/Outputs</span></div>
 <div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;    <span class="keywordtype">character(len=*)</span>,<span class="keywordtype">intent(in)</span>   :: filename<span class="comment">   !&lt;The name of a file.</span></div>
 <div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;    <span class="keywordtype">integer(INT_KIND)</span>,<span class="keywordtype">intent(out)</span> :: funit<span class="comment">      !&lt;The file unit for the input file.</span></div>
@@ -137,7 +137,7 @@ $(document).ready(function(){initNavTree('fms__io__unstructured__file__unit_8inc
 <div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160; </div>
 <div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;   <span class="comment">!Get the actual name of the file, searching for all possible variants. If</span></div>
 <div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;   <span class="comment">!the file is not found, then throw a fatal error.</span></div>
-<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;    found_file = <a class="code" href="fms__io__unstructured__get__file__name_8inc.html#a4eeea16ed549432b88a3133332c91bad">fms_io_unstructured_get_file_name</a>(filename, &amp;</div>
+<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;    found_file = <a class="code" href="group__fms__io__mod.html#ga4eeea16ed549432b88a3133332c91bad">fms_io_unstructured_get_file_name</a>(filename, &amp;</div>
 <div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;                                                   actual_file, &amp;</div>
 <div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;                                                   read_dist, &amp;</div>
 <div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;                                                   domain)</div>
@@ -149,25 +149,24 @@ $(document).ready(function(){initNavTree('fms__io__unstructured__file__unit_8inc
 <div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;<span class="keywordflow">    endif</span></div>
 <div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160; </div>
 <div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;   <span class="comment">!Get the file unit for the input file.</span></div>
-<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;    <span class="keyword">call </span><a class="code" href="fms__io__unstructured__get__file__unit_8inc.html#a75c0b6f2a887ddc435ac59adfcacc67a">fms_io_unstructured_get_file_unit</a>(actual_file, &amp;</div>
+<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;    <span class="keyword">call </span><a class="code" href="group__fms__io__mod.html#ga75c0b6f2a887ddc435ac59adfcacc67a">fms_io_unstructured_get_file_unit</a>(actual_file, &amp;</div>
 <div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;                                           funit, &amp;</div>
 <div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;                                           nfile, &amp;</div>
 <div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;                                           read_dist, &amp;</div>
 <div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;                                           domain)</div>
 <div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160; </div>
 <div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;    <span class="keywordflow">return</span></div>
-<div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;<span class="keyword">end subroutine </span><a class="code" href="fms__io__unstructured__file__unit_8inc.html#afc8104d0d2dfa616718bf4990042ce57">fms_io_unstructured_file_unit</a></div>
-<div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160; </div>
-<div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;<span class="comment">!----------</span></div>
+<div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;<span class="keyword">end subroutine </span><a class="code" href="group__fms__io__mod.html#gafc8104d0d2dfa616718bf4990042ce57">fms_io_unstructured_file_unit</a><span class="comment"></span></div>
+<div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;<span class="comment">!&gt; @}</span></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
-<div class="ttc" id="afms__io__unstructured__get__file__name_8inc_html_a4eeea16ed549432b88a3133332c91bad"><div class="ttname"><a href="fms__io__unstructured__get__file__name_8inc.html#a4eeea16ed549432b88a3133332c91bad">fms_io_unstructured_get_file_name</a></div><div class="ttdeci">logical(int_kind) function fms_io_unstructured_get_file_name(orig_file, actual_file, read_dist, domain)</div><div class="ttdoc">For an inputted file name, check if it or any of its variants exist. For a file named &quot;foo&quot;,...</div><div class="ttdef"><b>Definition:</b> <a href="fms__io__unstructured__get__file__name_8inc_source.html#l00050">fms_io_unstructured_get_file_name.inc:50</a></div></div>
-<div class="ttc" id="afms__io__unstructured__file__unit_8inc_html_afc8104d0d2dfa616718bf4990042ce57"><div class="ttname"><a href="fms__io__unstructured__file__unit_8inc.html#afc8104d0d2dfa616718bf4990042ce57">fms_io_unstructured_file_unit</a></div><div class="ttdeci">subroutine fms_io_unstructured_file_unit(filename, funit, domain)</div><div class="ttdoc">Find the file unit for an inputted file, searching for its variants. If the file is not found,...</div><div class="ttdef"><b>Definition:</b> <a href="fms__io__unstructured__file__unit_8inc_source.html#l00029">fms_io_unstructured_file_unit.inc:29</a></div></div>
-<div class="ttc" id="afms__io__unstructured__get__file__unit_8inc_html_a75c0b6f2a887ddc435ac59adfcacc67a"><div class="ttname"><a href="fms__io__unstructured__get__file__unit_8inc.html#a75c0b6f2a887ddc435ac59adfcacc67a">fms_io_unstructured_get_file_unit</a></div><div class="ttdeci">subroutine fms_io_unstructured_get_file_unit(filename, funit, index_file, read_dist, domain)</div><div class="ttdoc">Return the file unit and index in the &quot;files_read&quot; module array for the inputted file....</div><div class="ttdef"><b>Definition:</b> <a href="fms__io__unstructured__get__file__unit_8inc_source.html#l00032">fms_io_unstructured_get_file_unit.inc:32</a></div></div>
+<div class="ttc" id="agroup__fms__io__mod_html_ga4eeea16ed549432b88a3133332c91bad"><div class="ttname"><a href="group__fms__io__mod.html#ga4eeea16ed549432b88a3133332c91bad">fms_io_unstructured_get_file_name</a></div><div class="ttdeci">logical(int_kind) function fms_io_unstructured_get_file_name(orig_file, actual_file, read_dist, domain)</div><div class="ttdoc">For an inputted file name, check if it or any of its variants exist. For a file named &quot;foo&quot;,...</div><div class="ttdef"><b>Definition:</b> <a href="fms__io__unstructured__get__file__name_8inc_source.html#l00050">fms_io_unstructured_get_file_name.inc:50</a></div></div>
+<div class="ttc" id="agroup__fms__io__mod_html_ga75c0b6f2a887ddc435ac59adfcacc67a"><div class="ttname"><a href="group__fms__io__mod.html#ga75c0b6f2a887ddc435ac59adfcacc67a">fms_io_unstructured_get_file_unit</a></div><div class="ttdeci">subroutine fms_io_unstructured_get_file_unit(filename, funit, index_file, read_dist, domain)</div><div class="ttdoc">Return the file unit and index in the &quot;files_read&quot; module array for the inputted file....</div><div class="ttdef"><b>Definition:</b> <a href="fms__io__unstructured__get__file__unit_8inc_source.html#l00032">fms_io_unstructured_get_file_unit.inc:32</a></div></div>
+<div class="ttc" id="agroup__fms__io__mod_html_gafc8104d0d2dfa616718bf4990042ce57"><div class="ttname"><a href="group__fms__io__mod.html#gafc8104d0d2dfa616718bf4990042ce57">fms_io_unstructured_file_unit</a></div><div class="ttdeci">subroutine fms_io_unstructured_file_unit(filename, funit, domain)</div><div class="ttdoc">Find the file unit for an inputted file, searching for its variants. If the file is not found,...</div><div class="ttdef"><b>Definition:</b> <a href="fms__io__unstructured__file__unit_8inc_source.html#l00029">fms_io_unstructured_file_unit.inc:29</a></div></div>
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><a class="el" href="dir_75cacd08096b96d5cce2e22025a878a7.html">fms</a></li><li class="navelem"><a class="el" href="fms__io__unstructured__file__unit_8inc.html">fms_io_unstructured_file_unit.inc</a></li>
+    <li class="navelem"><a class="el" href="dir_75cacd08096b96d5cce2e22025a878a7.html">fms</a></li><li class="navelem"><b>fms_io_unstructured_file_unit.inc</b></li>
     <li class="footer">Generated by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="doxygen.png" alt="doxygen"/></a> 1.8.17 </li>

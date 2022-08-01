@@ -1,0 +1,27 @@
+var group__xgrid__mod_structxgrid__mod_1_1xmap__type =
+[
+    [ "get1", "group__xgrid__mod.html#a9169a300a001697716ac1a046f11c35c", null ],
+    [ "get1_repro", "group__xgrid__mod.html#a08c1781332c90e76d4a226dcff9f0969", null ],
+    [ "grids", "group__xgrid__mod.html#acae022706db72f6a30a40aea31c103da", null ],
+    [ "ind_get1", "group__xgrid__mod.html#a4cf98cd6232b0f88f9771d57dcc082d7", null ],
+    [ "ind_put1", "group__xgrid__mod.html#aa184950102541dba2ba1273f815f6dae", null ],
+    [ "me", "group__xgrid__mod.html#af0c1ebe7c983f1b1061d88e367afc933", null ],
+    [ "npes", "group__xgrid__mod.html#a41e7fb762a9241d5528151ca2d284ca5", null ],
+    [ "put1", "group__xgrid__mod.html#a583a21c261e50a70ec2d0593ad0c764e", null ],
+    [ "recv_count_repro", "group__xgrid__mod.html#a7484ab6bb0c39858d454919ba2bbc3e2", null ],
+    [ "recv_count_repro_tot", "group__xgrid__mod.html#a6bfc07b62fea929163951e2391be6761", null ],
+    [ "root_pe", "group__xgrid__mod.html#ab96da8c443f9c55ebfefe033da98ab47", null ],
+    [ "send_count_repro", "group__xgrid__mod.html#ab76fb46dd94237014dc609a41c326325", null ],
+    [ "send_count_repro_tot", "group__xgrid__mod.html#a797feff82af965067b34bab49b9c2035", null ],
+    [ "size", "group__xgrid__mod.html#a6621c7fedbd7c7baa696edda1ef5aee6", null ],
+    [ "size_get2", "group__xgrid__mod.html#acc4d9ee133827f3688fc3a74d200004c", null ],
+    [ "size_put1", "group__xgrid__mod.html#a2c66cee9b9b5c1da93452553bfe39cd5", null ],
+    [ "version", "group__xgrid__mod.html#ac35bc8aa283c31e1b50bbad14da3092e", null ],
+    [ "x1", "group__xgrid__mod.html#aeae3101216812dacb59a76ad86bc62c7", null ],
+    [ "x1_put", "group__xgrid__mod.html#a7fec775ff6d43fc26797acab3f63c8e2", null ],
+    [ "x2", "group__xgrid__mod.html#a92024cf0024e8c57fab9bd23dc89e979", null ],
+    [ "x2_get", "group__xgrid__mod.html#aed7320b532ba202187b2de6497ded52d", null ],
+    [ "your1my2", "group__xgrid__mod.html#a973bf7af6ce9cd63e3534009bbd6772d", null ],
+    [ "your2my1", "group__xgrid__mod.html#affbab574cf2d4279fb32c12f72279b09", null ],
+    [ "your2my1_size", "group__xgrid__mod.html#a93f6c030937569a01ace6ba1ca273a5e", null ]
+];

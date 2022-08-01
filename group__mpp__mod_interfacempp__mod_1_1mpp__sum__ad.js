@@ -1,0 +1,27 @@
+var group__mpp__mod_interfacempp__mod_1_1mpp__sum__ad =
+[
+    [ "mpp_sum_int4_2d_ad", "group__mpp__mod.html#a05cbe2a513501d25a4a3b1f927f87676", null ],
+    [ "mpp_sum_int4_3d_ad", "group__mpp__mod.html#ae51d3e726b602b2d3ca545197be1a376", null ],
+    [ "mpp_sum_int4_4d_ad", "group__mpp__mod.html#ae72b5c6c71c0bc2a387592bd9fa308f4", null ],
+    [ "mpp_sum_int4_5d_ad", "group__mpp__mod.html#a7b9ed7be237ec6a9ad4d8f1faf42ca08", null ],
+    [ "mpp_sum_int4_ad", "group__mpp__mod.html#af3fa3d045dc33d405c88d14089a7d605", null ],
+    [ "mpp_sum_int4_scalar_ad", "group__mpp__mod.html#a138c812dc313a6892acd96b98fd1c7f3", null ],
+    [ "mpp_sum_int8_2d_ad", "group__mpp__mod.html#a25f89ae83654d2e0ab3b7af4001706a5", null ],
+    [ "mpp_sum_int8_3d_ad", "group__mpp__mod.html#a0ef4fb9e637ab3447a22d8b881409797", null ],
+    [ "mpp_sum_int8_4d_ad", "group__mpp__mod.html#af958fb39ca84164f295236e8689502d6", null ],
+    [ "mpp_sum_int8_5d_ad", "group__mpp__mod.html#a46ee670b8f6971523faa3bff256d3405", null ],
+    [ "mpp_sum_int8_ad", "group__mpp__mod.html#ab3b3cb04534374baf6b921f68d372786", null ],
+    [ "mpp_sum_int8_scalar_ad", "group__mpp__mod.html#af09a5f4da775da7edc2b7e04920f63cc", null ],
+    [ "mpp_sum_real4_2d_ad", "group__mpp__mod.html#a9466bbc3db69eb735efb73ff591c58a3", null ],
+    [ "mpp_sum_real4_3d_ad", "group__mpp__mod.html#a4c686db6d4a7a2be4bec554924803055", null ],
+    [ "mpp_sum_real4_4d_ad", "group__mpp__mod.html#a03c51956abc222dd9c013002b60ead8e", null ],
+    [ "mpp_sum_real4_5d_ad", "group__mpp__mod.html#a06648ef49fd2b29ef4ca13d942abe847", null ],
+    [ "mpp_sum_real4_ad", "group__mpp__mod.html#a4f12cd8009c3753956387a303de67f48", null ],
+    [ "mpp_sum_real4_scalar_ad", "group__mpp__mod.html#a35fccafa84d7e24ffa1d147eedca5ce6", null ],
+    [ "mpp_sum_real8_2d_ad", "group__mpp__mod.html#a5d33673d1fa241349707b283e13efd4a", null ],
+    [ "mpp_sum_real8_3d_ad", "group__mpp__mod.html#a2265e4ac84ec4ee36ae5911160ab7d1d", null ],
+    [ "mpp_sum_real8_4d_ad", "group__mpp__mod.html#abf3c3e5efc0248345565f37029f4bac0", null ],
+    [ "mpp_sum_real8_5d_ad", "group__mpp__mod.html#aa273f341754557db9a695ba2e29f9db5", null ],
+    [ "mpp_sum_real8_ad", "group__mpp__mod.html#a0ce9a504de1095165522efd5ecf98728", null ],
+    [ "mpp_sum_real8_scalar_ad", "group__mpp__mod.html#a8daf4dfbf9ceab47aa3ff92bd2248e9e", null ]
+];

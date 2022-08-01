@@ -1,26 +1,26 @@
 var group__diag__grid__mod =
 [
-    [ "diag_global_grid_type", "structdiag__grid__mod_1_1diag__global__grid__type.html", [
-      [ "adimi", "structdiag__grid__mod_1_1diag__global__grid__type.html#ac15c33ac089571a954c320ef2c67630a", null ],
-      [ "adimj", "structdiag__grid__mod_1_1diag__global__grid__type.html#a86d68afdf2a37152ab6dfdfef8ac7b8b", null ],
-      [ "aglo_lat", "structdiag__grid__mod_1_1diag__global__grid__type.html#acf91b0a8ab14c847de6dcf3a75bf7563", null ],
-      [ "aglo_lon", "structdiag__grid__mod_1_1diag__global__grid__type.html#abc738585b21d733c289514d704b31b57", null ],
-      [ "dimi", "structdiag__grid__mod_1_1diag__global__grid__type.html#a49a0ec2c2044680c58ef6bc811e3ac74", null ],
-      [ "dimj", "structdiag__grid__mod_1_1diag__global__grid__type.html#ae989844e19d85097cd5a13b83a73b890", null ],
-      [ "glo_lat", "structdiag__grid__mod_1_1diag__global__grid__type.html#ae3eb4a3d1d9b08f05623c3ae6458e00d", null ],
-      [ "glo_lon", "structdiag__grid__mod_1_1diag__global__grid__type.html#a9969dceb880fc2d80d8d3b961083f0a3", null ],
-      [ "grid_type", "structdiag__grid__mod_1_1diag__global__grid__type.html#a6bf0505a03af67deea36dd10b1e059a6", null ],
-      [ "myxbegin", "structdiag__grid__mod_1_1diag__global__grid__type.html#a2d7903f6b52147a70fd397ae37ef8d26", null ],
-      [ "myybegin", "structdiag__grid__mod_1_1diag__global__grid__type.html#a6298bdaa8a32dfbe5e64f704995d6bf3", null ],
-      [ "ntiles", "structdiag__grid__mod_1_1diag__global__grid__type.html#ad647e9d34add429dd842471b09d57723", null ],
-      [ "peend", "structdiag__grid__mod_1_1diag__global__grid__type.html#a2a770f8073c4c3e7c74940b5598ac113", null ],
-      [ "pestart", "structdiag__grid__mod_1_1diag__global__grid__type.html#acc94db07ba99997a63533a2b04fe8296", null ],
-      [ "tile_number", "structdiag__grid__mod_1_1diag__global__grid__type.html#abf2730d777f8dceceb7669cfff23fd20", null ]
+    [ "diag_global_grid_type", "group__diag__grid__mod.html#structdiag__grid__mod_1_1diag__global__grid__type", [
+      [ "adimi", "group__diag__grid__mod.html#ac15c33ac089571a954c320ef2c67630a", null ],
+      [ "adimj", "group__diag__grid__mod.html#a86d68afdf2a37152ab6dfdfef8ac7b8b", null ],
+      [ "aglo_lat", "group__diag__grid__mod.html#acf91b0a8ab14c847de6dcf3a75bf7563", null ],
+      [ "aglo_lon", "group__diag__grid__mod.html#abc738585b21d733c289514d704b31b57", null ],
+      [ "dimi", "group__diag__grid__mod.html#a49a0ec2c2044680c58ef6bc811e3ac74", null ],
+      [ "dimj", "group__diag__grid__mod.html#ae989844e19d85097cd5a13b83a73b890", null ],
+      [ "glo_lat", "group__diag__grid__mod.html#ae3eb4a3d1d9b08f05623c3ae6458e00d", null ],
+      [ "glo_lon", "group__diag__grid__mod.html#a9969dceb880fc2d80d8d3b961083f0a3", null ],
+      [ "grid_type", "group__diag__grid__mod.html#a6bf0505a03af67deea36dd10b1e059a6", null ],
+      [ "myxbegin", "group__diag__grid__mod.html#a2d7903f6b52147a70fd397ae37ef8d26", null ],
+      [ "myybegin", "group__diag__grid__mod.html#a6298bdaa8a32dfbe5e64f704995d6bf3", null ],
+      [ "ntiles", "group__diag__grid__mod.html#ad647e9d34add429dd842471b09d57723", null ],
+      [ "peend", "group__diag__grid__mod.html#a2a770f8073c4c3e7c74940b5598ac113", null ],
+      [ "pestart", "group__diag__grid__mod.html#acc94db07ba99997a63533a2b04fe8296", null ],
+      [ "tile_number", "group__diag__grid__mod.html#abf2730d777f8dceceb7669cfff23fd20", null ]
     ] ],
-    [ "point", "structdiag__grid__mod_1_1point.html", [
-      [ "x", "structdiag__grid__mod_1_1point.html#ab0aad012248673bbebc1382484d5344a", null ],
-      [ "y", "structdiag__grid__mod_1_1point.html#a4b63294f355d7b12de9a25f75a70c5ec", null ],
-      [ "z", "structdiag__grid__mod_1_1point.html#a10bcf9869cc0e4a13dc5c090991dac34", null ]
+    [ "point", "group__diag__grid__mod.html#structdiag__grid__mod_1_1point", [
+      [ "x", "group__diag__grid__mod.html#ab0aad012248673bbebc1382484d5344a", null ],
+      [ "y", "group__diag__grid__mod.html#a4b63294f355d7b12de9a25f75a70c5ec", null ],
+      [ "z", "group__diag__grid__mod.html#a10bcf9869cc0e4a13dc5c090991dac34", null ]
     ] ],
     [ "deg2rad", "group__diag__grid__mod.html#ga7c106eac542c18e69fa010f358067b65", null ],
     [ "diag_grid_end", "group__diag__grid__mod.html#ga5e5a7eeabed97e40f69b0167e44b1330", null ],

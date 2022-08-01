@@ -1,0 +1,4 @@
+<map id="tile_type" name="tile_type">
+<area shape="rect" id="node1" title="Upper and lower x and y bounds for a tile." alt="" coords="5,139,84,165"/>
+<area shape="rect" id="node2" title=" " alt="" coords="11,5,79,32"/>
+</map>

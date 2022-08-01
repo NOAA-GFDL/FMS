@@ -1,0 +1,9 @@
+digraph "Graphical Class Hierarchy"
+{
+ // INTERACTIVE_SVG=YES
+ // LATEX_PDF_SIZE
+  edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
+  node [fontname="Helvetica",fontsize="10",shape=record];
+  rankdir="LR";
+  Node0 [label="assignment(=)",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$group__drifters__core__mod.html#interfacedrifters__core__mod_1_1assignment_07_0a_08",tooltip="Assignment override for drifters_core_type."];
+}

@@ -1,0 +1,28 @@
+digraph "grid_type"
+{
+ // INTERACTIVE_SVG=YES
+ // LATEX_PDF_SIZE
+  edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
+  node [fontname="Helvetica",fontsize="10",shape=record];
+  rankdir="LR";
+  Node1 [label="grid_type",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled", fontcolor="black",tooltip="Private type to hold all data needed from given grid for an exchange grid."];
+  Node2 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" is_ug\nis_latlon\non_this_pe" ,fontname="Helvetica"];
+  Node2 [label="logical",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
+  Node3 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" x\nx_repro" ,fontname="Helvetica"];
+  Node3 [label="xcell_type",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$group__xgrid__mod.html#structxgrid__mod_1_1xcell__type",tooltip="Private type for cell indices and data in the exchange grid."];
+  Node4 -> Node3 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" scale\ndi\ndj\narea" ,fontname="Helvetica"];
+  Node4 [label="real(r8_kind)",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
+  Node5 -> Node3 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" pe\nl1\nl2\nj1\nj2\ni1\ni2\nrecv_pos\ntile" ,fontname="Helvetica"];
+  Node5 [label="integer",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
+  Node6 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" id" ,fontname="Helvetica"];
+  Node6 [label="character(len=3)",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
+  Node7 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" ug_domain" ,fontname="Helvetica"];
+  Node7 [label="type(domainug)",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
+  Node8 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" box" ,fontname="Helvetica"];
+  Node8 [label="grid_box_type",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$group__xgrid__mod.html#structxgrid__mod_1_1grid__box__type",tooltip="Type to hold pointers for grid boxes."];
+  Node4 -> Node8 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" edge_s\nedge_e\ndx\nedge_w\ndy\nvlon\nen1\nen2\nvlat\nedge_n\n..." ,fontname="Helvetica"];
+  Node4 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" area_inv\nlon\nlat\nfrac_area\ngeolon\narea\ngeolat" ,fontname="Helvetica"];
+  Node5 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" ied_me\nkm\nsize\nlast_get\njm\nge_me\nim\npelist\nnxl_me\nie_me\n..." ,fontname="Helvetica"];
+  Node9 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" domain\ndomain_with_halo" ,fontname="Helvetica"];
+  Node9 [label="type(domain2d)",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
+}

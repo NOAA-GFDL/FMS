@@ -1,0 +1,9 @@
+digraph "Graphical Class Hierarchy"
+{
+ // INTERACTIVE_SVG=YES
+ // LATEX_PDF_SIZE
+  edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
+  node [fontname="Helvetica",fontsize="10",shape=record];
+  rankdir="LR";
+  Node0 [label="mpp_create_group_update",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$group__mpp__domains__mod.html#interfacempp__domains__mod_1_1mpp__create__group__update",tooltip="Constructor for the mpp_group_update_type which is then used with mpp_start_group_update."];
+}

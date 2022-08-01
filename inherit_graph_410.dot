@@ -1,0 +1,9 @@
+digraph "Graphical Class Hierarchy"
+{
+ // INTERACTIVE_SVG=YES
+ // LATEX_PDF_SIZE
+  edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
+  node [fontname="Helvetica",fontsize="10",shape=record];
+  rankdir="LR";
+  Node0 [label="stock_type",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$group__stock__constants__mod.html#structstock__constants__mod_1_1stock__type",tooltip="Holds stocks amounts per PE values."];
+}

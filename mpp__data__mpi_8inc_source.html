@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.17"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>FMS: mpp/include/mpp_data_mpi.inc Source File</title>
+<title>FMS: mpp/include/mpp_data_mpi.inc (1640fde1a51a73f97748f150eb84bf49e472aeca) Source File</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -33,7 +33,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">FMS
-   &#160;<span id="projectnumber">2022.02.0</span>
+   &#160;<span id="projectnumber">2022.03.00</span>
    </div>
    <div id="projectbrief">Flexible Modeling System</div>
   </td>
@@ -113,34 +113,33 @@ $(document).ready(function(){initNavTree('mpp__data__mpi_8inc_source.html',''); 
 <div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160;<span class="comment">!*</span></div>
 <div class="line"><a name="l00018"></a><span class="lineno">   18</span>&#160;<span class="comment">!* You should have received a copy of the GNU Lesser General Public</span></div>
 <div class="line"><a name="l00019"></a><span class="lineno">   19</span>&#160;<span class="comment">!* License along with FMS.  If not, see &lt;http://www.gnu.org/licenses/&gt;.</span></div>
-<div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160;<span class="comment">!***********************************************************************</span></div>
-<div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160;<span class="comment"></span> </div>
-<div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160;<span class="comment">!&gt; @file</span></div>
-<div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160;<span class="comment">!&gt; @ingroup mpp_data_mod</span></div>
-<div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;<span class="comment">!&gt; @brief Holds dummy constants and stack data for @ref mpp_mod and @ref mpp_domains_mod.</span></div>
-<div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160;<span class="comment">!! Accessible through @ref mpp_data_mod</span></div>
-<div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160; </div>
-<div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;<span class="comment">!----------------------------------------------------------------!</span></div>
-<div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;<span class="comment">! The following data is used in mpp_mod and its components       !</span></div>
-<div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;<span class="comment">!----------------------------------------------------------------!</span></div>
-<div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;<span class="keywordtype">integer</span> :: stat(MPI_STATUS_SIZE)</div>
-<div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;<span class="keywordtype">real</span>(r8_kind), <span class="keywordtype">allocatable</span> :: mpp_stack(:)</div>
-<div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160; </div>
-<div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;<span class="comment">!--- some dummy variables with dummy values that will never be used</span></div>
-<div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;<span class="keywordtype">integer</span>, <span class="keywordtype">parameter</span> :: ptr_stack = -999</div>
-<div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;<span class="keywordtype">integer</span>, <span class="keywordtype">parameter</span> :: status=-999, ptr_status = -999</div>
-<div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;<span class="keywordtype">integer</span>, <span class="keywordtype">parameter</span> :: remote_data_loc=-999, ptr_remote = -999</div>
-<div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;<span class="keywordtype">integer</span>, <span class="keywordtype">parameter</span> :: sync=-999, ptr_sync = -999</div>
-<div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;<span class="keywordtype">integer</span>, <span class="keywordtype">parameter</span> :: mpp_from_pe = -999, ptr_from = -999</div>
-<div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160; </div>
-<div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;<span class="comment">!-------------------------------------------------------------------!</span></div>
-<div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;<span class="comment">! The following data is used in mpp_domains_mod and its components  !</span></div>
-<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;<span class="comment">!-------------------------------------------------------------------!</span></div>
-<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;<span class="keywordtype">real</span>(r8_kind), <span class="keywordtype">allocatable</span> :: mpp_domains_stack(:)</div>
-<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;<span class="keywordtype">real</span>(r8_kind), <span class="keywordtype">allocatable</span> :: mpp_domains_stack_nonblock(:)</div>
-<div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;<span class="comment">!--- some dummy variables with dummy values that will never be used</span></div>
-<div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;<span class="keywordtype">integer</span>, <span class="keywordtype">parameter</span> :: ptr_domains_stack = -999</div>
-<div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;<span class="keywordtype">integer</span>, <span class="keywordtype">parameter</span> :: ptr_domains_stack_nonblock = -999</div>
+<div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160;<span class="comment">!***********************************************************************</span><span class="comment"></span></div>
+<div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160;<span class="comment">!&gt; @file</span></div>
+<div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160;<span class="comment">!&gt; @ingroup mpp_data_mod</span></div>
+<div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160;<span class="comment">!&gt; @brief Holds dummy constants and stack data for @ref mpp_mod and @ref mpp_domains_mod.</span></div>
+<div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;<span class="comment">!! Accessible through @ref mpp_data_mod</span></div>
+<div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160; </div>
+<div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160;<span class="comment">!----------------------------------------------------------------!</span></div>
+<div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;<span class="comment">! The following data is used in mpp_mod and its components       !</span></div>
+<div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;<span class="comment">!----------------------------------------------------------------!</span></div>
+<div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;<span class="keywordtype">integer</span> :: stat(MPI_STATUS_SIZE)</div>
+<div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;<span class="keywordtype">real</span>(r8_kind), <span class="keywordtype">allocatable</span> :: mpp_stack(:)<span class="comment"> !&lt; stack used for general mpp operations</span></div>
+<div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160; </div>
+<div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;<span class="comment">!--- some dummy variables with dummy values that will never be used</span></div>
+<div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;<span class="keywordtype">integer</span>, <span class="keywordtype">parameter</span> :: ptr_stack = -999</div>
+<div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;<span class="keywordtype">integer</span>, <span class="keywordtype">parameter</span> :: status=-999, ptr_status = -999</div>
+<div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;<span class="keywordtype">integer</span>, <span class="keywordtype">parameter</span> :: remote_data_loc=-999, ptr_remote = -999</div>
+<div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;<span class="keywordtype">integer</span>, <span class="keywordtype">parameter</span> :: sync=-999, ptr_sync = -999</div>
+<div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;<span class="keywordtype">integer</span>, <span class="keywordtype">parameter</span> :: mpp_from_pe = -999, ptr_from = -999</div>
+<div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160; </div>
+<div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;<span class="comment">!-------------------------------------------------------------------!</span></div>
+<div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;<span class="comment">! The following data is used in mpp_domains_mod and its components  !</span></div>
+<div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;<span class="comment">!-------------------------------------------------------------------!</span></div>
+<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;<span class="keywordtype">real</span>(r8_kind), <span class="keywordtype">allocatable</span> :: mpp_domains_stack(:)<span class="comment"> !&lt; stack used to hold data for domain operations</span></div>
+<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;<span class="keywordtype">real</span>(r8_kind), <span class="keywordtype">allocatable</span> :: mpp_domains_stack_nonblock(:)<span class="comment"> !&lt; stack used for non-blocking domain operations</span></div>
+<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;<span class="comment">!--- some dummy variables with dummy values that will never be used</span></div>
+<div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;<span class="keywordtype">integer</span>, <span class="keywordtype">parameter</span> :: ptr_domains_stack = -999</div>
+<div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;<span class="keywordtype">integer</span>, <span class="keywordtype">parameter</span> :: ptr_domains_stack_nonblock = -999</div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->

@@ -33,7 +33,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">FMS
-   &#160;<span id="projectnumber">2022.02.0</span>
+   &#160;<span id="projectnumber">2022.03.00</span>
    </div>
    <div id="projectbrief">Flexible Modeling System</div>
   </td>
@@ -91,12 +91,14 @@ $(document).ready(function(){initNavTree('group__fms2__io.html',''); initResizab
 
 <div class="header">
   <div class="summary">
-<a href="#groups">Modules</a> &#124;
-<a href="#files">Files</a>  </div>
+<a href="#groups">Modules</a>  </div>
   <div class="headertitle">
 <div class="title">FMS2 IO</div>  </div>
 </div><!--header-->
 <div class="contents">
+
+<p>Modules and associated files in the fms2_io directory.  
+<a href="#details">More...</a></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="groups"></a>
 Modules</h2></td></tr>
@@ -104,7 +106,7 @@ Modules</h2></td></tr>
 <tr class="memdesc:group__blackboxio"><td class="mdescLeft">&#160;</td><td class="mdescRight">File utility functions for use within <a class="el" href="group__fms2__io.html">FMS2 IO</a>. <br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:group__fms2__io__mod"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__fms2__io__mod.html">fms2_io_mod</a></td></tr>
-<tr class="memdesc:group__fms2__io__mod"><td class="mdescLeft">&#160;</td><td class="mdescRight">An updated library for parallel IO to replace <a class="el" href="group__mpp__io__mod.html">mpp_io_mod</a>. This module contains the public API for fms2 I/O interfaces and routines defined throughout this directory. <br /></td></tr>
+<tr class="memdesc:group__fms2__io__mod"><td class="mdescLeft">&#160;</td><td class="mdescRight">An updated library for parallel IO to replace <a class="el" href="group__mpp__io__mod.html">mpp_io_mod</a>. This module contains the public API for fms2 I/O interfaces and routines defined throughout this directory. A conversion guide for replacing mpp/fms_io code with this module is available below. <br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:group__fms__io__utils__mod"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__fms__io__utils__mod.html">fms_io_utils_mod</a></td></tr>
 <tr class="memdesc:group__fms__io__utils__mod"><td class="mdescLeft">&#160;</td><td class="mdescRight">Misc. utility routines for use in <a class="el" href="group__fms2__io.html">FMS2 IO</a>. <br /></td></tr>
@@ -118,33 +120,10 @@ Modules</h2></td></tr>
 <tr class="memitem:group__netcdf__io__mod"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__netcdf__io__mod.html">netcdf_io_mod</a></td></tr>
 <tr class="memdesc:group__netcdf__io__mod"><td class="mdescLeft">&#160;</td><td class="mdescRight">Creates a basic netcdf type and routines to extend for other uses. <br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-</table><table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="files"></a>
-Files</h2></td></tr>
-<tr class="memitem:compressed__read_8inc"><td class="memItemLeft" align="right" valign="top">file &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="compressed__read_8inc.html">compressed_read.inc</a></td></tr>
-<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:compressed__write_8inc"><td class="memItemLeft" align="right" valign="top">file &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="compressed__write_8inc.html">compressed_write.inc</a></td></tr>
-<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:gather__data__bc_8inc"><td class="memItemLeft" align="right" valign="top">file &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="gather__data__bc_8inc.html">gather_data_bc.inc</a></td></tr>
-<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:get__global__attribute_8inc"><td class="memItemLeft" align="right" valign="top">file &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="get__global__attribute_8inc.html">get_global_attribute.inc</a></td></tr>
-<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:get__variable__attribute_8inc"><td class="memItemLeft" align="right" valign="top">file &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="get__variable__attribute_8inc.html">get_variable_attribute.inc</a></td></tr>
-<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:netcdf__add__restart__variable_8inc"><td class="memItemLeft" align="right" valign="top">file &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="netcdf__add__restart__variable_8inc.html">netcdf_add_restart_variable.inc</a></td></tr>
-<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:netcdf__read__data_8inc"><td class="memItemLeft" align="right" valign="top">file &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="netcdf__read__data_8inc.html">netcdf_read_data.inc</a></td></tr>
-<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:netcdf__write__data_8inc"><td class="memItemLeft" align="right" valign="top">file &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="netcdf__write__data_8inc.html">netcdf_write_data.inc</a></td></tr>
-<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:register__global__attribute_8inc"><td class="memItemLeft" align="right" valign="top">file &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="register__global__attribute_8inc.html">register_global_attribute.inc</a></td></tr>
-<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:register__variable__attribute_8inc"><td class="memItemLeft" align="right" valign="top">file &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="register__variable__attribute_8inc.html">register_variable_attribute.inc</a></td></tr>
-<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:scatter__data__bc_8inc"><td class="memItemLeft" align="right" valign="top">file &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="scatter__data__bc_8inc.html">scatter_data_bc.inc</a></td></tr>
-<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
+<p>Modules and associated files in the fms2_io directory. </p>
+<p>Updated IO modules for parallel IO via netcdf files. Replaces the functionality of the IO routines in mpp_io. fms2_io_mod is the main module for external usage and provides public interfaces for routines defined throughout this directory, dependent on the type of file. </p>
 </div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->

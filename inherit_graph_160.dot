@@ -1,0 +1,9 @@
+digraph "Graphical Class Hierarchy"
+{
+ // INTERACTIVE_SVG=YES
+ // LATEX_PDF_SIZE
+  edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
+  node [fontname="Helvetica",fontsize="10",shape=record];
+  rankdir="LR";
+  Node0 [label="get_ocean_frac",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$group__topography__mod.html#interfacetopography__mod_1_1get__ocean__frac",tooltip="Returns fractional area covered by ocean in a grid box. Returns fractional area covered by ocean in t..."];
+}

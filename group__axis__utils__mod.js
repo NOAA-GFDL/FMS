@@ -1,9 +1,9 @@
 var group__axis__utils__mod =
 [
-    [ "interp_1d", "interfaceaxis__utils__mod_1_1interp__1d.html", [
-      [ "interp_1d_1d", "interfaceaxis__utils__mod_1_1interp__1d.html#a20df8aa9edfbb7c6ecb73e65855b3393", null ],
-      [ "interp_1d_2d", "interfaceaxis__utils__mod_1_1interp__1d.html#a64e4ffe9078c6d8aa841f35968211e09", null ],
-      [ "interp_1d_3d", "interfaceaxis__utils__mod_1_1interp__1d.html#a6c7bb4e4b93559a972ac8337f1f23581", null ]
+    [ "interp_1d", "group__axis__utils__mod.html#interfaceaxis__utils__mod_1_1interp__1d", [
+      [ "interp_1d_1d", "group__axis__utils__mod.html#a20df8aa9edfbb7c6ecb73e65855b3393", null ],
+      [ "interp_1d_2d", "group__axis__utils__mod.html#a64e4ffe9078c6d8aa841f35968211e09", null ],
+      [ "interp_1d_3d", "group__axis__utils__mod.html#a6c7bb4e4b93559a972ac8337f1f23581", null ]
     ] ],
     [ "frac_index", "group__axis__utils__mod.html#ga501df9f40778ebcfee3caf5cd3740e0d", null ],
     [ "get_axis_bounds", "group__axis__utils__mod.html#gaf2d607b6a8526083a52fba72e56954d4", null ],

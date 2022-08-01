@@ -33,7 +33,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">FMS
-   &#160;<span id="projectnumber">2022.02.0</span>
+   &#160;<span id="projectnumber">2022.03.00</span>
    </div>
    <div id="projectbrief">Flexible Modeling System</div>
   </td>
@@ -104,40 +104,40 @@ $(document).ready(function(){initNavTree('group__fms__mod.html',''); initResizab
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
 Data Types</h2></td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">type &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structfms__mod_1_1nml__errors__type.html">nml_errors_type</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Namelist read error values.  <a href="structfms__mod_1_1nml__errors__type.html#details">More...</a><br /></td></tr>
-<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">interface &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="interfacefms__string__utils__mod_1_1fms__c2f__string.html">fms_c2f_string</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Converts a C string to a Fortran string.  <a href="interfacefms__string__utils__mod_1_1fms__c2f__string.html#details">More...</a><br /></td></tr>
-<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">interface &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="interfacefms__string__utils__mod_1_1string.html">string</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Converts a number to a string.  <a href="interfacefms__string__utils__mod_1_1string.html#details">More...</a><br /></td></tr>
-<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:interfacefms__string__utils__mod_1_1fms__c2f__string"><td class="memItemLeft" align="right" valign="top">interface &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__fms__mod.html#interfacefms__string__utils__mod_1_1fms__c2f__string">fms_c2f_string</a></td></tr>
+<tr class="memdesc:interfacefms__string__utils__mod_1_1fms__c2f__string"><td class="mdescLeft">&#160;</td><td class="mdescRight">Converts a C string to a Fortran string.  <a href="group__fms__mod.html#interfacefms__string__utils__mod_1_1fms__c2f__string">More...</a><br /></td></tr>
+<tr class="separator:interfacefms__string__utils__mod_1_1fms__c2f__string"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:structfms__mod_1_1nml__errors__type"><td class="memItemLeft" align="right" valign="top">type &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__fms__mod.html#structfms__mod_1_1nml__errors__type">nml_errors_type</a></td></tr>
+<tr class="memdesc:structfms__mod_1_1nml__errors__type"><td class="mdescLeft">&#160;</td><td class="mdescRight">Namelist read error values.  <a href="group__fms__mod.html#structfms__mod_1_1nml__errors__type">More...</a><br /></td></tr>
+<tr class="separator:structfms__mod_1_1nml__errors__type"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:interfacefms__string__utils__mod_1_1string"><td class="memItemLeft" align="right" valign="top">interface &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__fms__mod.html#interfacefms__string__utils__mod_1_1string">string</a></td></tr>
+<tr class="memdesc:interfacefms__string__utils__mod_1_1string"><td class="mdescLeft">&#160;</td><td class="mdescRight">Converts a number to a string.  <a href="group__fms__mod.html#interfacefms__string__utils__mod_1_1string">More...</a><br /></td></tr>
+<tr class="separator:interfacefms__string__utils__mod_1_1string"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="func-members"></a>
 Functions/Subroutines</h2></td></tr>
-<tr class="memitem:ga76099928e3f2e58ea5efe717c7809fce"><td class="memItemLeft" align="right" valign="top">subroutine, public&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__fms__mod.html#ga76099928e3f2e58ea5efe717c7809fce">fms_init</a> (localcomm, alt_input_nml_path)</td></tr>
-<tr class="memdesc:ga76099928e3f2e58ea5efe717c7809fce"><td class="mdescLeft">&#160;</td><td class="mdescRight">Initializes the FMS module and also calls the initialization routines for all modules in the MPP package. Will be called automatically if the user does not call it.  <a href="group__fms__mod.html#ga76099928e3f2e58ea5efe717c7809fce">More...</a><br /></td></tr>
-<tr class="separator:ga76099928e3f2e58ea5efe717c7809fce"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga05e7686befc1e49d2be9bdb81d479a76"><td class="memItemLeft" align="right" valign="top">integer function, public&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__fms__mod.html#ga05e7686befc1e49d2be9bdb81d479a76">check_nml_error</a> (IOSTAT, NML_NAME)</td></tr>
+<tr class="memdesc:ga05e7686befc1e49d2be9bdb81d479a76"><td class="mdescLeft">&#160;</td><td class="mdescRight">Checks the iostat argument that is returned after reading a namelist and determines if the error code is valid.  <a href="group__fms__mod.html#ga05e7686befc1e49d2be9bdb81d479a76">More...</a><br /></td></tr>
+<tr class="separator:ga05e7686befc1e49d2be9bdb81d479a76"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:gae5c7420e421293e2be14717dd7b3d97f"><td class="memItemLeft" align="right" valign="top">subroutine, public&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__fms__mod.html#gae5c7420e421293e2be14717dd7b3d97f">error_mesg</a> (routine, message, level)</td></tr>
 <tr class="memdesc:gae5c7420e421293e2be14717dd7b3d97f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Print notes, warnings and error messages; terminates program for warning and error messages. Usage of mpp_error is preferable. (use error levels NOTE,WARNING,FATAL, see example below)  <a href="group__fms__mod.html#gae5c7420e421293e2be14717dd7b3d97f">More...</a><br /></td></tr>
 <tr class="separator:gae5c7420e421293e2be14717dd7b3d97f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga6695d901d751a75f108c27aa385d9579"><td class="memItemLeft" align="right" valign="top">logical function, public&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__fms__mod.html#ga6695d901d751a75f108c27aa385d9579">fms_error_handler</a> (routine, message, err_msg)</td></tr>
 <tr class="memdesc:ga6695d901d751a75f108c27aa385d9579"><td class="mdescLeft">&#160;</td><td class="mdescRight">Facilitates the control of fatal error conditions.  <a href="group__fms__mod.html#ga6695d901d751a75f108c27aa385d9579">More...</a><br /></td></tr>
 <tr class="separator:ga6695d901d751a75f108c27aa385d9579"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga05e7686befc1e49d2be9bdb81d479a76"><td class="memItemLeft" align="right" valign="top">integer function, public&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__fms__mod.html#ga05e7686befc1e49d2be9bdb81d479a76">check_nml_error</a> (IOSTAT, NML_NAME)</td></tr>
-<tr class="memdesc:ga05e7686befc1e49d2be9bdb81d479a76"><td class="mdescLeft">&#160;</td><td class="mdescRight">Checks the iostat argument that is returned after reading a namelist and determines if the error code is valid.  <a href="group__fms__mod.html#ga05e7686befc1e49d2be9bdb81d479a76">More...</a><br /></td></tr>
-<tr class="separator:ga05e7686befc1e49d2be9bdb81d479a76"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga76099928e3f2e58ea5efe717c7809fce"><td class="memItemLeft" align="right" valign="top">subroutine, public&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__fms__mod.html#ga76099928e3f2e58ea5efe717c7809fce">fms_init</a> (localcomm, alt_input_nml_path)</td></tr>
+<tr class="memdesc:ga76099928e3f2e58ea5efe717c7809fce"><td class="mdescLeft">&#160;</td><td class="mdescRight">Initializes the FMS module and also calls the initialization routines for all modules in the MPP package. Will be called automatically if the user does not call it.  <a href="group__fms__mod.html#ga76099928e3f2e58ea5efe717c7809fce">More...</a><br /></td></tr>
+<tr class="separator:ga76099928e3f2e58ea5efe717c7809fce"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:gae80e64e737312192624678ecd590acd6"><td class="memItemLeft" align="right" valign="top">logical function, public&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__fms__mod.html#gae80e64e737312192624678ecd590acd6">monotonic_array</a> (array, direction)</td></tr>
+<tr class="memdesc:gae80e64e737312192624678ecd590acd6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Determines if a real input array has monotonically increasing or decreasing values.  <a href="group__fms__mod.html#gae80e64e737312192624678ecd590acd6">More...</a><br /></td></tr>
+<tr class="separator:gae80e64e737312192624678ecd590acd6"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga0d71e1611bc61c9aa999c92abe008c45"><td class="memItemLeft" align="right" valign="top"><a id="ga0d71e1611bc61c9aa999c92abe008c45"></a>
 subroutine, private&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__fms__mod.html#ga0d71e1611bc61c9aa999c92abe008c45">nml_error_init</a></td></tr>
 <tr class="memdesc:ga0d71e1611bc61c9aa999c92abe008c45"><td class="mdescLeft">&#160;</td><td class="mdescRight">Determines the IOSTAT error value for some common Namelist errors. Also checks if the compiler returns a non-zero status if there are multiple namelist records in a single file. <br /></td></tr>
 <tr class="separator:ga0d71e1611bc61c9aa999c92abe008c45"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga2cb4556e28486de51d4118871fd5acd9"><td class="memItemLeft" align="right" valign="top">logical function, public&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__fms__mod.html#ga2cb4556e28486de51d4118871fd5acd9">string_array_index</a> (<a class="el" href="interfacefms__string__utils__mod_1_1string.html">string</a>, string_array, index)</td></tr>
+<tr class="memitem:ga2cb4556e28486de51d4118871fd5acd9"><td class="memItemLeft" align="right" valign="top">logical function, public&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__fms__mod.html#ga2cb4556e28486de51d4118871fd5acd9">string_array_index</a> (<a class="el" href="group__fms__mod.html#interfacefms__string__utils__mod_1_1string">string</a>, string_array, index)</td></tr>
 <tr class="memdesc:ga2cb4556e28486de51d4118871fd5acd9"><td class="mdescLeft">&#160;</td><td class="mdescRight">match the input character string to a string in an array/list of character strings  <a href="group__fms__mod.html#ga2cb4556e28486de51d4118871fd5acd9">More...</a><br /></td></tr>
 <tr class="separator:ga2cb4556e28486de51d4118871fd5acd9"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:gae80e64e737312192624678ecd590acd6"><td class="memItemLeft" align="right" valign="top">logical function, public&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__fms__mod.html#gae80e64e737312192624678ecd590acd6">monotonic_array</a> (array, direction)</td></tr>
-<tr class="memdesc:gae80e64e737312192624678ecd590acd6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Determines if a real input array has monotonically increasing or decreasing values.  <a href="group__fms__mod.html#gae80e64e737312192624678ecd590acd6">More...</a><br /></td></tr>
-<tr class="separator:gae80e64e737312192624678ecd590acd6"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga0c093df98a75dbd9e0f3add67aa6c23a"><td class="memItemLeft" align="right" valign="top"><a id="ga0c093df98a75dbd9e0f3add67aa6c23a"></a>
 subroutine, public&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__fms__mod.html#ga0c093df98a75dbd9e0f3add67aa6c23a">write_version_number</a> (version, tag, unit)</td></tr>
 <tr class="memdesc:ga0c093df98a75dbd9e0f3add67aa6c23a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Prints to the log file (or a specified unit) the version id string and tag name. <br /></td></tr>
@@ -145,73 +145,73 @@ subroutine, public&#160;</td><td class="memItemRight" valign="bottom"><a class="
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="var-members"></a>
 Variables</h2></td></tr>
-<tr class="memitem:ga4422f1543997b447d925821d54e7252a"><td class="memItemLeft" align="right" valign="top"><a id="ga4422f1543997b447d925821d54e7252a"></a>
-logical&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__fms__mod.html#ga4422f1543997b447d925821d54e7252a">read_all_pe</a> = .true.</td></tr>
-<tr class="memdesc:ga4422f1543997b447d925821d54e7252a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Read global data on all processors extracting local part needed (TRUE) or read global data on PE0 and broadcast to all PEs(FALSE). <br /></td></tr>
-<tr class="separator:ga4422f1543997b447d925821d54e7252a"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga4b46c985d2a99c5a87f1733b1749e892"><td class="memItemLeft" align="right" valign="top"><a id="ga4b46c985d2a99c5a87f1733b1749e892"></a>
-character(len=16)&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__fms__mod.html#ga4b46c985d2a99c5a87f1733b1749e892">clock_grain</a> = 'NONE'</td></tr>
-<tr class="memdesc:ga4b46c985d2a99c5a87f1733b1749e892"><td class="mdescLeft">&#160;</td><td class="mdescRight">The level of clock granularity used for performance timing sections of code. Possible values in order of increasing detail are: 'NONE', 'COMPONENT', 'SUBCOMPONENT', 'MODULE_DRIVER', 'MODULE', 'ROUTINE', 'LOOP', and 'INFRA'. Code sections are defined using routines in MPP module: mpp_clock_id, mpp_clock_begin, and mpp_clock_end. The fms module makes these routines public. A list of timed code sections will be printed to STDOUT. See the <a class="el" href="group__mpp__mod.html">mpp_mod</a> module for more details. <br /></td></tr>
-<tr class="separator:ga4b46c985d2a99c5a87f1733b1749e892"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:gad1925a5c08b19f3412af60515e4e6321"><td class="memItemLeft" align="right" valign="top"><a id="gad1925a5c08b19f3412af60515e4e6321"></a>
 character(len=16)&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__fms__mod.html#gad1925a5c08b19f3412af60515e4e6321">clock_flags</a> ='NONE'</td></tr>
 <tr class="memdesc:gad1925a5c08b19f3412af60515e4e6321"><td class="mdescLeft">&#160;</td><td class="mdescRight">Possible values are 'NONE', 'SYNC', or 'DETAILED'. SYNC will give accurate information on load balance of the clocked portion of code. DETAILED also turns on detailed message-passing performance diagnosis. Both SYNC and DETAILED will work correctly on innermost clock nest and distort outer clocks, and possibly the overall code time. See the <a class="el" href="group__mpp__mod.html">mpp_mod</a> module for more details. <br /></td></tr>
 <tr class="separator:gad1925a5c08b19f3412af60515e4e6321"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga19036b5d0d3973d75e541700506919f2"><td class="memItemLeft" align="right" valign="top"><a id="ga19036b5d0d3973d75e541700506919f2"></a>
-character(len=8)&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__fms__mod.html#ga19036b5d0d3973d75e541700506919f2">warning_level</a> = 'warning'</td></tr>
-<tr class="memdesc:ga19036b5d0d3973d75e541700506919f2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sets the termination condition for the WARNING flag to interfaces error_mesg/mpp_error. set warning_level = 'fatal' (program crashes for warning messages) or 'warning' (prints warning message and continues). <br /></td></tr>
-<tr class="separator:ga19036b5d0d3973d75e541700506919f2"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:gaebceb5b06d9009d61504648bc4865786"><td class="memItemLeft" align="right" valign="top"><a id="gaebceb5b06d9009d61504648bc4865786"></a>
-integer&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__fms__mod.html#gaebceb5b06d9009d61504648bc4865786">stack_size</a> = 0</td></tr>
-<tr class="memdesc:gaebceb5b06d9009d61504648bc4865786"><td class="mdescLeft">&#160;</td><td class="mdescRight">The size in words of the MPP user stack. If stack_size &gt; 0, the following MPP routine is called: call mpp_set_stack_size (stack_size). If stack_size = 0 (default) then the default size set by mpp_mod is used. <br /></td></tr>
-<tr class="separator:gaebceb5b06d9009d61504648bc4865786"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga4b46c985d2a99c5a87f1733b1749e892"><td class="memItemLeft" align="right" valign="top"><a id="ga4b46c985d2a99c5a87f1733b1749e892"></a>
+character(len=16)&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__fms__mod.html#ga4b46c985d2a99c5a87f1733b1749e892">clock_grain</a> = 'NONE'</td></tr>
+<tr class="memdesc:ga4b46c985d2a99c5a87f1733b1749e892"><td class="mdescLeft">&#160;</td><td class="mdescRight">The level of clock granularity used for performance timing sections of code. Possible values in order of increasing detail are: 'NONE', 'COMPONENT', 'SUBCOMPONENT', 'MODULE_DRIVER', 'MODULE', 'ROUTINE', 'LOOP', and 'INFRA'. Code sections are defined using routines in MPP module: mpp_clock_id, mpp_clock_begin, and mpp_clock_end. The fms module makes these routines public. A list of timed code sections will be printed to STDOUT. See the <a class="el" href="group__mpp__mod.html">mpp_mod</a> module for more details. <br /></td></tr>
+<tr class="separator:ga4b46c985d2a99c5a87f1733b1749e892"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:gaa4d51133301c44a4a974eda285c057ec"><td class="memItemLeft" align="right" valign="top"><a id="gaa4d51133301c44a4a974eda285c057ec"></a>
+logical, private&#160;</td><td class="memItemRight" valign="bottom"><b>do_nml_error_init</b> = .true.</td></tr>
+<tr class="separator:gaa4d51133301c44a4a974eda285c057ec"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga7460ed347f0eebbfe05fe3f60863a8cf"><td class="memItemLeft" align="right" valign="top"><a id="ga7460ed347f0eebbfe05fe3f60863a8cf"></a>
 integer&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__fms__mod.html#ga7460ed347f0eebbfe05fe3f60863a8cf">domains_stack_size</a> = 0</td></tr>
 <tr class="memdesc:ga7460ed347f0eebbfe05fe3f60863a8cf"><td class="mdescLeft">&#160;</td><td class="mdescRight">The size in words of the MPP_DOMAINS user stack. If domains_stack_size &gt; 0, the following MPP_DOMAINS routine is called: call mpp_domains_set_stack_size (domains_stack_size). If domains_stack_size = 0 (default) then the default size set by <a class="el" href="group__mpp__domains__mod.html">mpp_domains_mod</a> is used. <br /></td></tr>
 <tr class="separator:ga7460ed347f0eebbfe05fe3f60863a8cf"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:gad78fc2d65a2e6be1cb7cec1087ef7d4a"><td class="memItemLeft" align="right" valign="top"><a id="gad78fc2d65a2e6be1cb7cec1087ef7d4a"></a>
+logical, private&#160;</td><td class="memItemRight" valign="bottom"><b>fms_io</b></td></tr>
+<tr class="separator:gad78fc2d65a2e6be1cb7cec1087ef7d4a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:gabd60d28a9fe40d764061faf539017017"><td class="memItemLeft" align="right" valign="top"><a id="gabd60d28a9fe40d764061faf539017017"></a>
+logical, private&#160;</td><td class="memItemRight" valign="bottom"><b>fms_io_initialized</b> = .FALSE.</td></tr>
+<tr class="separator:gabd60d28a9fe40d764061faf539017017"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:gadb6fda35ab4181ca23be9c2d7812ebce"><td class="memItemLeft" align="right" valign="top"><a id="gadb6fda35ab4181ca23be9c2d7812ebce"></a>
+logical, private&#160;</td><td class="memItemRight" valign="bottom"><b>is</b></td></tr>
+<tr class="separator:gadb6fda35ab4181ca23be9c2d7812ebce"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga1e152f2e27b87c2897f6e016cb508c83"><td class="memItemLeft" align="right" valign="top"><a id="ga1e152f2e27b87c2897f6e016cb508c83"></a>
+logical, private&#160;</td><td class="memItemRight" valign="bottom"><b>make</b></td></tr>
+<tr class="separator:ga1e152f2e27b87c2897f6e016cb508c83"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:gad369225c254bc7bda087334ca5d13096"><td class="memItemLeft" align="right" valign="top"><a id="gad369225c254bc7bda087334ca5d13096"></a>
+logical&#160;</td><td class="memItemRight" valign="bottom"><b>module_is_initialized</b> = .FALSE.</td></tr>
+<tr class="separator:gad369225c254bc7bda087334ca5d13096"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga12c1ce70bb3b9275cc49b79e75de0d8d"><td class="memItemLeft" align="right" valign="top"><a id="ga12c1ce70bb3b9275cc49b79e75de0d8d"></a>
+integer, dimension(20), private&#160;</td><td class="memItemRight" valign="bottom"><b>nml_error_codes</b></td></tr>
+<tr class="separator:ga12c1ce70bb3b9275cc49b79e75de0d8d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga02cde751a71d9b42ced5e3c300805f2e"><td class="memItemLeft" align="right" valign="top"><a id="ga02cde751a71d9b42ced5e3c300805f2e"></a>
+integer, private&#160;</td><td class="memItemRight" valign="bottom"><b>num_nml_error_codes</b></td></tr>
+<tr class="separator:ga02cde751a71d9b42ced5e3c300805f2e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga75f6af47ddac380527238a1be183d2ff"><td class="memItemLeft" align="right" valign="top"><a id="ga75f6af47ddac380527238a1be183d2ff"></a>
+logical, private&#160;</td><td class="memItemRight" valign="bottom"><b>only</b></td></tr>
+<tr class="separator:ga75f6af47ddac380527238a1be183d2ff"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga78f0d71e88638662c5f3ee5175f24d85"><td class="memItemLeft" align="right" valign="top"><a id="ga78f0d71e88638662c5f3ee5175f24d85"></a>
 logical, public&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__fms__mod.html#ga78f0d71e88638662c5f3ee5175f24d85">print_memory_usage</a> = .FALSE.</td></tr>
 <tr class="memdesc:ga78f0d71e88638662c5f3ee5175f24d85"><td class="mdescLeft">&#160;</td><td class="mdescRight">If set to .TRUE., memory usage statistics will be printed at various points in the code. It is used to study memory usage, e.g to detect memory leaks. <br /></td></tr>
 <tr class="separator:ga78f0d71e88638662c5f3ee5175f24d85"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga02cde751a71d9b42ced5e3c300805f2e"><td class="memItemLeft" align="right" valign="top"><a id="ga02cde751a71d9b42ced5e3c300805f2e"></a>
-integer, private&#160;</td><td class="memItemRight" valign="bottom"><b>num_nml_error_codes</b></td></tr>
-<tr class="separator:ga02cde751a71d9b42ced5e3c300805f2e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga12c1ce70bb3b9275cc49b79e75de0d8d"><td class="memItemLeft" align="right" valign="top"><a id="ga12c1ce70bb3b9275cc49b79e75de0d8d"></a>
-integer, dimension(20), private&#160;</td><td class="memItemRight" valign="bottom"><b>nml_error_codes</b></td></tr>
-<tr class="separator:ga12c1ce70bb3b9275cc49b79e75de0d8d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:gaa4d51133301c44a4a974eda285c057ec"><td class="memItemLeft" align="right" valign="top"><a id="gaa4d51133301c44a4a974eda285c057ec"></a>
-logical, private&#160;</td><td class="memItemRight" valign="bottom"><b>do_nml_error_init</b> = .true.</td></tr>
-<tr class="separator:gaa4d51133301c44a4a974eda285c057ec"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:gad369225c254bc7bda087334ca5d13096"><td class="memItemLeft" align="right" valign="top"><a id="gad369225c254bc7bda087334ca5d13096"></a>
-logical&#160;</td><td class="memItemRight" valign="bottom"><b>module_is_initialized</b> = .FALSE.</td></tr>
-<tr class="separator:gad369225c254bc7bda087334ca5d13096"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:gabd60d28a9fe40d764061faf539017017"><td class="memItemLeft" align="right" valign="top"><a id="gabd60d28a9fe40d764061faf539017017"></a>
-logical, private&#160;</td><td class="memItemRight" valign="bottom"><b>fms_io_initialized</b> = .FALSE.</td></tr>
-<tr class="separator:gabd60d28a9fe40d764061faf539017017"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:gac17a7d67ed047c03c55c0015851b1f9d"><td class="memItemLeft" align="right" valign="top"><a id="gac17a7d67ed047c03c55c0015851b1f9d"></a>
-logical, private&#160;</td><td class="memItemRight" valign="bottom"><b>used</b></td></tr>
-<tr class="separator:gac17a7d67ed047c03c55c0015851b1f9d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga17ad30be155a6ed8333bd9d94d860e49"><td class="memItemLeft" align="right" valign="top"><a id="ga17ad30be155a6ed8333bd9d94d860e49"></a>
-logical, private&#160;</td><td class="memItemRight" valign="bottom"><b>to</b></td></tr>
-<tr class="separator:ga17ad30be155a6ed8333bd9d94d860e49"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga1e152f2e27b87c2897f6e016cb508c83"><td class="memItemLeft" align="right" valign="top"><a id="ga1e152f2e27b87c2897f6e016cb508c83"></a>
-logical, private&#160;</td><td class="memItemRight" valign="bottom"><b>make</b></td></tr>
-<tr class="separator:ga1e152f2e27b87c2897f6e016cb508c83"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga4422f1543997b447d925821d54e7252a"><td class="memItemLeft" align="right" valign="top"><a id="ga4422f1543997b447d925821d54e7252a"></a>
+logical&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__fms__mod.html#ga4422f1543997b447d925821d54e7252a">read_all_pe</a> = .true.</td></tr>
+<tr class="memdesc:ga4422f1543997b447d925821d54e7252a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Read global data on all processors extracting local part needed (TRUE) or read global data on PE0 and broadcast to all PEs(FALSE). <br /></td></tr>
+<tr class="separator:ga4422f1543997b447d925821d54e7252a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:gaebceb5b06d9009d61504648bc4865786"><td class="memItemLeft" align="right" valign="top"><a id="gaebceb5b06d9009d61504648bc4865786"></a>
+integer&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__fms__mod.html#gaebceb5b06d9009d61504648bc4865786">stack_size</a> = 0</td></tr>
+<tr class="memdesc:gaebceb5b06d9009d61504648bc4865786"><td class="mdescLeft">&#160;</td><td class="mdescRight">The size in words of the MPP user stack. If stack_size &gt; 0, the following MPP routine is called: call mpp_set_stack_size (stack_size). If stack_size = 0 (default) then the default size set by mpp_mod is used. <br /></td></tr>
+<tr class="separator:gaebceb5b06d9009d61504648bc4865786"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:gaa83a0dd38b7142b1863afc4c6dacf135"><td class="memItemLeft" align="right" valign="top"><a id="gaa83a0dd38b7142b1863afc4c6dacf135"></a>
 logical, private&#160;</td><td class="memItemRight" valign="bottom"><b>sure</b></td></tr>
 <tr class="separator:gaa83a0dd38b7142b1863afc4c6dacf135"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:gad78fc2d65a2e6be1cb7cec1087ef7d4a"><td class="memItemLeft" align="right" valign="top"><a id="gad78fc2d65a2e6be1cb7cec1087ef7d4a"></a>
-logical, private&#160;</td><td class="memItemRight" valign="bottom"><b>fms_io</b></td></tr>
-<tr class="separator:gad78fc2d65a2e6be1cb7cec1087ef7d4a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga17ad30be155a6ed8333bd9d94d860e49"><td class="memItemLeft" align="right" valign="top"><a id="ga17ad30be155a6ed8333bd9d94d860e49"></a>
+logical, private&#160;</td><td class="memItemRight" valign="bottom"><b>to</b></td></tr>
+<tr class="separator:ga17ad30be155a6ed8333bd9d94d860e49"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:gac17a7d67ed047c03c55c0015851b1f9d"><td class="memItemLeft" align="right" valign="top"><a id="gac17a7d67ed047c03c55c0015851b1f9d"></a>
+logical, private&#160;</td><td class="memItemRight" valign="bottom"><b>used</b></td></tr>
+<tr class="separator:gac17a7d67ed047c03c55c0015851b1f9d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga972eb100f87c43f1bff62f62a45efeea"><td class="memItemLeft" align="right" valign="top"><a id="ga972eb100f87c43f1bff62f62a45efeea"></a>
 logical, private&#160;</td><td class="memItemRight" valign="bottom"><b>version</b></td></tr>
 <tr class="separator:ga972eb100f87c43f1bff62f62a45efeea"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:gadb6fda35ab4181ca23be9c2d7812ebce"><td class="memItemLeft" align="right" valign="top"><a id="gadb6fda35ab4181ca23be9c2d7812ebce"></a>
-logical, private&#160;</td><td class="memItemRight" valign="bottom"><b>is</b></td></tr>
-<tr class="separator:gadb6fda35ab4181ca23be9c2d7812ebce"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga75f6af47ddac380527238a1be183d2ff"><td class="memItemLeft" align="right" valign="top"><a id="ga75f6af47ddac380527238a1be183d2ff"></a>
-logical, private&#160;</td><td class="memItemRight" valign="bottom"><b>only</b></td></tr>
-<tr class="separator:ga75f6af47ddac380527238a1be183d2ff"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga19036b5d0d3973d75e541700506919f2"><td class="memItemLeft" align="right" valign="top"><a id="ga19036b5d0d3973d75e541700506919f2"></a>
+character(len=8)&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__fms__mod.html#ga19036b5d0d3973d75e541700506919f2">warning_level</a> = 'warning'</td></tr>
+<tr class="memdesc:ga19036b5d0d3973d75e541700506919f2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sets the termination condition for the WARNING flag to interfaces error_mesg/mpp_error. set warning_level = 'fatal' (program crashes for warning messages) or 'warning' (prints warning message and continues). <br /></td></tr>
+<tr class="separator:ga19036b5d0d3973d75e541700506919f2"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <p>The fms module provides routines that are commonly used by most FMS modules. </p>
@@ -226,6 +226,251 @@ logical, private&#160;</td><td class="memItemRight" valign="bottom"><b>only</b><
 </li>
 <li>For convenience there are several routines published from the <a class="el" href="group__mpp.html">MPP</a> module. These are routines for getting processor numbers, commonly used I/O unit numbers, error handling, and timing sections of code. </li>
 </ol>
+<hr/><h2 class="groupheader">Data Type Documentation</h2>
+<a name="interfacefms__string__utils__mod_1_1fms__c2f__string" id="interfacefms__string__utils__mod_1_1fms__c2f__string"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#interfacefms__string__utils__mod_1_1fms__c2f__string">&#9670;&nbsp;</a></span>fms_string_utils_mod::fms_c2f_string</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">interface fms_string_utils_mod::fms_c2f_string</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<div class="textblock"><p>Converts a C string to a Fortran string. </p>
+
+<p class="definition">Definition at line <a class="el" href="fms__string__utils_8F90_source.html#l00110">110</a> of file <a class="el" href="fms__string__utils_8F90_source.html">fms_string_utils.F90</a>.</p>
+</div><table class="memberdecls">
+<tr><td colspan="2"><h3>Private Member Functions</h3></td></tr>
+<tr class="memitem:aadaafc70b1918799933ea0eef1b5e371"><td class="memItemLeft" align="right" valign="top">character(len=:) function, allocatable&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__fms__mod.html#aadaafc70b1918799933ea0eef1b5e371">cpointer_fortran_conversion</a> (cstring)</td></tr>
+<tr class="memdesc:aadaafc70b1918799933ea0eef1b5e371"><td class="mdescLeft">&#160;</td><td class="mdescRight">Converts a C-string returned from a TYPE(C_PTR) function to a fortran string with type character.  <a href="group__fms__mod.html#aadaafc70b1918799933ea0eef1b5e371">More...</a><br /></td></tr>
+<tr class="separator:aadaafc70b1918799933ea0eef1b5e371"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2926018a984f8089aae0df096e093378"><td class="memItemLeft" align="right" valign="top">character(len=:) function, allocatable&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__fms__mod.html#a2926018a984f8089aae0df096e093378">cstring_fortran_conversion</a> (cstring)</td></tr>
+<tr class="memdesc:a2926018a984f8089aae0df096e093378"><td class="mdescLeft">&#160;</td><td class="mdescRight">Converts a C-string to a pointer and then to a Fortran string.  <a href="group__fms__mod.html#a2926018a984f8089aae0df096e093378">More...</a><br /></td></tr>
+<tr class="separator:a2926018a984f8089aae0df096e093378"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table>
+<h4 class="groupheader">Member Function/Subroutine Documentation</h4>
+<a id="aadaafc70b1918799933ea0eef1b5e371"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aadaafc70b1918799933ea0eef1b5e371">&#9670;&nbsp;</a></span>cpointer_fortran_conversion()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">character(len=:) function, allocatable cpointer_fortran_conversion </td>
+          <td>(</td>
+          <td class="paramtype">type (c_ptr), intent(in)&#160;</td>
+          <td class="paramname"><em>cstring</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Converts a C-string returned from a TYPE(C_PTR) function to a fortran string with type character. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">cstring</td><td>Input C-pointer </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>The fortran string returned </dd></dl>
+
+<p class="definition">Definition at line <a class="el" href="fms__string__utils_8F90_source.html#l00206">206</a> of file <a class="el" href="fms__string__utils_8F90_source.html">fms_string_utils.F90</a>.</p>
+
+</div>
+</div>
+<a id="a2926018a984f8089aae0df096e093378"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a2926018a984f8089aae0df096e093378">&#9670;&nbsp;</a></span>cstring_fortran_conversion()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">character(len=:) function, allocatable cstring_fortran_conversion </td>
+          <td>(</td>
+          <td class="paramtype">character (kind=c_char), dimension (*), intent(in)&#160;</td>
+          <td class="paramname"><em>cstring</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Converts a C-string to a pointer and then to a Fortran string. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">cstring</td><td>Input C-string </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>The fortran string returned </dd></dl>
+
+<p class="definition">Definition at line <a class="el" href="fms__string__utils_8F90_source.html#l00198">198</a> of file <a class="el" href="fms__string__utils_8F90_source.html">fms_string_utils.F90</a>.</p>
+
+</div>
+</div>
+
+</div>
+</div>
+<a name="structfms__mod_1_1nml__errors__type" id="structfms__mod_1_1nml__errors__type"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#structfms__mod_1_1nml__errors__type">&#9670;&nbsp;</a></span>fms_mod::nml_errors_type</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">type fms_mod::nml_errors_type</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<div class="textblock"><p>Namelist read error values. </p>
+
+<p class="definition">Definition at line <a class="el" href="fms_8F90_source.html#l00224">224</a> of file <a class="el" href="fms_8F90_source.html">fms.F90</a>.</p>
+</div><div class="dynheader">
+Collaboration diagram for nml_errors_type:</div>
+<div class="dyncontent">
+<div class="center"><iframe scrolling="no" frameborder="0" src="structfms__mod_1_1nml__errors__type__coll__graph.svg" width="198" height="186"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe>
+</div>
+<center><span class="legend">[<a target="top" href="graph_legend.html">legend</a>]</span></center></div>
+<table class="memberdecls">
+<tr><td colspan="2"><h3>Private Attributes</h3></td></tr>
+<tr class="memitem:a45602ba18ce79502e6a75c985ed5ff45"><td class="memItemLeft" align="right" valign="top"><a id="a45602ba18ce79502e6a75c985ed5ff45"></a>
+integer&#160;</td><td class="memItemRight" valign="bottom"><b>badtype1</b></td></tr>
+<tr class="separator:a45602ba18ce79502e6a75c985ed5ff45"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af369597000885987112ef52318fa89ef"><td class="memItemLeft" align="right" valign="top"><a id="af369597000885987112ef52318fa89ef"></a>
+integer&#160;</td><td class="memItemRight" valign="bottom"><b>badtype2</b></td></tr>
+<tr class="separator:af369597000885987112ef52318fa89ef"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9c7719ff71915a5a1106d00960a6f585"><td class="memItemLeft" align="right" valign="top"><a id="a9c7719ff71915a5a1106d00960a6f585"></a>
+integer&#160;</td><td class="memItemRight" valign="bottom"><b>missingvar</b></td></tr>
+<tr class="separator:a9c7719ff71915a5a1106d00960a6f585"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aeef287b5667f4a81a041cbbaafc6e707"><td class="memItemLeft" align="right" valign="top"><a id="aeef287b5667f4a81a041cbbaafc6e707"></a>
+integer&#160;</td><td class="memItemRight" valign="bottom"><b>multiplenmlsinfile</b></td></tr>
+<tr class="separator:aeef287b5667f4a81a041cbbaafc6e707"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae4939f16a1734b3d5134b93d505e6850"><td class="memItemLeft" align="right" valign="top"><a id="ae4939f16a1734b3d5134b93d505e6850"></a>
+integer&#160;</td><td class="memItemRight" valign="bottom"><b>notinfile</b></td></tr>
+<tr class="separator:ae4939f16a1734b3d5134b93d505e6850"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table>
+
+</div>
+</div>
+<a name="interfacefms__string__utils__mod_1_1string" id="interfacefms__string__utils__mod_1_1string"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#interfacefms__string__utils__mod_1_1string">&#9670;&nbsp;</a></span>fms_string_utils_mod::string</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">interface fms_string_utils_mod::string</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<div class="textblock"><p>Converts a number to a string. </p>
+
+<p class="definition">Definition at line <a class="el" href="fms__string__utils_8F90_source.html#l00117">117</a> of file <a class="el" href="fms__string__utils_8F90_source.html">fms_string_utils.F90</a>.</p>
+</div><table class="memberdecls">
+<tr><td colspan="2"><h3>Private Member Functions</h3></td></tr>
+<tr class="memitem:aa376b42bf56dc366fd3fcf116abe93e8"><td class="memItemLeft" align="right" valign="top">character(:) function, allocatable&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__fms__mod.html#aa376b42bf56dc366fd3fcf116abe93e8">string_from_integer</a> (i)</td></tr>
+<tr class="memdesc:aa376b42bf56dc366fd3fcf116abe93e8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Converts an integer to a string.  <a href="group__fms__mod.html#aa376b42bf56dc366fd3fcf116abe93e8">More...</a><br /></td></tr>
+<tr class="separator:aa376b42bf56dc366fd3fcf116abe93e8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6ccc1a91862455f5aaf10c32e1a276b6"><td class="memItemLeft" align="right" valign="top">character(len=32) function&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__fms__mod.html#a6ccc1a91862455f5aaf10c32e1a276b6">string_from_real</a> (r)</td></tr>
+<tr class="memdesc:a6ccc1a91862455f5aaf10c32e1a276b6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Converts a real to a string.  <a href="group__fms__mod.html#a6ccc1a91862455f5aaf10c32e1a276b6">More...</a><br /></td></tr>
+<tr class="separator:a6ccc1a91862455f5aaf10c32e1a276b6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table>
+<h4 class="groupheader">Member Function/Subroutine Documentation</h4>
+<a id="aa376b42bf56dc366fd3fcf116abe93e8"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa376b42bf56dc366fd3fcf116abe93e8">&#9670;&nbsp;</a></span>string_from_integer()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">character(:) function, allocatable string_from_integer </td>
+          <td>(</td>
+          <td class="paramtype">integer, intent(in)&#160;</td>
+          <td class="paramname"><em>i</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Converts an integer to a string. </p>
+<dl class="section return"><dt>Returns</dt><dd>The integer as a string </dd></dl>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">i</td><td>Integer to be converted to a string </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>String converted frominteger </dd></dl>
+
+<p class="definition">Definition at line <a class="el" href="fms__string__utils_8F90_source.html#l00244">244</a> of file <a class="el" href="fms__string__utils_8F90_source.html">fms_string_utils.F90</a>.</p>
+
+</div>
+</div>
+<a id="a6ccc1a91862455f5aaf10c32e1a276b6"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a6ccc1a91862455f5aaf10c32e1a276b6">&#9670;&nbsp;</a></span>string_from_real()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">character(len=32) function string_from_real </td>
+          <td>(</td>
+          <td class="paramtype">real, intent(in)&#160;</td>
+          <td class="paramname"><em>r</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Converts a real to a string. </p>
+<dl class="section return"><dt>Returns</dt><dd>The real number as a string </dd></dl>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">r</td><td>Real number to be converted to a string </td></tr>
+  </table>
+  </dd>
+</dl>
+
+<p class="definition">Definition at line <a class="el" href="fms__string__utils_8F90_source.html#l00257">257</a> of file <a class="el" href="fms__string__utils_8F90_source.html">fms_string_utils.F90</a>.</p>
+
+</div>
+</div>
+
+</div>
+</div>
 <h2 class="groupheader">Function/Subroutine Documentation</h2>
 <a id="ga05e7686befc1e49d2be9bdb81d479a76"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#ga05e7686befc1e49d2be9bdb81d479a76">&#9670;&nbsp;</a></span>check_nml_error()</h2>
@@ -279,7 +524,7 @@ Examples<br  />
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="fms_8F90_source.html#l00552">552</a> of file <a class="el" href="fms_8F90_source.html">fms.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="fms_8F90_source.html#l00549">549</a> of file <a class="el" href="fms_8F90_source.html">fms.F90</a>.</p>
 
 </div>
 </div>
@@ -330,7 +575,7 @@ Example usage: </p><div class="fragment"><div class="line"><span class="keywordt
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="fms_8F90_source.html#l00470">470</a> of file <a class="el" href="fms_8F90_source.html">fms.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="fms_8F90_source.html#l00467">467</a> of file <a class="el" href="fms_8F90_source.html">fms.F90</a>.</p>
 
 </div>
 </div>
@@ -378,7 +623,7 @@ Example usage: </p><div class="fragment"><div class="line"><span class="keywordt
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="fms_8F90_source.html#l00497">497</a> of file <a class="el" href="fms_8F90_source.html">fms.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="fms_8F90_source.html#l00494">494</a> of file <a class="el" href="fms_8F90_source.html">fms.F90</a>.</p>
 
 </div>
 </div>
@@ -418,7 +663,7 @@ Example usage: </p><div class="fragment"><div class="line"><span class="keywordt
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="fms_8F90_source.html#l00321">321</a> of file <a class="el" href="fms_8F90_source.html">fms.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="fms_8F90_source.html#l00318">318</a> of file <a class="el" href="fms_8F90_source.html">fms.F90</a>.</p>
 
 </div>
 </div>
@@ -464,7 +709,7 @@ Example usage: </p><div class="fragment"><div class="line"><span class="keywordt
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>If the input array of real values either increases or decreases monotonically then TRUE is returned, otherwise FALSE is returned. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="fms_8F90_source.html#l00733">733</a> of file <a class="el" href="fms_8F90_source.html">fms.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="fms_8F90_source.html#l00730">730</a> of file <a class="el" href="fms_8F90_source.html">fms.F90</a>.</p>
 
 </div>
 </div>
@@ -519,13 +764,13 @@ Examples<br  />
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>If an exact match was found then TRUE is returned, otherwise FALSE is returned. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="fms_8F90_source.html#l00702">702</a> of file <a class="el" href="fms_8F90_source.html">fms.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="fms_8F90_source.html#l00699">699</a> of file <a class="el" href="fms_8F90_source.html">fms.F90</a>.</p>
 
 </div>
 </div>
 </div><!-- contents -->
 </div><!-- doc-content -->
-<div class="ttc" id="agroup__fms__mod_html_gae5c7420e421293e2be14717dd7b3d97f"><div class="ttname"><a href="group__fms__mod.html#gae5c7420e421293e2be14717dd7b3d97f">fms_mod::error_mesg</a></div><div class="ttdeci">subroutine, public error_mesg(routine, message, level)</div><div class="ttdoc">Print notes, warnings and error messages; terminates program for warning and error messages....</div><div class="ttdef"><b>Definition:</b> <a href="fms_8F90_source.html#l00470">fms.F90:470</a></div></div>
+<div class="ttc" id="agroup__fms__mod_html_gae5c7420e421293e2be14717dd7b3d97f"><div class="ttname"><a href="group__fms__mod.html#gae5c7420e421293e2be14717dd7b3d97f">fms_mod::error_mesg</a></div><div class="ttdeci">subroutine, public error_mesg(routine, message, level)</div><div class="ttdoc">Print notes, warnings and error messages; terminates program for warning and error messages....</div><div class="ttdef"><b>Definition:</b> <a href="fms_8F90_source.html#l00467">fms.F90:467</a></div></div>
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>

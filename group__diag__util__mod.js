@@ -1,12 +1,12 @@
 var group__diag__util__mod =
 [
-    [ "prepend_attribute", "interfacediag__util__mod_1_1prepend__attribute.html", [
-      [ "prepend_attribute_field", "interfacediag__util__mod_1_1prepend__attribute.html#a792ecb2d28da3e682b9716e4fc917b0d", null ],
-      [ "prepend_attribute_file", "interfacediag__util__mod_1_1prepend__attribute.html#ab852b7f37e3248507fc463aaa16b49c0", null ]
+    [ "attribute_init", "group__diag__util__mod.html#interfacediag__util__mod_1_1attribute__init", [
+      [ "attribute_init_field", "group__diag__util__mod.html#a284292bdc999f66aaa2c6e0c0b91b46c", null ],
+      [ "attribute_init_file", "group__diag__util__mod.html#aabff14bf3b8d7e1a9ed7743a5b0d3330", null ]
     ] ],
-    [ "attribute_init", "interfacediag__util__mod_1_1attribute__init.html", [
-      [ "attribute_init_field", "interfacediag__util__mod_1_1attribute__init.html#a284292bdc999f66aaa2c6e0c0b91b46c", null ],
-      [ "attribute_init_file", "interfacediag__util__mod_1_1attribute__init.html#aabff14bf3b8d7e1a9ed7743a5b0d3330", null ]
+    [ "prepend_attribute", "group__diag__util__mod.html#interfacediag__util__mod_1_1prepend__attribute", [
+      [ "prepend_attribute_field", "group__diag__util__mod.html#a792ecb2d28da3e682b9716e4fc917b0d", null ],
+      [ "prepend_attribute_file", "group__diag__util__mod.html#ab852b7f37e3248507fc463aaa16b49c0", null ]
     ] ],
     [ "attribute_init_field", "group__diag__util__mod.html#gae50021eac70f2c1d81935b584d1f4da9", null ],
     [ "attribute_init_file", "group__diag__util__mod.html#gad7672a732b7b5e54cdddd13e9155583f", null ],

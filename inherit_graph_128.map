@@ -1,0 +1,5 @@
+<map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
+<area shape="rect" id="node1" href="$group__netcdf__io__mod.html#structnetcdf__io__mod_1_1fmsnetcdffile__t" title="Netcdf file type." alt="" coords="5,31,125,57"/>
+<area shape="rect" id="node2" href="$group__fms__netcdf__domain__io__mod.html#structfms__netcdf__domain__io__mod_1_1fmsnetcdfdomainfile__t" title="netcdf domain file type." alt="" coords="214,5,383,32"/>
+<area shape="rect" id="node3" href="$group__fms__netcdf__unstructured__domain__io__mod.html#structfms__netcdf__unstructured__domain__io__mod_1_1fmsnetcdfunstructureddomainfile__t" title="netcdf unstructured domain file type." alt="" coords="173,56,424,83"/>
+</map>

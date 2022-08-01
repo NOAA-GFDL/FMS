@@ -1,0 +1,8 @@
+<map id="file_description_type" name="file_description_type">
+<area shape="rect" id="node1" title="Private type to hold file information for the diag table." alt="" coords="270,363,427,389"/>
+<area shape="rect" id="node2" href="$group__time__manager__mod.html#structtime__manager__mod_1_1time__type" title="Type to represent amounts of time. Implemented as seconds and days to allow for larger intervals." alt="" coords="173,169,261,196"/>
+<area shape="rect" id="node3" title=" " alt="" coords="5,5,73,32"/>
+<area shape="rect" id="node4" title=" " alt="" coords="285,169,425,196"/>
+<area shape="rect" id="node5" title=" " alt="" coords="455,169,603,196"/>
+<area shape="rect" id="node6" title=" " alt="" coords="627,169,767,196"/>
+</map>

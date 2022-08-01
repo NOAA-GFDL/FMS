@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.17"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>FMS: mpp/include/mpp_read_distributed_ascii.h Source File</title>
+<title>FMS: mpp/include/mpp_read_distributed_ascii.h (1640fde1a51a73f97748f150eb84bf49e472aeca) Source File</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -33,7 +33,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">FMS
-   &#160;<span id="projectnumber">2022.02.0</span>
+   &#160;<span id="projectnumber">2022.03.00</span>
    </div>
    <div id="projectbrief">Flexible Modeling System</div>
   </td>
@@ -94,53 +94,53 @@ $(document).ready(function(){initNavTree('mpp__read__distributed__ascii_8h_sourc
 <div class="title">mpp_read_distributed_ascii.h</div>  </div>
 </div><!--header-->
 <div class="contents">
-<div class="fragment"><div class="line"><a name="l00001"></a><span class="lineno">    1</span>&#160;!***********************************************************************</div>
-<div class="line"><a name="l00002"></a><span class="lineno">    2</span>&#160;!*                   GNU Lesser General Public License</div>
-<div class="line"><a name="l00003"></a><span class="lineno">    3</span>&#160;!*</div>
-<div class="line"><a name="l00004"></a><span class="lineno">    4</span>&#160;!* This file is part of the GFDL Flexible Modeling System (FMS).</div>
-<div class="line"><a name="l00005"></a><span class="lineno">    5</span>&#160;!*</div>
-<div class="line"><a name="l00006"></a><span class="lineno">    6</span>&#160;!* FMS is free software: you can redistribute it and/or modify it under</div>
-<div class="line"><a name="l00007"></a><span class="lineno">    7</span>&#160;!* the terms of the GNU Lesser General Public License as published by</div>
-<div class="line"><a name="l00008"></a><span class="lineno">    8</span>&#160;!* the Free Software Foundation, either version 3 of the License, or (at</div>
-<div class="line"><a name="l00009"></a><span class="lineno">    9</span>&#160;!* your option) any later version.</div>
-<div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;!*</div>
-<div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160;!* FMS is distributed in the hope that it will be useful, but WITHOUT</div>
-<div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160;!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or</div>
-<div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160;!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License</div>
-<div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160;!* <span class="keywordflow">for</span> more details.</div>
-<div class="line"><a name="l00015"></a><span class="lineno">   15</span>&#160;!*</div>
-<div class="line"><a name="l00016"></a><span class="lineno">   16</span>&#160;!* You should have received a copy of the GNU Lesser General Public</div>
-<div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160;!* License along with FMS.  If not, see &lt;http:<span class="comment">//www.gnu.org/licenses/&gt;.</span></div>
-<div class="line"><a name="l00018"></a><span class="lineno">   18</span>&#160;!***********************************************************************</div>
-<div class="line"><a name="l00019"></a><span class="lineno">   19</span>&#160;subroutine MPP_READ_DISTRIBUTED_ASCII_1D_ (unit,fmt,ssize,data,iostat)</div>
-<div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160;  integer, intent(in)               :: unit</div>
-<div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160;  character(*), intent(in)          :: fmt</div>
-<div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160;  integer, intent(in)               :: ssize</div>
-<div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160;  MPP_TYPE_, dimension(:), intent(inout) :: data</div>
-<div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;  integer, intent(out)              :: iostat</div>
+<div class="fragment"><div class="line"><a name="l00001"></a><span class="lineno">    1</span>&#160;<span class="comment">!***********************************************************************</span></div>
+<div class="line"><a name="l00002"></a><span class="lineno">    2</span>&#160;<span class="comment">!*                   GNU Lesser General Public License</span></div>
+<div class="line"><a name="l00003"></a><span class="lineno">    3</span>&#160;<span class="comment">!*</span></div>
+<div class="line"><a name="l00004"></a><span class="lineno">    4</span>&#160;<span class="comment">!* This file is part of the GFDL Flexible Modeling System (FMS).</span></div>
+<div class="line"><a name="l00005"></a><span class="lineno">    5</span>&#160;<span class="comment">!*</span></div>
+<div class="line"><a name="l00006"></a><span class="lineno">    6</span>&#160;<span class="comment">!* FMS is free software: you can redistribute it and/or modify it under</span></div>
+<div class="line"><a name="l00007"></a><span class="lineno">    7</span>&#160;<span class="comment">!* the terms of the GNU Lesser General Public License as published by</span></div>
+<div class="line"><a name="l00008"></a><span class="lineno">    8</span>&#160;<span class="comment">!* the Free Software Foundation, either version 3 of the License, or (at</span></div>
+<div class="line"><a name="l00009"></a><span class="lineno">    9</span>&#160;<span class="comment">!* your option) any later version.</span></div>
+<div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;<span class="comment">!*</span></div>
+<div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160;<span class="comment">!* FMS is distributed in the hope that it will be useful, but WITHOUT</span></div>
+<div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160;<span class="comment">!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or</span></div>
+<div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160;<span class="comment">!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License</span></div>
+<div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160;<span class="comment">!* for more details.</span></div>
+<div class="line"><a name="l00015"></a><span class="lineno">   15</span>&#160;<span class="comment">!*</span></div>
+<div class="line"><a name="l00016"></a><span class="lineno">   16</span>&#160;<span class="comment">!* You should have received a copy of the GNU Lesser General Public</span></div>
+<div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160;<span class="comment">!* License along with FMS.  If not, see &lt;http://www.gnu.org/licenses/&gt;.</span></div>
+<div class="line"><a name="l00018"></a><span class="lineno">   18</span>&#160;<span class="comment">!***********************************************************************</span></div>
+<div class="line"><a name="l00019"></a><span class="lineno">   19</span>&#160;<span class="keyword">subroutine </span>mpp_read_distributed_ascii_1d_ (unit,fmt,ssize,data,iostat)</div>
+<div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160;  <span class="keywordtype">integer</span>, <span class="keywordtype">intent(in)</span>               :: unit</div>
+<div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160;  <span class="keywordtype">character(*)</span>, <span class="keywordtype">intent(in)</span>          :: fmt</div>
+<div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160;  <span class="keywordtype">integer</span>, <span class="keywordtype">intent(in)</span>               :: ssize</div>
+<div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160;  mpp_type_, <span class="keywordtype">dimension(:)</span>, <span class="keywordtype">intent(inout)</span> :: <span class="keyword">data</span></div>
+<div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;  <span class="keywordtype">integer</span>, <span class="keywordtype">intent(out)</span>              :: iostat</div>
 <div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160; </div>
-<div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160;  integer, allocatable :: pelist(:)</div>
-<div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;  logical              :: is_ioroot=.false.</div>
+<div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160;  <span class="keywordtype">integer</span>, <span class="keywordtype">allocatable</span> :: pelist(:)</div>
+<div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;  <span class="keywordtype">logical</span>              :: is_ioroot=.false.</div>
 <div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160; </div>
-<div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;  if(.not.module_is_initialized) call mpp_error(FATAL,<span class="stringliteral">&#39;MPP_READ_DISTRIBUTED_ASCII_1D_:  module not initialized&#39;</span>)</div>
+<div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;  <span class="keywordflow">if</span>(.not.module_is_initialized) <span class="keyword">call </span>mpp_error(fatal,<span class="stringliteral">&#39;MPP_READ_DISTRIBUTED_ASCII_1D_:  module not initialized&#39;</span>)</div>
 <div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160; </div>
 <div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;  iostat = 0</div>
-<div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;  call mpp_dist_io_pelist(ssize,pelist)  ! ALLOCATE and create pelist if size of group &gt; 1</div>
-<div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;  if(.not. ALLOCATED(pelist)) &amp;</div>
-<div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;           call mpp_error(FATAL,<span class="stringliteral">&#39;MPP_READ_DISTRIBUTED_ASCII_1D_:: pelist allocation failed&#39;</span>)</div>
+<div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;  <span class="keyword">call </span>mpp_dist_io_pelist(ssize,pelist)  <span class="comment">! ALLOCATE and create pelist if size of group &gt; 1</span></div>
+<div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;  <span class="keywordflow">if</span>(.not. <span class="keyword">ALLOCATED</span>(pelist)) &amp;</div>
+<div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;           <span class="keyword">call </span>mpp_error(fatal,<span class="stringliteral">&#39;MPP_READ_DISTRIBUTED_ASCII_1D_:: pelist allocation failed&#39;</span>)</div>
 <div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;  is_ioroot = mpp_is_dist_ioroot(ssize)</div>
-<div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;  if(is_ioroot) then</div>
-<div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;    if(trim(fmt)==<span class="stringliteral">&#39;*&#39;</span>)then</div>
-<div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;       read(unit,*,iostat=iostat) data</div>
-<div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;    else</div>
-<div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;       read(unit,fmt=trim(fmt),iostat=iostat) data</div>
-<div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;    endif</div>
-<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;    if(iostat /= 0) return  ! Calling routine must handle error</div>
-<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;  endif</div>
+<div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;  <span class="keywordflow">if</span>(is_ioroot) <span class="keywordflow">then</span></div>
+<div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;    <span class="keywordflow">if</span>(trim(fmt)==<span class="stringliteral">&#39;*&#39;</span>)<span class="keywordflow">then</span></div>
+<div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;       <span class="keyword">read</span>(unit,*,iostat=iostat) <span class="keyword">data</span></div>
+<div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;    <span class="keywordflow">else</span></div>
+<div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;       <span class="keyword">read</span>(unit,fmt=trim(fmt),iostat=iostat) <span class="keyword">data</span></div>
+<div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;<span class="keywordflow">    endif</span></div>
+<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;    <span class="keywordflow">if</span>(iostat /= 0) <span class="keywordflow">return</span>  <span class="comment">! Calling routine must handle error</span></div>
+<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;<span class="keywordflow">  endif</span></div>
 <div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160; </div>
-<div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;  call mpp_broadcast(data,size(data),pelist(1),pelist)</div>
-<div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;  deallocate(pelist)  ! Don<span class="stringliteral">&#39;t forget to deallocate pelist</span></div>
-<div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;<span class="stringliteral">end subroutine MPP_READ_DISTRIBUTED_ASCII_1D_</span></div>
+<div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;  <span class="keyword">call </span>mpp_broadcast(<span class="keyword">data</span>,<span class="keyword">size</span>(data),pelist(1),pelist)</div>
+<div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;  <span class="keyword">deallocate</span>(pelist)  <span class="comment">! Don&#39;t forget to deallocate pelist</span></div>
+<div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;<span class="keyword">end subroutine </span>mpp_read_distributed_ascii_1d_</div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->

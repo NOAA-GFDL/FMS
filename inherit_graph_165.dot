@@ -1,0 +1,9 @@
+digraph "Graphical Class Hierarchy"
+{
+ // INTERACTIVE_SVG=YES
+ // LATEX_PDF_SIZE
+  edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
+  node [fontname="Helvetica",fontsize="10",shape=record];
+  rankdir="LR";
+  Node0 [label="get_tracer_index",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$group__tracer__manager__mod.html#interfacetracer__manager__mod_1_1get__tracer__index",tooltip="Function which returns the number assigned to the tracer name."];
+}

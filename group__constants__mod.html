@@ -33,7 +33,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">FMS
-   &#160;<span id="projectnumber">2022.02.0</span>
+   &#160;<span id="projectnumber">2022.03.00</span>
    </div>
    <div id="projectbrief">Flexible Modeling System</div>
   </td>
@@ -97,8 +97,21 @@ $(document).ready(function(){initNavTree('group__constants__mod.html',''); initR
 
 <p>compatibility module as we transition to an FMSConstants module  
 <a href="#details">More...</a></p>
+<a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <p>compatibility module as we transition to an FMSConstants module </p>
-</div><!-- contents -->
+<p>Constants have been declared as type REAL, PARAMETER.</p>
+<p>The value a constant can not be changed in a users program. New constants can be defined in terms of values from the constants module using a parameter statement.<br  />
+<br  />
+</p>
+<p>The name given to a particular constant may be changed.<br  />
+<br  />
+</p>
+<p>Constants can be used on the right side on an assignment statement (their value can not be reassigned).</p>
+<p>Example:</p>
+<pre class="fragment">    use constants_mod, only:  TFREEZE, grav_new =&gt; GRAV
+    real, parameter :: grav_inv = 1.0 / grav_new
+    tempc(:,:,:) = tempk(:,:,:) - TFREEZE
+    geopotential(:,:) = height(:,:) * grav_new</pre> </div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->

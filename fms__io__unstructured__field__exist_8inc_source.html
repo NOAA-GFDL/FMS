@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.17"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>FMS: fms/fms_io_unstructured_field_exist.inc Source File</title>
+<title>FMS: fms/fms_io_unstructured_field_exist.inc (1640fde1a51a73f97748f150eb84bf49e472aeca) Source File</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -33,7 +33,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">FMS
-   &#160;<span id="projectnumber">2022.02.0</span>
+   &#160;<span id="projectnumber">2022.03.00</span>
    </div>
    <div id="projectbrief">Flexible Modeling System</div>
   </td>
@@ -94,7 +94,7 @@ $(document).ready(function(){initNavTree('fms__io__unstructured__field__exist_8i
 <div class="title">fms_io_unstructured_field_exist.inc</div>  </div>
 </div><!--header-->
 <div class="contents">
-<a href="fms__io__unstructured__field__exist_8inc.html">Go to the documentation of this file.</a><div class="fragment"><div class="line"><a name="l00001"></a><span class="lineno">    1</span>&#160;<span class="comment">!***********************************************************************</span></div>
+<div class="fragment"><div class="line"><a name="l00001"></a><span class="lineno">    1</span>&#160;<span class="comment">!***********************************************************************</span></div>
 <div class="line"><a name="l00002"></a><span class="lineno">    2</span>&#160;<span class="comment">!*                   GNU Lesser General Public License</span></div>
 <div class="line"><a name="l00003"></a><span class="lineno">    3</span>&#160;<span class="comment">!*</span></div>
 <div class="line"><a name="l00004"></a><span class="lineno">    4</span>&#160;<span class="comment">!* This file is part of the GFDL Flexible Modeling System (FMS).</span></div>
@@ -114,16 +114,16 @@ $(document).ready(function(){initNavTree('fms__io__unstructured__field__exist_8i
 <div class="line"><a name="l00018"></a><span class="lineno">   18</span>&#160;<span class="comment">!***********************************************************************</span></div>
 <div class="line"><a name="l00019"></a><span class="lineno">   19</span>&#160;<span class="comment">!----------</span></div>
 <div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160;<span class="comment">!ug support</span><span class="comment"></span></div>
-<div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160;<span class="comment">!&gt; @file</span></div>
-<div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160;<span class="comment">!&gt; @ingroup fms_io_mod</span></div>
+<div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160;<span class="comment">!&gt; @addtogroup fms_io_mod</span></div>
+<div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160;<span class="comment">!&gt; @{</span></div>
 <div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160;<span class="comment"></span> </div>
-<div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;<span class="comment">!&gt;Return a flag indicating whether the inputted field exists in the inputted</span></div>
+<div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;<span class="comment">!&gt; Return a flag indicating whether the inputted field exists in the inputted</span></div>
 <div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160;<span class="comment">!!file, where the file is associated with an unstructured mpp domain.</span></div>
-<div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160;<span class="keyword">function </span><a class="code" href="fms__io__unstructured__field__exist_8inc.html#a883d713cc10bc734f032bf0304349d86">fms_io_unstructured_field_exist</a>(file_name, &amp;</div>
+<div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160;<span class="keyword">function </span><a class="code" href="group__fms__io__mod.html#ga883d713cc10bc734f032bf0304349d86">fms_io_unstructured_field_exist</a>(file_name, &amp;</div>
 <div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;                                         field_name, &amp;</div>
 <div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;                                         domain) &amp;</div>
 <div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;                                         result(does_field_exist)</div>
-<div class="line"><a name="l00030"></a><span class="lineno"><a class="line" href="fms__io__unstructured__field__exist_8inc.html#a883d713cc10bc734f032bf0304349d86">   30</a></span>&#160; </div>
+<div class="line"><a name="l00030"></a><span class="lineno"><a class="line" href="group__fms__io__mod.html#ga883d713cc10bc734f032bf0304349d86">   30</a></span>&#160; </div>
 <div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;   <span class="comment">!Inputs/Outputs</span></div>
 <div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;    <span class="keywordtype">character(len=*)</span>,<span class="keywordtype">intent(in)</span> :: file_name<span class="comment">        !&lt;Name of a file.</span></div>
 <div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;    <span class="keywordtype">character(len=*)</span>,<span class="keywordtype">intent(in)</span> :: field_name<span class="comment">       !&lt;Name of a field.</span></div>
@@ -160,7 +160,7 @@ $(document).ready(function(){initNavTree('fms__io__unstructured__field__exist_8i
 <div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;<span class="keywordflow">    endif</span></div>
 <div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160; </div>
 <div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;   <span class="comment">!Check if the file exists.</span></div>
-<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;    file_exist = <a class="code" href="fms__io__unstructured__get__file__name_8inc.html#a4eeea16ed549432b88a3133332c91bad">fms_io_unstructured_get_file_name</a>(file_name, &amp;</div>
+<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;    file_exist = <a class="code" href="group__fms__io__mod.html#ga4eeea16ed549432b88a3133332c91bad">fms_io_unstructured_get_file_name</a>(file_name, &amp;</div>
 <div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;                                                   fname, &amp;</div>
 <div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;                                                   read_dist, &amp;</div>
 <div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;                                                   domain)</div>
@@ -168,7 +168,7 @@ $(document).ready(function(){initNavTree('fms__io__unstructured__field__exist_8i
 <div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;    <span class="keywordflow">if</span> (file_exist) <span class="keywordflow">then</span></div>
 <div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160; </div>
 <div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;       <span class="comment">!Get the file unit for the input file.</span></div>
-<div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;        <span class="keyword">call </span><a class="code" href="fms__io__unstructured__get__file__unit_8inc.html#a75c0b6f2a887ddc435ac59adfcacc67a">fms_io_unstructured_get_file_unit</a>(fname, &amp;</div>
+<div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;        <span class="keyword">call </span><a class="code" href="group__fms__io__mod.html#ga75c0b6f2a887ddc435ac59adfcacc67a">fms_io_unstructured_get_file_unit</a>(fname, &amp;</div>
 <div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;                                               funit, &amp;</div>
 <div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;                                               nfile, &amp;</div>
 <div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;                                               read_dist, &amp;</div>
@@ -176,7 +176,7 @@ $(document).ready(function(){initNavTree('fms__io__unstructured__field__exist_8i
 <div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160; </div>
 <div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;       <span class="comment">!Get the number of dimensions, fields, attributes and time levels</span></div>
 <div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;       <span class="comment">!for the file.</span></div>
-<div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;        <span class="keyword">call </span><a class="code" href="mpp__io__util_8inc.html#a1b259a1037e7498382c529cf0e545c9b">mpp_get_info</a>(funit, &amp;</div>
+<div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;        <span class="keyword">call </span><a class="code" href="group__mpp__io__mod.html#ga1b259a1037e7498382c529cf0e545c9b">mpp_get_info</a>(funit, &amp;</div>
 <div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160;                          ndim, &amp;</div>
 <div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;                          nvar, &amp;</div>
 <div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160;                          natt, &amp;</div>
@@ -184,7 +184,7 @@ $(document).ready(function(){initNavTree('fms__io__unstructured__field__exist_8i
 <div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160; </div>
 <div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160;       <span class="comment">!Create an array of all fields contained in the file.</span></div>
 <div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;        <span class="keyword">allocate</span>(fields(nvar))</div>
-<div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160;        <span class="keyword">call </span><a class="code" href="mpp__io__util_8inc.html#a9d312dd6a9a8382c846fd8f15ce2c7de">mpp_get_fields</a>(funit, &amp;</div>
+<div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160;        <span class="keyword">call </span><a class="code" href="group__mpp__io__mod.html#ga9d312dd6a9a8382c846fd8f15ce2c7de">mpp_get_fields</a>(funit, &amp;</div>
 <div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;                            fields)</div>
 <div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160; </div>
 <div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160;       <span class="comment">!Loop through the fields to see if the inputted field name matches</span></div>
@@ -202,20 +202,19 @@ $(document).ready(function(){initNavTree('fms__io__unstructured__field__exist_8i
 <div class="line"><a name="l00106"></a><span class="lineno">  106</span>&#160;<span class="keywordflow">    endif</span></div>
 <div class="line"><a name="l00107"></a><span class="lineno">  107</span>&#160; </div>
 <div class="line"><a name="l00108"></a><span class="lineno">  108</span>&#160;    <span class="keywordflow">return</span></div>
-<div class="line"><a name="l00109"></a><span class="lineno">  109</span>&#160;<span class="keyword">end function </span><a class="code" href="fms__io__unstructured__field__exist_8inc.html#a883d713cc10bc734f032bf0304349d86">fms_io_unstructured_field_exist</a></div>
-<div class="line"><a name="l00110"></a><span class="lineno">  110</span>&#160; </div>
-<div class="line"><a name="l00111"></a><span class="lineno">  111</span>&#160;<span class="comment">!----------</span></div>
+<div class="line"><a name="l00109"></a><span class="lineno">  109</span>&#160;<span class="keyword">end function </span><a class="code" href="group__fms__io__mod.html#ga883d713cc10bc734f032bf0304349d86">fms_io_unstructured_field_exist</a><span class="comment"></span></div>
+<div class="line"><a name="l00110"></a><span class="lineno">  110</span>&#160;<span class="comment">!&gt; @}</span></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
-<div class="ttc" id="afms__io__unstructured__get__file__name_8inc_html_a4eeea16ed549432b88a3133332c91bad"><div class="ttname"><a href="fms__io__unstructured__get__file__name_8inc.html#a4eeea16ed549432b88a3133332c91bad">fms_io_unstructured_get_file_name</a></div><div class="ttdeci">logical(int_kind) function fms_io_unstructured_get_file_name(orig_file, actual_file, read_dist, domain)</div><div class="ttdoc">For an inputted file name, check if it or any of its variants exist. For a file named &quot;foo&quot;,...</div><div class="ttdef"><b>Definition:</b> <a href="fms__io__unstructured__get__file__name_8inc_source.html#l00050">fms_io_unstructured_get_file_name.inc:50</a></div></div>
-<div class="ttc" id="ampp__io__util_8inc_html_a9d312dd6a9a8382c846fd8f15ce2c7de"><div class="ttname"><a href="mpp__io__util_8inc.html#a9d312dd6a9a8382c846fd8f15ce2c7de">mpp_get_fields</a></div><div class="ttdeci">subroutine mpp_get_fields(unit, variables)</div><div class="ttdoc">Copy variable information from file (excluding data)</div><div class="ttdef"><b>Definition:</b> <a href="mpp__io__util_8inc_source.html#l00220">mpp_io_util.inc:220</a></div></div>
-<div class="ttc" id="afms__io__unstructured__get__file__unit_8inc_html_a75c0b6f2a887ddc435ac59adfcacc67a"><div class="ttname"><a href="fms__io__unstructured__get__file__unit_8inc.html#a75c0b6f2a887ddc435ac59adfcacc67a">fms_io_unstructured_get_file_unit</a></div><div class="ttdeci">subroutine fms_io_unstructured_get_file_unit(filename, funit, index_file, read_dist, domain)</div><div class="ttdoc">Return the file unit and index in the &quot;files_read&quot; module array for the inputted file....</div><div class="ttdef"><b>Definition:</b> <a href="fms__io__unstructured__get__file__unit_8inc_source.html#l00032">fms_io_unstructured_get_file_unit.inc:32</a></div></div>
-<div class="ttc" id="afms__io__unstructured__field__exist_8inc_html_a883d713cc10bc734f032bf0304349d86"><div class="ttname"><a href="fms__io__unstructured__field__exist_8inc.html#a883d713cc10bc734f032bf0304349d86">fms_io_unstructured_field_exist</a></div><div class="ttdeci">logical(int_kind) function fms_io_unstructured_field_exist(file_name, field_name, domain)</div><div class="ttdoc">Return a flag indicating whether the inputted field exists in the inputted file, where the file is as...</div><div class="ttdef"><b>Definition:</b> <a href="fms__io__unstructured__field__exist_8inc_source.html#l00030">fms_io_unstructured_field_exist.inc:30</a></div></div>
-<div class="ttc" id="ampp__io__util_8inc_html_a1b259a1037e7498382c529cf0e545c9b"><div class="ttname"><a href="mpp__io__util_8inc.html#a1b259a1037e7498382c529cf0e545c9b">mpp_get_info</a></div><div class="ttdeci">subroutine mpp_get_info(unit, ndim, nvar, natt, ntime)</div><div class="ttdoc">Get some general information about a file.</div><div class="ttdef"><b>Definition:</b> <a href="mpp__io__util_8inc_source.html#l00052">mpp_io_util.inc:52</a></div></div>
+<div class="ttc" id="agroup__fms__io__mod_html_ga4eeea16ed549432b88a3133332c91bad"><div class="ttname"><a href="group__fms__io__mod.html#ga4eeea16ed549432b88a3133332c91bad">fms_io_unstructured_get_file_name</a></div><div class="ttdeci">logical(int_kind) function fms_io_unstructured_get_file_name(orig_file, actual_file, read_dist, domain)</div><div class="ttdoc">For an inputted file name, check if it or any of its variants exist. For a file named &quot;foo&quot;,...</div><div class="ttdef"><b>Definition:</b> <a href="fms__io__unstructured__get__file__name_8inc_source.html#l00050">fms_io_unstructured_get_file_name.inc:50</a></div></div>
+<div class="ttc" id="agroup__fms__io__mod_html_ga75c0b6f2a887ddc435ac59adfcacc67a"><div class="ttname"><a href="group__fms__io__mod.html#ga75c0b6f2a887ddc435ac59adfcacc67a">fms_io_unstructured_get_file_unit</a></div><div class="ttdeci">subroutine fms_io_unstructured_get_file_unit(filename, funit, index_file, read_dist, domain)</div><div class="ttdoc">Return the file unit and index in the &quot;files_read&quot; module array for the inputted file....</div><div class="ttdef"><b>Definition:</b> <a href="fms__io__unstructured__get__file__unit_8inc_source.html#l00032">fms_io_unstructured_get_file_unit.inc:32</a></div></div>
+<div class="ttc" id="agroup__fms__io__mod_html_ga883d713cc10bc734f032bf0304349d86"><div class="ttname"><a href="group__fms__io__mod.html#ga883d713cc10bc734f032bf0304349d86">fms_io_unstructured_field_exist</a></div><div class="ttdeci">logical(int_kind) function fms_io_unstructured_field_exist(file_name, field_name, domain)</div><div class="ttdoc">Return a flag indicating whether the inputted field exists in the inputted file, where the file is as...</div><div class="ttdef"><b>Definition:</b> <a href="fms__io__unstructured__field__exist_8inc_source.html#l00030">fms_io_unstructured_field_exist.inc:30</a></div></div>
+<div class="ttc" id="agroup__mpp__io__mod_html_ga1b259a1037e7498382c529cf0e545c9b"><div class="ttname"><a href="group__mpp__io__mod.html#ga1b259a1037e7498382c529cf0e545c9b">mpp_get_info</a></div><div class="ttdeci">subroutine mpp_get_info(unit, ndim, nvar, natt, ntime)</div><div class="ttdoc">Get some general information about a file.</div><div class="ttdef"><b>Definition:</b> <a href="mpp__io__util_8inc_source.html#l00033">mpp_io_util.inc:33</a></div></div>
+<div class="ttc" id="agroup__mpp__io__mod_html_ga9d312dd6a9a8382c846fd8f15ce2c7de"><div class="ttname"><a href="group__mpp__io__mod.html#ga9d312dd6a9a8382c846fd8f15ce2c7de">mpp_get_fields</a></div><div class="ttdeci">subroutine mpp_get_fields(unit, variables)</div><div class="ttdoc">Copy variable information from file (excluding data)</div><div class="ttdef"><b>Definition:</b> <a href="mpp__io__util_8inc_source.html#l00195">mpp_io_util.inc:195</a></div></div>
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><a class="el" href="dir_75cacd08096b96d5cce2e22025a878a7.html">fms</a></li><li class="navelem"><a class="el" href="fms__io__unstructured__field__exist_8inc.html">fms_io_unstructured_field_exist.inc</a></li>
+    <li class="navelem"><a class="el" href="dir_75cacd08096b96d5cce2e22025a878a7.html">fms</a></li><li class="navelem"><b>fms_io_unstructured_field_exist.inc</b></li>
     <li class="footer">Generated by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="doxygen.png" alt="doxygen"/></a> 1.8.17 </li>

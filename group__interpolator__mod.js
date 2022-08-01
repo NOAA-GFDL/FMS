@@ -1,19 +1,19 @@
 var group__interpolator__mod =
 [
-    [ "interpolator", "interfaceinterpolator__mod_1_1interpolator.html", [
-      [ "interpolator_2d", "interfaceinterpolator__mod_1_1interpolator.html#a8337c01e0d03a350bf26d14ff6d99bbe", null ],
-      [ "interpolator_2d_no_time_axis", "interfaceinterpolator__mod_1_1interpolator.html#ae97ac81cd67701862cff730c113a65f3", null ],
-      [ "interpolator_3d", "interfaceinterpolator__mod_1_1interpolator.html#a3deb4a0f23ad2bffa3a99472154338d8", null ],
-      [ "interpolator_3d_no_time_axis", "interfaceinterpolator__mod_1_1interpolator.html#ab6269f2c25d0179f8e873a1f1df71324", null ],
-      [ "interpolator_4d", "interfaceinterpolator__mod_1_1interpolator.html#a73e907463b931b544ba673eaefabf5db", null ],
-      [ "interpolator_4d_no_time_axis", "interfaceinterpolator__mod_1_1interpolator.html#a310ff5fef6875f1fc7b1748a0922de21", null ]
+    [ "assignment(=)", "group__interpolator__mod.html#interfaceinterpolator__mod_1_1assignment_07_0a_08", [
+      [ "interpolate_type_eq", "group__interpolator__mod.html#a91280b9cf9e7bc366a45fda218476956", null ]
     ] ],
-    [ "assignment(=)", "interfaceinterpolator__mod_1_1assignment_07_0a_08.html", [
-      [ "interpolate_type_eq", "interfaceinterpolator__mod_1_1assignment_07_0a_08.html#a91280b9cf9e7bc366a45fda218476956", null ]
+    [ "interp_weighted_scalar", "group__interpolator__mod.html#interfaceinterpolator__mod_1_1interp__weighted__scalar", [
+      [ "interp_weighted_scalar_1d", "group__interpolator__mod.html#a449bcea65983472c6ee03d2a1b1eb26e", null ],
+      [ "interp_weighted_scalar_2d", "group__interpolator__mod.html#a0d6ec8c13b350568844e3ab588f7318a", null ]
     ] ],
-    [ "interp_weighted_scalar", "interfaceinterpolator__mod_1_1interp__weighted__scalar.html", [
-      [ "interp_weighted_scalar_1d", "interfaceinterpolator__mod_1_1interp__weighted__scalar.html#a449bcea65983472c6ee03d2a1b1eb26e", null ],
-      [ "interp_weighted_scalar_2d", "interfaceinterpolator__mod_1_1interp__weighted__scalar.html#a0d6ec8c13b350568844e3ab588f7318a", null ]
+    [ "interpolator", "group__interpolator__mod.html#interfaceinterpolator__mod_1_1interpolator", [
+      [ "interpolator_2d", "group__interpolator__mod.html#a8337c01e0d03a350bf26d14ff6d99bbe", null ],
+      [ "interpolator_2d_no_time_axis", "group__interpolator__mod.html#ae97ac81cd67701862cff730c113a65f3", null ],
+      [ "interpolator_3d", "group__interpolator__mod.html#a3deb4a0f23ad2bffa3a99472154338d8", null ],
+      [ "interpolator_3d_no_time_axis", "group__interpolator__mod.html#ab6269f2c25d0179f8e873a1f1df71324", null ],
+      [ "interpolator_4d", "group__interpolator__mod.html#a73e907463b931b544ba673eaefabf5db", null ],
+      [ "interpolator_4d_no_time_axis", "group__interpolator__mod.html#a310ff5fef6875f1fc7b1748a0922de21", null ]
     ] ],
     [ "cart_to_latlon", "group__interpolator__mod.html#ga6d7828eb74252f340328684ae223f785", null ],
     [ "cell_center2", "group__interpolator__mod.html#ga444568a0a574084630d91b8da59f3bc5", null ],

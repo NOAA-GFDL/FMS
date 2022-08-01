@@ -33,7 +33,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">FMS
-   &#160;<span id="projectnumber">2022.02.0</span>
+   &#160;<span id="projectnumber">2022.03.00</span>
    </div>
    <div id="projectbrief">Flexible Modeling System</div>
   </td>
@@ -95,137 +95,135 @@ $(document).ready(function(){initNavTree('diag__manager_8F90.html',''); initResi
 <a href="#func-members">Functions/Subroutines</a> &#124;
 <a href="#var-members">Variables</a>  </div>
   <div class="headertitle">
-<div class="title">diag_manager.F90 File Reference</div>  </div>
+<div class="title">diag_manager.F90 File Reference<div class="ingroups"><a class="el" href="group__diag__manager.html">Diag Manager</a> &raquo; <a class="el" href="group__diag__manager__mod.html">diag_manager_mod</a></div></div>  </div>
 </div><!--header-->
 <div class="contents">
-
+<h3 class="version">(1640fde1a51a73f97748f150eb84bf49e472aeca)</h3>
 <p>File for <a class="el" href="group__diag__manager__mod.html">diag_manager_mod</a>.  
 <a href="#details">More...</a></p>
 <div class="textblock"><code>#include &lt;file_version.h&gt;</code><br />
+</div><div class="textblock"><div class="dynheader">
+Include dependency graph for diag_manager.F90:</div>
+<div class="dyncontent">
+<div class="center"><iframe scrolling="no" frameborder="0" src="diag__manager_8F90__incl.svg" width="250" height="112"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe>
+</div>
+</div>
 </div>
 <p><a href="diag__manager_8F90_source.html">Go to the source code of this file.</a></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
 Data Types</h2></td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">interface &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="interfacediag__manager__mod_1_1send__data.html">send_data</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Send data over to output fields.  <a href="interfacediag__manager__mod_1_1send__data.html#details">More...</a><br /></td></tr>
-<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">interface &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="interfacediag__manager__mod_1_1register__diag__field.html">register_diag_field</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Register a diagnostic field for a given module.  <a href="interfacediag__manager__mod_1_1register__diag__field.html#details">More...</a><br /></td></tr>
-<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">interface &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="interfacediag__manager__mod_1_1send__tile__averaged__data.html">send_tile_averaged_data</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Send tile-averaged data over to output fields.  <a href="interfacediag__manager__mod_1_1send__tile__averaged__data.html#details">More...</a><br /></td></tr>
-<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">interface &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="interfacediag__manager__mod_1_1diag__field__add__attribute.html">diag_field_add_attribute</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Add a attribute to the output field.  <a href="interfacediag__manager__mod_1_1diag__field__add__attribute.html#details">More...</a><br /></td></tr>
-<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:interfacediag__manager__mod_1_1diag__field__add__attribute"><td class="memItemLeft" align="right" valign="top">interface &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__diag__manager__mod.html#interfacediag__manager__mod_1_1diag__field__add__attribute">diag_field_add_attribute</a></td></tr>
+<tr class="memdesc:interfacediag__manager__mod_1_1diag__field__add__attribute"><td class="mdescLeft">&#160;</td><td class="mdescRight">Add a attribute to the output field.  <a href="group__diag__manager__mod.html#interfacediag__manager__mod_1_1diag__field__add__attribute">More...</a><br /></td></tr>
+<tr class="separator:interfacediag__manager__mod_1_1diag__field__add__attribute"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:interfacediag__manager__mod_1_1register__diag__field"><td class="memItemLeft" align="right" valign="top">interface &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__diag__manager__mod.html#interfacediag__manager__mod_1_1register__diag__field">register_diag_field</a></td></tr>
+<tr class="memdesc:interfacediag__manager__mod_1_1register__diag__field"><td class="mdescLeft">&#160;</td><td class="mdescRight">Register a diagnostic field for a given module.  <a href="group__diag__manager__mod.html#interfacediag__manager__mod_1_1register__diag__field">More...</a><br /></td></tr>
+<tr class="separator:interfacediag__manager__mod_1_1register__diag__field"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:interfacediag__manager__mod_1_1send__data"><td class="memItemLeft" align="right" valign="top">interface &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__diag__manager__mod.html#interfacediag__manager__mod_1_1send__data">send_data</a></td></tr>
+<tr class="memdesc:interfacediag__manager__mod_1_1send__data"><td class="mdescLeft">&#160;</td><td class="mdescRight">Send data over to output fields.  <a href="group__diag__manager__mod.html#interfacediag__manager__mod_1_1send__data">More...</a><br /></td></tr>
+<tr class="separator:interfacediag__manager__mod_1_1send__data"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:interfacediag__manager__mod_1_1send__tile__averaged__data"><td class="memItemLeft" align="right" valign="top">interface &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__diag__manager__mod.html#interfacediag__manager__mod_1_1send__tile__averaged__data">send_tile_averaged_data</a></td></tr>
+<tr class="memdesc:interfacediag__manager__mod_1_1send__tile__averaged__data"><td class="mdescLeft">&#160;</td><td class="mdescRight">Send tile-averaged data over to output fields.  <a href="group__diag__manager__mod.html#interfacediag__manager__mod_1_1send__tile__averaged__data">More...</a><br /></td></tr>
+<tr class="separator:interfacediag__manager__mod_1_1send__tile__averaged__data"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="func-members"></a>
 Functions/Subroutines</h2></td></tr>
-<tr class="memitem:gacc8076aa4a0590d3053643efd89ea735"><td class="memItemLeft" align="right" valign="top">integer function&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__diag__manager__mod.html#gacc8076aa4a0590d3053643efd89ea735">register_diag_field_scalar</a> (module_name, field_name, init_time, long_name, units, missing_value, range, standard_name, do_not_log, err_msg, area, volume, realm)</td></tr>
-<tr class="memdesc:gacc8076aa4a0590d3053643efd89ea735"><td class="mdescLeft">&#160;</td><td class="mdescRight">Registers a scalar field.  <a href="group__diag__manager__mod.html#gacc8076aa4a0590d3053643efd89ea735">More...</a><br /></td></tr>
-<tr class="separator:gacc8076aa4a0590d3053643efd89ea735"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga6bbeb5060a1f47cb6000c1114aeb6ab3"><td class="memItemLeft" align="right" valign="top">integer function&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__diag__manager__mod.html#ga6bbeb5060a1f47cb6000c1114aeb6ab3">register_diag_field_array</a> (module_name, field_name, axes, init_time, long_name, units, missing_value, range, mask_variant, standard_name, verbose, do_not_log, err_msg, interp_method, tile_count, area, volume, realm)</td></tr>
-<tr class="memdesc:ga6bbeb5060a1f47cb6000c1114aeb6ab3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Registers an array field.  <a href="group__diag__manager__mod.html#ga6bbeb5060a1f47cb6000c1114aeb6ab3">More...</a><br /></td></tr>
-<tr class="separator:ga6bbeb5060a1f47cb6000c1114aeb6ab3"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga391e6c5a8bd236359bd030890cedbef9"><td class="memItemLeft" align="right" valign="top">integer function, public&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__diag__manager__mod.html#ga391e6c5a8bd236359bd030890cedbef9">register_static_field</a> (module_name, field_name, axes, long_name, units, missing_value, range, mask_variant, standard_name, DYNAMIC, do_not_log, interp_method, tile_count, area, volume, realm)</td></tr>
-<tr class="memdesc:ga391e6c5a8bd236359bd030890cedbef9"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return field index for subsequent call to <a class="el" href="interfacediag__manager__mod_1_1send__data.html" title="Send data over to output fields.">send_data</a>.  <a href="group__diag__manager__mod.html#ga391e6c5a8bd236359bd030890cedbef9">More...</a><br /></td></tr>
-<tr class="separator:ga391e6c5a8bd236359bd030890cedbef9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:gaa80b10875fe293f5d1d2dc0dc27940bc"><td class="memItemLeft" align="right" valign="top">subroutine&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__diag__manager__mod.html#gaa80b10875fe293f5d1d2dc0dc27940bc">add_associated_files</a> (file_num, cm_file_num, cm_ind)</td></tr>
+<tr class="memdesc:gaa80b10875fe293f5d1d2dc0dc27940bc"><td class="mdescLeft">&#160;</td><td class="mdescRight">Add to the associated files attribute.  <a href="group__diag__manager__mod.html#gaa80b10875fe293f5d1d2dc0dc27940bc">More...</a><br /></td></tr>
+<tr class="separator:gaa80b10875fe293f5d1d2dc0dc27940bc"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga92cac6ff74dff1387dc8352e33004aa8"><td class="memItemLeft" align="right" valign="top">subroutine&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__diag__manager__mod.html#ga92cac6ff74dff1387dc8352e33004aa8">average_tiles</a> (diag_field_id, x, area, mask, out)</td></tr>
+<tr class="memdesc:ga92cac6ff74dff1387dc8352e33004aa8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Calculates tile average of a field.  <a href="group__diag__manager__mod.html#ga92cac6ff74dff1387dc8352e33004aa8">More...</a><br /></td></tr>
+<tr class="separator:ga92cac6ff74dff1387dc8352e33004aa8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:gacfae2b80cc7823bc8b6a4c5960d58165"><td class="memItemLeft" align="right" valign="top">subroutine&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__diag__manager__mod.html#gacfae2b80cc7823bc8b6a4c5960d58165">average_tiles1d</a> (diag_field_id, x, area, mask, out)</td></tr>
+<tr class="memdesc:gacfae2b80cc7823bc8b6a4c5960d58165"><td class="mdescLeft">&#160;</td><td class="mdescRight">Calculates average for a field with the given area and land mask.  <a href="group__diag__manager__mod.html#gacfae2b80cc7823bc8b6a4c5960d58165">More...</a><br /></td></tr>
+<tr class="separator:gacfae2b80cc7823bc8b6a4c5960d58165"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga6eea868aa349db7faaa921b41e293f42"><td class="memItemLeft" align="right" valign="top">
+subroutine&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__diag__manager__mod.html#ga6eea868aa349db7faaa921b41e293f42">closing_file</a> (file, time)</td></tr>
+<tr class="memdesc:ga6eea868aa349db7faaa921b41e293f42"><td class="mdescLeft">&#160;</td><td class="mdescRight">Replaces diag_manager_end; close just one file: files(file) <br /></td></tr>
+<tr class="separator:ga6eea868aa349db7faaa921b41e293f42"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga5dbf7d75b22d4cf9838db13952b07172"><td class="memItemLeft" align="right" valign="top">subroutine&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__diag__manager__mod.html#ga5dbf7d75b22d4cf9838db13952b07172">diag_field_add_attribute_i1d</a> (diag_field_id, att_name, att_value)</td></tr>
+<tr class="memdesc:ga5dbf7d75b22d4cf9838db13952b07172"><td class="mdescLeft">&#160;</td><td class="mdescRight">Add an integer 1D array attribute to the diag field corresponding to a given id.  <a href="group__diag__manager__mod.html#ga5dbf7d75b22d4cf9838db13952b07172">More...</a><br /></td></tr>
+<tr class="separator:ga5dbf7d75b22d4cf9838db13952b07172"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga32c8f71fe642f2de9139387e8a86967e"><td class="memItemLeft" align="right" valign="top">subroutine&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__diag__manager__mod.html#ga32c8f71fe642f2de9139387e8a86967e">diag_field_add_attribute_r1d</a> (diag_field_id, att_name, att_value)</td></tr>
+<tr class="memdesc:ga32c8f71fe642f2de9139387e8a86967e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Add a real 1D array attribute to the diag field corresponding to a given id.  <a href="group__diag__manager__mod.html#ga32c8f71fe642f2de9139387e8a86967e">More...</a><br /></td></tr>
+<tr class="separator:ga32c8f71fe642f2de9139387e8a86967e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:gafc03eaadabae2c9f3c38946a5907f76b"><td class="memItemLeft" align="right" valign="top">subroutine&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__diag__manager__mod.html#gafc03eaadabae2c9f3c38946a5907f76b">diag_field_add_attribute_scalar_c</a> (diag_field_id, att_name, att_value)</td></tr>
+<tr class="memdesc:gafc03eaadabae2c9f3c38946a5907f76b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Add a scalar character attribute to the diag field corresponding to a given id.  <a href="group__diag__manager__mod.html#gafc03eaadabae2c9f3c38946a5907f76b">More...</a><br /></td></tr>
+<tr class="separator:gafc03eaadabae2c9f3c38946a5907f76b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga8b3663661ccd072adddd8d3b12aeaca3"><td class="memItemLeft" align="right" valign="top">subroutine&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__diag__manager__mod.html#ga8b3663661ccd072adddd8d3b12aeaca3">diag_field_add_attribute_scalar_i</a> (diag_field_id, att_name, att_value)</td></tr>
+<tr class="memdesc:ga8b3663661ccd072adddd8d3b12aeaca3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Add a scalar integer attribute to the diag field corresponding to a given id.  <a href="group__diag__manager__mod.html#ga8b3663661ccd072adddd8d3b12aeaca3">More...</a><br /></td></tr>
+<tr class="separator:ga8b3663661ccd072adddd8d3b12aeaca3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:gac1946cf297ede9d9f202c292b097f3cb"><td class="memItemLeft" align="right" valign="top">subroutine&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__diag__manager__mod.html#gac1946cf297ede9d9f202c292b097f3cb">diag_field_add_attribute_scalar_r</a> (diag_field_id, att_name, att_value)</td></tr>
+<tr class="memdesc:gac1946cf297ede9d9f202c292b097f3cb"><td class="mdescLeft">&#160;</td><td class="mdescRight">Add a scalar real attribute to the diag field corresponding to a given id.  <a href="group__diag__manager__mod.html#gac1946cf297ede9d9f202c292b097f3cb">More...</a><br /></td></tr>
+<tr class="separator:gac1946cf297ede9d9f202c292b097f3cb"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga6f632296fdf20dc41c1f4cc3918422b6"><td class="memItemLeft" align="right" valign="top">subroutine, public&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__diag__manager__mod.html#ga6f632296fdf20dc41c1f4cc3918422b6">diag_field_add_cell_measures</a> (diag_field_id, area, volume)</td></tr>
+<tr class="memdesc:ga6f632296fdf20dc41c1f4cc3918422b6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Add the cell_measures attribute to a diag out field.  <a href="group__diag__manager__mod.html#ga6f632296fdf20dc41c1f4cc3918422b6">More...</a><br /></td></tr>
+<tr class="separator:ga6f632296fdf20dc41c1f4cc3918422b6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga4331d6d18e62be6288629cf7029a85bc"><td class="memItemLeft" align="right" valign="top">subroutine&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__diag__manager__mod.html#ga4331d6d18e62be6288629cf7029a85bc">diag_field_attribute_init</a> (diag_field_id, name, type, cval, ival, rval)</td></tr>
+<tr class="separator:ga4331d6d18e62be6288629cf7029a85bc"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:gae363283d453e40d48d70f583c1e58b5f"><td class="memItemLeft" align="right" valign="top">
+subroutine, public&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__diag__manager__mod.html#gae363283d453e40d48d70f583c1e58b5f">diag_manager_end</a> (time)</td></tr>
+<tr class="memdesc:gae363283d453e40d48d70f583c1e58b5f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Flushes diagnostic buffers where necessary. Close diagnostics files. A warning will be issued here if a field in diag_table is not registered. <br /></td></tr>
+<tr class="separator:gae363283d453e40d48d70f583c1e58b5f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:gab78722b306c31534a1b7870aaef28c6c"><td class="memItemLeft" align="right" valign="top">subroutine, public&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__diag__manager__mod.html#gab78722b306c31534a1b7870aaef28c6c">diag_manager_init</a> (diag_model_subset, time_init, err_msg)</td></tr>
+<tr class="memdesc:gab78722b306c31534a1b7870aaef28c6c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Initialize Diagnostics Manager.  <a href="group__diag__manager__mod.html#gab78722b306c31534a1b7870aaef28c6c">More...</a><br /></td></tr>
+<tr class="separator:gab78722b306c31534a1b7870aaef28c6c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga1b5adb8ffece557999690f6f51f71c03"><td class="memItemLeft" align="right" valign="top">
+subroutine, public&#160;</td><td class="memItemRight" valign="bottom"><b>diag_manager_set_time_end</b> (Time_end_in)</td></tr>
+<tr class="separator:ga1b5adb8ffece557999690f6f51f71c03"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:gaffcd2ffd364000d0a1b498c8aa21ea1e"><td class="memItemLeft" align="right" valign="top">
+subroutine, public&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__diag__manager__mod.html#gaffcd2ffd364000d0a1b498c8aa21ea1e">diag_send_complete</a> (time_step, err_msg)</td></tr>
+<tr class="memdesc:gaffcd2ffd364000d0a1b498c8aa21ea1e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Saves diagnostic data for the given time value. <br /></td></tr>
+<tr class="separator:gaffcd2ffd364000d0a1b498c8aa21ea1e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga8465f5058eb48afcd76ad469ab3629a9"><td class="memItemLeft" align="right" valign="top">subroutine, public&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__diag__manager__mod.html#ga8465f5058eb48afcd76ad469ab3629a9">diag_send_complete_instant</a> (time)</td></tr>
+<tr class="memdesc:ga8465f5058eb48afcd76ad469ab3629a9"><td class="mdescLeft">&#160;</td><td class="mdescRight">The subroutine 'diag_send_complete_instant' allows the user to save diagnostic data on variable intervals (user defined in code logic) to the same file. The argument (time_type) will be written to the time axis correspondingly.  <a href="group__diag__manager__mod.html#ga8465f5058eb48afcd76ad469ab3629a9">More...</a><br /></td></tr>
+<tr class="separator:ga8465f5058eb48afcd76ad469ab3629a9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:gabcca324d176f7fc4a2afcb081e5467cd"><td class="memItemLeft" align="right" valign="top">subroutine, public&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__diag__manager__mod.html#gabcca324d176f7fc4a2afcb081e5467cd">get_base_date</a> (year, month, day, hour, minute, second)</td></tr>
+<tr class="memdesc:gabcca324d176f7fc4a2afcb081e5467cd"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return base date for diagnostics.  <a href="group__diag__manager__mod.html#gabcca324d176f7fc4a2afcb081e5467cd">More...</a><br /></td></tr>
+<tr class="separator:gabcca324d176f7fc4a2afcb081e5467cd"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga6f8f390263ec70bb5a7c281b95b37c5a"><td class="memItemLeft" align="right" valign="top">type(time_type) function, public&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__diag__manager__mod.html#ga6f8f390263ec70bb5a7c281b95b37c5a">get_base_time</a> ()</td></tr>
+<tr class="memdesc:ga6f8f390263ec70bb5a7c281b95b37c5a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return base time for diagnostics.  <a href="group__diag__manager__mod.html#ga6f8f390263ec70bb5a7c281b95b37c5a">More...</a><br /></td></tr>
+<tr class="separator:ga6f8f390263ec70bb5a7c281b95b37c5a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:gabb0ced689e563c1d91b3e85bddef1ef3"><td class="memItemLeft" align="right" valign="top">integer function, public&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__diag__manager__mod.html#gabb0ced689e563c1d91b3e85bddef1ef3">get_diag_field_id</a> (module_name, field_name)</td></tr>
 <tr class="memdesc:gabb0ced689e563c1d91b3e85bddef1ef3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the diagnostic field ID of a given variable.  <a href="group__diag__manager__mod.html#gabb0ced689e563c1d91b3e85bddef1ef3">More...</a><br /></td></tr>
 <tr class="separator:gabb0ced689e563c1d91b3e85bddef1ef3"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga06c19fe9196b943a2f121b1c84df212f"><td class="memItemLeft" align="right" valign="top">logical function&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__diag__manager__mod.html#ga06c19fe9196b943a2f121b1c84df212f">get_related_field</a> (field, rel_field, out_field_id, out_file_id)</td></tr>
 <tr class="memdesc:ga06c19fe9196b943a2f121b1c84df212f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Finds the corresponding related output field and file for a given input field.  <a href="group__diag__manager__mod.html#ga06c19fe9196b943a2f121b1c84df212f">More...</a><br /></td></tr>
 <tr class="separator:ga06c19fe9196b943a2f121b1c84df212f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:gaec228361a58462f3b987fdbac4b66827"><td class="memItemLeft" align="right" valign="top">integer function&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__diag__manager__mod.html#gaec228361a58462f3b987fdbac4b66827">init_diurnal_axis</a> (n_samples)</td></tr>
+<tr class="memdesc:gaec228361a58462f3b987fdbac4b66827"><td class="mdescLeft">&#160;</td><td class="mdescRight">Finds or initializes a diurnal time axis and returns its' ID.  <a href="group__diag__manager__mod.html#gaec228361a58462f3b987fdbac4b66827">More...</a><br /></td></tr>
+<tr class="separator:gaec228361a58462f3b987fdbac4b66827"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga70e34ef900bd740da27c87149621369c"><td class="memItemLeft" align="right" valign="top">subroutine&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__diag__manager__mod.html#ga70e34ef900bd740da27c87149621369c">init_field_cell_measures</a> (output_field, area, volume, err_msg)</td></tr>
 <tr class="memdesc:ga70e34ef900bd740da27c87149621369c"><td class="mdescLeft">&#160;</td><td class="mdescRight">If needed, add cell_measures and associated_file attribute to out field/file.  <a href="group__diag__manager__mod.html#ga70e34ef900bd740da27c87149621369c">More...</a><br /></td></tr>
 <tr class="separator:ga70e34ef900bd740da27c87149621369c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:gaa80b10875fe293f5d1d2dc0dc27940bc"><td class="memItemLeft" align="right" valign="top">subroutine&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__diag__manager__mod.html#gaa80b10875fe293f5d1d2dc0dc27940bc">add_associated_files</a> (file_num, cm_file_num, cm_ind)</td></tr>
-<tr class="memdesc:gaa80b10875fe293f5d1d2dc0dc27940bc"><td class="mdescLeft">&#160;</td><td class="mdescRight">Add to the associated files attribute.  <a href="group__diag__manager__mod.html#gaa80b10875fe293f5d1d2dc0dc27940bc">More...</a><br /></td></tr>
-<tr class="separator:gaa80b10875fe293f5d1d2dc0dc27940bc"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga05aea90030e4133f8f5669cf3279e41b"><td class="memItemLeft" align="right" valign="top">logical function, public&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__diag__manager__mod.html#ga05aea90030e4133f8f5669cf3279e41b">need_data</a> (diag_field_id, next_model_time)</td></tr>
+<tr class="memdesc:ga05aea90030e4133f8f5669cf3279e41b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Determine whether data is needed for the current model time step.  <a href="group__diag__manager__mod.html#ga05aea90030e4133f8f5669cf3279e41b">More...</a><br /></td></tr>
+<tr class="separator:ga05aea90030e4133f8f5669cf3279e41b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga6bbeb5060a1f47cb6000c1114aeb6ab3"><td class="memItemLeft" align="right" valign="top">integer function&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__diag__manager__mod.html#ga6bbeb5060a1f47cb6000c1114aeb6ab3">register_diag_field_array</a> (module_name, field_name, axes, init_time, long_name, units, missing_value, range, mask_variant, standard_name, verbose, do_not_log, err_msg, interp_method, tile_count, area, volume, realm)</td></tr>
+<tr class="memdesc:ga6bbeb5060a1f47cb6000c1114aeb6ab3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Registers an array field.  <a href="group__diag__manager__mod.html#ga6bbeb5060a1f47cb6000c1114aeb6ab3">More...</a><br /></td></tr>
+<tr class="separator:ga6bbeb5060a1f47cb6000c1114aeb6ab3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:gacc8076aa4a0590d3053643efd89ea735"><td class="memItemLeft" align="right" valign="top">integer function&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__diag__manager__mod.html#gacc8076aa4a0590d3053643efd89ea735">register_diag_field_scalar</a> (module_name, field_name, init_time, long_name, units, missing_value, range, standard_name, do_not_log, err_msg, area, volume, realm)</td></tr>
+<tr class="memdesc:gacc8076aa4a0590d3053643efd89ea735"><td class="mdescLeft">&#160;</td><td class="mdescRight">Registers a scalar field.  <a href="group__diag__manager__mod.html#gacc8076aa4a0590d3053643efd89ea735">More...</a><br /></td></tr>
+<tr class="separator:gacc8076aa4a0590d3053643efd89ea735"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga391e6c5a8bd236359bd030890cedbef9"><td class="memItemLeft" align="right" valign="top">integer function, public&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__diag__manager__mod.html#ga391e6c5a8bd236359bd030890cedbef9">register_static_field</a> (module_name, field_name, axes, long_name, units, missing_value, range, mask_variant, standard_name, DYNAMIC, do_not_log, interp_method, tile_count, area, volume, realm)</td></tr>
+<tr class="memdesc:ga391e6c5a8bd236359bd030890cedbef9"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return field index for subsequent call to <a class="el" href="group__diag__manager__mod.html#interfacediag__manager__mod_1_1send__data" title="Send data over to output fields.">send_data</a>.  <a href="group__diag__manager__mod.html#ga391e6c5a8bd236359bd030890cedbef9">More...</a><br /></td></tr>
+<tr class="separator:ga391e6c5a8bd236359bd030890cedbef9"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga98310de5593600a83d7e4fa889456b29"><td class="memItemLeft" align="right" valign="top">logical function&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__diag__manager__mod.html#ga98310de5593600a83d7e4fa889456b29">send_data_0d</a> (diag_field_id, field, time, err_msg)</td></tr>
 <tr class="separator:ga98310de5593600a83d7e4fa889456b29"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:gada4ddad4a5d38ed610f29c6d89fd0ab3"><td class="memItemLeft" align="right" valign="top">logical function&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__diag__manager__mod.html#gada4ddad4a5d38ed610f29c6d89fd0ab3">send_data_1d</a> (diag_field_id, field, time, is_in, mask, rmask, ie_in, weight, err_msg)</td></tr>
 <tr class="separator:gada4ddad4a5d38ed610f29c6d89fd0ab3"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga186a4a5d7d6d223828cc3f276f2745eb"><td class="memItemLeft" align="right" valign="top">logical function&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__diag__manager__mod.html#ga186a4a5d7d6d223828cc3f276f2745eb">send_data_2d</a> (diag_field_id, field, time, is_in, js_in, mask, rmask, ie_in, je_in, weight, err_msg)</td></tr>
 <tr class="separator:ga186a4a5d7d6d223828cc3f276f2745eb"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga64b8bd9b19b83a51bf4dce56e92a46de"><td class="memItemLeft" align="right" valign="top">logical function&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__diag__manager__mod.html#ga64b8bd9b19b83a51bf4dce56e92a46de">send_data_0d_r8</a> (diag_field_id, field, time, err_msg)</td></tr>
-<tr class="separator:ga64b8bd9b19b83a51bf4dce56e92a46de"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:gab18ff9170b9a0a7ec90b3e2d62408926"><td class="memItemLeft" align="right" valign="top">logical function&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__diag__manager__mod.html#gab18ff9170b9a0a7ec90b3e2d62408926">send_data_1d_r8</a> (diag_field_id, field, time, is_in, mask, rmask, ie_in, weight, err_msg)</td></tr>
-<tr class="separator:gab18ff9170b9a0a7ec90b3e2d62408926"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga563def7751689c949e4a2bc24c91a5f9"><td class="memItemLeft" align="right" valign="top">logical function&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__diag__manager__mod.html#ga563def7751689c949e4a2bc24c91a5f9">send_data_2d_r8</a> (diag_field_id, field, time, is_in, js_in, mask, rmask, ie_in, je_in, weight, err_msg)</td></tr>
-<tr class="separator:ga563def7751689c949e4a2bc24c91a5f9"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga5af0dae9bc1148ab3e9410572fcfec18"><td class="memItemLeft" align="right" valign="top">logical function&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__diag__manager__mod.html#ga5af0dae9bc1148ab3e9410572fcfec18">send_data_3d_r8</a> (diag_field_id, field, time, is_in, js_in, ks_in, mask, rmask, ie_in, je_in, ke_in, weight, err_msg)</td></tr>
-<tr class="separator:ga5af0dae9bc1148ab3e9410572fcfec18"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:gac823edb555974a0a04a75e944ef33bfe"><td class="memItemLeft" align="right" valign="top">logical function&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__diag__manager__mod.html#gac823edb555974a0a04a75e944ef33bfe">send_data_3d</a> (diag_field_id, field, time, is_in, js_in, ks_in, mask, rmask, ie_in, je_in, ke_in, weight, err_msg)</td></tr>
 <tr class="separator:gac823edb555974a0a04a75e944ef33bfe"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:gad9da945a2a2a883480d3cdf285622057"><td class="memItemLeft" align="right" valign="top">logical function&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__diag__manager__mod.html#gad9da945a2a2a883480d3cdf285622057">send_tile_averaged_data1d</a> (id, field, area, time, mask)</td></tr>
 <tr class="separator:gad9da945a2a2a883480d3cdf285622057"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:gacfae2b80cc7823bc8b6a4c5960d58165"><td class="memItemLeft" align="right" valign="top">subroutine&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__diag__manager__mod.html#gacfae2b80cc7823bc8b6a4c5960d58165">average_tiles1d</a> (diag_field_id, x, area, mask, out)</td></tr>
-<tr class="memdesc:gacfae2b80cc7823bc8b6a4c5960d58165"><td class="mdescLeft">&#160;</td><td class="mdescRight">Calculates average for a field with the given area and land mask.  <a href="group__diag__manager__mod.html#gacfae2b80cc7823bc8b6a4c5960d58165">More...</a><br /></td></tr>
-<tr class="separator:gacfae2b80cc7823bc8b6a4c5960d58165"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:gaec0c3b6c0df46eba50c6b0592a7a64c1"><td class="memItemLeft" align="right" valign="top">logical function&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__diag__manager__mod.html#gaec0c3b6c0df46eba50c6b0592a7a64c1">send_tile_averaged_data2d</a> (id, field, area, time, mask)</td></tr>
 <tr class="separator:gaec0c3b6c0df46eba50c6b0592a7a64c1"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga4cf04da3a6f740be3c513f714c73e71f"><td class="memItemLeft" align="right" valign="top">logical function&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__diag__manager__mod.html#ga4cf04da3a6f740be3c513f714c73e71f">send_tile_averaged_data3d</a> (id, field, area, time, mask)</td></tr>
 <tr class="separator:ga4cf04da3a6f740be3c513f714c73e71f"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga92cac6ff74dff1387dc8352e33004aa8"><td class="memItemLeft" align="right" valign="top">subroutine&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__diag__manager__mod.html#ga92cac6ff74dff1387dc8352e33004aa8">average_tiles</a> (diag_field_id, x, area, mask, out)</td></tr>
-<tr class="memdesc:ga92cac6ff74dff1387dc8352e33004aa8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Calculates tile average of a field.  <a href="group__diag__manager__mod.html#ga92cac6ff74dff1387dc8352e33004aa8">More...</a><br /></td></tr>
-<tr class="separator:ga92cac6ff74dff1387dc8352e33004aa8"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:gab2d4aba2617416205328fad90dbab9be"><td class="memItemLeft" align="right" valign="top">integer function&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__diag__manager__mod.html#gab2d4aba2617416205328fad90dbab9be">writing_field</a> (out_num, at_diag_end, error_string, time)</td></tr>
 <tr class="separator:gab2d4aba2617416205328fad90dbab9be"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga1b5adb8ffece557999690f6f51f71c03"><td class="memItemLeft" align="right" valign="top">
-subroutine, public&#160;</td><td class="memItemRight" valign="bottom"><b>diag_manager_set_time_end</b> (Time_end_in)</td></tr>
-<tr class="separator:ga1b5adb8ffece557999690f6f51f71c03"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga8465f5058eb48afcd76ad469ab3629a9"><td class="memItemLeft" align="right" valign="top">subroutine, public&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__diag__manager__mod.html#ga8465f5058eb48afcd76ad469ab3629a9">diag_send_complete_instant</a> (time)</td></tr>
-<tr class="memdesc:ga8465f5058eb48afcd76ad469ab3629a9"><td class="mdescLeft">&#160;</td><td class="mdescRight">The subroutine 'diag_send_complete_instant' allows the user to save diagnostic data on variable intervals (user defined in code logic) to the same file. The argument (time_type) will be written to the time axis correspondingly.  <a href="group__diag__manager__mod.html#ga8465f5058eb48afcd76ad469ab3629a9">More...</a><br /></td></tr>
-<tr class="separator:ga8465f5058eb48afcd76ad469ab3629a9"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:gaffcd2ffd364000d0a1b498c8aa21ea1e"><td class="memItemLeft" align="right" valign="top">
-subroutine, public&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__diag__manager__mod.html#gaffcd2ffd364000d0a1b498c8aa21ea1e">diag_send_complete</a> (time_step, err_msg)</td></tr>
-<tr class="memdesc:gaffcd2ffd364000d0a1b498c8aa21ea1e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Saves diagnostic data for the given time value. <br /></td></tr>
-<tr class="separator:gaffcd2ffd364000d0a1b498c8aa21ea1e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:gae363283d453e40d48d70f583c1e58b5f"><td class="memItemLeft" align="right" valign="top">
-subroutine, public&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__diag__manager__mod.html#gae363283d453e40d48d70f583c1e58b5f">diag_manager_end</a> (time)</td></tr>
-<tr class="memdesc:gae363283d453e40d48d70f583c1e58b5f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Flushes diagnostic buffers where necessary. Close diagnostics files. A warning will be issued here if a field in diag_table is not registered. <br /></td></tr>
-<tr class="separator:gae363283d453e40d48d70f583c1e58b5f"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga6eea868aa349db7faaa921b41e293f42"><td class="memItemLeft" align="right" valign="top">
-subroutine&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__diag__manager__mod.html#ga6eea868aa349db7faaa921b41e293f42">closing_file</a> (file, time)</td></tr>
-<tr class="memdesc:ga6eea868aa349db7faaa921b41e293f42"><td class="mdescLeft">&#160;</td><td class="mdescRight">Replaces diag_manager_end; close just one file: files(file) <br /></td></tr>
-<tr class="separator:ga6eea868aa349db7faaa921b41e293f42"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:gab78722b306c31534a1b7870aaef28c6c"><td class="memItemLeft" align="right" valign="top">subroutine, public&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__diag__manager__mod.html#gab78722b306c31534a1b7870aaef28c6c">diag_manager_init</a> (diag_model_subset, time_init, err_msg)</td></tr>
-<tr class="memdesc:gab78722b306c31534a1b7870aaef28c6c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Initialize Diagnostics Manager.  <a href="group__diag__manager__mod.html#gab78722b306c31534a1b7870aaef28c6c">More...</a><br /></td></tr>
-<tr class="separator:gab78722b306c31534a1b7870aaef28c6c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga6f8f390263ec70bb5a7c281b95b37c5a"><td class="memItemLeft" align="right" valign="top">type(time_type) function, public&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__diag__manager__mod.html#ga6f8f390263ec70bb5a7c281b95b37c5a">get_base_time</a> ()</td></tr>
-<tr class="memdesc:ga6f8f390263ec70bb5a7c281b95b37c5a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return base time for diagnostics.  <a href="group__diag__manager__mod.html#ga6f8f390263ec70bb5a7c281b95b37c5a">More...</a><br /></td></tr>
-<tr class="separator:ga6f8f390263ec70bb5a7c281b95b37c5a"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:gabcca324d176f7fc4a2afcb081e5467cd"><td class="memItemLeft" align="right" valign="top">subroutine, public&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__diag__manager__mod.html#gabcca324d176f7fc4a2afcb081e5467cd">get_base_date</a> (year, month, day, hour, minute, second)</td></tr>
-<tr class="memdesc:gabcca324d176f7fc4a2afcb081e5467cd"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return base date for diagnostics.  <a href="group__diag__manager__mod.html#gabcca324d176f7fc4a2afcb081e5467cd">More...</a><br /></td></tr>
-<tr class="separator:gabcca324d176f7fc4a2afcb081e5467cd"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga05aea90030e4133f8f5669cf3279e41b"><td class="memItemLeft" align="right" valign="top">logical function, public&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__diag__manager__mod.html#ga05aea90030e4133f8f5669cf3279e41b">need_data</a> (diag_field_id, next_model_time)</td></tr>
-<tr class="memdesc:ga05aea90030e4133f8f5669cf3279e41b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Determine whether data is needed for the current model time step.  <a href="group__diag__manager__mod.html#ga05aea90030e4133f8f5669cf3279e41b">More...</a><br /></td></tr>
-<tr class="separator:ga05aea90030e4133f8f5669cf3279e41b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:gaec228361a58462f3b987fdbac4b66827"><td class="memItemLeft" align="right" valign="top">integer function&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__diag__manager__mod.html#gaec228361a58462f3b987fdbac4b66827">init_diurnal_axis</a> (n_samples)</td></tr>
-<tr class="memdesc:gaec228361a58462f3b987fdbac4b66827"><td class="mdescLeft">&#160;</td><td class="mdescRight">Finds or initializes a diurnal time axis and returns its' ID.  <a href="group__diag__manager__mod.html#gaec228361a58462f3b987fdbac4b66827">More...</a><br /></td></tr>
-<tr class="separator:gaec228361a58462f3b987fdbac4b66827"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga4331d6d18e62be6288629cf7029a85bc"><td class="memItemLeft" align="right" valign="top">subroutine&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__diag__manager__mod.html#ga4331d6d18e62be6288629cf7029a85bc">diag_field_attribute_init</a> (diag_field_id, name, type, cval, ival, rval)</td></tr>
-<tr class="separator:ga4331d6d18e62be6288629cf7029a85bc"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:gac1946cf297ede9d9f202c292b097f3cb"><td class="memItemLeft" align="right" valign="top">subroutine&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__diag__manager__mod.html#gac1946cf297ede9d9f202c292b097f3cb">diag_field_add_attribute_scalar_r</a> (diag_field_id, att_name, att_value)</td></tr>
-<tr class="memdesc:gac1946cf297ede9d9f202c292b097f3cb"><td class="mdescLeft">&#160;</td><td class="mdescRight">Add a scalar real attribute to the diag field corresponding to a given id.  <a href="group__diag__manager__mod.html#gac1946cf297ede9d9f202c292b097f3cb">More...</a><br /></td></tr>
-<tr class="separator:gac1946cf297ede9d9f202c292b097f3cb"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga8b3663661ccd072adddd8d3b12aeaca3"><td class="memItemLeft" align="right" valign="top">subroutine&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__diag__manager__mod.html#ga8b3663661ccd072adddd8d3b12aeaca3">diag_field_add_attribute_scalar_i</a> (diag_field_id, att_name, att_value)</td></tr>
-<tr class="memdesc:ga8b3663661ccd072adddd8d3b12aeaca3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Add a scalar integer attribute to the diag field corresponding to a given id.  <a href="group__diag__manager__mod.html#ga8b3663661ccd072adddd8d3b12aeaca3">More...</a><br /></td></tr>
-<tr class="separator:ga8b3663661ccd072adddd8d3b12aeaca3"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:gafc03eaadabae2c9f3c38946a5907f76b"><td class="memItemLeft" align="right" valign="top">subroutine&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__diag__manager__mod.html#gafc03eaadabae2c9f3c38946a5907f76b">diag_field_add_attribute_scalar_c</a> (diag_field_id, att_name, att_value)</td></tr>
-<tr class="memdesc:gafc03eaadabae2c9f3c38946a5907f76b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Add a scalar character attribute to the diag field corresponding to a given id.  <a href="group__diag__manager__mod.html#gafc03eaadabae2c9f3c38946a5907f76b">More...</a><br /></td></tr>
-<tr class="separator:gafc03eaadabae2c9f3c38946a5907f76b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga32c8f71fe642f2de9139387e8a86967e"><td class="memItemLeft" align="right" valign="top">subroutine&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__diag__manager__mod.html#ga32c8f71fe642f2de9139387e8a86967e">diag_field_add_attribute_r1d</a> (diag_field_id, att_name, att_value)</td></tr>
-<tr class="memdesc:ga32c8f71fe642f2de9139387e8a86967e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Add a real 1D array attribute to the diag field corresponding to a given id.  <a href="group__diag__manager__mod.html#ga32c8f71fe642f2de9139387e8a86967e">More...</a><br /></td></tr>
-<tr class="separator:ga32c8f71fe642f2de9139387e8a86967e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga5dbf7d75b22d4cf9838db13952b07172"><td class="memItemLeft" align="right" valign="top">subroutine&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__diag__manager__mod.html#ga5dbf7d75b22d4cf9838db13952b07172">diag_field_add_attribute_i1d</a> (diag_field_id, att_name, att_value)</td></tr>
-<tr class="memdesc:ga5dbf7d75b22d4cf9838db13952b07172"><td class="mdescLeft">&#160;</td><td class="mdescRight">Add an integer 1D array attribute to the diag field corresponding to a given id.  <a href="group__diag__manager__mod.html#ga5dbf7d75b22d4cf9838db13952b07172">More...</a><br /></td></tr>
-<tr class="separator:ga5dbf7d75b22d4cf9838db13952b07172"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga6f632296fdf20dc41c1f4cc3918422b6"><td class="memItemLeft" align="right" valign="top">subroutine, public&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__diag__manager__mod.html#ga6f632296fdf20dc41c1f4cc3918422b6">diag_field_add_cell_measures</a> (diag_field_id, area, volume)</td></tr>
-<tr class="memdesc:ga6f632296fdf20dc41c1f4cc3918422b6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Add the cell_measures attribute to a diag out field.  <a href="group__diag__manager__mod.html#ga6f632296fdf20dc41c1f4cc3918422b6">More...</a><br /></td></tr>
-<tr class="separator:ga6f632296fdf20dc41c1f4cc3918422b6"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="var-members"></a>
 Variables</h2></td></tr>

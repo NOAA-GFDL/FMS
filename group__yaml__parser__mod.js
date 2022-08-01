@@ -1,11 +1,11 @@
 var group__yaml__parser__mod =
 [
-    [ "get_value_from_key", "interfaceyaml__parser__mod_1_1get__value__from__key.html", [
-      [ "get_value_from_key_0d", "interfaceyaml__parser__mod_1_1get__value__from__key.html#aa59d6f319cd45db5fa9b2a4ed5dd41da", null ],
-      [ "get_value_from_key_1d", "interfaceyaml__parser__mod_1_1get__value__from__key.html#aabadbb2a315975802f314a83fb4eb4ed", null ]
+    [ "get_value_from_key", "group__yaml__parser__mod.html#interfaceyaml__parser__mod_1_1get__value__from__key", [
+      [ "get_value_from_key_0d", "group__yaml__parser__mod.html#aa59d6f319cd45db5fa9b2a4ed5dd41da", null ],
+      [ "get_value_from_key_1d", "group__yaml__parser__mod.html#aabadbb2a315975802f314a83fb4eb4ed", null ]
     ] ],
-    [ "open_and_parse_file_wrap", "interfaceyaml__parser__mod_1_1open__and__parse__file__wrap.html", [
-      [ "open_and_parse_file_wrap", "interfaceyaml__parser__mod_1_1open__and__parse__file__wrap.html#ac14a1953ba7992c6c2d093d9f3e026f3", null ]
+    [ "open_and_parse_file_wrap", "group__yaml__parser__mod.html#interfaceyaml__parser__mod_1_1open__and__parse__file__wrap", [
+      [ "open_and_parse_file_wrap", "group__yaml__parser__mod.html#ac14a1953ba7992c6c2d093d9f3e026f3", null ]
     ] ],
     [ "get_block_ids", "group__yaml__parser__mod.html#ga991ef792715cfaaf77a9929ffe718879", null ],
     [ "get_key_ids", "group__yaml__parser__mod.html#ga5ef96a65d44366f4014d60d0509749cf", null ],

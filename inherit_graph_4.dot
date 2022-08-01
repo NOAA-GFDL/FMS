@@ -1,0 +1,9 @@
+digraph "Graphical Class Hierarchy"
+{
+ // INTERACTIVE_SVG=YES
+ // LATEX_PDF_SIZE
+  edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
+  node [fontname="Helvetica",fontsize="10",shape=record];
+  rankdir="LR";
+  Node0 [label="array_to_char",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$group__mpp__mod.html#interfacempp__mod_1_1array__to__char",tooltip="Takes a given integer or real array and returns it as a string."];
+}

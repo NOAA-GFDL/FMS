@@ -33,7 +33,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">FMS
-   &#160;<span id="projectnumber">2022.02.0</span>
+   &#160;<span id="projectnumber">2022.03.00</span>
    </div>
    <div id="projectbrief">Flexible Modeling System</div>
   </td>
@@ -111,6 +111,10 @@ $(document).ready(function(){initNavTree('install.html',''); initResizable(); })
 <p>The default way to build libFMS is with MPI support. We have found that using the MPI aware compiler, or the MPI compiler wrappers (mpif90, mpicc, etc.), in general, offer the best results when building with MPI support. If you decide to not use an MPI aware compiler, you should pass the include and library locations to the build system.</p>
 <p>libFMS can be built without MPI support (sometimes called "no-comm mode"). To build libFMS without MPI support, pass to <code>configure</code> the <code>--disable-mpi</code> flag.</p>
 <h2>Supported Build Systems</h2>
+<p>The FMS repository has two build systems in place, GNU autotools and CMake. It is also compiled with the GFDL's internally-developed build tool, <a href="https://github.com/noaa-gfdl/mkmf">mkmf</a></p>
+<p>CMake and Autotools have some variation in options and the resulting build targets.</p>
+<p>Autotools will build with 64 bit real defaults unless configured with <code>--enable-mixed-mode</code> in which case it will default to 32 bit reals and add overloads to allow for both 32 bit and 64 bit operations. This results in one library with both 32 bit and 64 bit routines (defaulting to 32 bit reals).</p>
+<p>By default CMake will build the library with 32 bit reals. It also has an option for 64 bit defaults , and if enabled will build an additional library with 64 bit reals. This results in distinct 32 bit and 64 bit libraries (libfms_r4.a and libfms_r8.a)</p>
 <h3>GNU Autoconf/Automake</h3>
 <p>In many cases, running the shell command <code>./configure &amp;&amp; make &amp;&amp; make install</code> will build and install this package. Since libFMS requires the netCDF libraries, you will likely need to tell configure where to find the C and Fortran netCDF headers and libraries via the <code>CPPFLAGS</code>, <code>FCFLAGS</code> and <code>LDFLAGS</code> variables</p>
 <div class="fragment"><div class="line">&gt; ./configure CPPFLAGS=&quot;-I/path/to/netcdf/include&quot; \</div>

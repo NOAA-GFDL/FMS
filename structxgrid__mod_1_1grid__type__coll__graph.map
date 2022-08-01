@@ -1,0 +1,11 @@
+<map id="grid_type" name="grid_type">
+<area shape="rect" id="node1" title="Private type to hold all data needed from given grid for an exchange grid." alt="" coords="517,393,600,420"/>
+<area shape="rect" id="node2" title=" " alt="" coords="251,5,316,32"/>
+<area shape="rect" id="node3" href="$group__xgrid__mod.html#structxgrid__mod_1_1xcell__type" title="Private type for cell indices and data in the exchange grid." alt="" coords="239,365,328,392"/>
+<area shape="rect" id="node4" title=" " alt="" coords="5,327,111,353"/>
+<area shape="rect" id="node8" href="$group__xgrid__mod.html#structxgrid__mod_1_1grid__box__type" title="Type to hold pointers for grid boxes." alt="" coords="226,312,341,339"/>
+<area shape="rect" id="node5" title=" " alt="" coords="24,615,92,641"/>
+<area shape="rect" id="node6" title=" " alt="" coords="217,416,349,443"/>
+<area shape="rect" id="node7" title=" " alt="" coords="220,467,347,493"/>
+<area shape="rect" id="node9" title=" " alt="" coords="220,727,347,753"/>
+</map>

@@ -1,0 +1,6 @@
+<map id="comm_type" name="comm_type">
+<area shape="rect" id="node1" title="Private type used for exchange grid communication." alt="" coords="5,348,104,375"/>
+<area shape="rect" id="node2" title=" " alt="" coords="19,5,87,32"/>
+<area shape="rect" id="node3" href="$group__xgrid__mod.html#structxgrid__mod_1_1overlap__type" title="Private type for overlap exchange grid data." alt="" coords="132,221,239,247"/>
+<area shape="rect" id="node4" title=" " alt="" coords="133,5,238,32"/>
+</map>

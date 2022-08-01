@@ -1,0 +1,9 @@
+digraph "Graphical Class Hierarchy"
+{
+ // INTERACTIVE_SVG=YES
+ // LATEX_PDF_SIZE
+  edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
+  node [fontname="Helvetica",fontsize="10",shape=record];
+  rankdir="LR";
+  Node0 [label="amip_interp_type",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$group__amip__interp__mod.html#structamip__interp__mod_1_1amip__interp__type",tooltip="Contains information needed by the interpolation module (exchange_mod) and buffers data."];
+}

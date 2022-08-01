@@ -1,0 +1,27 @@
+digraph "interpolate_type"
+{
+ // INTERACTIVE_SVG=YES
+ // LATEX_PDF_SIZE
+  edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
+  node [fontname="Helvetica",fontsize="10",shape=record];
+  rankdir="LR";
+  Node1 [label="interpolate_type",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled", fontcolor="black",tooltip="Redundant climatology data between fields."];
+  Node2 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" climatological_year\nhas_level\nseparate_time_vary_calc" ,fontname="Helvetica"];
+  Node2 [label="logical",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
+  Node3 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" time_slice\nclim_times" ,fontname="Helvetica"];
+  Node3 [label="time_type",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$group__time__manager__mod.html#structtime__manager__mod_1_1time__type",tooltip="Type to represent amounts of time. Implemented as seconds and days to allow for larger intervals."];
+  Node4 -> Node3 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" days\nseconds\nticks" ,fontname="Helvetica"];
+  Node4 [label="integer",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
+  Node5 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" interph" ,fontname="Helvetica"];
+  Node5 [label="horiz_interp_type",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$group__horiz__interp__type__mod.html#structhoriz__interp__type__mod_1_1horiz__interp__type",tooltip=" "];
+  Node2 -> Node5 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" i_am_initialized\nfound_neighbors" ,fontname="Helvetica"];
+  Node4 -> Node5 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" nlat_dst\nnlat_src\nj_lat\nilon\nnum_found\njlat\ninterp_method\ni_src\ni_dst\nj_src\n..." ,fontname="Helvetica"];
+  Node6 -> Node5 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" faci\nfacj\narea_frac_dst\nmax_src_dist\nsrc_dist\nrat_x\nrat_y\nwti\nlat_in\nwtj\n..." ,fontname="Helvetica"];
+  Node6 [label="real",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
+  Node7 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" field_name\nfile_name" ,fontname="Helvetica"];
+  Node7 [label="character(len=64)",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
+  Node8 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" fileobj" ,fontname="Helvetica"];
+  Node8 [label="type(fmsnetcdffile_t)",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
+  Node4 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" vert_interp\nmr\nvertical_indices\ntime_init\nlevel_type\njs\nitaum\nclimatology\nis\nout_of_bounds\n..." ,fontname="Helvetica"];
+  Node6 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" tweight1\ntweight2\ntweight3\ntweight\nlatb\nlon\nlevs\nnmon_pyear\nlonb\nlat\n..." ,fontname="Helvetica"];
+}

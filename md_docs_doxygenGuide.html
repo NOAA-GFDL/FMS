@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.17"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>FMS: Documentation Style Guide</title>
+<title>FMS: Documentation Style and Building Guide</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -33,7 +33,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">FMS
-   &#160;<span id="projectnumber">2022.02.0</span>
+   &#160;<span id="projectnumber">2022.03.00</span>
    </div>
    <div id="projectbrief">Flexible Modeling System</div>
   </td>
@@ -91,10 +91,10 @@ $(document).ready(function(){initNavTree('md_docs_doxygenGuide.html',''); initRe
 
 <div class="PageDoc"><div class="header">
   <div class="headertitle">
-<div class="title">Documentation Style Guide </div>  </div>
+<div class="title">Documentation Style and Building Guide </div>  </div>
 </div><!--header-->
 <div class="contents">
-<div class="textblock"><p>Best practices for documenting FMS code with Doxygen.</p>
+<div class="textblock"><p>Best practices for documenting FMS code with Doxygen, as well as instructions for generating the site.</p>
 <h2>Basics</h2>
 <p>For .F90 files:</p><ul>
 <li><code>!&gt;</code> Starts or continues a multi-line doxygen comment</li>
@@ -115,8 +115,8 @@ $(document).ready(function(){initNavTree('md_docs_doxygenGuide.html',''); initRe
 <p>Simple subroutine/function documentation:</p>
 <div class="fragment"><div class="line"><span class="comment">!&gt; description</span></div>
 <div class="line"><span class="comment">!! continued description</span></div>
-<div class="line"><span class="keyword">function </span>foo()</div>
-<div class="line">  <span class="keywordtype">integer</span> :: bar<span class="comment"> !&lt; variable description</span></div>
+<div class="line"><span class="keyword">function </span>foo(bar)</div>
+<div class="line">  <span class="keywordtype">integer</span>, <span class="keywordtype">intent(inout)</span> :: bar<span class="comment"> !&lt; argument description</span></div>
 <div class="line">  ...</div>
 </div><!-- fragment --><p>Full subroutine/function documentation:</p>
 <div class="fragment"><div class="line"><span class="comment">!&gt; @brief short description</span></div>
@@ -169,7 +169,14 @@ $(document).ready(function(){initNavTree('md_docs_doxygenGuide.html',''); initRe
 <div class="line"><span class="comment">!&gt; @addtogroup foo_mod</span></div>
 <div class="line"><span class="comment">!&gt; @{</span></div>
 <div class="line">...</div>
-</div><!-- fragment --> </div></div><!-- contents -->
+</div><!-- fragment --><h2>Generating the Doxygen Site</h2>
+<p>The site can be generated from the source code either manually (must have doxygen installed), or through a github action.</p>
+<p>To generate it manually from the repository: </p><div class="fragment"><div class="line">autoreconf -it</div>
+<div class="line">./configure --enable-docs</div>
+<div class="line">make -C docs</div>
+</div><!-- fragment --><p>To have the site generated through a github action, you can go to the <em>Actions</em> tab on your forked FMS repository. From there you can click on <em>Select Workflow</em> and select the <em>Generate and deploy documentationon GH pages</em> action. This will show all previous runs, and will display a button to run the doxygen workflow on whichever branch is desired. After completion, the page will be available at: &lt;your github username&gt;.github.io/FMS</p>
+<p>If not available, settings for the site can be found in the forked repositories <em>Settings</em> tab, under <em>Pages</em>. </p>
+</div></div><!-- contents -->
 </div><!-- PageDoc -->
 </div><!-- doc-content -->
 <!-- start footer part -->

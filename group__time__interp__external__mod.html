@@ -33,7 +33,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">FMS
-   &#160;<span id="projectnumber">2022.02.0</span>
+   &#160;<span id="projectnumber">2022.03.00</span>
    </div>
    <div id="projectbrief">Flexible Modeling System</div>
   </td>
@@ -104,100 +104,106 @@ $(document).ready(function(){initNavTree('group__time__interp__external__mod.htm
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
 Data Types</h2></td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">type &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structtime__interp__external__mod_1_1ext__fieldtype.html">ext_fieldtype</a></td></tr>
-<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">type &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structtime__interp__external__mod_1_1filetype.html">filetype</a></td></tr>
-<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">interface &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="interfacetime__interp__external__mod_1_1time__interp__external.html">time_interp_external</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Provide data from external file interpolated to current model time. Data may be local to current processor or global, depending on "init_external_field" flags. Uses <a class="el" href="group__mpp__io__mod.html">mpp_io_mod</a> for I/O.  <a href="interfacetime__interp__external__mod_1_1time__interp__external.html#details">More...</a><br /></td></tr>
-<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:structtime__interp__external__mod_1_1ext__fieldtype"><td class="memItemLeft" align="right" valign="top">type &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__time__interp__external__mod.html#structtime__interp__external__mod_1_1ext__fieldtype">ext_fieldtype</a></td></tr>
+<tr class="separator:structtime__interp__external__mod_1_1ext__fieldtype"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:structtime__interp__external__mod_1_1filetype"><td class="memItemLeft" align="right" valign="top">type &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__time__interp__external__mod.html#structtime__interp__external__mod_1_1filetype">filetype</a></td></tr>
+<tr class="separator:structtime__interp__external__mod_1_1filetype"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:interfacetime__interp__external__mod_1_1time__interp__external"><td class="memItemLeft" align="right" valign="top">interface &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__time__interp__external__mod.html#interfacetime__interp__external__mod_1_1time__interp__external">time_interp_external</a></td></tr>
+<tr class="memdesc:interfacetime__interp__external__mod_1_1time__interp__external"><td class="mdescLeft">&#160;</td><td class="mdescRight">Provide data from external file interpolated to current model time. Data may be local to current processor or global, depending on "init_external_field" flags. Uses <a class="el" href="group__mpp__io__mod.html">mpp_io_mod</a> for I/O.  <a href="group__time__interp__external__mod.html#interfacetime__interp__external__mod_1_1time__interp__external">More...</a><br /></td></tr>
+<tr class="separator:interfacetime__interp__external__mod_1_1time__interp__external"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="func-members"></a>
 Functions/Subroutines</h2></td></tr>
-<tr class="memitem:gad1f56b2c9b092accb0039bb950c7c815"><td class="memItemLeft" align="right" valign="top"><a id="gad1f56b2c9b092accb0039bb950c7c815"></a>
-subroutine, public&#160;</td><td class="memItemRight" valign="bottom"><b>time_interp_external_init</b> ()</td></tr>
-<tr class="separator:gad1f56b2c9b092accb0039bb950c7c815"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga49f83f39031adaf686e1b9e5108dd29b"><td class="memItemLeft" align="right" valign="top"><a id="ga49f83f39031adaf686e1b9e5108dd29b"></a>
+integer function, private&#160;</td><td class="memItemRight" valign="bottom"><b>find_buf_index</b> (indx, buf)</td></tr>
+<tr class="separator:ga49f83f39031adaf686e1b9e5108dd29b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:gab2aad20000c5aef5485342634627676e"><td class="memItemLeft" align="right" valign="top"><a id="gab2aad20000c5aef5485342634627676e"></a>
+type(<a class="el" href="group__mpp__io__mod.html#structmpp__io__mod_1_1axistype">axistype</a>) function, dimension(4), public&#160;</td><td class="memItemRight" valign="bottom"><b>get_external_field_axes</b> (index)</td></tr>
+<tr class="separator:gab2aad20000c5aef5485342634627676e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga71caa655313fee196846f013adbf395c"><td class="memItemLeft" align="right" valign="top"><a id="ga71caa655313fee196846f013adbf395c"></a>
+real function, public&#160;</td><td class="memItemRight" valign="bottom"><b>get_external_field_missing</b> (index)</td></tr>
+<tr class="separator:ga71caa655313fee196846f013adbf395c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga75076732769ab52423ae99b4cfcf417d"><td class="memItemLeft" align="right" valign="top"><a id="ga75076732769ab52423ae99b4cfcf417d"></a>
+integer function, dimension(4), public&#160;</td><td class="memItemRight" valign="bottom"><b>get_external_field_size</b> (index)</td></tr>
+<tr class="separator:ga75076732769ab52423ae99b4cfcf417d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:gac6f2d8a0cfd1d18ede3136f6d71decc0"><td class="memItemLeft" align="right" valign="top"><a id="gac6f2d8a0cfd1d18ede3136f6d71decc0"></a>
+subroutine, public&#160;</td><td class="memItemRight" valign="bottom"><b>get_time_axis</b> (index, time)</td></tr>
+<tr class="separator:gac6f2d8a0cfd1d18ede3136f6d71decc0"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga8057518b04011a1abc54f798ad71ce33"><td class="memItemLeft" align="right" valign="top">integer function, public&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__time__interp__external__mod.html#ga8057518b04011a1abc54f798ad71ce33">init_external_field</a> (file, fieldname, format, threading, domain, desired_units, verbose, axis_centers, axis_sizes, override, correct_leap_year_inconsistency, permit_calendar_conversion, use_comp_domain, ierr, nwindows, ignore_axis_atts)</td></tr>
 <tr class="memdesc:ga8057518b04011a1abc54f798ad71ce33"><td class="mdescLeft">&#160;</td><td class="mdescRight">Initialize an external field. Buffer "num_io_buffers" (default=2) in memory to reduce memory allocations. distributed reads are supported using the optional "domain" flag. Units conversion via the optional "desired_units" flag using udunits_mod.  <a href="group__time__interp__external__mod.html#ga8057518b04011a1abc54f798ad71ce33">More...</a><br /></td></tr>
 <tr class="separator:ga8057518b04011a1abc54f798ad71ce33"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:gaa23019a85c9ab7dcf7e989cf4fbffeb2"><td class="memItemLeft" align="right" valign="top"><a id="gaa23019a85c9ab7dcf7e989cf4fbffeb2"></a>
-subroutine&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__time__interp__external__mod.html#gaa23019a85c9ab7dcf7e989cf4fbffeb2">time_interp_external_2d</a> (index, time, data_in, interp, verbose, horz_interp, mask_out, is_in, ie_in, js_in, je_in, window_id)</td></tr>
-<tr class="memdesc:gaa23019a85c9ab7dcf7e989cf4fbffeb2"><td class="mdescLeft">&#160;</td><td class="mdescRight">2D time interpolation for <a class="el" href="interfacetime__interp__external__mod_1_1time__interp__external.html">time_interp_external</a> <br /></td></tr>
-<tr class="separator:gaa23019a85c9ab7dcf7e989cf4fbffeb2"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:gaa8bf9c54a34906df4ea20b36cca8edd5"><td class="memItemLeft" align="right" valign="top"><a id="gaa8bf9c54a34906df4ea20b36cca8edd5"></a>
-subroutine&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__time__interp__external__mod.html#gaa8bf9c54a34906df4ea20b36cca8edd5">time_interp_external_3d</a> (index, time, data, interp, verbose, horz_interp, mask_out, is_in, ie_in, js_in, je_in, window_id)</td></tr>
-<tr class="memdesc:gaa8bf9c54a34906df4ea20b36cca8edd5"><td class="mdescLeft">&#160;</td><td class="mdescRight">3D time interpolation for <a class="el" href="interfacetime__interp__external__mod_1_1time__interp__external.html">time_interp_external</a> <br /></td></tr>
-<tr class="separator:gaa8bf9c54a34906df4ea20b36cca8edd5"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:gaf7d6b13f30c5023d0aaa3ef1ad3fc670"><td class="memItemLeft" align="right" valign="top"><a id="gaf7d6b13f30c5023d0aaa3ef1ad3fc670"></a>
-subroutine&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__time__interp__external__mod.html#gaf7d6b13f30c5023d0aaa3ef1ad3fc670">time_interp_external_0d</a> (index, time, data, verbose)</td></tr>
-<tr class="memdesc:gaf7d6b13f30c5023d0aaa3ef1ad3fc670"><td class="mdescLeft">&#160;</td><td class="mdescRight">Scalar time interpolation for <a class="el" href="interfacetime__interp__external__mod_1_1time__interp__external.html">time_interp_external</a>. <br /></td></tr>
-<tr class="separator:gaf7d6b13f30c5023d0aaa3ef1ad3fc670"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga693377af248f01eed23888d8df8fb8b4"><td class="memItemLeft" align="right" valign="top"><a id="ga693377af248f01eed23888d8df8fb8b4"></a>
-subroutine, private&#160;</td><td class="memItemRight" valign="bottom"><b>set_time_modulo</b> (Time)</td></tr>
-<tr class="separator:ga693377af248f01eed23888d8df8fb8b4"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga1313559c3249a57cb4b284e36b1a863f"><td class="memItemLeft" align="right" valign="top"><a id="ga1313559c3249a57cb4b284e36b1a863f"></a>
 subroutine&#160;</td><td class="memItemRight" valign="bottom"><b>load_record</b> (field, rec, interp, is_in, ie_in, js_in, je_in, window_id_in)</td></tr>
 <tr class="separator:ga1313559c3249a57cb4b284e36b1a863f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:gac7e29abb77d98c55c6fc9f765ef292f5"><td class="memItemLeft" align="right" valign="top"><a id="gac7e29abb77d98c55c6fc9f765ef292f5"></a>
 subroutine&#160;</td><td class="memItemRight" valign="bottom"><b>load_record_0d</b> (field, rec)</td></tr>
 <tr class="separator:gac7e29abb77d98c55c6fc9f765ef292f5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga7fbfe9d4352a247541c128b7939b13b5"><td class="memItemLeft" align="right" valign="top"><a id="ga7fbfe9d4352a247541c128b7939b13b5"></a>
+subroutine&#160;</td><td class="memItemRight" valign="bottom"><b>realloc_fields</b> (n)</td></tr>
+<tr class="separator:ga7fbfe9d4352a247541c128b7939b13b5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga7f486caf77ed2cd7fbf5c68e22a28788"><td class="memItemLeft" align="right" valign="top"><a id="ga7f486caf77ed2cd7fbf5c68e22a28788"></a>
+subroutine&#160;</td><td class="memItemRight" valign="bottom"><b>realloc_files</b> (n)</td></tr>
+<tr class="separator:ga7f486caf77ed2cd7fbf5c68e22a28788"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:gaff9ef57fdcc28ffa97d2539c13ed23cd"><td class="memItemLeft" align="right" valign="top"><a id="gaff9ef57fdcc28ffa97d2539c13ed23cd"></a>
 subroutine, public&#160;</td><td class="memItemRight" valign="bottom"><b>reset_src_data_region</b> (index, is, ie, js, je)</td></tr>
 <tr class="separator:gaff9ef57fdcc28ffa97d2539c13ed23cd"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga845d0cd77890f7a1c948b07125b5f3e2"><td class="memItemLeft" align="right" valign="top"><a id="ga845d0cd77890f7a1c948b07125b5f3e2"></a>
 subroutine, public&#160;</td><td class="memItemRight" valign="bottom"><b>set_override_region</b> (index, region_type, is_region, ie_region, js_region, je_region)</td></tr>
 <tr class="separator:ga845d0cd77890f7a1c948b07125b5f3e2"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga7f486caf77ed2cd7fbf5c68e22a28788"><td class="memItemLeft" align="right" valign="top"><a id="ga7f486caf77ed2cd7fbf5c68e22a28788"></a>
-subroutine&#160;</td><td class="memItemRight" valign="bottom"><b>realloc_files</b> (n)</td></tr>
-<tr class="separator:ga7f486caf77ed2cd7fbf5c68e22a28788"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga7fbfe9d4352a247541c128b7939b13b5"><td class="memItemLeft" align="right" valign="top"><a id="ga7fbfe9d4352a247541c128b7939b13b5"></a>
-subroutine&#160;</td><td class="memItemRight" valign="bottom"><b>realloc_fields</b> (n)</td></tr>
-<tr class="separator:ga7fbfe9d4352a247541c128b7939b13b5"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga49f83f39031adaf686e1b9e5108dd29b"><td class="memItemLeft" align="right" valign="top"><a id="ga49f83f39031adaf686e1b9e5108dd29b"></a>
-integer function, private&#160;</td><td class="memItemRight" valign="bottom"><b>find_buf_index</b> (indx, buf)</td></tr>
-<tr class="separator:ga49f83f39031adaf686e1b9e5108dd29b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga75076732769ab52423ae99b4cfcf417d"><td class="memItemLeft" align="right" valign="top"><a id="ga75076732769ab52423ae99b4cfcf417d"></a>
-integer function, dimension(4), public&#160;</td><td class="memItemRight" valign="bottom"><b>get_external_field_size</b> (index)</td></tr>
-<tr class="separator:ga75076732769ab52423ae99b4cfcf417d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga71caa655313fee196846f013adbf395c"><td class="memItemLeft" align="right" valign="top"><a id="ga71caa655313fee196846f013adbf395c"></a>
-real function, public&#160;</td><td class="memItemRight" valign="bottom"><b>get_external_field_missing</b> (index)</td></tr>
-<tr class="separator:ga71caa655313fee196846f013adbf395c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:gab2aad20000c5aef5485342634627676e"><td class="memItemLeft" align="right" valign="top"><a id="gab2aad20000c5aef5485342634627676e"></a>
-type(<a class="el" href="structmpp__io__mod_1_1axistype.html">axistype</a>) function, dimension(4), public&#160;</td><td class="memItemRight" valign="bottom"><b>get_external_field_axes</b> (index)</td></tr>
-<tr class="separator:gab2aad20000c5aef5485342634627676e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:gac6f2d8a0cfd1d18ede3136f6d71decc0"><td class="memItemLeft" align="right" valign="top"><a id="gac6f2d8a0cfd1d18ede3136f6d71decc0"></a>
-subroutine, public&#160;</td><td class="memItemRight" valign="bottom"><b>get_time_axis</b> (index, time)</td></tr>
-<tr class="separator:gac6f2d8a0cfd1d18ede3136f6d71decc0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga693377af248f01eed23888d8df8fb8b4"><td class="memItemLeft" align="right" valign="top"><a id="ga693377af248f01eed23888d8df8fb8b4"></a>
+subroutine, private&#160;</td><td class="memItemRight" valign="bottom"><b>set_time_modulo</b> (Time)</td></tr>
+<tr class="separator:ga693377af248f01eed23888d8df8fb8b4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:gaf7d6b13f30c5023d0aaa3ef1ad3fc670"><td class="memItemLeft" align="right" valign="top"><a id="gaf7d6b13f30c5023d0aaa3ef1ad3fc670"></a>
+subroutine&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__time__interp__external__mod.html#gaf7d6b13f30c5023d0aaa3ef1ad3fc670">time_interp_external_0d</a> (index, time, data, verbose)</td></tr>
+<tr class="memdesc:gaf7d6b13f30c5023d0aaa3ef1ad3fc670"><td class="mdescLeft">&#160;</td><td class="mdescRight">Scalar time interpolation for <a class="el" href="group__time__interp__external__mod.html">time_interp_external</a>. <br /></td></tr>
+<tr class="separator:gaf7d6b13f30c5023d0aaa3ef1ad3fc670"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:gaa23019a85c9ab7dcf7e989cf4fbffeb2"><td class="memItemLeft" align="right" valign="top"><a id="gaa23019a85c9ab7dcf7e989cf4fbffeb2"></a>
+subroutine&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__time__interp__external__mod.html#gaa23019a85c9ab7dcf7e989cf4fbffeb2">time_interp_external_2d</a> (index, time, data_in, interp, verbose, horz_interp, mask_out, is_in, ie_in, js_in, je_in, window_id)</td></tr>
+<tr class="memdesc:gaa23019a85c9ab7dcf7e989cf4fbffeb2"><td class="mdescLeft">&#160;</td><td class="mdescRight">2D time interpolation for <a class="el" href="group__time__interp__external__mod.html">time_interp_external</a> <br /></td></tr>
+<tr class="separator:gaa23019a85c9ab7dcf7e989cf4fbffeb2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:gaa8bf9c54a34906df4ea20b36cca8edd5"><td class="memItemLeft" align="right" valign="top"><a id="gaa8bf9c54a34906df4ea20b36cca8edd5"></a>
+subroutine&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__time__interp__external__mod.html#gaa8bf9c54a34906df4ea20b36cca8edd5">time_interp_external_3d</a> (index, time, data, interp, verbose, horz_interp, mask_out, is_in, ie_in, js_in, je_in, window_id)</td></tr>
+<tr class="memdesc:gaa8bf9c54a34906df4ea20b36cca8edd5"><td class="mdescLeft">&#160;</td><td class="mdescRight">3D time interpolation for <a class="el" href="group__time__interp__external__mod.html">time_interp_external</a> <br /></td></tr>
+<tr class="separator:gaa8bf9c54a34906df4ea20b36cca8edd5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga58284fe61f523a4473024296ade5bcb8"><td class="memItemLeft" align="right" valign="top"><a id="ga58284fe61f523a4473024296ade5bcb8"></a>
 subroutine, public&#160;</td><td class="memItemRight" valign="bottom"><b>time_interp_external_exit</b> ()</td></tr>
 <tr class="separator:ga58284fe61f523a4473024296ade5bcb8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:gad1f56b2c9b092accb0039bb950c7c815"><td class="memItemLeft" align="right" valign="top"><a id="gad1f56b2c9b092accb0039bb950c7c815"></a>
+subroutine, public&#160;</td><td class="memItemRight" valign="bottom"><b>time_interp_external_init</b> ()</td></tr>
+<tr class="separator:gad1f56b2c9b092accb0039bb950c7c815"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="var-members"></a>
 Variables</h2></td></tr>
-<tr class="memitem:gab3c9228d741892e51ee24a2323369a5f"><td class="memItemLeft" align="right" valign="top"><a id="gab3c9228d741892e51ee24a2323369a5f"></a>
-integer, parameter, public&#160;</td><td class="memItemRight" valign="bottom"><b>inside_region</b> =1</td></tr>
-<tr class="separator:gab3c9228d741892e51ee24a2323369a5f"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga34c0c641f9eef99e094f1631fc6be375"><td class="memItemLeft" align="right" valign="top"><a id="ga34c0c641f9eef99e094f1631fc6be375"></a>
-integer, parameter, public&#160;</td><td class="memItemRight" valign="bottom"><b>outside_region</b> =2</td></tr>
-<tr class="separator:ga34c0c641f9eef99e094f1631fc6be375"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:gae59e29e66072b47b8397f2786722b03e"><td class="memItemLeft" align="right" valign="top"><a id="gae59e29e66072b47b8397f2786722b03e"></a>
-integer, parameter, private&#160;</td><td class="memItemRight" valign="bottom"><b>modulo_year</b> = 0001</td></tr>
-<tr class="separator:gae59e29e66072b47b8397f2786722b03e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga2778d0c5d9ff2e057f8933ee9fd3dbaf"><td class="memItemLeft" align="right" valign="top"><a id="ga2778d0c5d9ff2e057f8933ee9fd3dbaf"></a>
-integer, parameter, private&#160;</td><td class="memItemRight" valign="bottom"><b>linear_time_interp</b> = 1</td></tr>
-<tr class="separator:ga2778d0c5d9ff2e057f8933ee9fd3dbaf"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga4227942d9137c40f68c3d26e7e6e2f03"><td class="memItemLeft" align="right" valign="top"><a id="ga4227942d9137c40f68c3d26e7e6e2f03"></a>
-integer, parameter, public&#160;</td><td class="memItemRight" valign="bottom"><b>success</b> = 0</td></tr>
-<tr class="separator:ga4227942d9137c40f68c3d26e7e6e2f03"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga5f7f1e1da198e259a4e30cd1639851b3"><td class="memItemLeft" align="right" valign="top"><a id="ga5f7f1e1da198e259a4e30cd1639851b3"></a>
+logical, private&#160;</td><td class="memItemRight" valign="bottom"><b>debug_this_module</b> = .false.</td></tr>
+<tr class="separator:ga5f7f1e1da198e259a4e30cd1639851b3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:gaa2beacbfc3688bf8256a580ea4eae6ce"><td class="memItemLeft" align="right" valign="top"><a id="gaa2beacbfc3688bf8256a580ea4eae6ce"></a>
+integer, parameter, private&#160;</td><td class="memItemRight" valign="bottom"><b>dk</b> = DOUBLE_KIND</td></tr>
+<tr class="separator:gaa2beacbfc3688bf8256a580ea4eae6ce"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga11b62c4ab8f0c349665b3ad42bb233b4"><td class="memItemLeft" align="right" valign="top"><a id="ga11b62c4ab8f0c349665b3ad42bb233b4"></a>
 integer, parameter, public&#160;</td><td class="memItemRight" valign="bottom"><b>err_field_not_found</b> = 1</td></tr>
 <tr class="separator:ga11b62c4ab8f0c349665b3ad42bb233b4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga393d2d6faf768533f814fd0c9b9233e3"><td class="memItemLeft" align="right" valign="top"><a id="ga393d2d6faf768533f814fd0c9b9233e3"></a>
+type(<a class="el" href="group__time__interp__external__mod.html#structtime__interp__external__mod_1_1ext__fieldtype">ext_fieldtype</a>), dimension(:), pointer, save, private&#160;</td><td class="memItemRight" valign="bottom"><b>field</b> =&gt; NULL()</td></tr>
+<tr class="separator:ga393d2d6faf768533f814fd0c9b9233e3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:gab3c9228d741892e51ee24a2323369a5f"><td class="memItemLeft" align="right" valign="top"><a id="gab3c9228d741892e51ee24a2323369a5f"></a>
+integer, parameter, public&#160;</td><td class="memItemRight" valign="bottom"><b>inside_region</b> =1</td></tr>
+<tr class="separator:gab3c9228d741892e51ee24a2323369a5f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga2778d0c5d9ff2e057f8933ee9fd3dbaf"><td class="memItemLeft" align="right" valign="top"><a id="ga2778d0c5d9ff2e057f8933ee9fd3dbaf"></a>
+integer, parameter, private&#160;</td><td class="memItemRight" valign="bottom"><b>linear_time_interp</b> = 1</td></tr>
+<tr class="separator:ga2778d0c5d9ff2e057f8933ee9fd3dbaf"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:gaa4e8e981f8d68d4305293b696702eac0"><td class="memItemLeft" align="right" valign="top"><a id="gaa4e8e981f8d68d4305293b696702eac0"></a>
 integer, private&#160;</td><td class="memItemRight" valign="bottom"><b>max_fields</b> = 100</td></tr>
 <tr class="separator:gaa4e8e981f8d68d4305293b696702eac0"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:gaf0e1f9b2c70e155d61e638e4e8370b05"><td class="memItemLeft" align="right" valign="top"><a id="gaf0e1f9b2c70e155d61e638e4e8370b05"></a>
 integer, private&#160;</td><td class="memItemRight" valign="bottom"><b>max_files</b> = 40</td></tr>
 <tr class="separator:gaf0e1f9b2c70e155d61e638e4e8370b05"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga6df11b15af9faf6742b4d87dcd4b8ea8"><td class="memItemLeft" align="right" valign="top"><a id="ga6df11b15af9faf6742b4d87dcd4b8ea8"></a>
+logical, private&#160;</td><td class="memItemRight" valign="bottom"><b>module_initialized</b> = .false.</td></tr>
+<tr class="separator:ga6df11b15af9faf6742b4d87dcd4b8ea8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:gae59e29e66072b47b8397f2786722b03e"><td class="memItemLeft" align="right" valign="top"><a id="gae59e29e66072b47b8397f2786722b03e"></a>
+integer, parameter, private&#160;</td><td class="memItemRight" valign="bottom"><b>modulo_year</b> = 0001</td></tr>
+<tr class="separator:gae59e29e66072b47b8397f2786722b03e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga20e417d52aede3a532942877721c9b97"><td class="memItemLeft" align="right" valign="top"><a id="ga20e417d52aede3a532942877721c9b97"></a>
 integer, private&#160;</td><td class="memItemRight" valign="bottom"><b>num_fields</b> = 0</td></tr>
 <tr class="separator:ga20e417d52aede3a532942877721c9b97"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -207,24 +213,18 @@ integer, private&#160;</td><td class="memItemRight" valign="bottom"><b>num_files
 <tr class="memitem:gae1a3d4a8908b1c0a857bfb3bc8c1ebc9"><td class="memItemLeft" align="right" valign="top"><a id="gae1a3d4a8908b1c0a857bfb3bc8c1ebc9"></a>
 integer, private&#160;</td><td class="memItemRight" valign="bottom"><b>num_io_buffers</b> = 2</td></tr>
 <tr class="separator:gae1a3d4a8908b1c0a857bfb3bc8c1ebc9"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga6df11b15af9faf6742b4d87dcd4b8ea8"><td class="memItemLeft" align="right" valign="top"><a id="ga6df11b15af9faf6742b4d87dcd4b8ea8"></a>
-logical, private&#160;</td><td class="memItemRight" valign="bottom"><b>module_initialized</b> = .false.</td></tr>
-<tr class="separator:ga6df11b15af9faf6742b4d87dcd4b8ea8"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga5f7f1e1da198e259a4e30cd1639851b3"><td class="memItemLeft" align="right" valign="top"><a id="ga5f7f1e1da198e259a4e30cd1639851b3"></a>
-logical, private&#160;</td><td class="memItemRight" valign="bottom"><b>debug_this_module</b> = .false.</td></tr>
-<tr class="separator:ga5f7f1e1da198e259a4e30cd1639851b3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga2d94435abd895f24bb16eac37aea1a88"><td class="memItemLeft" align="right" valign="top"><a id="ga2d94435abd895f24bb16eac37aea1a88"></a>
+type(<a class="el" href="group__time__interp__external__mod.html#structtime__interp__external__mod_1_1filetype">filetype</a>), dimension(:), pointer, save, private&#160;</td><td class="memItemRight" valign="bottom"><b>opened_files</b> =&gt; NULL()</td></tr>
+<tr class="separator:ga2d94435abd895f24bb16eac37aea1a88"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga34c0c641f9eef99e094f1631fc6be375"><td class="memItemLeft" align="right" valign="top"><a id="ga34c0c641f9eef99e094f1631fc6be375"></a>
+integer, parameter, public&#160;</td><td class="memItemRight" valign="bottom"><b>outside_region</b> =2</td></tr>
+<tr class="separator:ga34c0c641f9eef99e094f1631fc6be375"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga513fcaf22b4613b9e602ee67990e378b"><td class="memItemLeft" align="right" valign="top"><a id="ga513fcaf22b4613b9e602ee67990e378b"></a>
 integer&#160;</td><td class="memItemRight" valign="bottom"><b>outunit</b></td></tr>
 <tr class="separator:ga513fcaf22b4613b9e602ee67990e378b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga393d2d6faf768533f814fd0c9b9233e3"><td class="memItemLeft" align="right" valign="top"><a id="ga393d2d6faf768533f814fd0c9b9233e3"></a>
-type(<a class="el" href="structtime__interp__external__mod_1_1ext__fieldtype.html">ext_fieldtype</a>), dimension(:), pointer, save, private&#160;</td><td class="memItemRight" valign="bottom"><b>field</b> =&gt; NULL()</td></tr>
-<tr class="separator:ga393d2d6faf768533f814fd0c9b9233e3"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga2d94435abd895f24bb16eac37aea1a88"><td class="memItemLeft" align="right" valign="top"><a id="ga2d94435abd895f24bb16eac37aea1a88"></a>
-type(<a class="el" href="structtime__interp__external__mod_1_1filetype.html">filetype</a>), dimension(:), pointer, save, private&#160;</td><td class="memItemRight" valign="bottom"><b>opened_files</b> =&gt; NULL()</td></tr>
-<tr class="separator:ga2d94435abd895f24bb16eac37aea1a88"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:gaa2beacbfc3688bf8256a580ea4eae6ce"><td class="memItemLeft" align="right" valign="top"><a id="gaa2beacbfc3688bf8256a580ea4eae6ce"></a>
-integer, parameter, private&#160;</td><td class="memItemRight" valign="bottom"><b>dk</b> = DOUBLE_KIND</td></tr>
-<tr class="separator:gaa2beacbfc3688bf8256a580ea4eae6ce"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga4227942d9137c40f68c3d26e7e6e2f03"><td class="memItemLeft" align="right" valign="top"><a id="ga4227942d9137c40f68c3d26e7e6e2f03"></a>
+integer, parameter, public&#160;</td><td class="memItemRight" valign="bottom"><b>success</b> = 0</td></tr>
+<tr class="separator:ga4227942d9137c40f68c3d26e7e6e2f03"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga04439552571d2e444ef05e3d2bfc44d4"><td class="memItemLeft" align="right" valign="top"><a id="ga04439552571d2e444ef05e3d2bfc44d4"></a>
 real(double_kind), parameter, private&#160;</td><td class="memItemRight" valign="bottom"><b>time_interp_missing</b> =-1e99_dk</td></tr>
 <tr class="separator:ga04439552571d2e444ef05e3d2bfc44d4"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -234,6 +234,234 @@ real(double_kind), parameter, private&#160;</td><td class="memItemRight" valign=
 <dl class="section author"><dt>Author</dt><dd>M.J. Harrison</dd></dl>
 <p>Perform I/O and time interpolation for external fields. Uses udunits library to calculate calendar dates and convert units. Allows for reading data decomposed across model horizontal grid using optional domain2d argument</p>
 <p>data are defined over data domain for domain2d data (halo values are NOT updated by this module) </p>
+<hr/><h2 class="groupheader">Data Type Documentation</h2>
+<a name="structtime__interp__external__mod_1_1ext__fieldtype" id="structtime__interp__external__mod_1_1ext__fieldtype"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#structtime__interp__external__mod_1_1ext__fieldtype">&#9670;&nbsp;</a></span>time_interp_external_mod::ext_fieldtype</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">type time_interp_external_mod::ext_fieldtype</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<div class="textblock">
+<p class="definition">Definition at line <a class="el" href="time__interp__external_8F90_source.html#l00101">101</a> of file <a class="el" href="time__interp__external_8F90_source.html">time_interp_external.F90</a>.</p>
+</div><div class="dynheader">
+Collaboration diagram for ext_fieldtype:</div>
+<div class="dyncontent">
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="structtime__interp__external__mod_1_1ext__fieldtype__coll__graph.svg" width="100%" height="600"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+</div>
+<center><span class="legend">[<a target="top" href="graph_legend.html">legend</a>]</span></center></div>
+<table class="memberdecls">
+<tr><td colspan="2"><h3>Private Attributes</h3></td></tr>
+<tr class="memitem:a923ba58e400ba8e9113a12374fe76861"><td class="memItemLeft" align="right" valign="top"><a id="a923ba58e400ba8e9113a12374fe76861"></a>
+type(<a class="el" href="group__mpp__io__mod.html#structmpp__io__mod_1_1axistype">axistype</a>), dimension(4)&#160;</td><td class="memItemRight" valign="bottom"><b>axes</b></td></tr>
+<tr class="separator:a923ba58e400ba8e9113a12374fe76861"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa5305ae5c5573a48c4b789d9298fe5bb"><td class="memItemLeft" align="right" valign="top"><a id="aa5305ae5c5573a48c4b789d9298fe5bb"></a>
+logical&#160;</td><td class="memItemRight" valign="bottom"><b>correct_leap_year_inconsistency</b></td></tr>
+<tr class="separator:aa5305ae5c5573a48c4b789d9298fe5bb"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a85fb0692af6ab5513a546edfc583eee9"><td class="memItemLeft" align="right" valign="top"><a id="a85fb0692af6ab5513a546edfc583eee9"></a>
+real, dimension(:,:,:,:), pointer&#160;</td><td class="memItemRight" valign="bottom"><b>data</b> =&gt;NULL()</td></tr>
+<tr class="separator:a85fb0692af6ab5513a546edfc583eee9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a44cfff2babb687954ffc79c677a82a4d"><td class="memItemLeft" align="right" valign="top"><a id="a44cfff2babb687954ffc79c677a82a4d"></a>
+type(<a class="el" href="group__mpp__domains__mod.html#structmpp__domains__mod_1_1domain2d">domain2d</a>)&#160;</td><td class="memItemRight" valign="bottom"><b>domain</b></td></tr>
+<tr class="separator:a44cfff2babb687954ffc79c677a82a4d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a925cd8152170d034c6e3a17c9b9e2c4e"><td class="memItemLeft" align="right" valign="top"><a id="a925cd8152170d034c6e3a17c9b9e2c4e"></a>
+logical&#160;</td><td class="memItemRight" valign="bottom"><b>domain_present</b></td></tr>
+<tr class="separator:a925cd8152170d034c6e3a17c9b9e2c4e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5fdc01df0fa28f4d533803d824b8ffb7"><td class="memItemLeft" align="right" valign="top"><a id="a5fdc01df0fa28f4d533803d824b8ffb7"></a>
+type(<a class="el" href="group__time__manager__mod.html#structtime__manager__mod_1_1time__type">time_type</a>), dimension(:), pointer&#160;</td><td class="memItemRight" valign="bottom"><b>end_time</b> =&gt;NULL()</td></tr>
+<tr class="separator:a5fdc01df0fa28f4d533803d824b8ffb7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:adf6b79cff5bcb094d12e28355426bc0d"><td class="memItemLeft" align="right" valign="top"><a id="adf6b79cff5bcb094d12e28355426bc0d"></a>
+type(<a class="el" href="group__mpp__io__mod.html#structmpp__io__mod_1_1fieldtype">fieldtype</a>)&#160;</td><td class="memItemRight" valign="bottom"><b>field</b></td></tr>
+<tr class="separator:adf6b79cff5bcb094d12e28355426bc0d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac2bbda6d5d3baaedc6646b912acccdd6"><td class="memItemLeft" align="right" valign="top"><a id="ac2bbda6d5d3baaedc6646b912acccdd6"></a>
+logical&#160;</td><td class="memItemRight" valign="bottom"><b>have_modulo_times</b></td></tr>
+<tr class="separator:ac2bbda6d5d3baaedc6646b912acccdd6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad59a8d4c2060376fc7932a3330adbebd"><td class="memItemLeft" align="right" valign="top"><a id="ad59a8d4c2060376fc7932a3330adbebd"></a>
+integer, dimension(:), pointer&#160;</td><td class="memItemRight" valign="bottom"><b>ibuf</b> =&gt;NULL()</td></tr>
+<tr class="separator:ad59a8d4c2060376fc7932a3330adbebd"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aeecd684dcd1ac59d13cb107731ab8243"><td class="memItemLeft" align="right" valign="top"><a id="aeecd684dcd1ac59d13cb107731ab8243"></a>
+integer&#160;</td><td class="memItemRight" valign="bottom"><b>ie_region</b></td></tr>
+<tr class="separator:aeecd684dcd1ac59d13cb107731ab8243"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3086e45f9774af92149257fadac88740"><td class="memItemLeft" align="right" valign="top"><a id="a3086e45f9774af92149257fadac88740"></a>
+integer&#160;</td><td class="memItemRight" valign="bottom"><b>ie_src</b></td></tr>
+<tr class="separator:a3086e45f9774af92149257fadac88740"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:abe892689e3e4c97c64388150bc2a9701"><td class="memItemLeft" align="right" valign="top"><a id="abe892689e3e4c97c64388150bc2a9701"></a>
+integer&#160;</td><td class="memItemRight" valign="bottom"><b>iec</b></td></tr>
+<tr class="separator:abe892689e3e4c97c64388150bc2a9701"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3af07ed5b4d446a6ef51cb9dd0c3c5b0"><td class="memItemLeft" align="right" valign="top"><a id="a3af07ed5b4d446a6ef51cb9dd0c3c5b0"></a>
+real(double_kind)&#160;</td><td class="memItemRight" valign="bottom"><b>intercept</b></td></tr>
+<tr class="separator:a3af07ed5b4d446a6ef51cb9dd0c3c5b0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a80a63a11ca3fb47a1e2600b7c2bad0c1"><td class="memItemLeft" align="right" valign="top"><a id="a80a63a11ca3fb47a1e2600b7c2bad0c1"></a>
+integer&#160;</td><td class="memItemRight" valign="bottom"><b>is_region</b></td></tr>
+<tr class="separator:a80a63a11ca3fb47a1e2600b7c2bad0c1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad9c982d764e58665ba6869a5c9c78043"><td class="memItemLeft" align="right" valign="top"><a id="ad9c982d764e58665ba6869a5c9c78043"></a>
+integer&#160;</td><td class="memItemRight" valign="bottom"><b>is_src</b></td></tr>
+<tr class="separator:ad9c982d764e58665ba6869a5c9c78043"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aaf460a324a841afc65907fb2ff37f221"><td class="memItemLeft" align="right" valign="top"><a id="aaf460a324a841afc65907fb2ff37f221"></a>
+integer&#160;</td><td class="memItemRight" valign="bottom"><b>isc</b></td></tr>
+<tr class="separator:aaf460a324a841afc65907fb2ff37f221"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1d69d971fdffa0baa43a170366cf5ae2"><td class="memItemLeft" align="right" valign="top"><a id="a1d69d971fdffa0baa43a170366cf5ae2"></a>
+integer&#160;</td><td class="memItemRight" valign="bottom"><b>je_region</b></td></tr>
+<tr class="separator:a1d69d971fdffa0baa43a170366cf5ae2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa98fafd854a001bdedfc41287c56296d"><td class="memItemLeft" align="right" valign="top"><a id="aa98fafd854a001bdedfc41287c56296d"></a>
+integer&#160;</td><td class="memItemRight" valign="bottom"><b>je_src</b></td></tr>
+<tr class="separator:aa98fafd854a001bdedfc41287c56296d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab1cad82f25f65ef5449e8bf44552498e"><td class="memItemLeft" align="right" valign="top"><a id="ab1cad82f25f65ef5449e8bf44552498e"></a>
+integer&#160;</td><td class="memItemRight" valign="bottom"><b>jec</b></td></tr>
+<tr class="separator:ab1cad82f25f65ef5449e8bf44552498e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8366319551a77188d2db33b8371bc509"><td class="memItemLeft" align="right" valign="top"><a id="a8366319551a77188d2db33b8371bc509"></a>
+integer&#160;</td><td class="memItemRight" valign="bottom"><b>js_region</b></td></tr>
+<tr class="separator:a8366319551a77188d2db33b8371bc509"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aadd9e5c4424a94f5cf6a0b40e7bba910"><td class="memItemLeft" align="right" valign="top"><a id="aadd9e5c4424a94f5cf6a0b40e7bba910"></a>
+integer&#160;</td><td class="memItemRight" valign="bottom"><b>js_src</b></td></tr>
+<tr class="separator:aadd9e5c4424a94f5cf6a0b40e7bba910"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5ca54023796f63b9ff73e35f6880c91e"><td class="memItemLeft" align="right" valign="top"><a id="a5ca54023796f63b9ff73e35f6880c91e"></a>
+integer&#160;</td><td class="memItemRight" valign="bottom"><b>jsc</b></td></tr>
+<tr class="separator:a5ca54023796f63b9ff73e35f6880c91e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a48249fa2f8bc263625be404dd7cd815d"><td class="memItemLeft" align="right" valign="top"><a id="a48249fa2f8bc263625be404dd7cd815d"></a>
+logical, dimension(:,:,:,:), pointer&#160;</td><td class="memItemRight" valign="bottom"><b>mask</b> =&gt;NULL()</td></tr>
+<tr class="separator:a48249fa2f8bc263625be404dd7cd815d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3d7c9bcf4a981e2ac5936bdf0b9bb302"><td class="memItemLeft" align="right" valign="top"><a id="a3d7c9bcf4a981e2ac5936bdf0b9bb302"></a>
+real&#160;</td><td class="memItemRight" valign="bottom"><b>missing</b></td></tr>
+<tr class="separator:a3d7c9bcf4a981e2ac5936bdf0b9bb302"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a32c9387694c17e628b2fb42b9e89af50"><td class="memItemLeft" align="right" valign="top"><a id="a32c9387694c17e628b2fb42b9e89af50"></a>
+logical&#160;</td><td class="memItemRight" valign="bottom"><b>modulo_time</b></td></tr>
+<tr class="separator:a32c9387694c17e628b2fb42b9e89af50"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7749fe8f0513bb3be74660207ea0d856"><td class="memItemLeft" align="right" valign="top"><a id="a7749fe8f0513bb3be74660207ea0d856"></a>
+type(<a class="el" href="group__time__manager__mod.html#structtime__manager__mod_1_1time__type">time_type</a>)&#160;</td><td class="memItemRight" valign="bottom"><b>modulo_time_beg</b></td></tr>
+<tr class="separator:a7749fe8f0513bb3be74660207ea0d856"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a189b505b1420cca6b899c45c622234ba"><td class="memItemLeft" align="right" valign="top"><a id="a189b505b1420cca6b899c45c622234ba"></a>
+type(<a class="el" href="group__time__manager__mod.html#structtime__manager__mod_1_1time__type">time_type</a>)&#160;</td><td class="memItemRight" valign="bottom"><b>modulo_time_end</b></td></tr>
+<tr class="separator:a189b505b1420cca6b899c45c622234ba"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aae58c3d1a017cc0d36082fdf508df9c1"><td class="memItemLeft" align="right" valign="top"><a id="aae58c3d1a017cc0d36082fdf508df9c1"></a>
+character(len=128)&#160;</td><td class="memItemRight" valign="bottom"><b>name</b></td></tr>
+<tr class="separator:aae58c3d1a017cc0d36082fdf508df9c1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad44b51539d3254ac222ea638f968e55d"><td class="memItemLeft" align="right" valign="top"><a id="ad44b51539d3254ac222ea638f968e55d"></a>
+integer&#160;</td><td class="memItemRight" valign="bottom"><b>nbuf</b></td></tr>
+<tr class="separator:ad44b51539d3254ac222ea638f968e55d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2478bde0940afdb5975a61635ece1163"><td class="memItemLeft" align="right" valign="top"><a id="a2478bde0940afdb5975a61635ece1163"></a>
+integer&#160;</td><td class="memItemRight" valign="bottom"><b>ndim</b></td></tr>
+<tr class="separator:a2478bde0940afdb5975a61635ece1163"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aba964dc1f0d3b51fd159cd9001edaedd"><td class="memItemLeft" align="right" valign="top"><a id="aba964dc1f0d3b51fd159cd9001edaedd"></a>
+logical, dimension(:,:), pointer&#160;</td><td class="memItemRight" valign="bottom"><b>need_compute</b> =&gt;NULL()</td></tr>
+<tr class="separator:aba964dc1f0d3b51fd159cd9001edaedd"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab6cf8dbd11ba9e834be2b77c51d9d960"><td class="memItemLeft" align="right" valign="top"><a id="ab6cf8dbd11ba9e834be2b77c51d9d960"></a>
+integer&#160;</td><td class="memItemRight" valign="bottom"><b>numwindows</b></td></tr>
+<tr class="separator:ab6cf8dbd11ba9e834be2b77c51d9d960"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:afa73ebac34b2ec7a648a12ef12e6f27f"><td class="memItemLeft" align="right" valign="top"><a id="afa73ebac34b2ec7a648a12ef12e6f27f"></a>
+type(<a class="el" href="group__time__manager__mod.html#structtime__manager__mod_1_1time__type">time_type</a>), dimension(:), pointer&#160;</td><td class="memItemRight" valign="bottom"><b>period</b> =&gt;NULL()</td></tr>
+<tr class="separator:afa73ebac34b2ec7a648a12ef12e6f27f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7852e756c3fdd12f5a72a2523b07b7ea"><td class="memItemLeft" align="right" valign="top"><a id="a7852e756c3fdd12f5a72a2523b07b7ea"></a>
+integer&#160;</td><td class="memItemRight" valign="bottom"><b>region_type</b></td></tr>
+<tr class="separator:a7852e756c3fdd12f5a72a2523b07b7ea"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac928d978587983b4cc6ad6f04e59834e"><td class="memItemLeft" align="right" valign="top"><a id="ac928d978587983b4cc6ad6f04e59834e"></a>
+integer, dimension(4)&#160;</td><td class="memItemRight" valign="bottom"><b>siz</b></td></tr>
+<tr class="separator:ac928d978587983b4cc6ad6f04e59834e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a60c03934f2941f99e926d093cd0c0891"><td class="memItemLeft" align="right" valign="top"><a id="a60c03934f2941f99e926d093cd0c0891"></a>
+real(double_kind)&#160;</td><td class="memItemRight" valign="bottom"><b>slope</b></td></tr>
+<tr class="separator:a60c03934f2941f99e926d093cd0c0891"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a29dc8d96257a5a0154e63a902dd29e79"><td class="memItemLeft" align="right" valign="top"><a id="a29dc8d96257a5a0154e63a902dd29e79"></a>
+real, dimension(:,:,:,:), pointer&#160;</td><td class="memItemRight" valign="bottom"><b>src_data</b> =&gt;NULL()</td></tr>
+<tr class="separator:a29dc8d96257a5a0154e63a902dd29e79"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:adf8837d2d181e019f50f8c4d1b96f891"><td class="memItemLeft" align="right" valign="top"><a id="adf8837d2d181e019f50f8c4d1b96f891"></a>
+type(<a class="el" href="group__time__manager__mod.html#structtime__manager__mod_1_1time__type">time_type</a>), dimension(:), pointer&#160;</td><td class="memItemRight" valign="bottom"><b>start_time</b> =&gt;NULL()</td></tr>
+<tr class="separator:adf8837d2d181e019f50f8c4d1b96f891"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac0261ab7c8052c0d2934a7a841667512"><td class="memItemLeft" align="right" valign="top"><a id="ac0261ab7c8052c0d2934a7a841667512"></a>
+integer&#160;</td><td class="memItemRight" valign="bottom"><b>tdim</b></td></tr>
+<tr class="separator:ac0261ab7c8052c0d2934a7a841667512"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad59c3eb79753af5efb6a5db1a3a9e838"><td class="memItemLeft" align="right" valign="top"><a id="ad59c3eb79753af5efb6a5db1a3a9e838"></a>
+type(<a class="el" href="group__time__manager__mod.html#structtime__manager__mod_1_1time__type">time_type</a>), dimension(:), pointer&#160;</td><td class="memItemRight" valign="bottom"><b>time</b> =&gt;NULL()</td></tr>
+<tr class="separator:ad59c3eb79753af5efb6a5db1a3a9e838"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a30ee20f1f8152bc52c795fa8fea700d2"><td class="memItemLeft" align="right" valign="top"><a id="a30ee20f1f8152bc52c795fa8fea700d2"></a>
+integer&#160;</td><td class="memItemRight" valign="bottom"><b>unit</b></td></tr>
+<tr class="separator:a30ee20f1f8152bc52c795fa8fea700d2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a27f470ec770c4cae53cd21508b4d16d6"><td class="memItemLeft" align="right" valign="top"><a id="a27f470ec770c4cae53cd21508b4d16d6"></a>
+character(len=128)&#160;</td><td class="memItemRight" valign="bottom"><b>units</b></td></tr>
+<tr class="separator:a27f470ec770c4cae53cd21508b4d16d6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a92979ff04d045c418b2066303f9c3545"><td class="memItemLeft" align="right" valign="top"><a id="a92979ff04d045c418b2066303f9c3545"></a>
+type(<a class="el" href="group__mpp__io__mod.html#structmpp__io__mod_1_1validtype">validtype</a>)&#160;</td><td class="memItemRight" valign="bottom"><b>valid</b></td></tr>
+<tr class="separator:a92979ff04d045c418b2066303f9c3545"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table>
+
+</div>
+</div>
+<a name="structtime__interp__external__mod_1_1filetype" id="structtime__interp__external__mod_1_1filetype"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#structtime__interp__external__mod_1_1filetype">&#9670;&nbsp;</a></span>time_interp_external_mod::filetype</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">type time_interp_external_mod::filetype</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<div class="textblock">
+<p class="definition">Definition at line <a class="el" href="time__interp__external_8F90_source.html#l00133">133</a> of file <a class="el" href="time__interp__external_8F90_source.html">time_interp_external.F90</a>.</p>
+</div><div class="dynheader">
+Collaboration diagram for filetype:</div>
+<div class="dyncontent">
+<div class="center"><iframe scrolling="no" frameborder="0" src="structtime__interp__external__mod_1_1filetype__coll__graph.svg" width="251" height="127"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe>
+</div>
+<center><span class="legend">[<a target="top" href="graph_legend.html">legend</a>]</span></center></div>
+<table class="memberdecls">
+<tr><td colspan="2"><h3>Private Attributes</h3></td></tr>
+<tr class="memitem:a022dca1675c56e98c4788ce9fc4063ae"><td class="memItemLeft" align="right" valign="top"><a id="a022dca1675c56e98c4788ce9fc4063ae"></a>
+character(len=128)&#160;</td><td class="memItemRight" valign="bottom"><b>filename</b> = ''</td></tr>
+<tr class="separator:a022dca1675c56e98c4788ce9fc4063ae"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a30ee20f1f8152bc52c795fa8fea700d2"><td class="memItemLeft" align="right" valign="top"><a id="a30ee20f1f8152bc52c795fa8fea700d2"></a>
+integer&#160;</td><td class="memItemRight" valign="bottom"><b>unit</b> = -1</td></tr>
+<tr class="separator:a30ee20f1f8152bc52c795fa8fea700d2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table>
+
+</div>
+</div>
+<a name="interfacetime__interp__external__mod_1_1time__interp__external" id="interfacetime__interp__external__mod_1_1time__interp__external"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#interfacetime__interp__external__mod_1_1time__interp__external">&#9670;&nbsp;</a></span>time_interp_external_mod::time_interp_external</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">interface time_interp_external_mod::time_interp_external</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<div class="textblock"><p>Provide data from external file interpolated to current model time. Data may be local to current processor or global, depending on "init_external_field" flags. Uses <a class="el" href="group__mpp__io__mod.html">mpp_io_mod</a> for I/O. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir"></td><td class="paramname">index</td><td>index of external field from previous call to init_external_field </td></tr>
+    <tr><td class="paramdir"></td><td class="paramname">time</td><td>target time for data </td></tr>
+    <tr><td class="paramdir">[in,out]</td><td class="paramname">data</td><td>global or local data array </td></tr>
+    <tr><td class="paramdir"></td><td class="paramname">interp</td><td><a class="el" href="group__time__interp__external__mod.html#interfacetime__interp__external__mod_1_1time__interp__external" title="Provide data from external file interpolated to current model time. Data may be local to current proc...">time_interp_external</a> defined interpolation method (optional). Currently this module only supports LINEAR_TIME_INTERP. </td></tr>
+    <tr><td class="paramdir"></td><td class="paramname">verbose</td><td>verbose flag for debugging (optional). </td></tr>
+  </table>
+  </dd>
+</dl>
+
+<p class="definition">Definition at line <a class="el" href="time__interp__external_8F90_source.html#l00150">150</a> of file <a class="el" href="time__interp__external_8F90_source.html">time_interp_external.F90</a>.</p>
+</div><table class="memberdecls">
+<tr><td colspan="2"><h3>Private Member Functions</h3></td></tr>
+<tr class="memitem:ab379bf79edbcf413338e921ec587c100"><td class="memItemLeft" align="right" valign="top"><a id="ab379bf79edbcf413338e921ec587c100"></a>
+subroutine&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__time__interp__external__mod.html#ab379bf79edbcf413338e921ec587c100">time_interp_external_0d</a> (index, time, data, verbose)</td></tr>
+<tr class="memdesc:ab379bf79edbcf413338e921ec587c100"><td class="mdescLeft">&#160;</td><td class="mdescRight">Scalar time interpolation for <a class="el" href="group__time__interp__external__mod.html">time_interp_external</a>. <br /></td></tr>
+<tr class="separator:ab379bf79edbcf413338e921ec587c100"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:acb05b375b1756deb19ccbf53298665c4"><td class="memItemLeft" align="right" valign="top"><a id="acb05b375b1756deb19ccbf53298665c4"></a>
+subroutine&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__time__interp__external__mod.html#acb05b375b1756deb19ccbf53298665c4">time_interp_external_2d</a> (index, time, data_in, interp, verbose, horz_interp, mask_out, is_in, ie_in, js_in, je_in, window_id)</td></tr>
+<tr class="memdesc:acb05b375b1756deb19ccbf53298665c4"><td class="mdescLeft">&#160;</td><td class="mdescRight">2D time interpolation for <a class="el" href="group__time__interp__external__mod.html">time_interp_external</a> <br /></td></tr>
+<tr class="separator:acb05b375b1756deb19ccbf53298665c4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aae27f4ea4e36d3d27fd6b871ac20b881"><td class="memItemLeft" align="right" valign="top"><a id="aae27f4ea4e36d3d27fd6b871ac20b881"></a>
+subroutine&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__time__interp__external__mod.html#aae27f4ea4e36d3d27fd6b871ac20b881">time_interp_external_3d</a> (index, time, data, interp, verbose, horz_interp, mask_out, is_in, ie_in, js_in, je_in, window_id)</td></tr>
+<tr class="memdesc:aae27f4ea4e36d3d27fd6b871ac20b881"><td class="mdescLeft">&#160;</td><td class="mdescRight">3D time interpolation for <a class="el" href="group__time__interp__external__mod.html">time_interp_external</a> <br /></td></tr>
+<tr class="separator:aae27f4ea4e36d3d27fd6b871ac20b881"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table>
+
+</div>
+</div>
 <h2 class="groupheader">Function/Subroutine Documentation</h2>
 <a id="ga8057518b04011a1abc54f798ad71ce33"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#ga8057518b04011a1abc54f798ad71ce33">&#9670;&nbsp;</a></span>init_external_field()</h2>
@@ -268,7 +496,7 @@ real(double_kind), parameter, private&#160;</td><td class="memItemRight" valign=
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">type(domain2d), intent(in), optional&#160;</td>
+          <td class="paramtype">type(<a class="el" href="group__mpp__domains__mod.html#structmpp__domains__mod_1_1domain2d">domain2d</a>), intent(in), optional&#160;</td>
           <td class="paramname"><em>domain</em>, </td>
         </tr>
         <tr>
@@ -286,7 +514,7 @@ real(double_kind), parameter, private&#160;</td><td class="memItemRight" valign=
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">type(<a class="el" href="structmpp__io__mod_1_1axistype.html">axistype</a>), dimension(4), intent(inout), optional&#160;</td>
+          <td class="paramtype">type(<a class="el" href="group__mpp__io__mod.html#structmpp__io__mod_1_1axistype">axistype</a>), dimension(4), intent(inout), optional&#160;</td>
           <td class="paramname"><em>axis_centers</em>, </td>
         </tr>
         <tr>
@@ -346,7 +574,7 @@ real(double_kind), parameter, private&#160;</td><td class="memItemRight" valign=
 </div><div class="memdoc">
 
 <p>Initialize an external field. Buffer "num_io_buffers" (default=2) in memory to reduce memory allocations. distributed reads are supported using the optional "domain" flag. Units conversion via the optional "desired_units" flag using udunits_mod. </p>
-<dl class="section return"><dt>Returns</dt><dd>integer id of field for future calls to <a class="el" href="interfacetime__interp__external__mod_1_1time__interp__external.html" title="Provide data from external file interpolated to current model time. Data may be local to current proc...">time_interp_external</a>. </dd></dl>
+<dl class="section return"><dt>Returns</dt><dd>integer id of field for future calls to <a class="el" href="group__time__interp__external__mod.html#interfacetime__interp__external__mod_1_1time__interp__external" title="Provide data from external file interpolated to current model time. Data may be local to current proc...">time_interp_external</a>. </dd></dl>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramdir"></td><td class="paramname">file</td><td>filename </td></tr>
@@ -362,7 +590,7 @@ real(double_kind), parameter, private&#160;</td><td class="memItemRight" valign=
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="time__interp__external_8F90_source.html#l00279">279</a> of file <a class="el" href="time__interp__external_8F90_source.html">time_interp_external.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="time__interp__external_8F90_source.html#l00276">276</a> of file <a class="el" href="time__interp__external_8F90_source.html">time_interp_external.F90</a>.</p>
 
 </div>
 </div>

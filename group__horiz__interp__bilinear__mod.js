@@ -1,8 +1,8 @@
 var group__horiz__interp__bilinear__mod =
 [
-    [ "horiz_interp_bilinear_new", "interfacehoriz__interp__bilinear__mod_1_1horiz__interp__bilinear__new.html", [
-      [ "horiz_interp_bilinear_new_1d", "interfacehoriz__interp__bilinear__mod_1_1horiz__interp__bilinear__new.html#a10bd70e02e03fb99de1f9c8a13d7692e", null ],
-      [ "horiz_interp_bilinear_new_2d", "interfacehoriz__interp__bilinear__mod_1_1horiz__interp__bilinear__new.html#a6b4e5db99a318b2565f86988d7256fef", null ]
+    [ "horiz_interp_bilinear_new", "group__horiz__interp__bilinear__mod.html#interfacehoriz__interp__bilinear__mod_1_1horiz__interp__bilinear__new", [
+      [ "horiz_interp_bilinear_new_1d", "group__horiz__interp__bilinear__mod.html#a10bd70e02e03fb99de1f9c8a13d7692e", null ],
+      [ "horiz_interp_bilinear_new_2d", "group__horiz__interp__bilinear__mod.html#a6b4e5db99a318b2565f86988d7256fef", null ]
     ] ],
     [ "find_neighbor", "group__horiz__interp__bilinear__mod.html#gab4709e3321e4f8045c46e070f4b31134", null ],
     [ "find_neighbor_new", "group__horiz__interp__bilinear__mod.html#ga03b7383c8b4be4e1c4c42bc75ced5761", null ],

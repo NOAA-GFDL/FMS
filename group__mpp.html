@@ -33,7 +33,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">FMS
-   &#160;<span id="projectnumber">2022.02.0</span>
+   &#160;<span id="projectnumber">2022.03.00</span>
    </div>
    <div id="projectbrief">Flexible Modeling System</div>
   </td>
@@ -91,12 +91,14 @@ $(document).ready(function(){initNavTree('group__mpp.html',''); initResizable();
 
 <div class="header">
   <div class="summary">
-<a href="#groups">Modules</a> &#124;
-<a href="#files">Files</a>  </div>
+<a href="#groups">Modules</a>  </div>
   <div class="headertitle">
 <div class="title">MPP</div>  </div>
 </div><!--header-->
 <div class="contents">
+
+<p>Modules and associated files in the mpp directory.  
+<a href="#details">More...</a></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="groups"></a>
 Modules</h2></td></tr>
@@ -116,43 +118,19 @@ Modules</h2></td></tr>
 <tr class="memdesc:group__mpp__memutils__mod"><td class="mdescLeft">&#160;</td><td class="mdescRight">Routines to initialize and report on memory usage during the model run. <br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:group__mpp__mod"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__mpp__mod.html">mpp_mod</a></td></tr>
-<tr class="memdesc:group__mpp__mod"><td class="mdescLeft">&#160;</td><td class="mdescRight">This module defines interfaces for common operations using message-passing libraries. <br /></td></tr>
+<tr class="memdesc:group__mpp__mod"><td class="mdescLeft">&#160;</td><td class="mdescRight">This module defines interfaces for common operations using message-passing libraries. Any type-less arguments in the documentation are MPP_TYPE_ which is defined by the pre-processor to create multiple subroutines out of one implementation for use in an interface. See the note below for more information. <br /></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:group__mpp__pset__mod"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__mpp__pset__mod.html">mpp_pset_mod</a></td></tr>
+<tr class="memdesc:group__mpp__pset__mod"><td class="mdescLeft">&#160;</td><td class="mdescRight">Handles PSETs(Persistent Shared-memory Execution Threads) for mpp modules. <br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:group__mpp__utilities__mod"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__mpp__utilities__mod.html">mpp_utilities_mod</a></td></tr>
 <tr class="memdesc:group__mpp__utilities__mod"><td class="mdescLeft">&#160;</td><td class="mdescRight">Module for utiltity routines to be used in <a class="el" href="group__mpp.html">MPP</a> modules. <br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-</table><table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="files"></a>
-Files</h2></td></tr>
-<tr class="memitem:mpp__comm_8inc"><td class="memItemLeft" align="right" valign="top">file &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="mpp__comm_8inc.html">mpp_comm.inc</a></td></tr>
-<tr class="memdesc:mpp__comm_8inc"><td class="mdescLeft">&#160;</td><td class="mdescRight">Imports checksum, gather, and scatter routines used for communications and calculations between PE's in <a class="el" href="group__mpp__mod.html">mpp_mod</a>. <br /></td></tr>
-<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:mpp__comm__mpi_8inc"><td class="memItemLeft" align="right" valign="top">file &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="mpp__comm__mpi_8inc.html">mpp_comm_mpi.inc</a></td></tr>
-<tr class="memdesc:mpp__comm__mpi_8inc"><td class="mdescLeft">&#160;</td><td class="mdescRight">Routines to initialize and finalize <a class="el" href="group__mpp__mod.html">mpp_mod</a> with mpi enabled. <br /></td></tr>
-<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:mpp__comm__nocomm_8inc"><td class="memItemLeft" align="right" valign="top">file &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="mpp__comm__nocomm_8inc.html">mpp_comm_nocomm.inc</a></td></tr>
-<tr class="memdesc:mpp__comm__nocomm_8inc"><td class="mdescLeft">&#160;</td><td class="mdescRight">Routines to initialize and finalize <a class="el" href="group__mpp__mod.html">mpp_mod</a> without MPI. <br /></td></tr>
-<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:mpp__read__distributed__ascii_8inc"><td class="memItemLeft" align="right" valign="top">file &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="mpp__read__distributed__ascii_8inc.html">mpp_read_distributed_ascii.inc</a></td></tr>
-<tr class="memdesc:mpp__read__distributed__ascii_8inc"><td class="mdescLeft">&#160;</td><td class="mdescRight">Routines for reading distributed ascii files for <a class="el" href="group__mpp__io__mod.html">mpp_io_mod</a>. <br /></td></tr>
-<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:mpp__sum_8inc"><td class="memItemLeft" align="right" valign="top">file &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="mpp__sum_8inc.html">mpp_sum.inc</a></td></tr>
-<tr class="memdesc:mpp__sum_8inc"><td class="mdescLeft">&#160;</td><td class="mdescRight">Summation routines for <a class="el" href="group__mpp__mod.html">mpp_mod</a>. <br /></td></tr>
-<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:mpp__sum__ad_8inc"><td class="memItemLeft" align="right" valign="top">file &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="mpp__sum__ad_8inc.html">mpp_sum_ad.inc</a></td></tr>
-<tr class="memdesc:mpp__sum__ad_8inc"><td class="mdescLeft">&#160;</td><td class="mdescRight">Adjoint summation routines for <a class="el" href="group__mpp__mod.html">mpp_mod</a>. <br /></td></tr>
-<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:mpp__transmit_8inc"><td class="memItemLeft" align="right" valign="top">file &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="mpp__transmit_8inc.html">mpp_transmit.inc</a></td></tr>
-<tr class="memdesc:mpp__transmit_8inc"><td class="mdescLeft">&#160;</td><td class="mdescRight">Routines for data transmission between PE's. <br /></td></tr>
-<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:mpp__util__mpi_8inc"><td class="memItemLeft" align="right" valign="top">file &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="mpp__util__mpi_8inc.html">mpp_util_mpi.inc</a></td></tr>
-<tr class="memdesc:mpp__util__mpi_8inc"><td class="mdescLeft">&#160;</td><td class="mdescRight">Utility routines for parallelization with MPI. <br /></td></tr>
-<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:mpp__util__nocomm_8inc"><td class="memItemLeft" align="right" valign="top">file &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="mpp__util__nocomm_8inc.html">mpp_util_nocomm.inc</a></td></tr>
-<tr class="memdesc:mpp__util__nocomm_8inc"><td class="mdescLeft">&#160;</td><td class="mdescRight">Utility routines for parallelization, non-mpi version. <br /></td></tr>
-<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
+<p>Modules and associated files in the mpp directory. </p>
+<p>Wrapper routine for mpp_chksum interface.</p>
+<p>Provides interfaces to facilitate common tasks for parallel computing and modeling. Originally written to provide interfaces across different message-passing libraries, it is now used mainly with the MPI standard, and provides wrappers to many MPI routines. Documentation on serial implementations of routines (usually denoted by _nocommm in the file name) will be excluded on these module pages, as they are currently unused but mo, but their documentation is still available in the Files tab. </p>
 </div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->

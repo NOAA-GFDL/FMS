@@ -33,7 +33,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">FMS
-   &#160;<span id="projectnumber">2022.02.0</span>
+   &#160;<span id="projectnumber">2022.03.00</span>
    </div>
    <div id="projectbrief">Flexible Modeling System</div>
   </td>
@@ -98,7 +98,7 @@ $(document).ready(function(){initNavTree('mosaic__util_8c.html',''); initResizab
 <div class="title">mosaic_util.c File Reference<div class="ingroups"><a class="el" href="group__mosaic.html">Mosaic</a></div></div>  </div>
 </div><!--header-->
 <div class="contents">
-
+<h3 class="version">(1640fde1a51a73f97748f150eb84bf49e472aeca)</h3>
 <p>Error handling and other general utilities for <a class="el" href="group__mosaic__mod.html">mosaic_mod</a>.  
 <a href="#details">More...</a></p>
 <div class="textblock"><code>#include &lt;stdlib.h&gt;</code><br />
@@ -107,23 +107,17 @@ $(document).ready(function(){initNavTree('mosaic__util_8c.html',''); initResizab
 <code>#include &lt;string.h&gt;</code><br />
 <code>#include &quot;mosaic_util.h&quot;</code><br />
 <code>#include &quot;constant.h&quot;</code><br />
+</div><div class="textblock"><div class="dynheader">
+Include dependency graph for mosaic_util.c:</div>
+<div class="dyncontent">
+<div class="center"><iframe scrolling="no" frameborder="0" src="mosaic__util_8c__incl.svg" width="610" height="112"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe>
+</div>
+</div>
 </div>
 <p><a href="mosaic__util_8c_source.html">Go to the source code of this file.</a></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="define-members"></a>
 Macros</h2></td></tr>
-<tr class="memitem:a4f9c445bd2835e7996624ef1dd870ad4"><td class="memItemLeft" align="right" valign="top"><a id="a4f9c445bd2835e7996624ef1dd870ad4"></a>
-#define&#160;</td><td class="memItemRight" valign="bottom"><b>HPI</b>&#160;&#160;&#160;(0.5*M_PI)</td></tr>
-<tr class="separator:a4f9c445bd2835e7996624ef1dd870ad4"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a8b4dd00016aed25a0ea54e9a9acd1239"><td class="memItemLeft" align="right" valign="top"><a id="a8b4dd00016aed25a0ea54e9a9acd1239"></a>
-#define&#160;</td><td class="memItemRight" valign="bottom"><b>TPI</b>&#160;&#160;&#160;(2.0*M_PI)</td></tr>
-<tr class="separator:a8b4dd00016aed25a0ea54e9a9acd1239"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a40d199f1a226f2638a509e0d64fb9bf6"><td class="memItemLeft" align="right" valign="top"><a id="a40d199f1a226f2638a509e0d64fb9bf6"></a>
-#define&#160;</td><td class="memItemRight" valign="bottom"><b>TOLORENCE</b>&#160;&#160;&#160;(1.e-6)</td></tr>
-<tr class="separator:a40d199f1a226f2638a509e0d64fb9bf6"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae7f51186b00c5479b3b320e3c74517ae"><td class="memItemLeft" align="right" valign="top"><a id="ae7f51186b00c5479b3b320e3c74517ae"></a>
-#define&#160;</td><td class="memItemRight" valign="bottom"><b>EPSLN8</b>&#160;&#160;&#160;(1.e-8)</td></tr>
-<tr class="separator:ae7f51186b00c5479b3b320e3c74517ae"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a4a452b298afbd40befc5356e33891863"><td class="memItemLeft" align="right" valign="top"><a id="a4a452b298afbd40befc5356e33891863"></a>
 #define&#160;</td><td class="memItemRight" valign="bottom"><b>EPSLN10</b>&#160;&#160;&#160;(1.e-10)</td></tr>
 <tr class="separator:a4a452b298afbd40befc5356e33891863"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -133,198 +127,210 @@ Macros</h2></td></tr>
 <tr class="memitem:aeadb9ce0cc2b11c11c53aae2186dc876"><td class="memItemLeft" align="right" valign="top"><a id="aeadb9ce0cc2b11c11c53aae2186dc876"></a>
 #define&#160;</td><td class="memItemRight" valign="bottom"><b>EPSLN30</b>&#160;&#160;&#160;(1.e-30)</td></tr>
 <tr class="separator:aeadb9ce0cc2b11c11c53aae2186dc876"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae7f51186b00c5479b3b320e3c74517ae"><td class="memItemLeft" align="right" valign="top"><a id="ae7f51186b00c5479b3b320e3c74517ae"></a>
+#define&#160;</td><td class="memItemRight" valign="bottom"><b>EPSLN8</b>&#160;&#160;&#160;(1.e-8)</td></tr>
+<tr class="separator:ae7f51186b00c5479b3b320e3c74517ae"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4f9c445bd2835e7996624ef1dd870ad4"><td class="memItemLeft" align="right" valign="top"><a id="a4f9c445bd2835e7996624ef1dd870ad4"></a>
+#define&#160;</td><td class="memItemRight" valign="bottom"><b>HPI</b>&#160;&#160;&#160;(0.5*M_PI)</td></tr>
+<tr class="separator:a4f9c445bd2835e7996624ef1dd870ad4"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a8f2e613af3d6d5101ee0a405d526342f"><td class="memItemLeft" align="right" valign="top"><a id="a8f2e613af3d6d5101ee0a405d526342f"></a>
 #define&#160;</td><td class="memItemRight" valign="bottom"><b>MAXNODELIST</b>&#160;&#160;&#160;100</td></tr>
 <tr class="separator:a8f2e613af3d6d5101ee0a405d526342f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a40d199f1a226f2638a509e0d64fb9bf6"><td class="memItemLeft" align="right" valign="top"><a id="a40d199f1a226f2638a509e0d64fb9bf6"></a>
+#define&#160;</td><td class="memItemRight" valign="bottom"><b>TOLORENCE</b>&#160;&#160;&#160;(1.e-6)</td></tr>
+<tr class="separator:a40d199f1a226f2638a509e0d64fb9bf6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8b4dd00016aed25a0ea54e9a9acd1239"><td class="memItemLeft" align="right" valign="top"><a id="a8b4dd00016aed25a0ea54e9a9acd1239"></a>
+#define&#160;</td><td class="memItemRight" valign="bottom"><b>TPI</b>&#160;&#160;&#160;(2.0*M_PI)</td></tr>
+<tr class="separator:a8b4dd00016aed25a0ea54e9a9acd1239"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="func-members"></a>
 Functions</h2></td></tr>
-<tr class="memitem:a6893d280ad38252a528385da3efc05c1"><td class="memItemLeft" align="right" valign="top"><a id="a6893d280ad38252a528385da3efc05c1"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>set_reproduce_siena_true</b> (void)</td></tr>
-<tr class="separator:a6893d280ad38252a528385da3efc05c1"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a26c5946a33430252e81fffc8c6a49b7a"><td class="memItemLeft" align="right" valign="top"><a id="a26c5946a33430252e81fffc8c6a49b7a"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>set_reproduce_siena_true_</b> (void)</td></tr>
-<tr class="separator:a26c5946a33430252e81fffc8c6a49b7a"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a9e766ce18b7c714e3bfbd4e741b58ffc"><td class="memItemLeft" align="right" valign="top"><a id="a9e766ce18b7c714e3bfbd4e741b58ffc"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>error_handler</b> (const char *msg)</td></tr>
-<tr class="separator:a9e766ce18b7c714e3bfbd4e741b58ffc"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aeda16e32d3d15b77393c0cc76387ad5a"><td class="memItemLeft" align="right" valign="top"><a id="aeda16e32d3d15b77393c0cc76387ad5a"></a>
-int&#160;</td><td class="memItemRight" valign="bottom"><b>nearest_index</b> (double value, const double *array, int ia)</td></tr>
-<tr class="separator:aeda16e32d3d15b77393c0cc76387ad5a"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:abbef76e3c4264ac58c9a8e3ef05917f9"><td class="memItemLeft" align="right" valign="top"><a id="abbef76e3c4264ac58c9a8e3ef05917f9"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>tokenize</b> (const char *const string, const char *tokens, unsigned int varlen, unsigned int maxvar, char *pstring, unsigned int *const nstr)</td></tr>
-<tr class="separator:abbef76e3c4264ac58c9a8e3ef05917f9"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a6babf03292716f2fefbbf4368eadfe0f"><td class="memItemLeft" align="right" valign="top"><a id="a6babf03292716f2fefbbf4368eadfe0f"></a>
-double&#160;</td><td class="memItemRight" valign="bottom"><b>maxval_double</b> (int size, const double *data)</td></tr>
-<tr class="separator:a6babf03292716f2fefbbf4368eadfe0f"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a743512b784406d174bc67445987c6cf8"><td class="memItemLeft" align="right" valign="top"><a id="a743512b784406d174bc67445987c6cf8"></a>
-double&#160;</td><td class="memItemRight" valign="bottom"><b>minval_double</b> (int size, const double *data)</td></tr>
-<tr class="separator:a743512b784406d174bc67445987c6cf8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9ec426b2a23488773deb24ca48e28c1a"><td class="memItemLeft" align="right" valign="top"><a id="a9ec426b2a23488773deb24ca48e28c1a"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>addEnd</b> (struct Node *list, double x, double y, double z, int intersect, double u, int inbound, int inside)</td></tr>
+<tr class="separator:a9ec426b2a23488773deb24ca48e28c1a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4c954e556831ab32cd6d6c0f9d50580e"><td class="memItemLeft" align="right" valign="top"><a id="a4c954e556831ab32cd6d6c0f9d50580e"></a>
+int&#160;</td><td class="memItemRight" valign="bottom"><b>addIntersect</b> (struct Node *list, double x, double y, double z, int intersect, double u1, double u2, int inbound, int is1, int ie1, int is2, int ie2)</td></tr>
+<tr class="separator:a4c954e556831ab32cd6d6c0f9d50580e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a74b2951c6c07334d09e75cc7e820bc1d"><td class="memItemLeft" align="right" valign="top"><a id="a74b2951c6c07334d09e75cc7e820bc1d"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>addNode</b> (struct Node *list, struct Node inNode)</td></tr>
+<tr class="separator:a74b2951c6c07334d09e75cc7e820bc1d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a0c96b5dd0a3ba684b21803975b6d902f"><td class="memItemLeft" align="right" valign="top"><a id="a0c96b5dd0a3ba684b21803975b6d902f"></a>
 double&#160;</td><td class="memItemRight" valign="bottom"><b>avgval_double</b> (int size, const double *data)</td></tr>
 <tr class="separator:a0c96b5dd0a3ba684b21803975b6d902f"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a1ee8c225207d365ae43123fbacf3d39e"><td class="memItemLeft" align="right" valign="top"><a id="a1ee8c225207d365ae43123fbacf3d39e"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>latlon2xyz</b> (int size, const double *lon, const double *lat, double *x, double *y, double *z)</td></tr>
-<tr class="separator:a1ee8c225207d365ae43123fbacf3d39e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae3e29afb7399b92b13799b371ca51b51"><td class="memItemLeft" align="right" valign="top"><a id="ae3e29afb7399b92b13799b371ca51b51"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>xyz2latlon</b> (int np, const double *x, const double *y, const double *z, double *lon, double *lat)</td></tr>
-<tr class="separator:ae3e29afb7399b92b13799b371ca51b51"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a17f8a839fa0a54af8556ef7b00cd862a"><td class="memItemLeft" align="right" valign="top"><a id="a17f8a839fa0a54af8556ef7b00cd862a"></a>
 double&#160;</td><td class="memItemRight" valign="bottom"><b>box_area</b> (double ll_lon, double ll_lat, double ur_lon, double ur_lat)</td></tr>
 <tr class="separator:a17f8a839fa0a54af8556ef7b00cd862a"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a38fbb816bc85da2d7bde79d0864a37d0"><td class="memItemLeft" align="right" valign="top"><a id="a38fbb816bc85da2d7bde79d0864a37d0"></a>
-double&#160;</td><td class="memItemRight" valign="bottom"><b>poly_area_dimensionless</b> (const double x[], const double y[], int n)</td></tr>
-<tr class="separator:a38fbb816bc85da2d7bde79d0864a37d0"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa1367e970bc7dca69e1d04d234f8aba2"><td class="memItemLeft" align="right" valign="top"><a id="aa1367e970bc7dca69e1d04d234f8aba2"></a>
-double&#160;</td><td class="memItemRight" valign="bottom"><b>poly_area</b> (const double x[], const double y[], int n)</td></tr>
-<tr class="separator:aa1367e970bc7dca69e1d04d234f8aba2"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a5847b737bd1776b030f71b3ca8ab8822"><td class="memItemLeft" align="right" valign="top"><a id="a5847b737bd1776b030f71b3ca8ab8822"></a>
-double&#160;</td><td class="memItemRight" valign="bottom"><b>poly_area_no_adjust</b> (const double x[], const double y[], int n)</td></tr>
-<tr class="separator:a5847b737bd1776b030f71b3ca8ab8822"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5c2b2d3ef3756c3cd6e709f76c929061"><td class="memItemLeft" align="right" valign="top"><a id="a5c2b2d3ef3756c3cd6e709f76c929061"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>copyNode</b> (struct Node *node_out, struct Node node_in)</td></tr>
+<tr class="separator:a5c2b2d3ef3756c3cd6e709f76c929061"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a24022ed142b7402ffcb2a1e85a5720c8"><td class="memItemLeft" align="right" valign="top"><a id="a24022ed142b7402ffcb2a1e85a5720c8"></a>
 int&#160;</td><td class="memItemRight" valign="bottom"><b>delete_vtx</b> (double x[], double y[], int n, int n_del)</td></tr>
 <tr class="separator:a24022ed142b7402ffcb2a1e85a5720c8"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad282fff8e3291623011cd811ae5aa33b"><td class="memItemLeft" align="right" valign="top"><a id="ad282fff8e3291623011cd811ae5aa33b"></a>
-int&#160;</td><td class="memItemRight" valign="bottom"><b>insert_vtx</b> (double x[], double y[], int n, int n_ins, double lon_in, double lat_in)</td></tr>
-<tr class="separator:ad282fff8e3291623011cd811ae5aa33b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a05f544b9373d7d7e389cddd1b77c9047"><td class="memItemLeft" align="right" valign="top"><a id="a05f544b9373d7d7e389cddd1b77c9047"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>v_print</b> (double x[], double y[], int n)</td></tr>
-<tr class="separator:a05f544b9373d7d7e389cddd1b77c9047"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab7b5c93d135693b2b750ff6ae88a6124"><td class="memItemLeft" align="right" valign="top"><a id="ab7b5c93d135693b2b750ff6ae88a6124"></a>
-int&#160;</td><td class="memItemRight" valign="bottom"><b>fix_lon</b> (double x[], double y[], int n, double tlon)</td></tr>
-<tr class="separator:ab7b5c93d135693b2b750ff6ae88a6124"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a226d3ce25d167e1f6e9ff76a22d851ae"><td class="memItemLeft" align="right" valign="top"><a id="a226d3ce25d167e1f6e9ff76a22d851ae"></a>
-double&#160;</td><td class="memItemRight" valign="bottom"><b>great_circle_distance</b> (double *p1, double *p2)</td></tr>
-<tr class="separator:a226d3ce25d167e1f6e9ff76a22d851ae"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a22cb3bec57f4f82495afbc1e978ad6a7"><td class="memItemLeft" align="right" valign="top"><a id="a22cb3bec57f4f82495afbc1e978ad6a7"></a>
-double&#160;</td><td class="memItemRight" valign="bottom"><b>great_circle_area</b> (int n, const double *x, const double *y, const double *z)</td></tr>
-<tr class="separator:a22cb3bec57f4f82495afbc1e978ad6a7"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a77f2a235839c977f3f82e9b8552bb328"><td class="memItemLeft" align="right" valign="top"><a id="a77f2a235839c977f3f82e9b8552bb328"></a>
-double&#160;</td><td class="memItemRight" valign="bottom"><b>spherical_angle</b> (const double *v1, const double *v2, const double *v3)</td></tr>
-<tr class="separator:a77f2a235839c977f3f82e9b8552bb328"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a2364282a86c8432b952e97a561616399"><td class="memItemLeft" align="right" valign="top"><a id="a2364282a86c8432b952e97a561616399"></a>
-double&#160;</td><td class="memItemRight" valign="bottom"><b>spherical_excess_area</b> (const double *p_ll, const double *p_ul, const double *p_lr, const double *p_ur, double radius)</td></tr>
-<tr class="separator:a2364282a86c8432b952e97a561616399"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:acb19bf5eeed93a77999135b2e715fb6e"><td class="memItemLeft" align="right" valign="top"><a id="acb19bf5eeed93a77999135b2e715fb6e"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>vect_cross</b> (const double *p1, const double *p2, double *e)</td></tr>
-<tr class="separator:acb19bf5eeed93a77999135b2e715fb6e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ac63178d216b77ca8618911d082143c4f"><td class="memItemLeft" align="right" valign="top"><a id="ac63178d216b77ca8618911d082143c4f"></a>
 double&#160;</td><td class="memItemRight" valign="bottom"><b>dot</b> (const double *p1, const double *p2)</td></tr>
 <tr class="separator:ac63178d216b77ca8618911d082143c4f"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa4625c78e721940b3b1087a8b2cef752"><td class="memItemLeft" align="right" valign="top"><a id="aa4625c78e721940b3b1087a8b2cef752"></a>
-double&#160;</td><td class="memItemRight" valign="bottom"><b>metric</b> (const double *p)</td></tr>
-<tr class="separator:aa4625c78e721940b3b1087a8b2cef752"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ac306f4b34db0bb12d55eb815031b7476"><td class="memItemLeft" align="right" valign="top"><a id="ac306f4b34db0bb12d55eb815031b7476"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>normalize_vect</b> (double *e)</td></tr>
-<tr class="separator:ac306f4b34db0bb12d55eb815031b7476"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a69b8e30abe5d8cc2c2d6238e9ce4baab"><td class="memItemLeft" align="right" valign="top"><a id="a69b8e30abe5d8cc2c2d6238e9ce4baab"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>unit_vect_latlon</b> (int size, const double *lon, const double *lat, double *vlon, double *vlat)</td></tr>
-<tr class="separator:a69b8e30abe5d8cc2c2d6238e9ce4baab"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad344f2e049b4ef1dc71fe50ac3db0d77"><td class="memItemLeft" align="right" valign="top"><a id="ad344f2e049b4ef1dc71fe50ac3db0d77"></a>
-int&#160;</td><td class="memItemRight" valign="bottom"><b>intersect_tri_with_line</b> (const double *plane, const double *l1, const double *l2, double *p, double *t)</td></tr>
-<tr class="separator:ad344f2e049b4ef1dc71fe50ac3db0d77"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a03b46011bb5f516faf58d95414c629f3"><td class="memItemLeft" align="right" valign="top"><a id="a03b46011bb5f516faf58d95414c629f3"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>mult</b> (long double m[], long double v[], long double out_v[])</td></tr>
-<tr class="separator:a03b46011bb5f516faf58d95414c629f3"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ac68705d977b95d2ce19d47c187c5984b"><td class="memItemLeft" align="right" valign="top"><a id="ac68705d977b95d2ce19d47c187c5984b"></a>
-int&#160;</td><td class="memItemRight" valign="bottom"><b>invert_matrix_3x3</b> (long double m[], long double m_inv[])</td></tr>
-<tr class="separator:ac68705d977b95d2ce19d47c187c5984b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a25b3a4d9513469c01b0636366ab5b4a8"><td class="memItemLeft" align="right" valign="top"><a id="a25b3a4d9513469c01b0636366ab5b4a8"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>rewindList</b> (void)</td></tr>
-<tr class="separator:a25b3a4d9513469c01b0636366ab5b4a8"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a08dab5914bd28c6b29809f2b09ab42a6"><td class="memItemLeft" align="right" valign="top"><a id="a08dab5914bd28c6b29809f2b09ab42a6"></a>
-struct <a class="el" href="structNode.html">Node</a> *&#160;</td><td class="memItemRight" valign="bottom"><b>getNext</b> ()</td></tr>
-<tr class="separator:a08dab5914bd28c6b29809f2b09ab42a6"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a3894e66b3fe02e170c4cb71a96fa2139"><td class="memItemLeft" align="right" valign="top"><a id="a3894e66b3fe02e170c4cb71a96fa2139"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>initNode</b> (struct <a class="el" href="structNode.html">Node</a> *node)</td></tr>
-<tr class="separator:a3894e66b3fe02e170c4cb71a96fa2139"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a9ec426b2a23488773deb24ca48e28c1a"><td class="memItemLeft" align="right" valign="top"><a id="a9ec426b2a23488773deb24ca48e28c1a"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>addEnd</b> (struct <a class="el" href="structNode.html">Node</a> *list, double x, double y, double z, int intersect, double u, int inbound, int inside)</td></tr>
-<tr class="separator:a9ec426b2a23488773deb24ca48e28c1a"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a4c954e556831ab32cd6d6c0f9d50580e"><td class="memItemLeft" align="right" valign="top"><a id="a4c954e556831ab32cd6d6c0f9d50580e"></a>
-int&#160;</td><td class="memItemRight" valign="bottom"><b>addIntersect</b> (struct <a class="el" href="structNode.html">Node</a> *list, double x, double y, double z, int intersect, double u1, double u2, int inbound, int is1, int ie1, int is2, int ie2)</td></tr>
-<tr class="separator:a4c954e556831ab32cd6d6c0f9d50580e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a4cf5438ecb4da59dcc26d725cea011a4"><td class="memItemLeft" align="right" valign="top"><a id="a4cf5438ecb4da59dcc26d725cea011a4"></a>
-int&#160;</td><td class="memItemRight" valign="bottom"><b>length</b> (struct <a class="el" href="structNode.html">Node</a> *list)</td></tr>
-<tr class="separator:a4cf5438ecb4da59dcc26d725cea011a4"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a5cf4018233441b2c1e3af63334c8e17c"><td class="memItemLeft" align="right" valign="top"><a id="a5cf4018233441b2c1e3af63334c8e17c"></a>
-int&#160;</td><td class="memItemRight" valign="bottom"><b>samePoint</b> (double x1, double y1, double z1, double x2, double y2, double z2)</td></tr>
-<tr class="separator:a5cf4018233441b2c1e3af63334c8e17c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a7d0ef6baee574da014afa9b9520652aa"><td class="memItemLeft" align="right" valign="top"><a id="a7d0ef6baee574da014afa9b9520652aa"></a>
-int&#160;</td><td class="memItemRight" valign="bottom"><b>sameNode</b> (struct <a class="el" href="structNode.html">Node</a> node1, struct <a class="el" href="structNode.html">Node</a> node2)</td></tr>
-<tr class="separator:a7d0ef6baee574da014afa9b9520652aa"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a74b2951c6c07334d09e75cc7e820bc1d"><td class="memItemLeft" align="right" valign="top"><a id="a74b2951c6c07334d09e75cc7e820bc1d"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>addNode</b> (struct <a class="el" href="structNode.html">Node</a> *list, struct <a class="el" href="structNode.html">Node</a> inNode)</td></tr>
-<tr class="separator:a74b2951c6c07334d09e75cc7e820bc1d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ac920e909ceb6a5ff51aafe9a3045df80"><td class="memItemLeft" align="right" valign="top"><a id="ac920e909ceb6a5ff51aafe9a3045df80"></a>
-struct <a class="el" href="structNode.html">Node</a> *&#160;</td><td class="memItemRight" valign="bottom"><b>getNode</b> (struct <a class="el" href="structNode.html">Node</a> *list, struct <a class="el" href="structNode.html">Node</a> inNode)</td></tr>
-<tr class="separator:ac920e909ceb6a5ff51aafe9a3045df80"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a9c6468f9542aad7935b5a2b1a7f4bb75"><td class="memItemLeft" align="right" valign="top"><a id="a9c6468f9542aad7935b5a2b1a7f4bb75"></a>
-struct <a class="el" href="structNode.html">Node</a> *&#160;</td><td class="memItemRight" valign="bottom"><b>getNextNode</b> (struct <a class="el" href="structNode.html">Node</a> *list)</td></tr>
-<tr class="separator:a9c6468f9542aad7935b5a2b1a7f4bb75"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a5c2b2d3ef3756c3cd6e709f76c929061"><td class="memItemLeft" align="right" valign="top"><a id="a5c2b2d3ef3756c3cd6e709f76c929061"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>copyNode</b> (struct <a class="el" href="structNode.html">Node</a> *node_out, struct <a class="el" href="structNode.html">Node</a> node_in)</td></tr>
-<tr class="separator:a5c2b2d3ef3756c3cd6e709f76c929061"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a05a7c69a2fa292668ad3eacd9ff60f5e"><td class="memItemLeft" align="right" valign="top"><a id="a05a7c69a2fa292668ad3eacd9ff60f5e"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>printNode</b> (struct <a class="el" href="structNode.html">Node</a> *list, char *str)</td></tr>
-<tr class="separator:a05a7c69a2fa292668ad3eacd9ff60f5e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a54e94e3b2ee6502b5bd5fc502eed7a93"><td class="memItemLeft" align="right" valign="top"><a id="a54e94e3b2ee6502b5bd5fc502eed7a93"></a>
-int&#160;</td><td class="memItemRight" valign="bottom"><b>intersectInList</b> (struct <a class="el" href="structNode.html">Node</a> *list, double x, double y, double z)</td></tr>
-<tr class="separator:a54e94e3b2ee6502b5bd5fc502eed7a93"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a7ed285b0f2141ca81d5ceab2552034a9"><td class="memItemLeft" align="right" valign="top"><a id="a7ed285b0f2141ca81d5ceab2552034a9"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>insertIntersect</b> (struct <a class="el" href="structNode.html">Node</a> *list, double x, double y, double z, double u1, double u2, int inbound, double x2, double y2, double z2)</td></tr>
-<tr class="separator:a7ed285b0f2141ca81d5ceab2552034a9"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa47d7c407a0e7ab4e18563c9c98a8011"><td class="memItemLeft" align="right" valign="top"><a id="aa47d7c407a0e7ab4e18563c9c98a8011"></a>
-double&#160;</td><td class="memItemRight" valign="bottom"><b>gridArea</b> (struct <a class="el" href="structNode.html">Node</a> *grid)</td></tr>
-<tr class="separator:aa47d7c407a0e7ab4e18563c9c98a8011"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a961d4e6016396f981c7088fe0d480fde"><td class="memItemLeft" align="right" valign="top"><a id="a961d4e6016396f981c7088fe0d480fde"></a>
-int&#160;</td><td class="memItemRight" valign="bottom"><b>isIntersect</b> (struct <a class="el" href="structNode.html">Node</a> node)</td></tr>
-<tr class="separator:a961d4e6016396f981c7088fe0d480fde"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:af643d125e023bc5be34222635638b661"><td class="memItemLeft" align="right" valign="top"><a id="af643d125e023bc5be34222635638b661"></a>
-int&#160;</td><td class="memItemRight" valign="bottom"><b>getInbound</b> (struct <a class="el" href="structNode.html">Node</a> node)</td></tr>
-<tr class="separator:af643d125e023bc5be34222635638b661"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:af3adba919cbfbf97b530317cc228dc3e"><td class="memItemLeft" align="right" valign="top"><a id="af3adba919cbfbf97b530317cc228dc3e"></a>
-struct <a class="el" href="structNode.html">Node</a> *&#160;</td><td class="memItemRight" valign="bottom"><b>getLast</b> (struct <a class="el" href="structNode.html">Node</a> *list)</td></tr>
-<tr class="separator:af3adba919cbfbf97b530317cc228dc3e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a1b077c641311d27284dc005d93443ff5"><td class="memItemLeft" align="right" valign="top"><a id="a1b077c641311d27284dc005d93443ff5"></a>
-int&#160;</td><td class="memItemRight" valign="bottom"><b>getFirstInbound</b> (struct <a class="el" href="structNode.html">Node</a> *list, struct <a class="el" href="structNode.html">Node</a> *nodeOut)</td></tr>
-<tr class="separator:a1b077c641311d27284dc005d93443ff5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9e766ce18b7c714e3bfbd4e741b58ffc"><td class="memItemLeft" align="right" valign="top"><a id="a9e766ce18b7c714e3bfbd4e741b58ffc"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>error_handler</b> (const char *msg)</td></tr>
+<tr class="separator:a9e766ce18b7c714e3bfbd4e741b58ffc"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab7b5c93d135693b2b750ff6ae88a6124"><td class="memItemLeft" align="right" valign="top"><a id="ab7b5c93d135693b2b750ff6ae88a6124"></a>
+int&#160;</td><td class="memItemRight" valign="bottom"><b>fix_lon</b> (double x[], double y[], int n, double tlon)</td></tr>
+<tr class="separator:ab7b5c93d135693b2b750ff6ae88a6124"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a24b214d62eb4289056535af0f651b803"><td class="memItemLeft" align="right" valign="top"><a id="a24b214d62eb4289056535af0f651b803"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>getCoordinate</b> (struct <a class="el" href="structNode.html">Node</a> node, double *x, double *y, double *z)</td></tr>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>getCoordinate</b> (struct Node node, double *x, double *y, double *z)</td></tr>
 <tr class="separator:a24b214d62eb4289056535af0f651b803"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad04a41e1cb9876b5288e2af4e7b9f531"><td class="memItemLeft" align="right" valign="top"><a id="ad04a41e1cb9876b5288e2af4e7b9f531"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>getCoordinates</b> (struct <a class="el" href="structNode.html">Node</a> *node, double *p)</td></tr>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>getCoordinates</b> (struct Node *node, double *p)</td></tr>
 <tr class="separator:ad04a41e1cb9876b5288e2af4e7b9f531"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a565bf1a0a491e93b7a64c52e53e661cc"><td class="memItemLeft" align="right" valign="top"><a id="a565bf1a0a491e93b7a64c52e53e661cc"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>setCoordinate</b> (struct <a class="el" href="structNode.html">Node</a> *node, double x, double y, double z)</td></tr>
-<tr class="separator:a565bf1a0a491e93b7a64c52e53e661cc"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a056cf0127f02a3cca573a57bba84a070"><td class="memItemLeft" align="right" valign="top"><a id="a056cf0127f02a3cca573a57bba84a070"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>setInbound</b> (struct <a class="el" href="structNode.html">Node</a> *interList, struct <a class="el" href="structNode.html">Node</a> *list)</td></tr>
-<tr class="separator:a056cf0127f02a3cca573a57bba84a070"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a0adb05fe8eebbff1ed72977c8175def3"><td class="memItemLeft" align="right" valign="top"><a id="a0adb05fe8eebbff1ed72977c8175def3"></a>
-int&#160;</td><td class="memItemRight" valign="bottom"><b>isInside</b> (struct <a class="el" href="structNode.html">Node</a> *node)</td></tr>
-<tr class="separator:a0adb05fe8eebbff1ed72977c8175def3"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a7d40634e0226c96b2ca0d9ea682bb419"><td class="memItemLeft" align="right" valign="top"><a id="a7d40634e0226c96b2ca0d9ea682bb419"></a>
-int&#160;</td><td class="memItemRight" valign="bottom"><b>insidePolygon</b> (struct <a class="el" href="structNode.html">Node</a> *node, struct <a class="el" href="structNode.html">Node</a> *list)</td></tr>
-<tr class="separator:a7d40634e0226c96b2ca0d9ea682bb419"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1b077c641311d27284dc005d93443ff5"><td class="memItemLeft" align="right" valign="top"><a id="a1b077c641311d27284dc005d93443ff5"></a>
+int&#160;</td><td class="memItemRight" valign="bottom"><b>getFirstInbound</b> (struct Node *list, struct Node *nodeOut)</td></tr>
+<tr class="separator:a1b077c641311d27284dc005d93443ff5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af643d125e023bc5be34222635638b661"><td class="memItemLeft" align="right" valign="top"><a id="af643d125e023bc5be34222635638b661"></a>
+int&#160;</td><td class="memItemRight" valign="bottom"><b>getInbound</b> (struct Node node)</td></tr>
+<tr class="separator:af643d125e023bc5be34222635638b661"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af3adba919cbfbf97b530317cc228dc3e"><td class="memItemLeft" align="right" valign="top"><a id="af3adba919cbfbf97b530317cc228dc3e"></a>
+struct Node *&#160;</td><td class="memItemRight" valign="bottom"><b>getLast</b> (struct Node *list)</td></tr>
+<tr class="separator:af3adba919cbfbf97b530317cc228dc3e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a08dab5914bd28c6b29809f2b09ab42a6"><td class="memItemLeft" align="right" valign="top"><a id="a08dab5914bd28c6b29809f2b09ab42a6"></a>
+struct Node *&#160;</td><td class="memItemRight" valign="bottom"><b>getNext</b> ()</td></tr>
+<tr class="separator:a08dab5914bd28c6b29809f2b09ab42a6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9c6468f9542aad7935b5a2b1a7f4bb75"><td class="memItemLeft" align="right" valign="top"><a id="a9c6468f9542aad7935b5a2b1a7f4bb75"></a>
+struct Node *&#160;</td><td class="memItemRight" valign="bottom"><b>getNextNode</b> (struct Node *list)</td></tr>
+<tr class="separator:a9c6468f9542aad7935b5a2b1a7f4bb75"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac920e909ceb6a5ff51aafe9a3045df80"><td class="memItemLeft" align="right" valign="top"><a id="ac920e909ceb6a5ff51aafe9a3045df80"></a>
+struct Node *&#160;</td><td class="memItemRight" valign="bottom"><b>getNode</b> (struct Node *list, struct Node inNode)</td></tr>
+<tr class="separator:ac920e909ceb6a5ff51aafe9a3045df80"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a22cb3bec57f4f82495afbc1e978ad6a7"><td class="memItemLeft" align="right" valign="top"><a id="a22cb3bec57f4f82495afbc1e978ad6a7"></a>
+double&#160;</td><td class="memItemRight" valign="bottom"><b>great_circle_area</b> (int n, const double *x, const double *y, const double *z)</td></tr>
+<tr class="separator:a22cb3bec57f4f82495afbc1e978ad6a7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a226d3ce25d167e1f6e9ff76a22d851ae"><td class="memItemLeft" align="right" valign="top"><a id="a226d3ce25d167e1f6e9ff76a22d851ae"></a>
+double&#160;</td><td class="memItemRight" valign="bottom"><b>great_circle_distance</b> (double *p1, double *p2)</td></tr>
+<tr class="separator:a226d3ce25d167e1f6e9ff76a22d851ae"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa47d7c407a0e7ab4e18563c9c98a8011"><td class="memItemLeft" align="right" valign="top"><a id="aa47d7c407a0e7ab4e18563c9c98a8011"></a>
+double&#160;</td><td class="memItemRight" valign="bottom"><b>gridArea</b> (struct Node *grid)</td></tr>
+<tr class="separator:aa47d7c407a0e7ab4e18563c9c98a8011"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3894e66b3fe02e170c4cb71a96fa2139"><td class="memItemLeft" align="right" valign="top"><a id="a3894e66b3fe02e170c4cb71a96fa2139"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>initNode</b> (struct Node *node)</td></tr>
+<tr class="separator:a3894e66b3fe02e170c4cb71a96fa2139"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad282fff8e3291623011cd811ae5aa33b"><td class="memItemLeft" align="right" valign="top"><a id="ad282fff8e3291623011cd811ae5aa33b"></a>
+int&#160;</td><td class="memItemRight" valign="bottom"><b>insert_vtx</b> (double x[], double y[], int n, int n_ins, double lon_in, double lat_in)</td></tr>
+<tr class="separator:ad282fff8e3291623011cd811ae5aa33b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7ed285b0f2141ca81d5ceab2552034a9"><td class="memItemLeft" align="right" valign="top"><a id="a7ed285b0f2141ca81d5ceab2552034a9"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>insertIntersect</b> (struct Node *list, double x, double y, double z, double u1, double u2, int inbound, double x2, double y2, double z2)</td></tr>
+<tr class="separator:a7ed285b0f2141ca81d5ceab2552034a9"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa5bfcd5f6f4fb2453649eb4dc70e45c0"><td class="memItemLeft" align="right" valign="top"><a id="aa5bfcd5f6f4fb2453649eb4dc70e45c0"></a>
 int&#160;</td><td class="memItemRight" valign="bottom"><b>inside_a_polygon</b> (double *lon1, double *lat1, int *npts, double *lon2, double *lat2)</td></tr>
 <tr class="separator:aa5bfcd5f6f4fb2453649eb4dc70e45c0"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ae1663865884713b40af71f6c6feb5ff2"><td class="memItemLeft" align="right" valign="top"><a id="ae1663865884713b40af71f6c6feb5ff2"></a>
 int&#160;</td><td class="memItemRight" valign="bottom"><b>inside_a_polygon_</b> (double *lon1, double *lat1, int *npts, double *lon2, double *lat2)</td></tr>
 <tr class="separator:ae1663865884713b40af71f6c6feb5ff2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7d40634e0226c96b2ca0d9ea682bb419"><td class="memItemLeft" align="right" valign="top"><a id="a7d40634e0226c96b2ca0d9ea682bb419"></a>
+int&#160;</td><td class="memItemRight" valign="bottom"><b>insidePolygon</b> (struct Node *node, struct Node *list)</td></tr>
+<tr class="separator:a7d40634e0226c96b2ca0d9ea682bb419"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad344f2e049b4ef1dc71fe50ac3db0d77"><td class="memItemLeft" align="right" valign="top"><a id="ad344f2e049b4ef1dc71fe50ac3db0d77"></a>
+int&#160;</td><td class="memItemRight" valign="bottom"><b>intersect_tri_with_line</b> (const double *plane, const double *l1, const double *l2, double *p, double *t)</td></tr>
+<tr class="separator:ad344f2e049b4ef1dc71fe50ac3db0d77"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a54e94e3b2ee6502b5bd5fc502eed7a93"><td class="memItemLeft" align="right" valign="top"><a id="a54e94e3b2ee6502b5bd5fc502eed7a93"></a>
+int&#160;</td><td class="memItemRight" valign="bottom"><b>intersectInList</b> (struct Node *list, double x, double y, double z)</td></tr>
+<tr class="separator:a54e94e3b2ee6502b5bd5fc502eed7a93"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac68705d977b95d2ce19d47c187c5984b"><td class="memItemLeft" align="right" valign="top"><a id="ac68705d977b95d2ce19d47c187c5984b"></a>
+int&#160;</td><td class="memItemRight" valign="bottom"><b>invert_matrix_3x3</b> (long double m[], long double m_inv[])</td></tr>
+<tr class="separator:ac68705d977b95d2ce19d47c187c5984b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0adb05fe8eebbff1ed72977c8175def3"><td class="memItemLeft" align="right" valign="top"><a id="a0adb05fe8eebbff1ed72977c8175def3"></a>
+int&#160;</td><td class="memItemRight" valign="bottom"><b>isInside</b> (struct Node *node)</td></tr>
+<tr class="separator:a0adb05fe8eebbff1ed72977c8175def3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a961d4e6016396f981c7088fe0d480fde"><td class="memItemLeft" align="right" valign="top"><a id="a961d4e6016396f981c7088fe0d480fde"></a>
+int&#160;</td><td class="memItemRight" valign="bottom"><b>isIntersect</b> (struct Node node)</td></tr>
+<tr class="separator:a961d4e6016396f981c7088fe0d480fde"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1ee8c225207d365ae43123fbacf3d39e"><td class="memItemLeft" align="right" valign="top"><a id="a1ee8c225207d365ae43123fbacf3d39e"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>latlon2xyz</b> (int size, const double *lon, const double *lat, double *x, double *y, double *z)</td></tr>
+<tr class="separator:a1ee8c225207d365ae43123fbacf3d39e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4cf5438ecb4da59dcc26d725cea011a4"><td class="memItemLeft" align="right" valign="top"><a id="a4cf5438ecb4da59dcc26d725cea011a4"></a>
+int&#160;</td><td class="memItemRight" valign="bottom"><b>length</b> (struct Node *list)</td></tr>
+<tr class="separator:a4cf5438ecb4da59dcc26d725cea011a4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6babf03292716f2fefbbf4368eadfe0f"><td class="memItemLeft" align="right" valign="top"><a id="a6babf03292716f2fefbbf4368eadfe0f"></a>
+double&#160;</td><td class="memItemRight" valign="bottom"><b>maxval_double</b> (int size, const double *data)</td></tr>
+<tr class="separator:a6babf03292716f2fefbbf4368eadfe0f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa4625c78e721940b3b1087a8b2cef752"><td class="memItemLeft" align="right" valign="top"><a id="aa4625c78e721940b3b1087a8b2cef752"></a>
+double&#160;</td><td class="memItemRight" valign="bottom"><b>metric</b> (const double *p)</td></tr>
+<tr class="separator:aa4625c78e721940b3b1087a8b2cef752"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a743512b784406d174bc67445987c6cf8"><td class="memItemLeft" align="right" valign="top"><a id="a743512b784406d174bc67445987c6cf8"></a>
+double&#160;</td><td class="memItemRight" valign="bottom"><b>minval_double</b> (int size, const double *data)</td></tr>
+<tr class="separator:a743512b784406d174bc67445987c6cf8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a03b46011bb5f516faf58d95414c629f3"><td class="memItemLeft" align="right" valign="top"><a id="a03b46011bb5f516faf58d95414c629f3"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>mult</b> (long double m[], long double v[], long double out_v[])</td></tr>
+<tr class="separator:a03b46011bb5f516faf58d95414c629f3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aeda16e32d3d15b77393c0cc76387ad5a"><td class="memItemLeft" align="right" valign="top"><a id="aeda16e32d3d15b77393c0cc76387ad5a"></a>
+int&#160;</td><td class="memItemRight" valign="bottom"><b>nearest_index</b> (double value, const double *array, int ia)</td></tr>
+<tr class="separator:aeda16e32d3d15b77393c0cc76387ad5a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac306f4b34db0bb12d55eb815031b7476"><td class="memItemLeft" align="right" valign="top"><a id="ac306f4b34db0bb12d55eb815031b7476"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>normalize_vect</b> (double *e)</td></tr>
+<tr class="separator:ac306f4b34db0bb12d55eb815031b7476"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa1367e970bc7dca69e1d04d234f8aba2"><td class="memItemLeft" align="right" valign="top"><a id="aa1367e970bc7dca69e1d04d234f8aba2"></a>
+double&#160;</td><td class="memItemRight" valign="bottom"><b>poly_area</b> (const double x[], const double y[], int n)</td></tr>
+<tr class="separator:aa1367e970bc7dca69e1d04d234f8aba2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a38fbb816bc85da2d7bde79d0864a37d0"><td class="memItemLeft" align="right" valign="top"><a id="a38fbb816bc85da2d7bde79d0864a37d0"></a>
+double&#160;</td><td class="memItemRight" valign="bottom"><b>poly_area_dimensionless</b> (const double x[], const double y[], int n)</td></tr>
+<tr class="separator:a38fbb816bc85da2d7bde79d0864a37d0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5847b737bd1776b030f71b3ca8ab8822"><td class="memItemLeft" align="right" valign="top"><a id="a5847b737bd1776b030f71b3ca8ab8822"></a>
+double&#160;</td><td class="memItemRight" valign="bottom"><b>poly_area_no_adjust</b> (const double x[], const double y[], int n)</td></tr>
+<tr class="separator:a5847b737bd1776b030f71b3ca8ab8822"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a05a7c69a2fa292668ad3eacd9ff60f5e"><td class="memItemLeft" align="right" valign="top"><a id="a05a7c69a2fa292668ad3eacd9ff60f5e"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>printNode</b> (struct Node *list, char *str)</td></tr>
+<tr class="separator:a05a7c69a2fa292668ad3eacd9ff60f5e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a25b3a4d9513469c01b0636366ab5b4a8"><td class="memItemLeft" align="right" valign="top"><a id="a25b3a4d9513469c01b0636366ab5b4a8"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>rewindList</b> (void)</td></tr>
+<tr class="separator:a25b3a4d9513469c01b0636366ab5b4a8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7d0ef6baee574da014afa9b9520652aa"><td class="memItemLeft" align="right" valign="top"><a id="a7d0ef6baee574da014afa9b9520652aa"></a>
+int&#160;</td><td class="memItemRight" valign="bottom"><b>sameNode</b> (struct Node node1, struct Node node2)</td></tr>
+<tr class="separator:a7d0ef6baee574da014afa9b9520652aa"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5cf4018233441b2c1e3af63334c8e17c"><td class="memItemLeft" align="right" valign="top"><a id="a5cf4018233441b2c1e3af63334c8e17c"></a>
+int&#160;</td><td class="memItemRight" valign="bottom"><b>samePoint</b> (double x1, double y1, double z1, double x2, double y2, double z2)</td></tr>
+<tr class="separator:a5cf4018233441b2c1e3af63334c8e17c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6893d280ad38252a528385da3efc05c1"><td class="memItemLeft" align="right" valign="top"><a id="a6893d280ad38252a528385da3efc05c1"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>set_reproduce_siena_true</b> (void)</td></tr>
+<tr class="separator:a6893d280ad38252a528385da3efc05c1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a26c5946a33430252e81fffc8c6a49b7a"><td class="memItemLeft" align="right" valign="top"><a id="a26c5946a33430252e81fffc8c6a49b7a"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>set_reproduce_siena_true_</b> (void)</td></tr>
+<tr class="separator:a26c5946a33430252e81fffc8c6a49b7a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a565bf1a0a491e93b7a64c52e53e661cc"><td class="memItemLeft" align="right" valign="top"><a id="a565bf1a0a491e93b7a64c52e53e661cc"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>setCoordinate</b> (struct Node *node, double x, double y, double z)</td></tr>
+<tr class="separator:a565bf1a0a491e93b7a64c52e53e661cc"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a056cf0127f02a3cca573a57bba84a070"><td class="memItemLeft" align="right" valign="top"><a id="a056cf0127f02a3cca573a57bba84a070"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>setInbound</b> (struct Node *interList, struct Node *list)</td></tr>
+<tr class="separator:a056cf0127f02a3cca573a57bba84a070"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a77f2a235839c977f3f82e9b8552bb328"><td class="memItemLeft" align="right" valign="top"><a id="a77f2a235839c977f3f82e9b8552bb328"></a>
+double&#160;</td><td class="memItemRight" valign="bottom"><b>spherical_angle</b> (const double *v1, const double *v2, const double *v3)</td></tr>
+<tr class="separator:a77f2a235839c977f3f82e9b8552bb328"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2364282a86c8432b952e97a561616399"><td class="memItemLeft" align="right" valign="top"><a id="a2364282a86c8432b952e97a561616399"></a>
+double&#160;</td><td class="memItemRight" valign="bottom"><b>spherical_excess_area</b> (const double *p_ll, const double *p_ul, const double *p_lr, const double *p_ur, double radius)</td></tr>
+<tr class="separator:a2364282a86c8432b952e97a561616399"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:abbef76e3c4264ac58c9a8e3ef05917f9"><td class="memItemLeft" align="right" valign="top"><a id="abbef76e3c4264ac58c9a8e3ef05917f9"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>tokenize</b> (const char *const string, const char *tokens, unsigned int varlen, unsigned int maxvar, char *pstring, unsigned int *const nstr)</td></tr>
+<tr class="separator:abbef76e3c4264ac58c9a8e3ef05917f9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a69b8e30abe5d8cc2c2d6238e9ce4baab"><td class="memItemLeft" align="right" valign="top"><a id="a69b8e30abe5d8cc2c2d6238e9ce4baab"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>unit_vect_latlon</b> (int size, const double *lon, const double *lat, double *vlon, double *vlat)</td></tr>
+<tr class="separator:a69b8e30abe5d8cc2c2d6238e9ce4baab"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a05f544b9373d7d7e389cddd1b77c9047"><td class="memItemLeft" align="right" valign="top"><a id="a05f544b9373d7d7e389cddd1b77c9047"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>v_print</b> (double x[], double y[], int n)</td></tr>
+<tr class="separator:a05f544b9373d7d7e389cddd1b77c9047"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:acb19bf5eeed93a77999135b2e715fb6e"><td class="memItemLeft" align="right" valign="top"><a id="acb19bf5eeed93a77999135b2e715fb6e"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>vect_cross</b> (const double *p1, const double *p2, double *e)</td></tr>
+<tr class="separator:acb19bf5eeed93a77999135b2e715fb6e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae3e29afb7399b92b13799b371ca51b51"><td class="memItemLeft" align="right" valign="top"><a id="ae3e29afb7399b92b13799b371ca51b51"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>xyz2latlon</b> (int np, const double *x, const double *y, const double *z, double *lon, double *lat)</td></tr>
+<tr class="separator:ae3e29afb7399b92b13799b371ca51b51"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="var-members"></a>
 Variables</h2></td></tr>
-<tr class="memitem:a0e80651fdb1315a88e6a0e10b2c30787"><td class="memItemLeft" align="right" valign="top"><a id="a0e80651fdb1315a88e6a0e10b2c30787"></a>
-int&#160;</td><td class="memItemRight" valign="bottom"><b>reproduce_siena</b> = 0</td></tr>
-<tr class="separator:a0e80651fdb1315a88e6a0e10b2c30787"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a2d3f65cf77e476b0b08209f4442b3a08"><td class="memItemLeft" align="right" valign="top"><a id="a2d3f65cf77e476b0b08209f4442b3a08"></a>
-struct <a class="el" href="structNode.html">Node</a> *&#160;</td><td class="memItemRight" valign="bottom"><b>nodeList</b> =NULL</td></tr>
-<tr class="separator:a2d3f65cf77e476b0b08209f4442b3a08"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a7d59ab57ea071cacc07f49650dff1b07"><td class="memItemLeft" align="right" valign="top"><a id="a7d59ab57ea071cacc07f49650dff1b07"></a>
 int&#160;</td><td class="memItemRight" valign="bottom"><b>curListPos</b> =0</td></tr>
 <tr class="separator:a7d59ab57ea071cacc07f49650dff1b07"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2d3f65cf77e476b0b08209f4442b3a08"><td class="memItemLeft" align="right" valign="top"><a id="a2d3f65cf77e476b0b08209f4442b3a08"></a>
+struct Node *&#160;</td><td class="memItemRight" valign="bottom"><b>nodeList</b> =NULL</td></tr>
+<tr class="separator:a2d3f65cf77e476b0b08209f4442b3a08"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0e80651fdb1315a88e6a0e10b2c30787"><td class="memItemLeft" align="right" valign="top"><a id="a0e80651fdb1315a88e6a0e10b2c30787"></a>
+int&#160;</td><td class="memItemRight" valign="bottom"><b>reproduce_siena</b> = 0</td></tr>
+<tr class="separator:a0e80651fdb1315a88e6a0e10b2c30787"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Error handling and other general utilities for <a class="el" href="group__mosaic__mod.html">mosaic_mod</a>. </p>

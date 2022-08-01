@@ -1,0 +1,9 @@
+digraph "Graphical Class Hierarchy"
+{
+ // INTERACTIVE_SVG=YES
+ // LATEX_PDF_SIZE
+  edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
+  node [fontname="Helvetica",fontsize="10",shape=record];
+  rankdir="LR";
+  Node0 [label="mpp_nullify_domain_list",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$group__mpp__domains__mod.html#interfacempp__domains__mod_1_1mpp__nullify__domain__list",tooltip="Nullify domain list. This interface is needed in mpp_domains_test. 1-D case can be added in if needed..."];
+}

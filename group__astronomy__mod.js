@@ -1,39 +1,39 @@
 var group__astronomy__mod =
 [
-    [ "diurnal_solar", "interfaceastronomy__mod_1_1diurnal__solar.html", [
-      [ "diurnal_solar_0d", "interfaceastronomy__mod_1_1diurnal__solar.html#af727ae0008bd283364398efdea7288e4", null ],
-      [ "diurnal_solar_1d", "interfaceastronomy__mod_1_1diurnal__solar.html#a3fb0a50161556870c339e51007d72edd", null ],
-      [ "diurnal_solar_2d", "interfaceastronomy__mod_1_1diurnal__solar.html#a577a347753151527ed6046df3b0d1070", null ],
-      [ "diurnal_solar_cal_0d", "interfaceastronomy__mod_1_1diurnal__solar.html#a148595fe7067ec2f578d6a12a40b7bff", null ],
-      [ "diurnal_solar_cal_1d", "interfaceastronomy__mod_1_1diurnal__solar.html#ab0f1c0debc10697b183c1b3bf9b3cdc1", null ],
-      [ "diurnal_solar_cal_2d", "interfaceastronomy__mod_1_1diurnal__solar.html#a9f664492701405c3da160cde6568dc82", null ]
+    [ "annual_mean_solar", "group__astronomy__mod.html#interfaceastronomy__mod_1_1annual__mean__solar", [
+      [ "annual_mean_solar_1d", "group__astronomy__mod.html#a73b22023f95ab51738595290b16fc913", null ],
+      [ "annual_mean_solar_2d", "group__astronomy__mod.html#a841f269b79251fd44b9fbe2a6c9af03f", null ],
+      [ "annual_mean_solar_2level", "group__astronomy__mod.html#aa834f1a14b5d706c6e18771a37ad0255", null ]
     ] ],
-    [ "daily_mean_solar", "interfaceastronomy__mod_1_1daily__mean__solar.html", [
-      [ "daily_mean_solar_0d", "interfaceastronomy__mod_1_1daily__mean__solar.html#aa30f291a0ea032f3074ce045dc52391d", null ],
-      [ "daily_mean_solar_1d", "interfaceastronomy__mod_1_1daily__mean__solar.html#a9ec4dfb6faa483b90a44f637d2396ece", null ],
-      [ "daily_mean_solar_2d", "interfaceastronomy__mod_1_1daily__mean__solar.html#aafceabdc4e0dd4f110fed88e6975ef1d", null ],
-      [ "daily_mean_solar_2level", "interfaceastronomy__mod_1_1daily__mean__solar.html#a6a9dd974e6fe7e811b161a236754f2be", null ],
-      [ "daily_mean_solar_cal_0d", "interfaceastronomy__mod_1_1daily__mean__solar.html#ae9008a6b5c82e683c2d1745cd28f9d24", null ],
-      [ "daily_mean_solar_cal_1d", "interfaceastronomy__mod_1_1daily__mean__solar.html#a291cd887ea14e1b13369236a91753aba", null ],
-      [ "daily_mean_solar_cal_2d", "interfaceastronomy__mod_1_1daily__mean__solar.html#a92dfe81382f7d242b8c92a4dd1f78e85", null ],
-      [ "daily_mean_solar_cal_2level", "interfaceastronomy__mod_1_1daily__mean__solar.html#aa786db4c86665571434f881c4af5c75a", null ]
+    [ "daily_mean_solar", "group__astronomy__mod.html#interfaceastronomy__mod_1_1daily__mean__solar", [
+      [ "daily_mean_solar_0d", "group__astronomy__mod.html#aa30f291a0ea032f3074ce045dc52391d", null ],
+      [ "daily_mean_solar_1d", "group__astronomy__mod.html#a9ec4dfb6faa483b90a44f637d2396ece", null ],
+      [ "daily_mean_solar_2d", "group__astronomy__mod.html#aafceabdc4e0dd4f110fed88e6975ef1d", null ],
+      [ "daily_mean_solar_2level", "group__astronomy__mod.html#a6a9dd974e6fe7e811b161a236754f2be", null ],
+      [ "daily_mean_solar_cal_0d", "group__astronomy__mod.html#ae9008a6b5c82e683c2d1745cd28f9d24", null ],
+      [ "daily_mean_solar_cal_1d", "group__astronomy__mod.html#a291cd887ea14e1b13369236a91753aba", null ],
+      [ "daily_mean_solar_cal_2d", "group__astronomy__mod.html#a92dfe81382f7d242b8c92a4dd1f78e85", null ],
+      [ "daily_mean_solar_cal_2level", "group__astronomy__mod.html#aa786db4c86665571434f881c4af5c75a", null ]
     ] ],
-    [ "annual_mean_solar", "interfaceastronomy__mod_1_1annual__mean__solar.html", [
-      [ "annual_mean_solar_1d", "interfaceastronomy__mod_1_1annual__mean__solar.html#a73b22023f95ab51738595290b16fc913", null ],
-      [ "annual_mean_solar_2d", "interfaceastronomy__mod_1_1annual__mean__solar.html#a841f269b79251fd44b9fbe2a6c9af03f", null ],
-      [ "annual_mean_solar_2level", "interfaceastronomy__mod_1_1annual__mean__solar.html#aa834f1a14b5d706c6e18771a37ad0255", null ]
+    [ "diurnal_solar", "group__astronomy__mod.html#interfaceastronomy__mod_1_1diurnal__solar", [
+      [ "diurnal_solar_0d", "group__astronomy__mod.html#af727ae0008bd283364398efdea7288e4", null ],
+      [ "diurnal_solar_1d", "group__astronomy__mod.html#a3fb0a50161556870c339e51007d72edd", null ],
+      [ "diurnal_solar_2d", "group__astronomy__mod.html#a577a347753151527ed6046df3b0d1070", null ],
+      [ "diurnal_solar_cal_0d", "group__astronomy__mod.html#a148595fe7067ec2f578d6a12a40b7bff", null ],
+      [ "diurnal_solar_cal_1d", "group__astronomy__mod.html#ab0f1c0debc10697b183c1b3bf9b3cdc1", null ],
+      [ "diurnal_solar_cal_2d", "group__astronomy__mod.html#a9f664492701405c3da160cde6568dc82", null ]
     ] ],
-    [ "get_period", "interfaceastronomy__mod_1_1get__period.html", [
-      [ "get_period_integer", "interfaceastronomy__mod_1_1get__period.html#ac0b497e04ebb539076ce702cdc3aa85f", null ],
-      [ "get_period_time_type", "interfaceastronomy__mod_1_1get__period.html#a025f01b43c4d84ce9547886a7dd916c7", null ]
+    [ "get_period", "group__astronomy__mod.html#interfaceastronomy__mod_1_1get__period", [
+      [ "get_period_integer", "group__astronomy__mod.html#ac0b497e04ebb539076ce702cdc3aa85f", null ],
+      [ "get_period_time_type", "group__astronomy__mod.html#a025f01b43c4d84ce9547886a7dd916c7", null ]
     ] ],
-    [ "set_period", "interfaceastronomy__mod_1_1set__period.html", [
-      [ "set_period_integer", "interfaceastronomy__mod_1_1set__period.html#a873c596f7985745855e27a4f689fedc3", null ],
-      [ "set_period_time_type", "interfaceastronomy__mod_1_1set__period.html#a0a58ae7be03563b725fb6c6d1bf31588", null ]
+    [ "half_day", "group__astronomy__mod.html#interfaceastronomy__mod_1_1half__day", [
+      [ "half_day_0d", "group__astronomy__mod.html#aba2af2a06c209abb0450ca72202e7d67", null ],
+      [ "half_day_2d", "group__astronomy__mod.html#ac70ffe953d0db6a3b98088762a9f8fde", null ]
     ] ],
-    [ "half_day", "interfaceastronomy__mod_1_1half__day.html", [
-      [ "half_day_0d", "interfaceastronomy__mod_1_1half__day.html#aba2af2a06c209abb0450ca72202e7d67", null ],
-      [ "half_day_2d", "interfaceastronomy__mod_1_1half__day.html#ac70ffe953d0db6a3b98088762a9f8fde", null ]
+    [ "set_period", "group__astronomy__mod.html#interfaceastronomy__mod_1_1set__period", [
+      [ "set_period_integer", "group__astronomy__mod.html#a873c596f7985745855e27a4f689fedc3", null ],
+      [ "set_period_time_type", "group__astronomy__mod.html#a0a58ae7be03563b725fb6c6d1bf31588", null ]
     ] ],
     [ "angle", "group__astronomy__mod.html#gae7804247bd90b8bed01d7769a609f81d", null ],
     [ "annual_mean_solar_1d", "group__astronomy__mod.html#ga5d8127b604bbddae17c0d2d658d2a715", null ],

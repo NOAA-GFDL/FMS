@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.17"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>FMS: mpp/include/mpp_sum_mpi_ad.h Source File</title>
+<title>FMS: mpp/include/mpp_sum_mpi_ad.h (1640fde1a51a73f97748f150eb84bf49e472aeca) Source File</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -33,7 +33,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">FMS
-   &#160;<span id="projectnumber">2022.02.0</span>
+   &#160;<span id="projectnumber">2022.03.00</span>
    </div>
    <div id="projectbrief">Flexible Modeling System</div>
   </td>
@@ -94,61 +94,57 @@ $(document).ready(function(){initNavTree('mpp__sum__mpi__ad_8h_source.html','');
 <div class="title">mpp_sum_mpi_ad.h</div>  </div>
 </div><!--header-->
 <div class="contents">
-<div class="fragment"><div class="line"><a name="l00001"></a><span class="lineno">    1</span>&#160;! -*-f90-*-</div>
+<div class="fragment"><div class="line"><a name="l00001"></a><span class="lineno">    1</span>&#160;<span class="comment">! -*-f90-*-</span></div>
 <div class="line"><a name="l00002"></a><span class="lineno">    2</span>&#160; </div>
 <div class="line"><a name="l00003"></a><span class="lineno">    3</span>&#160; </div>
-<div class="line"><a name="l00004"></a><span class="lineno">    4</span>&#160;!***********************************************************************</div>
-<div class="line"><a name="l00005"></a><span class="lineno">    5</span>&#160;!*                   GNU Lesser General Public License</div>
-<div class="line"><a name="l00006"></a><span class="lineno">    6</span>&#160;!*</div>
-<div class="line"><a name="l00007"></a><span class="lineno">    7</span>&#160;!* This file is part of the GFDL Flexible Modeling System (FMS).</div>
-<div class="line"><a name="l00008"></a><span class="lineno">    8</span>&#160;!*</div>
-<div class="line"><a name="l00009"></a><span class="lineno">    9</span>&#160;!* FMS is free software: you can redistribute it and/or modify it under</div>
-<div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;!* the terms of the GNU Lesser General Public License as published by</div>
-<div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160;!* the Free Software Foundation, either version 3 of the License, or (at</div>
-<div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160;!* your option) any later version.</div>
-<div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160;!*</div>
-<div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160;!* FMS is distributed in the hope that it will be useful, but WITHOUT</div>
-<div class="line"><a name="l00015"></a><span class="lineno">   15</span>&#160;!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or</div>
-<div class="line"><a name="l00016"></a><span class="lineno">   16</span>&#160;!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License</div>
-<div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160;!* <span class="keywordflow">for</span> more details.</div>
-<div class="line"><a name="l00018"></a><span class="lineno">   18</span>&#160;!*</div>
-<div class="line"><a name="l00019"></a><span class="lineno">   19</span>&#160;!* You should have received a copy of the GNU Lesser General Public</div>
-<div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160;!* License along with FMS.  If not, see &lt;http:<span class="comment">//www.gnu.org/licenses/&gt;.</span></div>
-<div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160;!***********************************************************************</div>
-<div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160; </div>
-<div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160;    subroutine MPP_SUM_AD_( a, length, pelist )</div>
-<div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;!sums array a over the PEs in pelist (all PEs <span class="keywordflow">if</span> <span class="keyword">this</span> argument is omitted)</div>
-<div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160;!result is also automatically broadcast: all PEs have the sum in a at the end</div>
-<div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160;  !we are <span class="keyword">using</span> f77-style call: array passed by address and not descriptor; further,</div>
-<div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;  !the f90 conformance check is avoided.</div>
-<div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;      integer, intent(in) :: length</div>
-<div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;      integer, intent(in), optional :: pelist(:)</div>
-<div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;      MPP_TYPE_, intent(inout) :: a(*)</div>
-<div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;      integer :: n, errunit</div>
+<div class="line"><a name="l00004"></a><span class="lineno">    4</span>&#160;<span class="comment">!***********************************************************************</span></div>
+<div class="line"><a name="l00005"></a><span class="lineno">    5</span>&#160;<span class="comment">!*                   GNU Lesser General Public License</span></div>
+<div class="line"><a name="l00006"></a><span class="lineno">    6</span>&#160;<span class="comment">!*</span></div>
+<div class="line"><a name="l00007"></a><span class="lineno">    7</span>&#160;<span class="comment">!* This file is part of the GFDL Flexible Modeling System (FMS).</span></div>
+<div class="line"><a name="l00008"></a><span class="lineno">    8</span>&#160;<span class="comment">!*</span></div>
+<div class="line"><a name="l00009"></a><span class="lineno">    9</span>&#160;<span class="comment">!* FMS is free software: you can redistribute it and/or modify it under</span></div>
+<div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;<span class="comment">!* the terms of the GNU Lesser General Public License as published by</span></div>
+<div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160;<span class="comment">!* the Free Software Foundation, either version 3 of the License, or (at</span></div>
+<div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160;<span class="comment">!* your option) any later version.</span></div>
+<div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160;<span class="comment">!*</span></div>
+<div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160;<span class="comment">!* FMS is distributed in the hope that it will be useful, but WITHOUT</span></div>
+<div class="line"><a name="l00015"></a><span class="lineno">   15</span>&#160;<span class="comment">!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or</span></div>
+<div class="line"><a name="l00016"></a><span class="lineno">   16</span>&#160;<span class="comment">!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License</span></div>
+<div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160;<span class="comment">!* for more details.</span></div>
+<div class="line"><a name="l00018"></a><span class="lineno">   18</span>&#160;<span class="comment">!*</span></div>
+<div class="line"><a name="l00019"></a><span class="lineno">   19</span>&#160;<span class="comment">!* You should have received a copy of the GNU Lesser General Public</span></div>
+<div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160;<span class="comment">!* License along with FMS.  If not, see &lt;http://www.gnu.org/licenses/&gt;.</span></div>
+<div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160;<span class="comment">!***********************************************************************</span><span class="comment"></span></div>
+<div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160;<span class="comment">    !&gt; Sums array a over the PEs in pelist (all PEs if this argument is omitted)</span></div>
+<div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160;<span class="comment">    !! result is also automatically broadcast: all PEs have the sum in a at the end</span></div>
+<div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;<span class="comment">    !! we are using f77-style call: array passed by address and not descriptor; further,</span></div>
+<div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160;<span class="comment">    !! the f90 conformance check is avoided.</span></div>
+<div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160;<span class="comment">    !&gt; @ingroup mpp_mod</span></div>
+<div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;    <span class="keyword">subroutine </span><a class="code" href="group__mpp__mod.html#ga7e92fbb9175ecbe84873dc1085e51096">mpp_sum_ad_</a>( a, length, pelist )</div>
+<div class="line"><a name="l00028"></a><span class="lineno"><a class="line" href="group__mpp__mod.html#ga7e92fbb9175ecbe84873dc1085e51096">   28</a></span>&#160;      <span class="keywordtype">integer</span>, <span class="keywordtype">intent(in)</span> :: length</div>
+<div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;      <span class="keywordtype">integer</span>, <span class="keywordtype">intent(in)</span>, <span class="keywordtype">optional</span> :: pelist(:)</div>
+<div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;      mpp_type_, <span class="keywordtype">intent(inout)</span> :: a(*)</div>
+<div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;      <span class="keywordtype">integer</span> :: n, errunit</div>
 <div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160; </div>
-<div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;      if( .NOT.module_is_initialized )call mpp_error( FATAL, <span class="stringliteral">&#39;MPP_SUM: You must first call mpp_init.&#39;</span> )</div>
-<div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;      n = <a class="code" href="mpp__util__mpi_8inc.html#a948898490a7d1d09fc1043dac561514d">get_peset</a>(pelist); <span class="keywordflow">if</span>( <a class="code" href="group__mpp__mod.html#ga38f401fa0dd3a764c0fde248197eec15">peset</a>(n)%count.EQ.1 )<span class="keywordflow">return</span></div>
+<div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;      <span class="keywordflow">if</span>( .NOT.module_is_initialized )<span class="keyword">call </span>mpp_error( fatal, <span class="stringliteral">&#39;MPP_SUM: You must first call mpp_init.&#39;</span> )</div>
+<div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;      n = get_peset(pelist); <span class="keywordflow">if</span>( peset(n)%count.EQ.1 )<span class="keywordflow">return</span></div>
 <div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160; </div>
-<div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;      <span class="keywordflow">if</span>( debug .and. (current_clock.NE.0) )call SYSTEM_CLOCK(start_tick)</div>
-<div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;      <span class="keywordflow">if</span>( <a class="code" href="group__amip__interp__mod.html#ga9e8dcf56a77b1b156ccc0fa7e082a46b">verbose</a> )call mpp_error( NOTE, <span class="stringliteral">&#39;MPP_SUM: using MPI_ALLREDUCE...&#39;</span> )</div>
-<div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;      if( debug ) then</div>
-<div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;          errunit = <a class="code" href="mpp__util_8inc.html#a285ef180624257148d85af894928844b">stderr</a>()</div>
-<div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;          write( errunit,* )&#39;pe, n, <a class="code" href="group__mpp__mod.html#ga38f401fa0dd3a764c0fde248197eec15">peset</a>(n)%<span class="keywordtype">id</span>=&#39;, pe, n, <a class="code" href="group__mpp__mod.html#ga38f401fa0dd3a764c0fde248197eec15">peset</a>(n)%<span class="keywordtype">id</span></div>
-<div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;      endif</div>
-<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;      call mpp_broadcast(a, length, <a class="code" href="group__mpp__mod.html#ga38f401fa0dd3a764c0fde248197eec15">peset</a>(n)%list(1), PELIST=pelist)</div>
-<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;      if( debug .and. (current_clock.NE.0) )call increment_current_clock( EVENT_ALLREDUCE, length*MPP_TYPE_BYTELEN_ )</div>
-<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;      return</div>
-<div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;    end subroutine MPP_SUM_AD_</div>
-<div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160; </div>
-<div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;!<span class="preprocessor">#######################################################################</span></div>
-<div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="mpp__sum__ad_8inc.html">mpp_sum_ad.inc</a>&gt;</span></div>
-</div><!-- fragment --></div><!-- contents -->
+<div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;      <span class="keywordflow">if</span>( debug .and. (current_clock.NE.0) )<span class="keyword">call </span>system_clock(start_tick)</div>
+<div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;      <span class="keywordflow">if</span>( verbose )<span class="keyword">call </span>mpp_error( note, <span class="stringliteral">&#39;MPP_SUM: using MPI_ALLREDUCE...&#39;</span> )</div>
+<div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;      <span class="keywordflow">if</span>( debug ) <span class="keywordflow">then</span></div>
+<div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;          errunit = <a class="code" href="group__mpp__mod.html#ga285ef180624257148d85af894928844b">stderr</a>()</div>
+<div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;          <span class="keyword">write</span>( errunit,* )<span class="stringliteral">&#39;pe, n, peset(n)%id=&#39;</span>, pe, n, peset(n)%id</div>
+<div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;<span class="keywordflow">      endif</span></div>
+<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;      <span class="keyword">call </span>mpp_broadcast(a, length, peset(n)%list(1), pelist=pelist)</div>
+<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;      <span class="keywordflow">if</span>( debug .and. (current_clock.NE.0) )<span class="keyword">call </span>increment_current_clock( event_allreduce, length*mpp_type_bytelen_ )</div>
+<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;      <span class="keywordflow">return</span></div>
+<div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;    <span class="keyword">end subroutine </span><a class="code" href="group__mpp__mod.html#ga7e92fbb9175ecbe84873dc1085e51096">mpp_sum_ad_</a></div>
+<div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;<span class="comment">!#######################################################################</span></div>
+<div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;<span class="preprocessor">#include &lt;mpp_sum_ad.inc&gt;</span></div>
+<span class="preprocessor"></span></div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
-<div class="ttc" id="agroup__mpp__mod_html_ga38f401fa0dd3a764c0fde248197eec15"><div class="ttname"><a href="group__mpp__mod.html#ga38f401fa0dd3a764c0fde248197eec15">mpp_mod::peset</a></div><div class="ttdeci">type(communicator), dimension(:), allocatable peset</div><div class="ttdoc">Will be allocated starting from 0, 0 is a dummy used to hold single-PE &quot;self&quot; communicator.</div><div class="ttdef"><b>Definition:</b> <a href="mpp_8F90_source.html#l01211">mpp.F90:1211</a></div></div>
-<div class="ttc" id="agroup__amip__interp__mod_html_ga9e8dcf56a77b1b156ccc0fa7e082a46b"><div class="ttname"><a href="group__amip__interp__mod.html#ga9e8dcf56a77b1b156ccc0fa7e082a46b">amip_interp_mod::verbose</a></div><div class="ttdeci">integer verbose</div><div class="ttdoc">0 &lt;= verbose &lt;= 3</div><div class="ttdef"><b>Definition:</b> <a href="amip__interp_8F90_source.html#l00277">amip_interp.F90:277</a></div></div>
-<div class="ttc" id="ampp__util__mpi_8inc_html_a948898490a7d1d09fc1043dac561514d"><div class="ttname"><a href="mpp__util__mpi_8inc.html#a948898490a7d1d09fc1043dac561514d">get_peset</a></div><div class="ttdeci">integer function get_peset(pelist)</div><div class="ttdoc">Makes a PE set out of a PE list. A PE list is an ordered list of PEs a PE set is a triad (start,...</div><div class="ttdef"><b>Definition:</b> <a href="mpp__util__mpi_8inc_source.html#l00090">mpp_util_mpi.inc:90</a></div></div>
-<div class="ttc" id="ampp__util_8inc_html_a285ef180624257148d85af894928844b"><div class="ttname"><a href="mpp__util_8inc.html#a285ef180624257148d85af894928844b">stderr</a></div><div class="ttdeci">integer function stderr()</div><div class="ttdoc">This function returns the current standard fortran unit numbers for error messages.</div><div class="ttdef"><b>Definition:</b> <a href="mpp__util_8inc_source.html#l00085">mpp_util.inc:85</a></div></div>
-<div class="ttc" id="ampp__sum__ad_8inc_html"><div class="ttname"><a href="mpp__sum__ad_8inc.html">mpp_sum_ad.inc</a></div><div class="ttdoc">Adjoint summation routines for mpp_mod.</div></div>
+<div class="ttc" id="agroup__mpp__mod_html_ga285ef180624257148d85af894928844b"><div class="ttname"><a href="group__mpp__mod.html#ga285ef180624257148d85af894928844b">stderr</a></div><div class="ttdeci">integer function stderr()</div><div class="ttdoc">This function returns the current standard fortran unit numbers for error messages.</div><div class="ttdef"><b>Definition:</b> <a href="mpp__util_8inc_source.html#l00051">mpp_util.inc:51</a></div></div>
+<div class="ttc" id="agroup__mpp__mod_html_ga7e92fbb9175ecbe84873dc1085e51096"><div class="ttname"><a href="group__mpp__mod.html#ga7e92fbb9175ecbe84873dc1085e51096">mpp_sum_ad_</a></div><div class="ttdeci">subroutine mpp_sum_ad_(a, length, pelist)</div><div class="ttdoc">Sums array a over the PEs in pelist (all PEs if this argument is omitted) result is also automaticall...</div><div class="ttdef"><b>Definition:</b> <a href="mpp__sum__mpi__ad_8h_source.html#l00028">mpp_sum_mpi_ad.h:28</a></div></div>
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>

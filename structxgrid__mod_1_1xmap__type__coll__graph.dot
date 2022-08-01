@@ -1,0 +1,47 @@
+digraph "xmap_type"
+{
+ // INTERACTIVE_SVG=YES
+ // LATEX_PDF_SIZE
+  edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
+  node [fontname="Helvetica",fontsize="10",shape=record];
+  rankdir="LR";
+  Node1 [label="xmap_type",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled", fontcolor="black",tooltip="Type for an exchange grid, holds pointers to included grids and any necessary data."];
+  Node2 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" your2my1\nyour1my2" ,fontname="Helvetica"];
+  Node2 [label="logical",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
+  Node3 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" x2_get\nx2" ,fontname="Helvetica"];
+  Node3 [label="x2_type",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$group__xgrid__mod.html#structxgrid__mod_1_1x2__type",tooltip="Private type for exchange grid data."];
+  Node4 -> Node3 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" area" ,fontname="Helvetica"];
+  Node4 [label="real(r8_kind)",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
+  Node5 -> Node3 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" i\nj\nk\nl\npos" ,fontname="Helvetica"];
+  Node5 [label="integer",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
+  Node6 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" grids" ,fontname="Helvetica"];
+  Node6 [label="grid_type",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$group__xgrid__mod.html#structxgrid__mod_1_1grid__type",tooltip="Private type to hold all data needed from given grid for an exchange grid."];
+  Node2 -> Node6 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" is_ug\nis_latlon\non_this_pe" ,fontname="Helvetica"];
+  Node7 -> Node6 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" x\nx_repro" ,fontname="Helvetica"];
+  Node7 [label="xcell_type",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$group__xgrid__mod.html#structxgrid__mod_1_1xcell__type",tooltip="Private type for cell indices and data in the exchange grid."];
+  Node4 -> Node7 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" scale\ndi\ndj\narea" ,fontname="Helvetica"];
+  Node5 -> Node7 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" pe\nl1\nl2\nj1\nj2\ni1\ni2\nrecv_pos\ntile" ,fontname="Helvetica"];
+  Node8 -> Node6 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" id" ,fontname="Helvetica"];
+  Node8 [label="character(len=3)",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
+  Node9 -> Node6 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" ug_domain" ,fontname="Helvetica"];
+  Node9 [label="type(domainug)",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
+  Node10 -> Node6 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" box" ,fontname="Helvetica"];
+  Node10 [label="grid_box_type",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$group__xgrid__mod.html#structxgrid__mod_1_1grid__box__type",tooltip="Type to hold pointers for grid boxes."];
+  Node4 -> Node10 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" edge_s\nedge_e\ndx\nedge_w\ndy\nvlon\nen1\nen2\nvlat\nedge_n\n..." ,fontname="Helvetica"];
+  Node4 -> Node6 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" area_inv\nlon\nlat\nfrac_area\ngeolon\narea\ngeolat" ,fontname="Helvetica"];
+  Node5 -> Node6 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" ied_me\nkm\nsize\nlast_get\njm\nge_me\nim\npelist\nnxl_me\nie_me\n..." ,fontname="Helvetica"];
+  Node11 -> Node6 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" domain\ndomain_with_halo" ,fontname="Helvetica"];
+  Node11 [label="type(domain2d)",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
+  Node12 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" x1_put\nx1" ,fontname="Helvetica"];
+  Node12 [label="x1_type",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$group__xgrid__mod.html#structxgrid__mod_1_1x1__type",tooltip="Private type for exchange grid data."];
+  Node4 -> Node12 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" di\ndj\narea" ,fontname="Helvetica"];
+  Node5 -> Node12 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" i\nj\npos\ntile" ,fontname="Helvetica"];
+  Node13 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" put1\nget1_repro\nget1" ,fontname="Helvetica"];
+  Node13 [label="comm_type",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$group__xgrid__mod.html#structxgrid__mod_1_1comm__type",tooltip="Private type used for exchange grid communication."];
+  Node5 -> Node13 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" nsend\nunpack_ind\nrecvsize\nsendsize\nnrecv" ,fontname="Helvetica"];
+  Node14 -> Node13 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" recv\nsend" ,fontname="Helvetica"];
+  Node14 [label="overlap_type",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$group__xgrid__mod.html#structxgrid__mod_1_1overlap__type",tooltip="Private type for overlap exchange grid data."];
+  Node4 -> Node14 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" di\ndj" ,fontname="Helvetica"];
+  Node5 -> Node14 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" g\ni\nj\npe\ncount\nxloc\nbuffer_pos\ntile" ,fontname="Helvetica"];
+  Node5 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" size_get2\nsize\nrecv_count_repro\nind_get1\nsend_count_repro\nroot_pe\nme\nrecv_count_repro\l_tot\nversion\nyour2my1_size\n..." ,fontname="Helvetica"];
+}

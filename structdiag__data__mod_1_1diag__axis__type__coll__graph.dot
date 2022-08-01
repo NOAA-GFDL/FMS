@@ -1,0 +1,66 @@
+digraph "diag_axis_type"
+{
+ // INTERACTIVE_SVG=YES
+ // LATEX_PDF_SIZE
+  edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
+  node [fontname="Helvetica",fontsize="10",shape=record];
+  rankdir="LR";
+  Node1 [label="diag_axis_type",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled", fontcolor="black",tooltip="Type to hold the diagnostic axis description."];
+  Node2 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" domain" ,fontname="Helvetica"];
+  Node2 [label="domain1d",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$group__mpp__domains__mod.html#structmpp__domains__mod_1_1domain1d",tooltip="One dimensional domain used to manage shared data access between pes."];
+  Node3 -> Node2 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" cyclic" ,fontname="Helvetica"];
+  Node3 [label="logical",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
+  Node2 -> Node2 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" list" ,fontname="Helvetica"];
+  Node4 -> Node2 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" memory\nglobal\ncompute\ndata" ,fontname="Helvetica"];
+  Node4 [label="domain_axis_spec",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$group__mpp__domains__mod.html#structmpp__domains__mod_1_1domain__axis__spec",tooltip="Used to specify index limits along an axis of a domain."];
+  Node3 -> Node4 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" is_global" ,fontname="Helvetica"];
+  Node5 -> Node4 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" max_size\nsize\nbegin\nend" ,fontname="Helvetica"];
+  Node5 [label="integer",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
+  Node5 -> Node2 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" pe\ngoffset\npos\nloffset" ,fontname="Helvetica"];
+  Node6 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" cart_name" ,fontname="Helvetica"];
+  Node6 [label="character(len=1)",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
+  Node7 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" attributes" ,fontname="Helvetica"];
+  Node7 [label="diag_atttype",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$group__diag__data__mod.html#structdiag__data__mod_1_1diag__atttype",tooltip="Attribute type for diagnostic fields."];
+  Node8 -> Node7 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" catt" ,fontname="Helvetica"];
+  Node8 [label="character(len=1280)",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
+  Node9 -> Node7 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" name" ,fontname="Helvetica"];
+  Node9 [label="character(len=128)",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
+  Node10 -> Node7 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" fatt" ,fontname="Helvetica"];
+  Node10 [label="real",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
+  Node5 -> Node7 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" iatt\ntype\nlen" ,fontname="Helvetica"];
+  Node11 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" subaxis_domain2\ndomain2" ,fontname="Helvetica"];
+  Node11 [label="domain2d",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$group__mpp__domains__mod.html#structmpp__domains__mod_1_1domain2d",tooltip="The domain2D type contains all the necessary information to define the global, compute and data domai..."];
+  Node3 -> Node11 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" rotated_ninety\nsymmetry\ninitialized" ,fontname="Helvetica"];
+  Node2 -> Node11 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" x\ny" ,fontname="Helvetica"];
+  Node12 -> Node11 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" id" ,fontname="Helvetica"];
+  Node12 [label="integer(i8_kind)",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
+  Node11 -> Node11 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" io_domain" ,fontname="Helvetica"];
+  Node13 -> Node11 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" update_c\nupdate_t\nupdate_e\nbound_c\nbound_e\ncheck_n\nupdate_n\ncheck_c\nbound_n\ncheck_e\n..." ,fontname="Helvetica"];
+  Node13 [label="overlapspec",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$group__mpp__domains__mod.html#structmpp__domains__mod_1_1overlapspec",tooltip="Private type for overlap specifications."];
+  Node14 -> Node13 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" recv\nsend" ,fontname="Helvetica"];
+  Node14 [label="overlap_type",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$group__mpp__domains__mod.html#structmpp__domains__mod_1_1overlap__type",tooltip="Type for overlapping data."];
+  Node3 -> Node14 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" from_contact" ,fontname="Helvetica"];
+  Node5 -> Node14 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" rotation\ntotsize\npe\ndir\ntileme\njs\ncount\nis\ntilenbr\nindex\n..." ,fontname="Helvetica"];
+  Node13 -> Node13 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" next" ,fontname="Helvetica"];
+  Node5 -> Node13 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" nsend\nybegin\nxbegin\nyend\nnhalo\nxend\nrecvsize\nshalo\nehalo\nsendsize\n..." ,fontname="Helvetica"];
+  Node15 -> Node11 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" list" ,fontname="Helvetica"];
+  Node15 [label="domain2d_spec",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$group__mpp__domains__mod.html#structmpp__domains__mod_1_1domain2d__spec",tooltip="Private type to specify multiple index limits and pe information for a 2D domain."];
+  Node16 -> Node15 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" x\ny" ,fontname="Helvetica"];
+  Node16 [label="domain1d_spec",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$group__mpp__domains__mod.html#structmpp__domains__mod_1_1domain1d__spec",tooltip="A private type used to specify index limits for a domain decomposition."];
+  Node4 -> Node16 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" global\ncompute" ,fontname="Helvetica"];
+  Node5 -> Node16 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" pos" ,fontname="Helvetica"];
+  Node5 -> Node15 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" tile_id\npe\ntile_root_pe\npos" ,fontname="Helvetica"];
+  Node17 -> Node11 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" tilelist" ,fontname="Helvetica"];
+  Node17 [label="tile_type",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$group__mpp__domains__mod.html#structmpp__domains__mod_1_1tile__type",tooltip="Upper and lower x and y bounds for a tile."];
+  Node5 -> Node17 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" ybegin\nxbegin\nyend\nxend" ,fontname="Helvetica"];
+  Node5 -> Node11 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" fold\ntile_id\ntile_id_all\nio_layout\nnhalo\nntiles\npe\nmax_ntile\l_pe\nshalo\nncontacts\n..." ,fontname="Helvetica"];
+  Node18 -> Node11 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" name" ,fontname="Helvetica"];
+  Node18 [label="character(len=name\l_length)",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
+  Node19 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" units\nlong_name" ,fontname="Helvetica"];
+  Node19 [label="character(len=256)",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
+  Node20 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" domainug" ,fontname="Helvetica"];
+  Node20 [label="type(domainug)",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
+  Node9 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" req\nname\naux\nsubaxis_name" ,fontname="Helvetica"];
+  Node5 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" tile_count\ndomain_position\nend\nnum_attributes\nlength\ndirection\nshift\nset\nstart\nedges\n..." ,fontname="Helvetica"];
+  Node10 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" data" ,fontname="Helvetica"];
+}

@@ -1,0 +1,9 @@
+digraph "Graphical Class Hierarchy"
+{
+ // INTERACTIVE_SVG=YES
+ // LATEX_PDF_SIZE
+  edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
+  node [fontname="Helvetica",fontsize="10",shape=record];
+  rankdir="LR";
+  Node0 [label="get_grid_cell_area",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$group__grid2__mod.html#interfacegrid2__mod_1_1get__grid__cell__area",tooltip="Finds area of a grid cell."];
+}

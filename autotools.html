@@ -33,7 +33,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">FMS
-   &#160;<span id="projectnumber">2022.02.0</span>
+   &#160;<span id="projectnumber">2022.03.00</span>
    </div>
    <div id="projectbrief">Flexible Modeling System</div>
   </td>
@@ -143,6 +143,10 @@ $(document).ready(function(){initNavTree('autotools.html',''); initResizable(); 
 <li><code>--enable-mixed-mode</code> : Build in mixed precision mode, with default 4 byte reals and 8 byte real overloads</li>
 <li><code>--disable-setting-flags</code> : Build without automatically setting flags during configuration</li>
 <li><code>--with-mpi</code> : Build with MPI support, enabled by default</li>
+<li><code>--enable-overload-r4</code> : Compiles with 4 byte real routine overloads</li>
+<li><code>--enable-overload-c4</code> : Compiles with 4 byte complex routine overloads</li>
+<li><code>--enable-overload-c8</code> : Compiles with 8 byte complex routine overloads</li>
+<li><code>--disable-8byte-int</code> : Compiles with only 4 byte integer routines</li>
 </ul>
 <h2>Standard Make Targets</h2>
 <p>Some of the useful make targets include:</p><ul>

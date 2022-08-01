@@ -33,7 +33,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">FMS
-   &#160;<span id="projectnumber">2022.02.0</span>
+   &#160;<span id="projectnumber">2022.03.00</span>
    </div>
    <div id="projectbrief">Flexible Modeling System</div>
   </td>
@@ -103,45 +103,279 @@ $(document).ready(function(){initNavTree('group__yaml__parser__mod.html',''); in
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
 Data Types</h2></td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">interface &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="interfaceyaml__parser__mod_1_1get__value__from__key.html">get_value_from_key</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Dermine the value of a key from a keyname.  <a href="interfaceyaml__parser__mod_1_1get__value__from__key.html#details">More...</a><br /></td></tr>
-<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">interface &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="interfaceyaml__parser__mod_1_1open__and__parse__file__wrap.html">open_and_parse_file_wrap</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">c functions binding  <a href="interfaceyaml__parser__mod_1_1open__and__parse__file__wrap.html#details">More...</a><br /></td></tr>
-<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:interfaceyaml__parser__mod_1_1get__value__from__key"><td class="memItemLeft" align="right" valign="top">interface &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__yaml__parser__mod.html#interfaceyaml__parser__mod_1_1get__value__from__key">get_value_from_key</a></td></tr>
+<tr class="memdesc:interfaceyaml__parser__mod_1_1get__value__from__key"><td class="mdescLeft">&#160;</td><td class="mdescRight">Dermine the value of a key from a keyname.  <a href="group__yaml__parser__mod.html#interfaceyaml__parser__mod_1_1get__value__from__key">More...</a><br /></td></tr>
+<tr class="separator:interfaceyaml__parser__mod_1_1get__value__from__key"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:interfaceyaml__parser__mod_1_1open__and__parse__file__wrap"><td class="memItemLeft" align="right" valign="top">interface &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__yaml__parser__mod.html#interfaceyaml__parser__mod_1_1open__and__parse__file__wrap">open_and_parse_file_wrap</a></td></tr>
+<tr class="memdesc:interfaceyaml__parser__mod_1_1open__and__parse__file__wrap"><td class="mdescLeft">&#160;</td><td class="mdescRight">c functions binding  <a href="group__yaml__parser__mod.html#interfaceyaml__parser__mod_1_1open__and__parse__file__wrap">More...</a><br /></td></tr>
+<tr class="separator:interfaceyaml__parser__mod_1_1open__and__parse__file__wrap"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="func-members"></a>
 Functions/Subroutines</h2></td></tr>
-<tr class="memitem:ga3d600290bb55dd9edd575555d217cfeb"><td class="memItemLeft" align="right" valign="top">integer function, public&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__yaml__parser__mod.html#ga3d600290bb55dd9edd575555d217cfeb">open_and_parse_file</a> (filename)</td></tr>
-<tr class="memdesc:ga3d600290bb55dd9edd575555d217cfeb"><td class="mdescLeft">&#160;</td><td class="mdescRight">Opens and parses a yaml file.  <a href="group__yaml__parser__mod.html#ga3d600290bb55dd9edd575555d217cfeb">More...</a><br /></td></tr>
-<tr class="separator:ga3d600290bb55dd9edd575555d217cfeb"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga991ef792715cfaaf77a9929ffe718879"><td class="memItemLeft" align="right" valign="top">subroutine, public&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__yaml__parser__mod.html#ga991ef792715cfaaf77a9929ffe718879">get_block_ids</a> (file_id, block_name, block_ids, parent_block_id)</td></tr>
+<tr class="memdesc:ga991ef792715cfaaf77a9929ffe718879"><td class="mdescLeft">&#160;</td><td class="mdescRight">Gets the the ids of the blocks with block_name in the yaml file If parent_block_id is present, it only gets those that belong to that block.  <a href="group__yaml__parser__mod.html#ga991ef792715cfaaf77a9929ffe718879">More...</a><br /></td></tr>
+<tr class="separator:ga991ef792715cfaaf77a9929ffe718879"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga5ef96a65d44366f4014d60d0509749cf"><td class="memItemLeft" align="right" valign="top">subroutine, public&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__yaml__parser__mod.html#ga5ef96a65d44366f4014d60d0509749cf">get_key_ids</a> (file_id, block_id, key_ids)</td></tr>
+<tr class="memdesc:ga5ef96a65d44366f4014d60d0509749cf"><td class="mdescLeft">&#160;</td><td class="mdescRight">Gets the ids of the key-value pairs in a block.  <a href="group__yaml__parser__mod.html#ga5ef96a65d44366f4014d60d0509749cf">More...</a><br /></td></tr>
+<tr class="separator:ga5ef96a65d44366f4014d60d0509749cf"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga18652691d52033fcf0977464bf961705"><td class="memItemLeft" align="right" valign="top">subroutine, public&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__yaml__parser__mod.html#ga18652691d52033fcf0977464bf961705">get_key_name</a> (file_id, key_id, key_name)</td></tr>
 <tr class="memdesc:ga18652691d52033fcf0977464bf961705"><td class="mdescLeft">&#160;</td><td class="mdescRight">Gets the key from a file id.  <a href="group__yaml__parser__mod.html#ga18652691d52033fcf0977464bf961705">More...</a><br /></td></tr>
 <tr class="separator:ga18652691d52033fcf0977464bf961705"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:gaf4da6a3ca1bdc64af6f37d7545fdedfe"><td class="memItemLeft" align="right" valign="top">subroutine, public&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__yaml__parser__mod.html#gaf4da6a3ca1bdc64af6f37d7545fdedfe">get_key_value</a> (file_id, key_id, key_value)</td></tr>
 <tr class="memdesc:gaf4da6a3ca1bdc64af6f37d7545fdedfe"><td class="mdescLeft">&#160;</td><td class="mdescRight">Gets the value from a file id.  <a href="group__yaml__parser__mod.html#gaf4da6a3ca1bdc64af6f37d7545fdedfe">More...</a><br /></td></tr>
 <tr class="separator:gaf4da6a3ca1bdc64af6f37d7545fdedfe"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga1765b04ffaada8280e3d04d260f1b363"><td class="memItemLeft" align="right" valign="top">integer function, public&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__yaml__parser__mod.html#ga1765b04ffaada8280e3d04d260f1b363">get_nkeys</a> (file_id, block_id)</td></tr>
+<tr class="memdesc:ga1765b04ffaada8280e3d04d260f1b363"><td class="mdescLeft">&#160;</td><td class="mdescRight">Gets the number of key-value pairs in a block.  <a href="group__yaml__parser__mod.html#ga1765b04ffaada8280e3d04d260f1b363">More...</a><br /></td></tr>
+<tr class="separator:ga1765b04ffaada8280e3d04d260f1b363"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:gabeac7c228a3c6057474cb7aac407cbca"><td class="memItemLeft" align="right" valign="top">integer function, public&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__yaml__parser__mod.html#gabeac7c228a3c6057474cb7aac407cbca">get_num_blocks</a> (file_id, block_name, parent_block_id)</td></tr>
+<tr class="memdesc:gabeac7c228a3c6057474cb7aac407cbca"><td class="mdescLeft">&#160;</td><td class="mdescRight">Determines the number of blocks with block_name in the yaml file If parent_block_id is present, it only counts those that belong to that block.  <a href="group__yaml__parser__mod.html#gabeac7c228a3c6057474cb7aac407cbca">More...</a><br /></td></tr>
+<tr class="separator:gabeac7c228a3c6057474cb7aac407cbca"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga0567345270e76181ad8ee7500bd1c461"><td class="memItemLeft" align="right" valign="top">subroutine&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__yaml__parser__mod.html#ga0567345270e76181ad8ee7500bd1c461">get_value_from_key_0d</a> (file_id, block_id, key_name, key_value, is_optional)</td></tr>
 <tr class="memdesc:ga0567345270e76181ad8ee7500bd1c461"><td class="mdescLeft">&#160;</td><td class="mdescRight">Used to dermine the value of a key from a keyname.  <a href="group__yaml__parser__mod.html#ga0567345270e76181ad8ee7500bd1c461">More...</a><br /></td></tr>
 <tr class="separator:ga0567345270e76181ad8ee7500bd1c461"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga734f8c898afc2da442aaa74a1b6d84ee"><td class="memItemLeft" align="right" valign="top">subroutine&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__yaml__parser__mod.html#ga734f8c898afc2da442aaa74a1b6d84ee">get_value_from_key_1d</a> (file_id, block_id, key_name, key_value, is_optional)</td></tr>
 <tr class="memdesc:ga734f8c898afc2da442aaa74a1b6d84ee"><td class="mdescLeft">&#160;</td><td class="mdescRight">Used' to dermine the 1D value of a key from a keyname.  <a href="group__yaml__parser__mod.html#ga734f8c898afc2da442aaa74a1b6d84ee">More...</a><br /></td></tr>
 <tr class="separator:ga734f8c898afc2da442aaa74a1b6d84ee"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:gabeac7c228a3c6057474cb7aac407cbca"><td class="memItemLeft" align="right" valign="top">integer function, public&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__yaml__parser__mod.html#gabeac7c228a3c6057474cb7aac407cbca">get_num_blocks</a> (file_id, block_name, parent_block_id)</td></tr>
-<tr class="memdesc:gabeac7c228a3c6057474cb7aac407cbca"><td class="mdescLeft">&#160;</td><td class="mdescRight">Determines the number of blocks with block_name in the yaml file If parent_block_id is present, it only counts those that belong to that block.  <a href="group__yaml__parser__mod.html#gabeac7c228a3c6057474cb7aac407cbca">More...</a><br /></td></tr>
-<tr class="separator:gabeac7c228a3c6057474cb7aac407cbca"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga991ef792715cfaaf77a9929ffe718879"><td class="memItemLeft" align="right" valign="top">subroutine, public&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__yaml__parser__mod.html#ga991ef792715cfaaf77a9929ffe718879">get_block_ids</a> (file_id, block_name, block_ids, parent_block_id)</td></tr>
-<tr class="memdesc:ga991ef792715cfaaf77a9929ffe718879"><td class="mdescLeft">&#160;</td><td class="mdescRight">Gets the the ids of the blocks with block_name in the yaml file If parent_block_id is present, it only gets those that belong to that block.  <a href="group__yaml__parser__mod.html#ga991ef792715cfaaf77a9929ffe718879">More...</a><br /></td></tr>
-<tr class="separator:ga991ef792715cfaaf77a9929ffe718879"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga1765b04ffaada8280e3d04d260f1b363"><td class="memItemLeft" align="right" valign="top">integer function, public&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__yaml__parser__mod.html#ga1765b04ffaada8280e3d04d260f1b363">get_nkeys</a> (file_id, block_id)</td></tr>
-<tr class="memdesc:ga1765b04ffaada8280e3d04d260f1b363"><td class="mdescLeft">&#160;</td><td class="mdescRight">Gets the number of key-value pairs in a block.  <a href="group__yaml__parser__mod.html#ga1765b04ffaada8280e3d04d260f1b363">More...</a><br /></td></tr>
-<tr class="separator:ga1765b04ffaada8280e3d04d260f1b363"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga5ef96a65d44366f4014d60d0509749cf"><td class="memItemLeft" align="right" valign="top">subroutine, public&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__yaml__parser__mod.html#ga5ef96a65d44366f4014d60d0509749cf">get_key_ids</a> (file_id, block_id, key_ids)</td></tr>
-<tr class="memdesc:ga5ef96a65d44366f4014d60d0509749cf"><td class="mdescLeft">&#160;</td><td class="mdescRight">Gets the ids of the key-value pairs in a block.  <a href="group__yaml__parser__mod.html#ga5ef96a65d44366f4014d60d0509749cf">More...</a><br /></td></tr>
-<tr class="separator:ga5ef96a65d44366f4014d60d0509749cf"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga3d600290bb55dd9edd575555d217cfeb"><td class="memItemLeft" align="right" valign="top">integer function, public&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__yaml__parser__mod.html#ga3d600290bb55dd9edd575555d217cfeb">open_and_parse_file</a> (filename)</td></tr>
+<tr class="memdesc:ga3d600290bb55dd9edd575555d217cfeb"><td class="mdescLeft">&#160;</td><td class="mdescRight">Opens and parses a yaml file.  <a href="group__yaml__parser__mod.html#ga3d600290bb55dd9edd575555d217cfeb">More...</a><br /></td></tr>
+<tr class="separator:ga3d600290bb55dd9edd575555d217cfeb"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <p>Routines to use for parsing yaml files. </p>
+<hr/><h2 class="groupheader">Data Type Documentation</h2>
+<a name="interfaceyaml__parser__mod_1_1get__value__from__key" id="interfaceyaml__parser__mod_1_1get__value__from__key"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#interfaceyaml__parser__mod_1_1get__value__from__key">&#9670;&nbsp;</a></span>yaml_parser_mod::get_value_from_key</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">interface yaml_parser_mod::get_value_from_key</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<div class="textblock"><p>Dermine the value of a key from a keyname. </p>
+
+<p class="definition">Definition at line <a class="el" href="yaml__parser_8F90_source.html#l00054">54</a> of file <a class="el" href="yaml__parser_8F90_source.html">yaml_parser.F90</a>.</p>
+</div><table class="memberdecls">
+<tr><td colspan="2"><h3>Private Member Functions</h3></td></tr>
+<tr class="memitem:aa59d6f319cd45db5fa9b2a4ed5dd41da"><td class="memItemLeft" align="right" valign="top">subroutine&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__yaml__parser__mod.html#aa59d6f319cd45db5fa9b2a4ed5dd41da">get_value_from_key_0d</a> (file_id, block_id, key_name, key_value, is_optional)</td></tr>
+<tr class="memdesc:aa59d6f319cd45db5fa9b2a4ed5dd41da"><td class="mdescLeft">&#160;</td><td class="mdescRight">Used to dermine the value of a key from a keyname.  <a href="group__yaml__parser__mod.html#aa59d6f319cd45db5fa9b2a4ed5dd41da">More...</a><br /></td></tr>
+<tr class="separator:aa59d6f319cd45db5fa9b2a4ed5dd41da"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aabadbb2a315975802f314a83fb4eb4ed"><td class="memItemLeft" align="right" valign="top">subroutine&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__yaml__parser__mod.html#aabadbb2a315975802f314a83fb4eb4ed">get_value_from_key_1d</a> (file_id, block_id, key_name, key_value, is_optional)</td></tr>
+<tr class="memdesc:aabadbb2a315975802f314a83fb4eb4ed"><td class="mdescLeft">&#160;</td><td class="mdescRight">Used' to dermine the 1D value of a key from a keyname.  <a href="group__yaml__parser__mod.html#aabadbb2a315975802f314a83fb4eb4ed">More...</a><br /></td></tr>
+<tr class="separator:aabadbb2a315975802f314a83fb4eb4ed"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table>
+<h4 class="groupheader">Member Function/Subroutine Documentation</h4>
+<a id="aa59d6f319cd45db5fa9b2a4ed5dd41da"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa59d6f319cd45db5fa9b2a4ed5dd41da">&#9670;&nbsp;</a></span>get_value_from_key_0d()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">subroutine get_value_from_key_0d </td>
+          <td>(</td>
+          <td class="paramtype">integer, intent(in)&#160;</td>
+          <td class="paramname"><em>file_id</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">integer, intent(in)&#160;</td>
+          <td class="paramname"><em>block_id</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">character(len=*), intent(in)&#160;</td>
+          <td class="paramname"><em>key_name</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">class(*), intent(inout)&#160;</td>
+          <td class="paramname"><em>key_value</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">logical, intent(in), optional&#160;</td>
+          <td class="paramname"><em>is_optional</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Used to dermine the value of a key from a keyname. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">file_id</td><td>File id of the yaml file to search </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">block_id</td><td>ID corresponding to the block you want the key for </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">key_name</td><td>Name of the key you want the value for </td></tr>
+    <tr><td class="paramdir">[in,out]</td><td class="paramname">key_value</td><td>Value of the key </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">is_optional</td><td>Flag indicating if it is okay for they key to not exist. If the key does not exist key_value will not be set, so it is the user's responsibility to initialize it before the call </td></tr>
+  </table>
+  </dd>
+</dl>
+
+<p class="definition">Definition at line <a class="el" href="yaml__parser_8F90_source.html#l00257">257</a> of file <a class="el" href="yaml__parser_8F90_source.html">yaml_parser.F90</a>.</p>
+
+</div>
+</div>
+<a id="aabadbb2a315975802f314a83fb4eb4ed"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aabadbb2a315975802f314a83fb4eb4ed">&#9670;&nbsp;</a></span>get_value_from_key_1d()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">subroutine get_value_from_key_1d </td>
+          <td>(</td>
+          <td class="paramtype">integer, intent(in)&#160;</td>
+          <td class="paramname"><em>file_id</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">integer, intent(in)&#160;</td>
+          <td class="paramname"><em>block_id</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">character(len=*), intent(in)&#160;</td>
+          <td class="paramname"><em>key_name</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">class(*), dimension(:), intent(inout)&#160;</td>
+          <td class="paramname"><em>key_value</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">logical, intent(in), optional&#160;</td>
+          <td class="paramname"><em>is_optional</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Used' to dermine the 1D value of a key from a keyname. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">file_id</td><td>File id of the yaml file to search </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">block_id</td><td>ID corresponding to the block you want the key for </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">key_name</td><td>Name of the key you want the value for </td></tr>
+    <tr><td class="paramdir">[in,out]</td><td class="paramname">key_value</td><td>Value of the key </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">is_optional</td><td>Flag indicating if it is okay for they key' to not exist. If the key does not exist key_value will not be set, so it is the user's responsibility to initialize it before the call </td></tr>
+  </table>
+  </dd>
+</dl>
+
+<p class="definition">Definition at line <a class="el" href="yaml__parser_8F90_source.html#l00323">323</a> of file <a class="el" href="yaml__parser_8F90_source.html">yaml_parser.F90</a>.</p>
+
+</div>
+</div>
+
+</div>
+</div>
+<a name="interfaceyaml__parser__mod_1_1open__and__parse__file__wrap" id="interfaceyaml__parser__mod_1_1open__and__parse__file__wrap"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#interfaceyaml__parser__mod_1_1open__and__parse__file__wrap">&#9670;&nbsp;</a></span>yaml_parser_mod::open_and_parse_file_wrap</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">interface yaml_parser_mod::open_and_parse_file_wrap</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<div class="textblock"><p>c functions binding </p>
+<p>Private c function that opens and parses a yaml file (see <a class="el" href="yaml__parser__binding_8c_source.html">yaml_parser_binding.c</a>) </p><dl class="section return"><dt>Returns</dt><dd>Flag indicating if the read was sucessful </dd></dl>
+
+<p class="definition">Definition at line <a class="el" href="yaml__parser_8F90_source.html#l00065">65</a> of file <a class="el" href="yaml__parser_8F90_source.html">yaml_parser.F90</a>.</p>
+</div><table class="memberdecls">
+<tr><td colspan="2"><h3>Private Member Functions</h3></td></tr>
+<tr class="memitem:ac14a1953ba7992c6c2d093d9f3e026f3"><td class="memItemLeft" align="right" valign="top">logical(kind=c_bool) function&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__yaml__parser__mod.html#ac14a1953ba7992c6c2d093d9f3e026f3">open_and_parse_file_wrap</a> (filename, file_id)</td></tr>
+<tr class="separator:ac14a1953ba7992c6c2d093d9f3e026f3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table>
+<h4 class="groupheader">Constructor &amp; Destructor Documentation</h4>
+<a id="ac14a1953ba7992c6c2d093d9f3e026f3"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac14a1953ba7992c6c2d093d9f3e026f3">&#9670;&nbsp;</a></span>open_and_parse_file_wrap()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">logical(kind=c_bool) function <a class="el" href="group__yaml__parser__mod.html#interfaceyaml__parser__mod_1_1open__and__parse__file__wrap">open_and_parse_file_wrap</a> </td>
+          <td>(</td>
+          <td class="paramtype">character(kind=c_char), dimension(*), intent(in)&#160;</td>
+          <td class="paramname"><em>filename</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">integer(kind=c_int), intent(out)&#160;</td>
+          <td class="paramname"><em>file_id</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">filename</td><td>Filename of the yaml file</td></tr>
+    <tr><td class="paramdir">[out]</td><td class="paramname">file_id</td><td>File id corresponding to the yaml file that was opened</td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>Flag indicating if the read was sucessful </dd></dl>
+
+<p class="definition">Definition at line <a class="el" href="yaml__parser_8F90_source.html#l00067">67</a> of file <a class="el" href="yaml__parser_8F90_source.html">yaml_parser.F90</a>.</p>
+
+</div>
+</div>
+
+</div>
+</div>
 <h2 class="groupheader">Function/Subroutine Documentation</h2>
 <a id="ga991ef792715cfaaf77a9929ffe718879"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#ga991ef792715cfaaf77a9929ffe718879">&#9670;&nbsp;</a></span>get_block_ids()</h2>

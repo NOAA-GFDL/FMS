@@ -33,7 +33,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">FMS
-   &#160;<span id="projectnumber">2022.02.0</span>
+   &#160;<span id="projectnumber">2022.03.00</span>
    </div>
    <div id="projectbrief">Flexible Modeling System</div>
   </td>
@@ -99,29 +99,20 @@ $(document).ready(function(){initNavTree('group__fms__affinity__mod.html',''); i
 </div><!--header-->
 <div class="contents">
 
-<p>Fortran API interfaces to set the thread affinity. API interfaces to allow setting and getting thread affinity. The thread affinity get and set are managed in the C routines in <a class="el" href="affinity_8c.html" title="Routines to set and get thread CPU affinity Get, set, and helper functions for thread CPU affinity to...">affinity.c</a>.  
+<p>Fortran API interfaces to set the thread affinity. API interfaces to allow setting and getting thread affinity. The routines get_cpuset , set_cpu_affinity , and fms_affinity_get are defined via C routines in <a class="el" href="affinity_8c_source.html">affinity.c</a>.  
 <a href="#details">More...</a></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
 Data Types</h2></td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">interface &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="interfacefms__affinity__mod_1_1fms__affinity__get.html">fms_affinity_get</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Interface to get affinity from the current component.  <a href="interfacefms__affinity__mod_1_1fms__affinity__get.html#details">More...</a><br /></td></tr>
-<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">interface &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="interfacefms__affinity__mod_1_1get__cpuset.html">get_cpuset</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Private interface to retrieve this groups CPU set and it's size.  <a href="interfacefms__affinity__mod_1_1get__cpuset.html#details">More...</a><br /></td></tr>
-<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">interface &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="interfacefms__affinity__mod_1_1set__cpu__affinity.html">set_cpu_affinity</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Private interface to set CPU afinity to a given core.  <a href="interfacefms__affinity__mod_1_1set__cpu__affinity.html#details">More...</a><br /></td></tr>
-<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:interfacefms__affinity__mod_1_1get__cpuset"><td class="memItemLeft" align="right" valign="top">interface &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__fms__affinity__mod.html#interfacefms__affinity__mod_1_1get__cpuset">get_cpuset</a></td></tr>
+<tr class="memdesc:interfacefms__affinity__mod_1_1get__cpuset"><td class="mdescLeft">&#160;</td><td class="mdescRight">Private interface to retrieve this groups CPU set and it's size.  <a href="group__fms__affinity__mod.html#interfacefms__affinity__mod_1_1get__cpuset">More...</a><br /></td></tr>
+<tr class="separator:interfacefms__affinity__mod_1_1get__cpuset"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:interfacefms__affinity__mod_1_1set__cpu__affinity"><td class="memItemLeft" align="right" valign="top">interface &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__fms__affinity__mod.html#interfacefms__affinity__mod_1_1set__cpu__affinity">set_cpu_affinity</a></td></tr>
+<tr class="memdesc:interfacefms__affinity__mod_1_1set__cpu__affinity"><td class="mdescLeft">&#160;</td><td class="mdescRight">Private interface to set CPU afinity to a given core.  <a href="group__fms__affinity__mod.html#interfacefms__affinity__mod_1_1set__cpu__affinity">More...</a><br /></td></tr>
+<tr class="separator:interfacefms__affinity__mod_1_1set__cpu__affinity"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="func-members"></a>
 Functions/Subroutines</h2></td></tr>
-<tr class="memitem:ga302de19fbd9ea007cc5bf3abb77edc68"><td class="memItemLeft" align="right" valign="top"><a id="ga302de19fbd9ea007cc5bf3abb77edc68"></a>
-integer(kind=c_int) function&#160;</td><td class="memItemRight" valign="bottom"><b>get_cpuset</b> (fsz, output, pe, debug)</td></tr>
-<tr class="separator:ga302de19fbd9ea007cc5bf3abb77edc68"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga7a03c21c363f196c9d1638034935718e"><td class="memItemLeft" align="right" valign="top"><a id="ga7a03c21c363f196c9d1638034935718e"></a>
-integer(kind=c_int) function&#160;</td><td class="memItemRight" valign="bottom"><b>set_cpu_affinity</b> (cpu)</td></tr>
-<tr class="separator:ga7a03c21c363f196c9d1638034935718e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga78a042dc1e444c6cb142e03d2c1f5345"><td class="memItemLeft" align="right" valign="top"><a id="ga78a042dc1e444c6cb142e03d2c1f5345"></a>
 subroutine, public&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__fms__affinity__mod.html#ga78a042dc1e444c6cb142e03d2c1f5345">fms_affinity_init</a> ()</td></tr>
 <tr class="memdesc:ga78a042dc1e444c6cb142e03d2c1f5345"><td class="mdescLeft">&#160;</td><td class="mdescRight">Initialization routine for affinity handling. <br /></td></tr>
@@ -129,15 +120,18 @@ subroutine, public&#160;</td><td class="memItemRight" valign="bottom"><a class="
 <tr class="memitem:gaee9fe9116c8a7ddbdcc6ed836b218755"><td class="memItemLeft" align="right" valign="top">subroutine, public&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__fms__affinity__mod.html#gaee9fe9116c8a7ddbdcc6ed836b218755">fms_affinity_set</a> (component, use_hyper_thread, nthreads)</td></tr>
 <tr class="memdesc:gaee9fe9116c8a7ddbdcc6ed836b218755"><td class="mdescLeft">&#160;</td><td class="mdescRight">Routine to set affinity for a component.  <a href="group__fms__affinity__mod.html#gaee9fe9116c8a7ddbdcc6ed836b218755">More...</a><br /></td></tr>
 <tr class="separator:gaee9fe9116c8a7ddbdcc6ed836b218755"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga302de19fbd9ea007cc5bf3abb77edc68"><td class="memItemLeft" align="right" valign="top"><a id="ga302de19fbd9ea007cc5bf3abb77edc68"></a>
+integer(kind=c_int) function&#160;</td><td class="memItemRight" valign="bottom"><b>get_cpuset</b> (fsz, output, pe, debug)</td></tr>
+<tr class="separator:ga302de19fbd9ea007cc5bf3abb77edc68"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga7a03c21c363f196c9d1638034935718e"><td class="memItemLeft" align="right" valign="top"><a id="ga7a03c21c363f196c9d1638034935718e"></a>
+integer(kind=c_int) function&#160;</td><td class="memItemRight" valign="bottom"><b>set_cpu_affinity</b> (cpu)</td></tr>
+<tr class="separator:ga7a03c21c363f196c9d1638034935718e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="var-members"></a>
 Variables</h2></td></tr>
 <tr class="memitem:ga2ce2e3d54661724dcd6eae4271fe2428"><td class="memItemLeft" align="right" valign="top"><a id="ga2ce2e3d54661724dcd6eae4271fe2428"></a>
 logical&#160;</td><td class="memItemRight" valign="bottom"><b>affinity</b> = .true.</td></tr>
 <tr class="separator:ga2ce2e3d54661724dcd6eae4271fe2428"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga3a5d5dde929708624552f3cd1f6af46d"><td class="memItemLeft" align="right" valign="top"><a id="ga3a5d5dde929708624552f3cd1f6af46d"></a>
-logical&#160;</td><td class="memItemRight" valign="bottom"><b>strict</b> = .true.</td></tr>
-<tr class="separator:ga3a5d5dde929708624552f3cd1f6af46d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:gae1db4a1f7b5b9d78777c3f3bcd06a279"><td class="memItemLeft" align="right" valign="top"><a id="gae1db4a1f7b5b9d78777c3f3bcd06a279"></a>
 logical&#160;</td><td class="memItemRight" valign="bottom"><b>debug_affinity</b> = .false.</td></tr>
 <tr class="separator:gae1db4a1f7b5b9d78777c3f3bcd06a279"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -147,10 +141,62 @@ logical(c_bool)&#160;</td><td class="memItemRight" valign="bottom"><b>debug_cpus
 <tr class="memitem:gad369225c254bc7bda087334ca5d13096"><td class="memItemLeft" align="right" valign="top"><a id="gad369225c254bc7bda087334ca5d13096"></a>
 logical&#160;</td><td class="memItemRight" valign="bottom"><b>module_is_initialized</b> = .FALSE.</td></tr>
 <tr class="separator:gad369225c254bc7bda087334ca5d13096"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga3a5d5dde929708624552f3cd1f6af46d"><td class="memItemLeft" align="right" valign="top"><a id="ga3a5d5dde929708624552f3cd1f6af46d"></a>
+logical&#160;</td><td class="memItemRight" valign="bottom"><b>strict</b> = .true.</td></tr>
+<tr class="separator:ga3a5d5dde929708624552f3cd1f6af46d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
-<p>Fortran API interfaces to set the thread affinity. API interfaces to allow setting and getting thread affinity. The thread affinity get and set are managed in the C routines in <a class="el" href="affinity_8c.html" title="Routines to set and get thread CPU affinity Get, set, and helper functions for thread CPU affinity to...">affinity.c</a>. </p>
+<p>Fortran API interfaces to set the thread affinity. API interfaces to allow setting and getting thread affinity. The routines get_cpuset , set_cpu_affinity , and fms_affinity_get are defined via C routines in <a class="el" href="affinity_8c_source.html">affinity.c</a>. </p>
 <dl class="section author"><dt>Author</dt><dd>Rusty Benson </dd></dl>
+<hr/><h2 class="groupheader">Data Type Documentation</h2>
+<a name="interfacefms__affinity__mod_1_1get__cpuset" id="interfacefms__affinity__mod_1_1get__cpuset"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#interfacefms__affinity__mod_1_1get__cpuset">&#9670;&nbsp;</a></span>fms_affinity_mod::get_cpuset</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">interface fms_affinity_mod::get_cpuset</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<div class="textblock"><p>Private interface to retrieve this groups CPU set and it's size. </p>
+<p>Defined in <a class="el" href="affinity_8c_source.html">affinity.c</a>. </p>
+
+<p class="definition">Definition at line <a class="el" href="fms__affinity_8F90_source.html#l00056">56</a> of file <a class="el" href="fms__affinity_8F90_source.html">fms_affinity.F90</a>.</p>
+</div><table class="memberdecls">
+<tr><td colspan="2"><h3>Private Member Functions</h3></td></tr>
+<tr class="memitem:ga302de19fbd9ea007cc5bf3abb77edc68"><td class="memItemLeft" align="right" valign="top">
+integer(kind=c_int) function&#160;</td><td class="memItemRight" valign="bottom"><b>get_cpuset</b> (fsz, output, pe, debug)</td></tr>
+<tr class="separator:ga302de19fbd9ea007cc5bf3abb77edc68"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table>
+
+</div>
+</div>
+<a name="interfacefms__affinity__mod_1_1set__cpu__affinity" id="interfacefms__affinity__mod_1_1set__cpu__affinity"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#interfacefms__affinity__mod_1_1set__cpu__affinity">&#9670;&nbsp;</a></span>fms_affinity_mod::set_cpu_affinity</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">interface fms_affinity_mod::set_cpu_affinity</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<div class="textblock"><p>Private interface to set CPU afinity to a given core. </p>
+<p>Defined in <a class="el" href="affinity_8c_source.html">affinity.c</a>. </p>
+
+<p class="definition">Definition at line <a class="el" href="fms__affinity_8F90_source.html#l00066">66</a> of file <a class="el" href="fms__affinity_8F90_source.html">fms_affinity.F90</a>.</p>
+</div><table class="memberdecls">
+<tr><td colspan="2"><h3>Private Member Functions</h3></td></tr>
+<tr class="memitem:ga7a03c21c363f196c9d1638034935718e"><td class="memItemLeft" align="right" valign="top">
+integer(kind=c_int) function&#160;</td><td class="memItemRight" valign="bottom"><b>set_cpu_affinity</b> (cpu)</td></tr>
+<tr class="separator:ga7a03c21c363f196c9d1638034935718e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table>
+
+</div>
+</div>
 <h2 class="groupheader">Function/Subroutine Documentation</h2>
 <a id="gaee9fe9116c8a7ddbdcc6ed836b218755"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#gaee9fe9116c8a7ddbdcc6ed836b218755">&#9670;&nbsp;</a></span>fms_affinity_set()</h2>
@@ -194,7 +240,7 @@ logical&#160;</td><td class="memItemRight" valign="bottom"><b>module_is_initiali
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="fms__affinity_8F90_source.html#l00122">122</a> of file <a class="el" href="fms__affinity_8F90_source.html">fms_affinity.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="fms__affinity_8F90_source.html#l00118">118</a> of file <a class="el" href="fms__affinity_8F90_source.html">fms_affinity.F90</a>.</p>
 
 </div>
 </div>

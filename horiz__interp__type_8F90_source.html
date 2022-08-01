@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.17"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>FMS: horiz_interp/horiz_interp_type.F90 Source File</title>
+<title>FMS: horiz_interp/horiz_interp_type.F90 (1640fde1a51a73f97748f150eb84bf49e472aeca) Source File</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -33,7 +33,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">FMS
-   &#160;<span id="projectnumber">2022.02.0</span>
+   &#160;<span id="projectnumber">2022.03.00</span>
    </div>
    <div id="projectbrief">Flexible Modeling System</div>
   </td>
@@ -94,7 +94,7 @@ $(document).ready(function(){initNavTree('horiz__interp__type_8F90_source.html',
 <div class="title">horiz_interp_type.F90</div>  </div>
 </div><!--header-->
 <div class="contents">
-<a href="horiz__interp__type_8F90.html">Go to the documentation of this file.</a><div class="fragment"><div class="line"><a name="l00001"></a><span class="lineno">    1</span>&#160;<span class="comment">!***********************************************************************</span></div>
+<div class="fragment"><div class="line"><a name="l00001"></a><span class="lineno">    1</span>&#160;<span class="comment">!***********************************************************************</span></div>
 <div class="line"><a name="l00002"></a><span class="lineno">    2</span>&#160;<span class="comment">!*                   GNU Lesser General Public License</span></div>
 <div class="line"><a name="l00003"></a><span class="lineno">    3</span>&#160;<span class="comment">!*</span></div>
 <div class="line"><a name="l00004"></a><span class="lineno">    4</span>&#160;<span class="comment">!* This file is part of the GFDL Flexible Modeling System (FMS).</span></div>
@@ -118,230 +118,227 @@ $(document).ready(function(){initNavTree('horiz__interp__type_8F90_source.html',
 <div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160;<span class="comment">!! interpolations.</span></div>
 <div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160;<span class="comment">!&gt; @author Zhi Liang</span></div>
 <div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;<span class="comment"></span> </div>
-<div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160;<span class="comment">!&gt; @file</span></div>
-<div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160;<span class="comment">!&gt; @brief File for @ref horiz_interp_type_mod</span></div>
-<div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;<span class="comment"></span> </div>
-<div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;<span class="comment">!&gt; @addtogroup</span></div>
-<div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;<span class="comment">!&gt; @{</span></div>
-<div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;<span class="keyword">module</span> horiz_interp_type_mod</div>
-<div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160; </div>
-<div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;<span class="keywordtype">use </span>mpp_mod, <span class="keywordtype">only</span> : <a class="code" href="interfacempp__mod_1_1mpp__send.html">mpp_send</a>, <a class="code" href="interfacempp__mod_1_1mpp__recv.html">mpp_recv</a>, <a class="code" href="mpp__util__mpi_8inc.html#a09e69243d8c67e6a6e6e4fd9e93d0870">mpp_sync_self</a>, <a class="code" href="interfacempp__mod_1_1mpp__error.html">mpp_error</a>, fatal</div>
-<div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;<span class="keywordtype">use </span>mpp_mod, <span class="keywordtype">only</span> : <a class="code" href="mpp__util_8inc.html#acfeba7de56f9dd6000b3fd78f9d56c50">mpp_pe</a>, mpp_root_pe, <a class="code" href="mpp__util_8inc.html#abf546cd336d5c539e445fb884f98ab6b">mpp_npes</a></div>
-<div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;<span class="keywordtype">use </span>mpp_mod, <span class="keywordtype">only</span> : comm_tag_1, comm_tag_2</div>
+<div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160;<span class="comment">!&gt; @addtogroup</span></div>
+<div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160;<span class="comment">!&gt; @{</span></div>
+<div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;<span class="keyword">module</span> horiz_interp_type_mod</div>
+<div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160; </div>
+<div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;<span class="keywordtype">use </span>mpp_mod, <span class="keywordtype">only</span> : <a class="code" href="group__mpp__mod.html#interfacempp__mod_1_1mpp__send">mpp_send</a>, <a class="code" href="group__mpp__mod.html#interfacempp__mod_1_1mpp__recv">mpp_recv</a>, <a class="code" href="group__mpp__mod.html#ga09e69243d8c67e6a6e6e4fd9e93d0870">mpp_sync_self</a>, <a class="code" href="group__mpp__mod.html#interfacempp__mod_1_1mpp__error">mpp_error</a>, fatal</div>
+<div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;<span class="keywordtype">use </span>mpp_mod, <span class="keywordtype">only</span> : <a class="code" href="group__mpp__mod.html#gacfeba7de56f9dd6000b3fd78f9d56c50">mpp_pe</a>, mpp_root_pe, <a class="code" href="group__mpp__mod.html#gabf546cd336d5c539e445fb884f98ab6b">mpp_npes</a></div>
+<div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;<span class="keywordtype">use </span>mpp_mod, <span class="keywordtype">only</span> : comm_tag_1, comm_tag_2</div>
+<div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160; </div>
+<div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;<span class="keywordtype">implicit none</span></div>
+<div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;<span class="keywordtype">private</span></div>
 <div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160; </div>
-<div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;<span class="keywordtype">implicit none</span></div>
-<div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;<span class="keywordtype">private</span></div>
-<div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160; </div>
-<div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160; </div>
-<div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;<span class="comment">! parameter to determine interpolation method</span></div>
-<div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160; <span class="keywordtype">integer</span>, <span class="keywordtype">parameter</span> :: CONSERVE = 1</div>
-<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160; <span class="keywordtype">integer</span>, <span class="keywordtype">parameter</span> :: BILINEAR = 2</div>
-<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160; <span class="keywordtype">integer</span>, <span class="keywordtype">parameter</span> :: SPHERICA = 3</div>
-<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160; <span class="keywordtype">integer</span>, <span class="keywordtype">parameter</span> :: BICUBIC  = 4</div>
-<div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160; </div>
-<div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;<span class="keywordtype">public</span> :: conserve, bilinear, spherica, bicubic</div>
-<div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;<span class="keywordtype">public</span> :: <a class="code" href="structhoriz__interp__type__mod_1_1horiz__interp__type.html">horiz_interp_type</a>, <a class="code" href="group__horiz__interp__type__mod.html#ga1c6f1880c2031ea711611df5b4b081c6">stats</a>, <span class="keyword">assignment</span>(=)</div>
-<div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;<span class="comment"></span> </div>
-<div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;<span class="comment">!&gt; @}</span></div>
-<div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;<span class="comment"></span> </div>
-<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;<span class="comment">!&gt; @ingroup horiz_interp_type_mod</span></div>
-<div class="line"><a name="l00052"></a><span class="lineno"><a class="line" href="interfacehoriz__interp__type__mod_1_1assignment_07_0a_08.html">   52</a></span>&#160;<span class="keyword">interface</span> <span class="keyword">assignment</span>(=)</div>
-<div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;  <span class="keyword">module procedure</span> horiz_interp_type_eq</div>
-<div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;<span class="keyword">end interface</span></div>
-<div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160; </div>
-<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;<span class="comment">!&lt;PUBLICTYPE &gt;</span></div>
-<div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;<span class="comment">!&gt; @ingroup horiz_interp_type_mod</span></div>
-<div class="line"><a name="l00058"></a><span class="lineno"><a class="line" href="structhoriz__interp__type__mod_1_1horiz__interp__type.html">   58</a></span>&#160; <span class="keyword">type</span> <a class="code" href="structhoriz__interp__type__mod_1_1horiz__interp__type.html">horiz_interp_type</a></div>
-<div class="line"><a name="l00059"></a><span class="lineno"><a class="line" href="structhoriz__interp__type__mod_1_1horiz__interp__type.html#a7412ac44f0c7bef533d0973234cad141">   59</a></span>&#160;<span class="keywordtype">   real</span>,    <span class="keywordtype">dimension(:,:)</span>, <span class="keywordtype">pointer</span>   :: faci =&gt;null()   <span class="comment">!&lt; weights for conservative scheme</span></div>
-<div class="line"><a name="l00060"></a><span class="lineno"><a class="line" href="structhoriz__interp__type__mod_1_1horiz__interp__type.html#a82d8088ca8dc71e4d4f56adced4ec2ae">   60</a></span>&#160;<span class="keywordtype">   real</span>,    <span class="keywordtype">dimension(:,:)</span>, <span class="keywordtype">pointer</span>   :: facj =&gt;null()   <span class="comment">!&lt; weights for conservative scheme</span></div>
-<div class="line"><a name="l00061"></a><span class="lineno"><a class="line" href="structhoriz__interp__type__mod_1_1horiz__interp__type.html#a823067c5bb10b8a7b55544622fde572c">   61</a></span>&#160;   <span class="keywordtype">integer</span>, <span class="keywordtype">dimension(:,:)</span>, <span class="keywordtype">pointer</span>   :: ilon =&gt;null()   <span class="comment">!&lt; indices for conservative scheme</span></div>
-<div class="line"><a name="l00062"></a><span class="lineno"><a class="line" href="structhoriz__interp__type__mod_1_1horiz__interp__type.html#a103b8f216512dc33f0f99272124f89dc">   62</a></span>&#160;   <span class="keywordtype">integer</span>, <span class="keywordtype">dimension(:,:)</span>, <span class="keywordtype">pointer</span>   :: jlat =&gt;null()   <span class="comment">!&lt; indices for conservative scheme</span></div>
-<div class="line"><a name="l00063"></a><span class="lineno"><a class="line" href="structhoriz__interp__type__mod_1_1horiz__interp__type.html#a635f89ae100a36a36b2cf5f33f625993">   63</a></span>&#160;<span class="keywordtype">   real</span>,    <span class="keywordtype">dimension(:,:)</span>, <span class="keywordtype">pointer</span>   :: area_src =&gt;null()              <span class="comment">!&lt; area of the source grid</span></div>
-<div class="line"><a name="l00064"></a><span class="lineno"><a class="line" href="structhoriz__interp__type__mod_1_1horiz__interp__type.html#acde35600538beb05cc43ac55626314de">   64</a></span>&#160;<span class="keywordtype">   real</span>,    <span class="keywordtype">dimension(:,:)</span>, <span class="keywordtype">pointer</span>   :: area_dst =&gt;null()              <span class="comment">!&lt; area of the destination grid</span></div>
-<div class="line"><a name="l00065"></a><span class="lineno"><a class="line" href="structhoriz__interp__type__mod_1_1horiz__interp__type.html#a580c42a0cd9effa061ddfbfcfd539def">   65</a></span>&#160;<span class="keywordtype">   real</span>,    <span class="keywordtype">dimension(:,:,:)</span>, <span class="keywordtype">pointer</span> :: wti =&gt;null()      <span class="comment">!&lt; weights for bilinear interpolation</span></div>
-<div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;<span class="comment">                                                           !! wti ist used for derivative &quot;weights&quot; in bicubic</span></div>
-<div class="line"><a name="l00067"></a><span class="lineno"><a class="line" href="structhoriz__interp__type__mod_1_1horiz__interp__type.html#a6ae69c9aa71a50fb182a3d299b4e1881">   67</a></span>&#160;<span class="keywordtype">   real</span>,    <span class="keywordtype">dimension(:,:,:)</span>, <span class="keywordtype">pointer</span> :: wtj =&gt;null()      <span class="comment">!&lt; weights for bilinear interpolation</span></div>
-<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;<span class="comment">                                                           !! wti ist used for derivative &quot;weights&quot; in bicubic</span></div>
-<div class="line"><a name="l00069"></a><span class="lineno"><a class="line" href="structhoriz__interp__type__mod_1_1horiz__interp__type.html#a70da49b8437deee5d60d099a7d32120f">   69</a></span>&#160;   <span class="keywordtype">integer</span>, <span class="keywordtype">dimension(:,:,:)</span>, <span class="keywordtype">pointer</span> :: i_lon =&gt;null() <span class="comment">!&lt; indices for bilinear interpolation</span></div>
-<div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;<span class="comment">                                                        !! and spherical regrid</span></div>
-<div class="line"><a name="l00071"></a><span class="lineno"><a class="line" href="structhoriz__interp__type__mod_1_1horiz__interp__type.html#a662e6252eeedbb9f80695a76779a21bb">   71</a></span>&#160;   <span class="keywordtype">integer</span>, <span class="keywordtype">dimension(:,:,:)</span>, <span class="keywordtype">pointer</span> :: j_lat =&gt;null() <span class="comment">!&lt; indices for bilinear interpolation</span></div>
-<div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;<span class="comment">                                                        !! and spherical regrid</span></div>
-<div class="line"><a name="l00073"></a><span class="lineno"><a class="line" href="structhoriz__interp__type__mod_1_1horiz__interp__type.html#a8fa4fe2851eabd4d08cb3eed7eddc820">   73</a></span>&#160;<span class="keywordtype">   real</span>,    <span class="keywordtype">dimension(:,:,:)</span>, <span class="keywordtype">pointer</span> :: src_dist =&gt;null()              <span class="comment">!&lt; distance between destination grid and</span></div>
-<div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;<span class="comment">                                                                        !! neighbor source grid.</span></div>
-<div class="line"><a name="l00075"></a><span class="lineno"><a class="line" href="structhoriz__interp__type__mod_1_1horiz__interp__type.html#a01e065438395cad747230da6401675f1">   75</a></span>&#160;   <span class="keywordtype">logical</span>, <span class="keywordtype">dimension(:,:)</span>, <span class="keywordtype">pointer</span>   :: found_neighbors =&gt;null()       <span class="comment">!&lt; indicate whether destination grid</span></div>
-<div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;<span class="comment">                                                                        !! has some source grid around it.</span></div>
-<div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;<span class="keywordtype">   real</span>                               :: max_src_dist</div>
-<div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;   <span class="keywordtype">integer</span>, <span class="keywordtype">dimension(:,:)</span>, <span class="keywordtype">pointer</span>   :: num_found =&gt; null()</div>
-<div class="line"><a name="l00079"></a><span class="lineno"><a class="line" href="structhoriz__interp__type__mod_1_1horiz__interp__type.html#a249ed13f6136748d7b19fde32958544b">   79</a></span>&#160;   <span class="keywordtype">integer</span>                            :: nlon_src<span class="comment"> !&lt; size of source grid</span></div>
-<div class="line"><a name="l00080"></a><span class="lineno"><a class="line" href="structhoriz__interp__type__mod_1_1horiz__interp__type.html#a13562d73eb235791443ec8997f6e02ad">   80</a></span>&#160;   <span class="keywordtype">integer</span>                            :: nlat_src<span class="comment"> !&lt; size of source grid</span></div>
-<div class="line"><a name="l00081"></a><span class="lineno"><a class="line" href="structhoriz__interp__type__mod_1_1horiz__interp__type.html#a40532820e1b65479e3239216779165aa">   81</a></span>&#160;   <span class="keywordtype">integer</span>                            :: nlon_dst<span class="comment"> !&lt; size of destination grid</span></div>
-<div class="line"><a name="l00082"></a><span class="lineno"><a class="line" href="structhoriz__interp__type__mod_1_1horiz__interp__type.html#a9d9d0169346f09eb735677bb112d1f94">   82</a></span>&#160;   <span class="keywordtype">integer</span>                            :: nlat_dst<span class="comment"> !&lt; size of destination grid</span></div>
-<div class="line"><a name="l00083"></a><span class="lineno"><a class="line" href="structhoriz__interp__type__mod_1_1horiz__interp__type.html#a17dd266f081f8d3c35c9320eb114928a">   83</a></span>&#160;   <span class="keywordtype">integer</span>                            :: interp_method<span class="comment">      !&lt; interpolation method.</span></div>
-<div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160;<span class="comment">                                                            !! =1, conservative scheme</span></div>
-<div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;<span class="comment">                                                            !! =2, bilinear interpolation</span></div>
-<div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160;<span class="comment">                                                            !! =3, spherical regrid</span></div>
-<div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;<span class="comment">                                                            !! =4, bicubic regrid</span></div>
-<div class="line"><a name="l00088"></a><span class="lineno"><a class="line" href="structhoriz__interp__type__mod_1_1horiz__interp__type.html#a293b695a89ba698cd49d46d8e2854c85">   88</a></span>&#160;<span class="keywordtype">   real</span>,    <span class="keywordtype">dimension(:,:)</span>, <span class="keywordtype">pointer</span>   :: rat_x =&gt;null() <span class="comment">!&lt; the ratio of coordinates of the dest grid</span></div>
+<div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160; </div>
+<div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;<span class="comment">! parameter to determine interpolation method</span></div>
+<div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160; <span class="keywordtype">integer</span>, <span class="keywordtype">parameter</span> :: CONSERVE = 1</div>
+<div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160; <span class="keywordtype">integer</span>, <span class="keywordtype">parameter</span> :: BILINEAR = 2</div>
+<div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160; <span class="keywordtype">integer</span>, <span class="keywordtype">parameter</span> :: SPHERICA = 3</div>
+<div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160; <span class="keywordtype">integer</span>, <span class="keywordtype">parameter</span> :: BICUBIC  = 4</div>
+<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160; </div>
+<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;<span class="keywordtype">public</span> :: conserve, bilinear, spherica, bicubic</div>
+<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;<span class="keywordtype">public</span> :: <a class="code" href="group__horiz__interp__type__mod.html#structhoriz__interp__type__mod_1_1horiz__interp__type">horiz_interp_type</a>, <a class="code" href="group__horiz__interp__type__mod.html#ga1c6f1880c2031ea711611df5b4b081c6">stats</a>, <span class="keyword">assignment</span>(=)</div>
+<div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;<span class="comment"></span> </div>
+<div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;<span class="comment">!&gt; @}</span></div>
+<div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;<span class="comment"></span> </div>
+<div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;<span class="comment">!&gt; @ingroup horiz_interp_type_mod</span></div>
+<div class="line"><a name="l00049"></a><span class="lineno"><a class="line" href="group__horiz__interp__type__mod.html">   49</a></span>&#160;<span class="keyword">interface</span> <span class="keyword">assignment</span>(=)</div>
+<div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;  <span class="keyword">module procedure</span> horiz_interp_type_eq</div>
+<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;<span class="keyword">end interface</span></div>
+<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160; </div>
+<div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;<span class="comment">!&lt;PUBLICTYPE &gt;</span></div>
+<div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;<span class="comment">!&gt; @ingroup horiz_interp_type_mod</span></div>
+<div class="line"><a name="l00055"></a><span class="lineno"><a class="line" href="group__horiz__interp__type__mod.html">   55</a></span>&#160; <span class="keyword">type</span> <a class="code" href="group__horiz__interp__type__mod.html#structhoriz__interp__type__mod_1_1horiz__interp__type">horiz_interp_type</a></div>
+<div class="line"><a name="l00056"></a><span class="lineno"><a class="line" href="group__horiz__interp__type__mod.html#a7412ac44f0c7bef533d0973234cad141">   56</a></span>&#160;<span class="keywordtype">   real</span>,    <span class="keywordtype">dimension(:,:)</span>, <span class="keywordtype">pointer</span>   :: faci =&gt;null()   <span class="comment">!&lt; weights for conservative scheme</span></div>
+<div class="line"><a name="l00057"></a><span class="lineno"><a class="line" href="group__horiz__interp__type__mod.html#a82d8088ca8dc71e4d4f56adced4ec2ae">   57</a></span>&#160;<span class="keywordtype">   real</span>,    <span class="keywordtype">dimension(:,:)</span>, <span class="keywordtype">pointer</span>   :: facj =&gt;null()   <span class="comment">!&lt; weights for conservative scheme</span></div>
+<div class="line"><a name="l00058"></a><span class="lineno"><a class="line" href="group__horiz__interp__type__mod.html#a823067c5bb10b8a7b55544622fde572c">   58</a></span>&#160;   <span class="keywordtype">integer</span>, <span class="keywordtype">dimension(:,:)</span>, <span class="keywordtype">pointer</span>   :: ilon =&gt;null()   <span class="comment">!&lt; indices for conservative scheme</span></div>
+<div class="line"><a name="l00059"></a><span class="lineno"><a class="line" href="group__horiz__interp__type__mod.html#a103b8f216512dc33f0f99272124f89dc">   59</a></span>&#160;   <span class="keywordtype">integer</span>, <span class="keywordtype">dimension(:,:)</span>, <span class="keywordtype">pointer</span>   :: jlat =&gt;null()   <span class="comment">!&lt; indices for conservative scheme</span></div>
+<div class="line"><a name="l00060"></a><span class="lineno"><a class="line" href="group__horiz__interp__type__mod.html#a635f89ae100a36a36b2cf5f33f625993">   60</a></span>&#160;<span class="keywordtype">   real</span>,    <span class="keywordtype">dimension(:,:)</span>, <span class="keywordtype">pointer</span>   :: area_src =&gt;null()              <span class="comment">!&lt; area of the source grid</span></div>
+<div class="line"><a name="l00061"></a><span class="lineno"><a class="line" href="group__horiz__interp__type__mod.html#acde35600538beb05cc43ac55626314de">   61</a></span>&#160;<span class="keywordtype">   real</span>,    <span class="keywordtype">dimension(:,:)</span>, <span class="keywordtype">pointer</span>   :: area_dst =&gt;null()              <span class="comment">!&lt; area of the destination grid</span></div>
+<div class="line"><a name="l00062"></a><span class="lineno"><a class="line" href="group__horiz__interp__type__mod.html#a580c42a0cd9effa061ddfbfcfd539def">   62</a></span>&#160;<span class="keywordtype">   real</span>,    <span class="keywordtype">dimension(:,:,:)</span>, <span class="keywordtype">pointer</span> :: wti =&gt;null()      <span class="comment">!&lt; weights for bilinear interpolation</span></div>
+<div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;<span class="comment">                                                           !! wti ist used for derivative &quot;weights&quot; in bicubic</span></div>
+<div class="line"><a name="l00064"></a><span class="lineno"><a class="line" href="group__horiz__interp__type__mod.html#a6ae69c9aa71a50fb182a3d299b4e1881">   64</a></span>&#160;<span class="keywordtype">   real</span>,    <span class="keywordtype">dimension(:,:,:)</span>, <span class="keywordtype">pointer</span> :: wtj =&gt;null()      <span class="comment">!&lt; weights for bilinear interpolation</span></div>
+<div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;<span class="comment">                                                           !! wti ist used for derivative &quot;weights&quot; in bicubic</span></div>
+<div class="line"><a name="l00066"></a><span class="lineno"><a class="line" href="group__horiz__interp__type__mod.html#a70da49b8437deee5d60d099a7d32120f">   66</a></span>&#160;   <span class="keywordtype">integer</span>, <span class="keywordtype">dimension(:,:,:)</span>, <span class="keywordtype">pointer</span> :: i_lon =&gt;null() <span class="comment">!&lt; indices for bilinear interpolation</span></div>
+<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;<span class="comment">                                                        !! and spherical regrid</span></div>
+<div class="line"><a name="l00068"></a><span class="lineno"><a class="line" href="group__horiz__interp__type__mod.html#a662e6252eeedbb9f80695a76779a21bb">   68</a></span>&#160;   <span class="keywordtype">integer</span>, <span class="keywordtype">dimension(:,:,:)</span>, <span class="keywordtype">pointer</span> :: j_lat =&gt;null() <span class="comment">!&lt; indices for bilinear interpolation</span></div>
+<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;<span class="comment">                                                        !! and spherical regrid</span></div>
+<div class="line"><a name="l00070"></a><span class="lineno"><a class="line" href="group__horiz__interp__type__mod.html#a8fa4fe2851eabd4d08cb3eed7eddc820">   70</a></span>&#160;<span class="keywordtype">   real</span>,    <span class="keywordtype">dimension(:,:,:)</span>, <span class="keywordtype">pointer</span> :: src_dist =&gt;null()              <span class="comment">!&lt; distance between destination grid and</span></div>
+<div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;<span class="comment">                                                                        !! neighbor source grid.</span></div>
+<div class="line"><a name="l00072"></a><span class="lineno"><a class="line" href="group__horiz__interp__type__mod.html#a01e065438395cad747230da6401675f1">   72</a></span>&#160;   <span class="keywordtype">logical</span>, <span class="keywordtype">dimension(:,:)</span>, <span class="keywordtype">pointer</span>   :: found_neighbors =&gt;null()       <span class="comment">!&lt; indicate whether destination grid</span></div>
+<div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;<span class="comment">                                                                        !! has some source grid around it.</span></div>
+<div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;<span class="keywordtype">   real</span>                               :: max_src_dist</div>
+<div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;   <span class="keywordtype">integer</span>, <span class="keywordtype">dimension(:,:)</span>, <span class="keywordtype">pointer</span>   :: num_found =&gt; null()</div>
+<div class="line"><a name="l00076"></a><span class="lineno"><a class="line" href="group__horiz__interp__type__mod.html#a249ed13f6136748d7b19fde32958544b">   76</a></span>&#160;   <span class="keywordtype">integer</span>                            :: nlon_src<span class="comment"> !&lt; size of source grid</span></div>
+<div class="line"><a name="l00077"></a><span class="lineno"><a class="line" href="group__horiz__interp__type__mod.html#a13562d73eb235791443ec8997f6e02ad">   77</a></span>&#160;   <span class="keywordtype">integer</span>                            :: nlat_src<span class="comment"> !&lt; size of source grid</span></div>
+<div class="line"><a name="l00078"></a><span class="lineno"><a class="line" href="group__horiz__interp__type__mod.html#a40532820e1b65479e3239216779165aa">   78</a></span>&#160;   <span class="keywordtype">integer</span>                            :: nlon_dst<span class="comment"> !&lt; size of destination grid</span></div>
+<div class="line"><a name="l00079"></a><span class="lineno"><a class="line" href="group__horiz__interp__type__mod.html#a9d9d0169346f09eb735677bb112d1f94">   79</a></span>&#160;   <span class="keywordtype">integer</span>                            :: nlat_dst<span class="comment"> !&lt; size of destination grid</span></div>
+<div class="line"><a name="l00080"></a><span class="lineno"><a class="line" href="group__horiz__interp__type__mod.html#a17dd266f081f8d3c35c9320eb114928a">   80</a></span>&#160;   <span class="keywordtype">integer</span>                            :: interp_method<span class="comment">      !&lt; interpolation method.</span></div>
+<div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;<span class="comment">                                                            !! =1, conservative scheme</span></div>
+<div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;<span class="comment">                                                            !! =2, bilinear interpolation</span></div>
+<div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;<span class="comment">                                                            !! =3, spherical regrid</span></div>
+<div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160;<span class="comment">                                                            !! =4, bicubic regrid</span></div>
+<div class="line"><a name="l00085"></a><span class="lineno"><a class="line" href="group__horiz__interp__type__mod.html#a293b695a89ba698cd49d46d8e2854c85">   85</a></span>&#160;<span class="keywordtype">   real</span>,    <span class="keywordtype">dimension(:,:)</span>, <span class="keywordtype">pointer</span>   :: rat_x =&gt;null() <span class="comment">!&lt; the ratio of coordinates of the dest grid</span></div>
+<div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160;<span class="comment">                                                        !! (x_dest -x_src_r)/(x_src_l -x_src_r)</span></div>
+<div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;<span class="comment">                                                        !! and (y_dest -y_src_r)/(y_src_l -y_src_r)</span></div>
+<div class="line"><a name="l00088"></a><span class="lineno"><a class="line" href="group__horiz__interp__type__mod.html#af8342cb3296d3cf4cb2003fb8b9236a0">   88</a></span>&#160;<span class="keywordtype">   real</span>,    <span class="keywordtype">dimension(:,:)</span>, <span class="keywordtype">pointer</span>   :: rat_y =&gt;null() <span class="comment">!&lt; the ratio of coordinates of the dest grid</span></div>
 <div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160;<span class="comment">                                                        !! (x_dest -x_src_r)/(x_src_l -x_src_r)</span></div>
 <div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;<span class="comment">                                                        !! and (y_dest -y_src_r)/(y_src_l -y_src_r)</span></div>
-<div class="line"><a name="l00091"></a><span class="lineno"><a class="line" href="structhoriz__interp__type__mod_1_1horiz__interp__type.html#af8342cb3296d3cf4cb2003fb8b9236a0">   91</a></span>&#160;<span class="keywordtype">   real</span>,    <span class="keywordtype">dimension(:,:)</span>, <span class="keywordtype">pointer</span>   :: rat_y =&gt;null() <span class="comment">!&lt; the ratio of coordinates of the dest grid</span></div>
-<div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;<span class="comment">                                                        !! (x_dest -x_src_r)/(x_src_l -x_src_r)</span></div>
-<div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;<span class="comment">                                                        !! and (y_dest -y_src_r)/(y_src_l -y_src_r)</span></div>
-<div class="line"><a name="l00094"></a><span class="lineno"><a class="line" href="structhoriz__interp__type__mod_1_1horiz__interp__type.html#a2fff7c7536ba488841ca1376f8621ef9">   94</a></span>&#160;<span class="keywordtype">   real</span>,    <span class="keywordtype">dimension(:)</span>, <span class="keywordtype">pointer</span>     :: lon_in =&gt;null()  <span class="comment">!&lt; the coordinates of the source grid</span></div>
-<div class="line"><a name="l00095"></a><span class="lineno"><a class="line" href="structhoriz__interp__type__mod_1_1horiz__interp__type.html#ae5d586c4397d9dd14f2d50849a0ee622">   95</a></span>&#160;<span class="keywordtype">   real</span>,    <span class="keywordtype">dimension(:)</span>, <span class="keywordtype">pointer</span>     :: lat_in =&gt;null()  <span class="comment">!&lt; the coordinates of the source grid</span></div>
-<div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160;   <span class="keywordtype">logical</span>                            :: i_am_initialized=.false.</div>
-<div class="line"><a name="l00097"></a><span class="lineno"><a class="line" href="structhoriz__interp__type__mod_1_1horiz__interp__type.html#ac35bc8aa283c31e1b50bbad14da3092e">   97</a></span>&#160;   <span class="keywordtype">integer</span>                            :: version<span class="comment">                            !&lt; indicate conservative</span></div>
-<div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160;<span class="comment">                                                                            !! interpolation version with value 1 or 2</span></div>
-<div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160;   <span class="comment">!--- The following are for conservative interpolation scheme version 2 ( through xgrid)</span></div>
-<div class="line"><a name="l00100"></a><span class="lineno"><a class="line" href="structhoriz__interp__type__mod_1_1horiz__interp__type.html#a3bc08dc4d87dae61478420684483b30e">  100</a></span>&#160;   <span class="keywordtype">integer</span>                            :: nxgrid<span class="comment">                             !&lt; number of exchange grid</span></div>
-<div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160;<span class="comment">                                                                            !! between src and dst grid.</span></div>
-<div class="line"><a name="l00102"></a><span class="lineno"><a class="line" href="structhoriz__interp__type__mod_1_1horiz__interp__type.html#a815669c5838c34753030a6aa676b051f">  102</a></span>&#160;   <span class="keywordtype">integer</span>, <span class="keywordtype">dimension(:)</span>, <span class="keywordtype">pointer</span>     :: i_src=&gt;null()       <span class="comment">!&lt; indices in source grid.</span></div>
-<div class="line"><a name="l00103"></a><span class="lineno"><a class="line" href="structhoriz__interp__type__mod_1_1horiz__interp__type.html#a679808623eb229c593bcea2ca990e6c2">  103</a></span>&#160;   <span class="keywordtype">integer</span>, <span class="keywordtype">dimension(:)</span>, <span class="keywordtype">pointer</span>     :: j_src=&gt;null()       <span class="comment">!&lt; indices in source grid.</span></div>
-<div class="line"><a name="l00104"></a><span class="lineno"><a class="line" href="structhoriz__interp__type__mod_1_1horiz__interp__type.html#a7872c62b31475a726f369e269c67e808">  104</a></span>&#160;   <span class="keywordtype">integer</span>, <span class="keywordtype">dimension(:)</span>, <span class="keywordtype">pointer</span>     :: i_dst=&gt;null()       <span class="comment">!&lt; indices in destination grid.</span></div>
-<div class="line"><a name="l00105"></a><span class="lineno"><a class="line" href="structhoriz__interp__type__mod_1_1horiz__interp__type.html#a2a86c02e8c2ff32ad183d4c87e112152">  105</a></span>&#160;   <span class="keywordtype">integer</span>, <span class="keywordtype">dimension(:)</span>, <span class="keywordtype">pointer</span>     :: j_dst=&gt;null()       <span class="comment">!&lt; indices in destination grid.</span></div>
-<div class="line"><a name="l00106"></a><span class="lineno"><a class="line" href="structhoriz__interp__type__mod_1_1horiz__interp__type.html#a476c241727dbfb87e6cd4196b0c3304b">  106</a></span>&#160;<span class="keywordtype">   real</span>,    <span class="keywordtype">dimension(:)</span>, <span class="keywordtype">pointer</span>     :: area_frac_dst=&gt;null()              <span class="comment">!&lt; area fraction in destination grid.</span></div>
-<div class="line"><a name="l00107"></a><span class="lineno"><a class="line" href="structhoriz__interp__type__mod_1_1horiz__interp__type.html#a87b2059fe6fbac9c9fe3a64515da68d6">  107</a></span>&#160;<span class="keywordtype">   real</span>,    <span class="keywordtype">dimension(:,:)</span>, <span class="keywordtype">pointer</span>   :: mask_in=&gt;null()</div>
-<div class="line"><a name="l00108"></a><span class="lineno">  108</span>&#160; <span class="keyword">end type</span></div>
-<div class="line"><a name="l00109"></a><span class="lineno">  109</span>&#160;<span class="comment">!&lt;/PUBLICTYPE&gt;</span></div>
-<div class="line"><a name="l00110"></a><span class="lineno">  110</span>&#160;<span class="comment"></span> </div>
-<div class="line"><a name="l00111"></a><span class="lineno">  111</span>&#160;<span class="comment">!&gt; @addtogroup horiz_interp_type_mod</span></div>
-<div class="line"><a name="l00112"></a><span class="lineno">  112</span>&#160;<span class="comment">!&gt; @{</span></div>
-<div class="line"><a name="l00113"></a><span class="lineno">  113</span>&#160;<span class="keyword">contains</span></div>
-<div class="line"><a name="l00114"></a><span class="lineno">  114</span>&#160; </div>
-<div class="line"><a name="l00115"></a><span class="lineno">  115</span>&#160;<span class="comment">!#######################################################################</span><span class="comment"></span></div>
-<div class="line"><a name="l00116"></a><span class="lineno">  116</span>&#160;<span class="comment"> !&gt; @brief This statistics is for bilinear interpolation and spherical regrid.</span></div>
-<div class="line"><a name="l00117"></a><span class="lineno">  117</span>&#160; <span class="keyword">subroutine </span><a class="code" href="group__horiz__interp__type__mod.html#ga1c6f1880c2031ea711611df5b4b081c6">stats</a> ( dat, low, high, avg, miss, missing_value, mask )</div>
-<div class="line"><a name="l00118"></a><span class="lineno"><a class="line" href="group__horiz__interp__type__mod.html#ga1c6f1880c2031ea711611df5b4b081c6">  118</a></span>&#160;<span class="keywordtype"> real</span>,    <span class="keywordtype">intent(in)</span>  :: dat(:,:)</div>
-<div class="line"><a name="l00119"></a><span class="lineno">  119</span>&#160;<span class="keywordtype"> real</span>,    <span class="keywordtype">intent(out)</span> :: low, high, avg</div>
-<div class="line"><a name="l00120"></a><span class="lineno">  120</span>&#160; <span class="keywordtype">integer</span>, <span class="keywordtype">intent(out)</span> :: miss</div>
-<div class="line"><a name="l00121"></a><span class="lineno">  121</span>&#160;<span class="keywordtype"> real</span>, <span class="keywordtype">intent(in)</span>, <span class="keywordtype">optional</span> :: missing_value</div>
-<div class="line"><a name="l00122"></a><span class="lineno">  122</span>&#160;<span class="keywordtype"> real</span>,    <span class="keywordtype">intent(in)</span>, <span class="keywordtype">optional</span> :: mask(:,:)</div>
+<div class="line"><a name="l00091"></a><span class="lineno"><a class="line" href="group__horiz__interp__type__mod.html#a2fff7c7536ba488841ca1376f8621ef9">   91</a></span>&#160;<span class="keywordtype">   real</span>,    <span class="keywordtype">dimension(:)</span>, <span class="keywordtype">pointer</span>     :: lon_in =&gt;null()  <span class="comment">!&lt; the coordinates of the source grid</span></div>
+<div class="line"><a name="l00092"></a><span class="lineno"><a class="line" href="group__horiz__interp__type__mod.html#ae5d586c4397d9dd14f2d50849a0ee622">   92</a></span>&#160;<span class="keywordtype">   real</span>,    <span class="keywordtype">dimension(:)</span>, <span class="keywordtype">pointer</span>     :: lat_in =&gt;null()  <span class="comment">!&lt; the coordinates of the source grid</span></div>
+<div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;   <span class="keywordtype">logical</span>                            :: i_am_initialized=.false.</div>
+<div class="line"><a name="l00094"></a><span class="lineno"><a class="line" href="group__horiz__interp__type__mod.html#ac35bc8aa283c31e1b50bbad14da3092e">   94</a></span>&#160;   <span class="keywordtype">integer</span>                            :: version<span class="comment">                            !&lt; indicate conservative</span></div>
+<div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160;<span class="comment">                                                                            !! interpolation version with value 1 or 2</span></div>
+<div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160;   <span class="comment">!--- The following are for conservative interpolation scheme version 2 ( through xgrid)</span></div>
+<div class="line"><a name="l00097"></a><span class="lineno"><a class="line" href="group__horiz__interp__type__mod.html#a3bc08dc4d87dae61478420684483b30e">   97</a></span>&#160;   <span class="keywordtype">integer</span>                            :: nxgrid<span class="comment">                             !&lt; number of exchange grid</span></div>
+<div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160;<span class="comment">                                                                            !! between src and dst grid.</span></div>
+<div class="line"><a name="l00099"></a><span class="lineno"><a class="line" href="group__horiz__interp__type__mod.html#a815669c5838c34753030a6aa676b051f">   99</a></span>&#160;   <span class="keywordtype">integer</span>, <span class="keywordtype">dimension(:)</span>, <span class="keywordtype">pointer</span>     :: i_src=&gt;null()       <span class="comment">!&lt; indices in source grid.</span></div>
+<div class="line"><a name="l00100"></a><span class="lineno"><a class="line" href="group__horiz__interp__type__mod.html#a679808623eb229c593bcea2ca990e6c2">  100</a></span>&#160;   <span class="keywordtype">integer</span>, <span class="keywordtype">dimension(:)</span>, <span class="keywordtype">pointer</span>     :: j_src=&gt;null()       <span class="comment">!&lt; indices in source grid.</span></div>
+<div class="line"><a name="l00101"></a><span class="lineno"><a class="line" href="group__horiz__interp__type__mod.html#a7872c62b31475a726f369e269c67e808">  101</a></span>&#160;   <span class="keywordtype">integer</span>, <span class="keywordtype">dimension(:)</span>, <span class="keywordtype">pointer</span>     :: i_dst=&gt;null()       <span class="comment">!&lt; indices in destination grid.</span></div>
+<div class="line"><a name="l00102"></a><span class="lineno"><a class="line" href="group__horiz__interp__type__mod.html#a2a86c02e8c2ff32ad183d4c87e112152">  102</a></span>&#160;   <span class="keywordtype">integer</span>, <span class="keywordtype">dimension(:)</span>, <span class="keywordtype">pointer</span>     :: j_dst=&gt;null()       <span class="comment">!&lt; indices in destination grid.</span></div>
+<div class="line"><a name="l00103"></a><span class="lineno"><a class="line" href="group__horiz__interp__type__mod.html#a476c241727dbfb87e6cd4196b0c3304b">  103</a></span>&#160;<span class="keywordtype">   real</span>,    <span class="keywordtype">dimension(:)</span>, <span class="keywordtype">pointer</span>     :: area_frac_dst=&gt;null()              <span class="comment">!&lt; area fraction in destination grid.</span></div>
+<div class="line"><a name="l00104"></a><span class="lineno"><a class="line" href="group__horiz__interp__type__mod.html#a87b2059fe6fbac9c9fe3a64515da68d6">  104</a></span>&#160;<span class="keywordtype">   real</span>,    <span class="keywordtype">dimension(:,:)</span>, <span class="keywordtype">pointer</span>   :: mask_in=&gt;null()</div>
+<div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160; <span class="keyword">end type</span></div>
+<div class="line"><a name="l00106"></a><span class="lineno">  106</span>&#160;<span class="comment">!&lt;/PUBLICTYPE&gt;</span></div>
+<div class="line"><a name="l00107"></a><span class="lineno">  107</span>&#160;<span class="comment"></span> </div>
+<div class="line"><a name="l00108"></a><span class="lineno">  108</span>&#160;<span class="comment">!&gt; @addtogroup horiz_interp_type_mod</span></div>
+<div class="line"><a name="l00109"></a><span class="lineno">  109</span>&#160;<span class="comment">!&gt; @{</span></div>
+<div class="line"><a name="l00110"></a><span class="lineno">  110</span>&#160;<span class="keyword">contains</span></div>
+<div class="line"><a name="l00111"></a><span class="lineno">  111</span>&#160; </div>
+<div class="line"><a name="l00112"></a><span class="lineno">  112</span>&#160;<span class="comment">!#######################################################################</span><span class="comment"></span></div>
+<div class="line"><a name="l00113"></a><span class="lineno">  113</span>&#160;<span class="comment"> !&gt; @brief This statistics is for bilinear interpolation and spherical regrid.</span></div>
+<div class="line"><a name="l00114"></a><span class="lineno">  114</span>&#160; <span class="keyword">subroutine </span><a class="code" href="group__horiz__interp__type__mod.html#ga1c6f1880c2031ea711611df5b4b081c6">stats</a> ( dat, low, high, avg, miss, missing_value, mask )</div>
+<div class="line"><a name="l00115"></a><span class="lineno"><a class="line" href="group__horiz__interp__type__mod.html#ga1c6f1880c2031ea711611df5b4b081c6">  115</a></span>&#160;<span class="keywordtype"> real</span>,    <span class="keywordtype">intent(in)</span>  :: dat(:,:)</div>
+<div class="line"><a name="l00116"></a><span class="lineno">  116</span>&#160;<span class="keywordtype"> real</span>,    <span class="keywordtype">intent(out)</span> :: low, high, avg</div>
+<div class="line"><a name="l00117"></a><span class="lineno">  117</span>&#160; <span class="keywordtype">integer</span>, <span class="keywordtype">intent(out)</span> :: miss</div>
+<div class="line"><a name="l00118"></a><span class="lineno">  118</span>&#160;<span class="keywordtype"> real</span>, <span class="keywordtype">intent(in)</span>, <span class="keywordtype">optional</span> :: missing_value</div>
+<div class="line"><a name="l00119"></a><span class="lineno">  119</span>&#160;<span class="keywordtype"> real</span>,    <span class="keywordtype">intent(in)</span>, <span class="keywordtype">optional</span> :: mask(:,:)</div>
+<div class="line"><a name="l00120"></a><span class="lineno">  120</span>&#160; </div>
+<div class="line"><a name="l00121"></a><span class="lineno">  121</span>&#160;<span class="keywordtype"> real</span> :: dsum, buffer_real(3)</div>
+<div class="line"><a name="l00122"></a><span class="lineno">  122</span>&#160; <span class="keywordtype">integer</span> :: pe, root_pe, npes, p, buffer_int(2), npts</div>
 <div class="line"><a name="l00123"></a><span class="lineno">  123</span>&#160; </div>
-<div class="line"><a name="l00124"></a><span class="lineno">  124</span>&#160;<span class="keywordtype"> real</span> :: dsum, buffer_real(3)</div>
-<div class="line"><a name="l00125"></a><span class="lineno">  125</span>&#160; <span class="keywordtype">integer</span> :: pe, root_pe, npes, p, buffer_int(2), npts</div>
-<div class="line"><a name="l00126"></a><span class="lineno">  126</span>&#160; </div>
-<div class="line"><a name="l00127"></a><span class="lineno">  127</span>&#160;   pe = <a class="code" href="mpp__util_8inc.html#acfeba7de56f9dd6000b3fd78f9d56c50">mpp_pe</a>()</div>
-<div class="line"><a name="l00128"></a><span class="lineno">  128</span>&#160;   root_pe = mpp_root_pe()</div>
-<div class="line"><a name="l00129"></a><span class="lineno">  129</span>&#160;   npes = <a class="code" href="mpp__util_8inc.html#abf546cd336d5c539e445fb884f98ab6b">mpp_npes</a>()</div>
+<div class="line"><a name="l00124"></a><span class="lineno">  124</span>&#160;   pe = <a class="code" href="group__mpp__mod.html#gacfeba7de56f9dd6000b3fd78f9d56c50">mpp_pe</a>()</div>
+<div class="line"><a name="l00125"></a><span class="lineno">  125</span>&#160;   root_pe = mpp_root_pe()</div>
+<div class="line"><a name="l00126"></a><span class="lineno">  126</span>&#160;   npes = <a class="code" href="group__mpp__mod.html#gabf546cd336d5c539e445fb884f98ab6b">mpp_npes</a>()</div>
+<div class="line"><a name="l00127"></a><span class="lineno">  127</span>&#160; </div>
+<div class="line"><a name="l00128"></a><span class="lineno">  128</span>&#160;   dsum = 0.0</div>
+<div class="line"><a name="l00129"></a><span class="lineno">  129</span>&#160;   miss = 0</div>
 <div class="line"><a name="l00130"></a><span class="lineno">  130</span>&#160; </div>
-<div class="line"><a name="l00131"></a><span class="lineno">  131</span>&#160;   dsum = 0.0</div>
-<div class="line"><a name="l00132"></a><span class="lineno">  132</span>&#160;   miss = 0</div>
-<div class="line"><a name="l00133"></a><span class="lineno">  133</span>&#160; </div>
-<div class="line"><a name="l00134"></a><span class="lineno">  134</span>&#160;   <span class="keywordflow">if</span> (<span class="keyword">present</span>(missing_value)) <span class="keywordflow">then</span></div>
-<div class="line"><a name="l00135"></a><span class="lineno">  135</span>&#160;      miss = count(dat(:,:) == missing_value)</div>
-<div class="line"><a name="l00136"></a><span class="lineno">  136</span>&#160;      low  = minval(dat(:,:), dat(:,:) /= missing_value)</div>
-<div class="line"><a name="l00137"></a><span class="lineno">  137</span>&#160;      high = maxval(dat(:,:), dat(:,:) /= missing_value)</div>
-<div class="line"><a name="l00138"></a><span class="lineno">  138</span>&#160;      dsum = sum(dat(:,:), dat(:,:) /= missing_value)</div>
-<div class="line"><a name="l00139"></a><span class="lineno">  139</span>&#160;   <span class="keywordflow">else</span> <span class="keywordflow">if</span>(<span class="keyword">present</span>(mask)) <span class="keywordflow">then</span></div>
-<div class="line"><a name="l00140"></a><span class="lineno">  140</span>&#160;      miss = count(mask(:,:) &lt;= 0.5)</div>
-<div class="line"><a name="l00141"></a><span class="lineno">  141</span>&#160;      low  = minval(dat(:,:),mask=mask(:,:) &gt; 0.5)</div>
-<div class="line"><a name="l00142"></a><span class="lineno">  142</span>&#160;      high = maxval(dat(:,:),mask=mask(:,:) &gt; 0.5)</div>
-<div class="line"><a name="l00143"></a><span class="lineno">  143</span>&#160;      dsum = sum(dat(:,:), mask=mask(:,:) &gt; 0.5)</div>
-<div class="line"><a name="l00144"></a><span class="lineno">  144</span>&#160;   <span class="keywordflow">else</span></div>
-<div class="line"><a name="l00145"></a><span class="lineno">  145</span>&#160;      miss = 0</div>
-<div class="line"><a name="l00146"></a><span class="lineno">  146</span>&#160;      low  = minval(dat(:,:))</div>
-<div class="line"><a name="l00147"></a><span class="lineno">  147</span>&#160;      high = maxval(dat(:,:))</div>
-<div class="line"><a name="l00148"></a><span class="lineno">  148</span>&#160;      dsum = sum(dat(:,:))</div>
-<div class="line"><a name="l00149"></a><span class="lineno">  149</span>&#160;<span class="keywordflow">   endif</span></div>
-<div class="line"><a name="l00150"></a><span class="lineno">  150</span>&#160;   avg = 0.0</div>
-<div class="line"><a name="l00151"></a><span class="lineno">  151</span>&#160; </div>
-<div class="line"><a name="l00152"></a><span class="lineno">  152</span>&#160;   npts = <span class="keyword">size</span>(dat(:,:)) - miss</div>
-<div class="line"><a name="l00153"></a><span class="lineno">  153</span>&#160;   <span class="keywordflow">if</span>(pe == root_pe) <span class="keywordflow">then</span></div>
-<div class="line"><a name="l00154"></a><span class="lineno">  154</span>&#160;      <span class="keywordflow">do</span> p = 1, npes - 1  <span class="comment">! root_pe receive data from other pe</span></div>
-<div class="line"><a name="l00155"></a><span class="lineno">  155</span>&#160;      <span class="comment">! Force use of &quot;scalar&quot;, integer pointer mpp interface</span></div>
-<div class="line"><a name="l00156"></a><span class="lineno">  156</span>&#160;         <span class="keyword">call </span><a class="code" href="interfacempp__mod_1_1mpp__recv.html">mpp_recv</a>(buffer_real(1),glen=3, from_pe=p+root_pe, tag=comm_tag_1)</div>
-<div class="line"><a name="l00157"></a><span class="lineno">  157</span>&#160;         dsum = dsum + buffer_real(1)</div>
-<div class="line"><a name="l00158"></a><span class="lineno">  158</span>&#160;         low  = min(low, buffer_real(2))</div>
-<div class="line"><a name="l00159"></a><span class="lineno">  159</span>&#160;         high = max(high, buffer_real(3))</div>
-<div class="line"><a name="l00160"></a><span class="lineno">  160</span>&#160;         <span class="keyword">call </span><a class="code" href="interfacempp__mod_1_1mpp__recv.html">mpp_recv</a>(buffer_int(1), glen=2, from_pe=p+root_pe, tag=comm_tag_2)</div>
-<div class="line"><a name="l00161"></a><span class="lineno">  161</span>&#160;         miss = miss + buffer_int(1)</div>
-<div class="line"><a name="l00162"></a><span class="lineno">  162</span>&#160;         npts = npts + buffer_int(2)</div>
-<div class="line"><a name="l00163"></a><span class="lineno">  163</span>&#160;<span class="keywordflow">      enddo</span></div>
-<div class="line"><a name="l00164"></a><span class="lineno">  164</span>&#160;      <span class="keywordflow">if</span>(npts == 0) <span class="keywordflow">then</span></div>
-<div class="line"><a name="l00165"></a><span class="lineno">  165</span>&#160;         print*, <span class="stringliteral">&#39;Warning: no points is valid&#39;</span></div>
-<div class="line"><a name="l00166"></a><span class="lineno">  166</span>&#160;      <span class="keywordflow">else</span></div>
-<div class="line"><a name="l00167"></a><span class="lineno">  167</span>&#160;         avg = dsum/real(npts)</div>
-<div class="line"><a name="l00168"></a><span class="lineno">  168</span>&#160;<span class="keywordflow">      endif</span></div>
-<div class="line"><a name="l00169"></a><span class="lineno">  169</span>&#160;    <span class="keywordflow">else</span>   <span class="comment">! other pe send data to the root_pe.</span></div>
-<div class="line"><a name="l00170"></a><span class="lineno">  170</span>&#160;      buffer_real(1) = dsum</div>
-<div class="line"><a name="l00171"></a><span class="lineno">  171</span>&#160;      buffer_real(2) = low</div>
-<div class="line"><a name="l00172"></a><span class="lineno">  172</span>&#160;      buffer_real(3) = high</div>
-<div class="line"><a name="l00173"></a><span class="lineno">  173</span>&#160;      <span class="comment">! Force use of &quot;scalar&quot;, integer pointer mpp interface</span></div>
-<div class="line"><a name="l00174"></a><span class="lineno">  174</span>&#160;      <span class="keyword">call </span><a class="code" href="interfacempp__mod_1_1mpp__send.html">mpp_send</a>(buffer_real(1),plen=3,to_pe=root_pe, tag=comm_tag_1)</div>
-<div class="line"><a name="l00175"></a><span class="lineno">  175</span>&#160;      buffer_int(1) = miss</div>
-<div class="line"><a name="l00176"></a><span class="lineno">  176</span>&#160;      buffer_int(2) = npts</div>
-<div class="line"><a name="l00177"></a><span class="lineno">  177</span>&#160;      <span class="keyword">call </span><a class="code" href="interfacempp__mod_1_1mpp__send.html">mpp_send</a>(buffer_int(1), plen=2, to_pe=root_pe, tag=comm_tag_2)</div>
-<div class="line"><a name="l00178"></a><span class="lineno">  178</span>&#160;<span class="keywordflow">    endif</span></div>
-<div class="line"><a name="l00179"></a><span class="lineno">  179</span>&#160; </div>
-<div class="line"><a name="l00180"></a><span class="lineno">  180</span>&#160;    <span class="keyword">call </span><a class="code" href="mpp__util__mpi_8inc.html#a09e69243d8c67e6a6e6e4fd9e93d0870">mpp_sync_self</a>()</div>
-<div class="line"><a name="l00181"></a><span class="lineno">  181</span>&#160; </div>
-<div class="line"><a name="l00182"></a><span class="lineno">  182</span>&#160;    <span class="keywordflow">return</span></div>
-<div class="line"><a name="l00183"></a><span class="lineno">  183</span>&#160; </div>
-<div class="line"><a name="l00184"></a><span class="lineno">  184</span>&#160; <span class="keyword">end subroutine </span><a class="code" href="group__horiz__interp__type__mod.html#ga1c6f1880c2031ea711611df5b4b081c6">stats</a></div>
-<div class="line"><a name="l00185"></a><span class="lineno">  185</span>&#160; </div>
-<div class="line"><a name="l00186"></a><span class="lineno">  186</span>&#160;<span class="comment">!######################################################################################################################</span></div>
-<div class="line"><a name="l00187"></a><span class="lineno">  187</span>&#160; <span class="keyword">subroutine </span>horiz_interp_type_eq(horiz_interp_out, horiz_interp_in)</div>
-<div class="line"><a name="l00188"></a><span class="lineno">  188</span>&#160;    <span class="keywordtype">type</span>(<a class="code" href="structhoriz__interp__type__mod_1_1horiz__interp__type.html">horiz_interp_type</a>), <span class="keywordtype">intent(inout)</span> :: horiz_interp_out</div>
-<div class="line"><a name="l00189"></a><span class="lineno">  189</span>&#160;    <span class="keywordtype">type</span>(<a class="code" href="structhoriz__interp__type__mod_1_1horiz__interp__type.html">horiz_interp_type</a>), <span class="keywordtype">intent(in)</span>    :: horiz_interp_in</div>
-<div class="line"><a name="l00190"></a><span class="lineno">  190</span>&#160; </div>
-<div class="line"><a name="l00191"></a><span class="lineno">  191</span>&#160;    <span class="keywordflow">if</span>(.not.horiz_interp_in%I_am_initialized) <span class="keywordflow">then</span></div>
-<div class="line"><a name="l00192"></a><span class="lineno">  192</span>&#160;      <span class="keyword">call </span><a class="code" href="interfacempp__mod_1_1mpp__error.html">mpp_error</a>(fatal,<span class="stringliteral">&#39;horiz_interp_type_eq: horiz_interp_type variable on right hand side is unassigned&#39;</span>)</div>
-<div class="line"><a name="l00193"></a><span class="lineno">  193</span>&#160;<span class="keywordflow">    endif</span></div>
-<div class="line"><a name="l00194"></a><span class="lineno">  194</span>&#160; </div>
-<div class="line"><a name="l00195"></a><span class="lineno">  195</span>&#160;    horiz_interp_out%faci            =&gt; horiz_interp_in%faci</div>
-<div class="line"><a name="l00196"></a><span class="lineno">  196</span>&#160;    horiz_interp_out%facj            =&gt; horiz_interp_in%facj</div>
-<div class="line"><a name="l00197"></a><span class="lineno">  197</span>&#160;    horiz_interp_out%ilon            =&gt; horiz_interp_in%ilon</div>
-<div class="line"><a name="l00198"></a><span class="lineno">  198</span>&#160;    horiz_interp_out%jlat            =&gt; horiz_interp_in%jlat</div>
-<div class="line"><a name="l00199"></a><span class="lineno">  199</span>&#160;    horiz_interp_out%area_src        =&gt; horiz_interp_in%area_src</div>
-<div class="line"><a name="l00200"></a><span class="lineno">  200</span>&#160;    horiz_interp_out%area_dst        =&gt; horiz_interp_in%area_dst</div>
-<div class="line"><a name="l00201"></a><span class="lineno">  201</span>&#160;    horiz_interp_out%wti             =&gt; horiz_interp_in%wti</div>
-<div class="line"><a name="l00202"></a><span class="lineno">  202</span>&#160;    horiz_interp_out%wtj             =&gt; horiz_interp_in%wtj</div>
-<div class="line"><a name="l00203"></a><span class="lineno">  203</span>&#160;    horiz_interp_out%i_lon           =&gt; horiz_interp_in%i_lon</div>
-<div class="line"><a name="l00204"></a><span class="lineno">  204</span>&#160;    horiz_interp_out%j_lat           =&gt; horiz_interp_in%j_lat</div>
-<div class="line"><a name="l00205"></a><span class="lineno">  205</span>&#160;    horiz_interp_out%src_dist        =&gt; horiz_interp_in%src_dist</div>
-<div class="line"><a name="l00206"></a><span class="lineno">  206</span>&#160;    horiz_interp_out%found_neighbors =&gt; horiz_interp_in%found_neighbors</div>
-<div class="line"><a name="l00207"></a><span class="lineno">  207</span>&#160;    horiz_interp_out%max_src_dist    =  horiz_interp_in%max_src_dist</div>
-<div class="line"><a name="l00208"></a><span class="lineno">  208</span>&#160;    horiz_interp_out%num_found       =&gt; horiz_interp_in%num_found</div>
-<div class="line"><a name="l00209"></a><span class="lineno">  209</span>&#160;    horiz_interp_out%nlon_src        =  horiz_interp_in%nlon_src</div>
-<div class="line"><a name="l00210"></a><span class="lineno">  210</span>&#160;    horiz_interp_out%nlat_src        =  horiz_interp_in%nlat_src</div>
-<div class="line"><a name="l00211"></a><span class="lineno">  211</span>&#160;    horiz_interp_out%nlon_dst        =  horiz_interp_in%nlon_dst</div>
-<div class="line"><a name="l00212"></a><span class="lineno">  212</span>&#160;    horiz_interp_out%nlat_dst        =  horiz_interp_in%nlat_dst</div>
-<div class="line"><a name="l00213"></a><span class="lineno">  213</span>&#160;    horiz_interp_out%interp_method   =  horiz_interp_in%interp_method</div>
-<div class="line"><a name="l00214"></a><span class="lineno">  214</span>&#160;    horiz_interp_out%rat_x           =&gt; horiz_interp_in%rat_x</div>
-<div class="line"><a name="l00215"></a><span class="lineno">  215</span>&#160;    horiz_interp_out%rat_y           =&gt; horiz_interp_in%rat_y</div>
-<div class="line"><a name="l00216"></a><span class="lineno">  216</span>&#160;    horiz_interp_out%lon_in          =&gt; horiz_interp_in%lon_in</div>
-<div class="line"><a name="l00217"></a><span class="lineno">  217</span>&#160;    horiz_interp_out%lat_in          =&gt; horiz_interp_in%lat_in</div>
-<div class="line"><a name="l00218"></a><span class="lineno">  218</span>&#160;    horiz_interp_out%I_am_initialized = .true.</div>
-<div class="line"><a name="l00219"></a><span class="lineno">  219</span>&#160;    horiz_interp_out%i_src           =&gt; horiz_interp_in%i_src</div>
-<div class="line"><a name="l00220"></a><span class="lineno">  220</span>&#160;    horiz_interp_out%j_src           =&gt; horiz_interp_in%j_src</div>
-<div class="line"><a name="l00221"></a><span class="lineno">  221</span>&#160;    horiz_interp_out%i_dst           =&gt; horiz_interp_in%i_dst</div>
-<div class="line"><a name="l00222"></a><span class="lineno">  222</span>&#160;    horiz_interp_out%j_dst           =&gt; horiz_interp_in%j_dst</div>
-<div class="line"><a name="l00223"></a><span class="lineno">  223</span>&#160;    horiz_interp_out%area_frac_dst   =&gt; horiz_interp_in%area_frac_dst</div>
-<div class="line"><a name="l00224"></a><span class="lineno">  224</span>&#160;    <span class="keywordflow">if</span>(horiz_interp_in%interp_method == conserve) <span class="keywordflow">then</span></div>
-<div class="line"><a name="l00225"></a><span class="lineno">  225</span>&#160;       horiz_interp_out%version =  horiz_interp_in%version</div>
-<div class="line"><a name="l00226"></a><span class="lineno">  226</span>&#160;       <span class="keywordflow">if</span>(horiz_interp_in%version==2) horiz_interp_out%nxgrid = horiz_interp_in%nxgrid</div>
-<div class="line"><a name="l00227"></a><span class="lineno">  227</span>&#160;<span class="keywordflow">    end if</span></div>
+<div class="line"><a name="l00131"></a><span class="lineno">  131</span>&#160;   <span class="keywordflow">if</span> (<span class="keyword">present</span>(missing_value)) <span class="keywordflow">then</span></div>
+<div class="line"><a name="l00132"></a><span class="lineno">  132</span>&#160;      miss = count(dat(:,:) == missing_value)</div>
+<div class="line"><a name="l00133"></a><span class="lineno">  133</span>&#160;      low  = minval(dat(:,:), dat(:,:) /= missing_value)</div>
+<div class="line"><a name="l00134"></a><span class="lineno">  134</span>&#160;      high = maxval(dat(:,:), dat(:,:) /= missing_value)</div>
+<div class="line"><a name="l00135"></a><span class="lineno">  135</span>&#160;      dsum = sum(dat(:,:), dat(:,:) /= missing_value)</div>
+<div class="line"><a name="l00136"></a><span class="lineno">  136</span>&#160;   <span class="keywordflow">else</span> <span class="keywordflow">if</span>(<span class="keyword">present</span>(mask)) <span class="keywordflow">then</span></div>
+<div class="line"><a name="l00137"></a><span class="lineno">  137</span>&#160;      miss = count(mask(:,:) &lt;= 0.5)</div>
+<div class="line"><a name="l00138"></a><span class="lineno">  138</span>&#160;      low  = minval(dat(:,:),mask=mask(:,:) &gt; 0.5)</div>
+<div class="line"><a name="l00139"></a><span class="lineno">  139</span>&#160;      high = maxval(dat(:,:),mask=mask(:,:) &gt; 0.5)</div>
+<div class="line"><a name="l00140"></a><span class="lineno">  140</span>&#160;      dsum = sum(dat(:,:), mask=mask(:,:) &gt; 0.5)</div>
+<div class="line"><a name="l00141"></a><span class="lineno">  141</span>&#160;   <span class="keywordflow">else</span></div>
+<div class="line"><a name="l00142"></a><span class="lineno">  142</span>&#160;      miss = 0</div>
+<div class="line"><a name="l00143"></a><span class="lineno">  143</span>&#160;      low  = minval(dat(:,:))</div>
+<div class="line"><a name="l00144"></a><span class="lineno">  144</span>&#160;      high = maxval(dat(:,:))</div>
+<div class="line"><a name="l00145"></a><span class="lineno">  145</span>&#160;      dsum = sum(dat(:,:))</div>
+<div class="line"><a name="l00146"></a><span class="lineno">  146</span>&#160;<span class="keywordflow">   endif</span></div>
+<div class="line"><a name="l00147"></a><span class="lineno">  147</span>&#160;   avg = 0.0</div>
+<div class="line"><a name="l00148"></a><span class="lineno">  148</span>&#160; </div>
+<div class="line"><a name="l00149"></a><span class="lineno">  149</span>&#160;   npts = <span class="keyword">size</span>(dat(:,:)) - miss</div>
+<div class="line"><a name="l00150"></a><span class="lineno">  150</span>&#160;   <span class="keywordflow">if</span>(pe == root_pe) <span class="keywordflow">then</span></div>
+<div class="line"><a name="l00151"></a><span class="lineno">  151</span>&#160;      <span class="keywordflow">do</span> p = 1, npes - 1  <span class="comment">! root_pe receive data from other pe</span></div>
+<div class="line"><a name="l00152"></a><span class="lineno">  152</span>&#160;      <span class="comment">! Force use of &quot;scalar&quot;, integer pointer mpp interface</span></div>
+<div class="line"><a name="l00153"></a><span class="lineno">  153</span>&#160;         <span class="keyword">call </span><a class="code" href="group__mpp__mod.html#interfacempp__mod_1_1mpp__recv">mpp_recv</a>(buffer_real(1),glen=3, from_pe=p+root_pe, tag=comm_tag_1)</div>
+<div class="line"><a name="l00154"></a><span class="lineno">  154</span>&#160;         dsum = dsum + buffer_real(1)</div>
+<div class="line"><a name="l00155"></a><span class="lineno">  155</span>&#160;         low  = min(low, buffer_real(2))</div>
+<div class="line"><a name="l00156"></a><span class="lineno">  156</span>&#160;         high = max(high, buffer_real(3))</div>
+<div class="line"><a name="l00157"></a><span class="lineno">  157</span>&#160;         <span class="keyword">call </span><a class="code" href="group__mpp__mod.html#interfacempp__mod_1_1mpp__recv">mpp_recv</a>(buffer_int(1), glen=2, from_pe=p+root_pe, tag=comm_tag_2)</div>
+<div class="line"><a name="l00158"></a><span class="lineno">  158</span>&#160;         miss = miss + buffer_int(1)</div>
+<div class="line"><a name="l00159"></a><span class="lineno">  159</span>&#160;         npts = npts + buffer_int(2)</div>
+<div class="line"><a name="l00160"></a><span class="lineno">  160</span>&#160;<span class="keywordflow">      enddo</span></div>
+<div class="line"><a name="l00161"></a><span class="lineno">  161</span>&#160;      <span class="keywordflow">if</span>(npts == 0) <span class="keywordflow">then</span></div>
+<div class="line"><a name="l00162"></a><span class="lineno">  162</span>&#160;         print*, <span class="stringliteral">&#39;Warning: no points is valid&#39;</span></div>
+<div class="line"><a name="l00163"></a><span class="lineno">  163</span>&#160;      <span class="keywordflow">else</span></div>
+<div class="line"><a name="l00164"></a><span class="lineno">  164</span>&#160;         avg = dsum/real(npts)</div>
+<div class="line"><a name="l00165"></a><span class="lineno">  165</span>&#160;<span class="keywordflow">      endif</span></div>
+<div class="line"><a name="l00166"></a><span class="lineno">  166</span>&#160;    <span class="keywordflow">else</span>   <span class="comment">! other pe send data to the root_pe.</span></div>
+<div class="line"><a name="l00167"></a><span class="lineno">  167</span>&#160;      buffer_real(1) = dsum</div>
+<div class="line"><a name="l00168"></a><span class="lineno">  168</span>&#160;      buffer_real(2) = low</div>
+<div class="line"><a name="l00169"></a><span class="lineno">  169</span>&#160;      buffer_real(3) = high</div>
+<div class="line"><a name="l00170"></a><span class="lineno">  170</span>&#160;      <span class="comment">! Force use of &quot;scalar&quot;, integer pointer mpp interface</span></div>
+<div class="line"><a name="l00171"></a><span class="lineno">  171</span>&#160;      <span class="keyword">call </span><a class="code" href="group__mpp__mod.html#interfacempp__mod_1_1mpp__send">mpp_send</a>(buffer_real(1),plen=3,to_pe=root_pe, tag=comm_tag_1)</div>
+<div class="line"><a name="l00172"></a><span class="lineno">  172</span>&#160;      buffer_int(1) = miss</div>
+<div class="line"><a name="l00173"></a><span class="lineno">  173</span>&#160;      buffer_int(2) = npts</div>
+<div class="line"><a name="l00174"></a><span class="lineno">  174</span>&#160;      <span class="keyword">call </span><a class="code" href="group__mpp__mod.html#interfacempp__mod_1_1mpp__send">mpp_send</a>(buffer_int(1), plen=2, to_pe=root_pe, tag=comm_tag_2)</div>
+<div class="line"><a name="l00175"></a><span class="lineno">  175</span>&#160;<span class="keywordflow">    endif</span></div>
+<div class="line"><a name="l00176"></a><span class="lineno">  176</span>&#160; </div>
+<div class="line"><a name="l00177"></a><span class="lineno">  177</span>&#160;    <span class="keyword">call </span><a class="code" href="group__mpp__mod.html#ga09e69243d8c67e6a6e6e4fd9e93d0870">mpp_sync_self</a>()</div>
+<div class="line"><a name="l00178"></a><span class="lineno">  178</span>&#160; </div>
+<div class="line"><a name="l00179"></a><span class="lineno">  179</span>&#160;    <span class="keywordflow">return</span></div>
+<div class="line"><a name="l00180"></a><span class="lineno">  180</span>&#160; </div>
+<div class="line"><a name="l00181"></a><span class="lineno">  181</span>&#160; <span class="keyword">end subroutine </span><a class="code" href="group__horiz__interp__type__mod.html#ga1c6f1880c2031ea711611df5b4b081c6">stats</a></div>
+<div class="line"><a name="l00182"></a><span class="lineno">  182</span>&#160; </div>
+<div class="line"><a name="l00183"></a><span class="lineno">  183</span>&#160;<span class="comment">!######################################################################################################################</span></div>
+<div class="line"><a name="l00184"></a><span class="lineno">  184</span>&#160; <span class="keyword">subroutine </span>horiz_interp_type_eq(horiz_interp_out, horiz_interp_in)</div>
+<div class="line"><a name="l00185"></a><span class="lineno">  185</span>&#160;    <span class="keywordtype">type</span>(<a class="code" href="group__horiz__interp__type__mod.html#structhoriz__interp__type__mod_1_1horiz__interp__type">horiz_interp_type</a>), <span class="keywordtype">intent(inout)</span> :: horiz_interp_out</div>
+<div class="line"><a name="l00186"></a><span class="lineno">  186</span>&#160;    <span class="keywordtype">type</span>(<a class="code" href="group__horiz__interp__type__mod.html#structhoriz__interp__type__mod_1_1horiz__interp__type">horiz_interp_type</a>), <span class="keywordtype">intent(in)</span>    :: horiz_interp_in</div>
+<div class="line"><a name="l00187"></a><span class="lineno">  187</span>&#160; </div>
+<div class="line"><a name="l00188"></a><span class="lineno">  188</span>&#160;    <span class="keywordflow">if</span>(.not.horiz_interp_in%I_am_initialized) <span class="keywordflow">then</span></div>
+<div class="line"><a name="l00189"></a><span class="lineno">  189</span>&#160;      <span class="keyword">call </span><a class="code" href="group__mpp__mod.html#interfacempp__mod_1_1mpp__error">mpp_error</a>(fatal,<span class="stringliteral">&#39;horiz_interp_type_eq: horiz_interp_type variable on right hand side is unassigned&#39;</span>)</div>
+<div class="line"><a name="l00190"></a><span class="lineno">  190</span>&#160;<span class="keywordflow">    endif</span></div>
+<div class="line"><a name="l00191"></a><span class="lineno">  191</span>&#160; </div>
+<div class="line"><a name="l00192"></a><span class="lineno">  192</span>&#160;    horiz_interp_out%faci            =&gt; horiz_interp_in%faci</div>
+<div class="line"><a name="l00193"></a><span class="lineno">  193</span>&#160;    horiz_interp_out%facj            =&gt; horiz_interp_in%facj</div>
+<div class="line"><a name="l00194"></a><span class="lineno">  194</span>&#160;    horiz_interp_out%ilon            =&gt; horiz_interp_in%ilon</div>
+<div class="line"><a name="l00195"></a><span class="lineno">  195</span>&#160;    horiz_interp_out%jlat            =&gt; horiz_interp_in%jlat</div>
+<div class="line"><a name="l00196"></a><span class="lineno">  196</span>&#160;    horiz_interp_out%area_src        =&gt; horiz_interp_in%area_src</div>
+<div class="line"><a name="l00197"></a><span class="lineno">  197</span>&#160;    horiz_interp_out%area_dst        =&gt; horiz_interp_in%area_dst</div>
+<div class="line"><a name="l00198"></a><span class="lineno">  198</span>&#160;    horiz_interp_out%wti             =&gt; horiz_interp_in%wti</div>
+<div class="line"><a name="l00199"></a><span class="lineno">  199</span>&#160;    horiz_interp_out%wtj             =&gt; horiz_interp_in%wtj</div>
+<div class="line"><a name="l00200"></a><span class="lineno">  200</span>&#160;    horiz_interp_out%i_lon           =&gt; horiz_interp_in%i_lon</div>
+<div class="line"><a name="l00201"></a><span class="lineno">  201</span>&#160;    horiz_interp_out%j_lat           =&gt; horiz_interp_in%j_lat</div>
+<div class="line"><a name="l00202"></a><span class="lineno">  202</span>&#160;    horiz_interp_out%src_dist        =&gt; horiz_interp_in%src_dist</div>
+<div class="line"><a name="l00203"></a><span class="lineno">  203</span>&#160;    horiz_interp_out%found_neighbors =&gt; horiz_interp_in%found_neighbors</div>
+<div class="line"><a name="l00204"></a><span class="lineno">  204</span>&#160;    horiz_interp_out%max_src_dist    =  horiz_interp_in%max_src_dist</div>
+<div class="line"><a name="l00205"></a><span class="lineno">  205</span>&#160;    horiz_interp_out%num_found       =&gt; horiz_interp_in%num_found</div>
+<div class="line"><a name="l00206"></a><span class="lineno">  206</span>&#160;    horiz_interp_out%nlon_src        =  horiz_interp_in%nlon_src</div>
+<div class="line"><a name="l00207"></a><span class="lineno">  207</span>&#160;    horiz_interp_out%nlat_src        =  horiz_interp_in%nlat_src</div>
+<div class="line"><a name="l00208"></a><span class="lineno">  208</span>&#160;    horiz_interp_out%nlon_dst        =  horiz_interp_in%nlon_dst</div>
+<div class="line"><a name="l00209"></a><span class="lineno">  209</span>&#160;    horiz_interp_out%nlat_dst        =  horiz_interp_in%nlat_dst</div>
+<div class="line"><a name="l00210"></a><span class="lineno">  210</span>&#160;    horiz_interp_out%interp_method   =  horiz_interp_in%interp_method</div>
+<div class="line"><a name="l00211"></a><span class="lineno">  211</span>&#160;    horiz_interp_out%rat_x           =&gt; horiz_interp_in%rat_x</div>
+<div class="line"><a name="l00212"></a><span class="lineno">  212</span>&#160;    horiz_interp_out%rat_y           =&gt; horiz_interp_in%rat_y</div>
+<div class="line"><a name="l00213"></a><span class="lineno">  213</span>&#160;    horiz_interp_out%lon_in          =&gt; horiz_interp_in%lon_in</div>
+<div class="line"><a name="l00214"></a><span class="lineno">  214</span>&#160;    horiz_interp_out%lat_in          =&gt; horiz_interp_in%lat_in</div>
+<div class="line"><a name="l00215"></a><span class="lineno">  215</span>&#160;    horiz_interp_out%I_am_initialized = .true.</div>
+<div class="line"><a name="l00216"></a><span class="lineno">  216</span>&#160;    horiz_interp_out%i_src           =&gt; horiz_interp_in%i_src</div>
+<div class="line"><a name="l00217"></a><span class="lineno">  217</span>&#160;    horiz_interp_out%j_src           =&gt; horiz_interp_in%j_src</div>
+<div class="line"><a name="l00218"></a><span class="lineno">  218</span>&#160;    horiz_interp_out%i_dst           =&gt; horiz_interp_in%i_dst</div>
+<div class="line"><a name="l00219"></a><span class="lineno">  219</span>&#160;    horiz_interp_out%j_dst           =&gt; horiz_interp_in%j_dst</div>
+<div class="line"><a name="l00220"></a><span class="lineno">  220</span>&#160;    horiz_interp_out%area_frac_dst   =&gt; horiz_interp_in%area_frac_dst</div>
+<div class="line"><a name="l00221"></a><span class="lineno">  221</span>&#160;    <span class="keywordflow">if</span>(horiz_interp_in%interp_method == conserve) <span class="keywordflow">then</span></div>
+<div class="line"><a name="l00222"></a><span class="lineno">  222</span>&#160;       horiz_interp_out%version =  horiz_interp_in%version</div>
+<div class="line"><a name="l00223"></a><span class="lineno">  223</span>&#160;       <span class="keywordflow">if</span>(horiz_interp_in%version==2) horiz_interp_out%nxgrid = horiz_interp_in%nxgrid</div>
+<div class="line"><a name="l00224"></a><span class="lineno">  224</span>&#160;<span class="keywordflow">    end if</span></div>
+<div class="line"><a name="l00225"></a><span class="lineno">  225</span>&#160; </div>
+<div class="line"><a name="l00226"></a><span class="lineno">  226</span>&#160; <span class="keyword">end subroutine </span>horiz_interp_type_eq</div>
+<div class="line"><a name="l00227"></a><span class="lineno">  227</span>&#160;<span class="comment">!######################################################################################################################</span></div>
 <div class="line"><a name="l00228"></a><span class="lineno">  228</span>&#160; </div>
-<div class="line"><a name="l00229"></a><span class="lineno">  229</span>&#160; <span class="keyword">end subroutine </span>horiz_interp_type_eq</div>
-<div class="line"><a name="l00230"></a><span class="lineno">  230</span>&#160;<span class="comment">!######################################################################################################################</span></div>
-<div class="line"><a name="l00231"></a><span class="lineno">  231</span>&#160; </div>
-<div class="line"><a name="l00232"></a><span class="lineno">  232</span>&#160;<span class="keyword">end module </span>horiz_interp_type_mod<span class="comment"></span></div>
-<div class="line"><a name="l00233"></a><span class="lineno">  233</span>&#160;<span class="comment">!&gt; @}</span></div>
-<div class="line"><a name="l00234"></a><span class="lineno">  234</span>&#160;<span class="comment">! close documentation grouping</span></div>
+<div class="line"><a name="l00229"></a><span class="lineno">  229</span>&#160;<span class="keyword">end module </span>horiz_interp_type_mod<span class="comment"></span></div>
+<div class="line"><a name="l00230"></a><span class="lineno">  230</span>&#160;<span class="comment">!&gt; @}</span></div>
+<div class="line"><a name="l00231"></a><span class="lineno">  231</span>&#160;<span class="comment">! close documentation grouping</span></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
-<div class="ttc" id="astructhoriz__interp__type__mod_1_1horiz__interp__type_html"><div class="ttname"><a href="structhoriz__interp__type__mod_1_1horiz__interp__type.html">horiz_interp_type_mod::horiz_interp_type</a></div><div class="ttdef"><b>Definition:</b> <a href="horiz__interp__type_8F90_source.html#l00058">horiz_interp_type.F90:58</a></div></div>
-<div class="ttc" id="ainterfacempp__mod_1_1mpp__recv_html"><div class="ttname"><a href="interfacempp__mod_1_1mpp__recv.html">mpp_mod::mpp_recv</a></div><div class="ttdoc">Recieve data to another PE.</div><div class="ttdef"><b>Definition:</b> <a href="mpp_8F90_source.html#l00888">mpp.F90:888</a></div></div>
-<div class="ttc" id="ainterfacempp__mod_1_1mpp__error_html"><div class="ttname"><a href="interfacempp__mod_1_1mpp__error.html">mpp_mod::mpp_error</a></div><div class="ttdoc">Error handler.</div><div class="ttdef"><b>Definition:</b> <a href="mpp_8F90_source.html#l00383">mpp.F90:383</a></div></div>
-<div class="ttc" id="ampp__util__mpi_8inc_html_a09e69243d8c67e6a6e6e4fd9e93d0870"><div class="ttname"><a href="mpp__util__mpi_8inc.html#a09e69243d8c67e6a6e6e4fd9e93d0870">mpp_sync_self</a></div><div class="ttdeci">subroutine mpp_sync_self(pelist, check, request, msg_size, msg_type)</div><div class="ttdoc">This is to check if current PE's outstanding puts are complete but we can't use shmem_fence because w...</div><div class="ttdef"><b>Definition:</b> <a href="mpp__util__mpi_8inc_source.html#l00167">mpp_util_mpi.inc:167</a></div></div>
-<div class="ttc" id="ainterfacempp__mod_1_1mpp__send_html"><div class="ttname"><a href="interfacempp__mod_1_1mpp__send.html">mpp_mod::mpp_send</a></div><div class="ttdoc">Send data to a receiving PE.</div><div class="ttdef"><b>Definition:</b> <a href="mpp_8F90_source.html#l00955">mpp.F90:955</a></div></div>
-<div class="ttc" id="agroup__horiz__interp__type__mod_html_ga1c6f1880c2031ea711611df5b4b081c6"><div class="ttname"><a href="group__horiz__interp__type__mod.html#ga1c6f1880c2031ea711611df5b4b081c6">horiz_interp_type_mod::stats</a></div><div class="ttdeci">subroutine, public stats(dat, low, high, avg, miss, missing_value, mask)</div><div class="ttdoc">This statistics is for bilinear interpolation and spherical regrid.</div><div class="ttdef"><b>Definition:</b> <a href="horiz__interp__type_8F90_source.html#l00118">horiz_interp_type.F90:118</a></div></div>
-<div class="ttc" id="ampp__util_8inc_html_abf546cd336d5c539e445fb884f98ab6b"><div class="ttname"><a href="mpp__util_8inc.html#abf546cd336d5c539e445fb884f98ab6b">mpp_npes</a></div><div class="ttdeci">integer function mpp_npes()</div><div class="ttdoc">Returns processor count for current pelist.</div><div class="ttdef"><b>Definition:</b> <a href="mpp__util_8inc_source.html#l00465">mpp_util.inc:465</a></div></div>
-<div class="ttc" id="ampp__util_8inc_html_acfeba7de56f9dd6000b3fd78f9d56c50"><div class="ttname"><a href="mpp__util_8inc.html#acfeba7de56f9dd6000b3fd78f9d56c50">mpp_pe</a></div><div class="ttdeci">integer function mpp_pe()</div><div class="ttdoc">Returns processor ID. This returns the unique ID associated with a PE. This number runs between 0 and...</div><div class="ttdef"><b>Definition:</b> <a href="mpp__util_8inc_source.html#l00440">mpp_util.inc:440</a></div></div>
+<div class="ttc" id="agroup__horiz__interp__type__mod_html_structhoriz__interp__type__mod_1_1horiz__interp__type"><div class="ttname"><a href="group__horiz__interp__type__mod.html#structhoriz__interp__type__mod_1_1horiz__interp__type">horiz_interp_type_mod::horiz_interp_type</a></div><div class="ttdef"><b>Definition:</b> <a href="horiz__interp__type_8F90_source.html#l00055">horiz_interp_type.F90:55</a></div></div>
+<div class="ttc" id="agroup__mpp__mod_html_gabf546cd336d5c539e445fb884f98ab6b"><div class="ttname"><a href="group__mpp__mod.html#gabf546cd336d5c539e445fb884f98ab6b">mpp_npes</a></div><div class="ttdeci">integer function mpp_npes()</div><div class="ttdoc">Returns processor count for current pelist.</div><div class="ttdef"><b>Definition:</b> <a href="mpp__util_8inc_source.html#l00392">mpp_util.inc:392</a></div></div>
+<div class="ttc" id="agroup__mpp__mod_html_interfacempp__mod_1_1mpp__send"><div class="ttname"><a href="group__mpp__mod.html#interfacempp__mod_1_1mpp__send">mpp_mod::mpp_send</a></div><div class="ttdoc">Send data to a receiving PE.</div><div class="ttdef"><b>Definition:</b> <a href="mpp_8F90_source.html#l00998">mpp.F90:998</a></div></div>
+<div class="ttc" id="agroup__mpp__mod_html_interfacempp__mod_1_1mpp__error"><div class="ttname"><a href="group__mpp__mod.html#interfacempp__mod_1_1mpp__error">mpp_mod::mpp_error</a></div><div class="ttdoc">Error handler.</div><div class="ttdef"><b>Definition:</b> <a href="mpp_8F90_source.html#l00382">mpp.F90:382</a></div></div>
+<div class="ttc" id="agroup__mpp__mod_html_gacfeba7de56f9dd6000b3fd78f9d56c50"><div class="ttname"><a href="group__mpp__mod.html#gacfeba7de56f9dd6000b3fd78f9d56c50">mpp_pe</a></div><div class="ttdeci">integer function mpp_pe()</div><div class="ttdoc">Returns processor ID.</div><div class="ttdef"><b>Definition:</b> <a href="mpp__util_8inc_source.html#l00378">mpp_util.inc:378</a></div></div>
+<div class="ttc" id="agroup__horiz__interp__type__mod_html_ga1c6f1880c2031ea711611df5b4b081c6"><div class="ttname"><a href="group__horiz__interp__type__mod.html#ga1c6f1880c2031ea711611df5b4b081c6">horiz_interp_type_mod::stats</a></div><div class="ttdeci">subroutine, public stats(dat, low, high, avg, miss, missing_value, mask)</div><div class="ttdoc">This statistics is for bilinear interpolation and spherical regrid.</div><div class="ttdef"><b>Definition:</b> <a href="horiz__interp__type_8F90_source.html#l00115">horiz_interp_type.F90:115</a></div></div>
+<div class="ttc" id="agroup__mpp__mod_html_interfacempp__mod_1_1mpp__recv"><div class="ttname"><a href="group__mpp__mod.html#interfacempp__mod_1_1mpp__recv">mpp_mod::mpp_recv</a></div><div class="ttdoc">Recieve data from another PE.</div><div class="ttdef"><b>Definition:</b> <a href="mpp_8F90_source.html#l00931">mpp.F90:931</a></div></div>
+<div class="ttc" id="agroup__mpp__mod_html_ga09e69243d8c67e6a6e6e4fd9e93d0870"><div class="ttname"><a href="group__mpp__mod.html#ga09e69243d8c67e6a6e6e4fd9e93d0870">mpp_sync_self</a></div><div class="ttdeci">subroutine mpp_sync_self(pelist, check, request, msg_size, msg_type)</div><div class="ttdoc">This is to check if current PE's outstanding puts are complete but we can't use shmem_fence because w...</div><div class="ttdef"><b>Definition:</b> <a href="mpp__util__mpi_8inc_source.html#l00169">mpp_util_mpi.inc:169</a></div></div>
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><a class="el" href="dir_de2bbf0ae022fc400a792b8e69a05737.html">horiz_interp</a></li><li class="navelem"><a class="el" href="horiz__interp__type_8F90.html">horiz_interp_type.F90</a></li>
+    <li class="navelem"><a class="el" href="dir_de2bbf0ae022fc400a792b8e69a05737.html">horiz_interp</a></li><li class="navelem"><b>horiz_interp_type.F90</b></li>
     <li class="footer">Generated by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="doxygen.png" alt="doxygen"/></a> 1.8.17 </li>

@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.17"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>FMS: mpp/include/mpp_util_nocomm.inc Source File</title>
+<title>FMS: mpp/include/mpp_util_nocomm.inc (1640fde1a51a73f97748f150eb84bf49e472aeca) Source File</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -33,7 +33,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">FMS
-   &#160;<span id="projectnumber">2022.02.0</span>
+   &#160;<span id="projectnumber">2022.03.00</span>
    </div>
    <div id="projectbrief">Flexible Modeling System</div>
   </td>
@@ -94,7 +94,7 @@ $(document).ready(function(){initNavTree('mpp__util__nocomm_8inc_source.html',''
 <div class="title">mpp_util_nocomm.inc</div>  </div>
 </div><!--header-->
 <div class="contents">
-<a href="mpp__util__nocomm_8inc.html">Go to the documentation of this file.</a><div class="fragment"><div class="line"><a name="l00001"></a><span class="lineno">    1</span>&#160;<span class="comment">! -*-f90-*-</span></div>
+<div class="fragment"><div class="line"><a name="l00001"></a><span class="lineno">    1</span>&#160;<span class="comment">! -*-f90-*-</span></div>
 <div class="line"><a name="l00002"></a><span class="lineno">    2</span>&#160; </div>
 <div class="line"><a name="l00003"></a><span class="lineno">    3</span>&#160;<span class="comment">!***********************************************************************</span></div>
 <div class="line"><a name="l00004"></a><span class="lineno">    4</span>&#160;<span class="comment">!*                   GNU Lesser General Public License</span></div>
@@ -115,113 +115,111 @@ $(document).ready(function(){initNavTree('mpp__util__nocomm_8inc_source.html',''
 <div class="line"><a name="l00019"></a><span class="lineno">   19</span>&#160;<span class="comment">!* License along with FMS.  If not, see &lt;http://www.gnu.org/licenses/&gt;.</span></div>
 <div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160;<span class="comment">!***********************************************************************</span><span class="comment"></span></div>
 <div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160;<span class="comment">!&gt; @file</span></div>
-<div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160;<span class="comment">!&gt; @ingroup mpp</span></div>
-<div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160;<span class="comment">!&gt; @brief Utility routines for parallelization, non-mpi version</span></div>
-<div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160; </div>
-<div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160;<span class="comment">!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!</span></div>
-<div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160;<span class="comment">!                                                                             !</span></div>
-<div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;<span class="comment">!         MISCELLANEOUS UTILITIES: mpp_error                                  !</span></div>
-<div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;<span class="comment">!                                                                             !</span></div>
-<div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;<span class="comment">!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!</span></div>
-<div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160; </div>
-<div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;<span class="keyword">subroutine </span><a class="code" href="mpp__util__mpi_8inc.html#a12e1fe8a6b55f7d625ba77a5dcc4670b">mpp_error_basic</a>( errortype, errormsg )</div>
-<div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;  <span class="comment">!a very basic error handler</span></div>
-<div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;  <span class="comment">!uses ABORT and FLUSH calls, may need to use cpp to rename</span></div>
-<div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;  <span class="keywordtype">integer</span>,                    <span class="keywordtype">intent(in)</span> :: errortype</div>
-<div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;  <span class="keywordtype">character(len=*)</span>, <span class="keywordtype">intent(in)</span>, <span class="keywordtype">optional</span> :: errormsg</div>
-<div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;  <span class="keywordtype">character(len=512)</span>                     :: text</div>
-<div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;  <span class="keywordtype">logical</span>                                :: opened</div>
-<div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;  <span class="keywordtype">integer</span>                                :: istat, errunit, outunit</div>
-<div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160; </div>
-<div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;  <span class="keywordflow">if</span>( .NOT.module_is_initialized )<span class="keyword">call </span>abort()</div>
-<div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160; </div>
-<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;  <span class="keywordflow">select case</span>( errortype )</div>
-<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;  <span class="keywordflow">case</span>(note)</div>
-<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;     text = <span class="stringliteral">&#39;NOTE&#39;</span>         <span class="comment">!just FYI</span></div>
-<div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;  <span class="keywordflow">case</span>(warning)</div>
-<div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;     text = <span class="stringliteral">&#39;WARNING&#39;</span>      <span class="comment">!probable error</span></div>
-<div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;  <span class="keywordflow">case</span>(fatal)</div>
-<div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;     text = <span class="stringliteral">&#39;FATAL&#39;</span>        <span class="comment">!fatal error</span></div>
-<div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;<span class="keywordflow">  case default</span></div>
-<div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;     text = <span class="stringliteral">&#39;WARNING: non-existent errortype (must be NOTE|WARNING|FATAL)&#39;</span></div>
-<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;<span class="keywordflow">  end select</span></div>
-<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160; </div>
-<div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;  <span class="keywordflow">if</span>( npes.GT.1 )<span class="keyword">write</span>( text,<span class="stringliteral">&#39;(a,i5)&#39;</span> )trim(text)//<span class="stringliteral">&#39; from PE&#39;</span>, pe   <span class="comment">!this is the mpp part</span></div>
-<div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;  <span class="keywordflow">if</span>( <span class="keyword">PRESENT</span>(errormsg) )text = trim(text)//<span class="stringliteral">&#39;: &#39;</span>//trim(errormsg)</div>
-<div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160; </div>
-<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;  errunit = <a class="code" href="mpp__util_8inc.html#a285ef180624257148d85af894928844b">stderr</a>()</div>
-<div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;  outunit = <a class="code" href="mpp__util_8inc.html#a172901d39c9b0cf14aa83b1e94fdf21b">stdout</a>()</div>
-<div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160; </div>
-<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;  <span class="keywordflow">select case</span>( errortype )</div>
-<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;  <span class="keywordflow">case</span>(note)</div>
-<div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;     <span class="keyword">write</span>( outunit,<span class="stringliteral">&#39;(a)&#39;</span> )trim(text)</div>
-<div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;<span class="keywordflow">  case default</span></div>
-<div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;     <span class="keyword">write</span>( errunit,<span class="stringliteral">&#39;(/a/)&#39;</span> )trim(text)</div>
-<div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;     <span class="keyword">write</span>( outunit,<span class="stringliteral">&#39;(/a/)&#39;</span> )trim(text)</div>
-<div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;     <span class="keywordflow">if</span>( errortype.EQ.fatal .OR. warnings_are_fatal )<span class="keywordflow">then</span></div>
-<div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;        <span class="keyword">FLUSH</span>(outunit)</div>
-<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;        <span class="keyword">call </span>abort() <span class="comment">!automatically calls traceback on Cray systems</span></div>
-<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;<span class="keywordflow">     end if</span></div>
-<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;<span class="keywordflow">  end select</span></div>
-<div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160; </div>
-<div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;  error_state = errortype</div>
-<div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;  <span class="keywordflow">return</span></div>
-<div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;<span class="keyword">end subroutine </span><a class="code" href="mpp__util__mpi_8inc.html#a12e1fe8a6b55f7d625ba77a5dcc4670b">mpp_error_basic</a></div>
-<div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160; </div>
-<div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;<span class="comment">!#####################################################################</span></div>
-<div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;<span class="comment">!--- makes a PE set out of a PE list. A PE list is an ordered list of PEs</span></div>
-<div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;<span class="comment">!--- a PE set is a triad (start,log2stride,size) for SHMEM, an a communicator for MPI</span></div>
-<div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;<span class="comment">!--- if stride is non-uniform or not a power of 2,</span></div>
-<div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;<span class="comment">!--- will return error (not required for MPI but enforced for uniformity)</span></div>
-<div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;<span class="keyword">function </span><a class="code" href="mpp__util__mpi_8inc.html#a948898490a7d1d09fc1043dac561514d">get_peset</a>(pelist)</div>
-<div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;  <span class="keywordtype">integer</span>                       :: get_peset</div>
-<div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;  <span class="keywordtype">integer</span>, <span class="keywordtype">intent(in)</span>, <span class="keywordtype">optional</span> :: pelist(:)</div>
-<div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160; </div>
-<div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160;  <span class="keywordflow">if</span>( .NOT.<span class="keyword">PRESENT</span>(pelist) )<span class="keywordflow">then</span> <span class="comment">!set it to current_peset_num</span></div>
-<div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;     get_peset = current_peset_num; <span class="keywordflow">return</span></div>
-<div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160;<span class="keywordflow">  end if</span></div>
-<div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160; </div>
-<div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160;  get_peset = 0</div>
-<div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160; </div>
-<div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;  <span class="keywordflow">return</span></div>
-<div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160; </div>
-<div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;<span class="keyword">end function </span><a class="code" href="mpp__util__mpi_8inc.html#a948898490a7d1d09fc1043dac561514d">get_peset</a></div>
-<div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160; </div>
-<div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160;<span class="comment">!#######################################################################</span></div>
-<div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160; <span class="comment">!synchronize PEs in list</span></div>
-<div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160;<span class="keyword">subroutine </span><a class="code" href="mpp__util__mpi_8inc.html#ad75482ebfad2337cd236ef0998accdc4">mpp_sync</a>( pelist, check )</div>
-<div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160;  <span class="keywordtype">integer</span>, <span class="keywordtype">intent(in)</span>, <span class="keywordtype">optional</span> :: pelist(:)</div>
-<div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160;  <span class="keywordtype">integer</span>, <span class="keywordtype">intent(in)</span>, <span class="keywordtype">optional</span> :: check</div>
-<div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160; </div>
-<div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160;  <span class="keywordflow">return</span></div>
-<div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160;<span class="keyword">end subroutine </span><a class="code" href="mpp__util__mpi_8inc.html#ad75482ebfad2337cd236ef0998accdc4">mpp_sync</a></div>
-<div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160; </div>
-<div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160;<span class="comment">!#######################################################################</span></div>
-<div class="line"><a name="l00104"></a><span class="lineno">  104</span>&#160;  <span class="comment">!this is to check if current PE&#39;s outstanding puts are complete</span></div>
-<div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160;  <span class="comment">!but we can&#39;t use shmem_fence because we are actually waiting for</span></div>
-<div class="line"><a name="l00106"></a><span class="lineno">  106</span>&#160;  <span class="comment">!a remote PE to complete its get</span></div>
-<div class="line"><a name="l00107"></a><span class="lineno">  107</span>&#160;<span class="keyword">subroutine </span><a class="code" href="mpp__util__mpi_8inc.html#a09e69243d8c67e6a6e6e4fd9e93d0870">mpp_sync_self</a>( pelist, check, request, msg_size, msg_type )</div>
-<div class="line"><a name="l00108"></a><span class="lineno">  108</span>&#160;  <span class="keywordtype">integer</span>, <span class="keywordtype">intent(in)</span>, <span class="keywordtype">optional</span> :: pelist(:)</div>
-<div class="line"><a name="l00109"></a><span class="lineno">  109</span>&#160;  <span class="keywordtype">integer</span>, <span class="keywordtype">intent(in)</span>, <span class="keywordtype">optional</span> :: check</div>
-<div class="line"><a name="l00110"></a><span class="lineno">  110</span>&#160;  <span class="keywordtype">integer</span>, <span class="keywordtype">intent(inout)</span>, <span class="keywordtype">optional</span> :: request(:)</div>
-<div class="line"><a name="l00111"></a><span class="lineno">  111</span>&#160;  <span class="keywordtype">integer</span>, <span class="keywordtype">intent(in   )</span>, <span class="keywordtype">optional</span> :: msg_size(:)</div>
-<div class="line"><a name="l00112"></a><span class="lineno">  112</span>&#160;  <span class="keywordtype">integer</span>, <span class="keywordtype">intent(in   )</span>, <span class="keywordtype">optional</span> :: msg_type(:)</div>
+<div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160;<span class="comment">!&gt; @brief Utility routines for parallelization, non-mpi version</span></div>
+<div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160; </div>
+<div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;<span class="comment">!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!</span></div>
+<div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160;<span class="comment">!                                                                             !</span></div>
+<div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160;<span class="comment">!         MISCELLANEOUS UTILITIES: mpp_error                                  !</span></div>
+<div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;<span class="comment">!                                                                             !</span></div>
+<div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;<span class="comment">!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!</span></div>
+<div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160; </div>
+<div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;<span class="keyword">subroutine </span><a class="code" href="group__mpp__mod.html#ga12e1fe8a6b55f7d625ba77a5dcc4670b">mpp_error_basic</a>( errortype, errormsg )</div>
+<div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;  <span class="comment">!a very basic error handler</span></div>
+<div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;  <span class="comment">!uses ABORT and FLUSH calls, may need to use cpp to rename</span></div>
+<div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;  <span class="keywordtype">integer</span>,                    <span class="keywordtype">intent(in)</span> :: errortype</div>
+<div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;  <span class="keywordtype">character(len=*)</span>, <span class="keywordtype">intent(in)</span>, <span class="keywordtype">optional</span> :: errormsg</div>
+<div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;  <span class="keywordtype">character(len=512)</span>                     :: text</div>
+<div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;  <span class="keywordtype">logical</span>                                :: opened</div>
+<div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;  <span class="keywordtype">integer</span>                                :: istat, errunit, outunit</div>
+<div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160; </div>
+<div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;  <span class="keywordflow">if</span>( .NOT.module_is_initialized )<span class="keyword">call </span>abort()</div>
+<div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160; </div>
+<div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;  <span class="keywordflow">select case</span>( errortype )</div>
+<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;  <span class="keywordflow">case</span>(note)</div>
+<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;     text = <span class="stringliteral">&#39;NOTE&#39;</span>         <span class="comment">!just FYI</span></div>
+<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;  <span class="keywordflow">case</span>(warning)</div>
+<div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;     text = <span class="stringliteral">&#39;WARNING&#39;</span>      <span class="comment">!probable error</span></div>
+<div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;  <span class="keywordflow">case</span>(fatal)</div>
+<div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;     text = <span class="stringliteral">&#39;FATAL&#39;</span>        <span class="comment">!fatal error</span></div>
+<div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;<span class="keywordflow">  case default</span></div>
+<div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;     text = <span class="stringliteral">&#39;WARNING: non-existent errortype (must be NOTE|WARNING|FATAL)&#39;</span></div>
+<div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;<span class="keywordflow">  end select</span></div>
+<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160; </div>
+<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;  <span class="keywordflow">if</span>( npes.GT.1 )<span class="keyword">write</span>( text,<span class="stringliteral">&#39;(a,i5)&#39;</span> )trim(text)//<span class="stringliteral">&#39; from PE&#39;</span>, pe   <span class="comment">!this is the mpp part</span></div>
+<div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;  <span class="keywordflow">if</span>( <span class="keyword">PRESENT</span>(errormsg) )text = trim(text)//<span class="stringliteral">&#39;: &#39;</span>//trim(errormsg)</div>
+<div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160; </div>
+<div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;  errunit = <a class="code" href="group__mpp__mod.html#ga285ef180624257148d85af894928844b">stderr</a>()</div>
+<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;  outunit = <a class="code" href="group__mpp__mod.html#ga172901d39c9b0cf14aa83b1e94fdf21b">stdout</a>()</div>
+<div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160; </div>
+<div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;  <span class="keywordflow">select case</span>( errortype )</div>
+<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;  <span class="keywordflow">case</span>(note)</div>
+<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;     <span class="keyword">write</span>( outunit,<span class="stringliteral">&#39;(a)&#39;</span> )trim(text)</div>
+<div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;<span class="keywordflow">  case default</span></div>
+<div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;     <span class="keyword">write</span>( errunit,<span class="stringliteral">&#39;(/a/)&#39;</span> )trim(text)</div>
+<div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;     <span class="keyword">write</span>( outunit,<span class="stringliteral">&#39;(/a/)&#39;</span> )trim(text)</div>
+<div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;     <span class="keywordflow">if</span>( errortype.EQ.fatal .OR. warnings_are_fatal )<span class="keywordflow">then</span></div>
+<div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;        <span class="keyword">FLUSH</span>(outunit)</div>
+<div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;        <span class="keyword">call </span>abort() <span class="comment">!automatically calls traceback on Cray systems</span></div>
+<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;<span class="keywordflow">     end if</span></div>
+<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;<span class="keywordflow">  end select</span></div>
+<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160; </div>
+<div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;  error_state = errortype</div>
+<div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;  <span class="keywordflow">return</span></div>
+<div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;<span class="keyword">end subroutine </span><a class="code" href="group__mpp__mod.html#ga12e1fe8a6b55f7d625ba77a5dcc4670b">mpp_error_basic</a></div>
+<div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160; </div>
+<div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;<span class="comment">!#####################################################################</span><span class="comment"></span></div>
+<div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;<span class="comment">!&gt; Makes a PE set out of a PE list. A PE list is an ordered list of PEs</span></div>
+<div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;<span class="comment">!! a PE set is a triad (start,log2stride,size) for SHMEM, an a communicator for MPI</span></div>
+<div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;<span class="comment">!! if stride is non-uniform or not a power of 2,</span></div>
+<div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;<span class="comment">!! will return error (not required for MPI but enforced for uniformity)</span></div>
+<div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;<span class="keyword">function </span>get_peset(pelist)</div>
+<div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;  <span class="keywordtype">integer</span>                       :: get_peset</div>
+<div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;  <span class="keywordtype">integer</span>, <span class="keywordtype">intent(in)</span>, <span class="keywordtype">optional</span> :: pelist(:)</div>
+<div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160; </div>
+<div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;  <span class="keywordflow">if</span>( .NOT.<span class="keyword">PRESENT</span>(pelist) )<span class="keywordflow">then</span> <span class="comment">!set it to current_peset_num</span></div>
+<div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160;     get_peset = current_peset_num; <span class="keywordflow">return</span></div>
+<div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;<span class="keywordflow">  end if</span></div>
+<div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160; </div>
+<div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;  get_peset = 0</div>
+<div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160; </div>
+<div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160;  <span class="keywordflow">return</span></div>
+<div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160; </div>
+<div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160;<span class="keyword">end function </span>get_peset</div>
+<div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160; </div>
+<div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;<span class="comment">!#######################################################################</span><span class="comment"></span></div>
+<div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160;<span class="comment">!&gt; synchronize PEs in list</span></div>
+<div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160;<span class="keyword">subroutine </span><a class="code" href="group__mpp__mod.html#gad75482ebfad2337cd236ef0998accdc4">mpp_sync</a>( pelist, check )</div>
+<div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160;  <span class="keywordtype">integer</span>, <span class="keywordtype">intent(in)</span>, <span class="keywordtype">optional</span> :: pelist(:)</div>
+<div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160;  <span class="keywordtype">integer</span>, <span class="keywordtype">intent(in)</span>, <span class="keywordtype">optional</span> :: check</div>
+<div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160; </div>
+<div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160;  <span class="keywordflow">return</span></div>
+<div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160;<span class="keyword">end subroutine </span><a class="code" href="group__mpp__mod.html#gad75482ebfad2337cd236ef0998accdc4">mpp_sync</a></div>
+<div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160; </div>
+<div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160;<span class="comment">!#######################################################################</span><span class="comment"></span></div>
+<div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160;<span class="comment">!&gt; This is to check if current PE&#39;s outstanding puts are complete</span></div>
+<div class="line"><a name="l00104"></a><span class="lineno">  104</span>&#160;<span class="comment">!! but we can&#39;t use shmem_fence because we are actually waiting for</span></div>
+<div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160;<span class="comment">!! a remote PE to complete its get</span></div>
+<div class="line"><a name="l00106"></a><span class="lineno">  106</span>&#160;<span class="keyword">subroutine </span><a class="code" href="group__mpp__mod.html#ga09e69243d8c67e6a6e6e4fd9e93d0870">mpp_sync_self</a>( pelist, check, request, msg_size, msg_type )</div>
+<div class="line"><a name="l00107"></a><span class="lineno">  107</span>&#160;  <span class="keywordtype">integer</span>, <span class="keywordtype">intent(in)</span>, <span class="keywordtype">optional</span> :: pelist(:)</div>
+<div class="line"><a name="l00108"></a><span class="lineno">  108</span>&#160;  <span class="keywordtype">integer</span>, <span class="keywordtype">intent(in)</span>, <span class="keywordtype">optional</span> :: check</div>
+<div class="line"><a name="l00109"></a><span class="lineno">  109</span>&#160;  <span class="keywordtype">integer</span>, <span class="keywordtype">intent(inout)</span>, <span class="keywordtype">optional</span> :: request(:)</div>
+<div class="line"><a name="l00110"></a><span class="lineno">  110</span>&#160;  <span class="keywordtype">integer</span>, <span class="keywordtype">intent(in   )</span>, <span class="keywordtype">optional</span> :: msg_size(:)</div>
+<div class="line"><a name="l00111"></a><span class="lineno">  111</span>&#160;  <span class="keywordtype">integer</span>, <span class="keywordtype">intent(in   )</span>, <span class="keywordtype">optional</span> :: msg_type(:)</div>
+<div class="line"><a name="l00112"></a><span class="lineno">  112</span>&#160; </div>
 <div class="line"><a name="l00113"></a><span class="lineno">  113</span>&#160; </div>
-<div class="line"><a name="l00114"></a><span class="lineno">  114</span>&#160; </div>
-<div class="line"><a name="l00115"></a><span class="lineno">  115</span>&#160;  <span class="keywordflow">return</span></div>
-<div class="line"><a name="l00116"></a><span class="lineno">  116</span>&#160;<span class="keyword">end subroutine </span><a class="code" href="mpp__util__mpi_8inc.html#a09e69243d8c67e6a6e6e4fd9e93d0870">mpp_sync_self</a></div>
+<div class="line"><a name="l00114"></a><span class="lineno">  114</span>&#160;  <span class="keywordflow">return</span></div>
+<div class="line"><a name="l00115"></a><span class="lineno">  115</span>&#160;<span class="keyword">end subroutine </span><a class="code" href="group__mpp__mod.html#ga09e69243d8c67e6a6e6e4fd9e93d0870">mpp_sync_self</a></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
-<div class="ttc" id="ampp__util__mpi_8inc_html_a12e1fe8a6b55f7d625ba77a5dcc4670b"><div class="ttname"><a href="mpp__util__mpi_8inc.html#a12e1fe8a6b55f7d625ba77a5dcc4670b">mpp_error_basic</a></div><div class="ttdeci">subroutine mpp_error_basic(errortype, errormsg)</div><div class="ttdoc">A very basic error handler uses ABORT and FLUSH calls, may need to use cpp to rename.</div><div class="ttdef"><b>Definition:</b> <a href="mpp__util__mpi_8inc_source.html#l00034">mpp_util_mpi.inc:34</a></div></div>
-<div class="ttc" id="ampp__util_8inc_html_a172901d39c9b0cf14aa83b1e94fdf21b"><div class="ttname"><a href="mpp__util_8inc.html#a172901d39c9b0cf14aa83b1e94fdf21b">stdout</a></div><div class="ttdeci">integer function stdout()</div><div class="ttdoc">This function returns the current standard fortran unit numbers for output.</div><div class="ttdef"><b>Definition:</b> <a href="mpp__util_8inc_source.html#l00065">mpp_util.inc:65</a></div></div>
-<div class="ttc" id="ampp__util__mpi_8inc_html_a09e69243d8c67e6a6e6e4fd9e93d0870"><div class="ttname"><a href="mpp__util__mpi_8inc.html#a09e69243d8c67e6a6e6e4fd9e93d0870">mpp_sync_self</a></div><div class="ttdeci">subroutine mpp_sync_self(pelist, check, request, msg_size, msg_type)</div><div class="ttdoc">This is to check if current PE's outstanding puts are complete but we can't use shmem_fence because w...</div><div class="ttdef"><b>Definition:</b> <a href="mpp__util__mpi_8inc_source.html#l00167">mpp_util_mpi.inc:167</a></div></div>
-<div class="ttc" id="ampp__util__mpi_8inc_html_a948898490a7d1d09fc1043dac561514d"><div class="ttname"><a href="mpp__util__mpi_8inc.html#a948898490a7d1d09fc1043dac561514d">get_peset</a></div><div class="ttdeci">integer function get_peset(pelist)</div><div class="ttdoc">Makes a PE set out of a PE list. A PE list is an ordered list of PEs a PE set is a triad (start,...</div><div class="ttdef"><b>Definition:</b> <a href="mpp__util__mpi_8inc_source.html#l00090">mpp_util_mpi.inc:90</a></div></div>
-<div class="ttc" id="ampp__util_8inc_html_a285ef180624257148d85af894928844b"><div class="ttname"><a href="mpp__util_8inc.html#a285ef180624257148d85af894928844b">stderr</a></div><div class="ttdeci">integer function stderr()</div><div class="ttdoc">This function returns the current standard fortran unit numbers for error messages.</div><div class="ttdef"><b>Definition:</b> <a href="mpp__util_8inc_source.html#l00085">mpp_util.inc:85</a></div></div>
-<div class="ttc" id="ampp__util__mpi_8inc_html_ad75482ebfad2337cd236ef0998accdc4"><div class="ttname"><a href="mpp__util__mpi_8inc.html#ad75482ebfad2337cd236ef0998accdc4">mpp_sync</a></div><div class="ttdeci">subroutine mpp_sync(pelist, do_self)</div><div class="ttdoc">Synchronize PEs in list.</div><div class="ttdef"><b>Definition:</b> <a href="mpp__util__mpi_8inc_source.html#l00144">mpp_util_mpi.inc:144</a></div></div>
+<div class="ttc" id="agroup__mpp__mod_html_gad75482ebfad2337cd236ef0998accdc4"><div class="ttname"><a href="group__mpp__mod.html#gad75482ebfad2337cd236ef0998accdc4">mpp_sync</a></div><div class="ttdeci">subroutine mpp_sync(pelist, do_self)</div><div class="ttdoc">Synchronize PEs in list.</div><div class="ttdef"><b>Definition:</b> <a href="mpp__util__mpi_8inc_source.html#l00146">mpp_util_mpi.inc:146</a></div></div>
+<div class="ttc" id="agroup__mpp__mod_html_ga12e1fe8a6b55f7d625ba77a5dcc4670b"><div class="ttname"><a href="group__mpp__mod.html#ga12e1fe8a6b55f7d625ba77a5dcc4670b">mpp_error_basic</a></div><div class="ttdeci">subroutine mpp_error_basic(errortype, errormsg)</div><div class="ttdoc">A very basic error handler uses ABORT and FLUSH calls, may need to use cpp to rename.</div><div class="ttdef"><b>Definition:</b> <a href="mpp__util__mpi_8inc_source.html#l00036">mpp_util_mpi.inc:36</a></div></div>
+<div class="ttc" id="agroup__mpp__mod_html_ga285ef180624257148d85af894928844b"><div class="ttname"><a href="group__mpp__mod.html#ga285ef180624257148d85af894928844b">stderr</a></div><div class="ttdeci">integer function stderr()</div><div class="ttdoc">This function returns the current standard fortran unit numbers for error messages.</div><div class="ttdef"><b>Definition:</b> <a href="mpp__util_8inc_source.html#l00051">mpp_util.inc:51</a></div></div>
+<div class="ttc" id="agroup__mpp__mod_html_ga172901d39c9b0cf14aa83b1e94fdf21b"><div class="ttname"><a href="group__mpp__mod.html#ga172901d39c9b0cf14aa83b1e94fdf21b">stdout</a></div><div class="ttdeci">integer function stdout()</div><div class="ttdoc">This function returns the current standard fortran unit numbers for output.</div><div class="ttdef"><b>Definition:</b> <a href="mpp__util_8inc_source.html#l00043">mpp_util.inc:43</a></div></div>
+<div class="ttc" id="agroup__mpp__mod_html_ga09e69243d8c67e6a6e6e4fd9e93d0870"><div class="ttname"><a href="group__mpp__mod.html#ga09e69243d8c67e6a6e6e4fd9e93d0870">mpp_sync_self</a></div><div class="ttdeci">subroutine mpp_sync_self(pelist, check, request, msg_size, msg_type)</div><div class="ttdoc">This is to check if current PE's outstanding puts are complete but we can't use shmem_fence because w...</div><div class="ttdef"><b>Definition:</b> <a href="mpp__util__mpi_8inc_source.html#l00169">mpp_util_mpi.inc:169</a></div></div>
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><a class="el" href="dir_72b96e86e48e5dd402c7a282ec4fcc3a.html">mpp</a></li><li class="navelem"><a class="el" href="dir_26bb404c5de62e9dc2e5e3445360ffe7.html">include</a></li><li class="navelem"><a class="el" href="mpp__util__nocomm_8inc.html">mpp_util_nocomm.inc</a></li>
+    <li class="navelem"><a class="el" href="dir_72b96e86e48e5dd402c7a282ec4fcc3a.html">mpp</a></li><li class="navelem"><a class="el" href="dir_26bb404c5de62e9dc2e5e3445360ffe7.html">include</a></li><li class="navelem"><b>mpp_util_nocomm.inc</b></li>
     <li class="footer">Generated by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="doxygen.png" alt="doxygen"/></a> 1.8.17 </li>

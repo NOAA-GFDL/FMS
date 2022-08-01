@@ -33,7 +33,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">FMS
-   &#160;<span id="projectnumber">2022.02.0</span>
+   &#160;<span id="projectnumber">2022.03.00</span>
    </div>
    <div id="projectbrief">Flexible Modeling System</div>
   </td>
@@ -91,12 +91,14 @@ $(document).ready(function(){initNavTree('group__drifters.html',''); initResizab
 
 <div class="header">
   <div class="summary">
-<a href="#groups">Modules</a> &#124;
-<a href="#files">Files</a>  </div>
+<a href="#groups">Modules</a>  </div>
   <div class="headertitle">
 <div class="title">Drifters</div>  </div>
 </div><!--header-->
 <div class="contents">
+
+<p>Modules and associated files in the drifters directory.  
+<a href="#details">More...</a></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="groups"></a>
 Modules</h2></td></tr>
@@ -118,14 +120,12 @@ Modules</h2></td></tr>
 <tr class="memitem:group__drifters__mod"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__drifters__mod.html">drifters_mod</a></td></tr>
 <tr class="memdesc:group__drifters__mod"><td class="mdescLeft">&#160;</td><td class="mdescRight"><code>Drifters_mod</code>is a module designed to advect a set of particles, in parallel or sequentially, given an prescribed velocity field. <br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-</table><table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="files"></a>
-Files</h2></td></tr>
-<tr class="memitem:quicksort_8F90"><td class="memItemLeft" align="right" valign="top">file &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="quicksort_8F90.html">quicksort.F90</a></td></tr>
-<tr class="memdesc:quicksort_8F90"><td class="mdescLeft">&#160;</td><td class="mdescRight">Fortran implementation of quicksort. <br /></td></tr>
+<tr class="memitem:group__quicksort"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__quicksort.html">quicksort</a></td></tr>
+<tr class="memdesc:group__quicksort"><td class="mdescLeft">&#160;</td><td class="mdescRight">Fortran implementation of quicksort to be used in drifters_core. <br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
+<p>Modules and associated files in the drifters directory. </p>
 
 
 <h3><a id="md_drifters_README"></a>README</h3><div class="textblock"><h1>Drifters</h1>
@@ -142,15 +142,15 @@ Files</h2></td></tr>
 Drifters are idealized point particles with positions that evolve in time according to a prescribed velocity field, starting from some initial conditions. Drifters have no mass, no energy, no size, and no friction and therefore have no impact on the dynamics of the underlying system. The only feature that distinguishes a drifter from another is its trajectory. This makes drifters ideal for tracking pollution clouds and probing fields (e.g. temperature, salinity) along ocean currents. Drifters can mimic real experiments such as the Argo floats <a href="http://www.metoffice.com/research/ocean/argo/ukfloats.html">http://www.metoffice.com/research/ocean/argo/ukfloats.html</a>.<h2>2. The drifters' module</h2>
 The drifters' module (drifters_mod) is a Fortran module built on top of low level kernels. The code was designed to run in parallel within a coupled FMS model.The general layout is:<h5>Top layer:</h5>
 <ul>
-<li><a class="el" href="drifters_8F90.html" title="File for drifters_mod.">drifters.F90</a>: exposes the API</li>
+<li><a class="el" href="drifters_8F90_source.html">drifters.F90</a>: exposes the API</li>
 </ul>
 <h5>Some low level kernels:</h5>
 <ul>
-<li><a class="el" href="cloud__interpolator_8F90.html" title="File for cloud_interpolator_mod.">cloud_interpolator.F90</a>: (linear) interpolation of a structured field at random positions</li>
-<li><a class="el" href="drifters__comm_8F90.html" title="File for drifters_comm_mod.">drifters_comm.F90</a>: updates positions across processor (PE) domains</li>
-<li><a class="el" href="drifters__core_8F90.html" title="File for drifters_core_mod.">drifters_core.F90</a>: handles the mechanics for adding/removing drifters</li>
-<li><a class="el" href="drifters__input_8F90.html" title="File for drifters_input_mod.">drifters_input.F90</a>: imports initial positions from a NetCDF file</li>
-<li><a class="el" href="drifters__io_8F90.html" title="File for drifters_io_mod.">drifters_io.F90</a>: saves data for postprocessing and restart</li>
+<li><a class="el" href="cloud__interpolator_8F90_source.html">cloud_interpolator.F90</a>: (linear) interpolation of a structured field at random positions</li>
+<li><a class="el" href="drifters__comm_8F90_source.html">drifters_comm.F90</a>: updates positions across processor (PE) domains</li>
+<li><a class="el" href="drifters__core_8F90_source.html">drifters_core.F90</a>: handles the mechanics for adding/removing drifters</li>
+<li><a class="el" href="drifters__input_8F90_source.html">drifters_input.F90</a>: imports initial positions from a NetCDF file</li>
+<li><a class="el" href="drifters__io_8F90_source.html">drifters_io.F90</a>: saves data for postprocessing and restart</li>
 </ul>
 <h2>3. What the drifters' module can and cannot do?</h2>
 The drifters' module will handle all the communication necessary to keep track of positions within PE domains. This will involve adding/removing drifters when they enter/leave a PE domain. As the number of drifters can vary greatly both between PE domains and in the course of a simulation, the drifters' module will also manage dynamically the memory for you.The drifters' code was written to run efficiently by avoiding unnecessary data copies. There is no software limit as to the maximum number of drifters and their distribution. The drifters' module is ideally suited for long runs where the amount of data required to advect particles is large, making it impractical to use a post-processing approach. Such a situation occurs, in particular, when the velocity fields must be saved at high sampling rate in order to compute accurately the drifters' positions.Although a Runge-Kutta method is provided to push drifters, users may want to implement their own time-integration scheme in some cases. It is moreover possible to combine time integration along some axes while prescribing the evolution in the third axis, as would be the case for robotic floats that move up and down in predetermined way, for instance.There are a number of basic assumptions which could make the drifters' module ill-suited for some tasks. First and foremost, it is assumed that the motion of drifters is not erratic but follows deterministic trajectories. Furthermore, drifters should not cross both compute and data domain boundaries within less than a time step. This limitation is imposed by the Runge-Kutta integration scheme, which must be able to complete, within a time step, a trajectory calculation that starts inside the compute domain. Therefore, the drifters, as they are presently modeled, are unlikely to work for very fast objects. This constraint also puts a upper limit to the domain decomposition, although it can often be remedied by increasing the number of ghost nodes.Another fundamental assumption is that the (e.g. velocity) fields are structured, on a per PE domain basis. There is no support for locally nested or unstructured meshes. Meshes need not be smooth and continuous across PE domains, however.If the higher level module drifters_mod cannot do what you need, the chances are the kernels will be able to. For instance, the upper level assumes, at present, two-dimensional (x,y) positions, and a two-dimension domain decomposition. The cloud_interpolator kernel on the other hand makes no such assumption; it can be used to interpolate structured data in arbitrary number of dimensions and with no dependence on FMS code.<h2>4. How to invoke the drifters' module in your code</h2>
@@ -211,7 +211,7 @@ In order to implement drifters in your code, you will need to get access to the 
 <div class="line"> </div>
 <div class="line"><span class="comment">! Push the drifters. u_comp, v_comp etc are provided by the host code</span></div>
 <div class="line"> </div>
-<div class="line"><span class="keyword">call </span><a class="code" href="interfacedrifters__mod_1_1drifters__push.html">drifters_push</a>(drfts, u=u_comp, v=v_comp, w=w_comp, ermesg=ermesg)</div>
+<div class="line"><span class="keyword">call </span><a class="code" href="group__drifters__mod.html#interfacedrifters__mod_1_1drifters__push">drifters_push</a>(drfts, u=u_comp, v=v_comp, w=w_comp, ermesg=ermesg)</div>
 <div class="line"> </div>
 <div class="line"><span class="keywordflow">do</span> <span class="keywordflow">while</span> (time &lt; time_end)</div>
 <div class="line"> </div>
@@ -219,14 +219,14 @@ In order to implement drifters in your code, you will need to get access to the 
 <div class="line">....</div>
 <div class="line"> </div>
 <div class="line"><span class="comment">! Push the drifters</span></div>
-<div class="line"><span class="keyword">call </span><a class="code" href="interfacedrifters__mod_1_1drifters__push.html">drifters_push</a>(drfts, u=u_comp, v=v_comp, w=w_comp, ermesg=ermesg)</div>
+<div class="line"><span class="keyword">call </span><a class="code" href="group__drifters__mod.html#interfacedrifters__mod_1_1drifters__push">drifters_push</a>(drfts, u=u_comp, v=v_comp, w=w_comp, ermesg=ermesg)</div>
 <div class="line"> </div>
 <div class="line"><span class="comment">! check if RK4 integration is complete</span></div>
 <div class="line"><span class="keywordflow">if</span>(drfts%rk4_step==1) <span class="keywordflow">then</span></div>
 <div class="line"> </div>
 <div class="line">     <span class="comment">! interpolate fields</span></div>
 <div class="line"> </div>
-<div class="line">     <span class="keyword">call </span><a class="code" href="interfacedrifters__mod_1_1drifters__set__field.html">drifters_set_field</a>(drfts, index_field=1, x=x1, y=y1, z=z1, &amp;</div>
+<div class="line">     <span class="keyword">call </span><a class="code" href="group__drifters__mod.html#interfacedrifters__mod_1_1drifters__set__field">drifters_set_field</a>(drfts, index_field=1, x=x1, y=y1, z=z1, &amp;</div>
 <div class="line">     &amp;    data=temp, ermesg=ermesg)</div>
 <div class="line"> </div>
 <div class="line">     .... <span class="comment">! set other fields here</span></div>
@@ -331,16 +331,16 @@ A typical NetCDF input file contains:<div class="fragment"><div class="line">net
 </ul>
 </div></div><!-- contents -->
 </div><!-- doc-content -->
-<div class="ttc" id="agroup__drifters__mod_html_gae5f4a850b28c0132197541725ed0a933"><div class="ttname"><a href="group__drifters__mod.html#gae5f4a850b28c0132197541725ed0a933">drifters_mod::drifters_save</a></div><div class="ttdeci">subroutine, public drifters_save(self, ermesg)</div><div class="ttdoc">Append new positions to NetCDF file.</div><div class="ttdef"><b>Definition:</b> <a href="drifters_8F90_source.html#l00529">drifters.F90:529</a></div></div>
-<div class="ttc" id="agroup__drifters__mod_html_ga9a1aa7c59e21aeab310b3fd722ced015"><div class="ttname"><a href="group__drifters__mod.html#ga9a1aa7c59e21aeab310b3fd722ced015">drifters_mod::drifters_distribute</a></div><div class="ttdeci">subroutine, public drifters_distribute(self, ermesg)</div><div class="ttdoc">Distribute particles across PEs.</div><div class="ttdef"><b>Definition:</b> <a href="drifters_8F90_source.html#l00551">drifters.F90:551</a></div></div>
-<div class="ttc" id="agroup__drifters__mod_html_gaddfba33d6e4b7bdc50a58a1be1e3489b"><div class="ttname"><a href="group__drifters__mod.html#gaddfba33d6e4b7bdc50a58a1be1e3489b">drifters_mod::drifters_new</a></div><div class="ttdeci">subroutine, public drifters_new(self, input_file, output_file, ermesg)</div><div class="ttdoc">Will read positions stored in the netCDF file input_file.</div><div class="ttdef"><b>Definition:</b> <a href="drifters_8F90_source.html#l00193">drifters.F90:193</a></div></div>
-<div class="ttc" id="agroup__drifters__mod_html_ga3e7db869b8b17f17d7c07b3c2b0cc5c2"><div class="ttname"><a href="group__drifters__mod.html#ga3e7db869b8b17f17d7c07b3c2b0cc5c2">drifters_mod::drifters_write_restart</a></div><div class="ttdeci">subroutine, public drifters_write_restart(self, filename, x1, y1, geolon1, x2, y2, geolat2, root, mycomm, ermesg)</div><div class="ttdoc">Write restart file for drifters.</div><div class="ttdef"><b>Definition:</b> <a href="drifters_8F90_source.html#l00589">drifters.F90:589</a></div></div>
-<div class="ttc" id="agroup__drifters__mod_html_gaf48b96da0cba62052592800e59ec7529"><div class="ttname"><a href="group__drifters__mod.html#gaf48b96da0cba62052592800e59ec7529">drifters_mod::drifters_set_domain</a></div><div class="ttdeci">subroutine, public drifters_set_domain(self, xmin_comp, xmax_comp, ymin_comp, ymax_comp, xmin_data, xmax_data, ymin_data, ymax_data, xmin_glob, xmax_glob, ymin_glob, ymax_glob, ermesg)</div><div class="ttdoc">Set the compute, data, and global domain boundaries.</div><div class="ttdef"><b>Definition:</b> <a href="drifters_8F90_source.html#l00408">drifters.F90:408</a></div></div>
-<div class="ttc" id="agroup__drifters__mod_html_ga2d38270021bffd79cb60096459b3ae7e"><div class="ttname"><a href="group__drifters__mod.html#ga2d38270021bffd79cb60096459b3ae7e">drifters_mod::drifters_set_v_axes</a></div><div class="ttdeci">subroutine, public drifters_set_v_axes(self, component, x, y, z, ermesg)</div><div class="ttdoc">Set velocity field axes.</div><div class="ttdef"><b>Definition:</b> <a href="drifters_8F90_source.html#l00670">drifters.F90:670</a></div></div>
-<div class="ttc" id="ainterfacedrifters__mod_1_1drifters__push_html"><div class="ttname"><a href="interfacedrifters__mod_1_1drifters__push.html">drifters_mod::drifters_push</a></div><div class="ttdoc">&quot;Push&quot; a given drifter at a given velocity for either 2D or 3D data</div><div class="ttdef"><b>Definition:</b> <a href="drifters_8F90_source.html#l00165">drifters.F90:165</a></div></div>
-<div class="ttc" id="agroup__drifters__mod_html_gaa90f5c5c61f3e1f0a686b87cece0c1d6"><div class="ttname"><a href="group__drifters__mod.html#gaa90f5c5c61f3e1f0a686b87cece0c1d6">drifters_mod::drifters_set_pe_neighbors</a></div><div class="ttdeci">subroutine, public drifters_set_pe_neighbors(self, domain, ermesg)</div><div class="ttdoc">Given an MPP based deomposition, set the PE numbers that are adjacent to this processor.</div><div class="ttdef"><b>Definition:</b> <a href="drifters_8F90_source.html#l00455">drifters.F90:455</a></div></div>
-<div class="ttc" id="agroup__drifters__mod_html_gabd7a7c5d6f87429d1f125fccbbbf9a5a"><div class="ttname"><a href="group__drifters__mod.html#gabd7a7c5d6f87429d1f125fccbbbf9a5a">drifters_mod::drifters_del</a></div><div class="ttdeci">subroutine, public drifters_del(self, ermesg)</div><div class="ttdoc">Destructor, call this to reclaim memory from data used for drifters.</div><div class="ttdef"><b>Definition:</b> <a href="drifters_8F90_source.html#l00281">drifters.F90:281</a></div></div>
-<div class="ttc" id="ainterfacedrifters__mod_1_1drifters__set__field_html"><div class="ttname"><a href="interfacedrifters__mod_1_1drifters__set__field.html">drifters_mod::drifters_set_field</a></div><div class="ttdoc">Set the value of a given drifter field.</div><div class="ttdef"><b>Definition:</b> <a href="drifters_8F90_source.html#l00178">drifters.F90:178</a></div></div>
+<div class="ttc" id="agroup__drifters__mod_html_interfacedrifters__mod_1_1drifters__push"><div class="ttname"><a href="group__drifters__mod.html#interfacedrifters__mod_1_1drifters__push">drifters_mod::drifters_push</a></div><div class="ttdoc">&quot;Push&quot; a given drifter at a given velocity for either 2D or 3D data</div><div class="ttdef"><b>Definition:</b> <a href="drifters_8F90_source.html#l00161">drifters.F90:161</a></div></div>
+<div class="ttc" id="agroup__drifters__mod_html_gae5f4a850b28c0132197541725ed0a933"><div class="ttname"><a href="group__drifters__mod.html#gae5f4a850b28c0132197541725ed0a933">drifters_mod::drifters_save</a></div><div class="ttdeci">subroutine, public drifters_save(self, ermesg)</div><div class="ttdoc">Append new positions to NetCDF file.</div><div class="ttdef"><b>Definition:</b> <a href="drifters_8F90_source.html#l00525">drifters.F90:525</a></div></div>
+<div class="ttc" id="agroup__drifters__mod_html_ga9a1aa7c59e21aeab310b3fd722ced015"><div class="ttname"><a href="group__drifters__mod.html#ga9a1aa7c59e21aeab310b3fd722ced015">drifters_mod::drifters_distribute</a></div><div class="ttdeci">subroutine, public drifters_distribute(self, ermesg)</div><div class="ttdoc">Distribute particles across PEs.</div><div class="ttdef"><b>Definition:</b> <a href="drifters_8F90_source.html#l00547">drifters.F90:547</a></div></div>
+<div class="ttc" id="agroup__drifters__mod_html_gaddfba33d6e4b7bdc50a58a1be1e3489b"><div class="ttname"><a href="group__drifters__mod.html#gaddfba33d6e4b7bdc50a58a1be1e3489b">drifters_mod::drifters_new</a></div><div class="ttdeci">subroutine, public drifters_new(self, input_file, output_file, ermesg)</div><div class="ttdoc">Will read positions stored in the netCDF file input_file.</div><div class="ttdef"><b>Definition:</b> <a href="drifters_8F90_source.html#l00189">drifters.F90:189</a></div></div>
+<div class="ttc" id="agroup__drifters__mod_html_interfacedrifters__mod_1_1drifters__set__field"><div class="ttname"><a href="group__drifters__mod.html#interfacedrifters__mod_1_1drifters__set__field">drifters_mod::drifters_set_field</a></div><div class="ttdoc">Set the value of a given drifter field.</div><div class="ttdef"><b>Definition:</b> <a href="drifters_8F90_source.html#l00174">drifters.F90:174</a></div></div>
+<div class="ttc" id="agroup__drifters__mod_html_ga3e7db869b8b17f17d7c07b3c2b0cc5c2"><div class="ttname"><a href="group__drifters__mod.html#ga3e7db869b8b17f17d7c07b3c2b0cc5c2">drifters_mod::drifters_write_restart</a></div><div class="ttdeci">subroutine, public drifters_write_restart(self, filename, x1, y1, geolon1, x2, y2, geolat2, root, mycomm, ermesg)</div><div class="ttdoc">Write restart file for drifters.</div><div class="ttdef"><b>Definition:</b> <a href="drifters_8F90_source.html#l00585">drifters.F90:585</a></div></div>
+<div class="ttc" id="agroup__drifters__mod_html_gaf48b96da0cba62052592800e59ec7529"><div class="ttname"><a href="group__drifters__mod.html#gaf48b96da0cba62052592800e59ec7529">drifters_mod::drifters_set_domain</a></div><div class="ttdeci">subroutine, public drifters_set_domain(self, xmin_comp, xmax_comp, ymin_comp, ymax_comp, xmin_data, xmax_data, ymin_data, ymax_data, xmin_glob, xmax_glob, ymin_glob, ymax_glob, ermesg)</div><div class="ttdoc">Set the compute, data, and global domain boundaries.</div><div class="ttdef"><b>Definition:</b> <a href="drifters_8F90_source.html#l00404">drifters.F90:404</a></div></div>
+<div class="ttc" id="agroup__drifters__mod_html_ga2d38270021bffd79cb60096459b3ae7e"><div class="ttname"><a href="group__drifters__mod.html#ga2d38270021bffd79cb60096459b3ae7e">drifters_mod::drifters_set_v_axes</a></div><div class="ttdeci">subroutine, public drifters_set_v_axes(self, component, x, y, z, ermesg)</div><div class="ttdoc">Set velocity field axes.</div><div class="ttdef"><b>Definition:</b> <a href="drifters_8F90_source.html#l00666">drifters.F90:666</a></div></div>
+<div class="ttc" id="agroup__drifters__mod_html_gaa90f5c5c61f3e1f0a686b87cece0c1d6"><div class="ttname"><a href="group__drifters__mod.html#gaa90f5c5c61f3e1f0a686b87cece0c1d6">drifters_mod::drifters_set_pe_neighbors</a></div><div class="ttdeci">subroutine, public drifters_set_pe_neighbors(self, domain, ermesg)</div><div class="ttdoc">Given an MPP based deomposition, set the PE numbers that are adjacent to this processor.</div><div class="ttdef"><b>Definition:</b> <a href="drifters_8F90_source.html#l00451">drifters.F90:451</a></div></div>
+<div class="ttc" id="agroup__drifters__mod_html_gabd7a7c5d6f87429d1f125fccbbbf9a5a"><div class="ttname"><a href="group__drifters__mod.html#gabd7a7c5d6f87429d1f125fccbbbf9a5a">drifters_mod::drifters_del</a></div><div class="ttdeci">subroutine, public drifters_del(self, ermesg)</div><div class="ttdoc">Destructor, call this to reclaim memory from data used for drifters.</div><div class="ttdef"><b>Definition:</b> <a href="drifters_8F90_source.html#l00277">drifters.F90:277</a></div></div>
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>

@@ -1,0 +1,28 @@
+var group__mpp__domains__mod_structmpp__domains__mod_1_1nestspec =
+[
+    [ "center", "group__mpp__domains__mod.html#a5a4ff9f65064026fa35d0e98ecede620", null ],
+    [ "east", "group__mpp__domains__mod.html#a5cbf8b5b5aeb74aa12aa6d42f53d69be", null ],
+    [ "extra_halo", "group__mpp__domains__mod.html#a93a58cb85552343a71a088f83f701898", null ],
+    [ "next", "group__mpp__domains__mod.html#a4913b59faf5da0497413f480e0990a3d", null ],
+    [ "north", "group__mpp__domains__mod.html#ae662aeeb2f4f7c9df3d93f6f0653a87e", null ],
+    [ "nrecv", "group__mpp__domains__mod.html#ab8cb7e88307bf762ce8e29af35a7ec2a", null ],
+    [ "nsend", "group__mpp__domains__mod.html#adfa6b3db0147e156eb11d48106b5029c", null ],
+    [ "recv", "group__mpp__domains__mod.html#a46aaa2b1ca76598a9b05749b382078c9", null ],
+    [ "send", "group__mpp__domains__mod.html#a31686972019e68d7728b835346dfbf54", null ],
+    [ "south", "group__mpp__domains__mod.html#a49471052d392490877c8108bd4a5bad0", null ],
+    [ "west", "group__mpp__domains__mod.html#a5c9d2f4dd7b4e59ab9b8b5fa3ab5f26b", null ],
+    [ "xbegin", "group__mpp__domains__mod.html#ab7b342d6f46d8865285c77a1a1231cee", null ],
+    [ "xbegin_c", "group__mpp__domains__mod.html#adbc307b0d2f658580262cc09691397eb", null ],
+    [ "xbegin_f", "group__mpp__domains__mod.html#a4a660f56e3c633baa27f851af270c6f7", null ],
+    [ "xend", "group__mpp__domains__mod.html#add6f0512098c3db52deb817307afa02b", null ],
+    [ "xend_c", "group__mpp__domains__mod.html#ad1f59d399d3e71ba271b981f909ab1aa", null ],
+    [ "xend_f", "group__mpp__domains__mod.html#aea3eb822bf50c09dd89dab9de16ee9a6", null ],
+    [ "xsize_c", "group__mpp__domains__mod.html#a0954b5ae5fdbbc435eebadab790512c9", null ],
+    [ "ybegin", "group__mpp__domains__mod.html#a2c5bb0830141a6f13b91d2e550db4917", null ],
+    [ "ybegin_c", "group__mpp__domains__mod.html#acfd977e644058c6102ba70a2d995e072", null ],
+    [ "ybegin_f", "group__mpp__domains__mod.html#a1ee3f6c649c3a6e874525ede2d2ed4f4", null ],
+    [ "yend", "group__mpp__domains__mod.html#a327d10748bfeeb1f00782a415da5760e", null ],
+    [ "yend_c", "group__mpp__domains__mod.html#a67442f870e7917f18901149a33c0436f", null ],
+    [ "yend_f", "group__mpp__domains__mod.html#a5a02c5203abc51b34db6ae40f7d5a97d", null ],
+    [ "ysize_c", "group__mpp__domains__mod.html#af1679c753ef475055c7d7e4c9966e09a", null ]
+];

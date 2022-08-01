@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.17"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>FMS: time_manager/get_cal_time.F90 Source File</title>
+<title>FMS: time_manager/get_cal_time.F90 (1640fde1a51a73f97748f150eb84bf49e472aeca) Source File</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -33,7 +33,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">FMS
-   &#160;<span id="projectnumber">2022.02.0</span>
+   &#160;<span id="projectnumber">2022.03.00</span>
    </div>
    <div id="projectbrief">Flexible Modeling System</div>
   </td>
@@ -94,7 +94,7 @@ $(document).ready(function(){initNavTree('get__cal__time_8F90_source.html',''); 
 <div class="title">get_cal_time.F90</div>  </div>
 </div><!--header-->
 <div class="contents">
-<a href="get__cal__time_8F90.html">Go to the documentation of this file.</a><div class="fragment"><div class="line"><a name="l00001"></a><span class="lineno">    1</span>&#160;<span class="comment">!***********************************************************************</span></div>
+<div class="fragment"><div class="line"><a name="l00001"></a><span class="lineno">    1</span>&#160;<span class="comment">!***********************************************************************</span></div>
 <div class="line"><a name="l00002"></a><span class="lineno">    2</span>&#160;<span class="comment">!*                   GNU Lesser General Public License</span></div>
 <div class="line"><a name="l00003"></a><span class="lineno">    3</span>&#160;<span class="comment">!*</span></div>
 <div class="line"><a name="l00004"></a><span class="lineno">    4</span>&#160;<span class="comment">!* This file is part of the GFDL Flexible Modeling System (FMS).</span></div>
@@ -117,368 +117,365 @@ $(document).ready(function(){initNavTree('get__cal__time_8F90_source.html',''); 
 <div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160;<span class="comment">!&gt; @brief Given a time increment as a real number, and base time and calendar</span></div>
 <div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160;<span class="comment">!!  as a character strings, returns time as a time_type variable.</span></div>
 <div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160;<span class="comment"></span> </div>
-<div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;<span class="comment">!&gt; @file</span></div>
-<div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160;<span class="comment">!&gt; @brief File for @ref get_cal_time_mod</span></div>
-<div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160;<span class="comment"></span> </div>
-<div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;<span class="comment">!&gt; @addtogroup get_cal_time_mod</span></div>
-<div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;<span class="comment">!&gt; @{</span></div>
-<div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;<span class="keyword">module</span> get_cal_time_mod</div>
-<div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160; </div>
-<div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;<span class="keywordtype">use          </span>fms_mod, <span class="keywordtype">only</span>: <a class="code" href="group__fms__mod.html#gae5c7420e421293e2be14717dd7b3d97f">error_mesg</a>, fatal, <a class="code" href="group__fms__mod.html#ga0c093df98a75dbd9e0f3add67aa6c23a">write_version_number</a>, lowercase, &amp;</div>
-<div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;                            <a class="code" href="group__fms__mod.html#ga05e7686befc1e49d2be9bdb81d479a76">check_nml_error</a>, <a class="code" href="mpp__util_8inc.html#a8e5518df9532bae0241f53ab542294a2">stdlog</a>, &amp;</div>
-<div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;                            <a class="code" href="mpp__util_8inc.html#acfeba7de56f9dd6000b3fd78f9d56c50">mpp_pe</a>, mpp_root_pe</div>
-<div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160; </div>
-<div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;<span class="keywordtype">use </span>time_manager_mod, <span class="keywordtype">only</span>: <a class="code" href="structtime__manager__mod_1_1time__type.html">time_type</a>, <span class="keyword">operator</span>(+), <span class="keyword">operator</span>(-), <a class="code" href="interfacetime__manager__mod_1_1set__time.html">set_time</a>, <a class="code" href="group__time__manager__mod.html#ga2b9c941f38e33eba67ee151fe3bd8ee6">get_time</a>, &amp;</div>
-<div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;                            no_calendar, thirty_day_months, noleap, julian, gregorian, &amp;</div>
-<div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;                            <a class="code" href="group__time__manager__mod.html#gae4ed023b8077a6f14fffb764d642e55a">set_calendar_type</a>, <a class="code" href="group__time__manager__mod.html#gad4d5cb71942ebf3f1bb9d4a29a6d9a04">get_calendar_type</a>, <a class="code" href="interfacetime__manager__mod_1_1set__date.html">set_date</a>, &amp;</div>
-<div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;                            <a class="code" href="group__time__manager__mod.html#ga42ca904e0ef4d8cd59deab75ea8bc048">get_date</a>, days_in_month, <a class="code" href="group__time__manager__mod.html#ga40ba58ef6e1c86616e5f8d7e8ebefca3">valid_calendar_types</a></div>
-<div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;<span class="keywordtype">use </span>mpp_mod,          <span class="keywordtype">only</span>: input_nml_file</div>
+<div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;<span class="comment">!&gt; @addtogroup get_cal_time_mod</span></div>
+<div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160;<span class="comment">!&gt; @{</span></div>
+<div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160;<span class="keyword">module</span> get_cal_time_mod</div>
+<div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160; </div>
+<div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;<span class="keywordtype">use          </span>fms_mod, <span class="keywordtype">only</span>: <a class="code" href="group__fms__mod.html#gae5c7420e421293e2be14717dd7b3d97f">error_mesg</a>, fatal, <a class="code" href="group__fms__mod.html#ga0c093df98a75dbd9e0f3add67aa6c23a">write_version_number</a>, lowercase, &amp;</div>
+<div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;                            <a class="code" href="group__fms__mod.html#ga05e7686befc1e49d2be9bdb81d479a76">check_nml_error</a>, <a class="code" href="group__mpp__mod.html#ga8e5518df9532bae0241f53ab542294a2">stdlog</a>, &amp;</div>
+<div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;                            <a class="code" href="group__mpp__mod.html#gacfeba7de56f9dd6000b3fd78f9d56c50">mpp_pe</a>, mpp_root_pe</div>
+<div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160; </div>
+<div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;<span class="keywordtype">use </span>time_manager_mod, <span class="keywordtype">only</span>: <a class="code" href="group__time__manager__mod.html#structtime__manager__mod_1_1time__type">time_type</a>, <span class="keyword">operator</span>(+), <span class="keyword">operator</span>(-), <a class="code" href="group__time__manager__mod.html#interfacetime__manager__mod_1_1set__time">set_time</a>, <a class="code" href="group__time__manager__mod.html#ga2b9c941f38e33eba67ee151fe3bd8ee6">get_time</a>, &amp;</div>
+<div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;                            no_calendar, thirty_day_months, noleap, julian, gregorian, &amp;</div>
+<div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;                            <a class="code" href="group__time__manager__mod.html#gae4ed023b8077a6f14fffb764d642e55a">set_calendar_type</a>, <a class="code" href="group__time__manager__mod.html#gad4d5cb71942ebf3f1bb9d4a29a6d9a04">get_calendar_type</a>, <a class="code" href="group__time__manager__mod.html#interfacetime__manager__mod_1_1set__date">set_date</a>, &amp;</div>
+<div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;                            <a class="code" href="group__time__manager__mod.html#ga42ca904e0ef4d8cd59deab75ea8bc048">get_date</a>, days_in_month, <a class="code" href="group__time__manager__mod.html#ga40ba58ef6e1c86616e5f8d7e8ebefca3">valid_calendar_types</a></div>
+<div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;<span class="keywordtype">use </span>mpp_mod,          <span class="keywordtype">only</span>: input_nml_file</div>
+<div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160; </div>
+<div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;<span class="keywordtype">implicit none</span></div>
+<div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;<span class="keywordtype">private</span></div>
 <div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160; </div>
-<div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;<span class="keywordtype">implicit none</span></div>
-<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;<span class="keywordtype">private</span></div>
-<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160; </div>
-<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;<span class="keywordtype">public</span> :: <a class="code" href="group__get__cal__time__mod.html#ga3eb93e699a7c27c535cd6bb35b6f0ef8">get_cal_time</a></div>
-<div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160; </div>
-<div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;<span class="keywordtype">logical</span> :: module_is_initialized=.false.<span class="comment"> !&gt; This module is initialized on</span></div>
-<div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;<span class="comment">                                         !! the first call to get_cal_time</span></div>
-<div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;<span class="comment">                                         !! because there is no constructor.</span></div>
-<div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;<span class="comment">! &lt;NAMELIST NAME=&quot;get_cal_time_nml&quot;&gt;</span></div>
-<div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;<span class="comment">! &lt;DATA NAME=&quot;allow_calendar_conversion&quot; TYPE=&quot;logical&quot;  DEFAULT=&quot;.true.&quot;&gt;</span></div>
-<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;<span class="comment">!   This sets the default value of the optional argument named &quot;permit_calendar_conversion&quot; of get_cal_time.</span></div>
-<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;<span class="comment">!   This namelist is deprecated as of the memphis release.</span></div>
-<div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;<span class="comment">!   If calendar conversion is not desired, then it is recommended that permit_calendar_conversion</span></div>
-<div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;<span class="comment">!   be present in the call to get_cal_time and that it be set to .false.</span></div>
-<div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;<span class="comment">! &lt;/DATA&gt;</span></div>
-<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160; </div>
-<div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;<span class="keywordtype">logical</span> :: allow_calendar_conversion=.true.</div>
+<div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;<span class="keywordtype">public</span> :: <a class="code" href="group__get__cal__time__mod.html#ga3eb93e699a7c27c535cd6bb35b6f0ef8">get_cal_time</a></div>
+<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160; </div>
+<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;<span class="keywordtype">logical</span> :: module_is_initialized=.false.<span class="comment"> !&gt; This module is initialized on</span></div>
+<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;<span class="comment">                                         !! the first call to get_cal_time</span></div>
+<div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;<span class="comment">                                         !! because there is no constructor.</span></div>
+<div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;<span class="comment">! &lt;NAMELIST NAME=&quot;get_cal_time_nml&quot;&gt;</span></div>
+<div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;<span class="comment">! &lt;DATA NAME=&quot;allow_calendar_conversion&quot; TYPE=&quot;logical&quot;  DEFAULT=&quot;.true.&quot;&gt;</span></div>
+<div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;<span class="comment">!   This sets the default value of the optional argument named &quot;permit_calendar_conversion&quot; of get_cal_time.</span></div>
+<div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;<span class="comment">!   This namelist is deprecated as of the memphis release.</span></div>
+<div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;<span class="comment">!   If calendar conversion is not desired, then it is recommended that permit_calendar_conversion</span></div>
+<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;<span class="comment">!   be present in the call to get_cal_time and that it be set to .false.</span></div>
+<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;<span class="comment">! &lt;/DATA&gt;</span></div>
+<div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160; </div>
+<div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;<span class="keywordtype">logical</span> :: allow_calendar_conversion=.true.</div>
+<div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160; </div>
+<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;namelist / get_cal_time_nml / allow_calendar_conversion</div>
+<div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;<span class="comment">! &lt;/NAMELIST&gt;</span></div>
 <div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160; </div>
-<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;namelist / get_cal_time_nml / allow_calendar_conversion</div>
-<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;<span class="comment">! &lt;/NAMELIST&gt;</span></div>
-<div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160; </div>
-<div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;<span class="comment">! Include variable &quot;version&quot; to be written to log file.</span></div>
-<div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;<span class="preprocessor">#include&lt;file_version.h&gt;</span></div>
-<div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;<span class="preprocessor"></span> </div>
-<div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;<span class="keyword">contains</span><span class="comment"></span></div>
-<div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;<span class="comment">!&gt; @brief Calculates what a given calendar time would be after a interval of time</span></div>
-<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;<span class="comment">!!</span></div>
-<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;<span class="comment">!! @param time_increment A time interval</span></div>
-<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;<span class="comment">!! @param units</span></div>
-<div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;<span class="comment">!! Examples of acceptable values of units:</span></div>
-<div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;<span class="comment">!! - &#39;days since 1980-01-01 00:00:00&#39;</span></div>
-<div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;<span class="comment">!! - &#39;hours since 1980-1-1 0:0:0&#39;</span></div>
-<div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;<span class="comment">!! - &#39;minutes since 0001-4-12&#39;</span></div>
-<div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;<span class="comment">!! The first word in the string must be</span></div>
-<div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;<span class="comment">!! &#39;years&#39;, &#39;months&#39;, &#39;days&#39;, &#39;hours&#39;, &#39;minutes&#39; or &#39;seconds&#39;.</span></div>
-<div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;<span class="comment">!! The second word must be &#39;since&#39;.</span></div>
-<div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;<span class="comment">!! year number must occupy 4 spaces.</span></div>
-<div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;<span class="comment">!! Number of months, days, hours, minutes, seconds may occupy 1 or 2 spaces</span></div>
-<div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;<span class="comment">!! year, month and day must be separated by a &#39;-&#39;</span></div>
-<div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;<span class="comment">!! hour, minute, second must be separated by a &#39;:&#39;</span></div>
-<div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;<span class="comment">!! hour, minute, second are optional. If not present then zero is assumed.</span></div>
-<div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;<span class="comment">!!</span></div>
-<div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;<span class="comment">!! Because months are not equal increments of time, and, for julian calendar,</span></div>
-<div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160;<span class="comment">!! neither are years, the &#39;years since&#39; and &#39;month since&#39; cases deserve</span></div>
-<div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;<span class="comment">!! further explaination.</span></div>
-<div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160;<span class="comment">!!</span></div>
-<div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;<span class="comment">!! When &#39;years since&#39; is used:</span></div>
-<div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160;<span class="comment">!! The year number is increased by floor(time_increment)   to obtain a time T1.</span></div>
-<div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160;<span class="comment">!! The year number is increased by floor(time_increment)+1 to obtain a time T2.</span></div>
-<div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;<span class="comment">!! The time returned is T1 + (time_increment-floor(time_increment))*(T2-T1).</span></div>
-<div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160;<span class="comment">!!</span></div>
-<div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;<span class="comment">!! When &#39;months since&#39; is used:</span></div>
-<div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;<span class="comment">!! The month number is increased by floor(time_increment). If it falls outside</span></div>
-<div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160;<span class="comment">!! to range 1 to 12 then it is adjusted along with the year number to convert</span></div>
-<div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160;<span class="comment">!! to a valid date. The number of days in the month of this date is used to</span></div>
-<div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160;<span class="comment">!! compute the time interval of the fraction.</span></div>
-<div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160;<span class="comment">!! That is:</span></div>
-<div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160;<span class="comment">!! The month number is increased by floor(time_increment) to obtain a time T1.</span></div>
-<div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160;<span class="comment">!! delt = the number of days in the month in which T1 falls.</span></div>
-<div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160;<span class="comment">!! The time returned is T1 + ((time_increment-floor(time_increment))*delt.</span></div>
-<div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160;<span class="comment">!! Two of the consequences of this scheme should be kept in mind.</span></div>
-<div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160;<span class="comment">!! -- The time since should not be from the 29&#39;th to 31&#39;st of a month,</span></div>
-<div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160;<span class="comment">!!    since an invalid date is likely to result, triggering an error stop.</span></div>
-<div class="line"><a name="l00104"></a><span class="lineno">  104</span>&#160;<span class="comment">!! -- When time since is from the begining of a month, the fraction of a month</span></div>
-<div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160;<span class="comment">!!    will never advance into the month after that which results from only</span></div>
-<div class="line"><a name="l00106"></a><span class="lineno">  106</span>&#160;<span class="comment">!!    the whole number.</span></div>
+<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;<span class="comment">! Include variable &quot;version&quot; to be written to log file.</span></div>
+<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;<span class="preprocessor">#include&lt;file_version.h&gt;</span></div>
+<div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;<span class="preprocessor"></span> </div>
+<div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;<span class="keyword">contains</span><span class="comment"></span></div>
+<div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;<span class="comment">!&gt; @brief Calculates what a given calendar time would be after a interval of time</span></div>
+<div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;<span class="comment">!!</span></div>
+<div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;<span class="comment">!! @param time_increment A time interval</span></div>
+<div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;<span class="comment">!! @param units</span></div>
+<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;<span class="comment">!! Examples of acceptable values of units:</span></div>
+<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;<span class="comment">!! - &#39;days since 1980-01-01 00:00:00&#39;</span></div>
+<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;<span class="comment">!! - &#39;hours since 1980-1-1 0:0:0&#39;</span></div>
+<div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;<span class="comment">!! - &#39;minutes since 0001-4-12&#39;</span></div>
+<div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;<span class="comment">!! The first word in the string must be</span></div>
+<div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;<span class="comment">!! &#39;years&#39;, &#39;months&#39;, &#39;days&#39;, &#39;hours&#39;, &#39;minutes&#39; or &#39;seconds&#39;.</span></div>
+<div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;<span class="comment">!! The second word must be &#39;since&#39;.</span></div>
+<div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;<span class="comment">!! year number must occupy 4 spaces.</span></div>
+<div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;<span class="comment">!! Number of months, days, hours, minutes, seconds may occupy 1 or 2 spaces</span></div>
+<div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;<span class="comment">!! year, month and day must be separated by a &#39;-&#39;</span></div>
+<div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;<span class="comment">!! hour, minute, second must be separated by a &#39;:&#39;</span></div>
+<div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;<span class="comment">!! hour, minute, second are optional. If not present then zero is assumed.</span></div>
+<div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;<span class="comment">!!</span></div>
+<div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;<span class="comment">!! Because months are not equal increments of time, and, for julian calendar,</span></div>
+<div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;<span class="comment">!! neither are years, the &#39;years since&#39; and &#39;month since&#39; cases deserve</span></div>
+<div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;<span class="comment">!! further explaination.</span></div>
+<div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;<span class="comment">!!</span></div>
+<div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160;<span class="comment">!! When &#39;years since&#39; is used:</span></div>
+<div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;<span class="comment">!! The year number is increased by floor(time_increment)   to obtain a time T1.</span></div>
+<div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160;<span class="comment">!! The year number is increased by floor(time_increment)+1 to obtain a time T2.</span></div>
+<div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;<span class="comment">!! The time returned is T1 + (time_increment-floor(time_increment))*(T2-T1).</span></div>
+<div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160;<span class="comment">!!</span></div>
+<div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160;<span class="comment">!! When &#39;months since&#39; is used:</span></div>
+<div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;<span class="comment">!! The month number is increased by floor(time_increment). If it falls outside</span></div>
+<div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160;<span class="comment">!! to range 1 to 12 then it is adjusted along with the year number to convert</span></div>
+<div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;<span class="comment">!! to a valid date. The number of days in the month of this date is used to</span></div>
+<div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;<span class="comment">!! compute the time interval of the fraction.</span></div>
+<div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160;<span class="comment">!! That is:</span></div>
+<div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160;<span class="comment">!! The month number is increased by floor(time_increment) to obtain a time T1.</span></div>
+<div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160;<span class="comment">!! delt = the number of days in the month in which T1 falls.</span></div>
+<div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160;<span class="comment">!! The time returned is T1 + ((time_increment-floor(time_increment))*delt.</span></div>
+<div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160;<span class="comment">!! Two of the consequences of this scheme should be kept in mind.</span></div>
+<div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160;<span class="comment">!! -- The time since should not be from the 29&#39;th to 31&#39;st of a month,</span></div>
+<div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160;<span class="comment">!!    since an invalid date is likely to result, triggering an error stop.</span></div>
+<div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160;<span class="comment">!! -- When time since is from the begining of a month, the fraction of a month</span></div>
+<div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160;<span class="comment">!!    will never advance into the month after that which results from only</span></div>
+<div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160;<span class="comment">!!    the whole number.</span></div>
+<div class="line"><a name="l00104"></a><span class="lineno">  104</span>&#160;<span class="comment">!!</span></div>
+<div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160;<span class="comment">!! When NO_CALENDAR is in effect, units attribute must specify a starting</span></div>
+<div class="line"><a name="l00106"></a><span class="lineno">  106</span>&#160;<span class="comment">!! day and second, with day number appearing first</span></div>
 <div class="line"><a name="l00107"></a><span class="lineno">  107</span>&#160;<span class="comment">!!</span></div>
-<div class="line"><a name="l00108"></a><span class="lineno">  108</span>&#160;<span class="comment">!! When NO_CALENDAR is in effect, units attribute must specify a starting</span></div>
-<div class="line"><a name="l00109"></a><span class="lineno">  109</span>&#160;<span class="comment">!! day and second, with day number appearing first</span></div>
-<div class="line"><a name="l00110"></a><span class="lineno">  110</span>&#160;<span class="comment">!!</span></div>
-<div class="line"><a name="l00111"></a><span class="lineno">  111</span>&#160;<span class="comment">!! Example: &#39;days since 100 0&#39; Indicates 100 days 0 seconds</span></div>
-<div class="line"><a name="l00112"></a><span class="lineno">  112</span>&#160;<span class="comment">!!</span></div>
-<div class="line"><a name="l00113"></a><span class="lineno">  113</span>&#160;<span class="comment">!! @param calendar</span></div>
-<div class="line"><a name="l00114"></a><span class="lineno">  114</span>&#160;<span class="comment">!! Acceptable values of calendar are:</span></div>
-<div class="line"><a name="l00115"></a><span class="lineno">  115</span>&#160;<span class="comment">!! &#39;noleap&#39;</span></div>
-<div class="line"><a name="l00116"></a><span class="lineno">  116</span>&#160;<span class="comment">!! &#39;365_day&#39;</span></div>
-<div class="line"><a name="l00117"></a><span class="lineno">  117</span>&#160;<span class="comment">!! &#39;360_day&#39;</span></div>
-<div class="line"><a name="l00118"></a><span class="lineno">  118</span>&#160;<span class="comment">!! &#39;julian&#39;</span></div>
-<div class="line"><a name="l00119"></a><span class="lineno">  119</span>&#160;<span class="comment">!! &#39;thirty_day_months&#39;</span></div>
-<div class="line"><a name="l00120"></a><span class="lineno">  120</span>&#160;<span class="comment">!! &#39;no_calendar&#39;</span></div>
-<div class="line"><a name="l00121"></a><span class="lineno">  121</span>&#160;<span class="comment">!!</span></div>
-<div class="line"><a name="l00122"></a><span class="lineno">  122</span>&#160;<span class="comment">!! @param optional permit_calendar_conversion</span></div>
-<div class="line"><a name="l00123"></a><span class="lineno">  123</span>&#160;<span class="comment">!! It is sometimes desirable to allow the value of the intent(in) argument</span></div>
-<div class="line"><a name="l00124"></a><span class="lineno">  124</span>&#160;<span class="comment">!! &quot;calendar&quot; to be different than the calendar in use by time_manager_mod.</span></div>
-<div class="line"><a name="l00125"></a><span class="lineno">  125</span>&#160;<span class="comment">!! If this is not desirable, then the optional variable &quot;permit_calendar_conversion&quot;</span></div>
-<div class="line"><a name="l00126"></a><span class="lineno">  126</span>&#160;<span class="comment">!! should be set to .false. so as to allow an error check.</span></div>
-<div class="line"><a name="l00127"></a><span class="lineno">  127</span>&#160;<span class="comment">!! When calendar conversion is done, the time returned is the time in the</span></div>
-<div class="line"><a name="l00128"></a><span class="lineno">  128</span>&#160;<span class="comment">!! time_manager&#39;s calendar, but corresponds to the date computed using the input calendar.</span></div>
-<div class="line"><a name="l00129"></a><span class="lineno">  129</span>&#160;<span class="comment">!! For example, suppose the time_manager is using the julian calendar and</span></div>
-<div class="line"><a name="l00130"></a><span class="lineno">  130</span>&#160;<span class="comment">!! the values of the input arguments of get_cal_time are:</span></div>
-<div class="line"><a name="l00131"></a><span class="lineno">  131</span>&#160;<span class="comment">!! time_increment = 59.0</span></div>
-<div class="line"><a name="l00132"></a><span class="lineno">  132</span>&#160;<span class="comment">!! units = &#39;days since 1980-1-1 00:00:00&#39;</span></div>
-<div class="line"><a name="l00133"></a><span class="lineno">  133</span>&#160;<span class="comment">!! calendar = &#39;noleap&#39;</span></div>
-<div class="line"><a name="l00134"></a><span class="lineno">  134</span>&#160;<span class="comment">!! Because it will use the noleap calendar to calculate the date, get_cal_time will return</span></div>
-<div class="line"><a name="l00135"></a><span class="lineno">  135</span>&#160;<span class="comment">!! value of time for midnight March 1 1980, but it will be time in the julian calendar</span></div>
-<div class="line"><a name="l00136"></a><span class="lineno">  136</span>&#160;<span class="comment">!! rather than the noleap calendar. It will never return a value of time corresponding</span></div>
-<div class="line"><a name="l00137"></a><span class="lineno">  137</span>&#160;<span class="comment">!! to anytime during the day Feb 29.</span></div>
-<div class="line"><a name="l00138"></a><span class="lineno">  138</span>&#160;<span class="comment">!!</span></div>
-<div class="line"><a name="l00139"></a><span class="lineno">  139</span>&#160;<span class="comment">!! Another example:</span></div>
-<div class="line"><a name="l00140"></a><span class="lineno">  140</span>&#160;<span class="comment">!! Suppose the time_manager is using either the noleap or julian calendars,</span></div>
-<div class="line"><a name="l00141"></a><span class="lineno">  141</span>&#160;<span class="comment">!! and the values of the input arguments are:</span></div>
-<div class="line"><a name="l00142"></a><span class="lineno">  142</span>&#160;<span class="comment">!! time_increment = 30.0</span></div>
-<div class="line"><a name="l00143"></a><span class="lineno">  143</span>&#160;<span class="comment">!! units = &#39;days since 1980-1-1&#39;</span></div>
-<div class="line"><a name="l00144"></a><span class="lineno">  144</span>&#160;<span class="comment">!! calendar = &#39;thirty_day_months&#39;</span></div>
-<div class="line"><a name="l00145"></a><span class="lineno">  145</span>&#160;<span class="comment">!! In this case get_cal_time will return the value of time for Feb 1 1980 00:00:00,</span></div>
-<div class="line"><a name="l00146"></a><span class="lineno">  146</span>&#160;<span class="comment">!! but in the time_manager&#39;s calendar.</span></div>
-<div class="line"><a name="l00147"></a><span class="lineno">  147</span>&#160;<span class="comment">!!</span></div>
-<div class="line"><a name="l00148"></a><span class="lineno">  148</span>&#160;<span class="comment">!! Calendar conversion may result in a fatal error when the input calendar type is</span></div>
-<div class="line"><a name="l00149"></a><span class="lineno">  149</span>&#160;<span class="comment">!! a calendar that has more days per year than that of the time_manager&#39;s calendar.</span></div>
-<div class="line"><a name="l00150"></a><span class="lineno">  150</span>&#160;<span class="comment">!! For example, if the input calendar type is julian and the time_manager&#39;s calendar</span></div>
-<div class="line"><a name="l00151"></a><span class="lineno">  151</span>&#160;<span class="comment">!! is thirty_day_months, then get_cal_time will try to convert Jan 31 to a time in</span></div>
-<div class="line"><a name="l00152"></a><span class="lineno">  152</span>&#160;<span class="comment">!! the thirty_day_months calendar, resulting in a fatal error.</span></div>
-<div class="line"><a name="l00153"></a><span class="lineno">  153</span>&#160;<span class="comment">!!</span></div>
-<div class="line"><a name="l00154"></a><span class="lineno">  154</span>&#160;<span class="comment">!! @note This option was originally coded to allow noleap calendar as input when</span></div>
-<div class="line"><a name="l00155"></a><span class="lineno">  155</span>&#160;<span class="comment">!! the julian calendar was in effect by the time_manager.</span></div>
-<div class="line"><a name="l00156"></a><span class="lineno">  156</span>&#160;<span class="keyword">function </span><a class="code" href="group__get__cal__time__mod.html#ga3eb93e699a7c27c535cd6bb35b6f0ef8">get_cal_time</a>(time_increment, units, calendar, permit_calendar_conversion)</div>
-<div class="line"><a name="l00157"></a><span class="lineno"><a class="line" href="group__get__cal__time__mod.html#ga3eb93e699a7c27c535cd6bb35b6f0ef8">  157</a></span>&#160;<span class="keywordtype">real</span>, <span class="keywordtype">intent(in)</span> :: time_increment</div>
-<div class="line"><a name="l00158"></a><span class="lineno">  158</span>&#160;<span class="keywordtype">character(len=*)</span>, <span class="keywordtype">intent(in)</span> :: units</div>
-<div class="line"><a name="l00159"></a><span class="lineno">  159</span>&#160;<span class="keywordtype">character(len=*)</span>, <span class="keywordtype">intent(in)</span> :: calendar</div>
-<div class="line"><a name="l00160"></a><span class="lineno">  160</span>&#160;<span class="keywordtype">logical</span>, <span class="keywordtype">intent(in)</span>, <span class="keywordtype">optional</span> :: permit_calendar_conversion</div>
-<div class="line"><a name="l00161"></a><span class="lineno">  161</span>&#160;<span class="keywordtype">type</span>(<a class="code" href="structtime__manager__mod_1_1time__type.html">time_type</a>) :: <a class="code" href="group__get__cal__time__mod.html#ga3eb93e699a7c27c535cd6bb35b6f0ef8">get_cal_time</a></div>
-<div class="line"><a name="l00162"></a><span class="lineno">  162</span>&#160;<span class="keywordtype">integer</span> :: year, month, day, hour, minute, second</div>
-<div class="line"><a name="l00163"></a><span class="lineno">  163</span>&#160;<span class="keywordtype">integer</span> :: i1, increment_seconds, increment_days, increment_years, increment_months</div>
-<div class="line"><a name="l00164"></a><span class="lineno">  164</span>&#160;<span class="keywordtype">real</span>    :: month_fraction</div>
-<div class="line"><a name="l00165"></a><span class="lineno">  165</span>&#160;<span class="keywordtype">integer</span> :: calendar_tm_i, calendar_in_i, ierr, io, logunit</div>
-<div class="line"><a name="l00166"></a><span class="lineno">  166</span>&#160;<span class="keywordtype">logical</span> :: correct_form</div>
-<div class="line"><a name="l00167"></a><span class="lineno">  167</span>&#160;<span class="keywordtype">character(len=32)</span> :: calendar_in_c</div>
-<div class="line"><a name="l00168"></a><span class="lineno">  168</span>&#160;<span class="keywordtype">character(len=64)</span> :: err_msg</div>
-<div class="line"><a name="l00169"></a><span class="lineno">  169</span>&#160;<span class="keywordtype">type</span>(<a class="code" href="structtime__manager__mod_1_1time__type.html">time_type</a>) :: base_time, base_time_plus_one_yr</div>
-<div class="line"><a name="l00170"></a><span class="lineno">  170</span>&#160;<span class="keywordtype">real</span> :: dt</div>
-<div class="line"><a name="l00171"></a><span class="lineno">  171</span>&#160;<span class="keywordtype">logical</span> :: permit_conversion_local</div>
-<div class="line"><a name="l00172"></a><span class="lineno">  172</span>&#160; </div>
-<div class="line"><a name="l00173"></a><span class="lineno">  173</span>&#160;<span class="keywordflow">if</span>(.not.module_is_initialized) <span class="keywordflow">then</span></div>
-<div class="line"><a name="l00174"></a><span class="lineno">  174</span>&#160;  <span class="keyword">read</span> (input_nml_file, get_cal_time_nml, iostat=io)</div>
-<div class="line"><a name="l00175"></a><span class="lineno">  175</span>&#160;  ierr = <a class="code" href="group__fms__mod.html#ga05e7686befc1e49d2be9bdb81d479a76">check_nml_error</a>(io, <span class="stringliteral">&#39;get_cal_time_nml&#39;</span>)</div>
-<div class="line"><a name="l00176"></a><span class="lineno">  176</span>&#160; </div>
-<div class="line"><a name="l00177"></a><span class="lineno">  177</span>&#160;  <span class="keyword">call </span><a class="code" href="group__fms__mod.html#ga0c093df98a75dbd9e0f3add67aa6c23a">write_version_number</a>(<span class="stringliteral">&quot;GET_CAL_TIME_MOD&quot;</span>, version)</div>
-<div class="line"><a name="l00178"></a><span class="lineno">  178</span>&#160;  logunit = <a class="code" href="mpp__util_8inc.html#a8e5518df9532bae0241f53ab542294a2">stdlog</a>()</div>
-<div class="line"><a name="l00179"></a><span class="lineno">  179</span>&#160;  <span class="keywordflow">if</span>(<a class="code" href="mpp__util_8inc.html#acfeba7de56f9dd6000b3fd78f9d56c50">mpp_pe</a>() == mpp_root_pe()) <span class="keyword">write</span> (logunit, nml=get_cal_time_nml)</div>
-<div class="line"><a name="l00180"></a><span class="lineno">  180</span>&#160;  module_is_initialized = .true.</div>
-<div class="line"><a name="l00181"></a><span class="lineno">  181</span>&#160;<span class="keywordflow">endif</span></div>
-<div class="line"><a name="l00182"></a><span class="lineno">  182</span>&#160; </div>
-<div class="line"><a name="l00183"></a><span class="lineno">  183</span>&#160;<span class="keywordflow">if</span>(<span class="keyword">present</span>(permit_calendar_conversion)) <span class="keywordflow">then</span></div>
-<div class="line"><a name="l00184"></a><span class="lineno">  184</span>&#160;  permit_conversion_local = permit_calendar_conversion</div>
-<div class="line"><a name="l00185"></a><span class="lineno">  185</span>&#160;<span class="keywordflow">else</span></div>
-<div class="line"><a name="l00186"></a><span class="lineno">  186</span>&#160;  permit_conversion_local = allow_calendar_conversion</div>
-<div class="line"><a name="l00187"></a><span class="lineno">  187</span>&#160;<span class="keywordflow">endif</span></div>
-<div class="line"><a name="l00188"></a><span class="lineno">  188</span>&#160; </div>
-<div class="line"><a name="l00189"></a><span class="lineno">  189</span>&#160;calendar_in_c = lowercase(trim(cut0(calendar)))</div>
-<div class="line"><a name="l00190"></a><span class="lineno">  190</span>&#160; </div>
-<div class="line"><a name="l00191"></a><span class="lineno">  191</span>&#160;correct_form = (trim(calendar_in_c)) == <span class="stringliteral">&#39;noleap&#39;</span>     .or. (trim(calendar_in_c)) == <span class="stringliteral">&#39;365_day&#39;</span> .or. &amp;</div>
-<div class="line"><a name="l00192"></a><span class="lineno">  192</span>&#160;               (trim(calendar_in_c)) == <span class="stringliteral">&#39;365_days&#39;</span> .or. &amp;</div>
-<div class="line"><a name="l00193"></a><span class="lineno">  193</span>&#160;               (trim(calendar_in_c)) == <span class="stringliteral">&#39;360_day&#39;</span>    .or. (trim(calendar_in_c)) == <span class="stringliteral">&#39;julian&#39;</span>  .or. &amp;</div>
-<div class="line"><a name="l00194"></a><span class="lineno">  194</span>&#160;               (trim(calendar_in_c)) == <span class="stringliteral">&#39;no_calendar&#39;</span>.or. (trim(calendar_in_c)) == <span class="stringliteral">&#39;thirty_day_months&#39;</span> .or. &amp;</div>
-<div class="line"><a name="l00195"></a><span class="lineno">  195</span>&#160;               (trim(calendar_in_c)) == <span class="stringliteral">&#39;gregorian&#39;</span></div>
-<div class="line"><a name="l00196"></a><span class="lineno">  196</span>&#160; </div>
-<div class="line"><a name="l00197"></a><span class="lineno">  197</span>&#160;<span class="keywordflow">if</span>(.not.correct_form) <span class="keywordflow">then</span></div>
-<div class="line"><a name="l00198"></a><span class="lineno">  198</span>&#160;  <span class="keyword">call </span><a class="code" href="group__fms__mod.html#gae5c7420e421293e2be14717dd7b3d97f">error_mesg</a>(<span class="stringliteral">&#39;get_cal_time&#39;</span>,<span class="stringliteral">&#39;&quot;&#39;</span>//trim(calendar_in_c)//<span class="stringliteral">&#39;&quot;&#39;</span>// &amp;</div>
-<div class="line"><a name="l00199"></a><span class="lineno">  199</span>&#160;   <span class="stringliteral">&#39; is not an acceptable calendar attribute. acceptable calendars are: &#39;</span>// &amp;</div>
-<div class="line"><a name="l00200"></a><span class="lineno">  200</span>&#160;   <span class="stringliteral">&#39; noleap, 365_day, 365_days, 360_day, julian, no_calendar, thirty_day_months, gregorian&#39;</span>,fatal)</div>
-<div class="line"><a name="l00201"></a><span class="lineno">  201</span>&#160;<span class="keywordflow">endif</span></div>
-<div class="line"><a name="l00202"></a><span class="lineno">  202</span>&#160; </div>
-<div class="line"><a name="l00203"></a><span class="lineno">  203</span>&#160;calendar_tm_i = <a class="code" href="group__time__manager__mod.html#gad4d5cb71942ebf3f1bb9d4a29a6d9a04">get_calendar_type</a>()</div>
-<div class="line"><a name="l00204"></a><span class="lineno">  204</span>&#160; </div>
-<div class="line"><a name="l00205"></a><span class="lineno">  205</span>&#160;<span class="keywordflow">if</span>(.not.permit_conversion_local) <span class="keywordflow">then</span></div>
-<div class="line"><a name="l00206"></a><span class="lineno">  206</span>&#160;  correct_form = (trim(calendar_in_c) == <span class="stringliteral">&#39;noleap&#39;</span>            .and. calendar_tm_i == noleap)            .or. &amp;</div>
-<div class="line"><a name="l00207"></a><span class="lineno">  207</span>&#160;                 (trim(calendar_in_c) == <span class="stringliteral">&#39;365_day&#39;</span>           .and. calendar_tm_i == noleap)            .or. &amp;</div>
-<div class="line"><a name="l00208"></a><span class="lineno">  208</span>&#160;                 (trim(calendar_in_c) == <span class="stringliteral">&#39;365_days&#39;</span>          .and. calendar_tm_i == noleap)            .or. &amp;</div>
-<div class="line"><a name="l00209"></a><span class="lineno">  209</span>&#160;                 (trim(calendar_in_c) == <span class="stringliteral">&#39;360_day&#39;</span>           .and. calendar_tm_i == thirty_day_months) .or. &amp;</div>
-<div class="line"><a name="l00210"></a><span class="lineno">  210</span>&#160;                 (trim(calendar_in_c) == <span class="stringliteral">&#39;thirty_day_months&#39;</span> .and. calendar_tm_i == thirty_day_months) .or. &amp;</div>
-<div class="line"><a name="l00211"></a><span class="lineno">  211</span>&#160;                 (trim(calendar_in_c) == <span class="stringliteral">&#39;julian&#39;</span>            .and. calendar_tm_i == julian)            .or. &amp;</div>
-<div class="line"><a name="l00212"></a><span class="lineno">  212</span>&#160;                 (trim(calendar_in_c) == <span class="stringliteral">&#39;no_calendar&#39;</span>       .and. calendar_tm_i == no_calendar)       .or. &amp;</div>
-<div class="line"><a name="l00213"></a><span class="lineno">  213</span>&#160;                 (trim(calendar_in_c) == <span class="stringliteral">&#39;gregorian&#39;</span>         .and. calendar_tm_i == gregorian)</div>
-<div class="line"><a name="l00214"></a><span class="lineno">  214</span>&#160;  <span class="keywordflow">if</span>(.not.correct_form) <span class="keywordflow">then</span></div>
-<div class="line"><a name="l00215"></a><span class="lineno">  215</span>&#160;    <span class="keyword">call </span><a class="code" href="group__fms__mod.html#gae5c7420e421293e2be14717dd7b3d97f">error_mesg</a>(<span class="stringliteral">&#39;get_cal_time&#39;</span>,<span class="stringliteral">&#39;calendar not consistent with calendar type in use by time_manager.&#39;</span>// &amp;</div>
-<div class="line"><a name="l00216"></a><span class="lineno">  216</span>&#160;         <span class="stringliteral">&#39; calendar=&#39;</span>//trim(calendar_in_c)//<span class="stringliteral">&#39;. Type in use by time_manager=&#39;</span>// &amp;</div>
-<div class="line"><a name="l00217"></a><span class="lineno">  217</span>&#160;                          &amp; <a class="code" href="group__time__manager__mod.html#ga40ba58ef6e1c86616e5f8d7e8ebefca3">valid_calendar_types</a>(calendar_tm_i),fatal)</div>
-<div class="line"><a name="l00218"></a><span class="lineno">  218</span>&#160;<span class="keywordflow">  endif</span></div>
-<div class="line"><a name="l00219"></a><span class="lineno">  219</span>&#160;<span class="keywordflow">endif</span></div>
-<div class="line"><a name="l00220"></a><span class="lineno">  220</span>&#160; </div>
-<div class="line"><a name="l00221"></a><span class="lineno">  221</span>&#160;<span class="keywordflow">if</span> (permit_conversion_local) <span class="keywordflow">then</span></div>
-<div class="line"><a name="l00222"></a><span class="lineno">  222</span>&#160;    <span class="keywordflow">select case</span> (trim(calendar_in_c))</div>
-<div class="line"><a name="l00223"></a><span class="lineno">  223</span>&#160;    <span class="keywordflow">case</span> (<span class="stringliteral">&#39;noleap&#39;</span>)</div>
-<div class="line"><a name="l00224"></a><span class="lineno">  224</span>&#160;        calendar_in_i = noleap</div>
-<div class="line"><a name="l00225"></a><span class="lineno">  225</span>&#160;    <span class="keywordflow">case</span> (<span class="stringliteral">&#39;365_day&#39;</span>)</div>
-<div class="line"><a name="l00226"></a><span class="lineno">  226</span>&#160;        calendar_in_i = noleap</div>
-<div class="line"><a name="l00227"></a><span class="lineno">  227</span>&#160;    <span class="keywordflow">case</span> (<span class="stringliteral">&#39;365_days&#39;</span>)</div>
-<div class="line"><a name="l00228"></a><span class="lineno">  228</span>&#160;        calendar_in_i = noleap</div>
-<div class="line"><a name="l00229"></a><span class="lineno">  229</span>&#160;    <span class="keywordflow">case</span> (<span class="stringliteral">&#39;360_day&#39;</span>)</div>
-<div class="line"><a name="l00230"></a><span class="lineno">  230</span>&#160;        calendar_in_i = thirty_day_months</div>
-<div class="line"><a name="l00231"></a><span class="lineno">  231</span>&#160;    <span class="keywordflow">case</span> (<span class="stringliteral">&#39;thirty_day_months&#39;</span>)</div>
-<div class="line"><a name="l00232"></a><span class="lineno">  232</span>&#160;        calendar_in_i = thirty_day_months</div>
-<div class="line"><a name="l00233"></a><span class="lineno">  233</span>&#160;    <span class="keywordflow">case</span> (<span class="stringliteral">&#39;julian&#39;</span>)</div>
-<div class="line"><a name="l00234"></a><span class="lineno">  234</span>&#160;        calendar_in_i = julian</div>
-<div class="line"><a name="l00235"></a><span class="lineno">  235</span>&#160;    <span class="keywordflow">case</span> (<span class="stringliteral">&#39;no_calendar&#39;</span>)</div>
-<div class="line"><a name="l00236"></a><span class="lineno">  236</span>&#160;        calendar_in_i = no_calendar</div>
-<div class="line"><a name="l00237"></a><span class="lineno">  237</span>&#160;    <span class="keywordflow">case</span> (<span class="stringliteral">&#39;gregorian&#39;</span>)</div>
-<div class="line"><a name="l00238"></a><span class="lineno">  238</span>&#160;        calendar_in_i = gregorian</div>
-<div class="line"><a name="l00239"></a><span class="lineno">  239</span>&#160;<span class="keywordflow">    case default</span></div>
-<div class="line"><a name="l00240"></a><span class="lineno">  240</span>&#160;        <span class="keyword">call </span><a class="code" href="group__fms__mod.html#gae5c7420e421293e2be14717dd7b3d97f">error_mesg</a>(<span class="stringliteral">&#39;get_cal_time&#39;</span>, &amp;</div>
-<div class="line"><a name="l00241"></a><span class="lineno">  241</span>&#160;                 trim(calendar_in_c)//<span class="stringliteral">&#39; is an invalid calendar type (specified in call to get_cal_time)&#39;</span>,fatal)</div>
-<div class="line"><a name="l00242"></a><span class="lineno">  242</span>&#160;<span class="keywordflow">    end select</span></div>
-<div class="line"><a name="l00243"></a><span class="lineno">  243</span>&#160;<span class="keywordflow">else</span></div>
-<div class="line"><a name="l00244"></a><span class="lineno">  244</span>&#160;    calendar_in_i = calendar_tm_i</div>
-<div class="line"><a name="l00245"></a><span class="lineno">  245</span>&#160;<span class="keywordflow">end if</span></div>
-<div class="line"><a name="l00246"></a><span class="lineno">  246</span>&#160; </div>
-<div class="line"><a name="l00247"></a><span class="lineno">  247</span>&#160;correct_form = lowercase(units(1:10)) == <span class="stringliteral">&#39;days since&#39;</span>    .or. &amp;</div>
-<div class="line"><a name="l00248"></a><span class="lineno">  248</span>&#160;               lowercase(units(1:11)) == <span class="stringliteral">&#39;hours since&#39;</span>   .or. &amp;</div>
-<div class="line"><a name="l00249"></a><span class="lineno">  249</span>&#160;               lowercase(units(1:13)) == <span class="stringliteral">&#39;minutes since&#39;</span> .or. &amp;</div>
-<div class="line"><a name="l00250"></a><span class="lineno">  250</span>&#160;               lowercase(units(1:13)) == <span class="stringliteral">&#39;seconds since&#39;</span></div>
-<div class="line"><a name="l00251"></a><span class="lineno">  251</span>&#160; </div>
-<div class="line"><a name="l00252"></a><span class="lineno">  252</span>&#160;<span class="keywordflow">if</span>(calendar_in_i /= no_calendar) <span class="keywordflow">then</span></div>
-<div class="line"><a name="l00253"></a><span class="lineno">  253</span>&#160;  correct_form = correct_form .or. &amp;</div>
-<div class="line"><a name="l00254"></a><span class="lineno">  254</span>&#160;               lowercase(units(1:11)) == <span class="stringliteral">&#39;years since&#39;</span>   .or. &amp;</div>
-<div class="line"><a name="l00255"></a><span class="lineno">  255</span>&#160;               lowercase(units(1:12)) == <span class="stringliteral">&#39;months since&#39;</span></div>
-<div class="line"><a name="l00256"></a><span class="lineno">  256</span>&#160;<span class="keywordflow">endif</span></div>
-<div class="line"><a name="l00257"></a><span class="lineno">  257</span>&#160; </div>
-<div class="line"><a name="l00258"></a><span class="lineno">  258</span>&#160;<span class="keywordflow">if</span>(.not.correct_form) <span class="keywordflow">then</span></div>
-<div class="line"><a name="l00259"></a><span class="lineno">  259</span>&#160;  <span class="keyword">call </span><a class="code" href="group__fms__mod.html#gae5c7420e421293e2be14717dd7b3d97f">error_mesg</a>(<span class="stringliteral">&#39;get_cal_time&#39;</span>,trim(units)//<span class="stringliteral">&#39; is an invalid string for units.&#39;</span> // &amp;</div>
-<div class="line"><a name="l00260"></a><span class="lineno">  260</span>&#160;        <span class="stringliteral">&#39; units must begin with a time unit then the word &quot;since&quot;&#39;</span> // &amp;</div>
-<div class="line"><a name="l00261"></a><span class="lineno">  261</span>&#160;        <span class="stringliteral">&#39; Valid time units are: &quot;seconds&quot; &quot;minutes&quot;, &quot;hours&quot;, &quot;days&quot;, and, &#39;</span> // &amp;</div>
-<div class="line"><a name="l00262"></a><span class="lineno">  262</span>&#160;        <span class="stringliteral">&#39; except when NO_CALENDAR is in effect, &quot;months&quot; and &quot;years&quot;&#39;</span>,fatal)</div>
-<div class="line"><a name="l00263"></a><span class="lineno">  263</span>&#160;<span class="keywordflow">endif</span></div>
-<div class="line"><a name="l00264"></a><span class="lineno">  264</span>&#160; </div>
-<div class="line"><a name="l00265"></a><span class="lineno">  265</span>&#160;<span class="keywordflow">if</span>(calendar_in_i /= calendar_tm_i) <span class="keywordflow">then</span></div>
-<div class="line"><a name="l00266"></a><span class="lineno">  266</span>&#160;<span class="comment">! switch to calendar type specified as input argument,</span></div>
-<div class="line"><a name="l00267"></a><span class="lineno">  267</span>&#160;<span class="comment">! will switch back before returning.</span></div>
-<div class="line"><a name="l00268"></a><span class="lineno">  268</span>&#160;  <span class="keyword">call </span><a class="code" href="group__time__manager__mod.html#gae4ed023b8077a6f14fffb764d642e55a">set_calendar_type</a>(calendar_in_i)</div>
-<div class="line"><a name="l00269"></a><span class="lineno">  269</span>&#160;<span class="keywordflow">endif</span></div>
-<div class="line"><a name="l00270"></a><span class="lineno">  270</span>&#160; </div>
-<div class="line"><a name="l00271"></a><span class="lineno">  271</span>&#160;<span class="comment">! index(string, substring[,back])</span></div>
-<div class="line"><a name="l00272"></a><span class="lineno">  272</span>&#160;<span class="comment">! Returns the starting position of substring as a substring of string,</span></div>
-<div class="line"><a name="l00273"></a><span class="lineno">  273</span>&#160;<span class="comment">! or zero if it does not occur as a substring. Default value of back is</span></div>
-<div class="line"><a name="l00274"></a><span class="lineno">  274</span>&#160;<span class="comment">! .false. If back is .false., the starting position of the first such</span></div>
-<div class="line"><a name="l00275"></a><span class="lineno">  275</span>&#160;<span class="comment">! substring is returned. If back is .true., the starting position of the</span></div>
-<div class="line"><a name="l00276"></a><span class="lineno">  276</span>&#160;<span class="comment">! last such substring is returned.</span></div>
-<div class="line"><a name="l00277"></a><span class="lineno">  277</span>&#160;<span class="comment">! Returns zero if substring is not a substring of string (regardless of value of back)</span></div>
-<div class="line"><a name="l00278"></a><span class="lineno">  278</span>&#160; </div>
-<div class="line"><a name="l00279"></a><span class="lineno">  279</span>&#160;i1 = index(units,<span class="stringliteral">&#39;since&#39;</span>) + 5</div>
-<div class="line"><a name="l00280"></a><span class="lineno">  280</span>&#160;<span class="keywordflow">if</span>(calendar_in_i == no_calendar) <span class="keywordflow">then</span></div>
-<div class="line"><a name="l00281"></a><span class="lineno">  281</span>&#160;  base_time = <a class="code" href="interfacetime__manager__mod_1_1set__time.html">set_time</a>(units(i1:len_trim(units)))</div>
-<div class="line"><a name="l00282"></a><span class="lineno">  282</span>&#160;<span class="keywordflow">else</span></div>
-<div class="line"><a name="l00283"></a><span class="lineno">  283</span>&#160;  base_time = <a class="code" href="interfacetime__manager__mod_1_1set__date.html">set_date</a>(units(i1:len_trim(units)))</div>
-<div class="line"><a name="l00284"></a><span class="lineno">  284</span>&#160;<span class="keywordflow">endif</span></div>
-<div class="line"><a name="l00285"></a><span class="lineno">  285</span>&#160; </div>
-<div class="line"><a name="l00286"></a><span class="lineno">  286</span>&#160;<span class="keywordflow">if</span>(lowercase(units(1:10)) == <span class="stringliteral">&#39;days since&#39;</span>) <span class="keywordflow">then</span></div>
-<div class="line"><a name="l00287"></a><span class="lineno">  287</span>&#160;  increment_days = floor(time_increment)</div>
-<div class="line"><a name="l00288"></a><span class="lineno">  288</span>&#160;  increment_seconds = int(86400*(time_increment - increment_days))</div>
-<div class="line"><a name="l00289"></a><span class="lineno">  289</span>&#160;<span class="keywordflow">else</span> <span class="keywordflow">if</span>(lowercase(units(1:11)) == <span class="stringliteral">&#39;hours since&#39;</span>) <span class="keywordflow">then</span></div>
-<div class="line"><a name="l00290"></a><span class="lineno">  290</span>&#160;  increment_days = floor(time_increment/24)</div>
-<div class="line"><a name="l00291"></a><span class="lineno">  291</span>&#160;  increment_seconds = int(86400*(time_increment/24 - increment_days))</div>
-<div class="line"><a name="l00292"></a><span class="lineno">  292</span>&#160;<span class="keywordflow">else</span> <span class="keywordflow">if</span>(lowercase(units(1:13)) == <span class="stringliteral">&#39;minutes since&#39;</span>) <span class="keywordflow">then</span></div>
-<div class="line"><a name="l00293"></a><span class="lineno">  293</span>&#160;  increment_days = floor(time_increment/1440)</div>
-<div class="line"><a name="l00294"></a><span class="lineno">  294</span>&#160;  increment_seconds = int(86400*(time_increment/1440 - increment_days))</div>
-<div class="line"><a name="l00295"></a><span class="lineno">  295</span>&#160;<span class="keywordflow">else</span> <span class="keywordflow">if</span>(lowercase(units(1:13)) == <span class="stringliteral">&#39;seconds since&#39;</span>) <span class="keywordflow">then</span></div>
-<div class="line"><a name="l00296"></a><span class="lineno">  296</span>&#160;  increment_days = floor(time_increment/86400)</div>
-<div class="line"><a name="l00297"></a><span class="lineno">  297</span>&#160;  increment_seconds = int(86400*(time_increment/86400 - increment_days))</div>
-<div class="line"><a name="l00298"></a><span class="lineno">  298</span>&#160;<span class="keywordflow">else</span> <span class="keywordflow">if</span>(lowercase(units(1:11)) == <span class="stringliteral">&#39;years since&#39;</span>) <span class="keywordflow">then</span></div>
-<div class="line"><a name="l00299"></a><span class="lineno">  299</span>&#160;<span class="comment">! The time period between between (base_time + time_increment) and</span></div>
-<div class="line"><a name="l00300"></a><span class="lineno">  300</span>&#160;<span class="comment">! (base_time + time_increment + 1 year) may be 360, 365, or 366 days.</span></div>
-<div class="line"><a name="l00301"></a><span class="lineno">  301</span>&#160;<span class="comment">! This must be determined to handle time increments with year fractions.</span></div>
-<div class="line"><a name="l00302"></a><span class="lineno">  302</span>&#160;  <span class="keyword">call </span><a class="code" href="group__time__manager__mod.html#ga42ca904e0ef4d8cd59deab75ea8bc048">get_date</a>(base_time, year,month,day,hour,minute,second)</div>
-<div class="line"><a name="l00303"></a><span class="lineno">  303</span>&#160;  base_time             = <a class="code" href="interfacetime__manager__mod_1_1set__date.html">set_date</a>(year+floor(time_increment)  ,month,day,hour,minute,second)</div>
-<div class="line"><a name="l00304"></a><span class="lineno">  304</span>&#160;  base_time_plus_one_yr = <a class="code" href="interfacetime__manager__mod_1_1set__date.html">set_date</a>(year+floor(time_increment)+1,month,day,hour,minute,second)</div>
-<div class="line"><a name="l00305"></a><span class="lineno">  305</span>&#160;  <span class="keyword">call </span><a class="code" href="group__time__manager__mod.html#ga2b9c941f38e33eba67ee151fe3bd8ee6">get_time</a>(base_time_plus_one_yr - base_time, second, day)</div>
-<div class="line"><a name="l00306"></a><span class="lineno">  306</span>&#160;  dt = (day*86400+second)*(time_increment-floor(time_increment))</div>
-<div class="line"><a name="l00307"></a><span class="lineno">  307</span>&#160;  increment_days = floor(dt/86400)</div>
-<div class="line"><a name="l00308"></a><span class="lineno">  308</span>&#160;  increment_seconds = int(dt - increment_days*86400)</div>
-<div class="line"><a name="l00309"></a><span class="lineno">  309</span>&#160;<span class="keywordflow">else</span> <span class="keywordflow">if</span>(lowercase(units(1:12)) == <span class="stringliteral">&#39;months since&#39;</span>) <span class="keywordflow">then</span></div>
-<div class="line"><a name="l00310"></a><span class="lineno">  310</span>&#160;  month_fraction = time_increment - floor(time_increment)</div>
-<div class="line"><a name="l00311"></a><span class="lineno">  311</span>&#160;  increment_years  = floor(time_increment/12)</div>
-<div class="line"><a name="l00312"></a><span class="lineno">  312</span>&#160;  increment_months = floor(time_increment) - 12*increment_years</div>
-<div class="line"><a name="l00313"></a><span class="lineno">  313</span>&#160;  <span class="keyword">call </span><a class="code" href="group__time__manager__mod.html#ga42ca904e0ef4d8cd59deab75ea8bc048">get_date</a>(base_time, year,month,day,hour,minute,second)</div>
-<div class="line"><a name="l00314"></a><span class="lineno">  314</span>&#160;  base_time = <a class="code" href="interfacetime__manager__mod_1_1set__date.html">set_date</a>(year+increment_years,month+increment_months  ,day,hour,minute,second)</div>
-<div class="line"><a name="l00315"></a><span class="lineno">  315</span>&#160;  dt = 86400*days_in_month(base_time) * month_fraction</div>
-<div class="line"><a name="l00316"></a><span class="lineno">  316</span>&#160;  increment_days = floor(dt/86400)</div>
-<div class="line"><a name="l00317"></a><span class="lineno">  317</span>&#160;  increment_seconds = int(dt - increment_days*86400)</div>
-<div class="line"><a name="l00318"></a><span class="lineno">  318</span>&#160;<span class="keywordflow">else</span></div>
-<div class="line"><a name="l00319"></a><span class="lineno">  319</span>&#160;  <span class="keyword">call </span><a class="code" href="group__fms__mod.html#gae5c7420e421293e2be14717dd7b3d97f">error_mesg</a>(<span class="stringliteral">&#39;get_cal_time&#39;</span>,<span class="stringliteral">&#39;&quot;&#39;</span>//trim(units)//<span class="stringliteral">&#39;&quot; is not an acceptable units attribute of time.&#39;</span>// &amp;</div>
-<div class="line"><a name="l00320"></a><span class="lineno">  320</span>&#160;            &amp; <span class="stringliteral">&#39; It must begin with: &quot;years since&quot;, &quot;months since&quot;, &quot;days since&quot;, &quot;hours since&quot;, &quot;minutes since&quot;,&#39;</span>// &amp;</div>
-<div class="line"><a name="l00321"></a><span class="lineno">  321</span>&#160;            &amp; <span class="stringliteral">&#39; or &quot;seconds since&quot;&#39;</span>,fatal)</div>
-<div class="line"><a name="l00322"></a><span class="lineno">  322</span>&#160;<span class="keywordflow">endif</span></div>
-<div class="line"><a name="l00323"></a><span class="lineno">  323</span>&#160; </div>
-<div class="line"><a name="l00324"></a><span class="lineno">  324</span>&#160;<span class="keywordflow">if</span> (calendar_in_i /= calendar_tm_i) <span class="keywordflow">then</span></div>
-<div class="line"><a name="l00325"></a><span class="lineno">  325</span>&#160;    <span class="keywordflow">if</span>(calendar_in_i == no_calendar .or. calendar_tm_i == no_calendar) <span class="keywordflow">then</span></div>
-<div class="line"><a name="l00326"></a><span class="lineno">  326</span>&#160;      <span class="keyword">call </span><a class="code" href="group__fms__mod.html#gae5c7420e421293e2be14717dd7b3d97f">error_mesg</a>(<span class="stringliteral">&#39;get_cal_time&#39;</span>,<span class="stringliteral">&#39;Cannot do calendar conversion because input calendar is &#39;</span>// &amp;</div>
-<div class="line"><a name="l00327"></a><span class="lineno">  327</span>&#160;       trim(<a class="code" href="group__time__manager__mod.html#ga40ba58ef6e1c86616e5f8d7e8ebefca3">valid_calendar_types</a>(calendar_in_i))//<span class="stringliteral">&#39; and time_manager is using &#39;</span>// &amp;</div>
-<div class="line"><a name="l00328"></a><span class="lineno">  328</span>&#160;       trim(<a class="code" href="group__time__manager__mod.html#ga40ba58ef6e1c86616e5f8d7e8ebefca3">valid_calendar_types</a>(calendar_tm_i))// &amp;</div>
-<div class="line"><a name="l00329"></a><span class="lineno">  329</span>&#160;       <span class="stringliteral">&#39; Conversion cannot be done if either is NO_CALENDAR&#39;</span>,fatal)</div>
-<div class="line"><a name="l00330"></a><span class="lineno">  330</span>&#160;<span class="keywordflow">    endif</span></div>
-<div class="line"><a name="l00331"></a><span class="lineno">  331</span>&#160;    <span class="keyword">call </span><a class="code" href="group__time__manager__mod.html#ga42ca904e0ef4d8cd59deab75ea8bc048">get_date</a>(base_time,year, month, day, hour, minute, second)</div>
-<div class="line"><a name="l00332"></a><span class="lineno">  332</span>&#160;    <a class="code" href="group__get__cal__time__mod.html#ga3eb93e699a7c27c535cd6bb35b6f0ef8">get_cal_time</a> = <a class="code" href="interfacetime__manager__mod_1_1set__date.html">set_date</a>(year,month,day,hour,minute,second) + <a class="code" href="interfacetime__manager__mod_1_1set__time.html">set_time</a>(increment_seconds, increment_days)</div>
-<div class="line"><a name="l00333"></a><span class="lineno">  333</span>&#160;    <span class="keyword">call </span><a class="code" href="group__time__manager__mod.html#ga42ca904e0ef4d8cd59deab75ea8bc048">get_date</a>(<a class="code" href="group__get__cal__time__mod.html#ga3eb93e699a7c27c535cd6bb35b6f0ef8">get_cal_time</a>,year,month,day,hour,minute,second)</div>
-<div class="line"><a name="l00334"></a><span class="lineno">  334</span>&#160;    <span class="keyword">call </span><a class="code" href="group__time__manager__mod.html#gae4ed023b8077a6f14fffb764d642e55a">set_calendar_type</a>(calendar_tm_i)</div>
-<div class="line"><a name="l00335"></a><span class="lineno">  335</span>&#160;    <a class="code" href="group__get__cal__time__mod.html#ga3eb93e699a7c27c535cd6bb35b6f0ef8">get_cal_time</a> = <a class="code" href="interfacetime__manager__mod_1_1set__date.html">set_date</a>(year,month,day,hour,minute,second, err_msg=err_msg)</div>
-<div class="line"><a name="l00336"></a><span class="lineno">  336</span>&#160;    <span class="keywordflow">if</span>(err_msg /= <span class="stringliteral">&#39;&#39;</span>) <span class="keywordflow">then</span></div>
-<div class="line"><a name="l00337"></a><span class="lineno">  337</span>&#160;      <span class="keyword">call </span><a class="code" href="group__fms__mod.html#gae5c7420e421293e2be14717dd7b3d97f">error_mesg</a>(<span class="stringliteral">&#39;get_cal_time&#39;</span>,<span class="stringliteral">&#39;Error in function get_cal_time: &#39;</span>//trim(err_msg)// &amp;</div>
-<div class="line"><a name="l00338"></a><span class="lineno">  338</span>&#160;               <span class="stringliteral">&#39; Note that the time_manager is using the &#39;</span>//trim(<a class="code" href="group__time__manager__mod.html#ga40ba58ef6e1c86616e5f8d7e8ebefca3">valid_calendar_types</a>(calendar_tm_i))//<span class="stringliteral">&#39; calendar &#39;</span>// &amp;</div>
-<div class="line"><a name="l00339"></a><span class="lineno">  339</span>&#160;               <span class="stringliteral">&#39;while the calendar type passed to function get_cal_time is &#39;</span>//calendar_in_c,fatal)</div>
-<div class="line"><a name="l00340"></a><span class="lineno">  340</span>&#160;<span class="keywordflow">    endif</span></div>
-<div class="line"><a name="l00341"></a><span class="lineno">  341</span>&#160;<span class="keywordflow">else</span></div>
-<div class="line"><a name="l00342"></a><span class="lineno">  342</span>&#160;    <a class="code" href="group__get__cal__time__mod.html#ga3eb93e699a7c27c535cd6bb35b6f0ef8">get_cal_time</a> = base_time + <a class="code" href="interfacetime__manager__mod_1_1set__time.html">set_time</a>(increment_seconds, increment_days)</div>
-<div class="line"><a name="l00343"></a><span class="lineno">  343</span>&#160;<span class="keywordflow">endif</span></div>
-<div class="line"><a name="l00344"></a><span class="lineno">  344</span>&#160; </div>
-<div class="line"><a name="l00345"></a><span class="lineno">  345</span>&#160;<span class="keyword">end function </span><a class="code" href="group__get__cal__time__mod.html#ga3eb93e699a7c27c535cd6bb35b6f0ef8">get_cal_time</a></div>
-<div class="line"><a name="l00346"></a><span class="lineno">  346</span>&#160;<span class="comment">!------------------------------------------------------------------------</span></div>
-<div class="line"><a name="l00347"></a><span class="lineno">  347</span>&#160;<span class="keyword">function </span>cut0(string)</div>
-<div class="line"><a name="l00348"></a><span class="lineno">  348</span>&#160;<span class="keywordtype">character(len=256)</span> :: cut0</div>
-<div class="line"><a name="l00349"></a><span class="lineno">  349</span>&#160;<span class="keywordtype">character(len=*)</span>, <span class="keywordtype">intent(in)</span> :: string</div>
-<div class="line"><a name="l00350"></a><span class="lineno">  350</span>&#160;<span class="keywordtype">integer</span> :: i</div>
-<div class="line"><a name="l00351"></a><span class="lineno">  351</span>&#160; </div>
-<div class="line"><a name="l00352"></a><span class="lineno">  352</span>&#160;cut0 = string</div>
-<div class="line"><a name="l00353"></a><span class="lineno">  353</span>&#160; </div>
-<div class="line"><a name="l00354"></a><span class="lineno">  354</span>&#160;<span class="keywordflow">do</span> i=1,len(string)</div>
-<div class="line"><a name="l00355"></a><span class="lineno">  355</span>&#160;  <span class="keywordflow">if</span>(ichar(string(i:i)) == 0 ) <span class="keywordflow">then</span></div>
-<div class="line"><a name="l00356"></a><span class="lineno">  356</span>&#160;    cut0(i:i) = <span class="stringliteral">&#39; &#39;</span></div>
-<div class="line"><a name="l00357"></a><span class="lineno">  357</span>&#160;<span class="keywordflow">  endif</span></div>
-<div class="line"><a name="l00358"></a><span class="lineno">  358</span>&#160;<span class="keywordflow">enddo</span></div>
-<div class="line"><a name="l00359"></a><span class="lineno">  359</span>&#160; </div>
-<div class="line"><a name="l00360"></a><span class="lineno">  360</span>&#160;<span class="keywordflow">return</span></div>
-<div class="line"><a name="l00361"></a><span class="lineno">  361</span>&#160;<span class="keyword">end function </span>cut0</div>
-<div class="line"><a name="l00362"></a><span class="lineno">  362</span>&#160;<span class="comment">!------------------------------------------------------------------------</span></div>
-<div class="line"><a name="l00363"></a><span class="lineno">  363</span>&#160;<span class="keyword">end module </span>get_cal_time_mod<span class="comment"></span></div>
-<div class="line"><a name="l00364"></a><span class="lineno">  364</span>&#160;<span class="comment">!&gt; @}</span></div>
-<div class="line"><a name="l00365"></a><span class="lineno">  365</span>&#160;<span class="comment">! close documentation grouping</span></div>
+<div class="line"><a name="l00108"></a><span class="lineno">  108</span>&#160;<span class="comment">!! Example: &#39;days since 100 0&#39; Indicates 100 days 0 seconds</span></div>
+<div class="line"><a name="l00109"></a><span class="lineno">  109</span>&#160;<span class="comment">!!</span></div>
+<div class="line"><a name="l00110"></a><span class="lineno">  110</span>&#160;<span class="comment">!! @param calendar</span></div>
+<div class="line"><a name="l00111"></a><span class="lineno">  111</span>&#160;<span class="comment">!! Acceptable values of calendar are:</span></div>
+<div class="line"><a name="l00112"></a><span class="lineno">  112</span>&#160;<span class="comment">!! &#39;noleap&#39;</span></div>
+<div class="line"><a name="l00113"></a><span class="lineno">  113</span>&#160;<span class="comment">!! &#39;365_day&#39;</span></div>
+<div class="line"><a name="l00114"></a><span class="lineno">  114</span>&#160;<span class="comment">!! &#39;360_day&#39;</span></div>
+<div class="line"><a name="l00115"></a><span class="lineno">  115</span>&#160;<span class="comment">!! &#39;julian&#39;</span></div>
+<div class="line"><a name="l00116"></a><span class="lineno">  116</span>&#160;<span class="comment">!! &#39;thirty_day_months&#39;</span></div>
+<div class="line"><a name="l00117"></a><span class="lineno">  117</span>&#160;<span class="comment">!! &#39;no_calendar&#39;</span></div>
+<div class="line"><a name="l00118"></a><span class="lineno">  118</span>&#160;<span class="comment">!!</span></div>
+<div class="line"><a name="l00119"></a><span class="lineno">  119</span>&#160;<span class="comment">!! @param optional permit_calendar_conversion</span></div>
+<div class="line"><a name="l00120"></a><span class="lineno">  120</span>&#160;<span class="comment">!! It is sometimes desirable to allow the value of the intent(in) argument</span></div>
+<div class="line"><a name="l00121"></a><span class="lineno">  121</span>&#160;<span class="comment">!! &quot;calendar&quot; to be different than the calendar in use by time_manager_mod.</span></div>
+<div class="line"><a name="l00122"></a><span class="lineno">  122</span>&#160;<span class="comment">!! If this is not desirable, then the optional variable &quot;permit_calendar_conversion&quot;</span></div>
+<div class="line"><a name="l00123"></a><span class="lineno">  123</span>&#160;<span class="comment">!! should be set to .false. so as to allow an error check.</span></div>
+<div class="line"><a name="l00124"></a><span class="lineno">  124</span>&#160;<span class="comment">!! When calendar conversion is done, the time returned is the time in the</span></div>
+<div class="line"><a name="l00125"></a><span class="lineno">  125</span>&#160;<span class="comment">!! time_manager&#39;s calendar, but corresponds to the date computed using the input calendar.</span></div>
+<div class="line"><a name="l00126"></a><span class="lineno">  126</span>&#160;<span class="comment">!! For example, suppose the time_manager is using the julian calendar and</span></div>
+<div class="line"><a name="l00127"></a><span class="lineno">  127</span>&#160;<span class="comment">!! the values of the input arguments of get_cal_time are:</span></div>
+<div class="line"><a name="l00128"></a><span class="lineno">  128</span>&#160;<span class="comment">!! time_increment = 59.0</span></div>
+<div class="line"><a name="l00129"></a><span class="lineno">  129</span>&#160;<span class="comment">!! units = &#39;days since 1980-1-1 00:00:00&#39;</span></div>
+<div class="line"><a name="l00130"></a><span class="lineno">  130</span>&#160;<span class="comment">!! calendar = &#39;noleap&#39;</span></div>
+<div class="line"><a name="l00131"></a><span class="lineno">  131</span>&#160;<span class="comment">!! Because it will use the noleap calendar to calculate the date, get_cal_time will return</span></div>
+<div class="line"><a name="l00132"></a><span class="lineno">  132</span>&#160;<span class="comment">!! value of time for midnight March 1 1980, but it will be time in the julian calendar</span></div>
+<div class="line"><a name="l00133"></a><span class="lineno">  133</span>&#160;<span class="comment">!! rather than the noleap calendar. It will never return a value of time corresponding</span></div>
+<div class="line"><a name="l00134"></a><span class="lineno">  134</span>&#160;<span class="comment">!! to anytime during the day Feb 29.</span></div>
+<div class="line"><a name="l00135"></a><span class="lineno">  135</span>&#160;<span class="comment">!!</span></div>
+<div class="line"><a name="l00136"></a><span class="lineno">  136</span>&#160;<span class="comment">!! Another example:</span></div>
+<div class="line"><a name="l00137"></a><span class="lineno">  137</span>&#160;<span class="comment">!! Suppose the time_manager is using either the noleap or julian calendars,</span></div>
+<div class="line"><a name="l00138"></a><span class="lineno">  138</span>&#160;<span class="comment">!! and the values of the input arguments are:</span></div>
+<div class="line"><a name="l00139"></a><span class="lineno">  139</span>&#160;<span class="comment">!! time_increment = 30.0</span></div>
+<div class="line"><a name="l00140"></a><span class="lineno">  140</span>&#160;<span class="comment">!! units = &#39;days since 1980-1-1&#39;</span></div>
+<div class="line"><a name="l00141"></a><span class="lineno">  141</span>&#160;<span class="comment">!! calendar = &#39;thirty_day_months&#39;</span></div>
+<div class="line"><a name="l00142"></a><span class="lineno">  142</span>&#160;<span class="comment">!! In this case get_cal_time will return the value of time for Feb 1 1980 00:00:00,</span></div>
+<div class="line"><a name="l00143"></a><span class="lineno">  143</span>&#160;<span class="comment">!! but in the time_manager&#39;s calendar.</span></div>
+<div class="line"><a name="l00144"></a><span class="lineno">  144</span>&#160;<span class="comment">!!</span></div>
+<div class="line"><a name="l00145"></a><span class="lineno">  145</span>&#160;<span class="comment">!! Calendar conversion may result in a fatal error when the input calendar type is</span></div>
+<div class="line"><a name="l00146"></a><span class="lineno">  146</span>&#160;<span class="comment">!! a calendar that has more days per year than that of the time_manager&#39;s calendar.</span></div>
+<div class="line"><a name="l00147"></a><span class="lineno">  147</span>&#160;<span class="comment">!! For example, if the input calendar type is julian and the time_manager&#39;s calendar</span></div>
+<div class="line"><a name="l00148"></a><span class="lineno">  148</span>&#160;<span class="comment">!! is thirty_day_months, then get_cal_time will try to convert Jan 31 to a time in</span></div>
+<div class="line"><a name="l00149"></a><span class="lineno">  149</span>&#160;<span class="comment">!! the thirty_day_months calendar, resulting in a fatal error.</span></div>
+<div class="line"><a name="l00150"></a><span class="lineno">  150</span>&#160;<span class="comment">!!</span></div>
+<div class="line"><a name="l00151"></a><span class="lineno">  151</span>&#160;<span class="comment">!! @note This option was originally coded to allow noleap calendar as input when</span></div>
+<div class="line"><a name="l00152"></a><span class="lineno">  152</span>&#160;<span class="comment">!! the julian calendar was in effect by the time_manager.</span></div>
+<div class="line"><a name="l00153"></a><span class="lineno">  153</span>&#160;<span class="keyword">function </span><a class="code" href="group__get__cal__time__mod.html#ga3eb93e699a7c27c535cd6bb35b6f0ef8">get_cal_time</a>(time_increment, units, calendar, permit_calendar_conversion)</div>
+<div class="line"><a name="l00154"></a><span class="lineno"><a class="line" href="group__get__cal__time__mod.html#ga3eb93e699a7c27c535cd6bb35b6f0ef8">  154</a></span>&#160;<span class="keywordtype">real</span>, <span class="keywordtype">intent(in)</span> :: time_increment</div>
+<div class="line"><a name="l00155"></a><span class="lineno">  155</span>&#160;<span class="keywordtype">character(len=*)</span>, <span class="keywordtype">intent(in)</span> :: units</div>
+<div class="line"><a name="l00156"></a><span class="lineno">  156</span>&#160;<span class="keywordtype">character(len=*)</span>, <span class="keywordtype">intent(in)</span> :: calendar</div>
+<div class="line"><a name="l00157"></a><span class="lineno">  157</span>&#160;<span class="keywordtype">logical</span>, <span class="keywordtype">intent(in)</span>, <span class="keywordtype">optional</span> :: permit_calendar_conversion</div>
+<div class="line"><a name="l00158"></a><span class="lineno">  158</span>&#160;<span class="keywordtype">type</span>(<a class="code" href="group__time__manager__mod.html#structtime__manager__mod_1_1time__type">time_type</a>) :: <a class="code" href="group__get__cal__time__mod.html#ga3eb93e699a7c27c535cd6bb35b6f0ef8">get_cal_time</a></div>
+<div class="line"><a name="l00159"></a><span class="lineno">  159</span>&#160;<span class="keywordtype">integer</span> :: year, month, day, hour, minute, second</div>
+<div class="line"><a name="l00160"></a><span class="lineno">  160</span>&#160;<span class="keywordtype">integer</span> :: i1, increment_seconds, increment_days, increment_years, increment_months</div>
+<div class="line"><a name="l00161"></a><span class="lineno">  161</span>&#160;<span class="keywordtype">real</span>    :: month_fraction</div>
+<div class="line"><a name="l00162"></a><span class="lineno">  162</span>&#160;<span class="keywordtype">integer</span> :: calendar_tm_i, calendar_in_i, ierr, io, logunit</div>
+<div class="line"><a name="l00163"></a><span class="lineno">  163</span>&#160;<span class="keywordtype">logical</span> :: correct_form</div>
+<div class="line"><a name="l00164"></a><span class="lineno">  164</span>&#160;<span class="keywordtype">character(len=32)</span> :: calendar_in_c</div>
+<div class="line"><a name="l00165"></a><span class="lineno">  165</span>&#160;<span class="keywordtype">character(len=64)</span> :: err_msg</div>
+<div class="line"><a name="l00166"></a><span class="lineno">  166</span>&#160;<span class="keywordtype">type</span>(<a class="code" href="group__time__manager__mod.html#structtime__manager__mod_1_1time__type">time_type</a>) :: base_time, base_time_plus_one_yr</div>
+<div class="line"><a name="l00167"></a><span class="lineno">  167</span>&#160;<span class="keywordtype">real</span> :: dt</div>
+<div class="line"><a name="l00168"></a><span class="lineno">  168</span>&#160;<span class="keywordtype">logical</span> :: permit_conversion_local</div>
+<div class="line"><a name="l00169"></a><span class="lineno">  169</span>&#160; </div>
+<div class="line"><a name="l00170"></a><span class="lineno">  170</span>&#160;<span class="keywordflow">if</span>(.not.module_is_initialized) <span class="keywordflow">then</span></div>
+<div class="line"><a name="l00171"></a><span class="lineno">  171</span>&#160;  <span class="keyword">read</span> (input_nml_file, get_cal_time_nml, iostat=io)</div>
+<div class="line"><a name="l00172"></a><span class="lineno">  172</span>&#160;  ierr = <a class="code" href="group__fms__mod.html#ga05e7686befc1e49d2be9bdb81d479a76">check_nml_error</a>(io, <span class="stringliteral">&#39;get_cal_time_nml&#39;</span>)</div>
+<div class="line"><a name="l00173"></a><span class="lineno">  173</span>&#160; </div>
+<div class="line"><a name="l00174"></a><span class="lineno">  174</span>&#160;  <span class="keyword">call </span><a class="code" href="group__fms__mod.html#ga0c093df98a75dbd9e0f3add67aa6c23a">write_version_number</a>(<span class="stringliteral">&quot;GET_CAL_TIME_MOD&quot;</span>, version)</div>
+<div class="line"><a name="l00175"></a><span class="lineno">  175</span>&#160;  logunit = <a class="code" href="group__mpp__mod.html#ga8e5518df9532bae0241f53ab542294a2">stdlog</a>()</div>
+<div class="line"><a name="l00176"></a><span class="lineno">  176</span>&#160;  <span class="keywordflow">if</span>(<a class="code" href="group__mpp__mod.html#gacfeba7de56f9dd6000b3fd78f9d56c50">mpp_pe</a>() == mpp_root_pe()) <span class="keyword">write</span> (logunit, nml=get_cal_time_nml)</div>
+<div class="line"><a name="l00177"></a><span class="lineno">  177</span>&#160;  module_is_initialized = .true.</div>
+<div class="line"><a name="l00178"></a><span class="lineno">  178</span>&#160;<span class="keywordflow">endif</span></div>
+<div class="line"><a name="l00179"></a><span class="lineno">  179</span>&#160; </div>
+<div class="line"><a name="l00180"></a><span class="lineno">  180</span>&#160;<span class="keywordflow">if</span>(<span class="keyword">present</span>(permit_calendar_conversion)) <span class="keywordflow">then</span></div>
+<div class="line"><a name="l00181"></a><span class="lineno">  181</span>&#160;  permit_conversion_local = permit_calendar_conversion</div>
+<div class="line"><a name="l00182"></a><span class="lineno">  182</span>&#160;<span class="keywordflow">else</span></div>
+<div class="line"><a name="l00183"></a><span class="lineno">  183</span>&#160;  permit_conversion_local = allow_calendar_conversion</div>
+<div class="line"><a name="l00184"></a><span class="lineno">  184</span>&#160;<span class="keywordflow">endif</span></div>
+<div class="line"><a name="l00185"></a><span class="lineno">  185</span>&#160; </div>
+<div class="line"><a name="l00186"></a><span class="lineno">  186</span>&#160;calendar_in_c = lowercase(trim(cut0(calendar)))</div>
+<div class="line"><a name="l00187"></a><span class="lineno">  187</span>&#160; </div>
+<div class="line"><a name="l00188"></a><span class="lineno">  188</span>&#160;correct_form = (trim(calendar_in_c)) == <span class="stringliteral">&#39;noleap&#39;</span>     .or. (trim(calendar_in_c)) == <span class="stringliteral">&#39;365_day&#39;</span> .or. &amp;</div>
+<div class="line"><a name="l00189"></a><span class="lineno">  189</span>&#160;               (trim(calendar_in_c)) == <span class="stringliteral">&#39;365_days&#39;</span> .or. &amp;</div>
+<div class="line"><a name="l00190"></a><span class="lineno">  190</span>&#160;               (trim(calendar_in_c)) == <span class="stringliteral">&#39;360_day&#39;</span>    .or. (trim(calendar_in_c)) == <span class="stringliteral">&#39;julian&#39;</span>  .or. &amp;</div>
+<div class="line"><a name="l00191"></a><span class="lineno">  191</span>&#160;               (trim(calendar_in_c)) == <span class="stringliteral">&#39;no_calendar&#39;</span>.or. (trim(calendar_in_c)) == <span class="stringliteral">&#39;thirty_day_months&#39;</span> .or. &amp;</div>
+<div class="line"><a name="l00192"></a><span class="lineno">  192</span>&#160;               (trim(calendar_in_c)) == <span class="stringliteral">&#39;gregorian&#39;</span></div>
+<div class="line"><a name="l00193"></a><span class="lineno">  193</span>&#160; </div>
+<div class="line"><a name="l00194"></a><span class="lineno">  194</span>&#160;<span class="keywordflow">if</span>(.not.correct_form) <span class="keywordflow">then</span></div>
+<div class="line"><a name="l00195"></a><span class="lineno">  195</span>&#160;  <span class="keyword">call </span><a class="code" href="group__fms__mod.html#gae5c7420e421293e2be14717dd7b3d97f">error_mesg</a>(<span class="stringliteral">&#39;get_cal_time&#39;</span>,<span class="stringliteral">&#39;&quot;&#39;</span>//trim(calendar_in_c)//<span class="stringliteral">&#39;&quot;&#39;</span>// &amp;</div>
+<div class="line"><a name="l00196"></a><span class="lineno">  196</span>&#160;   <span class="stringliteral">&#39; is not an acceptable calendar attribute. acceptable calendars are: &#39;</span>// &amp;</div>
+<div class="line"><a name="l00197"></a><span class="lineno">  197</span>&#160;   <span class="stringliteral">&#39; noleap, 365_day, 365_days, 360_day, julian, no_calendar, thirty_day_months, gregorian&#39;</span>,fatal)</div>
+<div class="line"><a name="l00198"></a><span class="lineno">  198</span>&#160;<span class="keywordflow">endif</span></div>
+<div class="line"><a name="l00199"></a><span class="lineno">  199</span>&#160; </div>
+<div class="line"><a name="l00200"></a><span class="lineno">  200</span>&#160;calendar_tm_i = <a class="code" href="group__time__manager__mod.html#gad4d5cb71942ebf3f1bb9d4a29a6d9a04">get_calendar_type</a>()</div>
+<div class="line"><a name="l00201"></a><span class="lineno">  201</span>&#160; </div>
+<div class="line"><a name="l00202"></a><span class="lineno">  202</span>&#160;<span class="keywordflow">if</span>(.not.permit_conversion_local) <span class="keywordflow">then</span></div>
+<div class="line"><a name="l00203"></a><span class="lineno">  203</span>&#160;  correct_form = (trim(calendar_in_c) == <span class="stringliteral">&#39;noleap&#39;</span>            .and. calendar_tm_i == noleap)            .or. &amp;</div>
+<div class="line"><a name="l00204"></a><span class="lineno">  204</span>&#160;                 (trim(calendar_in_c) == <span class="stringliteral">&#39;365_day&#39;</span>           .and. calendar_tm_i == noleap)            .or. &amp;</div>
+<div class="line"><a name="l00205"></a><span class="lineno">  205</span>&#160;                 (trim(calendar_in_c) == <span class="stringliteral">&#39;365_days&#39;</span>          .and. calendar_tm_i == noleap)            .or. &amp;</div>
+<div class="line"><a name="l00206"></a><span class="lineno">  206</span>&#160;                 (trim(calendar_in_c) == <span class="stringliteral">&#39;360_day&#39;</span>           .and. calendar_tm_i == thirty_day_months) .or. &amp;</div>
+<div class="line"><a name="l00207"></a><span class="lineno">  207</span>&#160;                 (trim(calendar_in_c) == <span class="stringliteral">&#39;thirty_day_months&#39;</span> .and. calendar_tm_i == thirty_day_months) .or. &amp;</div>
+<div class="line"><a name="l00208"></a><span class="lineno">  208</span>&#160;                 (trim(calendar_in_c) == <span class="stringliteral">&#39;julian&#39;</span>            .and. calendar_tm_i == julian)            .or. &amp;</div>
+<div class="line"><a name="l00209"></a><span class="lineno">  209</span>&#160;                 (trim(calendar_in_c) == <span class="stringliteral">&#39;no_calendar&#39;</span>       .and. calendar_tm_i == no_calendar)       .or. &amp;</div>
+<div class="line"><a name="l00210"></a><span class="lineno">  210</span>&#160;                 (trim(calendar_in_c) == <span class="stringliteral">&#39;gregorian&#39;</span>         .and. calendar_tm_i == gregorian)</div>
+<div class="line"><a name="l00211"></a><span class="lineno">  211</span>&#160;  <span class="keywordflow">if</span>(.not.correct_form) <span class="keywordflow">then</span></div>
+<div class="line"><a name="l00212"></a><span class="lineno">  212</span>&#160;    <span class="keyword">call </span><a class="code" href="group__fms__mod.html#gae5c7420e421293e2be14717dd7b3d97f">error_mesg</a>(<span class="stringliteral">&#39;get_cal_time&#39;</span>,<span class="stringliteral">&#39;calendar not consistent with calendar type in use by time_manager.&#39;</span>// &amp;</div>
+<div class="line"><a name="l00213"></a><span class="lineno">  213</span>&#160;         <span class="stringliteral">&#39; calendar=&#39;</span>//trim(calendar_in_c)//<span class="stringliteral">&#39;. Type in use by time_manager=&#39;</span>// &amp;</div>
+<div class="line"><a name="l00214"></a><span class="lineno">  214</span>&#160;                          &amp; <a class="code" href="group__time__manager__mod.html#ga40ba58ef6e1c86616e5f8d7e8ebefca3">valid_calendar_types</a>(calendar_tm_i),fatal)</div>
+<div class="line"><a name="l00215"></a><span class="lineno">  215</span>&#160;<span class="keywordflow">  endif</span></div>
+<div class="line"><a name="l00216"></a><span class="lineno">  216</span>&#160;<span class="keywordflow">endif</span></div>
+<div class="line"><a name="l00217"></a><span class="lineno">  217</span>&#160; </div>
+<div class="line"><a name="l00218"></a><span class="lineno">  218</span>&#160;<span class="keywordflow">if</span> (permit_conversion_local) <span class="keywordflow">then</span></div>
+<div class="line"><a name="l00219"></a><span class="lineno">  219</span>&#160;    <span class="keywordflow">select case</span> (trim(calendar_in_c))</div>
+<div class="line"><a name="l00220"></a><span class="lineno">  220</span>&#160;    <span class="keywordflow">case</span> (<span class="stringliteral">&#39;noleap&#39;</span>)</div>
+<div class="line"><a name="l00221"></a><span class="lineno">  221</span>&#160;        calendar_in_i = noleap</div>
+<div class="line"><a name="l00222"></a><span class="lineno">  222</span>&#160;    <span class="keywordflow">case</span> (<span class="stringliteral">&#39;365_day&#39;</span>)</div>
+<div class="line"><a name="l00223"></a><span class="lineno">  223</span>&#160;        calendar_in_i = noleap</div>
+<div class="line"><a name="l00224"></a><span class="lineno">  224</span>&#160;    <span class="keywordflow">case</span> (<span class="stringliteral">&#39;365_days&#39;</span>)</div>
+<div class="line"><a name="l00225"></a><span class="lineno">  225</span>&#160;        calendar_in_i = noleap</div>
+<div class="line"><a name="l00226"></a><span class="lineno">  226</span>&#160;    <span class="keywordflow">case</span> (<span class="stringliteral">&#39;360_day&#39;</span>)</div>
+<div class="line"><a name="l00227"></a><span class="lineno">  227</span>&#160;        calendar_in_i = thirty_day_months</div>
+<div class="line"><a name="l00228"></a><span class="lineno">  228</span>&#160;    <span class="keywordflow">case</span> (<span class="stringliteral">&#39;thirty_day_months&#39;</span>)</div>
+<div class="line"><a name="l00229"></a><span class="lineno">  229</span>&#160;        calendar_in_i = thirty_day_months</div>
+<div class="line"><a name="l00230"></a><span class="lineno">  230</span>&#160;    <span class="keywordflow">case</span> (<span class="stringliteral">&#39;julian&#39;</span>)</div>
+<div class="line"><a name="l00231"></a><span class="lineno">  231</span>&#160;        calendar_in_i = julian</div>
+<div class="line"><a name="l00232"></a><span class="lineno">  232</span>&#160;    <span class="keywordflow">case</span> (<span class="stringliteral">&#39;no_calendar&#39;</span>)</div>
+<div class="line"><a name="l00233"></a><span class="lineno">  233</span>&#160;        calendar_in_i = no_calendar</div>
+<div class="line"><a name="l00234"></a><span class="lineno">  234</span>&#160;    <span class="keywordflow">case</span> (<span class="stringliteral">&#39;gregorian&#39;</span>)</div>
+<div class="line"><a name="l00235"></a><span class="lineno">  235</span>&#160;        calendar_in_i = gregorian</div>
+<div class="line"><a name="l00236"></a><span class="lineno">  236</span>&#160;<span class="keywordflow">    case default</span></div>
+<div class="line"><a name="l00237"></a><span class="lineno">  237</span>&#160;        <span class="keyword">call </span><a class="code" href="group__fms__mod.html#gae5c7420e421293e2be14717dd7b3d97f">error_mesg</a>(<span class="stringliteral">&#39;get_cal_time&#39;</span>, &amp;</div>
+<div class="line"><a name="l00238"></a><span class="lineno">  238</span>&#160;                 trim(calendar_in_c)//<span class="stringliteral">&#39; is an invalid calendar type (specified in call to get_cal_time)&#39;</span>,fatal)</div>
+<div class="line"><a name="l00239"></a><span class="lineno">  239</span>&#160;<span class="keywordflow">    end select</span></div>
+<div class="line"><a name="l00240"></a><span class="lineno">  240</span>&#160;<span class="keywordflow">else</span></div>
+<div class="line"><a name="l00241"></a><span class="lineno">  241</span>&#160;    calendar_in_i = calendar_tm_i</div>
+<div class="line"><a name="l00242"></a><span class="lineno">  242</span>&#160;<span class="keywordflow">end if</span></div>
+<div class="line"><a name="l00243"></a><span class="lineno">  243</span>&#160; </div>
+<div class="line"><a name="l00244"></a><span class="lineno">  244</span>&#160;correct_form = lowercase(units(1:10)) == <span class="stringliteral">&#39;days since&#39;</span>    .or. &amp;</div>
+<div class="line"><a name="l00245"></a><span class="lineno">  245</span>&#160;               lowercase(units(1:11)) == <span class="stringliteral">&#39;hours since&#39;</span>   .or. &amp;</div>
+<div class="line"><a name="l00246"></a><span class="lineno">  246</span>&#160;               lowercase(units(1:13)) == <span class="stringliteral">&#39;minutes since&#39;</span> .or. &amp;</div>
+<div class="line"><a name="l00247"></a><span class="lineno">  247</span>&#160;               lowercase(units(1:13)) == <span class="stringliteral">&#39;seconds since&#39;</span></div>
+<div class="line"><a name="l00248"></a><span class="lineno">  248</span>&#160; </div>
+<div class="line"><a name="l00249"></a><span class="lineno">  249</span>&#160;<span class="keywordflow">if</span>(calendar_in_i /= no_calendar) <span class="keywordflow">then</span></div>
+<div class="line"><a name="l00250"></a><span class="lineno">  250</span>&#160;  correct_form = correct_form .or. &amp;</div>
+<div class="line"><a name="l00251"></a><span class="lineno">  251</span>&#160;               lowercase(units(1:11)) == <span class="stringliteral">&#39;years since&#39;</span>   .or. &amp;</div>
+<div class="line"><a name="l00252"></a><span class="lineno">  252</span>&#160;               lowercase(units(1:12)) == <span class="stringliteral">&#39;months since&#39;</span></div>
+<div class="line"><a name="l00253"></a><span class="lineno">  253</span>&#160;<span class="keywordflow">endif</span></div>
+<div class="line"><a name="l00254"></a><span class="lineno">  254</span>&#160; </div>
+<div class="line"><a name="l00255"></a><span class="lineno">  255</span>&#160;<span class="keywordflow">if</span>(.not.correct_form) <span class="keywordflow">then</span></div>
+<div class="line"><a name="l00256"></a><span class="lineno">  256</span>&#160;  <span class="keyword">call </span><a class="code" href="group__fms__mod.html#gae5c7420e421293e2be14717dd7b3d97f">error_mesg</a>(<span class="stringliteral">&#39;get_cal_time&#39;</span>,trim(units)//<span class="stringliteral">&#39; is an invalid string for units.&#39;</span> // &amp;</div>
+<div class="line"><a name="l00257"></a><span class="lineno">  257</span>&#160;        <span class="stringliteral">&#39; units must begin with a time unit then the word &quot;since&quot;&#39;</span> // &amp;</div>
+<div class="line"><a name="l00258"></a><span class="lineno">  258</span>&#160;        <span class="stringliteral">&#39; Valid time units are: &quot;seconds&quot; &quot;minutes&quot;, &quot;hours&quot;, &quot;days&quot;, and, &#39;</span> // &amp;</div>
+<div class="line"><a name="l00259"></a><span class="lineno">  259</span>&#160;        <span class="stringliteral">&#39; except when NO_CALENDAR is in effect, &quot;months&quot; and &quot;years&quot;&#39;</span>,fatal)</div>
+<div class="line"><a name="l00260"></a><span class="lineno">  260</span>&#160;<span class="keywordflow">endif</span></div>
+<div class="line"><a name="l00261"></a><span class="lineno">  261</span>&#160; </div>
+<div class="line"><a name="l00262"></a><span class="lineno">  262</span>&#160;<span class="keywordflow">if</span>(calendar_in_i /= calendar_tm_i) <span class="keywordflow">then</span></div>
+<div class="line"><a name="l00263"></a><span class="lineno">  263</span>&#160;<span class="comment">! switch to calendar type specified as input argument,</span></div>
+<div class="line"><a name="l00264"></a><span class="lineno">  264</span>&#160;<span class="comment">! will switch back before returning.</span></div>
+<div class="line"><a name="l00265"></a><span class="lineno">  265</span>&#160;  <span class="keyword">call </span><a class="code" href="group__time__manager__mod.html#gae4ed023b8077a6f14fffb764d642e55a">set_calendar_type</a>(calendar_in_i)</div>
+<div class="line"><a name="l00266"></a><span class="lineno">  266</span>&#160;<span class="keywordflow">endif</span></div>
+<div class="line"><a name="l00267"></a><span class="lineno">  267</span>&#160; </div>
+<div class="line"><a name="l00268"></a><span class="lineno">  268</span>&#160;<span class="comment">! index(string, substring[,back])</span></div>
+<div class="line"><a name="l00269"></a><span class="lineno">  269</span>&#160;<span class="comment">! Returns the starting position of substring as a substring of string,</span></div>
+<div class="line"><a name="l00270"></a><span class="lineno">  270</span>&#160;<span class="comment">! or zero if it does not occur as a substring. Default value of back is</span></div>
+<div class="line"><a name="l00271"></a><span class="lineno">  271</span>&#160;<span class="comment">! .false. If back is .false., the starting position of the first such</span></div>
+<div class="line"><a name="l00272"></a><span class="lineno">  272</span>&#160;<span class="comment">! substring is returned. If back is .true., the starting position of the</span></div>
+<div class="line"><a name="l00273"></a><span class="lineno">  273</span>&#160;<span class="comment">! last such substring is returned.</span></div>
+<div class="line"><a name="l00274"></a><span class="lineno">  274</span>&#160;<span class="comment">! Returns zero if substring is not a substring of string (regardless of value of back)</span></div>
+<div class="line"><a name="l00275"></a><span class="lineno">  275</span>&#160; </div>
+<div class="line"><a name="l00276"></a><span class="lineno">  276</span>&#160;i1 = index(units,<span class="stringliteral">&#39;since&#39;</span>) + 5</div>
+<div class="line"><a name="l00277"></a><span class="lineno">  277</span>&#160;<span class="keywordflow">if</span>(calendar_in_i == no_calendar) <span class="keywordflow">then</span></div>
+<div class="line"><a name="l00278"></a><span class="lineno">  278</span>&#160;  base_time = <a class="code" href="group__time__manager__mod.html#interfacetime__manager__mod_1_1set__time">set_time</a>(units(i1:len_trim(units)))</div>
+<div class="line"><a name="l00279"></a><span class="lineno">  279</span>&#160;<span class="keywordflow">else</span></div>
+<div class="line"><a name="l00280"></a><span class="lineno">  280</span>&#160;  base_time = <a class="code" href="group__time__manager__mod.html#interfacetime__manager__mod_1_1set__date">set_date</a>(units(i1:len_trim(units)))</div>
+<div class="line"><a name="l00281"></a><span class="lineno">  281</span>&#160;<span class="keywordflow">endif</span></div>
+<div class="line"><a name="l00282"></a><span class="lineno">  282</span>&#160; </div>
+<div class="line"><a name="l00283"></a><span class="lineno">  283</span>&#160;<span class="keywordflow">if</span>(lowercase(units(1:10)) == <span class="stringliteral">&#39;days since&#39;</span>) <span class="keywordflow">then</span></div>
+<div class="line"><a name="l00284"></a><span class="lineno">  284</span>&#160;  increment_days = floor(time_increment)</div>
+<div class="line"><a name="l00285"></a><span class="lineno">  285</span>&#160;  increment_seconds = int(86400*(time_increment - increment_days))</div>
+<div class="line"><a name="l00286"></a><span class="lineno">  286</span>&#160;<span class="keywordflow">else</span> <span class="keywordflow">if</span>(lowercase(units(1:11)) == <span class="stringliteral">&#39;hours since&#39;</span>) <span class="keywordflow">then</span></div>
+<div class="line"><a name="l00287"></a><span class="lineno">  287</span>&#160;  increment_days = floor(time_increment/24)</div>
+<div class="line"><a name="l00288"></a><span class="lineno">  288</span>&#160;  increment_seconds = int(86400*(time_increment/24 - increment_days))</div>
+<div class="line"><a name="l00289"></a><span class="lineno">  289</span>&#160;<span class="keywordflow">else</span> <span class="keywordflow">if</span>(lowercase(units(1:13)) == <span class="stringliteral">&#39;minutes since&#39;</span>) <span class="keywordflow">then</span></div>
+<div class="line"><a name="l00290"></a><span class="lineno">  290</span>&#160;  increment_days = floor(time_increment/1440)</div>
+<div class="line"><a name="l00291"></a><span class="lineno">  291</span>&#160;  increment_seconds = int(86400*(time_increment/1440 - increment_days))</div>
+<div class="line"><a name="l00292"></a><span class="lineno">  292</span>&#160;<span class="keywordflow">else</span> <span class="keywordflow">if</span>(lowercase(units(1:13)) == <span class="stringliteral">&#39;seconds since&#39;</span>) <span class="keywordflow">then</span></div>
+<div class="line"><a name="l00293"></a><span class="lineno">  293</span>&#160;  increment_days = floor(time_increment/86400)</div>
+<div class="line"><a name="l00294"></a><span class="lineno">  294</span>&#160;  increment_seconds = int(86400*(time_increment/86400 - increment_days))</div>
+<div class="line"><a name="l00295"></a><span class="lineno">  295</span>&#160;<span class="keywordflow">else</span> <span class="keywordflow">if</span>(lowercase(units(1:11)) == <span class="stringliteral">&#39;years since&#39;</span>) <span class="keywordflow">then</span></div>
+<div class="line"><a name="l00296"></a><span class="lineno">  296</span>&#160;<span class="comment">! The time period between between (base_time + time_increment) and</span></div>
+<div class="line"><a name="l00297"></a><span class="lineno">  297</span>&#160;<span class="comment">! (base_time + time_increment + 1 year) may be 360, 365, or 366 days.</span></div>
+<div class="line"><a name="l00298"></a><span class="lineno">  298</span>&#160;<span class="comment">! This must be determined to handle time increments with year fractions.</span></div>
+<div class="line"><a name="l00299"></a><span class="lineno">  299</span>&#160;  <span class="keyword">call </span><a class="code" href="group__time__manager__mod.html#ga42ca904e0ef4d8cd59deab75ea8bc048">get_date</a>(base_time, year,month,day,hour,minute,second)</div>
+<div class="line"><a name="l00300"></a><span class="lineno">  300</span>&#160;  base_time             = <a class="code" href="group__time__manager__mod.html#interfacetime__manager__mod_1_1set__date">set_date</a>(year+floor(time_increment)  ,month,day,hour,minute,second)</div>
+<div class="line"><a name="l00301"></a><span class="lineno">  301</span>&#160;  base_time_plus_one_yr = <a class="code" href="group__time__manager__mod.html#interfacetime__manager__mod_1_1set__date">set_date</a>(year+floor(time_increment)+1,month,day,hour,minute,second)</div>
+<div class="line"><a name="l00302"></a><span class="lineno">  302</span>&#160;  <span class="keyword">call </span><a class="code" href="group__time__manager__mod.html#ga2b9c941f38e33eba67ee151fe3bd8ee6">get_time</a>(base_time_plus_one_yr - base_time, second, day)</div>
+<div class="line"><a name="l00303"></a><span class="lineno">  303</span>&#160;  dt = (day*86400+second)*(time_increment-floor(time_increment))</div>
+<div class="line"><a name="l00304"></a><span class="lineno">  304</span>&#160;  increment_days = floor(dt/86400)</div>
+<div class="line"><a name="l00305"></a><span class="lineno">  305</span>&#160;  increment_seconds = int(dt - increment_days*86400)</div>
+<div class="line"><a name="l00306"></a><span class="lineno">  306</span>&#160;<span class="keywordflow">else</span> <span class="keywordflow">if</span>(lowercase(units(1:12)) == <span class="stringliteral">&#39;months since&#39;</span>) <span class="keywordflow">then</span></div>
+<div class="line"><a name="l00307"></a><span class="lineno">  307</span>&#160;  month_fraction = time_increment - floor(time_increment)</div>
+<div class="line"><a name="l00308"></a><span class="lineno">  308</span>&#160;  increment_years  = floor(time_increment/12)</div>
+<div class="line"><a name="l00309"></a><span class="lineno">  309</span>&#160;  increment_months = floor(time_increment) - 12*increment_years</div>
+<div class="line"><a name="l00310"></a><span class="lineno">  310</span>&#160;  <span class="keyword">call </span><a class="code" href="group__time__manager__mod.html#ga42ca904e0ef4d8cd59deab75ea8bc048">get_date</a>(base_time, year,month,day,hour,minute,second)</div>
+<div class="line"><a name="l00311"></a><span class="lineno">  311</span>&#160;  base_time = <a class="code" href="group__time__manager__mod.html#interfacetime__manager__mod_1_1set__date">set_date</a>(year+increment_years,month+increment_months  ,day,hour,minute,second)</div>
+<div class="line"><a name="l00312"></a><span class="lineno">  312</span>&#160;  dt = 86400*days_in_month(base_time) * month_fraction</div>
+<div class="line"><a name="l00313"></a><span class="lineno">  313</span>&#160;  increment_days = floor(dt/86400)</div>
+<div class="line"><a name="l00314"></a><span class="lineno">  314</span>&#160;  increment_seconds = int(dt - increment_days*86400)</div>
+<div class="line"><a name="l00315"></a><span class="lineno">  315</span>&#160;<span class="keywordflow">else</span></div>
+<div class="line"><a name="l00316"></a><span class="lineno">  316</span>&#160;  <span class="keyword">call </span><a class="code" href="group__fms__mod.html#gae5c7420e421293e2be14717dd7b3d97f">error_mesg</a>(<span class="stringliteral">&#39;get_cal_time&#39;</span>,<span class="stringliteral">&#39;&quot;&#39;</span>//trim(units)//<span class="stringliteral">&#39;&quot; is not an acceptable units attribute of time.&#39;</span>// &amp;</div>
+<div class="line"><a name="l00317"></a><span class="lineno">  317</span>&#160;            &amp; <span class="stringliteral">&#39; It must begin with: &quot;years since&quot;, &quot;months since&quot;, &quot;days since&quot;, &quot;hours since&quot;, &quot;minutes since&quot;,&#39;</span>// &amp;</div>
+<div class="line"><a name="l00318"></a><span class="lineno">  318</span>&#160;            &amp; <span class="stringliteral">&#39; or &quot;seconds since&quot;&#39;</span>,fatal)</div>
+<div class="line"><a name="l00319"></a><span class="lineno">  319</span>&#160;<span class="keywordflow">endif</span></div>
+<div class="line"><a name="l00320"></a><span class="lineno">  320</span>&#160; </div>
+<div class="line"><a name="l00321"></a><span class="lineno">  321</span>&#160;<span class="keywordflow">if</span> (calendar_in_i /= calendar_tm_i) <span class="keywordflow">then</span></div>
+<div class="line"><a name="l00322"></a><span class="lineno">  322</span>&#160;    <span class="keywordflow">if</span>(calendar_in_i == no_calendar .or. calendar_tm_i == no_calendar) <span class="keywordflow">then</span></div>
+<div class="line"><a name="l00323"></a><span class="lineno">  323</span>&#160;      <span class="keyword">call </span><a class="code" href="group__fms__mod.html#gae5c7420e421293e2be14717dd7b3d97f">error_mesg</a>(<span class="stringliteral">&#39;get_cal_time&#39;</span>,<span class="stringliteral">&#39;Cannot do calendar conversion because input calendar is &#39;</span>// &amp;</div>
+<div class="line"><a name="l00324"></a><span class="lineno">  324</span>&#160;       trim(<a class="code" href="group__time__manager__mod.html#ga40ba58ef6e1c86616e5f8d7e8ebefca3">valid_calendar_types</a>(calendar_in_i))//<span class="stringliteral">&#39; and time_manager is using &#39;</span>// &amp;</div>
+<div class="line"><a name="l00325"></a><span class="lineno">  325</span>&#160;       trim(<a class="code" href="group__time__manager__mod.html#ga40ba58ef6e1c86616e5f8d7e8ebefca3">valid_calendar_types</a>(calendar_tm_i))// &amp;</div>
+<div class="line"><a name="l00326"></a><span class="lineno">  326</span>&#160;       <span class="stringliteral">&#39; Conversion cannot be done if either is NO_CALENDAR&#39;</span>,fatal)</div>
+<div class="line"><a name="l00327"></a><span class="lineno">  327</span>&#160;<span class="keywordflow">    endif</span></div>
+<div class="line"><a name="l00328"></a><span class="lineno">  328</span>&#160;    <span class="keyword">call </span><a class="code" href="group__time__manager__mod.html#ga42ca904e0ef4d8cd59deab75ea8bc048">get_date</a>(base_time,year, month, day, hour, minute, second)</div>
+<div class="line"><a name="l00329"></a><span class="lineno">  329</span>&#160;    <a class="code" href="group__get__cal__time__mod.html#ga3eb93e699a7c27c535cd6bb35b6f0ef8">get_cal_time</a> = <a class="code" href="group__time__manager__mod.html#interfacetime__manager__mod_1_1set__date">set_date</a>(year,month,day,hour,minute,second) + <a class="code" href="group__time__manager__mod.html#interfacetime__manager__mod_1_1set__time">set_time</a>(increment_seconds, increment_days)</div>
+<div class="line"><a name="l00330"></a><span class="lineno">  330</span>&#160;    <span class="keyword">call </span><a class="code" href="group__time__manager__mod.html#ga42ca904e0ef4d8cd59deab75ea8bc048">get_date</a>(<a class="code" href="group__get__cal__time__mod.html#ga3eb93e699a7c27c535cd6bb35b6f0ef8">get_cal_time</a>,year,month,day,hour,minute,second)</div>
+<div class="line"><a name="l00331"></a><span class="lineno">  331</span>&#160;    <span class="keyword">call </span><a class="code" href="group__time__manager__mod.html#gae4ed023b8077a6f14fffb764d642e55a">set_calendar_type</a>(calendar_tm_i)</div>
+<div class="line"><a name="l00332"></a><span class="lineno">  332</span>&#160;    <a class="code" href="group__get__cal__time__mod.html#ga3eb93e699a7c27c535cd6bb35b6f0ef8">get_cal_time</a> = <a class="code" href="group__time__manager__mod.html#interfacetime__manager__mod_1_1set__date">set_date</a>(year,month,day,hour,minute,second, err_msg=err_msg)</div>
+<div class="line"><a name="l00333"></a><span class="lineno">  333</span>&#160;    <span class="keywordflow">if</span>(err_msg /= <span class="stringliteral">&#39;&#39;</span>) <span class="keywordflow">then</span></div>
+<div class="line"><a name="l00334"></a><span class="lineno">  334</span>&#160;      <span class="keyword">call </span><a class="code" href="group__fms__mod.html#gae5c7420e421293e2be14717dd7b3d97f">error_mesg</a>(<span class="stringliteral">&#39;get_cal_time&#39;</span>,<span class="stringliteral">&#39;Error in function get_cal_time: &#39;</span>//trim(err_msg)// &amp;</div>
+<div class="line"><a name="l00335"></a><span class="lineno">  335</span>&#160;               <span class="stringliteral">&#39; Note that the time_manager is using the &#39;</span>//trim(<a class="code" href="group__time__manager__mod.html#ga40ba58ef6e1c86616e5f8d7e8ebefca3">valid_calendar_types</a>(calendar_tm_i))//<span class="stringliteral">&#39; calendar &#39;</span>// &amp;</div>
+<div class="line"><a name="l00336"></a><span class="lineno">  336</span>&#160;               <span class="stringliteral">&#39;while the calendar type passed to function get_cal_time is &#39;</span>//calendar_in_c,fatal)</div>
+<div class="line"><a name="l00337"></a><span class="lineno">  337</span>&#160;<span class="keywordflow">    endif</span></div>
+<div class="line"><a name="l00338"></a><span class="lineno">  338</span>&#160;<span class="keywordflow">else</span></div>
+<div class="line"><a name="l00339"></a><span class="lineno">  339</span>&#160;    <a class="code" href="group__get__cal__time__mod.html#ga3eb93e699a7c27c535cd6bb35b6f0ef8">get_cal_time</a> = base_time + <a class="code" href="group__time__manager__mod.html#interfacetime__manager__mod_1_1set__time">set_time</a>(increment_seconds, increment_days)</div>
+<div class="line"><a name="l00340"></a><span class="lineno">  340</span>&#160;<span class="keywordflow">endif</span></div>
+<div class="line"><a name="l00341"></a><span class="lineno">  341</span>&#160; </div>
+<div class="line"><a name="l00342"></a><span class="lineno">  342</span>&#160;<span class="keyword">end function </span><a class="code" href="group__get__cal__time__mod.html#ga3eb93e699a7c27c535cd6bb35b6f0ef8">get_cal_time</a></div>
+<div class="line"><a name="l00343"></a><span class="lineno">  343</span>&#160;<span class="comment">!------------------------------------------------------------------------</span></div>
+<div class="line"><a name="l00344"></a><span class="lineno">  344</span>&#160;<span class="keyword">function </span>cut0(string)</div>
+<div class="line"><a name="l00345"></a><span class="lineno">  345</span>&#160;<span class="keywordtype">character(len=256)</span> :: cut0</div>
+<div class="line"><a name="l00346"></a><span class="lineno">  346</span>&#160;<span class="keywordtype">character(len=*)</span>, <span class="keywordtype">intent(in)</span> :: string</div>
+<div class="line"><a name="l00347"></a><span class="lineno">  347</span>&#160;<span class="keywordtype">integer</span> :: i</div>
+<div class="line"><a name="l00348"></a><span class="lineno">  348</span>&#160; </div>
+<div class="line"><a name="l00349"></a><span class="lineno">  349</span>&#160;cut0 = string</div>
+<div class="line"><a name="l00350"></a><span class="lineno">  350</span>&#160; </div>
+<div class="line"><a name="l00351"></a><span class="lineno">  351</span>&#160;<span class="keywordflow">do</span> i=1,len(string)</div>
+<div class="line"><a name="l00352"></a><span class="lineno">  352</span>&#160;  <span class="keywordflow">if</span>(ichar(string(i:i)) == 0 ) <span class="keywordflow">then</span></div>
+<div class="line"><a name="l00353"></a><span class="lineno">  353</span>&#160;    cut0(i:i) = <span class="stringliteral">&#39; &#39;</span></div>
+<div class="line"><a name="l00354"></a><span class="lineno">  354</span>&#160;<span class="keywordflow">  endif</span></div>
+<div class="line"><a name="l00355"></a><span class="lineno">  355</span>&#160;<span class="keywordflow">enddo</span></div>
+<div class="line"><a name="l00356"></a><span class="lineno">  356</span>&#160; </div>
+<div class="line"><a name="l00357"></a><span class="lineno">  357</span>&#160;<span class="keywordflow">return</span></div>
+<div class="line"><a name="l00358"></a><span class="lineno">  358</span>&#160;<span class="keyword">end function </span>cut0</div>
+<div class="line"><a name="l00359"></a><span class="lineno">  359</span>&#160;<span class="comment">!------------------------------------------------------------------------</span></div>
+<div class="line"><a name="l00360"></a><span class="lineno">  360</span>&#160;<span class="keyword">end module </span>get_cal_time_mod<span class="comment"></span></div>
+<div class="line"><a name="l00361"></a><span class="lineno">  361</span>&#160;<span class="comment">!&gt; @}</span></div>
+<div class="line"><a name="l00362"></a><span class="lineno">  362</span>&#160;<span class="comment">! close documentation grouping</span></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
-<div class="ttc" id="agroup__get__cal__time__mod_html_ga3eb93e699a7c27c535cd6bb35b6f0ef8"><div class="ttname"><a href="group__get__cal__time__mod.html#ga3eb93e699a7c27c535cd6bb35b6f0ef8">get_cal_time_mod::get_cal_time</a></div><div class="ttdeci">type(time_type) function, public get_cal_time(time_increment, units, calendar, permit_calendar_conversion)</div><div class="ttdoc">Calculates what a given calendar time would be after a interval of time.</div><div class="ttdef"><b>Definition:</b> <a href="get__cal__time_8F90_source.html#l00157">get_cal_time.F90:157</a></div></div>
-<div class="ttc" id="agroup__fms__mod_html_ga05e7686befc1e49d2be9bdb81d479a76"><div class="ttname"><a href="group__fms__mod.html#ga05e7686befc1e49d2be9bdb81d479a76">fms_mod::check_nml_error</a></div><div class="ttdeci">integer function, public check_nml_error(IOSTAT, NML_NAME)</div><div class="ttdoc">Checks the iostat argument that is returned after reading a namelist and determines if the error code...</div><div class="ttdef"><b>Definition:</b> <a href="fms_8F90_source.html#l00552">fms.F90:552</a></div></div>
-<div class="ttc" id="agroup__time__manager__mod_html_gad4d5cb71942ebf3f1bb9d4a29a6d9a04"><div class="ttname"><a href="group__time__manager__mod.html#gad4d5cb71942ebf3f1bb9d4a29a6d9a04">time_manager_mod::get_calendar_type</a></div><div class="ttdeci">integer function, public get_calendar_type()</div><div class="ttdoc">Returns default calendar type for mapping from time to date.</div><div class="ttdef"><b>Definition:</b> <a href="time__manager_8F90_source.html#l01508">time_manager.F90:1508</a></div></div>
-<div class="ttc" id="ainterfacetime__manager__mod_1_1set__time_html"><div class="ttname"><a href="interfacetime__manager__mod_1_1set__time.html">time_manager_mod::set_time</a></div><div class="ttdoc">Given some number of seconds and days, returns the corresponding time_type.</div><div class="ttdef"><b>Definition:</b> <a href="time__manager_8F90_source.html#l00232">time_manager.F90:232</a></div></div>
-<div class="ttc" id="agroup__time__manager__mod_html_ga42ca904e0ef4d8cd59deab75ea8bc048"><div class="ttname"><a href="group__time__manager__mod.html#ga42ca904e0ef4d8cd59deab75ea8bc048">time_manager_mod::get_date</a></div><div class="ttdeci">subroutine, public get_date(time, year, month, day, hour, minute, second, tick, err_msg)</div><div class="ttdoc">Gets the date for different calendar types.</div><div class="ttdef"><b>Definition:</b> <a href="time__manager_8F90_source.html#l01596">time_manager.F90:1596</a></div></div>
-<div class="ttc" id="agroup__fms__mod_html_gae5c7420e421293e2be14717dd7b3d97f"><div class="ttname"><a href="group__fms__mod.html#gae5c7420e421293e2be14717dd7b3d97f">fms_mod::error_mesg</a></div><div class="ttdeci">subroutine, public error_mesg(routine, message, level)</div><div class="ttdoc">Print notes, warnings and error messages; terminates program for warning and error messages....</div><div class="ttdef"><b>Definition:</b> <a href="fms_8F90_source.html#l00470">fms.F90:470</a></div></div>
-<div class="ttc" id="agroup__time__manager__mod_html_ga40ba58ef6e1c86616e5f8d7e8ebefca3"><div class="ttname"><a href="group__time__manager__mod.html#ga40ba58ef6e1c86616e5f8d7e8ebefca3">time_manager_mod::valid_calendar_types</a></div><div class="ttdeci">character(len=24) function, public valid_calendar_types(ncal, err_msg)</div><div class="ttdoc">Returns a character string that describes the calendar type corresponding to the input integer.</div><div class="ttdef"><b>Definition:</b> <a href="time__manager_8F90_source.html#l03196">time_manager.F90:3196</a></div></div>
-<div class="ttc" id="astructtime__manager__mod_1_1time__type_html"><div class="ttname"><a href="structtime__manager__mod_1_1time__type.html">time_manager_mod::time_type</a></div><div class="ttdoc">Type to represent amounts of time. Implemented as seconds and days to allow for larger intervals.</div><div class="ttdef"><b>Definition:</b> <a href="time__manager_8F90_source.html#l00166">time_manager.F90:166</a></div></div>
-<div class="ttc" id="ampp__util_8inc_html_a8e5518df9532bae0241f53ab542294a2"><div class="ttname"><a href="mpp__util_8inc.html#a8e5518df9532bae0241f53ab542294a2">stdlog</a></div><div class="ttdeci">integer function stdlog()</div><div class="ttdoc">This function returns the current standard fortran unit numbers for log messages. Log messages,...</div><div class="ttdef"><b>Definition:</b> <a href="mpp__util_8inc_source.html#l00106">mpp_util.inc:106</a></div></div>
-<div class="ttc" id="agroup__time__manager__mod_html_gae4ed023b8077a6f14fffb764d642e55a"><div class="ttname"><a href="group__time__manager__mod.html#gae4ed023b8077a6f14fffb764d642e55a">time_manager_mod::set_calendar_type</a></div><div class="ttdeci">subroutine, public set_calendar_type(type, err_msg)</div><div class="ttdoc">Sets calendar_type. For the Gregorian calendar, negative years and the proleptic calendar are not use...</div><div class="ttdef"><b>Definition:</b> <a href="time__manager_8F90_source.html#l01463">time_manager.F90:1463</a></div></div>
-<div class="ttc" id="agroup__time__manager__mod_html_ga2b9c941f38e33eba67ee151fe3bd8ee6"><div class="ttname"><a href="group__time__manager__mod.html#ga2b9c941f38e33eba67ee151fe3bd8ee6">time_manager_mod::get_time</a></div><div class="ttdeci">subroutine, public get_time(Time, seconds, days, ticks, err_msg)</div><div class="ttdoc">Returns days and seconds ( &lt; 86400 ) corresponding to a time. err_msg should be checked for any error...</div><div class="ttdef"><b>Definition:</b> <a href="time__manager_8F90_source.html#l00509">time_manager.F90:509</a></div></div>
-<div class="ttc" id="ainterfacetime__manager__mod_1_1set__date_html"><div class="ttname"><a href="interfacetime__manager__mod_1_1set__date.html">time_manager_mod::set_date</a></div><div class="ttdoc">Given an input date in year, month, days, etc., creates a time_type that represents this time interva...</div><div class="ttdef"><b>Definition:</b> <a href="time__manager_8F90_source.html#l00272">time_manager.F90:272</a></div></div>
-<div class="ttc" id="ampp__util_8inc_html_acfeba7de56f9dd6000b3fd78f9d56c50"><div class="ttname"><a href="mpp__util_8inc.html#acfeba7de56f9dd6000b3fd78f9d56c50">mpp_pe</a></div><div class="ttdeci">integer function mpp_pe()</div><div class="ttdoc">Returns processor ID. This returns the unique ID associated with a PE. This number runs between 0 and...</div><div class="ttdef"><b>Definition:</b> <a href="mpp__util_8inc_source.html#l00440">mpp_util.inc:440</a></div></div>
-<div class="ttc" id="agroup__fms__mod_html_ga0c093df98a75dbd9e0f3add67aa6c23a"><div class="ttname"><a href="group__fms__mod.html#ga0c093df98a75dbd9e0f3add67aa6c23a">fms_mod::write_version_number</a></div><div class="ttdeci">subroutine, public write_version_number(version, tag, unit)</div><div class="ttdoc">Prints to the log file (or a specified unit) the version id string and tag name.</div><div class="ttdef"><b>Definition:</b> <a href="fms_8F90_source.html#l00775">fms.F90:775</a></div></div>
+<div class="ttc" id="agroup__time__manager__mod_html_structtime__manager__mod_1_1time__type"><div class="ttname"><a href="group__time__manager__mod.html#structtime__manager__mod_1_1time__type">time_manager_mod::time_type</a></div><div class="ttdoc">Type to represent amounts of time. Implemented as seconds and days to allow for larger intervals.</div><div class="ttdef"><b>Definition:</b> <a href="time__manager_8F90_source.html#l00142">time_manager.F90:142</a></div></div>
+<div class="ttc" id="agroup__get__cal__time__mod_html_ga3eb93e699a7c27c535cd6bb35b6f0ef8"><div class="ttname"><a href="group__get__cal__time__mod.html#ga3eb93e699a7c27c535cd6bb35b6f0ef8">get_cal_time_mod::get_cal_time</a></div><div class="ttdeci">type(time_type) function, public get_cal_time(time_increment, units, calendar, permit_calendar_conversion)</div><div class="ttdoc">Calculates what a given calendar time would be after a interval of time.</div><div class="ttdef"><b>Definition:</b> <a href="get__cal__time_8F90_source.html#l00154">get_cal_time.F90:154</a></div></div>
+<div class="ttc" id="agroup__fms__mod_html_ga05e7686befc1e49d2be9bdb81d479a76"><div class="ttname"><a href="group__fms__mod.html#ga05e7686befc1e49d2be9bdb81d479a76">fms_mod::check_nml_error</a></div><div class="ttdeci">integer function, public check_nml_error(IOSTAT, NML_NAME)</div><div class="ttdoc">Checks the iostat argument that is returned after reading a namelist and determines if the error code...</div><div class="ttdef"><b>Definition:</b> <a href="fms_8F90_source.html#l00549">fms.F90:549</a></div></div>
+<div class="ttc" id="agroup__time__manager__mod_html_interfacetime__manager__mod_1_1set__time"><div class="ttname"><a href="group__time__manager__mod.html#interfacetime__manager__mod_1_1set__time">time_manager_mod::set_time</a></div><div class="ttdoc">Given some number of seconds and days, returns the corresponding time_type.</div><div class="ttdef"><b>Definition:</b> <a href="time__manager_8F90_source.html#l00208">time_manager.F90:208</a></div></div>
+<div class="ttc" id="agroup__time__manager__mod_html_gad4d5cb71942ebf3f1bb9d4a29a6d9a04"><div class="ttname"><a href="group__time__manager__mod.html#gad4d5cb71942ebf3f1bb9d4a29a6d9a04">time_manager_mod::get_calendar_type</a></div><div class="ttdeci">integer function, public get_calendar_type()</div><div class="ttdoc">Returns default calendar type for mapping from time to date.</div><div class="ttdef"><b>Definition:</b> <a href="time__manager_8F90_source.html#l01504">time_manager.F90:1504</a></div></div>
+<div class="ttc" id="agroup__mpp__mod_html_gacfeba7de56f9dd6000b3fd78f9d56c50"><div class="ttname"><a href="group__mpp__mod.html#gacfeba7de56f9dd6000b3fd78f9d56c50">mpp_pe</a></div><div class="ttdeci">integer function mpp_pe()</div><div class="ttdoc">Returns processor ID.</div><div class="ttdef"><b>Definition:</b> <a href="mpp__util_8inc_source.html#l00378">mpp_util.inc:378</a></div></div>
+<div class="ttc" id="agroup__time__manager__mod_html_ga42ca904e0ef4d8cd59deab75ea8bc048"><div class="ttname"><a href="group__time__manager__mod.html#ga42ca904e0ef4d8cd59deab75ea8bc048">time_manager_mod::get_date</a></div><div class="ttdeci">subroutine, public get_date(time, year, month, day, hour, minute, second, tick, err_msg)</div><div class="ttdoc">Gets the date for different calendar types.</div><div class="ttdef"><b>Definition:</b> <a href="time__manager_8F90_source.html#l01592">time_manager.F90:1592</a></div></div>
+<div class="ttc" id="agroup__fms__mod_html_gae5c7420e421293e2be14717dd7b3d97f"><div class="ttname"><a href="group__fms__mod.html#gae5c7420e421293e2be14717dd7b3d97f">fms_mod::error_mesg</a></div><div class="ttdeci">subroutine, public error_mesg(routine, message, level)</div><div class="ttdoc">Print notes, warnings and error messages; terminates program for warning and error messages....</div><div class="ttdef"><b>Definition:</b> <a href="fms_8F90_source.html#l00467">fms.F90:467</a></div></div>
+<div class="ttc" id="agroup__mpp__mod_html_ga8e5518df9532bae0241f53ab542294a2"><div class="ttname"><a href="group__mpp__mod.html#ga8e5518df9532bae0241f53ab542294a2">stdlog</a></div><div class="ttdeci">integer function stdlog()</div><div class="ttdoc">This function returns the current standard fortran unit numbers for log messages. Log messages,...</div><div class="ttdef"><b>Definition:</b> <a href="mpp__util_8inc_source.html#l00059">mpp_util.inc:59</a></div></div>
+<div class="ttc" id="agroup__time__manager__mod_html_ga40ba58ef6e1c86616e5f8d7e8ebefca3"><div class="ttname"><a href="group__time__manager__mod.html#ga40ba58ef6e1c86616e5f8d7e8ebefca3">time_manager_mod::valid_calendar_types</a></div><div class="ttdeci">character(len=24) function, public valid_calendar_types(ncal, err_msg)</div><div class="ttdoc">Returns a character string that describes the calendar type corresponding to the input integer.</div><div class="ttdef"><b>Definition:</b> <a href="time__manager_8F90_source.html#l03192">time_manager.F90:3192</a></div></div>
+<div class="ttc" id="agroup__time__manager__mod_html_gae4ed023b8077a6f14fffb764d642e55a"><div class="ttname"><a href="group__time__manager__mod.html#gae4ed023b8077a6f14fffb764d642e55a">time_manager_mod::set_calendar_type</a></div><div class="ttdeci">subroutine, public set_calendar_type(type, err_msg)</div><div class="ttdoc">Sets calendar_type. For the Gregorian calendar, negative years and the proleptic calendar are not use...</div><div class="ttdef"><b>Definition:</b> <a href="time__manager_8F90_source.html#l01459">time_manager.F90:1459</a></div></div>
+<div class="ttc" id="agroup__time__manager__mod_html_ga2b9c941f38e33eba67ee151fe3bd8ee6"><div class="ttname"><a href="group__time__manager__mod.html#ga2b9c941f38e33eba67ee151fe3bd8ee6">time_manager_mod::get_time</a></div><div class="ttdeci">subroutine, public get_time(Time, seconds, days, ticks, err_msg)</div><div class="ttdoc">Returns days and seconds ( &lt; 86400 ) corresponding to a time. err_msg should be checked for any error...</div><div class="ttdef"><b>Definition:</b> <a href="time__manager_8F90_source.html#l00485">time_manager.F90:485</a></div></div>
+<div class="ttc" id="agroup__fms__mod_html_ga0c093df98a75dbd9e0f3add67aa6c23a"><div class="ttname"><a href="group__fms__mod.html#ga0c093df98a75dbd9e0f3add67aa6c23a">fms_mod::write_version_number</a></div><div class="ttdeci">subroutine, public write_version_number(version, tag, unit)</div><div class="ttdoc">Prints to the log file (or a specified unit) the version id string and tag name.</div><div class="ttdef"><b>Definition:</b> <a href="fms_8F90_source.html#l00772">fms.F90:772</a></div></div>
+<div class="ttc" id="agroup__time__manager__mod_html_interfacetime__manager__mod_1_1set__date"><div class="ttname"><a href="group__time__manager__mod.html#interfacetime__manager__mod_1_1set__date">time_manager_mod::set_date</a></div><div class="ttdoc">Given an input date in year, month, days, etc., creates a time_type that represents this time interva...</div><div class="ttdef"><b>Definition:</b> <a href="time__manager_8F90_source.html#l00248">time_manager.F90:248</a></div></div>
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><a class="el" href="dir_e4baa7f80acbc9ad07d694f3aacd8c3b.html">time_manager</a></li><li class="navelem"><a class="el" href="get__cal__time_8F90.html">get_cal_time.F90</a></li>
+    <li class="navelem"><a class="el" href="dir_e4baa7f80acbc9ad07d694f3aacd8c3b.html">time_manager</a></li><li class="navelem"><b>get_cal_time.F90</b></li>
     <li class="footer">Generated by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="doxygen.png" alt="doxygen"/></a> 1.8.17 </li>

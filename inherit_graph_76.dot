@@ -1,0 +1,9 @@
+digraph "Graphical Class Hierarchy"
+{
+ // INTERACTIVE_SVG=YES
+ // LATEX_PDF_SIZE
+  edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
+  node [fontname="Helvetica",fontsize="10",shape=record];
+  rankdir="LR";
+  Node0 [label="diag_global_grid_type",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$group__diag__grid__mod.html#structdiag__grid__mod_1_1diag__global__grid__type",tooltip="Private type to hold the model's global grid data, and other grid information for use in this module."];
+}

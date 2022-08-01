@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.17"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>FMS: fms2_io/include/gather_data_bc.inc Source File</title>
+<title>FMS: fms2_io/include/gather_data_bc.inc (1640fde1a51a73f97748f150eb84bf49e472aeca) Source File</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -33,7 +33,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">FMS
-   &#160;<span id="projectnumber">2022.02.0</span>
+   &#160;<span id="projectnumber">2022.03.00</span>
    </div>
    <div id="projectbrief">Flexible Modeling System</div>
   </td>
@@ -94,7 +94,7 @@ $(document).ready(function(){initNavTree('gather__data__bc_8inc_source.html','')
 <div class="title">gather_data_bc.inc</div>  </div>
 </div><!--header-->
 <div class="contents">
-<a href="gather__data__bc_8inc.html">Go to the documentation of this file.</a><div class="fragment"><div class="line"><a name="l00001"></a><span class="lineno">    1</span>&#160;<span class="comment">!***********************************************************************</span></div>
+<div class="fragment"><div class="line"><a name="l00001"></a><span class="lineno">    1</span>&#160;<span class="comment">!***********************************************************************</span></div>
 <div class="line"><a name="l00002"></a><span class="lineno">    2</span>&#160;<span class="comment">!*                   GNU Lesser General Public License</span></div>
 <div class="line"><a name="l00003"></a><span class="lineno">    3</span>&#160;<span class="comment">!*</span></div>
 <div class="line"><a name="l00004"></a><span class="lineno">    4</span>&#160;<span class="comment">!* This file is part of the GFDL Flexible Modeling System (FMS).</span></div>
@@ -113,257 +113,261 @@ $(document).ready(function(){initNavTree('gather__data__bc_8inc_source.html','')
 <div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160;<span class="comment">!* License along with FMS.  If not, see &lt;http://www.gnu.org/licenses/&gt;.</span></div>
 <div class="line"><a name="l00018"></a><span class="lineno">   18</span>&#160;<span class="comment">!***********************************************************************</span><span class="comment"></span></div>
 <div class="line"><a name="l00019"></a><span class="lineno">   19</span>&#160;<span class="comment">!&gt; @file</span></div>
-<div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160;<span class="comment">!&gt; @ingroup fms2_io</span></div>
+<div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160;<span class="comment">!&gt; @brief Routines for the @ref gather_data_bc interface</span></div>
 <div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160;<span class="comment"></span> </div>
-<div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160;<span class="comment">!&gt; @brief gathers the 2d vdata from all of the relevant pes into the root_pe and saves it to a</span></div>
-<div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160;<span class="comment">!! buffer.</span></div>
-<div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;<span class="keyword">subroutine </span><a class="code" href="gather__data__bc_8inc.html#ad440f02265e003907bf2d8097b47eed7">gather_data_bc_2d</a>(fileobj, vdata, bc_info)</div>
-<div class="line"><a name="l00025"></a><span class="lineno"><a class="line" href="gather__data__bc_8inc.html#ad440f02265e003907bf2d8097b47eed7">   25</a></span>&#160;  <span class="keywordtype">class</span>(fmsnetcdffile_t), <span class="keywordtype">intent(inout)</span> :: fileobj<span class="comment"> !&lt; Fms2io netcdf fileobj</span></div>
-<div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160;  <span class="keywordtype">class</span>(*), <span class="keywordtype">dimension(:,:)</span>, <span class="keywordtype">intent(in)</span> :: vdata<span class="comment"> !&lt; Data to be gather</span></div>
-<div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;  <span class="keywordtype">type</span>(bc_information), <span class="keywordtype">intent(inout)</span> :: bc_info<span class="comment"> !&lt; information about the boundary condition variable</span></div>
-<div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160; </div>
-<div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;  <span class="keywordtype">integer</span> :: i_glob<span class="comment"> !&lt; Size of the global domain in x</span></div>
-<div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;  <span class="keywordtype">integer</span> :: j_glob<span class="comment"> !&lt; Size of the global domain in y</span></div>
+<div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160;<span class="comment">!&gt; @addtogroup netcdf_io_mod</span></div>
+<div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160;<span class="comment">!&gt; @{ </span></div>
+<div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;<span class="comment"></span> </div>
+<div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160;<span class="comment">!&gt; @brief gathers the 2d vdata from all of the relevant pes into the root_pe and saves it to a</span></div>
+<div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160;<span class="comment">!! buffer.</span></div>
+<div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;<span class="keyword">subroutine </span><a class="code" href="group__netcdf__io__mod.html#gad440f02265e003907bf2d8097b47eed7">gather_data_bc_2d</a>(fileobj, vdata, bc_info)</div>
+<div class="line"><a name="l00028"></a><span class="lineno"><a class="line" href="group__netcdf__io__mod.html#gad440f02265e003907bf2d8097b47eed7">   28</a></span>&#160;  <span class="keywordtype">class</span>(fmsnetcdffile_t), <span class="keywordtype">intent(inout)</span> :: fileobj<span class="comment"> !&lt; Fms2io netcdf fileobj</span></div>
+<div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;  <span class="keywordtype">class</span>(*), <span class="keywordtype">dimension(:,:)</span>, <span class="keywordtype">intent(in)</span> :: vdata<span class="comment"> !&lt; Data to be gather</span></div>
+<div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;  <span class="keywordtype">type</span>(bc_information), <span class="keywordtype">intent(inout)</span> :: bc_info<span class="comment"> !&lt; information about the boundary condition variable</span></div>
 <div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160; </div>
-<div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;  <span class="keywordtype">integer</span> :: isc, iec, jsc, jec<span class="comment"> !&lt; current PE&#39;s indices</span></div>
-<div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;  <span class="keywordtype">integer</span> :: i1, i2, j1, j2<span class="comment"> !&lt; current PE&#39;s indices relative to the global domain</span></div>
-<div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;  <span class="keywordtype">integer</span> :: i_add, j_add<span class="comment"> !&lt; current PE&#39;s shift</span></div>
-<div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160; </div>
-<div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;<span class="keywordtype">  real</span>(kind=r4_kind), <span class="keywordtype">dimension(:,:)</span>, <span class="keywordtype">allocatable</span>, <span class="keywordtype">target</span> :: global_buf_r4_kind <span class="comment">!&lt; buffer with a data gathered</span></div>
-<div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;<span class="keywordtype">  real</span>(kind=r4_kind), <span class="keywordtype">dimension(:,:)</span>, <span class="keywordtype">allocatable</span>, <span class="keywordtype">target</span> :: local_buf_r4_kind <span class="comment">!&lt; current PEs data</span></div>
-<div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;<span class="keywordtype">  real</span>(kind=r8_kind), <span class="keywordtype">dimension(:,:)</span>, <span class="keywordtype">allocatable</span>, <span class="keywordtype">target</span> :: global_buf_r8_kind <span class="comment">!&lt; buffer with a data gathered</span></div>
-<div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;<span class="keywordtype">  real</span>(kind=r8_kind), <span class="keywordtype">dimension(:,:)</span>, <span class="keywordtype">allocatable</span>, <span class="keywordtype">target</span> :: local_buf_r8_kind <span class="comment">!&lt; current PEs data</span></div>
-<div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160; </div>
-<div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;  <span class="keywordtype">integer(kind=i8_kind)</span> :: chksum_val<span class="comment"> !&lt; Checksum value calculated from the gathered data</span></div>
-<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;  <span class="keywordtype">character(len=32)</span> :: chksum<span class="comment"> !&lt; Cheksum value converted to a string</span></div>
-<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;<span class="comment"></span> </div>
-<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;<span class="comment">  !&gt; Set the indices</span></div>
-<div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;  isc = bc_info%indices(1)</div>
-<div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;  iec = bc_info%indices(2)</div>
-<div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;  jsc = bc_info%indices(3)</div>
-<div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;  jec = bc_info%indices(4)</div>
-<div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;<span class="comment"></span> </div>
-<div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;<span class="comment">  !&gt; This is the section of the PE that will actually be added to the global_buffer</span></div>
-<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;  i1 = 1 + bc_info%x_halo</div>
-<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;  i2 = i1 + (iec-isc)</div>
-<div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;  j1 = 1 + bc_info%y_halo</div>
-<div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;  j2 = j1 + (jec-jsc)</div>
-<div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;<span class="comment"></span> </div>
-<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;<span class="comment">  !&gt; Set up index shifts for global array</span></div>
-<div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;  i_add = bc_info%ishift</div>
-<div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;  j_add = bc_info%jshift</div>
-<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;<span class="comment"></span> </div>
-<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;<span class="comment">  !&gt; Only root allocates a global_buffer that will be written</span></div>
-<div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;  <span class="keywordflow">if</span> (fileobj%is_root) <span class="keywordflow">then</span></div>
-<div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;        i_glob = bc_info%global_size(1)</div>
-<div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;        j_glob = bc_info%global_size(2)</div>
-<div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;<span class="keywordflow">  endif</span></div>
-<div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;<span class="comment"></span> </div>
-<div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;<span class="comment">  !&gt; Gather the data and calculate the checksum for the resulting array.</span></div>
-<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;  <span class="keywordflow">select type</span>(vdata)</div>
-<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;<span class="keywordflow">    type is</span> (real(kind=r4_kind))<span class="comment"></span></div>
-<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;<span class="comment">       !&gt; If the fileobj&#39;s root does not have data for this variable</span></div>
-<div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;       <span class="keywordflow">if</span> (fileobj%is_root .and. .not. bc_info%data_on_file_root) <span class="keywordflow">then</span><span class="comment"></span></div>
-<div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;<span class="comment">           !&gt; Allocate global_buf_r4_kind to be one size bigger, global_buf_r4_kind(i_glob+1,,:) is just dummy data</span></div>
-<div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;          <span class="keyword">allocate</span>(global_buf_r4_kind(i_glob+1, j_glob))<span class="comment"></span></div>
-<div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;<span class="comment">          !&gt; Allocate a temp local buffer to the fileobj&#39;s root. This is needed because the data needs to be send</span></div>
-<div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;<span class="comment">          !! to the fileobj&#39;s root, but because fileobj&#39;s root doesn&#39;t have any data, we just create dummy data and</span></div>
-<div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;<span class="comment">          !! not write it later</span></div>
-<div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;          <span class="keyword">allocate</span>(local_buf_r4_kind(1,1))</div>
-<div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;          local_buf_r4_kind = 0.</div>
-<div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;          isc = 1+i_glob; i_add=0; iec=1+i_glob; jsc=j_glob; j_add=0; jec=j_glob</div>
-<div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;          i1=1; i2=1; j1=1; j2=1</div>
-<div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;       <span class="keywordflow">else</span></div>
-<div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;          <span class="comment">!! In this case there is data in fileobj&#39;s root, so there is no need for the dummy data</span></div>
-<div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;          <span class="keywordflow">if</span>(fileobj%is_root) <span class="keyword">allocate</span>(global_buf_r4_kind(i_glob, j_glob))</div>
-<div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;          <span class="keyword">allocate</span>(local_buf_r4_kind(<span class="keyword">size</span>(vdata,1), <span class="keyword">size</span>(vdata,2)))</div>
-<div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160;          local_buf_r4_kind = vdata</div>
-<div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;<span class="keywordflow">       endif</span></div>
-<div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160; </div>
-<div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;       <span class="keyword">call </span>mpp_gather(isc+i_add, iec+i_add, jsc+j_add, jec+j_add, bc_info%pelist, &amp;</div>
-<div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160;                          local_buf_r4_kind(i1:i2,j1:j2), &amp;</div>
-<div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160;                          global_buf_r4_kind, fileobj%is_root)</div>
-<div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160; </div>
-<div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160;        <span class="keyword">deallocate</span>(local_buf_r4_kind)<span class="comment"></span></div>
-<div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;<span class="comment">       !&gt; If you are on fileobj&#39;s root, calculate the checksum and save the gathered data in a buffer</span></div>
-<div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;       <span class="keywordflow">if</span> (fileobj%is_root) <span class="keywordflow">then</span></div>
-<div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160;           chksum_val = mpp_chksum(global_buf_r4_kind(1:i_glob,1:j_glob), (/<a class="code" href="mpp__util_8inc.html#acfeba7de56f9dd6000b3fd78f9d56c50">mpp_pe</a>()/))</div>
-<div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160;           <span class="keyword">allocate</span>(bc_info%globaldata2d_r4(i_glob, j_glob))</div>
-<div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160;           bc_info%globaldata2d_r4=global_buf_r4_kind(1:i_glob,1:j_glob)</div>
-<div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160;           <span class="keyword">deallocate</span>(global_buf_r4_kind)</div>
-<div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160;<span class="keywordflow">       endif</span></div>
-<div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160;<span class="keywordflow">    type is</span> (real(kind=r8_kind))<span class="comment"></span></div>
-<div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160;<span class="comment">       !&gt; If the fileobj&#39;s root does not have data for this variable</span></div>
-<div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160;       <span class="keywordflow">if</span> (fileobj%is_root .and. .not. bc_info%data_on_file_root) <span class="keywordflow">then</span><span class="comment"></span></div>
-<div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160;<span class="comment">          !&gt; Allocate global_buf_r8_kind to be one size bigger, global_buf_r8_kind(i_glob+1,,:) is just dummy data</span></div>
-<div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160;          <span class="keyword">allocate</span>(global_buf_r8_kind(i_glob+1, j_glob))<span class="comment"></span></div>
-<div class="line"><a name="l00104"></a><span class="lineno">  104</span>&#160;<span class="comment">          !&gt; Allocate a temp local buffer to the fileobj&#39;s root. This is needed because the data needs to be send</span></div>
-<div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160;<span class="comment">          !! to the fileobj&#39;s root, but because fileobj&#39;s root doesn&#39;t have any data, we just create dummy data and</span></div>
-<div class="line"><a name="l00106"></a><span class="lineno">  106</span>&#160;<span class="comment">          !! not write it later</span></div>
-<div class="line"><a name="l00107"></a><span class="lineno">  107</span>&#160;          <span class="keyword">allocate</span>(local_buf_r8_kind(1,1))</div>
-<div class="line"><a name="l00108"></a><span class="lineno">  108</span>&#160;          local_buf_r8_kind = 0.</div>
-<div class="line"><a name="l00109"></a><span class="lineno">  109</span>&#160;          isc = 1+i_glob; i_add=0; iec=1+i_glob; jsc=j_glob; j_add=0; jec=j_glob</div>
-<div class="line"><a name="l00110"></a><span class="lineno">  110</span>&#160;          i1=1; i2=1; j1=1; j2=1</div>
-<div class="line"><a name="l00111"></a><span class="lineno">  111</span>&#160;       <span class="keywordflow">else</span></div>
-<div class="line"><a name="l00112"></a><span class="lineno">  112</span>&#160;          <span class="comment">!! In this case there is data in fileobj&#39;s root, so there is no need for the dummy data</span></div>
-<div class="line"><a name="l00113"></a><span class="lineno">  113</span>&#160;          <span class="keywordflow">if</span>(fileobj%is_root) <span class="keyword">allocate</span>(global_buf_r8_kind(i_glob, j_glob))</div>
-<div class="line"><a name="l00114"></a><span class="lineno">  114</span>&#160;          <span class="keyword">allocate</span>(local_buf_r8_kind(<span class="keyword">size</span>(vdata,1), <span class="keyword">size</span>(vdata,2)))</div>
-<div class="line"><a name="l00115"></a><span class="lineno">  115</span>&#160;          local_buf_r8_kind = vdata</div>
-<div class="line"><a name="l00116"></a><span class="lineno">  116</span>&#160;<span class="keywordflow">       endif</span></div>
-<div class="line"><a name="l00117"></a><span class="lineno">  117</span>&#160; </div>
-<div class="line"><a name="l00118"></a><span class="lineno">  118</span>&#160;       <span class="keyword">call </span>mpp_gather(isc+i_add, iec+i_add, jsc+j_add, jec+j_add, bc_info%pelist, &amp;</div>
-<div class="line"><a name="l00119"></a><span class="lineno">  119</span>&#160;                          local_buf_r8_kind(i1:i2,j1:j2), &amp;</div>
-<div class="line"><a name="l00120"></a><span class="lineno">  120</span>&#160;                          global_buf_r8_kind, fileobj%is_root)</div>
-<div class="line"><a name="l00121"></a><span class="lineno">  121</span>&#160;       <span class="keyword">deallocate</span>(local_buf_r8_kind)<span class="comment"></span></div>
-<div class="line"><a name="l00122"></a><span class="lineno">  122</span>&#160;<span class="comment">       !&gt; If you are on fileobj&#39;s root, calculate the checksum and save the gathered data in a buffer</span></div>
-<div class="line"><a name="l00123"></a><span class="lineno">  123</span>&#160;       <span class="keywordflow">if</span> (fileobj%is_root) <span class="keywordflow">then</span></div>
-<div class="line"><a name="l00124"></a><span class="lineno">  124</span>&#160;           chksum_val = mpp_chksum(global_buf_r8_kind(1:i_glob,1:j_glob), (/<a class="code" href="mpp__util_8inc.html#acfeba7de56f9dd6000b3fd78f9d56c50">mpp_pe</a>()/))</div>
-<div class="line"><a name="l00125"></a><span class="lineno">  125</span>&#160;           <span class="keyword">allocate</span>(bc_info%globaldata2d_r8(i_glob, j_glob))</div>
-<div class="line"><a name="l00126"></a><span class="lineno">  126</span>&#160;           bc_info%globaldata2d_r8=global_buf_r8_kind(1:i_glob,1:j_glob)</div>
-<div class="line"><a name="l00127"></a><span class="lineno">  127</span>&#160;           <span class="keyword">deallocate</span>(global_buf_r8_kind)</div>
-<div class="line"><a name="l00128"></a><span class="lineno">  128</span>&#160;<span class="keywordflow">       endif</span></div>
-<div class="line"><a name="l00129"></a><span class="lineno">  129</span>&#160;<span class="keywordflow">     class default</span></div>
-<div class="line"><a name="l00130"></a><span class="lineno">  130</span>&#160;         <span class="keyword">call </span>error(<span class="stringliteral">&quot;gather_data_bc_2d: unsupported type. Currently only r8_kind and r4_kinds are supported&quot;</span>)</div>
-<div class="line"><a name="l00131"></a><span class="lineno">  131</span>&#160;<span class="keywordflow">   end select</span></div>
-<div class="line"><a name="l00132"></a><span class="lineno">  132</span>&#160;<span class="comment"></span> </div>
-<div class="line"><a name="l00133"></a><span class="lineno">  133</span>&#160;<span class="comment">   !&gt; Save the checksum, so you can write it later</span></div>
-<div class="line"><a name="l00134"></a><span class="lineno">  134</span>&#160;   <span class="keywordflow">if</span> (fileobj%is_root) <span class="keywordflow">then</span></div>
-<div class="line"><a name="l00135"></a><span class="lineno">  135</span>&#160;      chksum = <span class="stringliteral">&quot;&quot;</span></div>
-<div class="line"><a name="l00136"></a><span class="lineno">  136</span>&#160;      <span class="keyword">write</span>(chksum, <span class="stringliteral">&quot;(Z16)&quot;</span>) chksum_val</div>
-<div class="line"><a name="l00137"></a><span class="lineno">  137</span>&#160;      bc_info%chksum = chksum</div>
-<div class="line"><a name="l00138"></a><span class="lineno">  138</span>&#160;<span class="keywordflow">   endif</span></div>
-<div class="line"><a name="l00139"></a><span class="lineno">  139</span>&#160; </div>
-<div class="line"><a name="l00140"></a><span class="lineno">  140</span>&#160;<span class="keyword">end subroutine </span><a class="code" href="gather__data__bc_8inc.html#ad440f02265e003907bf2d8097b47eed7">gather_data_bc_2d</a></div>
-<div class="line"><a name="l00141"></a><span class="lineno">  141</span>&#160;<span class="comment"></span> </div>
-<div class="line"><a name="l00142"></a><span class="lineno">  142</span>&#160;<span class="comment">!&gt; @brief gathers the 2d vdata from all of the relevant pes into the root_pe and saves it to a</span></div>
-<div class="line"><a name="l00143"></a><span class="lineno">  143</span>&#160;<span class="comment">!! buffer.</span></div>
-<div class="line"><a name="l00144"></a><span class="lineno">  144</span>&#160;<span class="keyword">subroutine </span><a class="code" href="gather__data__bc_8inc.html#a99a306d2b645cb196888fc967f2cd9d1">gather_data_bc_3d</a>(fileobj, vdata, bc_info)</div>
-<div class="line"><a name="l00145"></a><span class="lineno"><a class="line" href="gather__data__bc_8inc.html#a99a306d2b645cb196888fc967f2cd9d1">  145</a></span>&#160;  <span class="keywordtype">class</span>(fmsnetcdffile_t), <span class="keywordtype">intent(inout)</span> :: fileobj<span class="comment"> !&lt; Fms2io netcdf fileobj</span></div>
-<div class="line"><a name="l00146"></a><span class="lineno">  146</span>&#160;  <span class="keywordtype">class</span>(*), <span class="keywordtype">dimension(:,:,:)</span>, <span class="keywordtype">intent(in)</span> :: vdata<span class="comment"> !&lt; Data to be gather</span></div>
-<div class="line"><a name="l00147"></a><span class="lineno">  147</span>&#160;  <span class="keywordtype">type</span>(bc_information), <span class="keywordtype">intent(inout)</span> :: bc_info<span class="comment"> !&lt; information about the boundary condition variable</span></div>
-<div class="line"><a name="l00148"></a><span class="lineno">  148</span>&#160; </div>
-<div class="line"><a name="l00149"></a><span class="lineno">  149</span>&#160;  <span class="keywordtype">integer</span> :: i_glob<span class="comment"> !&lt; Size of the global domain in x</span></div>
-<div class="line"><a name="l00150"></a><span class="lineno">  150</span>&#160;  <span class="keywordtype">integer</span> :: j_glob<span class="comment"> !&lt; Size of the global domain in y</span></div>
-<div class="line"><a name="l00151"></a><span class="lineno">  151</span>&#160;  <span class="keywordtype">integer</span> :: k_glob<span class="comment"> !&lt; Size of the z axis</span></div>
-<div class="line"><a name="l00152"></a><span class="lineno">  152</span>&#160; </div>
-<div class="line"><a name="l00153"></a><span class="lineno">  153</span>&#160;  <span class="keywordtype">integer</span> :: isc, iec, jsc, jec<span class="comment"> !&lt; current PE&#39;s indices</span></div>
-<div class="line"><a name="l00154"></a><span class="lineno">  154</span>&#160;  <span class="keywordtype">integer</span> :: i1, i2, j1, j2<span class="comment"> !&lt; current PE&#39;s indices relative to the global domain</span></div>
-<div class="line"><a name="l00155"></a><span class="lineno">  155</span>&#160;  <span class="keywordtype">integer</span> :: i_add, j_add<span class="comment"> !&lt; current PE&#39;s shift</span></div>
-<div class="line"><a name="l00156"></a><span class="lineno">  156</span>&#160; </div>
-<div class="line"><a name="l00157"></a><span class="lineno">  157</span>&#160;<span class="keywordtype">  real</span>(kind=r4_kind), <span class="keywordtype">dimension(:,:,:)</span>, <span class="keywordtype">allocatable</span>, <span class="keywordtype">target</span> :: global_buf_r4_kind <span class="comment">!&lt; buffer with a data gathered</span></div>
-<div class="line"><a name="l00158"></a><span class="lineno">  158</span>&#160;<span class="keywordtype">  real</span>(kind=r4_kind), <span class="keywordtype">dimension(:,:,:)</span>, <span class="keywordtype">allocatable</span>, <span class="keywordtype">target</span> :: local_buf_r4_kind <span class="comment">!&lt; current PEs data</span></div>
-<div class="line"><a name="l00159"></a><span class="lineno">  159</span>&#160;<span class="keywordtype">  real</span>(kind=r8_kind), <span class="keywordtype">dimension(:,:,:)</span>, <span class="keywordtype">allocatable</span>, <span class="keywordtype">target</span> :: global_buf_r8_kind <span class="comment">!&lt; buffer with a data gathered</span></div>
-<div class="line"><a name="l00160"></a><span class="lineno">  160</span>&#160;<span class="keywordtype">  real</span>(kind=r8_kind), <span class="keywordtype">dimension(:,:,:)</span>, <span class="keywordtype">allocatable</span>, <span class="keywordtype">target</span> :: local_buf_r8_kind <span class="comment">!&lt; current PEs data</span></div>
-<div class="line"><a name="l00161"></a><span class="lineno">  161</span>&#160; </div>
-<div class="line"><a name="l00162"></a><span class="lineno">  162</span>&#160;  <span class="keywordtype">integer(kind=i8_kind)</span> :: chksum_val<span class="comment"> !&lt; Checksum value calculated from the gathered data</span></div>
-<div class="line"><a name="l00163"></a><span class="lineno">  163</span>&#160;  <span class="keywordtype">character(len=32)</span> :: chksum<span class="comment"> !&lt; Cheksum value converted to a string</span></div>
-<div class="line"><a name="l00164"></a><span class="lineno">  164</span>&#160;<span class="comment"></span> </div>
-<div class="line"><a name="l00165"></a><span class="lineno">  165</span>&#160;<span class="comment">  !&gt; Set the indices</span></div>
-<div class="line"><a name="l00166"></a><span class="lineno">  166</span>&#160;  isc = bc_info%indices(1)</div>
-<div class="line"><a name="l00167"></a><span class="lineno">  167</span>&#160;  iec = bc_info%indices(2)</div>
-<div class="line"><a name="l00168"></a><span class="lineno">  168</span>&#160;  jsc = bc_info%indices(3)</div>
-<div class="line"><a name="l00169"></a><span class="lineno">  169</span>&#160;  jec = bc_info%indices(4)</div>
-<div class="line"><a name="l00170"></a><span class="lineno">  170</span>&#160;<span class="comment"></span> </div>
-<div class="line"><a name="l00171"></a><span class="lineno">  171</span>&#160;<span class="comment">  !&gt; This is the section of the PE that will actually be added to the global_buffer</span></div>
-<div class="line"><a name="l00172"></a><span class="lineno">  172</span>&#160;  i1 = 1 + bc_info%x_halo</div>
-<div class="line"><a name="l00173"></a><span class="lineno">  173</span>&#160;  i2 = i1 + (iec-isc)</div>
-<div class="line"><a name="l00174"></a><span class="lineno">  174</span>&#160;  j1 = 1 + bc_info%y_halo</div>
-<div class="line"><a name="l00175"></a><span class="lineno">  175</span>&#160;  j2 = j1 + (jec-jsc)</div>
-<div class="line"><a name="l00176"></a><span class="lineno">  176</span>&#160;<span class="comment"></span> </div>
-<div class="line"><a name="l00177"></a><span class="lineno">  177</span>&#160;<span class="comment">  !&gt; Set up index shifts for global array</span></div>
-<div class="line"><a name="l00178"></a><span class="lineno">  178</span>&#160;  i_add = bc_info%ishift</div>
-<div class="line"><a name="l00179"></a><span class="lineno">  179</span>&#160;  j_add = bc_info%jshift</div>
-<div class="line"><a name="l00180"></a><span class="lineno">  180</span>&#160;<span class="comment"></span> </div>
-<div class="line"><a name="l00181"></a><span class="lineno">  181</span>&#160;<span class="comment">  !&gt; Allocate a global_buffer that will be written</span></div>
-<div class="line"><a name="l00182"></a><span class="lineno">  182</span>&#160;  <span class="keywordflow">if</span> (fileobj%is_root) <span class="keywordflow">then</span></div>
-<div class="line"><a name="l00183"></a><span class="lineno">  183</span>&#160;        i_glob = bc_info%global_size(1)</div>
-<div class="line"><a name="l00184"></a><span class="lineno">  184</span>&#160;        j_glob = bc_info%global_size(2)</div>
-<div class="line"><a name="l00185"></a><span class="lineno">  185</span>&#160;<span class="keywordflow">  endif</span></div>
-<div class="line"><a name="l00186"></a><span class="lineno">  186</span>&#160; </div>
-<div class="line"><a name="l00187"></a><span class="lineno">  187</span>&#160;  k_glob=bc_info%global_size(3)<span class="comment"></span></div>
-<div class="line"><a name="l00188"></a><span class="lineno">  188</span>&#160;<span class="comment">  !&gt; Gather the data and calculate the checksum for the resulting array.</span></div>
-<div class="line"><a name="l00189"></a><span class="lineno">  189</span>&#160;  <span class="keywordflow">select type</span>(vdata)</div>
-<div class="line"><a name="l00190"></a><span class="lineno">  190</span>&#160;<span class="keywordflow">    type is</span> (real(kind=r4_kind))<span class="comment"></span></div>
-<div class="line"><a name="l00191"></a><span class="lineno">  191</span>&#160;<span class="comment">       !&gt; If the fileobj&#39;s root does not have data for this variable</span></div>
-<div class="line"><a name="l00192"></a><span class="lineno">  192</span>&#160;       <span class="keywordflow">if</span> (fileobj%is_root .and. .not. bc_info%data_on_file_root) <span class="keywordflow">then</span><span class="comment"></span></div>
-<div class="line"><a name="l00193"></a><span class="lineno">  193</span>&#160;<span class="comment">          !&gt; Allocate global_buf_r8_kind to be one size bigger, global_buf_r8_kind(i_glob+1,,:) is just dummy data</span></div>
-<div class="line"><a name="l00194"></a><span class="lineno">  194</span>&#160;          <span class="keyword">allocate</span>(global_buf_r4_kind(i_glob+1, j_glob, bc_info%global_size(3)))<span class="comment"></span></div>
-<div class="line"><a name="l00195"></a><span class="lineno">  195</span>&#160;<span class="comment">          !&gt; Allocate a temp local buffer to the fileobj&#39;s root. This is needed because the data needs to be send</span></div>
-<div class="line"><a name="l00196"></a><span class="lineno">  196</span>&#160;<span class="comment">          !! to the fileobj&#39;s root, but because fileobj&#39;s root doesn&#39;t have any data, we just create dummy data and</span></div>
-<div class="line"><a name="l00197"></a><span class="lineno">  197</span>&#160;<span class="comment">          !! not write it later</span></div>
-<div class="line"><a name="l00198"></a><span class="lineno">  198</span>&#160;          <span class="keyword">allocate</span>(local_buf_r4_kind(1,1,1))</div>
-<div class="line"><a name="l00199"></a><span class="lineno">  199</span>&#160;          local_buf_r4_kind = 0.</div>
-<div class="line"><a name="l00200"></a><span class="lineno">  200</span>&#160;          isc = 1+i_glob; i_add=0; iec=1+i_glob; jsc=j_glob; j_add=0; jec=j_glob</div>
-<div class="line"><a name="l00201"></a><span class="lineno">  201</span>&#160;          i1=1; i2=1; j1=1; j2=1</div>
-<div class="line"><a name="l00202"></a><span class="lineno">  202</span>&#160;       <span class="keywordflow">else</span></div>
-<div class="line"><a name="l00203"></a><span class="lineno">  203</span>&#160;          <span class="comment">!! In this case there is data in fileobj&#39;s root, so there is no need for the dummy data</span></div>
-<div class="line"><a name="l00204"></a><span class="lineno">  204</span>&#160;          <span class="keywordflow">if</span>(fileobj%is_root) <span class="keyword">allocate</span>(global_buf_r4_kind(i_glob, j_glob, k_glob))</div>
-<div class="line"><a name="l00205"></a><span class="lineno">  205</span>&#160;          <span class="keyword">allocate</span>(local_buf_r4_kind(<span class="keyword">size</span>(vdata,1), <span class="keyword">size</span>(vdata,2), <span class="keyword">size</span>(vdata,3)))</div>
-<div class="line"><a name="l00206"></a><span class="lineno">  206</span>&#160;          local_buf_r4_kind = vdata</div>
-<div class="line"><a name="l00207"></a><span class="lineno">  207</span>&#160;<span class="keywordflow">       endif</span></div>
-<div class="line"><a name="l00208"></a><span class="lineno">  208</span>&#160; </div>
-<div class="line"><a name="l00209"></a><span class="lineno">  209</span>&#160;       <span class="keyword">call </span>mpp_gather(isc+i_add, iec+i_add, jsc+j_add, jec+j_add, k_glob, bc_info%pelist, &amp;</div>
-<div class="line"><a name="l00210"></a><span class="lineno">  210</span>&#160;                          local_buf_r4_kind(i1:i2,j1:j2,:), &amp;</div>
-<div class="line"><a name="l00211"></a><span class="lineno">  211</span>&#160;                          global_buf_r4_kind, fileobj%is_root)</div>
-<div class="line"><a name="l00212"></a><span class="lineno">  212</span>&#160;       <span class="keyword">deallocate</span>(local_buf_r4_kind)<span class="comment"></span></div>
-<div class="line"><a name="l00213"></a><span class="lineno">  213</span>&#160;<span class="comment">       !&gt; If you are on fileobj&#39;s root, calculate the checksum and save the gathered data in a buffer</span></div>
-<div class="line"><a name="l00214"></a><span class="lineno">  214</span>&#160;       <span class="keywordflow">if</span> (fileobj%is_root) <span class="keywordflow">then</span></div>
-<div class="line"><a name="l00215"></a><span class="lineno">  215</span>&#160;           chksum_val = mpp_chksum(global_buf_r4_kind(1:i_glob,1:j_glob, :), (/<a class="code" href="mpp__util_8inc.html#acfeba7de56f9dd6000b3fd78f9d56c50">mpp_pe</a>()/))</div>
-<div class="line"><a name="l00216"></a><span class="lineno">  216</span>&#160;           <span class="keyword">allocate</span>(bc_info%globaldata3d_r4(i_glob, j_glob, bc_info%global_size(3)))</div>
-<div class="line"><a name="l00217"></a><span class="lineno">  217</span>&#160;           bc_info%globaldata3d_r4=global_buf_r4_kind(1:i_glob,1:j_glob,:)</div>
-<div class="line"><a name="l00218"></a><span class="lineno">  218</span>&#160;           <span class="keyword">deallocate</span>(global_buf_r4_kind)</div>
-<div class="line"><a name="l00219"></a><span class="lineno">  219</span>&#160;<span class="keywordflow">       endif</span></div>
-<div class="line"><a name="l00220"></a><span class="lineno">  220</span>&#160;<span class="keywordflow">    type is</span> (real(kind=r8_kind))<span class="comment"></span></div>
-<div class="line"><a name="l00221"></a><span class="lineno">  221</span>&#160;<span class="comment">       !&gt; If the fileobj&#39;s root does not have data for this variable</span></div>
-<div class="line"><a name="l00222"></a><span class="lineno">  222</span>&#160;       <span class="keywordflow">if</span> (fileobj%is_root .and. .not. bc_info%data_on_file_root) <span class="keywordflow">then</span><span class="comment"></span></div>
-<div class="line"><a name="l00223"></a><span class="lineno">  223</span>&#160;<span class="comment">          !&gt; Allocate global_buf_r8_kind to be one size bigger, global_buf_r8_kind(i_glob+1,,:) is just dummy data</span></div>
-<div class="line"><a name="l00224"></a><span class="lineno">  224</span>&#160;          <span class="keyword">allocate</span>(global_buf_r8_kind(i_glob+1, j_glob, bc_info%global_size(3)))<span class="comment"></span></div>
-<div class="line"><a name="l00225"></a><span class="lineno">  225</span>&#160;<span class="comment">          !&gt; Allocate a temp local buffer to the fileobj&#39;s root. This is needed because the data needs to be send</span></div>
-<div class="line"><a name="l00226"></a><span class="lineno">  226</span>&#160;<span class="comment">          !! to the fileobj&#39;s root, but because fileobj&#39;s root doesn&#39;t have any data, we just create dummy data and</span></div>
-<div class="line"><a name="l00227"></a><span class="lineno">  227</span>&#160;<span class="comment">          !! not write it later</span></div>
-<div class="line"><a name="l00228"></a><span class="lineno">  228</span>&#160;          <span class="keyword">allocate</span>(local_buf_r8_kind(1,1,1))</div>
-<div class="line"><a name="l00229"></a><span class="lineno">  229</span>&#160;          local_buf_r8_kind = 0.</div>
-<div class="line"><a name="l00230"></a><span class="lineno">  230</span>&#160;          isc = 1+i_glob; i_add=0; iec=1+i_glob; jsc=j_glob; j_add=0; jec=j_glob</div>
-<div class="line"><a name="l00231"></a><span class="lineno">  231</span>&#160;          i1=1; i2=1; j1=1; j2=1</div>
-<div class="line"><a name="l00232"></a><span class="lineno">  232</span>&#160;       <span class="keywordflow">else</span></div>
-<div class="line"><a name="l00233"></a><span class="lineno">  233</span>&#160;          <span class="comment">!! In this case there is data in fileobj&#39;s root, so there is no need for the dummy data</span></div>
-<div class="line"><a name="l00234"></a><span class="lineno">  234</span>&#160;          <span class="keywordflow">if</span>(fileobj%is_root) <span class="keyword">allocate</span>(global_buf_r8_kind(i_glob, j_glob, k_glob))</div>
-<div class="line"><a name="l00235"></a><span class="lineno">  235</span>&#160;          <span class="keyword">allocate</span>(local_buf_r8_kind(<span class="keyword">size</span>(vdata,1), <span class="keyword">size</span>(vdata,2), <span class="keyword">size</span>(vdata,3)))</div>
-<div class="line"><a name="l00236"></a><span class="lineno">  236</span>&#160;          local_buf_r8_kind = vdata</div>
-<div class="line"><a name="l00237"></a><span class="lineno">  237</span>&#160;<span class="keywordflow">       endif</span></div>
-<div class="line"><a name="l00238"></a><span class="lineno">  238</span>&#160; </div>
-<div class="line"><a name="l00239"></a><span class="lineno">  239</span>&#160;       <span class="keyword">call </span>mpp_gather(isc+i_add, iec+i_add, jsc+j_add, jec+j_add, k_glob, bc_info%pelist, &amp;</div>
-<div class="line"><a name="l00240"></a><span class="lineno">  240</span>&#160;                          local_buf_r8_kind(i1:i2,j1:j2,:), &amp;</div>
-<div class="line"><a name="l00241"></a><span class="lineno">  241</span>&#160;                          global_buf_r8_kind, fileobj%is_root)</div>
-<div class="line"><a name="l00242"></a><span class="lineno">  242</span>&#160;       <span class="keyword">deallocate</span>(local_buf_r8_kind)<span class="comment"></span></div>
-<div class="line"><a name="l00243"></a><span class="lineno">  243</span>&#160;<span class="comment">       !&gt; If you are on fileobj&#39;s root, calculate the checksum and save the gathered data in a buffer</span></div>
-<div class="line"><a name="l00244"></a><span class="lineno">  244</span>&#160;       <span class="keywordflow">if</span> (fileobj%is_root) <span class="keywordflow">then</span></div>
-<div class="line"><a name="l00245"></a><span class="lineno">  245</span>&#160;           chksum_val = mpp_chksum(global_buf_r8_kind(1:i_glob,1:j_glob, :), (/<a class="code" href="mpp__util_8inc.html#acfeba7de56f9dd6000b3fd78f9d56c50">mpp_pe</a>()/))</div>
-<div class="line"><a name="l00246"></a><span class="lineno">  246</span>&#160;           <span class="keyword">allocate</span>(bc_info%globaldata3d_r8(i_glob, j_glob, bc_info%global_size(3)))</div>
-<div class="line"><a name="l00247"></a><span class="lineno">  247</span>&#160;           bc_info%globaldata3d_r8=global_buf_r8_kind(1:i_glob,1:j_glob,:)</div>
-<div class="line"><a name="l00248"></a><span class="lineno">  248</span>&#160;           <span class="keyword">deallocate</span>(global_buf_r8_kind)</div>
-<div class="line"><a name="l00249"></a><span class="lineno">  249</span>&#160;<span class="keywordflow">       endif</span></div>
-<div class="line"><a name="l00250"></a><span class="lineno">  250</span>&#160;<span class="keywordflow">     class default</span></div>
-<div class="line"><a name="l00251"></a><span class="lineno">  251</span>&#160;         <span class="keyword">call </span>error(<span class="stringliteral">&quot;gather_data_bc_3d: unsupported type. Currently only r8_kind and r4_kinds are supported&quot;</span>)</div>
-<div class="line"><a name="l00252"></a><span class="lineno">  252</span>&#160;<span class="keywordflow">   end select</span></div>
-<div class="line"><a name="l00253"></a><span class="lineno">  253</span>&#160;<span class="comment"></span> </div>
-<div class="line"><a name="l00254"></a><span class="lineno">  254</span>&#160;<span class="comment">   !&gt; Save the checksum, so you can write it later</span></div>
-<div class="line"><a name="l00255"></a><span class="lineno">  255</span>&#160;   <span class="keywordflow">if</span> (fileobj%is_root) <span class="keywordflow">then</span></div>
-<div class="line"><a name="l00256"></a><span class="lineno">  256</span>&#160;      chksum = <span class="stringliteral">&quot;&quot;</span></div>
-<div class="line"><a name="l00257"></a><span class="lineno">  257</span>&#160;      <span class="keyword">write</span>(chksum, <span class="stringliteral">&quot;(Z16)&quot;</span>) chksum_val</div>
-<div class="line"><a name="l00258"></a><span class="lineno">  258</span>&#160;      bc_info%chksum = chksum</div>
-<div class="line"><a name="l00259"></a><span class="lineno">  259</span>&#160;<span class="keywordflow">   endif</span></div>
-<div class="line"><a name="l00260"></a><span class="lineno">  260</span>&#160; </div>
-<div class="line"><a name="l00261"></a><span class="lineno">  261</span>&#160;<span class="keyword">end subroutine </span><a class="code" href="gather__data__bc_8inc.html#a99a306d2b645cb196888fc967f2cd9d1">gather_data_bc_3d</a></div>
+<div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;  <span class="keywordtype">integer</span> :: i_glob<span class="comment"> !&lt; Size of the global domain in x</span></div>
+<div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;  <span class="keywordtype">integer</span> :: j_glob<span class="comment"> !&lt; Size of the global domain in y</span></div>
+<div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160; </div>
+<div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;  <span class="keywordtype">integer</span> :: isc, iec, jsc, jec<span class="comment"> !&lt; current PE&#39;s indices</span></div>
+<div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;  <span class="keywordtype">integer</span> :: i1, i2, j1, j2<span class="comment"> !&lt; current PE&#39;s indices relative to the global domain</span></div>
+<div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;  <span class="keywordtype">integer</span> :: i_add, j_add<span class="comment"> !&lt; current PE&#39;s shift</span></div>
+<div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160; </div>
+<div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;<span class="keywordtype">  real</span>(kind=r4_kind), <span class="keywordtype">dimension(:,:)</span>, <span class="keywordtype">allocatable</span>, <span class="keywordtype">target</span> :: global_buf_r4_kind <span class="comment">!&lt; buffer with a data gathered</span></div>
+<div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;<span class="keywordtype">  real</span>(kind=r4_kind), <span class="keywordtype">dimension(:,:)</span>, <span class="keywordtype">allocatable</span>, <span class="keywordtype">target</span> :: local_buf_r4_kind <span class="comment">!&lt; current PEs data</span></div>
+<div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;<span class="keywordtype">  real</span>(kind=r8_kind), <span class="keywordtype">dimension(:,:)</span>, <span class="keywordtype">allocatable</span>, <span class="keywordtype">target</span> :: global_buf_r8_kind <span class="comment">!&lt; buffer with a data gathered</span></div>
+<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;<span class="keywordtype">  real</span>(kind=r8_kind), <span class="keywordtype">dimension(:,:)</span>, <span class="keywordtype">allocatable</span>, <span class="keywordtype">target</span> :: local_buf_r8_kind <span class="comment">!&lt; current PEs data</span></div>
+<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160; </div>
+<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;  <span class="keywordtype">integer(kind=i8_kind)</span> :: chksum_val<span class="comment"> !&lt; Checksum value calculated from the gathered data</span></div>
+<div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;  <span class="keywordtype">character(len=32)</span> :: chksum<span class="comment"> !&lt; Cheksum value converted to a string</span></div>
+<div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;<span class="comment"></span> </div>
+<div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;<span class="comment">  !&gt; Set the indices</span></div>
+<div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;  isc = bc_info%indices(1)</div>
+<div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;  iec = bc_info%indices(2)</div>
+<div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;  jsc = bc_info%indices(3)</div>
+<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;  jec = bc_info%indices(4)</div>
+<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;<span class="comment"></span> </div>
+<div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;<span class="comment">  !&gt; This is the section of the PE that will actually be added to the global_buffer</span></div>
+<div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;  i1 = 1 + bc_info%x_halo</div>
+<div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;  i2 = i1 + (iec-isc)</div>
+<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;  j1 = 1 + bc_info%y_halo</div>
+<div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;  j2 = j1 + (jec-jsc)</div>
+<div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;<span class="comment"></span> </div>
+<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;<span class="comment">  !&gt; Set up index shifts for global array</span></div>
+<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;  i_add = bc_info%ishift</div>
+<div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;  j_add = bc_info%jshift</div>
+<div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;<span class="comment"></span> </div>
+<div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;<span class="comment">  !&gt; Only root allocates a global_buffer that will be written</span></div>
+<div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;  <span class="keywordflow">if</span> (fileobj%is_root) <span class="keywordflow">then</span></div>
+<div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;        i_glob = bc_info%global_size(1)</div>
+<div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;        j_glob = bc_info%global_size(2)</div>
+<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;<span class="keywordflow">  endif</span></div>
+<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;<span class="comment"></span> </div>
+<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;<span class="comment">  !&gt; Gather the data and calculate the checksum for the resulting array.</span></div>
+<div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;  <span class="keywordflow">select type</span>(vdata)</div>
+<div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;<span class="keywordflow">    type is</span> (real(kind=r4_kind))<span class="comment"></span></div>
+<div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;<span class="comment">       !&gt; If the fileobj&#39;s root does not have data for this variable</span></div>
+<div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;       <span class="keywordflow">if</span> (fileobj%is_root .and. .not. bc_info%data_on_file_root) <span class="keywordflow">then</span><span class="comment"></span></div>
+<div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;<span class="comment">           !&gt; Allocate global_buf_r4_kind to be one size bigger, global_buf_r4_kind(i_glob+1,,:) is just dummy data</span></div>
+<div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;          <span class="keyword">allocate</span>(global_buf_r4_kind(i_glob+1, j_glob))<span class="comment"></span></div>
+<div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;<span class="comment">          !&gt; Allocate a temp local buffer to the fileobj&#39;s root. This is needed because the data needs to be send</span></div>
+<div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;<span class="comment">          !! to the fileobj&#39;s root, but because fileobj&#39;s root doesn&#39;t have any data, we just create dummy data and</span></div>
+<div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;<span class="comment">          !! not write it later</span></div>
+<div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;          <span class="keyword">allocate</span>(local_buf_r4_kind(1,1))</div>
+<div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;          local_buf_r4_kind = 0.</div>
+<div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;          isc = 1+i_glob; i_add=0; iec=1+i_glob; jsc=j_glob; j_add=0; jec=j_glob</div>
+<div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;          i1=1; i2=1; j1=1; j2=1</div>
+<div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;       <span class="keywordflow">else</span></div>
+<div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160;          <span class="comment">!! In this case there is data in fileobj&#39;s root, so there is no need for the dummy data</span></div>
+<div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;          <span class="keywordflow">if</span>(fileobj%is_root) <span class="keyword">allocate</span>(global_buf_r4_kind(i_glob, j_glob))</div>
+<div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160;          <span class="keyword">allocate</span>(local_buf_r4_kind(<span class="keyword">size</span>(vdata,1), <span class="keyword">size</span>(vdata,2)))</div>
+<div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;          local_buf_r4_kind = vdata</div>
+<div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160;<span class="keywordflow">       endif</span></div>
+<div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160; </div>
+<div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;       <span class="keyword">call </span>mpp_gather(isc+i_add, iec+i_add, jsc+j_add, jec+j_add, bc_info%pelist, &amp;</div>
+<div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160;                          local_buf_r4_kind(i1:i2,j1:j2), &amp;</div>
+<div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;                          global_buf_r4_kind, fileobj%is_root)</div>
+<div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160; </div>
+<div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160;        <span class="keyword">deallocate</span>(local_buf_r4_kind)<span class="comment"></span></div>
+<div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160;<span class="comment">       !&gt; If you are on fileobj&#39;s root, calculate the checksum and save the gathered data in a buffer</span></div>
+<div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160;       <span class="keywordflow">if</span> (fileobj%is_root) <span class="keywordflow">then</span></div>
+<div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160;           chksum_val = mpp_chksum(global_buf_r4_kind(1:i_glob,1:j_glob), (/<a class="code" href="group__mpp__mod.html#gacfeba7de56f9dd6000b3fd78f9d56c50">mpp_pe</a>()/))</div>
+<div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160;           <span class="keyword">allocate</span>(bc_info%globaldata2d_r4(i_glob, j_glob))</div>
+<div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160;           bc_info%globaldata2d_r4=global_buf_r4_kind(1:i_glob,1:j_glob)</div>
+<div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160;           <span class="keyword">deallocate</span>(global_buf_r4_kind)</div>
+<div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160;<span class="keywordflow">       endif</span></div>
+<div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160;<span class="keywordflow">    type is</span> (real(kind=r8_kind))<span class="comment"></span></div>
+<div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160;<span class="comment">       !&gt; If the fileobj&#39;s root does not have data for this variable</span></div>
+<div class="line"><a name="l00104"></a><span class="lineno">  104</span>&#160;       <span class="keywordflow">if</span> (fileobj%is_root .and. .not. bc_info%data_on_file_root) <span class="keywordflow">then</span><span class="comment"></span></div>
+<div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160;<span class="comment">          !&gt; Allocate global_buf_r8_kind to be one size bigger, global_buf_r8_kind(i_glob+1,,:) is just dummy data</span></div>
+<div class="line"><a name="l00106"></a><span class="lineno">  106</span>&#160;          <span class="keyword">allocate</span>(global_buf_r8_kind(i_glob+1, j_glob))<span class="comment"></span></div>
+<div class="line"><a name="l00107"></a><span class="lineno">  107</span>&#160;<span class="comment">          !&gt; Allocate a temp local buffer to the fileobj&#39;s root. This is needed because the data needs to be send</span></div>
+<div class="line"><a name="l00108"></a><span class="lineno">  108</span>&#160;<span class="comment">          !! to the fileobj&#39;s root, but because fileobj&#39;s root doesn&#39;t have any data, we just create dummy data and</span></div>
+<div class="line"><a name="l00109"></a><span class="lineno">  109</span>&#160;<span class="comment">          !! not write it later</span></div>
+<div class="line"><a name="l00110"></a><span class="lineno">  110</span>&#160;          <span class="keyword">allocate</span>(local_buf_r8_kind(1,1))</div>
+<div class="line"><a name="l00111"></a><span class="lineno">  111</span>&#160;          local_buf_r8_kind = 0.</div>
+<div class="line"><a name="l00112"></a><span class="lineno">  112</span>&#160;          isc = 1+i_glob; i_add=0; iec=1+i_glob; jsc=j_glob; j_add=0; jec=j_glob</div>
+<div class="line"><a name="l00113"></a><span class="lineno">  113</span>&#160;          i1=1; i2=1; j1=1; j2=1</div>
+<div class="line"><a name="l00114"></a><span class="lineno">  114</span>&#160;       <span class="keywordflow">else</span></div>
+<div class="line"><a name="l00115"></a><span class="lineno">  115</span>&#160;          <span class="comment">!! In this case there is data in fileobj&#39;s root, so there is no need for the dummy data</span></div>
+<div class="line"><a name="l00116"></a><span class="lineno">  116</span>&#160;          <span class="keywordflow">if</span>(fileobj%is_root) <span class="keyword">allocate</span>(global_buf_r8_kind(i_glob, j_glob))</div>
+<div class="line"><a name="l00117"></a><span class="lineno">  117</span>&#160;          <span class="keyword">allocate</span>(local_buf_r8_kind(<span class="keyword">size</span>(vdata,1), <span class="keyword">size</span>(vdata,2)))</div>
+<div class="line"><a name="l00118"></a><span class="lineno">  118</span>&#160;          local_buf_r8_kind = vdata</div>
+<div class="line"><a name="l00119"></a><span class="lineno">  119</span>&#160;<span class="keywordflow">       endif</span></div>
+<div class="line"><a name="l00120"></a><span class="lineno">  120</span>&#160; </div>
+<div class="line"><a name="l00121"></a><span class="lineno">  121</span>&#160;       <span class="keyword">call </span>mpp_gather(isc+i_add, iec+i_add, jsc+j_add, jec+j_add, bc_info%pelist, &amp;</div>
+<div class="line"><a name="l00122"></a><span class="lineno">  122</span>&#160;                          local_buf_r8_kind(i1:i2,j1:j2), &amp;</div>
+<div class="line"><a name="l00123"></a><span class="lineno">  123</span>&#160;                          global_buf_r8_kind, fileobj%is_root)</div>
+<div class="line"><a name="l00124"></a><span class="lineno">  124</span>&#160;       <span class="keyword">deallocate</span>(local_buf_r8_kind)<span class="comment"></span></div>
+<div class="line"><a name="l00125"></a><span class="lineno">  125</span>&#160;<span class="comment">       !&gt; If you are on fileobj&#39;s root, calculate the checksum and save the gathered data in a buffer</span></div>
+<div class="line"><a name="l00126"></a><span class="lineno">  126</span>&#160;       <span class="keywordflow">if</span> (fileobj%is_root) <span class="keywordflow">then</span></div>
+<div class="line"><a name="l00127"></a><span class="lineno">  127</span>&#160;           chksum_val = mpp_chksum(global_buf_r8_kind(1:i_glob,1:j_glob), (/<a class="code" href="group__mpp__mod.html#gacfeba7de56f9dd6000b3fd78f9d56c50">mpp_pe</a>()/))</div>
+<div class="line"><a name="l00128"></a><span class="lineno">  128</span>&#160;           <span class="keyword">allocate</span>(bc_info%globaldata2d_r8(i_glob, j_glob))</div>
+<div class="line"><a name="l00129"></a><span class="lineno">  129</span>&#160;           bc_info%globaldata2d_r8=global_buf_r8_kind(1:i_glob,1:j_glob)</div>
+<div class="line"><a name="l00130"></a><span class="lineno">  130</span>&#160;           <span class="keyword">deallocate</span>(global_buf_r8_kind)</div>
+<div class="line"><a name="l00131"></a><span class="lineno">  131</span>&#160;<span class="keywordflow">       endif</span></div>
+<div class="line"><a name="l00132"></a><span class="lineno">  132</span>&#160;<span class="keywordflow">     class default</span></div>
+<div class="line"><a name="l00133"></a><span class="lineno">  133</span>&#160;         <span class="keyword">call </span>error(<span class="stringliteral">&quot;gather_data_bc_2d: unsupported type. Currently only r8_kind and r4_kinds are supported&quot;</span>)</div>
+<div class="line"><a name="l00134"></a><span class="lineno">  134</span>&#160;<span class="keywordflow">   end select</span></div>
+<div class="line"><a name="l00135"></a><span class="lineno">  135</span>&#160;<span class="comment"></span> </div>
+<div class="line"><a name="l00136"></a><span class="lineno">  136</span>&#160;<span class="comment">   !&gt; Save the checksum, so you can write it later</span></div>
+<div class="line"><a name="l00137"></a><span class="lineno">  137</span>&#160;   <span class="keywordflow">if</span> (fileobj%is_root) <span class="keywordflow">then</span></div>
+<div class="line"><a name="l00138"></a><span class="lineno">  138</span>&#160;      chksum = <span class="stringliteral">&quot;&quot;</span></div>
+<div class="line"><a name="l00139"></a><span class="lineno">  139</span>&#160;      <span class="keyword">write</span>(chksum, <span class="stringliteral">&quot;(Z16)&quot;</span>) chksum_val</div>
+<div class="line"><a name="l00140"></a><span class="lineno">  140</span>&#160;      bc_info%chksum = chksum</div>
+<div class="line"><a name="l00141"></a><span class="lineno">  141</span>&#160;<span class="keywordflow">   endif</span></div>
+<div class="line"><a name="l00142"></a><span class="lineno">  142</span>&#160; </div>
+<div class="line"><a name="l00143"></a><span class="lineno">  143</span>&#160;<span class="keyword">end subroutine </span><a class="code" href="group__netcdf__io__mod.html#gad440f02265e003907bf2d8097b47eed7">gather_data_bc_2d</a></div>
+<div class="line"><a name="l00144"></a><span class="lineno">  144</span>&#160;<span class="comment"></span> </div>
+<div class="line"><a name="l00145"></a><span class="lineno">  145</span>&#160;<span class="comment">!&gt; @brief gathers the 2d vdata from all of the relevant pes into the root_pe and saves it to a</span></div>
+<div class="line"><a name="l00146"></a><span class="lineno">  146</span>&#160;<span class="comment">!! buffer.</span></div>
+<div class="line"><a name="l00147"></a><span class="lineno">  147</span>&#160;<span class="keyword">subroutine </span><a class="code" href="group__netcdf__io__mod.html#ga99a306d2b645cb196888fc967f2cd9d1">gather_data_bc_3d</a>(fileobj, vdata, bc_info)</div>
+<div class="line"><a name="l00148"></a><span class="lineno"><a class="line" href="group__netcdf__io__mod.html#ga99a306d2b645cb196888fc967f2cd9d1">  148</a></span>&#160;  <span class="keywordtype">class</span>(fmsnetcdffile_t), <span class="keywordtype">intent(inout)</span> :: fileobj<span class="comment"> !&lt; Fms2io netcdf fileobj</span></div>
+<div class="line"><a name="l00149"></a><span class="lineno">  149</span>&#160;  <span class="keywordtype">class</span>(*), <span class="keywordtype">dimension(:,:,:)</span>, <span class="keywordtype">intent(in)</span> :: vdata<span class="comment"> !&lt; Data to be gather</span></div>
+<div class="line"><a name="l00150"></a><span class="lineno">  150</span>&#160;  <span class="keywordtype">type</span>(bc_information), <span class="keywordtype">intent(inout)</span> :: bc_info<span class="comment"> !&lt; information about the boundary condition variable</span></div>
+<div class="line"><a name="l00151"></a><span class="lineno">  151</span>&#160; </div>
+<div class="line"><a name="l00152"></a><span class="lineno">  152</span>&#160;  <span class="keywordtype">integer</span> :: i_glob<span class="comment"> !&lt; Size of the global domain in x</span></div>
+<div class="line"><a name="l00153"></a><span class="lineno">  153</span>&#160;  <span class="keywordtype">integer</span> :: j_glob<span class="comment"> !&lt; Size of the global domain in y</span></div>
+<div class="line"><a name="l00154"></a><span class="lineno">  154</span>&#160;  <span class="keywordtype">integer</span> :: k_glob<span class="comment"> !&lt; Size of the z axis</span></div>
+<div class="line"><a name="l00155"></a><span class="lineno">  155</span>&#160; </div>
+<div class="line"><a name="l00156"></a><span class="lineno">  156</span>&#160;  <span class="keywordtype">integer</span> :: isc, iec, jsc, jec<span class="comment"> !&lt; current PE&#39;s indices</span></div>
+<div class="line"><a name="l00157"></a><span class="lineno">  157</span>&#160;  <span class="keywordtype">integer</span> :: i1, i2, j1, j2<span class="comment"> !&lt; current PE&#39;s indices relative to the global domain</span></div>
+<div class="line"><a name="l00158"></a><span class="lineno">  158</span>&#160;  <span class="keywordtype">integer</span> :: i_add, j_add<span class="comment"> !&lt; current PE&#39;s shift</span></div>
+<div class="line"><a name="l00159"></a><span class="lineno">  159</span>&#160; </div>
+<div class="line"><a name="l00160"></a><span class="lineno">  160</span>&#160;<span class="keywordtype">  real</span>(kind=r4_kind), <span class="keywordtype">dimension(:,:,:)</span>, <span class="keywordtype">allocatable</span>, <span class="keywordtype">target</span> :: global_buf_r4_kind <span class="comment">!&lt; buffer with a data gathered</span></div>
+<div class="line"><a name="l00161"></a><span class="lineno">  161</span>&#160;<span class="keywordtype">  real</span>(kind=r4_kind), <span class="keywordtype">dimension(:,:,:)</span>, <span class="keywordtype">allocatable</span>, <span class="keywordtype">target</span> :: local_buf_r4_kind <span class="comment">!&lt; current PEs data</span></div>
+<div class="line"><a name="l00162"></a><span class="lineno">  162</span>&#160;<span class="keywordtype">  real</span>(kind=r8_kind), <span class="keywordtype">dimension(:,:,:)</span>, <span class="keywordtype">allocatable</span>, <span class="keywordtype">target</span> :: global_buf_r8_kind <span class="comment">!&lt; buffer with a data gathered</span></div>
+<div class="line"><a name="l00163"></a><span class="lineno">  163</span>&#160;<span class="keywordtype">  real</span>(kind=r8_kind), <span class="keywordtype">dimension(:,:,:)</span>, <span class="keywordtype">allocatable</span>, <span class="keywordtype">target</span> :: local_buf_r8_kind <span class="comment">!&lt; current PEs data</span></div>
+<div class="line"><a name="l00164"></a><span class="lineno">  164</span>&#160; </div>
+<div class="line"><a name="l00165"></a><span class="lineno">  165</span>&#160;  <span class="keywordtype">integer(kind=i8_kind)</span> :: chksum_val<span class="comment"> !&lt; Checksum value calculated from the gathered data</span></div>
+<div class="line"><a name="l00166"></a><span class="lineno">  166</span>&#160;  <span class="keywordtype">character(len=32)</span> :: chksum<span class="comment"> !&lt; Cheksum value converted to a string</span></div>
+<div class="line"><a name="l00167"></a><span class="lineno">  167</span>&#160;<span class="comment"></span> </div>
+<div class="line"><a name="l00168"></a><span class="lineno">  168</span>&#160;<span class="comment">  !&gt; Set the indices</span></div>
+<div class="line"><a name="l00169"></a><span class="lineno">  169</span>&#160;  isc = bc_info%indices(1)</div>
+<div class="line"><a name="l00170"></a><span class="lineno">  170</span>&#160;  iec = bc_info%indices(2)</div>
+<div class="line"><a name="l00171"></a><span class="lineno">  171</span>&#160;  jsc = bc_info%indices(3)</div>
+<div class="line"><a name="l00172"></a><span class="lineno">  172</span>&#160;  jec = bc_info%indices(4)</div>
+<div class="line"><a name="l00173"></a><span class="lineno">  173</span>&#160;<span class="comment"></span> </div>
+<div class="line"><a name="l00174"></a><span class="lineno">  174</span>&#160;<span class="comment">  !&gt; This is the section of the PE that will actually be added to the global_buffer</span></div>
+<div class="line"><a name="l00175"></a><span class="lineno">  175</span>&#160;  i1 = 1 + bc_info%x_halo</div>
+<div class="line"><a name="l00176"></a><span class="lineno">  176</span>&#160;  i2 = i1 + (iec-isc)</div>
+<div class="line"><a name="l00177"></a><span class="lineno">  177</span>&#160;  j1 = 1 + bc_info%y_halo</div>
+<div class="line"><a name="l00178"></a><span class="lineno">  178</span>&#160;  j2 = j1 + (jec-jsc)</div>
+<div class="line"><a name="l00179"></a><span class="lineno">  179</span>&#160;<span class="comment"></span> </div>
+<div class="line"><a name="l00180"></a><span class="lineno">  180</span>&#160;<span class="comment">  !&gt; Set up index shifts for global array</span></div>
+<div class="line"><a name="l00181"></a><span class="lineno">  181</span>&#160;  i_add = bc_info%ishift</div>
+<div class="line"><a name="l00182"></a><span class="lineno">  182</span>&#160;  j_add = bc_info%jshift</div>
+<div class="line"><a name="l00183"></a><span class="lineno">  183</span>&#160;<span class="comment"></span> </div>
+<div class="line"><a name="l00184"></a><span class="lineno">  184</span>&#160;<span class="comment">  !&gt; Allocate a global_buffer that will be written</span></div>
+<div class="line"><a name="l00185"></a><span class="lineno">  185</span>&#160;  <span class="keywordflow">if</span> (fileobj%is_root) <span class="keywordflow">then</span></div>
+<div class="line"><a name="l00186"></a><span class="lineno">  186</span>&#160;        i_glob = bc_info%global_size(1)</div>
+<div class="line"><a name="l00187"></a><span class="lineno">  187</span>&#160;        j_glob = bc_info%global_size(2)</div>
+<div class="line"><a name="l00188"></a><span class="lineno">  188</span>&#160;<span class="keywordflow">  endif</span></div>
+<div class="line"><a name="l00189"></a><span class="lineno">  189</span>&#160; </div>
+<div class="line"><a name="l00190"></a><span class="lineno">  190</span>&#160;  k_glob=bc_info%global_size(3)<span class="comment"></span></div>
+<div class="line"><a name="l00191"></a><span class="lineno">  191</span>&#160;<span class="comment">  !&gt; Gather the data and calculate the checksum for the resulting array.</span></div>
+<div class="line"><a name="l00192"></a><span class="lineno">  192</span>&#160;  <span class="keywordflow">select type</span>(vdata)</div>
+<div class="line"><a name="l00193"></a><span class="lineno">  193</span>&#160;<span class="keywordflow">    type is</span> (real(kind=r4_kind))<span class="comment"></span></div>
+<div class="line"><a name="l00194"></a><span class="lineno">  194</span>&#160;<span class="comment">       !&gt; If the fileobj&#39;s root does not have data for this variable</span></div>
+<div class="line"><a name="l00195"></a><span class="lineno">  195</span>&#160;       <span class="keywordflow">if</span> (fileobj%is_root .and. .not. bc_info%data_on_file_root) <span class="keywordflow">then</span><span class="comment"></span></div>
+<div class="line"><a name="l00196"></a><span class="lineno">  196</span>&#160;<span class="comment">          !&gt; Allocate global_buf_r8_kind to be one size bigger, global_buf_r8_kind(i_glob+1,,:) is just dummy data</span></div>
+<div class="line"><a name="l00197"></a><span class="lineno">  197</span>&#160;          <span class="keyword">allocate</span>(global_buf_r4_kind(i_glob+1, j_glob, bc_info%global_size(3)))<span class="comment"></span></div>
+<div class="line"><a name="l00198"></a><span class="lineno">  198</span>&#160;<span class="comment">          !&gt; Allocate a temp local buffer to the fileobj&#39;s root. This is needed because the data needs to be send</span></div>
+<div class="line"><a name="l00199"></a><span class="lineno">  199</span>&#160;<span class="comment">          !! to the fileobj&#39;s root, but because fileobj&#39;s root doesn&#39;t have any data, we just create dummy data and</span></div>
+<div class="line"><a name="l00200"></a><span class="lineno">  200</span>&#160;<span class="comment">          !! not write it later</span></div>
+<div class="line"><a name="l00201"></a><span class="lineno">  201</span>&#160;          <span class="keyword">allocate</span>(local_buf_r4_kind(1,1,1))</div>
+<div class="line"><a name="l00202"></a><span class="lineno">  202</span>&#160;          local_buf_r4_kind = 0.</div>
+<div class="line"><a name="l00203"></a><span class="lineno">  203</span>&#160;          isc = 1+i_glob; i_add=0; iec=1+i_glob; jsc=j_glob; j_add=0; jec=j_glob</div>
+<div class="line"><a name="l00204"></a><span class="lineno">  204</span>&#160;          i1=1; i2=1; j1=1; j2=1</div>
+<div class="line"><a name="l00205"></a><span class="lineno">  205</span>&#160;       <span class="keywordflow">else</span></div>
+<div class="line"><a name="l00206"></a><span class="lineno">  206</span>&#160;          <span class="comment">!! In this case there is data in fileobj&#39;s root, so there is no need for the dummy data</span></div>
+<div class="line"><a name="l00207"></a><span class="lineno">  207</span>&#160;          <span class="keywordflow">if</span>(fileobj%is_root) <span class="keyword">allocate</span>(global_buf_r4_kind(i_glob, j_glob, k_glob))</div>
+<div class="line"><a name="l00208"></a><span class="lineno">  208</span>&#160;          <span class="keyword">allocate</span>(local_buf_r4_kind(<span class="keyword">size</span>(vdata,1), <span class="keyword">size</span>(vdata,2), <span class="keyword">size</span>(vdata,3)))</div>
+<div class="line"><a name="l00209"></a><span class="lineno">  209</span>&#160;          local_buf_r4_kind = vdata</div>
+<div class="line"><a name="l00210"></a><span class="lineno">  210</span>&#160;<span class="keywordflow">       endif</span></div>
+<div class="line"><a name="l00211"></a><span class="lineno">  211</span>&#160; </div>
+<div class="line"><a name="l00212"></a><span class="lineno">  212</span>&#160;       <span class="keyword">call </span>mpp_gather(isc+i_add, iec+i_add, jsc+j_add, jec+j_add, k_glob, bc_info%pelist, &amp;</div>
+<div class="line"><a name="l00213"></a><span class="lineno">  213</span>&#160;                          local_buf_r4_kind(i1:i2,j1:j2,:), &amp;</div>
+<div class="line"><a name="l00214"></a><span class="lineno">  214</span>&#160;                          global_buf_r4_kind, fileobj%is_root)</div>
+<div class="line"><a name="l00215"></a><span class="lineno">  215</span>&#160;       <span class="keyword">deallocate</span>(local_buf_r4_kind)<span class="comment"></span></div>
+<div class="line"><a name="l00216"></a><span class="lineno">  216</span>&#160;<span class="comment">       !&gt; If you are on fileobj&#39;s root, calculate the checksum and save the gathered data in a buffer</span></div>
+<div class="line"><a name="l00217"></a><span class="lineno">  217</span>&#160;       <span class="keywordflow">if</span> (fileobj%is_root) <span class="keywordflow">then</span></div>
+<div class="line"><a name="l00218"></a><span class="lineno">  218</span>&#160;           chksum_val = mpp_chksum(global_buf_r4_kind(1:i_glob,1:j_glob, :), (/<a class="code" href="group__mpp__mod.html#gacfeba7de56f9dd6000b3fd78f9d56c50">mpp_pe</a>()/))</div>
+<div class="line"><a name="l00219"></a><span class="lineno">  219</span>&#160;           <span class="keyword">allocate</span>(bc_info%globaldata3d_r4(i_glob, j_glob, bc_info%global_size(3)))</div>
+<div class="line"><a name="l00220"></a><span class="lineno">  220</span>&#160;           bc_info%globaldata3d_r4=global_buf_r4_kind(1:i_glob,1:j_glob,:)</div>
+<div class="line"><a name="l00221"></a><span class="lineno">  221</span>&#160;           <span class="keyword">deallocate</span>(global_buf_r4_kind)</div>
+<div class="line"><a name="l00222"></a><span class="lineno">  222</span>&#160;<span class="keywordflow">       endif</span></div>
+<div class="line"><a name="l00223"></a><span class="lineno">  223</span>&#160;<span class="keywordflow">    type is</span> (real(kind=r8_kind))<span class="comment"></span></div>
+<div class="line"><a name="l00224"></a><span class="lineno">  224</span>&#160;<span class="comment">       !&gt; If the fileobj&#39;s root does not have data for this variable</span></div>
+<div class="line"><a name="l00225"></a><span class="lineno">  225</span>&#160;       <span class="keywordflow">if</span> (fileobj%is_root .and. .not. bc_info%data_on_file_root) <span class="keywordflow">then</span><span class="comment"></span></div>
+<div class="line"><a name="l00226"></a><span class="lineno">  226</span>&#160;<span class="comment">          !&gt; Allocate global_buf_r8_kind to be one size bigger, global_buf_r8_kind(i_glob+1,,:) is just dummy data</span></div>
+<div class="line"><a name="l00227"></a><span class="lineno">  227</span>&#160;          <span class="keyword">allocate</span>(global_buf_r8_kind(i_glob+1, j_glob, bc_info%global_size(3)))<span class="comment"></span></div>
+<div class="line"><a name="l00228"></a><span class="lineno">  228</span>&#160;<span class="comment">          !&gt; Allocate a temp local buffer to the fileobj&#39;s root. This is needed because the data needs to be send</span></div>
+<div class="line"><a name="l00229"></a><span class="lineno">  229</span>&#160;<span class="comment">          !! to the fileobj&#39;s root, but because fileobj&#39;s root doesn&#39;t have any data, we just create dummy data and</span></div>
+<div class="line"><a name="l00230"></a><span class="lineno">  230</span>&#160;<span class="comment">          !! not write it later</span></div>
+<div class="line"><a name="l00231"></a><span class="lineno">  231</span>&#160;          <span class="keyword">allocate</span>(local_buf_r8_kind(1,1,1))</div>
+<div class="line"><a name="l00232"></a><span class="lineno">  232</span>&#160;          local_buf_r8_kind = 0.</div>
+<div class="line"><a name="l00233"></a><span class="lineno">  233</span>&#160;          isc = 1+i_glob; i_add=0; iec=1+i_glob; jsc=j_glob; j_add=0; jec=j_glob</div>
+<div class="line"><a name="l00234"></a><span class="lineno">  234</span>&#160;          i1=1; i2=1; j1=1; j2=1</div>
+<div class="line"><a name="l00235"></a><span class="lineno">  235</span>&#160;       <span class="keywordflow">else</span></div>
+<div class="line"><a name="l00236"></a><span class="lineno">  236</span>&#160;          <span class="comment">!! In this case there is data in fileobj&#39;s root, so there is no need for the dummy data</span></div>
+<div class="line"><a name="l00237"></a><span class="lineno">  237</span>&#160;          <span class="keywordflow">if</span>(fileobj%is_root) <span class="keyword">allocate</span>(global_buf_r8_kind(i_glob, j_glob, k_glob))</div>
+<div class="line"><a name="l00238"></a><span class="lineno">  238</span>&#160;          <span class="keyword">allocate</span>(local_buf_r8_kind(<span class="keyword">size</span>(vdata,1), <span class="keyword">size</span>(vdata,2), <span class="keyword">size</span>(vdata,3)))</div>
+<div class="line"><a name="l00239"></a><span class="lineno">  239</span>&#160;          local_buf_r8_kind = vdata</div>
+<div class="line"><a name="l00240"></a><span class="lineno">  240</span>&#160;<span class="keywordflow">       endif</span></div>
+<div class="line"><a name="l00241"></a><span class="lineno">  241</span>&#160; </div>
+<div class="line"><a name="l00242"></a><span class="lineno">  242</span>&#160;       <span class="keyword">call </span>mpp_gather(isc+i_add, iec+i_add, jsc+j_add, jec+j_add, k_glob, bc_info%pelist, &amp;</div>
+<div class="line"><a name="l00243"></a><span class="lineno">  243</span>&#160;                          local_buf_r8_kind(i1:i2,j1:j2,:), &amp;</div>
+<div class="line"><a name="l00244"></a><span class="lineno">  244</span>&#160;                          global_buf_r8_kind, fileobj%is_root)</div>
+<div class="line"><a name="l00245"></a><span class="lineno">  245</span>&#160;       <span class="keyword">deallocate</span>(local_buf_r8_kind)<span class="comment"></span></div>
+<div class="line"><a name="l00246"></a><span class="lineno">  246</span>&#160;<span class="comment">       !&gt; If you are on fileobj&#39;s root, calculate the checksum and save the gathered data in a buffer</span></div>
+<div class="line"><a name="l00247"></a><span class="lineno">  247</span>&#160;       <span class="keywordflow">if</span> (fileobj%is_root) <span class="keywordflow">then</span></div>
+<div class="line"><a name="l00248"></a><span class="lineno">  248</span>&#160;           chksum_val = mpp_chksum(global_buf_r8_kind(1:i_glob,1:j_glob, :), (/<a class="code" href="group__mpp__mod.html#gacfeba7de56f9dd6000b3fd78f9d56c50">mpp_pe</a>()/))</div>
+<div class="line"><a name="l00249"></a><span class="lineno">  249</span>&#160;           <span class="keyword">allocate</span>(bc_info%globaldata3d_r8(i_glob, j_glob, bc_info%global_size(3)))</div>
+<div class="line"><a name="l00250"></a><span class="lineno">  250</span>&#160;           bc_info%globaldata3d_r8=global_buf_r8_kind(1:i_glob,1:j_glob,:)</div>
+<div class="line"><a name="l00251"></a><span class="lineno">  251</span>&#160;           <span class="keyword">deallocate</span>(global_buf_r8_kind)</div>
+<div class="line"><a name="l00252"></a><span class="lineno">  252</span>&#160;<span class="keywordflow">       endif</span></div>
+<div class="line"><a name="l00253"></a><span class="lineno">  253</span>&#160;<span class="keywordflow">     class default</span></div>
+<div class="line"><a name="l00254"></a><span class="lineno">  254</span>&#160;         <span class="keyword">call </span>error(<span class="stringliteral">&quot;gather_data_bc_3d: unsupported type. Currently only r8_kind and r4_kinds are supported&quot;</span>)</div>
+<div class="line"><a name="l00255"></a><span class="lineno">  255</span>&#160;<span class="keywordflow">   end select</span></div>
+<div class="line"><a name="l00256"></a><span class="lineno">  256</span>&#160;<span class="comment"></span> </div>
+<div class="line"><a name="l00257"></a><span class="lineno">  257</span>&#160;<span class="comment">   !&gt; Save the checksum, so you can write it later</span></div>
+<div class="line"><a name="l00258"></a><span class="lineno">  258</span>&#160;   <span class="keywordflow">if</span> (fileobj%is_root) <span class="keywordflow">then</span></div>
+<div class="line"><a name="l00259"></a><span class="lineno">  259</span>&#160;      chksum = <span class="stringliteral">&quot;&quot;</span></div>
+<div class="line"><a name="l00260"></a><span class="lineno">  260</span>&#160;      <span class="keyword">write</span>(chksum, <span class="stringliteral">&quot;(Z16)&quot;</span>) chksum_val</div>
+<div class="line"><a name="l00261"></a><span class="lineno">  261</span>&#160;      bc_info%chksum = chksum</div>
+<div class="line"><a name="l00262"></a><span class="lineno">  262</span>&#160;<span class="keywordflow">   endif</span></div>
+<div class="line"><a name="l00263"></a><span class="lineno">  263</span>&#160; </div>
+<div class="line"><a name="l00264"></a><span class="lineno">  264</span>&#160;<span class="keyword">end subroutine </span><a class="code" href="group__netcdf__io__mod.html#ga99a306d2b645cb196888fc967f2cd9d1">gather_data_bc_3d</a><span class="comment"></span></div>
+<div class="line"><a name="l00265"></a><span class="lineno">  265</span>&#160;<span class="comment">!&gt; @}</span></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
-<div class="ttc" id="agather__data__bc_8inc_html_ad440f02265e003907bf2d8097b47eed7"><div class="ttname"><a href="gather__data__bc_8inc.html#ad440f02265e003907bf2d8097b47eed7">gather_data_bc_2d</a></div><div class="ttdeci">subroutine gather_data_bc_2d(fileobj, vdata, bc_info)</div><div class="ttdoc">gathers the 2d vdata from all of the relevant pes into the root_pe and saves it to a buffer.</div><div class="ttdef"><b>Definition:</b> <a href="gather__data__bc_8inc_source.html#l00025">gather_data_bc.inc:25</a></div></div>
-<div class="ttc" id="ampp__util_8inc_html_acfeba7de56f9dd6000b3fd78f9d56c50"><div class="ttname"><a href="mpp__util_8inc.html#acfeba7de56f9dd6000b3fd78f9d56c50">mpp_pe</a></div><div class="ttdeci">integer function mpp_pe()</div><div class="ttdoc">Returns processor ID. This returns the unique ID associated with a PE. This number runs between 0 and...</div><div class="ttdef"><b>Definition:</b> <a href="mpp__util_8inc_source.html#l00440">mpp_util.inc:440</a></div></div>
-<div class="ttc" id="agather__data__bc_8inc_html_a99a306d2b645cb196888fc967f2cd9d1"><div class="ttname"><a href="gather__data__bc_8inc.html#a99a306d2b645cb196888fc967f2cd9d1">gather_data_bc_3d</a></div><div class="ttdeci">subroutine gather_data_bc_3d(fileobj, vdata, bc_info)</div><div class="ttdoc">gathers the 2d vdata from all of the relevant pes into the root_pe and saves it to a buffer.</div><div class="ttdef"><b>Definition:</b> <a href="gather__data__bc_8inc_source.html#l00145">gather_data_bc.inc:145</a></div></div>
+<div class="ttc" id="agroup__netcdf__io__mod_html_gad440f02265e003907bf2d8097b47eed7"><div class="ttname"><a href="group__netcdf__io__mod.html#gad440f02265e003907bf2d8097b47eed7">gather_data_bc_2d</a></div><div class="ttdeci">subroutine gather_data_bc_2d(fileobj, vdata, bc_info)</div><div class="ttdoc">gathers the 2d vdata from all of the relevant pes into the root_pe and saves it to a buffer.</div><div class="ttdef"><b>Definition:</b> <a href="gather__data__bc_8inc_source.html#l00028">gather_data_bc.inc:28</a></div></div>
+<div class="ttc" id="agroup__netcdf__io__mod_html_ga99a306d2b645cb196888fc967f2cd9d1"><div class="ttname"><a href="group__netcdf__io__mod.html#ga99a306d2b645cb196888fc967f2cd9d1">gather_data_bc_3d</a></div><div class="ttdeci">subroutine gather_data_bc_3d(fileobj, vdata, bc_info)</div><div class="ttdoc">gathers the 2d vdata from all of the relevant pes into the root_pe and saves it to a buffer.</div><div class="ttdef"><b>Definition:</b> <a href="gather__data__bc_8inc_source.html#l00148">gather_data_bc.inc:148</a></div></div>
+<div class="ttc" id="agroup__mpp__mod_html_gacfeba7de56f9dd6000b3fd78f9d56c50"><div class="ttname"><a href="group__mpp__mod.html#gacfeba7de56f9dd6000b3fd78f9d56c50">mpp_pe</a></div><div class="ttdeci">integer function mpp_pe()</div><div class="ttdoc">Returns processor ID.</div><div class="ttdef"><b>Definition:</b> <a href="mpp__util_8inc_source.html#l00378">mpp_util.inc:378</a></div></div>
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><a class="el" href="dir_0b23f86593b5beae7fad04a40cca3c16.html">fms2_io</a></li><li class="navelem"><a class="el" href="dir_731df1d3823ee5b9df3d8fffb0d31a46.html">include</a></li><li class="navelem"><a class="el" href="gather__data__bc_8inc.html">gather_data_bc.inc</a></li>
+    <li class="navelem"><a class="el" href="dir_0b23f86593b5beae7fad04a40cca3c16.html">fms2_io</a></li><li class="navelem"><a class="el" href="dir_731df1d3823ee5b9df3d8fffb0d31a46.html">include</a></li><li class="navelem"><b>gather_data_bc.inc</b></li>
     <li class="footer">Generated by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="doxygen.png" alt="doxygen"/></a> 1.8.17 </li>

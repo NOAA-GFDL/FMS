@@ -33,7 +33,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">FMS
-   &#160;<span id="projectnumber">2022.02.0</span>
+   &#160;<span id="projectnumber">2022.03.00</span>
    </div>
    <div id="projectbrief">Flexible Modeling System</div>
   </td>
@@ -103,40 +103,163 @@ $(document).ready(function(){initNavTree('group__drifters__comm__mod.html',''); 
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
 Data Types</h2></td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">type &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structdrifters__comm__mod_1_1drifters__comm__type.html">drifters_comm_type</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Type for drifter communication between PE's.  <a href="structdrifters__comm__mod_1_1drifters__comm__type.html#details">More...</a><br /></td></tr>
-<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:structdrifters__comm__mod_1_1drifters__comm__type"><td class="memItemLeft" align="right" valign="top">type &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__drifters__comm__mod.html#structdrifters__comm__mod_1_1drifters__comm__type">drifters_comm_type</a></td></tr>
+<tr class="memdesc:structdrifters__comm__mod_1_1drifters__comm__type"><td class="mdescLeft">&#160;</td><td class="mdescRight">Type for drifter communication between PE's.  <a href="group__drifters__comm__mod.html#structdrifters__comm__mod_1_1drifters__comm__type">More...</a><br /></td></tr>
+<tr class="separator:structdrifters__comm__mod_1_1drifters__comm__type"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="func-members"></a>
 Functions/Subroutines</h2></td></tr>
-<tr class="memitem:gad6202f68705009bf80d213c0a1e13074"><td class="memItemLeft" align="right" valign="top">subroutine, public&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__drifters__comm__mod.html#gad6202f68705009bf80d213c0a1e13074">drifters_comm_new</a> (self)</td></tr>
-<tr class="memdesc:gad6202f68705009bf80d213c0a1e13074"><td class="mdescLeft">&#160;</td><td class="mdescRight">Initializes default values for <a class="el" href="structdrifters__comm__mod_1_1drifters__comm__type.html">drifters_comm_type</a> in self.  <a href="group__drifters__comm__mod.html#gad6202f68705009bf80d213c0a1e13074">More...</a><br /></td></tr>
-<tr class="separator:gad6202f68705009bf80d213c0a1e13074"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:gae835675113b952770f1ba84467beeda1"><td class="memItemLeft" align="right" valign="top">subroutine, public&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__drifters__comm__mod.html#gae835675113b952770f1ba84467beeda1">drifters_comm_del</a> (self)</td></tr>
-<tr class="memdesc:gae835675113b952770f1ba84467beeda1"><td class="mdescLeft">&#160;</td><td class="mdescRight">Reset data in a given <a class="el" href="structdrifters__comm__mod_1_1drifters__comm__type.html">drifters_comm_type</a> to defaults.  <a href="group__drifters__comm__mod.html#gae835675113b952770f1ba84467beeda1">More...</a><br /></td></tr>
+<tr class="memdesc:gae835675113b952770f1ba84467beeda1"><td class="mdescLeft">&#160;</td><td class="mdescRight">Reset data in a given <a class="el" href="group__drifters__comm__mod.html">drifters_comm_type</a> to defaults.  <a href="group__drifters__comm__mod.html#gae835675113b952770f1ba84467beeda1">More...</a><br /></td></tr>
 <tr class="separator:gae835675113b952770f1ba84467beeda1"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:gac8886c09b18d2138ff27dc47e36cb2c4"><td class="memItemLeft" align="right" valign="top"><a id="gac8886c09b18d2138ff27dc47e36cb2c4"></a>
-subroutine&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__drifters__comm__mod.html#gac8886c09b18d2138ff27dc47e36cb2c4">drifters_comm_set_data_bounds</a> (self, xmin, ymin, xmax, ymax)</td></tr>
-<tr class="memdesc:gac8886c09b18d2138ff27dc47e36cb2c4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set data domain bounds. <br /></td></tr>
-<tr class="separator:gac8886c09b18d2138ff27dc47e36cb2c4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga21b3baf8e94bded2623c05a77d4f1c13"><td class="memItemLeft" align="right" valign="top">subroutine, public&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__drifters__comm__mod.html#ga21b3baf8e94bded2623c05a77d4f1c13">drifters_comm_gather</a> (self, drfts, dinp, lons, lats, do_save_lonlat, filename, root, mycomm)</td></tr>
+<tr class="separator:ga21b3baf8e94bded2623c05a77d4f1c13"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:gad6202f68705009bf80d213c0a1e13074"><td class="memItemLeft" align="right" valign="top">subroutine, public&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__drifters__comm__mod.html#gad6202f68705009bf80d213c0a1e13074">drifters_comm_new</a> (self)</td></tr>
+<tr class="memdesc:gad6202f68705009bf80d213c0a1e13074"><td class="mdescLeft">&#160;</td><td class="mdescRight">Initializes default values for <a class="el" href="group__drifters__comm__mod.html">drifters_comm_type</a> in self.  <a href="group__drifters__comm__mod.html#gad6202f68705009bf80d213c0a1e13074">More...</a><br /></td></tr>
+<tr class="separator:gad6202f68705009bf80d213c0a1e13074"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:gaee73200ee61bec4133ee82ba13512b96"><td class="memItemLeft" align="right" valign="top"><a id="gaee73200ee61bec4133ee82ba13512b96"></a>
 subroutine&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__drifters__comm__mod.html#gaee73200ee61bec4133ee82ba13512b96">drifters_comm_set_comp_bounds</a> (self, xmin, ymin, xmax, ymax)</td></tr>
 <tr class="memdesc:gaee73200ee61bec4133ee82ba13512b96"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set compute domain bounds. <br /></td></tr>
 <tr class="separator:gaee73200ee61bec4133ee82ba13512b96"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga4db4d3ab76ee5c6ae039183dc198c9c6"><td class="memItemLeft" align="right" valign="top">subroutine, public&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__drifters__comm__mod.html#ga4db4d3ab76ee5c6ae039183dc198c9c6">drifters_comm_set_pe_neighbors</a> (self, domain)</td></tr>
-<tr class="memdesc:ga4db4d3ab76ee5c6ae039183dc198c9c6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set neighboring pe numbers.  <a href="group__drifters__comm__mod.html#ga4db4d3ab76ee5c6ae039183dc198c9c6">More...</a><br /></td></tr>
-<tr class="separator:ga4db4d3ab76ee5c6ae039183dc198c9c6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:gac8886c09b18d2138ff27dc47e36cb2c4"><td class="memItemLeft" align="right" valign="top"><a id="gac8886c09b18d2138ff27dc47e36cb2c4"></a>
+subroutine&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__drifters__comm__mod.html#gac8886c09b18d2138ff27dc47e36cb2c4">drifters_comm_set_data_bounds</a> (self, xmin, ymin, xmax, ymax)</td></tr>
+<tr class="memdesc:gac8886c09b18d2138ff27dc47e36cb2c4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set data domain bounds. <br /></td></tr>
+<tr class="separator:gac8886c09b18d2138ff27dc47e36cb2c4"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:gac59ff2590c95134ec28fe03e33094fa9"><td class="memItemLeft" align="right" valign="top">subroutine, public&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__drifters__comm__mod.html#gac59ff2590c95134ec28fe03e33094fa9">drifters_comm_set_domain</a> (self, domain, x, y, backoff_x, backoff_y)</td></tr>
 <tr class="memdesc:gac59ff2590c95134ec28fe03e33094fa9"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set boundaries of domain and compute neighbors. This method can be called multiple times; the data domain will just be the intersection (overlap) of all domains (e.g domain_u, domain_v, etc).  <a href="group__drifters__comm__mod.html#gac59ff2590c95134ec28fe03e33094fa9">More...</a><br /></td></tr>
 <tr class="separator:gac59ff2590c95134ec28fe03e33094fa9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga4db4d3ab76ee5c6ae039183dc198c9c6"><td class="memItemLeft" align="right" valign="top">subroutine, public&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__drifters__comm__mod.html#ga4db4d3ab76ee5c6ae039183dc198c9c6">drifters_comm_set_pe_neighbors</a> (self, domain)</td></tr>
+<tr class="memdesc:ga4db4d3ab76ee5c6ae039183dc198c9c6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set neighboring pe numbers.  <a href="group__drifters__comm__mod.html#ga4db4d3ab76ee5c6ae039183dc198c9c6">More...</a><br /></td></tr>
+<tr class="separator:ga4db4d3ab76ee5c6ae039183dc198c9c6"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga62f10c09f77f8dbc0c1e94978f7ccddc"><td class="memItemLeft" align="right" valign="top">subroutine, public&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__drifters__comm__mod.html#ga62f10c09f77f8dbc0c1e94978f7ccddc">drifters_comm_update</a> (self, drfts, new_positions, comm, remove, max_add_remove)</td></tr>
 <tr class="memdesc:ga62f10c09f77f8dbc0c1e94978f7ccddc"><td class="mdescLeft">&#160;</td><td class="mdescRight">Updates drifter communication.  <a href="group__drifters__comm__mod.html#ga62f10c09f77f8dbc0c1e94978f7ccddc">More...</a><br /></td></tr>
 <tr class="separator:ga62f10c09f77f8dbc0c1e94978f7ccddc"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga21b3baf8e94bded2623c05a77d4f1c13"><td class="memItemLeft" align="right" valign="top">subroutine, public&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__drifters__comm__mod.html#ga21b3baf8e94bded2623c05a77d4f1c13">drifters_comm_gather</a> (self, drfts, dinp, lons, lats, do_save_lonlat, filename, root, mycomm)</td></tr>
-<tr class="separator:ga21b3baf8e94bded2623c05a77d4f1c13"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <p>Routines and types to update drifter positions across processor domains. </p>
+<hr/><h2 class="groupheader">Data Type Documentation</h2>
+<a name="structdrifters__comm__mod_1_1drifters__comm__type" id="structdrifters__comm__mod_1_1drifters__comm__type"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#structdrifters__comm__mod_1_1drifters__comm__type">&#9670;&nbsp;</a></span>drifters_comm_mod::drifters_comm_type</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">type drifters_comm_mod::drifters_comm_type</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<div class="textblock"><p>Type for drifter communication between PE's. </p>
+
+<p class="definition">Definition at line <a class="el" href="drifters__comm_8F90_source.html#l00059">59</a> of file <a class="el" href="drifters__comm_8F90_source.html">drifters_comm.F90</a>.</p>
+</div><div class="dynheader">
+Collaboration diagram for drifters_comm_type:</div>
+<div class="dyncontent">
+<div class="center"><iframe scrolling="no" frameborder="0" src="structdrifters__comm__mod_1_1drifters__comm__type__coll__graph.svg" width="275" height="274"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe>
+</div>
+<center><span class="legend">[<a target="top" href="graph_legend.html">legend</a>]</span></center></div>
+<table class="memberdecls">
+<tr><td colspan="2"><h3>Private Attributes</h3></td></tr>
+<tr class="memitem:a3122c66e5967734416ff26adf103a662"><td class="memItemLeft" align="right" valign="top"><a id="a3122c66e5967734416ff26adf103a662"></a>
+integer&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__drifters__comm__mod.html#a3122c66e5967734416ff26adf103a662">pe_beg</a></td></tr>
+<tr class="memdesc:a3122c66e5967734416ff26adf103a662"><td class="mdescLeft">&#160;</td><td class="mdescRight">starting/ending pe, set this to a value /= 0 if running concurrently <br /></td></tr>
+<tr class="separator:a3122c66e5967734416ff26adf103a662"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aafd21b46f982ce04921ee29443e80a5a"><td class="memItemLeft" align="right" valign="top"><a id="aafd21b46f982ce04921ee29443e80a5a"></a>
+integer&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__drifters__comm__mod.html#aafd21b46f982ce04921ee29443e80a5a">pe_e</a></td></tr>
+<tr class="memdesc:aafd21b46f982ce04921ee29443e80a5a"><td class="mdescLeft">&#160;</td><td class="mdescRight">neighbor domains <br /></td></tr>
+<tr class="separator:aafd21b46f982ce04921ee29443e80a5a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a20ed5473f9099be7fb9ccfad2277dc4f"><td class="memItemLeft" align="right" valign="top"><a id="a20ed5473f9099be7fb9ccfad2277dc4f"></a>
+integer&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__drifters__comm__mod.html#a20ed5473f9099be7fb9ccfad2277dc4f">pe_end</a></td></tr>
+<tr class="memdesc:a20ed5473f9099be7fb9ccfad2277dc4f"><td class="mdescLeft">&#160;</td><td class="mdescRight">starting/ending pe, set this to a value /= 0 if running concurrently <br /></td></tr>
+<tr class="separator:a20ed5473f9099be7fb9ccfad2277dc4f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6b0ba9bdf8cb25ac6507b957449c2d67"><td class="memItemLeft" align="right" valign="top"><a id="a6b0ba9bdf8cb25ac6507b957449c2d67"></a>
+integer&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__drifters__comm__mod.html#a6b0ba9bdf8cb25ac6507b957449c2d67">pe_n</a></td></tr>
+<tr class="memdesc:a6b0ba9bdf8cb25ac6507b957449c2d67"><td class="mdescLeft">&#160;</td><td class="mdescRight">neighbor domains <br /></td></tr>
+<tr class="separator:a6b0ba9bdf8cb25ac6507b957449c2d67"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a89599855d3450f512823ff4497cfee94"><td class="memItemLeft" align="right" valign="top"><a id="a89599855d3450f512823ff4497cfee94"></a>
+integer&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__drifters__comm__mod.html#a89599855d3450f512823ff4497cfee94">pe_ne</a></td></tr>
+<tr class="memdesc:a89599855d3450f512823ff4497cfee94"><td class="mdescLeft">&#160;</td><td class="mdescRight">neighbor domains <br /></td></tr>
+<tr class="separator:a89599855d3450f512823ff4497cfee94"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a65064d6a9037411602eac609f33238b3"><td class="memItemLeft" align="right" valign="top"><a id="a65064d6a9037411602eac609f33238b3"></a>
+integer&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__drifters__comm__mod.html#a65064d6a9037411602eac609f33238b3">pe_nw</a></td></tr>
+<tr class="memdesc:a65064d6a9037411602eac609f33238b3"><td class="mdescLeft">&#160;</td><td class="mdescRight">neighbor domains <br /></td></tr>
+<tr class="separator:a65064d6a9037411602eac609f33238b3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af0d203f1d753bee248f51e13f6d19676"><td class="memItemLeft" align="right" valign="top"><a id="af0d203f1d753bee248f51e13f6d19676"></a>
+integer&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__drifters__comm__mod.html#af0d203f1d753bee248f51e13f6d19676">pe_s</a></td></tr>
+<tr class="memdesc:af0d203f1d753bee248f51e13f6d19676"><td class="mdescLeft">&#160;</td><td class="mdescRight">neighbor domains <br /></td></tr>
+<tr class="separator:af0d203f1d753bee248f51e13f6d19676"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aee6d18c6e1228a586f74633bd3564f16"><td class="memItemLeft" align="right" valign="top"><a id="aee6d18c6e1228a586f74633bd3564f16"></a>
+integer&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__drifters__comm__mod.html#aee6d18c6e1228a586f74633bd3564f16">pe_se</a></td></tr>
+<tr class="memdesc:aee6d18c6e1228a586f74633bd3564f16"><td class="mdescLeft">&#160;</td><td class="mdescRight">neighbor domains <br /></td></tr>
+<tr class="separator:aee6d18c6e1228a586f74633bd3564f16"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae2995e8df2d6a6f5e4eb71b41146d8c3"><td class="memItemLeft" align="right" valign="top"><a id="ae2995e8df2d6a6f5e4eb71b41146d8c3"></a>
+integer&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__drifters__comm__mod.html#ae2995e8df2d6a6f5e4eb71b41146d8c3">pe_sw</a></td></tr>
+<tr class="memdesc:ae2995e8df2d6a6f5e4eb71b41146d8c3"><td class="mdescLeft">&#160;</td><td class="mdescRight">neighbor domains <br /></td></tr>
+<tr class="separator:ae2995e8df2d6a6f5e4eb71b41146d8c3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a03495873cbb46bed82d16b4a115e1a19"><td class="memItemLeft" align="right" valign="top"><a id="a03495873cbb46bed82d16b4a115e1a19"></a>
+integer&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__drifters__comm__mod.html#a03495873cbb46bed82d16b4a115e1a19">pe_w</a></td></tr>
+<tr class="memdesc:a03495873cbb46bed82d16b4a115e1a19"><td class="mdescLeft">&#160;</td><td class="mdescRight">neighbor domains <br /></td></tr>
+<tr class="separator:a03495873cbb46bed82d16b4a115e1a19"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa79118f30f51245bff6eca48fa137b22"><td class="memItemLeft" align="right" valign="top"><a id="aa79118f30f51245bff6eca48fa137b22"></a>
+real&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__drifters__comm__mod.html#aa79118f30f51245bff6eca48fa137b22">xcmax</a></td></tr>
+<tr class="memdesc:aa79118f30f51245bff6eca48fa137b22"><td class="mdescLeft">&#160;</td><td class="mdescRight">compute domain <br /></td></tr>
+<tr class="separator:aa79118f30f51245bff6eca48fa137b22"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a99497d0511e6c3c0e52a2c007aef6e41"><td class="memItemLeft" align="right" valign="top"><a id="a99497d0511e6c3c0e52a2c007aef6e41"></a>
+real&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__drifters__comm__mod.html#a99497d0511e6c3c0e52a2c007aef6e41">xcmin</a></td></tr>
+<tr class="memdesc:a99497d0511e6c3c0e52a2c007aef6e41"><td class="mdescLeft">&#160;</td><td class="mdescRight">compute domain <br /></td></tr>
+<tr class="separator:a99497d0511e6c3c0e52a2c007aef6e41"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6c9175b8cc92b2694cde7d3a3a1df9bf"><td class="memItemLeft" align="right" valign="top"><a id="a6c9175b8cc92b2694cde7d3a3a1df9bf"></a>
+real&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__drifters__comm__mod.html#a6c9175b8cc92b2694cde7d3a3a1df9bf">xdmax</a></td></tr>
+<tr class="memdesc:a6c9175b8cc92b2694cde7d3a3a1df9bf"><td class="mdescLeft">&#160;</td><td class="mdescRight">data domain <br /></td></tr>
+<tr class="separator:a6c9175b8cc92b2694cde7d3a3a1df9bf"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1012e864441d93e2209e5f9934fff559"><td class="memItemLeft" align="right" valign="top"><a id="a1012e864441d93e2209e5f9934fff559"></a>
+real&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__drifters__comm__mod.html#a1012e864441d93e2209e5f9934fff559">xdmin</a></td></tr>
+<tr class="memdesc:a1012e864441d93e2209e5f9934fff559"><td class="mdescLeft">&#160;</td><td class="mdescRight">data domain <br /></td></tr>
+<tr class="separator:a1012e864441d93e2209e5f9934fff559"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0e95b8cbe6cf0a10d04de338c1524083"><td class="memItemLeft" align="right" valign="top"><a id="a0e95b8cbe6cf0a10d04de338c1524083"></a>
+real&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__drifters__comm__mod.html#a0e95b8cbe6cf0a10d04de338c1524083">xgmax</a></td></tr>
+<tr class="memdesc:a0e95b8cbe6cf0a10d04de338c1524083"><td class="mdescLeft">&#160;</td><td class="mdescRight">global valid min/max <br /></td></tr>
+<tr class="separator:a0e95b8cbe6cf0a10d04de338c1524083"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a59ef58548d561ad6f55bc514028c8fd5"><td class="memItemLeft" align="right" valign="top"><a id="a59ef58548d561ad6f55bc514028c8fd5"></a>
+real&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__drifters__comm__mod.html#a59ef58548d561ad6f55bc514028c8fd5">xgmin</a></td></tr>
+<tr class="memdesc:a59ef58548d561ad6f55bc514028c8fd5"><td class="mdescLeft">&#160;</td><td class="mdescRight">global valid min/max <br /></td></tr>
+<tr class="separator:a59ef58548d561ad6f55bc514028c8fd5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa2df955c2a9cce8d03ecebc3c20f12b6"><td class="memItemLeft" align="right" valign="top"><a id="aa2df955c2a9cce8d03ecebc3c20f12b6"></a>
+logical&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__drifters__comm__mod.html#aa2df955c2a9cce8d03ecebc3c20f12b6">xperiodic</a></td></tr>
+<tr class="memdesc:aa2df955c2a9cce8d03ecebc3c20f12b6"><td class="mdescLeft">&#160;</td><td class="mdescRight">x/y period (can be be nearly infinite) <br /></td></tr>
+<tr class="separator:aa2df955c2a9cce8d03ecebc3c20f12b6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a70d1b71d94826c2cce120231b879b114"><td class="memItemLeft" align="right" valign="top"><a id="a70d1b71d94826c2cce120231b879b114"></a>
+real&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__drifters__comm__mod.html#a70d1b71d94826c2cce120231b879b114">ycmax</a></td></tr>
+<tr class="memdesc:a70d1b71d94826c2cce120231b879b114"><td class="mdescLeft">&#160;</td><td class="mdescRight">compute domain <br /></td></tr>
+<tr class="separator:a70d1b71d94826c2cce120231b879b114"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a23ebdbfb38c37902157bb0521d92f039"><td class="memItemLeft" align="right" valign="top"><a id="a23ebdbfb38c37902157bb0521d92f039"></a>
+real&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__drifters__comm__mod.html#a23ebdbfb38c37902157bb0521d92f039">ycmin</a></td></tr>
+<tr class="memdesc:a23ebdbfb38c37902157bb0521d92f039"><td class="mdescLeft">&#160;</td><td class="mdescRight">compute domain <br /></td></tr>
+<tr class="separator:a23ebdbfb38c37902157bb0521d92f039"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a12032a75e22e4280889020dc38966f4c"><td class="memItemLeft" align="right" valign="top"><a id="a12032a75e22e4280889020dc38966f4c"></a>
+real&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__drifters__comm__mod.html#a12032a75e22e4280889020dc38966f4c">ydmax</a></td></tr>
+<tr class="memdesc:a12032a75e22e4280889020dc38966f4c"><td class="mdescLeft">&#160;</td><td class="mdescRight">data domain <br /></td></tr>
+<tr class="separator:a12032a75e22e4280889020dc38966f4c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5f876b60b5d5fa2064e1a38c7de92185"><td class="memItemLeft" align="right" valign="top"><a id="a5f876b60b5d5fa2064e1a38c7de92185"></a>
+real&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__drifters__comm__mod.html#a5f876b60b5d5fa2064e1a38c7de92185">ydmin</a></td></tr>
+<tr class="memdesc:a5f876b60b5d5fa2064e1a38c7de92185"><td class="mdescLeft">&#160;</td><td class="mdescRight">data domain <br /></td></tr>
+<tr class="separator:a5f876b60b5d5fa2064e1a38c7de92185"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4e907cf88576d936fb5a6852420d12fb"><td class="memItemLeft" align="right" valign="top"><a id="a4e907cf88576d936fb5a6852420d12fb"></a>
+real&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__drifters__comm__mod.html#a4e907cf88576d936fb5a6852420d12fb">ygmax</a></td></tr>
+<tr class="memdesc:a4e907cf88576d936fb5a6852420d12fb"><td class="mdescLeft">&#160;</td><td class="mdescRight">global valid min/max <br /></td></tr>
+<tr class="separator:a4e907cf88576d936fb5a6852420d12fb"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3e49d89b54f27cd77afbb1ba4c76ba6d"><td class="memItemLeft" align="right" valign="top"><a id="a3e49d89b54f27cd77afbb1ba4c76ba6d"></a>
+real&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__drifters__comm__mod.html#a3e49d89b54f27cd77afbb1ba4c76ba6d">ygmin</a></td></tr>
+<tr class="memdesc:a3e49d89b54f27cd77afbb1ba4c76ba6d"><td class="mdescLeft">&#160;</td><td class="mdescRight">global valid min/max <br /></td></tr>
+<tr class="separator:a3e49d89b54f27cd77afbb1ba4c76ba6d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9304f27d75ad3344b19602e4780c76ea"><td class="memItemLeft" align="right" valign="top"><a id="a9304f27d75ad3344b19602e4780c76ea"></a>
+logical&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__drifters__comm__mod.html#a9304f27d75ad3344b19602e4780c76ea">yperiodic</a></td></tr>
+<tr class="memdesc:a9304f27d75ad3344b19602e4780c76ea"><td class="mdescLeft">&#160;</td><td class="mdescRight">x/y period (can be be nearly infinite) <br /></td></tr>
+<tr class="separator:a9304f27d75ad3344b19602e4780c76ea"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table>
+
+</div>
+</div>
 <h2 class="groupheader">Function/Subroutine Documentation</h2>
 <a id="gae835675113b952770f1ba84467beeda1"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#gae835675113b952770f1ba84467beeda1">&#9670;&nbsp;</a></span>drifters_comm_del()</h2>
@@ -147,22 +270,22 @@ subroutine&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href
         <tr>
           <td class="memname">subroutine, public drifters_comm_mod::drifters_comm_del </td>
           <td>(</td>
-          <td class="paramtype">type(<a class="el" href="structdrifters__comm__mod_1_1drifters__comm__type.html">drifters_comm_type</a>)&#160;</td>
+          <td class="paramtype">type(<a class="el" href="group__drifters__comm__mod.html#structdrifters__comm__mod_1_1drifters__comm__type">drifters_comm_type</a>)&#160;</td>
           <td class="paramname"><em>self</em></td><td>)</td>
           <td></td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p>Reset data in a given <a class="el" href="structdrifters__comm__mod_1_1drifters__comm__type.html">drifters_comm_type</a> to defaults. </p>
+<p>Reset data in a given <a class="el" href="group__drifters__comm__mod.html">drifters_comm_type</a> to defaults. </p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramname">self</td><td>A <a class="el" href="structdrifters__comm__mod_1_1drifters__comm__type.html">drifters_comm_type</a> to reset </td></tr>
+    <tr><td class="paramname">self</td><td>A <a class="el" href="group__drifters__comm__mod.html">drifters_comm_type</a> to reset </td></tr>
   </table>
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="drifters__comm_8F90_source.html#l00127">127</a> of file <a class="el" href="drifters__comm_8F90_source.html">drifters_comm.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="drifters__comm_8F90_source.html#l00124">124</a> of file <a class="el" href="drifters__comm_8F90_source.html">drifters_comm.F90</a>.</p>
 
 </div>
 </div>
@@ -175,19 +298,19 @@ subroutine&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href
         <tr>
           <td class="memname">subroutine, public drifters_comm_mod::drifters_comm_gather </td>
           <td>(</td>
-          <td class="paramtype">type(<a class="el" href="structdrifters__comm__mod_1_1drifters__comm__type.html">drifters_comm_type</a>)&#160;</td>
+          <td class="paramtype">type(<a class="el" href="group__drifters__comm__mod.html#structdrifters__comm__mod_1_1drifters__comm__type">drifters_comm_type</a>)&#160;</td>
           <td class="paramname"><em>self</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">type(<a class="el" href="structdrifters__core__mod_1_1drifters__core__type.html">drifters_core_type</a>)&#160;</td>
+          <td class="paramtype">type(<a class="el" href="group__drifters__core__mod.html#structdrifters__core__mod_1_1drifters__core__type">drifters_core_type</a>)&#160;</td>
           <td class="paramname"><em>drfts</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">type(<a class="el" href="structdrifters__input__mod_1_1drifters__input__type.html">drifters_input_type</a>)&#160;</td>
+          <td class="paramtype">type(<a class="el" href="group__drifters__input__mod.html#structdrifters__input__mod_1_1drifters__input__type">drifters_input_type</a>)&#160;</td>
           <td class="paramname"><em>dinp</em>, </td>
         </tr>
         <tr>
@@ -241,7 +364,7 @@ subroutine&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="drifters__comm_8F90_source.html#l00603">603</a> of file <a class="el" href="drifters__comm_8F90_source.html">drifters_comm.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="drifters__comm_8F90_source.html#l00600">600</a> of file <a class="el" href="drifters__comm_8F90_source.html">drifters_comm.F90</a>.</p>
 
 </div>
 </div>
@@ -254,22 +377,22 @@ subroutine&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href
         <tr>
           <td class="memname">subroutine, public drifters_comm_mod::drifters_comm_new </td>
           <td>(</td>
-          <td class="paramtype">type(<a class="el" href="structdrifters__comm__mod_1_1drifters__comm__type.html">drifters_comm_type</a>)&#160;</td>
+          <td class="paramtype">type(<a class="el" href="group__drifters__comm__mod.html#structdrifters__comm__mod_1_1drifters__comm__type">drifters_comm_type</a>)&#160;</td>
           <td class="paramname"><em>self</em></td><td>)</td>
           <td></td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p>Initializes default values for <a class="el" href="structdrifters__comm__mod_1_1drifters__comm__type.html">drifters_comm_type</a> in self. </p>
+<p>Initializes default values for <a class="el" href="group__drifters__comm__mod.html">drifters_comm_type</a> in self. </p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramname">self</td><td>A new <a class="el" href="structdrifters__comm__mod_1_1drifters__comm__type.html">drifters_comm_type</a> </td></tr>
+    <tr><td class="paramname">self</td><td>A new <a class="el" href="group__drifters__comm__mod.html">drifters_comm_type</a> </td></tr>
   </table>
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="drifters__comm_8F90_source.html#l00096">96</a> of file <a class="el" href="drifters__comm_8F90_source.html">drifters_comm.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="drifters__comm_8F90_source.html#l00093">93</a> of file <a class="el" href="drifters__comm_8F90_source.html">drifters_comm.F90</a>.</p>
 
 </div>
 </div>
@@ -282,7 +405,7 @@ subroutine&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href
         <tr>
           <td class="memname">subroutine, public drifters_comm_mod::drifters_comm_set_domain </td>
           <td>(</td>
-          <td class="paramtype">type(<a class="el" href="structdrifters__comm__mod_1_1drifters__comm__type.html">drifters_comm_type</a>)&#160;</td>
+          <td class="paramtype">type(<a class="el" href="group__drifters__comm__mod.html#structdrifters__comm__mod_1_1drifters__comm__type">drifters_comm_type</a>)&#160;</td>
           <td class="paramname"><em>self</em>, </td>
         </tr>
         <tr>
@@ -334,7 +457,7 @@ subroutine&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="drifters__comm_8F90_source.html#l00234">234</a> of file <a class="el" href="drifters__comm_8F90_source.html">drifters_comm.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="drifters__comm_8F90_source.html#l00231">231</a> of file <a class="el" href="drifters__comm_8F90_source.html">drifters_comm.F90</a>.</p>
 
 </div>
 </div>
@@ -347,7 +470,7 @@ subroutine&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href
         <tr>
           <td class="memname">subroutine, public drifters_comm_mod::drifters_comm_set_pe_neighbors </td>
           <td>(</td>
-          <td class="paramtype">type(<a class="el" href="structdrifters__comm__mod_1_1drifters__comm__type.html">drifters_comm_type</a>)&#160;</td>
+          <td class="paramtype">type(<a class="el" href="group__drifters__comm__mod.html#structdrifters__comm__mod_1_1drifters__comm__type">drifters_comm_type</a>)&#160;</td>
           <td class="paramname"><em>self</em>, </td>
         </tr>
         <tr>
@@ -372,7 +495,7 @@ subroutine&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="drifters__comm_8F90_source.html#l00165">165</a> of file <a class="el" href="drifters__comm_8F90_source.html">drifters_comm.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="drifters__comm_8F90_source.html#l00162">162</a> of file <a class="el" href="drifters__comm_8F90_source.html">drifters_comm.F90</a>.</p>
 
 </div>
 </div>
@@ -385,13 +508,13 @@ subroutine&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href
         <tr>
           <td class="memname">subroutine, public drifters_comm_mod::drifters_comm_update </td>
           <td>(</td>
-          <td class="paramtype">type(<a class="el" href="structdrifters__comm__mod_1_1drifters__comm__type.html">drifters_comm_type</a>)&#160;</td>
+          <td class="paramtype">type(<a class="el" href="group__drifters__comm__mod.html#structdrifters__comm__mod_1_1drifters__comm__type">drifters_comm_type</a>)&#160;</td>
           <td class="paramname"><em>self</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">type(<a class="el" href="structdrifters__core__mod_1_1drifters__core__type.html">drifters_core_type</a>)&#160;</td>
+          <td class="paramtype">type(<a class="el" href="group__drifters__core__mod.html#structdrifters__core__mod_1_1drifters__core__type">drifters_core_type</a>)&#160;</td>
           <td class="paramname"><em>drfts</em>, </td>
         </tr>
         <tr>
@@ -436,7 +559,7 @@ subroutine&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="drifters__comm_8F90_source.html#l00330">330</a> of file <a class="el" href="drifters__comm_8F90_source.html">drifters_comm.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="drifters__comm_8F90_source.html#l00327">327</a> of file <a class="el" href="drifters__comm_8F90_source.html">drifters_comm.F90</a>.</p>
 
 </div>
 </div>

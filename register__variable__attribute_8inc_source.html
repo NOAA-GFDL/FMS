@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.17"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>FMS: fms2_io/include/register_variable_attribute.inc Source File</title>
+<title>FMS: fms2_io/include/register_variable_attribute.inc (1640fde1a51a73f97748f150eb84bf49e472aeca) Source File</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -33,7 +33,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">FMS
-   &#160;<span id="projectnumber">2022.02.0</span>
+   &#160;<span id="projectnumber">2022.03.00</span>
    </div>
    <div id="projectbrief">Flexible Modeling System</div>
   </td>
@@ -94,7 +94,7 @@ $(document).ready(function(){initNavTree('register__variable__attribute_8inc_sou
 <div class="title">register_variable_attribute.inc</div>  </div>
 </div><!--header-->
 <div class="contents">
-<a href="register__variable__attribute_8inc.html">Go to the documentation of this file.</a><div class="fragment"><div class="line"><a name="l00001"></a><span class="lineno">    1</span>&#160;<span class="comment">!***********************************************************************</span></div>
+<div class="fragment"><div class="line"><a name="l00001"></a><span class="lineno">    1</span>&#160;<span class="comment">!***********************************************************************</span></div>
 <div class="line"><a name="l00002"></a><span class="lineno">    2</span>&#160;<span class="comment">!*                   GNU Lesser General Public License</span></div>
 <div class="line"><a name="l00003"></a><span class="lineno">    3</span>&#160;<span class="comment">!*</span></div>
 <div class="line"><a name="l00004"></a><span class="lineno">    4</span>&#160;<span class="comment">!* This file is part of the GFDL Flexible Modeling System (FMS).</span></div>
@@ -113,195 +113,200 @@ $(document).ready(function(){initNavTree('register__variable__attribute_8inc_sou
 <div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160;<span class="comment">!* License along with FMS.  If not, see &lt;http://www.gnu.org/licenses/&gt;.</span></div>
 <div class="line"><a name="l00018"></a><span class="lineno">   18</span>&#160;<span class="comment">!***********************************************************************</span><span class="comment"></span></div>
 <div class="line"><a name="l00019"></a><span class="lineno">   19</span>&#160;<span class="comment">!&gt; @file</span></div>
-<div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160;<span class="comment">!&gt; @ingroup fms2_io</span></div>
-<div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160;<span class="comment"></span> </div>
-<div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160;<span class="comment">!&gt; @brief Add an attribute to a variable.</span></div>
-<div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160;<span class="keyword">subroutine </span><a class="code" href="register__variable__attribute_8inc.html#aa6eafb821917f92e937c532c72711b38">register_variable_attribute_0d</a>(fileobj, variable_name, attribute_name, &amp;</div>
-<div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;                                          attribute_value, str_len)</div>
-<div class="line"><a name="l00025"></a><span class="lineno"><a class="line" href="register__variable__attribute_8inc.html#aa6eafb821917f92e937c532c72711b38">   25</a></span>&#160; </div>
-<div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160;  <span class="keywordtype">class</span>(fmsnetcdffile_t), <span class="keywordtype">intent(in)</span> :: fileobj<span class="comment"> !&lt; File object.</span></div>
-<div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;  <span class="keywordtype">character(len=*)</span>, <span class="keywordtype">intent(in)</span> :: variable_name<span class="comment"> !&lt; Variable name.</span></div>
-<div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;  <span class="keywordtype">character(len=*)</span>, <span class="keywordtype">intent(in)</span> :: attribute_name<span class="comment"> !&lt; Attribute name.</span></div>
-<div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;  <span class="keywordtype">class</span>(*), <span class="keywordtype">intent(in)</span> :: attribute_value<span class="comment"> !&lt; Attribute value</span></div>
-<div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;  <span class="keywordtype">integer</span>, <span class="keywordtype">intent(in)</span>, <span class="keywordtype">optional</span> :: str_len<span class="comment"> !&lt; Length of the string</span></div>
-<div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160; </div>
-<div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;  <span class="keywordtype">integer</span> :: varid</div>
-<div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;  <span class="keywordtype">integer</span> :: err</div>
-<div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;  <span class="keywordtype">integer</span> :: axtype</div>
-<div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;  <span class="keywordtype">integer</span> :: xtype</div>
-<div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;  <span class="keywordtype">integer(kind=i4_kind)</span>, <span class="keywordtype">dimension(2)</span> :: i32_range</div>
-<div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;  <span class="keywordtype">integer(kind=i8_kind)</span>, <span class="keywordtype">dimension(2)</span> :: i64_range</div>
-<div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;<span class="keywordtype">  real</span>(kind=r4_kind), <span class="keywordtype">dimension(2)</span> :: r32_range</div>
-<div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;<span class="keywordtype">  real</span>(kind=r8_kind), <span class="keywordtype">dimension(2)</span> :: r64_range</div>
-<div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;  <span class="keywordtype">character(len=200)</span> :: append_error_msg<span class="comment"> !&lt; Msg to be appended to FATAL error message</span></div>
-<div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160; </div>
-<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;  append_error_msg = <span class="stringliteral">&quot;register_variable_attribute_0d: file:&quot;</span>//trim(fileobj%path)//<span class="stringliteral">&quot;- variable:&quot;</span>//&amp;</div>
-<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;                     &amp;trim(variable_name)//<span class="stringliteral">&quot; attribute: &quot;</span>//trim(attribute_name)</div>
-<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160; </div>
-<div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;  <span class="keywordflow">if</span> (fileobj%is_root) <span class="keywordflow">then</span></div>
-<div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;    <span class="keyword">call </span>set_netcdf_mode(fileobj%ncid, define_mode)</div>
-<div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;    varid = get_variable_id(fileobj%ncid, trim(variable_name), msg=append_error_msg)</div>
-<div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;    <span class="keywordflow">select type</span>(attribute_value)</div>
-<div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;<span class="keywordflow">      type is</span> (<span class="keywordtype">character</span>(len=*))</div>
-<div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;        <span class="keywordflow">if</span> (.not. <span class="keyword">present</span>(str_len)) <span class="keyword">call </span>error(<span class="stringliteral">&quot;Need to include str length:&quot;</span>//trim(append_error_msg))</div>
-<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;        err = nf90_put_att(fileobj%ncid, varid, trim(attribute_name), &amp;</div>
-<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;                           trim(attribute_value(1:str_len)))</div>
-<div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;<span class="keywordflow">      type is</span> (<span class="keywordtype">integer</span>(kind=i4_kind))</div>
-<div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;        err = nf90_put_att(fileobj%ncid, varid, trim(attribute_name), &amp;</div>
-<div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;                           attribute_value)</div>
-<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;<span class="keywordflow">      type is</span> (<span class="keywordtype">integer</span>(kind=i8_kind))</div>
-<div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;        <span class="keywordflow">if</span> ( .not. fileobj%allow_int8) <span class="keyword">call </span>error(trim(fileobj%path)//&amp;</div>
-<div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;                                               &amp; <span class="stringliteral">&quot;: 64 bit integers are only supported with &#39;netcdf4&#39; file format&quot;</span>//  &amp;</div>
-<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;                                               &amp; <span class="stringliteral">&quot;. Set netcdf_default_format=&#39;netcdf4&#39; in the fms2_io namelist OR &quot;</span>//&amp;</div>
-<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;                                               &amp; <span class="stringliteral">&quot;add nc_format=&#39;netcdf4&#39; to your open_file call&quot;</span>)</div>
-<div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;        err = nf90_put_att(fileobj%ncid, varid, trim(attribute_name), &amp;</div>
-<div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;                           attribute_value)</div>
-<div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;<span class="keywordflow">      type is</span> (real(kind=r4_kind))</div>
-<div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;        err = nf90_put_att(fileobj%ncid, varid, trim(attribute_name), &amp;</div>
-<div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;                           attribute_value)</div>
-<div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;<span class="keywordflow">      type is</span> (real(kind=r8_kind))</div>
-<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;        err = nf90_put_att(fileobj%ncid, varid, trim(attribute_name), &amp;</div>
-<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;                           attribute_value)</div>
-<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;<span class="keywordflow">      class default</span></div>
-<div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;        <span class="keyword">call </span>error(<span class="stringliteral">&quot;Unsupported attribute type:&quot;</span>//trim(append_error_msg))</div>
-<div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;<span class="keywordflow">    end select</span></div>
-<div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;    <span class="keyword">call </span>check_netcdf_code(err, append_error_msg)</div>
-<div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160; </div>
-<div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;    <span class="comment">!The missing_value attribute is not NUG compliant, but is included here to support</span></div>
-<div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;    <span class="comment">!legacy model component code.</span></div>
-<div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;    axtype = get_attribute_type(fileobj%ncid, varid, attribute_name, append_error_msg)</div>
-<div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;    xtype = get_variable_type(fileobj%ncid, varid, append_error_msg)</div>
-<div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;    <span class="keywordflow">if</span> (string_compare(attribute_name, <span class="stringliteral">&quot;_FillValue&quot;</span>) .or. &amp;</div>
-<div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;        string_compare(attribute_name, <span class="stringliteral">&quot;valid_min&quot;</span>) .or. &amp;</div>
-<div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;        string_compare(attribute_name, <span class="stringliteral">&quot;valid_max&quot;</span>) .or. &amp;</div>
-<div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;        string_compare(attribute_name, <span class="stringliteral">&quot;scale_factor&quot;</span>) .or. &amp;</div>
-<div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;        string_compare(attribute_name, <span class="stringliteral">&quot;add_offset&quot;</span>) .or. &amp;</div>
-<div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;        string_compare(attribute_name, <span class="stringliteral">&quot;missing_value&quot;</span>)) <span class="keywordflow">then</span></div>
-<div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160;      <span class="keywordflow">if</span> (axtype .ne. xtype) <span class="keywordflow">then</span></div>
-<div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;        <span class="keyword">call </span>error(<span class="stringliteral">&quot;The variable type does not match the attribute type: &quot;</span>//trim(append_error_msg))</div>
-<div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160;<span class="keywordflow">      endif</span></div>
-<div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;<span class="keywordflow">    endif</span></div>
-<div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160; </div>
-<div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160;    <span class="keywordflow">if</span> (string_compare(attribute_name, <span class="stringliteral">&quot;_FillValue&quot;</span>)) <span class="keywordflow">then</span></div>
-<div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;      <span class="keywordflow">if</span> (attribute_exists(fileobj%ncid, varid, <span class="stringliteral">&quot;valid_range&quot;</span>, msg=append_error_msg)) <span class="keywordflow">then</span></div>
-<div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160;        <span class="keywordflow">select type</span>(attribute_value)</div>
-<div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;<span class="keywordflow">          type is</span> (<span class="keywordtype">integer</span>(kind=i4_kind))</div>
-<div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;            <span class="keyword">call </span>get_variable_attribute(fileobj, variable_name, <span class="stringliteral">&quot;valid_range&quot;</span>, &amp;</div>
-<div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160;                                        i32_range, .false.)</div>
-<div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160;            <span class="keywordflow">if</span> (attribute_value .lt. i32_range(1) .or. &amp;</div>
-<div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160;                attribute_value .gt. i32_range(2)) <span class="keywordflow">then</span></div>
-<div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160;              <span class="keyword">call </span>error(<span class="stringliteral">&quot;_FillValue inside valid_range: &quot;</span>//trim(append_error_msg))</div>
-<div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160;<span class="keywordflow">            endif</span></div>
-<div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160;<span class="keywordflow">          type is</span> (<span class="keywordtype">integer</span>(kind=i8_kind))</div>
-<div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160;            <span class="keyword">call </span>get_variable_attribute(fileobj, variable_name, <span class="stringliteral">&quot;valid_range&quot;</span>, &amp;</div>
-<div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160;                                        i64_range, .false.)</div>
-<div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160;            <span class="keywordflow">if</span> (attribute_value .lt. i64_range(1) .or. &amp;</div>
-<div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160;                attribute_value .gt. i64_range(2)) <span class="keywordflow">then</span></div>
-<div class="line"><a name="l00104"></a><span class="lineno">  104</span>&#160;              <span class="keyword">call </span>error(<span class="stringliteral">&quot;_FillValue inside valid_range: &quot;</span>//trim(append_error_msg))</div>
-<div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160;<span class="keywordflow">            endif</span></div>
-<div class="line"><a name="l00106"></a><span class="lineno">  106</span>&#160;<span class="keywordflow">          type is</span> (real(kind=r4_kind))</div>
-<div class="line"><a name="l00107"></a><span class="lineno">  107</span>&#160;            <span class="keyword">call </span>get_variable_attribute(fileobj, variable_name, <span class="stringliteral">&quot;valid_range&quot;</span>, &amp;</div>
-<div class="line"><a name="l00108"></a><span class="lineno">  108</span>&#160;                                        r32_range, .false.)</div>
-<div class="line"><a name="l00109"></a><span class="lineno">  109</span>&#160;            <span class="keywordflow">if</span> (attribute_value .lt. r32_range(1) .or. &amp;</div>
-<div class="line"><a name="l00110"></a><span class="lineno">  110</span>&#160;                attribute_value .gt. r32_range(2)) <span class="keywordflow">then</span></div>
-<div class="line"><a name="l00111"></a><span class="lineno">  111</span>&#160;              <span class="keyword">call </span>error(<span class="stringliteral">&quot;_FillValue inside valid_range: &quot;</span>//trim(append_error_msg))</div>
-<div class="line"><a name="l00112"></a><span class="lineno">  112</span>&#160;<span class="keywordflow">            endif</span></div>
-<div class="line"><a name="l00113"></a><span class="lineno">  113</span>&#160;<span class="keywordflow">          type is</span> (real(kind=r8_kind))</div>
-<div class="line"><a name="l00114"></a><span class="lineno">  114</span>&#160;            <span class="keyword">call </span>get_variable_attribute(fileobj, variable_name, <span class="stringliteral">&quot;valid_range&quot;</span>, &amp;</div>
-<div class="line"><a name="l00115"></a><span class="lineno">  115</span>&#160;                                        r64_range, .false.)</div>
-<div class="line"><a name="l00116"></a><span class="lineno">  116</span>&#160;            <span class="keywordflow">if</span> (attribute_value .lt. r64_range(1) .or. &amp;</div>
-<div class="line"><a name="l00117"></a><span class="lineno">  117</span>&#160;                attribute_value .gt. r64_range(2)) <span class="keywordflow">then</span></div>
-<div class="line"><a name="l00118"></a><span class="lineno">  118</span>&#160;              <span class="keyword">call </span>error(<span class="stringliteral">&quot;_FillValue inside valid_range: &quot;</span>//trim(append_error_msg))</div>
-<div class="line"><a name="l00119"></a><span class="lineno">  119</span>&#160;<span class="keywordflow">            endif</span></div>
-<div class="line"><a name="l00120"></a><span class="lineno">  120</span>&#160;<span class="keywordflow">          class default</span></div>
-<div class="line"><a name="l00121"></a><span class="lineno">  121</span>&#160;            <span class="keyword">call </span>error(<span class="stringliteral">&quot;unsupported attribute type: &quot;</span>//trim(append_error_msg))</div>
-<div class="line"><a name="l00122"></a><span class="lineno">  122</span>&#160;<span class="keywordflow">        end select</span></div>
-<div class="line"><a name="l00123"></a><span class="lineno">  123</span>&#160;<span class="keywordflow">      endif</span></div>
-<div class="line"><a name="l00124"></a><span class="lineno">  124</span>&#160;    <span class="keywordflow">elseif</span> (string_compare(attribute_name, <span class="stringliteral">&quot;valid_min&quot;</span>) .or. &amp;</div>
-<div class="line"><a name="l00125"></a><span class="lineno">  125</span>&#160;            string_compare(attribute_name, <span class="stringliteral">&quot;valid_max&quot;</span>)) <span class="keywordflow">then</span></div>
-<div class="line"><a name="l00126"></a><span class="lineno">  126</span>&#160;      <span class="keywordflow">if</span> (attribute_exists(fileobj%ncid, varid, <span class="stringliteral">&quot;valid_range&quot;</span>, msg=append_error_msg)) <span class="keywordflow">then</span></div>
-<div class="line"><a name="l00127"></a><span class="lineno">  127</span>&#160;        <span class="keyword">call </span>error(<span class="stringliteral">&quot;cannot have attributes valid_range and valid_min/max: &quot;</span>//trim(append_error_msg))</div>
-<div class="line"><a name="l00128"></a><span class="lineno">  128</span>&#160;<span class="keywordflow">      endif</span></div>
-<div class="line"><a name="l00129"></a><span class="lineno">  129</span>&#160;<span class="keywordflow">    endif</span></div>
-<div class="line"><a name="l00130"></a><span class="lineno">  130</span>&#160;<span class="keywordflow">  endif</span></div>
-<div class="line"><a name="l00131"></a><span class="lineno">  131</span>&#160;<span class="keyword">end subroutine </span><a class="code" href="register__variable__attribute_8inc.html#aa6eafb821917f92e937c532c72711b38">register_variable_attribute_0d</a></div>
-<div class="line"><a name="l00132"></a><span class="lineno">  132</span>&#160; </div>
-<div class="line"><a name="l00133"></a><span class="lineno">  133</span>&#160;<span class="comment"></span> </div>
-<div class="line"><a name="l00134"></a><span class="lineno">  134</span>&#160;<span class="comment">!&gt; @brief Add an attribute to a variable.</span></div>
-<div class="line"><a name="l00135"></a><span class="lineno">  135</span>&#160;<span class="keyword">subroutine </span><a class="code" href="register__variable__attribute_8inc.html#a0a9fc35686f9fdfb6b798ad426ff9b23">register_variable_attribute_1d</a>(fileobj, variable_name, attribute_name, &amp;</div>
-<div class="line"><a name="l00136"></a><span class="lineno">  136</span>&#160;                                          attribute_value, str_len)</div>
-<div class="line"><a name="l00137"></a><span class="lineno"><a class="line" href="register__variable__attribute_8inc.html#a0a9fc35686f9fdfb6b798ad426ff9b23">  137</a></span>&#160; </div>
-<div class="line"><a name="l00138"></a><span class="lineno">  138</span>&#160;  <span class="keywordtype">class</span>(fmsnetcdffile_t), <span class="keywordtype">intent(in)</span> :: fileobj<span class="comment"> !&lt; File object.</span></div>
-<div class="line"><a name="l00139"></a><span class="lineno">  139</span>&#160;  <span class="keywordtype">character(len=*)</span>, <span class="keywordtype">intent(in)</span> :: variable_name<span class="comment"> !&lt; Variable name.</span></div>
-<div class="line"><a name="l00140"></a><span class="lineno">  140</span>&#160;  <span class="keywordtype">character(len=*)</span>, <span class="keywordtype">intent(in)</span> :: attribute_name<span class="comment"> !&lt; Attribute name.</span></div>
-<div class="line"><a name="l00141"></a><span class="lineno">  141</span>&#160;  <span class="keywordtype">class</span>(*), <span class="keywordtype">dimension(:)</span>, <span class="keywordtype">intent(in)</span> :: attribute_value<span class="comment"> !&lt; Attribute value</span></div>
-<div class="line"><a name="l00142"></a><span class="lineno">  142</span>&#160;  <span class="keywordtype">integer</span>, <span class="keywordtype">intent(in)</span>, <span class="keywordtype">optional</span> :: str_len<span class="comment"> !&lt; Length of the string</span></div>
-<div class="line"><a name="l00143"></a><span class="lineno">  143</span>&#160; </div>
-<div class="line"><a name="l00144"></a><span class="lineno">  144</span>&#160;  <span class="keywordtype">integer</span> :: varid</div>
-<div class="line"><a name="l00145"></a><span class="lineno">  145</span>&#160;  <span class="keywordtype">integer</span> :: err</div>
-<div class="line"><a name="l00146"></a><span class="lineno">  146</span>&#160;  <span class="keywordtype">integer</span> :: axtype</div>
-<div class="line"><a name="l00147"></a><span class="lineno">  147</span>&#160;  <span class="keywordtype">integer</span> :: xtype</div>
-<div class="line"><a name="l00148"></a><span class="lineno">  148</span>&#160;  <span class="keywordtype">character(len=200)</span> :: append_error_msg<span class="comment"> !&lt; Msg to be appended to FATAL error message</span></div>
-<div class="line"><a name="l00149"></a><span class="lineno">  149</span>&#160; </div>
-<div class="line"><a name="l00150"></a><span class="lineno">  150</span>&#160;  append_error_msg = <span class="stringliteral">&quot;register_variable_attribute_0d: file:&quot;</span>//trim(fileobj%path)//<span class="stringliteral">&quot;- variable:&quot;</span>//&amp;</div>
-<div class="line"><a name="l00151"></a><span class="lineno">  151</span>&#160;                     &amp;trim(variable_name)//<span class="stringliteral">&quot; attribute: &quot;</span>//trim(attribute_name)</div>
-<div class="line"><a name="l00152"></a><span class="lineno">  152</span>&#160; </div>
-<div class="line"><a name="l00153"></a><span class="lineno">  153</span>&#160;  <span class="keywordflow">if</span> (fileobj%is_root) <span class="keywordflow">then</span></div>
-<div class="line"><a name="l00154"></a><span class="lineno">  154</span>&#160;    <span class="keyword">call </span>set_netcdf_mode(fileobj%ncid, define_mode)</div>
-<div class="line"><a name="l00155"></a><span class="lineno">  155</span>&#160;    varid = get_variable_id(fileobj%ncid, trim(variable_name), msg=append_error_msg)</div>
-<div class="line"><a name="l00156"></a><span class="lineno">  156</span>&#160;    <span class="keywordflow">select type</span>(attribute_value)</div>
-<div class="line"><a name="l00157"></a><span class="lineno">  157</span>&#160;<span class="keywordflow">      type is</span> (<span class="keywordtype">integer</span>(kind=i4_kind))</div>
-<div class="line"><a name="l00158"></a><span class="lineno">  158</span>&#160;        err = nf90_put_att(fileobj%ncid, varid, trim(attribute_name), &amp;</div>
-<div class="line"><a name="l00159"></a><span class="lineno">  159</span>&#160;                           attribute_value)</div>
-<div class="line"><a name="l00160"></a><span class="lineno">  160</span>&#160;<span class="keywordflow">      type is</span> (<span class="keywordtype">integer</span>(kind=i8_kind))</div>
-<div class="line"><a name="l00161"></a><span class="lineno">  161</span>&#160;        <span class="keywordflow">if</span> ( .not. fileobj%allow_int8) <span class="keyword">call </span>error(trim(fileobj%path)// &amp;</div>
-<div class="line"><a name="l00162"></a><span class="lineno">  162</span>&#160;                                               &amp; <span class="stringliteral">&quot;: 64 bit integers are only supported with &#39;netcdf4&#39; file format&quot;</span>//  &amp;</div>
-<div class="line"><a name="l00163"></a><span class="lineno">  163</span>&#160;                                               &amp; <span class="stringliteral">&quot;. Set netcdf_default_format=&#39;netcdf4&#39; in the fms2_io namelist OR &quot;</span>//&amp;</div>
-<div class="line"><a name="l00164"></a><span class="lineno">  164</span>&#160;                                               &amp; <span class="stringliteral">&quot;add nc_format=&#39;netcdf4&#39; to your open_file call&quot;</span>)</div>
-<div class="line"><a name="l00165"></a><span class="lineno">  165</span>&#160;        err = nf90_put_att(fileobj%ncid, varid, trim(attribute_name), &amp;</div>
-<div class="line"><a name="l00166"></a><span class="lineno">  166</span>&#160;                           attribute_value)</div>
-<div class="line"><a name="l00167"></a><span class="lineno">  167</span>&#160;<span class="keywordflow">      type is</span> (real(kind=r4_kind))</div>
-<div class="line"><a name="l00168"></a><span class="lineno">  168</span>&#160;        err = nf90_put_att(fileobj%ncid, varid, trim(attribute_name), &amp;</div>
-<div class="line"><a name="l00169"></a><span class="lineno">  169</span>&#160;                           attribute_value)</div>
-<div class="line"><a name="l00170"></a><span class="lineno">  170</span>&#160;<span class="keywordflow">      type is</span> (real(kind=r8_kind))</div>
-<div class="line"><a name="l00171"></a><span class="lineno">  171</span>&#160;        err = nf90_put_att(fileobj%ncid, varid, trim(attribute_name), &amp;</div>
-<div class="line"><a name="l00172"></a><span class="lineno">  172</span>&#160;                           attribute_value)</div>
-<div class="line"><a name="l00173"></a><span class="lineno">  173</span>&#160;<span class="keywordflow">      class default</span></div>
-<div class="line"><a name="l00174"></a><span class="lineno">  174</span>&#160;        <span class="keyword">call </span>error(<span class="stringliteral">&quot;unsupported attribute type: &quot;</span>//trim(append_error_msg))</div>
-<div class="line"><a name="l00175"></a><span class="lineno">  175</span>&#160;<span class="keywordflow">    end select</span></div>
-<div class="line"><a name="l00176"></a><span class="lineno">  176</span>&#160;    <span class="keyword">call </span>check_netcdf_code(err, append_error_msg)</div>
-<div class="line"><a name="l00177"></a><span class="lineno">  177</span>&#160; </div>
-<div class="line"><a name="l00178"></a><span class="lineno">  178</span>&#160;    <span class="keywordflow">if</span> (string_compare(attribute_name, <span class="stringliteral">&quot;_FillValue&quot;</span>) .or. &amp;</div>
-<div class="line"><a name="l00179"></a><span class="lineno">  179</span>&#160;        string_compare(attribute_name, <span class="stringliteral">&quot;valid_min&quot;</span>) .or. &amp;</div>
-<div class="line"><a name="l00180"></a><span class="lineno">  180</span>&#160;        string_compare(attribute_name, <span class="stringliteral">&quot;valid_max&quot;</span>) .or. &amp;</div>
-<div class="line"><a name="l00181"></a><span class="lineno">  181</span>&#160;        string_compare(attribute_name, <span class="stringliteral">&quot;scale_factor&quot;</span>) .or. &amp;</div>
-<div class="line"><a name="l00182"></a><span class="lineno">  182</span>&#160;        string_compare(attribute_name, <span class="stringliteral">&quot;add_offset&quot;</span>) .or. &amp;</div>
-<div class="line"><a name="l00183"></a><span class="lineno">  183</span>&#160;        string_compare(attribute_name, <span class="stringliteral">&quot;missing_value&quot;</span>)) <span class="keywordflow">then</span></div>
-<div class="line"><a name="l00184"></a><span class="lineno">  184</span>&#160;      <span class="keyword">call </span>error(trim(attribute_name)//<span class="stringliteral">&quot; must be a scalar.&quot;</span>)</div>
-<div class="line"><a name="l00185"></a><span class="lineno">  185</span>&#160;    <span class="keywordflow">elseif</span> (string_compare(attribute_name, <span class="stringliteral">&quot;valid_range&quot;</span>)) <span class="keywordflow">then</span></div>
-<div class="line"><a name="l00186"></a><span class="lineno">  186</span>&#160;      <span class="keywordflow">if</span> (attribute_exists(fileobj%ncid, varid, <span class="stringliteral">&quot;valid_min&quot;</span>, msg=append_error_msg) .or. &amp;</div>
-<div class="line"><a name="l00187"></a><span class="lineno">  187</span>&#160;          attribute_exists(fileobj%ncid, varid, <span class="stringliteral">&quot;valid_max&quot;</span>, msg=append_error_msg)) <span class="keywordflow">then</span></div>
-<div class="line"><a name="l00188"></a><span class="lineno">  188</span>&#160;        <span class="keyword">call </span>error(<span class="stringliteral">&quot;cannot have valid_range and valid_min/max: &quot;</span>//trim(append_error_msg))</div>
-<div class="line"><a name="l00189"></a><span class="lineno">  189</span>&#160;<span class="keywordflow">      endif</span></div>
-<div class="line"><a name="l00190"></a><span class="lineno">  190</span>&#160;      axtype = get_attribute_type(fileobj%ncid, varid, attribute_name, append_error_msg)</div>
-<div class="line"><a name="l00191"></a><span class="lineno">  191</span>&#160;      xtype = get_variable_type(fileobj%ncid, varid, append_error_msg)</div>
-<div class="line"><a name="l00192"></a><span class="lineno">  192</span>&#160;      <span class="keywordflow">if</span> (axtype .ne. xtype) <span class="keywordflow">then</span></div>
-<div class="line"><a name="l00193"></a><span class="lineno">  193</span>&#160;        <span class="keyword">call </span>error(<span class="stringliteral">&quot;The type of the variable is not the same as the type of the variable: &quot;</span>//trim(append_error_msg))</div>
-<div class="line"><a name="l00194"></a><span class="lineno">  194</span>&#160;<span class="keywordflow">      endif</span></div>
-<div class="line"><a name="l00195"></a><span class="lineno">  195</span>&#160;      <span class="keywordflow">if</span> (<span class="keyword">size</span>(attribute_value) .ne. 2) <span class="keywordflow">then</span></div>
-<div class="line"><a name="l00196"></a><span class="lineno">  196</span>&#160;        <span class="keyword">call </span>error(<span class="stringliteral">&quot;valid_range must be a vector with two values: &quot;</span>//trim(append_error_msg))</div>
-<div class="line"><a name="l00197"></a><span class="lineno">  197</span>&#160;<span class="keywordflow">      endif</span></div>
-<div class="line"><a name="l00198"></a><span class="lineno">  198</span>&#160;<span class="keywordflow">    endif</span></div>
-<div class="line"><a name="l00199"></a><span class="lineno">  199</span>&#160;<span class="keywordflow">  endif</span></div>
-<div class="line"><a name="l00200"></a><span class="lineno">  200</span>&#160;<span class="keyword">end subroutine </span><a class="code" href="register__variable__attribute_8inc.html#a0a9fc35686f9fdfb6b798ad426ff9b23">register_variable_attribute_1d</a></div>
+<div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160;<span class="comment">!&gt; @brief Routines to add variable attributes for different dimensions to be used in</span></div>
+<div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160;<span class="comment">!! the @ref register_variable_attribute interface</span></div>
+<div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160;<span class="comment"></span> </div>
+<div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160;<span class="comment">!&gt; @addtogroup fms2_io_mod</span></div>
+<div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;<span class="comment">!&gt; @{</span></div>
+<div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160;<span class="comment"></span> </div>
+<div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160;<span class="comment">!&gt; @brief Add an attribute to a variable.</span></div>
+<div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;<span class="keyword">subroutine </span><a class="code" href="group__fms2__io__mod.html#gaa6eafb821917f92e937c532c72711b38">register_variable_attribute_0d</a>(fileobj, variable_name, attribute_name, &amp;</div>
+<div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;                                          attribute_value, str_len)</div>
+<div class="line"><a name="l00029"></a><span class="lineno"><a class="line" href="group__fms2__io__mod.html#gaa6eafb821917f92e937c532c72711b38">   29</a></span>&#160; </div>
+<div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;  <span class="keywordtype">class</span>(fmsnetcdffile_t), <span class="keywordtype">intent(in)</span> :: fileobj<span class="comment"> !&lt; File object.</span></div>
+<div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;  <span class="keywordtype">character(len=*)</span>, <span class="keywordtype">intent(in)</span> :: variable_name<span class="comment"> !&lt; Variable name.</span></div>
+<div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;  <span class="keywordtype">character(len=*)</span>, <span class="keywordtype">intent(in)</span> :: attribute_name<span class="comment"> !&lt; Attribute name.</span></div>
+<div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;  <span class="keywordtype">class</span>(*), <span class="keywordtype">intent(in)</span> :: attribute_value<span class="comment"> !&lt; Attribute value</span></div>
+<div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;  <span class="keywordtype">integer</span>, <span class="keywordtype">intent(in)</span>, <span class="keywordtype">optional</span> :: str_len<span class="comment"> !&lt; Length of the string</span></div>
+<div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160; </div>
+<div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;  <span class="keywordtype">integer</span> :: varid</div>
+<div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;  <span class="keywordtype">integer</span> :: err</div>
+<div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;  <span class="keywordtype">integer</span> :: axtype</div>
+<div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;  <span class="keywordtype">integer</span> :: xtype</div>
+<div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;  <span class="keywordtype">integer(kind=i4_kind)</span>, <span class="keywordtype">dimension(2)</span> :: i32_range</div>
+<div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;  <span class="keywordtype">integer(kind=i8_kind)</span>, <span class="keywordtype">dimension(2)</span> :: i64_range</div>
+<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;<span class="keywordtype">  real</span>(kind=r4_kind), <span class="keywordtype">dimension(2)</span> :: r32_range</div>
+<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;<span class="keywordtype">  real</span>(kind=r8_kind), <span class="keywordtype">dimension(2)</span> :: r64_range</div>
+<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;  <span class="keywordtype">character(len=200)</span> :: append_error_msg<span class="comment"> !&lt; Msg to be appended to FATAL error message</span></div>
+<div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160; </div>
+<div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;  append_error_msg = <span class="stringliteral">&quot;register_variable_attribute_0d: file:&quot;</span>//trim(fileobj%path)//<span class="stringliteral">&quot;- variable:&quot;</span>//&amp;</div>
+<div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;                     &amp;trim(variable_name)//<span class="stringliteral">&quot; attribute: &quot;</span>//trim(attribute_name)</div>
+<div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160; </div>
+<div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;  <span class="keywordflow">if</span> (fileobj%is_root) <span class="keywordflow">then</span></div>
+<div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;    <span class="keyword">call </span>set_netcdf_mode(fileobj%ncid, define_mode)</div>
+<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;    varid = get_variable_id(fileobj%ncid, trim(variable_name), msg=append_error_msg)</div>
+<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;    <span class="keywordflow">select type</span>(attribute_value)</div>
+<div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;<span class="keywordflow">      type is</span> (<span class="keywordtype">character</span>(len=*))</div>
+<div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;        <span class="keywordflow">if</span> (.not. <span class="keyword">present</span>(str_len)) <span class="keyword">call </span>error(<span class="stringliteral">&quot;Need to include str length:&quot;</span>//trim(append_error_msg))</div>
+<div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;        err = nf90_put_att(fileobj%ncid, varid, trim(attribute_name), &amp;</div>
+<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;                           trim(attribute_value(1:str_len)))</div>
+<div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;<span class="keywordflow">      type is</span> (<span class="keywordtype">integer</span>(kind=i4_kind))</div>
+<div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;        err = nf90_put_att(fileobj%ncid, varid, trim(attribute_name), &amp;</div>
+<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;                           attribute_value)</div>
+<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;<span class="keywordflow">      type is</span> (<span class="keywordtype">integer</span>(kind=i8_kind))</div>
+<div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;        <span class="keywordflow">if</span> ( .not. fileobj%allow_int8) <span class="keyword">call </span>error(trim(fileobj%path)//&amp;</div>
+<div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;                                               &amp; <span class="stringliteral">&quot;: 64 bit integers are only supported with &#39;netcdf4&#39; file format&quot;</span>//  &amp;</div>
+<div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;                                               &amp; <span class="stringliteral">&quot;. Set netcdf_default_format=&#39;netcdf4&#39; in the fms2_io namelist OR &quot;</span>//&amp;</div>
+<div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;                                               &amp; <span class="stringliteral">&quot;add nc_format=&#39;netcdf4&#39; to your open_file call&quot;</span>)</div>
+<div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;        err = nf90_put_att(fileobj%ncid, varid, trim(attribute_name), &amp;</div>
+<div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;                           attribute_value)</div>
+<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;<span class="keywordflow">      type is</span> (real(kind=r4_kind))</div>
+<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;        err = nf90_put_att(fileobj%ncid, varid, trim(attribute_name), &amp;</div>
+<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;                           attribute_value)</div>
+<div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;<span class="keywordflow">      type is</span> (real(kind=r8_kind))</div>
+<div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;        err = nf90_put_att(fileobj%ncid, varid, trim(attribute_name), &amp;</div>
+<div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;                           attribute_value)</div>
+<div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;<span class="keywordflow">      class default</span></div>
+<div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;        <span class="keyword">call </span>error(<span class="stringliteral">&quot;Unsupported attribute type:&quot;</span>//trim(append_error_msg))</div>
+<div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;<span class="keywordflow">    end select</span></div>
+<div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;    <span class="keyword">call </span>check_netcdf_code(err, append_error_msg)</div>
+<div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160; </div>
+<div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;    <span class="comment">!The missing_value attribute is not NUG compliant, but is included here to support</span></div>
+<div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;    <span class="comment">!legacy model component code.</span></div>
+<div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;    axtype = get_attribute_type(fileobj%ncid, varid, attribute_name, append_error_msg)</div>
+<div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;    xtype = get_variable_type(fileobj%ncid, varid, append_error_msg)</div>
+<div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;    <span class="keywordflow">if</span> (string_compare(attribute_name, <span class="stringliteral">&quot;_FillValue&quot;</span>) .or. &amp;</div>
+<div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;        string_compare(attribute_name, <span class="stringliteral">&quot;valid_min&quot;</span>) .or. &amp;</div>
+<div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160;        string_compare(attribute_name, <span class="stringliteral">&quot;valid_max&quot;</span>) .or. &amp;</div>
+<div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;        string_compare(attribute_name, <span class="stringliteral">&quot;scale_factor&quot;</span>) .or. &amp;</div>
+<div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160;        string_compare(attribute_name, <span class="stringliteral">&quot;add_offset&quot;</span>) .or. &amp;</div>
+<div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;        string_compare(attribute_name, <span class="stringliteral">&quot;missing_value&quot;</span>)) <span class="keywordflow">then</span></div>
+<div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160;      <span class="keywordflow">if</span> (axtype .ne. xtype) <span class="keywordflow">then</span></div>
+<div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160;        <span class="keyword">call </span>error(<span class="stringliteral">&quot;The variable type does not match the attribute type: &quot;</span>//trim(append_error_msg))</div>
+<div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;<span class="keywordflow">      endif</span></div>
+<div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160;<span class="keywordflow">    endif</span></div>
+<div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160; </div>
+<div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;    <span class="keywordflow">if</span> (string_compare(attribute_name, <span class="stringliteral">&quot;_FillValue&quot;</span>)) <span class="keywordflow">then</span></div>
+<div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160;      <span class="keywordflow">if</span> (attribute_exists(fileobj%ncid, varid, <span class="stringliteral">&quot;valid_range&quot;</span>, msg=append_error_msg)) <span class="keywordflow">then</span></div>
+<div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160;        <span class="keywordflow">select type</span>(attribute_value)</div>
+<div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160;<span class="keywordflow">          type is</span> (<span class="keywordtype">integer</span>(kind=i4_kind))</div>
+<div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160;            <span class="keyword">call </span>get_variable_attribute(fileobj, variable_name, <span class="stringliteral">&quot;valid_range&quot;</span>, &amp;</div>
+<div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160;                                        i32_range, .false.)</div>
+<div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160;            <span class="keywordflow">if</span> (attribute_value .lt. i32_range(1) .or. &amp;</div>
+<div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160;                attribute_value .gt. i32_range(2)) <span class="keywordflow">then</span></div>
+<div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160;              <span class="keyword">call </span>error(<span class="stringliteral">&quot;_FillValue inside valid_range: &quot;</span>//trim(append_error_msg))</div>
+<div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160;<span class="keywordflow">            endif</span></div>
+<div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160;<span class="keywordflow">          type is</span> (<span class="keywordtype">integer</span>(kind=i8_kind))</div>
+<div class="line"><a name="l00104"></a><span class="lineno">  104</span>&#160;            <span class="keyword">call </span>get_variable_attribute(fileobj, variable_name, <span class="stringliteral">&quot;valid_range&quot;</span>, &amp;</div>
+<div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160;                                        i64_range, .false.)</div>
+<div class="line"><a name="l00106"></a><span class="lineno">  106</span>&#160;            <span class="keywordflow">if</span> (attribute_value .lt. i64_range(1) .or. &amp;</div>
+<div class="line"><a name="l00107"></a><span class="lineno">  107</span>&#160;                attribute_value .gt. i64_range(2)) <span class="keywordflow">then</span></div>
+<div class="line"><a name="l00108"></a><span class="lineno">  108</span>&#160;              <span class="keyword">call </span>error(<span class="stringliteral">&quot;_FillValue inside valid_range: &quot;</span>//trim(append_error_msg))</div>
+<div class="line"><a name="l00109"></a><span class="lineno">  109</span>&#160;<span class="keywordflow">            endif</span></div>
+<div class="line"><a name="l00110"></a><span class="lineno">  110</span>&#160;<span class="keywordflow">          type is</span> (real(kind=r4_kind))</div>
+<div class="line"><a name="l00111"></a><span class="lineno">  111</span>&#160;            <span class="keyword">call </span>get_variable_attribute(fileobj, variable_name, <span class="stringliteral">&quot;valid_range&quot;</span>, &amp;</div>
+<div class="line"><a name="l00112"></a><span class="lineno">  112</span>&#160;                                        r32_range, .false.)</div>
+<div class="line"><a name="l00113"></a><span class="lineno">  113</span>&#160;            <span class="keywordflow">if</span> (attribute_value .lt. r32_range(1) .or. &amp;</div>
+<div class="line"><a name="l00114"></a><span class="lineno">  114</span>&#160;                attribute_value .gt. r32_range(2)) <span class="keywordflow">then</span></div>
+<div class="line"><a name="l00115"></a><span class="lineno">  115</span>&#160;              <span class="keyword">call </span>error(<span class="stringliteral">&quot;_FillValue inside valid_range: &quot;</span>//trim(append_error_msg))</div>
+<div class="line"><a name="l00116"></a><span class="lineno">  116</span>&#160;<span class="keywordflow">            endif</span></div>
+<div class="line"><a name="l00117"></a><span class="lineno">  117</span>&#160;<span class="keywordflow">          type is</span> (real(kind=r8_kind))</div>
+<div class="line"><a name="l00118"></a><span class="lineno">  118</span>&#160;            <span class="keyword">call </span>get_variable_attribute(fileobj, variable_name, <span class="stringliteral">&quot;valid_range&quot;</span>, &amp;</div>
+<div class="line"><a name="l00119"></a><span class="lineno">  119</span>&#160;                                        r64_range, .false.)</div>
+<div class="line"><a name="l00120"></a><span class="lineno">  120</span>&#160;            <span class="keywordflow">if</span> (attribute_value .lt. r64_range(1) .or. &amp;</div>
+<div class="line"><a name="l00121"></a><span class="lineno">  121</span>&#160;                attribute_value .gt. r64_range(2)) <span class="keywordflow">then</span></div>
+<div class="line"><a name="l00122"></a><span class="lineno">  122</span>&#160;              <span class="keyword">call </span>error(<span class="stringliteral">&quot;_FillValue inside valid_range: &quot;</span>//trim(append_error_msg))</div>
+<div class="line"><a name="l00123"></a><span class="lineno">  123</span>&#160;<span class="keywordflow">            endif</span></div>
+<div class="line"><a name="l00124"></a><span class="lineno">  124</span>&#160;<span class="keywordflow">          class default</span></div>
+<div class="line"><a name="l00125"></a><span class="lineno">  125</span>&#160;            <span class="keyword">call </span>error(<span class="stringliteral">&quot;unsupported attribute type: &quot;</span>//trim(append_error_msg))</div>
+<div class="line"><a name="l00126"></a><span class="lineno">  126</span>&#160;<span class="keywordflow">        end select</span></div>
+<div class="line"><a name="l00127"></a><span class="lineno">  127</span>&#160;<span class="keywordflow">      endif</span></div>
+<div class="line"><a name="l00128"></a><span class="lineno">  128</span>&#160;    <span class="keywordflow">elseif</span> (string_compare(attribute_name, <span class="stringliteral">&quot;valid_min&quot;</span>) .or. &amp;</div>
+<div class="line"><a name="l00129"></a><span class="lineno">  129</span>&#160;            string_compare(attribute_name, <span class="stringliteral">&quot;valid_max&quot;</span>)) <span class="keywordflow">then</span></div>
+<div class="line"><a name="l00130"></a><span class="lineno">  130</span>&#160;      <span class="keywordflow">if</span> (attribute_exists(fileobj%ncid, varid, <span class="stringliteral">&quot;valid_range&quot;</span>, msg=append_error_msg)) <span class="keywordflow">then</span></div>
+<div class="line"><a name="l00131"></a><span class="lineno">  131</span>&#160;        <span class="keyword">call </span>error(<span class="stringliteral">&quot;cannot have attributes valid_range and valid_min/max: &quot;</span>//trim(append_error_msg))</div>
+<div class="line"><a name="l00132"></a><span class="lineno">  132</span>&#160;<span class="keywordflow">      endif</span></div>
+<div class="line"><a name="l00133"></a><span class="lineno">  133</span>&#160;<span class="keywordflow">    endif</span></div>
+<div class="line"><a name="l00134"></a><span class="lineno">  134</span>&#160;<span class="keywordflow">  endif</span></div>
+<div class="line"><a name="l00135"></a><span class="lineno">  135</span>&#160;<span class="keyword">end subroutine </span><a class="code" href="group__fms2__io__mod.html#gaa6eafb821917f92e937c532c72711b38">register_variable_attribute_0d</a></div>
+<div class="line"><a name="l00136"></a><span class="lineno">  136</span>&#160; </div>
+<div class="line"><a name="l00137"></a><span class="lineno">  137</span>&#160;<span class="comment"></span> </div>
+<div class="line"><a name="l00138"></a><span class="lineno">  138</span>&#160;<span class="comment">!&gt; @brief Add an attribute to a variable.</span></div>
+<div class="line"><a name="l00139"></a><span class="lineno">  139</span>&#160;<span class="keyword">subroutine </span><a class="code" href="group__fms2__io__mod.html#ga0a9fc35686f9fdfb6b798ad426ff9b23">register_variable_attribute_1d</a>(fileobj, variable_name, attribute_name, &amp;</div>
+<div class="line"><a name="l00140"></a><span class="lineno">  140</span>&#160;                                          attribute_value, str_len)</div>
+<div class="line"><a name="l00141"></a><span class="lineno"><a class="line" href="group__fms2__io__mod.html#ga0a9fc35686f9fdfb6b798ad426ff9b23">  141</a></span>&#160; </div>
+<div class="line"><a name="l00142"></a><span class="lineno">  142</span>&#160;  <span class="keywordtype">class</span>(fmsnetcdffile_t), <span class="keywordtype">intent(in)</span> :: fileobj<span class="comment"> !&lt; File object.</span></div>
+<div class="line"><a name="l00143"></a><span class="lineno">  143</span>&#160;  <span class="keywordtype">character(len=*)</span>, <span class="keywordtype">intent(in)</span> :: variable_name<span class="comment"> !&lt; Variable name.</span></div>
+<div class="line"><a name="l00144"></a><span class="lineno">  144</span>&#160;  <span class="keywordtype">character(len=*)</span>, <span class="keywordtype">intent(in)</span> :: attribute_name<span class="comment"> !&lt; Attribute name.</span></div>
+<div class="line"><a name="l00145"></a><span class="lineno">  145</span>&#160;  <span class="keywordtype">class</span>(*), <span class="keywordtype">dimension(:)</span>, <span class="keywordtype">intent(in)</span> :: attribute_value<span class="comment"> !&lt; Attribute value</span></div>
+<div class="line"><a name="l00146"></a><span class="lineno">  146</span>&#160;  <span class="keywordtype">integer</span>, <span class="keywordtype">intent(in)</span>, <span class="keywordtype">optional</span> :: str_len<span class="comment"> !&lt; Length of the string</span></div>
+<div class="line"><a name="l00147"></a><span class="lineno">  147</span>&#160; </div>
+<div class="line"><a name="l00148"></a><span class="lineno">  148</span>&#160;  <span class="keywordtype">integer</span> :: varid</div>
+<div class="line"><a name="l00149"></a><span class="lineno">  149</span>&#160;  <span class="keywordtype">integer</span> :: err</div>
+<div class="line"><a name="l00150"></a><span class="lineno">  150</span>&#160;  <span class="keywordtype">integer</span> :: axtype</div>
+<div class="line"><a name="l00151"></a><span class="lineno">  151</span>&#160;  <span class="keywordtype">integer</span> :: xtype</div>
+<div class="line"><a name="l00152"></a><span class="lineno">  152</span>&#160;  <span class="keywordtype">character(len=200)</span> :: append_error_msg<span class="comment"> !&lt; Msg to be appended to FATAL error message</span></div>
+<div class="line"><a name="l00153"></a><span class="lineno">  153</span>&#160; </div>
+<div class="line"><a name="l00154"></a><span class="lineno">  154</span>&#160;  append_error_msg = <span class="stringliteral">&quot;register_variable_attribute_0d: file:&quot;</span>//trim(fileobj%path)//<span class="stringliteral">&quot;- variable:&quot;</span>//&amp;</div>
+<div class="line"><a name="l00155"></a><span class="lineno">  155</span>&#160;                     &amp;trim(variable_name)//<span class="stringliteral">&quot; attribute: &quot;</span>//trim(attribute_name)</div>
+<div class="line"><a name="l00156"></a><span class="lineno">  156</span>&#160; </div>
+<div class="line"><a name="l00157"></a><span class="lineno">  157</span>&#160;  <span class="keywordflow">if</span> (fileobj%is_root) <span class="keywordflow">then</span></div>
+<div class="line"><a name="l00158"></a><span class="lineno">  158</span>&#160;    <span class="keyword">call </span>set_netcdf_mode(fileobj%ncid, define_mode)</div>
+<div class="line"><a name="l00159"></a><span class="lineno">  159</span>&#160;    varid = get_variable_id(fileobj%ncid, trim(variable_name), msg=append_error_msg)</div>
+<div class="line"><a name="l00160"></a><span class="lineno">  160</span>&#160;    <span class="keywordflow">select type</span>(attribute_value)</div>
+<div class="line"><a name="l00161"></a><span class="lineno">  161</span>&#160;<span class="keywordflow">      type is</span> (<span class="keywordtype">integer</span>(kind=i4_kind))</div>
+<div class="line"><a name="l00162"></a><span class="lineno">  162</span>&#160;        err = nf90_put_att(fileobj%ncid, varid, trim(attribute_name), &amp;</div>
+<div class="line"><a name="l00163"></a><span class="lineno">  163</span>&#160;                           attribute_value)</div>
+<div class="line"><a name="l00164"></a><span class="lineno">  164</span>&#160;<span class="keywordflow">      type is</span> (<span class="keywordtype">integer</span>(kind=i8_kind))</div>
+<div class="line"><a name="l00165"></a><span class="lineno">  165</span>&#160;        <span class="keywordflow">if</span> ( .not. fileobj%allow_int8) <span class="keyword">call </span>error(trim(fileobj%path)// &amp;</div>
+<div class="line"><a name="l00166"></a><span class="lineno">  166</span>&#160;                                               &amp; <span class="stringliteral">&quot;: 64 bit integers are only supported with &#39;netcdf4&#39; file format&quot;</span>//  &amp;</div>
+<div class="line"><a name="l00167"></a><span class="lineno">  167</span>&#160;                                               &amp; <span class="stringliteral">&quot;. Set netcdf_default_format=&#39;netcdf4&#39; in the fms2_io namelist OR &quot;</span>//&amp;</div>
+<div class="line"><a name="l00168"></a><span class="lineno">  168</span>&#160;                                               &amp; <span class="stringliteral">&quot;add nc_format=&#39;netcdf4&#39; to your open_file call&quot;</span>)</div>
+<div class="line"><a name="l00169"></a><span class="lineno">  169</span>&#160;        err = nf90_put_att(fileobj%ncid, varid, trim(attribute_name), &amp;</div>
+<div class="line"><a name="l00170"></a><span class="lineno">  170</span>&#160;                           attribute_value)</div>
+<div class="line"><a name="l00171"></a><span class="lineno">  171</span>&#160;<span class="keywordflow">      type is</span> (real(kind=r4_kind))</div>
+<div class="line"><a name="l00172"></a><span class="lineno">  172</span>&#160;        err = nf90_put_att(fileobj%ncid, varid, trim(attribute_name), &amp;</div>
+<div class="line"><a name="l00173"></a><span class="lineno">  173</span>&#160;                           attribute_value)</div>
+<div class="line"><a name="l00174"></a><span class="lineno">  174</span>&#160;<span class="keywordflow">      type is</span> (real(kind=r8_kind))</div>
+<div class="line"><a name="l00175"></a><span class="lineno">  175</span>&#160;        err = nf90_put_att(fileobj%ncid, varid, trim(attribute_name), &amp;</div>
+<div class="line"><a name="l00176"></a><span class="lineno">  176</span>&#160;                           attribute_value)</div>
+<div class="line"><a name="l00177"></a><span class="lineno">  177</span>&#160;<span class="keywordflow">      class default</span></div>
+<div class="line"><a name="l00178"></a><span class="lineno">  178</span>&#160;        <span class="keyword">call </span>error(<span class="stringliteral">&quot;unsupported attribute type: &quot;</span>//trim(append_error_msg))</div>
+<div class="line"><a name="l00179"></a><span class="lineno">  179</span>&#160;<span class="keywordflow">    end select</span></div>
+<div class="line"><a name="l00180"></a><span class="lineno">  180</span>&#160;    <span class="keyword">call </span>check_netcdf_code(err, append_error_msg)</div>
+<div class="line"><a name="l00181"></a><span class="lineno">  181</span>&#160; </div>
+<div class="line"><a name="l00182"></a><span class="lineno">  182</span>&#160;    <span class="keywordflow">if</span> (string_compare(attribute_name, <span class="stringliteral">&quot;_FillValue&quot;</span>) .or. &amp;</div>
+<div class="line"><a name="l00183"></a><span class="lineno">  183</span>&#160;        string_compare(attribute_name, <span class="stringliteral">&quot;valid_min&quot;</span>) .or. &amp;</div>
+<div class="line"><a name="l00184"></a><span class="lineno">  184</span>&#160;        string_compare(attribute_name, <span class="stringliteral">&quot;valid_max&quot;</span>) .or. &amp;</div>
+<div class="line"><a name="l00185"></a><span class="lineno">  185</span>&#160;        string_compare(attribute_name, <span class="stringliteral">&quot;scale_factor&quot;</span>) .or. &amp;</div>
+<div class="line"><a name="l00186"></a><span class="lineno">  186</span>&#160;        string_compare(attribute_name, <span class="stringliteral">&quot;add_offset&quot;</span>) .or. &amp;</div>
+<div class="line"><a name="l00187"></a><span class="lineno">  187</span>&#160;        string_compare(attribute_name, <span class="stringliteral">&quot;missing_value&quot;</span>)) <span class="keywordflow">then</span></div>
+<div class="line"><a name="l00188"></a><span class="lineno">  188</span>&#160;      <span class="keyword">call </span>error(trim(attribute_name)//<span class="stringliteral">&quot; must be a scalar.&quot;</span>)</div>
+<div class="line"><a name="l00189"></a><span class="lineno">  189</span>&#160;    <span class="keywordflow">elseif</span> (string_compare(attribute_name, <span class="stringliteral">&quot;valid_range&quot;</span>)) <span class="keywordflow">then</span></div>
+<div class="line"><a name="l00190"></a><span class="lineno">  190</span>&#160;      <span class="keywordflow">if</span> (attribute_exists(fileobj%ncid, varid, <span class="stringliteral">&quot;valid_min&quot;</span>, msg=append_error_msg) .or. &amp;</div>
+<div class="line"><a name="l00191"></a><span class="lineno">  191</span>&#160;          attribute_exists(fileobj%ncid, varid, <span class="stringliteral">&quot;valid_max&quot;</span>, msg=append_error_msg)) <span class="keywordflow">then</span></div>
+<div class="line"><a name="l00192"></a><span class="lineno">  192</span>&#160;        <span class="keyword">call </span>error(<span class="stringliteral">&quot;cannot have valid_range and valid_min/max: &quot;</span>//trim(append_error_msg))</div>
+<div class="line"><a name="l00193"></a><span class="lineno">  193</span>&#160;<span class="keywordflow">      endif</span></div>
+<div class="line"><a name="l00194"></a><span class="lineno">  194</span>&#160;      axtype = get_attribute_type(fileobj%ncid, varid, attribute_name, append_error_msg)</div>
+<div class="line"><a name="l00195"></a><span class="lineno">  195</span>&#160;      xtype = get_variable_type(fileobj%ncid, varid, append_error_msg)</div>
+<div class="line"><a name="l00196"></a><span class="lineno">  196</span>&#160;      <span class="keywordflow">if</span> (axtype .ne. xtype) <span class="keywordflow">then</span></div>
+<div class="line"><a name="l00197"></a><span class="lineno">  197</span>&#160;        <span class="keyword">call </span>error(<span class="stringliteral">&quot;The type of the variable is not the same as the type of the variable: &quot;</span>//trim(append_error_msg))</div>
+<div class="line"><a name="l00198"></a><span class="lineno">  198</span>&#160;<span class="keywordflow">      endif</span></div>
+<div class="line"><a name="l00199"></a><span class="lineno">  199</span>&#160;      <span class="keywordflow">if</span> (<span class="keyword">size</span>(attribute_value) .ne. 2) <span class="keywordflow">then</span></div>
+<div class="line"><a name="l00200"></a><span class="lineno">  200</span>&#160;        <span class="keyword">call </span>error(<span class="stringliteral">&quot;valid_range must be a vector with two values: &quot;</span>//trim(append_error_msg))</div>
+<div class="line"><a name="l00201"></a><span class="lineno">  201</span>&#160;<span class="keywordflow">      endif</span></div>
+<div class="line"><a name="l00202"></a><span class="lineno">  202</span>&#160;<span class="keywordflow">    endif</span></div>
+<div class="line"><a name="l00203"></a><span class="lineno">  203</span>&#160;<span class="keywordflow">  endif</span></div>
+<div class="line"><a name="l00204"></a><span class="lineno">  204</span>&#160;<span class="keyword">end subroutine </span><a class="code" href="group__fms2__io__mod.html#ga0a9fc35686f9fdfb6b798ad426ff9b23">register_variable_attribute_1d</a><span class="comment"></span></div>
+<div class="line"><a name="l00205"></a><span class="lineno">  205</span>&#160;<span class="comment">!&gt; @}</span></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
-<div class="ttc" id="aregister__variable__attribute_8inc_html_a0a9fc35686f9fdfb6b798ad426ff9b23"><div class="ttname"><a href="register__variable__attribute_8inc.html#a0a9fc35686f9fdfb6b798ad426ff9b23">register_variable_attribute_1d</a></div><div class="ttdeci">subroutine register_variable_attribute_1d(fileobj, variable_name, attribute_name, attribute_value, str_len)</div><div class="ttdoc">Add an attribute to a variable.</div><div class="ttdef"><b>Definition:</b> <a href="register__variable__attribute_8inc_source.html#l00137">register_variable_attribute.inc:137</a></div></div>
-<div class="ttc" id="aregister__variable__attribute_8inc_html_aa6eafb821917f92e937c532c72711b38"><div class="ttname"><a href="register__variable__attribute_8inc.html#aa6eafb821917f92e937c532c72711b38">register_variable_attribute_0d</a></div><div class="ttdeci">subroutine register_variable_attribute_0d(fileobj, variable_name, attribute_name, attribute_value, str_len)</div><div class="ttdoc">Add an attribute to a variable.</div><div class="ttdef"><b>Definition:</b> <a href="register__variable__attribute_8inc_source.html#l00025">register_variable_attribute.inc:25</a></div></div>
+<div class="ttc" id="agroup__fms2__io__mod_html_ga0a9fc35686f9fdfb6b798ad426ff9b23"><div class="ttname"><a href="group__fms2__io__mod.html#ga0a9fc35686f9fdfb6b798ad426ff9b23">register_variable_attribute_1d</a></div><div class="ttdeci">subroutine register_variable_attribute_1d(fileobj, variable_name, attribute_name, attribute_value, str_len)</div><div class="ttdoc">Add an attribute to a variable.</div><div class="ttdef"><b>Definition:</b> <a href="register__variable__attribute_8inc_source.html#l00141">register_variable_attribute.inc:141</a></div></div>
+<div class="ttc" id="agroup__fms2__io__mod_html_gaa6eafb821917f92e937c532c72711b38"><div class="ttname"><a href="group__fms2__io__mod.html#gaa6eafb821917f92e937c532c72711b38">register_variable_attribute_0d</a></div><div class="ttdeci">subroutine register_variable_attribute_0d(fileobj, variable_name, attribute_name, attribute_value, str_len)</div><div class="ttdoc">Add an attribute to a variable.</div><div class="ttdef"><b>Definition:</b> <a href="register__variable__attribute_8inc_source.html#l00029">register_variable_attribute.inc:29</a></div></div>
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><a class="el" href="dir_0b23f86593b5beae7fad04a40cca3c16.html">fms2_io</a></li><li class="navelem"><a class="el" href="dir_731df1d3823ee5b9df3d8fffb0d31a46.html">include</a></li><li class="navelem"><a class="el" href="register__variable__attribute_8inc.html">register_variable_attribute.inc</a></li>
+    <li class="navelem"><a class="el" href="dir_0b23f86593b5beae7fad04a40cca3c16.html">fms2_io</a></li><li class="navelem"><a class="el" href="dir_731df1d3823ee5b9df3d8fffb0d31a46.html">include</a></li><li class="navelem"><b>register_variable_attribute.inc</b></li>
     <li class="footer">Generated by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="doxygen.png" alt="doxygen"/></a> 1.8.17 </li>

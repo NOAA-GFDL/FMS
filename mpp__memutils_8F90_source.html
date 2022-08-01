@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.17"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>FMS: mpp/mpp_memutils.F90 Source File</title>
+<title>FMS: mpp/mpp_memutils.F90 (1640fde1a51a73f97748f150eb84bf49e472aeca) Source File</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -33,7 +33,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">FMS
-   &#160;<span id="projectnumber">2022.02.0</span>
+   &#160;<span id="projectnumber">2022.03.00</span>
    </div>
    <div id="projectbrief">Flexible Modeling System</div>
   </td>
@@ -94,7 +94,7 @@ $(document).ready(function(){initNavTree('mpp__memutils_8F90_source.html',''); i
 <div class="title">mpp_memutils.F90</div>  </div>
 </div><!--header-->
 <div class="contents">
-<a href="mpp__memutils_8F90.html">Go to the documentation of this file.</a><div class="fragment"><div class="line"><a name="l00001"></a><span class="lineno">    1</span>&#160;<span class="comment">!***********************************************************************</span></div>
+<div class="fragment"><div class="line"><a name="l00001"></a><span class="lineno">    1</span>&#160;<span class="comment">!***********************************************************************</span></div>
 <div class="line"><a name="l00002"></a><span class="lineno">    2</span>&#160;<span class="comment">!*                   GNU Lesser General Public License</span></div>
 <div class="line"><a name="l00003"></a><span class="lineno">    3</span>&#160;<span class="comment">!*</span></div>
 <div class="line"><a name="l00004"></a><span class="lineno">    4</span>&#160;<span class="comment">!* This file is part of the GFDL Flexible Modeling System (FMS).</span></div>
@@ -116,133 +116,130 @@ $(document).ready(function(){initNavTree('mpp__memutils_8F90_source.html',''); i
 <div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160;<span class="comment">!&gt; @ingroup mpp</span></div>
 <div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160;<span class="comment">!&gt; @brief Routines to initialize and report on memory usage during the model run.</span></div>
 <div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160;<span class="comment"></span> </div>
-<div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160;<span class="comment">!&gt; @file</span></div>
-<div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;<span class="comment">!&gt; @brief File for mpp_memutils_mod</span></div>
-<div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160;<span class="comment"></span> </div>
-<div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160;<span class="comment">!&gt; @addtogroup mpp_memutils_mod</span></div>
-<div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;<span class="comment">!&gt; @{</span></div>
-<div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;<span class="keyword">module</span> mpp_memutils_mod</div>
-<div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160; </div>
-<div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;  <span class="keywordtype">use </span>mpp_mod, <span class="keywordtype">only</span>: <a class="code" href="interfacempp__mod_1_1mpp__min.html">mpp_min</a>, <a class="code" href="interfacempp__mod_1_1mpp__max.html">mpp_max</a>, <a class="code" href="interfacempp__mod_1_1mpp__sum.html">mpp_sum</a>, <a class="code" href="mpp__util_8inc.html#acfeba7de56f9dd6000b3fd78f9d56c50">mpp_pe</a>, mpp_root_pe</div>
-<div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;  <span class="keywordtype">use </span>mpp_mod, <span class="keywordtype">only</span>: <a class="code" href="interfacempp__mod_1_1mpp__error.html">mpp_error</a>, fatal, <a class="code" href="mpp__util_8inc.html#a285ef180624257148d85af894928844b">stderr</a>, <a class="code" href="mpp__util_8inc.html#abf546cd336d5c539e445fb884f98ab6b">mpp_npes</a></div>
-<div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;  <span class="keywordtype">use </span>platform_mod</div>
+<div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160;<span class="comment">!&gt; @addtogroup mpp_memutils_mod</span></div>
+<div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;<span class="comment">!&gt; @{</span></div>
+<div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160;<span class="keyword">module</span> mpp_memutils_mod</div>
+<div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160; </div>
+<div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;  <span class="keywordtype">use </span>mpp_mod, <span class="keywordtype">only</span>: <a class="code" href="group__mpp__mod.html#interfacempp__mod_1_1mpp__min">mpp_min</a>, <a class="code" href="group__mpp__mod.html#interfacempp__mod_1_1mpp__max">mpp_max</a>, <a class="code" href="group__mpp__mod.html#interfacempp__mod_1_1mpp__sum">mpp_sum</a>, <a class="code" href="group__mpp__mod.html#gacfeba7de56f9dd6000b3fd78f9d56c50">mpp_pe</a>, mpp_root_pe</div>
+<div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;  <span class="keywordtype">use </span>mpp_mod, <span class="keywordtype">only</span>: <a class="code" href="group__mpp__mod.html#interfacempp__mod_1_1mpp__error">mpp_error</a>, fatal, <a class="code" href="group__mpp__mod.html#ga285ef180624257148d85af894928844b">stderr</a>, <a class="code" href="group__mpp__mod.html#gabf546cd336d5c539e445fb884f98ab6b">mpp_npes</a></div>
+<div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;  <span class="keywordtype">use </span>platform_mod</div>
+<div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160; </div>
+<div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;  <span class="keywordtype">implicit none</span></div>
+<div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;  <span class="keywordtype">private</span></div>
 <div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160; </div>
-<div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;  <span class="keywordtype">implicit none</span></div>
-<div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;  <span class="keywordtype">private</span></div>
+<div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;  <span class="keywordtype">public</span> :: <a class="code" href="group__mpp__memutils__mod.html#gac353a266f4ed14aa3f6168844dd7ee72">mpp_print_memuse_stats</a>, <a class="code" href="group__mpp__memutils__mod.html#ga61577f7d271e473a6a0455378ca50931">mpp_mem_dump</a></div>
+<div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;  <span class="keywordtype">public</span> :: <a class="code" href="group__mpp__memutils__mod.html#ga3c5834bfffa897af09be279c225279a2">mpp_memuse_begin</a>, <a class="code" href="group__mpp__memutils__mod.html#ga3c26d4cff3ed9302d05ffd12ded42f76">mpp_memuse_end</a></div>
 <div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160; </div>
-<div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;  <span class="keywordtype">public</span> :: <a class="code" href="group__mpp__memutils__mod.html#gac353a266f4ed14aa3f6168844dd7ee72">mpp_print_memuse_stats</a>, <a class="code" href="group__mpp__memutils__mod.html#ga61577f7d271e473a6a0455378ca50931">mpp_mem_dump</a></div>
-<div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;  <span class="keywordtype">public</span> :: <a class="code" href="group__mpp__memutils__mod.html#ga3c5834bfffa897af09be279c225279a2">mpp_memuse_begin</a>, <a class="code" href="group__mpp__memutils__mod.html#ga3c26d4cff3ed9302d05ffd12ded42f76">mpp_memuse_end</a></div>
+<div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;<span class="keywordtype">  real</span>    :: begin_memuse</div>
+<div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;  <span class="keywordtype">logical</span> :: memuse_started = .false.</div>
 <div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160; </div>
-<div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;<span class="keywordtype">  real</span>    :: begin_memuse</div>
-<div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;  <span class="keywordtype">logical</span> :: memuse_started = .false.</div>
-<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160; </div>
-<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;<span class="keyword">contains</span></div>
-<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160; </div>
-<div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;  <span class="comment">!#######################################################################</span><span class="comment"></span></div>
-<div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;<span class="comment">  !&gt; Initialize the memory module, and record the initial memory use.</span></div>
-<div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;  <span class="keyword">subroutine </span><a class="code" href="group__mpp__memutils__mod.html#ga3c5834bfffa897af09be279c225279a2">mpp_memuse_begin</a></div>
-<div class="line"><a name="l00048"></a><span class="lineno"><a class="line" href="group__mpp__memutils__mod.html#ga3c5834bfffa897af09be279c225279a2">   48</a></span>&#160;    <span class="keywordflow">if</span>(memuse_started) <span class="keywordflow">then</span></div>
-<div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;       <span class="keyword">call </span><a class="code" href="interfacempp__mod_1_1mpp__error.html">mpp_error</a>(fatal, <span class="stringliteral">&quot;mpp_memutils_mod: mpp_memuse_begin was already called&quot;</span>)</div>
-<div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;<span class="keywordflow">    endif</span></div>
-<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;    memuse_started = .true.</div>
+<div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;<span class="keyword">contains</span></div>
+<div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160; </div>
+<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;  <span class="comment">!#######################################################################</span><span class="comment"></span></div>
+<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;<span class="comment">  !&gt; Initialize the memory module, and record the initial memory use.</span></div>
+<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;  <span class="keyword">subroutine </span><a class="code" href="group__mpp__memutils__mod.html#ga3c5834bfffa897af09be279c225279a2">mpp_memuse_begin</a></div>
+<div class="line"><a name="l00045"></a><span class="lineno"><a class="line" href="group__mpp__memutils__mod.html#ga3c5834bfffa897af09be279c225279a2">   45</a></span>&#160;    <span class="keywordflow">if</span>(memuse_started) <span class="keywordflow">then</span></div>
+<div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;       <span class="keyword">call </span><a class="code" href="group__mpp__mod.html#interfacempp__mod_1_1mpp__error">mpp_error</a>(fatal, <span class="stringliteral">&quot;mpp_memutils_mod: mpp_memuse_begin was already called&quot;</span>)</div>
+<div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;<span class="keywordflow">    endif</span></div>
+<div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;    memuse_started = .true.</div>
+<div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160; </div>
+<div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;    <span class="keyword">call </span><a class="code" href="group__mpp__memutils__mod.html#ga61577f7d271e473a6a0455378ca50931">mpp_mem_dump</a>(begin_memuse)</div>
+<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;  <span class="keyword">end subroutine </span><a class="code" href="group__mpp__memutils__mod.html#ga3c5834bfffa897af09be279c225279a2">mpp_memuse_begin</a></div>
 <div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160; </div>
-<div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;    <span class="keyword">call </span><a class="code" href="group__mpp__memutils__mod.html#ga61577f7d271e473a6a0455378ca50931">mpp_mem_dump</a>(begin_memuse)</div>
-<div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;  <span class="keyword">end subroutine </span><a class="code" href="group__mpp__memutils__mod.html#ga3c5834bfffa897af09be279c225279a2">mpp_memuse_begin</a></div>
-<div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160; </div>
-<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;  <span class="comment">!#######################################################################</span><span class="comment"></span></div>
-<div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;<span class="comment">  !&gt; End the memory collection, and report on total memory used during the</span></div>
-<div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;<span class="comment">  !! execution of the model run.</span></div>
-<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;  <span class="keyword">subroutine </span><a class="code" href="group__mpp__memutils__mod.html#ga3c26d4cff3ed9302d05ffd12ded42f76">mpp_memuse_end</a>(text, unit)</div>
-<div class="line"><a name="l00060"></a><span class="lineno"><a class="line" href="group__mpp__memutils__mod.html#ga3c26d4cff3ed9302d05ffd12ded42f76">   60</a></span>&#160;    <span class="keywordtype">character(len=*)</span>, <span class="keywordtype">intent(in)</span> :: text<span class="comment"> !&lt; Text to include in memory use statement</span></div>
-<div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;    <span class="keywordtype">integer</span>, <span class="keywordtype">intent(in)</span>, <span class="keywordtype">optional</span> :: unit<span class="comment"> !&lt; Fortran unit number where memory report should go.</span></div>
-<div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;<span class="comment">                                          !! Default is stderr.</span></div>
-<div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;<span class="keywordtype">    real</span>    :: m, mmin, mmax, mavg, mstd, end_memuse</div>
-<div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;    <span class="keywordtype">integer</span> :: mu</div>
-<div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160; </div>
-<div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;    <span class="keywordflow">if</span>(.NOT.memuse_started) <span class="keywordflow">then</span></div>
-<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;       <span class="keyword">call </span><a class="code" href="interfacempp__mod_1_1mpp__error.html">mpp_error</a>(fatal, <span class="stringliteral">&quot;mpp_memutils_mod: mpp_memuse_begin must be called before calling mpp_memuse_being&quot;</span>)</div>
-<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;<span class="keywordflow">    endif</span></div>
-<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;    memuse_started = .false.</div>
-<div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160; </div>
-<div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;    <span class="keyword">call </span><a class="code" href="group__mpp__memutils__mod.html#ga61577f7d271e473a6a0455378ca50931">mpp_mem_dump</a>(end_memuse)</div>
-<div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160; </div>
-<div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;    mu = <a class="code" href="mpp__util_8inc.html#a285ef180624257148d85af894928844b">stderr</a>(); <span class="keywordflow">if</span>( <span class="keyword">PRESENT</span>(unit) )mu = unit</div>
-<div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;    m = end_memuse - begin_memuse</div>
-<div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;    mmin = m; <span class="keyword">call </span><a class="code" href="interfacempp__mod_1_1mpp__min.html">mpp_min</a>(mmin)</div>
-<div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;    mmax = m; <span class="keyword">call </span><a class="code" href="interfacempp__mod_1_1mpp__max.html">mpp_max</a>(mmax)</div>
-<div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;    mavg = m; <span class="keyword">call </span><a class="code" href="interfacempp__mod_1_1mpp__sum.html">mpp_sum</a>(mavg); mavg = mavg/<a class="code" href="mpp__util_8inc.html#abf546cd336d5c539e445fb884f98ab6b">mpp_npes</a>()</div>
-<div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;    mstd = (m-mavg)**2; <span class="keyword">call </span><a class="code" href="interfacempp__mod_1_1mpp__sum.html">mpp_sum</a>(mstd); mstd = sqrt( mstd/<a class="code" href="mpp__util_8inc.html#abf546cd336d5c539e445fb884f98ab6b">mpp_npes</a>() )</div>
-<div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;    <span class="keywordflow">if</span>( <a class="code" href="mpp__util_8inc.html#acfeba7de56f9dd6000b3fd78f9d56c50">mpp_pe</a>().EQ.mpp_root_pe() )<span class="keyword">write</span>( mu,<span class="stringliteral">&#39;(a64,4es11.3)&#39;</span> ) &amp;</div>
-<div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;         <span class="stringliteral">&#39;Memory(MB) used in &#39;</span>//trim(text)//<span class="stringliteral">&#39;=&#39;</span>, mmin, mmax, mstd, mavg</div>
+<div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;  <span class="comment">!#######################################################################</span><span class="comment"></span></div>
+<div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;<span class="comment">  !&gt; End the memory collection, and report on total memory used during the</span></div>
+<div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;<span class="comment">  !! execution of the model run.</span></div>
+<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;  <span class="keyword">subroutine </span><a class="code" href="group__mpp__memutils__mod.html#ga3c26d4cff3ed9302d05ffd12ded42f76">mpp_memuse_end</a>(text, unit)</div>
+<div class="line"><a name="l00057"></a><span class="lineno"><a class="line" href="group__mpp__memutils__mod.html#ga3c26d4cff3ed9302d05ffd12ded42f76">   57</a></span>&#160;    <span class="keywordtype">character(len=*)</span>, <span class="keywordtype">intent(in)</span> :: text<span class="comment"> !&lt; Text to include in memory use statement</span></div>
+<div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;    <span class="keywordtype">integer</span>, <span class="keywordtype">intent(in)</span>, <span class="keywordtype">optional</span> :: unit<span class="comment"> !&lt; Fortran unit number where memory report should go.</span></div>
+<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;<span class="comment">                                          !! Default is stderr.</span></div>
+<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;<span class="keywordtype">    real</span>    :: m, mmin, mmax, mavg, mstd, end_memuse</div>
+<div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;    <span class="keywordtype">integer</span> :: mu</div>
+<div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160; </div>
+<div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;    <span class="keywordflow">if</span>(.NOT.memuse_started) <span class="keywordflow">then</span></div>
+<div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;       <span class="keyword">call </span><a class="code" href="group__mpp__mod.html#interfacempp__mod_1_1mpp__error">mpp_error</a>(fatal, <span class="stringliteral">&quot;mpp_memutils_mod: mpp_memuse_begin must be called before calling mpp_memuse_being&quot;</span>)</div>
+<div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;<span class="keywordflow">    endif</span></div>
+<div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;    memuse_started = .false.</div>
+<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160; </div>
+<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;    <span class="keyword">call </span><a class="code" href="group__mpp__memutils__mod.html#ga61577f7d271e473a6a0455378ca50931">mpp_mem_dump</a>(end_memuse)</div>
+<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160; </div>
+<div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;    mu = <a class="code" href="group__mpp__mod.html#ga285ef180624257148d85af894928844b">stderr</a>(); <span class="keywordflow">if</span>( <span class="keyword">PRESENT</span>(unit) )mu = unit</div>
+<div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;    m = end_memuse - begin_memuse</div>
+<div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;    mmin = m; <span class="keyword">call </span><a class="code" href="group__mpp__mod.html#interfacempp__mod_1_1mpp__min">mpp_min</a>(mmin)</div>
+<div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;    mmax = m; <span class="keyword">call </span><a class="code" href="group__mpp__mod.html#interfacempp__mod_1_1mpp__max">mpp_max</a>(mmax)</div>
+<div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;    mavg = m; <span class="keyword">call </span><a class="code" href="group__mpp__mod.html#interfacempp__mod_1_1mpp__sum">mpp_sum</a>(mavg); mavg = mavg/<a class="code" href="group__mpp__mod.html#gabf546cd336d5c539e445fb884f98ab6b">mpp_npes</a>()</div>
+<div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;    mstd = (m-mavg)**2; <span class="keyword">call </span><a class="code" href="group__mpp__mod.html#interfacempp__mod_1_1mpp__sum">mpp_sum</a>(mstd); mstd = sqrt( mstd/<a class="code" href="group__mpp__mod.html#gabf546cd336d5c539e445fb884f98ab6b">mpp_npes</a>() )</div>
+<div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;    <span class="keywordflow">if</span>( <a class="code" href="group__mpp__mod.html#gacfeba7de56f9dd6000b3fd78f9d56c50">mpp_pe</a>().EQ.mpp_root_pe() )<span class="keyword">write</span>( mu,<span class="stringliteral">&#39;(a64,4es11.3)&#39;</span> ) &amp;</div>
+<div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;         <span class="stringliteral">&#39;Memory(MB) used in &#39;</span>//trim(text)//<span class="stringliteral">&#39;=&#39;</span>, mmin, mmax, mstd, mavg</div>
+<div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160; </div>
+<div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;    <span class="keywordflow">return</span></div>
+<div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;  <span class="keyword">end subroutine </span><a class="code" href="group__mpp__memutils__mod.html#ga3c26d4cff3ed9302d05ffd12ded42f76">mpp_memuse_end</a></div>
 <div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160; </div>
-<div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;    <span class="keywordflow">return</span></div>
-<div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;  <span class="keyword">end subroutine </span><a class="code" href="group__mpp__memutils__mod.html#ga3c26d4cff3ed9302d05ffd12ded42f76">mpp_memuse_end</a></div>
-<div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160; </div>
-<div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;  <span class="comment">!#######################################################################</span><span class="comment"></span></div>
-<div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160;<span class="comment">  !&gt; Print the current memory high water mark to stderr, or the unit</span></div>
-<div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;<span class="comment">  !! specified.</span></div>
-<div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160;  <span class="keyword">subroutine </span><a class="code" href="group__mpp__memutils__mod.html#gac353a266f4ed14aa3f6168844dd7ee72">mpp_print_memuse_stats</a>(text, unit)</div>
-<div class="line"><a name="l00089"></a><span class="lineno"><a class="line" href="group__mpp__memutils__mod.html#gac353a266f4ed14aa3f6168844dd7ee72">   89</a></span>&#160;    <span class="keywordtype">character(len=*)</span>, <span class="keywordtype">intent(in)</span> :: text<span class="comment"> !&lt; Text to include in memory print statement</span></div>
-<div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;    <span class="keywordtype">integer</span>, <span class="keywordtype">intent(in)</span>, <span class="keywordtype">optional</span> :: unit<span class="comment"> !&lt; Fortran unit number where print statement should go.</span></div>
-<div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160;<span class="comment">                                          !! Default is stderr.</span></div>
-<div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;<span class="keywordtype">    real</span> :: m, mmin, mmax, mavg, mstd</div>
-<div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;    <span class="keywordtype">integer</span> :: mu</div>
+<div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;  <span class="comment">!#######################################################################</span><span class="comment"></span></div>
+<div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;<span class="comment">  !&gt; Print the current memory high water mark to stderr, or the unit</span></div>
+<div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160;<span class="comment">  !! specified.</span></div>
+<div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;  <span class="keyword">subroutine </span><a class="code" href="group__mpp__memutils__mod.html#gac353a266f4ed14aa3f6168844dd7ee72">mpp_print_memuse_stats</a>(text, unit)</div>
+<div class="line"><a name="l00086"></a><span class="lineno"><a class="line" href="group__mpp__memutils__mod.html#gac353a266f4ed14aa3f6168844dd7ee72">   86</a></span>&#160;    <span class="keywordtype">character(len=*)</span>, <span class="keywordtype">intent(in)</span> :: text<span class="comment"> !&lt; Text to include in memory print statement</span></div>
+<div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;    <span class="keywordtype">integer</span>, <span class="keywordtype">intent(in)</span>, <span class="keywordtype">optional</span> :: unit<span class="comment"> !&lt; Fortran unit number where print statement should go.</span></div>
+<div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160;<span class="comment">                                          !! Default is stderr.</span></div>
+<div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160;<span class="keywordtype">    real</span> :: m, mmin, mmax, mavg, mstd</div>
+<div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;    <span class="keywordtype">integer</span> :: mu</div>
+<div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160; </div>
+<div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;    mu = <a class="code" href="group__mpp__mod.html#ga285ef180624257148d85af894928844b">stderr</a>(); <span class="keywordflow">if</span>( <span class="keyword">PRESENT</span>(unit) )mu = unit</div>
+<div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;    <span class="keyword">call </span><a class="code" href="group__mpp__memutils__mod.html#ga61577f7d271e473a6a0455378ca50931">mpp_mem_dump</a>(m)</div>
 <div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160; </div>
-<div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160;    mu = <a class="code" href="mpp__util_8inc.html#a285ef180624257148d85af894928844b">stderr</a>(); <span class="keywordflow">if</span>( <span class="keyword">PRESENT</span>(unit) )mu = unit</div>
-<div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160;    <span class="keyword">call </span><a class="code" href="group__mpp__memutils__mod.html#ga61577f7d271e473a6a0455378ca50931">mpp_mem_dump</a>(m)</div>
-<div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160; </div>
-<div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160;    mmin = m; <span class="keyword">call </span><a class="code" href="interfacempp__mod_1_1mpp__min.html">mpp_min</a>(mmin)</div>
-<div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160;    mmax = m; <span class="keyword">call </span><a class="code" href="interfacempp__mod_1_1mpp__max.html">mpp_max</a>(mmax)</div>
-<div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160;    mavg = m; <span class="keyword">call </span><a class="code" href="interfacempp__mod_1_1mpp__sum.html">mpp_sum</a>(mavg); mavg = mavg/<a class="code" href="mpp__util_8inc.html#abf546cd336d5c539e445fb884f98ab6b">mpp_npes</a>()</div>
-<div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160;    mstd = (m-mavg)**2; <span class="keyword">call </span><a class="code" href="interfacempp__mod_1_1mpp__sum.html">mpp_sum</a>(mstd); mstd = sqrt( mstd/<a class="code" href="mpp__util_8inc.html#abf546cd336d5c539e445fb884f98ab6b">mpp_npes</a>() )</div>
-<div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160;    <span class="keywordflow">if</span>( <a class="code" href="mpp__util_8inc.html#acfeba7de56f9dd6000b3fd78f9d56c50">mpp_pe</a>().EQ.mpp_root_pe() )<span class="keyword">write</span>( mu,<span class="stringliteral">&#39;(a64,4es11.3)&#39;</span> ) &amp;</div>
-<div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160;         <span class="stringliteral">&#39;Memuse(MB) at &#39;</span>//trim(text)//<span class="stringliteral">&#39;=&#39;</span>, mmin, mmax, mstd, mavg</div>
+<div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160;    mmin = m; <span class="keyword">call </span><a class="code" href="group__mpp__mod.html#interfacempp__mod_1_1mpp__min">mpp_min</a>(mmin)</div>
+<div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160;    mmax = m; <span class="keyword">call </span><a class="code" href="group__mpp__mod.html#interfacempp__mod_1_1mpp__max">mpp_max</a>(mmax)</div>
+<div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160;    mavg = m; <span class="keyword">call </span><a class="code" href="group__mpp__mod.html#interfacempp__mod_1_1mpp__sum">mpp_sum</a>(mavg); mavg = mavg/<a class="code" href="group__mpp__mod.html#gabf546cd336d5c539e445fb884f98ab6b">mpp_npes</a>()</div>
+<div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160;    mstd = (m-mavg)**2; <span class="keyword">call </span><a class="code" href="group__mpp__mod.html#interfacempp__mod_1_1mpp__sum">mpp_sum</a>(mstd); mstd = sqrt( mstd/<a class="code" href="group__mpp__mod.html#gabf546cd336d5c539e445fb884f98ab6b">mpp_npes</a>() )</div>
+<div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160;    <span class="keywordflow">if</span>( <a class="code" href="group__mpp__mod.html#gacfeba7de56f9dd6000b3fd78f9d56c50">mpp_pe</a>().EQ.mpp_root_pe() )<span class="keyword">write</span>( mu,<span class="stringliteral">&#39;(a64,4es11.3)&#39;</span> ) &amp;</div>
+<div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160;         <span class="stringliteral">&#39;Memuse(MB) at &#39;</span>//trim(text)//<span class="stringliteral">&#39;=&#39;</span>, mmin, mmax, mstd, mavg</div>
+<div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160; </div>
+<div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160;    <span class="keywordflow">return</span></div>
+<div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160;  <span class="keyword">end subroutine </span><a class="code" href="group__mpp__memutils__mod.html#gac353a266f4ed14aa3f6168844dd7ee72">mpp_print_memuse_stats</a></div>
 <div class="line"><a name="l00104"></a><span class="lineno">  104</span>&#160; </div>
-<div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160;    <span class="keywordflow">return</span></div>
-<div class="line"><a name="l00106"></a><span class="lineno">  106</span>&#160;  <span class="keyword">end subroutine </span><a class="code" href="group__mpp__memutils__mod.html#gac353a266f4ed14aa3f6168844dd7ee72">mpp_print_memuse_stats</a></div>
-<div class="line"><a name="l00107"></a><span class="lineno">  107</span>&#160; </div>
-<div class="line"><a name="l00108"></a><span class="lineno">  108</span>&#160;  <span class="comment">!#######################################################################</span></div>
-<div class="line"><a name="l00109"></a><span class="lineno">  109</span>&#160;<span class="comment"></span> </div>
-<div class="line"><a name="l00110"></a><span class="lineno">  110</span>&#160;<span class="comment">  !&gt; \brief Return the memory high water mark in MiB</span></div>
-<div class="line"><a name="l00111"></a><span class="lineno">  111</span>&#160;<span class="comment">  !!</span></div>
-<div class="line"><a name="l00112"></a><span class="lineno">  112</span>&#160;<span class="comment">  !! Query the system for the memory high water mark, return the result in MiB.</span></div>
-<div class="line"><a name="l00113"></a><span class="lineno">  113</span>&#160;  <span class="keyword">subroutine </span><a class="code" href="group__mpp__memutils__mod.html#ga61577f7d271e473a6a0455378ca50931">mpp_mem_dump</a>(memuse)</div>
-<div class="line"><a name="l00114"></a><span class="lineno"><a class="line" href="group__mpp__memutils__mod.html#ga61577f7d271e473a6a0455378ca50931">  114</a></span>&#160;<span class="keywordtype">    real</span>, <span class="keywordtype">intent(out)</span> :: memuse<span class="comment"> !&lt; Memory, high water mark, in MiB</span></div>
-<div class="line"><a name="l00115"></a><span class="lineno">  115</span>&#160; </div>
-<div class="line"><a name="l00116"></a><span class="lineno">  116</span>&#160;    <span class="keyword">interface</span></div>
-<div class="line"><a name="l00117"></a><span class="lineno">  117</span>&#160;      <span class="keyword">integer(KIND=c_size_t) </span><span class="keyword">function </span>getpeakrss() <span class="keyword">bind(c, name=&quot;getpeakrss&quot;)</span></div>
-<div class="line"><a name="l00118"></a><span class="lineno">  118</span>&#160;        use, <span class="keywordtype">intrinsic</span> :: iso_c_binding</div>
-<div class="line"><a name="l00119"></a><span class="lineno">  119</span>&#160;      <span class="keyword">end function </span>getpeakrss</div>
-<div class="line"><a name="l00120"></a><span class="lineno">  120</span>&#160;    <span class="keyword">end interface</span></div>
+<div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160;  <span class="comment">!#######################################################################</span></div>
+<div class="line"><a name="l00106"></a><span class="lineno">  106</span>&#160;<span class="comment"></span> </div>
+<div class="line"><a name="l00107"></a><span class="lineno">  107</span>&#160;<span class="comment">  !&gt; \brief Return the memory high water mark in MiB</span></div>
+<div class="line"><a name="l00108"></a><span class="lineno">  108</span>&#160;<span class="comment">  !!</span></div>
+<div class="line"><a name="l00109"></a><span class="lineno">  109</span>&#160;<span class="comment">  !! Query the system for the memory high water mark, return the result in MiB.</span></div>
+<div class="line"><a name="l00110"></a><span class="lineno">  110</span>&#160;  <span class="keyword">subroutine </span><a class="code" href="group__mpp__memutils__mod.html#ga61577f7d271e473a6a0455378ca50931">mpp_mem_dump</a>(memuse)</div>
+<div class="line"><a name="l00111"></a><span class="lineno"><a class="line" href="group__mpp__memutils__mod.html#ga61577f7d271e473a6a0455378ca50931">  111</a></span>&#160;<span class="keywordtype">    real</span>, <span class="keywordtype">intent(out)</span> :: memuse<span class="comment"> !&lt; Memory, high water mark, in MiB</span></div>
+<div class="line"><a name="l00112"></a><span class="lineno">  112</span>&#160; </div>
+<div class="line"><a name="l00113"></a><span class="lineno">  113</span>&#160;    <span class="keyword">interface</span></div>
+<div class="line"><a name="l00114"></a><span class="lineno">  114</span>&#160;      <span class="keyword">integer(KIND=c_size_t) </span><span class="keyword">function </span>getpeakrss() <span class="keyword">bind(c, name=&quot;getpeakrss&quot;)</span></div>
+<div class="line"><a name="l00115"></a><span class="lineno">  115</span>&#160;        use, <span class="keywordtype">intrinsic</span> :: iso_c_binding</div>
+<div class="line"><a name="l00116"></a><span class="lineno">  116</span>&#160;      <span class="keyword">end function </span>getpeakrss</div>
+<div class="line"><a name="l00117"></a><span class="lineno">  117</span>&#160;    <span class="keyword">end interface</span></div>
+<div class="line"><a name="l00118"></a><span class="lineno">  118</span>&#160; </div>
+<div class="line"><a name="l00119"></a><span class="lineno">  119</span>&#160;    <span class="comment">! Value of Bytes to Mebibytes</span></div>
+<div class="line"><a name="l00120"></a><span class="lineno">  120</span>&#160;<span class="keywordtype">    real</span>, <span class="keywordtype">parameter</span> :: b_to_mib = 1048576.0</div>
 <div class="line"><a name="l00121"></a><span class="lineno">  121</span>&#160; </div>
-<div class="line"><a name="l00122"></a><span class="lineno">  122</span>&#160;    <span class="comment">! Value of Bytes to Mebibytes</span></div>
-<div class="line"><a name="l00123"></a><span class="lineno">  123</span>&#160;<span class="keywordtype">    real</span>, <span class="keywordtype">parameter</span> :: b_to_mib = 1048576.0</div>
+<div class="line"><a name="l00122"></a><span class="lineno">  122</span>&#160;    <span class="comment">! Get the max memory use, convert to MiB</span></div>
+<div class="line"><a name="l00123"></a><span class="lineno">  123</span>&#160;    memuse = real(getpeakrss())/b_to_mib</div>
 <div class="line"><a name="l00124"></a><span class="lineno">  124</span>&#160; </div>
-<div class="line"><a name="l00125"></a><span class="lineno">  125</span>&#160;    <span class="comment">! Get the max memory use, convert to MiB</span></div>
-<div class="line"><a name="l00126"></a><span class="lineno">  126</span>&#160;    memuse = real(getpeakrss())/b_to_mib</div>
-<div class="line"><a name="l00127"></a><span class="lineno">  127</span>&#160; </div>
-<div class="line"><a name="l00128"></a><span class="lineno">  128</span>&#160;    <span class="keywordflow">return</span></div>
-<div class="line"><a name="l00129"></a><span class="lineno">  129</span>&#160;  <span class="keyword">end subroutine </span><a class="code" href="group__mpp__memutils__mod.html#ga61577f7d271e473a6a0455378ca50931">mpp_mem_dump</a></div>
-<div class="line"><a name="l00130"></a><span class="lineno">  130</span>&#160;<span class="keyword">end module </span>mpp_memutils_mod<span class="comment"></span></div>
-<div class="line"><a name="l00131"></a><span class="lineno">  131</span>&#160;<span class="comment">!&gt; @}</span></div>
-<div class="line"><a name="l00132"></a><span class="lineno">  132</span>&#160;<span class="comment">! close documentation grouping</span></div>
+<div class="line"><a name="l00125"></a><span class="lineno">  125</span>&#160;    <span class="keywordflow">return</span></div>
+<div class="line"><a name="l00126"></a><span class="lineno">  126</span>&#160;  <span class="keyword">end subroutine </span><a class="code" href="group__mpp__memutils__mod.html#ga61577f7d271e473a6a0455378ca50931">mpp_mem_dump</a></div>
+<div class="line"><a name="l00127"></a><span class="lineno">  127</span>&#160;<span class="keyword">end module </span>mpp_memutils_mod<span class="comment"></span></div>
+<div class="line"><a name="l00128"></a><span class="lineno">  128</span>&#160;<span class="comment">!&gt; @}</span></div>
+<div class="line"><a name="l00129"></a><span class="lineno">  129</span>&#160;<span class="comment">! close documentation grouping</span></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
-<div class="ttc" id="ainterfacempp__mod_1_1mpp__min_html"><div class="ttname"><a href="interfacempp__mod_1_1mpp__min.html">mpp_mod::mpp_min</a></div><div class="ttdoc">Get minimum value out of the PEs in pelist Result is also broadcast to all PEs.</div><div class="ttdef"><b>Definition:</b> <a href="mpp_8F90_source.html#l00551">mpp.F90:551</a></div></div>
-<div class="ttc" id="agroup__mpp__memutils__mod_html_ga3c26d4cff3ed9302d05ffd12ded42f76"><div class="ttname"><a href="group__mpp__memutils__mod.html#ga3c26d4cff3ed9302d05ffd12ded42f76">mpp_memutils_mod::mpp_memuse_end</a></div><div class="ttdeci">subroutine, public mpp_memuse_end(text, unit)</div><div class="ttdoc">End the memory collection, and report on total memory used during the execution of the model run.</div><div class="ttdef"><b>Definition:</b> <a href="mpp__memutils_8F90_source.html#l00060">mpp_memutils.F90:60</a></div></div>
-<div class="ttc" id="ainterfacempp__mod_1_1mpp__sum_html"><div class="ttname"><a href="interfacempp__mod_1_1mpp__sum.html">mpp_mod::mpp_sum</a></div><div class="ttdoc">Reduction operation.</div><div class="ttdef"><b>Definition:</b> <a href="mpp_8F90_source.html#l00588">mpp.F90:588</a></div></div>
-<div class="ttc" id="ainterfacempp__mod_1_1mpp__error_html"><div class="ttname"><a href="interfacempp__mod_1_1mpp__error.html">mpp_mod::mpp_error</a></div><div class="ttdoc">Error handler.</div><div class="ttdef"><b>Definition:</b> <a href="mpp_8F90_source.html#l00383">mpp.F90:383</a></div></div>
-<div class="ttc" id="agroup__mpp__memutils__mod_html_ga3c5834bfffa897af09be279c225279a2"><div class="ttname"><a href="group__mpp__memutils__mod.html#ga3c5834bfffa897af09be279c225279a2">mpp_memutils_mod::mpp_memuse_begin</a></div><div class="ttdeci">subroutine, public mpp_memuse_begin</div><div class="ttdoc">Initialize the memory module, and record the initial memory use.</div><div class="ttdef"><b>Definition:</b> <a href="mpp__memutils_8F90_source.html#l00048">mpp_memutils.F90:48</a></div></div>
-<div class="ttc" id="ampp__util_8inc_html_a285ef180624257148d85af894928844b"><div class="ttname"><a href="mpp__util_8inc.html#a285ef180624257148d85af894928844b">stderr</a></div><div class="ttdeci">integer function stderr()</div><div class="ttdoc">This function returns the current standard fortran unit numbers for error messages.</div><div class="ttdef"><b>Definition:</b> <a href="mpp__util_8inc_source.html#l00085">mpp_util.inc:85</a></div></div>
-<div class="ttc" id="ainterfacempp__mod_1_1mpp__max_html"><div class="ttname"><a href="interfacempp__mod_1_1mpp__max.html">mpp_mod::mpp_max</a></div><div class="ttdoc">Reduction operations. Find the max of scalar a the PEs in pelist result is also automatically broadca...</div><div class="ttdef"><b>Definition:</b> <a href="mpp_8F90_source.html#l00537">mpp.F90:537</a></div></div>
-<div class="ttc" id="agroup__mpp__memutils__mod_html_gac353a266f4ed14aa3f6168844dd7ee72"><div class="ttname"><a href="group__mpp__memutils__mod.html#gac353a266f4ed14aa3f6168844dd7ee72">mpp_memutils_mod::mpp_print_memuse_stats</a></div><div class="ttdeci">subroutine, public mpp_print_memuse_stats(text, unit)</div><div class="ttdoc">Print the current memory high water mark to stderr, or the unit specified.</div><div class="ttdef"><b>Definition:</b> <a href="mpp__memutils_8F90_source.html#l00089">mpp_memutils.F90:89</a></div></div>
-<div class="ttc" id="ampp__util_8inc_html_abf546cd336d5c539e445fb884f98ab6b"><div class="ttname"><a href="mpp__util_8inc.html#abf546cd336d5c539e445fb884f98ab6b">mpp_npes</a></div><div class="ttdeci">integer function mpp_npes()</div><div class="ttdoc">Returns processor count for current pelist.</div><div class="ttdef"><b>Definition:</b> <a href="mpp__util_8inc_source.html#l00465">mpp_util.inc:465</a></div></div>
-<div class="ttc" id="agroup__mpp__memutils__mod_html_ga61577f7d271e473a6a0455378ca50931"><div class="ttname"><a href="group__mpp__memutils__mod.html#ga61577f7d271e473a6a0455378ca50931">mpp_memutils_mod::mpp_mem_dump</a></div><div class="ttdeci">subroutine, public mpp_mem_dump(memuse)</div><div class="ttdoc">Return the memory high water mark in MiB.</div><div class="ttdef"><b>Definition:</b> <a href="mpp__memutils_8F90_source.html#l00114">mpp_memutils.F90:114</a></div></div>
-<div class="ttc" id="ampp__util_8inc_html_acfeba7de56f9dd6000b3fd78f9d56c50"><div class="ttname"><a href="mpp__util_8inc.html#acfeba7de56f9dd6000b3fd78f9d56c50">mpp_pe</a></div><div class="ttdeci">integer function mpp_pe()</div><div class="ttdoc">Returns processor ID. This returns the unique ID associated with a PE. This number runs between 0 and...</div><div class="ttdef"><b>Definition:</b> <a href="mpp__util_8inc_source.html#l00440">mpp_util.inc:440</a></div></div>
+<div class="ttc" id="agroup__mpp__mod_html_interfacempp__mod_1_1mpp__sum"><div class="ttname"><a href="group__mpp__mod.html#interfacempp__mod_1_1mpp__sum">mpp_mod::mpp_sum</a></div><div class="ttdoc">Reduction operation.</div><div class="ttdef"><b>Definition:</b> <a href="mpp_8F90_source.html#l00597">mpp.F90:597</a></div></div>
+<div class="ttc" id="agroup__mpp__mod_html_interfacempp__mod_1_1mpp__min"><div class="ttname"><a href="group__mpp__mod.html#interfacempp__mod_1_1mpp__min">mpp_mod::mpp_min</a></div><div class="ttdoc">Reduction operations. Find the min of scalar a from the PEs in pelist result is also automatically br...</div><div class="ttdef"><b>Definition:</b> <a href="mpp_8F90_source.html#l00560">mpp.F90:560</a></div></div>
+<div class="ttc" id="agroup__mpp__mod_html_interfacempp__mod_1_1mpp__max"><div class="ttname"><a href="group__mpp__mod.html#interfacempp__mod_1_1mpp__max">mpp_mod::mpp_max</a></div><div class="ttdoc">Reduction operations. Find the max of scalar a from the PEs in pelist result is also automatically br...</div><div class="ttdef"><b>Definition:</b> <a href="mpp_8F90_source.html#l00538">mpp.F90:538</a></div></div>
+<div class="ttc" id="agroup__mpp__mod_html_gabf546cd336d5c539e445fb884f98ab6b"><div class="ttname"><a href="group__mpp__mod.html#gabf546cd336d5c539e445fb884f98ab6b">mpp_npes</a></div><div class="ttdeci">integer function mpp_npes()</div><div class="ttdoc">Returns processor count for current pelist.</div><div class="ttdef"><b>Definition:</b> <a href="mpp__util_8inc_source.html#l00392">mpp_util.inc:392</a></div></div>
+<div class="ttc" id="agroup__mpp__memutils__mod_html_ga3c26d4cff3ed9302d05ffd12ded42f76"><div class="ttname"><a href="group__mpp__memutils__mod.html#ga3c26d4cff3ed9302d05ffd12ded42f76">mpp_memutils_mod::mpp_memuse_end</a></div><div class="ttdeci">subroutine, public mpp_memuse_end(text, unit)</div><div class="ttdoc">End the memory collection, and report on total memory used during the execution of the model run.</div><div class="ttdef"><b>Definition:</b> <a href="mpp__memutils_8F90_source.html#l00057">mpp_memutils.F90:57</a></div></div>
+<div class="ttc" id="agroup__mpp__memutils__mod_html_ga3c5834bfffa897af09be279c225279a2"><div class="ttname"><a href="group__mpp__memutils__mod.html#ga3c5834bfffa897af09be279c225279a2">mpp_memutils_mod::mpp_memuse_begin</a></div><div class="ttdeci">subroutine, public mpp_memuse_begin</div><div class="ttdoc">Initialize the memory module, and record the initial memory use.</div><div class="ttdef"><b>Definition:</b> <a href="mpp__memutils_8F90_source.html#l00045">mpp_memutils.F90:45</a></div></div>
+<div class="ttc" id="agroup__mpp__mod_html_ga285ef180624257148d85af894928844b"><div class="ttname"><a href="group__mpp__mod.html#ga285ef180624257148d85af894928844b">stderr</a></div><div class="ttdeci">integer function stderr()</div><div class="ttdoc">This function returns the current standard fortran unit numbers for error messages.</div><div class="ttdef"><b>Definition:</b> <a href="mpp__util_8inc_source.html#l00051">mpp_util.inc:51</a></div></div>
+<div class="ttc" id="agroup__mpp__mod_html_interfacempp__mod_1_1mpp__error"><div class="ttname"><a href="group__mpp__mod.html#interfacempp__mod_1_1mpp__error">mpp_mod::mpp_error</a></div><div class="ttdoc">Error handler.</div><div class="ttdef"><b>Definition:</b> <a href="mpp_8F90_source.html#l00382">mpp.F90:382</a></div></div>
+<div class="ttc" id="agroup__mpp__mod_html_gacfeba7de56f9dd6000b3fd78f9d56c50"><div class="ttname"><a href="group__mpp__mod.html#gacfeba7de56f9dd6000b3fd78f9d56c50">mpp_pe</a></div><div class="ttdeci">integer function mpp_pe()</div><div class="ttdoc">Returns processor ID.</div><div class="ttdef"><b>Definition:</b> <a href="mpp__util_8inc_source.html#l00378">mpp_util.inc:378</a></div></div>
+<div class="ttc" id="agroup__mpp__memutils__mod_html_gac353a266f4ed14aa3f6168844dd7ee72"><div class="ttname"><a href="group__mpp__memutils__mod.html#gac353a266f4ed14aa3f6168844dd7ee72">mpp_memutils_mod::mpp_print_memuse_stats</a></div><div class="ttdeci">subroutine, public mpp_print_memuse_stats(text, unit)</div><div class="ttdoc">Print the current memory high water mark to stderr, or the unit specified.</div><div class="ttdef"><b>Definition:</b> <a href="mpp__memutils_8F90_source.html#l00086">mpp_memutils.F90:86</a></div></div>
+<div class="ttc" id="agroup__mpp__memutils__mod_html_ga61577f7d271e473a6a0455378ca50931"><div class="ttname"><a href="group__mpp__memutils__mod.html#ga61577f7d271e473a6a0455378ca50931">mpp_memutils_mod::mpp_mem_dump</a></div><div class="ttdeci">subroutine, public mpp_mem_dump(memuse)</div><div class="ttdoc">Return the memory high water mark in MiB.</div><div class="ttdef"><b>Definition:</b> <a href="mpp__memutils_8F90_source.html#l00111">mpp_memutils.F90:111</a></div></div>
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><a class="el" href="dir_72b96e86e48e5dd402c7a282ec4fcc3a.html">mpp</a></li><li class="navelem"><a class="el" href="mpp__memutils_8F90.html">mpp_memutils.F90</a></li>
+    <li class="navelem"><a class="el" href="dir_72b96e86e48e5dd402c7a282ec4fcc3a.html">mpp</a></li><li class="navelem"><b>mpp_memutils.F90</b></li>
     <li class="footer">Generated by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="doxygen.png" alt="doxygen"/></a> 1.8.17 </li>
