@@ -28,7 +28,7 @@ lib_LTLIBRARIES = libFMS.la
 # These linker flags specify libtool version info.
 # See http://www.gnu.org/software/libtool/manual/libtool.html#Libtool-versioning
 # for information regarding incrementing `-version-info`.
-libFMS_la_LDFLAGS = -version-info 12:0:0
+libFMS_la_LDFLAGS = -version-info 13:0:0
 
 # Add the convenience libraries to the FMS library.
 libFMS_la_LIBADD = $(top_builddir)/platform/libplatform.la
