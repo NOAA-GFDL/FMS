@@ -75,8 +75,9 @@ test_expect_success "data_override get_grid_v1" '
 '
 
 # Run tests with input if enabled
-if test ! -z "$test_input_path" ; then
-  cp $test_input_path/data_override/INPUT/* ./INPUT
+# skips if built with yaml parser(tests older behavior)
+if test ! -z "$test_input_path" && test ! -z "$parser_skip"  ; then
+  cp -r $test_input_path/data_override/INPUT .
   cat <<_EOF > diag_table
 test_data_override
 1 3 1 0 0 0
@@ -107,6 +108,7 @@ _EOF
   test_expect_success "data_override on latlon-grid with input" '
     mpirun -n 6 ./test_data_override
   '
+  rm -rf INPUT *.nc # remove any leftover files to reduce size
 fi
 
 test_done

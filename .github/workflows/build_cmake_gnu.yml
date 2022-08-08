@@ -10,7 +10,7 @@ jobs:
         omp-flags: [ -DOPENMP=on, -DOPENMP=off ]
         libyaml-flag: [ "", -DWITH_YAML=on ]
     container:
-      image: noaagfdl/ubuntu_libfms_gnu
+      image: noaagfdl/hpc-me.ubuntu-minimal:cmake
       env:
         CMAKE_FLAGS: "${{ matrix.omp-flags }} ${{ matrix.libyaml-flag }} -D64BIT=on"
     steps:
