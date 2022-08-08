@@ -217,7 +217,7 @@ subroutine fms_register_diag_field_obj &
  CHARACTER(len=*),               INTENT(in)    :: varname               !< The variable name
  integer,                        INTENT(in)    :: diag_field_indices(:) !< Array of indices to the field
                                                                         !! in the yaml object
- TYPE(time_type),  OPTIONAL,     INTENT(in)    :: init_time             !< Initial time !< TO DO
+ TYPE(time_type),  OPTIONAL,     INTENT(in)    :: init_time             !< Initial time
  INTEGER, TARGET,  OPTIONAL,     INTENT(in)    :: axes(:)               !< The axes indicies
  CHARACTER(len=*), OPTIONAL,     INTENT(in)    :: longname              !< THe variables long name
  CHARACTER(len=*), OPTIONAL,     INTENT(in)    :: units                 !< The units of the variables
@@ -257,6 +257,7 @@ subroutine fms_register_diag_field_obj &
        j = dobj%file_ids(i)
        call FMS_diag_files(j)%set_file_domain(dobj%domain, dobj%type_of_domain)
        call FMS_diag_files(j)%add_axes(axes)
+       if (present(init_time)) call FMS_diag_files(j)%add_start_time(init_time)
     enddo
      !> TO DO:
      !!     Mark the field as registered in the diag_files

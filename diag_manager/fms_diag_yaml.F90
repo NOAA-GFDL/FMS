@@ -31,7 +31,8 @@
 module fms_diag_yaml_mod
 #ifdef use_yaml
 use diag_data_mod,   only: DIAG_NULL, DIAG_OCEAN, DIAG_ALL, DIAG_OTHER, set_base_time, latlon_gridtype, &
-                           index_gridtype, null_gridtype
+                           index_gridtype, null_gridtype, DIAG_SECONDS, DIAG_MINUTES, DIAG_HOURS, DIAG_DAYS, &
+                           DIAG_MONTHS, DIAG_YEARS
 use yaml_parser_mod, only: open_and_parse_file, get_value_from_key, get_num_blocks, get_nkeys, &
                            get_block_ids, get_key_value, get_key_ids, get_key_name
 use mpp_mod,         only: mpp_error, FATAL
@@ -84,14 +85,18 @@ end type subRegion_type
 !> @brief type to hold the diag_file information
 type diagYamlFiles_type
   character (len=:), private, allocatable :: file_fname !< file name
-  character (len=:), private, allocatable :: file_frequnit !< the frequency unit
+  integer,           private              :: file_frequnit !< the frequency unit (DIAG_SECONDS, DIAG_MINUTES, &
+                                                           !! DIAG_HOURS, DIAG_DAYS, DIAG_YEARS)
   integer, private    :: file_freq !< the frequency of data
-  character (len=:), private, allocatable :: file_timeunit !< The unit of time
+  integer,           private              :: file_timeunit !< The unit of time (DIAG_SECONDS, DIAG_MINUTES, &
+                                                           !! DIAG_HOURS, DIAG_DAYS, DIAG_YEARS)
   character (len=:), private, allocatable :: file_unlimdim !< The name of the unlimited dimension
   type(subRegion_type), private :: file_sub_region !< type containing info about the subregion, if any
   integer, private :: file_new_file_freq !< Frequency for closing the existing file
-  character (len=:), private, allocatable :: file_new_file_freq_units !< Time units for creating a new file.
+  integer,           private              :: file_new_file_freq_units !< Time units for creating a new file.
                                                                       !! Required if “new_file_freq” used
+                                                                      !! (DIAG_SECONDS, DIAG_MINUTES, &
+                                                                      !! DIAG_HOURS, DIAG_DAYS, DIAG_YEARS)
   character (len=:), private, allocatable :: file_start_time !< Time to start the file for the first time. Requires
                                                              !! “new_file_freq”
   integer, private :: file_duration !< How long the file should receive data after start time
@@ -101,7 +106,9 @@ type diagYamlFiles_type
                                     !! frequency for creating new files.
                                     !! NOTE: The file_duration_units field must also be present if
                                     !! this field is present.
-  character (len=:), private, allocatable :: file_duration_units !< The file duration units
+  integer,           private              :: file_duration_units !< The file duration units
+                                                                 !! (DIAG_SECONDS, DIAG_MINUTES, &
+                                                                 !! DIAG_HOURS, DIAG_DAYS, DIAG_YEARS)
   !< Need to use `MAX_STR_LEN` because not all filenames/global attributes are the same length
   character (len=MAX_STR_LEN), dimension(:), private, allocatable :: file_varlist !< An array of variable names
                                                                                   !! within a file
@@ -452,26 +459,30 @@ subroutine fill_in_diag_files(diag_yaml_id, diag_file_id, fileobj)
 
   integer, allocatable :: key_ids(:) !< Id of the gloabl atttributes key/value pairs
   character(len=:), ALLOCATABLE :: grid_type !< grid_type as it is read in from the yaml
+  character(len=:), ALLOCATABLE :: buffer    !< buffer to store any *_units as it is read from the yaml
 
   call diag_get_value_from_key(diag_yaml_id, diag_file_id, "file_name", fileobj%file_fname)
-  call diag_get_value_from_key(diag_yaml_id, diag_file_id, "freq_units", fileobj%file_frequnit)
+  call diag_get_value_from_key(diag_yaml_id, diag_file_id, "freq_units", buffer)
   call get_value_from_key(diag_yaml_id, diag_file_id, "freq", fileobj%file_freq)
-  call check_file_freq(fileobj)
+  call set_file_freq(fileobj, buffer)
 
+  deallocate(buffer)
   call diag_get_value_from_key(diag_yaml_id, diag_file_id, "unlimdim", fileobj%file_unlimdim)
-  call diag_get_value_from_key(diag_yaml_id, diag_file_id, "time_units", fileobj%file_timeunit)
-  call check_file_time_units(fileobj)
+  call diag_get_value_from_key(diag_yaml_id, diag_file_id, "time_units", buffer)
+  call set_file_time_units(fileobj, buffer)
 
+  deallocate(buffer)
   call get_value_from_key(diag_yaml_id, diag_file_id, "new_file_freq", fileobj%file_new_file_freq, is_optional=.true.)
-  call diag_get_value_from_key(diag_yaml_id, diag_file_id, "new_file_freq_units", fileobj%file_new_file_freq_units, &
+  call diag_get_value_from_key(diag_yaml_id, diag_file_id, "new_file_freq_units", buffer, &
          is_optional=.true.)
-  call check_new_file_freq(fileobj)
+  call set_new_file_freq(fileobj, buffer)
 
+  deallocate(buffer)
   call diag_get_value_from_key(diag_yaml_id, diag_file_id, "start_time", fileobj%file_start_time, is_optional=.true.)
   call get_value_from_key(diag_yaml_id, diag_file_id, "file_duration", fileobj%file_duration, is_optional=.true.)
-  call diag_get_value_from_key(diag_yaml_id, diag_file_id, "file_duration_units", fileobj%file_duration_units, &
+  call diag_get_value_from_key(diag_yaml_id, diag_file_id, "file_duration_units", buffer, &
     is_optional=.true.)
-  call check_file_duration(fileobj)
+  call set_file_duration(fileobj, buffer)
 
   nsubregion = 0
   nsubregion = get_num_blocks(diag_yaml_id, "sub_region", parent_block_id=diag_file_id)
@@ -633,60 +644,57 @@ result(total_nvars)
   end do
 end function
 
-!> @brief This checks if the file frequency in a diag file is valid and crashes if it isn't
-subroutine check_file_freq(fileobj)
-  type(diagYamlFiles_type), intent(inout) :: fileobj      !< diagYamlFiles_type obj to check
+!> @brief This checks if the file frequency and file frequency units in a diag file are valid and
+!! sets the integer equivalent
+subroutine set_file_freq(fileobj, file_frequnit)
+  type(diagYamlFiles_type), intent(inout) :: fileobj         !< diagYamlFiles_type obj to check
+  character(len=*),         intent(in)    :: file_frequnit   !< File_freq_units as it is read from the diag_table
 
   if (.not. (fileobj%file_freq >= -1) ) &
     call mpp_error(FATAL, "freq must be greater than or equal to -1. &
       &Check you entry for"//trim(fileobj%file_fname))
-  if(.not. is_valid_time_units(fileobj%file_frequnit)) &
-    call mpp_error(FATAL, trim(fileobj%file_frequnit)//" is not a valid file_frequnit. &
-      &The acceptable values are seconds, minuts, hours, days, months, years. &
-      &Check your entry for file:"//trim(fileobj%file_fname))
-end subroutine check_file_freq
+  fileobj%file_frequnit = set_valid_time_units(file_frequnit, "frequnit for file:"//trim(fileobj%file_fname))
+end subroutine set_file_freq
 
-!> @brief This checks if the time unit in a diag file is valid and crashes if it isn't
-subroutine check_file_time_units (fileobj)
-  type(diagYamlFiles_type), intent(inout) :: fileobj      !< diagYamlFiles_type obj to checK
+!> @brief This checks if the time unit in a diag file is valid and sets the integer equivalent
+subroutine set_file_time_units (fileobj, file_timeunit)
+  type(diagYamlFiles_type), intent(inout) :: fileobj       !< diagYamlFiles_type obj to checK
+  character(len=*),         intent(in)    :: file_timeunit !< file_timeunit as it is read from the diag_table
 
-  if(.not. is_valid_time_units(fileobj%file_timeunit)) &
-    call mpp_error(FATAL, trim(fileobj%file_timeunit)//" is not a valid time_unit. &
-      &The acceptable values are seconds, minuts, hours, days, months, years. &
-      &Check your entry for file:"//trim(fileobj%file_fname))
-end subroutine check_file_time_units
+ fileobj%file_timeunit = set_valid_time_units(file_timeunit, "timeunit for file:"//trim(fileobj%file_fname))
+end subroutine set_file_time_units
 
-!> @brief This checks if the new file frequency in a diag file is valid and crashes if it isn't
-subroutine check_new_file_freq(fileobj)
+!> @brief This checks if the new file frequency and the new file frequency units in a diag file are valid
+!! and sets the integer equivalent
+subroutine set_new_file_freq(fileobj, file_new_file_freq_units)
   type(diagYamlFiles_type), intent(inout) :: fileobj      !< diagYamlFiles_type obj to check
-
+  character(len=*),         intent(in)    :: file_new_file_freq_units !< new file freq units as it is read from
+                                                                      !! the diag_table
   if (fileobj%file_new_file_freq > 0) then
-    if (trim(fileobj%file_new_file_freq_units) .eq. "") &
+    if (trim(file_new_file_freq_units) .eq. "") &
       call mpp_error(FATAL, "new_file_freq_units is required if using new_file_freq. &
         &Check your entry for file:"//trim(fileobj%file_fname))
 
-    if (.not. is_valid_time_units(fileobj%file_new_file_freq_units)) &
-      call mpp_error(FATAL, trim(fileobj%file_new_file_freq_units)//" is not a valid new_file_freq_units. &
-        &The acceptable values are seconds, minuts, hours, days, months, years. &
-        &Check your entry for file:"//trim(fileobj%file_fname))
+    fileobj%file_new_file_freq_units = set_valid_time_units(file_new_file_freq_units, &
+      "new_file_freq_units for file:"//trim(fileobj%file_fname))
   endif
-end subroutine check_new_file_freq
+end subroutine set_new_file_freq
 
-!> @brief This checks if the file duration in a diag file is valid and crashes if it isn't
-subroutine check_file_duration(fileobj)
-  type(diagYamlFiles_type), intent(inout) :: fileobj      !< diagYamlFiles_type obj to check
+!> @brief This checks if the file duration and the file duration units in a diag file are valid
+!! and sets the integer equivalent
+subroutine set_file_duration(fileobj, file_duration_units)
+  type(diagYamlFiles_type), intent(inout) :: fileobj             !< diagYamlFiles_type obj to check
+  character(len=*),         intent(in)    :: file_duration_units !< file_duration as it is read from the diag_table
 
   if (fileobj%file_duration > 0) then
-    if(trim(fileobj%file_duration_units) .eq. "") &
+    if(trim(file_duration_units) .eq. "") &
       call mpp_error(FATAL, "file_duration_units is required if using file_duration. &
         &Check your entry for file:"//trim(fileobj%file_fname))
 
-    if (.not. is_valid_time_units(fileobj%file_duration_units)) &
-      call mpp_error(FATAL, trim(fileobj%file_duration_units)//" is not a valid file_duration_units. &
-        &The acceptable values are seconds, minuts, hours, days, months, years. &
-        &Check your entry for file:"//trim(fileobj%file_duration_units))
+    fileobj%file_duration_units = set_valid_time_units(file_duration_units, &
+      "file_duration_units for file:"//trim(fileobj%file_fname))
   endif
-end subroutine check_file_duration
+end subroutine set_file_duration
 
 !> @brief This checks if the kind of a diag field is valid and crashes if it isn't
 subroutine check_field_kind(field)
@@ -742,20 +750,35 @@ subroutine check_field_reduction(field)
   field%pow_value = pow_value
 end subroutine check_field_reduction
 
-!> @brief This checks if a time unit is valid
-!! @return Flag indicating if the time units are valid
-pure function is_valid_time_units(time_units) &
-result(is_valid)
-  character(len=*), intent(in) :: time_units
-  logical :: is_valid
+!> @brief This checks if a time unit is valid and if it is, it assigns the integer equivalent
+!! @return The integer equivalent to the time units
+function set_valid_time_units(time_units, error_msg) &
+result(time_units_int)
+
+  character(len=*), intent(in)  :: time_units      !< The time_units as a string
+  character(len=*), intent(in)  :: error_msg       !< Error message to append
+
+  integer                       :: time_units_int  !< The integer equivalent of the time_units
 
   select case (TRIM(time_units))
-  case ("seconds", "minutes", "hours", "days", "months", "years")
-    is_valid = .true.
+  case ("seconds")
+    time_units_int = DIAG_SECONDS
+  case ("minutes")
+    time_units_int = DIAG_MINUTES
+  case ("hours")
+    time_units_int = DIAG_HOURS
+  case ("days")
+    time_units_int = DIAG_DAYS
+  case ("months")
+    time_units_int = DIAG_MONTHS
+  case ("years")
+    time_units_int = DIAG_YEARS
   case default
-    is_valid = .false.
+    time_units_int =DIAG_NULL
+    call mpp_error(FATAL, trim(error_msg)//" is not valid. Acceptable values are "&
+                   "seconds, minutes, hours, days, months, years")
   end select
-end function is_valid_time_units
+end function set_valid_time_units
 
 !!!!!!! YAML FILE INQUIRIES !!!!!!!
 !> @brief Finds the number of variables in the file_varlist
@@ -778,7 +801,7 @@ end function get_file_fname
 pure function get_file_frequnit (diag_files_obj) &
 result (res)
  class (diagYamlFiles_type), intent(in) :: diag_files_obj !< The object being inquiried
- character (len=:), allocatable :: res !< What is returned
+ integer :: res !< What is returned
   res = diag_files_obj%file_frequnit
 end function get_file_frequnit
 !> @brief Inquiry for diag_files_obj%file_freq
@@ -794,7 +817,7 @@ end function get_file_freq
 pure function get_file_timeunit (diag_files_obj) &
 result (res)
  class (diagYamlFiles_type), intent(in) :: diag_files_obj !< The object being inquiried
- character (len=:), allocatable :: res !< What is returned
+ integer :: res !< What is returned
   res = diag_files_obj%file_timeunit
 end function get_file_timeunit
 !> @brief Inquiry for diag_files_obj%file_unlimdim
@@ -826,7 +849,7 @@ end function get_file_new_file_freq
 pure function get_file_new_file_freq_units (diag_files_obj) &
 result (res)
  class (diagYamlFiles_type), intent(in) :: diag_files_obj !< The object being inquiried
- character (:), allocatable :: res !< What is returned
+ integer :: res !< What is returned
   res = diag_files_obj%file_new_file_freq_units
 end function get_file_new_file_freq_units
 !> @brief Inquiry for diag_files_obj%file_start_time
@@ -850,7 +873,7 @@ end function get_file_duration
 pure function get_file_duration_units (diag_files_obj) &
 result (res)
  class (diagYamlFiles_type), intent(in) :: diag_files_obj !< The object being inquiried
-  character (:), allocatable :: res !< What is returned
+  integer :: res !< What is returned
   res = diag_files_obj%file_duration_units
 end function get_file_duration_units
 !> @brief Inquiry for diag_files_obj%file_varlist
@@ -992,7 +1015,9 @@ subroutine diag_yaml_files_obj_init(obj)
 
   obj%file_freq           = DIAG_NULL
   obj%file_duration       = DIAG_NULL
+  obj%file_duration_units = DIAG_NULL
   obj%file_new_file_freq  = DIAG_NULL
+  obj%file_new_file_freq_units = DIAG_NULL
   obj%file_sub_region%tile = DIAG_NULL
 end subroutine diag_yaml_files_obj_init
 
@@ -1006,7 +1031,7 @@ end function has_file_fname
 !! @return true if obj%file_frequnit is allocated
 pure logical function has_file_frequnit (obj)
   class(diagYamlFiles_type), intent(in) :: obj !< diagYamlFiles_type object to initialize
-  has_file_frequnit = allocated(obj%file_frequnit)
+  has_file_frequnit = obj%file_frequnit .NE. DIAG_NULL
 end function has_file_frequnit
 !> @brief obj%file_freq is on the stack, so the object always has it
 !! @return true if obj%file_freq is allocated
@@ -1018,7 +1043,7 @@ end function has_file_freq
 !! @return true if obj%file_timeunit is allocated
 pure logical function has_file_timeunit (obj)
   class(diagYamlFiles_type), intent(in) :: obj !< diagYamlFiles_type object to initialize
-  has_file_timeunit = allocated(obj%file_timeunit)
+  has_file_timeunit = obj%file_timeunit .ne. diag_null
 end function has_file_timeunit
 !> @brief Checks if obj%file_unlimdim is allocated
 !! @return true if obj%file_unlimdim is allocated
@@ -1052,7 +1077,7 @@ end function has_file_new_file_freq
 !! @return true if obj%file_new_file_freq_units is allocated
 pure logical function has_file_new_file_freq_units (obj)
   class(diagYamlFiles_type), intent(in) :: obj !< diagYamlFiles_type object to initialize
-  has_file_new_file_freq_units = allocated(obj%file_new_file_freq_units)
+  has_file_new_file_freq_units = obj%file_new_file_freq_units .ne. diag_null
 end function has_file_new_file_freq_units
 !> @brief Checks if obj%file_start_time is allocated
 !! @return true if obj%file_start_time is allocated
@@ -1070,7 +1095,7 @@ end function has_file_duration
 !! @return true 
 pure logical function has_file_duration_units (obj)
   class(diagYamlFiles_type), intent(in) :: obj !< diagYamlFiles_type object to initialize
-  has_file_duration_units = .true.
+  has_file_duration_units = obj%file_duration_units .ne. diag_null
 end function has_file_duration_units
 !> @brief Checks if obj%file_varlist is allocated
 !! @return true if obj%file_varlist is allocated
