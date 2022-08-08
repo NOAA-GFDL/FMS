@@ -24,9 +24,10 @@
 !! a pointer to the information from the diag yaml, additional metadata that comes from the model, and a
 !! list of the variables and their variable IDs that are in the file.
 module fms_diag_file_object_mod
-!use mpp_mod, only: mpp_error, FATAL
 use fms2_io_mod, only: FmsNetcdfFile_t, FmsNetcdfUnstructuredDomainFile_t, FmsNetcdfDomainFile_t
-use diag_data_mod, only: DIAG_NULL, NO_DOMAIN, max_axes, SUB_REGIONAL
+use diag_data_mod, only: DIAG_NULL, NO_DOMAIN, max_axes, SUB_REGIONAL, get_base_time
+use diag_util_mod, only: diag_time_inc
+use time_manager_mod, only: time_type, operator(/=), operator(==)
 #ifdef use_yaml
 use fms_diag_yaml_mod, only: diag_yaml, diagYamlObject_type, diagYamlFiles_type
 #endif
@@ -44,6 +45,13 @@ integer, parameter :: var_string_len = 25
 type :: fmsDiagFile_type
  private
   integer :: id !< The number associated with this file in the larger array of files
+  TYPE(time_type) :: start_time       !< The start time for the file
+  TYPE(time_type) :: last_output      !< Time of the last time output was writen
+  TYPE(time_type) :: next_output      !< Time of the next write
+  TYPE(time_type) :: next_next_output !< Time of the next next write
+
+  !< This will be used when using the new_file_freq keys in the diag_table.yaml
+  TYPE(time_type) :: next_open        !< The next time to open the file
   class(FmsNetcdfFile_t), allocatable :: fileobj !< fms2_io file object for this history file
 #ifdef use_yaml
   type(diagYamlFiles_type), pointer :: diag_yaml_file => null() !< Pointer to the diag_yaml_file data
@@ -72,6 +80,7 @@ type :: fmsDiagFile_type
   procedure, public :: has_diag_yaml_file
   procedure, public :: set_file_domain
   procedure, public :: add_axes
+  procedure, public :: add_start_time
 #endif
   procedure, public :: has_var_ids
   procedure, public :: get_id
@@ -122,36 +131,47 @@ logical function fms_diag_files_object_init ()
 #ifdef use_yaml
   integer :: nFiles !< Number of files in the diag yaml
   integer :: i !< Looping iterator
+  type(fmsDiagFile_type), pointer :: obj !< FMS_diag_files(i) (for less typing)
   if (diag_yaml%has_diag_files()) then
    nFiles = diag_yaml%size_diag_files()
    allocate (FMS_diag_files(nFiles))
    set_ids_loop: do i= 1,nFiles
-     FMS_diag_files(i)%diag_yaml_file => diag_yaml%diag_files(i)
-     FMS_diag_files(i)%id = i
-     allocate(FMS_diag_files(i)%var_ids(diag_yaml%diag_files(i)%size_file_varlist()))
-     allocate(FMS_diag_files(i)%var_index(diag_yaml%diag_files(i)%size_file_varlist()))
-     allocate(FMS_diag_files(i)%var_reg(diag_yaml%diag_files(i)%size_file_varlist()))
+     obj => FMS_diag_files(i)
+     obj%diag_yaml_file => diag_yaml%diag_files(i)
+     obj%id = i
+     allocate(obj%var_ids(diag_yaml%diag_files(i)%size_file_varlist()))
+     allocate(obj%var_index(diag_yaml%diag_files(i)%size_file_varlist()))
+     allocate(obj%var_reg(diag_yaml%diag_files(i)%size_file_varlist()))
      !! Initialize the integer arrays
-     FMS_diag_files(i)%var_ids = DIAG_NULL
-     FMS_diag_files(i)%var_reg = .FALSE.
-     FMS_diag_files(i)%var_index = DIAG_NULL
+     obj%var_ids = DIAG_NULL
+     obj%var_reg = .FALSE.
+     obj%var_index = DIAG_NULL
 
      !> These will be set in a set_file_domain
-     FMS_diag_files(i)%type_of_domain = NO_DOMAIN
-     FMS_diag_files(i)%domain => null()
+     obj%type_of_domain = NO_DOMAIN
+     obj%domain => null()
 
      !> This will be set in a add_axes
-     allocate(FMS_diag_files(i)%axis_ids(max_axes))
+     allocate(obj%axis_ids(max_axes))
 
      !> If the file has a sub_regional, define it as one and allocate the sub_axis_ids array.
      !! This will be set in a add_axes
-     if (FMS_diag_files(i)%has_file_sub_region()) then
-      FMS_diag_files(i)%type_of_domain = SUB_REGIONAL
-      allocate(FMS_diag_files(i)%sub_axis_ids(max_axes))
-      FMS_diag_files(i)%sub_axis_ids = diag_null
+     if (obj%has_file_sub_region()) then
+      obj%type_of_domain = SUB_REGIONAL
+      allocate(obj%sub_axis_ids(max_axes))
+      obj%sub_axis_ids = diag_null
      endif
 
-     FMS_diag_files(i)%number_of_axis = 0
+     obj%number_of_axis = 0
+
+     !> Set the start_time of the file to the base_time and set up the *_output variables
+     obj%start_time = get_base_time()
+     obj%last_output = get_base_time()
+     obj%next_output = diag_time_inc(obj%start_time, obj%get_file_freq(), obj%get_file_frequnit())
+     obj%next_next_output = diag_time_inc(obj%next_output, obj%get_file_freq(), obj%get_file_frequnit())
+     obj%next_open = get_base_time()
+
+     nullify(obj)
    enddo set_ids_loop
    fms_diag_files_object_init = .true.
   else
@@ -244,7 +264,7 @@ end function get_file_fname
 !! \return Copy of file_frequnit
 pure function get_file_frequnit (obj) result(res)
  class(fmsDiagFile_type), intent(in) :: obj !< The file object
- character (len=:), allocatable :: res
+ integer :: res
   res = obj%diag_yaml_file%get_file_frequnit()
 end function get_file_frequnit
 !> \brief Returns a copy of file_freq from the yaml object
@@ -258,7 +278,7 @@ end function get_file_freq
 !! \return Copy of file_timeunit
 pure function get_file_timeunit (obj) result(res)
  class(fmsDiagFile_type), intent(in) :: obj !< The file object
- character (len=:), allocatable :: res
+ integer :: res
   res = obj%diag_yaml_file%get_file_timeunit()
 end function get_file_timeunit
 !> \brief Returns a copy of file_unlimdim from the yaml object
@@ -287,7 +307,7 @@ end function get_file_new_file_freq
 !! \return Copy of file_new_file_freq_units
 pure function get_file_new_file_freq_units (obj) result(res)
  class(fmsDiagFile_type), intent(in) :: obj !< The file object
- character (len=:), allocatable :: res
+ integer :: res
   res = obj%diag_yaml_file%get_file_new_file_freq_units()
 end function get_file_new_file_freq_units
 !> \brief Returns a copy of file_start_time from the yaml object
@@ -308,7 +328,7 @@ end function get_file_duration
 !! \return Copy of file_duration_units
 pure function get_file_duration_units (obj) result(res)
  class(fmsDiagFile_type), intent(in) :: obj !< The file object
- character (len=:), allocatable :: res
+ integer :: res
   res = obj%diag_yaml_file%get_file_duration_units()
 end function get_file_duration_units
 !> \brief Returns a copy of file_varlist from the yaml object
@@ -461,8 +481,8 @@ subroutine add_axes(obj, axis_ids)
 
   do i = 1, size(axis_ids)
     do j = 1, obj%number_of_axis
-      !> Check if the axis already exists, if it does leave this do loop
-      if (axis_ids(i) .eq. obj%axis_ids(j)) exit
+      !> Check if the axis already exists, return
+      if (axis_ids(i) .eq. obj%axis_ids(j)) return
     enddo
 
     !> If the axis does not exist add it to the list
@@ -475,5 +495,33 @@ subroutine add_axes(obj, axis_ids)
   enddo
 
 end subroutine add_axes
+
+!> @brief adds the start time to the fileobj
+!! @note This should be called from the register field calls. It can be called multiple times (one for each variable)
+!! So it needs to make sure that the start_time is the same for each variable. The initial value is the base_time
+subroutine add_start_time(obj, start_time)
+  class(fmsDiagFile_type), intent(inout)       :: obj            !< The file object
+  TYPE(time_type),         intent(in)          :: start_time     !< Start time to add to the fileobj
+
+  !< If the start_time sent in is equal to the base_time return because
+  !! obj%start_time was already set to the base_time
+  if (start_time .eq. get_base_time()) return
+
+  if (obj%start_time .ne. get_base_time()) then
+    !> If the obj%start_time is not equal to the base_time from the diag_table
+    !! obj%start_time was already updated so make sure it is the same or error out
+    if (obj%start_time .ne. start_time)&
+      call mpp_error(FATAL, "The variables associated with the file:"//obj%get_file_fname()//" have"&
+      &" different start_time")
+  else
+    !> If the obj%start_time is equal to the base_time,
+    !! simply update it with the start_time and set up the *_output variables
+    obj%start_time = start_time
+    obj%last_output = start_time
+    obj%next_output = diag_time_inc(start_time, obj%get_file_freq(), obj%get_file_frequnit())
+    obj%next_next_output = diag_time_inc(obj%next_output, obj%get_file_freq(), obj%get_file_frequnit())
+  endif
+
+end subroutine
 #endif
 end module fms_diag_file_object_mod

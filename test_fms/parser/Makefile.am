@@ -47,7 +47,7 @@ EXTRA_DIST = test_yaml_parser.sh
 # Define test file extensions and log driver
 TEST_EXTENSIONS = .sh
 SH_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
-                  $(top_srcdir)/tap-driver.sh
+                  $(abs_top_srcdir)/test_fms/tap-driver.sh
 
 if SKIP_PARSER_TESTS
 skipflag="skip"

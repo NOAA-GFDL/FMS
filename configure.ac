@@ -25,7 +25,7 @@ AC_PREREQ([2.69])
 
 # Initialize with name, version, and support email address.
 AC_INIT([GFDL FMS Library],
-  [2022.03.0-dev],
+  [2022.03.00],
   [gfdl.climate.model.info@noaa.gov],
   [FMS],
   [https://www.github.com/NOAA-GFDL/FMS])
@@ -40,7 +40,6 @@ AC_CANONICAL_TARGET
 AC_CONFIG_MACRO_DIR([m4])
 
 AM_INIT_AUTOMAKE([foreign dist-zip subdir-objects])
-AC_REQUIRE_AUX_FILE([tap-driver.sh])
 
 # Set up libtool.
 LT_PREREQ([2.4])
@@ -321,6 +320,10 @@ if test $enable_setting_flags = yes; then
   if test $enable_code_coverage = yes; then
     FCFLAGS="$FCFLAGS -prof-gen=srcpos"
     CFLAGS="$CFLAGS -prof-gen=srcpos"
+  fi
+  # add yaml flag
+  if test $with_yaml = yes; then
+    LDFLAGS="$LDFLAGS -lyaml"
   fi
 fi
 
