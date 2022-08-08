@@ -5,28 +5,32 @@ on: [push, pull_request]
 jobs:
   build:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
     strategy:
       matrix:
-        distcheck-conf-flags: [--enable-openmp, --disable-openmp, --enable-mixed-mode, --disable-setting-flags ]
-        yaml-flag: [ --with-yaml, "" ]
+        conf-flags: [--disable-openmp, --enable-mixed-mode, --disable-setting-flags, --with-mpi=no]
+        input-flag:  [--with-yaml, --enable-test-input=/home/unit_tests_input]
     container:
-      image: noaagfdl/ubuntu_libfms_gnu
+      image: noaagfdl/hpc-me.ubuntu-minimal:gnu-input
       env:
-        FCFLAGS: "-I/usr/include"
-        VERBOSE: 1
-        DISTCHECK_CONFIGURE_FLAGS: "${{ matrix.distcheck-conf-flags }} ${{ matrix.yaml-flag }}"
+        TEST_VERBOSE: 1
+        DISTCHECK_CONFIGURE_FLAGS: "${{ matrix.conf-flags }} ${{ matrix.input-flag }}"
     steps:
     - name: Checkout code
       uses: actions/checkout@v2
     - name: Prepare GNU autoconf for build
       run: autoreconf -if
     - name: Configure the build
-      if: ${{ matrix.distcheck-conf-flags != '--disable-setting-flags' }}
-      run: ./configure ${DISTCHECK_CONFIGURE_FLAGS}
+      if: ${{ matrix.conf-flags != '--disable-setting-flags' }}
+      run: ./configure ${DISTCHECK_CONFIGURE_FLAGS} || cat config.log
     - name: Configure the build with compiler flags
-      if: ${{ matrix.distcheck-conf-flags == '--disable-setting-flags' }}
-      run: ./configure ${DISTCHECK_CONFIGURE_FLAGS}
-      env:
-        FCFLAGS: "-fdefault-real-8 -fdefault-double-8 -fcray-pointer -ffree-line-length-none -I/usr/include"
+      if: ${{ matrix.conf-flags == '--disable-setting-flags' }}
+      run: ./configure ${DISTCHECK_CONFIGURE_FLAGS} FCFLAGS="-fdefault-real-8 -fdefault-double-8 -fcray-pointer -ffree-line-length-none -I/usr/include $FCFLAGS" || cat config.log
     - name: Build the library
-      run: make -j distcheck
+      run: make distcheck
+      if: ${{ matrix.conf-flags != '--with-mpi=no' }}
+    - name: Build the library (without test suite for serial build)
+      run: make
+      if: ${{ matrix.conf-flags == '--with-mpi=no' }}
