@@ -41,7 +41,8 @@ module fms_diag_axis_object_mod
   PRIVATE
 
   public :: diagAxis_t, set_subaxis, fms_diag_axis_init, fms_diag_axis_object_init, fms_diag_axis_object_end, &
-          & get_domain_and_domain_type, axis_obj, diagDomain_t, sub_axis_objs, fms_diag_axis_add_attribute
+          & get_domain_and_domain_type, axis_obj, diagDomain_t, sub_axis_objs, fms_diag_axis_add_attribute, &
+          & DIAGDOMAIN2D_T, fms_get_axis_length
   !> @}
 
   !> @brief Type to hold the domain info for an axis
@@ -556,9 +557,10 @@ module fms_diag_axis_object_mod
         !! i.e a variable can have axis that are domain decomposed (x,y) and an axis that isn't (z)
         if (domain_type .eq. NO_DOMAIN .or. axis_obj(j)%type_of_domain .eq. NO_DOMAIN ) then
           !< Update the domain_type and domain, if needed
-          if (axis_obj(j)%type_of_domain .eq. TWO_D_DOMAIN .or. axis_obj(j)%type_of_domain .eq. UG_DOMAIN) then
-            domain_type = axis_obj(j)%type_of_domain
-            domain => axis_obj(j)%axis_domain
+          if ((axis_obj(j)%type_of_domain .eq. TWO_D_DOMAIN  .and. size(axis_id) > 2) &
+             & .or. axis_obj(j)%type_of_domain .eq. UG_DOMAIN) then
+               domain_type = axis_obj(j)%type_of_domain
+               domain => axis_obj(j)%axis_domain
           endif
         else
           call mpp_error(FATAL, "The variable:"//trim(var_name)//" has axis that are not in the same domain")
@@ -566,6 +568,19 @@ module fms_diag_axis_object_mod
       endif
     enddo
   end subroutine get_domain_and_domain_type
+
+  !> @brief Gets the length of the axis based on the axis_id
+  !> @return Axis_length
+  function fms_get_axis_length(axis_id)&
+  result(axis_length)
+    INTEGER, INTENT(in) :: axis_id !< Axis ID of the axis to the length of
+    integer :: axis_length
+
+    if (axis_id < 0 .and. axis_id > number_of_axis) &
+      call mpp_error(FATAL, "fms_get_axis_length: The axis_id is not valid")
+
+    axis_length = axis_obj(axis_id)%axis_length()
+  end function fms_get_axis_length
 end module fms_diag_axis_object_mod
 !> @}
 ! close documentation grouping

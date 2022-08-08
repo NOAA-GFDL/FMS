@@ -237,7 +237,8 @@ use platform_mod
   USE diag_output_mod, ONLY: get_diag_global_att, set_diag_global_att
   USE diag_grid_mod, ONLY: diag_grid_init, diag_grid_end
   USE fms_diag_object_mod, ONLY: fmsDiagObject_type, fms_diag_object_init, fms_register_diag_field_array, &
-      & fms_register_diag_field_scalar, fms_diag_object_end, fms_register_static_field
+      & fms_register_diag_field_scalar, fms_diag_object_end, fms_register_static_field, fms_diag_field_add_attribute, &
+      & fms_get_diag_field_id
   USE fms_diag_file_object_mod, only: fms_diag_files_object_initialized
 #ifdef use_yaml
   use fms_diag_yaml_mod, only: diag_yaml_object_init, diag_yaml_object_end, get_num_unique_fields, find_diag_field
@@ -1223,9 +1224,16 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
     CHARACTER(len=*), INTENT(in) :: module_name !< Module name that registered the variable
     CHARACTER(len=*), INTENT(in) :: field_name !< Variable name
 
-    ! find_input_field will return DIAG_FIELD_NOT_FOUND if the field is not
-    ! included in the diag_table
-    get_diag_field_id = find_input_field(module_name, field_name, tile_count=1)
+    integer :: i !< For do loops
+
+    get_diag_field_id = DIAG_FIELD_NOT_FOUND
+    if (use_modern_diag) then
+      get_diag_field_id = fms_get_diag_field_id(module_name, field_name)
+    else
+      ! find_input_field will return DIAG_FIELD_NOT_FOUND if the field is not
+      ! included in the diag_table
+      get_diag_field_id = find_input_field(module_name, field_name, tile_count=1)
+    endif
   END FUNCTION get_diag_field_id
 
   !> @brief Finds the corresponding related output field and file for a given input field
@@ -4211,7 +4219,11 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
     CHARACTER(len=*), INTENT(in) :: att_name !< new attribute name
     REAL, INTENT(in) :: att_value !< new attribute value
 
-    CALL diag_field_add_attribute_r1d(diag_field_id, att_name, (/ att_value /))
+    if (use_modern_diag) then
+      call fms_diag_field_add_attribute(diag_field_id, att_name, (/att_value /))
+    else
+      CALL diag_field_add_attribute_r1d(diag_field_id, att_name, (/ att_value /))
+    endif
   END SUBROUTINE diag_field_add_attribute_scalar_r
 
   !> @brief Add a scalar integer attribute to the diag field corresponding to a given id
@@ -4220,7 +4232,11 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
     CHARACTER(len=*), INTENT(in) :: att_name !< new attribute name
     INTEGER, INTENT(in) :: att_value !< new attribute value
 
-    CALL diag_field_add_attribute_i1d(diag_field_id, att_name, (/ att_value /))
+    if (use_modern_diag) then
+      call fms_diag_field_add_attribute(diag_field_id, att_name, (/att_value /))
+    else
+      CALL diag_field_add_attribute_i1d(diag_field_id, att_name, (/ att_value /))
+    endif
   END SUBROUTINE diag_field_add_attribute_scalar_i
 
   !> @brief Add a scalar character attribute to the diag field corresponding to a given id
@@ -4229,7 +4245,11 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
     CHARACTER(len=*), INTENT(in) :: att_name !< new attribute name
     CHARACTER(len=*), INTENT(in) :: att_value !< new attribute value
 
-    CALL diag_field_attribute_init(diag_field_id, att_name, NF90_CHAR, cval=att_value)
+    if (use_modern_diag) then
+      call fms_diag_field_add_attribute(diag_field_id, att_name, (/att_value /))
+    else
+      CALL diag_field_attribute_init(diag_field_id, att_name, NF90_CHAR, cval=att_value)
+    endif
   END SUBROUTINE diag_field_add_attribute_scalar_c
 
   !> @brief Add a real 1D array attribute to the diag field corresponding to a given id
@@ -4238,7 +4258,11 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
     CHARACTER(len=*), INTENT(in) :: att_name !< new attribute name
     REAL, DIMENSION(:), INTENT(in) :: att_value !< new attribute value
 
-    CALL diag_field_attribute_init(diag_field_id, att_name, NF90_FLOAT, rval=att_value)
+    if (use_modern_diag) then
+      call fms_diag_field_add_attribute(diag_field_id, att_name, att_value)
+    else
+      CALL diag_field_attribute_init(diag_field_id, att_name, NF90_FLOAT, rval=att_value)
+    endif
   END SUBROUTINE diag_field_add_attribute_r1d
 
   !> @brief Add an integer 1D array attribute to the diag field corresponding to a given id
@@ -4247,7 +4271,11 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
     CHARACTER(len=*), INTENT(in) :: att_name !< new attribute name
     INTEGER, DIMENSION(:), INTENT(in) :: att_value !< new attribute value
 
-    CALL diag_field_attribute_init(diag_field_id, att_name, NF90_INT, ival=att_value)
+    if (use_modern_diag) then
+      call fms_diag_field_add_attribute(diag_field_id, att_name, att_value)
+    else
+      CALL diag_field_attribute_init(diag_field_id, att_name, NF90_INT, ival=att_value)
+    endif
   END SUBROUTINE diag_field_add_attribute_i1d
 
   !> @brief Add the cell_measures attribute to a diag out field
