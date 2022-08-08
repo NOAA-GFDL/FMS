@@ -40,7 +40,7 @@ TESTS = test_time_interp2.sh
 
 TEST_EXTENSIONS = .sh
 SH_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
-                  $(top_srcdir)/tap-driver.sh
+                  $(abs_top_srcdir)/test_fms/tap-driver.sh
 # These files will also be included in the distribution.
 EXTRA_DIST = test_time_interp2.sh
 

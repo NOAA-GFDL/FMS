@@ -40,7 +40,6 @@ AC_CANONICAL_TARGET
 AC_CONFIG_MACRO_DIR([m4])
 
 AM_INIT_AUTOMAKE([foreign dist-zip subdir-objects])
-AC_REQUIRE_AUX_FILE([tap-driver.sh])
 
 # Set up libtool.
 LT_PREREQ([2.4])
@@ -321,6 +320,10 @@ if test $enable_setting_flags = yes; then
   if test $enable_code_coverage = yes; then
     FCFLAGS="$FCFLAGS -prof-gen=srcpos"
     CFLAGS="$CFLAGS -prof-gen=srcpos"
+  fi
+  # add yaml flag
+  if test $with_yaml = yes; then
+    LDFLAGS="$LDFLAGS -lyaml"
   fi
 fi
 

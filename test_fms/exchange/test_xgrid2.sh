@@ -33,7 +33,6 @@ if test -z "$test_input_path" ; then
 else
   rm -rf INPUT && mkdir INPUT
   cp $test_input_path/exchange/INPUT/* INPUT
-  rm *.nc
 fi
 
 # Copy file for test.
@@ -58,5 +57,7 @@ _EOF
 test_expect_success "Test exchange grid" '
   mpirun -n 12 ./test_xgrid
 '
+
+rm -rf INPUT *.nc # remove any leftover io files to save space
 
 test_done
