@@ -32,7 +32,8 @@ module fms_diag_yaml_mod
 #ifdef use_yaml
 use diag_data_mod,   only: DIAG_NULL, DIAG_OCEAN, DIAG_ALL, DIAG_OTHER, set_base_time, latlon_gridtype, &
                            index_gridtype, null_gridtype, DIAG_SECONDS, DIAG_MINUTES, DIAG_HOURS, DIAG_DAYS, &
-                           DIAG_MONTHS, DIAG_YEARS
+                           DIAG_MONTHS, DIAG_YEARS, time_average, time_rms, time_max, time_min, time_sum, &
+                           time_diurnal, time_power, time_none
 use yaml_parser_mod, only: open_and_parse_file, get_value_from_key, get_num_blocks, get_nkeys, &
                            get_block_ids, get_key_value, get_key_ids, get_key_name
 use mpp_mod,         only: mpp_error, FATAL
@@ -158,7 +159,9 @@ end type diagYamlFiles_type
 type diagYamlFilesVar_type
   character (len=:), private, allocatable :: var_fname !< The field/diagnostic name
   character (len=:), private, allocatable :: var_varname !< The name of the variable
-  character (len=:), private, allocatable :: var_reduction !< Reduction to be done on var
+  integer          , private, allocatable :: var_reduction !< Reduction to be done on var
+                                                           !! time_average, time_rms, time_max,
+                                                           !! time_min, time_sum, time_diurnal, time_power
   character (len=:), private, allocatable :: var_module !< The module that th variable is in
   character (len=:), private, allocatable :: var_skind !< The type/kind of the variable
   character (len=:), private, allocatable :: var_outname !< Name of the variable as written to the file
@@ -529,10 +532,11 @@ subroutine fill_in_diag_fields(diag_file_id, var_id, field)
   integer :: j             !< For do loops
 
   integer, allocatable :: key_ids(:) !< Id of each attribute key/value pair
+  character(len=:), ALLOCATABLE :: buffer    !< buffer to store the reduction method as it is read from the yaml
 
   call diag_get_value_from_key(diag_file_id, var_id, "var_name", field%var_varname)
-  call diag_get_value_from_key(diag_file_id, var_id, "reduction", field%var_reduction)
-  call check_field_reduction(field)
+  call diag_get_value_from_key(diag_file_id, var_id, "reduction", buffer)
+  call set_field_reduction(field, buffer)
 
   call diag_get_value_from_key(diag_file_id, var_id, "module", field%var_module)
   call diag_get_value_from_key(diag_file_id, var_id, "kind", field%var_skind)
@@ -710,10 +714,11 @@ subroutine check_field_kind(field)
 
 end subroutine check_field_kind
 
-!> @brief This checks if the reduction of a diag field is valid and crashes if it isn't
+!> @brief This checks if the reduction of a diag field is valid and sets it
 !! If the reduction method is diurnalXX or powXX, it gets the number of diurnal sample and the power value
-subroutine check_field_reduction(field)
-  type(diagYamlFilesVar_type), intent(inout) :: field        !< diagYamlFilesVar_type obj to read the contents into
+subroutine set_field_reduction(field, reduction_method)
+  type(diagYamlFilesVar_type), intent(inout) :: field           !< diagYamlFilesVar_type obj to read the contents into
+  character(len=*)           , intent(in)    :: reduction_method!< reduction method as read from the yaml
 
   integer :: n_diurnal !< number of diurnal samples
   integer :: pow_value !< The power value
@@ -722,25 +727,36 @@ subroutine check_field_reduction(field)
   n_diurnal = 0
   pow_value = 0
   ioerror = 0
-  if (index(field%var_reduction, "diurnal") .ne. 0) then
-    READ (UNIT=field%var_reduction(8:LEN_TRIM(field%var_reduction)), FMT=*, IOSTAT=ioerror) n_diurnal
+  if (index(reduction_method, "diurnal") .ne. 0) then
+    READ (UNIT=reduction_method(8:LEN_TRIM(reduction_method)), FMT=*, IOSTAT=ioerror) n_diurnal
     if (ioerror .ne. 0) &
-      call mpp_error(FATAL, "Error getting the number of diurnal samples from "//trim(field%var_reduction))
+      call mpp_error(FATAL, "Error getting the number of diurnal samples from "//trim(reduction_method))
     if (n_diurnal .le. 0) &
       call mpp_error(FATAL, "Diurnal samples should be greater than 0. &
         & Check your entry for file:"//trim(field%var_varname)//" in file "//trim(field%var_fname))
-  elseif (index(field%var_reduction, "pow") .ne. 0) then
-    READ (UNIT=field%var_reduction(4:LEN_TRIM(field%var_reduction)), FMT=*, IOSTAT=ioerror) pow_value
+    field%var_reduction = time_diurnal
+  elseif (index(reduction_method, "pow") .ne. 0) then
+    READ (UNIT=reduction_method(4:LEN_TRIM(reduction_method)), FMT=*, IOSTAT=ioerror) pow_value
     if (ioerror .ne. 0) &
-      call mpp_error(FATAL, "Error getting the power value from "//trim(field%var_reduction))
+      call mpp_error(FATAL, "Error getting the power value from "//trim(reduction_method))
       if (pow_value .le. 0) &
       call mpp_error(FATAL, "The power value should be greater than 0. &
         & Check your entry for file:"//trim(field%var_varname)//" in file "//trim(field%var_fname))
+    field%var_reduction = time_power
   else
-    select case (TRIM(field%var_reduction))
-    case ("none", "average", "min", "max", "rms")
+    select case (reduction_method)
+    case ("none")
+      field%var_reduction = time_none
+    case ("average")
+      field%var_reduction = time_average
+    case ("min")
+      field%var_reduction = time_min
+    case ("max")
+      field%var_reduction = time_max
+    case ("rms")
+      field%var_reduction = time_rms
     case default
-      call mpp_error(FATAL, trim(field%var_reduction)//" is an invalid reduction method! &
+      call mpp_error(FATAL, trim(reduction_method)//" is an invalid reduction method! &
         &The acceptable values are none, average, pow##, diurnal##, min, max, and rms. &
         &Check your entry for file:"//trim(field%var_varname)//" in file "//trim(field%var_fname))
     end select
@@ -748,7 +764,7 @@ subroutine check_field_reduction(field)
 
   field%n_diurnal = n_diurnal
   field%pow_value = pow_value
-end subroutine check_field_reduction
+end subroutine set_field_reduction
 
 !> @brief This checks if a time unit is valid and if it is, it assigns the integer equivalent
 !! @return The integer equivalent to the time units
@@ -930,7 +946,7 @@ end function get_var_varname
 pure function get_var_reduction (diag_var_obj) &
 result (res)
  class (diagYamlFilesVar_type), intent(in) :: diag_var_obj !< The object being inquiried
- character (len=:), allocatable :: res !< What is returned
+ integer, allocatable :: res !< What is returned
   res = diag_var_obj%var_reduction
 end function get_var_reduction
 !> @brief Inquiry for diag_yaml_files_var_obj%var_module
