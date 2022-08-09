@@ -236,7 +236,7 @@ use platform_mod
   USE diag_table_mod, ONLY: parse_diag_table
   USE diag_output_mod, ONLY: get_diag_global_att, set_diag_global_att
   USE diag_grid_mod, ONLY: diag_grid_init, diag_grid_end
-  USE fms_diag_object_mod, ONLY: fmsDiagObject_type, fms_diag_object_init, fms_register_diag_field_array, &
+  USE fms_diag_field_object_mod, ONLY: fmsDiagField_type, fms_diag_object_init, fms_register_diag_field_array, &
       & fms_register_diag_field_scalar, fms_diag_object_end, fms_register_static_field, fms_diag_field_add_attribute, &
       & fms_get_diag_field_id
   USE fms_diag_file_object_mod, only: fms_diag_files_object_initialized
