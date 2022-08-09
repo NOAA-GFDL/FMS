@@ -139,19 +139,19 @@ type diagYamlFiles_type
  procedure :: is_global_meta
  !> Has functions to determine if allocatable variables are true.  If a variable is not an allocatable
  !! then is will always return .true.
- procedure :: has_file_fname 
- procedure :: has_file_frequnit 
- procedure :: has_file_freq 
- procedure :: has_file_timeunit 
- procedure :: has_file_unlimdim 
- procedure :: has_file_sub_region 
- procedure :: has_file_new_file_freq 
- procedure :: has_file_new_file_freq_units 
- procedure :: has_file_start_time 
- procedure :: has_file_duration 
- procedure :: has_file_duration_units 
- procedure :: has_file_varlist 
- procedure :: has_file_global_meta 
+ procedure :: has_file_fname
+ procedure :: has_file_frequnit
+ procedure :: has_file_freq
+ procedure :: has_file_timeunit
+ procedure :: has_file_unlimdim
+ procedure :: has_file_sub_region
+ procedure :: has_file_new_file_freq
+ procedure :: has_file_new_file_freq_units
+ procedure :: has_file_start_time
+ procedure :: has_file_duration
+ procedure :: has_file_duration_units
+ procedure :: has_file_varlist
+ procedure :: has_file_global_meta
 
 end type diagYamlFiles_type
 
@@ -191,15 +191,15 @@ type diagYamlFilesVar_type
   procedure :: get_pow_value
   procedure :: is_var_attributes
 
-  procedure :: has_var_fname 
-  procedure :: has_var_varname 
-  procedure :: has_var_reduction 
-  procedure :: has_var_module 
+  procedure :: has_var_fname
+  procedure :: has_var_varname
+  procedure :: has_var_reduction
+  procedure :: has_var_module
   procedure :: has_var_kind
-  procedure :: has_var_outname 
-  procedure :: has_var_longname 
-  procedure :: has_var_units 
-  procedure :: has_var_attributes 
+  procedure :: has_var_outname
+  procedure :: has_var_longname
+  procedure :: has_var_units
+  procedure :: has_var_attributes
   procedure :: has_n_diurnal
   procedure :: has_pow_value
 
@@ -220,10 +220,10 @@ type diagYamlObject_type
   procedure :: get_diag_files   !< Returns the diag_files array
   procedure :: get_diag_fields  !< Returns the diag_field array
 
-  procedure :: has_diag_title                   
-  procedure :: has_diag_basedate           
+  procedure :: has_diag_title
+  procedure :: has_diag_basedate
   procedure :: has_diag_files
-  procedure :: has_diag_fields 
+  procedure :: has_diag_fields
 
 end type diagYamlObject_type
 
@@ -1077,7 +1077,7 @@ pure logical function has_file_unlimdim (obj)
   has_file_unlimdim = allocated(obj%file_unlimdim)
 end function has_file_unlimdim
 !> @brief Checks if obj%file_write is on the stack, so this will always be true
-!! @return true 
+!! @return true
 pure logical function has_file_write (obj)
   class(diagYamlFiles_type), intent(in) :: obj !< diagYamlFiles_type object to initialize
   has_file_write = .true.
@@ -1093,7 +1093,7 @@ pure logical function has_file_sub_region (obj)
   endif
 end function has_file_sub_region
 !> @brief obj%file_new_file_freq is defined on the stack, so this will return true
-!! @return true 
+!! @return true
 pure logical function has_file_new_file_freq (obj)
   class(diagYamlFiles_type), intent(in) :: obj !< diagYamlFiles_type object to initialize
   has_file_new_file_freq = .true.
@@ -1111,13 +1111,13 @@ pure logical function has_file_start_time (obj)
   has_file_start_time = allocated(obj%file_start_time)
 end function has_file_start_time
 !> @brief obj%file_duration is allocated on th stack, so this is always true
-!! @return true 
+!! @return true
 pure logical function has_file_duration (obj)
   class(diagYamlFiles_type), intent(in) :: obj !< diagYamlFiles_type object to initialize
   has_file_duration = .true.
 end function has_file_duration
 !> @brief obj%file_duration_units is on the stack, so this will retrun true
-!! @return true 
+!! @return true
 pure logical function has_file_duration_units (obj)
   class(diagYamlFiles_type), intent(in) :: obj !< diagYamlFiles_type object to initialize
   has_file_duration_units = obj%file_duration_units .ne. diag_null
@@ -1166,7 +1166,7 @@ pure logical function has_var_kind (obj)
   has_var_kind = allocated(obj%var_kind)
 end function has_var_kind
 !> @brief obj%var_write is on the stack, so this returns true
-!! @return true 
+!! @return true
 pure logical function has_var_write (obj)
   class(diagYamlFilesVar_type), intent(in) :: obj !< diagYamlvar_type object to initialize
   has_var_write = .true.
@@ -1213,13 +1213,13 @@ end function has_pow_value
 pure logical function has_diag_title (obj)
   class(diagYamlObject_type), intent(in) :: obj !< diagYamlObject_type object to initialize
   has_diag_title = allocated(obj%diag_title)
-end function has_diag_title                    
+end function has_diag_title
 !> @brief obj%diag_basedate is on the stack, so this is always true
 !! @return true
 pure logical function has_diag_basedate (obj)
   class(diagYamlObject_type), intent(in) :: obj !< diagYamlObject_type object to initialize
   has_diag_basedate = .true.
-end function has_diag_basedate            
+end function has_diag_basedate
 !> @brief Checks if obj%diag_files is allocated
 !! @return true if obj%diag_files is allocated
 pure logical function has_diag_files (obj)
@@ -1231,7 +1231,7 @@ end function has_diag_files
 pure logical function has_diag_fields (obj)
   class(diagYamlObject_type), intent(in) :: obj !< diagYamlObject_type object to initialize
   has_diag_fields = allocated(obj%diag_fields)
-end function has_diag_fields  
+end function has_diag_fields
 
 !> @brief Determine the number of unique diag_fields in the diag_yaml_object
 !! @return The number of unique diag_fields
