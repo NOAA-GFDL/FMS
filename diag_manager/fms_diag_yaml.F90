@@ -33,7 +33,7 @@ module fms_diag_yaml_mod
 use diag_data_mod,   only: DIAG_NULL, DIAG_OCEAN, DIAG_ALL, DIAG_OTHER, set_base_time, latlon_gridtype, &
                            index_gridtype, null_gridtype, DIAG_SECONDS, DIAG_MINUTES, DIAG_HOURS, DIAG_DAYS, &
                            DIAG_MONTHS, DIAG_YEARS, time_average, time_rms, time_max, time_min, time_sum, &
-                           time_diurnal, time_power, time_none
+                           time_diurnal, time_power, time_none, r8, i8, r4, i4
 use yaml_parser_mod, only: open_and_parse_file, get_value_from_key, get_num_blocks, get_nkeys, &
                            get_block_ids, get_key_value, get_key_ids, get_key_name
 use mpp_mod,         only: mpp_error, FATAL
@@ -163,7 +163,7 @@ type diagYamlFilesVar_type
                                                            !! time_average, time_rms, time_max,
                                                            !! time_min, time_sum, time_diurnal, time_power
   character (len=:), private, allocatable :: var_module !< The module that th variable is in
-  character (len=:), private, allocatable :: var_skind !< The type/kind of the variable
+  integer          , private, allocatable :: var_kind !< The type/kind of the variable
   character (len=:), private, allocatable :: var_outname !< Name of the variable as written to the file
   character (len=:), private, allocatable :: var_longname !< Overwrites the long name of the variable
   character (len=:), private, allocatable :: var_units !< Overwrites the units
@@ -182,7 +182,7 @@ type diagYamlFilesVar_type
   procedure :: get_var_varname
   procedure :: get_var_reduction
   procedure :: get_var_module
-  procedure :: get_var_skind
+  procedure :: get_var_kind
   procedure :: get_var_outname
   procedure :: get_var_longname
   procedure :: get_var_units
@@ -195,7 +195,7 @@ type diagYamlFilesVar_type
   procedure :: has_var_varname 
   procedure :: has_var_reduction 
   procedure :: has_var_module 
-  procedure :: has_var_skind 
+  procedure :: has_var_kind
   procedure :: has_var_outname 
   procedure :: has_var_longname 
   procedure :: has_var_units 
@@ -539,8 +539,9 @@ subroutine fill_in_diag_fields(diag_file_id, var_id, field)
   call set_field_reduction(field, buffer)
 
   call diag_get_value_from_key(diag_file_id, var_id, "module", field%var_module)
-  call diag_get_value_from_key(diag_file_id, var_id, "kind", field%var_skind)
-  call check_field_kind(field)
+  deallocate(buffer)
+  call diag_get_value_from_key(diag_file_id, var_id, "kind", buffer)
+  call set_field_kind(field, buffer)
 
   call diag_get_value_from_key(diag_file_id, var_id, "output_name", field%var_outname, is_optional=.true.)
   call diag_get_value_from_key(diag_file_id, var_id, "long_name", field%var_longname, is_optional=.true.)
@@ -700,19 +701,27 @@ subroutine set_file_duration(fileobj, file_duration_units)
   endif
 end subroutine set_file_duration
 
-!> @brief This checks if the kind of a diag field is valid and crashes if it isn't
-subroutine check_field_kind(field)
-  type(diagYamlFilesVar_type), intent(in) :: field        !< diagYamlFilesVar_type obj to read the contents into
+!> @brief This checks if the kind of a diag field is valid and sets it
+subroutine set_field_kind(field, skind)
+  type(diagYamlFilesVar_type), intent(inout) :: field        !< diagYamlFilesVar_type obj to read the contents into
+  character(len=*),            intent(in)    :: skind        !< The variable kind as read from diag_yaml
 
-  select case (TRIM(field%var_skind))
-  case ("r4", "r8", "i4", "i8")
+  select case (TRIM(skind))
+  case ("r4")
+    field%var_kind = r4
+  case ("r8")
+    field%var_kind = r8
+  case ("i4")
+    field%var_kind = i4
+  case ("i8")
+    field%var_kind = i8
   case default
-    call mpp_error(FATAL, trim(field%var_skind)//" is an invalid kind! &
+    call mpp_error(FATAL, trim(skind)//" is an invalid kind! &
       &The acceptable values are r4, r8, i4, i8. &
       &Check your entry for file:"//trim(field%var_varname)//" in file "//trim(field%var_fname))
   end select
 
-end subroutine check_field_kind
+end subroutine set_field_kind
 
 !> @brief This checks if the reduction of a diag field is valid and sets it
 !! If the reduction method is diurnalXX or powXX, it gets the number of diurnal sample and the power value
@@ -957,14 +966,14 @@ result (res)
  character (len=:), allocatable :: res !< What is returned
   res = diag_var_obj%var_module
 end function get_var_module
-!> @brief Inquiry for diag_yaml_files_var_obj%var_skind
-!! @return var_skind of a diag_yaml_files_var_obj
-pure function get_var_skind (diag_var_obj) &
+!> @brief Inquiry for diag_yaml_files_var_obj%var_kind
+!! @return var_kind of a diag_yaml_files_var_obj
+pure function get_var_kind (diag_var_obj) &
 result (res)
  class (diagYamlFilesVar_type), intent(in) :: diag_var_obj !< The object being inquiried
- character (len=:), allocatable :: res !< What is returned
-  res = diag_var_obj%var_skind
-end function get_var_skind
+ integer, allocatable :: res !< What is returned
+  res = diag_var_obj%var_kind
+end function get_var_kind
 !> @brief Inquiry for diag_yaml_files_var_obj%var_outname
 !! @return var_outname of a diag_yaml_files_var_obj
 pure function get_var_outname (diag_var_obj) &
@@ -1150,12 +1159,12 @@ pure logical function has_var_module (obj)
   class(diagYamlFilesVar_type), intent(in) :: obj !< diagYamlvar_type object to initialize
   has_var_module = allocated(obj%var_module)
 end function has_var_module
-!> @brief Checks if obj%var_skind is allocated
-!! @return true if obj%var_skind is allocated
-pure logical function has_var_skind (obj)
+!> @brief Checks if obj%var_kind is allocated
+!! @return true if obj%var_kind is allocated
+pure logical function has_var_kind (obj)
   class(diagYamlFilesVar_type), intent(in) :: obj !< diagYamlvar_type object to initialize
-  has_var_skind = allocated(obj%var_skind)
-end function has_var_skind
+  has_var_kind = allocated(obj%var_kind)
+end function has_var_kind
 !> @brief obj%var_write is on the stack, so this returns true
 !! @return true 
 pure logical function has_var_write (obj)
