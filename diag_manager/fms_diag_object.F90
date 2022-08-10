@@ -17,16 +17,29 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 module fms_diag_object_mod
-use fms_diag_file_object_mod :: FMS_diag_files
-use fms_diag_field_object_mod :: fmsDiagField_type
+use fms_diag_file_object_mod :: fmsDiagFileContainer_type, fms_diag_files_object_init
+use fms_diag_field_object_mod :: fmsDiagField_type, fms_diag_fields_object_init
+use fms_diag_yaml_object_mod :: diag_yaml_object_init
+use fms_diag_axis_object_mod :: fms_diag_axis_object_init
+implicit none
+private
 
 type fmsDiagObject_type
 !TODO add container arrays
-  TYPE(fmsDiagField_type), private, ALLOCATABLE, target :: diag_fields(:) !< Array of diag objects
-                                                                       !! one for each registered variable
+private
+  class(fmsDiagFileContainer_type), allocatable, target :: FMS_diag_files (:) !< array of diag files
+  TYPE(fmsDiagField_type), ALLOCATABLE, target :: FMS_diag_fields(:) !< Array of diag fields
   integer, private :: registered_variables !< Number of registered variables
+  logical, private :: initialized=.false. !< True if the fmsDiagObject is initialized
+  logical, private :: files_initialized=.false. !< True if the fmsDiagObject is initialized
+  logical, private :: fields_initialized=.false. !< True if the fmsDiagObject is initialized
+  logical, private :: buffers_initialized=.false. !< True if the fmsDiagObject is initialized
+  logical, private :: axes_initialized=.false. !< True if the fmsDiagObject is initialized
+
   contains
+    procedure :: init => fms_diag_object_init
     procedure :: register => fms_register_diag_field_obj !! Merely initialize fields.
+    procedure :: diag_end => fms_diag_object_end
 end type fmsDiagObject_type
 
 type (fmsDiagObject_type), target :: fms_diag_object
@@ -37,6 +50,40 @@ public :: fms_register_diag_field_array
 public :: fms_register_static_field
 public :: fms_diag_object 
 contains
+!> @brief Initiliazes the  fms_diag_object.
+!! Reads the diag_table.yaml and fills in the yaml object
+!! Allocates the diag manager object arrays for files, fields, and buffers
+!! Initializes variables
+subroutine fms_diag_object_init (obj,diag_subset_output)
+ class(fmsDiagObject_type) :: obj
+
+ if (obj%initialized) return
+#ifdef use_yaml
+!TODO: Read name list
+!TODO: Read YAML
+!TODO: allocate the file, field, and buffer containers
+! allocate(diag_objs(get_num_unique_fields()))
+  CALL diag_yaml_object_init(diag_subset_output)
+  CALL fms_diag_axis_object_init()
+  obj%files_initialized = fms_diag_files_object_init (FMS_diag_files)
+  obj%fields_initialized = fms_diag_fields_object_init (FMS_diag_fields)
+ registered_variables = 0
+#else
+ !TODO: FATAL modern diag requires the use of yaml
+#endif
+ obj%initialized = .true.
+end subroutine fms_diag_object_init
+!> \description Loops through all files and does one final write.
+!! Closes all files
+!! Deallocates all buffers, fields, and files
+!! Uninitializes the fms_diag_object
+subroutine fms_diag_object_end (obj)
+  class(fmsDiagObject_type) :: obj
+  !TODO: loop through files and force write
+  !TODO: Close all files
+  !TODO: Deallocate diag object arrays and clean up all memory
+  obj%initialized = .false.
+end subroutine fms_diag_object_end
 !> \Description Fills in and allocates (when necessary) the values in the diagnostic object
 subroutine fms_register_diag_field_obj &
                 !(field_obj, modname, varname, axes, time, longname, units, missing_value, metadata)

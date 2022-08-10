@@ -69,15 +69,9 @@ type fmsDiagField_type
      integer, allocatable, private                    :: area, volume      !< The Area and Volume
      class(*), allocatable, private                   :: missing_value     !< The missing fill value
      class(*), allocatable, private                   :: data_RANGE(:)     !< The range of the variable data
-     class(*), allocatable :: vardata0                                     !< Scalar data buffer 
-     class(*), allocatable, dimension(:) :: vardata1                       !< 1D data buffer
-     class(*), allocatable, dimension(:,:) :: vardata2                     !< 2D data buffer
-     class(*), allocatable, dimension(:,:,:) :: vardata3                   !< 3D data buffer
-     class(*), allocatable, dimension(:,:,:,:) :: vardata4                 !< 4D data buffer
-     class(*), allocatable, dimension(:,:,:,:,:) :: vardata5               !< 5D data buffer
     contains
 !     procedure :: send_data => fms_send_data  !!TODO
-     procedure :: init_ob => diag_obj_init
+     procedure :: init_ob => fms_diag_fields_object_init
      procedure :: get_id => fms_diag_get_id
      procedure :: id => fms_diag_get_id
      procedure :: copy => copy_diag_obj
@@ -145,17 +139,13 @@ end type fmsDiagField_type
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! variables !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 type(fmsDiagField_type) :: null_ob
 
-integer,private :: MAX_LEN_VARNAME
-integer,private :: MAX_LEN_META
 logical,private :: module_is_initialized = .false. !< Flag indicating if the module is initialized
-
-TYPE(fmsDiagField_type), private, ALLOCATABLE, target :: diag_objs(:) !< Array of diag objects
-                                                                       !! one for each registered variable
 integer, private :: registered_variables !< Number of registered variables
 
 !type(fmsDiagField_type) :: diag_object_placeholder (10)
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 public :: fmsDiagField_type
+public :: fms_diag_fields_object_init
 public :: null_ob
 public :: copy_diag_obj, fms_diag_get_id
 public :: fms_diag_object_init
@@ -171,43 +161,31 @@ public :: fms_get_diag_field_id
  CONTAINS
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!> @brief Initiliazes the array of diag_objs based on the number of unique diag_fields in the diag_table
-subroutine fms_diag_object_init (mlv,mlm)
- integer, intent(in) :: mlv !< The maximum length of the varname
- integer, intent(in) :: mlm !< The maximum length of the metadata
-
- if (module_is_initialized) return
-
-!> Get info from the namelist
- MAX_LEN_VARNAME = mlv
- MAX_LEN_META = mlm
-!> Initialize the null_d variables
- null_ob%diag_id = DIAG_NULL
-#ifdef use_yaml
- allocate(diag_objs(get_num_unique_fields()))
- registered_variables = 0
-#endif
- module_is_initialized = .true.
-end subroutine fms_diag_object_init
 
 !> @brief Deallocates the array of diag_objs
-subroutine fms_diag_object_end ()
-  if (.not. module_is_initialized) return
-
-  if (allocated(diag_objs)) deallocate(diag_objs)
-
+subroutine fms_diag_object_end (ob)
+  class (fmsDiagField_type), allocatable, intent(inout) :: ob(:) !< diag field object
+  if (allocated(ob)) deallocate(ob)
   module_is_initialized = .false.
 end subroutine fms_diag_object_end
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!> \Description Sets the diag_id to the not registered value.
-subroutine diag_obj_init(ob)
- class (fmsDiagField_type)      , intent(inout)       :: ob
- select type (ob)
-  class is (fmsDiagField_type)
-     ob%diag_id = diag_not_registered !null_ob%diag_id
-     ob%registered = .false.
- end select
-end subroutine diag_obj_init
+!> \Description Allocates the diad field object array.
+!! Sets the diag_id to the not registered value.
+!! Initializes the number of registered variables to be 0
+logical function fms_diag_fields_object_init(ob)
+  class (fmsDiagField_type), allocatable, intent(inout) :: ob(:) !< diag field object
+  integer :: i !< For looping
+#ifdef use_yaml
+  allocate(ob(get_num_unique_fields()))
+  registered_variables = 0
+#endif
+  do i = 1,size(ob)
+      ob%diag_id = diag_not_registered !null_ob%diag_id
+      ob%registered = .false.
+  enddo
+  module_is_initialized = .true.
+  fms_diag_fields_object_init = .true.
+end function fms_diag_fields_object_init
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !> \Description Fills in and allocates (when necessary) the values in the diagnostic object
 subroutine fms_register_diag_field_obj &
@@ -216,7 +194,7 @@ subroutine fms_register_diag_field_obj &
        longname, units, missing_value, varRange, mask_variant, standname, &
        do_not_log, err_msg, interp_method, tile_count, area, volume, realm)
 
- class(fmsDiagField_type),      INTENT(inout) :: dobj                  !< Diaj_obj to fill
+ class(fmsDiagField_type),       INTENT(inout) :: dobj                  !< Diaj_obj to fill
  CHARACTER(len=*),               INTENT(in)    :: modname               !< The module name
  CHARACTER(len=*),               INTENT(in)    :: varname               !< The variable name
  integer,                        INTENT(in)    :: diag_field_indices(:) !< Array of indices to the field

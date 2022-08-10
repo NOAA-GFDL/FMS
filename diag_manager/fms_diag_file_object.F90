@@ -36,7 +36,8 @@ use mpp_mod, only: mpp_error, FATAL
 implicit none
 private
 
-public :: fmsDiagFile_type, FMS_diag_files, fms_diag_files_object_init, fms_diag_files_object_initialized
+public :: fmsDiagFileContainer_type
+public :: fmsDiagFile_type, fms_diag_files_object_init, fms_diag_files_object_initialized
 
 logical :: fms_diag_files_object_initialized = .false.
 
@@ -122,21 +123,20 @@ type :: fmsDiagFile_type
 end type fmsDiagFile_type
 
 type(fmsDiagFile_type), dimension (:), allocatable, target :: FMS_diag_files !< The array of diag files
-
+class(fmsDiagFileContainer_type),dimension (:), allocatable, target :: FMS_diag_files
 contains
 
 !< @brief Allocates the number of files and sets an ID based for each file
 !! @return true if there are files allocated in the YAML object
-logical function fms_diag_files_object_init ()
+logical function fms_diag_files_object_init (FMS_diag_files)
 #ifdef use_yaml
+  class(fmsDiagFileContainer_type), allocatable, intent(out) :: obj (:) !< array of diag files
   integer :: nFiles !< Number of files in the diag yaml
   integer :: i !< Looping iterator
-  type(fmsDiagFile_type), pointer :: obj !< FMS_diag_files(i) (for less typing)
   if (diag_yaml%has_diag_files()) then
    nFiles = diag_yaml%size_diag_files()
    allocate (FMS_diag_files(nFiles))
    set_ids_loop: do i= 1,nFiles
-     obj => FMS_diag_files(i)
      obj%diag_yaml_file => diag_yaml%diag_files(i)
      obj%id = i
      allocate(obj%var_ids(diag_yaml%diag_files(i)%size_file_varlist()))
