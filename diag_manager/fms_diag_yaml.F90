@@ -764,6 +764,8 @@ subroutine set_field_reduction(field, reduction_method)
       field%var_reduction = time_max
     case ("rms")
       field%var_reduction = time_rms
+    case ("sum")
+      field%var_reduction = time_sum
     case default
       call mpp_error(FATAL, trim(reduction_method)//" is an invalid reduction method! &
         &The acceptable values are none, average, pow##, diurnal##, min, max, and rms. &
