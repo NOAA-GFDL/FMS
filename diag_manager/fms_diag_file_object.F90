@@ -146,6 +146,7 @@ logical function fms_diag_files_object_init (files_array)
    set_ids_loop: do i= 1,nFiles
      !> If the file has a sub_regional, define it as one and allocate the sub_axis_ids array.
      !! This will be set in a add_axes
+     files_array(i)%FMS_diag_file%diag_yaml_file => diag_yaml%diag_files(i)
      if (files_array(i)%FMS_diag_file%has_file_sub_region()) then
        allocate(subRegionalFile_type :: files_array(i)%FMS_diag_file)
        obj => files_array(i)%FMS_diag_file
