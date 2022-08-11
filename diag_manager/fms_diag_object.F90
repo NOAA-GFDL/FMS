@@ -17,18 +17,24 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 module fms_diag_object_mod
-use fms_diag_file_object_mod :: fmsDiagFileContainer_type, fms_diag_files_object_init
-use fms_diag_field_object_mod :: fmsDiagField_type, fms_diag_fields_object_init
-use fms_diag_yaml_object_mod :: diag_yaml_object_init
-use fms_diag_axis_object_mod :: fms_diag_axis_object_init
+use fms_diag_file_object_mod, only: fmsDiagFileContainer_type, fmsDiagFile_type, fms_diag_files_object_init
+use fms_diag_field_object_mod, only: fmsDiagField_type, fms_diag_fields_object_init
+use fms_diag_yaml_mod, only: diag_yaml_object_init, find_diag_field, get_diag_files_id
+use fms_diag_axis_object_mod, only: fms_diag_axis_object_init
+use diag_data_mod,  only: diag_null, diag_not_found, diag_not_registered, diag_registered_id, &
+                         &DIAG_FIELD_NOT_FOUND
+  USE time_manager_mod, ONLY: set_time, set_date, get_time, time_type, OPERATOR(>=), OPERATOR(>),&
+       & OPERATOR(<), OPERATOR(==), OPERATOR(/=), OPERATOR(/), OPERATOR(+), ASSIGNMENT(=), get_date, &
+       & get_ticks_per_second
+
 implicit none
 private
 
 type fmsDiagObject_type
 !TODO add container arrays
 private
-  class(fmsDiagFileContainer_type), allocatable, target :: FMS_diag_files (:) !< array of diag files
-  TYPE(fmsDiagField_type), ALLOCATABLE, target :: FMS_diag_fields(:) !< Array of diag fields
+  class(fmsDiagFileContainer_type), allocatable :: FMS_diag_files (:) !< array of diag files
+  class(fmsDiagField_type), allocatable :: FMS_diag_fields(:) !< Array of diag fields
   integer, private :: registered_variables !< Number of registered variables
   logical, private :: initialized=.false. !< True if the fmsDiagObject is initialized
   logical, private :: files_initialized=.false. !< True if the fmsDiagObject is initialized
@@ -38,24 +44,36 @@ private
 
   contains
     procedure :: init => fms_diag_object_init
+    procedure :: fms_register_diag_field_scalar
+    procedure :: fms_register_diag_field_array
+    procedure :: fms_register_static_field
     procedure :: register => fms_register_diag_field_obj !! Merely initialize fields.
+    procedure :: fms_diag_field_add_attribute
+    procedure :: fms_get_diag_field_id_from_name
     procedure :: diag_end => fms_diag_object_end
 end type fmsDiagObject_type
 
 type (fmsDiagObject_type), target :: fms_diag_object
+integer, private :: registered_variables !< Number of registered variables
 
 public :: fms_register_diag_field_obj
 public :: fms_register_diag_field_scalar
 public :: fms_register_diag_field_array 
 public :: fms_register_static_field
+public :: fms_diag_field_add_attribute
+public :: fms_get_diag_field_id_from_name
 public :: fms_diag_object 
+public :: fmsDiagObject_type
+
 contains
+
 !> @brief Initiliazes the  fms_diag_object.
 !! Reads the diag_table.yaml and fills in the yaml object
 !! Allocates the diag manager object arrays for files, fields, and buffers
 !! Initializes variables
 subroutine fms_diag_object_init (obj,diag_subset_output)
- class(fmsDiagObject_type) :: obj
+ class(fmsDiagObject_type) :: obj !< Diag mediator/controller object
+ integer :: diag_subset_output !< Subset of the diag output?
 
  if (obj%initialized) return
 #ifdef use_yaml
@@ -65,8 +83,8 @@ subroutine fms_diag_object_init (obj,diag_subset_output)
 ! allocate(diag_objs(get_num_unique_fields()))
   CALL diag_yaml_object_init(diag_subset_output)
   CALL fms_diag_axis_object_init()
-  obj%files_initialized = fms_diag_files_object_init (FMS_diag_files)
-  obj%fields_initialized = fms_diag_fields_object_init (FMS_diag_fields)
+  obj%files_initialized = fms_diag_files_object_init(obj%FMS_diag_files)
+  obj%fields_initialized = fms_diag_fields_object_init (obj%FMS_diag_fields)
  registered_variables = 0
 #else
  !TODO: FATAL modern diag requires the use of yaml
@@ -91,7 +109,7 @@ subroutine fms_register_diag_field_obj &
        longname, units, missing_value, varRange, mask_variant, standname, &
        do_not_log, err_msg, interp_method, tile_count, area, volume, realm)
 
- class(fmsDiagObject_type),      INTENT(inout) :: fms_diag_object       !< Diaj_obj to fill
+ class(fmsDiagObject_type),TARGET,INTENT(inout):: fms_diag_object       !< Diaj_obj to fill
  CHARACTER(len=*),               INTENT(in)    :: modname               !< The module name
  CHARACTER(len=*),               INTENT(in)    :: varname               !< The variable name
  integer,                        INTENT(in)    :: diag_field_indices(:) !< Array of indices to the field
@@ -116,141 +134,64 @@ subroutine fms_register_diag_field_obj &
  CHARACTER(len=*), OPTIONAL,     INTENT(in)    :: realm                 !< String to set as the value to the
                                                                         !! modeling_realm attribute
 
+ class (fmsDiagFile_type), pointer :: fileptr => null()
+ class (fmsDiagField_type), pointer :: fieldptr => null()
+ integer, allocatable :: file_ids(:) !< The file IDs for this variable
  integer :: i !< For do loops
- integer :: j !< fms_diag_object%field_obj%file_ids(i) (for less typing :)
-
+ integer :: j !< fms_diag_object%FMS_diag_fields%file_ids(i) (for less typing :)
+  
 #ifdef use_yaml
-!> Fill in information from the register call
-  fms_diag_object%field_obj%varname = trim(varname)
-  fms_diag_object%field_obj%modname = trim(modname)
-
-!> Fill in diag_field and find the ids of the files that this variable is in
-  fms_diag_object%field_obj%diag_field = get_diag_fields_entries(diag_field_indices)
-  fms_diag_object%field_obj%file_ids   = get_diag_files_id(diag_field_indices)
-
-  if (present(axes)) then
-    fms_diag_object%field_obj%axis_ids => axes
-    call get_domain_and_domain_type(fms_diag_object%field_obj%axis_ids, fms_diag_object%field_obj%type_of_domain, fms_diag_object%field_obj%domain, fms_diag_object%field_obj%varname)
-    do i = 1, size(fms_diag_object%field_obj%file_ids)
-       j = fms_diag_object%field_obj%file_ids(i)
-       call FMS_diag_files(j)%set_file_domain(fms_diag_object%field_obj%domain, fms_diag_object%field_obj%type_of_domain)
-       call FMS_diag_files(j)%add_axes(axes)
-       if (present(init_time)) call FMS_diag_files(j)%add_start_time(init_time)
+!> Use pointers for convenience
+  fieldptr => fms_diag_object%FMS_diag_fields(registered_variables)
+!> Register the data for the field
+  call fieldptr%register(modname, varname, diag_field_indices, &
+       axes, init_time, longname, units, missing_value, varRange, mask_variant, standname, &
+       do_not_log, err_msg, interp_method, tile_count, area, volume, realm)
+!> Get the file IDs from the field indicies from the yaml
+  file_ids = get_diag_files_id(diag_field_indices)
+!> Add the axis information, initial time, and field IDs to the files
+  if (present(axes) .and. present(init_time)) then
+    do i = 1, size(file_ids)
+     fileptr => fms_diag_object%FMS_diag_files(file_ids(i))%FMS_diag_file
+     call fileptr%add_field_id(fieldptr%get_id())
+     call fileptr%set_domain_from_axis(axes)
+     call fileptr%add_axes(axes)
+     call fileptr%add_start_time(init_time)
     enddo
-     !> TO DO:
-     !!     Mark the field as registered in the diag_files
-  else
-     !> The variable is a scalar
-    fms_diag_object%field_obj%type_of_domain = NO_DOMAIN
-    fms_diag_object%field_obj%domain => null()
+  elseif (present(axes)) then !only axes present
+    do i = 1, size(file_ids)
+     fileptr => fms_diag_object%FMS_diag_files(file_ids(i))%FMS_diag_file
+     call fileptr%add_field_id(fieldptr%get_id())
+     call fileptr%set_domain_from_axis(axes)
+     call fileptr%add_axes(axes)
+    enddo
+  elseif (present(init_time)) then !only inti time present
+    do i = 1, size(file_ids)
+     fileptr => fms_diag_object%FMS_diag_files(file_ids(i))%FMS_diag_file
+     call fileptr%add_field_id(fieldptr%get_id())
+     call fileptr%add_start_time(init_time)
+    enddo
+  else !no axis or init time present
+    do i = 1, size(file_ids)
+     fileptr => fms_diag_object%FMS_diag_files(file_ids(i))%FMS_diag_file
+     call fileptr%add_field_id(fieldptr%get_id())
+    enddo
   endif
+  nullify (fileptr)
+  nullify (fieldptr)
+     !TODO:
+     !!     Mark the field as registered in the diag_files 
+     !!     DO we actually need this?
 
-!> get the optional arguments if included and the diagnostic is in the diag table
-  if (present(longname))      fms_diag_object%field_obj%longname      = trim(longname)
-  if (present(standname))     fms_diag_object%field_obj%standname     = trim(standname)
-  if (present(units))         fms_diag_object%field_obj%units         = trim(units)
-  if (present(realm))         fms_diag_object%field_obj%realm         = trim(realm)
-  if (present(interp_method)) fms_diag_object%field_obj%interp_method = trim(interp_method)
-  if (present(tile_count)) then
-    allocate(fms_diag_object%field_obj%tile_count)
-    fms_diag_object%field_obj%tile_count = tile_count
-  endif
-
-  if (present(missing_value)) then
-    select type (missing_value)
-     type is (integer(kind=i4_kind))
-             allocate(integer(kind=i4_kind) :: fms_diag_object%field_obj%missing_value)
-             fms_diag_object%field_obj%missing_value = missing_value
-     type is (integer(kind=i8_kind))
-             allocate(integer(kind=i8_kind) :: fms_diag_object%field_obj%missing_value)
-             fms_diag_object%field_obj%missing_value = missing_value
-     type is (real(kind=r4_kind))
-             allocate(integer(kind=r4_kind) :: fms_diag_object%field_obj%missing_value)
-             fms_diag_object%field_obj%missing_value = missing_value
-     type is (real(kind=r8_kind))
-             allocate(integer(kind=r8_kind) :: fms_diag_object%field_obj%missing_value)
-             fms_diag_object%field_obj%missing_value = missing_value
-     class default
-             call mpp_error("fms_register_diag_field_obj", &
-                     "The missing value passed to register a diagnostic is not a r8, r4, i8, or i4",&
-                     FATAL)
-    end select
-  else
-      allocate(real :: fms_diag_object%field_obj%missing_value)
-      select type (miss => fms_diag_object%field_obj%missing_value)
-       type is (real)
-        miss = real(CMOR_MISSING_VALUE)
-      end select
-  endif
-
-  if (present(varRANGE)) then
-    select type (varRANGE)
-     type is (integer(kind=i4_kind))
-             allocate(integer(kind=i4_kind) :: fms_diag_object%field_obj%data_RANGE(2))
-             fms_diag_object%field_obj%data_RANGE = varRANGE
-     type is (integer(kind=i8_kind))
-             allocate(integer(kind=i8_kind) :: fms_diag_object%field_obj%data_RANGE(2))
-             fms_diag_object%field_obj%data_RANGE = varRANGE
-     type is (real(kind=r4_kind))
-             allocate(integer(kind=r4_kind) :: fms_diag_object%field_obj%data_RANGE(2))
-             fms_diag_object%field_obj%data_RANGE = varRANGE
-     type is (real(kind=r8_kind))
-             allocate(integer(kind=r8_kind) :: fms_diag_object%field_obj%data_RANGE(2))
-             fms_diag_object%field_obj%data_RANGE = varRANGE
-     class default
-             call mpp_error("fms_register_diag_field_obj", &
-                     "The varRange passed to register a diagnostic is not a r8, r4, i8, or i4",&
-                     FATAL)
-    end select
-  else
-      allocate(real :: fms_diag_object%field_obj%data_RANGE(2))
-      select type (varRANGE => fms_diag_object%field_obj%data_RANGE)
-       type is (real)
-        varRANGE = real(CMOR_MISSING_VALUE)
-      end select
-  endif
-
-  if (present(area)) then
-    if (area < 0) call mpp_error("fms_register_diag_field_obj", &
-                     "The area id passed with field_name"//trim(varname)//" has not been registered."&
-                     "Check that there is a register_diag_field call for the AREA measure and that is in the"&
-                     "diag_table.yaml", FATAL)
-    allocate(fms_diag_object%field_obj%area)
-    fms_diag_object%field_obj%area = area
-  endif
-
-  if (present(volume)) then
-    if (volume < 0) call mpp_error("fms_register_diag_field_obj", &
-                     "The volume id passed with field_name"//trim(varname)//" has not been registered."&
-                     "Check that there is a register_diag_field call for the VOLUME measure and that is in the"&
-                     "diag_table.yaml", FATAL)
-    allocate(fms_diag_object%field_obj%volume)
-    fms_diag_object%field_obj%volume = volume
-  endif
-
-  if (present(mask_variant)) then
-    allocate(fms_diag_object%field_obj%mask_variant)
-    fms_diag_object%field_obj%mask_variant = mask_variant
-  endif
-
-  if (present(do_not_log)) then
-    allocate(fms_diag_object%field_obj%do_not_log)
-    fms_diag_object%field_obj%do_not_log = do_not_log
-  endif
-
- !< Allocate space for any additional variable attributes
- !< These will be fill out when calling `diag_field_add_attribute`
- allocate(fms_diag_object%field_obj%attributes(max_field_attributes))
- fms_diag_object%field_obj%num_attributes = 0
- fms_diag_object%field_obj%registered = .true.
 #endif
 end subroutine fms_register_diag_field_obj
 
   !> @brief Registers a scalar field
   !! @return field index for subsequent call to send_data.
-  INTEGER FUNCTION fms_register_diag_field_scalar(module_name, field_name, init_time, &
+INTEGER FUNCTION fms_register_diag_field_scalar(fms_diag_object,module_name, field_name, init_time, &
        & long_name, units, missing_value, var_range, standard_name, do_not_log, err_msg,&
        & area, volume, realm)
+    class(fmsDiagObject_type),TARGET,INTENT(inout):: fms_diag_object       !< Diaj_obj to fill
     CHARACTER(len=*),           INTENT(in) :: module_name   !< Module where the field comes from
     CHARACTER(len=*),           INTENT(in) :: field_name    !< Name of the field
     TYPE(time_type),  OPTIONAL, INTENT(in) :: init_time     !< Time to start writing data from
@@ -279,21 +220,23 @@ end subroutine fms_register_diag_field_obj
     registered_variables = registered_variables + 1
     fms_register_diag_field_scalar = registered_variables
 
-    call diag_objs(registered_variables)%setID(registered_variables)
-    call diag_objs(registered_variables)%register(module_name, field_name, diag_field_indices, init_time=init_time, &
+    call fms_diag_object%FMS_diag_fields(registered_variables)%setID(registered_variables)
+    call fms_diag_object%FMS_diag_fields(registered_variables)%register(&
+      & module_name, field_name, diag_field_indices, init_time=init_time, &
       & longname=long_name, units=units, missing_value=missing_value, varrange=var_range, &
       & standname=standard_name, do_not_log=do_not_log, err_msg=err_msg, &
       & area=area, volume=volume, realm=realm)
     deallocate(diag_field_indices)
 #endif
 
-  end function fms_register_diag_field_scalar
+end function fms_register_diag_field_scalar
 
     !> @brief Registers an array field
   !> @return field index for subsequent call to send_data.
-  INTEGER FUNCTION fms_register_diag_field_array(module_name, field_name, axes, init_time, &
+INTEGER FUNCTION fms_register_diag_field_array(fms_diag_object, module_name, field_name, axes, init_time, &
        & long_name, units, missing_value, var_range, mask_variant, standard_name, verbose,&
        & do_not_log, err_msg, interp_method, tile_count, area, volume, realm)
+    class(fmsDiagObject_type),TARGET,INTENT(inout):: fms_diag_object       !< Diaj_obj to fill
     CHARACTER(len=*),           INTENT(in) :: module_name   !< Module where the field comes from
     CHARACTER(len=*),           INTENT(in) :: field_name    !< Name of the field
     INTEGER,                    INTENT(in) :: axes(:)       !< Ids corresponding to the variable axis
@@ -330,8 +273,9 @@ end subroutine fms_register_diag_field_obj
     registered_variables = registered_variables + 1
     fms_register_diag_field_array = registered_variables
 
-    call diag_objs(registered_variables)%setID(registered_variables)
-    call diag_objs(registered_variables)%register(module_name, field_name, diag_field_indices, init_time=init_time, &
+    call fms_diag_object%FMS_diag_fields(registered_variables)%setID (registered_variables)
+    call fms_diag_object%FMS_diag_fields(registered_variables)%register( &
+      & module_name, field_name, diag_field_indices, init_time=init_time, &
       & axes=axes, longname=long_name, units=units, missing_value=missing_value, varrange=var_range, &
       & mask_variant=mask_variant, standname=standard_name, do_not_log=do_not_log, err_msg=err_msg, &
       & interp_method=interp_method, tile_count=tile_count, area=area, volume=volume, realm=realm)
@@ -342,9 +286,10 @@ end function fms_register_diag_field_array
 
 !> @brief Return field index for subsequent call to send_data.
 !! @return field index for subsequent call to send_data.
-INTEGER FUNCTION fms_register_static_field(module_name, field_name, axes, long_name, units,&
+INTEGER FUNCTION fms_register_static_field(fms_diag_object, module_name, field_name, axes, long_name, units,&
        & missing_value, range, mask_variant, standard_name, DYNAMIC, do_not_log, interp_method,&
        & tile_count, area, volume, realm)
+    class(fmsDiagObject_type),TARGET,INTENT(inout):: fms_diag_object       !< Diaj_obj to fill
     CHARACTER(len=*),                         INTENT(in) :: module_name   !< Name of the module, the field is on
     CHARACTER(len=*),                         INTENT(in) :: field_name    !< Name of the field
     INTEGER,          DIMENSION(:),           INTENT(in) :: axes          !< Axes_id of the field
@@ -383,15 +328,47 @@ INTEGER FUNCTION fms_register_static_field(module_name, field_name, axes, long_n
     registered_variables = registered_variables + 1
     fms_register_static_field = registered_variables
 
-    call diag_objs(registered_variables)%setID(registered_variables)
-    allocate(diag_objs(registered_variables)%static)
-    diag_objs(registered_variables)%static = .true.
-    call diag_objs(registered_variables)%register(module_name, field_name, diag_field_indices, axes=axes, &
+    call fms_diag_object%FMS_diag_fields(registered_variables)%setID(registered_variables)
+! Include static as optional variable to register here
+    call fms_diag_object%FMS_diag_fields(registered_variables)%register( &
+      & module_name, field_name, diag_field_indices, axes=axes, &
       & longname=long_name, units=units, missing_value=missing_value, varrange=range, &
-      & standname=standard_name, do_not_log=do_not_log, area=area, volume=volume, realm=realm)
+      & standname=standard_name, do_not_log=do_not_log, area=area, volume=volume, realm=realm, &
+      & static=.true.)
     deallocate(diag_field_indices)
 #endif
 end function fms_register_static_field
 
+!> @brief Add a attribute to the diag_obj using the diag_field_id
+subroutine fms_diag_field_add_attribute(fms_diag_object, diag_field_id, att_name, att_value)
+  class(fmsDiagObject_type), intent (inout) :: fms_diag_object !< The diag object
+  integer,          intent(in) :: diag_field_id      !< Id of the axis to add the attribute to
+  character(len=*), intent(in) :: att_name     !< Name of the attribute
+  class(*),         intent(in) :: att_value(:) !< The attribute value to add
 
-end fms_diag_object_mod
+  if (fms_diag_object%FMS_diag_fields(diag_field_id)%is_registered() ) then
+    call fms_diag_object%FMS_diag_fields(diag_field_id)%add_attribute(att_name, att_value)
+  else
+ !TODO: add error call
+  endif
+end subroutine fms_diag_field_add_attribute
+!> \brief Gets the diag field ID from the module name and field name.
+!> \returns a copy of the ID of the diag field or DIAG_FIELD_NOT_FOUND if the field is not registered
+PURE FUNCTION fms_get_diag_field_id_from_name(fms_diag_object, module_name, field_name) &
+  result(diag_field_id)
+  class(fmsDiagObject_type), intent (in) :: fms_diag_object !< The diag object
+  CHARACTER(len=*), INTENT(in) :: module_name !< Module name that registered the variable
+  CHARACTER(len=*), INTENT(in) :: field_name !< Variable name
+  integer :: diag_field_id
+  integer :: i !< For looping
+!> Initialize to not found 
+  diag_field_id = DIAG_FIELD_NOT_FOUND
+!> Loop through fields to find it.
+  if (registered_variables < 1) return
+  do i=1,registered_variables
+   diag_field_id = fms_diag_object%FMS_diag_fields(i)%id_from_name(module_name, field_name)
+   if(diag_field_id .ne. DIAG_FIELD_NOT_FOUND) return
+  enddo
+END FUNCTION fms_get_diag_field_id_from_name
+
+end module fms_diag_object_mod
