@@ -53,6 +53,9 @@ setup_test () {
 _EOF
 }
 
+test_expect_success "buffer functionality" '
+  mpirun -n 1 ./test_diag_buffer
+'
 # create and enter directory for in/output files
 output_dir
 
