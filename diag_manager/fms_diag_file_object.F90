@@ -24,13 +24,12 @@
 !! a pointer to the information from the diag yaml, additional metadata that comes from the model, and a
 !! list of the variables and their variable IDs that are in the file.
 module fms_diag_file_object_mod
+#ifdef use_yaml
 use fms2_io_mod, only: FmsNetcdfFile_t, FmsNetcdfUnstructuredDomainFile_t, FmsNetcdfDomainFile_t
 use diag_data_mod, only: DIAG_NULL, NO_DOMAIN, max_axes, SUB_REGIONAL, get_base_time, DIAG_NOT_REGISTERED
 use diag_util_mod, only: diag_time_inc
 use time_manager_mod, only: time_type, operator(/=), operator(==)
-#ifdef use_yaml
 use fms_diag_yaml_mod, only: diag_yaml, diagYamlObject_type, diagYamlFiles_type
-#endif
 use fms_diag_axis_object_mod, only: diagDomain_t, get_domain_and_domain_type
 use mpp_mod, only: mpp_error, FATAL
 implicit none
@@ -54,9 +53,7 @@ type :: fmsDiagFile_type
   !< This will be used when using the new_file_freq keys in the diag_table.yaml
   TYPE(time_type) :: next_open        !< The next time to open the file
   class(FmsNetcdfFile_t), allocatable :: fileobj !< fms2_io file object for this history file
-#ifdef use_yaml
   type(diagYamlFiles_type), pointer :: diag_yaml_file => null() !< Pointer to the diag_yaml_file data
-#endif
   integer                                      :: type_of_domain !< The type of domain to use to open the file
                                                                  !! NO_DOMAIN, TWO_D_DOMAIN, UG_DOMAIN, SUB_REGIONAL
   class(diagDomain_t), pointer                 :: domain         !< The domain to use,
@@ -74,13 +71,11 @@ type :: fmsDiagFile_type
   procedure, public :: add_field_id
   procedure, public :: has_file_metadata_from_model
   procedure, public :: has_fileobj
-#ifdef use_yaml
   procedure, public :: has_diag_yaml_file
   procedure, public :: set_domain_from_axis
   procedure, public :: set_file_domain
   procedure, public :: add_axes
   procedure, public :: add_start_time
-#endif
   procedure, public :: has_field_ids
   procedure, public :: get_id
 ! TODO  procedure, public :: get_fileobj ! TODO
@@ -88,7 +83,6 @@ type :: fmsDiagFile_type
   procedure, public :: get_file_metadata_from_model
   procedure, public :: get_field_ids
 ! The following fuctions come will use the yaml inquiry functions
-#ifdef use_yaml
  procedure, public :: get_file_fname
  procedure, public :: get_file_frequnit
  procedure, public :: get_file_freq
@@ -116,7 +110,6 @@ type :: fmsDiagFile_type
  procedure, public :: has_file_duration_units
  procedure, public :: has_file_varlist
  procedure, public :: has_file_global_meta
-#endif
 
 end type fmsDiagFile_type
 type, extends (fmsDiagFile_type) :: subRegionalFile_type
@@ -135,7 +128,6 @@ contains
 !< @brief Allocates the number of files and sets an ID based for each file
 !! @return true if there are files allocated in the YAML object
 logical function fms_diag_files_object_init (files_array)
-#ifdef use_yaml
   class(fmsDiagFileContainer_type), allocatable, target, intent(inout) :: files_array (:) !< array of diag files
   class(fmsDiagFile_type), pointer :: obj => null() !< Pointer for each member of the array
   integer :: nFiles !< Number of files in the diag yaml
@@ -192,9 +184,6 @@ logical function fms_diag_files_object_init (files_array)
 !  mpp_error("fms_diag_files_object_init: The diag_table.yaml file has not been correctly parsed.",&
 !    FATAL)
   endif
-#else
-  fms_diag_files_object_init = .false.
-#endif
 end function fms_diag_files_object_init
 !> \brief Adds a field ID to the file
 subroutine add_field_id (obj, new_field_id)
@@ -225,14 +214,12 @@ pure logical function has_fileobj (obj)
   class(fmsDiagFile_type), intent(in) :: obj !< The file object
   has_fileobj = allocated(obj%fileobj)
 end function has_fileobj
-#ifdef use_yaml
 !> \brief Logical function to determine if the variable diag_yaml_file has been allocated or associated
 !! \return .True. if diag_yaml_file exists .False. if diag_yaml has not been set
 pure logical function has_diag_yaml_file (obj)
   class(fmsDiagFile_type), intent(in) :: obj !< The file object
   has_diag_yaml_file = associated(obj%diag_yaml_file)
 end function has_diag_yaml_file
-#endif
 !> \brief Logical function to determine if the variable field_ids has been allocated or associated
 !! \return .True. if field_ids exists .False. if field_ids has not been set
 pure logical function has_field_ids (obj)
@@ -259,13 +246,11 @@ end function get_id
 !! TODO
 !!> \brief Returns a copy of the value of diag_yaml_file
 !!! \return A copy of diag_yaml_file
-!#ifdef use_yaml
 !pure function get_diag_yaml_file (obj) result (res)
 !  class(fmsDiagFile_type), intent(in) :: obj !< The file object
 !  type(diagYamlFiles_type) :: res
 !  res = obj%diag_yaml_file
 !end function get_diag_yaml_file
-!#endif
 !> \brief Returns a copy of the value of file_metadata_from_model
 !! \return A copy of file_metadata_from_model
 pure function get_file_metadata_from_model (obj) result (res)
@@ -282,7 +267,6 @@ pure function get_field_ids (obj) result (res)
   res = obj%field_ids
 end function get_field_ids
 !!!!!!!!! Functions from diag_yaml_file
-#ifdef use_yaml
 !> \brief Returns a copy of file_fname from the yaml object
 !! \return Copy of file_fname
 pure function get_file_fname (obj) result(res)

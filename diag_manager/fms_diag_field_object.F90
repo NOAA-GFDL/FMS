@@ -7,6 +7,7 @@ module fms_diag_field_object_mod
 !! The procedures of this object and the types are all in this module.  The fms_dag_object is a type
 !! that contains all of the information of the variable.  It is extended by a type that holds the
 !! appropriate buffer for the data for manipulation.
+#ifdef use_yaml
 use diag_data_mod,  only: diag_null, CMOR_MISSING_VALUE, diag_null_string
 use diag_data_mod,  only: r8, r4, i8, i4, string, null_type_int, NO_DOMAIN
 use diag_data_mod,  only: max_field_attributes, fmsDiagAttribute_type
@@ -15,10 +16,8 @@ use diag_data_mod,  only: diag_null, diag_not_found, diag_not_registered, diag_r
 
 use diag_axis_mod,  only: diag_axis_type
 use mpp_mod, only: fatal, note, warning, mpp_error
-#ifdef use_yaml
 use fms_diag_yaml_mod, only:  diagYamlFilesVar_type, get_diag_fields_entries, get_diag_files_id, &
   & find_diag_field, get_num_unique_fields
-#endif
 use fms_diag_axis_object_mod, only: diagDomain_t, get_domain_and_domain_type
 use time_manager_mod, ONLY: time_type
 !!!set_time, set_date, get_time, time_type, OPERATOR(>=), OPERATOR(>),&
@@ -32,11 +31,9 @@ implicit none
 
 !> \brief Object that holds all variable information
 type fmsDiagField_type
-#ifdef use_yaml
      type (diagYamlFilesVar_type), allocatable, dimension(:) :: diag_field !< info from diag_table for this variable
      integer,                      allocatable, dimension(:) :: file_ids   !< Ids of the FMS_diag_files the variable
                                                                            !! belongs to
-#endif
      integer, allocatable, private                    :: diag_id           !< unique id for varable
      type(fmsDiagAttribute_type), allocatable         :: attributes(:)     !< attributes for the variable
      integer,              private                    :: num_attributes    !< Number of attributes currently added
@@ -170,10 +167,8 @@ end subroutine fms_diag_field_object_end
 logical function fms_diag_fields_object_init(ob)
   class (fmsDiagField_type), allocatable, intent(inout) :: ob(:) !< diag field object
   integer :: i !< For looping
-#ifdef use_yaml
   allocate(ob(get_num_unique_fields()))
   registered_variables = 0
-#endif
   do i = 1,size(ob)
       ob(i)%diag_id = diag_not_registered !null_ob%diag_id
       ob(i)%registered = .false.
@@ -218,7 +213,6 @@ subroutine fms_register_diag_field_obj &
  integer :: i !< For do loops
  integer :: j !< dobj%file_ids(i) (for less typing :)
 
-#ifdef use_yaml
 !> Fill in information from the register call
   dobj%varname = trim(varname)
   dobj%modname = trim(modname)
@@ -335,7 +329,6 @@ subroutine fms_register_diag_field_obj &
  allocate(dobj%attributes(max_field_attributes))
  dobj%num_attributes = 0
  dobj%registered = .true.
-#endif
 end subroutine fms_register_diag_field_obj
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !> \brief Sets the diag_id.  This can only be done if a variable is unregistered
@@ -961,5 +954,5 @@ PURE FUNCTION diag_field_id_from_name(diag_objs, module_name, field_name) &
         diag_field_id = diag_objs%get_id()
   endif
 end function diag_field_id_from_name
-
+#endif
 end module fms_diag_field_object_mod

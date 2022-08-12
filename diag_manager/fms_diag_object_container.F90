@@ -40,6 +40,7 @@
 !> @addtogroup fms_diag_object_container_mod
 !> @{
 MODULE fms_diag_object_container_mod
+#ifdef use_yaml
    use fms_diag_field_object_mod, only: fmsDiagField_type
    USE fms_mod, ONLY: error_mesg, FATAL, WARNING, NOTE
 
@@ -284,7 +285,7 @@ contains
      this%the_linked_list =>null()
    end subroutine destructor
 
-
+#endif
 end module fms_diag_object_container_mod
 !> @}
 ! close documentation grouping

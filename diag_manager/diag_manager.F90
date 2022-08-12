@@ -239,8 +239,8 @@ use platform_mod
 #ifdef use_yaml
   use fms_diag_yaml_mod, only: diag_yaml_object_init, diag_yaml_object_end, get_num_unique_fields, find_diag_field
   use fms_diag_axis_object_mod, only: fms_diag_axis_object_end, fms_diag_axis_object_init
-  use fms_diag_object_mod, only:fms_diag_object
 #endif
+  use fms_diag_object_mod, only:fms_diag_object
 
   USE constants_mod, ONLY: SECONDS_PER_DAY
 
