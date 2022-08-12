@@ -28,6 +28,7 @@ use fms_diag_file_object_mod, only: fmsDiagFileContainer_type, fmsDiagFile_type,
 use fms_diag_field_object_mod, only: fmsDiagField_type, fms_diag_fields_object_init
 use fms_diag_yaml_mod, only: diag_yaml_object_init, find_diag_field, get_diag_files_id
 use fms_diag_axis_object_mod, only: fms_diag_axis_object_init
+use fms_diag_buffer_mod
 #endif
 implicit none
 private
@@ -38,6 +39,12 @@ type fmsDiagObject_type
 private
   class(fmsDiagFileContainer_type), allocatable :: FMS_diag_files (:) !< array of diag files
   class(fmsDiagField_type), allocatable :: FMS_diag_fields(:) !< Array of diag fields
+  class(fmsDiagBufferContainer_type), allocatable :: FMS_diag_buffers_0d(:)!this could be one array
+  class(fmsDiagBufferContainer_type), allocatable :: FMS_diag_buffers_1d(:)
+  class(fmsDiagBufferContainer_type), allocatable :: FMS_diag_buffers_2d(:)
+  class(fmsDiagBufferContainer_type), allocatable :: FMS_diag_buffers_3d(:)
+  class(fmsDiagBufferContainer_type), allocatable :: FMS_diag_buffers_4d(:)
+  class(fmsDiagBufferContainer_type), allocatable :: FMS_diag_buffers_5d(:)
   integer, private :: registered_variables !< Number of registered variables
   logical, private :: initialized=.false. !< True if the fmsDiagObject is initialized
   logical, private :: files_initialized=.false. !< True if the fmsDiagObject is initialized
@@ -54,6 +61,7 @@ private
     procedure :: fms_diag_field_add_attribute
     procedure :: fms_get_diag_field_id_from_name
     procedure :: diag_end => fms_diag_object_end
+    procedure :: get_diag_buffer 
 end type fmsDiagObject_type
 
 type (fmsDiagObject_type), target :: fms_diag_object
@@ -81,12 +89,18 @@ subroutine fms_diag_object_init (obj,diag_subset_output)
 
 !TODO: Read name list
 !TODO: Read YAML
-!TODO: allocate the file, field, and buffer containers
 ! allocate(diag_objs(get_num_unique_fields()))
   CALL diag_yaml_object_init(diag_subset_output)
   CALL fms_diag_axis_object_init()
   obj%files_initialized = fms_diag_files_object_init(obj%FMS_diag_files)
   obj%fields_initialized = fms_diag_fields_object_init (obj%FMS_diag_fields)
+  obj%buffers_initialized = fms_diag_buffer_init(obj%FMS_diag_buffers_0d) .and. &
+                            fms_diag_buffer_init(obj%FMS_diag_buffers_1d) .and. &
+                            fms_diag_buffer_init(obj%FMS_diag_buffers_2d) .and. &
+                            fms_diag_buffer_init(obj%FMS_diag_buffers_3d) .and. &
+                            fms_diag_buffer_init(obj%FMS_diag_buffers_4d) .and. &
+                            fms_diag_buffer_init(obj%FMS_diag_buffers_5d)
+                             
  registered_variables = 0
  obj%initialized = .true.
 #else
@@ -384,4 +398,30 @@ PURE FUNCTION fms_get_diag_field_id_from_name(fms_diag_object, module_name, fiel
   enddo
 #endif
 END FUNCTION fms_get_diag_field_id_from_name
+
+!> returns the buffer object for the given id
+!! actual data comes from %get_buffer_data() on the returned object
+function get_diag_buffer(fms_diag_object, dims, bufferid) &
+result(rslt)
+    class(fmsDiagObject_type), intent(in) :: fms_diag_object
+    integer, intent(in)                   :: dims, bufferid
+    class(fmsDiagBuffer_class),allocatable:: rslt
+    select case(dims)
+        case(0)
+            rslt = fms_diag_object%FMS_diag_buffers_0d(bufferid)%buffer_obj
+        case(1)
+            rslt = fms_diag_object%FMS_diag_buffers_1d(bufferid)%buffer_obj
+        case(2)
+            rslt = fms_diag_object%FMS_diag_buffers_2d(bufferid)%buffer_obj
+        case(3)
+            rslt = fms_diag_object%FMS_diag_buffers_3d(bufferid)%buffer_obj
+        case(4)
+            rslt = fms_diag_object%FMS_diag_buffers_4d(bufferid)%buffer_obj
+        case(5)
+            rslt = fms_diag_object%FMS_diag_buffers_5d(bufferid)%buffer_obj
+        case default
+            call mpp_error(FATAL, 'get_diag_buffer:invalid dimension given')
+    end select
+end function
+
 end module fms_diag_object_mod

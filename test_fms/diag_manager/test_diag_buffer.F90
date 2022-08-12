@@ -23,14 +23,6 @@ program test_diag_bufer
     integer :: i
     real(4) :: arr(9) 
 
-    !procedure :: get_remapped_buffer_pointer
-    !procedure :: get_area
-    !procedure :: get_volume
-    !procedure :: get_missing_value
-    !procedure :: get_data_RANGE
-    !cedure :: allocate_buffer => allocate_buffer_0d
-    !procedure :: get_buffer => get_buffer_0d
-    !procedure :: initialize_buffer => initialize_buffer_0d
          
     !! 0d
     ! allocate some buffers
@@ -50,16 +42,6 @@ program test_diag_bufer
         print *, buffer_out
     end select
     call print_5d(remap_buffer_out)
-    ! check output from list with id
-    select type (tmp => get_buffer_object(9, 0))
-        type is (buffer0d)
-            buffer_out = tmp%get_buffer()
-    end select
-    select type (buffer_out)
-      type is(real(8))
-        print *, buffer_out
-    end select
-    ! check add
 
     !! 1d
     ! allocate a buffer to the given type and get it's id

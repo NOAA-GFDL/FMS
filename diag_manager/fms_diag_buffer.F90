@@ -50,16 +50,16 @@ type, abstract :: fmsDiagBuffer_class
 end type fmsDiagBuffer_class
 
 !> holds pointer to allocated buffer0-5d objects
-type :: fmsDiagBuffer_type
+type :: fmsDiagBufferContainer_type
     class(fmsDiagBuffer_class), pointer :: buffer_obj
 end type
 
-!> Scalar buffer type to extend fmsDiagBuffer_type
+!> Scalar buffer type to extend fmsDiagBufferContainer_type
 type, extends(fmsDiagBuffer_class) :: buffer0d
     class(*), allocatable :: buffer
     contains
     procedure :: allocate_buffer => allocate_buffer_0d
-    procedure :: get_buffer => get_buffer_0d
+    procedure :: get_buffer_data => get_buffer_0d
     procedure :: initialize_buffer => initialize_buffer_0d
     procedure :: add_to_buffer => add_to_buffer_0d
 
@@ -71,7 +71,7 @@ type, extends(fmsDiagBuffer_class) :: buffer1d
     contains
     ! TODO add
     procedure :: allocate_buffer => allocate_buffer_1d
-    procedure :: get_buffer => get_buffer_1d
+    procedure :: get_buffer_data => get_buffer_1d
     procedure :: initialize_buffer => initialize_buffer_1d
     procedure :: add_to_buffer => add_to_buffer_1d
 end type buffer1d
@@ -82,7 +82,7 @@ type, extends(fmsDiagBuffer_class) :: buffer2d
     contains
     ! TODO add
     procedure :: allocate_buffer => allocate_buffer_2d
-    procedure :: get_buffer => get_buffer_2d
+    procedure :: get_buffer_data => get_buffer_2d
     procedure :: initialize_buffer => initialize_buffer_2d
     procedure :: add_to_buffer => add_to_buffer_2d
 end type buffer2d
@@ -93,7 +93,7 @@ type, extends(fmsDiagBuffer_class) :: buffer3d
     contains
     ! TODO add 
     procedure :: allocate_buffer => allocate_buffer_3d
-    procedure :: get_buffer => get_buffer_3d
+    procedure :: get_buffer_data => get_buffer_3d
     procedure :: initialize_buffer => initialize_buffer_3d
     procedure :: add_to_buffer => add_to_buffer_3d
 end type buffer3d
@@ -104,8 +104,9 @@ type, extends(fmsDiagBuffer_class) :: buffer4d
     contains
     !! TODO add
     procedure :: allocate_buffer => allocate_buffer_4d
-    procedure :: get_buffer => get_buffer_4d
+    procedure :: get_buffer_data => get_buffer_4d
     procedure :: initialize_buffer => initialize_buffer_4d
+    procedure :: add_to_buffer => add_to_buffer_4d
 end type buffer4d
 
 !> 5D buffer type to extend fmsDiagBuffer_class
@@ -114,8 +115,9 @@ type, extends(fmsDiagBuffer_class) :: buffer5d
     contains
     ! TODO  add
     procedure :: allocate_buffer => allocate_buffer_5d
-    procedure :: get_buffer => get_buffer_5d
+    procedure :: get_buffer_data => get_buffer_5d
     procedure :: initialize_buffer => initialize_buffer_5d
+    procedure :: add_to_buffer => add_to_buffer_5d
 end type buffer5d
 
 ! public types
@@ -126,26 +128,14 @@ public :: buffer3d
 public :: buffer4d
 public :: buffer5d
 public :: fmsDiagBuffer_class
-public :: fmsDiagBuffer_type
+public :: fmsDiagBufferContainer_type
 ! public routines
-public :: get_buffer_object
+public :: fms_diag_buffer_init 
 ! Module variables
 logical,private :: module_is_initialized = .false. !< Flag indicating if the module is initialized
-integer, private :: num_buffers(0:5) = 0 !< Number of available buffers, index refers to dimensions of buffer
-integer, private, parameter :: BUFFER_LIST_SIZE = 64 !< default amount of buffers to allocate buffer_lists for 
-!logical, private :: buffer_id_used(0:5, BUFFER_LIST_SIZE) !! TODO reuse flushed buffers with this
+integer, parameter :: DEFAULT_BUFFER_LIST_SIZE = 64
+integer         :: num_buffers = 0 !< number of buffers allocated, might be better in diag_object
 
-!> this ?
-!type(fmsDiagBuffer_type), public, ALLOCATABLE, target :: buffer_list(:,:) !< Array of buffer objects
-                                                    !! (dimensions of buffer, buffer id)
-!> or this?
-!! going with this way for now, this way we don't have to allocate a big array if we're only using certain buffers 
-type(fmsDiagBuffer_type), public, allocatable :: buffer_list_0d(:) !< Array of buffer objects
-type(fmsDiagBuffer_type), public, allocatable :: buffer_list_1d(:) !< Array of buffer objects
-type(fmsDiagBuffer_type), public, allocatable :: buffer_list_2d(:) !< Array of buffer objects
-type(fmsDiagBuffer_type), public, allocatable :: buffer_list_3d(:) !< Array of buffer objects
-type(fmsDiagBuffer_type), public, allocatable :: buffer_list_4d(:) !< Array of buffer objects
-type(fmsDiagBuffer_type), public, allocatable :: buffer_list_5d(:) !< Array of buffer objects
 
 logical, parameter, private :: DEBUG = .true. !< debugging output
 
@@ -166,74 +156,20 @@ contains
 
 !!--------module routines
 
-!> Gets a buffer object from a given id
-function get_buffer_object(id, dimensions) &
+logical function fms_diag_buffer_init(buffobjs)
+    class(fmsDiagBufferContainer_type), allocatable, intent(out) :: buffobjs(:)
+    allocate(buffobjs(DEFAULT_BUFFER_LIST_SIZE))
+    fms_diag_buffer_init = allocated(buffobjs)
+end function
+
+!> creates a container type with the given buffer object
+function fms_diag_buffer_create_container(buffobj) &
 result(rslt)
-    integer :: id
-    integer :: dimensions 
-    class(fmsDiagBuffer_class), allocatable :: rslt 
-    if ( id .gt. BUFFER_LIST_SIZE .or. id .lt. 1) call mpp_error(FATAL, 'get_buffer_object: invalid buffer id')
-    select case(dimensions)
-        case(0) 
-            if ( .not. allocated(buffer_list_0d)) then 
-                call mpp_error (FATAL, 'get_buffer_object: buffer list not yet allocated for given dimension')
-            endif
-            rslt = buffer_list_0d(id)%buffer_obj
-        case(1) 
-            if ( .not. allocated(buffer_list_1d)) then 
-                call mpp_error (FATAL, 'get_buffer_object: buffer list not yet allocated for given dimension')
-            endif
-            rslt = buffer_list_1d(id)%buffer_obj
-        case(2) 
-            if ( .not. allocated(buffer_list_2d)) then 
-                call mpp_error (FATAL, 'get_buffer_object: buffer list not yet allocated for given dimension')
-            endif
-            rslt = buffer_list_2d(id)%buffer_obj
-        case(3) 
-            if ( .not. allocated(buffer_list_3d)) then 
-                call mpp_error (FATAL, 'get_buffer_object: buffer list not yet allocated for given dimension')
-            endif
-            rslt = buffer_list_3d(id)%buffer_obj
-        case(4) 
-            if ( .not. allocated(buffer_list_4d)) then 
-                call mpp_error (FATAL, 'get_buffer_object: buffer list not yet allocated for given dimension')
-            endif
-            rslt = buffer_list_4d(id)%buffer_obj
-        case(5) 
-            if ( .not. allocated(buffer_list_5d)) then 
-                call mpp_error (FATAL, 'get_buffer_object: buffer list not yet allocated for given dimension')
-            endif
-            rslt = buffer_list_5d(id)%buffer_obj
-        case default
-            call mpp_error( FATAL, 'get_buffer_object: invalid dimensions given, must be 0-5')
-    end select
+    class(fmsDiagBuffer_class), allocatable, target :: buffobj
+    class(fmsDiagBufferContainer_type), allocatable :: rslt
+    allocate(rslt)
+    rslt%buffer_obj => buffobj
 end function 
-
-! TODO reallocate arrays when needed, reuse id's 
-subroutine allocate_buffer_list(dimensions)
-    integer, intent(in) :: dimensions
-    if(num_buffers(dimensions)+1 .gt. BUFFER_LIST_SIZE ) then
-        call mpp_error(FATAL, 'allocate_buffer_list: buffer space exceeded')
-    endif
-    select case(dimensions)
-        case(0) 
-            if (.not. allocated(buffer_list_0d)) allocate(buffer_list_0d( BUFFER_LIST_SIZE ))
-        case(1) 
-            if (.not. allocated(buffer_list_1d)) allocate(buffer_list_1d( BUFFER_LIST_SIZE ))
-        case(2) 
-            if (.not. allocated(buffer_list_2d)) allocate(buffer_list_2d( BUFFER_LIST_SIZE ))
-        case(3) 
-            if (.not. allocated(buffer_list_3d)) allocate(buffer_list_3d( BUFFER_LIST_SIZE ))
-        case(4) 
-            if (.not. allocated(buffer_list_4d)) allocate(buffer_list_4d( BUFFER_LIST_SIZE ))
-        case(5) 
-            if (.not. allocated(buffer_list_5d)) allocate(buffer_list_5d( BUFFER_LIST_SIZE ))
-        case default
-            call mpp_error( FATAL, 'get_buffer_object: invalid dimensions given, must be 0-5')
-    end select
-
-end subroutine
-
 
 !!--------generic routines for any fmsDiagBuffer_class objects 
 
@@ -425,7 +361,6 @@ result(rslt)
        endif
 end function get_data_RANGE
 
-
 subroutine flush_buffer(buffobj)
     class(fmsDiagBuffer_class), intent(inout) :: buffobj
     select type (buffobj)
@@ -462,10 +397,8 @@ result(rslt)
     class(buffer0d), intent(inout), target :: buffobj !< scalar buffer object
     class(*),intent(in) :: mold !< allocates to the type of mold
     type(time_type), intent(in), optional :: init_time
-    type(fmsDiagBuffer_type), allocatable :: buff_type
+    type(fmsDiagBufferContainer_type), allocatable :: buff_type
 
-    num_buffers(0) = num_buffers(0) + 1
-    if(.not. allocated(buffer_list_0d) .or. num_buffers(0) .gt. BUFFER_LIST_SIZE) call allocate_buffer_list(0)
     select type (mold)
         type is (integer(kind=i4_kind))
             allocate(integer(kind=i4_kind) :: buffobj%buffer)
@@ -493,13 +426,10 @@ result(rslt)
     allocate(buffobj%tile_count)
     allocate(buffobj%area)
     allocate(buffobj%volume)
-    !! set buffer_id
-    rslt = num_buffers(0)
-    buffobj%buffer_id = num_buffers(0)
-    !! add to list
-    allocate(buff_type)
-    buff_type%buffer_obj => buffobj
-    buffer_list_0d(num_buffers(0)) = buff_type
+
+    num_buffers = num_buffers + 1
+    rslt = num_buffers
+    buffobj%buffer_id = num_buffers
 
 end function
 
@@ -509,10 +439,10 @@ result(rslt)
     class(buffer1d), intent(inout), target :: buffobj !< scalar buffer object
     class(*),intent(in) :: mold !< allocates to the type of mold
     integer, intent(in) :: size !< dimension bounds
-    type(fmsDiagBuffer_type), allocatable :: buff_type
+    type(fmsDiagBufferContainer_type), allocatable :: buff_type
 
-    if(.not. allocated(buffer_list_1d) .or. num_buffers(1)+1 .gt. BUFFER_LIST_SIZE) call allocate_buffer_list(1)
-    num_buffers(1) = num_buffers(1) + 1
+    !if(.not. allocated(buffer_list_1d) .or. num_buffers(1)+1 .gt. BUFFER_LIST_SIZE) call allocate_buffer_list(1)
+    !num_buffers(1) = num_buffers(1) + 1
 
     select type (mold)
         type is (integer(kind=i4_kind))
@@ -541,13 +471,9 @@ result(rslt)
     allocate(buffobj%tile_count)
     allocate(buffobj%area)
     allocate(buffobj%volume)
-    !! set buffer id
-    rslt = num_buffers(1)
-    buffobj%buffer_id = num_buffers(1)
-    !! add to list
-    allocate(buff_type)
-    buff_type%buffer_obj => buffobj
-    buffer_list_1d(num_buffers(1)) = buff_type
+    num_buffers = num_buffers + 1
+    rslt = num_buffers
+    buffobj%buffer_id = num_buffers
 
 end function
 !> allocates a 2D buffer to given mold type
@@ -556,10 +482,10 @@ result(rslt)
     class(buffer2d), intent(inout), target :: buffobj !< 2D buffer object
     class(*),intent(in) :: mold !< allocates to the type of mold
     integer, intent(in) :: sizes(2) !< dimension bounds
-    type(fmsDiagBuffer_type), allocatable :: buff_type
+    type(fmsDiagBufferContainer_type), allocatable :: buff_type
 
-    if(.not. allocated(buffer_list_2d) .or. num_buffers(2)+1 .gt. BUFFER_LIST_SIZE) call allocate_buffer_list(2)
-    num_buffers(2) = num_buffers(2) + 1
+    !if(.not. allocated(buffer_list_2d) .or. num_buffers(2)+1 .gt. BUFFER_LIST_SIZE) call allocate_buffer_list(2)
+    !num_buffers(2) = num_buffers(2) + 1
     select type (mold)
         type is (integer(kind=i4_kind))
             allocate(integer(kind=i4_kind) :: buffobj%buffer(sizes(1), sizes(2)))
@@ -587,13 +513,10 @@ result(rslt)
     allocate(buffobj%tile_count)
     allocate(buffobj%area)
     allocate(buffobj%volume)
-    !! set buffer id
-    rslt = num_buffers(2)
-    buffobj%buffer_id = num_buffers(2)
-    !! add to list
-    allocate(buff_type)
-    buff_type%buffer_obj => buffobj
-    buffer_list_2d(num_buffers(2)) = buff_type
+
+    num_buffers = num_buffers + 1
+    rslt = num_buffers
+    buffobj%buffer_id = num_buffers
 end function
 
 !> allocates a 3D buffer to given mold type
@@ -602,10 +525,10 @@ result(rslt)
     class(buffer3d), intent(inout), target :: buffobj !< 3D buffer object
     class(*),intent(in) :: mold !< allocates to the type of mold
     integer, intent(in) :: sizes(3) !< dimension sizes
-    type(fmsDiagBuffer_type), allocatable :: buff_type
+    type(fmsDiagBufferContainer_type), allocatable :: buff_type
 
-    if(.not. allocated(buffer_list_3d) .or. num_buffers(3)+1 .gt. BUFFER_LIST_SIZE) call allocate_buffer_list(3)
-    num_buffers(3) = num_buffers(3) + 1
+    !if(.not. allocated(buffer_list_3d) .or. num_buffers(3)+1 .gt. BUFFER_LIST_SIZE) call allocate_buffer_list(3)
+    !num_buffers(3) = num_buffers(3) + 1
     select type (mold)
         type is (integer(kind=i4_kind))
             allocate(integer(kind=i4_kind) :: buffobj%buffer( sizes(1),sizes(2), sizes(3)))
@@ -633,13 +556,9 @@ result(rslt)
     allocate(buffobj%tile_count)
     allocate(buffobj%area)
     allocate(buffobj%volume)
-    !! set buffer id
-    rslt = num_buffers(3)
-    buffobj%buffer_id = num_buffers(3)
-    !! add to list
-    allocate(buff_type)
-    buff_type%buffer_obj => buffobj
-    buffer_list_3d(num_buffers(3)) = buff_type
+    num_buffers = num_buffers + 1
+    rslt = num_buffers
+    buffobj%buffer_id = num_buffers
 end function
 
 !> allocates a 4D buffer to given mold type
@@ -648,10 +567,10 @@ result(rslt)
     class(buffer4d), intent(inout), target :: buffobj !< 4D buffer object
     class(*),intent(in) :: mold !< allocates to the type of mold
     integer, intent(in) :: sizes(4) !< dimension sizes
-    type(fmsDiagBuffer_type), allocatable :: buff_type
+    type(fmsDiagBufferContainer_type), allocatable :: buff_type
 
-    if(.not. allocated(buffer_list_4d) .or. num_buffers(4)+1 .gt. BUFFER_LIST_SIZE) call allocate_buffer_list(4)
-    num_buffers(4) = num_buffers(4) + 1
+    !if(.not. allocated(buffer_list_4d) .or. num_buffers(4)+1 .gt. BUFFER_LIST_SIZE) call allocate_buffer_list(4)
+    !num_buffers(4) = num_buffers(4) + 1
     select type (mold)
         type is (integer(kind=i4_kind))
             allocate(integer(kind=i4_kind) :: buffobj%buffer(sizes(1),sizes(2),sizes(3),sizes(4)))
@@ -679,13 +598,9 @@ result(rslt)
     allocate(buffobj%tile_count)
     allocate(buffobj%area)
     allocate(buffobj%volume)
-    !! set buffer id
-    rslt = num_buffers(4)
-    buffobj%buffer_id = num_buffers(4)
-    !! add to list
-    allocate(buff_type)
-    buff_type%buffer_obj => buffobj
-    buffer_list_4d(num_buffers(4)) = buff_type
+    num_buffers = num_buffers + 1
+    rslt = num_buffers
+    buffobj%buffer_id = num_buffers
 
 end function
 
@@ -695,10 +610,10 @@ result(rslt)
     class(buffer5d), intent(inout), target :: buffobj !< 5D buffer object
     class(*),intent(in) :: mold !< allocates to the type of mold
     integer, intent(in) :: sizes(5) !< dimension sizes
-    type(fmsDiagBuffer_type), allocatable :: buff_type
+    !type(fmsDiagBufferContainer_type), allocatable :: buff_type
 
-    if(.not. allocated(buffer_list_5d) .or. num_buffers(5)+1 .gt. BUFFER_LIST_SIZE) call allocate_buffer_list(5)
-    num_buffers(5) = num_buffers(5) + 1
+    !if(.not. allocated(buffer_list_5d) .or. num_buffers(5)+1 .gt. BUFFER_LIST_SIZE) call allocate_buffer_list(5)
+    !num_buffers(5) = num_buffers(5) + 1
     select type (mold)
         type is (integer(kind=i4_kind))
             allocate(integer(kind=i4_kind) :: buffobj%buffer(sizes(1),sizes(2),sizes(3),sizes(4),sizes(5)))
@@ -726,13 +641,9 @@ result(rslt)
     allocate(buffobj%tile_count)
     allocate(buffobj%area)
     allocate(buffobj%volume)
-    !! set buffer id
-    rslt = num_buffers(5)
-    buffobj%buffer_id = num_buffers(5)
-    !! add to list
-    allocate(buff_type)
-    buff_type%buffer_obj => buffobj
-    buffer_list_5d(num_buffers(5)) = buff_type
+    num_buffers = num_buffers + 1
+    rslt = num_buffers
+    buffobj%buffer_id = num_buffers
 end function
 
 !> @brief Gets buffer data from buffer0d type
