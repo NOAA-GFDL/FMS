@@ -457,7 +457,7 @@ type, private :: field_mgr_type
   character(len=fm_string_len)                        :: field_name
   integer                                             :: model, num_methods
 #ifdef use_yaml
-  type(method_type), dimension(:), allocatable        :: methods
+  type(method_type), dimension(:), allocatable        :: methods !< methods associated with this field name
 #else
   type(method_type)                                   :: methods(MAX_FIELD_METHODS)
 #endif
@@ -504,7 +504,7 @@ end type field_def
 !> @{
 
 #ifdef use_yaml
-type(field_mgr_type), dimension(:), allocatable, private :: fields
+type(field_mgr_type), dimension(:), allocatable, private :: fields !< fields of field_mgr_type
 #else
 type(field_mgr_type), private :: fields(MAX_FIELDS)
 #endif
@@ -538,6 +538,16 @@ contains
 !! needed within various modules. The field manager does not
 !! initialize any of those schemes however. It simply holds the
 !! information and is queried by the appropriate  module.
+!!
+!! The routine has two loops. The first loop initializes the my_table object
+!! and counts the number of fields contained therein. The second loop is the
+!! main loop that acts on each field in the my_table object, defining a list
+!! object (in the field_manager definition) from which various fm routines may be
+!! called, as well as populating the "fields" object and the "methods" objects
+!! within each field object. The "fields" and "methods" objects are then used
+!! with the subroutine new_name to append various characteristics to the list
+!! object. Note that the "fields" and "methods" objects are also used with other
+!! fm routines in a bit of a parallel system.
 subroutine field_manager_init(nfields, table_name)
 integer,                      intent(out), optional :: nfields    !< number of fields
 character(len=fm_string_len), intent(in),  optional :: table_name !< Name of the field table, default
@@ -546,15 +556,14 @@ character(len=fm_string_len)    :: tbl_name !< field_table yaml file
 character(len=fm_string_len)    :: method_control !< field_table yaml file
 integer                         :: h, i, j, k, l, m !< dummy integer buffer
 type (fmTable_t)                :: my_table       !< the field table
-integer                         :: model
-character(len=fm_path_name_len) :: list_name
-character(len=fm_string_len)    :: subparamvalue
-integer                         :: current_field
-integer                         :: index_list_name
-integer                         :: trim_method_control
-integer                         :: subparamindex
-logical                         :: fm_success
-logical                         :: subparams
+integer                         :: model !< model assocaited with the current field
+character(len=fm_path_name_len) :: list_name !< field_manager list name
+character(len=fm_string_len)    :: subparamvalue !< subparam value to be used when defining new name
+integer                         :: current_field !< field index within loop
+integer                         :: index_list_name !< integer used as check for "no field"
+integer                         :: subparamindex !< index to identify whether subparams exist for this field
+logical                         :: fm_success !< logical for whether fm_change_list was a success
+logical                         :: subparams !< logical whether subparams exist in this iteration
 
 if (module_is_initialized) then
    if(present(nfields)) nfields = num_fields
@@ -574,6 +583,7 @@ if (.not. file_exists(trim(tbl_name))) then
 endif
 
 
+! Define my_table object and read in number of fields
 my_table = fmTable_t(trim(tbl_name))
 call my_table%get_blocks
 call my_table%create_children
@@ -675,20 +685,18 @@ character(len=*), intent(in)    :: method_name_in !< The name of the method that
 character(len=*), intent(inout) :: val_name_in !< The value or values that will be parsed and
                                                !! used as the value when creating a new field or fields.
 
-character(len=fm_string_len)       :: method_name
-character(len=fm_string_len)       :: val_name
-integer, dimension(:), allocatable :: end_val
-integer, dimension(:), allocatable :: start_val
-integer                            :: i
-integer                            :: index_t
-integer                            :: num_elem
-integer                            :: out_unit
-integer                            :: val_int
-integer                            :: val_type
-logical                            :: append_new
-logical                            :: val_logic
-real                               :: val_real
-integer                            :: length
+character(len=fm_string_len)       :: method_name !< name of method to be attached to new list
+character(len=fm_string_len)       :: val_name !< value name (to be converted to appropriate type)
+integer, dimension(:), allocatable :: end_val !< end values in comma separated list
+integer, dimension(:), allocatable :: start_val !< start values in comma separated list
+integer                            :: i !< loop index
+integer                            :: index_t !< appending index
+integer                            :: num_elem !< number of elements in comma list
+integer                            :: val_int !< value when converted to integer
+integer                            :: val_type !< value type represented as integer for use in select case
+logical                            :: append_new !< whether or not to append to existing list structure
+logical                            :: val_logic !< value when converted to logical
+real                               :: val_real !< value when converted to real
 
 call strip_front_blanks(val_name_in)
 method_name = trim(method_name_in)
