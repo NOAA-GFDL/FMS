@@ -355,11 +355,12 @@ subroutine fms_diag_field_add_attribute(fms_diag_object, diag_field_id, att_name
   character(len=*), intent(in) :: att_name     !< Name of the attribute
   class(*),         intent(in) :: att_value(:) !< The attribute value to add
 #ifdef use_yaml
-
-  if (fms_diag_object%FMS_diag_fields(diag_field_id)%is_registered() ) then
-    call fms_diag_object%FMS_diag_fields(diag_field_id)%add_attribute(att_name, att_value)
+!TODO: Value for diag not found
+  if ( diag_field_id .LE. 0 ) THEN 
+    RETURN 
   else
- !TODO: add error call
+    if (fms_diag_object%FMS_diag_fields(diag_field_id)%is_registered() ) &
+      call fms_diag_object%FMS_diag_fields(diag_field_id)%add_attribute(att_name, att_value)
   endif
 #endif
 end subroutine fms_diag_field_add_attribute
