@@ -114,9 +114,9 @@ type diagYamlFiles_type
   character (len=MAX_STR_LEN), dimension(:), private, allocatable :: file_varlist !< An array of variable names
                                                                                   !! within a file
   character (len=MAX_STR_LEN), dimension(:,:), private, allocatable :: file_global_meta !< Array of key(dim=1)
-                                                                                        !! and values(dim=2) to be added as global
-                                                                                        !! meta data to the file
-
+                                                                                        !! and values(dim=2) to be
+                                                                                        !! added as global meta data to
+                                                                                        !! the file
  contains
 
  !> All getter functions (functions named get_x(), for member field named x)
@@ -230,6 +230,9 @@ type (diagYamlObject_type), target :: diag_yaml  !< Obj containing the contents 
 type (varList_type), save :: variable_list !< List of all the variables in the diag_table.yaml
 type (fileList_type), save :: file_list !< List of all files in the diag_table.yaml
 
+logical, private :: diag_yaml_module_initialized = .false.
+
+
 !> @addtogroup fms_diag_yaml_mod
 !> @{
 contains
@@ -317,6 +320,8 @@ subroutine diag_yaml_object_init(diag_subset_output)
   integer              :: file_count       !! The current number of files added to the diag_yaml obj
   logical              :: write_file       !< Flag indicating if the user wants the file to be written
   logical              :: write_var        !< Flag indicating if the user wants the variable to be written
+
+  if (diag_yaml_module_initialized) return
 
   diag_yaml_id = open_and_parse_file("diag_table.yaml")
 
@@ -417,6 +422,7 @@ subroutine diag_yaml_object_init(diag_subset_output)
   call fms_sort_this(variable_list%var_pointer, total_nvars, variable_list%diag_field_indices)
 
   deallocate(diag_file_ids)
+  diag_yaml_module_initialized = .true.
 end subroutine
 
 !> @brief Destroys the diag_yaml object

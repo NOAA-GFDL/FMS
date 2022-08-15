@@ -20,12 +20,12 @@
 !> @defgroup fms_diag_object_container_mod fms_diag_object_container_mod
 !> @ingroup diag_manager
 !> @brief fms_diag_object_container_mod defines a container class and iterator class
-!! for inserting, removing and searching for <TT>fmsDiagObject_type</TT> instances
+!! for inserting, removing and searching for <TT>fmsDiagField_type</TT> instances
 !!
 !> @author Miguel Zuniga
 !!
 !! <TT>fms_diag_object_container_mod</TT> defines a container for inserting, removing and
-!! searching for <TT>fmsDiagObject_type</TT> instances. It also defined an iterator for
+!! searching for <TT>fmsDiagField_type</TT> instances. It also defined an iterator for
 !! the data in the container. The value returned by the fms_diag_object function get_id()
 !! is used for search key comparison.
 !!
@@ -40,7 +40,8 @@
 !> @addtogroup fms_diag_object_container_mod
 !> @{
 MODULE fms_diag_object_container_mod
-   use fms_diag_object_mod, only: fmsDiagObject_type
+#ifdef use_yaml
+   use fms_diag_field_object_mod, only: fmsDiagField_type
    USE fms_mod, ONLY: error_mesg, FATAL, WARNING, NOTE
 
    !! Since this version is based on the FDS linked list:
@@ -48,7 +49,7 @@ MODULE fms_diag_object_container_mod
 
    implicit none
 
-   !> @brief A container of fmsDiagObject_type instances providing insert, remove ,
+   !> @brief A container of fmsDiagField_type instances providing insert, remove ,
    !!  find/search, and size public member functions. Iterator is provided by
    !!  the associated iterator class (see  dig_obj_iterator class).
    !!
@@ -101,7 +102,7 @@ contains
      class(FmsDiagObjIterator_t), intent (in), optional :: iiter
      !< An (optional) iterator over the searchable set.
       class(FmsDiagObjIterator_t) , allocatable :: riter !< The resultant iterator to the object.
-      class(fmsDiagObject_type),  pointer:: ptdo  !< A pointer to temporaty diagnostic object
+      class(fmsDiagField_type),  pointer:: ptdo  !< A pointer to temporaty diagnostic object
       integer :: status                        !< A status from iterator operations.
       !!
       if(present (iiter)) then
@@ -126,7 +127,7 @@ contains
    function insert_diag_object (this, id, obj) result (status)
       class (FmsDiagObjectContainer_t), intent (in out) :: this
       integer,  intent (in) :: id                     !< The id of the object to insert.
-      class(fmsDiagObject_type) , intent (in out) :: obj !< The object to insert
+      class(fmsDiagField_type) , intent (in out) :: obj !< The object to insert
       integer :: status                               !< The returned status. 0 for success.
       class(FmsDllIterator_t), allocatable ::  tliter   !< A temporary iterator.
 
@@ -243,13 +244,13 @@ contains
    function  literator_data( this ) result( rdo )
      class(FmsDiagObjIterator_t), intent(in) :: this
      !<The instance of the class that this function is bound to.
-      class(fmsDiagObject_type),  pointer :: rdo !< The resultant diagnostic object.
+      class(fmsDiagField_type),  pointer :: rdo !< The resultant diagnostic object.
       class(*),  pointer :: gp !< A eneric typed object in the container.
 
       rdo => null()
       gp  => this%liter%get()
       select type(gp)
-       type is (fmsDiagObject_type)  !! "type is", not the (polymorphic) "class is"
+       type is (fmsDiagField_type)  !! "type is", not the (polymorphic) "class is"
          rdo => gp
        class default
          call  error_mesg ('fms_diag_object_container:', &
@@ -284,7 +285,7 @@ contains
      this%the_linked_list =>null()
    end subroutine destructor
 
-
+#endif
 end module fms_diag_object_container_mod
 !> @}
 ! close documentation grouping
