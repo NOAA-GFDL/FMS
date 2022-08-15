@@ -99,8 +99,6 @@ type fmsDiagField_type
      procedure :: has_realm
      procedure :: has_interp_method
      procedure :: has_frequency
-     procedure :: has_output_units
-     procedure :: has_t
      procedure :: has_tile_count
      procedure :: has_area
      procedure :: has_volume
@@ -121,8 +119,6 @@ type fmsDiagField_type
      procedure :: get_realm
      procedure :: get_interp_method
      procedure :: get_frequency
-     procedure :: get_output_units
-     procedure :: get_t
      procedure :: get_tile_count
      procedure :: get_area
      procedure :: get_volume
@@ -642,32 +638,6 @@ result(rslt)
        rslt = DIAG_NULL
      endif
 end function get_frequency
-!> @brief Gets output_units
-!! @return copy of The units of the output or DIAG_NULL is output_units is not allocated
-pure function get_output_units (obj) &
-result(rslt)
-     class (fmsDiagField_type), intent(in) :: obj !< diag object
-     integer,allocatable, dimension (:) :: rslt 
-     if (allocated(obj%output_units)) then
-       allocate (rslt(size(obj%output_units)))
-       rslt = obj%output_units
-     else
-       allocate (rslt(1))
-       rslt = DIAG_NULL
-     endif
-end function get_output_units
-!> @brief Gets t
-!! @return copy of t 
-pure function get_t (obj) &
-result(rslt)
-     class (fmsDiagField_type), intent(in) :: obj !< diag object
-     integer :: rslt 
-     if (allocated(obj%t)) then
-       rslt = obj%t
-     else
-       rslt = -999
-     endif
-end function get_t
 !> @brief Gets tile_count
 !! @return copy of the number of tiles or diag_null if tile_count is not allocated
 pure function get_tile_count (obj) &
@@ -877,18 +847,6 @@ pure logical function has_frequency (obj)
   class (fmsDiagField_type), intent(in) :: obj !< diag object
   has_frequency = allocated(obj%frequency)
 end function has_frequency
-!> @brief Checks if obj%output_units is allocated
-!! @return true if obj%output_units is allocated
-pure logical function has_output_units (obj)
-  class (fmsDiagField_type), intent(in) :: obj !< diag object
-  has_output_units = allocated(obj%output_units)
-end function has_output_units
-!> @brief Checks if obj%t is allocated
-!! @return true if obj%t is allocated
-pure logical function has_t (obj)
-  class (fmsDiagField_type), intent(in) :: obj !< diag object
-  has_t = allocated(obj%t)
-end function has_t
 !> @brief Checks if obj%tile_count is allocated
 !! @return true if obj%tile_count is allocated
 pure logical function has_tile_count (obj)
