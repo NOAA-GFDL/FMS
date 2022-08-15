@@ -35,7 +35,7 @@
 program test_field_manager
 
 use field_manager_mod
-use mpp_mod, only : mpp_exit, mpp_pe, mpp_root_pe, mpp_error, NOTE, FATAL
+use mpp_mod, only : mpp_init, mpp_exit, mpp_pe, mpp_root_pe, mpp_error, NOTE, FATAL
 
 implicit none
 
@@ -48,6 +48,7 @@ integer :: flag, index
 logical :: success
 type(method_type), dimension(20) :: methods
 
+call mpp_init
 call field_manager_init(nfields)
 
 ! Dump the list of fields produced from reading the field_table
