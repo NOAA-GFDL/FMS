@@ -64,6 +64,8 @@ type :: fmsDiagFile_type
   logical, dimension(:), private, allocatable :: field_registered   !< Array corresponding to `field_ids`, .true.
                                                                  !! if the variable has been registered and
                                                                  !! `field_id` has been set for the variable
+  integer, allocatable                         :: num_registered_fields !< The number of fields registered
+                                                                        !! to the file 
   integer, dimension(:), allocatable :: axis_ids !< Array of axis ids in the file
   integer :: number_of_axis !< Number of axis in the file
 
@@ -159,6 +161,7 @@ logical function fms_diag_files_object_init (files_array)
      !! Initialize the integer arrays
      obj%field_ids = DIAG_NOT_REGISTERED
      obj%field_registered = .FALSE.
+     obj%num_registered_fields = 0
 
      !> These will be set in a set_file_domain
      obj%type_of_domain = NO_DOMAIN
@@ -188,17 +191,14 @@ end function fms_diag_files_object_init
 subroutine add_field_id (obj, new_field_id)
   class(fmsDiagFile_type), intent(inout) :: obj !< The file object
   integer, intent(in) :: new_field_id !< The field ID to be added to field_ids
-  integer :: i !< For looping
-  do i = 1, size(obj%field_ids)
-    if (.not.obj%field_registered(i)) then
-      obj%field_ids(i) = new_field_id
-      obj%field_registered(i) = .true.
-      return
-    endif
-  enddo
-
-  call mpp_error(FATAL, "The file: "//obj%get_file_fname()//" has already been assigned its maximum "//&
+  obj%num_registered_fields = obj%num_registered_fields + 1
+  if (obj%num_registered_fields .le. size(obj%field_ids)) then
+    obj%field_ids( obj%num_registered_fields ) = new_field_id
+    obj%field_registered( obj%num_registered_fields ) = .true.
+  else
+    call mpp_error(FATAL, "The file: "//obj%get_file_fname()//" has already been assigned its maximum "//&
                  "number of fields.")
+  endif
 end subroutine add_field_id
 
 !> \brief Logical function to determine if the variable file_metadata_from_model has been allocated or associated

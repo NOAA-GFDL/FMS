@@ -56,8 +56,6 @@ type fmsDiagField_type
                                                             !! Valid options are "conserve_order1",
                                                             !! "conserve_order2", and "none".
      integer, allocatable, dimension(:), private      :: frequency         !< specifies the frequency
-     integer, allocatable, dimension(:), private      :: output_units
-     integer, allocatable, private                    :: t
      integer, allocatable, private                    :: tile_count        !< The number of tiles
      integer, allocatable, dimension(:), private      :: axis_ids          !< variable axis IDs
      class(diagDomain_t), pointer,   private          :: domain            !< Domain
@@ -70,7 +68,6 @@ type fmsDiagField_type
 !     procedure :: send_data => fms_send_data  !!TODO
 ! Get ID functions
      procedure :: get_id => fms_diag_get_id
-     procedure :: id => fms_diag_get_id
      procedure :: id_from_name => diag_field_id_from_name
      procedure :: copy => copy_diag_obj
      procedure :: register => fms_register_diag_field_obj !! Merely initialize fields.
@@ -110,7 +107,6 @@ type fmsDiagField_type
      procedure :: has_missing_value
      procedure :: has_data_RANGE
 ! Get functions
-     procedure :: get_diag_id => fms_diag_get_id
      procedure :: get_attributes
      procedure :: get_static
      procedure :: get_registered

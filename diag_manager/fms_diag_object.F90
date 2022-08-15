@@ -36,6 +36,7 @@ type fmsDiagObject_type
 !TODO add container arrays
 #ifdef use_yaml
 private
+!TODO: Remove FMS prefix from variables in this type 
   class(fmsDiagFileContainer_type), allocatable :: FMS_diag_files (:) !< array of diag files
   class(fmsDiagField_type), allocatable :: FMS_diag_fields(:) !< Array of diag fields
   integer, private :: registered_variables !< Number of registered variables
@@ -79,8 +80,6 @@ subroutine fms_diag_object_init (obj,diag_subset_output)
 #ifdef use_yaml
  if (obj%initialized) return
 
-!TODO: Read name list
-!TODO: Read YAML
 !TODO: allocate the file, field, and buffer containers
 ! allocate(diag_objs(get_num_unique_fields()))
   CALL diag_yaml_object_init(diag_subset_output)
@@ -184,10 +183,6 @@ subroutine fms_register_diag_field_obj &
   endif
   nullify (fileptr)
   nullify (fieldptr)
-     !TODO:
-     !!     Mark the field as registered in the diag_files 
-     !!     DO we actually need this?
-
 #endif
 end subroutine fms_register_diag_field_obj
 
