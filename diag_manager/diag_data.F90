@@ -112,7 +112,14 @@ use platform_mod
   INTEGER, PARAMETER :: latlon_gridtype = 1
   INTEGER, PARAMETER :: index_gridtype = 2
   INTEGER, PARAMETER :: null_gridtype = DIAG_NULL
-
+  INTEGER, PARAMETER :: time_none    = 0 !< There is no reduction method
+  INTEGER, PARAMETER :: time_average = 1 !< The reduction method is avera
+  INTEGER, PARAMETER :: time_rms     = 2 !< The reduction method is rms
+  INTEGER, PARAMETER :: time_max     = 3 !< The reduction method is max
+  INTEGER, PARAMETER :: time_min     = 4 !< The reduction method is min
+  INTEGER, PARAMETER :: time_sum     = 5 !< The reudction method is sum
+  INTEGER, PARAMETER :: time_diurnal = 6 !< The reduction method is diurnal
+  INTEGER, PARAMETER :: time_power   = 7 !< The reduction method is power
   !> @}
 
   !> @brief Contains the coordinates of the local domain to output.
