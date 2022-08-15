@@ -134,7 +134,7 @@ public :: fms_diag_buffer_init
 ! Module variables
 logical,private :: module_is_initialized = .false. !< Flag indicating if the module is initialized
 integer, parameter :: DEFAULT_BUFFER_LIST_SIZE = 64
-integer         :: num_buffers = 0 !< number of buffers allocated, might be better in diag_object
+integer         :: num_buffers(0:5) = 0 !< number of buffers allocated, might be better in diag_object
 
 
 logical, parameter, private :: DEBUG = .true. !< debugging output
@@ -255,7 +255,44 @@ subroutine remap_buffer(buffobj)
                     buffobj%remap_buffer = RESHAPE( buff, (/ buff_bounds(1),buff_bounds(2),buff_bounds(3),1,1 /))
             end select
         type is (buffer4d)
+            buff_bounds(1) = size(buffobj%buffer, 1)
+            buff_bounds(2) = size(buffobj%buffer, 2)
+            buff_bounds(3) = size(buffobj%buffer, 3)
+            buff_bounds(4) = size(buffobj%buffer, 4)
+            select type (buff => buffobj%buffer)
+                type is(integer(i4_kind))
+                    allocate (integer(kind=i4_kind) :: buffobj%remap_buffer(buff_bounds(1),buff_bounds(2), buff_bounds(3), buff_bounds(4),1))
+                    buffobj%remap_buffer = RESHAPE( buff, (/ buff_bounds(1),buff_bounds(2),buff_bounds(3), buff_bounds(4),1 /))
+                type is(integer(i8_kind))
+                    allocate (integer(kind=i8_kind) :: buffobj%remap_buffer(buff_bounds(1),buff_bounds(2), buff_bounds(3), buff_bounds(4),1))
+                    buffobj%remap_buffer = RESHAPE( buff, (/ buff_bounds(1),buff_bounds(2),buff_bounds(3), buff_bounds(4),1 /))
+                type is(real(r4_kind))
+                    allocate (real(kind=r4_kind) :: buffobj%remap_buffer(buff_bounds(1),buff_bounds(2),buff_bounds(3), buff_bounds(4),1))
+                    buffobj%remap_buffer = RESHAPE( buff, (/ buff_bounds(1),buff_bounds(2),buff_bounds(3), buff_bounds(4),1 /))
+                type is(real(r8_kind))
+                    allocate (real(kind=r8_kind) :: buffobj%remap_buffer(buff_bounds(1),buff_bounds(2),buff_bounds(3), buff_bounds(4),1))
+                    buffobj%remap_buffer = RESHAPE( buff, (/ buff_bounds(1),buff_bounds(2),buff_bounds(3), buff_bounds(4),1 /))
+            end select
         type is (buffer5d)
+            buff_bounds(1) = size(buffobj%buffer, 1)
+            buff_bounds(2) = size(buffobj%buffer, 2)
+            buff_bounds(3) = size(buffobj%buffer, 3)
+            buff_bounds(4) = size(buffobj%buffer, 4)
+            buff_bounds(5) = size(buffobj%buffer, 5)
+            select type (buff => buffobj%buffer)
+                type is(integer(i4_kind))
+                    allocate (integer(kind=i4_kind) :: buffobj%remap_buffer(buff_bounds(1),buff_bounds(2), buff_bounds(3), buff_bounds(4), buff_bounds(5)))
+                    buffobj%remap_buffer = buff 
+                type is(integer(i8_kind))
+                    allocate (integer(kind=i8_kind) :: buffobj%remap_buffer(buff_bounds(1),buff_bounds(2), buff_bounds(3), buff_bounds(4), buff_bounds(5)))
+                    buffobj%remap_buffer = buff
+                type is(real(r4_kind))
+                    allocate (real(kind=r4_kind) :: buffobj%remap_buffer(buff_bounds(1),buff_bounds(2),buff_bounds(3), buff_bounds(4), buff_bounds(5)))
+                    buffobj%remap_buffer = buff
+                type is(real(r8_kind))
+                    allocate (real(kind=r8_kind) :: buffobj%remap_buffer(buff_bounds(1),buff_bounds(2),buff_bounds(3), buff_bounds(4), buff_bounds(5)))
+                    buffobj%remap_buffer = buff
+            end select
         class default
             call mpp_error( FATAL, 'remap_buffer_pointer: invalid buffer type for remapping')
     end select
@@ -427,9 +464,9 @@ result(rslt)
     allocate(buffobj%area)
     allocate(buffobj%volume)
 
-    num_buffers = num_buffers + 1
-    rslt = num_buffers
-    buffobj%buffer_id = num_buffers
+    num_buffers(0) = num_buffers(0) + 1
+    rslt = num_buffers(0)
+    buffobj%buffer_id = num_buffers(0)
 
 end function
 
@@ -471,9 +508,9 @@ result(rslt)
     allocate(buffobj%tile_count)
     allocate(buffobj%area)
     allocate(buffobj%volume)
-    num_buffers = num_buffers + 1
-    rslt = num_buffers
-    buffobj%buffer_id = num_buffers
+    num_buffers(1) = num_buffers(1) + 1
+    rslt = num_buffers(1)
+    buffobj%buffer_id = num_buffers(1)
 
 end function
 !> allocates a 2D buffer to given mold type
@@ -514,9 +551,9 @@ result(rslt)
     allocate(buffobj%area)
     allocate(buffobj%volume)
 
-    num_buffers = num_buffers + 1
-    rslt = num_buffers
-    buffobj%buffer_id = num_buffers
+    num_buffers(2) = num_buffers(2) + 1
+    rslt = num_buffers(2)
+    buffobj%buffer_id = num_buffers(2)
 end function
 
 !> allocates a 3D buffer to given mold type
@@ -556,9 +593,9 @@ result(rslt)
     allocate(buffobj%tile_count)
     allocate(buffobj%area)
     allocate(buffobj%volume)
-    num_buffers = num_buffers + 1
-    rslt = num_buffers
-    buffobj%buffer_id = num_buffers
+    num_buffers(3) = num_buffers(3) + 1
+    rslt = num_buffers(3)
+    buffobj%buffer_id = num_buffers(3)
 end function
 
 !> allocates a 4D buffer to given mold type
@@ -598,9 +635,9 @@ result(rslt)
     allocate(buffobj%tile_count)
     allocate(buffobj%area)
     allocate(buffobj%volume)
-    num_buffers = num_buffers + 1
-    rslt = num_buffers
-    buffobj%buffer_id = num_buffers
+    num_buffers(4) = num_buffers(4) + 1
+    rslt = num_buffers(4)
+    buffobj%buffer_id = num_buffers(4)
 
 end function
 
@@ -641,9 +678,9 @@ result(rslt)
     allocate(buffobj%tile_count)
     allocate(buffobj%area)
     allocate(buffobj%volume)
-    num_buffers = num_buffers + 1
-    rslt = num_buffers
-    buffobj%buffer_id = num_buffers
+    num_buffers(5) = num_buffers(5) + 1
+    rslt = num_buffers(5)
+    buffobj%buffer_id = num_buffers(5)
 end function
 
 !> @brief Gets buffer data from buffer0d type
