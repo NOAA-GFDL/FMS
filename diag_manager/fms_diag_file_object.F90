@@ -24,19 +24,19 @@
 !! a pointer to the information from the diag yaml, additional metadata that comes from the model, and a
 !! list of the variables and their variable IDs that are in the file.
 module fms_diag_file_object_mod
+#ifdef use_yaml
 use fms2_io_mod, only: FmsNetcdfFile_t, FmsNetcdfUnstructuredDomainFile_t, FmsNetcdfDomainFile_t
-use diag_data_mod, only: DIAG_NULL, NO_DOMAIN, max_axes, SUB_REGIONAL, get_base_time
+use diag_data_mod, only: DIAG_NULL, NO_DOMAIN, max_axes, SUB_REGIONAL, get_base_time, DIAG_NOT_REGISTERED
 use diag_util_mod, only: diag_time_inc
 use time_manager_mod, only: time_type, operator(/=), operator(==)
-#ifdef use_yaml
 use fms_diag_yaml_mod, only: diag_yaml, diagYamlObject_type, diagYamlFiles_type
-#endif
-use fms_diag_axis_object_mod, only: diagDomain_t
+use fms_diag_axis_object_mod, only: diagDomain_t, get_domain_and_domain_type
 use mpp_mod, only: mpp_error, FATAL
 implicit none
 private
 
-public :: fmsDiagFile_type, FMS_diag_files, fms_diag_files_object_init, fms_diag_files_object_initialized
+public :: fmsDiagFileContainer_type
+public :: fmsDiagFile_type, fms_diag_files_object_init, fms_diag_files_object_initialized
 
 logical :: fms_diag_files_object_initialized = .false.
 
@@ -53,43 +53,38 @@ type :: fmsDiagFile_type
   !< This will be used when using the new_file_freq keys in the diag_table.yaml
   TYPE(time_type) :: next_open        !< The next time to open the file
   class(FmsNetcdfFile_t), allocatable :: fileobj !< fms2_io file object for this history file
-#ifdef use_yaml
   type(diagYamlFiles_type), pointer :: diag_yaml_file => null() !< Pointer to the diag_yaml_file data
-#endif
   integer                                      :: type_of_domain !< The type of domain to use to open the file
                                                                  !! NO_DOMAIN, TWO_D_DOMAIN, UG_DOMAIN, SUB_REGIONAL
   class(diagDomain_t), pointer                 :: domain         !< The domain to use,
                                                                  !! null if NO_DOMAIN or SUB_REGIONAL
   character(len=:) , dimension(:), allocatable :: file_metadata_from_model !< File metadata that comes from
                                                                            !! the model.
-  integer, dimension(:), allocatable :: var_ids !< Variable IDs corresponding to file_varlist
-  integer, dimension(:), private, allocatable :: var_index !< An array of the variable indicies in the
-                                                                 !! diag_object.  This should be the same size as
-                                                                 !! `file_varlist`
-  logical, dimension(:), private, allocatable :: var_reg   !< Array corresponding to `file_varlist`, .true.
+  integer, dimension(:), allocatable :: field_ids !< Variable IDs corresponding to file_varlist
+  logical, dimension(:), private, allocatable :: field_registered   !< Array corresponding to `field_ids`, .true.
                                                                  !! if the variable has been registered and
-                                                                 !! `file_var_index` has been set for the variable
+                                                                 !! `field_id` has been set for the variable
+  integer, allocatable                         :: num_registered_fields !< The number of fields registered
+                                                                        !! to the file 
   integer, dimension(:), allocatable :: axis_ids !< Array of axis ids in the file
-  integer, dimension(:), allocatable :: sub_axis_ids !< Array of axis ids in the file
   integer :: number_of_axis !< Number of axis in the file
 
  contains
+  procedure, public :: add_field_id
   procedure, public :: has_file_metadata_from_model
   procedure, public :: has_fileobj
-#ifdef use_yaml
   procedure, public :: has_diag_yaml_file
+  procedure, public :: set_domain_from_axis
   procedure, public :: set_file_domain
   procedure, public :: add_axes
   procedure, public :: add_start_time
-#endif
-  procedure, public :: has_var_ids
+  procedure, public :: has_field_ids
   procedure, public :: get_id
 ! TODO  procedure, public :: get_fileobj ! TODO
 ! TODO  procedure, public :: get_diag_yaml_file ! TODO
   procedure, public :: get_file_metadata_from_model
-  procedure, public :: get_var_ids
+  procedure, public :: get_field_ids
 ! The following fuctions come will use the yaml inquiry functions
-#ifdef use_yaml
  procedure, public :: get_file_fname
  procedure, public :: get_file_frequnit
  procedure, public :: get_file_freq
@@ -117,35 +112,56 @@ type :: fmsDiagFile_type
  procedure, public :: has_file_duration_units
  procedure, public :: has_file_varlist
  procedure, public :: has_file_global_meta
-#endif
 
 end type fmsDiagFile_type
+type, extends (fmsDiagFile_type) :: subRegionalFile_type
+  integer, dimension(:), allocatable :: sub_axis_ids !< Array of axis ids in the file
+end type subRegionalFile_type
 
-type(fmsDiagFile_type), dimension (:), allocatable, target :: FMS_diag_files !< The array of diag files
+!> \brief A container for fmsDiagFile_type.  This is used to create the array of files
+type fmsDiagFileContainer_type
+  class (fmsDiagFile_type),allocatable :: FMS_diag_file !< The individual file object 
+end type fmsDiagFileContainer_type
 
+!type(fmsDiagFile_type), dimension (:), allocatable, target :: FMS_diag_file !< The array of diag files
+!class(fmsDiagFileContainer_type),dimension (:), allocatable, target :: FMS_diag_file
 contains
 
 !< @brief Allocates the number of files and sets an ID based for each file
 !! @return true if there are files allocated in the YAML object
-logical function fms_diag_files_object_init ()
-#ifdef use_yaml
+logical function fms_diag_files_object_init (files_array)
+  class(fmsDiagFileContainer_type), allocatable, target, intent(inout) :: files_array (:) !< array of diag files
+  class(fmsDiagFile_type), pointer :: obj => null() !< Pointer for each member of the array
   integer :: nFiles !< Number of files in the diag yaml
   integer :: i !< Looping iterator
-  type(fmsDiagFile_type), pointer :: obj !< FMS_diag_files(i) (for less typing)
   if (diag_yaml%has_diag_files()) then
    nFiles = diag_yaml%size_diag_files()
-   allocate (FMS_diag_files(nFiles))
+   allocate (files_array(nFiles))
    set_ids_loop: do i= 1,nFiles
-     obj => FMS_diag_files(i)
+     !> If the file has a sub_regional, define it as one and allocate the sub_axis_ids array.
+     !! This will be set in a add_axes
+     if (diag_yaml%diag_files(i)%has_file_sub_region()) then
+       allocate(subRegionalFile_type :: files_array(i)%FMS_diag_file)
+       obj => files_array(i)%FMS_diag_file
+       obj%type_of_domain = SUB_REGIONAL
+       select type (obj)
+         type is (subRegionalFile_type)
+           allocate(obj%sub_axis_ids(max_axes))
+           obj%sub_axis_ids = diag_null
+       end select
+     else
+       allocate(FmsDiagFile_type::files_array(i)%FMS_diag_file)
+       obj => files_array(i)%FMS_diag_file
+     endif
+     !!
      obj%diag_yaml_file => diag_yaml%diag_files(i)
      obj%id = i
-     allocate(obj%var_ids(diag_yaml%diag_files(i)%size_file_varlist()))
-     allocate(obj%var_index(diag_yaml%diag_files(i)%size_file_varlist()))
-     allocate(obj%var_reg(diag_yaml%diag_files(i)%size_file_varlist()))
+     allocate(obj%field_ids(diag_yaml%diag_files(i)%size_file_varlist()))
+     allocate(obj%field_registered(diag_yaml%diag_files(i)%size_file_varlist()))
      !! Initialize the integer arrays
-     obj%var_ids = DIAG_NULL
-     obj%var_reg = .FALSE.
-     obj%var_index = DIAG_NULL
+     obj%field_ids = DIAG_NOT_REGISTERED
+     obj%field_registered = .FALSE.
+     obj%num_registered_fields = 0
 
      !> These will be set in a set_file_domain
      obj%type_of_domain = NO_DOMAIN
@@ -153,15 +169,6 @@ logical function fms_diag_files_object_init ()
 
      !> This will be set in a add_axes
      allocate(obj%axis_ids(max_axes))
-
-     !> If the file has a sub_regional, define it as one and allocate the sub_axis_ids array.
-     !! This will be set in a add_axes
-     if (obj%has_file_sub_region()) then
-      obj%type_of_domain = SUB_REGIONAL
-      allocate(obj%sub_axis_ids(max_axes))
-      obj%sub_axis_ids = diag_null
-     endif
-
      obj%number_of_axis = 0
 
      !> Set the start_time of the file to the base_time and set up the *_output variables
@@ -179,10 +186,21 @@ logical function fms_diag_files_object_init ()
 !  mpp_error("fms_diag_files_object_init: The diag_table.yaml file has not been correctly parsed.",&
 !    FATAL)
   endif
-#else
-  fms_diag_files_object_init = .false.
-#endif
 end function fms_diag_files_object_init
+!> \brief Adds a field ID to the file
+subroutine add_field_id (obj, new_field_id)
+  class(fmsDiagFile_type), intent(inout) :: obj !< The file object
+  integer, intent(in) :: new_field_id !< The field ID to be added to field_ids
+  obj%num_registered_fields = obj%num_registered_fields + 1
+  if (obj%num_registered_fields .le. size(obj%field_ids)) then
+    obj%field_ids( obj%num_registered_fields ) = new_field_id
+    obj%field_registered( obj%num_registered_fields ) = .true.
+  else
+    call mpp_error(FATAL, "The file: "//obj%get_file_fname()//" has already been assigned its maximum "//&
+                 "number of fields.")
+  endif
+end subroutine add_field_id
+
 !> \brief Logical function to determine if the variable file_metadata_from_model has been allocated or associated
 !! \return .True. if file_metadata_from_model exists .False. if file_metadata_from_model has not been set
 pure logical function has_file_metadata_from_model (obj)
@@ -195,20 +213,18 @@ pure logical function has_fileobj (obj)
   class(fmsDiagFile_type), intent(in) :: obj !< The file object
   has_fileobj = allocated(obj%fileobj)
 end function has_fileobj
-#ifdef use_yaml
 !> \brief Logical function to determine if the variable diag_yaml_file has been allocated or associated
 !! \return .True. if diag_yaml_file exists .False. if diag_yaml has not been set
 pure logical function has_diag_yaml_file (obj)
   class(fmsDiagFile_type), intent(in) :: obj !< The file object
   has_diag_yaml_file = associated(obj%diag_yaml_file)
 end function has_diag_yaml_file
-#endif
-!> \brief Logical function to determine if the variable var_ids has been allocated or associated
-!! \return .True. if var_ids exists .False. if var_ids has not been set
-pure logical function has_var_ids (obj)
+!> \brief Logical function to determine if the variable field_ids has been allocated or associated
+!! \return .True. if field_ids exists .False. if field_ids has not been set
+pure logical function has_field_ids (obj)
   class(fmsDiagFile_type), intent(in) :: obj !< The file object
-  has_var_ids = allocated(obj%var_ids)
-end function has_var_ids
+  has_field_ids = allocated(obj%field_ids)
+end function has_field_ids
 !> \brief Returns a copy of the value of id
 !! \return A copy of id
 pure function get_id (obj) result (res)
@@ -229,13 +245,11 @@ end function get_id
 !! TODO
 !!> \brief Returns a copy of the value of diag_yaml_file
 !!! \return A copy of diag_yaml_file
-!#ifdef use_yaml
 !pure function get_diag_yaml_file (obj) result (res)
 !  class(fmsDiagFile_type), intent(in) :: obj !< The file object
 !  type(diagYamlFiles_type) :: res
 !  res = obj%diag_yaml_file
 !end function get_diag_yaml_file
-!#endif
 !> \brief Returns a copy of the value of file_metadata_from_model
 !! \return A copy of file_metadata_from_model
 pure function get_file_metadata_from_model (obj) result (res)
@@ -243,16 +257,15 @@ pure function get_file_metadata_from_model (obj) result (res)
   character(len=:), dimension(:), allocatable :: res
   res = obj%file_metadata_from_model
 end function get_file_metadata_from_model
-!> \brief Returns a copy of the value of var_ids
-!! \return A copy of var_ids
-pure function get_var_ids (obj) result (res)
+!> \brief Returns a copy of the value of field_ids
+!! \return A copy of field_ids
+pure function get_field_ids (obj) result (res)
   class(fmsDiagFile_type), intent(in) :: obj !< The file object
   integer, dimension(:), allocatable :: res
-  allocate(res(size(obj%var_ids)))
-  res = obj%var_ids
-end function get_var_ids
+  allocate(res(size(obj%field_ids)))
+  res = obj%field_ids
+end function get_field_ids
 !!!!!!!!! Functions from diag_yaml_file
-#ifdef use_yaml
 !> \brief Returns a copy of file_fname from the yaml object
 !! \return Copy of file_fname
 pure function get_file_fname (obj) result(res)
@@ -436,7 +449,12 @@ pure function has_file_global_meta (obj) result(res)
  logical :: res
   res = obj%diag_yaml_file%has_file_global_meta()
 end function has_file_global_meta
-
+!> @brief Sets the domain and type of domain from the axis IDs
+subroutine set_domain_from_axis(obj, axes)
+  class(fmsDiagFile_type), intent(inout)       :: obj            !< The file object
+  integer, intent(in) :: axes (:)
+  call get_domain_and_domain_type(axes, obj%type_of_domain, obj%domain, obj%get_file_fname())
+end subroutine set_domain_from_axis
 !> @brief Set the domain and the type_of_domain for a file
 !> @details This subroutine is going to be called once by every variable in the file
 !! in register_diag_field. It will update the domain and the type_of_domain if needed and verify that
