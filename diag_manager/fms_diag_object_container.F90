@@ -49,6 +49,8 @@ MODULE fms_diag_object_container_mod
 
    implicit none
 
+   private
+
    !> @brief A container of fmsDiagField_type instances providing insert, remove ,
    !!  find/search, and size public member functions. Iterator is provided by
    !!  the associated iterator class (see  dig_obj_iterator class).
