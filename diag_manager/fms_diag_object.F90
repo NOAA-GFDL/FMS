@@ -58,13 +58,7 @@ private
 end type fmsDiagObject_type
 
 type (fmsDiagObject_type), target :: fms_diag_object
-public :: fms_register_diag_field_obj
-public :: fms_register_diag_field_scalar
-public :: fms_register_diag_field_array
-public :: fms_register_static_field
-public :: fms_diag_field_add_attribute
-public :: fms_get_diag_field_id_from_name
-public :: fms_diag_object
+public :: fms_diag_object 
 public :: fmsDiagObject_type
 
 contains

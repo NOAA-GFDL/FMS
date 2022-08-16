@@ -29,6 +29,8 @@ use iso_c_binding
 
 implicit none
 
+private
+
 !> \brief Object that holds all variable information
 type fmsDiagField_type
      type (diagYamlFilesVar_type), allocatable, dimension(:) :: diag_field !< info from diag_table for this variable
@@ -134,7 +136,6 @@ logical,private :: module_is_initialized = .false. !< Flag indicating if the mod
 public :: fmsDiagField_type
 public :: fms_diag_fields_object_init
 public :: null_ob
-public :: copy_diag_obj, fms_diag_get_id
 public :: fms_diag_field_object_end
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
