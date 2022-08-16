@@ -29,10 +29,14 @@ use iso_c_binding
 
 implicit none
 
+private
+
 !> \brief Object that holds all variable information
 type fmsDiagField_type
-     type (diagYamlFilesVar_type), allocatable, dimension(:) :: diag_field !< info from diag_table for this variable
-     integer,                      allocatable, dimension(:) :: file_ids   !< Ids of the FMS_diag_files the variable
+     private
+
+     type (diagYamlFilesVar_type), public, allocatable, dimension(:) :: diag_field !< info from diag_table for this variable
+     integer, public, allocatable, dimension(:)                      :: file_ids   !< Ids of the FMS_diag_files the variable
                                                                            !! belongs to
      integer, allocatable, private                    :: diag_id           !< unique id for varable
      type(fmsDiagAttribute_type), allocatable         :: attributes(:)     !< attributes for the variable
@@ -138,7 +142,6 @@ integer, private :: registered_variables !< Number of registered variables
 public :: fmsDiagField_type
 public :: fms_diag_fields_object_init
 public :: null_ob
-public :: copy_diag_obj, fms_diag_get_id
 public :: fms_diag_field_object_end
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
