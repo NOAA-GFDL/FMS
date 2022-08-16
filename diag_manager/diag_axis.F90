@@ -40,7 +40,8 @@ use platform_mod
   USE diag_data_mod, ONLY: diag_axis_type, max_subaxes, max_axes,&
        & max_num_axis_sets, max_axis_attributes, debug_diag_manager,&
        & first_send_data_call, diag_atttype, use_modern_diag, TWO_D_DOMAIN
-  USE fms_diag_axis_object_mod, ONLY: fms_diag_axis_init, fms_diag_axis_add_attribute, &
+  use fms_diag_object_mod, only:fms_diag_object
+  USE fms_diag_axis_object_mod, ONLY: &
        & diagDomain_t, DIAGDOMAIN2D_T, get_domain_and_domain_type, fms_get_axis_length
 #ifdef use_netCDF
   USE netcdf, ONLY: NF90_INT, NF90_FLOAT, NF90_CHAR
@@ -139,7 +140,7 @@ CONTAINS
     ENDIF
 
     if (use_modern_diag) then
-      diag_axis_init = fms_diag_axis_init(name, DATA, units, cart_name, long_name=long_name, direction=direction,&
+      diag_axis_init = fms_diag_object%fms_diag_axis_init(name, DATA, units, cart_name, long_name=long_name, direction=direction,&
        & set_name=set_name, edges=edges, Domain=Domain, Domain2=Domain2, DomainU=DomainU, aux=aux, req=req, &
        & tile_count=tile_count, domain_position=domain_position )
       return
@@ -1070,7 +1071,7 @@ CONTAINS
     REAL, INTENT(in) :: att_value
 
     if (use_modern_diag) then
-      call fms_diag_axis_add_attribute(diag_axis_id, att_name, (/ att_value /))
+      call fms_diag_object%fms_diag_axis_add_attribute(diag_axis_id, att_name, (/ att_value /))
     else
       CALL diag_axis_add_attribute_r1d(diag_axis_id, att_name, (/ att_value /))
     endif
@@ -1082,7 +1083,7 @@ CONTAINS
     INTEGER, INTENT(in) :: att_value
 
     if (use_modern_diag) then
-      call fms_diag_axis_add_attribute(diag_axis_id, att_name, (/ att_value /))
+      call fms_diag_object%fms_diag_axis_add_attribute(diag_axis_id, att_name, (/ att_value /))
     else
       CALL diag_axis_add_attribute_i1d(diag_axis_id, att_name, (/ att_value /))
     endif
@@ -1094,7 +1095,7 @@ CONTAINS
     CHARACTER(len=*), INTENT(in) :: att_value
 
     if (use_modern_diag) then
-      call fms_diag_axis_add_attribute(diag_axis_id, att_name, (/ att_value /))
+      call fms_diag_object%fms_diag_axis_add_attribute(diag_axis_id, att_name, (/ att_value /))
     else
       CALL diag_axis_attribute_init(diag_axis_id, att_name, NF90_CHAR, cval=att_value)
     endif
@@ -1106,7 +1107,7 @@ CONTAINS
     REAL, DIMENSION(:), INTENT(in) :: att_value
 
     if (use_modern_diag) then
-      call fms_diag_axis_add_attribute(diag_axis_id, att_name, att_value)
+      call fms_diag_object%fms_diag_axis_add_attribute(diag_axis_id, att_name, att_value)
     else
       CALL diag_axis_attribute_init(diag_axis_id, att_name, NF90_FLOAT, rval=att_value)
     endif
@@ -1117,7 +1118,7 @@ CONTAINS
     CHARACTER(len=*), INTENT(in) :: att_name
     INTEGER, DIMENSION(:), INTENT(in) :: att_value
     if (use_modern_diag) then
-      call fms_diag_axis_add_attribute(diag_axis_id, att_name, att_value)
+      call fms_diag_object%fms_diag_axis_add_attribute(diag_axis_id, att_name, att_value)
     else
       CALL diag_axis_attribute_init(diag_axis_id, att_name, NF90_INT, ival=att_value)
     endif

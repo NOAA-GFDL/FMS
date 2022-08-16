@@ -27,7 +27,7 @@ module fms_diag_file_object_mod
 #ifdef use_yaml
 use fms2_io_mod, only: FmsNetcdfFile_t, FmsNetcdfUnstructuredDomainFile_t, FmsNetcdfDomainFile_t
 use diag_data_mod, only: DIAG_NULL, NO_DOMAIN, max_axes, SUB_REGIONAL, get_base_time, DIAG_NOT_REGISTERED
-use diag_util_mod, only: diag_time_inc
+!TODO cross dependency use diag_util_mod, only: diag_time_inc
 use time_manager_mod, only: time_type, operator(/=), operator(==)
 use fms_diag_yaml_mod, only: diag_yaml, diagYamlObject_type, diagYamlFiles_type
 use fms_diag_axis_object_mod, only: diagDomain_t, get_domain_and_domain_type
@@ -174,8 +174,9 @@ logical function fms_diag_files_object_init (files_array)
      !> Set the start_time of the file to the base_time and set up the *_output variables
      obj%start_time = get_base_time()
      obj%last_output = get_base_time()
-     obj%next_output = diag_time_inc(obj%start_time, obj%get_file_freq(), obj%get_file_frequnit())
-     obj%next_next_output = diag_time_inc(obj%next_output, obj%get_file_freq(), obj%get_file_frequnit())
+     !TODO cross dependency
+     !obj%next_output = diag_time_inc(obj%start_time, obj%get_file_freq(), obj%get_file_frequnit())
+     !obj%next_next_output = diag_time_inc(obj%next_output, obj%get_file_freq(), obj%get_file_frequnit())
      obj%next_open = get_base_time()
 
      nullify(obj)
@@ -536,8 +537,9 @@ subroutine add_start_time(obj, start_time)
     !! simply update it with the start_time and set up the *_output variables
     obj%start_time = start_time
     obj%last_output = start_time
-    obj%next_output = diag_time_inc(start_time, obj%get_file_freq(), obj%get_file_frequnit())
-    obj%next_next_output = diag_time_inc(obj%next_output, obj%get_file_freq(), obj%get_file_frequnit())
+    !TODO cross dependency
+    !obj%next_output = diag_time_inc(start_time, obj%get_file_freq(), obj%get_file_frequnit())
+    !obj%next_next_output = diag_time_inc(obj%next_output, obj%get_file_freq(), obj%get_file_frequnit())
   endif
 
 end subroutine

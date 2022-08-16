@@ -13,8 +13,6 @@ use diag_data_mod,  only: r8, r4, i8, i4, string, null_type_int, NO_DOMAIN
 use diag_data_mod,  only: max_field_attributes, fmsDiagAttribute_type
 use diag_data_mod,  only: diag_null, diag_not_found, diag_not_registered, diag_registered_id, &
                          &DIAG_FIELD_NOT_FOUND
-
-use diag_axis_mod,  only: diag_axis_type
 use mpp_mod, only: fatal, note, warning, mpp_error
 use fms_diag_yaml_mod, only:  diagYamlFilesVar_type, get_diag_fields_entries, get_diag_files_id, &
   & find_diag_field, get_num_unique_fields
@@ -196,9 +194,6 @@ subroutine fms_register_diag_field_obj &
  CHARACTER(len=*), OPTIONAL,     INTENT(in)    :: realm                 !< String to set as the value to the
                                                                         !! modeling_realm attribute
  LOGICAL,          OPTIONAL,     INTENT(in)    :: static                !< Set to true if it is a static field
-
- integer :: i !< For do loops
- integer :: j !< dobj%file_ids(i) (for less typing :)
 
 !> Fill in information from the register call
   dobj%varname = trim(varname)
@@ -724,6 +719,7 @@ result(rslt)
                  "The data_RANGE value is not allocated", FATAL)
        endif
 end function get_data_RANGE
+
 !> @brief Gets axis_ids
 !! @return pointer to the axis ids
 function get_axis_id (obj) &
