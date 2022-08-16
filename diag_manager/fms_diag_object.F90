@@ -59,7 +59,6 @@ end type fmsDiagObject_type
 
 type (fmsDiagObject_type), target :: fms_diag_object
 integer, private :: registered_variables !< Number of registered variables
-public :: fms_register_diag_field_obj
 public :: fms_diag_object 
 public :: fmsDiagObject_type
 

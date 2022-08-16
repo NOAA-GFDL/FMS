@@ -33,10 +33,8 @@ private
 
 !> \brief Object that holds all variable information
 type fmsDiagField_type
-     private
-
-     type (diagYamlFilesVar_type), public, allocatable, dimension(:) :: diag_field !< info from diag_table for this variable
-     integer, public, allocatable, dimension(:)                      :: file_ids   !< Ids of the FMS_diag_files the variable
+     type (diagYamlFilesVar_type), allocatable, dimension(:) :: diag_field !< info from diag_table for this variable
+     integer,                      allocatable, dimension(:) :: file_ids   !< Ids of the FMS_diag_files the variable
                                                                            !! belongs to
      integer, allocatable, private                    :: diag_id           !< unique id for varable
      type(fmsDiagAttribute_type), allocatable         :: attributes(:)     !< attributes for the variable
