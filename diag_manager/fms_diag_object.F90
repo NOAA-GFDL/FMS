@@ -156,7 +156,8 @@ integer function fms_register_diag_field_obj &
   fms_diag_object%registered_variables = fms_diag_object%registered_variables + 1
   fms_register_diag_field_obj = fms_diag_object%registered_variables
 
-  call fms_diag_object%FMS_diag_fields(fms_diag_object%registered_variables)%setID(fms_diag_object%registered_variables)
+  call fms_diag_object%FMS_diag_fields(fms_diag_object%registered_variables)%&
+    &setID(fms_diag_object%registered_variables)
 
 !> Use pointers for convenience
   fieldptr => fms_diag_object%FMS_diag_fields(fms_diag_object%registered_variables)
