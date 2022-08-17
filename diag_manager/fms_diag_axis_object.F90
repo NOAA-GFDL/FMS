@@ -40,7 +40,7 @@ module fms_diag_axis_object_mod
 
   PRIVATE
 
-  public :: diagAxis_t, set_subaxis, fms_diag_axis_init, fms_diag_axis_object_init, fms_diag_axis_object_end, &
+  public :: diagAxis_t, fms_diag_axis_init, fms_diag_axis_object_init, fms_diag_axis_object_end, &
           & get_domain_and_domain_type, axis_obj, diagDomain_t, sub_axis_objs, fms_diag_axis_add_attribute, &
           & DIAGDOMAIN2D_T, fms_get_axis_length
   !> @}
