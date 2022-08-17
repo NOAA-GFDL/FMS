@@ -39,12 +39,13 @@ type fmsDiagObject_type
 private
   class(fmsDiagFileContainer_type), allocatable :: FMS_diag_files (:) !< array of diag files
   class(fmsDiagField_type), allocatable :: FMS_diag_fields(:) !< Array of diag fields
-  class(fmsDiagBufferContainer_type), allocatable :: FMS_diag_buffers_0d(:)!this could be one array
-  class(fmsDiagBufferContainer_type), allocatable :: FMS_diag_buffers_1d(:)
-  class(fmsDiagBufferContainer_type), allocatable :: FMS_diag_buffers_2d(:)
-  class(fmsDiagBufferContainer_type), allocatable :: FMS_diag_buffers_3d(:)
-  class(fmsDiagBufferContainer_type), allocatable :: FMS_diag_buffers_4d(:)
-  class(fmsDiagBufferContainer_type), allocatable :: FMS_diag_buffers_5d(:)
+  type(fmsDiagBufferContainer_type), allocatable :: FMS_diag_buffers_0d(:) !< array of 0 dimensional buffers 
+  type(fmsDiagBufferContainer_type), allocatable :: FMS_diag_buffers_1d(:) !< array of 1 dimensional buffers
+  type(fmsDiagBufferContainer_type), allocatable :: FMS_diag_buffers_2d(:) !< array of 2 dimensional buffers
+  type(fmsDiagBufferContainer_type), allocatable :: FMS_diag_buffers_3d(:) !< array of 3 dimensional buffers
+  type(fmsDiagBufferContainer_type), allocatable :: FMS_diag_buffers_4d(:) !< array of 4 dimensional buffers
+  type(fmsDiagBufferContainer_type), allocatable :: FMS_diag_buffers_5d(:) !< array of 5 dimensional buffers
+  integer, private :: registered_buffers(0:5) = 0 !< number of registered buffers, per dimension
   integer, private :: registered_variables !< Number of registered variables
   logical, private :: initialized=.false. !< True if the fmsDiagObject is initialized
   logical, private :: files_initialized=.false. !< True if the fmsDiagObject is initialized
@@ -94,12 +95,12 @@ subroutine fms_diag_object_init (obj,diag_subset_output)
   CALL fms_diag_axis_object_init()
   obj%files_initialized = fms_diag_files_object_init(obj%FMS_diag_files)
   obj%fields_initialized = fms_diag_fields_object_init (obj%FMS_diag_fields)
-  obj%buffers_initialized = fms_diag_buffer_init(obj%FMS_diag_buffers_0d) .and. &
-                            fms_diag_buffer_init(obj%FMS_diag_buffers_1d) .and. &
-                            fms_diag_buffer_init(obj%FMS_diag_buffers_2d) .and. &
-                            fms_diag_buffer_init(obj%FMS_diag_buffers_3d) .and. &
-                            fms_diag_buffer_init(obj%FMS_diag_buffers_4d) .and. &
-                            fms_diag_buffer_init(obj%FMS_diag_buffers_5d)
+  obj%buffers_initialized = fms_diag_buffer_init(obj%FMS_diag_buffers_0d, 0) .and. &
+                            fms_diag_buffer_init(obj%FMS_diag_buffers_1d, 1) .and. &
+                            fms_diag_buffer_init(obj%FMS_diag_buffers_2d, 2) .and. &
+                            fms_diag_buffer_init(obj%FMS_diag_buffers_3d, 3) .and. &
+                            fms_diag_buffer_init(obj%FMS_diag_buffers_4d, 4) .and. &
+                            fms_diag_buffer_init(obj%FMS_diag_buffers_5d, 5)
                              
  registered_variables = 0
  obj%initialized = .true.
@@ -408,17 +409,17 @@ result(rslt)
     class(fmsDiagBuffer_class),allocatable:: rslt
     select case(dims)
         case(0)
-            rslt = fms_diag_object%FMS_diag_buffers_0d(bufferid)%buffer_obj
+            rslt = fms_diag_object%FMS_diag_buffers_0d(bufferid)%diag_buffer_obj
         case(1)
-            rslt = fms_diag_object%FMS_diag_buffers_1d(bufferid)%buffer_obj
+            rslt = fms_diag_object%FMS_diag_buffers_1d(bufferid)%diag_buffer_obj
         case(2)
-            rslt = fms_diag_object%FMS_diag_buffers_2d(bufferid)%buffer_obj
+            rslt = fms_diag_object%FMS_diag_buffers_2d(bufferid)%diag_buffer_obj
         case(3)
-            rslt = fms_diag_object%FMS_diag_buffers_3d(bufferid)%buffer_obj
+            rslt = fms_diag_object%FMS_diag_buffers_3d(bufferid)%diag_buffer_obj
         case(4)
-            rslt = fms_diag_object%FMS_diag_buffers_4d(bufferid)%buffer_obj
+            rslt = fms_diag_object%FMS_diag_buffers_4d(bufferid)%diag_buffer_obj
         case(5)
-            rslt = fms_diag_object%FMS_diag_buffers_5d(bufferid)%buffer_obj
+            rslt = fms_diag_object%FMS_diag_buffers_5d(bufferid)%diag_buffer_obj
         case default
             call mpp_error(FATAL, 'get_diag_buffer:invalid dimension given')
     end select
