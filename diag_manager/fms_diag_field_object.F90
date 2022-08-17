@@ -29,6 +29,8 @@ use iso_c_binding
 
 implicit none
 
+private
+
 !> \brief Object that holds all variable information
 type fmsDiagField_type
      type (diagYamlFilesVar_type), allocatable, dimension(:) :: diag_field !< info from diag_table for this variable
@@ -57,8 +59,6 @@ type fmsDiagField_type
                                                             !! Valid options are "conserve_order1",
                                                             !! "conserve_order2", and "none".
      integer, allocatable, dimension(:), private      :: frequency         !< specifies the frequency
-     integer, allocatable, dimension(:), private      :: output_units
-     integer, allocatable, private                    :: t
      integer, allocatable, private                    :: tile_count        !< The number of tiles
      integer, allocatable, dimension(:), private      :: axis_ids          !< variable axis IDs
      class(diagDomain_t), pointer,   private          :: domain            !< Domain
@@ -71,7 +71,6 @@ type fmsDiagField_type
 !     procedure :: send_data => fms_send_data  !!TODO
 ! Get ID functions
      procedure :: get_id => fms_diag_get_id
-     procedure :: id => fms_diag_get_id
      procedure :: id_from_name => diag_field_id_from_name
      procedure :: copy => copy_diag_obj
      procedure :: register => fms_register_diag_field_obj !! Merely initialize fields.
@@ -93,7 +92,6 @@ type fmsDiagField_type
      procedure :: has_registered
      procedure :: has_mask_variant
      procedure :: has_local
-!TODO     procedure :: has_init_time
      procedure :: has_vartype
      procedure :: has_varname
      procedure :: has_longname
@@ -103,15 +101,12 @@ type fmsDiagField_type
      procedure :: has_realm
      procedure :: has_interp_method
      procedure :: has_frequency
-     procedure :: has_output_units
-     procedure :: has_t
      procedure :: has_tile_count
      procedure :: has_area
      procedure :: has_volume
      procedure :: has_missing_value
      procedure :: has_data_RANGE
 ! Get functions
-     procedure :: get_diag_id => fms_diag_get_id
      procedure :: get_attributes
      procedure :: get_static
      procedure :: get_registered
@@ -126,28 +121,23 @@ type fmsDiagField_type
      procedure :: get_realm
      procedure :: get_interp_method
      procedure :: get_frequency
-     procedure :: get_output_units
-     procedure :: get_t
      procedure :: get_tile_count
      procedure :: get_area
      procedure :: get_volume
      procedure :: get_missing_value
      procedure :: get_data_RANGE
-!TODO     procedure :: get_init_time
-!TODO     procedure :: get_axis
+     procedure :: get_axis_id
 end type fmsDiagField_type
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! variables !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 type(fmsDiagField_type) :: null_ob
 
 logical,private :: module_is_initialized = .false. !< Flag indicating if the module is initialized
-integer, private :: registered_variables !< Number of registered variables
 
 !type(fmsDiagField_type) :: diag_object_placeholder (10)
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 public :: fmsDiagField_type
 public :: fms_diag_fields_object_init
 public :: null_ob
-public :: copy_diag_obj, fms_diag_get_id
 public :: fms_diag_field_object_end
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -169,7 +159,6 @@ logical function fms_diag_fields_object_init(ob)
   class (fmsDiagField_type), allocatable, intent(inout) :: ob(:) !< diag field object
   integer :: i !< For looping
   allocate(ob(get_num_unique_fields()))
-  registered_variables = 0
   do i = 1,size(ob)
       ob(i)%diag_id = diag_not_registered !null_ob%diag_id
       ob(i)%registered = .false.
@@ -181,7 +170,7 @@ end function fms_diag_fields_object_init
 !> \Description Fills in and allocates (when necessary) the values in the diagnostic object
 subroutine fms_register_diag_field_obj &
                 !(dobj, modname, varname, axes, time, longname, units, missing_value, metadata)
-       (dobj, modname, varname, diag_field_indices, axes, init_time, &
+       (dobj, modname, varname, diag_field_indices, axes, &
        longname, units, missing_value, varRange, mask_variant, standname, &
        do_not_log, err_msg, interp_method, tile_count, area, volume, realm, static)
 
@@ -190,7 +179,6 @@ subroutine fms_register_diag_field_obj &
  CHARACTER(len=*),               INTENT(in)    :: varname               !< The variable name
  integer,                        INTENT(in)    :: diag_field_indices(:) !< Array of indices to the field
                                                                         !! in the yaml object
- TYPE(time_type),  OPTIONAL,     INTENT(in)    :: init_time             !< Initial time
  INTEGER, TARGET,  OPTIONAL,     INTENT(in)    :: axes(:)               !< The axes indicies
  CHARACTER(len=*), OPTIONAL,     INTENT(in)    :: longname              !< THe variables long name
  CHARACTER(len=*), OPTIONAL,     INTENT(in)    :: units                 !< The units of the variables
@@ -217,6 +205,10 @@ subroutine fms_register_diag_field_obj &
 !> Fill in information from the register call
   dobj%varname = trim(varname)
   dobj%modname = trim(modname)
+
+!> Add the yaml info to the diag_object
+  dobj%diag_field = get_diag_fields_entries(diag_field_indices)
+
 !> Add axis and domain information
   if (present(axes)) then
     dobj%axis_ids = axes
@@ -525,7 +517,7 @@ end function get_registered
 pure function get_mask_variant (obj) &
 result(rslt)
      class (fmsDiagField_type), intent(in) :: obj !< diag object
-     logical :: rslt 
+     logical :: rslt
      rslt = obj%mask_variant
 end function get_mask_variant
 !> @brief Gets local
@@ -533,19 +525,10 @@ end function get_mask_variant
 pure function get_local (obj) &
 result(rslt)
      class (fmsDiagField_type), intent(in) :: obj !< diag object
-     logical :: rslt 
+     logical :: rslt
      rslt = obj%local
 end function get_local
-!> @brief Gets initial time 
-!! @return copy of the initial time
-!! TODO
-!function get_init_time (obj) &
-!result(rslt)
-!     class (fmsDiagField_type), intent(in) :: obj !< diag object
-!     TYPE(time_type) :: rslt 
-!
-!end function get_init_time
-!> @brief Gets vartype 
+!> @brief Gets vartype
 !! @return copy of The integer related to the variable type
 pure function get_vartype (obj) &
 result(rslt)
@@ -578,7 +561,7 @@ end function get_longname
 pure function get_standname (obj) &
 result(rslt)
      class (fmsDiagField_type), intent(in) :: obj !< diag object
-     character(len=:), allocatable :: rslt 
+     character(len=:), allocatable :: rslt
      if (allocated(obj%standname)) then
        rslt = obj%standname
      else
@@ -590,7 +573,7 @@ end function get_standname
 pure function get_units (obj) &
 result(rslt)
      class (fmsDiagField_type), intent(in) :: obj !< diag object
-     character(len=:), allocatable :: rslt 
+     character(len=:), allocatable :: rslt
      if (allocated(obj%units)) then
        rslt = obj%units
      else
@@ -602,7 +585,7 @@ end function get_units
 pure function get_modname (obj) &
 result(rslt)
      class (fmsDiagField_type), intent(in) :: obj !< diag object
-     character(len=:), allocatable :: rslt 
+     character(len=:), allocatable :: rslt
      if (allocated(obj%modname)) then
        rslt = obj%modname
      else
@@ -614,7 +597,7 @@ end function get_modname
 pure function get_realm (obj) &
 result(rslt)
      class (fmsDiagField_type), intent(in) :: obj !< diag object
-     character(len=:), allocatable :: rslt 
+     character(len=:), allocatable :: rslt
      if (allocated(obj%realm)) then
        rslt = obj%realm
      else
@@ -626,7 +609,7 @@ end function get_realm
 pure function get_interp_method (obj) &
 result(rslt)
      class (fmsDiagField_type), intent(in) :: obj !< diag object
-     character(len=:), allocatable :: rslt 
+     character(len=:), allocatable :: rslt
      if (allocated(obj%interp_method)) then
        rslt = obj%interp_method
      else
@@ -638,7 +621,7 @@ end function get_interp_method
 pure function get_frequency (obj) &
 result(rslt)
      class (fmsDiagField_type), intent(in) :: obj !< diag object
-     integer, allocatable, dimension (:) :: rslt 
+     integer, allocatable, dimension (:) :: rslt
      if (allocated(obj%frequency)) then
        allocate (rslt(size(obj%frequency)))
        rslt = obj%frequency
@@ -647,38 +630,12 @@ result(rslt)
        rslt = DIAG_NULL
      endif
 end function get_frequency
-!> @brief Gets output_units
-!! @return copy of The units of the output or DIAG_NULL is output_units is not allocated
-pure function get_output_units (obj) &
-result(rslt)
-     class (fmsDiagField_type), intent(in) :: obj !< diag object
-     integer,allocatable, dimension (:) :: rslt 
-     if (allocated(obj%output_units)) then
-       allocate (rslt(size(obj%output_units)))
-       rslt = obj%output_units
-     else
-       allocate (rslt(1))
-       rslt = DIAG_NULL
-     endif
-end function get_output_units
-!> @brief Gets t
-!! @return copy of t 
-pure function get_t (obj) &
-result(rslt)
-     class (fmsDiagField_type), intent(in) :: obj !< diag object
-     integer :: rslt 
-     if (allocated(obj%t)) then
-       rslt = obj%t
-     else
-       rslt = -999
-     endif
-end function get_t
 !> @brief Gets tile_count
 !! @return copy of the number of tiles or diag_null if tile_count is not allocated
 pure function get_tile_count (obj) &
 result(rslt)
      class (fmsDiagField_type), intent(in) :: obj !< diag object
-     integer :: rslt 
+     integer :: rslt
      if (allocated(obj%tile_count)) then
        rslt = obj%tile_count
      else
@@ -690,7 +647,7 @@ end function get_tile_count
 pure function get_area (obj) &
 result(rslt)
      class (fmsDiagField_type), intent(in) :: obj !< diag object
-     integer :: rslt 
+     integer :: rslt
      if (allocated(obj%area)) then
        rslt = obj%area
      else
@@ -744,7 +701,7 @@ end function get_missing_value
 function get_data_RANGE (obj) &
 result(rslt)
      class (fmsDiagField_type), intent(in) :: obj !< diag object
-     class(*),allocatable :: rslt(:) 
+     class(*),allocatable :: rslt(:)
      if (allocated(obj%data_RANGE)) then
        select type (r => obj%data_RANGE)
          type is (integer(kind=i4_kind))
@@ -769,15 +726,19 @@ result(rslt)
                  "The data_RANGE value is not allocated", FATAL)
        endif
 end function get_data_RANGE
-!> @brief Gets axis
-!! @return copy of axis information
-!! TODO
-!function get_axis (obj) &
-!result(rslt)
-!     class (fmsDiagField_type), intent(in) :: obj !< diag object
-!     type (diag_axis_type), allocatable, dimension(:) :: rslt 
-!
-!end function get_axis
+!> @brief Gets axis_ids
+!! @return pointer to the axis ids
+function get_axis_id (obj) &
+result(rslt)
+  class (fmsDiagField_type), target, intent(in) :: obj   !< diag object
+  integer, pointer, dimension(:)    :: rslt  !< field's axis_ids
+
+  if(allocated(obj%axis_ids)) then
+    rslt => obj%axis_ids
+  else
+    rslt => null()
+  endif
+end function get_axis_id
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!! Allocation checks
 !!> @brief Checks if obj%diag_field is allocated
@@ -822,12 +783,6 @@ pure logical function has_local (obj)
   class (fmsDiagField_type), intent(in) :: obj !< diag object
   has_local = allocated(obj%local)
 end function has_local
-!!> @brief Checks if obj%init_time is allocated
-!!! @return true if obj%init_time is allocated
-!logical function has_init_time (obj)
-!  class (fmsDiagField_type), intent(in) :: obj !< diag object
-!  has_init_time = allocated(obj%init_time)
-!end function has_init_time
 !> @brief Checks if obj%vartype is allocated
 !! @return true if obj%vartype is allocated
 pure logical function has_vartype (obj)
@@ -882,18 +837,6 @@ pure logical function has_frequency (obj)
   class (fmsDiagField_type), intent(in) :: obj !< diag object
   has_frequency = allocated(obj%frequency)
 end function has_frequency
-!> @brief Checks if obj%output_units is allocated
-!! @return true if obj%output_units is allocated
-pure logical function has_output_units (obj)
-  class (fmsDiagField_type), intent(in) :: obj !< diag object
-  has_output_units = allocated(obj%output_units)
-end function has_output_units
-!> @brief Checks if obj%t is allocated
-!! @return true if obj%t is allocated
-pure logical function has_t (obj)
-  class (fmsDiagField_type), intent(in) :: obj !< diag object
-  has_t = allocated(obj%t)
-end function has_t
 !> @brief Checks if obj%tile_count is allocated
 !! @return true if obj%tile_count is allocated
 pure logical function has_tile_count (obj)
