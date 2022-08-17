@@ -64,6 +64,7 @@ private
     procedure :: fms_get_domain2d
     procedure :: fms_get_axis_length
     procedure :: fms_get_diag_field_id_from_name
+    procedure :: fms_get_axis_name_from_id
     procedure :: diag_end => fms_diag_object_end
 end type fmsDiagObject_type
 
@@ -463,5 +464,24 @@ fms_get_axis_length = 0
   fms_get_axis_length = this%diag_axis(axis_id)%axis_length()
 #endif
 end function fms_get_axis_length
+
+!> @brief Gets the name of the axis based on the axis_id
+ !> @return The axis_name
+function fms_get_axis_name_from_id (this, axis_id) &
+result(axis_name)
+  class(fmsDiagObject_type), intent (in) :: this !< The diag object
+  INTEGER, INTENT(in) :: axis_id !< Axis ID of the axis to the length of
+
+  character (len=:), allocatable :: axis_name
+
+#ifdef use_yaml
+    if (axis_id < 0 .and. axis_id > this%registered_axis) &
+    call mpp_error(FATAL, "fms_get_axis_length: The axis_id is not valid")
+
+    axis_name = this%diag_axis(axis_id)%get_axis_name()
+#else
+    axis_name = ""
+#endif
+end function fms_get_axis_name_from_id
 
 end module fms_diag_object_mod

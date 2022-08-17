@@ -589,8 +589,12 @@ CONTAINS
     INTEGER         , INTENT(in)  :: id !< Axis ID
     CHARACTER(len=*), INTENT(out) :: name !< Axis short name
 
-    CALL valid_id_check(id, 'get_diag_axis_name')
-    name = Axes(id)%name
+    if (use_modern_diag) then
+      name = fms_diag_object%fms_get_axis_name_from_id(id)
+    else
+      CALL valid_id_check(id, 'get_diag_axis_name')
+      name = Axes(id)%name
+    endif
   END SUBROUTINE get_diag_axis_name
 
   !> @brief Return the name of the axis' domain
