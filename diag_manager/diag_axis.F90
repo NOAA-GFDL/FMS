@@ -138,9 +138,9 @@ CONTAINS
     ENDIF
 
     if (use_modern_diag) then
-      diag_axis_init = fms_diag_object%fms_diag_axis_init(name, DATA, units, cart_name, long_name=long_name, direction=direction,&
-       & set_name=set_name, edges=edges, Domain=Domain, Domain2=Domain2, DomainU=DomainU, aux=aux, req=req, &
-       & tile_count=tile_count, domain_position=domain_position )
+      diag_axis_init = fms_diag_object%fms_diag_axis_init(name, DATA, units, cart_name, long_name=long_name,&
+       & direction=direction, set_name=set_name, edges=edges, Domain=Domain, Domain2=Domain2, DomainU=DomainU, &
+       & aux=aux, req=req, tile_count=tile_count, domain_position=domain_position )
       return
     endif
     IF ( PRESENT(tile_count)) THEN

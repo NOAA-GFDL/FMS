@@ -29,8 +29,8 @@ use fms_diag_field_object_mod, only: fmsDiagField_type, fms_diag_fields_object_i
 use fms_diag_yaml_mod, only: diag_yaml_object_init, find_diag_field, get_diag_files_id
 use fms_diag_axis_object_mod, only: fms_diag_axis_object_init, fmsDiagAxis_type, fmsDiagSubAxis_type, &
                                    &diagDomain_t, get_domain_and_domain_type, diagDomain2d_t, fms_diag_axis_object_end
-use mpp_domains_mod, only: domain1d, domain2d, domainUG, null_domain2d
 #endif
+use mpp_domains_mod, only: domain1d, domain2d, domainUG, null_domain2d
 implicit none
 private
 
@@ -346,6 +346,9 @@ FUNCTION fms_diag_axis_init(this, axis_name, axis_data, units, cart_name, long_n
   INTEGER,            INTENT(in), OPTIONAL :: domain_position !< Domain position, "NORTH" or "EAST"
   integer :: id
 
+  id = diag_null
+
+#ifdef use_yaml
   CHARACTER(len=:),   ALLOCATABLE :: edges_name !< Name of the edges
 
   this%registered_axis = this%registered_axis + 1
@@ -365,6 +368,7 @@ FUNCTION fms_diag_axis_init(this, axis_name, axis_data, units, cart_name, long_n
     & req=req, tile_count=tile_count, domain_position=domain_position)
 
   id = this%registered_axis
+#endif
 end function fms_diag_axis_init
 
 !> @brief Add a attribute to the diag_obj using the diag_field_id
@@ -391,10 +395,12 @@ subroutine fms_diag_axis_add_attribute(this, axis_id, att_name, att_value)
   character(len=*), intent(in) :: att_name     !< Name of the attribute
   class(*),         intent(in) :: att_value(:) !< The attribute value to add
 
+#ifdef use_yaml
   if (axis_id < 0 .and. axis_id > this%registered_axis) &
     call mpp_error(FATAL, "diag_axis_add_attribute: The axis_id is not valid")
 
   call this%diag_axis(axis_id)%add_axis_attribute(att_name, att_value)
+#endif
 end subroutine fms_diag_axis_add_attribute
 
 !> \brief Gets the diag field ID from the module name and field name.
@@ -424,10 +430,10 @@ type(domain2d) FUNCTION fms_get_domain2d(this, ids)
   class(fmsDiagObject_type), intent (in) :: this !< The diag object
   INTEGER, DIMENSION(:), INTENT(in) :: ids !< Axis IDs.
 
+#ifdef use_yaml
   INTEGER                      :: type_of_domain !< The type of domain
   CLASS(diagDomain_t), POINTER :: domain         !< Diag Domain pointer
 
-  fms_get_domain2d = null_domain2d
   call get_domain_and_domain_type(fms_diag_object%diag_axis, ids, type_of_domain, domain, "get_domain2d")
   if (type_of_domain .ne. TWO_D_DOMAIN) &
     call mpp_error(FATAL, 'diag_axis_mod::get_domain2d- The axis do not correspond to a 2d Domain')
@@ -435,6 +441,9 @@ type(domain2d) FUNCTION fms_get_domain2d(this, ids)
   type is (diagDomain2d_t)
     fms_get_domain2d = domain%domain2
   end select
+#else
+  fms_get_domain2d = null_domain2d
+#endif
 END FUNCTION fms_get_domain2d
 
  !> @brief Gets the length of the axis based on the axis_id
@@ -443,10 +452,14 @@ END FUNCTION fms_get_domain2d
   class(fmsDiagObject_type), intent (in) :: this !< The diag object
   INTEGER, INTENT(in) :: axis_id !< Axis ID of the axis to the length of
 
+fms_get_axis_length = 0
+
+#ifdef use_yaml
   if (axis_id < 0 .and. axis_id > this%registered_axis) &
     call mpp_error(FATAL, "fms_get_axis_length: The axis_id is not valid")
 
   fms_get_axis_length = this%diag_axis(axis_id)%axis_length()
+#endif
 end function fms_get_axis_length
 
 end module fms_diag_object_mod
