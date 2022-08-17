@@ -42,8 +42,8 @@ module fms_diag_axis_object_mod
   PRIVATE
 
   public :: fmsDiagAxis_type, fms_diag_axis_object_init, fms_diag_axis_object_end, &
-          & get_domain_and_domain_type, axis_obj, diagDomain_t, sub_axis_objs, &
-          & DIAGDOMAIN2D_T, fms_get_axis_length, fmsDiagSubAxis_type
+          & get_domain_and_domain_type, diagDomain_t, &
+          & DIAGDOMAIN2D_T, fmsDiagSubAxis_type
   !> @}
 
   !> @brief Type to hold the domain info for an axis
@@ -102,7 +102,8 @@ module fms_diag_axis_object_mod
                                                                  !! or "UG_DOMAIN")
      INTEGER                        , private :: length          !< Global axis length
      INTEGER                        , private :: direction       !< Direction of the axis 0, 1, -1
-     INTEGER                        , private :: edges           !< Axis ID for the previously defined "edges axis"
+     CHARACTER(len=:),   ALLOCATABLE, private :: edges_name      !< Name for the previously defined "edges axis"
+                                                                 !! This will be written as an attribute
      CHARACTER(len=128)             , private :: aux             !< Auxiliary name, can only be <TT>geolon_t</TT>
                                                                  !! or <TT>geolat_t</TT>
      CHARACTER(len=128)             , private :: req             !< Required field names.
@@ -116,6 +117,8 @@ module fms_diag_axis_object_mod
      PROCEDURE :: add_axis_attribute
      PROCEDURE :: register => register_diag_axis_obj
      PROCEDURE :: axis_length => get_axis_length
+     PROCEDURE :: get_axis_name
+     PROCEDURE :: set_edges_name
      PROCEDURE :: set_subaxis
      PROCEDURE :: write_axis_metadata
      PROCEDURE :: write_axis_data
@@ -124,11 +127,6 @@ module fms_diag_axis_object_mod
      ! Get/has/is subroutines as needed
   END TYPE fmsDiagAxis_type
 
-  integer                                :: number_of_axis !< Number of axis that has been registered
-  type(fmsDiagAxis_type), ALLOCATABLE, TARGET  :: axis_obj(:)    !< Diag_axis objects
-  integer                                :: nsubaxis_objs  !< Number of sub_axis that has been registered
-  type(fmsDiagSubAxis_type), ALLOCATABLE, Target   :: sub_axis_objs(:) !< Registered sub_axis objects
-
   !> @addtogroup fms_diag_yaml_mod
   !> @{
   contains
@@ -136,7 +134,7 @@ module fms_diag_axis_object_mod
   !!!!!!!!!!!!!!!!! DIAG AXIS PROCEDURES !!!!!!!!!!!!!!!!!
   !> @brief Initialize the axis
   subroutine register_diag_axis_obj(obj, axis_name, axis_data, units, cart_name, long_name, direction,&
-  & set_name, edges, Domain, Domain2, DomainU, aux, req, tile_count, domain_position )
+  & set_name, Domain, Domain2, DomainU, aux, req, tile_count, domain_position)
     class(fmsDiagAxis_type),  INTENT(out)    :: obj             !< Diag_axis obj
     CHARACTER(len=*),   INTENT(in)           :: axis_name       !< Name of the axis
     class(*),           INTENT(in)           :: axis_data(:)    !< Array of coordinate values
@@ -145,7 +143,6 @@ module fms_diag_axis_object_mod
     CHARACTER(len=*),   INTENT(in), OPTIONAL :: long_name       !< Long name for the axis.
     CHARACTER(len=*),   INTENT(in), OPTIONAL :: set_name        !< Name of the parent axis, if it is a subaxis
     INTEGER,            INTENT(in), OPTIONAL :: direction       !< Indicates the direction of the axis
-    INTEGER,            INTENT(in), OPTIONAL :: edges           !< Axis ID for the previously defined "edges axis"
     TYPE(domain1d),     INTENT(in), OPTIONAL :: Domain          !< 1D domain
     TYPE(domain2d),     INTENT(in), OPTIONAL :: Domain2         !< 2D domain
     TYPE(domainUG),     INTENT(in), OPTIONAL :: DomainU         !< Unstructured domain
@@ -208,10 +205,6 @@ module fms_diag_axis_object_mod
     obj%direction = 0
     if (present(direction)) obj%direction = direction
     call check_if_valid_direction(obj%direction)
-
-    obj%edges = 0
-    if (present(edges)) obj%edges = edges
-    call check_if_valid_edges(obj%edges)
 
     if (present(aux)) obj%aux = trim(aux)
     if (present(req)) obj%req = trim(req)
@@ -301,10 +294,9 @@ module fms_diag_axis_object_mod
       call register_variable_attribute(fileobj, axis_name, "positive", "down", str_len=4)
     end select
 
-    if (obj%edges > 0) then
-      axis_edges_name = axis_obj(obj%edges)%axis_name
-      call register_variable_attribute(fileobj, axis_name, "edges", axis_edges_name, &
-        str_len=len_trim(axis_edges_name))
+    if (allocated(obj%edges_name)) then
+      call register_variable_attribute(fileobj, axis_name, "edges", obj%edges_name, &
+        str_len=len_trim(obj%edges_name))
     endif
 
     if(allocated(obj%attributes)) then
@@ -339,7 +331,7 @@ module fms_diag_axis_object_mod
   !> @return axis length
   function get_axis_length(obj) &
   result (axis_length)
-    class(fmsDiagAxis_type), intent(inout) :: obj !< diag_axis obj
+    class(fmsDiagAxis_type), intent(in)    :: obj !< diag_axis obj
     integer                                :: axis_length
 
     !< If the axis is domain decomposed axis_length will be set to the length for the current PE:
@@ -350,6 +342,24 @@ module fms_diag_axis_object_mod
     endif
 
   end function
+
+  !> @brief Get the name of the axis
+  !> @return axis name
+  function get_axis_name(this) &
+  result (axis_name)
+    class(fmsDiagAxis_type), intent(in)    :: this !< diag_axis obj
+    CHARACTER(len=:),   ALLOCATABLE :: axis_name
+
+    axis_name = this%axis_name
+  end function
+
+  !> @brief Set the name of the edges
+  subroutine set_edges_name(this, edges_name)
+    class(fmsDiagAxis_type), intent(inout) :: this !< diag_axis obj
+    CHARACTER(len=*),        intent(in)     :: edges_name !< Name of the edges
+
+    this%edges_name = edges_name
+  end subroutine
 
   !> @brief Set the subaxis of the axis obj
   !> @return A sub_axis id corresponding to the indices of the sub_axes in the sub_axes_objs array
@@ -367,12 +377,9 @@ module fms_diag_axis_object_mod
       if (obj%subaxis(i)%exists(bounds)) return
     enddo
 
-    !< TO DO: everything
+    !TODO: everything
     obj%nsubaxis = obj%nsubaxis + 1
-
-    nsubaxis_objs = nsubaxis_objs + 1
-    sub_axes_id = nsubaxis_objs
-    !< TO DO: set the parent_axis_id
+    sub_axes_id = -999
   end function
 
   !!!!!!!!!!!!!!!!!! SUB AXIS PROCEDURES !!!!!!!!!!!!!!!!!
@@ -392,7 +399,7 @@ module fms_diag_axis_object_mod
   !> @return Length of the 2D domain
   function get_length(obj, cart_axis, domain_position, global_length) &
   result (length)
-    class(diagDomain_t), INTENT(INOUT) :: obj       !< diag_axis obj
+    class(diagDomain_t), INTENT(IN)    :: obj       !< diag_axis obj
     character(len=*),    INTENT(IN)    :: cart_axis !< cart_axis of the axis
     integer,             INTENT(IN)    :: domain_position !< Domain position (CENTER, NORTH, EAST)
     integer,             INTENT(IN)    :: global_length !< global_length of the axis
@@ -428,11 +435,11 @@ module fms_diag_axis_object_mod
     end select
   end subroutine set_axis_domain
 
-  !< @brief Allocates the number of axis and the number of subaxis
+  !< @brief Allocates the axis and subaxis objects
   !! @return true if there are axis and subaxis allocated
   logical function fms_diag_axis_object_init(axis_array, subaxis_array)
-  class(fmsDiagAxis_type)   , allocatable, target, intent(inout) :: axis_array(:) !< Array of diag_axis
-  class(fmsDiagSubAxis_type), allocatable, target, intent(inout) :: subaxis_array(:) !< Array of diag_subaxis
+  class(fmsDiagAxis_type)   , allocatable, intent(inout) :: axis_array(:) !< Array of diag_axis
+  class(fmsDiagSubAxis_type), allocatable, intent(inout) :: subaxis_array(:) !< Array of diag_subaxis
 
     allocate(axis_array(max_axes))
     axis_array%axis_id = DIAG_NULL
@@ -443,10 +450,17 @@ module fms_diag_axis_object_mod
     fms_diag_axis_object_init = .true.
   end function fms_diag_axis_object_init
 
-  subroutine fms_diag_axis_object_end()
-    deallocate(axis_obj)
+  !< @brief Deallocates the axis and subaxis objects
+  !! @return true if there are axis and subaxis allocated
+  logical function fms_diag_axis_object_end(axis_array, subaxis_array)
+    class(fmsDiagAxis_type)   , allocatable, intent(inout) :: axis_array(:) !< Array of diag_axis
+    class(fmsDiagSubAxis_type), allocatable, intent(inout) :: subaxis_array(:) !< Array of diag_subaxis
 
-  end subroutine fms_diag_axis_object_end
+    deallocate(axis_array)
+    deallocate(subaxis_array)
+    fms_diag_axis_object_end = .false.
+
+  end function fms_diag_axis_object_end
 
   !> @brief Check if a cart_name is valid and crashes if it isn't
   subroutine check_if_valid_cart_name(cart_name)
@@ -484,17 +498,9 @@ module fms_diag_axis_object_mod
     end select
   end subroutine check_if_valid_direction
 
-  !> @brief Check if the edges id is valid and crashes if it isn't
-  subroutine check_if_valid_edges(edges)
-    integer, INTENT(IN) :: edges
-
-    if (edges < 0 .or. edges > number_of_axis) &
-       call mpp_error(FATAL, "diag_axit_init: The edge axis has not been defined. "&
-                             "Call diag_axis_init for the edge axis first")
-  end subroutine check_if_valid_edges
-
   !> @brief Loop through a variable's axis_id to determine and return the domain type and domain to use
-  subroutine get_domain_and_domain_type(axis_id, domain_type, domain, var_name)
+  subroutine get_domain_and_domain_type(diag_axis, axis_id, domain_type, domain, var_name)
+    class(fmsDiagAxis_type), target, intent(in)  :: diag_axis(:)  !< Array of diag_axis
     integer,                      INTENT(IN)  :: axis_id(:)    !< Array of axis ids
     integer,                      INTENT(OUT) :: domain_type   !< fileobj_type to use
     CLASS(diagDomain_t), POINTER, INTENT(OUT) :: domain        !< Domain
@@ -509,15 +515,15 @@ module fms_diag_axis_object_mod
     do i = 1, size(axis_id)
       j = axis_id(i)
       !< Check that all the axis are in the same domain
-      if (domain_type .ne. axis_obj(j)%type_of_domain) then
+      if (domain_type .ne. diag_axis(j)%type_of_domain) then
         !< If they are different domains, one of them can be NO_DOMAIN
         !! i.e a variable can have axis that are domain decomposed (x,y) and an axis that isn't (z)
-        if (domain_type .eq. NO_DOMAIN .or. axis_obj(j)%type_of_domain .eq. NO_DOMAIN ) then
+        if (domain_type .eq. NO_DOMAIN .or. diag_axis(j)%type_of_domain .eq. NO_DOMAIN ) then
           !< Update the domain_type and domain, if needed
-          if ((axis_obj(j)%type_of_domain .eq. TWO_D_DOMAIN  .and. size(axis_id) > 2) &
-             & .or. axis_obj(j)%type_of_domain .eq. UG_DOMAIN) then
-               domain_type = axis_obj(j)%type_of_domain
-               domain => axis_obj(j)%axis_domain
+          if ((diag_axis(j)%type_of_domain .eq. TWO_D_DOMAIN  .and. size(axis_id) > 2) &
+             & .or. diag_axis(j)%type_of_domain .eq. UG_DOMAIN) then
+               domain_type = diag_axis(j)%type_of_domain
+               domain => diag_axis(j)%axis_domain
           endif
         else
           call mpp_error(FATAL, "The variable:"//trim(var_name)//" has axis that are not in the same domain")
@@ -526,18 +532,6 @@ module fms_diag_axis_object_mod
     enddo
   end subroutine get_domain_and_domain_type
 
-  !> @brief Gets the length of the axis based on the axis_id
-  !> @return Axis_length
-  function fms_get_axis_length(axis_id)&
-  result(axis_length)
-    INTEGER, INTENT(in) :: axis_id !< Axis ID of the axis to the length of
-    integer :: axis_length
-
-    if (axis_id < 0 .and. axis_id > number_of_axis) &
-      call mpp_error(FATAL, "fms_get_axis_length: The axis_id is not valid")
-
-    axis_length = axis_obj(axis_id)%axis_length()
-  end function fms_get_axis_length
 end module fms_diag_axis_object_mod
 !> @}
 ! close documentation grouping

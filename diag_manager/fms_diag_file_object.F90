@@ -30,7 +30,7 @@ use diag_data_mod, only: DIAG_NULL, NO_DOMAIN, max_axes, SUB_REGIONAL, get_base_
 !TODO cross dependency use diag_util_mod, only: diag_time_inc
 use time_manager_mod, only: time_type, operator(/=), operator(==)
 use fms_diag_yaml_mod, only: diag_yaml, diagYamlObject_type, diagYamlFiles_type
-use fms_diag_axis_object_mod, only: diagDomain_t, get_domain_and_domain_type
+use fms_diag_axis_object_mod, only: diagDomain_t, get_domain_and_domain_type, fmsDiagAxis_type
 use mpp_mod, only: mpp_error, FATAL
 implicit none
 private
@@ -451,10 +451,12 @@ pure function has_file_global_meta (obj) result(res)
   res = obj%diag_yaml_file%has_file_global_meta()
 end function has_file_global_meta
 !> @brief Sets the domain and type of domain from the axis IDs
-subroutine set_domain_from_axis(obj, axes)
-  class(fmsDiagFile_type), intent(inout)       :: obj            !< The file object
+subroutine set_domain_from_axis(obj, diag_axis, axes)
+  class(fmsDiagFile_type), intent(inout)       :: obj          !< The file object
+  class(fmsDiagAxis_type), intent(in)          :: diag_axis(:) !< Array of diag_axis
   integer, intent(in) :: axes (:)
-  call get_domain_and_domain_type(axes, obj%type_of_domain, obj%domain, obj%get_file_fname())
+
+  call get_domain_and_domain_type(diag_axis, axes, obj%type_of_domain, obj%domain, obj%get_file_fname())
 end subroutine set_domain_from_axis
 !> @brief Set the domain and the type_of_domain for a file
 !> @details This subroutine is going to be called once by every variable in the file

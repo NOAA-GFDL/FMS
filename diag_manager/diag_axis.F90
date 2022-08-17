@@ -41,8 +41,6 @@ use platform_mod
        & max_num_axis_sets, max_axis_attributes, debug_diag_manager,&
        & first_send_data_call, diag_atttype, use_modern_diag, TWO_D_DOMAIN
   use fms_diag_object_mod, only:fms_diag_object
-  USE fms_diag_axis_object_mod, ONLY: &
-       & diagDomain_t, DIAGDOMAIN2D_T, get_domain_and_domain_type, fms_get_axis_length
 #ifdef use_netCDF
   USE netcdf, ONLY: NF90_INT, NF90_FLOAT, NF90_CHAR
 #endif
@@ -611,7 +609,7 @@ CONTAINS
     INTEGER :: length
 
     if (use_modern_diag) then
-      get_axis_length = fms_get_axis_length(id)
+      get_axis_length = fms_diag_object%fms_get_axis_length(id)
     else
       CALL valid_id_check(id, 'get_axis_length')
       IF ( Axes(id)%Domain .NE. null_domain1d ) THEN
@@ -699,26 +697,17 @@ CONTAINS
 
     INTEGER :: i, id, flag
 
-    INTEGER                      :: type_of_domain !< The type of domain
-    CLASS(diagDomain_t), POINTER :: domain         !< Diag Domain pointer
-
     IF ( SIZE(ids(:)) < 1 ) THEN
        ! <ERROR STATUS="FATAL">input argument has incorrect size.</ERROR>
        CALL error_mesg('diag_axis_mod::get_domain2d', 'input argument has incorrect size', FATAL)
     END IF
-    get_domain2d = null_domain2d
 
     if (use_modern_diag) then
-      call get_domain_and_domain_type(ids, type_of_domain, domain, "get_domain2d")
-      if (type_of_domain .ne. TWO_D_DOMAIN) &
-        call error_mesg('diag_axis_mod::get_domain2d', 'The axis do not correspond to a 2d Domain', FATAL)
-      select type(domain)
-      type is (diagDomain2d_t)
-        get_domain2d = domain%domain2
-      end select
+       get_domain2d = fms_diag_object%fms_get_domain2d(ids)
       return
     endif
 
+    get_domain2d = null_domain2d
     flag = 0
     DO i = 1, SIZE(ids(:))
        id = ids(i)
