@@ -205,6 +205,8 @@ integer function fms_register_diag_field_obj &
   nullify (fileptr)
   nullify (fieldptr)
   deallocate(diag_field_indices)
+#else
+  fms_register_diag_field_obj = diag_null
 #endif
 end function fms_register_diag_field_obj
 
@@ -346,8 +348,6 @@ FUNCTION fms_diag_axis_init(this, axis_name, axis_data, units, cart_name, long_n
   INTEGER,            INTENT(in), OPTIONAL :: domain_position !< Domain position, "NORTH" or "EAST"
   integer :: id
 
-  id = diag_null
-
 #ifdef use_yaml
   CHARACTER(len=:),   ALLOCATABLE :: edges_name !< Name of the edges
 
@@ -368,6 +368,8 @@ FUNCTION fms_diag_axis_init(this, axis_name, axis_data, units, cart_name, long_n
     & req=req, tile_count=tile_count, domain_position=domain_position)
 
   id = this%registered_axis
+#else
+  id = diag_null
 #endif
 end function fms_diag_axis_init
 
