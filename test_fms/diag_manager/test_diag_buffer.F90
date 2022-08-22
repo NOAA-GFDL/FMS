@@ -26,7 +26,7 @@ program test_diag_bufer
     !! 0d
     ! allocate some buffers
     do i=1, 10
-        buff_id = buffobj0(i)%allocate_buffer(r8_data)
+        call buffobj0(i)%allocate_buffer(r8_data)
         call buffobj0(i)%initialize_buffer( real(i, kind=r8_kind) )
     end do
     ! add some values
@@ -34,17 +34,18 @@ program test_diag_bufer
     ! get the buffer data
     buffer_out = buffobj0(5)%get_buffer_data()
     ! get the 5d remapped buffer data
-    remap_buffer_out => buffobj0(5)%get_remapped_buffer_pointer()
+    ! TODO scalar buffer remapping
+    !remap_buffer_out => buffobj0(5)%get_remapped_buffer_pointer()
     ! check output from object and remapped buffer
     select type (buffer_out)
       type is(real(8))
         print *, buffer_out
     end select
-    call print_5d(remap_buffer_out)
+    !call print_5d(remap_buffer_out)
 
     !! 1d
     ! allocate a buffer to the given type and get it's id
-    buff_id = buffobj1%allocate_buffer(r4_data, 10)
+    call buffobj1%allocate_buffer(r4_data, 10)
     ! init to given value
     call buffobj1%initialize_buffer( real(0.1, kind=r4_kind) )
     ! add some values to the buffer
@@ -64,7 +65,7 @@ program test_diag_bufer
 
     !! 2d
     ! allocate a buffer to the given type and get it's id
-    buff_id = buffobj2%allocate_buffer(i4_data, (/ 5, 10 /) )
+    call buffobj2%allocate_buffer(i4_data, (/ 5, 10 /) )
     !! init to given value
     call buffobj2%initialize_buffer( int(2, kind=i4_kind) )
     !! get the buffer
@@ -81,7 +82,7 @@ program test_diag_bufer
 
     !! 3d
     ! allocate a buffer to the given type and get it's id
-    buff_id = buffobj3%allocate_buffer(i8_data, (/ 5, 10, 5/) )
+    call buffobj3%allocate_buffer(i8_data, (/ 5, 10, 5/) )
     !! init to given value
     call buffobj3%initialize_buffer( int(3, kind=i8_kind) )
     !! get the buffer
@@ -97,7 +98,7 @@ program test_diag_bufer
 
     !! 4d
     ! allocate a buffer to the given type and get it's id
-    buff_id = buffobj4%allocate_buffer(i8_data, (/ 5, 5, 5, 5/) )
+    call buffobj4%allocate_buffer(i8_data, (/ 5, 5, 5, 5/) )
     !! init to given value
     call buffobj4%initialize_buffer( int(4, kind=i8_kind) )
     !! get the buffer
@@ -114,7 +115,7 @@ program test_diag_bufer
 
     !! 5d
     ! allocate a buffer to the given type and get it's id
-    buff_id = buffobj5%allocate_buffer(i8_data, (/ 5, 5, 5, 5, 5/) )
+    call buffobj5%allocate_buffer(i8_data, (/ 5, 5, 5, 5, 5/) )
     !! init to given value
     call buffobj5%initialize_buffer( int(5, kind=i8_kind) )
     !! get the buffer

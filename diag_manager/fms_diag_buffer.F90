@@ -23,9 +23,6 @@
 !! @description Holds buffered data for fmsDiagVars_type objects
 !! buffer0-5d types extend fmsDiagBuffer_class, and upon allocation
 !! are added to the module's buffer_lists depending on it's dimension
-!!
-!! TODO: - the allocates assume 1 as the lower bound
-!!       - add_to_buffer assumes copying to/from a 1:size(input array) 
 module fms_diag_buffer_mod
 
 use platform_mod
@@ -42,25 +39,24 @@ private
 !> @brief Object that holds buffered data and other diagnostics
 !! Abstract to ensure use through its extensions(buffer0-5d types)
 type, abstract :: fmsDiagBuffer_class
-  class(*), dimension(:,:,:,:,:), allocatable :: remap_buffer !< remapped buffer data
+  class(*), dimension(:,:,:,:,:), pointer     :: remap_buffer !< remapped buffer data
   integer, allocatable, private               :: buffer_id !< index in buffer list
-  !type(time_type), private                    :: init_time !< initialization time
 
   contains
   procedure :: get_remapped_buffer_pointer
   procedure :: flush_buffer
   procedure :: remap_buffer_data => remap_buffer
   procedure :: set_buffer_id
-  ! TODO deferred routines, will require some interfaces 
+  ! TODO deferred routines, will require some interfaces
   !procedure(allocate_buffer), deferred :: allocate_buffer
-  !procedure, deferred :: get_buffer 
+  !procedure, deferred :: get_buffer
   !procedure, deferred :: initialize_buffer
 
 end type fmsDiagBuffer_class
 
 !> holds pointer to allocated buffer0-5d objects
 type :: fmsDiagBufferContainer_type
-  class(fmsDiagBuffer_class), allocatable :: diag_buffer_obj 
+  class(fmsDiagBuffer_class), allocatable :: diag_buffer_obj
 end type
 
 !> Scalar buffer type to extend fmsDiagBufferContainer_type
@@ -134,22 +130,19 @@ public :: buffer5d
 public :: fmsDiagBuffer_class
 public :: fmsDiagBufferContainer_type
 ! public routines
-public :: fms_diag_buffer_init 
+public :: fms_diag_buffer_init
+
 ! Module variables
-logical,private :: module_is_initialized = .false. !< Flag indicating if the module is initialized
-integer, parameter :: DEFAULT_BUFFER_LIST_SIZE = 64
-
-
 logical, parameter, private :: DEBUG = .true. !< debugging output
 
 ! TODO interface with function declarations needed for deferred routines
 !abstract interface
-  !integer function allocate_buffer(buffobj, mold) &
+  !integer function allocate_buffer(buffobj, buff_type) &
   !result(rslt)
-    !import buffer0d 
-    !!import time_type 
+    !import buffer0d
+    !!import time_type
     !class(fmsDiag), intent(inout) :: buffobj !< scalar buffer object
-    !class(*),intent(in) :: mold !< allocates to the type of mold
+    !class(*),intent(in) :: buff_type !< allocates to the type of buff_type
     !!type(time_type), intent(in), optional :: init_time
   !end function
 !end interface
@@ -160,24 +153,18 @@ contains
 !!--------module routines
 
 !> Initializes a list of diag buffers
-!! and sets the buffer_id's to DIAG_NOT_REGISTERED
-logical function fms_diag_buffer_init(buffobjs, buff_dims)
+logical function fms_diag_buffer_init(buffobjs, buff_list_size)
   type(fmsDiagBufferContainer_type), allocatable, intent(out) :: buffobjs(:) !< an array of buffer container types to allocate
-  integer, intent(in)                                          :: buff_dims !< number of dimensions needed for the buffer data
-  integer :: i
+  integer, intent(in)                                          :: buff_list_size!< number of dimensions needed for the buffer data
 
-  allocate(buffobjs(DEFAULT_BUFFER_LIST_SIZE))
-  do i=1, SIZE(buffobjs)
-    buffobjs(i) = fms_diag_buffer_create_container(buff_dims)
-    call buffobjs(i)%diag_buffer_obj%set_buffer_id(DIAG_NOT_REGISTERED)
-  enddo
+  allocate(buffobjs(buff_list_size))
   fms_diag_buffer_init = allocated(buffobjs)
 end function
 
 !> creates a container type with a new (unallocated) buffer for the given dimensions
 function fms_diag_buffer_create_container(buff_dims) &
 result(rslt)
-  integer, intent(in)                            :: buff_dims !< dimensions 
+  integer, intent(in)                            :: buff_dims !< dimensions
   type(fmsDiagBufferContainer_type), allocatable :: rslt
 
   allocate(rslt)
@@ -195,11 +182,11 @@ result(rslt)
     case (5)
       allocate(buffer5d :: rslt%diag_buffer_obj)
     case default
-      call mpp_error(FATAL, 'fms_diag_buffer_create_container: invalid number of dimensions given') 
+      call mpp_error(FATAL, 'fms_diag_buffer_create_container: invalid number of dimensions given')
   end select
-end function 
+end function
 
-!!--------generic routines for any fmsDiagBuffer_class objects 
+!!--------generic routines for any fmsDiagBuffer_class objects
 
 !> setter for buffer_id for any buffer objects
 subroutine set_buffer_id(this, id)
@@ -211,8 +198,8 @@ end subroutine
 
 !> Remaps 0-5d data buffer from the given object onto a 5d array and sets it in the type
 subroutine remap_buffer(this)
-  class(fmsDiagBuffer_class), intent(inout) :: this !< any dimension buffer object
-  integer                   :: buff_bounds(5)
+  class(fmsDiagBuffer_class), target, intent(inout) :: this !< any dimension buffer object
+  !class(*), pointer                                  :: tmp1d(:)
 
   if( DEBUG) print *, 'remapping buffer'
   ! get num dimensions from type extension
@@ -220,133 +207,53 @@ subroutine remap_buffer(this)
     type is (buffer0d)
       if (.not. allocated(this%buffer)) call mpp_error(FATAL, "remap_buffer: buffer data not yet allocated")
       if (DEBUG) print *, '0d buffer'
+      ! TODO need a workaround since array pointers can not point to scalars (unless we use some C pointer functions)
+      !tmp1d => transfer(this%buffer, tmp1d)
+      !this%remap_buffer(1:1, 1:1, 1:1, 1:1, 1:1) => tmp1d
+      !this%remap_buffer(1:size(this%buffer,1), 1:1, 1:1, 1:1, 1:1) => this%buffer(1:size(this%buffer,1))
+      !this%remap_buffer(1, 1, 1, 1, 1) => this%buffer
       ! get buffer data type to allocate and remap
-      select type (buff => this%buffer)
-        type is(integer(i4_kind))
-          allocate (integer(kind=i4_kind) :: this%remap_buffer(1,1,1,1,1))
-          this%remap_buffer = buff
-        type is(integer(i8_kind))
-          allocate (integer(kind=i8_kind) :: this%remap_buffer(1,1,1,1,1))
-          this%remap_buffer = buff
-        type is(real(r4_kind))
-          allocate (real(kind=r4_kind) :: this%remap_buffer(1,1,1,1,1))
-          this%remap_buffer = buff
-        type is(real(r8_kind))
-          allocate (real(kind=r8_kind) :: this%remap_buffer(1,1,1,1,1))
-          this%remap_buffer = buff 
-      end select
     type is (buffer1d)
       if (.not. allocated(this%buffer)) call mpp_error(FATAL, "remap_buffer: buffer data not yet allocated")
       if( DEBUG) print *, '1d buffer'
-      buff_bounds(1) = SIZE(this%buffer, 1)
-      select type (buff => this%buffer)
-        type is(integer(i4_kind))
-          allocate (integer(kind=i4_kind) :: this%remap_buffer(buff_bounds(1),1,1,1,1))
-          this%remap_buffer = RESHAPE( buff, (/ buff_bounds(1),1,1,1,1 /))
-        type is(integer(i8_kind))
-          allocate (integer(kind=i8_kind) :: this%remap_buffer(buff_bounds(1),1,1,1,1))
-          this%remap_buffer = RESHAPE( buff, (/ buff_bounds(1),1,1,1,1 /))
-        type is(real(r4_kind))
-          allocate (real(kind=r4_kind) :: this%remap_buffer(buff_bounds(1),1,1,1,1))
-          this%remap_buffer = RESHAPE( buff, (/ buff_bounds(1),1,1,1,1 /))
-        type is(real(r8_kind))
-          allocate (real(kind=r8_kind) :: this%remap_buffer(buff_bounds(1),1,1,1,1))
-          this%remap_buffer = RESHAPE( buff, (/ buff_bounds(1),1,1,1,1 /))
-      end select
+      this%remap_buffer(1:size(this%buffer,1), 1:1, 1:1, 1:1, 1:1) => this%buffer(1:size(this%buffer,1))
     type is (buffer2d)
       if (.not. allocated(this%buffer)) call mpp_error(FATAL, "remap_buffer: buffer data not yet allocated")
-      buff_bounds(1) = SIZE(this%buffer, 1)
-      buff_bounds(2) = SIZE(this%buffer, 2)
-      select type (buff => this%buffer)
-        type is(integer(i4_kind))
-          allocate (integer(kind=i4_kind) :: this%remap_buffer(buff_bounds(1),buff_bounds(2),1,1,1))
-          this%remap_buffer = RESHAPE( buff, (/ buff_bounds(1),buff_bounds(2),1,1,1 /))
-        type is(integer(i8_kind))
-          allocate (integer(kind=i8_kind) :: this%remap_buffer(buff_bounds(1),buff_bounds(2),1,1,1))
-          this%remap_buffer = RESHAPE( buff, (/ buff_bounds(1),buff_bounds(2),1,1,1 /))
-        type is(real(r4_kind))
-          allocate (real(kind=r4_kind) :: this%remap_buffer(buff_bounds(1),buff_bounds(2),1,1,1))
-          this%remap_buffer = RESHAPE( buff, (/ buff_bounds(1),buff_bounds(2),1,1,1 /))
-        type is(real(r8_kind))
-          allocate (real(kind=r8_kind) :: this%remap_buffer(buff_bounds(1),buff_bounds(2),1,1,1))
-          this%remap_buffer = RESHAPE( buff, (/ buff_bounds(1),buff_bounds(2),1,1,1 /))
-      end select
+      this%remap_buffer(1:size(this%buffer,1), 1:size(this%buffer,2), 1:1, 1:1, 1:1) => &
+                                           & this%buffer(1:size(this%buffer,1), 1:size(this%buffer, 2))
     type is (buffer3d)
       if (.not. allocated(this%buffer)) call mpp_error(FATAL, "remap_buffer: buffer data not yet allocated")
-      buff_bounds(1) = SIZE(this%buffer, 1)
-      buff_bounds(2) = SIZE(this%buffer, 2)
-      buff_bounds(3) = SIZE(this%buffer, 3)
-      select type (buff => this%buffer)
-        type is(integer(i4_kind))
-          allocate (integer(kind=i4_kind) :: this%remap_buffer(buff_bounds(1),buff_bounds(2), buff_bounds(3),1,1))
-          this%remap_buffer = RESHAPE( buff, (/ buff_bounds(1),buff_bounds(2),buff_bounds(3),1,1 /))
-        type is(integer(i8_kind))
-          allocate (integer(kind=i8_kind) :: this%remap_buffer(buff_bounds(1),buff_bounds(2),buff_bounds(3),1,1))
-          this%remap_buffer = RESHAPE( buff, (/ buff_bounds(1),buff_bounds(2),buff_bounds(3),1,1 /))
-        type is(real(r4_kind))
-          allocate (real(kind=r4_kind) :: this%remap_buffer(buff_bounds(1),buff_bounds(2),buff_bounds(3),1,1))
-          this%remap_buffer = RESHAPE( buff, (/ buff_bounds(1),buff_bounds(2),buff_bounds(3),1,1 /))
-        type is(real(r8_kind))
-          allocate (real(kind=r8_kind) :: this%remap_buffer(buff_bounds(1),buff_bounds(2),buff_bounds(3),1,1))
-          this%remap_buffer = RESHAPE( buff, (/ buff_bounds(1),buff_bounds(2),buff_bounds(3),1,1 /))
-      end select
+      this%remap_buffer(1:size(this%buffer,1), 1:size(this%buffer,2), 1:size(this%buffer,3), 1:1, 1:1) => &
+                                           & this%buffer(1:size(this%buffer,1), 1:size(this%buffer, 2), 1:size(this%buffer, 3))
     type is (buffer4d)
-      buff_bounds(1) = SIZE(this%buffer, 1)
-      buff_bounds(2) = SIZE(this%buffer, 2)
-      buff_bounds(3) = SIZE(this%buffer, 3)
-      buff_bounds(4) = SIZE(this%buffer, 4)
-      select type (buff => this%buffer)
-        type is(integer(i4_kind))
-          allocate (integer(kind=i4_kind) :: this%remap_buffer(buff_bounds(1),buff_bounds(2), buff_bounds(3), buff_bounds(4),1))
-          this%remap_buffer = RESHAPE( buff, (/ buff_bounds(1),buff_bounds(2),buff_bounds(3), buff_bounds(4),1 /))
-        type is(integer(i8_kind))
-          allocate (integer(kind=i8_kind) :: this%remap_buffer(buff_bounds(1),buff_bounds(2), buff_bounds(3), buff_bounds(4),1))
-          this%remap_buffer = RESHAPE( buff, (/ buff_bounds(1),buff_bounds(2),buff_bounds(3), buff_bounds(4),1 /))
-        type is(real(r4_kind))
-          allocate (real(kind=r4_kind) :: this%remap_buffer(buff_bounds(1),buff_bounds(2),buff_bounds(3), buff_bounds(4),1))
-          this%remap_buffer = RESHAPE( buff, (/ buff_bounds(1),buff_bounds(2),buff_bounds(3), buff_bounds(4),1 /))
-        type is(real(r8_kind))
-          allocate (real(kind=r8_kind) :: this%remap_buffer(buff_bounds(1),buff_bounds(2),buff_bounds(3), buff_bounds(4),1))
-          this%remap_buffer = RESHAPE( buff, (/ buff_bounds(1),buff_bounds(2),buff_bounds(3), buff_bounds(4),1 /))
-      end select
+      if (.not. allocated(this%buffer)) call mpp_error(FATAL, "remap_buffer: buffer data not yet allocated")
+      this%remap_buffer(1:size(this%buffer,1), 1:size(this%buffer,2), 1:size(this%buffer,3), &
+                        1:size(this%buffer,4), 1:1) => this%buffer(1:size(this%buffer, 1), 1:size(this%buffer, 2), &
+                                                                   1:size(this%buffer, 3), 1:size(this%buffer, 4))
     type is (buffer5d)
-      buff_bounds(1) = SIZE(this%buffer, 1)
-      buff_bounds(2) = SIZE(this%buffer, 2)
-      buff_bounds(3) = SIZE(this%buffer, 3)
-      buff_bounds(4) = SIZE(this%buffer, 4)
-      buff_bounds(5) = SIZE(this%buffer, 5)
-      select type (buff => this%buffer)
-        type is(integer(i4_kind))
-          allocate (integer(kind=i4_kind) :: this%remap_buffer(buff_bounds(1),buff_bounds(2), buff_bounds(3), buff_bounds(4), buff_bounds(5)))
-          this%remap_buffer = buff 
-        type is(integer(i8_kind))
-          allocate (integer(kind=i8_kind) :: this%remap_buffer(buff_bounds(1),buff_bounds(2), buff_bounds(3), buff_bounds(4), buff_bounds(5)))
-          this%remap_buffer = buff
-        type is(real(r4_kind))
-          allocate (real(kind=r4_kind) :: this%remap_buffer(buff_bounds(1),buff_bounds(2),buff_bounds(3), buff_bounds(4), buff_bounds(5)))
-          this%remap_buffer = buff
-        type is(real(r8_kind))
-          allocate (real(kind=r8_kind) :: this%remap_buffer(buff_bounds(1),buff_bounds(2),buff_bounds(3), buff_bounds(4), buff_bounds(5)))
-          this%remap_buffer = buff
-      end select
+      if (.not. allocated(this%buffer)) call mpp_error(FATAL, "remap_buffer: buffer data not yet allocated")
+      this%remap_buffer(1:size(this%buffer,1), 1:size(this%buffer,2), 1:size(this%buffer,3), &
+                        1:size(this%buffer,4), 1:size(this%buffer,5)) => this%buffer(1:size(this%buffer, 1), &
+                                                                                     1:size(this%buffer, 2), &
+                                                                                     1:size(this%buffer, 3), &
+                                                                                     1:size(this%buffer, 4), &
+                                                                                     1:size(this%buffer, 5) )
     class default
       call mpp_error( FATAL, 'remap_buffer_pointer: invalid buffer type for remapping')
   end select
-   
-end subroutine 
+
+end subroutine
 
 !> @brief Gets the remapped buffer pointer
 !! Will do the remapping if not set already
 function get_remapped_buffer_pointer (this) &
 result(rslt)
   class(fmsDiagBuffer_class), target, intent(inout) :: this !< any buffer object
-  class(fmsDiagBuffer_class), pointer     :: objptr
   class(*), pointer, dimension(:,:,:,:,:)  :: rslt
-  if(.not. allocated(this%remap_buffer)) then
-    call remap_buffer(this) 
+  if(.not. associated(this%remap_buffer)) then
+    call remap_buffer(this)
   endif
-  objptr => this 
-  rslt => objptr%remap_buffer
+  rslt => this%remap_buffer
 end function
 
 !> Deallocates data fields from a buffer object
@@ -369,7 +276,7 @@ subroutine flush_buffer(this)
   deallocate(this%buffer_id)
 end subroutine
 
-!! -----------Type-specific routines for buffer0-5d 
+!! -----------Type-specific routines for buffer0-5d
 
 !! allocations could be done in one routine for 0-5d if buffobj is changed to fmsDiagBuffer_class
 !! not sure which approach would be better
@@ -447,7 +354,7 @@ end subroutine
 subroutine allocate_buffer_3d(this, buff_type, buff_sizes)
   class(buffer3d), intent(inout), target :: this !< 3D buffer object
   class(*),intent(in) :: buff_type !< allocates to the type of buff_type
-  integer, intent(in) :: buff_sizes(3) !< dimension sizes 
+  integer, intent(in) :: buff_sizes(3) !< dimension sizes
 
   select type (buff_type)
     type is (integer(kind=i4_kind))
@@ -583,10 +490,9 @@ result(rslt)
 end function
 
 !> @brief Initializes a buffer to a given fill value
-!! TODO default to 0?
 subroutine initialize_buffer_0d (this, fillval)
   class(buffer0d), intent(inout) :: this !< scalar buffer object
-  class(*) :: fillval
+  class(*), intent(in) :: fillval !< fill value, must be same type as the allocated buffer in this
 
   if(.not. allocated(this%buffer)) call mpp_error(FATAL, 'initialize_buffer_0d:' // &
       'buffer not yet allocated, allocate_buffer() must be called on this object first.')
@@ -628,7 +534,7 @@ end subroutine
 !> @brief Initializes a buffer to a given fill value
 subroutine initialize_buffer_1d (this, fillval)
   class(buffer1d), intent(inout) :: this !< 1D buffer object
-  class(*) :: fillval !< fill value, must be same type as the allocated buffer in this
+  class(*), intent(in) :: fillval !< fill value, must be same type as the allocated buffer in this
 
   if(.not. allocated(this%buffer)) call mpp_error(FATAL, 'initialize_buffer_1d:' // &
       'buffer not yet allocated, allocate_buffer() must be called on this object first.')
@@ -671,7 +577,7 @@ end subroutine
 !> @brief Initializes a buffer to a given fill value
 subroutine initialize_buffer_2d (this, fillval)
   class(buffer2d), intent(inout) :: this !< 2D buffer object
-  class(*) :: fillval
+  class(*), intent(in) :: fillval !< fill value, must be same type as the allocated buffer in this
 
   if(.not. allocated(this%buffer)) call mpp_error(FATAL, 'initialize_buffer_2d:' // &
       'buffer not yet allocated, allocate_buffer() must be called on this object first.')
@@ -714,7 +620,7 @@ end subroutine
 !> @brief Initializes a buffer to a given fill value
 subroutine initialize_buffer_3d (this, fillval)
   class(buffer3d), intent(inout) :: this !< 3D buffer object
-  class(*) :: fillval
+  class(*), intent(in) :: fillval!< fill value, must be same type as the allocated buffer in this
 
   if(.not. allocated(this%buffer)) call mpp_error(FATAL, 'initialize_buffer_3d:' // &
       'buffer not yet allocated, allocate_buffer() must be called on this object first.')
@@ -757,7 +663,7 @@ end subroutine
 !> @brief Initializes a buffer to a given fill value
 subroutine initialize_buffer_4d (this, fillval)
   class(buffer4d), intent(inout) :: this !< allocated 4D buffer object
-  class(*) :: fillval
+  class(*), intent(in) :: fillval!< fill value, must be same type as the allocated buffer in this
 
   if(.not. allocated(this%buffer)) call mpp_error(FATAL, 'initialize_buffer_4d:' // &
       'buffer not yet allocated, allocate_buffer() must be called on this object first.')
@@ -800,7 +706,7 @@ end subroutine
 !> @brief Initializes a buffer to a given fill value
 subroutine initialize_buffer_5d (this, fillval)
   class(buffer5d), intent(inout) :: this !< allocated 5D buffer object
-  class(*) :: fillval
+  class(*), intent(in) :: fillval!< fill value, must be same type as the allocated buffer in this
 
   if(.not. allocated(this%buffer)) call mpp_error(FATAL, 'initialize_buffer_5d:' // &
       'buffer not yet allocated, allocate_buffer() must be called on this object first.')
@@ -845,16 +751,16 @@ end subroutine
 !! input_data must match allocated type of buffer object
 subroutine add_to_buffer_0d(this, input_data)
   class(buffer0d), intent(inout) :: this !< allocated scalar buffer object
-  class(*)      :: input_data
+  class(*), intent(in)      :: input_data !< data to copy into buffer
   if( .not. allocated(this%buffer)) call mpp_error (FATAL, 'add_to_buffer_1d: buffer not yet allocated')
   call this%initialize_buffer(input_data)
 end subroutine
 
-!> @brief Add values to 1d buffer
+!> @brief Copy values ( from 1 to size(input_data)) into a 1d buffer object
 !! input_data must match allocated type of buffer object
 subroutine add_to_buffer_1d(this, input_data)
-  class(buffer1d), intent(inout) :: this !< 
-  class(*)             :: input_data(:)
+  class(buffer1d), intent(inout) :: this !< allocated 1d buffer object
+  class(*), intent(in)            :: input_data(:) !< data to copy into the buffer
   integer            :: n !< number of elements in input data
   logical            :: type_error = .false.
   if( .not. allocated(this%buffer)) call mpp_error (FATAL, 'add_to_buffer_1d: buffer not yet allocated')
@@ -894,11 +800,11 @@ subroutine add_to_buffer_1d(this, input_data)
   if( type_error ) call mpp_error (FATAL,'add_to_buffer_1d: mismatch between allocated buffer and input data types')
 end subroutine
 
-!> @brief Add values to 2d buffer
+!> @brief Copy values ( from 1 to size(input_data)) into a 2d buffer object
 !! input_data must match allocated type of buffer object
 subroutine add_to_buffer_2d(this, input_data)
-  class(buffer2d), intent(inout) :: this
-  class(*)             :: input_data(:,:)
+  class(buffer2d), intent(inout) :: this !< allocated 2d buffer object
+  class(*), intent(in)             :: input_data(:,:) !< 2d data array to copy into buffer
   integer            :: n1, n2 !< number of elements per dimension
   logical            :: type_error
   if( .not. allocated(this%buffer)) call mpp_error (FATAL, 'add_to_buffer_2d: buffer not yet allocated')
@@ -942,11 +848,11 @@ subroutine add_to_buffer_2d(this, input_data)
   if( type_error ) call mpp_error (FATAL,'add_to_buffer_1d: mismatch between allocated buffer and input data types')
 end subroutine
 
-!> @brief Add values to 3d buffer
+!> @brief Copy values ( from 1 to size(input_data)) into a 3d buffer object
 !! input_data must match allocated type of buffer object
 subroutine add_to_buffer_3d(this, input_data)
-  class(buffer3d), intent(inout) :: this
-  class(*)             :: input_data(:,:,:)
+  class(buffer3d), intent(inout) :: this !< allocated 3d buffer object
+  class(*), intent(in)             :: input_data(:,:,:)!< 3d data array to copy into buffer
   integer            :: n1, n2, n3 !< number of elements per dimension
   logical            :: type_error
   if( .not. allocated(this%buffer)) call mpp_error (FATAL, 'add_to_buffer_3d: buffer not yet allocated')
@@ -992,11 +898,11 @@ subroutine add_to_buffer_3d(this, input_data)
   if( type_error ) call mpp_error (FATAL,'add_to_buffer_1d: mismatch between allocated buffer and input data types')
 end subroutine
 
-!> @brief Add values to 4d buffer
+!> @brief Copy values ( from 1 to size(input_data)) into a 4d buffer object
 !! input_data must match allocated type of buffer object
 subroutine add_to_buffer_4d(this, input_data)
-  class(buffer4d), intent(inout) :: this
-  class(*)             :: input_data(:,:,:,:)
+  class(buffer4d), intent(inout) :: this !< allocated 4d buffer object
+  class(*), intent(in)             :: input_data(:,:,:,:) !< 4d data to copy into buffer
   integer            :: n1, n2, n3, n4!< number of elements per dimension
   logical            :: type_error
   if( .not. allocated(this%buffer)) call mpp_error (FATAL, 'add_to_buffer_4d: buffer not yet allocated')
@@ -1042,11 +948,11 @@ subroutine add_to_buffer_4d(this, input_data)
   if( type_error ) call mpp_error (FATAL,'add_to_buffer_4d: mismatch between allocated buffer and input data types')
 end subroutine
 
-!> @brief Add values to 5d buffer
+!> @brief Copy values (from 1 to size(input_data)) into a 5d buffer object
 !! input_data must match allocated type of buffer object
 subroutine add_to_buffer_5d(this, input_data)
-  class(buffer5d), intent(inout) :: this
-  class(*)             :: input_data(:,:,:,:,:)
+  class(buffer5d), intent(inout) :: this !< allocated 5d buffer object
+  class(*), intent(in)             :: input_data(:,:,:,:,:) !< 5d data to copy into buffer
   integer            :: n1, n2, n3, n4, n5 !< number of elements per dimension
   logical            :: type_error
   if( .not. allocated(this%buffer)) call mpp_error (FATAL, 'add_to_buffer_5d: buffer not yet allocated')
