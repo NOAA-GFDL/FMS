@@ -30,7 +30,8 @@ use diag_data_mod, only: DIAG_NULL, NO_DOMAIN, max_axes, SUB_REGIONAL, get_base_
 !TODO cross dependency use diag_util_mod, only: diag_time_inc
 use time_manager_mod, only: time_type, operator(/=), operator(==)
 use fms_diag_yaml_mod, only: diag_yaml, diagYamlObject_type, diagYamlFiles_type
-use fms_diag_axis_object_mod, only: diagDomain_t, get_domain_and_domain_type, fmsDiagAxis_type,fmsDiagAxisContainer_type
+use fms_diag_axis_object_mod, only: diagDomain_t, get_domain_and_domain_type, fmsDiagAxis_type, &
+                                    fmsDiagAxisContainer_type
 use mpp_mod, only: mpp_error, FATAL
 implicit none
 private
