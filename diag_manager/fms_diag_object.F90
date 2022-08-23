@@ -28,7 +28,8 @@ use fms_diag_file_object_mod, only: fmsDiagFileContainer_type, fmsDiagFile_type,
 use fms_diag_field_object_mod, only: fmsDiagField_type, fms_diag_fields_object_init
 use fms_diag_yaml_mod, only: diag_yaml_object_init, find_diag_field, get_diag_files_id
 use fms_diag_axis_object_mod, only: fms_diag_axis_object_init, fmsDiagAxis_type, fmsDiagSubAxis_type, &
-                                   &diagDomain_t, get_domain_and_domain_type, diagDomain2d_t, fms_diag_axis_object_end
+                                   &diagDomain_t, get_domain_and_domain_type, diagDomain2d_t, &
+                                   &fmsDiagAxisContainer_type, fms_diag_axis_object_end, fmsDiagFullAxis_type
 #endif
 use mpp_domains_mod, only: domain1d, domain2d, domainUG, null_domain2d
 implicit none
@@ -41,11 +42,9 @@ private
 !TODO: Remove FMS prefix from variables in this type
   class(fmsDiagFileContainer_type), allocatable :: FMS_diag_files (:) !< array of diag files
   class(fmsDiagField_type), allocatable :: FMS_diag_fields(:) !< Array of diag fields
-  class(fmsDiagAxis_type), allocatable :: diag_axis(:) !< Array of diag_axis
-  class(fmsDiagSubAxis_type), allocatable :: diag_sub_axis(:) !< Array of diag_sub_axis
+  class(fmsDiagAxisContainer_type), allocatable :: diag_axis(:) !< Array of diag_axis
   integer, private :: registered_variables !< Number of registered variables
   integer, private :: registered_axis !< Number of registered axis
-  integer, private :: registered_subaxis !< Number of registered subAxis
   logical, private :: initialized=.false. !< True if the fmsDiagObject is initialized
   logical, private :: files_initialized=.false. !< True if the fmsDiagObject is initialized
   logical, private :: fields_initialized=.false. !< True if the fmsDiagObject is initialized
@@ -87,12 +86,11 @@ subroutine fms_diag_object_init (this,diag_subset_output)
 !TODO: allocate the file, field, and buffer containers
 ! allocate(diag_objs(get_num_unique_fields()))
   CALL diag_yaml_object_init(diag_subset_output)
-  this%axes_initialized = fms_diag_axis_object_init(this%diag_axis, this%diag_sub_axis)
+  this%axes_initialized = fms_diag_axis_object_init(this%diag_axis)
   this%files_initialized = fms_diag_files_object_init(this%FMS_diag_files)
   this%fields_initialized = fms_diag_fields_object_init (this%FMS_diag_fields)
   this%registered_variables = 0
   this%registered_axis = 0
-  this%registered_subaxis = 0
   this%initialized = .true.
 #else
   call mpp_error("fms_diag_object_init",&
@@ -110,7 +108,7 @@ subroutine fms_diag_object_end (this)
   !TODO: loop through files and force write
   !TODO: Close all files
   !TODO: Deallocate diag object arrays and clean up all memory
-  this%axes_initialized = fms_diag_axis_object_end(this%diag_axis, this%diag_sub_axis)
+  this%axes_initialized = fms_diag_axis_object_end(this%diag_axis)
   this%initialized = .false.
 #endif
 end subroutine fms_diag_object_end
@@ -358,18 +356,26 @@ FUNCTION fms_diag_axis_init(this, axis_name, axis_data, units, cart_name, long_n
   if (this%registered_axis > max_axes) call mpp_error(FATAL, &
     &"diag_axis_init: max_axes exceeded, increase via diag_manager_nml")
 
-  if(present(edges)) then
-    if (edges < 0 .or. edges > this%registered_axis) &
-       call mpp_error(FATAL, "diag_axit_init: The edge axis has not been defined. "&
-                             "Call diag_axis_init for the edge axis first")
-    edges_name = this%diag_axis(edges)%get_axis_name()
-    call this%diag_axis(this%registered_axis)%set_edges_name(edges_name)
-  endif
-  call this%diag_axis(this%registered_axis)%register(axis_name, axis_data, units, cart_name, long_name=long_name, &
-    & direction=direction, set_name=set_name, Domain=Domain, Domain2=Domain2, DomainU=DomainU, aux=aux, &
-    & req=req, tile_count=tile_count, domain_position=domain_position)
+  allocate(fmsDiagFullAxis_type :: this%diag_axis(this%registered_axis)%axis)
 
-  id = this%registered_axis
+  select type (axis => this%diag_axis(this%registered_axis)%axis )
+  type is (fmsDiagFullAxis_type)
+    if(present(edges)) then
+      if (edges < 0 .or. edges > this%registered_axis) &
+        call mpp_error(FATAL, "diag_axit_init: The edge axis has not been defined. "&
+                               "Call diag_axis_init for the edge axis first")
+      select type (edges_axis => this%diag_axis(edges)%axis)
+      type is (fmsDiagFullAxis_type)
+        edges_name = edges_axis%get_axis_name()
+        call axis%set_edges_name(edges_name)
+      end select
+    endif
+    call axis%register(axis_name, axis_data, units, cart_name, long_name=long_name, &
+      & direction=direction, set_name=set_name, Domain=Domain, Domain2=Domain2, DomainU=DomainU, aux=aux, &
+      & req=req, tile_count=tile_count, domain_position=domain_position)
+
+    id = this%registered_axis
+  end select
 #else
   id = diag_null
 #endif
@@ -403,7 +409,10 @@ subroutine fms_diag_axis_add_attribute(this, axis_id, att_name, att_value)
   if (axis_id < 0 .and. axis_id > this%registered_axis) &
     call mpp_error(FATAL, "diag_axis_add_attribute: The axis_id is not valid")
 
-  call this%diag_axis(axis_id)%add_axis_attribute(att_name, att_value)
+  select type (axis => this%diag_axis(axis_id)%axis)
+  type is (fmsDiagFullAxis_type)
+    call axis%add_axis_attribute(att_name, att_value)
+  end select
 #endif
 end subroutine fms_diag_axis_add_attribute
 
@@ -462,7 +471,10 @@ fms_get_axis_length = 0
   if (axis_id < 0 .and. axis_id > this%registered_axis) &
     call mpp_error(FATAL, "fms_get_axis_length: The axis_id is not valid")
 
-  fms_get_axis_length = this%diag_axis(axis_id)%axis_length()
+  select type (axis => this%diag_axis(axis_id)%axis)
+  type is (fmsDiagFullAxis_type)
+    fms_get_axis_length = axis%axis_length()
+  end select
 #endif
 end function fms_get_axis_length
 
@@ -479,7 +491,10 @@ result(axis_name)
     if (axis_id < 0 .and. axis_id > this%registered_axis) &
     call mpp_error(FATAL, "fms_get_axis_length: The axis_id is not valid")
 
-    axis_name = this%diag_axis(axis_id)%get_axis_name()
+    select type (axis => this%diag_axis(axis_id)%axis)
+    type is (fmsDiagFullAxis_type)
+      axis_name = axis%get_axis_name()
+    end select
 #else
     axis_name = ""
 #endif

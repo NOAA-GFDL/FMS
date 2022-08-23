@@ -16,7 +16,8 @@ use diag_data_mod,  only: diag_null, diag_not_found, diag_not_registered, diag_r
 use mpp_mod, only: fatal, note, warning, mpp_error
 use fms_diag_yaml_mod, only:  diagYamlFilesVar_type, get_diag_fields_entries, get_diag_files_id, &
   & find_diag_field, get_num_unique_fields
-use fms_diag_axis_object_mod, only: diagDomain_t, get_domain_and_domain_type, fmsDiagAxis_type
+use fms_diag_axis_object_mod, only: diagDomain_t, get_domain_and_domain_type, fmsDiagAxis_type, &
+  & fmsDiagAxisContainer_type
 use time_manager_mod, ONLY: time_type
 !!!set_time, set_date, get_time, time_type, OPERATOR(>=), OPERATOR(>),&
 !!!       & OPERATOR(<), OPERATOR(==), OPERATOR(/=), OPERATOR(/), OPERATOR(+), ASSIGNMENT(=), get_date, &
@@ -174,7 +175,7 @@ subroutine fms_register_diag_field_obj &
  CHARACTER(len=*),               INTENT(in)    :: varname               !< The variable name
  integer,                        INTENT(in)    :: diag_field_indices(:) !< Array of indices to the field
                                                                         !! in the yaml object
- class(fmsDiagAxis_type),        intent(in)    :: diag_axis(:)          !< Array of diag_axis
+ class(fmsDiagAxisContainer_type),intent(in)   :: diag_axis(:)          !< Array of diag_axis
  INTEGER, TARGET,  OPTIONAL,     INTENT(in)    :: axes(:)               !< The axes indicies
  CHARACTER(len=*), OPTIONAL,     INTENT(in)    :: longname              !< THe variables long name
  CHARACTER(len=*), OPTIONAL,     INTENT(in)    :: units                 !< The units of the variables

@@ -43,7 +43,7 @@ module fms_diag_axis_object_mod
 
   public :: fmsDiagAxis_type, fms_diag_axis_object_init, fms_diag_axis_object_end, &
           & get_domain_and_domain_type, diagDomain_t, &
-          & DIAGDOMAIN2D_T, fmsDiagSubAxis_type
+          & DIAGDOMAIN2D_T, fmsDiagSubAxis_type, fmsDiagAxisContainer_type, fmsDiagFullAxis_type
   !> @}
 
   !> @brief Type to hold the domain info for an axis
@@ -71,9 +71,21 @@ module fms_diag_axis_object_mod
     type(domainUG) :: DomainUG !< Domain of "U" axis
   end type
 
+  !> @brief Type to hold the diag_axis (either subaxis or a full axis)
+  !> @ingroup diag_axis_object_mod
+  type :: fmsDiagAxisContainer_type
+    class(fmsDiagAxis_type), allocatable :: axis
+  end type
+
+  !> @brief Type to hold the diagnostic axis description.
+  !> @ingroup diag_axis_object_mod
+  TYPE fmsDiagAxis_type
+     INTEGER                        , private :: axis_id         !< ID of the axis
+  END TYPE fmsDiagAxis_type
+
   !> @brief Type to hold the subaxis
   !> @ingroup diag_axis_object_mod
-  TYPE fmsDiagSubAxis_type
+  TYPE, extends(fmsDiagAxis_type) :: fmsDiagSubAxis_type
     INTEGER                       :: subaxis_id     !< ID of the subaxis
     CHARACTER(len=:), ALLOCATABLE :: subaxis_name   !< Name of the subaxis
     INTEGER                       :: starting_index !< Starting index of the subaxis relative to the parent axis
@@ -86,8 +98,7 @@ module fms_diag_axis_object_mod
 
   !> @brief Type to hold the diagnostic axis description.
   !> @ingroup diag_axis_object_mod
-  TYPE fmsDiagAxis_type
-     INTEGER                        , private :: axis_id         !< ID of the axis
+  TYPE, extends(fmsDiagAxis_type) :: fmsDiagFullAxis_type
      CHARACTER(len=:),   ALLOCATABLE, private :: axis_name       !< Name of the axis
      CHARACTER(len=:),   ALLOCATABLE, private :: units           !< Units of the axis
      CHARACTER(len=:),   ALLOCATABLE, private :: long_name       !< Long_name attribute of the axis
@@ -125,7 +136,7 @@ module fms_diag_axis_object_mod
 
      ! TO DO:
      ! Get/has/is subroutines as needed
-  END TYPE fmsDiagAxis_type
+  END TYPE fmsDiagFullAxis_type
 
   !> @addtogroup fms_diag_yaml_mod
   !> @{
@@ -135,7 +146,7 @@ module fms_diag_axis_object_mod
   !> @brief Initialize the axis
   subroutine register_diag_axis_obj(this, axis_name, axis_data, units, cart_name, long_name, direction,&
   & set_name, Domain, Domain2, DomainU, aux, req, tile_count, domain_position )
-    class(fmsDiagAxis_type),INTENT(out)      :: this            !< Diag_axis obj
+    class(fmsDiagFullAxis_type),INTENT(out)  :: this            !< Diag_axis obj
     CHARACTER(len=*),   INTENT(in)           :: axis_name       !< Name of the axis
     class(*),           INTENT(in)           :: axis_data(:)    !< Array of coordinate values
     CHARACTER(len=*),   INTENT(in)           :: units           !< Units for the axis
@@ -215,7 +226,7 @@ module fms_diag_axis_object_mod
 
   !> @brief Add an attribute to an axis
   subroutine add_axis_attribute(this, att_name, att_value)
-    class(fmsDiagAxis_type),INTENT(INOUT) :: this   !< diag_axis obj
+    class(fmsDiagFullAxis_type),INTENT(INOUT) :: this   !< diag_axis obj
     character(len=*), intent(in)    :: att_name     !< Name of the attribute
     class(*),         intent(in)    :: att_value(:) !< The attribute value to add
 
@@ -232,7 +243,7 @@ module fms_diag_axis_object_mod
 
   !> @brief Write the axis meta data to an open fileobj
   subroutine write_axis_metadata(this, fileobj, sub_axis_id)
-    class(fmsDiagAxis_type), target, INTENT(IN) :: this     !< diag_axis obj
+    class(fmsDiagFullAxis_type), target, INTENT(IN) :: this     !< diag_axis obj
     class(FmsNetcdfFile_t),    INTENT(INOUT) :: fileobj     !< Fms2_io fileobj to write the data to
     integer, OPTIONAL,         INTENT(IN)    :: sub_axis_id !< ID of the sub_axis, if it exists
 
@@ -310,7 +321,7 @@ module fms_diag_axis_object_mod
 
   !> @brief Write the axis data to an open fileobj
   subroutine write_axis_data(this, fileobj, sub_axis_id)
-    class(fmsDiagAxis_type),INTENT(IN)    :: this       !< diag_axis obj
+    class(fmsDiagFullAxis_type),INTENT(IN):: this       !< diag_axis obj
     class(FmsNetcdfFile_t), INTENT(INOUT) :: fileobj   !< Fms2_io fileobj to write the data to
     integer, OPTIONAL,      INTENT(IN)    :: sub_axis_id !< ID of the sub_axis, if it exists
 
@@ -331,8 +342,8 @@ module fms_diag_axis_object_mod
   !> @return axis length
   function get_axis_length(this) &
   result (axis_length)
-    class(fmsDiagAxis_type), intent(in) :: this !< diag_axis obj
-    integer                                :: axis_length
+    class(fmsDiagFullAxis_type), intent(in) :: this !< diag_axis obj
+    integer                                 :: axis_length
 
     !< If the axis is domain decomposed axis_length will be set to the length for the current PE:
     if (allocated(this%axis_domain)) then
@@ -347,16 +358,16 @@ module fms_diag_axis_object_mod
   !> @return axis name
   function get_axis_name(this) &
   result (axis_name)
-    class(fmsDiagAxis_type), intent(in)    :: this !< diag_axis obj
-    CHARACTER(len=:),   ALLOCATABLE :: axis_name
+    class(fmsDiagFullAxis_type), intent(in)    :: this !< diag_axis obj
+    CHARACTER(len=:),   ALLOCATABLE            :: axis_name
 
     axis_name = this%axis_name
   end function
 
   !> @brief Set the name of the edges
   subroutine set_edges_name(this, edges_name)
-    class(fmsDiagAxis_type), intent(inout) :: this !< diag_axis obj
-    CHARACTER(len=*),        intent(in)     :: edges_name !< Name of the edges
+    class(fmsDiagFullAxis_type), intent(inout) :: this !< diag_axis obj
+    CHARACTER(len=*),        intent(in)        :: edges_name !< Name of the edges
 
     this%edges_name = edges_name
   end subroutine
@@ -365,7 +376,7 @@ module fms_diag_axis_object_mod
   !> @return A sub_axis id corresponding to the indices of the sub_axes in the sub_axes_objs array
   function set_subaxis(this, bounds) &
   result(sub_axes_id)
-    class(fmsDiagAxis_type),  INTENT(INOUT) :: this      !< diag_axis obj
+    class(fmsDiagFullAxis_type),  INTENT(INOUT) :: this      !< diag_axis obj
     class(*),                 INTENT(INOUT) :: bounds(:) !< bound of the subaxis
 
     integer :: sub_axes_id
@@ -435,29 +446,24 @@ module fms_diag_axis_object_mod
     end select
   end subroutine set_axis_domain
 
-  !< @brief Allocates the axis and subaxis objects
-  !! @return true if there are axis and subaxis allocated
-  logical function fms_diag_axis_object_init(axis_array, subaxis_array)
-  class(fmsDiagAxis_type)   , allocatable, intent(inout) :: axis_array(:) !< Array of diag_axis
-  class(fmsDiagSubAxis_type), allocatable, intent(inout) :: subaxis_array(:) !< Array of diag_subaxis
+  !< @brief Allocates the array of axis/subaxis objects
+  !! @return true if there the aray of axis/subaxis objects is allocated
+  logical function fms_diag_axis_object_init(axis_array)
+    class(fmsDiagAxisContainer_type)   , allocatable, intent(inout) :: axis_array(:) !< Array of diag_axis
 
+    if (allocated(axis_array)) call mpp_error(FATAL, "The diag_axis containers is already allocated")
     allocate(axis_array(max_axes))
-    axis_array%axis_id = DIAG_NULL
-
-    allocate(subaxis_array(MAX_SUBAXES))
-    subaxis_array%subaxis_id = DIAG_NULL
+    !axis_array%axis_id = DIAG_NULL
 
     fms_diag_axis_object_init = .true.
   end function fms_diag_axis_object_init
 
-  !< @brief Deallocates the axis and subaxis objects
-  !! @return true if there are axis and subaxis allocated
-  logical function fms_diag_axis_object_end(axis_array, subaxis_array)
-    class(fmsDiagAxis_type)   , allocatable, intent(inout) :: axis_array(:) !< Array of diag_axis
-    class(fmsDiagSubAxis_type), allocatable, intent(inout) :: subaxis_array(:) !< Array of diag_subaxis
+  !< @brief Deallocates the array of axis/subaxis objects
+  !! @return false if the aray of axis/subaxis objects was allocated
+  logical function fms_diag_axis_object_end(axis_array)
+    class(fmsDiagAxisContainer_type)   , allocatable, intent(inout) :: axis_array(:) !< Array of diag_axis
 
-    deallocate(axis_array)
-    deallocate(subaxis_array)
+    if (allocated(axis_array)) deallocate(axis_array)
     fms_diag_axis_object_end = .false.
 
   end function fms_diag_axis_object_end
@@ -500,7 +506,7 @@ module fms_diag_axis_object_mod
 
   !> @brief Loop through a variable's axis_id to determine and return the domain type and domain to use
   subroutine get_domain_and_domain_type(diag_axis, axis_id, domain_type, domain, var_name)
-    class(fmsDiagAxis_type), target, intent(in)  :: diag_axis(:)  !< Array of diag_axis
+    class(fmsDiagAxisContainer_type), target, intent(in)  :: diag_axis(:)  !< Array of diag_axis
     integer,                      INTENT(IN)  :: axis_id(:)    !< Array of axis ids
     integer,                      INTENT(OUT) :: domain_type   !< fileobj_type to use
     CLASS(diagDomain_t), POINTER, INTENT(OUT) :: domain        !< Domain
@@ -514,21 +520,24 @@ module fms_diag_axis_object_mod
 
     do i = 1, size(axis_id)
       j = axis_id(i)
-      !< Check that all the axis are in the same domain
-      if (domain_type .ne. diag_axis(j)%type_of_domain) then
-        !< If they are different domains, one of them can be NO_DOMAIN
-        !! i.e a variable can have axis that are domain decomposed (x,y) and an axis that isn't (z)
-        if (domain_type .eq. NO_DOMAIN .or. diag_axis(j)%type_of_domain .eq. NO_DOMAIN ) then
-          !< Update the domain_type and domain, if needed
-          if ((diag_axis(j)%type_of_domain .eq. TWO_D_DOMAIN  .and. size(axis_id) > 2) &
-             & .or. diag_axis(j)%type_of_domain .eq. UG_DOMAIN) then
-               domain_type = diag_axis(j)%type_of_domain
-               domain => diag_axis(j)%axis_domain
+      select type (axis => diag_axis(j)%axis)
+      type is (fmsDiagFullAxis_type)
+        !< Check that all the axis are in the same domain
+        if (domain_type .ne. axis%type_of_domain) then
+          !< If they are different domains, one of them can be NO_DOMAIN
+          !! i.e a variable can have axis that are domain decomposed (x,y) and an axis that isn't (z)
+          if (domain_type .eq. NO_DOMAIN .or. axis%type_of_domain .eq. NO_DOMAIN ) then
+            !< Update the domain_type and domain, if needed
+            if ((axis%type_of_domain .eq. TWO_D_DOMAIN  .and. size(axis_id) > 2) &
+               & .or. axis%type_of_domain .eq. UG_DOMAIN) then
+                 domain_type = axis%type_of_domain
+                domain => axis%axis_domain
+            endif
+          else
+            call mpp_error(FATAL, "The variable:"//trim(var_name)//" has axis that are not in the same domain")
           endif
-        else
-          call mpp_error(FATAL, "The variable:"//trim(var_name)//" has axis that are not in the same domain")
         endif
-      endif
+      end select
     enddo
   end subroutine get_domain_and_domain_type
 
