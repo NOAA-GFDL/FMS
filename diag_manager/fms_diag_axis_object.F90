@@ -133,9 +133,9 @@ module fms_diag_axis_object_mod
 
   !!!!!!!!!!!!!!!!! DIAG AXIS PROCEDURES !!!!!!!!!!!!!!!!!
   !> @brief Initialize the axis
-  subroutine register_diag_axis_obj(obj, axis_name, axis_data, units, cart_name, long_name, direction,&
+  subroutine register_diag_axis_obj(this, axis_name, axis_data, units, cart_name, long_name, direction,&
   & set_name, edges, Domain, Domain2, DomainU, aux, req, tile_count, domain_position )
-    class(diagAxis_t),  INTENT(out)          :: obj             !< Diag_axis obj
+    class(diagAxis_t),  INTENT(out)          :: this             !< Diag_axis obj
     CHARACTER(len=*),   INTENT(in)           :: axis_name       !< Name of the axis
     class(*),           INTENT(in)           :: axis_data(:)    !< Array of coordinate values
     CHARACTER(len=*),   INTENT(in)           :: units           !< Units for the axis
@@ -153,91 +153,91 @@ module fms_diag_axis_object_mod
     INTEGER,            INTENT(in), OPTIONAL :: tile_count      !< Number of tiles
     INTEGER,            INTENT(in), OPTIONAL :: domain_position !< Domain position, "NORTH" or "EAST"
 
-    obj%axis_name = trim(axis_name)
-    obj%units = trim(units)
-    obj%cart_name = uppercase(cart_name)
-    call check_if_valid_cart_name(obj%cart_name)
+    this%axis_name = trim(axis_name)
+    this%units = trim(units)
+    this%cart_name = uppercase(cart_name)
+    call check_if_valid_cart_name(this%cart_name)
 
-    if (present(long_name)) obj%long_name = trim(long_name)
+    if (present(long_name)) this%long_name = trim(long_name)
 
     select type (axis_data)
     type is (real(kind=r8_kind))
-      allocate(real(kind=r8_kind) :: obj%axis_data(size(axis_data)))
-      obj%axis_data = axis_data
-      obj%type_of_data = "double" !< This is what fms2_io expects in the register_field call
+      allocate(real(kind=r8_kind) :: this%axis_data(size(axis_data)))
+      this%axis_data = axis_data
+      this%type_of_data = "double" !< This is what fms2_io expects in the register_field call
     type is (real(kind=r4_kind))
-      allocate(real(kind=r4_kind) :: obj%axis_data(size(axis_data)))
-      obj%axis_data = axis_data
-      obj%type_of_data = "float" !< This is what fms2_io expects in the register_field call
+      allocate(real(kind=r4_kind) :: this%axis_data(size(axis_data)))
+      this%axis_data = axis_data
+      this%type_of_data = "float" !< This is what fms2_io expects in the register_field call
     class default
       call mpp_error(FATAL, "The axis_data in your diag_axis_init call is not a supported type. &
                           &  Currently only r4 and r8 data is supported.")
     end select
 
-    obj%type_of_domain = NO_DOMAIN
+    this%type_of_domain = NO_DOMAIN
     if (present(Domain)) then
       if (present(Domain2) .or. present(DomainU)) call mpp_error(FATAL, &
         "The presence of Domain with any other domain type is prohibited. "//&
         "Check you diag_axis_init call for axis_name:"//trim(axis_name))
-      allocate(diagDomain1d_t :: obj%axis_domain)
-      call obj%axis_domain%set(Domain=Domain)
+      allocate(diagDomain1d_t :: this%axis_domain)
+      call this%axis_domain%set(Domain=Domain)
     else if (present(Domain2)) then
         if (present(DomainU)) call mpp_error(FATAL, &
         "The presence of Domain2 with any other domain type is prohibited. "//&
         "Check you diag_axis_init call for axis_name:"//trim(axis_name))
-      allocate(diagDomain2d_t :: obj%axis_domain)
-      call obj%axis_domain%set(Domain2=Domain2)
-      obj%type_of_domain = TWO_D_DOMAIN
+      allocate(diagDomain2d_t :: this%axis_domain)
+      call this%axis_domain%set(Domain2=Domain2)
+      this%type_of_domain = TWO_D_DOMAIN
     else if (present(DomainU)) then
-      allocate(diagDomainUg_t :: obj%axis_domain)
-      call obj%axis_domain%set(DomainU=DomainU)
-      obj%type_of_domain = UG_DOMAIN
+      allocate(diagDomainUg_t :: this%axis_domain)
+      call this%axis_domain%set(DomainU=DomainU)
+      this%type_of_domain = UG_DOMAIN
     endif
 
-    obj%tile_count = 1
-    if (present(tile_count)) obj%tile_count = tile_count
+    this%tile_count = 1
+    if (present(tile_count)) this%tile_count = tile_count
 
-    obj%domain_position = CENTER
-    if (present(domain_position)) obj%domain_position = domain_position
-    call check_if_valid_domain_position(obj%domain_position)
+    this%domain_position = CENTER
+    if (present(domain_position)) this%domain_position = domain_position
+    call check_if_valid_domain_position(this%domain_position)
 
-    obj%length = size(axis_data)
+    this%length = size(axis_data)
 
-    obj%direction = 0
-    if (present(direction)) obj%direction = direction
-    call check_if_valid_direction(obj%direction)
+    this%direction = 0
+    if (present(direction)) this%direction = direction
+    call check_if_valid_direction(this%direction)
 
-    obj%edges = 0
-    if (present(edges)) obj%edges = edges
-    call check_if_valid_edges(obj%edges)
+    this%edges = 0
+    if (present(edges)) this%edges = edges
+    call check_if_valid_edges(this%edges)
 
-    if (present(aux)) obj%aux = trim(aux)
-    if (present(req)) obj%req = trim(req)
+    if (present(aux)) this%aux = trim(aux)
+    if (present(req)) this%req = trim(req)
 
-    obj%nsubaxis = 0
-    obj%num_attributes = 0
+    this%nsubaxis = 0
+    this%num_attributes = 0
   end subroutine register_diag_axis_obj
 
   !> @brief Add an attribute to an axis
-  subroutine add_axis_attribute(obj, att_name, att_value)
-    class(diagAxis_t),INTENT(INOUT) :: obj          !< diag_axis obj
+  subroutine add_axis_attribute(this, att_name, att_value)
+    class(diagAxis_t),INTENT(INOUT) :: this          !< diag_axis obj
     character(len=*), intent(in)    :: att_name     !< Name of the attribute
     class(*),         intent(in)    :: att_value(:) !< The attribute value to add
 
     integer :: j    !< obj%num_attributes (for less typing)
 
-    if (.not. allocated(obj%attributes)) &
-      allocate(obj%attributes(max_axis_attributes))
+    if (.not. allocated(this%attributes)) &
+      allocate(this%attributes(max_axis_attributes))
 
-    obj%num_attributes = obj%num_attributes + 1
+    this%num_attributes = this%num_attributes + 1
 
-    j = obj%num_attributes
-    call obj%attributes(j)%add(att_name, att_value)
+    j = this%num_attributes
+    call this%attributes(j)%add(att_name, att_value)
   end subroutine add_axis_attribute
 
   !> @brief Write the axis meta data to an open fileobj
-  subroutine write_axis_metadata(obj, fileobj, sub_axis_id)
-    class(diagAxis_t), target, INTENT(IN)    :: obj         !< diag_axis obj
+  subroutine write_axis_metadata(this, fileobj, sub_axis_id)
+    class(diagAxis_t), target, INTENT(IN)    :: this         !< diag_axis obj
     class(FmsNetcdfFile_t),    INTENT(INOUT) :: fileobj     !< Fms2_io fileobj to write the data to
     integer, OPTIONAL,         INTENT(IN)    :: sub_axis_id !< ID of the sub_axis, if it exists
 
@@ -247,11 +247,11 @@ module fms_diag_axis_object_mod
     integer                       :: i               !< For do loops
 
     if (present(sub_axis_id)) then
-      axis_name  => obj%subaxis(sub_axis_id)%subaxis_name
-      axis_length = obj%subaxis(sub_axis_id)%ending_index - obj%subaxis(sub_axis_id)%starting_index + 1
+      axis_name  => this%subaxis(sub_axis_id)%subaxis_name
+      axis_length = this%subaxis(sub_axis_id)%ending_index - this%subaxis(sub_axis_id)%starting_index + 1
     else
-      axis_name => obj%axis_name
-      axis_length = obj%length
+      axis_name => this%axis_name
+      axis_length = this%length
     endif
 
     !< Add the axis as a dimension in the netcdf file based on the type of axis_domain and the fileobj type
@@ -260,17 +260,17 @@ module fms_diag_axis_object_mod
         !< Here the axis is not domain decomposed (i.e z_axis)
         call register_axis(fileobj, axis_name, axis_length)
       type is (FmsNetcdfDomainFile_t)
-        select case (obj%type_of_domain)
+        select case (this%type_of_domain)
         case (NO_DOMAIN)
           !< Here the fileobj is domain decomposed, but the axis is not
           !! Domain decomposed fileobjs can have axis that are not domain decomposed (i.e "Z" axis)
           call register_axis(fileobj, axis_name, axis_length)
         case (TWO_D_DOMAIN)
           !< Here the axis is domain decomposed
-          call register_axis(fileobj, axis_name, obj%cart_name, domain_position=obj%domain_position)
+          call register_axis(fileobj, axis_name, this%cart_name, domain_position=this%domain_position)
         end select
       type is (FmsNetcdfUnstructuredDomainFile_t)
-        select case (obj%type_of_domain)
+        select case (this%type_of_domain)
         case (NO_DOMAIN)
           !< Here the fileobj is in the unstructured domain, but the axis is not
           !< Unstructured domain fileobjs can have axis that are not domain decomposed (i.e "Z" axis)
@@ -282,41 +282,41 @@ module fms_diag_axis_object_mod
     end select
 
     !< Add the axis as a variable and write its metada
-    call register_field(fileobj, axis_name, obj%type_of_data, (/axis_name/))
-    call register_variable_attribute(fileobj, axis_name, "longname", obj%long_name, &
-      str_len=len_trim(obj%long_name))
+    call register_field(fileobj, axis_name, this%type_of_data, (/axis_name/))
+    call register_variable_attribute(fileobj, axis_name, "longname", this%long_name, &
+      str_len=len_trim(this%long_name))
 
-    if (obj%cart_name .NE. "N") &
-      call register_variable_attribute(fileobj, axis_name, "axis", obj%cart_name, str_len=1)
+    if (this%cart_name .NE. "N") &
+      call register_variable_attribute(fileobj, axis_name, "axis", this%cart_name, str_len=1)
 
-    if (trim(obj%units) .NE. "none") &
-      call register_variable_attribute(fileobj, axis_name, "units", obj%units, str_len=len_trim(obj%units))
+    if (trim(this%units) .NE. "none") &
+      call register_variable_attribute(fileobj, axis_name, "units", this%units, str_len=len_trim(this%units))
 
-    select case (obj%direction)
+    select case (this%direction)
     case (direction_up)
       call register_variable_attribute(fileobj, axis_name, "positive", "up", str_len=2)
     case (direction_down)
       call register_variable_attribute(fileobj, axis_name, "positive", "down", str_len=4)
     end select
 
-    if (obj%edges > 0) then
-      axis_edges_name = axis_obj(obj%edges)%axis_name
+    if (this%edges > 0) then
+      axis_edges_name = axis_obj(this%edges)%axis_name
       call register_variable_attribute(fileobj, axis_name, "edges", axis_edges_name, &
         str_len=len_trim(axis_edges_name))
     endif
 
-    if(allocated(obj%attributes)) then
-      do i = 1, size(obj%attributes)
-        call register_variable_attribute(fileobj, axis_name, obj%attributes(i)%att_name, &
-          & obj%attributes(i)%att_value)
+    if(allocated(this%attributes)) then
+      do i = 1, size(this%attributes)
+        call register_variable_attribute(fileobj, axis_name, this%attributes(i)%att_name, &
+          & this%attributes(i)%att_value)
       enddo
     endif
 
   end subroutine write_axis_metadata
 
   !> @brief Write the axis data to an open fileobj
-  subroutine write_axis_data(obj, fileobj, sub_axis_id)
-    class(diagAxis_t),      INTENT(IN)    :: obj       !< diag_axis obj
+  subroutine write_axis_data(this, fileobj, sub_axis_id)
+    class(diagAxis_t),      INTENT(IN)    :: this       !< diag_axis obj
     class(FmsNetcdfFile_t), INTENT(INOUT) :: fileobj   !< Fms2_io fileobj to write the data to
     integer, OPTIONAL,      INTENT(IN)    :: sub_axis_id !< ID of the sub_axis, if it exists
 
@@ -324,36 +324,36 @@ module fms_diag_axis_object_mod
     integer                       :: j         !< Ending index of a sub_axis
 
     if (present(sub_axis_id)) then
-      i = obj%subaxis(sub_axis_id)%starting_index
-      j = obj%subaxis(sub_axis_id)%ending_index
+      i = this%subaxis(sub_axis_id)%starting_index
+      j = this%subaxis(sub_axis_id)%ending_index
 
-      call write_data(fileobj, obj%subaxis(sub_axis_id)%subaxis_name, obj%axis_data(i:j))
+      call write_data(fileobj, this%subaxis(sub_axis_id)%subaxis_name, this%axis_data(i:j))
     else
-      call write_data(fileobj, obj%axis_name, obj%axis_data)
+      call write_data(fileobj, this%axis_name, this%axis_data)
     endif
   end subroutine write_axis_data
 
   !> @brief Get the length of the axis
   !> @return axis length
-  function get_axis_length(obj) &
+  function get_axis_length(this) &
   result (axis_length)
-    class(diagAxis_t), intent(inout) :: obj !< diag_axis obj
+    class(diagAxis_t), intent(inout) :: this !< diag_axis obj
     integer                           :: axis_length
 
     !< If the axis is domain decomposed axis_length will be set to the length for the current PE:
-    if (allocated(obj%axis_domain)) then
-      axis_length = obj%axis_domain%length(obj%cart_name, obj%domain_position, obj%length)
+    if (allocated(this%axis_domain)) then
+      axis_length = this%axis_domain%length(this%cart_name, this%domain_position, this%length)
     else
-      axis_length = obj%length
+      axis_length = this%length
     endif
 
   end function
 
   !> @brief Set the subaxis of the axis obj
   !> @return A sub_axis id corresponding to the indices of the sub_axes in the sub_axes_objs array
-  function set_subaxis(obj, bounds) &
+  function set_subaxis(this, bounds) &
   result(sub_axes_id)
-    class(diagAxis_t),  INTENT(INOUT) :: obj       !< diag_axis obj
+    class(diagAxis_t),  INTENT(INOUT) :: this       !< diag_axis obj
     class(*),           INTENT(INOUT) :: bounds(:) !< bound of the subaxis
 
     integer :: sub_axes_id
@@ -361,12 +361,12 @@ module fms_diag_axis_object_mod
     integer :: i !< For do loops
 
     !< Check if the subaxis for this bouds already exists
-    do i = 1, obj%nsubaxis
-      if (obj%subaxis(i)%exists(bounds)) return
+    do i = 1, this%nsubaxis
+      if (this%subaxis(i)%exists(bounds)) return
     enddo
 
     !< TO DO: everything
-    obj%nsubaxis = obj%nsubaxis + 1
+    this%nsubaxis = this%nsubaxis + 1
 
     nsubaxis_objs = nsubaxis_objs + 1
     sub_axes_id = nsubaxis_objs
@@ -376,9 +376,9 @@ module fms_diag_axis_object_mod
   !!!!!!!!!!!!!!!!!! SUB AXIS PROCEDURES !!!!!!!!!!!!!!!!!
   !> @brief Check if a subaxis was already defined
   !> @return Flag indicating if a subaxis is already defined
-  function check_if_subaxis_exists(obj,bounds) &
+  function check_if_subaxis_exists(this, bounds) &
   result(exists)
-    class(subaxis_t), INTENT(INOUT) :: obj       !< diag_axis obj
+    class(subaxis_t), INTENT(INOUT) :: this       !< diag_axis obj
     class(*),         INTENT(IN)    :: bounds(:) !< bounds of the subaxis
     logical                         :: exists
 
@@ -388,19 +388,19 @@ module fms_diag_axis_object_mod
 
   !> @brief Get the length of a 2D domain
   !> @return Length of the 2D domain
-  function get_length(obj, cart_axis, domain_position, global_length) &
+  function get_length(this, cart_axis, domain_position, global_length) &
   result (length)
-    class(diagDomain_t), INTENT(INOUT) :: obj       !< diag_axis obj
+    class(diagDomain_t), INTENT(INOUT) :: this       !< diag_axis obj
     character(len=*),    INTENT(IN)    :: cart_axis !< cart_axis of the axis
     integer,             INTENT(IN)    :: domain_position !< Domain position (CENTER, NORTH, EAST)
     integer,             INTENT(IN)    :: global_length !< global_length of the axis
 
     integer :: length
 
-    select type (obj)
+    select type (this)
     type is(diagDomain2d_t)
-      if (trim(cart_axis) == "X") call mpp_get_compute_domain(obj%Domain2, xsize=length, position=domain_position)
-      if (trim(cart_axis) == "Y") call mpp_get_compute_domain(obj%Domain2, ysize=length, position=domain_position)
+      if (trim(cart_axis) == "X") call mpp_get_compute_domain(this%Domain2, xsize=length, position=domain_position)
+      if (trim(cart_axis) == "Y") call mpp_get_compute_domain(this%Domain2, ysize=length, position=domain_position)
     class default
       !< If domain is 1D or UG, just set it to the global length
       length = global_length
@@ -410,19 +410,19 @@ module fms_diag_axis_object_mod
   !!!!!!!!!!!!!!!!! FMS_DOMAIN PROCEDURES !!!!!!!!!!!!!!!!!
 
   !> @brief Set the axis domain
-  subroutine set_axis_domain(obj, Domain, Domain2, DomainU)
-    class(diagDomain_t) :: obj !< fms_domain obj
+  subroutine set_axis_domain(this, Domain, Domain2, DomainU)
+    class(diagDomain_t) :: this !< fms_domain obj
     TYPE(domain1d),     INTENT(in),  OPTIONAL :: Domain  !< 1d domain
     TYPE(domain2d),     INTENT(in),  OPTIONAL :: Domain2 !< 2d domain
     TYPE(domainUG),     INTENT(in),  OPTIONAL :: DomainU !< Unstructured domain
 
-    select type(obj)
+    select type(this)
     type is (diagDomain1d_t)
-      obj%Domain = Domain
+      this%Domain = Domain
     type is (diagDomain2d_t)
-      obj%Domain2 = Domain2
+      this%Domain2 = Domain2
     type is (diagDomainUg_t)
-      obj%DomainUG = DomainU
+      this%DomainUG = DomainU
     end select
   end subroutine set_axis_domain
 
