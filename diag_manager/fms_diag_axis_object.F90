@@ -396,15 +396,15 @@ module fms_diag_axis_object_mod
   !!!!!!!!!!!!!!!!!! SUB AXIS PROCEDURES !!!!!!!!!!!!!!!!!
   !> @brief Check if a subaxis was already defined
   !> @return Flag indicating if a subaxis is already defined
-  function check_if_subaxis_exists(this, bounds) &
+  pure function check_if_subaxis_exists(this, bounds) &
   result(exists)
-    class(fmsDiagSubAxis_type), INTENT(INOUT) :: this      !< diag_axis obj
+    class(fmsDiagSubAxis_type), INTENT(IN) :: this      !< diag_axis obj
     class(*),                   INTENT(IN)    :: bounds(:) !< bounds of the subaxis
     logical                                   :: exists
 
     !< TO DO: compare bounds
     exists = .false.
-  end function
+  end function check_if_subaxis_exists
 
   !> @brief Get the length of a 2D domain
   !> @return Length of the 2D domain
@@ -425,7 +425,7 @@ module fms_diag_axis_object_mod
       !< If domain is 1D or UG, just set it to the global length
       length = global_length
     end select
-  end function
+  end function get_length
 
   !!!!!!!!!!!!!!!!! FMS_DOMAIN PROCEDURES !!!!!!!!!!!!!!!!!
 
