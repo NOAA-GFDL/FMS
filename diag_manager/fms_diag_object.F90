@@ -104,10 +104,16 @@ end subroutine fms_diag_object_init
 !! Uninitializes the fms_diag_object
 subroutine fms_diag_object_end (obj)
   class(fmsDiagObject_type) :: obj
+  integer                   :: i
 #ifdef use_yaml
   !TODO: loop through files and force write
   !TODO: Close all files
   !TODO: Deallocate diag object arrays and clean up all memory
+  do i=1, size(obj%FMS_diag_buffers)
+    !select type (buff => obj%FMS_diag_buffers(i)%buffer)
+    call obj%FMS_diag_buffers(i)%buffer
+  enddo
+  deallocate(FMS_diag_buffers)
   obj%initialized = .false.
 #endif
 end subroutine fms_diag_object_end

@@ -54,7 +54,7 @@ program test_diag_bufer
     ! get the buffer
     buffer_out1= buffobj1%get_buffer_data()
     ! get the remapped buffer
-    remap_buffer_out => buffobj1%get_remapped_buffer_pointer()
+    remap_buffer_out => buffobj1%remap_buffer()
     ! check output
     select type (buffer_out1)
       type is(real(4))
@@ -71,7 +71,7 @@ program test_diag_bufer
     !! get the buffer
     buffer_out2= buffobj2%get_buffer_data()
     !! get the remapped buffer
-    remap_buffer_out => buffobj2%get_remapped_buffer_pointer()
+    remap_buffer_out => buffobj2%remap_buffer()
     !! check output
     select type (buffer_out2)
         type is(integer(4))
@@ -88,7 +88,7 @@ program test_diag_bufer
     !! get the buffer
     buffer_out3= buffobj3%get_buffer_data()
     !! get the remapped buffer
-    remap_buffer_out => buffobj3%get_remapped_buffer_pointer()
+    remap_buffer_out => buffobj3%remap_buffer()
     !! check output
     select type (buffer_out3)
         type is(integer(8))
@@ -104,7 +104,7 @@ program test_diag_bufer
     !! get the buffer
     buffer_out4= buffobj4%get_buffer_data()
     !! get the remapped buffer
-    remap_buffer_out => buffobj4%get_remapped_buffer_pointer()
+    remap_buffer_out => buffobj4%remap_buffer()
     !! check output
     select type (buffer_out4)
         type is(integer(8))
@@ -121,7 +121,7 @@ program test_diag_bufer
     !! get the buffer
     buffer_out5= buffobj5%get_buffer_data()
     !! get the remapped buffer
-    remap_buffer_out => buffobj5%get_remapped_buffer_pointer()
+    remap_buffer_out => buffobj5%remap_buffer()
     !! check output
     select type (buffer_out5)
         type is(integer(8))
