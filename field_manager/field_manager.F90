@@ -632,9 +632,9 @@ do h=1,my_table%nchildren
         if (my_table%children(h)%children(i)%children(j)%nchildren .gt. 0) subparams = .true.
         do k=1,size(my_table%children(h)%children(i)%children(j)%keys)
           fields(current_field)%methods(k)%method_type = &
-            lowercase(trim(my_table%children(h)%children(i)%children(j)%keys(k)))
+            trim(my_table%children(h)%children(i)%children(j)%keys(k))
           fields(current_field)%methods(k)%method_name = &
-            lowercase(trim(my_table%children(h)%children(i)%children(j)%values(k)))
+            trim(my_table%children(h)%children(i)%children(j)%values(k))
           if (.not.subparams) then
             call new_name(list_name, fields(current_field)%methods(k)%method_type,&
               fields(current_field)%methods(k)%method_name )
