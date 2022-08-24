@@ -114,6 +114,7 @@ type :: fmsDiagFile_type
  procedure, public :: has_file_global_meta
 
 end type fmsDiagFile_type
+
 type, extends (fmsDiagFile_type) :: subRegionalFile_type
   integer, dimension(:), allocatable :: sub_axis_ids !< Array of axis ids in the file
 end type subRegionalFile_type
@@ -125,6 +126,7 @@ end type fmsDiagFileContainer_type
 
 !type(fmsDiagFile_type), dimension (:), allocatable, target :: FMS_diag_file !< The array of diag files
 !class(fmsDiagFileContainer_type),dimension (:), allocatable, target :: FMS_diag_file
+
 contains
 
 !< @brief Allocates the number of files and sets an ID based for each file
@@ -187,51 +189,57 @@ logical function fms_diag_files_object_init (files_array)
 !    FATAL)
   endif
 end function fms_diag_files_object_init
+
 !> \brief Adds a field ID to the file
-subroutine add_field_id (obj, new_field_id)
-  class(fmsDiagFile_type), intent(inout) :: obj !< The file object
+subroutine add_field_id (this, new_field_id)
+  class(fmsDiagFile_type), intent(inout) :: this !< The file object
   integer, intent(in) :: new_field_id !< The field ID to be added to field_ids
-  obj%num_registered_fields = obj%num_registered_fields + 1
-  if (obj%num_registered_fields .le. size(obj%field_ids)) then
-    obj%field_ids( obj%num_registered_fields ) = new_field_id
-    obj%field_registered( obj%num_registered_fields ) = .true.
+  this%num_registered_fields = this%num_registered_fields + 1
+  if (this%num_registered_fields .le. size(this%field_ids)) then
+    this%field_ids( this%num_registered_fields ) = new_field_id
+    this%field_registered( this%num_registered_fields ) = .true.
   else
-    call mpp_error(FATAL, "The file: "//obj%get_file_fname()//" has already been assigned its maximum "//&
+    call mpp_error(FATAL, "The file: "//this%get_file_fname()//" has already been assigned its maximum "//&
                  "number of fields.")
   endif
 end subroutine add_field_id
 
 !> \brief Logical function to determine if the variable file_metadata_from_model has been allocated or associated
 !! \return .True. if file_metadata_from_model exists .False. if file_metadata_from_model has not been set
-pure logical function has_file_metadata_from_model (obj)
-  class(fmsDiagFile_type), intent(in) :: obj !< The file object
-  has_file_metadata_from_model = allocated(obj%file_metadata_from_model)
+pure logical function has_file_metadata_from_model (this)
+  class(fmsDiagFile_type), intent(in) :: this !< The file object
+  has_file_metadata_from_model = allocated(this%file_metadata_from_model)
 end function has_file_metadata_from_model
+
 !> \brief Logical function to determine if the variable fileobj has been allocated or associated
 !! \return .True. if fileobj exists .False. if fileobj has not been set
-pure logical function has_fileobj (obj)
-  class(fmsDiagFile_type), intent(in) :: obj !< The file object
-  has_fileobj = allocated(obj%fileobj)
+pure logical function has_fileobj (this)
+  class(fmsDiagFile_type), intent(in) :: this !< The file object
+  has_fileobj = allocated(this%fileobj)
 end function has_fileobj
+
 !> \brief Logical function to determine if the variable diag_yaml_file has been allocated or associated
 !! \return .True. if diag_yaml_file exists .False. if diag_yaml has not been set
-pure logical function has_diag_yaml_file (obj)
-  class(fmsDiagFile_type), intent(in) :: obj !< The file object
-  has_diag_yaml_file = associated(obj%diag_yaml_file)
+pure logical function has_diag_yaml_file (this)
+  class(fmsDiagFile_type), intent(in) :: this !< The file object
+  has_diag_yaml_file = associated(this%diag_yaml_file)
 end function has_diag_yaml_file
+
 !> \brief Logical function to determine if the variable field_ids has been allocated or associated
 !! \return .True. if field_ids exists .False. if field_ids has not been set
-pure logical function has_field_ids (obj)
-  class(fmsDiagFile_type), intent(in) :: obj !< The file object
-  has_field_ids = allocated(obj%field_ids)
+pure logical function has_field_ids (this)
+  class(fmsDiagFile_type), intent(in) :: this !< The file object
+  has_field_ids = allocated(this%field_ids)
 end function has_field_ids
+
 !> \brief Returns a copy of the value of id
 !! \return A copy of id
-pure function get_id (obj) result (res)
-  class(fmsDiagFile_type), intent(in) :: obj !< The file object
+pure function get_id (this) result (res)
+  class(fmsDiagFile_type), intent(in) :: this !< The file object
   integer :: res
-  res = obj%id
+  res = this%id
 end function get_id
+
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! TODO
 !> \brief Returns a copy of the value of fileobj
@@ -250,57 +258,65 @@ end function get_id
 !  type(diagYamlFiles_type) :: res
 !  res = obj%diag_yaml_file
 !end function get_diag_yaml_file
+
 !> \brief Returns a copy of the value of file_metadata_from_model
 !! \return A copy of file_metadata_from_model
-pure function get_file_metadata_from_model (obj) result (res)
-  class(fmsDiagFile_type), intent(in) :: obj !< The file object
+pure function get_file_metadata_from_model (this) result (res)
+  class(fmsDiagFile_type), intent(in) :: this !< The file object
   character(len=:), dimension(:), allocatable :: res
-  res = obj%file_metadata_from_model
+  res = this%file_metadata_from_model
 end function get_file_metadata_from_model
+
 !> \brief Returns a copy of the value of field_ids
 !! \return A copy of field_ids
-pure function get_field_ids (obj) result (res)
-  class(fmsDiagFile_type), intent(in) :: obj !< The file object
+pure function get_field_ids (this) result (res)
+  class(fmsDiagFile_type), intent(in) :: this !< The file object
   integer, dimension(:), allocatable :: res
-  allocate(res(size(obj%field_ids)))
-  res = obj%field_ids
+  allocate(res(size(this%field_ids)))
+  res = this%field_ids
 end function get_field_ids
+
 !!!!!!!!! Functions from diag_yaml_file
 !> \brief Returns a copy of file_fname from the yaml object
 !! \return Copy of file_fname
-pure function get_file_fname (obj) result(res)
- class(fmsDiagFile_type), intent(in) :: obj !< The file object
+pure function get_file_fname (this) result(res)
+ class(fmsDiagFile_type), intent(in) :: this !< The file object
  character (len=:), allocatable :: res
-  res = obj%diag_yaml_file%get_file_fname()
+  res = this%diag_yaml_file%get_file_fname()
 end function get_file_fname
+
 !> \brief Returns a copy of file_frequnit from the yaml object
 !! \return Copy of file_frequnit
-pure function get_file_frequnit (obj) result(res)
- class(fmsDiagFile_type), intent(in) :: obj !< The file object
+pure function get_file_frequnit (this) result(res)
+ class(fmsDiagFile_type), intent(in) :: this !< The file object
  integer :: res
-  res = obj%diag_yaml_file%get_file_frequnit()
+  res = this%diag_yaml_file%get_file_frequnit()
 end function get_file_frequnit
+
 !> \brief Returns a copy of file_freq from the yaml object
 !! \return Copy of file_freq
-pure function get_file_freq (obj) result(res)
- class(fmsDiagFile_type), intent(in) :: obj !< The file object
+pure function get_file_freq (this) result(res)
+ class(fmsDiagFile_type), intent(in) :: this !< The file object
  integer :: res
-  res = obj%diag_yaml_file%get_file_freq()
+  res = this%diag_yaml_file%get_file_freq()
 end function get_file_freq
+
 !> \brief Returns a copy of file_timeunit from the yaml object
 !! \return Copy of file_timeunit
-pure function get_file_timeunit (obj) result(res)
- class(fmsDiagFile_type), intent(in) :: obj !< The file object
+pure function get_file_timeunit (this) result(res)
+ class(fmsDiagFile_type), intent(in) :: this !< The file object
  integer :: res
-  res = obj%diag_yaml_file%get_file_timeunit()
+  res = this%diag_yaml_file%get_file_timeunit()
 end function get_file_timeunit
+
 !> \brief Returns a copy of file_unlimdim from the yaml object
 !! \return Copy of file_unlimdim
-pure function get_file_unlimdim (obj) result(res)
- class(fmsDiagFile_type), intent(in) :: obj !< The file object
+pure function get_file_unlimdim (this) result(res)
+ class(fmsDiagFile_type), intent(in) :: this !< The file object
  character (len=:), allocatable :: res
-  res = obj%diag_yaml_file%get_file_unlimdim()
+  res = this%diag_yaml_file%get_file_unlimdim()
 end function get_file_unlimdim
+
 !! TODO - get functions for sub region stuff
 !> \brief Returns a copy of file_sub_region from the yaml object
 !! \return Copy of file_sub_region
@@ -309,203 +325,225 @@ end function get_file_unlimdim
 ! integer :: res
 !  res = obj%diag_yaml_file%get_file_sub_region()
 !end function get_file_sub_region
+
 !> \brief Returns a copy of file_new_file_freq from the yaml object
 !! \return Copy of file_new_file_freq
-pure function get_file_new_file_freq (obj) result(res)
- class(fmsDiagFile_type), intent(in) :: obj !< The file object
+pure function get_file_new_file_freq (this) result(res)
+ class(fmsDiagFile_type), intent(in) :: this !< The file object
  integer :: res
-  res = obj%diag_yaml_file%get_file_new_file_freq()
+  res = this%diag_yaml_file%get_file_new_file_freq()
 end function get_file_new_file_freq
+
 !> \brief Returns a copy of file_new_file_freq_units from the yaml object
 !! \return Copy of file_new_file_freq_units
-pure function get_file_new_file_freq_units (obj) result(res)
- class(fmsDiagFile_type), intent(in) :: obj !< The file object
+pure function get_file_new_file_freq_units (this) result(res)
+ class(fmsDiagFile_type), intent(in) :: this !< The file object
  integer :: res
-  res = obj%diag_yaml_file%get_file_new_file_freq_units()
+  res = this%diag_yaml_file%get_file_new_file_freq_units()
 end function get_file_new_file_freq_units
+
 !> \brief Returns a copy of file_start_time from the yaml object
 !! \return Copy of file_start_time
-pure function get_file_start_time (obj) result(res)
- class(fmsDiagFile_type), intent(in) :: obj !< The file object
+pure function get_file_start_time (this) result(res)
+ class(fmsDiagFile_type), intent(in) :: this !< The file object
  character (len=:), allocatable :: res
-  res = obj%diag_yaml_file%get_file_start_time()
+  res = this%diag_yaml_file%get_file_start_time()
 end function get_file_start_time
+
 !> \brief Returns a copy of file_duration from the yaml object
 !! \return Copy of file_duration
-pure function get_file_duration (obj) result(res)
- class(fmsDiagFile_type), intent(in) :: obj !< The file object
+pure function get_file_duration (this) result(res)
+ class(fmsDiagFile_type), intent(in) :: this !< The file object
  integer :: res
-  res = obj%diag_yaml_file%get_file_duration()
+  res = this%diag_yaml_file%get_file_duration()
 end function get_file_duration
+
 !> \brief Returns a copy of file_duration_units from the yaml object
 !! \return Copy of file_duration_units
-pure function get_file_duration_units (obj) result(res)
- class(fmsDiagFile_type), intent(in) :: obj !< The file object
+pure function get_file_duration_units (this) result(res)
+ class(fmsDiagFile_type), intent(in) :: this !< The file object
  integer :: res
-  res = obj%diag_yaml_file%get_file_duration_units()
+  res = this%diag_yaml_file%get_file_duration_units()
 end function get_file_duration_units
+
 !> \brief Returns a copy of file_varlist from the yaml object
 !! \return Copy of file_varlist
-pure function get_file_varlist (obj) result(res)
- class(fmsDiagFile_type), intent(in) :: obj !< The file object
+pure function get_file_varlist (this) result(res)
+ class(fmsDiagFile_type), intent(in) :: this !< The file object
  character (len=:), allocatable, dimension(:) :: res
-  res = obj%diag_yaml_file%get_file_varlist()
+  res = this%diag_yaml_file%get_file_varlist()
 end function get_file_varlist
+
 !> \brief Returns a copy of file_global_meta from the yaml object
 !! \return Copy of file_global_meta
-pure function get_file_global_meta (obj) result(res)
- class(fmsDiagFile_type), intent(in) :: obj !< The file object
+pure function get_file_global_meta (this) result(res)
+ class(fmsDiagFile_type), intent(in) :: this !< The file object
  character (len=:), allocatable, dimension(:,:) :: res
-  res = obj%diag_yaml_file%get_file_global_meta()
+  res = this%diag_yaml_file%get_file_global_meta()
 end function get_file_global_meta
+
 !> \brief Checks if file_fname is allocated in the yaml object
 !! \return true if file_fname is allocated
-pure function has_file_fname (obj) result(res)
- class(fmsDiagFile_type), intent(in) :: obj !< The file object
+pure function has_file_fname (this) result(res)
+ class(fmsDiagFile_type), intent(in) :: this !< The file object
  logical :: res
-  res = obj%diag_yaml_file%has_file_fname()
+  res = this%diag_yaml_file%has_file_fname()
 end function has_file_fname
+
 !> \brief Checks if file_frequnit is allocated in the yaml object
 !! \return true if file_frequnit is allocated
-pure function has_file_frequnit (obj) result(res)
- class(fmsDiagFile_type), intent(in) :: obj !< The file object
+pure function has_file_frequnit (this) result(res)
+ class(fmsDiagFile_type), intent(in) :: this !< The file object
  logical :: res
-  res = obj%diag_yaml_file%has_file_frequnit()
+  res = this%diag_yaml_file%has_file_frequnit()
 end function has_file_frequnit
+
 !> \brief Checks if file_freq is allocated in the yaml object
 !! \return true if file_freq is allocated
-pure function has_file_freq (obj) result(res)
- class(fmsDiagFile_type), intent(in) :: obj !< The file object
+pure function has_file_freq (this) result(res)
+ class(fmsDiagFile_type), intent(in) :: this !< The file object
  logical :: res
-  res = obj%diag_yaml_file%has_file_freq()
+  res = this%diag_yaml_file%has_file_freq()
 end function has_file_freq
+
 !> \brief Checks if file_timeunit is allocated in the yaml object
 !! \return true if file_timeunit is allocated
-pure function has_file_timeunit (obj) result(res)
- class(fmsDiagFile_type), intent(in) :: obj !< The file object
+pure function has_file_timeunit (this) result(res)
+ class(fmsDiagFile_type), intent(in) :: this !< The file object
  logical :: res
-  res = obj%diag_yaml_file%has_file_timeunit()
+  res = this%diag_yaml_file%has_file_timeunit()
 end function has_file_timeunit
+
 !> \brief Checks if file_unlimdim is allocated in the yaml object
 !! \return true if file_unlimdim is allocated
-pure function has_file_unlimdim (obj) result(res)
- class(fmsDiagFile_type), intent(in) :: obj !< The file object
+pure function has_file_unlimdim (this) result(res)
+ class(fmsDiagFile_type), intent(in) :: this !< The file object
  logical :: res
-  res = obj%diag_yaml_file%has_file_unlimdim()
+  res = this%diag_yaml_file%has_file_unlimdim()
 end function has_file_unlimdim
+
 !> \brief Checks if file_sub_region is allocated in the yaml object
 !! \return true if file_sub_region is allocated
-pure function has_file_sub_region (obj) result(res)
- class(fmsDiagFile_type), intent(in) :: obj !< The file object
+pure function has_file_sub_region (this) result(res)
+ class(fmsDiagFile_type), intent(in) :: this !< The file object
  logical :: res
-  res = obj%diag_yaml_file%has_file_sub_region()
+  res = this%diag_yaml_file%has_file_sub_region()
 end function has_file_sub_region
+
 !> \brief Checks if file_new_file_freq is allocated in the yaml object
 !! \return true if file_new_file_freq is allocated
-pure function has_file_new_file_freq (obj) result(res)
- class(fmsDiagFile_type), intent(in) :: obj !< The file object
+pure function has_file_new_file_freq (this) result(res)
+ class(fmsDiagFile_type), intent(in) :: this !< The file object
  logical :: res
-  res = obj%diag_yaml_file%has_file_new_file_freq()
+  res = this%diag_yaml_file%has_file_new_file_freq()
 end function has_file_new_file_freq
+
 !> \brief Checks if file_new_file_freq_units is allocated in the yaml object
 !! \return true if file_new_file_freq_units is allocated
-pure function has_file_new_file_freq_units (obj) result(res)
- class(fmsDiagFile_type), intent(in) :: obj !< The file object
+pure function has_file_new_file_freq_units (this) result(res)
+ class(fmsDiagFile_type), intent(in) :: this !< The file object
  logical :: res
-  res = obj%diag_yaml_file%has_file_new_file_freq_units()
+  res = this%diag_yaml_file%has_file_new_file_freq_units()
 end function has_file_new_file_freq_units
+
 !> \brief Checks if file_start_time is allocated in the yaml object
 !! \return true if file_start_time is allocated
-pure function has_file_start_time (obj) result(res)
- class(fmsDiagFile_type), intent(in) :: obj !< The file object
+pure function has_file_start_time (this) result(res)
+ class(fmsDiagFile_type), intent(in) :: this !< The file object
  logical :: res
-  res = obj%diag_yaml_file%has_file_start_time()
+  res = this%diag_yaml_file%has_file_start_time()
 end function has_file_start_time
+
 !> \brief Checks if file_duration is allocated in the yaml object
 !! \return true if file_duration is allocated
-pure function has_file_duration (obj) result(res)
- class(fmsDiagFile_type), intent(in) :: obj !< The file object
+pure function has_file_duration (this) result(res)
+ class(fmsDiagFile_type), intent(in) :: this !< The file object
  logical :: res
-  res = obj%diag_yaml_file%has_file_duration()
+  res = this%diag_yaml_file%has_file_duration()
 end function has_file_duration
+
 !> \brief Checks if file_duration_units is allocated in the yaml object
 !! \return true if file_duration_units is allocated
-pure function has_file_duration_units (obj) result(res)
- class(fmsDiagFile_type), intent(in) :: obj !< The file object
+pure function has_file_duration_units (this) result(res)
+ class(fmsDiagFile_type), intent(in) :: this !< The file object
  logical :: res
-  res = obj%diag_yaml_file%has_file_duration_units()
+  res = this%diag_yaml_file%has_file_duration_units()
 end function has_file_duration_units
+
 !> \brief Checks if file_varlist is allocated in the yaml object
 !! \return true if file_varlist is allocated
-pure function has_file_varlist (obj) result(res)
- class(fmsDiagFile_type), intent(in) :: obj !< The file object
+pure function has_file_varlist (this) result(res)
+ class(fmsDiagFile_type), intent(in) :: this !< The file object
  logical :: res
-  res = obj%diag_yaml_file%has_file_varlist()
+  res = this%diag_yaml_file%has_file_varlist()
 end function has_file_varlist
+
 !> \brief Checks if file_global_meta is allocated in the yaml object
 !! \return true if file_global_meta is allocated
-pure function has_file_global_meta (obj) result(res)
- class(fmsDiagFile_type), intent(in) :: obj !< The file object
+pure function has_file_global_meta (this) result(res)
+ class(fmsDiagFile_type), intent(in) :: this !< The file object
  logical :: res
-  res = obj%diag_yaml_file%has_file_global_meta()
+  res = this%diag_yaml_file%has_file_global_meta()
 end function has_file_global_meta
+
 !> @brief Sets the domain and type of domain from the axis IDs
-subroutine set_domain_from_axis(obj, axes)
-  class(fmsDiagFile_type), intent(inout)       :: obj            !< The file object
+subroutine set_domain_from_axis(this, axes)
+  class(fmsDiagFile_type), intent(inout)       :: this            !< The file object
   integer, intent(in) :: axes (:)
-  call get_domain_and_domain_type(axes, obj%type_of_domain, obj%domain, obj%get_file_fname())
+  call get_domain_and_domain_type(axes, this%type_of_domain, this%domain, this%get_file_fname())
 end subroutine set_domain_from_axis
+
 !> @brief Set the domain and the type_of_domain for a file
 !> @details This subroutine is going to be called once by every variable in the file
 !! in register_diag_field. It will update the domain and the type_of_domain if needed and verify that
 !! all the variables are in the same domain
-subroutine set_file_domain(obj, domain, type_of_domain)
-  class(fmsDiagFile_type), intent(inout)       :: obj            !< The file object
+subroutine set_file_domain(this, domain, type_of_domain)
+  class(fmsDiagFile_type), intent(inout)       :: this            !< The file object
   integer,                 INTENT(in)          :: type_of_domain !< fileobj_type to use
   CLASS(diagDomain_t),     INTENT(in), target  :: domain         !< Domain
 
   !! If this a sub_regional, don't do anything here
-  if (obj%type_of_domain .eq. SUB_REGIONAL) return
+  if (this%type_of_domain .eq. SUB_REGIONAL) return
 
-  if (type_of_domain .ne. obj%type_of_domain) then
+  if (type_of_domain .ne. this%type_of_domain) then
   !! If the current type_of_domain in the file obj is not the same as the variable calling this subroutine
 
-    if (type_of_domain .eq. NO_DOMAIN .or. obj%type_of_domain .eq. NO_DOMAIN) then
+    if (type_of_domain .eq. NO_DOMAIN .or. this%type_of_domain .eq. NO_DOMAIN) then
     !! If they are not the same then one of them can be NO_DOMAIN
     !! (i.e a file can have variables that are not domain decomposed and variables that are)
 
       if (type_of_domain .ne. NO_DOMAIN) then
       !! Update the file's type_of_domain and domain if needed
-        obj%type_of_domain = type_of_domain
-        obj%domain => domain
+        this%type_of_domain = type_of_domain
+        this%domain => domain
       endif
 
     else
     !! If they are not the same and of them is not NO_DOMAIN, then crash because the variables don't have the
     !! same domain (i.e a file has a variable is that in a 2D domain and one that is in a UG domain)
 
-      call mpp_error(FATAL, "The file: "//obj%get_file_fname()//" has variables that are not in the same domain")
+      call mpp_error(FATAL, "The file: "//this%get_file_fname()//" has variables that are not in the same domain")
     endif
   endif
 
 end subroutine set_file_domain
 
 !> @brief Loops through a variable's axis_ids and adds them to the FMSDiagFile object if they don't exist
-subroutine add_axes(obj, axis_ids)
-  class(fmsDiagFile_type), intent(inout)       :: obj            !< The file object
+subroutine add_axes(this, axis_ids)
+  class(fmsDiagFile_type), intent(inout)       :: this            !< The file object
   integer,                 INTENT(in)          :: axis_ids(:)    !< Array of axes_ids
 
   integer :: i, j !< For do loops
 
   do i = 1, size(axis_ids)
-    do j = 1, obj%number_of_axis
+    do j = 1, this%number_of_axis
       !> Check if the axis already exists, return
-      if (axis_ids(i) .eq. obj%axis_ids(j)) return
+      if (axis_ids(i) .eq. this%axis_ids(j)) return
     enddo
 
     !> If the axis does not exist add it to the list
-    obj%number_of_axis = obj%number_of_axis + 1
-    obj%axis_ids(obj%number_of_axis) = axis_ids(i)
+    this%number_of_axis = this%number_of_axis + 1
+    this%axis_ids(this%number_of_axis) = axis_ids(i)
 
     !> If this is a sub_regional file, set up the sub_axes
     !> TO DO:
@@ -517,27 +555,27 @@ end subroutine add_axes
 !> @brief adds the start time to the fileobj
 !! @note This should be called from the register field calls. It can be called multiple times (one for each variable)
 !! So it needs to make sure that the start_time is the same for each variable. The initial value is the base_time
-subroutine add_start_time(obj, start_time)
-  class(fmsDiagFile_type), intent(inout)       :: obj            !< The file object
+subroutine add_start_time(this, start_time)
+  class(fmsDiagFile_type), intent(inout)       :: this            !< The file object
   TYPE(time_type),         intent(in)          :: start_time     !< Start time to add to the fileobj
 
   !< If the start_time sent in is equal to the base_time return because
   !! obj%start_time was already set to the base_time
   if (start_time .eq. get_base_time()) return
 
-  if (obj%start_time .ne. get_base_time()) then
+  if (this%start_time .ne. get_base_time()) then
     !> If the obj%start_time is not equal to the base_time from the diag_table
     !! obj%start_time was already updated so make sure it is the same or error out
-    if (obj%start_time .ne. start_time)&
-      call mpp_error(FATAL, "The variables associated with the file:"//obj%get_file_fname()//" have"&
+    if (this%start_time .ne. start_time)&
+      call mpp_error(FATAL, "The variables associated with the file:"//this%get_file_fname()//" have"&
       &" different start_time")
   else
     !> If the obj%start_time is equal to the base_time,
     !! simply update it with the start_time and set up the *_output variables
-    obj%start_time = start_time
-    obj%last_output = start_time
-    obj%next_output = diag_time_inc(start_time, obj%get_file_freq(), obj%get_file_frequnit())
-    obj%next_next_output = diag_time_inc(obj%next_output, obj%get_file_freq(), obj%get_file_frequnit())
+    this%start_time = start_time
+    this%last_output = start_time
+    this%next_output = diag_time_inc(start_time, this%get_file_freq(), this%get_file_frequnit())
+    this%next_next_output = diag_time_inc(this%next_output, this%get_file_freq(), this%get_file_frequnit())
   endif
 
 end subroutine
