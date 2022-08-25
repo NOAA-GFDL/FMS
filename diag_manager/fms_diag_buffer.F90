@@ -253,19 +253,19 @@ subroutine flush_buffer(this)
   class(fmsDiagBuffer_class), intent(inout) :: this !< any buffer object
   select type (this)
     type is (buffer0d)
-      deallocate(this%buffer)
+      if (allocated(this%buffer)) deallocate(this%buffer)
     type is (buffer1d)
-      deallocate(this%buffer)
+      if (allocated(this%buffer)) deallocate(this%buffer)
     type is (buffer2d)
-      deallocate(this%buffer)
+      if (allocated(this%buffer)) deallocate(this%buffer)
     type is (buffer3d)
-      deallocate(this%buffer)
+      if (allocated(this%buffer)) deallocate(this%buffer)
     type is (buffer4d)
-      deallocate(this%buffer)
+      if (allocated(this%buffer)) deallocate(this%buffer)
     type is (buffer5d)
-      deallocate(this%buffer)
+      if (allocated(this%buffer)) deallocate(this%buffer)
   end select
-  deallocate(this%buffer_id)
+  if (allocated(this%buffer_id)) deallocate(this%buffer_id)
 end subroutine
 
 !! -----------Type-specific routines for buffer0-5d

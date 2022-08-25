@@ -40,7 +40,7 @@ private
 !TODO: Remove FMS prefix from variables in this type
   class(fmsDiagFileContainer_type), allocatable :: FMS_diag_files (:) !< array of diag files
   class(fmsDiagField_type), allocatable :: FMS_diag_fields(:) !< Array of diag fields
-  type(fmsDiagBufferContainer_type), allocatable :: FMS_diag_buffers(:) !< array of buffer objects 
+  type(fmsDiagBufferContainer_type), allocatable :: FMS_diag_buffers(:) !< array of buffer objects
   integer, private :: registered_buffers = 0 !< number of registered buffers, per dimension
   integer, private :: registered_variables !< Number of registered variables
   logical, private :: initialized=.false. !< True if the fmsDiagObject is initialized
@@ -58,18 +58,18 @@ private
     procedure :: fms_diag_field_add_attribute
     procedure :: fms_get_diag_field_id_from_name
     procedure :: diag_end => fms_diag_object_end
-    procedure :: get_diag_buffer 
+    procedure :: get_diag_buffer
 end type fmsDiagObject_type
 
 type (fmsDiagObject_type), target :: fms_diag_object
 integer, private :: registered_variables !< Number of registered variables
 public :: fms_register_diag_field_obj
 public :: fms_register_diag_field_scalar
-public :: fms_register_diag_field_array 
+public :: fms_register_diag_field_array
 public :: fms_register_static_field
 public :: fms_diag_field_add_attribute
 public :: fms_get_diag_field_id_from_name
-public :: fms_diag_object 
+public :: fms_diag_object
 public :: fmsDiagObject_type
 
 contains
@@ -87,11 +87,11 @@ subroutine fms_diag_object_init (this,diag_subset_output)
 ! allocate(diag_objs(get_num_unique_fields()))
   CALL diag_yaml_object_init(diag_subset_output)
   CALL fms_diag_axis_object_init()
-  obj%files_initialized = fms_diag_files_object_init(obj%FMS_diag_files)
-  obj%fields_initialized = fms_diag_fields_object_init (obj%FMS_diag_fields)
-  obj%buffers_initialized = fms_diag_buffer_init(obj%FMS_diag_buffers, SIZE(diag_yaml%get_diag_fields())) 
-  obj%initialized = .true.
+  this%files_initialized = fms_diag_files_object_init(this%FMS_diag_files)
+  this%fields_initialized = fms_diag_fields_object_init(this%FMS_diag_fields)
+  this%buffers_initialized = fms_diag_buffer_init(this%FMS_diag_buffers, SIZE(diag_yaml%get_diag_fields()))
   this%registered_variables = 0
+  this%initialized = .true.
 #else
   call mpp_error("fms_diag_object_init",&
     "You must compile with -Duse_yaml to use the option use_modern_diag", FATAL)
@@ -111,9 +111,11 @@ subroutine fms_diag_object_end (obj)
   !TODO: Deallocate diag object arrays and clean up all memory
   do i=1, size(obj%FMS_diag_buffers)
     !select type (buff => obj%FMS_diag_buffers(i)%buffer)
-    call obj%FMS_diag_buffers(i)%buffer%flush_buffer()
+    if(allocated(obj%FMS_diag_buffers(i)%diag_buffer_obj)) then
+      call obj%FMS_diag_buffers(i)%diag_buffer_obj%flush_buffer()
+    endif
   enddo
-  deallocate(FMS_diag_buffers)
+  deallocate(obj%FMS_diag_buffers)
   obj%initialized = .false.
 #endif
 end subroutine fms_diag_object_end
@@ -367,7 +369,7 @@ END FUNCTION fms_get_diag_field_id_from_name
 !! actual data comes from %get_buffer_data() on the returned object
 function get_diag_buffer(this, bufferid) &
 result(rslt)
-  class(fmsDiagObject_type), intent(in) :: this 
+  class(fmsDiagObject_type), intent(in) :: this
   integer, intent(in)                   :: bufferid
   class(fmsDiagBuffer_class),allocatable:: rslt
   if( (bufferid .gt. UBOUND(this%FMS_diag_buffers, 1)) .or. (bufferid .lt. UBOUND(this%FMS_diag_buffers, 1))) &
