@@ -632,9 +632,9 @@ do h=1,my_table%nchildren
         if (my_table%children(h)%children(i)%children(j)%nchildren .gt. 0) subparams = .true.
         do k=1,size(my_table%children(h)%children(i)%children(j)%keys)
           fields(current_field)%methods(k)%method_type = &
-            lowercase(trim(my_table%children(h)%children(i)%children(j)%keys(k)))
+            trim(my_table%children(h)%children(i)%children(j)%keys(k))
           fields(current_field)%methods(k)%method_name = &
-            lowercase(trim(my_table%children(h)%children(i)%children(j)%values(k)))
+            trim(my_table%children(h)%children(i)%children(j)%values(k))
           if (.not.subparams) then
             call new_name(list_name, fields(current_field)%methods(k)%method_type,&
               fields(current_field)%methods(k)%method_name )
@@ -642,14 +642,16 @@ do h=1,my_table%nchildren
             subparamindex=-1
             do l=1,my_table%children(h)%children(i)%children(j)%nchildren
               if(trim(my_table%children(h)%children(i)%children(j)%children(l)%paramname).eq.&
-                trim(fields(current_field)%methods(k)%method_type)) subparamindex = l
-              exit
+                trim(fields(current_field)%methods(k)%method_type)) then
+                  subparamindex = l
+                  exit
+              end if
             end do
             if (subparamindex.eq.-1) then
               call new_name(list_name, fields(current_field)%methods(k)%method_type,&
                 fields(current_field)%methods(k)%method_name )
             else
-              do m=1,size(my_table%children(h)%children(i)%children(j)%children(l)%keys)
+              do m=1,size(my_table%children(h)%children(i)%children(j)%children(subparamindex)%keys)
                 method_control = " "
                 subparamvalue = " "
                 method_control = trim(fields(current_field)%methods(k)%method_type)//"/"//&
