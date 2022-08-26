@@ -1,4 +1,5 @@
 program test_diag_buffer
+#ifdef use_yaml
 
     use fms_diag_buffer_mod
     use platform_mod
@@ -152,4 +153,5 @@ program test_diag_buffer
             print *, val
         end select
     end subroutine
+#endif
 end program

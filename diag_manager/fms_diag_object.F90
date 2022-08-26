@@ -58,7 +58,9 @@ private
     procedure :: fms_diag_field_add_attribute
     procedure :: fms_get_diag_field_id_from_name
     procedure :: diag_end => fms_diag_object_end
+#ifdef use_yaml
     procedure :: get_diag_buffer
+#endif
 end type fmsDiagObject_type
 
 type (fmsDiagObject_type), target :: fms_diag_object
