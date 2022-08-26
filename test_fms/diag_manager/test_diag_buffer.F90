@@ -1,4 +1,4 @@
-program test_diag_bufer
+program test_diag_buffer
 
     use fms_diag_buffer_mod
     use platform_mod
@@ -22,7 +22,6 @@ program test_diag_bufer
     integer :: i
     real(4) :: arr(9)
 
-
     !! 0d
     ! allocate some buffers
     do i=1, 10
@@ -35,13 +34,16 @@ program test_diag_bufer
     buffer_out = buffobj0(5)%get_buffer_data()
     ! get the 5d remapped buffer data
     ! TODO scalar buffer remapping
-    !remap_buffer_out => buffobj0(5)%get_remapped_buffer_pointer()
+    remap_buffer_out => buffobj0(5)%remap_buffer()
     ! check output from object and remapped buffer
     select type (buffer_out)
       type is(real(8))
         print *, buffer_out
     end select
-    !call print_5d(remap_buffer_out)
+    call print_5d(remap_buffer_out)
+    do i=1, 10
+      call buffobj0(i)%flush_buffer()
+    enddo
 
     !! 1d
     ! allocate a buffer to the given type and get it's id
@@ -52,7 +54,8 @@ program test_diag_bufer
     arr = 4.0
     call buffobj1%add_to_buffer(arr)
     ! get the buffer
-    buffer_out1= buffobj1%get_buffer_data()
+    allocate(real(r4_kind) :: buffer_out1(10))
+    buffer_out1 = buffobj1%get_buffer_data()
     ! get the remapped buffer
     remap_buffer_out => buffobj1%remap_buffer()
     ! check output
@@ -61,6 +64,7 @@ program test_diag_bufer
         print *, buffer_out1
     end select
     call print_5d(remap_buffer_out)
+    call buffobj1%flush_buffer()
 
 
     !! 2d
@@ -78,6 +82,7 @@ program test_diag_bufer
             print *, buffer_out2
     end select
     call print_5d(remap_buffer_out)
+    call buffobj2%flush_buffer()
 
 
     !! 3d
@@ -95,6 +100,7 @@ program test_diag_bufer
             print *, buffer_out3
     end select
     call print_5d(remap_buffer_out)
+    call buffobj3%flush_buffer()
 
     !! 4d
     ! allocate a buffer to the given type and get it's id
@@ -111,6 +117,7 @@ program test_diag_bufer
             print *, buffer_out4
     end select
     call print_5d(remap_buffer_out)
+    call buffobj4%flush_buffer()
 
 
     !! 5d
@@ -128,6 +135,8 @@ program test_diag_bufer
             print *, buffer_out5
     end select
     call print_5d(remap_buffer_out)
+    call buffobj5%flush_buffer()
+
 
     contains
     ! just prints polymorphic data types
