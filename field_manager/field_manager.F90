@@ -617,8 +617,9 @@ do h=1,my_table%nchildren
     end select
     do j=1,my_table%children(h)%children(i)%nchildren
       current_field = current_field + 1
-      list_name = list_sep//trim(my_table%children(h)%children(i)%name)//list_sep//trim(my_table%children(h)%name)//&
-               list_sep//trim(my_table%children(h)%children(i)%children(j)%name)
+      list_name = list_sep//lowercase(trim(my_table%children(h)%children(i)%name))//list_sep//&
+               lowercase(trim(my_table%children(h)%name))//list_sep//&
+               lowercase(trim(my_table%children(h)%children(i)%children(j)%name))
       index_list_name = fm_new_list(list_name, create = .true.)
       if ( index_list_name == NO_FIELD ) &
         call mpp_error(FATAL, trim(error_header)//'Could not set field list for '//trim(list_name))
@@ -632,30 +633,30 @@ do h=1,my_table%nchildren
         if (my_table%children(h)%children(i)%children(j)%nchildren .gt. 0) subparams = .true.
         do k=1,size(my_table%children(h)%children(i)%children(j)%keys)
           fields(current_field)%methods(k)%method_type = &
-            trim(my_table%children(h)%children(i)%children(j)%keys(k))
+            lowercase(trim(my_table%children(h)%children(i)%children(j)%keys(k)))
           fields(current_field)%methods(k)%method_name = &
-            trim(my_table%children(h)%children(i)%children(j)%values(k))
+            lowercase(trim(my_table%children(h)%children(i)%children(j)%values(k)))
           if (.not.subparams) then
-            call new_name(list_name, fields(current_field)%methods(k)%method_type,&
-              fields(current_field)%methods(k)%method_name )
+            call new_name(list_name, trim(my_table%children(h)%children(i)%children(j)%keys(k)),&
+              trim(my_table%children(h)%children(i)%children(j)%values(k)) )
           else
             subparamindex=-1
             do l=1,my_table%children(h)%children(i)%children(j)%nchildren
-              if(trim(my_table%children(h)%children(i)%children(j)%children(l)%paramname).eq.&
-                trim(fields(current_field)%methods(k)%method_type)) then
+              if(lowercase(trim(my_table%children(h)%children(i)%children(j)%children(l)%paramname)).eq.&
+                lowercase(trim(fields(current_field)%methods(k)%method_type))) then
                   subparamindex = l
                   exit
               end if
             end do
             if (subparamindex.eq.-1) then
-              call new_name(list_name, fields(current_field)%methods(k)%method_type,&
-                fields(current_field)%methods(k)%method_name )
+              call new_name(list_name, trim(my_table%children(h)%children(i)%children(j)%keys(k)),&
+                trim(my_table%children(h)%children(i)%children(j)%values(k)) )
             else
               do m=1,size(my_table%children(h)%children(i)%children(j)%children(subparamindex)%keys)
                 method_control = " "
                 subparamvalue = " "
-                method_control = trim(fields(current_field)%methods(k)%method_type)//"/"//&
-                  &trim(fields(current_field)%methods(k)%method_name)//"/"//&
+                method_control = trim(my_table%children(h)%children(i)%children(j)%keys(k))//"/"//&
+                  &trim(my_table%children(h)%children(i)%children(j)%values(k))//"/"//&
                   &trim(my_table%children(h)%children(i)%children(j)%children(subparamindex)%keys(m))
                 subparamvalue = trim(my_table%children(h)%children(i)%children(j)%children(subparamindex)%values(m))
                 call new_name(list_name, method_control, subparamvalue)
