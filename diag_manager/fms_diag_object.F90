@@ -365,6 +365,7 @@ PURE FUNCTION fms_get_diag_field_id_from_name(fms_diag_object, module_name, fiel
 #endif
 END FUNCTION fms_get_diag_field_id_from_name
 
+#ifdef use_yaml
 !> returns the buffer object for the given id
 !! actual data comes from %get_buffer_data() on the returned object
 function get_diag_buffer(this, bufferid) &
@@ -376,5 +377,6 @@ result(rslt)
     call mpp_error(FATAL, 'get_diag_bufer: invalid bufferid given')
   rslt = fms_diag_object%FMS_diag_buffers(bufferid)%diag_buffer_obj
 end function
+#endif
 
 end module fms_diag_object_mod
