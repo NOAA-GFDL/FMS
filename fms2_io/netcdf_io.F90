@@ -2126,7 +2126,7 @@ function is_registered_to_restart(fileobj, variable_name) &
 
   if (.not. fileobj%is_restart) then
     call error("file "//trim(fileobj%path)//" is not a restart file. "&
-               "Add is_restart=.true. to your open_file call")
+              //"Add is_restart=.true. to your open_file call")
   endif
   is_registered = .false.
   do i = 1, fileobj%num_restart_vars
