@@ -267,6 +267,7 @@ subroutine allocate_buffer_0d(this, buff_type)
   class(buffer0d), intent(inout), target :: this !< scalar buffer object
   class(*),intent(in) :: buff_type !< allocates to the given type, value does not matter
 
+  if(allocated(this%buffer)) call mpp_error(FATAL, "allocate_buffer_0d: buffer already allocated")
   select type (buff_type)
     type is (integer(kind=i4_kind))
       allocate(integer(kind=i4_kind) :: this%buffer(1))
@@ -290,15 +291,16 @@ subroutine allocate_buffer_1d(this, buff_type, buff_size)
   class(*),intent(in) :: buff_type !< allocates to the type of buff_type
   integer, intent(in) :: buff_size !< dimension bounds
 
+  if(allocated(this%buffer)) call mpp_error(FATAL, "allocate_buffer_1d: buffer already allocated")
   select type (buff_type)
     type is (integer(kind=i4_kind))
-      allocate(integer(kind=i4_kind) :: this%buffer(buff_size))
+      allocate(integer(kind=i4_kind) :: this%buffer(1:buff_size))
     type is (integer(kind=i8_kind))
-      allocate(integer(kind=i8_kind) :: this%buffer(buff_size))
+      allocate(integer(kind=i8_kind) :: this%buffer(1:buff_size))
     type is (real(kind=r4_kind))
-      allocate(real(kind=r4_kind) :: this%buffer(buff_size))
+      allocate(real(kind=r4_kind) :: this%buffer(1:buff_size))
     type is (real(kind=r8_kind))
-      allocate(real(kind=r8_kind) :: this%buffer(buff_size))
+      allocate(real(kind=r8_kind) :: this%buffer(1:buff_size))
     class default
        call mpp_error("allocate_buffer_1d", &
            "The buff_type value passed to allocate a buffer is not a r8, r4, i8, or i4",&
@@ -313,6 +315,7 @@ subroutine allocate_buffer_2d(this, buff_type, buff_sizes)
   class(*),intent(in) :: buff_type !< allocates to the type of buff_type
   integer, intent(in) :: buff_sizes(2) !< dimension sizes
 
+  if(allocated(this%buffer)) call mpp_error(FATAL, "allocate_buffer_2d: buffer already allocated")
   select type (buff_type)
     type is (integer(kind=i4_kind))
       allocate(integer(kind=i4_kind) :: this%buffer(buff_sizes(1), buff_sizes(2)))
@@ -336,6 +339,7 @@ subroutine allocate_buffer_3d(this, buff_type, buff_sizes)
   class(*),intent(in) :: buff_type !< allocates to the type of buff_type
   integer, intent(in) :: buff_sizes(3) !< dimension sizes
 
+  if(allocated(this%buffer)) call mpp_error(FATAL, "allocate_buffer_3d: buffer already allocated")
   select type (buff_type)
     type is (integer(kind=i4_kind))
       allocate(integer(kind=i4_kind) :: this%buffer( buff_sizes(1),buff_sizes(2), buff_sizes(3)))
@@ -358,6 +362,7 @@ subroutine allocate_buffer_4d(this, buff_type, buff_sizes)
   class(*),intent(in) :: buff_type !< allocates to the type of buff_type
   integer, intent(in) :: buff_sizes(4) !< dimension buff_sizes
 
+  if(allocated(this%buffer)) call mpp_error(FATAL, "allocate_buffer_4d: buffer already allocated")
   select type (buff_type)
     type is (integer(kind=i4_kind))
       allocate(integer(kind=i4_kind) :: this%buffer(buff_sizes(1),buff_sizes(2),buff_sizes(3),buff_sizes(4)))
@@ -380,6 +385,7 @@ subroutine allocate_buffer_5d(this, buff_type, buff_sizes)
   class(*),intent(in) :: buff_type !< allocates to the type of buff_type
   integer, intent(in) :: buff_sizes(5) !< dimension buff_sizes
 
+  if(allocated(this%buffer)) call mpp_error(FATAL, "allocate_buffer_5d: buffer already allocated")
   select type (buff_type)
     type is (integer(kind=i4_kind))
       allocate(integer(kind=i4_kind) :: this%buffer(buff_sizes(1),buff_sizes(2),buff_sizes(3),buff_sizes(4),buff_sizes(5)))
@@ -412,8 +418,18 @@ end function get_buffer_0d
 !! @return copy of the buffer data
 function get_buffer_1d (this) &
 result(rslt)
-  class (buffer1d), intent(in) :: this !< 1D buffer object
+  class (buffer1d), target, intent(in) :: this !< 1D buffer object
   class(*), allocatable :: rslt(:)
+  select type(buff=>this%buffer)
+    type is(integer(8))
+      allocate(integer(8) :: rslt(size(buff)))
+    type is(integer(4))
+      allocate(integer(4) :: rslt(size(buff)))
+    type is(real(4))
+      allocate(real(4) :: rslt(size(buff)))
+    type is(real(8))
+      allocate(real(8) :: rslt(size(buff)))
+  end select
   if (allocated(this%buffer)) then
     rslt = this%buffer
   else
@@ -426,6 +442,16 @@ function get_buffer_2d (this) &
 result(rslt)
   class (buffer2d), intent(in) :: this !< 2D buffer object
   class(*), allocatable :: rslt(:,:)
+  select type(buff=>this%buffer)
+    type is(integer(8))
+      allocate(integer(8) :: rslt(size(buff,1), size(buff,2)))
+    type is(integer(4))
+      allocate(integer(4) :: rslt(size(buff,1), size(buff,2)))
+    type is(real(4))
+      allocate(real(4) :: rslt(size(buff,1), size(buff,2)))
+    type is(real(8))
+      allocate(real(8) :: rslt(size(buff,1), size(buff,2)))
+  end select
   if (allocated(this%buffer)) then
     rslt = this%buffer
   else
@@ -438,6 +464,16 @@ function get_buffer_3d (this) &
 result(rslt)
   class (buffer3d), intent(in) :: this !< 3D buffer object
   class(*), allocatable :: rslt(:,:,:)
+  select type(buff=>this%buffer)
+    type is(integer(8))
+      allocate(integer(8) :: rslt(size(buff,1), size(buff,2), size(buff,3)))
+    type is(integer(4))
+      allocate(integer(4) :: rslt(size(buff,1), size(buff,2), size(buff,3)))
+    type is(real(4))
+      allocate(real(4) :: rslt(size(buff,1), size(buff,2), size(buff,3)))
+    type is(real(8))
+      allocate(real(8) :: rslt(size(buff,1), size(buff,2), size(buff,3)))
+  end select
   if (allocated(this%buffer)) then
     rslt = this%buffer
   else
@@ -450,6 +486,16 @@ function get_buffer_4d (this) &
 result(rslt)
   class (buffer4d), intent(in) :: this !< 4D buffer object
   class(*), allocatable :: rslt(:,:,:,:)
+  select type(buff=>this%buffer)
+    type is(integer(8))
+      allocate(integer(8) :: rslt(size(buff,1), size(buff,2), size(buff,3), size(buff,4)))
+    type is(integer(4))
+      allocate(integer(4) :: rslt(size(buff,1), size(buff,2), size(buff,3), size(buff,4)))
+    type is(real(4))
+      allocate(real(4) :: rslt(size(buff,1), size(buff,2), size(buff,3), size(buff,4)))
+    type is(real(8))
+      allocate(real(8) :: rslt(size(buff,1), size(buff,2), size(buff,3), size(buff,4)))
+  end select
   if (allocated(this%buffer)) then
     rslt = this%buffer
   else
@@ -462,6 +508,16 @@ function get_buffer_5d (this) &
 result(rslt)
   class (buffer5d), intent(in) :: this !< 5D buffer object
   class(*), allocatable :: rslt(:,:,:,:,:)
+  select type(buff=>this%buffer)
+    type is(integer(8))
+      allocate(integer(8) :: rslt(size(buff,1), size(buff,2), size(buff,3), size(buff,4), size(buff,5)))
+    type is(integer(4))
+      allocate(integer(4) :: rslt(size(buff,1), size(buff,2), size(buff,3), size(buff,4), size(buff,5)))
+    type is(real(4))
+      allocate(real(4) :: rslt(size(buff,1), size(buff,2), size(buff,3), size(buff,4), size(buff,5)))
+    type is(real(8))
+      allocate(real(8) :: rslt(size(buff,1), size(buff,2), size(buff,3), size(buff,4), size(buff,5)))
+  end select
   if (allocated(this%buffer)) then
     rslt = this%buffer
   else
