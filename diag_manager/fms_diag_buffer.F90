@@ -41,8 +41,12 @@ private
 !! Abstract to ensure use through its extensions(buffer0-5d types)
 type, abstract :: fmsDiagBuffer_class
   integer, allocatable, private               :: buffer_id !< index in buffer list
-
+  integer, allocatable, public :: num_elements(:) !< used in time-averaging
+  class(*), allocatable, public :: count_0d(:) !< used in time-averaging along with
+                                       !! counter which is stored in the child types (bufferNd)
+  character(len=2), public :: typestr !<set to allocated data type & kind value, one of i4,i8,r4,r8
   contains
+
   procedure :: flush_buffer
   procedure :: remap_buffer
   procedure :: set_buffer_id
@@ -62,12 +66,14 @@ end type
 type, extends(fmsDiagBuffer_class) :: buffer0d
   class(*), allocatable :: buffer(:) !< "scalar" numberic buffer value
                                      !! will only be allocated to hold 1 value
+  class(*), allocatable :: counter(:) !< (x,y,z, time-of-day) used in the time averaging functions
   character, private :: dims = '0'
   contains
   procedure :: allocate_buffer => allocate_buffer_0d
-  procedure :: get_buffer_data => get_buffer_0d
   procedure :: initialize_buffer => initialize_buffer_0d
   procedure :: add_to_buffer => add_to_buffer_0d
+  generic :: get_buffer => get_0d_int4, get_0d_int8, get_0d_real4, get_0d_real8
+  procedure, private :: get_0d_int4, get_0d_int8, get_0d_real4, get_0d_real8
 
 end type buffer0d
 
@@ -75,55 +81,65 @@ end type buffer0d
 type, extends(fmsDiagBuffer_class) :: buffer1d
   class(*), allocatable :: buffer(:) !< 1D numeric data array
   character, private :: dims = '1'
+  class(*), allocatable :: counter(:) !< (x,y,z, time-of-day) used in the time averaging functions
   contains
   procedure :: allocate_buffer => allocate_buffer_1d
-  procedure :: get_buffer_data => get_buffer_1d
   procedure :: initialize_buffer => initialize_buffer_1d
   procedure :: add_to_buffer => add_to_buffer_1d
+  generic :: get_buffer => get_1d_int4, get_1d_int8, get_1d_real4, get_1d_real8
+  procedure, private :: get_1d_int4, get_1d_int8, get_1d_real4, get_1d_real8
 end type buffer1d
 
 !> 2D buffer type to extend fmsDiagBuffer_class
 type, extends(fmsDiagBuffer_class) :: buffer2d
   class(*), allocatable :: buffer(:,:) !< 2D numeric data array
   character, private :: dims = '2'
+  class(*), allocatable :: counter(:,:) !< (x,y,z, time-of-day) used in the time averaging functions
   contains
   procedure :: allocate_buffer => allocate_buffer_2d
-  procedure :: get_buffer_data => get_buffer_2d
   procedure :: initialize_buffer => initialize_buffer_2d
   procedure :: add_to_buffer => add_to_buffer_2d
+  generic :: get_buffer => get_2d_int4, get_2d_int8, get_2d_real4, get_2d_real8
+  procedure, private :: get_2d_int4, get_2d_int8, get_2d_real4, get_2d_real8
 end type buffer2d
 
 !> 3D buffer type to extend fmsDiagBuffer_class
 type, extends(fmsDiagBuffer_class) :: buffer3d
   class(*), allocatable :: buffer(:,:,:) !< 3D numeric data array
   character, private :: dims = '3'
+  class(*), allocatable :: counter(:,:,:) !< (x,y,z, time-of-day) used in the time averaging functions
   contains
   procedure :: allocate_buffer => allocate_buffer_3d
-  procedure :: get_buffer_data => get_buffer_3d
   procedure :: initialize_buffer => initialize_buffer_3d
   procedure :: add_to_buffer => add_to_buffer_3d
+  generic :: get_buffer => get_3d_int4, get_3d_int8, get_3d_real4, get_3d_real8
+  procedure, private :: get_3d_int4, get_3d_int8, get_3d_real4, get_3d_real8
 end type buffer3d
 
 !> 4D buffer type to extend fmsDiagBuffer_class
 type, extends(fmsDiagBuffer_class) :: buffer4d
   class(*), allocatable :: buffer(:,:,:,:) !< 4D numeric data array
   character, private :: dims = '4'
+  class(*), allocatable :: counter(:,:,:,:) !< (x,y,z, time-of-day) used in the time averaging functions
   contains
   procedure :: allocate_buffer => allocate_buffer_4d
-  procedure :: get_buffer_data => get_buffer_4d
   procedure :: initialize_buffer => initialize_buffer_4d
   procedure :: add_to_buffer => add_to_buffer_4d
+  generic :: get_buffer => get_4d_int4, get_4d_int8, get_4d_real4, get_4d_real8
+  procedure, private :: get_4d_int4, get_4d_int8, get_4d_real4, get_4d_real8
 end type buffer4d
 
 !> 5D buffer type to extend fmsDiagBuffer_class
 type, extends(fmsDiagBuffer_class) :: buffer5d
   class(*), allocatable :: buffer(:,:,:,:,:) !< 5D numeric data array
   character, private :: dims = '5'
+  class(*), allocatable :: counter(:,:,:,:,:) !< (x,y,z, time-of-day) used in the time averaging functions
   contains
   procedure :: allocate_buffer => allocate_buffer_5d
-  procedure :: get_buffer_data => get_buffer_5d
   procedure :: initialize_buffer => initialize_buffer_5d
   procedure :: add_to_buffer => add_to_buffer_5d
+  generic :: get_buffer => get_5d_int4, get_5d_int8, get_5d_real4, get_5d_real8
+  procedure, private :: get_5d_int4, get_5d_int8, get_5d_real4, get_5d_real8
 end type buffer5d
 
 ! public types
@@ -135,6 +151,13 @@ public :: buffer4d
 public :: buffer5d
 public :: fmsDiagBuffer_class
 public :: fmsDiagBufferContainer_type
+
+public :: get_5d_real4, get_5d_real8, get_5d_int4, get_5d_int8
+public :: get_4d_real4, get_4d_real8, get_4d_int4, get_4d_int8
+public :: get_3d_real4, get_3d_real8, get_3d_int4, get_3d_int8
+public :: get_2d_real4, get_2d_real8, get_2d_int4, get_2d_int8
+public :: get_1d_real4, get_1d_real8, get_1d_int4, get_1d_int8
+public :: get_0d_real4, get_0d_real8, get_0d_int4, get_0d_int8
 ! public routines
 public :: fms_diag_buffer_init
 
@@ -153,6 +176,11 @@ logical, parameter, private :: DEBUG = .true. !< debugging output
   !end function
 !end interface
 !
+
+interface get_buffer_0d
+  module procedure :: get_0d_int4 
+end interface get_buffer_0d
+
 contains
 
 
@@ -271,17 +299,37 @@ subroutine allocate_buffer_0d(this, buff_type)
   select type (buff_type)
     type is (integer(kind=i4_kind))
       allocate(integer(kind=i4_kind) :: this%buffer(1))
+      allocate(integer(kind=i4_kind) :: this%counter(1))
+      allocate(integer(kind=i4_kind) :: this%count_0d(1))
+      this%counter = 0
+      this%typestr = 'i4'
     type is (integer(kind=i8_kind))
       allocate(integer(kind=i8_kind) :: this%buffer(1))
+      allocate(integer(kind=i8_kind) :: this%counter(1))
+      allocate(integer(kind=i8_kind) :: this%count_0d(1))
+      this%counter = 0
+      this%typestr = 'i8'
     type is (real(kind=r4_kind))
       allocate(real(kind=r4_kind) :: this%buffer(1))
+      allocate(real(kind=r4_kind) :: this%count_0d(1))
+      allocate(real(kind=r4_kind) :: this%counter(1))
+      this%counter = 0
+      this%typestr = 'r4'
     type is (real(kind=r8_kind))
       allocate(real(kind=r8_kind) :: this%buffer(1))
+      allocate(real(kind=r8_kind) :: this%count_0d(1))
+      allocate(real(kind=r8_kind) :: this%counter(1))
+      this%counter = 0
+      this%typestr = 'r8'
     class default
        call mpp_error("allocate_buffer_0d", &
            "The buff_type value passed to allocate a buffer is not a r8, r4, i8, or i4",&
            FATAL)
   end select
+
+  allocate(this%num_elements(1))
+  this%num_elements = 0
+  this%count_0d   = 0
 
 end subroutine allocate_buffer_0d
 
@@ -294,18 +342,38 @@ subroutine allocate_buffer_1d(this, buff_type, buff_size)
   if(allocated(this%buffer)) call mpp_error(FATAL, "allocate_buffer_1d: buffer already allocated")
   select type (buff_type)
     type is (integer(kind=i4_kind))
-      allocate(integer(kind=i4_kind) :: this%buffer(1:buff_size))
+      allocate(integer(kind=i4_kind) :: this%buffer(buff_size))
+      allocate(integer(kind=i4_kind) :: this%counter(buff_size))
+      allocate(integer(kind=i4_kind) :: this%count_0d(buff_size))
+      this%counter = 0
+      this%typestr = 'i4'
     type is (integer(kind=i8_kind))
-      allocate(integer(kind=i8_kind) :: this%buffer(1:buff_size))
+      allocate(integer(kind=i8_kind) :: this%buffer(buff_size))
+      allocate(integer(kind=i8_kind) :: this%counter(buff_size))
+      allocate(integer(kind=i8_kind) :: this%count_0d(buff_size))
+      this%counter = 0
+      this%typestr = 'i8'
     type is (real(kind=r4_kind))
-      allocate(real(kind=r4_kind) :: this%buffer(1:buff_size))
+      allocate(real(kind=r4_kind) :: this%buffer(buff_size))
+      allocate(real(kind=r4_kind) :: this%count_0d(buff_size))
+      allocate(real(kind=r4_kind) :: this%counter(buff_size))
+      this%counter = 0
+      this%typestr = 'r4'
     type is (real(kind=r8_kind))
-      allocate(real(kind=r8_kind) :: this%buffer(1:buff_size))
+      allocate(real(kind=r8_kind) :: this%buffer(buff_size))
+      allocate(real(kind=r8_kind) :: this%count_0d(buff_size))
+      allocate(real(kind=r8_kind) :: this%counter(buff_size))
+      this%counter = 0
+      this%typestr = 'r8'
     class default
        call mpp_error("allocate_buffer_1d", &
            "The buff_type value passed to allocate a buffer is not a r8, r4, i8, or i4",&
            FATAL)
   end select
+
+  allocate(this%num_elements(1))
+  this%num_elements = 0
+  this%count_0d   = 0
 
 end subroutine allocate_buffer_1d
 !> allocates a 2D buffer to given buff_type type
@@ -319,17 +387,36 @@ subroutine allocate_buffer_2d(this, buff_type, buff_sizes)
   select type (buff_type)
     type is (integer(kind=i4_kind))
       allocate(integer(kind=i4_kind) :: this%buffer(buff_sizes(1), buff_sizes(2)))
+      allocate(integer(kind=i4_kind) :: this%counter(buff_sizes(1), buff_sizes(2)))
+      allocate(integer(kind=i4_kind) :: this%count_0d(buff_sizes(2)))
+      this%counter = 0
+      this%typestr = 'i4'
     type is (integer(kind=i8_kind))
       allocate(integer(kind=i8_kind) :: this%buffer(buff_sizes(1), buff_sizes(2)))
+      allocate(integer(kind=i8_kind) :: this%counter(buff_sizes(1), buff_sizes(2)))
+      allocate(integer(kind=i8_kind) :: this%count_0d(buff_sizes(2)))
+      this%counter = 0
+      this%typestr = 'i8'
     type is (real(kind=r4_kind))
       allocate(real(kind=r4_kind) :: this%buffer(buff_sizes(1), buff_sizes(2)))
+      allocate(real(kind=r4_kind) :: this%counter(buff_sizes(1), buff_sizes(2)))
+      allocate(real(kind=r4_kind) :: this%count_0d(buff_sizes(2)))
+      this%counter = 0
+      this%typestr = 'r4'
     type is (real(kind=r8_kind))
       allocate(real(kind=r8_kind) :: this%buffer(buff_sizes(1), buff_sizes(2)))
+      allocate(real(kind=r8_kind) :: this%counter(buff_sizes(1), buff_sizes(2)))
+      allocate(real(kind=r8_kind) :: this%count_0d(buff_sizes(2)))
+      this%typestr = 'r4'
     class default
        call mpp_error("allocate_buffer_1d", &
            "The buff_type value passed to allocate a buffer is not a r8, r4, i8, or i4",&
            FATAL)
   end select
+
+  allocate(this%num_elements(2))
+  this%count_0d     = 0
+  this%num_elements = 0
 
 end subroutine allocate_buffer_2d
 
@@ -343,17 +430,38 @@ subroutine allocate_buffer_3d(this, buff_type, buff_sizes)
   select type (buff_type)
     type is (integer(kind=i4_kind))
       allocate(integer(kind=i4_kind) :: this%buffer( buff_sizes(1),buff_sizes(2), buff_sizes(3)))
+      allocate(integer(kind=i4_kind) :: this%counter(buff_sizes(1),buff_sizes(2), buff_sizes(3)))
+      allocate(integer(kind=i4_kind) :: this%count_0d(buff_sizes(3)))
+      this%counter = 0
+      this%typestr = 'i4'
     type is (integer(kind=i8_kind))
       allocate(integer(kind=i8_kind) :: this%buffer( buff_sizes(1),buff_sizes(2), buff_sizes(3)))
+      allocate(integer(kind=i8_kind) :: this%counter(buff_sizes(1),buff_sizes(2), buff_sizes(3)))
+      allocate(integer(kind=i8_kind) :: this%count_0d(buff_sizes(3)))
+      this%counter = 0
+      this%typestr = 'i8'
     type is (real(kind=r4_kind))
       allocate(real(kind=r4_kind) :: this%buffer( buff_sizes(1),buff_sizes(2), buff_sizes(3)))
+      allocate(real(kind=r4_kind) :: this%counter(buff_sizes(1),buff_sizes(2), buff_sizes(3)))
+      allocate(real(kind=r4_kind) :: this%count_0d(buff_sizes(3)))
+      this%counter = 0
+      this%typestr = 'r4'
     type is (real(kind=r8_kind))
       allocate(real(kind=r8_kind) :: this%buffer( buff_sizes(1),buff_sizes(2), buff_sizes(3)))
+      allocate(real(kind=r8_kind) :: this%counter( buff_sizes(1),buff_sizes(2), buff_sizes(3)))
+      allocate(real(kind=r8_kind) :: this%count_0d(buff_sizes(3)))
+      this%typestr = 'r4'
+      this%counter = 0
     class default
        call mpp_error("allocate_buffer_3d", &
            "The buff_type value passed to allocate a buffer is not a r8, r4, i8, or i4",&
            FATAL)
   end select
+
+  allocate(this%num_elements(3))
+  this%num_elements = 0
+  this%count_0d   = 0
+
 end subroutine allocate_buffer_3d
 
 !> allocates a 4D buffer to given buff_type type
@@ -366,17 +474,38 @@ subroutine allocate_buffer_4d(this, buff_type, buff_sizes)
   select type (buff_type)
     type is (integer(kind=i4_kind))
       allocate(integer(kind=i4_kind) :: this%buffer(buff_sizes(1),buff_sizes(2),buff_sizes(3),buff_sizes(4)))
+      allocate(integer(kind=i4_kind) :: this%counter(buff_sizes(1),buff_sizes(2),buff_sizes(3),buff_sizes(4)))
+      allocate(integer(kind=i4_kind) :: this%count_0d(buff_sizes(4)))
+      this%counter = 0
+      this%typestr = 'i4'
     type is (integer(kind=i8_kind))
       allocate(integer(kind=i8_kind) :: this%buffer(buff_sizes(1),buff_sizes(2),buff_sizes(3),buff_sizes(4)))
+      allocate(integer(kind=i8_kind) :: this%counter(buff_sizes(1),buff_sizes(2),buff_sizes(3),buff_sizes(4)))
+      allocate(integer(kind=i8_kind) :: this%count_0d(buff_sizes(4)))
+      this%counter = 0
+      this%typestr = 'i8'
     type is (real(kind=r4_kind))
       allocate(real(kind=r4_kind) :: this%buffer(buff_sizes(1),buff_sizes(2),buff_sizes(3),buff_sizes(4)))
+      allocate(real(kind=r4_kind) :: this%counter(buff_sizes(1),buff_sizes(2),buff_sizes(3),buff_sizes(4)))
+      allocate(real(kind=r4_kind) :: this%count_0d(buff_sizes(4)))
+      this%counter = 0
+      this%typestr = 'r4'
     type is (real(kind=r8_kind))
       allocate(real(kind=r8_kind) :: this%buffer(buff_sizes(1),buff_sizes(2),buff_sizes(3),buff_sizes(4)))
+      allocate(real(kind=r4_kind) :: this%counter(buff_sizes(1),buff_sizes(2),buff_sizes(3),buff_sizes(4)))
+      allocate(real(kind=r4_kind) :: this%count_0d(buff_sizes(4)))
+      this%counter = 0
+      this%typestr = 'r8'
     class default
        call mpp_error("allocate_buffer_4d", &
            "The buff_type value passed to allocate a buffer is not a r8, r4, i8, or i4",&
            FATAL)
   end select
+
+  allocate(this%num_elements(4))
+  this%num_elements = 0
+  this%count_0d   = 0
+
 end subroutine allocate_buffer_4d
 
 !> allocates a 5D buffer to given buff_type type
@@ -389,141 +518,430 @@ subroutine allocate_buffer_5d(this, buff_type, buff_sizes)
   select type (buff_type)
     type is (integer(kind=i4_kind))
       allocate(integer(kind=i4_kind) :: this%buffer(buff_sizes(1),buff_sizes(2),buff_sizes(3),buff_sizes(4),buff_sizes(5)))
+      allocate(integer(kind=i4_kind) :: this%counter(buff_sizes(1),buff_sizes(2),buff_sizes(3),buff_sizes(4),buff_sizes(5)))
+      allocate(integer(kind=i4_kind) :: this%count_0d(buff_sizes(5)))
+      this%counter = 0
+      this%typestr = 'i4'
     type is (integer(kind=i8_kind))
       allocate(integer(kind=i8_kind) :: this%buffer(buff_sizes(1),buff_sizes(2),buff_sizes(3),buff_sizes(4),buff_sizes(5)))
+      allocate(integer(kind=i8_kind) :: this%counter(buff_sizes(1),buff_sizes(2),buff_sizes(3),buff_sizes(4),buff_sizes(5)))
+      allocate(integer(kind=i8_kind) :: this%count_0d(buff_sizes(5)))
+      this%counter = 0
+      this%typestr = 'i8'
     type is (real(kind=r4_kind))
       allocate(real(kind=r4_kind) :: this%buffer(buff_sizes(1),buff_sizes(2),buff_sizes(3),buff_sizes(4),buff_sizes(5)))
+      allocate(real(kind=r4_kind) :: this%counter(buff_sizes(1),buff_sizes(2),buff_sizes(3),buff_sizes(4),buff_sizes(5)))
+      allocate(real(kind=r4_kind) :: this%count_0d(buff_sizes(5)))
+      this%counter = 0
+      this%typestr = 'r4'
     type is (real(kind=r8_kind))
       allocate(real(kind=r8_kind) :: this%buffer(buff_sizes(1),buff_sizes(2),buff_sizes(3),buff_sizes(4),buff_sizes(5)))
+      allocate(real(kind=r8_kind) :: this%counter(buff_sizes(1),buff_sizes(2),buff_sizes(3),buff_sizes(4),buff_sizes(5)))
+      allocate(real(kind=r8_kind) :: this%count_0d(buff_sizes(5)))
+      this%counter = 0
+      this%typestr = 'r8'
     class default
        call mpp_error("allocate_buffer_5d", &
            "The buff_type value passed to allocate a buffer is not a r8, r4, i8, or i4",&
            FATAL)
   end select
+
+  allocate(this%num_elements(5))
+  this%num_elements = 0
+  this%count_0d   = 0
 end subroutine allocate_buffer_5d
 
+!! gonna leave these for when we stop caring about gnu <11
 !> @brief Gets buffer data from buffer0d type
 !! @return copy of the buffer data
-function get_buffer_0d (this) &
-result(rslt)
-  class (buffer0d), intent(in) :: this !< scalar buffer object
-  class(*), allocatable :: rslt
-  if (allocated(this%buffer)) then
-    rslt = this%buffer(1)
-  else
-    call mpp_error(FATAL, 'get_buffer_0d: buffer not allocated')
-  endif
-end function get_buffer_0d
+!function get_buffer_0d (this) &
+!result(rslt)
+  !class (buffer0d), intent(in) :: this !< scalar buffer object
+  !class(*), allocatable :: rslt
+  !if (allocated(this%buffer)) then
+    !rslt = this%buffer(1)
+  !else
+    !call mpp_error(FATAL, 'get_buffer_0d: buffer not allocated')
+  !endif
+!end function get_buffer_0d
+
+subroutine get_0d_real4 (buffobj, buff_out)
+  class(buffer0d), intent(in) :: buffobj
+  real(r4_kind), allocatable, intent(out)  :: buff_out
+  allocate(buff_out)
+  select type (buff=>buffobj%buffer)
+    type is (real(r4_kind))
+      buff_out = buff(1)
+    class default
+      call mpp_error(FATAL, "incorrect output type for allocated buffer")
+  end select
+end subroutine
+
+subroutine get_0d_real8 (buffobj, buff_out)
+  class(buffer0d), intent(in) :: buffobj
+  real(r8_kind), allocatable, intent(out)  :: buff_out
+  allocate(buff_out)
+  select type (buff=>buffobj%buffer)
+    type is (real(r8_kind))
+      buff_out = buff(1)
+    class default
+      call mpp_error(FATAL, "incorrect output type for allocated buffer")
+  end select
+end subroutine
+
+subroutine get_0d_int4 (buffobj, buff_out)
+  class(buffer0d), intent(in) :: buffobj
+  integer(i4_kind), allocatable, intent(out)  :: buff_out
+  allocate(buff_out)
+  select type (buff=>buffobj%buffer)
+    type is (integer(r4_kind))
+      buff_out = buff(1)
+    class default
+      call mpp_error(FATAL, "incorrect output type for allocated buffer")
+  end select
+end subroutine
+
+subroutine get_0d_int8 (buffobj, buff_out)
+  class(buffer0d), intent(in) :: buffobj
+  integer(i8_kind), allocatable, intent(out)  :: buff_out
+  allocate(buff_out)
+  select type (buff=>buffobj%buffer)
+    type is (integer(r8_kind))
+      buff_out = buff(1)
+    class default
+      call mpp_error(FATAL, "incorrect output type for allocated buffer")
+  end select
+end subroutine
+
 !> @brief Gets buffer data from buffer1d type
 !! @return copy of the buffer data
-function get_buffer_1d (this) &
-result(rslt)
-  class (buffer1d), target, intent(in) :: this !< 1D buffer object
-  class(*), allocatable :: rslt(:)
-  select type(buff=>this%buffer)
-    type is(integer(8))
-      allocate(integer(8) :: rslt(size(buff)))
-    type is(integer(4))
-      allocate(integer(4) :: rslt(size(buff)))
-    type is(real(4))
-      allocate(real(4) :: rslt(size(buff)))
-    type is(real(8))
-      allocate(real(8) :: rslt(size(buff)))
+!function get_buffer_1d (this) &
+!result(rslt)
+  !class (buffer1d), target, intent(in) :: this !< 1D buffer object
+  !class(*), allocatable :: rslt(:)
+  !select type(buff=>this%buffer)
+    !type is(integer(8))
+      !allocate(integer(8) :: rslt(size(buff)))
+    !type is(integer(4))
+      !allocate(integer(4) :: rslt(size(buff)))
+    !type is(real(4))
+      !allocate(real(4) :: rslt(size(buff)))
+    !type is(real(8))
+      !allocate(real(8) :: rslt(size(buff)))
+  !end select
+  !if (allocated(this%buffer)) then
+    !rslt = this%buffer
+  !else
+    !call mpp_error(FATAL, 'get_buffer_1d: buffer not allocated')
+  !endif
+!end function get_buffer_1d
+
+subroutine get_1d_real4 (buffobj, buff_out)
+  class(buffer1d), intent(in) :: buffobj
+  real(r4_kind), allocatable, intent(out)  :: buff_out(:)
+  allocate(buff_out(size(buffobj%buffer)))
+  select type (buff=>buffobj%buffer)
+    type is (real(r4_kind))
+      buff_out = buff
+    class default
+      call mpp_error(FATAL, "incorrect output type for allocated buffer")
   end select
-  if (allocated(this%buffer)) then
-    rslt = this%buffer
-  else
-    call mpp_error(FATAL, 'get_buffer_1d: buffer not allocated')
-  endif
-end function get_buffer_1d
+end subroutine
+
+subroutine get_1d_real8 (buffobj, buff_out)
+  class(buffer1d), intent(in) :: buffobj
+  real(r8_kind), allocatable, intent(out)  :: buff_out(:)
+  allocate(buff_out(size(buffobj%buffer)))
+  select type (buff=>buffobj%buffer)
+    type is (real(r8_kind))
+      buff_out = buff
+    class default
+      call mpp_error(FATAL, "incorrect output type for allocated buffer")
+  end select
+end subroutine
+
+subroutine get_1d_int4 (buffobj, buff_out)
+  class(buffer1d), intent(in) :: buffobj
+  integer(i4_kind), allocatable, intent(out)  :: buff_out(:)
+  allocate(buff_out(size(buffobj%buffer)))
+  select type (buff=>buffobj%buffer)
+    type is (integer(r4_kind))
+      buff_out = buff
+    class default
+      call mpp_error(FATAL, "incorrect output type for allocated buffer")
+  end select
+end subroutine
+
+subroutine get_1d_int8 (buffobj, buff_out)
+  class(buffer1d), intent(in) :: buffobj
+  integer(i8_kind), allocatable, intent(out)  :: buff_out(:)
+  allocate(buff_out(size(buffobj%buffer)))
+  select type (buff=>buffobj%buffer)
+    type is (integer(r8_kind))
+      buff_out = buff
+    class default
+      call mpp_error(FATAL, "incorrect output type for allocated buffer")
+  end select
+end subroutine
+
+!! breaks gcc 10 and prior
+!function get_buffer_2d (this) &
+!result(rslt)
+  !class (buffer2d), intent(in) :: this !< 2D buffer object
+  !class(*), allocatable :: rslt(:,:)
+  !select type(buff=>this%buffer)
+    !type is(integer(8))
+      !allocate(integer(8) :: rslt(size(buff,1), size(buff,2)))
+    !type is(integer(4))
+      !allocate(integer(4) :: rslt(size(buff,1), size(buff,2)))
+    !type is(real(4))
+      !allocate(real(4) :: rslt(size(buff,1), size(buff,2)))
+    !type is(real(8))
+      !allocate(real(8) :: rslt(size(buff,1), size(buff,2)))
+  !end select
+  !if (allocated(this%buffer)) then
+    !rslt = this%buffer
+  !else
+    !call mpp_error(FATAL, 'get_buffer_2d: buffer not allocated')
+  !endif
+!end function get_buffer_2d
+
 !> @brief Gets buffer data from buffer2d type
 !! @return copy of the buffer data
-function get_buffer_2d (this) &
-result(rslt)
-  class (buffer2d), intent(in) :: this !< 2D buffer object
-  class(*), allocatable :: rslt(:,:)
-  select type(buff=>this%buffer)
-    type is(integer(8))
-      allocate(integer(8) :: rslt(size(buff,1), size(buff,2)))
-    type is(integer(4))
-      allocate(integer(4) :: rslt(size(buff,1), size(buff,2)))
-    type is(real(4))
-      allocate(real(4) :: rslt(size(buff,1), size(buff,2)))
-    type is(real(8))
-      allocate(real(8) :: rslt(size(buff,1), size(buff,2)))
+subroutine get_2d_real4 (buffobj, buff_out)
+  class(buffer2d), intent(in) :: buffobj
+  real(r4_kind), allocatable, intent(out)  :: buff_out(:,:)
+  allocate(buff_out(size(buffobj%buffer,1), size(buffobj%buffer,2)))
+  select type (buff=>buffobj%buffer)
+    type is (real(r4_kind))
+      buff_out = buff
   end select
-  if (allocated(this%buffer)) then
-    rslt = this%buffer
-  else
-    call mpp_error(FATAL, 'get_buffer_2d: buffer not allocated')
-  endif
-end function get_buffer_2d
+end subroutine
+
+subroutine get_2d_real8 (buffobj, buff_out)
+  class(buffer2d), intent(in) :: buffobj
+  real(r8_kind), allocatable, intent(out)  :: buff_out(:,:)
+  allocate(buff_out(size(buffobj%buffer,1), size(buffobj%buffer,2)))
+  select type (buff=>buffobj%buffer)
+    type is (real(r8_kind))
+      buff_out = buff
+  end select
+end subroutine
+
+subroutine get_2d_int4 (buffobj, buff_out)
+  class(buffer2d), intent(in) :: buffobj
+  integer(i4_kind), allocatable, intent(out)  :: buff_out(:,:)
+  allocate(buff_out(size(buffobj%buffer,1), size(buffobj%buffer,2)))
+  select type (buff=>buffobj%buffer)
+    type is (integer(i4_kind))
+      buff_out = buff
+  end select
+end subroutine
+
+subroutine get_2d_int8 (buffobj, buff_out)
+  class(buffer2d), intent(in) :: buffobj
+  integer(i8_kind), allocatable, intent(out)  :: buff_out(:,:)
+  allocate(buff_out(size(buffobj%buffer,1), size(buffobj%buffer,2)))
+  select type (buff=>buffobj%buffer)
+    type is (integer(i8_kind))
+      buff_out = buff
+  end select
+end subroutine
+
+
 !> @brief Gets buffer data from buffer3d type
-!! @return copy of the buffer data
-function get_buffer_3d (this) &
-result(rslt)
-  class (buffer3d), intent(in) :: this !< 3D buffer object
-  class(*), allocatable :: rslt(:,:,:)
-  select type(buff=>this%buffer)
-    type is(integer(8))
-      allocate(integer(8) :: rslt(size(buff,1), size(buff,2), size(buff,3)))
-    type is(integer(4))
-      allocate(integer(4) :: rslt(size(buff,1), size(buff,2), size(buff,3)))
-    type is(real(4))
-      allocate(real(4) :: rslt(size(buff,1), size(buff,2), size(buff,3)))
-    type is(real(8))
-      allocate(real(8) :: rslt(size(buff,1), size(buff,2), size(buff,3)))
+! @return copy of the buffer data
+!function get_buffer_3d (this) &
+!result(rslt)
+  !class (buffer3d), intent(in) :: this !< 3D buffer object
+  !class(*), allocatable :: rslt(:,:,:)
+  !select type(buff=>this%buffer)
+    !type is(integer(8))
+      !allocate(integer(8) :: rslt(size(buff,1), size(buff,2), size(buff,3)))
+    !type is(integer(4))
+      !allocate(integer(4) :: rslt(size(buff,1), size(buff,2), size(buff,3)))
+    !type is(real(4))
+      !allocate(real(4) :: rslt(size(buff,1), size(buff,2), size(buff,3)))
+    !type is(real(8))
+      !allocate(real(8) :: rslt(size(buff,1), size(buff,2), size(buff,3)))
+  !end select
+  !if (allocated(this%buffer)) then
+    !rslt = this%buffer
+  !else
+    !call mpp_error(FATAL, 'get_buffer_3d: buffer not allocated')
+  !endif
+!end function get_buffer_3d
+
+subroutine get_3d_real4 (buffobj, buff_out)
+  class(buffer3d), intent(in) :: buffobj
+  real(r4_kind), allocatable, intent(out)  :: buff_out(:,:,:)
+  allocate(buff_out(size(buffobj%buffer,1), size(buffobj%buffer,2), size(buffobj%buffer,3)))
+  select type (buff=>buffobj%buffer)
+    type is (real(r4_kind))
+      buff_out = buff
   end select
-  if (allocated(this%buffer)) then
-    rslt = this%buffer
-  else
-    call mpp_error(FATAL, 'get_buffer_3d: buffer not allocated')
-  endif
-end function get_buffer_3d
+end subroutine
+
+subroutine get_3d_real8 (buffobj, buff_out)
+  class(buffer3d), intent(in) :: buffobj
+  real(r8_kind), allocatable, intent(out)  :: buff_out(:,:,:)
+  allocate(buff_out(size(buffobj%buffer,1), size(buffobj%buffer,2), size(buffobj%buffer,3)))
+  select type (buff=>buffobj%buffer)
+    type is (real(r8_kind))
+      buff_out = buff
+  end select
+end subroutine
+
+subroutine get_3d_int4 (buffobj, buff_out)
+  class(buffer3d), intent(in) :: buffobj
+  integer(i4_kind), allocatable, intent(out)  :: buff_out(:,:,:)
+  allocate(buff_out(size(buffobj%buffer,1), size(buffobj%buffer,2), size(buffobj%buffer,3)))
+  select type (buff=>buffobj%buffer)
+    type is (integer(i4_kind))
+      buff_out = buff
+  end select
+end subroutine
+
+subroutine get_3d_int8 (buffobj, buff_out)
+  class(buffer3d), intent(in) :: buffobj
+  integer(i8_kind), allocatable, intent(out)  :: buff_out(:,:,:)
+  allocate(buff_out(size(buffobj%buffer,1), size(buffobj%buffer,2), size(buffobj%buffer,3)))
+  select type (buff=>buffobj%buffer)
+    type is (integer(i8_kind))
+      buff_out = buff
+  end select
+end subroutine
+
+
 !> @brief Gets buffer data from buffer4d type
 !! @return copy of the buffer data
-function get_buffer_4d (this) &
-result(rslt)
-  class (buffer4d), intent(in) :: this !< 4D buffer object
-  class(*), allocatable :: rslt(:,:,:,:)
-  select type(buff=>this%buffer)
-    type is(integer(8))
-      allocate(integer(8) :: rslt(size(buff,1), size(buff,2), size(buff,3), size(buff,4)))
-    type is(integer(4))
-      allocate(integer(4) :: rslt(size(buff,1), size(buff,2), size(buff,3), size(buff,4)))
-    type is(real(4))
-      allocate(real(4) :: rslt(size(buff,1), size(buff,2), size(buff,3), size(buff,4)))
-    type is(real(8))
-      allocate(real(8) :: rslt(size(buff,1), size(buff,2), size(buff,3), size(buff,4)))
+!function get_buffer_4d (this) &
+!result(rslt)
+  !class (buffer4d), intent(in) :: this !< 4D buffer object
+  !class(*), allocatable :: rslt(:,:,:,:)
+  !select type(buff=>this%buffer)
+    !type is(integer(8))
+      !allocate(integer(8) :: rslt(size(buff,1), size(buff,2), size(buff,3), size(buff,4)))
+    !type is(integer(4))
+      !allocate(integer(4) :: rslt(size(buff,1), size(buff,2), size(buff,3), size(buff,4)))
+    !type is(real(4))
+      !allocate(real(4) :: rslt(size(buff,1), size(buff,2), size(buff,3), size(buff,4)))
+    !type is(real(8))
+      !allocate(real(8) :: rslt(size(buff,1), size(buff,2), size(buff,3), size(buff,4)))
+  !end select
+  !if (allocated(this%buffer)) then
+    !rslt = this%buffer
+  !else
+    !call mpp_error(FATAL, 'get_buffer_4d: buffer not allocated')
+  !endif
+!end function get_buffer_4d
+
+subroutine get_4d_real4 (buffobj, buff_out)
+  class(buffer4d), intent(in) :: buffobj
+  real(r4_kind), allocatable, intent(out)  :: buff_out(:,:,:,:)
+  allocate(buff_out(size(buffobj%buffer,1), size(buffobj%buffer,2), size(buffobj%buffer,3), size(buffobj%buffer,4)))
+  select type (buff=>buffobj%buffer)
+    type is (real(r4_kind))
+      buff_out = buff
   end select
-  if (allocated(this%buffer)) then
-    rslt = this%buffer
-  else
-    call mpp_error(FATAL, 'get_buffer_4d: buffer not allocated')
-  endif
-end function get_buffer_4d
+end subroutine
+
+subroutine get_4d_real8 (buffobj, buff_out)
+  class(buffer4d), intent(in) :: buffobj
+  real(r8_kind), allocatable, intent(out)  :: buff_out(:,:,:,:)
+  allocate(buff_out(size(buffobj%buffer,1), size(buffobj%buffer,2), size(buffobj%buffer,3), size(buffobj%buffer,4)))
+  select type (buff=>buffobj%buffer)
+    type is (real(r8_kind))
+      buff_out = buff
+  end select
+end subroutine
+
+subroutine get_4d_int4 (buffobj, buff_out)
+  class(buffer4d), intent(in) :: buffobj
+  integer(i4_kind), allocatable, intent(out)  :: buff_out(:,:,:,:)
+  allocate(buff_out(size(buffobj%buffer,1), size(buffobj%buffer,2), size(buffobj%buffer,3), size(buffobj%buffer,4)))
+  select type (buff=>buffobj%buffer)
+    type is (integer(i4_kind))
+      buff_out = buff
+  end select
+end subroutine
+
+subroutine get_4d_int8 (buffobj, buff_out)
+  class(buffer4d), intent(in) :: buffobj
+  integer(i8_kind), allocatable, intent(out)  :: buff_out(:,:,:,:)
+  allocate(buff_out(size(buffobj%buffer,1), size(buffobj%buffer,2), size(buffobj%buffer,3), size(buffobj%buffer,4)))
+  select type (buff=>buffobj%buffer)
+    type is (integer(i8_kind))
+      buff_out = buff
+  end select
+end subroutine
+
 !> @brief Gets buffer data from buffer5d type
 !! @return copy of the buffer data
-function get_buffer_5d (this) &
-result(rslt)
-  class (buffer5d), intent(in) :: this !< 5D buffer object
-  class(*), allocatable :: rslt(:,:,:,:,:)
-  select type(buff=>this%buffer)
-    type is(integer(8))
-      allocate(integer(8) :: rslt(size(buff,1), size(buff,2), size(buff,3), size(buff,4), size(buff,5)))
-    type is(integer(4))
-      allocate(integer(4) :: rslt(size(buff,1), size(buff,2), size(buff,3), size(buff,4), size(buff,5)))
-    type is(real(4))
-      allocate(real(4) :: rslt(size(buff,1), size(buff,2), size(buff,3), size(buff,4), size(buff,5)))
-    type is(real(8))
-      allocate(real(8) :: rslt(size(buff,1), size(buff,2), size(buff,3), size(buff,4), size(buff,5)))
+!function get_buffer_5d (this) &
+!result(rslt)
+  !class (buffer5d), intent(in) :: this !< 5D buffer object
+  !class(*), allocatable :: rslt(:,:,:,:,:)
+  !select type(buff=>this%buffer)
+    !type is(integer(8))
+      !allocate(integer(8) :: rslt(size(buff,1), size(buff,2), size(buff,3), size(buff,4), size(buff,5)))
+    !type is(integer(4))
+      !allocate(integer(4) :: rslt(size(buff,1), size(buff,2), size(buff,3), size(buff,4), size(buff,5)))
+    !type is(real(4))
+      !allocate(real(4) :: rslt(size(buff,1), size(buff,2), size(buff,3), size(buff,4), size(buff,5)))
+    !type is(real(8))
+      !allocate(real(8) :: rslt(size(buff,1), size(buff,2), size(buff,3), size(buff,4), size(buff,5)))
+  !end select
+  !if (allocated(this%buffer)) then
+    !rslt = this%buffer
+  !else
+    !call mpp_error(FATAL, 'get_buffer_5d: buffer not allocated')
+  !endif
+!end function get_buffer_5d
+
+subroutine get_5d_real4 (buffobj, buff_out)
+  class(buffer5d), intent(in) :: buffobj
+  real(r4_kind), allocatable, intent(out)  :: buff_out(:,:,:,:,:)
+  allocate(buff_out(size(buffobj%buffer,1), size(buffobj%buffer,2), size(buffobj%buffer,3), &
+                  & size(buffobj%buffer,4), size(buffobj%buffer,5)))
+  select type (buff=>buffobj%buffer)
+    type is (real(r4_kind))
+      buff_out = buff
   end select
-  if (allocated(this%buffer)) then
-    rslt = this%buffer
-  else
-    call mpp_error(FATAL, 'get_buffer_5d: buffer not allocated')
-  endif
-end function get_buffer_5d
+end subroutine
+
+subroutine get_5d_real8 (buffobj, buff_out)
+  class(buffer5d), intent(in) :: buffobj
+  real(r8_kind), allocatable, intent(out)  :: buff_out(:,:,:,:,:)
+  allocate(buff_out(size(buffobj%buffer,1), size(buffobj%buffer,2), size(buffobj%buffer,3), &
+                  & size(buffobj%buffer,4), size(buffobj%buffer,5)))
+  select type (buff=>buffobj%buffer)
+    type is (real(r8_kind))
+      buff_out = buff
+  end select
+end subroutine
+
+subroutine get_5d_int4 (buffobj, buff_out)
+  class(buffer5d), intent(in) :: buffobj
+  integer(i4_kind), allocatable, intent(out)  :: buff_out(:,:,:,:,:)
+  allocate(buff_out(size(buffobj%buffer,1), size(buffobj%buffer,2), size(buffobj%buffer,3), &
+                  & size(buffobj%buffer,4), size(buffobj%buffer,5)))
+  select type (buff=>buffobj%buffer)
+    type is (integer(i4_kind))
+      buff_out = buff
+  end select
+end subroutine
+
+subroutine get_5d_int8 (buffobj, buff_out)
+  class(buffer5d), intent(in) :: buffobj
+  integer(i8_kind), allocatable, intent(out)  :: buff_out(:,:,:,:,:)
+  allocate(buff_out(size(buffobj%buffer,1), size(buffobj%buffer,2), size(buffobj%buffer,3), &
+                  & size(buffobj%buffer,4), size(buffobj%buffer)))
+  select type (buff=>buffobj%buffer)
+    type is (integer(i8_kind))
+      buff_out = buff
+  end select
+end subroutine
 
 !> @brief Initializes a buffer to a given fill value
 subroutine initialize_buffer_0d (this, fillval)
