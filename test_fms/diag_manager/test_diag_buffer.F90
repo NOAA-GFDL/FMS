@@ -55,7 +55,7 @@ program test_diag_buffer
     call buffobj1%add_to_buffer(arr)
     !! get the buffer
     allocate(arr1d(10))
-    call get_1d_real4( buffobj1, arr1d)
+    call buffobj1%get_buffer(arr1d)
     !! get the remapped buffer
     remap_buffer_out => buffobj1%remap_buffer()
     !! check output
@@ -71,25 +71,22 @@ program test_diag_buffer
     call buffobj2%initialize_buffer( int(2, kind=i4_kind) )
     !!! get the buffer
     allocate(arr2d(5,10))
-    call get_2d_int4(buffobj2, arr2d) 
+    call buffobj2%get_buffer(arr2d)
     !!! get the remapped buffer
     remap_buffer_out => buffobj2%remap_buffer()
     !!! check output
-    print *, arr2d 
+    print *, arr2d
     call print_5d(remap_buffer_out)
     call buffobj2%flush_buffer()
 
     !! 3d
     ! allocate a buffer to the given type and get it's id
     call buffobj3%allocate_buffer(i8_data, (/ 2, 2, 2/) )
-    print *, '1'
     !! init to given value
     call buffobj3%initialize_buffer( int(3, kind=i8_kind) )
-    print *, '2'
     !! get the buffer
     allocate(i8arr3d(2,2,2))
-    call get_3d_int8(buffobj3, i8arr3d)
-    print *, '3'
+    call buffobj3%get_buffer(i8arr3d)
     !! get the remapped buffer
     remap_buffer_out => buffobj3%remap_buffer()
     !! check output
@@ -103,7 +100,7 @@ program test_diag_buffer
     !! init to given value
     call buffobj4%initialize_buffer( int(4, kind=i8_kind) )
     !! get the buffer
-    call get_4d_int8(buffobj4, i8arr4d)
+    call buffobj4%get_buffer(i8arr4d)
     !! get the remapped buffer
     remap_buffer_out => buffobj4%remap_buffer()
     !! check output
@@ -116,7 +113,7 @@ program test_diag_buffer
     !! init to given value
     call buffobj5%initialize_buffer( int(5, kind=i8_kind) )
     !! get the buffer
-    call get_5d_int8(buffobj5, i8arr5d)
+    call buffobj5%get_buffer(i8arr5d)
     !! get the remapped buffer
     remap_buffer_out => buffobj5%remap_buffer()
     !! check output
@@ -126,7 +123,7 @@ program test_diag_buffer
 
   contains
 
-    ! just prints polymorphic data types
+  ! just prints polymorphic data types
   subroutine print_5d(val)
     class(*), intent(in) :: val(:,:,:,:,:)
 
