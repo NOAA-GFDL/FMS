@@ -265,34 +265,40 @@ end subroutine flush_buffer
 !! not sure which approach would be better
 
 !> allocates scalar buffer data to the given buff_type
-subroutine allocate_buffer_0d(this, buff_type)
+subroutine allocate_buffer_0d(this, buff_type, diurnal_samples)
   class(buffer0d), intent(inout), target :: this !< scalar buffer object
   class(*),intent(in) :: buff_type !< allocates to the given type, value does not matter
+  integer, optional :: diurnal_samples !< number of diurnal samples, passed in from diag_yaml
+  integer :: n_samples = 1
+
+  if(present(diurnal_samples)) then
+    n_samples = diurnal_samples
+  endif
 
   if(allocated(this%buffer)) call mpp_error(FATAL, "allocate_buffer_0d: buffer already allocated")
   select type (buff_type)
     type is (integer(kind=i4_kind))
       allocate(integer(kind=i4_kind) :: this%buffer(1))
       allocate(integer(kind=i4_kind) :: this%counter(1))
-      allocate(integer(kind=i4_kind) :: this%count_0d(1))
+      allocate(integer(kind=i4_kind) :: this%count_0d(n_samples))
       this%counter = 0
       this%typestr = 'i4'
     type is (integer(kind=i8_kind))
       allocate(integer(kind=i8_kind) :: this%buffer(1))
       allocate(integer(kind=i8_kind) :: this%counter(1))
-      allocate(integer(kind=i8_kind) :: this%count_0d(1))
+      allocate(integer(kind=i8_kind) :: this%count_0d(n_samples))
       this%counter = 0
       this%typestr = 'i8'
     type is (real(kind=r4_kind))
       allocate(real(kind=r4_kind) :: this%buffer(1))
-      allocate(real(kind=r4_kind) :: this%count_0d(1))
       allocate(real(kind=r4_kind) :: this%counter(1))
+      allocate(real(kind=r4_kind) :: this%count_0d(n_samples))
       this%counter = 0
       this%typestr = 'r4'
     type is (real(kind=r8_kind))
       allocate(real(kind=r8_kind) :: this%buffer(1))
-      allocate(real(kind=r8_kind) :: this%count_0d(1))
       allocate(real(kind=r8_kind) :: this%counter(1))
+      allocate(real(kind=r8_kind) :: this%count_0d(n_samples))
       this%counter = 0
       this%typestr = 'r8'
     class default
@@ -301,44 +307,50 @@ subroutine allocate_buffer_0d(this, buff_type)
            FATAL)
   end select
 
-  allocate(this%num_elements(1))
+  allocate(this%num_elements(n_samples))
   allocate(this%buffer_dims(1))
-  this%buffer_dims(1) = 1
   this%num_elements = 0
   this%count_0d   = 0
+  this%buffer_dims(1) = 1
 
 end subroutine allocate_buffer_0d
 
 !> allocates 1D buffer data to given buff_type type
-subroutine allocate_buffer_1d(this, buff_type, buff_size)
+subroutine allocate_buffer_1d(this, buff_type, buff_size, diurnal_samples)
   class(buffer1d), intent(inout), target :: this !< scalar buffer object
   class(*),intent(in) :: buff_type !< allocates to the type of buff_type
   integer, intent(in) :: buff_size !< dimension bounds
+  integer, optional :: diurnal_samples !< number of diurnal samples, passed in from diag_yaml
+  integer :: n_samples = 1
+
+  if(present(diurnal_samples)) then
+    n_samples = diurnal_samples
+  endif
 
   if(allocated(this%buffer)) call mpp_error(FATAL, "allocate_buffer_1d: buffer already allocated")
   select type (buff_type)
     type is (integer(kind=i4_kind))
       allocate(integer(kind=i4_kind) :: this%buffer(buff_size))
       allocate(integer(kind=i4_kind) :: this%counter(buff_size))
-      allocate(integer(kind=i4_kind) :: this%count_0d(buff_size))
+      allocate(integer(kind=i4_kind) :: this%count_0d(n_samples))
       this%counter = 0
       this%typestr = 'i4'
     type is (integer(kind=i8_kind))
       allocate(integer(kind=i8_kind) :: this%buffer(buff_size))
       allocate(integer(kind=i8_kind) :: this%counter(buff_size))
-      allocate(integer(kind=i8_kind) :: this%count_0d(buff_size))
+      allocate(integer(kind=i8_kind) :: this%count_0d(n_samples))
       this%counter = 0
       this%typestr = 'i8'
     type is (real(kind=r4_kind))
       allocate(real(kind=r4_kind) :: this%buffer(buff_size))
       allocate(real(kind=r4_kind) :: this%count_0d(buff_size))
-      allocate(real(kind=r4_kind) :: this%counter(buff_size))
+      allocate(real(kind=r4_kind) :: this%counter(n_samples))
       this%counter = 0
       this%typestr = 'r4'
     type is (real(kind=r8_kind))
       allocate(real(kind=r8_kind) :: this%buffer(buff_size))
       allocate(real(kind=r8_kind) :: this%count_0d(buff_size))
-      allocate(real(kind=r8_kind) :: this%counter(buff_size))
+      allocate(real(kind=r8_kind) :: this%counter(n_samples))
       this%counter = 0
       this%typestr = 'r8'
     class default
@@ -347,90 +359,100 @@ subroutine allocate_buffer_1d(this, buff_type, buff_size)
            FATAL)
   end select
 
+  allocate(this%num_elements(n_samples))
   allocate(this%buffer_dims(1))
-  this%buffer_dims(1) = buff_size
-  allocate(this%num_elements(1))
   this%num_elements = 0
   this%count_0d   = 0
+  this%buffer_dims(1) = buff_size
 
 end subroutine allocate_buffer_1d
 !> allocates a 2D buffer to given buff_type type
 !! TODO fails with gnu
-subroutine allocate_buffer_2d(this, buff_type, buff_sizes)
+subroutine allocate_buffer_2d(this, buff_type, buff_sizes, diurnal_samples)
   class(buffer2d), intent(inout), target :: this !< 2D buffer object
   class(*),intent(in) :: buff_type !< allocates to the type of buff_type
   integer, intent(in) :: buff_sizes(2) !< dimension sizes
+  integer, optional :: diurnal_samples !< number of diurnal samples, passed in from diag_yaml
+  integer :: n_samples = 1
+
+  if(present(diurnal_samples)) then
+    n_samples = diurnal_samples
+  endif
 
   if(allocated(this%buffer)) call mpp_error(FATAL, "allocate_buffer_2d: buffer already allocated")
   select type (buff_type)
     type is (integer(kind=i4_kind))
       allocate(integer(kind=i4_kind) :: this%buffer(buff_sizes(1), buff_sizes(2)))
       allocate(integer(kind=i4_kind) :: this%counter(buff_sizes(1), buff_sizes(2)))
-      allocate(integer(kind=i4_kind) :: this%count_0d(buff_sizes(2)))
+      allocate(integer(kind=i4_kind) :: this%count_0d(n_samples))
       this%counter = 0
       this%typestr = 'i4'
     type is (integer(kind=i8_kind))
       allocate(integer(kind=i8_kind) :: this%buffer(buff_sizes(1), buff_sizes(2)))
       allocate(integer(kind=i8_kind) :: this%counter(buff_sizes(1), buff_sizes(2)))
-      allocate(integer(kind=i8_kind) :: this%count_0d(buff_sizes(2)))
+      allocate(integer(kind=i8_kind) :: this%count_0d(n_samples))
       this%counter = 0
       this%typestr = 'i8'
     type is (real(kind=r4_kind))
       allocate(real(kind=r4_kind) :: this%buffer(buff_sizes(1), buff_sizes(2)))
       allocate(real(kind=r4_kind) :: this%counter(buff_sizes(1), buff_sizes(2)))
-      allocate(real(kind=r4_kind) :: this%count_0d(buff_sizes(2)))
+      allocate(real(kind=r4_kind) :: this%count_0d(n_samples))
       this%counter = 0
       this%typestr = 'r4'
     type is (real(kind=r8_kind))
       allocate(real(kind=r8_kind) :: this%buffer(buff_sizes(1), buff_sizes(2)))
       allocate(real(kind=r8_kind) :: this%counter(buff_sizes(1), buff_sizes(2)))
-      allocate(real(kind=r8_kind) :: this%count_0d(buff_sizes(2)))
+      allocate(real(kind=r8_kind) :: this%count_0d(n_samples))
       this%typestr = 'r4'
     class default
        call mpp_error("allocate_buffer_1d", &
            "The buff_type value passed to allocate a buffer is not a r8, r4, i8, or i4",&
            FATAL)
   end select
-
+  allocate(this%num_elements(n_samples))
   allocate(this%buffer_dims(2))
+  this%num_elements = 0
+  this%count_0d   = 0
   this%buffer_dims(1) = buff_sizes(1)
   this%buffer_dims(2) = buff_sizes(2)
-  allocate(this%num_elements(2))
-  this%count_0d     = 0
-  this%num_elements = 0
 
 end subroutine allocate_buffer_2d
 
 !> allocates a 3D buffer to given buff_type type
-subroutine allocate_buffer_3d(this, buff_type, buff_sizes)
+subroutine allocate_buffer_3d(this, buff_type, buff_sizes, diurnal_samples)
   class(buffer3d), intent(inout), target :: this !< 3D buffer object
   class(*),intent(in) :: buff_type !< allocates to the type of buff_type
   integer, intent(in) :: buff_sizes(3) !< dimension sizes
+  integer, optional :: diurnal_samples !< number of diurnal samples, passed in from diag_yaml
+  integer :: n_samples = 1
 
+  if(present(diurnal_samples)) then
+    n_samples = diurnal_samples
+  endif
   if(allocated(this%buffer)) call mpp_error(FATAL, "allocate_buffer_3d: buffer already allocated")
   select type (buff_type)
     type is (integer(kind=i4_kind))
       allocate(integer(kind=i4_kind) :: this%buffer( buff_sizes(1),buff_sizes(2), buff_sizes(3)))
       allocate(integer(kind=i4_kind) :: this%counter(buff_sizes(1),buff_sizes(2), buff_sizes(3)))
-      allocate(integer(kind=i4_kind) :: this%count_0d(buff_sizes(3)))
+      allocate(integer(kind=i4_kind) :: this%count_0d(n_samples))
       this%counter = 0
       this%typestr = 'i4'
     type is (integer(kind=i8_kind))
       allocate(integer(kind=i8_kind) :: this%buffer( buff_sizes(1),buff_sizes(2), buff_sizes(3)))
       allocate(integer(kind=i8_kind) :: this%counter(buff_sizes(1),buff_sizes(2), buff_sizes(3)))
-      allocate(integer(kind=i8_kind) :: this%count_0d(buff_sizes(3)))
+      allocate(integer(kind=i8_kind) :: this%count_0d(n_samples))
       this%counter = 0
       this%typestr = 'i8'
     type is (real(kind=r4_kind))
       allocate(real(kind=r4_kind) :: this%buffer( buff_sizes(1),buff_sizes(2), buff_sizes(3)))
       allocate(real(kind=r4_kind) :: this%counter(buff_sizes(1),buff_sizes(2), buff_sizes(3)))
-      allocate(real(kind=r4_kind) :: this%count_0d(buff_sizes(3)))
+      allocate(real(kind=r4_kind) :: this%count_0d(n_samples))
       this%counter = 0
       this%typestr = 'r4'
     type is (real(kind=r8_kind))
       allocate(real(kind=r8_kind) :: this%buffer( buff_sizes(1),buff_sizes(2), buff_sizes(3)))
       allocate(real(kind=r8_kind) :: this%counter( buff_sizes(1),buff_sizes(2), buff_sizes(3)))
-      allocate(real(kind=r8_kind) :: this%count_0d(buff_sizes(3)))
+      allocate(real(kind=r8_kind) :: this%count_0d(n_samples))
       this%typestr = 'r4'
       this%counter = 0
     class default
@@ -439,46 +461,52 @@ subroutine allocate_buffer_3d(this, buff_type, buff_sizes)
            FATAL)
   end select
 
+  allocate(this%num_elements(n_samples))
+  this%num_elements = 0
+  this%count_0d   = 0
   allocate(this%buffer_dims(3))
   this%buffer_dims(1) = buff_sizes(1)
   this%buffer_dims(2) = buff_sizes(2)
   this%buffer_dims(3) = buff_sizes(3)
-  allocate(this%num_elements(3))
-  this%num_elements = 0
-  this%count_0d   = 0
 
 end subroutine allocate_buffer_3d
 
 !> allocates a 4D buffer to given buff_type type
-subroutine allocate_buffer_4d(this, buff_type, buff_sizes)
+subroutine allocate_buffer_4d(this, buff_type, buff_sizes, diurnal_samples)
   class(buffer4d), intent(inout), target :: this !< 4D buffer object
   class(*),intent(in) :: buff_type !< allocates to the type of buff_type
   integer, intent(in) :: buff_sizes(4) !< dimension buff_sizes
+  integer, optional :: diurnal_samples !< number of diurnal samples, passed in from diag_yaml
+  integer :: n_samples = 1
+
+  if(present(diurnal_samples)) then
+    n_samples = diurnal_samples
+  endif
 
   if(allocated(this%buffer)) call mpp_error(FATAL, "allocate_buffer_4d: buffer already allocated")
   select type (buff_type)
     type is (integer(kind=i4_kind))
       allocate(integer(kind=i4_kind) :: this%buffer(buff_sizes(1),buff_sizes(2),buff_sizes(3),buff_sizes(4)))
       allocate(integer(kind=i4_kind) :: this%counter(buff_sizes(1),buff_sizes(2),buff_sizes(3),buff_sizes(4)))
-      allocate(integer(kind=i4_kind) :: this%count_0d(buff_sizes(4)))
+      allocate(integer(kind=i4_kind) :: this%count_0d(n_samples))
       this%counter = 0
       this%typestr = 'i4'
     type is (integer(kind=i8_kind))
       allocate(integer(kind=i8_kind) :: this%buffer(buff_sizes(1),buff_sizes(2),buff_sizes(3),buff_sizes(4)))
       allocate(integer(kind=i8_kind) :: this%counter(buff_sizes(1),buff_sizes(2),buff_sizes(3),buff_sizes(4)))
-      allocate(integer(kind=i8_kind) :: this%count_0d(buff_sizes(4)))
+      allocate(integer(kind=i8_kind) :: this%count_0d(n_samples))
       this%counter = 0
       this%typestr = 'i8'
     type is (real(kind=r4_kind))
       allocate(real(kind=r4_kind) :: this%buffer(buff_sizes(1),buff_sizes(2),buff_sizes(3),buff_sizes(4)))
       allocate(real(kind=r4_kind) :: this%counter(buff_sizes(1),buff_sizes(2),buff_sizes(3),buff_sizes(4)))
-      allocate(real(kind=r4_kind) :: this%count_0d(buff_sizes(4)))
+      allocate(real(kind=r4_kind) :: this%count_0d(n_samples))
       this%counter = 0
       this%typestr = 'r4'
     type is (real(kind=r8_kind))
       allocate(real(kind=r8_kind) :: this%buffer(buff_sizes(1),buff_sizes(2),buff_sizes(3),buff_sizes(4)))
       allocate(real(kind=r4_kind) :: this%counter(buff_sizes(1),buff_sizes(2),buff_sizes(3),buff_sizes(4)))
-      allocate(real(kind=r4_kind) :: this%count_0d(buff_sizes(4)))
+      allocate(real(kind=r4_kind) :: this%count_0d(n_samples))
       this%counter = 0
       this%typestr = 'r8'
     class default
@@ -487,22 +515,28 @@ subroutine allocate_buffer_4d(this, buff_type, buff_sizes)
            FATAL)
   end select
 
+  allocate(this%num_elements(n_samples))
+  this%num_elements = 0
+  this%count_0d   = 0
   allocate(this%buffer_dims(4))
   this%buffer_dims(1) = buff_sizes(1)
   this%buffer_dims(2) = buff_sizes(2)
   this%buffer_dims(3) = buff_sizes(3)
   this%buffer_dims(4) = buff_sizes(4)
-  allocate(this%num_elements(4))
-  this%num_elements = 0
-  this%count_0d   = 0
 
 end subroutine allocate_buffer_4d
 
 !> allocates a 5D buffer to given buff_type type
-subroutine allocate_buffer_5d(this, buff_type, buff_sizes)
+subroutine allocate_buffer_5d(this, buff_type, buff_sizes, diurnal_samples)
   class(buffer5d), intent(inout), target :: this !< 5D buffer object
   class(*),intent(in) :: buff_type !< allocates to the type of buff_type
   integer, intent(in) :: buff_sizes(5) !< dimension buff_sizes
+  integer, optional :: diurnal_samples !< number of diurnal samples, passed in from diag_yaml
+  integer :: n_samples = 1
+
+  if(present(diurnal_samples)) then
+    n_samples = diurnal_samples
+  endif
 
   if(allocated(this%buffer)) call mpp_error(FATAL, "allocate_buffer_5d: buffer already allocated")
   select type (buff_type)
@@ -511,7 +545,7 @@ subroutine allocate_buffer_5d(this, buff_type, buff_sizes)
                                                   & buff_sizes(5)))
       allocate(integer(kind=i4_kind) :: this%counter(buff_sizes(1),buff_sizes(2),buff_sizes(3),buff_sizes(4), &
                                                    & buff_sizes(5)))
-      allocate(integer(kind=i4_kind) :: this%count_0d(buff_sizes(5)))
+      allocate(integer(kind=i4_kind) :: this%count_0d(n_samples))
       this%counter = 0
       this%typestr = 'i4'
     type is (integer(kind=i8_kind))
@@ -519,7 +553,7 @@ subroutine allocate_buffer_5d(this, buff_type, buff_sizes)
                                                   & buff_sizes(5)))
       allocate(integer(kind=i8_kind) :: this%counter(buff_sizes(1),buff_sizes(2),buff_sizes(3),buff_sizes(4), &
                                                   & buff_sizes(5)))
-      allocate(integer(kind=i8_kind) :: this%count_0d(buff_sizes(5)))
+      allocate(integer(kind=i8_kind) :: this%count_0d(n_samples))
       this%counter = 0
       this%typestr = 'i8'
     type is (real(kind=r4_kind))
@@ -527,7 +561,7 @@ subroutine allocate_buffer_5d(this, buff_type, buff_sizes)
                                                & buff_sizes(5)))
       allocate(real(kind=r4_kind) :: this%counter(buff_sizes(1),buff_sizes(2),buff_sizes(3),buff_sizes(4), &
                                                 & buff_sizes(5)))
-      allocate(real(kind=r4_kind) :: this%count_0d(buff_sizes(5)))
+      allocate(real(kind=r4_kind) :: this%count_0d(n_samples))
       this%counter = 0
       this%typestr = 'r4'
     type is (real(kind=r8_kind))
@@ -535,7 +569,7 @@ subroutine allocate_buffer_5d(this, buff_type, buff_sizes)
                                                & buff_sizes(5)))
       allocate(real(kind=r8_kind) :: this%counter(buff_sizes(1),buff_sizes(2),buff_sizes(3),buff_sizes(4), &
                                                 & buff_sizes(5)))
-      allocate(real(kind=r8_kind) :: this%count_0d(buff_sizes(5)))
+      allocate(real(kind=r8_kind) :: this%count_0d(n_samples))
       this%counter = 0
       this%typestr = 'r8'
     class default
@@ -543,16 +577,15 @@ subroutine allocate_buffer_5d(this, buff_type, buff_sizes)
            "The buff_type value passed to allocate a buffer is not a r8, r4, i8, or i4",&
            FATAL)
   end select
-
+  allocate(this%num_elements(n_samples))
+  this%num_elements = 0
+  this%count_0d   = 0
   allocate(this%buffer_dims(5))
   this%buffer_dims(1) = buff_sizes(1)
   this%buffer_dims(2) = buff_sizes(2)
   this%buffer_dims(3) = buff_sizes(3)
   this%buffer_dims(4) = buff_sizes(4)
   this%buffer_dims(5) = buff_sizes(5)
-  allocate(this%num_elements(5))
-  this%num_elements = 0
-  this%count_0d   = 0
 end subroutine allocate_buffer_5d
 
 !! gonna leave these for when we stop caring about gnu <11
@@ -668,7 +701,7 @@ end subroutine
 subroutine get_1d_real8 (this, buff_out)
   class(buffer1d), intent(in) :: this !< 1d allocated buffer object
   real(r8_kind), allocatable, intent(out)  :: buff_out(:) !< output of copied buffer data
-                                                !! must be the same size as the allocated buffer
+                                         !! must be the same size as the allocated buffer
   allocate(buff_out(size(this%buffer)))
   select type (buff=>this%buffer)
     type is (real(r8_kind))
