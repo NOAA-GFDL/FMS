@@ -43,6 +43,7 @@ public :: open_file
 public :: open_virtual_file
 public :: close_file
 public :: register_axis
+public :: register_unlimited_compressed_axis
 public :: register_field
 public :: register_restart_field
 public :: write_data
