@@ -86,12 +86,14 @@ module fms_diag_axis_object_mod
   !> @brief Type to hold the subaxis
   !> @ingroup diag_axis_object_mod
   TYPE, extends(fmsDiagAxis_type) :: fmsDiagSubAxis_type
-    INTEGER                       :: subaxis_id     !< ID of the subaxis
-    CHARACTER(len=:), ALLOCATABLE :: subaxis_name   !< Name of the subaxis
-    INTEGER                       :: starting_index !< Starting index of the subaxis relative to the parent axis
-    INTEGER                       :: ending_index   !< Ending index of the subaxis relative to the parent axis
-    class(*)        , ALLOCATABLE :: bounds         !< Bounds of the subaxis (lat/lon or indices)
-    INTEGER                       :: parent_axis_id !< Id of the parent_axis
+    INTEGER                      , private  :: subaxis_id     !< ID of the subaxis
+    CHARACTER(len=:), ALLOCATABLE, private  :: subaxis_name   !< Name of the subaxis
+    INTEGER                      , private  :: starting_index !< Starting index of the subaxis relative to the
+                                                              !! parent axis
+    INTEGER                      , private  :: ending_index   !< Ending index of the subaxis relative to the
+                                                              !! parent axis
+    class(*)        , ALLOCATABLE, private  :: bounds         !< Bounds of the subaxis (lat/lon or indices)
+    INTEGER                      , private  :: parent_axis_id !< Id of the parent_axis
     contains
       procedure :: exists => check_if_subaxis_exists
   END TYPE fmsDiagSubAxis_type
@@ -340,7 +342,7 @@ module fms_diag_axis_object_mod
 
   !> @brief Get the length of the axis
   !> @return axis length
-  function get_axis_length(this) &
+  pure function get_axis_length(this) &
   result (axis_length)
     class(fmsDiagFullAxis_type), intent(in) :: this !< diag_axis obj
     integer                                 :: axis_length
@@ -356,7 +358,7 @@ module fms_diag_axis_object_mod
 
   !> @brief Get the name of the axis
   !> @return axis name
-  function get_axis_name(this) &
+  pure function get_axis_name(this) &
   result (axis_name)
     class(fmsDiagFullAxis_type), intent(in)    :: this !< diag_axis obj
     CHARACTER(len=:),   ALLOCATABLE            :: axis_name

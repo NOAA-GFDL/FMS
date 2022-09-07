@@ -585,15 +585,15 @@ CONTAINS
   END SUBROUTINE get_diag_axis_data
 
   !> @brief Return the short name of the axis.
-  SUBROUTINE get_diag_axis_name(id, name)
+  SUBROUTINE get_diag_axis_name(id, axis_name)
     INTEGER         , INTENT(in)  :: id !< Axis ID
-    CHARACTER(len=*), INTENT(out) :: name !< Axis short name
+    CHARACTER(len=*), INTENT(out) :: axis_name !< Axis short name
 
     if (use_modern_diag) then
-      name = fms_diag_object%fms_get_axis_name_from_id(id)
+      axis_name = fms_diag_object%fms_get_axis_name_from_id(id)
     else
       CALL valid_id_check(id, 'get_diag_axis_name')
-      name = Axes(id)%name
+      axis_name = Axes(id)%name
     endif
   END SUBROUTINE get_diag_axis_name
 
