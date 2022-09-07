@@ -342,7 +342,7 @@ module fms_diag_axis_object_mod
 
   !> @brief Get the length of the axis
   !> @return axis length
-  pure function get_axis_length(this) &
+  function get_axis_length(this) &
   result (axis_length)
     class(fmsDiagFullAxis_type), intent(in) :: this !< diag_axis obj
     integer                                 :: axis_length
