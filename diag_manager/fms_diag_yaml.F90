@@ -165,7 +165,7 @@ type diagYamlFilesVar_type
   character (len=:), private, allocatable :: var_outname !< Name of the variable as written to the file
   character (len=:), private, allocatable :: var_longname !< Overwrites the long name of the variable
   character (len=:), private, allocatable :: var_units !< Overwrites the units
-  real(kind=r4_kind), private             :: var_zbounds(2)  !< indices of the z axis limits (zbegin, zend)
+  real(kind=r4_kind), private             :: var_zbounds(2)  !< The z axis limits [vert_min, vert_max]
   integer          , private              :: n_diurnal !< Number of diurnal samples
                                                        !! 0 if var_reduction is not "diurnalXX"
   integer          , private              :: pow_value !< The power value
