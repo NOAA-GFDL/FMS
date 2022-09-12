@@ -1319,7 +1319,8 @@ subroutine add_to_buffer_1d(this, input_data)
   class(buffer1d), intent(inout) :: this !< allocated 1d buffer object
   class(*), intent(in)            :: input_data(:) !< data to copy into the buffer
   integer            :: n !< number of elements in input data
-  logical            :: type_error = .false.
+  logical            :: type_error !< set to true if mismatch between input_data and allocated buffer
+  type_error = .false.
   if( .not. allocated(this%buffer)) call mpp_error (FATAL, 'add_to_buffer_1d: buffer not yet allocated')
   n = SIZE(input_data)
   if( n .gt. SIZE(this%buffer)) call mpp_error( FATAL,"add_to_buffer_1d: input data larger than allocated buffer")
@@ -1363,7 +1364,8 @@ subroutine add_to_buffer_2d(this, input_data)
   class(buffer2d), intent(inout) :: this !< allocated 2d buffer object
   class(*), intent(in)             :: input_data(:,:) !< 2d data array to copy into buffer
   integer            :: n1, n2 !< number of elements per dimension
-  logical            :: type_error = .false.
+  logical            :: type_error !< set to true if mismatch between input_data and allocated buffer
+  type_error = .false.
   if( .not. allocated(this%buffer)) call mpp_error (FATAL, 'add_to_buffer_2d: buffer not yet allocated')
   n1 = SIZE(input_data, 1)
   n2 = SIZE(input_data, 2)
@@ -1411,7 +1413,8 @@ subroutine add_to_buffer_3d(this, input_data)
   class(buffer3d), intent(inout) :: this !< allocated 3d buffer object
   class(*), intent(in)             :: input_data(:,:,:)!< 3d data array to copy into buffer
   integer            :: n1, n2, n3 !< number of elements per dimension
-  logical            :: type_error = .false.
+  logical            :: type_error !< set to true if mismatch between input_data and allocated buffer
+  type_error = .false.
   if( .not. allocated(this%buffer)) call mpp_error (FATAL, 'add_to_buffer_3d: buffer not yet allocated')
   n1 = SIZE(input_data, 1)
   n2 = SIZE(input_data, 2)
@@ -1461,7 +1464,8 @@ subroutine add_to_buffer_4d(this, input_data)
   class(buffer4d), intent(inout) :: this !< allocated 4d buffer object
   class(*), intent(in)             :: input_data(:,:,:,:) !< 4d data to copy into buffer
   integer            :: n1, n2, n3, n4!< number of elements per dimension
-  logical            :: type_error = .false.
+  logical            :: type_error !< set to true if mismatch between input_data and allocated buffer
+  type_error = .false.
   if( .not. allocated(this%buffer)) call mpp_error (FATAL, 'add_to_buffer_4d: buffer not yet allocated')
   n1 = SIZE(input_data, 1)
   n2 = SIZE(input_data, 2)
@@ -1511,7 +1515,8 @@ subroutine add_to_buffer_5d(this, input_data)
   class(buffer5d), intent(inout) :: this !< allocated 5d buffer object
   class(*), intent(in)             :: input_data(:,:,:,:,:) !< 5d data to copy into buffer
   integer            :: n1, n2, n3, n4, n5 !< number of elements per dimension
-  logical            :: type_error = .false.
+  logical            :: type_error !< set to true if mismatch between input_data and allocated buffer
+  type_error = .false.
   if( .not. allocated(this%buffer)) call mpp_error (FATAL, 'add_to_buffer_5d: buffer not yet allocated')
   n1 = SIZE(input_data, 1)
   n2 = SIZE(input_data, 2)
