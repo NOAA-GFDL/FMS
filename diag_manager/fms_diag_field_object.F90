@@ -45,7 +45,6 @@ type fmsDiagField_type
      logical, allocatable, private                    :: mask_variant      !< If there is a mask variant
      logical, allocatable, private                    :: do_not_log        !< .true. if no need to log the diag_field
      logical, allocatable, private                    :: local             !< If the output is local
-     TYPE(time_type), private                         :: init_time         !< The initial time
      integer,          allocatable, private           :: vartype           !< the type of varaible
      character(len=:), allocatable, private           :: varname           !< the name of the variable
      character(len=:), allocatable, private           :: longname          !< longname of the variable

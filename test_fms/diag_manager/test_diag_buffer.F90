@@ -69,8 +69,11 @@ program test_diag_buffer
     call buffobj2%allocate_buffer(i4_data, (/ 5, 10 /) )
     !!! init to given value
     call buffobj2%initialize_buffer( int(2, kind=i4_kind) )
-    !!! get the buffer
+    !! set some values in the buffer
     allocate(arr2d(5,10))
+    arr2d = 1
+    call buffobj2%add_to_buffer(arr2d)
+    !!! get the buffer
     call buffobj2%get_buffer(arr2d)
     !!! get the remapped buffer
     remap_buffer_out => buffobj2%remap_buffer()
@@ -84,8 +87,11 @@ program test_diag_buffer
     call buffobj3%allocate_buffer(i8_data, (/ 2, 2, 2/) )
     !! init to given value
     call buffobj3%initialize_buffer( int(3, kind=i8_kind) )
-    !! get the buffer
+    !! set some values in the buffer
     allocate(i8arr3d(2,2,2))
+    i8arr3d = 6
+    call buffobj3%add_to_buffer(i8arr3d)
+    !! get the buffer
     call buffobj3%get_buffer(i8arr3d)
     !! get the remapped buffer
     remap_buffer_out => buffobj3%remap_buffer()
@@ -99,6 +105,10 @@ program test_diag_buffer
     call buffobj4%allocate_buffer(i8_data, (/ 2, 2, 2, 2/) )
     !! init to given value
     call buffobj4%initialize_buffer( int(4, kind=i8_kind) )
+    !! set some values in the buffer
+    allocate(i8arr4d(2,2,2,2))
+    i8arr4d = 8
+    call buffobj4%add_to_buffer(i8arr4d)
     !! get the buffer
     call buffobj4%get_buffer(i8arr4d)
     !! get the remapped buffer
@@ -112,10 +122,14 @@ program test_diag_buffer
     call buffobj5%allocate_buffer(i8_data, (/ 2, 2, 2, 2, 2/) )
     !! init to given value
     call buffobj5%initialize_buffer( int(5, kind=i8_kind) )
-    !! get the buffer
-    call buffobj5%get_buffer(i8arr5d)
     !! get the remapped buffer
     remap_buffer_out => buffobj5%remap_buffer()
+    !! set some values in the buffer
+    allocate(i8arr5d(2,2,2,2,2))
+    i8arr5d = 10
+    call buffobj5%add_to_buffer(i8arr5d)
+    !! get the buffer
+    call buffobj5%get_buffer(i8arr5d)
     !! check output
     print *, i8arr5d
     call print_5d(remap_buffer_out)
