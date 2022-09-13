@@ -123,8 +123,8 @@ subroutine fms_diag_object_end (this)
   !TODO: Close all files
   !TODO: Deallocate diag object arrays and clean up all memory
   do i=1, size(this%FMS_diag_buffers)
-    if(allocated(this%FMS_diag_buffers(i)%diag_buffer_this)) then
-      call this%FMS_diag_buffers(i)%diag_buffer_this%flush_buffer()
+    if(allocated(this%FMS_diag_buffers(i)%diag_buffer_obj)) then
+      call this%FMS_diag_buffers(i)%diag_buffer_obj%flush_buffer()
     endif
   enddo
   deallocate(this%FMS_diag_buffers)
