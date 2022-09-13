@@ -24,7 +24,7 @@
 
 !> @addtogroup fms_diag_time_utils_mod
 !> @{
-module fms_diag_time_utils
+module fms_diag_time_utils_mod
 
 use time_manager_mod, only: time_type, increment_date, increment_time, get_calendar_type, NO_CALENDAR, leap_year, &
                             get_date, get_time
@@ -252,4 +252,4 @@ contains
     get_time_string = TRIM(yr)//TRIM(mo)//TRIM(dy)//TRIM(hr)//TRIM(mi)//TRIM(sc)
   END FUNCTION get_time_string
 
-end module fms_diag_time_utils
+end module fms_diag_time_utils_mod
