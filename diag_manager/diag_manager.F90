@@ -239,7 +239,6 @@ use platform_mod
   USE diag_grid_mod, ONLY: diag_grid_init, diag_grid_end
 #ifdef use_yaml
   use fms_diag_yaml_mod, only: diag_yaml_object_init, diag_yaml_object_end, get_num_unique_fields, find_diag_field
-  use fms_diag_axis_object_mod, only: fms_diag_axis_object_end, fms_diag_axis_object_init
 #endif
   use fms_diag_object_mod, only:fms_diag_object
 
@@ -3825,7 +3824,6 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
 #ifdef use_yaml
     if (use_modern_diag) then
       call diag_yaml_object_end
-      call fms_diag_axis_object_end()
       call fms_diag_object%diag_end()
     endif
 #endif
@@ -4042,7 +4040,6 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
 #ifdef use_yaml
     if (use_modern_diag) then
       CALL diag_yaml_object_init(diag_subset_output)
-      CALL fms_diag_axis_object_init()
       CALL fms_diag_object%init(diag_subset_output) 
     endif
 #else

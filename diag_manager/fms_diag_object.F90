@@ -19,7 +19,7 @@
 module fms_diag_object_mod
 use mpp_mod, only: fatal, note, warning, mpp_error
 use diag_data_mod,  only: diag_null, diag_not_found, diag_not_registered, diag_registered_id, &
-                         &DIAG_FIELD_NOT_FOUND, diag_not_registered
+                         &DIAG_FIELD_NOT_FOUND, diag_not_registered, max_axes, TWO_D_DOMAIN
   USE time_manager_mod, ONLY: set_time, set_date, get_time, time_type, OPERATOR(>=), OPERATOR(>),&
        & OPERATOR(<), OPERATOR(==), OPERATOR(/=), OPERATOR(/), OPERATOR(+), ASSIGNMENT(=), get_date, &
        & get_ticks_per_second
@@ -27,8 +27,11 @@ use diag_data_mod,  only: diag_null, diag_not_found, diag_not_registered, diag_r
 use fms_diag_file_object_mod, only: fmsDiagFileContainer_type, fmsDiagFile_type, fms_diag_files_object_init
 use fms_diag_field_object_mod, only: fmsDiagField_type, fms_diag_fields_object_init
 use fms_diag_yaml_mod, only: diag_yaml_object_init, find_diag_field, get_diag_files_id
-use fms_diag_axis_object_mod, only: fms_diag_axis_object_init
+use fms_diag_axis_object_mod, only: fms_diag_axis_object_init, fmsDiagAxis_type, fmsDiagSubAxis_type, &
+                                   &diagDomain_t, get_domain_and_domain_type, diagDomain2d_t, &
+                                   &fmsDiagAxisContainer_type, fms_diag_axis_object_end, fmsDiagFullAxis_type
 #endif
+use mpp_domains_mod, only: domain1d, domain2d, domainUG, null_domain2d
 implicit none
 private
 
@@ -39,7 +42,9 @@ private
 !TODO: Remove FMS prefix from variables in this type
   class(fmsDiagFileContainer_type), allocatable :: FMS_diag_files (:) !< array of diag files
   class(fmsDiagField_type), allocatable :: FMS_diag_fields(:) !< Array of diag fields
+  class(fmsDiagAxisContainer_type), allocatable :: diag_axis(:) !< Array of diag_axis
   integer, private :: registered_variables !< Number of registered variables
+  integer, private :: registered_axis !< Number of registered axis
   logical, private :: initialized=.false. !< True if the fmsDiagObject is initialized
   logical, private :: files_initialized=.false. !< True if the fmsDiagObject is initialized
   logical, private :: fields_initialized=.false. !< True if the fmsDiagObject is initialized
@@ -51,9 +56,14 @@ private
     procedure :: fms_register_diag_field_scalar
     procedure :: fms_register_diag_field_array
     procedure :: fms_register_static_field
+    procedure :: fms_diag_axis_init
     procedure :: register => fms_register_diag_field_obj !! Merely initialize fields.
     procedure :: fms_diag_field_add_attribute
+    procedure :: fms_diag_axis_add_attribute
+    procedure :: fms_get_domain2d
+    procedure :: fms_get_axis_length
     procedure :: fms_get_diag_field_id_from_name
+    procedure :: fms_get_axis_name_from_id
     procedure :: diag_end => fms_diag_object_end
 end type fmsDiagObject_type
 
@@ -76,10 +86,11 @@ subroutine fms_diag_object_init (this,diag_subset_output)
 !TODO: allocate the file, field, and buffer containers
 ! allocate(diag_objs(get_num_unique_fields()))
   CALL diag_yaml_object_init(diag_subset_output)
-  CALL fms_diag_axis_object_init()
+  this%axes_initialized = fms_diag_axis_object_init(this%diag_axis)
   this%files_initialized = fms_diag_files_object_init(this%FMS_diag_files)
   this%fields_initialized = fms_diag_fields_object_init (this%FMS_diag_fields)
   this%registered_variables = 0
+  this%registered_axis = 0
   this%initialized = .true.
 #else
   call mpp_error("fms_diag_object_init",&
@@ -97,6 +108,7 @@ subroutine fms_diag_object_end (this)
   !TODO: loop through files and force write
   !TODO: Close all files
   !TODO: Deallocate diag object arrays and clean up all memory
+  this%axes_initialized = fms_diag_axis_object_end(this%diag_axis)
   this%initialized = .false.
 #endif
 end subroutine fms_diag_object_end
@@ -157,7 +169,7 @@ integer function fms_register_diag_field_obj &
 !> Use pointers for convenience
   fieldptr => this%FMS_diag_fields(this%registered_variables)
 !> Register the data for the field
-  call fieldptr%register(modname, varname, diag_field_indices, &
+  call fieldptr%register(modname, varname, diag_field_indices, fms_diag_object%diag_axis, &
        axes, longname, units, missing_value, varRange, mask_variant, standname, &
        do_not_log, err_msg, interp_method, tile_count, area, volume, realm, static)
 !> Get the file IDs from the field indicies from the yaml
@@ -167,7 +179,7 @@ integer function fms_register_diag_field_obj &
     do i = 1, size(file_ids)
      fileptr => this%FMS_diag_files(file_ids(i))%FMS_diag_file
      call fileptr%add_field_id(fieldptr%get_id())
-     call fileptr%set_domain_from_axis(axes)
+     call fileptr%set_domain_from_axis(fms_diag_object%diag_axis, axes)
      call fileptr%add_axes(axes)
      call fileptr%add_start_time(init_time)
     enddo
@@ -175,7 +187,7 @@ integer function fms_register_diag_field_obj &
     do i = 1, size(file_ids)
      fileptr => this%FMS_diag_files(file_ids(i))%FMS_diag_file
      call fileptr%add_field_id(fieldptr%get_id())
-     call fileptr%set_domain_from_axis(axes)
+     call fileptr%set_domain_from_axis(fms_diag_object%diag_axis, axes)
      call fileptr%add_axes(axes)
     enddo
   elseif (present(init_time)) then !only inti time present
@@ -193,6 +205,8 @@ integer function fms_register_diag_field_obj &
   nullify (fileptr)
   nullify (fieldptr)
   deallocate(diag_field_indices)
+#else
+  fms_register_diag_field_obj = diag_null
 #endif
 end function fms_register_diag_field_obj
 
@@ -308,6 +322,65 @@ fms_register_static_field = diag_not_registered
 #endif
 end function fms_register_static_field
 
+!> @brief Wrapper for the register_diag_axis subroutine. This is needed to keep the diag_axis_init
+!! interface the same
+!> @return Axis id
+FUNCTION fms_diag_axis_init(this, axis_name, axis_data, units, cart_name, long_name, direction,&
+  & set_name, edges, Domain, Domain2, DomainU, aux, req, tile_count, domain_position ) &
+  & result(id)
+
+  class(fmsDiagObject_type),TARGET,INTENT(inout):: this       !< Diaj_obj to fill
+  CHARACTER(len=*),   INTENT(in)           :: axis_name       !< Name of the axis
+  CLASS(*),           INTENT(in)           :: axis_data(:)    !< Array of coordinate values
+  CHARACTER(len=*),   INTENT(in)           :: units           !< Units for the axis
+  CHARACTER(len=1),   INTENT(in)           :: cart_name       !< Cartesian axis ("X", "Y", "Z", "T", "U", "N")
+  CHARACTER(len=*),   INTENT(in), OPTIONAL :: long_name       !< Long name for the axis.
+  CHARACTER(len=*),   INTENT(in), OPTIONAL :: set_name        !< Name of the parent axis, if it is a subaxis
+  INTEGER,            INTENT(in), OPTIONAL :: direction       !< Indicates the direction of the axis
+  INTEGER,            INTENT(in), OPTIONAL :: edges           !< Axis ID for the previously defined "edges axis"
+  TYPE(domain1d),     INTENT(in), OPTIONAL :: Domain          !< 1D domain
+  TYPE(domain2d),     INTENT(in), OPTIONAL :: Domain2         !< 2D domain
+  TYPE(domainUG),     INTENT(in), OPTIONAL :: DomainU         !< Unstructured domain
+  CHARACTER(len=*),   INTENT(in), OPTIONAL :: aux             !< Auxiliary name, can only be <TT>geolon_t</TT>
+                                                               !! or <TT>geolat_t</TT>
+  CHARACTER(len=*),   INTENT(in), OPTIONAL :: req             !< Required field names.
+  INTEGER,            INTENT(in), OPTIONAL :: tile_count      !< Number of tiles
+  INTEGER,            INTENT(in), OPTIONAL :: domain_position !< Domain position, "NORTH" or "EAST"
+  integer :: id
+
+#ifdef use_yaml
+  CHARACTER(len=:),   ALLOCATABLE :: edges_name !< Name of the edges
+
+  this%registered_axis = this%registered_axis + 1
+
+  if (this%registered_axis > max_axes) call mpp_error(FATAL, &
+    &"diag_axis_init: max_axes exceeded, increase via diag_manager_nml")
+
+  allocate(fmsDiagFullAxis_type :: this%diag_axis(this%registered_axis)%axis)
+
+  select type (axis => this%diag_axis(this%registered_axis)%axis )
+  type is (fmsDiagFullAxis_type)
+    if(present(edges)) then
+      if (edges < 0 .or. edges > this%registered_axis) &
+        call mpp_error(FATAL, "diag_axit_init: The edge axis has not been defined. "&
+                               "Call diag_axis_init for the edge axis first")
+      select type (edges_axis => this%diag_axis(edges)%axis)
+      type is (fmsDiagFullAxis_type)
+        edges_name = edges_axis%get_axis_name()
+        call axis%set_edges_name(edges_name)
+      end select
+    endif
+    call axis%register(axis_name, axis_data, units, cart_name, long_name=long_name, &
+      & direction=direction, set_name=set_name, Domain=Domain, Domain2=Domain2, DomainU=DomainU, aux=aux, &
+      & req=req, tile_count=tile_count, domain_position=domain_position)
+
+    id = this%registered_axis
+  end select
+#else
+  id = diag_null
+#endif
+end function fms_diag_axis_init
+
 !> @brief Add a attribute to the diag_obj using the diag_field_id
 subroutine fms_diag_field_add_attribute(this, diag_field_id, att_name, att_value)
   class(fmsDiagObject_type), intent (inout) :: this !< The diag object
@@ -324,6 +397,24 @@ subroutine fms_diag_field_add_attribute(this, diag_field_id, att_name, att_value
   endif
 #endif
 end subroutine fms_diag_field_add_attribute
+
+!> @brief Add an attribute to an axis
+subroutine fms_diag_axis_add_attribute(this, axis_id, att_name, att_value)
+  class(fmsDiagObject_type), intent (inout) :: this !< The diag object
+  integer,          intent(in) :: axis_id      !< Id of the axis to add the attribute to
+  character(len=*), intent(in) :: att_name     !< Name of the attribute
+  class(*),         intent(in) :: att_value(:) !< The attribute value to add
+
+#ifdef use_yaml
+  if (axis_id < 0 .and. axis_id > this%registered_axis) &
+    call mpp_error(FATAL, "diag_axis_add_attribute: The axis_id is not valid")
+
+  select type (axis => this%diag_axis(axis_id)%axis)
+  type is (fmsDiagFullAxis_type)
+    call axis%add_axis_attribute(att_name, att_value)
+  end select
+#endif
+end subroutine fms_diag_axis_add_attribute
 
 !> \brief Gets the diag field ID from the module name and field name.
 !> \returns a copy of the ID of the diag field or DIAG_FIELD_NOT_FOUND if the field is not registered
@@ -345,4 +436,68 @@ PURE FUNCTION fms_get_diag_field_id_from_name(fms_diag_object, module_name, fiel
   enddo
 #endif
 END FUNCTION fms_get_diag_field_id_from_name
+
+!> @brief Return the 2D domain for the axis IDs given.
+!! @return 2D domain for the axis IDs given
+type(domain2d) FUNCTION fms_get_domain2d(this, ids)
+  class(fmsDiagObject_type), intent (in) :: this !< The diag object
+  INTEGER, DIMENSION(:), INTENT(in) :: ids !< Axis IDs.
+
+#ifdef use_yaml
+  INTEGER                      :: type_of_domain !< The type of domain
+  CLASS(diagDomain_t), POINTER :: domain         !< Diag Domain pointer
+
+  call get_domain_and_domain_type(fms_diag_object%diag_axis, ids, type_of_domain, domain, "get_domain2d")
+  if (type_of_domain .ne. TWO_D_DOMAIN) &
+    call mpp_error(FATAL, 'diag_axis_mod::get_domain2d- The axis do not correspond to a 2d Domain')
+  select type(domain)
+  type is (diagDomain2d_t)
+    fms_get_domain2d = domain%domain2
+  end select
+#else
+  fms_get_domain2d = null_domain2d
+#endif
+END FUNCTION fms_get_domain2d
+
+ !> @brief Gets the length of the axis based on the axis_id
+ !> @return Axis_length
+ integer function fms_get_axis_length(this, axis_id)
+  class(fmsDiagObject_type), intent (in) :: this !< The diag object
+  INTEGER, INTENT(in) :: axis_id !< Axis ID of the axis to the length of
+
+fms_get_axis_length = 0
+
+#ifdef use_yaml
+  if (axis_id < 0 .and. axis_id > this%registered_axis) &
+    call mpp_error(FATAL, "fms_get_axis_length: The axis_id is not valid")
+
+  select type (axis => this%diag_axis(axis_id)%axis)
+  type is (fmsDiagFullAxis_type)
+    fms_get_axis_length = axis%axis_length()
+  end select
+#endif
+end function fms_get_axis_length
+
+!> @brief Gets the name of the axis based on the axis_id
+ !> @return The axis_name
+function fms_get_axis_name_from_id (this, axis_id) &
+result(axis_name)
+  class(fmsDiagObject_type), intent (in) :: this !< The diag object
+  INTEGER, INTENT(in) :: axis_id !< Axis ID of the axis to the length of
+
+  character (len=:), allocatable :: axis_name
+
+#ifdef use_yaml
+    if (axis_id < 0 .and. axis_id > this%registered_axis) &
+    call mpp_error(FATAL, "fms_get_axis_length: The axis_id is not valid")
+
+    select type (axis => this%diag_axis(axis_id)%axis)
+    type is (fmsDiagFullAxis_type)
+      axis_name = axis%get_axis_name()
+    end select
+#else
+    axis_name = ""
+#endif
+end function fms_get_axis_name_from_id
+
 end module fms_diag_object_mod

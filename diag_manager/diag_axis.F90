@@ -40,8 +40,7 @@ use platform_mod
   USE diag_data_mod, ONLY: diag_axis_type, max_subaxes, max_axes,&
        & max_num_axis_sets, max_axis_attributes, debug_diag_manager,&
        & first_send_data_call, diag_atttype, use_modern_diag, TWO_D_DOMAIN
-  USE fms_diag_axis_object_mod, ONLY: fms_diag_axis_init, fms_diag_axis_add_attribute, &
-       & diagDomain_t, DIAGDOMAIN2D_T, get_domain_and_domain_type, fms_get_axis_length
+  use fms_diag_object_mod, only:fms_diag_object
 #ifdef use_netCDF
   USE netcdf, ONLY: NF90_INT, NF90_FLOAT, NF90_CHAR
 #endif
@@ -139,9 +138,9 @@ CONTAINS
     ENDIF
 
     if (use_modern_diag) then
-      diag_axis_init = fms_diag_axis_init(name, DATA, units, cart_name, long_name=long_name, direction=direction,&
-       & set_name=set_name, edges=edges, Domain=Domain, Domain2=Domain2, DomainU=DomainU, aux=aux, req=req, &
-       & tile_count=tile_count, domain_position=domain_position )
+      diag_axis_init = fms_diag_object%fms_diag_axis_init(name, DATA, units, cart_name, long_name=long_name,&
+       & direction=direction, set_name=set_name, edges=edges, Domain=Domain, Domain2=Domain2, DomainU=DomainU, &
+       & aux=aux, req=req, tile_count=tile_count, domain_position=domain_position )
       return
     endif
     IF ( PRESENT(tile_count)) THEN
@@ -586,12 +585,16 @@ CONTAINS
   END SUBROUTINE get_diag_axis_data
 
   !> @brief Return the short name of the axis.
-  SUBROUTINE get_diag_axis_name(id, name)
+  SUBROUTINE get_diag_axis_name(id, axis_name)
     INTEGER         , INTENT(in)  :: id !< Axis ID
-    CHARACTER(len=*), INTENT(out) :: name !< Axis short name
+    CHARACTER(len=*), INTENT(out) :: axis_name !< Axis short name
 
-    CALL valid_id_check(id, 'get_diag_axis_name')
-    name = Axes(id)%name
+    if (use_modern_diag) then
+      axis_name = fms_diag_object%fms_get_axis_name_from_id(id)
+    else
+      CALL valid_id_check(id, 'get_diag_axis_name')
+      axis_name = Axes(id)%name
+    endif
   END SUBROUTINE get_diag_axis_name
 
   !> @brief Return the name of the axis' domain
@@ -610,7 +613,7 @@ CONTAINS
     INTEGER :: length
 
     if (use_modern_diag) then
-      get_axis_length = fms_get_axis_length(id)
+      get_axis_length = fms_diag_object%fms_get_axis_length(id)
     else
       CALL valid_id_check(id, 'get_axis_length')
       IF ( Axes(id)%Domain .NE. null_domain1d ) THEN
@@ -698,26 +701,17 @@ CONTAINS
 
     INTEGER :: i, id, flag
 
-    INTEGER                      :: type_of_domain !< The type of domain
-    CLASS(diagDomain_t), POINTER :: domain         !< Diag Domain pointer
-
     IF ( SIZE(ids(:)) < 1 ) THEN
        ! <ERROR STATUS="FATAL">input argument has incorrect size.</ERROR>
        CALL error_mesg('diag_axis_mod::get_domain2d', 'input argument has incorrect size', FATAL)
     END IF
-    get_domain2d = null_domain2d
 
     if (use_modern_diag) then
-      call get_domain_and_domain_type(ids, type_of_domain, domain, "get_domain2d")
-      if (type_of_domain .ne. TWO_D_DOMAIN) &
-        call error_mesg('diag_axis_mod::get_domain2d', 'The axis do not correspond to a 2d Domain', FATAL)
-      select type(domain)
-      type is (diagDomain2d_t)
-        get_domain2d = domain%domain2
-      end select
+       get_domain2d = fms_diag_object%fms_get_domain2d(ids)
       return
     endif
 
+    get_domain2d = null_domain2d
     flag = 0
     DO i = 1, SIZE(ids(:))
        id = ids(i)
@@ -1070,7 +1064,7 @@ CONTAINS
     REAL, INTENT(in) :: att_value
 
     if (use_modern_diag) then
-      call fms_diag_axis_add_attribute(diag_axis_id, att_name, (/ att_value /))
+      call fms_diag_object%fms_diag_axis_add_attribute(diag_axis_id, att_name, (/ att_value /))
     else
       CALL diag_axis_add_attribute_r1d(diag_axis_id, att_name, (/ att_value /))
     endif
@@ -1082,7 +1076,7 @@ CONTAINS
     INTEGER, INTENT(in) :: att_value
 
     if (use_modern_diag) then
-      call fms_diag_axis_add_attribute(diag_axis_id, att_name, (/ att_value /))
+      call fms_diag_object%fms_diag_axis_add_attribute(diag_axis_id, att_name, (/ att_value /))
     else
       CALL diag_axis_add_attribute_i1d(diag_axis_id, att_name, (/ att_value /))
     endif
@@ -1094,7 +1088,7 @@ CONTAINS
     CHARACTER(len=*), INTENT(in) :: att_value
 
     if (use_modern_diag) then
-      call fms_diag_axis_add_attribute(diag_axis_id, att_name, (/ att_value /))
+      call fms_diag_object%fms_diag_axis_add_attribute(diag_axis_id, att_name, (/ att_value /))
     else
       CALL diag_axis_attribute_init(diag_axis_id, att_name, NF90_CHAR, cval=att_value)
     endif
@@ -1106,7 +1100,7 @@ CONTAINS
     REAL, DIMENSION(:), INTENT(in) :: att_value
 
     if (use_modern_diag) then
-      call fms_diag_axis_add_attribute(diag_axis_id, att_name, att_value)
+      call fms_diag_object%fms_diag_axis_add_attribute(diag_axis_id, att_name, att_value)
     else
       CALL diag_axis_attribute_init(diag_axis_id, att_name, NF90_FLOAT, rval=att_value)
     endif
@@ -1117,7 +1111,7 @@ CONTAINS
     CHARACTER(len=*), INTENT(in) :: att_name
     INTEGER, DIMENSION(:), INTENT(in) :: att_value
     if (use_modern_diag) then
-      call fms_diag_axis_add_attribute(diag_axis_id, att_name, att_value)
+      call fms_diag_object%fms_diag_axis_add_attribute(diag_axis_id, att_name, att_value)
     else
       CALL diag_axis_attribute_init(diag_axis_id, att_name, NF90_INT, ival=att_value)
     endif
