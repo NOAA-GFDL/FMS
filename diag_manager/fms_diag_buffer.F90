@@ -150,9 +150,6 @@ public :: fmsDiagBufferContainer_type
 ! public routines
 public :: fms_diag_buffer_init
 
-! Module variables
-logical, parameter, private :: DEBUG = .false. !< debugging output
-
 contains
 
 !!--------module routines
@@ -207,8 +204,6 @@ end subroutine set_buffer_id
 function remap_buffer(buffobj)
   class(fmsDiagBuffer_class), target, intent(inout) :: buffobj !< any dimension buffer object
   class(*), pointer                                 :: remap_buffer(:,:,:,:,:)
-
-  if( DEBUG) print *, 'remapping buffer'
 
   ! get num dimensions from type extension
   select type (buffobj)
@@ -269,10 +264,12 @@ subroutine allocate_buffer_0d(this, buff_type, diurnal_samples)
   class(buffer0d_type), intent(inout), target :: this !< scalar buffer object
   class(*),intent(in) :: buff_type !< allocates to the given type, value does not matter
   integer, optional :: diurnal_samples !< number of diurnal samples, passed in from diag_yaml
-  integer :: n_samples = 1
+  integer :: n_samples !< number of diurnal samples, defaults to 1
 
   if(present(diurnal_samples)) then
     n_samples = diurnal_samples
+  else
+    n_samples = 1
   endif
 
   if(allocated(this%buffer)) call mpp_error(FATAL, "allocate_buffer_0d: buffer already allocated")
@@ -321,10 +318,12 @@ subroutine allocate_buffer_1d(this, buff_type, buff_size, diurnal_samples)
   class(*),intent(in) :: buff_type !< allocates to the type of buff_type
   integer, intent(in) :: buff_size !< dimension bounds
   integer, optional :: diurnal_samples !< number of diurnal samples, passed in from diag_yaml
-  integer :: n_samples = 1
+  integer :: n_samples !< number of diurnal samples, defaults to 1
 
   if(present(diurnal_samples)) then
     n_samples = diurnal_samples
+  else
+    n_samples = 1
   endif
 
   if(allocated(this%buffer)) call mpp_error(FATAL, "allocate_buffer_1d: buffer already allocated")
@@ -373,10 +372,12 @@ subroutine allocate_buffer_2d(this, buff_type, buff_sizes, diurnal_samples)
   class(*),intent(in) :: buff_type !< allocates to the type of buff_type
   integer, intent(in) :: buff_sizes(2) !< dimension sizes
   integer, optional :: diurnal_samples !< number of diurnal samples, passed in from diag_yaml
-  integer :: n_samples = 1
+  integer :: n_samples !< number of diurnal samples, defaults to 1
 
   if(present(diurnal_samples)) then
     n_samples = diurnal_samples
+  else
+    n_samples = 1
   endif
 
   if(allocated(this%buffer)) call mpp_error(FATAL, "allocate_buffer_2d: buffer already allocated")
@@ -424,11 +425,14 @@ subroutine allocate_buffer_3d(this, buff_type, buff_sizes, diurnal_samples)
   class(*),intent(in) :: buff_type !< allocates to the type of buff_type
   integer, intent(in) :: buff_sizes(3) !< dimension sizes
   integer, optional :: diurnal_samples !< number of diurnal samples, passed in from diag_yaml
-  integer :: n_samples = 1
+  integer :: n_samples !< number of diurnal samples, defaults to 1
 
   if(present(diurnal_samples)) then
     n_samples = diurnal_samples
+  else
+    n_samples = 1
   endif
+
   if(allocated(this%buffer)) call mpp_error(FATAL, "allocate_buffer_3d: buffer already allocated")
   select type (buff_type)
     type is (integer(kind=i4_kind))
@@ -477,10 +481,12 @@ subroutine allocate_buffer_4d(this, buff_type, buff_sizes, diurnal_samples)
   class(*),intent(in) :: buff_type !< allocates to the type of buff_type
   integer, intent(in) :: buff_sizes(4) !< dimension buff_sizes
   integer, optional :: diurnal_samples !< number of diurnal samples, passed in from diag_yaml
-  integer :: n_samples = 1
+  integer :: n_samples !< number of diurnal samples, defaults to 1
 
   if(present(diurnal_samples)) then
     n_samples = diurnal_samples
+  else
+    n_samples = 1
   endif
 
   if(allocated(this%buffer)) call mpp_error(FATAL, "allocate_buffer_4d: buffer already allocated")
@@ -532,10 +538,12 @@ subroutine allocate_buffer_5d(this, buff_type, buff_sizes, diurnal_samples)
   class(*),intent(in) :: buff_type !< allocates to the type of buff_type
   integer, intent(in) :: buff_sizes(5) !< dimension buff_sizes
   integer, optional :: diurnal_samples !< number of diurnal samples, passed in from diag_yaml
-  integer :: n_samples = 1
+  integer :: n_samples !< number of diurnal samples, defaults to 1
 
   if(present(diurnal_samples)) then
     n_samples = diurnal_samples
+  else
+    n_samples = 1
   endif
 
   if(allocated(this%buffer)) call mpp_error(FATAL, "allocate_buffer_5d: buffer already allocated")
