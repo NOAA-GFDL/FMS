@@ -64,7 +64,7 @@ type :: fmsDiagBufferContainer_type
 end type
 
 !> Scalar buffer type to extend fmsDiagBufferContainer_type
-type, extends(fmsDiagBuffer_class) :: buffer0d
+type, extends(fmsDiagBuffer_class) :: buffer0d_type
   class(*), allocatable :: buffer(:) !< "scalar" numberic buffer value
                                      !! will only be allocated to hold 1 value
   class(*), allocatable :: counter(:) !< (x,y,z, time-of-day) used in the time averaging functions
@@ -75,10 +75,10 @@ type, extends(fmsDiagBuffer_class) :: buffer0d
   generic :: get_buffer => get_0d_int4, get_0d_int8, get_0d_real4, get_0d_real8
   procedure, private :: get_0d_int4, get_0d_int8, get_0d_real4, get_0d_real8
 
-end type buffer0d
+end type buffer0d_type
 
 !> 1D buffer type to extend fmsDiagBuffer_class
-type, extends(fmsDiagBuffer_class) :: buffer1d
+type, extends(fmsDiagBuffer_class) :: buffer1d_type
   class(*), allocatable :: buffer(:) !< 1D numeric data array
   class(*), allocatable :: counter(:) !< (x,y,z, time-of-day) used in the time averaging functions
   contains
@@ -87,10 +87,10 @@ type, extends(fmsDiagBuffer_class) :: buffer1d
   procedure :: add_to_buffer => add_to_buffer_1d
   generic :: get_buffer => get_1d_int4, get_1d_int8, get_1d_real4, get_1d_real8
   procedure, private :: get_1d_int4, get_1d_int8, get_1d_real4, get_1d_real8
-end type buffer1d
+end type buffer1d_type
 
 !> 2D buffer type to extend fmsDiagBuffer_class
-type, extends(fmsDiagBuffer_class) :: buffer2d
+type, extends(fmsDiagBuffer_class) :: buffer2d_type
   class(*), allocatable :: buffer(:,:) !< 2D numeric data array
   class(*), allocatable :: counter(:,:) !< (x,y,z, time-of-day) used in the time averaging functions
   contains
@@ -99,10 +99,10 @@ type, extends(fmsDiagBuffer_class) :: buffer2d
   procedure :: add_to_buffer => add_to_buffer_2d
   generic :: get_buffer => get_2d_int4, get_2d_int8, get_2d_real4, get_2d_real8
   procedure, private :: get_2d_int4, get_2d_int8, get_2d_real4, get_2d_real8
-end type buffer2d
+end type buffer2d_type
 
 !> 3D buffer type to extend fmsDiagBuffer_class
-type, extends(fmsDiagBuffer_class) :: buffer3d
+type, extends(fmsDiagBuffer_class) :: buffer3d_type
   class(*), allocatable :: buffer(:,:,:) !< 3D numeric data array
   class(*), allocatable :: counter(:,:,:) !< (x,y,z, time-of-day) used in the time averaging functions
   contains
@@ -111,10 +111,10 @@ type, extends(fmsDiagBuffer_class) :: buffer3d
   procedure :: add_to_buffer => add_to_buffer_3d
   generic :: get_buffer => get_3d_int4, get_3d_int8, get_3d_real4, get_3d_real8
   procedure, private :: get_3d_int4, get_3d_int8, get_3d_real4, get_3d_real8
-end type buffer3d
+end type buffer3d_type
 
 !> 4D buffer type to extend fmsDiagBuffer_class
-type, extends(fmsDiagBuffer_class) :: buffer4d
+type, extends(fmsDiagBuffer_class) :: buffer4d_type
   class(*), allocatable :: buffer(:,:,:,:) !< 4D numeric data array
   class(*), allocatable :: counter(:,:,:,:) !< (x,y,z, time-of-day) used in the time averaging functions
   contains
@@ -123,10 +123,10 @@ type, extends(fmsDiagBuffer_class) :: buffer4d
   procedure :: add_to_buffer => add_to_buffer_4d
   generic :: get_buffer => get_4d_int4, get_4d_int8, get_4d_real4, get_4d_real8
   procedure, private :: get_4d_int4, get_4d_int8, get_4d_real4, get_4d_real8
-end type buffer4d
+end type buffer4d_type
 
 !> 5D buffer type to extend fmsDiagBuffer_class
-type, extends(fmsDiagBuffer_class) :: buffer5d
+type, extends(fmsDiagBuffer_class) :: buffer5d_type
   class(*), allocatable :: buffer(:,:,:,:,:) !< 5D numeric data array
   class(*), allocatable :: counter(:,:,:,:,:) !< (x,y,z, time-of-day) used in the time averaging functions
   contains
@@ -135,15 +135,15 @@ type, extends(fmsDiagBuffer_class) :: buffer5d
   procedure :: add_to_buffer => add_to_buffer_5d
   generic :: get_buffer => get_5d_int4, get_5d_int8, get_5d_real4, get_5d_real8
   procedure, private :: get_5d_int4, get_5d_int8, get_5d_real4, get_5d_real8
-end type buffer5d
+end type buffer5d_type
 
 ! public types
-public :: buffer0d
-public :: buffer1d
-public :: buffer2d
-public :: buffer3d
-public :: buffer4d
-public :: buffer5d
+public :: buffer0d_type
+public :: buffer1d_type
+public :: buffer2d_type
+public :: buffer3d_type
+public :: buffer4d_type
+public :: buffer5d_type
 public :: fmsDiagBuffer_class
 public :: fmsDiagBufferContainer_type
 
@@ -177,17 +177,17 @@ result(rslt)
   allocate(rslt)
   select case (buff_dims)
     case (0)
-      allocate(buffer0d :: rslt%diag_buffer_obj)
+      allocate(buffer0d_type :: rslt%diag_buffer_obj)
     case (1)
-      allocate(buffer1d :: rslt%diag_buffer_obj)
+      allocate(buffer1d_type :: rslt%diag_buffer_obj)
     case (2)
-      allocate(buffer2d :: rslt%diag_buffer_obj)
+      allocate(buffer2d_type :: rslt%diag_buffer_obj)
     case (3)
-      allocate(buffer3d :: rslt%diag_buffer_obj)
+      allocate(buffer3d_type :: rslt%diag_buffer_obj)
     case (4)
-      allocate(buffer4d :: rslt%diag_buffer_obj)
+      allocate(buffer4d_type :: rslt%diag_buffer_obj)
     case (5)
-      allocate(buffer5d :: rslt%diag_buffer_obj)
+      allocate(buffer5d_type :: rslt%diag_buffer_obj)
     case default
       call mpp_error(FATAL, 'fms_diag_buffer_create_container: invalid number of dimensions given')
   end select
@@ -212,24 +212,24 @@ function remap_buffer(buffobj)
 
   ! get num dimensions from type extension
   select type (buffobj)
-    type is (buffer0d)
+    type is (buffer0d_type)
       if (.not. allocated(buffobj%buffer)) call mpp_error(FATAL, "remap_buffer: buffer data not yet allocated")
       remap_buffer(1:size(buffobj%buffer,1), 1:1, 1:1, 1:1, 1:1) => buffobj%buffer
-    type is (buffer1d)
+    type is (buffer1d_type)
       if (.not. allocated(buffobj%buffer)) call mpp_error(FATAL, "remap_buffer: buffer data not yet allocated")
       remap_buffer(1:size(buffobj%buffer,1), 1:1, 1:1, 1:1, 1:1) => buffobj%buffer(1:size(buffobj%buffer,1))
-    type is (buffer2d)
+    type is (buffer2d_type)
       if (.not. allocated(buffobj%buffer)) call mpp_error(FATAL, "remap_buffer: buffer data not yet allocated")
       remap_buffer(1:size(buffobj%buffer,1), 1:size(buffobj%buffer,2), 1:1, 1:1, 1:1) => buffobj%buffer(:,:)
-    type is (buffer3d)
+    type is (buffer3d_type)
       if (.not. allocated(buffobj%buffer)) call mpp_error(FATAL, "remap_buffer: buffer data not yet allocated")
       remap_buffer(1:size(buffobj%buffer,1), 1:size(buffobj%buffer,2), 1:size(buffobj%buffer,3), 1:1, 1:1) => &
                                                                                           & buffobj%buffer(:,:,:)
-    type is (buffer4d)
+    type is (buffer4d_type)
       if (.not. allocated(buffobj%buffer)) call mpp_error(FATAL, "remap_buffer: buffer data not yet allocated")
       remap_buffer(1:size(buffobj%buffer,1), 1:size(buffobj%buffer,2), 1:size(buffobj%buffer,3), &
                    1:size(buffobj%buffer,4), 1:1) => buffobj%buffer(:,:,:,:)
-    type is (buffer5d)
+    type is (buffer5d_type)
       if (.not. allocated(buffobj%buffer)) call mpp_error(FATAL, "remap_buffer: buffer data not yet allocated")
       remap_buffer(1:size(buffobj%buffer,1), 1:size(buffobj%buffer,2), 1:size(buffobj%buffer,3), &
                    1:size(buffobj%buffer,4), 1:size(buffobj%buffer,5)) => buffobj%buffer(:,:,:,:,:)
@@ -243,17 +243,17 @@ end function remap_buffer
 subroutine flush_buffer(this)
   class(fmsDiagBuffer_class), intent(inout) :: this !< any buffer object
   select type (this)
-    type is (buffer0d)
+    type is (buffer0d_type)
       if (allocated(this%buffer)) deallocate(this%buffer)
-    type is (buffer1d)
+    type is (buffer1d_type)
       if (allocated(this%buffer)) deallocate(this%buffer)
-    type is (buffer2d)
+    type is (buffer2d_type)
       if (allocated(this%buffer)) deallocate(this%buffer)
-    type is (buffer3d)
+    type is (buffer3d_type)
       if (allocated(this%buffer)) deallocate(this%buffer)
-    type is (buffer4d)
+    type is (buffer4d_type)
       if (allocated(this%buffer)) deallocate(this%buffer)
-    type is (buffer5d)
+    type is (buffer5d_type)
       if (allocated(this%buffer)) deallocate(this%buffer)
   end select
   if (allocated(this%buffer_id)) deallocate(this%buffer_id)
@@ -266,7 +266,7 @@ end subroutine flush_buffer
 
 !> allocates scalar buffer data to the given buff_type
 subroutine allocate_buffer_0d(this, buff_type, diurnal_samples)
-  class(buffer0d), intent(inout), target :: this !< scalar buffer object
+  class(buffer0d_type), intent(inout), target :: this !< scalar buffer object
   class(*),intent(in) :: buff_type !< allocates to the given type, value does not matter
   integer, optional :: diurnal_samples !< number of diurnal samples, passed in from diag_yaml
   integer :: n_samples = 1
@@ -317,7 +317,7 @@ end subroutine allocate_buffer_0d
 
 !> allocates 1D buffer data to given buff_type type
 subroutine allocate_buffer_1d(this, buff_type, buff_size, diurnal_samples)
-  class(buffer1d), intent(inout), target :: this !< scalar buffer object
+  class(buffer1d_type), intent(inout), target :: this !< scalar buffer object
   class(*),intent(in) :: buff_type !< allocates to the type of buff_type
   integer, intent(in) :: buff_size !< dimension bounds
   integer, optional :: diurnal_samples !< number of diurnal samples, passed in from diag_yaml
@@ -369,7 +369,7 @@ end subroutine allocate_buffer_1d
 !> allocates a 2D buffer to given buff_type type
 !! TODO fails with gnu
 subroutine allocate_buffer_2d(this, buff_type, buff_sizes, diurnal_samples)
-  class(buffer2d), intent(inout), target :: this !< 2D buffer object
+  class(buffer2d_type), intent(inout), target :: this !< 2D buffer object
   class(*),intent(in) :: buff_type !< allocates to the type of buff_type
   integer, intent(in) :: buff_sizes(2) !< dimension sizes
   integer, optional :: diurnal_samples !< number of diurnal samples, passed in from diag_yaml
@@ -420,7 +420,7 @@ end subroutine allocate_buffer_2d
 
 !> allocates a 3D buffer to given buff_type type
 subroutine allocate_buffer_3d(this, buff_type, buff_sizes, diurnal_samples)
-  class(buffer3d), intent(inout), target :: this !< 3D buffer object
+  class(buffer3d_type), intent(inout), target :: this !< 3D buffer object
   class(*),intent(in) :: buff_type !< allocates to the type of buff_type
   integer, intent(in) :: buff_sizes(3) !< dimension sizes
   integer, optional :: diurnal_samples !< number of diurnal samples, passed in from diag_yaml
@@ -473,7 +473,7 @@ end subroutine allocate_buffer_3d
 
 !> allocates a 4D buffer to given buff_type type
 subroutine allocate_buffer_4d(this, buff_type, buff_sizes, diurnal_samples)
-  class(buffer4d), intent(inout), target :: this !< 4D buffer object
+  class(buffer4d_type), intent(inout), target :: this !< 4D buffer object
   class(*),intent(in) :: buff_type !< allocates to the type of buff_type
   integer, intent(in) :: buff_sizes(4) !< dimension buff_sizes
   integer, optional :: diurnal_samples !< number of diurnal samples, passed in from diag_yaml
@@ -528,7 +528,7 @@ end subroutine allocate_buffer_4d
 
 !> allocates a 5D buffer to given buff_type type
 subroutine allocate_buffer_5d(this, buff_type, buff_sizes, diurnal_samples)
-  class(buffer5d), intent(inout), target :: this !< 5D buffer object
+  class(buffer5d_type), intent(inout), target :: this !< 5D buffer object
   class(*),intent(in) :: buff_type !< allocates to the type of buff_type
   integer, intent(in) :: buff_sizes(5) !< dimension buff_sizes
   integer, optional :: diurnal_samples !< number of diurnal samples, passed in from diag_yaml
@@ -589,11 +589,11 @@ subroutine allocate_buffer_5d(this, buff_type, buff_sizes, diurnal_samples)
 end subroutine allocate_buffer_5d
 
 !! gonna leave these for when we stop caring about gnu <11
-!> @brief Gets buffer data from buffer0d type
+!> @brief Gets buffer data from buffer0d_type type
 !! @return copy of the buffer data
 !function get_buffer_0d (this) &
 !result(rslt)
-  !class (buffer0d), intent(in) :: this !< scalar buffer object
+  !class (buffer0d_type), intent(in) :: this !< scalar buffer object
   !class(*), allocatable :: rslt
   !if (allocated(this%buffer)) then
     !rslt = this%buffer(1)
@@ -605,7 +605,7 @@ end subroutine allocate_buffer_5d
 !> Gets real(r4_kind) buffer data from a scalar buffer object
 !! called through buffobj%get_buffer(r4_outputdata)
 subroutine get_0d_real4 (this, buff_out)
-  class(buffer0d), intent(in) :: this !< 0d allocated buffer object
+  class(buffer0d_type), intent(in) :: this !< 0d allocated buffer object
   real(r4_kind), allocatable, intent(out)  :: buff_out !< output of copied buffer data
   allocate(buff_out)
   select type (buff=>this%buffer)
@@ -619,7 +619,7 @@ end subroutine
 !> Gets real(r8_kind) buffer data from a 0d buffer object
 !! called through this%get_buffer(r8_outputdata)
 subroutine get_0d_real8 (this, buff_out)
-  class(buffer0d), intent(in) :: this !< 0d allocated buffer objects
+  class(buffer0d_type), intent(in) :: this !< 0d allocated buffer objects
   real(r8_kind), allocatable, intent(out)  :: buff_out !< output of copied buffer data
   allocate(buff_out)
   select type (buff=>this%buffer)
@@ -633,7 +633,7 @@ end subroutine
 !> Gets integer(i4_kind) buffer data from 0d buffer object
 !> called through this%get_buffer(i4_outputdata)
 subroutine get_0d_int4 (this, buff_out)
-  class(buffer0d), intent(in) :: this !< 0d allocated buffer objects
+  class(buffer0d_type), intent(in) :: this !< 0d allocated buffer objects
   integer(i4_kind), allocatable, intent(out)  :: buff_out !< output of copied buffer data
   allocate(buff_out)
   select type (buff=>this%buffer)
@@ -647,7 +647,7 @@ end subroutine
 !> Gets integer(i8_kind) buffer data from 0d buffer object
 !> called through this%get_buffer(i8_outputdata)
 subroutine get_0d_int8 (this, buff_out)
-  class(buffer0d), intent(in) :: this !< 0d allocated buffer objects
+  class(buffer0d_type), intent(in) :: this !< 0d allocated buffer objects
   integer(i8_kind), allocatable, intent(out)  :: buff_out !< output of copied buffer data
   allocate(buff_out)
   select type (buff=>this%buffer)
@@ -658,11 +658,11 @@ subroutine get_0d_int8 (this, buff_out)
   end select
 end subroutine
 
-!> @brief Gets buffer data from buffer1d type
+!> @brief Gets buffer data from buffer1d_type type
 !! @return copy of the buffer data
 !function get_buffer_1d (this) &
 !result(rslt)
-  !class (buffer1d), target, intent(in) :: this !< 1D buffer object
+  !class (buffer1d_type), target, intent(in) :: this !< 1D buffer object
   !class(*), allocatable :: rslt(:)
   !select type(buff=>this%buffer)
     !type is(integer(8))
@@ -684,7 +684,7 @@ end subroutine
 !> Gets real(r4_kind) buffer data from a 1d buffer object
 !! called through this%get_buffer(r4_outputdata)
 subroutine get_1d_real4 (this, buff_out)
-  class(buffer1d), intent(in) :: this !< 1d allocated buffer object
+  class(buffer1d_type), intent(in) :: this !< 1d allocated buffer object
   real(r4_kind), allocatable, intent(out)  :: buff_out(:) !< output of copied buffer data
                                             !! must be the same size as the allocated buffer
   allocate(buff_out(size(this%buffer)))
@@ -699,7 +699,7 @@ end subroutine
 !> Gets real(r8_kind) buffer data from a 1d buffer object
 !! called through this%get_buffer(r8_outputdata)
 subroutine get_1d_real8 (this, buff_out)
-  class(buffer1d), intent(in) :: this !< 1d allocated buffer object
+  class(buffer1d_type), intent(in) :: this !< 1d allocated buffer object
   real(r8_kind), allocatable, intent(out)  :: buff_out(:) !< output of copied buffer data
                                          !! must be the same size as the allocated buffer
   allocate(buff_out(size(this%buffer)))
@@ -714,7 +714,7 @@ end subroutine
 !> Gets integer(i4_kind) buffer data from 1d buffer object
 !> called through this%get_buffer(i4_outputdata)
 subroutine get_1d_int4 (this, buff_out)
-  class(buffer1d), intent(in) :: this !< 1d allocated buffer object
+  class(buffer1d_type), intent(in) :: this !< 1d allocated buffer object
   integer(i4_kind), allocatable, intent(out)  :: buff_out(:) !< output of copied buffer data
                                                 !! must be the same size as the allocated buffer
   allocate(buff_out(size(this%buffer)))
@@ -729,7 +729,7 @@ end subroutine
 !> Gets integer(i8_kind) buffer data from 1d buffer object
 !> called through this%get_buffer(i8_outputdata)
 subroutine get_1d_int8 (this, buff_out)
-  class(buffer1d), intent(in) :: this !< 1d allocated buffer object
+  class(buffer1d_type), intent(in) :: this !< 1d allocated buffer object
   integer(i8_kind), allocatable, intent(out)  :: buff_out(:) !< output of copied buffer data
                                                 !! must be the same size as the allocated buffer
   allocate(buff_out(size(this%buffer)))
@@ -744,7 +744,7 @@ end subroutine
 !! breaks gcc 10 and prior
 !function get_buffer_2d (this) &
 !result(rslt)
-  !class (buffer2d), intent(in) :: this !< 2D buffer object
+  !class (buffer2d_type), intent(in) :: this !< 2D buffer object
   !class(*), allocatable :: rslt(:,:)
   !select type(buff=>this%buffer)
     !type is(integer(8))
@@ -766,7 +766,7 @@ end subroutine
 !> Gets real(r4_kind) buffer data from a 2d buffer object
 !! called through this%get_buffer(r4_outputdata)
 subroutine get_2d_real4 (this, buff_out)
-  class(buffer2d), intent(in) :: this !< 2d allocated buffer object
+  class(buffer2d_type), intent(in) :: this !< 2d allocated buffer object
   real(r4_kind), allocatable, intent(out)  :: buff_out(:,:) !< output of copied buffer data
                                                 !! must be the same size as the allocated buffer
   allocate(buff_out(size(this%buffer,1), size(this%buffer,2)))
@@ -779,7 +779,7 @@ end subroutine
 !> Gets real(r8_kind) buffer data from a 2d buffer object
 !! called through this%get_buffer(r8_outputdata)
 subroutine get_2d_real8 (this, buff_out)
-  class(buffer2d), intent(in) :: this !< 2d allocated buffer object
+  class(buffer2d_type), intent(in) :: this !< 2d allocated buffer object
   real(r8_kind), allocatable, intent(out)  :: buff_out(:,:) !< output of copied buffer data
                                                 !! must be the same size as the allocated buffer
   allocate(buff_out(size(this%buffer,1), size(this%buffer,2)))
@@ -792,7 +792,7 @@ end subroutine
 !> Gets integer(i4_kind) buffer data from 2d buffer object
 !> called through this%get_buffer(i4_outputdata)
 subroutine get_2d_int4 (this, buff_out)
-  class(buffer2d), intent(in) :: this !< 2d allocated buffer object
+  class(buffer2d_type), intent(in) :: this !< 2d allocated buffer object
   integer(i4_kind), allocatable, intent(out)  :: buff_out(:,:) !< output of copied buffer data
                                                 !! must be the same size as the allocated buffer
   allocate(buff_out(size(this%buffer,1), size(this%buffer,2)))
@@ -805,7 +805,7 @@ end subroutine
 !> Gets integer(i8_kind) buffer data from 2d buffer object
 !> called through this%get_buffer(i8_outputdata)
 subroutine get_2d_int8 (this, buff_out)
-  class(buffer2d), intent(in) :: this !< 2d allocated buffer object
+  class(buffer2d_type), intent(in) :: this !< 2d allocated buffer object
   integer(i8_kind), allocatable, intent(out)  :: buff_out(:,:) !< output of copied buffer data
                                                 !! must be the same size as the allocated buffer
   allocate(buff_out(size(this%buffer,1), size(this%buffer,2)))
@@ -816,11 +816,11 @@ subroutine get_2d_int8 (this, buff_out)
 end subroutine
 
 
-!> @brief Gets buffer data from buffer3d type
+!> @brief Gets buffer data from buffer3d_type type
 ! @return copy of the buffer data
 !function get_buffer_3d (this) &
 !result(rslt)
-  !class (buffer3d), intent(in) :: this !< 3D buffer object
+  !class (buffer3d_type), intent(in) :: this !< 3D buffer object
   !class(*), allocatable :: rslt(:,:,:)
   !select type(buff=>this%buffer)
     !type is(integer(8))
@@ -842,7 +842,7 @@ end subroutine
 !> Gets real(r4_kind) buffer data from a 3d buffer object
 !! called through this%get_buffer(r4_outputdata)
 subroutine get_3d_real4 (this, buff_out)
-  class(buffer3d), intent(in) :: this !< 3d allocated buffer object
+  class(buffer3d_type), intent(in) :: this !< 3d allocated buffer object
   real(r4_kind), allocatable, intent(out)  :: buff_out(:,:,:) !< output of copied buffer data
                                                 !! must be the same size as the allocated buffer
   allocate(buff_out(size(this%buffer,1), size(this%buffer,2), size(this%buffer,3)))
@@ -855,7 +855,7 @@ end subroutine
 !> Gets real(r8_kind) buffer data from a 3d buffer object
 !! called through this%get_buffer(r8_outputdata)
 subroutine get_3d_real8 (this, buff_out)
-  class(buffer3d), intent(in) :: this !< 3d allocated buffer object
+  class(buffer3d_type), intent(in) :: this !< 3d allocated buffer object
   real(r8_kind), allocatable, intent(out)  :: buff_out(:,:,:) !< output of copied buffer data
                                                 !! must be the same size as the allocated buffer
   allocate(buff_out(size(this%buffer,1), size(this%buffer,2), size(this%buffer,3)))
@@ -868,7 +868,7 @@ end subroutine
 !> Gets integer(i4_kind) buffer data from 3d buffer object
 !> called through this%get_buffer(i4_outputdata)
 subroutine get_3d_int4 (this, buff_out)
-  class(buffer3d), intent(in) :: this !< 3d allocated buffer object
+  class(buffer3d_type), intent(in) :: this !< 3d allocated buffer object
   integer(i4_kind), allocatable, intent(out)  :: buff_out(:,:,:) !< output of copied buffer data
                                                 !! must be the same size as the allocated buffer
   allocate(buff_out(size(this%buffer,1), size(this%buffer,2), size(this%buffer,3)))
@@ -881,7 +881,7 @@ end subroutine
 !> Gets integer(i8_kind) buffer data from 3d buffer object
 !> called through this%get_buffer(i8_outputdata)
 subroutine get_3d_int8 (this, buff_out)
-  class(buffer3d), intent(in) :: this !< 3d allocated buffer object
+  class(buffer3d_type), intent(in) :: this !< 3d allocated buffer object
   integer(i8_kind), allocatable, intent(out)  :: buff_out(:,:,:) !< output of copied buffer data
                                                 !! must be the same size as the allocated buffer
   allocate(buff_out(size(this%buffer,1), size(this%buffer,2), size(this%buffer,3)))
@@ -892,11 +892,11 @@ subroutine get_3d_int8 (this, buff_out)
 end subroutine
 
 
-!> @brief Gets buffer data from buffer4d type
+!> @brief Gets buffer data from buffer4d_type type
 !! @return copy of the buffer data
 !function get_buffer_4d (this) &
 !result(rslt)
-  !class (buffer4d), intent(in) :: this !< 4D buffer object
+  !class (buffer4d_type), intent(in) :: this !< 4D buffer object
   !class(*), allocatable :: rslt(:,:,:,:)
   !select type(buff=>this%buffer)
     !type is(integer(8))
@@ -918,7 +918,7 @@ end subroutine
 !> Gets real(r4_kind) buffer data from a 4d buffer object
 !! called through this%get_buffer(r4_outputdata)
 subroutine get_4d_real4 (this, buff_out)
-  class(buffer4d), intent(in) :: this !< 4d allocated buffer object
+  class(buffer4d_type), intent(in) :: this !< 4d allocated buffer object
   real(r4_kind), allocatable, intent(out)  :: buff_out(:,:,:,:) !< output of copied buffer data
                                                 !! must be the same size as the allocated buffer
   allocate(buff_out(size(this%buffer,1), size(this%buffer,2), size(this%buffer,3), size(this%buffer,4)))
@@ -931,7 +931,7 @@ end subroutine
 !> Gets real(r8_kind) buffer data from a 4d buffer object
 !! called through this%get_buffer(r8_outputdata)
 subroutine get_4d_real8 (this, buff_out)
-  class(buffer4d), intent(in) :: this !< 4d allocated buffer object
+  class(buffer4d_type), intent(in) :: this !< 4d allocated buffer object
   real(r8_kind), allocatable, intent(out)  :: buff_out(:,:,:,:) !< output of copied buffer data
                                                 !! must be the same size as the allocated buffer
   allocate(buff_out(size(this%buffer,1), size(this%buffer,2), size(this%buffer,3), size(this%buffer,4)))
@@ -944,7 +944,7 @@ end subroutine
 !> Gets integer(i4_kind) buffer data from 4d buffer object
 !> called through this%get_buffer(i4_outputdata)
 subroutine get_4d_int4 (this, buff_out)
-  class(buffer4d), intent(in) :: this !< 4d allocated buffer object
+  class(buffer4d_type), intent(in) :: this !< 4d allocated buffer object
   integer(i4_kind), allocatable, intent(out)  :: buff_out(:,:,:,:) !< output of copied buffer data
                                                 !! must be the same size as the allocated buffer
   allocate(buff_out(size(this%buffer,1), size(this%buffer,2), size(this%buffer,3), size(this%buffer,4)))
@@ -957,7 +957,7 @@ end subroutine
 !> Gets integer(i8_kind) buffer data from 4d buffer object
 !> called through this%get_buffer(i8_outputdata)
 subroutine get_4d_int8 (this, buff_out)
-  class(buffer4d), intent(in) :: this !< 4d allocated buffer object
+  class(buffer4d_type), intent(in) :: this !< 4d allocated buffer object
   integer(i8_kind), allocatable, intent(out)  :: buff_out(:,:,:,:) !< output of copied buffer data
                                                 !! must be the same size as the allocated buffer
   allocate(buff_out(size(this%buffer,1), size(this%buffer,2), size(this%buffer,3), size(this%buffer,4)))
@@ -967,11 +967,11 @@ subroutine get_4d_int8 (this, buff_out)
   end select
 end subroutine
 
-!> @brief Gets buffer data from buffer5d type
+!> @brief Gets buffer data from buffer5d_type type
 !! @return copy of the buffer data
 !function get_buffer_5d (this) &
 !result(rslt)
-  !class (buffer5d), intent(in) :: this !< 5D buffer object
+  !class (buffer5d_type), intent(in) :: this !< 5D buffer object
   !class(*), allocatable :: rslt(:,:,:,:,:)
   !select type(buff=>this%buffer)
     !type is(integer(8))
@@ -993,7 +993,7 @@ end subroutine
 !> Gets real(r4_kind) buffer data from a 5d buffer object
 !! called through this%get_buffer(r4_outputdata)
 subroutine get_5d_real4 (this, buff_out)
-  class(buffer5d), intent(in) :: this !< 5d allocated buffer object
+  class(buffer5d_type), intent(in) :: this !< 5d allocated buffer object
   real(r4_kind), allocatable, intent(out)  :: buff_out(:,:,:,:,:) !< output of copied buffer data
                                                 !! must be the same size as the allocated buffer
   allocate(buff_out(size(this%buffer,1), size(this%buffer,2), size(this%buffer,3), &
@@ -1007,7 +1007,7 @@ end subroutine
 !> Gets real(r8_kind) buffer data from a 5d buffer object
 !! called through this%get_buffer(r8_outputdata)
 subroutine get_5d_real8 (this, buff_out)
-  class(buffer5d), intent(in) :: this !< 5d allocated buffer object
+  class(buffer5d_type), intent(in) :: this !< 5d allocated buffer object
   real(r8_kind), allocatable, intent(out)  :: buff_out(:,:,:,:,:) !< output of copied buffer data
                                                 !! must be the same size as the allocated buffer
   allocate(buff_out(size(this%buffer,1), size(this%buffer,2), size(this%buffer,3), &
@@ -1021,7 +1021,7 @@ end subroutine
 !> Gets integer(i4_kind) buffer data from 5d buffer object
 !> called through this%get_buffer(i4_outputdata)
 subroutine get_5d_int4 (this, buff_out)
-  class(buffer5d), intent(in) :: this !< 5d allocated buffer object
+  class(buffer5d_type), intent(in) :: this !< 5d allocated buffer object
   integer(i4_kind), allocatable, intent(out)  :: buff_out(:,:,:,:,:) !< output of copied buffer data
                                                 !! must be the same size as the allocated buffer
   allocate(buff_out(size(this%buffer,1), size(this%buffer,2), size(this%buffer,3), &
@@ -1035,7 +1035,7 @@ end subroutine
 !> Gets integer(i8_kind) buffer data from 5d buffer object
 !> called through this%get_buffer(i8_outputdata)
 subroutine get_5d_int8 (this, buff_out)
-  class(buffer5d), intent(in) :: this !< 5d allocated buffer object
+  class(buffer5d_type), intent(in) :: this !< 5d allocated buffer object
   integer(i8_kind), allocatable, intent(out)  :: buff_out(:,:,:,:,:) !< output of copied buffer data
                                                 !! must be the same size as the allocated buffer
   allocate(buff_out(size(this%buffer,1), size(this%buffer,2), size(this%buffer,3), &
@@ -1048,7 +1048,7 @@ end subroutine
 
 !> @brief Initializes a buffer to a given fill value
 subroutine initialize_buffer_0d (this, fillval)
-  class(buffer0d), intent(inout) :: this !< scalar buffer object
+  class(buffer0d_type), intent(inout) :: this !< scalar buffer object
   class(*), intent(in) :: fillval !< fill value, must be same type as the allocated buffer in this
 
   if(.not. allocated(this%buffer)) call mpp_error(FATAL, 'initialize_buffer_0d:' // &
@@ -1090,7 +1090,7 @@ end subroutine initialize_buffer_0d
 
 !> @brief Initializes a buffer to a given fill value
 subroutine initialize_buffer_1d (this, fillval)
-  class(buffer1d), intent(inout) :: this !< 1D buffer object
+  class(buffer1d_type), intent(inout) :: this !< 1D buffer object
   class(*), intent(in) :: fillval !< fill value, must be same type as the allocated buffer in this
 
   if(.not. allocated(this%buffer)) call mpp_error(FATAL, 'initialize_buffer_1d:' // &
@@ -1133,7 +1133,7 @@ end subroutine initialize_buffer_1d
 
 !> @brief Initializes a buffer to a given fill value
 subroutine initialize_buffer_2d (this, fillval)
-  class(buffer2d), intent(inout) :: this !< 2D buffer object
+  class(buffer2d_type), intent(inout) :: this !< 2D buffer object
   class(*), intent(in) :: fillval !< fill value, must be same type as the allocated buffer in this
 
   if(.not. allocated(this%buffer)) call mpp_error(FATAL, 'initialize_buffer_2d:' // &
@@ -1176,7 +1176,7 @@ end subroutine initialize_buffer_2d
 
 !> @brief Initializes a buffer to a given fill value
 subroutine initialize_buffer_3d (this, fillval)
-  class(buffer3d), intent(inout) :: this !< 3D buffer object
+  class(buffer3d_type), intent(inout) :: this !< 3D buffer object
   class(*), intent(in) :: fillval!< fill value, must be same type as the allocated buffer in this
 
   if(.not. allocated(this%buffer)) call mpp_error(FATAL, 'initialize_buffer_3d:' // &
@@ -1219,7 +1219,7 @@ end subroutine initialize_buffer_3d
 
 !> @brief Initializes a buffer to a given fill value
 subroutine initialize_buffer_4d (this, fillval)
-  class(buffer4d), intent(inout) :: this !< allocated 4D buffer object
+  class(buffer4d_type), intent(inout) :: this !< allocated 4D buffer object
   class(*), intent(in) :: fillval!< fill value, must be same type as the allocated buffer in this
 
   if(.not. allocated(this%buffer)) call mpp_error(FATAL, 'initialize_buffer_4d:' // &
@@ -1262,7 +1262,7 @@ end subroutine initialize_buffer_4d
 
 !> @brief Initializes a buffer to a given fill value
 subroutine initialize_buffer_5d (this, fillval)
-  class(buffer5d), intent(inout) :: this !< allocated 5D buffer object
+  class(buffer5d_type), intent(inout) :: this !< allocated 5D buffer object
   class(*), intent(in) :: fillval!< fill value, must be same type as the allocated buffer in this
 
   if(.not. allocated(this%buffer)) call mpp_error(FATAL, 'initialize_buffer_5d:' // &
@@ -1307,7 +1307,7 @@ end subroutine initialize_buffer_5d
 !! this will just call the init routine since there's only one value
 !! input_data must match allocated type of buffer object
 subroutine add_to_buffer_0d(this, input_data)
-  class(buffer0d), intent(inout) :: this !< allocated scalar buffer object
+  class(buffer0d_type), intent(inout) :: this !< allocated scalar buffer object
   class(*), intent(in)      :: input_data !< data to copy into buffer
   if( .not. allocated(this%buffer)) call mpp_error (FATAL, 'add_to_buffer_1d: buffer not yet allocated')
   call this%initialize_buffer(input_data)
@@ -1316,7 +1316,7 @@ end subroutine add_to_buffer_0d
 !> @brief Copy values ( from 1 to size(input_data)) into a 1d buffer object
 !! input_data must match allocated type of buffer object
 subroutine add_to_buffer_1d(this, input_data)
-  class(buffer1d), intent(inout) :: this !< allocated 1d buffer object
+  class(buffer1d_type), intent(inout) :: this !< allocated 1d buffer object
   class(*), intent(in)            :: input_data(:) !< data to copy into the buffer
   integer            :: n !< number of elements in input data
   logical            :: type_error !< set to true if mismatch between input_data and allocated buffer
@@ -1361,7 +1361,7 @@ end subroutine add_to_buffer_1d
 !> @brief Copy values ( from 1 to size(input_data)) into a 2d buffer object
 !! input_data must match allocated type of buffer object
 subroutine add_to_buffer_2d(this, input_data)
-  class(buffer2d), intent(inout) :: this !< allocated 2d buffer object
+  class(buffer2d_type), intent(inout) :: this !< allocated 2d buffer object
   class(*), intent(in)             :: input_data(:,:) !< 2d data array to copy into buffer
   integer            :: n1, n2 !< number of elements per dimension
   logical            :: type_error !< set to true if mismatch between input_data and allocated buffer
@@ -1410,7 +1410,7 @@ end subroutine add_to_buffer_2d
 !> @brief Copy values ( from 1 to size(input_data)) into a 3d buffer object
 !! input_data must match allocated type of buffer object
 subroutine add_to_buffer_3d(this, input_data)
-  class(buffer3d), intent(inout) :: this !< allocated 3d buffer object
+  class(buffer3d_type), intent(inout) :: this !< allocated 3d buffer object
   class(*), intent(in)             :: input_data(:,:,:)!< 3d data array to copy into buffer
   integer            :: n1, n2, n3 !< number of elements per dimension
   logical            :: type_error !< set to true if mismatch between input_data and allocated buffer
@@ -1461,7 +1461,7 @@ end subroutine add_to_buffer_3d
 !> @brief Copy values ( from 1 to size(input_data)) into a 4d buffer object
 !! input_data must match allocated type of buffer object
 subroutine add_to_buffer_4d(this, input_data)
-  class(buffer4d), intent(inout) :: this !< allocated 4d buffer object
+  class(buffer4d_type), intent(inout) :: this !< allocated 4d buffer object
   class(*), intent(in)             :: input_data(:,:,:,:) !< 4d data to copy into buffer
   integer            :: n1, n2, n3, n4!< number of elements per dimension
   logical            :: type_error !< set to true if mismatch between input_data and allocated buffer
@@ -1512,7 +1512,7 @@ end subroutine add_to_buffer_4d
 !> @brief Copy values (from 1 to size(input_data)) into a 5d buffer object
 !! input_data must match allocated type of buffer object
 subroutine add_to_buffer_5d(this, input_data)
-  class(buffer5d), intent(inout) :: this !< allocated 5d buffer object
+  class(buffer5d_type), intent(inout) :: this !< allocated 5d buffer object
   class(*), intent(in)             :: input_data(:,:,:,:,:) !< 5d data to copy into buffer
   integer            :: n1, n2, n3, n4, n5 !< number of elements per dimension
   logical            :: type_error !< set to true if mismatch between input_data and allocated buffer

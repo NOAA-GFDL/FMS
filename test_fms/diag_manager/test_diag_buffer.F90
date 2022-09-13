@@ -6,12 +6,12 @@ program test_diag_buffer
 
     implicit none
 
-    type(buffer0d) :: buffobj0(10), tmp0
-    type(buffer1d) :: buffobj1, tmp1
-    type(buffer2d) :: buffobj2, tmp2
-    type(buffer3d) :: buffobj3, tmp3
-    type(buffer4d) :: buffobj4, tmp4
-    type(buffer5d) :: buffobj5, tmp5
+    type(buffer0d_type) :: buffobj0(10), tmp0
+    type(buffer1d_type) :: buffobj1, tmp1
+    type(buffer2d_type) :: buffobj2, tmp2
+    type(buffer3d_type) :: buffobj3, tmp3
+    type(buffer4d_type) :: buffobj4, tmp4
+    type(buffer5d_type) :: buffobj5, tmp5
     real(r8_kind)  :: r8_data
     real(r4_kind)  :: r4_data
     integer(i8_kind)  :: i8_data
