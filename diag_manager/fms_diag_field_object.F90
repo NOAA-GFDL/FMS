@@ -13,12 +13,11 @@ use diag_data_mod,  only: r8, r4, i8, i4, string, null_type_int, NO_DOMAIN
 use diag_data_mod,  only: max_field_attributes, fmsDiagAttribute_type
 use diag_data_mod,  only: diag_null, diag_not_found, diag_not_registered, diag_registered_id, &
                          &DIAG_FIELD_NOT_FOUND
-
-use diag_axis_mod,  only: diag_axis_type
 use mpp_mod, only: fatal, note, warning, mpp_error
 use fms_diag_yaml_mod, only:  diagYamlFilesVar_type, get_diag_fields_entries, get_diag_files_id, &
   & find_diag_field, get_num_unique_fields
-use fms_diag_axis_object_mod, only: diagDomain_t, get_domain_and_domain_type
+use fms_diag_axis_object_mod, only: diagDomain_t, get_domain_and_domain_type, fmsDiagAxis_type, &
+  & fmsDiagAxisContainer_type
 use time_manager_mod, ONLY: time_type
 !!!set_time, set_date, get_time, time_type, OPERATOR(>=), OPERATOR(>),&
 !!!       & OPERATOR(<), OPERATOR(==), OPERATOR(/=), OPERATOR(/), OPERATOR(+), ASSIGNMENT(=), get_date, &
@@ -167,8 +166,7 @@ end function fms_diag_fields_object_init
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !> \Description Fills in and allocates (when necessary) the values in the diagnostic object
 subroutine fms_register_diag_field_obj &
-                !(dobj, modname, varname, axes, time, longname, units, missing_value, metadata)
-       (this, modname, varname, diag_field_indices, axes, &
+       (this, modname, varname, diag_field_indices, diag_axis, axes, &
        longname, units, missing_value, varRange, mask_variant, standname, &
        do_not_log, err_msg, interp_method, tile_count, area, volume, realm, static)
 
@@ -177,6 +175,7 @@ subroutine fms_register_diag_field_obj &
  CHARACTER(len=*),               INTENT(in)    :: varname               !< The variable name
  integer,                        INTENT(in)    :: diag_field_indices(:) !< Array of indices to the field
                                                                         !! in the yaml object
+ class(fmsDiagAxisContainer_type),intent(in)   :: diag_axis(:)          !< Array of diag_axis
  INTEGER, TARGET,  OPTIONAL,     INTENT(in)    :: axes(:)               !< The axes indicies
  CHARACTER(len=*), OPTIONAL,     INTENT(in)    :: longname              !< THe variables long name
  CHARACTER(len=*), OPTIONAL,     INTENT(in)    :: units                 !< The units of the variables
@@ -197,9 +196,6 @@ subroutine fms_register_diag_field_obj &
                                                                         !! modeling_realm attribute
  LOGICAL,          OPTIONAL,     INTENT(in)    :: static                !< Set to true if it is a static field
 
- integer :: i !< For do loops
- integer :: j !< this%file_ids(i) (for less typing :)
-
 !> Fill in information from the register call
   this%varname = trim(varname)
   this%modname = trim(modname)
@@ -210,7 +206,7 @@ subroutine fms_register_diag_field_obj &
 !> Add axis and domain information
   if (present(axes)) then
     this%axis_ids = axes
-    call get_domain_and_domain_type(this%axis_ids, this%type_of_domain, this%domain, this%varname)
+    call get_domain_and_domain_type(diag_axis, this%axis_ids, this%type_of_domain, this%domain, this%varname)
   else
      !> The variable is a scalar
     this%type_of_domain = NO_DOMAIN

@@ -27,10 +27,11 @@ module fms_diag_file_object_mod
 #ifdef use_yaml
 use fms2_io_mod, only: FmsNetcdfFile_t, FmsNetcdfUnstructuredDomainFile_t, FmsNetcdfDomainFile_t
 use diag_data_mod, only: DIAG_NULL, NO_DOMAIN, max_axes, SUB_REGIONAL, get_base_time, DIAG_NOT_REGISTERED
-use diag_util_mod, only: diag_time_inc
+!TODO cross dependency use diag_util_mod, only: diag_time_inc
 use time_manager_mod, only: time_type, operator(/=), operator(==)
 use fms_diag_yaml_mod, only: diag_yaml, diagYamlObject_type, diagYamlFiles_type
-use fms_diag_axis_object_mod, only: diagDomain_t, get_domain_and_domain_type
+use fms_diag_axis_object_mod, only: diagDomain_t, get_domain_and_domain_type, fmsDiagAxis_type, &
+                                    fmsDiagAxisContainer_type
 use mpp_mod, only: mpp_error, FATAL
 implicit none
 private
@@ -176,8 +177,9 @@ logical function fms_diag_files_object_init (files_array)
      !> Set the start_time of the file to the base_time and set up the *_output variables
      obj%start_time = get_base_time()
      obj%last_output = get_base_time()
-     obj%next_output = diag_time_inc(obj%start_time, obj%get_file_freq(), obj%get_file_frequnit())
-     obj%next_next_output = diag_time_inc(obj%next_output, obj%get_file_freq(), obj%get_file_frequnit())
+     !TODO cross dependency
+     !obj%next_output = diag_time_inc(obj%start_time, obj%get_file_freq(), obj%get_file_frequnit())
+     !obj%next_next_output = diag_time_inc(obj%next_output, obj%get_file_freq(), obj%get_file_frequnit())
      obj%next_open = get_base_time()
 
      nullify(obj)
@@ -487,10 +489,12 @@ pure function has_file_global_meta (this) result(res)
 end function has_file_global_meta
 
 !> @brief Sets the domain and type of domain from the axis IDs
-subroutine set_domain_from_axis(this, axes)
-  class(fmsDiagFile_type), intent(inout)       :: this            !< The file object
+subroutine set_domain_from_axis(this, diag_axis, axes)
+  class(fmsDiagFile_type), intent(inout)       :: this          !< The file object
+  class(fmsDiagAxisContainer_type), intent(in) :: diag_axis(:) !< Array of diag_axis
   integer, intent(in) :: axes (:)
-  call get_domain_and_domain_type(axes, this%type_of_domain, this%domain, this%get_file_fname())
+
+  call get_domain_and_domain_type(diag_axis, axes, this%type_of_domain, this%domain, this%get_file_fname())
 end subroutine set_domain_from_axis
 
 !> @brief Set the domain and the type_of_domain for a file
@@ -574,8 +578,9 @@ subroutine add_start_time(this, start_time)
     !! simply update it with the start_time and set up the *_output variables
     this%start_time = start_time
     this%last_output = start_time
-    this%next_output = diag_time_inc(start_time, this%get_file_freq(), this%get_file_frequnit())
-    this%next_next_output = diag_time_inc(this%next_output, this%get_file_freq(), this%get_file_frequnit())
+    !TODO circular dependency
+    !obj%next_output = diag_time_inc(start_time, obj%get_file_freq(), obj%get_file_frequnit())
+    !obj%next_next_output = diag_time_inc(obj%next_output, obj%get_file_freq(), obj%get_file_frequnit())
   endif
 
 end subroutine
