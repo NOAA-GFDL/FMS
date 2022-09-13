@@ -59,7 +59,7 @@ use,intrinsic :: iso_c_binding, only: c_double,c_float,c_int64_t, &
        & write_field_meta_data, done_meta_data, diag_flush
   USE diag_output_mod, ONLY: diag_field_write, diag_write_time !<fms2_io
   USE diag_grid_mod, ONLY: get_local_indexes
-  USE fms_diag_time_utils, ONLY: diag_time_inc, get_time_string
+  USE fms_diag_time_utils_mod, ONLY: diag_time_inc, get_time_string
   USE fms_mod, ONLY: error_mesg, FATAL, WARNING, NOTE, mpp_pe, mpp_root_pe, lowercase, fms_error_handler,&
        & string, write_version_number
   USE mpp_domains_mod,ONLY: domain1d, domain2d, mpp_get_compute_domain, null_domain1d, null_domain2d,&
