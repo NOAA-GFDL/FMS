@@ -1,4 +1,3 @@
-!***********************************************************************
 !*                   GNU Lesser General Public License
 !*
 !* This file is part of the GFDL Flexible Modeling System (FMS).
@@ -25,10 +24,12 @@
 !! list of the variables and their variable IDs that are in the file.
 module fms_diag_file_object_mod
 #ifdef use_yaml
-use fms2_io_mod, only: FmsNetcdfFile_t, FmsNetcdfUnstructuredDomainFile_t, FmsNetcdfDomainFile_t
-use diag_data_mod, only: DIAG_NULL, NO_DOMAIN, max_axes, SUB_REGIONAL, get_base_time, DIAG_NOT_REGISTERED
 !TODO cross dependency use diag_util_mod, only: diag_time_inc
-use time_manager_mod, only: time_type, operator(/=), operator(==)
+use fms2_io_mod, only: FmsNetcdfFile_t, FmsNetcdfUnstructuredDomainFile_t, FmsNetcdfDomainFile_t, &
+                       get_instance_filename, open_file, close_file
+use diag_data_mod, only: DIAG_NULL, NO_DOMAIN, max_axes, SUB_REGIONAL, get_base_time, DIAG_NOT_REGISTERED, &
+                         TWO_D_DOMAIN, UG_DOMAIN, prepend_date
+use time_manager_mod, only: time_type, operator(>), operator(/=), operator(==), get_date
 use fms_diag_yaml_mod, only: diag_yaml, diagYamlObject_type, diagYamlFiles_type
 use fms_diag_axis_object_mod, only: diagDomain_t, get_domain_and_domain_type, fmsDiagAxis_type, &
                                     fmsDiagAxisContainer_type
@@ -113,16 +114,19 @@ type :: fmsDiagFile_type
  procedure, public :: has_file_duration_units
  procedure, public :: has_file_varlist
  procedure, public :: has_file_global_meta
-
 end type fmsDiagFile_type
 
 type, extends (fmsDiagFile_type) :: subRegionalFile_type
   integer, dimension(:), allocatable :: sub_axis_ids !< Array of axis ids in the file
+  logical :: write_on_this_pe !< Flag indicating if the subregion is on the current PE
 end type subRegionalFile_type
 
 !> \brief A container for fmsDiagFile_type.  This is used to create the array of files
 type fmsDiagFileContainer_type
-  class (fmsDiagFile_type),allocatable :: FMS_diag_file !< The individual file object 
+  class (fmsDiagFile_type),allocatable :: FMS_diag_file !< The individual file object
+
+  contains
+  procedure :: open_diag_file
 end type fmsDiagFileContainer_type
 
 !type(fmsDiagFile_type), dimension (:), allocatable, target :: FMS_diag_file !< The array of diag files
@@ -146,7 +150,6 @@ logical function fms_diag_files_object_init (files_array)
      if (diag_yaml%diag_files(i)%has_file_sub_region()) then
        allocate(subRegionalFile_type :: files_array(i)%FMS_diag_file)
        obj => files_array(i)%FMS_diag_file
-       obj%type_of_domain = SUB_REGIONAL
        select type (obj)
          type is (subRegionalFile_type)
            allocate(obj%sub_axis_ids(max_axes))
@@ -506,9 +509,6 @@ subroutine set_file_domain(this, domain, type_of_domain)
   integer,                 INTENT(in)          :: type_of_domain !< fileobj_type to use
   CLASS(diagDomain_t),     INTENT(in), target  :: domain         !< Domain
 
-  !! If this a sub_regional, don't do anything here
-  if (this%type_of_domain .eq. SUB_REGIONAL) return
-
   if (type_of_domain .ne. this%type_of_domain) then
   !! If the current type_of_domain in the file obj is not the same as the variable calling this subroutine
 
@@ -584,5 +584,81 @@ subroutine add_start_time(this, start_time)
   endif
 
 end subroutine
+
+subroutine open_diag_file(this, time_step)
+  class(fmsDiagFileContainer_type), intent(inout), target :: this            !< The file object
+  TYPE(time_type),                  intent(in)            :: time_step       !< Current model step time
+
+  class(fmsDiagFile_type), pointer :: diag_file
+  class(diagDomain_t), pointer :: domain
+  class(FmsNetcdfFile_t), pointer :: fileobj
+  character(len=:), allocatable :: diag_file_name !< The file name as defined in the yaml
+  character(len=:), allocatable :: base_name !< The file name as defined in the yaml without the wildcard def
+  character(len=:), allocatable :: file_name !< The file name as it will be written to disk
+  character(len=:), allocatable :: start_date !< The start_time as a string
+  integer :: pos
+  INTEGER :: year, month, day, hour, minute, second
+
+  diag_file => this%FMS_diag_file
+  fileobj => diag_file%fileobj
+  domain => diag_file%domain
+
+  !< Go away if it is not time to open the file
+  if (diag_file%next_open > time_step) return
+
+  !< Figure out what fileobj to use!
+  select type (diag_file)
+  type is (subRegionalFile_type)
+    !< Go away if the subregion is not on current PE
+    if (diag_file%write_on_this_pe) return
+
+    !< In this case each PE is going to write its own file
+    allocate(FmsNetcdfFile_t :: fileobj)
+
+    write(mype_string,'(I0.4)') mpp_pe()
+  type is (fmsDiagFile_type)
+    !< Use the type_of_domain to get the correct fileobj
+    select case (diag_file%type_of_domain)
+    case (NO_DOMAIN)
+      allocate(FmsNetcdfFile_t :: fileobj)
+    case (TWO_D_DOMAIN)
+      allocate(FmsNetcdfDomainFile_t :: fileobj)
+    case (UG_DOMAIN)
+      allocate(FmsNetcdfUnstructuredDomainFile_t :: fileobj)
+    end select
+  end select
+
+  !< Figure out what to name of the file
+  diag_file_name = diag_file%get_file_fname()
+  if (diag_file%has_file_new_file_freq()) then
+    !< If using a wildcard file name (i.e ocn%4yr%2mo%2dy%2hr), get the basename (i.e ocn)
+    pos = INDEX(diag_file_name, '%')
+    if (pos > 0) base_name = diag_file_name(1:pos-1)
+    !TODO Figure out the name to append base on the time
+    !suffix = get_time_string(files(file)%name, time_step) !TODO fname_time?
+    !base_name = trim(base_name)//trim(suffix)
+  else
+    base_name = diag_file_name
+  endif
+
+  !< Add the ens number to the file name
+  file_name = base_name
+  call get_instance_filename(base_name, file_name)
+
+  !< Prepend the file start_time to the file name if prepend_date == .TRUE. in
+  !! the namelist
+  IF ( prepend_date ) THEN
+    call get_date(diag_file%start_time, year, month, day, hour, minute, second)
+    write (start_date, '(1I20.4, 2I2.2)') year, month, day
+
+    file_name = TRIM(adjustl(start_date))//'.'//TRIM(file_name)
+  END IF
+
+  !< If this is a regional file add the PE and the tile_number to the filename
+  
+!TODO: set next_open for the next time
+
+end subroutine open_diag_file
+
 #endif
 end module fms_diag_file_object_mod

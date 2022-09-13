@@ -3634,6 +3634,11 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
             & "diag_manager_set_time_end must be called before diag_send_complete", FATAL)
     END IF
 
+    if (use_modern_diag) then
+       call fms_diag_object%fms_diag_send_complete(time_step)
+       return
+    endif
+
     DO file = 1, num_files
        freq = files(file)%output_freq
        DO j = 1, files(file)%num_fields
