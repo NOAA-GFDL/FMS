@@ -382,14 +382,16 @@ FUNCTION fms_diag_axis_init(this, axis_name, axis_data, units, cart_name, long_n
 #endif
 end function fms_diag_axis_init
 
+!> @brief Loops through all the files, open the file, writes out axis and
+!! variable metadata and data when necessary.
 subroutine fms_diag_send_complete(this, time_step)
   class(fmsDiagObject_type), target, intent (inout) :: this !< The diag object
   TYPE (time_type),                  INTENT(in)     :: time_step !< The current model time
 
-  integer :: i
+  integer :: i !< For do loops
 
 #ifdef use_yaml
-  class(fmsDiagFileContainer_type), pointer :: diag_file
+  class(fmsDiagFileContainer_type), pointer :: diag_file !< Pointer to this%FMS_diag_files(i) (for convenience)
 
   do i = 1, size(this%FMS_diag_files)
     diag_file => this%FMS_diag_files(i)

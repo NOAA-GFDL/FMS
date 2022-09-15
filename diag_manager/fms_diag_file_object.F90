@@ -1,3 +1,4 @@
+!***********************************************************************
 !*                   GNU Lesser General Public License
 !*
 !* This file is part of the GFDL Flexible Modeling System (FMS).
@@ -33,7 +34,7 @@ use fms_diag_time_utils_mod, only: diag_time_inc, get_time_string
 use fms_diag_yaml_mod, only: diag_yaml, diagYamlObject_type, diagYamlFiles_type
 use fms_diag_axis_object_mod, only: diagDomain_t, get_domain_and_domain_type, fmsDiagAxis_type, &
                                     fmsDiagAxisContainer_type, DIAGDOMAIN2D_T, DIAGDOMAINUG_T
-use mpp_mod, only: mpp_root_pe, mpp_pe, mpp_error, FATAL
+use mpp_mod, only: mpp_get_current_pelist, mpp_npes, mpp_root_pe, mpp_pe, mpp_error, FATAL
 implicit none
 private
 
@@ -584,23 +585,33 @@ subroutine add_start_time(this, start_time)
 
 end subroutine
 
+!< @brief Opens the diag_file if it is time to do so
 subroutine open_diag_file(this, time_step)
   class(fmsDiagFileContainer_type), intent(inout), target :: this            !< The file object
   TYPE(time_type),                  intent(in)            :: time_step       !< Current model step time
 
-  class(fmsDiagFile_type), pointer :: diag_file
-  class(diagDomain_t), pointer :: domain
-  class(FmsNetcdfFile_t), pointer :: fileobj
-  character(len=:), allocatable :: diag_file_name !< The file name as defined in the yaml
-  character(len=128) :: base_name !< The file name as defined in the yaml without the wildcard def
-  character(len=128) :: file_name !< The file name as it will be written to disk
-  character(len=128) :: temp_name
-  character(len=128) :: start_date !< The start_time as a string
-  character(len=128) :: suffix
-  integer :: pos
-  INTEGER :: year, month, day, hour, minute, second
-  character(len=4) :: mype_string
-  logical :: is_regional
+  class(fmsDiagFile_type), pointer     :: diag_file      !< Diag_file object to open
+  class(diagDomain_t),     pointer     :: domain         !< The domain used in the file
+  class(FmsNetcdfFile_t),  pointer     :: fileobj        !< The fileobj to write to
+  character(len=:),        allocatable :: diag_file_name !< The file name as defined in the yaml
+  character(len=128)                   :: base_name      !< The file name as defined in the yaml
+                                                         !! without the wildcard definition
+  character(len=128)                   :: file_name      !< The file name as it will be written to disk
+  character(len=128)                   :: temp_name      !< Temp variable to store the file_name
+  character(len=128)                   :: start_date     !< The start_time as a string that will be added to
+                                                         !! the begining of the filename (start_date.filename)
+  character(len=128)                   :: suffix         !< The current time as a string that will be added to
+                                                         !! the end of filename
+  integer                              :: pos            !< Index of the filename with the first "%" in the file name
+  INTEGER                              :: year           !< The year of the start_date
+  INTEGER                              :: month          !< The month of the start_date
+  INTEGER                              :: day            !< The day of the start_date
+  INTEGER                              :: hour           !< The hour of the start_date
+  INTEGER                              :: minute         !< The minute of the start_date
+  INTEGER                              :: second         !< The second of the start_date
+  character(len=4)                     :: mype_string    !< The pe as a string
+  logical                              :: is_regional    !< Flag indicating if the file is regional
+  integer, allocatable                 :: pes(:)         !< Array of the pes in the current pelist
 
   diag_file => this%FMS_diag_file
   fileobj => diag_file%fileobj
@@ -634,6 +645,8 @@ subroutine open_diag_file(this, time_step)
 
   !< Figure out what to name of the file
   diag_file_name = diag_file%get_file_fname()
+
+  !< If using the new_file_freq figure out what the name is based on the current time
   if (diag_file%has_file_new_file_freq()) then
     !< If using a wildcard file name (i.e ocn%4yr%2mo%2dy%2hr), get the basename (i.e ocn)
     pos = INDEX(diag_file_name, '%')
@@ -644,7 +657,7 @@ subroutine open_diag_file(this, time_step)
     base_name = trim(diag_file_name)
   endif
 
-  !< Add the ens number to the file name
+  !< Add the ens number to the file name (if it exists)
   file_name = trim(base_name)
   call get_instance_filename(base_name, file_name)
 
@@ -674,10 +687,19 @@ subroutine open_diag_file(this, time_step)
     file_name = trim(file_name)//"."//trim(mype_string)
   endif
 
+  !< Open the file!
   select type (fileobj)
   type is (FmsNetcdfFile_t)
-    if (.not. open_file(fileobj, file_name, "overwrite")) &
+    if (is_regional) then
+      if (.not. open_file(fileobj, file_name, "overwrite", pelist=(/mpp_pe()/))) &
       &call mpp_error(FATAL, "Error opening the file:"//file_name)
+   else
+      allocate(pes(mpp_npes()))
+      call mpp_get_current_pelist(pes)
+
+      if (.not. open_file(fileobj, file_name, "overwrite", pelist=pes)) &
+      &call mpp_error(FATAL, "Error opening the file:"//file_name)
+   endif
   type is (FmsNetcdfDomainFile_t)
     select type (domain)
     type is (diagDomain2d_t)

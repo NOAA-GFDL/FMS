@@ -777,7 +777,7 @@ end function get_domain
 
 !> @brief Gets field's type of domain
 !! @return integer defining the type of domain (NO_DOMAIN, TWO_D_DOMAIN, UG_DOMAIN)
-function get_type_of_domain (this) &
+pure function get_type_of_domain (this) &
 result(rslt)
   class (fmsDiagField_type), target, intent(in) :: this  !< diag field
   integer                                       :: rslt  !< field's domain
