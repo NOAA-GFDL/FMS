@@ -559,6 +559,7 @@ type (fmTable_t)                :: my_table       !< the field table
 integer                         :: model !< model assocaited with the current field
 character(len=fm_path_name_len) :: list_name !< field_manager list name
 character(len=fm_string_len)    :: subparamvalue !< subparam value to be used when defining new name
+character(len=fm_string_len)    :: fm_yaml_null !< useful hack when OG subparam does not contain an equals sign
 integer                         :: current_field !< field index within loop
 integer                         :: index_list_name !< integer used as check for "no field"
 integer                         :: subparamindex !< index to identify whether subparams exist for this field
@@ -655,8 +656,13 @@ do h=1,my_table%nchildren
               do m=1,size(my_table%children(h)%children(i)%children(j)%children(subparamindex)%keys)
                 method_control = " "
                 subparamvalue = " "
+                if (trim(my_table%children(h)%children(i)%children(j)%values(k)).eq.'fm_yaml_null') then
+                  fm_yaml_null = ''
+                else
+                  fm_yaml_null = trim(my_table%children(h)%children(i)%children(j)%values(k))//'/'
+                end if
                 method_control = trim(my_table%children(h)%children(i)%children(j)%keys(k))//"/"//&
-                  &trim(my_table%children(h)%children(i)%children(j)%values(k))//"/"//&
+                  &trim(fm_yaml_null)//&
                   &trim(my_table%children(h)%children(i)%children(j)%children(subparamindex)%keys(m))
                 subparamvalue = trim(my_table%children(h)%children(i)%children(j)%children(subparamindex)%values(m))
                 call new_name(list_name, method_control, subparamvalue)
