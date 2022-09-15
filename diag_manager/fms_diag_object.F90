@@ -383,13 +383,16 @@ FUNCTION fms_diag_axis_init(this, axis_name, axis_data, units, cart_name, long_n
 end function fms_diag_axis_init
 
 subroutine fms_diag_send_complete(this, time_step)
-  class(fmsDiagObject_type), intent (inout) :: this !< The diag object
-  TYPE (time_type),          INTENT(in)     :: time_step !< The current model time
+  class(fmsDiagObject_type), target, intent (inout) :: this !< The diag object
+  TYPE (time_type),                  INTENT(in)     :: time_step !< The current model time
 
   integer :: i
+  class(fmsDiagFileContainer_type), pointer :: diag_file
 
   do i = 1, size(this%FMS_diag_files)
-    call this%FMS_diag_files(i)%open_diag_file(time_step)
+    diag_file => this%FMS_diag_files(i)
+    call diag_file%open_diag_file(time_step)
+    call diag_file%write_axis_metadata(this%diag_axis)
   enddo
 
 end subroutine fms_diag_send_complete

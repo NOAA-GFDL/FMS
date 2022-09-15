@@ -25,15 +25,15 @@
 module fms_diag_file_object_mod
 #ifdef use_yaml
 use fms2_io_mod, only: FmsNetcdfFile_t, FmsNetcdfUnstructuredDomainFile_t, FmsNetcdfDomainFile_t, &
-                       get_instance_filename, open_file, close_file
+                       get_instance_filename, open_file, close_file, get_mosaic_tile_file
 use diag_data_mod, only: DIAG_NULL, NO_DOMAIN, max_axes, SUB_REGIONAL, get_base_time, DIAG_NOT_REGISTERED, &
                          TWO_D_DOMAIN, UG_DOMAIN, prepend_date
 use time_manager_mod, only: time_type, operator(>), operator(/=), operator(==), get_date
-use fms_diag_time_utils_mod, only: diag_time_inc
+use fms_diag_time_utils_mod, only: diag_time_inc, get_time_string
 use fms_diag_yaml_mod, only: diag_yaml, diagYamlObject_type, diagYamlFiles_type
 use fms_diag_axis_object_mod, only: diagDomain_t, get_domain_and_domain_type, fmsDiagAxis_type, &
-                                    fmsDiagAxisContainer_type
-use mpp_mod, only: mpp_error, FATAL
+                                    fmsDiagAxisContainer_type, DIAGDOMAIN2D_T, DIAGDOMAINUG_T
+use mpp_mod, only: mpp_root_pe, mpp_pe, mpp_error, FATAL
 implicit none
 private
 
@@ -67,7 +67,7 @@ type :: fmsDiagFile_type
                                                                  !! if the variable has been registered and
                                                                  !! `field_id` has been set for the variable
   integer, allocatable                         :: num_registered_fields !< The number of fields registered
-                                                                        !! to the file 
+                                                                        !! to the file
   integer, dimension(:), allocatable :: axis_ids !< Array of axis ids in the file
   integer :: number_of_axis !< Number of axis in the file
 
@@ -154,6 +154,7 @@ logical function fms_diag_files_object_init (files_array)
          type is (subRegionalFile_type)
            allocate(obj%sub_axis_ids(max_axes))
            obj%sub_axis_ids = diag_null
+           obj%write_on_this_pe = .true. !TODO this should be .false. probably
        end select
      else
        allocate(FmsDiagFile_type::files_array(i)%FMS_diag_file)
@@ -591,11 +592,15 @@ subroutine open_diag_file(this, time_step)
   class(diagDomain_t), pointer :: domain
   class(FmsNetcdfFile_t), pointer :: fileobj
   character(len=:), allocatable :: diag_file_name !< The file name as defined in the yaml
-  character(len=:), allocatable :: base_name !< The file name as defined in the yaml without the wildcard def
-  character(len=:), allocatable :: file_name !< The file name as it will be written to disk
-  character(len=:), allocatable :: start_date !< The start_time as a string
+  character(len=128) :: base_name !< The file name as defined in the yaml without the wildcard def
+  character(len=128) :: file_name !< The file name as it will be written to disk
+  character(len=128) :: temp_name
+  character(len=128) :: start_date !< The start_time as a string
+  character(len=128) :: suffix
   integer :: pos
   INTEGER :: year, month, day, hour, minute, second
+  character(len=4) :: mype_string
+  logical :: is_regional
 
   diag_file => this%FMS_diag_file
   fileobj => diag_file%fileobj
@@ -604,16 +609,17 @@ subroutine open_diag_file(this, time_step)
   !< Go away if it is not time to open the file
   if (diag_file%next_open > time_step) return
 
+  is_regional = .false.
   !< Figure out what fileobj to use!
   select type (diag_file)
   type is (subRegionalFile_type)
     !< Go away if the subregion is not on current PE
-    if (diag_file%write_on_this_pe) return
+    if (.not. diag_file%write_on_this_pe) return
 
     !< In this case each PE is going to write its own file
     allocate(FmsNetcdfFile_t :: fileobj)
 
-    write(mype_string,'(I0.4)') mpp_pe()
+    is_regional = .true.
   type is (fmsDiagFile_type)
     !< Use the type_of_domain to get the correct fileobj
     select case (diag_file%type_of_domain)
@@ -632,15 +638,14 @@ subroutine open_diag_file(this, time_step)
     !< If using a wildcard file name (i.e ocn%4yr%2mo%2dy%2hr), get the basename (i.e ocn)
     pos = INDEX(diag_file_name, '%')
     if (pos > 0) base_name = diag_file_name(1:pos-1)
-    !TODO Figure out the name to append base on the time
-    !suffix = get_time_string(files(file)%name, time_step) !TODO fname_time?
-    !base_name = trim(base_name)//trim(suffix)
+    suffix = get_time_string(diag_file_name, time_step) !TODO fname_time?
+    base_name = trim(base_name)//trim(suffix)
   else
-    base_name = diag_file_name
+    base_name = trim(diag_file_name)
   endif
 
   !< Add the ens number to the file name
-  file_name = base_name
+  file_name = trim(base_name)
   call get_instance_filename(base_name, file_name)
 
   !< Prepend the file start_time to the file name if prepend_date == .TRUE. in
@@ -652,8 +657,41 @@ subroutine open_diag_file(this, time_step)
     file_name = TRIM(adjustl(start_date))//'.'//TRIM(file_name)
   END IF
 
+  file_name = trim(file_name)//".nc"
+
   !< If this is a regional file add the PE and the tile_number to the filename
-  
+  if (is_regional) then
+    !< Get the pe number that will be appended to the end of the file
+    write(mype_string,'(I0.4)') mpp_pe()
+
+    !< Add the tile number if appropriate
+    select type (domain)
+    type is (DIAGDOMAIN2D_T)
+      temp_name = file_name
+      call get_mosaic_tile_file(temp_name, file_name, .true., domain%domain2)
+    end select
+
+    file_name = trim(file_name)//"."//trim(mype_string)
+  endif
+
+  select type (fileobj)
+  type is (FmsNetcdfFile_t)
+    if (.not. open_file(fileobj, file_name, "overwrite")) &
+      &call mpp_error(FATAL, "Error opening the file:"//file_name)
+  type is (FmsNetcdfDomainFile_t)
+    select type (domain)
+    type is (diagDomain2d_t)
+      if (.not. open_file(fileobj, file_name, "overwrite", domain%Domain2)) &
+        &call mpp_error(FATAL, "Error opening the file:"//file_name)
+    end select
+  type is (FmsNetcdfUnstructuredDomainFile_t)
+    select type (domain)
+    type is (diagDomainUg_t)
+      if (.not. open_file(fileobj, file_name, "overwrite", domain%DomainUG)) &
+        &call mpp_error(FATAL, "Error opening the file:"//file_name)
+    end select
+  end select
+
 !TODO: set next_open for the next time
 
 end subroutine open_diag_file
