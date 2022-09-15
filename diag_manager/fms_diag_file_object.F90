@@ -27,7 +27,7 @@ module fms_diag_file_object_mod
 #ifdef use_yaml
 use fms2_io_mod, only: FmsNetcdfFile_t, FmsNetcdfUnstructuredDomainFile_t, FmsNetcdfDomainFile_t
 use diag_data_mod, only: DIAG_NULL, NO_DOMAIN, max_axes, SUB_REGIONAL, get_base_time, DIAG_NOT_REGISTERED
-!TODO cross dependency use diag_util_mod, only: diag_time_inc
+use fms_diag_time_utils_mod, only: diag_time_inc
 use time_manager_mod, only: time_type, operator(/=), operator(==)
 use fms_diag_yaml_mod, only: diag_yaml, diagYamlObject_type, diagYamlFiles_type
 use fms_diag_axis_object_mod, only: diagDomain_t, get_domain_and_domain_type, fmsDiagAxis_type, &
@@ -177,9 +177,8 @@ logical function fms_diag_files_object_init (files_array)
      !> Set the start_time of the file to the base_time and set up the *_output variables
      obj%start_time = get_base_time()
      obj%last_output = get_base_time()
-     !TODO cross dependency
-     !obj%next_output = diag_time_inc(obj%start_time, obj%get_file_freq(), obj%get_file_frequnit())
-     !obj%next_next_output = diag_time_inc(obj%next_output, obj%get_file_freq(), obj%get_file_frequnit())
+     obj%next_output = diag_time_inc(obj%start_time, obj%get_file_freq(), obj%get_file_frequnit())
+     obj%next_next_output = diag_time_inc(obj%next_output, obj%get_file_freq(), obj%get_file_frequnit())
      obj%next_open = get_base_time()
 
      nullify(obj)
@@ -564,23 +563,22 @@ subroutine add_start_time(this, start_time)
   TYPE(time_type),         intent(in)          :: start_time     !< Start time to add to the fileobj
 
   !< If the start_time sent in is equal to the base_time return because
-  !! obj%start_time was already set to the base_time
+  !! this%start_time was already set to the base_time
   if (start_time .eq. get_base_time()) return
 
   if (this%start_time .ne. get_base_time()) then
-    !> If the obj%start_time is not equal to the base_time from the diag_table
-    !! obj%start_time was already updated so make sure it is the same or error out
+    !> If the this%start_time is not equal to the base_time from the diag_table
+    !! this%start_time was already updated so make sure it is the same or error out
     if (this%start_time .ne. start_time)&
       call mpp_error(FATAL, "The variables associated with the file:"//this%get_file_fname()//" have"&
       &" different start_time")
   else
-    !> If the obj%start_time is equal to the base_time,
+    !> If the this%start_time is equal to the base_time,
     !! simply update it with the start_time and set up the *_output variables
     this%start_time = start_time
     this%last_output = start_time
-    !TODO circular dependency
-    !obj%next_output = diag_time_inc(start_time, obj%get_file_freq(), obj%get_file_frequnit())
-    !obj%next_next_output = diag_time_inc(obj%next_output, obj%get_file_freq(), obj%get_file_frequnit())
+    this%next_output = diag_time_inc(start_time, this%get_file_freq(), this%get_file_frequnit())
+    this%next_next_output = diag_time_inc(this%next_output, this%get_file_freq(), this%get_file_frequnit())
   endif
 
 end subroutine
