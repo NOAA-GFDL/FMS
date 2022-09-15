@@ -851,7 +851,7 @@ end subroutine register_compressed_dimension
 
 
 !> @brief Add a variable to a file.
-subroutine netcdf_add_variable(fileobj, variable_name, variable_type, dimensions)
+subroutine netcdf_add_variable(fileobj, variable_name, variable_type, dimensions, deflate_level, chunksizes)
 
   class(FmsNetcdfFile_t), intent(in) :: fileobj !< File object.
   character(len=*), intent(in) :: variable_name !< Variable name.
@@ -859,7 +859,8 @@ subroutine netcdf_add_variable(fileobj, variable_name, variable_type, dimensions
                                                 !! values are: "char", "int", "int64",
                                                 !! "float", or "double".
   character(len=*), dimension(:), intent(in), optional :: dimensions !< Dimension names.
-
+  integer, optional, intent(in) :: deflate_level !<The netcdf deflate level
+  integer, optional, intent(in) :: chunksizes(:) !< netcdf chunksize to use for this variable  
   integer :: err
   integer, dimension(:), allocatable :: dimids
   integer :: vtype
@@ -896,7 +897,8 @@ subroutine netcdf_add_variable(fileobj, variable_name, variable_type, dimensions
       do i = 1, size(dimids)
         dimids(i) = get_dimension_id(fileobj%ncid, trim(dimensions(i)),msg=append_error_msg)
       enddo
-      err = nf90_def_var(fileobj%ncid, trim(variable_name), vtype, dimids, varid)
+      err = nf90_def_var(fileobj%ncid, trim(variable_name), vtype, dimids, varid, &
+       deflate_level=deflate_level, chunksizes=chunksizes)
       deallocate(dimids)
     else
       err = nf90_def_var(fileobj%ncid, trim(variable_name), vtype, varid)
