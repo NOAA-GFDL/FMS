@@ -77,7 +77,6 @@ type subRegion_type
                                                 !! acceptable values are latlon_gridtype, index_gridtype,
                                                 !! null_gridtype
   class(*),          allocatable :: corners(:,:)!< (x, y) coordinates of the four corner of the region
-  integer                        :: zbounds(2)  !< indices of the z axis limits (zbegin, zend)
   integer                        :: tile        !< Tile number of the sub region
                                                 !! required if using the "index" grid type
 
@@ -166,6 +165,7 @@ type diagYamlFilesVar_type
   character (len=:), private, allocatable :: var_outname !< Name of the variable as written to the file
   character (len=:), private, allocatable :: var_longname !< Overwrites the long name of the variable
   character (len=:), private, allocatable :: var_units !< Overwrites the units
+  real(kind=r4_kind), private             :: var_zbounds(2)  !< The z axis limits [vert_min, vert_max]
   integer          , private              :: n_diurnal !< Number of diurnal samples
                                                        !! 0 if var_reduction is not "diurnalXX"
   integer          , private              :: pow_value !< The power value
@@ -185,6 +185,7 @@ type diagYamlFilesVar_type
   procedure :: get_var_outname
   procedure :: get_var_longname
   procedure :: get_var_units
+  procedure :: get_var_zbounds
   procedure :: get_var_attributes
   procedure :: get_n_diurnal
   procedure :: get_pow_value
@@ -198,6 +199,7 @@ type diagYamlFilesVar_type
   procedure :: has_var_outname
   procedure :: has_var_longname
   procedure :: has_var_units
+  procedure :: has_var_zbounds
   procedure :: has_var_attributes
   procedure :: has_n_diurnal
   procedure :: has_pow_value
@@ -570,6 +572,9 @@ subroutine fill_in_diag_fields(diag_file_id, var_id, field)
       call mpp_error(FATAL, "diag_yaml_object_init: variable "//trim(field%var_varname)//" has multiple attribute blocks")
   endif
 
+  !> Set the zbounds if they exist
+  field%var_zbounds = DIAG_NULL
+  call get_value_from_key(diag_file_id, var_id, "zbounds", field%var_zbounds, is_optional=.true.)
 end subroutine
 
 !> @brief diag_manager wrapper to get_value_from_key to use for allocatable
@@ -620,9 +625,6 @@ subroutine get_sub_region(diag_yaml_id, sub_region_id, sub_region, grid_type, fn
   call get_value_from_key(diag_yaml_id, sub_region_id, "corner2", sub_region%corners(2,:))
   call get_value_from_key(diag_yaml_id, sub_region_id, "corner3", sub_region%corners(3,:))
   call get_value_from_key(diag_yaml_id, sub_region_id, "corner4", sub_region%corners(4,:))
-
-  sub_region%zbounds = DIAG_NULL
-  call get_value_from_key(diag_yaml_id, sub_region_id, "zbounds", sub_region%zbounds, is_optional=.true.)
 
 end subroutine get_sub_region
 
@@ -1004,6 +1006,14 @@ result (res)
  character (len=:), allocatable :: res !< What is returned
   res = diag_var_obj%var_units
 end function get_var_units
+!> @brief Inquiry for diag_yaml_files_var_obj%var_zbounds
+!! @return var_zbounds of a diag_yaml_files_var_obj
+pure function get_var_zbounds (diag_var_obj) &
+result (res)
+ class (diagYamlFilesVar_type), intent(in) :: diag_var_obj !< The object being inquiried
+ real(kind=r4_kind) :: res(2) !< What is returned
+  res = diag_var_obj%var_zbounds
+end function get_var_zbounds
 !> @brief Inquiry for diag_yaml_files_var_obj%var_attributes
 !! @return var_attributes of a diag_yaml_files_var_obj
 pure function get_var_attributes(diag_var_obj) &
@@ -1195,6 +1205,12 @@ pure logical function has_var_units (obj)
   class(diagYamlFilesVar_type), intent(in) :: obj !< diagYamlvar_type object to initialize
   has_var_units = allocated(obj%var_units)
 end function has_var_units
+!> @brief Checks if obj%var_zbounds is allocated
+!! @return true if obj%var_zbounds is allocated
+pure logical function has_var_zbounds (obj)
+  class(diagYamlFilesVar_type), intent(in) :: obj !< diagYamlvar_type object to initialize
+  has_var_zbounds = any(obj%var_zbounds .eq. diag_null)
+end function has_var_zbounds
 !> @brief Checks if obj%var_attributes is allocated
 !! @return true if obj%var_attributes is allocated
 pure logical function has_var_attributes (obj)
