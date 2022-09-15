@@ -3,15 +3,17 @@ program test_diag_buffer
 
     use fms_diag_buffer_mod
     use platform_mod
+    use diag_data_mod, only: i4, i8, r4, r8
 
     implicit none
 
-    type(buffer0d_type) :: buffobj0(10), tmp0
-    type(buffer1d_type) :: buffobj1, tmp1
-    type(buffer2d_type) :: buffobj2, tmp2
-    type(buffer3d_type) :: buffobj3, tmp3
-    type(buffer4d_type) :: buffobj4, tmp4
-    type(buffer5d_type) :: buffobj5, tmp5
+    type(buffer0d_type) :: buffobj0(10)
+    type(buffer1d_type) :: buffobj1
+    type(buffer2d_type) :: buffobj2
+    type(buffer3d_type) :: buffobj3
+    type(buffer4d_type) :: buffobj4
+    type(buffer5d_type) :: buffobj5
+    class(*),allocatable       :: p_val, p_data1(:), p_data2(:,:)
     real(r8_kind)  :: r8_data
     real(r4_kind)  :: r4_data
     integer(i8_kind)  :: i8_data
@@ -21,8 +23,10 @@ program test_diag_buffer
     integer :: i
     real(4) :: arr(9)
     real(4), allocatable :: arr1d(:)
-    integer(4), allocatable :: arr2d(:,:)
+    class(*), allocatable :: arr2d(:,:)
+    integer(8), allocatable :: i8arr2d(:,:)
     real(8), allocatable :: r8val
+    class(*), allocatable :: arr3d(:,:,:), arr4d(:,:,:,:), arr5d(:,:,:,:,:)
     integer(8), allocatable :: i8arr3d(:,:,:), i8arr4d(:,:,:,:), i8arr5d(:,:,:,:,:)
     logical :: test_5d = .true.
 
@@ -35,7 +39,14 @@ program test_diag_buffer
     ! add some values
     call buffobj0(5)%add_to_buffer(real(-1, kind=r8_kind))
     ! get the buffer data
-    call buffobj0(5)%get_buffer(r8val)
+    !allocate(real(8) :: p_val)
+    !allocate(r8val)
+    call buffobj0(5)%get_buffer(p_val)
+    select type(p_val)
+      type is(real(r8_kind))
+        print *, p_val
+        r8val = p_val
+    end select
     ! get the 5d remapped buffer data
     remap_buffer_out => buffobj0(5)%remap_buffer()
     ! check output from object and remapped buffer
@@ -54,15 +65,21 @@ program test_diag_buffer
     arr = 4.0
     call buffobj1%add_to_buffer(arr)
     !! get the buffer
+    allocate(real(8) :: p_data1(10))
     allocate(arr1d(10))
-    call buffobj1%get_buffer(arr1d)
+    call buffobj1%get_buffer(p_data1)
+    select type(p_data1)
+      type is(real(4))
+        print *, p_data1
+        arr1d = p_data1
+    end select
     !! get the remapped buffer
     remap_buffer_out => buffobj1%remap_buffer()
     !! check output
     print *, arr1d
     call print_5d(remap_buffer_out)
     call buffobj1%flush_buffer()
-
+    print *, '********** 2d **********'
 
     !! 2d
     ! allocate a buffer to the given type and get it's id
@@ -70,7 +87,7 @@ program test_diag_buffer
     !!! init to given value
     call buffobj2%initialize_buffer( int(2, kind=i4_kind) )
     !! set some values in the buffer
-    allocate(arr2d(5,10))
+    allocate(integer(4) :: arr2d(5,10))
     arr2d = 1
     call buffobj2%add_to_buffer(arr2d)
     !!! get the buffer
@@ -78,7 +95,10 @@ program test_diag_buffer
     !!! get the remapped buffer
     remap_buffer_out => buffobj2%remap_buffer()
     !!! check output
-    print *, arr2d
+    select type(arr2d)
+      type is(integer(i4_kind))
+        print *, arr2d
+    end select
     call print_5d(remap_buffer_out)
     call buffobj2%flush_buffer()
 
@@ -92,11 +112,14 @@ program test_diag_buffer
     i8arr3d = 6
     call buffobj3%add_to_buffer(i8arr3d)
     !! get the buffer
-    call buffobj3%get_buffer(i8arr3d)
+    call buffobj3%get_buffer(arr3d)
     !! get the remapped buffer
     remap_buffer_out => buffobj3%remap_buffer()
     !! check output
-    print *, i8arr3d
+    select type (arr3d)
+      type is(integer(i8_kind))
+        print *, arr3d
+    end select
     call print_5d(remap_buffer_out)
     call buffobj3%flush_buffer()
 
@@ -110,11 +133,14 @@ program test_diag_buffer
     i8arr4d = 8
     call buffobj4%add_to_buffer(i8arr4d)
     !! get the buffer
-    call buffobj4%get_buffer(i8arr4d)
+    call buffobj4%get_buffer(arr4d)
     !! get the remapped buffer
     remap_buffer_out => buffobj4%remap_buffer()
     !! check output
-    print *, i8arr4d
+    select type (arr4d)
+      type is(integer(i8_kind))
+        print *, arr4d
+    end select
     call print_5d(remap_buffer_out)
     call buffobj4%flush_buffer()
 
@@ -129,9 +155,12 @@ program test_diag_buffer
     i8arr5d = 10
     call buffobj5%add_to_buffer(i8arr5d)
     !! get the buffer
-    call buffobj5%get_buffer(i8arr5d)
+    call buffobj5%get_buffer(arr5d)
     !! check output
-    print *, i8arr5d
+    select type (arr4d)
+      type is(integer(i8_kind))
+        print *, arr4d
+    end select
     call print_5d(remap_buffer_out)
     call buffobj5%flush_buffer()
 
