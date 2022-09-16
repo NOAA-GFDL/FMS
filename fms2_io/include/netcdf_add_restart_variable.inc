@@ -58,7 +58,8 @@ end subroutine netcdf_add_restart_variable_0d
 
 !> @brief Wrapper to distinguish interfaces.
 subroutine netcdf_add_restart_variable_0d_wrap(fileobj, variable_name, vdata, &
-                                               dimensions, is_optional)
+                                               dimensions, is_optional, &
+                                                deflate_level, chunksizes)
   type(FmsNetcdfFile_t), intent(inout) :: fileobj !< File object.
   character(len=*), intent(in) :: variable_name !< Variable name.
   class(*),  intent(in), target :: vdata !< Pointer to
@@ -66,8 +67,9 @@ subroutine netcdf_add_restart_variable_0d_wrap(fileobj, variable_name, vdata, &
   character(len=*), dimension(1), intent(in), optional :: dimensions !< Dimension names.
   logical, intent(in), optional :: is_optional !< Prevent errors in read-only files
                                                !! if a variable does not exist.
-
-  call netcdf_add_restart_variable(fileobj, variable_name, vdata, dimensions, is_optional)
+  integer, intent(in), optional :: deflate_level
+  integer, intent(in), optional :: chunksizes
+  call netcdf_add_restart_variable(fileobj, variable_name, vdata, dimensions, is_optional, deflate_level, chunksizes)
 end subroutine netcdf_add_restart_variable_0d_wrap
 
 
@@ -114,7 +116,8 @@ end subroutine netcdf_add_restart_variable_1d
 
 !> @brief Wrapper to distinguish interfaces.
 subroutine netcdf_add_restart_variable_1d_wrap(fileobj, variable_name, vdata, &
-                                               dimensions, is_optional)
+                                               dimensions, is_optional, deflate_level, &
+                                               chunksizes)
   type(FmsNetcdfFile_t), intent(inout) :: fileobj !< File object.
   character(len=*), intent(in) :: variable_name !< Variable name.
   class(*), dimension(:), intent(in), target :: vdata !< Pointer to
@@ -122,8 +125,10 @@ subroutine netcdf_add_restart_variable_1d_wrap(fileobj, variable_name, vdata, &
   character(len=*), dimension(:), intent(in), optional :: dimensions !< Dimension names.
   logical, intent(in), optional :: is_optional !< Prevent errors in read-only files
                                                !! if a variable does not exist.
-
-  call netcdf_add_restart_variable(fileobj, variable_name, vdata, dimensions, is_optional)
+  integer, intent(in), optional :: deflate_level
+  integer, intent(in), optional :: chunksizes 
+  call netcdf_add_restart_variable(fileobj, variable_name, vdata, dimensions, is_optional, &
+                                   deflate_level, chunksizes)
 end subroutine netcdf_add_restart_variable_1d_wrap
 
 
@@ -170,7 +175,8 @@ end subroutine netcdf_add_restart_variable_2d
 
 !> @brief Wrapper to distinguish interfaces.
 subroutine netcdf_add_restart_variable_2d_wrap(fileobj, variable_name, vdata, &
-                                               dimensions, is_optional)
+                                               dimensions, is_optional, deflate_level, &
+                                               chunksizes)
   type(FmsNetcdfFile_t), intent(inout) :: fileobj !< File object.
   character(len=*), intent(in) :: variable_name !< Variable name.
   class(*), dimension(:,:), intent(in), target :: vdata !< Pointer to
@@ -178,8 +184,10 @@ subroutine netcdf_add_restart_variable_2d_wrap(fileobj, variable_name, vdata, &
   character(len=*), dimension(:), intent(in), optional :: dimensions !< Dimension names.
   logical, intent(in), optional :: is_optional !< Prevent errors in read-only files
                                                !! if a variable does not exist.
-
-  call netcdf_add_restart_variable(fileobj, variable_name, vdata, dimensions, is_optional)
+  integer, intent(in), optional :: deflate_level
+  integer, intent(in), optional :: chunksizes
+  call netcdf_add_restart_variable(fileobj, variable_name, vdata, dimensions, is_optional, &
+                                   deflate_level, chunksizes) 
 end subroutine netcdf_add_restart_variable_2d_wrap
 
 
@@ -226,7 +234,8 @@ end subroutine netcdf_add_restart_variable_3d
 
 !> @brief Wrapper to distinguish interfaces.
 subroutine netcdf_add_restart_variable_3d_wrap(fileobj, variable_name, vdata, &
-                                               dimensions, is_optional)
+                                               dimensions, is_optional, deflate_level, &
+                                               chunksizes)
   type(FmsNetcdfFile_t), intent(inout) :: fileobj !< File object.
   character(len=*), intent(in) :: variable_name !< Variable name.
   class(*), dimension(:,:,:), intent(in), target :: vdata !< Pointer to
@@ -234,8 +243,10 @@ subroutine netcdf_add_restart_variable_3d_wrap(fileobj, variable_name, vdata, &
   character(len=*), dimension(:), intent(in), optional :: dimensions !< Dimension names.
   logical, intent(in), optional :: is_optional !< Prevent errors in read-only files
                                                !! if a variable does not exist.
-
-  call netcdf_add_restart_variable(fileobj, variable_name, vdata, dimensions, is_optional)
+  integer, intent(in), optional :: deflate_level
+  integer, intent(in), optional :: chunksizes 
+  call netcdf_add_restart_variable(fileobj, variable_name, vdata, dimensions, is_optional, &
+                                   deflate_level, chunksizes)
 end subroutine netcdf_add_restart_variable_3d_wrap
 
 
@@ -282,7 +293,8 @@ end subroutine netcdf_add_restart_variable_4d
 
 !> @brief Wrapper to distinguish interfaces.
 subroutine netcdf_add_restart_variable_4d_wrap(fileobj, variable_name, vdata, &
-                                               dimensions, is_optional)
+                                               dimensions, is_optional, deflate_level, &
+                                               chunksizes)
   type(FmsNetcdfFile_t), intent(inout) :: fileobj !< File object.
   character(len=*), intent(in) :: variable_name !< Variable name.
   class(*), dimension(:,:,:,:), intent(in), target :: vdata !< Pointer to
@@ -290,8 +302,10 @@ subroutine netcdf_add_restart_variable_4d_wrap(fileobj, variable_name, vdata, &
   character(len=*), dimension(:), intent(in), optional :: dimensions !< Dimension names.
   logical, intent(in), optional :: is_optional !< Prevent errors in read-only files
                                                !! if a variable does not exist.
-
-  call netcdf_add_restart_variable(fileobj, variable_name, vdata, dimensions, is_optional)
+  integer, intent(in), optional :: deflate_level
+  integer, intent(in), optional :: chunksizes
+  call netcdf_add_restart_variable(fileobj, variable_name, vdata, dimensions, is_optional, &
+                                   deflate_level, chunksizes)
 end subroutine netcdf_add_restart_variable_4d_wrap
 
 
@@ -338,7 +352,8 @@ end subroutine netcdf_add_restart_variable_5d
 
 !> @brief Wrapper to distinguish interfaces.
 subroutine netcdf_add_restart_variable_5d_wrap(fileobj, variable_name, vdata, &
-                                               dimensions, is_optional)
+                                               dimensions, is_optional, deflate_level, &
+                                               chunksizes)
   type(FmsNetcdfFile_t), intent(inout) :: fileobj !< File object.
   character(len=*), intent(in) :: variable_name !< Variable name.
   class(*), dimension(:,:,:,:,:), intent(in), target :: vdata !< Pointer to
@@ -346,8 +361,10 @@ subroutine netcdf_add_restart_variable_5d_wrap(fileobj, variable_name, vdata, &
   character(len=*), dimension(:), intent(in), optional :: dimensions !< Dimension names.
   logical, intent(in), optional :: is_optional !< Prevent errors in read-only files
                                                !! if a variable does not exist.
-
-  call netcdf_add_restart_variable(fileobj, variable_name, vdata, dimensions, is_optional)
+  integer, intent(in), optional :: deflate_level
+  integer, intent(in), optional :: chunksizes
+  call netcdf_add_restart_variable(fileobj, variable_name, vdata, dimensions, is_optional, &
+                                   deflate_level, chunksizes)
 end subroutine netcdf_add_restart_variable_5d_wrap
 
 !> @brief Registers a regional 2D variable and stores the information needed
