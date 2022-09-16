@@ -149,6 +149,7 @@ contains
 !!--------module routines
 
 !> Initializes a list of diag buffers
+!> @returns true if allocation is successfull
 logical function fms_diag_buffer_init(buffobjs, buff_list_size)
   type(fmsDiagBufferContainer_type), allocatable, intent(out) :: buffobjs(:) !< an array of buffer container types
                                                                              !! to allocate
@@ -159,8 +160,8 @@ logical function fms_diag_buffer_init(buffobjs, buff_list_size)
   fms_diag_buffer_init = allocated(buffobjs)
 end function fms_diag_buffer_init
 
-!> Creates a container type encapsulating a new buffer object for the given dimensions
-!! The buffer object will still need to be allocated to a type via allocate_buffer() before use
+!> Creates a container type encapsulating a new buffer object for the given dimensions.
+!! The buffer object will still need to be allocated to a type via allocate_buffer() before use.
 !> @result A fmsDiagBufferContainer_type that holds a bufferNd_type, where N is buff_dims
 function fms_diag_buffer_create_container(buff_dims) &
 result(rslt)
@@ -192,7 +193,7 @@ end function fms_diag_buffer_create_container
 
 !!--------generic routines for any fmsDiagBuffer_class objects
 
-!> setter for buffer_id for any buffer objects
+!> Setter for buffer_id for any buffer objects
 subroutine set_buffer_id(this, id)
   class(fmsDiagBuffer_class), intent(inout) :: this !< buffer object to set id for
   integer, intent(in)                       :: id !< positive integer id to set
@@ -200,46 +201,40 @@ subroutine set_buffer_id(this, id)
   this%buffer_id = id
 end subroutine set_buffer_id
 
-!> Remaps 0-5d data buffer from the given object onto a 5d array pointer
+!> Remaps 0-5d data buffer from the given object onto a 5d array pointer.
+!> @returns a 5D remapped buffer, with 1:1 for any added dimensions.
 function remap_buffer(buffobj, field_name)
   class(fmsDiagBuffer_class), target, intent(inout) :: buffobj !< any dimension buffer object
   class(*), pointer                                 :: remap_buffer(:,:,:,:,:)
-  character(len=*), intent(in), optional            :: field_name
-  character(len=128)                                :: field_name_str
-
-  if( present(field_name)) then
-    field_name_str = field_name(1:128)
-  else
-    field_name_str = 'N/A'
-  endif
+  character(len=*), intent(in)                      :: field_name !< name of field for error output
 
   ! get num dimensions from type extension
   select type (buffobj)
     type is (buffer0d_type)
       if (.not. allocated(buffobj%buffer)) call mpp_error(FATAL, "remap_buffer: buffer data not yet allocated" // &
-                                                                 "for field:" // field_name_str)
+                                                                 "for field:" // field_name)
       remap_buffer(1:size(buffobj%buffer,1), 1:1, 1:1, 1:1, 1:1) => buffobj%buffer
     type is (buffer1d_type)
       if (.not. allocated(buffobj%buffer)) call mpp_error(FATAL, "remap_buffer: buffer data not yet allocated" // &
-                                                                 "for field:" // field_name_str)
+                                                                 "for field:" // field_name)
       remap_buffer(1:size(buffobj%buffer,1), 1:1, 1:1, 1:1, 1:1) => buffobj%buffer(1:size(buffobj%buffer,1))
     type is (buffer2d_type)
       if (.not. allocated(buffobj%buffer)) call mpp_error(FATAL, "remap_buffer: buffer data not yet allocated" // &
-                                                                 "for field:" // field_name_str)
+                                                                 "for field:" // field_name)
       remap_buffer(1:size(buffobj%buffer,1), 1:size(buffobj%buffer,2), 1:1, 1:1, 1:1) => buffobj%buffer(:,:)
     type is (buffer3d_type)
       if (.not. allocated(buffobj%buffer)) call mpp_error(FATAL, "remap_buffer: buffer data not yet allocated" // &
-                                                                 "for field:" // field_name_str)
+                                                                 "for field:" // field_name)
       remap_buffer(1:size(buffobj%buffer,1), 1:size(buffobj%buffer,2), 1:size(buffobj%buffer,3), 1:1, 1:1) => &
                                                                                           & buffobj%buffer(:,:,:)
     type is (buffer4d_type)
       if (.not. allocated(buffobj%buffer)) call mpp_error(FATAL, "remap_buffer: buffer data not yet allocated" // &
-                                                                 "for field:" // field_name_str)
+                                                                 "for field:" // field_name)
       remap_buffer(1:size(buffobj%buffer,1), 1:size(buffobj%buffer,2), 1:size(buffobj%buffer,3), &
                    1:size(buffobj%buffer,4), 1:1) => buffobj%buffer(:,:,:,:)
     type is (buffer5d_type)
       if (.not. allocated(buffobj%buffer)) call mpp_error(FATAL, "remap_buffer: buffer data not yet allocated" // &
-                                                                 "for field:" // field_name_str)
+                                                                 "for field:" // field_name)
       remap_buffer(1:size(buffobj%buffer,1), 1:size(buffobj%buffer,2), 1:size(buffobj%buffer,3), &
                    1:size(buffobj%buffer,4), 1:size(buffobj%buffer,5)) => buffobj%buffer(:,:,:,:,:)
     class default
@@ -248,7 +243,7 @@ function remap_buffer(buffobj, field_name)
 
 end function remap_buffer
 
-!> Deallocates data fields from a buffer object
+!> Deallocates data fields from a buffer object.
 subroutine flush_buffer(this)
   class(fmsDiagBuffer_class), intent(inout) :: this !< any buffer object
   select type (this)
@@ -279,22 +274,13 @@ end subroutine flush_buffer
 
 !! -----------Type-specific routines for buffer0-5d
 
-!! allocations could be done in one routine for 0-5d if buffobj is changed to fmsDiagBuffer_class
-!! not sure which approach would be better
-
-!> allocates scalar buffer data to the given buff_type
-subroutine allocate_buffer_0d(this, buff_type, diurnal_samples, field_name)
+!> Allocates scalar buffer data to the given buff_type.
+subroutine allocate_buffer_0d(this, buff_type, field_name, diurnal_samples)
   class(buffer0d_type), intent(inout), target :: this !< scalar buffer object
   class(*),intent(in) :: buff_type !< allocates to the given type, value does not matter
-  integer, optional :: diurnal_samples !< number of diurnal samples, passed in from diag_yaml
+  character(len=*), intent(in) :: field_name !< field name for error output
+  integer, intent(in),optional :: diurnal_samples !< number of diurnal samples, passed in from diag_yaml
   integer :: n_samples !< number of diurnal samples, defaults to 1
-  character(len=*), optional, intent(in) :: field_name !< optional field name for error output
-  character(len=128)          :: field_name_str
-  if(present(field_name)) then
-    field_name_str = field_name(1:128)
-  else
-    field_name_str = 'N/A'
-  endif
 
   if(present(diurnal_samples)) then
     n_samples = diurnal_samples
@@ -303,61 +289,58 @@ subroutine allocate_buffer_0d(this, buff_type, diurnal_samples, field_name)
   endif
 
   if(allocated(this%buffer)) call mpp_error(FATAL, "allocate_buffer_0d: buffer already allocated for field:"// &
-                                                    field_name_str)
+                                                    field_name)
   select type (buff_type)
     type is (integer(kind=i4_kind))
       allocate(integer(kind=i4_kind) :: this%buffer(1))
       allocate(integer(kind=i4_kind) :: this%counter(1))
       allocate(integer(kind=i4_kind) :: this%count_0d(n_samples))
       this%counter = 0
+      this%count_0d = 0
       this%buffer_type = i4
     type is (integer(kind=i8_kind))
       allocate(integer(kind=i8_kind) :: this%buffer(1))
       allocate(integer(kind=i8_kind) :: this%counter(1))
       allocate(integer(kind=i8_kind) :: this%count_0d(n_samples))
       this%counter = 0
+      this%count_0d = 0
       this%buffer_type = i8
     type is (real(kind=r4_kind))
       allocate(real(kind=r4_kind) :: this%buffer(1))
       allocate(real(kind=r4_kind) :: this%counter(1))
       allocate(real(kind=r4_kind) :: this%count_0d(n_samples))
-      this%counter = 0
+      this%counter = 0.0_r4_kind
+      this%count_0d = 0.0_r4_kind
       this%buffer_type = r4
     type is (real(kind=r8_kind))
       allocate(real(kind=r8_kind) :: this%buffer(1))
       allocate(real(kind=r8_kind) :: this%counter(1))
       allocate(real(kind=r8_kind) :: this%count_0d(n_samples))
-      this%counter = 0
+      this%counter = 0.0_r8_kind
+      this%count_0d = 0.0_r8_kind
       this%buffer_type = r8
     class default
        call mpp_error("allocate_buffer_0d", &
            "The buff_type value passed to allocate a buffer is not a r8, r4, i8, or i4" // &
-           "for field:" // field_name_str, &
+           "for field:" // field_name, &
            FATAL)
   end select
 
   allocate(this%num_elements(n_samples))
   allocate(this%buffer_dims(1))
   this%num_elements = 0
-  this%count_0d   = 0
   this%buffer_dims(1) = 1
 
 end subroutine allocate_buffer_0d
 
-!> allocates 1D buffer data to given buff_type
-subroutine allocate_buffer_1d(this, buff_type, buff_size, diurnal_samples, field_name)
+!> Allocates 1D buffer data to given buff_type.
+subroutine allocate_buffer_1d(this, buff_type, buff_size, field_name, diurnal_samples)
   class(buffer1d_type), intent(inout), target :: this !< scalar buffer object
   class(*),intent(in) :: buff_type !< allocates to the type of buff_type
   integer, intent(in) :: buff_size !< dimension bounds
-  integer, optional :: diurnal_samples !< number of diurnal samples, passed in from diag_yaml
+  character(len=*), intent(in) :: field_name !< field name for error output
+  integer, intent(in), optional :: diurnal_samples !< number of diurnal samples, passed in from diag_yaml
   integer :: n_samples !< number of diurnal samples, defaults to 1
-  character(len=*), optional, intent(in) :: field_name !< optional field name for error output
-  character(len=128)          :: field_name_str
-  if(present(field_name)) then
-    field_name_str = field_name(1:128)
-  else
-    field_name_str = 'N/A'
-  endif
 
   if(present(diurnal_samples)) then
     n_samples = diurnal_samples
@@ -366,36 +349,40 @@ subroutine allocate_buffer_1d(this, buff_type, buff_size, diurnal_samples, field
   endif
 
   if(allocated(this%buffer)) call mpp_error(FATAL, "allocate_buffer_1d: buffer already allocated for field:" // &
-                                                   field_name_str)
+                                                   field_name)
   select type (buff_type)
     type is (integer(kind=i4_kind))
       allocate(integer(kind=i4_kind) :: this%buffer(buff_size))
       allocate(integer(kind=i4_kind) :: this%counter(buff_size))
       allocate(integer(kind=i4_kind) :: this%count_0d(n_samples))
       this%counter = 0
+      this%count_0d = 0
       this%buffer_type = i4
     type is (integer(kind=i8_kind))
       allocate(integer(kind=i8_kind) :: this%buffer(buff_size))
       allocate(integer(kind=i8_kind) :: this%counter(buff_size))
       allocate(integer(kind=i8_kind) :: this%count_0d(n_samples))
       this%counter = 0
+      this%count_0d = 0
       this%buffer_type = i8
     type is (real(kind=r4_kind))
       allocate(real(kind=r4_kind) :: this%buffer(buff_size))
       allocate(real(kind=r4_kind) :: this%count_0d(buff_size))
       allocate(real(kind=r4_kind) :: this%counter(n_samples))
-      this%counter = 0
+      this%counter = 0.0_r4_kind
+      this%count_0d = 0.0_r4_kind
       this%buffer_type = r4
     type is (real(kind=r8_kind))
       allocate(real(kind=r8_kind) :: this%buffer(buff_size))
       allocate(real(kind=r8_kind) :: this%count_0d(buff_size))
       allocate(real(kind=r8_kind) :: this%counter(n_samples))
-      this%counter = 0
+      this%counter = 0.0_r8_kind
+      this%count_0d = 0.0_r8_kind
       this%buffer_type = r8
     class default
        call mpp_error("allocate_buffer_1d", &
            "The buff_type value passed to allocate a buffer is not a r8, r4, i8, or i4 " // &
-           "for field:" // field_name_str, &
+           "for field:" // field_name, &
            FATAL)
   end select
 
@@ -407,20 +394,14 @@ subroutine allocate_buffer_1d(this, buff_type, buff_size, diurnal_samples, field
 
 end subroutine allocate_buffer_1d
 
-!> allocates a 2D buffer to given buff_type
-subroutine allocate_buffer_2d(this, buff_type, buff_sizes, diurnal_samples, field_name)
+!> Allocates a 2D buffer to given buff_type.
+subroutine allocate_buffer_2d(this, buff_type, buff_sizes, field_name, diurnal_samples)
   class(buffer2d_type), intent(inout), target :: this !< 2D buffer object
   class(*),intent(in) :: buff_type !< allocates to the type of buff_type
   integer, intent(in) :: buff_sizes(2) !< dimension sizes
-  integer, optional :: diurnal_samples !< number of diurnal samples, passed in from diag_yaml
+  integer, intent(in),optional :: diurnal_samples !< number of diurnal samples, passed in from diag_yaml
   integer :: n_samples !< number of diurnal samples, defaults to 1
-  character(len=*), optional, intent(in) :: field_name !< optional field name for error output
-  character(len=128)          :: field_name_str
-  if(present(field_name)) then
-    field_name_str = field_name(1:128)
-  else
-    field_name_str = 'N/A'
-  endif
+  character(len=*), intent(in) :: field_name !< field name for error output
 
   if(present(diurnal_samples)) then
     n_samples = diurnal_samples
@@ -429,60 +410,58 @@ subroutine allocate_buffer_2d(this, buff_type, buff_sizes, diurnal_samples, fiel
   endif
 
   if(allocated(this%buffer)) call mpp_error(FATAL, "allocate_buffer_2d: buffer already allocated for field: " // &
-                                                    field_name_str)
+                                                    field_name)
   select type (buff_type)
     type is (integer(kind=i4_kind))
       allocate(integer(kind=i4_kind) :: this%buffer(buff_sizes(1), buff_sizes(2)))
       allocate(integer(kind=i4_kind) :: this%counter(buff_sizes(1), buff_sizes(2)))
       allocate(integer(kind=i4_kind) :: this%count_0d(n_samples))
       this%counter = 0
+      this%count_0d = 0
       this%buffer_type = i4
     type is (integer(kind=i8_kind))
       allocate(integer(kind=i8_kind) :: this%buffer(buff_sizes(1), buff_sizes(2)))
       allocate(integer(kind=i8_kind) :: this%counter(buff_sizes(1), buff_sizes(2)))
       allocate(integer(kind=i8_kind) :: this%count_0d(n_samples))
       this%counter = 0
+      this%count_0d = 0
       this%buffer_type = i8
     type is (real(kind=r4_kind))
       allocate(real(kind=r4_kind) :: this%buffer(buff_sizes(1), buff_sizes(2)))
       allocate(real(kind=r4_kind) :: this%counter(buff_sizes(1), buff_sizes(2)))
       allocate(real(kind=r4_kind) :: this%count_0d(n_samples))
-      this%counter = 0
+      this%counter = 0.0_r4_kind
+      this%count_0d = 0.0_r4_kind
       this%buffer_type = r4
     type is (real(kind=r8_kind))
       allocate(real(kind=r8_kind) :: this%buffer(buff_sizes(1), buff_sizes(2)))
       allocate(real(kind=r8_kind) :: this%counter(buff_sizes(1), buff_sizes(2)))
       allocate(real(kind=r8_kind) :: this%count_0d(n_samples))
+      this%counter = 0.0_r8_kind
+      this%count_0d = 0.0_r8_kind
       this%buffer_type = r4
     class default
        call mpp_error("allocate_buffer_1d", &
            "The buff_type value passed to allocate a buffer is not a r8, r4, i8, or i4" // &
-           "for field:" // field_name_str, &
+           "for field:" // field_name, &
            FATAL)
   end select
   allocate(this%num_elements(n_samples))
   allocate(this%buffer_dims(2))
   this%num_elements = 0
-  this%count_0d   = 0
   this%buffer_dims(1) = buff_sizes(1)
   this%buffer_dims(2) = buff_sizes(2)
 
 end subroutine allocate_buffer_2d
 
-!> allocates a 3D buffer to given buff_type
-subroutine allocate_buffer_3d(this, buff_type, buff_sizes, diurnal_samples, field_name)
+!> Allocates a 3D buffer to given buff_type.
+subroutine allocate_buffer_3d(this, buff_type, buff_sizes, field_name, diurnal_samples)
   class(buffer3d_type), intent(inout), target :: this !< 3D buffer object
   class(*),intent(in) :: buff_type !< allocates to the type of buff_type
   integer, intent(in) :: buff_sizes(3) !< dimension sizes
-  integer, optional :: diurnal_samples !< number of diurnal samples, passed in from diag_yaml
+  integer, intent(in),optional :: diurnal_samples !< number of diurnal samples, passed in from diag_yaml
   integer :: n_samples !< number of diurnal samples, defaults to 1
-  character(len=*), optional, intent(in) :: field_name !< optional field name for error output
-  character(len=128)          :: field_name_str
-  if(present(field_name)) then
-    field_name_str = field_name(1:128)
-  else
-    field_name_str = 'N/A'
-  endif
+  character(len=*), intent(in) :: field_name !< field name for error output
 
   if(present(diurnal_samples)) then
     n_samples = diurnal_samples
@@ -491,25 +470,28 @@ subroutine allocate_buffer_3d(this, buff_type, buff_sizes, diurnal_samples, fiel
   endif
 
   if(allocated(this%buffer)) call mpp_error(FATAL, "allocate_buffer_3d: buffer already allocated for field" // &
-                                                   field_name_str)
+                                                   field_name)
   select type (buff_type)
     type is (integer(kind=i4_kind))
       allocate(integer(kind=i4_kind) :: this%buffer( buff_sizes(1),buff_sizes(2), buff_sizes(3)))
       allocate(integer(kind=i4_kind) :: this%counter(buff_sizes(1),buff_sizes(2), buff_sizes(3)))
       allocate(integer(kind=i4_kind) :: this%count_0d(n_samples))
       this%counter = 0
+      this%count_0d = 0
       this%buffer_type = i4
     type is (integer(kind=i8_kind))
       allocate(integer(kind=i8_kind) :: this%buffer( buff_sizes(1),buff_sizes(2), buff_sizes(3)))
       allocate(integer(kind=i8_kind) :: this%counter(buff_sizes(1),buff_sizes(2), buff_sizes(3)))
       allocate(integer(kind=i8_kind) :: this%count_0d(n_samples))
       this%counter = 0
+      this%count_0d = 0
       this%buffer_type = i8
     type is (real(kind=r4_kind))
       allocate(real(kind=r4_kind) :: this%buffer( buff_sizes(1),buff_sizes(2), buff_sizes(3)))
       allocate(real(kind=r4_kind) :: this%counter(buff_sizes(1),buff_sizes(2), buff_sizes(3)))
       allocate(real(kind=r4_kind) :: this%count_0d(n_samples))
       this%counter = 0
+      this%count_0d = 0.0_r4_kind
       this%buffer_type = r4
     type is (real(kind=r8_kind))
       allocate(real(kind=r8_kind) :: this%buffer( buff_sizes(1),buff_sizes(2), buff_sizes(3)))
@@ -517,10 +499,11 @@ subroutine allocate_buffer_3d(this, buff_type, buff_sizes, diurnal_samples, fiel
       allocate(real(kind=r8_kind) :: this%count_0d(n_samples))
       this%buffer_type = r4
       this%counter = 0
+      this%count_0d = 0.0_r8_kind
     class default
        call mpp_error("allocate_buffer_3d", &
            "The buff_type value passed to allocate a buffer is not a r8, r4, i8, or i4" // &
-           "for field:" // field_name_str, FATAL)
+           "for field:" // field_name, FATAL)
   end select
 
   allocate(this%num_elements(n_samples))
@@ -533,20 +516,14 @@ subroutine allocate_buffer_3d(this, buff_type, buff_sizes, diurnal_samples, fiel
 
 end subroutine allocate_buffer_3d
 
-!> allocates a 4D buffer to given buff_type
-subroutine allocate_buffer_4d(this, buff_type, buff_sizes, diurnal_samples, field_name)
+!> Allocates a 4D buffer to given buff_type.
+subroutine allocate_buffer_4d(this, buff_type, buff_sizes, field_name, diurnal_samples)
   class(buffer4d_type), intent(inout), target :: this !< 4D buffer object
   class(*),intent(in) :: buff_type !< allocates to the type of buff_type
   integer, intent(in) :: buff_sizes(4) !< dimension buff_sizes
-  integer, optional :: diurnal_samples !< number of diurnal samples, passed in from diag_yaml
+  character(len=*), intent(in) :: field_name !< field name for error output
+  integer, intent(in),optional :: diurnal_samples !< number of diurnal samples, passed in from diag_yaml
   integer :: n_samples !< number of diurnal samples, defaults to 1
-  character(len=*), optional, intent(in) :: field_name !< optional field name for error output
-  character(len=128)          :: field_name_str
-  if(present(field_name)) then
-    field_name_str = field_name(1:128)
-  else
-    field_name_str = 'N/A'
-  endif
 
   if(present(diurnal_samples)) then
     n_samples = diurnal_samples
@@ -555,7 +532,7 @@ subroutine allocate_buffer_4d(this, buff_type, buff_sizes, diurnal_samples, fiel
   endif
 
   if(allocated(this%buffer)) call mpp_error(FATAL, "allocate_buffer_4d: buffer already allocated for field:" // &
-                                                   field_name_str)
+                                                   field_name)
 
   select type (buff_type)
     type is (integer(kind=i4_kind))
@@ -563,29 +540,33 @@ subroutine allocate_buffer_4d(this, buff_type, buff_sizes, diurnal_samples, fiel
       allocate(integer(kind=i4_kind) :: this%counter(buff_sizes(1),buff_sizes(2),buff_sizes(3),buff_sizes(4)))
       allocate(integer(kind=i4_kind) :: this%count_0d(n_samples))
       this%counter = 0
+      this%count_0d = 0
       this%buffer_type = i4
     type is (integer(kind=i8_kind))
       allocate(integer(kind=i8_kind) :: this%buffer(buff_sizes(1),buff_sizes(2),buff_sizes(3),buff_sizes(4)))
       allocate(integer(kind=i8_kind) :: this%counter(buff_sizes(1),buff_sizes(2),buff_sizes(3),buff_sizes(4)))
       allocate(integer(kind=i8_kind) :: this%count_0d(n_samples))
       this%counter = 0
+      this%count_0d = 0
       this%buffer_type = i8
     type is (real(kind=r4_kind))
       allocate(real(kind=r4_kind) :: this%buffer(buff_sizes(1),buff_sizes(2),buff_sizes(3),buff_sizes(4)))
       allocate(real(kind=r4_kind) :: this%counter(buff_sizes(1),buff_sizes(2),buff_sizes(3),buff_sizes(4)))
       allocate(real(kind=r4_kind) :: this%count_0d(n_samples))
       this%counter = 0
+      this%count_0d = 0.0_r4_kind
       this%buffer_type = r4
     type is (real(kind=r8_kind))
       allocate(real(kind=r8_kind) :: this%buffer(buff_sizes(1),buff_sizes(2),buff_sizes(3),buff_sizes(4)))
-      allocate(real(kind=r4_kind) :: this%counter(buff_sizes(1),buff_sizes(2),buff_sizes(3),buff_sizes(4)))
-      allocate(real(kind=r4_kind) :: this%count_0d(n_samples))
+      allocate(real(kind=r8_kind) :: this%counter(buff_sizes(1),buff_sizes(2),buff_sizes(3),buff_sizes(4)))
+      allocate(real(kind=r8_kind) :: this%count_0d(n_samples))
       this%counter = 0
+      this%count_0d = 0.0_r8_kind
       this%buffer_type = r8
     class default
        call mpp_error("allocate_buffer_4d", &
            "The buff_type value passed to allocate a buffer is not a r8, r4, i8, or i4" // &
-           "for field:" // field_name_str, FATAL)
+           "for field:" // field_name, FATAL)
   end select
 
   allocate(this%num_elements(n_samples))
@@ -599,20 +580,14 @@ subroutine allocate_buffer_4d(this, buff_type, buff_sizes, diurnal_samples, fiel
 
 end subroutine allocate_buffer_4d
 
-!> allocates a 5D buffer to given buff_type
-subroutine allocate_buffer_5d(this, buff_type, buff_sizes, diurnal_samples, field_name)
+!> Allocates a 5D buffer to given buff_type.
+subroutine allocate_buffer_5d(this, buff_type, buff_sizes, field_name, diurnal_samples)
   class(buffer5d_type), intent(inout), target :: this !< 5D buffer object
   class(*),intent(in) :: buff_type !< allocates to the type of buff_type
   integer, intent(in) :: buff_sizes(5) !< dimension buff_sizes
-  integer, optional :: diurnal_samples !< number of diurnal samples, passed in from diag_yaml
+  character(len=*), intent(in) :: field_name !< field name for error output
+  integer, intent(in),optional :: diurnal_samples !< number of diurnal samples, passed in from diag_yaml
   integer :: n_samples !< number of diurnal samples, defaults to 1
-  character(len=*), optional, intent(in) :: field_name !< optional field name for error output
-  character(len=128)          :: field_name_str
-  if(present(field_name)) then
-    field_name_str = field_name(1:128)
-  else
-    field_name_str = 'N/A'
-  endif
 
   if(present(diurnal_samples)) then
     n_samples = diurnal_samples
@@ -621,7 +596,7 @@ subroutine allocate_buffer_5d(this, buff_type, buff_sizes, diurnal_samples, fiel
   endif
 
   if(allocated(this%buffer)) call mpp_error(FATAL, "allocate_buffer_5d: buffer already allocated for field:" // &
-                                                   field_name_str)
+                                                   field_name)
   select type (buff_type)
     type is (integer(kind=i4_kind))
       allocate(integer(kind=i4_kind) :: this%buffer(buff_sizes(1),buff_sizes(2),buff_sizes(3),buff_sizes(4),  &
@@ -630,6 +605,7 @@ subroutine allocate_buffer_5d(this, buff_type, buff_sizes, diurnal_samples, fiel
                                                    & buff_sizes(5)))
       allocate(integer(kind=i4_kind) :: this%count_0d(n_samples))
       this%counter = 0
+      this%count_0d = 0
       this%buffer_type = i4
     type is (integer(kind=i8_kind))
       allocate(integer(kind=i8_kind) :: this%buffer(buff_sizes(1),buff_sizes(2),buff_sizes(3),buff_sizes(4), &
@@ -638,6 +614,7 @@ subroutine allocate_buffer_5d(this, buff_type, buff_sizes, diurnal_samples, fiel
                                                   & buff_sizes(5)))
       allocate(integer(kind=i8_kind) :: this%count_0d(n_samples))
       this%counter = 0
+      this%count_0d = 0
       this%buffer_type = i8
     type is (real(kind=r4_kind))
       allocate(real(kind=r4_kind) :: this%buffer(buff_sizes(1),buff_sizes(2),buff_sizes(3),buff_sizes(4),  &
@@ -646,6 +623,7 @@ subroutine allocate_buffer_5d(this, buff_type, buff_sizes, diurnal_samples, fiel
                                                 & buff_sizes(5)))
       allocate(real(kind=r4_kind) :: this%count_0d(n_samples))
       this%counter = 0
+      this%count_0d = 0.0_r4_kind
       this%buffer_type = r4
     type is (real(kind=r8_kind))
       allocate(real(kind=r8_kind) :: this%buffer(buff_sizes(1),buff_sizes(2),buff_sizes(3),buff_sizes(4), &
@@ -654,11 +632,12 @@ subroutine allocate_buffer_5d(this, buff_type, buff_sizes, diurnal_samples, fiel
                                                 & buff_sizes(5)))
       allocate(real(kind=r8_kind) :: this%count_0d(n_samples))
       this%counter = 0
+      this%count_0d = 0.0_r8_kind
       this%buffer_type = r8
     class default
        call mpp_error("allocate_buffer_5d", &
            "The buff_type value passed to allocate a buffer is not a r8, r4, i8, or i4" // &
-           "for field:" // field_name_str, FATAL)
+           "for field:" // field_name, FATAL)
   end select
   allocate(this%num_elements(n_samples))
   this%num_elements = 0
@@ -671,21 +650,15 @@ subroutine allocate_buffer_5d(this, buff_type, buff_sizes, diurnal_samples, fiel
   this%buffer_dims(5) = buff_sizes(5)
 end subroutine allocate_buffer_5d
 
-!> Get routine for scalar buffers
-!! Sets the buff_out argument to the integer or real value currently stored in the buffer
+!> Get routine for scalar buffers.
+!! Sets the buff_out argument to the integer or real value currently stored in the buffer.
 subroutine get_0d (this, buff_out, field_name)
   class(buffer0d_type), intent(in) :: this !< 0d allocated buffer object
   class(*), allocatable, intent(out)  :: buff_out !< output of copied buffer data
-  character(len=*), optional, intent(in) :: field_name !< optional field name for error output
-  character(len=128)          :: field_name_str
-  if(present(field_name)) then
-    field_name_str = field_name(1:128)
-  else
-    field_name_str = 'N/A'
-  endif
+  character(len=*), intent(in) :: field_name !< field name for error output
 
   if(.not. allocated(this%buffer)) call mpp_error(FATAL, 'get_0d(get_buffer): buffer not yet allocated for field:' &
-                                                        & // field_name_str)
+                                                        & // field_name)
   select type (buff=>this%buffer)
     type is (real(r4_kind))
       allocate(real(r4_kind) :: buff_out)
@@ -701,27 +674,21 @@ subroutine get_0d (this, buff_out, field_name)
       buff_out = buff(1)
     class default
       call mpp_error(FATAL, "get_0d: buffer allocated to invalid type(must be integer or real, kind size 4 or 8)." // &
-                            field_name_str)
+                            field_name)
   end select
 end subroutine
 
-!> Get routine for 1D buffers
-!! Sets the buff_out argument to the integer or real array currently stored in the buffer
+!> Get routine for 1D buffers.
+!! Sets the buff_out argument to the integer or real array currently stored in the buffer.
 subroutine get_1d (this, buff_out, field_name)
   class(buffer1d_type), intent(in) :: this !< 1d allocated buffer object
   class(*), allocatable, intent(out)  :: buff_out(:) !< output of copied buffer data
                                                 !! must be the same size as the allocated buffer
   integer(i4_kind) :: buff_size !< size for allocated buffer
-  character(len=*), optional, intent(in) :: field_name !< optional field name for error output
-  character(len=128)          :: field_name_str
-  if(present(field_name)) then
-    field_name_str = field_name(1:128)
-  else
-    field_name_str = 'N/A'
-  endif
+  character(len=*), intent(in) :: field_name !< field name for error output
 
   if(.not. allocated(this%buffer)) call mpp_error(FATAL, 'get_0d(get_buffer): buffer not yet allocated for field:' &
-                                                        & // field_name_str)
+                                                        & // field_name)
   buff_size = size(this%buffer,1)
 
   select type (buff=>this%buffer)
@@ -739,27 +706,21 @@ subroutine get_1d (this, buff_out, field_name)
       buff_out = buff
     class default
       call mpp_error(FATAL, "get_1d: buffer allocated to invalid type(must be integer or real, kind size 4 or 8)." // &
-                            "field name: "// field_name_str)
+                            "field name: "// field_name)
   end select
 end subroutine
 
-!> Get routine for 2D buffers
-!! Sets the buff_out argument to the integer or real array currently stored in the buffer
+!> Get routine for 2D buffers.
+!! Sets the buff_out argument to the integer or real array currently stored in the buffer.
 subroutine get_2d (this, buff_out, field_name)
   class(buffer2d_type), intent(in) :: this !< 2d allocated buffer object
   class(*), allocatable, intent(out)  :: buff_out(:,:) !< output of copied buffer data
                                                 !! must be the same size as the allocated buffer
   integer(i4_kind) :: buff_size(2) !< sizes for allocated buffer
-  character(len=*), optional, intent(in) :: field_name !< optional field name for error output
-  character(len=128)          :: field_name_str
-  if(present(field_name)) then
-    field_name_str = field_name(1:128)
-  else
-    field_name_str = 'N/A'
-  endif
+  character(len=*), intent(in) :: field_name !< field name for error output
 
   if(.not. allocated(this%buffer)) call mpp_error(FATAL, 'get_2d(get_buffer): buffer not yet allocated for field:' &
-                                                        & // field_name_str)
+                                                        & // field_name)
   buff_size(1) = size(this%buffer,1)
   buff_size(2) = size(this%buffer,2)
 
@@ -778,28 +739,22 @@ subroutine get_2d (this, buff_out, field_name)
       buff_out = buff
     class default
       call mpp_error(FATAL, "get_2d: buffer allocated to invalid type(must be integer or real, kind size 4 or 8)." // &
-                            "field name: "// field_name_str)
+                            "field name: "// field_name)
 
   end select
 end subroutine
 
-!> Get routine for 3D buffers
-!! Sets the buff_out argument to the integer or real array currently stored in the buffer
+!> Get routine for 3D buffers.
+!! Sets the buff_out argument to the integer or real array currently stored in the buffer.
 subroutine get_3d (this, buff_out, field_name)
   class(buffer3d_type), intent(in) :: this !< 3d allocated buffer object
   class(*), allocatable, intent(out)  :: buff_out(:,:,:) !< output of copied buffer data
                                                 !! must be the same size as the allocated buffer
   integer(i4_kind) :: buff_size(3)!< sizes for allocated buffer
-  character(len=*), optional, intent(in) :: field_name !< optional field name for error output
-  character(len=128)          :: field_name_str
-  if(present(field_name)) then
-    field_name_str = field_name(1:128)
-  else
-    field_name_str = 'N/A'
-  endif
+  character(len=*), intent(in) :: field_name !< field name for error output
 
   if(.not. allocated(this%buffer)) call mpp_error(FATAL, 'get_3d(get_buffer): buffer not yet allocated for field:' &
-                                                        & // field_name_str)
+                                                        & // field_name)
   buff_size(1) = size(this%buffer,1)
   buff_size(2) = size(this%buffer,2)
   buff_size(3) = size(this%buffer,3)
@@ -819,27 +774,21 @@ subroutine get_3d (this, buff_out, field_name)
       buff_out = buff
     class default
       call mpp_error(FATAL, "get_3d: buffer allocated to invalid type(must be integer or real, kind size 4 or 8)." // &
-                            "field name: "// field_name_str)
+                            "field name: "// field_name)
   end select
 end subroutine
 
-!> Get routine for 4D buffers
-!! Sets the buff_out argument to the integer or real array currently stored in the buffer
+!> Get routine for 4D buffers.
+!! Sets the buff_out argument to the integer or real array currently stored in the buffer.
 subroutine get_4d (this, buff_out, field_name)
   class(buffer4d_type), intent(in) :: this !< 4d allocated buffer object
   class(*), allocatable, intent(out)  :: buff_out(:,:,:,:) !< output of copied buffer data
                                                 !! must be the same size as the allocated buffer
   integer(i4_kind) :: buff_size(4)!< sizes for allocated buffer
-  character(len=*), optional, intent(in) :: field_name !< optional field name for error output
-  character(len=128)          :: field_name_str
-  if(present(field_name)) then
-    field_name_str = field_name(1:128)
-  else
-    field_name_str = 'N/A'
-  endif
+  character(len=*), intent(in) :: field_name !< field name for error output
 
   if(.not. allocated(this%buffer)) call mpp_error(FATAL, 'get_4d(get_buffer): buffer not yet allocated for field:' &
-                                                        & // field_name_str)
+                                                        & // field_name)
   buff_size(1) = size(this%buffer,1)
   buff_size(2) = size(this%buffer,2)
   buff_size(3) = size(this%buffer,3)
@@ -860,27 +809,21 @@ subroutine get_4d (this, buff_out, field_name)
       buff_out = buff
     class default
       call mpp_error(FATAL, "get_4d: buffer allocated to invalid type(must be integer or real, kind size 4 or 8)." // &
-                            "field name: "// field_name_str)
+                            "field name: "// field_name)
   end select
 end subroutine
 
-!> Get routine for 5D buffers
-!! Sets the buff_out argument to the integer or real array currently stored in the buffer
+!> Get routine for 5D buffers.
+!! Sets the buff_out argument to the integer or real array currently stored in the buffer.
 subroutine get_5d (this, buff_out, field_name)
   class(buffer5d_type), intent(in) :: this !< 5d allocated buffer object
   class(*), allocatable, intent(out)  :: buff_out(:,:,:,:,:) !< output of copied buffer data
                                                 !! must be the same size as the allocated buffer
   integer(i4_kind) :: buff_size(5)!< sizes for allocated buffer
-  character(len=*), optional, intent(in) :: field_name !< optional field name for error output
-  character(len=128)          :: field_name_str
-  if(present(field_name)) then
-    field_name_str = field_name(1:128)
-  else
-    field_name_str = 'N/A'
-  endif
+  character(len=*), intent(in) :: field_name !< field name for error output
 
   if(.not. allocated(this%buffer)) call mpp_error(FATAL, 'get_5d: buffer not yet allocated for field:' &
-                                                        & // field_name_str)
+                                                        & // field_name)
   buff_size(1) = size(this%buffer,1)
   buff_size(2) = size(this%buffer,2)
   buff_size(3) = size(this%buffer,3)
@@ -902,23 +845,17 @@ subroutine get_5d (this, buff_out, field_name)
       buff_out = buff
     class default
       call mpp_error(FATAL, "get_5d: buffer allocated to invalid type(must be integer or real, kind size 4 or 8)." // &
-                            "field name: "// field_name_str)
+                            "field name: "// field_name)
   end select
 end subroutine
 
-!> @brief Initializes a buffer to a given fill value
+!> @brief Initializes a buffer to a given fill value.
 subroutine initialize_buffer_0d (this, fillval, field_name)
   class(buffer0d_type), intent(inout) :: this !< scalar buffer object
   class(*), intent(in) :: fillval !< fill value, must be same type as the allocated buffer in this
-  character(len=*), optional, intent(in) :: field_name !< optional field name for error output
-  character(len=128)          :: field_name_str
-  if(present(field_name)) then
-    field_name_str = field_name(1:128)
-  else
-    field_name_str = 'N/A'
-  endif
+  character(len=*), intent(in) :: field_name !< field name for error output
 
-  if(.not. allocated(this%buffer)) call mpp_error(FATAL, 'initialize_buffer_0d: field:'// field_name_str // &
+  if(.not. allocated(this%buffer)) call mpp_error(FATAL, 'initialize_buffer_0d: field:'// field_name // &
       'buffer not yet allocated, allocate_buffer() must be called on this object first.')
   select type(buff => this%buffer)
   type is(real(r8_kind))
@@ -927,7 +864,7 @@ subroutine initialize_buffer_0d (this, fillval, field_name)
       buff = fillval
     class default
       call mpp_error(FATAL, 'initialize_buffer_0d: fillval does not match up with allocated buffer type(r8_kind)' // &
-                            ' for field' // field_name_str )
+                            ' for field' // field_name )
     end select
   type is(real(r4_kind))
     select type(fillval)
@@ -935,7 +872,7 @@ subroutine initialize_buffer_0d (this, fillval, field_name)
       buff = fillval
     class default
       call mpp_error(FATAL, 'initialize_buffer_0d: fillval does not match up with allocated buffer type(r4_kind)' // &
-                            ' for field' // field_name_str )
+                            ' for field' // field_name )
     end select
   type is(integer(i8_kind))
     select type(fillval)
@@ -943,7 +880,7 @@ subroutine initialize_buffer_0d (this, fillval, field_name)
       buff = fillval
     class default
       call mpp_error(FATAL, 'initialize_buffer_0d: fillval does not match up with allocated buffer type(i8_kind)' // &
-                            ' for field' // field_name_str )
+                            ' for field' // field_name )
     end select
   type is(integer(i4_kind))
     select type(fillval)
@@ -951,7 +888,7 @@ subroutine initialize_buffer_0d (this, fillval, field_name)
       buff = fillval
     class default
       call mpp_error(FATAL, 'initialize_buffer_0d: fillval does not match up with allocated buffer type(i4_kind)' // &
-                            ' for field' // field_name_str )
+                            ' for field' // field_name )
     end select
   class default
     call mpp_error(FATAL, 'initialize buffer_0d: buffer allocated to invalid data type, this shouldnt happen')
@@ -959,19 +896,13 @@ subroutine initialize_buffer_0d (this, fillval, field_name)
 
 end subroutine initialize_buffer_0d
 
-!> @brief Initializes a buffer to a given fill value
+!> @brief Initializes a buffer to a given fill value.
 subroutine initialize_buffer_1d (this, fillval, field_name)
   class(buffer1d_type), intent(inout) :: this !< 1D buffer object
   class(*), intent(in) :: fillval !< fill value, must be same type as the allocated buffer in this
-  character(len=*), optional, intent(in) :: field_name !< optional field name for error output
-  character(len=128)          :: field_name_str
-  if(present(field_name)) then
-    field_name_str = field_name(1:128)
-  else
-    field_name_str = 'N/A'
-  endif
+  character(len=*), intent(in) :: field_name !< field name for error output
 
-  if(.not. allocated(this%buffer)) call mpp_error(FATAL, 'initialize_buffer_1d: field:'// field_name_str // &
+  if(.not. allocated(this%buffer)) call mpp_error(FATAL, 'initialize_buffer_1d: field:'// field_name // &
       'buffer not yet allocated, allocate_buffer() must be called on this object first.')
   ! have to check fill value and buffer types match
   select type(buff => this%buffer)
@@ -981,7 +912,7 @@ subroutine initialize_buffer_1d (this, fillval, field_name)
       buff = fillval
     class default
       call mpp_error(FATAL, 'initialize_buffer_1d: fillval does not match up with allocated buffer type(r8_kind)' // &
-                            ' for field' // field_name_str )
+                            ' for field' // field_name )
     end select
   type is(real(r4_kind))
     select type(fillval)
@@ -989,7 +920,7 @@ subroutine initialize_buffer_1d (this, fillval, field_name)
       buff = fillval
     class default
       call mpp_error(FATAL, 'initialize_buffer_1d: fillval does not match up with allocated buffer type(r4_kind)' // &
-                            ' for field' // field_name_str )
+                            ' for field' // field_name )
     end select
   type is(integer(i8_kind))
     select type(fillval)
@@ -997,7 +928,7 @@ subroutine initialize_buffer_1d (this, fillval, field_name)
       buff = fillval
     class default
       call mpp_error(FATAL, 'initialize_buffer_1d: fillval does not match up with allocated buffer type(i8_kind)' // &
-                            ' for field' // field_name_str )
+                            ' for field' // field_name )
     end select
   type is(integer(i4_kind))
     select type(fillval)
@@ -1005,7 +936,7 @@ subroutine initialize_buffer_1d (this, fillval, field_name)
       buff = fillval
     class default
       call mpp_error(FATAL, 'initialize_buffer_1d: fillval does not match up with allocated buffer type(i4_kind)' // &
-                            ' for field' // field_name_str )
+                            ' for field' // field_name )
     end select
   class default
     call mpp_error(FATAL, 'initialize buffer_1d: buffer allocated to invalid data type, this shouldnt happen')
@@ -1013,19 +944,13 @@ subroutine initialize_buffer_1d (this, fillval, field_name)
 
 end subroutine initialize_buffer_1d
 
-!> @brief Initializes a buffer to a given fill value
+!> @brief Initializes a buffer to a given fill value.
 subroutine initialize_buffer_2d (this, fillval, field_name)
   class(buffer2d_type), intent(inout) :: this !< 2D buffer object
   class(*), intent(in) :: fillval !< fill value, must be same type as the allocated buffer in this
-  character(len=*), optional, intent(in) :: field_name !< optional field name for error output
-  character(len=128)          :: field_name_str
-  if(present(field_name)) then
-    field_name_str = field_name(1:128)
-  else
-    field_name_str = 'N/A'
-  endif
+  character(len=*), intent(in) :: field_name !< field name for error output
 
-  if(.not. allocated(this%buffer)) call mpp_error(FATAL, 'initialize_buffer_2d: field:'// field_name_str // &
+  if(.not. allocated(this%buffer)) call mpp_error(FATAL, 'initialize_buffer_2d: field:'// field_name // &
       'buffer not yet allocated, allocate_buffer() must be called on this object first.')
   ! have to check fill value and buffer types match
   select type(buff => this%buffer)
@@ -1035,7 +960,7 @@ subroutine initialize_buffer_2d (this, fillval, field_name)
       buff = fillval
     class default
       call mpp_error(FATAL, 'initialize_buffer_2d: fillval does not match up with allocated buffer type(r8_kind)' // &
-                            ' for field' // field_name_str )
+                            ' for field' // field_name )
     end select
   type is(real(r4_kind))
     select type(fillval)
@@ -1043,7 +968,7 @@ subroutine initialize_buffer_2d (this, fillval, field_name)
       buff = fillval
     class default
       call mpp_error(FATAL, 'initialize_buffer_2d: fillval does not match up with allocated buffer type(r4_kind)' // &
-                            ' for field' // field_name_str )
+                            ' for field' // field_name )
     end select
   type is(integer(i8_kind))
     select type(fillval)
@@ -1051,7 +976,7 @@ subroutine initialize_buffer_2d (this, fillval, field_name)
       buff = fillval
     class default
       call mpp_error(FATAL, 'initialize_buffer_2d: fillval does not match up with allocated buffer type(i8_kind)' // &
-                            ' for field' // field_name_str )
+                            ' for field' // field_name )
     end select
   type is(integer(i4_kind))
     select type(fillval)
@@ -1059,7 +984,7 @@ subroutine initialize_buffer_2d (this, fillval, field_name)
       buff = fillval
     class default
       call mpp_error(FATAL, 'initialize_buffer_2d: fillval does not match up with allocated buffer type(i4_kind)' // &
-                            ' for field' // field_name_str )
+                            ' for field' // field_name )
     end select
   class default
     call mpp_error(FATAL, 'initialize buffer_2d: buffer allocated to invalid data type, this shouldnt happen')
@@ -1067,19 +992,13 @@ subroutine initialize_buffer_2d (this, fillval, field_name)
 
 end subroutine initialize_buffer_2d
 
-!> @brief Initializes a buffer to a given fill value
+!> @brief Initializes a buffer to a given fill value.
 subroutine initialize_buffer_3d (this, fillval, field_name)
   class(buffer3d_type), intent(inout) :: this !< 3D buffer object
   class(*), intent(in) :: fillval!< fill value, must be same type as the allocated buffer in this
-  character(len=*), optional, intent(in) :: field_name !< optional field name for error output
-  character(len=128)          :: field_name_str
-  if(present(field_name)) then
-    field_name_str = field_name(1:128)
-  else
-    field_name_str = 'N/A'
-  endif
+  character(len=*), intent(in) :: field_name !< field name for error output
 
-  if(.not. allocated(this%buffer)) call mpp_error(FATAL, 'initialize_buffer_3d: field:'// field_name_str // &
+  if(.not. allocated(this%buffer)) call mpp_error(FATAL, 'initialize_buffer_3d: field:'// field_name // &
       'buffer not yet allocated, allocate_buffer() must be called on this object first.')
   ! have to check fill value and buffer types match
   select type(buff => this%buffer)
@@ -1089,7 +1008,7 @@ subroutine initialize_buffer_3d (this, fillval, field_name)
       buff = fillval
     class default
       call mpp_error(FATAL, 'initialize_buffer_3d: fillval does not match up with allocated buffer type(r8_kind)' // &
-                            ' for field' // field_name_str )
+                            ' for field' // field_name )
     end select
   type is(real(r4_kind))
     select type(fillval)
@@ -1097,7 +1016,7 @@ subroutine initialize_buffer_3d (this, fillval, field_name)
       buff = fillval
     class default
       call mpp_error(FATAL, 'initialize_buffer_3d: fillval does not match up with allocated buffer type(r4_kind)' // &
-                            ' for field' // field_name_str )
+                            ' for field' // field_name )
     end select
   type is(integer(i8_kind))
     select type(fillval)
@@ -1105,7 +1024,7 @@ subroutine initialize_buffer_3d (this, fillval, field_name)
       buff = fillval
     class default
       call mpp_error(FATAL, 'initialize_buffer_3d: fillval does not match up with allocated buffer type(i8_kind)' // &
-                            ' for field' // field_name_str )
+                            ' for field' // field_name )
     end select
   type is(integer(i4_kind))
     select type(fillval)
@@ -1113,7 +1032,7 @@ subroutine initialize_buffer_3d (this, fillval, field_name)
       buff = fillval
     class default
       call mpp_error(FATAL, 'initialize_buffer_3d: fillval does not match up with allocated buffer type(i4_kind)' // &
-                            ' for field' // field_name_str )
+                            ' for field' // field_name )
     end select
   class default
     call mpp_error(FATAL, 'initialize buffer_3d: buffer allocated to invalid data type, this shouldnt happen')
@@ -1121,19 +1040,13 @@ subroutine initialize_buffer_3d (this, fillval, field_name)
 
 end subroutine initialize_buffer_3d
 
-!> @brief Initializes a buffer to a given fill value
+!> @brief Initializes a buffer to a given fill value.
 subroutine initialize_buffer_4d (this, fillval, field_name)
   class(buffer4d_type), intent(inout) :: this !< allocated 4D buffer object
   class(*), intent(in) :: fillval!< fill value, must be same type as the allocated buffer in this
-  character(len=*), optional, intent(in) :: field_name !< optional field name for error output
-  character(len=128)          :: field_name_str
-  if(present(field_name)) then
-    field_name_str = field_name(1:128)
-  else
-    field_name_str = 'N/A'
-  endif
+  character(len=*), intent(in) :: field_name !< field name for error output
 
-  if(.not. allocated(this%buffer)) call mpp_error(FATAL, 'initialize_buffer_4d: field:'// field_name_str // &
+  if(.not. allocated(this%buffer)) call mpp_error(FATAL, 'initialize_buffer_4d: field:'// field_name // &
       'buffer not yet allocated, allocate_buffer() must be called on this object first.')
   ! have to check fill value and buffer types match
   select type(buff => this%buffer)
@@ -1143,7 +1056,7 @@ subroutine initialize_buffer_4d (this, fillval, field_name)
       buff = fillval
     class default
       call mpp_error(FATAL, 'initialize_buffer_4d: fillval does not match up with allocated buffer type(r8_kind)' // &
-                            ' for field' // field_name_str )
+                            ' for field' // field_name )
     end select
   type is(real(r4_kind))
     select type(fillval)
@@ -1151,7 +1064,7 @@ subroutine initialize_buffer_4d (this, fillval, field_name)
       buff = fillval
     class default
       call mpp_error(FATAL, 'initialize_buffer_4d: fillval does not match up with allocated buffer type(r4_kind)' // &
-                            ' for field' // field_name_str )
+                            ' for field' // field_name )
     end select
   type is(integer(i8_kind))
     select type(fillval)
@@ -1159,7 +1072,7 @@ subroutine initialize_buffer_4d (this, fillval, field_name)
       buff = fillval
     class default
       call mpp_error(FATAL, 'initialize_buffer_4d: fillval does not match up with allocated buffer type(i8_kind)' // &
-                            ' for field' // field_name_str )
+                            ' for field' // field_name )
     end select
   type is(integer(i4_kind))
     select type(fillval)
@@ -1167,7 +1080,7 @@ subroutine initialize_buffer_4d (this, fillval, field_name)
       buff = fillval
     class default
       call mpp_error(FATAL, 'initialize_buffer_4d: fillval does not match up with allocated buffer type(i4_kind)' // &
-                            ' for field' // field_name_str )
+                            ' for field' // field_name )
     end select
   class default
     call mpp_error(FATAL, 'initialize buffer_4d: buffer allocated to invalid data type, this shouldnt happen')
@@ -1175,19 +1088,13 @@ subroutine initialize_buffer_4d (this, fillval, field_name)
 
 end subroutine initialize_buffer_4d
 
-!> @brief Initializes a buffer to a given fill value
+!> @brief Initializes a buffer to a given fill value.
 subroutine initialize_buffer_5d (this, fillval, field_name)
   class(buffer5d_type), intent(inout) :: this !< allocated 5D buffer object
   class(*), intent(in) :: fillval!< fill value, must be same type as the allocated buffer in this
-  character(len=*), optional, intent(in) :: field_name !< optional field name for error output
-  character(len=128)          :: field_name_str
-  if(present(field_name)) then
-    field_name_str = field_name(1:128)
-  else
-    field_name_str = 'N/A'
-  endif
+  character(len=*), intent(in) :: field_name !< field name for error output
 
-  if(.not. allocated(this%buffer)) call mpp_error(FATAL, 'initialize_buffer_5d: field:'// field_name_str // &
+  if(.not. allocated(this%buffer)) call mpp_error(FATAL, 'initialize_buffer_5d: field:'// field_name // &
       'buffer not yet allocated, allocate_buffer() must be called on this object first.')
   ! have to check fill value and buffer types match
   select type(buff => this%buffer)
@@ -1197,7 +1104,7 @@ subroutine initialize_buffer_5d (this, fillval, field_name)
       buff = fillval
     class default
       call mpp_error(FATAL, 'initialize_buffer_5d: fillval does not match up with allocated buffer type(r8_kind)' // &
-                            ' for field' // field_name_str )
+                            ' for field' // field_name )
     end select
   type is(real(r4_kind))
     select type(fillval)
@@ -1205,7 +1112,7 @@ subroutine initialize_buffer_5d (this, fillval, field_name)
       buff = fillval
     class default
       call mpp_error(FATAL, 'initialize_buffer_5d: fillval does not match up with allocated buffer type(r4_kind)' // &
-                            ' for field' // field_name_str )
+                            ' for field' // field_name )
     end select
   type is(integer(i8_kind))
     select type(fillval)
@@ -1213,7 +1120,7 @@ subroutine initialize_buffer_5d (this, fillval, field_name)
       buff = fillval
     class default
       call mpp_error(FATAL, 'initialize_buffer_5d: fillval does not match up with allocated buffer type(i8_kind)' // &
-                            ' for field' // field_name_str )
+                            ' for field' // field_name )
     end select
   type is(integer(i4_kind))
     select type(fillval)
@@ -1221,7 +1128,7 @@ subroutine initialize_buffer_5d (this, fillval, field_name)
       buff = fillval
     class default
       call mpp_error(FATAL, 'initialize_buffer_5d: fillval does not match up with allocated buffer type(i4_kind)' // &
-                            ' for field' // field_name_str )
+                            ' for field' // field_name )
     end select
   class default
     call mpp_error(FATAL, 'initialize buffer_5d: buffer allocated to invalid data type, this shouldnt happen')
@@ -1229,44 +1136,32 @@ subroutine initialize_buffer_5d (this, fillval, field_name)
 
 end subroutine initialize_buffer_5d
 
-!> @brief Add values to 0d buffer
-!! this will just call the init routine since there's only one value
-!! input_data must match allocated type of buffer object
+!> @brief Add values to 0d buffer.
+!! This will just call the init routine since there's only one value.
+!! @note input_data must match allocated type of buffer object.
 subroutine add_to_buffer_0d(this, input_data, field_name)
   class(buffer0d_type), intent(inout) :: this !< allocated scalar buffer object
   class(*), intent(in)      :: input_data !< data to copy into buffer
-  character(len=*), optional, intent(in) :: field_name !< optional field name for error output
-  character(len=128)          :: field_name_str
-  if(present(field_name)) then
-    field_name_str = field_name(1:128)
-  else
-    field_name_str = 'N/A'
-  endif
+  character(len=*), intent(in) :: field_name !< field name for error output
   if( .not. allocated(this%buffer)) call mpp_error (FATAL, 'add_to_buffer_0d: buffer not yet allocated for field:'// &
-                                                           field_name_str)
-  call this%initialize_buffer(input_data)
+                                                           field_name)
+  call this%initialize_buffer(input_data, field_name)
 end subroutine add_to_buffer_0d
 
-!> @brief Copy values ( from 1 to size(input_data)) into a 1d buffer object
-!! input_data must match allocated type of buffer object
+!> @brief Copy values ( from 1 to size(input_data)) into a 1d buffer object.
+!! @note input_data must match allocated type of buffer object.
 subroutine add_to_buffer_1d(this, input_data, field_name)
   class(buffer1d_type), intent(inout) :: this !< allocated 1d buffer object
   class(*), intent(in)            :: input_data(:) !< data to copy into the buffer
   integer            :: n !< number of elements in input data
   logical            :: type_error !< set to true if mismatch between input_data and allocated buffer
-  character(len=*), optional, intent(in) :: field_name !< optional field name for error output
-  character(len=128)          :: field_name_str
-  if(present(field_name)) then
-    field_name_str = field_name(1:128)
-  else
-    field_name_str = 'N/A'
-  endif
+  character(len=*), intent(in) :: field_name !< field name for error output
   type_error = .false.
   if( .not. allocated(this%buffer)) call mpp_error (FATAL, 'add_to_buffer_1d: buffer not yet allocated for field:' // &
-                                                            field_name_str)
+                                                            field_name)
   n = SIZE(input_data)
   if( n .gt. SIZE(this%buffer)) call mpp_error( FATAL,"add_to_buffer_1d: input data larger than allocated buffer " // &
-                                                      "for field: "// field_name_str)
+                                                      "for field: "// field_name)
   ! have to check both types for assignment
   select type( buffer => this%buffer )
   type is(integer(i4_kind))
@@ -1299,32 +1194,25 @@ subroutine add_to_buffer_1d(this, input_data, field_name)
     end select
   end select
   if( type_error ) call mpp_error (FATAL,'add_to_buffer_1d: mismatch between allocated buffer and input data types'// &
-                                         ' for field:' // field_name_str)
+                                         ' for field:' // field_name)
 end subroutine add_to_buffer_1d
 
-!> @brief Copy values ( from 1 to size(input_data)) into a 2d buffer object
-!! input_data must match allocated type of buffer object
+!> @brief Copy values ( from 1 to size(input_data)) into a 2d buffer object.
+!! @note input_data must match allocated type of buffer object.
 subroutine add_to_buffer_2d(this, input_data, field_name)
   class(buffer2d_type), intent(inout) :: this !< allocated 2d buffer object
   class(*), intent(in)             :: input_data(:,:) !< 2d data array to copy into buffer
   integer            :: n1, n2 !< number of elements per dimension
   logical            :: type_error !< set to true if mismatch between input_data and allocated buffer
-  character(len=*), optional, intent(in) :: field_name !< optional field name for error output
-  character(len=128)          :: field_name_str
-  if(present(field_name)) then
-    field_name_str = field_name(1:128)
-  else
-    field_name_str = 'N/A'
-  endif
+  character(len=*), intent(in) :: field_name !< field name for error output
   type_error = .false.
   if( .not. allocated(this%buffer)) call mpp_error (FATAL, 'add_to_buffer_2d: buffer not yet allocated for field:' // &
-                                                            field_name_str)
+                                                            field_name)
   n1 = SIZE(input_data, 1)
   n2 = SIZE(input_data, 2)
   if( n1 .gt. SIZE(this%buffer, 1) .or. n2 .gt. SIZE(this%buffer, 2)) then
     call mpp_error( FATAL,"add_to_buffer_2d: input data larger than allocated buffer")
   endif
-  !this%buffer(1:n1, 1:n2) = input_data(1:n1, 1:n2)
   ! have to check both types for assignment
   select type( buffer => this%buffer )
   type is(integer(i4_kind))
@@ -1357,34 +1245,27 @@ subroutine add_to_buffer_2d(this, input_data, field_name)
     end select
   end select
   if( type_error ) call mpp_error (FATAL,'add_to_buffer_1d: mismatch between allocated buffer and input data types'//&
-                                         ' for field:'// field_name_str)
+                                         ' for field:'// field_name)
 end subroutine add_to_buffer_2d
 
-!> @brief Copy values ( from 1 to size(input_data)) into a 3d buffer object
-!! input_data must match allocated type of buffer object
+!> @brief Copy values ( from 1 to size(input_data)) into a 3d buffer object.
+!! @note input_data must match allocated type of buffer object.
 subroutine add_to_buffer_3d(this, input_data, field_name)
   class(buffer3d_type), intent(inout) :: this !< allocated 3d buffer object
   class(*), intent(in)             :: input_data(:,:,:)!< 3d data array to copy into buffer
   integer            :: n1, n2, n3 !< number of elements per dimension
   logical            :: type_error !< set to true if mismatch between input_data and allocated buffer
-  character(len=*), optional, intent(in) :: field_name !< optional field name for error output
-  character(len=128)          :: field_name_str
-  if(present(field_name)) then
-    field_name_str = field_name(1:128)
-  else
-    field_name_str = 'N/A'
-  endif
+  character(len=*), intent(in) :: field_name !< field name for error output
   type_error = .false.
   if( .not. allocated(this%buffer)) call mpp_error (FATAL, 'add_to_buffer_3d: buffer not yet allocated for field:'//&
-                                                           field_name_str)
+                                                           field_name)
   n1 = SIZE(input_data, 1)
   n2 = SIZE(input_data, 2)
   n3 = SIZE(input_data, 3)
   if( n1 .gt. SIZE(this%buffer, 1) .or. n2 .gt. SIZE(this%buffer, 2) .or. &
     n3 .gt. SIZE(this%buffer, 3)) then
-    call mpp_error( FATAL,"add_to_buffer_3d: input data larger than allocated buffer for field:"//field_name_str)
+    call mpp_error( FATAL,"add_to_buffer_3d: input data larger than allocated buffer for field:"//field_name)
   endif
-  !this%buffer(1:n1, 1:n2) = input_data(1:n1, 1:n2)
   ! have to check both types for assignment
   select type( buffer => this%buffer )
   type is(integer(i4_kind))
@@ -1417,33 +1298,27 @@ subroutine add_to_buffer_3d(this, input_data, field_name)
     end select
   end select
   if( type_error ) call mpp_error (FATAL,'add_to_buffer_3d: mismatch between allocated buffer and input data types'//&
-                                         ' for field:'//field_name_str)
+                                         ' for field:'//field_name)
 end subroutine add_to_buffer_3d
 
-!> @brief Copy values ( from 1 to size(input_data)) into a 4d buffer object
-!! input_data must match allocated type of buffer object
+!> @brief Copy values ( from 1 to size(input_data)) into a 4d buffer object.
+!! @note input_data must match allocated type of buffer object.
 subroutine add_to_buffer_4d(this, input_data, field_name)
   class(buffer4d_type), intent(inout) :: this !< allocated 4d buffer object
   class(*), intent(in)             :: input_data(:,:,:,:) !< 4d data to copy into buffer
   integer            :: n1, n2, n3, n4!< number of elements per dimension
   logical            :: type_error !< set to true if mismatch between input_data and allocated buffer
-  character(len=*), optional, intent(in) :: field_name !< optional field name for error output
-  character(len=128)          :: field_name_str
-  if(present(field_name)) then
-    field_name_str = field_name(1:128)
-  else
-    field_name_str = 'N/A'
-  endif
+  character(len=*), intent(in) :: field_name !< field name for error output
   type_error = .false.
   if( .not. allocated(this%buffer)) call mpp_error (FATAL, 'add_to_buffer_4d: buffer not yet allocated for field:'// &
-                                                           field_name_str)
+                                                           field_name)
   n1 = SIZE(input_data, 1)
   n2 = SIZE(input_data, 2)
   n3 = SIZE(input_data, 3)
   n4 = SIZE(input_data, 4)
   if( n1 .gt. SIZE(this%buffer, 1) .or. n2 .gt. SIZE(this%buffer, 2) .or. &
     n3 .gt. SIZE(this%buffer, 3) .or. n4 .gt. SIZE(this%buffer, 4)) then
-    call mpp_error( FATAL,"add_to_buffer_4d: input data larger than allocated buffer for field:"//field_name_str)
+    call mpp_error( FATAL,"add_to_buffer_4d: input data larger than allocated buffer for field:"//field_name)
   endif
   ! have to check both types for assignment
   select type( buffer => this%buffer )
@@ -1477,26 +1352,20 @@ subroutine add_to_buffer_4d(this, input_data, field_name)
     end select
   end select
   if( type_error ) call mpp_error (FATAL,'add_to_buffer_4d: mismatch between allocated buffer and input data types'// &
-                                         ' for field:' //field_name_str)
+                                         ' for field:' //field_name)
 end subroutine add_to_buffer_4d
 
-!> @brief Copy values (from 1 to size(input_data)) into a 5d buffer object
-!! input_data must match allocated type of buffer object
+!> @brief Copy values (from 1 to size(input_data)) into a 5d buffer object.
+!! @note input_data must match allocated type of buffer object.
 subroutine add_to_buffer_5d(this, input_data, field_name)
   class(buffer5d_type), intent(inout) :: this !< allocated 5d buffer object
   class(*), intent(in)             :: input_data(:,:,:,:,:) !< 5d data to copy into buffer
   integer            :: n1, n2, n3, n4, n5 !< number of elements per dimension
   logical            :: type_error !< set to true if mismatch between input_data and allocated buffer
-  character(len=*), optional, intent(in) :: field_name !< optional field name for error output
-  character(len=128)          :: field_name_str
-  if(present(field_name)) then
-    field_name_str = field_name(1:128)
-  else
-    field_name_str = 'N/A'
-  endif
+  character(len=*), intent(in) :: field_name !< field name for error output
   type_error = .false.
   if( .not. allocated(this%buffer)) call mpp_error (FATAL, 'add_to_buffer_5d: buffer not yet allocated for field:'// &
-                                                           field_name_str)
+                                                           field_name)
   n1 = SIZE(input_data, 1)
   n2 = SIZE(input_data, 2)
   n3 = SIZE(input_data, 3)
@@ -1505,9 +1374,8 @@ subroutine add_to_buffer_5d(this, input_data, field_name)
   if( n1 .gt. SIZE(this%buffer, 1) .or. n2 .gt. SIZE(this%buffer, 2) .or. &
     n3 .gt. SIZE(this%buffer, 3) .or. n4 .gt. SIZE(this%buffer, 4) .or. &
     n5 .gt. SIZE(this%buffer, 5)) then
-    call mpp_error( FATAL,"add_to_buffer_4d: input data larger than allocated buffer for field:"//field_name_str)
+    call mpp_error( FATAL,"add_to_buffer_4d: input data larger than allocated buffer for field:"//field_name)
   endif
-  !this%buffer(1:n1, 1:n2) = input_data(1:n1, 1:n2)
   ! have to check both types for assignment
   select type( buffer => this%buffer )
   type is(integer(i4_kind))
@@ -1540,7 +1408,7 @@ subroutine add_to_buffer_5d(this, input_data, field_name)
     end select
   end select
   if( type_error ) call mpp_error (FATAL,'add_to_buffer_5d: mismatch between allocated buffer and input data types'//&
-                                         'for field:'// field_name_str)
+                                         'for field:'// field_name)
 end subroutine add_to_buffer_5d
 #endif
 end module fms_diag_buffer_mod
