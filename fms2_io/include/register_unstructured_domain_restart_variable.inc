@@ -25,7 +25,8 @@
 
 !> @brief Add a domain decomposed variable.
 subroutine register_unstructured_domain_restart_variable_0d(fileobj, variable_name, vdata, &
-                                                            dimensions, is_optional)
+                                                            dimensions, is_optional, deflate_level, &
+                                                            chunksizes)
 
   type(FmsNetcdfUnstructuredDomainFile_t), intent(inout) :: fileobj !< File object.
   character(len=*), intent(in) :: variable_name !< Variable name.
@@ -33,14 +34,18 @@ subroutine register_unstructured_domain_restart_variable_0d(fileobj, variable_na
   character(len=*), dimension(:), intent(in), optional :: dimensions !< Dimension names.
   logical, intent(in), optional :: is_optional !< Prevent errors in read-only files
                                                !! if a variable does not exist.
+  integer, intent(in), optional :: deflate_level
+  integer, intent(in), optional :: chunksizes
 
-  call netcdf_add_restart_variable(fileobj, variable_name, vdata, dimensions, is_optional)
+  call netcdf_add_restart_variable(fileobj, variable_name, vdata, dimensions, is_optional, &
+                                   deflate_level, chunksizes)
 end subroutine register_unstructured_domain_restart_variable_0d
 
 
 !> @brief Add a domain decomposed variable.
 subroutine register_unstructured_domain_restart_variable_1d(fileobj, variable_name, vdata, &
-                                                            dimensions, is_optional)
+                                                            dimensions, is_optional, deflate_level, &
+                                                            chunksizes)
 
   type(FmsNetcdfUnstructuredDomainFile_t), intent(inout) :: fileobj !< File object.
   character(len=*), intent(in) :: variable_name !< Variable name.
@@ -48,14 +53,18 @@ subroutine register_unstructured_domain_restart_variable_1d(fileobj, variable_na
   character(len=*), dimension(:), intent(in), optional :: dimensions !< Dimension names.
   logical, intent(in), optional :: is_optional !< Prevent errors in read-only files
                                                !! if a variable does not exist.
+  integer, intent(in), optional :: deflate_level
+  integer, intent(in), optional :: chunksizes
 
-  call netcdf_add_restart_variable(fileobj, variable_name, vdata, dimensions, is_optional)
+  call netcdf_add_restart_variable(fileobj, variable_name, vdata, dimensions, is_optional, &
+                                   deflate_level, chunksizes)
 end subroutine register_unstructured_domain_restart_variable_1d
 
 
 !> @brief Add a domain decomposed variable.
 subroutine register_unstructured_domain_restart_variable_2d(fileobj, variable_name, vdata, &
-                                                            dimensions, is_optional)
+                                                            dimensions, is_optional, deflate_level, &
+                                                            chunksizes )
 
   type(FmsNetcdfUnstructuredDomainFile_t), intent(inout) :: fileobj !< File object.
   character(len=*), intent(in) :: variable_name !< Variable name.
@@ -63,14 +72,18 @@ subroutine register_unstructured_domain_restart_variable_2d(fileobj, variable_na
   character(len=*), dimension(:), intent(in), optional :: dimensions !< Dimension names.
   logical, intent(in), optional :: is_optional !< Prevent errors in read-only files
                                                !! if a variable does not exist.
+  integer, intent(in), optional :: deflate_level
+  integer, intent(in), optional :: chunksizes
 
-  call netcdf_add_restart_variable(fileobj, variable_name, vdata, dimensions, is_optional)
+  call netcdf_add_restart_variable(fileobj, variable_name, vdata, dimensions, is_optional, &
+                                   deflate_level, chunksizes)
 end subroutine register_unstructured_domain_restart_variable_2d
 
 
 !> @brief Add a domain decomposed variable.
 subroutine register_unstructured_domain_restart_variable_3d(fileobj, variable_name, vdata, &
-                                                            dimensions, is_optional)
+                                                            dimensions, is_optional, deflate_level, &
+                                                            chunksizes)
 
   type(FmsNetcdfUnstructuredDomainFile_t), intent(inout) :: fileobj !< File object.
   character(len=*), intent(in) :: variable_name !< Variable name.
@@ -78,14 +91,18 @@ subroutine register_unstructured_domain_restart_variable_3d(fileobj, variable_na
   character(len=*), dimension(:), intent(in), optional :: dimensions !< Dimension names.
   logical, intent(in), optional :: is_optional !< Prevent errors in read-only files
                                                !! if a variable does not exist.
+  integer, intent(in), optional :: deflate_level
+  integer, intent(in), optional :: chunksizes
 
-  call netcdf_add_restart_variable(fileobj, variable_name, vdata, dimensions, is_optional)
+  call netcdf_add_restart_variable(fileobj, variable_name, vdata, dimensions, is_optional, &
+                                   deflate_level, chunksizes)
 end subroutine register_unstructured_domain_restart_variable_3d
 
 
 !> @brief Add a domain decomposed variable.
 subroutine register_unstructured_domain_restart_variable_4d(fileobj, variable_name, vdata, &
-                                                            dimensions, is_optional)
+                                                            dimensions, is_optional, deflate_level, &
+                                                            chunksizes)
 
   type(FmsNetcdfUnstructuredDomainFile_t), intent(inout) :: fileobj !< File object.
   character(len=*), intent(in) :: variable_name !< Variable name.
@@ -93,14 +110,18 @@ subroutine register_unstructured_domain_restart_variable_4d(fileobj, variable_na
   character(len=*), dimension(:), intent(in), optional :: dimensions !< Dimension names.
   logical, intent(in), optional :: is_optional !< Prevent errors in read-only files
                                                !! if a variable does not exist.
+  integer, intent(in), optional :: deflate_level
+  integer, intent(in), optional :: chunksizes
 
-  call netcdf_add_restart_variable(fileobj, variable_name, vdata, dimensions, is_optional)
+  call netcdf_add_restart_variable(fileobj, variable_name, vdata, dimensions, is_optional, &
+                                   deflate_level, chunksizes)
 end subroutine register_unstructured_domain_restart_variable_4d
 
 
 !> @brief Add a domain decomposed variable.
 subroutine register_unstructured_domain_restart_variable_5d(fileobj, variable_name, vdata, &
-                                                            dimensions, is_optional)
+                                                            dimensions, is_optional, deflate_level, &
+                                                            chunksizes)
 
   type(FmsNetcdfUnstructuredDomainFile_t), intent(inout) :: fileobj !< File object.
   character(len=*), intent(in) :: variable_name !< Variable name.
@@ -108,7 +129,10 @@ subroutine register_unstructured_domain_restart_variable_5d(fileobj, variable_na
   character(len=*), dimension(:), intent(in), optional :: dimensions !< Dimension names.
   logical, intent(in), optional :: is_optional !< Prevent errors in read-only files
                                                !! if a variable does not exist.
-
-  call netcdf_add_restart_variable(fileobj, variable_name, vdata, dimensions, is_optional)
+  integer, intent(in), optional :: deflate_level
+  integer, intent(in), optional :: chunksizes
+ 
+  call netcdf_add_restart_variable(fileobj, variable_name, vdata, dimensions, is_optional, &
+                                   deflate_level, chunksizes)
 end subroutine register_unstructured_domain_restart_variable_5d
 !> @}
