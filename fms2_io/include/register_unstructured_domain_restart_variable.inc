@@ -35,10 +35,10 @@ subroutine register_unstructured_domain_restart_variable_0d(fileobj, variable_na
   logical, intent(in), optional :: is_optional !< Prevent errors in read-only files
                                                !! if a variable does not exist.
   integer, intent(in), optional :: deflate_level
-  integer, intent(in), optional :: chunksizes
+  integer, intent(in), optional :: chunksizes(:)
 
-  call netcdf_add_restart_variable(fileobj, variable_name, vdata, dimensions, is_optional, &
-                                   deflate_level, chunksizes)
+  call netcdf_add_restart_variable(fileobj, variable_name, vdata, dimensions, &
+                                   deflate_level=deflate_level, chunksizes=chunksizes)
 end subroutine register_unstructured_domain_restart_variable_0d
 
 
@@ -54,10 +54,10 @@ subroutine register_unstructured_domain_restart_variable_1d(fileobj, variable_na
   logical, intent(in), optional :: is_optional !< Prevent errors in read-only files
                                                !! if a variable does not exist.
   integer, intent(in), optional :: deflate_level
-  integer, intent(in), optional :: chunksizes
+  integer, intent(in), optional :: chunksizes(:)
 
-  call netcdf_add_restart_variable(fileobj, variable_name, vdata, dimensions, is_optional, &
-                                   deflate_level, chunksizes)
+  call netcdf_add_restart_variable(fileobj, variable_name, vdata, dimensions, &
+                                   deflate_level=deflate_level, chunksizes=chunksizes)
 end subroutine register_unstructured_domain_restart_variable_1d
 
 
@@ -73,10 +73,10 @@ subroutine register_unstructured_domain_restart_variable_2d(fileobj, variable_na
   logical, intent(in), optional :: is_optional !< Prevent errors in read-only files
                                                !! if a variable does not exist.
   integer, intent(in), optional :: deflate_level
-  integer, intent(in), optional :: chunksizes
+  integer, intent(in), optional :: chunksizes(:)
 
-  call netcdf_add_restart_variable(fileobj, variable_name, vdata, dimensions, is_optional, &
-                                   deflate_level, chunksizes)
+  call netcdf_add_restart_variable(fileobj, variable_name, vdata, dimensions, &
+                                   deflate_level=deflate_level, chunksizes=chunksizes)
 end subroutine register_unstructured_domain_restart_variable_2d
 
 
@@ -92,10 +92,10 @@ subroutine register_unstructured_domain_restart_variable_3d(fileobj, variable_na
   logical, intent(in), optional :: is_optional !< Prevent errors in read-only files
                                                !! if a variable does not exist.
   integer, intent(in), optional :: deflate_level
-  integer, intent(in), optional :: chunksizes
+  integer, intent(in), optional :: chunksizes(:)
 
-  call netcdf_add_restart_variable(fileobj, variable_name, vdata, dimensions, is_optional, &
-                                   deflate_level, chunksizes)
+  call netcdf_add_restart_variable(fileobj, variable_name, vdata, dimensions, &
+                                   deflate_level=deflate_level, chunksizes=chunksizes)
 end subroutine register_unstructured_domain_restart_variable_3d
 
 
@@ -111,10 +111,10 @@ subroutine register_unstructured_domain_restart_variable_4d(fileobj, variable_na
   logical, intent(in), optional :: is_optional !< Prevent errors in read-only files
                                                !! if a variable does not exist.
   integer, intent(in), optional :: deflate_level
-  integer, intent(in), optional :: chunksizes
+  integer, intent(in), optional :: chunksizes(:)
 
-  call netcdf_add_restart_variable(fileobj, variable_name, vdata, dimensions, is_optional, &
-                                   deflate_level, chunksizes)
+  call netcdf_add_restart_variable(fileobj, variable_name, vdata, dimensions, &
+                                   deflate_level=deflate_level, chunksizes=chunksizes)
 end subroutine register_unstructured_domain_restart_variable_4d
 
 
@@ -130,9 +130,9 @@ subroutine register_unstructured_domain_restart_variable_5d(fileobj, variable_na
   logical, intent(in), optional :: is_optional !< Prevent errors in read-only files
                                                !! if a variable does not exist.
   integer, intent(in), optional :: deflate_level
-  integer, intent(in), optional :: chunksizes
+  integer, intent(in), optional :: chunksizes(:)
  
-  call netcdf_add_restart_variable(fileobj, variable_name, vdata, dimensions, is_optional, &
-                                   deflate_level, chunksizes)
+  call netcdf_add_restart_variable(fileobj, variable_name, vdata, dimensions, &
+                                   deflate_level=deflate_level, chunksizes=chunksizes)
 end subroutine register_unstructured_domain_restart_variable_5d
 !> @}
