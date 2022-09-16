@@ -28,7 +28,7 @@ module fms_diag_file_object_mod
 use fms2_io_mod, only: FmsNetcdfFile_t, FmsNetcdfUnstructuredDomainFile_t, FmsNetcdfDomainFile_t, &
                        get_instance_filename, open_file, close_file, get_mosaic_tile_file
 use diag_data_mod, only: DIAG_NULL, NO_DOMAIN, max_axes, SUB_REGIONAL, get_base_time, DIAG_NOT_REGISTERED, &
-                         TWO_D_DOMAIN, UG_DOMAIN, prepend_date
+                         TWO_D_DOMAIN, UG_DOMAIN, prepend_date, DIAG_DAYS, VERY_LARGE_FILE_FREQ
 use time_manager_mod, only: time_type, operator(>), operator(/=), operator(==), get_date
 use fms_diag_time_utils_mod, only: diag_time_inc, get_time_string
 use time_manager_mod, only: time_type, operator(/=), operator(==)
@@ -623,26 +623,31 @@ subroutine open_diag_file(this, time_step)
 
   is_regional = .false.
   !< Figure out what fileobj to use!
-  select type (diag_file)
-  type is (subRegionalFile_type)
-    !< Go away if the subregion is not on current PE
-    if (.not. diag_file%write_on_this_pe) return
+  if (.not. allocated(diag_file%fileobj)) then
+    select type (diag_file)
+    type is (subRegionalFile_type)
+      !< Go away if the subregion is not on current PE
+      if (.not. diag_file%write_on_this_pe) return
 
-    !< In this case each PE is going to write its own file
-    allocate(FmsNetcdfFile_t :: fileobj)
-
-    is_regional = .true.
-  type is (fmsDiagFile_type)
-    !< Use the type_of_domain to get the correct fileobj
-    select case (diag_file%type_of_domain)
-    case (NO_DOMAIN)
+      !< In this case each PE is going to write its own file
       allocate(FmsNetcdfFile_t :: fileobj)
-    case (TWO_D_DOMAIN)
-      allocate(FmsNetcdfDomainFile_t :: fileobj)
-    case (UG_DOMAIN)
-      allocate(FmsNetcdfUnstructuredDomainFile_t :: fileobj)
+
+      is_regional = .true.
+    type is (fmsDiagFile_type)
+      !< Use the type_of_domain to get the correct fileobj
+      select case (diag_file%type_of_domain)
+      case (NO_DOMAIN)
+        allocate(FmsNetcdfFile_t :: fileobj)
+      case (TWO_D_DOMAIN)
+        allocate(FmsNetcdfDomainFile_t :: fileobj)
+      case (UG_DOMAIN)
+        allocate(FmsNetcdfUnstructuredDomainFile_t :: fileobj)
+      end select
     end select
-  end select
+  else
+    !< In this case, we are opening a new file so close the current the file
+    call close_file(fileobj)
+  endif
 
   !< Figure out what to name of the file
   diag_file_name = diag_file%get_file_fname()
@@ -715,8 +720,15 @@ subroutine open_diag_file(this, time_step)
     end select
   end select
 
-!TODO: set next_open for the next time
+  if (diag_file%has_file_new_file_freq()) then
+    diag_file%next_open = diag_time_inc(diag_file%next_open, diag_file%get_file_new_file_freq(), &
+                                        diag_file%get_file_new_file_freq_units())
+  else
+    diag_file%next_open = diag_time_inc(diag_file%next_open, VERY_LARGE_FILE_FREQ, DIAG_DAYS)
+  endif
 
+!TODO: closing the file here for now, just to see if it works
+  call close_file(fileobj)
 end subroutine open_diag_file
 
 #endif
