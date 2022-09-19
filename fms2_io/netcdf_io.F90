@@ -859,8 +859,12 @@ subroutine netcdf_add_variable(fileobj, variable_name, variable_type, dimensions
                                                 !! values are: "char", "int", "int64",
                                                 !! "float", or "double".
   character(len=*), dimension(:), intent(in), optional :: dimensions !< Dimension names.
-  integer, optional, intent(in) :: deflate_level !<The netcdf deflate level
-  integer, optional, intent(in) :: chunksizes(:) !< netcdf chunksize to use for this variable  
+  integer, optional, intent(in) :: deflate_level !< The netcdf deflate level
+                                                 !! This feature is only
+                                                 !! available for netcdf4 files
+  integer, optional, intent(in) :: chunksizes(:) !< netcdf chunksize to use for this variable
+                                                 !! This feature is only
+                                                 !! available for netcdf4 files  
   integer :: err
   integer, dimension(:), allocatable :: dimids
   integer :: vtype
