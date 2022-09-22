@@ -80,7 +80,7 @@ subroutine netcdf_add_restart_variable_0d_wrap(fileobj, variable_name, vdata, &
                                                  !! This feature is only
                                                  !! available for netcdf4 files
 
-  call netcdf_add_restart_variable(fileobj, variable_name, vdata, dimensions, &
+  call netcdf_add_restart_variable(fileobj, variable_name, vdata, dimensions, is_optional, &
                                    deflate_level=deflate_level, chunksizes=chunksizes)
 end subroutine netcdf_add_restart_variable_0d_wrap
 
@@ -151,7 +151,7 @@ subroutine netcdf_add_restart_variable_1d_wrap(fileobj, variable_name, vdata, &
                                                  !! This feature is only
                                                  !! available for netcdf4 files
 
-  call netcdf_add_restart_variable(fileobj, variable_name, vdata, dimensions, &
+  call netcdf_add_restart_variable(fileobj, variable_name, vdata, dimensions, is_optional, &
                                    deflate_level=deflate_level, chunksizes=chunksizes)
 end subroutine netcdf_add_restart_variable_1d_wrap
 
@@ -222,7 +222,7 @@ subroutine netcdf_add_restart_variable_2d_wrap(fileobj, variable_name, vdata, &
                                                  !! This feature is only
                                                  !! available for netcdf4 files
 
-  call netcdf_add_restart_variable(fileobj, variable_name, vdata, dimensions, &
+  call netcdf_add_restart_variable(fileobj, variable_name, vdata, dimensions, is_optional, &
                                    deflate_level=deflate_level, chunksizes=chunksizes) 
 end subroutine netcdf_add_restart_variable_2d_wrap
 
@@ -293,7 +293,7 @@ subroutine netcdf_add_restart_variable_3d_wrap(fileobj, variable_name, vdata, &
                                                  !! This feature is only
                                                  !! available for netcdf4 files
 
-  call netcdf_add_restart_variable(fileobj, variable_name, vdata, dimensions, &
+  call netcdf_add_restart_variable(fileobj, variable_name, vdata, dimensions, is_optional, &
                                    deflate_level=deflate_level, chunksizes=chunksizes)
 end subroutine netcdf_add_restart_variable_3d_wrap
 
@@ -364,7 +364,7 @@ subroutine netcdf_add_restart_variable_4d_wrap(fileobj, variable_name, vdata, &
                                                  !! This feature is only
                                                  !! available for netcdf4 files
 
-  call netcdf_add_restart_variable(fileobj, variable_name, vdata, dimensions, &
+  call netcdf_add_restart_variable(fileobj, variable_name, vdata, dimensions, is_optional, &
                                    deflate_level=deflate_level, chunksizes=chunksizes)
 end subroutine netcdf_add_restart_variable_4d_wrap
 
@@ -435,7 +435,7 @@ subroutine netcdf_add_restart_variable_5d_wrap(fileobj, variable_name, vdata, &
                                                  !! This feature is only
                                                  !! available for netcdf4 files
   
- call netcdf_add_restart_variable(fileobj, variable_name, vdata, dimensions, &
+ call netcdf_add_restart_variable(fileobj, variable_name, vdata, dimensions, is_optional, &
                                    deflate_level=deflate_level, chunksizes=chunksizes)
 end subroutine netcdf_add_restart_variable_5d_wrap
 
