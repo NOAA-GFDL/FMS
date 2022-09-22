@@ -620,5 +620,3 @@ dim_names, deflate_level=deflate_level, chunsizes=chunksizes)
 - **NOTE: These arguments can only be used in "NETCDF4" file formats. You can set the netcdf file format for all files using the 'netcdf_default_format' namelist or in a per file basis by using the 'nc_format' argument in the 'open_file' call**
 
 - See the NETCDF user guide for more information: (https://cluster.earlham.edu/bccd-ng/testing/mobeen/GALAXSEEHPC/netcdf-4.1.3/man4/netcdf.html#Chunking)
-
-```F90 call register_restart_field(fileobj, 'variable_name', variable_data, dim_names, deflate_level=deflate_level, chunsizes=chunksizes)```
