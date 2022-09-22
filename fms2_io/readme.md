@@ -606,6 +606,13 @@ deallocate(restart_file)
 
 ### I. Compression and Chunking 
 
+In release 2022.04, "deflate_level" and the "chunksize" were added as optional arguments to the register_diag_field:
+
+```F90
+call register_restart_field(fileobj, 'variable_name', variable_data, 
+dim_names, deflate_level=deflate_level, chunsizes=chunksizes)
+```
+
 - **deflate_level:** Determines how much to compress the variable. Chosen by an integer of 1 through 9. The higher the number, the more compression will take place, but will take longer to write the file. NOTE: the smaller the size, the more time it will take to write the file.
 
 - **chunksizes:** Is an array defining the chunksize of each dimension of the variable. Chunksizes can be used to improve performance. Default chunks are chosen by the library.
