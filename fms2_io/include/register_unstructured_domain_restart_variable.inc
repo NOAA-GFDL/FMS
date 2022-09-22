@@ -41,7 +41,7 @@ subroutine register_unstructured_domain_restart_variable_0d(fileobj, variable_na
                                                  !! This feature is only
                                                  !! available for netcdf4 files
 
-  call netcdf_add_restart_variable(fileobj, variable_name, vdata, dimensions, &
+  call netcdf_add_restart_variable(fileobj, variable_name, vdata, dimensions, is_optional, &
                                    deflate_level=deflate_level, chunksizes=chunksizes)
 end subroutine register_unstructured_domain_restart_variable_0d
 
@@ -64,7 +64,7 @@ subroutine register_unstructured_domain_restart_variable_1d(fileobj, variable_na
                                                  !! This feature is only
                                                  !! available for netcdf4 files
 
-  call netcdf_add_restart_variable(fileobj, variable_name, vdata, dimensions, &
+  call netcdf_add_restart_variable(fileobj, variable_name, vdata, dimensions, is_optional, &
                                    deflate_level=deflate_level, chunksizes=chunksizes)
 end subroutine register_unstructured_domain_restart_variable_1d
 
@@ -87,7 +87,7 @@ subroutine register_unstructured_domain_restart_variable_2d(fileobj, variable_na
                                                  !! This feature is only
                                                  !! available for netcdf4 files
 
-  call netcdf_add_restart_variable(fileobj, variable_name, vdata, dimensions, &
+  call netcdf_add_restart_variable(fileobj, variable_name, vdata, dimensions, is_optional, &
                                    deflate_level=deflate_level, chunksizes=chunksizes)
 end subroutine register_unstructured_domain_restart_variable_2d
 
@@ -110,7 +110,7 @@ subroutine register_unstructured_domain_restart_variable_3d(fileobj, variable_na
                                                  !! This feature is only
                                                  !! available for netcdf4 files
 
-  call netcdf_add_restart_variable(fileobj, variable_name, vdata, dimensions, &
+  call netcdf_add_restart_variable(fileobj, variable_name, vdata, dimensions, is_optional, &
                                    deflate_level=deflate_level, chunksizes=chunksizes)
 end subroutine register_unstructured_domain_restart_variable_3d
 
@@ -133,7 +133,7 @@ subroutine register_unstructured_domain_restart_variable_4d(fileobj, variable_na
                                                  !! This feature is only
                                                  !! available for netcdf4 files
 
-  call netcdf_add_restart_variable(fileobj, variable_name, vdata, dimensions, &
+  call netcdf_add_restart_variable(fileobj, variable_name, vdata, dimensions, is_optional, &
                                    deflate_level=deflate_level, chunksizes=chunksizes)
 end subroutine register_unstructured_domain_restart_variable_4d
 
@@ -156,7 +156,7 @@ subroutine register_unstructured_domain_restart_variable_5d(fileobj, variable_na
                                                  !! This feature is only
                                                  !! available for netcdf4 files
  
-  call netcdf_add_restart_variable(fileobj, variable_name, vdata, dimensions, &
+  call netcdf_add_restart_variable(fileobj, variable_name, vdata, dimensions, is_optional, &
                                    deflate_level=deflate_level, chunksizes=chunksizes)
 end subroutine register_unstructured_domain_restart_variable_5d
 !> @}
