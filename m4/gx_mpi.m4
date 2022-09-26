@@ -108,7 +108,7 @@ AS_VAR_IF([gx_mpi_lang_usable], [yes], [dnl
     AC_LANG_CASE([C], [AC_DEFINE([HAVE_MPI_H], 1, [Define to 1 if the mpi.h header file $1 is found])],
         [C++], [AC_DEFINE([HAVE_MPI_H], 1, [Define to 1 if the mpi.h header file $1 is found])],
         [Fortran 77], [AC_DEFINE([HAVE_MPI_H], 1, [Define to 1 if the mpif.h header file $1 is found])],
-        [Fortran 77], [AC_DEFINE([HAVE_MPI_H], 1, [Define to 1 if the mpif.h header file $1 is found])]
+        [Fortran], [AC_DEFINE([HAVE_MPI_H], 1, [Define to 1 if the mpif.h header file $1 is found])]
     )], [dnl
     m4_default([$2], [AC_MSG_ERROR([Unable to find the MPI headers or library for _AC_LANG])])
 ])
@@ -129,12 +129,12 @@ AC_DEFUN([GX_MPI_FC_LEGACY_INTERFACE], [
       use mpi
       integer(kind=8) :: rarg8(10), sarg8(10)
       integer(kind=4) :: rarg4(10), sarg4(10)
-      integer :: ssize(10), rsize(10), sdislp(10), rdispl(10), ierr
+      integer :: ssize(10), rsize(10), sdispl(10), rdispl(10), ierr
       call MPI_Alltoallv(sarg4, ssize, sdispl, MPI_INTEGER4, &
             rarg4, rsize, rdispl, MPI_INTEGER4, 1, error)
       call MPI_Alltoallv(sarg8, ssize, sdispl, MPI_INTEGER8, &
             rarg8, rsize, rdispl, MPI_INTEGER8, 1, error)])], [dnl
-            AC_DEFINE([HAVE_MPI_FC_LEGACY], 1 [Define to 1 if the MPI Fortran library uses legacy interfaces])
+            AC_DEFINE([HAVE_MPI_FC_LEGACY], 1, [Define to 1 if the MPI Fortran library uses legacy interfaces])
             AC_MSG_RESULT(yes)], [dnl
             AC_MSG_RESULT(no)]
     )
