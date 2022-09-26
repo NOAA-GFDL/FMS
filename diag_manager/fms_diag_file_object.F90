@@ -32,9 +32,10 @@ use diag_data_mod, only: DIAG_NULL, NO_DOMAIN, max_axes, SUB_REGIONAL, get_base_
 use time_manager_mod, only: time_type, operator(>), operator(/=), operator(==), get_date
 use fms_diag_time_utils_mod, only: diag_time_inc, get_time_string
 use time_manager_mod, only: time_type, operator(/=), operator(==)
-use fms_diag_yaml_mod, only: diag_yaml, diagYamlObject_type, diagYamlFiles_type
+use fms_diag_yaml_mod, only: diag_yaml, diagYamlObject_type, diagYamlFiles_type, subRegion_type
 use fms_diag_axis_object_mod, only: diagDomain_t, get_domain_and_domain_type, fmsDiagAxis_type, &
-                                    fmsDiagAxisContainer_type, DIAGDOMAIN2D_T, DIAGDOMAINUG_T
+                                    fmsDiagAxisContainer_type, DIAGDOMAIN2D_T, DIAGDOMAINUG_T, &
+                                    fmsDiagFullAxis_type, define_subaxis
 use mpp_mod, only: mpp_get_current_pelist, mpp_npes, mpp_root_pe, mpp_pe, mpp_error, FATAL
 implicit none
 private
@@ -94,8 +95,7 @@ type :: fmsDiagFile_type
  procedure, public :: get_file_freq
  procedure, public :: get_file_timeunit
  procedure, public :: get_file_unlimdim
-!! TODO get functions for sub region stuff
-! procedure, public :: get_file_sub_region
+ procedure, public :: get_file_sub_region
  procedure, public :: get_file_new_file_freq
  procedure, public :: get_file_new_file_freq_units
  procedure, public :: get_file_start_time
@@ -121,6 +121,7 @@ end type fmsDiagFile_type
 type, extends (fmsDiagFile_type) :: subRegionalFile_type
   integer, dimension(:), allocatable :: sub_axis_ids !< Array of axis ids in the file
   logical :: write_on_this_pe !< Flag indicating if the subregion is on the current PE
+  logical :: subaxis_defined !< Flag indicating if the subaxes have already been defined
 end type subRegionalFile_type
 
 !> \brief A container for fmsDiagFile_type.  This is used to create the array of files
@@ -157,6 +158,7 @@ logical function fms_diag_files_object_init (files_array)
            allocate(obj%sub_axis_ids(max_axes))
            obj%sub_axis_ids = diag_null
            obj%write_on_this_pe = .true. !TODO this should be .false. probably
+           obj%subaxis_defined = .false.
        end select
      else
        allocate(FmsDiagFile_type::files_array(i)%FMS_diag_file)
@@ -324,14 +326,13 @@ pure function get_file_unlimdim (this) result(res)
   res = this%diag_yaml_file%get_file_unlimdim()
 end function get_file_unlimdim
 
-!! TODO - get functions for sub region stuff
 !> \brief Returns a copy of file_sub_region from the yaml object
 !! \return Copy of file_sub_region
-!pure function get_file_sub_region (obj) result(res)
-! class(fmsDiagFile_type), intent(in) :: obj !< The file object
-! integer :: res
-!  res = obj%diag_yaml_file%get_file_sub_region()
-!end function get_file_sub_region
+function get_file_sub_region (obj) result(res)
+ class(fmsDiagFile_type), target, intent(in) :: obj !< The file object
+ type(subRegion_type) :: res
+  res = obj%diag_yaml_file%get_file_sub_region()
+end function get_file_sub_region
 
 !> \brief Returns a copy of file_new_file_freq from the yaml object
 !! \return Copy of file_new_file_freq
@@ -535,27 +536,41 @@ subroutine set_file_domain(this, domain, type_of_domain)
 end subroutine set_file_domain
 
 !> @brief Loops through a variable's axis_ids and adds them to the FMSDiagFile object if they don't exist
-subroutine add_axes(this, axis_ids)
-  class(fmsDiagFile_type), intent(inout)       :: this            !< The file object
-  integer,                 INTENT(in)          :: axis_ids(:)    !< Array of axes_ids
+subroutine add_axes(this, axis_ids, diag_axis, naxis)
+  class(fmsDiagFile_type),          intent(inout)       :: this          !< The file object
+  integer,                          INTENT(in)          :: axis_ids(:)   !< Array of axes_ids
+  class(fmsDiagAxisContainer_type), intent(inout)       :: diag_axis(:)  !< Diag_axis object
+  integer,                          intent(inout)       :: naxis         !< Number of axis that have been registered
 
   integer :: i, j !< For do loops
+  logical :: is_cube_sphere !< Flag indicating if the file's domain is a cubesphere
 
-  do i = 1, size(axis_ids)
-    do j = 1, this%number_of_axis
-      !> Check if the axis already exists, return
-      if (axis_ids(i) .eq. this%axis_ids(j)) return
+  is_cube_sphere = .false.
+
+  select type(this)
+  type is (subRegionalFile_type)
+    if (.not. this%subaxis_defined) then
+      if (associated(this%domain)) then
+        if (this%domain%get_ntiles() .eq. 6) is_cube_sphere = .true.
+      endif
+
+      call define_subaxis(diag_axis, axis_ids, naxis, this%get_file_sub_region(), &
+        is_cube_sphere, this%write_on_this_pe)
+      this%subaxis_defined = .true.
+    endif
+    return
+  type is (fmsDiagFile_type)
+    do i = 1, size(axis_ids)
+      do j = 1, this%number_of_axis
+        !> Check if the axis already exists, return
+        if (axis_ids(i) .eq. this%axis_ids(j)) return
+      enddo
+
+      !> If the axis does not exist add it to the list
+      this%number_of_axis = this%number_of_axis + 1
+      this%axis_ids(this%number_of_axis) = axis_ids(i)
     enddo
-
-    !> If the axis does not exist add it to the list
-    this%number_of_axis = this%number_of_axis + 1
-    this%axis_ids(this%number_of_axis) = axis_ids(i)
-
-    !> If this is a sub_regional file, set up the sub_axes
-    !> TO DO:
-    !!
-  enddo
-
+  end select
 end subroutine add_axes
 
 !> @brief adds the start time to the fileobj

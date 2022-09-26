@@ -501,14 +501,25 @@ end subroutine axis_edges
   !!     z(k1) would be the nearest data point to 12.5 and z(k2) would
   !!     be the nearest data point to 0.0
   !! @return integer nearest_index
-  function nearest_index (value, array)
+  function nearest_index (value, dummy_array)
 
     integer :: nearest_index
     integer :: ia !< dimension of "array"
     integer :: i, ii, unit
     real :: value !< arbitrary data...same units as elements in "array"
-    real, dimension(:) :: array !< array of data points  (must be monotonically increasing)
+    class(*), dimension(:), target :: dummy_array !< array of data points  (must be monotonically increasing)
+    real, dimension(:), allocatable :: array
+
     logical keep_going
+
+    select type(dummy_array)
+    type is (real(kind=r8_kind))
+      allocate(array(size(dummy_array)))
+      array = dummy_array
+    type is (real(kind=r4_kind))
+      allocate(array(size(dummy_array)))
+      array = dummy_array
+    end select
 
     ia = size(array(:))
 

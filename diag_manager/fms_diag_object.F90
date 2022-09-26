@@ -181,7 +181,7 @@ integer function fms_register_diag_field_obj &
      fileptr => this%FMS_diag_files(file_ids(i))%FMS_diag_file
      call fileptr%add_field_id(fieldptr%get_id())
      call fileptr%set_file_domain(fieldptr%get_domain(), fieldptr%get_type_of_domain())
-     call fileptr%add_axes(axes)
+     call fileptr%add_axes(axes, this%diag_axis, this%registered_axis)
      call fileptr%add_start_time(init_time)
     enddo
   elseif (present(axes)) then !only axes present
@@ -189,7 +189,7 @@ integer function fms_register_diag_field_obj &
      fileptr => this%FMS_diag_files(file_ids(i))%FMS_diag_file
      call fileptr%add_field_id(fieldptr%get_id())
      call fileptr%set_file_domain(fieldptr%get_domain(), fieldptr%get_type_of_domain())
-     call fileptr%add_axes(axes)
+     call fileptr%add_axes(axes, this%diag_axis, this%registered_axis)
     enddo
   elseif (present(init_time)) then !only inti time present
     do i = 1, size(file_ids)

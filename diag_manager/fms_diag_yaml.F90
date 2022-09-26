@@ -47,7 +47,7 @@ private
 
 public :: diag_yaml
 public :: diag_yaml_object_init, diag_yaml_object_end
-public :: diagYamlObject_type, get_diag_yaml_obj
+public :: diagYamlObject_type, get_diag_yaml_obj, subRegion_type
 public :: diagYamlFiles_type, diagYamlFilesVar_type
 public :: get_num_unique_fields, find_diag_field, get_diag_fields_entries, get_diag_files_id
 !> @}
