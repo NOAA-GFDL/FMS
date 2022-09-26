@@ -668,7 +668,8 @@ module fms_diag_axis_object_mod
     class(fmsDiagAxisContainer_type), target, intent(inout) :: diag_axis(:)     !< Diag_axis object
     integer,                                  INTENT(in)    :: axis_ids(:)      !< Array of axes_ids
     integer,                                  intent(inout) :: naxis            !< Number of axis registered
-    type(subRegion_type),                     intent(in)    :: subRegion        !< The subRegion definition from the yaml
+    type(subRegion_type),                     intent(in)    :: subRegion        !< The subRegion definition from
+                                                                                !! the yaml
     logical,                                  intent(in)    :: is_cube_sphere   !< .true. if this is a cubesphere
     logical,                                  intent(out)   :: write_on_this_pe !< .true. if the subregion
                                                                                 !! is on this PE
