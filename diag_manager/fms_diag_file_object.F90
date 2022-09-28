@@ -608,7 +608,6 @@ subroutine open_diag_file(this, time_step)
 
   class(fmsDiagFile_type), pointer     :: diag_file      !< Diag_file object to open
   class(diagDomain_t),     pointer     :: domain         !< The domain used in the file
-  class(FmsNetcdfFile_t),  pointer     :: fileobj        !< The fileobj to write to
   character(len=:),        allocatable :: diag_file_name !< The file name as defined in the yaml
   character(len=128)                   :: base_name      !< The file name as defined in the yaml
                                                          !! without the wildcard definition
@@ -630,7 +629,6 @@ subroutine open_diag_file(this, time_step)
   integer, allocatable                 :: pes(:)         !< Array of the pes in the current pelist
 
   diag_file => this%FMS_diag_file
-  fileobj => diag_file%fileobj
   domain => diag_file%domain
 
   !< Go away if it is not time to open the file
@@ -645,23 +643,23 @@ subroutine open_diag_file(this, time_step)
       if (.not. diag_file%write_on_this_pe) return
 
       !< In this case each PE is going to write its own file
-      allocate(FmsNetcdfFile_t :: fileobj)
+      allocate(FmsNetcdfFile_t :: diag_file%fileobj)
 
       is_regional = .true.
     type is (fmsDiagFile_type)
       !< Use the type_of_domain to get the correct fileobj
       select case (diag_file%type_of_domain)
       case (NO_DOMAIN)
-        allocate(FmsNetcdfFile_t :: fileobj)
+        allocate(FmsNetcdfFile_t :: diag_file%fileobj)
       case (TWO_D_DOMAIN)
-        allocate(FmsNetcdfDomainFile_t :: fileobj)
+        allocate(FmsNetcdfDomainFile_t :: diag_file%fileobj)
       case (UG_DOMAIN)
-        allocate(FmsNetcdfUnstructuredDomainFile_t :: fileobj)
+        allocate(FmsNetcdfUnstructuredDomainFile_t :: diag_file%fileobj)
       end select
     end select
   else
     !< In this case, we are opening a new file so close the current the file
-    call close_file(fileobj)
+    call close_file(diag_file%fileobj)
   endif
 
   !< Figure out what to name of the file
@@ -709,7 +707,7 @@ subroutine open_diag_file(this, time_step)
   endif
 
   !< Open the file!
-  select type (fileobj)
+  select type (fileobj => diag_file%fileobj)
   type is (FmsNetcdfFile_t)
     if (is_regional) then
       if (.not. open_file(fileobj, file_name, "overwrite", pelist=(/mpp_pe()/))) &
@@ -743,7 +741,7 @@ subroutine open_diag_file(this, time_step)
   endif
 
 !TODO: closing the file here for now, just to see if it works
-  call close_file(fileobj)
+  call close_file(diag_file%fileobj)
 end subroutine open_diag_file
 
 #endif
