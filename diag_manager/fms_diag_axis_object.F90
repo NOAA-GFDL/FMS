@@ -424,19 +424,19 @@ module fms_diag_axis_object_mod
     if (compute_idx(1) > subregion_end   .and. compute_idx(2) > subregion_end) return
 
     need_to_define_axis = .true.
-    if (compute_idx(1)  > subregion_start .and. compute_idx(2) <= subregion_end) then
+    if (compute_idx(1)  >= subregion_start .and. compute_idx(2) >= subregion_end) then
       !< In this case all the point of the current PE are inside the range of the sub_axis
       starting_index = compute_idx(1)
       ending_index   = compute_idx(2)
-    else if (compute_idx(1)  > subregion_start .and. compute_idx(2) >= subregion_end) then
+    else if (compute_idx(1)  >= subregion_start .and. compute_idx(2) <= subregion_end) then
       !< In this case all the points of the current PE are valid up to the end point
       starting_index = compute_idx(1)
       ending_index   = subregion_end
-    else if (compute_idx(1)  > subregion_start .and. compute_idx(2) <= subregion_end) then
+    else if (compute_idx(1)  <= subregion_start .and. compute_idx(2) <= subregion_end) then
       !< In this case all the points of the current PE are valid starting with t subregion_start
       starting_index = subregion_start
       ending_index   = compute_idx(2)
-    else if (compute_idx(1) > subregion_start .and. compute_idx(2) >= subregion_end) then
+    else if (compute_idx(1) <= subregion_start .and. compute_idx(2) >= subregion_end) then
       !< In this case only the points in the current PE ar valid
       starting_index = subregion_start
       ending_index   = subregion_end
