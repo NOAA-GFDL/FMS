@@ -906,7 +906,7 @@ subroutine netcdf_add_variable(fileobj, variable_name, variable_type, dimensions
           &deflate_level=deflate_level, chunksizes=chunksizes)
       else
         if (present(deflate_level) .or. present(chunksizes)) &
-          &call mpp_error(NOTE,"Not able to use deflate_level or chunksizes if not using netcdf4"&
+          &call mpp_error(NOTE,"Not able to use deflate_level or chunksizes if not using netcdf4"// &
           " ignoring them")
         err = nf90_def_var(fileobj%ncid, trim(variable_name), vtype, dimids, varid)
       endif
