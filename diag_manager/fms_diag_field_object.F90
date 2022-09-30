@@ -937,5 +937,54 @@ PURE FUNCTION diag_field_id_from_name(this, module_name, field_name) &
         diag_field_id = this%get_id()
   endif
 end function diag_field_id_from_name
+
+!> Dumps any data from a given fmsDiagField_type object
+subroutine dump_field_obj (this)
+  class(fmsDiagField_type), intent(in) :: this
+    print *, 'file_ids:' ,this%file_ids
+    print *, 'diag_id:' ,this%diag_id
+    !print *, this%attributes
+    print *, 'num_attributes:' ,this%num_attributes
+    print *, 'static:' ,this%static
+    print *, 'registered:' ,this%registered
+    print *, 'mask_variant:' ,this%mask_variant
+    print *, 'do_not_log:' ,this%do_not_log
+    print *, 'local:' ,this%local
+    print *, 'vartype:' ,this%vartype
+    print *, 'varname:' ,this%varname
+    print *, 'longname:' ,this%longname
+    print *, 'standname:' ,this%standname
+    print *, 'units:' ,this%units
+    print *, 'modname:' ,this%modname
+    print *, 'realm:' ,this%realm
+    print *, 'interp_method:' ,this%interp_method
+    print *, 'tile_count:' ,this%tile_count
+    print *, 'axis_ids:' ,this%axis_ids
+    !print *, this%domain
+    print *, 'type_of_domain:' ,this%type_of_domain
+    print *, 'area:' ,this%area
+    select type(missing_val => this%missing_value)
+      type is (real(4)) 
+        print *, 'missing_value:', missing_val
+      type is (real(8)) 
+        print *, 'missing_value:' ,missing_val
+     type is(integer(4))
+        print *, 'missing_value:' ,missing_val
+     type is(integer(8))
+        print *, 'missing_value:' ,missing_val
+    end select
+    select type(drange => this%data_RANGE)
+      type is (real(4)) 
+        print *, 'data_RANGE:' ,drange
+      type is (real(8)) 
+        print *, 'data_RANGE:' ,drange
+     type is(integer(4))
+        print *, 'data_RANGE:' ,drange
+     type is(integer(8))
+        print *, 'data_RANGE:' ,drange
+    end select
+
+end subroutine
+
 #endif
 end module fms_diag_field_object_mod

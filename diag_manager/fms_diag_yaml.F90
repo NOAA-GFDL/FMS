@@ -1334,6 +1334,56 @@ function get_diag_files_id(indices) &
   end do
 
 end function get_diag_files_id
+
+!> prints out contents of diag_yaml 
+subroutine diag_yaml_dump( ) 
+  type(diagyamlfilesvar_type), allocatable      :: fields(:)
+  type(diagyamlfiles_type), allocatable         :: files(:)
+  integer                                       :: i
+  !! TODO root, write to log
+  print *, '**********Dumping diag_yaml object**********' 
+  print *, 'FILES'
+  allocate(fields(SIZE(diag_yaml%get_diag_fields())))
+  allocate(files(SIZE(diag_yaml%get_diag_files())))
+  files = diag_yaml%get_diag_files()
+  fields = diag_yaml%get_diag_fields()
+  do i=1, SIZE(files)
+    print *, 'File: ', files(i)%get_file_fname() 
+    if(files(i)%has_file_frequnit()) print *, 'file_frequnit:', files(i)%get_file_frequnit()
+    if(files(i)%has_file_freq()) print *, 'get_file_freq:', files(i)%get_file_freq()
+    if(files(i)%has_file_timeunit()) print *, 'get_file_timeunit:', files(i)%get_file_timeunit()
+    if(files(i)%has_file_unlimdim()) print *, 'get_file_unlimdim:', files(i)%get_file_unlimdim()
+    !if(files(i)%has_file_sub_region()) print *, 'get_file_sub_region:', files(i)%get_file_sub_region()
+    if(files(i)%has_file_new_file_freq()) print *, 'get_file_new_file_freq:', files(i)%get_file_new_file_freq()
+    if(files(i)%has_file_new_file_freq_units()) print *, 'get_file_new_file_freq_units:', &
+                                                                files(i)%get_file_new_file_freq_units()
+    if(files(i)%has_file_start_time()) print *, 'get_file_start_time:', files(i)%get_file_start_time()
+    if(files(i)%has_file_duration()) print *, 'get_file_duration:', files(i)%get_file_duration()
+    if(files(i)%has_file_duration_units()) print *, 'get_file_duration_units:', files(i)%get_file_duration_units()
+    if(files(i)%has_file_varlist()) print *, 'get_file_varlist:', files(i)%get_file_varlist()
+    if(files(i)%has_file_global_meta()) print *, 'get_file_global_meta:', files(i)%get_file_global_meta()
+    if(files(i)%is_global_meta()) print *, 'is_global_meta:', files(i)%is_global_meta()
+    print *, ''
+  enddo
+  print *, 'FIELDS'
+  do i=1, SIZE(fields)
+    print *, 'Field: ', fields(i)%get_var_fname() 
+    if(fields(i)%has_var_fname()) print *, 'get_var_fname:', fields(i)%get_var_fname()
+    if(fields(i)%has_var_varname()) print *, 'get_var_varname:', fields(i)%get_var_varname()
+    if(fields(i)%has_var_reduction()) print *, 'get_var_reduction:', fields(i)%get_var_reduction()
+    if(fields(i)%has_var_module()) print *, 'get_var_module:', fields(i)%get_var_module()
+    if(fields(i)%has_var_kind()) print *, 'get_var_kind:', fields(i)%get_var_kind()
+    if(fields(i)%has_var_outname()) print *, 'get_var_outname:', fields(i)%get_var_outname()
+    if(fields(i)%has_var_longname()) print *, 'get_var_longname:', fields(i)%get_var_longname()
+    if(fields(i)%has_var_units()) print *, 'get_var_units:', fields(i)%get_var_units()
+    if(fields(i)%has_var_zbounds()) print *, 'get_var_zbounds:', fields(i)%get_var_zbounds()
+    if(fields(i)%has_var_attributes()) print *, 'get_var_attributes:', fields(i)%get_var_attributes()
+    if(fields(i)%has_n_diurnal()) print *, 'get_n_diurnal:', fields(i)%get_n_diurnal()
+    if(fields(i)%has_pow_value()) print *, 'get_pow_value:', fields(i)%get_pow_value()
+    if(fields(i)%has_var_attributes()) print *, 'is_var_attributes:', fields(i)%is_var_attributes()
+  enddo
+end subroutine
+
 #endif
 end module fms_diag_yaml_mod
 !> @}

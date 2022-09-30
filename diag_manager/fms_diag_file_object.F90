@@ -582,5 +582,36 @@ subroutine add_start_time(this, start_time)
   endif
 
 end subroutine
+
+!> writes out internal values for fmsDiagFile_type object
+subroutine dump_file_obj(this)
+  class(fmsDiagFile_type), intent(in) :: this !< the file object
+
+  print *, 'file id:', this%id
+  !! TODO dump time_type
+  !print *, 'start time:', this%start_time
+  !print *, 'last_output', this%last_output
+  !print *, 'next_output', this%next_output
+  !print *,'next_next_output', this%next_next_output
+  !print *,'next_open', this%next_open
+
+  !! TODO print file info, might already be a fnct for it
+  !print *,'fileobj', this%fileobj
+
+  !! dump yaml
+  call diag_yaml_dump()
+
+  print *,'type_of_domain', this%type_of_domain
+  !print *,'domain', this%domain
+  print *,'file_metadata_from_model', this%file_metadata_from_model
+  print *,'field_ids', this%field_ids
+  print *,'field_registered', this%field_registered
+  print *,'num_registered_fields', this%num_registered_fields
+  print *,'axis_ids', this%axis_ids
+  print *,'number_of_axis', this%number_of_axis
+
+end subroutine
+
+
 #endif
 end module fms_diag_file_object_mod

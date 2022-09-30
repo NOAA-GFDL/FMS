@@ -500,4 +500,43 @@ result(axis_name)
 #endif
 end function fms_get_axis_name_from_id
 
+#ifdef use_yaml
+!> Dumps as much data as it can from the fmsDiagObject_type.
+!! Will print all fields in the object
+subroutine fms_diag_dump()
+  !type(fmsDiagObject_type) :: diag_obj
+  type(fmsDiagFile_type), pointer :: fileptr !<  pointer for traversing file list
+  type(fmsDiagField_type), pointer :: fieldptr !<  pointer for traversing field list
+  integer :: i !< do loops
+
+  print *, '********** dumping diag object ***********'
+  print *, 'registered_variables:', fms_diag_object%registered_variables
+  print *, 'registered_axis:', fms_diag_object%registered_axis
+  print *, 'initialized:', fms_diag_object%initialized
+  print *, 'files_initialized:', fms_diag_object%files_initialized
+  print *, 'fields_initialized:', fms_diag_object%fields_initialized
+  print *, 'buffers_initialized:', fms_diag_object%buffers_initialized
+  print *, 'axes_initialized:', fms_diag_object%axes_initialized
+  print *, 'Files:'
+  if( fms_diag_object%files_initialized ) then
+    do i=1, SIZE(fms_diag_object%FMS_diag_files) 
+      print *, 'File num:', i
+      fileptr => fms_diag_object%FMS_diag_files(i)%FMS_diag_file
+      call fileptr%dump_file_obj()
+    enddo
+  else
+    print *, 'files not initialized'
+  endif
+  if( fms_diag_object%fields_initialized) then
+    do i=1, SIZE(fms_diag_object%FMS_diag_fields) 
+      print *, 'Field num:', i
+      fieldptr => fms_diag_object%FMS_diag_fields(i)
+      call fieldptr%dump_field_obj()
+    enddo
+  else
+    print *, 'fields not initialized'
+  endif
+end subroutine
+#endif
+
 end module fms_diag_object_mod
