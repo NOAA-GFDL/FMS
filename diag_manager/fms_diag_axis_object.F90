@@ -35,7 +35,7 @@ module fms_diag_axis_object_mod
   use diag_data_mod,   only:  diag_atttype, max_axes, NO_DOMAIN, TWO_D_DOMAIN, UG_DOMAIN, &
                               direction_down, direction_up, fmsDiagAttribute_type, max_axis_attributes, &
                               MAX_SUBAXES, DIAG_NULL, index_gridtype, latlon_gridtype
-  use mpp_mod,         only:  FATAL, mpp_error, uppercase
+  use mpp_mod,         only:  FATAL, mpp_error, uppercase, mpp_pe, mpp_root_pe, stdout
   use fms2_io_mod,     only:  FmsNetcdfFile_t, FmsNetcdfDomainFile_t, FmsNetcdfUnstructuredDomainFile_t, &
                             & register_axis, register_field, register_variable_attribute, write_data
 #ifdef use_yaml
@@ -92,6 +92,13 @@ module fms_diag_axis_object_mod
   !> @ingroup diag_axis_object_mod
   TYPE fmsDiagAxis_type
      INTEGER                        , private :: axis_id         !< ID of the axis
+
+     contains
+       procedure :: get_parent_axis_id
+       procedure :: get_subaxes_id
+       procedure :: write_axis_metadata
+       procedure :: write_axis_data
+       procedure :: dump_axis_object
   END TYPE fmsDiagAxis_type
 
   !> @brief Type to hold the subaxis
@@ -109,6 +116,7 @@ module fms_diag_axis_object_mod
     contains
 #ifdef use_yaml
       procedure :: fill_subaxis
+      procedure :: dump_axis_object_sub
 #endif
   END TYPE fmsDiagSubAxis_type
 
@@ -146,10 +154,10 @@ module fms_diag_axis_object_mod
      PROCEDURE :: axis_length => get_axis_length
      PROCEDURE :: get_axis_name
      PROCEDURE :: set_edges_name
-     PROCEDURE :: write_axis_metadata
-     PROCEDURE :: write_axis_data
+     PROCEDURE :: set_axis_id
      PROCEDURE :: get_compute_domain
      PROCEDURE :: get_indices
+     PROCEDURE :: dump_axis_object_full
 
      ! TO DO:
      ! Get/has/is subroutines as needed
@@ -258,24 +266,58 @@ module fms_diag_axis_object_mod
     call this%attributes(j)%add(att_name, att_value)
   end subroutine add_axis_attribute
 
+  !> @brief Dump out the contents of a  full axis object
+  subroutine dump_axis_object_full(this)
+    class(fmsDiagFullAxis_type),INTENT(IN) :: this   !< diag_axis obj
+
+    integer :: out_unit !< Unit for the stdout
+    integer :: i        !< For do loops
+
+    out_unit = stdout()
+    if (mpp_pe() .eq. mpp_root_pe()) then
+      write(out_unit, *) "Dumping contents for ", this%axis_name, " ID:", this%axis_id
+      write(out_unit, *) "Type of domain ", this%type_of_domain
+      write(out_unit, *) "Size of axis_data ", size(this%axis_data)
+      do i = 1, this%nsubaxis
+        write(out_unit, *) "Contains subaxis with ID:", this%subaxis(i)
+      enddo
+
+      !TODO Finish the rest of the object
+    endif
+  end subroutine dump_axis_object_full
+
   !> @brief Write the axis meta data to an open fileobj
-  subroutine write_axis_metadata(this, fileobj, sub_axis_id)
-    class(fmsDiagFullAxis_type), target, INTENT(IN) :: this     !< diag_axis obj
-    class(FmsNetcdfFile_t),    INTENT(INOUT) :: fileobj     !< Fms2_io fileobj to write the data to
-    integer, OPTIONAL,         INTENT(IN)    :: sub_axis_id !< ID of the sub_axis, if it exists
+  subroutine write_axis_metadata(this, fileobj, parent_axis)
+    class(fmsDiagAxis_type),          target,  INTENT(IN)    :: this        !< diag_axis obj
+    class(FmsNetcdfFile_t),                    INTENT(INOUT) :: fileobj     !< Fms2_io fileobj to write the data to
+    class(fmsDiagAxis_type), OPTIONAL, target, INTENT(IN)    :: parent_axis !< If the axis is a subaxis, axis object
+                                                                            !! for the parent axis (this will be used
+                                                                            !! to get some of the metadata info)
 
-    character(len=:), ALLOCATABLE :: axis_edges_name !< Name of the edges, if it exist
-    character(len=:), pointer     :: axis_name       !< Name of the axis
-    integer                       :: axis_length     !< Size of the axis
-    integer                       :: i               !< For do loops
+    character(len=:), ALLOCATABLE         :: axis_edges_name !< Name of the edges, if it exist
+    character(len=:), pointer             :: axis_name       !< Name of the axis
+    character(len=:), ALLOCATABLE, target :: sub_axis_name   !< Name of the sub_axis
+    integer                               :: axis_length     !< Size of the axis
+    integer                               :: i               !< For do loops
+    type(fmsDiagFullAxis_type), pointer   :: diag_axis       !< Local pointer to the diag_axis
 
-    if (present(sub_axis_id)) then
-      !axis_name  => this%subaxis(sub_axis_id)%subaxis_name
-      !axis_length = this%subaxis(sub_axis_id)%ending_index - this%subaxis(sub_axis_id)%starting_index + 1
-    else
+    select type(this)
+    type is (fmsDiagFullAxis_type)
       axis_name => this%axis_name
       axis_length = this%length
-    endif
+      diag_axis => this
+    type is (fmsDiagSubAxis_type)
+      sub_axis_name = this%subaxis_name//"_sub01"
+      axis_name => sub_axis_name
+      axis_length = this%ending_index - this%starting_index + 1
+      !< Get all the other information from the parent axis (i.e the cart_name, units, etc)
+      if (present(parent_axis)) then
+        select type(parent_axis)
+        type is (fmsDiagFullAxis_type)
+          diag_axis => parent_axis
+        end select
+      endif
+    end select
 
     !< Add the axis as a dimension in the netcdf file based on the type of axis_domain and the fileobj type
     select type (fileobj)
@@ -283,17 +325,17 @@ module fms_diag_axis_object_mod
         !< Here the axis is not domain decomposed (i.e z_axis)
         call register_axis(fileobj, axis_name, axis_length)
       type is (FmsNetcdfDomainFile_t)
-        select case (this%type_of_domain)
+        select case (diag_axis%type_of_domain)
         case (NO_DOMAIN)
           !< Here the fileobj is domain decomposed, but the axis is not
           !! Domain decomposed fileobjs can have axis that are not domain decomposed (i.e "Z" axis)
           call register_axis(fileobj, axis_name, axis_length)
         case (TWO_D_DOMAIN)
           !< Here the axis is domain decomposed
-          call register_axis(fileobj, axis_name, this%cart_name, domain_position=this%domain_position)
+          call register_axis(fileobj, axis_name, diag_axis%cart_name, domain_position=diag_axis%domain_position)
         end select
       type is (FmsNetcdfUnstructuredDomainFile_t)
-        select case (this%type_of_domain)
+        select case (diag_axis%type_of_domain)
         case (NO_DOMAIN)
           !< Here the fileobj is in the unstructured domain, but the axis is not
           !< Unstructured domain fileobjs can have axis that are not domain decomposed (i.e "Z" axis)
@@ -305,54 +347,60 @@ module fms_diag_axis_object_mod
     end select
 
     !< Add the axis as a variable and write its metada
-    call register_field(fileobj, axis_name, this%type_of_data, (/axis_name/))
-    call register_variable_attribute(fileobj, axis_name, "longname", this%long_name, &
-      str_len=len_trim(this%long_name))
+    call register_field(fileobj, axis_name, diag_axis%type_of_data, (/axis_name/))
+    call register_variable_attribute(fileobj, axis_name, "longname", diag_axis%long_name, &
+      str_len=len_trim(diag_axis%long_name))
 
-    if (this%cart_name .NE. "N") &
-      call register_variable_attribute(fileobj, axis_name, "axis", this%cart_name, str_len=1)
+    if (diag_axis%cart_name .NE. "N") &
+      call register_variable_attribute(fileobj, axis_name, "axis", diag_axis%cart_name, str_len=1)
 
-    if (trim(this%units) .NE. "none") &
-      call register_variable_attribute(fileobj, axis_name, "units", this%units, str_len=len_trim(this%units))
+    if (trim(diag_axis%units) .NE. "none") &
+      call register_variable_attribute(fileobj, axis_name, "units", diag_axis%units, str_len=len_trim(diag_axis%units))
 
-    select case (this%direction)
+    select case (diag_axis%direction)
     case (direction_up)
       call register_variable_attribute(fileobj, axis_name, "positive", "up", str_len=2)
     case (direction_down)
       call register_variable_attribute(fileobj, axis_name, "positive", "down", str_len=4)
     end select
 
-    if (allocated(this%edges_name)) then
-      call register_variable_attribute(fileobj, axis_name, "edges", this%edges_name, &
-        str_len=len_trim(this%edges_name))
+    if (allocated(diag_axis%edges_name)) then
+      call register_variable_attribute(fileobj, axis_name, "edges", diag_axis%edges_name, &
+        str_len=len_trim(diag_axis%edges_name))
     endif
 
-    if(allocated(this%attributes)) then
-      do i = 1, size(this%attributes)
-        call register_variable_attribute(fileobj, axis_name, this%attributes(i)%att_name, &
-          & this%attributes(i)%att_value)
+    if(allocated(diag_axis%attributes)) then
+      do i = 1, diag_axis%num_attributes
+        call register_variable_attribute(fileobj, axis_name, diag_axis%attributes(i)%att_name, &
+          & diag_axis%attributes(i)%att_value)
       enddo
     endif
 
   end subroutine write_axis_metadata
 
   !> @brief Write the axis data to an open fileobj
-  subroutine write_axis_data(this, fileobj, sub_axis_id)
-    class(fmsDiagFullAxis_type),INTENT(IN):: this       !< diag_axis obj
-    class(FmsNetcdfFile_t), INTENT(INOUT) :: fileobj   !< Fms2_io fileobj to write the data to
-    integer, OPTIONAL,      INTENT(IN)    :: sub_axis_id !< ID of the sub_axis, if it exists
+  subroutine write_axis_data(this, fileobj, parent_axis)
+    class(fmsDiagAxis_type), target, INTENT(IN) :: this     !< diag_axis obj
+    class(FmsNetcdfFile_t),    INTENT(INOUT) :: fileobj     !< Fms2_io fileobj to write the data to
+    class(fmsDiagAxis_type), OPTIONAL, target,       INTENT(IN)    :: parent_axis
 
     integer                       :: i         !< Starting index of a sub_axis
     integer                       :: j         !< Ending index of a sub_axis
 
-    if (present(sub_axis_id)) then
-      !i = this%subaxis(sub_axis_id)%starting_index
-      !j = this%subaxis(sub_axis_id)%ending_index
-
-      !call write_data(fileobj, this%subaxis(sub_axis_id)%subaxis_name, this%axis_data(i:j))
-    else
+    select type(this)
+    type is (fmsDiagFullAxis_type)
       call write_data(fileobj, this%axis_name, this%axis_data)
-    endif
+    type is (fmsDiagSubAxis_type)
+      i = this%starting_index
+      j = this%ending_index
+
+      if (present(parent_axis)) then
+        select type(parent_axis)
+        type is (fmsDiagFullAxis_type)
+          call write_data(fileobj, this%subaxis_name//"_sub01", parent_axis%axis_data(i:j))
+        end select
+      endif
+    end select
   end subroutine write_axis_data
 
   !> @brief Get the length of the axis
@@ -380,6 +428,15 @@ module fms_diag_axis_object_mod
 
     axis_name = this%axis_name
   end function
+
+  !> @brief Set the axis_id
+  subroutine set_axis_id(this, axis_id)
+    class(fmsDiagFullAxis_type), intent(inout) :: this    !< diag_axis obj
+    integer,                     intent(in)    :: axis_id !< Axis_id
+
+    this%axis_id = axis_id
+
+  end subroutine set_axis_id
 
   !> @brief Set the name of the edges
   subroutine set_edges_name(this, edges_name)
@@ -492,8 +549,22 @@ module fms_diag_axis_object_mod
   end subroutine get_compute_domain
 
   !!!!!!!!!!!!!!!!!! SUB AXIS PROCEDURES !!!!!!!!!!!!!!!!!
-  !> @brief Fill in the info in the subaxis object
+
 #ifdef use_yaml
+  !>@brief Print out the information in the subaxis object
+  subroutine dump_axis_object_sub(this)
+    class(fmsDiagSubAxis_type), INTENT(IN) :: this             !< diag_sub_axis obj
+
+    integer :: out_unit !< unit of the stdout
+
+    out_unit = stdout()
+    if (mpp_pe() .eq. mpp_root_pe()) then
+      write(out_unit, *) "Dumping contents for ", this%subaxis_name, " ID:", this%axis_id
+      write(out_unit, *) "Starting index:", this%starting_index
+      write(out_unit, *) "Ending index:", this%ending_index
+      write(out_unit, *) "Parent_id:", this%parent_axis_id
+    endif
+  end subroutine dump_axis_object_sub
   !> @brief Fills in the information needed to define a subaxis
   subroutine fill_subaxis(this, starting_index, ending_index, axis_id, parent_id, parent_axis_name, subRegion)
     class(fmsDiagSubAxis_type), INTENT(INOUT) :: this             !< diag_sub_axis obj
@@ -703,16 +774,22 @@ module fms_diag_axis_object_mod
         !< Get the PEs compute domain
         call parent_axis%get_compute_domain(compute_idx, need_to_define_axis, tile_number=subRegion%tile)
 
-        !< If this is not a "X" or "Y" axis go to the next axis
-        if (.not. need_to_define_axis) cycle
+        !< If this is not a "X" or "Y" axis, go to the next axis
+        if (.not. need_to_define_axis) then
+          cycle
+        endif
 
         !< Determine if the PE's compute domain is inside the subRegion
         !! If it is get the starting and ending indices for that PE
         call parent_axis%get_indices(compute_idx, subRegion%corners(:,i), starting_index, ending_index, &
           need_to_define_axis)
 
-        !< If the PE's compute is not inside the subRegion move to the next axis
-        if (.not. need_to_define_axis) cycle
+        !< If the PE's compute is not inside the subRegion, define a null subaxis and go to the next axis
+        if (.not. need_to_define_axis) then
+          call define_new_axis(diag_axis, parent_axis, naxis, axis_ids(i), &
+            subRegion, diag_null, diag_null)
+          cycle
+        endif
 
         !< If it made it to this point, the current PE is in the subRegion!
         write_on_this_pe = .true.
@@ -853,6 +930,52 @@ module fms_diag_axis_object_mod
              parent_axis%axis_name, subRegion)
     end select
   end subroutine define_new_axis
+
+  !< @brief Determine the parent_axis_id of a subaxis
+  !! @return parent_axis_id if it is a subaxis and diag_null if is not a subaxis
+  pure function get_parent_axis_id(this) &
+  result(parent_axis_id)
+
+    class(fmsDiagAxis_type), intent(in) :: this            !< Axis Object
+    integer                             :: parent_axis_id
+
+    select type (this)
+    type is (fmsDiagFullAxis_type)
+      parent_axis_id = diag_null
+    type is (fmsDiagSubAxis_type)
+      parent_axis_id = this%parent_axis_id
+    end select
+
+  end function
+
+  !< @brief Determine the most recent subaxis id in a diag_axis object
+  !! @return the most recent subaxis id in a diag_axis object
+  pure function get_subaxes_id(this) &
+  result(sub_axis_id)
+
+    class(fmsDiagAxis_type), intent(in) :: this !< Axis Object
+    integer :: sub_axis_id
+
+    sub_axis_id = this%axis_id
+    select type (this)
+    type is (fmsDiagFullAxis_type)
+      if (this%cart_name .ne. "Z") sub_axis_id = this%subaxis(this%nsubaxis)
+    end select
+
+  end function
+
+  !< @brief Writes out the contents of an axis object to the stdout
+  subroutine dump_axis_object(this)
+    class(fmsDiagAxis_type), intent(in) :: this !< Axis Object
+
+    select type (this)
+    type is (fmsDiagFullAxis_type)
+      call this%dump_axis_object_full()
+    type is (fmsDiagSubAxis_type)
+      call this%dump_axis_object_sub()
+    end select
+  end subroutine dump_axis_object
+
 #endif
 end module fms_diag_axis_object_mod
 !> @}

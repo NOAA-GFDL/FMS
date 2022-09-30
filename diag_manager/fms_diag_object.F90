@@ -66,10 +66,13 @@ private
     procedure :: fms_get_axis_name_from_id
     procedure :: fms_diag_send_complete
     procedure :: diag_end => fms_diag_object_end
+    procedure :: dump_field_object
+    procedure :: dump_file_object
+    procedure :: dump_axis_object
 end type fmsDiagObject_type
 
 type (fmsDiagObject_type), target :: fms_diag_object
-public :: fms_diag_object 
+public :: fms_diag_object
 public :: fmsDiagObject_type
 
 contains
@@ -376,6 +379,7 @@ FUNCTION fms_diag_axis_init(this, axis_name, axis_data, units, cart_name, long_n
       & req=req, tile_count=tile_count, domain_position=domain_position)
 
     id = this%registered_axis
+    call axis%set_axis_id(id)
   end select
 #else
   id = diag_null
@@ -393,9 +397,16 @@ subroutine fms_diag_send_complete(this, time_step)
 #ifdef use_yaml
   class(fmsDiagFileContainer_type), pointer :: diag_file !< Pointer to this%FMS_diag_files(i) (for convenience)
 
+  logical :: file_is_opened !< True if the file was opened in this time_step
+                            !! If true the metadata will need to be written
+
   do i = 1, size(this%FMS_diag_files)
     diag_file => this%FMS_diag_files(i)
-    call diag_file%open_diag_file(time_step)
+    call diag_file%open_diag_file(time_step, file_is_opened)
+    if (file_is_opened) then
+      call diag_file%write_metadata(this%diag_axis)
+      call diag_file%write_axis_data(this%diag_axis)
+    endif
   enddo
 #endif
 
@@ -519,5 +530,38 @@ result(axis_name)
     axis_name = ""
 #endif
 end function fms_get_axis_name_from_id
+
+!> @brief Prints out the contents of all of the field object
+subroutine dump_field_object(this)
+  class(fmsDiagObject_type), intent (in) :: this !< The diag object
+
+  integer :: i !< for do loops
+
+  do i = 1, this%registered_variables
+    call this%FMS_diag_fields(i)%dump_field_object()
+  enddo
+end subroutine dump_field_object
+
+!> @brief Prints out the contents of all of the file object
+subroutine dump_file_object(this)
+  class(fmsDiagObject_type), intent (in) :: this !< The diag object
+
+  integer :: i !< for do loops
+
+   do i = 1, size(this%FMS_diag_files)
+    call this%FMS_diag_files(i)%dump_file_object()
+  enddo
+end subroutine dump_file_object
+
+!> @brief Prints out the contents of all of the axis object
+subroutine dump_axis_object(this)
+  class(fmsDiagObject_type), intent (in) :: this !< The diag object
+
+  integer :: i !< for do loops
+
+  do i = 1, this%registered_axis
+    call this%diag_axis(i)%axis%dump_axis_object()
+  enddo
+end subroutine dump_axis_object
 
 end module fms_diag_object_mod

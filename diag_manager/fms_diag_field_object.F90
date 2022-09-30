@@ -13,7 +13,7 @@ use diag_data_mod,  only: r8, r4, i8, i4, string, null_type_int, NO_DOMAIN
 use diag_data_mod,  only: max_field_attributes, fmsDiagAttribute_type
 use diag_data_mod,  only: diag_null, diag_not_found, diag_not_registered, diag_registered_id, &
                          &DIAG_FIELD_NOT_FOUND
-use mpp_mod, only: fatal, note, warning, mpp_error
+use mpp_mod, only: fatal, note, warning, mpp_error, stdout, mpp_pe, mpp_root_pe
 use fms_diag_yaml_mod, only:  diagYamlFilesVar_type, get_diag_fields_entries, get_diag_files_id, &
   & find_diag_field, get_num_unique_fields
 use fms_diag_axis_object_mod, only: diagDomain_t, get_domain_and_domain_type, fmsDiagAxis_type, &
@@ -126,6 +126,7 @@ type fmsDiagField_type
      procedure :: get_axis_id
      procedure :: get_domain
      procedure :: get_type_of_domain
+     procedure :: dump_field_object
 end type fmsDiagField_type
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! variables !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 type(fmsDiagField_type) :: null_ob
@@ -328,6 +329,8 @@ subroutine set_diag_id(this , id)
  if (allocated(this%registered)) then
      if (this%registered) then
           call mpp_error("set_diag_id", "The variable"//this%varname//" is already registered", FATAL)
+     else
+       this%diag_id = id
      endif
  else
      this%diag_id = id
@@ -963,5 +966,20 @@ PURE FUNCTION diag_field_id_from_name(this, module_name, field_name) &
         diag_field_id = this%get_id()
   endif
 end function diag_field_id_from_name
+
+!> @brief Prints out the field object information to the stdout
+subroutine dump_field_object (this)
+  class (fmsDiagField_type), intent(in) :: this !< diag object
+
+  integer :: out_unit !< The unit of the sdtout
+
+  out_unit = stdout()
+
+  if (mpp_pe() .eq. mpp_root_pe()) then
+    write(out_unit, *) "Dumping contents for ", this%varname, " ID: ", this%diag_id
+    write(out_unit, *) "Type_of_domain:", this%type_of_domain
+    !TODO Finish the rest of the object
+  endif
+end subroutine dump_field_object
 #endif
 end module fms_diag_field_object_mod
