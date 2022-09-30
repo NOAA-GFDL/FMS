@@ -535,33 +535,39 @@ end function fms_get_axis_name_from_id
 subroutine dump_field_object(this)
   class(fmsDiagObject_type), intent (in) :: this !< The diag object
 
+#ifdef use_yaml
   integer :: i !< for do loops
 
   do i = 1, this%registered_variables
     call this%FMS_diag_fields(i)%dump_field_object()
   enddo
+#endif
 end subroutine dump_field_object
 
 !> @brief Prints out the contents of all of the file object
 subroutine dump_file_object(this)
   class(fmsDiagObject_type), intent (in) :: this !< The diag object
 
+#ifdef use_yaml
   integer :: i !< for do loops
 
    do i = 1, size(this%FMS_diag_files)
     call this%FMS_diag_files(i)%dump_file_object()
   enddo
+#endif
 end subroutine dump_file_object
 
 !> @brief Prints out the contents of all of the axis object
 subroutine dump_axis_object(this)
   class(fmsDiagObject_type), intent (in) :: this !< The diag object
 
+#ifdef use_yaml
   integer :: i !< for do loops
 
   do i = 1, this%registered_axis
     call this%diag_axis(i)%axis%dump_axis_object()
   enddo
+#endif
 end subroutine dump_axis_object
 
 end module fms_diag_object_mod

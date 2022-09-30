@@ -28,6 +28,7 @@
 !> @addtogroup fms_diag_axis_object_mod
 !> @{
 module fms_diag_axis_object_mod
+#ifdef use_yaml
   use mpp_domains_mod, only:  domain1d, domain2d, domainUG, mpp_get_compute_domain, CENTER, &
                             & mpp_get_compute_domain, NORTH, EAST, mpp_get_tile_id, &
                             & mpp_get_ntile_count
@@ -38,9 +39,7 @@ module fms_diag_axis_object_mod
   use mpp_mod,         only:  FATAL, mpp_error, uppercase, mpp_pe, mpp_root_pe, stdout
   use fms2_io_mod,     only:  FmsNetcdfFile_t, FmsNetcdfDomainFile_t, FmsNetcdfUnstructuredDomainFile_t, &
                             & register_axis, register_field, register_variable_attribute, write_data
-#ifdef use_yaml
   use fms_diag_yaml_mod, only: subRegion_type
-#endif
   use diag_grid_mod,       only:  get_local_indices_cubesphere => get_local_indexes
   use axis_utils2_mod,   only: nearest_index
   implicit none
@@ -50,9 +49,7 @@ module fms_diag_axis_object_mod
   public :: fmsDiagAxis_type, fms_diag_axis_object_init, fms_diag_axis_object_end, &
           & get_domain_and_domain_type, diagDomain_t, &
           & DIAGDOMAIN2D_T, fmsDiagSubAxis_type, fmsDiagAxisContainer_type, fmsDiagFullAxis_type, DIAGDOMAINUG_T
-#ifdef use_yaml
   public :: define_new_axis, define_subaxis
-#endif
 
   !> @}
 
@@ -109,15 +106,11 @@ module fms_diag_axis_object_mod
                                                               !! parent axis
     INTEGER                      , private  :: ending_index   !< Ending index of the subaxis relative to the
                                                               !! parent axis
-#ifdef use_yaml
     type(subRegion_type)         , private  :: subRegion      !< Bounds of the subaxis (lat/lon or indices)
-#endif
     INTEGER                      , private  :: parent_axis_id !< Id of the parent_axis
     contains
-#ifdef use_yaml
       procedure :: fill_subaxis
       procedure :: dump_axis_object_sub
-#endif
   END TYPE fmsDiagSubAxis_type
 
   !> @brief Type to hold the diagnostic axis description.
@@ -549,8 +542,6 @@ module fms_diag_axis_object_mod
   end subroutine get_compute_domain
 
   !!!!!!!!!!!!!!!!!! SUB AXIS PROCEDURES !!!!!!!!!!!!!!!!!
-
-#ifdef use_yaml
   !>@brief Print out the information in the subaxis object
   subroutine dump_axis_object_sub(this)
     class(fmsDiagSubAxis_type), INTENT(IN) :: this             !< diag_sub_axis obj
@@ -582,7 +573,6 @@ module fms_diag_axis_object_mod
     this%subRegion = subRegion
     this%subaxis_name = trim(parent_axis_name)
   end subroutine fill_subaxis
-#endif
 
   !> @brief Get the ntiles in a domain
   !> @return the number of tiles in a domain
@@ -733,7 +723,6 @@ module fms_diag_axis_object_mod
     enddo
   end subroutine get_domain_and_domain_type
 
-#ifdef use_yaml
   !> @brief Define a subaxis based on the subRegion defined by the yaml
   subroutine define_subaxis (diag_axis, axis_ids, naxis, subRegion, is_cube_sphere, write_on_this_pe)
     class(fmsDiagAxisContainer_type), target, intent(inout) :: diag_axis(:)     !< Diag_axis object
