@@ -30,6 +30,7 @@ use   diag_manager_mod, only: diag_manager_init, diag_manager_end, diag_axis_ini
 use   fms_mod,          only: fms_init, fms_end
 use   mpp_mod,          only: FATAL, mpp_error, mpp_npes, mpp_pe, mpp_root_pe, mpp_broadcast
 use   time_manager_mod, only: time_type, set_calendar_type, set_date, JULIAN, set_time
+use fms_diag_object_mod,only: dump_diag_obj
 
 implicit none
 
@@ -148,6 +149,11 @@ call diag_field_add_attribute (id_var1, "integer", 10)
 call diag_field_add_attribute (id_var1, "1d integer", (/10, 10/))
 call diag_field_add_attribute (id_var1, "real", 10.)
 call diag_field_add_attribute (id_var2, '1d real', (/10./))
+
+!! test dump routines
+!! prints fields from objects for debugging to log if name is provided, othwerise goes to stdout
+call dump_diag_obj('diag_obj_dump.log')
+call dump_diag_obj()
 
 call diag_manager_end(Time)
 call fms_end

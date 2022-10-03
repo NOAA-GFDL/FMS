@@ -32,7 +32,7 @@ use time_manager_mod, only: time_type, operator(/=), operator(==)
 use fms_diag_yaml_mod, only: diag_yaml, diagYamlObject_type, diagYamlFiles_type
 use fms_diag_axis_object_mod, only: diagDomain_t, get_domain_and_domain_type, fmsDiagAxis_type, &
                                     fmsDiagAxisContainer_type
-use mpp_mod, only: mpp_error, FATAL
+use mpp_mod, only: mpp_error, FATAL, mpp_pe, mpp_root_pe, stdout
 implicit none
 private
 
@@ -113,6 +113,7 @@ type :: fmsDiagFile_type
  procedure, public :: has_file_duration_units
  procedure, public :: has_file_varlist
  procedure, public :: has_file_global_meta
+ procedure, public :: dump_file_obj
 
 end type fmsDiagFile_type
 
@@ -584,31 +585,29 @@ subroutine add_start_time(this, start_time)
 end subroutine
 
 !> writes out internal values for fmsDiagFile_type object
-subroutine dump_file_obj(this)
+subroutine dump_file_obj(this, unit_num)
   class(fmsDiagFile_type), intent(in) :: this !< the file object
-
-  print *, 'file id:', this%id
+  integer, intent(in) :: unit_num !< passed in from dump_diag_obj
+                                  !! will either be for new log file or stdout 
+  write( unit_num, *) 'file id:', this%id
   !! TODO dump time_type
-  !print *, 'start time:', this%start_time
-  !print *, 'last_output', this%last_output
-  !print *, 'next_output', this%next_output
-  !print *,'next_next_output', this%next_next_output
-  !print *,'next_open', this%next_open
+  !write( unit_num, *) 'start time:', this%start_time
+  !write( unit_num, *) 'last_output', this%last_output
+  !write( unit_num, *) 'next_output', this%next_output
+  !write( unit_num, *)'next_next_output', this%next_next_output
+  !write( unit_num, *)'next_open', this%next_open
 
-  !! TODO print file info, might already be a fnct for it
-  !print *,'fileobj', this%fileobj
+  !! TODO file info (maybe just print name)
+  !write( unit_num, *)'fileobj', this%fileobj
 
-  !! dump yaml
-  call diag_yaml_dump()
-
-  print *,'type_of_domain', this%type_of_domain
-  !print *,'domain', this%domain
-  print *,'file_metadata_from_model', this%file_metadata_from_model
-  print *,'field_ids', this%field_ids
-  print *,'field_registered', this%field_registered
-  print *,'num_registered_fields', this%num_registered_fields
-  print *,'axis_ids', this%axis_ids
-  print *,'number_of_axis', this%number_of_axis
+  write( unit_num, *)'type_of_domain', this%type_of_domain
+  !write( unit_num, *)'domain', this%domain
+  if( allocated(this%file_metadata_from_model)) write( unit_num, *)'file_metadata_from_model', this%file_metadata_from_model
+  if( allocated(this%field_ids)) write( unit_num, *)'field_ids', this%field_ids
+  if( allocated(this%field_registered)) write( unit_num, *)'field_registered', this%field_registered
+  if( allocated(this%num_registered_fields)) write( unit_num, *)'num_registered_fields', this%num_registered_fields
+  if( allocated(this%axis_ids)) write( unit_num, *)'axis_ids', this%axis_ids
+  write( unit_num, *)'number_of_axis', this%number_of_axis
 
 end subroutine
 
