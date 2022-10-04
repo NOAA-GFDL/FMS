@@ -36,6 +36,7 @@ type fmsDiagField_type
      integer,                      allocatable, dimension(:) :: file_ids   !< Ids of the FMS_diag_files the variable
                                                                            !! belongs to
      integer, allocatable, private                    :: diag_id           !< unique id for varable
+     integer, allocatable, dimension(:)               :: buffer_ids        !< index/id for this field's buffers
      type(fmsDiagAttribute_type), allocatable         :: attributes(:)     !< attributes for the variable
      integer,              private                    :: num_attributes    !< Number of attributes currently added
      logical, allocatable, private                    :: static            !< true if this is a static var
@@ -125,6 +126,8 @@ type fmsDiagField_type
      procedure :: get_data_RANGE
      procedure :: get_axis_id
      procedure :: dump_field_obj
+     procedure :: get_domain
+     procedure :: get_type_of_domain
 end type fmsDiagField_type
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! variables !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 type(fmsDiagField_type) :: null_ob
@@ -759,6 +762,30 @@ result(rslt)
   endif
 end function get_axis_id
 
+!> @brief Gets field's domain
+!! @return pointer to the domain
+function get_domain (this) &
+result(rslt)
+  class (fmsDiagField_type), target, intent(in) :: this  !< diag field
+  class(diagDomain_t),       pointer            :: rslt  !< field's domain
+
+  if (associated(this%domain)) then
+    rslt => this%domain
+  else
+    rslt => null()
+  endif
+
+end function get_domain
+
+!> @brief Gets field's type of domain
+!! @return integer defining the type of domain (NO_DOMAIN, TWO_D_DOMAIN, UG_DOMAIN)
+pure function get_type_of_domain (this) &
+result(rslt)
+  class (fmsDiagField_type), target, intent(in) :: this  !< diag field
+  integer                                       :: rslt  !< field's domain
+
+  rslt = this%type_of_domain
+end function get_type_of_domain
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!! Allocation checks
 

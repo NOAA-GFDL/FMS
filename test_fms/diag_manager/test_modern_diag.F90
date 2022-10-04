@@ -26,7 +26,8 @@ use   mpp_domains_mod,  only: domain2d, mpp_domains_set_stack_size, mpp_define_d
                               mpp_get_compute_domain, mpp_get_data_domain, mpp_get_UG_domain_grid_index, &
                               mpp_get_UG_compute_domain
 use   diag_manager_mod, only: diag_manager_init, diag_manager_end, diag_axis_init, register_diag_field, &
-                              diag_axis_add_attribute, diag_field_add_attribute
+                              diag_axis_add_attribute, diag_field_add_attribute, diag_send_complete, &
+                              diag_manager_set_time_end
 use   fms_mod,          only: fms_init, fms_end
 use   mpp_mod,          only: FATAL, mpp_error, mpp_npes, mpp_pe, mpp_root_pe, mpp_broadcast
 use   time_manager_mod, only: time_type, set_calendar_type, set_date, JULIAN, set_time
@@ -155,6 +156,8 @@ call diag_field_add_attribute (id_var2, '1d real', (/10./))
 call dump_diag_obj('diag_obj_dump.log')
 call dump_diag_obj()
 
+call diag_manager_set_time_end(Time)
+call diag_send_complete(Time)
 call diag_manager_end(Time)
 call fms_end
 

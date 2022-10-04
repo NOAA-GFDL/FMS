@@ -132,6 +132,7 @@ list(APPEND fms_fortran_src_files
   diag_manager/fms_diag_axis_object.F90
   diag_manager/fms_diag_dlinked_list.F90
   diag_manager/fms_diag_object_container.F90
+  diag_manager/fms_diag_buffer.F90
   drifters/cloud_interpolator.F90
   drifters/drifters.F90
   drifters/drifters_comm.F90
@@ -143,6 +144,7 @@ list(APPEND fms_fortran_src_files
   exchange/xgrid.F90
   field_manager/field_manager.F90
   field_manager/fm_util.F90
+  field_manager/fm_yaml.F90
   fms/fms_io.F90
   fms/fms.F90
   fms2_io/blackboxio.F90

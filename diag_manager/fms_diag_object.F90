@@ -26,10 +26,11 @@ use diag_data_mod,  only: diag_null, diag_not_found, diag_not_registered, diag_r
 #ifdef use_yaml
 use fms_diag_file_object_mod, only: fmsDiagFileContainer_type, fmsDiagFile_type, fms_diag_files_object_init
 use fms_diag_field_object_mod, only: fmsDiagField_type, fms_diag_fields_object_init
-use fms_diag_yaml_mod, only: diag_yaml_object_init, find_diag_field, get_diag_files_id
+use fms_diag_yaml_mod, only: diag_yaml_object_init, find_diag_field, get_diag_files_id, diag_yaml
 use fms_diag_axis_object_mod, only: fms_diag_axis_object_init, fmsDiagAxis_type, fmsDiagSubAxis_type, &
                                    &diagDomain_t, get_domain_and_domain_type, diagDomain2d_t, &
                                    &fmsDiagAxisContainer_type, fms_diag_axis_object_end, fmsDiagFullAxis_type
+use fms_diag_buffer_mod
 #endif
 use mpp_domains_mod, only: domain1d, domain2d, domainUG, null_domain2d
 implicit none
@@ -42,6 +43,8 @@ private
 !TODO: Remove FMS prefix from variables in this type
   class(fmsDiagFileContainer_type), allocatable :: FMS_diag_files (:) !< array of diag files
   class(fmsDiagField_type), allocatable :: FMS_diag_fields(:) !< Array of diag fields
+  type(fmsDiagBufferContainer_type), allocatable :: FMS_diag_buffers(:) !< array of buffer objects
+  integer, private :: registered_buffers = 0 !< number of registered buffers, per dimension
   class(fmsDiagAxisContainer_type), allocatable :: diag_axis(:) !< Array of diag_axis
   integer, private :: registered_variables !< Number of registered variables
   integer, private :: registered_axis !< Number of registered axis
@@ -64,11 +67,22 @@ private
     procedure :: fms_get_axis_length
     procedure :: fms_get_diag_field_id_from_name
     procedure :: fms_get_axis_name_from_id
+    procedure :: fms_diag_send_complete
     procedure :: diag_end => fms_diag_object_end
+#ifdef use_yaml
+    procedure :: get_diag_buffer
+#endif
 end type fmsDiagObject_type
 
 type (fmsDiagObject_type), target :: fms_diag_object
-public :: fms_diag_object 
+integer, private :: registered_variables !< Number of registered variables
+public :: fms_register_diag_field_obj
+public :: fms_register_diag_field_scalar
+public :: fms_register_diag_field_array
+public :: fms_register_static_field
+public :: fms_diag_field_add_attribute
+public :: fms_get_diag_field_id_from_name
+public :: fms_diag_object
 public :: fmsDiagObject_type
 public :: dump_diag_obj
 
@@ -84,12 +98,12 @@ subroutine fms_diag_object_init (this,diag_subset_output)
 #ifdef use_yaml
  if (this%initialized) return
 
-!TODO: allocate the file, field, and buffer containers
 ! allocate(diag_objs(get_num_unique_fields()))
   CALL diag_yaml_object_init(diag_subset_output)
   this%axes_initialized = fms_diag_axis_object_init(this%diag_axis)
   this%files_initialized = fms_diag_files_object_init(this%FMS_diag_files)
-  this%fields_initialized = fms_diag_fields_object_init (this%FMS_diag_fields)
+  this%fields_initialized = fms_diag_fields_object_init(this%FMS_diag_fields)
+  this%buffers_initialized = fms_diag_buffer_init(this%FMS_diag_buffers, SIZE(diag_yaml%get_diag_fields()))
   this%registered_variables = 0
   this%registered_axis = 0
   this%initialized = .true.
@@ -105,10 +119,17 @@ end subroutine fms_diag_object_init
 !! Uninitializes the fms_diag_object
 subroutine fms_diag_object_end (this)
   class(fmsDiagObject_type) :: this
+  integer                   :: i
 #ifdef use_yaml
   !TODO: loop through files and force write
   !TODO: Close all files
   !TODO: Deallocate diag object arrays and clean up all memory
+  do i=1, size(this%FMS_diag_buffers)
+    if(allocated(this%FMS_diag_buffers(i)%diag_buffer_obj)) then
+      call this%FMS_diag_buffers(i)%diag_buffer_obj%flush_buffer()
+    endif
+  enddo
+  deallocate(this%FMS_diag_buffers)
   this%axes_initialized = fms_diag_axis_object_end(this%diag_axis)
   this%initialized = .false.
 #endif
@@ -180,7 +201,7 @@ integer function fms_register_diag_field_obj &
     do i = 1, size(file_ids)
      fileptr => this%FMS_diag_files(file_ids(i))%FMS_diag_file
      call fileptr%add_field_id(fieldptr%get_id())
-     call fileptr%set_domain_from_axis(fms_diag_object%diag_axis, axes)
+     call fileptr%set_file_domain(fieldptr%get_domain(), fieldptr%get_type_of_domain())
      call fileptr%add_axes(axes)
      call fileptr%add_start_time(init_time)
     enddo
@@ -188,7 +209,7 @@ integer function fms_register_diag_field_obj &
     do i = 1, size(file_ids)
      fileptr => this%FMS_diag_files(file_ids(i))%FMS_diag_file
      call fileptr%add_field_id(fieldptr%get_id())
-     call fileptr%set_domain_from_axis(fms_diag_object%diag_axis, axes)
+     call fileptr%set_file_domain(fieldptr%get_domain(), fieldptr%get_type_of_domain())
      call fileptr%add_axes(axes)
     enddo
   elseif (present(init_time)) then !only inti time present
@@ -382,6 +403,25 @@ FUNCTION fms_diag_axis_init(this, axis_name, axis_data, units, cart_name, long_n
 #endif
 end function fms_diag_axis_init
 
+!> @brief Loops through all the files, open the file, writes out axis and
+!! variable metadata and data when necessary.
+subroutine fms_diag_send_complete(this, time_step)
+  class(fmsDiagObject_type), target, intent (inout) :: this !< The diag object
+  TYPE (time_type),                  INTENT(in)     :: time_step !< The current model time
+
+  integer :: i !< For do loops
+
+#ifdef use_yaml
+  class(fmsDiagFileContainer_type), pointer :: diag_file !< Pointer to this%FMS_diag_files(i) (for convenience)
+
+  do i = 1, size(this%FMS_diag_files)
+    diag_file => this%FMS_diag_files(i)
+    call diag_file%open_diag_file(time_step)
+  enddo
+#endif
+
+end subroutine fms_diag_send_complete
+
 !> @brief Add a attribute to the diag_obj using the diag_field_id
 subroutine fms_diag_field_add_attribute(this, diag_field_id, att_name, att_value)
   class(fmsDiagObject_type), intent (inout) :: this !< The diag object
@@ -437,6 +477,20 @@ PURE FUNCTION fms_get_diag_field_id_from_name(fms_diag_object, module_name, fiel
   enddo
 #endif
 END FUNCTION fms_get_diag_field_id_from_name
+
+#ifdef use_yaml
+!> returns the buffer object for the given id
+!! actual data comes from %get_buffer_data() on the returned object
+function get_diag_buffer(this, bufferid) &
+result(rslt)
+  class(fmsDiagObject_type), intent(in) :: this
+  integer, intent(in)                   :: bufferid
+  class(fmsDiagBuffer_class),allocatable:: rslt
+  if( (bufferid .gt. UBOUND(this%FMS_diag_buffers, 1)) .or. (bufferid .lt. UBOUND(this%FMS_diag_buffers, 1))) &
+    call mpp_error(FATAL, 'get_diag_bufer: invalid bufferid given')
+  rslt = fms_diag_object%FMS_diag_buffers(bufferid)%diag_buffer_obj
+end function
+#endif
 
 !> @brief Return the 2D domain for the axis IDs given.
 !! @return 2D domain for the axis IDs given
