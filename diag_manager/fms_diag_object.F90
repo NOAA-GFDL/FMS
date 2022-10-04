@@ -484,7 +484,6 @@ PURE FUNCTION fms_get_diag_field_id_from_name(fms_diag_object, module_name, fiel
   integer :: i !< For looping
 !> Initialize to not found
   diag_field_id = DIAG_FIELD_NOT_FOUND
-CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling with -Duse_yaml")
 !> Loop through fields to find it.
   if (fms_diag_object%registered_variables < 1) return
   do i=1,fms_diag_object%registered_variables
