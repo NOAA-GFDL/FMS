@@ -28,7 +28,7 @@ module fms_diag_file_object_mod
 use fms2_io_mod, only: FmsNetcdfFile_t, FmsNetcdfUnstructuredDomainFile_t, FmsNetcdfDomainFile_t
 use diag_data_mod, only: DIAG_NULL, NO_DOMAIN, max_axes, SUB_REGIONAL, get_base_time, DIAG_NOT_REGISTERED
 use fms_diag_time_utils_mod, only: diag_time_inc
-use time_manager_mod, only: time_type, operator(/=), operator(==)
+use time_manager_mod, only: time_type, operator(/=), operator(==), date_to_string
 use fms_diag_yaml_mod, only: diag_yaml, diagYamlObject_type, diagYamlFiles_type
 use fms_diag_axis_object_mod, only: diagDomain_t, get_domain_and_domain_type, fmsDiagAxis_type, &
                                     fmsDiagAxisContainer_type
@@ -590,18 +590,15 @@ subroutine dump_file_obj(this, unit_num)
   integer, intent(in) :: unit_num !< passed in from dump_diag_obj
                                   !! will either be for new log file or stdout 
   write( unit_num, *) 'file id:', this%id
-  !! TODO dump time_type
-  !write( unit_num, *) 'start time:', this%start_time
-  !write( unit_num, *) 'last_output', this%last_output
-  !write( unit_num, *) 'next_output', this%next_output
-  !write( unit_num, *)'next_next_output', this%next_next_output
-  !write( unit_num, *)'next_open', this%next_open
+  write( unit_num, *) 'start time:', date_to_string(this%start_time)
+  write( unit_num, *) 'last_output', date_to_string(this%last_output)
+  write( unit_num, *) 'next_output', date_to_string(this%next_output)
+  write( unit_num, *)'next_next_output', date_to_string(this%next_next_output)
+  write( unit_num, *)'next_open', date_to_string(this%next_open)
 
-  !! TODO file info (maybe just print name)
-  !write( unit_num, *)'fileobj', this%fileobj
+  if( allocated(this%fileobj)) write( unit_num, *)'fileobj path', this%fileobj%path
 
   write( unit_num, *)'type_of_domain', this%type_of_domain
-  !write( unit_num, *)'domain', this%domain
   if( allocated(this%file_metadata_from_model)) write( unit_num, *)'file_metadata_from_model', this%file_metadata_from_model
   if( allocated(this%field_ids)) write( unit_num, *)'field_ids', this%field_ids
   if( allocated(this%field_registered)) write( unit_num, *)'field_registered', this%field_registered

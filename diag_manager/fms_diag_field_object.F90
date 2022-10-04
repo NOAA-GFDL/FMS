@@ -943,6 +943,7 @@ end function diag_field_id_from_name
 subroutine dump_field_obj (this, unit_num)
   class(fmsDiagField_type), intent(in) :: this
   integer, intent(in) :: unit_num !< passed in from dump_diag_obj if log file is being written to
+  integer :: i
 
   if( mpp_pe() .eq. mpp_root_pe()) then
     if( allocated(this%file_ids)) write(unit_num, *) 'file_ids:' ,this%file_ids
@@ -966,31 +967,46 @@ subroutine dump_field_obj (this, unit_num)
     if( allocated(this%area)) write(unit_num, *) 'area:' ,this%area
     if( allocated(this%missing_value)) then
       select type(missing_val => this%missing_value)
-        type is (real(4)) 
+        type is (real(r4_kind))
           write(unit_num, *) 'missing_value:', missing_val
-        type is (real(8)) 
+        type is (real(r8_kind))
           write(unit_num, *) 'missing_value:' ,missing_val
-       type is(integer(4))
+       type is(integer(i4_kind))
           write(unit_num, *) 'missing_value:' ,missing_val
-       type is(integer(8))
+       type is(integer(i8_kind))
           write(unit_num, *) 'missing_value:' ,missing_val
       end select
     endif
     if( allocated( this%data_RANGE)) then
       select type(drange => this%data_RANGE)
-        type is (real(4)) 
+        type is (real(r4_kind))
           write(unit_num, *) 'data_RANGE:' ,drange
-        type is (real(8)) 
+        type is (real(r8_kind))
           write(unit_num, *) 'data_RANGE:' ,drange
-       type is(integer(4))
+       type is(integer(i4_kind))
           write(unit_num, *) 'data_RANGE:' ,drange
-       type is(integer(8))
+       type is(integer(i8_kind))
           write(unit_num, *) 'data_RANGE:' ,drange
       end select
     endif
-    !!!! TODO loop thru attributes (derived type)
-    !print *, this%attributes
-    !if( allocated(this%num_attributes)) print *, 'num_attributes:' ,this%num_attributes
+    write(unit_num, *) 'num_attributes:' ,this%num_attributes
+    if( allocated(this%attributes)) then
+      do i=1, SIZE(this%attributes)
+        if( allocated(this%attributes(i)%att_value)) then
+          select type( val => this%attributes(i)%att_value)
+            type is (real(r8_kind))
+              write(unit_num, *) 'attribute name', this%attributes(i)%att_name, 'val:',  val
+            type is (real(r4_kind))
+              write(unit_num, *) 'attribute name', this%attributes(i)%att_name, 'val:',  val
+            type is (integer(i4_kind))
+              write(unit_num, *) 'attribute name', this%attributes(i)%att_name, 'val:',  val
+            type is (integer(i8_kind))
+              write(unit_num, *) 'attribute name', this%attributes(i)%att_name, 'val:', val
+          end select
+        endif
+      enddo
+    endif
+
   endif
 
 end subroutine
