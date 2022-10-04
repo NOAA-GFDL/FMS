@@ -26,7 +26,8 @@ use diag_data_mod,  only: diag_null, diag_not_found, diag_not_registered, diag_r
 #ifdef use_yaml
 use fms_diag_file_object_mod, only: fmsDiagFileContainer_type, fmsDiagFile_type, fms_diag_files_object_init
 use fms_diag_field_object_mod, only: fmsDiagField_type, fms_diag_fields_object_init
-use fms_diag_yaml_mod, only: diag_yaml_object_init, find_diag_field, get_diag_files_id, diag_yaml
+use fms_diag_yaml_mod, only: diag_yaml_object_init, diag_yaml_object_end, find_diag_field, &
+                            & get_diag_files_id, diag_yaml
 use fms_diag_axis_object_mod, only: fms_diag_axis_object_init, fmsDiagAxis_type, fmsDiagSubAxis_type, &
                                    &diagDomain_t, get_domain_and_domain_type, diagDomain2d_t, &
                                    &fmsDiagAxisContainer_type, fms_diag_axis_object_end, fmsDiagFullAxis_type
@@ -69,7 +70,9 @@ private
     procedure :: fms_get_diag_field_id_from_name
     procedure :: fms_get_axis_name_from_id
     procedure :: fms_diag_send_complete
+#ifdef use_yaml
     procedure :: get_diag_buffer
+#endif
 end type fmsDiagObject_type
 
 type (fmsDiagObject_type), target :: fms_diag_object
@@ -176,6 +179,7 @@ integer function fms_register_diag_field_obj &
  integer, allocatable :: diag_field_indices(:) !< indices where the field was found in the yaml
 #endif
 #ifndef use_yaml
+fms_register_diag_field_obj = DIAG_FIELD_NOT_FOUND
 CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling with -Duse_yaml")
 #else
  diag_field_indices = find_diag_field(varname, modname)
@@ -254,6 +258,7 @@ INTEGER FUNCTION fms_register_diag_field_scalar(this,module_name, field_name, in
     INTEGER,          OPTIONAL, INTENT(in) :: volume        !< Id of the volume field
     CHARACTER(len=*), OPTIONAL, INTENT(in) :: realm         !< String to set as the modeling_realm attribute
 #ifndef use_yaml
+fms_register_diag_field_scalar=diag_null
 CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling with -Duse_yaml")
 #else
     fms_register_diag_field_scalar = this%register(&
@@ -293,6 +298,7 @@ INTEGER FUNCTION fms_register_diag_field_array(this, module_name, field_name, ax
     CHARACTER(len=*), OPTIONAL, INTENT(in) :: realm         !< String to set as the modeling_realm attribute
 
 #ifndef use_yaml
+fms_register_diag_field_array=diag_null
 CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling with -Duse_yaml")
 #else
     fms_register_diag_field_array = this%register( &
@@ -334,6 +340,7 @@ INTEGER FUNCTION fms_register_static_field(this, module_name, field_name, axes, 
                                                                           !! modeling_realm attribute
 
 #ifndef use_yaml
+fms_register_static_field=diag_null
 CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling with -Duse_yaml")
 #else
 ! Include static as optional variable to register here
@@ -372,6 +379,7 @@ FUNCTION fms_diag_axis_init(this, axis_name, axis_data, units, cart_name, long_n
   integer :: id
 
 #ifndef use_yaml
+id = diag_null
 CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling with -Duse_yaml")
 #else
   CHARACTER(len=:),   ALLOCATABLE :: edges_name !< Name of the edges
@@ -401,6 +409,7 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
 
     id = this%registered_axis
   end select
+#endif
 end function fms_diag_axis_init
 
 !> @brief Loops through all the files, open the file, writes out axis and
@@ -463,6 +472,7 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
 #endif
 end subroutine fms_diag_axis_add_attribute
 
+#ifdef use_yaml
 !> \brief Gets the diag field ID from the module name and field name.
 !> \returns a copy of the ID of the diag field or DIAG_FIELD_NOT_FOUND if the field is not registered
 PURE FUNCTION fms_get_diag_field_id_from_name(fms_diag_object, module_name, field_name) &
@@ -474,17 +484,30 @@ PURE FUNCTION fms_get_diag_field_id_from_name(fms_diag_object, module_name, fiel
   integer :: i !< For looping
 !> Initialize to not found
   diag_field_id = DIAG_FIELD_NOT_FOUND
-#ifndef use_yaml
 CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling with -Duse_yaml")
-#else
 !> Loop through fields to find it.
   if (fms_diag_object%registered_variables < 1) return
   do i=1,fms_diag_object%registered_variables
    diag_field_id = fms_diag_object%FMS_diag_fields(i)%id_from_name(module_name, field_name)
    if(diag_field_id .ne. DIAG_FIELD_NOT_FOUND) return
   enddo
-#endif
 END FUNCTION fms_get_diag_field_id_from_name
+#else
+!> \brief This replaces the pure function when not compiled with yaml so that an error can be called
+!> \returns Error
+FUNCTION fms_get_diag_field_id_from_name(fms_diag_object, module_name, field_name) &
+  result(diag_field_id)
+  class(fmsDiagObject_type), intent (in) :: fms_diag_object !< The diag object
+  CHARACTER(len=*), INTENT(in) :: module_name !< Module name that registered the variable
+  CHARACTER(len=*), INTENT(in) :: field_name !< Variable name
+  integer :: diag_field_id
+  integer :: i !< For looping
+!> Initialize to not found
+  diag_field_id = DIAG_FIELD_NOT_FOUND
+CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling with -Duse_yaml")
+END FUNCTION fms_get_diag_field_id_from_name
+#endif
+
 
 #ifdef use_yaml
 !> returns the buffer object for the given id
@@ -508,6 +531,7 @@ type(domain2d) FUNCTION fms_get_domain2d(this, ids)
 
 #ifndef use_yaml
 CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling with -Duse_yaml")
+fms_get_domain2d = null_domain2d
 #else
   INTEGER                      :: type_of_domain !< The type of domain
   CLASS(diagDomain_t), POINTER :: domain         !< Diag Domain pointer
@@ -530,6 +554,7 @@ END FUNCTION fms_get_domain2d
 
 #ifndef use_yaml
 CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling with -Duse_yaml")
+fms_get_axis_length = 0
 #else
 fms_get_axis_length = 0
 
@@ -554,6 +579,7 @@ result(axis_name)
 
 #ifndef use_yaml
 CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling with -Duse_yaml")
+axis_name=" "
 #else
     if (axis_id < 0 .and. axis_id > this%registered_axis) &
     call mpp_error(FATAL, "fms_get_axis_length: The axis_id is not valid")
@@ -562,6 +588,7 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
     type is (fmsDiagFullAxis_type)
       axis_name = axis%get_axis_name()
     end select
+#endif
 end function fms_get_axis_name_from_id
 
 end module fms_diag_object_mod
