@@ -600,6 +600,7 @@ subroutine dump_diag_obj( filename )
     else
       write(unit_num, *) 'fields not initialized'
     endif
+    if( present(filename) ) close(unit_num)
   endif
 #endif
 end subroutine
