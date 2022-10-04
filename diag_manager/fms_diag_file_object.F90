@@ -603,7 +603,8 @@ subroutine dump_file_obj(this, unit_num)
   if( allocated(this%fileobj)) write( unit_num, *)'fileobj path', this%fileobj%path
 
   write( unit_num, *)'type_of_domain', this%type_of_domain
-  if( allocated(this%file_metadata_from_model)) write( unit_num, *)'file_metadata_from_model', this%file_metadata_from_model
+  if( allocated(this%file_metadata_from_model)) write( unit_num, *) 'file_metadata_from_model', &
+                                                                    this%file_metadata_from_model
   if( allocated(this%field_ids)) write( unit_num, *)'field_ids', this%field_ids
   if( allocated(this%field_registered)) write( unit_num, *)'field_registered', this%field_registered
   if( allocated(this%num_registered_fields)) write( unit_num, *)'num_registered_fields', this%num_registered_fields

@@ -1339,7 +1339,8 @@ end function get_diag_files_id
 !> Prints out values from diag_yaml object for debugging.
 !! Only writes on root.
 subroutine dump_diag_yaml_obj( filename ) 
-  character(len=*), optional, intent(in)        :: filename !< optional name of logfile to write to, otherwise prints to stdout
+  character(len=*), optional, intent(in)        :: filename !< optional name of logfile to write to, otherwise
+                                                            !! prints to stdout
   type(diagyamlfilesvar_type), allocatable      :: fields(:)
   type(diagyamlfiles_type), allocatable         :: files(:)
   integer                                       :: i, unit_num
