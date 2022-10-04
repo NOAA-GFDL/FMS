@@ -68,6 +68,7 @@ type :: fmsDiagFile_type
   integer, allocatable                         :: num_registered_fields !< The number of fields registered
                                                                         !! to the file 
   integer, dimension(:), allocatable :: axis_ids !< Array of axis ids in the file
+  integer, dimension(:), allocatable :: buffer_ids !< array of buffer ids associated with the file
   integer :: number_of_axis !< Number of axis in the file
 
  contains
