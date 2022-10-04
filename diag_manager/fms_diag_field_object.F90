@@ -36,6 +36,7 @@ type fmsDiagField_type
      integer,                      allocatable, dimension(:) :: file_ids   !< Ids of the FMS_diag_files the variable
                                                                            !! belongs to
      integer, allocatable, private                    :: diag_id           !< unique id for varable
+     integer, allocatable, dimension(:)               :: buffer_ids        !< index/id for this field's buffers
      type(fmsDiagAttribute_type), allocatable         :: attributes(:)     !< attributes for the variable
      integer,              private                    :: num_attributes    !< Number of attributes currently added
      logical, allocatable, private                    :: static            !< true if this is a static var

@@ -742,5 +742,9 @@ my_test_count=43
 test_expect_success "Test the modern diag manager end to end (test $my_test_count)" '
   mpirun -n 6 ../test_modern_diag
 '
+my_test_count=44
+test_expect_success "buffer functionality (test $my_test_count)" '
+  mpirun -n 1 ../test_diag_buffer
+'
 
 test_done

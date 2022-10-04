@@ -37,6 +37,7 @@ use fms_diag_axis_object_mod, only: diagDomain_t, get_domain_and_domain_type, fm
                                     fmsDiagAxisContainer_type, DIAGDOMAIN2D_T, DIAGDOMAINUG_T, &
                                     fmsDiagFullAxis_type, define_subaxis
 use mpp_mod, only: mpp_get_current_pelist, mpp_npes, mpp_root_pe, mpp_pe, mpp_error, FATAL, stdout
+
 implicit none
 private
 
@@ -72,6 +73,7 @@ type :: fmsDiagFile_type
   integer, allocatable                         :: num_registered_fields !< The number of fields registered
                                                                         !! to the file
   integer, dimension(:), allocatable :: axis_ids !< Array of axis ids in the file
+  integer, dimension(:), allocatable :: buffer_ids !< array of buffer ids associated with the file
   integer :: number_of_axis !< Number of axis in the file
 
  contains
@@ -850,5 +852,6 @@ subroutine dump_file_object(this)
     enddo
   endif
 end subroutine dump_file_object
+
 #endif
 end module fms_diag_file_object_mod

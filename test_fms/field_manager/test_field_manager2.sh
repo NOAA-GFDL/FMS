@@ -44,6 +44,34 @@ cat <<_EOF > field_table
             "units",        "kg/kg" /
 _EOF
 
+cat <<_EOF > field_table.yaml
+field_table:
+- field_type: tracer
+  modlist:
+  - model_type: atmos_mod
+    varlist:
+    - variable: radon
+      longname: radon-222
+      units: VMR*1E21
+      profile_type: fixed
+      subparams:
+      - surface_value: 0.0E+00
+      convection: all
+  - model_type: ocean_mod
+    varlist:
+    - variable: biotic1
+      diff_horiz: linear
+      subparams:
+      - slope: ok
+      longname: biotic one
+    - variable: age_ctl
+  - model_type: land_mod
+    varlist:
+    - variable: sphum
+      longname: specific humidity
+      units: kg/kg
+_EOF
+
 cat <<_EOF > input.nml
 &test_field_manager
 

@@ -125,7 +125,7 @@ type, public :: FmsNetcdfFile_t
   logical :: is_readonly !< Flag telling if the file is readonly.
   integer :: ncid !< Netcdf file id.
   character(len=256) :: nc_format !< Netcdf file format.
-  logical :: allow_int8 !< Flag indicating if int8 variables are allowed
+  logical :: is_netcdf4 !< Flag indicating if the netcdf file type is netcdf4
   integer, dimension(:), allocatable :: pelist !< List of ranks who will
                                                !! communicate.
   integer :: io_root !< I/O root rank of the pelist.
@@ -605,7 +605,7 @@ function netcdf_file_open(fileobj, path, mode, nc_format, pelist, is_restart, do
   fileobj%io_root = fileobj%pelist(1)
   fileobj%is_root = mpp_pe() .eq. fileobj%io_root
 
-  fileobj%allow_int8 = .false.
+  fileobj%is_netcdf4 = .false.
   !Open the file with netcdf if this rank is the I/O root.
   if (fileobj%is_root) then
     if (fms2_ncchksz == -1) call error("netcdf_file_open:: fms2_ncchksz not set, call fms2_io_init")
@@ -617,7 +617,7 @@ function netcdf_file_open(fileobj, path, mode, nc_format, pelist, is_restart, do
       elseif (string_compare(nc_format, "classic", .true.)) then
         nc_format_param = nf90_classic_model
       elseif (string_compare(nc_format, "netcdf4", .true.)) then
-        fileobj%allow_int8 = .true.
+        fileobj%is_netcdf4 = .true.
         nc_format_param = nf90_netcdf4
       else
         call error("unrecognized netcdf file format: '"//trim(nc_format)//"' for file:"//trim(fileobj%path)//&
@@ -851,7 +851,7 @@ end subroutine register_compressed_dimension
 
 
 !> @brief Add a variable to a file.
-subroutine netcdf_add_variable(fileobj, variable_name, variable_type, dimensions)
+subroutine netcdf_add_variable(fileobj, variable_name, variable_type, dimensions, deflate_level, chunksizes)
 
   class(FmsNetcdfFile_t), intent(in) :: fileobj !< File object.
   character(len=*), intent(in) :: variable_name !< Variable name.
@@ -859,7 +859,12 @@ subroutine netcdf_add_variable(fileobj, variable_name, variable_type, dimensions
                                                 !! values are: "char", "int", "int64",
                                                 !! "float", or "double".
   character(len=*), dimension(:), intent(in), optional :: dimensions !< Dimension names.
-
+  integer, optional, intent(in) :: deflate_level !< The netcdf deflate level
+                                                 !! This feature is only
+                                                 !! available for netcdf4 files
+  integer, optional, intent(in) :: chunksizes(:) !< netcdf chunksize to use for this variable
+                                                 !! This feature is only
+                                                 !! available for netcdf4 files  
   integer :: err
   integer, dimension(:), allocatable :: dimids
   integer :: vtype
@@ -874,7 +879,7 @@ subroutine netcdf_add_variable(fileobj, variable_name, variable_type, dimensions
     if (string_compare(variable_type, "int", .true.)) then
       vtype = nf90_int
     elseif (string_compare(variable_type, "int64", .true.)) then
-      if ( .not. fileobj%allow_int8) call error(trim(fileobj%path)//&
+      if ( .not. fileobj%is_netcdf4) call error(trim(fileobj%path)//&
                                                &": 64 bit integers are only supported with 'netcdf4' file format"//&
                                                &". Set netcdf_default_format='netcdf4' in the fms2_io namelist OR "//&
                                                &"add nc_format='netcdf4' to your open_file call")
@@ -896,7 +901,15 @@ subroutine netcdf_add_variable(fileobj, variable_name, variable_type, dimensions
       do i = 1, size(dimids)
         dimids(i) = get_dimension_id(fileobj%ncid, trim(dimensions(i)),msg=append_error_msg)
       enddo
-      err = nf90_def_var(fileobj%ncid, trim(variable_name), vtype, dimids, varid)
+      if (fileobj%is_netcdf4) then
+        err = nf90_def_var(fileobj%ncid, trim(variable_name), vtype, dimids, varid, &
+          &deflate_level=deflate_level, chunksizes=chunksizes)
+      else
+        if (present(deflate_level) .or. present(chunksizes)) &
+          &call mpp_error(NOTE,"Not able to use deflate_level or chunksizes if not using netcdf4"// &
+          & " ignoring them")
+        err = nf90_def_var(fileobj%ncid, trim(variable_name), vtype, dimids, varid)
+      endif
       deallocate(dimids)
     else
       err = nf90_def_var(fileobj%ncid, trim(variable_name), vtype, varid)
@@ -2126,7 +2139,7 @@ function is_registered_to_restart(fileobj, variable_name) &
 
   if (.not. fileobj%is_restart) then
     call error("file "//trim(fileobj%path)//" is not a restart file. "&
-               "Add is_restart=.true. to your open_file call")
+              //"Add is_restart=.true. to your open_file call")
   endif
   is_registered = .false.
   do i = 1, fileobj%num_restart_vars

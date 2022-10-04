@@ -124,7 +124,7 @@ call mpp_get_compute_domain(io_domain, ybegin=jsc_north, yend=jec_north, ysize=n
 
 !Open a restart file and initialize the file object.
 call open_check(open_file(fileobj, "atmosphere_io.nc", "overwrite", &
-                          domain, nc_format="64bit", is_restart=.true.))
+                          domain, nc_format="netcdf4", is_restart=.true.))
 call open_check(open_virtual_file(fileobjv, domain, "atm.nc"))
 
 !Add dimensions and corresponding variables to the file.
@@ -322,6 +322,9 @@ names(3) = "lev"
 names(4) = "time"
 call create_data(var11, (/nxd, nyd, test_params%nz/))
 call register_restart_field(fileobj, "var11", var11, names(1:4))
+call register_restart_field(fileobj, "var12", var11, names(1:4),chunksizes &
+ =(/10, 10, 10, 1 /), deflate_level=5)
+
 
 !Perform a "simulation" and write restart data.
 do i = 1, nt
@@ -380,13 +383,13 @@ deallocate(var11)
 !Check if a non-existent file exists (just to see if this feature
 !works.
 if (open_file(fileobj, "atmosphere.foobar.nc", "read", domain, &
-              nc_format="64bit", is_restart=.true.)) then
+              nc_format="netcdf4", is_restart=.true.)) then
   call mpp_error(FATAL, "Found non-existent file.")
 endif
 
 !Re-open the restart file and re-initialize the file object.
 call open_check(open_file(fileobj, "atmosphere_io.nc", "read", domain2, &
-                          nc_format="64bit", is_restart=.true.))
+                          nc_format="netcdf4", is_restart=.true.))
 
 !Get the sizes of the I/O compute and data domains.
 io_domain => mpp_get_io_domain(domain2)

@@ -158,14 +158,14 @@ module fms
                          get_field_method, get_field_methods, parse, fm_change_list, &
                          fm_change_root, fm_dump_list, fm_exists, fm_get_index, &
                          fm_get_current_list, fm_get_length, fm_get_type, fm_get_value, &
-                         fm_intersection, fm_init_loop, &
+                         fm_init_loop, &
                          fm_loop_over_list, fm_new_list, fm_new_value, &
                          fm_reset_loop, fm_return_root, &
                          fm_modify_name, fm_query_method, fm_find_methods, fm_copy_list, &
-                         fm_set_verbosity, fm_field_name_len, fm_path_name_len, &
+                         fm_field_name_len, fm_path_name_len, &
                          fm_string_len, fm_type_name_len, NUM_MODELS, NO_FIELD, &
                          MODEL_ATMOS, MODEL_OCEAN, MODEL_LAND, MODEL_ICE, MODEL_COUPLER, &
-                         fm_array_list_def, method_type, method_type_short, &
+                         method_type, method_type_short, &
                          method_type_very_short, fm_list_iter_type, default_method
   use fm_util_mod, only: fm_util_start_namelist, fm_util_end_namelist, &
                          fm_util_check_for_bad_fields, fm_util_set_caller, &

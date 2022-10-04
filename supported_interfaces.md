@@ -204,7 +204,6 @@ Additional information for this module and others can be found in the Doxygen ge
 - fm_copy_list
 - fm_set_verbosity
 ##### Types
-- fm_array_list_def
 - method_type
 - method_type_short
 - method_type_very_short
