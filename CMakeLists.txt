@@ -144,6 +144,7 @@ list(APPEND fms_fortran_src_files
   exchange/xgrid.F90
   field_manager/field_manager.F90
   field_manager/fm_util.F90
+  field_manager/fm_yaml.F90
   fms/fms_io.F90
   fms/fms.F90
   fms2_io/blackboxio.F90

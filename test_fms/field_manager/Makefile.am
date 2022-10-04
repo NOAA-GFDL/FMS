@@ -45,4 +45,4 @@ TESTS = test_field_manager2.sh
 EXTRA_DIST = test_field_manager2.sh
 
 # Clean up
-CLEANFILES = input.nml *.out* field_table *.dpi *.spi *.dyn *.spl
+CLEANFILES = input.nml *.out* field_table *.dpi *.spi *.dyn *.spl *.yaml

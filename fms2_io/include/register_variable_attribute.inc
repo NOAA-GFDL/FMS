@@ -58,7 +58,7 @@ subroutine register_variable_attribute_0d(fileobj, variable_name, attribute_name
         err = nf90_put_att(fileobj%ncid, varid, trim(attribute_name), &
                            attribute_value)
       type is (integer(kind=i8_kind))
-        if ( .not. fileobj%allow_int8) call error(trim(fileobj%path)//&
+        if ( .not. fileobj%is_netcdf4) call error(trim(fileobj%path)//&
                                                & ": 64 bit integers are only supported with 'netcdf4' file format"//  &
                                                & ". Set netcdf_default_format='netcdf4' in the fms2_io namelist OR "//&
                                                & "add nc_format='netcdf4' to your open_file call")
@@ -162,7 +162,7 @@ subroutine register_variable_attribute_1d(fileobj, variable_name, attribute_name
         err = nf90_put_att(fileobj%ncid, varid, trim(attribute_name), &
                            attribute_value)
       type is (integer(kind=i8_kind))
-        if ( .not. fileobj%allow_int8) call error(trim(fileobj%path)// &
+        if ( .not. fileobj%is_netcdf4) call error(trim(fileobj%path)// &
                                                & ": 64 bit integers are only supported with 'netcdf4' file format"//  &
                                                & ". Set netcdf_default_format='netcdf4' in the fms2_io namelist OR "//&
                                                & "add nc_format='netcdf4' to your open_file call")
