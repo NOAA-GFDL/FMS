@@ -20,7 +20,6 @@
 !> @brief  This programs tests the modern diag_manager
 
 program test_modern_diag
-#ifdef use_yaml
 use   mpp_domains_mod,  only: domain2d, mpp_domains_set_stack_size, mpp_define_domains, mpp_define_io_domain, &
                               mpp_define_mosaic, domainug, mpp_get_compute_domains, mpp_define_unstruct_domain, &
                               mpp_get_compute_domain, mpp_get_data_domain, mpp_get_UG_domain_grid_index, &
@@ -201,5 +200,4 @@ subroutine set_up_cube_sph_domain(Domain_cube_sph, nx, ny, io_layout)
                                 global_indices, layout, pe_start, pe_end, &
                                 io_layout, Domain_cube_sph)
 end subroutine set_up_cube_sph_domain
-#endif
 end program test_modern_diag
