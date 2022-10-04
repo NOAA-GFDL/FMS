@@ -125,6 +125,8 @@ type fmsDiagField_type
      procedure :: get_missing_value
      procedure :: get_data_RANGE
      procedure :: get_axis_id
+     procedure :: get_domain
+     procedure :: get_type_of_domain
 end type fmsDiagField_type
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! variables !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 type(fmsDiagField_type) :: null_ob
@@ -759,6 +761,30 @@ result(rslt)
   endif
 end function get_axis_id
 
+!> @brief Gets field's domain
+!! @return pointer to the domain
+function get_domain (this) &
+result(rslt)
+  class (fmsDiagField_type), target, intent(in) :: this  !< diag field
+  class(diagDomain_t),       pointer            :: rslt  !< field's domain
+
+  if (associated(this%domain)) then
+    rslt => this%domain
+  else
+    rslt => null()
+  endif
+
+end function get_domain
+
+!> @brief Gets field's type of domain
+!! @return integer defining the type of domain (NO_DOMAIN, TWO_D_DOMAIN, UG_DOMAIN)
+pure function get_type_of_domain (this) &
+result(rslt)
+  class (fmsDiagField_type), target, intent(in) :: this  !< diag field
+  integer                                       :: rslt  !< field's domain
+
+  rslt = this%type_of_domain
+end function get_type_of_domain
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!! Allocation checks
 
