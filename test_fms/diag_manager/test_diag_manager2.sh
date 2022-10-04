@@ -499,7 +499,17 @@ test_expect_success "diurnal test (test $my_test_count)" '
   mpirun -n 1 ../test_diag_manager_time
 '
 
-cat <<_EOF > diag_table.yaml
+## uses some updated code but doesn't need flag
+my_test_count=`expr $my_test_count + 1`
+test_expect_success "test_diag_dlinked_list (test $my_test_count)" '
+  mpirun -n 1 ../test_diag_dlinked_list
+'
+
+## run tests that are ifdef'd out only if compiled with yaml
+## otherwise just run the updated end to end to check for error 
+if [ -z "${skipflag}" ]; then
+
+  cat <<_EOF > diag_table.yaml
 title: test_diag_manager
 base_date: 2 1 1 0 0 0
 diag_files:
@@ -575,16 +585,17 @@ diag_files:
   unlimdim: records
   write_file: false
 _EOF
-cp diag_table.yaml diag_table.yaml_base
+  cp diag_table.yaml diag_table.yaml_base
 
-my_test_count=`expr $my_test_count + 1`
-test_expect_success "diag_yaml test (test $my_test_count)" '
-  mpirun -n 1 ../test_diag_yaml
-'
-. $top_srcdir/test_fms/diag_manager/check_crashes.sh
+  my_test_count=`expr $my_test_count + 1`
+  test_expect_success "diag_yaml test (test $my_test_count)" '
+    mpirun -n 1 ../test_diag_yaml
+  '
+  . $top_srcdir/test_fms/diag_manager/check_crashes.sh
+  my_test_count = `expr $my_test_count + 14` 
 
-printf "&diag_manager_nml \n use_modern_diag = .true. \n/" | cat > input.nml
-cat <<_EOF > diag_table.yaml
+  printf "&diag_manager_nml \n use_modern_diag = .true. \n/" | cat > input.nml
+  cat <<_EOF > diag_table.yaml
 title: test_diag_manager
 base_date: 2 1 1 0 0 0
 diag_files:
@@ -629,18 +640,14 @@ diag_files:
     kind: r4
 _EOF
 
-my_test_count=`expr $my_test_count + 1`
-test_expect_success "Test the diag_ocean feature in diag_manager_init (test $my_test_count)" '
-  mpirun -n 2 ../test_diag_ocean
-'
+  my_test_count=`expr $my_test_count + 1`
+  test_expect_success "Test the diag_ocean feature in diag_manager_init (test $my_test_count)" '
+    mpirun -n 2 ../test_diag_ocean
+  '
 
-my_test_count=`expr $my_test_count + 1`
-test_expect_success "test_diag_dlinked_list (test $my_test_count)" '
-  mpirun -n 1 ../test_diag_dlinked_list
-'
 
-printf "&diag_manager_nml \n use_modern_diag = .true. \n/" | cat > input.nml
-cat <<_EOF > diag_table.yaml
+  printf "&diag_manager_nml \n use_modern_diag = .true. \n/" | cat > input.nml
+  cat <<_EOF > diag_table.yaml
 title: test_diag_manager
 base_date: 2 1 1 0 0 0
 
@@ -737,12 +744,11 @@ diag_files:
     kind: r4
 _EOF
 
-my_test_count=`expr $my_test_count + 1`
-test_expect_success "buffer functionality (test $my_test_count)" '
-  mpirun -n 1 ../test_diag_buffer
-'
-  
-if [ -z "${skiptest}" ]; then
+  my_test_count=`expr $my_test_count + 1`
+  test_expect_success "buffer functionality (test $my_test_count)" '
+    mpirun -n 1 ../test_diag_buffer
+  '
+
   my_test_count=`expr $my_test_count + 1`
   test_expect_success "Test the modern diag manager end to end (test $my_test_count)" '
     mpirun -n 6 ../test_modern_diag
