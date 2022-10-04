@@ -67,6 +67,7 @@ private
     procedure :: fms_get_axis_length
     procedure :: fms_get_diag_field_id_from_name
     procedure :: fms_get_axis_name_from_id
+    procedure :: fms_diag_send_complete
     procedure :: diag_end => fms_diag_object_end
 #ifdef use_yaml
     procedure :: get_diag_buffer
@@ -199,7 +200,7 @@ integer function fms_register_diag_field_obj &
     do i = 1, size(file_ids)
      fileptr => this%FMS_diag_files(file_ids(i))%FMS_diag_file
      call fileptr%add_field_id(fieldptr%get_id())
-     call fileptr%set_domain_from_axis(fms_diag_object%diag_axis, axes)
+     call fileptr%set_file_domain(fieldptr%get_domain(), fieldptr%get_type_of_domain())
      call fileptr%add_axes(axes)
      call fileptr%add_start_time(init_time)
     enddo
@@ -207,7 +208,7 @@ integer function fms_register_diag_field_obj &
     do i = 1, size(file_ids)
      fileptr => this%FMS_diag_files(file_ids(i))%FMS_diag_file
      call fileptr%add_field_id(fieldptr%get_id())
-     call fileptr%set_domain_from_axis(fms_diag_object%diag_axis, axes)
+     call fileptr%set_file_domain(fieldptr%get_domain(), fieldptr%get_type_of_domain())
      call fileptr%add_axes(axes)
     enddo
   elseif (present(init_time)) then !only inti time present
@@ -400,6 +401,25 @@ FUNCTION fms_diag_axis_init(this, axis_name, axis_data, units, cart_name, long_n
   id = diag_null
 #endif
 end function fms_diag_axis_init
+
+!> @brief Loops through all the files, open the file, writes out axis and
+!! variable metadata and data when necessary.
+subroutine fms_diag_send_complete(this, time_step)
+  class(fmsDiagObject_type), target, intent (inout) :: this !< The diag object
+  TYPE (time_type),                  INTENT(in)     :: time_step !< The current model time
+
+  integer :: i !< For do loops
+
+#ifdef use_yaml
+  class(fmsDiagFileContainer_type), pointer :: diag_file !< Pointer to this%FMS_diag_files(i) (for convenience)
+
+  do i = 1, size(this%FMS_diag_files)
+    diag_file => this%FMS_diag_files(i)
+    call diag_file%open_diag_file(time_step)
+  enddo
+#endif
+
+end subroutine fms_diag_send_complete
 
 !> @brief Add a attribute to the diag_obj using the diag_field_id
 subroutine fms_diag_field_add_attribute(this, diag_field_id, att_name, att_value)

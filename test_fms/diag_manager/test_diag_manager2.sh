@@ -717,6 +717,38 @@ diag_files:
     var_name: var1
     reduction: average
     kind: r4
+- file_name: file5
+  freq: 6
+  freq_units: hours
+  time_units: hours
+  unlimdim: time
+  varlist:
+  - module: atm_mod
+    var_name: var4
+    reduction: average
+    kind: r4
+  sub_region:
+  - grid_type: index
+    tile: 1
+    corner1: 10, 15
+    corner2: 20, 15
+    corner3: 10, 25
+    corner4: 20, 25
+- file_name: wild_card_name%4yr%2mo%2dy%2hr
+  freq: 6
+  freq_units: hours
+  time_units: hours
+  unlimdim: time
+  new_file_freq: 6
+  new_file_freq_units: hours
+  start_time: 2 1 1 0 0 0
+  file_duration: 12
+  file_duration_units: hours
+  varlist:
+  - module: atm_mod
+    var_name: var4
+    reduction: average
+    kind: r4
 _EOF
 
 my_test_count=43
