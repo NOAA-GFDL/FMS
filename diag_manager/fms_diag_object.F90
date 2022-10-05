@@ -602,6 +602,8 @@ subroutine dump_diag_obj( filename )
     endif
     if( present(filename) ) close(unit_num)
   endif
+#else
+  call mpp_error( FATAL, "You can not use the modern diag manager without compiling with -Duse_yaml")
 #endif
 end subroutine
   

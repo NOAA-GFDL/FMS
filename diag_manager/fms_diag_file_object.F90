@@ -608,8 +608,7 @@ subroutine dump_file_obj(this, unit_num)
   if( allocated(this%field_ids)) write( unit_num, *)'field_ids', this%field_ids
   if( allocated(this%field_registered)) write( unit_num, *)'field_registered', this%field_registered
   if( allocated(this%num_registered_fields)) write( unit_num, *)'num_registered_fields', this%num_registered_fields
-  if( allocated(this%axis_ids)) write( unit_num, *)'axis_ids', this%axis_ids
-  write( unit_num, *)'number_of_axis', this%number_of_axis
+  if( allocated(this%axis_ids)) write( unit_num, *)'axis_ids', this%axis_ids(1:this%number_of_axis)
 
 end subroutine
 

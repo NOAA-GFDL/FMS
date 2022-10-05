@@ -1018,7 +1018,7 @@ subroutine dump_field_obj (this, unit_num)
     endif
     write(unit_num, *) 'num_attributes:' ,this%num_attributes
     if( allocated(this%attributes)) then
-      do i=1, SIZE(this%attributes)
+      do i=1, this%num_attributes
         if( allocated(this%attributes(i)%att_value)) then
           select type( val => this%attributes(i)%att_value)
             type is (real(r8_kind))
