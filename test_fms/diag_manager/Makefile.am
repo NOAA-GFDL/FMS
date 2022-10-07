@@ -52,12 +52,12 @@ TESTS = test_diag_manager2.sh
 # Copy over other needed files to the srcdir
 EXTRA_DIST = input.nml_base diagTables test_diag_manager2.sh check_crashes.sh
 
-if SKIP_PARSER_TESTS
-skipflag="skip"
-else
+if USING_YAML
 skipflag=""
+else
+skipflag="skip"
 endif
 
-TESTS_ENVIRONMENT = parser_skip=${skipflag}
+TESTS_ENVIRONMENT = skipflag=${skipflag}
 
 CLEANFILES = input.nml *.nc *.out diag_table *-files/* *.dpi *.spi *.dyn *.spl

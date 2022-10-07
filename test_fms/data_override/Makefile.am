@@ -58,10 +58,10 @@ test_data_override_ongrid_r8_CPPFLAGS = $(AM_CPPFLAGS) -DDO_TEST_KIND_=r8_kind
 test_get_grid_v1_r4_CPPFLAGS = $(AM_CPPFLAGS) -DDO_TEST_KIND_=r4_kind
 test_get_grid_v1_r8_CPPFLAGS = $(AM_CPPFLAGS) -DDO_TEST_KIND_=r8_kind
 
-if SKIP_PARSER_TESTS
-skipflag="skip"
-else
+if USING_YAML
 skipflag=""
+else
+skipflag="skip"
 endif
 
 TEST_EXTENSIONS = .sh
