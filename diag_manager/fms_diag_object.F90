@@ -17,7 +17,7 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 module fms_diag_object_mod
-use mpp_mod, only: fatal, note, warning, mpp_error
+use mpp_mod, only: fatal, note, warning, mpp_error, mpp_pe, mpp_root_pe, stdout
 use diag_data_mod,  only: diag_null, diag_not_found, diag_not_registered, diag_registered_id, &
                          &DIAG_FIELD_NOT_FOUND, diag_not_registered, max_axes, TWO_D_DOMAIN
   USE time_manager_mod, ONLY: set_time, set_date, get_time, time_type, OPERATOR(>=), OPERATOR(>),&
@@ -84,6 +84,7 @@ public :: fms_diag_field_add_attribute
 public :: fms_get_diag_field_id_from_name
 public :: fms_diag_object
 public :: fmsDiagObject_type
+public :: dump_diag_obj
 
 contains
 
@@ -554,4 +555,56 @@ result(axis_name)
 #endif
 end function fms_get_axis_name_from_id
 
+!> Dumps as much data as it can from the fmsDiagObject_type.
+!! Will dump any fields and files as well (see d)
+subroutine dump_diag_obj( filename )
+  character(len=*), intent(in), optional :: filename !< optional filename to print to,
+                                            !! otherwise prints to stdout
+#ifdef use_yaml
+  !type(fmsDiagObject_type) :: diag_obj
+  type(fmsDiagFile_type), pointer :: fileptr !<  pointer for traversing file list
+  type(fmsDiagField_type), pointer :: fieldptr !<  pointer for traversing field list
+  integer :: i !< do loops
+  integer :: unit_num !< unit num of opened log file or stdout
+
+  if( present(filename) ) then
+    open(newunit=unit_num, file=trim(filename), action='WRITE')
+  else
+    unit_num = stdout()
+  endif
+  if( mpp_pe() .eq. mpp_root_pe()) then
+    write(unit_num, *) '********** dumping diag object ***********'
+    write(unit_num, *) 'registered_variables:', fms_diag_object%registered_variables
+    write(unit_num, *) 'registered_axis:', fms_diag_object%registered_axis
+    write(unit_num, *) 'initialized:', fms_diag_object%initialized
+    write(unit_num, *) 'files_initialized:', fms_diag_object%files_initialized
+    write(unit_num, *) 'fields_initialized:', fms_diag_object%fields_initialized
+    write(unit_num, *) 'buffers_initialized:', fms_diag_object%buffers_initialized
+    write(unit_num, *) 'axes_initialized:', fms_diag_object%axes_initialized
+    write(unit_num, *) 'Files:'
+    if( fms_diag_object%files_initialized ) then
+      do i=1, SIZE(fms_diag_object%FMS_diag_files) 
+        write(unit_num, *) 'File num:', i
+        fileptr => fms_diag_object%FMS_diag_files(i)%FMS_diag_file
+        call fileptr%dump_file_obj(unit_num)
+      enddo
+    else
+      write(unit_num, *) 'files not initialized'
+    endif
+    if( fms_diag_object%fields_initialized) then
+      do i=1, SIZE(fms_diag_object%FMS_diag_fields) 
+        write(unit_num, *) 'Field num:', i
+        fieldptr => fms_diag_object%FMS_diag_fields(i)
+        call fieldptr%dump_field_obj(unit_num)
+      enddo
+    else
+      write(unit_num, *) 'fields not initialized'
+    endif
+    if( present(filename) ) close(unit_num)
+  endif
+#else
+  call mpp_error( FATAL, "You can not use the modern diag manager without compiling with -Duse_yaml")
+#endif
+end subroutine
+  
 end module fms_diag_object_mod
