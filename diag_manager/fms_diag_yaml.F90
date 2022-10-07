@@ -36,7 +36,7 @@ use diag_data_mod,   only: DIAG_NULL, DIAG_OCEAN, DIAG_ALL, DIAG_OTHER, set_base
                            time_diurnal, time_power, time_none, r8, i8, r4, i4
 use yaml_parser_mod, only: open_and_parse_file, get_value_from_key, get_num_blocks, get_nkeys, &
                            get_block_ids, get_key_value, get_key_ids, get_key_name
-use mpp_mod,         only: mpp_error, FATAL
+use mpp_mod,         only: mpp_error, FATAL, mpp_pe, mpp_root_pe, stdout
 use, intrinsic :: iso_c_binding, only : c_ptr, c_null_char
 use fms_string_utils_mod, only: fms_array_to_pointer, fms_find_my_string, fms_sort_this, fms_find_unique
 use platform_mod, only: r4_kind, i4_kind
@@ -50,6 +50,7 @@ public :: diag_yaml_object_init, diag_yaml_object_end
 public :: diagYamlObject_type, get_diag_yaml_obj
 public :: diagYamlFiles_type, diagYamlFilesVar_type
 public :: get_num_unique_fields, find_diag_field, get_diag_fields_entries, get_diag_files_id
+public :: dump_diag_yaml_obj
 !> @}
 
 integer, parameter :: basedate_size = 6
@@ -1333,6 +1334,72 @@ function get_diag_files_id(indices) &
   end do
 
 end function get_diag_files_id
+
+!> Prints out values from diag_yaml object for debugging.
+!! Only writes on root.
+subroutine dump_diag_yaml_obj( filename ) 
+  character(len=*), optional, intent(in)        :: filename !< optional name of logfile to write to, otherwise
+                                                            !! prints to stdout
+  type(diagyamlfilesvar_type), allocatable      :: fields(:)
+  type(diagyamlfiles_type), allocatable         :: files(:)
+  integer                                       :: i, unit_num
+  if( present(filename)) then
+    open(newunit=unit_num, file=trim(filename), action='WRITE') 
+  else
+    unit_num = stdout() 
+  endif
+  !! TODO write to log
+  if( mpp_pe() .eq. mpp_root_pe()) then
+    write(unit_num, *) '**********Dumping diag_yaml object**********' 
+    if( diag_yaml%has_diag_title())    write(unit_num, *) 'Title:', diag_yaml%diag_title
+    if( diag_yaml%has_diag_basedate()) write(unit_num, *) 'basedate array:', diag_yaml%diag_basedate
+    write(unit_num, *) 'FILES'
+    allocate(fields(SIZE(diag_yaml%get_diag_fields())))
+    allocate(files(SIZE(diag_yaml%get_diag_files())))
+    files = diag_yaml%get_diag_files()
+    fields = diag_yaml%get_diag_fields()
+    do i=1, SIZE(files)
+      write(unit_num, *) 'File: ', files(i)%get_file_fname() 
+      if(files(i)%has_file_frequnit()) write(unit_num, *) 'file_frequnit:', files(i)%get_file_frequnit()
+      if(files(i)%has_file_freq()) write(unit_num, *) 'freq:', files(i)%get_file_freq()
+      if(files(i)%has_file_timeunit()) write(unit_num, *) 'timeunit:', files(i)%get_file_timeunit()
+      if(files(i)%has_file_unlimdim()) write(unit_num, *) 'unlimdim:', files(i)%get_file_unlimdim()
+      !if(files(i)%has_file_sub_region()) write(unit_num, *) 'sub_region:', files(i)%get_file_sub_region()
+      if(files(i)%has_file_new_file_freq()) write(unit_num, *) 'new_file_freq:', files(i)%get_file_new_file_freq()
+      if(files(i)%has_file_new_file_freq_units()) write(unit_num, *) 'new_file_freq_units:', &
+                                                         & files(i)%get_file_new_file_freq_units()
+      if(files(i)%has_file_start_time()) write(unit_num, *) 'start_time:', files(i)%get_file_start_time()
+      if(files(i)%has_file_duration()) write(unit_num, *) 'duration:', files(i)%get_file_duration()
+      if(files(i)%has_file_duration_units()) write(unit_num, *) 'duration_units:', files(i)%get_file_duration_units()
+      if(files(i)%has_file_varlist()) write(unit_num, *) 'varlist:', files(i)%get_file_varlist()
+      if(files(i)%has_file_global_meta()) write(unit_num, *) 'global_meta:', files(i)%get_file_global_meta()
+      if(files(i)%is_global_meta()) write(unit_num, *) 'global_meta:', files(i)%is_global_meta()
+      write(unit_num, *) ''
+    enddo
+    write(unit_num, *) 'FIELDS'
+    do i=1, SIZE(fields)
+      write(unit_num, *) 'Field: ', fields(i)%get_var_fname() 
+      if(fields(i)%has_var_fname()) write(unit_num, *) 'fname:', fields(i)%get_var_fname()
+      if(fields(i)%has_var_varname()) write(unit_num, *) 'varname:', fields(i)%get_var_varname()
+      if(fields(i)%has_var_reduction()) write(unit_num, *) 'reduction:', fields(i)%get_var_reduction()
+      if(fields(i)%has_var_module()) write(unit_num, *) 'module:', fields(i)%get_var_module()
+      if(fields(i)%has_var_kind()) write(unit_num, *) 'kind:', fields(i)%get_var_kind()
+      if(fields(i)%has_var_outname()) write(unit_num, *) 'outname:', fields(i)%get_var_outname()
+      if(fields(i)%has_var_longname()) write(unit_num, *) 'longname:', fields(i)%get_var_longname()
+      if(fields(i)%has_var_units()) write(unit_num, *) 'units:', fields(i)%get_var_units()
+      if(fields(i)%has_var_zbounds()) write(unit_num, *) 'zbounds:', fields(i)%get_var_zbounds()
+      if(fields(i)%has_var_attributes()) write(unit_num, *) 'attributes:', fields(i)%get_var_attributes()
+      if(fields(i)%has_n_diurnal()) write(unit_num, *) 'n_diurnal:', fields(i)%get_n_diurnal()
+      if(fields(i)%has_pow_value()) write(unit_num, *) 'pow_value:', fields(i)%get_pow_value()
+      if(fields(i)%has_var_attributes()) write(unit_num, *) 'is_var_attributes:', fields(i)%is_var_attributes()
+    enddo
+    deallocate(files, fields)
+    if( present(filename)) then
+      close(unit_num)
+    endif
+  endif
+end subroutine
+
 #endif
 end module fms_diag_yaml_mod
 !> @}

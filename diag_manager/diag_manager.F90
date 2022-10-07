@@ -4045,7 +4045,7 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
 #ifdef use_yaml
     if (use_modern_diag) then
       CALL diag_yaml_object_init(diag_subset_output)
-      CALL fms_diag_object%init(diag_subset_output) 
+      CALL fms_diag_object%init(diag_subset_output)
     endif
 #else
     if (use_modern_diag) &

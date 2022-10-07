@@ -144,6 +144,10 @@ if (.not. checking_crashes) then
 
 endif
 
+!! test dump routines
+call dump_diag_yaml_obj('test_dump.log')
+call dump_diag_yaml_obj() ! to stdout
+
 call diag_yaml_object_end
 
 call fms_end()
