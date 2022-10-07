@@ -237,9 +237,6 @@ use platform_mod
   USE diag_table_mod, ONLY: parse_diag_table
   USE diag_output_mod, ONLY: get_diag_global_att, set_diag_global_att
   USE diag_grid_mod, ONLY: diag_grid_init, diag_grid_end
-#ifdef use_yaml
-  use fms_diag_yaml_mod, only: diag_yaml_object_init, diag_yaml_object_end, get_num_unique_fields, find_diag_field
-#endif
   use fms_diag_object_mod, only:fms_diag_object
 
   USE constants_mod, ONLY: SECONDS_PER_DAY
@@ -3826,12 +3823,9 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
     if (allocated(fileobjND)) deallocate(fileobjND)
     if (allocated(fnum_for_domain)) deallocate(fnum_for_domain)
 
-#ifdef use_yaml
     if (use_modern_diag) then
-      call diag_yaml_object_end
       call fms_diag_object%diag_end()
     endif
-#endif
   END SUBROUTINE diag_manager_end
 
   !> @brief Replaces diag_manager_end; close just one file: files(file)
@@ -4042,17 +4036,9 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
        END IF
     END IF
 
-#ifdef use_yaml
     if (use_modern_diag) then
-      CALL diag_yaml_object_init(diag_subset_output)
-      CALL fms_diag_object%init(diag_subset_output)
+      CALL fms_diag_object%init(diag_subset_output) 
     endif
-#else
-    if (use_modern_diag) &
-      call error_mesg("diag_manager_mod::diag_manager_init", &
-                       & "You need to compile with -Duse_yaml if diag_manager_nml::use_modern_diag=.true.", FATAL)
-#endif
-
    if (.not. use_modern_diag) then
      CALL parse_diag_table(DIAG_SUBSET=diag_subset_output, ISTAT=mystat, ERR_MSG=err_msg_local)
      IF ( mystat /= 0 ) THEN
