@@ -13,7 +13,7 @@ use diag_data_mod,  only: r8, r4, i8, i4, string, null_type_int, NO_DOMAIN
 use diag_data_mod,  only: max_field_attributes, fmsDiagAttribute_type
 use diag_data_mod,  only: diag_null, diag_not_found, diag_not_registered, diag_registered_id, &
                          &DIAG_FIELD_NOT_FOUND
-use mpp_mod, only: fatal, note, warning, mpp_error
+use mpp_mod, only: fatal, note, warning, mpp_error, mpp_pe, mpp_root_pe
 use fms_diag_yaml_mod, only:  diagYamlFilesVar_type, get_diag_fields_entries, get_diag_files_id, &
   & find_diag_field, get_num_unique_fields
 use fms_diag_axis_object_mod, only: diagDomain_t, get_domain_and_domain_type, fmsDiagAxis_type, &
@@ -125,6 +125,7 @@ type fmsDiagField_type
      procedure :: get_missing_value
      procedure :: get_data_RANGE
      procedure :: get_axis_id
+     procedure :: dump_field_obj
      procedure :: get_domain
      procedure :: get_type_of_domain
 end type fmsDiagField_type
@@ -964,5 +965,78 @@ PURE FUNCTION diag_field_id_from_name(this, module_name, field_name) &
         diag_field_id = this%get_id()
   endif
 end function diag_field_id_from_name
+
+!> Dumps any data from a given fmsDiagField_type object
+subroutine dump_field_obj (this, unit_num)
+  class(fmsDiagField_type), intent(in) :: this
+  integer, intent(in) :: unit_num !< passed in from dump_diag_obj if log file is being written to
+  integer :: i
+
+  if( mpp_pe() .eq. mpp_root_pe()) then
+    if( allocated(this%file_ids)) write(unit_num, *) 'file_ids:' ,this%file_ids
+    if( allocated(this%diag_id)) write(unit_num, *) 'diag_id:' ,this%diag_id
+    if( allocated(this%static)) write(unit_num, *) 'static:' ,this%static
+    if( allocated(this%registered)) write(unit_num, *) 'registered:' ,this%registered
+    if( allocated(this%mask_variant)) write(unit_num, *) 'mask_variant:' ,this%mask_variant
+    if( allocated(this%do_not_log)) write(unit_num, *) 'do_not_log:' ,this%do_not_log
+    if( allocated(this%local)) write(unit_num, *) 'local:' ,this%local
+    if( allocated(this%vartype)) write(unit_num, *) 'vartype:' ,this%vartype
+    if( allocated(this%varname)) write(unit_num, *) 'varname:' ,this%varname
+    if( allocated(this%longname)) write(unit_num, *) 'longname:' ,this%longname
+    if( allocated(this%standname)) write(unit_num, *) 'standname:' ,this%standname
+    if( allocated(this%units)) write(unit_num, *) 'units:' ,this%units
+    if( allocated(this%modname)) write(unit_num, *) 'modname:' ,this%modname
+    if( allocated(this%realm)) write(unit_num, *) 'realm:' ,this%realm
+    if( allocated(this%interp_method)) write(unit_num, *) 'interp_method:' ,this%interp_method
+    if( allocated(this%tile_count)) write(unit_num, *) 'tile_count:' ,this%tile_count
+    if( allocated(this%axis_ids)) write(unit_num, *) 'axis_ids:' ,this%axis_ids
+    write(unit_num, *) 'type_of_domain:' ,this%type_of_domain
+    if( allocated(this%area)) write(unit_num, *) 'area:' ,this%area
+    if( allocated(this%missing_value)) then
+      select type(missing_val => this%missing_value)
+        type is (real(r4_kind))
+          write(unit_num, *) 'missing_value:', missing_val
+        type is (real(r8_kind))
+          write(unit_num, *) 'missing_value:' ,missing_val
+       type is(integer(i4_kind))
+          write(unit_num, *) 'missing_value:' ,missing_val
+       type is(integer(i8_kind))
+          write(unit_num, *) 'missing_value:' ,missing_val
+      end select
+    endif
+    if( allocated( this%data_RANGE)) then
+      select type(drange => this%data_RANGE)
+        type is (real(r4_kind))
+          write(unit_num, *) 'data_RANGE:' ,drange
+        type is (real(r8_kind))
+          write(unit_num, *) 'data_RANGE:' ,drange
+       type is(integer(i4_kind))
+          write(unit_num, *) 'data_RANGE:' ,drange
+       type is(integer(i8_kind))
+          write(unit_num, *) 'data_RANGE:' ,drange
+      end select
+    endif
+    write(unit_num, *) 'num_attributes:' ,this%num_attributes
+    if( allocated(this%attributes)) then
+      do i=1, this%num_attributes
+        if( allocated(this%attributes(i)%att_value)) then
+          select type( val => this%attributes(i)%att_value)
+            type is (real(r8_kind))
+              write(unit_num, *) 'attribute name', this%attributes(i)%att_name, 'val:',  val
+            type is (real(r4_kind))
+              write(unit_num, *) 'attribute name', this%attributes(i)%att_name, 'val:',  val
+            type is (integer(i4_kind))
+              write(unit_num, *) 'attribute name', this%attributes(i)%att_name, 'val:',  val
+            type is (integer(i8_kind))
+              write(unit_num, *) 'attribute name', this%attributes(i)%att_name, 'val:', val
+          end select
+        endif
+      enddo
+    endif
+
+  endif
+
+end subroutine
+
 #endif
 end module fms_diag_field_object_mod
