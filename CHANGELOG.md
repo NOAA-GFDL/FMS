@@ -6,6 +6,21 @@ and this project uses `yyyy.rr[.pp]`, where `yyyy` is the year a patch is releas
 `rr` is a sequential release number (starting from `01`), and an optional two-digit
 sequential patch number (starting from `01`).
 
+## [2022.04] - 2022-10-14
+### Known Issues
+- If using GCC 10 or higher as well as MPICH, compilation errors will occur unless `-fallow-argument-mismatch` is included in the Fortran compiler flags(the flag will now be added automatically if building with autotools or CMake). 
+- GCC 11.1.0 is unsupported due to compilation issues with select type. The issue is resolved in later GCC releases.
+- When outputting sub-region diagnostics, the current diag_manager does not add "tileX" to the filename when using a cube sphere. This leads to trouble when trying to combine the files and regrid them (if the region is in two different tiles)
+
+### Added
+
+
+### Changed
+
+### Fixed
+
+### Tag Commit Hashes
+
 ## [2022.03] - 2022-08-01
 ### Known Issues
 - If using GCC 10 or higher as well as MPICH, compilation errors will occur unless `-fallow-argument-mismatch` is included in the Fortran compiler flags(the flag will now be added automatically if building with autotools or CMake). 
