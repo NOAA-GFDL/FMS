@@ -1,4 +1,6 @@
-on: release 
+on:
+  release:
+    types: [published]
 jobs:
   add-dev-to-version:
     runs-on: ubuntu-latest
@@ -13,3 +15,6 @@ jobs:
         branch: add-dev-post-release # name of the created branch
         branch-suffix: timestamp     # add a timestamp to branch name
         delete-branch: true          # delete afer merge 
+        title: Append dev to version number post-release
+        body: automated change, adds '-dev' to the version number upon releases
+        reviewers: rem1776
