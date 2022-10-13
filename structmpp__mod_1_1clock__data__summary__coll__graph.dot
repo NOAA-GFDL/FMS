@@ -4,14 +4,11 @@ digraph "clock_data_summary"
  // LATEX_PDF_SIZE
   edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
   node [fontname="Helvetica",fontsize="10",shape=record];
-  rankdir="LR";
   Node1 [label="clock_data_summary",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled", fontcolor="black",tooltip="Summary of information from a clock run."];
   Node2 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" name" ,fontname="Helvetica"];
   Node2 [label="character(len=16)",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
-  Node3 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" total_cnts" ,fontname="Helvetica"];
+  Node3 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" msg_size_cnts\ntotal_cnts" ,fontname="Helvetica"];
   Node3 [label="integer(i8_kind)",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
   Node4 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" total_data\nmsg_size_sums\nmsg_time_sums\ntotal_time" ,fontname="Helvetica"];
   Node4 [label="real(r8_kind)",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
-  Node5 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" msg_size_cnts" ,fontname="Helvetica"];
-  Node5 [label="integer(i8_kind), dimension\l(max_bins)",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
 }

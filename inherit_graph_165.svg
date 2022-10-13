@@ -12,9 +12,9 @@
 <!-- Node0 -->
 <g id="node1" class="node">
 <title>Node0</title>
-<g id="a_node1"><a xlink:href="group__tracer__manager__mod.html#interfacetracer__manager__mod_1_1get__tracer__index" target="_top" xlink:title="Function which returns the number assigned to the tracer name.">
+<g id="a_node1"><a xlink:href="group__topography__mod.html#interfacetopography__mod_1_1get__topog__mean" target="_top" xlink:title="Returns a &quot;realistic&quot; mean surface height field.">
 <polygon fill="white" stroke="black" points="0,-0.5 0,-19.5 98,-19.5 98,-0.5 0,-0.5"/>
-<text text-anchor="middle" x="49" y="-7.5" font-family="Helvetica,sans-Serif" font-size="10.00">get_tracer_index</text>
+<text text-anchor="middle" x="49" y="-7.5" font-family="Helvetica,sans-Serif" font-size="10.00">get_topog_mean</text>
 </a>
 </g>
 </g>

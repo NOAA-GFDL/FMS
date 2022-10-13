@@ -1,8 +1,7 @@
 <map id="summary_struct" name="summary_struct">
-<area shape="rect" id="node1" title="holds name and clock data for use in mpp_util.h" alt="" coords="65,243,193,269"/>
-<area shape="rect" id="node2" href="$group__mpp__mod.html#structmpp__mod_1_1clock__data__summary" title="Summary of information from a clock run." alt="" coords="152,153,313,180"/>
-<area shape="rect" id="node3" title=" " alt="" coords="5,13,145,39"/>
-<area shape="rect" id="node4" title=" " alt="" coords="170,13,295,39"/>
-<area shape="rect" id="node5" title=" " alt="" coords="320,13,425,39"/>
-<area shape="rect" id="node6" title=" " alt="" coords="449,5,651,47"/>
+<area shape="rect" id="node1" title="holds name and clock data for use in mpp_util.h" alt="" coords="62,228,190,255"/>
+<area shape="rect" id="node2" href="$group__mpp__mod.html#structmpp__mod_1_1clock__data__summary" title="Summary of information from a clock run." alt="" coords="149,139,311,165"/>
+<area shape="rect" id="node3" title=" " alt="" coords="5,5,145,32"/>
+<area shape="rect" id="node4" title=" " alt="" coords="170,5,295,32"/>
+<area shape="rect" id="node5" title=" " alt="" coords="320,5,425,32"/>
 </map>

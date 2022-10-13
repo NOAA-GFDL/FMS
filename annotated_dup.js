@@ -120,10 +120,7 @@ var annotated_dup =
     [ "field_manager_mod", null, [
       [ "field_def", "group__field__manager__mod.html#structfield__manager__mod_1_1field__def", "group__field__manager__mod_structfield__manager__mod_1_1field__def" ],
       [ "field_mgr_type", "group__field__manager__mod.html#structfield__manager__mod_1_1field__mgr__type", "group__field__manager__mod_structfield__manager__mod_1_1field__mgr__type" ],
-      [ "field_names_type", "group__field__manager__mod.html#structfield__manager__mod_1_1field__names__type", "group__field__manager__mod_structfield__manager__mod_1_1field__names__type" ],
-      [ "field_names_type_short", "group__field__manager__mod.html#structfield__manager__mod_1_1field__names__type__short", "group__field__manager__mod_structfield__manager__mod_1_1field__names__type__short" ],
       [ "find_field_index", "group__field__manager__mod.html#interfacefield__manager__mod_1_1find__field__index", "group__field__manager__mod_interfacefield__manager__mod_1_1find__field__index" ],
-      [ "fm_array_list_def", "group__field__manager__mod.html#structfield__manager__mod_1_1fm__array__list__def", "group__field__manager__mod_structfield__manager__mod_1_1fm__array__list__def" ],
       [ "fm_get_value", "group__field__manager__mod.html#interfacefield__manager__mod_1_1fm__get__value", "group__field__manager__mod_interfacefield__manager__mod_1_1fm__get__value" ],
       [ "fm_list_iter_type", "group__field__manager__mod.html#structfield__manager__mod_1_1fm__list__iter__type", "group__field__manager__mod_structfield__manager__mod_1_1fm__list__iter__type" ],
       [ "fm_loop_over_list", "group__field__manager__mod.html#interfacefield__manager__mod_1_1fm__loop__over__list", "group__field__manager__mod_interfacefield__manager__mod_1_1fm__loop__over__list" ],
@@ -135,6 +132,13 @@ var annotated_dup =
     ] ],
     [ "fm_util_mod", null, [
       [ "fm_util_set_value", "group__fm__util__mod.html#interfacefm__util__mod_1_1fm__util__set__value", "group__fm__util__mod_interfacefm__util__mod_1_1fm__util__set__value" ]
+    ] ],
+    [ "fm_yaml_mod", null, [
+      [ "fmattr_t", "group__fm__yaml__mod.html#structfm__yaml__mod_1_1fmattr__t", "group__fm__yaml__mod_structfm__yaml__mod_1_1fmattr__t" ],
+      [ "fmmodel_t", "group__fm__yaml__mod.html#structfm__yaml__mod_1_1fmmodel__t", "group__fm__yaml__mod_structfm__yaml__mod_1_1fmmodel__t" ],
+      [ "fmtable_t", "group__fm__yaml__mod.html#structfm__yaml__mod_1_1fmtable__t", "group__fm__yaml__mod_structfm__yaml__mod_1_1fmtable__t" ],
+      [ "fmtype_t", "group__fm__yaml__mod.html#structfm__yaml__mod_1_1fmtype__t", "group__fm__yaml__mod_structfm__yaml__mod_1_1fmtype__t" ],
+      [ "fmvar_t", "group__fm__yaml__mod.html#structfm__yaml__mod_1_1fmvar__t", "group__fm__yaml__mod_structfm__yaml__mod_1_1fmvar__t" ]
     ] ],
     [ "fms2_io_mod", null, [
       [ "close_file", "group__fms2__io__mod.html#interfacefms2__io__mod_1_1close__file", "group__fms2__io__mod_interfacefms2__io__mod_1_1close__file" ],

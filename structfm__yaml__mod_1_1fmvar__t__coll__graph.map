@@ -1,0 +1,8 @@
+<map id="fmvar_t" name="fmvar_t">
+<area shape="rect" id="node1" title="This type represents the entries for a given variable, e.g. dust. This type contains the name of the ..." alt="" coords="603,142,676,169"/>
+<area shape="rect" id="node2" href="$group__fm__yaml__mod.html#structfm__yaml__mod_1_1fmattr__t" title="This type represents the subparameters for a given variable parameter. This type contains the name of..." alt="" coords="374,142,449,169"/>
+<area shape="rect" id="node3" title=" " alt="" coords="5,113,213,139"/>
+<area shape="rect" id="node4" title=" " alt="" coords="7,5,211,47"/>
+<area shape="rect" id="node5" title=" " alt="" coords="75,217,143,243"/>
+<area shape="rect" id="node6" title=" " alt="" coords="345,314,477,341"/>
+</map>

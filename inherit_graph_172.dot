@@ -5,5 +5,5 @@ digraph "Graphical Class Hierarchy"
   edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
   node [fontname="Helvetica",fontsize="10",shape=record];
   rankdir="LR";
-  Node0 [label="get_water_mask",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$group__topography__mod.html#interfacetopography__mod_1_1get__water__mask",tooltip="Returns a land-water mask in a grid box."];
+  Node0 [label="get_variable_attribute",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$group__netcdf__io__mod.html#interfacenetcdf__io__mod_1_1get__variable__attribute",tooltip=" "];
 }

@@ -34,10 +34,10 @@
 <polygon fill="#9a32cd" stroke="#9a32cd" points="85.62,-311.93 83.38,-322.29 91.59,-315.59 85.62,-311.93"/>
 <text text-anchor="middle" x="471" y="-120.26" font-family="Helvetica,sans-Serif" font-size="10.00"> mode_is_append</text>
 <text text-anchor="middle" x="471" y="-109.26" font-family="Helvetica,sans-Serif" font-size="10.00">is_diskless</text>
-<text text-anchor="middle" x="471" y="-98.26" font-family="Helvetica,sans-Serif" font-size="10.00">is_restart</text>
-<text text-anchor="middle" x="471" y="-87.26" font-family="Helvetica,sans-Serif" font-size="10.00">is_readonly</text>
-<text text-anchor="middle" x="471" y="-76.26" font-family="Helvetica,sans-Serif" font-size="10.00">is_root</text>
-<text text-anchor="middle" x="471" y="-65.26" font-family="Helvetica,sans-Serif" font-size="10.00">allow_int8</text>
+<text text-anchor="middle" x="471" y="-98.26" font-family="Helvetica,sans-Serif" font-size="10.00">is_netcdf4</text>
+<text text-anchor="middle" x="471" y="-87.26" font-family="Helvetica,sans-Serif" font-size="10.00">is_restart</text>
+<text text-anchor="middle" x="471" y="-76.26" font-family="Helvetica,sans-Serif" font-size="10.00">is_readonly</text>
+<text text-anchor="middle" x="471" y="-65.26" font-family="Helvetica,sans-Serif" font-size="10.00">is_root</text>
 <text text-anchor="middle" x="471" y="-54.26" font-family="Helvetica,sans-Serif" font-size="10.00">is_open</text>
 </g>
 <!-- Node8 -->

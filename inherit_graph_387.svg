@@ -12,9 +12,9 @@
 <!-- Node0 -->
 <g id="node1" class="node">
 <title>Node0</title>
-<g id="a_node1"><a xlink:href="group__fms2__io__mod.html#interfacefms2__io__mod_1_1register__field" target="_top" xlink:title="Defines a new field within the given file &#160;Example usage:">
+<g id="a_node1"><a xlink:href="group__fms2__io__mod.html#interfacefms2__io__mod_1_1register__axis" target="_top" xlink:title="Add a dimension to a given file.">
 <polygon fill="white" stroke="black" points="0,-0.5 0,-19.5 80,-19.5 80,-0.5 0,-0.5"/>
-<text text-anchor="middle" x="40" y="-7.5" font-family="Helvetica,sans-Serif" font-size="10.00">register_field</text>
+<text text-anchor="middle" x="40" y="-7.5" font-family="Helvetica,sans-Serif" font-size="10.00">register_axis</text>
 </a>
 </g>
 </g>

@@ -5,5 +5,5 @@ digraph "Graphical Class Hierarchy"
   edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
   node [fontname="Helvetica",fontsize="10",shape=record];
   rankdir="LR";
-  Node0 [label="file_type",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$group__diag__data__mod.html#structdiag__data__mod_1_1file__type",tooltip="Type to define the diagnostic files that will be written as defined by the diagnostic table."];
+  Node0 [label="filetype",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$group__time__interp__external__mod.html#structtime__interp__external__mod_1_1filetype",tooltip=" "];
 }

@@ -8,7 +8,7 @@ digraph "fmsnetcdfunstructureddomainfile_t"
   Node1 [label="fmsnetcdfunstructureddomainfile_t",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled", fontcolor="black",tooltip="netcdf unstructured domain file type."];
   Node2 -> Node1 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
   Node2 [label="fmsnetcdffile_t",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$group__netcdf__io__mod.html#structnetcdf__io__mod_1_1fmsnetcdffile__t",tooltip="Netcdf file type."];
-  Node3 -> Node2 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" mode_is_append\nis_diskless\nis_restart\nis_readonly\nis_root\nallow_int8\nis_open" ,fontname="Helvetica"];
+  Node3 -> Node2 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" mode_is_append\nis_diskless\nis_netcdf4\nis_restart\nis_readonly\nis_root\nis_open" ,fontname="Helvetica"];
   Node3 [label="logical",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
   Node4 -> Node2 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" path\nnc_format" ,fontname="Helvetica"];
   Node4 [label="character(len=256)",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];

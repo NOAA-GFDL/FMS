@@ -5,5 +5,5 @@ digraph "Graphical Class Hierarchy"
   edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
   node [fontname="Helvetica",fontsize="10",shape=record];
   rankdir="LR";
-  Node0 [label="interp_weighted_scalar",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$group__interpolator__mod.html#interfaceinterpolator__mod_1_1interp__weighted__scalar",tooltip="Private interface for weighted scalar interpolation."];
+  Node0 [label="interp_1d",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$group__axis__utils__mod.html#interfaceaxis__utils__mod_1_1interp__1d",tooltip="Perform 1D interpolation between grids."];
 }

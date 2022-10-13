@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.17"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>FMS: fms2_io/include/register_variable_attribute.inc (1640fde1a51a73f97748f150eb84bf49e472aeca) Source File</title>
+<title>FMS: fms2_io/include/register_variable_attribute.inc (b21a5e88c87db6d3eb26518c6111867a3b2807c8) Source File</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -33,7 +33,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">FMS
-   &#160;<span id="projectnumber">2022.03.00</span>
+   &#160;<span id="projectnumber">2022.04.00</span>
    </div>
    <div id="projectbrief">Flexible Modeling System</div>
   </td>
@@ -154,7 +154,7 @@ $(document).ready(function(){initNavTree('register__variable__attribute_8inc_sou
 <div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;        err = nf90_put_att(fileobj%ncid, varid, trim(attribute_name), &amp;</div>
 <div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;                           attribute_value)</div>
 <div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;<span class="keywordflow">      type is</span> (<span class="keywordtype">integer</span>(kind=i8_kind))</div>
-<div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;        <span class="keywordflow">if</span> ( .not. fileobj%allow_int8) <span class="keyword">call </span>error(trim(fileobj%path)//&amp;</div>
+<div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;        <span class="keywordflow">if</span> ( .not. fileobj%is_netcdf4) <span class="keyword">call </span>error(trim(fileobj%path)//&amp;</div>
 <div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;                                               &amp; <span class="stringliteral">&quot;: 64 bit integers are only supported with &#39;netcdf4&#39; file format&quot;</span>//  &amp;</div>
 <div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;                                               &amp; <span class="stringliteral">&quot;. Set netcdf_default_format=&#39;netcdf4&#39; in the fms2_io namelist OR &quot;</span>//&amp;</div>
 <div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;                                               &amp; <span class="stringliteral">&quot;add nc_format=&#39;netcdf4&#39; to your open_file call&quot;</span>)</div>
@@ -258,7 +258,7 @@ $(document).ready(function(){initNavTree('register__variable__attribute_8inc_sou
 <div class="line"><a name="l00162"></a><span class="lineno">  162</span>&#160;        err = nf90_put_att(fileobj%ncid, varid, trim(attribute_name), &amp;</div>
 <div class="line"><a name="l00163"></a><span class="lineno">  163</span>&#160;                           attribute_value)</div>
 <div class="line"><a name="l00164"></a><span class="lineno">  164</span>&#160;<span class="keywordflow">      type is</span> (<span class="keywordtype">integer</span>(kind=i8_kind))</div>
-<div class="line"><a name="l00165"></a><span class="lineno">  165</span>&#160;        <span class="keywordflow">if</span> ( .not. fileobj%allow_int8) <span class="keyword">call </span>error(trim(fileobj%path)// &amp;</div>
+<div class="line"><a name="l00165"></a><span class="lineno">  165</span>&#160;        <span class="keywordflow">if</span> ( .not. fileobj%is_netcdf4) <span class="keyword">call </span>error(trim(fileobj%path)// &amp;</div>
 <div class="line"><a name="l00166"></a><span class="lineno">  166</span>&#160;                                               &amp; <span class="stringliteral">&quot;: 64 bit integers are only supported with &#39;netcdf4&#39; file format&quot;</span>//  &amp;</div>
 <div class="line"><a name="l00167"></a><span class="lineno">  167</span>&#160;                                               &amp; <span class="stringliteral">&quot;. Set netcdf_default_format=&#39;netcdf4&#39; in the fms2_io namelist OR &quot;</span>//&amp;</div>
 <div class="line"><a name="l00168"></a><span class="lineno">  168</span>&#160;                                               &amp; <span class="stringliteral">&quot;add nc_format=&#39;netcdf4&#39; to your open_file call&quot;</span>)</div>

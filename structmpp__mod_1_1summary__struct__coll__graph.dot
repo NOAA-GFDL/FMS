@@ -9,11 +9,9 @@ digraph "summary_struct"
   Node2 [label="clock_data_summary",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$group__mpp__mod.html#structmpp__mod_1_1clock__data__summary",tooltip="Summary of information from a clock run."];
   Node3 -> Node2 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" name" ,fontname="Helvetica"];
   Node3 [label="character(len=16)",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
-  Node4 -> Node2 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" total_cnts" ,fontname="Helvetica"];
+  Node4 -> Node2 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" msg_size_cnts\ntotal_cnts" ,fontname="Helvetica"];
   Node4 [label="integer(i8_kind)",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
   Node5 -> Node2 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" total_data\nmsg_size_sums\nmsg_time_sums\ntotal_time" ,fontname="Helvetica"];
   Node5 [label="real(r8_kind)",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
-  Node6 -> Node2 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" msg_size_cnts" ,fontname="Helvetica"];
-  Node6 [label="integer(i8_kind), dimension\l(max_bins)",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
   Node3 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" name" ,fontname="Helvetica"];
 }

@@ -5,5 +5,5 @@ digraph "Graphical Class Hierarchy"
   edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
   node [fontname="Helvetica",fontsize="10",shape=record];
   rankdir="LR";
-  Node0 [label="open_and_parse_file_wrap",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$group__yaml__parser__mod.html#interfaceyaml__parser__mod_1_1open__and__parse__file__wrap",tooltip="c functions binding"];
+  Node0 [label="nml_errors_type",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$group__fms__mod.html#structfms__mod_1_1nml__errors__type",tooltip="Namelist read error values."];
 }

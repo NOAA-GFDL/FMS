@@ -20,26 +20,13 @@ var group__field__manager__mod =
     [ "field_mgr_type", "group__field__manager__mod.html#structfield__manager__mod_1_1field__mgr__type", [
       [ "field_name", "group__field__manager__mod.html#a4c996824d8c8f9b1b8259fa5640426c2", null ],
       [ "field_type", "group__field__manager__mod.html#aaf4745c074d3c86c13911c7ff9d98164", null ],
-      [ "methods", "group__field__manager__mod.html#ae60d753972df8ac178c486ba3508fac5", null ],
+      [ "methods", "group__field__manager__mod.html#acaded284f5929e7d89ed176457384399", null ],
       [ "model", "group__field__manager__mod.html#aa28b7897d65131a0db76ed955ccbbf77", null ],
       [ "num_methods", "group__field__manager__mod.html#ae835abe322e0125c4fcb646c3061f9f5", null ]
-    ] ],
-    [ "field_names_type", "group__field__manager__mod.html#structfield__manager__mod_1_1field__names__type", [
-      [ "fld_name", "group__field__manager__mod.html#a20c50935f45d0e1509f6aed0888c8fad", null ],
-      [ "fld_type", "group__field__manager__mod.html#aedb6e7dc94c5657e25b26221e09f961e", null ],
-      [ "mod_name", "group__field__manager__mod.html#a67d6d81e027eacfa8098d7ac761a95f2", null ]
-    ] ],
-    [ "field_names_type_short", "group__field__manager__mod.html#structfield__manager__mod_1_1field__names__type__short", [
-      [ "fld_type", "group__field__manager__mod.html#aedb6e7dc94c5657e25b26221e09f961e", null ],
-      [ "mod_name", "group__field__manager__mod.html#a67d6d81e027eacfa8098d7ac761a95f2", null ]
     ] ],
     [ "find_field_index", "group__field__manager__mod.html#interfacefield__manager__mod_1_1find__field__index", [
       [ "find_field_index_new", "group__field__manager__mod.html#a75eb5a1cb80cb2a3e48e16a078b3e7ed", null ],
       [ "find_field_index_old", "group__field__manager__mod.html#adbbccd801f3e7dd00c637b094dc05db8", null ]
-    ] ],
-    [ "fm_array_list_def", "group__field__manager__mod.html#structfield__manager__mod_1_1fm__array__list__def", [
-      [ "length", "group__field__manager__mod.html#af940c51e198511031f839dec6e7f1b71", null ],
-      [ "names", "group__field__manager__mod.html#aa7c0892764b079b7e832778c9fa6c290", null ]
     ] ],
     [ "fm_get_value", "group__field__manager__mod.html#interfacefield__manager__mod_1_1fm__get__value", [
       [ "fm_get_value_integer", "group__field__manager__mod.html#ad72736b1a178c59d4f251dfd70ee0cfd", null ],
@@ -107,7 +94,6 @@ var group__field__manager__mod =
     [ "fm_get_value_real", "group__field__manager__mod.html#ga7c6bfc33b51469b8a7d85d9c54fa3faf", null ],
     [ "fm_get_value_string", "group__field__manager__mod.html#ga851b8979930e92dccde6be2fb22a0bb9", null ],
     [ "fm_init_loop", "group__field__manager__mod.html#gacc86a175c2060ba4695ec35b3ffb8a76", null ],
-    [ "fm_intersection", "group__field__manager__mod.html#gafa2a7ddda27e4e6d2525273510ecf8b1", null ],
     [ "fm_loop_over_list_new", "group__field__manager__mod.html#gad442674b099c93b6f4a7427037818d16", null ],
     [ "fm_loop_over_list_old", "group__field__manager__mod.html#gaf3e20037c88c52712f4abec8384dc562", null ],
     [ "fm_modify_name", "group__field__manager__mod.html#gabe6324d661c9d1a25b1f60694bf3ed5c", null ],
@@ -119,7 +105,6 @@ var group__field__manager__mod =
     [ "fm_query_method", "group__field__manager__mod.html#ga8c0e638a294dd0a396f9e3aa68d10e97", null ],
     [ "fm_reset_loop", "group__field__manager__mod.html#ga4bb3f75e7cb9d5da487e66e5ce7a337c", null ],
     [ "fm_return_root", "group__field__manager__mod.html#gaca2ccd351328f8a95675746e9d711de1", null ],
-    [ "fm_set_verbosity", "group__field__manager__mod.html#ga31ae07f44a3d7c24eb4738fe71538928", null ],
     [ "get_field", "group__field__manager__mod.html#ga87477eaf09839bb3f049b7413183948a", null ],
     [ "get_field_info", "group__field__manager__mod.html#gaae3e428c349350a8637a5d9370133bba", null ],
     [ "get_field_method", "group__field__manager__mod.html#gaad02871b54ab77978cf086aaaebcadc4", null ],
@@ -136,6 +121,7 @@ var group__field__manager__mod =
     [ "query_method", "group__field__manager__mod.html#ga16054251842969a40166ac5ad949a605", null ],
     [ "set_list_stuff", "group__field__manager__mod.html#ga1f8e83ec7b4f8564f4f8d4a4eda84527", null ],
     [ "strip_front_blanks", "group__field__manager__mod.html#ga24ea091bcf33c4a098f9bf35043c9641", null ],
+    [ "fields", "group__field__manager__mod.html#ga5ce664fa109ccb258ef09aef875394a5", null ],
     [ "fm_field_name_len", "group__field__manager__mod.html#ga95d681675a9f1f8b752ce1710d2f4185", null ],
     [ "fm_path_name_len", "group__field__manager__mod.html#gaca9d8f497b9e1a21909eb5fb56818614", null ],
     [ "fm_string_len", "group__field__manager__mod.html#ga19ea08bc7d0d6b5b75433b084191c617", null ],

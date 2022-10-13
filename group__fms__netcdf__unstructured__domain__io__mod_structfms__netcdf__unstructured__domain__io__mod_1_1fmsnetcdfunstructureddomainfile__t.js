@@ -1,11 +1,11 @@
 var group__fms__netcdf__unstructured__domain__io__mod_structfms__netcdf__unstructured__domain__io__mod_1_1fmsnetcdfunstructureddomainfile__t =
 [
-    [ "allow_int8", "group__fms__netcdf__unstructured__domain__io__mod.html#a869f05f3559ab9587f8abd84077ab725", null ],
     [ "bc_dimensions", "group__fms__netcdf__unstructured__domain__io__mod.html#a9d60e00cbf427c534425cb4d7818a2b5", null ],
     [ "compressed_dims", "group__fms__netcdf__unstructured__domain__io__mod.html#a1e3999a940850b3e8a4781e148a01117", null ],
     [ "domain", "group__fms__netcdf__unstructured__domain__io__mod.html#ace8345d99aa02df9bfbc7de0d0c33dd7", null ],
     [ "io_root", "group__fms__netcdf__unstructured__domain__io__mod.html#a32c807e75442ee5d98dcb64539e97633", null ],
     [ "is_diskless", "group__fms__netcdf__unstructured__domain__io__mod.html#adad38ea12622066b88b0d3b24ad7ce78", null ],
+    [ "is_netcdf4", "group__fms__netcdf__unstructured__domain__io__mod.html#acdb2123c860b09d69bc91ce2df1fbb3c", null ],
     [ "is_open", "group__fms__netcdf__unstructured__domain__io__mod.html#a114acb969f9ae81d60db72a76c6a2146", null ],
     [ "is_readonly", "group__fms__netcdf__unstructured__domain__io__mod.html#a9f4ae3b7b46fde1698c24bf9a02be974", null ],
     [ "is_restart", "group__fms__netcdf__unstructured__domain__io__mod.html#af6e3265f5526d2114d85edb4237a8331", null ],

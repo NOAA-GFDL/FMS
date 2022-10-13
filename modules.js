@@ -36,5 +36,6 @@ var modules =
     [ "Topography", "group__topography.html", "group__topography" ],
     [ "Tracer Manager", "group__tracer__manager.html", "group__tracer__manager" ],
     [ "Tridiagonal", "group__tridiagonal.html", "group__tridiagonal" ],
-    [ "constantsR4_mod", "group__constantsR4__mod.html", null ]
+    [ "constantsR4_mod", "group__constantsR4__mod.html", null ],
+    [ "fm_yaml_mod", "group__fm__yaml__mod.html", "group__fm__yaml__mod" ]
 ];

@@ -1,5 +1,6 @@
 var NAVTREEINDEX2 =
 {
+"group__coupler__types__mod.html#gaa2e7027dd9ed67bdc8993982d4027cde":[5,7,1,30],
 "group__coupler__types__mod.html#gaa5bab0539df1cb886e34f6cf538e03b4":[5,7,1,50],
 "group__coupler__types__mod.html#gaa7eb2b03605fc89713b011f9ab07f02b":[5,7,1,65],
 "group__coupler__types__mod.html#gaa95b52bd5af530cd485e17e3b3e456ca":[5,7,1,58],
@@ -248,6 +249,5 @@ var NAVTREEINDEX2 =
 "group__diag__data__mod.html#ab6198d96c4d83153f40b95d45c06e852":[5,10,1,8,13],
 "group__diag__data__mod.html#ab7a783aaa7fc635b8fd0a784b24392d0":[5,10,1,7,17],
 "group__diag__data__mod.html#abcdb7ccd6a5816777b79f64cbc449ebd":[5,10,1,6,19],
-"group__diag__data__mod.html#abcf33092ed5e63a052019e856a6a26bf":[5,10,1,2,21],
-"group__diag__data__mod.html#abcf33092ed5e63a052019e856a6a26bf":[5,10,1,3,7]
+"group__diag__data__mod.html#abcf33092ed5e63a052019e856a6a26bf":[5,10,1,2,21]
 };
