@@ -20,7 +20,6 @@
 !> @brief  This programs tests the modern diag_manager
 
 program test_modern_diag
-#ifdef use_yaml
 use   mpp_domains_mod,  only: domain2d, mpp_domains_set_stack_size, mpp_define_domains, mpp_define_io_domain, &
                               mpp_define_mosaic, domainug, mpp_get_compute_domains, mpp_define_unstruct_domain, &
                               mpp_get_compute_domain, mpp_get_data_domain, mpp_get_UG_domain_grid_index, &
@@ -31,7 +30,7 @@ use   diag_manager_mod, only: diag_manager_init, diag_manager_end, diag_axis_ini
 use   fms_mod,          only: fms_init, fms_end
 use   mpp_mod,          only: FATAL, mpp_error, mpp_npes, mpp_pe, mpp_root_pe, mpp_broadcast
 use   time_manager_mod, only: time_type, set_calendar_type, set_date, JULIAN, set_time
-use   fms_diag_object_mod, only: fms_diag_object, fmsDiagObject_type
+use fms_diag_object_mod,only: dump_diag_obj
 
 implicit none
 
@@ -151,9 +150,10 @@ call diag_field_add_attribute (id_var1, "1d_integer", (/10, 10/))
 call diag_field_add_attribute (id_var1, "real", 10.)
 call diag_field_add_attribute (id_var2, '1d_real', (/10./))
 
-call fms_diag_object%dump_field_object()
-call fms_diag_object%dump_file_object()
-call fms_diag_object%dump_axis_object()
+!! test dump routines
+!! prints fields from objects for debugging to log if name is provided, othwerise goes to stdout
+call dump_diag_obj('diag_obj_dump.log')
+call dump_diag_obj()
 
 call diag_manager_set_time_end(Time)
 call diag_send_complete(Time)
@@ -206,5 +206,4 @@ subroutine set_up_cube_sph_domain(Domain_cube_sph, nx, ny, io_layout)
                                 global_indices, layout, pe_start, pe_end, &
                                 io_layout, Domain_cube_sph)
 end subroutine set_up_cube_sph_domain
-#endif
 end program test_modern_diag

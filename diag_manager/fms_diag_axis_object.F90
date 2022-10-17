@@ -95,7 +95,6 @@ module fms_diag_axis_object_mod
        procedure :: get_subaxes_id
        procedure :: write_axis_metadata
        procedure :: write_axis_data
-       procedure :: dump_axis_object
   END TYPE fmsDiagAxis_type
 
   !> @brief Type to hold the subaxis
@@ -110,7 +109,6 @@ module fms_diag_axis_object_mod
     INTEGER                      , private  :: parent_axis_id !< Id of the parent_axis
     contains
       procedure :: fill_subaxis
-      procedure :: dump_axis_object_sub
   END TYPE fmsDiagSubAxis_type
 
   !> @brief Type to hold the diagnostic axis description.
@@ -150,7 +148,6 @@ module fms_diag_axis_object_mod
      PROCEDURE :: set_axis_id
      PROCEDURE :: get_compute_domain
      PROCEDURE :: get_indices
-     PROCEDURE :: dump_axis_object_full
 
      ! TO DO:
      ! Get/has/is subroutines as needed
@@ -258,26 +255,6 @@ module fms_diag_axis_object_mod
     j = this%num_attributes
     call this%attributes(j)%add(att_name, att_value)
   end subroutine add_axis_attribute
-
-  !> @brief Dump out the contents of a  full axis object
-  subroutine dump_axis_object_full(this)
-    class(fmsDiagFullAxis_type),INTENT(IN) :: this   !< diag_axis obj
-
-    integer :: out_unit !< Unit for the stdout
-    integer :: i        !< For do loops
-
-    out_unit = stdout()
-    if (mpp_pe() .eq. mpp_root_pe()) then
-      write(out_unit, *) "Dumping contents for ", this%axis_name, " ID:", this%axis_id
-      write(out_unit, *) "Type of domain ", this%type_of_domain
-      write(out_unit, *) "Size of axis_data ", size(this%axis_data)
-      do i = 1, this%nsubaxis
-        write(out_unit, *) "Contains subaxis with ID:", this%subaxis(i)
-      enddo
-
-      !TODO Finish the rest of the object
-    endif
-  end subroutine dump_axis_object_full
 
   !> @brief Write the axis meta data to an open fileobj
   subroutine write_axis_metadata(this, fileobj, parent_axis)
@@ -542,20 +519,6 @@ module fms_diag_axis_object_mod
   end subroutine get_compute_domain
 
   !!!!!!!!!!!!!!!!!! SUB AXIS PROCEDURES !!!!!!!!!!!!!!!!!
-  !>@brief Print out the information in the subaxis object
-  subroutine dump_axis_object_sub(this)
-    class(fmsDiagSubAxis_type), INTENT(IN) :: this             !< diag_sub_axis obj
-
-    integer :: out_unit !< unit of the stdout
-
-    out_unit = stdout()
-    if (mpp_pe() .eq. mpp_root_pe()) then
-      write(out_unit, *) "Dumping contents for ", this%subaxis_name, " ID:", this%axis_id
-      write(out_unit, *) "Starting index:", this%starting_index
-      write(out_unit, *) "Ending index:", this%ending_index
-      write(out_unit, *) "Parent_id:", this%parent_axis_id
-    endif
-  end subroutine dump_axis_object_sub
   !> @brief Fills in the information needed to define a subaxis
   subroutine fill_subaxis(this, starting_index, ending_index, axis_id, parent_id, parent_axis_name, subRegion)
     class(fmsDiagSubAxis_type), INTENT(INOUT) :: this             !< diag_sub_axis obj
@@ -952,18 +915,6 @@ module fms_diag_axis_object_mod
     end select
 
   end function
-
-  !< @brief Writes out the contents of an axis object to the stdout
-  subroutine dump_axis_object(this)
-    class(fmsDiagAxis_type), intent(in) :: this !< Axis Object
-
-    select type (this)
-    type is (fmsDiagFullAxis_type)
-      call this%dump_axis_object_full()
-    type is (fmsDiagSubAxis_type)
-      call this%dump_axis_object_sub()
-    end select
-  end subroutine dump_axis_object
 
 #endif
 end module fms_diag_axis_object_mod

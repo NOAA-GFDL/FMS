@@ -31,12 +31,12 @@ use diag_data_mod, only: DIAG_NULL, NO_DOMAIN, max_axes, SUB_REGIONAL, get_base_
                          TWO_D_DOMAIN, UG_DOMAIN, prepend_date, DIAG_DAYS, VERY_LARGE_FILE_FREQ
 use time_manager_mod, only: time_type, operator(>), operator(/=), operator(==), get_date
 use fms_diag_time_utils_mod, only: diag_time_inc, get_time_string
-use time_manager_mod, only: time_type, operator(/=), operator(==)
 use fms_diag_yaml_mod, only: diag_yaml, diagYamlObject_type, diagYamlFiles_type, subRegion_type
 use fms_diag_axis_object_mod, only: diagDomain_t, get_domain_and_domain_type, fmsDiagAxis_type, &
                                     fmsDiagAxisContainer_type, DIAGDOMAIN2D_T, DIAGDOMAINUG_T, &
                                     fmsDiagFullAxis_type, define_subaxis
 use mpp_mod, only: mpp_get_current_pelist, mpp_npes, mpp_root_pe, mpp_pe, mpp_error, FATAL, stdout
+use time_manager_mod, only: time_type, operator(/=), operator(==), date_to_string
 
 implicit none
 private
@@ -118,6 +118,7 @@ type :: fmsDiagFile_type
  procedure, public :: has_file_duration_units
  procedure, public :: has_file_varlist
  procedure, public :: has_file_global_meta
+ procedure, public :: dump_file_obj
 end type fmsDiagFile_type
 
 type, extends (fmsDiagFile_type) :: subRegionalFile_type
@@ -614,6 +615,30 @@ subroutine add_start_time(this, start_time)
     this%next_output = diag_time_inc(start_time, this%get_file_freq(), this%get_file_frequnit())
     this%next_next_output = diag_time_inc(this%next_output, this%get_file_freq(), this%get_file_frequnit())
   endif
+
+end subroutine
+
+!> writes out internal values for fmsDiagFile_type object
+subroutine dump_file_obj(this, unit_num)
+  class(fmsDiagFile_type), intent(in) :: this !< the file object
+  integer, intent(in) :: unit_num !< passed in from dump_diag_obj
+                                  !! will either be for new log file or stdout 
+  write( unit_num, *) 'file id:', this%id
+  write( unit_num, *) 'start time:', date_to_string(this%start_time)
+  write( unit_num, *) 'last_output', date_to_string(this%last_output)
+  write( unit_num, *) 'next_output', date_to_string(this%next_output)
+  write( unit_num, *)'next_next_output', date_to_string(this%next_next_output)
+  write( unit_num, *)'next_open', date_to_string(this%next_open)
+
+  if( allocated(this%fileobj)) write( unit_num, *)'fileobj path', this%fileobj%path
+
+  write( unit_num, *)'type_of_domain', this%type_of_domain
+  if( allocated(this%file_metadata_from_model)) write( unit_num, *) 'file_metadata_from_model', &
+                                                                    this%file_metadata_from_model
+  if( allocated(this%field_ids)) write( unit_num, *)'field_ids', this%field_ids
+  if( allocated(this%field_registered)) write( unit_num, *)'field_registered', this%field_registered
+  if( allocated(this%num_registered_fields)) write( unit_num, *)'num_registered_fields', this%num_registered_fields
+  if( allocated(this%axis_ids)) write( unit_num, *)'axis_ids', this%axis_ids(1:this%number_of_axis)
 
 end subroutine
 

@@ -72,7 +72,7 @@ test_expect_success "Data array is too large in x and y direction (test $my_test
   mpirun -n 1 ../test_diag_manager
 '
 
-my_test_count=2
+my_test_count=`expr $my_test_count + 1`
 cat <<_EOF > diag_table
 test_diag_manager_02
 1 3 1 0 0 0
@@ -88,7 +88,7 @@ test_expect_success "Data array is too large in x direction (test $my_test_count
   mpirun -n 1 ../test_diag_manager
 '
 
-my_test_count=3
+my_test_count=`expr $my_test_count + 1`
 cat <<_EOF > diag_table
 test_diag_manager_03
 1 3 1 0 0 0
@@ -104,7 +104,7 @@ test_expect_success "Data array is too large in y direction (test $my_test_count
   mpirun -n 1 ../test_diag_manager
 '
 
-my_test_count=4
+my_test_count=`expr $my_test_count + 1`
 cat <<_EOF > diag_table
 test_diag_manager_04
 1 3 1 0 0 0
@@ -122,7 +122,7 @@ test_expect_success "Data array is too small in x and y direction, checks for 2 
   mpirun -n 1 ../test_diag_manager
 '
 
-my_test_count=5
+my_test_count=`expr $my_test_count + 1`
 cat <<_EOF > diag_table
 test_diag_manager_05
 1 3 1 0 0 0
@@ -140,7 +140,7 @@ test_expect_success "Data array is too small in x directions, checks for 2 time 
   mpirun -n 1 ../test_diag_manager
 '
 
-my_test_count=6
+my_test_count=`expr $my_test_count + 1`
 cat <<_EOF > diag_table
 test_diag_manager_06
 1 3 1 0 0 0
@@ -158,7 +158,7 @@ test_expect_success "Data array is too small in y direction, checks for 2 time s
   mpirun -n 1 ../test_diag_manager
 '
 
-my_test_count=7
+my_test_count=`expr $my_test_count + 1`
 cat <<_EOF > diag_table
 test_diag_manager_07
 1 3 1 0 0 0
@@ -174,7 +174,7 @@ test_expect_success "Data array is too large in x and y, with halos, 2 time step
   mpirun -n 1 ../test_diag_manager
 '
 
-my_test_count=8
+my_test_count=`expr $my_test_count + 1`
 cat <<_EOF > diag_table
 test_diag_manager_08
 1 3 1 0 0 0
@@ -192,7 +192,7 @@ test_expect_success "Data array is too small in x and y, with halos, 2 time step
   mpirun -n 1 ../test_diag_manager
 '
 
-my_test_count=9
+my_test_count=`expr $my_test_count + 1`
 cat <<_EOF > diag_table
 test_diag_manager_09
 1 3 1 0 0 0
@@ -208,7 +208,7 @@ test_expect_success "Data array is too small, 1D, static global data (test $my_t
   mpirun -n 1 ../test_diag_manager
 '
 
-my_test_count=10
+my_test_count=`expr $my_test_count + 1`
 cat <<_EOF > diag_table
 test_diag_manager_10
 1 3 1 0 0 0
@@ -224,7 +224,7 @@ test_expect_success "Data array is too large, 1D, static global data (test $my_t
   mpirun -n 1 ../test_diag_manager
 '
 
-my_test_count=11
+my_test_count=`expr $my_test_count + 1`
 cat <<_EOF > diag_table
 test_diag_manager_11
 1 3 1 0 0 0
@@ -240,7 +240,7 @@ test_expect_success "Missing je_in as an input (test $my_test_count)" '
   mpirun -n 1 ../test_diag_manager
 '
 
-my_test_count=12
+my_test_count=`expr $my_test_count + 1`
 cat <<_EOF > diag_table
 test_diag_manager_12
 1 3 1 0 0 0
@@ -259,7 +259,7 @@ test_expect_success "Catch duplicate field in diag_table (test $my_test_count)" 
   mpirun -n 1 ../test_diag_manager
 '
 
-my_test_count=13
+my_test_count=`expr $my_test_count + 1`
 cat <<_EOF > diag_table
 test_diag_manager_13
 1 3 1 0 0 0
@@ -279,7 +279,7 @@ test_expect_success "Output interval greater than runlength (test $my_test_count
   mpirun -n 1 ../test_diag_manager
 '
 
-my_test_count=14
+my_test_count=`expr $my_test_count + 1`
 cat <<_EOF > diag_table
 test_diag_manager_14
 1990 1 29 0 0 0
@@ -296,7 +296,7 @@ test_expect_success "Catch invalid date in register_diag_field call (test $my_te
   mpirun -n 1 ../test_diag_manager
 '
 
-my_test_count=15
+my_test_count=`expr $my_test_count + 1`
 cat <<_EOF > diag_table
 test_diag_manager_15
 1 3 1 0 0 0
@@ -313,7 +313,7 @@ test_expect_success "OpenMP thread test (test $my_test_count)" '
   mpirun -n 1 ../test_diag_manager
 '
 
-my_test_count=16
+my_test_count=`expr $my_test_count + 1`
 cat <<_EOF > diag_table
 test_diag_manager_16
 1 3 1 0 0 0
@@ -330,7 +330,7 @@ test_expect_success "Filename appendix added (test $my_test_count)" '
   mpirun -n 1 ../test_diag_manager
 '
 
-my_test_count=17
+my_test_count=`expr $my_test_count + 1`
 cat <<_EOF > diag_table
 test_diag_manager_17
 1 3 1 0 0 0
@@ -347,7 +347,7 @@ test_expect_success "Root-mean-square (test $my_test_count)" '
   mpirun -n 1 ../test_diag_manager
 '
 
-my_test_count=18
+my_test_count=`expr $my_test_count + 1`
 cat <<_EOF > diag_table
 test_diag_manager_18
 1 3 1 0 0 0
@@ -367,7 +367,7 @@ test_expect_success "Added attributes, and cell_measures (test $my_test_count)" 
   mpirun -n 1 ../test_diag_manager
 '
 
-my_test_count=19
+my_test_count=`expr $my_test_count + 1`
 cat <<_EOF > diag_table
 test_diag_manager_19
 1 3 1 0 0 0
@@ -386,7 +386,7 @@ test_expect_success "Area and Volume same field (test $my_test_count)" '
   mpirun -n 1 ../test_diag_manager
 '
 
-my_test_count=20
+my_test_count=`expr $my_test_count + 1`
 cat <<_EOF > diag_table
 test_diag_manager_20
 1 3 1 0 0 0
@@ -405,7 +405,7 @@ test_expect_success "Get diag_field_id, ID found and not found (test $my_test_co
   mpirun -n 1 ../test_diag_manager
 '
 
-my_test_count=21
+my_test_count=`expr $my_test_count + 1`
 cat <<_EOF > diag_table
 test_diag_manager_21
 1 3 1 0 0 0
@@ -422,7 +422,7 @@ test_expect_success "Add axis attributes (test $my_test_count)" '
   mpirun -n 1 ../test_diag_manager
 '
 
-my_test_count=22
+my_test_count=`expr $my_test_count + 1`
 cat <<_EOF > diag_table
 test_diag_manager_22
 1 3 1 0 0 0
@@ -439,7 +439,7 @@ test_expect_success "Get 'nv' axis id (test $my_test_count)" '
   mpirun -n 1 ../test_diag_manager
 '
 
-my_test_count=23
+my_test_count=`expr $my_test_count + 1`
 cat <<_EOF > diag_table
 test_diag_manager_23
 1990 1 1 0 0 0
@@ -458,7 +458,7 @@ setup_test
 test_expect_success "Unstructured grid (test $my_test_count)" '
   mpirun -n 1 ../test_diag_manager
 '
-my_test_count=24
+my_test_count=`expr $my_test_count + 1`
 # test_diag_manager_time
 cat <<_EOF > diag_table
 test_diag_manager
@@ -494,12 +494,22 @@ test_diag_manager
  "test_diag_manager_mod", "ice", "ice", "test_diurnal",  "all", "diurnal3", "none", 2
 _EOF
 
-my_test_count=25
+my_test_count=`expr $my_test_count + 1`
 test_expect_success "diurnal test (test $my_test_count)" '
   mpirun -n 1 ../test_diag_manager_time
 '
 
-cat <<_EOF > diag_table.yaml
+## uses some updated code but doesn't need flag
+my_test_count=`expr $my_test_count + 1`
+test_expect_success "test_diag_dlinked_list (test $my_test_count)" '
+  mpirun -n 1 ../test_diag_dlinked_list
+'
+
+## run tests that are ifdef'd out only if compiled with yaml
+## otherwise just run the updated end to end to check for error 
+if [ -z "${skipflag}" ]; then
+
+  cat <<_EOF > diag_table.yaml
 title: test_diag_manager
 base_date: 2 1 1 0 0 0
 diag_files:
@@ -575,17 +585,17 @@ diag_files:
   unlimdim: records
   write_file: false
 _EOF
-cp diag_table.yaml diag_table.yaml_base
+  cp diag_table.yaml diag_table.yaml_base
 
-my_test_count=26
-test_expect_success "diag_yaml test (test $my_test_count)" '
-  mpirun -n 1 ../test_diag_yaml
-'
+  my_test_count=`expr $my_test_count + 1`
+  test_expect_success "diag_yaml test (test $my_test_count)" '
+    mpirun -n 1 ../test_diag_yaml
+  '
+  . $top_srcdir/test_fms/diag_manager/check_crashes.sh
+  my_test_count = `expr $my_test_count + 14` 
 
-. $top_srcdir/test_fms/diag_manager/check_crashes.sh
-
-printf "&diag_manager_nml \n use_modern_diag = .true. \n/" | cat > input.nml
-cat <<_EOF > diag_table.yaml
+  printf "&diag_manager_nml \n use_modern_diag = .true. \n/" | cat > input.nml
+  cat <<_EOF > diag_table.yaml
 title: test_diag_manager
 base_date: 2 1 1 0 0 0
 diag_files:
@@ -630,18 +640,14 @@ diag_files:
     kind: r4
 _EOF
 
-my_test_count=41
-test_expect_success "Test the diag_ocean feature in diag_manager_init (test $my_test_count)" '
-  mpirun -n 2 ../test_diag_ocean
-'
+  my_test_count=`expr $my_test_count + 1`
+  test_expect_success "Test the diag_ocean feature in diag_manager_init (test $my_test_count)" '
+    mpirun -n 2 ../test_diag_ocean
+  '
 
-my_test_count=42
-test_expect_success "test_diag_dlinked_list (test $my_test_count)" '
-  mpirun -n 1 ../test_diag_dlinked_list
-'
 
-printf "&diag_manager_nml \n use_modern_diag = .true. \n/" | cat > input.nml
-cat <<_EOF > diag_table.yaml
+  printf "&diag_manager_nml \n use_modern_diag = .true. \n/" | cat > input.nml
+  cat <<_EOF > diag_table.yaml
 title: test_diag_manager
 base_date: 2 1 1 0 0 0
 
@@ -738,13 +744,19 @@ diag_files:
     kind: r4
 _EOF
 
-my_test_count=43
-test_expect_success "Test the modern diag manager end to end (test $my_test_count)" '
-  mpirun -n 6 ../test_modern_diag
-'
-my_test_count=44
-test_expect_success "buffer functionality (test $my_test_count)" '
-  mpirun -n 1 ../test_diag_buffer
-'
+  my_test_count=`expr $my_test_count + 1`
+  test_expect_success "buffer functionality (test $my_test_count)" '
+    mpirun -n 1 ../test_diag_buffer
+  '
 
+  my_test_count=`expr $my_test_count + 1`
+  test_expect_success "Test the modern diag manager end to end (test $my_test_count)" '
+    mpirun -n 6 ../test_modern_diag
+  '
+else
+  my_test_count=`expr $my_test_count + 1`
+  test_expect_failure "test modern diag manager failure when compiled without -Duse-yaml flag (test $my_test_count)" '
+    mpirun -n 6 ../test_modern_diag
+  '
+fi
 test_done
