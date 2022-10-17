@@ -17,4 +17,3 @@ jobs:
         delete-branch: true          # delete afer merge 
         title: Append dev to version number post-release
         body: automated change, adds '-dev' to the version number upon releases
-        reviewers: rem1776, thomas-robinson, bensonr
