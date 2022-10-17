@@ -829,13 +829,19 @@ module fms_diag_axis_object_mod
 
           !< Get the starting and ending indices of the subregion relative to the global grid
           if (parent_axis%cart_name .eq. "X") then
-            lon_indices(1) = nearest_index(lon(1), parent_axis%axis_data)
-            lon_indices(2) = nearest_index(lon(2), parent_axis%axis_data) + 1
+            select type(adata=>parent_axis%axis_data)
+            type is (real)
+              lon_indices(1) = nearest_index(lon(1), adata)
+              lon_indices(2) = nearest_index(lon(2), adata) + 1
+            end select
             call parent_axis%get_indices(compute_idx, lon_indices, starting_index, ending_index, &
               need_to_define_axis)
           else if (parent_axis%cart_name .eq. "Y") then
-            lat_indices(1) = nearest_index(lat(1), parent_axis%axis_data)
-            lat_indices(2) = nearest_index(lat(2), parent_axis%axis_data) + 1
+            select type(adata=>parent_axis%axis_data)
+            type is (real)
+              lat_indices(1) = nearest_index(lat(1), adata)
+              lat_indices(2) = nearest_index(lat(2), adata) + 1
+            end select
             call parent_axis%get_indices(compute_idx, lat_indices, starting_index, ending_index, &
               need_to_define_axis)
           endif

@@ -135,7 +135,6 @@ type fmsDiagFileContainer_type
   procedure :: open_diag_file
   procedure :: write_metadata
   procedure :: write_axis_data
-  procedure :: dump_file_object
 end type fmsDiagFileContainer_type
 
 !type(fmsDiagFile_type), dimension (:), allocatable, target :: FMS_diag_file !< The array of diag files
@@ -842,41 +841,6 @@ subroutine write_axis_data(this, diag_axis)
   !TODO: closing the file here for now, just to see if it works
   call close_file(fileobj)
 end subroutine write_axis_data
-
-!< @brief Dump the contents of the file object to the stdout
-subroutine dump_file_object(this)
-  class(fmsDiagFileContainer_type), intent(in), target :: this !< The diag_file container
-
-  integer                              :: out_unit       !< The unit of the stdout
-  class(fmsDiagFile_type), pointer     :: diag_file      !< Diag_file object to open
-  integer                              :: i              !< For do loops
-
-  diag_file => this%FMS_diag_file
-  out_unit = stdout()
-
-  if (mpp_pe() .eq. mpp_root_pe()) then
-    write(out_unit, *) "-> Dumping contents for ", diag_file%get_file_fname()
-    write(out_unit, *) "Type_of_domain:", diag_file%type_of_domain
-
-    select type (fileobj => diag_file%fileobj)
-    type is (FmsNetcdfFile_t)
-      write(out_unit, *) "This is using the normal fms2io fileobj"
-    type is (FmsNetcdfDomainFile_t)
-      write(out_unit, *) "This is using the domain decomposed fms2io fileobj"
-    type is (FmsNetcdfUnstructuredDomainFile_t)
-      write(out_unit, *) "This is using the unstructured domain fms2io fileobj"
-    end select
-
-    do i = 1, diag_file%number_of_axis
-      write(out_unit, *) "axis_id:", diag_file%axis_ids(i)
-    enddo
-
-    do i = 1, size(diag_file%field_ids)
-      write(out_unit, *) "variable id:", diag_file%field_ids(i), " is field registered:", &
-                          diag_file%field_registered(i)
-    enddo
-  endif
-end subroutine dump_file_object
 
 #endif
 end module fms_diag_file_object_mod
