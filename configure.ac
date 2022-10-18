@@ -25,7 +25,7 @@ AC_PREREQ([2.69])
 
 # Initialize with name, version, and support email address.
 AC_INIT([GFDL FMS Library],
-  [2022.03.00],
+  [2022.04.00-dev],
   [gfdl.climate.model.info@noaa.gov],
   [FMS],
   [https://www.github.com/NOAA-GFDL/FMS])
@@ -178,8 +178,7 @@ if test $with_mpi = yes; then
   # Require MPI
   # We expect users to set CC and FC to MPI compiler wrappers, or that the correct
   # CPPFLAGS, {C,FC}FLAGS, LDFLAGS and LIBS options are given.
-  AC_CHECK_HEADERS([mpi.h], [], [AC_MSG_ERROR([Can't find the MPI C header file.  Set CC/CPPFLAGS/CFLAGS])])
-  AC_CHECK_FUNC([MPI_Init], [], [AC_MSG_ERROR([Can't find the MPI C library.  Set CC/LDFLAGS/LIBS])])
+  GX_MPI()
 fi
 
 # Require yaml
@@ -225,9 +224,16 @@ AC_LANG_POP(C)
 AC_LANG_PUSH(Fortran)
 if test $with_mpi = yes; then
   # Require MPI
-  GX_FC_CHECK_MOD([mpi], [], [], [AC_MSG_ERROR([Can't find the MPI Fortran module.  Set FC/CPPFLAGS/FCFLAGS])])
-  AC_CHECK_FUNC([MPI_init], [], [AC_MSG_ERROR([Can't find the MPI Fortran library.  Set FC/LDFLAGS/LIBS])])
+  GX_MPI()
+  GX_MPI_FC_LEGACY_INTERFACE()
+  # Determine if a flag is required to allow external procedure argument mismatch when
+  # an explicit interface does not exist
+  if test ! -z "$HAVE_MPI_FC_LEGACY"; then
+    GX_FC_ALLOW_ARG_MISMATCH([dnl
+    FCFLAGS="$FCFLAGS $FC_ALLOW_ARG_MISMATCH_FLAG"])
+  fi
 fi
+
 # check intel compiler and coverage tools are avaiable if code coverage is enabled
 if test "$enable_code_coverage" = yes; then
   if test ! -z "`$FC --version | grep ifort`"; then
@@ -376,21 +382,11 @@ if test -n "$fc_version_info"; then
 fi
 
 # Check if gcc is 11.1 for class(*) select type bug
-AC_MSG_CHECKING([if gcc 11.1.0 is loaded])
+AC_MSG_CHECKING([if using gcc 11.1.0])
 if [ test -n "`$FC --version | grep GNU | grep 11\.1\..`" ]; then
   AC_MSG_RESULT([yes])
   AC_MSG_ERROR([Compilation with gcc and gfortran 11.1.0 is unsupported \
 by this version of FMS due to a bug in the compiler. Please use a different version of gcc/gfortran.])
-else
-  AC_MSG_RESULT([no])
-fi
-# Check if gcc >=10 is used with mpich
-# adds compiler arg needed for mpich compilation if found
-AC_MSG_CHECKING([if gcc 10 or greater is loaded with mpich])
-if [ test "`$FC --version | grep GNU | grep -E ' 1[0-9]\.[0-9]*\.[0-9]*$'`" -a "`which $FC | grep -i mpich`" ]; then
-  AC_MSG_RESULT([yes])
-  AC_MSG_WARN([Adding -fallow-argument-mismatch to FCFLAGS to allow compilation with gcc >=10 and mpich])
-  FCFLAGS="$FCFLAGS -fallow-argument-mismatch"
 else
   AC_MSG_RESULT([no])
 fi
