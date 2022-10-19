@@ -25,7 +25,6 @@
 #include <assert.h>
 #include <ctype.h>
  
- // these need to be hardcoded
  // Should always match values of string_len_parameter and lvl2_key_parameter in fms_yaml_output_mod
 #define LVL2KEY_NUM 8 
 #define KEY_STR_LEN 255
@@ -341,12 +340,6 @@ void write_yaml_from_struct_3 (char *yamlname, int asize, struct fmsyamloutkeys 
   int s3count = 0; /* A counter to keep track of the number of level 3 arrays output */
   FILE * yamlout; /* The file for the YAML output. */
 
-  // dbg
-  for(int i=0; i<LVL2KEY_NUM; i++){
-    printf("i:%d", i);
-    printf("offset:%d", topkeys->level2key_offset);
-    printf(topkeys->level2key);
-  }
   /* open the yaml output file. Only 1 core should do this */
   yamlout = fopen(yamlname,"w");
   /* Start the emmitter */
@@ -363,7 +356,7 @@ void write_yaml_from_struct_3 (char *yamlname, int asize, struct fmsyamloutkeys 
  	error(yamlname, &event, &emitter, yamlout);
 	return;
   }
-/* start the event (top level) */
+  /* start the event (top level) */
   yaml_mapping_start_event_initialize(&event, NULL, (yaml_char_t *)YAML_MAP_TAG,
                                         1, YAML_ANY_MAPPING_STYLE);
   if (!yaml_emitter_emit(&emitter, &event)){
@@ -371,11 +364,11 @@ void write_yaml_from_struct_3 (char *yamlname, int asize, struct fmsyamloutkeys 
 	return;
   }
 
-/* write the top level */
+  /* write the top level */
   write_keys_vals_yaml (&emitter, &event , 0, topkeys, topvals);
-    /* Check for the next level key */
+  /* Check for the next level key */
   if (topkeys->level2key[0] !='\0') {
-  /* Start the secodn level event */
+    /* Start the secodn level event */
     yaml_scalar_event_initialize(&event, NULL, (yaml_char_t *)YAML_STR_TAG,
       				 (yaml_char_t *)topkeys->level2key, strlen(topkeys->level2key), 1, 0,
       				 YAML_PLAIN_SCALAR_STYLE);
@@ -447,14 +440,14 @@ void write_yaml_from_struct_3 (char *yamlname, int asize, struct fmsyamloutkeys 
  	    error(yamlname, &event, &emitter, yamlout);
 	    return;
     }
-  }/* for s2 loop */
+    }/* for s2 loop */
     yaml_sequence_end_event_initialize(&event);
     if (!yaml_emitter_emit(&emitter, &event)){
  	error(yamlname, &event, &emitter, yamlout);
 	return;
     }
 
-  }/* if (topkeys->level2key[0] !='\0') */
+}/* if (topkeys->level2key[0] !='\0') */
 
   /* end the emitter */
   yaml_mapping_end_event_initialize(&event);
@@ -478,40 +471,41 @@ void write_yaml_from_struct_3 (char *yamlname, int asize, struct fmsyamloutkeys 
   return;
 }
 /// @brief Adds a key to the level2key character array in the struct.
-/// Uses an offset to store multiple keys, set by <param name>
+/// Uses an offset to store multiple keys, size is set by LVL2KEY_NUM (avoids c to fortran 2d array issues)
 /// @param keys key struct to add level 2 key to 
 /// @param key_name name of level 2 key to add
-void add_level2key(char* key_name, struct fmsyamloutkeys keys){
+void add_level2key(char* key_name, struct fmsyamloutkeys* keys){
 
   // local fixed length copy to try to mitigate any fortran to c string weirdness
   char kname_loc[255];
   strcpy(kname_loc, key_name);
-
   // error checking
   if ( strlen(kname_loc) > 255){
     fprintf(stderr, "WARNING: YAML_OUTPUT: invalid level two key passed to add_level2key. Max string size is %d, passed in string: %s",  KEY_STR_LEN, key_name); 
   }
-  if ( !isalnum(keys.level2key[0])  || (keys.level2key_offset < 0 || keys.level2key_offset > 7)){
-    keys.level2key_offset = 0; 
+  if( keys->level2key_offset  >= LVL2KEY_NUM ){
+    fprintf(stderr, "WARNING: YAML_OUTPUT: max amount of level 2 keys (%d) has been exceeded", LVL2KEY_NUM);
   }
-
+  // check if string is set to initialize offset count
+  if ( keys->level2key[0] == '\0'){
+    keys->level2key_offset = 0; 
+  }
   // calculate offset and copy into the level2key array
-  int offset = keys.level2key_offset * 255;
-  char* curr_key = NULL;
-  curr_key = keys.level2key + offset;
-  printf("offset: %d \n", offset);
+  int offset = keys->level2key_offset * 255;
+  char* curr_key;
+  curr_key = keys->level2key + offset;
   strcpy(curr_key, kname_loc);
 
-  keys.level2key_offset++;
+  keys->level2key_offset++;
 
   if (DEBUG) {
     printf("offset: %d \n", offset);
     printf("kname_loc:");
     printf(kname_loc);
     printf("\n*l2key:");
-    printf(keys.level2key);
+    printf(keys->level2key);
     printf("\nl2key+offset:");
-    printf(keys.level2key + offset);
+    printf(keys->level2key + offset);
     printf("\n");
   }
 }
