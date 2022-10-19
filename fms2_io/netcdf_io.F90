@@ -768,17 +768,20 @@ subroutine append_compressed_dimension(fileobj, dim_name, npes_corner, &
   fileobj%compressed_dims(n)%nelems = sum(fileobj%compressed_dims(n)%npes_nelems)
 end subroutine append_compressed_dimension
 
+!> @brief Add a "compressed" unlimited dimension to a netcdf file.
+!! @note Here compressed means that every rank has a different dimension_length
+!compressed. This was written specifically for the icebergs restarts.
 subroutine register_unlimited_compressed_axis(fileobj, dimension_name, dimension_length)
   class(FmsNetcdfFile_t), intent(inout) :: fileobj !< File object.
   character(len=*), intent(in) :: dimension_name !< Dimension name.
   integer, intent(in) :: dimension_length !< Dimension length for the current rank
 
-  integer :: dim_len
-  integer, dimension(:), allocatable :: npes_start
-  integer, dimension(:), allocatable :: npes_count
-  integer :: i
-  integer :: err
-  integer :: dimid
+  integer                            :: dim_len    !< Dimension length
+  integer, dimension(:), allocatable :: npes_start !< The starting index of the dimension for each of the PEs
+  integer, dimension(:), allocatable :: npes_count !< The size of the dimension for each of the PEs
+  integer                            :: i          !< For do loops
+  integer                            :: err        !< Netcdf error
+  integer                            :: dimid      !< Netcdf id for the dimension
 
   dim_len = dimension_length
   !Gather all local dimension lengths on the I/O root pe.
@@ -808,7 +811,7 @@ subroutine register_unlimited_compressed_axis(fileobj, dimension_name, dimension
     call check_netcdf_code(err, "Netcdf_add_dimension: file:"//trim(fileobj%path)//" dimension name:"// &
                          & trim(dimension_name))
   endif
-end subroutine
+end subroutine register_unlimited_compressed_axis
 
 !> @brief Add a dimension to a file.
 subroutine netcdf_add_dimension(fileobj, dimension_name, dimension_length, &
