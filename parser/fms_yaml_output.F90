@@ -59,9 +59,19 @@ module fms_yaml_output_mod
 use iso_c_binding
 implicit none
 
+private 
+
+public :: fmsYamlOutKeys_type, fmsYamlOutValues_type
+public :: write_yaml_from_struct_3
+public :: add_level2key
+public :: string_len_parameter
+
 integer, parameter :: string_len_parameter = 255 !< Number of characters in the keys and strings.
                                                  !! Must match whats in yaml_output_functions.c 
+integer, parameter :: lvl2_key_parameter = 8!< max number of strings to be stored in lvl2keys
 !> Keys for the output yaml on a given level corresponding to the struct in yaml_output_functions.c
+!! Should be set using the fms_f2c_string routine to get properly formatted c style strings
+!! level2keys should be set with  add_level2key()
 type, bind(c) :: fmsYamlOutKeys_type
         character (c_char) :: key1 (string_len_parameter)
         character (c_char) :: key2 (string_len_parameter)
@@ -78,7 +88,8 @@ type, bind(c) :: fmsYamlOutKeys_type
         character (c_char) :: key13 (string_len_parameter)
         character (c_char) :: key14 (string_len_parameter)
         character (c_char) :: key15 (string_len_parameter)
-        character (c_char) :: level2key (string_len_parameter)
+        character (c_char) :: level2key (string_len_parameter * lvl2_key_parameter)
+        integer(c_int)     :: level2key_offset
 end type fmsYamlOutKeys_type
 !> Values for the output yaml on a given level corresponding to the struct in yaml_output_functions.c
 type, bind(c) :: fmsYamlOutValues_type
@@ -119,6 +130,13 @@ type (fmsYamlOutKeys_type) :: key3(a3size) !< Third level keys
 type (fmsYamlOutValues_type) :: val3(a3size) !< Values corresponding to keys2
 
 end subroutine write_yaml_from_struct_3
+
+subroutine add_level2key(key_name, keytype) bind(C)
+  use iso_c_binding
+  import fmsYamlOutKeys_type
+  character(c_char), intent(in) :: key_name
+  type(fmsYamlOutKeys_type), intent(inout) :: keytype
+end subroutine
 
 end interface
 

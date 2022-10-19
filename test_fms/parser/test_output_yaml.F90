@@ -56,7 +56,7 @@
 !! Great, now I have to create this long yaml for testing, lol.
 program test_output_yaml
 #ifdef use_yaml
-
+use iso_c_binding
 use fms_yaml_output_mod
 use fms_string_utils_mod
 use mpp_mod
@@ -65,7 +65,7 @@ implicit none
 
 integer, parameter :: yaml_len = 500
 character (len=9) :: filename = "test.yaml"
-character(c_char) :: c_filename(10)
+character(c_char) :: c_filename(10), c_tmp(255)
 character(len=21) :: ref_yaml_name="reference_output.yaml"
 type (fmsYamlOutKeys_type), allocatable :: k1 (:)
 type (fmsYamlOutValues_type), allocatable :: v1 (:)
@@ -130,11 +130,17 @@ call fms_f2c_string (k1(1)%key1,"name")
 call fms_f2c_string (v1(1)%val1,"time to eat")
 call fms_f2c_string (k1(1)%key2,"location")
 call fms_f2c_string (v1(1)%val2,"Bridgewater, NJ")
-call fms_f2c_string (k1(1)%level2key,"order")
+!call fms_f2c_string (k1(1)%level2key,"order")
+!call fms_f2c_string(c_tmp, "order")
+call add_level2key( "order", k1(1))
+call add_level2key( "2ndorder", k1(1))
 
 call fms_f2c_string (k2(1)%key1,"Drink")
 call fms_f2c_string (v2(1)%val1, "Iced tea")
-call fms_f2c_string (k2(1)%level2key,"Food")
+!call fms_f2c_string (k2(1)%level2key,"Food")
+!call fms_f2c_string( c_tmp, "Food")
+!call add_level2key(c_tmp, k2(1))
+call add_level2key("Food", k2(1))
 call fms_f2c_string (k3(1)%key1,"Main")
 call fms_f2c_string (v3(1)%val1,"pancake")
 call fms_f2c_string (k3(1)%key7,"side")
@@ -158,7 +164,10 @@ call fms_f2c_string (k2(2)%key5,"spoon")
 call fms_f2c_string (v2(2)%val5, "silver")
 call fms_f2c_string (k2(2)%key12,"knife")
 call fms_f2c_string (v2(2)%val12, "none")
-call fms_f2c_string (k2(2)%level2key,"Food")
+!call fms_f2c_string (k2(2)%level2key,"Food")
+!call fms_f2c_string(c_tmp, "Food")
+!call add_level2key(c_tmp, k2(2))
+call add_level2key("Food", k2(2))
 call fms_f2c_string (k3(3)%key1,"Main")
 call fms_f2c_string (v3(3)%val1,"cereal")
 call fms_f2c_string (k3(3)%key7,"sauce")
@@ -170,7 +179,9 @@ call fms_f2c_string (k2(3)%key2,"fork")
 call fms_f2c_string (v2(3)%val2, "silver")
 call fms_f2c_string (k2(3)%key13,"knife")
 call fms_f2c_string (v2(3)%val13, "steak")
-call fms_f2c_string (k2(3)%level2key,"Meal")
+!call fms_f2c_string (k2(3)%level2key,"Meal")
+!call fms_f2c_string( c_tmp, 'Meal')
+!call add_level2key(c_tmp, k2(3))
 call fms_f2c_string (k3(4)%key1,"app")
 call fms_f2c_string (v3(4)%val1,"poppers")
 call fms_f2c_string (k3(4)%key7,"sauce")
@@ -235,7 +246,8 @@ subroutine initialize_key_struct( yk )
   call fms_f2c_string (yk%key13,"")
   call fms_f2c_string (yk%key14,"")
   call fms_f2c_string (yk%key15,"")
-  call fms_f2c_string(yk%level2key,"")
+  !call fms_f2c_string(yk%level2key,"")
+  yk%level2key_offset = -1
 end subroutine initialize_key_struct
 
 !! Initialize one instance of the fmsYamlOutValues_type structure.
