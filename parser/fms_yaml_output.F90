@@ -113,9 +113,9 @@ end type fmsYamlOutValues_type
 
 interface
 subroutine write_yaml_from_struct_3 (yamlname, a1size, keys, vals, a2size, key2, val2, a3size, a3each,&
-                       key3, val3) bind(C, name="write_yaml_from_struct_3")
+                       key3, val3, lvl2keyeach1, lvl2keyeach2) bind(C, name="write_yaml_from_struct_3")
 use iso_c_binding
-import fmsYamlOutKeys_type, fmsYamlOutValues_type
+import fmsYamlOutKeys_type, fmsYamlOutValues_type, lvl2_key_parameter
 character (c_char) :: yamlname !< The output yaml file name
 integer (c_int), value :: a1size !< The size of the first yaml array (only supports 1)
 type (fmsYamlOutKeys_type) :: keys(a1size) !< Top level yaml keys
@@ -128,6 +128,8 @@ integer (c_int) :: a3each (a2size) !< Array that has the number of elements for 
                                    !! third level elements
 type (fmsYamlOutKeys_type) :: key3(a3size) !< Third level keys
 type (fmsYamlOutValues_type) :: val3(a3size) !< Values corresponding to keys2
+integer (c_int)        :: lvl2keyeach1(lvl2_key_parameter) !< amount of key2 'blocks' to print per level 2 key from keys
+integer (c_int)        :: lvl2keyeach2(lvl2_key_parameter) !< amount of key2 'blocks' to print per level 2 key from keys
 
 end subroutine write_yaml_from_struct_3
 

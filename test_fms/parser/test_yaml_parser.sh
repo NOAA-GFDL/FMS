@@ -129,7 +129,12 @@ test_expect_success "parser_demo" '
 test_expect_success "parser_demo2" '
   mpirun -n 1 ./parser_demo2
 '
-test_expect_success "test_output_yaml" '
+echo "" > input.nml # clear out any nmls
+test_expect_success "yaml output initial functionality" '
+  mpirun -n 1 ./test_output_yaml
+'
+printf "&test_output_yaml_nml\n test_lvl2keys = .true. \n/" | cat > input.nml
+test_expect_success "yaml output with multiple level2keys" '
   mpirun -n 1 ./test_output_yaml
 '
 printf "&check_crashes_nml \n bad_conversion = .true. \n/" | cat > input.nml
