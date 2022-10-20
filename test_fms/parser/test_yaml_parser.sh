@@ -120,6 +120,46 @@ order:
 ...
 _EOF
 
+cat << _EOF > lvl2keys_reference.yaml
+---
+name: time to eat
+location: Bridgewater, NJ
+order:
+- Drink: Iced tea
+  Food:
+  - Main: pancake
+    side: eggs
+    sauce: hot
+  sides:
+  - Appetizer: wings
+    dip: ranch
+2ndorder:
+- Drink: Milk
+  paper: coloring
+  crayon: purple
+  fork: plastic
+  spoon: silver
+  knife: none
+  Food:
+  - Main: cereal
+    sauce: milk
+  specials:
+  - app: poppers
+    sauce: tangy
+3rd_order:
+- Drink: coffee
+  fork: silver
+  knife: steak
+  Food:
+  - main: steak
+    side: mashed
+    sauce: A1
+  - dessert: cake
+    topping: frosting
+order 4: []
+...
+_EOF
+
 test_expect_success "test_yaml_parser" '
   mpirun -n 1 ./test_yaml_parser
 '

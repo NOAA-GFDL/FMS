@@ -113,31 +113,31 @@ end type fmsYamlOutValues_type
 
 interface
 subroutine write_yaml_from_struct_3 (yamlname, a1size, keys, vals, a2size, key2, val2, a3size, a3each,&
-                       key3, val3, lvl2keyeach1, lvl2keyeach2) bind(C, name="write_yaml_from_struct_3")
+                       key3, val3, lvl2keyeach) bind(C, name="write_yaml_from_struct_3")
 use iso_c_binding
 import fmsYamlOutKeys_type, fmsYamlOutValues_type, lvl2_key_parameter
 character (c_char) :: yamlname !< The output yaml file name
-integer (c_int), value :: a1size !< The size of the first yaml array (only supports 1)
+integer (c_int), value :: a1size !< The size of the first yaml array
 type (fmsYamlOutKeys_type) :: keys(a1size) !< Top level yaml keys
 type (fmsYamlOutValues_type) :: vals(a1size) !< Values corresponding to keys
 integer (c_int), value :: a2size !< The size of the second yaml array
 type (fmsYamlOutKeys_type) :: key2(a2size) !< Second level keys
 type (fmsYamlOutValues_type) :: val2(a2size) !< Values corresponding to key2
 integer (c_int), value :: a3size !< The size of the third yaml array
-integer (c_int) :: a3each (a2size) !< Array that has the number of elements for each level 2 array's 
-                                   !! third level elements
+integer (c_int) :: a3each (a2size) !< Array that has the number of elements for each level 2 array's
+                                   !! third level elements. If using multiple level2keys, will use the same value
+                                   !! for each key.
 type (fmsYamlOutKeys_type) :: key3(a3size) !< Third level keys
 type (fmsYamlOutValues_type) :: val3(a3size) !< Values corresponding to keys2
-integer (c_int)        :: lvl2keyeach1(lvl2_key_parameter) !< amount of key2 'blocks' to print per level 2 key from keys
-integer (c_int)        :: lvl2keyeach2(lvl2_key_parameter) !< amount of key2 'blocks' to print per level 2 key from keys
-
+integer (c_int)        :: lvl2keyeach(lvl2_key_parameter) !< amount of key2 'blocks' to print per level2key in keys
 end subroutine write_yaml_from_struct_3
-
+!> adds a level 2 key to the list.
+!! Will print level 2 keys in the order added.
 subroutine add_level2key(key_name, keytype) bind(C)
   use iso_c_binding
   import fmsYamlOutKeys_type
-  character(c_char), intent(in) :: key_name
-  type(fmsYamlOutKeys_type), intent(inout) :: keytype
+  character(c_char), intent(in) :: key_name !< name of level 2 key (starts a new tabbed section) to add to list 
+  type(fmsYamlOutKeys_type), intent(inout) :: keytype !< key struct to add ()
 end subroutine
 
 end interface

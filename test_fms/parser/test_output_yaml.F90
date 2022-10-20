@@ -63,14 +63,14 @@ use mpp_mod
 use fms_mod
 implicit none
 
-!! nml switch to output the reference with multiple level 2 keys
+!! nml switch to test using lvl2keys 
 logical :: test_lvl2keys = .false.
 namelist / test_output_yaml_nml / test_lvl2keys
 
 integer, parameter :: yaml_len = 500
-character (len=9) :: filename = "test.yaml"
+character (len=16) :: filename = "test.yaml"
 character(c_char) :: c_filename(10), c_tmp(255)
-character(len=21) :: ref_yaml_name="reference_output.yaml"
+character(len=23) :: ref_yaml_name="reference_output.yaml"
 type (fmsYamlOutKeys_type), allocatable :: k1 (:)
 type (fmsYamlOutValues_type), allocatable :: v1 (:)
 type (fmsYamlOutKeys_type), allocatable :: k2 (:)
@@ -195,14 +195,18 @@ call fms_f2c_string (k3(6)%key11,"topping")
 call fms_f2c_string (v3(6)%val11,"frosting")
 print *, test_lvl2keys
 if(test_lvl2keys) then
-   !> add some extra level 2 keys to the various structs
+  ref_yaml_name = 'lvl2keys_reference.yaml'
+  filename = 'test_lvl2keys.yaml'
+  !> add some extra level 2 keys to the various structs
   call add_level2key( "2ndorder", k1(1))
   call add_level2key( "3rd_order", k1(1))
-  call add_level2key( "order 4", k1(1))
-  call write_yaml_from_struct_3 (filename, 1, k1, v1, a2, k2, v2, a3, a3each, k3, v3, (/ 1, 1, 1 , 0, 0 ,0 ,0 ,0/) , (/0,0,0,0,0,0,0,0/))
+  call add_level2key("order 4", k1(1))
+  call add_level2key( "sides", k2(1))
+  call add_level2key("specials", k2(2))
+  call write_yaml_from_struct_3 (filename, 1, k1, v1, a2, k2, v2, a3, (/1, 1, 2/), k3, v3, (/ 1, 1, 1 , 0, 0 ,0 ,0 ,0/)) 
 else
   !> Write the yaml
-  call write_yaml_from_struct_3 (filename, 1, k1, v1, a2, k2, v2, a3, a3each, k3, v3, (/ 3, 0, 0 , 0, 0 ,0 ,0 ,0/) , (/0,0,0,0,0,0,0,0/))
+  call write_yaml_from_struct_3 (filename, 1, k1, v1, a2, k2, v2, a3, a3each, k3, v3, (/ 3, 0, 0 , 0, 0 ,0 ,0 ,0/)) 
 endif
 
 !> Check yaml output against reference

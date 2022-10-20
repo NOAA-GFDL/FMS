@@ -333,12 +333,11 @@ return ;
  * \param n3each Array that has the number of elements for each l2 array's third level elements
  * \param l3keys The keys for the third level of the yaml, any lvl2 keys will not be printed
  * \param l3vals The values corresponding to l3keys
- * \param lvl2keyeach1 array to indicate how many structs to print per level2key for the top level keys, should be the size of LVL2KEY_NUM 
- * \param lvl2keyeach2 array to indicate how many structs to print per level2key for the 2nd level keys, should be the size of LVL2KEY_NUM 
+ * \param lvl2keyeach array to indicate how many structs to print per level2key for the top level keys, should be the size of LVL2KEY_NUM 
  */
 void write_yaml_from_struct_3 (char *yamlname, int asize, struct fmsyamloutkeys *topkeys, struct fmsyamloutvalues *topvals, int a2size, struct fmsyamloutkeys *l2keys,
                                struct fmsyamloutvalues *l2vals, int a3size, int * n3each, struct fmsyamloutkeys *l3keys, struct fmsyamloutvalues *l3vals,
-                               int* lvl2keyeach1, int* lvl2keyeach2){
+                               int* lvl2keyeach){
   yaml_emitter_t emitter; /* libyaml emitter */
   yaml_event_t event; /* libyaml event for the output yaml */
   int s2count = 0; /* A counter to keep track of the number of level 2 arrays output */
@@ -390,9 +389,8 @@ void write_yaml_from_struct_3 (char *yamlname, int asize, struct fmsyamloutkeys 
   	  error(yamlname, &event, &emitter, yamlout);
 	    return;
     } 
-    /* loop through the structs */
-    for (int s2 = 0 ; s2 < lvl2keyeach1[top_ind]; s2++){
-      printf("s2:%d \t top_ind:%d \t lvl2keyeach[top_ind]:%d \n", s2, top_ind, lvl2keyeach1[top_ind]);
+    /* loop through the structs for this key*/
+    for (int s2 = 0 ; s2 < lvl2keyeach[top_ind]; s2++){
       yaml_mapping_start_event_initialize(&event, NULL, (yaml_char_t *)YAML_MAP_TAG,
         				  1, YAML_ANY_MAPPING_STYLE);
       if (!yaml_emitter_emit(&emitter, &event)){
@@ -401,15 +399,10 @@ void write_yaml_from_struct_3 (char *yamlname, int asize, struct fmsyamloutkeys 
       }
       /* call the write function */
       write_keys_vals_yaml (&emitter, &event , s2count, l2keys, l2vals);
-      s2count++;
-      printf("wrote l2key[%d]", s2count);
+
       /* Next level keys */
-      char * curr_l2key = (&l2keys[s2count-1])->level2key;
-      printf(curr_l2key);
-      printf("curr l2offset: %d", (&l2keys[s2count])->level2key_offset);
+      char * curr_l2key = (&l2keys[s2count])->level2key;
       for (int l2_ind = 0; l2_ind < (&l2keys[s2count])->level2key_offset; l2_ind++) {
-        //printf( "\ncurr_l2key:");
-        //printf(curr_l2key);
         /* Start the third level event */
      	  yaml_scalar_event_initialize(&event, NULL, (yaml_char_t *)YAML_STR_TAG,
      		                            (yaml_char_t *)curr_l2key, strlen(curr_l2key), 1, 0,
@@ -427,8 +420,7 @@ void write_yaml_from_struct_3 (char *yamlname, int asize, struct fmsyamloutkeys 
         }
     	  /* loop through the structs */
         int s3start = s3count;
-        int s3end = s3start + n3each[s2count-1];
-        printf("s3start: %d \t s3end: %d\n", s3start, s3end);
+        int s3end = s3start + n3each[s2count];
         for (int s3 = s3start ; s3 < s3end ; s3++){
           yaml_mapping_start_event_initialize(&event, NULL, (yaml_char_t *)YAML_MAP_TAG,
                     1, YAML_ANY_MAPPING_STYLE);
@@ -439,36 +431,35 @@ void write_yaml_from_struct_3 (char *yamlname, int asize, struct fmsyamloutkeys 
           /* call the write function */
           write_keys_vals_yaml (&emitter, &event , s3, l3keys, l3vals);
           yaml_mapping_end_event_initialize(&event);
-          if (!yaml_emitter_emit(&emitter, &event)){
+          if(!yaml_emitter_emit(&emitter, &event)){
             error(yamlname, &event, &emitter, yamlout);
             return;
           }
           s3count ++;
-        }
+        } // for s3
         yaml_sequence_end_event_initialize(&event);
         if (!yaml_emitter_emit(&emitter, &event)){
  		      error(yamlname, &event, &emitter, yamlout);
 		      return;
         }
-        curr_l2key = l2keys->level2key + ((l2_ind+1) * KEY_STR_LEN);
+        curr_l2key = (&l2keys[s2count])->level2key + ((l2_ind+1) * KEY_STR_LEN);
       } /* for l2_ind */
-    yaml_mapping_end_event_initialize(&event);
-    if (!yaml_emitter_emit(&emitter, &event)){
- 	    error(yamlname, &event, &emitter, yamlout);
-	    return;
-    }
-  }/* for s2 loop */
+      yaml_mapping_end_event_initialize(&event);
+      if (!yaml_emitter_emit(&emitter, &event)){
+ 	      error(yamlname, &event, &emitter, yamlout);
+	      return;
+      }
+
+      s2count++;
+    }/* for s2 loop */
   
     yaml_sequence_end_event_initialize(&event);
     if (!yaml_emitter_emit(&emitter, &event)){
- 	error(yamlname, &event, &emitter, yamlout);
-	return;
+ 	    error(yamlname, &event, &emitter, yamlout);
+      return;
     }
-  curr_topkey = topkeys->level2key + ((top_ind+1) * KEY_STR_LEN);
-  printf("curr_topkey:");
-  printf(curr_topkey);
-  printf("\n");
-}/* while (curr_topkey[0] !='\0') */
+    curr_topkey = topkeys->level2key + ((top_ind+1) * KEY_STR_LEN);
+  }/* for top_ind */
 
   /* end the emitter */
   yaml_mapping_end_event_initialize(&event);
@@ -503,9 +494,11 @@ void add_level2key(char* key_name, struct fmsyamloutkeys* keys){
   // error checking
   if ( strlen(kname_loc) > 255){
     fprintf(stderr, "WARNING: YAML_OUTPUT: invalid level two key passed to add_level2key. Max string size is %d, passed in string: %s",  KEY_STR_LEN, key_name); 
+    fprintf(stdout, "WARNING: YAML_OUTPUT: invalid level two key passed to add_level2key. Max string size is %d, passed in string: %s",  KEY_STR_LEN, key_name); 
   }
   if( keys->level2key_offset  >= LVL2KEY_NUM ){
     fprintf(stderr, "WARNING: YAML_OUTPUT: max amount of level 2 keys (%d) has been exceeded", LVL2KEY_NUM);
+    fprintf(stdout, "WARNING: YAML_OUTPUT: max amount of level 2 keys (%d) has been exceeded", LVL2KEY_NUM);
   }
   // check if string is set to initialize offset count
   if ( keys->level2key[0] == '\0'){
