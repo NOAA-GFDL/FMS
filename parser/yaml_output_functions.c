@@ -30,43 +30,43 @@
 #define KEY_STR_LEN 255
 #define LVL2KEY_SIZE LVL2KEY_NUM*KEY_STR_LEN
 
-#define DEBUG 1
+#define DEBUG 0
 
 struct fmsyamloutkeys {
-	char key1 [255];
-  char key2 [255];
-  char key3 [255];
-  char key4 [255];
-  char key5 [255];
-  char key6 [255];
-  char key7 [255];
-  char key8 [255];
-  char key9 [255];
-  char key10 [255];
-  char key11 [255];
-  char key12 [255];
-  char key13 [255];
-  char key14 [255];
-  char key15 [255];
+	char key1 [KEY_STR_LEN];
+  char key2 [KEY_STR_LEN];
+  char key3 [KEY_STR_LEN];
+  char key4 [KEY_STR_LEN];
+  char key5 [KEY_STR_LEN];
+  char key6 [KEY_STR_LEN];
+  char key7 [KEY_STR_LEN];
+  char key8 [KEY_STR_LEN];
+  char key9 [KEY_STR_LEN];
+  char key10 [KEY_STR_LEN];
+  char key11 [KEY_STR_LEN];
+  char key12 [KEY_STR_LEN];
+  char key13 [KEY_STR_LEN];
+  char key14 [KEY_STR_LEN];
+  char key15 [KEY_STR_LEN];
   int level2key_offset;
 	char level2key [LVL2KEY_SIZE];
 };
 struct fmsyamloutvalues {
-  char val1 [255];
-  char val2 [255];
-  char val3 [255];
-  char val4 [255];
-  char val5 [255];
-  char val6 [255];
-  char val7 [255];
-  char val8 [255];
-  char val9 [255];
-  char val10 [255];
-  char val11 [255];
-  char val12 [255];
-  char val13 [255];
-  char val14 [255];
-  char val15 [255];
+  char val1 [KEY_STR_LEN];
+  char val2 [KEY_STR_LEN];
+  char val3 [KEY_STR_LEN];
+  char val4 [KEY_STR_LEN];
+  char val5 [KEY_STR_LEN];
+  char val6 [KEY_STR_LEN];
+  char val7 [KEY_STR_LEN];
+  char val8 [KEY_STR_LEN];
+  char val9 [KEY_STR_LEN];
+  char val10 [KEY_STR_LEN];
+  char val11 [KEY_STR_LEN];
+  char val12 [KEY_STR_LEN];
+  char val13 [KEY_STR_LEN];
+  char val14 [KEY_STR_LEN];
+  char val15 [KEY_STR_LEN];
 };
 
 /* \breif Prints a warning message that the yaml was not written correctly
@@ -489,10 +489,10 @@ void write_yaml_from_struct_3 (char *yamlname, int asize, struct fmsyamloutkeys 
 void add_level2key(char* key_name, struct fmsyamloutkeys* keys){
 
   // local fixed length copy to try to mitigate any fortran to c string weirdness
-  char kname_loc[255];
+  char kname_loc[KEY_STR_LEN];
   strcpy(kname_loc, key_name);
   // error checking
-  if ( strlen(kname_loc) > 255){
+  if ( strlen(kname_loc) > KEY_STR_LEN){
     fprintf(stderr, "WARNING: YAML_OUTPUT: invalid level two key passed to add_level2key. Max string size is %d, passed in string: %s",  KEY_STR_LEN, key_name); 
     fprintf(stdout, "WARNING: YAML_OUTPUT: invalid level two key passed to add_level2key. Max string size is %d, passed in string: %s",  KEY_STR_LEN, key_name); 
   }
@@ -505,7 +505,7 @@ void add_level2key(char* key_name, struct fmsyamloutkeys* keys){
     keys->level2key_offset = 0; 
   }
   // calculate offset and copy into the level2key array
-  int offset = keys->level2key_offset * 255;
+  int offset = keys->level2key_offset * KEY_STR_LEN;
   char* curr_key;
   curr_key = keys->level2key + offset;
   strcpy(curr_key, kname_loc);

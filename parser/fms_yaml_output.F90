@@ -63,12 +63,13 @@ private
 
 public :: fmsYamlOutKeys_type, fmsYamlOutValues_type
 public :: write_yaml_from_struct_3
-public :: add_level2key
+public :: yaml_out_add_level2key
 public :: string_len_parameter
 
-integer, parameter :: string_len_parameter = 255 !< Number of characters in the keys and strings.
+integer, parameter :: string_len_parameter = 255 !< Max number of characters in the key and value strings.
                                                  !! Must match whats in yaml_output_functions.c 
-integer, parameter :: lvl2_key_parameter = 8!< max number of strings to be stored in lvl2keys
+integer, parameter :: lvl2_key_parameter = 8     !< Max number of strings to be stored in lvl2keys
+                                                 !! Must match whats in yaml_output_functions.c 
 !> Keys for the output yaml on a given level corresponding to the struct in yaml_output_functions.c
 !! Should be set using the fms_f2c_string routine to get properly formatted c style strings
 !! level2keys should be set with  add_level2key()
@@ -133,7 +134,7 @@ integer (c_int)        :: lvl2keyeach(lvl2_key_parameter) !< amount of key2 'blo
 end subroutine write_yaml_from_struct_3
 !> adds a level 2 key to the list.
 !! Will print level 2 keys in the order added.
-subroutine add_level2key(key_name, keytype) bind(C)
+subroutine yaml_out_add_level2key(key_name, keytype) bind(C, name="add_level2key")
   use iso_c_binding
   import fmsYamlOutKeys_type
   character(c_char), intent(in) :: key_name !< name of level 2 key (starts a new tabbed section) to add to list 
