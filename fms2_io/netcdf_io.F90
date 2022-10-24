@@ -2251,11 +2251,11 @@ subroutine write_restart_bc(fileobj, unlim_dim_level)
     if (associated(fileobj%restart_vars(i)%data2d)) then
         call gather_data_bc(fileobj, fileobj%restart_vars(i)%data2d, fileobj%restart_vars(i)%bc_info)
         call register_variable_attribute(fileobj, fileobj%restart_vars(i)%varname, "checksum", &
-             fileobj%restart_vars(i)%bc_info%chksum, str_len=len(fileobj%restart_vars(i)%bc_info%chksum))
+             fileobj%restart_vars(i)%bc_info%chksum(1:len(fileobj%restart_vars(i)%bc_info%chksum)), str_len=len(fileobj%restart_vars(i)%bc_info%chksum))
     else if (associated(fileobj%restart_vars(i)%data3d)) then
         call gather_data_bc(fileobj, fileobj%restart_vars(i)%data3d, fileobj%restart_vars(i)%bc_info)
         call register_variable_attribute(fileobj, fileobj%restart_vars(i)%varname, "checksum", &
-             fileobj%restart_vars(i)%bc_info%chksum, str_len=len(fileobj%restart_vars(i)%bc_info%chksum))
+             fileobj%restart_vars(i)%bc_info%chksum(1:len(fileobj%restart_vars(i)%bc_info%chksum)), str_len=len(fileobj%restart_vars(i)%bc_info%chksum))
     endif
  enddo
 
