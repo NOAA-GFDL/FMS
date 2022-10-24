@@ -30,7 +30,7 @@
 #define KEY_STR_LEN 255
 #define LVL2KEY_SIZE LVL2KEY_NUM*KEY_STR_LEN
 
-#define DEBUG 0
+#define DEBUG 1
 
 struct fmsyamloutkeys {
 	char key1 [KEY_STR_LEN];
@@ -344,6 +344,11 @@ void write_yaml_from_struct_3 (char *yamlname, int asize, struct fmsyamloutkeys 
   int s3count = 0; /* A counter to keep track of the number of level 3 arrays output */
   FILE * yamlout; /* The file for the YAML output. */
 
+  // trim any trailing whitespace
+  int ws_ind = strlen(yamlname)-1;
+  while(isspace(*(yamlname+ws_ind))) ws_ind--;
+  if( ws_ind != strlen(yamlname)-1) yamlname[ws_ind] = '\0';
+
   /* open the yaml output file. Only 1 core should do this */
   yamlout = fopen(yamlname,"w");
   /* Start the emmitter */
@@ -484,13 +489,16 @@ void write_yaml_from_struct_3 (char *yamlname, int asize, struct fmsyamloutkeys 
 }
 /// @brief Adds a key to the level2key character array in the struct.
 /// Uses an offset to store multiple keys, size(amount of strings) is set by LVL2KEY_NUM (avoids c to fortran 2d array issues)
-/// @param keys key struct to add level 2 key to 
 /// @param key_name name of level 2 key to add
-void add_level2key(char* key_name, struct fmsyamloutkeys* keys){
+/// @param key_length string length of key_name
+/// @param keys key struct to add level 2 key to 
+void add_level2key(int key_length, char* key_name, struct fmsyamloutkeys* keys){
 
   // local fixed length copy to try to mitigate any fortran to c string weirdness
-  char kname_loc[KEY_STR_LEN];
-  strcpy(kname_loc, key_name);
+  char kname_loc[key_length + 1];
+  //memset(kname_loc, '\0', sizeof(kname_loc));
+  strncpy(kname_loc, key_name, key_length);
+  kname_loc[key_length] = '\0';
   // error checking
   if ( strlen(kname_loc) > KEY_STR_LEN){
     fprintf(stderr, "WARNING: YAML_OUTPUT: invalid level two key passed to add_level2key. Max string size is %d, passed in string: %s",  KEY_STR_LEN, key_name); 
@@ -513,6 +521,9 @@ void add_level2key(char* key_name, struct fmsyamloutkeys* keys){
   keys->level2key_offset++;
 
   if (DEBUG) {
+    printf("key length: %d \n key_name:", key_length);
+    printf(key_name);
+    printf("\n");
     printf("offset: %d \n", offset);
     printf("kname_loc:");
     printf(kname_loc);
