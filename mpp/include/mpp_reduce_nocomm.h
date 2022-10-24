@@ -16,9 +16,9 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
+    !> Find the max of scalar a the PEs in pelist (all PEs if this argument is omitted)
+    !! result is also automatically broadcast to all PEs. Nocomm version
     subroutine MPP_REDUCE_0D_( a, pelist )
-!find the max of scalar a the PEs in pelist (all PEs if this argument is omitted)
-!result is also automatically broadcast to all PEs
       MPP_TYPE_, intent(inout) :: a
       integer, intent(in), optional :: pelist(0:)
       integer :: n
@@ -26,9 +26,9 @@
       return
     end subroutine MPP_REDUCE_0D_
 
+    !> Find the max of scalar a the PEs in pelist (all PEs if this argument is omitted)
+    !! result is also automatically broadcast to all PEs. Nocomm version
     subroutine MPP_REDUCE_1D_( a, length, pelist )
-!find the max of scalar a the PEs in pelist (all PEs if this argument is omitted)
-!result is also automatically broadcast to all PEs
       MPP_TYPE_, intent(inout) :: a(:)
       integer,   intent(in)    :: length
       integer, intent(in), optional :: pelist(0:)

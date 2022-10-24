@@ -1,9 +1,8 @@
-\file
-\ingroup amip_interp
+@ingroup amip_interp
+
+## Information for the use of the monthly NMC SST analyzed fields
 
 (This file was edited for the Flexible Modeling System on July 26, 1999)
-
-Information for the use of the monthly NMC SST analyzed fields
 
 The monthly optimum interpolation (OI) fields are derived by a linear
 interpolation of the weekly OI fields to daily fields then averaging

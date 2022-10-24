@@ -20,9 +20,6 @@
 !> @ingroup fms2_io
 !> @brief File utility functions for use within @ref fms2_io
 
-!> @file
-!> @brief File for @ref blackboxio
-
 !> @addtogroup blackboxio
 !> @{
 module blackboxio
@@ -272,7 +269,7 @@ subroutine copy_metadata(fileobj, new_fileobj)
               deallocate(buf_double)
             else
               call error(append_error_msg//" "//trim(varname)//" has an unsupported type, "&
-                         "only nf90_int, nf90_float, and nf90_double are currently supported")
+                        //"only nf90_int, nf90_float, and nf90_double are currently supported")
 
             endif
             call check_netcdf_code(err, append_error_msg)

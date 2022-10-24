@@ -18,12 +18,11 @@
 !***********************************************************************
 
 !> @file
-!> @ingroup mpp_io_mod
 !> @brief Parallel file reads for unstructured grids, used in @ref mpp_io_mod
-!----------
-!ug support
 
-!------------------------------------------------------------------------------
+!> @addtogroup mpp_io_mod
+!> @{
+
 !>Read in one-dimensional data for a field associated with an unstructured
 !!mpp domain.
 subroutine mpp_io_unstructured_read_r8_1D(funit, &
@@ -1118,7 +1117,4 @@ subroutine mpp_io_unstructured_read_r4_3D(funit, &
 
     return
 end subroutine mpp_io_unstructured_read_r4_3D
-
-!------------------------------------------------------------------------------
-
-!----------
+!> @}

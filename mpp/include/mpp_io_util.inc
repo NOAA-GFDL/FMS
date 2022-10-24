@@ -1,6 +1,4 @@
 ! -*-f90-*-
-
-
 !***********************************************************************
 !*                   GNU Lesser General Public License
 !*
@@ -19,28 +17,11 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
-
 !> @file
-!> @ingroup mpp_io_mod
 !> @brief Routines to retrieve data used in @ref mpp_io_mod
 
-  !#####################################################################
-! <SUBROUTINE NAME="mpp_get_info">
-!   <OVERVIEW>
-!     Get some general information about a file.
-!   </OVERVIEW>
-!   <DESCRIPTION>
-!     Get some general information about a file.
-!   </DESCRIPTION>
-!   <TEMPLATE>
-!     call mpp_get_info( unit, ndim, nvar, natt, ntime )
-!   </TEMPLATE>
-!   <IN NAME="unit" TYPE="integer"> </IN>
-!   <OUT NAME="ndim" TYPE="integer"> </OUT>
-!   <OUT NAME="nvar" TYPE="integer"> </OUT>
-!   <OUT NAME="natt" TYPE="integer"> </OUT>
-!   <OUT NAME="ntime" TYPE="integer"> </OUT>
-! </SUBROUTINE>
+!> @addtogroup mpp_io_mod
+!> @{
 
     !> @brief Get some general information about a file.
     !!
@@ -67,12 +48,6 @@
 
     end subroutine mpp_get_info
 
-  !#####################################################################
-! <SUBROUTINE NAME="mpp_get_global_atts" INTERFACE="mpp_get_atts">
-!  <IN NAME="unit" TYPE="integer"></IN>
-!  <IN NAME="global_atts" TYPE="atttype" DIM="(:)"></IN>
-! </SUBROUTINE>
-!
     !> @brief Copy global file attributes for use by user
     subroutine mpp_get_global_atts( unit, global_atts )
 
@@ -923,3 +898,4 @@ logical function mpp_is_dist_ioroot(ssize,ioroot,lsize)
   if(PRESENT(ioroot)) ioroot = d_ioroot
   if(PRESENT(lsize)) lsize = d_lsize
 end function mpp_is_dist_ioroot
+!> @}

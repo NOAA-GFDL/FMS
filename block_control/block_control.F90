@@ -21,9 +21,6 @@
 !> @brief Routines for "blocks" used for  OpenMP threading of column-based
 !!        calculations
 
-!> @file
-!> @brief File for @ref block_control_mod
-
 module block_control_mod
 
 use mpp_mod,         only: mpp_error, NOTE, WARNING, FATAL

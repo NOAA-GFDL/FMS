@@ -158,14 +158,14 @@ module fms
                          get_field_method, get_field_methods, parse, fm_change_list, &
                          fm_change_root, fm_dump_list, fm_exists, fm_get_index, &
                          fm_get_current_list, fm_get_length, fm_get_type, fm_get_value, &
-                         fm_intersection, fm_init_loop, &
+                         fm_init_loop, &
                          fm_loop_over_list, fm_new_list, fm_new_value, &
                          fm_reset_loop, fm_return_root, &
                          fm_modify_name, fm_query_method, fm_find_methods, fm_copy_list, &
-                         fm_set_verbosity, fm_field_name_len, fm_path_name_len, &
+                         fm_field_name_len, fm_path_name_len, &
                          fm_string_len, fm_type_name_len, NUM_MODELS, NO_FIELD, &
                          MODEL_ATMOS, MODEL_OCEAN, MODEL_LAND, MODEL_ICE, MODEL_COUPLER, &
-                         fm_array_list_def, method_type, method_type_short, &
+                         method_type, method_type_short, &
                          method_type_very_short, fm_list_iter_type, default_method
   use fm_util_mod, only: fm_util_start_namelist, fm_util_end_namelist, &
                          fm_util_check_for_bad_fields, fm_util_set_caller, &
@@ -361,7 +361,12 @@ module fms
                      mpp_get_nest_fine_pelist, mpp_get_nest_fine_npes, &
                      mpp_domain_UG_is_tile_root_pe, mpp_deallocate_domainUG, &
                      mpp_get_io_domain_UG_layout, NULL_DOMAIN1D, NULL_DOMAIN2D, &
-                     mpp_create_super_grid_domain
+                     mpp_create_super_grid_domain, mpp_shift_nest_domains
+  !> parser
+#ifdef use_yaml
+  use yaml_parser_mod, only: open_and_parse_file, get_num_blocks, get_block_ids, get_value_from_key, &
+                        get_nkeys, get_key_ids, get_key_name, get_key_value
+#endif
 
   !> platform
   use platform_mod, only: r8_kind, r4_kind, i8_kind, i4_kind, c8_kind, c4_kind, &
@@ -377,6 +382,10 @@ module fms
                                 lookup_es3, lookup_des3, lookup_es3_des3, &
                                 lookup_es_des, compute_qs, compute_mrs, &
                                 escomp, descomp
+  !> string_utils
+  use fms_string_utils_mod, only: string, fms_array_to_pointer, fms_pointer_to_array, fms_sort_this, &
+                                  fms_find_my_string, fms_find_unique, fms_c2f_string, fms_cstring2cpointer, &
+                                  string_copy
 
   !> time_interp
   use time_interp_mod, only: time_interp_init, time_interp, fraction_of_year, &

@@ -18,15 +18,17 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 !> @file
-!> @ingroup mpp
 !> @brief Updates data domain of 3D field whose computational domains have been computed
 
+!> @addtogroup mpp_domains_mod
+!> @{
+
+    !> Updates data domain of 3D field whose computational domains have been computed
     subroutine MPP_DO_CHECK_3D_( f_addrs, domain, check, d_type, ke, flags, name)
-!updates data domain of 3D field whose computational domains have been computed
       integer(i8_kind),         intent(in) :: f_addrs(:,:)
       type(domain2D),             intent(in) :: domain
       type(overlapSpec),          intent(in) :: check
-      MPP_TYPE_,                  intent(in) :: d_type  ! creates unique interface
+      MPP_TYPE_,                  intent(in) :: d_type  !<creates unique interface
       integer,                    intent(in) :: ke
       integer, optional,          intent(in) :: flags
       character(len=*), optional, intent(in) :: name
@@ -247,3 +249,4 @@
 
       return
     end subroutine MPP_DO_CHECK_3D_
+!> @}

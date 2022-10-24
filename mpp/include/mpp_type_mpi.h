@@ -16,6 +16,8 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
+!> @addtogroup mpp_mod
+!> @{
 
 subroutine MPP_TYPE_CREATE_(field, array_of_subsizes, array_of_starts, &
                             dtype_out)
@@ -99,3 +101,4 @@ subroutine MPP_TYPE_CREATE_(field, array_of_subsizes, array_of_starts, &
         call increment_current_clock(EVENT_TYPE_CREATE, MPP_TYPE_BYTELEN_)
 
 end subroutine MPP_TYPE_CREATE_
+!> @}

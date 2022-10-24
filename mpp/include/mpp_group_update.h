@@ -17,6 +17,8 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 ! -*-f90-*-
+!> @addtogroup mpp_domains_mod
+!> @{
 subroutine MPP_CREATE_GROUP_UPDATE_2D_(group, field, domain, flags, position, &
      whalo, ehalo, shalo, nhalo)
   type(mpp_group_update_type), intent(inout) :: group
@@ -1022,3 +1024,4 @@ subroutine MPP_RESET_GROUP_UPDATE_FIELD_4D_V_(group, fieldx, fieldy)
   group%addrs_y(group%reset_index_v) = LOC(fieldy)
 
 end subroutine MPP_RESET_GROUP_UPDATE_FIELD_4D_V_
+!> @}

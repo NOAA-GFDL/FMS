@@ -18,8 +18,8 @@
 !***********************************************************************
 !----------
 !ug support
-!> @file
-!> @ingroup fms_io_mod
+!> @addtogroup
+!> @{
 
 !------------------------------------------------------------------------------
 !>Store a real axis (x,y,z,...) in a restart object assoicated with an
@@ -606,7 +606,4 @@ subroutine fms_io_unstructured_register_restart_axis_u(fileObj, &
 
     return
 end subroutine fms_io_unstructured_register_restart_axis_u
-
-!------------------------------------------------------------------------------
-
-!----------
+!> @}

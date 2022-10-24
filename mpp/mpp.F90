@@ -27,6 +27,9 @@
 !> @defgroup mpp_mod mpp_mod
 !> @ingroup mpp
 !> @brief This module defines interfaces for common operations using message-passing libraries.
+!! Any type-less arguments in the documentation are MPP_TYPE_ which is defined by the pre-processor
+!! to create multiple subroutines out of one implementation for use in an interface. See the note
+!! below for more information
 !!
 !> @author V. Balaji <"V.Balaji@noaa.gov">
 !!
@@ -76,9 +79,8 @@
 !!     <li> Performance to be not significantly lower than any native API. </li>
 !!    </ol>
 !!
-!!   This module is used to develop higher-level calls for <LINK
-!!   SRC="mpp_domains.html">domain decomposition</LINK> and <LINK
-!!   SRC="mpp_io.html">parallel I/O</LINK>.
+!!   This module is used to develop higher-level calls for
+!!   domain decomposition (@ref mpp_domains) and parallel I/O (@ref fms2_io)
 !! <br/>
 !!   Parallel computing is initially daunting, but it soon becomes
 !!   second nature, much the way many of us can now write vector code
@@ -90,7 +92,7 @@
 !!   function calls are particularly subtle, since it is not always obvious
 !!   from looking at a call what synchronization between execution streams
 !!   it implies. An example of erroneous code would be a global barrier
-!!   call (see <LINK SRC="#mpp_sync">mpp_sync</LINK> below) placed
+!!   call (see @ref mpp_sync below) placed
 !!   within a code block that not all PEs will execute, e.g:
 !!
 !!   <PRE>
@@ -136,7 +138,7 @@
 !! </DESCRIPTION>
 !! <br/>
 !!
-!!  F90 is a strictly-typed language, and the syntax pass of the
+!!  @note F90 is a strictly-typed language, and the syntax pass of the
 !!  compiler requires matching of type, kind and rank (TKR). Most calls
 !!  listed here use a generic type, shown here as <TT>MPP_TYPE_</TT>. This
 !!  is resolved in the pre-processor stage to any of a variety of
@@ -145,9 +147,6 @@
 !!  rank 0 to 5, leading to 48 specific module procedures under the same
 !!  generic interface. Any of the variables below shown as
 !!  <TT>MPP_TYPE_</TT> is treated in this way.
-
-!> @file
-!> @brief File for @ref mpp_mod
 
 module mpp_mod
 
@@ -406,6 +405,8 @@ private
      module procedure mpp_error_rs_rs
   end interface
   !> Takes a given integer or real array and returns it as a string
+  !> @param[in] array An array of integers or reals
+  !> @returns string equivalent of given array
   !> @ingroup mpp_mod
   interface array_to_char
      module procedure iarray_to_char
@@ -424,38 +425,38 @@ private
   !                                                                             !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  !> @fn subroutine mpp_init( flags, localcomm, test_level)
-  !> @brief Initialize @ref mpp_mod
-  !!
-  !> Called to initialize the <TT>mpp_mod</TT> package. It is recommended
-  !! that this call be the first executed line in your program. It sets the
-  !! number of PEs assigned to this run (acquired from the command line, or
-  !! through the environment variable <TT>NPES</TT>), and associates an ID
-  !! number to each PE. These can be accessed by calling @ref mpp_npes and
-  !! @ref mpp_pe.
-  !! <br> Example usage:
-  !!
-  !!            call mpp_init( flags )
-  !!
-  !! @param flags
-  !!   <TT>flags</TT> can be set to <TT>MPP_VERBOSE</TT> to
-  !!   have <TT>mpp_mod</TT> keep you informed of what it's up to.
-  !! @param test_level
-  !!   Debugging flag to set amount of initialization tasks performed
-  !> @ingroup mpp_mod
+!> @fn mpp_mod::mpp_init::mpp_init( flags, localcomm, test_level)
+!> @ingroup mpp_mod
+!> @brief Initialize @ref mpp_mod
+!!
+!> Called to initialize the <TT>mpp_mod</TT> package. It is recommended
+!! that this call be the first executed line in your program. It sets the
+!! number of PEs assigned to this run (acquired from the command line, or
+!! through the environment variable <TT>NPES</TT>), and associates an ID
+!! number to each PE. These can be accessed by calling @ref mpp_npes and
+!! @ref mpp_pe.
+!! <br> Example usage:
+!!
+!!            call mpp_init( flags )
+!!
+!! @param flags
+!!   <TT>flags</TT> can be set to <TT>MPP_VERBOSE</TT> to
+!!   have <TT>mpp_mod</TT> keep you informed of what it's up to.
+!! @param test_level
+!!   Debugging flag to set amount of initialization tasks performed
 
-  !> @fn subroutine mpp_exit()
-  !> @brief Exit <TT>@ref mpp_mod</TT>.
-  !!
-  !> Called at the end of the run, or to re-initialize <TT>mpp_mod</TT>,
-  !! should you require that for some odd reason.
-  !!
-  !! This call implies synchronization across all PEs.
-  !!
-  !! <br>Example usage:
-  !!
-  !!            call mpp_exit()
-  !> @ingroup mpp_mod
+!> @fn mpp_mod::mpp_exit()
+!> @brief Exit <TT>@ref mpp_mod</TT>.
+!!
+!> Called at the end of the run, or to re-initialize <TT>mpp_mod</TT>,
+!! should you require that for some odd reason.
+!!
+!! This call implies synchronization across all PEs.
+!!
+!! <br>Example usage:
+!!
+!!            call mpp_exit()
+!> @ingroup mpp_mod
 
   !#####################################################################
 
@@ -524,7 +525,7 @@ private
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
   !> @brief Reduction operations.
-  !>    Find the max of scalar a the PEs in pelist
+  !>    Find the max of scalar a from the PEs in pelist
   !!    result is also automatically broadcast to all PEs
   !!    @code{.F90}
   !!            call  mpp_max( a, pelist )
@@ -545,8 +546,16 @@ private
      module procedure mpp_max_int4_1d
   end interface
 
-  !> @brief Get minimum value out of the PEs in pelist
-  !> Result is also broadcast to all PEs
+  !> @brief Reduction operations.
+  !>    Find the min of scalar a from the PEs in pelist
+  !!    result is also automatically broadcast to all PEs
+  !!    @code{.F90}
+  !!            call  mpp_min( a, pelist )
+  !!    @endcode
+  !> @param a <TT>real</TT> or <TT>integer</TT>, of 4-byte of 8-byte kind.
+  !> @param pelist If <TT>pelist</TT> is omitted, the context is assumed to be the
+  !!    current pelist. This call implies synchronization across the PEs in
+  !!    <TT>pelist</TT>, or the current pelist if <TT>pelist</TT> is absent.
   !> @ingroup mpp_mod
   interface mpp_min
      module procedure mpp_min_real8_0d
@@ -571,8 +580,8 @@ private
   !! bit-reproducible. In any case, changing the processor count changes
   !! the data layout, and thus very likely the order of operations. For
   !! bit-reproducible sums of distributed arrays, consider using the
-  !! <TT>mpp_global_sum</TT> routine provided by the <LINK
-  !! SRC="mpp_domains.html"><TT>mpp_domains</TT></LINK> module.
+  !! <TT>mpp_global_sum</TT> routine provided by the
+  !! @ref mpp_domains module.
   !!
   !! The <TT>bit_reproducible</TT> flag provided in earlier versions of
   !! this routine has been removed.
@@ -673,8 +682,19 @@ private
 #endif
   end interface
 
-  !> @brief Gather information onto root pe
+  !> @brief Gather data sent from pelist onto the root pe
+  !! Wrapper for MPI_gather, can be used with and without indices
   !> @ingroup mpp_mod
+  !!
+  !> @param sbuf MPP_TYPE_ data buffer to send
+  !> @param rbuf MPP_TYPE_ data buffer to receive
+  !> @param pelist integer(:) optional pelist to gather from, defaults to current
+  !>
+  !> <BR> Example usage:
+  !!
+  !!                    call mpp_gather(send_buffer,recv_buffer, pelist)
+  !!                    call mpp_gather(is, ie, js, je, pelist, array_seg, data, is_root_pe)
+  !!
   interface mpp_gather
      module procedure mpp_gather_logical_1d
      module procedure mpp_gather_int4_1d
@@ -694,8 +714,23 @@ private
      module procedure mpp_gather_pelist_real8_3d
   end interface
 
-  !> @brief Scatter information to the given pelist
+  !> @brief Scatter (ie - is) * (je - js) contiguous elements of array data from the designated root pe
+  !! into contigous members of array segment in each pe that is included in the pelist argument.
   !> @ingroup mpp_mod
+  !!
+  !> @param is, ie integer start and end index of the first dimension of the segment array
+  !> @param je, js integer start and end index of the second dimension of the segment array
+  !> @param pelist integer(:) the PE list of target pes, needs to be monotonically increasing
+  !> @param array_seg MPP_TYPE_ 2D array that the data is to be copied into
+  !> @param data MPP_TYPE_ the source array
+  !> @param is_root_pe logical true if calling from root pe
+  !> @param ishift integer offsets specifying the first elelement in the data array
+  !> @param nk integer size of third dimension for 3D calls
+  !!
+  !> <BR> Example usage:
+  !!
+  !!                    call mpp_scatter(is, ie, js, je, pelist, segment, data, .true.)
+  !!
   interface mpp_scatter
      module procedure mpp_scatter_pelist_int4_2d
      module procedure mpp_scatter_pelist_int4_3d
@@ -709,6 +744,14 @@ private
   !> @brief Scatter a vector across all PEs
   !!
   !> Transpose the vector and PE index
+  !! Wrapper for the MPI_alltoall function, includes more generic _V and _W
+  !! versions if given displacements/data types
+  !!
+  !! Generic MPP_TYPE_ implentations:
+  !! <li> @ref mpp_alltoall_ </li>
+  !! <li> @ref mpp_alltoallv_ </li>
+  !! <li> @ref mpp_alltoallw_ </li>
+  !!
   !> @ingroup mpp_mod
   interface mpp_alltoall
      module procedure mpp_alltoall_int4
@@ -777,8 +820,8 @@ private
   !!    portability is a concern, it is best avoided).<BR/>
   !!    <TT>ALL_PES</TT>: is used for broadcast operations.
   !!
-  !!    It is recommended that <LINK
-  !!    SRC="#mpp_broadcast"><TT>mpp_broadcast</TT></LINK> be used for
+  !!    It is recommended that
+  !!    @ref mpp_broadcast be used for
   !!    broadcasts.
   !!
   !!    The following example illustrates the use of
@@ -876,7 +919,7 @@ private
      module procedure mpp_transmit_logical4_4d
      module procedure mpp_transmit_logical4_5d
   end interface
-  !> @brief Recieve data to another PE
+  !> @brief Recieve data from another PE
   !!
   !> @param[out] get_data scalar or array to get written with received data
   !> @param get_len size of array to recv from get_data
@@ -1021,8 +1064,8 @@ private
   !! contiguous block from a multi-dimensional array may be passed by its
   !! starting address and its length, as in <TT>f77</TT>.
   !!
-  !! Global broadcasts through the <TT>ALL_PES</TT> argument to <LINK
-  !! SRC="#mpp_transmit"><TT>mpp_transmit</TT></LINK> are still provided for
+  !! Global broadcasts through the <TT>ALL_PES</TT> argument to
+  !! @ref mpp_transmit are still provided for
   !! backward-compatibility.
   !!
   !! If <TT>pelist</TT> is omitted, the context is assumed to be the
@@ -1103,20 +1146,17 @@ private
   !!
   !> \e mpp_chksum is a parallel checksum routine that returns an
   !! identical answer for the same array irrespective of how it has been
-  !! partitioned across processors. \eint_kind is the KIND
+  !! partitioned across processors. \e int_kind is the KIND
   !! parameter corresponding to long integers (see discussion on
   !! OS-dependent preprocessor directives) defined in
-  !! the file platform.F90. \eMPP_TYPE_ corresponds to any
-  !! 4-byte and 8-byte variant of \einteger, \ereal, \ecomplex, \elogical
+  !! the file platform.F90. \e MPP_TYPE_ corresponds to any
+  !! 4-byte and 8-byte variant of \e integer, \e real, \e complex, \e logical
   !! variables, of rank 0 to 5.
   !!
   !! Integer checksums on FP data use the F90 <TT>TRANSFER()</TT>
   !! intrinsic.
   !!
-  !! The <LINK SRC="http://www.gfdl.noaa.gov/fms-cgi-bin/cvsweb.cgi/FMS/shared/chksum/chksum.html">serial
-  !! checksum module</LINK> is superseded
-  !! by this function, and is no longer being actively maintained. This
-  !! provides identical results on a single-processor job, and to perform
+  !! This provides identical results on a single-processor job, and to perform
   !! serial checksums on a single processor of a parallel job, you only
   !! need to use the optional <TT>pelist</TT> argument.
   !! <PRE>
@@ -1144,6 +1184,12 @@ private
   !! @param pelist Optional list of PE's to include in checksum calculation if not using
   !! current pelist
   !! @return Parallel checksum of var across given or implicit pelist
+  !!
+  !! Generic MPP_TYPE_ implentations:
+  !! <li> @ref mpp_chksum_</li>
+  !! <li> @ref mpp_chksum_int_</li>
+  !! <li> @ref mpp_chksum_int_rmask_</li>
+  !!
   !> @ingroup mpp_mod
   interface mpp_chksum
      module procedure mpp_chksum_i8_1d

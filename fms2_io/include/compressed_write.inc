@@ -17,7 +17,10 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 !> @file
-!> @ingroup fms2_io
+!> @brief Compressed write routines for @ref write_data interface
+
+!> @addtogroup fms2_io_mod
+!> @{
 
 !> @brief For variables without a compressed dimension, this routine simply wraps
 !!        netcdf_write data.  If the variable does have a compressed axis, the I/O root
@@ -742,3 +745,4 @@ subroutine compressed_write_5d_wrap(fileobj, variable_name, cdata, unlim_dim_lev
   call compressed_write(fileobj, variable_name, cdata, unlim_dim_level, corner, &
                         edge_lengths=edge_lengths)
 end subroutine compressed_write_5d_wrap
+!> @}

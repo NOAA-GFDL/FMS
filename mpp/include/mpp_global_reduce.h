@@ -16,6 +16,8 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
+!> @addtogroup mpp_domains_mod
+!> @{
   function MPP_GLOBAL_REDUCE_2D_( domain, field, locus, position )
     MPP_TYPE_ :: MPP_GLOBAL_REDUCE_2D_
     type(domain2D), intent(in) :: domain
@@ -142,3 +144,4 @@
     end if
     return
   end function MPP_GLOBAL_REDUCE_5D_
+!> @}

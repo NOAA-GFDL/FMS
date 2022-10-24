@@ -1,3 +1,5 @@
+! -*-f90-*-
+
 !***********************************************************************
 !*                   GNU Lesser General Public License
 !*
@@ -16,20 +18,22 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
+
 !> @file
-!> @ingroup mpp
+!> @addtogroup mpp
 !> @brief Wrapper routine for @ref mpp_chksum interface
 
+!> Wrapper routine for @ref mpp_chksum interface
+!!
+!> @returns i8_kind checksum of var, which will actually be int if no_8byte_integers is defined
 function MPP_CHKSUM_( var, pelist , mask_val)
-!mold is a dummy array to be used by TRANSFER()
-!must be same TYPE as result
-!result is i8_kind, which will actually be int ifdef no_8byte_integers
-  !optional mask_val is masked away in checksum_int.h function via PACK()
   integer(i8_kind) :: MPP_CHKSUM_
-  integer(MPP_TRANSFER_KIND_) :: mold(1)
+  integer(MPP_TRANSFER_KIND_) :: mold(1) !< Mold is a dummy array to be used by TRANSFER(),
+                                         !! must be same TYPE as result
   MPP_TYPE_, intent(in) :: var MPP_RANK_
   integer, intent(in), optional :: pelist(:)
-  MPP_TYPE_, intent(in),optional :: mask_val
+  MPP_TYPE_, intent(in),optional :: mask_val !< optional mask_val is masked away in checksum_int.h
+                                             !! function via PACK()
 
   if ( PRESENT(mask_val) ) then
      MPP_CHKSUM_ = mpp_chksum( TRANSFER(var,mold), pelist, &
@@ -38,5 +42,5 @@ function MPP_CHKSUM_( var, pelist , mask_val)
       MPP_CHKSUM_ = mpp_chksum( TRANSFER(var,mold), pelist )
   end if
 
-      return
-    end function MPP_CHKSUM_
+  return
+end function MPP_CHKSUM_

@@ -31,17 +31,17 @@
 # Create and enter output directory
 output_dir
 
-# Warn if stack size not set
-if test "`ulimit -s`" != "unlimited"; then
-  say "Warning: system stack size not set to unlimited, test may fail"
-fi
-
-# make a dummy input.nml file for mpp_init to read
-cat <<_EOF > input.nml
-&dummy
-  empty=true
+# use smaller arrays if system stack size is limited
+if [ $STACK_LIMITED ]; then
+  cat <<_EOF > input.nml
+&test_fms2_io_nml
+  nx = 32
+  ny = 32
+  nz = 10
 /
 _EOF
+fi
+touch input.nml
 
 # run the tests
 test_expect_success "FMS2 IO Test" '

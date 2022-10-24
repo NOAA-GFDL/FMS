@@ -17,7 +17,11 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 !> @file
-!> @ingroup fms2_io
+!> @brief Routines for retrieving global attribute values from netcdf files with different
+!! dimension sizes for the @ref get_global_attribute interface
+
+!> @addtogroup netcdf_io_mod
+!> @{
 
 !> @brief Get the value of a global attribute.
 subroutine get_global_attribute_0d(fileobj, &
@@ -50,7 +54,7 @@ subroutine get_global_attribute_0d(fileobj, &
                                    trim(attribute_name), &
                                    attribute_value)
             type is (integer(kind=i8_kind))
-            if ( .not. fileobj%allow_int8) call error(trim(fileobj%path)// &
+            if ( .not. fileobj%is_netcdf4) call error(trim(fileobj%path)// &
                                             & ": 64 bit integers are only supported with 'netcdf4' file format"//&
                                             & ". Set netcdf_default_format='netcdf4' in the fms2_io namelist OR "//&
                                             & "add nc_format='netcdf4' to your open_file call")
@@ -134,7 +138,7 @@ subroutine get_global_attribute_1d(fileobj, &
                                    trim(attribute_name), &
                                    attribute_value)
             type is (integer(kind=i8_kind))
-                if ( .not. fileobj%allow_int8) call error(trim(fileobj%path)// &
+                if ( .not. fileobj%is_netcdf4) call error(trim(fileobj%path)// &
                                                & ": 64 bit integers are only supported with 'netcdf4' file format"//&
                                                & ". Set netcdf_default_format='netcdf4' in the fms2_io namelist OR "//&
                                                & "add nc_format='netcdf4' to your open_file call")
@@ -190,3 +194,4 @@ subroutine get_global_attribute_1d(fileobj, &
             &trim(attribute_name)//" for file: "//trim(fileobj%path)//"")
     end select
 end subroutine get_global_attribute_1d
+!> @}

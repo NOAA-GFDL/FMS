@@ -36,7 +36,7 @@ test_diag_manager_time_SOURCES = test_diag_manager_time.F90
 
 TEST_EXTENSIONS = .sh
 SH_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
-                  $(top_srcdir)/tap-driver.sh
+                  $(abs_top_srcdir)/test_fms/tap-driver.sh
 
 # Run the test.
 TESTS = test_diag_manager2.sh

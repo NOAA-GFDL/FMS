@@ -16,6 +16,8 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
+!> @addtogroup mpp_domains_mod
+!> @{
   subroutine MPP_GLOBAL_SUM_TL_( domain, field, field_tl, gsum, gsum_tl, flags, position, tile_count )
     type(domain2D), intent(in) :: domain
     MPP_TYPE_, intent(inout) :: field(:,: MPP_EXTRA_INDICES_ )
@@ -31,3 +33,4 @@
 
     return
   end subroutine MPP_GLOBAL_SUM_TL_
+!> @}

@@ -17,6 +17,8 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
+!> @addtogroup mpp_domains_mod
+!> @{
 subroutine MPP_UPDATE_NEST_FINE_2D_(field, nest_domain, wbuffer, ebuffer, sbuffer, nbuffer, &
                                     nest_level, flags, complete, position, extra_halo, name, tile_count)
       MPP_TYPE_,             intent(in)      :: field(:,:) !< field on the model grid
@@ -1060,3 +1062,4 @@ end subroutine MPP_UPDATE_NEST_COARSE_4D_V_
 
 
 #endif
+!> @}

@@ -16,6 +16,8 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
+!> @addtogroup mpp_domains_mod
+!> @{
   function MPP_GLOBAL_SUM_( domain, field, flags, position, tile_count, overflow_check)
     MPP_TYPE_ :: MPP_GLOBAL_SUM_
     type(domain2D), intent(in) :: domain
@@ -155,3 +157,4 @@
 
     return
   end function MPP_GLOBAL_SUM_
+!> @}

@@ -16,6 +16,8 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
+!> @addtogroup mpp_domains_mod
+!> @{
 function MPP_START_UPDATE_DOMAINS_2D_( field, domain, flags, position, &
                                        whalo, ehalo, shalo, nhalo, name, tile_count, update_id, complete)
   type(domain2D),   intent(inout)        :: domain
@@ -1096,3 +1098,4 @@ subroutine MPP_COMPLETE_UPDATE_DOMAINS_5D_V_( id_update, fieldx, fieldy, domain,
 end subroutine MPP_COMPLETE_UPDATE_DOMAINS_5D_V_
 
 #endif
+!> @}

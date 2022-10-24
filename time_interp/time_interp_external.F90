@@ -29,9 +29,6 @@
 !! data are defined over data domain for domain2d data
 !! (halo values are NOT updated by this module)
 
-!> @file
-!> @brief File for @ref time_interp_external_mod
-
 !> @addtogroup time_interp_external_mod
 !> @{
 module time_interp_external_mod

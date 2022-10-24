@@ -21,27 +21,22 @@
 !                                  MPP_TRANSMIT                               !
 !                                                                             !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
+!> @addtogroup mpp_mod
+!> @{
+!> A message-passing routine intended to be reminiscent equally of both MPI and SHMEM
+!! put_data and get_data are contiguous MPP_TYPE_ arrays
+!!at each call, your put_data array is put to   to_pe's get_data
+!!              your get_data array is got from from_pe's put_data
+!!i.e we assume that typically (e.g updating halo regions) each PE performs a put _and_ a get
+!!special PE designations:
+!!      NULL_PE: to disable a put or a get (e.g at boundaries)
+!!      ANY_PE:  if remote PE for the put or get is to be unspecific
+!!      ALL_PES: broadcast and collect operations (collect not yet implemented)
+!!ideally we would not pass length, but this f77-style call performs better (arrays passed by address, not descriptor)
+!!further, this permits <length> contiguous words from an array of any rank to be passed (avoiding f90 rank conformance check)
+!!caller is responsible for completion checks (mpp_sync_self) before and after
     subroutine MPP_TRANSMIT_( put_data, put_len, to_pe, get_data, get_len, from_pe, block, tag, recv_request, &
                             &  send_request )
-!a message-passing routine intended to be reminiscent equally of both MPI and SHMEM
-
-!put_data and get_data are contiguous MPP_TYPE_ arrays
-
-!at each call, your put_data array is put to   to_pe's get_data
-!              your get_data array is got from from_pe's put_data
-!i.e we assume that typically (e.g updating halo regions) each PE performs a put _and_ a get
-
-!special PE designations:
-!      NULL_PE: to disable a put or a get (e.g at boundaries)
-!      ANY_PE:  if remote PE for the put or get is to be unspecific
-!      ALL_PES: broadcast and collect operations (collect not yet implemented)
-
-!ideally we would not pass length, but this f77-style call performs better (arrays passed by address, not descriptor)
-!further, this permits <length> contiguous words from an array of any rank to be passed (avoiding
-!f90 rank conformance check)
-
-!caller is responsible for completion checks (mpp_sync_self) before and after
 
       integer, intent(in) :: put_len, to_pe, get_len, from_pe
       MPP_TYPE_, intent(in)  :: put_data(*)
@@ -164,7 +159,7 @@
 !                                MPP_BROADCAST                                !
 !                                                                             !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
+    !> Broadcasts data to a pelist
     subroutine MPP_BROADCAST_( data, length, from_pe, pelist )
 !this call was originally bundled in with mpp_transmit, but that doesn't allow
 !broadcast to a subset of PEs. This version will, and mpp_transmit will remain
@@ -198,6 +193,6 @@
       if( debug .and. (current_clock.NE.0) )call increment_current_clock( EVENT_BROADCAST, length*MPP_TYPE_BYTELEN_ )
       return
     end subroutine MPP_BROADCAST_
-
+!> @}
 !####################################################################################
 #include <mpp_transmit.inc>

@@ -20,16 +20,14 @@
 !> @ingroup mosaic2
 !> @brief Routines for grid calculations, using @ref fms2_io
 
-!> @file
-!> @brief File for @ref grid2_mod
-
 module grid2_mod
 
 use mpp_mod, only : mpp_root_pe, mpp_error, uppercase, lowercase, FATAL, NOTE
 use constants_mod, only : PI, radius
 use fms2_io_mod, only : get_global_attribute, read_data, global_att_exists, &
                         variable_exists, file_exists,  open_file, close_file, get_variable_size, &
-                        FmsNetcdfFile_t, string => string2
+                        FmsNetcdfFile_t
+use fms_string_utils_mod, only: string
 use mosaic2_mod, only : get_mosaic_ntiles, get_mosaic_xgrid_size, get_mosaic_grid_sizes, &
      get_mosaic_xgrid, calc_mosaic_grid_area, calc_mosaic_grid_great_circle_area
 

@@ -38,7 +38,7 @@ test_expect_success "mpp_print_memuse_stats" '
 '
 
 test_expect_success "mpp_print_memuse_stats to file (stdout)" '
-    mpirun -n 1 ./test_mpp_print_memuse_stats_file 1
+    mpirun -n 1 ./test_mpp_print_memuse_stats_file
 '
 
 test_expect_failure "failure caught if mpp_memuse_begin called multiple times" '
@@ -46,7 +46,7 @@ test_expect_failure "failure caught if mpp_memuse_begin called multiple times" '
 '
 
 test_expect_failure "failure caught if mpp_memuse_end called before mpp_memuse_begin" '
-    mpirun -n 1./test_mpp_memutils_end_before_begin
+    mpirun -n 1 ./test_mpp_memutils_end_before_begin
 '
 
 test_done

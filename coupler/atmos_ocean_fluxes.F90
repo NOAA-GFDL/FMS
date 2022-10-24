@@ -37,9 +37,6 @@
 !!
 !! http://ocmip5.ipsl.fr/documentation/OCMIP/phase2/simulations/Biotic/HOWTO-Biotic.html
 
-!> @file
-!> @brief File for @ref atmos_ocean_fluxes_mod
-
 !> @addtogroup atmos_ocean_fluxes_mod
 !> @{
 module  atmos_ocean_fluxes_mod

@@ -26,10 +26,9 @@
 !!
 !> When using these routines three possible data sets are available:
 !!
-!! 1. AMIP @link http://www-pcmdi.llnl.gov/amip @endlink from Jan 1979 to Jan 1989 (2 deg x 2 deg)
-!! 2. Reynolds OI @link amip_interp.rey_oi.txt @endlink from Nov 1981 to Jan 1999 (1 deg x 1 deg)
-!! 3. Reynolds EOF @link ftp://podaac.jpl.nasa.gov/pub/sea_surface_temperature/reynolds/rsst/doc/rsst.html
-!! @endlink from Jan 1950 to Dec 1998 (2 deg x 2 deg)
+!! 1. AMIP http://www.pcmdi.github.io/mips/amip from Jan 1979 to Jan 1989 (2 deg x 2 deg)
+!! 2. Reynolds OI @ref amip_interp.rey_oi.txt from Nov 1981 to Jan 1999 (1 deg x 1 deg)
+!! 3. Reynolds EOF podaac.jpl.nasa.gov/ from Jan 1950 to Dec 1998 (2 deg x 2 deg)
 !!
 !! All original data are observed monthly means. This module
 !! interpolates linearly in time between pairs of monthly means.
@@ -62,10 +61,55 @@
 !!         amip1           INPUT/amip1_sst.data
 !!         reynolds_io     INPUT/reyoi_sst.data
 !!         reynolds_eof    INPUT/reynolds_sst.data
-
-
-!> @file
-!> File for amip_interp_mod
+!!
+!> @var character(len=24) data_set
+!! Name/type of SST data that will be used.
+!!        Possible values (case-insensitive) are:
+!!                          1) amip1
+!!                          2) reynolds_eof
+!!                          3) reynolds_oi
+!!        See the @ref amip_interp_oi page for more information
+!! @var character(len=16) date_out_of_range
+!!     Controls the use of climatological monthly mean data when
+!!     the requested date falls outside the range of the data set.<BR/>
+!!     Possible values are:
+!!     <PRE>
+!!   fail      - program will fail if requested date is prior
+!!               to or after the data set period.
+!!   initclimo - program uses climatological requested data is
+!!               prior to data set period and will fail if
+!!               requested date is after data set period.
+!!   climo     - program uses climatological data anytime.
+!!    </PRE>
+!! @var real tice_crit
+!!     Freezing point of sea water in degC or degK. Defaults to -1.80
+!! @var integer verbose
+!!     Controls printed output, 0 <= verbose <= 3, default=0
+!!     additional parameters for controlling zonal prescribed sst ----
+!!     these parameters only have an effect when use_zonal=.true. ----
+!! @var logical use_zonal
+!!     Flag to selected zonal sst or data set. Default=.false.
+!! @var real teq
+!!     sst at the equator. Default=305
+!! @var real tdif
+!!     Equator to pole sst difference. Default=50
+!! @var real tann
+!!     Amplitude of annual cycle. Default=20
+!! @var real tlag
+!!     Offset for time of year (for annual cycle). Default=0.875
+!! @var integer amip_date
+!!     Single calendar date in integer "(year,month,day)" format
+!!     that is used only if set with year>0, month>0, day>0.
+!!     If used, model calendar date is replaced by this date,
+!!     but model time of day is still used to determine ice/sst.
+!!     Used for repeating-single-day (rsd) experiments.
+!!     Default=/-1,-1,-1/
+!! @var real sst_pert
+!!     Temperature perturbation in degrees Kelvin added onto the SST.
+!!                The perturbation is globally-uniform (even near sea-ice).
+!!                It is only used when abs(sst_pert) > 1.e-4.  SST perturbation runs
+!!                may be useful in accessing model sensitivities.
+!!     Default=0.
 
 !> @addtogroup amip_interp_mod
 !> @{
@@ -299,56 +343,6 @@ end type
  logical :: interp_oi_sst = .false. !< changed to false for regular runs
  logical :: use_mpp_io = .false. !< Set to .true. to use mpp_io, otherwise fms2io is used
 
-!> @page amip_interp_nml @ref amip_interp_mod Namelist
-!!
-!> @var character(len=24) data_set
-!! Name/type of SST data that will be used.
-!!        Possible values (case-insensitive) are:
-!!                          1) amip1
-!!                          2) reynolds_eof
-!!                          3) reynolds_oi
-!!        See the @ref amip_interp_oi page for more information
-!! @var character(len=16) date_out_of_range
-!!     Controls the use of climatological monthly mean data when
-!!     the requested date falls outside the range of the data set.<BR/>
-!!     Possible values are:
-!!     <PRE>
-!!   fail      - program will fail if requested date is prior
-!!               to or after the data set period.
-!!   initclimo - program uses climatological requested data is
-!!               prior to data set period and will fail if
-!!               requested date is after data set period.
-!!   climo     - program uses climatological data anytime.
-!!    </PRE>
-!! @var real tice_crit
-!!     Freezing point of sea water in degC or degK. Defaults to -1.80
-!! @var integer verbose
-!!     Controls printed output, 0 <= verbose <= 3, default=0
-!!     additional parameters for controlling zonal prescribed sst ----
-!!     these parameters only have an effect when use_zonal=.true. ----
-!! @var logical use_zonal
-!!     Flag to selected zonal sst or data set. Default=.false.
-!! @var real teq
-!!     sst at the equator. Default=305
-!! @var real tdif
-!!     Equator to pole sst difference. Default=50
-!! @var real tann
-!!     Amplitude of annual cycle. Default=20
-!! @var real tlag
-!!     Offset for time of year (for annual cycle). Default=0.875
-!! @var integer amip_date
-!!     Single calendar date in integer "(year,month,day)" format
-!!     that is used only if set with year>0, month>0, day>0.
-!!     If used, model calendar date is replaced by this date,
-!!     but model time of day is still used to determine ice/sst.
-!!     Used for repeating-single-day (rsd) experiments.
-!!     Default=/-1,-1,-1/
-!! @var real sst_pert
-!!     Temperature perturbation in degrees Kelvin added onto the SST.
-!!                The perturbation is globally-uniform (even near sea-ice).
-!!                It is only used when abs(sst_pert) > 1.e-4.  SST perturbation runs
-!!                may be useful in accessing model sensitivities.
-!!     Default=0.
  namelist /amip_interp_nml/ use_ncep_sst, no_anom_sst, use_ncep_ice,  tice_crit, &
                             interp_oi_sst, data_set, date_out_of_range,          &
                             use_zonal, teq, tdif, tann, tlag, amip_date,         &

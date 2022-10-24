@@ -22,9 +22,6 @@
 !!
 !> Mainly routines for use via interfaces in @ref fms2_io_mod
 
-!> @file
-!> @brief File for @ref fms_netcdf_unstructured_domain_io_mod
-
 module fms_netcdf_unstructured_domain_io_mod
 use netcdf
 use mpp_domains_mod

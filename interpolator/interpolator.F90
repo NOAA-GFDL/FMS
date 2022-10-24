@@ -21,9 +21,6 @@
 !> @brief A module to interpolate climatology data to model the grid.
 !> @author William Cooke <William.Cooke@noaa.gov>
 
-!> @file
-!> File for @ref interpolator_mod
-
 module interpolator_mod
 
 use mpp_mod,           only : mpp_error, &

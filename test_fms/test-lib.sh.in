@@ -33,6 +33,11 @@ TEST_NAME="$(basename "$0" .sh)"
 TEST_NUMBER="${TEST_NAME%%-*}"
 TEST_NUMBER="${TEST_NUMBER#t}"
 
+# if using intel with a limited stack size, sets to run smaller tests
+if [ "$($FC --version | grep ifort)" -a "$(ulimit -s)" != "unlimited" 2> /dev/null ]; then
+  STACK_LIMITED=1
+fi
+
 exec 7>&2
 # For now, write all output
 #if test -n "$VERBOSE"
@@ -232,13 +237,12 @@ match_pattern_list_ () {
     pInd=`expr index $arg '.'`
     tNameArg=`expr substr $arg 1 $pInd`
     tNamePattern=`expr substr $pattern_ 1 $pInd`
-    test "$tNameArg" != "$tNamePattern" && break
     isRange="`expr index $pattern_ '-'`"
     # individual test num
     if test $isRange -eq 0 ; then
       say "is range.."
       if test "$pattern_" = "$arg" ; then
-          return 0
+           test "$tNameArg" = "$tNamePattern" && return 0
       fi
     # num range
     else

@@ -17,7 +17,10 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 !> @file
-!> @ingroup fms2_io
+!> @brief Routines for the @ref gather_data_bc interface
+
+!> @addtogroup netcdf_io_mod
+!> @{ 
 
 !< Root pe reads the data in the netcdf file and scatters it to the other pes
 subroutine scatter_data_bc_2d(fileobj, varname, vdata, bc_info, unlim_dim_level, ignore_checksum)

@@ -36,7 +36,7 @@ test_field_manager_SOURCES = test_field_manager.F90
 
 TEST_EXTENSIONS = .sh
 SH_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
-                  $(top_srcdir)/tap-driver.sh
+                  $(abs_top_srcdir)/test_fms/tap-driver.sh
 
 # Run the test program.
 TESTS = test_field_manager2.sh
@@ -45,4 +45,4 @@ TESTS = test_field_manager2.sh
 EXTRA_DIST = test_field_manager2.sh
 
 # Clean up
-CLEANFILES = input.nml *.out* field_table *.dpi *.spi *.dyn *.spl
+CLEANFILES = input.nml *.out* field_table *.dpi *.spi *.dyn *.spl *.yaml

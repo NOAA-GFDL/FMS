@@ -19,8 +19,10 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 !> @file
-!> @ingroup mpp
 !> @brief Routines for data transmission between PE's
+
+!> @addtogroup mpp_mod
+!> @{
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !                                                                             !
@@ -380,3 +382,4 @@
 
       return
     end subroutine MPP_BROADCAST_5D_
+!> @}

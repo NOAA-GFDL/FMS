@@ -16,7 +16,6 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
-
 !> @defgroup diag_integral_mod diag_integral_mod
 !> @ingroup diag_integral
 !!
@@ -24,42 +23,8 @@
 !!
 !! @brief This module computes and outputs global and / or hemispheric physics
 !!        integrals.
-!!
-!! <b> Public Interfaces: </b>
-!!
-!! - sum_diag_integral_field
-!!
-!! <b> Public Subroutines: </b>
-!!
-!! - diag_integral_init
-!! - diag_integral_field_init
-!! - diag_integral_output
-!! - diag_integral_end
-!! - sum_field_2d
-!! - sum_field_3d
-!! - sum_field_wght_3d
-!! - sum_field_2d_hemi
-!!
-!! <b> Private Functions: </b>
-!!
-!! - set_axis_time
-!! - get_field_index
-!! - get_axis_time
-!! - diag_integral_alarm
-!! - vert_diag_integral
-!!
-!! <b> Private Subroutines: </b>
-!!
-!! - write_field_averages
-!! - format_text_init
-!! - format_data_init
-!!
 
-!> @file
-!! @brief File for @ref diag_integral_mod
-
-                     module diag_integral_mod
-
+module diag_integral_mod
 
 !###############################################################################
 

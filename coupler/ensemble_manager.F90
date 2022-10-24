@@ -20,9 +20,6 @@
 !> @ingroup coupler
 !> @brief Routines for setting up and managing ensembles and ensemble pe lists.
 
-!> @file
-!> @brief File for @ref ensemble_manager_mod
-
 !> @addtogroup ensemble_manager_mod
 !> @{
 module ensemble_manager_mod

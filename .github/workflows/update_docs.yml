@@ -12,14 +12,14 @@ jobs:
       - name: Setup repo
         run: | # do autotool's job for substitutes since we don't need a full build environement
           mkdir gen_docs
-          sed 's/@abs_top_builddir@\/docs/gen_docs/' docs/Doxyfile.in > gen_docs/Doxyfile
-          sed -i 's/@abs_top_srcdir@/./' gen_docs/Doxyfile
+          sed 's/@abs_top_builddir@\/docs/gen_docs/g' docs/Doxyfile.in > gen_docs/Doxyfile
+          sed -i 's/@abs_top_srcdir@/./g' gen_docs/Doxyfile
           # grab version number from configure.ac
           export VER="`awk '/AC_INIT/{getline;print}' configure.ac | cut -d "[" -f2 | cut -d "]" -f1`"
-          sed -i "s/@PACKAGE_VERSION@/$VER/" gen_docs/Doxyfile
+          sed -i "s/@PACKAGE_VERSION@/$VER/g" gen_docs/Doxyfile
       - name: Install and run doxygen
         run: |
-          sudo apt -y install doxygen
+          sudo apt -y install doxygen graphviz
           doxygen gen_docs/Doxyfile
       - name: Deploy
         uses: peaceiris/actions-gh-pages@v3

@@ -18,8 +18,8 @@
 !***********************************************************************
 !----------
 !ug support
-!> @file
-!> @ingroup fms_io_mod
+!> @addtogroup fms_io_mod
+!> @{
 
 !------------------------------------------------------------------------------
 !>Add a real scalar field to a restart object (restart_file_type).  Return
@@ -1365,7 +1365,4 @@ function fms_io_unstructured_register_restart_field_i_2d(fileObj, &
 
     return
 end function fms_io_unstructured_register_restart_field_i_2d
-
-!------------------------------------------------------------------------------
-
-!----------
+!> @}

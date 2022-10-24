@@ -29,6 +29,11 @@
 
 echo "&test_mpp_chksum_nml" > input.nml
 echo "test_num = 1" >> input.nml
+# replaces defaults with smaller sizes if stack size is limited
+if [ $STACK_LIMITED ]; then
+  echo "nx = 64" >> input.nml
+  echo "ny = 64" >> input.nml
+fi
 echo "/" >> input.nml
 
 test_expect_success "mpp_chksum simple functionality" '

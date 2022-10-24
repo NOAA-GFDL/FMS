@@ -17,7 +17,10 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 !> @file
-!> @ingroup fms_netcdf_domain_io_mod
+!> @brief Routines for calculating variable checksums across pes for the @ref compute_global_checksum interface
+
+!> @addtogroup fms_netcdf_domain_io_mod
+!> @{
 
 !> @briefs Calculates a variable's checksum across all ranks in the current pelist.
 !! @return A hex string containing the checksum.
@@ -367,3 +370,4 @@ function compute_global_checksum_4d(fileobj, variable_name, variable_data, is_de
   chksum = ""
   write(chksum, "(Z16)") chksum_val
 end function compute_global_checksum_4d
+!> @}

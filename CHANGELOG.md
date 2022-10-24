@@ -5,6 +5,77 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0),
 and this project uses `yyyy.rr[.pp]`, where `yyyy` is the year a patch is released,
 `rr` is a sequential release number (starting from `01`), and an optional two-digit
 sequential patch number (starting from `01`).
+
+## [2022.04] - 2022-10-13
+### Known Issues
+- If using GCC 10 or higher as well as MPICH, compilation errors will occur unless `-fallow-argument-mismatch` is included in the Fortran compiler flags(the flag will now be added automatically if building with autotools or CMake).
+- GCC 11.1.0 is unsupported due to compilation issues with select type. The issue is resolved in later GCC releases.
+- When outputting sub-region diagnostics, the current diag_manager does not add "tileX" to the filename when using a cube sphere. This leads to trouble when trying to combine the files and regrid them (if the region is in two different tiles)
+
+### Added
+- FIELD MANAGER: Adds support for reading field tables in the yaml format (field_table.yaml).
+ Yaml input only be used if compiled with `-Duse_yaml` preprocessor flag, otherwise it will default
+ to previous behaviour. The converter script to convert current field tables to the new format is
+ publicly available [here](https://github.com/NOAA-GFDL/fms_yaml_tools/) although the conversions will also be done automatically in FRE.
+- FMS2_IO: Adds options to enable data compression and chunking for netcdf output in `register_restart_field`
+
+### Changed
+- BUILD: Improves the configuration check for the MPICH/GCC 10+ argument mismatch bug by replacing
+it with a m4 compile test
+
+### Fixed
+- Compiler Support: allows for compilation via the Cray/HP CCE compilers by fixing string concatenation compilation errors
+
+### Tag Commit Hashes
+- 2022.04-beta2   163cb3e434dba05933c3d2151dea5d770758a2f3
+- 2022.04-beta1   1099a2890a06d279df0abe1f383b71279643bcdd
+- 2022.04-alpha4  8036d8d8448b0da8416a76ee0820314da27d5711
+- 2022.04-alpha3  7fafa4f7fb7a89c6f22da7ae19dc4e61a8073451
+- 2022.04-alpha2  0c4b3cc98f4bce5b39c6e9f6404ea32f5bf719e5
+- 2022.04-alpha1  ec57a48aeefb62b475a11cad7e30ebe460fa0d9f
+
+## [2022.03] - 2022-08-01
+### Known Issues
+- If using GCC 10 or higher as well as MPICH, compilation errors will occur unless `-fallow-argument-mismatch` is included in the Fortran compiler flags(the flag will now be added automatically if building with autotools or CMake).
+- GCC 11.1.0 is unsupported due to compilation issues with select type. The issue is resolved in later GCC releases.
+- When outputting sub-region diagnostics, the current diag_manager does not add "tileX" to the filename when using a cube sphere. This leads to trouble when trying to combine the files and regrid them (if the region is in two different tiles)
+### Added
+- BUILD: Adds checks to autotools and cmake build files to solve compilation issues with GCC 10 and greater. Also adds a debug build type for CMake to allow for overriding compiler flags, and individual override flags for mixed precision routines.
+- DOCS: Additional information added for building and testing FMS with the build systems; renamed and moved autotools build document.
+- YAML: Adds support for writing yaml files through the `fms_yaml_output_mod` module
+### Changed
+- MIXED MODE: Expands support for mixed precision reals to the constants files, diag_manager, sat_vapor_pres, time_manager, and tracer_manager
+- FMS_IO: Increased the character length for restart file names to allow for longer paths
+### Fixed
+- COUPLER: Fixes global checksum being written to stdout by every core instead of just the root
+- DOCS: Fixed parsing issues with include and header files, adds class diagrams and layout improvements
+### Tag Commit Hashes
+- 2022.03-alpha1 62588548a5ecbdce7dbf857542ed272f7b2c971f
+- 2022.03-beta1  8a4ad847122c7cc597a1f2626290b46af44b143a
+
+## [2022.02] - 2022-04-29
+### Known Issues
+- If using GCC 10 or higher as well as MPICH, compilation errors will occur unless `-fallow-argument-mismatch` is included in the Fortran compiler flags
+- GCC 11.1.0 is unsupported due to compilation issues with select type. The issue is resolved in later GCC releases.
+- Current diag_manager does not add "tileX" to the filename when using a cube sphere, which leads to trouble when trying to combine the files and regrid them (if the region is in two different tiles)
+### Added
+- STRING_UTILS: Adds a module, `fms_string_utils_mod`, for common string operations throughout FMS
+- LIBFMS: makes recently added routines available through the global `fms` module
+- CMAKE: Adds build option for position independent code
+- CONSTANTS: Adds macros to load constants for different modeling systems/uses between GFDL, GEOS and GFS. Can be selected in cmake with `-DCONSTANTS=<GEOS|GFDL|GFS>`
+### Changed
+- STRING_UTILS: Refactored string routine definitions from fms_mod and fms2_io_mod to be located in fms_string_utils_mod
+- CONSTANTS: Makes fmsconstants.F90 contain the constant definitions, with constants_mod refactored to hold the same values
+- MOSAIC2: changes grid 'version' names and documentation to be more descriptive
+### Removed
+- FMS_MOD: Removes fms_c.c and fms_c.h files from the fms directory
+### Fixed
+- FMS2_IO: Fixed bug casuing non-root pe's to fail during the flush_file routine
+### Tag Commit Hashes
+- 2022.02-alpha1 270c2a4e1a94229a2ae6b1e431c473589b6e15c3
+- 2022.02-alpha2 7768ad1d4941b92ec8f40d34b1b517f5bde3df4e
+- 2022.02-beta1  689579eea6bf7a25c64e8b823551ec588be90984
+
 ## [2022.01] - 2022-03-25
 ### Known Issues
 - The MPICH MPI implementation is unsupported when used alongside GCC 10 or 11 due to compilation issues with the mixed precision reals. MPICH can still be used to compile FMS with GCC 9 or earlier, or with other compilers.

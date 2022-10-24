@@ -19,6 +19,9 @@
 
 character(len=18), public, parameter :: constants_version = 'FMSConstants: GFS '
 
+!--- temporary definition for backwards compatibility
+real(kind=RKIND), public, parameter :: small_fac = 1._r8_kind
+
 !--- Spherical coordinate conversion constants
 real(kind=r8_kind), public, parameter :: PI_8 = 3.1415926535897931_r8_kind    !< Ratio of circle circumference to diameter [N/A]
 real(kind=RKIND),   public, parameter :: PI   = PI_8                          !< Ratio of circle circumference to diameter [N/A]

@@ -17,6 +17,8 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
+!> @addtogroup mpp_domains_mod
+!> @{
 subroutine MPP_DO_UPDATE_NEST_FINE_3D_(f_addrs, nest_domain, update, d_type, ke, wb_addrs, eb_addrs, &
                                    sb_addrs, nb_addrs, flags, xbegin, xend, ybegin, yend)
   integer(i8_kind),         intent(in) :: f_addrs(:)
@@ -1156,5 +1158,5 @@ subroutine MPP_DO_UPDATE_NEST_COARSE_3D_V_(f_addrsx_in, f_addrsy_in, f_addrsx_ou
   return
 
 end subroutine MPP_DO_UPDATE_NEST_COARSE_3D_V_
-
+!> @}
 #endif

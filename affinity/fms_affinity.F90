@@ -20,13 +20,10 @@
 !> @defgroup fms_affinity_mod fms_affinity_mod
 !> @ingroup affinity
 !> @brief Fortran API interfaces to set the thread affinity.
-!! API interfaces to allow setting and getting thread affinity.  The thread affinity get and set
-!! are managed in the C routines in affinity.c.
+!! API interfaces to allow setting and getting thread affinity.  The routines @ref get_cpuset
+!! , @ref set_cpu_affinity , and @ref fms_affinity_get are defined via C routines in affinity.c.
 !!
 !! @author Rusty Benson
-
-!> @file
-!> File for @ref fms_affinity_mod
 
 !> @addtogroup fms_affinity_mod
 !> @{
@@ -49,7 +46,6 @@ module fms_affinity_mod
     !> Interface to get affinity from the current component.
     !!
     !> Defined in @ref affinity.c.
-    !> @ingroup fms_affinity_mod
     integer(KIND=c_int) function fms_affinity_get() bind(c, name="get_cpu_affinity")
       import c_int
     end function fms_affinity_get

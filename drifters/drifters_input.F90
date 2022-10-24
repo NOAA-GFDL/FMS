@@ -20,9 +20,6 @@
 !> @ingroup drifters
 !> @brief Imports initial drifter positions from a netCDF file
 
-!> @file
-!> @brief File for @ref drifters_input_mod
-
 !> @addtogroup drifters_input_mod
 !> @{
 module drifters_input_mod

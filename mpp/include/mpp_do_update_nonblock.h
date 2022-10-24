@@ -17,6 +17,8 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
+!> @addtogroup mpp_domains_mod
+!> @{
 subroutine MPP_START_DO_UPDATE_3D_(id_update, f_addrs, domain, update, d_type, ke_max, ke_list, flags, &
                                   &  reuse_id_update, name)
   integer,                    intent(in) :: id_update
@@ -374,3 +376,4 @@ subroutine MPP_COMPLETE_DO_UPDATE_3D_(id_update, f_addrs, domain, update, d_type
   return
 
 end subroutine MPP_COMPLETE_DO_UPDATE_3D_
+!> @}

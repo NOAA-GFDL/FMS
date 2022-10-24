@@ -21,9 +21,6 @@
 !> @brief Uses @ref fms_platform.h to define byte sizes for variable kinds
 !! to be used in fms.
 
-!> @file
-!> @brief File for @ref platform_mod
-
 !> @addtogroup platform_mod
 !> @{
 module platform_mod

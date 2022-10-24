@@ -22,9 +22,6 @@
 !> @ingroup drifters
 !> @brief Routines and types to update drifter positions across processor domains
 
-!> @file
-!> @brief File for @ref drifters_comm_mod
-
 module drifters_comm_mod
 
 #ifdef _SERIAL

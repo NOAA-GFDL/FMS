@@ -25,9 +25,6 @@
 !!  in the range 0 to 1.
 !!  This version uses the Mersenne Twister to generate random numbers on [0, 1].
 
-!> @file
-!> @brief File for @ref random_numbers_mod
-
 module random_numbers_mod
 
   use MersenneTwister_mod, only: randomNumberSequence, & ! The random number engine.

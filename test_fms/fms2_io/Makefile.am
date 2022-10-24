@@ -66,7 +66,7 @@ TESTS = test_bc_restart.sh test_fms2_io.sh test_atmosphere_io.sh test_io_simple.
 # Set srcdir as evironment variable to be reference in the job script
 TEST_EXTENSIONS = .sh
 SH_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
-                  $(top_srcdir)/tap-driver.sh
-TESTS_ENVIRONMENT = srcdir="$(top_srcdir)"
+                  $(abs_top_srcdir)/test_fms/tap-driver.sh
+TESTS_ENVIRONMENT = srcdir="$(abs_top_srcdir)"
 
 CLEANFILES = *.mod *.nc *.nc.* input.nml logfile.000000.out the_mask ascii_test1 *.dpi *.spi *.dyn *.spl *-files/*

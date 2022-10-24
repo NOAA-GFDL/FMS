@@ -36,9 +36,6 @@
 !! A field can be overriden globally (by default) or users can specify one or two regions in which
 !! data_override will take place, field values outside the region will not be affected.
 
-!> @file
-!> @brief File for @ref data_override_mod
-
 module data_override_mod
 use yaml_parser_mod
 use constants_mod, only: PI
@@ -517,9 +514,19 @@ subroutine read_table_yaml(data_table)
       do i = 1, nentries
          call get_value_from_key(file_id, entry_id(i), "gridname", data_table(i)%gridname)
          call get_value_from_key(file_id, entry_id(i), "fieldname_code", data_table(i)%fieldname_code)
-         call get_value_from_key(file_id, entry_id(i), "fieldname_file", data_table(i)%fieldname_file)
-         call get_value_from_key(file_id, entry_id(i), "file_name", data_table(i)%file_name)
-         call get_value_from_key(file_id, entry_id(i), "interpol_method", data_table(i)%interpol_method)
+
+         data_table(i)%fieldname_file = ""
+         call get_value_from_key(file_id, entry_id(i), "fieldname_file", data_table(i)%fieldname_file, &
+           & is_optional=.true.)
+
+         data_table(i)%file_name = ""
+         call get_value_from_key(file_id, entry_id(i), "file_name", data_table(i)%file_name, &
+           & is_optional=.true.)
+
+         data_table(i)%interpol_method = "none"
+         call get_value_from_key(file_id, entry_id(i), "interpol_method", data_table(i)%interpol_method, &
+           & is_optional=.true.)
+
          call get_value_from_key(file_id, entry_id(i), "factor", data_table(i)%factor)
          call get_value_from_key(file_id, entry_id(i), "region_type", buffer, is_optional=.true.)
 

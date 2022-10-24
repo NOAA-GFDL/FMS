@@ -19,9 +19,11 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
+!> @addtogroup mpp_domains_mod
+!> @{
 
+    !> Updates data domain of 3D field whose computational domains have been computed
     subroutine MPP_DO_UPDATE_AD_3D_( f_addrs, domain, update, d_type, ke, flags)
-!updates data domain of 3D field whose computational domains have been computed
       integer(i8_kind),         intent(in) :: f_addrs(:,:)
       type(domain2D),             intent(in) :: domain
       type(overlapSpec),          intent(in) :: update
@@ -271,3 +273,4 @@
 
       return
     end subroutine MPP_DO_UPDATE_AD_3D_
+!> @}

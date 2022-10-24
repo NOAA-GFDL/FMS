@@ -152,18 +152,19 @@
 !! authors of code to allow modification of their routines.
 !!
 
-!> @file
-!> @brief File for @ref field_manager_mod
-
 !> @addtogroup field_manager_mod
 !> @{
 module field_manager_mod
+#ifndef use_yaml
 #ifndef MAXFIELDS_
 #define MAXFIELDS_ 250
 #endif
+#endif
 
+#ifndef use_yaml
 #ifndef MAXFIELDMETHODS_
 #define MAXFIELDMETHODS_ 250
+#endif
 #endif
 
 !
@@ -178,9 +179,6 @@ module field_manager_mod
 !
 ! <REVIEWER EMAIL="John.Dunne@noaa.gov"> John P. Dunne
 ! </REVIEWER>
-!
-! <HISTORY
-!  SRC="http://www.gfdl.noaa.gov/fms-cgi-bin/cvsweb.cgi/FMS/shared/field_manager/field_manager.F90"/>
 
 use    mpp_mod, only : mpp_error,   &
                        FATAL,       &
@@ -193,18 +191,16 @@ use    mpp_mod, only : mpp_error,   &
 use    fms_mod, only : lowercase,   &
                        write_version_number
 use fms2_io_mod, only: file_exists
+#ifdef use_yaml
+use fm_yaml_mod
+#endif
 
 implicit none
 private
 
-! Include variable "version" to be written to log file.
 #include<file_version.h>
 logical            :: module_is_initialized  = .false.
 
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        Public routines
-!        Interface definitions (optional arguments are in [brackets]):
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 public :: field_manager_init   !< (nfields, [table_name]) returns number of fields
 public :: field_manager_end    !< ()
 public :: find_field_index     !< (model, field_name) or (list_path)
@@ -230,7 +226,6 @@ public :: fm_get_value_integer !<   as above (overloaded function)
 public :: fm_get_value_logical !<   as above (overloaded function)
 public :: fm_get_value_real    !<   as above (overloaded function)
 public :: fm_get_value_string  !<   as above (overloaded function)
-public :: fm_intersection      !< (lists, num_lists) return fm_array_list pointer
 public :: fm_init_loop         !< (list, iter)
 public :: fm_loop_over_list    !< (list, name, type, index) return success
                                !! (iter, name, type, index) return success
@@ -248,13 +243,6 @@ public :: fm_query_method      !< (name, method_name, method_control) return suc
 public :: fm_find_methods      !< (list, methods, control) return success and name and
                                !! control strings.
 public :: fm_copy_list         !< (list, suffix, [create]) return index
-public :: fm_set_verbosity     !< ([verbosity])
-
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!   Private routines
-!   Interface definitions (optional arguments are in [brackets]):
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-
 private :: create_field        ! (list_p, name) return field pointer
 private :: dump_list           ! (list_p, recursive, depth) return success
 private :: find_base           ! (field, path, base)
@@ -265,9 +253,6 @@ private :: get_field           ! (field, list_p) return field pointer
 private :: initialize          ! ()
 private :: make_list           ! (list_p, name) return field pointer
 
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        Public parameters
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 !> The length of a character string representing the field name.
 integer, parameter, public :: fm_field_name_len = 48
 !> The length of a character string representing the field path.
@@ -294,18 +279,7 @@ integer, parameter, public :: MODEL_COUPLER     = 5
 character(len=11), parameter, public, dimension(NUM_MODELS) :: &
    MODEL_NAMES=(/'atmospheric','oceanic    ','land       ','ice        ','coupler    '/)
 
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        Public type definitions
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-
 !> @}
-
-!> @brief List of field names
-!> @ingroup field_manager_mod
-type, public :: fm_array_list_def
-  character (len=fm_field_name_len), dimension(:), pointer :: names => NULL()
-  integer                                                  :: length
-end type  fm_array_list_def
 
 !> @brief This method_type is a way to allow a component module to alter the parameters it needs
 !! for various tracers.
@@ -356,17 +330,8 @@ type, public :: fm_list_iter_type
    type(field_def), pointer    :: ptr => NULL()  !< pointer to the current field
 end type fm_list_iter_type
 
-
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        Public types
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-
 !> @ingroup field_manager_mod
 type(method_type), public :: default_method
-
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        Interface definitions for overloaded routines
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
 !> @brief Returns an index corresponding to the given field name.
 !!
@@ -460,22 +425,18 @@ interface fm_loop_over_list
   module procedure  fm_loop_over_list_old
 end interface
 
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        Private parameters
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-
 character(len=17), parameter :: module_name       = 'field_manager_mod'
-character(len=1),  parameter :: bracket_left      = '['
-character(len=1),  parameter :: bracket_right     = ']'
+character(len=33), parameter :: error_header      = '==>Error from '//trim(module_name)//': '
+character(len=35), parameter :: warn_header       = '==>Warning from '//trim(module_name)//': '
+character(len=32), parameter :: note_header       = '==>Note from '//trim(module_name)//': '
 character(len=1),  parameter :: comma             = ","
+character(len=1),  parameter :: list_sep          = '/'
+#ifndef use_yaml
 character(len=1),  parameter :: comment           = '#'
 character(len=1),  parameter :: dquote            = '"'
 character(len=1),  parameter :: equal             = '='
-character(len=1),  parameter :: list_sep          = '/'
-character(len=1),  parameter :: space             = ' '
 character(len=1),  parameter :: squote            = "'"
-character(len=1),  parameter :: tab               = char(9) ! ASCII
-
+#endif
 integer,           parameter :: null_type         = 0
 integer,           parameter :: integer_type      = 1
 integer,           parameter :: list_type         = 2
@@ -483,43 +444,45 @@ integer,           parameter :: logical_type      = 3
 integer,           parameter :: real_type         = 4
 integer,           parameter :: string_type       = 5
 integer,           parameter :: num_types         = 5
-integer,           parameter :: line_len          = 256
 integer,           parameter :: array_increment   = 10
+#ifndef use_yaml
 integer,           parameter :: MAX_FIELDS        = MAXFIELDS_
 integer,           parameter :: MAX_FIELD_METHODS = MAXFIELDMETHODS_
-
-
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        Private type definitions
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+#endif
 
 !> @brief Private type for internal use
 !> @ingroup field_manager_mod
-type, private :: field_mgr_type !{
+type, private :: field_mgr_type
   character(len=fm_field_name_len)                    :: field_type
-  character(len=fm_string_len)                    :: field_name
+  character(len=fm_string_len)                        :: field_name
   integer                                             :: model, num_methods
+#ifdef use_yaml
+  type(method_type), dimension(:), allocatable        :: methods !< methods associated with this field name
+#else
   type(method_type)                                   :: methods(MAX_FIELD_METHODS)
-end type field_mgr_type !}
+#endif
+end type field_mgr_type
 
+#ifndef use_yaml
 !> @brief Private type for internal use
 !> @ingroup field_manager_mod
-type, private :: field_names_type !{
+type, private :: field_names_type
   character(len=fm_field_name_len)                    :: fld_type
   character(len=fm_field_name_len)                    :: mod_name
   character(len=fm_string_len)                    :: fld_name
-end  type field_names_type !}
+end  type field_names_type
 
 !> @brief Private type for internal use
 !> @ingroup field_manager_mod
-type, private :: field_names_type_short !{
+type, private :: field_names_type_short
   character(len=fm_field_name_len)                    :: fld_type
   character(len=fm_field_name_len)                    :: mod_name
-end type field_names_type_short !}
+end type field_names_type_short
+#endif
 
 !> @brief Private type for internal use
 !> @ingroup field_manager_mod
-type, private :: field_def  !{
+type, private :: field_def
   character (len=fm_field_name_len)                   :: name
   integer                                             :: index
   type (field_def), pointer                           :: parent => NULL()
@@ -535,20 +498,16 @@ type, private :: field_def  !{
   character(len=fm_string_len), pointer, dimension(:) :: s_value => NULL()
   type (field_def), pointer                           :: next => NULL()
   type (field_def), pointer                           :: prev => NULL()
-end type field_def  !}
+end type field_def
 
 !> @addtogroup field_manager_mod
 !> @{
 
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        Private types
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-
+#ifdef use_yaml
+type(field_mgr_type), dimension(:), allocatable, private :: fields !< fields of field_mgr_type
+#else
 type(field_mgr_type), private :: fields(MAX_FIELDS)
-
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        Private variables
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+#endif
 
 character(len=fm_path_name_len)  :: loop_list
 character(len=fm_type_name_len)  :: field_type_name(num_types)
@@ -562,11 +521,6 @@ character(len=50)                :: set_nonexp = "ABCDFGHIJKLMNOPQRSTUVWXYZabcdf
 ! the string setnum then the string may be a number.
 character(len=13)                :: setnum     = "0123456789+-."
 integer                          :: num_fields         = 0
-integer                          :: verb               = 0
-integer                          :: verb_level_warn    = 0
-integer                          :: verb_level_note    = 0
-integer                          :: default_verbosity  = 0
-integer                          :: max_verbosity      = 1
 type (field_def), pointer        :: loop_list_p        => NULL()
 type (field_def), pointer        :: current_list_p     => NULL()
 type (field_def), pointer        :: root_p             => NULL()
@@ -574,6 +528,290 @@ type (field_def), pointer        :: save_root_parent_p => NULL()
 type (field_def), target, save   :: root
 
 contains
+
+#ifdef use_yaml
+
+!> @brief Routine to initialize the field manager.
+!!
+!> This routine reads from a file containing yaml paramaters.
+!! These yaml parameters contain information on which schemes are
+!! needed within various modules. The field manager does not
+!! initialize any of those schemes however. It simply holds the
+!! information and is queried by the appropriate  module.
+!!
+!! The routine has two loops. The first loop initializes the my_table object
+!! and counts the number of fields contained therein. The second loop is the
+!! main loop that acts on each field in the my_table object, defining a list
+!! object (in the field_manager definition) from which various fm routines may be
+!! called, as well as populating the "fields" object and the "methods" objects
+!! within each field object. The "fields" and "methods" objects are then used
+!! with the subroutine new_name to append various characteristics to the list
+!! object. Note that the "fields" and "methods" objects are also used with other
+!! fm routines in a bit of a parallel system.
+subroutine field_manager_init(nfields, table_name)
+integer,                      intent(out), optional :: nfields    !< number of fields
+character(len=fm_string_len), intent(in),  optional :: table_name !< Name of the field table, default
+
+character(len=fm_string_len)    :: tbl_name !< field_table yaml file
+character(len=fm_string_len)    :: method_control !< field_table yaml file
+integer                         :: h, i, j, k, l, m !< dummy integer buffer
+type (fmTable_t)                :: my_table       !< the field table
+integer                         :: model !< model assocaited with the current field
+character(len=fm_path_name_len) :: list_name !< field_manager list name
+character(len=fm_string_len)    :: subparamvalue !< subparam value to be used when defining new name
+character(len=fm_string_len)    :: fm_yaml_null !< useful hack when OG subparam does not contain an equals sign
+integer                         :: current_field !< field index within loop
+integer                         :: index_list_name !< integer used as check for "no field"
+integer                         :: subparamindex !< index to identify whether subparams exist for this field
+logical                         :: fm_success !< logical for whether fm_change_list was a success
+logical                         :: subparams !< logical whether subparams exist in this iteration
+
+if (module_is_initialized) then
+   if(present(nfields)) nfields = num_fields
+   return
+endif
+
+call initialize
+
+if (.not.PRESENT(table_name)) then
+   tbl_name = 'field_table.yaml'
+else
+   tbl_name = trim(table_name)
+endif
+if (.not. file_exists(trim(tbl_name))) then
+  if(present(nfields)) nfields = 0
+  return
+endif
+
+
+! Define my_table object and read in number of fields
+my_table = fmTable_t(trim(tbl_name))
+call my_table%get_blocks
+call my_table%create_children
+do h=1,my_table%nchildren
+  do i=1,my_table%children(h)%nchildren
+    do j=1,my_table%children(h)%children(i)%nchildren
+      num_fields = num_fields + 1
+    end do
+  end do
+end do
+
+allocate(fields(num_fields))
+
+current_field = 0
+do h=1,my_table%nchildren
+  do i=1,my_table%children(h)%nchildren
+    select case (my_table%children(h)%children(i)%name)
+    case ('coupler_mod')
+       model = MODEL_COUPLER
+    case ('atmos_mod')
+       model = MODEL_ATMOS
+    case ('ocean_mod')
+       model = MODEL_OCEAN
+    case ('land_mod')
+       model = MODEL_LAND
+    case ('ice_mod')
+       model = MODEL_ICE
+    case default
+      call mpp_error(FATAL, trim(error_header)//'The model name is unrecognised : &
+        &'//trim(my_table%children(h)%children(i)%name))
+    end select
+    do j=1,my_table%children(h)%children(i)%nchildren
+      current_field = current_field + 1
+      list_name = list_sep//lowercase(trim(my_table%children(h)%children(i)%name))//list_sep//&
+               lowercase(trim(my_table%children(h)%name))//list_sep//&
+               lowercase(trim(my_table%children(h)%children(i)%children(j)%name))
+      index_list_name = fm_new_list(list_name, create = .true.)
+      if ( index_list_name == NO_FIELD ) &
+        call mpp_error(FATAL, trim(error_header)//'Could not set field list for '//trim(list_name))
+      fm_success = fm_change_list(list_name)
+      fields(current_field)%model       = model
+      fields(current_field)%field_name  = lowercase(trim(my_table%children(h)%children(i)%children(j)%name))
+      fields(current_field)%field_type  = lowercase(trim(my_table%children(h)%name))
+      fields(current_field)%num_methods = size(my_table%children(h)%children(i)%children(j)%key_ids)
+      allocate(fields(current_field)%methods(fields(current_field)%num_methods))
+      if(fields(current_field)%num_methods.gt.0) then
+        if (my_table%children(h)%children(i)%children(j)%nchildren .gt. 0) subparams = .true.
+        do k=1,size(my_table%children(h)%children(i)%children(j)%keys)
+          fields(current_field)%methods(k)%method_type = &
+            lowercase(trim(my_table%children(h)%children(i)%children(j)%keys(k)))
+          fields(current_field)%methods(k)%method_name = &
+            lowercase(trim(my_table%children(h)%children(i)%children(j)%values(k)))
+          if (.not.subparams) then
+            call new_name(list_name, my_table%children(h)%children(i)%children(j)%keys(k),&
+              my_table%children(h)%children(i)%children(j)%values(k) )
+          else
+            subparamindex=-1
+            do l=1,my_table%children(h)%children(i)%children(j)%nchildren
+              if(lowercase(trim(my_table%children(h)%children(i)%children(j)%children(l)%paramname)).eq.&
+                lowercase(trim(fields(current_field)%methods(k)%method_type))) then
+                  subparamindex = l
+                  exit
+              end if
+            end do
+            if (subparamindex.eq.-1) then
+              call new_name(list_name, my_table%children(h)%children(i)%children(j)%keys(k),&
+                my_table%children(h)%children(i)%children(j)%values(k) )
+            else
+              do m=1,size(my_table%children(h)%children(i)%children(j)%children(subparamindex)%keys)
+                method_control = " "
+                subparamvalue = " "
+                if (trim(my_table%children(h)%children(i)%children(j)%values(k)).eq.'fm_yaml_null') then
+                  fm_yaml_null = ''
+                else
+                  fm_yaml_null = trim(my_table%children(h)%children(i)%children(j)%values(k))//'/'
+                end if
+                method_control = trim(my_table%children(h)%children(i)%children(j)%keys(k))//"/"//&
+                  &trim(fm_yaml_null)//&
+                  &trim(my_table%children(h)%children(i)%children(j)%children(subparamindex)%keys(m))
+                subparamvalue = trim(my_table%children(h)%children(i)%children(j)%children(subparamindex)%values(m))
+                call new_name(list_name, method_control, subparamvalue)
+              end do
+            end if
+          end if
+        end do
+      end if
+    end do
+  end do
+end do
+
+if (present(nfields)) nfields = num_fields
+call my_table%destruct
+end subroutine field_manager_init
+
+!> @brief Subroutine to add new values to list parameters.
+!!
+!> This subroutine uses input strings list_name, method_name
+!! and val_name_in to add new values to the list. Given
+!! list_name a new list item is created that is named
+!! method_name and is given the value or values in
+!! val_name_in. If there is more than 1 value in
+!! val_name_in, these values should be  comma-separated.
+subroutine new_name ( list_name, method_name_in , val_name_in)
+character(len=*), intent(in)    :: list_name !< The name of the field that is of interest here.
+character(len=*), intent(in)    :: method_name_in !< The name of the method that values are
+                                                  !! being supplied for.
+character(len=*), intent(inout) :: val_name_in !< The value or values that will be parsed and
+                                               !! used as the value when creating a new field or fields.
+
+character(len=fm_string_len)       :: method_name !< name of method to be attached to new list
+character(len=fm_string_len)       :: val_name !< value name (to be converted to appropriate type)
+integer, dimension(:), allocatable :: end_val !< end values in comma separated list
+integer, dimension(:), allocatable :: start_val !< start values in comma separated list
+integer                            :: i !< loop index
+integer                            :: index_t !< appending index
+integer                            :: num_elem !< number of elements in comma list
+integer                            :: val_int !< value when converted to integer
+integer                            :: val_type !< value type represented as integer for use in select case
+logical                            :: append_new !< whether or not to append to existing list structure
+logical                            :: val_logic !< value when converted to logical
+real                               :: val_real !< value when converted to real
+
+call strip_front_blanks(val_name_in)
+method_name = trim(method_name_in)
+call strip_front_blanks(method_name)
+
+index_t  = 1
+num_elem = 1
+append_new = .false.
+
+! If the array of values being passed in is a comma delimited list then count
+! the number of elements.
+
+do i = 1, len_trim(val_name_in)
+  if ( val_name_in(i:i) == comma ) then
+    num_elem = num_elem + 1
+  endif
+enddo
+
+allocate(start_val(num_elem))
+allocate(end_val(num_elem))
+start_val(1) = 1
+end_val(:) = len_trim(val_name_in)
+
+num_elem = 1
+do i = 1, len_trim(val_name_in)
+  if ( val_name_in(i:i) == comma ) then
+    end_val(num_elem) = i-1
+    start_val(num_elem+1) = i+1
+    num_elem = num_elem + 1
+  endif
+enddo
+
+do i = 1, num_elem
+
+  if ( i .gt. 1 .or. index_t .eq. 0 ) then
+    append_new = .true.
+    index_t = 0 ! If append is true then index must be <= 0
+  endif
+  val_type = string_type  ! Assume it is a string
+  val_name = val_name_in(start_val(i):end_val(i))
+  call strip_front_blanks(val_name)
+
+  if ( scan(val_name(1:1), setnum ) > 0 ) then
+    if ( scan(val_name, set_nonexp ) .le. 0 ) then
+      if ( scan(val_name, '.') > 0 .or. scan(val_name, 'e') > 0 .or. scan(val_name, 'E') > 0) then
+        read(val_name, *) val_real
+        val_type = real_type
+      else
+        read(val_name, *) val_int
+        val_type = integer_type
+      endif
+    endif
+  endif
+
+  if ( len_trim(val_name) == 1 .or. len_trim(val_name) == 3) then
+    if ( val_name == 't' .or. val_name == 'T' .or. val_name == '.t.' .or. val_name == '.T.' ) then
+      val_logic = .TRUE.
+      val_type = logical_type
+    endif
+    if ( val_name == 'f' .or. val_name == 'F' .or. val_name == '.f.' .or. val_name == '.F.' ) then
+      val_logic = .FALSE.
+      val_type = logical_type
+    endif
+  endif
+  if ( trim(lowercase(val_name)) == 'true' .or. trim(lowercase(val_name)) == '.true.' ) then
+    val_logic = .TRUE.
+    val_type = logical_type
+  endif
+  if ( trim(lowercase(val_name)) == 'false' .or. trim(lowercase(val_name)) == '.false.' ) then
+    val_logic = .FALSE.
+    val_type = logical_type
+  endif
+
+  select case(val_type)
+
+    case (integer_type)
+      if ( fm_new_value( method_name, val_int, create = .true., index = index_t, append = append_new ) < 0 ) &
+        call mpp_error(FATAL, trim(error_header)//'Could not set "' // trim(val_name) // '" for '//trim(method_name)//&
+                              ' (I) for '//trim(list_name))
+
+    case (logical_type)
+      if ( fm_new_value( method_name, val_logic, create = .true., index = index_t, append = append_new) < 0 ) &
+        call mpp_error(FATAL, trim(error_header)//'Could not set "' // trim(val_name) // '" for '//trim(method_name)//&
+                              ' (L) for '//trim(list_name))
+
+    case (real_type)
+      if ( fm_new_value( method_name, val_real, create = .true., index = index_t, append = append_new) < 0 ) &
+        call mpp_error(FATAL, trim(error_header)//'Could not set "' // trim(val_name) // '" for '//trim(method_name)//&
+                              ' (R) for '//trim(list_name))
+
+    case (string_type)
+      if ( fm_new_value( method_name, val_name, create = .true., index = index_t, append = append_new) < 0 ) &
+        call mpp_error(FATAL, trim(error_header)//'Could not set "' // trim(val_name) // '" for '//trim(method_name)//&
+                              ' (S) for '//trim(list_name))
+    case default
+      call mpp_error(FATAL, trim(error_header)//'Could not find a valid type to set the '//trim(method_name)//&
+                            ' for '//trim(list_name))
+
+  end select
+
+enddo
+  deallocate(start_val)
+  deallocate(end_val)
+
+end subroutine new_name
+#else  
 
 !> @brief Routine to initialize the field manager.
 !!
@@ -588,20 +826,6 @@ integer,                      intent(out), optional :: nfields !< number of fiel
 character(len=fm_string_len), intent(in), optional :: table_name !< Name of the field table, default
                                                                  !! is 'field_table'
 
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        local parameters
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-character(len=18), parameter :: sub_name     = 'field_manager_init'
-character(len=64), parameter :: error_header = '==>Error from ' // trim(module_name)   //  &
-                                               '(' // trim(sub_name) // '): '
-character(len=64), parameter :: warn_header  = '==>Warning from ' // trim(module_name) //  &
-                                               '(' // trim(sub_name) // '): '
-character(len=64), parameter :: note_header  = '==>Note from ' // trim(module_name)    //  &
-                                               '(' // trim(sub_name) // '): '
-
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        local variables
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 character(len=1024)              :: record
 character(len=fm_string_len)     :: control_str
 character(len=fm_path_name_len)  :: list_name
@@ -631,23 +855,11 @@ type(method_type_short)          :: text_method_short
 type(method_type)                :: text_method
 type(method_type_very_short)     :: text_method_very_short
 
-
-
 if (module_is_initialized) then
    if(present(nfields)) nfields = num_fields
    return
 endif
 
-#ifdef PRESERVE_UNIT_CASE
-! <ERROR MSG="Preserving the unit's case is experimental." STATUS="NOTE">
-!   The case of the units in the field_table is preserved.  This option is
-!   still experimental.  It is possible other model components expect the units
-!   to be lowercase.  Please notify the developers if any issues are discovered.
-! </ERROR>
-call mpp_error(NOTE,trim(note_header)//"Preserving the unit's case is experimental.")
-#endif
-
-num_fields = 0
 call initialize
 
 if (.not.PRESENT(table_name)) then
@@ -656,16 +868,7 @@ else
    tbl_name = trim(table_name)
 endif
 if (.not. file_exists(trim(tbl_name))) then
-!   <ERROR MSG="No field table available, so no fields are being registered." STATUS="NOTE">
-!      The field table does not exist.
-!   </ERROR>
-  if (mpp_pe() == mpp_root_pe()) then
-    if (verb .gt. verb_level_warn) then
-      call mpp_error(NOTE, trim(warn_header)//                       &
-         'No field table ('//trim(tbl_name)//') available, so no fields are being registered.')
-    endif
-  endif
-if(present(nfields)) nfields = 0
+  if(present(nfields)) nfields = 0
   return
 endif
 
@@ -688,13 +891,6 @@ do while (.TRUE.)
                icount = icount + 1
             endif
          enddo
-!     <ERROR MSG="Too many fields in field table header entry." STATUS="FATAL">
-!       There are more that 3 fields in the field table header entry.
-!       The entry should look like <BR/>
-!       "Field_Type","Model_Type","Field_Name" <BR/>
-!        or<BR/>
-!       "Field_Type","Model_Type"
-!     </ERROR>
       if (icount > 6 ) then
         call mpp_error(FATAL,trim(error_header)//'Too many fields in field table header entry.'//trim(record))
       endif
@@ -719,32 +915,18 @@ do while (.TRUE.)
              text_names%mod_name = lowercase(trim(text_names_short%mod_name))
              text_names%fld_name = lowercase(trim(text_names_short%mod_name))
            case default
-!     <ERROR MSG="Unterminated field in field table header entry." STATUS="FATAL">
 !       There is an unterminated or unquoted string in the field table entry.
              text_names%fld_type = " "
              text_names%mod_name = lowercase(trim(record))
              text_names%fld_name = " "
-!             call mpp_error(FATAL,trim(error_header)//'Unterminated field in field_table header entry.'//trim(record))
-!     </ERROR>
          end select
 
 ! Create a list with Rick Slaters field manager code
 
    list_name = list_sep//trim(text_names%mod_name)//list_sep//trim(text_names%fld_type)//&
                list_sep//trim(text_names%fld_name)
-   if (mpp_pe() == mpp_root_pe() ) then
-     if (verb .gt. verb_level_note) then
-!   <ERROR MSG="Creating list name = list_name." STATUS="NOTE">
-!      A field is being created called list_name.
-!   </ERROR>
-       call mpp_error(NOTE, trim(note_header)//'Creating list name = '//trim(list_name))
-     endif
-   endif
 
    index_list_name = fm_new_list(list_name, create = .true.)
-!   <ERROR MSG="Could not set field list for list_name." STATUS="FATAL">
-!      A field called list_name could not be created.
-!   </ERROR>
    if ( index_list_name == NO_FIELD ) &
      call mpp_error(FATAL, trim(error_header)//'Could not set field list for '//trim(list_name))
 
@@ -761,20 +943,11 @@ do while (.TRUE.)
    case ('ice_mod')
       model = MODEL_ICE
    case default
-!   <ERROR MSG="The model name is unrecognised : model_name" STATUS="FATAL">
-!      The model name being supplied in the field entry is unrecognised.
-!      This should be the second string in the first line of the field entry.
-!      Recognised names are atmos_mod, ice_mod, land_mod and ocean_mod.
-!   </ERROR>
      call mpp_error(FATAL, trim(error_header)//'The model name is unrecognised : '//trim(text_names%mod_name))
    end select
    if (find_field_index(list_name) > 0) then
       num_fields = num_fields + 1
 
-
-!     <ERROR MSG="max fields exceeded" STATUS="FATAL">
-!       Maximum number of fields for this module has been exceeded.
-!     </ERROR>
       if (num_fields > MAX_FIELDS) call mpp_error(FATAL,trim(error_header)//'max fields exceeded')
       fields(num_fields)%model       = model
       fields(num_fields)%field_name  = lowercase(trim(text_names%fld_name))
@@ -808,14 +981,6 @@ do while (.TRUE.)
                icount = icount + 1
             endif
          enddo
-!     <ERROR MSG="Too many fields in field entry." STATUS="FATAL">
-!       There are more that 3 fields in the tracer entry. This is probably due
-!       to separating the parameters entry into multiple strings.
-!       The entry should look like <BR/>
-!       "Type","Name","Control1=XXX,Control2=YYY" <BR/>
-!        and not like<BR/>
-!       "Type","Name","Control1=XXX","Control2=YYY"
-!     </ERROR>
       if (icount > 6 ) call mpp_error(FATAL,trim(error_header)//'Too many fields in field entry.'//trim(record))
 
       if (.not. fm_change_list ( list_name)) &
@@ -837,20 +1002,8 @@ do while (.TRUE.)
           read(record,*,end=99,err=99) text_method_short
           fields(num_fields)%methods(m)%method_type =&
                & lowercase(trim(text_method_short%method_type))
-#ifdef PRESERVE_UNIT_CASE
-
-          if ( trim(fields(num_fields)%methods(m)%method_type) == 'units' ) then
-             ! Do not lowercase if units
-             fields(num_fields)%methods(m)%method_name =&
-                  & trim(text_method_short%method_name)
-          else
-             fields(num_fields)%methods(m)%method_name =&
-                  & lowercase(trim(text_method_short%method_name))
-          end if
-#else
           fields(num_fields)%methods(m)%method_name =&
                & lowercase(trim(text_method_short%method_name))
-#endif
           fields(num_fields)%methods(m)%method_control = " "
 
           type_str    = text_method_short%method_type
@@ -875,10 +1028,7 @@ do while (.TRUE.)
           name_str = ""
 
         case default
-!     <ERROR MSG="Unterminated field in field entry." STATUS="FATAL">
-!       There is an unterminated or unquoted string in the field table entry.
           call mpp_error(FATAL,trim(error_header)//'Unterminated field in field entry.'//trim(record))
-!     </ERROR>
       end select
 
 ! This section of code breaks the control string into separate strings.
@@ -900,28 +1050,16 @@ do while (.TRUE.)
             control_array(icount,2) = l ! Middle of string
          elseif (control_str(l:l) == comma ) then
             if (icount .eq. 0) then
-
-!     <ERROR MSG="Unterminated field in field entry." STATUS="FATAL">
-!       Bad format for field entry (comma without equals sign)
               call mpp_error(FATAL,trim(error_header) //                                &
                    ' Bad format for field entry (comma without equals sign): ''' //     &
                    trim(control_str) // '''')
-!     </ERROR>
-
             elseif (icount .gt. MAX_FIELDS) then
-
-!     <ERROR MSG="Unterminated field in field entry." STATUS="FATAL">
-!       Too many fields in field entry
               call mpp_error(FATAL,trim(error_header) //        &
                    ' Too many fields in field entry: ''' //     &
                    trim(control_str) // '''')
-!     </ERROR>
-
             else
-
               control_array(icount,3) = l-1   !End of previous string
               control_array(min(MAX_FIELDS,icount+1),1) = l+1 !Start of next string
-
             endif
          endif
       enddo
@@ -933,7 +1071,6 @@ do while (.TRUE.)
       if (control_str(ltrec:ltrec) .ne. comma) then
         control_array(max(1,icount),3) = ltrec
       endif
-
 
       if ( icount == 0 ) then
         method_name = type_str
@@ -974,24 +1111,11 @@ do while (.TRUE.)
       endif
 
       fields(num_fields)%num_methods = fields(num_fields)%num_methods + 1
-!     <ERROR MSG="Maximum number of methods for field exceeded" STATUS="FATAL">
-!       Maximum number of methods allowed for entries in the field table has been exceeded.
-!     </ERROR>
       if (fields(num_fields)%num_methods > MAX_FIELD_METHODS) &
          call mpp_error(FATAL,trim(error_header)//'Maximum number of methods for field exceeded')
          m = m + 1
       enddo
    else
-
-!     <ERROR MSG="Field with identical name and model name duplicate found, skipping" STATUS="NOTE">
-!       The name of the field and the model name are identical. Skipping that field.
-!     </ERROR>
-      if (mpp_pe() == 0) then
-         if (verb .gt. verb_level_warn) then
-           call mpp_error(WARNING, trim(warn_header)//                              &
-                'Field with identical name and model name duplicate found, skipping')
-          endif
-      endif
       flag_method = .TRUE.
       do while (flag_method)
          read(iunit,'(A)',end=99,err=99) record
@@ -1009,8 +1133,6 @@ if(io_status/=0) call mpp_error(FATAL, 'field_manager_mod: Error in closing file
 
 
 if(present(nfields)) nfields = num_fields
-if (verb .gt. verb_level_warn) &
-  fm_success= fm_dump_list("/", .true.)
 
 default_method%method_type = 'none'
 default_method%method_name = 'none'
@@ -1019,13 +1141,9 @@ return
 
 99 continue
 
-!     <ERROR MSG="error reading field table" STATUS="FATAL">
-!       There is an error in reading the field table.
-!     </ERROR>
 call mpp_error(FATAL,trim(error_header)//' Error reading field table. Record = '//trim(record))
 
 end subroutine field_manager_init
-! </SUBROUTINE>
 
 subroutine check_for_name_duplication
 integer :: i
@@ -1046,9 +1164,6 @@ enddo
 
 end subroutine check_for_name_duplication
 
-!#######################################################################
-!#######################################################################
-
 !> @brief Subroutine to add new values to list parameters.
 !!
 !> This subroutine uses input strings list_name, method_name
@@ -1064,20 +1179,6 @@ character(len=*), intent(in)    :: method_name_in !< The name of the method that
 character(len=*), intent(inout) :: val_name_in !< The value or values that will be parsed and
                                                !! used as the value when creating a new field or fields.
 
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        local parameters
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-character(len=8),  parameter :: sub_name     = 'new_name'
-character(len=64), parameter :: error_header = '==>Error from ' // trim(module_name)   //  &
-                                               '(' // trim(sub_name) // '): '
-character(len=64), parameter :: warn_header  = '==>Warning from ' // trim(module_name) //  &
-                                               '(' // trim(sub_name) // '): '
-character(len=64), parameter :: note_header  = '==>Note from ' // trim(module_name)    //  &
-                                               '(' // trim(sub_name) // '): '
-
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        local variables
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 character(len=fm_string_len)   :: method_name
 character(len=fm_string_len)   :: val_name
 integer, dimension(MAX_FIELDS) :: end_val
@@ -1120,22 +1221,11 @@ enddo
 left_br  = scan(method_name,'[')
 right_br = scan(method_name,']')
 if ( num_elem .eq. 1 ) then
-!     <ERROR MSG="Left bracket present without right bracket in method_name" STATUS="FATAL">
-!       When using an array element an unpaired bracket was found.
-!     </ERROR>
   if ( left_br > 0 .and. right_br == 0 ) &
     call mpp_error(FATAL, trim(error_header)//"Left bracket present without right bracket in "//trim(method_name))
-!     <ERROR MSG="Right bracket present without left bracket in method_name" STATUS="FATAL">
-!       When using an array element an unpaired bracket was found.
-!     </ERROR>
   if ( left_br== 0 .and. right_br > 0 ) &
     call mpp_error(FATAL, trim(error_header)//"Right bracket present without left bracket in "//trim(method_name))
-
-
   if ( left_br > 0 .and. right_br > 0 ) then
-!     <ERROR MSG="Using a non-numeric value for index in method_name" STATUS="FATAL">
-!       An array assignment was requested but a non-numeric value was found. i.e. array[a] = 1
-!     </ERROR>
     if ( scan( method_name(left_br+1:right_br -1), set ) > 0 ) &
        call mpp_error(FATAL, trim(error_header)//"Using a non-numeric value for index in "//trim(method_name))
     read(method_name(left_br+1:right_br -1), *) index_t
@@ -1143,13 +1233,9 @@ if ( num_elem .eq. 1 ) then
   endif
 else
 ! If there are multiple values then there cannot be a bracket in method_name.
-!     <ERROR MSG="Using a comma delimited list with an indexed array element in method_name" STATUS="FATAL">
-!       When supplying multiple values an index was found. i.e array[3] = 4,5,6 is invalid.
-!     </ERROR>
   if ( left_br > 0 .or. right_br > 0 ) &
     call mpp_error(FATAL, &
       trim(error_header)//"Using a comma delimited list with an indexed array element in "//trim(method_name))
-
 endif
 
 do i = 1, num_elem
@@ -1162,14 +1248,13 @@ do i = 1, num_elem
   val_name = val_name_in(start_val(i):end_val(i))
   call strip_front_blanks(val_name)
 
-
 !
 !       if the string starts and ends with matching single quotes, then this is a string
 !       if there are quotes which do not match, then this is an error
 !
 
   length = len_trim(val_name)
-  if (val_name(1:1) .eq. squote) then  !{
+  if (val_name(1:1) .eq. squote) then
 
     if (val_name(length:length) .eq. squote) then
       val_name = val_name(2:length-1)//repeat(" ",len(val_name)-length+2)
@@ -1182,17 +1267,17 @@ do i = 1, num_elem
            ' for ' // trim(method_name) // ' of ' // trim(list_name))
     endif
 
-  elseif (val_name(1:1) .eq. dquote .or. val_name(length:length) .eq. dquote) then  !}{
+  elseif (val_name(1:1) .eq. dquote .or. val_name(length:length) .eq. dquote) then
 
     call mpp_error(FATAL, trim(error_header) // ' Double quotes not allowed in ' // trim(val_name) //   &
          ' for ' // trim(method_name) // ' of ' // trim(list_name))
 
-  elseif (val_name(length:length) .eq. squote) then  !}{
+  elseif (val_name(length:length) .eq. squote) then
 
     call mpp_error(FATAL, trim(error_header) // ' No leading quote in ' // trim(val_name) //            &
          ' for ' // trim(method_name) // ' of ' // trim(list_name))
 
-  else  !}{
+  else
 ! If the string to be parsed is a real then all the characters must be numeric,
 ! be a plus/minus, be a decimal point or, for exponentials, be e or E.
 
@@ -1202,19 +1287,7 @@ do i = 1, num_elem
 
 ! If there is a letter in the name it may only be e or E
 
-      if ( scan(val_name, set_nonexp ) > 0 ) then
-        if (verb .gt. verb_level_warn) then
-!     <ERROR MSG="First character of value is numerical but the value does not appear to be
-!     numerical." STATUS="WARNING">
-!       The value may not be numerical. This is a warning as the user may wish to use a value of 2nd_order.
-!     </ERROR>
-          call mpp_error(WARNING, trim(warn_header)//                                  &
-               'First character of value is numerical but the value does not appear to be numerical.')
-          call mpp_error(WARNING, 'Name = '// trim(list_name)// list_sep//                &
-               trim(method_name)// ' Value = '// trim(val_name))
-        endif
-
-      else
+      if ( scan(val_name, set_nonexp ) .le. 0 ) then
 ! It is real if there is a . in the name or the value appears exponential
         if ( scan(val_name, '.') > 0 .or. scan(val_name, 'e') > 0 .or. scan(val_name, 'E') > 0) then
           read(val_name, *) val_real
@@ -1246,7 +1319,7 @@ do i = 1, num_elem
       val_logic = .FALSE.
       val_type = logical_type
     endif
-  endif  !}
+  endif
 
   select case(val_type)
 
@@ -1275,49 +1348,31 @@ do i = 1, num_elem
 
   end select
 
-  if (mpp_pe() == mpp_root_pe() ) then
-    if (verb .gt. verb_level_note) then
-      out_unit = stdout()
-      write (out_unit,*) trim(note_header), 'Creating new value = ', trim(method_name), ' ', trim(val_name)
-    endif
-  endif
-
 enddo
 
 end subroutine new_name
-
-!#######################################################################
-!#######################################################################
+#endif
 
 !> @brief Destructor for field manager.
 !!
-!> This subroutine writes to the logfile that the user is exiting field_manager and
+!> This subroutine deallocates allocated variables (if allocated) and
 !! changes the initialized flag to false.
 subroutine field_manager_end
 
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        local parameters
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-character(len=17), parameter :: sub_name     = 'field_manager_end'
-character(len=64), parameter :: note_header  = '==>Note from ' // trim(module_name)    //  &
-                                               '(' // trim(sub_name) // '): '
-
-integer :: unit
-
-call write_version_number("FIELD_MANAGER_MOD", version)
-if ( mpp_pe() == mpp_root_pe() ) then
-   unit = stdlog()
-   write (unit,'(/,(a))') trim(note_header), 'Exiting field_manager, have a nice day ...'
-   unit = stdout()
-   write (unit,'(/,(a))') trim(note_header), 'Exiting field_manager, have a nice day ...'
-endif
+#ifdef use_yaml
+integer :: j
+#endif
 
 module_is_initialized = .false.
 
-end subroutine field_manager_end
+#ifdef use_yaml
+do j=1,size(fields)
+  if(allocated(fields(j)%methods)) deallocate(fields(j)%methods)
+end do
+if(allocated(fields)) deallocate(fields)
+#endif
 
-!#######################################################################
-!#######################################################################
+end subroutine field_manager_end
 
 !> @brief A routine to strip whitespace from the start of character strings.
 !!
@@ -1326,25 +1381,8 @@ subroutine strip_front_blanks(name)
 
 character(len=*), intent(inout) :: name !< name to remove whitespace from
 
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        local parameters
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-
-integer :: i, j
-
-j = 1
-do i = 1,len_trim(name) !{
-   if ( .not. (name(i:i) .eq. space .or.                        &
-               name(i:i) .eq. tab)) then  !{
-    j = i
-    exit
-  endif !}
-enddo !}
-name = name(j:)
+name = trim(adjustl(name))
 end subroutine strip_front_blanks
-
-!#######################################################################
-!#######################################################################
 
 !> @brief Function to return the index of the field
 !!
@@ -1358,9 +1396,6 @@ integer                      :: find_field_index_old
 integer,          intent(in) :: model !< The number indicating which model is used.
 character(len=*), intent(in) :: field_name !< The name of the field that an index is being requested for.
 
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        local parameters
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 integer :: i
 
 find_field_index_old = NO_FIELD
@@ -1387,9 +1422,6 @@ find_field_index_new = fm_get_index(field_name)
 
 end function find_field_index_new
 
-!#######################################################################
-!#######################################################################
-
 !> @brief This routine allows access to field information given an index.
 !!
 !> When passed an index, this routine will return the type of field,
@@ -1406,17 +1438,6 @@ character (len=*),intent(out) :: fld_name !< name of the field
 integer, intent(out) :: model !< number indicating which model is used
 integer, intent(out) :: num_methods !< number of methods
 
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        local parameters
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-character(len=14), parameter :: sub_name     = 'get_field_info'
-character(len=64), parameter :: error_header = '==>Error from ' // trim(module_name)   //  &
-                                               '(' // trim(sub_name) // '): '
-
-!   <ERROR MSG="invalid field index" STATUS="FATAL">
-!     The field index is invalid because it is less than 1 or greater than the
-!     number of fields.
-!   </ERROR>
 if (n < 1 .or. n > num_fields) call mpp_error(FATAL,trim(error_header)//'Invalid field index')
 
 fld_type    = fields(n)%field_type
@@ -1425,9 +1446,6 @@ model       = fields(n)%model
 num_methods = fields(n)%num_methods
 
 end subroutine get_field_info
-
-!#######################################################################
-!#######################################################################
 
 !> @brief A routine to get a specified method
 !!
@@ -1439,31 +1457,12 @@ integer,           intent(in)    :: n !< index of field
 integer,           intent(in)    :: m !< index of method
 type(method_type) ,intent(inout) :: method !< the m-th method of field with index n
 
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        local parameters
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-character(len=16), parameter :: sub_name     = 'get_field_method'
-character(len=64), parameter :: error_header = '==>Error from ' // trim(module_name)   //  &
-                                               '(' // trim(sub_name) // '): '
-
-!   <ERROR MSG="invalid field index" STATUS="FATAL">
-!     The field index is invalid because it is less than 1 or greater than the
-!     number of fields.
-!   </ERROR>
 if (n < 1 .or. n > num_fields) call mpp_error(FATAL,trim(error_header)//'Invalid field index')
-
-!   <ERROR MSG="invalid method index" STATUS="FATAL">
-!     The method index is invalid because it is less than 1 or greater than
-!     the number of methods.
-!   </ERROR>
 if (m < 1 .or. m > fields(n)%num_methods) call mpp_error(FATAL,trim(error_header)//'Invalid method index')
 
   method = fields(n)%methods(m)
 
 end subroutine get_field_method
-
-!#######################################################################
-!#######################################################################
 
 !> @brief A routine to obtain all the methods associated with a field.
 !!
@@ -1474,22 +1473,9 @@ subroutine get_field_methods(n,methods)
 integer,          intent(in)  :: n !< field index
 type(method_type),intent(inout) :: methods(:) !< an array of methods for field with index n
 
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        local parameters
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-character(len=17), parameter :: sub_name     = 'get_field_methods'
-character(len=64), parameter :: error_header = '==>Error from ' // trim(module_name)   //  &
-                                               '(' // trim(sub_name) // '): '
-!   <ERROR MSG="invalid field index" STATUS="FATAL">
-!     The field index is invalid because it is less than 1 or greater than the
-!     number of fields.
-!   </ERROR>
   if (n < 1 .or. n > num_fields) &
     call mpp_error(FATAL,trim(error_header)//'Invalid field index')
 
-!   <ERROR MSG="method array too small" STATUS="FATAL">
-!     The method array is smaller than the number of methods.
-!   </ERROR>
   if (size(methods(:)) <  fields(n)%num_methods) &
     call mpp_error(FATAL,trim(error_header)//'Method array too small')
 
@@ -1497,9 +1483,6 @@ character(len=64), parameter :: error_header = '==>Error from ' // trim(module_n
   methods(1:fields(n)%num_methods) = fields(n)%methods(1:fields(n)%num_methods)
 
 end subroutine get_field_methods
-
-!#######################################################################
-!#######################################################################
 
 !> @returns The number of values that have been decoded. This allows
 !! a user to define a large array and fill it partially with
@@ -1511,10 +1494,6 @@ real,             intent(out) :: values(:) !< The value or values that have been
 
 include 'parse.inc'
 end function parse_reals
-! </FUNCTION>
-
-!#######################################################################
-!#######################################################################
 
 function parse_integers ( text, label, values ) result (parse)
 character(len=*), intent(in)  :: text !< The text string from which the values will be parsed.
@@ -1524,9 +1503,6 @@ integer,          intent(out) :: values(:) !< The value or values that have been
 include 'parse.inc'
 end function parse_integers
 
-!#######################################################################
-!#######################################################################
-
 function parse_strings ( text, label, values ) result (parse)
 character(len=*), intent(in)  :: text !< The text string from which the values will be parsed.
 character(len=*), intent(in)  :: label !< A label which describes the values being decoded.
@@ -1534,11 +1510,6 @@ character(len=*), intent(out) :: values(:) !< The value or values that have been
 
 include 'parse.inc'
 end function parse_strings
-
-!#######################################################################
-!#######################################################################
-
-!---- scalar overloads -----
 
 function parse_real ( text, label, value ) result (parse)
 character(len=*), intent(in)  :: text !< The text string from which the values will be parsed.
@@ -1552,9 +1523,6 @@ real :: values(1)
    if (parse > 0) value = values(1)
 end function parse_real
 
-!#######################################################################
-!#######################################################################
-
 function parse_integer ( text, label, value ) result (parse)
 character(len=*), intent(in)  :: text !< The text string from which the values will be parsed.
 character(len=*), intent(in)  :: label !< A label which describes the values being decoded.
@@ -1566,9 +1534,6 @@ integer :: values(1)
    parse = parse_integers ( text, label, values )
    if (parse > 0) value = values(1)
 end function parse_integer
-
-!#######################################################################
-!#######################################################################
 
 function parse_string ( text, label, value ) result (parse)
 character(len=*), intent(in)  :: text !< The text string from which the values will be parsed.
@@ -1582,9 +1547,6 @@ character(len=len(value)) :: values(1)
    if (parse > 0) value = values(1)
 end function parse_string
 
-!#######################################################################
-!#######################################################################
-
 !> @brief A function to create a field as a child of parent_p. This will return
 !! a pointer to a field_def type.
 !!
@@ -1596,58 +1558,28 @@ end function parse_string
 !! list_p => create_field(parent_p, name)
 !! @endcode
 function  create_field(parent_p, name)                        &
-          result (list_p)  !{
+          result (list_p)
 type (field_def), pointer    :: list_p
 type (field_def), pointer    :: parent_p !< A pointer to the parent of the field that is to be created
 character(len=*), intent(in) :: name !< The name of the field that is to be created
 
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        local parameters
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-character(len=12), parameter :: sub_name     = 'create_field'
-character(len=64), parameter :: error_header = '==>Error from ' // trim(module_name)   //  &
-                                               '(' // trim(sub_name) // '): '
-character(len=64), parameter :: warn_header  = '==>Warning from ' // trim(module_name) //  &
-                                               '(' // trim(sub_name) // '): '
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        local variables
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 integer                      :: error, out_unit
-!
 !        Check for fatal errors which should never arise
-!
 out_unit = stdout()
-if (.not. associated(parent_p)) then  !{
-
-  if (verb .gt. verb_level_warn) then  !{
-    write (out_unit,*) trim(warn_header), 'Unnassociated pointer'  &
-                   , ' for ', trim(name)
-  endif  !}
+if (.not. associated(parent_p) .or. name .eq. ' ') then
   nullify(list_p)
   return
-endif  !}
+endif
 
-if (name .eq. ' ') then  !{
-  if (verb .gt. verb_level_warn) then  !{
-    write (out_unit,*) trim(warn_header), 'Empty name for '        &
-                   , trim(name)
-  endif  !}
-  nullify(list_p)
-  return
-endif  !}
-!
 !        Allocate space for the new list
-!
 allocate(list_p, stat = error)
-if (error .ne. 0) then !{
+if (error .ne. 0) then
   write (out_unit,*) trim(error_header), 'Error ', error,       &
        ' allocating memory for list ', trim(name)
   nullify(list_p)
   return
-endif  !}
-!
+endif
 !        Initialize the new field
-!
 list_p%name = name
 
 nullify(list_p%next)
@@ -1662,36 +1594,23 @@ if (associated(list_p%i_value)) deallocate(list_p%i_value)
 if (associated(list_p%l_value)) deallocate(list_p%l_value)
 if (associated(list_p%r_value)) deallocate(list_p%r_value)
 if (associated(list_p%s_value)) deallocate(list_p%s_value)
-!
 !        If this is the first field in the parent, then set the pointer
 !        to it, otherwise, update the "next" pointer for the last list
-!
-if (parent_p%length .le. 0) then  !{
+if (parent_p%length .le. 0) then
   parent_p%first_field => list_p
-else  !}{
+else
   parent_p%last_field%next => list_p
-endif  !}
-!
+endif
 !        Update the pointer for the last list in the parent
-!
 parent_p%last_field => list_p
-!
 !        Update the length for the parent
-!
 parent_p%length = parent_p%length + 1
-!
 !        Set the new index as the return value
-!
 list_p%index = parent_p%length
-!
 !        set the pointer to the parent list
-!
 list_p%parent => parent_p
 
-end function  create_field  !}
-
-!#######################################################################
-!#######################################################################
+end function  create_field
 
 !> @brief This is a function that lists the parameters of a field.
 !!
@@ -1711,9 +1630,6 @@ logical recursive function dump_list(list_p, recursive, depth, out_unit) result(
                                      !! the field being printed
   integer, intent(in)       :: out_unit !< unit number to print to
 
-  ! ---- local constants
-  character(len=64), parameter :: warn_header  = '==>Warning from ' // trim(module_name) // '(dump_list): '
-  ! ---- local variables
   integer                             :: depthp1
   integer                             :: j
   character(len=fm_field_name_len)    :: num, scratch
@@ -1725,10 +1641,8 @@ logical recursive function dump_list(list_p, recursive, depth, out_unit) result(
   ! Check for a valid list
   success = .false.
   if (.not. associated(list_p)) then
-    if (verb > verb_level_warn) write (out_unit,*) trim(warn_header), 'Invalid list pointer'
     return
   elseif (list_p%field_type .ne. list_type) then
-    if (verb > verb_level_warn) write (out_unit,*) trim(warn_header), trim(list_p%name), ' is not a list'
     return
   endif
 
@@ -1821,9 +1735,6 @@ logical recursive function dump_list(list_p, recursive, depth, out_unit) result(
          endif
 
      case default
-         if (verb .gt. verb_level_warn) then
-            write (out_unit,*) trim(warn_header), 'Undefined type for ', trim(this_field_p%name)
-         endif
          success = .false.
          exit
 
@@ -1834,85 +1745,60 @@ logical recursive function dump_list(list_p, recursive, depth, out_unit) result(
 
 end function dump_list
 
-!#######################################################################
-!#######################################################################
-
 !> @brief A subroutine that splits a listname into a path and a base.
 !!
 !> Find the base name for a list by splitting the list name into
 !! a path and base. The base is the last field within name, while the
 !! path is the preceding section of name. The base string can then be
 !! used to query for values associated with name.
-subroutine find_base(name, path, base)  !{
+subroutine find_base(name, path, base)
 
 character(len=*), intent(in)  :: name !< list name for a field
 character(len=*), intent(out) :: path !< path of the base field
 character(len=*), intent(out) :: base !< A string which can be used to query for values associated with name
 
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        local variables
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-
 integer :: i
 integer :: length
 
-!
 !        Check for the last occurrence of the list separator in name
-!
 ! The following max function is to work around an error in the IBM compiler for len_trim
 length = max(len_trim(name),0)
+if (length .eq. 0) then
 
-if (length .eq. 0) then  !{
-
-   !
    !       Empty name, so return empty path and base
-   !
    path = ' '
    base = ' '
-else  !}{
-   !
+else
    !       Remove trailing list separators
-   !
-   do while (name(length:length) .eq. list_sep)  !{
+   do while (name(length:length) .eq. list_sep)
       length = length - 1
-      if (length .eq. 0) then  !{
+      if (length .eq. 0) then
          exit
-      endif  !}
-   enddo  !}
-   if (length .eq. 0) then  !{
+      endif
+   enddo
+   if (length .eq. 0) then
 
-      !
       !       Name only list separators, so return empty path and base
-      !
       path = ' '
       base = ' '
-   else  !}{
-      !
+   else
       !       Check for the last occurrence of the list separator in name
-      !
       i = index(name(1:length), list_sep, back = .true.)
-      if (i .eq. 0) then  !{
-         !
+      if (i .eq. 0) then
          !       no list separators in the path, so return an empty path
          !       and name as the base
-         !
          path = ' '
          base = name(1:length)
-      else  !}{
-         !
+      else
          !       Found a list separator, so return the part up to the last
          !       list separator in path, and the remainder in base
-         !
          path = name(1:i)
          base = name(i+1:length)
-      endif  !}
-   endif  !}
-endif  !}
+      endif
+   endif
+endif
 
-end subroutine find_base  !}
-
-!#######################################################################
-!#######################################################################
+end subroutine find_base
 
 !> @brief Find and return a pointer to the field in the specified
 !! list. Return a null pointer on error.
@@ -1923,56 +1809,42 @@ end subroutine find_base  !}
 !> @returns A pointer to the field corresponding to "name" or an unassociated pointer if the field
 !! name does not exist.
 function find_field(name, this_list_p)                                &
-        result (field_p)  !{
+        result (field_p)
 type (field_def), pointer    :: field_p
 character(len=*), intent(in) :: name !< The name of a field that the user wishes to find
 type (field_def), pointer    :: this_list_p !< A pointer to a list which the user wishes to search
                                             !! for a field "name".
 
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        local variables
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 type (field_def), pointer, save    :: temp_p
 
 
 nullify (field_p)
 
-if (name .eq. '.') then  !{
+if (name .eq. '.') then
 
-!
 !        If the field is '.' then return this list
-!
   field_p => this_list_p
-elseif (name .eq. '..') then  !}{
-!
+elseif (name .eq. '..') then
 !        If the field is '..' then return the parent list
-!
   field_p => this_list_p%parent
-else  !}{
-!
+else
 !        Loop over each field in this list
-!
   temp_p => this_list_p%first_field
 
-  do while (associated(temp_p))  !{
-!
+  do while (associated(temp_p))
 !        If the name matches, then set the return pointer and exit
 !        the loop
-!
-    if (temp_p%name .eq. name) then  !{
+    if (temp_p%name .eq. name) then
       field_p => temp_p
       exit
-    endif  !}
+    endif
 
     temp_p => temp_p%next
 
-  enddo  !}
-endif  !}
+  enddo
+endif
 
-end function find_field  !}
-
-!#######################################################################
-!#######################################################################
+end function find_field
 
 !> @brief Find the first list for a name by splitting the name into
 !!    a head and the rest.
@@ -1981,60 +1853,43 @@ end function find_field  !}
 !! rest. The head is the first field within name, while rest is the remaining
 !! section of name. The head string can then be used to find other fields that
 !! may be associated with name.
-subroutine find_head(name, head, rest)  !{
+subroutine find_head(name, head, rest)
 
 character(len=*), intent(in)  :: name !< The name of a field of interest
 character(len=*), intent(out) :: head !< the first field within name
 character(len=*), intent(out) :: rest !< the remaining section of name
 
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        local variables
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 integer        :: i
-!
 !        Check for the first occurrence of the list separator in name
-!
 i = index(name, list_sep)
-!
 !        Check for additional consecutive list separators and return
 !        those also
-!
-do while (i .le. len(name))  !{
-  if (name(i+1:i+1) .eq. list_sep) then  !{
+do while (i .le. len(name))
+  if (name(i+1:i+1) .eq. list_sep) then
     i = i + 1
-  else  !}{
+  else
     exit
-  endif  !}
-enddo  !}
+  endif
+enddo
 
-if (i .eq. 0) then  !{
-!
+if (i .eq. 0) then
 !        no list separators in the path, so return an empty head and
 !        name as the rest
-!
   head = ' '
   rest = name
-elseif (i .eq. len(name)) then  !}{
-!
+elseif (i .eq. len(name)) then
 !        The last character in name is a list separator, so return name
 !        as head and an empty rest
-!
   head = name
   rest = ' '
-else  !}{
-!
+else
 !        Found a list separator, so return the part up to the list
 !        separator in head, and the remainder in rest
-!
   head = name(1:i)
   rest = name(i+1:)
-endif  !}
+endif
 
-end subroutine find_head  !}
-
-!#######################################################################
-!#######################################################################
-
+end subroutine find_head
 
 !> @brief Find and return a pointer to the specified list, relative to
 !!    relative_p. Return a null pointer on error.
@@ -2045,23 +1900,12 @@ end subroutine find_head  !}
 !! it will be created.
 !> @returns A pointer to the list to be returned
 function find_list(path, relative_p, create)                    &
-        result (list_p)  !{
+        result (list_p)
 type (field_def), pointer        :: list_p
 character(len=*), intent(in)     :: path !< path to the list of interest
 type (field_def), pointer        :: relative_p !< pointer to the list to which "path" is relative to
 logical,          intent(in)     :: create !< If the list does not exist, it will be created if set to true
 
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        local parameters
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-character(len=9),  parameter :: sub_name     = 'find_list'
-character(len=64), parameter :: warn_header  = '==>Warning from ' // trim(module_name) //  &
-                                               '(' // trim(sub_name) // '): '
-character(len=64), parameter :: note_header  = '==>Note from ' // trim(module_name)    //  &
-                                               '(' // trim(sub_name) // '): '
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        local variables
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 character(len=fm_path_name_len)  :: working_path
 character(len=fm_path_name_len)  :: rest
 character(len=fm_field_name_len) :: this_list
@@ -2069,109 +1913,72 @@ integer                          :: i, out_unit
 type (field_def), pointer, save  :: working_path_p
 type (field_def), pointer, save  :: this_list_p
 
-
 out_unit = stdout()
 nullify(list_p)
-!
 !        If the path is empty, then return the relative list
-!
-if (path .eq. ' ') then  !{
+if (path .eq. ' ') then
 
   list_p => relative_p
 
-else  !}{
-!
+else
 !        If a fully qualified path is given (i.e., starts with the
 !        list separator) then do everything relative to root,
 !        otherwise, do everything relative to relative list.
-!
-  if (path(1:1) .eq. list_sep) then  !{
+  if (path(1:1) .eq. list_sep) then
     working_path_p => root_p
     working_path = path(2:)
-  else  !}{
+  else
     working_path_p => relative_p
     working_path = path
-  endif  !}
-!
+  endif
 !        Loop over each field in the path
-!
-  do while (working_path .ne. ' ')  !{
-!
+  do while (working_path .ne. ' ')
 !        Get the first list in the working path
-!
     call find_head(working_path, this_list, rest)
-!
 !        If the first list is empty, then the 'rest' should hold the
 !        final field in the path
-!
-    if (this_list .eq. ' ') then  !{
+    if (this_list .eq. ' ') then
       this_list = rest
       rest = ' '
-    endif  !}
-!
+    endif
 !        Strip off trailing list separators
-!
     i = len_trim(this_list)
-    do while (i .gt. 0 .and. this_list(i:i) .eq. list_sep)  !{
+    do while (i .gt. 0 .and. this_list(i:i) .eq. list_sep)
       this_list(i:i) = ' '
       i = i - 1
-    enddo  !}
-!
+    enddo
 !        Find a pointer to this field in the working list
-!
     this_list_p => find_field(this_list, working_path_p)
 
-    if (.not. associated(this_list_p)) then  !{
-      if (create) then  !{
-!
+    if (.not. associated(this_list_p)) then
+      if (create) then
 !        Create the list if so requested
-!
         this_list_p => make_list(working_path_p, this_list)
-        if (.not. associated(this_list_p)) then  !{
-          if (verb .gt. verb_level_warn) then  !{
-            write (out_unit,*) trim(warn_header), 'List "',       &
-                 trim(this_list), '" could not be created in ',   &
-                 trim(path)
-          endif  !}
+        if (.not. associated(this_list_p)) then
           nullify(list_p)
           return
-        endif  !}
-      else  !}{
-!
+        endif
+      else
 !        Otherwise, return an error
-!
 
-        if (verb .gt. verb_level_note) then  !{
-          write (out_unit,*) trim(note_header), 'List "',         &
-               trim(this_list), '" does not exist in ', trim(path)
-        endif  !}
         nullify(list_p)
         return
-      endif  !}
-    endif  !}
-!
+      endif
+    endif
 !        Make sure that the field found is a list, and if so, proceed to
 !        the next field in the path, otherwise, return an error
-!
-    if (this_list_p%field_type .eq. list_type) then  !{
+    if (this_list_p%field_type .eq. list_type) then
       working_path_p => this_list_p
       working_path = rest
-    else  !}{
-      if (verb .gt. verb_level_warn) then  !{
-        write (out_unit,*) trim(warn_header), '"',                &
-             trim(this_list), '" is not a list in ', trim(path)
-      endif  !}
+    else
       nullify(list_p)
       return
-    endif  !}
-  enddo  !}
+    endif
+  enddo
   list_p => working_path_p
-endif  !}
+endif
 
-end function find_list  !}
-
-!#######################################################################
-!#######################################################################
+end function find_list
 
 !> @brief Change the current list. Return true on success, false otherwise
 !!
@@ -2181,37 +1988,26 @@ end function find_list  !}
 !! will search for name starting from the current list.
 !! @return A flag to indicate operation success, true = no errors
 function fm_change_list(name)                                        &
-        result (success)  !{
+        result (success)
 logical        :: success
 character(len=*), intent(in)  :: name !< name of a list to change to
 
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        local variables
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 type (field_def), pointer, save :: temp_p
-!
 !        Initialize the field manager if needed
-!
-if (.not. module_is_initialized) then  !{
+if (.not. module_is_initialized) then
   call initialize
-endif  !}
-!
+endif
 !        Find the list if path is not empty
-!
 temp_p => find_list(name, current_list_p, .false.)
 
-if (associated(temp_p)) then  !{
+if (associated(temp_p)) then
   current_list_p => temp_p
   success = .true.
-else  !}{
+else
   success = .false.
-endif  !}
+endif
 
-end function fm_change_list  !}
-! </FUNCTION> NAME="fm_change_list"
-
-!#######################################################################
-!#######################################################################
+end function fm_change_list
 
 !> @brief Change the root list
 !!
@@ -2224,88 +2020,49 @@ end function fm_change_list  !}
 !! This function should be used in conjunction with fm_return_root.
 !! @return A flag to indicate operation success, true = no errors
 function  fm_change_root(name)                                        &
-          result (success)  !{
+          result (success)
 logical        :: success
 character(len=*), intent(in)  :: name !< name of the field which the user wishes to become the root.
 
-
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        local parameters
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-character(len=14), parameter :: sub_name     = 'fm_change_root'
-character(len=64), parameter :: warn_header  = '==>Warning from ' // trim(module_name) //  &
-                                               '(' // trim(sub_name) // '): '
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        local variables
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 type (field_def), pointer, save :: temp_list_p
 integer :: out_unit
-!
 !        Initialize the field manager if needed
-!
-if (.not. module_is_initialized) then  !{
+if (.not. module_is_initialized) then
   call initialize
-endif  !}
+endif
 out_unit = stdout()
-!
 !        Must supply a field field name
-!
-if (name .eq. ' ') then  !{
-  if (verb .gt. verb_level_warn) then  !{
-    write (out_unit,*) trim(warn_header), 'Must supply a field name'
-  endif  !}
+if (name .eq. ' ') then
   success = .false.
   return
-endif  !}
-!
+endif
 !        Get a pointer to the list
-!
 temp_list_p => find_list(name, current_list_p, .false.)
 
-if (associated(temp_list_p)) then  !{
-!
+if (associated(temp_list_p)) then
 !        restore the saved root values if we've already changed root
-!
-  if (save_root_name .ne. ' ') then  !{
+  if (save_root_name .ne. ' ') then
     root_p%name = save_root_name
     root_p%parent => save_root_parent_p
-  endif  !}
-!
+  endif
 !        set the pointer for the new root field
-!
   root_p => temp_list_p
-!
 !        save the new root field's name and parent
-!
   save_root_name = root_p%name
   save_root_parent_p => root_p%parent
-!
 !        set the new root name and parent fields to appropriate values
-!
   root_p%name = ' '
   nullify(root_p%parent)
-!
 !        set the current list to the new root as it likely is not
 !        going to be meaningful anymore
-!
   current_list_p => root_p
   success = .true.
-else  !}{
-!
+else
 !        Couldn't find the list
-!
-
-  if (verb .gt. verb_level_warn) then  !{
-    write (out_unit,*) trim(warn_header),                      &
-         'Could not find list ', trim(name)
-  endif  !}
   success = .false.
-endif  !}
+endif
 
-end function  fm_change_root  !}
-
-!#######################################################################
-!#######################################################################
+end function  fm_change_root
 
 !> @brief A function to list properties associated with a field.
 !!
@@ -2319,11 +2076,6 @@ logical function  fm_dump_list(name, recursive, unit) result (success)
                                              !! fields will be performed.
   integer, intent(in), optional :: unit !< file to print to
 
-  ! ---- local parameters
-  character(len=12), parameter :: sub_name     = 'fm_dump_list'
-  character(len=64), parameter :: warn_header  = '==>Warning from ' // trim(module_name) //  &
-                                               '(' // trim(sub_name) // '): '
-  ! ---- local variables
   logical                         :: recursive_t
   type (field_def), pointer, save :: temp_list_p
   integer                         :: out_unit
@@ -2348,10 +2100,6 @@ logical function  fm_dump_list(name, recursive, unit) result (success)
     if (associated(temp_list_p)) then
        success = .true.
     else
-       ! Error following the path
-       if (verb .gt. verb_level_warn) then
-          write (out_unit,*) trim(warn_header), 'Could not follow path for ', trim(name)
-       endif
        success = .false.
     endif
   endif
@@ -2361,39 +2109,26 @@ logical function  fm_dump_list(name, recursive, unit) result (success)
   endif
 end function  fm_dump_list
 
-!#######################################################################
-!#######################################################################
-
 !> @brief A function to test whether a named field exists.
 !!
 !> This function determines is a field exists, relative to the current list,
 !! and returns true if the list exists, false otherwise.
 !! @return A flag to indicate operation success, true = no errors
 function fm_exists(name)                                                &
-        result (success)  !{
+        result (success)
 logical        :: success
 character(len=*), intent(in) :: name !< The name of the field that is being queried
 
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        local variables
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 type (field_def), pointer, save :: dummy_p
-!
 !        Initialize the field manager if needed
-!
-if (.not. module_is_initialized) then  !{
+if (.not. module_is_initialized) then
   call initialize
-endif  !}
-!
+endif
 !        Determine whether the field exists
-!
 dummy_p => get_field(name, current_list_p)
 success = associated(dummy_p)
 
-end function fm_exists  !}
-
-!#######################################################################
-!#######################################################################
+end function fm_exists
 
 !> @brief A function to return the index of a named field.
 !!
@@ -2403,62 +2138,33 @@ end function fm_exists  !}
 !! Otherwise the named field will be relative to the current list.
 !> @returns index of the named field if it exists, otherwise the parameter NO_FIELD
 function  fm_get_index(name)                        &
-          result (index)  !{
+          result (index)
 integer        :: index
 character(len=*), intent(in) :: name !< The name of a field that the user wishes to get an index for
 
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        local parameters
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-character(len=12), parameter :: sub_name     = 'fm_get_index'
-character(len=64), parameter :: warn_header  = '==>Warning from ' // trim(module_name) //  &
-                                               '(' // trim(sub_name) // '): '
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        local variables
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 type (field_def), pointer, save :: temp_field_p
 integer                         :: out_unit
 
 out_unit = stdout()
-!
 !        Initialize the field manager if needed
-!
-if (.not. module_is_initialized) then  !{
+if (.not. module_is_initialized) then
   call initialize
-endif  !}
-!
+endif
 !        Must supply a field field name
-!
-if (name .eq. ' ') then  !{
-  if (verb .gt. verb_level_warn) then  !{
-    write (out_unit,*) trim(warn_header), 'Must supply a field name'
-  endif  !}
+if (name .eq. ' ') then
   index = NO_FIELD
   return
-endif  !}
-!
+endif
 !        Get a pointer to the field
-!
 temp_field_p => get_field(name, current_list_p)
-if (associated(temp_field_p)) then  !{
-!
+if (associated(temp_field_p)) then
 !        Set the index
-!
   index = temp_field_p%index
-else  !}{
-!
-!        Error following the path
-!
-  if (verb .gt. verb_level_warn) then  !{
-    write (out_unit,*) trim(warn_header), 'Could not follow path for ', trim(name)
-  endif  !}
+else
   index = NO_FIELD
-endif  !}
+endif
 
-end function  fm_get_index  !}
-
-!#######################################################################
-!#######################################################################
+end function  fm_get_index
 
 !> @brief A function to return the full path of the current list.
 !!
@@ -2466,62 +2172,42 @@ end function  fm_get_index  !}
 !! path indicates an error condition has occurred.
 !> @returns The path corresponding to the current list
 function  fm_get_current_list()                                        &
-          result (path)  !{
+          result (path)
 character(len=fm_path_name_len) :: path
 
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        local variables
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 type (field_def), pointer, save :: temp_list_p
-!
 !        Initialize the field manager if needed
-!
-if (.not. module_is_initialized) then  !{
+if (.not. module_is_initialized) then
   call initialize
-endif  !}
-!
+endif
 !        Set a pointer to the current list and proceed
 !        up the tree, filling in the name as we go
-!
 temp_list_p => current_list_p
 path = ' '
 
-do while (associated(temp_list_p))  !{
-!
+do while (associated(temp_list_p))
 !        Check whether we are at the root field--it is the
 !        only field with a blank name
-!
-  if (temp_list_p%name .eq. ' ') then  !{
+  if (temp_list_p%name .eq. ' ') then
     exit
-  endif  !}
-!
+  endif
 !        Append the name to the path
-!
   path = list_sep // trim(temp_list_p%name) // path
-!
 !        Point to the next field
-!
   temp_list_p => temp_list_p%parent
-enddo  !}
+enddo
 
-if (.not. associated(temp_list_p)) then  !{
-!
+if (.not. associated(temp_list_p)) then
 !        The pointer is not associated, indicating an error has
 !        occurred, so set the path accordingly
-!
   path = ' '
-elseif (path .eq. ' ') then  !}{
-!
+elseif (path .eq. ' ') then
 !        If path is empty, then the current list must be root,
 !        so set path accordingly
-!
   path = list_sep
-endif  !}
+endif
 
-end function  fm_get_current_list  !}
-
-!#######################################################################
-!#######################################################################
+end function  fm_get_current_list
 
 !> @brief A function to return how many elements are contained within the named
 !! list or entry.
@@ -2530,69 +2216,38 @@ end function  fm_get_current_list  !}
 !! If the named field or entry does not exist, a value of 0 is returned.
 !> @returns The number of elements that the field name has.
 function  fm_get_length(name)                        &
-          result (length)  !{
+          result (length)
 integer                      :: length
 character(len=*), intent(in) :: name !< The name of a list or entry that the user wishes to get the length of
 
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        local parameters
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-character(len=13), parameter :: sub_name     = 'fm_get_length'
-character(len=64), parameter :: warn_header  = '==>Warning from ' // trim(module_name) //  &
-                                               '(' // trim(sub_name) // '): '
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        local variables
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 type (field_def), pointer, save :: temp_field_p
 integer                         :: out_unit
 
 out_unit = stdout()
-!
 !        Initialize the field manager if needed
-!
-if (.not. module_is_initialized) then  !{
+if (.not. module_is_initialized) then
   call initialize
-endif  !}
-!
+endif
 !        Must supply a field name
-!
-if (name .eq. ' ') then  !{
-  if (verb .gt. verb_level_warn) then  !{
-    write (out_unit,*) trim(warn_header), 'Must supply a field name'
-  endif  !}
+if (name .eq. ' ') then
   length = 0
   return
-endif  !}
-!
+endif
 !        Get a pointer to the field
-!
 temp_field_p => get_field(name, current_list_p)
 
-if (associated(temp_field_p)) then  !{
-!
+if (associated(temp_field_p)) then
 !        Set the field length
-!
-  if (temp_field_p%field_type .eq. list_type) then !{
+  if (temp_field_p%field_type .eq. list_type) then
     length = temp_field_p%length
-  else !}{
+  else
     length = temp_field_p%max_index
-  endif !}
-else  !}{
-!
-!        Error following the path
-!
-
-  if (verb .gt. verb_level_warn) then  !{
-    write (out_unit,*) trim(warn_header),                            &
-         'Could not follow path for ', trim(name)
-  endif  !}
+  endif
+else
   length = 0
-endif  !}
+endif
 
-end function  fm_get_length  !}
-
-!#######################################################################
-!#######################################################################
+end function  fm_get_length
 
 !> @brief A function to return the type of the named field
 !!
@@ -2602,840 +2257,333 @@ end function  fm_get_length  !}
 !! If it does not exist it returns a blank string.
 !> @returns A string containing the type of the named field
 function  fm_get_type(name)                        &
-          result (name_field_type)  !{
+          result (name_field_type)
 character(len=8)             :: name_field_type
 character(len=*), intent(in) :: name !< The name of a field that the user wishes to find the type of
 
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        local parameters
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-character(len=11), parameter :: sub_name     = 'fm_get_type'
-character(len=64), parameter :: warn_header  = '==>Warning from ' // trim(module_name) //  &
-                                               '(' // trim(sub_name) // '): '
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        local variables
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 type (field_def), pointer, save :: temp_field_p
 integer                         :: out_unit
 
 out_unit = stdout()
-!
 !        Initialize the field manager if needed
-!
-if (.not. module_is_initialized) then  !{
+if (.not. module_is_initialized) then
   call initialize
-endif  !}
-!
+endif
 !        Must supply a field name
-!
-if (name .eq. ' ') then  !{
-  if (verb .gt. verb_level_warn) then  !{
-    write (out_unit,*) trim(warn_header), 'Must supply a field name'
-  endif  !}
+if (name .eq. ' ') then
   name_field_type = ' '
   return
-endif  !}
-!
+endif
 !        Get a pointer to the field
-!
 temp_field_p => get_field(name, current_list_p)
 
-if (associated(temp_field_p)) then  !{
-!
+if (associated(temp_field_p)) then
 !        Set the field type
-!
   name_field_type = field_type_name(temp_field_p%field_type)
-else  !}{
-!
-!        Error following the path
-!
-
-  if (verb .gt. verb_level_warn) then  !{
-    write (out_unit,*) trim(warn_header),                            &
-         'Could not follow path for ', trim(name)
-  endif  !}
+else
   name_field_type = ' '
-endif  !}
+endif
 
-end function  fm_get_type  !}
-
-!#######################################################################
-!#######################################################################
+end function  fm_get_type
 
 !> @returns A flag to indicate whether the function operated with (false) or without
 !! (true) errors.
 function  fm_get_value_integer(name, value, index)                 &
-          result (success)  !{
+          result (success)
 logical                                :: success
 character(len=*), intent(in)           :: name !< The name of a field that the user wishes to get a value for.
 integer,          intent(out)          :: value !< The value associated with the named field.
 integer,          intent(in), optional :: index !< An optional index to retrieve a single value from an array.
 
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        local parameters
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-character(len=20), parameter :: sub_name     = 'fm_get_value_integer'
-character(len=64), parameter :: warn_header  = '==>Warning from ' // trim(module_name) //  &
-                                               '(' // trim(sub_name) // '): '
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        local variables
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 integer                         :: index_t
 type (field_def), pointer, save :: temp_field_p
 integer                         :: out_unit
 
 out_unit = stdout()
-!
 !        Initialize the field manager if needed
-!
-if (.not. module_is_initialized) then  !{
+if (.not. module_is_initialized) then
   call initialize
-endif  !}
-!
+endif
 !        Must supply a field field name
-!
-if (name .eq. ' ') then  !{
-  if (verb .gt. verb_level_warn) then  !{
-    write (out_unit,*) trim(warn_header), 'Must supply a field name'
-  endif  !}
+if (name .eq. ' ') then
   value = 0
   success = .false.
   return
-endif  !}
-!
+endif
 !        Set index to retrieve
-!
-if (present(index)) then  !{
+if (present(index)) then
   index_t = index
-else !}{
+else
   index_t = 1
-endif !}
-!
+endif
 !        Get a pointer to the field
-!
 temp_field_p => get_field(name, current_list_p)
 
-if (associated(temp_field_p)) then  !{
-!
+if (associated(temp_field_p)) then
 !        check that the field is the correct type
-!
-  if (temp_field_p%field_type .eq. integer_type) then  !{
-    if (index_t .lt. 1) then  !{
-!
-!        Index is not positive
-!
-
-      if (verb .gt. verb_level_warn) then  !{
-        write (out_unit,*) trim(warn_header),                   &
-             'Optional index for ', trim(name),                 &
-             ' not positive: ', index_t
-      endif  !}
+  if (temp_field_p%field_type .eq. integer_type) then
+    if (index_t .lt. 1 .or. index_t .gt. temp_field_p%max_index) then
+!        Index is not positive or index too large
       value = 0
       success = .false.
-    elseif (index_t .gt. temp_field_p%max_index) then  !}{
-!
-!        Index is too large
-!
-
-      if (verb .gt. verb_level_warn) then  !{
-        write (out_unit,*) trim(warn_header),                        &
-             'Optional index for ', trim(name),                      &
-             ' too large: ', index_t, ' > ', temp_field_p%max_index
-      endif  !}
-      value = 0
-      success = .false.
-    else  !}{
-!
+    else
 !        extract the value
-!
       value = temp_field_p%i_value(index_t)
       success = .true.
-    endif !}
-  else  !}{
-!
+    endif
+  else
 !        Field not corrcet type
-!
-
-    if (verb .gt. verb_level_warn) then  !{
-      write (out_unit,*) trim(warn_header),                          &
-           'Field not type integer ', trim(name)
-    endif  !}
     value = 0
     success = .false.
-  endif  !}
-else  !}{
-!
-!        Error following the path
-!
-
-  if (verb .gt. verb_level_warn) then  !{
-    write (out_unit,*) trim(warn_header),                            &
-         'Could not follow path for ', trim(name)
-  endif  !}
+  endif
+else
   value = 0
   success = .false.
-endif  !}
+endif
 
-end function  fm_get_value_integer  !}
-
-!#######################################################################
-!#######################################################################
+end function  fm_get_value_integer
 
 !> @returns A flag to indicate whether the function operated with (false) or without
 !! (true) errors.
 function  fm_get_value_logical(name, value, index)                 &
-          result (success)  !{
+          result (success)
 logical                                :: success
 character(len=*), intent(in)           :: name !< The name of a field that the user wishes to get a value for.
 logical,          intent(out)          :: value !< The value associated with the named field
 integer,          intent(in), optional :: index !< An optional index to retrieve a single value from an array.
 
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        local parameters
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-character(len=20), parameter :: sub_name     = 'fm_get_value_logical'
-character(len=64), parameter :: warn_header  = '==>Warning from ' // trim(module_name) //  &
-                                               '(' // trim(sub_name) // '): '
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        local variables
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 integer                         :: index_t
 type (field_def), pointer, save :: temp_field_p
 integer                         :: out_unit
 
 out_unit = stdout()
-!
 !        Initialize the field manager if needed
-!
-if (.not. module_is_initialized) then  !{
+if (.not. module_is_initialized) then
   call initialize
-endif  !}
-!
+endif
 !        Must supply a field field name
-!
-if (name .eq. ' ') then  !{
-  if (verb .gt. verb_level_warn) then  !{
-    write (out_unit,*) trim(warn_header), 'Must supply a field name'
-  endif  !}
+if (name .eq. ' ') then
   value = .false.
   success = .false.
   return
-endif  !}
-!
+endif
 !        Set index to retrieve
-!
-if (present(index)) then  !{
+if (present(index)) then
   index_t = index
-else  !}{
+else
   index_t = 1
-endif  !}
-!
+endif
 !        Get a pointer to the field
-!
 temp_field_p => get_field(name, current_list_p)
 
-if (associated(temp_field_p)) then  !{
-!
+if (associated(temp_field_p)) then
 !        check that the field is the correct type
-!
-  if (temp_field_p%field_type .eq. logical_type) then  !{
+  if (temp_field_p%field_type .eq. logical_type) then
 
-    if (index_t .lt. 1) then  !{
-!
-!        Index is not positive
-!
-
-      if (verb .gt. verb_level_warn) then  !{
-        write (out_unit,*) trim(warn_header),                   &
-             'Optional index for ', trim(name),                 &
-             ' not positive: ', index_t
-      endif  !}
+    if (index_t .lt. 1 .or. index_t .gt. temp_field_p%max_index) then
+!        Index is not positive or too large
       value = .false.
       success = .false.
-
-    elseif (index_t .gt. temp_field_p%max_index) then  !}{
-!
-!        Index is too large
-!
-
-      if (verb .gt. verb_level_warn) then  !{
-        write (out_unit,*) trim(warn_header),                        &
-             'Optional index for ', trim(name),                      &
-             ' too large: ', index_t, ' > ', temp_field_p%max_index
-      endif  !}
-      value = .false.
-      success = .false.
-
-    else  !}{
-!
+    else
 !        extract the value
-!
       value = temp_field_p%l_value(index_t)
       success = .true.
-    endif !}
-  else  !}{
-!
+    endif
+  else
 !        Field not correct type
-!
-
-    if (verb .gt. verb_level_warn) then  !{
-      write (out_unit,*) trim(warn_header),                          &
-           'Field not type logical ', trim(name)
-    endif  !}
     value = .false.
     success = .false.
-  endif  !}
-else  !}{
-!
-!        Error following the path
-!
-
-  if (verb .gt. verb_level_warn) then  !{
-    write (out_unit,*) trim(warn_header),                            &
-         'Could not follow path for ', trim(name)
-  endif  !}
+  endif
+else
   value = .false.
   success = .false.
-endif  !}
+endif
 
-end function  fm_get_value_logical  !}
-
-!#######################################################################
-!#######################################################################
+end function  fm_get_value_logical
 
 !> @returns A flag to indicate whether the function operated with (false) or without
 !! (true) errors.
 function  fm_get_value_real(name, value, index)                 &
-          result (success)  !{
+          result (success)
 logical                                :: success
 character(len=*), intent(in)           :: name !< The name of a field that the user wishes to get a value for.
 real,             intent(out)          :: value !< The value associated with the named field
 integer,          intent(in), optional :: index !< An optional index to retrieve a single value from an array.
 
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        local parameters
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-character(len=17), parameter :: sub_name     = 'fm_get_value_real'
-character(len=64), parameter :: warn_header  = '==>Warning from ' // trim(module_name) //  &
-                                               '(' // trim(sub_name) // '): '
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        local variables
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 integer                         :: index_t
 type (field_def), pointer, save :: temp_field_p
 integer                         :: out_unit
 
 out_unit = stdout()
-!
 !        Initialize the field manager if needed
-!
-if (.not. module_is_initialized) then  !{
+if (.not. module_is_initialized) then
   call initialize
-endif  !}
-!
+endif
 !        Must supply a field field name
-!
-if (name .eq. ' ') then  !{
-  if (verb .gt. verb_level_warn) then  !{
-    write (out_unit,*) trim(warn_header), 'Must supply a field name'
-  endif  !}
+if (name .eq. ' ') then
   value = 0.0
   success = .false.
   return
-endif  !}
-!
+endif
 !        Set index to retrieve
-!
-if (present(index)) then  !{
+if (present(index)) then
   index_t = index
-else  !}{
+else
   index_t = 1
-endif  !}
-!
+endif
 !        Get a pointer to the field
-!
 temp_field_p => get_field(name, current_list_p)
 
-if (associated(temp_field_p)) then  !{
-!
+if (associated(temp_field_p)) then
 !        check that the field is the correct type
-!
-  if (temp_field_p%field_type .eq. real_type) then  !{
-
-    if (index_t .lt. 1) then  !{
-
-!
-!        Index is not positive
-!
-
-      if (verb .gt. verb_level_warn) then  !{
-        write (out_unit,*) trim(warn_header),                        &
-             'Optional index for ', trim(name),                      &
-             ' not positive: ', index_t
-      endif  !}
+  if (temp_field_p%field_type .eq. real_type) then
+    if (index_t .lt. 1 .or. index_t .gt. temp_field_p%max_index) then
+!        Index is not positive or is too large
       value = 0.0
       success = .false.
-
-    elseif (index_t .gt. temp_field_p%max_index) then  !}{
-
-!
-!        Index is too large
-!
-
-      if (verb .gt. verb_level_warn) then  !{
-        write (out_unit,*) trim(warn_header),                        &
-             'Optional index for ', trim(name),                      &
-             ' too large: ', index_t, ' > ', temp_field_p%max_index
-      endif  !}
-      value = 0.0
-      success = .false.
-
-    else  !}{
-
-!
+    else
 !        extract the value
-!
       value = temp_field_p%r_value(index_t)
       success = .true.
-    endif !}
-  else  !}{
-!
-!        Field not correct type
-!
-
-    if (verb .gt. verb_level_warn) then  !{
-      write (out_unit,*) trim(warn_header),                          &
-           'Field not type real ', trim(name)
-    endif  !}
+    endif
+  else
     value = 0.0
     success = .false.
-  endif  !}
-else  !}{
-!
-!        Error following the path
-!
-
-  if (verb .gt. verb_level_warn) then  !{
-    write (out_unit,*) trim(warn_header),                            &
-         'Could not follow path for ', trim(name)
-  endif  !}
+  endif
+else
   value = 0.0
   success = .false.
-endif  !}
+endif
 
-end function  fm_get_value_real  !}
-
-!#######################################################################
-!#######################################################################
+end function  fm_get_value_real
 
 !> @returns A flag to indicate whether the function operated with (false) or without
 !! (true) errors.
 function  fm_get_value_string(name, value, index)                 &
-          result (success)  !{
+          result (success)
 logical                                :: success
 character(len=*), intent(in)           :: name !< The name of a field that the user wishes to get a value for.
 character(len=*), intent(out)          :: value !< The value associated with the named field
 integer,          intent(in), optional :: index !< An optional index to retrieve a single value from an array.
 
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        local parameters
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-character(len=19), parameter :: sub_name     = 'fm_get_value_string'
-character(len=64), parameter :: warn_header  = '==>Warning from ' // trim(module_name) //  &
-                                               '(' // trim(sub_name) // '): '
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        local variables
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 integer                         :: index_t
 type (field_def), pointer, save :: temp_field_p
 integer                         :: out_unit
 
 out_unit = stdout()
-!
 !        Initialize the field manager if needed
-!
-if (.not. module_is_initialized) then  !{
+if (.not. module_is_initialized) then
   call initialize
-endif  !}
-!
+endif
 !        Must supply a field field name
-!
-if (name .eq. ' ') then  !{
-  if (verb .gt. verb_level_warn) then  !{
-    write (out_unit,*) trim(warn_header), 'Must supply a field name'
-  endif  !}
+if (name .eq. ' ') then
   value = ''
   success = .false.
   return
-endif  !}
-!
+endif
 !        Set index to retrieve
-!
-if (present(index)) then  !{
+if (present(index)) then
   index_t = index
-else  !}{
+else
   index_t = 1
-endif  !}
-!
+endif
 !        Get a pointer to the field
-!
 temp_field_p => get_field(name, current_list_p)
 
-if (associated(temp_field_p)) then  !{
-!
+if (associated(temp_field_p)) then
 !        check that the field is the correct type
-!
-  if (temp_field_p%field_type .eq. string_type) then  !{
-    if (index_t .lt. 1) then  !{
-!
-!        Index is not positive
-!
-
-      if (verb .gt. verb_level_warn) then  !{
-        write (out_unit,*) trim(warn_header),                        &
-             'Optional index for ', trim(name),                      &
-             ' not positive: ', index_t
-      endif  !}
+  if (temp_field_p%field_type .eq. string_type) then
+    if (index_t .lt. 1 .or. index_t .gt. temp_field_p%max_index) then
+!        Index is not positive or is too large
       value = ''
       success = .false.
-
-    elseif (index_t .gt. temp_field_p%max_index) then  !}{
-!
-!        Index is too large
-!
-
-      if (verb .gt. verb_level_warn) then  !{
-        write (out_unit,*) trim(warn_header),                        &
-             'Optional index for ', trim(name),                      &
-             ' too large: ', index_t, ' > ', temp_field_p%max_index
-      endif  !}
-      value = ''
-      success = .false.
-    else  !}{
-!
+    else
 !        extract the value
-!
       value = temp_field_p%s_value(index_t)
-      !if (trim(value) == '') then
-        !success = .false.
-      !else
         success = .true.
-      !endif
-    endif !}
-  else  !}{
-!
+    endif
+  else
 !        Field not correct type
-!
-
-    if (verb .gt. verb_level_warn) then  !{
-      write (out_unit,*) trim(warn_header),                          &
-           'Field not type string ', trim(name)
-    endif  !}
     value = ''
     success = .false.
-  endif  !}
-else  !}{
-!
-!        Error following the path
-!
-
-  if (verb .gt. verb_level_warn) then  !{
-    write (out_unit,*) trim(warn_header),                            &
-         'Could not follow path for ', trim(name)
-  endif  !}
+  endif
+else
   value = ''
   success = .false.
-endif  !}
+endif
 
-end function  fm_get_value_string  !}
-
-!#######################################################################
-!#######################################################################
-
-!> @brief A function to find the common names of the sub-fields in a list
-!!    of fields.
-!!
-!> Return a pointer to an fm_array_list of the intersection
-!! of an array of lists, ignoring the contents of the values,
-!! but just returning the names.
-!! Return false on the end of the intersection.
-!!
-!! @returns A pointer to a list of names that are common to the fields provided in lists.
-function fm_intersection(lists, dim)                        &
-        result (return_p)  !{
-type (fm_array_list_def), pointer  :: return_p
-integer,          intent(in)       :: dim !< The dimension of lists
-character(len=*), intent(in)       :: lists(dim) !< A list of fields to find common fields of
-
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        local parameters
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-character(len=15), parameter :: sub_name     = 'fm_intersection'
-character(len=64), parameter :: error_header = '==>Error from ' // trim(module_name)   //  &
-                                               '(' // trim(sub_name) // '): '
-character(len=64), parameter :: warn_header  = '==>Warning from ' // trim(module_name) //  &
-                                               '(' // trim(sub_name) // '): '
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        local variables
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-character (len=fm_field_name_len)  :: name
-character (len=fm_field_name_len),                          &
-        dimension(:), allocatable  :: names
-character (len=fm_type_name_len)   :: field_type
-integer                            :: count
-integer                            :: error
-integer                            :: index
-integer                            :: n
-integer                            :: shortest
-logical                            :: found
-type (field_def), pointer, save    :: temp_p
-integer                            :: out_unit
-
-out_unit = stdout()
-
-nullify(return_p)
-!
-!        Initialize the field manager if needed
-!
-if (.not. module_is_initialized) then  !{
-  call initialize
-endif  !}
-!
-!        return error if dimension if bad
-!
-if (dim .le. 0) then  !{
-  if (verb .gt. verb_level_warn) then  !{
-    write (out_unit,*) trim(warn_header), 'Non-positive dimension: ', dim
-  endif  !}
-  nullify(return_p)
-  return
-endif  !}
-!
-!        make sure that the lists exist, and find the shortest list
-!        and its length
-!
-count = -1
-shortest = 0
-do n = 1, dim  !{
-  temp_p => find_list(lists(n), current_list_p, .false.)
-  if (associated(temp_p)) then  !{
-    if (count .eq. -1) then  !{
-      count = temp_p%length
-      shortest = n
-    else  !}{
-      if (count .gt. temp_p%length) then  !{
-        count = temp_p%length
-        shortest = n
-      endif  !}
-    endif  !}
-  else  !}{
-    if (verb .gt. verb_level_warn) then  !{
-      write (out_unit,*) trim(warn_header),                          &
-                         'List does not exist: "', trim(lists(n)), '"'
-    endif  !}
-    nullify(return_p)
-    return
-  endif  !}
-enddo  !} n
-!
-!        allocate return pointer
-!
-allocate( return_p, stat = error)
-if (error .ne. 0) then !{
-  write (out_unit,*) trim(error_header), 'Error ', error          &
-                 , ' allocating memory for return_p '
-  nullify(return_p)
-  return
-endif  !}
-if ( associated(return_p%names)) deallocate(return_p%names)
-!
-!        return if any list is empty
-!
-if (count .eq. 0) then  !{
-  return_p%length = 0
-  return
-endif  !}
-!
-!        If there is only one list, then return its names
-!
-if (dim .eq. 1) then  !{
-!
-!        allocate space for names in return pointer
-!
-  allocate( return_p%names(count), stat = error)
-  if (error .ne. 0) then !{
-    write (out_unit,*) trim(error_header), 'Error ', error        &
-                   , ' allocating memory for names in return_p '
-    nullify(return_p)
-    return
-  endif  !}
-  count = 0
-  do while (fm_loop_over_list(lists(1), name, field_type, index))  !{
-    count = count + 1
-    return_p%names(count) = name
-  enddo  !}
-  return
-endif  !}
-!
-!        allocate space for names
-!
-allocate( names(count), stat = error)
-if (error .ne. 0) then !{
-  write (out_unit,*) trim(error_header), 'Error ', error          &
-                 , ' allocating memory for names '
-  nullify(return_p)
-  return
-endif  !}
-!
-!        Loop over the shortest list, checking whether its names
-!        occur in all of the other lists. If so, then save the name
-!
-count = 0
-do while (fm_loop_over_list(lists(shortest), name, field_type, index))  !{
-  found = .true.
-  do n = 1, dim  !{
-    if (n .ne. shortest) then   !{
-      temp_p => find_list(trim(lists(n)) // list_sep // name,        &
-                          current_list_p, .false.)
-      if (.not. associated(temp_p)) then  !{
-        found = .false.
-        exit
-      endif  !}
-    endif  !}
-  enddo  !}
-  if (found) then  !{
-    count = count + 1
-    names(count) = name
-  endif  !}
-enddo  !}
-!
-!        allocate space for names in return pointer
-!
-allocate( return_p%names(count), stat = error)
-if (error .ne. 0) then !{
-  write (out_unit,*) trim(error_header), 'Error ', error  &
-                 , ' allocating memory for names in return_p '
-  deallocate(names)
-  nullify(return_p)
-  return
-endif  !}
-!
-!        copy the names to the return pointer and clean up
-!
-do n = 1, count  !{
-  return_p%names(n) = names(n)
-enddo  !} n
-return_p%length = count
-deallocate(names)
-
-end function fm_intersection  !}
-
-!#######################################################################
-!#######################################################################
+end function  fm_get_value_string
 
 !> Iterates through the given list
 !> @returns A flag to indicate whether the function operated with (FALSE)
 !! or without (TRUE) errors
 function  fm_loop_over_list_old(list, name, field_type, index)        &
-          result (success)  !{
+          result (success)
 logical                                      :: success
 character(len=*),                intent(in)  :: list !< Name of a list to loop over
 character(len=*),                intent(out) :: name !< name of a field from list
 character(len=fm_type_name_len), intent(out) :: field_type !< type of a list entry
 integer,                         intent(out) :: index !< index of the field within the list
 
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        local parameters
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-character(len=17), parameter :: sub_name     = 'fm_loop_over_list'
-character(len=64), parameter :: warn_header  = '==>Warning from ' // trim(module_name) //  &
-                                               '(' // trim(sub_name) // '): '
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        local variables
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 integer                         :: out_unit
 
 out_unit = stdout()
-!
 !        Initialize the field manager if needed
-!
-if (.not. module_is_initialized) then  !{
+if (.not. module_is_initialized) then
   call initialize
-endif  !}
+endif
 
-if (list .eq. loop_list .and. associated(loop_list_p)) then  !{
-!
+if (list .eq. loop_list .and. associated(loop_list_p)) then
 !        We've already started this loop, so continue on
-!
   loop_list_p => loop_list_p%next
   success = set_list_stuff()
-elseif (list .eq. ' ') then  !{
-!
+elseif (list .eq. ' ') then
 !        If list is empty, then loop over the current list
-!
   loop_list = ' '
   loop_list_p => current_list_p%first_field
   success = set_list_stuff()
-else  !}{
-!
+else
 !        Get a pointer to the list
-!
   loop_list = list
   loop_list_p => find_list(loop_list, current_list_p, .false.)
-  if (associated(loop_list_p)) then  !{
+  if (associated(loop_list_p)) then
     loop_list_p => loop_list_p%first_field
     success = set_list_stuff()
-  else  !}{
-!
-!        Error following the path
-!
-
-    if (verb .gt. verb_level_warn) then  !{
-      write (out_unit,*) trim(warn_header),                        &
-           'Could not follow path for ', trim(list)
-    endif  !}
+  else
     success = .false.
-  endif  !}
-endif  !}
+  endif
+endif
 
 return
 
 contains
-
-!#######################################################################
-!#######################################################################
 
 !> If the the pointer matches to the right list,
 !! extract the field information.  Used in fm_loop_over_list
 !> @returns A flag to indicate whether the function operated with (FALSE)
 !! or without (TRUE) errors
 function  set_list_stuff()                                                &
-          result (success)  !{
-!
-!        Function definition
-!
+          result (success)
+
   logical        :: success
-!
-!        arguments
-!
-  if (associated(loop_list_p)) then  !{
+
+  if (associated(loop_list_p)) then
     name = loop_list_p%name
     field_type = field_type_name(loop_list_p%field_type)
     index = loop_list_p%index
     success = .true.
-  else  !}{
+  else
     name = ' '
     field_type = ' '
     index = 0
     success = .false.
     loop_list = ' '
-  endif  !}
+  endif
 
-end function  set_list_stuff  !}
+end function  set_list_stuff
 
 end function  fm_loop_over_list_old
 
-!#######################################################################
 !> given a name of the list, prepares an iterator over the list content.
 !! If the name of the given list is blank, then the current list is used
 subroutine fm_init_loop(loop_list, iter)
@@ -3452,7 +2600,6 @@ subroutine fm_init_loop(loop_list, iter)
   endif
 end subroutine fm_init_loop
 
-!#######################################################################
 !> given a list iterator, returns information about curren list element
 !! and advances the iterator to the next list element. At the end of the
 !! list, returns FALSE
@@ -3478,30 +2625,18 @@ function fm_loop_over_list_new(iter, name, field_type, index) &
   endif
 end function fm_loop_over_list_new
 
-!#######################################################################
-!#######################################################################
-
 !> @brief A function to create a new list
 !!
 !> Allocate and initialize a new list and return the index of the list. If an
 !! error occurs return the parameter NO_FIELD.
 !> @return integer index of the newly created list
 function  fm_new_list(name, create, keep)                        &
-          result (index)  !{
+          result (index)
 integer                                :: index
 character(len=*), intent(in)           :: name !< Name of a list that user wishes to create
 logical,          intent(in), optional :: create !< If present and true, create the list if it does not exist
 logical,          intent(in), optional :: keep !< If present and true, make this list the current list
 
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        local parameters
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-character(len=11), parameter :: sub_name     = 'fm_new_list'
-character(len=64), parameter :: warn_header  = '==>Warning from ' // trim(module_name) //  &
-                                               '(' // trim(sub_name) // '): '
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        local variables
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 logical                          :: create_t
 logical                          :: keep_t
 character(len=fm_path_name_len)  :: path
@@ -3510,90 +2645,54 @@ type (field_def), pointer, save  :: temp_list_p
 integer                         :: out_unit
 
 out_unit = stdout()
-!
 !        Initialize the field manager if needed
-!
-if (.not. module_is_initialized) then  !{
+if (.not. module_is_initialized) then
   call initialize
-endif  !}
-!
+endif
 !        Must supply a field list name
-!
-if (name .eq. ' ') then  !{
-  if (verb .gt. verb_level_warn) then  !{
-    write (out_unit,*) trim(warn_header), 'Must supply a list name'
-  endif  !}
+if (name .eq. ' ') then
   index = NO_FIELD
   return
-endif  !}
-!
+endif
 !        Check for optional arguments
-!
-if (present(create)) then  !{
+if (present(create)) then
   create_t = create
-else  !}{
+else
   create_t = .false.
-endif  !}
+endif
 
-if (present(keep)) then  !{
+if (present(keep)) then
   keep_t = keep
-else  !}{
+else
   keep_t = .false.
-endif  !}
-!
+endif
 !        Get a pointer to the parent list
-!
 call find_base(name, path, base)
 
 temp_list_p => find_list(path, current_list_p, create_t)
 
-if (associated(temp_list_p)) then  !{
-!
+if (associated(temp_list_p)) then
 !        Create the list
-!
   temp_list_p => make_list(temp_list_p, base)
-  if (associated(temp_list_p)) then  !{
-!
+  if (associated(temp_list_p)) then
 !        Make this list the current list, if requested
-!
-    if (keep_t) then  !{
+    if (keep_t) then
       current_list_p => temp_list_p
-    endif  !}
+    endif
     index = temp_list_p%index
-  else  !}{
-!
-!        Error in making the list
-!
-
-    if (verb .gt. verb_level_warn) then  !{
-      write (out_unit,*) trim(warn_header),                        &
-           'Could not create list ', trim(name)
-    endif  !}
+  else
     index = NO_FIELD
-
-  endif  !}
-else  !}{
-!
-!        Error following the path
-!
-
-  if (verb .gt. verb_level_warn) then  !{
-    write (out_unit,*) trim(warn_header),                  &
-         'Could not follow path for ', trim(name)
-  endif  !}
+  endif
+else
   index = NO_FIELD
+endif
 
-endif  !}
-
-end function  fm_new_list  !}
-
-!#######################################################################
-!#######################################################################
+end function  fm_new_list
 
 !> @brief Assigns a given value to a given field
 !> @returns An index for the named field
 function  fm_new_value_integer(name, value, create, index, append)     &
-          result (field_index)  !{
+          result (field_index)
 integer                                :: field_index
 character(len=*), intent(in)           :: name !< The name of a field that the user wishes to create
                                                !! a value for.
@@ -3606,15 +2705,6 @@ integer,          intent(in), optional :: index !< The index to an array of valu
 logical,          intent(in), optional :: append !< If present and .true., then append the value to
       !! an array of the present values. If present and .true., then index cannot be greater than 0.
 
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        local parameters
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-character(len=20), parameter :: sub_name     = 'fm_new_value_integer'
-character(len=64), parameter :: warn_header  = '==>Warning from ' // trim(module_name) //  &
-                                               '(' // trim(sub_name) // '): '
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        local variables
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 logical                          :: create_t
 integer                          :: i
 integer                          :: index_t
@@ -3626,84 +2716,52 @@ type (field_def), pointer, save  :: temp_field_p
 integer                          :: out_unit
 
 out_unit = stdout()
-!
 !        Initialize the field manager if needed
-!
-if (.not. module_is_initialized) then  !{
+if (.not. module_is_initialized) then
   call initialize
-endif  !}
-!
+endif
 !        Must supply a field name
-!
-if (name .eq. ' ') then  !{
-  if (verb .gt. verb_level_warn) then  !{
-    write (out_unit,*) trim(warn_header), 'Must supply a field name'
-  endif  !}
+if (name .eq. ' ') then
   field_index = NO_FIELD
   return
-endif  !}
-!
+endif
 !        Check for optional arguments
-!
-if (present(create)) then  !{
+if (present(create)) then
   create_t = create
-else  !}{
+else
   create_t = .false.
-endif  !}
-!
+endif
 !        Check that append is not true and index non-positive
-!
-
-if (present(index) .and. present(append)) then  !{
-  if (append .and. index .gt. 0) then  !{
-    if (verb .gt. verb_level_warn) then  !{
-      write (out_unit,*) trim(warn_header),                          &
-           'Index and Append both set for ', trim(name)
-    endif  !}
+if (present(index) .and. present(append)) then
+  if (append .and. index .gt. 0) then
     field_index = NO_FIELD
     return
-  endif  !}
-endif  !}
-!
+  endif
+endif
 !        Set index to define
-!
-if (present(index)) then  !{
+if (present(index)) then
   index_t = index
-  if (index_t .lt. 0) then  !{
-!
+  if (index_t .lt. 0) then
 !        Index is negative
-!
-
-    if (verb .gt. verb_level_warn) then  !{
-      write (out_unit,*) trim(warn_header),                     &
-           'Optional index for ', trim(name),                   &
-           ' negative: ', index_t
-    endif  !}
     field_index = NO_FIELD
     return
-  endif  !}
-else  !}{
+  endif
+else
   index_t = 1
-endif  !}
-!
+endif
 !        Get a pointer to the parent list
-!
 call find_base(name, path, base)
 temp_list_p => find_list(path, current_list_p, create_t)
 
-if (associated(temp_list_p)) then  !{
+if (associated(temp_list_p)) then
   temp_field_p => find_field(base, temp_list_p)
-  if (.not. associated(temp_field_p)) then  !{
-!
+  if (.not. associated(temp_field_p)) then
 !        Create the field if it doesn't exist
-!
     temp_field_p => create_field(temp_list_p, base)
-  endif  !}
-  if (associated(temp_field_p)) then  !{
-!
+  endif
+  if (associated(temp_field_p)) then
 !        Check if the field_type is the same as previously
 !        If not then reset max_index to 0
-!
     if (temp_field_p%field_type == real_type ) then
        ! promote integer input to real
        field_index = fm_new_value_real(name, real(value), create, index, append)
@@ -3712,124 +2770,68 @@ if (associated(temp_list_p)) then  !{
       !  slm: why would we reset index? Is it not an error to have a "list" defined
       !  with different types in more than one place?
       temp_field_p%max_index = 0
-      if (temp_field_p%field_type /= null_type ) then  !{
-        if (verb .gt. verb_level_warn) then  !{
-          write (out_unit,*) trim(warn_header),                   &
-               'Changing type of ', trim(name), ' from ',         &
-               trim(field_type_name(temp_field_p%field_type)),    &
-               ' to ', trim(field_type_name(integer_type))
-        endif  !}
-      endif  !}
     endif
-!
 !        Assign the type
-!
     temp_field_p%field_type = integer_type
-!
 !        Set the index if appending
-!
-
-    if (present(append)) then  !{
-      if (append) then  !{
+    if (present(append)) then
+      if (append) then
         index_t = temp_field_p%max_index + 1
-      endif  !}
-    endif  !}
+      endif
+    endif
 
-    if (index_t .gt. temp_field_p%max_index + 1) then  !{
-
-!
+    if (index_t .gt. temp_field_p%max_index + 1) then
 !        Index too large
-!
-
-      if (verb .gt. verb_level_warn) then  !{
-        write (out_unit,*) trim(warn_header),                   &
-             'Index too large for ', trim(name), ': ', index_t
-      endif  !}
       field_index = NO_FIELD
       return
 
     elseif (index_t .eq. 0 .and.                                &
-            temp_field_p%max_index .gt. 0) then  !}{
-!
+            temp_field_p%max_index .gt. 0) then
 !        Can't set non-null field to null
-!
-
-      if (verb .gt. verb_level_warn) then  !{
-        write (out_unit,*) trim(warn_header),                   &
-             'Trying to nullify a non-null field: ',            &
-             trim(name)
-      endif  !}
       field_index = NO_FIELD
       return
 
     elseif (.not. associated(temp_field_p%i_value) .and.        &
-            index_t .gt. 0) then  !}{
-!
+            index_t .gt. 0) then
 !        Array undefined, so allocate the array
-!
       allocate(temp_field_p%i_value(1))
       temp_field_p%max_index = 1
       temp_field_p%array_dim = 1
-    elseif (index_t .gt. temp_field_p%array_dim) then  !}{
-!
+    elseif (index_t .gt. temp_field_p%array_dim) then
 !        Array is too small, so allocate new array and copy over
 !        old values
-!
       temp_field_p%array_dim = temp_field_p%array_dim + array_increment
       allocate (temp_i_value(temp_field_p%array_dim))
-      do i = 1, temp_field_p%max_index  !{
+      do i = 1, temp_field_p%max_index
         temp_i_value(i) = temp_field_p%i_value(i)
-      enddo  !} i
+      enddo
       if (associated (temp_field_p%i_value)) deallocate(temp_field_p%i_value)
       temp_field_p%i_value => temp_i_value
       temp_field_p%max_index = index_t
-    endif  !}
-!
+    endif
 !        Assign the value and set the field_index for return
 !        for non-null fields (index_t > 0)
-!
-    if (index_t .gt. 0) then  !{
+    if (index_t .gt. 0) then
       temp_field_p%i_value(index_t) = value
-      if (index_t .gt. temp_field_p%max_index) then  !{
+      if (index_t .gt. temp_field_p%max_index) then
         temp_field_p%max_index = index_t
-      endif  !}
-    endif  !}
+      endif
+    endif
     field_index = temp_field_p%index
 
-  else  !}{
-!
-!        Error in making the field
-!
-
-    if (verb .gt. verb_level_warn) then  !{
-      write (out_unit,*) trim(warn_header),                     &
-           'Could not create integer value field ',             &
-           trim(name)
-    endif  !}
+  else
     field_index = NO_FIELD
-  endif  !}
-else  !}{
-!
-!        Error following the path
-!
-
-  if (verb .gt. verb_level_warn) then  !{
-    write (out_unit,*) trim(warn_header),                       &
-         'Could not follow path for ',                          &
-         trim(name)
-  endif  !}
+  endif
+else
   field_index = NO_FIELD
-endif  !}
+endif
 
-end function  fm_new_value_integer  !}
-
-!#######################################################################
-!#######################################################################
+end function  fm_new_value_integer
 
 !> @brief Assigns a given value to a given field
 !> @returns An index for the named field
 function  fm_new_value_logical(name, value, create, index, append) &
-          result (field_index)  !{
+          result (field_index)
 integer                                :: field_index
 character(len=*), intent(in)           :: name !< The name of a field that the user wishes to create
                                                !! a value for.
@@ -3842,15 +2844,6 @@ integer,          intent(in), optional :: index !< The index to an array of valu
 logical,          intent(in), optional :: append !< If present and .true., then append the value to
       !! an array of the present values. If present and .true., then index cannot be greater than 0.
 
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        local parameters
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-character(len=20), parameter :: sub_name     = 'fm_new_value_logical'
-character(len=64), parameter :: warn_header  = '==>Warning from ' // trim(module_name) //  &
-                                               '(' // trim(sub_name) // '): '
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        local variables
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 character(len=fm_path_name_len)      :: path
 character(len=fm_field_name_len)     :: base
 integer                              :: i
@@ -3862,210 +2855,117 @@ type (field_def),      pointer, save :: temp_field_p
 integer                              :: out_unit
 
 out_unit = stdout()
-!
 !        Initialize the field manager if needed
-!
-if (.not. module_is_initialized) then  !{
+if (.not. module_is_initialized) then
   call initialize
-endif  !}
-!
+endif
 !        Must supply a field name
-!
-if (name .eq. ' ') then  !{
-  if (verb .gt. verb_level_warn) then  !{
-    write (out_unit,*) trim(warn_header), 'Must supply a field name'
-  endif  !}
+if (name .eq. ' ') then
   field_index = NO_FIELD
   return
-endif  !}
-!
+endif
 !        Check for optional arguments
-!
-if (present(create)) then  !{
+if (present(create)) then
   create_t = create
-else  !}{
+else
   create_t = .false.
-endif  !}
-!
+endif
 !        Check that append is not true and index greater than 0
-!
-if (present(index) .and. present(append)) then  !{
-  if (append .and. index .gt. 0) then  !{
-    if (verb .gt. verb_level_warn) then  !{
-      write (out_unit,*) trim(warn_header),                          &
-           'Index and Append both set for ', trim(name)
-    endif  !}
+if (present(index) .and. present(append)) then
+  if (append .and. index .gt. 0) then
     field_index = NO_FIELD
     return
-  endif  !}
-endif  !}
-!
+  endif
+endif
 !        Set index to define
-!
-
-if (present(index)) then  !{
+if (present(index)) then
   index_t = index
-  if (index_t .lt. 0) then  !{
-!
+  if (index_t .lt. 0) then
 !        Index is negative
-!
-
-    if (verb .gt. verb_level_warn) then  !{
-      write (out_unit,*) trim(warn_header),                     &
-           'Optional index for ', trim(name),                   &
-           ' negative: ', index_t
-    endif  !}
     field_index = NO_FIELD
     return
-  endif  !}
-else  !}{
+  endif
+else
   index_t = 1
-endif !}
-!
+endif
 !        Get a pointer to the parent list
-!
 call find_base(name, path, base)
 temp_list_p => find_list(path, current_list_p, create_t)
 
-if (associated(temp_list_p)) then  !{
+if (associated(temp_list_p)) then
   temp_field_p => find_field(base, temp_list_p)
-  if (.not. associated(temp_field_p)) then  !{
-!
+  if (.not. associated(temp_field_p)) then
 !        Create the field if it doesn't exist
-!
     temp_field_p => create_field(temp_list_p, base)
-  endif  !}
-  if (associated(temp_field_p)) then  !{
-!
+  endif
+  if (associated(temp_field_p)) then
 !        Check if the field_type is the same as previously
 !        If not then reset max_index to 0
-!
     if (temp_field_p%field_type /= logical_type ) then
         temp_field_p%max_index = 0
-      if (temp_field_p%field_type /= null_type ) then  !{
-        if (verb .gt. verb_level_warn) then  !{
-          write (out_unit,*) trim(warn_header),                   &
-               'Changing type of ', trim(name), ' from ',         &
-               trim(field_type_name(temp_field_p%field_type)),    &
-               ' to ', trim(field_type_name(logical_type))
-        endif  !}
-      endif  !}
     endif
-!
 !        Assign the type
-!
     temp_field_p%field_type = logical_type
-!
 !        Set the index if appending
-!
-
-    if (present(append)) then  !{
-      if (append) then  !{
+    if (present(append)) then
+      if (append) then
         index_t = temp_field_p%max_index + 1
-      endif  !}
-    endif  !}
+      endif
+    endif
 
-    if (index_t .gt. temp_field_p%max_index + 1) then  !{
-
-!
+    if (index_t .gt. temp_field_p%max_index + 1) then
 !        Index too large
-!
-
-      if (verb .gt. verb_level_warn) then  !{
-        write (out_unit,*) trim(warn_header),                   &
-             'Index too large for ', trim(name), ': ', index_t
-      endif  !}
       field_index = NO_FIELD
       return
 
     elseif (index_t .eq. 0 .and.                                &
-            temp_field_p%max_index .gt. 0) then  !}{
-
-!
+            temp_field_p%max_index .gt. 0) then
 !        Can't set non-null field to null
-!
-
-      if (verb .gt. verb_level_warn) then  !{
-        write (out_unit,*) trim(warn_header),                   &
-             'Trying to nullify a non-null field: ', trim(name)
-      endif  !}
       field_index = NO_FIELD
       return
 
     elseif (.not. associated(temp_field_p%l_value) .and.        &
-            index_t .gt. 0) then  !}{
-
-!
+            index_t .gt. 0) then
 !        Array undefined, so allocate the array
-!
-
       allocate(temp_field_p%l_value(1))
       temp_field_p%max_index = 1
       temp_field_p%array_dim = 1
 
-    elseif (index_t .gt. temp_field_p%array_dim) then  !}{
-
-!
+    elseif (index_t .gt. temp_field_p%array_dim) then
 !        Array is too small, so allocate new array and copy over
 !        old values
-!
       temp_field_p%array_dim = temp_field_p%array_dim + array_increment
       allocate (temp_l_value(temp_field_p%array_dim))
-      do i = 1, temp_field_p%max_index  !{
+      do i = 1, temp_field_p%max_index
         temp_l_value(i) = temp_field_p%l_value(i)
-      enddo  !} i
+      enddo
       if (associated(temp_field_p%l_value)) deallocate(temp_field_p%l_value)
       temp_field_p%l_value => temp_l_value
       temp_field_p%max_index = index_t
 
-    endif  !}
-
-!
+    endif
 !        Assign the value and set the field_index for return
 !        for non-null fields (index_t > 0)
-!
-
-    if (index_t .gt. 0) then  !{
+    if (index_t .gt. 0) then
       temp_field_p%l_value(index_t) = value
-      if (index_t .gt. temp_field_p%max_index) then  !{
+      if (index_t .gt. temp_field_p%max_index) then
         temp_field_p%max_index = index_t
-      endif  !}
-    endif  !}
+      endif
+    endif
     field_index = temp_field_p%index
-  else  !}{
-!
-!        Error in making the field
-!
-
-    if (verb .gt. verb_level_warn) then  !{
-      write (out_unit,*) trim(warn_header),                     &
-           'Could not create logical value field ',             &
-           trim(name)
-    endif  !}
+  else
     field_index = NO_FIELD
-  endif  !}
-else  !}{
-!
-!        Error following the path
-!
-
-  if (verb .gt. verb_level_warn) then  !{
-    write (out_unit,*) trim(warn_header),                       &
-         'Could not follow path for ',                          &
-         trim(name)
-  endif  !}
+  endif
+else
   field_index = NO_FIELD
-endif  !}
+endif
 
-end function  fm_new_value_logical  !}
-
-!#######################################################################
-!#######################################################################
+end function  fm_new_value_logical
 
 !> @brief Assigns a given value to a given field
 !> @returns An index for the named field
 function  fm_new_value_real(name, value, create, index, append) &
-          result (field_index)  !{
+          result (field_index)
 integer                                :: field_index
 character(len=*), intent(in)           :: name !< The name of a field that the user wishes to create
                                                !! a value for.
@@ -4077,16 +2977,6 @@ integer,          intent(in), optional :: index !< The index to an array of valu
                                                 !! wishes to apply a new value.
 logical,          intent(in), optional :: append !< If present and .true., then append the value to
       !! an array of the present values. If present and .true., then index cannot be greater than 0.
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        local parameters
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-
-character(len=17), parameter :: sub_name     = 'fm_new_value_real'
-character(len=64), parameter :: warn_header  = '==>Warning from ' // trim(module_name) //  &
-                                               '(' // trim(sub_name) // '): '
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        local variables
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
 logical                          :: create_t
 integer                          :: i
@@ -4099,85 +2989,53 @@ type (field_def), pointer, save  :: temp_field_p
 integer                          :: out_unit
 
 out_unit = stdout()
-!
 !        Initialize the field manager if needed
-!
-if (.not. module_is_initialized) then  !{
+if (.not. module_is_initialized) then
   call initialize
-endif  !}
-!
+endif
 !        Must supply a field name
-!
-if (name .eq. ' ') then  !{
-  if (verb .gt. verb_level_warn) then  !{
-    write (out_unit,*) trim(warn_header), 'Must supply a field name'
-  endif  !}
+if (name .eq. ' ') then
   field_index = NO_FIELD
   return
-endif  !}
-!
+endif
 !        Check for optional arguments
-!
-if (present(create)) then  !{
+if (present(create)) then
   create_t = create
-else  !}{
+else
   create_t = .false.
-endif  !}
-!
+endif
 !        Check that append is not true and index greater than 0
-!
-if (present(index) .and. present(append)) then  !{
-  if (append .and. index .gt. 0) then  !{
-    if (verb .gt. verb_level_warn) then  !{
-      write (out_unit,*) trim(warn_header),                          &
-           'Index and Append both set for ', trim(name)
-    endif  !}
+if (present(index) .and. present(append)) then
+  if (append .and. index .gt. 0) then
     field_index = NO_FIELD
     return
-  endif  !}
-endif  !}
-!
+  endif
+endif
 !        Set index to define
-!
-
-if (present(index)) then  !{
+if (present(index)) then
   index_t = index
-  if (index_t .lt. 0) then  !{
-!
+  if (index_t .lt. 0) then
 !        Index is negative
-!
-
-    if (verb .gt. verb_level_warn) then  !{
-      write (out_unit,*) trim(warn_header),                     &
-           'Optional index for ', trim(name),                   &
-           ' negative: ', index_t
-    endif  !}
     field_index = NO_FIELD
     return
-  endif  !}
-else  !}{
+  endif
+else
   index_t = 1
-endif !}
+endif
 
-!
 !        Get a pointer to the parent list
-!
 call find_base(name, path, base)
 temp_list_p => find_list(path, current_list_p, create_t)
 
-if (associated(temp_list_p)) then  !{
+if (associated(temp_list_p)) then
   temp_field_p => find_field(base, temp_list_p)
-  if (.not. associated(temp_field_p)) then  !{
-!
+  if (.not. associated(temp_field_p)) then
 !        Create the field if it doesn't exist
-!
     temp_field_p => create_field(temp_list_p, base)
-  endif  !}
-  if (associated(temp_field_p)) then  !{
-!
+  endif
+  if (associated(temp_field_p)) then
 !        Check if the field_type is the same as previously
 !        If not then reset max_index to 0
-!
     if (temp_field_p%field_type == integer_type) then
        ! promote integer field to real
        allocate(temp_field_p%r_value(size(temp_field_p%i_value)))
@@ -4192,116 +3050,66 @@ if (associated(temp_list_p)) then  !{
       ! Or, alternatively, if string follows a real value, should not be the entire
       ! array converted to string type?
       temp_field_p%max_index = 0
-      if (temp_field_p%field_type /= null_type ) then  !{
-        if (verb .gt. verb_level_warn) then  !{
-          write (out_unit,*) trim(warn_header),                   &
-               'Changing type of ', trim(name), ' from ',         &
-               trim(field_type_name(temp_field_p%field_type)),    &
-               ' to ', trim(field_type_name(real_type))
-        endif  !}
-      endif  !}
     endif
-!
 !        Assign the type
-!
     temp_field_p%field_type = real_type
-!
 !        Set the index if appending
-!
-    if (present(append)) then  !{
-      if (append) then  !{
+    if (present(append)) then
+      if (append) then
         index_t = temp_field_p%max_index + 1
-      endif  !}
-    endif  !}
-    if (index_t .gt. temp_field_p%max_index + 1) then  !{
-!
+      endif
+    endif
+    if (index_t .gt. temp_field_p%max_index + 1) then
 !        Index too large
-!
-
-      if (verb .gt. verb_level_warn) then  !{
-        write (out_unit,*) trim(warn_header),                   &
-             'Index too large for ', trim(name), ': ', index_t
-      endif  !}
       field_index = NO_FIELD
       return
     elseif (index_t .eq. 0 .and.                                &
-            temp_field_p%max_index .gt. 0) then  !}{
-!
+            temp_field_p%max_index .gt. 0) then
 !        Can't set non-null field to null
-!
-
-      if (verb .gt. verb_level_warn) then  !{
-        write (out_unit,*) trim(warn_header),                   &
-             'Trying to nullify a non-null field: ',            &
-             trim(name)
-      endif  !}
       field_index = NO_FIELD
       return
     elseif (.not. associated(temp_field_p%r_value) .and.        &
-            index_t .gt. 0) then  !}{
-!
+            index_t .gt. 0) then
 !        Array undefined, so allocate the array
-!
       allocate(temp_field_p%r_value(1))
       temp_field_p%max_index = 1
       temp_field_p%array_dim = 1
-    elseif (index_t .gt. temp_field_p%array_dim) then  !}{
-!
+    elseif (index_t .gt. temp_field_p%array_dim) then
 !        Array is too small, so allocate new array and copy over
 !        old values
-!
       temp_field_p%array_dim = temp_field_p%array_dim + array_increment
       allocate (temp_r_value(temp_field_p%array_dim))
-      do i = 1, temp_field_p%max_index  !{
+      do i = 1, temp_field_p%max_index
         temp_r_value(i) = temp_field_p%r_value(i)
-      enddo  !} i
+      enddo
       if (associated(temp_field_p%r_value)) deallocate(temp_field_p%r_value)
       temp_field_p%r_value => temp_r_value
       temp_field_p%max_index = index_t
-    endif  !}
-!
+    endif
 !        Assign the value and set the field_index for return
 !        for non-null fields (index_t > 0)
-!
-    if (index_t .gt. 0) then  !{
+    if (index_t .gt. 0) then
       temp_field_p%r_value(index_t) = value
-      if (index_t .gt. temp_field_p%max_index) then  !{
+      if (index_t .gt. temp_field_p%max_index) then
         temp_field_p%max_index = index_t
-      endif  !}
-    endif  !}
+      endif
+    endif
     field_index = temp_field_p%index
-  else  !}{
-!
+  else
 !        Error in making the field
-!
-
-    if (verb .gt. verb_level_warn) then  !{
-      write (out_unit,*) trim(warn_header),                        &
-           'Could not create real value field ', trim(name)
-    endif  !}
     field_index = NO_FIELD
-  endif  !}
-else  !}{
-!
+  endif
+else
 !        Error following the path
-!
-
-  if (verb .gt. verb_level_warn) then  !{
-    write (out_unit,*) trim(warn_header),                          &
-         'Could not follow path for ', trim(name)
-  endif  !}
   field_index = NO_FIELD
-endif  !}
+endif
 
-end function  fm_new_value_real  !}
-
-!#######################################################################
-!#######################################################################
+end function  fm_new_value_real
 
 !> @brief Assigns a given value to a given field
 !> @returns An index for the named field
 function  fm_new_value_string(name, value, create, index, append) &
-          result (field_index)  !{
+          result (field_index)
 integer                                :: field_index
 character(len=*), intent(in)           :: name !< The name of a field that the user wishes to create
                                                !! a value for.
@@ -4312,16 +3120,6 @@ logical,          intent(in), optional :: create !< If present and .true., then 
 integer,          intent(in), optional :: index !< The index to an array of values that the user
                                                 !! wishes to apply a new value.
 logical,          intent(in), optional :: append !< If present and .true., then append the value to
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        local parameters
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-
-character(len=19), parameter :: sub_name     = 'fm_new_value_string'
-character(len=64), parameter :: warn_header  = '==>Warning from ' // trim(module_name) //  &
-                                               '(' // trim(sub_name) // '): '
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        local variables
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
 character(len=fm_string_len), dimension(:), pointer :: temp_s_value
 character(len=fm_path_name_len)                     :: path
@@ -4334,233 +3132,127 @@ type (field_def),                     save, pointer :: temp_field_p
 integer                         :: out_unit
 
 out_unit = stdout()
-!
 !        Initialize the field manager if needed
-!
-if (.not. module_is_initialized) then  !{
+if (.not. module_is_initialized) then
   call initialize
-endif  !}
-!
+endif
 !        Must supply a field name
-!
-if (name .eq. ' ') then  !{
-  if (verb .gt. verb_level_warn) then  !{
-    write (out_unit,*) trim(warn_header), 'Must supply a field name'
-  endif  !}
+if (name .eq. ' ') then
   field_index = NO_FIELD
   return
-endif  !}
-!
+endif
 !        Check for optional arguments
-!
-if (present(create)) then  !{
+if (present(create)) then
   create_t = create
-else  !}{
+else
   create_t = .false.
-endif  !}
-!
+endif
 !        Check that append is not true and index greater than 0
-!
-
-if (present(index) .and. present(append)) then  !{
-  if (append .and. index .gt. 0) then  !{
-    if (verb .gt. verb_level_warn) then  !{
-      write (out_unit,*) trim(warn_header),                     &
-           'Index and Append both set for ', trim(name)
-    endif  !}
+if (present(index) .and. present(append)) then
+  if (append .and. index .gt. 0) then
     field_index = NO_FIELD
     return
-  endif  !}
-endif  !}
-!
+  endif
+endif
 !        Set index to define
-!
-if (present(index)) then  !{
+if (present(index)) then
   index_t = index
-  if (index_t .lt. 0) then  !{
-!
+  if (index_t .lt. 0) then
 !        Index is negative
-!
-
-    if (verb .gt. verb_level_warn) then  !{
-      write (out_unit,*) trim(warn_header),                     &
-           'Optional index for ', trim(name),                   &
-           ' negative: ', index_t
-    endif  !}
     field_index = NO_FIELD
     return
-  endif  !}
-else  !}{
+  endif
+else
   index_t = 1
-endif  !}
-
-!
+endif
 !        Get a pointer to the parent list
-!
 call find_base(name, path, base)
 temp_list_p => find_list(path, current_list_p, create_t)
 
-if (associated(temp_list_p)) then  !{
+if (associated(temp_list_p)) then
   temp_field_p => find_field(base, temp_list_p)
-  if (.not. associated(temp_field_p)) then  !{
-!
+  if (.not. associated(temp_field_p)) then
 !        Create the field if it doesn't exist
-!
     temp_field_p => create_field(temp_list_p, base)
-  endif  !}
-  if (associated(temp_field_p)) then  !{
-!
+  endif
+  if (associated(temp_field_p)) then
 !        Check if the field_type is the same as previously
 !        If not then reset max_index to 0
-!
     if (temp_field_p%field_type /= string_type ) then
         temp_field_p%max_index = 0
-      if (temp_field_p%field_type /= null_type ) then  !{
-        if (verb .gt. verb_level_warn) then  !{
-          write (out_unit,*) trim(warn_header),                   &
-               'Changing type of ', trim(name), ' from ',         &
-               trim(field_type_name(temp_field_p%field_type)),    &
-               ' to ', trim(field_type_name(string_type))
-        endif  !}
-      endif  !}
     endif
-!
 !        Assign the type
-!
     temp_field_p%field_type = string_type
-!
 !        Set the index if appending
-!
-
-    if (present(append)) then  !{
-      if (append) then  !{
+    if (present(append)) then
+      if (append) then
         index_t = temp_field_p%max_index + 1
-      endif  !}
-    endif  !}
+      endif
+    endif
 
-    if (index_t .gt. temp_field_p%max_index + 1) then  !{
-
-!
+    if (index_t .gt. temp_field_p%max_index + 1) then
 !        Index too large
-!
-
-      if (verb .gt. verb_level_warn) then  !{
-        write (out_unit,*) trim(warn_header),                   &
-             'Index too large for ', trim(name), ': ', index_t
-      endif  !}
       field_index = NO_FIELD
       return
 
     elseif (index_t .eq. 0 .and.                                &
-            temp_field_p%max_index .gt. 0) then  !}{
-
-!
+            temp_field_p%max_index .gt. 0) then
 !        Can't set non-null field to null
-!
-
-      if (verb .gt. verb_level_warn) then  !{
-        write (out_unit,*) trim(warn_header),                   &
-             'Trying to nullify a non-null field: ',            &
-             trim(name)
-      endif  !}
       field_index = NO_FIELD
       return
 
     elseif (.not. associated(temp_field_p%s_value) .and.        &
-            index_t .gt. 0) then  !}{
-
-!
+            index_t .gt. 0) then
 !        Array undefined, so allocate the array
-!
-
       allocate(temp_field_p%s_value(1))
       temp_field_p%max_index = 1
       temp_field_p%array_dim = 1
 
-    elseif (index_t .gt. temp_field_p%array_dim) then  !}{
-
-!
+    elseif (index_t .gt. temp_field_p%array_dim) then
 !        Array is too small, so allocate new array and copy over
 !        old values
-!
       temp_field_p%array_dim = temp_field_p%array_dim + array_increment
       allocate (temp_s_value(temp_field_p%array_dim))
-      do i = 1, temp_field_p%max_index  !{
+      do i = 1, temp_field_p%max_index
         temp_s_value(i) = temp_field_p%s_value(i)
-      enddo  !} i
+      enddo
       if (associated(temp_field_p%s_value)) deallocate(temp_field_p%s_value)
       temp_field_p%s_value => temp_s_value
       temp_field_p%max_index = index_t
 
-    endif  !}
-
-!
+    endif
 !        Assign the value and set the field_index for return
 !        for non-null fields (index_t > 0)
-!
-
-    if (index_t .gt. 0) then  !{
+    if (index_t .gt. 0) then
       temp_field_p%s_value(index_t) = value
-      if (index_t .gt. temp_field_p%max_index) then  !{
+      if (index_t .gt. temp_field_p%max_index) then
         temp_field_p%max_index = index_t
-      endif  !}
-    endif  !}
+      endif
+    endif
     field_index = temp_field_p%index
-  else  !}{
-!
+  else
 !        Error in making the field
-!
-
-    if (verb .gt. verb_level_warn) then  !{
-      write (out_unit,*) trim(warn_header),                     &
-           'Could not create string value field ',              &
-           trim(name)
-    endif  !}
     field_index = NO_FIELD
-  endif  !}
-else  !}{
-!
+  endif
+else
 !        Error following the path
-!
-
-  if (verb .gt. verb_level_warn) then  !{
-    write (out_unit,*) trim(warn_header),                       &
-         'Could not follow path for ', trim(name)
-  endif  !}
   field_index = NO_FIELD
-endif  !}
+endif
 
-end function  fm_new_value_string  !}
+end function  fm_new_value_string
 
-
-!#######################################################################
-!#######################################################################
 
 !> Resets the loop variable. For use in conjunction with fm_loop_over_list.
 subroutine  fm_reset_loop
-!
-!        arguments
-!
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        local variables
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-
-!
 !        Initialize the field manager if needed
-!
-if (.not. module_is_initialized) then  !{
+if (.not. module_is_initialized) then
   call initialize
-endif  !}
-!
+endif
 !        Reset the variables
-!
 loop_list = ' '
 nullify(loop_list_p)
 
-end subroutine  fm_reset_loop  !}
-
-!#######################################################################
-!#######################################################################
+end subroutine  fm_reset_loop
 
 !> Return the root list to the value at initialization.
 !!
@@ -4568,78 +3260,52 @@ end subroutine  fm_reset_loop  !}
 !!
 !! Users should use this routine before leaving their routine if they
 !! previously used fm_change_root.
-subroutine  fm_return_root  !{
-!
-!        arguments
-!
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        local variables
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!
+subroutine  fm_return_root
 !        Initialize the field manager if needed
-!
-if (.not. module_is_initialized) then  !{
+if (.not. module_is_initialized) then
   call initialize
-endif  !}
-!
+endif
 !        restore the saved values to the current root
-!
 root_p%name = save_root_name
 root_p%parent => save_root_parent_p
-!
 !        set the pointer to the original root field
-!
 root_p => root
-!
 !        reset the save root name and parent variables
-!
 save_root_name = ' '
 nullify(save_root_parent_p)
 
-end subroutine  fm_return_root  !}
-
-!#######################################################################
-!#######################################################################
+end subroutine  fm_return_root
 
 !> Return a pointer to the field if it exists relative to this_list_p,
 !! null otherwise
 !! @returns A pointer to the field name
 function get_field(name, this_list_p)                                        &
-        result (list_p)  !{
+        result (list_p)
 type (field_def), pointer        :: list_p
 character(len=*), intent(in)     :: name !< The name of a list that the user wishes to get information for
 type (field_def), pointer        :: this_list_p !< A pointer to a list that serves as the base point
                                                 !! for searching for name
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        local variables
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+
 character(len=fm_path_name_len)  :: path
 character(len=fm_field_name_len) :: base
 type (field_def), pointer, save  :: temp_p
 
 nullify(list_p)
-!
 !        Get the path and base for name
-!
 call find_base(name, path, base)
-!
 !        Find the list if path is not empty
-!
-if (path .ne. ' ') then  !{
+if (path .ne. ' ') then
   temp_p => find_list(path, this_list_p, .false.)
-  if (associated(temp_p)) then  !{
+  if (associated(temp_p)) then
     list_p => find_field(base, temp_p)
-  else  !}{
+  else
     nullify(list_p)
-  endif  !}
-else  !}{
+  endif
+else
   list_p => find_field(base, this_list_p)
-endif  !}
+endif
 
-end function get_field  !}
-
-!#######################################################################
-!#######################################################################
+end function get_field
 
 !> This function allows a user to rename a field without modifying the
 !! contents of the field.
@@ -4649,58 +3315,47 @@ end function get_field  !}
 !! @returns A flag to indicate whether the function operated with (FALSE) or
 !!     without (TRUE) errors.
 function fm_modify_name(oldname, newname)                                        &
-        result (success)  !{
+        result (success)
 logical                          :: success
 character(len=*), intent(in)     :: oldname !< The name of a field that the user wishes to change
                                             !! the name of
 character(len=*), intent(in)     :: newname !< The name that the user wishes to change the name of
                                             !! the field to.
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        local variables
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+
 character(len=fm_path_name_len)  :: path
 character(len=fm_field_name_len) :: base
 type (field_def), pointer, save  :: list_p
 type (field_def), pointer, save  :: temp_p
-!
 !        Get the path and base for name
-!
 call find_base(oldname, path, base)
-!
 !        Find the list if path is not empty
-!
 success = .false.
-if (path .ne. ' ') then  !{
+if (path .ne. ' ') then
   temp_p => find_list(path, current_list_p, .false.)
-  if (associated(temp_p)) then  !{
+  if (associated(temp_p)) then
     list_p => find_field(base, temp_p)
-    if (associated(list_p)) then !{
+    if (associated(list_p)) then
       list_p%name = newname
       success = .true.
-    endif!}
-  else  !}{
+    endif
+  else
     nullify(list_p)
-  endif  !}
-else  !}{
+  endif
+else
   list_p => find_field(base, current_list_p)
-  if (associated(list_p)) then !{
+  if (associated(list_p)) then
     list_p%name = newname
     success = .true.
-  endif !}
-endif  !}
+  endif
+endif
 
-end function fm_modify_name  !}
-
-!#######################################################################
-!#######################################################################
+end function fm_modify_name
 
 !> A function to initialize the values of the pointers. This will remove
 !! all fields and reset the field tree to only the root field.
-subroutine initialize  !{
-!
+subroutine initialize
 !        Initialize the root field
-!
-if (.not. module_is_initialized) then  !{
+if (.not. module_is_initialized) then
   root_p => root
 
   field_type_name(integer_type) = 'integer'
@@ -4738,12 +3393,9 @@ if (.not. module_is_initialized) then  !{
 
   module_is_initialized = .true.
 
-endif  !}
+endif
 
-end subroutine initialize  !}
-
-!#######################################################################
-!#######################################################################
+end subroutine initialize
 
 !> This function creates a new field and returns a pointer to that field.
 !!
@@ -4751,57 +3403,32 @@ end subroutine initialize  !}
 !! @return a pointer to the list on success, or a null pointer
 !! on failure.
 function  make_list(this_list_p, name)                        &
-          result (list_p)  !{
+          result (list_p)
 type (field_def), pointer    :: list_p
 type (field_def), pointer    :: this_list_p !< Base of a list that the user wishes to add a list to
 character(len=*), intent(in) :: name !< name of a list that the user wishes to create
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        local parameters
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-character(len=9),  parameter :: sub_name     = 'make_list'
-character(len=64), parameter :: warn_header  = '==>Warning from ' // trim(module_name) //  &
-                                               '(' // trim(sub_name) // '): '
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        local variables
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+
 type (field_def), pointer, save :: dummy_p
 integer                         :: out_unit
 
 out_unit = stdout()
-!
 !        Check to see whether there is already a list with
 !        this name, and if so, return an error as list names
 !        must be unique
-!
 dummy_p => find_field(name, this_list_p )
-if (associated(dummy_p)) then  !{
-!
+if (associated(dummy_p)) then
 !        This list is already specified, return an error
-!
-  if (verb .gt. verb_level_warn) then  !{
-    write (out_unit,*) trim(warn_header), 'List ',                 &
-         trim(name), ' already exists'
-  endif  !}
-!  nullify(list_p)
   list_p => dummy_p
   return
-endif  !}
-!
+endif
 !        Create a field for the new list
-!
 nullify(list_p)
 list_p => create_field(this_list_p, name)
-if (.not. associated(list_p)) then !{
-  if (verb .gt. verb_level_warn) then  !{
-    write (out_unit,*) trim(warn_header),                          &
-         'Could not create field ', trim(name)
-  endif  !}
+if (.not. associated(list_p)) then
   nullify(list_p)
   return
-endif  !}
-!
+endif
 !        Initialize the new list
-!
 list_p%length = 0
 list_p%field_type = list_type
 if (associated(list_p%i_value)) deallocate(list_p%i_value)
@@ -4809,11 +3436,7 @@ if (associated(list_p%l_value)) deallocate(list_p%l_value)
 if (associated(list_p%r_value)) deallocate(list_p%r_value)
 if (associated(list_p%s_value)) deallocate(list_p%s_value)
 
-end function  make_list  !}
-
-
-!#######################################################################
-!#######################################################################
+end function  make_list
 
 !> This is a function that provides the capability to return parameters
 !! associated with a field in a pair of strings.
@@ -4824,20 +3447,12 @@ end function  make_list  !}
 !> @return A flag to indicate whether the function operated with (FALSE) or
 !! without (TRUE) errors
 function fm_query_method(name, method_name, method_control)                &
-          result (success)  !{
+          result (success)
 logical                       :: success
 character(len=*), intent(in)  :: name !< name of a list that the user wishes to change to
 character(len=*), intent(out) :: method_name !< name of a parameter associated with the named field
 character(len=*), intent(out) :: method_control !< value of parameters associated with the named field
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        local parameters
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-character(len=15), parameter :: sub_name     = 'fm_query_method'
-character(len=64), parameter :: warn_header  = '==>Warning from ' // trim(module_name) //  &
-                                               '(' // trim(sub_name) // '): '
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        local variables
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+
 character(len=fm_path_name_len) :: path
 character(len=fm_path_name_len) :: base
 character(len=fm_path_name_len) :: name_loc
@@ -4852,9 +3467,7 @@ integer                         :: out_unit
   recursive_t = .true.
   method_name = " "
   method_control = " "
-!
 !        Initialize the field manager if needed
-!
 if (.not. module_is_initialized) call initialize
 name_loc = lowercase(name)
 call find_base(name_loc, path, base)
@@ -4864,42 +3477,34 @@ call find_base(name_loc, path, base)
 if (associated(temp_list_p)) then
 ! Find the entry values for the list.
   success = query_method(temp_list_p, recursive_t, base, method_name, method_control)
-else  !}{
+else
 ! This is not a list but it may be a parameter with a value
 ! If so put the parameter value in method_name.
 
   temp_value_p => find_list(path, current_list_p, .false.)
-  if (associated(temp_value_p)) then  !{
+  if (associated(temp_value_p)) then
 ! Find the entry values for this item.
   this_field_p => temp_value_p%first_field
 
-  do while (associated(this_field_p))  !{
-    if ( this_field_p%name == base ) then !{
+  do while (associated(this_field_p))
+    if ( this_field_p%name == base ) then
       method_name = this_field_p%s_value(1)
       method_control = ""
       success = .true.
       exit
-    else !}{
+    else
       success = .false.
-    endif !}
+    endif
     this_field_p => this_field_p%next
   enddo
 
-  else  !}{
-!
+  else
 !        Error following the path
-!
-    if (verb .gt. verb_level_warn) then
-      write (out_unit,*) trim(warn_header), 'Could not follow path for ', trim(path)
-    endif
     success = .false.
-  endif  !}
-endif  !}
+  endif
+endif
 
-end function  fm_query_method  !}
-
-!#######################################################################
-!#######################################################################
+end function  fm_query_method
 
 !> A private function that can recursively recover values for parameters
 !! associated with a field.
@@ -4914,11 +3519,6 @@ character(len=*), intent(in)  :: name !<  name of a list that the user wishes to
 character(len=*), intent(out) :: method_name !< name of a parameter associated with the named field
 character(len=*), intent(out) :: method_control !< value of parameters associated with the named field
 
-! local parameters
-character(len=12), parameter :: sub_name     = 'query_method'
-character(len=64), parameter :: warn_header  = '==>Warning from ' // trim(module_name) //  &
-                                               '(' // trim(sub_name) // '): '
-! local variables
 integer                         :: i
 character(len=64)               :: scratch
 type (field_def), pointer :: this_field_p
@@ -4927,15 +3527,7 @@ integer                         :: out_unit
 out_unit = stdout()
 
 !  Check for a valid list
-if (.not. associated(list_p)) then
-  if (verb .gt. verb_level_warn) then
-    write (out_unit,*) trim(warn_header), 'Invalid list pointer'
-  endif
-  success = .false.
-elseif (list_p%field_type .ne. list_type) then
-  if (verb .gt. verb_level_warn) then
-    write (out_unit,*) trim(warn_header), trim(list_p%name)//' is not a list'
-  endif
+if (.not. associated(list_p) .or. list_p%field_type .ne. list_type) then
   success = .false.
 else
 
@@ -4954,7 +3546,6 @@ else
           exit
         else
           method_name = trim(method_name)//trim(this_field_p%name)
-          ! TODO: check length
         endif
       endif
 
@@ -4977,9 +3568,6 @@ else
         enddo
 
     case default
-        if (verb .gt. verb_level_warn) then
-          write (out_unit,*) trim(warn_header), 'Undefined type for ', trim(this_field_p%name)
-        endif
         success = .false.
         exit
 
@@ -4990,7 +3578,6 @@ endif
 
 end function query_method
 
-!#######################################################################
 !> private function: appends str2 to the end of str1, with length check
 subroutine concat_strings(str1,str2)
    character(*), intent(inout) :: str1
@@ -5008,9 +3595,6 @@ subroutine concat_strings(str1,str2)
    str1 = trim(str1)//trim(str2)
 end subroutine concat_strings
 
-!#######################################################################
-!#######################################################################
-
 !> A function that allows the user to copy a field and add a suffix to
 !! the name of the new field.
 !!
@@ -5019,26 +3603,15 @@ end subroutine concat_strings
 !! the old field with a suffix supplied by the user.
 !! @return index of the field that has been created by the copy
 function fm_copy_list(list_name, suffix, create ) &
-         result(index)   !{
+         result(index)
 integer        :: index
 character(len=*), intent(in)           :: list_name !< name of a field that the user wishes to copy
 character(len=*), intent(in)           :: suffix !< suffix that will be added to list_name when
                                                  !! field is copied
 logical,          intent(in), optional :: create !< flag to create new list if applicable
 
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        local parameters
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-character(len=12), parameter :: sub_name     = 'fm_copy_list'
-character(len=64), parameter :: error_header = '==>Error from ' // trim(module_name)   //  &
-                                               '(' // trim(sub_name) // '): '
-character(len=64), parameter :: warn_header  = '==>Warning from ' // trim(module_name) //  &
-                                               '(' // trim(sub_name) // '): '
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        local variables
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-character(len=fm_string_len), dimension(MAX_FIELD_METHODS) :: control
-character(len=fm_string_len), dimension(MAX_FIELD_METHODS) :: method
+character(len=fm_string_len), dimension(:), allocatable    :: control
+character(len=fm_string_len), dimension(:), allocatable    :: method
 character(len=fm_string_len)                               :: head
 character(len=fm_string_len)                               :: list_name_new
 character(len=fm_string_len)                               :: tail
@@ -5061,47 +3634,30 @@ out_unit = stdout()
 
 num_meth= 1
 list_name_new = trim(list_name)//trim(suffix)
-!
   recursive_t = .true.
-!
 !        Initialize the field manager if needed
-!
-if (.not. module_is_initialized) then  !{
+if (.not. module_is_initialized) then
   call initialize
-endif  !}
+endif
 
-if (list_name .eq. ' ') then  !{
-!
+if (list_name .eq. ' ') then
 !        If list is empty, then dump the current list
-!
   temp_list_p => current_list_p
   success = .true.
-else  !}{
-!
+else
 !        Get a pointer to the list
-!
   temp_list_p => find_list(list_name, current_list_p, .false.)
-  if (associated(temp_list_p)) then  !{
+  if (associated(temp_list_p)) then
     success = .true.
-  else  !}{
-!
+  else
 !        Error following the path
-!
-    if (verb .gt. verb_level_warn) then
-      write (out_unit,*) trim(warn_header), 'Could not follow path for ', trim(list_name)
-    endif
     success = .false.
-  endif  !}
-endif  !}
-
-!
+  endif
+endif
 !        Find the list
-!
-if (success) then  !{
-  method(:) = ' '
-  control(:) = ' '
+if (success) then
   found_methods = fm_find_methods(trim(list_name), method, control)
-  do n = 1, MAX_FIELD_METHODS
+  do n = 1, size(method)
     if (LEN_TRIM(method(n)) > 0 ) then
       index = fm_new_list(trim(list_name_new)//list_sep//method(n), create = create)
       call find_base(method(n), head, tail)
@@ -5140,12 +3696,9 @@ if (success) then  !{
 
     endif
   enddo
-endif  !}
+endif
 
-end function fm_copy_list !}
-
-!#######################################################################
-!#######################################################################
+end function fm_copy_list
 
 !> This function retrieves all the methods associated with a field.
 !!
@@ -5154,21 +3707,12 @@ end function fm_copy_list !}
 !! @return A flag to indicate whether the function operated with (FALSE) or
 !!     without (TRUE) errors.
 function fm_find_methods(list_name, methods, control ) &
-         result(success)   !{
+         result(success)
 logical                                     :: success
 character(len=*), intent(in)                :: list_name !< The name of a list that the user wishes to find methods for
 character(len=*), intent(out), dimension(:) :: methods !< An array of the methods associated with list_name
 character(len=*), intent(out), dimension(:) :: control !< An array of the parameters associated with methods
 
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        local parameters
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-character(len=15), parameter :: sub_name     = 'fm_find_methods'
-character(len=64), parameter :: warn_header  = '==>Warning from ' // trim(module_name) //  &
-                                               '(' // trim(sub_name) // '): '
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        local variables
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 integer                         :: num_meth
 logical                         :: recursive_t
 type (field_def), pointer, save :: temp_list_p
@@ -5176,75 +3720,47 @@ integer                         :: out_unit
 
 out_unit = stdout()
 num_meth= 1
-!
 !        Check whether to do things recursively
-!
   recursive_t = .true.
-!  recursive_t = .false.
-!
-!        Initialize the field manager if needed
-!
-if (.not. module_is_initialized) then  !{
-  call initialize
-endif  !}
 
-if (list_name .eq. ' ') then  !{
-!
+if (.not. module_is_initialized) then
+  call initialize
+endif
+
+if (list_name .eq. ' ') then
 !        If list is empty, then dump the current list
-!
   temp_list_p => current_list_p
   success = .true.
-else  !}{
-!
+else
 !        Get a pointer to the list
-!
   temp_list_p => find_list(list_name, current_list_p, .false.)
-  if (associated(temp_list_p)) then  !{
+  if (associated(temp_list_p)) then
     success = .true.
-  else  !}{
-!
+  else
 !        Error following the path
-!
-    if (verb .gt. verb_level_warn) then
-      write (out_unit,*) trim(warn_header), 'Could not follow path for ', trim(list_name)
-    endif
     success = .false.
-  endif  !}
-endif  !}
-
-!
+  endif
+endif
 !        Find the list
-!
-if (success) then  !{
+if (success) then
   success = find_method(temp_list_p, recursive_t, num_meth, methods, control)
-endif  !}
+endif
 
-end function fm_find_methods !}
-
-!#######################################################################
-!#######################################################################
+end function fm_find_methods
 
 !> Given a field list pointer this function retrieves methods and
 !! associated parameters for the field list.
 !! @returns A flag to indicate whether the function operated with (FALSE) or
 !!     without (TRUE) errors.
 recursive function find_method(list_p, recursive, num_meth, method, control)   &
-          result (success)  !{
+          result (success)
 logical                                     :: success
 type (field_def), pointer                   :: list_p !< A pointer to the field of interest
 logical,          intent(in)                :: recursive !< If true, search recursively for fields
 integer,          intent(inout)             :: num_meth !< The number of methods found
 character(len=*), intent(out), dimension(:) :: method !< The methods associated with the field pointed to by list_p
 character(len=*), intent(out), dimension(:) :: control !< The control parameters for the methods found
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        local parameters
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-character(len=11), parameter :: sub_name     = 'find_method'
-character(len=64), parameter :: warn_header  = '==>Warning from ' // trim(module_name) //  &
-                                               '(' // trim(sub_name) // '): '
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        local variables
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+
 character(len=fm_path_name_len) :: scratch
 integer                         :: i
 integer                         :: n
@@ -5252,33 +3768,19 @@ type (field_def), pointer, save :: this_field_p
 integer                         :: out_unit
 
 out_unit = stdout()
-!
 !        Check for a valid list
-!
-if (.not. associated(list_p)) then  !{
-  if (verb .gt. verb_level_warn) then
-    write (out_unit,*) trim(warn_header), 'Invalid list pointer'
-  endif
+if (.not. associated(list_p) .or. list_p%field_type .ne. list_type) then
   success = .false.
-elseif (list_p%field_type .ne. list_type) then  !}{
-  if (verb .gt. verb_level_warn) then
-    write (out_unit,*) trim(warn_header), trim(list_p%name), ' is not a list'
-  endif
-  success = .false.
-else  !}{
-!
+else
 !        set the default return value
-!
   success = .true.
 
   this_field_p => list_p%first_field
 
-  do while (associated(this_field_p))  !{
+  do while (associated(this_field_p))
     select case(this_field_p%field_type)
     case(list_type)
-!
 !        If this is a list, then this is the method name
-!
         if ( this_field_p%length > 1) then
            do n = num_meth+1, num_meth + this_field_p%length - 1
               write (method(n),'(a,a,a,$)') trim(method(num_meth)), &
@@ -5333,76 +3835,16 @@ else  !}{
 
 
     case default
-        if (verb .gt. verb_level_warn) then
-          write (out_unit,*) trim(warn_header), 'Undefined type for ', trim(this_field_p%name)
-        endif
         success = .false.
         exit
 
     end select
 
     this_field_p => this_field_p%next
-  enddo  !}
-endif  !}
+  enddo
+endif
 
-end function find_method !}
-
-!> A subroutine to set the verbosity of the field manager output.
-!!
-!> This subroutine will set the level of verbosity in the module.
-!! Currently, verbosity is either on (1) or off (0). However,
-!! in the future, "on" may have more granularity. If no argument
-!! is given, then, if verbosity is on it will be turned off, and
-!! is off, will be turned to the default on level.
-!! If verbosity is negative then it is turned off.
-!! Values greater than the maximum will be set to the maximum.
-subroutine  fm_set_verbosity(verbosity)  !{
-integer, intent(in), optional :: verbosity !< The level of verbosity required by user
-
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!       local parameters
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-
-character(len=16), parameter :: sub_name     = 'fm_set_verbosity'
-character(len=64), parameter :: note_header  = '==>Note from ' // trim(module_name)    //  &
-                                               '(' // trim(sub_name) // '): '
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        local variables
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-integer                         :: out_unit
-
-out_unit = stdout()
-
-!
-!       Check whether an argument has been given
-!
-
-if (present(verbosity)) then  !{
-
-  if (verbosity .le. 0) then  !{
-    verb = 0
-  elseif (verbosity .ge. max_verbosity) then  !}{
-    verb = max_verbosity
-  else  !}{
-    verb = verbosity
-  endif  !}
-
-else  !}{
-
-  if (verb .eq. 0) then  !{
-    verb = default_verbosity
-  else  !}{
-    verb = 0
-  endif  !}
-
-endif  !}
-
-write (out_unit,*)
-write (out_unit,*) trim(note_header),                          &
-     'Verbosity now at level ', verb
-write (out_unit,*)
-
-end subroutine  fm_set_verbosity  !}
+end function find_method
 
 end module field_manager_mod
 !> @}

@@ -16,6 +16,10 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
+!> @file
+
+!> @addtogroup mpp_mod
+!> @{
 subroutine MPP_GATHER_1D_(sbuf, rbuf,pelist)
 ! JWD: Did not create mpp_gather_2d because have no requirement for it
 ! JWD: See mpp_gather_2dv below
@@ -242,3 +246,4 @@ subroutine MPP_GATHER_PELIST_3D_(is, ie, js, je, nk, pelist, array_seg, data, is
    return
 
 end subroutine MPP_GATHER_PELIST_3D_
+!> @}

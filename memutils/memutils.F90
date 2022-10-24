@@ -28,9 +28,6 @@
 !! This module exposes the print_memuse_stat and memutils_init calls for
 !! use in external user code.
 
-!> @file
-!> @brief File for @ref memutils_mod
-
 !> @addtogroup memutils_mod
 !> @{
 module memutils_mod

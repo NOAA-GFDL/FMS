@@ -27,9 +27,6 @@
 !! The dates may be expressed as years, months, or days or
 !! as indices in an array.
 
-!> @file
-!> @brief File for @ref time_interp_mod
-
 module time_interp_mod
 
 use time_manager_mod, only: time_type, get_date, set_date, set_time, &

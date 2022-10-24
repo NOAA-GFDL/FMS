@@ -31,8 +31,6 @@ noinst_LTLIBRARIES = libfms.la
 
 # Each convenience library depends on its source.
 libfms_la_SOURCES = \
-  fms_c.c \
-  fms_c.h \
   fms.F90 \
   fms_io.F90 \
   fms_io_unstructured_field_exist.inc \

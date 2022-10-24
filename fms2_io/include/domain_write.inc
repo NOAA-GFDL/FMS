@@ -17,7 +17,10 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 !> @file
-!> @ingroup fms_netcdf_domain_io_mod
+!> @brief Routines for writing domain decomposed variables for the @ref write_data interface
+
+!> @addtogroup fms2_io_mod
+!> @{
 
 !> @brief Gather "compute" domain data on the I/O root rank and then have
 !!        the I/O root write out the data that spans the "global" domain.
@@ -1255,3 +1258,4 @@ subroutine domain_write_5d(fileobj, variable_name, vdata, unlim_dim_level, &
     end select
   endif
 end subroutine domain_write_5d
+!> @}

@@ -55,9 +55,6 @@
 !! Arguments A, B, and C are optional, and are saved as module variables
 !! if one recalls tri_invert without changing (A,B,C)
 
-!> @file
-!> @brief File for @ref tridiagonal_mod
-
 !> @addtogroup tridiagonal_mod
 !> @{
 module tridiagonal_mod

@@ -19,8 +19,10 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 !> @file
-!> @ingroup mpp_io_mod
 !> @brief Misc. routines including initialization and finalization of @ref mpp_io_mod
+
+!> @addtogroup mpp_io_mod
+!> @{
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !                                                                      !
@@ -302,4 +304,4 @@
     logical function do_cf_compliance()
       do_cf_compliance = cf_compliance
     end function do_cf_compliance
-
+!> @}
