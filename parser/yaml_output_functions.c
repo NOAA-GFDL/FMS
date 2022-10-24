@@ -30,7 +30,7 @@
 #define KEY_STR_LEN 255
 #define LVL2KEY_SIZE LVL2KEY_NUM*KEY_STR_LEN
 
-#define DEBUG 1
+#define DEBUG 0
 
 struct fmsyamloutkeys {
 	char key1 [KEY_STR_LEN];
