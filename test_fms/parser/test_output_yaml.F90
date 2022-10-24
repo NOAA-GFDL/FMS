@@ -195,8 +195,8 @@ call fms_f2c_string (k3(6)%key11,"topping")
 call fms_f2c_string (v3(6)%val11,"frosting")
 print *, test_lvl2keys
 if(test_lvl2keys) then
-  ref_yaml_name = 'lvl2keys_reference.yaml'
-  filename = 'test_lvl2keys.yaml'
+  ref_yaml_name = 'lvl2keys_ref.yaml'
+  filename = 'lvl2keys.yaml'
   !> add some extra level 2 keys to the various structs
   call yaml_out_add_level2key( 8, "2ndorder", k1(1))
   call yaml_out_add_level2key( 9, "3rd_order", k1(1))

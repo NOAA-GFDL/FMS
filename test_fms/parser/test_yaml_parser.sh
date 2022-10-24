@@ -120,7 +120,7 @@ order:
 ...
 _EOF
 
-cat << _EOF > lvl2keys_reference.yaml
+cat << _EOF > lvl2keys_ref.yaml
 ---
 name: time to eat
 location: Bridgewater, NJ
