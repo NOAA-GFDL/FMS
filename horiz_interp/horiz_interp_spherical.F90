@@ -45,10 +45,10 @@ module horiz_interp_spherical_mod
   public :: horiz_interp_spherical_init, horiz_interp_spherical_wght
 
   integer, parameter :: max_neighbors = 400
-  real,    parameter :: max_dist_default = 0.1  ! radians
+  real(R8_KIND),    parameter :: max_dist_default = 0.1  ! radians
   integer, parameter :: num_nbrs_default = 4
-  real,    parameter :: large=1.e20
-  real,    parameter :: epsln=1.e-10
+  real(R8_KIND),    parameter :: large=1.e20
+  real(R8_KIND),    parameter :: epsln=1.e-10
 
   integer            :: pe, root_pe
 
