@@ -143,6 +143,7 @@ use  mpp_domains_mod, only:  domain2D, mpp_define_domains, &
                              mpp_get_compute_domain, mpp_get_global_domain, &
                              mpp_get_data_domain
 
+#ifdef use_deprecated_io
 use       mpp_io_mod, only:  mpp_io_init, mpp_open, mpp_close,         &
                        MPP_ASCII, MPP_NATIVE, MPP_IEEE32, MPP_NETCDF,  &
                        MPP_RDONLY, MPP_WRONLY, MPP_APPEND, MPP_OVERWR, &
@@ -158,6 +159,7 @@ use fms_io_mod, only : fms_io_init, fms_io_exit, field_size, &
                        open_file, open_direct_file, get_mosaic_tile_grid, &
                        get_mosaic_tile_file, get_global_att_value, file_exist, field_exist, &
                        set_domain, nullify_domain
+#endif
 use fms2_io_mod, only: fms2_io_init
 use memutils_mod, only: print_memuse_stats, memutils_init
 use grid2_mod, only: grid_init, grid_end
