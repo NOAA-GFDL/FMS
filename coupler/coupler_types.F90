@@ -325,9 +325,10 @@ module coupler_types_mod
   !! in restart files.
   !> @ingroup coupler_types_mod
   interface coupler_type_register_restarts
+#ifdef use_deprecated_io
     module procedure mpp_io_CT_register_restarts_2d, mpp_io_CT_register_restarts_3d
     module procedure mpp_io_CT_register_restarts_to_file_2d, mpp_io_CT_register_restarts_to_file_3d
-
+#endif
     module procedure CT_register_restarts_2d, CT_register_restarts_3d
   end interface coupler_type_register_restarts
 
@@ -335,7 +336,9 @@ module coupler_types_mod
   !! been saved in restart files.
   !> @ingroup coupler_types_mod
   interface coupler_type_restore_state
+#ifdef use_deprecated_io  
     module procedure mpp_io_CT_restore_state_2d, mpp_io_CT_restore_state_3d
+#endif      
     module procedure CT_restore_state_2d, CT_restore_state_3d
   end interface coupler_type_restore_state
 
