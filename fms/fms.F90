@@ -144,7 +144,7 @@ use  mpp_domains_mod, only:  domain2D, mpp_define_domains, &
                              mpp_get_data_domain
 
 #ifdef use_deprecated_io
-use       mpp_io_mod, only:  mpp_io_init, mpp_open, mpp_close,         &
+use mpp_io_mod, only:  mpp_io_init, mpp_open, mpp_close,         &
                        MPP_ASCII, MPP_NATIVE, MPP_IEEE32, MPP_NETCDF,  &
                        MPP_RDONLY, MPP_WRONLY, MPP_APPEND, MPP_OVERWR, &
                        MPP_SEQUENTIAL, MPP_DIRECT,                     &
@@ -174,6 +174,7 @@ private
 public :: fms_init, fms_end
 
 ! routines for opening/closing specific types of file
+#ifdef use_deprecated_io
 public :: open_namelist_file, open_restart_file, &
           open_ieee32_file, close_file, &
           open_file, open_direct_file
@@ -183,19 +184,24 @@ public :: read_data, write_data, read_compressed, read_distributed
 public :: get_domain_decomp, field_size
 public :: get_global_att_value
 
+
 ! routines for get mosaic information
 public :: get_mosaic_tile_grid, get_mosaic_tile_file
 
 ! miscellaneous i/o routines
-public :: file_exist, check_nml_error, field_exist,     &
-          error_mesg, fms_error_handler
+public :: file_exist, field_exist
+#endif
+public ::check_nml_error, error_mesg, fms_error_handler
+
 ! version logging routine (originally from fms_io)
 public :: write_version_number
 
 ! miscellaneous utilities (non i/o)
 public :: lowercase, uppercase,        &
-          string_array_index, monotonic_array, &
-          set_domain, nullify_domain
+          string_array_index, monotonic_array
+#ifdef use_deprecated_io
+public :: set_domain, nullify_domain
+#endif
 
 ! public mpp interfaces
 public :: mpp_error, NOTE, WARNING, FATAL, &
@@ -214,7 +220,9 @@ public :: fms_c2f_string, fms_cstring2cpointer
 public :: string
 
 ! public mpp-io interfaces
+#ifdef use_deprecated_io
 public :: do_cf_compliance
+#endif
 
 !Balaji
 !this is published by fms and applied to any initialized clocks
