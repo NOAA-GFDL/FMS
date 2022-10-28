@@ -327,8 +327,10 @@ contains
 subroutine fms_init (localcomm, alt_input_nml_path)
 
 !--- needed to output the version number of constants_mod to the logfile ---
- use constants_mod, only: constants_version=>version !pjp: PI not computed
+ use constants_mod, only: constants_version=>version !pjp: PI not computed 
+#ifdef use_deprecated_io 
  use fms_io_mod,    only: fms_io_version
+#endif 
 
  integer, intent(in), optional :: localcomm
  character(len=*), intent(in), optional :: alt_input_nml_path
@@ -356,7 +358,9 @@ subroutine fms_init (localcomm, alt_input_nml_path)
     call fms_io_init()
     !! write_version_number is inaccesible from fms_io_mod so write it from here if not written
     if(.not.fms_io_initialized) then
+#ifdef use_deprecated_io      
       call write_version_number("FMS_IO_MOD", fms_io_version)
+#endif      
       fms_io_initialized = .true.
     endif
     call fms2_io_init()
