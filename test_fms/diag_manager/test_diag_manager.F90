@@ -229,8 +229,10 @@ PROGRAM test
   USE fms_mod, ONLY: fms_init, fms_end, mpp_npes, file_exist, check_nml_error, open_file
   USE fms_mod, ONLY: error_mesg, FATAL, WARNING, NOTE, stdlog, stdout
   USE mpp_mod, ONLY: input_nml_file
+#ifdef use_deprecated_io  
   USE fms_io_mod, ONLY: fms_io_init
   USE fms_io_mod, ONLY: fms_io_exit, set_filename_appendix
+#endif
   USE constants_mod, ONLY: constants_init, PI, RAD_TO_DEG
 
   USE time_manager_mod, ONLY: time_type, set_calendar_type, set_date, decrement_date, OPERATOR(+), set_time
@@ -380,8 +382,6 @@ SELECT CASE ( test_number ) ! Closes just before the CONTAINS block.
         call mpp_io_init()
     endif
 #endif
-   !Initialize the fms_io module.
-    call fms_io_init()
 
    !Set the mpp and mpp_domains stack sizes.
     call mpp_set_stack_size(stackmax)
@@ -1004,7 +1004,6 @@ SELECT CASE ( test_number ) ! Closes just before the CONTAINS block.
   CALL diag_manager_end(Time)
 END SELECT ! End of case handling opened for test 12.
 
-  CALL fms_io_exit
   CALL fms_end
 
 CONTAINS
