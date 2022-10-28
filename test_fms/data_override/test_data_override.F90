@@ -49,7 +49,7 @@ program test
  use           fms_mod, only: fms_init, fms_end, mpp_npes, file_exist, check_nml_error
  use           fms_mod, only: error_mesg, FATAL, file_exist, field_exist, field_size
  use  fms_affinity_mod, only: fms_affinity_set
- use        fms_io_mod, only: read_data, fms_io_exit
+ use       fms2_io_mod, only: read_data
  use     constants_mod, only: constants_init, pi
  use  time_manager_mod, only: time_type, set_calendar_type, set_date, NOLEAP, JULIAN, operator(+), set_time, print_time
  use  diag_manager_mod, only: diag_manager_init, diag_manager_end, register_static_field, register_diag_field
@@ -306,7 +306,6 @@ enddo
 !-------------------------------------------------------------------------------------------------------
 
  call diag_manager_end(Time)
- call fms_io_exit
  call fms_end
 
 contains
