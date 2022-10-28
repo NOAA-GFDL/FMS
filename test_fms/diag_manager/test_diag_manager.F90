@@ -223,7 +223,6 @@ PROGRAM test
   ! Because of this, the calls to all of those routines differ depending on the test.
 
   USE mpp_mod, ONLY: mpp_pe, mpp_root_pe, mpp_debug, mpp_set_stack_size
-  USE mpp_io_mod, ONLY: mpp_io_init
   USE mpp_domains_mod, ONLY: domain2d, mpp_define_domains, mpp_get_compute_domain
   USE mpp_domains_mod, ONLY: mpp_define_io_domain, mpp_define_layout
   USE mpp_domains_mod, ONLY: mpp_domains_init, mpp_domains_set_stack_size
@@ -374,12 +373,13 @@ SELECT CASE ( test_number ) ! Closes just before the CONTAINS block.
     endif
 
    !Initialize the mpp_io module.
+#ifdef use_deprecated_io    
     if (debug) then
         call mpp_io_init(MPP_DEBUG)
     else
         call mpp_io_init()
     endif
-
+#endif
    !Initialize the fms_io module.
     call fms_io_init()
 
@@ -546,7 +546,9 @@ SELECT CASE ( test_number ) ! Closes just before the CONTAINS block.
 
   IF ( test_number == 16 ) THEN
      ! Test 16 tests the filename appendix
+#ifdef use_deprecated_io   
      CALL set_filename_appendix('g01')
+#endif     
   END IF
   id_dat1 = register_diag_field('test_diag_manager_mod', 'dat1', (/id_lon1,id_lat1,id_pfull/), Time, 'sample data','K')
   IF ( test_number == 18 ) THEN
