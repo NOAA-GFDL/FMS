@@ -11,6 +11,7 @@ module test_fms_mod
 end module test_fms_mod
 
 program test_fms
+#ifdef use_deprecated_io       
  use mpp_mod, only : mpp_error, fatal, note, mpp_init
  use fms_mod, only : fms_init, string, fms_end
  use fms_mod, only : fms_c2f_string
@@ -73,5 +74,5 @@ program test_fms
 
 
  call fms_end()
-
+#endif
 end program test_fms
