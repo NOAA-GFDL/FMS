@@ -18,6 +18,7 @@
 !***********************************************************************
 
 program parser_demo
+#ifdef use_deprecated_io    
 !> @brief  This programs demostrates how to use the parser
 
 #ifdef use_yaml
@@ -115,5 +116,5 @@ enddo
 deallocate(file_ids)
 
 #endif
-
+#endif
 end program parser_demo
