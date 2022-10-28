@@ -38,7 +38,6 @@ program test_update_domains_performance
   use mpp_domains_mod, only : NORTH, SOUTH, WEST, EAST, CENTER
   use mpp_domains_mod, only : mpp_get_global_domain, ZERO
   use mpp_domains_mod, only : mpp_start_update_domains, mpp_complete_update_domains
-  use mpp_io_mod, only: mpp_io_init
   use platform_mod
 
   implicit none
@@ -65,7 +64,6 @@ program test_update_domains_performance
   logical :: mix_2D_3D = .false.
   !> Initialize mpp and mpp IO modules
   call mpp_init(test_level=mpp_init_test_requests_allocated)
-  call mpp_io_init()
   call mpp_domains_init(MPP_DOMAIN_TIME)
   call mpp_domains_set_stack_size(stackmax)
   pe = mpp_pe()

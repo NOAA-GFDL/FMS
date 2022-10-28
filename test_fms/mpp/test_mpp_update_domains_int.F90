@@ -47,7 +47,6 @@ module test_mpp_update_domains_int
   use mpp_domains_mod, only : SOUTH, SOUTH_WEST, WEST, NORTH_WEST, mpp_define_mosaic_pelist
   use mpp_domains_mod, only : mpp_get_global_domain, ZERO, NINETY, MINUS_NINETY
   use mpp_domains_mod, only : mpp_deallocate_domain
-  use mpp_io_mod, only: mpp_io_init
   use platform_mod, only: i4_kind, i8_kind
 
   implicit none
