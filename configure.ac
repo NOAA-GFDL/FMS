@@ -111,8 +111,8 @@ AS_IF([test ${enable_8byte_int:-no} = yes],
   [enable_8byte_int=no])
 
 AC_ARG_ENABLE([deprecated-io],
-  [AS_HELP_STRING([],
-    [Enables compilation of deprecated mpp_io and fms_io modules in addition to the updated fms2_io modules])])
+  [AS_HELP_STRING([--enable-deprecated-io],
+    [Enables compilation of deprecated mpp_io and fms_io modules in addition to the updated fms2_io modules (default no)])])
 AS_IF([test ${enable_deprecated_io:-no} = yes],
   [enable_deprecated_io=yes],
   [enable_deprecated_io=no])

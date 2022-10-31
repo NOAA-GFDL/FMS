@@ -242,6 +242,10 @@ if(WITH_YAML)
   list(APPEND fms_defs use_yaml)
 endif()
 
+if(USE_DEPRECATED_IO)
+  list(APPEND fms_defs use_deprecated_io)
+endif()
+
 if(INTERNAL_FILE_NML)
   list(APPEND fms_defs INTERNAL_FILE_NML)
 endif()
