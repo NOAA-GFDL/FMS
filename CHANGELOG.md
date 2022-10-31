@@ -6,9 +6,37 @@ and this project uses `yyyy.rr[.pp]`, where `yyyy` is the year a patch is releas
 `rr` is a sequential release number (starting from `01`), and an optional two-digit
 sequential patch number (starting from `01`).
 
+## [2022.04] - 2022-10-13
+### Known Issues
+- If using GCC 10 or higher as well as MPICH, compilation errors will occur unless `-fallow-argument-mismatch` is included in the Fortran compiler flags(the flag will now be added automatically if building with autotools or CMake).
+- GCC 11.1.0 is unsupported due to compilation issues with select type. The issue is resolved in later GCC releases.
+- When outputting sub-region diagnostics, the current diag_manager does not add "tileX" to the filename when using a cube sphere. This leads to trouble when trying to combine the files and regrid them (if the region is in two different tiles)
+
+### Added
+- FIELD MANAGER: Adds support for reading field tables in the yaml format (field_table.yaml).
+ Yaml input only be used if compiled with `-Duse_yaml` preprocessor flag, otherwise it will default
+ to previous behaviour. The converter script to convert current field tables to the new format is
+ publicly available [here](https://github.com/NOAA-GFDL/fms_yaml_tools/) although the conversions will also be done automatically in FRE.
+- FMS2_IO: Adds options to enable data compression and chunking for netcdf output in `register_restart_field`
+
+### Changed
+- BUILD: Improves the configuration check for the MPICH/GCC 10+ argument mismatch bug by replacing
+it with a m4 compile test
+
+### Fixed
+- Compiler Support: allows for compilation via the Cray/HP CCE compilers by fixing string concatenation compilation errors
+
+### Tag Commit Hashes
+- 2022.04-beta2   163cb3e434dba05933c3d2151dea5d770758a2f3
+- 2022.04-beta1   1099a2890a06d279df0abe1f383b71279643bcdd
+- 2022.04-alpha4  8036d8d8448b0da8416a76ee0820314da27d5711
+- 2022.04-alpha3  7fafa4f7fb7a89c6f22da7ae19dc4e61a8073451
+- 2022.04-alpha2  0c4b3cc98f4bce5b39c6e9f6404ea32f5bf719e5
+- 2022.04-alpha1  ec57a48aeefb62b475a11cad7e30ebe460fa0d9f
+
 ## [2022.03] - 2022-08-01
 ### Known Issues
-- If using GCC 10 or higher as well as MPICH, compilation errors will occur unless `-fallow-argument-mismatch` is included in the Fortran compiler flags(the flag will now be added automatically if building with autotools or CMake). 
+- If using GCC 10 or higher as well as MPICH, compilation errors will occur unless `-fallow-argument-mismatch` is included in the Fortran compiler flags(the flag will now be added automatically if building with autotools or CMake).
 - GCC 11.1.0 is unsupported due to compilation issues with select type. The issue is resolved in later GCC releases.
 - When outputting sub-region diagnostics, the current diag_manager does not add "tileX" to the filename when using a cube sphere. This leads to trouble when trying to combine the files and regrid them (if the region is in two different tiles)
 ### Added
@@ -18,7 +46,7 @@ sequential patch number (starting from `01`).
 ### Changed
 - MIXED MODE: Expands support for mixed precision reals to the constants files, diag_manager, sat_vapor_pres, time_manager, and tracer_manager
 - FMS_IO: Increased the character length for restart file names to allow for longer paths
-### Fixed 
+### Fixed
 - COUPLER: Fixes global checksum being written to stdout by every core instead of just the root
 - DOCS: Fixed parsing issues with include and header files, adds class diagrams and layout improvements
 ### Tag Commit Hashes
