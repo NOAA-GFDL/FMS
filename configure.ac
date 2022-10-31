@@ -110,6 +110,13 @@ AS_IF([test ${enable_8byte_int:-no} = yes],
   [enable_8byte_int=yes],
   [enable_8byte_int=no])
 
+AC_ARG_ENABLE([deprecated-io],
+  [AS_HELP_STRING([],
+    [Enables compilation of deprecated mpp_io and fms_io modules in addition to the updated fms2_io modules])])
+AS_IF([test ${enable_deprecated_io:-no} = yes],
+  [enable_deprecated_io=yes],
+  [enable_deprecated_io=no])
+
 # user enabled testing with input files
 AC_MSG_CHECKING([whether to enable tests with input files])
 AC_ARG_ENABLE([test-input],
@@ -194,6 +201,7 @@ else
   AM_CONDITIONAL([SKIP_PARSER_TESTS], true )
 fi
 
+
 # Require netCDF
 AC_CHECK_HEADERS([netcdf.h], [], [AC_MSG_ERROR([Can't find the netCDF C header file.  Set CPPFLAGS/CFLAGS])])
 AC_SEARCH_LIBS([nc_create], [netcdf], [], [AC_MSG_ERROR([Can't find the netCDF C library.  Set LDFLAGS/LIBS])])
@@ -271,6 +279,13 @@ AC_LANG_POP(Fortran)
 AC_DEFINE([use_netCDF], [1], [This is required for the library to build])
 if test $with_mpi = yes; then
   AC_DEFINE([use_libMPI], [1], [This is required for the library to build])
+fi
+
+# check if compiling old io
+if test $enable_deprecated_io = yes; then
+  AC_DEFINE([use_deprecated_io], [1], [This is required to use mpp_io and fms_io modules])
+  #If the test pass, define use_yaml macro
+  AM_CONDITIONAL([SKIP_DEPRECATED_IO_TESTS], true)
 fi
 
 # Set any required compile flags.  This will not be done if the user wants to
