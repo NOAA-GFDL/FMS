@@ -201,7 +201,6 @@ else
   AM_CONDITIONAL([SKIP_PARSER_TESTS], true )
 fi
 
-
 # Require netCDF
 AC_CHECK_HEADERS([netcdf.h], [], [AC_MSG_ERROR([Can't find the netCDF C header file.  Set CPPFLAGS/CFLAGS])])
 AC_SEARCH_LIBS([nc_create], [netcdf], [], [AC_MSG_ERROR([Can't find the netCDF C library.  Set LDFLAGS/LIBS])])
@@ -283,8 +282,8 @@ fi
 
 # check if compiling old io
 if test $enable_deprecated_io = yes; then
+  #If the test pass, define use_deprecated_io macro and skip it's unit tests
   AC_DEFINE([use_deprecated_io], [1], [This is required to use mpp_io and fms_io modules])
-  #If the test pass, define use_yaml macro
   AM_CONDITIONAL([SKIP_DEPRECATED_IO_TESTS], true)
 fi
 
