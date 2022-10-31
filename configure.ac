@@ -210,7 +210,6 @@ AC_MSG_CHECKING([if netCDF was built with HDF5])
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([], [[
 #include <netcdf_meta.h>
 #if !(NC_HAS_NC4)
-      choke me
 #endif]])], [nc_has_nc4=yes], [nc_has_nc4=no])
 AC_MSG_RESULT([$nc_has_nc4])
 if test $nc_has_nc4 = no; then
@@ -285,6 +284,8 @@ if test $enable_deprecated_io = yes; then
   #If the test pass, define use_deprecated_io macro and skip it's unit tests
   AC_DEFINE([use_deprecated_io], [1], [This is required to use mpp_io and fms_io modules])
   AM_CONDITIONAL([SKIP_DEPRECATED_IO_TESTS], true)
+else
+  AM_CONDITIONAL([SKIP_DEPRECATED_IO_TESTS], false)
 fi
 
 # Set any required compile flags.  This will not be done if the user wants to
