@@ -55,11 +55,44 @@ module axis_utils2_mod
   !! @param [inout] data2 Interpolated data
   !! @param method Either "linear" or "cubic_spline" interpolation method, default="linear"
   !! @ingroup axis_utils2_mod
+  
+  interface axis_edges
+    module procedure axis_edges_r4, axis_edges_r8
+  end interface axis_edges
+
+  interface lon_in_range
+    module procedure lon_in_range_r4, lon_in_range_r8
+  end interface lon_in_range
+
+  interface frac_index
+    module procedure frac_index_r4, frac_index_r8
+  end interface frac_index
+
+  interface nearest_index
+      module procedure nearest_index_r4, nearest_index_r8
+  end interface nearest_index
+  
+  interface tranlon
+      module procedure tranlon_r4, tranlon_r8
+  end interface tranlon
+  
+  interface interp_1d_linear
+      module procedure interp_1d_linear_r4, interp_1d_linear_r8
+  end interface interp_1d_linear
+
+  interface interp_1d_cubic_spline
+        module procedure interp_1d_cubic_spline_r4, interp_1d_cubic_spline_r8
+  end interface interp_1d_cubic_spline
+
   interface interp_1d
      module procedure interp_1d_1d_r4, interp_1d_1d_r8 
      module procedure interp_1d_2d_r4, interp_1d_2d_r8 
      module procedure interp_1d_3d_r4, interp_1d_3d_r8
-  end interface
+  end interface interp_1d
+
+  interface find_index
+      module procedure find_index_r4, find_index_r8
+  end interface find_index
 
 !> @addtogroup axis_utils2_mod
 !> @{
@@ -177,56 +210,9 @@ contains
       tend = ""
     endif
     get_axis_modulo_times = found_tbeg
-  end function get_axis_modulo_timesS
+  end function get_axis_modulo_times
 
-  subroutine interp_1d_3d(grid1,grid2,data1,data2, method, yp1, yp2)
-
-    real, dimension(:,:,:),  intent(in)    :: grid1, data1, grid2
-    real, dimension(:,:,:),  intent(inout) :: data2
-    character(len=*), optional, intent(in) :: method
-    real,             optional, intent(in) :: yp1, yp2
-
-    integer           :: n1, n2, m1, m2, k2, n, m
-    real              :: y1, y2
-    character(len=32) :: interp_method
-    integer           :: ks, ke
-    n1 = size(grid1,1)
-    n2 = size(grid2,1)
-    m1 = size(grid1,2)
-    m2 = size(grid2,2)
-    k2 = size(grid2,3)
-
-    interp_method = "linear"
-    if(present(method)) interp_method = method
-    y1 = 1.0e30
-    if(present(yp1)) y1 = yp1
-    y2 = 1.0e30
-    if(present(yp2)) y2 = yp2
-
-    if (n1 /= n2 .or. m1 /= m2) call mpp_error(FATAL,'grid size mismatch')
-
-    select case(trim(interp_method))
-    case("linear")
-       do m=1,m1
-          do n=1,n1
-            call find_index(grid1(n,m,:), grid2(n,m,1), grid2(n,m,k2), ks, ke)
-             call interp_1d_linear(grid1(n,m,ks:ke),grid2(n,m,:),data1(n,m,ks:ke),data2(n,m,:))
-          enddo
-       enddo
-    case("cubic_spline")
-       do m=1,m1
-          do n=1,n1
-            call find_index(grid1(n,m,:), grid2(n,m,1), grid2(n,m,k2), ks, ke)
-            call interp_1d_cubic_spline(grid1(n,m,ks:ke),grid2(n,m,:), data1(n,m,ks:ke),data2(n,m,:), y1, y2)
-          enddo
-       enddo
-    case default
-       call mpp_error(FATAL,"axis_utils: interp_method should be linear or cubic_spline")
-    end select
-
-    return
-
-  end subroutine interp_1d_3d
+#include<axis_utils2.inc>
 
 end module axis_utils2_mod
 !> @}

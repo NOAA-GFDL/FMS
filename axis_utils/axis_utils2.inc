@@ -27,157 +27,116 @@
 
 #undef AXIS_EDGES_
 #define AXIS_EDGES_ axis_edges_r4
-#undef FMS_AU_TYPE_
-#define FMS_AU_KIND_ r4_kind
-#include <axis_utils.fh>
-#undef AXIS_EDGES_
-
-#undef AXIS_EDGES_
-#define AXIS_EDGES_ axis_edges_r8
-#undef FMS_AU_TYPE_
-#define FMS_AU_KIND_ r8_kind
-#include <axis_utils.fh>
-#undef AXIS_EDGES_
+#undef FMS_AU_KIND_
+#define FMS_AU_KIND r4_kind
 
 #undef LON_IN_RANGE_
 #define LON_IN_RANGE_ lon_in_range_r4
-#undef FMS_AU_TYPE_
+#undef FMS_AU_KIND_
 #define FMS_AU_KIND_ r4_kind
-#include <axis_utils.fh>
-#undef LON_IN_RANGE_
-
-#undef LON_IN_RANGE_
-#define LON_IN_RANGE_ lon_in_range_r8
-#undef FMS_AU_TYPE_
-#define FMS_AU_KIND_ r8_kind
-#include <axis_utils.fh>
-#undef LON_IN_RANGE_
 
 #undef FRAC_INDEX_
 #define FRAC_INDEX_ frac_index_r4
-#undef FMS_AU_TYPE_
+#undef FMS_AU_KIND_
 #define FMS_AU_KIND_ r4_kind
-#include <axis_utils.fh>
-#undef FRAC_INDEX_
-
-#undef FRAC_INDEX_
-#define FRAC_INDEX_ frac_index_r8
-#undef FMS_AU_TYPE_
-#define FMS_AU_KIND_ r8_kind
-#include <axis_utils.fh>
-#undef FIND_INDEX_
 
 #undef NEAREST_INDEX_
 #define NEAREST_INDEX_ nearest_index_r4
-#undef FMS_AU_TYPE_
+#undef FMS_AU_KIND_
 #define FMS_AU_KIND_ r4_kind
-#include <axis_utils.fh>
-#undef NEAREST_INDEX_
-
-#undef NEAREST_INDEX_
-#define NEAREST_INDEX_ nearest_index_r8
-#undef FMS_AU_TYPE_
-#define FMS_AU_KIND_ r8_kind
-#include <axis_utils.fh>
-#undef NEAREST_INDEX_
 
 #undef TRANLON_
 #define TRANLON_ tranlon_r4
-#undef FMS_AU_TYPE_
+#undef FMS_AU_KIND_
 #define FMS_AU_KIND_ r4_kind
-#include <axis_utils.fh>
-#undef TRANLON_
-
-#undef TRANLON_
-#define TRANLON_ tranlon_r8
-#undef FMS_AU_TYPE_
-#define FMS_AU_KIND_ r8_kind
-#include <axis_utils.fh>
-#undef TRANLON_
 
 #undef INTERP_1D_LINEAR_
 #define INTERP_1D_LINEAR_ interp_1d_linear_r4
-#undef FMS_AU_TYPE_
+#undef FMS_AU_KIND_
 #define FMS_AU_KIND_ r4_kind
-#include <axis_utils.fh>
-#undef INTERP_1D_LINEAR_
-
-#undef INTERP_1D_LINEAR_
-#define INTERP_1D_LINEAR_ interp_1d_linear_r8
-#undef FMS_AU_TYPE_
-#define FMS_AU_KIND_ r8_kind
-#include <axis_utils.fh>
-#undef INTERP_1D_LINEAR_
 
 #undef INTERP_1D_CUBIC_SPLINE_
 #define INTERP_1D_CUBIC_SPLINE_ interp_1d_cubic_spline_r4
-#undef FMS_AU_TYPE_
+#undef FMS_AU_KIND_
 #define FMS_AU_KIND_ r4_kind
-#include <axis_utils.fh>
-#undef INTERP_1D_CUBIC_SPLINE_
-
-#undef INTERP_1D_CUBIC_SPLINE_
-#define INTERP_1D_CUBIC_SPLINE_ interp_1d_cubic_spline_r8
-#undef FMS_AU_TYPE_
-#define FMS_AU_KIND_ r8_kind
-#include <axis_utils.fh>
-#undef INTERP_1D_CUBIC_SPLINE_
 
 #undef INTERP_1D_1D_
 #define INTERP_1D_1D_ interp_1d_1d_r4
-#undef FMS_AU_TYPE_
+#undef FMS_AU_KIND_
 #define FMS_AU_KIND_ r4_kind
-#include <axis_utils.fh>
-#undef INTERP_1D_1D_
-
-#undef INTERP_1D_1D_
-#define INTERP_1D_1D_ interp_1d_1d_r8
-#undef FMS_AU_TYPE_
-#define FMS_AU_KIND_ r8_kind
-#include <axis_utils.fh>
-#undef INTERP_1D_1D_
 
 #undef INTERP_1D_2D_
 #define INTERP_1D_2D_ interp_1d_2d_r4
-#undef FMS_AU_TYPE_ 
+#undef FMS_AU_KIND_ 
 #define FMS_AU_KIND_ r4_kind
-#include <axis_utils.fh>
-#undef INTERP_1D_2D_
-
-#undef INTERP_1D_2D_
-#define INTERP_1D_2D_ interp_1d_2d_r8
-#undef FMS_AU_TYPE_
-#define FMS_AU_KIND_ r8_kind
-#include <axis_utils.fh>
-#undef INTERP_1D_2D_
 
 #undef INTERP_1D_3D_
 #define INTERP_1D_3D_ interp_1d_3d_r4
-#undef FMS_AU_TYPE_
+#undef FMS_AU_KIND_
 #define FMS_AU_KIND_ r4_kind
-#include <axis_utils.fh>
-#undef INTERP_1D_3D_
-
-#undef INTERP_1D_3D_
-#define INTERP_1D_3D_ interp_1d_3d_r8
-#undef FMS_AU_TYPE_
-#define FMS_AU_KIND_ r8_kind
-#include <axis_utils.fh>
-#undef INTERP_1D_3D_
 
 #undef FIND_INDEX_
 #define FIND_INDEX_ find_index_r4
-#undef FMS_AU_TYPE_
+#undef FMS_AU_KIND_
 #define FMS_AU_KIND_ r4_kind
-#include <axis_utils.fh>
-#undef FIND_INDEX_
+#include <axis_utils2.fh>
+
+
+#undef AXIS_EDGES_
+#define AXIS_EDGES_ axis_edges_r8
+#undef FMS_AU_KIND_
+#define FMS_AU_KIND_ r8_kind
+
+#undef LON_IN_RANGE_
+#define LON_IN_RANGE_ lon_in_range_r8
+#undef FMS_AU_KIND_
+#define FMS_AU_KIND_ r8_kind
+
+#undef FRAC_INDEX_
+#define FRAC_INDEX_ frac_index_r8
+#undef FMS_AU_KIND_
+#define FMS_AU_KIND_ r8_kind
+
+#undef NEAREST_INDEX_
+#define NEAREST_INDEX_ nearest_index_r8
+#undef FMS_AU_KIND_
+#define FMS_AU_KIND_ r8_kind
+
+#undef TRANLON_
+#define TRANLON_ tranlon_r8
+#undef FMS_AU_KIND_
+#define FMS_AU_KIND_ r8_kind
+
+#undef INTERP_1D_LINEAR_
+#define INTERP_1D_LINEAR_ interp_1d_linear_r8
+#undef FMS_AU_KIND_
+#define FMS_AU_KIND_ r8_kind
+
+#undef INTERP_1D_CUBIC_SPLINE_
+#define INTERP_1D_CUBIC_SPLINE_ interp_1d_cubic_spline_r8
+#undef FMS_AU_KIND_
+#define FMS_AU_KIND_ r8_kind
+
+#undef INTERP_1D_1D_
+#define INTERP_1D_1D_ interp_1d_1d_r8
+#undef FMS_AU_KIND_
+#define FMS_AU_KIND_ r8_kind
+
+#undef INTERP_1D_2D_
+#define INTERP_1D_2D_ interp_1d_2d_r8
+#undef FMS_AU_KIND_
+#define FMS_AU_KIND_ r8_kind
+
+#undef INTERP_1D_3D_
+#define INTERP_1D_3D_ interp_1d_3d_r8
+#undef FMS_AU_KIND_
+#define FMS_AU_KIND_ r8_kind
 
 #undef FIND_INDEX_
 #define FIND_INDEX_ find_index_r8
-#undef FMS_AU_TYPE_
+#undef FMS_AU_KIND_
 #define FMS_AU_KIND_ r8_kind
-#include <axis_utils.fh>
-#undef FIND_INDEX_
+#include <axis_utils2.fh>
 
 !> @}
 ! close documentation grouping
