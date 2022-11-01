@@ -770,29 +770,27 @@ end subroutine append_compressed_dimension
 
 !> @brief Add a "compressed" unlimited dimension to a netcdf file.
 !! @note Here compressed means that every rank has a different dimension_length
-!compressed. This was written specifically for the icebergs restarts.
+!! compressed. This was written specifically for the icebergs restarts.
 subroutine register_unlimited_compressed_axis(fileobj, dimension_name, dimension_length)
-  class(FmsNetcdfFile_t), intent(inout) :: fileobj !< File object.
-  character(len=*), intent(in) :: dimension_name !< Dimension name.
-  integer, intent(in) :: dimension_length !< Dimension length for the current rank
+  class(FmsNetcdfFile_t), intent(inout) :: fileobj           !< File object.
+  character(len=*),       intent(in)    :: dimension_name    !< Dimension name.
+  integer,                intent(in)    :: dimension_length  !< Dimension length for the current rank
 
-  integer                            :: dim_len    !< Dimension length
   integer, dimension(:), allocatable :: npes_start !< The starting index of the dimension for each of the PEs
   integer, dimension(:), allocatable :: npes_count !< The size of the dimension for each of the PEs
   integer                            :: i          !< For do loops
   integer                            :: err        !< Netcdf error
   integer                            :: dimid      !< Netcdf id for the dimension
 
-  dim_len = dimension_length
   !Gather all local dimension lengths on the I/O root pe.
   allocate(npes_start(size(fileobj%pelist)))
   allocate(npes_count(size(fileobj%pelist)))
   do i = 1, size(fileobj%pelist)
     if (fileobj%pelist(i) .eq. mpp_pe()) then
-      npes_count(i) = dim_len
+      npes_count(i) = dimension_length
     else
       call mpp_recv(npes_count(i), fileobj%pelist(i), block=.false.)
-      call mpp_send(dim_len, fileobj%pelist(i))
+      call mpp_send(dimension_length, fileobj%pelist(i))
     endif
   enddo
   call mpp_sync_self(check=event_recv)
@@ -803,7 +801,6 @@ subroutine register_unlimited_compressed_axis(fileobj, dimension_name, dimension
   enddo
   call append_compressed_dimension(fileobj, dimension_name, npes_start, &
                                    npes_count)
-  dim_len = sum(npes_count)
 
   if (fileobj%is_root .and. .not. fileobj%is_readonly) then
     call set_netcdf_mode(fileobj%ncid, define_mode)
