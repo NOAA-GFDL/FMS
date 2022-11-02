@@ -226,11 +226,11 @@ PROGRAM test
   USE mpp_domains_mod, ONLY: domain2d, mpp_define_domains, mpp_get_compute_domain
   USE mpp_domains_mod, ONLY: mpp_define_io_domain, mpp_define_layout
   USE mpp_domains_mod, ONLY: mpp_domains_init, mpp_domains_set_stack_size
-  USE fms_mod, ONLY: fms_init, fms_end, mpp_npes, file_exist, check_nml_error, open_file
+  USE fms_mod, ONLY: fms_init, fms_end, mpp_npes, check_nml_error
   USE fms_mod, ONLY: error_mesg, FATAL, WARNING, NOTE, stdlog, stdout
   USE mpp_mod, ONLY: input_nml_file
 #ifdef use_deprecated_io  
-  USE fms_io_mod, ONLY: fms_io_init
+  USE fms_io_mod, ONLY: fms_io_init, file_exist, open_file
   USE fms_io_mod, ONLY: fms_io_exit, set_filename_appendix
 #endif
   USE constants_mod, ONLY: constants_init, PI, RAD_TO_DEG
