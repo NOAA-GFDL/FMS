@@ -36,6 +36,7 @@
     nlon_in = size(lon_in(:))-1;  nlat_in = size(lat_in(:))-1
     nlon_out = size(lon_out(:))-1;  nlat_out = size(lat_out(:))-1
 
+    if( .not. allocated(Interp % HI_KIND_TYPE)) allocate (Interp % HI_KIND_TYPE)
     allocate ( Interp % HI_KIND_TYPE % facj (nlat_out,2), Interp % jlat (nlat_out,2),      &
                Interp % HI_KIND_TYPE % faci (nlon_out,2), Interp % ilon (nlon_out,2),      &
                Interp % HI_KIND_TYPE % area_src (nlon_in, nlat_in),   &
@@ -228,6 +229,8 @@
     if(.not. module_is_initialized) call mpp_error(FATAL, &
          'horiz_interp_conserve_new_1dx2d: horiz_interp_conserve_init is not called')
 
+    if( .not. allocated(Interp%HI_KIND_TYPE)) allocate(Interp%HI_KIND_TYPE)
+
     wordsz=size(transfer(lon_in(1), one_byte))
     if(wordsz .NE. 4 .AND. wordsz .NE. 8) call mpp_error(FATAL, &
          'horiz_interp_conserve_new_1dx2d: wordsz should be 4 or 8')
@@ -390,6 +393,8 @@
     if(.not. module_is_initialized) call mpp_error(FATAL, &
          'horiz_interp_conserve_new_2dx1d: horiz_interp_conserve_init is not called')
 
+    if( .not. allocated(Interp%HI_KIND_TYPE)) allocate(Interp%HI_KIND_TYPE)
+
     wordsz=size(transfer(lon_in(1,1), one_byte))
     if(wordsz .NE. 8) call mpp_error(FATAL, &
          'horiz_interp_conserve_new_2dx1d: currently only support 64-bit real(FMS_HI_KIND), contact developer')
@@ -495,6 +500,8 @@
 
     if(.not. module_is_initialized) call mpp_error(FATAL, &
          'horiz_interp_conserve_new_2dx2d: horiz_interp_conserve_init is not called')
+
+    if( .not. allocated(Interp%HI_KIND_TYPE)) allocate(Interp%HI_KIND_TYPE)
 
     wordsz=size(transfer(lon_in(1,1), one_byte))
     if(wordsz .NE. 4 .AND. wordsz .NE. 8) call mpp_error(FATAL, &

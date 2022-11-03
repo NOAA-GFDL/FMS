@@ -32,6 +32,7 @@
     lt_err = 0
     !-----------------------------------------------------------------------
 
+    if( .not. allocated(Interp%HI_KIND_TYPE)) allocate(Interp%HI_KIND_TYPE)
     allocate ( Interp % HI_KIND_TYPE % wti (size(lon_out,1),size(lon_out,2),2),   &
                Interp % HI_KIND_TYPE % wtj (size(lon_out,1),size(lon_out,2),2),   &
                Interp % i_lon (size(lon_out,1),size(lon_out,2),2), &
@@ -211,6 +212,7 @@
     Interp%nlon_src = nlon_in;  Interp%nlat_src = nlat_in
     Interp%nlon_dst = nlon_out; Interp%nlat_dst = nlat_out
 
+    if( .not. allocated(Interp%HI_KIND_TYPE)) allocate(Interp%HI_KIND_TYPE)
     allocate ( Interp % HI_KIND_TYPE % wti (size(lon_out,1),size(lon_out,2),2),   &
                Interp % HI_KIND_TYPE % wtj (size(lon_out,1),size(lon_out,2),2),   &
                Interp % i_lon (size(lon_out,1),size(lon_out,2),2), &

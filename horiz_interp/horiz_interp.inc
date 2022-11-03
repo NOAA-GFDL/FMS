@@ -160,6 +160,8 @@
    method = 'conservative'
    if(present(interp_method)) method = interp_method
 
+   if( .not. allocated(Interp % HI_KIND_TYPE)) allocate (Interp % HI_KIND_TYPE)
+
    select case (trim(method))
    case ("conservative")
       Interp%interp_method = CONSERVE
@@ -268,6 +270,8 @@
    method = 'bilinear'
    if(present(interp_method)) method = interp_method
 
+   if( .not. allocated(Interp % HI_KIND_TYPE)) allocate (Interp % HI_KIND_TYPE)
+
    select case (trim(method))
    case ("conservative")
       Interp%interp_method = CONSERVE
@@ -343,6 +347,8 @@
 
    method = 'bilinear'
    if(present(interp_method)) method = interp_method
+
+   if( .not. allocated(Interp % HI_KIND_TYPE)) allocate (Interp % HI_KIND_TYPE)
 
    nlon_out = size(lon_out(:)); nlat_out = size(lat_out(:))
    allocate(lon_dst(nlon_out,nlat_out), lat_dst(nlon_out,nlat_out))
