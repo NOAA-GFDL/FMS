@@ -219,10 +219,10 @@
     !--- first fine the neighbor points for the destination points.
     if(use_new_search) then
        epsln2 = epsln*1e5
-       call find_neighbor_new(Interp, lon_in, lat_in, lon_out, lat_out, src_is_modulo, no_crash)
+       call FIND_NEIGHBOR_NEW(Interp, lon_in, lat_in, lon_out, lat_out, src_is_modulo, no_crash)
     else
        epsln2 = epsln
-       call find_neighbor(Interp, lon_in, lat_in, lon_out, lat_out, src_is_modulo)
+       call FIND_NEIGHBOR(Interp, lon_in, lat_in, lon_out, lat_out, src_is_modulo)
     endif
 
     !***************************************************************************
@@ -584,7 +584,7 @@
               print *,'lat_in(ie,je)=',lat_in(iend,jend)*180./PI
 
              call mpp_error(FATAL, &
-                  'find_neighbor: the destination point is not inside the source grid' )
+                  'FIND_NEIGHBOR: the destination point is not inside the source grid' )
           endif
        enddo
     enddo

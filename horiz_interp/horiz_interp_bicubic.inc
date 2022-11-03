@@ -408,10 +408,10 @@
 
    subroutine BCUINT(y,y1,y2,y12,x1l,x1u,x2l,x2u,t,u,ansy,ansy1,ansy2)
       real(FMS_HI_KIND) ansy,ansy1,ansy2,x1l,x1u,x2l,x2u,y(4),y1(4),y12(4),y2(4)
-!     uses bcucof 
+!     uses BCUCOF 
       integer i
       real(FMS_HI_KIND) t,u,c(4,4)
-      call bcucof(y,y1,y2,y12,x1u-x1l,x2u-x2l,c)
+      call BCUCOF(y,y1,y2,y12,x1u-x1l,x2u-x2l,c)
       ansy=0.
       ansy2=0.
       ansy1=0.
