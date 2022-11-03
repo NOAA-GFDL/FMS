@@ -48,7 +48,7 @@ module horiz_interp_bicubic_mod
 
   use mpp_mod,               only: mpp_error, FATAL, stdout, mpp_pe, mpp_root_pe
   use fms_mod,               only: write_version_number
-  use horiz_interp_type_mod, only: horiz_interp_type, horiz_interp_r4_type, horiz_interp_r8_type
+  use horiz_interp_type_mod, only: horiz_interp_type
   use constants_mod,         only: PI
 
 
@@ -118,32 +118,34 @@ module horiz_interp_bicubic_mod
 
 
   subroutine horiz_interp_bicubic_del( Interp )
+    type(horiz_interp_type), intent(inout) :: Interp
 
-    class(horiz_interp_type), intent(inout) :: Interp
-    select type(Interp)
-      type is(horiz_interp_r4_type)
-        if(associated(Interp%rat_x))  deallocate ( Interp%rat_x )
-        if(associated(Interp%rat_y))  deallocate ( Interp%rat_y )
-        if(associated(Interp%lon_in)) deallocate ( Interp%lon_in )
-        if(associated(Interp%lat_in)) deallocate ( Interp%lat_in )
-        if(associated(Interp%i_lon))  deallocate ( Interp%i_lon )
-        if(associated(Interp%j_lat))  deallocate ( Interp%j_lat )
-        if(associated(Interp%wti))    deallocate ( Interp%wti )
-      type is(horiz_interp_r8_type)
-        if(associated(Interp%rat_x))  deallocate ( Interp%rat_x )
-        if(associated(Interp%rat_y))  deallocate ( Interp%rat_y )
-        if(associated(Interp%lon_in)) deallocate ( Interp%lon_in )
-        if(associated(Interp%lat_in)) deallocate ( Interp%lat_in )
-        if(associated(Interp%i_lon))  deallocate ( Interp%i_lon )
-        if(associated(Interp%j_lat))  deallocate ( Interp%j_lat )
-        if(associated(Interp%wti))    deallocate ( Interp%wti )
-    end select
+    if(allocated(Interp%kind8_reals)) then
+      if(associated(Interp%kind8_reals%rat_x))  deallocate ( Interp%kind8_reals%rat_x )
+      if(associated(Interp%kind8_reals%rat_y))  deallocate ( Interp%kind8_reals%rat_y )
+      if(associated(Interp%kind8_reals%lon_in)) deallocate ( Interp%kind8_reals%lon_in )
+      if(associated(Interp%kind8_reals%lat_in)) deallocate ( Interp%kind8_reals%lat_in )
+      if(associated(Interp%kind8_reals%wti))    deallocate ( Interp%kind8_reals%wti )
+      deallocate(Interp%kind8_reals)
+    else if(allocated(Interp%kind4_reals)) then
+      if(associated(Interp%kind4_reals%rat_x))  deallocate ( Interp%kind4_reals%rat_x )
+      if(associated(Interp%kind4_reals%rat_y))  deallocate ( Interp%kind4_reals%rat_y )
+      if(associated(Interp%kind4_reals%lon_in)) deallocate ( Interp%kind4_reals%lon_in )
+      if(associated(Interp%kind4_reals%lat_in)) deallocate ( Interp%kind4_reals%lat_in )
+      if(associated(Interp%kind4_reals%wti))    deallocate ( Interp%kind4_reals%wti )
+      deallocate(Interp%kind4_reals)
+    endif
+
+    if(associated(Interp%i_lon))  deallocate ( Interp%i_lon )
+    if(associated(Interp%j_lat))  deallocate ( Interp%j_lat )
 
   end subroutine horiz_interp_bicubic_del
 
   
 #undef FMS_HI_KIND
 #define FMS_HI_KIND 4
+#undef HI_KIND_TYPE
+#define HI_KIND_TYPE kind4_reals
 #undef BICUBIC_NEW_1D_S 
 #define BICUBIC_NEW_1D_S horiz_interp_bicubic_new_1d_s_r4 
 #undef BICUBIC_NEW_1D
@@ -154,8 +156,6 @@ module horiz_interp_bicubic_mod
 #define BCUINT bcuint_r4
 #undef BCUCOF
 #define BCUCOF bcucof_r4 
-#undef HI_KIND_TYPE
-#define HI_KIND_TYPE horiz_interp_r4_type
 #undef INDL
 #define INDL indl_r4
 #undef INDU
@@ -166,6 +166,8 @@ module horiz_interp_bicubic_mod
 
 #undef FMS_HI_KIND
 #define FMS_HI_KIND 8
+#undef HI_KIND_TYPE
+#define HI_KIND_TYPE kind8_reals
 #undef BICUBIC_NEW_1D_S 
 #define BICUBIC_NEW_1D_S horiz_interp_bicubic_new_1d_s_r8 
 #undef BICUBIC_NEW_1D
@@ -176,8 +178,6 @@ module horiz_interp_bicubic_mod
 #define BCUINT bcuint_r8
 #undef BCUCOF
 #define BCUCOF bcucof_r8 
-#undef HI_KIND_TYPE
-#define HI_KIND_TYPE horiz_interp_r8_type
 #undef INDL
 #define INDL indl_r8
 #undef INDU

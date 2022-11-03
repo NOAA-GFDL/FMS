@@ -1,4 +1,4 @@
-  !> @brief Creates a new @ref HI_KIND_TYPE
+  !> @brief Creates a new @ref horiz_interp_type
   !!
   !> Allocates space and initializes a derived-type variable
   !! that contains pre-computed interpolation indices and weights.
@@ -6,7 +6,7 @@
        verbose, src_modulo )
 
     !-----------------------------------------------------------------------
-    type(HI_KIND_TYPE), intent(inout) :: Interp !< A derived-type variable containing indices
+    type(horiz_interp_type), intent(inout) :: Interp !< A derived-type variable containing indices
                                        !! and weights used for subsequent interpolations. To
                                        !! reinitialize this variable for a different grid-to-grid
                                        !! interpolation you must first use the
@@ -40,24 +40,24 @@
     Interp%nlon_src = nlon_in;  Interp%nlat_src = nlat_in
     Interp%nlon_dst = nlon_out; Interp%nlat_dst = nlat_out
 !   use wti(:,:,1) for x-derivative, wti(:,:,2) for y-derivative, wti(:,:,3) for xy-derivative
-    allocate ( Interp%wti    (nlon_in, nlat_in, 3) )
-    allocate ( Interp%lon_in (nlon_in) )
-    allocate ( Interp%lat_in (nlat_in) )
-    allocate ( Interp%rat_x  (nlon_out, nlat_out) )
-    allocate ( Interp%rat_y  (nlon_out, nlat_out) )
+    allocate ( Interp%HI_KIND_TYPE%wti    (nlon_in, nlat_in, 3) )
+    allocate ( Interp%HI_KIND_TYPE%lon_in (nlon_in) )
+    allocate ( Interp%HI_KIND_TYPE%lat_in (nlat_in) )
+    allocate ( Interp%HI_KIND_TYPE%rat_x  (nlon_out, nlat_out) )
+    allocate ( Interp%HI_KIND_TYPE%rat_y  (nlon_out, nlat_out) )
     allocate ( Interp%i_lon  (nlon_out, nlat_out, 2) )
     allocate ( Interp%j_lat  (nlon_out, nlat_out, 2) )
 
-    Interp%lon_in = lon_in
-    Interp%lat_in = lat_in
+    Interp%HI_KIND_TYPE%lon_in = lon_in
+    Interp%HI_KIND_TYPE%lat_in = lat_in
 
     if ( verbose_bicubic > 0 ) then
        unit = stdout()
        write (unit,'(/,"Initialising bicubic interpolation, interface BICUBIC_NEW_1D_S")')
        write (unit,'(/," Longitude of coarse grid points (radian): xc(i) i=1, ",i4)') Interp%nlon_src
-       write (unit,'(1x,10f10.4)') (Interp%lon_in(jj),jj=1,Interp%nlon_src)
+       write (unit,'(1x,10f10.4)') (Interp%HI_KIND_TYPE%lon_in(jj),jj=1,Interp%nlon_src)
        write (unit,'(/," Latitude of coarse grid points (radian):  yc(j) j=1, ",i4)') Interp%nlat_src
-       write (unit,'(1x,10f10.4)') (Interp%lat_in(jj),jj=1,Interp%nlat_src)
+       write (unit,'(1x,10f10.4)') (Interp%HI_KIND_TYPE%lat_in(jj),jj=1,Interp%nlat_src)
        do i=1, Interp%nlat_dst
          write (unit,*)
          write (unit,'(/," Longitude of fine grid points (radian): xf(i) i=1, ",i4)') Interp%nlat_dst
@@ -79,7 +79,7 @@
       do i=1,nlon_in
         ip1=min(i+1,nlon_in)
         im1=max(i-1,1)
-        Interp%wti(i,j,1) = 1./(Interp%lon_in(ip1)-Interp%lon_in(im1))
+        Interp%HI_KIND_TYPE%wti(i,j,1) = 1./(Interp%HI_KIND_TYPE%lon_in(ip1)-Interp%HI_KIND_TYPE%lon_in(im1))
       enddo
     enddo
 
@@ -92,7 +92,7 @@
         jp1=min(j+1,nlat_in)
         jm1=max(j-1,1)
         do i=1,nlon_in
-          Interp%wti(i,j,2) = 1./(Interp%lat_in(jp1)-Interp%lat_in(jm1))
+          Interp%HI_KIND_TYPE%wti(i,j,2) = 1./(Interp%HI_KIND_TYPE%lat_in(jp1)-Interp%HI_KIND_TYPE%lat_in(jm1))
         enddo
       enddo
 
@@ -106,7 +106,8 @@
         do i=1,nlon_in
           ip1=min(i+1,nlon_in)
           im1=max(i-1,1)
-          Interp%wti(i,j,3) = 1./((Interp%lon_in(ip1)-Interp%lon_in(im1))*(Interp%lat_in(jp1)-Interp%lat_in(jm1)))
+          Interp%HI_KIND_TYPE%wti(i,j,3) = 1./((Interp%HI_KIND_TYPE%lon_in(ip1)-Interp%HI_KIND_TYPE%lon_in(im1)) * &
+                                                (Interp%HI_KIND_TYPE%lat_in(jp1)-Interp%HI_KIND_TYPE%lat_in(jm1)))
         enddo
       enddo
 !---------------------------------------------------------------------------
@@ -119,53 +120,53 @@
 
           jcl = 0
           jcu = 0
-          if( yz .le. Interp%lat_in(1) ) then
+          if( yz .le. Interp%HI_KIND_TYPE%lat_in(1) ) then
              jcl = 1
              jcu = 1
-          else if( yz .ge. Interp%lat_in(nlat_in) ) then
+          else if( yz .ge. Interp%HI_KIND_TYPE%lat_in(nlat_in) ) then
              jcl = nlat_in
              jcu = nlat_in
           else
-             jcl = INDL(Interp%lat_in, yz)
-             jcu = INDU(Interp%lat_in, yz)
+             jcl = INDL(Interp%HI_KIND_TYPE%lat_in, yz)
+             jcu = INDU(Interp%HI_KIND_TYPE%lat_in, yz)
           endif
 
           icl = 0
           icu = 0
           !--- cyclic condition, do we need to use do while
-          if( xz .gt. Interp%lon_in(nlon_in) ) xz = xz - tpi
-          if( xz .le. Interp%lon_in(1) ) xz = xz + tpi
-          if( xz .ge. Interp%lon_in(nlon_in) ) then
+          if( xz .gt. Interp%HI_KIND_TYPE%lon_in(nlon_in) ) xz = xz - tpi
+          if( xz .le. Interp%HI_KIND_TYPE%lon_in(1) ) xz = xz + tpi
+          if( xz .ge. Interp%HI_KIND_TYPE%lon_in(nlon_in) ) then
             icl = nlon_in
             icu = 1
-            Interp%rat_x(i,j) = (xz - Interp%lon_in(icl))/(Interp%lon_in(icu) - Interp%lon_in(icl) + tpi)
+            Interp%HI_KIND_TYPE%rat_x(i,j) = (xz - Interp%HI_KIND_TYPE%lon_in(icl))/(Interp%HI_KIND_TYPE%lon_in(icu) - Interp%HI_KIND_TYPE%lon_in(icl) + tpi)
           else
-            icl = INDL(Interp%lon_in, xz)
-            icu = INDU(Interp%lon_in, xz)
-            Interp%rat_x(i,j) = (xz - Interp%lon_in(icl))/(Interp%lon_in(icu) - Interp%lon_in(icl))
+            icl = INDL(Interp%HI_KIND_TYPE%lon_in, xz)
+            icu = INDU(Interp%HI_KIND_TYPE%lon_in, xz)
+            Interp%HI_KIND_TYPE%rat_x(i,j) = (xz - Interp%HI_KIND_TYPE%lon_in(icl))/(Interp%HI_KIND_TYPE%lon_in(icu) - Interp%HI_KIND_TYPE%lon_in(icl))
           endif
           Interp%j_lat(i,j,1) = jcl
           Interp%j_lat(i,j,2) = jcu
           Interp%i_lon(i,j,1) = icl
           Interp%i_lon(i,j,2) = icu
           if(jcl == jcu) then
-             Interp%rat_y(i,j) = 0.0
+             Interp%HI_KIND_TYPE%rat_y(i,j) = 0.0
           else
-             Interp%rat_y(i,j) = (yz - Interp%lat_in(jcl))/(Interp%lat_in(jcu) - Interp%lat_in(jcl))
+             Interp%HI_KIND_TYPE%rat_y(i,j) = (yz - Interp%HI_KIND_TYPE%lat_in(jcl))/(Interp%HI_KIND_TYPE%lat_in(jcu) - Interp%HI_KIND_TYPE%lat_in(jcl))
           endif
-!          if(yz.gt.Interp%lat_in(jcu)) call mpp_error(FATAL, ' BICUBIC_NEW_1D_S:
+!          if(yz.gt.Interp%HI_KIND_TYPE%lat_in(jcu)) call mpp_error(FATAL, ' BICUBIC_NEW_1D_S:
 !          yf < ycl, no valid boundary point')
-!          if(yz.lt.Interp%lat_in(jcl)) call mpp_error(FATAL, ' BICUBIC_NEW_1D_S:
+!          if(yz.lt.Interp%HI_KIND_TYPE%lat_in(jcl)) call mpp_error(FATAL, ' BICUBIC_NEW_1D_S:
 !          yf > ycu, no valid boundary point')
-!          if(xz.gt.Interp%lon_in(icu)) call mpp_error(FATAL, ' BICUBIC_NEW_1D_S:
+!          if(xz.gt.Interp%HI_KIND_TYPE%lon_in(icu)) call mpp_error(FATAL, ' BICUBIC_NEW_1D_S:
 !          xf < xcl, no valid boundary point')
-!          if(xz.lt.Interp%lon_in(icl)) call mpp_error(FATAL, ' BICUBIC_NEW_1D_S:
+!          if(xz.lt.Interp%HI_KIND_TYPE%lon_in(icl)) call mpp_error(FATAL, ' BICUBIC_NEW_1D_S:
 !          xf > xcu, no valid boundary point')
         enddo
       enddo
   end subroutine BICUBIC_NEW_1D_S
 
-  !> @brief Creates a new @ref HI_KIND_TYPE
+  !> @brief Creates a new @ref horiz_interp_type
   !!
   !> Allocates space and initializes a derived-type variable
   !! that contains pre-computed interpolation indices and weights.
@@ -173,7 +174,7 @@
        verbose, src_modulo )
 
     !-----------------------------------------------------------------------
-    type(HI_KIND_TYPE), intent(inout) :: Interp
+    type(horiz_interp_type), intent(inout) :: Interp
     real(FMS_HI_KIND), intent(in),  dimension(:)        :: lon_in , lat_in
     real(FMS_HI_KIND), intent(in),  dimension(:)        :: lon_out, lat_out
     integer, intent(in),          optional :: verbose
@@ -194,24 +195,24 @@
     nlon_out = size(lon_out); nlat_out = size(lat_out)
     Interp%nlon_src = nlon_in;  Interp%nlat_src = nlat_in
     Interp%nlon_dst = nlon_out; Interp%nlat_dst = nlat_out
-    allocate ( Interp%wti     (nlon_in, nlat_in, 3) )
-    allocate ( Interp%lon_in  (nlon_in) )
-    allocate ( Interp%lat_in  (nlat_in) )
-    allocate ( Interp%rat_x   (nlon_out, nlat_out) )
-    allocate ( Interp%rat_y   (nlon_out, nlat_out) )
+    allocate ( Interp%HI_KIND_TYPE%wti     (nlon_in, nlat_in, 3) )
+    allocate ( Interp%HI_KIND_TYPE%lon_in  (nlon_in) )
+    allocate ( Interp%HI_KIND_TYPE%lat_in  (nlat_in) )
+    allocate ( Interp%HI_KIND_TYPE%rat_x   (nlon_out, nlat_out) )
+    allocate ( Interp%HI_KIND_TYPE%rat_y   (nlon_out, nlat_out) )
     allocate ( Interp%i_lon   (nlon_out, nlat_out, 2) )
     allocate ( Interp%j_lat   (nlon_out, nlat_out, 2) )
 
-    Interp%lon_in = lon_in
-    Interp%lat_in = lat_in
+    Interp%HI_KIND_TYPE%lon_in = lon_in
+    Interp%HI_KIND_TYPE%lat_in = lat_in
 
     if ( verbose_bicubic > 0 ) then
        unit = stdout()
        write (unit,'(/,"Initialising bicubic interpolation, interface BICUBIC_NEW_1D")')
        write (unit,'(/," Longitude of coarse grid points (radian): xc(i) i=1, ",i4)') Interp%nlon_src
-       write (unit,'(1x,10f10.4)') (Interp%lon_in(jj),jj=1,Interp%nlon_src)
+       write (unit,'(1x,10f10.4)') (Interp%HI_KIND_TYPE%lon_in(jj),jj=1,Interp%nlon_src)
        write (unit,'(/," Latitude of coarse grid points (radian):  yc(j) j=1, ",i4)') Interp%nlat_src
-       write (unit,'(1x,10f10.4)') (Interp%lat_in(jj),jj=1,Interp%nlat_src)
+       write (unit,'(1x,10f10.4)') (Interp%HI_KIND_TYPE%lat_in(jj),jj=1,Interp%nlat_src)
        write (unit,*)
        write (unit,'(/," Longitude of fine grid points (radian): xf(i) i=1, ",i4)') Interp%nlat_dst
        write (unit,'(1x,10f10.4)') (lon_out(jj),jj=1,Interp%nlon_dst)
@@ -228,7 +229,7 @@
       do i=1,nlon_in
         ip1=min(i+1,nlon_in)
         im1=max(i-1,1)
-        Interp%wti(i,j,1) = 1./(lon_in(ip1)-lon_in(im1))
+        Interp%HI_KIND_TYPE%wti(i,j,1) = 1./(lon_in(ip1)-lon_in(im1))
       enddo
     enddo
 
@@ -241,7 +242,7 @@
         jp1=min(j+1,nlat_in)
         jm1=max(j-1,1)
         do i=1,nlon_in
-          Interp%wti(i,j,2) = 1./(lat_in(jp1)-lat_in(jm1))
+          Interp%HI_KIND_TYPE%wti(i,j,2) = 1./(lat_in(jp1)-lat_in(jm1))
         enddo
       enddo
 
@@ -255,7 +256,7 @@
         do i=1,nlon_in
           ip1=min(i+1,nlon_in)
           im1=max(i-1,1)
-          Interp%wti(i,j,3) = 1./((lon_in(ip1)-lon_in(im1))*(lat_in(jp1)-lat_in(jm1)))
+          Interp%HI_KIND_TYPE%wti(i,j,3) = 1./((lon_in(ip1)-lon_in(im1))*(lat_in(jp1)-lat_in(jm1)))
         enddo
       enddo
 !---------------------------------------------------------------------------
@@ -285,11 +286,11 @@
           if( xz .ge. lon_in(nlon_in) ) then
             icl = nlon_in
             icu = 1
-            Interp%rat_x(i,j) = (xz - Interp%lon_in(icl))/(Interp%lon_in(icu) - Interp%lon_in(icl) + tpi)
+            Interp%HI_KIND_TYPE%rat_x(i,j) = (xz - Interp%HI_KIND_TYPE%lon_in(icl))/(Interp%HI_KIND_TYPE%lon_in(icu) - Interp%HI_KIND_TYPE%lon_in(icl) + tpi)
           else
             icl = INDL(lon_in, xz)
             icu = INDU(lon_in, xz)
-            Interp%rat_x(i,j) = (xz - Interp%lon_in(icl))/(Interp%lon_in(icu) - Interp%lon_in(icl))
+            Interp%HI_KIND_TYPE%rat_x(i,j) = (xz - Interp%HI_KIND_TYPE%lon_in(icl))/(Interp%HI_KIND_TYPE%lon_in(icu) - Interp%HI_KIND_TYPE%lon_in(icl))
           endif
           icl = INDL(lon_in, xz)
           icu = INDU(lon_in, xz)
@@ -298,9 +299,9 @@
           Interp%i_lon(i,j,1) = icl
           Interp%i_lon(i,j,2) = icu
           if(jcl == jcu) then
-             Interp%rat_y(i,j) = 0.0
+             Interp%HI_KIND_TYPE%rat_y(i,j) = 0.0
           else
-             Interp%rat_y(i,j) = (yz - Interp%lat_in(jcl))/(Interp%lat_in(jcu) - Interp%lat_in(jcl))
+             Interp%HI_KIND_TYPE%rat_y(i,j) = (yz - Interp%HI_KIND_TYPE%lat_in(jcl))/(Interp%HI_KIND_TYPE%lat_in(jcu) - Interp%HI_KIND_TYPE%lat_in(jcl))
           endif
 !          if(yz.gt.lat_in(jcu)) call mpp_error(FATAL, ' BICUBIC_NEW_1D: yf <
 !          ycl, no valid boundary point')
@@ -318,7 +319,7 @@
   !> @brief Perform bicubic horizontal interpolation
   subroutine BICUBIC_NEW( Interp, data_in, data_out, verbose, mask_in, mask_out, missing_value, &
                                  &  missing_permit)
-    type (HI_KIND_TYPE), intent(in)        :: Interp
+    type (horiz_interp_type), intent(in)        :: Interp
     real(FMS_HI_KIND), intent(in),  dimension(:,:)           :: data_in
     real(FMS_HI_KIND), intent(out), dimension(:,:)           :: data_out
     integer, intent(in),               optional :: verbose
@@ -339,13 +340,13 @@
 !    fill_in = .false.
 !    if ( present(fill) ) fill_in = fill
 !   use dfc_x and dfc_y as workspace
-!    if ( fill_in ) call FILL_XY(fc(ics:ice,jcs:jce), ics, ice, jcs, jce, maxpass=2)
+!    if ( fill_in ) call fill_xy(fc(ics:ice,jcs:jce), ics, ice, jcs, jce, maxpass=2)
 !    where ( data_in .le. missing ) data_in(:,:) = 0.
 !!
     do j=1, Interp%nlat_dst
       do i=1, Interp%nlon_dst
-        yz  = Interp%rat_y(i,j)
-        xz  = Interp%rat_x(i,j)
+        yz  = Interp%HI_KIND_TYPE%rat_y(i,j)
+        xz  = Interp%HI_KIND_TYPE%rat_x(i,j)
         jcl = Interp%j_lat(i,j,1)
         jcu = Interp%j_lat(i,j,2)
         icl = Interp%i_lon(i,j,1)
@@ -353,13 +354,13 @@
         if( icl > icu ) then
           iclp1 = icu
           icum1 = icl
-          xcl = Interp%lon_in(icl)
-          xcu = Interp%lon_in(icu)+tpi
+          xcl = Interp%HI_KIND_TYPE%lon_in(icl)
+          xcu = Interp%HI_KIND_TYPE%lon_in(icu)+tpi
         else
           iclp1 = min(icl+1,Interp%nlon_src)
           icum1 = max(icu-1,1)
-          xcl = Interp%lon_in(icl)
-          xcu = Interp%lon_in(icu)
+          xcl = Interp%HI_KIND_TYPE%lon_in(icl)
+          xcu = Interp%HI_KIND_TYPE%lon_in(icu)
         endif
         iclm1 = max(icl-1,1)
         icup1 = min(icu+1,Interp%nlon_src)
@@ -367,30 +368,30 @@
         jclm1 = max(jcl-1,1)
         jcup1 = min(jcu+1,Interp%nlat_src)
         jcum1 = max(jcu-1,1)
-        ycl = Interp%lat_in(jcl)
-        ycu = Interp%lat_in(jcu)
-!        xcl = Interp%lon_in(icl)
-!        xcu = Interp%lon_in(icu)
+        ycl = Interp%HI_KIND_TYPE%lat_in(jcl)
+        ycu = Interp%HI_KIND_TYPE%lat_in(jcu)
+!        xcl = Interp%HI_KIND_TYPE%lon_in(icl)
+!        xcu = Interp%HI_KIND_TYPE%lon_in(icu)
         y(1)  =  data_in(icl,jcl)
         y(2)  =  data_in(icu,jcl)
         y(3)  =  data_in(icu,jcu)
         y(4)  =  data_in(icl,jcu)
-        y1(1) = ( data_in(iclp1,jcl) - data_in(iclm1,jcl) ) * Interp%wti(icl,jcl,1)
-        y1(2) = ( data_in(icup1,jcl) - data_in(icum1,jcl) ) * Interp%wti(icu,jcl,1)
-        y1(3) = ( data_in(icup1,jcu) - data_in(icum1,jcu) ) * Interp%wti(icu,jcu,1)
-        y1(4) = ( data_in(iclp1,jcu) - data_in(iclm1,jcu) ) * Interp%wti(icl,jcu,1)
-        y2(1) = ( data_in(icl,jclp1) - data_in(icl,jclm1) ) * Interp%wti(icl,jcl,2)
-        y2(2) = ( data_in(icu,jclp1) - data_in(icu,jclm1) ) * Interp%wti(icu,jcl,2)
-        y2(3) = ( data_in(icu,jcup1) - data_in(icu,jcum1) ) * Interp%wti(icu,jcu,2)
-        y2(4) = ( data_in(icl,jcup1) - data_in(icl,jcum1) ) * Interp%wti(icl,jcu,2)
+        y1(1) = ( data_in(iclp1,jcl) - data_in(iclm1,jcl) ) * Interp%HI_KIND_TYPE%wti(icl,jcl,1)
+        y1(2) = ( data_in(icup1,jcl) - data_in(icum1,jcl) ) * Interp%HI_KIND_TYPE%wti(icu,jcl,1)
+        y1(3) = ( data_in(icup1,jcu) - data_in(icum1,jcu) ) * Interp%HI_KIND_TYPE%wti(icu,jcu,1)
+        y1(4) = ( data_in(iclp1,jcu) - data_in(iclm1,jcu) ) * Interp%HI_KIND_TYPE%wti(icl,jcu,1)
+        y2(1) = ( data_in(icl,jclp1) - data_in(icl,jclm1) ) * Interp%HI_KIND_TYPE%wti(icl,jcl,2)
+        y2(2) = ( data_in(icu,jclp1) - data_in(icu,jclm1) ) * Interp%HI_KIND_TYPE%wti(icu,jcl,2)
+        y2(3) = ( data_in(icu,jcup1) - data_in(icu,jcum1) ) * Interp%HI_KIND_TYPE%wti(icu,jcu,2)
+        y2(4) = ( data_in(icl,jcup1) - data_in(icl,jcum1) ) * Interp%HI_KIND_TYPE%wti(icl,jcu,2)
         y12(1)= ( data_in(iclp1,jclp1) + data_in(iclm1,jclm1) - data_in(iclm1,jclp1) &
-                - data_in(iclp1,jclm1) ) * Interp%wti(icl,jcl,3)
+                - data_in(iclp1,jclm1) ) * Interp%HI_KIND_TYPE%wti(icl,jcl,3)
         y12(2)= ( data_in(icup1,jclp1) + data_in(icum1,jclm1) - data_in(icum1,jclp1) &
-                - data_in(icup1,jclm1) ) * Interp%wti(icu,jcl,3)
+                - data_in(icup1,jclm1) ) * Interp%HI_KIND_TYPE%wti(icu,jcl,3)
         y12(3)= ( data_in(icup1,jcup1) + data_in(icum1,jcum1) - data_in(icum1,jcup1) &
-                - data_in(icup1,jcum1) ) * Interp%wti(icu,jcu,3)
+                - data_in(icup1,jcum1) ) * Interp%HI_KIND_TYPE%wti(icu,jcu,3)
         y12(4)= ( data_in(iclp1,jcup1) + data_in(iclm1,jcum1) - data_in(iclm1,jcup1) &
-                - data_in(iclp1,jcum1) ) * Interp%wti(icl,jcu,3)
+                - data_in(iclp1,jcum1) ) * Interp%HI_KIND_TYPE%wti(icl,jcu,3)
 
         call BCUINT(y,y1,y2,y12,xcl,xcu,ycl,ycu,xz,yz,val,val1,val2)
         data_out   (i,j) = val
@@ -407,10 +408,10 @@
 
    subroutine BCUINT(y,y1,y2,y12,x1l,x1u,x2l,x2u,t,u,ansy,ansy1,ansy2)
       real(FMS_HI_KIND) ansy,ansy1,ansy2,x1l,x1u,x2l,x2u,y(4),y1(4),y12(4),y2(4)
-!     uses BCUCOF
+!     uses bcucof 
       integer i
       real(FMS_HI_KIND) t,u,c(4,4)
-      call BCUCOF(y,y1,y2,y12,x1u-x1l,x2u-x2l,c)
+      call bcucof(y,y1,y2,y12,x1u-x1l,x2u-x2l,c)
       ansy=0.
       ansy2=0.
       ansy1=0.
@@ -423,7 +424,7 @@
 !      ansy2=ansy2/(x2u-x2l) ! could be used for accuracy checks
       return
 !  (c) copr. 1986-92 numerical recipes software -3#(-)f.
-   end subroutine BCUINT
+   end subroutine BCUINT 
 !---------------------------------------------------------------------------
 
    subroutine BCUCOF(y,y1,y2,y12,d1,d2,c)
@@ -499,7 +500,7 @@
        enddo
        call mpp_error(FATAL,'Error in INDU')
     return
-    end function INDU
+    end function INDU 
 
 !-----------------------------------------------------------------------
 
@@ -620,4 +621,4 @@
         fi(:,:) = work_new(:,:)
       endif
       return
-    end subroutine FILL_XY
+    end subroutine FILL_XY 

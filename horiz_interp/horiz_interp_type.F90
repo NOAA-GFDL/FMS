@@ -43,7 +43,6 @@ private
 
 public :: CONSERVE, BILINEAR, SPHERICA, BICUBIC
 public :: horiz_interp_type, stats, assignment(=)
-public :: horiz_interp_r8_type, horiz_interp_r4_type
 
 !> @}
 
@@ -58,9 +57,37 @@ interface stats
   module procedure stats_r8
 end interface
 
+!> Parameterized derive type to hold real arrays for horiz_interp_type
+!! Kind value is set through k, defaults to compiler default real size
+type :: horiz_interp_reals( k )
+   integer, kind :: k = kind(0.0) !< real kind size set by k, otherwise set to default size
+   real(kind=k),    dimension(:,:), pointer   :: faci =>NULL()   !< weights for conservative scheme
+   real(kind=k),    dimension(:,:), pointer   :: facj =>NULL()   !< weights for conservative scheme
+   real(kind=k),    dimension(:,:), pointer   :: area_src =>NULL()              !< area of the source grid
+   real(kind=k),    dimension(:,:), pointer   :: area_dst =>NULL()              !< area of the destination grid
+   real(kind=k),    dimension(:,:,:), pointer :: wti =>NULL()      !< weights for bilinear interpolation
+                                                           !! wti ist used for derivative "weights" in bicubic
+   real(kind=k),    dimension(:,:,:), pointer :: wtj =>NULL()      !< weights for bilinear interpolation
+                                                           !! wti ist used for derivative "weights" in bicubic
+   real(kind=k),    dimension(:,:,:), pointer :: src_dist =>NULL()              !< distance between destination grid and
+                                                                        !! neighbor source grid.
+   real(kind=k),    dimension(:,:), pointer   :: rat_x =>NULL() !< the ratio of coordinates of the dest grid
+                                                        !! (x_dest -x_src_r)/(x_src_l -x_src_r)
+                                                        !! and (y_dest -y_src_r)/(y_src_l -y_src_r)
+   real(kind=k),    dimension(:,:), pointer   :: rat_y =>NULL() !< the ratio of coordinates of the dest grid
+                                                        !! (x_dest -x_src_r)/(x_src_l -x_src_r)
+                                                        !! and (y_dest -y_src_r)/(y_src_l -y_src_r)
+   real(kind=k),    dimension(:), pointer     :: lon_in =>NULL()  !< the coordinates of the source grid
+   real(kind=k),    dimension(:), pointer     :: lat_in =>NULL()  !< the coordinates of the source grid
+   real(kind=k),    dimension(:), pointer     :: area_frac_dst=>NULL()              !< area fraction in destination grid.
+   real(kind=k),    dimension(:,:), pointer   :: mask_in=>NULL()
+   real(kind=k)                               :: max_src_dist
+
+end type horiz_interp_reals
+
 !<PUBLICTYPE >
 !> @ingroup horiz_interp_type_mod
- type, abstract :: horiz_interp_type
+ type :: horiz_interp_type
    integer, dimension(:,:), pointer   :: ilon =>NULL()   !< indices for conservative scheme
    integer, dimension(:,:), pointer   :: jlat =>NULL()   !< indices for conservative scheme
    integer, dimension(:,:,:), pointer :: i_lon =>NULL() !< indices for bilinear interpolation
@@ -89,56 +116,9 @@ end interface
    integer, dimension(:), pointer     :: j_src=>NULL()       !< indices in source grid.
    integer, dimension(:), pointer     :: i_dst=>NULL()       !< indices in destination grid.
    integer, dimension(:), pointer     :: j_dst=>NULL()       !< indices in destination grid.
+   type(horiz_interp_reals(r8_kind)), allocatable :: kind8_reals !< derived type holding all real data arrays if using r8
+   type(horiz_interp_reals(r4_kind)), allocatable :: kind4_reals !< derived type holding all real data arrays if using r4
  end type
-!</PUBLICTYPE>
-
-type, extends(horiz_interp_type) :: horiz_interp_r8_type
-   real(r8_kind),    dimension(:,:), pointer   :: faci =>NULL()   !< weights for conservative scheme
-   real(r8_kind),    dimension(:,:), pointer   :: facj =>NULL()   !< weights for conservative scheme
-   real(r8_kind),    dimension(:,:), pointer   :: area_src =>NULL()              !< area of the source grid
-   real(r8_kind),    dimension(:,:), pointer   :: area_dst =>NULL()              !< area of the destination grid
-   real(r8_kind),    dimension(:,:,:), pointer :: wti =>NULL()      !< weights for bilinear interpolation
-                                                           !! wti ist used for derivative "weights" in bicubic
-   real(r8_kind),    dimension(:,:,:), pointer :: wtj =>NULL()      !< weights for bilinear interpolation
-                                                           !! wti ist used for derivative "weights" in bicubic
-   real(r8_kind),    dimension(:,:,:), pointer :: src_dist =>NULL()              !< distance between destination grid and
-                                                                        !! neighbor source grid.
-   real(r8_kind),    dimension(:,:), pointer   :: rat_x =>NULL() !< the ratio of coordinates of the dest grid
-                                                        !! (x_dest -x_src_r)/(x_src_l -x_src_r)
-                                                        !! and (y_dest -y_src_r)/(y_src_l -y_src_r)
-   real(r8_kind),    dimension(:,:), pointer   :: rat_y =>NULL() !< the ratio of coordinates of the dest grid
-                                                        !! (x_dest -x_src_r)/(x_src_l -x_src_r)
-                                                        !! and (y_dest -y_src_r)/(y_src_l -y_src_r)
-   real(r8_kind),    dimension(:), pointer     :: lon_in =>NULL()  !< the coordinates of the source grid
-   real(r8_kind),    dimension(:), pointer     :: lat_in =>NULL()  !< the coordinates of the source grid
-   real(r8_kind),    dimension(:), pointer     :: area_frac_dst=>NULL()              !< area fraction in destination grid.
-   real(r8_kind),    dimension(:,:), pointer   :: mask_in=>NULL()
-   real(r8_kind)                               :: max_src_dist
-end type
-
-type, extends(horiz_interp_type) :: horiz_interp_r4_type
-   real(r4_kind),    dimension(:,:), pointer   :: faci =>NULL()   !< weights for conservative scheme
-   real(r4_kind),    dimension(:,:), pointer   :: facj =>NULL()   !< weights for conservative scheme
-   real(r4_kind),    dimension(:,:), pointer   :: area_src =>NULL()              !< area of the source grid
-   real(r4_kind),    dimension(:,:), pointer   :: area_dst =>NULL()              !< area of the destination grid
-   real(r4_kind),    dimension(:,:,:), pointer :: wti =>NULL()      !< weights for bilinear interpolation
-                                                           !! wti ist used for derivative "weights" in bicubic
-   real(r4_kind),    dimension(:,:,:), pointer :: wtj =>NULL()      !< weights for bilinear interpolation
-                                                           !! wti ist used for derivative "weights" in bicubic
-   real(r4_kind),    dimension(:,:,:), pointer :: src_dist =>NULL()              !< distance between destination grid and
-                                                                        !! neighbor source grid.
-   real(r4_kind),    dimension(:,:), pointer   :: rat_x =>NULL() !< the ratio of coordinates of the dest grid
-                                                        !! (x_dest -x_src_r)/(x_src_l -x_src_r)
-                                                        !! and (y_dest -y_src_r)/(y_src_l -y_src_r)
-   real(r4_kind),    dimension(:,:), pointer   :: rat_y =>NULL() !< the ratio of coordinates of the dest grid
-                                                        !! (x_dest -x_src_r)/(x_src_l -x_src_r)
-                                                        !! and (y_dest -y_src_r)/(y_src_l -y_src_r)
-   real(r4_kind),    dimension(:), pointer     :: lon_in =>NULL()  !< the coordinates of the source grid
-   real(r4_kind),    dimension(:), pointer     :: lat_in =>NULL()  !< the coordinates of the source grid
-   real(r4_kind),    dimension(:), pointer     :: area_frac_dst=>NULL()              !< area fraction in destination grid.
-   real(r4_kind),    dimension(:,:), pointer   :: mask_in=>NULL()
-   real(r4_kind)                               :: max_src_dist
-end type
 
 !> @addtogroup horiz_interp_type_mod
 !> @{
@@ -146,85 +126,74 @@ contains
 
 !######################################################################################################################
  subroutine horiz_interp_type_eq(horiz_interp_out, horiz_interp_in)
-    class(horiz_interp_type), intent(inout) :: horiz_interp_out
-    class(horiz_interp_type), intent(in)    :: horiz_interp_in
+    type(horiz_interp_type), intent(inout) :: horiz_interp_out
+    type(horiz_interp_type), intent(in)    :: horiz_interp_in
     logical :: valid_types
     valid_types = .false.
 
     if(.not.horiz_interp_in%I_am_initialized) then
       call mpp_error(FATAL,'horiz_interp_type_eq: horiz_interp_type variable on right hand side is unassigned')
     endif
-   select type (horiz_interp_out)
-   type is(horiz_interp_r4_type)
-   select type(horiz_interp_in)
-   type is (horiz_interp_r4_type)
-     horiz_interp_out%faci            => horiz_interp_in%faci
-     horiz_interp_out%facj            => horiz_interp_in%facj
-     horiz_interp_out%ilon            => horiz_interp_in%ilon
-     horiz_interp_out%jlat            => horiz_interp_in%jlat
-     horiz_interp_out%area_src        => horiz_interp_in%area_src
-     horiz_interp_out%area_dst        => horiz_interp_in%area_dst
-     horiz_interp_out%wti             => horiz_interp_in%wti
-     horiz_interp_out%wtj             => horiz_interp_in%wtj
-     horiz_interp_out%i_lon           => horiz_interp_in%i_lon
-     horiz_interp_out%j_lat           => horiz_interp_in%j_lat
-     horiz_interp_out%src_dist        => horiz_interp_in%src_dist
-     horiz_interp_out%found_neighbors => horiz_interp_in%found_neighbors
-     horiz_interp_out%max_src_dist    =  horiz_interp_in%max_src_dist
-     horiz_interp_out%num_found       => horiz_interp_in%num_found
-     horiz_interp_out%nlon_src        =  horiz_interp_in%nlon_src
-     horiz_interp_out%nlat_src        =  horiz_interp_in%nlat_src
-     horiz_interp_out%nlon_dst        =  horiz_interp_in%nlon_dst
-     horiz_interp_out%nlat_dst        =  horiz_interp_in%nlat_dst
-     horiz_interp_out%interp_method   =  horiz_interp_in%interp_method
-     horiz_interp_out%rat_x           => horiz_interp_in%rat_x
-     horiz_interp_out%rat_y           => horiz_interp_in%rat_y
-     horiz_interp_out%lon_in          => horiz_interp_in%lon_in
-     horiz_interp_out%lat_in          => horiz_interp_in%lat_in
-     horiz_interp_out%I_am_initialized = .true.
-     horiz_interp_out%i_src           => horiz_interp_in%i_src
-     horiz_interp_out%j_src           => horiz_interp_in%j_src
-     horiz_interp_out%i_dst           => horiz_interp_in%i_dst
-     horiz_interp_out%j_dst           => horiz_interp_in%j_dst
-     horiz_interp_out%area_frac_dst   => horiz_interp_in%area_frac_dst
-     valid_types = .true.
-   end select
-   type is(horiz_interp_r8_type)
-   select type(horiz_interp_in)
-   type is (horiz_interp_r8_type)
-     horiz_interp_out%faci            => horiz_interp_in%faci
-     horiz_interp_out%facj            => horiz_interp_in%facj
-     horiz_interp_out%ilon            => horiz_interp_in%ilon
-     horiz_interp_out%jlat            => horiz_interp_in%jlat
-     horiz_interp_out%area_src        => horiz_interp_in%area_src
-     horiz_interp_out%area_dst        => horiz_interp_in%area_dst
-     horiz_interp_out%wti             => horiz_interp_in%wti
-     horiz_interp_out%wtj             => horiz_interp_in%wtj
-     horiz_interp_out%i_lon           => horiz_interp_in%i_lon
-     horiz_interp_out%j_lat           => horiz_interp_in%j_lat
-     horiz_interp_out%src_dist        => horiz_interp_in%src_dist
-     horiz_interp_out%found_neighbors => horiz_interp_in%found_neighbors
-     horiz_interp_out%max_src_dist    =  horiz_interp_in%max_src_dist
-     horiz_interp_out%num_found       => horiz_interp_in%num_found
-     horiz_interp_out%nlon_src        =  horiz_interp_in%nlon_src
-     horiz_interp_out%nlat_src        =  horiz_interp_in%nlat_src
-     horiz_interp_out%nlon_dst        =  horiz_interp_in%nlon_dst
-     horiz_interp_out%nlat_dst        =  horiz_interp_in%nlat_dst
-     horiz_interp_out%interp_method   =  horiz_interp_in%interp_method
-     horiz_interp_out%rat_x           => horiz_interp_in%rat_x
-     horiz_interp_out%rat_y           => horiz_interp_in%rat_y
-     horiz_interp_out%lon_in          => horiz_interp_in%lon_in
-     horiz_interp_out%lat_in          => horiz_interp_in%lat_in
-     horiz_interp_out%I_am_initialized = .true.
-     horiz_interp_out%i_src           => horiz_interp_in%i_src
-     horiz_interp_out%j_src           => horiz_interp_in%j_src
-     horiz_interp_out%i_dst           => horiz_interp_in%i_dst
-     horiz_interp_out%j_dst           => horiz_interp_in%j_dst
-     horiz_interp_out%area_frac_dst   => horiz_interp_in%area_frac_dst
-     valid_types = .true.
-   end select
-   end select
-   if( .not. valid_types) call mpp_error(FATAL, "horiz_interp_type: invalid r4/r8 types passed to stats")
+    
+    horiz_interp_out%ilon            => horiz_interp_in%ilon
+    horiz_interp_out%jlat            => horiz_interp_in%jlat
+    horiz_interp_out%i_lon           => horiz_interp_in%i_lon
+    horiz_interp_out%j_lat           => horiz_interp_in%j_lat
+    horiz_interp_out%found_neighbors => horiz_interp_in%found_neighbors
+    horiz_interp_out%num_found       => horiz_interp_in%num_found
+    horiz_interp_out%nlon_src        =  horiz_interp_in%nlon_src
+    horiz_interp_out%nlat_src        =  horiz_interp_in%nlat_src
+    horiz_interp_out%nlon_dst        =  horiz_interp_in%nlon_dst
+    horiz_interp_out%nlat_dst        =  horiz_interp_in%nlat_dst
+    horiz_interp_out%interp_method   =  horiz_interp_in%interp_method
+    horiz_interp_out%I_am_initialized = .true.
+    horiz_interp_out%i_src           => horiz_interp_in%i_src
+    horiz_interp_out%j_src           => horiz_interp_in%j_src
+    horiz_interp_out%i_dst           => horiz_interp_in%i_dst
+    horiz_interp_out%j_dst           => horiz_interp_in%j_dst
+
+    if(allocated(horiz_interp_in%kind8_reals)) then
+      if(.not. allocated(horiz_interp_out%kind8_reals)) &
+        allocate(horiz_interp_out%kind8_reals)
+      horiz_interp_out%kind8_reals%faci            => horiz_interp_in%kind8_reals%faci
+      horiz_interp_out%kind8_reals%facj            => horiz_interp_in%kind8_reals%facj
+      horiz_interp_out%kind8_reals%area_src        => horiz_interp_in%kind8_reals%area_src
+      horiz_interp_out%kind8_reals%area_dst        => horiz_interp_in%kind8_reals%area_dst
+      horiz_interp_out%kind8_reals%wti             => horiz_interp_in%kind8_reals%wti
+      horiz_interp_out%kind8_reals%wtj             => horiz_interp_in%kind8_reals%wtj
+      horiz_interp_out%kind8_reals%src_dist        => horiz_interp_in%kind8_reals%src_dist
+      horiz_interp_out%kind8_reals%rat_x           => horiz_interp_in%kind8_reals%rat_x
+      horiz_interp_out%kind8_reals%rat_y           => horiz_interp_in%kind8_reals%rat_y
+      horiz_interp_out%kind8_reals%lon_in          => horiz_interp_in%kind8_reals%lon_in
+      horiz_interp_out%kind8_reals%lat_in          => horiz_interp_in%kind8_reals%lat_in
+      horiz_interp_out%kind8_reals%area_frac_dst   => horiz_interp_in%kind8_reals%area_frac_dst
+      horiz_interp_out%kind8_reals%max_src_dist    =  horiz_interp_in%kind8_reals%max_src_dist
+      ! this was left out previous to mixed mode 
+      horiz_interp_out%kind8_reals%mask_in         => horiz_interp_in%kind8_reals%mask_in
+
+    else if (allocated(horiz_interp_in%kind4_reals)) then
+      if(.not. allocated(horiz_interp_out%kind4_reals)) &
+        allocate(horiz_interp_out%kind4_reals)
+      horiz_interp_out%kind4_reals%faci            => horiz_interp_in%kind4_reals%faci
+      horiz_interp_out%kind4_reals%facj            => horiz_interp_in%kind4_reals%facj
+      horiz_interp_out%kind4_reals%area_src        => horiz_interp_in%kind4_reals%area_src
+      horiz_interp_out%kind4_reals%area_dst        => horiz_interp_in%kind4_reals%area_dst
+      horiz_interp_out%kind4_reals%wti             => horiz_interp_in%kind4_reals%wti
+      horiz_interp_out%kind4_reals%wtj             => horiz_interp_in%kind4_reals%wtj
+      horiz_interp_out%kind4_reals%src_dist        => horiz_interp_in%kind4_reals%src_dist
+      horiz_interp_out%kind4_reals%rat_x           => horiz_interp_in%kind4_reals%rat_x
+      horiz_interp_out%kind4_reals%rat_y           => horiz_interp_in%kind4_reals%rat_y
+      horiz_interp_out%kind4_reals%lon_in          => horiz_interp_in%kind4_reals%lon_in
+      horiz_interp_out%kind4_reals%lat_in          => horiz_interp_in%kind4_reals%lat_in
+      horiz_interp_out%kind4_reals%area_frac_dst   => horiz_interp_in%kind4_reals%area_frac_dst
+      horiz_interp_out%kind4_reals%max_src_dist    =  horiz_interp_in%kind4_reals%max_src_dist
+      ! this was left out previous to mixed mode 
+      horiz_interp_out%kind4_reals%mask_in         => horiz_interp_in%kind4_reals%mask_in
+    
+    else
+      !! error out
+    endif
+
     if(horiz_interp_in%interp_method == CONSERVE) then
        horiz_interp_out%version =  horiz_interp_in%version
        if(horiz_interp_in%version==2) horiz_interp_out%nxgrid = horiz_interp_in%nxgrid
