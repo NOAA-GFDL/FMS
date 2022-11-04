@@ -139,40 +139,40 @@ end subroutine horiz_interp_spherical_init
 #define FMS_HI_KIND r4_kind
 #undef HI_KIND_TYPE
 #define HI_KIND_TYPE kind4_reals 
-#undef horiz_interp_spherical
-#define horiz_interp_spherical horiz_interp_spherical_r4
-#undef horiz_interp_spherical_new
-#define horiz_interp_spherical_new horiz_interp_spherical_new_r4
-#undef horiz_interp_spherical_wght
-#define horiz_interp_spherical_wght horiz_interp_spherical_wght_r4
-#undef radial_search
-#define radial_search radial_search_r4
-#undef update_dest_neighbors
-#define update_dest_neighbors update_dest_neighbors_r4
-#undef spherical_distance
-#define spherical_distance spherical_distance_r4
-#undef full_search
-#define full_search full_search_r4
+#undef SPHERICAL
+#define SPHERICAL horiz_interp_spherical_r4
+#undef SPHERICAL_NEW
+#define SPHERICAL_NEW horiz_interp_spherical_new_r4
+#undef SPHERICAL_WGHT
+#define SPHERICAL_WGHT horiz_interp_spherical_wght_r4
+#undef RADIAL_SEARCH 
+#define RADIAL_SEARCH radial_search_r4
+#undef UPDATE_DEST_NEIGHBORS
+#define UPDATE_DEST_NEIGHBORS update_dest_neighbors_r4
+#undef SPHERICAL_DISTANCE
+#define SPHERICAL_DISTANCE spherical_distance_r4
+#undef FULL_SEARCH
+#define FULL_SEARCH full_search_r4
 #include <horiz_interp_spherical.inc>
 
 #undef FMS_HI_KIND
 #define FMS_HI_KIND r8_kind
 #undef HI_KIND_TYPE
 #define HI_KIND_TYPE kind8_reals 
-#undef horiz_interp_spherical
-#define horiz_interp_spherical horiz_interp_spherical_r8
-#undef horiz_interp_spherical_new
-#define horiz_interp_spherical_new horiz_interp_spherical_new_r8
-#undef horiz_interp_spherical_wght
-#define horiz_interp_spherical_wght horiz_interp_spherical_wght_r8
-#undef radial_search
-#define radial_search radial_search_r8
-#undef update_dest_neighbors
-#define update_dest_neighbors update_dest_neighbors_r8
-#undef spherical_distance
-#define spherical_distance spherical_distance_r8
-#undef full_search
-#define full_search full_search_r8
+#undef SPHERICAL
+#define SPHERICAL horiz_interp_spherical_r8
+#undef SPHERICAL_NEW
+#define SPHERICAL_NEW horiz_interp_spherical_new_r8
+#undef SPHERICAL_WGHT
+#define SPHERICAL_WGHT horiz_interp_spherical_wght_r8
+#undef RADIAL_SEARCH 
+#define RADIAL_SEARCH radial_search_r8
+#undef UPDATE_DEST_NEIGHBORS
+#define UPDATE_DEST_NEIGHBORS update_dest_neighbors_r8
+#undef SPHERICAL_DISTANCE
+#define SPHERICAL_DISTANCE spherical_distance_r8
+#undef FULL_SEARCH
+#define FULL_SEARCH full_search_r8
 #include <horiz_interp_spherical.inc>
 
 

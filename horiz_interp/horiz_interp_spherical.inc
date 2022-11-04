@@ -2,7 +2,7 @@
   !!
   !> Allocates space and initializes a derived-type variable
   !! that contains pre-computed interpolation indices and weights.
-  subroutine horiz_interp_spherical_new(Interp, lon_in,lat_in,lon_out,lat_out, &
+  subroutine SPHERICAL_NEW(Interp, lon_in,lat_in,lon_out,lat_out, &
        num_nbrs, max_dist, src_modulo)
 
     type(horiz_interp_type), intent(inout) :: Interp !< A derived type variable containing indices
@@ -129,17 +129,17 @@
     map_src_dist        = large
     num_found           = 0
 
-    !using radial_search to find the nearest points and corresponding distance.
+    !using RADIAL_SEARCH to find the nearest points and corresponding distance.
 
     select case(trim(search_method))
-    case ("radial_search") ! will be efficient, but may be not so accurate for some cases
-       call radial_search(theta_src, phi_src, theta_dst, phi_dst, map_src_xsize, map_src_ysize, &
+    case ("RADIAL_SEARCH") ! will be efficient, but may be not so accurate for some cases
+       call RADIAL_SEARCH(theta_src, phi_src, theta_dst, phi_dst, map_src_xsize, map_src_ysize, &
             map_src_add, map_src_dist, num_found, num_neighbors,max_src_dist,src_is_modulo)
-    case ("full_search")   ! always accurate, but less efficient.
-       call full_search(theta_src, phi_src, theta_dst, phi_dst, map_src_add, map_src_dist, &
+    case ("FULL_SEARCH")   ! always accurate, but less efficient.
+       call FULL_SEARCH(theta_src, phi_src, theta_dst, phi_dst, map_src_add, map_src_dist, &
             num_found, num_neighbors,max_src_dist )
     case default
-       call mpp_error(FATAL,"horiz_interp_spherical_new: nml search_method = "// &
+       call mpp_error(FATAL,"SPHERICAL_NEW: nml search_method = "// &
                   trim(search_method)//" is not a valid namelist option")
     end select
 
@@ -169,16 +169,16 @@
 
     return
 
-  end subroutine horiz_interp_spherical_new
+  end subroutine SPHERICAL_NEW
 
   !#######################################################################
 
   !> Subroutine for performing the horizontal interpolation between two grids.
-  !! horiz_interp_spherical_new must be called before calling this routine.
-  subroutine horiz_interp_spherical( Interp, data_in, data_out, verbose, mask_in, mask_out, missing_value)
+  !! SPHERICAL_NEW must be called before calling this routine.
+  subroutine SPHERICAL( Interp, data_in, data_out, verbose, mask_in, mask_out, missing_value)
     type(horiz_interp_type), intent(in) :: Interp !< A derived type variable containing indices
                                           !! and weights for subsequent interpolations. Returned
-                                          !! by a previous call to horiz_interp_spherical_new
+                                          !! by a previous call to SPHERICAL_NEW
     real(FMS_HI_KIND), intent(in),  dimension(:,:)           :: data_in !< Input data on source grid
     real(FMS_HI_KIND), intent(out), dimension(:,:)           :: data_out !< Output data on destination grid
     integer, intent(in),               optional :: verbose !< 0 = no output; 1 = min,max,means; 2 = most output
@@ -312,10 +312,10 @@
     endif
 
     return
-  end subroutine horiz_interp_spherical
+  end subroutine SPHERICAL
 
   !#######################################################################
-  subroutine horiz_interp_spherical_wght( Interp, wt, verbose, mask_in, mask_out, missing_value)
+  subroutine SPHERICAL_WGHT( Interp, wt, verbose, mask_in, mask_out, missing_value)
     type (horiz_interp_type), intent(in)        :: Interp
     real(FMS_HI_KIND), intent(out), dimension(:,:,:)         :: wt
     integer, intent(in),               optional :: verbose
@@ -395,11 +395,11 @@
     enddo
 
     return
-  end subroutine horiz_interp_spherical_wght
+  end subroutine SPHERICAL_WGHT
 
   !#######################################################################
 
-  subroutine radial_search(theta_src,phi_src,theta_dst,phi_dst, map_src_xsize, map_src_ysize, &
+  subroutine RADIAL_SEARCH(theta_src,phi_src,theta_dst,phi_dst, map_src_xsize, map_src_ysize, &
        map_src_add, map_src_dist, num_found, num_neighbors,max_src_dist,src_is_modulo)
     real(FMS_HI_KIND),    intent(in),    dimension(:)   :: theta_src, phi_src
     real(FMS_HI_KIND),    intent(in),    dimension(:,:) :: theta_dst, phi_dst
@@ -417,7 +417,7 @@
     integer :: map_dst_xsize, map_dst_ysize
     integer :: i_left1, i_left2, i_right1, i_right2
     integer :: map_src_size, step, step_size, bound, bound_start, bound_end
-    logical :: continue_search, result, continue_radial_search
+    logical :: continue_search, result, continue_RADIAL_SEARCH
     real(FMS_HI_KIND)    :: d, res
     !------------------------------------------------------------------
     map_dst_xsize=size(theta_dst,1);map_dst_ysize=size(theta_dst,2)
@@ -431,9 +431,9 @@
           do while (continue_search .and. step_size > 0)
              do while (step <= map_src_size .and. continue_search)
                 ! count land points as nearest neighbors
-                d = spherical_distance(theta_dst(i,j),phi_dst(i,j),theta_src(step),phi_src(step))
+                d = SPHERICAL_DISTANCE(theta_dst(i,j),phi_dst(i,j),theta_src(step),phi_src(step))
                 if (d <= max_src_dist) then
-                   result = update_dest_neighbors(map_src_add(i,j,:),map_src_dist(i,j,:), &
+                   result = UPDATE_DEST_NEIGHBORS(map_src_add(i,j,:),map_src_dist(i,j,:), &
                         step,d, num_found(i,j), num_neighbors )
                    if (result) then
                       n = 0
@@ -442,9 +442,9 @@
                       if (i0 == 0) i0 = map_src_xsize
                       res = float(step)/float(map_src_xsize)
                       j0 = ceiling(res)
-                      continue_radial_search = .true.
-                      do while (continue_radial_search)
-                         continue_radial_search = .false.
+                      continue_RADIAL_SEARCH = .true.
+                      do while (continue_RADIAL_SEARCH)
+                         continue_RADIAL_SEARCH = .false.
                          n = n+1 ! radial counter
                          if(n > max_nbrs) exit
                          ! ************** left boundary *******************************
@@ -467,11 +467,11 @@
                                bound = jj * map_src_xsize + i_left
                             endif
 
-                            d = spherical_distance(theta_dst(i,j),phi_dst(i,j),theta_src(bound),phi_src(bound))
+                            d = SPHERICAL_DISTANCE(theta_dst(i,j),phi_dst(i,j),theta_src(bound),phi_src(bound))
                             if(d<=max_src_dist) then
-                               result = update_dest_neighbors(map_src_add(i,j,:),map_src_dist(i,j,:), &
+                               result = UPDATE_DEST_NEIGHBORS(map_src_add(i,j,:),map_src_dist(i,j,:), &
                                     bound,d, num_found(i,j), num_neighbors)
-                               if (result) continue_radial_search = .true.
+                               if (result) continue_RADIAL_SEARCH = .true.
                             endif
                          enddo
 
@@ -496,11 +496,11 @@
                                bound = jj * map_src_xsize + i_right
                             endif
 
-                            d = spherical_distance(theta_dst(i,j),phi_dst(i,j),theta_src(bound),phi_src(bound))
+                            d = SPHERICAL_DISTANCE(theta_dst(i,j),phi_dst(i,j),theta_src(bound),phi_src(bound))
                             if(d<=max_src_dist) then
-                               result = update_dest_neighbors(map_src_add(i,j,:),map_src_dist(i,j,:), &
+                               result = UPDATE_DEST_NEIGHBORS(map_src_add(i,j,:),map_src_dist(i,j,:), &
                                     bound,d, num_found(i,j), num_neighbors)
-                               if (result) continue_radial_search = .true.
+                               if (result) continue_RADIAL_SEARCH = .true.
                             endif
                          enddo
 
@@ -527,11 +527,11 @@
 
                          bound = bound_start
                          do while (bound <= bound_end)
-                            d = spherical_distance(theta_dst(i,j),phi_dst(i,j),theta_src(bound),phi_src(bound))
+                            d = SPHERICAL_DISTANCE(theta_dst(i,j),phi_dst(i,j),theta_src(bound),phi_src(bound))
                             if(d<=max_src_dist) then
-                               result = update_dest_neighbors(map_src_add(i,j,:),map_src_dist(i,j,:), &
+                               result = UPDATE_DEST_NEIGHBORS(map_src_add(i,j,:),map_src_dist(i,j,:), &
                                     bound,d, num_found(i,j), num_neighbors)
-                               if (result) continue_radial_search = .true.
+                               if (result) continue_RADIAL_SEARCH = .true.
                             endif
                             bound = bound + 1
 
@@ -548,11 +548,11 @@
 
                             bound = bound_start
                             do while (bound <= bound_end)
-                               d = spherical_distance(theta_dst(i,j),phi_dst(i,j),theta_src(bound),phi_src(bound))
+                               d = SPHERICAL_DISTANCE(theta_dst(i,j),phi_dst(i,j),theta_src(bound),phi_src(bound))
                                if(d<=max_src_dist) then
-                                  result = update_dest_neighbors(map_src_add(i,j,:),map_src_dist(i,j,:), &
+                                  result = UPDATE_DEST_NEIGHBORS(map_src_add(i,j,:),map_src_dist(i,j,:), &
                                        bound,d, num_found(i,j), num_neighbors)
-                                  if (result) continue_radial_search = .true.
+                                  if (result) continue_RADIAL_SEARCH = .true.
                                endif
                                bound = bound + 1
                             enddo
@@ -570,11 +570,11 @@
 
                          bound = bound_start
                          do while (bound <= bound_end)
-                            d = spherical_distance(theta_dst(i,j),phi_dst(i,j),theta_src(bound),phi_src(bound))
+                            d = SPHERICAL_DISTANCE(theta_dst(i,j),phi_dst(i,j),theta_src(bound),phi_src(bound))
                             if(d<=max_src_dist) then
-                               result = update_dest_neighbors(map_src_add(i,j,:),map_src_dist(i,j,:), &
+                               result = UPDATE_DEST_NEIGHBORS(map_src_add(i,j,:),map_src_dist(i,j,:), &
                                     bound,d, num_found(i,j), num_neighbors)
-                               if (result) continue_radial_search = .true.
+                               if (result) continue_RADIAL_SEARCH = .true.
                             endif
                             bound = bound + 1
                          enddo
@@ -590,11 +590,11 @@
 
                             bound = bound_start
                             do while (bound <= bound_end)
-                               d = spherical_distance(theta_dst(i,j),phi_dst(i,j),theta_src(bound),phi_src(bound))
+                               d = SPHERICAL_DISTANCE(theta_dst(i,j),phi_dst(i,j),theta_src(bound),phi_src(bound))
                                if(d<=max_src_dist) then
-                                  result = update_dest_neighbors(map_src_add(i,j,:),map_src_dist(i,j,:), &
+                                  result = UPDATE_DEST_NEIGHBORS(map_src_add(i,j,:),map_src_dist(i,j,:), &
                                        bound,d, num_found(i,j), num_neighbors)
-                                  if (result) continue_radial_search = .true.
+                                  if (result) continue_RADIAL_SEARCH = .true.
                                endif
                                bound = bound + 1
                             enddo
@@ -614,12 +614,12 @@
 
     return
 
-  end subroutine radial_search
+  end subroutine RADIAL_SEARCH
 
 
   !#####################################################################
 
-  function update_dest_neighbors(map_src_add, map_src_dist, src_add,d, num_found, min_nbrs)
+  function UPDATE_DEST_NEIGHBORS(map_src_add, map_src_dist, src_add,d, num_found, min_nbrs)
 
     integer, intent(inout), dimension(:) :: map_src_add
     real(FMS_HI_KIND), intent(inout),    dimension(:) :: map_src_dist
@@ -628,11 +628,11 @@
     integer, intent(inout)               :: num_found
     integer, intent(in)                  :: min_nbrs
 
-    logical :: update_dest_neighbors, already_exist = .false.
+    logical :: UPDATE_DEST_NEIGHBORS, already_exist = .false.
 
     integer :: n,m
 
-    update_dest_neighbors = .false.
+    UPDATE_DEST_NEIGHBORS = .false.
 
     n = 0
     NLOOP : do while ( n .le. num_found )
@@ -647,7 +647,7 @@
           if(num_found < max_neighbors) then
              num_found = num_found + 1
           else
-             call mpp_error(FATAL,'update_dest_neighbors: '// &
+             call mpp_error(FATAL,'UPDATE_DEST_NEIGHBORS: '// &
                   'number of neighbor points found is greated than maxium neighbor points' )
           endif
           do m=num_found,n+1,-1
@@ -656,7 +656,7 @@
           enddo
           map_src_add(n) = src_add
           map_src_dist(n) = d
-          update_dest_neighbors = .true.
+          UPDATE_DEST_NEIGHBORS = .true.
           if( num_found > min_nbrs ) then
              if( map_src_dist(num_found) > map_src_dist(num_found-1) ) then
                 num_found = num_found - 1
@@ -670,10 +670,10 @@
     end do NLOOP
     if(already_exist) return
 
-    if( .not. update_dest_neighbors ) then
+    if( .not. UPDATE_DEST_NEIGHBORS ) then
        if( num_found < min_nbrs ) then
           num_found               = num_found + 1
-          update_dest_neighbors   = .true.
+          UPDATE_DEST_NEIGHBORS   = .true.
           map_src_add(num_found)  = src_add
           map_src_dist(num_found) = d
        endif
@@ -682,13 +682,13 @@
 
     return
 
-  end function update_dest_neighbors
+  end function UPDATE_DEST_NEIGHBORS
 
   !########################################################################
-!  function spherical_distance(theta1,phi1,theta2,phi2)
+!  function SPHERICAL_DISTANCE(theta1,phi1,theta2,phi2)
 
 !    real(FMS_HI_KIND), intent(in) :: theta1, phi1, theta2, phi2
-!    real(FMS_HI_KIND) :: spherical_distance
+!    real(FMS_HI_KIND) :: SPHERICAL_DISTANCE
 
 !    real(FMS_HI_KIND) :: r1(3), r2(3), cross(3), s, dot, ang
 
@@ -723,35 +723,35 @@
 !       ang = pi/2.
 !    endif
 
-!    spherical_distance = abs(ang) ! in radians
+!    SPHERICAL_DISTANCE = abs(ang) ! in radians
 
 !    return
 
-!  end function spherical_distance
+!  end function SPHERICAL_DISTANCE
   ! The great cycle distance
-  function spherical_distance(theta1,phi1,theta2,phi2)
+  function SPHERICAL_DISTANCE(theta1,phi1,theta2,phi2)
 
     real(FMS_HI_KIND), intent(in) :: theta1, phi1, theta2, phi2
-    real(FMS_HI_KIND) :: spherical_distance, dot
+    real(FMS_HI_KIND) :: SPHERICAL_DISTANCE, dot
 
     if(theta1 == theta2 .and. phi1 == phi2) then
-        spherical_distance = 0.0
+        SPHERICAL_DISTANCE = 0.0
         return
     endif
 
     dot = cos(phi1)*cos(phi2)*cos(theta1-theta2) + sin(phi1)*sin(phi2)
     if(dot > 1. ) dot = 1.
     if(dot < -1.) dot = -1.
-    spherical_distance = acos(dot)
+    SPHERICAL_DISTANCE = acos(dot)
 
     return
 
-  end function spherical_distance
+  end function SPHERICAL_DISTANCE
 
 
   !#######################################################################
 
-  subroutine full_search(theta_src,phi_src,theta_dst,phi_dst,map_src_add, map_src_dist,num_found, &
+  subroutine FULL_SEARCH(theta_src,phi_src,theta_dst,phi_dst,map_src_add, map_src_dist,num_found, &
                          num_neighbors,max_src_dist)
     real(FMS_HI_KIND),    intent(in),    dimension(:)   :: theta_src, phi_src
     real(FMS_HI_KIND),    intent(in),    dimension(:,:) :: theta_dst, phi_dst
@@ -772,13 +772,13 @@
     do j=1,map_dst_ysize
        do i=1,map_dst_xsize
           do step = 1, map_src_size
-             d = spherical_distance(theta_dst(i,j),phi_dst(i,j),theta_src(step),phi_src(step))
+             d = SPHERICAL_DISTANCE(theta_dst(i,j),phi_dst(i,j),theta_src(step),phi_src(step))
              if( d <= max_src_dist) then
-                found = update_dest_neighbors(map_src_add(i,j,:),map_src_dist(i,j,:), &
+                found = UPDATE_DEST_NEIGHBORS(map_src_add(i,j,:),map_src_dist(i,j,:), &
                      step,d,num_found(i,j), num_neighbors )
              endif
           enddo
        enddo
     enddo
 
-  end subroutine full_search
+  end subroutine FULL_SEARCH

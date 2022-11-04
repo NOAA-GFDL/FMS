@@ -76,7 +76,7 @@
           glt_min = min(lat,glt_min);  glt_max = max(lat,glt_max)
           gln_min = min(lon,gln_min);  gln_max = max(lon,gln_max)
 
-          is = indp(lon, lon_in )
+          is = INDP(lon, lon_in )
           if( lon_in(is) .gt. lon ) is = max(is-1,1)
           if( lon_in(is) .eq. lon .and. is .eq. nlon_in) is = max(is - 1,1)
           ie = min(is+1,nlon_in)
@@ -96,7 +96,7 @@
           endif
           wte = 1. - wtw
 
-          js = indp(lat, lat_in )
+          js = INDP(lat, lat_in )
 
           if( lat_in(js) .gt. lat ) js = max(js - 1, 1)
           if( lat_in(js) .eq. lat .and. js .eq. nlat_in) js = max(js - 1, 1)
@@ -424,10 +424,10 @@
                       endif
                    endif
 
-                   if(lat .ge. intersect(lon1,lat1,lon2,lat2,lon))then ! south
-                      if(lon .le. intersect(lat2,lon2,lat3,lon3,lat))then ! east
-                         if(lat .le. intersect(lon3,lat3,lon4,lat4,lon))then ! north
-                            if(lon .ge. intersect(lat4,lon4,lat1,lon1,lat))then  ! west
+                   if(lat .ge. INTERSECT(lon1,lat1,lon2,lat2,lon))then ! south
+                      if(lon .le. INTERSECT(lat2,lon2,lat3,lon3,lat))then ! east
+                         if(lat .le. INTERSECT(lon3,lat3,lon4,lat4,lon))then ! north
+                            if(lon .ge. INTERSECT(lat4,lon4,lat1,lon1,lat))then  ! west
                                found = .true.
                                Interp % i_lon (m,n,1) = i; Interp % i_lon (m,n,2) = ip1
                                Interp % j_lat (m,n,1) = j; Interp % j_lat (m,n,2) = jp1
@@ -554,10 +554,10 @@
                       endif
                    endif
 
-                   if(lat .ge. intersect(lon1,lat1,lon2,lat2,lon))then ! south
-                      if(lon .le. intersect(lat2,lon2,lat3,lon3,lat))then ! east
-                         if(lat .le. intersect(lon3,lat3,lon4,lat4,lon))then !north
-                            if(lon .ge. intersect(lat4,lon4,lat1,lon1,lat))then ! west
+                   if(lat .ge. INTERSECT(lon1,lat1,lon2,lat2,lon))then ! south
+                      if(lon .le. INTERSECT(lat2,lon2,lat3,lon3,lat))then ! east
+                         if(lat .le. INTERSECT(lon3,lat3,lon4,lat4,lon))then !north
+                            if(lon .ge. INTERSECT(lat4,lon4,lat1,lon1,lat))then ! west
                                found = .true.
                                is=i; js=j
                                Interp % i_lon (m,n,1) = i; Interp % i_lon (m,n,2) = ip1
@@ -598,26 +598,26 @@
   !> The function will return true if the point x,y is inside a polygon, or
   !! false if it is not.  If the point is exactly on the edge of a polygon,
   !! the function will return .true.
-  function inside_polygon(polyx, polyy, x, y)
+  function INSIDE_POLYGON(polyx, polyy, x, y)
      real(FMS_HI_KIND), dimension(:), intent(in) :: polyx !< longitude coordinates of corners
      real(FMS_HI_KIND), dimension(:), intent(in) :: polyy !< latitude coordinates of corners
      real(FMS_HI_KIND),               intent(in) :: x !< x coordinate of point to be tested
      real(FMS_HI_KIND),               intent(in) :: y !< y coordinate of point to be tested
-     logical                        :: inside_polygon
+     logical                        :: INSIDE_POLYGON
      integer                        :: i, j, nedges
      real(FMS_HI_KIND)                           :: xx
 
-     inside_polygon = .false.
+     INSIDE_POLYGON = .false.
      nedges = size(polyx(:))
      j = nedges
      do i = 1, nedges
         if( (polyy(i) < y .AND. polyy(j) >= y) .OR. (polyy(j) < y .AND. polyy(i) >= y) ) then
            xx = polyx(i)+(y-polyy(i))/(polyy(j)-polyy(i))*(polyx(j)-polyx(i))
            if( xx == x ) then
-             inside_polygon = .true.
+             INSIDE_POLYGON = .true.
              return
            else if( xx < x ) then
-             inside_polygon = .not. inside_polygon
+             INSIDE_POLYGON = .not. INSIDE_POLYGON
            endif
         endif
         j = i
@@ -714,7 +714,7 @@
 !                      print '(5f15.11)', lat, polyy
 !                   endif
 
-                   if(inside_polygon(polyx, polyy, lon, lat)) then
+                   if(INSIDE_POLYGON(polyx, polyy, lon, lat)) then
                       found = .true.
 !                      print*, " found ", i, j
                       Interp % i_lon (m,n,1) = i; Interp % i_lon (m,n,2) = ip1
@@ -806,7 +806,7 @@
                    polyx(2) = lon_in(ip1,j);   polyy(2) = lat_in(ip1,j)
                    polyx(3) = lon_in(ip1,jp1); polyy(3) = lat_in(ip1,jp1)
                    polyx(4) = lon_in(i,  jp1); polyy(4) = lat_in(i,  jp1)
-                   if(inside_polygon(polyx, polyy, lon, lat)) then
+                   if(INSIDE_POLYGON(polyx, polyy, lon, lat)) then
                       found = .true.
                       Interp % i_lon (m,n,1) = i; Interp % i_lon (m,n,2) = ip1
                       Interp % j_lat (m,n,1) = j; Interp % j_lat (m,n,2) = jp1
@@ -832,15 +832,15 @@
   end subroutine
 
   !#######################################################################
-  function intersect(x1, y1, x2, y2, x)
+  function INTERSECT(x1, y1, x2, y2, x)
      real(FMS_HI_KIND), intent(in) :: x1, y1, x2, y2, x
-     real(FMS_HI_KIND)             :: intersect
+     real(FMS_HI_KIND)             :: INTERSECT
 
-     intersect = (y2-y1)*(x-x1)/(x2-x1) + y1
+     INTERSECT = (y2-y1)*(x-x1)/(x2-x1) + y1
 
   return
 
-  end function intersect
+  end function INTERSECT
 
   !#######################################################################
 
@@ -1161,11 +1161,11 @@
 
   !#######################################################################
   !> @returns index of nearest data point to "value"
-  !! if "value" is outside the domain of "array" then indp = 1
+  !! if "value" is outside the domain of "array" then INDP = 1
   !! or "ia" depending on whether array(1) or array(ia) is
   !! closest to "value"
-  function indp (value, array)
-    integer                        :: indp !< index of nearest data point within "array"
+  function INDP (value, array)
+    integer                        :: INDP !< index of nearest data point within "array"
                                            !! corresponding to "value".
     real(FMS_HI_KIND), dimension(:), intent(in) :: array !< array of data points (must be monotonically increasing)
     real(FMS_HI_KIND), intent(in)               :: value !< arbitrary data, same units as elements in 'array'
@@ -1180,7 +1180,7 @@
        if (array(i) .lt. array(i-1)) then
           unit = stdout()
           write (unit,*) &
-               ' => Error: array must be monotonically increasing in "indp"' , &
+               ' => Error: array must be monotonically increasing in "INDP"' , &
                '           when searching for nearest element to value=',value
           write (unit,*) '           array(i) < array(i-1) for i=',i
           write (unit,*) '           array(i) for i=1..ia follows:'
@@ -1188,19 +1188,19 @@
        endif
     enddo
     if (value .lt. array(1) .or. value .gt. array(ia)) then
-       if (value .lt. array(1))  indp = 1
-       if (value .gt. array(ia)) indp = ia
+       if (value .lt. array(1))  INDP = 1
+       if (value .gt. array(ia)) INDP = ia
     else
        i=1
        keep_going = .true.
        do while (i .le. ia .and. keep_going)
           i = i+1
           if (value .le. array(i)) then
-             indp = i
-             if (array(i)-value .gt. value-array(i-1)) indp = i-1
+             INDP = i
+             if (array(i)-value .gt. value-array(i-1)) INDP = i-1
              keep_going = .false.
           endif
        enddo
     endif
     return
-  end function indp
+  end function INDP

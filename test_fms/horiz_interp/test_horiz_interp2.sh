@@ -37,7 +37,21 @@ cat <<_EOF > input.nml
 /
 _EOF
 
-test_expect_success "Horiz_interp test" '
+test_expect_success "Horiz_interp test (kind 8 reals)" '
+  mpirun -n 2 ./test_horiz_interp
+'
+
+cat <<_EOF > input.nml
+&test_horiz_interp_nml
+  test_r4 = .true.
+  ni_src = 360
+  nj_src = 180
+  ni_dst = 144
+  nj_dst = 72
+/
+_EOF
+
+test_expect_success "Horiz_interp test (kind 4 reals)" '
   mpirun -n 2 ./test_horiz_interp
 '
 

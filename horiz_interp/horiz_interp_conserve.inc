@@ -1,4 +1,4 @@
-  subroutine horiz_interp_conserve_new_1dx1d ( Interp, lon_in, lat_in, lon_out, lat_out, verbose)
+  subroutine CONSERVE_NEW_1DX1D ( Interp, lon_in, lat_in, lon_out, lat_out, verbose)
     type(horiz_interp_type), intent(inout) :: Interp
     real(FMS_HI_KIND), intent(in),       dimension(:)   :: lon_in , lat_in
     real(FMS_HI_KIND), intent(in),       dimension(:)   :: lon_out, lat_out
@@ -20,10 +20,10 @@
     character(len=64) :: mesg
 
     if(.not. module_is_initialized) call mpp_error(FATAL, &
-         'horiz_interp_conserve_new_1dx1d: horiz_interp_conserve_init is not called')
+         'CONSERVE_NEW_1DX1D: horiz_interp_conserve_init is not called')
 
     if(great_circle_algorithm) call mpp_error(FATAL, &
-         'horiz_interp_conserve_new_1dx1d: great_circle_algorithm is not implemented, contact developer')
+         'CONSERVE_NEW_1DX1D: great_circle_algorithm is not implemented, contact developer')
     !-----------------------------------------------------------------------
     iverbose = 0;  if (present(verbose)) iverbose = verbose
 
@@ -195,11 +195,11 @@
     endif
     !-----------------------------------------------------------------------
 
-  end subroutine horiz_interp_conserve_new_1dx1d
+  end subroutine CONSERVE_NEW_1DX1D
 
   !#######################################################################
 
-  subroutine horiz_interp_conserve_new_1dx2d ( Interp, lon_in, lat_in, lon_out, lat_out, &
+  subroutine CONSERVE_NEW_1DX2D ( Interp, lon_in, lat_in, lon_out, lat_out, &
                                                mask_in, mask_out, verbose)
     type(horiz_interp_type),        intent(inout) :: Interp
     real(FMS_HI_KIND), intent(in),              dimension(:)   :: lon_in , lat_in
@@ -227,13 +227,13 @@
     integer(kind=1) :: one_byte(8)
 
     if(.not. module_is_initialized) call mpp_error(FATAL, &
-         'horiz_interp_conserve_new_1dx2d: horiz_interp_conserve_init is not called')
+         'CONSERVE_NEW_1DX2D: horiz_interp_conserve_init is not called')
 
     if( .not. allocated(Interp%HI_KIND_TYPE)) allocate(Interp%HI_KIND_TYPE)
 
     wordsz=size(transfer(lon_in(1), one_byte))
     if(wordsz .NE. 4 .AND. wordsz .NE. 8) call mpp_error(FATAL, &
-         'horiz_interp_conserve_new_1dx2d: wordsz should be 4 or 8')
+         'CONSERVE_NEW_1DX2D: wordsz should be 4 or 8')
 
     if( (size(lon_out,1) .NE. size(lat_out,1)) .OR. (size(lon_out,2) .NE. size(lat_out,2)) )  &
         call mpp_error(FATAL, 'horiz_interp_conserve_mod: size mismatch between lon_out and lat_out')
@@ -364,11 +364,11 @@
 
     deallocate(i_src, j_src, i_dst, j_dst, xgrid_area, dst_area )
 
-  end subroutine horiz_interp_conserve_new_1dx2d
+  end subroutine CONSERVE_NEW_1DX2D
 
   !#######################################################################
 
-  subroutine horiz_interp_conserve_new_2dx1d ( Interp, lon_in, lat_in, lon_out, lat_out, &
+  subroutine CONSERVE_NEW_2DX1D ( Interp, lon_in, lat_in, lon_out, lat_out, &
                                                mask_in, mask_out, verbose)
     type(horiz_interp_type),        intent(inout) :: Interp
     real(FMS_HI_KIND), intent(in),              dimension(:,:) :: lon_in , lat_in
@@ -391,13 +391,13 @@
     integer(kind=1) :: one_byte(8)
 
     if(.not. module_is_initialized) call mpp_error(FATAL, &
-         'horiz_interp_conserve_new_2dx1d: horiz_interp_conserve_init is not called')
+         'CONSERVE_NEW_2DX1D: horiz_interp_conserve_init is not called')
 
     if( .not. allocated(Interp%HI_KIND_TYPE)) allocate(Interp%HI_KIND_TYPE)
 
     wordsz=size(transfer(lon_in(1,1), one_byte))
     if(wordsz .NE. 8) call mpp_error(FATAL, &
-         'horiz_interp_conserve_new_2dx1d: currently only support 64-bit real(FMS_HI_KIND), contact developer')
+         'CONSERVE_NEW_2DX1D: currently only support 64-bit real(FMS_HI_KIND), contact developer')
 
     if( (size(lon_in,1) .NE. size(lat_in,1)) .OR. (size(lon_in,2) .NE. size(lat_in,2)) )  &
         call mpp_error(FATAL, 'horiz_interp_conserve_mod: size mismatch between lon_in and lat_in')
@@ -473,11 +473,11 @@
 
     deallocate(i_src, j_src, i_dst, j_dst, xgrid_area, dst_area)
 
-  end subroutine horiz_interp_conserve_new_2dx1d
+  end subroutine CONSERVE_NEW_2DX1D
 
   !#######################################################################
 
-  subroutine horiz_interp_conserve_new_2dx2d ( Interp, lon_in, lat_in, lon_out, lat_out, &
+  subroutine CONSERVE_NEW_2DX2D ( Interp, lon_in, lat_in, lon_out, lat_out, &
                                                mask_in, mask_out, verbose)
     type(horiz_interp_type),        intent(inout) :: Interp
     real(FMS_HI_KIND), intent(in),              dimension(:,:) :: lon_in , lat_in
@@ -499,13 +499,13 @@
     integer(kind=1) :: one_byte(8)
 
     if(.not. module_is_initialized) call mpp_error(FATAL, &
-         'horiz_interp_conserve_new_2dx2d: horiz_interp_conserve_init is not called')
+         'CONSERVE_NEW_2DX2D: horiz_interp_conserve_init is not called')
 
     if( .not. allocated(Interp%HI_KIND_TYPE)) allocate(Interp%HI_KIND_TYPE)
 
     wordsz=size(transfer(lon_in(1,1), one_byte))
     if(wordsz .NE. 4 .AND. wordsz .NE. 8) call mpp_error(FATAL, &
-         'horiz_interp_conserve_new_2dx2d: wordsz should be 4 or 8')
+         'CONSERVE_NEW_2DX2D: wordsz should be 4 or 8')
 
     if( (size(lon_in,1) .NE. size(lat_in,1)) .OR. (size(lon_in,2) .NE. size(lat_in,2)) )  &
         call mpp_error(FATAL, 'horiz_interp_conserve_mod: size mismatch between lon_in and lat_in')
@@ -580,7 +580,7 @@
 
     deallocate(i_src, j_src, i_dst, j_dst, xgrid_area, dst_area )
 
-  end subroutine horiz_interp_conserve_new_2dx2d
+  end subroutine CONSERVE_NEW_2DX2D
 
   !########################################################################
 
@@ -588,7 +588,7 @@
   !!
   !> Subroutine for performing the horizontal interpolation between two grids.
   !! horiz_interp_conserve_new must be called before calling this routine.
-  subroutine horiz_interp_conserve ( Interp, data_in, data_out, verbose, &
+  subroutine CONSERVE( Interp, data_in, data_out, verbose, &
        mask_in, mask_out)
     !-----------------------------------------------------------------------
     type (horiz_interp_type), intent(in) :: Interp
@@ -615,17 +615,17 @@
 
     select case ( Interp%version)
     case (1)
-       call horiz_interp_conserve_version1(Interp, data_in, data_out, verbose, mask_in, mask_out)
+       call CONSERVE_VERSION1(Interp, data_in, data_out, verbose, mask_in, mask_out)
     case (2)
-       if(present(mask_in) .OR. present(mask_out) ) call mpp_error(FATAL, 'horiz_interp_conserve:'// &
+       if(present(mask_in) .OR. present(mask_out) ) call mpp_error(FATAL, 'CONSERVE:'// &
             & ' for version 2, mask_in and mask_out must be passed in horiz_interp_new, not in horiz_interp')
-       call horiz_interp_conserve_version2(Interp, data_in, data_out, verbose)
+       call CONSERVE_VERSION2(Interp, data_in, data_out, verbose)
     end select
 
-  end subroutine horiz_interp_conserve
+  end subroutine CONSERVE 
 
   !##############################################################################
-  subroutine horiz_interp_conserve_version1 ( Interp, data_in, data_out, verbose, &
+  subroutine CONSERVE_VERSION1 ( Interp, data_in, data_out, verbose, &
        mask_in, mask_out)
     !-----------------------------------------------------------------------
     type (horiz_interp_type), intent(in) :: Interp
@@ -697,13 +697,13 @@
 
              ! summing data*weight and weight for single grid point
              if (present(mask_in)) then
-                call data_sum ( data_in(is:ie,js:je), Interp%HI_KIND_TYPE%area_src(is:ie,js:je), &
+                call DATA_SUM ( data_in(is:ie,js:je), Interp%HI_KIND_TYPE%area_src(is:ie,js:je), &
                      fis, fie, fjs,fje, dwtsum, wtsum, arsum, mask_in(is:ie,js:je)  )
              else if( ASSOCIATED(Interp%HI_KIND_TYPE%mask_in) ) then
-                call data_sum ( data_in(is:ie,js:je), Interp%HI_KIND_TYPE%area_src(is:ie,js:je), &
+                call DATA_SUM ( data_in(is:ie,js:je), Interp%HI_KIND_TYPE%area_src(is:ie,js:je), &
                      fis, fie, fjs,fje, dwtsum, wtsum, arsum, Interp%HI_KIND_TYPE%mask_in(is:ie,js:je)  )
              else
-                call data_sum ( data_in(is:ie,js:je), Interp%HI_KIND_TYPE%area_src(is:ie,js:je), &
+                call DATA_SUM ( data_in(is:ie,js:je), Interp%HI_KIND_TYPE%area_src(is:ie,js:je), &
                      fis, fie, fjs,fje,  dwtsum, wtsum, arsum    )
              endif
           enddo
@@ -727,27 +727,27 @@
 
        ! compute statistics of input data
 
-       call stats(data_in, Interp%HI_KIND_TYPE%area_src, asum, dsum, wsum, min_in, max_in, miss_in, mask_in)
+       call STATS(data_in, Interp%HI_KIND_TYPE%area_src, asum, dsum, wsum, min_in, max_in, miss_in, mask_in)
        ! diagnostic messages
        ! on the root_pe, we can calculate the global mean, minimum and maximum.
        if(pe == root_pe) then
           if (wsum > 0.0) then
              avg_in=dsum/wsum
           else
-             print *, 'horiz_interp stats: input area equals zero '
+             print *, 'horiz_interp STATS: input area equals zero '
              avg_in=0.0
           endif
           if (iverbose > 1) print '(2f16.11)', 'global sum area_in  = ',  asum, wsum
        endif
 
        ! compute statistics of output data
-       call stats(data_out, Interp%HI_KIND_TYPE%area_dst, asum, dsum, wsum, min_out, max_out, miss_out, mask_out)
+       call STATS(data_out, Interp%HI_KIND_TYPE%area_dst, asum, dsum, wsum, min_out, max_out, miss_out, mask_out)
        ! diagnostic messages
        if(pe == root_pe) then
           if (wsum > 0.0) then
              avg_out=dsum/wsum
           else
-             print *, 'horiz_interp stats: output area equals zero '
+             print *, 'horiz_interp STATS: output area equals zero '
              avg_out=0.0
           endif
           if (iverbose > 1) print '(2f16.11)', 'global sum area_out = ',  asum, wsum
@@ -770,10 +770,10 @@
     endif
 
     !-----------------------------------------------------------------------
-  end subroutine horiz_interp_conserve_version1
+  end subroutine CONSERVE_VERSION1
 
   !#############################################################################
-  subroutine horiz_interp_conserve_version2 ( Interp, data_in, data_out, verbose )
+  subroutine CONSERVE_VERSION2 ( Interp, data_in, data_out, verbose )
     !-----------------------------------------------------------------------
     type (horiz_interp_type), intent(in) :: Interp
     real(FMS_HI_KIND),    intent(in),  dimension(:,:) :: data_in
@@ -788,12 +788,12 @@
        data_out(i_dst, j_dst) = data_out(i_dst, j_dst) + data_in(i_src,j_src)*Interp%HI_KIND_TYPE%area_frac_dst(i)
     end do
 
-  end subroutine horiz_interp_conserve_version2
+  end subroutine CONSERVE_VERSION2
 
 
   !#######################################################################
   !> This statistics is for conservative scheme
-  subroutine stats ( dat, area, asum, dsum, wsum, low, high, miss, mask )
+  subroutine STATS ( dat, area, asum, dsum, wsum, low, high, miss, mask )
     real(FMS_HI_KIND),    intent(in)  :: dat(:,:), area(:,:)
     real(FMS_HI_KIND),    intent(out) :: asum, dsum, wsum, low, high
     integer, intent(out) :: miss
@@ -853,12 +853,12 @@
 
     call mpp_sync_self()
 
-  end subroutine stats
+  end subroutine STATS
 
   !#######################################################################
 
   !> sums up the data and weights for a single output grid box
-  subroutine data_sum( data, area, facis, facie, facjs, facje,  &
+  subroutine DATA_SUM( data, area, facis, facie, facjs, facje,  &
        dwtsum, wtsum, arsum, mask )
 
     !-----------------------------------------------------------------------
@@ -899,4 +899,4 @@
     endif
     !-----------------------------------------------------------------------
 
-  end subroutine data_sum
+  end subroutine DATA_SUM
