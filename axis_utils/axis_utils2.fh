@@ -50,8 +50,6 @@
   integer,                 dimension(:),   allocatable :: dim_sizes
   real(kind=FMS_AU_KIND_), dimension(:),   allocatable :: r_var
   real(kind=FMS_AU_KIND_), dimension(:,:), allocatable :: r2d
-!  real(kind=FMS_AU_KIND_), dimension(:),   allocatable :: r64
-!  real(kind=FMS_AU_KIND_), dimension(:,:), allocatable :: r642d
   integer :: i
   integer :: n
   logical :: reproduce_null_char_bug  !< Local flag indicating to reproduce the mpp_io bug where
@@ -109,53 +107,26 @@
       if (dim_sizes(2) .ne. n) then
         call mpp_error(FATAL, "axis_edges: incorrect size of edge data.")
       endif
-    !  select type (edge_data)
-    !    type is (real(kind=FMS_AU_KIND_))
+
       allocate(r2d(dim_sizes(1), dim_sizes(2)))
       call read_data(fileobj, buffer, r2d)
       edge_data(1:dim_sizes(2)) = r2d(1,:)
       edge_data(dim_sizes(2)+1) = r2d(2,dim_sizes(2))
       deallocate(r2d)
-    !    type is (real(kind=FMS_AU_KIND_))
-    !      allocate(r642d(dim_sizes(1), dim_sizes(2)))
-    !      call read_data(fileobj, buffer, r642d)
-    !      edge_data(1:dim_sizes(2)) = r642d(1,:)
-    !      edge_data(dim_sizes(2)+1) = r642d(2,dim_sizes(2))
-    !      deallocate(r642d)
-     !   class default
-     !     call mpp_error(FATAL, "axis_edges: unsupported kind.")
-     ! end select
     endif
     deallocate(dim_sizes)
   else
-    !select type (edge_data)
-      !type is (real(kind=FMS_AU_KIND_))
-        allocate(r_var(n))
-        call read_data(fileobj, name, r_var)
-        do i = 2, n
-          edge_data(i) = r_var(i-1) + 0.5_FMS_AU_KIND_*(r_var(i) - r_var(i-1))
-        enddo
-        edge_data(1) = r_var(1) - 0.5_FMS_AU_KIND_*(r_var(2) - r_var(1))
-        if (abs(edge_data(1)) .lt. real(1.e-10,kind=FMS_AU_KIND_)) then
-          edge_data(1) = 0._FMS_AU_KIND
-        endif
-        edge_data(n+1) = r_var(n) + 0.5_FMS_AU_KIND_*(r_var(n) - r_var(n-1))
-        deallocate(r_var)
-      !type is (real(kind=FMS_AU_KIND_))
-      !  allocate(r64(n))
-      !  call read_data(fileobj, name, r64)
-      !  do i = 2, n
-      !    edge_data(i) = r64(i-1) + 0.5_FMS_AU_KIND_*(r64(i) - r64(i-1))
-      !  enddo
-      !  edge_data(1) = r64(1) - 0.5_FMS_AU_KIND_*(r64(2) - r64(1))
-      !  if (abs(edge_data(1)) .lt. 1.d-10_FMS_AU_KIND_) then
-      !    edge_data(1) = 0._FMS_AU_KIND_
-      !  endif
-      !  edge_data(n+1) = r64(n) + 0.5_FMS_AU_KIND_*(r64(n) - r64(n-1))
-      !  deallocate(r64)
-      !class default
-      !  call mpp_error(FATAL, "axis_edges: unsupported kind.")
-    !end select
+      allocate(r_var(n))
+      call read_data(fileobj, name, r_var)
+      do i = 2, n
+         edge_data(i) = r_var(i-1) + 0.5_FMS_AU_KIND_*(r_var(i) - r_var(i-1))
+      enddo
+      edge_data(1) = r_var(1) - 0.5_FMS_AU_KIND_*(r_var(2) - r_var(1))
+      if (abs(edge_data(1)) .lt. real(1.e-10,kind=FMS_AU_KIND_)) then
+         edge_data(1) = 0._FMS_AU_KIND
+      endif
+      edge_data(n+1) = r_var(n) + 0.5_FMS_AU_KIND_*(r_var(n) - r_var(n-1))
+      deallocate(r_var)
   endif
 end subroutine AXIS_EDGES_
 
