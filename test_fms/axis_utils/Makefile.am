@@ -29,10 +29,16 @@ AM_CPPFLAGS = -I$(MODDIR)
 LDADD = $(top_builddir)/libFMS/libFMS.la
 
 # Build this test program.
-check_PROGRAMS = test_axis_utils
+check_PROGRAMS = \
+test_axis_utils_r4 \
+test_axis_utils_r8 
 
 # This is the source code for the test.
-test_axis_utils_SOURCES = test_axis_utils.F90
+test_axis_utils_r4_SOURCES = \
+test_axis_utils_r4.F90
+
+test_axis_utils_r8_SOURCES = \
+test_axis_utils_r8.F90
 
 TEST_EXTENSIONS = .sh
 SH_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \

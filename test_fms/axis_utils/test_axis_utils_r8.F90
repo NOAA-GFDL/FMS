@@ -17,7 +17,7 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 
-program test_axis_utils
+program test_axis_utils_r8
 
 use fms_mod,         only : fms_init, fms_end, check_nml_error
 use mpp_mod,         only : mpp_sync, mpp_pe, mpp_root_pe, mpp_error, FATAL, stdout, &
@@ -163,4 +163,4 @@ call mpp_sync()
 
 end subroutine create_input_files
 
-end program test_axis_utils
+end program test_axis_utils_r8
