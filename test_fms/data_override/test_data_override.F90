@@ -41,7 +41,6 @@
 
 program test
 
-
   ! Input data and path_names file for this program is in:
   ! /archive/pjp/unit_tests/test_data_override/lima/exp1
  use           mpp_mod, only: input_nml_file, stdout, mpp_chksum
@@ -114,7 +113,7 @@ program test
  logical, allocatable              :: ov_sst(:), ov_ice(:)
  integer, dimension(2)             :: layout = (/0,0/)
  character(len=256)                :: solo_mosaic_file, tile_file
- character(len=128)                :: grid_file   = "INPUT/grid_spec.nc"  
+ character(len=128)                :: grid_file   = "INPUT/grid_spec.nc"
  integer                           :: window(2) = (/1,1/)
  integer                           :: nthreads=1
  integer                           :: nwindows

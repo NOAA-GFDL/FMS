@@ -10,7 +10,7 @@ module test_fms_mod
 
 end module test_fms_mod
 
-program test_fms      
+program test_fms
  use mpp_mod, only : mpp_error, fatal, note, mpp_init
  use fms_mod, only : fms_init, string, fms_end
  use fms_mod, only : fms_c2f_string

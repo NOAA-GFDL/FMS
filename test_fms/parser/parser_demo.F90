@@ -17,7 +17,7 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 
-program parser_demo  
+program parser_demo
 !> @brief  This programs demostrates how to use the parser
 
 #ifdef use_yaml

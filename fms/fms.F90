@@ -184,7 +184,6 @@ public :: read_data, write_data, read_compressed, read_distributed
 public :: get_domain_decomp, field_size
 public :: get_global_att_value
 
-
 ! routines for get mosaic information
 public :: get_mosaic_tile_grid, get_mosaic_tile_file
 
