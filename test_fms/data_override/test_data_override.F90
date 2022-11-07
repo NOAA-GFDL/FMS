@@ -51,7 +51,7 @@ program test
  use           fms_mod, only:   field_exist, field_size, file_exist
 #endif 
  use  fms_affinity_mod, only: fms_affinity_set
- use       fms2_io_mod, only: read_data, variable_exists, get_variable_size, FmsNetcdfFile_t, open_file, get_variable_num_dimensions
+ use       fms2_io_mod, only: read_data, variable_exists, get_variable_size, FmsNetcdfFile_t, open_file
  use     constants_mod, only: constants_init, pi
  use  time_manager_mod, only: time_type, set_calendar_type, set_date, NOLEAP, JULIAN, operator(+), set_time, print_time
  use  diag_manager_mod, only: diag_manager_init, diag_manager_end, register_static_field, register_diag_field
