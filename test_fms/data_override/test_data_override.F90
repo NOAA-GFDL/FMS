@@ -52,7 +52,7 @@ program test
  use           fms_mod, only:   field_exist, field_size, file_exist
 #endif 
  use  fms_affinity_mod, only: fms_affinity_set
- use       fms2_io_mod, only: read_data, variable_exists, get_variable_size, FmsNetcdfFile_t, open_file
+ use       fms2_io_mod, only: read_data, variable_exists, get_variable_size, FmsNetcdfFile_t, open_file, get_variable_num_dimensions
  use     constants_mod, only: constants_init, pi
  use  time_manager_mod, only: time_type, set_calendar_type, set_date, NOLEAP, JULIAN, operator(+), set_time, print_time
  use  diag_manager_mod, only: diag_manager_init, diag_manager_end, register_static_field, register_diag_field
@@ -101,7 +101,7 @@ program test
  integer, allocatable              :: is_win(:), js_win(:)
  integer                           :: nx_dom, ny_dom, nx_win, ny_win
  type(domain2d)                    :: Domain
- integer                           :: nlon, nlat, siz(4)
+ integer                           :: nlon, nlat, siz(2)
  real, allocatable, dimension(:)   :: x, y
  real, allocatable, dimension(:,:) :: lon, lat
  real, allocatable, dimension(:,:) :: sst, ice
@@ -152,10 +152,7 @@ program test
     solo_mosaic_file = 'INPUT/'//trim(solo_mosaic_file)
     if (.not. open_file(fileobj_solo_mosaic, solo_mosaic_file, "read")) call error_mesg('test_data_override', &
        'The solo_mosaic fike does not exist', FATAL)
-       if( mpp_pe() .eq. mpp_root_pe() ) print *, siz
     call get_variable_size(fileobj_solo_mosaic, 'gridfiles', siz)
-    if( siz(2) .NE. 1) &
-       call error_mesg('test_data_override', 'only support single tile mosaic, contact developer', FATAL)
     call read_data(fileobj_solo_mosaic, 'gridfiles', tile_file)
     tile_file = 'INPUT/'//trim(tile_file)
     if(.not. open_file(fileobj_tile, tile_file, "read")) call error_mesg('test_data_override', &
@@ -327,7 +324,7 @@ contains
  subroutine get_grid
    real, allocatable, dimension(:,:,:) :: lon_vert_glo, lat_vert_glo
    real, allocatable, dimension(:,:)   :: lon_global, lat_global
-   integer, dimension(4)  :: siz
+   integer, dimension(2)  :: siz
    character(len=128) :: message
 
    type(FmsNetcdfFile_t) :: fileobj_grid, fileobj_solo_mosaic, fileobj_tile
@@ -366,6 +363,8 @@ contains
          enddo
       enddo
    else if( variable_exists(fileobj_grid, "ocn_mosaic_file") ) then ! reading from mosaic file
+      if(.not. open_file(fileobj_tile, tile_file, "read")) call error_mesg('test_data_override', &
+      'The tile_file does not exist', FATAL)
       call get_variable_size(fileobj_tile, 'area', siz)
       if(siz(1) /= nlon*2 .or. siz(2) /= nlat*2) then
          write(message,'(a,2i4)') 'area is wrong shape. shape(area)=',siz(1:2)
