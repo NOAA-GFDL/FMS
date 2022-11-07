@@ -17,8 +17,7 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 
-program parser_demo
-#ifdef use_deprecated_io    
+program parser_demo  
 !> @brief  This programs demostrates how to use the parser
 
 #ifdef use_yaml
@@ -115,6 +114,5 @@ do i = 1, nfiles
 enddo
 deallocate(file_ids)
 
-#endif
 #endif
 end program parser_demo

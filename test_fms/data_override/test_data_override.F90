@@ -152,6 +152,7 @@ program test
     solo_mosaic_file = 'INPUT/'//trim(solo_mosaic_file)
     if (.not. open_file(fileobj_solo_mosaic, solo_mosaic_file, "read")) call error_mesg('test_data_override', &
        'The solo_mosaic fike does not exist', FATAL)
+       if( mpp_pe() .eq. mpp_root_pe() ) print *, siz
     call get_variable_size(fileobj_solo_mosaic, 'gridfiles', siz)
     if( siz(2) .NE. 1) &
        call error_mesg('test_data_override', 'only support single tile mosaic, contact developer', FATAL)
