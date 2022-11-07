@@ -427,14 +427,14 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
 #else
   class(fmsDiagFileContainer_type), pointer :: diag_file !< Pointer to this%FMS_diag_files(i) (for convenience)
 
-  logical :: file_is_opened !< True if the file was opened in this time_step
-                            !! If true the metadata will need to be written
+  logical :: file_is_opened_this_time_step !< True if the file was opened in this time_step
+                                           !! If true the metadata will need to be written
 
   do i = 1, size(this%FMS_diag_files)
     diag_file => this%FMS_diag_files(i)
-    call diag_file%open_diag_file(time_step, file_is_opened)
-    if (file_is_opened) then
-      call diag_file%write_metadata(this%diag_axis)
+    call diag_file%open_diag_file(time_step, file_is_opened_this_time_step)
+    if (file_is_opened_this_time_step) then
+      call diag_file%write_axis_metadata(this%diag_axis)
       call diag_file%write_axis_data(this%diag_axis)
     endif
   enddo
@@ -627,7 +627,7 @@ subroutine dump_diag_obj( filename )
     write(unit_num, *) 'axes_initialized:', fms_diag_object%axes_initialized
     write(unit_num, *) 'Files:'
     if( fms_diag_object%files_initialized ) then
-      do i=1, SIZE(fms_diag_object%FMS_diag_files) 
+      do i=1, SIZE(fms_diag_object%FMS_diag_files)
         write(unit_num, *) 'File num:', i
         fileptr => fms_diag_object%FMS_diag_files(i)%FMS_diag_file
         call fileptr%dump_file_obj(unit_num)
@@ -636,7 +636,7 @@ subroutine dump_diag_obj( filename )
       write(unit_num, *) 'files not initialized'
     endif
     if( fms_diag_object%fields_initialized) then
-      do i=1, SIZE(fms_diag_object%FMS_diag_fields) 
+      do i=1, SIZE(fms_diag_object%FMS_diag_fields)
         write(unit_num, *) 'Field num:', i
         fieldptr => fms_diag_object%FMS_diag_fields(i)
         call fieldptr%dump_field_obj(unit_num)

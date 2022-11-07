@@ -266,7 +266,6 @@ module fms_diag_axis_object_mod
 
     character(len=:), ALLOCATABLE         :: axis_edges_name !< Name of the edges, if it exist
     character(len=:), pointer             :: axis_name       !< Name of the axis
-    character(len=:), ALLOCATABLE, target :: sub_axis_name   !< Name of the sub_axis
     integer                               :: axis_length     !< Size of the axis
     integer                               :: i               !< For do loops
     type(fmsDiagFullAxis_type), pointer   :: diag_axis       !< Local pointer to the diag_axis
@@ -277,8 +276,7 @@ module fms_diag_axis_object_mod
       axis_length = this%length
       diag_axis => this
     type is (fmsDiagSubAxis_type)
-      sub_axis_name = this%subaxis_name//"_sub01"
-      axis_name => sub_axis_name
+      axis_name => this%subaxis_name
       axis_length = this%ending_index - this%starting_index + 1
       !< Get all the other information from the parent axis (i.e the cart_name, units, etc)
       if (present(parent_axis)) then
@@ -367,7 +365,7 @@ module fms_diag_axis_object_mod
       if (present(parent_axis)) then
         select type(parent_axis)
         type is (fmsDiagFullAxis_type)
-          call write_data(fileobj, this%subaxis_name//"_sub01", parent_axis%axis_data(i:j))
+          call write_data(fileobj, this%subaxis_name, parent_axis%axis_data(i:j))
         end select
       endif
     end select
@@ -418,10 +416,10 @@ module fms_diag_axis_object_mod
 
   !> @brief Determine if the subRegion is in the current PE.
   !! If it is, determine the starting and ending indices of the current PE that belong to the subRegion
-  subroutine get_indices(this, compute_idx, corners, starting_index, ending_index, need_to_define_axis)
+  subroutine get_indices(this, compute_idx, corners_indices, starting_index, ending_index, need_to_define_axis)
     class(fmsDiagFullAxis_type), intent(inout) :: this                !< diag_axis obj
     integer,                     intent(in)    :: compute_idx(:)      !< Current PE's compute domain
-    class(*),                    intent(in)    :: corners(:)          !< The corners of the subRegion
+    class(*),                    intent(in)    :: corners_indices(:)  !< The indices of the corners of the subRegion
     integer,                     intent(out)   :: starting_index      !< Starting index of the subRegion
                                                                       !! for the current PE
     integer,                     intent(out)   :: ending_index        !< Ending index of the subRegion
@@ -435,10 +433,10 @@ module fms_diag_axis_object_mod
     !< Get the rectangular coordinates of the subRegion
     !! If the subRegion is not rectangular, the points outside of the subRegion will be masked
     !! out later
-    select type (corners)
+    select type (corners_indices)
     type is (integer(kind=i4_kind))
-      subregion_start = minval(corners)
-      subregion_end = maxval(corners)
+      subregion_start = minval(corners_indices)
+      subregion_end = maxval(corners_indices)
     end select
 
     !< Initiliaze the output
@@ -534,7 +532,7 @@ module fms_diag_axis_object_mod
     this%ending_index = ending_index
     this%parent_axis_id = parent_id
     this%subRegion = subRegion
-    this%subaxis_name = trim(parent_axis_name)
+    this%subaxis_name = trim(parent_axis_name)//"_sub01"
   end subroutine fill_subaxis
 
   !> @brief Get the ntiles in a domain
@@ -784,12 +782,12 @@ module fms_diag_axis_object_mod
       lat(2) = maxval(corners(:,2))
     end select
 
-    if (is_cube_sphere) then
+    if_is_cube_sphere: if (is_cube_sphere) then
       !< Get the starting and ending indices of the subregion in the cubesphere relative to the global domain
       call get_local_indices_cubesphere(lat(1), lat(2), lon(1), lon(2),&
           & lon_indices(1), lon_indices(2), lat_indices(1), lat_indices(2))
-      do i = 1, size(axis_ids)
-        select type (parent_axis => diag_axis(axis_ids(i))%axis)
+      loop_over_axis_ids: do i = 1, size(axis_ids)
+        select_axis_type: select type (parent_axis => diag_axis(axis_ids(i))%axis)
         type is (fmsDiagFullAxis_type)
           !< Get the PEs compute domain
           call parent_axis%get_compute_domain(compute_idx, need_to_define_axis)
@@ -815,10 +813,10 @@ module fms_diag_axis_object_mod
 
           call define_new_axis(diag_axis, parent_axis, naxis, axis_ids(i), &
             subRegion, starting_index, ending_index)
-        end select
-      enddo
-    else
-      do i = 1, size(axis_ids)
+        end select select_axis_type
+      enddo loop_over_axis_ids
+    else if_is_cube_sphere
+      loop_over_axis_ids2: do i = 1, size(axis_ids)
         select type (parent_axis => diag_axis(axis_ids(i))%axis)
         type is (fmsDiagFullAxis_type)
           !< Get the PEs compute domain
@@ -855,8 +853,8 @@ module fms_diag_axis_object_mod
           call define_new_axis(diag_axis, parent_axis, naxis, axis_ids(i), &
             subRegion, starting_index, ending_index)
         end select
-      end do
-    endif
+      enddo loop_over_axis_ids2
+    endif if_is_cube_sphere
   end subroutine define_subaxis_latlon
 
   !< Creates a new subaxis and fills it will all the information it needs
