@@ -1,0 +1,27 @@
+name: Test coupler build
+on: [pull_request]
+
+jobs:
+  coupler-build:
+    runs-on: ubuntu-latest
+    container:
+      image: ryanmulhall/hpc-me.ubuntu-minimal:coupler
+      env:
+        CC: mpicc
+        FC: mpif90
+        CPPFLAGS: '-I/usr/include -Duse_LARGEFILE -DMAXFIELDMETHODS_=500'
+        FCFLAGS: '-fcray-pointer -fdefault-double-8 -fdefault-real-8 -Waliasing -ffree-line-length-none -fno-range-check -I/usr/include'
+        LDFLAGS: '-L/usr/lib'
+        VERBOSE: 1
+    steps:
+    - name: Checkout FMS
+      uses: actions/checkout@v2
+      with:
+        path: FMS
+    - name: Checkout FMScoupler
+      uses: actions/checkout@v2
+      with:
+        repository: 'NOAA-GFDL/FMScoupler'
+        path: FMScoupler
+    - name: Test Null build
+      run: FMScoupler/t/null_model_build.sh --local-fms
