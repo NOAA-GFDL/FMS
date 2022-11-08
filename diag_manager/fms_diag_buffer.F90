@@ -27,7 +27,6 @@ module fms_diag_buffer_mod
 
 use platform_mod
 use iso_c_binding
-use fms_diag_axis_object_mod, only: diagDomain_t
 use time_manager_mod, only: time_type
 use mpp_mod, only: mpp_error, FATAL
 use diag_data_mod, only: DIAG_NULL, DIAG_NOT_REGISTERED, i4, i8, r4, r8
