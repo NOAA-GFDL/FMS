@@ -876,7 +876,9 @@ logical function is_time_to_write(this, time_step)
     is_time_to_write = .true.
     if (this%FMS_diag_file%is_static) return
     if (time_step >= this%FMS_diag_file%next_next_output) &
-      call mpp_error(FATAL, this%FMS_diag_file%get_file_fname()//": You skip a time!")
+      call mpp_error(FATAL, this%FMS_diag_file%get_file_fname()//&
+        &": Diag_manager_mod:: You skipped a time_step. Be sure that diag_send_complete is called at every time step "&
+        &" needed by the file.")
   else
     is_time_to_write = .false.
   endif
@@ -886,11 +888,11 @@ end function is_time_to_write
 logical function writing_on_this_pe(this)
   class(fmsDiagFileContainer_type), intent(in), target   :: this            !< The file object
 
-  writing_on_this_pe = .true.
-
   select type(diag_file => this%FMS_diag_file)
   type is (subRegionalFile_type)
     writing_on_this_pe = diag_file%write_on_this_pe
+  class default
+    writing_on_this_pe = .true.
   end select
 
 end function

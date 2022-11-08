@@ -31,7 +31,8 @@ use time_manager_mod, only: time_type, increment_date, increment_time, get_calen
 use diag_data_mod,    only: END_OF_RUN, EVERY_TIME, DIAG_SECONDS, DIAG_MINUTES, DIAG_HOURS, DIAG_DAYS, DIAG_MONTHS, &
                             DIAG_YEARS
 USE constants_mod,    ONLY: SECONDS_PER_DAY, SECONDS_PER_HOUR, SECONDS_PER_MINUTE
-use fms_mod,          only: fms_error_handler, error_mesg, FATAL
+use fms_mod,          only: fms_error_handler
+use mpp_mod,          only: mpp_error, FATAL
 
 implicit none
 private
@@ -263,12 +264,8 @@ contains
     INTEGER :: dif_seconds, dif_days
     TYPE(time_type) :: dif_time
 
-    ! Compute time axis label value
-    ! <ERROR STATUS="FATAL">
-    !   variable t2 is less than in variable t1
-    ! </ERROR>
-    IF ( t2 < t1 ) CALL error_mesg('diag_util_mod::get_date_dif', &
-         & 'in variable t2 is less than in variable t1', FATAL)
+    IF ( t2 < t1 ) CALL mpp_error(FATAL, 'diag_util_mod::get_date_dif '//&
+         &'in variable t2 is less than in variable t1')
 
     dif_time = t2 - t1
 
@@ -283,20 +280,11 @@ contains
     ELSE IF ( units == DIAG_DAYS ) THEN
        get_date_dif = dif_days + dif_seconds / SECONDS_PER_DAY
     ELSE IF ( units == DIAG_MONTHS ) THEN
-       ! <ERROR STATUS="FATAL">
-       !   months not supported as output units
-       ! </ERROR>
-       CALL error_mesg('diag_util_mod::get_date_dif', 'months not supported as output units', FATAL)
+       CALL mpp_error(FATAL, 'diag_util_mod::get_date_dif months not supported as output units')
     ELSE IF ( units == DIAG_YEARS ) THEN
-       ! <ERROR STATUS="FATAL">
-       !   years not suppored as output units
-       ! </ERROR>
-       CALL error_mesg('diag_util_mod::get_date_dif', 'years not supported as output units', FATAL)
+       CALL mpp_error(FATAL, 'diag_util_mod::get_date_dif years not supported as output units')
     ELSE
-       ! <ERROR STATUS="FATAL">
-       !   illegal time units
-       ! </ERROR>
-       CALL error_mesg('diag_util_mod::diag_date_dif', 'illegal time units', FATAL)
+       CALL mpp_error(FATAL, 'diag_util_mod::diag_date_dif illegal time units')
     END IF
   END FUNCTION get_date_dif
 end module fms_diag_time_utils_mod
