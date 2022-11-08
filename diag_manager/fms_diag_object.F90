@@ -124,7 +124,14 @@ subroutine fms_diag_object_end (this)
   integer                   :: i
 #ifdef use_yaml
   !TODO: loop through files and force write
-  !TODO: Close all files
+  if (.not. this%initialized) return
+
+  do i = 1, size(this%FMS_diag_files)
+    !< Go away if the file is a subregional file and the current PE does not have any data for it
+    if (.not. this%FMS_diag_files(i)%writing_on_this_pe()) cycle
+
+    call this%FMS_diag_files(i)%close_diag_file()
+  enddo
   !TODO: Deallocate diag object arrays and clean up all memory
   do i=1, size(this%FMS_diag_buffers)
     if(allocated(this%FMS_diag_buffers(i)%diag_buffer_obj)) then
@@ -213,6 +220,7 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
      call fileptr%set_file_domain(fieldptr%get_domain(), fieldptr%get_type_of_domain())
      call fileptr%add_axes(axes, this%diag_axis, this%registered_axis)
      call fileptr%add_start_time(init_time)
+     call fileptr%set_file_time_ops (fieldptr%diag_field(i), fieldptr%is_static())
     enddo
   elseif (present(axes)) then !only axes present
     do i = 1, size(file_ids)
@@ -220,17 +228,20 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
      call fileptr%add_field_id(fieldptr%get_id())
      call fileptr%set_file_domain(fieldptr%get_domain(), fieldptr%get_type_of_domain())
      call fileptr%add_axes(axes, this%diag_axis, this%registered_axis)
+     call fileptr%set_file_time_ops (fieldptr%diag_field(i), fieldptr%is_static())
     enddo
   elseif (present(init_time)) then !only inti time present
     do i = 1, size(file_ids)
      fileptr => this%FMS_diag_files(file_ids(i))%FMS_diag_file
      call fileptr%add_field_id(fieldptr%get_id())
      call fileptr%add_start_time(init_time)
+     call fileptr%set_file_time_ops (fieldptr%diag_field(i), fieldptr%is_static())
     enddo
   else !no axis or init time present
     do i = 1, size(file_ids)
      fileptr => this%FMS_diag_files(file_ids(i))%FMS_diag_file
      call fileptr%add_field_id(fieldptr%get_id())
+     call fileptr%set_file_time_ops (fieldptr%diag_field(i), fieldptr%is_static())
     enddo
   endif
   nullify (fileptr)
@@ -432,10 +443,22 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
 
   do i = 1, size(this%FMS_diag_files)
     diag_file => this%FMS_diag_files(i)
+
+    !< Go away if the file is a subregional file and the current PE does not have any data for it
+    if (.not. diag_file%writing_on_this_pe()) cycle
+
     call diag_file%open_diag_file(time_step, file_is_opened_this_time_step)
     if (file_is_opened_this_time_step) then
+      call diag_file%write_time_metadata()
       call diag_file%write_axis_metadata(this%diag_axis)
       call diag_file%write_axis_data(this%diag_axis)
+    endif
+
+    if (diag_file%is_time_to_write(time_step)) then
+      call diag_file%increase_unlimited_dimension()
+      call diag_file%write_time_data(time_step)
+    !TODO call diag_file%add_variable_data()
+      call diag_file%update_next_write(time_step)
     endif
   enddo
 #endif

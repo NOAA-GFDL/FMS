@@ -27,17 +27,18 @@
 module fms_diag_time_utils_mod
 
 use time_manager_mod, only: time_type, increment_date, increment_time, get_calendar_type, NO_CALENDAR, leap_year, &
-                            get_date, get_time
+                            get_date, get_time,  operator(>), operator(<), operator(-)
 use diag_data_mod,    only: END_OF_RUN, EVERY_TIME, DIAG_SECONDS, DIAG_MINUTES, DIAG_HOURS, DIAG_DAYS, DIAG_MONTHS, &
                             DIAG_YEARS
 USE constants_mod,    ONLY: SECONDS_PER_DAY, SECONDS_PER_HOUR, SECONDS_PER_MINUTE
-use fms_mod,          only: fms_error_handler
+use fms_mod,          only: fms_error_handler, error_mesg, FATAL
 
 implicit none
 private
 
 public :: diag_time_inc
 public :: get_time_string
+public :: get_date_dif
 
 contains
 
@@ -252,4 +253,50 @@ contains
     get_time_string = TRIM(yr)//TRIM(mo)//TRIM(dy)//TRIM(hr)//TRIM(mi)//TRIM(sc)
   END FUNCTION get_time_string
 
+  !> @brief Return the difference between two times in units.
+  !! @return Real get_data_dif
+  REAL FUNCTION get_date_dif(t2, t1, units)
+    TYPE(time_type), INTENT(in) :: t2 !< Most recent time.
+    TYPE(time_type), INTENT(in) :: t1 !< Most distant time.
+    INTEGER, INTENT(in) :: units !< Unit of return value.
+
+    INTEGER :: dif_seconds, dif_days
+    TYPE(time_type) :: dif_time
+
+    ! Compute time axis label value
+    ! <ERROR STATUS="FATAL">
+    !   variable t2 is less than in variable t1
+    ! </ERROR>
+    IF ( t2 < t1 ) CALL error_mesg('diag_util_mod::get_date_dif', &
+         & 'in variable t2 is less than in variable t1', FATAL)
+
+    dif_time = t2 - t1
+
+    CALL get_time(dif_time, dif_seconds, dif_days)
+
+    IF ( units == DIAG_SECONDS ) THEN
+       get_date_dif = dif_seconds + SECONDS_PER_DAY * dif_days
+    ELSE IF ( units == DIAG_MINUTES ) THEN
+       get_date_dif = 1440 * dif_days + dif_seconds / SECONDS_PER_MINUTE
+    ELSE IF ( units == DIAG_HOURS ) THEN
+       get_date_dif = 24 * dif_days + dif_seconds / SECONDS_PER_HOUR
+    ELSE IF ( units == DIAG_DAYS ) THEN
+       get_date_dif = dif_days + dif_seconds / SECONDS_PER_DAY
+    ELSE IF ( units == DIAG_MONTHS ) THEN
+       ! <ERROR STATUS="FATAL">
+       !   months not supported as output units
+       ! </ERROR>
+       CALL error_mesg('diag_util_mod::get_date_dif', 'months not supported as output units', FATAL)
+    ELSE IF ( units == DIAG_YEARS ) THEN
+       ! <ERROR STATUS="FATAL">
+       !   years not suppored as output units
+       ! </ERROR>
+       CALL error_mesg('diag_util_mod::get_date_dif', 'years not supported as output units', FATAL)
+    ELSE
+       ! <ERROR STATUS="FATAL">
+       !   illegal time units
+       ! </ERROR>
+       CALL error_mesg('diag_util_mod::diag_date_dif', 'illegal time units', FATAL)
+    END IF
+  END FUNCTION get_date_dif
 end module fms_diag_time_utils_mod
