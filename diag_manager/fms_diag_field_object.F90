@@ -330,6 +330,8 @@ subroutine set_diag_id(this , id)
  if (allocated(this%registered)) then
      if (this%registered) then
           call mpp_error("set_diag_id", "The variable"//this%varname//" is already registered", FATAL)
+     else
+       this%diag_id = id
      endif
  else
      this%diag_id = id

@@ -109,7 +109,7 @@ id_ug = diag_axis_init("grid_index",  real(ug_dim_data), "none", "U", long_name=
                          set_name="land", DomainU=land_domain, aux="geolon_t geolat_t")
 
 id_z  = diag_axis_init('z',  z,  'point_Z', 'z', long_name='point_Z')
-call diag_axis_add_attribute (id_z, 'formula', 'p(n,k,j,i) = ap(k) + b(k)*ps(n,j,i)')
+!TODO call diag_axis_add_attribute (id_z, 'formula', 'p(n,k,j,i) = ap(k) + b(k)*ps(n,j,i)')
 call diag_axis_add_attribute (id_z, 'integer', 10)
 call diag_axis_add_attribute (id_z, '1d integer', (/10, 10/))
 call diag_axis_add_attribute (id_z, 'real', 10.)
@@ -146,9 +146,9 @@ if (id_var7  .ne. 7) call mpp_error(FATAL, "var7 does not have the expected id")
 
 call diag_field_add_attribute (id_var1, "some string", "this is a string")
 call diag_field_add_attribute (id_var1, "integer", 10)
-call diag_field_add_attribute (id_var1, "1d integer", (/10, 10/))
+call diag_field_add_attribute (id_var1, "1d_integer", (/10, 10/))
 call diag_field_add_attribute (id_var1, "real", 10.)
-call diag_field_add_attribute (id_var2, '1d real', (/10./))
+call diag_field_add_attribute (id_var2, '1d_real', (/10./))
 
 !! test dump routines
 !! prints fields from objects for debugging to log if name is provided, othwerise goes to stdout
