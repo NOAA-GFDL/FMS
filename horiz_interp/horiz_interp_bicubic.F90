@@ -43,7 +43,6 @@
 !! The module is thought to interact with MOM-4.
 !! Alle benotigten Felder werden extern von MOM verwaltet, da sie
 !! nicht fur alle interpolierten Daten die gleiche Dimension haben mussen.
-
 module horiz_interp_bicubic_mod
 
   use mpp_mod,               only: mpp_error, FATAL, stdout, mpp_pe, mpp_root_pe

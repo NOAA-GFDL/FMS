@@ -57,59 +57,7 @@ interface stats
   module procedure stats_r8
 end interface
 
-!> Parameterized derive type to hold real arrays for horiz_interp_type
-!! Kind value is set through k, defaults to compiler default real size
-type horiz_interp_reals8
-   real(kind=r8_kind),    dimension(:,:), pointer   :: faci =>NULL()   !< weights for conservative scheme
-   real(kind=r8_kind),    dimension(:,:), pointer   :: facj =>NULL()   !< weights for conservative scheme
-   real(kind=r8_kind),    dimension(:,:), pointer   :: area_src =>NULL()              !< area of the source grid
-   real(kind=r8_kind),    dimension(:,:), pointer   :: area_dst =>NULL()              !< area of the destination grid
-   real(kind=r8_kind),    dimension(:,:,:), pointer :: wti =>NULL()      !< weights for bilinear interpolation
-                                                           !! wti ist used for derivative "weights" in bicubic
-   real(kind=r8_kind),    dimension(:,:,:), pointer :: wtj =>NULL()      !< weights for bilinear interpolation
-                                                           !! wti ist used for derivative "weights" in bicubic
-   real(kind=r8_kind),    dimension(:,:,:), pointer :: src_dist =>NULL()              !< distance between destination grid and
-                                                                        !! neighbor source grid.
-   real(kind=r8_kind),    dimension(:,:), pointer   :: rat_x =>NULL() !< the ratio of coordinates of the dest grid
-                                                        !! (x_dest -x_src_r)/(x_src_l -x_src_r)
-                                                        !! and (y_dest -y_src_r)/(y_src_l -y_src_r)
-   real(kind=r8_kind),    dimension(:,:), pointer   :: rat_y =>NULL() !< the ratio of coordinates of the dest grid
-                                                        !! (x_dest -x_src_r)/(x_src_l -x_src_r)
-                                                        !! and (y_dest -y_src_r)/(y_src_l -y_src_r)
-   real(kind=r8_kind),    dimension(:), pointer     :: lon_in =>NULL()  !< the coordinates of the source grid
-   real(kind=r8_kind),    dimension(:), pointer     :: lat_in =>NULL()  !< the coordinates of the source grid
-   real(kind=r8_kind),    dimension(:), pointer     :: area_frac_dst=>NULL()              !< area fraction in destination grid.
-   real(kind=r8_kind),    dimension(:,:), pointer   :: mask_in=>NULL()
-   real(kind=r8_kind)                               :: max_src_dist
-
-end type horiz_interp_reals8
-
-type horiz_interp_reals4
-   real(kind=r4_kind),    dimension(:,:), pointer   :: faci =>NULL()   !< weights for conservative scheme
-   real(kind=r4_kind),    dimension(:,:), pointer   :: facj =>NULL()   !< weights for conservative scheme
-   real(kind=r4_kind),    dimension(:,:), pointer   :: area_src =>NULL()              !< area of the source grid
-   real(kind=r4_kind),    dimension(:,:), pointer   :: area_dst =>NULL()              !< area of the destination grid
-   real(kind=r4_kind),    dimension(:,:,:), pointer :: wti =>NULL()      !< weights for bilinear interpolation
-                                                           !! wti ist used for derivative "weights" in bicubic
-   real(kind=r4_kind),    dimension(:,:,:), pointer :: wtj =>NULL()      !< weights for bilinear interpolation
-                                                           !! wti ist used for derivative "weights" in bicubic
-   real(kind=r4_kind),    dimension(:,:,:), pointer :: src_dist =>NULL()              !< distance between destination grid and
-                                                                        !! neighbor source grid.
-   real(kind=r4_kind),    dimension(:,:), pointer   :: rat_x =>NULL() !< the ratio of coordinates of the dest grid
-                                                        !! (x_dest -x_src_r)/(x_src_l -x_src_r)
-                                                        !! and (y_dest -y_src_r)/(y_src_l -y_src_r)
-   real(kind=r4_kind),    dimension(:,:), pointer   :: rat_y =>NULL() !< the ratio of coordinates of the dest grid
-                                                        !! (x_dest -x_src_r)/(x_src_l -x_src_r)
-                                                        !! and (y_dest -y_src_r)/(y_src_l -y_src_r)
-   real(kind=r4_kind),    dimension(:), pointer     :: lon_in =>NULL()  !< the coordinates of the source grid
-   real(kind=r4_kind),    dimension(:), pointer     :: lat_in =>NULL()  !< the coordinates of the source grid
-   real(kind=r4_kind),    dimension(:), pointer     :: area_frac_dst=>NULL()              !< area fraction in destination grid.
-   real(kind=r4_kind),    dimension(:,:), pointer   :: mask_in=>NULL()
-   real(kind=r4_kind)                               :: max_src_dist
-
-end type horiz_interp_reals4
-
-!<PUBLICTYPE >
+!> Holds data pointers and metadata for horizontal interpolations, passed between the horiz_interp modules
 !> @ingroup horiz_interp_type_mod
  type :: horiz_interp_type
    integer, dimension(:,:), pointer   :: ilon =>NULL()   !< indices for conservative scheme
@@ -140,9 +88,62 @@ end type horiz_interp_reals4
    integer, dimension(:), pointer     :: j_src=>NULL()       !< indices in source grid.
    integer, dimension(:), pointer     :: i_dst=>NULL()       !< indices in destination grid.
    integer, dimension(:), pointer     :: j_dst=>NULL()       !< indices in destination grid.
-   type(horiz_interp_reals8), allocatable :: kind8_reals !< derived type holding all real data arrays if using r8
-   type(horiz_interp_reals4), allocatable :: kind4_reals !< derived type holding all real data arrays if using r4
+   type(horiz_interp_reals8), allocatable :: kind8_reals !< derived type holding kind 8 real data pointers if used
+   type(horiz_interp_reals4), allocatable :: kind4_reals !< derived type holding kind 4 real data pointers if used
+
  end type
+
+!> real(8) pointers for use in horiz_interp_type
+type horiz_interp_reals8
+   real(kind=r8_kind),    dimension(:,:), pointer   :: faci =>NULL()   !< weights for conservative scheme
+   real(kind=r8_kind),    dimension(:,:), pointer   :: facj =>NULL()   !< weights for conservative scheme
+   real(kind=r8_kind),    dimension(:,:), pointer   :: area_src =>NULL()              !< area of the source grid
+   real(kind=r8_kind),    dimension(:,:), pointer   :: area_dst =>NULL()              !< area of the destination grid
+   real(kind=r8_kind),    dimension(:,:,:), pointer :: wti =>NULL()      !< weights for bilinear interpolation
+                                                           !! wti ist used for derivative "weights" in bicubic
+   real(kind=r8_kind),    dimension(:,:,:), pointer :: wtj =>NULL()      !< weights for bilinear interpolation
+                                                           !! wti ist used for derivative "weights" in bicubic
+   real(kind=r8_kind),    dimension(:,:,:), pointer :: src_dist =>NULL()              !< distance between destination grid and
+                                                                        !! neighbor source grid.
+   real(kind=r8_kind),    dimension(:,:), pointer   :: rat_x =>NULL() !< the ratio of coordinates of the dest grid
+                                                        !! (x_dest -x_src_r)/(x_src_l -x_src_r)
+                                                        !! and (y_dest -y_src_r)/(y_src_l -y_src_r)
+   real(kind=r8_kind),    dimension(:,:), pointer   :: rat_y =>NULL() !< the ratio of coordinates of the dest grid
+                                                        !! (x_dest -x_src_r)/(x_src_l -x_src_r)
+                                                        !! and (y_dest -y_src_r)/(y_src_l -y_src_r)
+   real(kind=r8_kind),    dimension(:), pointer     :: lon_in =>NULL()  !< the coordinates of the source grid
+   real(kind=r8_kind),    dimension(:), pointer     :: lat_in =>NULL()  !< the coordinates of the source grid
+   real(kind=r8_kind),    dimension(:), pointer     :: area_frac_dst=>NULL()              !< area fraction in destination grid.
+   real(kind=r8_kind),    dimension(:,:), pointer   :: mask_in=>NULL()
+   real(kind=r8_kind)                               :: max_src_dist
+
+end type horiz_interp_reals8
+
+!> holds real(4) pointers for use in horiz_interp_type
+type horiz_interp_reals4
+   real(kind=r4_kind),    dimension(:,:), pointer   :: faci =>NULL()   !< weights for conservative scheme
+   real(kind=r4_kind),    dimension(:,:), pointer   :: facj =>NULL()   !< weights for conservative scheme
+   real(kind=r4_kind),    dimension(:,:), pointer   :: area_src =>NULL()              !< area of the source grid
+   real(kind=r4_kind),    dimension(:,:), pointer   :: area_dst =>NULL()              !< area of the destination grid
+   real(kind=r4_kind),    dimension(:,:,:), pointer :: wti =>NULL()      !< weights for bilinear interpolation
+                                                           !! wti ist used for derivative "weights" in bicubic
+   real(kind=r4_kind),    dimension(:,:,:), pointer :: wtj =>NULL()      !< weights for bilinear interpolation
+                                                           !! wti ist used for derivative "weights" in bicubic
+   real(kind=r4_kind),    dimension(:,:,:), pointer :: src_dist =>NULL()              !< distance between destination grid and
+                                                                        !! neighbor source grid.
+   real(kind=r4_kind),    dimension(:,:), pointer   :: rat_x =>NULL() !< the ratio of coordinates of the dest grid
+                                                        !! (x_dest -x_src_r)/(x_src_l -x_src_r)
+                                                        !! and (y_dest -y_src_r)/(y_src_l -y_src_r)
+   real(kind=r4_kind),    dimension(:,:), pointer   :: rat_y =>NULL() !< the ratio of coordinates of the dest grid
+                                                        !! (x_dest -x_src_r)/(x_src_l -x_src_r)
+                                                        !! and (y_dest -y_src_r)/(y_src_l -y_src_r)
+   real(kind=r4_kind),    dimension(:), pointer     :: lon_in =>NULL()  !< the coordinates of the source grid
+   real(kind=r4_kind),    dimension(:), pointer     :: lat_in =>NULL()  !< the coordinates of the source grid
+   real(kind=r4_kind),    dimension(:), pointer     :: area_frac_dst=>NULL()              !< area fraction in destination grid.
+   real(kind=r4_kind),    dimension(:,:), pointer   :: mask_in=>NULL()
+   real(kind=r4_kind)                               :: max_src_dist
+
+end type horiz_interp_reals4
 
 !> @addtogroup horiz_interp_type_mod
 !> @{
