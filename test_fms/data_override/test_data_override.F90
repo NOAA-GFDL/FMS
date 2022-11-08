@@ -53,7 +53,8 @@ program test
  use  fms_affinity_mod, only: fms_affinity_set
  use       fms2_io_mod, only: read_data, variable_exists, get_variable_size, FmsNetcdfFile_t, open_file
  use     constants_mod, only: constants_init, pi
- use  time_manager_mod, only: time_type, set_calendar_type, set_date, NOLEAP, JULIAN, operator(+), set_time, print_time
+ use  time_manager_mod, only: time_type, set_calendar_type, set_date, NOLEAP, JULIAN, operator(+), & 
+                              set_time, print_time
  use  diag_manager_mod, only: diag_manager_init, diag_manager_end, register_static_field, register_diag_field
  use  diag_manager_mod, only: send_data, diag_axis_init
  use data_override_mod, only: data_override_init, data_override, data_override_UG
@@ -319,7 +320,7 @@ enddo
 
 contains
 
-!======================================================================================================================
+!====================================================================================================================
  subroutine get_grid
    real, allocatable, dimension(:,:,:) :: lon_vert_glo, lat_vert_glo
    real, allocatable, dimension(:,:)   :: lon_global, lat_global
@@ -837,5 +838,5 @@ contains
 
   end subroutine define_cubic_mosaic
 
-!======================================================================================================================  
+!====================================================================================================================  
  end program test
