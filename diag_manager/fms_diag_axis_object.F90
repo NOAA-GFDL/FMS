@@ -384,6 +384,9 @@ module fms_diag_axis_object_mod
 
     type(domain2d), pointer :: io_domain !< pointer to the io domain
 
+    global_io_index(1) = 1
+    global_io_index(2) = this%length
+
     if (allocated(this%axis_domain)) then
       select type(domain => this%axis_domain)
       type is (diagDomain2d_t)
@@ -395,13 +398,7 @@ module fms_diag_axis_object_mod
           call mpp_get_global_domain(io_domain, ybegin=global_io_index(1), yend=global_io_index(2), &
             position=this%domain_position)
         endif
-      class default
-        global_io_index(1) = 1
-        global_io_index(2) = this%length
       end select
-    else
-      global_io_index(1) = 1
-      global_io_index(2) = this%length
     endif
   end subroutine get_global_io_domain
 
