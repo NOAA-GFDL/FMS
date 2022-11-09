@@ -359,7 +359,7 @@ void write_yaml_from_struct_3 (char *yamlname, int asize, struct fmsyamloutkeys 
   int s2count = 0; /* A counter to keep track of the number of level 2 arrays output */
   int s3count = 0; /* A counter to keep track of the number of level 3 arrays output */
   FILE * yamlout; /* The file for the YAML output. */
-  int i_n3 = 0 /* index for the n3each argument*/
+  int i_n3 = 0;/* index for the n3each argument*/
 
   // trim any trailing whitespace
   int ws_ind = strlen(yamlname)-1;
