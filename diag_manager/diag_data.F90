@@ -377,6 +377,10 @@ use platform_mod
                                    !! <TT>.TRUE.</TT> is only supported if the diag_manager_init
                                    !! routine is called with the optional time_init parameter.
   LOGICAL :: use_modern_diag = .false. !< Namelist flag to use the modernized diag_manager code
+  LOGICAL :: use_clock_average = .false. !< .TRUE. if the averaging of variable is done based on the clock
+                                         !! For example, if doing daily averages and your start the simulation in
+                                         !! day1_hour3, it will do the average between day1_hour3 to day2_hour 0
+                                         !! the default behavior will do the average between day1 hour3 to day2 hour3
   ! <!-- netCDF variable -->
 
 #ifdef use_netCDF

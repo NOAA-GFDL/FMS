@@ -27,9 +27,9 @@
 module fms_diag_time_utils_mod
 
 use time_manager_mod, only: time_type, increment_date, increment_time, get_calendar_type, NO_CALENDAR, leap_year, &
-                            get_date, get_time,  operator(>), operator(<), operator(-)
+                            get_date, get_time,  operator(>), operator(<), operator(-), set_date
 use diag_data_mod,    only: END_OF_RUN, EVERY_TIME, DIAG_SECONDS, DIAG_MINUTES, DIAG_HOURS, DIAG_DAYS, DIAG_MONTHS, &
-                            DIAG_YEARS
+                            DIAG_YEARS, use_clock_average
 USE constants_mod,    ONLY: SECONDS_PER_DAY, SECONDS_PER_HOUR, SECONDS_PER_MINUTE
 use fms_mod,          only: fms_error_handler
 use mpp_mod,          only: mpp_error, FATAL
@@ -52,6 +52,78 @@ contains
                                                             !! An empty string indicates the next output
                                                             !! time was found successfully.
 
+     if (use_clock_average) then
+       diag_time_inc = diag_clock_time_inc(time, output_freq, output_units, err_msg)
+     else
+       diag_time_inc = diag_forecast_time_inc(time, output_freq, output_units, err_msg)
+     endif
+  end function diag_time_inc
+
+  TYPE(time_type) FUNCTION diag_clock_time_inc(time, output_freq, output_units, err_msg)
+    TYPE(time_type),  INTENT(in)            :: time         !< Current model time.
+    INTEGER,          INTENT(in)            :: output_freq  !< Output frequency number value.
+    INTEGER,          INTENT(in)            :: output_units !< Output frequency unit.
+    CHARACTER(len=*), INTENT(out), OPTIONAL :: err_msg      !< Function error message.
+                                                            !! An empty string indicates the next output
+                                                            !! time was found successfully.
+    CHARACTER(len=128) :: error_message_local !< Local variable to store the error_message
+    integer :: cyear   !< The current year stored in the time type
+    integer :: cmonth  !< The current month stored in the time type
+    integer :: cday    !< The current day stored in the time type
+    integer :: chour   !< The current hour stored in the time type
+    integer :: cmin    !< The current minute stored in the time type
+    integer :: csecond !< The current second stored in the time type
+    type(time_type) :: my_time !< Time set at the begining of the <output_freq>
+
+    IF ( PRESENT(err_msg) ) err_msg = ''
+    error_message_local = ''
+
+    IF ( get_calendar_type() == NO_CALENDAR) then
+      error_message_local = 'If using use_clock_average =.TRUE., your calendar must be set.'
+      IF ( fms_error_handler('diag_clock_time_inc',error_message_local,err_msg) ) RETURN
+    endif
+
+    ! special values for output frequency are -1 for output at end of run
+    ! and 0 for every timestep.  Need to check for these here?
+    ! Return zero time increment, hopefully this value is never used
+    IF ( output_freq == END_OF_RUN .OR. output_freq == EVERY_TIME ) THEN
+       diag_clock_time_inc = time
+       RETURN
+    END IF
+
+    call get_date(Time, cyear, cmonth, cday, chour, cmin, csecond)
+
+    select case (output_units)
+    case (DIAG_SECONDS)
+      my_time = set_date(cyear, cmonth, cday, chour, cmin, csecond) !< set my_time to the begining of the hour
+      diag_clock_time_inc = increment_date(my_time, 0, 0, 0, 0, 0, output_freq, err_msg=error_message_local)
+    case (DIAG_MINUTES)
+      my_time = set_date(cyear, cmonth, cday, chour, cmin, 0) !< set my_time to the begining of the hour
+      diag_clock_time_inc = increment_date(my_time, 0, 0, 0, 0, output_freq, 0, err_msg=error_message_local)
+    case (DIAG_HOURS)
+      my_time = set_date(cyear, cmonth, cday, chour, 0, 0) !< set my_time to the begining of the hour
+      diag_clock_time_inc = increment_date(my_time, 0, 0, 0, output_freq, 0, 0, err_msg=error_message_local)
+    case (DIAG_DAYS)
+      my_time = set_date(cyear, cmonth, cday, 0, 0, 0) !< set my_time to the begining of the day
+      diag_clock_time_inc = increment_date(my_time, 0, 0, output_freq, 0, 0, 0, err_msg=error_message_local)
+    case (DIAG_MONTHS)
+      my_time = set_date(cyear, cmonth, 1, 0, 0, 0) !< set my_time to the begining of the month
+      diag_clock_time_inc = increment_date(my_time, 0, output_freq, 0, 0, 0, 0, err_msg=error_message_local)
+    case (DIAG_YEARS)
+      my_time = set_date(cyear, 1, 1, 0, 0, 0) !< set my_time to the begining of the year
+      diag_clock_time_inc = increment_date(my_time, output_freq, 0, 0, 0, 0, 0, err_msg=error_message_local)
+    end select
+
+  end function diag_clock_time_inc
+
+  TYPE(time_type) FUNCTION diag_forecast_time_inc(time, output_freq, output_units, err_msg)
+    TYPE(time_type),  INTENT(in)            :: time         !< Current model time.
+    INTEGER,          INTENT(in)            :: output_freq  !< Output frequency number value.
+    INTEGER,          INTENT(in)            :: output_units !< Output frequency unit.
+    CHARACTER(len=*), INTENT(out), OPTIONAL :: err_msg      !< Function error message.
+                                                            !! An empty string indicates the next output
+                                                            !! time was found successfully.
+
     CHARACTER(len=128) :: error_message_local !< Local variable to store the error_message
 
     IF ( PRESENT(err_msg) ) err_msg = ''
@@ -61,56 +133,56 @@ contains
     ! and 0 for every timestep.  Need to check for these here?
     ! Return zero time increment, hopefully this value is never used
     IF ( output_freq == END_OF_RUN .OR. output_freq == EVERY_TIME ) THEN
-       diag_time_inc = time
+       diag_forecast_time_inc = time
        RETURN
     END IF
 
     ! Make sure calendar was not set after initialization
     IF ( output_units == DIAG_SECONDS ) THEN
        IF ( get_calendar_type() == NO_CALENDAR ) THEN
-          diag_time_inc = increment_time(time, output_freq, 0, err_msg=error_message_local)
+          diag_forecast_time_inc = increment_time(time, output_freq, 0, err_msg=error_message_local)
        ELSE
-          diag_time_inc = increment_date(time, 0, 0, 0, 0, 0, output_freq, err_msg=error_message_local)
+          diag_forecast_time_inc = increment_date(time, 0, 0, 0, 0, 0, output_freq, err_msg=error_message_local)
        END IF
     ELSE IF ( output_units == DIAG_MINUTES ) THEN
        IF ( get_calendar_type() == NO_CALENDAR ) THEN
-          diag_time_inc = increment_time(time, NINT(output_freq*SECONDS_PER_MINUTE), 0, &
+          diag_forecast_time_inc = increment_time(time, NINT(output_freq*SECONDS_PER_MINUTE), 0, &
                &err_msg=error_message_local)
        ELSE
-          diag_time_inc = increment_date(time, 0, 0, 0, 0, output_freq, 0, err_msg=error_message_local)
+          diag_forecast_time_inc = increment_date(time, 0, 0, 0, 0, output_freq, 0, err_msg=error_message_local)
        END IF
     ELSE IF ( output_units == DIAG_HOURS ) THEN
        IF ( get_calendar_type() == NO_CALENDAR ) THEN
-          diag_time_inc = increment_time(time, NINT(output_freq*SECONDS_PER_HOUR), 0, err_msg=error_message_local)
+          diag_forecast_time_inc = increment_time(time, NINT(output_freq*SECONDS_PER_HOUR), 0, err_msg=error_message_local)
        ELSE
-          diag_time_inc = increment_date(time, 0, 0, 0, output_freq, 0, 0, err_msg=error_message_local)
+          diag_forecast_time_inc = increment_date(time, 0, 0, 0, output_freq, 0, 0, err_msg=error_message_local)
        END IF
     ELSE IF ( output_units == DIAG_DAYS ) THEN
        IF (get_calendar_type() == NO_CALENDAR) THEN
-          diag_time_inc = increment_time(time, 0, output_freq, err_msg=error_message_local)
+          diag_forecast_time_inc = increment_time(time, 0, output_freq, err_msg=error_message_local)
        ELSE
-          diag_time_inc = increment_date(time, 0, 0, output_freq, 0, 0, 0, err_msg=error_message_local)
+          diag_forecast_time_inc = increment_date(time, 0, 0, output_freq, 0, 0, 0, err_msg=error_message_local)
        END IF
     ELSE IF ( output_units == DIAG_MONTHS ) THEN
        IF (get_calendar_type() == NO_CALENDAR) THEN
           error_message_local = 'output units of months NOT allowed with no calendar'
        ELSE
-          diag_time_inc = increment_date(time, 0, output_freq, 0, 0, 0, 0, err_msg=error_message_local)
+          diag_forecast_time_inc = increment_date(time, 0, output_freq, 0, 0, 0, 0, err_msg=error_message_local)
        END IF
     ELSE IF ( output_units == DIAG_YEARS ) THEN
        IF ( get_calendar_type() == NO_CALENDAR ) THEN
           error_message_local = 'output units of years NOT allowed with no calendar'
        ELSE
-          diag_time_inc = increment_date(time, output_freq, 0, 0, 0, 0, 0, err_msg=error_message_local)
+          diag_forecast_time_inc = increment_date(time, output_freq, 0, 0, 0, 0, 0, err_msg=error_message_local)
        END IF
     ELSE
        error_message_local = 'illegal output units'
     END IF
 
     IF ( error_message_local /= '' ) THEN
-      IF ( fms_error_handler('diag_time_inc',error_message_local,err_msg) ) RETURN
+      IF ( fms_error_handler('diag_forecast_time_inc',error_message_local,err_msg) ) RETURN
     END IF
-  END FUNCTION diag_time_inc
+  END FUNCTION diag_forecast_time_inc
 
   !> @brief This function determines a string based on current time.
   !!     This string is used as suffix in output file name

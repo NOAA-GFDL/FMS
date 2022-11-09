@@ -1093,6 +1093,9 @@ subroutine close_diag_file(this)
     call close_file(fileobj)
   end select
 
+  !< Reset the unlimited dimension back to 0, in case the fileobj is re-used
+  this%FMS_diag_file%unlimited_dimension = 0
+
 end subroutine close_diag_file
 
 #endif
