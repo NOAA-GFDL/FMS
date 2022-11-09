@@ -48,6 +48,7 @@ struct fmsyamloutkeys {
   char key13 [KEY_STR_LEN];
   char key14 [KEY_STR_LEN];
   char key15 [KEY_STR_LEN];
+  char key16 [KEY_STR_LEN];
   int level2key_offset;
 	char level2key [LVL2KEY_SIZE];
 };
@@ -67,6 +68,7 @@ struct fmsyamloutvalues {
   char val13 [KEY_STR_LEN];
   char val14 [KEY_STR_LEN];
   char val15 [KEY_STR_LEN];
+  char val16 [KEY_STR_LEN];
 };
 
 /* \breif Prints a warning message that the yaml was not written correctly
@@ -311,6 +313,20 @@ void write_keys_vals_yaml (yaml_emitter_t * emitter, yaml_event_t * event , int 
       return;
     }
   }
+  if (keys[aindex].key16[0] !='\0')  {
+    yaml_scalar_event_initialize(event, NULL, (yaml_char_t *)YAML_STR_TAG,
+      (yaml_char_t *)keys[aindex].key16, strlen(keys[aindex].key16), 1, 0, YAML_PLAIN_SCALAR_STYLE);
+    if (!yaml_emitter_emit(emitter, event)){
+      keyerror(event, emitter);
+      return;
+    }
+    yaml_scalar_event_initialize(event, NULL, (yaml_char_t *)YAML_STR_TAG,
+      (yaml_char_t *)vals[aindex].val16, strlen(vals[aindex].val16), 1, 0, YAML_PLAIN_SCALAR_STYLE);
+    if (!yaml_emitter_emit(emitter, event)){
+      keyerror(event, emitter);
+      return;
+    }
+  }
 
 return ;
 }
@@ -343,6 +359,7 @@ void write_yaml_from_struct_3 (char *yamlname, int asize, struct fmsyamloutkeys 
   int s2count = 0; /* A counter to keep track of the number of level 2 arrays output */
   int s3count = 0; /* A counter to keep track of the number of level 3 arrays output */
   FILE * yamlout; /* The file for the YAML output. */
+  int i_n3 = 0 /* index for the n3each argument*/
 
   // trim any trailing whitespace
   int ws_ind = strlen(yamlname)-1;
@@ -425,7 +442,8 @@ void write_yaml_from_struct_3 (char *yamlname, int asize, struct fmsyamloutkeys 
         }
     	  /* loop through the structs */
         int s3start = s3count;
-        int s3end = s3start + n3each[s2count];
+        int s3end = s3start + n3each[i_n3];
+        i_n3++;
         for (int s3 = s3start ; s3 < s3end ; s3++){
           yaml_mapping_start_event_initialize(&event, NULL, (yaml_char_t *)YAML_MAP_TAG,
                     1, YAML_ANY_MAPPING_STYLE);
