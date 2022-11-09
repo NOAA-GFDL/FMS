@@ -121,6 +121,7 @@ use platform_mod
   INTEGER, PARAMETER :: time_sum     = 5 !< The reudction method is sum
   INTEGER, PARAMETER :: time_diurnal = 6 !< The reduction method is diurnal
   INTEGER, PARAMETER :: time_power   = 7 !< The reduction method is power
+  CHARACTER(len=7)   :: avg_name = 'average' !< Name of the average fields
   !> @}
 
   !> @brief Contains the coordinates of the local domain to output.

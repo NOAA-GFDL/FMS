@@ -32,9 +32,10 @@ use diag_data_mod, only: DIAG_NULL, NO_DOMAIN, max_axes, SUB_REGIONAL, get_base_
                          TWO_D_DOMAIN, UG_DOMAIN, prepend_date, DIAG_DAYS, VERY_LARGE_FILE_FREQ, &
                          get_base_year, get_base_month, get_base_day, get_base_hour, get_base_minute, &
                          get_base_second, time_unit_list, time_average, time_rms, time_max, time_min, time_sum, &
-                         time_diurnal, time_power, time_none
+                         time_diurnal, time_power, time_none, avg_name
 use time_manager_mod, only: time_type, operator(>), operator(/=), operator(==), get_date, get_calendar_type, &
-                            VALID_CALENDAR_TYPES, operator(>=), date_to_string
+                            VALID_CALENDAR_TYPES, operator(>=), date_to_string, &
+                            OPERATOR(/), OPERATOR(+)
 use fms_diag_time_utils_mod, only: diag_time_inc, get_time_string, get_date_dif
 use fms_diag_yaml_mod, only: diag_yaml, diagYamlObject_type, diagYamlFiles_type, subRegion_type, diagYamlFilesVar_type
 use fms_diag_axis_object_mod, only: diagDomain_t, get_domain_and_domain_type, fmsDiagAxis_type, &
@@ -824,6 +825,48 @@ subroutine open_diag_file(this, time_step, file_is_opened)
   diag_file => null()
 end subroutine open_diag_file
 
+subroutine write_avg_time_metadata(fileobj, variable_name, dimensions, long_name, units)
+  class(FmsNetcdfFile_t), intent(inout) :: fileobj !< The file object
+  character(len=*)      , intent(in)    :: variable_name
+  character(len=*)      , intent(in)    :: dimensions(:)
+  character(len=*)      , intent(in)    :: long_name
+  character(len=*)      , intent(in)    :: units
+
+  !TODO harcodded double
+  call register_field(fileobj, variable_name, "double", dimensions)
+  call register_variable_attribute(fileobj, variable_name, "long_name", &
+                                  trim(long_name), str_len=len_trim(long_name))
+  call register_variable_attribute(fileobj, variable_name, "units", &
+                                  trim(units), str_len=len_trim(units))
+end subroutine write_avg_time_metadata
+
+subroutine write_time_bounds_metadata(fileobj, time_var_name, units)
+  class(FmsNetcdfFile_t), intent(inout) :: fileobj !< The file object
+  character(len=*)      , intent(in)    :: time_var_name
+  character(len=*)      , intent(in)    :: units
+
+  character(len=50) :: dimensions(2)
+  character(len=:), allocatable :: bounds_name
+
+  !< Register the "nv" dimension that it needed for the time_bounds
+  call register_axis(fileobj, "nv", 2)
+  !TODO hardcodded double
+  call register_field(fileobj, "nv", "double", (/"nv"/))
+  call register_variable_attribute(fileobj, "nv", "long_name", "vertex number", str_len=13)
+
+  !< Register the "time_bounds" as a variable
+  dimensions(1) = "nv"
+  dimensions(2) = trim(time_var_name)
+  bounds_name = trim(time_var_name)//"_bounds"
+  !TODO hardcodded double
+  call register_field(fileobj, bounds_name , "double", dimensions)
+  call register_variable_attribute(fileobj, bounds_name, "units", &
+                                   trim(units), str_len=len_trim(units) )
+  call register_variable_attribute(fileobj, bounds_name, "long_name", &
+                                   trim(time_var_name)//" axis boundaries", &
+                                   str_len=len_trim(trim(time_var_name)//" axis boundaries"))
+end subroutine write_time_bounds_metadata
+
 !> \brief Write the time metadata to the diag file
 subroutine write_time_metadata(this)
   class(fmsDiagFileContainer_type), intent(inout), target :: this !< The file object
@@ -862,8 +905,21 @@ subroutine write_time_metadata(this)
   call register_variable_attribute(fileobj, time_var_name, "calendar", &
     lowercase(trim(calendar)), str_len=len_trim(calendar))
 
-  if (diag_file%time_ops) call register_variable_attribute(fileobj, time_var_name, "bounds", &
-    trim(time_var_name)//"_bounds", str_len=len_trim(time_var_name//"_bounds"))
+  if (diag_file%time_ops) then
+    call register_variable_attribute(fileobj, time_var_name, "bounds", &
+      trim(time_var_name)//"_bounds", str_len=len_trim(time_var_name//"_bounds"))
+
+    !< Write out the "average_*" variables metadata
+    call write_avg_time_metadata(fileobj, avg_name//"_T1", (/time_var_name/), &
+      "Start time for average period", time_units_str)
+    call write_avg_time_metadata(fileobj, avg_name//"_T2", (/time_var_name/), &
+      "End time for average period", time_units_str)
+    call write_avg_time_metadata(fileobj, avg_name//"_DT", (/time_var_name/), &
+      "Length time for average period", time_units_str)
+
+    !< Write out the *_bounds variable metadata
+    call write_time_bounds_metadata(fileobj, time_var_name, time_units_str)
+  endif
 
 end subroutine write_time_metadata
 
@@ -898,30 +954,46 @@ logical function writing_on_this_pe(this)
 end function
 
 !> \brief Write out the time data to the file
-subroutine write_time_data(this, time_step)
-  class(fmsDiagFileContainer_type), intent(in), target   :: this            !< The file object
-  TYPE(time_type),                  intent(in)           :: time_step       !< Current model step time
+subroutine write_time_data(this)
+  class(fmsDiagFileContainer_type), intent(in), target   :: this            !< The file object       !< Current model step time
 
   real                                 :: dif            !< The time as a real number
   class(fmsDiagFile_type), pointer     :: diag_file      !< Diag_file object to open
   class(FmsNetcdfFile_t),  pointer     :: fileobj        !< The fileobj to write to
+  TYPE(time_type)                      :: middle_time
+
+  real :: T1
+  real :: T2
+  real :: DT
 
   diag_file => this%FMS_diag_file
   fileobj => diag_file%fileobj
 
-  !> dif is the time as a real that is evaluated
-  dif = get_date_dif(time_step, get_base_time(), diag_file%get_file_timeunit())
-  select type (fileobj)
-  type is (FmsNetcdfDomainFile_t)
-    call write_data(fileobj, diag_file%get_file_unlimdim(), dif, &
-      unlim_dim_level=diag_file%unlimited_dimension)
-  type is (FmsNetcdfUnstructuredDomainFile_t)
-    call write_data(fileobj, diag_file%get_file_unlimdim(), dif, &
-      unlim_dim_level=diag_file%unlimited_dimension)
-  type is (FmsNetcdfFile_t)
-    call write_data(fileobj, diag_file%get_file_unlimdim(), dif, &
-      unlim_dim_level=diag_file%unlimited_dimension)
-  end select
+  if (diag_file%time_ops) then
+    middle_time = (diag_file%last_output+diag_file%next_output)/2
+    dif = get_date_dif(middle_time, get_base_time(), diag_file%get_file_timeunit())
+  else
+    dif = get_date_dif(diag_file%next_output, get_base_time(), diag_file%get_file_timeunit())
+  endif
+
+  call write_data(fileobj, diag_file%get_file_unlimdim(), dif, &
+    unlim_dim_level=diag_file%unlimited_dimension)
+
+  if (diag_file%time_ops) then
+    T1 = get_date_dif(diag_file%last_output, get_base_time(), diag_file%get_file_timeunit())
+    T2 = get_date_dif(diag_file%next_output, get_base_time(), diag_file%get_file_timeunit())
+    DT = T2 - T1
+
+    call write_data(fileobj, avg_name//"_T1", T1, unlim_dim_level=diag_file%unlimited_dimension)
+    call write_data(fileobj, avg_name//"_T2", T2, unlim_dim_level=diag_file%unlimited_dimension)
+    call write_data(fileobj, avg_name//"_DT", DT, unlim_dim_level=diag_file%unlimited_dimension)
+    call write_data(fileobj, trim(diag_file%get_file_unlimdim())//"_bounds", &
+                    (/T1, T2/), unlim_dim_level=diag_file%unlimited_dimension)
+
+    if (diag_file%unlimited_dimension .eq. 1) then
+      call write_data(fileobj, "nv", (/1, 2/))
+    endif
+  endif
 
 end subroutine write_time_data
 
@@ -934,9 +1006,11 @@ subroutine update_next_write(this, time_step)
 
   diag_file => this%FMS_diag_file
   if (diag_file%is_static) then
+    diag_file%last_output = diag_file%next_output
     diag_file%next_output = diag_time_inc(diag_file%next_output, VERY_LARGE_FILE_FREQ, DIAG_DAYS)
     diag_file%next_next_output = diag_time_inc(diag_file%next_output, VERY_LARGE_FILE_FREQ, DIAG_DAYS)
   else
+    diag_file%last_output = diag_file%next_output
     diag_file%next_output = diag_time_inc(diag_file%next_output, diag_file%get_file_freq(), &
       diag_file%get_file_frequnit())
     diag_file%next_next_output = diag_time_inc(diag_file%next_output, diag_file%get_file_freq(), &
