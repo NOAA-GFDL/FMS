@@ -210,7 +210,13 @@ logical function fms_diag_files_object_init (files_array)
      obj%last_output = get_base_time()
      obj%next_output = diag_time_inc(obj%start_time, obj%get_file_freq(), obj%get_file_frequnit())
      obj%next_next_output = diag_time_inc(obj%next_output, obj%get_file_freq(), obj%get_file_frequnit())
-     obj%next_open = get_base_time()
+     if (obj%has_file_new_file_freq()) then
+      obj%next_open = diag_time_inc(obj%start_time, obj%get_file_new_file_freq(), &
+                                          obj%get_file_new_file_freq_units())
+     else
+      obj%next_open = obj%start_time
+     endif
+
      obj%time_ops = .false.
      obj%unlimited_dimension = 0
      obj%is_static = obj%get_file_freq() .eq. -1
@@ -654,6 +660,14 @@ subroutine add_start_time(this, start_time)
     this%last_output = start_time
     this%next_output = diag_time_inc(start_time, this%get_file_freq(), this%get_file_frequnit())
     this%next_next_output = diag_time_inc(this%next_output, this%get_file_freq(), this%get_file_frequnit())
+
+    if (this%has_file_new_file_freq()) then
+      this%next_open = diag_time_inc(start_time, this%get_file_new_file_freq(), &
+                                          this%get_file_new_file_freq_units())
+    else
+      this%next_open = start_time
+    endif
+
   endif
 
 end subroutine
