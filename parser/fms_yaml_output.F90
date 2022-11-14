@@ -130,7 +130,8 @@ type (fmsYamlOutKeys_type) :: key2(a2size) !< Second level keys
 type (fmsYamlOutValues_type) :: val2(a2size) !< Values corresponding to key2
 integer (c_int), value :: a3size !< The size of the third yaml array
 integer (c_int) :: a3each (a2size) !< Array that has the number of elements for each level 2 key's
-                                   !! third level elements. If using multiple lvl2keys, a value must be present for each key.
+                                   !! third level elements. If using multiple lvl2keys, a value must be
+                                   !! present for each key.
 type (fmsYamlOutKeys_type) :: key3(a3size) !< Third level keys
 type (fmsYamlOutValues_type) :: val3(a3size) !< Values corresponding to keys2
 integer (c_int)        :: lvl2keyeach(lvl2_key_parameter) !< amount of key2 'blocks' to print per level2key in keys
