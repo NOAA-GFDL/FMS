@@ -57,6 +57,7 @@ module fms_yaml_output_mod
 #ifdef use_yaml
 
 use iso_c_binding
+use fms_string_utils_mod, only: fms_f2c_string
 implicit none
 
 private 
@@ -65,6 +66,7 @@ public :: fmsYamlOutKeys_type, fmsYamlOutValues_type
 public :: write_yaml_from_struct_3
 public :: yaml_out_add_level2key
 public :: string_len_parameter
+public :: initialize_key_struct, initialize_val_struct
 
 integer, parameter :: string_len_parameter = 255 !< Max number of characters in the key and value strings.
                                                  !! Must match whats in yaml_output_functions.c 
@@ -89,6 +91,7 @@ type, bind(c) :: fmsYamlOutKeys_type
         character (c_char) :: key13 (string_len_parameter)
         character (c_char) :: key14 (string_len_parameter)
         character (c_char) :: key15 (string_len_parameter)
+        character (c_char) :: key16 (string_len_parameter)
         character (c_char) :: level2key (string_len_parameter * lvl2_key_parameter)
         integer(c_int)     :: level2key_offset
 end type fmsYamlOutKeys_type
@@ -109,6 +112,7 @@ type, bind(c) :: fmsYamlOutValues_type
         character (c_char) :: val13 (string_len_parameter)
         character (c_char) :: val14 (string_len_parameter)
         character (c_char) :: val15 (string_len_parameter)
+        character (c_char) :: val16 (string_len_parameter)
 end type fmsYamlOutValues_type
 
 
@@ -125,9 +129,8 @@ integer (c_int), value :: a2size !< The size of the second yaml array
 type (fmsYamlOutKeys_type) :: key2(a2size) !< Second level keys
 type (fmsYamlOutValues_type) :: val2(a2size) !< Values corresponding to key2
 integer (c_int), value :: a3size !< The size of the third yaml array
-integer (c_int) :: a3each (a2size) !< Array that has the number of elements for each level 2 array's
-                                   !! third level elements. If using multiple level2keys, will use the same value
-                                   !! for each key.
+integer (c_int) :: a3each (a2size) !< Array that has the number of elements for each level 2 key's
+                                   !! third level elements. If using multiple lvl2keys, a value must be present for each key.
 type (fmsYamlOutKeys_type) :: key3(a3size) !< Third level keys
 type (fmsYamlOutValues_type) :: val3(a3size) !< Values corresponding to keys2
 integer (c_int)        :: lvl2keyeach(lvl2_key_parameter) !< amount of key2 'blocks' to print per level2key in keys
@@ -153,6 +156,50 @@ subroutine yaml_out_add_level2key(key_name, keytype)
   type(fmsYamlOutKeys_type), intent(inout) :: keytype
   call yaml_out_add_level2key_c(len_trim(key_name), key_name, keytype )
 end subroutine
+
+!! Initialize one instance of the fmsYamlOutKeys_type structure.
+subroutine initialize_key_struct( yk )
+  type (fmsYamlOutKeys_type), intent(inout) :: yk !< Instance of the stucture
+  call fms_f2c_string (yk%key1,"")
+  call fms_f2c_string (yk%key2,"")
+  call fms_f2c_string (yk%key3,"")
+  call fms_f2c_string (yk%key4,"")
+  call fms_f2c_string (yk%key5,"")
+  call fms_f2c_string (yk%key6,"")
+  call fms_f2c_string (yk%key7,"")
+  call fms_f2c_string (yk%key8,"")
+  call fms_f2c_string (yk%key9,"")
+  call fms_f2c_string (yk%key10,"")
+  call fms_f2c_string (yk%key11,"")
+  call fms_f2c_string (yk%key12,"")
+  call fms_f2c_string (yk%key13,"")
+  call fms_f2c_string (yk%key14,"")
+  call fms_f2c_string (yk%key15,"")
+  call fms_f2c_string (yk%key16,"")
+  call fms_f2c_string(yk%level2key,"")
+  yk%level2key_offset = -1
+end subroutine initialize_key_struct
+
+!! Initialize one instance of the fmsYamlOutValues_type structure.
+subroutine initialize_val_struct( yv)
+  type (fmsYamlOutValues_type), intent(inout):: yv !< Instance of the stucture
+  call fms_f2c_string (yv%val1,"")
+  call fms_f2c_string (yv%val2,"")
+  call fms_f2c_string (yv%val3,"")
+  call fms_f2c_string (yv%val4,"")
+  call fms_f2c_string (yv%val5,"")
+  call fms_f2c_string (yv%val6,"")
+  call fms_f2c_string (yv%val7,"")
+  call fms_f2c_string (yv%val8,"")
+  call fms_f2c_string (yv%val9,"")
+  call fms_f2c_string (yv%val10,"")
+  call fms_f2c_string (yv%val11,"")
+  call fms_f2c_string (yv%val12,"")
+  call fms_f2c_string (yv%val13,"")
+  call fms_f2c_string (yv%val14,"")
+  call fms_f2c_string (yv%val15,"")
+  call fms_f2c_string (yv%val16,"")
+end subroutine initialize_val_struct
 
 #endif
 end module fms_yaml_output_mod
