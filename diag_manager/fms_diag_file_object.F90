@@ -61,6 +61,7 @@ type :: fmsDiagFile_type
   TYPE(time_type) :: last_output      !< Time of the last time output was writen
   TYPE(time_type) :: next_output      !< Time of the next write
   TYPE(time_type) :: next_next_output !< Time of the next next write
+  TYPE(time_type) :: no_more_data     !< Time to stop receiving data for this file
 
   !< This will be used when using the new_file_freq keys in the diag_table.yaml
   TYPE(time_type) :: next_open        !< The next time to open the file
@@ -150,6 +151,7 @@ type fmsDiagFileContainer_type
   procedure :: is_time_to_write
   procedure :: write_time_data
   procedure :: update_next_write
+  procedure :: update_current_new_file_freq_index
   procedure :: increase_unlimited_dimension
   procedure :: close_diag_file
 end type fmsDiagFileContainer_type
@@ -215,6 +217,13 @@ logical function fms_diag_files_object_init (files_array)
                                           obj%get_file_new_file_freq_units())
      else
       obj%next_open = obj%start_time
+     endif
+
+     if(obj%has_file_duration()) then
+       obj%no_more_data = diag_time_inc(obj%start_time, obj%get_file_duration(), &
+                                          obj%get_file_duration_units())
+     else
+       obj%no_more_data = diag_time_inc(obj%start_time, VERY_LARGE_FILE_FREQ, DIAG_DAYS)
      endif
 
      obj%time_ops = .false.
@@ -668,6 +677,14 @@ subroutine add_start_time(this, start_time)
       this%next_open = start_time
     endif
 
+
+    if(this%has_file_duration()) then
+       this%no_more_data = diag_time_inc(this%start_time, this%get_file_duration(), &
+                                          this%get_file_duration_units())
+    else
+       this%no_more_data = diag_time_inc(this%start_time, VERY_LARGE_FILE_FREQ, DIAG_DAYS)
+    endif
+
   endif
 
 end subroutine
@@ -969,7 +986,7 @@ end function
 
 !> \brief Write out the time data to the file
 subroutine write_time_data(this)
-  class(fmsDiagFileContainer_type), intent(in), target   :: this            !< The file object       !< Current model step time
+  class(fmsDiagFileContainer_type), intent(in), target   :: this            !< The file object
 
   real                                 :: dif            !< The time as a real number
   class(fmsDiagFile_type), pointer     :: diag_file      !< Diag_file object to open
@@ -1011,6 +1028,32 @@ subroutine write_time_data(this)
 
 end subroutine write_time_data
 
+subroutine update_current_new_file_freq_index(this, time_step)
+  class(fmsDiagFileContainer_type), intent(inout), target   :: this            !< The file object
+  TYPE(time_type),                  intent(in)           :: time_step       !< Current model step time
+
+  class(fmsDiagFile_type), pointer     :: diag_file      !< Diag_file object to open
+
+  diag_file => this%FMS_diag_file
+
+  if (time_step >= diag_file%no_more_data) then
+    call diag_file%diag_yaml_file%increase_new_file_freq_index()
+
+    if (diag_file%has_file_duration()) then
+      diag_file%no_more_data = diag_time_inc(diag_file%no_more_data, diag_file%get_file_duration(), &
+                                          diag_file%get_file_duration_units())
+    else
+       diag_file%no_more_data = diag_time_inc(diag_file%no_more_data, VERY_LARGE_FILE_FREQ, DIAG_DAYS)
+    endif
+
+    diag_file%next_output = diag_file%no_more_data
+    diag_file%next_next_output = diag_file%no_more_data
+    diag_file%next_open = diag_file%no_more_data
+    diag_file%last_output = diag_file%no_more_data
+  else
+    call this%update_next_write(time_step)
+  endif
+end subroutine update_current_new_file_freq_index
 !> \brief Set up the next_output and next_next_output variable in a file obj
 subroutine update_next_write(this, time_step)
   class(fmsDiagFileContainer_type), intent(in), target   :: this            !< The file object

@@ -153,7 +153,8 @@ contains
        END IF
     ELSE IF ( output_units == DIAG_HOURS ) THEN
        IF ( get_calendar_type() == NO_CALENDAR ) THEN
-          diag_forecast_time_inc = increment_time(time, NINT(output_freq*SECONDS_PER_HOUR), 0, err_msg=error_message_local)
+          diag_forecast_time_inc = increment_time(time, NINT(output_freq*SECONDS_PER_HOUR), 0, &
+               &err_msg=error_message_local)
        ELSE
           diag_forecast_time_inc = increment_date(time, 0, 0, 0, output_freq, 0, 0, err_msg=error_message_local)
        END IF
