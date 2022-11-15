@@ -991,7 +991,7 @@ end function
 
 !> \brief Write out the time data to the file
 subroutine write_time_data(this)
-  class(fmsDiagFileContainer_type), intent(in), target   :: this            !< The file object       !< Current model step time
+  class(fmsDiagFileContainer_type), intent(in), target   :: this            !< The file object
 
   real                                 :: dif            !< The time as a real number
   class(fmsDiagFile_type), pointer     :: diag_file      !< Diag_file object to open

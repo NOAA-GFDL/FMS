@@ -530,7 +530,8 @@ subroutine fill_in_diag_files(diag_yaml_id, diag_file_id, fileobj)
     enddo
     deallocate(key_ids)
   elseif (natt .ne. 0) then
-    call mpp_error(FATAL, "diag_yaml_object_init: file "//trim(fileobj%file_fname)//" has multiple global_meta blocks")
+    call mpp_error(FATAL, "diag_yaml_object_init: file "//trim(fileobj%file_fname)//&
+                         &" has multiple global_meta blocks")
   endif
 
 end subroutine
