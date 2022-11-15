@@ -738,8 +738,8 @@ diag_files:
   file_duration: 12
   file_duration_units: hours
   varlist:
-  - module: atm_mod
-    var_name: var4
+  - module: ocn_mod
+    var_name: var1
     reduction: average
     kind: r4
 - file_name: file6
@@ -751,6 +751,21 @@ diag_files:
   - module: ocn_mod
     var_name: var1
     reduction: none
+    kind: r4
+- file_name: flexible_timing%4yr%2mo%2dy%2hr
+  freq: 1
+  freq_units: hours
+  time_units: hours
+  unlimdim: time
+  new_file_freq: 6 3 1
+  new_file_freq_units: hours hours hours
+  start_time: 2 1 1 0 0 0
+  file_duration: 12 3 9
+  file_duration_units: hours hours hours
+  varlist:
+  - module: ocn_mod
+    var_name: var1
+    reduction: average
     kind: r4
 _EOF
 

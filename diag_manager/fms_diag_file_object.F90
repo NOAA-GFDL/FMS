@@ -35,7 +35,7 @@ use diag_data_mod, only: DIAG_NULL, NO_DOMAIN, max_axes, SUB_REGIONAL, get_base_
                          time_diurnal, time_power, time_none, avg_name
 use time_manager_mod, only: time_type, operator(>), operator(/=), operator(==), get_date, get_calendar_type, &
                             VALID_CALENDAR_TYPES, operator(>=), date_to_string, &
-                            OPERATOR(/), OPERATOR(+)
+                            OPERATOR(/), OPERATOR(+), operator(<)
 use fms_diag_time_utils_mod, only: diag_time_inc, get_time_string, get_date_dif
 use fms_diag_yaml_mod, only: diag_yaml, diagYamlObject_type, diagYamlFiles_type, subRegion_type, diagYamlFilesVar_type
 use fms_diag_axis_object_mod, only: diagDomain_t, get_domain_and_domain_type, fmsDiagAxis_type, &
@@ -64,7 +64,9 @@ type :: fmsDiagFile_type
   TYPE(time_type) :: no_more_data     !< Time to stop receiving data for this file
 
   !< This will be used when using the new_file_freq keys in the diag_table.yaml
-  TYPE(time_type) :: next_open        !< The next time to open the file
+  TYPE(time_type) :: next_close       !< Time to close the file
+  logical :: is_file_open     !< .True. if the file is opened
+
   class(FmsNetcdfFile_t), allocatable :: fileobj !< fms2_io file object for this history file
   type(diagYamlFiles_type), pointer :: diag_yaml_file => null() !< Pointer to the diag_yaml_file data
   integer                                      :: type_of_domain !< The type of domain to use to open the file
@@ -149,6 +151,7 @@ type fmsDiagFileContainer_type
   procedure :: write_axis_data
   procedure :: writing_on_this_pe
   procedure :: is_time_to_write
+  procedure :: is_time_to_close_file
   procedure :: write_time_data
   procedure :: update_next_write
   procedure :: update_current_new_file_freq_index
@@ -212,12 +215,14 @@ logical function fms_diag_files_object_init (files_array)
      obj%last_output = get_base_time()
      obj%next_output = diag_time_inc(obj%start_time, obj%get_file_freq(), obj%get_file_frequnit())
      obj%next_next_output = diag_time_inc(obj%next_output, obj%get_file_freq(), obj%get_file_frequnit())
+
      if (obj%has_file_new_file_freq()) then
-      obj%next_open = diag_time_inc(obj%start_time, obj%get_file_new_file_freq(), &
-                                          obj%get_file_new_file_freq_units())
+       obj%next_close = diag_time_inc(obj%start_time, obj%get_file_new_file_freq(), &
+                                        obj%get_file_new_file_freq_units())
      else
-      obj%next_open = obj%start_time
+       obj%next_close = diag_time_inc(obj%start_time, VERY_LARGE_FILE_FREQ, DIAG_DAYS)
      endif
+     obj%is_file_open = .false.
 
      if(obj%has_file_duration()) then
        obj%no_more_data = diag_time_inc(obj%start_time, obj%get_file_duration(), &
@@ -669,14 +674,12 @@ subroutine add_start_time(this, start_time)
     this%last_output = start_time
     this%next_output = diag_time_inc(start_time, this%get_file_freq(), this%get_file_frequnit())
     this%next_next_output = diag_time_inc(this%next_output, this%get_file_freq(), this%get_file_frequnit())
-
     if (this%has_file_new_file_freq()) then
-      this%next_open = diag_time_inc(start_time, this%get_file_new_file_freq(), &
-                                          this%get_file_new_file_freq_units())
-    else
-      this%next_open = start_time
-    endif
-
+       this%next_close = diag_time_inc(this%start_time, this%get_file_new_file_freq(), &
+                                        this%get_file_new_file_freq_units())
+     else
+       this%next_close = diag_time_inc(this%start_time, VERY_LARGE_FILE_FREQ, DIAG_DAYS)
+     endif
 
     if(this%has_file_duration()) then
        this%no_more_data = diag_time_inc(this%start_time, this%get_file_duration(), &
@@ -699,7 +702,7 @@ subroutine dump_file_obj(this, unit_num)
   write( unit_num, *) 'last_output', date_to_string(this%last_output)
   write( unit_num, *) 'next_output', date_to_string(this%next_output)
   write( unit_num, *)'next_next_output', date_to_string(this%next_next_output)
-  write( unit_num, *)'next_open', date_to_string(this%next_open)
+  write( unit_num, *)'next_close', date_to_string(this%next_close)
 
   if( allocated(this%fileobj)) write( unit_num, *)'fileobj path', this%fileobj%path
 
@@ -746,8 +749,8 @@ subroutine open_diag_file(this, time_step, file_is_opened)
   domain => diag_file%domain
 
   file_is_opened = .false.
-  !< Go away if it is not time to open the file
-  if (diag_file%next_open > time_step) return
+  !< Go away if it the file is already open
+  if (diag_file%is_file_open) return
 
   is_regional = .false.
   !< Figure out what fileobj to use!
@@ -768,9 +771,6 @@ subroutine open_diag_file(this, time_step, file_is_opened)
         allocate(FmsNetcdfUnstructuredDomainFile_t :: diag_file%fileobj)
       end select
     end select
-  else
-    !< In this case, we are opening a new file so close the current the file
-    call this%close_diag_file()
   endif
 
   !< Figure out what to name of the file
@@ -844,14 +844,8 @@ subroutine open_diag_file(this, time_step, file_is_opened)
     end select
   end select
 
-  if (diag_file%has_file_new_file_freq()) then
-    diag_file%next_open = diag_time_inc(diag_file%next_open, diag_file%get_file_new_file_freq(), &
-                                        diag_file%get_file_new_file_freq_units())
-  else
-    diag_file%next_open = diag_time_inc(diag_file%next_open, VERY_LARGE_FILE_FREQ, DIAG_DAYS)
-  endif
-
   file_is_opened = .true.
+  diag_file%is_file_open = file_is_opened
   domain => null()
   diag_file => null()
 end subroutine open_diag_file
@@ -954,6 +948,17 @@ subroutine write_time_metadata(this)
 
 end subroutine write_time_metadata
 
+logical function is_time_to_close_file (this, time_step)
+  class(fmsDiagFileContainer_type), intent(in), target   :: this            !< The file object
+  TYPE(time_type),                  intent(in)           :: time_step       !< Current model step time
+
+  if (time_step >= this%FMS_diag_file%next_close) then
+    is_time_to_close_file = .true.
+  else
+    is_time_to_close_file = .false.
+  endif
+end function
+
 !> \brief Determine if it is time to "write" to the file
 logical function is_time_to_write(this, time_step)
   class(fmsDiagFileContainer_type), intent(in), target   :: this            !< The file object
@@ -962,7 +967,7 @@ logical function is_time_to_write(this, time_step)
   if (time_step >= this%FMS_diag_file%next_output) then
     is_time_to_write = .true.
     if (this%FMS_diag_file%is_static) return
-    if (time_step >= this%FMS_diag_file%next_next_output) &
+    if (time_step > this%FMS_diag_file%next_next_output) &
       call mpp_error(FATAL, this%FMS_diag_file%get_file_fname()//&
         &": Diag_manager_mod:: You skipped a time_step. Be sure that diag_send_complete is called at every time step "&
         &" needed by the file.")
@@ -986,7 +991,7 @@ end function
 
 !> \brief Write out the time data to the file
 subroutine write_time_data(this)
-  class(fmsDiagFileContainer_type), intent(in), target   :: this            !< The file object
+  class(fmsDiagFileContainer_type), intent(in), target   :: this            !< The file object       !< Current model step time
 
   real                                 :: dif            !< The time as a real number
   class(fmsDiagFile_type), pointer     :: diag_file      !< Diag_file object to open
@@ -1044,14 +1049,10 @@ subroutine update_current_new_file_freq_index(this, time_step)
                                           diag_file%get_file_duration_units())
     else
        diag_file%no_more_data = diag_time_inc(diag_file%no_more_data, VERY_LARGE_FILE_FREQ, DIAG_DAYS)
+       diag_file%next_output = diag_file%no_more_data
+       diag_file%next_next_output = diag_file%no_more_data
+       diag_file%last_output = diag_file%no_more_data
     endif
-
-    diag_file%next_output = diag_file%no_more_data
-    diag_file%next_next_output = diag_file%no_more_data
-    diag_file%next_open = diag_file%no_more_data
-    diag_file%last_output = diag_file%no_more_data
-  else
-    call this%update_next_write(time_step)
   endif
 end subroutine update_current_new_file_freq_index
 !> \brief Set up the next_output and next_next_output variable in a file obj
@@ -1139,6 +1140,8 @@ end subroutine write_axis_data
 subroutine close_diag_file(this)
   class(fmsDiagFileContainer_type), intent(inout), target :: this            !< The file object
 
+  if (.not. this%FMS_diag_file%is_file_open) return
+
   !< The select types are needed here because otherwise the code will go to the
   !! wrong close_file routine and things will not close propertly
   select type( fileobj => this%FMS_diag_file%fileobj)
@@ -1152,7 +1155,15 @@ subroutine close_diag_file(this)
 
   !< Reset the unlimited dimension back to 0, in case the fileobj is re-used
   this%FMS_diag_file%unlimited_dimension = 0
+  this%FMS_diag_file%is_file_open = .false.
 
+  if (this%FMS_diag_file%has_file_new_file_freq()) then
+    this%FMS_diag_file%next_close = diag_time_inc(this%FMS_diag_file%next_close, &
+                                        this%FMS_diag_file%get_file_new_file_freq(), &
+                                        this%FMS_diag_file%get_file_new_file_freq_units())
+  else
+    this%FMS_diag_file%next_close = diag_time_inc(this%FMS_diag_file%next_close, VERY_LARGE_FILE_FREQ, DIAG_DAYS)
+  endif
 end subroutine close_diag_file
 
 #endif

@@ -459,6 +459,8 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
       call diag_file%write_time_data()
     !TODO call diag_file%add_variable_data()
       call diag_file%update_current_new_file_freq_index(time_step)
+      call diag_file%update_next_write(time_step)
+      if (diag_file%is_time_to_close_file(time_step)) call diag_file%close_diag_file
       !call diag_file%update_next_write(time_step)
     endif
   enddo
