@@ -103,7 +103,7 @@ type horiz_interp_reals8
                                                            !! wti ist used for derivative "weights" in bicubic
    real(kind=r8_kind),    dimension(:,:,:), pointer :: wtj =>NULL()      !< weights for bilinear interpolation
                                                            !! wti ist used for derivative "weights" in bicubic
-   real(kind=r8_kind),    dimension(:,:,:), pointer :: src_dist =>NULL()              !< distance between destination grid and
+   real(kind=r8_kind),    dimension(:,:,:), pointer :: src_dist =>NULL() !< distance between destination grid and
                                                                         !! neighbor source grid.
    real(kind=r8_kind),    dimension(:,:), pointer   :: rat_x =>NULL() !< the ratio of coordinates of the dest grid
                                                         !! (x_dest -x_src_r)/(x_src_l -x_src_r)
@@ -113,7 +113,7 @@ type horiz_interp_reals8
                                                         !! and (y_dest -y_src_r)/(y_src_l -y_src_r)
    real(kind=r8_kind),    dimension(:), pointer     :: lon_in =>NULL()  !< the coordinates of the source grid
    real(kind=r8_kind),    dimension(:), pointer     :: lat_in =>NULL()  !< the coordinates of the source grid
-   real(kind=r8_kind),    dimension(:), pointer     :: area_frac_dst=>NULL()              !< area fraction in destination grid.
+   real(kind=r8_kind),    dimension(:), pointer     :: area_frac_dst=>NULL() !< area fraction in destination grid.
    real(kind=r8_kind),    dimension(:,:), pointer   :: mask_in=>NULL()
    real(kind=r8_kind)                               :: max_src_dist
 
@@ -129,7 +129,7 @@ type horiz_interp_reals4
                                                            !! wti ist used for derivative "weights" in bicubic
    real(kind=r4_kind),    dimension(:,:,:), pointer :: wtj =>NULL()      !< weights for bilinear interpolation
                                                            !! wti ist used for derivative "weights" in bicubic
-   real(kind=r4_kind),    dimension(:,:,:), pointer :: src_dist =>NULL()              !< distance between destination grid and
+   real(kind=r4_kind),    dimension(:,:,:), pointer :: src_dist =>NULL()!< distance between destination grid and
                                                                         !! neighbor source grid.
    real(kind=r4_kind),    dimension(:,:), pointer   :: rat_x =>NULL() !< the ratio of coordinates of the dest grid
                                                         !! (x_dest -x_src_r)/(x_src_l -x_src_r)
@@ -139,7 +139,7 @@ type horiz_interp_reals4
                                                         !! and (y_dest -y_src_r)/(y_src_l -y_src_r)
    real(kind=r4_kind),    dimension(:), pointer     :: lon_in =>NULL()  !< the coordinates of the source grid
    real(kind=r4_kind),    dimension(:), pointer     :: lat_in =>NULL()  !< the coordinates of the source grid
-   real(kind=r4_kind),    dimension(:), pointer     :: area_frac_dst=>NULL()              !< area fraction in destination grid.
+   real(kind=r4_kind),    dimension(:), pointer     :: area_frac_dst=>NULL() !< area fraction in destination grid.
    real(kind=r4_kind),    dimension(:,:), pointer   :: mask_in=>NULL()
    real(kind=r4_kind)                               :: max_src_dist
 
@@ -157,7 +157,7 @@ contains
     if(.not.horiz_interp_in%I_am_initialized) then
       call mpp_error(FATAL,'horiz_interp_type_eq: horiz_interp_type variable on right hand side is unassigned')
     endif
-    
+
     horiz_interp_out%ilon            => horiz_interp_in%ilon
     horiz_interp_out%jlat            => horiz_interp_in%jlat
     horiz_interp_out%i_lon           => horiz_interp_in%i_lon
@@ -191,7 +191,7 @@ contains
       horiz_interp_out%kind8_reals%lat_in          => horiz_interp_in%kind8_reals%lat_in
       horiz_interp_out%kind8_reals%area_frac_dst   => horiz_interp_in%kind8_reals%area_frac_dst
       horiz_interp_out%kind8_reals%max_src_dist    =  horiz_interp_in%kind8_reals%max_src_dist
-      ! this was left out previous to mixed mode 
+      ! this was left out previous to mixed mode
       horiz_interp_out%kind8_reals%mask_in         => horiz_interp_in%kind8_reals%mask_in
 
     else if (allocated(horiz_interp_in%kind4_reals)) then
@@ -210,9 +210,9 @@ contains
       horiz_interp_out%kind4_reals%lat_in          => horiz_interp_in%kind4_reals%lat_in
       horiz_interp_out%kind4_reals%area_frac_dst   => horiz_interp_in%kind4_reals%area_frac_dst
       horiz_interp_out%kind4_reals%max_src_dist    =  horiz_interp_in%kind4_reals%max_src_dist
-      ! this was left out previous to mixed mode 
+      ! this was left out previous to mixed mode
       horiz_interp_out%kind4_reals%mask_in         => horiz_interp_in%kind4_reals%mask_in
-    
+
     else
       !! error out
     endif
@@ -228,12 +228,12 @@ contains
 #define FMS_HI_KIND 4
 #undef HI_STATS
 #define HI_STATS stats_r4
-#include <horiz_interp_type.inc> 
+#include "horiz_interp_type.inc"
 #undef FMS_HI_KIND
 #define FMS_HI_KIND 8
 #undef HI_STATS
 #define HI_STATS stats_r8
-#include <horiz_interp_type.inc> 
+#include "horiz_interp_type.inc"
 
 end module horiz_interp_type_mod
 !> @}

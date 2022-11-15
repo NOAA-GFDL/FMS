@@ -325,7 +325,7 @@ contains
 #define HORIZ_INTERP_NEW_2D horiz_interp_new_2d_r4
 #undef IS_LAT_LON
 #define IS_LAT_LON is_lat_lon_r4
-#include <horiz_interp.inc>
+#include "horiz_interp.inc"
 #undef FMS_HI_KIND
 #define FMS_HI_KIND 8
 #undef HI_KIND_TYPE
@@ -354,7 +354,7 @@ contains
 #define HORIZ_INTERP_NEW_2D horiz_interp_new_2d_r8
 #undef IS_LAT_LON
 #define IS_LAT_LON is_lat_lon_r8
-#include <horiz_interp.inc>
+#include "horiz_interp.inc"
 
 end module horiz_interp_mod
 !> @}

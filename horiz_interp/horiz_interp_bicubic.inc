@@ -140,11 +140,13 @@
           if( xz .ge. Interp%HI_KIND_TYPE%lon_in(nlon_in) ) then
             icl = nlon_in
             icu = 1
-            Interp%HI_KIND_TYPE%rat_x(i,j) = (xz - Interp%HI_KIND_TYPE%lon_in(icl))/(Interp%HI_KIND_TYPE%lon_in(icu) - Interp%HI_KIND_TYPE%lon_in(icl) + tpi)
+            Interp%HI_KIND_TYPE%rat_x(i,j) = (xz - Interp%HI_KIND_TYPE%lon_in(icl))/(Interp%HI_KIND_TYPE%lon_in(icu) &
+                                             & - Interp%HI_KIND_TYPE%lon_in(icl) + tpi)
           else
             icl = INDL(Interp%HI_KIND_TYPE%lon_in, xz)
             icu = INDU(Interp%HI_KIND_TYPE%lon_in, xz)
-            Interp%HI_KIND_TYPE%rat_x(i,j) = (xz - Interp%HI_KIND_TYPE%lon_in(icl))/(Interp%HI_KIND_TYPE%lon_in(icu) - Interp%HI_KIND_TYPE%lon_in(icl))
+            Interp%HI_KIND_TYPE%rat_x(i,j) = (xz - Interp%HI_KIND_TYPE%lon_in(icl))/(Interp%HI_KIND_TYPE%lon_in(icu) &
+                                             & - Interp%HI_KIND_TYPE%lon_in(icl))
           endif
           Interp%j_lat(i,j,1) = jcl
           Interp%j_lat(i,j,2) = jcu
@@ -153,7 +155,8 @@
           if(jcl == jcu) then
              Interp%HI_KIND_TYPE%rat_y(i,j) = 0.0
           else
-             Interp%HI_KIND_TYPE%rat_y(i,j) = (yz - Interp%HI_KIND_TYPE%lat_in(jcl))/(Interp%HI_KIND_TYPE%lat_in(jcu) - Interp%HI_KIND_TYPE%lat_in(jcl))
+             Interp%HI_KIND_TYPE%rat_y(i,j) = (yz - Interp%HI_KIND_TYPE%lat_in(jcl))/(Interp%HI_KIND_TYPE%lat_in(jcu) &
+                                              & - Interp%HI_KIND_TYPE%lat_in(jcl))
           endif
 !          if(yz.gt.Interp%HI_KIND_TYPE%lat_in(jcu)) call mpp_error(FATAL, ' BICUBIC_NEW_1D_S:
 !          yf < ycl, no valid boundary point')
@@ -288,11 +291,13 @@
           if( xz .ge. lon_in(nlon_in) ) then
             icl = nlon_in
             icu = 1
-            Interp%HI_KIND_TYPE%rat_x(i,j) = (xz - Interp%HI_KIND_TYPE%lon_in(icl))/(Interp%HI_KIND_TYPE%lon_in(icu) - Interp%HI_KIND_TYPE%lon_in(icl) + tpi)
+            Interp%HI_KIND_TYPE%rat_x(i,j) = (xz - Interp%HI_KIND_TYPE%lon_in(icl))/(Interp%HI_KIND_TYPE%lon_in(icu) &
+                                            & - Interp%HI_KIND_TYPE%lon_in(icl) + tpi)
           else
             icl = INDL(lon_in, xz)
             icu = INDU(lon_in, xz)
-            Interp%HI_KIND_TYPE%rat_x(i,j) = (xz - Interp%HI_KIND_TYPE%lon_in(icl))/(Interp%HI_KIND_TYPE%lon_in(icu) - Interp%HI_KIND_TYPE%lon_in(icl))
+            Interp%HI_KIND_TYPE%rat_x(i,j) = (xz - Interp%HI_KIND_TYPE%lon_in(icl))/(Interp%HI_KIND_TYPE%lon_in(icu) &
+                                            & - Interp%HI_KIND_TYPE%lon_in(icl))
           endif
           icl = INDL(lon_in, xz)
           icu = INDU(lon_in, xz)
@@ -303,7 +308,8 @@
           if(jcl == jcu) then
              Interp%HI_KIND_TYPE%rat_y(i,j) = 0.0
           else
-             Interp%HI_KIND_TYPE%rat_y(i,j) = (yz - Interp%HI_KIND_TYPE%lat_in(jcl))/(Interp%HI_KIND_TYPE%lat_in(jcu) - Interp%HI_KIND_TYPE%lat_in(jcl))
+             Interp%HI_KIND_TYPE%rat_y(i,j) = (yz - Interp%HI_KIND_TYPE%lat_in(jcl))/(Interp%HI_KIND_TYPE%lat_in(jcu) &
+                                             & - Interp%HI_KIND_TYPE%lat_in(jcl))
           endif
 !          if(yz.gt.lat_in(jcu)) call mpp_error(FATAL, ' BICUBIC_NEW_1D: yf <
 !          ycl, no valid boundary point')
@@ -410,7 +416,7 @@
 
    subroutine BCUINT(y,y1,y2,y12,x1l,x1u,x2l,x2u,t,u,ansy,ansy1,ansy2)
       real(FMS_HI_KIND) ansy,ansy1,ansy2,x1l,x1u,x2l,x2u,y(4),y1(4),y12(4),y2(4)
-!     uses BCUCOF 
+!     uses BCUCOF
       integer i
       real(FMS_HI_KIND) t,u,c(4,4)
       call BCUCOF(y,y1,y2,y12,x1u-x1l,x2u-x2l,c)
@@ -426,7 +432,7 @@
 !      ansy2=ansy2/(x2u-x2l) ! could be used for accuracy checks
       return
 !  (c) copr. 1986-92 numerical recipes software -3#(-)f.
-   end subroutine BCUINT 
+   end subroutine BCUINT
 !---------------------------------------------------------------------------
 
    subroutine BCUCOF(y,y1,y2,y12,d1,d2,c)
@@ -502,7 +508,7 @@
        enddo
        call mpp_error(FATAL,'Error in INDU')
     return
-    end function INDU 
+    end function INDU
 
 !-----------------------------------------------------------------------
 
@@ -623,4 +629,4 @@
         fi(:,:) = work_new(:,:)
       endif
       return
-    end subroutine FILL_XY 
+    end subroutine FILL_XY

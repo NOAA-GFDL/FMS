@@ -102,7 +102,7 @@ contains
 #undef FMS_HI_KIND
 #define FMS_HI_KIND 4
 #undef HI_KIND_TYPE
-#define HI_KIND_TYPE kind4_reals 
+#define HI_KIND_TYPE kind4_reals
 #undef BILINEAR_NEW_1D
 #define BILINEAR_NEW_1D horiz_interp_bilinear_new_1d_r4
 #undef BILINEAR_NEW_2D
@@ -119,11 +119,11 @@ contains
 #define INTERSECT intersect_r4
 #undef INDP
 #define INDP indp_r4
-#include <horiz_interp_bilinear.inc>
+#include "horiz_interp_bilinear.inc"
 #undef FMS_HI_KIND
 #define FMS_HI_KIND 8
 #undef HI_KIND_TYPE
-#define HI_KIND_TYPE kind8_reals 
+#define HI_KIND_TYPE kind8_reals
 #undef BILINEAR_NEW_1D
 #define BILINEAR_NEW_1D horiz_interp_bilinear_new_1d_r8
 #undef BILINEAR_NEW_2D
@@ -134,13 +134,13 @@ contains
 #define FIND_NEIGHBOR find_neighbor_r8
 #undef FIND_NEIGHBOR_NEW
 #define FIND_NEIGHBOR_NEW find_neighbor_new_r8
-#undef INSIDE_POLYGON 
+#undef INSIDE_POLYGON
 #define INSIDE_POLYGON inside_polygon_r8
 #undef INTERSECT
 #define INTERSECT intersect_r8
 #undef INDP
 #define INDP indp_r8
-#include <horiz_interp_bilinear.inc>
+#include "horiz_interp_bilinear.inc"
 
 
 end module horiz_interp_bilinear_mod

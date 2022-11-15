@@ -45,7 +45,7 @@ module horiz_interp_spherical_mod
     module procedure horiz_interp_spherical_r4
     module procedure horiz_interp_spherical_r8
   end interface
-  
+
   interface horiz_interp_spherical_new
     module procedure horiz_interp_spherical_new_r4
     module procedure horiz_interp_spherical_new_r8
@@ -58,7 +58,7 @@ module horiz_interp_spherical_mod
 
   public :: horiz_interp_spherical_new, horiz_interp_spherical, horiz_interp_spherical_del
   public :: horiz_interp_spherical_init, horiz_interp_spherical_wght
-    
+
 
   integer, parameter :: max_neighbors = 400
   real(R8_KIND),    parameter :: max_dist_default = 0.1  ! radians
@@ -138,14 +138,14 @@ end subroutine horiz_interp_spherical_init
 #undef FMS_HI_KIND
 #define FMS_HI_KIND r4_kind
 #undef HI_KIND_TYPE
-#define HI_KIND_TYPE kind4_reals 
+#define HI_KIND_TYPE kind4_reals
 #undef SPHERICAL
 #define SPHERICAL horiz_interp_spherical_r4
 #undef SPHERICAL_NEW
 #define SPHERICAL_NEW horiz_interp_spherical_new_r4
 #undef SPHERICAL_WGHT
 #define SPHERICAL_WGHT horiz_interp_spherical_wght_r4
-#undef RADIAL_SEARCH 
+#undef RADIAL_SEARCH
 #define RADIAL_SEARCH radial_search_r4
 #undef UPDATE_DEST_NEIGHBORS
 #define UPDATE_DEST_NEIGHBORS update_dest_neighbors_r4
@@ -153,19 +153,19 @@ end subroutine horiz_interp_spherical_init
 #define SPHERICAL_DISTANCE spherical_distance_r4
 #undef FULL_SEARCH
 #define FULL_SEARCH full_search_r4
-#include <horiz_interp_spherical.inc>
+#include "horiz_interp_spherical.inc"
 
 #undef FMS_HI_KIND
 #define FMS_HI_KIND r8_kind
 #undef HI_KIND_TYPE
-#define HI_KIND_TYPE kind8_reals 
+#define HI_KIND_TYPE kind8_reals
 #undef SPHERICAL
 #define SPHERICAL horiz_interp_spherical_r8
 #undef SPHERICAL_NEW
 #define SPHERICAL_NEW horiz_interp_spherical_new_r8
 #undef SPHERICAL_WGHT
 #define SPHERICAL_WGHT horiz_interp_spherical_wght_r8
-#undef RADIAL_SEARCH 
+#undef RADIAL_SEARCH
 #define RADIAL_SEARCH radial_search_r8
 #undef UPDATE_DEST_NEIGHBORS
 #define UPDATE_DEST_NEIGHBORS update_dest_neighbors_r8
@@ -173,7 +173,7 @@ end subroutine horiz_interp_spherical_init
 #define SPHERICAL_DISTANCE spherical_distance_r8
 #undef FULL_SEARCH
 #define FULL_SEARCH full_search_r8
-#include <horiz_interp_spherical.inc>
+#include "horiz_interp_spherical.inc"
 
 
 end module horiz_interp_spherical_mod

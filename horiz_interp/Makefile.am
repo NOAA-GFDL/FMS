@@ -36,7 +36,13 @@ libhoriz_interp_la_SOURCES = \
   horiz_interp_conserve.F90 \
   horiz_interp.F90 \
   horiz_interp_spherical.F90 \
-  horiz_interp_type.F90
+  horiz_interp_type.F90 \
+  horiz_interp_bicubic.inc \
+  horiz_interp_bilinear.inc \
+  horiz_interp_conserve.inc \
+  horiz_interp.inc \
+  horiz_interp_spherical.inc \
+  horiz_interp_type.inc
 
 # Some mods are dependant on other mods in this dir.
 horiz_interp_bicubic_mod.$(FC_MODEXT): horiz_interp_type_mod.$(FC_MODEXT)

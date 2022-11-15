@@ -177,10 +177,10 @@ contains
   end subroutine horiz_interp_conserve_del
 
 #undef HI_KIND_TYPE
-#define HI_KIND_TYPE kind4_reals 
+#define HI_KIND_TYPE kind4_reals
 #undef FMS_HI_KIND
 #define FMS_HI_KIND r4_kind
-#undef CONSERVE_NEW_1DX1D 
+#undef CONSERVE_NEW_1DX1D
 #define CONSERVE_NEW_1DX1D horiz_interp_conserve_new_1dx1d_r4
 #undef CONSERVE_NEW_1DX2D
 #define CONSERVE_NEW_1DX2D horiz_interp_conserve_new_1dx2d_r4
@@ -198,9 +198,9 @@ contains
 #define STATS stats_r4
 #undef DATA_SUM
 #define DATA_SUM data_sum_r4
-#include <horiz_interp_conserve.inc>
+#include "horiz_interp_conserve.inc"
 #undef HI_KIND_TYPE
-#define HI_KIND_TYPE kind8_reals 
+#define HI_KIND_TYPE kind8_reals
 #undef FMS_HI_KIND
 #define FMS_HI_KIND r8_kind
 #undef CONSERVE_NEW_1DX1D
@@ -221,7 +221,7 @@ contains
 #define STATS stats_r8
 #undef DATA_SUM
 #define DATA_SUM data_sum_r8
-#include <horiz_interp_conserve.inc>
+#include "horiz_interp_conserve.inc"
 
 end module horiz_interp_conserve_mod
 !> @}

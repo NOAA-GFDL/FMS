@@ -186,7 +186,8 @@
                                              !! the input data. The real(FMS_HI_KIND) value of mask_in must be
                                              !! in the range (0.,1.). Set mask_in=0.0 for data points
                                              !! that should not be used or have missing data
-    real(FMS_HI_KIND), intent(out), dimension(:,:), optional :: mask_out !< Output mask that specifies whether data was computed.
+    real(FMS_HI_KIND), intent(out), dimension(:,:), optional :: mask_out !< Output mask that specifies whether data
+                                                                         !! was computed.
     real(FMS_HI_KIND), intent(in),                  optional :: missing_value !< Used to indicate missing data
 
     !--- some local variables ----------------------------------------
