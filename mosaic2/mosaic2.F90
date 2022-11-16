@@ -38,7 +38,7 @@ use mpp_domains_mod, only : domain2D, mpp_get_current_ntile, mpp_get_tile_id
 use constants_mod, only : PI, RADIUS
 use fms2_io_mod,   only : FmsNetcdfFile_t, open_file, close_file, get_dimension_size
 use fms2_io_mod,   only : read_data, variable_exists
-use platform_mod
+use platform_mod,  only : r4_kind, r8_kind
 
 implicit none
 private
@@ -65,6 +65,28 @@ public :: get_mosaic_tile_grid
 public :: calc_mosaic_grid_area
 public :: calc_mosaic_grid_great_circle_area
 public :: is_inside_polygon
+
+
+interface get_mosaic_xgrid
+   module procedure get_mosaic_xgrid_r4
+   module procedure get_mosaic_xgrid_r8
+end interface get_mosaic_xgrid
+
+interface calc_mosaic_grid_area
+   module procedure calc_mosaic_grid_area_r4
+   module procedure calc_mosaic_grid_area_r8
+end interface calc_mosaic_grid_area
+
+interface calc_mosaic_grid_great_circle_area
+   module procedure calc_mosaic_grid_great_circle_area_r4
+   module procedure calc_mosaic_grid_great_circle_area_r8
+end interface calc_mosaic_grid_great_circle_area
+
+interface is_inside_polygon
+   module procedure is_inside_polygon_r4
+   module procedure is_inside_polygon_r8
+end interface is_inside_polygon
+
 
 logical :: module_is_initialized = .true.
 ! Include variable "version" to be written to log file.
@@ -103,83 +125,6 @@ end subroutine mosaic_init
     return
 
   end function get_mosaic_xgrid_size
-!#######################################################################
-!> @brief Get exchange grid information from mosaic xgrid file.
-!> Example usage:
-!!
-!!           call get_mosaic_xgrid(fileobj, nxgrid, i1, j1, i2, j2, area)
-!!
-  subroutine get_mosaic_xgrid(fileobj, i1, j1, i2, j2, area, ibegin, iend)
-    type(FmsNetcdfFile_t), intent(in) :: fileobj !> The file that contains exchange grid information.
-    integer,       intent(inout) :: i1(:), j1(:), i2(:), j2(:) !> i and j indices for grids 1 and 2
-    class(*),          intent(inout) :: area(:) !> area of the exchange grid. The area is scaled to
-                                            !! represent unit earth area
-    integer, optional, intent(in) :: ibegin, iend
-
-    integer                            :: start(4), nread(4), istart
-    real,    dimension(2, size(i1(:))) :: tile1_cell, tile2_cell
-    integer                            :: nxgrid, n
-    real                               :: garea
-    real                               :: get_global_area
-
-    garea = get_global_area()
-
-    ! When start and nread present, make sure nread(1) is the same as the size of the data
-    if(present(ibegin) .and. present(iend)) then
-       istart = ibegin
-       nxgrid = iend - ibegin + 1
-       if(nxgrid .NE. size(i1(:))) call mpp_error(FATAL, "get_mosaic_xgrid: nxgrid .NE. size(i1(:))")
-       if(nxgrid .NE. size(j1(:))) call mpp_error(FATAL, "get_mosaic_xgrid: nxgrid .NE. size(j1(:))")
-       if(nxgrid .NE. size(i2(:))) call mpp_error(FATAL, "get_mosaic_xgrid: nxgrid .NE. size(i2(:))")
-       if(nxgrid .NE. size(j2(:))) call mpp_error(FATAL, "get_mosaic_xgrid: nxgrid .NE. size(j2(:))")
-       if(nxgrid .NE. size(area(:))) call mpp_error(FATAL, "get_mosaic_xgrid: nxgrid .NE. size(area(:))")
-    else
-       istart = 1
-       nxgrid = size(i1(:))
-    endif
-
-    start  = 1; nread = 1
-    start(1) = istart; nread(1) = nxgrid
-
-    select type(area)
-    type is (real(r4_kind))
-      call read_data(fileobj, 'xgrid_area', area, corner=start, edge_lengths=nread)
-    type is (real(r8_kind))
-      call read_data(fileobj, 'xgrid_area', area, corner=start, edge_lengths=nread)
-    class default
-      call mpp_error(FATAL,"get_mosaic_xgrid: invalid data type for area, must be real(r4_kind) or real(r8_kind)")
-    end select
-
-    start = 1; nread = 1
-    nread(1) = 2
-    start(2) = istart; nread(2) = nxgrid
-
-    select type(area)
-    type is (real(r4_kind))
-      call read_data(fileobj, 'tile1_cell', tile1_cell, corner=start, edge_lengths=nread)
-      call read_data(fileobj, 'tile2_cell', tile2_cell, corner=start, edge_lengths=nread)
-    type is (real(r8_kind))
-      call read_data(fileobj, 'tile1_cell', tile1_cell, corner=start, edge_lengths=nread)
-      call read_data(fileobj, 'tile2_cell', tile2_cell, corner=start, edge_lengths=nread)
-    end select
-
-     do n = 1, nxgrid
-       i1(n) = int(tile1_cell(1,n))
-       j1(n) = int(tile1_cell(2,n))
-       i2(n) = int(tile2_cell(1,n))
-       j2(n) = int(tile2_cell(2,n))
-       select type(area)
-       type is (real(r4_kind))
-         area(n) = real(area(n)/garea, r4_kind)
-       type is (real(r8_kind))
-         area(n) = real(area(n)/garea, r8_kind)
-       end select
-    end do
-
-    return
-
-  end subroutine get_mosaic_xgrid
-
   !###############################################################################
   !> Get number of tiles in the mosaic_file.
   !> @param fileobj mosaic file object
@@ -415,172 +360,50 @@ function transfer_to_model_index(istart, iend, refine_ratio)
    return
 
 end function transfer_to_model_index
+!#####################################################################
+function parse_string(string, set, value)
+   character(len=*),  intent(in) :: string
+   character(len=*),  intent(in) :: set
+   character(len=*), intent(out) :: value(:)
+   integer                       :: parse_string
+   integer :: nelem, length, first, last
 
-  !###############################################################################
-  !> @brief Calculate grid cell area.
-  !> Calculate the grid cell area. The purpose of this routine is to make
-  !! sure the consistency between model grid area and exchange grid area.
-  !> @param lon geographical longitude of grid cell vertices.
-  !> @param lat geographical latitude of grid cell vertices.
-  !> @param[inout] area grid cell area.
-  !> <br>Example usage:
-  !!            call calc_mosaic_grid_area(lon, lat, area)
-  subroutine calc_mosaic_grid_area(lon, lat, area)
-     class(*), dimension(:,:), intent(in)    :: lon
-     class(*), dimension(:,:), intent(in)    :: lat
-     class(*), dimension(:,:), intent(inout) :: area
-     integer                             :: nlon, nlat
-     logical                                 :: valid_types = .false.
+   nelem = size(value(:))
+   length = len_trim(string)
 
-     nlon = size(area,1)
-     nlat = size(area,2)
-     ! make sure size of lon, lat and area are consitency
-     if( size(lon,1) .NE. nlon+1 .OR. size(lat,1) .NE. nlon+1 ) &
-        call mpp_error(FATAL, "mosaic_mod: size(lon,1) and size(lat,1) should equal to size(area,1)+1")
-     if( size(lon,2) .NE. nlat+1 .OR. size(lat,2) .NE. nlat+1 ) &
-        call mpp_error(FATAL, "mosaic_mod: size(lon,2) and size(lat,2) should equal to size(area,2)+1")
-     select type (lon)
-     type is (real(r4_kind))
-       select type (lat)
-       type is (real(r4_kind))
-         select type(area)
-         type is (real(r4_kind))
-           call get_grid_area( nlon, nlat, real(lon, r8_kind), real(lat, r8_kind), real(area, r8_kind))
-           valid_types = .true.
-         end select
-       end select
-     type is (real(r8_kind))
-       select type (lat)
-       type is (real(r8_kind))
-         select type(area)
-         type is (real(r8_kind))
-           call get_grid_area( nlon, nlat, lon, lat, area)
-           valid_types = .true.
-         end select
-       end select
-     end select
+   first = 1; last = 0
+   parse_string = 0
 
-     if(.not. valid_types) call mpp_error(FATAL, "calc_mosaic_grid_area: invalid types given." &
-                                                 //" Arguments must be all r4_kind or r8_kind")
-
-  end subroutine calc_mosaic_grid_area
-
-  !###############################################################################
-  !> @brief Calculate grid cell area using great cirlce algorithm
-  !> Calculate the grid cell area. The purpose of this routine is to make
-  !! sure the consistency between model grid area and exchange grid area.
-  !> @param lon geographical longitude of grid cell vertices.
-  !> @param lat geographical latitude of grid cell vertices.
-  !> @param[inout] area grid cell area.
-  !> <br>Example usage:
-  !!            call calc_mosaic_grid_great_circle_area(lon, lat, area)
-  subroutine calc_mosaic_grid_great_circle_area(lon, lat, area)
-     class(*), dimension(:,:), intent(in)    :: lon
-     class(*), dimension(:,:), intent(in)    :: lat
-     class(*), dimension(:,:), intent(inout) :: area
-     integer                             :: nlon, nlat
-     logical                             :: valid_types = .false.
-
-     nlon = size(area,1)
-     nlat = size(area,2)
-     ! make sure size of lon, lat and area are consitency
-     if( size(lon,1) .NE. nlon+1 .OR. size(lat,1) .NE. nlon+1 ) &
-        call mpp_error(FATAL, "mosaic_mod: size(lon,1) and size(lat,1) should equal to size(area,1)+1")
-     if( size(lon,2) .NE. nlat+1 .OR. size(lat,2) .NE. nlat+1 ) &
-        call mpp_error(FATAL, "mosaic_mod: size(lon,2) and size(lat,2) should equal to size(area,2)+1")
-
-     select type (lon)
-     type is (real(r4_kind))
-       select type (lat)
-       type is (real(r4_kind))
-         select type(area)
-         type is (real(r4_kind))
-           call get_grid_great_circle_area( nlon, nlat, real(lon, r8_kind), real(lat, r8_kind), real(area, r8_kind))
-           valid_types = .true.
-         end select
-       end select
-     type is (real(r8_kind))
-       select type (lat)
-       type is (real(r8_kind))
-         select type(area)
-         type is (real(r8_kind))
-           call get_grid_great_circle_area( nlon, nlat, lon, lat, area)
-           valid_types = .true.
-         end select
-       end select
-     end select
-
-     if(.not. valid_types) call mpp_error(FATAL, "calc_mosaic_grid_area: invalid types given." &
-                                                 //" Arguments must be all r4_kind or r8_kind")
-
-  end subroutine calc_mosaic_grid_great_circle_area
-
-  !#####################################################################
-  !> This function check if a point (lon1,lat1) is inside a polygon (lon2(:), lat2(:))
-  !! lon1, lat1, lon2, lat2 are in radians.
-  function is_inside_polygon(lon1, lat1, lon2, lat2 )
-     real, intent(in) :: lon1, lat1
-     real, intent(in) :: lon2(:), lat2(:)
-     logical          :: is_inside_polygon
-     integer                        :: npts, isinside
-     integer                        :: inside_a_polygon
-
-     npts = size(lon2(:))
-
-     isinside = inside_a_polygon(lon1, lat1, npts, lon2, lat2)
-     if(isinside == 1) then
-        is_inside_polygon = .TRUE.
-     else
-        is_inside_polygon = .FALSE.
-     endif
-
-     return
-
-  end function is_inside_polygon
-
-  function parse_string(string, set, value)
-  character(len=*),  intent(in) :: string
-  character(len=*),  intent(in) :: set
-  character(len=*), intent(out) :: value(:)
-  integer                       :: parse_string
-  integer :: nelem, length, first, last
-
-     nelem = size(value(:))
-     length = len_trim(string)
-
-     first = 1; last = 0
-     parse_string = 0
-
-     do while(first .LE. length)
-       parse_string = parse_string + 1
-       if(parse_string>nelem) then
+   do while(first .LE. length)
+      parse_string = parse_string + 1
+      if(parse_string>nelem) then
          call mpp_error(FATAL, "mosaic_mod(parse_string) : number of element is greater than size(value(:))")
-       endif
-       last = first - 1 + scan(string(first:length), set)
-       if(last == first-1 ) then  ! not found, end of string
+      endif
+      last = first - 1 + scan(string(first:length), set)
+      if(last == first-1 ) then  ! not found, end of string
          value(parse_string) = string(first:length)
          exit
-       else
+      else
          if(last <= first) then
-           call mpp_error(FATAL, "mosaic_mod(parse_string) : last <= first")
+            call mpp_error(FATAL, "mosaic_mod(parse_string) : last <= first")
          endif
          value(parse_string) = string(first:(last-1))
          first = last + 1
          ! scan to make sure the next is not the character in the set
          do while (first == last+1)
-           last = first - 1 + scan(string(first:length), set)
-           if(last == first) then
-             first = first+1
-           else
-             exit
-           endif
+            last = first - 1 + scan(string(first:length), set)
+            if(last == first) then
+               first = first+1
+            else
+               exit
+            endif
          end do
-       endif
-     enddo
+      endif
+   enddo
 
-     return
+   return
 
-  end function parse_string
+end function parse_string
 
   !#############################################################################
   !> Gets the name of a mosaic tile grid file
@@ -588,29 +411,31 @@ end function transfer_to_model_index
   !> @param fileobj mosaic file object
   !> @param domain current domain
   !> @param tile_count optional count of tiles
-  subroutine get_mosaic_tile_grid(grid_file, fileobj, domain, tile_count)
-    character(len=*), intent(out)          :: grid_file
-    type(FmsNetcdfFile_t), intent(in)      :: fileobj
-    type(domain2D),   intent(in)           :: domain
-    integer,          intent(in), optional :: tile_count
-    integer                                :: tile, ntileMe
-    integer, dimension(:), allocatable     :: tile_id
-    character(len=256), allocatable        :: filelist(:)
-    integer :: ntiles
+subroutine get_mosaic_tile_grid(grid_file, fileobj, domain, tile_count)
+   character(len=*), intent(out)          :: grid_file
+   type(FmsNetcdfFile_t), intent(in)      :: fileobj
+   type(domain2D),   intent(in)           :: domain
+   integer,          intent(in), optional :: tile_count
+   integer                                :: tile, ntileMe
+   integer, dimension(:), allocatable     :: tile_id
+   character(len=256), allocatable        :: filelist(:)
+   integer :: ntiles
 
-    ntiles = get_mosaic_ntiles(fileobj)
-    allocate(filelist(ntiles))
-    tile = 1
-    if(present(tile_count)) tile = tile_count
-    ntileMe = mpp_get_current_ntile(domain)
-    allocate(tile_id(ntileMe))
-    tile_id = mpp_get_tile_id(domain)
-    call read_data(fileobj, "gridfiles", filelist)
-    grid_file = 'INPUT/'//trim(filelist(tile_id(tile)))
-    deallocate(tile_id, filelist)
+   ntiles = get_mosaic_ntiles(fileobj)
+   allocate(filelist(ntiles))
+   tile = 1
+   if(present(tile_count)) tile = tile_count
+   ntileMe = mpp_get_current_ntile(domain)
+   allocate(tile_id(ntileMe))
+   tile_id = mpp_get_tile_id(domain)
+   call read_data(fileobj, "gridfiles", filelist)
+   grid_file = 'INPUT/'//trim(filelist(tile_id(tile)))
+   deallocate(tile_id, filelist)
 
-  end subroutine get_mosaic_tile_grid
+end subroutine get_mosaic_tile_grid
 
+#include <mosaic2_r4.inc>
+#include <mosaic2_r8.inc>
 
 end module mosaic2_mod
 !> @}

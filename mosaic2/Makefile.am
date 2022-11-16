@@ -32,14 +32,18 @@ noinst_LTLIBRARIES = libmosaic2.la
 
 libmosaic2_la_SOURCES = \
 mosaic2.F90 \
-grid2.F90
+grid2.F90 \
+mosaic2_r4.inc \
+mosaic2_r8.inc \
+mosaic2.fh
 
 # Some mods are dependant on other mods in this dir.
 grid2_mod.$(FC_MODEXT): mosaic2_mod.$(FC_MODEXT)
+mosaic2_mod.$(FC_MODEXT): mosaic2.fh mosaic2_r4.inc mosaic2_r8.inc
 
 MODFILES = \
-  mosaic2_mod.$(FC_MODEXT) \
-  grid2_mod.$(FC_MODEXT)
+	mosaic2_mod.$(FC_MODEXT) \
+	grid2_mod.$(FC_MODEXT)
 nodist_include_HEADERS = $(MODFILES)
 BUILT_SOURCES = $(MODFILES)
 
