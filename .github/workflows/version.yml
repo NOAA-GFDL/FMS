@@ -1,0 +1,19 @@
+on:
+  release:
+    types: [published]
+jobs:
+  add-dev-to-version:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3 
+    - name: Append version with dev
+      run: sed -i '/20[0-9][0-9]\.[0-9][0-9]/ s/]/-dev]/' configure.ac 
+    - name: Create pull request
+      uses: peter-evans/create-pull-request@v4 
+      with:
+        base: main                   # creates a new branch off of main
+        branch: add-dev-post-release # name of the created branch
+        branch-suffix: timestamp     # add a timestamp to branch name
+        delete-branch: true          # delete afer merge 
+        title: Append dev to version number post-release
+        body: automated change, adds '-dev' to the version number upon releases
