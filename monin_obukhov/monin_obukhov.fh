@@ -371,10 +371,10 @@ if( stable_option == 1) then
 
 where (stable)
 
-psi_t = ln_z_zt + (5.0_FMS_MO_KIND_ - real(b_stab,kind=FMS_MO_KIND_))*log((1.0_FMS_MO_KIND_ + zeta)/(1.0_FMS_MO_KIND_ + zeta_t)) &
-  + real(b_stab,kind=FMS_MO_KIND_)*(zeta - zeta_t)
-psi_q = ln_z_zq + (5.0_FMS_MO_KIND_ - real(b_stab,kind=FMS_MO_KIND_))*log((1.0_FMS_MO_KIND_ + zeta)/(1.0_FMS_MO_KIND_ + zeta_q)) &
-  + real(b_stab,kind=FMS_MO_KIND_)*(zeta - zeta_q)
+psi_t = ln_z_zt + (5.0_FMS_MO_KIND_ - real(b_stab,kind=FMS_MO_KIND_))*log((1.0_FMS_MO_KIND_ + zeta) &
+/(1.0_FMS_MO_KIND_ + zeta_t)) + real(b_stab,kind=FMS_MO_KIND_)*(zeta - zeta_t)
+psi_q = ln_z_zq + (5.0_FMS_MO_KIND_ - real(b_stab,kind=FMS_MO_KIND_))*log((1.0_FMS_MO_KIND_ + zeta)/ & 
+        (1.0_FMS_MO_KIND_ + zeta_q)) + real(b_stab,kind=FMS_MO_KIND_)*(zeta - zeta_q)
 
 end where
 
@@ -389,7 +389,8 @@ psi_q = ln_z_zq + 5.0_FMS_MO_KIND_*(zeta - zeta_q)
 end where
 
 where(strongly_stable)
-x = (real(lambda,kind=FMS_MO_KIND_) - 1.0_FMS_MO_KIND_)*log(zeta/real(zeta_trans,kind=FMS_MO_KIND_)) + real(b_stab,kind=FMS_MO_KIND_)*(zeta - real(zeta_trans,kind=FMS_MO_KIND_))
+x = (real(lambda,kind=FMS_MO_KIND_) - 1.0_FMS_MO_KIND_)*log(zeta/real(zeta_trans,kind=FMS_MO_KIND_)) &
+     + real(b_stab,kind=FMS_MO_KIND_)*(zeta - real(zeta_trans,kind=FMS_MO_KIND_))
 endwhere
 
 where (strongly_stable .and. zeta_t <= real(zeta_trans,kind=FMS_MO_KIND_))
@@ -413,7 +414,7 @@ end subroutine MO_INTEGRAL_TQ_
 
 !=======================================================================
 
-subroutine MO_INTEGRAL_M_ (psi_m, zeta, zeta_0, ln_z_z0, mask)
+subroutine MO_INTEGRAL_M_(psi_m, zeta, zeta_0, ln_z_z0, mask)
 
 !  the integral similarity function for momentum
 
@@ -450,8 +451,8 @@ end where
 if( stable_option == 1) then
 
 where (stable)
-psi_m = ln_z_z0 + (5.0_FMS_MO_KIND_ - real(b_stab,kind=FMS_MO_KIND_))*log((1.0_FMS_MO_KIND_ + zeta)/(1.0_FMS_MO_KIND_ + zeta_0)) &
-  + real(b_stab,kind=FMS_MO_KIND_)*(zeta - zeta_0)
+psi_m = ln_z_z0 + (5.0_FMS_MO_KIND_ - real(b_stab,kind=FMS_MO_KIND_)) &
+      *log((1.0_FMS_MO_KIND_ + zeta)/(1.0_FMS_MO_KIND_ + zeta_0)) + real(b_stab,kind=FMS_MO_KIND_)*(zeta - zeta_0)
 end where
 
 else if (stable_option == 2) then
@@ -464,7 +465,8 @@ psi_m = ln_z_z0 + 5.0_FMS_MO_KIND_*(zeta - zeta_0)
 end where
 
 where(strongly_stable)
-x = (real(lambda,kind=FMS_MO_KIND_) - 1.0_FMS_MO_KIND_)*log(zeta/real(zeta_trans,kind=FMS_MO_KIND_)) + real(b_stab,kind=FMS_MO_KIND_)*(zeta - real(zeta_trans,kind=FMS_MO_KIND_))
+x = (real(lambda,kind=FMS_MO_KIND_) - 1.0_FMS_MO_KIND_)*log(zeta/real(zeta_trans,kind=FMS_MO_KIND_)) & 
+    + real(b_stab,kind=FMS_MO_KIND_)*(zeta - real(zeta_trans,kind=FMS_MO_KIND_))
 endwhere
 
 where (strongly_stable .and. zeta_0 <= real(zeta_trans,kind=FMS_MO_KIND_))
@@ -487,8 +489,7 @@ end subroutine MO_INTEGRAL_M_
 !=======================================================================
 
 
-subroutine MO_DRAG_2D_ &
-(pt, pt0, z, z0, zt, zq, speed, drag_m, drag_t, drag_q, u_star, b_star)
+subroutine MO_DRAG_2D_(pt, pt0, z, z0, zt, zq, speed, drag_m, drag_t, drag_q, u_star, b_star)
 
 real(kind=FMS_MO_KIND_), intent(in)   , dimension(:,:) :: z, speed, pt, pt0, z0, zt, zq
 real(kind=FMS_MO_KIND_), intent(out)  , dimension(:,:) :: drag_m, drag_t, drag_q
@@ -507,8 +508,7 @@ return
 end subroutine MO_DRAG_2D_
 
 !=======================================================================
-subroutine MO_DRAG_0D_ &
-(pt, pt0, z, z0, zt, zq, speed, drag_m, drag_t, drag_q, u_star, b_star)
+subroutine MO_DRAG_0D_(pt, pt0, z, z0, zt, zq, speed, drag_m, drag_t, drag_q, u_star, b_star)
 
 real(kind=FMS_MO_KIND_), intent(in)    :: z, speed, pt, pt0, z0, zt, zq
 real(kind=FMS_MO_KIND_), intent(out)   :: drag_m, drag_t, drag_q, u_star, b_star
@@ -657,7 +657,7 @@ subroutine MO_DIFF_2D_1_(z, u_star, b_star, k_m, k_h)
 real(kind=FMS_MO_KIND_), intent(in),  dimension(:,:) :: z, u_star, b_star
 real(kind=FMS_MO_KIND_), intent(out), dimension(:,:) :: k_m, k_h
 
-real(kind=FMS_MO_KIND_)   , dimension(size(z,1),size(z,2),1) :: z_n, k_m_n, k_h_n
+real(kind=FMS_MO_KIND_), dimension(size(z,1),size(z,2),1) :: z_n, k_m_n, k_h_n
 
 z_n(:,:,1) = z
 
