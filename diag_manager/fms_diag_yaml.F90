@@ -974,6 +974,7 @@ function is_global_meta(diag_files_obj) &
    res = .true.
 end function
 
+!> @brief Increate the current_new_file_freq_index by 1
 subroutine increase_new_file_freq_index(this)
   class(diagYamlFiles_type), intent(inout) :: this !< The file object
   this%current_new_file_freq_index = this%current_new_file_freq_index + 1

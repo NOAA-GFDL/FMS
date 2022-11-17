@@ -65,7 +65,7 @@ type :: fmsDiagFile_type
 
   !< This will be used when using the new_file_freq keys in the diag_table.yaml
   TYPE(time_type) :: next_close       !< Time to close the file
-  logical :: is_file_open     !< .True. if the file is opened
+  logical         :: is_file_open     !< .True. if the file is opened
 
   class(FmsNetcdfFile_t), allocatable :: fileobj !< fms2_io file object for this history file
   type(diagYamlFiles_type), pointer :: diag_yaml_file => null() !< Pointer to the diag_yaml_file data
@@ -850,12 +850,13 @@ subroutine open_diag_file(this, time_step, file_is_opened)
   diag_file => null()
 end subroutine open_diag_file
 
+!< @brief Writes the time average variables (*_T1, *_T2, *_DT) in the netcdf file
 subroutine write_avg_time_metadata(fileobj, variable_name, dimensions, long_name, units)
-  class(FmsNetcdfFile_t), intent(inout) :: fileobj !< The file object
-  character(len=*)      , intent(in)    :: variable_name
-  character(len=*)      , intent(in)    :: dimensions(:)
-  character(len=*)      , intent(in)    :: long_name
-  character(len=*)      , intent(in)    :: units
+  class(FmsNetcdfFile_t), intent(inout) :: fileobj        !< The file object to write into
+  character(len=*)      , intent(in)    :: variable_name  !< The name of the time variables
+  character(len=*)      , intent(in)    :: dimensions(:)  !< The dimensions of the variable
+  character(len=*)      , intent(in)    :: long_name      !< The long_name of the variable
+  character(len=*)      , intent(in)    :: units          !< The units of the variable
 
   !TODO harcodded double
   call register_field(fileobj, variable_name, "double", dimensions)
@@ -865,13 +866,15 @@ subroutine write_avg_time_metadata(fileobj, variable_name, dimensions, long_name
                                   trim(units), str_len=len_trim(units))
 end subroutine write_avg_time_metadata
 
+!< @brief Writes the time_bounds variables to the diag_file
 subroutine write_time_bounds_metadata(fileobj, time_var_name, units)
-  class(FmsNetcdfFile_t), intent(inout) :: fileobj !< The file object
-  character(len=*)      , intent(in)    :: time_var_name
-  character(len=*)      , intent(in)    :: units
+  class(FmsNetcdfFile_t), intent(inout) :: fileobj       !< The file object
+  character(len=*)      , intent(in)    :: time_var_name !< The name of the time variable as it is
+                                                         !! read from the diag_table.yaml
+  character(len=*)      , intent(in)    :: units         !< The units of the time variable
 
-  character(len=50) :: dimensions(2)
-  character(len=:), allocatable :: bounds_name
+  character(len=50)             :: dimensions(2) !< Array of dimensions names for the variable
+  character(len=:), allocatable :: bounds_name   !< The name of the time bounds variable (i.e time_bounds)
 
   !< Register the "nv" dimension that it needed for the time_bounds
   call register_axis(fileobj, "nv", 2)
@@ -948,6 +951,8 @@ subroutine write_time_metadata(this)
 
 end subroutine write_time_metadata
 
+!> \brief Determine if it is time to close the file
+!! \return .True. if it is time to close the file
 logical function is_time_to_close_file (this, time_step)
   class(fmsDiagFileContainer_type), intent(in), target   :: this            !< The file object
   TYPE(time_type),                  intent(in)           :: time_step       !< Current model step time
@@ -991,16 +996,16 @@ end function
 
 !> \brief Write out the time data to the file
 subroutine write_time_data(this)
-  class(fmsDiagFileContainer_type), intent(in), target   :: this            !< The file object
+  class(fmsDiagFileContainer_type), intent(in), target   :: this !< The file object
 
   real                                 :: dif            !< The time as a real number
   class(fmsDiagFile_type), pointer     :: diag_file      !< Diag_file object to open
   class(FmsNetcdfFile_t),  pointer     :: fileobj        !< The fileobj to write to
-  TYPE(time_type)                      :: middle_time
+  TYPE(time_type)                      :: middle_time    !< The middle time of the averaging period
 
-  real :: T1
-  real :: T2
-  real :: DT
+  real :: T1 !< The beginning time of the averaging period
+  real :: T2 !< The ending time of the averaging period
+  real :: DT !< The difference between the ending and beginning time of the averaging period
 
   diag_file => this%FMS_diag_file
   fileobj => diag_file%fileobj
@@ -1033,6 +1038,7 @@ subroutine write_time_data(this)
 
 end subroutine write_time_data
 
+!> \brief Updates the current_new_file_freq_index if using a new_file_freq
 subroutine update_current_new_file_freq_index(this, time_step)
   class(fmsDiagFileContainer_type), intent(inout), target   :: this            !< The file object
   TYPE(time_type),                  intent(in)           :: time_step       !< Current model step time
@@ -1055,6 +1061,7 @@ subroutine update_current_new_file_freq_index(this, time_step)
     endif
   endif
 end subroutine update_current_new_file_freq_index
+
 !> \brief Set up the next_output and next_next_output variable in a file obj
 subroutine update_next_write(this, time_step)
   class(fmsDiagFileContainer_type), intent(in), target   :: this            !< The file object

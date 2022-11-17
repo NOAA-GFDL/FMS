@@ -59,6 +59,9 @@ contains
      endif
   end function diag_time_inc
 
+  !> @brief Determine the next time data/file is to be written based on the frequency and units using the clock.
+  !! For example, if doing daily averages and the input time is day1_hour3, the output time will be day2_hour0.
+  !! @return the next time data/file is to be written
   TYPE(time_type) FUNCTION diag_clock_time_inc(time, output_freq, output_units, err_msg)
     TYPE(time_type),  INTENT(in)            :: time         !< Current model time.
     INTEGER,          INTENT(in)            :: output_freq  !< Output frequency number value.
@@ -116,6 +119,9 @@ contains
 
   end function diag_clock_time_inc
 
+  !> @brief Determine the next time data/file is to be written based on the frequency and units using forecast time.
+  !! For example, if doing daily averages and the input time is day1_hour3, the output time will be day2_hour3.
+  !! @return the next time data/file is to be written
   TYPE(time_type) FUNCTION diag_forecast_time_inc(time, output_freq, output_units, err_msg)
     TYPE(time_type),  INTENT(in)            :: time         !< Current model time.
     INTEGER,          INTENT(in)            :: output_freq  !< Output frequency number value.
