@@ -119,7 +119,7 @@ AS_VAR_POPDEF([gx_cv_mpi_h])
 # GX_MPI_FC_LEGACY_INTERFACE()
 # ----------------------------------------------------------------------
 # Check if the Fortran MPI library uses legacy interfaces.
-# 
+#
 # If the Fortran MPI library uses legacy interfaces, the variable
 # HAVE_MPI_FC_LEGACY will be set.
 AC_DEFUN([GX_MPI_FC_LEGACY_INTERFACE], [
