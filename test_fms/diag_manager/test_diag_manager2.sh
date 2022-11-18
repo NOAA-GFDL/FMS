@@ -753,8 +753,8 @@ diag_files:
     reduction: none
     kind: r4
 - file_name: flexible_timing%4yr%2mo%2dy%2hr
-  freq: 1
-  freq_units: hours
+  freq: 1 1 1
+  freq_units: hours hours hours
   time_units: hours
   unlimdim: time
   new_file_freq: 6 3 1
