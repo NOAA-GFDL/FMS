@@ -17,33 +17,25 @@
 #* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 #***********************************************************************
 
-# This is an automake file for the mosaic directory of the FMS
-# package.
+prefix=/usr/local
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+includedir=${prefix}/include
 
-# Ed Hartnett 2/22/19
+# Including the following, as they may be useful when building other components
+# and as a way to better record how the library was built.
+ccompiler=mpiicc
+fccompiler=mpiifort
+cppflagss.compiled=-DINTERNAL_FILE_NML
+cflags.compiled=-O0 -sox -qopenmp -debug minimal -I/opt/netcdf/4.6.1/INTEL/include -I/opt/hdf5/1.10.1/INTEL/include
+fcflags.compiled=-O0 -g -trackback -fno-alias -auto -safe-cray-ptr -ftz -assume byterecl -i4 -nowarn -I/opt/netcdf/4.6.1/INTEL/include -fpp -cpp  -FR -real-size 64 -fopenmp
+ldflags.compiled=
 
-# Include .h and .mod files.
-AM_CPPFLAGS = -I$(top_srcdir)/include -I$(top_srcdir)/mosaic -I./
-AM_FCFLAGS = $(FC_MODINC). $(FC_MODOUT)$(MODDIR)
-
-# Build these uninstalled convenience libraries.
-
-noinst_LTLIBRARIES = libmosaic2.la
-
-libmosaic2_la_SOURCES = \
-mosaic2.F90 \
-grid2.F90 \
-mosaic2_r4.inc mosaic2_r8.inc mosaic2.fh \
-grid2_r4.inc grid2_r8.inc grid2.fh
-
-# Some mods are dependant on other mods in this dir.
-grid2_mod.$(FC_MODEXT): mosaic2_mod.$(FC_MODEXT) grid2_r4.inc grid2_r8.inc grid2.fh
-mosaic2_mod.$(FC_MODEXT): mosaic2.fh mosaic2_r4.inc mosaic2_r8.inc
-
-MODFILES = \
-	mosaic2_mod.$(FC_MODEXT) \
-	grid2_mod.$(FC_MODEXT)
-nodist_include_HEADERS = $(MODFILES)
-BUILT_SOURCES = $(MODFILES)
-
-include $(top_srcdir)/mkmods.mk
+Name: FMS
+Description: The Flexible Modeling System Infrastructure Library
+URL: https://www.gfdl.noaa.gov/fms
+Version: 2022.04.00-dev
+Libs: -L$(libdir) -lFMS
+Libs.private: -lnetcdff -lnetcdf 
+Cflags: -I${includedir}
+Fflags: -I${includedir}
