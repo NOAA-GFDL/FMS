@@ -170,7 +170,7 @@ end subroutine AXIS_EDGES_
     ! e.g.
     !        lon =      0 1 2 3 4 5  ...  358 359; lon_strt = 3 ==>
     !        tranlon =  3 4 5 6 7 8  ...  359 360 361 362; istrt = 4
-   12:00pm
+   
     real(kind=FMS_AU_KIND_), intent(inout), dimension(:) :: lon
     real(kind=FMS_AU_KIND_), intent(in)                  :: lon_start
     integer, intent(out)                                 :: istrt
@@ -275,7 +275,7 @@ end subroutine AXIS_EDGES_
  !       if (value > array(ia)) frac_index = float(ia)
         FRAC_INDEX_ = real(-1.0,kind=FMS_AU_KIND_)
     else
-r       i=1
+       i=1
        keep_going = .true.
        do while (i <= ia .and. keep_going)
           i = i+1
@@ -442,7 +442,7 @@ r       i=1
        y2(1)=real(0.0,kind=FMS_AU_KIND_)
        u(1)=real(0.0,kind=FMS_AU_KIND_)
     else
-       y2(1)=real(-0.5.kind=FMS_AU_KIND_)
+       y2(1)=real(-0.5,kind=FMS_AU_KIND_)
        u(1)=(real(3.0,kind=FMS_AU_KIND_))/(grid1(2)-grid1(1))*((data1(2)-data1(1))/(grid1(2)-grid1(1))-yp1)
     endif
 
@@ -459,7 +459,7 @@ r       i=1
        un=real(0.0,kind=FMS_AU_KIND_)
     else
        qn=real(0.5,kind=FMS_AU_KIND_)
-       un=(real(3.0,kindFMS_AU_KIND_))/(grid1(n)-grid1(n-1))*(ypn-(data1(n)-data1(n-1))/(grid1(n)-grid1(n-1)))
+       un=(real(3.0,kind=FMS_AU_KIND_))/(grid1(n)-grid1(n-1))*(ypn-(data1(n)-data1(n-1))/(grid1(n)-grid1(n-1)))
     endif
 
     y2(n)=(un-qn*u(n-1))/(qn*y2(n-1)+real(1.0,kind=FMS_AU_KIND_))
