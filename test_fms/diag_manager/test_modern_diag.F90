@@ -149,6 +149,7 @@ call diag_field_add_attribute (id_var1, "integer", 10)
 call diag_field_add_attribute (id_var1, "1d_integer", (/10, 10/))
 call diag_field_add_attribute (id_var1, "real", 10.)
 call diag_field_add_attribute (id_var2, '1d_real', (/10./))
+call diag_field_add_attribute (id_var2, 'formula', 'p(n,k,j,i) = ap(k) + b(k)*ps(n,j,i)')
 
 !! test dump routines
 !! prints fields from objects for debugging to log if name is provided, othwerise goes to stdout
@@ -156,7 +157,12 @@ call dump_diag_obj('diag_obj_dump.log')
 call dump_diag_obj()
 
 call diag_manager_set_time_end(Time)
-call diag_send_complete(Time)
+call diag_manager_set_time_end(set_date(2,1,2,0,0,0))
+
+do i=1,23
+  call diag_send_complete(set_date(2,1,1,i,0,0))
+enddo
+
 call diag_manager_end(Time)
 call fms_end
 

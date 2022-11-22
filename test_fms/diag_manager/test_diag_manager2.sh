@@ -506,7 +506,7 @@ test_expect_success "test_diag_dlinked_list (test $my_test_count)" '
 '
 
 ## run tests that are ifdef'd out only if compiled with yaml
-## otherwise just run the updated end to end to check for error 
+## otherwise just run the updated end to end to check for error
 if [ -z "${skipflag}" ]; then
 
   cat <<_EOF > diag_table.yaml
@@ -592,7 +592,7 @@ _EOF
     mpirun -n 1 ../test_diag_yaml
   '
   . $top_srcdir/test_fms/diag_manager/check_crashes.sh
-  my_test_count = `expr $my_test_count + 14` 
+  my_test_count = `expr $my_test_count + 14`
 
   printf "&diag_manager_nml \n use_modern_diag = .true. \n/" | cat > input.nml
   cat <<_EOF > diag_table.yaml
@@ -741,6 +741,16 @@ diag_files:
   - module: atm_mod
     var_name: var4
     reduction: average
+    kind: r4
+- file_name: file6
+  freq: 6
+  freq_units: hours
+  time_units: hours
+  unlimdim: time
+  varlist:
+  - module: ocn_mod
+    var_name: var1
+    reduction: none
     kind: r4
 _EOF
 
