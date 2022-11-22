@@ -29,8 +29,8 @@ program test_chunksizes
   integer, parameter     :: dim_len = 24                           !< The dimension length
   integer                :: i, j, k                                !< For do loops
   type(fmsnetcdffile_t)  :: fileobj                                !< FMS2_io fileobj
-  character (len = 120), :: my_format(3)                           !< Array of formats to try.
-  character (len = 120), :: dimnames(4)                            !< Array of dimension names
+  character (len = 120) :: my_format(3)                            !< Array of formats to try.
+  character (len = 120) :: dimnames(4)                             !< Array of dimension names
   integer, dimension(4)  :: chunksizes                             !< The chunksizes to use
   real(kind=r8_kind)     :: vardata_in(dim_len, dim_len, dim_len)  !< The data to write
   real(kind=r8_kind)     :: vardata_out(dim_len, dim_len, dim_len) !< The data read in

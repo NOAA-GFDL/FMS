@@ -627,6 +627,6 @@ dim_names, chunsizes=chunksizes)
 ```
 - **chunksizes:** Is an array defining the chunksize of each dimension of the variable. Chunksizes can be used to improve performance. Default chunks are chosen by the library.
 
-- **NOTE: This arguments can only be used in "NETCDF4" file formats. You can set the netcdf file format for all files using the 'netcdf_default_format' namelist or in a per file basis by using the 'nc_format' argument in the 'open_file' call**
+- **NOTE: This argument can only be used in "NETCDF4" file formats. You can set the netcdf file format for all files using the 'netcdf_default_format' namelist or in a per file basis by using the 'nc_format' argument in the 'open_file' call**
 
 - See the NETCDF user guide for more information: (https://cluster.earlham.edu/bccd-ng/testing/mobeen/GALAXSEEHPC/netcdf-4.1.3/man4/netcdf.html#Chunking)
