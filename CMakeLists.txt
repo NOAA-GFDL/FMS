@@ -292,6 +292,7 @@ foreach(kind ${kinds})
                                                  fms
                                                  fms2_io/include
                                                  mpp/include
+                                                 mosaic2/include
                                                  constants4
                                                  constants)
   target_compile_definitions(${libTgt}_f PRIVATE "${fms_defs}")
