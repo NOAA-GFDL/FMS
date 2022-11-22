@@ -59,7 +59,7 @@ use,intrinsic :: iso_c_binding, only: c_double,c_float,c_int64_t, &
        & write_field_meta_data, done_meta_data, diag_flush
   USE diag_output_mod, ONLY: diag_field_write, diag_write_time !<fms2_io
   USE diag_grid_mod, ONLY: get_local_indexes
-  USE fms_diag_time_utils_mod, ONLY: diag_time_inc, get_time_string
+  USE fms_diag_time_utils_mod, ONLY: diag_time_inc, get_time_string, get_date_dif
   USE fms_mod, ONLY: error_mesg, FATAL, WARNING, NOTE, mpp_pe, mpp_root_pe, lowercase, fms_error_handler,&
        & string, write_version_number
   USE mpp_domains_mod,ONLY: domain1d, domain2d, mpp_get_compute_domain, null_domain1d, null_domain2d,&
@@ -2049,53 +2049,6 @@ END SUBROUTINE check_bounds_are_exact_dynamic
     ! Clean up pointer
     if (associated(fileob)) nullify(fileob)
   END SUBROUTINE opening_file
-
-  !> @brief Return the difference between two times in units.
-  !! @return Real get_data_dif
-  REAL FUNCTION get_date_dif(t2, t1, units)
-    TYPE(time_type), INTENT(in) :: t2 !< Most recent time.
-    TYPE(time_type), INTENT(in) :: t1 !< Most distant time.
-    INTEGER, INTENT(in) :: units !< Unit of return value.
-
-    INTEGER :: dif_seconds, dif_days
-    TYPE(time_type) :: dif_time
-
-    ! Compute time axis label value
-    ! <ERROR STATUS="FATAL">
-    !   variable t2 is less than in variable t1
-    ! </ERROR>
-    IF ( t2 < t1 ) CALL error_mesg('diag_util_mod::get_date_dif', &
-         & 'in variable t2 is less than in variable t1', FATAL)
-
-    dif_time = t2 - t1
-
-    CALL get_time(dif_time, dif_seconds, dif_days)
-
-    IF ( units == DIAG_SECONDS ) THEN
-       get_date_dif = dif_seconds + SECONDS_PER_DAY * dif_days
-    ELSE IF ( units == DIAG_MINUTES ) THEN
-       get_date_dif = 1440 * dif_days + dif_seconds / SECONDS_PER_MINUTE
-    ELSE IF ( units == DIAG_HOURS ) THEN
-       get_date_dif = 24 * dif_days + dif_seconds / SECONDS_PER_HOUR
-    ELSE IF ( units == DIAG_DAYS ) THEN
-       get_date_dif = dif_days + dif_seconds / SECONDS_PER_DAY
-    ELSE IF ( units == DIAG_MONTHS ) THEN
-       ! <ERROR STATUS="FATAL">
-       !   months not supported as output units
-       ! </ERROR>
-       CALL error_mesg('diag_util_mod::get_date_dif', 'months not supported as output units', FATAL)
-    ELSE IF ( units == DIAG_YEARS ) THEN
-       ! <ERROR STATUS="FATAL">
-       !   years not suppored as output units
-       ! </ERROR>
-       CALL error_mesg('diag_util_mod::get_date_dif', 'years not supported as output units', FATAL)
-    ELSE
-       ! <ERROR STATUS="FATAL">
-       !   illegal time units
-       ! </ERROR>
-       CALL error_mesg('diag_util_mod::diag_date_dif', 'illegal time units', FATAL)
-    END IF
-  END FUNCTION get_date_dif
 
   !> @brief Write data out to file, and if necessary flush the buffers.
   SUBROUTINE diag_data_out(file, field, dat, time, final_call_in, static_write_in, filename_time)
