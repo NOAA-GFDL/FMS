@@ -383,8 +383,9 @@ character (len = 10) :: netcdf_default_format = "64bit" !< User defined netcdf f
                               !! "nc_format" in the open_file call
 integer :: header_buffer_val = 16384 !< Use defined netCDF header buffer size(in bytes) used in
                                      !! NF__ENDDEF
-integer :: deflate_level = 0
-logical :: shuffle = .false.
+integer :: deflate_level = 0 !< Netcdf deflate level to use in nf90_def_var
+                             !! (integer between 1 to 9)
+logical :: shuffle = .false. !< Flag indicating whether to use the netcdf shuffle filter
 namelist / fms2_io_nml / &
                       ncchksz, netcdf_default_format, header_buffer_val, deflate_level, shuffle
 

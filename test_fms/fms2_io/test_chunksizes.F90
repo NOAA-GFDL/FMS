@@ -18,22 +18,22 @@
 !***********************************************************************
 
 program test_chunksizes
-  use fms2_io_mod, only: open_file, close_file, register_axis, register_restart_field, write_restart, &
-                         unlimited, fmsnetcdffile_t, read_restart
-  use mpp_mod,     only: mpp_error, FATAL
-  use fms_mod,     only: fms_init, fms_end
+  use fms2_io_mod,  only: open_file, close_file, register_axis, register_restart_field, write_restart, &
+                          unlimited, fmsnetcdffile_t, read_restart
+  use mpp_mod,      only: mpp_error, FATAL
+  use fms_mod,      only: fms_init, fms_end
   use platform_mod, only: r8_kind
 
   implicit none
 
-  integer, parameter :: dim_len = 24
-  integer               :: i, j, k !< For do loops
-  type(fmsnetcdffile_t) :: fileobj
-  character (len = 120), dimension(3) :: my_format !< Array of formats to try.
-  character (len = 120), dimension(4) :: dimnames
-  integer, dimension(4) :: chunksizes
-  real(kind=r8_kind) :: vardata_in(dim_len, dim_len, dim_len)
-  real(kind=r8_kind) :: vardata_out(dim_len, dim_len, dim_len)
+  integer, parameter     :: dim_len = 24                           !< The dimension length
+  integer                :: i, j, k                                !< For do loops
+  type(fmsnetcdffile_t)  :: fileobj                                !< FMS2_io fileobj
+  character (len = 120), :: my_format(3)                           !< Array of formats to try.
+  character (len = 120), :: dimnames(4)                            !< Array of dimension names
+  integer, dimension(4)  :: chunksizes                             !< The chunksizes to use
+  real(kind=r8_kind)     :: vardata_in(dim_len, dim_len, dim_len)  !< The data to write
+  real(kind=r8_kind)     :: vardata_out(dim_len, dim_len, dim_len) !< The data read in
 
   call fms_init()
 
@@ -53,6 +53,7 @@ program test_chunksizes
     enddo
   enddo
 
+  !< Loop through each of the file formats and write out a file
   do i = 1, 4
     if (i .ne. 4) then
       if (.not. open_file(fileobj, "test_chunksizes_"//trim(my_format(i))//".nc", "overwrite", &
@@ -67,11 +68,13 @@ program test_chunksizes
     call register_axis(fileobj, "dim2", dim_len)
     call register_axis(fileobj, "dim3", dim_len)
     call register_axis(fileobj, "dim4", unlimited)
+    !< The chunksizes will ignored for non netcdf4 file formats
     call register_restart_field(fileobj, "var1", vardata_in, dimnames, chunksizes=chunksizes)
     call write_restart(fileobj)
     call close_file(fileobj)
   enddo
 
+  !< Loop through each of the file formats and read out a file
   do i = 1, 4
     if (i .ne. 4) then
       if (.not. open_file(fileobj, "test_chunksizes_"//trim(my_format(i))//".nc", "read", &

@@ -54,9 +54,9 @@ integer, private :: fms2_ncchksz = -1 !< Chunksize (bytes) used in nc_open and n
 integer, private :: fms2_nc_format_param = -1 !< Netcdf format type param used in nc_create
 character (len = 10), private :: fms2_nc_format !< Netcdf format type used in netcdf_file_open
 integer, private :: fms2_header_buffer_val = -1  !< value used in NF__ENDDEF
-integer, private :: fms2_deflate_level = 0
-logical, private :: fms2_shuffle = .false.
-logical, private :: fms2_allow_netcdf4 = .false.
+integer, private :: fms2_deflate_level = 0 !< Netcdf deflate level to use in nf90_def_var (integer between 1 to 9)
+logical, private :: fms2_shuffle = .false. !< Flag indicating whether to use the netcdf shuffle filter
+logical, private :: fms2_is_netcdf4 = .false. !< Flag indicating whether the default netcdf file format is netcdf4
 
 !> @}
 
@@ -336,16 +336,17 @@ contains
 
 !> @brief Accepts the namelist fms2_io_nml variables relevant to netcdf_io_mod
 subroutine netcdf_io_init (chksz, header_buffer_val, netcdf_default_format, deflate_level, shuffle)
-integer, intent(in) :: chksz
-character (len = 10), intent(in) :: netcdf_default_format
-integer, intent(in) :: header_buffer_val
-integer, intent(in) :: deflate_level
-logical, intent(in) :: shuffle
+integer,              intent(in) :: chksz                 !< Chunksize (bytes) used in nc_open and nc_create
+character (len = 10), intent(in) :: netcdf_default_format !< Netcdf format type param used in nc_create
+integer,              intent(in) :: header_buffer_val     !< Value used in NF__ENDDEF
+integer,              intent(in) :: deflate_level         !< Netcdf deflate level to use in nf90_def_var
+                                                          !! (integer between 1 to 9)
+logical,              intent(in) :: shuffle               !< Flag indicating whether to use the netcdf shuffle filter
 
  fms2_ncchksz = chksz
  fms2_deflate_level = deflate_level
  fms2_shuffle = shuffle
- fms2_allow_netcdf4 = .false.
+ fms2_is_netcdf4 = .false.
  fms2_header_buffer_val = header_buffer_val
  if (string_compare(netcdf_default_format, "64bit", .true.)) then
      fms2_nc_format_param = nf90_64bit_offset
@@ -355,7 +356,7 @@ logical, intent(in) :: shuffle
      call string_copy(fms2_nc_format, "classic")
  elseif (string_compare(netcdf_default_format, "netcdf4", .true.)) then
      fms2_nc_format_param = nf90_netcdf4
-     fms2_allow_netcdf4 = .true.
+     fms2_is_netcdf4 = .true.
      call string_copy(fms2_nc_format, "netcdf4")
  else
      call error("unrecognized netcdf file format "//trim(netcdf_default_format)// &
@@ -637,7 +638,7 @@ function netcdf_file_open(fileobj, path, mode, nc_format, pelist, is_restart, do
     else
       call string_copy(fileobj%nc_format, trim(fms2_nc_format))
       nc_format_param = fms2_nc_format_param
-      fileobj%is_netcdf4 = fms2_allow_netcdf4
+      fileobj%is_netcdf4 = fms2_is_netcdf4
     endif
 
     if (string_compare(mode, "read", .true.)) then
