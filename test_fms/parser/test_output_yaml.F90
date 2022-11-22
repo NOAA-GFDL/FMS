@@ -56,17 +56,21 @@
 !! Great, now I have to create this long yaml for testing, lol.
 program test_output_yaml
 #ifdef use_yaml
-
+use iso_c_binding
 use fms_yaml_output_mod
 use fms_string_utils_mod
 use mpp_mod
 use fms_mod
 implicit none
 
+!! nml switch to test using lvl2keys
+logical :: test_lvl2keys = .false.
+namelist / test_output_yaml_nml / test_lvl2keys
+
 integer, parameter :: yaml_len = 500
-character (len=9) :: filename = "test.yaml"
-character(c_char) :: c_filename(10)
-character(len=21) :: ref_yaml_name="reference_output.yaml"
+character (len=16) :: filename = "test.yaml"
+character(c_char) :: c_filename(10), c_tmp(255)
+character(len=23) :: ref_yaml_name="reference_output.yaml"
 type (fmsYamlOutKeys_type), allocatable :: k1 (:)
 type (fmsYamlOutValues_type), allocatable :: v1 (:)
 type (fmsYamlOutKeys_type), allocatable :: k2 (:)
@@ -80,8 +84,12 @@ integer,allocatable :: a3each (:)
 character(len=yaml_len) :: yaml_reference
 character(len=yaml_len) :: yaml_output_read
 character(len=string_len_parameter) :: tmpstr
-integer :: i !< for looping
- call fms_init
+integer :: i, io_status !< for looping
+call fms_init
+call mpp_init
+
+read (input_nml_file, test_output_yaml_nml, iostat=io_status)
+
 !> Set the number of "third level" elements and calculate a3
 allocate (a3each(a2))
 a3each(1) = 2
@@ -130,11 +138,11 @@ call fms_f2c_string (k1(1)%key1,"name")
 call fms_f2c_string (v1(1)%val1,"time to eat")
 call fms_f2c_string (k1(1)%key2,"location")
 call fms_f2c_string (v1(1)%val2,"Bridgewater, NJ")
-call fms_f2c_string (k1(1)%level2key,"order")
+call yaml_out_add_level2key( "order", k1(1))
 
 call fms_f2c_string (k2(1)%key1,"Drink")
 call fms_f2c_string (v2(1)%val1, "Iced tea")
-call fms_f2c_string (k2(1)%level2key,"Food")
+call yaml_out_add_level2key("Food", k2(1))
 call fms_f2c_string (k3(1)%key1,"Main")
 call fms_f2c_string (v3(1)%val1,"pancake")
 call fms_f2c_string (k3(1)%key7,"side")
@@ -158,7 +166,7 @@ call fms_f2c_string (k2(2)%key5,"spoon")
 call fms_f2c_string (v2(2)%val5, "silver")
 call fms_f2c_string (k2(2)%key12,"knife")
 call fms_f2c_string (v2(2)%val12, "none")
-call fms_f2c_string (k2(2)%level2key,"Food")
+call yaml_out_add_level2key("Food", k2(2))
 call fms_f2c_string (k3(3)%key1,"Main")
 call fms_f2c_string (v3(3)%val1,"cereal")
 call fms_f2c_string (k3(3)%key7,"sauce")
@@ -170,7 +178,7 @@ call fms_f2c_string (k2(3)%key2,"fork")
 call fms_f2c_string (v2(3)%val2, "silver")
 call fms_f2c_string (k2(3)%key13,"knife")
 call fms_f2c_string (v2(3)%val13, "steak")
-call fms_f2c_string (k2(3)%level2key,"Meal")
+call yaml_out_add_level2key("Food", k2(3))
 call fms_f2c_string (k3(4)%key1,"app")
 call fms_f2c_string (v3(4)%val1,"poppers")
 call fms_f2c_string (k3(4)%key7,"sauce")
@@ -185,8 +193,23 @@ call fms_f2c_string (k3(6)%key10,"dessert")
 call fms_f2c_string (v3(6)%val10,"cake")
 call fms_f2c_string (k3(6)%key11,"topping")
 call fms_f2c_string (v3(6)%val11,"frosting")
-!> Write the yaml
-call write_yaml_from_struct_3 (filename, 1, k1, v1, a2, k2, v2, a3, a3each, k3, v3)
+print *, test_lvl2keys
+if(test_lvl2keys) then
+  ref_yaml_name = 'lvl2keys_ref.yaml'
+  filename = 'lvl2keys.yaml'
+  !> add some extra level 2 keys to the various structs
+  call yaml_out_add_level2key( "2ndorder", k1(1))
+  call yaml_out_add_level2key( "3rd_order", k1(1))
+  call yaml_out_add_level2key( "order 4",k1(1))
+  call yaml_out_add_level2key( "sides", k2(1))
+  call yaml_out_add_level2key( "specials",  k2(2))
+  call write_yaml_from_struct_3 (filename, 1, k1, v1, a2, k2, v2, a3, (/1, 1, 1, 1, 2, 1/), k3, v3, &
+                               & (/ 1, 1, 1 , 1, 0 ,0 ,0 ,0/))
+else
+  !> Write the yaml
+  call write_yaml_from_struct_3 (filename, 1, k1, v1, a2, k2, v2, a3, a3each, k3, v3, (/ 3, 0, 0 , 0, 0 ,0 ,0 ,0/))
+endif
+
 !> Check yaml output against reference
 if (mpp_pe() == mpp_root_pe() ) then
   do i = 1,yaml_len
@@ -214,49 +237,6 @@ if (mpp_pe() == mpp_root_pe() ) then
   endif
 endif
 call fms_end
-
-CONTAINS
-
-!! Initialize one instance of the fmsYamlOutKeys_type structure.
-subroutine initialize_key_struct( yk )
-  type (fmsYamlOutKeys_type), intent(inout) :: yk !< Instance of the stucture
-  call fms_f2c_string (yk%key1,"")
-  call fms_f2c_string (yk%key2,"")
-  call fms_f2c_string (yk%key3,"")
-  call fms_f2c_string (yk%key4,"")
-  call fms_f2c_string (yk%key5,"")
-  call fms_f2c_string (yk%key6,"")
-  call fms_f2c_string (yk%key7,"")
-  call fms_f2c_string (yk%key8,"")
-  call fms_f2c_string (yk%key9,"")
-  call fms_f2c_string (yk%key10,"")
-  call fms_f2c_string (yk%key11,"")
-  call fms_f2c_string (yk%key12,"")
-  call fms_f2c_string (yk%key13,"")
-  call fms_f2c_string (yk%key14,"")
-  call fms_f2c_string (yk%key15,"")
-  call fms_f2c_string(yk%level2key,"")
-end subroutine initialize_key_struct
-
-!! Initialize one instance of the fmsYamlOutValues_type structure.
-subroutine initialize_val_struct( yv)
-  type (fmsYamlOutValues_type), intent(inout):: yv !< Instance of the stucture
-  call fms_f2c_string (yv%val1,"")
-  call fms_f2c_string (yv%val2,"")
-  call fms_f2c_string (yv%val3,"")
-  call fms_f2c_string (yv%val4,"")
-  call fms_f2c_string (yv%val5,"")
-  call fms_f2c_string (yv%val6,"")
-  call fms_f2c_string (yv%val7,"")
-  call fms_f2c_string (yv%val8,"")
-  call fms_f2c_string (yv%val9,"")
-  call fms_f2c_string (yv%val10,"")
-  call fms_f2c_string (yv%val11,"")
-  call fms_f2c_string (yv%val12,"")
-  call fms_f2c_string (yv%val13,"")
-  call fms_f2c_string (yv%val14,"")
-  call fms_f2c_string (yv%val15,"")
-end subroutine initialize_val_struct
 
 #endif
 end program test_output_yaml
