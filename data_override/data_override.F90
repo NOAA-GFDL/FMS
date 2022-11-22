@@ -257,7 +257,7 @@ subroutine data_override_init(Atm_domain_in, Ocean_domain_in, Ice_domain_in, Lan
  module_is_initialized = .TRUE.
 
  if ( .NOT. (atm_on .or. ocn_on .or. lnd_on .or. ice_on .or. lndUG_on)) return
- if (table_size .eq. 0) then 
+ if (table_size .eq. 0) then
     call mpp_error(NOTE, "data_table is empty, not doing any data_overrides")
     return
  endif
