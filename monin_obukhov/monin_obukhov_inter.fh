@@ -58,9 +58,9 @@ else
 do k = 1, size(z,3)
    zeta = - vonkarm * b_star*z(:,:,k)/(uss*uss)
    do j = 1, size(z,2)
-      call MONIN_OBUKHOV_DERIVATIVE_M_(stable_option, rich_crit, zeta_trans, &
+      call monin_obukhov_derivative_m(stable_option, rich_crit, zeta_trans, &
            & ni, phi_m(:,j), zeta(:,j), mask, ier)
-      call MONIN_OBUKHOV_DERIVATIVE_T_(stable_option, new_mo_option,rich_crit, zeta_trans, &
+      call monin_obukhov_derivative_t(stable_option, new_mo_option,rich_crit, zeta_trans, &
            & ni, phi_h(:,j), zeta(:,j), mask, ier)
    enddo
    k_m(:,:,k) = vonkarm * uss*z(:,:,k)/phi_m
@@ -161,7 +161,7 @@ do i = 1, n
    end if
 enddo
 
-call MONIN_OBUKHOV_SOLVE_ZETA_(error, zeta_min, max_iter, small, &
+call monin_obukhov_solve_zeta(error, zeta_min, max_iter, small, &
      & stable_option, new_mo_option, rich_crit, zeta_trans,      &
      & n, rich, zz, z0, zt, zq, fm, ft, fq, mask_1, ier)
 
@@ -253,18 +253,18 @@ where (mask_1)
    zeta_q = zeta/z_zq
 end where
 
-call MONIN_OBUKHOV_DERIVATIVE_M_(stable_option, rich_crit, zeta_trans, &
+call monin_obukhov_derivative_m(stable_option, rich_crit, zeta_trans, &
      & n, phi_m  , zeta  , mask_1, ier)
-call MONIN_OBUKHOV_DERIVATIVE_M_(stable_option, rich_crit, zeta_trans, &
+call monin_obukhov_derivative_m(stable_option, rich_crit, zeta_trans, &
      & n, phi_m_0, zeta_0,  mask_1, ier)
-call MONIN_OBUKHOV_DERIVATIVE_T_(stable_option, new_mo_option,rich_crit, zeta_trans, &
+call monin_obukhov_derivative_t(stable_option, new_mo_option,rich_crit, zeta_trans, &
      & n, phi_t  , zeta  , mask_1, ier)
-call MONIN_OBUKHOV_DERIVATIVE_T_(stable_option, new_mo_option,rich_crit, zeta_trans, &
+call monin_obukhov_derivative_t(stable_option, new_mo_option,rich_crit, zeta_trans, &
      & n, phi_t_0, zeta_t, mask_1, ier)
 
-call MONIN_OBUKHOV_INTEGRAL_M_(stable_option, rich_crit, zeta_trans, &
+call monin_obukhov_integral_m(stable_option, rich_crit, zeta_trans, &
      & n, f_m, zeta, zeta_0, ln_z_z0, mask_1, ier)
-call MONIN_OBUKHOV_INTEGRAL_TQ_(stable_option, new_mo_option, rich_crit, zeta_trans, &
+call monin_obukhov_integral_tq(stable_option, new_mo_option, rich_crit, zeta_trans, &
      & n, f_t, f_q, zeta, zeta_t, zeta_q, ln_z_zt, ln_z_zq, mask_1, ier)
 
 where (mask_1)
@@ -465,14 +465,14 @@ where(mask .and. u_star > 0.0_FMS_MOI_KIND_)
    zeta_ref_t = zref_t*mo_length_inv
 endwhere
 
-call MONIN_OBUKHOV_INTEGRAL_M_(stable_option, rich_crit, zeta_trans, &
+call monin_obukhov_integral_m(stable_option, rich_crit, zeta_trans, &
      & n, f_m,     zeta, zeta_0,   ln_z_z0,   mask, ier)
-call MONIN_OBUKHOV_INTEGRAL_M_(stable_option, rich_crit, zeta_trans, &
+call monin_obukhov_integral_m(stable_option, rich_crit, zeta_trans, &
      & n, f_m_ref, zeta, zeta_ref, ln_z_zref, mask, ier)
 
-call MONIN_OBUKHOV_INTEGRAL_TQ_(stable_option, new_mo_option, rich_crit, zeta_trans, &
+call monin_obukhov_integral_tq(stable_option, new_mo_option, rich_crit, zeta_trans, &
      & n, f_t, f_q, zeta, zeta_t, zeta_q, ln_z_zt, ln_z_zq, mask, ier)
-call MONIN_OBUKHOV_INTEGRAL_TQ_(stable_option, new_mo_option, rich_crit, zeta_trans, &
+call monin_obukhov_integral_tq(stable_option, new_mo_option, rich_crit, zeta_trans, &
      & n, f_t_ref, f_q_ref, zeta, zeta_ref_t, zeta_ref_t, ln_z_zref_t, ln_z_zref_t,  mask, ier)
 
 where(mask)

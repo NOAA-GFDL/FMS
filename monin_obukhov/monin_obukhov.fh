@@ -50,14 +50,14 @@ if(present(avail)) lavail = .true.
 
 if(lavail) then
 if (count(avail) .eq. 0) return
-call MONIN_OBUKHOV_DRAG_1D_(grav, vonkarm,               &
+call monin_obukhov_drag_1d(grav, vonkarm,               &
    & error, zeta_min, max_iter, small,                         &
    & neutral, stable_option, new_mo_option, rich_crit, zeta_trans, &!miz
    & drag_min_heat, drag_min_moist, drag_min_mom,              &
    & n, pt, pt0, z, z0, zt, zq, speed, drag_m, drag_t,         &
    & drag_q, u_star, b_star, lavail, avail, ier)
 else
-call MONIN_OBUKHOV_DRAG_1D_(grav, vonkarm,               &
+call monin_obukhov_drag_1d(grav, vonkarm,               &
    & error, zeta_min, max_iter, small,                         &
    & neutral, stable_option, new_mo_option, rich_crit, zeta_trans, &!miz
    & drag_min_heat, drag_min_moist, drag_min_mom,              &
@@ -91,14 +91,14 @@ if(present(avail)) then
 
 if (count(avail) .eq. 0) return
 
-call MONIN_OBUKHOV_PROFILE_1D_(vonkarm, &
+call monin_obukhov_profile_1d(vonkarm, &
    & neutral, stable_option, new_mo_option,rich_crit, zeta_trans, &
    & n, zref, zref_t, z, z0, zt, zq, u_star, b_star, q_star, &
    & del_m, del_t, del_q, .true., avail, ier)
 
 else
 
-call MONIN_OBUKHOV_PROFILE_1D_(vonkarm, &
+call monin_obukhov_profile_1d(vonkarm, &
    & neutral, stable_option, new_mo_option,rich_crit, zeta_trans, &
    & n, zref, zref_t, z, z0, zt, zq, u_star, b_star, q_star, &
    & del_m, del_t, del_q, .false., dummy_avail, ier)
@@ -120,7 +120,7 @@ if(.not.module_is_initialized) call error_mesg('stable_mix_3d in monin_obukhov_m
 'monin_obukhov_init has not been called', FATAL)
 
 n = size(rich,1)*size(rich,2)*size(rich,3)
-call MONIN_OBUKHOV_STABLE_MIX_(stable_option, rich_crit, zeta_trans, &
+call monin_obukhov_stable_mix(stable_option, rich_crit, zeta_trans, &
 & n, rich, mix, ier)
 
 
@@ -141,7 +141,7 @@ if(.not.module_is_initialized) call error_mesg('mo_diff_2d_n in monin_obukhov_mo
 'monin_obukhov_init has not been called', FATAL)
 
 ni = size(z, 1); nj = size(z, 2); nk = size(z, 3)
-call MONIN_OBUKHOV_DIFF_(vonkarm,                     &
+call monin_obukhov_diff(vonkarm,                     &
      & ustar_min,                                     &
      & neutral, stable_option, new_mo_option,rich_crit, zeta_trans, &
      & ni, nj, nk, z, u_star, b_star, k_m, k_h, ier)
@@ -218,13 +218,13 @@ zeta_t = 0.0_FMS_MO_KIND_
 zeta_q = 0.0_FMS_MO_KIND_
 end where
 
-call MO_DERIVATIVE_M_(phi_m  , zeta  , mask_1)
-call MO_DERIVATIVE_M_(phi_m_0, zeta_0, mask_1)
-call MO_DERIVATIVE_T_(phi_t  , zeta  , mask_1)
-call MO_DERIVATIVE_T_(phi_t_0, zeta_t, mask_1)
+call mo_derivative_m(phi_m  , zeta  , mask_1)
+call mo_derivative_m(phi_m_0, zeta_0, mask_1)
+call mo_derivative_t(phi_t  , zeta  , mask_1)
+call mo_derivative_t(phi_t_0, zeta_t, mask_1)
 
-call MO_INTEGRAL_M_(f_m, zeta, zeta_0, ln_z_z0, mask_1)
-call MO_INTEGRAL_TQ_(f_t, f_q, zeta, zeta_t, zeta_q, ln_z_zt, ln_z_zq, mask_1)
+call mo_integral_m(f_m, zeta, zeta_0, ln_z_z0, mask_1)
+call mo_integral_tq(f_t, f_q, zeta, zeta_t, zeta_q, ln_z_zt, ln_z_zq, mask_1)
 
 where (mask_1)
 df_m  = (phi_m - phi_m_0)*rzeta
@@ -498,7 +498,7 @@ real(kind=FMS_MO_KIND_), intent(inout), dimension(:,:) :: u_star, b_star
 integer :: j
 
 do j = 1, size(pt,2)
-call MO_DRAG_1D_(pt(:,j), pt0(:,j), z(:,j), z0(:,j), zt(:,j), zq(:,j), &
+call mo_drag_1d(pt(:,j), pt0(:,j), z(:,j), z0(:,j), zt(:,j), zq(:,j), &
               speed(:,j), drag_m(:,j), drag_t(:,j), drag_q(:,j), &
               u_star(:,j), b_star(:,j))
 end do
@@ -508,7 +508,7 @@ return
 end subroutine MO_DRAG_2D_
 
 !=======================================================================
-subroutine MO_DRAG_0D_(pt, pt0, z, z0, zt, zq, speed, drag_m, drag_t, drag_q, u_star, b_star)
+subroutine mo_drag_0d(pt, pt0, z, z0, zt, zq, speed, drag_m, drag_t, drag_q, u_star, b_star)
 
 real(kind=FMS_MO_KIND_), intent(in)    :: z, speed, pt, pt0, z0, zt, zq
 real(kind=FMS_MO_KIND_), intent(out)   :: drag_m, drag_t, drag_q, u_star, b_star
@@ -524,7 +524,7 @@ zt_1   (1) = zt
 zq_1   (1) = zq
 speed_1(1) = speed
 
-call MO_DRAG_1D_(pt_1, pt0_1, z_1, z0_1, zt_1, zq_1, speed_1, &
+call mo_drag_1d(pt_1, pt0_1, z_1, z0_1, zt_1, zq_1, speed_1, &
             drag_m_1, drag_t_1, drag_q_1, u_star_1, b_star_1)
 
 drag_m = drag_m_1(1)
@@ -547,7 +547,7 @@ real(kind=FMS_MO_KIND_), intent(out), dimension(:,:) :: del_m, del_h, del_q
 integer :: j
 
 do j = 1, size(z,2)
-call MO_PROFILE_1D_(zref, zref_t, z(:,j), z0(:,j), zt(:,j),         &
+call mo_profile_1d(zref, zref_t, z(:,j), z0(:,j), zt(:,j),         &
                  zq(:,j), u_star(:,j), b_star(:,j), q_star(:,j), &
                  del_m(:,j), del_h (:,j), del_q (:,j))
 enddo
@@ -575,7 +575,7 @@ u_star_1(1) = u_star
 b_star_1(1) = b_star
 q_star_1(1) = q_star
 
-call MO_PROFILE_1D_(zref, zref_t, z_1, z0_1, zt_1, zq_1, &
+call mo_profile_1d(zref, zref_t, z_1, z0_1, zt_1, zq_1, &
                u_star_1, b_star_1, q_star_1,        &
                del_m_1, del_h_1, del_q_1)
 
@@ -601,10 +601,10 @@ integer :: k
 
 do k = 1, size(zref(:))
 if(present(avail)) then
-call MO_PROFILE_1D_(zref(k), zref(k), z, z0, zt, zq, &
+call mo_profile_1d(zref(k), zref(k), z, z0, zt, zq, &
   u_star, b_star, q_star, del_m(:,k), del_t(:,k), del_q(:,k), avail)
 else
- call MO_PROFILE_1D_(zref(k), zref(k), z, z0, zt, zq, &
+ call mo_profile_1d(zref(k), zref(k), z, z0, zt, zq, &
   u_star, b_star, q_star, del_m(:,k), del_t(:,k), del_q(:,k))
 endif
 enddo
@@ -624,7 +624,7 @@ real(kind=FMS_MO_KIND_),    intent(out), dimension(:) :: del_m, del_t, del_q
 integer :: k
 
 do k = 1, size(zref(:))
-call MO_PROFILE_0D_(zref(k), zref(k), z, z0, zt, zq, &
+call mo_profile_0d(zref(k), zref(k), z, z0, zt, zq, &
   u_star, b_star, q_star, del_m(k), del_t(k), del_q(k))
 enddo
 
@@ -643,7 +643,7 @@ real(kind=FMS_MO_KIND_),    intent(out), dimension(:,:,:) :: del_m, del_t, del_q
 integer :: k
 
 do k = 1, size(zref(:))
-call MO_PROFILE_2D_(zref(k), zref(k), z, z0, zt, zq, &
+call mo_profile_2d(zref(k), zref(k), z, z0, zt, zq, &
   u_star, b_star, q_star, del_m(:,:,k), del_t(:,:,k), del_q(:,:,k))
 enddo
 
@@ -661,7 +661,7 @@ real(kind=FMS_MO_KIND_), dimension(size(z,1),size(z,2),1) :: z_n, k_m_n, k_h_n
 
 z_n(:,:,1) = z
 
-call MO_DIFF_2D_N_(z_n, u_star, b_star, k_m_n, k_h_n)
+call mo_diff_2d_n(z_n, u_star, b_star, k_m_n, k_h_n)
 
 k_m = k_m_n(:,:,1)
 k_h = k_h_n(:,:,1)
@@ -684,7 +684,7 @@ z_n   (:,1,1) = z
 u_star_n(:,1) = u_star
 b_star_n(:,1) = b_star
 
-call MO_DIFF_2D_N_(z_n, u_star_n, b_star_n, k_m_n, k_h_n)
+call mo_diff_2d_n(z_n, u_star_n, b_star_n, k_m_n, k_h_n)
 
 k_m = k_m_n(:,1,1)
 k_h = k_h_n(:,1,1)
@@ -711,7 +711,7 @@ enddo
 u_star2(:,1) = u_star
 b_star2(:,1) = b_star
 
-call MO_DIFF_2D_N_(z2, u_star2, b_star2, k_m2, k_h2)
+call mo_diff_2d_n(z2, u_star2, b_star2, k_m2, k_h2)
 
 do n = 1, size(z,2)
 k_m(:,n) = k_m2(:,1,n)
@@ -740,7 +740,7 @@ ni = 1; nj = 1; nk = 1
 z_a(1,1,1) = z
 u_star_a(1,1) = u_star
 b_star_a(1,1) = b_star
-call MONIN_OBUKHOV_DIFF_(vonkarm, ustar_min, neutral, stable_option, new_mo_option,  &
+call monin_obukhov_diff(vonkarm, ustar_min, neutral, stable_option, new_mo_option,  &
                   rich_crit, zeta_trans, ni, nj, nk, z_a,                            &!miz
                   u_star_a, b_star_a, k_m_a, k_h_a, ier)
 k_m = k_m_a(1,1,1)
@@ -767,7 +767,7 @@ ni = 1; nj = 1; nk = size(z(:))
 z_a(1,1,:) = z(:)
 u_star_a(1,1) = u_star
 b_star_a(1,1) = b_star
-call MONIN_OBUKHOV_DIFF_(vonkarm, ustar_min, neutral, stable_option,new_mo_option, &
+call monin_obukhov_diff(vonkarm, ustar_min, neutral, stable_option,new_mo_option, &
                         rich_crit, zeta_trans, ni, nj, nk, z_a,                    &!miz
                         u_star_a, b_star_a, k_m_a, k_h_a, ier)
 k_m(:) = k_m_a(1,1,:)
@@ -785,7 +785,7 @@ real(kind=FMS_MO_KIND_), dimension(size(rich,1),size(rich,2),1) :: rich_3d, mix_
 
 rich_3d(:,:,1) = rich
 
-call STABLE_MIX_3D_(rich_3d, mix_3d)
+call stable_mix_3d(rich_3d, mix_3d)
 
 mix = mix_3d(:,:,1)
 
@@ -804,7 +804,7 @@ real(kind=FMS_MO_KIND_), dimension(size(rich),1,1)  :: rich_3d, mix_3d
 
 rich_3d(:,1,1) = rich
 
-call STABLE_MIX_3D_(rich_3d, mix_3d)
+call stable_mix_3d(rich_3d, mix_3d)
 
 mix = mix_3d(:,1,1)
 
@@ -822,7 +822,7 @@ real(kind=FMS_MO_KIND_), dimension(1,1,1) :: rich_3d, mix_3d
 
 rich_3d(1,1,1) = rich
 
-call STABLE_MIX_3D_(rich_3d, mix_3d)
+call stable_mix_3d(rich_3d, mix_3d)
 
 mix = mix_3d(1,1,1)
 
