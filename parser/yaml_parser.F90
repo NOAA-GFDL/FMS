@@ -216,7 +216,7 @@ function open_and_parse_file(filename) &
       file_id = 999
       call mpp_error(NOTE, "The yaml file:"//trim(filename)//" does not exist, hopefully this is your intent!")
       return
-   end if 
+   end if
    sucess = open_and_parse_file_wrap(trim(filename)//c_null_char, file_id)
    if (.not. sucess) call mpp_error(FATAL, "Error opening the yaml file:"//trim(filename)//". Check the file!")
 

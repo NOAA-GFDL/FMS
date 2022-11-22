@@ -811,7 +811,7 @@ enddo
   deallocate(end_val)
 
 end subroutine new_name
-#else  
+#else
 
 !> @brief Routine to initialize the field manager.
 !!
