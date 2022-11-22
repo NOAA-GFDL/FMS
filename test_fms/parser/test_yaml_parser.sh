@@ -26,7 +26,7 @@
 . ../test-lib.sh
 
 if [ ! -z $parser_skip ]; then
-  SKIP_TESTS='test_yaml_parser.[1-22]'
+  SKIP_TESTS='test_yaml_parser.[1-23]'
 fi
 
 touch input.nml
@@ -120,6 +120,46 @@ order:
 ...
 _EOF
 
+cat << _EOF > lvl2keys_ref.yaml
+---
+name: time to eat
+location: Bridgewater, NJ
+order:
+- Drink: Iced tea
+  Food:
+  - Main: pancake
+    side: eggs
+    sauce: hot
+  sides:
+  - Appetizer: wings
+    dip: ranch
+2ndorder:
+- Drink: Milk
+  paper: coloring
+  crayon: purple
+  fork: plastic
+  spoon: silver
+  knife: none
+  Food:
+  - Main: cereal
+    sauce: milk
+  specials:
+  - app: poppers
+    sauce: tangy
+3rd_order:
+- Drink: coffee
+  fork: silver
+  knife: steak
+  Food:
+  - main: steak
+    side: mashed
+    sauce: A1
+  - dessert: cake
+    topping: frosting
+order 4: []
+...
+_EOF
+
 test_expect_success "test_yaml_parser" '
   mpirun -n 1 ./test_yaml_parser
 '
@@ -129,7 +169,12 @@ test_expect_success "parser_demo" '
 test_expect_success "parser_demo2" '
   mpirun -n 1 ./parser_demo2
 '
-test_expect_success "test_output_yaml" '
+echo "" > input.nml # clear out any nmls
+test_expect_success "yaml output initial functionality" '
+  mpirun -n 1 ./test_output_yaml
+'
+printf "&test_output_yaml_nml\n test_lvl2keys = .true. \n/" | cat > input.nml
+test_expect_success "yaml output with multiple level2keys" '
   mpirun -n 1 ./test_output_yaml
 '
 printf "&check_crashes_nml \n bad_conversion = .true. \n/" | cat > input.nml
