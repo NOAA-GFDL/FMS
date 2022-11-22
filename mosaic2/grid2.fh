@@ -234,7 +234,8 @@ subroutine GET_GRID_CELL_AREA_UG_(component, tile, cellarea, SG_domain, UG_domai
 
   call mpp_get_compute_domain(SG_domain, is, ie, js, je)
   allocate(SG_area(is:ie, js:je))
-  call get_grid_cell_area_SG(component, tile, SG_area, SG_domain)
+  !MKL call get_grid_cell_area_SG(component, tile, SG_area, SG_domain)
+  call get_grid_cell_area(component, tile, SG_area, SG_domain)
   call mpp_pass_SG_to_UG(UG_domain, SG_area, cellarea)
   deallocate(SG_area)
 end subroutine GET_GRID_CELL_AREA_UG_
@@ -251,7 +252,8 @@ subroutine GET_GRID_COMP_AREA_UG_(component, tile, area, SG_domain, UG_domain)
 
   call mpp_get_compute_domain(SG_domain, is, ie, js, je)
   allocate(SG_area(is:ie, js:je))
-  call get_grid_comp_area_SG(component, tile, SG_area, SG_domain)
+  !MKL call get_grid_comp_area_SG(component, tile, SG_area, SG_domain)
+  call get_grid_comp_area(component, tile, SG_area, SG_domain)
   call mpp_pass_SG_to_UG(UG_domain, SG_area, area)
   deallocate(SG_area)
 
@@ -519,7 +521,8 @@ subroutine GET_GRID_CELL_VERTICES_UG_(component, tile, lonb, latb, SG_domain, UG
   allocate(SG_lonb(is:ie+1, js:je+1))
   allocate(SG_latb(is:ie+1, js:je+1))
   allocate(tmp(is:ie,js:je,4))
-  call get_grid_cell_vertices_2D(component, tile, SG_lonb, SG_latb, SG_domain)
+  !MKL call get_grid_cell_vertices_2D(component, tile, SG_lonb, SG_latb, SG_domain)
+  call get_grid_cell_vertices(component, tile, SG_lonb, SG_latb, SG_domain)
   do j = js, je
      do i = is, ie
         tmp(i,j,1) = SG_lonb(i,j)
@@ -763,7 +766,8 @@ subroutine GET_GRID_CELL_CENTERS_UG_(component, tile, lon, lat, SG_domain, UG_do
   call mpp_get_compute_domain(SG_domain, is, ie, js, je)
   allocate(SG_lon(is:ie, js:je))
   allocate(SG_lat(is:ie, js:je))
-  call get_grid_cell_centers_2D(component, tile, SG_lon, SG_lat, SG_domain)
+  !MKL call get_grid_cell_centers_2D(component, tile, SG_lon, SG_lat, SG_domain)
+  call get_grid_cell_centers(component, tile, SG_lon, SG_lat, SG_domain)
   call mpp_pass_SG_to_UG(UG_domain, SG_lon, lon)
   call mpp_pass_SG_to_UG(UG_domain, SG_lat, lat)
   deallocate(SG_lon, SG_lat)
