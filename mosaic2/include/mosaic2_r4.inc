@@ -17,8 +17,8 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 
-#undef  FMS_MO_KIND_
-#define FMS_MO_KIND_ r4_kind
+#undef  FMS_MOS_KIND_
+#define FMS_MOS_KIND_ r4_kind
 
 #undef  GET_MOSAIC_XGRID_
 #define GET_MOSAIC_XGRID_ get_mosaic_xgrid_r4

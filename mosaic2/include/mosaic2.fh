@@ -25,15 +25,15 @@
   subroutine GET_MOSAIC_XGRID_(fileobj, i1, j1, i2, j2, area, ibegin, iend)
     type(FmsNetcdfFile_t), intent(in) :: fileobj !> The file that contains exchange grid information.
     integer,       intent(inout) :: i1(:), j1(:), i2(:), j2(:) !> i and j indices for grids 1 and 2
-    real(kind=FMS_MO_KIND_),  intent(inout) :: area(:) !> area of the exchange grid. The area is scaled to
+    real(kind=FMS_MOS_KIND_),  intent(inout) :: area(:) !> area of the exchange grid. The area is scaled to
                                             !! represent unit earth area
     integer, optional, intent(in) :: ibegin, iend
 
     integer                 :: start(4), nread(4), istart
-    real(kind=FMS_MO_KIND_),  dimension(2, size(i1(:))) :: tile1_cell, tile2_cell
+    real(kind=FMS_MOS_KIND_),  dimension(2, size(i1(:))) :: tile1_cell, tile2_cell
     integer                 :: nxgrid, n
-    real(kind=FMS_MO_KIND_) :: garea
-    real(kind=FMS_MO_KIND_) :: get_global_area
+    real(kind=FMS_MOS_KIND_) :: garea
+    real(kind=FMS_MOS_KIND_) :: get_global_area
 
     garea = get_global_area()
 
@@ -84,9 +84,9 @@
   !> <br>Example usage:
   !!            call calc_mosaic_grid_area(lon, lat, area)
   subroutine CALC_MOSAIC_GRID_AREA_(lon, lat, area)
-     real(kind=FMS_MO_KIND_), dimension(:,:), intent(in)    :: lon
-     real(kind=FMS_MO_KIND_), dimension(:,:), intent(in)    :: lat
-     real(kind=FMS_MO_KIND_), dimension(:,:), intent(inout) :: area
+     real(kind=FMS_MOS_KIND_), dimension(:,:), intent(in)    :: lon
+     real(kind=FMS_MOS_KIND_), dimension(:,:), intent(in)    :: lat
+     real(kind=FMS_MOS_KIND_), dimension(:,:), intent(inout) :: area
      integer :: nlon, nlat
 
      nlon = size(area,1)
@@ -112,9 +112,9 @@
   !> <br>Example usage:
   !!            call calc_mosaic_grid_great_circle_area(lon, lat, area)
   subroutine CALC_MOSAIC_GRID_GREAT_CIRCLE_AREA_(lon, lat, area)
-     real(kind=FMS_MO_KIND_), dimension(:,:), intent(in)    :: lon
-     real(kind=FMS_MO_KIND_), dimension(:,:), intent(in)    :: lat
-     real(kind=FMS_MO_KIND_), dimension(:,:), intent(inout) :: area
+     real(kind=FMS_MOS_KIND_), dimension(:,:), intent(in)    :: lon
+     real(kind=FMS_MOS_KIND_), dimension(:,:), intent(in)    :: lat
+     real(kind=FMS_MOS_KIND_), dimension(:,:), intent(inout) :: area
      integer :: nlon, nlat
 
      nlon = size(area,1)
@@ -134,8 +134,8 @@
   !> This function check if a point (lon1,lat1) is inside a polygon (lon2(:), lat2(:))
   !! lon1, lat1, lon2, lat2 are in radians.
   function IS_INSIDE_POLYGON_(lon1, lat1, lon2, lat2 )
-     real(kind=FMS_MO_KIND_), intent(in) :: lon1, lat1
-     real(kind=FMS_MO_KIND_), intent(in) :: lon2(:), lat2(:)
+     real(kind=FMS_MOS_KIND_), intent(in) :: lon1, lat1
+     real(kind=FMS_MOS_KIND_), intent(in) :: lon2(:), lat2(:)
      logical :: IS_INSIDE_POLYGON_
      integer :: npts, isinside
      integer :: inside_a_polygon
