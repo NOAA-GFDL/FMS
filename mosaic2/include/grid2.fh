@@ -1,3 +1,22 @@
+!***********************************************************************
+!*                   GNU Lesser General Public License
+!*
+!* This file is part of the GFDL Flexible Modeling System (FMS).
+!*
+!* FMS is free software: you can redistribute it and/or modify it under
+!* the terms of the GNU Lesser General Public License as published by
+!* the Free Software Foundation, either version 3 of the License, or (at
+!* your option) any later version.
+!*
+!* FMS is distributed in the hope that it will be useful, but WITHOUT
+!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+!* for more details.
+!*
+!* You should have received a copy of the GNU Lesser General Public
+!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!***********************************************************************
+
 !> @brief return grid cell area for the specified model component and tile
 subroutine GET_GRID_CELL_AREA_SG_(component, tile, cellarea, domain)
   character(len=*), intent(in)    :: component !< Component model (atm, lnd, ocn)
@@ -234,7 +253,6 @@ subroutine GET_GRID_CELL_AREA_UG_(component, tile, cellarea, SG_domain, UG_domai
 
   call mpp_get_compute_domain(SG_domain, is, ie, js, je)
   allocate(SG_area(is:ie, js:je))
-  !MKL call get_grid_cell_area_SG(component, tile, SG_area, SG_domain)
   call get_grid_cell_area(component, tile, SG_area, SG_domain)
   call mpp_pass_SG_to_UG(UG_domain, SG_area, cellarea)
   deallocate(SG_area)
@@ -252,7 +270,6 @@ subroutine GET_GRID_COMP_AREA_UG_(component, tile, area, SG_domain, UG_domain)
 
   call mpp_get_compute_domain(SG_domain, is, ie, js, je)
   allocate(SG_area(is:ie, js:je))
-  !MKL call get_grid_comp_area_SG(component, tile, SG_area, SG_domain)
   call get_grid_comp_area(component, tile, SG_area, SG_domain)
   call mpp_pass_SG_to_UG(UG_domain, SG_area, area)
   deallocate(SG_area)
@@ -521,7 +538,6 @@ subroutine GET_GRID_CELL_VERTICES_UG_(component, tile, lonb, latb, SG_domain, UG
   allocate(SG_lonb(is:ie+1, js:je+1))
   allocate(SG_latb(is:ie+1, js:je+1))
   allocate(tmp(is:ie,js:je,4))
-  !MKL call get_grid_cell_vertices_2D(component, tile, SG_lonb, SG_latb, SG_domain)
   call get_grid_cell_vertices(component, tile, SG_lonb, SG_latb, SG_domain)
   do j = js, je
      do i = is, ie
@@ -766,7 +782,6 @@ subroutine GET_GRID_CELL_CENTERS_UG_(component, tile, lon, lat, SG_domain, UG_do
   call mpp_get_compute_domain(SG_domain, is, ie, js, je)
   allocate(SG_lon(is:ie, js:je))
   allocate(SG_lat(is:ie, js:je))
-  !MKL call get_grid_cell_centers_2D(component, tile, SG_lon, SG_lat, SG_domain)
   call get_grid_cell_centers(component, tile, SG_lon, SG_lat, SG_domain)
   call mpp_pass_SG_to_UG(UG_domain, SG_lon, lon)
   call mpp_pass_SG_to_UG(UG_domain, SG_lat, lat)
