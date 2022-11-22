@@ -19,7 +19,7 @@
 !> @defgroup fms_yaml_output_mod fms_yaml_output_mod
 !> @ingroup parser
 !> @author Tom Robinson
-!> @description Writes a 3 tiered yaml where the first and second tier can have 1 key that has an 
+!> @description Writes a 3 tiered yaml where the first and second tier can have 1 key that has an
 !! array of values.  This is usefule for writing a diag_output.yaml Here is an example:
 !! \verbatim
 !! ---
@@ -43,7 +43,7 @@
 !!     units: K
 !! ...
 !! \endverbatim
-!! In this example, basedate, experiment, and files are the level 1 (top level) keys.  files is the 
+!! In this example, basedate, experiment, and files are the level 1 (top level) keys.  files is the
 !! level2key in the keys struct.  The array of structs for the files with name, freq has a size of 2, and
 !! vars is the level2key.  The key3 and var3 arrays should have a size of 4, and a3each=(\3,1\)
 !! corresponding to the number of elements in each array within the yaml.
@@ -60,7 +60,7 @@ use iso_c_binding
 implicit none
 
 integer, parameter :: string_len_parameter = 255 !< Number of characters in the keys and strings.
-                                                 !! Must match whats in yaml_output_functions.c 
+                                                 !! Must match whats in yaml_output_functions.c
 !> Keys for the output yaml on a given level corresponding to the struct in yaml_output_functions.c
 type, bind(c) :: fmsYamlOutKeys_type
         character (c_char) :: key1 (string_len_parameter)
@@ -113,7 +113,7 @@ integer (c_int), value :: a2size !< The size of the second yaml array
 type (fmsYamlOutKeys_type) :: key2(a2size) !< Second level keys
 type (fmsYamlOutValues_type) :: val2(a2size) !< Values corresponding to key2
 integer (c_int), value :: a3size !< The size of the third yaml array
-integer (c_int) :: a3each (a2size) !< Array that has the number of elements for each level 2 array's 
+integer (c_int) :: a3each (a2size) !< Array that has the number of elements for each level 2 array's
                                    !! third level elements
 type (fmsYamlOutKeys_type) :: key3(a3size) !< Third level keys
 type (fmsYamlOutValues_type) :: val3(a3size) !< Values corresponding to keys2
