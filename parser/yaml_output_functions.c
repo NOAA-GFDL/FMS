@@ -24,9 +24,9 @@
 #include <string.h>
 #include <assert.h>
 #include <ctype.h>
- 
+
  // Should always match values of string_len_parameter and lvl2_key_parameter in fms_yaml_output_mod
-#define LVL2KEY_NUM 8 
+#define LVL2KEY_NUM 8
 #define KEY_STR_LEN 255
 #define LVL2KEY_SIZE LVL2KEY_NUM*KEY_STR_LEN
 
@@ -349,7 +349,7 @@ return ;
  * \param n3each Array that has the number of elements for each l2 array's third level elements
  * \param l3keys The keys for the third level of the yaml, any lvl2 keys will not be printed
  * \param l3vals The values corresponding to l3keys
- * \param lvl2keyeach array to indicate how many structs to print per level2key for the top level keys, should be the size of LVL2KEY_NUM 
+ * \param lvl2keyeach array to indicate how many structs to print per level2key for the top level keys, should be the size of LVL2KEY_NUM
  */
 void write_yaml_from_struct_3 (char *yamlname, int asize, struct fmsyamloutkeys *topkeys, struct fmsyamloutvalues *topvals, int a2size, struct fmsyamloutkeys *l2keys,
                                struct fmsyamloutvalues *l2vals, int a3size, int * n3each, struct fmsyamloutkeys *l3keys, struct fmsyamloutvalues *l3vals,
@@ -389,7 +389,7 @@ void write_yaml_from_struct_3 (char *yamlname, int asize, struct fmsyamloutkeys 
  	error(yamlname, &event, &emitter, yamlout);
 	return;
   }
-  
+
   /* write the top level */
   write_keys_vals_yaml (&emitter, &event , 0, topkeys, topvals);
   char* curr_topkey = topkeys->level2key;
@@ -410,7 +410,7 @@ void write_yaml_from_struct_3 (char *yamlname, int asize, struct fmsyamloutkeys 
     if (!yaml_emitter_emit(&emitter, &event)){
   	  error(yamlname, &event, &emitter, yamlout);
 	    return;
-    } 
+    }
     /* loop through the structs for this key*/
     for (int s2 = 0 ; s2 < lvl2keyeach[top_ind]; s2++){
       yaml_mapping_start_event_initialize(&event, NULL, (yaml_char_t *)YAML_MAP_TAG,
@@ -475,7 +475,7 @@ void write_yaml_from_struct_3 (char *yamlname, int asize, struct fmsyamloutkeys 
 
       s2count++;
     }/* for s2 loop */
-  
+
     yaml_sequence_end_event_initialize(&event);
     if (!yaml_emitter_emit(&emitter, &event)){
  	    error(yamlname, &event, &emitter, yamlout);
@@ -509,7 +509,7 @@ void write_yaml_from_struct_3 (char *yamlname, int asize, struct fmsyamloutkeys 
 /// Uses an offset to store multiple keys, size(amount of strings) is set by LVL2KEY_NUM (avoids c to fortran 2d array issues)
 /// @param key_name name of level 2 key to add
 /// @param key_length string length of key_name
-/// @param keys key struct to add level 2 key to 
+/// @param keys key struct to add level 2 key to
 void add_level2key(int key_length, char* key_name, struct fmsyamloutkeys* keys){
 
   // local fixed length copy to try to mitigate any fortran to c string weirdness
@@ -519,8 +519,8 @@ void add_level2key(int key_length, char* key_name, struct fmsyamloutkeys* keys){
   kname_loc[key_length] = '\0';
   // error checking
   if ( strlen(kname_loc) > KEY_STR_LEN){
-    fprintf(stderr, "WARNING: YAML_OUTPUT: invalid level two key passed to add_level2key. Max string size is %d, passed in string: %s",  KEY_STR_LEN, key_name); 
-    fprintf(stdout, "WARNING: YAML_OUTPUT: invalid level two key passed to add_level2key. Max string size is %d, passed in string: %s",  KEY_STR_LEN, key_name); 
+    fprintf(stderr, "WARNING: YAML_OUTPUT: invalid level two key passed to add_level2key. Max string size is %d, passed in string: %s",  KEY_STR_LEN, key_name);
+    fprintf(stdout, "WARNING: YAML_OUTPUT: invalid level two key passed to add_level2key. Max string size is %d, passed in string: %s",  KEY_STR_LEN, key_name);
   }
   if( keys->level2key_offset  >= LVL2KEY_NUM ){
     fprintf(stderr, "WARNING: YAML_OUTPUT: max amount of level 2 keys (%d) has been exceeded", LVL2KEY_NUM);
@@ -528,7 +528,7 @@ void add_level2key(int key_length, char* key_name, struct fmsyamloutkeys* keys){
   }
   // check if string is set to initialize offset count
   if ( keys->level2key[0] == '\0'){
-    keys->level2key_offset = 0; 
+    keys->level2key_offset = 0;
   }
   // calculate offset and copy into the level2key array
   int offset = keys->level2key_offset * KEY_STR_LEN;

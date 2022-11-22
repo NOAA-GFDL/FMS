@@ -63,7 +63,7 @@ use mpp_mod
 use fms_mod
 implicit none
 
-!! nml switch to test using lvl2keys 
+!! nml switch to test using lvl2keys
 logical :: test_lvl2keys = .false.
 namelist / test_output_yaml_nml / test_lvl2keys
 
@@ -87,7 +87,7 @@ character(len=string_len_parameter) :: tmpstr
 integer :: i, io_status !< for looping
 call fms_init
 call mpp_init
- 
+
 read (input_nml_file, test_output_yaml_nml, iostat=io_status)
 
 !> Set the number of "third level" elements and calculate a3
@@ -204,10 +204,10 @@ if(test_lvl2keys) then
   call yaml_out_add_level2key( "sides", k2(1))
   call yaml_out_add_level2key( "specials",  k2(2))
   call write_yaml_from_struct_3 (filename, 1, k1, v1, a2, k2, v2, a3, (/1, 1, 1, 1, 2, 1/), k3, v3, &
-                               & (/ 1, 1, 1 , 1, 0 ,0 ,0 ,0/)) 
+                               & (/ 1, 1, 1 , 1, 0 ,0 ,0 ,0/))
 else
   !> Write the yaml
-  call write_yaml_from_struct_3 (filename, 1, k1, v1, a2, k2, v2, a3, a3each, k3, v3, (/ 3, 0, 0 , 0, 0 ,0 ,0 ,0/)) 
+  call write_yaml_from_struct_3 (filename, 1, k1, v1, a2, k2, v2, a3, a3each, k3, v3, (/ 3, 0, 0 , 0, 0 ,0 ,0 ,0/))
 endif
 
 !> Check yaml output against reference

@@ -60,7 +60,7 @@ use iso_c_binding
 use fms_string_utils_mod, only: fms_f2c_string
 implicit none
 
-private 
+private
 
 public :: fmsYamlOutKeys_type, fmsYamlOutValues_type
 public :: write_yaml_from_struct_3
@@ -69,9 +69,9 @@ public :: string_len_parameter
 public :: initialize_key_struct, initialize_val_struct
 
 integer, parameter :: string_len_parameter = 255 !< Max number of characters in the key and value strings.
-                                                 !! Must match whats in yaml_output_functions.c 
+                                                 !! Must match whats in yaml_output_functions.c
 integer, parameter :: lvl2_key_parameter = 8     !< Max number of strings to be stored in lvl2keys
-                                                 !! Must match whats in yaml_output_functions.c 
+                                                 !! Must match whats in yaml_output_functions.c
 !> Keys for the output yaml on a given level corresponding to the struct in yaml_output_functions.c
 !! Should be set using the fms_f2c_string routine to get properly formatted c style strings
 !! level2keys should be set with  add_level2key()
@@ -141,7 +141,7 @@ end subroutine write_yaml_from_struct_3
 subroutine yaml_out_add_level2key_c(key_length, key_name, keytype) bind(C, name="add_level2key")
   use iso_c_binding
   import fmsYamlOutKeys_type
-  character(c_char), intent(in) :: key_name !< name of level 2 key (starts a new tabbed section) to add to list 
+  character(c_char), intent(in) :: key_name !< name of level 2 key (starts a new tabbed section) to add to list
   integer(c_int), value    :: key_length !< length of key_name
   type(fmsYamlOutKeys_type), intent(inout) :: keytype !< struct of keys to output
 end subroutine
@@ -151,7 +151,7 @@ contains
 
 !> Adds a level 2 key (key that starts new tabbed section) to the list.
 !! Will print level 2 keys in the order added. See write_yaml_from_struct_3 for more details.
-!! This routine is a wrapper for @ref yaml_out_add_level2key_c . 
+!! This routine is a wrapper for @ref yaml_out_add_level2key_c .
 subroutine yaml_out_add_level2key(key_name, keytype)
   character(len=*) :: key_name
   type(fmsYamlOutKeys_type), intent(inout) :: keytype
