@@ -28,6 +28,11 @@
 
 !> @{
 
+#undef MONIN_OBUKHOV_INIT_
+#define MONIN_OBUKHOV_INIT_ monin_obukhov_init_r4
+#undef FMS_MO_KIND_
+#define FMS_MO_KIND_ r4_kind
+
 #undef MO_DRAG_1D_
 #define MO_DRAG_1D_ mo_drag_1d_r4
 #undef FMS_MO_KIND_
@@ -114,7 +119,10 @@
 #define FMS_MO_KIND_ r4_kind
 
 #undef MO_DIFF_1D_1_
-#define MO_DIFF_1D_1_ mo_diff_1d_1_r4
+#define MO_DIFF_1D#undef MONIN_OBUKHOV_INIT_
+#define MONIN_OBUKHOV_INIT_ monin_obukhov_init_r4
+#undef FMS_MO_KIND_
+#define FMS_MO_KIND_ r4_kind_1_ mo_diff_1d_1_r4
 #undef FMS_MO_KIND_
 #define FMS_MO_KIND_ r4_kind
 
@@ -149,6 +157,10 @@
 #define FMS_MO_KIND_ r4_kind
 #include <monin_obukhov.fh>
 
+#undef MONIN_OBUKHOV_INIT_
+#define MONIN_OBUKHOV_INIT_ monin_obukhov_init_r8
+#undef FMS_MO_KIND_
+#define FMS_MO_KIND_ r8_kind
 
 #undef MO_DRAG_1D_
 #define MO_DRAG_1D_ mo_drag_1d_r8
