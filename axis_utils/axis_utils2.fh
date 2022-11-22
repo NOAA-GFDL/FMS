@@ -26,22 +26,13 @@
 !> @addtogroup axis_utils2_mod
 !> @{
 
-  !subroutine AXIS_UTILS_TYPE_EQ_(axis_utils_out, axis_utils_in)
-  !    type(axis_utils_type), intent(inout) :: axis_utils_out
-  !    type(axis_utils_type), intent(in)    :: axis_utils_in
-
-  !   axis_utils_out%
-
-
-
-  !end subroutine AXIS_UTILS_TYPE_EQ_ 
   !> get axis edge data from a given file
   subroutine AXIS_EDGES_(fileobj, name, edge_data, reproduce_null_char_bug_flag)
 
-  class(FmsNetcdfFile_t), intent(in)  :: fileobj  !< File object to read from
-  character(len=*), intent(in)        :: name  !< Name of a given axis
+  class(FmsNetcdfFile_t), intent(in)            :: fileobj  !< File object to read from
+  character(len=*), intent(in)                  :: name  !< Name of a given axis
   real(FMS_AU_KIND_), dimension(:), intent(out) :: edge_data  !< Returned edge data from given axis name
-  logical, intent(in), optional       :: reproduce_null_char_bug_flag  !< Flag indicating to reproduce
+  logical, intent(in), optional                 :: reproduce_null_char_bug_flag  !< Flag indicating to reproduce
                                      !! the mpp_io bug where the null characters were not removed
                                      !! after reading a string attribute 
 
@@ -123,7 +114,7 @@
       enddo
       edge_data(1) = r_var(1) - 0.5_FMS_AU_KIND_*(r_var(2) - r_var(1))
       if (abs(edge_data(1)) .lt. real(1.e-10,kind=FMS_AU_KIND_)) then
-         edge_data(1) = 0._FMS_AU_KIND
+         edge_data(1) = 0.0_FMS_AU_KIND_
       endif
       edge_data(n+1) = r_var(n) + 0.5_FMS_AU_KIND_*(r_var(n) - r_var(n-1))
       deallocate(r_var)

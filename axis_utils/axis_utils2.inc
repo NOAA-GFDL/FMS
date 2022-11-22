@@ -28,7 +28,7 @@
 #undef AXIS_EDGES_
 #define AXIS_EDGES_ axis_edges_r4
 #undef FMS_AU_KIND_
-#define FMS_AU_KIND r4_kind
+#define FMS_AU_KIND_ r4_kind
 
 #undef LON_IN_RANGE_
 #define LON_IN_RANGE_ lon_in_range_r4
