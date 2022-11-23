@@ -42,12 +42,12 @@ integer :: i, table_i, type_i, model_i, var_i, var_j, attr_j !< counters
 
 !> @brief This type represents the subparameters for a given variable parameter.
 !> This type contains the name of the associated parameter, the key / value pairs for this subparameter,
-!! and the following methods: getting names and properties, and self destruction. 
+!! and the following methods: getting names and properties, and self destruction.
 !> @ingroup fm_yaml_mod
 type, public :: fmAttr_t
   integer                                     :: yfid                  !< file id of a yaml file
   integer                                     :: id                    !< block id of this var
-  character(len=:), allocatable               :: paramname             !< name of associated parameter  
+  character(len=:), allocatable               :: paramname             !< name of associated parameter
   character(len=:), dimension(:), allocatable :: keys                  !< name of the variable
   character(len=:), dimension(:), allocatable :: values                !< name of the variable
   contains
@@ -58,7 +58,7 @@ end type fmAttr_t
 !> @brief This type represents the entries for a given variable, e.g. dust.
 !> This type contains the name of the variable, the block id, the key / value pairs for this variable's parameters,
 !! any applicable subparameters, and the following methods:
-!! getting blocks, getting names and properties, creating children (subparameters), and self destruction. 
+!! getting blocks, getting names and properties, creating children (subparameters), and self destruction.
 !> @ingroup fm_yaml_mod
 type, public :: fmVar_t
   integer                                     :: yfid                  !< file id of a yaml file
@@ -80,7 +80,7 @@ end type fmVar_t
 
 !> @brief This type represents the entries for a given model, e.g. land, ocean, atmosphere.
 !> This type contains the name of the model, the block id, the variables within this model,
-!! and the following methods: getting blocks, getting the name, creating children (variables), and self destruction. 
+!! and the following methods: getting blocks, getting the name, creating children (variables), and self destruction.
 !> @ingroup fm_yaml_mod
 type, public :: fmModel_t
   integer                       :: yfid                !< file id of a yaml file
@@ -99,7 +99,7 @@ end type fmModel_t
 
 !> @brief This type represents the entries for a specific field type, e.g. a tracer.
 !> This type contains the name of the field type, the block id, the models within this field type,
-!! and the following methods: getting blocks, getting the name, creating children (models), and self destruction. 
+!! and the following methods: getting blocks, getting the name, creating children (models), and self destruction.
 !> @ingroup fm_yaml_mod
 type, public :: fmType_t
   integer                       :: yfid                !< file id of a yaml file
@@ -118,7 +118,7 @@ end type fmType_t
 
 !> @brief This type represents the entirety of the field table.
 !> This type contains the file id of the yaml file, the field types within this table, and the following methods:
-!! getting blocks, creating children (field types), and self destruction. 
+!! getting blocks, creating children (field types), and self destruction.
 !> @ingroup fm_yaml_mod
 type, public :: fmTable_t
   integer                       :: yfid                    !< file id of a yaml file
