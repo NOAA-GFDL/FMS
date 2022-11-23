@@ -17,6 +17,8 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 
+!> @file
+
 !> @brief Get exchange grid information from mosaic xgrid file.
 !> Example usage:
 !!
@@ -152,3 +154,4 @@
      return
 
   end function IS_INSIDE_POLYGON_
+!> @}

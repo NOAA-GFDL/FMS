@@ -17,6 +17,8 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 
+!> @file
+
 !> @brief return grid cell area for the specified model component and tile
 subroutine GET_GRID_CELL_AREA_SG_(component, tile, cellarea, domain)
   character(len=*), intent(in)    :: component !< Component model (atm, lnd, ocn)

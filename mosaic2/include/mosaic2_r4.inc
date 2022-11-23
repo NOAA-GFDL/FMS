@@ -16,6 +16,11 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
+!> @file
+!> @brief include file for mosaic22_mod to generate subroutines/functions for r4_kind arguments
+
+!> @addtogroup mosaic2_mod
+!> @{
 
 #undef  FMS_MOS_KIND_
 #define FMS_MOS_KIND_ r4_kind
@@ -33,3 +38,4 @@
 #define IS_INSIDE_POLYGON_ is_inside_polygon_r4
 
 #include <mosaic2.fh>
+!> @}
