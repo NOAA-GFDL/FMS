@@ -23,14 +23,22 @@
 # Ed Hartnett 2/22/19
 
 # Include .h and .mod files.
-AM_CPPFLAGS = -I$(top_srcdir)/include
+AM_CPPFLAGS = -I$(top_srcdir)/include -I$(top_srcdir)/column_diagnostics/include
 AM_FCFLAGS = $(FC_MODINC). $(FC_MODOUT)$(MODDIR)
 
 # Build this uninstalled convenience library.
 noinst_LTLIBRARIES = libcolumn_diagnostics.la
 
 # The convenience library depends on its source.
-libcolumn_diagnostics_la_SOURCES = column_diagnostics.F90
+libcolumn_diagnostics_la_SOURCES = column_diagnostics.F90 \
+include/column_diagnostics.fh \
+include/column_diagnostics_r4.inc \
+include/column_diagnostics_r8.inc
+
+column_diagnostics.$(FC_MOD_EXT):\
+include/column_diagnostics.fh \
+include/column_diagnostics_r4.inc \
+include/column_diagnostics_r8.inc
 
 BUILT_SOURCES = column_diagnostics_mod.$(FC_MODEXT)
 nodist_include_HEADERS = column_diagnostics_mod.$(FC_MODEXT)
