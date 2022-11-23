@@ -105,7 +105,7 @@ type diagYamlFiles_type
   character (len=:),   allocatable :: file_start_time                    !< Time to start the file for the
                                                                          !! first time. Requires “new_file_freq”
   integer                          :: file_duration(MAX_FREQ)            !< How long the file should receive data
-                                                                         !! after start time in “file_duration_units”.
+                                                                         !! after start time in file_duration_units.
                                                                          !! This optional field can only be used if
                                                                          !! the start_time field is present.  If this
                                                                          !! field is absent, then the file duration
