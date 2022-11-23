@@ -29,7 +29,7 @@ jobs:
           path: 'gen_docs/html'
   deploy:
     needs: build
-    
+
     # Grant GITHUB_TOKEN the permissions required to make a Pages deployment
     permissions:
       pages: write      # to deploy to Pages
