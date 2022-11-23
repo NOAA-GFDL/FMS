@@ -32,9 +32,10 @@ use diag_data_mod, only: DIAG_NULL, NO_DOMAIN, max_axes, SUB_REGIONAL, get_base_
                          TWO_D_DOMAIN, UG_DOMAIN, prepend_date, DIAG_DAYS, VERY_LARGE_FILE_FREQ, &
                          get_base_year, get_base_month, get_base_day, get_base_hour, get_base_minute, &
                          get_base_second, time_unit_list, time_average, time_rms, time_max, time_min, time_sum, &
-                         time_diurnal, time_power, time_none
+                         time_diurnal, time_power, time_none, avg_name
 use time_manager_mod, only: time_type, operator(>), operator(/=), operator(==), get_date, get_calendar_type, &
-                            VALID_CALENDAR_TYPES, operator(>=), date_to_string
+                            VALID_CALENDAR_TYPES, operator(>=), date_to_string, &
+                            OPERATOR(/), OPERATOR(+), operator(<)
 use fms_diag_time_utils_mod, only: diag_time_inc, get_time_string, get_date_dif
 use fms_diag_yaml_mod, only: diag_yaml, diagYamlObject_type, diagYamlFiles_type, subRegion_type, diagYamlFilesVar_type
 use fms_diag_axis_object_mod, only: diagDomain_t, get_domain_and_domain_type, fmsDiagAxis_type, &
@@ -60,9 +61,12 @@ type :: fmsDiagFile_type
   TYPE(time_type) :: last_output      !< Time of the last time output was writen
   TYPE(time_type) :: next_output      !< Time of the next write
   TYPE(time_type) :: next_next_output !< Time of the next next write
+  TYPE(time_type) :: no_more_data     !< Time to stop receiving data for this file
 
   !< This will be used when using the new_file_freq keys in the diag_table.yaml
-  TYPE(time_type) :: next_open        !< The next time to open the file
+  TYPE(time_type) :: next_close       !< Time to close the file
+  logical         :: is_file_open     !< .True. if the file is opened
+
   class(FmsNetcdfFile_t), allocatable :: fileobj !< fms2_io file object for this history file
   type(diagYamlFiles_type), pointer :: diag_yaml_file => null() !< Pointer to the diag_yaml_file data
   integer                                      :: type_of_domain !< The type of domain to use to open the file
@@ -147,8 +151,10 @@ type fmsDiagFileContainer_type
   procedure :: write_axis_data
   procedure :: writing_on_this_pe
   procedure :: is_time_to_write
+  procedure :: is_time_to_close_file
   procedure :: write_time_data
   procedure :: update_next_write
+  procedure :: update_current_new_file_freq_index
   procedure :: increase_unlimited_dimension
   procedure :: close_diag_file
 end type fmsDiagFileContainer_type
@@ -209,7 +215,22 @@ logical function fms_diag_files_object_init (files_array)
      obj%last_output = get_base_time()
      obj%next_output = diag_time_inc(obj%start_time, obj%get_file_freq(), obj%get_file_frequnit())
      obj%next_next_output = diag_time_inc(obj%next_output, obj%get_file_freq(), obj%get_file_frequnit())
-     obj%next_open = get_base_time()
+
+     if (obj%has_file_new_file_freq()) then
+       obj%next_close = diag_time_inc(obj%start_time, obj%get_file_new_file_freq(), &
+                                        obj%get_file_new_file_freq_units())
+     else
+       obj%next_close = diag_time_inc(obj%start_time, VERY_LARGE_FILE_FREQ, DIAG_DAYS)
+     endif
+     obj%is_file_open = .false.
+
+     if(obj%has_file_duration()) then
+       obj%no_more_data = diag_time_inc(obj%start_time, obj%get_file_duration(), &
+                                          obj%get_file_duration_units())
+     else
+       obj%no_more_data = diag_time_inc(obj%start_time, VERY_LARGE_FILE_FREQ, DIAG_DAYS)
+     endif
+
      obj%time_ops = .false.
      obj%unlimited_dimension = 0
      obj%is_static = obj%get_file_freq() .eq. -1
@@ -653,6 +674,20 @@ subroutine add_start_time(this, start_time)
     this%last_output = start_time
     this%next_output = diag_time_inc(start_time, this%get_file_freq(), this%get_file_frequnit())
     this%next_next_output = diag_time_inc(this%next_output, this%get_file_freq(), this%get_file_frequnit())
+    if (this%has_file_new_file_freq()) then
+       this%next_close = diag_time_inc(this%start_time, this%get_file_new_file_freq(), &
+                                        this%get_file_new_file_freq_units())
+     else
+       this%next_close = diag_time_inc(this%start_time, VERY_LARGE_FILE_FREQ, DIAG_DAYS)
+     endif
+
+    if(this%has_file_duration()) then
+       this%no_more_data = diag_time_inc(this%start_time, this%get_file_duration(), &
+                                          this%get_file_duration_units())
+    else
+       this%no_more_data = diag_time_inc(this%start_time, VERY_LARGE_FILE_FREQ, DIAG_DAYS)
+    endif
+
   endif
 
 end subroutine
@@ -667,7 +702,7 @@ subroutine dump_file_obj(this, unit_num)
   write( unit_num, *) 'last_output', date_to_string(this%last_output)
   write( unit_num, *) 'next_output', date_to_string(this%next_output)
   write( unit_num, *)'next_next_output', date_to_string(this%next_next_output)
-  write( unit_num, *)'next_open', date_to_string(this%next_open)
+  write( unit_num, *)'next_close', date_to_string(this%next_close)
 
   if( allocated(this%fileobj)) write( unit_num, *)'fileobj path', this%fileobj%path
 
@@ -714,8 +749,8 @@ subroutine open_diag_file(this, time_step, file_is_opened)
   domain => diag_file%domain
 
   file_is_opened = .false.
-  !< Go away if it is not time to open the file
-  if (diag_file%next_open > time_step) return
+  !< Go away if it the file is already open
+  if (diag_file%is_file_open) return
 
   is_regional = .false.
   !< Figure out what fileobj to use!
@@ -736,9 +771,6 @@ subroutine open_diag_file(this, time_step, file_is_opened)
         allocate(FmsNetcdfUnstructuredDomainFile_t :: diag_file%fileobj)
       end select
     end select
-  else
-    !< In this case, we are opening a new file so close the current the file
-    call this%close_diag_file()
   endif
 
   !< Figure out what to name of the file
@@ -812,17 +844,56 @@ subroutine open_diag_file(this, time_step, file_is_opened)
     end select
   end select
 
-  if (diag_file%has_file_new_file_freq()) then
-    diag_file%next_open = diag_time_inc(diag_file%next_open, diag_file%get_file_new_file_freq(), &
-                                        diag_file%get_file_new_file_freq_units())
-  else
-    diag_file%next_open = diag_time_inc(diag_file%next_open, VERY_LARGE_FILE_FREQ, DIAG_DAYS)
-  endif
-
   file_is_opened = .true.
+  diag_file%is_file_open = file_is_opened
   domain => null()
   diag_file => null()
 end subroutine open_diag_file
+
+!< @brief Writes the time average variables (*_T1, *_T2, *_DT) in the netcdf file
+subroutine write_avg_time_metadata(fileobj, variable_name, dimensions, long_name, units)
+  class(FmsNetcdfFile_t), intent(inout) :: fileobj        !< The file object to write into
+  character(len=*)      , intent(in)    :: variable_name  !< The name of the time variables
+  character(len=*)      , intent(in)    :: dimensions(:)  !< The dimensions of the variable
+  character(len=*)      , intent(in)    :: long_name      !< The long_name of the variable
+  character(len=*)      , intent(in)    :: units          !< The units of the variable
+
+  !TODO harcodded double
+  call register_field(fileobj, variable_name, "double", dimensions)
+  call register_variable_attribute(fileobj, variable_name, "long_name", &
+                                  trim(long_name), str_len=len_trim(long_name))
+  call register_variable_attribute(fileobj, variable_name, "units", &
+                                  trim(units), str_len=len_trim(units))
+end subroutine write_avg_time_metadata
+
+!< @brief Writes the time_bounds variables to the diag_file
+subroutine write_time_bounds_metadata(fileobj, time_var_name, units)
+  class(FmsNetcdfFile_t), intent(inout) :: fileobj       !< The file object
+  character(len=*)      , intent(in)    :: time_var_name !< The name of the time variable as it is
+                                                         !! read from the diag_table.yaml
+  character(len=*)      , intent(in)    :: units         !< The units of the time variable
+
+  character(len=50)             :: dimensions(2) !< Array of dimensions names for the variable
+  character(len=:), allocatable :: bounds_name   !< The name of the time bounds variable (i.e time_bounds)
+
+  !< Register the "nv" dimension that it needed for the time_bounds
+  call register_axis(fileobj, "nv", 2)
+  !TODO hardcodded double
+  call register_field(fileobj, "nv", "double", (/"nv"/))
+  call register_variable_attribute(fileobj, "nv", "long_name", "vertex number", str_len=13)
+
+  !< Register the "time_bounds" as a variable
+  dimensions(1) = "nv"
+  dimensions(2) = trim(time_var_name)
+  bounds_name = trim(time_var_name)//"_bounds"
+  !TODO hardcodded double
+  call register_field(fileobj, bounds_name , "double", dimensions)
+  call register_variable_attribute(fileobj, bounds_name, "units", &
+                                   trim(units), str_len=len_trim(units) )
+  call register_variable_attribute(fileobj, bounds_name, "long_name", &
+                                   trim(time_var_name)//" axis boundaries", &
+                                   str_len=len_trim(trim(time_var_name)//" axis boundaries"))
+end subroutine write_time_bounds_metadata
 
 !> \brief Write the time metadata to the diag file
 subroutine write_time_metadata(this)
@@ -862,10 +933,36 @@ subroutine write_time_metadata(this)
   call register_variable_attribute(fileobj, time_var_name, "calendar", &
     lowercase(trim(calendar)), str_len=len_trim(calendar))
 
-  if (diag_file%time_ops) call register_variable_attribute(fileobj, time_var_name, "bounds", &
-    trim(time_var_name)//"_bounds", str_len=len_trim(time_var_name//"_bounds"))
+  if (diag_file%time_ops) then
+    call register_variable_attribute(fileobj, time_var_name, "bounds", &
+      trim(time_var_name)//"_bounds", str_len=len_trim(time_var_name//"_bounds"))
+
+    !< Write out the "average_*" variables metadata
+    call write_avg_time_metadata(fileobj, avg_name//"_T1", (/time_var_name/), &
+      "Start time for average period", time_units_str)
+    call write_avg_time_metadata(fileobj, avg_name//"_T2", (/time_var_name/), &
+      "End time for average period", time_units_str)
+    call write_avg_time_metadata(fileobj, avg_name//"_DT", (/time_var_name/), &
+      "Length time for average period", time_units_str)
+
+    !< Write out the *_bounds variable metadata
+    call write_time_bounds_metadata(fileobj, time_var_name, time_units_str)
+  endif
 
 end subroutine write_time_metadata
+
+!> \brief Determine if it is time to close the file
+!! \return .True. if it is time to close the file
+logical function is_time_to_close_file (this, time_step)
+  class(fmsDiagFileContainer_type), intent(in), target   :: this            !< The file object
+  TYPE(time_type),                  intent(in)           :: time_step       !< Current model step time
+
+  if (time_step >= this%FMS_diag_file%next_close) then
+    is_time_to_close_file = .true.
+  else
+    is_time_to_close_file = .false.
+  endif
+end function
 
 !> \brief Determine if it is time to "write" to the file
 logical function is_time_to_write(this, time_step)
@@ -875,7 +972,7 @@ logical function is_time_to_write(this, time_step)
   if (time_step >= this%FMS_diag_file%next_output) then
     is_time_to_write = .true.
     if (this%FMS_diag_file%is_static) return
-    if (time_step >= this%FMS_diag_file%next_next_output) &
+    if (time_step > this%FMS_diag_file%next_next_output) &
       call mpp_error(FATAL, this%FMS_diag_file%get_file_fname()//&
         &": Diag_manager_mod:: You skipped a time_step. Be sure that diag_send_complete is called at every time step "&
         &" needed by the file.")
@@ -898,32 +995,72 @@ logical function writing_on_this_pe(this)
 end function
 
 !> \brief Write out the time data to the file
-subroutine write_time_data(this, time_step)
-  class(fmsDiagFileContainer_type), intent(in), target   :: this            !< The file object
-  TYPE(time_type),                  intent(in)           :: time_step       !< Current model step time
+subroutine write_time_data(this)
+  class(fmsDiagFileContainer_type), intent(in), target   :: this !< The file object
 
   real                                 :: dif            !< The time as a real number
   class(fmsDiagFile_type), pointer     :: diag_file      !< Diag_file object to open
   class(FmsNetcdfFile_t),  pointer     :: fileobj        !< The fileobj to write to
+  TYPE(time_type)                      :: middle_time    !< The middle time of the averaging period
+
+  real :: T1 !< The beginning time of the averaging period
+  real :: T2 !< The ending time of the averaging period
+  real :: DT !< The difference between the ending and beginning time of the averaging period
 
   diag_file => this%FMS_diag_file
   fileobj => diag_file%fileobj
 
-  !> dif is the time as a real that is evaluated
-  dif = get_date_dif(time_step, get_base_time(), diag_file%get_file_timeunit())
-  select type (fileobj)
-  type is (FmsNetcdfDomainFile_t)
-    call write_data(fileobj, diag_file%get_file_unlimdim(), dif, &
-      unlim_dim_level=diag_file%unlimited_dimension)
-  type is (FmsNetcdfUnstructuredDomainFile_t)
-    call write_data(fileobj, diag_file%get_file_unlimdim(), dif, &
-      unlim_dim_level=diag_file%unlimited_dimension)
-  type is (FmsNetcdfFile_t)
-    call write_data(fileobj, diag_file%get_file_unlimdim(), dif, &
-      unlim_dim_level=diag_file%unlimited_dimension)
-  end select
+  if (diag_file%time_ops) then
+    middle_time = (diag_file%last_output+diag_file%next_output)/2
+    dif = get_date_dif(middle_time, get_base_time(), diag_file%get_file_timeunit())
+  else
+    dif = get_date_dif(diag_file%next_output, get_base_time(), diag_file%get_file_timeunit())
+  endif
+
+  call write_data(fileobj, diag_file%get_file_unlimdim(), dif, &
+    unlim_dim_level=diag_file%unlimited_dimension)
+
+  if (diag_file%time_ops) then
+    T1 = get_date_dif(diag_file%last_output, get_base_time(), diag_file%get_file_timeunit())
+    T2 = get_date_dif(diag_file%next_output, get_base_time(), diag_file%get_file_timeunit())
+    DT = T2 - T1
+
+    call write_data(fileobj, avg_name//"_T1", T1, unlim_dim_level=diag_file%unlimited_dimension)
+    call write_data(fileobj, avg_name//"_T2", T2, unlim_dim_level=diag_file%unlimited_dimension)
+    call write_data(fileobj, avg_name//"_DT", DT, unlim_dim_level=diag_file%unlimited_dimension)
+    call write_data(fileobj, trim(diag_file%get_file_unlimdim())//"_bounds", &
+                    (/T1, T2/), unlim_dim_level=diag_file%unlimited_dimension)
+
+    if (diag_file%unlimited_dimension .eq. 1) then
+      call write_data(fileobj, "nv", (/1, 2/))
+    endif
+  endif
 
 end subroutine write_time_data
+
+!> \brief Updates the current_new_file_freq_index if using a new_file_freq
+subroutine update_current_new_file_freq_index(this, time_step)
+  class(fmsDiagFileContainer_type), intent(inout), target   :: this            !< The file object
+  TYPE(time_type),                  intent(in)           :: time_step       !< Current model step time
+
+  class(fmsDiagFile_type), pointer     :: diag_file      !< Diag_file object to open
+
+  diag_file => this%FMS_diag_file
+
+  if (time_step >= diag_file%no_more_data) then
+    call diag_file%diag_yaml_file%increase_new_file_freq_index()
+
+    if (diag_file%has_file_duration()) then
+      diag_file%no_more_data = diag_time_inc(diag_file%no_more_data, diag_file%get_file_duration(), &
+                                          diag_file%get_file_duration_units())
+    else
+       diag_file%no_more_data = diag_time_inc(diag_file%no_more_data, VERY_LARGE_FILE_FREQ, DIAG_DAYS)
+       diag_file%next_output = diag_file%no_more_data
+       diag_file%next_next_output = diag_file%no_more_data
+       diag_file%last_output = diag_file%no_more_data
+    endif
+  endif
+end subroutine update_current_new_file_freq_index
 
 !> \brief Set up the next_output and next_next_output variable in a file obj
 subroutine update_next_write(this, time_step)
@@ -934,9 +1071,11 @@ subroutine update_next_write(this, time_step)
 
   diag_file => this%FMS_diag_file
   if (diag_file%is_static) then
+    diag_file%last_output = diag_file%next_output
     diag_file%next_output = diag_time_inc(diag_file%next_output, VERY_LARGE_FILE_FREQ, DIAG_DAYS)
     diag_file%next_next_output = diag_time_inc(diag_file%next_output, VERY_LARGE_FILE_FREQ, DIAG_DAYS)
   else
+    diag_file%last_output = diag_file%next_output
     diag_file%next_output = diag_time_inc(diag_file%next_output, diag_file%get_file_freq(), &
       diag_file%get_file_frequnit())
     diag_file%next_next_output = diag_time_inc(diag_file%next_output, diag_file%get_file_freq(), &
@@ -1008,6 +1147,8 @@ end subroutine write_axis_data
 subroutine close_diag_file(this)
   class(fmsDiagFileContainer_type), intent(inout), target :: this            !< The file object
 
+  if (.not. this%FMS_diag_file%is_file_open) return
+
   !< The select types are needed here because otherwise the code will go to the
   !! wrong close_file routine and things will not close propertly
   select type( fileobj => this%FMS_diag_file%fileobj)
@@ -1019,6 +1160,17 @@ subroutine close_diag_file(this)
     call close_file(fileobj)
   end select
 
+  !< Reset the unlimited dimension back to 0, in case the fileobj is re-used
+  this%FMS_diag_file%unlimited_dimension = 0
+  this%FMS_diag_file%is_file_open = .false.
+
+  if (this%FMS_diag_file%has_file_new_file_freq()) then
+    this%FMS_diag_file%next_close = diag_time_inc(this%FMS_diag_file%next_close, &
+                                        this%FMS_diag_file%get_file_new_file_freq(), &
+                                        this%FMS_diag_file%get_file_new_file_freq_units())
+  else
+    this%FMS_diag_file%next_close = diag_time_inc(this%FMS_diag_file%next_close, VERY_LARGE_FILE_FREQ, DIAG_DAYS)
+  endif
 end subroutine close_diag_file
 
 #endif
