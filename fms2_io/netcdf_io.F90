@@ -906,7 +906,7 @@ subroutine netcdf_add_variable(fileobj, variable_name, variable_type, dimensions
                                                  !! available for netcdf4 files
   integer, optional, intent(in) :: chunksizes(:) !< netcdf chunksize to use for this variable
                                                  !! This feature is only
-                                                 !! available for netcdf4 files  
+                                                 !! available for netcdf4 files
   integer :: err
   integer, dimension(:), allocatable :: dimids
   integer :: vtype

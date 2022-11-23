@@ -23,42 +23,53 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
+#include <ctype.h>
+
+ // Should always match values of string_len_parameter and lvl2_key_parameter in fms_yaml_output_mod
+#define LVL2KEY_NUM 8
+#define KEY_STR_LEN 255
+#define LVL2KEY_SIZE LVL2KEY_NUM*KEY_STR_LEN
+
+#define DEBUG 0
 
 struct fmsyamloutkeys {
-	char key1 [255];
-        char key2 [255];
-        char key3 [255];
-        char key4 [255];
-        char key5 [255];
-        char key6 [255];
-        char key7 [255];
-        char key8 [255];
-        char key9 [255];
-        char key10 [255];
-        char key11 [255];
-        char key12 [255];
-        char key13 [255];
-        char key14 [255];
-        char key15 [255];
-	char level2key [255];
-} fmsyamloutkeys;
+	char key1 [KEY_STR_LEN];
+  char key2 [KEY_STR_LEN];
+  char key3 [KEY_STR_LEN];
+  char key4 [KEY_STR_LEN];
+  char key5 [KEY_STR_LEN];
+  char key6 [KEY_STR_LEN];
+  char key7 [KEY_STR_LEN];
+  char key8 [KEY_STR_LEN];
+  char key9 [KEY_STR_LEN];
+  char key10 [KEY_STR_LEN];
+  char key11 [KEY_STR_LEN];
+  char key12 [KEY_STR_LEN];
+  char key13 [KEY_STR_LEN];
+  char key14 [KEY_STR_LEN];
+  char key15 [KEY_STR_LEN];
+  char key16 [KEY_STR_LEN];
+  int level2key_offset;
+	char level2key [LVL2KEY_SIZE];
+};
 struct fmsyamloutvalues {
-        char val1 [255];
-        char val2 [255];
-        char val3 [255];
-        char val4 [255];
-        char val5 [255];
-        char val6 [255];
-        char val7 [255];
-        char val8 [255];
-        char val9 [255];
-        char val10 [255];
-        char val11 [255];
-        char val12 [255];
-        char val13 [255];
-        char val14 [255];
-        char val15 [255];
-} fmsyamloutvalues;
+  char val1 [KEY_STR_LEN];
+  char val2 [KEY_STR_LEN];
+  char val3 [KEY_STR_LEN];
+  char val4 [KEY_STR_LEN];
+  char val5 [KEY_STR_LEN];
+  char val6 [KEY_STR_LEN];
+  char val7 [KEY_STR_LEN];
+  char val8 [KEY_STR_LEN];
+  char val9 [KEY_STR_LEN];
+  char val10 [KEY_STR_LEN];
+  char val11 [KEY_STR_LEN];
+  char val12 [KEY_STR_LEN];
+  char val13 [KEY_STR_LEN];
+  char val14 [KEY_STR_LEN];
+  char val15 [KEY_STR_LEN];
+  char val16 [KEY_STR_LEN];
+};
 
 /* \breif Prints a warning message that the yaml was not written correctly
  * \param emitter The libyaml emitter for this file
@@ -302,6 +313,20 @@ void write_keys_vals_yaml (yaml_emitter_t * emitter, yaml_event_t * event , int 
       return;
     }
   }
+  if (keys[aindex].key16[0] !='\0')  {
+    yaml_scalar_event_initialize(event, NULL, (yaml_char_t *)YAML_STR_TAG,
+      (yaml_char_t *)keys[aindex].key16, strlen(keys[aindex].key16), 1, 0, YAML_PLAIN_SCALAR_STYLE);
+    if (!yaml_emitter_emit(emitter, event)){
+      keyerror(event, emitter);
+      return;
+    }
+    yaml_scalar_event_initialize(event, NULL, (yaml_char_t *)YAML_STR_TAG,
+      (yaml_char_t *)vals[aindex].val16, strlen(vals[aindex].val16), 1, 0, YAML_PLAIN_SCALAR_STYLE);
+    if (!yaml_emitter_emit(emitter, event)){
+      keyerror(event, emitter);
+      return;
+    }
+  }
 
 return ;
 }
@@ -322,14 +347,25 @@ return ;
  * \param l2vals The values corresponding to l2keys
  * \param a3size The full size of the l3 arrays
  * \param n3each Array that has the number of elements for each l2 array's third level elements
- * \param l3keys The keys for the third level of the yaml
+ * \param l3keys The keys for the third level of the yaml, any lvl2 keys will not be printed
  * \param l3vals The values corresponding to l3keys
+ * \param lvl2keyeach array to indicate how many structs to print per level2key for the top level keys, should be the size of LVL2KEY_NUM
  */
-void write_yaml_from_struct_3 (char *yamlname, int asize, struct fmsyamloutkeys *topkeys, struct fmsyamloutvalues *topvals, int a2size, struct fmsyamloutkeys *l2keys, struct fmsyamloutvalues *l2vals, int a3size, int * n3each, struct fmsyamloutkeys *l3keys, struct fmsyamloutvalues *l3vals){
+void write_yaml_from_struct_3 (char *yamlname, int asize, struct fmsyamloutkeys *topkeys, struct fmsyamloutvalues *topvals, int a2size, struct fmsyamloutkeys *l2keys,
+                               struct fmsyamloutvalues *l2vals, int a3size, int * n3each, struct fmsyamloutkeys *l3keys, struct fmsyamloutvalues *l3vals,
+                               int* lvl2keyeach){
   yaml_emitter_t emitter; /* libyaml emitter */
   yaml_event_t event; /* libyaml event for the output yaml */
+  int s2count = 0; /* A counter to keep track of the number of level 2 arrays output */
   int s3count = 0; /* A counter to keep track of the number of level 3 arrays output */
   FILE * yamlout; /* The file for the YAML output. */
+  int i_n3 = 0;/* index for the n3each argument*/
+
+  // trim any trailing whitespace
+  int ws_ind = strlen(yamlname)-1;
+  while(isspace(*(yamlname+ws_ind))) ws_ind--;
+  if( ws_ind != strlen(yamlname)-1) yamlname[ws_ind+1] = '\0';
+
   /* open the yaml output file. Only 1 core should do this */
   yamlout = fopen(yamlname,"w");
   /* Start the emmitter */
@@ -346,7 +382,7 @@ void write_yaml_from_struct_3 (char *yamlname, int asize, struct fmsyamloutkeys 
  	error(yamlname, &event, &emitter, yamlout);
 	return;
   }
-/* start the event (top level) */
+  /* start the event (top level) */
   yaml_mapping_start_event_initialize(&event, NULL, (yaml_char_t *)YAML_MAP_TAG,
                                         1, YAML_ANY_MAPPING_STYLE);
   if (!yaml_emitter_emit(&emitter, &event)){
@@ -354,90 +390,99 @@ void write_yaml_from_struct_3 (char *yamlname, int asize, struct fmsyamloutkeys 
 	return;
   }
 
-/* write the top level */
+  /* write the top level */
   write_keys_vals_yaml (&emitter, &event , 0, topkeys, topvals);
-    /* Check for the next level key */
-  if (topkeys->level2key[0] !='\0') {
-  /* Start the secodn level event */
+  char* curr_topkey = topkeys->level2key;
+
+  /* loop through the top level 2 keys */
+  for (int top_ind=0; top_ind < topkeys->level2key_offset; top_ind++) {
+    /* Start the secodn level event */
     yaml_scalar_event_initialize(&event, NULL, (yaml_char_t *)YAML_STR_TAG,
-      				 (yaml_char_t *)topkeys->level2key, strlen(topkeys->level2key), 1, 0,
+      				 (yaml_char_t *)curr_topkey, strlen(curr_topkey), 1, 0,
       				 YAML_PLAIN_SCALAR_STYLE);
     if (!yaml_emitter_emit(&emitter, &event)){
- 	error(yamlname, &event, &emitter, yamlout);
-	return;
+ 	    error(yamlname, &event, &emitter, yamlout);
+	    return;
     }
-  /* Start the sequencing */
+    /* Start the sequencing */
     yaml_sequence_start_event_initialize(&event, NULL, (yaml_char_t *)YAML_SEQ_TAG,
       					 1, YAML_ANY_SEQUENCE_STYLE);
     if (!yaml_emitter_emit(&emitter, &event)){
-  	error(yamlname, &event, &emitter, yamlout);
-	return;
+  	  error(yamlname, &event, &emitter, yamlout);
+	    return;
     }
-  /* loop through the structs */
-    for (int s2 = 0 ; s2 < a2size ; s2++){
+    /* loop through the structs for this key*/
+    for (int s2 = 0 ; s2 < lvl2keyeach[top_ind]; s2++){
       yaml_mapping_start_event_initialize(&event, NULL, (yaml_char_t *)YAML_MAP_TAG,
         				  1, YAML_ANY_MAPPING_STYLE);
       if (!yaml_emitter_emit(&emitter, &event)){
- 	error(yamlname, &event, &emitter, yamlout);
-	return;
+ 	      error(yamlname, &event, &emitter, yamlout);
+	      return;
       }
       /* call the write function */
-      write_keys_vals_yaml (&emitter, &event , s2, l2keys, l2vals);
+      write_keys_vals_yaml (&emitter, &event , s2count, l2keys, l2vals);
+
       /* Next level keys */
-      if (l2keys->level2key[0] !='\0') {
+      char * curr_l2key = (&l2keys[s2count])->level2key;
+      for (int l2_ind = 0; l2_ind < (&l2keys[s2count])->level2key_offset; l2_ind++) {
         /* Start the third level event */
-     	yaml_scalar_event_initialize(&event, NULL, (yaml_char_t *)YAML_STR_TAG,
-     		(yaml_char_t *)l2keys->level2key, strlen(l2keys->level2key), 1, 0,
-     		YAML_PLAIN_SCALAR_STYLE);
-     	if (!yaml_emitter_emit(&emitter, &event)){
- 		error(yamlname, &event, &emitter, yamlout);
-		return;
- 	}
-     	/* Start the sequencing */
-     	yaml_sequence_start_event_initialize(&event, NULL, (yaml_char_t *)YAML_SEQ_TAG,
+     	  yaml_scalar_event_initialize(&event, NULL, (yaml_char_t *)YAML_STR_TAG,
+     		                            (yaml_char_t *)curr_l2key, strlen(curr_l2key), 1, 0,
+     		                             YAML_PLAIN_SCALAR_STYLE);
+     	  if (!yaml_emitter_emit(&emitter, &event)){
+ 		      error(yamlname, &event, &emitter, yamlout);
+		      return;
+ 	      }
+     	  /* Start the sequencing */
+     	  yaml_sequence_start_event_initialize(&event, NULL, (yaml_char_t *)YAML_SEQ_TAG,
          		1, YAML_ANY_SEQUENCE_STYLE);
-     	if (!yaml_emitter_emit(&emitter, &event)){
- 		error(yamlname, &event, &emitter, yamlout);
-		return;
+        if (!yaml_emitter_emit(&emitter, &event)){
+ 		      error(yamlname, &event, &emitter, yamlout);
+		      return;
         }
-    	/* loop through the structs */
-	int s3start = s3count;
-	int s3end = s3start + n3each[s2];
-	for (int s3 = s3start ; s3 < s3end ; s3++){
-      	  yaml_mapping_start_event_initialize(&event, NULL, (yaml_char_t *)YAML_MAP_TAG,
-          			1, YAML_ANY_MAPPING_STYLE);
-      	  if (!yaml_emitter_emit(&emitter, &event)){
- 		error(yamlname, &event, &emitter, yamlout);
-		return;
-	  }
-      	  /* call the write function */
-      	  write_keys_vals_yaml (&emitter, &event , s3, l3keys, l3vals);
-	  yaml_mapping_end_event_initialize(&event);
-      	  if (!yaml_emitter_emit(&emitter, &event)){
- 		error(yamlname, &event, &emitter, yamlout);
-		return;
-	  }
-	  s3count ++;
-     	}
+    	  /* loop through the structs */
+        int s3start = s3count;
+        int s3end = s3start + n3each[i_n3];
+        i_n3++;
+        for (int s3 = s3start ; s3 < s3end ; s3++){
+          yaml_mapping_start_event_initialize(&event, NULL, (yaml_char_t *)YAML_MAP_TAG,
+                    1, YAML_ANY_MAPPING_STYLE);
+          if (!yaml_emitter_emit(&emitter, &event)){
+            error(yamlname, &event, &emitter, yamlout);
+            return;
+          }
+          /* call the write function */
+          write_keys_vals_yaml (&emitter, &event , s3, l3keys, l3vals);
+          yaml_mapping_end_event_initialize(&event);
+          if(!yaml_emitter_emit(&emitter, &event)){
+            error(yamlname, &event, &emitter, yamlout);
+            return;
+          }
+          s3count ++;
+        } // for s3
         yaml_sequence_end_event_initialize(&event);
         if (!yaml_emitter_emit(&emitter, &event)){
- 		error(yamlname, &event, &emitter, yamlout);
-		return;
+ 		      error(yamlname, &event, &emitter, yamlout);
+		      return;
         }
-      } /* if (l2keys->level2key[0] !='\0') */
+        curr_l2key = (&l2keys[s2count])->level2key + ((l2_ind+1) * KEY_STR_LEN);
+      } /* for l2_ind */
       yaml_mapping_end_event_initialize(&event);
       if (!yaml_emitter_emit(&emitter, &event)){
- 	error(yamlname, &event, &emitter, yamlout);
-	return;
+ 	      error(yamlname, &event, &emitter, yamlout);
+	      return;
       }
+
+      s2count++;
     }/* for s2 loop */
+
     yaml_sequence_end_event_initialize(&event);
     if (!yaml_emitter_emit(&emitter, &event)){
- 	error(yamlname, &event, &emitter, yamlout);
-	return;
+ 	    error(yamlname, &event, &emitter, yamlout);
+      return;
     }
-
-  }/* if (topkeys->level2key[0] !='\0') */
+    curr_topkey = topkeys->level2key + ((top_ind+1) * KEY_STR_LEN);
+  }/* for top_ind */
 
   /* end the emitter */
   yaml_mapping_end_event_initialize(&event);
@@ -459,6 +504,53 @@ void write_yaml_from_struct_3 (char *yamlname, int asize, struct fmsyamloutkeys 
   yaml_emitter_delete(&emitter);
   fclose(yamlout);
   return;
+}
+/// @brief Adds a key to the level2key character array in the struct.
+/// Uses an offset to store multiple keys, size(amount of strings) is set by LVL2KEY_NUM (avoids c to fortran 2d array issues)
+/// @param key_name name of level 2 key to add
+/// @param key_length string length of key_name
+/// @param keys key struct to add level 2 key to
+void add_level2key(int key_length, char* key_name, struct fmsyamloutkeys* keys){
+
+  // local fixed length copy to try to mitigate any fortran to c string weirdness
+  char kname_loc[key_length + 1];
+  //memset(kname_loc, '\0', sizeof(kname_loc));
+  strncpy(kname_loc, key_name, key_length);
+  kname_loc[key_length] = '\0';
+  // error checking
+  if ( strlen(kname_loc) > KEY_STR_LEN){
+    fprintf(stderr, "WARNING: YAML_OUTPUT: invalid level two key passed to add_level2key. Max string size is %d, passed in string: %s",  KEY_STR_LEN, key_name);
+    fprintf(stdout, "WARNING: YAML_OUTPUT: invalid level two key passed to add_level2key. Max string size is %d, passed in string: %s",  KEY_STR_LEN, key_name);
+  }
+  if( keys->level2key_offset  >= LVL2KEY_NUM ){
+    fprintf(stderr, "WARNING: YAML_OUTPUT: max amount of level 2 keys (%d) has been exceeded", LVL2KEY_NUM);
+    fprintf(stdout, "WARNING: YAML_OUTPUT: max amount of level 2 keys (%d) has been exceeded", LVL2KEY_NUM);
+  }
+  // check if string is set to initialize offset count
+  if ( keys->level2key[0] == '\0'){
+    keys->level2key_offset = 0;
+  }
+  // calculate offset and copy into the level2key array
+  int offset = keys->level2key_offset * KEY_STR_LEN;
+  char* curr_key;
+  curr_key = keys->level2key + offset;
+  strcpy(curr_key, kname_loc);
+
+  keys->level2key_offset++;
+
+  if (DEBUG) {
+    printf("key length: %d \n key_name:", key_length);
+    printf(key_name);
+    printf("\n");
+    printf("offset: %d \n", offset);
+    printf("kname_loc:");
+    printf(kname_loc);
+    printf("\n*l2key:");
+    printf(keys->level2key);
+    printf("\nl2key+offset:");
+    printf(keys->level2key + offset);
+    printf("\n");
+  }
 }
 
 #endif
