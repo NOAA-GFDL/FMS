@@ -237,6 +237,7 @@ use platform_mod
   USE diag_output_mod, ONLY: get_diag_global_att, set_diag_global_att
   USE diag_grid_mod, ONLY: diag_grid_init, diag_grid_end
   use fms_diag_object_mod, only:fms_diag_object
+  use fms_diag_yaml_mod, only: fms_diag_yaml_out
 
   USE constants_mod, ONLY: SECONDS_PER_DAY
 
@@ -3700,6 +3701,7 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
     if (allocated(fnum_for_domain)) deallocate(fnum_for_domain)
 
     if (use_modern_diag) then
+      call fms_diag_yaml_out()
       call fms_diag_object%diag_end()
     endif
   END SUBROUTINE diag_manager_end
@@ -3914,7 +3916,7 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
     END IF
 
     if (use_modern_diag) then
-      CALL fms_diag_object%init(diag_subset_output) 
+      CALL fms_diag_object%init(diag_subset_output)
     endif
    if (.not. use_modern_diag) then
      CALL parse_diag_table(DIAG_SUBSET=diag_subset_output, ISTAT=mystat, ERR_MSG=err_msg_local)
