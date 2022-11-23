@@ -292,6 +292,7 @@ foreach(kind ${kinds})
                                                  fms
                                                  fms2_io/include
                                                  mpp/include
+                                                 column_diagnostics/include
                                                  constants4
                                                  constants)
   target_compile_definitions(${libTgt}_f PRIVATE "${fms_defs}")
@@ -328,6 +329,7 @@ foreach(kind ${kinds})
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/fms>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/fms2_io/include>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/column_diagnostics/include>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/mpp/include>)
 
   target_include_directories(${libTgt} INTERFACE
