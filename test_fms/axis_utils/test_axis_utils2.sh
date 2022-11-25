@@ -28,8 +28,10 @@
 touch input.nml
 
 # Run the test.
-test_expect_success "Test AXIS utils" '
-  mpirun -n 2 ./test_axis_utils
+test_expect_success "Test AXIS utils r4_kind" '
+  mpirun -n 2 ./test_axis_utils_r4
 '
-
+test_expect_success "Test AXIS utils r8_kind" '
+  mpirun -n 2 ./test_axis_utils_r8
+'
 test_done

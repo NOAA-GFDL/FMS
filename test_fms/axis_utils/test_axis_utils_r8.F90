@@ -17,7 +17,7 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 
-program test_axis_utils
+program test_axis_utils_r8
 
 use fms_mod,         only : fms_init, fms_end, check_nml_error
 use mpp_mod,         only : mpp_sync, mpp_pe, mpp_root_pe, mpp_error, FATAL, stdout, &
@@ -26,7 +26,7 @@ use mpp_mod,         only : input_nml_file
 use axis_utils2_mod, only : axis_edges
 use fms2_io_mod,     only : open_file, close_file, write_data, register_axis, register_field, &
                             FmsNetcdfFile_t, register_variable_attribute
-use platform_mod,    only : r4_kind, r8_kind
+use platform_mod,    only : r8_kind
 
 implicit none
 
@@ -163,4 +163,4 @@ call mpp_sync()
 
 end subroutine create_input_files
 
-end program test_axis_utils
+end program test_axis_utils_r8
