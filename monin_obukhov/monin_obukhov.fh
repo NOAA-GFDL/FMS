@@ -117,14 +117,14 @@ if(present(avail)) lavail = .true.
 
 if(lavail) then
 if (count(avail) .eq. 0) return
-call monin_obukhov_drag_1d(grav, vonkarm,               &
+call MONIN_OBUKHOV_DRAG_1D_(grav, vonkarm,               &
    & error, zeta_min, max_iter, small,                         &
    & neutral, stable_option, new_mo_option, rich_crit, zeta_trans, &!miz
    & drag_min_heat, drag_min_moist, drag_min_mom,              &
    & n, pt, pt0, z, z0, zt, zq, speed, drag_m, drag_t,         &
    & drag_q, u_star, b_star, lavail, avail, ier)
 else
-call monin_obukhov_drag_1d(grav, vonkarm,               &
+call MONIN_OBUKHOV_DRAG_1D_(grav, vonkarm,               &
    & error, zeta_min, max_iter, small,                         &
    & neutral, stable_option, new_mo_option, rich_crit, zeta_trans, &!miz
    & drag_min_heat, drag_min_moist, drag_min_mom,              &
@@ -158,14 +158,14 @@ if(present(avail)) then
 
 if (count(avail) .eq. 0) return
 
-call monin_obukhov_profile_1d(vonkarm, &
+call MONIN_OBUKHOV_PROFILE_1D_(vonkarm, &
    & neutral, stable_option, new_mo_option,rich_crit, zeta_trans, &
    & n, zref, zref_t, z, z0, zt, zq, u_star, b_star, q_star, &
    & del_m, del_t, del_q, .true., avail, ier)
 
 else
 
-call monin_obukhov_profile_1d(vonkarm, &
+call MONIN_OBUKHOV_PROFILE_1D_(vonkarm, &
    & neutral, stable_option, new_mo_option,rich_crit, zeta_trans, &
    & n, zref, zref_t, z, z0, zt, zq, u_star, b_star, q_star, &
    & del_m, del_t, del_q, .false., dummy_avail, ier)
@@ -187,7 +187,7 @@ if(.not.module_is_initialized) call error_mesg('stable_mix_3d in monin_obukhov_m
 'monin_obukhov_init has not been called', FATAL)
 
 n = size(rich,1)*size(rich,2)*size(rich,3)
-call monin_obukhov_stable_mix(stable_option, rich_crit, zeta_trans, &
+call MONIN_OBUKHOV_STABLE_MIX_(stable_option, rich_crit, zeta_trans, &
 & n, rich, mix, ier)
 
 
@@ -208,7 +208,7 @@ if(.not.module_is_initialized) call error_mesg('mo_diff_2d_n in monin_obukhov_mo
 'monin_obukhov_init has not been called', FATAL)
 
 ni = size(z, 1); nj = size(z, 2); nk = size(z, 3)
-call monin_obukhov_diff(vonkarm,                     &
+call MONIN_OBUKHOV_DIFF_(vonkarm,                     &
      & ustar_min,                                     &
      & neutral, stable_option, new_mo_option,rich_crit, zeta_trans, &
      & ni, nj, nk, z, u_star, b_star, k_m, k_h, ier)
@@ -579,7 +579,7 @@ return
 end subroutine MO_DRAG_2D_
 
 !=======================================================================
-subroutine mo_drag_0d(pt, pt0, z, z0, zt, zq, speed, drag_m, drag_t, drag_q, u_star, b_star)
+subroutine MO_DRAG_0D_(pt, pt0, z, z0, zt, zq, speed, drag_m, drag_t, drag_q, u_star, b_star)
 
 real(kind=FMS_MO_KIND_), intent(in)    :: z, speed, pt, pt0, z0, zt, zq
 real(kind=FMS_MO_KIND_), intent(out)   :: drag_m, drag_t, drag_q, u_star, b_star
@@ -811,7 +811,7 @@ ni = 1; nj = 1; nk = 1
 z_a(1,1,1) = z
 u_star_a(1,1) = u_star
 b_star_a(1,1) = b_star
-call monin_obukhov_diff(vonkarm, ustar_min, neutral, stable_option, new_mo_option,  &
+call MONIN_OBUKHOV_DIFF_(vonkarm, ustar_min, neutral, stable_option, new_mo_option,  &
                   rich_crit, zeta_trans, ni, nj, nk, z_a,                            &!miz
                   u_star_a, b_star_a, k_m_a, k_h_a, ier)
 k_m = k_m_a(1,1,1)
@@ -838,7 +838,7 @@ ni = 1; nj = 1; nk = size(z(:))
 z_a(1,1,:) = z(:)
 u_star_a(1,1) = u_star
 b_star_a(1,1) = b_star
-call monin_obukhov_diff(vonkarm, ustar_min, neutral, stable_option,new_mo_option, &
+call MONIN_OBUKHOV_DIFF_(vonkarm, ustar_min, neutral, stable_option,new_mo_option, &
                         rich_crit, zeta_trans, ni, nj, nk, z_a,                    &!miz
                         u_star_a, b_star_a, k_m_a, k_h_a, ier)
 k_m(:) = k_m_a(1,1,:)
