@@ -51,20 +51,20 @@ uss = max(u_star, ustar_min)
 
 if(neutral) then
 do k = 1, size(z,3)
-   k_m(:,:,k) = real(vonkarm,kind=FMS_MO_KIND_) *uss*z(:,:,k)
+   k_m(:,:,k) = vonkarm *uss*z(:,:,k)
    k_h(:,:,k) = k_m(:,:,k)
 end do
 else
 do k = 1, size(z,3)
-   zeta = - real(vonkarm,kind=FMS_MO_KIND_) * b_star*z(:,:,k)/(uss*uss)
+   zeta = - vonkarm * b_star*z(:,:,k)/(uss*uss)
    do j = 1, size(z,2)
       call monin_obukhov_derivative_m(stable_option, rich_crit, zeta_trans, &
            & ni, phi_m(:,j), zeta(:,j), mask, ier)
       call monin_obukhov_derivative_t(stable_option, new_mo_option,rich_crit, zeta_trans, &
            & ni, phi_h(:,j), zeta(:,j), mask, ier)
    enddo
-   k_m(:,:,k) = real(vonkarm,kind=FMS_MO_KIND_) * uss*z(:,:,k)/phi_m
-   k_h(:,:,k) = real(vonkarm,kind=FMS_MO_KIND_) * uss*z(:,:,k)/phi_h
+   k_m(:,:,k) = vonkarm * uss*z(:,:,k)/phi_m
+   k_h(:,:,k) = vonkarm * uss*z(:,:,k)/phi_h
 end do
 endif
 
@@ -119,7 +119,7 @@ mask = .true.
 if(lavail) mask = avail
 
 where(mask)
-delta_b = real(grav,kind=FMS_MO_KIND_)*(pt0 - pt)/pt0
+delta_b = grav*(pt0 - pt)/pt0
 rich    = - z*delta_b/(speed*speed + small)
 zz      = max(z,z0,zt,zq)
 elsewhere
@@ -133,9 +133,9 @@ do i = 1, n
       fm(i)   = log(zz(i)/z0(i))
       ft(i)   = log(zz(i)/zt(i))
       fq(i)   = log(zz(i)/zq(i))
-      us   = real(vonkarm,kind=FMS_MO_KIND_)/fm(i)
-      bs   = real(vonkarm,kind=FMS_MO_KIND_)/ft(i)
-      qs   = real(vonkarm,kind=FMS_MO_KIND_)/fq(i)
+      us   = vonkarm/fm(i)
+      bs   = vonkarm/ft(i)
+      qs   = vonkarm/fq(i)
       drag_m(i)    = us*us
       drag_t(i)    = us*bs
       drag_q(i)    = us*qs
@@ -167,9 +167,9 @@ call monin_obukhov_solve_zeta(error, zeta_min, max_iter, small, &
 
 do i = 1, n
    if(mask_1(i)) then
-      us   = max(real(vonkarm,kind=FMS_MO_KIND_)/fm(i), sqrt_drag_min_mom)
-      bs   = max(real(vonkarm,kind=FMS_MO_KIND_)/ft(i), sqrt_drag_min_heat)
-      qs   = max(real(vonkarm,kind=FMS_MO_KIND_)/fq(i), sqrt_drag_min_moist)
+      us   = max(vonkarm/fm(i), sqrt_drag_min_mom)
+      bs   = max(vonkarm/ft(i), sqrt_drag_min_heat)
+      qs   = max(vonkarm/fq(i), sqrt_drag_min_moist)
       drag_m(i)   = us*us
       drag_t(i)   = us*bs
       drag_q(i)   = us*qs
@@ -379,7 +379,7 @@ stable   = mask .and. zeta >= real(0.0,kind=FMS_MO_KIND_)
 unstable = mask .and. zeta <  real(0.0,kind=FMS_MO_KIND_)
 
 where (unstable)
-x     = (1 - real(16.0,kind=FMS_MO_KIND)_*zeta  )**(real(-0.5,kind=FMS_MO_KIND_))
+x     = (1 - real(16.0,kind=FMS_MO_KIND_)*zeta  )**(real(-0.5,kind=FMS_MO_KIND_))
 phi_m = sqrt(x)  ! phi_m = (1 - 16.0*zeta)**(-0.25)
 end where
 
@@ -457,7 +457,7 @@ endwhere
 else
 
 where(mask .and. u_star > real(0.0,kind=FMS_MO_KIND_))
-   mo_length_inv = - real(vonkarm,kind=FMS_MO_KIND_) * b_star/(u_star*u_star)
+   mo_length_inv = - vonkarm * b_star/(u_star*u_star)
    zeta       = z     *mo_length_inv
    zeta_0     = z0    *mo_length_inv
    zeta_t     = zt    *mo_length_inv
@@ -479,7 +479,7 @@ call monin_obukhov_integral_tq(stable_option, new_mo_option, rich_crit, zeta_tra
 where(mask)
    del_m = real(1.0,kind=FMS_MO_KIND_) - f_m_ref/f_m
    del_t = real(1.0,kind=FMS_MO_KIND_) - f_t_ref/f_t
-   del_q = real(1.0.kind=FMS_MO_KIND_) - f_q_ref/f_q
+   del_q = real(1.0,kind=FMS_MO_KIND_) - f_q_ref/f_q
 endwhere
 
 end if
