@@ -28,11 +28,6 @@
 
 !> @{
 
-#undef MONIN_OBUKHOV_INIT_
-#define MONIN_OBUKHOV_INIT_ monin_obukhov_init_r4
-#undef FMS_MO_KIND_
-#define FMS_MO_KIND_ r4_kind
-
 #undef MO_DRAG_1D_
 #define MO_DRAG_1D_ mo_drag_1d_r4
 #undef FMS_MO_KIND_
