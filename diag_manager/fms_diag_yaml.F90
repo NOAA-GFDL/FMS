@@ -1530,7 +1530,8 @@ subroutine fms_diag_yaml_out()
               exit
             endif
           enddo
-          if( .not. associated(varptr)) call mpp_error(FATAL, "diag_yaml_output: var name: "// trim(fileptr%file_varlist(j)))
+          if( .not. associated(varptr)) call mpp_error(FATAL, "diag_yaml_output: var name: "// &
+                                                              & trim(fileptr%file_varlist(j)))
           call fms_f2c_string(keys3(key3_i)%key1, 'module')
           call fms_f2c_string(keys3(key3_i)%key2, 'var_name')
           call fms_f2c_string(keys3(key3_i)%key3, 'reduction')
@@ -1719,7 +1720,8 @@ subroutine fms_diag_yaml_out()
     endif
   enddo
   tier2size = i
-  if (DEBUG .and. mpp_root_pe() .eq. mpp_pe()) print *, 'tier1size', 1, 'tier2size', SIZE(diag_yaml%diag_files), 'tier3size', tier3size, 'tier3each', tier3each
+  if (DEBUG .and. mpp_root_pe() .eq. mpp_pe()) print *, 'tier1size', 1, 'tier2size', SIZE(diag_yaml%diag_files), &
+                                                      & 'tier3size', tier3size, 'tier3each', tier3each
   call write_yaml_from_struct_3( 'diag_out.yaml',  1, keys, vals,          &
                                  SIZE(diag_yaml%diag_files), keys2, vals2, &
                                  tier3size, tier3each, keys3, vals3,       &
