@@ -191,8 +191,6 @@ module sat_vapor_pres_mod
                                    lookup_des3_k, lookup_es3_des3_k, &
                                    compute_qs_k, compute_mrs_k
 
- use platform_mod, only: r4_kind, r8_kind
-
 implicit none
 private
 
@@ -738,8 +736,8 @@ contains
 ! </SUBROUTINE>
  subroutine lookup_es_0d ( temp, esat, err_msg )
 
- class(*), intent(in)  :: temp
- class(*), intent(out) :: esat
+ real, intent(in)  :: temp
+ real, intent(out) :: esat
  character(len=*), intent(out), optional :: err_msg
 
  integer :: nbad
@@ -770,8 +768,8 @@ contains
 ! </SUBROUTINE>
  subroutine lookup_es_1d ( temp, esat, err_msg )
 
- class(*), intent(in)  :: temp(:)
- class(*), intent(out) :: esat(:)
+ real, intent(in)  :: temp(:)
+ real, intent(out) :: esat(:)
  character(len=*), intent(out), optional :: err_msg
 
  character(len=54) :: err_msg_local
@@ -806,8 +804,8 @@ contains
 ! </SUBROUTINE>
  subroutine lookup_es_2d ( temp, esat, err_msg )
 
- class(*), intent(in)  :: temp(:,:)
- class(*), intent(out) :: esat(:,:)
+ real, intent(in)  :: temp(:,:)
+ real, intent(out) :: esat(:,:)
  character(len=*), intent(out), optional :: err_msg
 
  character(len=54) :: err_msg_local
@@ -842,8 +840,8 @@ contains
 ! </SUBROUTINE>
  subroutine lookup_es_3d ( temp, esat, err_msg )
 
- class(*), intent(in)  :: temp(:,:,:)
- class(*), intent(out) :: esat(:,:,:)
+ real, intent(in)  :: temp(:,:,:)
+ real, intent(out) :: esat(:,:,:)
  character(len=*), intent(out), optional :: err_msg
 
  integer :: nbad
@@ -1974,10 +1972,10 @@ contains
  subroutine compute_qs_0d ( temp, press, qsat, q, hc, dqsdT, esat, &
                             err_msg, es_over_liq, es_over_liq_and_ice )
 
- class(*), intent(in)                    :: temp, press
- class(*), intent(out)                   :: qsat
- class(*), intent(in),          optional :: q, hc
- class(*), intent(out),         optional :: dqsdT, esat
+ real, intent(in)                        :: temp, press
+ real, intent(out)                       :: qsat
+ real, intent(in),              optional :: q, hc
+ real, intent(out),             optional :: dqsdT, esat
  character(len=*), intent(out), optional :: err_msg
  logical,intent(in),            optional :: es_over_liq
  logical,intent(in),            optional :: es_over_liq_and_ice
@@ -2032,11 +2030,11 @@ contains
  subroutine compute_qs_1d ( temp, press, qsat, q, hc, dqsdT, esat, &
                             err_msg, es_over_liq, es_over_liq_and_ice )
 
- class(*), intent(in)                    :: temp(:), press(:)
- class(*), intent(out)                   :: qsat(:)
- class(*), intent(in),          optional :: q(:)
- class(*), intent(in),          optional :: hc
- class(*), intent(out),         optional :: dqsdT(:), esat(:)
+ real, intent(in)                        :: temp(:), press(:)
+ real, intent(out)                       :: qsat(:)
+ real, intent(in),              optional :: q(:)
+real,  intent(in),              optional :: hc
+ real, intent(out),             optional :: dqsdT(:), esat(:)
  character(len=*), intent(out), optional :: err_msg
  logical,intent(in),            optional :: es_over_liq
  logical,intent(in),            optional :: es_over_liq_and_ice
@@ -2094,11 +2092,11 @@ contains
  subroutine compute_qs_2d ( temp, press, qsat, q, hc, dqsdT, esat, &
                             err_msg, es_over_liq, es_over_liq_and_ice )
 
- class(*), intent(in)                    :: temp(:,:), press(:,:)
- class(*), intent(out)                   :: qsat(:,:)
- class(*), intent(in),          optional :: q(:,:)
- class(*), intent(in),          optional :: hc
- class(*), intent(out),         optional :: dqsdT(:,:), esat(:,:)
+ real, intent(in)                        :: temp(:,:), press(:,:)
+ real, intent(out)                       :: qsat(:,:)
+ real, intent(in),              optional :: q(:,:)
+ real, intent(in),              optional :: hc
+ real, intent(out),             optional :: dqsdT(:,:), esat(:,:)
  character(len=*), intent(out), optional :: err_msg
  logical,intent(in),            optional :: es_over_liq
  logical,intent(in),            optional :: es_over_liq_and_ice
@@ -2155,11 +2153,11 @@ contains
  subroutine compute_qs_3d ( temp, press, qsat, q, hc, dqsdT, esat, &
                             err_msg, es_over_liq, es_over_liq_and_ice )
 
- class(*), intent(in)                    :: temp(:,:,:), press(:,:,:)
- class(*), intent(out)                   :: qsat(:,:,:)
- class(*), intent(in),          optional :: q(:,:,:)
- class(*), intent(in),          optional :: hc
- class(*), intent(out),         optional :: dqsdT(:,:,:), esat(:,:,:)
+ real, intent(in)                        :: temp(:,:,:), press(:,:,:)
+ real, intent(out)                       :: qsat(:,:,:)
+ real, intent(in),              optional :: q(:,:,:)
+ real, intent(in),              optional :: hc
+ real, intent(out),             optional :: dqsdT(:,:,:), esat(:,:,:)
  character(len=*), intent(out), optional :: err_msg
  logical,intent(in),            optional :: es_over_liq
  logical,intent(in),            optional :: es_over_liq_and_ice
@@ -2607,247 +2605,132 @@ end subroutine sat_vapor_pres_init
 !#######################################################################
 
  function check_1d ( temp ) result ( nbad )
- class(*), intent(in)  :: temp(:)
+ real   , intent(in)  :: temp(:)
  integer :: nbad, ind, i
 
    nbad = 0
-
-   select type (temp)
-   type is (real(kind=r4_kind))
-     do i = 1, size(temp,1)
-       ind = int(dtinv*(temp(i)-tmin+teps))
-       if (ind < 0 .or. ind > nlim) nbad = nbad+1
-     enddo
-   type is (real(kind=r8_kind))
-     do i = 1, size(temp,1)
-       ind = int(dtinv*(temp(i)-tmin+teps))
-       if (ind < 0 .or. ind > nlim) nbad = nbad+1
-     enddo
-   class default
-     call error_mesg ('sat_vapor_pres_mod::check_1d',&
-          & 'The temp is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)
-   end select
+   do i = 1, size(temp,1)
+     ind = int(dtinv*(temp(i)-tmin+teps))
+     if (ind < 0 .or. ind > nlim) nbad = nbad+1
+   enddo
 
  end function check_1d
 
 !------------------------------------------------
 
  function check_2d ( temp ) result ( nbad )
- class(*), intent(in)  :: temp(:,:)
+ real   , intent(in)  :: temp(:,:)
  integer :: nbad
  integer :: j
 
-   nbad = 0
-
-   select type (temp)
-   type is (real(kind=r4_kind))
-     do j = 1, size(temp,2)
-       nbad = nbad + check_1d ( temp(:,j) )
-     enddo
-   type is (real(kind=r8_kind))
-     do j = 1, size(temp,2)
-       nbad = nbad + check_1d ( temp(:,j) )
-     enddo
-   class default
-     call error_mesg ('sat_vapor_pres_mod::check_2d',&
-          &  'The temp is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)
-   end select
-
+    nbad = 0
+    do j = 1, size(temp,2)
+      nbad = nbad + check_1d ( temp(:,j) )
+    enddo
  end function check_2d
 
 !#######################################################################
 
  subroutine temp_check_1d ( temp )
- class(*), intent(in) :: temp(:)
+ real   , intent(in) :: temp(:)
  integer :: i, unit
 
    unit = stdoutunit
-
-   select type (temp)
-   type is (real(kind=r4_kind))
-     write(unit,*) 'Bad temperatures (dimension 1): ', (check_1d(temp(i:i)),i=1,size(temp,1))
-   type is (real(kind=r8_kind))
-     write(unit,*) 'Bad temperatures (dimension 1): ', (check_1d(temp(i:i)),i=1,size(temp,1))
-   class default
-     call error_mesg ('sat_vapor_pres_mod::temp_check_1d',&
-          & 'The temp is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)
-   end select
+   write(unit,*) 'Bad temperatures (dimension 1): ', (check_1d(temp(i:i)),i=1,size(temp,1))
 
  end subroutine temp_check_1d
 
 !--------------------------------------------------------------
 
  subroutine temp_check_2d ( temp )
- class(*), intent(in) :: temp(:,:)
+ real   , intent(in) :: temp(:,:)
  integer :: i, j, unit
 
    unit = stdoutunit
-
-   select type (temp)
-   type is (real(kind=r4_kind))
-     write(unit,*) 'Bad temperatures (dimension 1): ', (check_1d(temp(i,:)),i=1,size(temp,1))
-     write(unit,*) 'Bad temperatures (dimension 2): ', (check_1d(temp(:,j)),j=1,size(temp,2))
-   type is (real(kind=r8_kind))
-     write(unit,*) 'Bad temperatures (dimension 1): ', (check_1d(temp(i,:)),i=1,size(temp,1))
-     write(unit,*) 'Bad temperatures (dimension 2): ', (check_1d(temp(:,j)),j=1,size(temp,2))
-   class default
-     call error_mesg ('sat_vapor_pres_mod::temp_check_2d',&
-          & 'The temp is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)
-   end select
+   write(unit,*) 'Bad temperatures (dimension 1): ', (check_1d(temp(i,:)),i=1,size(temp,1))
+   write(unit,*) 'Bad temperatures (dimension 2): ', (check_1d(temp(:,j)),j=1,size(temp,2))
 
  end subroutine temp_check_2d
 
 !--------------------------------------------------------------
 
  subroutine temp_check_3d ( temp )
- class(*), intent(in)  :: temp(:,:,:)
+ real, intent(in)  :: temp(:,:,:)
  integer :: i, j, k, unit
 
    unit = stdoutunit
-
-   select type (temp)
-   type is (real(kind=r4_kind))
-     write(unit,*) 'Bad temperatures (dimension 1): ', (check_2d(temp(i,:,:)),i=1,size(temp,1))
-     write(unit,*) 'Bad temperatures (dimension 2): ', (check_2d(temp(:,j,:)),j=1,size(temp,2))
-     write(unit,*) 'Bad temperatures (dimension 3): ', (check_2d(temp(:,:,k)),k=1,size(temp,3))
-   type is (real(kind=r8_kind))
-     write(unit,*) 'Bad temperatures (dimension 1): ', (check_2d(temp(i,:,:)),i=1,size(temp,1))
-     write(unit,*) 'Bad temperatures (dimension 2): ', (check_2d(temp(:,j,:)),j=1,size(temp,2))
-     write(unit,*) 'Bad temperatures (dimension 3): ', (check_2d(temp(:,:,k)),k=1,size(temp,3))
-   class default
-     call error_mesg ('sat_vapor_pres_mod::temp_check_3d',&
-          & 'The temp is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)
-   end select
+   write(unit,*) 'Bad temperatures (dimension 1): ', (check_2d(temp(i,:,:)),i=1,size(temp,1))
+   write(unit,*) 'Bad temperatures (dimension 2): ', (check_2d(temp(:,j,:)),j=1,size(temp,2))
+   write(unit,*) 'Bad temperatures (dimension 3): ', (check_2d(temp(:,:,k)),k=1,size(temp,3))
 
  end subroutine temp_check_3d
 
 !#######################################################################
 
 subroutine show_all_bad_0d ( temp )
- class(*), intent(in) :: temp
+ real   , intent(in) :: temp
  integer :: ind, unit
 
  unit = stdoutunit
-
- select type (temp)
- type is (real(kind=r4_kind))
-   ind = int(dtinv*(temp-tmin+teps))
-   if (ind < 0 .or. ind > nlim) then
-     write(unit,'(a,e10.3,a,i6)') 'Bad temperature=',temp,' pe=',mpp_pe()
-   endif
- type is (real(kind=r8_kind))
-   ind = int(dtinv*(temp-tmin+teps))
-   if (ind < 0 .or. ind > nlim) then
-     write(unit,'(a,e10.3,a,i6)') 'Bad temperature=',temp,' pe=',mpp_pe()
-   endif
- class default
-   call error_mesg ('sat_vapor_pres_mod::show_all_bad_0d',&
-        & 'The temp is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)
- end select
+ ind = int(dtinv*(temp-tmin+teps))
+ if (ind < 0 .or. ind > nlim) then
+   write(unit,'(a,e10.3,a,i6)') 'Bad temperature=',temp,' pe=',mpp_pe()
+ endif
 
  end subroutine show_all_bad_0d
 
 !--------------------------------------------------------------
 
  subroutine show_all_bad_1d ( temp )
- class(*), intent(in) :: temp(:)
+ real   , intent(in) :: temp(:)
  integer :: i, ind, unit
 
  unit = stdoutunit
-
- select type (temp)
- type is (real(kind=r4_kind))
-   do i=1,size(temp)
-     ind = int(dtinv*(temp(i)-tmin+teps))
-     if (ind < 0 .or. ind > nlim) then
-       write(unit,'(a,e10.3,a,i4,a,i6)') 'Bad temperature=',temp(i),'  at i=',i,' pe=',mpp_pe()
-     endif
-   enddo
- type is (real(kind=r8_kind))
-   do i=1,size(temp)
-     ind = int(dtinv*(temp(i)-tmin+teps))
-     if (ind < 0 .or. ind > nlim) then
-       write(unit,'(a,e10.3,a,i4,a,i6)') 'Bad temperature=',temp(i),'  at i=',i,' pe=',mpp_pe()
-     endif
-   enddo
- class default
-   call error_mesg ('sat_vapor_pres_mod::show_all_bad_1d',&
-        & 'The temp is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)
- end select
+ do i=1,size(temp)
+   ind = int(dtinv*(temp(i)-tmin+teps))
+   if (ind < 0 .or. ind > nlim) then
+     write(unit,'(a,e10.3,a,i4,a,i6)') 'Bad temperature=',temp(i),'  at i=',i,' pe=',mpp_pe()
+   endif
+ enddo
 
  end subroutine show_all_bad_1d
 
 !--------------------------------------------------------------
 
  subroutine show_all_bad_2d ( temp )
- class(*), intent(in) :: temp(:,:)
+ real   , intent(in) :: temp(:,:)
  integer :: i, j, ind, unit
 
  unit = stdoutunit
-
- select type (temp)
- type is (real(kind=r4_kind))
-   do j=1,size(temp,2)
-   do i=1,size(temp,1)
-     ind = int(dtinv*(temp(i,j)-tmin+teps))
-     if (ind < 0 .or. ind > nlim) then
-       write(unit,'(a,e10.3,a,i4,a,i4,a,i6)') 'Bad temperature=',temp(i,j),'  at i=',i,' j=',j,' pe=',mpp_pe()
-     endif
-   enddo
-   enddo
- type is (real(kind=r8_kind))
-   do j=1,size(temp,2)
-   do i=1,size(temp,1)
-     ind = int(dtinv*(temp(i,j)-tmin+teps))
-     if (ind < 0 .or. ind > nlim) then
-       write(unit,'(a,e10.3,a,i4,a,i4,a,i6)') 'Bad temperature=',temp(i,j),'  at i=',i,' j=',j,' pe=',mpp_pe()
-     endif
-   enddo
-   enddo
- class default
-   call error_mesg ('sat_vapor_pres_mod::show_all_bad_2d',&
-        & 'The temp is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)
- end select
+ do j=1,size(temp,2)
+ do i=1,size(temp,1)
+   ind = int(dtinv*(temp(i,j)-tmin+teps))
+   if (ind < 0 .or. ind > nlim) then
+     write(unit,'(a,e10.3,a,i4,a,i4,a,i6)') 'Bad temperature=',temp(i,j),'  at i=',i,' j=',j,' pe=',mpp_pe()
+   endif
+ enddo
+ enddo
 
  end subroutine show_all_bad_2d
 
 !--------------------------------------------------------------
 
  subroutine show_all_bad_3d ( temp )
- class(*), intent(in)  :: temp(:,:,:)
+ real, intent(in)  :: temp(:,:,:)
  integer :: i, j, k, ind, unit
 
  unit = stdoutunit
-
- select type (temp)
- type is (real(kind=r4_kind))
-   do k=1,size(temp,3)
-   do j=1,size(temp,2)
-   do i=1,size(temp,1)
-     ind = int(dtinv*(temp(i,j,k)-tmin+teps))
-     if (ind < 0 .or. ind > nlim) then
-       write(unit,'(a,e10.3,a,i4,a,i4,a,i4,a,i6)') 'Bad temperature=',temp(i,j,k),&
-            &'  at i=',i,' j=',j,' k=',k,' pe=',mpp_pe()
-     endif
-   enddo
-   enddo
-   enddo
- type is (real(kind=r8_kind))
-   do k=1,size(temp,3)
-   do j=1,size(temp,2)
-   do i=1,size(temp,1)
-     ind = int(dtinv*(temp(i,j,k)-tmin+teps))
-     if (ind < 0 .or. ind > nlim) then
-       write(unit,'(a,e10.3,a,i4,a,i4,a,i4,a,i6)') 'Bad temperature=',temp(i,j,k),&
-            &'  at i=',i,' j=',j,' k=',k,' pe=',mpp_pe()
-     endif
-   enddo
-   enddo
-   enddo
- class default
-   call error_mesg ('sat_vapor_pres_mod::show_all_bad_3d',&
-        & 'The temp is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)
- end select
+ do k=1,size(temp,3)
+ do j=1,size(temp,2)
+ do i=1,size(temp,1)
+   ind = int(dtinv*(temp(i,j,k)-tmin+teps))
+   if (ind < 0 .or. ind > nlim) then
+     write(unit,'(a,e10.3,a,i4,a,i4,a,i4,a,i6)') 'Bad temperature=',temp(i,j,k),'  at i=',i,' j=',j,' k=',k, &
+          & ' pe=',mpp_pe()
+   endif
+ enddo
+ enddo
+ enddo
 
  end subroutine show_all_bad_3d
 

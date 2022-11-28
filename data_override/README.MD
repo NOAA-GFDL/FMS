@@ -30,15 +30,15 @@ In order to use the yaml data format, [libyaml](https://github.com/yaml/libyaml)
 ./configure --with-yaml
 ```
 
-If using cmake, you can use `-DWITH_YAML`. 
+If using cmake, you can use `-DWITH_YAML`.
 ```
 cmake -DWITH_YAML=on;
 ```
 #### 3. Converting legacy data_table to data_table.yaml
-To convert legacy data_table to data_table.yaml, the python script, [`data_table_to_yaml.py`](https://github.com/NOAA-GFDL/fms_yaml_tools/blob/main/data_table/data_table_to_yaml.py), can be used. Additionally, the python script, [`is_valid_data_table_yaml.py`](https://github.com/NOAA-GFDL/fms_yaml_tools/blob/main/data_table/is_valid_data_table_yaml.py), can be used to check if your data_table.yaml file is valid. 
+To convert legacy data_table to data_table.yaml, the python script, [`data_table_to_yaml.py`](https://github.com/NOAA-GFDL/fms_yaml_tools/blob/main/data_table/data_table_to_yaml.py), can be used. Additionally, the python script, [`is_valid_data_table_yaml.py`](https://github.com/NOAA-GFDL/fms_yaml_tools/blob/main/data_table/is_valid_data_table_yaml.py), can be used to check if your data_table.yaml file is valid.
 
 #### 4. Examples
-**4.1** The following example is going to bilnearly interpolate `sic_obs` to the `ICE` grid using the `sic` data from the file: `INPUT/hadisst_ice.data.nc`, multiply by a factor of `0.01`, and interpolate to the model time. 
+**4.1** The following example is going to bilnearly interpolate `sic_obs` to the `ICE` grid using the `sic` data from the file: `INPUT/hadisst_ice.data.nc`, multiply by a factor of `0.01`, and interpolate to the model time.
 
 In the **legacy format**, the data_table will look like:
 ```
@@ -65,7 +65,7 @@ where:
 - `icec` is the variable to write the data to
 - `Spec_Time` is the time to interpolate the data to.
 
-Additionally, it is required to call data_override_init (in this case with the ICE domain). The grid_spec.nc file must also contain the coordinate information for the domain being used. 
+Additionally, it is required to call data_override_init (in this case with the ICE domain). The grid_spec.nc file must also contain the coordinate information for the domain being used.
 
 ```F90
 call data_override_init(Ice_domain_in=Ice_domain)
