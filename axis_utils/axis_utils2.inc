@@ -67,7 +67,7 @@
 
 #undef INTERP_1D_2D_
 #define INTERP_1D_2D_ interp_1d_2d_r4
-#undef FMS_AU_KIND_ 
+#undef FMS_AU_KIND_
 #define FMS_AU_KIND_ r4_kind
 
 #undef INTERP_1D_3D_

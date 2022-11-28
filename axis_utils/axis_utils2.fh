@@ -34,7 +34,7 @@
   real(FMS_AU_KIND_), dimension(:), intent(out) :: edge_data  !< Returned edge data from given axis name
   logical, intent(in), optional                 :: reproduce_null_char_bug_flag  !< Flag indicating to reproduce
                                      !! the mpp_io bug where the null characters were not removed
-                                     !! after reading a string attribute 
+                                     !! after reading a string attribute
 
   integer :: ndims
   character(len=128) :: buffer
@@ -160,7 +160,7 @@ end subroutine AXIS_EDGES_
   !!
   !! e.g.
   !!        lon =      0 1 2 3 4 5  ...  358 359; lon_strt = 3 ==>
-  !!        tranlon =  3 4 5 6 7 8  ...  359 360 361 362; istrt = 4 
+  !!        tranlon =  3 4 5 6 7 8  ...  359 360 361 362; istrt = 4
 
   subroutine TRANLON_(lon, lon_start, istrt)
 
@@ -170,7 +170,7 @@ end subroutine AXIS_EDGES_
     ! e.g.
     !        lon =      0 1 2 3 4 5  ...  358 359; lon_strt = 3 ==>
     !        tranlon =  3 4 5 6 7 8  ...  359 360 361 362; istrt = 4
-   
+
     real(kind=FMS_AU_KIND_), intent(inout), dimension(:) :: lon
     real(kind=FMS_AU_KIND_), intent(in)                  :: lon_start
     integer, intent(out)                                 :: istrt
@@ -245,7 +245,7 @@ end subroutine AXIS_EDGES_
   !!   be the nearest data point to 0.0
   !!
   !!   @return real frac_index
-  
+
 
   function FRAC_INDEX_(value, array)
 
@@ -323,8 +323,8 @@ end subroutine AXIS_EDGES_
   !!     z(k1) would be the nearest data point to 12.5 and z(k2) would
   !!     be the nearest data point to 0.0
   !! @return integer nearest_index
-  
-  
+
+
 
   function NEAREST_INDEX_(value, array)
 

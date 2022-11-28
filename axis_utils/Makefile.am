@@ -33,7 +33,7 @@ libaxis_utils_la_SOURCES = \
   axis_utils.F90 \
   axis_utils2.F90 \
   axis_utils2.fh \
-  axis_utils2.inc 
+  axis_utils2.inc
 
 axis_utils2.$(FC_MODEXT) : \
 axis_utils2.fh \

@@ -55,7 +55,7 @@ module axis_utils2_mod
   !! @param [inout] data2 Interpolated data
   !! @param method Either "linear" or "cubic_spline" interpolation method, default="linear"
   !! @ingroup axis_utils2_mod
-  
+
   interface axis_edges
     module procedure axis_edges_r4, axis_edges_r8
   end interface axis_edges
@@ -71,11 +71,11 @@ module axis_utils2_mod
   interface nearest_index
       module procedure nearest_index_r4, nearest_index_r8
   end interface nearest_index
-  
+
   interface tranlon
       module procedure tranlon_r4, tranlon_r8
   end interface tranlon
-  
+
   interface interp_1d_linear
       module procedure interp_1d_linear_r4, interp_1d_linear_r8
   end interface interp_1d_linear
@@ -85,8 +85,8 @@ module axis_utils2_mod
   end interface interp_1d_cubic_spline
 
   interface interp_1d
-     module procedure interp_1d_1d_r4, interp_1d_1d_r8 
-     module procedure interp_1d_2d_r4, interp_1d_2d_r8 
+     module procedure interp_1d_1d_r4, interp_1d_1d_r8
+     module procedure interp_1d_2d_r4, interp_1d_2d_r8
      module procedure interp_1d_3d_r4, interp_1d_3d_r8
   end interface interp_1d
 
