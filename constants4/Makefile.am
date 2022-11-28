@@ -20,7 +20,7 @@
 # This is an automake file for the constants4 directory of the FMS
 # package.
 
-# Ryan Mulhall 7/22 
+# Ryan Mulhall 7/22
 
 # Include .h and .mod files.
 AM_CPPFLAGS = -I$(top_srcdir)/include
