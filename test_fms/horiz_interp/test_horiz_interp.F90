@@ -220,7 +220,7 @@ implicit none
 
    if(mpp_pe() == mpp_root_pe()) call mpp_error(NOTE,   &
          "The test that verify 2dx2d version horiz_interp can reproduce 1dx1d version of horiz_interp is succesful")
-         
+
    end subroutine
 
   subroutine test_horiz_interp_r4
@@ -369,7 +369,7 @@ implicit none
 
    if(mpp_pe() == mpp_root_pe()) call mpp_error(NOTE,   &
          "The test that verify 2dx2d version horiz_interp can reproduce 1dx1d version of horiz_interp is succesful")
-         
+
    end subroutine
 
 end program horiz_interp_test
