@@ -654,7 +654,6 @@ _EOF
   cat <<_EOF > diag_table.yaml
 title: test_diag_manager
 base_date: 2 1 1 0 0 0
-
 diag_files:
 - file_name: file1
   freq: 6
@@ -745,6 +744,16 @@ diag_files:
   - module: atm_mod
     var_name: var4
     reduction: average
+    kind: r4
+- file_name: file6
+  freq: 6
+  freq_units: hours
+  time_units: hours
+  unlimdim: time
+  varlist:
+  - module: ocn_mod
+    var_name: var1
+    reduction: none
     kind: r4
 _EOF
 

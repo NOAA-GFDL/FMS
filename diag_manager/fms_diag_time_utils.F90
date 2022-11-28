@@ -140,7 +140,7 @@ contains
     INTEGER :: days_per_month(12) = (/31,28,31,30,31,30,31,31,30,31,30,31/)
     INTEGER :: julian_day, i, position, len, first_percent
     CHARACTER(len=1) :: width  !< width of the field in format write
-    CHARACTER(len=10) :: format
+    CHARACTER(len=10) :: format_str
     CHARACTER(len=20) :: yr !< string of current time (output)
     CHARACTER(len=20) :: mo !< string of current time (output)
     CHARACTER(len=20) :: dy !< string of current time (output)
@@ -149,7 +149,7 @@ contains
     CHARACTER(len=20) :: sc !< string of current time (output)
     CHARACTER(len=128) :: filetail
 
-    format = '("_",i*.*)'
+    format_str = '("_",i*.*)'
     CALL get_date(current_time, yr1, mo1, dy1, hr1, mi1, sc1)
     len = LEN_TRIM(filename)
     first_percent = INDEX(filename, '%')
@@ -159,8 +159,8 @@ contains
     IF ( position > 0 ) THEN
        width = filetail(position-1:position-1)
        yr1_s = yr1
-       format(7:9) = width//'.'//width
-       WRITE(yr, format) yr1_s
+       format_str(7:9) = width//'.'//width
+       WRITE(yr, format_str) yr1_s
        yr2 = 0
     ELSE
        yr = ' '
@@ -171,8 +171,8 @@ contains
     IF ( position > 0 ) THEN
        width = filetail(position-1:position-1)
        mo1_s = yr2*12 + mo1
-       format(7:9) = width//'.'//width
-       WRITE(mo, format) mo1_s
+       format_str(7:9) = width//'.'//width
+       WRITE(mo, format_str) mo1_s
     ELSE
        mo = ' '
     END IF
@@ -202,8 +202,8 @@ contains
     position = INDEX(filetail, 'dy')
     IF ( position > 0 ) THEN
        width = filetail(position-1:position-1)
-       FORMAT(7:9) = width//'.'//width
-       WRITE(dy, FORMAT) dy1_s
+       format_str(7:9) = width//'.'//width
+       WRITE(dy, format_str) dy1_s
     ELSE
        dy = ' '
     END IF
@@ -217,8 +217,8 @@ contains
     position = INDEX(filetail, 'hr')
     IF ( position > 0 ) THEN
        width = filetail(position-1:position-1)
-       format(7:9) = width//'.'//width
-       WRITE(hr, format) hr1_s
+       format_str(7:9) = width//'.'//width
+       WRITE(hr, format_str) hr1_s
     ELSE
        hr = ' '
     END IF
@@ -232,8 +232,8 @@ contains
     position = INDEX(filetail, 'mi')
     IF(position>0) THEN
        width = filetail(position-1:position-1)
-       format(7:9) = width//'.'//width
-       WRITE(mi, format) mi1_s
+       format_str(7:9) = width//'.'//width
+       WRITE(mi, format_str) mi1_s
     ELSE
        mi = ' '
     END IF
@@ -246,8 +246,8 @@ contains
     position = INDEX(filetail, 'sc')
     IF ( position > 0 ) THEN
        width = filetail(position-1:position-1)
-       format(7:9) = width//'.'//width
-       WRITE(sc, format) sc1_s
+       format_str(7:9) = width//'.'//width
+       WRITE(sc, format_str) sc1_s
     ELSE
        sc = ' '
     ENDIF
