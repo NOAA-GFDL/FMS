@@ -37,8 +37,8 @@ include/mosaic2_r4.inc include/mosaic2_r8.inc include/mosaic2.fh \
 include/grid2_r4.inc include/grid2_r8.inc include/grid2.fh
 
 # Some mods are dependant on other mods in this dir.
-grid2_mod.$(FC_MODEXT): mosaic2_mod.$(FC_MODEXT) include/grid2_r4.inc include/grid2_r8.inc include/grid2.fh
-mosaic2_mod.$(FC_MODEXT): include/mosaic2.fh include/mosaic2_r4.inc include/mosaic2_r8.inc
+grid2_mod.$(FC_MODEXT): mosaic2_mod.$(FC_MODEXT) include/grid2_r4.fh include/grid2_r8.fh include/grid2.inc
+mosaic2_mod.$(FC_MODEXT): include/mosaic2_r4.fh include/mosaic2_r8.fh include/mosaic2.inc 
 
 MODFILES = \
 	mosaic2_mod.$(FC_MODEXT) \
