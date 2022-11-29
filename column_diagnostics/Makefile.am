@@ -31,14 +31,14 @@ noinst_LTLIBRARIES = libcolumn_diagnostics.la
 
 # The convenience library depends on its source.
 libcolumn_diagnostics_la_SOURCES = column_diagnostics.F90 \
-include/column_diagnostics.fh \
-include/column_diagnostics_r4.inc \
-include/column_diagnostics_r8.inc
+include/column_diagnostics.inc \
+include/column_diagnostics_r4.fh \
+include/column_diagnostics_r8.fh
 
 column_diagnostics.$(FC_MOD_EXT):\
-include/column_diagnostics.fh \
-include/column_diagnostics_r4.inc \
-include/column_diagnostics_r8.inc
+include/column_diagnostics.inc \
+include/column_diagnostics_r4.fh \
+include/column_diagnostics_r8.fh
 
 BUILT_SOURCES = column_diagnostics_mod.$(FC_MODEXT)
 nodist_include_HEADERS = column_diagnostics_mod.$(FC_MODEXT)
