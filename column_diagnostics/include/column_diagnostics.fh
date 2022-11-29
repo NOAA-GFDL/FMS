@@ -82,11 +82,11 @@ integer, dimension(:), intent(out)   :: diag_units            !< unit number for
 !--------------------------------------------------------------------
 !    local variables:
 
-      real(FMS_CD_KIND_), dimension(size(diag_i,1))     :: global_lat !< latitudes for all diagnostic columns [ degrees ]
-      real(FMS_CD_KIND_), dimension(size(diag_i,1))     :: global_lon !< longitudes for all diagnostic columns [ degrees ]
+      real(FMS_CD_KIND_), dimension(size(diag_i,1)) :: global_lat !< latitudes for all diagnostic columns [ degrees ]
+      real(FMS_CD_KIND_), dimension(size(diag_i,1)) :: global_lon !< longitudes for all diagnostic columns [ degrees ]
       real(FMS_CD_KIND_), dimension(size(latb_in,1)-1, size(latb_in,2)-1) ::  &
                                   distance, distance_x, distance_y, &
-                                   distance_x2, distance2
+                                  distance_x2, distance2
       real(FMS_CD_KIND_), dimension(size(latb_in,1), size(latb_in,2)) :: latb_deg
       real(FMS_CD_KIND_), dimension(size(lonb_in,1), size(lonb_in,2)) :: lonb_deg
       real(FMS_CD_KIND_) :: dellat, dellon
