@@ -30,7 +30,7 @@
 !> @{
 module fms_diag_yaml_mod
 
-#define DEBUG .true.
+#define DEBUG .false.
 #ifdef use_yaml
 use diag_data_mod,   only: DIAG_NULL, DIAG_OCEAN, DIAG_ALL, DIAG_OTHER, set_base_time, latlon_gridtype, &
                            index_gridtype, null_gridtype, DIAG_SECONDS, DIAG_MINUTES, DIAG_HOURS, DIAG_DAYS, &
@@ -1422,9 +1422,7 @@ subroutine fms_diag_yaml_out()
   integer, dimension(basedate_size) :: basedate_loc !< local copy of basedate to loop through
   integer :: varnum_i, key3_i, gm
 
-  if( mpp_pe() .ne. mpp_root_pe()) return
-
-  allocate(tier3each(SIZE(diag_yaml%diag_files)))
+  allocate(tier3each(SIZE(diag_yaml%diag_files) * 3))
   tier3size = 0; tier3each = 0
 
   !! allocations for key+val structs
@@ -1435,7 +1433,6 @@ subroutine fms_diag_yaml_out()
   do i=1, SIZE(diag_yaml%diag_files)
     call initialize_key_struct(keys2(i))
     call initialize_val_struct(vals2(i))
-
     if (allocated(diag_yaml%diag_files(i)%file_varlist) ) then
       do j=1, SIZE(diag_yaml%diag_files(i)%file_varlist)
         tier3size = tier3size + 1
@@ -1445,10 +1442,6 @@ subroutine fms_diag_yaml_out()
   enddo
   allocate(keys3(tier3size))
   allocate(vals3(tier3size))
-  do i=1, SIZE(diag_yaml%diag_files)
-    call initialize_key_struct(keys3(i))
-    call initialize_key_struct(keys3(j))
-  enddo
 
   !! tier 1 - title, basedate, diag_files
   call initialize_key_struct(keys(1))
@@ -1479,6 +1472,7 @@ subroutine fms_diag_yaml_out()
     call fms_f2c_string(keys2(i)%key5, 'unlimdim')
     call fms_f2c_string(keys2(i)%key6, 'new_file_freq')
     call fms_f2c_string(keys2(i)%key7, 'new_file_freq_units')
+    !! gcc bug causes this key to sometimes not show up
     call fms_f2c_string(keys2(i)%key8, 'start_time')
     call fms_f2c_string(keys2(i)%key9, 'file_duration')
     call fms_f2c_string(keys2(i)%key10, 'file_duration_units')
@@ -1518,6 +1512,8 @@ subroutine fms_diag_yaml_out()
       if( SIZE(fileptr%file_varlist) .gt. 0) then
         do j=1, SIZE(fileptr%file_varlist)
           key3_i = key3_i + 1
+          call initialize_key_struct(keys3(key3_i))
+          call initialize_val_struct(vals3(key3_i))
           !! find the variable object from the list
           varptr => NULL()
           do varnum_i=1, SIZE(diag_yaml%diag_fields)
@@ -1587,6 +1583,8 @@ subroutine fms_diag_yaml_out()
     tier3each(i*3-2) = j-1 ! j-1 structs to print for varlist keys
     tier3each(i*3-1) = 1   ! 1 struct per sub_region key
     tier3each(i*3) = 1     ! 1 struct per global metadata key
+    call initialize_key_struct(keys3(key3_i))
+    call initialize_val_struct(vals3(key3_i))
     !! sub region
     call yaml_out_add_level2key('sub_region', keys2(i))
     call fms_f2c_string(keys3(key3_i)%key1, 'grid_type')
@@ -1663,8 +1661,10 @@ subroutine fms_diag_yaml_out()
     endif
     !! global metadata
     key3_i = key3_i + 1
+    call initialize_key_struct(keys3(key3_i))
+    call initialize_val_struct(vals3(key3_i))
     call yaml_out_add_level2key('global_meta', keys2(i))
-    if ( .false. .and. fileptr%has_file_global_meta()) then
+    if ( fileptr%has_file_global_meta()) then
       do gm=1, SIZE(fileptr%file_global_meta, 1)
         select case(gm)
           case (1)
@@ -1722,7 +1722,8 @@ subroutine fms_diag_yaml_out()
   tier2size = i
   if (DEBUG .and. mpp_root_pe() .eq. mpp_pe()) print *, 'tier1size', 1, 'tier2size', SIZE(diag_yaml%diag_files), &
                                                       & 'tier3size', tier3size, 'tier3each', tier3each
-  call write_yaml_from_struct_3( 'diag_out.yaml',  1, keys, vals,          &
+  if( mpp_pe() .ne. mpp_root_pe()) return
+  call write_yaml_from_struct_3( 'diag_out.yaml'//c_null_char,  1, keys, vals,          &
                                  SIZE(diag_yaml%diag_files), keys2, vals2, &
                                  tier3size, tier3each, keys3, vals3,       &
                                  (/size(diag_yaml%diag_files), 0, 0, 0, 0, 0, 0, 0/))

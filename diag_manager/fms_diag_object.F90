@@ -27,7 +27,7 @@ use diag_data_mod,  only: diag_null, diag_not_found, diag_not_registered, diag_r
 use fms_diag_file_object_mod, only: fmsDiagFileContainer_type, fmsDiagFile_type, fms_diag_files_object_init
 use fms_diag_field_object_mod, only: fmsDiagField_type, fms_diag_fields_object_init
 use fms_diag_yaml_mod, only: diag_yaml_object_init, diag_yaml_object_end, find_diag_field, &
-                            & get_diag_files_id, diag_yaml
+                            & get_diag_files_id, diag_yaml, fms_diag_yaml_out
 use fms_diag_axis_object_mod, only: fms_diag_axis_object_init, fmsDiagAxis_type, fmsDiagSubAxis_type, &
                                    &diagDomain_t, get_domain_and_domain_type, diagDomain2d_t, &
                                    &fmsDiagAxisContainer_type, fms_diag_axis_object_end, fmsDiagFullAxis_type
@@ -123,8 +123,12 @@ subroutine fms_diag_object_end (this)
   class(fmsDiagObject_type) :: this
   integer                   :: i
 #ifdef use_yaml
+  ! write output yaml
+  call fms_diag_yaml_out()
+
   !TODO: loop through files and force write
   if (.not. this%initialized) return
+
 
   do i = 1, size(this%FMS_diag_files)
     !< Go away if the file is a subregional file and the current PE does not have any data for it
@@ -132,6 +136,7 @@ subroutine fms_diag_object_end (this)
 
     call this%FMS_diag_files(i)%close_diag_file()
   enddo
+
   !TODO: Deallocate diag object arrays and clean up all memory
   do i=1, size(this%FMS_diag_buffers)
     if(allocated(this%FMS_diag_buffers(i)%diag_buffer_obj)) then
