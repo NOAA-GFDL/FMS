@@ -233,7 +233,7 @@
       dtres = (tcmax - tcmin)/real(table_size-1)
       tminl = real(tcmin)+TFREEZE  ! minimum valid temp in table
       dtinvl = one/dtres
-      tepsl = zp5*dtres
+      tepsl = p5*dtres
       tinrc = .1*dtres
       if(present(teps )) teps =tepsl
       if(present(tmin )) tmin =tminl
