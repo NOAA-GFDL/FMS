@@ -486,6 +486,9 @@
  logical,intent(in),                  optional :: es_over_liq
  logical,intent(in),                  optional :: es_over_liq_and_ice
 
+ real, parameter :: zero=0.0
+ real, parameter :: one=1.0
+
  real, dimension(size(temp,1), size(temp,2), size(temp,3)) ::   &
                                                   esloc, desat, denom
  integer :: i, j, k
@@ -494,7 +497,7 @@
    if (present(hc)) then
      hc_loc = hc
    else
-     hc_loc = 1.0
+     hc_loc = one
    endif
  if (present(es_over_liq)) then
    if (present (dqsdT)) then
@@ -524,16 +527,16 @@
    endif
    if (nbad == 0) then
      if (present (q) .and. use_exact_qs) then
-       qs = (1.0 + zvir*q)*eps*esloc/press
+       qs = (one + zvir*q)*eps*esloc/press
        if (present (dqsdT)) then
-         dqsdT = (1.0 + zvir*q)*eps*desat/press
+         dqsdT = (one + zvir*q)*eps*desat/press
        endif
      else  ! (present(q))
-       denom = press - (1.0 - eps)*esloc
+       denom = press - (one - eps)*esloc
        do k=1,size(qs,3)
          do j=1,size(qs,2)
            do i=1,size(qs,1)
-             if (denom(i,j,k) > 0.0) then
+             if (denom(i,j,k) > zero) then
                qs(i,j,k) = eps*esloc(i,j,k)/denom(i,j,k)
              else
                qs(i,j,k) = eps
@@ -573,6 +576,9 @@
  logical,intent(in),                optional :: es_over_liq
  logical,intent(in),                  optional :: es_over_liq_and_ice
 
+ real, parameter :: zero=0.0
+ real, parameter :: one=1.0
+
  real, dimension(size(temp,1), size(temp,2)) :: esloc, desat, denom
  integer :: i, j
  real    :: hc_loc
@@ -580,7 +586,7 @@
    if (present(hc)) then
      hc_loc = hc
    else
-     hc_loc = 1.0
+     hc_loc = one
    endif
 
  if (present(es_over_liq)) then
@@ -611,15 +617,15 @@
    endif
    if (nbad == 0) then
      if (present (q) .and. use_exact_qs) then
-       qs = (1.0 + zvir*q)*eps*esloc/press
+       qs = (one + zvir*q)*eps*esloc/press
        if (present (dqsdT)) then
-         dqsdT = (1.0 + zvir*q)*eps*desat/press
+         dqsdT = (one + zvir*q)*eps*desat/press
        endif
      else  ! (present(q))
-       denom = press - (1.0 - eps)*esloc
+       denom = press - (one - eps)*esloc
       do j=1,size(qs,2)
         do i=1,size(qs,1)
-          if (denom(i,j) > 0.0) then
+          if (denom(i,j) > zero) then
             qs(i,j) = eps*esloc(i,j)/denom(i,j)
           else
             qs(i,j) = eps
@@ -657,6 +663,9 @@
  real, intent(out), dimension(:), optional :: dqsdT, esat
  logical,intent(in),              optional :: es_over_liq
  logical,intent(in),                  optional :: es_over_liq_and_ice
+
+ real, parameter :: zero=0.0
+ real, parameter :: one=1.0
 
  real, dimension(size(temp,1)) :: esloc, desat, denom
  integer :: i
@@ -696,14 +705,14 @@
    endif
    if (nbad == 0) then
      if (present (q) .and. use_exact_qs) then
-       qs = (1.0 + zvir*q)*eps*esloc/press
+       qs = (one + zvir*q)*eps*esloc/press
        if (present (dqsdT)) then
-         dqsdT = (1.0 + zvir*q)*eps*desat/press
+         dqsdT = (one + zvir*q)*eps*desat/press
        endif
      else  ! (present(q))
-       denom = press - (1.0 - eps)*esloc
+       denom = press - (one - eps)*esloc
        do i=1,size(qs,1)
-         if (denom(i) >  0.0) then
+         if (denom(i) >  zero) then
            qs(i) = eps*esloc(i)/denom(i)
          else
            qs(i) = eps
@@ -740,6 +749,9 @@
  real, intent(out),     optional :: dqsdT, esat
  logical,intent(in),    optional :: es_over_liq
  logical,intent(in),                  optional :: es_over_liq_and_ice
+
+ real, parameter :: zero=0.0
+ real, parameter :: one=1.0
 
  real    :: esloc, desat, denom
  real    :: hc_loc
@@ -778,13 +790,13 @@
    endif
    if (nbad == 0) then
      if (present (q) .and. use_exact_qs) then
-       qs = (1.0 + zvir*q)*eps*esloc/press
+       qs = (one + zvir*q)*eps*esloc/press
        if (present (dqsdT)) then
-         dqsdT = (1.0 + zvir*q)*eps*desat/press
+         dqsdT = (one + zvir*q)*eps*desat/press
        endif
      else  ! (present(q))
-       denom = press - (1.0 - eps)*esloc
-       if (denom > 0.0) then
+       denom = press - (one - eps)*esloc
+       if (denom > zero) then
          qs = eps*esloc/denom
        else
          qs = eps
@@ -825,13 +837,16 @@
 
  real, dimension(size(temp,1), size(temp,2), size(temp,3)) ::    &
                                                     esloc, desat, denom
+ real, parameter :: zero=0.0
+ real, parameter :: one=1.0
+
  integer :: i, j, k
  real    :: hc_loc
 
    if (present(hc)) then
      hc_loc = hc
    else
-     hc_loc = 1.0
+     hc_loc = one
    endif
 
  if (present (es_over_liq)) then
@@ -871,7 +886,7 @@
        do k=1,size(mrs,3)
          do j=1,size(mrs,2)
            do i=1,size(mrs,1)
-             if (denom(i,j,k) > 0.0) then
+             if (denom(i,j,k) > zero) then
                mrs(i,j,k) = eps*esloc(i,j,k)/denom(i,j,k)
              else
                mrs(i,j,k) = eps
@@ -911,6 +926,9 @@
  logical,intent(in),               optional :: es_over_liq
  logical,intent(in),                  optional :: es_over_liq_and_ice
 
+ real, parameter :: zero=0.0
+ real, parameter :: one=1.0
+
  real, dimension(size(temp,1), size(temp,2)) :: esloc, desat, denom
  integer :: i, j
  real    :: hc_loc
@@ -918,7 +936,7 @@
    if (present(hc)) then
      hc_loc = hc
    else
-     hc_loc = 1.0
+     hc_loc = one
    endif
 
  if (present (es_over_liq)) then
@@ -957,7 +975,7 @@
        denom = press - esloc
        do j=1,size(mrs,2)
          do i=1,size(mrs,1)
-           if (denom(i,j) > 0.0) then
+           if (denom(i,j) > zero) then
              mrs(i,j) = eps*esloc(i,j)/denom(i,j)
            else
              mrs(i,j) = eps
@@ -996,6 +1014,9 @@
  logical,intent(in),              optional :: es_over_liq
  logical,intent(in),                  optional :: es_over_liq_and_ice
 
+ real, parameter :: zero=0.0
+ real, parameter :: one=1.0
+
  real, dimension(size(temp,1)) :: esloc, desat, denom
  integer :: i
  real    :: hc_loc
@@ -1003,7 +1024,7 @@
    if (present(hc)) then
      hc_loc = hc
    else
-     hc_loc = 1.0
+     hc_loc = one
    endif
 
  if (present (es_over_liq)) then
@@ -1041,7 +1062,7 @@
      else ! (present (mr))
        denom = press - esloc
        do i=1,size(mrs,1)
-         if (denom(i) > 0.0) then
+         if (denom(i) > zero) then
            mrs(i) = eps*esloc(i)/denom(i)
          else
            mrs(i) = eps
@@ -1079,13 +1100,16 @@
  logical,intent(in),                  optional :: es_over_liq
  logical,intent(in),                  optional :: es_over_liq_and_ice
 
+ real, parameter :: zero=0.0
+ real, parameter :: one=1.0
+
  real    :: esloc, desat, denom
  real    :: hc_loc
 
    if (present(hc)) then
      hc_loc = hc
    else
-     hc_loc = 1.0
+     hc_loc = one
    endif
 
  if (present (es_over_liq)) then
@@ -1122,7 +1146,7 @@
        endif
      else ! (present (mr))
        denom = press - esloc
-       if (denom > 0.0) then
+       if (denom > zero) then
          mrs = eps*esloc/denom
        else
          mrs = eps
@@ -1153,6 +1177,8 @@
  real, intent(out), dimension(:,:,:)  :: esat, desat
  integer, intent(out)                 :: nbad
 
+ real, parameter :: two=2.0
+
  real    :: tmp, del
  integer :: ind, i, j, k
 
@@ -1168,7 +1194,7 @@
        del = tmp-dtres*real(ind)
        esat(i,j,k) = TABLE(ind+1) +  &
                      del*(DTABLE(ind+1) + del*D2TABLE(ind+1))
-       desat(i,j,k) = DTABLE(ind+1) + 2.*del*D2TABLE(ind+1)
+       desat(i,j,k) = DTABLE(ind+1) + two*del*D2TABLE(ind+1)
      endif
    enddo
    enddo
@@ -1182,6 +1208,8 @@
  real, intent(in),  dimension(:,:)  :: temp
  real, intent(out), dimension(:,:)  :: esat, desat
  integer, intent(out)               :: nbad
+
+ real, parameter :: two=2.0
 
  real    :: tmp, del
  integer :: ind, i, j
@@ -1197,7 +1225,7 @@
        del = tmp-dtres*real(ind)
        esat(i,j) = TABLE(ind+1) + &
                    del*(DTABLE(ind+1) + del*D2TABLE(ind+1))
-       desat(i,j) = DTABLE(ind+1) + 2.*del*D2TABLE(ind+1)
+       desat(i,j) = DTABLE(ind+1) + two*del*D2TABLE(ind+1)
      endif
    enddo
    enddo
@@ -1210,6 +1238,8 @@
  real, intent(in),  dimension(:)  :: temp
  real, intent(out), dimension(:)  :: esat, desat
  integer, intent(out)             :: nbad
+
+ real, parameter :: two=2.0
 
  real    :: tmp, del
  integer :: ind, i
@@ -1224,7 +1254,7 @@
        del = tmp-dtres*real(ind)
        esat(i) = TABLE(ind+1) + &
                    del*(DTABLE(ind+1) + del*D2TABLE(ind+1))
-       desat(i) = DTABLE(ind+1) + 2.*del*D2TABLE(ind+1)
+       desat(i) = DTABLE(ind+1) + two*del*D2TABLE(ind+1)
      endif
    enddo
 
@@ -1236,6 +1266,8 @@
  real, intent(in)     :: temp
  real, intent(out)    :: esat, desat
  integer, intent(out) :: nbad
+
+ real, parameter :: two=2.0
 
  real    :: tmp, del
  integer :: ind
@@ -1249,7 +1281,7 @@
      del = tmp-dtres*real(ind)
      esat = TABLE(ind+1) + &
             del*(DTABLE(ind+1) + del*D2TABLE(ind+1))
-     desat = DTABLE(ind+1) + 2.*del*D2TABLE(ind+1)
+     desat = DTABLE(ind+1) + two*del*D2TABLE(ind+1)
    endif
 
  end subroutine lookup_es_des_k_0d
@@ -1288,6 +1320,9 @@
  real, intent(in),  dimension(:,:,:)  :: temp
  real, intent(out), dimension(:,:,:)  :: desat
  integer, intent(out) :: nbad
+
+ real, parameter :: two=2.0
+
  real    :: tmp, del
  integer :: ind, i, j, k
 
@@ -1301,7 +1336,7 @@
        nbad = nbad+1
      else
        del = tmp-dtres*real(ind)
-       desat(i,j,k) = DTABLE(ind+1) + 2.*del*D2TABLE(ind+1)
+       desat(i,j,k) = DTABLE(ind+1) + two*del*D2TABLE(ind+1)
      endif
    enddo
    enddo
@@ -1314,6 +1349,9 @@
  real, intent(in),  dimension(:,:)  :: temp
  real, intent(out), dimension(:,:)  :: desat
  integer, intent(out) :: nbad
+
+ real, parameter :: two=2.0
+
  real    :: tmp, del
  integer :: ind, i, j
 
@@ -1326,7 +1364,7 @@
        nbad = nbad+1
      else
        del = tmp-dtres*real(ind)
-       desat(i,j) = DTABLE(ind+1) + 2.*del*D2TABLE(ind+1)
+       desat(i,j) = DTABLE(ind+1) + two*del*D2TABLE(ind+1)
      endif
    enddo
    enddo
@@ -1361,6 +1399,9 @@
  real, intent(in),  dimension(:)  :: temp
  real, intent(out), dimension(:)  :: desat
  integer, intent(out) :: nbad
+
+ real, parameter :: two=2.0
+
  real    :: tmp, del
  integer :: ind, i
 
@@ -1372,7 +1413,7 @@
        nbad = nbad+1
      else
        del = tmp-dtres*real(ind)
-       desat(i) = DTABLE(ind+1) + 2.*del*D2TABLE(ind+1)
+       desat(i) = DTABLE(ind+1) + two*del*D2TABLE(ind+1)
      endif
    enddo
 
@@ -1403,6 +1444,9 @@
  real, intent(in)     :: temp
  real, intent(out)    :: desat
  integer, intent(out) :: nbad
+
+ real, parameter :: two=2.0
+
  real    :: tmp, del
  integer :: ind
 
@@ -1413,7 +1457,7 @@
      nbad = nbad+1
    else
      del = tmp-dtres*real(ind)
-     desat = DTABLE(ind+1) + 2.*del*D2TABLE(ind+1)
+     desat = DTABLE(ind+1) + two*del*D2TABLE(ind+1)
    endif
 
  end subroutine lookup_des_k_0d
@@ -1443,6 +1487,8 @@
  real, intent(out), dimension(:,:,:)  :: esat, desat
  integer, intent(out)                 :: nbad
 
+ real, parameter :: two=2.0
+
  real    :: tmp, del
  integer :: ind, i, j, k
 
@@ -1458,7 +1504,7 @@
        del = tmp-dtres*real(ind)
        esat(i,j,k) = TABLE2(ind+1) +  &
                      del*(DTABLE2(ind+1) + del*D2TABLE2(ind+1))
-       desat(i,j,k) = DTABLE2(ind+1) + 2.*del*D2TABLE2(ind+1)
+       desat(i,j,k) = DTABLE2(ind+1) + two*del*D2TABLE2(ind+1)
      endif
    enddo
    enddo
@@ -1472,6 +1518,8 @@
  real, intent(in),  dimension(:,:)  :: temp
  real, intent(out), dimension(:,:)  :: esat, desat
  integer, intent(out)               :: nbad
+
+ real, parameter :: two=2.0
 
  real    :: tmp, del
  integer :: ind, i, j
@@ -1487,7 +1535,7 @@
        del = tmp-dtres*real(ind)
        esat(i,j) = TABLE2(ind+1) + &
                    del*(DTABLE2(ind+1) + del*D2TABLE2(ind+1))
-       desat(i,j) = DTABLE2(ind+1) + 2.*del*D2TABLE2(ind+1)
+       desat(i,j) = DTABLE2(ind+1) + two*del*D2TABLE2(ind+1)
      endif
    enddo
    enddo
@@ -1500,6 +1548,8 @@
  real, intent(in),  dimension(:)  :: temp
  real, intent(out), dimension(:)  :: esat, desat
  integer, intent(out)             :: nbad
+
+ real, parameter :: two=2.0
 
  real    :: tmp, del
  integer :: ind, i
@@ -1514,7 +1564,7 @@
        del = tmp-dtres*real(ind)
        esat(i) = TABLE2(ind+1) + &
                    del*(DTABLE2(ind+1) + del*D2TABLE2(ind+1))
-       desat(i) = DTABLE2(ind+1) + 2.*del*D2TABLE2(ind+1)
+       desat(i) = DTABLE2(ind+1) + two*del*D2TABLE2(ind+1)
      endif
    enddo
 
@@ -1526,6 +1576,8 @@
  real, intent(in)     :: temp
  real, intent(out)    :: esat, desat
  integer, intent(out) :: nbad
+
+ real, parameter :: two=2.0
 
  real    :: tmp, del
  integer :: ind
@@ -1539,7 +1591,7 @@
      del = tmp-dtres*real(ind)
      esat = TABLE2(ind+1) + &
             del*(DTABLE2(ind+1) + del*D2TABLE2(ind+1))
-     desat = DTABLE2(ind+1) + 2.*del*D2TABLE2(ind+1)
+     desat = DTABLE2(ind+1) + two*del*D2TABLE2(ind+1)
    endif
 
  end subroutine lookup_es2_des2_k_0d
@@ -1578,6 +1630,9 @@
  real, intent(in),  dimension(:,:,:)  :: temp
  real, intent(out), dimension(:,:,:)  :: desat
  integer, intent(out) :: nbad
+
+ real, parameter :: two=2.0
+
  real    :: tmp, del
  integer :: ind, i, j, k
 
@@ -1591,7 +1646,7 @@
        nbad = nbad+1
      else
        del = tmp-dtres*real(ind)
-       desat(i,j,k) = DTABLE2(ind+1) + 2.*del*D2TABLE2(ind+1)
+       desat(i,j,k) = DTABLE2(ind+1) + two*del*D2TABLE2(ind+1)
      endif
    enddo
    enddo
@@ -1604,6 +1659,9 @@
  real, intent(in),  dimension(:,:)  :: temp
  real, intent(out), dimension(:,:)  :: desat
  integer, intent(out) :: nbad
+
+ real, parameter :: two=2.0
+
  real    :: tmp, del
  integer :: ind, i, j
 
@@ -1616,7 +1674,7 @@
        nbad = nbad+1
      else
        del = tmp-dtres*real(ind)
-       desat(i,j) = DTABLE2(ind+1) + 2.*del*D2TABLE2(ind+1)
+       desat(i,j) = DTABLE2(ind+1) + two*del*D2TABLE2(ind+1)
      endif
    enddo
    enddo
@@ -1651,6 +1709,9 @@
  real, intent(in),  dimension(:)  :: temp
  real, intent(out), dimension(:)  :: desat
  integer, intent(out) :: nbad
+
+ real, parameter :: two=2.0
+
  real    :: tmp, del
  integer :: ind, i
 
@@ -1662,7 +1723,7 @@
        nbad = nbad+1
      else
        del = tmp-dtres*real(ind)
-       desat(i) = DTABLE2(ind+1) + 2.*del*D2TABLE2(ind+1)
+       desat(i) = DTABLE2(ind+1) + two*del*D2TABLE2(ind+1)
      endif
    enddo
 
@@ -1693,6 +1754,9 @@
  real, intent(in)     :: temp
  real, intent(out)    :: desat
  integer, intent(out) :: nbad
+
+ real, parameter :: two=2.0
+
  real    :: tmp, del
  integer :: ind
 
@@ -1703,7 +1767,7 @@
      nbad = nbad+1
    else
      del = tmp-dtres*real(ind)
-     desat = DTABLE2(ind+1) + 2.*del*D2TABLE2(ind+1)
+     desat = DTABLE2(ind+1) + two*del*D2TABLE2(ind+1)
    endif
 
  end subroutine lookup_des2_k_0d
@@ -1735,6 +1799,8 @@
  real, intent(out), dimension(:,:,:)  :: esat, desat
  integer, intent(out)                 :: nbad
 
+ real, parameter :: two=2.0
+
  real    :: tmp, del
  integer :: ind, i, j, k
 
@@ -1750,7 +1816,7 @@
        del = tmp-dtres*real(ind)
        esat(i,j,k) = TABLE3(ind+1) +  &
                      del*(DTABLE3(ind+1) + del*D2TABLE3(ind+1))
-       desat(i,j,k) = DTABLE3(ind+1) + 2.*del*D2TABLE3(ind+1)
+       desat(i,j,k) = DTABLE3(ind+1) + two*del*D2TABLE3(ind+1)
      endif
    enddo
    enddo
@@ -1764,6 +1830,8 @@
  real, intent(in),  dimension(:,:)  :: temp
  real, intent(out), dimension(:,:)  :: esat, desat
  integer, intent(out)               :: nbad
+
+ real, parameter :: two=2.0
 
  real    :: tmp, del
  integer :: ind, i, j
@@ -1779,7 +1847,7 @@
        del = tmp-dtres*real(ind)
        esat(i,j) = TABLE3(ind+1) + &
                    del*(DTABLE3(ind+1) + del*D2TABLE3(ind+1))
-       desat(i,j) = DTABLE3(ind+1) + 2.*del*D2TABLE3(ind+1)
+       desat(i,j) = DTABLE3(ind+1) + two*del*D2TABLE3(ind+1)
      endif
    enddo
    enddo
@@ -1792,6 +1860,8 @@
  real, intent(in),  dimension(:)  :: temp
  real, intent(out), dimension(:)  :: esat, desat
  integer, intent(out)             :: nbad
+
+ real, parameter :: two=2.0
 
  real    :: tmp, del
  integer :: ind, i
@@ -1806,7 +1876,7 @@
        del = tmp-dtres*real(ind)
        esat(i) = TABLE3(ind+1) + &
                    del*(DTABLE3(ind+1) + del*D2TABLE3(ind+1))
-       desat(i) = DTABLE3(ind+1) + 2.*del*D2TABLE3(ind+1)
+       desat(i) = DTABLE3(ind+1) + two*del*D2TABLE3(ind+1)
      endif
    enddo
 
@@ -1818,6 +1888,8 @@
  real, intent(in)     :: temp
  real, intent(out)    :: esat, desat
  integer, intent(out) :: nbad
+
+ real, parameter :: two=2.0
 
  real    :: tmp, del
  integer :: ind
@@ -1831,7 +1903,7 @@
      del = tmp-dtres*real(ind)
      esat = TABLE3(ind+1) + &
             del*(DTABLE3(ind+1) + del*D2TABLE3(ind+1))
-     desat = DTABLE3(ind+1) + 2.*del*D2TABLE3(ind+1)
+     desat = DTABLE3(ind+1) + two*del*D2TABLE3(ind+1)
    endif
 
  end subroutine lookup_es3_des3_k_0d
@@ -1870,6 +1942,9 @@
  real, intent(in),  dimension(:,:,:)  :: temp
  real, intent(out), dimension(:,:,:)  :: desat
  integer, intent(out) :: nbad
+
+ real, parameter :: two=2.0
+
  real    :: tmp, del
  integer :: ind, i, j, k
 
@@ -1883,7 +1958,7 @@
        nbad = nbad+1
      else
        del = tmp-dtres*real(ind)
-       desat(i,j,k) = DTABLE3(ind+1) + 2.*del*D2TABLE3(ind+1)
+       desat(i,j,k) = DTABLE3(ind+1) + two*del*D2TABLE3(ind+1)
      endif
    enddo
    enddo
@@ -1896,6 +1971,9 @@
  real, intent(in),  dimension(:,:)  :: temp
  real, intent(out), dimension(:,:)  :: desat
  integer, intent(out) :: nbad
+
+ real, parameter :: two=2.0
+
  real    :: tmp, del
  integer :: ind, i, j
 
@@ -1908,7 +1986,7 @@
        nbad = nbad+1
      else
        del = tmp-dtres*real(ind)
-       desat(i,j) = DTABLE3(ind+1) + 2.*del*D2TABLE3(ind+1)
+       desat(i,j) = DTABLE3(ind+1) + two*del*D2TABLE3(ind+1)
      endif
    enddo
    enddo
@@ -1943,6 +2021,9 @@
  real, intent(in),  dimension(:)  :: temp
  real, intent(out), dimension(:)  :: desat
  integer, intent(out) :: nbad
+
+ real, parameter :: two=2.0
+
  real    :: tmp, del
  integer :: ind, i
 
@@ -1954,7 +2035,7 @@
        nbad = nbad+1
      else
        del = tmp-dtres*real(ind)
-       desat(i) = DTABLE3(ind+1) + 2.*del*D2TABLE3(ind+1)
+       desat(i) = DTABLE3(ind+1) + two*del*D2TABLE3(ind+1)
      endif
    enddo
 
@@ -1985,6 +2066,9 @@
  real, intent(in)     :: temp
  real, intent(out)    :: desat
  integer, intent(out) :: nbad
+
+ real, parameter :: two=2.0
+
  real    :: tmp, del
  integer :: ind
 
@@ -1995,7 +2079,7 @@
      nbad = nbad+1
    else
      del = tmp-dtres*real(ind)
-     desat = DTABLE3(ind+1) + 2.*del*D2TABLE3(ind+1)
+     desat = DTABLE3(ind+1) + two*del*D2TABLE3(ind+1)
    endif
 
  end subroutine lookup_des3_k_0d
