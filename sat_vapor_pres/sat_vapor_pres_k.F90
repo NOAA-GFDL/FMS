@@ -253,7 +253,7 @@
 
         do i = 1, table_size
           tem(1) = tminl + dtres*real(i-1)
-          TABLE(i) = ES0*real(610.78,FMS_SP_KIND_)*exp(-hlv/rvgas*(one/tem(1) - one/tfreeze))
+          TABLE(i) = ES0*610.78*exp(-hlv/rvgas*(one/tem(1) - one/tfreeze))
           DTABLE(i) = hlv*TABLE(i)/rvgas/tem(1)**2.
         enddo
 
