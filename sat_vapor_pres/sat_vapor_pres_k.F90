@@ -191,6 +191,10 @@
  character(len=*), intent(out) :: err_msg
  real, intent(out), optional :: teps, tmin, dtinv
 
+  real, parameter :: one=1.0
+  real, parameter :: p5=0.5
+  real, parameter :: p25=0.25
+
 ! increment used to generate derivative table
   real, dimension(3) :: tem(3), es(3)
   real :: hdtinv, tinrc, tfact
@@ -228,8 +232,8 @@
       table_siz = table_size
       dtres = (tcmax - tcmin)/real(table_size-1)
       tminl = real(tcmin)+TFREEZE  ! minimum valid temp in table
-      dtinvl = 1./dtres
-      tepsl = .5*dtres
+      dtinvl = one/dtres
+      tepsl = zp5*dtres
       tinrc = .1*dtres
       if(present(teps )) teps =tepsl
       if(present(tmin )) tmin =tminl
@@ -240,7 +244,7 @@
 ! it is necessary to compute ftact differently than it is in memphis.
       tfact = 5.0*dtinvl
 
-      hdtinv = dtinvl*0.5
+      hdtinv = dtinvl*p5
 
 ! compute es tables from tcmin to tcmax
 ! estimate es derivative with small +/- difference
@@ -249,7 +253,7 @@
 
         do i = 1, table_size
           tem(1) = tminl + dtres*real(i-1)
-          TABLE(i) = ES0*610.78*exp(-hlv/rvgas*(1./tem(1) - 1./tfreeze))
+          TABLE(i) = ES0*real(610.78,FMS_SP_KIND_)*exp(-hlv/rvgas*(one/tem(1) - one/tfreeze))
           DTABLE(i) = hlv*TABLE(i)/rvgas/tem(1)**2.
         enddo
 
@@ -270,13 +274,13 @@
 ! differencing des values in the table
 
       do i = 2, table_size-1
-         D2TABLE(i) = 0.25*dtinvl*(DTABLE(i+1)-DTABLE(i-1))
+         D2TABLE(i) = p25*dtinvl*(DTABLE(i+1)-DTABLE(i-1))
       enddo
     ! one-sided derivatives at boundaries
 
-         D2TABLE(1) = 0.50*dtinvl*(DTABLE(2)-DTABLE(1))
+         D2TABLE(1) = p5*dtinvl*(DTABLE(2)-DTABLE(1))
 
-         D2TABLE(table_size) = 0.50*dtinvl*&
+         D2TABLE(table_size) = p5*dtinvl*&
               (DTABLE(table_size)-DTABLE(table_size-1))
 
    if (construct_table_wrt_liq) then
@@ -297,13 +301,13 @@
 ! differencing des values in the table
 
      do i = 2, table_size-1
-       D2TABLE2(i) = 0.25*dtinvl*(DTABLE2(i+1)-DTABLE2(i-1))
+       D2TABLE2(i) = p25*dtinvl*(DTABLE2(i+1)-DTABLE2(i-1))
      enddo
 ! one-sided derivatives at boundaries
 
-     D2TABLE2(1) = 0.50*dtinvl*(DTABLE2(2)-DTABLE2(1))
+     D2TABLE2(1) = p5*dtinvl*(DTABLE2(2)-DTABLE2(1))
 
-     D2TABLE2(table_size) = 0.50*dtinvl*&
+     D2TABLE2(table_size) = p5*dtinvl*&
           (DTABLE2(table_size)-DTABLE2(table_size-1))
    endif
 
@@ -326,13 +330,13 @@
 ! differencing des values in the table
 
      do i = 2, table_size-1
-       D2TABLE3(i) = 0.25*dtinvl*(DTABLE3(i+1)-DTABLE3(i-1))
+       D2TABLE3(i) = p25*dtinvl*(DTABLE3(i+1)-DTABLE3(i-1))
      enddo
 ! one-sided derivatives at boundaries
 
-     D2TABLE3(1) = 0.50*dtinvl*(DTABLE3(2)-DTABLE3(1))
+     D2TABLE3(1) = p5*dtinvl*(DTABLE3(2)-DTABLE3(1))
 
-     D2TABLE3(table_size) = 0.50*dtinvl*&
+     D2TABLE3(table_size) = p5*dtinvl*&
           (DTABLE3(table_size)-DTABLE3(table_size-1))
    endif
 
