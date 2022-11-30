@@ -129,14 +129,12 @@ subroutine fms_diag_object_end (this)
   !TODO: loop through files and force write
   if (.not. this%initialized) return
 
-
   do i = 1, size(this%FMS_diag_files)
     !< Go away if the file is a subregional file and the current PE does not have any data for it
     if (.not. this%FMS_diag_files(i)%writing_on_this_pe()) cycle
 
     call this%FMS_diag_files(i)%close_diag_file()
   enddo
-
   !TODO: Deallocate diag object arrays and clean up all memory
   do i=1, size(this%FMS_diag_buffers)
     if(allocated(this%FMS_diag_buffers(i)%diag_buffer_obj)) then

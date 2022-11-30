@@ -1459,7 +1459,6 @@ subroutine fms_diag_yaml_out()
     write (tmpstr1, '(I0)') basedate_loc(i)
     tmpstr2 = trim(tmpstr2) // ' ' // trim(tmpstr1)
   enddo
-  print *, trim(tmpstr2)
   call fms_f2c_string(vals(1)%val2, trim(tmpstr2))
   call yaml_out_add_level2key('diag_files', keys(1))
   key3_i = 0
@@ -1508,77 +1507,75 @@ subroutine fms_diag_yaml_out()
       call fms_f2c_string(vals2(i)%val10, get_diag_unit_string(fileptr%file_duration_units))
     endif
     !! tier 3 - varlists, subregion, global metadata
-    if (allocated(fileptr%file_varlist) ) then
-      call yaml_out_add_level2key('varlist', keys2(i))
-      j = 0
-      if( SIZE(fileptr%file_varlist) .gt. 0) then
-        do j=1, SIZE(fileptr%file_varlist)
-          key3_i = key3_i + 1
-          call initialize_key_struct(keys3(key3_i))
-          call initialize_val_struct(vals3(key3_i))
-          !! find the variable object from the list
-          varptr => NULL()
-          do varnum_i=1, SIZE(diag_yaml%diag_fields)
-            if(DEBUG) print *, 'diag_obj', trim(diag_yaml%diag_fields(varnum_i)%var_varname)
-            if(DEBUG) print *, 'file obj', trim(diag_yaml%diag_fields(varnum_i)%var_varname)
-            if( trim(diag_yaml%diag_fields(varnum_i)%var_varname ) .eq. trim(fileptr%file_varlist(j)) .and. &
-                trim(diag_yaml%diag_fields(varnum_i)%var_fname) .eq. trim(fileptr%file_fname)) then
-              if(DEBUG) print *, 'match'
-              varptr => diag_yaml%diag_fields(varnum_i)
-              exit
-            endif
-          enddo
-          if( .not. associated(varptr)) call mpp_error(FATAL, "diag_yaml_output: var name: "// &
-                                                              & trim(fileptr%file_varlist(j)))
-          call fms_f2c_string(keys3(key3_i)%key1, 'module')
-          call fms_f2c_string(keys3(key3_i)%key2, 'var_name')
-          call fms_f2c_string(keys3(key3_i)%key3, 'reduction')
-          call fms_f2c_string(keys3(key3_i)%key4, 'kind')
-          call fms_f2c_string(keys3(key3_i)%key5, 'output_name')
-          call fms_f2c_string(keys3(key3_i)%key6, 'long_name')
-          call fms_f2c_string(keys3(key3_i)%key7, 'units')
-          call fms_f2c_string(keys3(key3_i)%key8, 'zbounds')
-          call fms_f2c_string(keys3(key3_i)%key9, 'n_diurnal')
-          call fms_f2c_string(keys3(key3_i)%key10, 'pow_value')
-          if (varptr%has_var_module())   call fms_f2c_string(vals3(key3_i)%val1, varptr%var_module)
-          if (varptr%has_var_varname())  call fms_f2c_string(vals3(key3_i)%val2, varptr%var_varname)
-          if (varptr%has_var_reduction())call fms_f2c_string(vals3(key3_i)%val3, &
-                                                             get_diag_reduction_string(varptr%var_reduction))
-          if (varptr%has_var_outname())  call fms_f2c_string(vals3(key3_i)%val5, varptr%var_outname)
-          if (varptr%has_var_longname()) call fms_f2c_string(vals3(key3_i)%val6, varptr%var_longname)
-          if (varptr%has_var_units()) call fms_f2c_string(vals3(key3_i)%val7, varptr%var_units)
-          if (varptr%has_var_kind()) then
-            select case(varptr%var_kind)
-              case(i4)
-                call fms_f2c_string(vals3(key3_i)%val4, 'i4')
-              case(i8)
-                call fms_f2c_string(vals3(key3_i)%val4, 'i8')
-              case(r4)
-                call fms_f2c_string(vals3(key3_i)%val4, 'r4')
-              case(r8)
-                call fms_f2c_string(vals3(key3_i)%val4, 'r8')
-            end select
-          endif
-          if (varptr%has_var_zbounds()) then
-            tmpstr1 = ''
-            !! trims don't seem to work with just (F) for the format code
-            !! these are just abritrary lengths
-            write (tmpstr1, '(F10.5)') varptr%var_zbounds(1)
-            tmpstr2 = trim(tmpstr1)
-            write (tmpstr1, '(F10.5)') varptr%var_zbounds(2)
-            tmpstr2 = trim(tmpstr2) // ', ' // trim(tmpstr1)
-            call fms_f2c_string(vals3(key3_i)%val8, trim(tmpstr2))
-          endif
-          if (varptr%has_n_diurnal()) then
-            tmpstr1 = ''; write(tmpstr1, '(I0)') varptr%n_diurnal
-            call fms_f2c_string(vals3(key3_i)%val9, tmpstr1)
-          endif
-          if (varptr%has_pow_value()) then
-            tmpstr1 = ''; write(tmpstr1, '(I0)') varptr%pow_value
-            call fms_f2c_string(vals3(key3_i)%val10, tmpstr1)
+    call yaml_out_add_level2key('varlist', keys2(i))
+    j = 0
+    if( SIZE(fileptr%file_varlist) .gt. 0) then
+      do j=1, SIZE(fileptr%file_varlist)
+        key3_i = key3_i + 1
+        call initialize_key_struct(keys3(key3_i))
+        call initialize_val_struct(vals3(key3_i))
+        !! find the variable object from the list
+        varptr => NULL()
+        do varnum_i=1, SIZE(diag_yaml%diag_fields)
+          if(DEBUG) print *, 'diag_obj', trim(diag_yaml%diag_fields(varnum_i)%var_varname)
+          if(DEBUG) print *, 'file obj', trim(diag_yaml%diag_fields(varnum_i)%var_varname)
+          if( trim(diag_yaml%diag_fields(varnum_i)%var_varname ) .eq. trim(fileptr%file_varlist(j)) .and. &
+              trim(diag_yaml%diag_fields(varnum_i)%var_fname) .eq. trim(fileptr%file_fname)) then
+            if(DEBUG) print *, 'match'
+            varptr => diag_yaml%diag_fields(varnum_i)
+            exit
           endif
         enddo
-      endif
+        if( .not. associated(varptr)) call mpp_error(FATAL, "diag_yaml_output: var name: "// &
+                                                            & trim(fileptr%file_varlist(j)))
+        call fms_f2c_string(keys3(key3_i)%key1, 'module')
+        call fms_f2c_string(keys3(key3_i)%key2, 'var_name')
+        call fms_f2c_string(keys3(key3_i)%key3, 'reduction')
+        call fms_f2c_string(keys3(key3_i)%key4, 'kind')
+        call fms_f2c_string(keys3(key3_i)%key5, 'output_name')
+        call fms_f2c_string(keys3(key3_i)%key6, 'long_name')
+        call fms_f2c_string(keys3(key3_i)%key7, 'units')
+        call fms_f2c_string(keys3(key3_i)%key8, 'zbounds')
+        call fms_f2c_string(keys3(key3_i)%key9, 'n_diurnal')
+        call fms_f2c_string(keys3(key3_i)%key10, 'pow_value')
+        if (varptr%has_var_module())   call fms_f2c_string(vals3(key3_i)%val1, varptr%var_module)
+        if (varptr%has_var_varname())  call fms_f2c_string(vals3(key3_i)%val2, varptr%var_varname)
+        if (varptr%has_var_reduction())call fms_f2c_string(vals3(key3_i)%val3, &
+                                                           get_diag_reduction_string(varptr%var_reduction))
+        if (varptr%has_var_outname())  call fms_f2c_string(vals3(key3_i)%val5, varptr%var_outname)
+        if (varptr%has_var_longname()) call fms_f2c_string(vals3(key3_i)%val6, varptr%var_longname)
+        if (varptr%has_var_units()) call fms_f2c_string(vals3(key3_i)%val7, varptr%var_units)
+        if (varptr%has_var_kind()) then
+          select case(varptr%var_kind)
+            case(i4)
+              call fms_f2c_string(vals3(key3_i)%val4, 'i4')
+            case(i8)
+              call fms_f2c_string(vals3(key3_i)%val4, 'i8')
+            case(r4)
+              call fms_f2c_string(vals3(key3_i)%val4, 'r4')
+            case(r8)
+              call fms_f2c_string(vals3(key3_i)%val4, 'r8')
+          end select
+        endif
+        if (varptr%has_var_zbounds()) then
+          tmpstr1 = ''
+          !! trims don't seem to work with just (F) for the format code
+          !! these are just abritrary lengths
+          write (tmpstr1, '(F10.5)') varptr%var_zbounds(1)
+          tmpstr2 = trim(tmpstr1)
+          write (tmpstr1, '(F10.5)') varptr%var_zbounds(2)
+          tmpstr2 = trim(tmpstr2) // ', ' // trim(tmpstr1)
+          call fms_f2c_string(vals3(key3_i)%val8, trim(tmpstr2))
+        endif
+        if (varptr%has_n_diurnal()) then
+          tmpstr1 = ''; write(tmpstr1, '(I0)') varptr%n_diurnal
+          call fms_f2c_string(vals3(key3_i)%val9, tmpstr1)
+        endif
+        if (varptr%has_pow_value()) then
+          tmpstr1 = ''; write(tmpstr1, '(I0)') varptr%pow_value
+          call fms_f2c_string(vals3(key3_i)%val10, tmpstr1)
+        endif
+      enddo
     endif
 
     key3_i = key3_i + 1
@@ -1727,7 +1724,7 @@ subroutine fms_diag_yaml_out()
   do i=1, SIZE(keys2)
     call fms_f2c_string(keys2(i)%key8, 'start_time')
   enddo
-  if (DEBUG .and. mpp_root_pe() .eq. mpp_pe()) print *, 'tier1size', 1, 'tier2size', SIZE(diag_yaml%diag_files), &
+  if (DEBUG) print *, 'tier1size', 1, 'tier2size', SIZE(diag_yaml%diag_files), &
                                                       & 'tier3size', tier3size, 'tier3each', tier3each
   call write_yaml_from_struct_3( 'diag_out.yaml'//c_null_char,  1, keys, vals,          &
                                  SIZE(diag_yaml%diag_files), keys2, vals2, &
