@@ -1422,6 +1422,8 @@ subroutine fms_diag_yaml_out()
   integer, dimension(basedate_size) :: basedate_loc !< local copy of basedate to loop through
   integer :: varnum_i, key3_i, gm
 
+  if( mpp_pe() .ne. mpp_root_pe()) return
+
   allocate(tier3each(SIZE(diag_yaml%diag_files) * 3))
   tier3size = 0; tier3each = 0
 
@@ -1720,9 +1722,13 @@ subroutine fms_diag_yaml_out()
     endif
   enddo
   tier2size = i
+  ! gcc bug seems to occasionally ignore the start_time key when its set in the loop above
+  ! so we'll just set it again
+  do i=1, SIZE(keys2)
+    call fms_f2c_string(keys2(i)%key8, 'start_time')
+  enddo
   if (DEBUG .and. mpp_root_pe() .eq. mpp_pe()) print *, 'tier1size', 1, 'tier2size', SIZE(diag_yaml%diag_files), &
                                                       & 'tier3size', tier3size, 'tier3each', tier3each
-  if( mpp_pe() .ne. mpp_root_pe()) return
   call write_yaml_from_struct_3( 'diag_out.yaml'//c_null_char,  1, keys, vals,          &
                                  SIZE(diag_yaml%diag_files), keys2, vals2, &
                                  tier3size, tier3each, keys3, vals3,       &
