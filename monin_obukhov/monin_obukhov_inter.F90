@@ -78,7 +78,7 @@ end interface monin_obukhov_stable_mix
 
 contains
 
-#include<monin_obukhov_inter.inc>
+#include<monin_obukhov_inter.fh>
 end module monin_obukhov_inter
 !> @}
 ! close documentation grouping

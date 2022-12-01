@@ -33,7 +33,7 @@ use fms_mod,       only: error_mesg, FATAL, check_nml_error,   &
                          write_version_number
 use monin_obukhov_inter, only: monin_obukhov_diff, monin_obukhov_drag_1d, &
                                monin_obukhov_profile_1d, monin_obukhov_stable_mix
-use platform_mod
+use platform_mod,   only: r4_kind, r8_kind
 implicit none
 private
 
@@ -84,6 +84,18 @@ interface stable_mix
 end interface stable_mix
 
 !> @addtogroup monin_obukhov_mod
+interface mo_integral
+    module procedure mo_integral_m_r4, mo_integral_m_r8
+    module procedure mo_integral_tq_r4, mo_integral_tq_r8
+end interface mo_integral
+
+interface mo_derivative_m
+    module procedure mo_derivative_m_r4, mo_derivative_m_r8
+end interface mo_derivative_m
+
+interface mo_derivative_t
+    module procedure mo_derivative_t_r4, mo_derivative_t_r8
+end interface mo_derivative_t
 !> @{
 
 !-----------------------------------------------------------------------
@@ -96,9 +108,9 @@ end interface stable_mix
 !  DEFAULT VALUES OF NAMELIST PARAMETERS:
 
 real(r8_kind)    :: rich_crit      = 2.0
-real(r8_kind)    :: drag_min_heat  = 1.e-05
-real(r8_kind)    :: drag_min_moist = 1.e-05
-real(r8_kind)    :: drag_min_mom   = 1.e-05
+real(r8_kind)    :: drag_min_heat  = 1.d-05
+real(r8_kind)    :: drag_min_moist = 1.d-05
+real(r8_kind)    :: drag_min_mom   = 1.d-05
 logical          :: neutral        = .false.
 integer          :: stable_option  = 1
 real(r8_kind)    :: zeta_trans     = 0.5
@@ -113,7 +125,7 @@ namelist /monin_obukhov_nml/ rich_crit, neutral, drag_min_heat, &
 
 !  MODULE VARIABLES
 
-real(r8_kind), parameter  :: small  = 1.e-04
+real(r8_kind), parameter  :: small  = 1.d-04
 real(r8_kind)             :: b_stab, r_crit, lambda, rich_trans
 real(r8_kind)             :: sqrt_drag_min_heat, sqrt_drag_min_moist, sqrt_drag_min_mom
 logical                   :: module_is_initialized = .false.
@@ -195,7 +207,7 @@ module_is_initialized = .false.
 end subroutine monin_obukhov_end
 
 !=======================================================================
-#include<monin_obukhov.inc>
+#include<monin_obukhov.fh>
 
 end module monin_obukhov_mod
 !> @}
