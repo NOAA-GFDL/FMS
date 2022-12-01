@@ -614,12 +614,12 @@ deallocate(restart_file)
 - **ncchksz:** Sets chunksize (in bytes) argument in netcdf file creation calls. The default is `64*1024`.
 - **netcdf_default_format:** Sets the netcdf file type. The acceptable values are  "64bit", "classic", "netcdf4". This can be overwritten per file if you specify `nc_format` in the open_file call. The default is 64bit.
 - **header_buffer_val:** Sets the netCDF header buffer size(in bytes). The default is 16384 bytes.
-- **deflate_level:** Determines how much to compress the variable. Chosen by an integer of 1 through 9. The higher the number, the more compression will take place, but will take longer to write the file. NOTE: the smaller the size, the more time it will take to write the file. The default is no compression.
+- **deflate_level:** Determines how much to compress the variable. Chosen by an integer of 1 through 9. The higher the number the more compression will take place, but will take longer to write the file. NOTE: the higher the number, the more time it will take to write the file. The default is no compression. This is loseless compression so that every bit of the original data can be recovered.
 - **shuffle:** Flag indicating whether to use the netcdf shuffle filter.
 
 ### I. Chunking
 
-In release 2022.04, "chunksize" was added as an optional arguments to the register_diag_field:
+In release 2022.04, "chunksize" was added as an optional argument to the register_diag_field:
 
 ```F90
 call register_restart_field(fileobj, 'variable_name', variable_data,
@@ -627,6 +627,6 @@ dim_names, chunsizes=chunksizes)
 ```
 - **chunksizes:** Is an array defining the chunksize of each dimension of the variable. Chunksizes can be used to improve performance. Default chunks are chosen by the library.
 
-- **NOTE: This argument can only be used in "NETCDF4" file formats. You can set the netcdf file format for all files using the 'netcdf_default_format' namelist or in a per file basis by using the 'nc_format' argument in the 'open_file' call**
+- **NOTE: This argument is only valid with "NETCDF4" file formats, otherwise it will be ignored. You can set the netcdf file format for all files using the 'netcdf_default_format' namelist or in a per file basis by using the 'nc_format' argument in the 'open_file' call**
 
 - See the NETCDF user guide for more information: (https://cluster.earlham.edu/bccd-ng/testing/mobeen/GALAXSEEHPC/netcdf-4.1.3/man4/netcdf.html#Chunking)

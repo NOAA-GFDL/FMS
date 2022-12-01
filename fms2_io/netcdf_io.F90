@@ -37,6 +37,7 @@ private
 
 
 !Module constants.
+integer, parameter, public :: default_deflate_level = 0 !< The default (no compression) deflate level to use
 integer, parameter :: variable_missing = -1
 integer, parameter :: dimension_missing = -1
 integer, parameter, public :: no_unlimited_dimension = -1 !> No unlimited dimension in file.
@@ -54,7 +55,8 @@ integer, private :: fms2_ncchksz = -1 !< Chunksize (bytes) used in nc_open and n
 integer, private :: fms2_nc_format_param = -1 !< Netcdf format type param used in nc_create
 character (len = 10), private :: fms2_nc_format !< Netcdf format type used in netcdf_file_open
 integer, private :: fms2_header_buffer_val = -1  !< value used in NF__ENDDEF
-integer, private :: fms2_deflate_level = 0 !< Netcdf deflate level to use in nf90_def_var (integer between 1 to 9)
+integer, private :: fms2_deflate_level = default_deflate_level !< Netcdf deflate level to use in
+                                                               !! nf90_def_var (integer between 1 to 9)
 logical, private :: fms2_shuffle = .false. !< Flag indicating whether to use the netcdf shuffle filter
 logical, private :: fms2_is_netcdf4 = .false. !< Flag indicating whether the default netcdf file format is netcdf4
 
@@ -955,7 +957,7 @@ subroutine netcdf_add_variable(fileobj, variable_name, variable_type, dimensions
         err = nf90_def_var(fileobj%ncid, trim(variable_name), vtype, dimids, varid, &
           &deflate_level=fms2_deflate_level, shuffle=fms2_shuffle, chunksizes=chunksizes)
       else
-        if (fms2_deflate_level .ne. -1 .or. fms2_shuffle .or. present(chunksizes)) &
+        if (fms2_deflate_level .ne. default_deflate_level .or. fms2_shuffle .or. present(chunksizes)) &
           &call mpp_error(NOTE,"Not able to use deflate_level or chunksizes if not using netcdf4"// &
           & " ignoring them")
         err = nf90_def_var(fileobj%ncid, trim(variable_name), vtype, dimids, varid)
