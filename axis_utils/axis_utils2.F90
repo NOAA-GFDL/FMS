@@ -212,7 +212,7 @@ contains
     get_axis_modulo_times = found_tbeg
   end function get_axis_modulo_times
 
-#include<axis_utils2.inc>
+#include<axis_utils2.fh>
 
 end module axis_utils2_mod
 !> @}
