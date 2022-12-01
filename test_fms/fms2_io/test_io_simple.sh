@@ -56,6 +56,9 @@ test_expect_success "Test the unlimited compressed axis functionality" '
 test_expect_success "Test the chunksizes functionality with the default behavior" '
   mpirun -n 1 ../test_chunksizes
 '
+
+ncdump -hsv var1 test_chunksizes_netcdf4.res.nc 
+
 test_expect_success "test_chunksizes_netcdf4.res.nc should be chunked" '
   ncdump -hsv var1 test_chunksizes_netcdf4.res.nc | grep "ChunkSizes"
 '
