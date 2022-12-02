@@ -38,7 +38,6 @@ SUBDIRS = \
   tridiagonal \
   mpp \
   constants \
-  constants4 \
   memutils \
   string_utils \
   fms2_io \
