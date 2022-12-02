@@ -1054,10 +1054,12 @@ subroutine update_current_new_file_freq_index(this, time_step)
       diag_file%no_more_data = diag_time_inc(diag_file%no_more_data, diag_file%get_file_duration(), &
                                           diag_file%get_file_duration_units())
     else
+      !< At this point you are done writing data
        diag_file%no_more_data = diag_time_inc(diag_file%no_more_data, VERY_LARGE_FILE_FREQ, DIAG_DAYS)
        diag_file%next_output = diag_file%no_more_data
        diag_file%next_next_output = diag_file%no_more_data
        diag_file%last_output = diag_file%no_more_data
+       diag_file%next_close = diag_file%no_more_data
     endif
   endif
 end subroutine update_current_new_file_freq_index
