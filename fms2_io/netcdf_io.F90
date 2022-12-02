@@ -212,6 +212,7 @@ public :: compressed_read_3d
 public :: compressed_read_4d
 public :: compressed_read_5d
 public :: register_compressed_dimension
+public :: register_unlimited_compressed_axis
 public :: netcdf_add_restart_variable_0d_wrap
 public :: netcdf_add_restart_variable_1d_wrap
 public :: netcdf_add_restart_variable_2d_wrap
@@ -767,6 +768,47 @@ subroutine append_compressed_dimension(fileobj, dim_name, npes_corner, &
   fileobj%compressed_dims(n)%nelems = sum(fileobj%compressed_dims(n)%npes_nelems)
 end subroutine append_compressed_dimension
 
+!> @brief Add a "compressed" unlimited dimension to a netcdf file.
+!! @note Here compressed means that every rank has a different dimension_length
+!! compressed. This was written specifically for the icebergs restarts.
+subroutine register_unlimited_compressed_axis(fileobj, dimension_name, dimension_length)
+  class(FmsNetcdfFile_t), intent(inout) :: fileobj           !< File object.
+  character(len=*),       intent(in)    :: dimension_name    !< Dimension name.
+  integer,                intent(in)    :: dimension_length  !< Dimension length for the current rank
+
+  integer, dimension(:), allocatable :: npes_start !< The starting index of the dimension for each of the PEs
+  integer, dimension(:), allocatable :: npes_count !< The size of the dimension for each of the PEs
+  integer                            :: i          !< For do loops
+  integer                            :: err        !< Netcdf error
+  integer                            :: dimid      !< Netcdf id for the dimension
+
+  !Gather all local dimension lengths on the I/O root pe.
+  allocate(npes_start(size(fileobj%pelist)))
+  allocate(npes_count(size(fileobj%pelist)))
+  do i = 1, size(fileobj%pelist)
+    if (fileobj%pelist(i) .eq. mpp_pe()) then
+      npes_count(i) = dimension_length
+    else
+      call mpp_recv(npes_count(i), fileobj%pelist(i), block=.false.)
+      call mpp_send(dimension_length, fileobj%pelist(i))
+    endif
+  enddo
+  call mpp_sync_self(check=event_recv)
+  call mpp_sync_self(check=event_send)
+  npes_start(1) = 1
+  do i = 1, size(fileobj%pelist)-1
+     npes_start(i+1) = npes_start(i) + npes_count(i)
+  enddo
+  call append_compressed_dimension(fileobj, dimension_name, npes_start, &
+                                   npes_count)
+
+  if (fileobj%is_root .and. .not. fileobj%is_readonly) then
+    call set_netcdf_mode(fileobj%ncid, define_mode)
+    err = nf90_def_dim(fileobj%ncid, trim(dimension_name), unlimited, dimid)
+    call check_netcdf_code(err, "Netcdf_add_dimension: file:"//trim(fileobj%path)//" dimension name:"// &
+                         & trim(dimension_name))
+  endif
+end subroutine register_unlimited_compressed_axis
 
 !> @brief Add a dimension to a file.
 subroutine netcdf_add_dimension(fileobj, dimension_name, dimension_length, &
@@ -864,7 +906,7 @@ subroutine netcdf_add_variable(fileobj, variable_name, variable_type, dimensions
                                                  !! available for netcdf4 files
   integer, optional, intent(in) :: chunksizes(:) !< netcdf chunksize to use for this variable
                                                  !! This feature is only
-                                                 !! available for netcdf4 files  
+                                                 !! available for netcdf4 files
   integer :: err
   integer, dimension(:), allocatable :: dimids
   integer :: vtype
