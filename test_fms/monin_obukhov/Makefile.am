@@ -29,10 +29,13 @@ AM_CPPFLAGS = -I$(MODDIR)
 LDADD = $(top_builddir)/libFMS/libFMS.la
 
 # Build this test program.
-check_PROGRAMS = test_monin_obukhov
+check_PROGRAMS = \
+test_monin_obukhov_r4 \
+test_monin_obukhov_r8
 
 # This is the source code for the test.
-test_monin_obukhov_SOURCES = test_monin_obukhov.F90
+test_monin_obukhov_r4_SOURCES = test_monin_obukhov_r4.F90
+test_monin_obukhov_r8_SOURCES = test_monin_obukhov_r8.F90
 
 TEST_EXTENSIONS = .sh
 SH_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \

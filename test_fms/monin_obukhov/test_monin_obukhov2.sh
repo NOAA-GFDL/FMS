@@ -31,7 +31,10 @@
 touch input.nml
 
 # Run test
-test_expect_success "test monin_obukhov" '
-    mpirun -n 2 ./test_monin_obukhov
+test_expect_success "test monin_obukhov r4_kind" '
+    mpirun -n 2 ./test_monin_obukhov_r4
+'
+test_expect_success "test monin_obukhov r8_kind" '
+    mpirun -n 2 ./test_monin_obukhov_r8
 '
 test_done
