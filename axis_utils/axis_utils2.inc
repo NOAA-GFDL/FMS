@@ -48,7 +48,9 @@
 
   ndims = get_variable_num_dimensions(fileobj, name)
   allocate(dim_sizes(ndims))
+
   call get_variable_size(fileobj, name, dim_sizes)
+
   n = dim_sizes(1)
   if (size(edge_data) .ne. n+1) then
     call mpp_error(FATAL, "axis_edge: incorrect size of edge_data array.")
@@ -85,12 +87,16 @@
   if (trim(buffer) .ne. "") then
     ndims = get_variable_num_dimensions(fileobj, buffer)
     allocate(dim_sizes(ndims))
+
     call get_variable_size(fileobj, buffer, dim_sizes)
+
     if (size(dim_sizes) .eq. 1) then
       if (dim_sizes(1) .ne. n+1) then
         call mpp_error(FATAL, "axis_edges: incorrect size of edge data.")
       endif
+
       call read_data(fileobj, buffer, edge_data)
+
     elseif (size(dim_sizes) .eq. 2) then
       if (dim_sizes(1) .ne. 2) then
         call mpp_error(FATAL, "axis_edges: first dimension of edge must be of size 2")
@@ -108,15 +114,17 @@
     deallocate(dim_sizes)
   else
       allocate(r_var(n))
+
       call read_data(fileobj, name, r_var)
+
       do i = 2, n
          edge_data(i) = r_var(i-1) + real(0.5,kind=FMS_AU_KIND_)*(r_var(i) - r_var(i-1))
       enddo
-      edge_data(1) = r_var(1) - real(0.5,kind=FMS_AU_KIND_)*(r_var(2) - r_var(1))
+      edge_data(1)    = r_var(1) - real(0.5,kind=FMS_AU_KIND_)*(r_var(2) - r_var(1))
       if (abs(edge_data(1)) .lt. real(1.e-10,kind=FMS_AU_KIND_)) then
          edge_data(1) = real(0.0,kind=FMS_AU_KIND_)
       endif
-      edge_data(n+1) = r_var(n) + real(0.5,kind=FMS_AU_KIND_)*(r_var(n) - r_var(n-1))
+      edge_data(n+1)  = r_var(n) + real(0.5,kind=FMS_AU_KIND_)*(r_var(n) - r_var(n-1))
       deallocate(r_var)
   endif
 end subroutine AXIS_EDGES_
@@ -144,9 +152,9 @@ end subroutine AXIS_EDGES_
 
     do
       if (LON_IN_RANGE_ < l_strt) then
-        LON_IN_RANGE_ = LON_IN_RANGE_ +  f360
+        LON_IN_RANGE_ = LON_IN_RANGE_ + f360
       else if (LON_IN_RANGE_  >  l_end) then
-        LON_IN_RANGE_  = LON_IN_RANGE_ - f360
+        LON_IN_RANGE_ = LON_IN_RANGE_ - f360
       else
         exit
       end if
@@ -181,14 +189,14 @@ end subroutine AXIS_EDGES_
 
     len = size(lon(:))
 
-    do i=1,len
+    do i = 1, len
        lon(i) = LON_IN_RANGE_(lon(i),lon_start)
     enddo
 
-    istrt=0
-    do i=1,len-1
+    istrt = 0
+    do i = 1,len-1
        if (lon(i+1) < lon(i)) then
-          istrt=i+1
+          istrt = i+1
           exit
        endif
     enddo
@@ -197,13 +205,14 @@ end subroutine AXIS_EDGES_
        if (abs(lon(len)-lon(1)) < epsln) then
           tmp = cshift(lon(1:len-1),istrt-1)
           lon(1:len-1) = tmp
-          lon(len) = lon(1)
+          lon(len)     = lon(1)
        else
           lon = cshift(lon,istrt-1)
        endif
+
        lon_strt = lon(1)
        do i=2,len+1
-          lon(i) = LON_IN_RANGE_(lon(i),lon_strt)
+          lon(i)   = LON_IN_RANGE_(lon(i),lon_strt)
           lon_strt = lon(i)
        enddo
     endif
@@ -249,39 +258,40 @@ end subroutine AXIS_EDGES_
 
   function FRAC_INDEX_(value, array)
 
-    integer :: ia, i, ii, unit
-    real(kind=FMS_AU_KIND_) :: value !< arbitrary data...same units as elements in "array"
-    real(kind=FMS_AU_KIND_) :: FRAC_INDEX_
+    integer                               :: ia, i, ii, unit
+    real(kind=FMS_AU_KIND_)               :: value !< arbitrary data...same units as elements in "array"
+    real(kind=FMS_AU_KIND_)               :: FRAC_INDEX_
     real(kind=FMS_AU_KIND_), dimension(:) :: array !< array of data points  (must be monotonically increasing)
     logical keep_going
 
     ia = size(array(:))
 
-    do i=2,ia
+    do i = 2, ia
        if (array(i) < array(i-1)) then
           unit = stdout()
-          write (unit,*) &
-            '=> Error: "frac_index" array must be monotonically increasing when searching for nearest value to ', value
+          write (unit,*) '=> Error: "frac_index" array must be monotonically' &
+          & // 'increasing when searching for nearest value to ', value
           write (unit,*) '          array(i) < array(i-1) for i=',i
           write (unit,*) '          array(i) for i=1..ia follows:'
-          do ii=1,ia
+          do ii = 1, ia
              write (unit,*) 'i=',ii, ' array(i)=',array(ii)
           enddo
           call mpp_error(FATAL,' "frac_index" array must be monotonically increasing.')
        endif
     enddo
+
     if (value < array(1) .or. value > array(ia)) then
  !       if (value < array(1))  frac_index = 1.
  !       if (value > array(ia)) frac_index = float(ia)
         FRAC_INDEX_ = real(-1.0,kind=FMS_AU_KIND_)
     else
-       i=1
+       i = 1
        keep_going = .true.
        do while (i <= ia .and. keep_going)
           i = i+1
           if (value <= array(i)) then
              FRAC_INDEX_ = float(i-1) + (value-array(i-1))/(array(i)-array(i-1))
-             keep_going = .false.
+             keep_going  = .false.
           endif
        enddo
     endif
@@ -331,30 +341,31 @@ end subroutine AXIS_EDGES_
     integer :: NEAREST_INDEX_
     integer :: ia !< dimension of "array"
     integer :: i, ii, unit
-    real(kind=FMS_AU_KIND_) :: value !< arbitrary data...same units as elements in "array"
+    real(kind=FMS_AU_KIND_)               :: value !< arbitrary data...same units as elements in "array"
     real(kind=FMS_AU_KIND_), dimension(:) :: array !< array of data points  (must be monotonically increasing)
     logical keep_going
 
     ia = size(array(:))
 
-    do i=2,ia
+    do i = 2, ia
        if (array(i) < array(i-1)) then
           unit = stdout()
-          write (unit,*) '=> Error: "nearest_index" array must be monotonically increasing &
-                         &when searching for nearest value to ',value
+          write (unit,*) '=> Error: "nearest_index" array must be monotonically increasing' &
+                         & // 'when searching for nearest value to ', value
           write (unit,*) '          array(i) < array(i-1) for i=',i
           write (unit,*) '          array(i) for i=1..ia follows:'
-          do ii=1,ia
-             write (unit,*) 'i=',ii, ' array(i)=',array(ii)
+          do ii = 1, ia
+             write (unit,*) 'i=',ii, ' array(i)=', array(ii)
           enddo
           call mpp_error(FATAL,' "nearest_index" array must be monotonically increasing.')
        endif
     enddo
+
     if (value < array(1) .or. value > array(ia)) then
        if (value < array(1))  NEAREST_INDEX_ = 1
        if (value > array(ia)) NEAREST_INDEX_ = ia
     else
-       i=1
+       i = 1
        keep_going = .true.
        do while (i <= ia .and. keep_going)
           i = i+1
@@ -381,28 +392,28 @@ end subroutine AXIS_EDGES_
     n2 = size(grid2(:))
 
 
-    do i=2,n1
+    do i = 2, n1
        if (grid1(i) <= grid1(i-1)) call mpp_error(FATAL, 'grid1 not monotonic')
     enddo
 
-    do i=2,n2
+    do i = 2, n2
        if (grid2(i) <= grid2(i-1)) call mpp_error(FATAL, 'grid2 not monotonic')
     enddo
 
     if (grid1(1) > grid2(1) ) call mpp_error(FATAL, 'grid2 lies outside grid1')
     if (grid1(n1) < grid2(n2) ) call mpp_error(FATAL, 'grid2 lies outside grid1')
 
-    do i=1,n2
+    do i = 1, n2
        n = NEAREST_INDEX_(grid2(i),grid1)
 
        if (grid1(n) < grid2(i)) then
-          w = (grid2(i)-grid1(n))/(grid1(n+1)-grid1(n))
+          w        = (grid2(i)-grid1(n))/(grid1(n+1)-grid1(n))
           data2(i) = (real(1.0,kind=FMS_AU_KIND_)-w)*data1(n) + w*data1(n+1)
        else
           if(n==1) then
              data2(i) = data1(n)
           else
-             w = (grid2(i)-grid1(n-1))/(grid1(n)-grid1(n-1))
+             w        = (grid2(i)-grid1(n-1))/(grid1(n)-grid1(n-1))
              data2(i) = (real(1.0,kind=FMS_AU_KIND_)-w)*data1(n-1) + w*data1(n)
           endif
        endif
@@ -427,11 +438,11 @@ end subroutine AXIS_EDGES_
     n = size(grid1(:))
     m = size(grid2(:))
 
-    do i=2,n
+    do i = 2, n
        if (grid1(i) <= grid1(i-1)) call mpp_error(FATAL, 'grid1 not monotonic')
     enddo
 
-    do i=2,m
+    do i = 2, m
        if (grid2(i) <= grid2(i-1)) call mpp_error(FATAL, 'grid2 not monotonic')
     enddo
 
@@ -439,33 +450,33 @@ end subroutine AXIS_EDGES_
     if (grid1(n) < grid2(m) ) call mpp_error(FATAL, 'grid2 lies outside grid1')
 
     if (yp1>real(0.99e30, kind=FMS_AU_KIND_)) then
-       y2(1)=real(0.0,kind=FMS_AU_KIND_)
-       u(1)=real(0.0,kind=FMS_AU_KIND_)
+       y2(1) = real(0.0,kind=FMS_AU_KIND_)
+       u(1)  = real(0.0,kind=FMS_AU_KIND_)
     else
-       y2(1)=real(-0.5,kind=FMS_AU_KIND_)
-       u(1)=(real(3.0,kind=FMS_AU_KIND_))/(grid1(2)-grid1(1))*((data1(2)-data1(1))/(grid1(2)-grid1(1))-yp1)
+       y2(1) = real(-0.5,kind=FMS_AU_KIND_)
+       u(1)  = (real(3.0,kind=FMS_AU_KIND_))/(grid1(2)-grid1(1))*((data1(2)-data1(1))/(grid1(2)-grid1(1))-yp1)
     endif
 
-    do i=2,n-1
-       sig=(grid1(i)-grid1(i-1))/(grid1(i+1)-grid1(i-1))
-       p=sig*y2(i-1) + real(2.0,kind=FMS_AU_KIND_)
-       y2(i)=(sig-real(1.0,kind=FMS_AU_KIND_))/p
-       u(i)=(real(6.0,kind=FMS_AU_KIND_)*((data1(i+1)-data1(i))/(grid1(i+1)-grid1(i))-(data1(i)-data1(i-1)) &
-             /(grid1(i)-grid1(i-1)))/(grid1(i+1)-grid1(i-1))-sig*u(i-1))/p
+    do i = 2, n-1
+       sig   = (grid1(i)-grid1(i-1))/(grid1(i+1)-grid1(i-1))
+       p     = sig*y2(i-1) + real(2.0,kind=FMS_AU_KIND_)
+       y2(i) = (sig-real(1.0,kind=FMS_AU_KIND_))/p
+       u(i)  = (real(6.0,kind=FMS_AU_KIND_)*((data1(i+1)-data1(i))/(grid1(i+1)-grid1(i))-(data1(i)-data1(i-1)) &
+               /(grid1(i)-grid1(i-1)))/(grid1(i+1)-grid1(i-1))-sig*u(i-1))/p
     enddo
 
     if (ypn>real(.99e30,kind=FMS_AU_KIND_)) then
-       qn=real(0.0,kind=FMS_AU_KIND_)
-       un=real(0.0,kind=FMS_AU_KIND_)
+       qn = real(0.0,kind=FMS_AU_KIND_)
+       un = real(0.0,kind=FMS_AU_KIND_)
     else
-       qn=real(0.5,kind=FMS_AU_KIND_)
-       un=(real(3.0,kind=FMS_AU_KIND_))/(grid1(n)-grid1(n-1))*(ypn-(data1(n)-data1(n-1))/(grid1(n)-grid1(n-1)))
+       qn = real(0.5,kind=FMS_AU_KIND_)
+       un = (real(3.0,kind=FMS_AU_KIND_))/(grid1(n)-grid1(n-1))*(ypn-(data1(n)-data1(n-1))/(grid1(n)-grid1(n-1)))
     endif
 
-    y2(n)=(un-qn*u(n-1))/(qn*y2(n-1)+real(1.0,kind=FMS_AU_KIND_))
+    y2(n) = (un-qn*u(n-1))/(qn*y2(n-1)+real(1.0,kind=FMS_AU_KIND_))
 
-    do  k=n-1,1,-1
-       y2(k)=y2(k)*y2(k+1)+u(k)
+    do  k = n-1,1,-1
+       y2(k) = y2(k)*y2(k+1)+u(k)
     enddo
 
     do k = 1, m
@@ -479,11 +490,13 @@ end subroutine AXIS_EDGES_
             klo = n -1
           endif
        endif
-       khi = klo+1
-       h   = grid1(khi)-grid1(klo)
-       a   = (grid1(khi) - grid2(k))/h
-       b   = (grid2(k) - grid1(klo))/h
-       data2(k) = a*data1(klo) + b*data1(khi)+ ((a**3-a)*y2(klo) + (b**3-b)*y2(khi))*(h**2)/real(6.0,kind=FMS_AU_KIND_)
+
+       khi      = klo+1
+       h        = grid1(khi)-grid1(klo)
+       a        = (grid1(khi) - grid2(k))/h
+       b        = (grid2(k) - grid1(klo))/h
+       data2(k) = a*data1(klo) + b*data1(khi)+ ((a**3-a)*y2(klo) + (b**3-b)*y2(khi))*(h**2) &
+                 /real(6.0,kind=FMS_AU_KIND_)
     enddo
 
   end subroutine INTERP_1D_CUBIC_SPLINE_
@@ -506,8 +519,10 @@ end subroutine AXIS_EDGES_
     interp_method = "linear"
     if(present(method)) interp_method = method
     y1 = real(1.0e30, kind=FMS_AU_KIND_)
+
     if(present(yp1)) y1 = yp1
     y2 = real(1.0e30, kind=FMS_AU_KIND_)
+
     if(present(yp2)) y2 = yp2
     call FIND_INDEX_(grid1, grid2(1), grid2(k2), ks, ke)
     select case(trim(interp_method))
@@ -539,7 +554,7 @@ end subroutine AXIS_EDGES_
 
     if (n1 /= n2) call mpp_error(FATAL,'grid size mismatch')
 
-    do n=1,n1
+    do n = 1, n1
        call FIND_INDEX_(grid1(n,:), grid2(n,1), grid2(n,k2), ks, ke)
        call INTERP_1D_LINEAR_(grid1(n,ks:ke),grid2(n,:),data1(n,ks:ke),data2(n,:))
     enddo
@@ -552,8 +567,8 @@ end subroutine AXIS_EDGES_
 
   subroutine INTERP_1D_3D_(grid1,grid2,data1,data2, method, yp1, yp2)
 
-    real(FMS_AU_KIND_), dimension(:,:,:),           intent(in)    :: grid1, data1, grid2
-    real(FMS_AU_KIND_), dimension(:,:,:),           intent(inout) :: data2
+    real(FMS_AU_KIND_), dimension(:,:,:), intent(in)    :: grid1, data1, grid2
+    real(FMS_AU_KIND_), dimension(:,:,:), intent(inout) :: data2
     character(len=*),           optional, intent(in)    :: method
     real(kind=FMS_AU_KIND_),    optional, intent(in)    :: yp1, yp2
 
@@ -561,6 +576,7 @@ end subroutine AXIS_EDGES_
     real(kind=FMS_AU_KIND_)                             :: y1, y2
     character(len=32)                                   :: interp_method
     integer                                             :: ks, ke
+
     n1 = size(grid1,1)
     n2 = size(grid2,1)
     m1 = size(grid1,2)
@@ -570,6 +586,7 @@ end subroutine AXIS_EDGES_
     interp_method = "linear"
     if(present(method)) interp_method = method
     y1 = real(1.0e30, kind=FMS_AU_KIND_)
+
     if(present(yp1)) y1 = yp1
     y2 = real(1.0e30, kind=FMS_AU_KIND_)
     if(present(yp2)) y2 = yp2
@@ -578,19 +595,21 @@ end subroutine AXIS_EDGES_
 
     select case(trim(interp_method))
     case("linear")
-       do m=1,m1
-          do n=1,n1
+       do m = 1, m1
+          do n = 1, n1
             call FIND_INDEX_(grid1(n,m,:), grid2(n,m,1), grid2(n,m,k2), ks, ke)
-             call INTERP_1D_LINEAR_(grid1(n,m,ks:ke),grid2(n,m,:),data1(n,m,ks:ke),data2(n,m,:))
+            call INTERP_1D_LINEAR_(grid1(n,m,ks:ke),grid2(n,m,:),data1(n,m,ks:ke),data2(n,m,:))
           enddo
        enddo
+
     case("cubic_spline")
-       do m=1,m1
-          do n=1,n1
+       do m = 1, m1
+          do n = 1, n1
             call FIND_INDEX_(grid1(n,m,:), grid2(n,m,1), grid2(n,m,k2), ks, ke)
             call INTERP_1D_CUBIC_SPLINE_(grid1(n,m,ks:ke),grid2(n,m,:), data1(n,m,ks:ke),data2(n,m,:), y1, y2)
           enddo
        enddo
+
     case default
        call mpp_error(FATAL,"axis_utils: interp_method should be linear or cubic_spline")
     end select
@@ -602,8 +621,8 @@ end subroutine AXIS_EDGES_
 
   !#####################################################################
   subroutine FIND_INDEX_(grid1, xs, xe, ks, ke)
-    real(kind=FMS_AU_KIND_), dimension(:), intent(in) :: grid1
-    real(kind=FMS_AU_KIND_),               intent(in) :: xs, xe
+    real(kind=FMS_AU_KIND_), dimension(:), intent(in)  :: grid1
+    real(kind=FMS_AU_KIND_),               intent(in)  :: xs, xe
     integer,                               intent(out) :: ks, ke
 
     integer :: k, nk
@@ -617,6 +636,7 @@ end subroutine AXIS_EDGES_
           exit
        endif
     enddo
+
     do k = nk, 2, -1
        if(grid1(k) >= xe .and. grid1(k-1) < xe ) then
           ke = k
