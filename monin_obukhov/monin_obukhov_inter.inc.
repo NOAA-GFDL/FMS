@@ -30,19 +30,19 @@ pure subroutine MONIN_OBUKHOV_DIFF_(vonkarm,                &
 
 real(kind=FMS_MO_KIND_), intent(in) :: vonkarm
 real(kind=FMS_MO_KIND_), intent(in) :: ustar_min !< = 1.e-10
-logical,                  intent(in) :: neutral
-integer,                  intent(in) :: stable_option
-logical,                  intent(in) :: new_mo_option !miz
+logical,                 intent(in) :: neutral
+integer,                 intent(in) :: stable_option
+logical,                 intent(in) :: new_mo_option !miz
 real(kind=FMS_MO_KIND_), intent(in) :: rich_crit, zeta_trans
-integer,                  intent(in) :: ni, nj, nk
-real(kind=FMS_MO_KIND_), intent(in),  dimension(ni,nj,nk) :: z
-real(kind=FMS_MO_KIND_), intent(in),  dimension(ni,nj)    :: u_star, b_star
-real(kind=FMS_MO_KIND_), intent(out), dimension(ni,nj,nk) :: k_m, k_h
-integer,                  intent(out)                      :: ier
+integer,                 intent(in) :: ni, nj, nk
+real(kind=FMS_MO_KIND_), intent(in), dimension(ni,nj,nk) :: z
+real(kind=FMS_MO_KIND_), intent(in), dimension(ni,nj)    :: u_star, b_star
+real(kind=FMS_MO_KIND_), intent(out),dimension(ni,nj,nk) :: k_m, k_h
+integer,                 intent(out)                     :: ier
 
 real(kind=FMS_MO_KIND_) , dimension(ni, nj) :: phi_m, phi_h, zeta, uss
-integer                                      :: j, k
-logical,                   dimension(ni)     :: mask
+integer                                     :: j, k
+logical,                   dimension(ni)    :: mask
 
 ier = 0
 
@@ -154,15 +154,15 @@ else
          drag_m(i)   = drag_min_mom
          drag_t(i)   = drag_min_heat
          drag_q(i)   = drag_min_moist
-         us       = sqrt_drag_min_mom
-         bs       = sqrt_drag_min_heat
+         us          = sqrt_drag_min_mom
+         bs          = sqrt_drag_min_heat
          u_star(i)   = us*speed(i)
          b_star(i)   = bs*delta_b(i)
    end if
 enddo
 
 call monin_obukhov_solve_zeta(error, zeta_min, max_iter, small, &
-     & stable_option, new_mo_option, rich_crit, zeta_trans,      &
+     & stable_option, new_mo_option, rich_crit, zeta_trans,     &
      & n, rich, zz, z0, zt, zq, fm, ft, fq, mask_1, ier)
 
 do i = 1, n
@@ -202,11 +202,11 @@ integer,                 intent(out)               :: ier
 
 real(kind=FMS_MO_KIND_)               :: max_cor
 integer                               :: iter
-real(kind=FMS_MO_KIND_), dimension(n) ::             &
-  d_rich, rich_1, correction, corr, z_z0, z_zt, z_zq, &
-  ln_z_z0, ln_z_zt, ln_z_zq, zeta,                    &
-  phi_m, phi_m_0, phi_t, phi_t_0, rzeta,              &
-  zeta_0, zeta_t, zeta_q, df_m, df_t
+real(kind=FMS_MO_KIND_), dimension(n) ::                &
+  & d_rich, rich_1, correction, corr, z_z0, z_zt, z_zq, &
+  & ln_z_z0, ln_z_zt, ln_z_zq, zeta,                    &
+  & phi_m, phi_m_0, phi_t, phi_t_0, rzeta,              &
+  & zeta_0, zeta_t, zeta_q, df_m, df_t
 logical,                 dimension(n) :: mask_1
 
 ier = 0
@@ -218,7 +218,7 @@ ln_z_z0 = log(z_z0)
 ln_z_zt = log(z_zt)
 ln_z_zq = log(z_zq)
 
-corr = real(0.0,kind=FMS_MO_KIND_)
+corr   = real(0.0,kind=FMS_MO_KIND_)
 mask_1 = mask
 
 ! initial guess
@@ -235,10 +235,10 @@ end where
 iter_loop: do iter = 1, max_iter
 
 where (mask_1 .and. abs(zeta).lt.zeta_min)
-   zeta = real(0.0,kind=FMS_MO_KIND_)
-   f_m = ln_z_z0
-   f_t = ln_z_zt
-   f_q = ln_z_zq
+   zeta   = real(0.0,kind=FMS_MO_KIND_)
+   f_m    = ln_z_z0
+   f_t    = ln_z_zt
+   f_q    = ln_z_zq
    mask_1 = .false.  ! don't do any more calculations at these pts
 end where
 
@@ -268,10 +268,10 @@ call monin_obukhov_integral_tq(stable_option, new_mo_option, rich_crit, zeta_tra
      & n, f_t, f_q, zeta, zeta_t, zeta_q, ln_z_zt, ln_z_zq, mask_1, ier)
 
 where (mask_1)
-   df_m  = (phi_m - phi_m_0)*rzeta
-   df_t  = (phi_t - phi_t_0)*rzeta
-   rich_1 = zeta*f_t/(f_m*f_m)
-   d_rich = rich_1*( rzeta +  df_t/f_t - real(2.0,kind=FMS_MO_KIND_) *df_m/f_m)
+   df_m       = (phi_m - phi_m_0)*rzeta
+   df_t       = (phi_t - phi_t_0)*rzeta
+   rich_1     = zeta*f_t/(f_m*f_m)
+   d_rich     = rich_1*( rzeta +  df_t/f_t - real(2.0,kind=FMS_MO_KIND_) *df_m/f_m)
    correction = (rich - rich_1)/d_rich
    corr = min(abs(correction),abs(correction/zeta))
    ! the criterion corr < error seems to work ok, but is a bit arbitrary
@@ -386,7 +386,8 @@ end where
 if(stable_option == 1) then
 
 where (stable)
-   phi_m = real(1.0,kind=FMS_MO_KIND_) + zeta  *(real(5.0,kind=FMS_MO_KIND_) + b_stab*zeta)/(real(1.0,kind=FMS_MO_KIND_) + zeta)
+   phi_m = real(1.0,kind=FMS_MO_KIND_) + zeta  *(real(5.0,kind=FMS_MO_KIND_) + b_stab*zeta) &
+           /(real(1.0,kind=FMS_MO_KIND_) + zeta)
 end where
 
 else if(stable_option == 2) then
@@ -423,10 +424,9 @@ logical,                 intent(in)                 :: lavail !< whether to use 
 logical,                 intent(in),  dimension(n)  :: avail  !< provided mask
 integer,                 intent(out)                :: ier
 
-real(kind=FMS_MO_KIND_), dimension(n) :: zeta, zeta_0, zeta_t, zeta_q, zeta_ref, zeta_ref_t, &
-  ln_z_z0, ln_z_zt, ln_z_zq, ln_z_zref, ln_z_zref_t,  &
-  f_m_ref, f_m, f_t_ref, f_t, f_q_ref, f_q,           &
-  mo_length_inv
+real(kind=FMS_MO_KIND_), dimension(n) :: zeta, zeta_0, zeta_t, zeta_q,       &
+  & zeta_ref, zeta_ref_t,ln_z_z0, ln_z_zt, ln_z_zq, ln_z_zref, ln_z_zref_t,  &
+  & f_m_ref, f_m, f_t_ref, f_t, f_q_ref, f_q, mo_length_inv
 logical, dimension(n) :: mask
 
 ier = 0
@@ -514,8 +514,8 @@ unstable = mask .and. zeta <  real(0.0,kind=FMS_MO_KIND_)
 
 where(unstable)
 
-x     = sqrt(1 - real(16.0,kind=FMS_MO_KIND_)*zeta)
-x_0   = sqrt(1 - real(16.0,kind=FMS_MO_KIND_)*zeta_0)
+x      = sqrt(1 - real(16.0,kind=FMS_MO_KIND_)*zeta)
+x_0    = sqrt(1 - real(16.0,kind=FMS_MO_KIND_)*zeta_0)
 
 x      = sqrt(x)
 x_0    = sqrt(x_0)
@@ -534,7 +534,7 @@ if( stable_option == 1) then
 
 where (stable)
    psi_m = ln_z_z0 + (real(5.0,kind=FMS_MO_KIND_) - b_stab)*log((real(1.0,kind=FMS_MO_KIND_) + zeta) &
-          / (real(1.0,kind=FMS_MO_KIND_) + zeta_0)) + b_stab*(zeta - zeta_0)
+          /(real(1.0,kind=FMS_MO_KIND_) + zeta_0)) + b_stab*(zeta - zeta_0)
 end where
 
 else if (stable_option == 2) then
@@ -694,8 +694,8 @@ integer                               :: i
             a = r - b_stab
             b = r - (real(1.0,kind=FMS_MO_KIND_) + real(5.0,kind=FMS_MO_KIND_))
             zeta = (-b + sqrt(b*b - real(4.0,kind=FMS_MO_KIND_)*a*c))/(real(2.0,kind=FMS_MO_KIND_)*a)
-            phi = real(1.0,kind=FMS_MO_KIND_) + b_stab*zeta + (real(5.0,kind=FMS_MO_KIND_) &
-                  - b_stab)*zeta/(real(1.0,kind=FMS_MO_KIND_) + zeta)
+            phi  = real(1.0,kind=FMS_MO_KIND_) + b_stab*zeta + (real(5.0,kind=FMS_MO_KIND_) &
+                   - b_stab)*zeta/(real(1.0,kind=FMS_MO_KIND_) + zeta)
             mix(i) = real(1.0,kind=FMS_MO_KIND_)/(phi*phi)
          endif
       end do

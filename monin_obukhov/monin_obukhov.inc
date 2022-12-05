@@ -26,7 +26,7 @@
 
 
 subroutine MO_DRAG_1D_(pt, pt0, z, z0, zt, zq, speed, drag_m, drag_t, drag_q, &
-     u_star, b_star, avail)
+& u_star, b_star, avail)
 
 real(kind=FMS_MO_KIND_), intent(in)   , dimension(:) :: pt, pt0, z, z0, zt, zq, speed
 real(kind=FMS_MO_KIND_), intent(inout), dimension(:) :: drag_m, drag_t, drag_q, u_star, b_star
@@ -50,21 +50,19 @@ if(present(avail)) lavail = .true.
 
 if(lavail) then
 if (count(avail) .eq. 0) return
-call monin_obukhov_drag_1d(real(grav,kind=FMS_MO_KIND_), real(vonkarm,kind=FMS_MO_KIND_),               &
-   & error, zeta_min, max_iter, real(small,kind=FMS_MO_KIND_),                         &
-   & neutral, stable_option, new_mo_option, real(rich_crit,kind=FMS_MO_KIND_), real(zeta_trans,kind=FMS_MO_KIND_), &!miz
-   & real(drag_min_heat,kind=FMS_MO_KIND_), real(drag_min_moist,kind=FMS_MO_KIND_), &
-   real(drag_min_mom,kind=FMS_MO_KIND_),              &
-   & n, pt, pt0, z, z0, zt, zq, speed, drag_m, drag_t,         &
-   & drag_q, u_star, b_star, lavail, avail, ier)
+call monin_obukhov_drag_1d(real(grav,kind=FMS_MO_KIND_), real(vonkarm,kind=FMS_MO_KIND_),  &
+   & error, zeta_min, max_iter, real(small,kind=FMS_MO_KIND_), neutral, stable_option,     &
+   & new_mo_option, real(rich_crit,kind=FMS_MO_KIND_), real(zeta_trans,kind=FMS_MO_KIND_), &!miz
+   & real(drag_min_heat,kind=FMS_MO_KIND_), real(drag_min_moist,kind=FMS_MO_KIND_),        &
+   & real(drag_min_mom,kind=FMS_MO_KIND_), n, pt, pt0, z, z0, zt, zq, speed, drag_m,       &
+   & drag_t, drag_q, u_star, b_star, lavail, avail, ier)
 else
-call monin_obukhov_drag_1d(real(grav,kind=FMS_MO_KIND_), real(vonkarm,kind=FMS_MO_KIND_),               &
-   & error, zeta_min, max_iter, real(small,kind=FMS_MO_KIND_),                         &
-   & neutral, stable_option, new_mo_option, real(rich_crit,kind=FMS_MO_KIND_), real(zeta_trans,kind=FMS_MO_KIND_), &!miz
-   & real(drag_min_heat,kind=FMS_MO_KIND_), real(drag_min_moist,kind=FMS_MO_KIND_), &
-   real(drag_min_mom,kind=FMS_MO_KIND_),             &
-   & n, pt, pt0, z, z0, zt, zq, speed, drag_m, drag_t,         &
-   & drag_q, u_star, b_star, lavail, avail_dummy, ier)
+call monin_obukhov_drag_1d(real(grav,kind=FMS_MO_KIND_), real(vonkarm,kind=FMS_MO_KIND_),  &
+   & error, zeta_min, max_iter, real(small,kind=FMS_MO_KIND_), neutral, stable_option,     &
+   & new_mo_option, real(rich_crit,kind=FMS_MO_KIND_), real(zeta_trans,kind=FMS_MO_KIND_), &!miz
+   & real(drag_min_heat,kind=FMS_MO_KIND_), real(drag_min_moist,kind=FMS_MO_KIND_),        &
+   & real(drag_min_mom,kind=FMS_MO_KIND_), n, pt, pt0, z, z0, zt, zq, speed, drag_m,       &
+   & drag_t, drag_q, u_star, b_star, lavail, avail_dummy, ier)
 endif
 
 end subroutine MO_DRAG_1D_
@@ -73,7 +71,7 @@ end subroutine MO_DRAG_1D_
 !=======================================================================
 
 subroutine MO_PROFILE_1D_(zref, zref_t, z, z0, zt, zq, u_star, b_star, q_star, &
-                    del_m, del_t, del_q, avail)
+& del_m, del_t, del_q, avail)
 
 real(kind=FMS_MO_KIND_), intent(in)                :: zref, zref_t
 real(kind=FMS_MO_KIND_), intent(in) , dimension(:) :: z, z0, zt, zq, u_star, b_star, q_star
@@ -93,16 +91,18 @@ if(present(avail)) then
 
 if (count(avail) .eq. 0) return
 
-call monin_obukhov_profile_1d(real(vonkarm,kind=FMS_MO_KIND_), &
-   & neutral, stable_option, new_mo_option, real(rich_crit,kind=FMS_MO_KIND_), real(zeta_trans,kind=FMS_MO_KIND_), &
-   & n, zref, zref_t, z, z0, zt, zq, u_star, b_star, q_star, &
+call monin_obukhov_profile_1d(real(vonkarm,kind=FMS_MO_KIND_), neutral, &
+   & stable_option, new_mo_option, real(rich_crit,kind=FMS_MO_KIND_),   &
+   & real(zeta_trans,kind=FMS_MO_KIND_),                                &
+   & n, zref, zref_t, z, z0, zt, zq, u_star, b_star, q_star,            &
    & del_m, del_t, del_q, .true., avail, ier)
 
 else
 
-call monin_obukhov_profile_1d(real(vonkarm,kind=FMS_MO_KIND_), &
-   & neutral, stable_option, new_mo_option, real(rich_crit,kind=FMS_MO_KIND_), real(zeta_trans,kind=FMS_MO_KIND_), &
-   & n, zref, zref_t, z, z0, zt, zq, u_star, b_star, q_star, &
+call monin_obukhov_profile_1d(real(vonkarm,kind=FMS_MO_KIND_), neutral, &
+   & stable_option, new_mo_option, real(rich_crit,kind=FMS_MO_KIND_),   &
+   & real(zeta_trans,kind=FMS_MO_KIND_),                                &
+   & n, zref, zref_t, z, z0, zt, zq, u_star, b_star, q_star,            &
    & del_m, del_t, del_q, .false., dummy_avail, ier)
 
 endif
@@ -139,8 +139,8 @@ do k = 1, size(rich,3)
         end do 
 end do
 
-call monin_obukhov_stable_mix(stable_option, real(rich_crit,kind=FMS_MO_KIND_), real(zeta_trans,kind=FMS_MO_KIND_), &
-& n, rich1d, mix1d, ier)
+call monin_obukhov_stable_mix(stable_option, real(rich_crit,kind=FMS_MO_KIND_), &
+     & real(zeta_trans,kind=FMS_MO_KIND_), n, rich1d, mix1d, ier)
 
 end subroutine STABLE_MIX_3D_
 
@@ -159,9 +159,9 @@ if(.not.module_is_initialized) call error_mesg('mo_diff_2d_n in monin_obukhov_mo
 'monin_obukhov_init has not been called', FATAL)
 
 ni = size(z, 1); nj = size(z, 2); nk = size(z, 3)
-call monin_obukhov_diff(real(vonkarm,kind=FMS_MO_KIND_),                     &
-     & ustar_min,                                     &
-     & neutral, stable_option, new_mo_option,real(rich_crit,kind=FMS_MO_KIND_), real(zeta_trans,kind=FMS_MO_KIND_), &
+call monin_obukhov_diff(real(vonkarm,kind=FMS_MO_KIND_),                      &
+     & ustar_min, neutral, stable_option, new_mo_option,                      &
+     & real(rich_crit,kind=FMS_MO_KIND_), real(zeta_trans,kind=FMS_MO_KIND_), &
      & ni, nj, nk, z, u_star, b_star, k_m, k_h, ier)
 
 end subroutine MO_DIFF_2D_N_
@@ -184,18 +184,18 @@ integer,                 parameter :: max_iter = 20
 real(kind=FMS_MO_KIND_)    :: max_cor
 integer                    :: iter
 
-real(kind=FMS_MO_KIND_), dimension(size(rich(:))) ::   &
-     d_rich, rich_1, correction, corr, z_z0, z_zt, z_zq, &
-     ln_z_z0, ln_z_zt, ln_z_zq, zeta,                    &
-     phi_m, phi_m_0, phi_t, phi_t_0, rzeta,              &
-     zeta_0, zeta_t, zeta_q, df_m, df_t
+real(kind=FMS_MO_KIND_), dimension(size(rich(:))) ::       &
+     & d_rich, rich_1, correction, corr, z_z0, z_zt, z_zq, &
+     & ln_z_z0, ln_z_zt, ln_z_zq, zeta,                    &
+     & phi_m, phi_m_0, phi_t, phi_t_0, rzeta,              &
+     & zeta_0, zeta_t, zeta_q, df_m, df_t
 
 logical,                 dimension(size(rich(:))) :: mask_1
 
 
-z_z0 = z/z0
-z_zt = z/zt
-z_zq = z/zq
+z_z0    = z/z0
+z_zt    = z/zt
+z_zq    = z/zq
 ln_z_z0 = log(z_z0)
 ln_z_zt = log(z_zt)
 ln_z_zq = log(z_zq)
@@ -219,9 +219,9 @@ iter_loop: do iter = 1, max_iter
 
 where (mask_1 .and. abs(zeta).lt.zeta_min)
 zeta = real(0.0,kind=FMS_MO_KIND_)
-f_m = ln_z_z0
-f_t = ln_z_zt
-f_q = ln_z_zq
+f_m  = ln_z_z0
+f_t  = ln_z_zt
+f_q  = ln_z_zq
 mask_1 = .false.  ! don't do any more calculations at these pts
 end where
 
@@ -245,10 +245,10 @@ call mo_integral(f_m, zeta, zeta_0, ln_z_z0, mask_1)
 call mo_integral(f_t, f_q, zeta, zeta_t, zeta_q, ln_z_zt, ln_z_zq, mask_1)
 
 where (mask_1)
-df_m  = (phi_m - phi_m_0)*rzeta
-df_t  = (phi_t - phi_t_0)*rzeta
-rich_1 = zeta*f_t/(f_m*f_m)
-d_rich = rich_1*( rzeta +  df_t/f_t - real(2.0,kind=FMS_MO_KIND_) *df_m/f_m)
+df_m       = (phi_m - phi_m_0)*rzeta
+df_t       = (phi_t - phi_t_0)*rzeta
+rich_1     = zeta*f_t/(f_m*f_m)
+d_rich     = rich_1*( rzeta +  df_t/f_t - real(2.0,kind=FMS_MO_KIND_) *df_m/f_m)
 correction = (rich - rich_1)/d_rich
 corr = min(abs(correction),abs(correction/zeta))
  ! the criterion corr < error seems to work ok, but is a bit arbitrary
@@ -285,8 +285,8 @@ real(kind=FMS_MO_KIND_), intent(out), dimension(:) :: phi_m
 real(kind=FMS_MO_KIND_), intent(in),  dimension(:) :: zeta
 logical,                 intent(in),  dimension(:) :: mask
 
-logical,                 dimension(size(zeta(:))) :: stable, unstable
-real(kind=FMS_MO_KIND_), dimension(size(zeta(:))) :: x
+logical,                  dimension(size(zeta(:))) :: stable, unstable
+real(kind=FMS_MO_KIND_),  dimension(size(zeta(:))) :: x
 
 stable   = mask .and. zeta >= real(0.0,kind=FMS_MO_KIND_)
 unstable = mask .and. zeta <  real(0.0,kind=FMS_MO_KIND_)
@@ -340,7 +340,7 @@ if(stable_option == 1) then
 
 where (stable)
 phi_t = real(1.0,kind=FMS_MO_KIND_) + zeta*(real(5.0,kind=FMS_MO_KIND_) &
-        + real(b_stab,kind=FMS_MO_KIND_)*zeta)/(real(1.0,kind=FMS_MO_KIND_) + zeta)
+       + real(b_stab,kind=FMS_MO_KIND_)*zeta)/(real(1.0,kind=FMS_MO_KIND_) + zeta)
 end where
 
 else if(stable_option == 2) then
@@ -360,7 +360,7 @@ end subroutine MO_DERIVATIVE_T_
 !=======================================================================
 
 subroutine MO_INTEGRAL_TQ_(psi_t, psi_q, zeta, zeta_t, zeta_q, &
-                      ln_z_zt, ln_z_zq, mask)
+& ln_z_zt, ln_z_zq, mask)
 
 ! the integral similarity function for moisture and tracers
 
@@ -368,10 +368,9 @@ real(kind=FMS_MO_KIND_), intent(out), dimension(:) :: psi_t, psi_q
 real(kind=FMS_MO_KIND_), intent(in),  dimension(:) :: zeta, zeta_t, zeta_q, ln_z_zt, ln_z_zq
 logical,                 intent(in),  dimension(:) :: mask
 
-real(kind=FMS_MO_KIND_), dimension(size(zeta(:))) :: x, x_t, x_q
+real(kind=FMS_MO_KIND_), dimension(size(zeta(:)))  :: x, x_t, x_q
 
-logical,                 dimension(size(zeta(:))) :: stable, unstable, &
-                                             weakly_stable, strongly_stable
+logical, dimension(size(zeta(:))) :: stable, unstable, weakly_stable, strongly_stable
 
 stable   = mask .and. zeta >= real(0.0,kind=FMS_MO_KIND_)
 unstable = mask .and. zeta <  real(0.0,kind=FMS_MO_KIND_)
@@ -383,9 +382,9 @@ x_t   = sqrt(1 - real(16.0,kind=FMS_MO_KIND_)*zeta_t)
 x_q   = sqrt(1 - real(16.0,kind=FMS_MO_KIND_)*zeta_q)
 
 psi_t = ln_z_zt - real(2.0,kind=FMS_MO_KIND_)*log( (real(1.0,kind=FMS_MO_KIND_) + x) &
-        / (real(1.0,kind=FMS_MO_KIND_) + x_t) )
+        /(real(1.0,kind=FMS_MO_KIND_) + x_t) )
 psi_q = ln_z_zq - real(2.0,kind=FMS_MO_KIND_)*log( (real(1.0,kind=FMS_MO_KIND_) + x) &
-        / (real(1.0,kind=FMS_MO_KIND_) + x_q) )
+        /(real(1.0,kind=FMS_MO_KIND_) + x_q) )
 
 end where
 
@@ -447,16 +446,15 @@ logical,                 intent(in),  dimension(:) :: mask
 
 real(kind=FMS_MO_KIND_), dimension(size(zeta(:)))  :: x, x_0, x1, x1_0, num, denom, y
 
-logical,                 dimension(size(zeta(:)))  :: stable, unstable, &
-                             weakly_stable, strongly_stable
+logical, dimension(size(zeta(:)))  :: stable, unstable, weakly_stable, strongly_stable
 
 stable   = mask .and. zeta >= real(0.0,kind=FMS_MO_KIND_)
 unstable = mask .and. zeta <  real(0.0,kind=FMS_MO_KIND_)
 
 where(unstable)
 
-x     = sqrt(1 - real(16.0,kind=FMS_MO_KIND_)*zeta)
-x_0   = sqrt(1 - real(16.0,kind=FMS_MO_KIND_)*zeta_0)
+x      = sqrt(1 - real(16.0,kind=FMS_MO_KIND_)*zeta)
+x_0    = sqrt(1 - real(16.0,kind=FMS_MO_KIND_)*zeta_0)
 
 x      = sqrt(x)
 x_0    = sqrt(x_0)
@@ -522,8 +520,8 @@ integer :: j
 
 do j = 1, size(pt,2)
 call mo_drag(pt(:,j), pt0(:,j), z(:,j), z0(:,j), zt(:,j), zq(:,j), &
-              speed(:,j), drag_m(:,j), drag_t(:,j), drag_q(:,j), &
-              u_star(:,j), b_star(:,j))
+     & speed(:,j), drag_m(:,j), drag_t(:,j), drag_q(:,j),          &
+     & u_star(:,j), b_star(:,j))
 end do
 
 
@@ -537,7 +535,7 @@ real(kind=FMS_MO_KIND_), intent(in)    :: z, speed, pt, pt0, z0, zt, zq
 real(kind=FMS_MO_KIND_), intent(out)   :: drag_m, drag_t, drag_q, u_star, b_star
 
 real(kind=FMS_MO_KIND_), dimension(1)  :: pt_1, pt0_1, z_1, z0_1, zt_1, zq_1, speed_1, &
-                 drag_m_1, drag_t_1, drag_q_1, u_star_1, b_star_1
+                                        & drag_m_1, drag_t_1, drag_q_1, u_star_1, b_star_1
 
 pt_1   (1) = pt
 pt0_1  (1) = pt0
@@ -548,7 +546,7 @@ zq_1   (1) = zq
 speed_1(1) = speed
 
 call mo_drag(pt_1, pt0_1, z_1, z0_1, zt_1, zq_1, speed_1, &
-            drag_m_1, drag_t_1, drag_q_1, u_star_1, b_star_1)
+     & drag_m_1, drag_t_1, drag_q_1, u_star_1, b_star_1)
 
 drag_m = drag_m_1(1)
 drag_t = drag_t_1(1)
@@ -561,7 +559,7 @@ end subroutine MO_DRAG_0D_
 !=======================================================================
 
 subroutine MO_PROFILE_2D_(zref, zref_t, z, z0, zt, zq, u_star, b_star, q_star, &
-                    del_m, del_h, del_q)
+& del_m, del_h, del_q)
 
 real(kind=FMS_MO_KIND_), intent(in)                  :: zref, zref_t
 real(kind=FMS_MO_KIND_), intent(in) , dimension(:,:) :: z, z0, zt, zq, u_star, b_star, q_star
@@ -570,9 +568,9 @@ real(kind=FMS_MO_KIND_), intent(out), dimension(:,:) :: del_m, del_h, del_q
 integer :: j
 
 do j = 1, size(z,2)
-call mo_profile(zref, zref_t, z(:,j), z0(:,j), zt(:,j),         &
-                 zq(:,j), u_star(:,j), b_star(:,j), q_star(:,j), &
-                 del_m(:,j), del_h (:,j), del_q (:,j))
+call mo_profile(zref, zref_t, z(:,j), z0(:,j), zt(:,j), &
+     & zq(:,j), u_star(:,j), b_star(:,j), q_star(:,j),  &
+     & del_m(:,j), del_h (:,j), del_q (:,j))
 enddo
 
 return
@@ -581,7 +579,7 @@ end subroutine MO_PROFILE_2D_
 !=======================================================================
 
 subroutine MO_PROFILE_0D_(zref, zref_t, z, z0, zt, zq, u_star, b_star, q_star, &
-                    del_m, del_h, del_q)
+& del_m, del_h, del_q)
 
 real(kind=FMS_MO_KIND_), intent(in)   :: zref, zref_t
 real(kind=FMS_MO_KIND_), intent(in)   :: z, z0, zt, zq, u_star, b_star, q_star
@@ -599,8 +597,8 @@ b_star_1(1) = b_star
 q_star_1(1) = q_star
 
 call mo_profile(zref, zref_t, z_1, z0_1, zt_1, zq_1, &
-               u_star_1, b_star_1, q_star_1,        &
-               del_m_1, del_h_1, del_q_1)
+     & u_star_1, b_star_1, q_star_1,                 &
+     & del_m_1, del_h_1, del_q_1)
 
 del_m = del_m_1(1)
 del_h = del_h_1(1)
@@ -613,7 +611,7 @@ end subroutine MO_PROFILE_0D_
 !=======================================================================
 
 subroutine MO_PROFILE_1D_N_(zref, z, z0, zt, zq, u_star, b_star, q_star, &
-                    del_m, del_t, del_q, avail)
+& del_m, del_t, del_q, avail)
 
 real(kind=FMS_MO_KIND_), intent(in),  dimension(:)   :: zref
 real(kind=FMS_MO_KIND_), intent(in) , dimension(:)   :: z, z0, zt, zq, u_star, b_star, q_star
@@ -625,10 +623,10 @@ integer :: k
 do k = 1, size(zref(:))
 if(present(avail)) then
 call mo_profile(zref(k), zref(k), z, z0, zt, zq, &
-  u_star, b_star, q_star, del_m(:,k), del_t(:,k), del_q(:,k), avail)
+     & u_star, b_star, q_star, del_m(:,k), del_t(:,k), del_q(:,k), avail)
 else
  call mo_profile(zref(k), zref(k), z, z0, zt, zq, &
-  u_star, b_star, q_star, del_m(:,k), del_t(:,k), del_q(:,k))
+      & u_star, b_star, q_star, del_m(:,k), del_t(:,k), del_q(:,k))
 endif
 enddo
 
@@ -638,7 +636,7 @@ end subroutine MO_PROFILE_1D_N_
 !=======================================================================
 
 subroutine MO_PROFILE_0D_N_(zref, z, z0, zt, zq, u_star, b_star, q_star, &
-                    del_m, del_t, del_q)
+& del_m, del_t, del_q)
 
 real(kind=FMS_MO_KIND_),    intent(in),  dimension(:) :: zref
 real(kind=FMS_MO_KIND_),    intent(in)                :: z, z0, zt, zq, u_star, b_star, q_star
@@ -648,7 +646,7 @@ integer :: k
 
 do k = 1, size(zref(:))
 call mo_profile(zref(k), zref(k), z, z0, zt, zq, &
-  u_star, b_star, q_star, del_m(k), del_t(k), del_q(k))
+     & u_star, b_star, q_star, del_m(k), del_t(k), del_q(k))
 enddo
 
 return
@@ -657,7 +655,7 @@ end subroutine MO_PROFILE_0D_N_
 !=======================================================================
 
 subroutine MO_PROFILE_2D_N_(zref, z, z0, zt, zq, u_star, b_star, q_star, &
-                    del_m, del_t, del_q)
+& del_m, del_t, del_q)
 
 real(kind=FMS_MO_KIND_),    intent(in),  dimension(:)     :: zref
 real(kind=FMS_MO_KIND_),    intent(in),  dimension(:,:)   :: z, z0, zt, zq, u_star, b_star, q_star
@@ -667,7 +665,7 @@ integer :: k
 
 do k = 1, size(zref(:))
 call mo_profile(zref(k), zref(k), z, z0, zt, zq, &
-  u_star, b_star, q_star, del_m(:,:,k), del_t(:,:,k), del_q(:,:,k))
+     & u_star, b_star, q_star, del_m(:,:,k), del_t(:,:,k), del_q(:,:,k))
 enddo
 
 return
@@ -760,14 +758,17 @@ if(.not.module_is_initialized) call error_mesg('mo_diff_0d_1 in monin_obukhov_mo
 'monin_obukhov_init has not been called', FATAL)
 
 ni = 1; nj = 1; nk = 1
-z_a(1,1,1) = z
+z_a(1,1,1)    = z
 u_star_a(1,1) = u_star
 b_star_a(1,1) = b_star
-call monin_obukhov_diff(real(vonkarm,kind=FMS_MO_KIND_), ustar_min, neutral, stable_option, new_mo_option,  &
-                  real(rich_crit,kind=FMS_MO_KIND_), real(zeta_trans,kind=FMS_MO_KIND_), ni, nj, nk, z_a,                            &!miz
-                  u_star_a, b_star_a, k_m_a, k_h_a, ier)
+
+call monin_obukhov_diff(real(vonkarm,kind=FMS_MO_KIND_), ustar_min, neutral, stable_option,  & 
+     & new_mo_option, real(rich_crit,kind=FMS_MO_KIND_), real(zeta_trans,kind=FMS_MO_KIND_), &!miz 
+     & ni, nj, nk, z_a, u_star_a, b_star_a, k_m_a, k_h_a, ier)
+
 k_m = k_m_a(1,1,1)
 k_h = k_h_a(1,1,1)
+
 end subroutine MO_DIFF_0D_1_
 
 !=======================================================================
@@ -787,14 +788,17 @@ if(.not.module_is_initialized) call error_mesg('mo_diff_0d_n in monin_obukhov_mo
 'monin_obukhov_init has not been called', FATAL)
 
 ni = 1; nj = 1; nk = size(z(:))
-z_a(1,1,:) = z(:)
+z_a(1,1,:)    = z(:)
 u_star_a(1,1) = u_star
 b_star_a(1,1) = b_star
-call monin_obukhov_diff(real(vonkarm,kind=FMS_MO_KIND_), ustar_min, neutral, stable_option,new_mo_option, &
-                        real(rich_crit,kind=FMS_MO_KIND_), real(zeta_trans,kind=FMS_MO_KIND_), ni, nj, nk, z_a,                    &!miz
-                        u_star_a, b_star_a, k_m_a, k_h_a, ier)
+
+call monin_obukhov_diff(real(vonkarm,kind=FMS_MO_KIND_), ustar_min, neutral, stable_option,  &
+     & new_mo_option, real(rich_crit,kind=FMS_MO_KIND_), real(zeta_trans,kind=FMS_MO_KIND_), &!miz
+     & ni, nj, nk, z_a, u_star_a, b_star_a, k_m_a, k_h_a, ier)  
+
 k_m(:) = k_m_a(1,1,:)
 k_h(:) = k_h_a(1,1,:)
+
 end subroutine MO_DIFF_0D_N_
 
 !=======================================================================
