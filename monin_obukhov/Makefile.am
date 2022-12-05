@@ -34,7 +34,7 @@ libmonin_obukhov_la_SOURCES = \
   monin_obukhov_inter.F90 \
   monin_obukhov_inter.fh \
   monin_obukhov_inter.inc
-  
+
 monin_obukhov_mod.$(FC_MODEXT): \
   monin_obukhov_inter.$(FC_MODEXT) \
   monin_obukhov.fh \

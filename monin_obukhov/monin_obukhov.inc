@@ -136,7 +136,7 @@ do k = 1, size(rich,3)
                         mix1d(m) = mix(i, j, k)
                         m = m+1
                 end do
-        end do 
+        end do
 end do
 
 call monin_obukhov_stable_mix(stable_option, real(rich_crit,kind=FMS_MO_KIND_), &
@@ -486,7 +486,7 @@ psi_m = ln_z_z0 + real(5.0,kind=FMS_MO_KIND_)*(zeta - zeta_0)
 end where
 
 where(strongly_stable)
-x = (real(lambda,kind=FMS_MO_KIND_) - real(1.0,kind=FMS_MO_KIND_))*log(zeta/real(zeta_trans,kind=FMS_MO_KIND_)) & 
+x = (real(lambda,kind=FMS_MO_KIND_) - real(1.0,kind=FMS_MO_KIND_))*log(zeta/real(zeta_trans,kind=FMS_MO_KIND_)) &
     + real(b_stab,kind=FMS_MO_KIND_)*(zeta - real(zeta_trans,kind=FMS_MO_KIND_))
 endwhere
 
@@ -762,8 +762,8 @@ z_a(1,1,1)    = z
 u_star_a(1,1) = u_star
 b_star_a(1,1) = b_star
 
-call monin_obukhov_diff(real(vonkarm,kind=FMS_MO_KIND_), ustar_min, neutral, stable_option,  & 
-     & new_mo_option, real(rich_crit,kind=FMS_MO_KIND_), real(zeta_trans,kind=FMS_MO_KIND_), &!miz 
+call monin_obukhov_diff(real(vonkarm,kind=FMS_MO_KIND_), ustar_min, neutral, stable_option,  &
+     & new_mo_option, real(rich_crit,kind=FMS_MO_KIND_), real(zeta_trans,kind=FMS_MO_KIND_), &!miz
      & ni, nj, nk, z_a, u_star_a, b_star_a, k_m_a, k_h_a, ier)
 
 k_m = k_m_a(1,1,1)
@@ -794,7 +794,7 @@ b_star_a(1,1) = b_star
 
 call monin_obukhov_diff(real(vonkarm,kind=FMS_MO_KIND_), ustar_min, neutral, stable_option,  &
      & new_mo_option, real(rich_crit,kind=FMS_MO_KIND_), real(zeta_trans,kind=FMS_MO_KIND_), &!miz
-     & ni, nj, nk, z_a, u_star_a, b_star_a, k_m_a, k_h_a, ier)  
+     & ni, nj, nk, z_a, u_star_a, b_star_a, k_m_a, k_h_a, ier)
 
 k_m(:) = k_m_a(1,1,:)
 k_h(:) = k_h_a(1,1,:)
