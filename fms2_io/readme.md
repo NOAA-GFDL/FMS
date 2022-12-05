@@ -599,7 +599,24 @@ read(restart_file(3), *) date
 deallocate(restart_file)
 ```
 
-### G. FMS2_io namelist
+### H. FMS2_io namelist
 - **ncchksz:** Sets chunksize (in bytes) argument in netcdf file creation calls. The default is `64*1024`.
 - **netcdf_default_format:** Sets the netcdf file type. The acceptable values are  "64bit", "classic", "netcdf4". This can be overwritten per file if you specify `nc_format` in the open_file call. The default is 64bit.
 - **header_buffer_val:** Sets the netCDF header buffer size(in bytes). The default is 16384 bytes.
+
+### I. Compression and Chunking
+
+In release 2022.04, "deflate_level" and the "chunksize" were added as optional arguments to the register_diag_field:
+
+```F90
+call register_restart_field(fileobj, 'variable_name', variable_data,
+dim_names, deflate_level=deflate_level, chunsizes=chunksizes)
+```
+
+- **deflate_level:** Determines how much to compress the variable. Chosen by an integer of 1 through 9. The higher the number, the more compression will take place, but will take longer to write the file. NOTE: the smaller the size, the more time it will take to write the file.
+
+- **chunksizes:** Is an array defining the chunksize of each dimension of the variable. Chunksizes can be used to improve performance. Default chunks are chosen by the library.
+
+- **NOTE: These arguments can only be used in "NETCDF4" file formats. You can set the netcdf file format for all files using the 'netcdf_default_format' namelist or in a per file basis by using the 'nc_format' argument in the 'open_file' call**
+
+- See the NETCDF user guide for more information: (https://cluster.earlham.edu/bccd-ng/testing/mobeen/GALAXSEEHPC/netcdf-4.1.3/man4/netcdf.html#Chunking)

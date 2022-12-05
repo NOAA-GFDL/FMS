@@ -113,7 +113,14 @@ use platform_mod
   INTEGER, PARAMETER :: latlon_gridtype = 1
   INTEGER, PARAMETER :: index_gridtype = 2
   INTEGER, PARAMETER :: null_gridtype = DIAG_NULL
-
+  INTEGER, PARAMETER :: time_none    = 0 !< There is no reduction method
+  INTEGER, PARAMETER :: time_average = 1 !< The reduction method is avera
+  INTEGER, PARAMETER :: time_rms     = 2 !< The reduction method is rms
+  INTEGER, PARAMETER :: time_max     = 3 !< The reduction method is max
+  INTEGER, PARAMETER :: time_min     = 4 !< The reduction method is min
+  INTEGER, PARAMETER :: time_sum     = 5 !< The reudction method is sum
+  INTEGER, PARAMETER :: time_diurnal = 6 !< The reduction method is diurnal
+  INTEGER, PARAMETER :: time_power   = 7 !< The reduction method is power
   !> @}
 
   !> @brief Contains the coordinates of the local domain to output.
@@ -317,7 +324,6 @@ use platform_mod
   type fmsDiagAttribute_type
     class(*), allocatable         :: att_value(:) !< Value of the attribute
     character(len=:), allocatable :: att_name     !< Name of the attribute
-
     contains
       procedure :: add => fms_add_attribute
   end type fmsDiagAttribute_type
@@ -533,31 +539,31 @@ CONTAINS
     res = base_second
   end function get_base_second
 
-  subroutine fms_add_attribute(obj, att_name, att_value)
-    class(fmsDiagAttribute_type), intent(inout) :: obj          !< Diag attribute type
+  subroutine fms_add_attribute(this, att_name, att_value)
+    class(fmsDiagAttribute_type), intent(inout) :: this          !< Diag attribute type
     character(len=*),             intent(in)    :: att_name     !< Name of the attribute
     class(*),                     intent(in)    :: att_value(:) !< The attribute value to add
 
     integer :: natt !< the size of att_value
 
     natt = size(att_value)
-    obj%att_name = att_name
+    this%att_name = att_name
     select type (att_value)
     type is (integer(kind=i4_kind))
-      allocate(integer(kind=i4_kind) :: obj%att_value(natt))
-      obj%att_value = att_value
+      allocate(integer(kind=i4_kind) :: this%att_value(natt))
+      this%att_value = att_value
     type is (integer(kind=i8_kind))
-      allocate(integer(kind=i8_kind) :: obj%att_value(natt))
-      obj%att_value = att_value
+      allocate(integer(kind=i8_kind) :: this%att_value(natt))
+      this%att_value = att_value
     type is (real(kind=r4_kind))
-      allocate(real(kind=r4_kind) :: obj%att_value(natt))
-      obj%att_value = att_value
+      allocate(real(kind=r4_kind) :: this%att_value(natt))
+      this%att_value = att_value
     type is (real(kind=r8_kind))
-      allocate(real(kind=r8_kind) :: obj%att_value(natt))
-      obj%att_value = att_value
+      allocate(real(kind=r8_kind) :: this%att_value(natt))
+      this%att_value = att_value
     type is (character(len=*))
-      allocate(character(len=len(att_value)) :: obj%att_value(natt))
-      obj%att_value = att_value
+      allocate(character(len=len(att_value)) :: this%att_value(natt))
+      this%att_value = att_value
     end select
   end subroutine fms_add_attribute
 END MODULE diag_data_mod

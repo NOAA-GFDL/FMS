@@ -45,7 +45,7 @@ TESTS = test_mpp_io2.sh \
 
 TEST_EXTENSIONS = .sh
 SH_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
-                  $(top_srcdir)/tap-driver.sh
+                  $(abs_top_srcdir)/test_fms/tap-driver.sh
 
 # These files will also be distributed.
 EXTRA_DIST = test_mpp_io2.sh test_io_R4_R8.sh test_io_mosaic_R4_R8.sh

@@ -20,16 +20,17 @@
 !> @brief  This programs tests the modern diag_manager
 
 program test_modern_diag
-#ifdef use_yaml
 use   mpp_domains_mod,  only: domain2d, mpp_domains_set_stack_size, mpp_define_domains, mpp_define_io_domain, &
                               mpp_define_mosaic, domainug, mpp_get_compute_domains, mpp_define_unstruct_domain, &
                               mpp_get_compute_domain, mpp_get_data_domain, mpp_get_UG_domain_grid_index, &
                               mpp_get_UG_compute_domain
 use   diag_manager_mod, only: diag_manager_init, diag_manager_end, diag_axis_init, register_diag_field, &
-                              diag_axis_add_attribute
+                              diag_axis_add_attribute, diag_field_add_attribute, diag_send_complete, &
+                              diag_manager_set_time_end
 use   fms_mod,          only: fms_init, fms_end
 use   mpp_mod,          only: FATAL, mpp_error, mpp_npes, mpp_pe, mpp_root_pe, mpp_broadcast
 use   time_manager_mod, only: time_type, set_calendar_type, set_date, JULIAN, set_time
+use fms_diag_object_mod,only: dump_diag_obj
 
 implicit none
 
@@ -108,7 +109,7 @@ id_ug = diag_axis_init("grid_index",  real(ug_dim_data), "none", "U", long_name=
                          set_name="land", DomainU=land_domain, aux="geolon_t geolat_t")
 
 id_z  = diag_axis_init('z',  z,  'point_Z', 'z', long_name='point_Z')
-call diag_axis_add_attribute (id_z, 'formula', 'p(n,k,j,i) = ap(k) + b(k)*ps(n,j,i)')
+!TODO call diag_axis_add_attribute (id_z, 'formula', 'p(n,k,j,i) = ap(k) + b(k)*ps(n,j,i)')
 call diag_axis_add_attribute (id_z, 'integer', 10)
 call diag_axis_add_attribute (id_z, '1d integer', (/10, 10/))
 call diag_axis_add_attribute (id_z, 'real', 10.)
@@ -142,6 +143,25 @@ if (id_var4  .ne. 4) call mpp_error(FATAL, "var4 does not have the expected id")
 if (id_var5  .ne. 5) call mpp_error(FATAL, "var5 does not have the expected id")
 if (id_var6  .ne. 6) call mpp_error(FATAL, "var6 does not have the expected id")
 if (id_var7  .ne. 7) call mpp_error(FATAL, "var7 does not have the expected id")
+
+call diag_field_add_attribute (id_var1, "some string", "this is a string")
+call diag_field_add_attribute (id_var1, "integer", 10)
+call diag_field_add_attribute (id_var1, "1d_integer", (/10, 10/))
+call diag_field_add_attribute (id_var1, "real", 10.)
+call diag_field_add_attribute (id_var2, '1d_real', (/10./))
+call diag_field_add_attribute (id_var2, 'formula', 'p(n,k,j,i) = ap(k) + b(k)*ps(n,j,i)')
+
+!! test dump routines
+!! prints fields from objects for debugging to log if name is provided, othwerise goes to stdout
+call dump_diag_obj('diag_obj_dump.log')
+call dump_diag_obj()
+
+call diag_manager_set_time_end(Time)
+call diag_manager_set_time_end(set_date(2,1,2,0,0,0))
+
+do i=1,23
+  call diag_send_complete(set_date(2,1,1,i,0,0))
+enddo
 
 call diag_manager_end(Time)
 call fms_end
@@ -192,5 +212,4 @@ subroutine set_up_cube_sph_domain(Domain_cube_sph, nx, ny, io_layout)
                                 global_indices, layout, pe_start, pe_end, &
                                 io_layout, Domain_cube_sph)
 end subroutine set_up_cube_sph_domain
-#endif
 end program test_modern_diag

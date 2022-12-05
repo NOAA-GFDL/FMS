@@ -32,16 +32,18 @@ noinst_LTLIBRARIES = libfield_manager.la
 # Each convenience library depends on its source.
 libfield_manager_la_SOURCES = \
   field_manager.F90 \
+  fm_yaml.F90 \
   fm_util.F90 \
   parse.inc
 
-field_manager_mod.$(FC_MODEXT): parse.inc
+field_manager_mod.$(FC_MODEXT): parse.inc fm_yaml_mod.$(FC_MODEXT)
 fm_util_mod.$(FC_MODEXT): field_manager_mod.$(FC_MODEXT)
 
 # Mod files are built and then installed as headers.
 MODFILES = \
   field_manager_mod.$(FC_MODEXT) \
-  fm_util_mod.$(FC_MODEXT)
+  fm_util_mod.$(FC_MODEXT) \
+  fm_yaml_mod.$(FC_MODEXT)
 BUILT_SOURCES = $(MODFILES)
 nodist_include_HEADERS = $(MODFILES)
 

@@ -43,6 +43,9 @@
 MODULE fms_diag_dlinked_list_mod
    USE fms_mod, ONLY: error_mesg, FATAL, WARNING, NOTE
    implicit none
+
+   private
+
    !> The doubly-linked list node type.
    type, public:: FmsDlListNode_t
       private

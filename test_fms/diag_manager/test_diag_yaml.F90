@@ -24,7 +24,8 @@ program test_diag_yaml
 use FMS_mod, only: fms_init, fms_end
 use fms_diag_yaml_mod
 use diag_data_mod, only: DIAG_NULL, DIAG_ALL, get_base_year, get_base_month, get_base_day, get_base_hour, &
-                       & get_base_minute, get_base_second, diag_data_init
+                       & get_base_minute, get_base_second, diag_data_init, DIAG_HOURS, DIAG_NULL, DIAG_DAYS, &
+                       & time_average, r4
 use  time_manager_mod, only: set_calendar_type, JULIAN
 use mpp_mod
 use platform_mod
@@ -141,6 +142,10 @@ if (.not. checking_crashes) then
 
 endif
 
+!! test dump routines
+call dump_diag_yaml_obj('test_dump.log')
+call dump_diag_yaml_obj() ! to stdout
+
 call diag_yaml_object_end
 
 call fms_end()
@@ -161,17 +166,17 @@ subroutine compare_diag_fields(res)
   call compare_result("var_varname 2", res(2)%get_var_varname(), "sst")
   call compare_result("var_varname 3", res(3)%get_var_varname(), "sstt")
 
-  call compare_result("var_reduction 1", res(1)%get_var_reduction(), "average")
-  call compare_result("var_reduction 2", res(2)%get_var_reduction(), "average")
-  call compare_result("var_reduction 3", res(3)%get_var_reduction(), "average")
+  call compare_result("var_reduction 1", res(1)%get_var_reduction(), time_average)
+  call compare_result("var_reduction 2", res(2)%get_var_reduction(), time_average)
+  call compare_result("var_reduction 3", res(3)%get_var_reduction(), time_average)
 
   call compare_result("var_module 1", res(1)%get_var_module(), "test_diag_manager_mod")
   call compare_result("var_module 2", res(2)%get_var_module(), "test_diag_manager_mod")
   call compare_result("var_module 3", res(3)%get_var_module(), "test_diag_manager_mod")
 
-  call compare_result("var_skind 1", res(1)%get_var_skind(), "r4")
-  call compare_result("var_skind 2", res(2)%get_var_skind(), "r4")
-  call compare_result("var_skind 3", res(3)%get_var_skind(), "r4")
+  call compare_result("var_kind 1", res(1)%get_var_kind(), r4)
+  call compare_result("var_kind 2", res(2)%get_var_kind(), r4)
+  call compare_result("var_kind 3", res(3)%get_var_kind(), r4)
 
   call compare_result("var_outname 1", res(1)%get_var_outname(), "sst")
   call compare_result("var_outname 2", res(2)%get_var_outname(), "sst")
@@ -209,13 +214,13 @@ subroutine compare_diag_files(res)
   call compare_result("file_freq 2", res(2)%get_file_freq(), 24)
   call compare_result("file_freq 3", res(3)%get_file_freq(), -1)
 
-  call compare_result("file_frequnit 1", res(1)%get_file_frequnit(), "hours")
-  call compare_result("file_frequnit 2", res(2)%get_file_frequnit(), "days")
-  call compare_result("file_frequnit 3", res(3)%get_file_frequnit(), "days")
+  call compare_result("file_frequnit 1", res(1)%get_file_frequnit(), DIAG_HOURS)
+  call compare_result("file_frequnit 2", res(2)%get_file_frequnit(), DIAG_DAYS)
+  call compare_result("file_frequnit 3", res(3)%get_file_frequnit(), DIAG_DAYS)
 
-  call compare_result("file_timeunit 1", res(1)%get_file_timeunit(), "hours")
-  call compare_result("file_timeunit 2", res(2)%get_file_timeunit(), "hours")
-  call compare_result("file_timeunit 3", res(3)%get_file_timeunit(), "hours")
+  call compare_result("file_timeunit 1", res(1)%get_file_timeunit(), DIAG_HOURS)
+  call compare_result("file_timeunit 2", res(2)%get_file_timeunit(), DIAG_HOURS)
+  call compare_result("file_timeunit 3", res(3)%get_file_timeunit(), DIAG_HOURS)
 
   call compare_result("file_unlimdim 1", res(1)%get_file_unlimdim(), "time")
   call compare_result("file_unlimdim 2", res(2)%get_file_unlimdim(), "records")
@@ -225,17 +230,17 @@ subroutine compare_diag_files(res)
   call compare_result("file_new_file_freq 2", res(2)%get_file_new_file_freq(), DIAG_NULL)
   call compare_result("file_new_file_freq 3", res(3)%get_file_new_file_freq(), DIAG_NULL)
 
-  call compare_result("file_new_file_freq_units 1", res(1)%get_file_new_file_freq_units(), "hours")
-  call compare_result("file_new_file_freq_units 2", res(2)%get_file_new_file_freq_units(), "")
-  call compare_result("file_new_file_freq_units 3", res(3)%get_file_new_file_freq_units(), "")
+  call compare_result("file_new_file_freq_units 1", res(1)%get_file_new_file_freq_units(), DIAG_HOURS)
+  call compare_result("file_new_file_freq_units 2", res(2)%get_file_new_file_freq_units(), DIAG_NULL)
+  call compare_result("file_new_file_freq_units 3", res(3)%get_file_new_file_freq_units(), DIAG_NULL)
 
   call compare_result("file_duration 1", res(1)%get_file_duration(), 12)
   call compare_result("file_duration 2", res(2)%get_file_duration(), DIAG_NULL)
   call compare_result("file_duration 3", res(3)%get_file_duration(), DIAG_NULL)
 
-  call compare_result("file_duration_units 1", res(1)%get_file_duration_units(), "hours")
-  call compare_result("file_duration_units 2", res(2)%get_file_duration_units(), "")
-  call compare_result("file_duration_units 3", res(3)%get_file_duration_units(), "")
+  call compare_result("file_duration_units 1", res(1)%get_file_duration_units(), DIAG_HOURS)
+  call compare_result("file_duration_units 2", res(2)%get_file_duration_units(), DIAG_NULL)
+  call compare_result("file_duration_units 3", res(3)%get_file_duration_units(), DIAG_NULL)
 
   call compare_result("file_start_time 1", res(1)%get_file_start_time(), "2 1 1 0 0 0")
   call compare_result("file_start_time 2", res(2)%get_file_start_time(), "")
@@ -304,6 +309,8 @@ subroutine compare_result_0d(key_name, res, expected_res)
           if(trim(res) .ne. trim(expected_res)) &
             call mpp_error(FATAL, "Error!: "//trim(key_name)//" is not the expected result. "//trim(res)//" ne "//&
               trim(expected_res)//".")
+        class default
+          call mpp_error(FATAL, "Error!: "//trim(key_name)//" does not have the same type")
       end select
     type is (integer(kind=i4_kind))
        select type(expected_res)
@@ -312,6 +319,8 @@ subroutine compare_result_0d(key_name, res, expected_res)
              print *, res, " ne ", expected_res
             call mpp_error(FATAL, "Error!: "//trim(key_name)//" is not the expected result.")
           endif
+         class default
+          call mpp_error(FATAL, "Error!: "//trim(key_name)//" does not have the same type")
       end select
     type is (logical)
        select type(expected_res)
@@ -320,6 +329,8 @@ subroutine compare_result_0d(key_name, res, expected_res)
             print*, res, " ne ", expected_res
             call mpp_error(FATAL, "Error!:"//trim(key_name)//" is not the expected result")
            endif
+         class default
+            call mpp_error(FATAL, "Error!: "//trim(key_name)//" does not have the same type")
       end select
   end select
 
@@ -347,6 +358,8 @@ subroutine compare_result_1d(key_name, res, expected_res)
               call mpp_error(FATAL, "Error!: "//trim(key_name)//" is not the expected result. ")
             endif
           enddo
+        class default
+          call mpp_error(FATAL, "Error!: "//trim(key_name)//" does not have the same type")
       end select
     type is (real(kind=r4_kind))
       select type(expected_res)
@@ -357,6 +370,8 @@ subroutine compare_result_1d(key_name, res, expected_res)
               call mpp_error(FATAL, "Error!: "//trim(key_name)//" is not the expected result. ")
             endif
           enddo
+        class default
+          call mpp_error(FATAL, "Error!: "//trim(key_name)//" does not have the same type")
       end select
     type is (real(kind=r8_kind))
       select type(expected_res)
@@ -367,6 +382,8 @@ subroutine compare_result_1d(key_name, res, expected_res)
               call mpp_error(FATAL, "Error!: "//trim(key_name)//" is not the expected result. ")
             endif
           enddo
+        class default
+          call mpp_error(FATAL, "Error!: "//trim(key_name)//" does not have the same type")
     end select
   end select
 end subroutine compare_result_1d
