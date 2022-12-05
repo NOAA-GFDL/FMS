@@ -130,12 +130,12 @@ program test_monin_obukhov
         w = w + transfer(sum(b_star), w)
 
         ! plug in check sum here>>>
-  #if defined(__INTEL_COMPILER) || defined(_LF95)
-  #define CHKSUM_DRAG 4466746452959549648
-  #endif
-  #if defined(_PGF95)
-  #define CHKSUM_DRAG 4466746452959549650
-  #endif
+#if defined(__INTEL_COMPILER) || defined(_LF95)
+#define CHKSUM_DRAG 4466746452959549648
+#endif
+#if defined(_PGF95)
+#define CHKSUM_DRAG 4466746452959549650
+#endif
 
 
         print *,'chksum test_drag      : ', w, ' ref ', CHKSUM_DRAG
@@ -166,12 +166,12 @@ program test_monin_obukhov
         w = transfer( sum(mix) , w)
 
         ! plug in check sum here>>>
-  #if defined(__INTEL_COMPILER) || defined(_LF95)
-  #define CHKSUM_STABLE_MIX 4590035772608644256
-  #endif
-  #if defined(_PGF95)
-  #define CHKSUM_STABLE_MIX 4590035772608644258
-  #endif
+#if defined(__INTEL_COMPILER) || defined(_LF95)
+#define CHKSUM_STABLE_MIX 4590035772608644256
+#endif
+#if defined(_PGF95)
+#define CHKSUM_STABLE_MIX 4590035772608644258
+#endif
 
         print *,'chksum test_stable_mix: ', w, ' ref ', CHKSUM_STABLE_MIX
         ier = CHKSUM_STABLE_MIX - w
@@ -205,9 +205,9 @@ program test_monin_obukhov
         w = w + transfer( sum(k_h) , w)
 
         ! plug check sum in here>>>
-  #if defined(__INTEL_COMPILER) || defined(_LF95) || defined(_PGF95)
-  #define CHKSUM_DIFF -9222066590093362639
-  #endif
+#if defined(__INTEL_COMPILER) || defined(_LF95) || defined(_PGF95)
+#define CHKSUM_DIFF -9222066590093362639
+#endif
 
         print *,'chksum test_diff      : ', w, ' ref ', CHKSUM_DIFF
 
@@ -254,12 +254,12 @@ program test_monin_obukhov
         w = w + transfer(sum(del_q), w)
 
         ! plug check sum in here>>>
-  #if defined(__INTEL_COMPILER) || defined(_LF95)
-  #define CHKSUM_PROFILE -4596910845317820786
-  #endif
-  #if defined(_PGF95)
-  #define CHKSUM_PROFILE -4596910845317820785
-  #endif
+#if defined(__INTEL_COMPILER) || defined(_LF95)
+#define CHKSUM_PROFILE -4596910845317820786
+#endif
+#if defined(_PGF95)
+#define CHKSUM_PROFILE -4596910845317820785
+#endif
 
         print *,'chksum test_profile   : ', w, ' ref ', CHKSUM_PROFILE
 
