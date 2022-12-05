@@ -115,12 +115,11 @@ program test_monin_obukhov
         u_star = 0
         b_star = 0
 
-        call monin_obukhov_drag_1d(real(grav,kind=r8_kind), real(vonkarm,kind=r8_kind),                       &
-        & real(error,kind=r8_kind), real(zeta_min,kind=r8_kind), max_iter, real(small,kind=r8_kind),          &               &
-          neutral, stable_option, new_mo_option, real(rich_crit,kind=r8_kind),                                &!miz
-        & real(zeta_trans,kind=r8_kind), real(drag_min_heat,kind=r8_kind), real(drag_min_moist,kind=r8_kind), &
-        & real(drag_min_mom,kind=r8_kind), n, pt, pt0, z, z0, zt, zq, speed, drag_m, drag_t,                  &
-        & drag_q, u_star, b_star, lavail, avail, ier_l)
+        call monin_obukhov_drag_1d(real(grav,kind=r8_kind), real(vonkarm,kind=r8_kind),                              &
+             & real(error,kind=r8_kind), real(zeta_min,kind=r8_kind), max_iter, real(small,kind=r8_kind),            &
+             & neutral, stable_option, new_mo_option, real(rich_crit,kind=r8_kind), real(zeta_trans,kind=r8_kind),   &
+             & real(drag_min_heat,kind=r8_kind), real(drag_min_moist,kind=r8_kind), real(drag_min_mom,kind=r8_kind), &
+             & n, pt, pt0, z, z0, zt, zq, speed, drag_m, drag_t, drag_q, u_star, b_star, lavail, avail, ier_l)
 
         ! check sum results
         w = 0
