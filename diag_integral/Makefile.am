@@ -23,17 +23,17 @@
 # Ed Hartnett 2/22/19
 
 # Include .h and .mod files.
-AM_CPPFLAGS = -I$(top_srcdir)/include
+AM_CPPFLAGS = -I$(top_srcdir)/include -I$(top_srcdir)/diag_integral/include
 AM_FCFLAGS = $(FC_MODINC). $(FC_MODOUT)$(MODDIR)
 
 # Build this uninstalled convenience library.
 noinst_LTLIBRARIES = libdiag_integral.la
 
 # The convenience library depends on its source.
-libdiag_integral_la_SOURCES = diag_integral.F90
+libdiag_integral_la_SOURCES = fms_diag_integral.F90
 
-nodist_include_HEADERS = diag_integral_mod.$(FC_MODEXT)
-BUILT_SOURCES = diag_integral_mod.$(FC_MODEXT)
+nodist_include_HEADERS = fms_diag_integral_mod.$(FC_MODEXT)
+BUILT_SOURCES = fms_diag_integral_mod.$(FC_MODEXT)
 
 
 include $(top_srcdir)/mkmods.mk

@@ -23,7 +23,7 @@
 # Ed Hartnett 2/22/19
 
 # Include .h and .mod files.
-AM_CPPFLAGS = -I$(top_srcdir)/include
+AM_CPPFLAGS = -I$(top_srcdir)/include -I$(top_srcdir)/topography/include
 AM_FCFLAGS = $(FC_MODINC). $(FC_MODOUT)$(MODDIR)
 
 # Build these uninstalled convenience libraries.
@@ -31,15 +31,15 @@ noinst_LTLIBRARIES = libtopography.la
 
 # Each convenience library depends on its source.
 libtopography_la_SOURCES = \
-  topography.F90 \
-  gaussian_topog.F90
+	fms_topography.F90 \
+	fms_gaussian_topog.F90
 
-topography_mod.$(FC_MODEXT): gaussian_topog_mod.$(FC_MODEXT)
+fms_topography_mod.$(FC_MODEXT): fms_gaussian_topog_mod.$(FC_MODEXT)
 
 # Mod files are built and then installed as headers.
 MODFILES = \
-  gaussian_topog_mod.$(FC_MODEXT) \
-  topography_mod.$(FC_MODEXT)
+	fms_gaussian_topog_mod.$(FC_MODEXT) \
+	fms_topography_mod.$(FC_MODEXT)
 nodist_include_HEADERS = $(MODFILES)
 BUILT_SOURCES = $(MODFILES)
 

@@ -23,18 +23,18 @@
 # Ed Hartnett 2/22/19
 
 # Include .h and .mod files.
-AM_CPPFLAGS = -I$(top_srcdir)/include
+AM_CPPFLAGS = -I$(top_srcdir)/include -I$(top_srcdir)/astronomy/include
 AM_FCFLAGS = $(FC_MODINC). $(FC_MODOUT)$(MODDIR)
 
 # Build this uninstalled convenience library.
 noinst_LTLIBRARIES = libastronomy.la
 
 # The convenience library depends on its source.
-libastronomy_la_SOURCES = astronomy.F90
+libastronomy_la_SOURCES = fms_astronomy.F90
 
-BUILT_SOURCES = astronomy_mod.$(FC_MODEXT)
-nodist_include_HEADERS = astronomy_mod.$(FC_MODEXT)
+BUILT_SOURCES = fms_astronomy_mod.$(FC_MODEXT)
+nodist_include_HEADERS = fms_astronomy_mod.$(FC_MODEXT)
 
-EXTRA_DIST = astronomy.tech.ps
+EXTRA_DIST = fms_astronomy.tech.ps
 
 include $(top_srcdir)/mkmods.mk

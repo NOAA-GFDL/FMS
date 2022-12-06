@@ -31,8 +31,8 @@ noinst_LTLIBRARIES = libfms_affinity.la
 
 # The convenience library depends on its source.
 libfms_affinity_la_SOURCES = \
-  fms_affinity.F90 \
-  affinity.c
+	fms_affinity.F90 \
+	affinity.c
 
 # Mod files are built and then installed as headers
 MODFILES = fms_affinity_mod.$(FC_MODEXT)

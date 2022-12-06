@@ -30,9 +30,9 @@ AM_FCFLAGS = $(FC_MODINC). $(FC_MODOUT)$(MODDIR)
 noinst_LTLIBRARIES = libplatform.la
 
 # The convenience library depends on its source.
-libplatform_la_SOURCES = platform.F90
+libplatform_la_SOURCES = fms_platform.F90
 
-BUILT_SOURCES = platform_mod.$(FC_MODEXT)
-nodist_include_HEADERS = platform_mod.$(FC_MODEXT)
+BUILT_SOURCES = fms_platform_mod.$(FC_MODEXT)
+nodist_include_HEADERS = fms_platform_mod.$(FC_MODEXT)
 
 include $(top_srcdir)/mkmods.mk

@@ -23,7 +23,7 @@
 # Ed Hartnett 2/28/19
 
 # Include .h and .mod files.
-AM_CPPFLAGS = -I$(top_srcdir)/include
+AM_CPPFLAGS = -I$(top_srcdir)/include -I$(top_srcdir)/random_numbers/include
 AM_FCFLAGS = $(FC_MODINC). $(FC_MODOUT)$(MODDIR)
 
 # Build these uninstalled convenience library.
@@ -31,16 +31,16 @@ noinst_LTLIBRARIES = librandom_numbers.la
 
 # Each convenience library depends on its source.
 librandom_numbers_la_SOURCES = \
-  random_numbers.F90 \
-  mersennetwister.F90
+	fms_random_numbers.F90 \
+	fms_mersennetwister.F90
 
 # Some mods are dependant on other mods in this dir.
-random_numbers_mod.$(FC_MODEXT): mersennetwister_mod.$(FC_MODEXT)
+fms_random_numbers_mod.$(FC_MODEXT): fms_mersennetwister_mod.$(FC_MODEXT)
 
 # Mod files are built and then installed as headers.
 MODFILES = \
-  mersennetwister_mod.$(FC_MODEXT) \
-  random_numbers_mod.$(FC_MODEXT)
+	fms_mersennetwister_mod.$(FC_MODEXT) \
+	fms_random_numbers_mod.$(FC_MODEXT)
 BUILT_SOURCES = $(MODFILES)
 nodist_include_HEADERS = $(MODFILES)
 

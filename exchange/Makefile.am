@@ -23,7 +23,7 @@
 # Ed Hartnett 2/22/19
 
 # Include .h and .mod files.
-AM_CPPFLAGS = -I$(top_srcdir)/include
+AM_CPPFLAGS = -I$(top_srcdir)/include -I$(top_srcdir)/exchange
 AM_FCFLAGS = $(FC_MODINC). $(FC_MODOUT)$(MODDIR)
 
 # Build these uninstalled convenience libraries.
@@ -31,16 +31,16 @@ noinst_LTLIBRARIES = libexchange.la
 
 # Each convenience library depends on its source.
 libexchange_la_SOURCES = \
-  stock_constants.F90 \
-  xgrid.F90
+	fms_stock_constants.F90 \
+	fms_xgrid.F90
 
 # Some mods are dependant on other mods in this dir.
-xgrid_mod.$(FC_MODEXT): stock_constants_mod.$(FC_MODEXT)
+fms_xgrid_mod.$(FC_MODEXT): fms_stock_constants_mod.$(FC_MODEXT)
 
 # Mod files are built and then installed as headers.
 MODFILES = \
-  stock_constants_mod.$(FC_MODEXT) \
-  xgrid_mod.$(FC_MODEXT)
+	fms_stock_constants_mod.$(FC_MODEXT) \
+	fms_xgrid_mod.$(FC_MODEXT)
 nodist_include_HEADERS = $(MODFILES)
 BUILT_SOURCES = $(MODFILES)
 

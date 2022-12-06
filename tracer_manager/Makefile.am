@@ -23,17 +23,17 @@
 # Ed Hartnett 2/22/19
 
 # Include .h and .mod files.
-AM_CPPFLAGS = -I$(top_srcdir)/include
+AM_CPPFLAGS = -I$(top_srcdir)/include -I$(top_srcdir)/tracer_manager/include
 AM_FCFLAGS = $(FC_MODINC). $(FC_MODOUT)$(MODDIR)
 
 # Build this uninstalled convenience library.
 noinst_LTLIBRARIES = libtracer_manager.la
 
 # The convenience library depends on its source.
-libtracer_manager_la_SOURCES = tracer_manager.F90
+libtracer_manager_la_SOURCES = fms_tracer_manager.F90
 
 
-BUILT_SOURCES = tracer_manager_mod.$(FC_MODEXT)
-nodist_include_HEADERS = tracer_manager_mod.$(FC_MODEXT)
+BUILT_SOURCES = fms_tracer_manager_mod.$(FC_MODEXT)
+nodist_include_HEADERS = fms_tracer_manager_mod.$(FC_MODEXT)
 
 include $(top_srcdir)/mkmods.mk

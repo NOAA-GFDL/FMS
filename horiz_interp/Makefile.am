@@ -23,7 +23,7 @@
 # Ed Hartnett 2/22/19
 
 # Include .h and .mod files.
-AM_CPPFLAGS = -I$(top_srcdir)/include
+AM_CPPFLAGS = -I$(top_srcdir)/include -I$(top_srcdir)/horiz_interp/include
 AM_FCFLAGS = $(FC_MODINC). $(FC_MODOUT)$(MODDIR)
 
 # Build these uninstalled convenience libraries.
@@ -31,30 +31,30 @@ noinst_LTLIBRARIES = libhoriz_interp.la
 
 # Each convenience library depends on its source.
 libhoriz_interp_la_SOURCES = \
-  horiz_interp_bicubic.F90 \
-  horiz_interp_bilinear.F90 \
-  horiz_interp_conserve.F90 \
-  horiz_interp.F90 \
-  horiz_interp_spherical.F90 \
-  horiz_interp_type.F90
+	fms_horiz_interp_bicubic.F90 \
+	fms_horiz_interp_bilinear.F90 \
+	fms_horiz_interp_conserve.F90 \
+	fms_horiz_interp.F90 \
+	fms_horiz_interp_spherical.F90 \
+	fms_horiz_interp_type.F90
 
 # Some mods are dependant on other mods in this dir.
-horiz_interp_bicubic_mod.$(FC_MODEXT): horiz_interp_type_mod.$(FC_MODEXT)
-horiz_interp_bilinear_mod.$(FC_MODEXT): horiz_interp_type_mod.$(FC_MODEXT)
-horiz_interp_conserve_mod.$(FC_MODEXT): horiz_interp_type_mod.$(FC_MODEXT)
-horiz_interp_spherical_mod.$(FC_MODEXT): horiz_interp_type_mod.$(FC_MODEXT)
-horiz_interp_mod.$(FC_MODEXT): horiz_interp_bicubic_mod.$(FC_MODEXT) horiz_interp_type_mod.$(FC_MODEXT) \
-                      horiz_interp_bilinear_mod.$(FC_MODEXT) horiz_interp_conserve_mod.$(FC_MODEXT) \
-                      horiz_interp_spherical_mod.$(FC_MODEXT)
+horiz_interp_bicubic_mod.$(FC_MODEXT):   fms_horiz_interp_type_mod.$(FC_MODEXT)
+horiz_interp_bilinear_mod.$(FC_MODEXT):  fms_horiz_interp_type_mod.$(FC_MODEXT)
+horiz_interp_conserve_mod.$(FC_MODEXT):  fms_horiz_interp_type_mod.$(FC_MODEXT)
+horiz_interp_spherical_mod.$(FC_MODEXT): fms_horiz_interp_type_mod.$(FC_MODEXT)
+horiz_interp_mod.$(FC_MODEXT): fms_horiz_interp_bicubic_mod.$(FC_MODEXT) fms_horiz_interp_type_mod.$(FC_MODEXT) \
+											fms_horiz_interp_bilinear_mod.$(FC_MODEXT) fms_horiz_interp_conserve_mod.$(FC_MODEXT) \
+											fms_horiz_interp_spherical_mod.$(FC_MODEXT)
 
 # Mod files are built and then installed as headers.
 MODFILES = \
-  horiz_interp_type_mod.$(FC_MODEXT) \
-  horiz_interp_bicubic_mod.$(FC_MODEXT) \
-  horiz_interp_bilinear_mod.$(FC_MODEXT) \
-  horiz_interp_conserve_mod.$(FC_MODEXT) \
-  horiz_interp_spherical_mod.$(FC_MODEXT) \
-  horiz_interp_mod.$(FC_MODEXT)
+	fms_horiz_interp_type_mod.$(FC_MODEXT) \
+	fms_horiz_interp_bicubic_mod.$(FC_MODEXT) \
+	fms_horiz_interp_bilinear_mod.$(FC_MODEXT) \
+	fms_horiz_interp_conserve_mod.$(FC_MODEXT) \
+	fms_horiz_interp_spherical_mod.$(FC_MODEXT) \
+	fms_horiz_interp_mod.$(FC_MODEXT)
 nodist_include_HEADERS = $(MODFILES)
 BUILT_SOURCES = $(MODFILES)
 

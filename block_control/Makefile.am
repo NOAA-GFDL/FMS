@@ -23,16 +23,16 @@
 # Ed Hartnett 2/22/19
 
 # Include .h and .mod files.
-AM_CPPFLAGS = -I$(top_srcdir)/include
+AM_CPPFLAGS = -I$(top_srcdir)/include -I$(top_srcdir)/block_control/include
 AM_FCFLAGS = $(FC_MODINC). $(FC_MODOUT)$(MODDIR)
 
 # Build this uninstalled convenience library.
 noinst_LTLIBRARIES = libblock_control.la
 
 # The convenience library depends on its source.
-libblock_control_la_SOURCES = block_control.F90
+libblock_control_la_SOURCES = fms_block_control.F90
 
-BUILT_SOURCES = block_control_mod.$(FC_MODEXT)
-nodist_include_HEADERS = block_control_mod.$(FC_MODEXT)
+BUILT_SOURCES = fms_block_control_mod.$(FC_MODEXT)
+nodist_include_HEADERS = fms_block_control_mod.$(FC_MODEXT)
 
 include $(top_srcdir)/mkmods.mk

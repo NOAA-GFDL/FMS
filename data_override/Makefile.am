@@ -23,7 +23,7 @@
 # Ed Hartnett 2/22/19
 
 # Include .h and .mod files.
-AM_CPPFLAGS = -I$(top_srcdir)/include
+AM_CPPFLAGS = -I$(top_srcdir)/include -I$(top_srcdir)/data_override/include
 AM_FCFLAGS = $(FC_MODINC). $(FC_MODOUT)$(MODDIR)
 
 # Build this uninstalled convenience library.
@@ -31,16 +31,16 @@ noinst_LTLIBRARIES = libdata_override.la
 
 # The convenience library depends on its source.
 libdata_override_la_SOURCES = \
-  data_override.F90 \
-  get_grid_version.F90
+	fms_data_override.F90 \
+	fms_get_grid_version.F90
 
 # Some mods are dependent on other mods in this dir.
-data_override_mod.$(FC_MODEXT): get_grid_version_mod.$(FC_MODEXT)
+fms_data_override_mod.$(FC_MODEXT): fms_get_grid_version_mod.$(FC_MODEXT)
 
 # Mod files are built and then installed as headers.
 MODFILES = \
-  data_override_mod.$(FC_MODEXT) \
-  get_grid_version_mod.$(FC_MODEXT)
+	fms_data_override_mod.$(FC_MODEXT) \
+	fms_get_grid_version_mod.$(FC_MODEXT)
 
 nodist_include_HEADERS = $(MODFILES)
 BUILT_SOURCES = $(MODFILES)

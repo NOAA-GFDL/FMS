@@ -27,9 +27,9 @@ AM_FCFLAGS = $(FC_MODINC). $(FC_MODOUT)$(MODDIR)
 
 # The convenience library depends on its source.
 noinst_LTLIBRARIES = libmemutils.la
-libmemutils_la_SOURCES = memutils.F90
+libmemutils_la_SOURCES = fms_memutils.F90
 
-BUILT_SOURCES = memutils_mod.$(FC_MODEXT)
-nodist_include_HEADERS = memutils_mod.$(FC_MODEXT)
+BUILT_SOURCES = fms_memutils_mod.$(FC_MODEXT)
+nodist_include_HEADERS = fms_memutils_mod.$(FC_MODEXT)
 
 include $(top_srcdir)/mkmods.mk

@@ -28,18 +28,18 @@ AM_FCFLAGS = $(FC_MODINC). $(FC_MODOUT)$(MODDIR)
 noinst_LTLIBRARIES = libmonin_obukhov.la
 
 libmonin_obukhov_la_SOURCES = \
-  monin_obukhov.F90 \
-  monin_obukhov_inter.F90
+	fms_monin_obukhov.F90 \
+	fms_monin_obukhov_inter.F90
 
-monin_obukhov_mod.$(FC_MODEXT): monin_obukhov_inter.$(FC_MODEXT)
+fms_monin_obukhov_mod.$(FC_MODEXT): fms_monin_obukhov_inter.$(FC_MODEXT)
 
 # Mod files are built and then installed as headers.
 MODFILES = \
-  monin_obukhov_inter.$(FC_MODEXT) \
-  monin_obukhov_mod.$(FC_MODEXT)
+	fms_monin_obukhov_inter.$(FC_MODEXT) \
+	fms_monin_obukhov_mod.$(FC_MODEXT)
 nodist_include_HEADERS = $(MODFILES)
 BUILT_SOURCES = $(MODFILES)
 
-EXTRA_DIST = monin_obukhov.tech.ps
+EXTRA_DIST = fms_monin_obukhov.tech.ps
 
 include $(top_srcdir)/mkmods.mk
