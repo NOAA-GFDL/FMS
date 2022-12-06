@@ -187,7 +187,7 @@ list(APPEND fms_fortran_src_files
 
 # Collect FMS C source files
 list(APPEND fms_c_src_files
-  affinity/fms_affinity.c
+  affinity/affinity.c
   mosaic/create_xgrid.c
   mosaic/gradient_c2l.c
   mosaic/interp.c
