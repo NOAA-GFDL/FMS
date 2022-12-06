@@ -31,7 +31,7 @@ LDADD = $(top_builddir)/libFMS/libFMS.la
 # Build this test program.
 check_PROGRAMS = \
 test_axis_utils_r4 \
-test_axis_utils_r8 
+test_axis_utils_r8
 
 # This is the source code for the test.
 test_axis_utils_r4_SOURCES = \
