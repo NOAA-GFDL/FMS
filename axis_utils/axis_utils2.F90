@@ -25,12 +25,12 @@
 !> @addtogroup axis_utils2_mod
 !> @{
 module axis_utils2_mod
-  use mpp_mod,    only: mpp_error, FATAL, stdout
-  use fms_mod,    only: lowercase, uppercase, string_array_index, fms_error_handler
-  use fms2_io_mod, only: FmsNetcdfDomainFile_t, variable_att_exists, FmsNetcdfFile_t, &
-                         get_variable_num_dimensions, get_variable_attribute,  &
-                         get_variable_size, read_data, variable_exists
-  use platform_mod
+  use mpp_mod,      only: mpp_error, FATAL, stdout
+  use fms_mod,      only: lowercase, uppercase, string_array_index, fms_error_handler
+  use fms2_io_mod,  only: FmsNetcdfDomainFile_t, variable_att_exists, FmsNetcdfFile_t, &
+                          get_variable_num_dimensions, get_variable_attribute,  &
+                          get_variable_size, read_data, variable_exists
+  use platform_mod, only: r4_kind, r8_kind
 
   implicit none
 
@@ -212,7 +212,8 @@ contains
     get_axis_modulo_times = found_tbeg
   end function get_axis_modulo_times
 
-#include<axis_utils2.fh>
+#include<axis_utils2_r4.fh>
+#include<axis_utils2_r8.fh>
 
 end module axis_utils2_mod
 !> @}

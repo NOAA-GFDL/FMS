@@ -23,7 +23,7 @@
 # Ed Hartnett 2/22/19
 
 # Include .h and .mod files.
-AM_CPPFLAGS = -I$(top_srcdir)/include
+AM_CPPFLAGS = -I$(top_srcdir)/include -I$(top_srcdir)/axis_utils/include
 AM_FCFLAGS = $(FC_MODINC). $(FC_MODOUT)$(MODDIR)
 
 # Build this uninstalled convenience library.
@@ -32,7 +32,8 @@ noinst_LTLIBRARIES = libaxis_utils.la
 libaxis_utils_la_SOURCES = \
   axis_utils.F90 \
   axis_utils2.F90 \
-  axis_utils2.fh \
+  axis_utils2_r4.fh \
+  axis_utils_r8.fh \
   axis_utils2.inc
 
 axis_utils2.$(FC_MODEXT) : \
