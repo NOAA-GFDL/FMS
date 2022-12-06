@@ -223,7 +223,7 @@ subroutine netcdf_add_restart_variable_2d_wrap(fileobj, variable_name, vdata, &
                                                  !! available for netcdf4 files
 
   call netcdf_add_restart_variable(fileobj, variable_name, vdata, dimensions, is_optional, &
-                                   deflate_level=deflate_level, chunksizes=chunksizes) 
+                                   deflate_level=deflate_level, chunksizes=chunksizes)
 end subroutine netcdf_add_restart_variable_2d_wrap
 
 
@@ -434,7 +434,7 @@ subroutine netcdf_add_restart_variable_5d_wrap(fileobj, variable_name, vdata, &
   integer, intent(in), optional :: chunksizes(:) !< netcdf chunksize to use for this variable
                                                  !! This feature is only
                                                  !! available for netcdf4 files
-  
+
  call netcdf_add_restart_variable(fileobj, variable_name, vdata, dimensions, is_optional, &
                                    deflate_level=deflate_level, chunksizes=chunksizes)
 end subroutine netcdf_add_restart_variable_5d_wrap

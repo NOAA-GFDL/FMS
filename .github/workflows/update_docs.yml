@@ -1,8 +1,10 @@
 name: Generate and deploy documentation on GH pages
 
 # update on releases or when triggered manually(must have write access)
-on: [release, workflow_dispatch]
-
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
 jobs:
   update_docs:
     runs-on: ubuntu-latest
