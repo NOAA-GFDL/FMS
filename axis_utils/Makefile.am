@@ -32,13 +32,14 @@ noinst_LTLIBRARIES = libaxis_utils.la
 libaxis_utils_la_SOURCES = \
   axis_utils.F90 \
   axis_utils2.F90 \
-  axis_utils2_r4.fh \
-  axis_utils_r8.fh \
-  axis_utils2.inc
+  include/axis_utils2_r4.fh \
+  include/axis_utils_r8.fh \
+  include/axis_utils2.inc
 
 axis_utils2.$(FC_MODEXT) : \
-axis_utils2.fh \
-axis_utils2.inc
+include/axis_utils2_r4.fh \
+include/axis_utils2_r8.fh \
+include/axis_utils2.inc
 
 # Mod file depends on its o file, is built and then installed.
 nodist_include_HEADERS = axis_utils_mod.$(FC_MODEXT) axis_utils2_mod.$(FC_MODEXT)
