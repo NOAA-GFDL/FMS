@@ -28,7 +28,7 @@
 !> @addtogroup mosaic_mod
 !> @{
 module mosaic_mod
-#ifdef use_deprecated_io  
+#ifdef use_deprecated_io
 
 use mpp_mod,    only : mpp_error, FATAL, mpp_pe, mpp_root_pe
 use mpp_io_mod, only : MPP_MULTI

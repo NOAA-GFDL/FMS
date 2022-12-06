@@ -49,11 +49,11 @@ program test
  use           fms_mod, only: fms_init, fms_end, mpp_npes, check_nml_error, error_mesg, FATAL
 #ifdef use_deprecated_io
  use           fms_mod, only:   field_exist, field_size, file_exist
-#endif 
+#endif
  use  fms_affinity_mod, only: fms_affinity_set
  use       fms2_io_mod, only: read_data, variable_exists, get_variable_size, FmsNetcdfFile_t, open_file
  use     constants_mod, only: constants_init, pi
- use  time_manager_mod, only: time_type, set_calendar_type, set_date, NOLEAP, JULIAN, operator(+), & 
+ use  time_manager_mod, only: time_type, set_calendar_type, set_date, NOLEAP, JULIAN, operator(+), &
                               set_time, print_time
  use  diag_manager_mod, only: diag_manager_init, diag_manager_end, register_static_field, register_diag_field
  use  diag_manager_mod, only: send_data, diag_axis_init
@@ -136,8 +136,8 @@ program test
 
  read (input_nml_file, test_data_override_nml, iostat=io)
  ierr = check_nml_error(io, 'test_data_override_nml')
- 
- if (.not. open_file(fileobj_grid, grid_file, "read")) call error_mesg('test_data_override', & 
+
+ if (.not. open_file(fileobj_grid, grid_file, "read")) call error_mesg('test_data_override', &
  'The grid_file does not exist', FATAL)
  if(variable_exists(fileobj_grid, "x_T" ) ) then
     call get_variable_size(fileobj_grid, 'x_T', siz)
@@ -838,5 +838,5 @@ contains
 
   end subroutine define_cubic_mosaic
 
-!====================================================================================================================  
+!====================================================================================================================
  end program test

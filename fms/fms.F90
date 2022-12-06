@@ -326,10 +326,10 @@ contains
 subroutine fms_init (localcomm, alt_input_nml_path)
 
 !--- needed to output the version number of constants_mod to the logfile ---
- use constants_mod, only: constants_version=>version !pjp: PI not computed 
-#ifdef use_deprecated_io 
+ use constants_mod, only: constants_version=>version !pjp: PI not computed
+#ifdef use_deprecated_io
  use fms_io_mod,    only: fms_io_version
-#endif 
+#endif
 
  integer, intent(in), optional :: localcomm
  character(len=*), intent(in), optional :: alt_input_nml_path
@@ -354,14 +354,14 @@ subroutine fms_init (localcomm, alt_input_nml_path)
        endif
     endif
     call mpp_domains_init()
-#ifdef use_deprecated_io    
+#ifdef use_deprecated_io
     call fms_io_init()
-#endif    
+#endif
     !! write_version_number is inaccesible from fms_io_mod so write it from here if not written
     if(.not.fms_io_initialized) then
-#ifdef use_deprecated_io      
+#ifdef use_deprecated_io
       call write_version_number("FMS_IO_MOD", fms_io_version)
-#endif      
+#endif
       fms_io_initialized = .true.
     endif
     call fms2_io_init()
@@ -456,9 +456,9 @@ subroutine fms_end ( )
     if (.not.module_is_initialized) return  ! return silently
 !    call fms_io_exit  ! now called from coupler_end
     call grid_end
-#ifdef use_deprecated_io    
+#ifdef use_deprecated_io
     call mpp_io_exit
-#endif    
+#endif
     call mpp_domains_exit
     call mpp_exit
     module_is_initialized =.FALSE.

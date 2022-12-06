@@ -34,9 +34,9 @@ program test_mpp_sendrecv
   use mpp_mod, only : mpp_sync
   use mpp_mod, only : mpp_declare_pelist, mpp_set_current_pelist, mpp_set_stack_size
   use mpp_mod, only : mpp_send, mpp_recv, mpp_error, FATAL
-#ifdef use_deprecated_io  
+#ifdef use_deprecated_io
   use mpp_io_mod, only: mpp_flush
-#endif  
+#endif
   use mpp_mod, only : mpp_init_test_requests_allocated
   use platform_mod
 

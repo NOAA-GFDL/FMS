@@ -23,7 +23,7 @@
 !> @description Performs reads and writes on mosaic files using mpp_write
 !> and mpp_read using 32 and 64 bit reals
 program test_io_mosaic_R4_R8
-#ifdef use_deprecated_io   
+#ifdef use_deprecated_io
 
   use platform_mod
   use mpp_mod,         only : mpp_init, mpp_pe, mpp_npes, mpp_root_pe, mpp_error, mpp_sync_self

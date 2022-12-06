@@ -229,7 +229,7 @@ PROGRAM test
   USE fms_mod, ONLY: fms_init, fms_end, mpp_npes, check_nml_error
   USE fms_mod, ONLY: error_mesg, FATAL, WARNING, NOTE, stdlog, stdout
   USE mpp_mod, ONLY: input_nml_file
-#ifdef use_deprecated_io  
+#ifdef use_deprecated_io
   USE fms_io_mod, ONLY: fms_io_init, file_exist, open_file
   USE fms_io_mod, ONLY: fms_io_exit, set_filename_appendix
 #endif
@@ -375,7 +375,7 @@ SELECT CASE ( test_number ) ! Closes just before the CONTAINS block.
     endif
 
    !Initialize the mpp_io module.
-#ifdef use_deprecated_io    
+#ifdef use_deprecated_io
     if (debug) then
         call mpp_io_init(MPP_DEBUG)
     else
@@ -546,9 +546,9 @@ SELECT CASE ( test_number ) ! Closes just before the CONTAINS block.
 
   IF ( test_number == 16 ) THEN
      ! Test 16 tests the filename appendix
-#ifdef use_deprecated_io   
+#ifdef use_deprecated_io
      CALL set_filename_appendix('g01')
-#endif     
+#endif
   END IF
   id_dat1 = register_diag_field('test_diag_manager_mod', 'dat1', (/id_lon1,id_lat1,id_pfull/), Time, 'sample data','K')
   IF ( test_number == 18 ) THEN
