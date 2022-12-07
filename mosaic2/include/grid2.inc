@@ -30,6 +30,11 @@ subroutine GET_GRID_CELL_AREA_SG_(component, tile, cellarea, domain)
   integer :: nlon, nlat
   real(kind=FMS_MOS_KIND_), allocatable :: glonb(:,:), glatb(:,:)
 
+  real(kind=FMS_MOS_KIND_), parameter :: v180 = real(180.0,FMS_MOS_KIND_)
+  real(kind=FMS_MOS_KIND_) :: pi_loc
+
+  pi_loc = real(PI,FMS_MOS_KIND_)
+
   select case(grid_version)
   case(VERSION_GEOLON_T,VERSION_X_T)
      if (.not. grid_spec_exists) then
@@ -45,7 +50,7 @@ subroutine GET_GRID_CELL_AREA_SG_(component, tile, cellarea, domain)
              'Illegal component name "'//trim(component)//'": must be one of ATM, LND, or OCN')
      end select
      ! convert area to m2
-     cellarea = cellarea*real(4.0,FMS_MOS_KIND_)*real(PI,kind=FMS_MOS_KIND_)*radius**2
+     cellarea = cellarea*real(4.0,FMS_MOS_KIND_)*pi_loc*radius**2
   case(VERSION_OCN_MOSAIC_FILE, VERSION_GRIDFILES)
      if (present(domain)) then
         call mpp_get_compute_domain(domain,xsize=nlon,ysize=nlat)
@@ -55,11 +60,9 @@ subroutine GET_GRID_CELL_AREA_SG_(component, tile, cellarea, domain)
      allocate(glonb(nlon+1,nlat+1),glatb(nlon+1,nlat+1))
      call get_grid_cell_vertices(component, tile, glonb, glatb, domain)
      if (great_circle_algorithm) then
-        call calc_mosaic_grid_great_circle_area(glonb*real(pi,kind=FMS_MOS_KIND_)/real(180.0,FMS_MOS_KIND_), &
-                                                glatb*real(pi,kind=FMS_MOS_KIND_)/real(180.0,FMS_MOS_KIND_), cellarea)
+        call calc_mosaic_grid_great_circle_area(glonb*pi_loc/v180, glatb*pi_loc/v180, cellarea)
      else
-        call calc_mosaic_grid_area(glonb*real(pi,kind=FMS_MOS_KIND_)/real(180.0,FMS_MOS_KIND_), &
-                                   glatb*real(pi,kind=FMS_MOS_KIND_)/real(180.0,FMS_MOS_KIND_), cellarea)
+        call calc_mosaic_grid_area(glonb*pi_loc/v180, glatb*pi_loc/v180, cellarea)
      end if
      deallocate(glonb,glatb)
   end select
@@ -176,7 +179,7 @@ subroutine GET_GRID_COMP_AREA_SG_(component,tile,area,domain)
         end if
         call close_file(tilefileobj)
      end do
-     area(:,:) = 0.
+     area(:,:) = real(0.,FMS_MOS_KIND_)
      if (.not. grid_spec_exists) then
         call mpp_error(FATAL, 'grid2_mod(get_grid_comp_area_SG): grid_spec does not exist')
      end if
