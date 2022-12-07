@@ -39,7 +39,6 @@ fi
 cat <<_EOF > input.nml
 &xgrid_nml
   interp_method = 'second_order'
-  make_exchange_reproduce=.true.
 /
 
 &xgrid_test_nml
