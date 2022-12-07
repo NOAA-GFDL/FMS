@@ -33,7 +33,7 @@ libaxis_utils_la_SOURCES = \
   axis_utils.F90 \
   axis_utils2.F90 \
   include/axis_utils2_r4.fh \
-  include/axis_utils_r8.fh \
+  include/axis_utils2_r8.fh \
   include/axis_utils2.inc
 
 axis_utils2.$(FC_MODEXT) : \
