@@ -462,14 +462,14 @@ contains
   !============================================================================
 #define _DIMS 2
 #define drifters_push_XXX drifters_push_2
-#include "drifters_push.h"
+#include "drifters_push.fh"
 #undef _DIMS
 #undef drifters_push_XXX
 
   !============================================================================
 #define _DIMS 3
 #define drifters_push_XXX drifters_push_3
-#include "drifters_push.h"
+#include "drifters_push.fh"
 #undef _DIMS
 #undef drifters_push_XXX
 
@@ -506,14 +506,14 @@ contains
   !============================================================================
 #define _DIMS 2
 #define drifters_set_field_XXX drifters_set_field_2d
-#include "drifters_set_field.h"
+#include "drifters_set_field.fh"
 #undef _DIMS
 #undef drifters_set_field_XXX
 
   !============================================================================
 #define _DIMS 3
 #define drifters_set_field_XXX drifters_set_field_3d
-#include "drifters_set_field.h"
+#include "drifters_set_field.fh"
 #undef _DIMS
 #undef drifters_set_field_XXX
   !============================================================================
@@ -644,14 +644,14 @@ contains
   !============================================================================
 #define _DIMS 2
 #define drifters_compute_k_XXX drifters_computek2d
-#include "drifters_compute_k.h"
+#include "drifters_compute_k.fh"
 #undef _DIMS
 #undef drifters_compute_k_XXX
 
    !============================================================================
 #define _DIMS 3
 #define drifters_compute_k_XXX drifters_computek3d
-#include "drifters_compute_k.h"
+#include "drifters_compute_k.fh"
 #undef _DIMS
 #undef drifters_compute_k_XXX
 
