@@ -100,8 +100,7 @@
         call mpp_error(FATAL, "mosaic_mod: size(lon,2) and size(lat,2) should equal to size(area,2)+1")
 
      ! get_grid_area only accepts double precision data
-     call get_grid_area( nlon, nlat, &
-          real(lon,kind=r8_kind), real(lat,kind=r8_kind), real(area,kind=r8_kind))
+     call get_grid_area( nlon, nlat, lon, lat, area)
 
   end subroutine CALC_MOSAIC_GRID_AREA_
   !###############################################################################
@@ -128,8 +127,7 @@
         call mpp_error(FATAL, "mosaic_mod: size(lon,2) and size(lat,2) should equal to size(area,2)+1")
 
      ! get_grid_great_circle_area only accepts double precision data
-     call get_grid_great_circle_area( nlon, nlat, &
-          real(lon, kind=r8_kind), real(lat, kind=r8_kind), real(area,kind=r8_kind))
+     call get_grid_great_circle_area( nlon, nlat, lon, lat, area)
 
    end subroutine CALC_MOSAIC_GRID_GREAT_CIRCLE_AREA_
   !#####################################################################
