@@ -1186,7 +1186,7 @@ end function rarray_to_char
   subroutine read_input_nml(pelist_name_in, alt_input_nml_path)
 
 ! Include variable "version" to be written to log file.
-#include<file_version.fh>
+#include<file_version.h>
 
     character(len=*), intent(in), optional :: pelist_name_in
     character(len=*), intent(in), optional :: alt_input_nml_path
@@ -1409,7 +1409,7 @@ end function rarray_to_char
     integer, intent(in), optional,   dimension(:) :: PELIST
 
     ! Include variable "version" to be written to log file.
-#include<file_version.fh>
+#include<file_version.h>
 
     character(len=5) :: text
     logical :: file_exist
