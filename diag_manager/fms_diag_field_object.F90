@@ -17,7 +17,7 @@ use mpp_mod, only: fatal, note, warning, mpp_error, mpp_pe, mpp_root_pe
 use fms_diag_yaml_mod, only:  diagYamlFilesVar_type, get_diag_fields_entries, get_diag_files_id, &
   & find_diag_field, get_num_unique_fields
 use fms_diag_axis_object_mod, only: diagDomain_t, get_domain_and_domain_type, fmsDiagAxis_type, &
-  & fmsDiagAxisContainer_type
+  & fmsDiagAxisContainer_type, fmsDiagFullAxis_Type
 use time_manager_mod, ONLY: time_type
 !!!set_time, set_date, get_time, time_type, OPERATOR(>=), OPERATOR(>),&
 !!!       & OPERATOR(<), OPERATOR(==), OPERATOR(/=), OPERATOR(/), OPERATOR(+), ASSIGNMENT(=), get_date, &
@@ -65,6 +65,9 @@ type fmsDiagField_type
      integer, allocatable, private                    :: area, volume      !< The Area and Volume
      class(*), allocatable, private                   :: missing_value     !< The missing fill value
      class(*), allocatable, private                   :: data_RANGE(:)     !< The range of the variable data
+     class(*), allocatable, dimension(:,:,:,:), private :: data_buffer     !< Buffer for field data
+     logical, allocatable, private                    :: data_buffer_allocated !< True if the buffer has
+                                                                            !! been allocated
     contains
 !     procedure :: send_data => fms_send_data  !!TODO
 ! Get ID functions
@@ -74,6 +77,7 @@ type fmsDiagField_type
      procedure :: register => fms_register_diag_field_obj !! Merely initialize fields.
      procedure :: setID => set_diag_id
      procedure :: set_type => set_vartype
+     procedure :: set_data_buffer => set_data_buffer
      procedure :: add_attribute => diag_field_add_attribute
      procedure :: vartype_inq => what_is_vartype
 ! Check functions
@@ -359,7 +363,109 @@ subroutine set_vartype(objin , var)
           " r8, r4, i8, i4, or string.", warning)
  end select
 end subroutine set_vartype
+!> Allocates the data buffer in the field object.
+!! Adds the input data to the buffered data.
+subroutine set_data_buffer (this, input_data, diag_axis)
+  class (fmsDiagField_type) , intent(inout):: this !< The field object
+  class(*), dimension(:,:,:,:), intent(in) :: input_data !< The input array
+  class(fmsDiagAxisContainer_type),intent(in)   :: diag_axis(:)          !< Array of diag_axis
+!> Allocate the buffer if it is not allocated
+  if (.not.allocated(this%data_buffer_allocated)) this%data_buffer_allocated = .false.
+  if (.not.this%data_buffer_allocated) &
+    this%data_buffer_allocated =  allocate_data_buffer(this, input_data, diag_axis)
+  if (.not.this%data_buffer_allocated) &
+    call mpp_error ("set_data_buffer", "The data buffer for the field "//trim(this%varname)//" was unable to be "//&
+      "allocated.", FATAL)
 
+!> Buffer a copy of the data
+  select type (input_data)
+    type is (real(kind=r4_kind))
+      select type (db => this%data_buffer)
+        type is (real(kind=r4_kind))
+          db = input_data
+      end select
+    type is (real(kind=r8_kind))
+      select type (db => this%data_buffer)
+        type is (real(kind=r8_kind))
+          db = input_data
+      end select
+    type is (integer(kind=i4_kind))
+      select type (db => this%data_buffer)
+        type is (integer(kind=i4_kind))
+          db = input_data
+      end select
+    type is (integer(kind=i8_kind))
+      select type (db => this%data_buffer)
+        type is (integer(kind=i8_kind))
+          db = input_data
+      end select
+    class default
+        call mpp_error ("set_data_buffer", "The data input to set_data_buffer for "//&
+          trim(this%varname)//" does not match the buffer for the field object",  FATAL)
+  end select
+end subroutine set_data_buffer
+!> Allocates the global data buffer for a given field using a single thread. Returns true when the
+!! buffer is allocated
+logical function allocate_data_buffer(this, input_data, diag_axis)
+  class (fmsDiagField_type), target, intent(inout):: this !< The field object
+  class(*), dimension(:,:,:,:), intent(in) :: input_data !< The input array
+  class(fmsDiagAxisContainer_type),intent(in)   :: diag_axis(:) !< Array of diag_axis
+  integer :: naxes !< The number of axes in the field
+  integer, parameter :: ndims = 4
+  integer, dimension (ndims) :: length !< The length of an axis
+  integer :: a !< For looping through axes
+  integer, pointer :: axis_id !< The axis ID
+!!TODO:
+!! Use global data
+!! use is, ie, js, je, ks, ke, ls, le
+!! Use the axis to get the size
+!> Initialize the axis lengths to 1.  Any dimension that does not have an axis will have a length
+!! of 1.
+  length = 1
+!> Get the number of axes
+  naxes = size(this%axis_ids)
+!> Loop through the axes and get the length of the axes for this field
+  axis_loop: do a = 1,naxes
+    axis_id => this%axis_ids(a)
+    select type (axis => diag_axis(axis_id)%axis)
+      type is (fmsDiagFullAxis_type)
+        length(a) = axis%axis_length()
+    end select
+  enddo axis_loop
+!> On a single thread, allocate the data buffer to the correct kind and size
+!$omp single
+  select type (input_data)
+    type is (real(r4_kind))
+      if (.not.allocated(this%data_buffer)) allocate(real(kind=r4_kind) :: this%data_buffer( &
+                                                     length(1),&
+                                                     length(2),&
+                                                     length(3),&
+                                                     length(4)))
+    type is (real(r8_kind))
+      if (.not.allocated(this%data_buffer)) allocate(real(kind=r8_kind) :: this%data_buffer( &
+                                                      length(1),&
+                                                      length(2),&
+                                                      length(3),&
+                                                      length(4)))
+    type is (integer(i4_kind))
+      if (.not.allocated(this%data_buffer)) allocate(integer(kind=i4_kind) :: this%data_buffer( &
+                                                      length(1),&
+                                                      length(2),&
+                                                      length(3),&
+                                                      length(4)))
+    type is (integer(i8_kind))
+      if (.not.allocated(this%data_buffer)) allocate(integer(kind=i8_kind) :: this%data_buffer( &
+                                                      length(1),&
+                                                      length(2),&
+                                                      length(3),&
+                                                      length(4)))
+    class default
+      call mpp_error ("allocate_data_buffer","The data input to set_data_buffer for "//&
+        trim(this%varname)//" is not a supported type",  FATAL)
+  end select
+!$omp end single
+  allocate_data_buffer = allocated(this%data_buffer)
+end function allocate_data_buffer
 !> \brief Prints to the screen what type the diag variable is
 subroutine what_is_vartype(this)
  class (fmsDiagField_type) , intent(inout):: this
@@ -788,6 +894,45 @@ result(rslt)
 
   rslt = this%type_of_domain
 end function get_type_of_domain
+!> @brief Gets a fields data buffer
+!! @return a pointer to the data buffer
+function get_data_buffer (this) &
+result(rslt)
+  class (fmsDiagField_type), target, intent(in) :: this  !< diag field
+  class(*),dimension(:,:,:,:), pointer      :: rslt !< The field's data buffer
+ 
+  if (allocated(this%data_buffer)) then
+    rslt => this%data_buffer
+  else
+    rslt => null()
+  endif
+!  select type (db => this%data_buffer)
+!    type is (real(kind=r4_kind))
+!      allocate (real(kind=r4_kind) :: rslt(size(this%data_buffer,1), &
+!                                      size(this%data_buffer,2), &
+!                                      size(this%data_buffer,3), &
+!                                      size(this%data_buffer,4) ))
+!      rslt = this%data_buffer
+!    type is (real(kind=r8_kind))
+!      allocate (real(kind=r8_kind) :: rslt(size(this%data_buffer,1), &
+!                                      size(this%data_buffer,2), &
+!                                      size(this%data_buffer,3), &
+!                                      size(this%data_buffer,4) ))
+!      rslt = this%data_buffer
+!    type is (integer(kind=i4_kind))
+!      allocate (integer(kind=i4_kind) :: rslt(size(this%data_buffer,1), &
+!                                      size(this%data_buffer,2), &
+!                                      size(this%data_buffer,3), &
+!                                      size(this%data_buffer,4) ))
+!      rslt = this%data_buffer
+!    type is (integer(kind=i8_kind))
+!      allocate (integer(kind=i8_kind) :: rslt(size(this%data_buffer,1), &
+!                                      size(this%data_buffer,2), &
+!                                      size(this%data_buffer,3), &
+!                                      size(this%data_buffer,4) ))
+!      rslt = this%data_buffer
+!  end select
+end function get_data_buffer 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!! Allocation checks
 

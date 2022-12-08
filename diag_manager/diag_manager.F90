@@ -1616,7 +1616,7 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
     CHARACTER(len=128) :: error_string, error_string1
 
     REAL, ALLOCATABLE, DIMENSION(:,:,:) :: field_out !< Local copy of field
-
+    class(*), allocatable, dimension(:,:,:,:) :: field_modern !< 4d local copy 
     ! If diag_field_id is < 0 it means that this field is not registered, simply return
     IF ( diag_field_id <= 0 ) THEN
        send_data_3d = .FALSE.
@@ -1649,13 +1649,51 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
     SELECT TYPE (field)
     TYPE IS (real(kind=r4_kind))
        field_out = field
+       if (use_modern_diag) then
+         allocate(real(kind=r4_kind) :: field_modern(SIZE(field,1),SIZE(field,2),SIZE(field,3),1))
+         select type (field_modern) ; type is (real(kind=r4_kind))
+           field_modern(:,:,:,1) = field
+         end select
+       endif
     TYPE IS (real(kind=r8_kind))
        field_out = real(field)
+       if (use_modern_diag) then
+         allocate(real(kind=r8_kind) :: field_modern(SIZE(field,1),SIZE(field,2),SIZE(field,3),1))
+         select type (field_modern) ; type is (real(kind=r8_kind))
+           field_modern(:,:,:,1) = field
+         end select
+       endif
+    TYPE IS (integer(kind=i4_kind))
+       if (use_modern_diag) then
+         allocate(integer(kind=i4_kind) :: field_modern(SIZE(field,1),SIZE(field,2),SIZE(field,3),1))
+         select type (field_modern) ; type is (integer(kind=i4_kind))
+           field_modern(:,:,:,1) = field
+         end select
+       else
+         CALL error_mesg ('diag_manager_mod::send_data_3d',&
+            & 'The field is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)
+       endif
+    TYPE IS (integer(kind=i8_kind))
+       if (use_modern_diag) then
+         allocate(integer(kind=i8_kind) :: field_modern(SIZE(field,1),SIZE(field,2),SIZE(field,3),1))
+         select type (field_modern) ; type is (integer(kind=i8_kind))
+           field_modern(:,:,:,1) = field
+         end select
+       else
+         CALL error_mesg ('diag_manager_mod::send_data_3d',&
+            & 'The field is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)
+       endif
     CLASS DEFAULT
        CALL error_mesg ('diag_manager_mod::send_data_3d',&
-            & 'The field is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)
+            & 'The field is not one of the supported types (real(kind=4) or real(kind=8)). '//&
+            & 'If using an integer, please set use_modern_diag=.t. in the diag_manager_nml.', FATAL)
     END SELECT
-
+  ! Split old and modern2023 here
+  modern_if: iF (use_modern_diag) then
+    send_data_3d = fms_diag_object%fms_diag_accept_data(diag_field_id, field_modern, time, is_in, js_in, ks_in, &
+             & mask, rmask, ie_in, je_in, ke_in, weight, err_msg)
+    deallocate (field_modern)
+  elSE ! modern_if
     ! oor_mask is only used for checking out of range values.
     ALLOCATE(oor_mask(SIZE(field,1),SIZE(field,2),SIZE(field,3)), STAT=status)
     IF ( status .NE. 0 ) THEN
@@ -3248,6 +3286,7 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
 
     DEALLOCATE(field_out)
     DEALLOCATE(oor_mask)
+  endIF modern_if
   END FUNCTION send_data_3d
 
   !> @return true if send is successful
