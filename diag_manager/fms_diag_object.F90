@@ -429,7 +429,7 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
 #endif
 end function fms_diag_axis_init
 
-!> Accepts data from the send_data functions.  If this is in an openmp region with more than 
+!> Accepts data from the send_data functions.  If this is in an openmp region with more than
 !! one thread, the data is buffered in the field object and processed later.  If only a single thread
 !! is being used, then the processing can be done and stored in the buffer object.  The hope is that
 !! the increase in memory footprint related to buffering can be handled by the shared memory of the
@@ -473,11 +473,11 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
   else
 !!TODO: Loop through fields and do averages/math functions
     fms_diag_accept_data = .TRUE.
-    return 
+    return
   end if main_if
 !> Return false if nothing is done
   fms_diag_accept_data = .FALSE.
-  return 
+  return
 #endif
 end function fms_diag_accept_data
 !! TODO: This entire routine

@@ -1616,7 +1616,7 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
     CHARACTER(len=128) :: error_string, error_string1
 
     REAL, ALLOCATABLE, DIMENSION(:,:,:) :: field_out !< Local copy of field
-    class(*), allocatable, dimension(:,:,:,:) :: field_modern !< 4d local copy 
+    class(*), allocatable, dimension(:,:,:,:) :: field_modern !< 4d local copy
     ! If diag_field_id is < 0 it means that this field is not registered, simply return
     IF ( diag_field_id <= 0 ) THEN
        send_data_3d = .FALSE.
@@ -3953,7 +3953,7 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
     END IF
 
     if (use_modern_diag) then
-      CALL fms_diag_object%init(diag_subset_output) 
+      CALL fms_diag_object%init(diag_subset_output)
     endif
    if (.not. use_modern_diag) then
      CALL parse_diag_table(DIAG_SUBSET=diag_subset_output, ISTAT=mystat, ERR_MSG=err_msg_local)

@@ -900,7 +900,7 @@ function get_data_buffer (this) &
 result(rslt)
   class (fmsDiagField_type), target, intent(in) :: this  !< diag field
   class(*),dimension(:,:,:,:), pointer      :: rslt !< The field's data buffer
- 
+
   if (allocated(this%data_buffer)) then
     rslt => this%data_buffer
   else
@@ -932,7 +932,7 @@ result(rslt)
 !                                      size(this%data_buffer,4) ))
 !      rslt = this%data_buffer
 !  end select
-end function get_data_buffer 
+end function get_data_buffer
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!! Allocation checks
 
