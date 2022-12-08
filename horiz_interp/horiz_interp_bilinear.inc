@@ -39,8 +39,8 @@
     src_is_modulo = .true.
     if (present(src_modulo)) src_is_modulo = src_modulo
 
-    hpi = 0.5*pi
-    tpi = 4.0*hpi
+    hpi = real(0.5, FMS_HI_KIND) * real(pi, FMS_HI_KIND)
+    tpi = real(4.0, FMS_HI_KIND)*hpi
     glt_min = hpi
     glt_max = -hpi
     gln_min = tpi
@@ -205,7 +205,7 @@
     real(FMS_HI_KIND)                                   :: epsln2
     logical                                :: use_new_search, no_crash
 
-    tpi = 2.0*pi
+    tpi = real(2.0, FMS_HI_KIND) * real(pi, FMS_HI_KIND)
 
     warns = 0
     if(present(verbose)) warns = verbose
@@ -316,7 +316,7 @@
           a  = b2*c1-b1*c2
           b  = a1*b2-a2*b1+c1*d2-c2*d1+c2*lon-c1*lat
           c  = a2*lon-a1*lat+a1*d2-a2*d1
-          quadra = b*b-4.*a*c
+          quadra = b*b-real(4., FMS_HI_KIND)*a*c
           if(abs(quadra) < epsln) quadra = 0.0
           if(quadra < 0.0) call mpp_error(FATAL, &
                "horiz_interp_bilinear_mod: No solution existed for this quadratic equation")
@@ -325,18 +325,18 @@
                   "horiz_interp_bilinear_mod: no unique solution existed for this linear equation")
              y = -c/b
           else
-             y1 = 0.5*(-b+sqrt(quadra))/a
-             y2 = 0.5*(-b-sqrt(quadra))/a
-             if(abs(y1) < epsln2) y1 = 0.0
-             if(abs(y2) < epsln2) y2 = 0.0
-             if(abs(1.0-y1) < epsln2) y1 = 1.0
-             if(abs(1.0-y2) < epsln2) y2 = 1.0
+             y1 = real(0.5, FMS_HI_KIND)*(-b+sqrt(quadra))/a
+             y2 = real(0.5, FMS_HI_KIND)*(-b-sqrt(quadra))/a
+             if(abs(y1) < epsln2) y1 = real(0.0, FMS_HI_KIND)
+             if(abs(y2) < epsln2) y2 = real(0.0, FMS_HI_KIND)
+             if(abs(1.0-y1) < epsln2) y1 = real(1.0, FMS_HI_KIND)
+             if(abs(1.0-y2) < epsln2) y2 = real(1.0, FMS_HI_KIND)
              num_solution = 0
-             if(y1 >= 0.0 .and. y1 <= 1.0) then
+             if(y1 >= real(0.0, FMS_HI_KIND) .and. y1 <= real(1.0, FMS_HI_KIND)) then
                 y = y1
                 num_solution = num_solution +1
              endif
-             if(y2 >= 0.0 .and. y2 <= 1.0) then
+             if(y2 >= real(0.0, FMS_HI_KIND) .and. y2 <= real(1.0, FMS_HI_KIND)) then
                 y = y2
                 num_solution = num_solution + 1
              endif
@@ -348,21 +348,22 @@
            endif
            if(abs(a1+c1*y) < epsln) call mpp_error(FATAL, &
                "horiz_interp_bilinear_mod: the denomenator is 0")
-           if(abs(y) < epsln2) y = 0.0
-           if(abs(1.0-y) < epsln2) y = 1.0
+           if(abs(y) < epsln2) y = real(0.0, FMS_HI_KIND)
+           if(abs(1.0-y) < epsln2) y = real(1.0, FMS_HI_KIND)
            x = (lon-b1*y-d1)/(a1+c1*y)
-           if(abs(x) < epsln2) x = 0.0
-           if(abs(1.0-x) < epsln2) x = 1.0
+           if(abs(x) < epsln2) x = real(0.0, FMS_HI_KIND)
+           if(abs(1.0-x) < epsln2) x = real(1.0, FMS_HI_KIND)
            ! x and y should be between 0 and 1.
            !! Added for ECDA
            if(use_new_search) then
-             if (x < 0.0) x = 0.0 ! snz
-             if (y < 0.0) y = 0.0 ! snz
-             if (x > 1.0) x = 1.0
-             if (y > 1.0) y = 1.0
+             if (x < 0.0) x = real(0.0, FMS_HI_KIND) ! snz
+             if (y < 0.0) y = real(0.0, FMS_HI_KIND) ! snz
+             if (x > 1.0) x = real(1.0, FMS_HI_KIND)
+             if (y > 1.0) y = real(1.0, FMS_HI_KIND)
            endif
-           if( x>1. .or. x<0. .or. y>1. .or. y < 0.) call mpp_error(FATAL, &
-                "horiz_interp_bilinear_mod: weight should be between 0 and 1")
+           if( x>real(1., FMS_HI_KIND) .or. x< real(0., FMS_HI_KIND) .or. y>real(1.,FMS_HI_KIND) .or. &
+               y < real(0., FMS_HI_KIND)) &
+                  call mpp_error(FATAL, "horiz_interp_bilinear_mod: weight should be between 0 and 1")
            Interp % HI_KIND_TYPE % wti(m,n,1)=1.0-x; Interp % HI_KIND_TYPE % wti(m,n,2)=x
            Interp % HI_KIND_TYPE % wtj(m,n,1)=1.0-y; Interp % HI_KIND_TYPE % wtj(m,n,2)=y
        enddo
@@ -382,9 +383,9 @@
     integer                                :: max_step, n, m, l, i, j, ip1, jp1, step
     integer                                :: is, js, jstart, jend, istart, iend, npts
     integer, allocatable, dimension(:)     :: ilon, jlat
-    real(FMS_HI_KIND)                                   :: lon_min, lon_max, lon, lat, tpi
+    real(FMS_HI_KIND)                      :: lon_min, lon_max, lon, lat, tpi
     logical                                :: found
-    real(FMS_HI_KIND)                                   :: lon1, lat1, lon2, lat2, lon3, lat3, lon4, lat4
+    real(FMS_HI_KIND)                      :: lon1, lat1, lon2, lat2, lon3, lat3, lon4, lat4
 
     tpi = 2.0*pi
     nlon_in  = size(lon_in,1) ; nlat_in  = size(lat_in,2)
@@ -665,7 +666,7 @@
 
     integer, parameter :: step_div=8
 
-    tpi = 2.0*pi
+    tpi = real(2.0, FMS_HI_KIND)* real(pi, FMS_HI_KIND)
     nlon_in  = size(lon_in,1) ; nlat_in  = size(lat_in,2)
     nlon_out = size(lon_out,1); nlat_out = size(lon_out,2)
 
@@ -903,7 +904,7 @@
     if(present(mask_in)) then
        mask = mask_in
     else
-       mask = 1.0
+       mask = real(1.0, FMS_HI_KIND)
     endif
 
     if (present(verbose)) then
@@ -953,28 +954,28 @@
              if(data_in(is,js) == missing_value) then
                 num_missing = num_missing+1
                 is_missing(1) = .true.
-                if(wtw .GE. 0.5 .AND. wts .GE. 0.5) set_to_missing = .true.
+                if(wtw .GE. real(0.5, FMS_HI_KIND) .AND. wts .GE. real(0.5, FMS_HI_KIND)) set_to_missing = .true.
              endif
 
              if(data_in(ie,js) == missing_value) then
                 num_missing = num_missing+1
                 is_missing(2) = .true.
-                if(wte .GE. 0.5 .AND. wts .GE. 0.5) set_to_missing = .true.
+                if(wte .GE. real(0.5, FMS_HI_KIND) .AND. wts .GE. real(0.5, FMS_HI_KIND)) set_to_missing = .true.
              endif
              if(data_in(ie,je) == missing_value) then
                 num_missing = num_missing+1
                 is_missing(3) = .true.
-                if(wte .GE. 0.5 .AND. wtn .GE. 0.5) set_to_missing = .true.
+                if(wte .GE. real(0.5, FMS_HI_KIND) .AND. wtn .GE. real(0.5, FMS_HI_KIND)) set_to_missing = .true.
              endif
              if(data_in(is,je) == missing_value) then
                 num_missing = num_missing+1
                 is_missing(4) = .true.
-                if(wtw .GE. 0.5 .AND. wtn .GE. 0.5) set_to_missing = .true.
+                if(wtw .GE. real(0.5, FMS_HI_KIND) .AND. wtn .GE. real(0.5, FMS_HI_KIND)) set_to_missing = .true.
              endif
 
              if( num_missing == 4 .OR. set_to_missing ) then
                 data_out(m,n) = missing_value
-                if(present(mask_out)) mask_out(m,n) = 0.0
+                if(present(mask_out)) mask_out(m,n) = real(0.0, FMS_HI_KIND)
                  cycle
              else if(num_missing == 0) then
                 f1 = data_in(is,js)
@@ -993,90 +994,90 @@
                 else if(.not. is_missing(4) ) then
                    data_out(m,n) = data_in(is,je)
                 endif
-                if(present(mask_out) ) mask_out(m,n) = 1.0
+                if(present(mask_out) ) mask_out(m,n) = real(1.0, FMS_HI_KIND)
                 cycle
              else   !--- one or two missing value
                 if( num_missing == 1) then
                    if( is_missing(1) .OR. is_missing(3) ) then
-                      middle = 0.5*(data_in(ie,js)+data_in(is,je))
+                      middle = real(0.5, FMS_HI_KIND)*(data_in(ie,js)+data_in(is,je))
                    else
-                      middle = 0.5*(data_in(is,js)+data_in(ie,je))
+                      middle = real(0.5, FMS_HI_KIND)*(data_in(is,js)+data_in(ie,je))
                    endif
                 else ! num_missing = 2
                    if( is_missing(1) .AND. is_missing(2) ) then
-                      middle = 0.5*(data_in(ie,je)+data_in(is,je))
+                      middle = real(0.5, FMS_HI_KIND)*(data_in(ie,je)+data_in(is,je))
                    else if( is_missing(1) .AND. is_missing(3) ) then
-                      middle = 0.5*(data_in(ie,js)+data_in(is,je))
+                      middle = real(0.5, FMS_HI_KIND)*(data_in(ie,js)+data_in(is,je))
                    else if( is_missing(1) .AND. is_missing(4) ) then
-                      middle = 0.5*(data_in(ie,js)+data_in(ie,je))
+                      middle = real(0.5, FMS_HI_KIND)*(data_in(ie,js)+data_in(ie,je))
                    else if( is_missing(2) .AND. is_missing(3) ) then
-                      middle = 0.5*(data_in(is,js)+data_in(is,je))
+                      middle = real(0.5, FMS_HI_KIND)*(data_in(is,js)+data_in(is,je))
                    else if( is_missing(2) .AND. is_missing(4) ) then
-                      middle = 0.5*(data_in(is,js)+data_in(ie,je))
+                      middle = real(0.5, FMS_HI_KIND)*(data_in(is,js)+data_in(ie,je))
                    else if( is_missing(3) .AND. is_missing(4) ) then
-                      middle = 0.5*(data_in(is,js)+data_in(ie,js))
+                      middle = real(0.5, FMS_HI_KIND)*(data_in(is,js)+data_in(ie,js))
                    endif
                 endif
 
                 if( wtw .GE. 0.5 .AND. wts .GE. 0.5 ) then  ! zone 1
-                   w = 2.0*(wtw-0.5)
-                   s = 2.0*(wts-0.5)
+                   w = real(2.0, FMS_HI_KIND)*(wtw-real(0.5, FMS_HI_KIND))
+                   s = real(2.0, FMS_HI_KIND)*(wts-real(0.5, FMS_HI_KIND))
                    f1 = data_in(is,js)
                    if(is_missing(2)) then
                       f2 = f1
                    else
-                      f2 = 0.5*(data_in(is,js)+data_in(ie,js))
+                      f2 = real(0.5, FMS_HI_KIND)*(data_in(is,js)+data_in(ie,js))
                    endif
                    f3 = middle
                    if(is_missing(4)) then
                       f4 = f1
                    else
-                      f4 = 0.5*(data_in(is,js)+data_in(is,je))
+                      f4 = real(0.5, FMS_HI_KIND)*(data_in(is,js)+data_in(is,je))
                    endif
-                else if( wte .GE. 0.5 .AND. wts .GE. 0.5 ) then  ! zone 2
-                   w = 2.0*(1.0-wte)
-                   s = 2.0*(wts-0.5)
+                else if( wte .GE. real(0.5, FMS_HI_KIND) .AND. wts .GE. real(0.5, FMS_HI_KIND) ) then  ! zone 2
+                   w = real(2.0, FMS_HI_KIND)*(real(1.0, FMS_HI_KIND)-wte)
+                   s = real(2.0, FMS_HI_KIND)*(wts-real(0.5, FMS_HI_KIND))
                    f2 = data_in(ie,js)
                    if(is_missing(1)) then
                       f1 = f2
                    else
-                      f1 = 0.5*(data_in(is,js)+data_in(ie,js))
+                      f1 = real(0.5, FMS_HI_KIND)*(data_in(is,js)+data_in(ie,js))
                    endif
                    f4 = middle
                    if(is_missing(3)) then
                       f3 = f2
                    else
-                      f3 = 0.5*(data_in(ie,js)+data_in(ie,je))
+                      f3 = real(0.5, FMS_HI_KIND)*(data_in(ie,js)+data_in(ie,je))
                    endif
-                else if( wte .GE. 0.5 .AND. wtn .GE. 0.5 ) then  ! zone 3
-                   w = 2.0*(1.0-wte)
-                   s = 2.0*(1.0-wtn)
+                else if( wte .GE. real(0.5, FMS_HI_KIND) .AND. wtn .GE. real(0.5, FMS_HI_KIND) ) then  ! zone 3
+                   w = real(2.0, FMS_HI_KIND)*(real(1.0, FMS_HI_KIND)-wte)
+                   s = real(2.0, FMS_HI_KIND)*(real(1.0, FMS_HI_KIND)-wtn)
                    f3 = data_in(ie,je)
                    if(is_missing(2)) then
                       f2 = f3
                    else
-                      f2 = 0.5*(data_in(ie,js)+data_in(ie,je))
+                      f2 = real(0.5, FMS_HI_KIND)*(data_in(ie,js)+data_in(ie,je))
                    endif
                    f1 = middle
                    if(is_missing(4)) then
                       f4 = f3
                    else
-                      f4 = 0.5*(data_in(ie,je)+data_in(is,je))
+                      f4 = real(0.5, FMS_HI_KIND)*(data_in(ie,je)+data_in(is,je))
                    endif
-                else if( wtw .GE. 0.5 .AND. wtn .GE. 0.5 ) then  ! zone 4
-                   w = 2.0*(wtw-0.5)
-                   s = 2.0*(1.0-wtn)
+                else if( wtw .GE. real(0.5, FMS_HI_KIND) .AND. wtn .GE. real(0.5, FMS_HI_KIND) ) then  ! zone 4
+                   w = real(2.0, FMS_HI_KIND)*(wtw-real(0.5, FMS_HI_KIND))
+                   s = real(2.0, FMS_HI_KIND)*(real(1.0, FMS_HI_KIND)-wtn)
                    f4 = data_in(is,je)
                    if(is_missing(1)) then
                       f1 = f4
                    else
-                      f1 = 0.5*(data_in(is,js)+data_in(is,je))
+                      f1 = real(0.5, FMS_HI_KIND)*(data_in(is,js)+data_in(is,je))
                    endif
                    f2 = middle
                    if(is_missing(3)) then
                       f3 = f4
                    else
-                      f3 = 0.5*(data_in(ie,je)+data_in(is,je))
+                      f3 = real(0.5, FMS_HI_KIND)*(data_in(ie,je)+data_in(is,je))
                    endif
                 else
                    call mpp_error(FATAL, &
@@ -1085,7 +1086,7 @@
              endif
 
              data_out(m,n) = f3 + (f4-f3)*w + (f2-f3)*s + ((f1-f2)+(f3-f4))*w*s
-            if(present(mask_out)) mask_out(m,n) = 1.0
+            if(present(mask_out)) mask_out(m,n) = real(1.0, FMS_HI_KIND)
           enddo
        enddo
     else
@@ -1102,19 +1103,19 @@
                 num_missing = 0
                 if(data_in(is,js) == missing_value) then
                    num_missing = num_missing+1
-                   mask(is,js) = 0.0
+                   mask(is,js) = real(0.0, FMS_HI_KIND)
                 endif
                 if(data_in(ie,js) == missing_value) then
                    num_missing = num_missing+1
-                   mask(ie,js) = 0.0
+                   mask(ie,js) = real(0.0, FMS_HI_KIND)
                 endif
                 if(data_in(ie,je) == missing_value) then
                    num_missing = num_missing+1
-                   mask(ie,je) = 0.0
+                   mask(ie,je) = real(0.0, FMS_HI_KIND)
                 endif
                 if(data_in(is,je) == missing_value) then
                    num_missing = num_missing+1
-                   mask(is,je) = 0.0
+                   mask(is,je) = real(0.0, FMS_HI_KIND)
                 endif
              endif
 
@@ -1125,18 +1126,18 @@
              wtsum  = mask(is,js)*wtw*wts + mask(ie,js)*wte*wts  &
                   + mask(ie,je)*wte*wtn + mask(is,je)*wtw*wtn
 
-             if(.not. present(mask_in) .and. .not. present(missing_value)) wtsum = 1.0
+             if(.not. present(mask_in) .and. .not. present(missing_value)) wtsum = real(1.0, FMS_HI_KIND)
 
              if(num_missing .gt. max_missing ) then
                 data_out(m,n) = missing_value
-                if(present(mask_out)) mask_out(m,n) = 0.0
+                if(present(mask_out)) mask_out(m,n) = real(0.0, FMS_HI_KIND)
              else if(wtsum .lt. epsln) then
                 if(present(missing_value)) then
                    data_out(m,n) = missing_value
                 else
-                   data_out(m,n) = 0.0
+                   data_out(m,n) = real(0.0, FMS_HI_KIND)
                 endif
-                if(present(mask_out)) mask_out(m,n) = 0.0
+                if(present(mask_out)) mask_out(m,n) = real(0.0, FMS_HI_KIND)
              else
                 data_out(m,n) = dwtsum/wtsum
                 if(present(mask_out)) mask_out(m,n) = wtsum

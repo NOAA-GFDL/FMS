@@ -101,7 +101,7 @@
       do i=1,nlon_in
         ip1=min(i+1,nlon_in)
         im1=max(i-1,1)
-        Interp%HI_KIND_TYPE%wti(i,j,1) = 1./(Interp%HI_KIND_TYPE%lon_in(ip1)-Interp%HI_KIND_TYPE%lon_in(im1))
+        Interp%HI_KIND_TYPE%wti(i,j,1) = real(1.0, FMS_HI_KIND)/(Interp%HI_KIND_TYPE%lon_in(ip1)-Interp%HI_KIND_TYPE%lon_in(im1))
       enddo
     enddo
 
@@ -114,7 +114,7 @@
         jp1=min(j+1,nlat_in)
         jm1=max(j-1,1)
         do i=1,nlon_in
-          Interp%HI_KIND_TYPE%wti(i,j,2) = 1./(Interp%HI_KIND_TYPE%lat_in(jp1)-Interp%HI_KIND_TYPE%lat_in(jm1))
+          Interp%HI_KIND_TYPE%wti(i,j,2) = real(1.0, FMS_HI_KIND)/(Interp%HI_KIND_TYPE%lat_in(jp1)-Interp%HI_KIND_TYPE%lat_in(jm1))
         enddo
       enddo
 
@@ -128,7 +128,7 @@
         do i=1,nlon_in
           ip1=min(i+1,nlon_in)
           im1=max(i-1,1)
-          Interp%HI_KIND_TYPE%wti(i,j,3) = 1./((Interp%HI_KIND_TYPE%lon_in(ip1)-Interp%HI_KIND_TYPE%lon_in(im1)) * &
+          Interp%HI_KIND_TYPE%wti(i,j,3) = real(1.0, FMS_HI_KIND)/((Interp%HI_KIND_TYPE%lon_in(ip1)-Interp%HI_KIND_TYPE%lon_in(im1)) * &
                                                 (Interp%HI_KIND_TYPE%lat_in(jp1)-Interp%HI_KIND_TYPE%lat_in(jm1)))
         enddo
       enddo
@@ -255,7 +255,7 @@
       do i=1,nlon_in
         ip1=min(i+1,nlon_in)
         im1=max(i-1,1)
-        Interp%HI_KIND_TYPE%wti(i,j,1) = 1./(lon_in(ip1)-lon_in(im1))
+        Interp%HI_KIND_TYPE%wti(i,j,1) = real(1.0, FMS_HI_KIND)/(lon_in(ip1)-lon_in(im1))
       enddo
     enddo
 
@@ -268,7 +268,7 @@
         jp1=min(j+1,nlat_in)
         jm1=max(j-1,1)
         do i=1,nlon_in
-          Interp%HI_KIND_TYPE%wti(i,j,2) = 1./(lat_in(jp1)-lat_in(jm1))
+          Interp%HI_KIND_TYPE%wti(i,j,2) = real(1.0, FMS_HI_KIND)/(lat_in(jp1)-lat_in(jm1))
         enddo
       enddo
 
@@ -282,7 +282,7 @@
         do i=1,nlon_in
           ip1=min(i+1,nlon_in)
           im1=max(i-1,1)
-          Interp%HI_KIND_TYPE%wti(i,j,3) = 1./((lon_in(ip1)-lon_in(im1))*(lat_in(jp1)-lat_in(jm1)))
+          Interp%HI_KIND_TYPE%wti(i,j,3) = real(1.0, FMS_HI_KIND)/((lon_in(ip1)-lon_in(im1))*(lat_in(jp1)-lat_in(jm1)))
         enddo
       enddo
 !---------------------------------------------------------------------------
@@ -327,7 +327,7 @@
           Interp%i_lon(i,j,1) = icl
           Interp%i_lon(i,j,2) = icu
           if(jcl == jcu) then
-             Interp%HI_KIND_TYPE%rat_y(i,j) = 0.0
+             Interp%HI_KIND_TYPE%rat_y(i,j) = real(0.0, FMS_HI_KIND)
           else
              Interp%HI_KIND_TYPE%rat_y(i,j) = (yz - Interp%HI_KIND_TYPE%lat_in(jcl))/(Interp%HI_KIND_TYPE%lat_in(jcu) &
                                              & - Interp%HI_KIND_TYPE%lat_in(jcl))
@@ -370,7 +370,7 @@
 !    if ( present(fill) ) fill_in = fill
 !   use dfc_x and dfc_y as workspace
 !    if ( fill_in ) call fill_xy(fc(ics:ice,jcs:jce), ics, ice, jcs, jce, maxpass=2)
-!    where ( data_in .le. missing ) data_in(:,:) = 0.
+!    where ( data_in .le. missing ) data_in(:,:) = real(0.0, FMS_HI_KIND)
 !!
     do j=1, Interp%nlat_dst
       do i=1, Interp%nlon_dst
@@ -424,7 +424,7 @@
 
         call BCUINT(y,y1,y2,y12,xcl,xcu,ycl,ycu,xz,yz,val,val1,val2)
         data_out   (i,j) = val
-        if(present(mask_out)) mask_out(i,j) = 1.
+        if(present(mask_out)) mask_out(i,j) = real(1.0, FMS_HI_KIND)
 !!        dff_x(i,j) = val1
 !!        dff_y(i,j) = val2
       enddo
@@ -459,19 +459,25 @@
    subroutine BCUCOF(y,y1,y2,y12,d1,d2,c)
       real(FMS_HI_KIND) d1,d2,c(4,4),y(4),y1(4),y12(4),y2(4)
       integer i,j,k,l
-      real(FMS_HI_KIND) d1d2,xx,cl(16),wt(16,16),x(16)
-      save wt
-      data wt/1., 0., -3., 2., 4*0., -3., 0., 9., -6., 2., 0., -6., 4., 8*0., &
-              3., 0., -9., 6., -2., 0., 6., -4., 10*0., 9., -6., 2*0., -6., &
-              4., 2*0., 3., -2., 6*0., -9., 6., 2*0., 6., -4., 4*0., 1., 0., &
-              -3., 2., -2., 0., 6., -4., 1., 0., -3., 2., 8*0., -1., 0., 3., &
-              -2., 1., 0., -3., 2., 10*0., -3., 2., 2*0., 3., -2., 6*0., 3., &
-              -2., 2*0., -6., 4., 2*0., 3., -2., 0., 1., -2., 1., 5*0., -3., &
-              6., -3., 0., 2., -4., 2., 9*0., 3., -6., 3., 0., -2., 4., -2., &
-              10*0., -3., 3., 2*0., 2., -2., 2*0., -1., 1., 6*0., 3., -3., &
-              2*0., -2., 2., 5*0., 1., -2., 1., 0., -2., 4., -2., 0., 1., -2., &
-              1., 9*0., -1., 2., -1., 0., 1., -2., 1., 10*0., 1., -1., 2*0., &
-              -1., 1., 6*0., -1., 1., 2*0., 2., -2., 2*0., -1., 1./
+      real(FMS_HI_KIND) d1d2,xx,cl(16),x(16)
+      !! previous set by a data block, zeros were added to end of the array
+      real(FMS_HI_KIND), save, dimension(16,16) :: wt = &
+             (/(/1., 0., -3., 2., 4*0., -3., 0., 9., -6., 2., 0., -6., 4., 8*0., 3., 0./), &
+               (/-9., 6., -2., 0., 6., -4., 10*0., 9., -6., 2*0., -6., 4., 2*0., 3., -2., 6*0. /), &
+               (/ -9., 6., 2*0., 6., -4., 4*0., 1., 0., -3., 2., -2., 0., 6., -4., 1., 0. /), &
+               (/ -3., 2., 8*0., -1., 0., 3., -2., 1., 0., -3., 2., 10*0., -3., 2., 2*0., 3./), &
+               (/ -2., 6*0., 3., -2., 2*0., -6., 4., 2*0., 3., -2., 0., 1., -2., 1., 5*0., -3. /), &
+               (/ 6., -3., 0., 2., -4., 2., 9*0., 3., -6., 3., 0., -2., 4., -2., 10*0., -3. /), &
+               (/ 3., 2*0., 2., -2., 2*0., -1., 1., 6*0., 3., -3., 2*0., -2., 2., 5*0., 1., -2. /), &
+               (/ 1., 0., -2., 4., -2., 0., 1., -2., 1., 9*0., -1., 2., -1., 0., 1., -2. /), &
+               (/ 1., 10*0., 1., -1., 2*0., -1., 1., 6*0., -1., 1., 2*0., 2., -2., 2*0., -1., 1./), &
+               (/  0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0. /), &
+               (/  0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0. /), &
+               (/  0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0. /), &
+               (/  0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0. /), &
+               (/  0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0. /), &
+               (/  0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0. /), &
+               (/  0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0. /) /)
 
       d1d2=d1*d2
       do i=1,4
@@ -541,7 +547,7 @@
       real(FMS_HI_KIND)                       :: work_old(ics:ice,jcs:jce)
       real(FMS_HI_KIND)                       :: work_new(ics:ice,jcs:jce)
       logical :: ready
-      real(FMS_HI_KIND)    :: blank = -1.e30
+      real(FMS_HI_KIND)    :: blank = real(-1.e30,FMS_HI_KIND)
       real(FMS_HI_KIND)    :: tavr
       integer :: ipass = 0
       integer :: inl, inr, jnl, jnu, i, j, is, js,  iavr

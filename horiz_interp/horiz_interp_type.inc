@@ -34,7 +34,7 @@
    root_pe = mpp_root_pe()
    npes = mpp_npes()
 
-   dsum = 0.0
+   dsum = real(0.0, FMS_HI_KIND)
    miss = 0
 
    if (present(missing_value)) then
@@ -43,17 +43,17 @@
       high = maxval(dat(:,:), dat(:,:) /= missing_value)
       dsum = sum(dat(:,:), dat(:,:) /= missing_value)
    else if(present(mask)) then
-      miss = count(mask(:,:) <= 0.5)
-      low  = minval(dat(:,:),mask=mask(:,:) > 0.5)
-      high = maxval(dat(:,:),mask=mask(:,:) > 0.5)
-      dsum = sum(dat(:,:), mask=mask(:,:) > 0.5)
+      miss = count(mask(:,:) <= real(0.5, FMS_HI_KIND))
+      low  = minval(dat(:,:),mask=mask(:,:) > real(0.5, FMS_HI_KIND))
+      high = maxval(dat(:,:),mask=mask(:,:) > real(0.5, FMS_HI_KIND))
+      dsum = sum(dat(:,:), mask=mask(:,:) > real(0.5, FMS_HI_KIND))
    else
       miss = 0
       low  = minval(dat(:,:))
       high = maxval(dat(:,:))
       dsum = sum(dat(:,:))
    endif
-   avg = 0.0
+   avg = real(0.0, FMS_HI_KIND)
 
    npts = size(dat(:,:)) - miss
    if(pe == root_pe) then
