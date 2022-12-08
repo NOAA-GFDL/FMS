@@ -142,7 +142,8 @@
              rpos = mod(domain%x(1)%pos   +n,nd)
              from_pe = domain%x(1)%list(rpos)%pe
              rpos = from_pe - root_pe ! for concurrent run, root_pe may not be 0.
-             num_words = (domain%list(rpos)%x(1)%compute%size+ishift) * (domain%list(rpos)%y(1)%compute%size+jshift) * ke
+             num_words = (domain%list(rpos)%x(1)%compute%size+ishift) * &
+			 (domain%list(rpos)%y(1)%compute%size+jshift) * ke
            ! Force use of scalar, integer ptr interface
              m = 0
              is = domain%list(rpos)%x(1)%compute%begin; ie = domain%list(rpos)%x(1)%compute%end+ishift
