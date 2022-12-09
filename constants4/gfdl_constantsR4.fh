@@ -80,7 +80,7 @@ real(kind=RKIND), public, parameter :: WTMCFC12 = 120.9135_r8_kind          !< M
 real(kind=RKIND), public, parameter :: WTMN     =  14.0067_r8_kind          !< Molecular weight of Nitrogen [AMU]
 real(kind=RKIND), public, parameter :: DIFFAC   = 1.660_r8_kind             !< Diffusivity factor [dimensionless]
 real(kind=RKIND), public, parameter :: ES0      = 1.0_r8_kind               !< Humidity factor [dimensionless]
-                                                                            !! Controls the humidity content of 
+                                                                            !! Controls the humidity content of
 									    !! the atmosphere through the
                                                                             !! Saturation Vapour Pressure expression
                                                                             !! when using DO_SIMPLE
@@ -107,7 +107,7 @@ real(kind=RKIND), public, parameter :: RADCON     = ((1.0E+02*GRAV)/(1.0D+04*CP_
   									!< Factor to convert flux divergence
                                                                         !! to heating rate in degrees per day
                                                                         !! [deg sec/(cm day)]
-real(kind=RKIND), public, parameter :: RADCON_MKS = (GRAV/CP_AIR)*SECONDS_PER_DAY 
+real(kind=RKIND), public, parameter :: RADCON_MKS = (GRAV/CP_AIR)*SECONDS_PER_DAY
 									!< Factor to convert flux divergence
                                                                         !! to heating rate in degrees per day
                                                                         !! [deg sec/(m day)]

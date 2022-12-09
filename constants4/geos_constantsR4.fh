@@ -52,7 +52,7 @@ real(kind=RKIND), public, parameter :: CP_AIR   = RDGAS/KAPPA               !< S
                                                                             !! at constant pressure [J/kg/deg]
 real(kind=RKIND), public, parameter :: CP_VAPOR = 4.0_r8_kind*RVGAS         !< Specific heat capacity of water vapor
                                                                             !! at constant pressure [J/kg/deg]
-real(kind=RKIND), public, parameter :: CP_OCEAN = 3989.24495292815_r8_kind  !< Specific heat capacity taken 
+real(kind=RKIND), public, parameter :: CP_OCEAN = 3989.24495292815_r8_kind  !< Specific heat capacity taken
 									    !! from McDougall (2002)
                                                                             !! "Potential Enthalpy ..." [J/kg/deg]
 real(kind=RKIND), public, parameter :: DENS_H2O = 1000._r8_kind             !< Density of liquid water [kg/m^3]
@@ -108,7 +108,7 @@ real(kind=RKIND), public, parameter :: RADCON     = ((1.0E+02*GRAV)/(1.0D+04*CP_
                                                                                 !! to heating rate in degrees per day
                                                                                 !! [deg sec/(cm day)]
 
-real(kind=RKIND), public, parameter :: RADCON_MKS = (GRAV/CP_AIR)*SECONDS_PER_DAY 
+real(kind=RKIND), public, parameter :: RADCON_MKS = (GRAV/CP_AIR)*SECONDS_PER_DAY
 									!< Factor to convert flux divergence
                                                                         !! to heating rate in degrees per day
                                                                         !! [deg sec/(m day)]

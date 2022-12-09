@@ -29,7 +29,7 @@ real(kind=RKIND),   public, parameter :: PI   = PI_8                          !<
 									      !! to diameter [N/A]
 real(kind=RKIND),   public, parameter :: RAD_TO_DEG  = 180._r8_kind/PI_8      !< Degrees per radian [deg/rad]
 real(kind=RKIND),   public, parameter :: DEG_TO_RAD  = PI_8/180._r8_kind      !< Radians per degree [rad/deg]
-real(kind=RKIND),   public, parameter :: RADIAN      = RAD_TO_DEG             !< Equal to RAD_TO_DEG for 
+real(kind=RKIND),   public, parameter :: RADIAN      = RAD_TO_DEG             !< Equal to RAD_TO_DEG for
 									      									  !! backward compatability. [rad/deg]
 
 !--- Earth physical constants
