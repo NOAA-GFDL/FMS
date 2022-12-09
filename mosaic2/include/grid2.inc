@@ -384,13 +384,8 @@ subroutine GET_GRID_CELL_VERTICES_2D_(component, tile, lonb, latb, domain)
   integer :: start(4), nread(4)
   character(len=MAX_FILE)      :: tilefile
   type(FmsNetcdfFile_t)  :: tilefileobj
-  logical :: valid_types = .false.
 
   call get_grid_size_for_one_tile(component, tile, nlon, nlat)
-  valid_types = .true.
-  if(.not. valid_types) call mpp_error(FATAL, &
-     &  'get_grid_cell_vertices_2D: invalid types, lonb/latb must be r4_kind or r8_kind')
-
 
   if (present(domain)) then
     call mpp_get_compute_domain(domain,is,ie,js,je)
