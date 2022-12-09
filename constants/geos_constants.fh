@@ -25,7 +25,7 @@ real(kind=RKIND), public, parameter :: small_fac = 1._r8_kind
 !--- Spherical coordinate conversion constants
 real(kind=r8_kind), public, parameter :: PI_8 = 3.14159265358979323846_r8_kind  !< Ratio of circle circumference
                                                                                 !! to diameter [N/A]
-real(kind=RKIND),   public, parameter :: PI   = PI_8                            !< Ratio of circle circumference 
+real(kind=RKIND),   public, parameter :: PI   = PI_8                            !< Ratio of circle circumference
                                                                                 !! to diameter [N/A]
 real(kind=RKIND),   public, parameter :: RAD_TO_DEG  = 180._r8_kind/PI_8        !< Degrees per radian [deg/rad]
 real(kind=RKIND),   public, parameter :: DEG_TO_RAD  = PI_8/180._r8_kind        !< Radians per degree [rad/deg]
@@ -99,13 +99,15 @@ real(kind=RKIND), public, parameter :: AVOGNO   = 6.023000E+23_r8_kind      !< A
 real(kind=RKIND), public, parameter :: VONKARM  = 0.40_r8_kind              !< Von Karman constant [dimensionless]
 
 !--- Miscellaneous constants
-real(kind=RKIND), public, parameter :: ALOGMIN    = -50.0_r8_kind        !< Minimum value allowed as argument
-                                                                         !! to log function [N/A]
-real(kind=RKIND), public, parameter :: EPSLN      = 1.0E-40_r8_kind      !< A small number to prevent divide by zero exceptions [N/A]
+real(kind=RKIND), public, parameter :: ALOGMIN    = -50.0_r8_kind     !< Minimum value allowed as argument
+                                                                      !! to log function [N/A]
+real(kind=RKIND), public, parameter :: EPSLN      = 1.0E-40_r8_kind   !< A small number to prevent divide
+                                                                      !! by zero exceptions [N/A]
 real(kind=RKIND), public, parameter :: RADCON     = ((1.0E+02*GRAV)/(1.0D+04*CP_AIR))*SECONDS_PER_DAY
-                                                                                        !< Factor to convert flux divergence
-                                                                                        !! to heating rate in degrees per day
-                                                                                        !! [deg sec/(cm day)]
-real(kind=RKIND), public, parameter :: RADCON_MKS = (GRAV/CP_AIR)*SECONDS_PER_DAY       !< Factor to convert flux divergence
-                                                                                        !! to heating rate in degrees per day
-                                                                                        !! [deg sec/(m day)]
+                                                                                !< Factor to convert flux divergence
+                                                                                !! to heating rate in degrees per day
+                                                                                !! [deg sec/(cm day)]
+real(kind=RKIND), public, parameter :: RADCON_MKS = (GRAV/CP_AIR)*SECONDS_PER_DAY
+                                                                                !< Factor to convert flux divergence
+                                                                                !! to heating rate in degrees per day
+                                                                                !! [deg sec/(m day)]
