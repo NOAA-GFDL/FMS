@@ -1421,6 +1421,7 @@ subroutine fms_diag_yaml_out()
   integer, allocatable :: tier3each(:) !< tier 3 list sizes corresponding to where they are in the second tier
   integer, dimension(basedate_size) :: basedate_loc !< local copy of basedate to loop through
   integer :: varnum_i, key3_i, gm
+  character(len=32), allocatable :: st_vals(:) !< start times for gcc bug
 
   if( mpp_pe() .ne. mpp_root_pe()) return
 
@@ -1432,6 +1433,7 @@ subroutine fms_diag_yaml_out()
   allocate(vals(1))
   allocate(keys2(SIZE(diag_yaml%diag_files)))
   allocate(vals2(SIZE(diag_yaml%diag_files)))
+  allocate(st_vals(SIZE(diag_yaml%diag_files)))
   do i=1, SIZE(diag_yaml%diag_files)
     call initialize_key_struct(keys2(i))
     call initialize_val_struct(vals2(i))
@@ -1498,6 +1500,7 @@ subroutine fms_diag_yaml_out()
     endif
     if(fileptr%has_file_start_time()) then
       call fms_f2c_string(vals(i)%val8, trim(fileptr%get_file_start_time()))
+      st_vals(i) = fileptr%get_file_start_time()
     endif
     if(fileptr%has_file_duration()) then
       write(tmpstr1, '(I0)') fileptr%file_duration
@@ -1723,6 +1726,7 @@ subroutine fms_diag_yaml_out()
   ! so we'll just set it again
   do i=1, SIZE(keys2)
     call fms_f2c_string(keys2(i)%key8, 'start_time')
+    call fms_f2c_string(vals2(i)%val8, st_vals(i))
   enddo
   if (DEBUG) print *, 'tier1size', 1, 'tier2size', SIZE(diag_yaml%diag_files), &
                                                       & 'tier3size', tier3size, 'tier3each', tier3each

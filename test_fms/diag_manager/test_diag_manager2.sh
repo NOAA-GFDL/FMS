@@ -1066,7 +1066,7 @@ diag_files:
   unlimdim: time
   new_file_freq: 6
   new_file_freq_units: hours
-  start_time:
+  start_time: 2 1 1 0 0 0
   file_duration: 12
   file_duration_units: hours
   varlist:
