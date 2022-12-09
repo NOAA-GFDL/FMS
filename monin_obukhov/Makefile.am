@@ -22,36 +22,36 @@
 
 # Ed Hartnett 2/22/19
 
-AM_CPPFLAGS = -I$(top_srcdir)/include -I$(top_srcdir)/monin_obukhov/include
+AM_CPPFLAGS = -I$(top_srcdir)/include -I$(top_srcdir)/monin_obukhov -I$(top_srcdir)/monin_obukhov/include
 AM_FCFLAGS = $(FC_MODINC). $(FC_MODOUT)$(MODDIR)
 
 noinst_LTLIBRARIES = libmonin_obukhov.la
 
 libmonin_obukhov_la_SOURCES = \
-  monin_obukhov.F90 \
-  include/monin_obukhov_r4.fh \
-  include/monin_obukhov_r8.fh \
-  include/monin_obukhov.inc \
-  monin_obukhov_inter.F90 \
-  include/monin_obukhov_inter_r4.fh \
-  include/monin_obukhov_inter_r8.fh \
-  include/monin_obukhov_inter.inc
-
-monin_obukhov_mod.$(FC_MODEXT): \
-  monin_obukhov_inter.$(FC_MODEXT) \
-  include/monin_obukhov_r4.fh \
-  include/monin_obukhov_r8.fh \
-  include/monin_obukhov.inc
+        monin_obukhov.F90 \
+        monin_obukhov_inter.F90 \
+        include/monin_obukhov_r4.fh \
+        include/monin_obukhov_r8.fh \
+        include/monin_obukhov.inc \
+        include/monin_obukhov_inter_r4.fh \
+        include/monin_obukhov_inter_r8.fh \
+        include/monin_obukhov_inter.inc
 
 monin_obukhov_inter.$(FC_MODEXT): \
-  include/monin_obukhov_inter_r4.fh \
-  include/monin_obukhov_inter_r8.fh \
-  include/monin_obukhov_inter.inc
+        include/monin_obukhov_inter_r4.fh \
+        include/monin_obukhov_inter_r8.fh \
+        include/monin_obukhov_inter.inc
+
+monin_obukhov_mod.$(FC_MODEXT): \
+        monin_obukhov_inter.$(FC_MODEXT) \
+        include/monin_obukhov_r4.fh \
+        include/monin_obukhov_r8.fh \
+        include/monin_obukhov.inc
 
 # Mod files are built and then installed as headers.
 MODFILES = \
-  monin_obukhov_inter.$(FC_MODEXT) \
-  monin_obukhov_mod.$(FC_MODEXT)
+        monin_obukhov_mod.$(FC_MODEXT) \
+        monin_obukhov_inter.$(FC_MODEXT)
 nodist_include_HEADERS = $(MODFILES)
 BUILT_SOURCES = $(MODFILES)
 

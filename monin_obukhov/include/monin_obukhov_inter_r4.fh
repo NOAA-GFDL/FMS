@@ -24,7 +24,7 @@
 !> @{
 
 #undef FMS_MO_KIND_
-#define FMS_MO_KIND r4_kind
+#define FMS_MO_KIND_ r4_kind
 
 #undef MONIN_OBUKHOV_DIFF_
 #define MONIN_OBUKHOV_DIFF_ monin_obukhov_diff_r4
