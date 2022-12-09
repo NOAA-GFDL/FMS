@@ -122,6 +122,7 @@ use platform_mod
   INTEGER, PARAMETER :: time_diurnal = 6 !< The reduction method is diurnal
   INTEGER, PARAMETER :: time_power   = 7 !< The reduction method is power
   CHARACTER(len=7)   :: avg_name = 'average' !< Name of the average fields
+  CHARACTER(len=8)   :: no_units = "NO UNITS"!< String indicating that the variable has no units
   !> @}
 
   !> @brief Contains the coordinates of the local domain to output.

@@ -208,7 +208,7 @@ use platform_mod
        & get_ticks_per_second
   USE mpp_mod, ONLY: mpp_get_current_pelist, mpp_pe, mpp_npes, mpp_root_pe, mpp_sum
 
-  USE mpp_mod, ONLY: input_nml_file
+  USE mpp_mod, ONLY: input_nml_file, mpp_error
 
   USE fms_mod, ONLY: error_mesg, FATAL, WARNING, NOTE, stdout, stdlog, write_version_number,&
        & fms_error_handler, check_nml_error, lowercase
@@ -3853,6 +3853,10 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
                & 'DIAG_MANAGER_NML not found in input nml file.  Using defaults.', WARNING)
        END IF
     END IF
+
+    IF (.not. use_modern_diag .and. use_clock_average) &
+      call mpp_error(FATAL, "diag_manager_mod: You cannot set use_modern_diag=.false. and &
+        & use_clock_average=.true. in diag_manager_nml")
 
     IF ( mpp_pe() == mpp_root_pe() ) THEN
        WRITE (stdlog_unit, diag_manager_nml)

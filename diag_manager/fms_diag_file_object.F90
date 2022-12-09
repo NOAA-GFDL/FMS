@@ -32,7 +32,7 @@ use diag_data_mod, only: DIAG_NULL, NO_DOMAIN, max_axes, SUB_REGIONAL, get_base_
                          TWO_D_DOMAIN, UG_DOMAIN, prepend_date, DIAG_DAYS, VERY_LARGE_FILE_FREQ, &
                          get_base_year, get_base_month, get_base_day, get_base_hour, get_base_minute, &
                          get_base_second, time_unit_list, time_average, time_rms, time_max, time_min, time_sum, &
-                         time_diurnal, time_power, time_none, avg_name
+                         time_diurnal, time_power, time_none, avg_name, no_units
 use time_manager_mod, only: time_type, operator(>), operator(/=), operator(==), get_date, get_calendar_type, &
                             VALID_CALENDAR_TYPES, operator(>=), date_to_string, &
                             OPERATOR(/), OPERATOR(+), operator(<)
@@ -850,8 +850,8 @@ subroutine open_diag_file(this, time_step, file_is_opened)
   diag_file => null()
 end subroutine open_diag_file
 
-!< @brief Writes the time average variables (*_T1, *_T2, *_DT) in the netcdf file
-subroutine write_avg_time_metadata(fileobj, variable_name, dimensions, long_name, units)
+!< @brief Writes a variable's metadata in the netcdf file
+subroutine write_var_metadata(fileobj, variable_name, dimensions, long_name, units)
   class(FmsNetcdfFile_t), intent(inout) :: fileobj        !< The file object to write into
   character(len=*)      , intent(in)    :: variable_name  !< The name of the time variables
   character(len=*)      , intent(in)    :: dimensions(:)  !< The dimensions of the variable
@@ -862,38 +862,10 @@ subroutine write_avg_time_metadata(fileobj, variable_name, dimensions, long_name
   call register_field(fileobj, variable_name, "double", dimensions)
   call register_variable_attribute(fileobj, variable_name, "long_name", &
                                   trim(long_name), str_len=len_trim(long_name))
-  call register_variable_attribute(fileobj, variable_name, "units", &
-                                  trim(units), str_len=len_trim(units))
-end subroutine write_avg_time_metadata
-
-!< @brief Writes the time_bounds variables to the diag_file
-subroutine write_time_bounds_metadata(fileobj, time_var_name, units)
-  class(FmsNetcdfFile_t), intent(inout) :: fileobj       !< The file object
-  character(len=*)      , intent(in)    :: time_var_name !< The name of the time variable as it is
-                                                         !! read from the diag_table.yaml
-  character(len=*)      , intent(in)    :: units         !< The units of the time variable
-
-  character(len=50)             :: dimensions(2) !< Array of dimensions names for the variable
-  character(len=:), allocatable :: bounds_name   !< The name of the time bounds variable (i.e time_bounds)
-
-  !< Register the "nv" dimension that it needed for the time_bounds
-  call register_axis(fileobj, "nv", 2)
-  !TODO hardcodded double
-  call register_field(fileobj, "nv", "double", (/"nv"/))
-  call register_variable_attribute(fileobj, "nv", "long_name", "vertex number", str_len=13)
-
-  !< Register the "time_bounds" as a variable
-  dimensions(1) = "nv"
-  dimensions(2) = trim(time_var_name)
-  bounds_name = trim(time_var_name)//"_bounds"
-  !TODO hardcodded double
-  call register_field(fileobj, bounds_name , "double", dimensions)
-  call register_variable_attribute(fileobj, bounds_name, "units", &
-                                   trim(units), str_len=len_trim(units) )
-  call register_variable_attribute(fileobj, bounds_name, "long_name", &
-                                   trim(time_var_name)//" axis boundaries", &
-                                   str_len=len_trim(trim(time_var_name)//" axis boundaries"))
-end subroutine write_time_bounds_metadata
+  if (trim(units) .ne. no_units) &
+    call register_variable_attribute(fileobj, variable_name, "units", &
+                                    trim(units), str_len=len_trim(units))
+end subroutine write_var_metadata
 
 !> \brief Write the time metadata to the diag file
 subroutine write_time_metadata(this)
@@ -905,6 +877,7 @@ subroutine write_time_metadata(this)
   character(len=50)                 :: calendar       !< The calendar name
 
   character(len=:), allocatable :: time_var_name !< The name of the time variable as it is defined in the yaml
+  character(len=50)             :: dimensions(2) !< Array of dimensions names for the variable
 
   diag_file => this%FMS_diag_file
   fileobj => diag_file%fileobj
@@ -917,14 +890,14 @@ subroutine write_time_metadata(this)
          & get_base_month(), get_base_day(), get_base_hour(), get_base_minute(), get_base_second()
 11  FORMAT(a, ' since ', i4.4, '-', i2.2, '-', i2.2, ' ', i2.2, ':', i2.2, ':', i2.2)
 
-  !TODO harcodded "double"
-  call register_field(fileobj, time_var_name, "double", (/time_var_name/))
-  call register_variable_attribute(fileobj, time_var_name, "units", trim(time_units_str), &
-    str_len=len_trim(time_units_str))
+  dimensions(1) = "nv"
+  dimensions(2) = trim(time_var_name)
 
+  call write_var_metadata(fileobj, time_var_name, dimensions(2:2), &
+    time_var_name, time_units_str)
+
+  !< Add additional variables to the time variable
   call register_variable_attribute(fileobj, time_var_name, "axis", "T", str_len=1 )
-  call register_variable_attribute(fileobj, time_var_name, "long_name", trim(time_var_name), &
-    str_len=len_trim(time_var_name) )
 
   !TODO no need to have both attributes, probably?
   calendar = valid_calendar_types(get_calendar_type())
@@ -938,15 +911,19 @@ subroutine write_time_metadata(this)
       trim(time_var_name)//"_bounds", str_len=len_trim(time_var_name//"_bounds"))
 
     !< Write out the "average_*" variables metadata
-    call write_avg_time_metadata(fileobj, avg_name//"_T1", (/time_var_name/), &
+    call write_var_metadata(fileobj, avg_name//"_T1", dimensions(2:2), &
       "Start time for average period", time_units_str)
-    call write_avg_time_metadata(fileobj, avg_name//"_T2", (/time_var_name/), &
+    call write_var_metadata(fileobj, avg_name//"_T2", dimensions(2:2), &
       "End time for average period", time_units_str)
-    call write_avg_time_metadata(fileobj, avg_name//"_DT", (/time_var_name/), &
+    call write_var_metadata(fileobj, avg_name//"_DT", dimensions(2:2), &
       "Length time for average period", time_units_str)
 
     !< Write out the *_bounds variable metadata
-    call write_time_bounds_metadata(fileobj, time_var_name, time_units_str)
+    call register_axis(fileobj, "nv", 2) !< Time bounds need a vertex number
+    call write_var_metadata(fileobj, "nv", dimensions(1:1), &
+      "vertex number", no_units)
+    call write_var_metadata(fileobj, time_var_name//"_bounds", dimensions, &
+      trim(time_var_name)//" axis boundaries", time_units_str)
   endif
 
 end subroutine write_time_metadata
