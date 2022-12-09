@@ -604,12 +604,12 @@ deallocate(restart_file)
 - **netcdf_default_format:** Sets the netcdf file type. The acceptable values are  "64bit", "classic", "netcdf4". This can be overwritten per file if you specify `nc_format` in the open_file call. The default is 64bit.
 - **header_buffer_val:** Sets the netCDF header buffer size(in bytes). The default is 16384 bytes.
 
-### I. Compression and Chunking 
+### I. Compression and Chunking
 
 In release 2022.04, "deflate_level" and the "chunksize" were added as optional arguments to the register_diag_field:
 
 ```F90
-call register_restart_field(fileobj, 'variable_name', variable_data, 
+call register_restart_field(fileobj, 'variable_name', variable_data,
 dim_names, deflate_level=deflate_level, chunsizes=chunksizes)
 ```
 

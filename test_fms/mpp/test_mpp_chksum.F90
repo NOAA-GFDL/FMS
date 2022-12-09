@@ -18,7 +18,7 @@
 !***********************************************************************
 !> @author Ryan Mulhall
 !> @email gfdl.climate.model.info@noaa.gov
-!> @brief Test mpp_chksum routines 
+!> @brief Test mpp_chksum routines
 !> @description Tests mpp_chksum with 8 and 4 byte integer and real arrays with
 !> single pe and distributed checksums
 program test_mpp_chksum
