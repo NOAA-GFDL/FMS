@@ -103,7 +103,8 @@ use mpp_mod,         only: mpp_npes, mpp_pe, mpp_root_pe, mpp_send, mpp_recv, &
                            mpp_clock_begin, mpp_clock_end, MPP_CLOCK_SYNC,    &
                            COMM_TAG_1, COMM_TAG_2, COMM_TAG_3, COMM_TAG_4,    &
                            COMM_TAG_5, COMM_TAG_6, COMM_TAG_7, COMM_TAG_8,    &
-                           COMM_TAG_9, COMM_TAG_10
+                           COMM_TAG_9, COMM_TAG_10,                           &
+                           mpp_error
 use mpp_mod,         only: input_nml_file, mpp_set_current_pelist, mpp_sum, mpp_sync
 use mpp_domains_mod, only: mpp_get_compute_domain, mpp_get_compute_domains, &
                            Domain2d, mpp_global_sum, mpp_update_domains,    &
@@ -533,7 +534,7 @@ subroutine xgrid_init(remap_method)
 
   ! make_exchange_reproduce is no longer supported.
   if (make_exchange_reproduce) then
-    call mpp_error(FATAL, "xgrid_init: You have overridden the default value of make_exchange_reproduce : // &
+    call mpp_error(FATAL, "xgrid_init: You have overridden the default value of make_exchange_reproduce " // &
                           "and set it to .true. in xgrid_nml. This was a temporary workaround " // &
                           "that is no longer supported. Please remove this namelist variable.")
   endif

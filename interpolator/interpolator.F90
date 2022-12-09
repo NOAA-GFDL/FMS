@@ -446,7 +446,7 @@ if (.not. module_is_initialized) then
   ierr = check_nml_error(io,'interpolator_nml')
 
   ! retain_cm3_bug is no longer supported.
-  if (retain_cm3__bug) then
+  if (retain_cm3_bug) then
     call mpp_error(FATAL, "interpolator_init: You have overridden the default value of retain_cm3_bug " // &
                           "and set it to .true. in interpolator_nml. This was a temporary workaround " // &
                           "that is no longer supported. Please remove this namelist variable.")
