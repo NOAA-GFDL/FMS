@@ -206,6 +206,10 @@ if (grid_center_bug) then
   call mpp_error(FATAL, "data_override_init: You have overridden the default value of grid_center_bug " // &
                         "and set it to .true. in data_override_nml.  This was a temporary workaround " // &
                         "that is no longer supported. Please remove this namelist variable.")
+else if (.not. grid_center_bug) then
+  call mpp_error(WARNING, "data_override_init: You have set the outdated namelist variable grid_center_bug " // &
+                          "in data_override_nml. Please remove this namelist variable." // &
+                          "This will be removed in the next release.")
 endif
 
 !  if(module_is_initialized) return

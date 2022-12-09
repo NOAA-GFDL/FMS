@@ -450,6 +450,10 @@ if (.not. module_is_initialized) then
     call mpp_error(FATAL, "interpolator_init: You have overridden the default value of retain_cm3_bug " // &
                           "and set it to .true. in interpolator_nml. This was a temporary workaround " // &
                           "that is no longer supported. Please remove this namelist variable.")
+  else if (.not. retain_cm3_bug) then
+    call mpp_error(FATAL, "interpolator_init: You have set the outdated namelist variable retain_cm3_bug " // &
+                          "in interpolator_nml. Please remove this namelist variable. " // &
+                          "This will be removed in the next release.")
   endif
 
 !---------------------------------------------------------------------

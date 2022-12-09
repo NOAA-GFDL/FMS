@@ -698,6 +698,10 @@ subroutine fms_io_init()
     call mpp_error(FATAL, "fms_io_init: You have overridden the default value of read_data_bug " // &
                           "and set it to .true. in fms_io_nml. This was a temporary workaround " // &
                           "that is no longer supported. Please remove this namelist variable.")
+  else if (.not. read_data_bug) then
+    call mpp_error(WARNING, "fms_io_init: You have set the outdated namelist variable read_data_bug " // &
+                            "in fms_io_nml. Please remove this namelist variable. " // &
+                            "This will be removed in the next release.")
   endif
 
 ! determine packsize

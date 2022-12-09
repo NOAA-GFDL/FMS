@@ -236,6 +236,10 @@ contains
                            "and set it to .true. in horiz_interp_nml. This was a temporary workaround to " // &
                            "allow for consistency in continuing experiments and is no longer supported. " // &
                            "Please remove this namelist.")
+  else if (.not. reproduce_siena ) then
+     call mpp_error(WARNING, "horiz_interp_mod: You have set the outdated namelist variable reproduce_siena " // &
+                             "in horiz_interp_nml. Please remove this namelist. " // &
+                             "This will be removed in the next release.")
   endif
 
   call horiz_interp_conserve_init

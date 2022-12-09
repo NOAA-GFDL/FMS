@@ -537,6 +537,10 @@ subroutine xgrid_init(remap_method)
     call mpp_error(FATAL, "xgrid_init: You have overridden the default value of make_exchange_reproduce " // &
                           "and set it to .true. in xgrid_nml. This was a temporary workaround " // &
                           "that is no longer supported. Please remove this namelist variable.")
+  else if (.not. make_exchange_reproduce) then
+    call mpp_error(WARNING, "xgrid_init: You have set the outdated namelist variable make_exchange_reproduce " // &
+                            "in xgrid_nml. Please remove this namelist variable. " // &
+                            "This will be removed in the next release.")
   endif
 
 !--------- write version number and namelist ------------------
