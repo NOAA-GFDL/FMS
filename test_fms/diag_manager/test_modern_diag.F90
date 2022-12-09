@@ -228,7 +228,7 @@ end subroutine set_up_cube_sph_domain
 
 subroutine check_output_yaml
   integer :: i, un_out, un_ref
-  integer, parameter :: yaml_len = 100
+  integer, parameter :: yaml_len = 226
   character(len=128) :: out_yaml_line, ref_yaml_line
   character(len=17), parameter :: ref_fname = 'diag_out_ref.yaml'
   character(len=13), parameter :: out_fname = 'diag_out.yaml'

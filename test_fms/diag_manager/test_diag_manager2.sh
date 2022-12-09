@@ -846,7 +846,7 @@ diag_files:
     corner3: 10, 25
     corner4: 20, 25
   global_meta:
-    - fortran: wack
+  - fortran: wack
 - file_name: wild_card_name%4yr%2mo%2dy%2hr
   freq: 6
   freq_units: hours
@@ -1059,6 +1059,36 @@ diag_files:
     corner4: 20 25
   global_meta:
   - fortran: wack
+- file_name: wild_card_name%4yr%2mo%2dy%2hr
+  freq: 6
+  freq_units: hours
+  time_units: hours
+  unlimdim: time
+  new_file_freq: 6
+  new_file_freq_units: hours
+  start_time:
+  file_duration: 12
+  file_duration_units: hours
+  varlist:
+  - module: atm_mod
+    var_name: var4
+    reduction: average
+    kind: r4
+    output_name:
+    long_name:
+    units:
+    zbounds: -999.00000, -999.00000
+    n_diurnal:
+    pow_value:
+  sub_region:
+  - grid_type: null
+    tile: -999
+    corner1:
+    corner2:
+    corner3:
+    corner4:
+  global_meta:
+  - {}
 ...
 _EOF
   # add nml to input.nml
