@@ -727,7 +727,7 @@ diag_files:
     corner2: 20, 15
     corner3: 10, 25
     corner4: 20, 25
-- file_name: wild_card_name%4yr%2mo%2dy%2hr
+- file_name: file6%4yr%2mo%2dy%2hr
   freq: 6
   freq_units: hours
   time_units: hours
@@ -742,7 +742,7 @@ diag_files:
     var_name: var1
     reduction: average
     kind: r4
-- file_name: file6
+- file_name: file7
   freq: 6
   freq_units: hours
   time_units: hours
@@ -752,7 +752,7 @@ diag_files:
     var_name: var1
     reduction: none
     kind: r4
-- file_name: flexible_timing%4yr%2mo%2dy%2hr
+- file_name: file8%4yr%2mo%2dy%2hr
   freq: 1 1 1
   freq_units: hours hours hours
   time_units: hours
