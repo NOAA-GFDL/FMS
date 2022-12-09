@@ -87,13 +87,13 @@
                if(size(global,1).NE.(domain%x(tile)%global%size+ishift) .OR. &
                    size(global,2).NE.(domain%y(tile)%compute%size+jshift)) &
                   call mpp_error( FATAL, &
-                                 &  'MPP_GLOBAL_FIELD: incoming arrays do not match domain for xonly global field.' )
+                        &  'MPP_GLOBAL_FIELD: incoming arrays do not match domain for xonly global field.' )
                jpos = -domain%y(tile)%compute%begin + 1
             else if(yonly) then
                if(size(global,1).NE.(domain%x(tile)%compute%size+ishift) .OR. &
                    size(global,2).NE.(domain%y(tile)%global%size+jshift)) &
                   call mpp_error( FATAL, &
-                                 &  'MPP_GLOBAL_FIELD: incoming arrays do not match domain for yonly global field.' )
+                        &  'MPP_GLOBAL_FIELD: incoming arrays do not match domain for yonly global field.' )
                ipos = -domain%x(tile)%compute%begin + 1
             else
                call mpp_error( FATAL, 'MPP_GLOBAL_FIELD: incoming arrays do not match domain.' )
@@ -113,7 +113,7 @@
          joff = -domain%y(tile)%data%begin + 1
       else
          call mpp_error( FATAL, &
-                       & 'MPP_GLOBAL_FIELD_: incoming field array must match either compute domain or memory domain.')
+              & 'MPP_GLOBAL_FIELD_: incoming field array must match either compute domain or memory domain.')
       end if
 
       ke  = size(local,3)

@@ -141,8 +141,8 @@
           call MPI_RECV( get_data, get_len, MPI_TYPE_, MPI_ANY_SOURCE, comm_tag, mpp_comm_private, stat, error )
           if( debug .and. (current_clock.NE.0) )call increment_current_clock( EVENT_RECV, get_len*MPP_TYPE_BYTELEN_ )
       else if( from_pe.EQ.ALL_PES )then
-          call mpp_error( FATAL, 'MPP_TRANSMIT: from_pe=ALL_PES has ambiguous meaning, ' &
-			 & \\ 'and hence is not implemented.')
+          call mpp_error( FATAL, 'MPP_TRANSMIT: from_pe=ALL_PES has ambiguous meaning,' &
+			   & // 'and hence is not implemented.')
       else if( from_pe.NE.NULL_PE )then !only remaining valid choice is NULL_PE
           call mpp_error( FATAL, 'MPP_TRANSMIT: invalid from_pe.' )
       end if

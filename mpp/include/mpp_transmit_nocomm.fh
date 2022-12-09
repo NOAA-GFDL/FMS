@@ -31,7 +31,7 @@
 !!      NULL_PE: to disable a put or a get (e.g at boundaries)
 !!      ANY_PE:  if remote PE for the put or get is to be unspecific
 !!      ALL_PES: broadcast and collect operations (collect not yet implemented)
-!!ideally we would not pass length, but this f77-style call performs better 
+!!ideally we would not pass length, but this f77-style call performs better
 !!(arrays passed by address, not descriptor) further, this permits <length> contiguous
 !!words from an array of any rank to be passed (avoiding f90 rank conformance check)
 !!caller is responsible for completion checks (mpp_sync_self) before and after
@@ -116,7 +116,7 @@
       else if( from_pe.EQ.ANY_PE )then
 
       else if( from_pe.EQ.ALL_PES )then
-          call mpp_error( FATAL, 'MPP_TRANSMIT: from_pe=ALL_PES has ambiguous meaning,' & 
+          call mpp_error( FATAL, 'MPP_TRANSMIT: from_pe=ALL_PES has ambiguous meaning,' &
           & // 'and hence is not implemented.' )
 
       else if( from_pe.NE.NULL_PE )then !only remaining valid choice is NULL_PE
