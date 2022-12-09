@@ -1,0 +1,52 @@
+!***********************************************************************
+!*                   GNU Lesser General Public License
+!*
+!* This file is part of the GFDL Flexible Modeling System (FMS).
+!*
+!* FMS is free software: you can redistribute it and/or modify it under
+!* the terms of the GNU Lesser General Public License as published by
+!* the Free Software Foundation, either version 3 of the License, or (at
+!* your option) any later version.
+!*
+!* FMS is distributed in the hope that it will be useful, but WITHOUT
+!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+!* for more details.
+!*
+!* You should have received a copy of the GNU Lesser General Public
+!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!***********************************************************************
+!> @addtogroup horiz_interp_bicubic
+!> @{
+#undef FMS_HI_KIND
+#define FMS_HI_KIND 8
+
+#undef HI_KIND_TYPE
+#define HI_KIND_TYPE kind8_reals
+
+#undef BICUBIC_NEW_1D_S
+#define BICUBIC_NEW_1D_S horiz_interp_bicubic_new_1d_s_r8
+
+#undef BICUBIC_NEW_1D
+#define BICUBIC_NEW_1D horiz_interp_bicubic_new_1d_r8
+
+#undef BICUBIC_NEW
+#define BICUBIC_NEW horiz_interp_bicubic_r8
+
+#undef BCUINT
+#define BCUINT bcuint_r8
+
+#undef BCUCOF
+#define BCUCOF bcucof_r8
+
+#undef INDL
+#define INDL indl_r8
+
+#undef INDU
+#define INDU indu_r8
+
+#undef FILL_XY
+#define FILL_XY fill_xy_r8
+
+#include "horiz_interp_bicubic.inc"
+!> @}

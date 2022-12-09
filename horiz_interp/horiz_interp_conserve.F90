@@ -176,52 +176,8 @@ contains
 
   end subroutine horiz_interp_conserve_del
 
-#undef HI_KIND_TYPE
-#define HI_KIND_TYPE kind4_reals
-#undef FMS_HI_KIND
-#define FMS_HI_KIND r4_kind
-#undef CONSERVE_NEW_1DX1D
-#define CONSERVE_NEW_1DX1D horiz_interp_conserve_new_1dx1d_r4
-#undef CONSERVE_NEW_1DX2D
-#define CONSERVE_NEW_1DX2D horiz_interp_conserve_new_1dx2d_r4
-#undef CONSERVE_NEW_2DX1D
-#define CONSERVE_NEW_2DX1D horiz_interp_conserve_new_2dx1d_r4
-#undef CONSERVE_NEW_2DX2D
-#define CONSERVE_NEW_2DX2D horiz_interp_conserve_new_2dx2d_r4
-#undef CONSERVE
-#define CONSERVE horiz_interp_conserve_r4
-#undef CONSERVE_VERSION1
-#define CONSERVE_VERSION1 horiz_interp_conserve_version1_r4
-#undef CONSERVE_VERSION2
-#define CONSERVE_VERSION2 horiz_interp_conserve_version2_r4
-#undef STATS
-#define STATS stats_r4
-#undef DATA_SUM
-#define DATA_SUM data_sum_r4
-#include "horiz_interp_conserve.inc"
-#undef HI_KIND_TYPE
-#define HI_KIND_TYPE kind8_reals
-#undef FMS_HI_KIND
-#define FMS_HI_KIND r8_kind
-#undef CONSERVE_NEW_1DX1D
-#define CONSERVE_NEW_1DX1D horiz_interp_conserve_new_1dx1d_r8
-#undef CONSERVE_NEW_1DX2D
-#define CONSERVE_NEW_1DX2D horiz_interp_conserve_new_1dx2d_r8
-#undef CONSERVE_NEW_2DX1D
-#define CONSERVE_NEW_2DX1D horiz_interp_conserve_new_2dx1d_r8
-#undef CONSERVE_NEW_2DX2D
-#define CONSERVE_NEW_2DX2D horiz_interp_conserve_new_2dx2d_r8
-#undef CONSERVE
-#define CONSERVE horiz_interp_conserve_r8
-#undef CONSERVE_VERSION1
-#define CONSERVE_VERSION1 horiz_interp_conserve_version1_r8
-#undef CONSERVE_VERSION2
-#define CONSERVE_VERSION2 horiz_interp_conserve_version2_r8
-#undef STATS
-#define STATS stats_r8
-#undef DATA_SUM
-#define DATA_SUM data_sum_r8
-#include "horiz_interp_conserve.inc"
+#include "horiz_interp_conserve_r4.fh"
+#include "horiz_interp_conserve_r8.fh"
 
 end module horiz_interp_conserve_mod
 !> @}

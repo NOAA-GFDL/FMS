@@ -140,50 +140,8 @@ module horiz_interp_bicubic_mod
 
   end subroutine horiz_interp_bicubic_del
 
-
-#undef FMS_HI_KIND
-#define FMS_HI_KIND 4
-#undef HI_KIND_TYPE
-#define HI_KIND_TYPE kind4_reals
-#undef BICUBIC_NEW_1D_S
-#define BICUBIC_NEW_1D_S horiz_interp_bicubic_new_1d_s_r4
-#undef BICUBIC_NEW_1D
-#define BICUBIC_NEW_1D horiz_interp_bicubic_new_1d_r4
-#undef BICUBIC_NEW
-#define BICUBIC_NEW horiz_interp_bicubic_r4
-#undef BCUINT
-#define BCUINT bcuint_r4
-#undef BCUCOF
-#define BCUCOF bcucof_r4
-#undef INDL
-#define INDL indl_r4
-#undef INDU
-#define INDU indu_r4
-#undef FILL_XY
-#define FILL_XY fill_xy_r4
-#include "horiz_interp_bicubic.inc"
-
-#undef FMS_HI_KIND
-#define FMS_HI_KIND 8
-#undef HI_KIND_TYPE
-#define HI_KIND_TYPE kind8_reals
-#undef BICUBIC_NEW_1D_S
-#define BICUBIC_NEW_1D_S horiz_interp_bicubic_new_1d_s_r8
-#undef BICUBIC_NEW_1D
-#define BICUBIC_NEW_1D horiz_interp_bicubic_new_1d_r8
-#undef BICUBIC_NEW
-#define BICUBIC_NEW horiz_interp_bicubic_r8
-#undef BCUINT
-#define BCUINT bcuint_r8
-#undef BCUCOF
-#define BCUCOF bcucof_r8
-#undef INDL
-#define INDL indl_r8
-#undef INDU
-#define INDU indu_r8
-#undef FILL_XY
-#define FILL_XY fill_xy_r8
-#include "horiz_interp_bicubic.inc"
+#include "horiz_interp_bicubic_r4.fh"
+#include "horiz_interp_bicubic_r8.fh"
 
 end module horiz_interp_bicubic_mod
 !> @}

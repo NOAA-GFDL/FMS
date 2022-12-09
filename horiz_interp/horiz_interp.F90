@@ -297,64 +297,8 @@ contains
  return
  end subroutine horiz_interp_end
 
-#undef FMS_HI_KIND
-#define FMS_HI_KIND 4
-#undef HI_KIND_TYPE
-#define HI_KIND_TYPE kind4_reals
-#undef HORIZ_INTERP_NEW_1D
-#define HORIZ_INTERP_NEW_1D horiz_interp_new_1d_r4
-#undef HORIZ_INTERP_NEW_1D_SRC
-#define HORIZ_INTERP_NEW_1D_SRC horiz_interp_new_1d_src_r4
-#undef HORIZ_INTERP_NEW_1D_DST
-#define HORIZ_INTERP_NEW_1D_DST horiz_interp_new_1d_dst_r4
-#undef HORIZ_INTERP_BASE_2D
-#define HORIZ_INTERP_BASE_2D horiz_interp_base_2d_r4
-#undef HORIZ_INTERP_BASE_3D
-#define HORIZ_INTERP_BASE_3D horiz_interp_base_3d_r4
-#undef HORIZ_INTERP_SOLO_1D
-#define HORIZ_INTERP_SOLO_1D horiz_interp_solo_1d_r4
-#undef HORIZ_INTERP_SOLO_1D_SRC
-#define HORIZ_INTERP_SOLO_1D_SRC horiz_interp_solo_1d_src_r4
-#undef HORIZ_INTERP_SOLO_1D_DST
-#define HORIZ_INTERP_SOLO_1D_DST horiz_interp_solo_1d_dst_r4
-#undef HORIZ_INTERP_SOLO_2D
-#define HORIZ_INTERP_SOLO_2D horiz_interp_solo_2d_r4
-#undef HORIZ_INTERP_SOLO_OLD
-#define HORIZ_INTERP_SOLO_OLD horiz_interp_solo_old_r4
-#undef HORIZ_INTERP_NEW_2D
-#define HORIZ_INTERP_NEW_2D horiz_interp_new_2d_r4
-#undef IS_LAT_LON
-#define IS_LAT_LON is_lat_lon_r4
-#include "horiz_interp.inc"
-#undef FMS_HI_KIND
-#define FMS_HI_KIND 8
-#undef HI_KIND_TYPE
-#define HI_KIND_TYPE kind8_reals
-#undef HORIZ_INTERP_NEW_1D
-#define HORIZ_INTERP_NEW_1D horiz_interp_new_1d_r8
-#undef HORIZ_INTERP_NEW_1D_SRC
-#define HORIZ_INTERP_NEW_1D_SRC horiz_interp_new_1d_src_r8
-#undef HORIZ_INTERP_NEW_1D_DST
-#define HORIZ_INTERP_NEW_1D_DST horiz_interp_new_1d_dst_r8
-#undef HORIZ_INTERP_BASE_2D
-#define HORIZ_INTERP_BASE_2D horiz_interp_base_2d_r8
-#undef HORIZ_INTERP_BASE_3D
-#define HORIZ_INTERP_BASE_3D horiz_interp_base_3d_r8
-#undef HORIZ_INTERP_SOLO_1D
-#define HORIZ_INTERP_SOLO_1D horiz_interp_solo_1d_r8
-#undef HORIZ_INTERP_SOLO_1D_SRC
-#define HORIZ_INTERP_SOLO_1D_SRC horiz_interp_solo_1d_src_r8
-#undef HORIZ_INTERP_SOLO_1D_DST
-#define HORIZ_INTERP_SOLO_1D_DST horiz_interp_solo_1d_dst_r8
-#undef HORIZ_INTERP_SOLO_2D
-#define HORIZ_INTERP_SOLO_2D horiz_interp_solo_2d_r8
-#undef HORIZ_INTERP_SOLO_OLD
-#define HORIZ_INTERP_SOLO_OLD horiz_interp_solo_old_r8
-#undef HORIZ_INTERP_NEW_2D
-#define HORIZ_INTERP_NEW_2D horiz_interp_new_2d_r8
-#undef IS_LAT_LON
-#define IS_LAT_LON is_lat_lon_r8
-#include "horiz_interp.inc"
+#include "horiz_interp_r4.fh"
+#include "horiz_interp_r8.fh"
 
 end module horiz_interp_mod
 !> @}

@@ -1,0 +1,52 @@
+!***********************************************************************
+!*                   GNU Lesser General Public License
+!*
+!* This file is part of the GFDL Flexible Modeling System (FMS).
+!*
+!* FMS is free software: you can redistribute it and/or modify it under
+!* the terms of the GNU Lesser General Public License as published by
+!* the Free Software Foundation, either version 3 of the License, or (at
+!* your option) any later version.
+!*
+!* FMS is distributed in the hope that it will be useful, but WITHOUT
+!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+!* for more details.
+!*
+!* You should have received a copy of the GNU Lesser General Public
+!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!***********************************************************************
+!> @addtogroup horiz_interp_bilinear
+!> @{
+#undef FMS_HI_KIND
+#define FMS_HI_KIND 8
+
+#undef HI_KIND_TYPE
+#define HI_KIND_TYPE kind8_reals
+
+#undef BILINEAR_NEW_1D
+#define BILINEAR_NEW_1D horiz_interp_bilinear_new_1d_r8
+
+#undef BILINEAR_NEW_2D
+#define BILINEAR_NEW_2D horiz_interp_bilinear_new_2d_r8
+
+#undef DO_BILINEAR
+#define DO_BILINEAR horiz_interp_bilinear_r8
+
+#undef FIND_NEIGHBOR
+#define FIND_NEIGHBOR find_neighbor_r8
+
+#undef FIND_NEIGHBOR_NEW
+#define FIND_NEIGHBOR_NEW find_neighbor_new_r8
+
+#undef INSIDE_POLYGON
+#define INSIDE_POLYGON inside_polygon_r8
+
+#undef INTERSECT
+#define INTERSECT intersect_r8
+
+#undef INDP
+#define INDP indp_r8
+
+#include "horiz_interp_bilinear.inc"
+!> @}

@@ -224,16 +224,9 @@ contains
 
  end subroutine horiz_interp_type_eq
 !######################################################################################################################
-#undef FMS_HI_KIND
-#define FMS_HI_KIND 4
-#undef HI_STATS
-#define HI_STATS stats_r4
-#include "horiz_interp_type.inc"
-#undef FMS_HI_KIND
-#define FMS_HI_KIND 8
-#undef HI_STATS
-#define HI_STATS stats_r8
-#include "horiz_interp_type.inc"
+
+#include "horiz_interp_type_r4.fh"
+#include "horiz_interp_type_r8.fh"
 
 end module horiz_interp_type_mod
 !> @}
