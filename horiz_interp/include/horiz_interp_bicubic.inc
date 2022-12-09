@@ -101,7 +101,8 @@
       do i=1,nlon_in
         ip1=min(i+1,nlon_in)
         im1=max(i-1,1)
-        Interp%HI_KIND_TYPE%wti(i,j,1) = real(1.0, FMS_HI_KIND)/(Interp%HI_KIND_TYPE%lon_in(ip1)-Interp%HI_KIND_TYPE%lon_in(im1))
+        Interp%HI_KIND_TYPE%wti(i,j,1) = real(1.0, FMS_HI_KIND)/ &
+                                         (Interp%HI_KIND_TYPE%lon_in(ip1)-Interp%HI_KIND_TYPE%lon_in(im1))
       enddo
     enddo
 
@@ -114,7 +115,8 @@
         jp1=min(j+1,nlat_in)
         jm1=max(j-1,1)
         do i=1,nlon_in
-          Interp%HI_KIND_TYPE%wti(i,j,2) = real(1.0, FMS_HI_KIND)/(Interp%HI_KIND_TYPE%lat_in(jp1)-Interp%HI_KIND_TYPE%lat_in(jm1))
+          Interp%HI_KIND_TYPE%wti(i,j,2) = real(1.0, FMS_HI_KIND)/ &
+                                           (Interp%HI_KIND_TYPE%lat_in(jp1)-Interp%HI_KIND_TYPE%lat_in(jm1))
         enddo
       enddo
 
@@ -128,7 +130,8 @@
         do i=1,nlon_in
           ip1=min(i+1,nlon_in)
           im1=max(i-1,1)
-          Interp%HI_KIND_TYPE%wti(i,j,3) = real(1.0, FMS_HI_KIND)/((Interp%HI_KIND_TYPE%lon_in(ip1)-Interp%HI_KIND_TYPE%lon_in(im1)) * &
+          Interp%HI_KIND_TYPE%wti(i,j,3) = real(1.0, FMS_HI_KIND)/ &
+                                               ((Interp%HI_KIND_TYPE%lon_in(ip1)-Interp%HI_KIND_TYPE%lon_in(im1)) * &
                                                 (Interp%HI_KIND_TYPE%lat_in(jp1)-Interp%HI_KIND_TYPE%lat_in(jm1)))
         enddo
       enddo
