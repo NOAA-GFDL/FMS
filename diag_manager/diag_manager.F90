@@ -436,13 +436,20 @@ CONTAINS
     INTEGER,          OPTIONAL, INTENT(in) :: area          !< Id of the area field
     INTEGER,          OPTIONAL, INTENT(in) :: volume        !< Id of the volume field
     CHARACTER(len=*), OPTIONAL, INTENT(in) :: realm         !< String to set as the modeling_realm attribute
+    logical                                :: allow_log
 
     if (use_modern_diag) then
+      ! check if logging registered fields, uses arg and nml flag
+      IF ( PRESENT(do_not_log) ) THEN
+         allow_log = .NOT.do_not_log
+      ELSE
+         allow_log = .TRUE.
+      END IF
       register_diag_field_array = fms_diag_object%fms_register_diag_field_array( &
        & module_name, field_name, axes, init_time, long_name=long_name, &
        & units=units, missing_value=missing_value, var_range=range, mask_variant=mask_variant, &
-       & standard_name=standard_name, verbose=verbose, do_not_log=do_not_log, err_msg=err_msg, &
-       & interp_method=interp_method, tile_count=tile_count, area=area, volume=volume, realm=realm)
+       & standard_name=standard_name, verbose=verbose, do_not_log=.not.(do_diag_field_log.AND.allow_log), &
+       & err_msg=err_msg, interp_method=interp_method, tile_count=tile_count, area=area, volume=volume, realm=realm)
     else
       register_diag_field_array = register_diag_field_array_old(module_name, field_name, axes, init_time, &
        & long_name=long_name, units=units, missing_value=missing_value, range=range, mask_variant=mask_variant, &
@@ -479,6 +486,7 @@ end function register_diag_field_array
                                                                           !! with this field
     CHARACTER(len=*),               OPTIONAL, INTENT(in) :: realm         !< String to set as the value to the
                                                                           !! modeling_realm attribute
+    logical                                              :: allow_log
 
     ! Fatal error if the module has not been initialized.
     IF ( .NOT.module_is_initialized ) THEN
@@ -487,10 +495,16 @@ end function register_diag_field_array
     END IF
 
     if (use_modern_diag) then
+      ! check if logging registered fields, uses arg and nml flag
+      IF ( PRESENT(do_not_log) ) THEN
+         allow_log = .NOT.do_not_log
+      ELSE
+         allow_log = .TRUE.
+      END IF
       register_static_field = fms_diag_object%fms_register_static_field(module_name, field_name, axes, &
        & long_name=long_name, units=units, missing_value=missing_value, range=range, mask_variant=mask_variant, &
-       & standard_name=standard_name, dynamic=DYNAMIC, do_not_log=do_not_log, interp_method=interp_method,&
-       & tile_count=tile_count, area=area, volume=volume, realm=realm)
+       & standard_name=standard_name, dynamic=DYNAMIC, do_not_log=.not.(do_diag_field_log.AND.allow_log), &
+       & interp_method=interp_method, tile_count=tile_count, area=area, volume=volume, realm=realm)
     else
       register_static_field = register_static_field_old(module_name, field_name, axes, &
        & long_name=long_name, units=units, missing_value=missing_value, range=range, mask_variant=mask_variant, &
@@ -3780,10 +3794,12 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
 
   !> @brief Initialize Diagnostics Manager.
   !! @details Open and read diag_table. Select fields and files for diagnostic output.
-  SUBROUTINE diag_manager_init(diag_model_subset, time_init, err_msg)
+  SUBROUTINE diag_manager_init(diag_model_subset, time_init, err_msg, logfile_separator)
     INTEGER, OPTIONAL, INTENT(IN) :: diag_model_subset
     INTEGER, DIMENSION(6), OPTIONAL, INTENT(IN) :: time_init !< Model time diag_manager initialized
     CHARACTER(len=*), INTENT(out), OPTIONAL :: err_msg
+    CHARACTER(len=1), INTENT(in), OPTIONAL  :: logfile_separator !< character to use as a csv-style data field separator
+                                                                 !! (defaults to '|')
 
     CHARACTER(len=*), PARAMETER :: SEP = '|'
 
@@ -3914,7 +3930,7 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
     END IF
 
     if (use_modern_diag) then
-      CALL fms_diag_object%init(diag_subset_output) 
+      CALL fms_diag_object%init(diag_subset_output)
     endif
    if (.not. use_modern_diag) then
      CALL parse_diag_table(DIAG_SUBSET=diag_subset_output, ISTAT=mystat, ERR_MSG=err_msg_local)
@@ -3928,13 +3944,17 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
 
     ! open diag field log file
     IF ( do_diag_field_log.AND.mpp_pe().EQ.mpp_root_pe() ) THEN
-       open(newunit=diag_log_unit, file='diag_field_log.out', action='WRITE')
+      open(newunit=diag_log_unit, file='diag_field_log.out', action='WRITE')
       if( .not. use_modern_diag) then
           WRITE (diag_log_unit,'(777a)') &
             & 'Module',        SEP, 'Field',          SEP, 'Long Name',    SEP,&
             & 'Units',         SEP, 'Number of Axis', SEP, 'Time Axis',    SEP,&
             & 'Missing Value', SEP, 'Min Value',      SEP, 'Max Value',    SEP,&
             & 'AXES LIST'
+      else
+          if( present(logfile_separator)) then
+              call fms_diag_object%fms_set_field_log_separator(logfile_separator)
+          endif
       endif
     END IF
 
