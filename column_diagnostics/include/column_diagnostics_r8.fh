@@ -29,6 +29,6 @@
 #undef  COLUMN_DIAGNOSTICS_HEADER_
 #define COLUMN_DIAGNOSTICS_HEADER_ column_diagnostics_header_r8
 
-#include <column_diagnostics.inc>
+#include "column_diagnostics.inc"
 
 !> @}

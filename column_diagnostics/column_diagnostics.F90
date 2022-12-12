@@ -218,8 +218,8 @@ end subroutine close_column_diagnostics_units
 
 !#####################################################################
 
-#include <column_diagnostics_r4.fh>
-#include <column_diagnostics_r8.fh>
+#include "column_diagnostics_r4.fh"
+#include "column_diagnostics_r8.fh"
 
 
                end module column_diagnostics_mod
