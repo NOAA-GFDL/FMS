@@ -53,7 +53,7 @@
 #undef MONIN_OBUKHOV_STABLE_MIX_
 #define MONIN_OBUKHOV_STABLE_MIX_ monin_obukhov_stable_mix_r4
 
-#include <monin_obukhov_inter.inc>
+#include "monin_obukhov_inter.inc"
 
 !> @}
 ! close documentation grouping

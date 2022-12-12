@@ -106,7 +106,7 @@
 #undef STABLE_MIX_0D_
 #define STABLE_MIX_0D_ stable_mix_0d_r8
 
-#include <monin_obukhov.inc>
+#include "monin_obukhov.inc"
 
 !> @}
 ! close documentation grouping
