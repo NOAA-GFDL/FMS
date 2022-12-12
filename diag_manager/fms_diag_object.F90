@@ -313,6 +313,10 @@ INTEGER FUNCTION fms_register_diag_field_array(this, module_name, field_name, ax
 fms_register_diag_field_array=diag_null
 CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling with -Duse_yaml")
 #else
+    if( present(do_not_log))
+      if( .not. do_not_log ) call fms_log_field_info(module_name, field_name, axes, long_name, units,&
+                                   & missing_value, range, dynamic=.true., seperator))
+    end if
     fms_register_diag_field_array = this%register( &
       & module_name, field_name, init_time=init_time, &
       & axes=axes, longname=long_name, units=units, missing_value=missing_value, varrange=var_range, &
@@ -355,6 +359,9 @@ INTEGER FUNCTION fms_register_static_field(this, module_name, field_name, axes, 
 fms_register_static_field=diag_null
 CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling with -Duse_yaml")
 #else
+  if( present(do_not_log))
+    if( .not. do_not_log ) call fms_log_field_info()
+  end if
 ! Include static as optional variable to register here
   fms_register_static_field = this%register( &
       & module_name, field_name, axes=axes, &
@@ -673,4 +680,136 @@ subroutine dump_diag_obj( filename )
   call mpp_error( FATAL, "You can not use the modern diag manager without compiling with -Duse_yaml")
 #endif
 end subroutine
+
+!> @brief Writes brief diagnostic field info to the log file.
+!! @details If the <TT>do_diag_field_log</TT> namelist parameter is .TRUE.,
+!!     then a line briefly describing diagnostic field is added to
+!!     the log file.  Normally users should not call this subroutine
+!!     directly, since it is called by register_static_field and
+!!     register_diag_field if do_not_log is not set to .TRUE..  It is
+!!     used, however, in LM3 to avoid excessive logs due to the
+!!     number of fields registered for each of the tile types.  LM3
+!!     code uses a do_not_log parameter in the registration calls,
+!!     and subsequently calls this subroutine to log field information
+!!     under a generic name.
+SUBROUTINE fms_log_field_info(module_name, field_name, axes, long_name, units,&
+     & missing_value, range, dynamic, seperator)
+  CHARACTER(len=*), INTENT(in) :: module_name !< Module name
+  CHARACTER(len=*), INTENT(in) :: field_name !< Field name
+  INTEGER, DIMENSION(:), INTENT(in) :: axes !< Axis IDs
+  CHARACTER(len=*), OPTIONAL, INTENT(in) :: long_name !< Long name for field.
+  CHARACTER(len=*), OPTIONAL, INTENT(in) :: units !< Unit of field.
+  CLASS(*), OPTIONAL, INTENT(in) :: missing_value !< Missing value value.
+  CLASS(*), DIMENSION(:), OPTIONAL, INTENT(IN) :: range !< Valid range of values for field.
+  LOGICAL, OPTIONAL, INTENT(in) :: dynamic !< <TT>.TRUE.</TT> if field is not static.
+  CHARACTER(len=1), optional   :: seperator = '|'
+
+  logical, save :: wrote_header = .false. !< set if header was already written
+
+  ! ---- local vars
+  CHARACTER(len=256) :: lmodule, lfield, lname, lunits
+  CHARACTER(len=64)  :: lmissval, lmin, lmax
+  CHARACTER(len=8)   :: numaxis, timeaxis
+  CHARACTER(len=256) :: axis_name, axes_list
+  INTEGER :: i
+  REAL :: missing_value_use !< Local copy of missing_value
+  REAL, DIMENSION(2) :: range_use !< Local copy of range
+  ! return if disabled via nml, we'll just get the nml val from the original call
+  !IF ( .NOT.do_diag_field_log ) RETURN
+  IF ( mpp_pe().NE.mpp_root_pe() ) RETURN
+
+  ! Fatal error if range is present and its extent is not 2.
+  IF ( PRESENT(range) ) THEN
+    IF ( SIZE(range) .NE. 2 ) THEN
+      ! <ERROR STATUS="FATAL">extent of range should be 2</ERROR>
+      CALL error_mesg ('diag_util_mod::log_diag_field_info', 'extent of range should be 2', FATAL)
+    END IF
+  END IF
+
+  lmodule = TRIM(module_name)
+  lfield = TRIM(field_name)
+
+  IF ( PRESENT(long_name) ) THEN
+    lname  = TRIM(long_name)
+  ELSE
+    lname  = ''
+  END IF
+
+  IF ( PRESENT(units) ) THEN
+    lunits = TRIM(units)
+  ELSE
+    lunits = ''
+  END IF
+
+  WRITE (numaxis,'(i1)') SIZE(axes)
+
+  IF (PRESENT(missing_value)) THEN
+    IF ( use_cmor ) THEN
+      WRITE (lmissval,*) CMOR_MISSING_VALUE
+    ELSE
+      SELECT TYPE (missing_value)
+        TYPE IS (real(kind=r4_kind))
+          missing_value_use = missing_value
+        TYPE IS (real(kind=r8_kind))
+          missing_value_use = real(missing_value)
+        CLASS DEFAULT
+          CALL error_mesg ('diag_util_mod::log_diag_field_info',&
+                  & 'The missing_value is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)
+      END SELECT
+      WRITE (lmissval,*) missing_value_use
+    END IF
+  ELSE
+     lmissval = ''
+  ENDIF
+
+  IF ( PRESENT(range) ) THEN
+     SELECT TYPE (range)
+     TYPE IS (real(kind=r4_kind))
+        range_use = range
+     TYPE IS (real(kind=r8_kind))
+        range_use = real(range)
+     CLASS DEFAULT
+        CALL error_mesg ('diag_util_mod::log_diag_field_info',&
+             & 'The range is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)
+     END SELECT
+     WRITE (lmin,*) range_use(1)
+     WRITE (lmax,*) range_use(2)
+  ELSE
+     lmin = ''
+     lmax = ''
+  END IF
+
+  IF ( PRESENT(dynamic) ) THEN
+     IF (dynamic) THEN
+        timeaxis = 'T'
+     ELSE
+        timeaxis = 'F'
+     END IF
+  ELSE
+     timeaxis = ''
+  END IF
+
+  axes_list=''
+  DO i = 1, SIZE(axes)
+     CALL get_diag_axis_name(axes(i),axis_name)
+     IF ( TRIM(axes_list) /= '' ) axes_list = TRIM(axes_list)//','
+     axes_list = TRIM(axes_list)//TRIM(axis_name)
+    END DO
+
+  if ( .not. wrote_header ) then
+    WRITE (diag_log_unit,'(777a)') &
+        & 'Module',        sep, 'Field',          sep, 'Long Name',    sep,&
+        & 'Units',         sep, 'Number of Axis', sep, 'Time Axis',    sep,&
+        & 'Missing Value', sep, 'Min Value',      sep, 'Max Value',    sep,&
+        & 'AXES LIST'
+    wrote_header = .true.
+  endif
+
+  WRITE (diag_log_unit,'(777a)') &
+       & TRIM(lmodule),  sep, TRIM(lfield),  sep, TRIM(lname),    sep,&
+       & TRIM(lunits),   sep, TRIM(numaxis), sep, TRIM(timeaxis), sep,&
+       & TRIM(lmissval), sep, TRIM(lmin),    sep, TRIM(lmax),     sep,&
+       & TRIM(axes_list)
+END SUBROUTINE log_diag_field_info
+
 end module fms_diag_object_mod

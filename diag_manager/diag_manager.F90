@@ -3929,11 +3929,13 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
     ! open diag field log file
     IF ( do_diag_field_log.AND.mpp_pe().EQ.mpp_root_pe() ) THEN
        open(newunit=diag_log_unit, file='diag_field_log.out', action='WRITE')
-       WRITE (diag_log_unit,'(777a)') &
+      if( .not. use_modern_diag) then
+          WRITE (diag_log_unit,'(777a)') &
             & 'Module',        SEP, 'Field',          SEP, 'Long Name',    SEP,&
             & 'Units',         SEP, 'Number of Axis', SEP, 'Time Axis',    SEP,&
             & 'Missing Value', SEP, 'Min Value',      SEP, 'Max Value',    SEP,&
             & 'AXES LIST'
+      endif
     END IF
 
     module_is_initialized = .TRUE.
