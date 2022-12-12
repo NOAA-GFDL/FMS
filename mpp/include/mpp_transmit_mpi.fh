@@ -79,7 +79,7 @@
              call MPI_ISEND( put_data, put_len, MPI_TYPE_, to_pe, comm_tag, mpp_comm_private, send_request, error)
           else
              cur_send_request = cur_send_request + 1
-             if( cur_send_request > max_request )
+             if( cur_send_request > max_request ) &
              call mpp_error(FATAL, &
                   & "MPP_TRANSMIT: cur_send_request is greater than max_request, increase mpp_nml request_multiply")
              call MPI_ISEND( put_data, put_len, MPI_TYPE_, to_pe, comm_tag, mpp_comm_private, &
@@ -127,7 +127,7 @@
                   recv_request, error )
              else
                 cur_recv_request = cur_recv_request + 1
-                if( cur_recv_request > max_request )
+                if( cur_recv_request > max_request ) &
                 call mpp_error(FATAL, &
                      "MPP_TRANSMIT: cur_recv_request is greater than max_request, increase mpp_nml request_multiply")
                 call MPI_IRECV( get_data, get_len, MPI_TYPE_, from_pe, comm_tag, mpp_comm_private, &

@@ -152,7 +152,7 @@
       if( .NOT.mpp_file(unit)%read_on_this_pe )return
 
       if( .NOT.mpp_file(unit)%initialized ) call mpp_error( FATAL, 'MPP_READ: must first call mpp_read_meta.' )
-      if( mpp_file(unit)%format .NE. MPP_NETCDF )
+      if( mpp_file(unit)%format .NE. MPP_NETCDF ) &
          call mpp_error( FATAL, 'Currently dont support non-NetCDF mpp read' )
 
       if (.not.PRESENT(time_level)) then
