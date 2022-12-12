@@ -61,7 +61,7 @@
 #undef FIND_INDEX_
 #define FIND_INDEX_ find_index_r4
 
-#include <axis_utils2.inc>
+#include "axis_utils2.inc"
 
 !> @}
 ! close documentation grouping
