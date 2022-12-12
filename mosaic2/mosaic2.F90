@@ -434,8 +434,8 @@ subroutine get_mosaic_tile_grid(grid_file, fileobj, domain, tile_count)
 
 end subroutine get_mosaic_tile_grid
 
-#include <mosaic2_r4.fh>
-#include <mosaic2_r8.fh>
+#include "mosaic2_r4.fh"
+#include "mosaic2_r8.fh"
 
 end module mosaic2_mod
 !> @}

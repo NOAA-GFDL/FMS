@@ -37,5 +37,5 @@
 #undef  IS_INSIDE_POLYGON_
 #define IS_INSIDE_POLYGON_ is_inside_polygon_r8
 
-#include <mosaic2.inc>
+#include "mosaic2.inc"
 !> @}

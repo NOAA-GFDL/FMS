@@ -417,8 +417,8 @@ subroutine define_cube_mosaic(component, domain, layout, halo, maskmap)
   deallocate(is2,ie2,js2,je2)
 end subroutine define_cube_mosaic
 
-#include <grid2_r4.fh>
-#include <grid2_r8.fh>
+#include "grid2_r4.fh"
+#include "grid2_r8.fh"
 
 end module grid2_mod
 !> @}
