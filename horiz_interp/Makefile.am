@@ -43,12 +43,13 @@ libhoriz_interp_la_SOURCES = \
   include/horiz_interp.inc \
   include/horiz_interp_spherical.inc \
   include/horiz_interp_type.inc \
-  include/horiz_interp_bicubic.inc \
+  include/horiz_interp_bicubic_r4.fh \
   include/horiz_interp_bilinear_r4.fh \
   include/horiz_interp_conserve_r4.fh \
   include/horiz_interp_r4.fh \
   include/horiz_interp_spherical_r4.fh \
   include/horiz_interp_type_r4.fh \
+  include/horiz_interp_bicubic_r8.fh \
   include/horiz_interp_bilinear_r8.fh \
   include/horiz_interp_conserve_r8.fh \
   include/horiz_interp_r8.fh \
