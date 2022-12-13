@@ -646,7 +646,7 @@ _EOF
   '
 
 
-  printf "&diag_manager_nml \n use_modern_diag = .true. \n/" | cat > input.nml
+  printf "&diag_manager_nml \n use_modern_diag = .true. \n do_diag_field_log = .true. \n/" | cat > input.nml
   cat <<_EOF > diag_table.yaml
 title: test_diag_manager
 base_date: 2 1 1 0 0 0
