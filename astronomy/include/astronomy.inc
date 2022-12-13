@@ -145,10 +145,10 @@ real(kind=FMS_AST_KIND_), dimension(:,:), intent(out), optional :: half_day_out
 !---------------------------------------------------------------------
 !   local variables
 
-      real(kind=FMS_AST_KIND_), dimension(size(lat,1),size(lat,2)) :: t, tt, h, aa, bb,  &
-                                                                      & st, stt, sh
-      real(kind=FMS_AST_KIND_)                                     :: ang, dec
-      logical :: Lallow_negative
+real(kind=FMS_AST_KIND_), dimension(size(lat,1),size(lat,2)) :: t, tt, h, aa, bb,  &
+                                                                & st, stt, sh
+real(kind=FMS_AST_KIND_)                                     :: ang, dec
+logical :: Lallow_negative
 
 !---------------------------------------------------------------------
 !   local variables
@@ -172,20 +172,20 @@ real(kind=FMS_AST_KIND_), dimension(:,:), intent(out), optional :: half_day_out
 !--------------------------------------------------------------------
 !    be sure the time in the annual cycle is legitimate.
 !---------------------------------------------------------------------
-    if (time_since_ae < real(0.0,kind=FMS_AST_KIND_) .or. time_since_ae > twopi) &
+    if (time_since_ae < real(0.0,kind=FMS_AST_KIND_) .or. time_since_ae > real(twopi,kind=FMS_AST_KIND_)) &
         call error_mesg('astronomy_mod time_since_ae not between 0 and 2pi', FATAL)
 !--------------------------------------------------------------------
 !    be sure the time at longitude = 0.0 is legitimate.
 !---------------------------------------------------------------------
-      if (gmt < real(0.0,kind=FMS_AST_KIND_) .or. gmt > twopi) &
+      if (gmt < real(0.0,kind=FMS_AST_KIND_) .or. gmt > real(twopi,kind=FMS_AST_KIND_)) &
          call error_mesg('astronomy_mod gmt not between 0 and 2pi', FATAL)
 !---------------------------------------------------------------------
 !>    define the orbital angle (location in year), solar declination and
 !!    earth sun distance factor. use functions contained in this module.
 !---------------------------------------------------------------------
-    ang = angle(time_since_ae)
-    dec = declination(ang)
-    rrsun  = r_inv_squared(ang)
+    ang = ANGLE_(time_since_ae)
+    dec = DECLINATION_(ang)
+    rrsun  = R_INV_SQUARED_(ang)
 
 !---------------------------------------------------------------------
 !>    define terms needed in the cosine zenith angle equation.
@@ -197,8 +197,8 @@ real(kind=FMS_AST_KIND_), dimension(:,:), intent(out), optional :: half_day_out
 !>    define local time. force it to be between -pi and pi.
 !--------------------------------------------------------------------
     t = gmt + lon - PI
-    where(t >= PI) t = t - twopi
-    where(t < -PI) t = t + twopi
+    where(t >= PI) t = t - real(twopi,kind=FMS_AST_KIND_)
+    where(t < -PI) t = t + real(twopi,kind=FMS_AST_KIND_)
 
     Lallow_negative = .false.
     if (present(allow_negative_cosz)) then
@@ -261,14 +261,16 @@ real(kind=FMS_AST_KIND_), dimension(:,:), intent(out), optional :: half_day_out
 !    next day's sunrise. note that this includes the case when the
 !    day length is one day (h = pi).
 !-------------------------------------------------------------------
-        where (twopi - h < tt .and. (tt+h-twopi) /= real(0.0,kind=FMS_AST_KIND_) .and. t <= h ) &
-           cosz = (cosz*(h - t) + (aa*(tt + h - twopi) + bb*(stt + sh))) / ((h - t) + (tt + h - twopi))
+        where (real(twopi,kind=FMS_AST_KIND_) - h < tt &
+              .and. (tt+h-real(twopi,kind=FMS_AST_KIND_)) /= real(0.0,kind=FMS_AST_KIND_) .and. t <= h)
+           cosz = (cosz*(h - t) + (aa*(tt + h - real(twopi,kind=FMS_AST_KIND_)) + bb*(stt + sh))) &
+                  / ((h - t) + (tt + h - real(twopi,kind=FMS_AST_KIND_)))
 
 !-------------------------------------------------------------------
 !    case 7: averaging period begins after sunset and ends before the
 !    next day's sunrise
 !-------------------------------------------------------------------
-        where (h <  t .and. twopi - h >= tt) cosz = real(0.0,kind=FMS_AST_KIND_)
+        where (h <  t .and. real(twopi,kind=FMS_AST_KIND_) - h >= tt) cosz = real(0.0,kind=FMS_AST_KIND_)
 
 !-------------------------------------------------------------------
 !    case 8: averaging period begins after sunset and ends after the
@@ -276,8 +278,8 @@ real(kind=FMS_AST_KIND_), dimension(:,:), intent(out), optional :: half_day_out
 !    averaging period is less than a half-day (pi) the latter
 !    circumstance will never occur.
 !-----------------------------------------------------------------
-        where (h <  t .and. twopi - h < tt)
-          cosz = aa + bb*(stt + sh) / (tt + h - twopi)
+        where (h <  t .and. real(twopi,kind=FMS_AST_KIND_) - h < tt)
+          cosz = aa + bb*(stt + sh) / (tt + h - real(twopi,kind=FMS_AST_KIND_))
         end where
 
         else
@@ -296,9 +298,9 @@ real(kind=FMS_AST_KIND_), dimension(:,:), intent(out), optional :: half_day_out
         where (abs(t) <= h .and. abs(tt) <= h) fracday = (tt - t )/dt
         where (abs(t) <= h .and.       h < tt) fracday = ( h - t )/dt
         where (      h <  t                 )  fracday = real(0.0,kind=FMS_AST_KIND_)
-        where (twopi - h < tt)                 fracday = fracday +  &
-                                                         (tt + h - &
-                                                         twopi)/dt
+        where (real(twopi,kind=FMS_AST_KIND_) - h < tt)                 
+                                               fracday = fracday + (tt + h - &
+                                                        real(twopi,kind=FMS_AST_KIND_))/dt
 !----------------------------------------------------------------------
 !>    if instantaneous values are desired, define cosz at time t.
 !----------------------------------------------------------------------
@@ -699,7 +701,7 @@ real(kind=FMS_AST_KIND_) :: ang, dec, rr
 !--------------------------------------------------------------------
 !    be sure the time in the annual cycle is legitimate.
 !---------------------------------------------------------------------
-    if (time_since_ae < real(0.0,kind=FMS_AST_KIND_) .or. time_since_ae > twopi) &
+    if (time_since_ae < real(0.0,kind=FMS_AST_KIND_) .or. time_since_ae > real(twopi,kind=FMS_AST_KIND_)) &
         call error_mesg('astronomy_mod time_since_ae not between 0 and 2pi', FATAL)
 
 !---------------------------------------------------------------------
@@ -707,10 +709,10 @@ real(kind=FMS_AST_KIND_) :: ang, dec, rr
 !!    half-day length and earth sun distance factor. Use functions
 !!    contained in this module.
 !---------------------------------------------------------------------
-    ang = angle (time_since_ae)
-    dec = declination(ang)
+    ang = ANGLE_(time_since_ae)
+    dec = DECLINATION_(ang)
     h   = half_day    (lat, dec)
-    rr  = r_inv_squared (ang)
+    rr  = R_INV_SQUARED_(ang)
 
 !---------------------------------------------------------------------
 !>    Where the entire day is dark, define cosz to be zero. otherwise
@@ -887,7 +889,7 @@ real(kind=FMS_AST_KIND_) :: time_since_ae
 !    be sure the time in the annual cycle is legitimate.
 !---------------------------------------------------------------------
     time_since_ae = orbital_time(time)
-    if (time_since_ae < real(0.0,kind=FMS_AST_KIND_) .or. time_since_ae > twopi) &
+    if (time_since_ae < real(0.0,kind=FMS_AST_KIND_) .or. time_since_ae > real(twopi,kind=FMS_AST_KIND_)) &
         call error_mesg ('astronomy_mod time_since_ae not between 0 and 2pi', FATAL)
 
 !--------------------------------------------------------------------
@@ -1071,7 +1073,7 @@ integer                                                      :: n
         solar = real(0.0,kind=FMS_AST_KIND_)
         cosz = real(0.0, kind=FMS_AST_KIND_)
         do n =1, num_angles
-          t = float(n-1)*twopi/float(num_angles)
+          t = float(n-1)*real(twopi,kind=FMS_AST_KIND_)/float(num_angles)
           call daily_mean_solar(lat,t, z, fracday, rrsun)
           s = z*rrsun*fracday
           solar = solar + s
@@ -1106,7 +1108,7 @@ integer                                                      :: n
 !>    save the values that have been calculated as module variables, if
 !!    those variables are present; i.e., not the spectral 2-layer model.
 !---------------------------------------------------------------------
-        if (allocated (cosz_ann)) then
+        if (allocated (real(cosz_ann,kind=FMS_AST_KIND_))) then
           cosz_ann    = cosz
           solar_ann   = solar
           fracday_ann = fracday
@@ -1126,11 +1128,11 @@ integer                                                      :: n
 !!    variables.
 !--------------------------------------------------------------------
       else
-        if (allocated (cosz_ann)) then
-          cosz    = cosz_ann
-          solar   = solar_ann
-          fracday = fracday_ann
-          rrsun = rrsun_ann
+        if (allocated (real(cosz_ann,kind=FMS_AST_KIND_))) then
+          cosz    = real(cosz_ann,kind=FMS_AST_KIND_)
+          solar   = real(solar_ann,kind=FMS_AST_KIND_)
+          fracday = real(fracday_ann,kind=FMS_AST_KIND_)
+          rrsun   = real(rrsun_ann,kind=FMS_AST_KIND_)
         endif
     endif
 
@@ -1195,10 +1197,10 @@ real(kind=FMS_AST_KIND_)                         :: rrsun
 !!    variables contain the results at the desired latitudes.
 !--------------------------------------------------------------------
     else
-        cosz(:)    = cosz_ann(1,jst:jnd)
-        solar(:)   = solar_ann(1,jst:jnd)
-        fracday(:) = fracday_ann(1,jst:jnd)
-        rrsun      = rrsun_ann
+        cosz(:)    = real(cosz_ann,kind=FMS_AST_KIND_)(1,jst:jnd)
+        solar(:)   = real(solar_ann,kind=FMS_AST_KIND_)(1,jst:jnd)
+        fracday(:) = real(fracday_ann,kind=FMS_AST_KIND_)(1,jst:jnd)
+        rrsun      = real(rrsun_ann,kind=FMS_AST_KIND_)
     endif
 
 end subroutine ANNUAL_MEAN_SOLAR_1D_
@@ -1288,8 +1290,8 @@ real(kind=FMS_AST_KIND_) :: d1, d2, d3, d4, d5, dt, norm
 ! wfc moving to astronomy_init
 !     allocate ( orb_angle(0:num_angles) )
     orb_angle(0) = real(0.0,kind=FMS_AST_KIND_)
-    dt = twopi/float(num_angles)
-    norm = sqrt(real(1.0,kind=FMS_AST_KIND_) - ecc**2)
+    dt = real(twopi,kind=FMS_AST_KIND_)/float(num_angles)
+    norm = sqrt(real(1.0,kind=FMS_AST_KIND_) - real(ecc,kind=FMS_AST_KIND_)**2)
     dt = dt*norm
 
 !---------------------------------------------------------------------
@@ -1297,13 +1299,13 @@ real(kind=FMS_AST_KIND_) :: d1, d2, d3, d4, d5, dt, norm
 !!    the orbit.
 !---------------------------------------------------------------------
     do n = 1, num_angles
-       d1 = dt*r_inv_squared(orb_angle(n-1))
-       d2 = dt*r_inv_squared(orb_angle(n-1) + real(0.5,kind=FMS_AST_KIND_)*d1)
-       d3 = dt*r_inv_squared(orb_angle(n-1) + real(0.5,kind=FMS_AST_KIND_)*d2)
-       d4 = dt*r_inv_squared(orb_angle(n-1) + d3)
+       d1 = dt*R_INV_SQUARED_(real(orb_angle,kind=FMS_AST_KIND_)(n-1))
+       d2 = dt*R_INV_SQUARED_(real(orb_angle,kind=FMS_AST_KIND_)(n-1) + real(0.5,kind=FMS_AST_KIND_)*d1)
+       d3 = dt*R_INV_SQUARED_(real(orb_angle,kind=FMS_AST_KIND_)(n-1) + real(0.5,kind=FMS_AST_KIND_)*d2)
+       d4 = dt*R_INV_SQUARED_(real(orb_angle,kind=FMS_AST_KIND_)(n-1) + d3)
        d5 = d1/real(6.0,kind=FMS_AST_KIND_) + d2/real(3.0,kind=FMS_AST_KIND_) &
             + d3/real(3.0,kind=FMS_AST_KIND_) + d4/real(6.0,kind=FMS_AST_KIND_)
-       orb_angle(n) = orb_angle(n-1) + d5
+       orb_angle(n) = real(orb_angle,kind=FMS_AST_KIND_)(n-1) + d5
     end do
 
 end subroutine ORBIT_
@@ -1322,7 +1324,7 @@ real(kind=FMS_AST_KIND_), intent(in) :: ang !< angular position of earth in its 
 !---------------------------------------------------------------------
 !  local variables
 
-real(kind=FMS_AST_KIND_) :: r_inv_squared !< The inverse of the square of the earth-sun distance relative
+real(kind=FMS_AST_KIND_) :: R_INV_SQUARED_ !< The inverse of the square of the earth-sun distance relative
                       !! to the mean distance [dimensionless]
 real(kind=FMS_AST_KIND_) :: r             !< Earth-Sun distance relative to mean distance [dimensionless]
 real(kind=FMS_AST_KIND_) :: rad_per       !< Angular position of perihelion [radians]
@@ -1331,10 +1333,10 @@ real(kind=FMS_AST_KIND_) :: rad_per       !< Angular position of perihelion [rad
 !>    define the earth-sun distance (r) and then return the inverse of
 !!    its square (r_inv_squared) to the calling routine.
 !--------------------------------------------------------------------
-    rad_per       = per*deg_to_rad
-    r             = (real(1.0,kind=FMS_AST_KIND_) - ecc**2)/(real(1.0,kind=FMS_AST_KIND_) &
-                    + ecc*cos(ang - rad_per))
-    r_inv_squared = r**(-2)
+    rad_per       = real(per,kind=FMS_AST_KIND_)*real(deg_to_rad,kind=FMS_AST_KIND_)
+    r             = (real(1.0,kind=FMS_AST_KIND_) - real(ecc,kind=FMS_AST_KIND_)**2)/(real(1.0,kind=FMS_AST_KIND_) &
+                    + real(ecc,kind=FMS_AST_KIND_)*cos(ang - rad_per))
+    R_INV_SQUARED_ = r**(-2)
 
 
 end function R_INV_SQUARED_
@@ -1352,7 +1354,7 @@ real(kind=FMS_AST_KIND_), intent(in) :: t !< time of year (between 0 and 2*pi; t
 !--------------------------------------------------------------------
 !   local variables
 !--------------------------------------------------------------------
-real(kind=FMS_AST_KIND_) :: angle !< Orbital position relative to NH autumnal equinox [radians]
+real(kind=FMS_AST_KIND_) :: ANGLE_ !< Orbital position relative to NH autumnal equinox [radians]
 real(kind=FMS_AST_KIND_) :: norm_time !< Index into orbital table corresponding to input time [dimensionless]
 real(kind=FMS_AST_KIND_) :: x !< Fractional distance between the orbital table entries bracketing the input time [dimensionless]
 integer                  :: int !< Table index which is lower than actual position, but closest to it [dimensionless]
@@ -1365,13 +1367,14 @@ integer                  :: int_1 !< Next table index just larger than actual or
 !!    position as being x of the way between int and int_1. Renormalize
 !!    angle to be within the range 0 to 2*pi.
 !--------------------------------------------------------------------
-    norm_time = t*float(num_angles)/twopi
+    norm_time = t*float(num_angles)/real(twopi,kind=FMS_AST_KIND_)
     int = floor(norm_time)
     int = modulo(int,num_angles)
     int_1 = int+1
     x = norm_time - floor(norm_time)
-    angle = (real(1.0,kind=FMS_AST_KIND_) -x)*orb_angle(int) + x*orb_angle(int_1)
-    angle = modulo(angle, twopi)
+    ANGLE_ = (real(1.0,kind=FMS_AST_KIND_) -x)*real(orb_angle,kind=FMS0)(int) &
+            + x*real(orb_angle,kind=FMS_AST_KIND_)(int_1)
+    ANGLE_ = modulo(ANGLE_, real(twopi,kind=FMS_AST_KIND_))
 
 end function ANGLE_
 
@@ -1387,16 +1390,16 @@ real(kind=FMS_AST_KIND_), intent(in) :: ang !< solar orbital position ang in ear
 !--------------------------------------------------------------------
 !   local variables
 
-real(kind=FMS_AST_KIND_) :: declination !< Solar declination angle [radians]
+real(kind=FMS_AST_KIND_) :: DECLINATION_ !< Solar declination angle [radians]
 real(kind=FMS_AST_KIND_) :: rad_obliq !< Obliquity of the ecliptic [radians]
 real(kind=FMS_AST_KIND_) :: sin_dec !< Sine of the solar declination [dimensionless]
 
 !---------------------------------------------------------------------
 !    compute the solar declination.
 !---------------------------------------------------------------------
-    rad_obliq   =   obliq*deg_to_rad
-    sin_dec     = - sin(rad_obliq)*sin(ang)
-    declination =   asin(sin_dec)
+    rad_obliq    =   real(obliq,kind=FMS_AST_KIND_)*real(deg_to_rad,kind=FMS_AST_KIND_)
+    sin_dec      = - sin(rad_obliq)*sin(ang)
+    DECLINATION_ =   asin(sin_dec)
 
 end function DECLINATION_
 
@@ -1494,8 +1497,8 @@ type(time_type), intent(in) :: time !< time (1 year = 2*pi) since autumnal equin
 real(kind=FMS_AST_KIND_)                        :: t
 
     t = real ( (time - autumnal_eq_ref)//period_time_type)
-    t = twopi*(t - floor(t))
-    if (time < autumnal_eq_ref) t = twopi - t
+    t = real(twopi,kind=FMS_AST_KIND_)*(t - floor(t))
+    if (time < autumnal_eq_ref) t = real(twopi,kind=FMS_AST_KIND_) - t
 
 
 end function ORBITAL_TIME_
@@ -1514,7 +1517,7 @@ real(kind=FMS_AST_KIND_)    :: t
 integer ::  seconds, days
 
     call get_time (time, seconds, days)
-    t = twopi*real(seconds)/seconds_per_day
+    t = real(twopi,kind=FMS_AST_KIND_)*real(seconds)/real(seconds_per_day,kind=FMS_AST_KIND_)
 
 end function UNIVERSAL_TIME_
 
