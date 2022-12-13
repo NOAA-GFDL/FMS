@@ -81,9 +81,9 @@
              end do
           endif
       else if( to_pe.EQ.ALL_PES )then !this is a broadcast from from_pe
-          if( from_pe.LT.0 .OR. from_pe.GE.npes )
+          if( from_pe.LT.0 .OR. from_pe.GE.npes ) &
             call mpp_error( FATAL, 'MPP_TRANSMIT: broadcasting from invalid PE.' )
-          if( put_len.GT.get_len )
+          if( put_len.GT.get_len ) &
             call mpp_error( FATAL, 'MPP_TRANSMIT: size mismatch between put_data and get_data.' )
           if( pe.EQ.from_pe )then
               if( LOC(get_data).NE.LOC(put_data) )then
