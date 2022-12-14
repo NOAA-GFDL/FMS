@@ -58,7 +58,7 @@ program test_axis_utils_r4
 
     !< Case 1: Here the variable "axis" in the file does not have the attribute "bounds" or "edges", so
     !! it calculates them from the data in "axis"
-    answers = 0.0_r4_knd
+    answers = 0.0_r4_kind
     call axis_edges(fileobj, "axis", answers)
     call compare_answers(answers, data_in%answers, "1")
 
