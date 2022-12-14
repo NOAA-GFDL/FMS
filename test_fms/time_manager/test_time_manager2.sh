@@ -49,6 +49,9 @@ test16=.false.
 test17=.false.
 test18=.false.
 test19=.false.
+test20=.false.
+test21=.false.
+test22=.false.
 /
 _EOF
 
@@ -85,5 +88,8 @@ test_next "invalid dates"
 test_next "gregorian calendar"
 test_next "length_of_year"
 test_next "real_to_time_type"
+test_next "compare updated set/get_date_gregorian"
+test_next "real_to_time_type mixed precision"
+test_next "safe_rtoi mixed precision"
 
 test_done

@@ -25,17 +25,20 @@ program test_time_manager
  use    constants_mod, only: constants_init, rseconds_per_day=>seconds_per_day
  use time_manager_mod, only: time_type, set_date, get_date, set_time, set_calendar_type, real_to_time_type
  use time_manager_mod, only: length_of_year, leap_year, days_in_month, days_in_year, print_time
- use time_manager_mod, only: set_ticks_per_second, get_ticks_per_second
+ use time_manager_mod, only: set_ticks_per_second, get_ticks_per_second, safe_rtoi
  use time_manager_mod, only: decrement_date, increment_date, get_time, increment_time, decrement_time
  use time_manager_mod, only: JULIAN, GREGORIAN, THIRTY_DAY_MONTHS, NOLEAP
  use time_manager_mod, only: operator(-), operator(+),  operator(*),  operator(/),  &
                              operator(>), operator(>=), operator(==), operator(/=), &
                              operator(<), operator(<=), operator(//), assignment(=)
+ use platform_mod
 
  implicit none
 
  type(time_type) :: Time, Time0, time1, time2
  real    :: xx
+ real(r4_kind) :: rtoi4 
+ real(r8_kind) :: rtoi8 
  integer :: yr, mo, day, hr, min, sec, ticks
  integer :: yr0, mo0, day0, hr0, min0, sec0, ticks0
  integer :: year, month, dday, days_this_month
@@ -47,6 +50,7 @@ program test_time_manager
  character(len=23), allocatable, dimension(:) :: test_date
  character(len=8) :: test_name
  character(len=256) :: out_msg
+ integer, parameter :: do_floor = 0, do_nearest = 1
 
  !: for testing set/get_date_gregorian
  integer, parameter :: days_in_400_year_period = 146097
@@ -57,11 +61,11 @@ program test_time_manager
          & test8 =.true.
  logical :: test9 =.true.,test10=.true.,test11=.true.,test12=.true.,test13=.true.,test14=.true.,test15=.true., &
          & test16=.true.
- logical :: test17=.true.,test18=.true.,test19=.true.,test20=.true.
+ logical :: test17=.true.,test18=.true.,test19=.true.,test20=.true., test21=.true., test22=.true.
 
  namelist / test_nml / test1 ,test2 ,test3 ,test4 ,test5 ,test6 ,test7 ,test8,  &
                        test9 ,test10,test11,test12,test13,test14,test15,test16, &
-                       test17,test18,test19,test20
+                       test17,test18,test19,test20,test21, test22
 
  call fms_init
  call constants_init
@@ -680,6 +684,41 @@ program test_time_manager
     enddo
     write(outunit,'(a)') 'set_date_gregorian and get_date_gregorian tests successful'
  endif
+  !! mixed precision tests
+  if(test21) then
+    !! check r4 overloads from original real_to_time_type test 
+    write(outunit,'(/,a)') '#################################  test21  #################################'
+    call print_time(real_to_time_type(real(86401.1, r4_kind)), 'real_to_time_type(86401.1):', unit=outunit)
+    Time = real_to_time_type(real(-1.0, r4_kind), err_msg)
+    if(err_msg == '') then
+       call mpp_error(FATAL, 'test21 fails: did not get the expected error message')
+    else
+      write(outunit,'(a)') 'test successful: '//trim(err_msg)
+    endif
+    !! check equality between r4 and r8 returned types
+    if ( real_to_time_type(real(86401.1, r4_kind)) .ne. real_to_time_type(real(86401.1, r8_kind))) then
+        call mpp_error(FATAL, 'test21 fails: r4 and r8 values return different time_types')
+    endif
+  endif
+
+  if(test22) then
+    !! check rounding routine works with mixed precision
+    rtoi4 = 213.6232323_r4_kind
+    rtoi8 = 213.6232323_r8_kind
+    if ( safe_rtoi(rtoi4, do_floor) .ne. safe_rtoi(rtoi8, do_floor) .and. &
+         safe_rtoi(rtoi4, do_floor) .eq. 213) call mpp_error(FATAL, "safe_rtoi failed on"// &
+                                                                    "mixed precision do_floor")
+    if ( safe_rtoi(rtoi4, do_nearest) .ne. safe_rtoi(rtoi8, do_nearest) .and. &
+         safe_rtoi(rtoi4, do_nearest) .eq. 214) call mpp_error(FATAL, "safe_rtoi failed on"// &
+                                                                      "mixed precision do_nearest")
+    rtoi4 = 86401.5_r4_kind
+    rtoi8 = 86401.5_r8_kind
+    if ( safe_rtoi(rtoi4, do_floor) .ne. safe_rtoi(rtoi8, do_floor)) call mpp_error(FATAL, "safe_rtoi failed on"// &
+                                                                    "mixed precision do_floor")
+    if ( safe_rtoi(rtoi4, do_nearest) .ne. safe_rtoi(rtoi8, do_nearest)) call mpp_error(FATAL, "safe_rtoi failed on"// &
+                                                                      "mixed precision do_nearest")
+    
+  endif
 
   call fms_end
 

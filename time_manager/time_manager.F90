@@ -118,6 +118,9 @@ public :: set_date_julian, set_date_no_leap, get_date_julian, get_date_no_leap
 
 public :: date_to_string
 
+! just used in unit test to check mixed precision
+public :: safe_rtoi
+
 !====================================================================
 
 ! Global data to define calendar type

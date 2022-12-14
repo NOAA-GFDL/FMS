@@ -21,15 +21,9 @@
 
 #undef FMS_TM_KIND
 #define FMS_TM_KIND r8_kind
-#undef TIME_REAL_DIVIDE
-#define TIME_REAL_DIVIDE time_real_divide_r8
-#undef TIME_TYPE_TO_REAL
-#define TIME_TYPE_TO_REAL time_type_to_real_r8
 #undef REAL_TO_TIME_TYPE
 #define REAL_TO_TIME_TYPE real_to_time_type_r8
 #undef SAFE_RTOI
 #define SAFE_RTOI safe_rtoi_r8
-#undef TIME_SCALAR_DIVIDE
-#define TIME_SCALAR_DIVIDE time_scalar_divide_r8
 #include "time_manager.inc"
 !> @}
