@@ -40,8 +40,8 @@ module axis_utils2_mod
   private
 
   integer, parameter :: maxatts = 100
-  real(r8_kind), parameter    :: epsln= 1.e-10
-  real(r8_kind), parameter    :: fp5 = 0.5, f360 = 360.0
+  real(r8_kind), parameter    :: epsln= 1.d-10
+  real(r8_kind), parameter    :: fp5 = 0.5d0, f360 = 360.0d0
 !> @}
 ! Include variable "version" to be written to log file.
 #include<file_version.h>
