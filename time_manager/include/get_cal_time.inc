@@ -16,50 +16,9 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
-!> @defgroup get_cal_time_mod get_cal_time_mod
-!> @ingroup time_manager
-!> @brief Given a time increment as a real number, and base time and calendar
-!!  as a character strings, returns time as a time_type variable.
-
 !> @addtogroup get_cal_time_mod
 !> @{
-module get_cal_time_mod
 
-use          fms_mod, only: error_mesg, FATAL, write_version_number, lowercase, &
-                            check_nml_error, stdlog, &
-                            mpp_pe, mpp_root_pe
-
-use time_manager_mod, only: time_type, operator(+), operator(-), set_time, get_time, &
-                            NO_CALENDAR, THIRTY_DAY_MONTHS, NOLEAP, JULIAN, GREGORIAN, &
-                            set_calendar_type, get_calendar_type, set_date, &
-                            get_date, days_in_month, valid_calendar_types
-use mpp_mod,          only: input_nml_file
-
-implicit none
-private
-
-public :: get_cal_time
-
-logical :: module_is_initialized=.false. !> This module is initialized on
-                                         !! the first call to get_cal_time
-                                         !! because there is no constructor.
-! <NAMELIST NAME="get_cal_time_nml">
-! <DATA NAME="allow_calendar_conversion" TYPE="logical"  DEFAULT=".true.">
-!   This sets the default value of the optional argument named "permit_calendar_conversion" of get_cal_time.
-!   This namelist is deprecated as of the memphis release.
-!   If calendar conversion is not desired, then it is recommended that permit_calendar_conversion
-!   be present in the call to get_cal_time and that it be set to .false.
-! </DATA>
-
-logical :: allow_calendar_conversion=.true.
-
-namelist / get_cal_time_nml / allow_calendar_conversion
-! </NAMELIST>
-
-! Include variable "version" to be written to log file.
-#include<file_version.h>
-
-contains
 !> @brief Calculates what a given calendar time would be after a interval of time
 !!
 !! @param time_increment A time interval
@@ -150,28 +109,28 @@ contains
 !!
 !! @note This option was originally coded to allow noleap calendar as input when
 !! the julian calendar was in effect by the time_manager.
-function get_cal_time(time_increment, units, calendar, permit_calendar_conversion)
-real, intent(in) :: time_increment
+function GET_CAL_TIME(time_increment, units, calendar, permit_calendar_conversion) result(cal_time)
+real(FMS_TM_KIND), intent(in) :: time_increment
 character(len=*), intent(in) :: units
 character(len=*), intent(in) :: calendar
 logical, intent(in), optional :: permit_calendar_conversion
-type(time_type) :: get_cal_time
+type(time_type) :: cal_time
 integer :: year, month, day, hour, minute, second
 integer :: i1, increment_seconds, increment_days, increment_years, increment_months
-real    :: month_fraction
+real(FMS_TM_KIND)    :: month_fraction
 integer :: calendar_tm_i, calendar_in_i, ierr, io, logunit
 logical :: correct_form
 character(len=32) :: calendar_in_c
 character(len=64) :: err_msg
 type(time_type) :: base_time, base_time_plus_one_yr
-real :: dt
+real(FMS_TM_KIND) :: dt
 logical :: permit_conversion_local
 
 if(.not.module_is_initialized) then
   read (input_nml_file, get_cal_time_nml, iostat=io)
   ierr = check_nml_error (io, 'get_cal_time_nml')
 
-  call write_version_number("GET_CAL_TIME_MOD", version)
+  call write_version_number("get_cal_time_mod", version)
   logunit = stdlog()
   if(mpp_pe() == mpp_root_pe()) write (logunit, nml=get_cal_time_nml)
   module_is_initialized = .true.
@@ -192,7 +151,7 @@ correct_form = (trim(calendar_in_c)) == 'noleap'     .or. (trim(calendar_in_c)) 
                (trim(calendar_in_c)) == 'gregorian'
 
 if(.not.correct_form) then
-  call error_mesg('get_cal_time','"'//trim(calendar_in_c)//'"'// &
+  call error_mesg('GET_CAL_TIME','"'//trim(calendar_in_c)//'"'// &
    ' is not an acceptable calendar attribute. acceptable calendars are: '// &
    ' noleap, 365_day, 365_days, 360_day, julian, no_calendar, thirty_day_months, gregorian',FATAL)
 endif
@@ -209,7 +168,7 @@ if(.not.permit_conversion_local) then
                  (trim(calendar_in_c) == 'no_calendar'       .and. calendar_tm_i == NO_CALENDAR)       .or. &
                  (trim(calendar_in_c) == 'gregorian'         .and. calendar_tm_i == GREGORIAN)
   if(.not.correct_form) then
-    call error_mesg('get_cal_time','calendar not consistent with calendar type in use by time_manager.'// &
+    call error_mesg('GET_CAL_TIME','calendar not consistent with calendar type in use by time_manager.'// &
          ' calendar='//trim(calendar_in_c)//'. Type in use by time_manager='// &
                           & valid_calendar_types(calendar_tm_i),FATAL)
   endif
@@ -234,8 +193,8 @@ if (permit_conversion_local) then
     case ('gregorian')
         calendar_in_i = GREGORIAN
     case default
-        call error_mesg('get_cal_time', &
-                 trim(calendar_in_c)//' is an invalid calendar type (specified in call to get_cal_time)',FATAL)
+        call error_mesg('GET_CAL_TIME', &
+                 trim(calendar_in_c)//' is an invalid calendar type (specified in call to GET_CAL_TIME)',FATAL)
     end select
 else
     calendar_in_i = calendar_tm_i
@@ -253,7 +212,7 @@ if(calendar_in_i /= NO_CALENDAR) then
 endif
 
 if(.not.correct_form) then
-  call error_mesg('get_cal_time',trim(units)//' is an invalid string for units.' // &
+  call error_mesg('GET_CAL_TIME',trim(units)//' is an invalid string for units.' // &
         ' units must begin with a time unit then the word "since"' // &
         ' Valid time units are: "seconds" "minutes", "hours", "days", and, ' // &
         ' except when NO_CALENDAR is in effect, "months" and "years"',FATAL)
@@ -313,50 +272,33 @@ else if(lowercase(units(1:12)) == 'months since') then
   increment_days = floor(dt/86400)
   increment_seconds = int(dt - increment_days*86400)
 else
-  call error_mesg('get_cal_time','"'//trim(units)//'" is not an acceptable units attribute of time.'// &
+  call error_mesg('GET_CAL_TIME','"'//trim(units)//'" is not an acceptable units attribute of time.'// &
             & ' It must begin with: "years since", "months since", "days since", "hours since", "minutes since",'// &
             & ' or "seconds since"',FATAL)
 endif
 
 if (calendar_in_i /= calendar_tm_i) then
     if(calendar_in_i == NO_CALENDAR .or. calendar_tm_i == NO_CALENDAR) then
-      call error_mesg('get_cal_time','Cannot do calendar conversion because input calendar is '// &
+      call error_mesg('GET_CAL_TIME','Cannot do calendar conversion because input calendar is '// &
        trim(valid_calendar_types(calendar_in_i))//' and time_manager is using '// &
        trim(valid_calendar_types(calendar_tm_i))// &
        ' Conversion cannot be done if either is NO_CALENDAR',FATAL)
     endif
     call get_date(base_time,year, month, day, hour, minute, second)
-    get_cal_time = set_date(year,month,day,hour,minute,second) + set_time(increment_seconds, increment_days)
-    call get_date(get_cal_time,year,month,day,hour,minute,second)
+    cal_time = set_date(year,month,day,hour,minute,second) + set_time(increment_seconds, increment_days)
+    call get_date(cal_time,year,month,day,hour,minute,second)
     call set_calendar_type(calendar_tm_i)
-    get_cal_time = set_date(year,month,day,hour,minute,second, err_msg=err_msg)
+    cal_time = set_date(year,month,day,hour,minute,second, err_msg=err_msg)
     if(err_msg /= '') then
-      call error_mesg('get_cal_time','Error in function get_cal_time: '//trim(err_msg)// &
+      call error_mesg('GET_CAL_TIME','Error in function GET_CAL_TIME: '//trim(err_msg)// &
                ' Note that the time_manager is using the '//trim(valid_calendar_types(calendar_tm_i))//' calendar '// &
-               'while the calendar type passed to function get_cal_time is '//calendar_in_c,FATAL)
+               'while the calendar type passed to function GET_CAL_TIME is '//calendar_in_c,FATAL)
     endif
 else
-    get_cal_time = base_time + set_time(increment_seconds, increment_days)
+    cal_time = base_time + set_time(increment_seconds, increment_days)
 endif
 
-end function get_cal_time
-!------------------------------------------------------------------------
-function cut0(string)
-character(len=256) :: cut0
-character(len=*), intent(in) :: string
-integer :: i
+end function GET_CAL_TIME
 
-cut0 = string
-
-do i=1,len(string)
-  if(ichar(string(i:i)) == 0 ) then
-    cut0(i:i) = ' '
-  endif
-enddo
-
-return
-end function cut0
-!------------------------------------------------------------------------
-end module get_cal_time_mod
 !> @}
 ! close documentation grouping

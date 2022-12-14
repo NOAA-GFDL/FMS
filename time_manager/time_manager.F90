@@ -63,7 +63,7 @@
 module time_manager_mod
 
 
-use platform_mod, only: r8_kind
+use platform_mod, only: r8_kind, r4_kind
 use constants_mod, only: rseconds_per_day=>seconds_per_day
 use fms_mod, only: error_mesg, FATAL, WARNING, write_version_number, stdout
 
@@ -249,6 +249,16 @@ interface set_date
   module procedure set_date_i, set_date_c
 end interface
 
+interface safe_rtoi
+  module procedure safe_rtoi_r4
+  module procedure safe_rtoi_r8
+end interface
+
+interface real_to_time_type
+  module procedure real_to_time_type_r4
+  module procedure real_to_time_type_r8
+end interface
+
 !> @addtogroup time_manager_mod
 !> @{
 
@@ -267,6 +277,7 @@ integer :: ticks_per_second = 1
 
 !======================================================================
 contains
+
 
 ! First define all operations on time intervals independent of calendar
 
@@ -298,9 +309,9 @@ contains
  character(len=*), intent(out) :: err_msg
  integer            :: seconds_new, days_new, ticks_new
 
- seconds_new = seconds + floor(ticks/real(ticks_per_second))
+ seconds_new = seconds + floor(ticks/real(ticks_per_second, r8_kind))
  ticks_new = modulo(ticks,ticks_per_second)
- days_new = days + floor(seconds_new/real(seconds_per_day))
+ days_new = days + floor(seconds_new/real(seconds_per_day, r8_kind))
  seconds_new = modulo(seconds_new,seconds_per_day)
 
  if ( seconds_new < 0 .or. ticks_new < 0) then
@@ -456,7 +467,7 @@ contains
      magnitude = 10**nspf
      tpsfrac = ticks_per_second*fraction
      if(allow_rounding) then
-       tick = nint((real(tpsfrac)/magnitude))
+       tick = nint((real(tpsfrac, r8_kind)/magnitude))
      else
        if(modulo(tpsfrac,magnitude) == 0) then
          tick = tpsfrac/magnitude
@@ -930,40 +941,14 @@ else
 endif
 
 end function time_minus
-! </FUNCTION>
-
-!--------------------------------------------------------------------------
-! <FUNCTION NAME="time_scalar_mult; operator(*)">
-
-!   <OVERVIEW>
-!       Returns time multiplied by integer factor n.
-!   </OVERVIEW>
-!   <DESCRIPTION>
-!       Returns time multiplied by integer factor n.
-!   </DESCRIPTION>
-!   <TEMPLATE>
-!     time_scalar_mult(time, n)
-!   </TEMPLATE>
-
-!   <IN NAME="time" UNITS="" TYPE="time_type" DIM="">
-!      A time interval.
-!   </IN>
-!   <IN NAME="n" UNITS="" TYPE="integer" DIM="">
-!      A time interval.
-!   </IN>
-!   <OUT NAME="" UNITS="" TYPE="time_type" DIM="" DEFAULT="">
-!       Returns time multiplied by integer factor n.
-!   </OUT>
 
 !> Returns time multiplied by integer factor n
 function time_scalar_mult(time, n)
-
-
 type(time_type)             :: time_scalar_mult
 type(time_type), intent(in) :: time
 integer, intent(in)         :: n
 integer                     :: days, seconds, ticks, num_sec
-double precision            :: sec_prod, tick_prod
+real(r8_kind)               :: sec_prod, tick_prod
 
 if(.not.module_is_initialized) call time_manager_init
 
@@ -992,71 +977,14 @@ seconds = int(sec_prod - dble(days) * dble(seconds_per_day))
 
 time_scalar_mult = set_time(seconds, time%days * n + days, ticks)
 
-end function time_scalar_mult
-! </FUNCTION>
-
-!-------------------------------------------------------------------------
-! <FUNCTION NAME="scalar_time_mult; operator(*)">
-
-!   <OVERVIEW>
-!       Returns time multiplied by integer factor n.
-!   </OVERVIEW>
-!   <DESCRIPTION>
-!       Returns time multiplied by integer factor n.
-!   </DESCRIPTION>
-!   <TEMPLATE>
-!     n * time
-!     scalar_time_mult(n, time)
-!   </TEMPLATE>
-
-!   <IN NAME="time" UNITS="" TYPE="time_type" DIM="">A time interval.</IN>
-!   <IN NAME="n" UNITS="" TYPE="integer" DIM=""> An integer. </IN>
-!   <OUT NAME="" UNITS="" TYPE="time_type" DIM="" DEFAULT="">
-!       Returns time multiplied by integer factor n.
-!   </OUT>
-
-!> Returns time multipled by integer factor n
-function scalar_time_mult(n, time)
-
-type(time_type) :: scalar_time_mult
-type(time_type), intent(in) :: time
-integer, intent(in) :: n
-
-scalar_time_mult = time_scalar_mult(time, n)
-
-end function scalar_time_mult
-! </FUNCTION>
-
-!-------------------------------------------------------------------------
-! <FUNCTION NAME="time_divide; operator(/)">
-
-!   <OVERVIEW>
-!       Returns the largest integer, n, for which time1 >= time2 * n.
-!   </OVERVIEW>
-!   <DESCRIPTION>
-!       Returns the largest integer, n, for which time1 >= time2 * n.
-!   </DESCRIPTION>
-!   <TEMPLATE>
-!     n = time1 / time2
-!     time_divide(time1, time2)
-!   </TEMPLATE>
-
-!   <IN NAME="time1" UNITS="" TYPE="time_type" DIM="">
-!      A time interval.
-!   </IN>
-!   <IN NAME="time2" UNITS="" TYPE="time_type" DIM="">
-!      A time interval.
-!   </IN>
-!   <OUT NAME="" UNITS="" TYPE="integer" DIM="" DEFAULT="">
-!       Returns the largest integer, n, for which time1 >= time2 * n.
-!   </OUT>
+end function time_scalar_mult 
 
 !> Returns the largest integer, n, for which time1 >= time2 * n.
 function time_divide(time1, time2)
 
 integer                     :: time_divide
 type(time_type), intent(in) :: time1, time2
-double precision            :: d1, d2
+real(r8_kind)           :: d1, d2
 
 if(.not.module_is_initialized) call time_manager_init
 
@@ -1072,38 +1000,13 @@ if(time_divide * time2 > time1 .or. (time_divide + 1) * time2 <= time1) &
    call error_mesg('time_divide',' quotient error :: notify developer',FATAL)
 
 end function time_divide
-! </FUNCTION>
-
-!-------------------------------------------------------------------------
-! <FUNCTION NAME="time_real_divide; operator(//)">
-
-!   <OVERVIEW>
-!       Returns the double precision quotient of two times.
-!   </OVERVIEW>
-!   <DESCRIPTION>
-!       Returns the double precision quotient of two times.
-!   </DESCRIPTION>
-!   <TEMPLATE>
-!     time1 // time2
-!     time_real_divide(time1, time2)
-!   </TEMPLATE>
-
-!   <IN NAME="time1" UNITS="" TYPE="time_type" DIM="">
-!      A time interval.
-!   </IN>
-!   <IN NAME="time2" UNITS="" TYPE="time_type" DIM="">
-!      A time interval.
-!   </IN>
-!   <OUT NAME="" UNITS="" TYPE="integer" DIM="double precision" DEFAULT="">
-!       Returns the double precision quotient of two times
-!   </OUT>
 
 !> Returns the double precision quotient of two times
 function time_real_divide(time1, time2)
 
-double precision :: time_real_divide
+real(r8_kind)               :: time_real_divide
 type(time_type), intent(in) :: time1, time2
-double precision :: d1, d2
+real(r8_kind)               :: d1, d2
 
 if(.not.module_is_initialized) call time_manager_init
 
@@ -1114,7 +1017,17 @@ d2 = time2%days * dble(seconds_per_day) + dble(time2%seconds) + dble(time2%ticks
 time_real_divide = d1 / d2
 
 end function time_real_divide
-! </FUNCTION>
+
+!> Returns time multipled by integer factor n
+function scalar_time_mult(n, time)
+
+type(time_type) :: scalar_time_mult
+type(time_type), intent(in) :: time !< time interval
+integer, intent(in) :: n !< an integer to multiply by
+
+scalar_time_mult = time_scalar_mult(time, n)
+
+end function scalar_time_mult
 
 !-------------------------------------------------------------------------
 ! <SUBROUTINE NAME="time_assignment; assignment(=)">
@@ -1147,7 +1060,6 @@ type(time_type), intent(in)  :: time2
    time1%days    = time2%days
    time1%ticks   = time2%ticks
 end subroutine time_assignment
-! </SUBROUTINE>
 
 !-------------------------------------------------------------------------
 ! <FUNCTION NAME="time_type_to_real">
@@ -1176,104 +1088,28 @@ time_type_to_real = real(dble(time%days) * 86400.d0 + dble(time%seconds) + &
 
 end function time_type_to_real
 
-!> @brief Convert a real number of seconds into a time_type variable.
-!! @return A filled time type variable, and an error message if an
-!!         error occurs.
-function real_to_time_type(x,err_msg) result(t)
-  real,intent(in) :: x !< Number of seconds.
-  character(len=*),intent(out),optional :: err_msg !< Error message.
-  type(time_type) :: t
-  integer :: days
-  integer :: seconds
-  integer :: ticks
-  character(len=128) :: err_msg_local
-  real,parameter :: spd = real(86400)
-  real :: tps
-  real :: a
-  tps = real(ticks_per_second)
-  a = x/spd
-  days = safe_rtoi(a,do_floor)
-  a = x - real(days)*spd
-  seconds = safe_rtoi(a,do_floor)
-  a = (a - real(seconds))*tps
-  ticks = safe_rtoi(a,do_nearest)
-  if (.not. set_time_private(seconds,days,ticks,t,err_msg_local)) then
-    if (error_handler('function real_to_time_type',err_msg_local,err_msg)) then
-      return
-    endif
-  endif
-end function real_to_time_type
-
-!> @brief Convert a floating point value to an integer value.
-!! @return The integer value, using the input rounding mode.
-function safe_rtoi(rval,mode) result(ival)
-  real,intent(in) :: rval !< A floating point value.
-  integer,intent(in) :: mode !< A rouding mode (either "do_floor" or
-                             !! "do_nearest")
-  integer :: ival
-  real :: big
-  big = real(huge(ival))
-  if (rval .le. big .and. -1.*rval .ge. -1.*big) then
-    if (mode .eq. do_floor) then
-      ival = floor(rval)
-    elseif (mode .eq. do_nearest) then
-      ival = nint(rval)
-    else
-      call error_mesg("safe_rtoi","mode must be either do_floor" &
-                      //" or do_nearest.",FATAL)
-    endif
-  else
-    call error_mesg("safe_rtoi","input value cannot be safely" &
-                   //" converted to a 32-bit integer.",FATAL)
-  endif
-end function safe_rtoi
-
-!-------------------------------------------------------------------------
-! <FUNCTION NAME="time_scalar_divide; operator(/)">
-
-!   <OVERVIEW>
-!       Returns the largest time, t, for which n * t <= time.
-!   </OVERVIEW>
-!   <DESCRIPTION>
-!       Returns the largest time, t, for which n * t <= time.
-!   </DESCRIPTION>
-!   <TEMPLATE>
-!     time_scalar_divide(time, n)
-!   </TEMPLATE>
-
-!   <IN NAME="time" UNITS="" TYPE="time_type" DIM="">
-!      A time interval.
-!   </IN>
-!   <IN NAME="n" UNITS="" TYPE="integer" DIM="">
-!      An integer factor.
-!   </IN>
-!   <OUT NAME="" UNITS="" TYPE="integer" DIM="double precision" DEFAULT="">
-!       Returns the largest time, t, for which n * t <= time.
-!   </OUT>
-
 !> Returns the largest time, t, for which n * t <= time.
 function time_scalar_divide(time, n)
 
-! Returns the largest time, t, for which n * t <= time
-
 type(time_type) :: time_scalar_divide
-type(time_type), intent(in) :: time
-integer, intent(in) :: n
-double precision :: d, div, dseconds_per_day, dticks_per_second
+type(time_type), intent(in) :: time !< A time interval 
+integer, intent(in) :: n !< An integer factor
+real(r8_kind) :: d, div, dseconds_per_day, dticks_per_second
 integer :: days, seconds, ticks
 type(time_type) :: prod1, prod2
 character(len=128) tmp1,tmp2
 logical :: ltmp
 
 ! Convert time interval to floating point days; risky for general performance?
-dseconds_per_day  = dble(seconds_per_day)
-dticks_per_second = dble(ticks_per_second)
-d = time%days*dseconds_per_day*dticks_per_second + dble(time%seconds)*dticks_per_second + dble(time%ticks)
-div = d/dble(n)
+dseconds_per_day  = real(seconds_per_day, r8_kind)
+dticks_per_second = real(ticks_per_second, r8_kind)
+d = time%days*dseconds_per_day*dticks_per_second + real(time%seconds, r8_kind)*dticks_per_second + &
+    real(time%ticks, r8_kind)
+div = d/real(n, r8_kind)
 
 days = int(div/(dseconds_per_day*dticks_per_second))
 seconds = int(div/dticks_per_second - days*dseconds_per_day)
-ticks = int(div - (days*dseconds_per_day + dble(seconds))*dticks_per_second)
+ticks = int(div - (days*dseconds_per_day + real(seconds, r8_kind))*dticks_per_second)
 time_scalar_divide = set_time(seconds, days, ticks)
 
 ! Need to make sure that roundoff isn't killing this
@@ -1290,7 +1126,6 @@ if(prod1 > time .or. prod2 <= time) then
 endif
 
 end function time_scalar_divide
-! </FUNCTION>
 
 !-------------------------------------------------------------------------
 ! <FUNCTION NAME="interval_alarm">
@@ -1348,6 +1183,7 @@ else
 end if
 
 end function interval_alarm
+
 ! </FUNCTION>
 
 !--------------------------------------------------------------------------
@@ -3120,9 +2956,9 @@ character(len=19) :: fmt
 
 ! format output
 ! get number of digits for days and seconds strings
-   nd = int(log10(real(max(1,d))))+1
-   ns = int(log10(real(max(1,s))))+1
-   nt = int(log10(real(max(1,ticks))))+1
+   nd = int(log10(real(max(1,d), r8_kind)))+1
+   ns = int(log10(real(max(1,s), r8_kind)))+1
+   nt = int(log10(real(max(1,ticks), r8_kind)))+1
    write (fmt,10) nd, ns, nt
 10 format ('(a,i',i2.2,',a,i',i2.2,',a,i',i2.2,')')
 
@@ -3227,115 +3063,7 @@ subroutine time_list_error (T,Terr)
   write (terr,'(I0)') t%days
 end subroutine time_list_error
 
+#include "time_manager_r4.fh"
+#include "time_manager_r8.fh"
 
 end module time_manager_mod
-
-! <INFO>
-
-!   <TESTPROGRAM NAME="time_main2">
-!    <PRE>
-!        use time_manager_mod
-!        implicit none
-!        type(time_type) :: dt, init_date, astro_base_date, time, final_date
-!        type(time_type) :: next_rad_time, mid_date
-!        type(time_type) :: repeat_alarm_freq, repeat_alarm_length
-!        integer :: num_steps, i, days, months, years, seconds, minutes, hours
-!        integer :: months2, length
-!        real :: astro_days
-!
-!   !Set calendar type
-!   !    call set_calendar_type(THIRTY_DAY_MONTHS)
-!        call set_calendar_type(JULIAN)
-!   !    call set_calendar_type(NOLEAP)
-!
-!   ! Set timestep
-!        dt = set_time(1100, 0)
-!
-!   ! Set initial date
-!        init_date = set_date(1992, 1, 1)
-!
-!   ! Set date for astronomy delta calculation
-!        astro_base_date = set_date(1970, 1, 1, 12, 0, 0)
-!
-!   ! Copy initial time to model current time
-!        time = init_date
-!
-!   ! Determine how many steps to do to run one year
-!        final_date = increment_date(init_date, years = 1)
-!        num_steps = (final_date - init_date) / dt
-!        write(*, *) 'Number of steps is' , num_steps
-!
-!   ! Want to compute radiation at initial step, then every two hours
-!        next_rad_time = time + set_time(7200, 0)
-!
-!   ! Test repeat alarm
-!        repeat_alarm_freq = set_time(0, 1)
-!        repeat_alarm_length = set_time(7200, 0)
-!
-!   ! Loop through a year
-!        do i = 1, num_steps
-!
-!   ! Increment time
-!        time = time + dt
-!
-!   ! Test repeat alarm
-!        if(repeat_alarm(time, repeat_alarm_freq, repeat_alarm_length)) &
-!        write(*, *) 'REPEAT ALARM IS TRUE'
-!
-!   ! Should radiation be computed? Three possible tests.
-!   ! First test assumes exact interval; just ask if times are equal
-!   !     if(time == next_rad_time) then
-!   ! Second test computes rad on last time step that is <= radiation time
-!   !     if((next_rad_time - time) < dt .and. time < next_rad) then
-!   ! Third test computes rad on time step closest to radiation time
-!         if(interval_alarm(time, dt, next_rad_time, set_time(7200, 0))) then
-!           call get_date(time, years, months, days, hours, minutes, seconds)
-!           write(*, *) days, month_name(months), years, hours, minutes, seconds
-!
-!   ! Need to compute real number of days between current time and astro_base
-!           call get_time(time - astro_base_date, seconds, days)
-!           astro_days = days + seconds / 86400.
-!   !       write(*, *) 'astro offset ', astro_days
-!        end if
-!
-!   ! Can compute daily, monthly, yearly, hourly, etc. diagnostics as for rad
-!
-!   ! Example: do diagnostics on last time step of this month
-!        call get_date(time + dt, years, months2, days, hours, minutes, seconds)
-!        call get_date(time, years, months, days, hours, minutes, seconds)
-!        if(months /= months2) then
-!           write(*, *) 'last timestep of month'
-!           write(*, *) days, months, years, hours, minutes, seconds
-!        endif
-!
-!   ! Example: mid-month diagnostics; inefficient to make things clear
-!        length = days_in_month(time)
-!        call get_date(time, years, months, days, hours, minutes, seconds)
-!        mid_date = set_date(years, months, 1) + set_time(0, length) / 2
-!
-!        if(time < mid_date .and. (mid_date - time) < dt) then
-!           write(*, *) 'mid-month time'
-!           write(*, *) days, months, years, hours, minutes, seconds
-!        endif
-!
-!        end do
-!
-!    </PRE>
-!   end program time_main2
-
-!   </TESTPROGRAM>
-!   <NOTE>
-!     The <a name="base date">base date</a> is implicitly defined so users don't
-!     need to be concerned with it. For the curious, the base date is defined as
-!     0 seconds, 0 minutes, 0 hours, day 1, month 1, year 1
-!   </NOTE>
-!   <NOTE>
-!     Please note that a time is a positive definite quantity.
-!   </NOTE>
-!   <NOTE>
-!     See the <LINK SRC="TEST PROGRAM">Test Program </LINK> for a simple program
-!     that shows some of the capabilities of the time manager.
-!   </NOTE>
-! </INFO>
-!> @}
-! close documentation grouping

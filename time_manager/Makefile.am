@@ -23,7 +23,7 @@
 # Ed Hartnett 2/22/19
 
 # Include .h and .mod files.
-AM_CPPFLAGS = -I$(top_srcdir)/include
+AM_CPPFLAGS = -I$(top_srcdir)/include -I$(top_srcdir)/time_manager/include
 AM_FCFLAGS = $(FC_MODINC). $(FC_MODOUT)$(MODDIR)
 
 # Build these uninstalled convenience libraries.
@@ -32,7 +32,13 @@ noinst_LTLIBRARIES = libtime_manager.la
 # Each convenience library depends on its source.
 libtime_manager_la_SOURCES = \
   time_manager.F90 \
-  get_cal_time.F90
+  get_cal_time.F90 \
+  include/time_manager.inc \
+  include/get_cal_time.inc \
+  include/time_manager_r4.fh \
+  include/time_manager_r8.fh \
+  include/get_cal_time_r4.fh \
+  include/get_cal_time_r8.fh
 
 get_cal_time_mod.$(FC_MODEXT): time_manager_mod.$(FC_MODEXT)
 

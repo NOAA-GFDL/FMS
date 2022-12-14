@@ -1,0 +1,35 @@
+!***********************************************************************
+!*                   GNU Lesser General Public License
+!*
+!* This file is part of the GFDL Flexible Modeling System (FMS).
+!*
+!* FMS is free software: you can redistribute it and/or modify it under
+!* the terms of the GNU Lesser General Public License as published by
+!* the Free Software Foundation, either version 3 of the License, or (at
+!* your option) any later version.
+!*
+!* FMS is distributed in the hope that it will be useful, but WITHOUT
+!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+!* for more details.
+!*
+!* You should have received a copy of the GNU Lesser General Public
+!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!***********************************************************************
+!> @addtogroup time_manager
+!>@{
+
+#undef FMS_TM_KIND
+#define FMS_TM_KIND r4_kind
+#undef TIME_REAL_DIVIDE
+#define TIME_REAL_DIVIDE time_real_divide_r4
+#undef TIME_TYPE_TO_REAL
+#define TIME_TYPE_TO_REAL time_type_to_real_r4
+#undef REAL_TO_TIME_TYPE
+#define REAL_TO_TIME_TYPE real_to_time_type_r4
+#undef SAFE_RTOI
+#define SAFE_RTOI safe_rtoi_r4
+#undef TIME_SCALAR_DIVIDE
+#define TIME_SCALAR_DIVIDE time_scalar_divide_r4
+#include "time_manager.inc"
+!> @}
