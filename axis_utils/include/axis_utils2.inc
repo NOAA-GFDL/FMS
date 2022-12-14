@@ -190,7 +190,7 @@ end subroutine AXIS_EDGES_
     len = size(lon(:))
 
     do i = 1, len
-       lon(i) = LON_IN_RANGE_(lon(i),lon_start)
+       lon(i) = lon_in_range(lon(i),lon_start)
     enddo
 
     istrt = 0
@@ -212,7 +212,7 @@ end subroutine AXIS_EDGES_
 
        lon_strt = lon(1)
        do i=2,len+1
-          lon(i)   = LON_IN_RANGE_(lon(i),lon_strt)
+          lon(i)   = lon_in_range(lon(i),lon_strt)
           lon_strt = lon(i)
        enddo
     endif
@@ -404,7 +404,7 @@ end subroutine AXIS_EDGES_
     if (grid1(n1) < grid2(n2) ) call mpp_error(FATAL, 'grid2 lies outside grid1')
 
     do i = 1, n2
-       n = NEAREST_INDEX_(grid2(i),grid1)
+       n = nearest_index(grid2(i),grid1)
 
        if (grid1(n) < grid2(i)) then
           w        = (grid2(i)-grid1(n))/(grid1(n+1)-grid1(n))
@@ -480,7 +480,7 @@ end subroutine AXIS_EDGES_
     enddo
 
     do k = 1, m
-       n = NEAREST_INDEX_(grid2(k),grid1)
+       n = nearest_index(grid2(k),grid1)
        if (grid1(n) < grid2(k)) then
           klo = n
        else
