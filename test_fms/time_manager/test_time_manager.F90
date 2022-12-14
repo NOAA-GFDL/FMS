@@ -37,8 +37,8 @@ program test_time_manager
 
  type(time_type) :: Time, Time0, time1, time2
  real    :: xx
- real(r4_kind) :: rtoi4 
- real(r8_kind) :: rtoi8 
+ real(r4_kind) :: rtoi4
+ real(r8_kind) :: rtoi8
  integer :: yr, mo, day, hr, min, sec, ticks
  integer :: yr0, mo0, day0, hr0, min0, sec0, ticks0
  integer :: year, month, dday, days_this_month
@@ -686,7 +686,7 @@ program test_time_manager
  endif
   !! mixed precision tests
   if(test21) then
-    !! check r4 overloads from original real_to_time_type test 
+    !! check r4 overloads from original real_to_time_type test
     write(outunit,'(/,a)') '#################################  test21  #################################'
     call print_time(real_to_time_type(real(86401.1, r4_kind)), 'real_to_time_type(86401.1):', unit=outunit)
     Time = real_to_time_type(real(-1.0, r4_kind), err_msg)
@@ -717,7 +717,7 @@ program test_time_manager
                                                                     "mixed precision do_floor")
     if ( safe_rtoi(rtoi4, do_nearest) .ne. safe_rtoi(rtoi8, do_nearest)) call mpp_error(FATAL, "safe_rtoi failed on"// &
                                                                       "mixed precision do_nearest")
-    
+
   endif
 
   call fms_end

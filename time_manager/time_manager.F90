@@ -980,7 +980,7 @@ seconds = int(sec_prod - dble(days) * dble(seconds_per_day))
 
 time_scalar_mult = set_time(seconds, time%days * n + days, ticks)
 
-end function time_scalar_mult 
+end function time_scalar_mult
 
 !> Returns the largest integer, n, for which time1 >= time2 * n.
 function time_divide(time1, time2)
@@ -1095,7 +1095,7 @@ end function time_type_to_real
 function time_scalar_divide(time, n)
 
 type(time_type) :: time_scalar_divide
-type(time_type), intent(in) :: time !< A time interval 
+type(time_type), intent(in) :: time !< A time interval
 integer, intent(in) :: n !< An integer factor
 real(r8_kind) :: d, div, dseconds_per_day, dticks_per_second
 integer :: days, seconds, ticks
