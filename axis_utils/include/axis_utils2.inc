@@ -524,12 +524,12 @@ end subroutine AXIS_EDGES_
     y2 = real(1.0e30, kind=FMS_AU_KIND_)
 
     if(present(yp2)) y2 = yp2
-    call FIND_INDEX_(grid1, grid2(1), grid2(k2), ks, ke)
+    call find_index(grid1, grid2(1), grid2(k2), ks, ke)
     select case(trim(interp_method))
     case("linear")
-       call INTERP_1D_LINEAR_(grid1(ks:ke),grid2,data1(ks:ke),data2)
+       call interp_1d_linear(grid1(ks:ke),grid2,data1(ks:ke),data2)
     case("cubic_spline")
-       call INTERP_1D_CUBIC_SPLINE_(grid1(ks:ke),grid2,data1(ks:ke),data2, y1, y2)
+       call interp_1d_cubic_spline(grid1(ks:ke),grid2,data1(ks:ke),data2, y1, y2)
     case default
        call mpp_error(FATAL,"axis_utils: interp_method should be linear or cubic_spline")
     end select
@@ -555,8 +555,8 @@ end subroutine AXIS_EDGES_
     if (n1 /= n2) call mpp_error(FATAL,'grid size mismatch')
 
     do n = 1, n1
-       call FIND_INDEX_(grid1(n,:), grid2(n,1), grid2(n,k2), ks, ke)
-       call INTERP_1D_LINEAR_(grid1(n,ks:ke),grid2(n,:),data1(n,ks:ke),data2(n,:))
+       call find_index(grid1(n,:), grid2(n,1), grid2(n,k2), ks, ke)
+       call interp_1d_linear(grid1(n,ks:ke),grid2(n,:),data1(n,ks:ke),data2(n,:))
     enddo
 
     return
@@ -597,16 +597,16 @@ end subroutine AXIS_EDGES_
     case("linear")
        do m = 1, m1
           do n = 1, n1
-            call FIND_INDEX_(grid1(n,m,:), grid2(n,m,1), grid2(n,m,k2), ks, ke)
-            call INTERP_1D_LINEAR_(grid1(n,m,ks:ke),grid2(n,m,:),data1(n,m,ks:ke),data2(n,m,:))
+            call find_index(grid1(n,m,:), grid2(n,m,1), grid2(n,m,k2), ks, ke)
+            call interp_1d_linear(grid1(n,m,ks:ke),grid2(n,m,:),data1(n,m,ks:ke),data2(n,m,:))
           enddo
        enddo
 
     case("cubic_spline")
        do m = 1, m1
           do n = 1, n1
-            call FIND_INDEX_(grid1(n,m,:), grid2(n,m,1), grid2(n,m,k2), ks, ke)
-            call INTERP_1D_CUBIC_SPLINE_(grid1(n,m,ks:ke),grid2(n,m,:), data1(n,m,ks:ke),data2(n,m,:), y1, y2)
+            call find_index(grid1(n,m,:), grid2(n,m,1), grid2(n,m,k2), ks, ke)
+            call interp_1d_cubic_spline(grid1(n,m,ks:ke),grid2(n,m,:), data1(n,m,ks:ke),data2(n,m,:), y1, y2)
           enddo
        enddo
 
