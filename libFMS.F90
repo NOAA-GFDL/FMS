@@ -70,11 +70,11 @@ module fms
                              assignment(=), i_sst, j_sst, sst_ncep, sst_anom, &
                              forecast_mode, use_ncep_sst
   !> astronomy
-  use astronomy_mod, only: astronomy_init, get_period, set_period, &
+  use astronomy_mod, only: astronomy_init, &
                            set_orbital_parameters, get_orbital_parameters, &
                            set_ref_date_of_ae, get_ref_date_of_ae,  &
                            diurnal_solar, daily_mean_solar, annual_mean_solar,  &
-                           astronomy_end, universal_time, orbital_time
+                           astronomy_end
 
   !> axis_utils
   use axis_utils2_mod, only: get_axis_cart, get_axis_modulo, lon_in_range, &
