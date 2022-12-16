@@ -1,0 +1,95 @@
+!***********************************************************************
+!*                   GNU Lesser General Public License
+!*
+!* This file is part of the GFDL Flexible Modeling System (FMS).
+!*
+!* FMS is free software: you can redistribute it and/or modify it under
+!* the terms of the GNU Lesser General Public License as published by
+!* the Free Software Foundation, either version 3 of the License, or (at
+!* your option) any later version.
+!*
+!* FMS is distributed in the hope that it will be useful, but WITHOUT
+!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+!* for more details.
+!*
+!* You should have received a copy of the GNU Lesser General Public
+!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!***********************************************************************
+!> @defgroup gaussian_topog_mod gaussian_topog_mod
+!> @ingroup topography
+!> @brief Routines for creating Gaussian-shaped land surface topography
+!! for latitude-longitude grids.
+!> @author Bruce Wyman
+!!
+!! Interfaces generate simple Gaussian-shaped mountains from
+!! parameters specified by either argument list or namelist input.
+!! The mountain shapes are controlled by the height, half-width,
+!! and ridge-width parameters.
+
+!> @addtogroup gaussian_topog_mod
+!> @{
+
+#undef FMS_TOP_KIND_
+#define FMS_TOP_KIND_ r4_kind
+
+#undef GET_TOPOG_MEAN_1D_
+#define GET_TOPOG_MEAN_1D_ get_topog_mean_1d_r4
+
+#undef GET_TOPOG_MEAN_2D_
+#define GET_TOPOG_MEAN_2D_ get_topog_mean_2d_r4
+
+#undef GET_TOPOG_STDEV_1D_
+#define GET_TOPOG_STDEV_1D_ get_topog_stdev_1d_r4
+
+#undef GET_TOPOG_STDEV_2D_
+#define GET_TOPOG_STDEV_2D_ get_topog_stdev_2d_r4
+
+#undef GET_OCEAN_FRAC_1D_
+#define GET_OCEAN_FRAC_1D_ get_ocean_frac_1d_r4
+
+#undef GET_OCEAN_FRAC_2D_
+#define GET_OCEAN_FRAC_2D_ get_ocean_frac_2d_r4
+
+#undef GET_OCEAN_MASK_1D_
+#define GET_OCEAN_MASK_1D_ get_ocean_mask_1d_r4
+
+#undef GET_OCEAN_MASK_2D_
+#define GET_OCEAN_MASK_2D_ get_ocean_mask_2d_r4
+
+#undef GET_WATER_FRAC_1D_
+#define GET_WATER_FRAC_1D_ get_water_frac_1d_r4
+
+#undef GET_WATER_FRAC_2D_
+#define GET_WATER_FRAC_2D_ get_water_frac_2d_r4
+
+#undef GET_WATER_MASK_1D_
+#define GET_WATER_MASK_1D_ get_water_mask_1d_r4
+
+#undef GET_WATER_MASK_2D_
+#define GET_WATER_MASK_2D_ get_water_mask_2d_r4
+
+#undef INTERP_TOPOG_1D_
+#define INTERP_TOPOG_1D_ interp_topog_1d_r4
+
+#undef INTERP_TOPOG_2D_
+#define INTERP_TOPOG_2D_ interp_topog_2d_r4
+
+#undef FIND_INDICES_
+#define FIND_INDICES_ find_indices_r4
+
+#undef INPUT_DATA_
+#define INPUT_DATA_ input_data_r4
+
+#undef INTERP_WATER_1D_
+#define INTERP_WATER_1D_ interp_water_1d_r4
+
+#undef INTERP_WATER_2D_
+#define INTERP_WATER_2D_ interp_water_2d_r4
+
+#undef DETERMINE_OCEAN_POINTS_
+#define DETERMINE_OCEAN_POINTS_ determine_ocean_points_r4
+
+#include "gaussian_topog.inc"
+!> @}
+! close documentation grouping

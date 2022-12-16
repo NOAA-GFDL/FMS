@@ -49,7 +49,8 @@
  !!
  !! @throws FATAL, shape(zmean) is not equal to (/size(blon)-1,size(blat)-1/)
  !! Check the input grid size and output field size.
- function get_topog_mean_1d(blon, blat, zmean)
+
+ function GET_TOPOG_MEAN_1D_(blon, blat, zmean)
 
    real, intent(in),  dimension(:)   :: blon !< Longitude (radians) at grid box boundaries
    real, intent(in),  dimension(:)   :: blat !< Latitude (radians) at grid box boundaries
@@ -70,11 +71,11 @@
 
 !-----------------------------------------------------------------------
 
- end function get_topog_mean_1d
+ end function GET_TOPOG_MEAN_1D_
 
 !############################################################
 
- function get_topog_mean_2d (blon, blat, zmean)
+ function GET_TOPOG_MEAN_2D_(blon, blat, zmean)
 
    real, intent(in),  dimension(:,:) :: blon, blat
    real, intent(out), dimension(:,:) :: zmean
@@ -92,7 +93,7 @@
    if ( get_topog_mean_2d ) call interp_topog_2d ( blon, blat, zmean)
 !-----------------------------------------------------------------------
 
- end function get_topog_mean_2d
+ end function GET_TOPOG_MEAN_2D_
 
 !#######################################################################
 
@@ -105,7 +106,7 @@
  !!
  !! @returns A logical value of true if the output field was successfully created and false
  !! if the input topography data set was not readable.
- function get_topog_stdev_1d (blon, blat, stdev)
+ function GET_TOPOG_STDEV_1D_(blon, blat, stdev)
 
    real, intent(in),  dimension(:)   :: blon !< Longitude (radians) at grid box boundaries
    real, intent(in),  dimension(:)   :: blat !< Latitude (radians) at grid box boundaries
@@ -127,11 +128,11 @@
 
 !-----------------------------------------------------------------------
 
- end function get_topog_stdev_1d
+ end function GET_TOPOG_STDEV_1D_
 
 !#######################################################################
 
- function get_topog_stdev_2d (blon, blat, stdev)
+ function GET_TOPOG_STDEV_2D_(blon, blat, stdev)
 
    real, intent(in),  dimension(:,:) :: blon, blat
    real, intent(out), dimension(:,:) :: stdev
@@ -150,14 +151,14 @@
               stdev, flag=COMPUTE_STDEV)
 !-----------------------------------------------------------------------
 
- end function get_topog_stdev_2d
+ end function GET_TOPOG_STDEV_2D_
 
 !#######################################################################
 
  !> @brief Returns fractional area covered by ocean in a grid box.
  !> @returns A logical value of true if the output field was successfully created. A value of false
  !! may be returned if the Navy 1/6 degree percent water data set was not readable.
- function get_ocean_frac_1d (blon, blat, ocean_frac)
+ function GET_OCEAN_FRAC_1D_(blon, blat, ocean_frac)
 
  real, intent(in),  dimension(:)   :: blon !< Longitude (radians) at grid box boundaries
  real, intent(in),  dimension(:)   :: blat !< Latitude (radians) at grid box boundaries
@@ -177,11 +178,11 @@
 
 !-----------------------------------------------------------------------
 
- end function get_ocean_frac_1d
+ end function GET_OCEAN_FRAC_1D_
 
 !#######################################################################
 
- function get_ocean_frac_2d (blon, blat, ocean_frac)
+ function GET_OCEAN_FRAC_2D_(blon, blat, ocean_frac)
 
  real, intent(in),  dimension(:,:) :: blon, blat
  real, intent(out), dimension(:,:) :: ocean_frac
@@ -200,14 +201,14 @@
 
 !-----------------------------------------------------------------------
 
- end function get_ocean_frac_2d
+ end function GET_OCEAN_FRAC_2D_
 
 !#######################################################################
 
  !> @brief Returns a land-ocean mask in a grid box.
  !> @returns A logical value of true if the output field was successfully created. A value of false
  !! may be returned if the Navy 1/6 degree percent water data set was not readable.
- function get_ocean_mask_1d (blon, blat, ocean_mask)
+ function GET_OCEAN_MASK_1D_(blon, blat, ocean_mask)
 
  real, intent(in),  dimension(:)   :: blon !< Longitude (radians) at grid box boundaries
  real, intent(in),  dimension(:)   :: blat !< Latitude (radians) at grid box boundaries
@@ -230,11 +231,11 @@
    endif
 !-----------------------------------------------------------------------
 
- end function get_ocean_mask_1d
+ end function GET_OCEAN_MASK_1D_
 
 !#######################################################################
 
- function get_ocean_mask_2d (blon, blat, ocean_mask)
+ function GET_OCEAN_MASK_2D_(blon, blat, ocean_mask)
 
  real   , intent(in),  dimension(:,:) :: blon, blat
  logical, intent(out), dimension(:,:) :: ocean_mask
@@ -256,7 +257,7 @@
 
 !-----------------------------------------------------------------------
 
- end function get_ocean_mask_2d
+ end function GET_OCEAN_MASK_2D_
 
  !> @brief Returns the percent of water in a grid box.
  !> @returns A logical value of true if the output field was successfully created. A value of false
@@ -264,7 +265,7 @@
  !!
  !! @throws FATAL, shape(water_frac) is not equal to (/size(blon)-1,size(blat)-1/)
  !! Check the input grid size and output field size.
- function get_water_frac_1d (blon, blat, water_frac)
+ function GET_WATER_FRAC_1D_(blon, blat, water_frac)
  real, intent(in),  dimension(:)   :: blon !< The longitude (in radians) at grid box boundaries.
  real, intent(in),  dimension(:)   :: blat !< The latitude (in radians) at grid box boundaries.
  real, intent(out), dimension(:,:) :: water_frac !< The fractional amount (0 to 1) of water in a
@@ -283,11 +284,11 @@
 
 !-----------------------------------------------------------------------
 
- end function get_water_frac_1d
+ end function GET_WATER_FRAC_1D_
 
 !#######################################################################
 
- function get_water_frac_2d (blon, blat, water_frac)
+ function GET_WATER_FRAC_2D_(blon, blat, water_frac)
 
  real, intent(in),  dimension(:,:)   :: blon !< The longitude (in radians) at grid box boundaries.
  real, intent(in),  dimension(:,:)   :: blat !< The latitude (in radians) at grid box boundaries.
@@ -308,7 +309,7 @@
 
 !-----------------------------------------------------------------------
 
- end function get_water_frac_2d
+ end function GET_WATER_FRAC_2D_
 
 !#######################################################################
 
@@ -316,7 +317,7 @@
  !> @return A logical value of TRUE is returned if the output field
  !! was successfully created. A value of FALSE may be returned
  !! if the Navy 1/6 degree percent water data set was not readable.
- function get_water_mask_1d (blon, blat, water_mask)
+ function GET_WATER_MASK_1D_(blon, blat, water_mask)
 
  real, intent(in),  dimension(:)   :: blon !< The longitude (in radians) at grid box boundaries.
  real, intent(in),  dimension(:)   :: blat !< The latitude (in radians) at grid box boundaries.
@@ -340,11 +341,11 @@
    endif
 !-----------------------------------------------------------------------
 
- end function get_water_mask_1d
+ end function GET_WATER_MASK_1D_
 
 !#######################################################################
 
- function get_water_mask_2d (blon, blat, water_mask)
+ function GET_WATER_MASK_2D_(blon, blat, water_mask)
 
  real, intent(in),  dimension(:,:)   :: blon !< The longitude (in radians) at grid box boundaries.
  real, intent(in),  dimension(:,:)   :: blat !< The latitude (in radians) at grid box boundaries.
@@ -368,11 +369,11 @@
 
 !-----------------------------------------------------------------------
 
- end function get_water_mask_2d
+ end function GET_WATER_MASK_2D_
 
 !#######################################################################
 
-subroutine interp_topog_1d ( blon, blat, zout, flag)
+subroutine INTERP_TOPOG_1D_( blon, blat, zout, flag)
 real   , intent(in)  :: blon(:), blat(:)
 real   , intent(out) :: zout(:,:)
 integer, intent(in), optional :: flag
@@ -399,11 +400,11 @@ real :: zout2(size(zout,1),size(zout,2))
        endif
     endif
 
-end subroutine interp_topog_1d
+end subroutine INTERP_TOPOG_1D_
 
 !#######################################################################
 
-subroutine interp_topog_2d ( blon, blat, zout, flag )
+subroutine INTERP_TOPOG_2D_( blon, blat, zout, flag )
 real   , intent(in)  :: blon(:,:), blat(:,:)
 real   , intent(out) :: zout(:,:)
 integer, intent(in), optional :: flag
@@ -437,11 +438,11 @@ type (horiz_interp_type) :: Interp
 
     call horiz_interp_del ( Interp )
 
-end subroutine interp_topog_2d
+end subroutine INTERP_TOPOG_2D_
 
 !#######################################################################
 
-subroutine find_indices ( ybeg, yend, ydat, js, je )
+subroutine FIND_INDICES_( ybeg, yend, ydat, js, je )
 real,    intent(in)  :: ybeg, yend, ydat(:)
 integer, intent(out) :: js, je
 integer :: j
@@ -464,10 +465,10 @@ integer :: j
 
 !print '(a,i2,2(a,f10.5),2(a,i4))', "PE=",mpp_pe(),"  phs=",ybeg,"  phn=",yend,"  js=",js,"  je=",je
 
-end subroutine find_indices
+end subroutine FIND_INDICES_
 
 !#######################################################################
-subroutine input_data ( indx, xdat, ydat, zdat )
+subroutine INPUT_DATA_( indx, xdat, ydat, zdat )
 integer, intent(in) :: indx
 real, intent(out) :: xdat(ipts+1), ydat(jpts+1), zdat(ipts,jpts)
 
@@ -477,11 +478,11 @@ if( file_is_opened(indx) ) then
     call read_data(fileobj(indx), 'zdat', zdat)
 endif
 
-end subroutine input_data
+end subroutine INPUT_DATA_
 
 !#######################################################################
 
-subroutine interp_water_1d ( blon, blat, zout, do_ocean )
+subroutine INTERP_WATER_1D_( blon, blat, zout, do_ocean )
 real   , intent(in)  :: blon(:), blat(:)
 real   , intent(out) :: zout(:,:)
 logical, intent(in), optional :: do_ocean
@@ -496,11 +497,11 @@ endif
 ! interpolate onto output grid
 call horiz_interp ( zdat, xdat, ydat, blon, blat, zout )
 
-end subroutine interp_water_1d
+end subroutine INTERP_WATER_1D_
 
 !#######################################################################
 
-subroutine interp_water_2d ( blon, blat, zout, do_ocean )
+subroutine INTERP_WATER_2D_( blon, blat, zout, do_ocean )
 real   , intent(in)  :: blon(:,:), blat(:,:)
 real   , intent(out) :: zout(:,:)
 logical, intent(in), optional :: do_ocean
@@ -516,11 +517,11 @@ endif
 ! interpolate onto output grid
 call horiz_interp ( zdat, xdat, ydat, blon, blat, zout )
 
-end subroutine interp_water_2d
+end subroutine INTERP_WATER_2D_
 
 !#######################################################################
 
-subroutine determine_ocean_points ( pctwater )
+subroutine DETERMINE_OCEAN_POINTS_(pctwater)
 real, intent(inout) :: pctwater(:,:)
 logical :: ocean(size(pctwater,1),size(pctwater,2))
 integer :: i, j, m, n, im, ip, jm, jp, new
@@ -570,29 +571,7 @@ enddo
 ! final step is to elimate water percentage if land
 where (.not.ocean) pctwater = 0.
 
-end subroutine determine_ocean_points
-
-!#######################################################################
-!> @brief Reads the namelist file, write namelist to log file,
-!! and initializes constants
-subroutine read_namelist
-
-   integer :: unit, ierr, io
-
-!  read namelist
-
-   read (input_nml_file, topography_nml, iostat=io)
-   ierr = check_nml_error(io,'topography_nml')
-
-!  write version and namelist to log file
-
-   if (mpp_pe() == mpp_root_pe()) then
-     unit = stdlog()
-     write (unit, nml=topography_nml)
-   endif
-
-end subroutine read_namelist
-
+end subroutine DETERMINE_OCEAN_POINTS_
 
 !> @}
 ! close documentation grouping

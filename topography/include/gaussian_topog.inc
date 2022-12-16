@@ -59,7 +59,8 @@
 !! <br>Example usage:
 !! @code{.F90} zsurf = <B>get_gaussian_topog</B> ( lon, lat, height
 !!                    [, olond, olatd, wlond, wlatd, rlond, rlatd ] )@endcode
-function get_gaussian_topog ( lon, lat, height,                          &
+
+function GET_GUASSIAN_TOPOG_( lon, lat, height,                          &
                               olond, olatd, wlond, wlatd, rlond, rlatd ) &
                      result ( zsurf )
 
@@ -103,7 +104,7 @@ real    :: tpi, dtr, dx, dy, xx, yy
       enddo
     enddo
 
-end function get_gaussian_topog
+end function GET_GUASSIAN_TOPOG_
 
 !> @}
 ! close documentation grouping

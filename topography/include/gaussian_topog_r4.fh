@@ -1,0 +1,42 @@
+!***********************************************************************
+!*                   GNU Lesser General Public License
+!*
+!* This file is part of the GFDL Flexible Modeling System (FMS).
+!*
+!* FMS is free software: you can redistribute it and/or modify it under
+!* the terms of the GNU Lesser General Public License as published by
+!* the Free Software Foundation, either version 3 of the License, or (at
+!* your option) any later version.
+!*
+!* FMS is distributed in the hope that it will be useful, but WITHOUT
+!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+!* for more details.
+!*
+!* You should have received a copy of the GNU Lesser General Public
+!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!***********************************************************************
+!> @defgroup gaussian_topog_mod gaussian_topog_mod
+!> @ingroup topography
+!> @brief Routines for creating Gaussian-shaped land surface topography
+!! for latitude-longitude grids.
+!> @author Bruce Wyman
+!!
+!! Interfaces generate simple Gaussian-shaped mountains from
+!! parameters specified by either argument list or namelist input.
+!! The mountain shapes are controlled by the height, half-width,
+!! and ridge-width parameters.
+
+!> @addtogroup gaussian_topog_mod
+!> @{
+
+#undef FMS_TOP_KIND_
+#define FMS_TOP_KIND_ r4_kind
+
+#undef GET_GUASSIAN_TOPOG_
+#define GET_GUASSIAN_TOPOG_ get_gaussian_topog_r4
+
+#include "gaussian_topog.inc"
+!> @}
+! close documentation grouping
+
