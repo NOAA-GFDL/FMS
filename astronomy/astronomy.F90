@@ -313,6 +313,26 @@ private :: angle,  declination, half_day ! called from  diurnal_solar and daily_
 !! @param [out] <h> Half of the length of daylight at the given latitude and orbital position (dec); value
 !!                  ranges between 0 (all darkness) and pi (all daylight) [dimensionless]
 !> @ingroup astronomy_mod
+interface get_orbital_parameters
+    module procedure get_orbital_parameters_r4, get_orbital_parameters_r8
+end interface get_orbital_parameters
+
+interface set_orbital_parameters
+    module procedure set_orbital_parameters_r4, set_orbital_parameters_r8
+end interface set_orbital_parameters
+
+interface r_inv_squared
+    module procedure r_inv_squared_r4, r_inv_squared_r8
+end interface r_inv_squared
+
+interface angle
+    module procedure angle_r4, angle_r8
+end interface angle
+
+interface declination
+    module procedure declination_r4, declination_r8
+end interface declination
+
 interface half_day
    module procedure half_day_2d_r4, half_day_2d_r8 
    module procedure half_day_0d_r4, half_day_0d_r8 
