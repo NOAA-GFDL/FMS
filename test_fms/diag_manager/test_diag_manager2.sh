@@ -730,7 +730,7 @@ diag_files:
     corner2: 20, 15
     corner3: 10, 25
     corner4: 20, 25
-- file_name: wild_card_name%4yr%2mo%2dy%2hr
+- file_name: file6%4yr%2mo%2dy%2hr
   freq: 6
   freq_units: hours
   time_units: hours
@@ -741,11 +741,11 @@ diag_files:
   file_duration: 12
   file_duration_units: hours
   varlist:
-  - module: atm_mod
-    var_name: var4
+  - module: ocn_mod
+    var_name: var1
     reduction: average
     kind: r4
-- file_name: file6
+- file_name: file7
   freq: 6
   freq_units: hours
   time_units: hours
@@ -754,6 +754,21 @@ diag_files:
   - module: ocn_mod
     var_name: var1
     reduction: none
+    kind: r4
+- file_name: file8%4yr%2mo%2dy%2hr
+  freq: 1 1 1
+  freq_units: hours hours hours
+  time_units: hours
+  unlimdim: time
+  new_file_freq: 6 3 1
+  new_file_freq_units: hours hours hours
+  start_time: 2 1 1 0 0 0
+  file_duration: 12 3 9
+  file_duration_units: hours hours hours
+  varlist:
+  - module: ocn_mod
+    var_name: var1
+    reduction: average
     kind: r4
 _EOF
 
@@ -1097,6 +1112,57 @@ _EOF
   test_expect_success "Test the modern diag manager output yaml(test $my_test_count)" '
     mpirun -n 6 ../test_modern_diag
   '
+
+printf "&diag_manager_nml \n use_modern_diag = .true. \n use_clock_average = .true. \n /" | cat > input.nml
+cat <<_EOF > diag_table.yaml
+title: test_diag_manager
+base_date: 2 1 1 0 0 0
+
+diag_files:
+- file_name: file1_clock
+  freq: 1
+  freq_units: days
+  time_units: hours
+  unlimdim: time
+  varlist:
+  - module: atm_mod
+    var_name: var1
+    reduction: average
+    kind: r4
+_EOF
+
+my_test_count=`expr $my_test_count + 1`
+  test_expect_success "Test the modern diag manager with use_clock_average = .true. (test $my_test_count)" '
+    mpirun -n 1 ../test_flexible_time
+  '
+
+printf "&diag_manager_nml \n use_modern_diag = .true. \n use_clock_average = .false. \n /" | cat > input.nml
+cat <<_EOF > diag_table.yaml
+title: test_diag_manager
+base_date: 2 1 1 0 0 0
+
+diag_files:
+- file_name: file1_forecast
+  freq: 1
+  freq_units: days
+  time_units: hours
+  unlimdim: time
+  varlist:
+  - module: atm_mod
+    var_name: var1
+    reduction: average
+    kind: r4
+_EOF
+
+my_test_count=`expr $my_test_count + 1`
+  test_expect_success "Test the modern diag manager with use_clock_average = .false. (test $my_test_count)" '
+    mpirun -n 1 ../test_flexible_time
+  '
+printf "&diag_manager_nml \n use_modern_diag = .false. \n use_clock_average = .true. \n /" | cat > input.nml
+  test_expect_failure "Test if use_modern_diag = .false. and use_clock_average = .true. fails (test $my_test_count)" '
+    mpirun -n 1 ../test_flexible_time
+  '
+
 else
   my_test_count=`expr $my_test_count + 1`
   test_expect_failure "test modern diag manager failure when compiled without -Duse-yaml flag (test $my_test_count)" '

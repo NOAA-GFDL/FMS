@@ -208,7 +208,7 @@ use platform_mod
        & get_ticks_per_second
   USE mpp_mod, ONLY: mpp_get_current_pelist, mpp_pe, mpp_npes, mpp_root_pe, mpp_sum
 
-  USE mpp_mod, ONLY: input_nml_file
+  USE mpp_mod, ONLY: input_nml_file, mpp_error
 
   USE fms_mod, ONLY: error_mesg, FATAL, WARNING, NOTE, stdout, stdlog, write_version_number,&
        & fms_error_handler, check_nml_error, lowercase
@@ -230,7 +230,7 @@ use platform_mod
        & use_cmor, issue_oor_warnings, oor_warnings_fatal, oor_warning, pack_size,&
        & max_out_per_in_field, flush_nc_files, region_out_use_alt_value, max_field_attributes, output_field_type,&
        & max_file_attributes, max_axis_attributes, prepend_date, DIAG_FIELD_NOT_FOUND, diag_init_time,diag_data_init,&
-       & use_modern_diag, diag_null
+       & use_modern_diag, use_clock_average, diag_null
 
   USE diag_data_mod, ONLY:  fileobj, fileobjU, fnum_for_domain, fileobjND
   USE diag_table_mod, ONLY: parse_diag_table
@@ -3799,7 +3799,7 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
          & max_input_fields, max_axes, do_diag_field_log, write_bytes_in_file, debug_diag_manager,&
          & max_num_axis_sets, max_files, use_cmor, issue_oor_warnings,&
          & oor_warnings_fatal, max_out_per_in_field, flush_nc_files, region_out_use_alt_value, max_field_attributes,&
-         & max_file_attributes, max_axis_attributes, prepend_date, use_modern_diag
+         & max_file_attributes, max_axis_attributes, prepend_date, use_modern_diag, use_clock_average
 
     ! If the module was already initialized do nothing
     IF ( module_is_initialized ) RETURN
@@ -3852,6 +3852,10 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
                & 'DIAG_MANAGER_NML not found in input nml file.  Using defaults.', WARNING)
        END IF
     END IF
+
+    IF (.not. use_modern_diag .and. use_clock_average) &
+      call mpp_error(FATAL, "diag_manager_mod: You cannot set use_modern_diag=.false. and &
+        & use_clock_average=.true. in diag_manager_nml")
 
     IF ( mpp_pe() == mpp_root_pe() ) THEN
        WRITE (stdlog_unit, diag_manager_nml)
