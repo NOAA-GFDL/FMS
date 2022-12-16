@@ -107,13 +107,13 @@ end interface mo_derivative_t
 
 !  DEFAULT VALUES OF NAMELIST PARAMETERS:
 
-real(r8_kind)    :: rich_crit      = 2.0
+real(r8_kind)    :: rich_crit      = 2.0d0
 real(r8_kind)    :: drag_min_heat  = 1.d-05
 real(r8_kind)    :: drag_min_moist = 1.d-05
 real(r8_kind)    :: drag_min_mom   = 1.d-05
 logical          :: neutral        = .false.
 integer          :: stable_option  = 1
-real(r8_kind)    :: zeta_trans     = 0.5
+real(r8_kind)    :: zeta_trans     = 0.5d0
 logical          :: new_mo_option  = .false.
 
 
