@@ -345,9 +345,9 @@ end interface half_day
 !---------------------------------------------------------------------
 !-------- namelist  ---------
 
-real(r8_kind)   :: ecc   = 0.01671   !< Eccentricity of Earth's orbit [dimensionless]
-real(r8_kind)   :: obliq = 23.439    !< Obliquity [degrees]
-real(r8_kind)   :: per   = 102.932   !< Longitude of perihelion with respect
+real(r8_kind)   :: ecc   = 0.01671d0   !< Eccentricity of Earth's orbit [dimensionless]
+real(r8_kind)   :: obliq = 23.439d0    !< Obliquity [degrees]
+real(r8_kind)   :: per   = 102.932d0   !< Longitude of perihelion with respect
                                      !! to autumnal equinox in NH [degrees]
 integer         :: period = 0        !< Specified length of year [seconds];
                                      !! must be specified to override default
@@ -387,7 +387,7 @@ real(r8_kind), dimension(:), allocatable :: orb_angle !< table of orbital positi
                                              !! to find actual orbital position
                                              !! via interpolation
 
-real(r8_kind)    :: seconds_per_day=86400.   !< seconds in a day
+real(r8_kind)    :: seconds_per_day=86400.0d0   !< seconds in a day
 real(r8_kind)    :: deg_to_rad               !< conversion from degrees to radians
 real(r8_kind)    :: twopi                    !< 2 *PI
 logical          :: module_is_initialized=.false. !< has the module been initialized ?
