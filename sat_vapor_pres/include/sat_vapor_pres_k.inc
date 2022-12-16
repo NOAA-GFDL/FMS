@@ -21,159 +21,8 @@
 !> @brief Kernel module to be used by @ref sat_vapor_pres_mod for
 !! table lookups and calculations
 
- module sat_vapor_pres_k_mod
 
-! This module is what I (pjp) think a kernel should be.
-! There have been many proposals as to what a kernel should look like.
-! If fact, so many different ideas have been expressed that the lack
-! of agreement has greatly hampered progress.
-! The only way to move forward is to limit the requirments for a kernel
-! to only what is widely agreeded upon.
-! I believe that there are only two things widely agreeded upon.
-
-! 1) A kernel should be independent of the rest of FMS so that it can
-!    easily be ported into another programming system.
-!    This requires that a kernel does not access anything by use association.
-!    The one exception is this kernel, because it is not practical for physics
-!    modules to avoid using a module that computes the saturation vapor
-!    pressure of water vapor.
-
-! 2) For the sake of thread safety, module globals should be written only at initialization.
-!    In this case, the module globals are the tables and a handful of scalars.
-
-! 3) A kernel should not read from an external file.
-
-! One of the things that was not widely agreeded upon is that a kernel should
-! not be a fortran module. This complicates things greatly for questionable
-! benefit and could be done as a second step anyway, if necessary.
-
- implicit none
- private
-
-! Include variable "version" to be written to log file.
-#include<file_version.h>
-
- public :: sat_vapor_pres_init_k
- public :: lookup_es_k
- public :: lookup_des_k
- public :: lookup_es_des_k
- public :: lookup_es2_k
- public :: lookup_des2_k
- public :: lookup_es2_des2_k
- public :: lookup_es3_k
- public :: lookup_des3_k
- public :: lookup_es3_des3_k
- public :: compute_qs_k
- public :: compute_mrs_k
-
- !> @ingroup sat_vapor_pres_k_mod
- interface lookup_es_k
-   module procedure lookup_es_k_0d
-   module procedure lookup_es_k_1d
-   module procedure lookup_es_k_2d
-   module procedure lookup_es_k_3d
- end interface
-
- !> @ingroup sat_vapor_pres_k_mod
- interface lookup_des_k
-   module procedure lookup_des_k_0d
-   module procedure lookup_des_k_1d
-   module procedure lookup_des_k_2d
-   module procedure lookup_des_k_3d
- end interface
-
- !> @ingroup sat_vapor_pres_k_mod
- interface lookup_es_des_k
-   module procedure lookup_es_des_k_0d
-   module procedure lookup_es_des_k_1d
-   module procedure lookup_es_des_k_2d
-   module procedure lookup_es_des_k_3d
- end interface
-
- !> @ingroup sat_vapor_pres_k_mod
- interface lookup_es2_k
-   module procedure lookup_es2_k_0d
-   module procedure lookup_es2_k_1d
-   module procedure lookup_es2_k_2d
-   module procedure lookup_es2_k_3d
- end interface
-
- !> @ingroup sat_vapor_pres_k_mod
- interface lookup_des2_k
-   module procedure lookup_des2_k_0d
-   module procedure lookup_des2_k_1d
-   module procedure lookup_des2_k_2d
-   module procedure lookup_des2_k_3d
- end interface
-
- !> @ingroup sat_vapor_pres_k_mod
- interface lookup_es2_des2_k
-   module procedure lookup_es2_des2_k_0d
-   module procedure lookup_es2_des2_k_1d
-   module procedure lookup_es2_des2_k_2d
-   module procedure lookup_es2_des2_k_3d
- end interface
-
- !> @ingroup sat_vapor_pres_k_mod
- interface lookup_es3_k
-   module procedure lookup_es3_k_0d
-   module procedure lookup_es3_k_1d
-   module procedure lookup_es3_k_2d
-   module procedure lookup_es3_k_3d
- end interface
-
- !> @ingroup sat_vapor_pres_k_mod
- interface lookup_des3_k
-   module procedure lookup_des3_k_0d
-   module procedure lookup_des3_k_1d
-   module procedure lookup_des3_k_2d
-   module procedure lookup_des3_k_3d
- end interface
-
- !> @ingroup sat_vapor_pres_k_mod
- interface lookup_es3_des3_k
-   module procedure lookup_es3_des3_k_0d
-   module procedure lookup_es3_des3_k_1d
-   module procedure lookup_es3_des3_k_2d
-   module procedure lookup_es3_des3_k_3d
- end interface
-
- !> @ingroup sat_vapor_pres_k_mod
- interface compute_qs_k
-   module procedure compute_qs_k_0d
-   module procedure compute_qs_k_1d
-   module procedure compute_qs_k_2d
-   module procedure compute_qs_k_3d
- end interface
- !> @ingroup sat_vapor_pres_k_mod
- interface compute_mrs_k
-   module procedure compute_mrs_k_0d
-   module procedure compute_mrs_k_1d
-   module procedure compute_mrs_k_2d
-   module procedure compute_mrs_k_3d
- end interface
-
-!> @addtogroup sat_vapor_pres_k_mod
-!> @{
-
- real :: dtres, tepsl, tminl, dtinvl
- integer :: table_siz
- real, dimension(:), allocatable :: TABLE   !  sat vapor pres (es)
- real, dimension(:), allocatable :: DTABLE  !  first derivative of es
- real, dimension(:), allocatable :: D2TABLE ! second derivative of es
- real, dimension(:), allocatable :: TABLE2  !  sat vapor pres (es)
- real, dimension(:), allocatable :: DTABLE2 !  first derivative of es
- real, dimension(:), allocatable :: D2TABLE2 ! second derivative of es
- real, dimension(:), allocatable :: TABLE3  !  sat vapor pres (es)
- real, dimension(:), allocatable :: DTABLE3 !  first derivative of es
- real, dimension(:), allocatable :: D2TABLE3 ! second derivative of es
-
- logical  :: use_exact_qs
- logical  :: module_is_initialized = .false.
-
- contains
-
- subroutine sat_vapor_pres_init_k(table_size, tcmin, tcmax, TFREEZE, HLV, RVGAS, ES0, err_msg, &
+ subroutine SAT_VAPOR_PRES_INIT_K_(table_size, tcmin, tcmax, TFREEZE, HLV, RVGAS, ES0, err_msg, &
                                   use_exact_qs_input, do_simple,  &
                                   construct_table_wrt_liq, &
                                   construct_table_wrt_liq_and_ice, &
@@ -182,30 +31,41 @@
 ! This routine has been generalized to return tables for any temperature range and resolution
 
  integer, intent(in) :: table_size
- real, intent(in) :: tcmin ! TABLE(1)          = sat vapor pressure at temperature tcmin (deg C)
- real, intent(in) :: tcmax ! TABLE(table_size) = sat vapor pressure at temperature tcmax (deg C)
- real, intent(in) :: TFREEZE, HLV, RVGAS, ES0
+ real(kind=FMS_SVP_KIND_), intent(in) :: tcmin ! TABLE(1)          = sat vapor pressure at temperature tcmin (deg C)
+ real(kind=FMS_SVP_KIND_), intent(in) :: tcmax ! TABLE(table_size) = sat vapor pressure at temperature tcmax (deg C)
+ real(kind=FMS_SVP_KIND_), intent(in) :: TFREEZE, HLV, RVGAS, ES0
  logical, intent(in)  :: use_exact_qs_input, do_simple
  logical, intent(in)  :: construct_table_wrt_liq
  logical, intent(in)  :: construct_table_wrt_liq_and_ice
  character(len=*), intent(out) :: err_msg
- real, intent(out), optional :: teps, tmin, dtinv
+ real(kind=FMS_SVP_KIND_), intent(out), optional :: teps, tmin, dtinv
+
+! kind parameter
+ integer, parameter :: vkind = FMS_SVP_KIND_ ! local kind parameter
 
 ! increment used to generate derivative table
-  real, dimension(3) :: tem(3), es(3)
-  real :: hdtinv, tinrc, tfact
+  real(kind=FMS_SVP_KIND_), dimension(3) :: tem(3), es(3)
+  real(kind=FMS_SVP_KIND_) :: hdtinv, tinrc, tfact
   integer :: i
 
-      err_msg = ''
+!local module variables
+  real(kind=FMS_SVP_KIND_) :: dtres_loc, tepsl_loc, tminl_loc, dtinvl_loc
 
-      if (module_is_initialized) return
+   dtres_loc  = real(dtres, FMS_SVP_KIND_)
+   tepsl_loc  = real(tepsl, FMS_SVP_KIND_)
+   tminl_loc  = real(tmin,  FMS_SVP_KIND_)
+   dtinvl_loc = real(dtinvl, FMS_SVP_KIND_)
 
-      if(allocated(TABLE) .or. allocated(DTABLE) .or. allocated(D2TABLE)) then
-        err_msg = 'Attempt to allocate sat vapor pressure tables when already allocated'
-        return
-      else
-        allocate(TABLE(table_size), DTABLE(table_size), D2TABLE(table_size))
-      endif
+   err_msg = ''
+
+   if (module_is_initialized) return
+
+   if(allocated(TABLE) .or. allocated(DTABLE) .or. allocated(D2TABLE)) then
+      err_msg = 'Attempt to allocate sat vapor pressure tables when already allocated'
+      return
+   else
+      allocate(TABLE(table_size), DTABLE(table_size), D2TABLE(table_size))
+   endif
 
    if (construct_table_wrt_liq) then
       if(allocated(TABLE2) .or. allocated(DTABLE2) .or. allocated(D2TABLE2)) then
@@ -226,21 +86,21 @@
    endif
 
       table_siz = table_size
-      dtres = (tcmax - tcmin)/real(table_size-1)
-      tminl = real(tcmin)+TFREEZE  ! minimum valid temp in table
-      dtinvl = 1./dtres
-      tepsl = .5*dtres
-      tinrc = .1*dtres
-      if(present(teps )) teps =tepsl
-      if(present(tmin )) tmin =tminl
-      if(present(dtinv)) dtinv=dtinvl
+      dtres_loc  = (tcmax - tcmin)/real(table_size-1,FMS_SVP_KIND_)
+      tminl_loc  = tcmin+TFREEZE  ! minimum valid temp in table
+      dtinvl_loc = 1.0_vkind/dtres_loc
+      tepsl_loc  = 0.5_vkind*dtres_loc
+      tinrc   = 0.1_vkind*dtres_loc
+      if(present(teps )) teps =tepsl_loc
+      if(present(tmin )) tmin =tminl_loc
+      if(present(dtinv)) dtinv=dtinvl_loc
 
 ! To be able to compute tables for any temperature range and resolution,
 ! and at the same time exactly reproduce answers from memphis revision,
 ! it is necessary to compute ftact differently than it is in memphis.
-      tfact = 5.0*dtinvl
+      tfact = 5.0_vkind*dtinvl_loc
 
-      hdtinv = dtinvl*0.5
+      hdtinv = 0.5_vkind*dtinvl_loc
 
 ! compute es tables from tcmin to tcmax
 ! estimate es derivative with small +/- difference
@@ -248,20 +108,21 @@
       if (do_simple) then
 
         do i = 1, table_size
-          tem(1) = tminl + dtres*real(i-1)
-          TABLE(i) = ES0*610.78*exp(-hlv/rvgas*(1./tem(1) - 1./tfreeze))
-          DTABLE(i) = hlv*TABLE(i)/rvgas/tem(1)**2.
+          tem(1) = tminl_loc + dtres_loc*real(i-1,FMS_SVP_KIND_)
+          TABLE(i) = real( &
+               ES0*610.78_vkind*exp(-hlv/rvgas*(1.0_vkind/tem(1) - 1.0_vkind/tfreeze)), r8_kind)
+          DTABLE(i) = real( hlv*TABLE(i)/rvgas/tem(1)**2._vkind, r8_kind)
         enddo
 
       else
 
         do i = 1, table_size
-          tem(1) = tminl + dtres*real(i-1)
+          tem(1) = tminl_loc + dtres_loc*real(i-1,FMS_SVP_KIND_)
           tem(2) = tem(1)-tinrc
           tem(3) = tem(1)+tinrc
           es = compute_es_k (tem, TFREEZE)
-          TABLE(i) = es(1)
-          DTABLE(i) = (es(3)-es(2))*tfact
+          TABLE(i) = real(es(1), r8_kind)
+          DTABLE(i) = real( (es(3)-es(2))*tfact, r8_kind)
         enddo
 
       endif !if (do_simple)
@@ -270,41 +131,45 @@
 ! differencing des values in the table
 
       do i = 2, table_size-1
-         D2TABLE(i) = 0.25*dtinvl*(DTABLE(i+1)-DTABLE(i-1))
+         D2TABLE(i) = real( 0.25_vkind*dtinvl_loc* &
+              real( DTABLE(i+1)-DTABLE(i-1), FMS_SVP_KIND_), r8_kind)
       enddo
     ! one-sided derivatives at boundaries
 
-         D2TABLE(1) = 0.50*dtinvl*(DTABLE(2)-DTABLE(1))
+         D2TABLE(1) = real(0.50_vkind*dtinvl_loc* &
+              real(DTABLE(2)-DTABLE(1),FMS_SVP_KIND_), r8_kind)
 
-         D2TABLE(table_size) = 0.50*dtinvl*&
-              (DTABLE(table_size)-DTABLE(table_size-1))
+         D2TABLE(table_size) = real(0.50_vkind*dtinvl_loc* &
+              real(DTABLE(table_size)-DTABLE(table_size-1),FMS_SVP_KIND_), r8_kind)
 
    if (construct_table_wrt_liq) then
 ! compute es tables from tcmin to tcmax
 ! estimate es derivative with small +/- difference
 
       do i = 1, table_size
-        tem(1) = tminl + dtres*real(i-1)
+        tem(1) = tminl_loc + dtres_loc*real(i-1,FMS_SVP_KIND_)
         tem(2) = tem(1)-tinrc
         tem(3) = tem(1)+tinrc
 !   pass in flag to force all values to be wrt liquid
         es = compute_es_liq_k (tem, TFREEZE)
-        TABLE2(i) = es(1)
-        DTABLE2(i) = (es(3)-es(2))*tfact
+        TABLE2(i) = real( es(1), r8_kind )
+        DTABLE2(i) = real( (es(3)-es(2))*tfact, r8_kind )
       enddo
 
 ! compute one-half second derivative using centered differences
 ! differencing des values in the table
 
      do i = 2, table_size-1
-       D2TABLE2(i) = 0.25*dtinvl*(DTABLE2(i+1)-DTABLE2(i-1))
+       D2TABLE2(i) = real(0.25_vkind*dtinvl_loc* &
+            real(DTABLE2(i+1)-DTABLE2(i-1),FMS_SVP_KIND_), r8_kind)
      enddo
 ! one-sided derivatives at boundaries
 
-     D2TABLE2(1) = 0.50*dtinvl*(DTABLE2(2)-DTABLE2(1))
+     D2TABLE2(1) = real(0.50_vkind*dtinvl_loc* &
+          real(DTABLE2(2)-DTABLE2(1),FMS_SVP_KIND_), r8_kind)
 
-     D2TABLE2(table_size) = 0.50*dtinvl*&
-          (DTABLE2(table_size)-DTABLE2(table_size-1))
+     D2TABLE2(table_size) = real(0.50_vkind*dtinvl_loc* &
+          real(DTABLE2(table_size)-DTABLE2(table_size-1),FMS_SVP_KIND_), r8_kind)
    endif
 
 
@@ -313,46 +178,57 @@
 ! estimate es derivative with small +/- difference
 
       do i = 1, table_size
-        tem(1) = tminl + dtres*real(i-1)
+        tem(1) = tminl_loc + dtres_loc*real(i-1,FMS_SVP_KIND_)
         tem(2) = tem(1)-tinrc
         tem(3) = tem(1)+tinrc
 !   pass in flag to force all values to be wrt liquid
         es = compute_es_liq_ice_k (tem, TFREEZE)
-        TABLE3(i) = es(1)
-        DTABLE3(i) = (es(3)-es(2))*tfact
+        TABLE3(i) = real(es(1), r8_kind)
+        DTABLE3(i) = real( (es(3)-es(2))*tfact, r8_kind)
       enddo
 
 ! compute one-half second derivative using centered differences
 ! differencing des values in the table
 
      do i = 2, table_size-1
-       D2TABLE3(i) = 0.25*dtinvl*(DTABLE3(i+1)-DTABLE3(i-1))
+       D2TABLE3(i) = real(0.25_vkind*dtinvl* &
+            real(DTABLE3(i+1)-DTABLE3(i-1),FMS_SVP_KIND_), r8_kind)
      enddo
 ! one-sided derivatives at boundaries
 
-     D2TABLE3(1) = 0.50*dtinvl*(DTABLE3(2)-DTABLE3(1))
+     D2TABLE3(1) = real(0.50_vkind*dtinvl* &
+          real(DTABLE3(2)-DTABLE3(1),FMS_SVP_KIND_), r8_kind)
 
-     D2TABLE3(table_size) = 0.50*dtinvl*&
-          (DTABLE3(table_size)-DTABLE3(table_size-1))
+     D2TABLE3(table_size) = real(0.50_vkind*dtinvl* &
+          real(DTABLE3(table_size)-DTABLE3(table_size-1),FMS_SVP_KIND_), r8_kind)
    endif
 
       use_exact_qs = use_exact_qs_input
       module_is_initialized = .true.
 
- end subroutine sat_vapor_pres_init_k
+      dtres=real(dtres_loc, r8_kind)
+      tepsl=real(tepsl_loc, r8_kind)
+      tminl=real(tminl_loc, r8_kind)
+      dtinvl_loc=real(dtinvl_loc,r8_kind)
+
+  end subroutine SAT_VAPOR_PRES_INIT_K_
 
 !#######################################################################
 
- function compute_es_k(tem, TFREEZE) result (es)
- real, intent(in) :: tem(:), TFREEZE
- real :: es(size(tem,1))
+ function COMPUTE_ES_K_(tem, TFREEZE) result (es)
+ real(kind=FMS_SVP_KIND_), intent(in) :: tem(:), TFREEZE
+ real(kind=FMS_SVP_KIND_) :: es(size(tem,1))
 
- real    :: x, esice, esh2o, TBASW, TBASI
+ real(kind=FMS_SVP_KIND_)  :: x, esice, esh2o, TBASW, TBASI
  integer :: i
- real, parameter :: ESBASW = 101324.60
- real, parameter :: ESBASI =    610.71
+ real(kind=FMS_SVP_KIND_), parameter :: ESBASW = real(101324.60,FMS_SVP_KIND_)
+ real(kind=FMS_SVP_KIND_), parameter :: ESBASI = real(610.71,FMS_SVP_KIND_)
 
-   TBASW = TFREEZE+100.
+ integer, parameter :: vkind=FMS_SVP_KIND_ !< local kind parameter
+ real(FMS_SVP_KIND_), parameter :: v1=real(1.0,FMS_SVP_KIND_)
+ real(FMS_SVP_KIND_), parameter :: v10=real(10.0,FMS_SVP_KIND_)
+
+   TBASW = TFREEZE+100.0_vkind
    TBASI = TFREEZE
 
    do i = 1, size(tem)
@@ -360,52 +236,59 @@
 !  compute es over ice
 
      if (tem(i) < TBASI) then
-         x = -9.09718*(TBASI/tem(i)-1.0) - 3.56654*log10(TBASI/tem(i)) &
-             +0.876793*(1.0-tem(i)/TBASI) + log10(ESBASI)
-         esice =10.**(x)
+         x = -9.09718_vkind*(TBASI/tem(i)-v1)   &
+             -3.56654_vkind*log10(TBASI/tem(i)) &
+             +0.876793_vkind*(v1-tem(i)/TBASI) + log10(ESBASI)
+         esice =v10**(x)
      else
-         esice = 0.
+         esice = 0.0_vkind
      endif
 
 !  compute es over water greater than -20 c.
 !  values over 100 c may not be valid
 !  see smithsonian meteorological tables page 350.
 
-     if (tem(i) > -20.+TBASI) then
-         x = -7.90298*(TBASW/tem(i)-1.0) + 5.02808*log10(TBASW/tem(i)) &
-             -1.3816e-07*(10.0**((1.0-tem(i)/TBASW)*11.344)-1.0)        &
-             +8.1328e-03*(10.0**((TBASW/tem(i)-1.0)*(-3.49149))-1.0)    &
+     if (tem(i) > -20.0_vkind+TBASI) then
+         x = -7.90298_vkind*(TBASW/tem(i)-v1)   &
+             +5.02808_vkind*log10(TBASW/tem(i)) &
+             -real(1.3816e-07,FMS_SVP_KIND_)*(v10**((v1-tem(i)/TBASW)*11.344_vkind)-v1) &
+             +real(8.1328e-03,FMS_SVP_KIND_)*(v10**((TBASW/tem(i)-v1)*(-3.49149_vkind))-v1) &
              +log10(ESBASW)
-         esh2o = 10.**(x)
+         esh2o = v10**(x)
      else
-         esh2o = 0.
+         esh2o = 0.0_vkind
      endif
 
 !  derive blended es over ice and supercooled water between -20c and 0c
 
-     if (tem(i) <= -20.+TBASI) then
+     if (tem(i) <= -20.0_vkind+TBASI) then
          es(i) = esice
      else if (tem(i) >= TBASI) then
          es(i) = esh2o
      else
-         es(i) = 0.05*((TBASI-tem(i))*esice + (tem(i)-TBASI+20.)*esh2o)
+         es(i) = 0.05_vkind*((TBASI-tem(i))*esice + (tem(i)-TBASI+20.0_vkind)*esh2o)
      endif
 
    enddo
 
- end function compute_es_k
+ end function COMPUTE_ES_K_
 
 !#######################################################################
 
- function compute_es_liq_k(tem, TFREEZE) result (es)
- real, intent(in) :: tem(:), TFREEZE
- real :: es(size(tem,1))
+ function COMPUTE_ES_LIQ_K_(tem, TFREEZE) result (es)
+ real(kind=FMS_SVP_KIND_), intent(in) :: tem(:), TFREEZE
+ real(kind=FMS_SVP_KIND_) :: es(size(tem,1))
 
- real    :: x, esh2o, TBASW
+ real(kind=FMS_SVP_KIND_) :: x, esh2o, TBASW
  integer :: i
- real, parameter :: ESBASW = 101324.60
 
-   TBASW = TFREEZE+100.
+ integer, parameter :: vkind=FMS_SVP_KIND_
+ real(kind=FMS_SVP_KIND_), parameter :: v1=real(1.0,FMS_SVP_KIND_)
+ real(kind=FMS_SVP_KIND_), parameter ::v10=real(10.0,FMS_SVP_KIND_)
+ real(kind=FMS_SVP_KIND_), parameter :: ESBASW = real(101324.60,FMS_SVP_KIND_)
+
+
+   TBASW = TFREEZE+100.0_vkind
 
    do i = 1, size(tem)
 
@@ -414,31 +297,36 @@
 !  values over 100 c may not be valid
 !  see smithsonian meteorological tables page 350.
 
-         x = -7.90298*(TBASW/tem(i)-1.0) + 5.02808*log10(TBASW/tem(i)) &
-             -1.3816e-07*(10.0**((1.0-tem(i)/TBASW)*11.344)-1.0)        &
-             +8.1328e-03*(10.0**((TBASW/tem(i)-1.0)*(-3.49149))-1.0)    &
+         x = -7.90298_vkind*(TBASW/tem(i)-v1) &
+             +5.02808_vkind*log10(TBASW/tem(i)) &
+             -real(1.3816e-07,FMS_SVP_KIND_)*(v10**((v1-tem(i)/TBASW)*11.344_vkind)-v1)    &
+             +real(8.1328e-03,FMS_SVP_KIND_)*(v10**((TBASW/tem(i)-v1)*(-3.49149_vkind))-v1)&
              +log10(ESBASW)
-         esh2o = 10.**(x)
+         esh2o = v10**(x)
 
 
          es(i) = esh2o
 
    enddo
 
- end function compute_es_liq_k
+ end function COMPUTE_ES_LIQ_K_
 
 !#######################################################################
 
- function compute_es_liq_ice_k(tem, TFREEZE) result (es)
- real, intent(in) :: tem(:), TFREEZE
- real :: es(size(tem,1))
+ function COMPUTE_ES_LIQ_ICE_K_(tem, TFREEZE) result (es)
+ real(kind=FMS_SVP_KIND_), intent(in) :: tem(:), TFREEZE
+ real(kind=FMS_SVP_KIND_) :: es(size(tem,1))
 
- real    :: x, TBASW, TBASI
+ real(kind=FMS_SVP_KIND_)    :: x, TBASW, TBASI
  integer :: i
- real, parameter :: ESBASW = 101324.60
- real, parameter :: ESBASI =    610.71
 
-   TBASW = TFREEZE+100.
+ integer, parameter :: vkind=FMS_SVP_KIND_
+ real(kind=FMS_SVP_KIND_), parameter :: ESBASW = real(101324.60,FMS_SVP_KIND_)
+ real(kind=FMS_SVP_KIND_), parameter :: ESBASI = real(610.71,FMS_SVP_KIND_)
+ real(kind=FMS_SVP_KIND_), parameter :: v1=real(1.0,FMS_SVP_KIND_)
+ real(kind=FMS_SVP_KIND_), parameter :: v10=real(10.0,FMS_SVP_KIND_)
+
+   TBASW = TFREEZE+100.0_vkind
    TBASI = TFREEZE
 
    do i = 1, size(tem)
@@ -447,50 +335,53 @@
 
 !  compute es over ice
 
-         x = -9.09718*(TBASI/tem(i)-1.0) - 3.56654*log10(TBASI/tem(i)) &
-             +0.876793*(1.0-tem(i)/TBASI) + log10(ESBASI)
-         es(i) =10.**(x)
+         x = -9.09718_vkind*(TBASI/tem(i)-v1)   &
+             -3.56654_vkind*log10(TBASI/tem(i)) &
+             +0.876793_vkind*(v1-tem(i)/TBASI) + log10(ESBASI)
+         es(i) =v10**(x)
      else
 
 !  compute es over water
 !  values over 100 c may not be valid
 !  see smithsonian meteorological tables page 350.
 
-         x = -7.90298*(TBASW/tem(i)-1.0) + 5.02808*log10(TBASW/tem(i)) &
-             -1.3816e-07*(10.0**((1.0-tem(i)/TBASW)*11.344)-1.0)        &
-             +8.1328e-03*(10.0**((TBASW/tem(i)-1.0)*(-3.49149))-1.0)    &
+          x = -7.90298_vkind*(TBASW/tem(i)-v1) &
+              +5.02808_vkind*log10(TBASW/tem(i)) &
+              -real(1.3816e-07,FMS_SVP_KIND_)*(v10**((v1-tem(i)/TBASW)*11.344_vkind)-v1)      &
+              +real(8.1328e-03,FMS_SVP_KIND_)*(v10**((TBASW/tem(i)-v1)*(-3.49149_vkind))-v1) &
              +log10(ESBASW)
-         es(i) = 10.**(x)
+         es(i) = v10**(x)
      endif
-
    enddo
 
- end function compute_es_liq_ice_k
+ end function COMPUTE_ES_LIQ_ICE_K_
 
 !#######################################################################
 
- subroutine compute_qs_k_3d (temp, press, eps, zvir, qs, nbad, q, hc, &
+ subroutine COMPUTE_QS_K_3D_ (temp, press, eps, zvir, qs, nbad, q, hc, &
                           dqsdT, esat, es_over_liq, es_over_liq_and_ice)
 
- real, intent(in),  dimension(:,:,:)           :: temp, press
- real, intent(in)                              :: eps, zvir
- real, intent(out), dimension(:,:,:)           :: qs
+ real(kind=FMS_SVP_KIND_), intent(in),  dimension(:,:,:)           :: temp, press
+ real(kind=FMS_SVP_KIND_), intent(in)                              :: eps, zvir
+ real(kind=FMS_SVP_KIND_), intent(out), dimension(:,:,:)           :: qs
  integer, intent(out)                          :: nbad
- real, intent(in),  dimension(:,:,:), optional :: q
- real, intent(in),                    optional :: hc
- real, intent(out), dimension(:,:,:), optional :: dqsdT, esat
+ real(kind=FMS_SVP_KIND_), intent(in),  dimension(:,:,:), optional :: q
+ real(kind=FMS_SVP_KIND_), intent(in),                    optional :: hc
+ real(kind=FMS_SVP_KIND_), intent(out), dimension(:,:,:), optional :: dqsdT, esat
  logical,intent(in),                  optional :: es_over_liq
  logical,intent(in),                  optional :: es_over_liq_and_ice
 
- real, dimension(size(temp,1), size(temp,2), size(temp,3)) ::   &
+ integer, parameter :: vkind=FMS_SVP_KIND_
+
+ real(kind=FMS_SVP_KIND_), dimension(size(temp,1), size(temp,2), size(temp,3)) ::   &
                                                   esloc, desat, denom
  integer :: i, j, k
- real    :: hc_loc
+ real(kind=FMS_SVP_KIND_)    :: hc_loc
 
    if (present(hc)) then
      hc_loc = hc
    else
-     hc_loc = 1.0
+     hc_loc = 1.0_vkind
    endif
  if (present(es_over_liq)) then
    if (present (dqsdT)) then
@@ -520,16 +411,16 @@
    endif
    if (nbad == 0) then
      if (present (q) .and. use_exact_qs) then
-       qs = (1.0 + zvir*q)*eps*esloc/press
+       qs = (1.0_vkind + zvir*q)*eps*esloc/press
        if (present (dqsdT)) then
-         dqsdT = (1.0 + zvir*q)*eps*desat/press
+         dqsdT = (1.0_vkind + zvir*q)*eps*desat/press
        endif
      else  ! (present(q))
-       denom = press - (1.0 - eps)*esloc
+       denom = press - (1.0_vkind - eps)*esloc
        do k=1,size(qs,3)
          do j=1,size(qs,2)
            do i=1,size(qs,1)
-             if (denom(i,j,k) > 0.0) then
+             if (denom(i,j,k) > 0.0_vkind) then
                qs(i,j,k) = eps*esloc(i,j,k)/denom(i,j,k)
              else
                qs(i,j,k) = eps
@@ -542,41 +433,43 @@
        endif
      endif ! (present(q))
    else ! (nbad = 0)
-     qs = -999.
+     qs = -999.0_vkind
      if (present (dqsdT)) then
-       dqsdT = -999.
+       dqsdT = -999.0_vkind
      endif
      if (present (esat)) then
-       esat = -999.
+       esat = -999.0_vkind
      endif
    endif ! (nbad = 0)
 
 
- end subroutine compute_qs_k_3d
+ end subroutine COMPUTE_QS_K_3D_
 
 !#######################################################################
 
- subroutine compute_qs_k_2d (temp, press, eps, zvir, qs, nbad, q, hc, &
+ subroutine COMPUTE_QS_K_2D_ (temp, press, eps, zvir, qs, nbad, q, hc, &
                           dqsdT, esat, es_over_liq, es_over_liq_and_ice)
 
- real, intent(in),  dimension(:,:)           :: temp, press
- real, intent(in)                            :: eps, zvir
- real, intent(out), dimension(:,:)           :: qs
+ real(kind=FMS_SVP_KIND_), intent(in),  dimension(:,:)           :: temp, press
+ real(kind=FMS_SVP_KIND_), intent(in)                            :: eps, zvir
+ real(kind=FMS_SVP_KIND_), intent(out), dimension(:,:)           :: qs
  integer, intent(out)                        :: nbad
- real, intent(in),  dimension(:,:), optional :: q
- real, intent(in),                  optional :: hc
- real, intent(out), dimension(:,:), optional :: dqsdT, esat
+ real(kind=FMS_SVP_KIND_), intent(in),  dimension(:,:), optional :: q
+ real(kind=FMS_SVP_KIND_), intent(in),                  optional :: hc
+ real(kind=FMS_SVP_KIND_), intent(out), dimension(:,:), optional :: dqsdT, esat
  logical,intent(in),                optional :: es_over_liq
  logical,intent(in),                  optional :: es_over_liq_and_ice
 
- real, dimension(size(temp,1), size(temp,2)) :: esloc, desat, denom
+ integer, parameter :: vkind=FMS_SVP_KIND_
+
+ real(kind=FMS_SVP_KIND_), dimension(size(temp,1), size(temp,2)) :: esloc, desat, denom
  integer :: i, j
- real    :: hc_loc
+ real(kind=FMS_SVP_KIND_)  :: hc_loc
 
    if (present(hc)) then
      hc_loc = hc
    else
-     hc_loc = 1.0
+     hc_loc = 1.0_vkind
    endif
 
  if (present(es_over_liq)) then
@@ -607,15 +500,15 @@
    endif
    if (nbad == 0) then
      if (present (q) .and. use_exact_qs) then
-       qs = (1.0 + zvir*q)*eps*esloc/press
+       qs = (1.0_vkind + zvir*q)*eps*esloc/press
        if (present (dqsdT)) then
-         dqsdT = (1.0 + zvir*q)*eps*desat/press
+         dqsdT = (1.0_vkind + zvir*q)*eps*desat/press
        endif
      else  ! (present(q))
-       denom = press - (1.0 - eps)*esloc
+       denom = press - (1.0_vkind - eps)*esloc
       do j=1,size(qs,2)
         do i=1,size(qs,1)
-          if (denom(i,j) > 0.0) then
+          if (denom(i,j) > 0.0_vkind) then
             qs(i,j) = eps*esloc(i,j)/denom(i,j)
           else
             qs(i,j) = eps
@@ -627,41 +520,43 @@
       endif
     endif ! (present(q))
    else ! (nbad = 0)
-     qs = -999.
+     qs = -999.0_vkind
      if (present (dqsdT)) then
-       dqsdT = -999.
+       dqsdT = -999.0_vkind
      endif
      if (present (esat)) then
-       esat = -999.
+       esat = -999.0_vkind
      endif
    endif ! (nbad = 0)
 
 
- end subroutine compute_qs_k_2d
+ end subroutine COMPUTE_QS_K_2D_
 
 !#######################################################################
 
- subroutine compute_qs_k_1d (temp, press, eps, zvir, qs, nbad, q, hc, &
+ subroutine COMPUTE_QS_K_1D_ (temp, press, eps, zvir, qs, nbad, q, hc, &
                           dqsdT, esat, es_over_liq, es_over_liq_and_ice)
 
- real, intent(in),  dimension(:)           :: temp, press
- real, intent(in)                          :: eps, zvir
- real, intent(out), dimension(:)           :: qs
+ real(kind=FMS_SVP_KIND_), intent(in),  dimension(:)           :: temp, press
+ real(kind=FMS_SVP_KIND_), intent(in)                          :: eps, zvir
+ real(kind=FMS_SVP_KIND_), intent(out), dimension(:)           :: qs
  integer, intent(out)                      :: nbad
- real, intent(in),  dimension(:), optional :: q
- real, intent(in),                optional :: hc
- real, intent(out), dimension(:), optional :: dqsdT, esat
+ real(kind=FMS_SVP_KIND_), intent(in),  dimension(:), optional :: q
+ real(kind=FMS_SVP_KIND_), intent(in),                optional :: hc
+ real(kind=FMS_SVP_KIND_), intent(out), dimension(:), optional :: dqsdT, esat
  logical,intent(in),              optional :: es_over_liq
  logical,intent(in),                  optional :: es_over_liq_and_ice
 
- real, dimension(size(temp,1)) :: esloc, desat, denom
+ integer, parameter :: vkind=FMS_SVP_KIND_
+
+ real(kind=FMS_SVP_KIND_), dimension(size(temp,1)) :: esloc, desat, denom
  integer :: i
- real    :: hc_loc
+ real(kind=FMS_SVP_KIND_)    :: hc_loc
 
    if (present(hc)) then
      hc_loc = hc
    else
-     hc_loc = 1.0
+     hc_loc = 1.0_vkind
    endif
 
  if (present(es_over_liq)) then
@@ -692,14 +587,14 @@
    endif
    if (nbad == 0) then
      if (present (q) .and. use_exact_qs) then
-       qs = (1.0 + zvir*q)*eps*esloc/press
+       qs = (1.0_vkind + zvir*q)*eps*esloc/press
        if (present (dqsdT)) then
-         dqsdT = (1.0 + zvir*q)*eps*desat/press
+         dqsdT = (1.0_vkind + zvir*q)*eps*desat/press
        endif
      else  ! (present(q))
-       denom = press - (1.0 - eps)*esloc
+       denom = press - (1.0_vkind - eps)*esloc
        do i=1,size(qs,1)
-         if (denom(i) >  0.0) then
+         if (denom(i) >  0.0_vkind) then
            qs(i) = eps*esloc(i)/denom(i)
          else
            qs(i) = eps
@@ -710,40 +605,42 @@
        endif
      endif ! (present(q))
    else ! (nbad = 0)
-     qs = -999.
+     qs = -999.0_vkind
      if (present (dqsdT)) then
-       dqsdT = -999.
+       dqsdT = -999.0_vkind
      endif
      if (present (esat)) then
-       esat = -999.
+       esat = -999.0_vkind
      endif
    endif ! (nbad = 0)
 
 
- end subroutine compute_qs_k_1d
+ end subroutine COMPUTE_QS_K_1D_
 
 !#######################################################################
 
- subroutine compute_qs_k_0d (temp, press, eps, zvir, qs, nbad, q, hc, &
+ subroutine COMPUTE_QS_K_0D_ (temp, press, eps, zvir, qs, nbad, q, hc, &
                           dqsdT, esat, es_over_liq, es_over_liq_and_ice)
 
- real, intent(in)                :: temp, press
- real, intent(in)                :: eps, zvir
- real, intent(out)               :: qs
+ real(kind=FMS_SVP_KIND_), intent(in)                :: temp, press
+ real(kind=FMS_SVP_KIND_), intent(in)                :: eps, zvir
+ real(kind=FMS_SVP_KIND_), intent(out)               :: qs
  integer, intent(out)            :: nbad
- real, intent(in),      optional :: q
- real, intent(in),      optional :: hc
- real, intent(out),     optional :: dqsdT, esat
+ real(kind=FMS_SVP_KIND_), intent(in),      optional :: q
+ real(kind=FMS_SVP_KIND_), intent(in),      optional :: hc
+ real(kind=FMS_SVP_KIND_), intent(out),     optional :: dqsdT, esat
  logical,intent(in),    optional :: es_over_liq
  logical,intent(in),                  optional :: es_over_liq_and_ice
 
- real    :: esloc, desat, denom
- real    :: hc_loc
+ integer, parameter :: vkind=FMS_SVP_KIND_
+
+ real(kind=FMS_SVP_KIND_)    :: esloc, desat, denom
+ real(kind=FMS_SVP_KIND_)    :: hc_loc
 
    if (present(hc)) then
      hc_loc = hc
    else
-     hc_loc = 1.0
+     hc_loc = 1.0_vkind
    endif
 
  if (present(es_over_liq)) then
@@ -774,13 +671,13 @@
    endif
    if (nbad == 0) then
      if (present (q) .and. use_exact_qs) then
-       qs = (1.0 + zvir*q)*eps*esloc/press
+       qs = (1.0_vkind + zvir*q)*eps*esloc/press
        if (present (dqsdT)) then
-         dqsdT = (1.0 + zvir*q)*eps*desat/press
+         dqsdT = (1.0_vkind + zvir*q)*eps*desat/press
        endif
      else  ! (present(q))
-       denom = press - (1.0 - eps)*esloc
-       if (denom > 0.0) then
+       denom = press - (1.0_vkind - eps)*esloc
+       if (denom > 0.0_vkind) then
          qs = eps*esloc/denom
        else
          qs = eps
@@ -790,44 +687,44 @@
        endif
      endif ! (present(q))
    else ! (nbad = 0)
-     qs = -999.
+     qs = -999.0_vkind
      if (present (dqsdT)) then
-       dqsdT = -999.
+       dqsdT = -999.0_vkind
      endif
      if (present (esat)) then
-       esat = -999.
+       esat = -999.0_vkind
      endif
    endif ! (nbad = 0)
 
 
- end subroutine compute_qs_k_0d
+ end subroutine COMPUTE_QS_K_0D_
 
 !#######################################################################
 
-!#######################################################################
-
- subroutine compute_mrs_k_3d (temp, press, eps, zvir, mrs, nbad,   &
+ subroutine COMPUTE_MRS_K_3D_ (temp, press, eps, zvir, mrs, nbad,   &
                  mr, hc, dmrsdT, esat,es_over_liq, es_over_liq_and_ice)
 
- real, intent(in),  dimension(:,:,:)           :: temp, press
- real, intent(in)                              :: eps, zvir
- real, intent(out), dimension(:,:,:)           :: mrs
+ real(kind=FMS_SVP_KIND_), intent(in),  dimension(:,:,:)           :: temp, press
+ real(kind=FMS_SVP_KIND_), intent(in)                              :: eps, zvir
+ real(kind=FMS_SVP_KIND_), intent(out), dimension(:,:,:)           :: mrs
  integer, intent(out)                          :: nbad
- real, intent(in),  dimension(:,:,:), optional :: mr
- real, intent(in),                    optional :: hc
- real, intent(out), dimension(:,:,:), optional :: dmrsdT, esat
+ real(kind=FMS_SVP_KIND_), intent(in),  dimension(:,:,:), optional :: mr
+ real(kind=FMS_SVP_KIND_), intent(in),                    optional :: hc
+ real(kind=FMS_SVP_KIND_), intent(out), dimension(:,:,:), optional :: dmrsdT, esat
  logical,intent(in),                  optional :: es_over_liq
  logical,intent(in),                  optional :: es_over_liq_and_ice
 
- real, dimension(size(temp,1), size(temp,2), size(temp,3)) ::    &
+ real(FMS_SVP_KIND_), dimension(size(temp,1), size(temp,2), size(temp,3)) ::    &
                                                     esloc, desat, denom
+ integer, parameter :: vkind=FMS_SVP_KIND_
+
  integer :: i, j, k
  real    :: hc_loc
 
    if (present(hc)) then
      hc_loc = hc
    else
-     hc_loc = 1.0
+     hc_loc = 1.0_vkind
    endif
 
  if (present (es_over_liq)) then
@@ -867,7 +764,7 @@
        do k=1,size(mrs,3)
          do j=1,size(mrs,2)
            do i=1,size(mrs,1)
-             if (denom(i,j,k) > 0.0) then
+             if (denom(i,j,k) > 0.0_vkind) then
                mrs(i,j,k) = eps*esloc(i,j,k)/denom(i,j,k)
              else
                mrs(i,j,k) = eps
@@ -880,41 +777,43 @@
        endif
      endif !(present (mr))
    else
-     mrs = -999.
+     mrs = -999.0_vkind
      if (present (dmrsdT)) then
-       dmrsdT = -999.
+       dmrsdT = -999.0_vkind
      endif
      if (present (esat)) then
-       esat = -999.
+       esat = -999.0_vkind
      endif
    endif
 
 
- end subroutine compute_mrs_k_3d
+ end subroutine COMPUTE_MRS_K_3D_
 
 !#######################################################################
 
- subroutine compute_mrs_k_2d (temp, press, eps, zvir, mrs, nbad,  &
+ subroutine COMPUTE_MRS_K_2D_ (temp, press, eps, zvir, mrs, nbad,  &
                  mr, hc, dmrsdT, esat,es_over_liq, es_over_liq_and_ice)
 
- real, intent(in),  dimension(:,:)           :: temp, press
- real, intent(in)                            :: eps, zvir
- real, intent(out), dimension(:,:)           :: mrs
+ real(kind=FMS_SVP_KIND_), intent(in),  dimension(:,:)           :: temp, press
+ real(kind=FMS_SVP_KIND_), intent(in)                            :: eps, zvir
+ real(kind=FMS_SVP_KIND_), intent(out), dimension(:,:)           :: mrs
  integer, intent(out)                        :: nbad
- real, intent(in), dimension(:,:), optional  :: mr
- real, intent(in),                 optional :: hc
- real, intent(out), dimension(:,:), optional :: dmrsdT, esat
+ real(kind=FMS_SVP_KIND_), intent(in), dimension(:,:), optional  :: mr
+ real(kind=FMS_SVP_KIND_), intent(in),                 optional :: hc
+ real(kind=FMS_SVP_KIND_), intent(out), dimension(:,:), optional :: dmrsdT, esat
  logical,intent(in),               optional :: es_over_liq
  logical,intent(in),                  optional :: es_over_liq_and_ice
 
- real, dimension(size(temp,1), size(temp,2)) :: esloc, desat, denom
+ integer, parameter :: vkind=FMS_SVP_KIND_
+
+ real(kind=FMS_SVP_KIND_), dimension(size(temp,1), size(temp,2)) :: esloc, desat, denom
  integer :: i, j
- real    :: hc_loc
+ real(kind=FMS_SVP_KIND_)    :: hc_loc
 
    if (present(hc)) then
      hc_loc = hc
    else
-     hc_loc = 1.0
+     hc_loc = 1.0_vkind
    endif
 
  if (present (es_over_liq)) then
@@ -953,7 +852,7 @@
        denom = press - esloc
        do j=1,size(mrs,2)
          do i=1,size(mrs,1)
-           if (denom(i,j) > 0.0) then
+           if (denom(i,j) > 0.0_vkind) then
              mrs(i,j) = eps*esloc(i,j)/denom(i,j)
            else
              mrs(i,j) = eps
@@ -965,41 +864,43 @@
        endif
      endif !(present (mr))
    else
-     mrs = -999.
+     mrs = -999.0_vkind
      if (present (dmrsdT)) then
-       dmrsdT = -999.
+       dmrsdT = -999.0_vkind
      endif
      if (present (esat)) then
-       esat = -999.
+       esat = -999.0_vkind
      endif
    endif
 
 
- end subroutine compute_mrs_k_2d
+ end subroutine COMPUTE_MRS_K_2D_
 
 !#######################################################################
 
- subroutine compute_mrs_k_1d (temp, press, eps, zvir, mrs, nbad,  &
+ subroutine COMPUTE_MRS_K_1D_ (temp, press, eps, zvir, mrs, nbad,  &
                  mr, hc, dmrsdT, esat,es_over_liq, es_over_liq_and_ice)
 
- real, intent(in),  dimension(:)           :: temp, press
- real, intent(in)                          :: eps, zvir
- real, intent(out), dimension(:)           :: mrs
+ real(kind=FMS_SVP_KIND_), intent(in),  dimension(:)           :: temp, press
+ real(kind=FMS_SVP_KIND_), intent(in)                          :: eps, zvir
+ real(kind=FMS_SVP_KIND_), intent(out), dimension(:)           :: mrs
  integer, intent(out)                      :: nbad
- real, intent(in),  dimension(:), optional :: mr
- real, intent(in),                optional :: hc
- real, intent(out), dimension(:), optional :: dmrsdT, esat
+ real(kind=FMS_SVP_KIND_), intent(in),  dimension(:), optional :: mr
+ real(kind=FMS_SVP_KIND_), intent(in),                optional :: hc
+ real(kind=FMS_SVP_KIND_), intent(out), dimension(:), optional :: dmrsdT, esat
  logical,intent(in),              optional :: es_over_liq
- logical,intent(in),                  optional :: es_over_liq_and_ice
+ logical,intent(in),              optional :: es_over_liq_and_ice
 
- real, dimension(size(temp,1)) :: esloc, desat, denom
+ integer, parameter :: vkind=FMS_SVP_KIND_
+
+ real(kind=FMS_SVP_KIND_), dimension(size(temp,1)) :: esloc, desat, denom
  integer :: i
- real    :: hc_loc
+ real(kind=FMS_SVP_KIND_)    :: hc_loc
 
    if (present(hc)) then
      hc_loc = hc
    else
-     hc_loc = 1.0
+     hc_loc = 1.0_vkind
    endif
 
  if (present (es_over_liq)) then
@@ -1037,7 +938,7 @@
      else ! (present (mr))
        denom = press - esloc
        do i=1,size(mrs,1)
-         if (denom(i) > 0.0) then
+         if (denom(i) > 0.0_vkind) then
            mrs(i) = eps*esloc(i)/denom(i)
          else
            mrs(i) = eps
@@ -1048,40 +949,42 @@
        endif
      endif !(present (mr))
    else
-     mrs = -999.
+     mrs = -999.0_vkind
      if (present (dmrsdT)) then
-       dmrsdT = -999.
+       dmrsdT = -999.0_vkind
      endif
      if (present (esat)) then
-       esat = -999.
+       esat = -999.0_vkind
      endif
    endif
 
 
- end subroutine compute_mrs_k_1d
+ end subroutine COMPUTE_MRS_K_1D_
 
 !#######################################################################
 
- subroutine compute_mrs_k_0d (temp, press, eps, zvir, mrs, nbad,   &
+ subroutine COMPUTE_MRS_K_0D_ (temp, press, eps, zvir, mrs, nbad,   &
                  mr, hc, dmrsdT, esat,es_over_liq, es_over_liq_and_ice)
 
- real, intent(in)                              :: temp, press
- real, intent(in)                              :: eps, zvir
- real, intent(out)                             :: mrs
- integer, intent(out)                          :: nbad
- real, intent(in),                    optional :: mr
- real, intent(in),                    optional :: hc
- real, intent(out),                   optional :: dmrsdT, esat
+ real(kind=FMS_SVP_KIND_), intent(in)  :: temp, press
+ real(kind=FMS_SVP_KIND_), intent(in)  :: eps, zvir
+ real(kind=FMS_SVP_KIND_), intent(out) :: mrs
+ integer, intent(out)        :: nbad
+ real(kind=FMS_SVP_KIND_), intent(in),  optional :: mr
+ real(kind=FMS_SVP_KIND_), intent(in),  optional :: hc
+ real(kind=FMS_SVP_KIND_), intent(out),  optional :: dmrsdT, esat
  logical,intent(in),                  optional :: es_over_liq
  logical,intent(in),                  optional :: es_over_liq_and_ice
 
- real    :: esloc, desat, denom
- real    :: hc_loc
+ integer, parameter :: vkind=FMS_SVP_KIND_
+
+ real(kind=FMS_SVP_KIND_)    :: esloc, desat, denom
+ real(kind=FMS_SVP_KIND_)    :: hc_loc
 
    if (present(hc)) then
      hc_loc = hc
    else
-     hc_loc = 1.0
+     hc_loc = 1.0_vkind
    endif
 
  if (present (es_over_liq)) then
@@ -1118,7 +1021,7 @@
        endif
      else ! (present (mr))
        denom = press - esloc
-       if (denom > 0.0) then
+       if (denom > 0.0_vkind) then
          mrs = eps*esloc/denom
        else
          mrs = eps
@@ -1128,893 +1031,1202 @@
        endif
      endif !(present (mr))
    else
-     mrs = -999.
+     mrs = -999.0_vkind
      if (present (dmrsdT)) then
-       dmrsdT = -999.
+       dmrsdT = -999.0_vkind
      endif
      if (present (esat)) then
-       esat = -999.
+       esat = -999.0_vkind
      endif
    endif
 
 
- end subroutine compute_mrs_k_0d
+ end subroutine COMPUTE_MRS_K_0D_
 
 
 
 !#######################################################################
 
- subroutine lookup_es_des_k_3d (temp, esat, desat, nbad)
- real, intent(in),  dimension(:,:,:)  :: temp
- real, intent(out), dimension(:,:,:)  :: esat, desat
+ subroutine LOOKUP_ES_DES_K_3D_ (temp, esat, desat, nbad)
+ real(kind=FMS_SVP_KIND_), intent(in),  dimension(:,:,:)  :: temp
+ real(kind=FMS_SVP_KIND_), intent(out), dimension(:,:,:)  :: esat, desat
  integer, intent(out)                 :: nbad
 
- real    :: tmp, del
+ real(kind=FMS_SVP_KIND_) :: tmp, del
  integer :: ind, i, j, k
+ real(kind=FMS_SVP_KIND_) :: dtres_loc, tepsl_loc, tminl_loc,  dtinvl_loc
+
+   dtres_loc=real(dtres, FMS_SVP_KIND_)
+   tminl_loc=real(tminl, FMS_SVP_KIND_)
+   tepsl_loc=real(tepsl, FMS_SVP_KIND_)
+   dtinvl_loc=real(dtinvl, FMS_SVP_KIND_)
 
    nbad = 0
    do k = 1, size(temp,3)
    do j = 1, size(temp,2)
    do i = 1, size(temp,1)
-     tmp = temp(i,j,k)-tminl
-     ind = int(dtinvl*(tmp+tepsl))
+     tmp = temp(i,j,k)-tminl_loc
+     ind = int(dtinvl_loc*(tmp+tepsl_loc))
      if (ind < 0 .or. ind >= table_siz) then
        nbad = nbad+1
      else
-       del = tmp-dtres*real(ind)
-       esat(i,j,k) = TABLE(ind+1) +  &
-                     del*(DTABLE(ind+1) + del*D2TABLE(ind+1))
-       desat(i,j,k) = DTABLE(ind+1) + 2.*del*D2TABLE(ind+1)
+       del = tmp-real(dtres_loc,FMS_SVP_KIND_)*real(ind,FMS_SVP_KIND_)
+       esat(i,j,k) = real(TABLE(ind+1),FMS_SVP_KIND_)              &
+                         + del*( real(DTABLE(ind+1),FMS_SVP_KIND_) &
+                                    + del*real(D2TABLE(ind+1),FMS_SVP_KIND_) )
+       desat(i,j,k) = real(DTABLE(ind+1), FMS_SVP_KIND_) &
+                        + real(2.0,FMS_SVP_KIND_)*del*real(D2TABLE(ind+1),FMS_SVP_KIND_)
      endif
    enddo
    enddo
    enddo
 
- end subroutine lookup_es_des_k_3d
+ end subroutine LOOKUP_ES_DES_K_3D_
 
 !#######################################################################
 
- subroutine lookup_es_des_k_2d (temp, esat, desat, nbad)
- real, intent(in),  dimension(:,:)  :: temp
- real, intent(out), dimension(:,:)  :: esat, desat
+ subroutine LOOKUP_ES_DES_K_2D_ (temp, esat, desat, nbad)
+ real(kind=FMS_SVP_KIND_), intent(in),  dimension(:,:)  :: temp
+ real(kind=FMS_SVP_KIND_), intent(out), dimension(:,:)  :: esat, desat
  integer, intent(out)               :: nbad
 
  real    :: tmp, del
  integer :: ind, i, j
 
+ real(kind=FMS_SVP_KIND_) :: dtres_loc, tepsl_loc, tminl_loc,  dtinvl_loc
+
+   dtres_loc=real(dtres, FMS_SVP_KIND_)
+   tminl_loc=real(tminl, FMS_SVP_KIND_)
+   tepsl_loc=real(tepsl, FMS_SVP_KIND_)
+   dtinvl_loc=real(dtinvl, FMS_SVP_KIND_)
+
+
    nbad = 0
    do j = 1, size(temp,2)
    do i = 1, size(temp,1)
-     tmp = temp(i,j)-tminl
-     ind = int(dtinvl*(tmp+tepsl))
+     tmp = temp(i,j)-tminl_loc
+     ind = int(dtinvl_loc*(tmp+tepsl_loc))
      if (ind < 0 .or. ind >= table_siz)  then
        nbad = nbad+1
      else
-       del = tmp-dtres*real(ind)
-       esat(i,j) = TABLE(ind+1) + &
-                   del*(DTABLE(ind+1) + del*D2TABLE(ind+1))
-       desat(i,j) = DTABLE(ind+1) + 2.*del*D2TABLE(ind+1)
+       del = tmp-dtres_loc*real(ind)
+       esat(i,j) = real(TABLE(ind+1),FMS_SVP_KIND_) &
+                 + del*( real(DTABLE(ind+1),FMS_SVP_KIND_) &
+                               + del*real(D2TABLE(ind+1),FMS_SVP_KIND_) )
+       desat(i,j) = real(DTABLE(ind+1),FMS_SVP_KIND_) &
+                  + real(2.0,FMS_SVP_KIND_)*del*real(D2TABLE(ind+1),FMS_SVP_KIND_)
      endif
    enddo
    enddo
 
- end subroutine lookup_es_des_k_2d
+ end subroutine LOOKUP_ES_DES_K_2D_
 
 !#######################################################################
 
- subroutine lookup_es_des_k_1d (temp, esat, desat, nbad)
- real, intent(in),  dimension(:)  :: temp
- real, intent(out), dimension(:)  :: esat, desat
+ subroutine LOOKUP_ES_DES_K_1D_ (temp, esat, desat, nbad)
+ real(kind=FMS_SVP_KIND_), intent(in),  dimension(:)  :: temp
+ real(kind=FMS_SVP_KIND_), intent(out), dimension(:)  :: esat, desat
  integer, intent(out)             :: nbad
 
- real    :: tmp, del
+ real(kind=FMS_SVP_KIND_) :: tmp, del
  integer :: ind, i
+
+ real(kind=FMS_SVP_KIND_) :: dtres_loc, tepsl_loc, tminl_loc,  dtinvl_loc
+
+   dtres_loc=real(dtres, FMS_SVP_KIND_)
+   tminl_loc=real(tminl, FMS_SVP_KIND_)
+   tepsl_loc=real(tepsl, FMS_SVP_KIND_)
+   dtinvl_loc=real(dtinvl, FMS_SVP_KIND_)
+
 
    nbad = 0
    do i = 1, size(temp,1)
-     tmp = temp(i)-tminl
-     ind = int(dtinvl*(tmp+tepsl))
+     tmp = temp(i)-tminl_loc
+     ind = int(dtinvl*(tmp+tepsl_loc))
      if (ind < 0 .or. ind >= table_siz)  then
        nbad = nbad+1
      else
-       del = tmp-dtres*real(ind)
-       esat(i) = TABLE(ind+1) + &
-                   del*(DTABLE(ind+1) + del*D2TABLE(ind+1))
-       desat(i) = DTABLE(ind+1) + 2.*del*D2TABLE(ind+1)
+       del = tmp-dtres_loc*real(ind,FMS_SVP_KIND_)
+       esat(i) = real(TABLE(ind+1),FMS_SVP_KIND_) &
+               + del*( real(DTABLE(ind+1),FMS_SVP_KIND_) &
+                                + del*real(D2TABLE(ind+1),FMS_SVP_KIND_) )
+       desat(i) = real(DTABLE(ind+1),FMS_SVP_KIND_) &
+               + real(2.0,FMS_SVP_KIND_)*del*real(D2TABLE(ind+1),FMS_SVP_KIND_)
      endif
    enddo
 
- end subroutine lookup_es_des_k_1d
+ end subroutine LOOKUP_ES_DES_K_1D_
 
 !#######################################################################
 
- subroutine lookup_es_des_k_0d (temp, esat, desat, nbad)
- real, intent(in)     :: temp
- real, intent(out)    :: esat, desat
+ subroutine LOOKUP_ES_DES_K_0D_ (temp, esat, desat, nbad)
+ real(kind=FMS_SVP_KIND_), intent(in)     :: temp
+ real(kind=FMS_SVP_KIND_), intent(out)    :: esat, desat
  integer, intent(out) :: nbad
 
- real    :: tmp, del
+ real(kind=FMS_SVP_KIND_) :: tmp, del
  integer :: ind
 
+ real(kind=FMS_SVP_KIND_) :: dtres_loc, tepsl_loc, tminl_loc,  dtinvl_loc
+
+   dtres_loc=real(dtres, FMS_SVP_KIND_)
+   tminl_loc=real(tminl, FMS_SVP_KIND_)
+   tepsl_loc=real(tepsl, FMS_SVP_KIND_)
+   dtinvl_loc=real(dtinvl, FMS_SVP_KIND_)
+
    nbad = 0
-   tmp = temp-tminl
-   ind = int(dtinvl*(tmp+tepsl))
+   tmp = temp-tminl_loc
+   ind = int(dtinvl_loc*(tmp+tepsl_loc))
    if (ind < 0 .or. ind >= table_siz)  then
      nbad = nbad+1
    else
-     del = tmp-dtres*real(ind)
-     esat = TABLE(ind+1) + &
-            del*(DTABLE(ind+1) + del*D2TABLE(ind+1))
-     desat = DTABLE(ind+1) + 2.*del*D2TABLE(ind+1)
+     del = tmp-dtres_loc*real(ind,FMS_SVP_KIND_)
+     esat = real(TABLE(ind+1),FMS_SVP_KIND_) &
+            + del*( real(DTABLE(ind+1),FMS_SVP_KIND_) &
+                          + del*real(D2TABLE(ind+1),FMS_SVP_KIND_) )
+     desat = real(DTABLE(ind+1),FMS_SVP_KIND_) &
+             + real(2.0,FMS_SVP_KIND_)*del*real(D2TABLE(ind+1),FMS_SVP_KIND_)
    endif
 
- end subroutine lookup_es_des_k_0d
+ end subroutine LOOKUP_ES_DES_K_0D_
 
 !#######################################################################
 
- subroutine lookup_es_k_3d(temp, esat, nbad)
- real, intent(in),  dimension(:,:,:)  :: temp
- real, intent(out), dimension(:,:,:)  :: esat
+ subroutine LOOKUP_ES_K_3D_(temp, esat, nbad)
+ real(kind=FMS_SVP_KIND_), intent(in),  dimension(:,:,:)  :: temp
+ real(kind=FMS_SVP_KIND_), intent(out), dimension(:,:,:)  :: esat
  integer, intent(out) :: nbad
- real    :: tmp, del
+ real(kind=FMS_SVP_KIND_) :: tmp, del
  integer :: ind, i, j, k
+
+ real(kind=FMS_SVP_KIND_) :: dtres_loc, tepsl_loc, tminl_loc,  dtinvl_loc
+
+   dtres_loc=real(dtres, FMS_SVP_KIND_)
+   tminl_loc=real(tminl, FMS_SVP_KIND_)
+   tepsl_loc=real(tepsl, FMS_SVP_KIND_)
+   dtinvl_loc=real(dtinvl, FMS_SVP_KIND_)
 
    nbad = 0
    do k = 1, size(temp,3)
    do j = 1, size(temp,2)
    do i = 1, size(temp,1)
-     tmp = temp(i,j,k)-tminl
-     ind = int(dtinvl*(tmp+tepsl))
+     tmp = temp(i,j,k)-tminl_loc
+     ind = int(dtinvl_loc*(tmp+tepsl_loc))
      if (ind < 0 .or. ind >= table_siz)  then
        nbad = nbad+1
      else
-       del = tmp-dtres*real(ind)
-       esat(i,j,k) = TABLE(ind+1) + &
-                     del*(DTABLE(ind+1) + del*D2TABLE(ind+1))
+       del = tmp-dtres_loc*real(ind)
+       esat(i,j,k) = real(TABLE(ind+1),FMS_SVP_KIND_) &
+                     + del*( real(DTABLE(ind+1),FMS_SVP_KIND_) &
+                                    + del*real(D2TABLE(ind+1),FMS_SVP_KIND_) )
      endif
    enddo
    enddo
    enddo
 
- end subroutine lookup_es_k_3d
+ end subroutine LOOKUP_ES_K_3D_
 
 !#######################################################################
 
- subroutine lookup_des_k_3d(temp, desat, nbad)
- real, intent(in),  dimension(:,:,:)  :: temp
- real, intent(out), dimension(:,:,:)  :: desat
+ subroutine LOOKUP_DES_K_3D_(temp, desat, nbad)
+ real(kind=FMS_SVP_KIND_), intent(in),  dimension(:,:,:)  :: temp
+ real(kind=FMS_SVP_KIND_), intent(out), dimension(:,:,:)  :: desat
  integer, intent(out) :: nbad
- real    :: tmp, del
+ real(kind=FMS_SVP_KIND_) :: tmp, del
  integer :: ind, i, j, k
+
+ real(kind=FMS_SVP_KIND_) :: dtres_loc, tepsl_loc, tminl_loc,  dtinvl_loc
+
+   dtres_loc=real(dtres, FMS_SVP_KIND_)
+   tminl_loc=real(tminl, FMS_SVP_KIND_)
+   tepsl_loc=real(tepsl, FMS_SVP_KIND_)
+   dtinvl_loc=real(dtinvl, FMS_SVP_KIND_)
 
    nbad = 0
    do k = 1, size(temp,3)
    do j = 1, size(temp,2)
    do i = 1, size(temp,1)
-     tmp = temp(i,j,k)-tminl
-     ind = int(dtinvl*(tmp+tepsl))
+     tmp = temp(i,j,k)-tminl_loc
+     ind = int(dtinvl_loc*(tmp+tepsl_loc))
      if (ind < 0 .or. ind >= table_siz)  then
        nbad = nbad+1
      else
-       del = tmp-dtres*real(ind)
-       desat(i,j,k) = DTABLE(ind+1) + 2.*del*D2TABLE(ind+1)
+       del = tmp-dtres_loc*real(ind,FMS_SVP_KIND_)
+       desat(i,j,k) = real(DTABLE(ind+1),FMS_SVP_KIND_) &
+                      + real(2.0,FMS_SVP_KIND_)*del*real(D2TABLE(ind+1),FMS_SVP_KIND_)
      endif
    enddo
    enddo
    enddo
 
- end subroutine lookup_des_k_3d
+ end subroutine LOOKUP_DES_K_3D_
 
 !#######################################################################
- subroutine lookup_des_k_2d(temp, desat, nbad)
- real, intent(in),  dimension(:,:)  :: temp
- real, intent(out), dimension(:,:)  :: desat
+ subroutine LOOKUP_DES_K_2D_(temp, desat, nbad)
+ real(kind=FMS_SVP_KIND_), intent(in),  dimension(:,:)  :: temp
+ real(kind=FMS_SVP_KIND_), intent(out), dimension(:,:)  :: desat
  integer, intent(out) :: nbad
- real    :: tmp, del
+ real(kind=FMS_SVP_KIND_)    :: tmp, del
  integer :: ind, i, j
+
+
+ real(kind=FMS_SVP_KIND_) :: dtres_loc, tepsl_loc, tminl_loc,  dtinvl_loc
+
+   dtres_loc=real(dtres, FMS_SVP_KIND_)
+   tminl_loc=real(tminl, FMS_SVP_KIND_)
+   tepsl_loc=real(tepsl, FMS_SVP_KIND_)
+   dtinvl_loc=real(dtinvl, FMS_SVP_KIND_)
 
    nbad = 0
    do j = 1, size(temp,2)
    do i = 1, size(temp,1)
-     tmp = temp(i,j)-tminl
-     ind = int(dtinvl*(tmp+tepsl))
+     tmp = temp(i,j)-tminl_loc
+     ind = int(dtinvl_loc*(tmp+tepsl_loc))
      if (ind < 0 .or. ind >= table_siz)  then
        nbad = nbad+1
      else
-       del = tmp-dtres*real(ind)
-       desat(i,j) = DTABLE(ind+1) + 2.*del*D2TABLE(ind+1)
+       del = tmp-dtres_loc*real(ind,FMS_SVP_KIND_)
+       desat(i,j) = real(DTABLE(ind+1),FMS_SVP_KIND_) &
+                    + real(2.0,FMS_SVP_KIND_)*del*real(D2TABLE(ind+1),FMS_SVP_KIND_)
      endif
    enddo
    enddo
 
- end subroutine lookup_des_k_2d
+ end subroutine LOOKUP_DES_K_2D_
 !#######################################################################
- subroutine lookup_es_k_2d(temp, esat, nbad)
- real, intent(in),  dimension(:,:)  :: temp
- real, intent(out), dimension(:,:)  :: esat
+ subroutine LOOKUP_ES_K_2D_(temp, esat, nbad)
+ real(kind=FMS_SVP_KIND_), intent(in),  dimension(:,:)  :: temp
+ real(kind=FMS_SVP_KIND_), intent(out), dimension(:,:)  :: esat
  integer, intent(out) :: nbad
- real    :: tmp, del
+ real(kind=FMS_SVP_KIND_) :: tmp, del
  integer :: ind, i, j
+
+ real(kind=FMS_SVP_KIND_) :: dtres_loc, tepsl_loc, tminl_loc,  dtinvl_loc
+
+   dtres_loc=real(dtres, FMS_SVP_KIND_)
+   tminl_loc=real(tminl, FMS_SVP_KIND_)
+   tepsl_loc=real(tepsl, FMS_SVP_KIND_)
+   dtinvl_loc=real(dtinvl, FMS_SVP_KIND_)
+
 
    nbad = 0
    do j = 1, size(temp,2)
    do i = 1, size(temp,1)
-     tmp = temp(i,j)-tminl
-     ind = int(dtinvl*(tmp+tepsl))
+     tmp = temp(i,j)-tminl_loc
+     ind = int(dtinvl_loc*(tmp+tepsl_loc))
      if (ind < 0 .or. ind >= table_siz)  then
        nbad = nbad+1
      else
-       del = tmp-dtres*real(ind)
-       esat(i,j) = TABLE(ind+1) + del*(DTABLE(ind+1) +   &
-                                                  del*D2TABLE(ind+1))
+       del = tmp-dtres_loc*real(ind,FMS_SVP_KIND_)
+       esat(i,j) = real(TABLE(ind+1),FMS_SVP_KIND_) &
+                   + del*(real(DTABLE(ind+1),FMS_SVP_KIND_) &
+                                  + del*real(D2TABLE(ind+1),FMS_SVP_KIND_)  )
      endif
    enddo
    enddo
 
- end subroutine lookup_es_k_2d
+ end subroutine LOOKUP_ES_K_2D_
 !#######################################################################
- subroutine lookup_des_k_1d(temp, desat, nbad)
- real, intent(in),  dimension(:)  :: temp
- real, intent(out), dimension(:)  :: desat
+ subroutine LOOKUP_DES_K_1D_(temp, desat, nbad)
+ real(kind=FMS_SVP_KIND_), intent(in),  dimension(:)  :: temp
+ real(kind=FMS_SVP_KIND_), intent(out), dimension(:)  :: desat
  integer, intent(out) :: nbad
- real    :: tmp, del
+ real(kind=FMS_SVP_KIND_) :: tmp, del
  integer :: ind, i
+
+ real(kind=FMS_SVP_KIND_) :: dtres_loc, tepsl_loc, tminl_loc,  dtinvl_loc
+
+   dtres_loc=real(dtres, FMS_SVP_KIND_)
+   tminl_loc=real(tminl, FMS_SVP_KIND_)
+   tepsl_loc=real(tepsl, FMS_SVP_KIND_)
+   dtinvl_loc=real(dtinvl, FMS_SVP_KIND_)
 
    nbad = 0
    do i = 1, size(temp,1)
-     tmp = temp(i)-tminl
-     ind = int(dtinvl*(tmp+tepsl))
+     tmp = temp(i)-tminl_loc
+     ind = int(dtinvl_loc*(tmp+tepsl_loc))
      if (ind < 0 .or. ind >= table_siz)  then
        nbad = nbad+1
      else
-       del = tmp-dtres*real(ind)
-       desat(i) = DTABLE(ind+1) + 2.*del*D2TABLE(ind+1)
+       del = tmp-dtres_loc*real(ind,FMS_SVP_KIND_)
+       desat(i) = real(DTABLE(ind+1),FMS_SVP_KIND_) &
+                  + real(2.0,FMS_SVP_KIND_)*del*real(D2TABLE(ind+1),FMS_SVP_KIND_)
      endif
    enddo
 
- end subroutine lookup_des_k_1d
+ end subroutine LOOKUP_DES_K_1D_
 !#######################################################################
- subroutine lookup_es_k_1d(temp, esat, nbad)
- real, intent(in),  dimension(:)  :: temp
- real, intent(out), dimension(:)  :: esat
+ subroutine LOOKUP_ES_K_1D_(temp, esat, nbad)
+ real(kind=FMS_SVP_KIND_), intent(in),  dimension(:)  :: temp
+ real(kind=FMS_SVP_KIND_), intent(out), dimension(:)  :: esat
  integer, intent(out) :: nbad
- real    :: tmp, del
+ real(kind=FMS_SVP_KIND_)    :: tmp, del
  integer :: ind, i
+
+ real(kind=FMS_SVP_KIND_) :: dtres_loc, tepsl_loc, tminl_loc,  dtinvl_loc
+
+   dtres_loc=real(dtres, FMS_SVP_KIND_)
+   tminl_loc=real(tminl, FMS_SVP_KIND_)
+   tepsl_loc=real(tepsl, FMS_SVP_KIND_)
+   dtinvl_loc=real(dtinvl, FMS_SVP_KIND_)
 
    nbad = 0
    do i = 1, size(temp,1)
-     tmp = temp(i)-tminl
-     ind = int(dtinvl*(tmp+tepsl))
+     tmp = temp(i)-tminl_loc
+     ind = int(dtinvl_loc*(tmp+tepsl_loc))
      if (ind < 0 .or. ind >= table_siz)  then
        nbad = nbad+1
      else
-       del = tmp-dtres*real(ind)
-       esat(i) = TABLE(ind+1) + del*(DTABLE(ind+1) + del*D2TABLE(ind+1))
+       del = tmp-dtres_loc*real(ind,FMS_SVP_KIND_)
+       esat(i) = real(TABLE(ind+1),FMS_SVP_KIND_) &
+                 + del*(real(DTABLE(ind+1),FMS_SVP_KIND_) &
+                                + del*real(D2TABLE(ind+1),FMS_SVP_KIND_) )
      endif
    enddo
 
- end subroutine lookup_es_k_1d
+ end subroutine LOOKUP_ES_K_1D_
 !#######################################################################
- subroutine lookup_des_k_0d(temp, desat, nbad)
- real, intent(in)     :: temp
- real, intent(out)    :: desat
+ subroutine LOOKUP_DES_K_0D_(temp, desat, nbad)
+ real(kind=FMS_SVP_KIND_), intent(in)     :: temp
+ real(kind=FMS_SVP_KIND_), intent(out)    :: desat
  integer, intent(out) :: nbad
- real    :: tmp, del
+ real(kind=FMS_SVP_KIND_) :: tmp, del
  integer :: ind
 
+ real(kind=FMS_SVP_KIND_) :: dtres_loc, tepsl_loc, tminl_loc,  dtinvl_loc
+
+   dtres_loc=real(dtres, FMS_SVP_KIND_)
+   tminl_loc=real(tminl, FMS_SVP_KIND_)
+   tepsl_loc=real(tepsl, FMS_SVP_KIND_)
+   dtinvl_loc=real(dtinvl, FMS_SVP_KIND_)
+
    nbad = 0
-   tmp = temp-tminl
-   ind = int(dtinvl*(tmp+tepsl))
+   tmp = temp-tminl_loc
+   ind = int(dtinvl_loc*(tmp+tepsl_loc))
    if (ind < 0 .or. ind >= table_siz)  then
      nbad = nbad+1
    else
-     del = tmp-dtres*real(ind)
-     desat = DTABLE(ind+1) + 2.*del*D2TABLE(ind+1)
+     del = tmp-dtres_loc*real(ind,FMS_SVP_KIND_)
+     desat = real(DTABLE(ind+1),FMS_SVP_KIND_) &
+             + real(2.0,FMS_SVP_KIND_)*del*real(D2TABLE(ind+1),FMS_SVP_KIND_)
    endif
 
- end subroutine lookup_des_k_0d
+ end subroutine LOOKUP_DES_K_0D_
 !#######################################################################
- subroutine lookup_es_k_0d(temp, esat, nbad)
- real, intent(in)     :: temp
- real, intent(out)    :: esat
+ subroutine LOOKUP_ES_K_0D_(temp, esat, nbad)
+ real(kind=FMS_SVP_KIND_), intent(in)     :: temp
+ real(kind=FMS_SVP_KIND_), intent(out)    :: esat
  integer, intent(out) :: nbad
- real    :: tmp, del
+ real(kind=FMS_SVP_KIND_) :: tmp, del
  integer :: ind
 
+ real(kind=FMS_SVP_KIND_) :: dtres_loc, tepsl_loc, tminl_loc,  dtinvl_loc
+
+   dtres_loc=real(dtres, FMS_SVP_KIND_)
+   tminl_loc=real(tminl, FMS_SVP_KIND_)
+   tepsl_loc=real(tepsl, FMS_SVP_KIND_)
+   dtinvl_loc=real(dtinvl, FMS_SVP_KIND_)
+
    nbad = 0
-   tmp = temp-tminl
-   ind = int(dtinvl*(tmp+tepsl))
+   tmp = temp-tminl_loc
+   ind = int(dtinvl_loc*(tmp+tepsl_loc))
    if (ind < 0 .or. ind >= table_siz)  then
      nbad = nbad+1
    else
-     del = tmp-dtres*real(ind)
-     esat = TABLE(ind+1) + del*(DTABLE(ind+1) + del*D2TABLE(ind+1))
+     del = tmp-dtres_loc*real(ind,FMS_SVP_KIND_)
+     esat = real(TABLE(ind+1),FMS_SVP_KIND_) &
+            + del*( real(DTABLE(ind+1),FMS_SVP_KIND_) &
+                             + del*real(D2TABLE(ind+1),FMS_SVP_KIND_) )
    endif
 
- end subroutine lookup_es_k_0d
+ end subroutine LOOKUP_ES_K_0D_
 !#######################################################################
 
- subroutine lookup_es2_des2_k_3d (temp, esat, desat, nbad)
- real, intent(in),  dimension(:,:,:)  :: temp
- real, intent(out), dimension(:,:,:)  :: esat, desat
+ subroutine LOOKUP_ES2_DES2_K_3D_ (temp, esat, desat, nbad)
+ real(kind=FMS_SVP_KIND_), intent(in),  dimension(:,:,:)  :: temp
+ real(kind=FMS_SVP_KIND_), intent(out), dimension(:,:,:)  :: esat, desat
  integer, intent(out)                 :: nbad
 
- real    :: tmp, del
+ real(kind=FMS_SVP_KIND_) :: tmp, del
  integer :: ind, i, j, k
+
+ real(kind=FMS_SVP_KIND_) :: dtres_loc, tepsl_loc, tminl_loc,  dtinvl_loc
+
+   dtres_loc=real(dtres, FMS_SVP_KIND_)
+   tminl_loc=real(tminl, FMS_SVP_KIND_)
+   tepsl_loc=real(tepsl, FMS_SVP_KIND_)
+   dtinvl_loc=real(dtinvl, FMS_SVP_KIND_)
 
    nbad = 0
    do k = 1, size(temp,3)
    do j = 1, size(temp,2)
    do i = 1, size(temp,1)
-     tmp = temp(i,j,k)-tminl
-     ind = int(dtinvl*(tmp+tepsl))
+     tmp = temp(i,j,k)-tminl_loc
+     ind = int(dtinvl_loc*(tmp+tepsl_loc))
      if (ind < 0 .or. ind >= table_siz) then
        nbad = nbad+1
      else
-       del = tmp-dtres*real(ind)
-       esat(i,j,k) = TABLE2(ind+1) +  &
-                     del*(DTABLE2(ind+1) + del*D2TABLE2(ind+1))
-       desat(i,j,k) = DTABLE2(ind+1) + 2.*del*D2TABLE2(ind+1)
+       del = tmp-dtres_loc*real(ind,FMS_SVP_KIND_)
+       esat(i,j,k) = real(TABLE2(ind+1),FMS_SVP_KIND_) &
+                     + del*( real(DTABLE2(ind+1),FMS_SVP_KIND_) &
+                                + del*real(D2TABLE2(ind+1),FMS_SVP_KIND_) )
+       desat(i,j,k) = real(DTABLE2(ind+1),FMS_SVP_KIND_) &
+                      + real(2.0,FMS_SVP_KIND_)*del*real(D2TABLE2(ind+1),FMS_SVP_KIND_)
      endif
    enddo
    enddo
    enddo
 
- end subroutine lookup_es2_des2_k_3d
+ end subroutine LOOKUP_ES2_DES2_K_3D_
 
 !#######################################################################
 
- subroutine lookup_es2_des2_k_2d (temp, esat, desat, nbad)
- real, intent(in),  dimension(:,:)  :: temp
- real, intent(out), dimension(:,:)  :: esat, desat
+ subroutine LOOKUP_ES2_DES2_K_2D_ (temp, esat, desat, nbad)
+ real(kind=FMS_SVP_KIND_), intent(in),  dimension(:,:)  :: temp
+ real(kind=FMS_SVP_KIND_), intent(out), dimension(:,:)  :: esat, desat
  integer, intent(out)               :: nbad
 
- real    :: tmp, del
+ real(kind=FMS_SVP_KIND_) :: tmp, del
  integer :: ind, i, j
+
+ real(kind=FMS_SVP_KIND_) :: dtres_loc, tepsl_loc, tminl_loc,  dtinvl_loc
+
+   dtres_loc=real(dtres, FMS_SVP_KIND_)
+   tminl_loc=real(tminl, FMS_SVP_KIND_)
+   tepsl_loc=real(tepsl, FMS_SVP_KIND_)
+   dtinvl_loc=real(dtinvl, FMS_SVP_KIND_)
 
    nbad = 0
    do j = 1, size(temp,2)
    do i = 1, size(temp,1)
-     tmp = temp(i,j)-tminl
-     ind = int(dtinvl*(tmp+tepsl))
+     tmp = temp(i,j)-tminl_loc
+     ind = int(dtinvl_loc*(tmp+tepsl_loc))
      if (ind < 0 .or. ind >= table_siz)  then
        nbad = nbad+1
      else
-       del = tmp-dtres*real(ind)
-       esat(i,j) = TABLE2(ind+1) + &
-                   del*(DTABLE2(ind+1) + del*D2TABLE2(ind+1))
-       desat(i,j) = DTABLE2(ind+1) + 2.*del*D2TABLE2(ind+1)
+       del = tmp-dtres_loc*real(ind,FMS_SVP_KIND_)
+       esat(i,j) = real(TABLE2(ind+1),FMS_SVP_KIND_) &
+                   + del*( real(DTABLE2(ind+1),FMS_SVP_KIND_) &
+                                 + del*real(D2TABLE2(ind+1),FMS_SVP_KIND_) )
+       desat(i,j) = real(DTABLE2(ind+1),FMS_SVP_KIND_) &
+                    + real(2.0,FMS_SVP_KIND_)*del*real(D2TABLE2(ind+1),FMS_SVP_KIND_)
      endif
    enddo
    enddo
 
- end subroutine lookup_es2_des2_k_2d
+ end subroutine LOOKUP_ES2_DES2_K_2D_
 
 !#######################################################################
 
- subroutine lookup_es2_des2_k_1d (temp, esat, desat, nbad)
- real, intent(in),  dimension(:)  :: temp
- real, intent(out), dimension(:)  :: esat, desat
+ subroutine LOOKUP_ES2_DES2_K_1D_ (temp, esat, desat, nbad)
+ real(kind=FMS_SVP_KIND_), intent(in),  dimension(:)  :: temp
+ real(kind=FMS_SVP_KIND_), intent(out), dimension(:)  :: esat, desat
  integer, intent(out)             :: nbad
 
- real    :: tmp, del
+ real(kind=FMS_SVP_KIND_) :: tmp, del
  integer :: ind, i
+
+ real(kind=FMS_SVP_KIND_) :: dtres_loc, tepsl_loc, tminl_loc,  dtinvl_loc
+
+   dtres_loc=real(dtres, FMS_SVP_KIND_)
+   tminl_loc=real(tminl, FMS_SVP_KIND_)
+   tepsl_loc=real(tepsl, FMS_SVP_KIND_)
+   dtinvl_loc=real(dtinvl, FMS_SVP_KIND_)
 
    nbad = 0
    do i = 1, size(temp,1)
-     tmp = temp(i)-tminl
-     ind = int(dtinvl*(tmp+tepsl))
+     tmp = temp(i)-tminl_loc
+     IND = INT(dtinvl_loc*(tmp+tepsl_loc))
      if (ind < 0 .or. ind >= table_siz)  then
        nbad = nbad+1
      else
-       del = tmp-dtres*real(ind)
-       esat(i) = TABLE2(ind+1) + &
-                   del*(DTABLE2(ind+1) + del*D2TABLE2(ind+1))
-       desat(i) = DTABLE2(ind+1) + 2.*del*D2TABLE2(ind+1)
+       del = tmp-dtres_loc*real(ind,FMS_SVP_KIND_)
+       esat(i) = real(TABLE2(ind+1),FMS_SVP_KIND_) &
+                 + del*( real(DTABLE2(ind+1),FMS_SVP_KIND_) &
+                              + del*real(D2TABLE2(ind+1),FMS_SVP_KIND_) )
+       desat(i) = real(DTABLE2(ind+1),FMS_SVP_KIND_) &
+                  + real(2.0,FMS_SVP_KIND_)*del*real(D2TABLE2(ind+1),FMS_SVP_KIND_)
      endif
    enddo
 
- end subroutine lookup_es2_des2_k_1d
+ end subroutine LOOKUP_ES2_DES2_K_1D_
 
 !#######################################################################
 
- subroutine lookup_es2_des2_k_0d (temp, esat, desat, nbad)
- real, intent(in)     :: temp
- real, intent(out)    :: esat, desat
+ subroutine LOOKUP_ES2_DES2_K_0D_ (temp, esat, desat, nbad)
+ real(kind=FMS_SVP_KIND_), intent(in)     :: temp
+ real(kind=FMS_SVP_KIND_), intent(out)    :: esat, desat
  integer, intent(out) :: nbad
 
- real    :: tmp, del
+ real(kind=FMS_SVP_KIND_) :: tmp, del
  integer :: ind
 
+ real(kind=FMS_SVP_KIND_) :: dtres_loc, tepsl_loc, tminl_loc,  dtinvl_loc
+
+   dtres_loc=real(dtres, FMS_SVP_KIND_)
+   tminl_loc=real(tminl, FMS_SVP_KIND_)
+   tepsl_loc=real(tepsl, FMS_SVP_KIND_)
+   dtinvl_loc=real(dtinvl, FMS_SVP_KIND_)
+
+
    nbad = 0
-   tmp = temp-tminl
-   ind = int(dtinvl*(tmp+tepsl))
+   tmp = temp-tminl_loc
+   ind = int(dtinvl_loc*(tmp+tepsl_loc))
    if (ind < 0 .or. ind >= table_siz)  then
      nbad = nbad+1
    else
-     del = tmp-dtres*real(ind)
-     esat = TABLE2(ind+1) + &
-            del*(DTABLE2(ind+1) + del*D2TABLE2(ind+1))
-     desat = DTABLE2(ind+1) + 2.*del*D2TABLE2(ind+1)
+     del = tmp-dtres_loc*real(ind,FMS_SVP_KIND_)
+     esat = real(TABLE2(ind+1),FMS_SVP_KIND_) &
+            + del*( real(DTABLE2(ind+1),FMS_SVP_KIND_) &
+                          + del*real(D2TABLE2(ind+1),FMS_SVP_KIND_) )
+     desat = real(DTABLE2(ind+1),FMS_SVP_KIND_) &
+             + real(2.0,FMS_SVP_KIND_)*del*real(D2TABLE2(ind+1),FMS_SVP_KIND_)
    endif
 
- end subroutine lookup_es2_des2_k_0d
+ end subroutine LOOKUP_ES2_DES2_K_0D_
 
 !#######################################################################
 
- subroutine lookup_es2_k_3d(temp, esat, nbad)
- real, intent(in),  dimension(:,:,:)  :: temp
- real, intent(out), dimension(:,:,:)  :: esat
+ subroutine LOOKUP_ES2_K_3D_(temp, esat, nbad)
+ real(kind=FMS_SVP_KIND_), intent(in),  dimension(:,:,:)  :: temp
+ real(kind=FMS_SVP_KIND_), intent(out), dimension(:,:,:)  :: esat
  integer, intent(out) :: nbad
- real    :: tmp, del
+ real(kind=FMS_SVP_KIND_) :: tmp, del
  integer :: ind, i, j, k
+
+ real(kind=FMS_SVP_KIND_) :: dtres_loc, tepsl_loc, tminl_loc,  dtinvl_loc
+
+   dtres_loc=real(dtres, FMS_SVP_KIND_)
+   tminl_loc=real(tminl, FMS_SVP_KIND_)
+   tepsl_loc=real(tepsl, FMS_SVP_KIND_)
+   dtinvl_loc=real(dtinvl, FMS_SVP_KIND_)
 
    nbad = 0
    do k = 1, size(temp,3)
    do j = 1, size(temp,2)
    do i = 1, size(temp,1)
-     tmp = temp(i,j,k)-tminl
-     ind = int(dtinvl*(tmp+tepsl))
+     tmp = temp(i,j,k)-tminl_loc
+     ind = int(dtinvl_loc*(tmp+tepsl_loc))
      if (ind < 0 .or. ind >= table_siz)  then
        nbad = nbad+1
      else
-       del = tmp-dtres*real(ind)
-       esat(i,j,k) = TABLE2(ind+1) + &
-                     del*(DTABLE2(ind+1) + del*D2TABLE2(ind+1))
+       del = tmp-dtres_loc*real(ind,FMS_SVP_KIND_)
+       esat(i,j,k) = real(TABLE2(ind+1),FMS_SVP_KIND_) &
+                     + del*( real(DTABLE2(ind+1),FMS_SVP_KIND_) &
+                                  + del*real(D2TABLE2(ind+1),FMS_SVP_KIND_) )
      endif
    enddo
    enddo
    enddo
 
- end subroutine lookup_es2_k_3d
+ end subroutine LOOKUP_ES2_K_3D_
 
 !#######################################################################
 
- subroutine lookup_des2_k_3d(temp, desat, nbad)
- real, intent(in),  dimension(:,:,:)  :: temp
- real, intent(out), dimension(:,:,:)  :: desat
+ subroutine LOOKUP_DES2_K_3D_(temp, desat, nbad)
+ real(kind=FMS_SVP_KIND_), intent(in),  dimension(:,:,:)  :: temp
+ real(kind=FMS_SVP_KIND_), intent(out), dimension(:,:,:)  :: desat
  integer, intent(out) :: nbad
- real    :: tmp, del
+ real(kind=FMS_SVP_KIND_) :: tmp, del
  integer :: ind, i, j, k
+
+ real(kind=FMS_SVP_KIND_) :: dtres_loc, tepsl_loc, tminl_loc,  dtinvl_loc
+
+   dtres_loc=real(dtres, FMS_SVP_KIND_)
+   tminl_loc=real(tminl, FMS_SVP_KIND_)
+   tepsl_loc=real(tepsl, FMS_SVP_KIND_)
+   dtinvl_loc=real(dtinvl, FMS_SVP_KIND_)
 
    nbad = 0
    do k = 1, size(temp,3)
    do j = 1, size(temp,2)
    do i = 1, size(temp,1)
-     tmp = temp(i,j,k)-tminl
-     ind = int(dtinvl*(tmp+tepsl))
+     tmp = temp(i,j,k)-tminl_loc
+     ind = int(dtinvl_loc*(tmp+tepsl_loc))
      if (ind < 0 .or. ind >= table_siz)  then
        nbad = nbad+1
      else
-       del = tmp-dtres*real(ind)
-       desat(i,j,k) = DTABLE2(ind+1) + 2.*del*D2TABLE2(ind+1)
+       del = tmp-dtres_loc*real(ind,FMS_SVP_KIND_)
+       desat(i,j,k) = real(DTABLE2(ind+1),FMS_SVP_KIND_) &
+                      + real(2.0,FMS_SVP_KIND_)*del*real(D2TABLE2(ind+1),FMS_SVP_KIND_)
      endif
    enddo
    enddo
    enddo
 
- end subroutine lookup_des2_k_3d
+ end subroutine LOOKUP_DES2_K_3D_
 
 !#######################################################################
- subroutine lookup_des2_k_2d(temp, desat, nbad)
- real, intent(in),  dimension(:,:)  :: temp
- real, intent(out), dimension(:,:)  :: desat
+ subroutine LOOKUP_DES2_K_2D_(temp, desat, nbad)
+ real(kind=FMS_SVP_KIND_), intent(in),  dimension(:,:)  :: temp
+ real(kind=FMS_SVP_KIND_), intent(out), dimension(:,:)  :: desat
  integer, intent(out) :: nbad
- real    :: tmp, del
+ real(kind=FMS_SVP_KIND_) :: tmp, del
  integer :: ind, i, j
+
+ real(kind=FMS_SVP_KIND_) :: dtres_loc, tepsl_loc, tminl_loc,  dtinvl_loc
+
+   dtres_loc=real(dtres, FMS_SVP_KIND_)
+   tminl_loc=real(tminl, FMS_SVP_KIND_)
+   tepsl_loc=real(tepsl, FMS_SVP_KIND_)
+   dtinvl_loc=real(dtinvl, FMS_SVP_KIND_)
+
+   nbad = 0
+   do j = 1, size(temp,2)
+   do i = 1, size(temp,1)
+     tmp = temp(i,j)-tminl_loc
+     ind = int(dtinvl_loc*(tmp+tepsl_loc))
+     if (ind < 0 .or. ind >= table_siz)  then
+       nbad = nbad+1
+     else
+       del = tmp-dtres_loc*real(ind,FMS_SVP_KIND_)
+       desat(i,j) = real(DTABLE2(ind+1),FMS_SVP_KIND_) &
+                    + real(2.0,FMS_SVP_KIND_)*del*real(D2TABLE2(ind+1),FMS_SVP_KIND_)
+     endif
+   enddo
+   enddo
+
+ end subroutine LOOKUP_DES2_K_2D_
+!#######################################################################
+ subroutine LOOKUP_ES2_K_2D_(temp, esat, nbad)
+ real(kind=FMS_SVP_KIND_), intent(in),  dimension(:,:)  :: temp
+ real(kind=FMS_SVP_KIND_), intent(out), dimension(:,:)  :: esat
+ integer, intent(out) :: nbad
+ real(kind=FMS_SVP_KIND_) :: tmp, del
+ integer :: ind, i, j
+
+ real(kind=FMS_SVP_KIND_) :: dtres_loc, tepsl_loc, tminl_loc,  dtinvl_loc
+
+   dtres_loc=real(dtres, FMS_SVP_KIND_)
+   tminl_loc=real(tminl, FMS_SVP_KIND_)
+   tepsl_loc=real(tepsl, FMS_SVP_KIND_)
+   dtinvl_loc=real(dtinvl, FMS_SVP_KIND_)
 
    nbad = 0
    do j = 1, size(temp,2)
    do i = 1, size(temp,1)
      tmp = temp(i,j)-tminl
-     ind = int(dtinvl*(tmp+tepsl))
+     ind = int(dtinvl_loc*(tmp+tepsl_loc))
      if (ind < 0 .or. ind >= table_siz)  then
        nbad = nbad+1
      else
-       del = tmp-dtres*real(ind)
-       desat(i,j) = DTABLE2(ind+1) + 2.*del*D2TABLE2(ind+1)
+       del = tmp-dtres_loc*real(ind)
+       esat(i,j) = real(TABLE2(ind+1),FMS_SVP_KIND_) &
+                   + del*( real(DTABLE2(ind+1),FMS_SVP_KIND_) &
+                                   + del*real(D2TABLE2(ind+1),FMS_SVP_KIND_) )
      endif
    enddo
    enddo
 
- end subroutine lookup_des2_k_2d
+ end subroutine LOOKUP_ES2_K_2D_
 !#######################################################################
- subroutine lookup_es2_k_2d(temp, esat, nbad)
- real, intent(in),  dimension(:,:)  :: temp
- real, intent(out), dimension(:,:)  :: esat
+ subroutine LOOKUP_DES2_K_1D_(temp, desat, nbad)
+ real(kind=FMS_SVP_KIND_), intent(in),  dimension(:)  :: temp
+ real(kind=FMS_SVP_KIND_), intent(out), dimension(:)  :: desat
  integer, intent(out) :: nbad
- real    :: tmp, del
- integer :: ind, i, j
-
-   nbad = 0
-   do j = 1, size(temp,2)
-   do i = 1, size(temp,1)
-     tmp = temp(i,j)-tminl
-     ind = int(dtinvl*(tmp+tepsl))
-     if (ind < 0 .or. ind >= table_siz)  then
-       nbad = nbad+1
-     else
-       del = tmp-dtres*real(ind)
-       esat(i,j) = TABLE2(ind+1) + del*(DTABLE2(ind+1) +   &
-                                                  del*D2TABLE2(ind+1))
-     endif
-   enddo
-   enddo
-
- end subroutine lookup_es2_k_2d
-!#######################################################################
- subroutine lookup_des2_k_1d(temp, desat, nbad)
- real, intent(in),  dimension(:)  :: temp
- real, intent(out), dimension(:)  :: desat
- integer, intent(out) :: nbad
- real    :: tmp, del
+ real(kind=FMS_SVP_KIND_) :: tmp, del
  integer :: ind, i
 
+ real(kind=FMS_SVP_KIND_) :: dtres_loc, tepsl_loc, tminl_loc,  dtinvl_loc
+
+   dtres_loc=real(dtres, FMS_SVP_KIND_)
+   tminl_loc=real(tminl, FMS_SVP_KIND_)
+   tepsl_loc=real(tepsl, FMS_SVP_KIND_)
+   dtinvl_loc=real(dtinvl, FMS_SVP_KIND_)
+
    nbad = 0
    do i = 1, size(temp,1)
-     tmp = temp(i)-tminl
-     ind = int(dtinvl*(tmp+tepsl))
+     tmp = temp(i)-tminl_loc
+     ind = int(dtinvl_loc*(tmp+tepsl_loc))
      if (ind < 0 .or. ind >= table_siz)  then
        nbad = nbad+1
      else
-       del = tmp-dtres*real(ind)
-       desat(i) = DTABLE2(ind+1) + 2.*del*D2TABLE2(ind+1)
+       del = tmp-dtres_loc*real(ind,FMS_SVP_KIND_)
+       desat(i) = real(DTABLE2(ind+1),FMS_SVP_KIND_) &
+                  + real(2.0,FMS_SVP_KIND_)*del*real(D2TABLE2(ind+1),FMS_SVP_KIND_)
      endif
    enddo
 
- end subroutine lookup_des2_k_1d
+ end subroutine LOOKUP_DES2_K_1D_
 !#######################################################################
- subroutine lookup_es2_k_1d(temp, esat, nbad)
- real, intent(in),  dimension(:)  :: temp
- real, intent(out), dimension(:)  :: esat
+ subroutine LOOKUP_ES2_K_1D_(temp, esat, nbad)
+ real(kind=FMS_SVP_KIND_), intent(in),  dimension(:)  :: temp
+ real(kind=FMS_SVP_KIND_), intent(out), dimension(:)  :: esat
  integer, intent(out) :: nbad
- real    :: tmp, del
+ real(kind=FMS_SVP_KIND_) :: tmp, del
  integer :: ind, i
 
+ real(kind=FMS_SVP_KIND_) :: dtres_loc, tepsl_loc, tminl_loc,  dtinvl_loc
+
+   dtres_loc=real(dtres, FMS_SVP_KIND_)
+   tminl_loc=real(tminl, FMS_SVP_KIND_)
+   tepsl_loc=real(tepsl, FMS_SVP_KIND_)
+   dtinvl_loc=real(dtinvl, FMS_SVP_KIND_)
+
    nbad = 0
    do i = 1, size(temp,1)
-     tmp = temp(i)-tminl
-     ind = int(dtinvl*(tmp+tepsl))
+     tmp = temp(i)-tminl_loc
+     ind = int(dtinvl_loc*(tmp+tepsl_loc))
      if (ind < 0 .or. ind >= table_siz)  then
        nbad = nbad+1
      else
-       del = tmp-dtres*real(ind)
-       esat(i) = TABLE2(ind+1) + del*(DTABLE2(ind+1) + del*D2TABLE2(ind+1))
+       del = tmp-dtres_loc*real(ind,FMS_SVP_KIND_)
+       esat(i) = real(TABLE2(ind+1),FMS_SVP_KIND_) &
+                 + del*( real(DTABLE2(ind+1),FMS_SVP_KIND_) &
+                               + del*real(D2TABLE2(ind+1),FMS_SVP_KIND_) )
      endif
    enddo
 
- end subroutine lookup_es2_k_1d
+ end subroutine LOOKUP_ES2_K_1D_
 !#######################################################################
- subroutine lookup_des2_k_0d(temp, desat, nbad)
- real, intent(in)     :: temp
- real, intent(out)    :: desat
+ subroutine LOOKUP_DES2_K_0D_(temp, desat, nbad)
+ real(kind=FMS_SVP_KIND_), intent(in)     :: temp
+ real(kind=FMS_SVP_KIND_), intent(out)    :: desat
  integer, intent(out) :: nbad
- real    :: tmp, del
+ real(kind=FMS_SVP_KIND_)    :: tmp, del
  integer :: ind
 
+ real(kind=FMS_SVP_KIND_) :: dtres_loc, tepsl_loc, tminl_loc,  dtinvl_loc
+
+   dtres_loc=real(dtres, FMS_SVP_KIND_)
+   tminl_loc=real(tminl, FMS_SVP_KIND_)
+   tepsl_loc=real(tepsl, FMS_SVP_KIND_)
+   dtinvl_loc=real(dtinvl, FMS_SVP_KIND_)
+
    nbad = 0
-   tmp = temp-tminl
-   ind = int(dtinvl*(tmp+tepsl))
+   tmp = temp-tminl_loc
+   ind = int(dtinvl_loc*(tmp+tepsl_loc))
    if (ind < 0 .or. ind >= table_siz)  then
      nbad = nbad+1
    else
-     del = tmp-dtres*real(ind)
-     desat = DTABLE2(ind+1) + 2.*del*D2TABLE2(ind+1)
+     del = tmp-dtres_loc*real(ind,FMS_SVP_KIND_)
+     desat = real(DTABLE2(ind+1),FMS_SVP_KIND_) &
+             + real(2.0,FMS_SVP_KIND_)*del*real(D2TABLE2(ind+1),FMS_SVP_KIND_)
    endif
 
- end subroutine lookup_des2_k_0d
+ end subroutine LOOKUP_DES2_K_0D_
 !#######################################################################
- subroutine lookup_es2_k_0d(temp, esat, nbad)
- real, intent(in)     :: temp
- real, intent(out)    :: esat
+ subroutine LOOKUP_ES2_K_0D_(temp, esat, nbad)
+ real(kind=FMS_SVP_KIND_), intent(in)     :: temp
+ real(kind=FMS_SVP_KIND_), intent(out)    :: esat
  integer, intent(out) :: nbad
- real    :: tmp, del
+ real(kind=FMS_SVP_KIND_) :: tmp, del
  integer :: ind
 
+ real(kind=FMS_SVP_KIND_) :: dtres_loc, tepsl_loc, tminl_loc,  dtinvl_loc
+
+   dtres_loc=real(dtres, FMS_SVP_KIND_)
+   tminl_loc=real(tminl, FMS_SVP_KIND_)
+   tepsl_loc=real(tepsl, FMS_SVP_KIND_)
+   dtinvl_loc=real(dtinvl, FMS_SVP_KIND_)
+
    nbad = 0
-   tmp = temp-tminl
-   ind = int(dtinvl*(tmp+tepsl))
+   tmp = temp-tminl_loc
+   ind = int(dtinvl_loc*(tmp+tepsl_loc))
    if (ind < 0 .or. ind >= table_siz)  then
      nbad = nbad+1
    else
-     del = tmp-dtres*real(ind)
-     esat = TABLE2(ind+1) + del*(DTABLE2(ind+1) + del*D2TABLE2(ind+1))
+     del = tmp-dtres_loc*real(ind,FMS_SVP_KIND_)
+     esat = real(TABLE2(ind+1),FMS_SVP_KIND_) &
+            + del*( DTABLE2(ind+1) &
+                       + del*real(D2TABLE2(ind+1),FMS_SVP_KIND_) )
    endif
 
- end subroutine lookup_es2_k_0d
+ end subroutine LOOKUP_ES2_K_0D_
 !#######################################################################
 
 !#######################################################################
 
- subroutine lookup_es3_des3_k_3d (temp, esat, desat, nbad)
- real, intent(in),  dimension(:,:,:)  :: temp
- real, intent(out), dimension(:,:,:)  :: esat, desat
+ subroutine LOOKUP_ES3_DES3_K_3D_ (temp, esat, desat, nbad)
+ real(kind=FMS_SVP_KIND_), intent(in),  dimension(:,:,:)  :: temp
+ real(kind=FMS_SVP_KIND_), intent(out), dimension(:,:,:)  :: esat, desat
  integer, intent(out)                 :: nbad
 
- real    :: tmp, del
+ real(kind=FMS_SVP_KIND_) :: tmp, del
  integer :: ind, i, j, k
+
+ real(kind=FMS_SVP_KIND_) :: dtres_loc, tepsl_loc, tminl_loc,  dtinvl_loc
+
+   dtres_loc=real(dtres, FMS_SVP_KIND_)
+   tminl_loc=real(tminl, FMS_SVP_KIND_)
+   tepsl_loc=real(tepsl, FMS_SVP_KIND_)
+   dtinvl_loc=real(dtinvl, FMS_SVP_KIND_)
 
    nbad = 0
    do k = 1, size(temp,3)
    do j = 1, size(temp,2)
    do i = 1, size(temp,1)
-     tmp = temp(i,j,k)-tminl
-     ind = int(dtinvl*(tmp+tepsl))
+     tmp = temp(i,j,k)-tminl_loc
+     ind = int(dtinvl_loc*(tmp+tepsl_loc))
      if (ind < 0 .or. ind >= table_siz) then
        nbad = nbad+1
      else
-       del = tmp-dtres*real(ind)
-       esat(i,j,k) = TABLE3(ind+1) +  &
-                     del*(DTABLE3(ind+1) + del*D2TABLE3(ind+1))
-       desat(i,j,k) = DTABLE3(ind+1) + 2.*del*D2TABLE3(ind+1)
+       del = tmp-dtres_loc*real(ind,FMS_SVP_KIND_)
+       esat(i,j,k) = real(TABLE3(ind+1),FMS_SVP_KIND_) &
+                     + del*( real(DTABLE3(ind+1),FMS_SVP_KIND_) &
+                                  + del*real(D2TABLE3(ind+1),FMS_SVP_KIND_) )
+       desat(i,j,k) = real(DTABLE3(ind+1),FMS_SVP_KIND_) &
+                      + real(2.0,FMS_SVP_KIND_)*del*real(D2TABLE3(ind+1),FMS_SVP_KIND_)
      endif
    enddo
    enddo
    enddo
 
- end subroutine lookup_es3_des3_k_3d
+ end subroutine LOOKUP_ES3_DES3_K_3D_
 
 !#######################################################################
 
- subroutine lookup_es3_des3_k_2d (temp, esat, desat, nbad)
- real, intent(in),  dimension(:,:)  :: temp
- real, intent(out), dimension(:,:)  :: esat, desat
+ subroutine LOOKUP_ES3_DES3_K_2D_ (temp, esat, desat, nbad)
+ real(kind=FMS_SVP_KIND_), intent(in),  dimension(:,:)  :: temp
+ real(kind=FMS_SVP_KIND_), intent(out), dimension(:,:)  :: esat, desat
  integer, intent(out)               :: nbad
 
- real    :: tmp, del
+ real(kind=FMS_SVP_KIND_) :: tmp, del
  integer :: ind, i, j
+
+ real(kind=FMS_SVP_KIND_) :: dtres_loc, tepsl_loc, tminl_loc,  dtinvl_loc
+
+   dtres_loc=real(dtres, FMS_SVP_KIND_)
+   tminl_loc=real(tminl, FMS_SVP_KIND_)
+   tepsl_loc=real(tepsl, FMS_SVP_KIND_)
+   dtinvl_loc=real(dtinvl, FMS_SVP_KIND_)
 
    nbad = 0
    do j = 1, size(temp,2)
    do i = 1, size(temp,1)
-     tmp = temp(i,j)-tminl
-     ind = int(dtinvl*(tmp+tepsl))
+     tmp = temp(i,j)-tminl_loc
+     ind = int(dtinvl_loc*(tmp+tepsl_loc))
      if (ind < 0 .or. ind >= table_siz)  then
        nbad = nbad+1
      else
-       del = tmp-dtres*real(ind)
-       esat(i,j) = TABLE3(ind+1) + &
-                   del*(DTABLE3(ind+1) + del*D2TABLE3(ind+1))
-       desat(i,j) = DTABLE3(ind+1) + 2.*del*D2TABLE3(ind+1)
+       del = tmp-dtres_loc*real(ind,FMS_SVP_KIND_)
+       esat(i,j) = real(TABLE3(ind+1),FMS_SVP_KIND_) &
+                   + del*( real(DTABLE3(ind+1),FMS_SVP_KIND_) &
+                                + del*real(D2TABLE3(ind+1),FMS_SVP_KIND_) )
+       desat(i,j) = real(DTABLE3(ind+1),FMS_SVP_KIND_) &
+                    + real(2.0,FMS_SVP_KIND_)*del*real(D2TABLE3(ind+1),FMS_SVP_KIND_)
      endif
    enddo
    enddo
 
- end subroutine lookup_es3_des3_k_2d
+ end subroutine LOOKUP_ES3_DES3_K_2D_
 
 !#######################################################################
 
- subroutine lookup_es3_des3_k_1d (temp, esat, desat, nbad)
- real, intent(in),  dimension(:)  :: temp
- real, intent(out), dimension(:)  :: esat, desat
+ subroutine LOOKUP_ES3_DES3_K_1D_ (temp, esat, desat, nbad)
+ real(kind=FMS_SVP_KIND_), intent(in),  dimension(:)  :: temp
+ real(kind=FMS_SVP_KIND_), intent(out), dimension(:)  :: esat, desat
  integer, intent(out)             :: nbad
 
- real    :: tmp, del
+ real(kind=FMS_SVP_KIND_) :: tmp, del
  integer :: ind, i
+
+ real(kind=FMS_SVP_KIND_) :: dtres_loc, tepsl_loc, tminl_loc,  dtinvl_loc
+
+   dtres_loc=real(dtres, FMS_SVP_KIND_)
+   tminl_loc=real(tminl, FMS_SVP_KIND_)
+   tepsl_loc=real(tepsl, FMS_SVP_KIND_)
+   dtinvl_loc=real(dtinvl, FMS_SVP_KIND_)
 
    nbad = 0
    do i = 1, size(temp,1)
-     tmp = temp(i)-tminl
-     ind = int(dtinvl*(tmp+tepsl))
+     tmp = temp(i)-tminl_loc
+     ind = int(dtinvl*(tmp+tepsl_loc))
      if (ind < 0 .or. ind >= table_siz)  then
        nbad = nbad+1
      else
-       del = tmp-dtres*real(ind)
-       esat(i) = TABLE3(ind+1) + &
-                   del*(DTABLE3(ind+1) + del*D2TABLE3(ind+1))
-       desat(i) = DTABLE3(ind+1) + 2.*del*D2TABLE3(ind+1)
+       del = tmp-dtres_loc*real(ind,FMS_SVP_KIND_)
+       esat(i) = real(TABLE3(ind+1),FMS_SVP_KIND_) &
+                 + del*( real(DTABLE3(ind+1),FMS_SVP_KIND_) &
+                             + del*real(D2TABLE3(ind+1),FMS_SVP_KIND_) )
+       desat(i) = real(DTABLE3(ind+1),FMS_SVP_KIND_) &
+                  + real(2.0,FMS_SVP_KIND_)*del*real(D2TABLE3(ind+1),FMS_SVP_KIND_)
      endif
    enddo
 
- end subroutine lookup_es3_des3_k_1d
+ end subroutine LOOKUP_ES3_DES3_K_1D_
 
 !#######################################################################
 
- subroutine lookup_es3_des3_k_0d (temp, esat, desat, nbad)
- real, intent(in)     :: temp
- real, intent(out)    :: esat, desat
+ subroutine LOOKUP_ES3_DES3_K_0D_ (temp, esat, desat, nbad)
+ real(kind=FMS_SVP_KIND_), intent(in)  :: temp
+ real(kind=FMS_SVP_KIND_), intent(out) :: esat, desat
  integer, intent(out) :: nbad
 
- real    :: tmp, del
+ real(kind=FMS_SVP_KIND_) :: tmp, del
  integer :: ind
+
+ real(kind=FMS_SVP_KIND_) :: dtres_loc, tepsl_loc, tminl_loc,  dtinvl_loc
+
+   dtres_loc=real(dtres, FMS_SVP_KIND_)
+   tminl_loc=real(tminl, FMS_SVP_KIND_)
+   tepsl_loc=real(tepsl, FMS_SVP_KIND_)
+   dtinvl_loc=real(dtinvl, FMS_SVP_KIND_)
 
    nbad = 0
    tmp = temp-tminl
-   ind = int(dtinvl*(tmp+tepsl))
+   ind = int(dtinvl_loc*(tmp+tepsl_loc))
    if (ind < 0 .or. ind >= table_siz)  then
      nbad = nbad+1
    else
-     del = tmp-dtres*real(ind)
-     esat = TABLE3(ind+1) + &
-            del*(DTABLE3(ind+1) + del*D2TABLE3(ind+1))
-     desat = DTABLE3(ind+1) + 2.*del*D2TABLE3(ind+1)
+     del = tmp-dtres_loc*real(ind,FMS_SVP_KIND_)
+     esat = real(TABLE3(ind+1),FMS_SVP_KIND_) &
+            + del*( real(DTABLE3(ind+1),FMS_SVP_KIND_) &
+                           + del*real(D2TABLE3(ind+1),FMS_SVP_KIND_) )
+     desat = real(DTABLE3(ind+1),FMS_SVP_KIND_) &
+             + real(2.0,FMS_SVP_KIND_)*del*real(D2TABLE3(ind+1),FMS_SVP_KIND_)
    endif
 
- end subroutine lookup_es3_des3_k_0d
+ end subroutine LOOKUP_ES3_DES3_K_0D_
 
 !#######################################################################
 
- subroutine lookup_es3_k_3d(temp, esat, nbad)
- real, intent(in),  dimension(:,:,:)  :: temp
- real, intent(out), dimension(:,:,:)  :: esat
+ subroutine LOOKUP_ES3_K_3D_(temp, esat, nbad)
+ real(kind=FMS_SVP_KIND_), intent(in),  dimension(:,:,:)  :: temp
+ real(kind=FMS_SVP_KIND_), intent(out), dimension(:,:,:)  :: esat
  integer, intent(out) :: nbad
- real    :: tmp, del
+ real(kind=FMS_SVP_KIND_) :: tmp, del
  integer :: ind, i, j, k
+
+ real(kind=FMS_SVP_KIND_) :: dtres_loc, tepsl_loc, tminl_loc,  dtinvl_loc
+
+   dtres_loc=real(dtres, FMS_SVP_KIND_)
+   tminl_loc=real(tminl, FMS_SVP_KIND_)
+   tepsl_loc=real(tepsl, FMS_SVP_KIND_)
+   dtinvl_loc=real(dtinvl, FMS_SVP_KIND_)
 
    nbad = 0
    do k = 1, size(temp,3)
    do j = 1, size(temp,2)
    do i = 1, size(temp,1)
-     tmp = temp(i,j,k)-tminl
-     ind = int(dtinvl*(tmp+tepsl))
+     tmp = temp(i,j,k)-tminl_loc
+     ind = int(dtinvl_loc*(tmp+tepsl_loc))
      if (ind < 0 .or. ind >= table_siz)  then
        nbad = nbad+1
      else
-       del = tmp-dtres*real(ind)
-       esat(i,j,k) = TABLE3(ind+1) + &
-                     del*(DTABLE3(ind+1) + del*D2TABLE3(ind+1))
+       del = tmp-dtres_loc*real(ind,FMS_SVP_KIND_)
+       esat(i,j,k) = real(TABLE3(ind+1),FMS_SVP_KIND_) &
+                     + del*( real(DTABLE3(ind+1),FMS_SVP_KIND_) &
+                                    + del*real(D2TABLE3(ind+1),FMS_SVP_KIND_) )
      endif
    enddo
    enddo
    enddo
 
- end subroutine lookup_es3_k_3d
+ end subroutine LOOKUP_ES3_K_3D_
 
 !#######################################################################
 
- subroutine lookup_des3_k_3d(temp, desat, nbad)
- real, intent(in),  dimension(:,:,:)  :: temp
- real, intent(out), dimension(:,:,:)  :: desat
+ subroutine LOOKUP_DES3_K_3D_(temp, desat, nbad)
+ real(kind=FMS_SVP_KIND_), intent(in),  dimension(:,:,:)  :: temp
+ real(kind=FMS_SVP_KIND_), intent(out), dimension(:,:,:)  :: desat
  integer, intent(out) :: nbad
- real    :: tmp, del
+ real(kind=FMS_SVP_KIND_) :: tmp, del
  integer :: ind, i, j, k
+
+ real(kind=FMS_SVP_KIND_) :: dtres_loc, tepsl_loc, tminl_loc,  dtinvl_loc
+
+   dtres_loc=real(dtres, FMS_SVP_KIND_)
+   tminl_loc=real(tminl, FMS_SVP_KIND_)
+   tepsl_loc=real(tepsl, FMS_SVP_KIND_)
+   dtinvl_loc=real(dtinvl, FMS_SVP_KIND_)
 
    nbad = 0
    do k = 1, size(temp,3)
    do j = 1, size(temp,2)
    do i = 1, size(temp,1)
-     tmp = temp(i,j,k)-tminl
-     ind = int(dtinvl*(tmp+tepsl))
+     tmp = temp(i,j,k)-tminl_loc
+     ind = int(dtinvl_loc*(tmp+tepsl_loc))
      if (ind < 0 .or. ind >= table_siz)  then
        nbad = nbad+1
      else
-       del = tmp-dtres*real(ind)
-       desat(i,j,k) = DTABLE3(ind+1) + 2.*del*D2TABLE3(ind+1)
+       del = tmp-dtres_loc*real(ind)
+       desat(i,j,k) = real(DTABLE3(ind+1),FMS_SVP_KIND_) &
+                      + real(2.0,FMS_SVP_KIND_)*del*real(D2TABLE3(ind+1),FMS_SVP_KIND_)
      endif
    enddo
    enddo
    enddo
 
- end subroutine lookup_des3_k_3d
+ end subroutine LOOKUP_DES3_K_3D_
 
 !#######################################################################
- subroutine lookup_des3_k_2d(temp, desat, nbad)
- real, intent(in),  dimension(:,:)  :: temp
- real, intent(out), dimension(:,:)  :: desat
+ subroutine LOOKUP_DES3_K_2D_(temp, desat, nbad)
+ real(kind=FMS_SVP_KIND_), intent(in),  dimension(:,:)  :: temp
+ real(kind=FMS_SVP_KIND_), intent(out), dimension(:,:)  :: desat
  integer, intent(out) :: nbad
- real    :: tmp, del
+ real(kind=FMS_SVP_KIND_) :: tmp, del
  integer :: ind, i, j
+
+ real(kind=FMS_SVP_KIND_) :: dtres_loc, tepsl_loc, tminl_loc,  dtinvl_loc
+
+   dtres_loc=real(dtres, FMS_SVP_KIND_)
+   tminl_loc=real(tminl, FMS_SVP_KIND_)
+   tepsl_loc=real(tepsl, FMS_SVP_KIND_)
+   dtinvl_loc=real(dtinvl, FMS_SVP_KIND_)
+
+   nbad = 0
+   do j = 1, size(temp,2)
+   do i = 1, size(temp,1)
+     tmp = temp(i,j)-tminl_loc
+     ind = int(dtinvl_loc*(tmp+tepsl_loc))
+     if (ind < 0 .or. ind >= table_siz)  then
+       nbad = nbad+1
+     else
+       del = tmp-dtres_loc*real(ind)
+       desat(i,j) = real(DTABLE3(ind+1),FMS_SVP_KIND_) &
+                    + real(2.0,FMS_SVP_KIND_)*del*real(D2TABLE3(ind+1),FMS_SVP_KIND_)
+     endif
+   enddo
+   enddo
+
+ end subroutine LOOKUP_DES3_K_2D_
+!#######################################################################
+ subroutine LOOKUP_ES3_K_2D_(temp, esat, nbad)
+ real(kind=FMS_SVP_KIND_), intent(in),  dimension(:,:)  :: temp
+ real(kind=FMS_SVP_KIND_), intent(out), dimension(:,:)  :: esat
+ integer, intent(out) :: nbad
+ real(kind=FMS_SVP_KIND_) :: tmp, del
+ integer :: ind, i, j
+
+ real(kind=FMS_SVP_KIND_) :: dtres_loc, tepsl_loc, tminl_loc,  dtinvl_loc
+
+   dtres_loc=real(dtres, FMS_SVP_KIND_)
+   tminl_loc=real(tminl, FMS_SVP_KIND_)
+   tepsl_loc=real(tepsl, FMS_SVP_KIND_)
+   dtinvl_loc=real(dtinvl, FMS_SVP_KIND_)
 
    nbad = 0
    do j = 1, size(temp,2)
    do i = 1, size(temp,1)
      tmp = temp(i,j)-tminl
-     ind = int(dtinvl*(tmp+tepsl))
+     ind = int(dtinvl_loc*(tmp+tepsl_loc))
      if (ind < 0 .or. ind >= table_siz)  then
        nbad = nbad+1
      else
-       del = tmp-dtres*real(ind)
-       desat(i,j) = DTABLE3(ind+1) + 2.*del*D2TABLE3(ind+1)
+       del = tmp-dtres_loc*real(ind,FMS_SVP_KIND_)
+       esat(i,j) = real(TABLE3(ind+1),FMS_SVP_KIND_) &
+                   + del*( real(DTABLE3(ind+1),FMS_SVP_KIND_) &
+                                 + del*real(D2TABLE3(ind+1),FMS_SVP_KIND_) )
      endif
    enddo
    enddo
 
- end subroutine lookup_des3_k_2d
+ end subroutine LOOKUP_ES3_K_2D_
 !#######################################################################
- subroutine lookup_es3_k_2d(temp, esat, nbad)
- real, intent(in),  dimension(:,:)  :: temp
- real, intent(out), dimension(:,:)  :: esat
+ subroutine LOOKUP_DES3_K_1D_(temp, desat, nbad)
+ real(kind=FMS_SVP_KIND_), intent(in),  dimension(:)  :: temp
+ real(kind=FMS_SVP_KIND_), intent(out), dimension(:)  :: desat
  integer, intent(out) :: nbad
- real    :: tmp, del
- integer :: ind, i, j
-
-   nbad = 0
-   do j = 1, size(temp,2)
-   do i = 1, size(temp,1)
-     tmp = temp(i,j)-tminl
-     ind = int(dtinvl*(tmp+tepsl))
-     if (ind < 0 .or. ind >= table_siz)  then
-       nbad = nbad+1
-     else
-       del = tmp-dtres*real(ind)
-       esat(i,j) = TABLE3(ind+1) + del*(DTABLE3(ind+1) +   &
-                                                  del*D2TABLE3(ind+1))
-     endif
-   enddo
-   enddo
-
- end subroutine lookup_es3_k_2d
-!#######################################################################
- subroutine lookup_des3_k_1d(temp, desat, nbad)
- real, intent(in),  dimension(:)  :: temp
- real, intent(out), dimension(:)  :: desat
- integer, intent(out) :: nbad
- real    :: tmp, del
+ real(kind=FMS_SVP_KIND_) :: tmp, del
  integer :: ind, i
+
+ real(kind=FMS_SVP_KIND_) :: dtres_loc, tepsl_loc, tminl_loc,  dtinvl_loc
+
+   dtres_loc=real(dtres, FMS_SVP_KIND_)
+   tminl_loc=real(tminl, FMS_SVP_KIND_)
+   tepsl_loc=real(tepsl, FMS_SVP_KIND_)
+   dtinvl_loc=real(dtinvl, FMS_SVP_KIND_)
 
    nbad = 0
    do i = 1, size(temp,1)
      tmp = temp(i)-tminl
-     ind = int(dtinvl*(tmp+tepsl))
+     ind = int(dtinvl_loc*(tmp+tepsl_loc))
      if (ind < 0 .or. ind >= table_siz)  then
        nbad = nbad+1
      else
-       del = tmp-dtres*real(ind)
-       desat(i) = DTABLE3(ind+1) + 2.*del*D2TABLE3(ind+1)
+       del = tmp-dtres_loc*real(ind,FMS_SVP_KIND_)
+       desat(i) = real(DTABLE3(ind+1),FMS_SVP_KIND_) &
+                  + real(2.0,FMS_SVP_KIND_)*del*real(D2TABLE3(ind+1),FMS_SVP_KIND_)
      endif
    enddo
 
- end subroutine lookup_des3_k_1d
+ end subroutine LOOKUP_DES3_K_1D_
 !#######################################################################
- subroutine lookup_es3_k_1d(temp, esat, nbad)
- real, intent(in),  dimension(:)  :: temp
- real, intent(out), dimension(:)  :: esat
+ subroutine LOOKUP_ES3_K_1D_(temp, esat, nbad)
+ real(kind=FMS_SVP_KIND_), intent(in),  dimension(:)  :: temp
+ real(kind=FMS_SVP_KIND_), intent(out), dimension(:)  :: esat
  integer, intent(out) :: nbad
- real    :: tmp, del
+ real(kind=FMS_SVP_KIND_) :: tmp, del
  integer :: ind, i
+
+ real(kind=FMS_SVP_KIND_) :: dtres_loc, tepsl_loc, tminl_loc,  dtinvl_loc
+
+   dtres_loc=real(dtres, FMS_SVP_KIND_)
+   tminl_loc=real(tminl, FMS_SVP_KIND_)
+   tepsl_loc=real(tepsl, FMS_SVP_KIND_)
+   dtinvl_loc=real(dtinvl, FMS_SVP_KIND_)
 
    nbad = 0
    do i = 1, size(temp,1)
-     tmp = temp(i)-tminl
-     ind = int(dtinvl*(tmp+tepsl))
+     tmp = temp(i)-tminl_loc
+     ind = int(dtinvl_loc*(tmp+tepsl_loc))
      if (ind < 0 .or. ind >= table_siz)  then
        nbad = nbad+1
      else
-       del = tmp-dtres*real(ind)
-       esat(i) = TABLE3(ind+1) + del*(DTABLE3(ind+1) + del*D2TABLE3(ind+1))
+       del = tmp-dtres_loc*real(ind,FMS_SVP_KIND_)
+       esat(i) = real(TABLE3(ind+1),FMS_SVP_KIND_) &
+                 + del*( real(DTABLE3(ind+1),FMS_SVP_KIND_) &
+                                + del*real(D2TABLE3(ind+1),FMS_SVP_KIND_) )
      endif
    enddo
 
- end subroutine lookup_es3_k_1d
+ end subroutine LOOKUP_ES3_K_1D_
 !#######################################################################
- subroutine lookup_des3_k_0d(temp, desat, nbad)
- real, intent(in)     :: temp
- real, intent(out)    :: desat
+ subroutine LOOKUP_DES3_K_0D_(temp, desat, nbad)
+ real(kind=FMS_SVP_KIND_), intent(in)  :: temp
+ real(kind=FMS_SVP_KIND_), intent(out) :: desat
  integer, intent(out) :: nbad
- real    :: tmp, del
+ real(kind=FMS_SVP_KIND_) :: tmp, del
  integer :: ind
 
+ real(kind=FMS_SVP_KIND_) :: dtres_loc, tepsl_loc, tminl_loc,  dtinvl_loc
+
+   dtres_loc=real(dtres, FMS_SVP_KIND_)
+   tminl_loc=real(tminl, FMS_SVP_KIND_)
+   tepsl_loc=real(tepsl, FMS_SVP_KIND_)
+   dtinvl_loc=real(dtinvl, FMS_SVP_KIND_)
+
    nbad = 0
-   tmp = temp-tminl
-   ind = int(dtinvl*(tmp+tepsl))
+   tmp = temp-tminl_loc
+   ind = int(dtinvl_loc*(tmp+tepsl_loc))
    if (ind < 0 .or. ind >= table_siz)  then
      nbad = nbad+1
    else
-     del = tmp-dtres*real(ind)
-     desat = DTABLE3(ind+1) + 2.*del*D2TABLE3(ind+1)
+     del = tmp-dtres_loc*real(ind)
+     desat = real(DTABLE3(ind+1),FMS_SVP_KIND_) &
+             + real(2.0,FMS_SVP_KIND_)*del*real(D2TABLE3(ind+1),FMS_SVP_KIND_)
    endif
 
- end subroutine lookup_des3_k_0d
+ end subroutine LOOKUP_DES3_K_0D_
 !#######################################################################
- subroutine lookup_es3_k_0d(temp, esat, nbad)
- real, intent(in)     :: temp
- real, intent(out)    :: esat
+ subroutine LOOKUP_ES3_K_0D_(temp, esat, nbad)
+ real(kind=FMS_SVP_KIND_), intent(in)     :: temp
+ real(kind=FMS_SVP_KIND_), intent(out)    :: esat
  integer, intent(out) :: nbad
- real    :: tmp, del
+ real(kind=FMS_SVP_KIND_) :: tmp, del
  integer :: ind
 
+ real(kind=FMS_SVP_KIND_) :: dtres_loc, tepsl_loc, tminl_loc,  dtinvl_loc
+
+   dtres_loc=real(dtres, FMS_SVP_KIND_)
+   tminl_loc=real(tminl, FMS_SVP_KIND_)
+   tepsl_loc=real(tepsl, FMS_SVP_KIND_)
+   dtinvl_loc=real(dtinvl, FMS_SVP_KIND_)
+
    nbad = 0
-   tmp = temp-tminl
-   ind = int(dtinvl*(tmp+tepsl))
+   tmp = temp-tminl_loc
+   ind = int(dtinvl_loc*(tmp+tepsl_loc))
    if (ind < 0 .or. ind >= table_siz)  then
      nbad = nbad+1
    else
-     del = tmp-dtres*real(ind)
-     esat = TABLE3(ind+1) + del*(DTABLE3(ind+1) + del*D2TABLE3(ind+1))
+     del = tmp-dtres_loc*real(ind,FMS_SVP_KIND_)
+     esat = real(TABLE3(ind+1),FMS_SVP_KIND_) &
+            + del*( real(DTABLE3(ind+1),FMS_SVP_KIND_) &
+                          + del*real(D2TABLE3(ind+1),FMS_SVP_KIND_) )
    endif
 
- end subroutine lookup_es3_k_0d
+ end subroutine LOOKUP_ES3_K_0D_
 !#######################################################################
- end module sat_vapor_pres_k_mod
 !> @}
 ! close documentation grouping
