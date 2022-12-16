@@ -107,11 +107,11 @@ real(kind=RKIND), public, parameter :: ALOGMIN    = -50.0_r8_kind        !< Mini
                                                                          !! to log function [N/A]
 real(kind=RKIND), public, parameter :: EPSLN      = 1.0E-40_r8_kind      !< A small number to prevent divide by
                                                                          !! zero exceptions [N/A]
-real(kind=RKIND), public, parameter :: RADCON     = ((1.0D+02*GRAV)/(1.0D+04*CP_AIR))*SECONDS_PER_DAY !< Factor to 
+real(kind=RKIND), public, parameter :: RADCON     = ((1.0D+02*GRAV)/(1.0D+04*CP_AIR))*SECONDS_PER_DAY !< Factor to
                                                                                 !! convert flux divergence
                                                                                 !! to heating rate in degrees per day
                                                                                 !! [deg sec/(cm day)]
-real(kind=RKIND), public, parameter :: RADCON_MKS = (GRAV/CP_AIR)*SECONDS_PER_DAY !< Factor to 
+real(kind=RKIND), public, parameter :: RADCON_MKS = (GRAV/CP_AIR)*SECONDS_PER_DAY !< Factor to
                                                                             !! convert flux divergence
                                                                             !! to heating rate in degrees per day
                                                                             !! [deg sec/(m day)]
