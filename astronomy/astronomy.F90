@@ -53,11 +53,11 @@ private
 !---------------------------------------------------------------------
 !-----------------------------  interfaces ---------------------------
 
-public :: astronomy_init, get_period, set_period
+public :: astronomy_init
 public :: set_orbital_parameters, get_orbital_parameters
 public :: set_ref_date_of_ae, get_ref_date_of_ae
 public :: diurnal_solar, daily_mean_solar, annual_mean_solar
-public :: astronomy_end, universal_time, orbital_time
+public :: astronomy_end
 
 !> @}
 
@@ -213,7 +213,7 @@ end interface daily_mean_solar
 !! ~~~~~~~~~~{.f90}
 !! real, intent(in), dimension(:,:) :: lat
 !! real, intent(in), dimension(:)   :: lat
-!!
+!!deg_to_rad
 !! real, intent(out), dimension(:,:) :: cosz, solar, fracday
 !! real, intent(out), dimension(:)   :: cosz, solar, fracday
 !! ~~~~~~~~~~
@@ -255,10 +255,10 @@ end interface annual_mean_solar
 !!
 !! @param [out] <period_out> Length of year for calendar in use
 !> @ingroup astronomy_mod
-interface get_period
-   module procedure get_period_time_type_r4, get_period_time_type_r8
-   module procedure get_period_integer_r4, get_period_integer_r8 
-end interface get_period
+!interface get_period
+!   module procedure get_period_time_type_r4, get_period_time_type_r8
+!   module procedure get_period_integer_r4, get_period_integer_r8 
+!end interface get_period
 
 !> Sets the length of a year for the calendar in use
 !!
@@ -276,10 +276,10 @@ end interface get_period
 !!
 !! @param [in] <period_in> Length of year for calendar in use
 !> @ingroup astronomy_mod
-interface set_period
-   module procedure set_period_time_type_r4, set_period_time_type_r8
-   module procedure set_period_integer_r4, set_period_integer_r8 
-end interface set_period
+!interface set_period
+!   module procedure set_period_time_type_r4, set_period_time_type_r8
+!   module procedure set_period_integer_r4, set_period_integer_r8 
+!end interface set_period
 
 
 private :: orbit         ! Called from astronomy_init and set_orbital_parameters
