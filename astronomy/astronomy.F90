@@ -61,73 +61,7 @@ public :: astronomy_end
 
 !> @}
 
-!> @brief Calculates solar information for the given location(lat & lon) and time
-!!
-!> ~~~~~~~~~~{.f90}
-!! call diurnal_solar (lat, lon, time, cosz, fracday, rrsun, dt_time)
-!! call diurnal_solar (lat, lon, gmt, time_since_ae, cosz, fracday, rrsun, dt)
-!! ~~~~~~~~~~
-!!
-!! The first option (used in conjunction with time_manager_mod)
-!! generates the real variables gmt and time_since_ae from the
-!! time_type input, and then calls diurnal_solar with these real inputs.
-!!
-!! The time of day is set by
-!! ~~~~~~~~~~{.f90}
-!! real, intent(in) :: gmt
-!! ~~~~~~~~~~
-!! The time of year is set by
-!! ~~~~~~~~~~{.f90}
-!! real, intent(in) :: time_since_ae
-!! ~~~~~~~~~~
-!! with time_type input, both of these are extracted from
-!! ~~~~~~~~~~{.f90}
-!! type(time_type), intent(in) :: time
-!! ~~~~~~~~~~
-!!
-!! Separate routines exist within this interface for scalar,
-!! 1D or 2D input and output fields:
-!!
-!! ~~~~~~~~~~{.f90}
-!! real, intent(in), dimension(:,:) :: lat, lon
-!! real, intent(in), dimension(:)   :: lat, lon
-!! real, intent(in)                 :: lat, lon
-!!
-!! real, intent(out), dimension(:,:) :: cosz, fracday
-!! real, intent(out), dimension(:)   :: cosz, fracday
-!! real, intent(out)                 :: cosz, fracday
-!! ~~~~~~~~~~
-!!
-!! One may also average the output fields over the time interval
-!! between gmt and gmt + dt by including the optional argument dt (or
-!! dt_time). dt is measured in radians and must be less than pi
-!! (1/2 day). This average is computed analytically, and should be
-!! exact except for the fact that changes in earth-sun distance over
-!! the time interval dt are ignored. In the context of a diurnal GCM,
-!! this option should always be employed to insure that the total flux
-!! at the top of the atmosphere is not modified by time truncation error.
-!!
-!! ~~~~~~~~~~{.f90}
-!! real, intent(in), optional :: dt
-!! type(time_type), optional :: dt_time
-!! ~~~~~~~~~~
-!!
-!! @param [in] <lat> Latitudes of model grid points [radians]
-!! @param [in] <lon> Longitudes of model grid points [radians]
-!! @param [in] <gmt> Time of day at longitude 0.0; midnight = 0.0, one day = 2 * pi [radians]
-!! @param [in] <time_since_ae> Time of year; autumnal equinox = 0.0, one year = 2 * pi [radians]
-!! @param [in] <time> Time at which astronomical values are desired (time_type variable) [seconds, days]
-!! @param [out] <cosz> Cosine of solar zenith angle, set to zero when entire period is in darkness [dimensionless]
-!! @param [out] <fracday> Daylight fraction of time interval [dimensionless]
-!! @param [out] <rrsun> Earth-Sun distance (r) relative to semi-major axis of orbital ellipse
-!! (a):(a/r)**2 [dimensionless]
-!! @param [in] <dt> OPTIONAL: Time interval after gmt over which the astronomical variables are to be
-!!                  averaged. this produces averaged output rather than instantaneous. [radians], (1 day = 2 * pi)
-!! @param [in] <dt_time> OPTIONAL: Time interval after gmt over which the astronomical variables are to be
-!!                       averaged. this produces averaged output rather than instantaneous. time_type, [days, seconds]
-!! @param [in] <allow_negative_cosz> Allow negative values for cosz?
-!! @param [out] <half_day_out> half_day_out
-!> @ingroup astronomy_mod
+
 interface diurnal_solar
    module procedure diurnal_solar_2d_r4, diurnal_solar_2d_r8
    module procedure diurnal_solar_1d_r4, diurnal_solar_1d_r8
@@ -137,55 +71,7 @@ interface diurnal_solar
    module procedure diurnal_solar_cal_0d_r4, diurnal_solar_cal_0d_r8
 end interface diurnal_solar
 
-!> @brief Calculates the daily mean solar information for a given time and latitude.
-!!
-!> ~~~~~~~~~~{.f90}
-!! call daily_mean_solar (lat, time, cosz, fracday, rrsun)
-!! call daily_mean_solar (lat, time_since_ae, cosz, fracday, rrsun)
-!! call daily_mean_solar (lat, time, cosz, solar)
-!! call daily_mean_solar (lat, time_since_ae, cosz, solar)
-!! ~~~~~~~~~~
-!!
-!! The first option (used in conjunction with time_manager_mod)
-!! generates the real variable time_since_ae from the time_type
-!! input time, and then calls daily_mean_solar with this real input
-!! (option 2). The third and fourth options correspond to the first
-!! and second and are used with then spectral 2-layer model, where
-!! only cosz and solar are desired as output. These routines generate
-!! dummy arguments and then call option 2, where the calculation is done.
-!!
-!! The time of year is set by
-!! ~~~~~~~~~~{.f90}
-!!    real, intent(in) :: time_since_ae
-!! ~~~~~~~~~~
-!! With time_type input, the time of year is extracted from
-!! ~~~~~~~~~~{.f90}
-!!    type(time_type), intent(in) :: time
-!! ~~~~~~~~~~
-!!
-!! Separate routines exist within this interface for scalar,
-!! 1D or 2D input and output fields:
-!!
-!! ~~~~~~~~~~{.f90}
-!! real, intent(in), dimension(:,:) :: lat
-!! real, intent(in), dimension(:)   :: lat
-!! real, intent(in)                 :: lat
-!!
-!! real, intent(out), dimension(:,:) :: cosz, fracday
-!! real, intent(out), dimension(:)   :: cosz, fracday
-!! real, intent(out)                 :: cosz, fracday
-!! ~~~~~~~~~~
-!!
-!! @param [in] <lat> Latitudes of model grid points [radians]
-!! @param [in] <time_since_ae> Time of year; autumnal equinox = 0.0, one year = 2 * pi [radians]
-!! @param [in] <time> Time at which astronomical values are desired (time_type variable) [seconds, days]
-!! @param [out] <cosz> Cosine of solar zenith angle, set to zero when entire period is in darkness [dimensionless]
-!! @param [out] <fracday> Daylight fraction of time interval [dimensionless]
-!! @param [out] <rrsun> Earth-Sun distance (r) relative to semi-major axis of orbital ellipse
-!! (a):(a/r)**2 [dimensionless]
-!! @param [out] <solar> shortwave flux factor: cosine of zenith angle * daylight fraction /
-!! (earth-sun distance squared) [dimensionless]
-!> @ingroup astronomy_mod
+
 interface daily_mean_solar
    module procedure daily_mean_solar_2d_r4, daily_mean_solar_2d_r8
    module procedure daily_mean_solar_1d_r4, daily_mean_solar_1d_r8
