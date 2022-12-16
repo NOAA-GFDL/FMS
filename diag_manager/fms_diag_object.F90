@@ -436,11 +436,11 @@ end function fms_diag_axis_init
 !! multithreaded case.
 !! \note If some of the diag manager is offloaded in the future, then it should be treated similarly
 !! to the multi-threaded option for processing later
-logical function fms_diag_accept_data (this, diag_field_id, field, time, is_in, js_in, ks_in, &
+logical function fms_diag_accept_data (this, diag_field_id, field_data, time, is_in, js_in, ks_in, &
                   mask, rmask, ie_in, je_in, ke_in, weight, err_msg)
   class(fmsDiagObject_type),TARGET,INTENT(inout):: this !< Diaj_obj to fill
   INTEGER, INTENT(in) :: diag_field_id !< The ID of the input diagnostic field
-  CLASS(*), DIMENSION(:,:,:,:), INTENT(in) :: field !< The data for the input diagnostic
+  CLASS(*), DIMENSION(:,:,:,:), INTENT(in) :: field_data !< The data for the input diagnostic
   CLASS(*), INTENT(in), OPTIONAL :: weight !< The weight used for averaging
   TYPE (time_type), INTENT(in), OPTIONAL :: time !< The current time
   INTEGER, INTENT(in), OPTIONAL :: is_in, js_in, ks_in,ie_in,je_in, ke_in !< Indicies for the variable
@@ -467,7 +467,7 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
 !If this is true, buffer data
   main_if: if ((omp_num_threads > 1 .AND. omp_level > 0) .or. buffer_the_data) then
 !> Buffer the data
-    call this%FMS_diag_fields(diag_field_id)%set_data_buffer(field, FMS_diag_object%diag_axis)
+    call this%FMS_diag_fields(diag_field_id)%set_data_buffer(field_data, FMS_diag_object%diag_axis)
     fms_diag_accept_data = .TRUE.
     return
   else
