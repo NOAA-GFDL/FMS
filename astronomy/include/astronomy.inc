@@ -46,18 +46,19 @@ real(kind=FMS_AST_KIND_), intent(in) :: per_in !< Longitude of perihelion with r
 !    exit if module has not been initialized.
 !---------------------------------------------------------------------
     if (.not. module_is_initialized) &
-        call error_mesg ('astronomy_mod module has not been initialized', FATAL)
+        call error_mesg('astronomy_mod', 'module has not been initialized', FATAL)
 
 !--------------------------------------------------------------------
 !    be sure input values are within valid ranges.
 !    QUESTION : ARE THESE THE RIGHT LIMITS ???
 !---------------------------------------------------------------------
     if (ecc_in < real(0.0,kind=FMS_AST_KIND_) .or. ecc_in > real(0.99,kind=FMS_AST_KIND_)) &
-        call error_mesg ('astronomy_mod ecc must be between 0 and 0.99', FATAL)
-    if (obliq_in < real(-90.0,kind=FMS_AST_KIND_) .or. obliq > real(90.0,kind=FMS_AST_KIND_)) &
-        call error_mesg ('astronomy_mod obliquity must be between -90. and 90. degrees', FATAL)
+        call error_mesg('astronomy_mod', 'ecc must be between 0 and 0.99', FATAL)
+    if (obliq_in < real(-90.0,kind=FMS_AST_KIND_) .or. real(obliq,kind=FMS_AST_KIND_) & 
+                                                     > real(90.0,kind=FMS_AST_KIND_)) &
+        call error_mesg('astronomy_mod', 'obliquity must be between -90. and 90. degrees', FATAL)
     if (per_in < real(0.0,kind=FMS_AST_KIND_) .or. per_in > real(360.0,kind=FMS_AST_KIND_)) &
-        call error_mesg ('astronomy_mod perihelion must be between 0.0 and 360. degrees', FATAL)
+        call error_mesg('astronomy_mod', 'perihelion must be between 0.0 and 360. degrees', FATAL)
         
 !---------------------------------------------------------------------
 !    save input values into module variables.
@@ -96,7 +97,7 @@ real(kind=FMS_AST_KIND_), intent(out) :: per_out !< Longitude of perihelion with
 !    exit if module has not been initialized.
 !---------------------------------------------------------------------
     if (.not. module_is_initialized) &
-        call error_mesg ('astronomy_mod module has not been initialized', FATAL)
+        call error_mesg('astronomy_mod', 'module has not been initialized', FATAL)
 
 !--------------------------------------------------------------------
 !    fill the output arguments with the eccentricity, obliquity and
@@ -146,9 +147,9 @@ real(kind=FMS_AST_KIND_), dimension(:,:), intent(out), optional :: half_day_out
 !   local variables
 
 real(kind=FMS_AST_KIND_), dimension(size(lat,1),size(lat,2)) :: t, tt, h, aa, bb,  &
-                                                                & st, stt, sh
+                                                                st, stt, sh
 real(kind=FMS_AST_KIND_)                                     :: ang, dec
-logical :: Lallow_negative
+logical                                                      :: Lallow_negative
 
 !---------------------------------------------------------------------
 !   local variables
@@ -173,12 +174,14 @@ logical :: Lallow_negative
 !    be sure the time in the annual cycle is legitimate.
 !---------------------------------------------------------------------
     if (time_since_ae < real(0.0,kind=FMS_AST_KIND_) .or. time_since_ae > real(twopi,kind=FMS_AST_KIND_)) &
-        call error_mesg('astronomy_mod time_since_ae not between 0 and 2pi', FATAL)
+        call error_mesg('astronomy_mod', 'time_since_ae not between 0 and 2pi', FATAL)
+
 !--------------------------------------------------------------------
 !    be sure the time at longitude = 0.0 is legitimate.
 !---------------------------------------------------------------------
       if (gmt < real(0.0,kind=FMS_AST_KIND_) .or. gmt > real(twopi,kind=FMS_AST_KIND_)) &
-         call error_mesg('astronomy_mod gmt not between 0 and 2pi', FATAL)
+        call error_mesg('astronomy_mod', 'gmt not between 0 and 2pi', FATAL)
+
 !---------------------------------------------------------------------
 !>    define the orbital angle (location in year), solar declination and
 !!    earth sun distance factor. use functions contained in this module.
@@ -209,7 +212,7 @@ logical :: Lallow_negative
 !>    perform a time integration to obtain cosz and fracday if desired.
 !!    output is valid over the period from t to t + dt.
 !--------------------------------------------------------------------
-    h   = half_day   (lat,dec)
+    h   = half_day(lat,dec)
 
     if ( present(half_day_out) ) then
         half_day_out = h
@@ -232,7 +235,7 @@ logical :: Lallow_negative
 !    case 2: averaging period begins before sunrise, ends after sunrise
 !    but before sunset
 !-------------------------------------------------------------------
-       where ((tt+h) /= real(0.0,kind=FMS_AST_KIND_) .and. t < -h .and. abs(tt) <= h)  &
+        where ( (tt+h) /= real(0.0,kind=FMS_AST_KIND_) .and. t < -h .and. abs(tt) <= h)   &
               cosz = aa + bb*(stt + sh)/ (tt + h)
 
 !-------------------------------------------------------------------
@@ -247,13 +250,14 @@ logical :: Lallow_negative
 !-------------------------------------------------------------------
 !    case 4: averaging period begins after sunrise, ends before sunset.
 !-------------------------------------------------------------------
-        where (abs(t) <= h .and. abs(tt) <= h) cosz = aa + bb*(stt - st)/ (tt - t)
+        where ( abs(t) <= h .and. abs(tt) <= h)    &
+            cosz = aa + bb*(stt - st)/ (tt - t)
 
 !-------------------------------------------------------------------
 !    case 5: averaging period begins after sunrise, ends after sunset.
 !    modify when averaging period extends past the next day's sunrise.
 !-------------------------------------------------------------------
-        where ((h-t) /= real(0.0,kind=FMS_AST_KIND_) .and. abs(t) <= h .and.  h < tt)    &
+        where ((h-t) /= real(0.0,kind=FMS_AST_KIND_) .and. abs(t) <= h .and. h < tt)    &
               cosz = aa + bb*(sh - st)/(h-t)
 
 !-------------------------------------------------------------------
@@ -261,16 +265,17 @@ logical :: Lallow_negative
 !    next day's sunrise. note that this includes the case when the
 !    day length is one day (h = pi).
 !-------------------------------------------------------------------
-        where (real(twopi,kind=FMS_AST_KIND_) - h < tt &
-              .and. (tt+h-real(twopi,kind=FMS_AST_KIND_)) /= real(0.0,kind=FMS_AST_KIND_) .and. t <= h)
-           cosz = (cosz*(h - t) + (aa*(tt + h - real(twopi,kind=FMS_AST_KIND_)) + bb*(stt + sh))) &
-                  / ((h - t) + (tt + h - real(twopi,kind=FMS_AST_KIND_)))
+        where (real(twopi,kind=FMS_AST_KIND_) - h < tt .and. &
+            (tt+h-real(twopi,kind=FMS_AST_KIND_)) /= real(0.0,FMS_AST_KIND_) .and. t <= h ) &
+            cosz = (cosz*(h - t) + (aa*(tt + h - real(twopi,kind=FMS_AST_KIND_)) +     &
+            bb*(stt + sh))) / ((h - t) + (tt + h - real(twopi,kind=FMS_AST_KIND_)))
 
 !-------------------------------------------------------------------
 !    case 7: averaging period begins after sunset and ends before the
 !    next day's sunrise
 !-------------------------------------------------------------------
-        where (h <  t .and. real(twopi,kind=FMS_AST_KIND_) - h >= tt) cosz = real(0.0,kind=FMS_AST_KIND_)
+        where(h <  t .and. real(twopi,kind=FMS_AST_KIND_) - h >= tt) &
+            cosz = real(0.0,kind=FMS_AST_KIND_)
 
 !-------------------------------------------------------------------
 !    case 8: averaging period begins after sunset and ends after the
@@ -292,15 +297,14 @@ logical :: Lallow_negative
 !    day fraction is the fraction of the averaging period contained
 !    within the (-h,h) period.
 !-------------------------------------------------------------------
-        where (t < -h .and.      tt < -h)      fracday = real(0.0,kind=FMS_AST_KIND_)
+    where (t < -h .and. tt < -h)       fracday = real(0.0,kind=FMS_AST_KIND_)
         where (t < -h .and. abs(tt) <= h)      fracday = (tt + h )/dt
-        where (t < -h .and.       h < tt)      fracday = ( h + h )/dt
+    where (t < -h .and. h < tt)      fracday = ( h + h )/dt
         where (abs(t) <= h .and. abs(tt) <= h) fracday = (tt - t )/dt
-        where (abs(t) <= h .and.       h < tt) fracday = ( h - t )/dt
-        where (      h <  t                 )  fracday = real(0.0,kind=FMS_AST_KIND_)
-        where (real(twopi,kind=FMS_AST_KIND_) - h < tt)                 
-                                               fracday = fracday + (tt + h - &
-                                                        real(twopi,kind=FMS_AST_KIND_))/dt
+    where (abs(t) <= h .and. h < tt) fracday = ( h - t )/dt
+    where (h <  t)                   fracday = real(0.0,kind=FMS_AST_KIND_)
+    where (real(twopi,kind=FMS_AST_KIND_) - h < tt) fracday = fracday +  &
+                                (tt + h - real(twopi,kind=FMS_AST_KIND_))/dt
 !----------------------------------------------------------------------
 !>    if instantaneous values are desired, define cosz at time t.
 !----------------------------------------------------------------------
@@ -515,10 +519,10 @@ real(kind=FMS_AST_KIND_) :: gmt, time_since_ae
     if (present(dt_time))  then
         dt = universal_time(dt_time)
         if (dt > PI) then
-           call error_mesg ( 'astronomy_mod radiation time step must be no longer than 12 hrs', FATAL)
+           call error_mesg('astronomy_mod', 'radiation time step must be no longer than 12 hrs', FATAL)
         endif
-    if (dt == 0.0) then
-        call error_mesg ( 'astronomy_mod radiation time step must not be an integral number of days', FATAL)
+    if (dt == real(0.0,kind=FMS_AST_KIND_)) then
+        call error_mesg('astronomy_mod', 'radiation time step must not be an integral number of days', FATAL)
     endif
 
 !--------------------------------------------------------------------
@@ -702,7 +706,7 @@ real(kind=FMS_AST_KIND_) :: ang, dec, rr
 !    be sure the time in the annual cycle is legitimate.
 !---------------------------------------------------------------------
     if (time_since_ae < real(0.0,kind=FMS_AST_KIND_) .or. time_since_ae > real(twopi,kind=FMS_AST_KIND_)) &
-        call error_mesg('astronomy_mod time_since_ae not between 0 and 2pi', FATAL)
+        call error_mesg('astronomy_mod', 'time_since_ae not between 0 and 2pi', FATAL)
 
 !---------------------------------------------------------------------
 !>    Define the orbital angle (location in year), solar declination,
@@ -890,7 +894,7 @@ real(kind=FMS_AST_KIND_) :: time_since_ae
 !---------------------------------------------------------------------
     time_since_ae = orbital_time(time)
     if (time_since_ae < real(0.0,kind=FMS_AST_KIND_) .or. time_since_ae > real(twopi,kind=FMS_AST_KIND_)) &
-        call error_mesg ('astronomy_mod time_since_ae not between 0 and 2pi', FATAL)
+        call error_mesg('astronomy_mod', 'time_since_ae not between 0 and 2pi', FATAL)
 
 !--------------------------------------------------------------------
 !    call daily_mean_solar_2d to calculate astronomy fields.
@@ -1108,7 +1112,7 @@ integer                                                      :: n
 !>    save the values that have been calculated as module variables, if
 !!    those variables are present; i.e., not the spectral 2-layer model.
 !---------------------------------------------------------------------
-        if (allocated (real(cosz_ann,kind=FMS_AST_KIND_))) then
+        if (allocated (cosz_ann)) then
           cosz_ann    = cosz
           solar_ann   = solar
           fracday_ann = fracday
@@ -1128,7 +1132,7 @@ integer                                                      :: n
 !!    variables.
 !--------------------------------------------------------------------
       else
-        if (allocated (real(cosz_ann,kind=FMS_AST_KIND_))) then
+        if (allocated (cosz_ann)) then
           cosz    = real(cosz_ann,kind=FMS_AST_KIND_)
           solar   = real(solar_ann,kind=FMS_AST_KIND_)
           fracday = real(fracday_ann,kind=FMS_AST_KIND_)
@@ -1258,7 +1262,7 @@ real(kind=FMS_AST_KIND_)                         :: rrsun
 !!    this subroutine should be called only once.
 !--------------------------------------------------------------------
     else
-        call error_mesg ('astronomy_mod annual_mean_solar_2level should be called only once', FATAL)
+        call error_mesg('astronomy_mod', 'annual_mean_solar_2level should be called only once', FATAL)
     endif
     annual_mean_calculated = .true.
 
@@ -1372,8 +1376,8 @@ integer                  :: int_1 !< Next table index just larger than actual or
     int = modulo(int,num_angles)
     int_1 = int+1
     x = norm_time - floor(norm_time)
-    ANGLE_ = (real(1.0,kind=FMS_AST_KIND_) -x)*real(orb_angle,kind=FMS0)(int) &
-            + x*real(orb_angle,kind=FMS_AST_KIND_)(int_1)
+    ANGLE_ = (real(1.0,kind=FMS_AST_KIND_) -x)*real(orb_angle(int),kind=FMS_AST_KIND_) &
+            + x*real(orb_angle(int_1),kind=FMS_AST_KIND_)
     ANGLE_ = modulo(ANGLE_, real(twopi,kind=FMS_AST_KIND_))
 
 end function ANGLE_
@@ -1473,7 +1477,7 @@ real(kind=FMS_AST_KIND_), dimension(1,1) :: lat_2d, h_2d
 !---------------------------------------------------------------------
 !    call half_day with the 2d arguments to calculate half-day length.
 !---------------------------------------------------------------------
-    h_2d = half_day (lat_2d, dec)
+    h_2d = half_day(lat_2d, dec)
 
 !---------------------------------------------------------------------
 !    create scalar from 2d array.
