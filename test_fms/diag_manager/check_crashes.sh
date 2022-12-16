@@ -56,7 +56,7 @@ test_expect_failure "freq units is not valid" '
   mpirun -n 1 ../test_diag_yaml
 '
 
-sed 's/freq: 6/freq: -666/g' diag_table.yaml_base > diag_table.yaml
+sed 's/freq: 6/freq: 6 6/g' diag_table.yaml_base > diag_table.yaml
 test_expect_failure "freq is less than -1" '
   mpirun -n 1 ../test_diag_yaml
 '
