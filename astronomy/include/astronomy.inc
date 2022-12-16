@@ -54,12 +54,12 @@ real(kind=FMS_AST_KIND_), intent(in) :: per_in !< Longitude of perihelion with r
 !---------------------------------------------------------------------
     if (ecc_in < real(0.0,kind=FMS_AST_KIND_) .or. ecc_in > real(0.99,kind=FMS_AST_KIND_)) &
         call error_mesg('astronomy_mod', 'ecc must be between 0 and 0.99', FATAL)
-    if (obliq_in < real(-90.0,kind=FMS_AST_KIND_) .or. real(obliq,kind=FMS_AST_KIND_) & 
+    if (obliq_in < real(-90.0,kind=FMS_AST_KIND_) .or. real(obliq,kind=FMS_AST_KIND_) &
                                                      > real(90.0,kind=FMS_AST_KIND_)) &
         call error_mesg('astronomy_mod', 'obliquity must be between -90. and 90. degrees', FATAL)
     if (per_in < real(0.0,kind=FMS_AST_KIND_) .or. per_in > real(360.0,kind=FMS_AST_KIND_)) &
         call error_mesg('astronomy_mod', 'perihelion must be between 0.0 and 360. degrees', FATAL)
-        
+
 !---------------------------------------------------------------------
 !    save input values into module variables.
 !---------------------------------------------------------------------
@@ -1321,7 +1321,8 @@ real(kind=FMS_AST_KIND_), intent(in) :: t !< time of year (between 0 and 2*pi; t
 !--------------------------------------------------------------------
 real(kind=FMS_AST_KIND_) :: ANGLE_ !< Orbital position relative to NH autumnal equinox [radians]
 real(kind=FMS_AST_KIND_) :: norm_time !< Index into orbital table corresponding to input time [dimensionless]
-real(kind=FMS_AST_KIND_) :: x !< Fractional distance between the orbital table entries bracketing the input time [dimensionless]
+real(kind=FMS_AST_KIND_) :: x !< Fractional distance between the orbital table entries bracketing
+                              !! the input time [dimensionless]
 integer                  :: int !< Table index which is lower than actual position, but closest to it [dimensionless]
 integer                  :: int_1 !< Next table index just larger than actual orbital position [dimensionless]
 

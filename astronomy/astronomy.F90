@@ -75,11 +75,11 @@ end interface diurnal_solar
 interface daily_mean_solar
    module procedure daily_mean_solar_2d_r4, daily_mean_solar_2d_r8
    module procedure daily_mean_solar_1d_r4, daily_mean_solar_1d_r8
-   module procedure daily_mean_solar_2level_r4, daily_mean_solar_2level_r8 
+   module procedure daily_mean_solar_2level_r4, daily_mean_solar_2level_r8
    module procedure daily_mean_solar_0d_r4, daily_mean_solar_0d_r8
    module procedure daily_mean_solar_cal_2d_r4, daily_mean_solar_cal_2d_r8
    module procedure daily_mean_solar_cal_1d_r4, daily_mean_solar_cal_1d_r8
-   module procedure daily_mean_solar_cal_2level_r4, daily_mean_solar_cal_2level_r8 
+   module procedure daily_mean_solar_cal_2level_r4, daily_mean_solar_cal_2level_r8
    module procedure daily_mean_solar_cal_0d_r4, daily_mean_solar_cal_0d_r8
 end interface daily_mean_solar
 
@@ -143,7 +143,7 @@ end interface annual_mean_solar
 !> @ingroup astronomy_mod
 !interface get_period
 !   module procedure get_period_time_type_r4, get_period_time_type_r8
-!   module procedure get_period_integer_r4, get_period_integer_r8 
+!   module procedure get_period_integer_r4, get_period_integer_r8
 !end interface get_period
 
 !> Sets the length of a year for the calendar in use
@@ -164,7 +164,7 @@ end interface annual_mean_solar
 !> @ingroup astronomy_mod
 !interface set_period
 !   module procedure set_period_time_type_r4, set_period_time_type_r8
-!   module procedure set_period_integer_r4, set_period_integer_r8 
+!   module procedure set_period_integer_r4, set_period_integer_r8
 !end interface set_period
 
 
@@ -220,8 +220,8 @@ interface declination
 end interface declination
 
 interface half_day
-   module procedure half_day_2d_r4, half_day_2d_r8 
-   module procedure half_day_0d_r4, half_day_0d_r8 
+   module procedure half_day_2d_r4, half_day_2d_r8
+   module procedure half_day_0d_r4, half_day_0d_r8
 end interface half_day
 
 
@@ -612,7 +612,7 @@ subroutine astronomy_end
     if (.not. module_is_initialized)  return
     !                call error_mesg ( 'astronomy_mod',  &
     !                         ' module has not been initialized', FATAL)
-    
+
     !----------------------------------------------------------------------
     !>    deallocate module variables.
     !----------------------------------------------------------------------
@@ -622,12 +622,12 @@ subroutine astronomy_end
         deallocate (fracday_ann)
         deallocate (solar_ann)
     endif
-    
+
     !----------------------------------------------------------------------
     !>    mark the module as uninitialized.
     !----------------------------------------------------------------------
     module_is_initialized = .false.
-    
+
 end subroutine astronomy_end
 
 !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -642,10 +642,10 @@ end subroutine astronomy_end
 subroutine orbit
 !---------------------------------------------------------------------
 !   local variables
-  
+
 integer                  :: n
 real(kind=r8_kind) :: d1, d2, d3, d4, d5, dt, norm
-    
+
 !--------------------------------------------------------------------
 !>    allocate the orbital angle array, sized by the namelist parameter
 !!    num_angles, defining the annual cycle resolution of the earth's
@@ -657,7 +657,7 @@ orb_angle(0) = real(0.0,kind=r8_kind)
 dt = twopi/float(num_angles)
 norm = sqrt(real(1.0,kind=r8_kind) - ecc**2)
 dt = dt*norm
-    
+
 !---------------------------------------------------------------------
 !>    define the orbital angle at each of the num_angles locations in
 !!    the orbit.
@@ -671,7 +671,7 @@ dt = dt*norm
             + d3/real(3.0,kind=r8_kind) + d4/real(6.0,kind=r8_kind)
         orb_angle(n) = real(orb_angle(n-1),kind=r8_kind) + d5
     end do
-    
+
 end subroutine orbit
 
 
@@ -687,29 +687,29 @@ function orbital_time(time) result(t)
 
 type(time_type), intent(in) :: time !< time (1 year = 2*pi) since autumnal equinox
 real(kind=r8_kind)    :: t
-        
+
     t = real ( (time - autumnal_eq_ref)//period_time_type)
     t = real(twopi,kind=r8_kind)*(t - floor(t))
     if (time < autumnal_eq_ref) t = real(twopi,kind=r8_kind) - t
-        
+
 end function orbital_time
-    
-        
+
+
 !> @brief universal_time returns the time of day at longitude = 0.0
 !!       (1 day = 2*pi)
 function universal_time(time) result(t)
-        
+
 type(time_type), intent(in) :: time !< Time (1 year = 2*pi) since autumnal equinox
 real(kind=r8_kind)    :: t
-        
+
     !--------------------------------------------------------------------
     !   local variables
     !--------------------------------------------------------------------
     integer ::  seconds, days
-        
+
     call get_time(time, seconds, days)
         t = real(twopi,kind=r8_kind)*real(seconds,kind=r8_kind)/real(seconds_per_day,kind=r8_kind)
-        
+
 end function universal_time
 
 #include "astronomy_r4.fh"
