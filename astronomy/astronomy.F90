@@ -724,6 +724,88 @@ subroutine astronomy_end
     
 end subroutine astronomy_end
 
+!%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+!
+!                    PRIVATE SUBROUTINES
+!
+!%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+!> @brief Orbit computes and stores a table of value of orbital angles as a
+!!        function of orbital time (both the angle and time are zero at
+!!        autumnal equinox in the NH, and range from 0 to 2*pi).
+subroutine orbit
+!---------------------------------------------------------------------
+!   local variables
+  
+integer                  :: n
+real(kind=r8_kind) :: d1, d2, d3, d4, d5, dt, norm
+    
+!--------------------------------------------------------------------
+!>    allocate the orbital angle array, sized by the namelist parameter
+!!    num_angles, defining the annual cycle resolution of the earth's
+!!    orbit. define some constants to be used.
+!--------------------------------------------------------------------
+! wfc moving to astronomy_init
+!     allocate ( orb_angle(0:num_angles) )
+orb_angle(0) = real(0.0,kind=r8_kind)
+dt = twopi/float(num_angles)
+norm = sqrt(real(1.0,kind=r8_kind) - ecc**2)
+dt = dt*norm
+    
+!---------------------------------------------------------------------
+!>    define the orbital angle at each of the num_angles locations in
+!!    the orbit.
+!---------------------------------------------------------------------
+    do n = 1, num_angles
+       d1 = dt*r_inv_squared(real(orb_angle(n-1),kind=r8_kind))
+       d2 = dt*r_inv_squared(real(orb_angle(n-1),kind=r8_kind) + real(0.5,kind=r8_kind)*d1)
+       d3 = dt*r_inv_squared(real(orb_angle(n-1),kind=r8_kind) + real(0.5,kind=r8_kind)*d2)
+       d4 = dt*r_inv_squared(real(orb_angle(n-1),kind=r8_kind) + d3)
+       d5 = d1/real(6.0,kind=r8_kind) + d2/real(3.0,kind=r8_kind) &
+            + d3/real(3.0,kind=r8_kind) + d4/real(6.0,kind=r8_kind)
+        orb_angle(n) = real(orb_angle(n-1),kind=r8_kind) + d5
+    end do
+    
+end subroutine orbit
+
+
+!> @brief Orbital time returns the time (1 year = 2*pi) since autumnal
+!!        equinox
+!!
+!! @details Orbital time returns the time (1 year = 2*pi) since autumnal
+!!          equinox; autumnal_eq_ref is a module variable of time_type and
+!!          will have been defined by default or by a call to
+!!          set_ref_date_of_ae; length_of_year is available through the time
+!!          manager and is set at the value approriate for the calandar being used
+function orbital_time(time) result(t)
+
+type(time_type), intent(in) :: time !< time (1 year = 2*pi) since autumnal equinox
+real(kind=r8_kind)    :: t
+        
+    t = real ( (time - autumnal_eq_ref)//period_time_type)
+    t = real(twopi,kind=r8_kind)*(t - floor(t))
+    if (time < autumnal_eq_ref) t = real(twopi,kind=r8_kind) - t
+        
+end function orbital_time
+    
+        
+!> @brief universal_time returns the time of day at longitude = 0.0
+!!       (1 day = 2*pi)
+function universal_time(time) result(t)
+        
+type(time_type), intent(in) :: time !< Time (1 year = 2*pi) since autumnal equinox
+real(kind=r8_kind)    :: t
+        
+    !--------------------------------------------------------------------
+    !   local variables
+    !--------------------------------------------------------------------
+    integer ::  seconds, days
+        
+    call get_time(time, seconds, days)
+        t = real(twopi,kind=r8_kind)*real(seconds,kind=r8_kind)/real(seconds_per_day,kind=r8_kind)
+        
+end function universal_time
+
 #include "astronomy_r4.fh"
 #include "astronomy_r8.fh"
 

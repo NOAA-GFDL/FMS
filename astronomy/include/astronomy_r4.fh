@@ -87,9 +87,6 @@
 #undef ANNUAL_MEAN_SOLAR_2LEVEL_
 #define ANNUAL_MEAN_SOLAR_2LEVEL_ annual_mean_solar_2level_r4
 
-#undef ORBIT_
-#define ORBIT_ orbit_r4
-
 #undef R_INV_SQUARED_
 #define R_INV_SQUARED_ r_inv_squared_r4
 
@@ -104,12 +101,6 @@
 
 #undef HALF_DAY_0D_
 #define HALF_DAY_0D_ half_day_0d_r4
-
-#undef ORBITAL_TIME_
-#define ORBITAL_TIME_ orbital_time_r4
-
-#undef UNIVERSAL_TIME_
-#define UNIVERSAL_TIME_ universal_time_r4
 
 #include "astronomy.inc"
 !> @}
