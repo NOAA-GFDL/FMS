@@ -1482,6 +1482,8 @@ subroutine fms_diag_yaml_out()
     if (fileptr%has_file_fname())     call fms_f2c_string(vals2(i)%val1, fileptr%file_fname)
     if (fileptr%has_file_unlimdim())  call fms_f2c_string(vals2(i)%val5, fileptr%file_unlimdim)
     if (fileptr%has_file_timeunit()) then
+      if ( get_diag_unit_string(fileptr%file_timeunit) .eq. 'N/A' ) call mpp_error(FATAL, &
+            "fms_diag_yaml_out: invalid time unit for file:"//fileptr%file_fname)
       call fms_f2c_string(vals2(i)%val4, get_diag_unit_string(fileptr%file_timeunit))
     endif
     if (fileptr%has_file_freq()) then
@@ -1489,6 +1491,8 @@ subroutine fms_diag_yaml_out()
       call fms_f2c_string(vals2(i)%val2, trim(tmpstr1))
     endif
     if (fileptr%has_file_frequnit()) then
+      if ( get_diag_unit_string(fileptr%file_frequnit) .eq. 'N/A' ) call mpp_error(FATAL, &
+            "fms_diag_yaml_out: invalid frequency unit for file:"//fileptr%file_fname)
       call fms_f2c_string(vals2(i)%val3, get_diag_unit_string(fileptr%file_frequnit))
     endif
     if(fileptr%has_file_new_file_freq()) then
@@ -1496,6 +1500,8 @@ subroutine fms_diag_yaml_out()
       call fms_f2c_string(vals2(i)%val6, tmpstr1)
     endif
     if(fileptr%has_file_new_file_freq_units()) then
+      if ( get_diag_unit_string(fileptr%file_new_file_freq_units) .eq. 'N/A' ) call mpp_error(FATAL, &
+            "fms_diag_yaml_out: invalid new file frequency unit for file:"//fileptr%file_fname)
       call fms_f2c_string(vals2(i)%val7, get_diag_unit_string(fileptr%file_new_file_freq_units))
     endif
     if(fileptr%has_file_start_time()) then
@@ -1507,6 +1513,8 @@ subroutine fms_diag_yaml_out()
       call fms_f2c_string(vals2(i)%val9, tmpstr1)
     endif
     if(fileptr%has_file_duration_units()) then
+      if ( get_diag_unit_string(fileptr%file_duration_units) .eq. 'N/A' ) call mpp_error(FATAL, &
+            "fms_diag_yaml_out: invalid new file duration unit for file:"//fileptr%file_fname)
       call fms_f2c_string(vals2(i)%val10, get_diag_unit_string(fileptr%file_duration_units))
     endif
     !! tier 3 - varlists, subregion, global metadata
@@ -1529,8 +1537,8 @@ subroutine fms_diag_yaml_out()
             exit
           endif
         enddo
-        if( .not. associated(varptr)) call mpp_error(FATAL, "diag_yaml_output: var name: "// &
-                                                            & trim(fileptr%file_varlist(j)))
+        if( .not. associated(varptr)) call mpp_error(FATAL, "diag_yaml_output: could not find variable in list."//&
+                                                            " var: "// trim(fileptr%file_varlist(j)))
         call fms_f2c_string(keys3(key3_i)%key1, 'module')
         call fms_f2c_string(keys3(key3_i)%key2, 'var_name')
         call fms_f2c_string(keys3(key3_i)%key3, 'reduction')
@@ -1543,6 +1551,8 @@ subroutine fms_diag_yaml_out()
         call fms_f2c_string(keys3(key3_i)%key10, 'pow_value')
         if (varptr%has_var_module())   call fms_f2c_string(vals3(key3_i)%val1, varptr%var_module)
         if (varptr%has_var_varname())  call fms_f2c_string(vals3(key3_i)%val2, varptr%var_varname)
+        if( get_diag_reduction_string(varptr%var_reduction) .eq. 'N/A') call mpp_error(FATAL,  &
+                    "fms_diag_yaml_out: invalid reduction type for variable:" //varptr%var_varname)
         if (varptr%has_var_reduction())call fms_f2c_string(vals3(key3_i)%val3, &
                                                            get_diag_reduction_string(varptr%var_reduction))
         if (varptr%has_var_outname())  call fms_f2c_string(vals3(key3_i)%val5, varptr%var_outname)
@@ -1739,7 +1749,7 @@ subroutine fms_diag_yaml_out()
 end subroutine
 
 !> private function for getting unit string from diag_data parameter values
-character(len=7) function get_diag_unit_string( unit_param )
+character(len=7) pure function get_diag_unit_string( unit_param )
   integer, intent(in) :: unit_param !< A diag unit parameter value from diag_data_mod.
                                     !! <br>eg. DIAG_SECONDS, DIAG_MINUTES,DIAG_HOURS, DIAG_DAYS, DIAG_YEARS
   select case(unit_param)
@@ -1754,12 +1764,12 @@ character(len=7) function get_diag_unit_string( unit_param )
     case (DIAG_YEARS)
       get_diag_unit_string = 'years'
     case default
-      get_diag_unit_string = ''
+      get_diag_unit_string = 'N/A'
   end select
 end function
 
 !> private function for getting reduction type string from parameter values
-character(len=7) function get_diag_reduction_string( reduction_val ) &
+character(len=7) pure function get_diag_reduction_string( reduction_val ) &
   result(rslt)
   integer, intent(in) :: reduction_val !< reduction type (eg. time_average)
   select case (reduction_val)
@@ -1776,7 +1786,7 @@ character(len=7) function get_diag_reduction_string( reduction_val ) &
     case (time_sum)
       rslt = 'sum'
     case default
-      call mpp_error(FATAL, 'get_diag_reduction_string: passed in value is invalid reduction type')
+      rslt = 'N/A'
   end select
 end function
 
