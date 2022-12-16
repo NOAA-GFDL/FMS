@@ -282,6 +282,8 @@ end interface annual_mean_solar
 !end interface set_period
 
 
+
+
 private :: orbit         ! Called from astronomy_init and set_orbital_parameters
 private :: r_inv_squared ! Called from diurnal_solar, daily_mean_solar and orbit
 private :: angle,  declination, half_day ! called from  diurnal_solar and daily_mean_solar
@@ -315,6 +317,7 @@ interface half_day
    module procedure half_day_2d_r4, half_day_2d_r8 
    module procedure half_day_0d_r4, half_day_0d_r8 
 end interface half_day
+
 
 !> @addtogroup astronomy_mod
 !> @{
@@ -520,8 +523,8 @@ integer :: seconds, days
 !---------------------------------------------------------------------
 !    exit if module has not been initialized.
 !---------------------------------------------------------------------
-    if (.not. module_is_initialized) &
-        call error_mesg ('astronomy_mod module has not been initialized', FATAL)
+    if (.not. module_is_initialized)   &
+        call error_mesg ( 'astronomy_mod', ' module has not been initialized', FATAL)
 
 !--------------------------------------------------------------------
 !    define length of year in seconds.
@@ -544,7 +547,7 @@ type(time_type), intent(inout) :: period_out !< Length of year as time_type vari
 !    exit if module has not been initialized.
 !---------------------------------------------------------------------
     if (.not. module_is_initialized) &
-       call error_mesg ('astronomy_mod module has not been initialized', FATAL)
+       call error_mesg ('astronomy_mod', 'module has not been initialized', FATAL)
 
 !--------------------------------------------------------------------
 !    define length of year as a time_type variable.
@@ -565,7 +568,7 @@ integer, intent(in) :: period_in !< Length of year as a time_type
 !    exit if module has not been initialized.
 !---------------------------------------------------------------------
     if (.not. module_is_initialized) &
-        call error_mesg ('astronomy_mod module has not been initialized', FATAL)
+        call error_mesg ('astronomy_mod', 'module has not been initialized', FATAL)
 
 !---------------------------------------------------------------------
 !    define time_type variable defining the length of year from the
@@ -588,7 +591,7 @@ type(time_type), intent(in) :: period_in
 !    exit if module has not been initialized.
 !---------------------------------------------------------------------
     if (.not. module_is_initialized) &
-        call error_mesg ('astronomy_mod module has not been initialized', FATAL)
+        call error_mesg ('astronomy_mod', 'module has not been initialized', FATAL)
 
 !---------------------------------------------------------------------
 !    define time_type variable defining the length of year from the
@@ -629,7 +632,7 @@ integer, intent(in), optional :: second_in, minute_in, hour_in
 !    exit if module has not been initialized.
 !---------------------------------------------------------------------
     if (.not. module_is_initialized) &
-        call error_mesg ('astronomy_mod module has not been initialized', FATAL)
+        call error_mesg ('astronomy_mod', 'module has not been initialized', FATAL)
 
 !--------------------------------------------------------------------
 !    save the input time of ae specification into a time_type module
@@ -679,7 +682,7 @@ integer, intent(out) :: day_out, month_out, year_out,  &
 !    exit if module has not been initialized.
 !---------------------------------------------------------------------
     if (.not. module_is_initialized) &
-        call error_mesg ('astronomy_mod module has not been initialized', FATAL)
+        call error_mesg ('astronomy_mod', 'module has not been initialized', FATAL)
 
 !---------------------------------------------------------------------
 !    fill the output fields with the proper module data.
