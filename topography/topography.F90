@@ -51,6 +51,7 @@ use        fms2_io_mod, only: read_data, FmsNetcdfFile_t, file_exists, open_file
 
 use      constants_mod, only: PI
 use            mpp_mod, only: input_nml_file
+use platform_mod,       only: r4_kind, r8_kind
 
 implicit none
 private
@@ -259,7 +260,7 @@ end subroutine topography_init
 
 function open_topog_file ( )
 logical :: open_topog_file
-real    :: r_ipts, r_jpts
+real(kind=r8_kind)    :: r_ipts, r_jpts
 integer :: namelen
      
 namelen = len(trim(topog_file))
@@ -286,7 +287,7 @@ end function open_topog_file
      
 function open_water_file ( )
 logical :: open_water_file
-real    :: r_ipts, r_jpts
+real(kind=r8_kind)    :: r_ipts, r_jpts
 integer :: namelen
      
 namelen = len(trim(water_file))

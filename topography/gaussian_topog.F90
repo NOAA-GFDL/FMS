@@ -39,6 +39,7 @@ use  fms_mod, only: check_nml_error,                 &
 use constants_mod, only: pi
 
 use mpp_mod,       only: input_nml_file
+use platform_mod,  only: r4_kind, r8_kind
 
 implicit none
 private
@@ -71,13 +72,13 @@ public :: gaussian_topog_init, get_gaussian_topog
 
    integer, parameter :: maxmts = 10
 
-   real, dimension(maxmts) :: height = 0.
-   real, dimension(maxmts) ::  olon  = 0.
-   real, dimension(maxmts) ::  olat  = 0.
-   real, dimension(maxmts) ::  wlon  = 0.
-   real, dimension(maxmts) ::  wlat  = 0.
-   real, dimension(maxmts) ::  rlon  = 0.
-   real, dimension(maxmts) ::  rlat  = 0.
+   real(kind=r8_kind), dimension(maxmts) :: height = 0.0
+   real(kind=r8_kind), dimension(maxmts) ::  olon  = 0.0
+   real(kind=r8_kind), dimension(maxmts) ::  olat  = 0.0
+   real(kind=r8_kind), dimension(maxmts) ::  wlon  = 0.0
+   real(kind=r8_kind), dimension(maxmts) ::  wlat  = 0.0
+   real(kind=r8_kind), dimension(maxmts) ::  rlon  = 0.0
+   real(kind=r8_kind), dimension(maxmts) ::  rlat  = 0.0
 
    namelist /gaussian_topog_nml/ height, olon, olat, wlon, wlat, rlon, rlat
 ! </NAMELIST>
@@ -105,9 +106,9 @@ contains
 !! by variables in the namelist.
 subroutine gaussian_topog_init ( lon, lat, zsurf )
 
-real, intent(in)  :: lon(:) !< The mean grid box longitude in radians
-real, intent(in)  :: lat(:) !< The mean grid box latitude in radians
-real, intent(out) :: zsurf(:,:) !< The surface height (meters). Size must be size(lon) by size(lat)
+real(kind=r8_kind), intent(in)  :: lon(:) !< The mean grid box longitude in radians
+real(kind=r8_kind), intent(in)  :: lat(:) !< The mean grid box latitude in radians
+real(kind=r8_kind), intent(out) :: zsurf(:,:) !< The surface height (meters). Size must be size(lon) by size(lat)
 
 integer :: n
 
@@ -123,9 +124,9 @@ integer :: n
   if (do_nml) call read_namelist
 
 ! compute sum of all non-zero mountains
-  zsurf(:,:) = 0.
+  zsurf(:,:) = real(0.0,kind=r8_kind)
   do n = 1, maxmts
-    if ( height(n) == 0. ) cycle
+    if ( height(n) == real(0.0,kind=r8_kind) ) cycle
     zsurf = zsurf + get_gaussian_topog ( lon, lat, height(n), &
                 olon(n), olat(n), wlon(n), wlat(n), rlon(n), rlat(n))
   enddo
