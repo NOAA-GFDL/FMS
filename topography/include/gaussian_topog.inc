@@ -76,30 +76,30 @@ real(kind=FMS_TOP_KIND_)    :: tpi, dtr, dx, dy, xx, yy
   if (do_nml) call read_namelist
 
 ! no need to compute mountain if height=0
-  if ( height == 0. ) then
-       zsurf(:,:) = 0.
+  if ( height == real(0.0,kind=FMS_TOP_KIND_)) then
+       zsurf(:,:) = real(0.0,kind=FMS_TOP_KIND_)
        return
   endif
 
-  tpi = 2.0*pi
-  dtr = tpi/360.
+  tpi = real(2.0,kind=FMS_TOP_KIND_)*pi
+  dtr = tpi/real(360.0,kind=FMS_TOP_KIND_)
 
 ! defaults and convert degrees to radians (dtr)
-  olon = 90.*dtr;  if (present(olond)) olon=olond*dtr
-  olat = 45.*dtr;  if (present(olatd)) olat=olatd*dtr
-  wlon = 15.*dtr;  if (present(wlond)) wlon=wlond*dtr
-  wlat = 15.*dtr;  if (present(wlatd)) wlat=wlatd*dtr
-  rlon =  0.    ;  if (present(rlond)) rlon=rlond*dtr
-  rlat =  0.    ;  if (present(rlatd)) rlat=rlatd*dtr
+  olon = real(90.0,kind=FMS_TOP_KIND_)*dtr;  if (present(olond)) olon=olond*dtr
+  olat = real(45.0,kind=FMS_TOP_KIND_)*dtr;  if (present(olatd)) olat=olatd*dtr
+  wlon = real(15.0,kind=FMS_TOP_KIND_)*dtr;  if (present(wlond)) wlon=wlond*dtr
+  wlat = real(15.0,kind=FMS_TOP_KIND_)*dtr;  if (present(wlatd)) wlat=wlatd*dtr
+  rlon = real(0.0,kind=FMS_TOP_KIND_)     ;  if (present(rlond)) rlon=rlond*dtr
+  rlat = real(0.0,kind=FMS_TOP_KIND_)     ;  if (present(rlatd)) rlat=rlatd*dtr
 
 ! compute gaussian-shaped mountain
     do j=1,size(lat(:))
       dy = abs(lat(j) - olat)   ! dist from y origin
-      yy = max(0., dy-rlat)/wlat
+      yy = max(real(0.0,kind=FMS_TOP_KIND_), dy-rlat)/wlat
       do i=1,size(lon(:))
         dx = abs(lon(i) - olon) ! dist from x origin
         dx = min(dx, abs(dx-tpi))  ! To ensure that: -pi <= dx <= pi
-        xx = max(0., dx-rlon)/wlon
+        xx = max(real(0.0,kind=FMS_TOP_KIND_), dx-rlon)/wlon
         zsurf(i,j) = height*exp(-xx**2 - yy**2)
       enddo
     enddo

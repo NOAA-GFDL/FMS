@@ -220,7 +220,7 @@
    if (.not. module_is_initialized) call topography_init()
 
    if ( get_ocean_frac_1d(blon, blat, ocean_frac) ) then
-     where (ocean_frac > 0.50)
+     where (ocean_frac > real(0.50,kind=FMS_TOP_KIND_))
        ocean_mask = .true.
      elsewhere
        ocean_mask = .false.
@@ -245,7 +245,7 @@
    if (.not. module_is_initialized) call topography_init()
 
    if ( get_ocean_frac_2d(blon, blat, ocean_frac) ) then
-     where (ocean_frac > 0.50)
+     where (ocean_frac > real(0.50,kind=FMS_TOP_KIND_))
        ocean_mask = .true.
      elsewhere
        ocean_mask = .false.
@@ -330,7 +330,7 @@
    if (.not. module_is_initialized) call topography_init()
 
    if ( get_water_frac_1d(blon, blat, water_frac) ) then
-     where (water_frac > 0.50)
+     where (water_frac > real(0.50,kind=FMS_TOP_KIND_))
        water_mask = .true.
      elsewhere
        water_mask = .false.
@@ -357,7 +357,7 @@
    if (.not. module_is_initialized) call topography_init()
 
    if ( get_water_frac_2d(blon, blat, water_frac) ) then
-     where (water_frac > 0.50)
+     where (water_frac > real(0.50,kind=FMS_TOP_KIND_))
        water_mask = .true.
      elsewhere
        water_mask = .false.
@@ -392,10 +392,10 @@ real(kind=FMS_TOP_KIND_) :: zout2(size(zout,1),size(zout,2))
           zdat = zdat*zdat
           call horiz_interp ( zdat, xdat, ydat, blon, blat, zout2 )
           zout = zout2 - zout*zout
-           where (zout > 0.0)
+           where (zout > real(0.0,kind=FMS_TOP_KIND_))
              zout = sqrt ( zout )
            elsewhere
-             zout = 0.0
+             zout = real(0.0,kind=FMS_TOP_KIND_)
            endwhere
        endif
     endif
@@ -428,10 +428,10 @@ type (horiz_interp_type) :: Interp
            zdat = zdat*zdat
            call horiz_interp ( Interp, zdat(:,js:je), zout2 )
            zout = zout2 - zout*zout
-           where (zout > 0.0)
+           where (zout > real(0.0,kind=FMS_TOP_KIND_))
              zout = sqrt ( zout )
            elsewhere
-             zout = 0.0
+             zout = real(0.0,kind=FMS_TOP_KIND_)
            endwhere
        endif
     endif
@@ -526,7 +526,7 @@ real(kind=FMS_TOP_KIND_), intent(inout) :: pctwater(:,:)
 logical :: ocean(size(pctwater,1),size(pctwater,2))
 integer :: i, j, m, n, im, ip, jm, jp, new
 
-real(kind=FMS_TOP_KIND_) :: ocean_pct_crit = .500
+real(kind=FMS_TOP_KIND_) :: ocean_pct_crit = real(0.500,kind=FMS_TOP_KIND_)
 
 ! resolution of the grid
 m = size(pctwater,1)
@@ -537,7 +537,7 @@ n = size(pctwater,2)
 ! all other grid boxes have <= 99 percent water
 
 ! set a mask for ocean grid boxes
-ocean = (pctwater > .999)
+ocean = (pctwater > real(0.999,kind=FMS_TOP_KIND_))
 new = count(ocean)
 
 ! set land grid boxes that have sufficient amount of water
@@ -569,7 +569,7 @@ do
 enddo
 
 ! final step is to elimate water percentage if land
-where (.not.ocean) pctwater = 0.
+where (.not.ocean) pctwater = real(0.0,kind=FMS_TOP_KIND_)
 
 end subroutine DETERMINE_OCEAN_POINTS_
 
