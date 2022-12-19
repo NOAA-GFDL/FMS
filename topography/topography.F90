@@ -334,6 +334,9 @@ endif
 
 end subroutine read_namelist
 
+#include "topography_r4.fh"
+#include "topography_r8.fh"
+
 end module topography_mod
 
 ! <INFO>
