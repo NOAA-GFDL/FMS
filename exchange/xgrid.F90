@@ -72,7 +72,8 @@
 !!             because, in the side 1 "get", exchange cells are first summed
 !!             locally onto a side 1 grid, then these side 1 contributions are
 !!             further summed after they have been communicated to their target
-!!             PE. This get communicates individual exchange cells.  The
+!!             PE.  For the make_exchange_reproduce option, a special side 1 get
+!!             is used.  This get communicates individual exchange cells.  The
 !!             cells are summed in the order they appear in the grid spec. file.
 !!
 !!     <TT>xgrid_mod</TT> reads a NetCDF grid specification file to determine the
@@ -103,8 +104,7 @@ use mpp_mod,         only: mpp_npes, mpp_pe, mpp_root_pe, mpp_send, mpp_recv, &
                            mpp_clock_begin, mpp_clock_end, MPP_CLOCK_SYNC,    &
                            COMM_TAG_1, COMM_TAG_2, COMM_TAG_3, COMM_TAG_4,    &
                            COMM_TAG_5, COMM_TAG_6, COMM_TAG_7, COMM_TAG_8,    &
-                           COMM_TAG_9, COMM_TAG_10,                           &
-                           mpp_error
+                           COMM_TAG_9, COMM_TAG_10
 use mpp_mod,         only: input_nml_file, mpp_set_current_pelist, mpp_sum, mpp_sync
 use mpp_domains_mod, only: mpp_get_compute_domain, mpp_get_compute_domains, &
                            Domain2d, mpp_global_sum, mpp_update_domains,    &
@@ -531,17 +531,6 @@ subroutine xgrid_init(remap_method)
 
   read (input_nml_file, xgrid_nml, iostat=io)
   ierr = check_nml_error ( io, 'xgrid_nml' )
-
-  ! make_exchange_reproduce is no longer supported.
-  if (make_exchange_reproduce) then
-    call mpp_error(FATAL, "xgrid_init: You have overridden the default value of make_exchange_reproduce " // &
-                          "and set it to .true. in xgrid_nml. This was a temporary workaround " // &
-                          "that is no longer supported. Please remove this namelist variable.")
-  else if (.not. make_exchange_reproduce) then
-    call mpp_error(WARNING, "xgrid_init: You have set the outdated namelist variable make_exchange_reproduce " // &
-                            "in xgrid_nml. Please remove this namelist variable. " // &
-                            "This will be removed in the next release.")
-  endif
 
 !--------- write version number and namelist ------------------
   call write_version_number("XGRID_MOD", version)
@@ -1128,6 +1117,16 @@ logical,        intent(in)             :: use_higher_order
               grid%x(ll)%di  = di(l)
               grid%x(ll)%dj  = dj(l)
            end if
+
+           if (make_exchange_reproduce) then
+              do p=0,xmap%npes-1
+                 if(grid1%tile(p) == tile1) then
+                    if (in_box_nbr(i1(l), j1(l), grid1, p)) then
+                       grid%x(ll)%pe = p + xmap%root_pe
+                    end if
+                 end if
+              end do
+           end if ! make_exchange reproduce
         end if
      end do
   end if
@@ -1277,7 +1276,7 @@ logical,        intent(in)             :: use_higher_order
                  end if
               end if
            end do
-        end if
+        end if ! make_exchange_reproduce
      end do
   end if
 
@@ -1939,8 +1938,27 @@ subroutine setup_xmap(xmap, grid_ids, grid_domains, grid_file, atm_grid, lnd_ug_
   xmap%your1my2(xmap%me-xmap%root_pe) = .false. ! this is not necessarily true but keeps
   xmap%your2my1(xmap%me-xmap%root_pe) = .false. ! a PE from communicating with itself
 
-  xmap%send_count_repro_tot = 0
-  xmap%recv_count_repro_tot = 0
+  if (make_exchange_reproduce) then
+     allocate( xmap%send_count_repro(0:xmap%npes-1) )
+     allocate( xmap%recv_count_repro(0:xmap%npes-1) )
+     xmap%send_count_repro = 0
+     xmap%recv_count_repro = 0
+     do g=2,size(xmap%grids(:))
+        do p=0,xmap%npes-1
+           if(xmap%grids(g)%size >0) &
+                xmap%send_count_repro(p) = xmap%send_count_repro(p) &
+                +count(xmap%grids(g)%x      (:)%pe==p+xmap%root_pe)
+           if(xmap%grids(g)%size_repro >0) &
+                xmap%recv_count_repro(p) = xmap%recv_count_repro(p) &
+                +count(xmap%grids(g)%x_repro(:)%pe==p+xmap%root_pe)
+        end do
+     end do
+     xmap%send_count_repro_tot = sum(xmap%send_count_repro)
+     xmap%recv_count_repro_tot = sum(xmap%recv_count_repro)
+  else
+     xmap%send_count_repro_tot = 0
+     xmap%recv_count_repro_tot = 0
+  end if
 
   allocate( xmap%x1(1:sum(xmap%grids(2:size(xmap%grids(:)))%size)) )
   allocate( xmap%x2(1:sum(xmap%grids(2:size(xmap%grids(:)))%size)) )
@@ -1954,6 +1972,11 @@ subroutine setup_xmap(xmap, grid_ids, grid_domains, grid_file, atm_grid, lnd_ug_
   call set_comm_get1(xmap)
 
   call set_comm_put1(xmap)
+
+  if(make_exchange_reproduce) then
+    allocate(xmap%get1_repro)
+    call set_comm_get1_repro(xmap)
+  endif
 
   call mpp_clock_end(id_set_comm)
 
@@ -2990,6 +3013,41 @@ type (xmap_type), intent(inout) :: xmap
      xmap%grids(g)%last_get = xmap%size_get2
   end do
 
+  !---set up information for get_1_from_xgrid_repro
+  if (make_exchange_reproduce) then
+  if (xmap%get1_repro%nsend > 0) then
+     xloc = 0
+     nsend = 0
+     npes = xmap%npes
+     mypos = mpp_pe() - mpp_root_pe()
+     cnt(:) = 0
+     do m=0,npes-1
+        p = mod(mypos+m, npes)
+        if( xmap%send_count_repro(p) > 0 ) then
+          nsend = nsend + 1
+          send_ind(p) = nsend
+        endif
+     enddo
+     do g=2,size(xmap%grids(:))
+        do l=1,xmap%grids(g)%size ! index into this side 2 grid's patterns
+           p = xmap%grids(g)%x(l)%pe-xmap%root_pe
+           n = send_ind(p)
+           cnt(n) = cnt(n) + 1
+           pos = cnt(n)
+           xmap%get1_repro%send(n)%xLoc(pos) = xloc
+           if( xmap%grids(g)%is_ug ) then
+             i = xmap%grids(g)%x(l)%l2
+             xloc = xloc + count(xmap%grids(g)%frac_area(i,1,:)/=0.0)
+           else
+             i = xmap%grids(g)%x(l)%i2
+             j = xmap%grids(g)%x(l)%j2
+             xloc = xloc + count(xmap%grids(g)%frac_area(i,j,:)/=0.0)
+           endif
+        enddo
+     enddo
+  endif
+  endif
+
 end subroutine regen
 
 !#######################################################################
@@ -3236,7 +3294,11 @@ subroutine get_side1_from_xgrid(d, grid_id, x, xmap, complete)
      endif
 
      if(is_complete) then
-        call get_1_from_xgrid(d_addrs, x_addrs, xmap, isize, jsize, xsize, lsize)
+        if (make_exchange_reproduce) then
+           call get_1_from_xgrid_repro(d_addrs, x_addrs, xmap, xsize, lsize)
+        else
+           call get_1_from_xgrid(d_addrs, x_addrs, xmap, isize, jsize, xsize, lsize)
+        end if
         d_addrs(1:lsize) = -9999
         x_addrs(1:lsize) = -9999
         isize   = 0
@@ -4713,7 +4775,11 @@ subroutine get_side1_from_xgrid_ug(d, grid_id, x, xmap, complete)
      endif
 
      if(is_complete) then
-        call get_1_from_xgrid_ug(d_addrs, x_addrs, xmap, isize, xsize, lsize)
+        if (make_exchange_reproduce) then
+           call get_1_from_xgrid_ug_repro(d_addrs, x_addrs, xmap, xsize, lsize)
+        else
+           call get_1_from_xgrid_ug(d_addrs, x_addrs, xmap, isize, xsize, lsize)
+        end if
         d_addrs(1:lsize) = -9999
         x_addrs(1:lsize) = -9999
         isize   = 0
