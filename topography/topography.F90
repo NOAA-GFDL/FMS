@@ -81,8 +81,9 @@ public :: topography_init,                 &
 !! @code{.F90} flag = get_topog_mean ( blon, blat, zmean )@endcode
 !> @ingroup topography_mod
 interface get_topog_mean
-  module procedure get_topog_mean_1d, get_topog_mean_2d
-end interface
+    module procedure get_topog_mean_1d_r4, get_topog_mean_1d_r8 
+    module procedure get_topog_mean_2d_r4, get_topog_mean_2d_r8 
+end interface get_topog_mean
 
 !> Returns a standard deviation of higher resolution topography with
 !! the given model grid boxes.
@@ -105,8 +106,9 @@ end interface
 !! @code{.F90} flag = get_topog_stdev( blon, blat, stdev ) @code
 !> @ingroup topography_mod
 interface get_topog_stdev
-  module procedure get_topog_stdev_1d, get_topog_stdev_2d
-end interface
+    module procedure get_topog_stdev_1d_r4, get_topog_stdev_1d_r8
+    module procedure get_topog_stdev_2d_r4, get_topog_stdev_2d_r8 
+end interface get_topog_stdev
 
 !> @brief Returns fractional area covered by ocean in a grid box.
 !! Returns fractional area covered by ocean in the given model grid boxes.
@@ -124,8 +126,9 @@ end interface
 !! @code{.F90} flag = get_ocean_frac ( blon, blat, ocean_frac ) @endcode
 !> @ingroup topography_mod
 interface get_ocean_frac
-  module procedure get_ocean_frac_1d, get_ocean_frac_2d
-end interface
+    module procedure get_ocean_frac_1d_r4, get_ocean_frac_1d_r8
+    module procedure get_ocean_frac_2d_r4, get_ocean_frac_2d_r8 
+end interface get_ocean_frac
 
 !> @brief Returns a land-ocean mask in a grid box.
 !!
@@ -144,8 +147,9 @@ end interface
 !! @code{.F90} flag = get_ocean_mask( blon, blat, ocean_mask ) @endcode
 !> @ingroup topography_mod
 interface get_ocean_mask
-  module procedure get_ocean_mask_1d, get_ocean_mask_2d
-end interface
+    module procedure get_ocean_mask_1d_r4, get_ocean_mask_1d_r8
+    module procedure get_ocean_mask_2d_r4, get_ocean_mask_2d_r8
+end interface get_ocean_mask
 
 !> @brief Returns fractional area covered by water.
 !!
@@ -163,8 +167,9 @@ end interface
 !! <br>Example usage:<br> @code{.F90} flag = get_water_frac ( blon, blat, water_frac ) @endcode
 !> @ingroup topography_mod
 interface get_water_frac
-  module procedure get_water_frac_1d, get_water_frac_2d
-end interface
+    module procedure get_water_frac_1d_r4, get_water_frac_1d_r8
+    module procedure get_water_frac_2d_r4, get_water_frac_2d_r8 
+end interface get_water_frac
 
 !> @brief Returns a land-water mask in a grid box.
 !!
@@ -182,8 +187,31 @@ end interface
 !! Example usage: @code{.F90}flag = get_water_mask( blon, blat, water_mask ) @endcode
 !> @ingroup topography_mod
 interface get_water_mask
-  module procedure get_water_mask_1d, get_water_mask_2d
-end interface
+    module procedure get_water_mask_1d_r4, get_water_mask_1d_r8
+    module procedure get_water_mask_2d_r4, get_water_mask_2d_r8 
+end interface get_water_mask
+
+interface interp_topog
+    module procedure interp_topog_1d_r4, interp_topog_1d_r8
+    module procedure interp_topog_2d_r4, interp_topog_2d_r8
+end interface interp_topog
+
+interface find_indices
+    module procedure find_indices_r4, find_indices_r8
+end interface find_indices
+
+interface input_data
+    module procedure input_data_r4, input_data_r8
+end interface input_data
+
+interface interp_water
+    module procedure interp_water_1d_r4, interp_water_1d_r8
+    module procedure interp_water_2d_r4, interp_water_2d_r8
+end interface interp_water
+
+interface determine_ocean_points
+    module procedure determine_ocean_points_r4, determine_ocean_points_r8
+end interface determine_ocean_points
 
 !> @addtogroup topography_mod
 !> @{

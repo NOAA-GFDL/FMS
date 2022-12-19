@@ -46,6 +46,10 @@ private
 
 public :: gaussian_topog_init, get_gaussian_topog
 
+interface get_gaussian_topog
+    module procedure get_gaussian_topog_r4, get_gaussian_topog_r8
+end interface get_gaussian_topog
+
 !-----------------------------------------------------------------------
 ! <NAMELIST NAME="gaussian_topog_nml">
 !   <DATA NAME="height" UNITS="meter" TYPE="real" DIM="(mxmtns)" DEFAULT="0.">
