@@ -23,7 +23,7 @@
 # Ed Hartnett 2/28/19
 
 # Include .h and .mod files.
-AM_CPPFLAGS = -I$(top_srcdir)/include -I$(top_srcdir)/sat_vapor_pres/include
+AM_CPPFLAGS = -I$(top_srcdir)/include -I$(top_srcdir)/sat_vapor_pres/include -I.
 AM_FCFLAGS = $(FC_MODINC). $(FC_MODOUT)$(MODDIR)
 
 # Build these uninstalled convenience library.
