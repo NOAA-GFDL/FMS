@@ -51,7 +51,7 @@ use time_interp_external2_mod, only:time_interp_external_init, &
                                    reset_src_data_region, &
                                    NO_REGION, INSIDE_REGION, OUTSIDE_REGION,     &
                                    get_external_fileobj
-use fms_mod, only: write_version_number, lowercase, check_nml_error
+use fms_mod, only: write_version_number, lowercase, check_nml_error, mpp_root_pe, mpp_pe
 use axis_utils2_mod,  only : nearest_index, axis_edges
 use mpp_domains_mod, only : domain2d, mpp_get_compute_domain, NULL_DOMAIN2D,operator(.NE.),operator(.EQ.)
 use mpp_domains_mod, only : mpp_get_global_domain, mpp_get_data_domain
@@ -148,7 +148,7 @@ type(override_type), save                       :: default_array
 logical                                         :: atm_on, ocn_on, lnd_on, ice_on
 logical                                         :: lndUG_on
 logical                                         :: debug_data_override
-logical                                         :: grid_center_bug = .false.
+logical                                         :: grid_center_bug
 logical                                         :: reproduce_null_char_bug = .false. !> Flag indicating
                                                    !! to reproduce the mpp_io bug where lat/lon_bnd were
                                                    !! not read correctly if null characters are present in
@@ -202,14 +202,10 @@ subroutine data_override_init(Atm_domain_in, Ocean_domain_in, Ice_domain_in, Lan
   write(unit, data_override_nml)
 
 ! grid_center_bug is no longer supported.
-if (grid_center_bug) then
+if (mpp_pe() == mpp_root_pe() .and. grid_center_bug) then
   call mpp_error(FATAL, "data_override_init: You have overridden the default value of grid_center_bug " // &
                         "and set it to .true. in data_override_nml.  This was a temporary workaround " // &
                         "that is no longer supported. Please remove this namelist variable.")
-else if (.not. grid_center_bug) then
-  call mpp_error(WARNING, "data_override_init: You have set the outdated namelist variable grid_center_bug " // &
-                          "in data_override_nml. Please remove this namelist variable." // &
-                          "This will be removed in the next release.")
 endif
 
 !  if(module_is_initialized) return
