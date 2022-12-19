@@ -38,7 +38,7 @@
  logical, intent(in)  :: construct_table_wrt_liq
  logical, intent(in)  :: construct_table_wrt_liq_and_ice
  character(len=*), intent(out) :: err_msg
- real(kind=FMS_SVP_KIND_), intent(out), optional :: teps, tmin, dtinv
+ real(kind=r8_kind), intent(out), optional :: teps, tmin, dtinv !< sat_vapor_pres module variables are decared as r8_kind
 
 ! kind parameter
  integer, parameter :: vkind = FMS_SVP_KIND_ ! local kind parameter
@@ -91,9 +91,9 @@
       dtinvl_loc = 1.0_vkind/dtres_loc
       tepsl_loc  = 0.5_vkind*dtres_loc
       tinrc   = 0.1_vkind*dtres_loc
-      if(present(teps )) teps =tepsl_loc
-      if(present(tmin )) tmin =tminl_loc
-      if(present(dtinv)) dtinv=dtinvl_loc
+      if(present(teps )) teps =real(tepsl_loc,  r8_kind)
+      if(present(tmin )) tmin =real(tminl_loc,  r8_kind)
+      if(present(dtinv)) dtinv=real(dtinvl_loc, r8_kind)
 
 ! To be able to compute tables for any temperature range and resolution,
 ! and at the same time exactly reproduce answers from memphis revision,
@@ -205,11 +205,6 @@
 
       use_exact_qs = use_exact_qs_input
       module_is_initialized = .true.
-
-      dtres=real(dtres_loc, r8_kind)
-      tepsl=real(tepsl_loc, r8_kind)
-      tminl=real(tminl_loc, r8_kind)
-      dtinvl_loc=real(dtinvl_loc,r8_kind)
 
   end subroutine SAT_VAPOR_PRES_INIT_K_
 
