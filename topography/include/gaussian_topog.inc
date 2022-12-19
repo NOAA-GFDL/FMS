@@ -60,9 +60,9 @@
 !! @code{.F90} zsurf = <B>get_gaussian_topog</B> ( lon, lat, height
 !!                    [, olond, olatd, wlond, wlatd, rlond, rlatd ] )@endcode
 
-function GET_GUASSIAN_TOPOG_( lon, lat, height,                          &
-                              olond, olatd, wlond, wlatd, rlond, rlatd ) &
-                     result ( zsurf )
+function GET_GAUSSIAN_TOPOG_(lon, lat, height,                         &
+                            olond, olatd, wlond, wlatd, rlond, rlatd ) &
+                     result (zsurf )
 
 real(kind=FMS_TOP_KIND_), intent(in)  :: lon(:), lat(:)
 real(kind=FMS_TOP_KIND_), intent(in)  :: height
