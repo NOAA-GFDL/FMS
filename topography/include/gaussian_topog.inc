@@ -64,14 +64,14 @@ function GET_GUASSIAN_TOPOG_( lon, lat, height,                          &
                               olond, olatd, wlond, wlatd, rlond, rlatd ) &
                      result ( zsurf )
 
-real, intent(in)  :: lon(:), lat(:)
-real, intent(in)  :: height
-real, intent(in), optional :: olond, olatd, wlond, wlatd, rlond, rlatd
-real :: zsurf(size(lon,1),size(lat,1))
+real(kind=FMS_TOP_KIND_), intent(in)  :: lon(:), lat(:)
+real(kind=FMS_TOP_KIND_), intent(in)  :: height
+real(kind=FMS_TOP_KIND_), intent(in), optional :: olond, olatd, wlond, wlatd, rlond, rlatd
+real(kind=FMS_TOP_KIND_) :: zsurf(size(lon,1),size(lat,1))
 
 integer :: i, j
-real    :: olon, olat, wlon, wlat, rlon, rlat
-real    :: tpi, dtr, dx, dy, xx, yy
+real(kind=FMS_TOP_KIND_)    :: olon, olat, wlon, wlat, rlon, rlat
+real(kind=FMS_TOP_KIND_)    :: tpi, dtr, dx, dy, xx, yy
 
   if (do_nml) call read_namelist
 
