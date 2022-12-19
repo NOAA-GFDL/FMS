@@ -38,7 +38,8 @@
  logical, intent(in)  :: construct_table_wrt_liq
  logical, intent(in)  :: construct_table_wrt_liq_and_ice
  character(len=*), intent(out) :: err_msg
- real(kind=r8_kind), intent(out), optional :: teps, tmin, dtinv !< sat_vapor_pres module variables are decared as r8_kind
+ real(kind=r8_kind), intent(out), optional :: teps, tmin, dtinv !< sat_vapor_pres module variables
+                                                                ! are decared as r8_kind
 
 ! kind parameter
  integer, parameter :: vkind = FMS_SVP_KIND_ ! local kind parameter
