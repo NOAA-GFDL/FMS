@@ -148,7 +148,7 @@ type(override_type), save                       :: default_array
 logical                                         :: atm_on, ocn_on, lnd_on, ice_on
 logical                                         :: lndUG_on
 logical                                         :: debug_data_override
-logical                                         :: grid_center_bug
+logical                                         :: grid_center_bug = .false.
 logical                                         :: reproduce_null_char_bug = .false. !> Flag indicating
                                                    !! to reproduce the mpp_io bug where lat/lon_bnd were
                                                    !! not read correctly if null characters are present in
@@ -202,10 +202,10 @@ subroutine data_override_init(Atm_domain_in, Ocean_domain_in, Ice_domain_in, Lan
   write(unit, data_override_nml)
 
 ! grid_center_bug is no longer supported.
-if (mpp_pe() == mpp_root_pe() .and. grid_center_bug) then
-  call mpp_error(FATAL, "data_override_init: You have overridden the default value of grid_center_bug " // &
-                        "and set it to .true. in data_override_nml.  This was a temporary workaround " // &
-                        "that is no longer supported. Please remove this namelist variable.")
+if (grid_center_bug) then
+  if (mpp_pe() == mpp_root_pe()) call mpp_error(FATAL, "data_override_init: You have overridden the default " // &
+     "value of grid_center_bug and set it to .true. in data_override_nml.  This was a temporary workaround " // &
+     "that is no longer supported. Please remove this namelist variable.")
 endif
 
 !  if(module_is_initialized) return

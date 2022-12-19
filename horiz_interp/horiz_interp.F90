@@ -199,7 +199,7 @@ use horiz_interp_spherical_mod, only: horiz_interp_spherical_new, horiz_interp_s
 !> @addtogroup horiz_interp_mod
 !> @{
 
- logical :: reproduce_siena !< Set reproduce_siena = .true. to reproduce siena results.
+ logical :: reproduce_siena = .false. !< Set reproduce_siena = .true. to reproduce siena results.
                  !! Set reproduce_siena = .false. to decrease truncation error
                  !! in routine poly_area in file mosaic_util.c. The truncation error of
                  !! second order conservative remapping might be big for high resolution
@@ -231,11 +231,11 @@ contains
      write (unit, nml=horiz_interp_nml)
   endif
 
-  if (mpp_pe() == mpp_root_pe() .and. reproduce_siena) then
-     call mpp_error(FATAL, "horiz_interp_mod: You have overridden the default value of reproduce_siena " // &
-                           "and set it to .true. in horiz_interp_nml. This was a temporary workaround to " // &
-                           "allow for consistency in continuing experiments and is no longer supported. " // &
-                           "Please remove this namelist.")
+  if (reproduce_siena) then
+     if (mpp_pe() == mpp_root_pe()) call mpp_error(FATAL, "horiz_interp_mod: You have overridden the default " // &
+        "value of reproduce_siena and set it to .true. in horiz_interp_nml. This was a temporary workaround to " // &
+        "allow for consistency in continuing experiments and is no longer supported. " // &
+        "Please remove this namelist.")
   endif
 
   call horiz_interp_conserve_init

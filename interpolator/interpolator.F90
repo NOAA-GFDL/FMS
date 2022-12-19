@@ -321,7 +321,7 @@ real ::  missing_value = -1.e10                                                 
 logical :: read_all_on_init = .false.          !< No description
 integer :: verbose = 0                              !< No description
 logical :: conservative_interp = .true.          !< No description
-logical :: retain_cm3_bug               !< No description
+logical :: retain_cm3_bug = .false.               !< No description
 logical :: use_mpp_io = .false. !< Set to true to use mpp_io, otherwise fms2io is used
 
 namelist /interpolator_nml/    &
@@ -446,10 +446,10 @@ if (.not. module_is_initialized) then
   ierr = check_nml_error(io,'interpolator_nml')
 
   ! retain_cm3_bug is no longer supported.
-  if (mpp_pe() == mpp_root_pe() .and. retain_cm3_bug) then
-    call mpp_error(FATAL, "interpolator_init: You have overridden the default value of retain_cm3_bug " // &
-                          "and set it to .true. in interpolator_nml. This was a temporary workaround " // &
-                          "that is no longer supported. Please remove this namelist variable.")
+  if (retain_cm3_bug) then
+    if (mpp_pe() == mpp_root_pe()) call mpp_error(FATAL, "interpolator_init: You have overridden the default " // &
+       "value of retain_cm3_bug and set it to .true. in interpolator_nml. This was a temporary workaround " // &
+       "that is no longer supported. Please remove this namelist variable.")
   endif
 
 !---------------------------------------------------------------------
