@@ -33,7 +33,7 @@ noinst_LTLIBRARIES = libsat_vapor_pres.la
 libsat_vapor_pres_la_SOURCES = \
 	sat_vapor_pres.F90 \
 	include/sat_vapor_pres_r4.fh \
-	include/sast_vapor_pres.inc \
+	include/sat_vapor_pres.inc \
 	sat_vapor_pres_k.F90 \
 	include/sat_vapor_pres_k_r4.fh \
 	include/sat_vapor_pres_k.inc
