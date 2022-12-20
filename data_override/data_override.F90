@@ -51,7 +51,7 @@ use time_interp_external2_mod, only:time_interp_external_init, &
                                    reset_src_data_region, &
                                    NO_REGION, INSIDE_REGION, OUTSIDE_REGION,     &
                                    get_external_fileobj
-use fms_mod, only: write_version_number, lowercase, check_nml_error, mpp_root_pe, mpp_pe
+use fms_mod, only: write_version_number, lowercase, check_nml_error
 use axis_utils2_mod,  only : nearest_index, axis_edges
 use mpp_domains_mod, only : domain2d, mpp_get_compute_domain, NULL_DOMAIN2D,operator(.NE.),operator(.EQ.)
 use mpp_domains_mod, only : mpp_get_global_domain, mpp_get_data_domain
@@ -203,8 +203,8 @@ subroutine data_override_init(Atm_domain_in, Ocean_domain_in, Ice_domain_in, Lan
 
 ! grid_center_bug is no longer supported.
 if (grid_center_bug) then
-  if (mpp_pe() == mpp_root_pe()) call mpp_error(FATAL, "data_override_init: You have overridden the default " // &
-     "value of grid_center_bug and set it to .true. in data_override_nml.  This was a temporary workaround " // &
+  call mpp_error(FATAL, "data_override_init: You have overridden the default value of " // &
+     "grid_center_bug and set it to .true. in data_override_nml.  This was a temporary workaround " // &
      "that is no longer supported. Please remove this namelist variable.")
 endif
 

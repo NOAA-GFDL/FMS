@@ -447,19 +447,19 @@ if (.not. module_is_initialized) then
 
   ! retain_cm3_bug is no longer supported.
   if (retain_cm3_bug) then
-    if (mpp_pe() == mpp_root_pe()) call mpp_error(FATAL, "interpolator_init: You have overridden the default " // &
-       "value of retain_cm3_bug and set it to .true. in interpolator_nml. This was a temporary workaround " // &
+    call mpp_error(FATAL, "interpolator_init: You have overridden the default value of " // &
+       "retain_cm3_bug and set it to .true. in interpolator_nml. This was a temporary workaround " // &
        "that is no longer supported. Please remove this namelist variable.")
   endif
 
 !---------------------------------------------------------------------
 !    write version number and namelist to logfile.
 !---------------------------------------------------------------------
-  call write_version_number("INTERPOLATOR_MOD", version)
+call write_version_number("INTERPOLATOR_MOD", version)
 
-  if (mpp_pe() == mpp_root_pe() ) write (stdlog(), nml=interpolator_nml)
+if (mpp_pe() == mpp_root_pe() ) write (stdlog(), nml=interpolator_nml)
 
-  module_is_initialized = .true.
+module_is_initialized = .true.
 
 endif !> if (module_is_initilized)
 if (use_mpp_io) then

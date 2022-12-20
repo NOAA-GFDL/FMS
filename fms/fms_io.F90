@@ -695,8 +695,8 @@ subroutine fms_io_init()
 ! take namelist options if present
 ! read_data_bug is no longer supported.
   if (read_data_bug) then
-    if (mpp_pe() == mpp_root_pe()) call mpp_error(FATAL, "fms_io_init: You have overridden the default " // &
-       "value of read_data_bug and set it to .true. in fms_io_nml. This was a temporary workaround " // &
+    call mpp_error(FATAL, "fms_io_init: You have overridden the default value of " // &
+       "read_data_bug and set it to .true. in fms_io_nml. This was a temporary workaround " // &
        "that is no longer supported. Please remove this namelist variable.")
   endif
 

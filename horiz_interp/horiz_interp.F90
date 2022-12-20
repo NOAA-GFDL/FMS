@@ -232,10 +232,10 @@ contains
   endif
 
   if (reproduce_siena) then
-     if (mpp_pe() == mpp_root_pe()) call mpp_error(FATAL, "horiz_interp_mod: You have overridden the default " // &
-        "value of reproduce_siena and set it to .true. in horiz_interp_nml. This was a temporary workaround to " // &
-        "allow for consistency in continuing experiments and is no longer supported. " // &
-        "Please remove this namelist.")
+    call mpp_error(FATAL, "horiz_interp_mod: You have overridden the default value of " // &
+       "reproduce_siena and set it to .true. in horiz_interp_nml. This was a temporary workaround to " // &
+       "allow for consistency in continuing experiments and is no longer supported. " // &
+       "Please remove this namelist.")
   endif
 
   call horiz_interp_conserve_init
