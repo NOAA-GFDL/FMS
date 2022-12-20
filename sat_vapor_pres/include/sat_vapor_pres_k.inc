@@ -40,10 +40,10 @@
  logical, intent(in)  :: construct_table_wrt_liq_and_ice
  character(len=*), intent(out) :: err_msg
  real(kind=r8_kind), intent(out), optional :: teps, tmin, dtinv !< sat_vapor_pres module variables
-                                                                ! are decared as r8_kind
+                                                                ! are declared as r8_kind
 
 ! kind parameter
- integer, parameter :: vkind = FMS_SVP_KIND_ ! local kind parameter
+ integer, parameter :: kindl = FMS_SVP_KIND_ ! local kind parameter
 
 ! increment used to generate derivative table
   real(kind=FMS_SVP_KIND_), dimension(3) :: tem(3), es(3)
@@ -89,10 +89,10 @@
 
       table_siz = table_size
       dtres_loc  = (tcmax - tcmin)/real(table_size-1,FMS_SVP_KIND_)
-      tminl_loc  = tcmin+TFREEZE  ! minimum valid temp in table
-      dtinvl_loc = 1.0_vkind/dtres_loc
-      tepsl_loc  = 0.5_vkind*dtres_loc
-      tinrc   = 0.1_vkind*dtres_loc
+      tminl_loc  = real(tcmin,FMS_SVP_KIND_)+TFREEZE  ! minimum valid temp in table
+      dtinvl_loc = 1.0_kindl/dtres_loc
+      tepsl_loc  = 0.5_kindl*dtres_loc
+      tinrc   = 0.1_kindl*dtres_loc
       if(present(teps )) teps =real(tepsl_loc,  r8_kind)
       if(present(tmin )) tmin =real(tminl_loc,  r8_kind)
       if(present(dtinv)) dtinv=real(dtinvl_loc, r8_kind)
@@ -100,9 +100,9 @@
 ! To be able to compute tables for any temperature range and resolution,
 ! and at the same time exactly reproduce answers from memphis revision,
 ! it is necessary to compute ftact differently than it is in memphis.
-      tfact = 5.0_vkind*dtinvl_loc
+      tfact = 5.0_kindl*dtinvl_loc
 
-      hdtinv = 0.5_vkind*dtinvl_loc
+      hdtinv = 0.5_kindl*dtinvl_loc
 
 ! compute es tables from tcmin to tcmax
 ! estimate es derivative with small +/- difference
@@ -112,8 +112,8 @@
         do i = 1, table_size
           tem(1) = tminl_loc + dtres_loc*real(i-1,FMS_SVP_KIND_)
           TABLE(i) = real( &
-               ES0*610.78_vkind*exp(-hlv/rvgas*(1.0_vkind/tem(1) - 1.0_vkind/tfreeze)), r8_kind)
-          DTABLE(i) = real( hlv*TABLE(i)/rvgas/tem(1)**2._vkind, r8_kind)
+               ES0*610.78_kindl*exp(-hlv/rvgas*(1.0_kindl/tem(1) - 1.0_kindl/tfreeze)), r8_kind)
+          DTABLE(i) = real( hlv*TABLE(i)/rvgas/tem(1)**2._kindl, r8_kind)
         enddo
 
       else
@@ -133,16 +133,16 @@
 ! differencing des values in the table
 
       do i = 2, table_size-1
-         D2TABLE(i) = real( 0.25_vkind*dtinvl_loc* &
-              real( DTABLE(i+1)-DTABLE(i-1), FMS_SVP_KIND_), r8_kind)
+         D2TABLE(i) = real( 0.25_kindl*dtinvl_loc* &
+              (real( DTABLE(i+1)-DTABLE(i-1), FMS_SVP_KIND_)), r8_kind)
       enddo
     ! one-sided derivatives at boundaries
 
-         D2TABLE(1) = real(0.50_vkind*dtinvl_loc* &
-              real(DTABLE(2)-DTABLE(1),FMS_SVP_KIND_), r8_kind)
+         D2TABLE(1) = real(0.50_kindl*dtinvl_loc* &
+              (real(DTABLE(2)-DTABLE(1),FMS_SVP_KIND_)), r8_kind)
 
-         D2TABLE(table_size) = real(0.50_vkind*dtinvl_loc* &
-              real(DTABLE(table_size)-DTABLE(table_size-1),FMS_SVP_KIND_), r8_kind)
+         D2TABLE(table_size) = real(0.50_kindl*dtinvl_loc* &
+              (real(DTABLE(table_size)-DTABLE(table_size-1),FMS_SVP_KIND_)), r8_kind)
 
    if (construct_table_wrt_liq) then
 ! compute es tables from tcmin to tcmax
@@ -162,16 +162,16 @@
 ! differencing des values in the table
 
      do i = 2, table_size-1
-       D2TABLE2(i) = real(0.25_vkind*dtinvl_loc* &
+       D2TABLE2(i) = real(0.25_kindl*dtinvl_loc* &
             real(DTABLE2(i+1)-DTABLE2(i-1),FMS_SVP_KIND_), r8_kind)
      enddo
 ! one-sided derivatives at boundaries
 
-     D2TABLE2(1) = real(0.50_vkind*dtinvl_loc* &
-          real(DTABLE2(2)-DTABLE2(1),FMS_SVP_KIND_), r8_kind)
+     D2TABLE2(1) = real(0.50_kindl*dtinvl_loc* &
+          (real(DTABLE2(2)-DTABLE2(1),FMS_SVP_KIND_)), r8_kind)
 
-     D2TABLE2(table_size) = real(0.50_vkind*dtinvl_loc* &
-          real(DTABLE2(table_size)-DTABLE2(table_size-1),FMS_SVP_KIND_), r8_kind)
+     D2TABLE2(table_size) = real(0.50_kindl*dtinvl_loc* &
+          (real(DTABLE2(table_size)-DTABLE2(table_size-1),FMS_SVP_KIND_)), r8_kind)
    endif
 
 
@@ -193,17 +193,22 @@
 ! differencing des values in the table
 
      do i = 2, table_size-1
-       D2TABLE3(i) = real(0.25_vkind*dtinvl* &
-            real(DTABLE3(i+1)-DTABLE3(i-1),FMS_SVP_KIND_), r8_kind)
+       D2TABLE3(i) = real(0.25_kindl*dtinvl* &
+            (real(DTABLE3(i+1)-DTABLE3(i-1),FMS_SVP_KIND_)), r8_kind)
      enddo
 ! one-sided derivatives at boundaries
 
-     D2TABLE3(1) = real(0.50_vkind*dtinvl* &
-          real(DTABLE3(2)-DTABLE3(1),FMS_SVP_KIND_), r8_kind)
+     D2TABLE3(1) = real(0.50_kindl*dtinvl* &
+          (real(DTABLE3(2)-DTABLE3(1),FMS_SVP_KIND_)), r8_kind)
 
-     D2TABLE3(table_size) = real(0.50_vkind*dtinvl* &
-          real(DTABLE3(table_size)-DTABLE3(table_size-1),FMS_SVP_KIND_), r8_kind)
+     D2TABLE3(table_size) = real(0.50_kindl*dtinvl* &
+          (real(DTABLE3(table_size)-DTABLE3(table_size-1),FMS_SVP_KIND_)), r8_kind)
    endif
+
+   dtres  = real(dtres_loc,  r8_kind)
+   tepsl  = real(tepsl_loc,  r8_kind)
+   tminl  = real(tminl_loc,  r8_kind)
+   dtinvl = real(dtinvl_loc, r8_kind)
 
       use_exact_qs = use_exact_qs_input
       module_is_initialized = .true.
@@ -221,11 +226,11 @@
  real(kind=FMS_SVP_KIND_), parameter :: ESBASW = real(101324.60,FMS_SVP_KIND_)
  real(kind=FMS_SVP_KIND_), parameter :: ESBASI = real(610.71,FMS_SVP_KIND_)
 
- integer, parameter :: vkind=FMS_SVP_KIND_ !< local kind parameter
- real(FMS_SVP_KIND_), parameter :: v1=real(1.0,FMS_SVP_KIND_)
- real(FMS_SVP_KIND_), parameter :: v10=real(10.0,FMS_SVP_KIND_)
+ integer, parameter :: kindl=FMS_SVP_KIND_ !< local kind parameter
+ real(FMS_SVP_KIND_), parameter :: one=real(1.0,FMS_SVP_KIND_)
+ real(FMS_SVP_KIND_), parameter :: ten=real(10.0,FMS_SVP_KIND_)
 
-   TBASW = TFREEZE+100.0_vkind
+   TBASW = TFREEZE+100.0_kindl
    TBASI = TFREEZE
 
    do i = 1, size(tem)
@@ -233,37 +238,37 @@
 !  compute es over ice
 
      if (tem(i) < TBASI) then
-         x = -9.09718_vkind*(TBASI/tem(i)-v1)   &
-             -3.56654_vkind*log10(TBASI/tem(i)) &
-             +0.876793_vkind*(v1-tem(i)/TBASI) + log10(ESBASI)
-         esice =v10**(x)
+         x = -9.09718_kindl*(TBASI/tem(i)-one)   &
+             -3.56654_kindl*log10(TBASI/tem(i)) &
+             +0.876793_kindl*(one-tem(i)/TBASI) + log10(ESBASI)
+         esice =ten**(x)
      else
-         esice = 0.0_vkind
+         esice = 0.0_kindl
      endif
 
 !  compute es over water greater than -20 c.
 !  values over 100 c may not be valid
 !  see smithsonian meteorological tables page 350.
 
-     if (tem(i) > -20.0_vkind+TBASI) then
-         x = -7.90298_vkind*(TBASW/tem(i)-v1)   &
-             +5.02808_vkind*log10(TBASW/tem(i)) &
-             -real(1.3816e-07,FMS_SVP_KIND_)*(v10**((v1-tem(i)/TBASW)*11.344_vkind)-v1) &
-             +real(8.1328e-03,FMS_SVP_KIND_)*(v10**((TBASW/tem(i)-v1)*(-3.49149_vkind))-v1) &
+     if (tem(i) > -20.0_kindl+TBASI) then
+         x = -7.90298_kindl*(TBASW/tem(i)-one)   &
+             +5.02808_kindl*log10(TBASW/tem(i)) &
+             -real(1.3816e-07,FMS_SVP_KIND_)*(ten**((one-tem(i)/TBASW)*11.344_kindl)-one) &
+             +real(8.1328e-03,FMS_SVP_KIND_)*(ten**((TBASW/tem(i)-one)*(-3.49149_kindl))-one) &
              +log10(ESBASW)
-         esh2o = v10**(x)
+         esh2o = ten**(x)
      else
-         esh2o = 0.0_vkind
+         esh2o = 0.0_kindl
      endif
 
 !  derive blended es over ice and supercooled water between -20c and 0c
 
-     if (tem(i) <= -20.0_vkind+TBASI) then
+     if (tem(i) <= -20.0_kindl+TBASI) then
          es(i) = esice
      else if (tem(i) >= TBASI) then
          es(i) = esh2o
      else
-         es(i) = 0.05_vkind*((TBASI-tem(i))*esice + (tem(i)-TBASI+20.0_vkind)*esh2o)
+         es(i) = 0.05_kindl*((TBASI-tem(i))*esice + (tem(i)-TBASI+20.0_kindl)*esh2o)
      endif
 
    enddo
@@ -279,13 +284,13 @@
  real(kind=FMS_SVP_KIND_) :: x, esh2o, TBASW
  integer :: i
 
- integer, parameter :: vkind=FMS_SVP_KIND_
- real(kind=FMS_SVP_KIND_), parameter :: v1=real(1.0,FMS_SVP_KIND_)
- real(kind=FMS_SVP_KIND_), parameter ::v10=real(10.0,FMS_SVP_KIND_)
+ integer, parameter :: kindl=FMS_SVP_KIND_
+ real(kind=FMS_SVP_KIND_), parameter :: one=real(1.0,FMS_SVP_KIND_)
+ real(kind=FMS_SVP_KIND_), parameter :: ten=real(10.0,FMS_SVP_KIND_)
  real(kind=FMS_SVP_KIND_), parameter :: ESBASW = real(101324.60,FMS_SVP_KIND_)
 
 
-   TBASW = TFREEZE+100.0_vkind
+   TBASW = TFREEZE+100.0_kindl
 
    do i = 1, size(tem)
 
@@ -294,12 +299,12 @@
 !  values over 100 c may not be valid
 !  see smithsonian meteorological tables page 350.
 
-         x = -7.90298_vkind*(TBASW/tem(i)-v1) &
-             +5.02808_vkind*log10(TBASW/tem(i)) &
-             -real(1.3816e-07,FMS_SVP_KIND_)*(v10**((v1-tem(i)/TBASW)*11.344_vkind)-v1)    &
-             +real(8.1328e-03,FMS_SVP_KIND_)*(v10**((TBASW/tem(i)-v1)*(-3.49149_vkind))-v1)&
+         x = -7.90298_kindl*(TBASW/tem(i)-one) &
+             +5.02808_kindl*log10(TBASW/tem(i)) &
+             -real(1.3816e-07,FMS_SVP_KIND_)*(ten**((one-tem(i)/TBASW)*11.344_kindl)-one)    &
+             +real(8.1328e-03,FMS_SVP_KIND_)*(ten**((TBASW/tem(i)-one)*(-3.49149_kindl))-one)&
              +log10(ESBASW)
-         esh2o = v10**(x)
+         esh2o = ten**(x)
 
 
          es(i) = esh2o
@@ -317,13 +322,13 @@
  real(kind=FMS_SVP_KIND_)    :: x, TBASW, TBASI
  integer :: i
 
- integer, parameter :: vkind=FMS_SVP_KIND_
+ integer, parameter :: kindl=FMS_SVP_KIND_
  real(kind=FMS_SVP_KIND_), parameter :: ESBASW = real(101324.60,FMS_SVP_KIND_)
  real(kind=FMS_SVP_KIND_), parameter :: ESBASI = real(610.71,FMS_SVP_KIND_)
- real(kind=FMS_SVP_KIND_), parameter :: v1=real(1.0,FMS_SVP_KIND_)
- real(kind=FMS_SVP_KIND_), parameter :: v10=real(10.0,FMS_SVP_KIND_)
+ real(kind=FMS_SVP_KIND_), parameter :: one=real(1.0,FMS_SVP_KIND_)
+ real(kind=FMS_SVP_KIND_), parameter :: ten=real(10.0,FMS_SVP_KIND_)
 
-   TBASW = TFREEZE+100.0_vkind
+   TBASW = TFREEZE+100.0_kindl
    TBASI = TFREEZE
 
    do i = 1, size(tem)
@@ -332,22 +337,22 @@
 
 !  compute es over ice
 
-         x = -9.09718_vkind*(TBASI/tem(i)-v1)   &
-             -3.56654_vkind*log10(TBASI/tem(i)) &
-             +0.876793_vkind*(v1-tem(i)/TBASI) + log10(ESBASI)
-         es(i) =v10**(x)
+         x = -9.09718_kindl*(TBASI/tem(i)-one)   &
+             -3.56654_kindl*log10(TBASI/tem(i)) &
+             +0.876793_kindl*(one-tem(i)/TBASI) + log10(ESBASI)
+         es(i) =ten**(x)
      else
 
 !  compute es over water
 !  values over 100 c may not be valid
 !  see smithsonian meteorological tables page 350.
 
-          x = -7.90298_vkind*(TBASW/tem(i)-v1) &
-              +5.02808_vkind*log10(TBASW/tem(i)) &
-              -real(1.3816e-07,FMS_SVP_KIND_)*(v10**((v1-tem(i)/TBASW)*11.344_vkind)-v1)      &
-              +real(8.1328e-03,FMS_SVP_KIND_)*(v10**((TBASW/tem(i)-v1)*(-3.49149_vkind))-v1) &
+          x = -7.90298_kindl*(TBASW/tem(i)-one) &
+              +5.02808_kindl*log10(TBASW/tem(i)) &
+              -real(1.3816e-07,FMS_SVP_KIND_)*(ten**((one-tem(i)/TBASW)*11.344_kindl)-one)      &
+              +real(8.1328e-03,FMS_SVP_KIND_)*(ten**((TBASW/tem(i)-one)*(-3.49149_kindl))-one) &
              +log10(ESBASW)
-         es(i) = v10**(x)
+         es(i) = ten**(x)
      endif
    enddo
 
@@ -368,7 +373,7 @@
  logical,intent(in),                  optional :: es_over_liq
  logical,intent(in),                  optional :: es_over_liq_and_ice
 
- integer, parameter :: vkind=FMS_SVP_KIND_
+ integer, parameter :: kindl=FMS_SVP_KIND_
 
  real(kind=FMS_SVP_KIND_), dimension(size(temp,1), size(temp,2), size(temp,3)) ::   &
                                                   esloc, desat, denom
@@ -378,7 +383,7 @@
    if (present(hc)) then
      hc_loc = hc
    else
-     hc_loc = 1.0_vkind
+     hc_loc = 1.0_kindl
    endif
  if (present(es_over_liq)) then
    if (present (dqsdT)) then
@@ -408,16 +413,16 @@
    endif
    if (nbad == 0) then
      if (present (q) .and. use_exact_qs) then
-       qs = (1.0_vkind + zvir*q)*eps*esloc/press
+       qs = (1.0_kindl + zvir*q)*eps*esloc/press
        if (present (dqsdT)) then
-         dqsdT = (1.0_vkind + zvir*q)*eps*desat/press
+         dqsdT = (1.0_kindl + zvir*q)*eps*desat/press
        endif
      else  ! (present(q))
-       denom = press - (1.0_vkind - eps)*esloc
+       denom = press - (1.0_kindl - eps)*esloc
        do k=1,size(qs,3)
          do j=1,size(qs,2)
            do i=1,size(qs,1)
-             if (denom(i,j,k) > 0.0_vkind) then
+             if (denom(i,j,k) > 0.0_kindl) then
                qs(i,j,k) = eps*esloc(i,j,k)/denom(i,j,k)
              else
                qs(i,j,k) = eps
@@ -430,12 +435,12 @@
        endif
      endif ! (present(q))
    else ! (nbad = 0)
-     qs = -999.0_vkind
+     qs = -999.0_kindl
      if (present (dqsdT)) then
-       dqsdT = -999.0_vkind
+       dqsdT = -999.0_kindl
      endif
      if (present (esat)) then
-       esat = -999.0_vkind
+       esat = -999.0_kindl
      endif
    endif ! (nbad = 0)
 
@@ -457,7 +462,7 @@
  logical,intent(in),                optional :: es_over_liq
  logical,intent(in),                  optional :: es_over_liq_and_ice
 
- integer, parameter :: vkind=FMS_SVP_KIND_
+ integer, parameter :: kindl=FMS_SVP_KIND_
 
  real(kind=FMS_SVP_KIND_), dimension(size(temp,1), size(temp,2)) :: esloc, desat, denom
  integer :: i, j
@@ -466,7 +471,7 @@
    if (present(hc)) then
      hc_loc = hc
    else
-     hc_loc = 1.0_vkind
+     hc_loc = 1.0_kindl
    endif
 
  if (present(es_over_liq)) then
@@ -497,15 +502,15 @@
    endif
    if (nbad == 0) then
      if (present (q) .and. use_exact_qs) then
-       qs = (1.0_vkind + zvir*q)*eps*esloc/press
+       qs = (1.0_kindl + zvir*q)*eps*esloc/press
        if (present (dqsdT)) then
-         dqsdT = (1.0_vkind + zvir*q)*eps*desat/press
+         dqsdT = (1.0_kindl + zvir*q)*eps*desat/press
        endif
      else  ! (present(q))
-       denom = press - (1.0_vkind - eps)*esloc
+       denom = press - (1.0_kindl - eps)*esloc
       do j=1,size(qs,2)
         do i=1,size(qs,1)
-          if (denom(i,j) > 0.0_vkind) then
+          if (denom(i,j) > 0.0_kindl) then
             qs(i,j) = eps*esloc(i,j)/denom(i,j)
           else
             qs(i,j) = eps
@@ -517,12 +522,12 @@
       endif
     endif ! (present(q))
    else ! (nbad = 0)
-     qs = -999.0_vkind
+     qs = -999.0_kindl
      if (present (dqsdT)) then
-       dqsdT = -999.0_vkind
+       dqsdT = -999.0_kindl
      endif
      if (present (esat)) then
-       esat = -999.0_vkind
+       esat = -999.0_kindl
      endif
    endif ! (nbad = 0)
 
@@ -544,7 +549,7 @@
  logical,intent(in),              optional :: es_over_liq
  logical,intent(in),                  optional :: es_over_liq_and_ice
 
- integer, parameter :: vkind=FMS_SVP_KIND_
+ integer, parameter :: kindl=FMS_SVP_KIND_
 
  real(kind=FMS_SVP_KIND_), dimension(size(temp,1)) :: esloc, desat, denom
  integer :: i
@@ -553,7 +558,7 @@
    if (present(hc)) then
      hc_loc = hc
    else
-     hc_loc = 1.0_vkind
+     hc_loc = 1.0_kindl
    endif
 
  if (present(es_over_liq)) then
@@ -584,14 +589,14 @@
    endif
    if (nbad == 0) then
      if (present (q) .and. use_exact_qs) then
-       qs = (1.0_vkind + zvir*q)*eps*esloc/press
+       qs = (1.0_kindl + zvir*q)*eps*esloc/press
        if (present (dqsdT)) then
-         dqsdT = (1.0_vkind + zvir*q)*eps*desat/press
+         dqsdT = (1.0_kindl + zvir*q)*eps*desat/press
        endif
      else  ! (present(q))
-       denom = press - (1.0_vkind - eps)*esloc
+       denom = press - (1.0_kindl - eps)*esloc
        do i=1,size(qs,1)
-         if (denom(i) >  0.0_vkind) then
+         if (denom(i) >  0.0_kindl) then
            qs(i) = eps*esloc(i)/denom(i)
          else
            qs(i) = eps
@@ -602,12 +607,12 @@
        endif
      endif ! (present(q))
    else ! (nbad = 0)
-     qs = -999.0_vkind
+     qs = -999.0_kindl
      if (present (dqsdT)) then
-       dqsdT = -999.0_vkind
+       dqsdT = -999.0_kindl
      endif
      if (present (esat)) then
-       esat = -999.0_vkind
+       esat = -999.0_kindl
      endif
    endif ! (nbad = 0)
 
@@ -629,7 +634,7 @@
  logical,intent(in),    optional :: es_over_liq
  logical,intent(in),                  optional :: es_over_liq_and_ice
 
- integer, parameter :: vkind=FMS_SVP_KIND_
+ integer, parameter :: kindl=FMS_SVP_KIND_
 
  real(kind=FMS_SVP_KIND_)    :: esloc, desat, denom
  real(kind=FMS_SVP_KIND_)    :: hc_loc
@@ -637,7 +642,7 @@
    if (present(hc)) then
      hc_loc = hc
    else
-     hc_loc = 1.0_vkind
+     hc_loc = 1.0_kindl
    endif
 
  if (present(es_over_liq)) then
@@ -668,13 +673,13 @@
    endif
    if (nbad == 0) then
      if (present (q) .and. use_exact_qs) then
-       qs = (1.0_vkind + zvir*q)*eps*esloc/press
+       qs = (1.0_kindl + zvir*q)*eps*esloc/press
        if (present (dqsdT)) then
-         dqsdT = (1.0_vkind + zvir*q)*eps*desat/press
+         dqsdT = (1.0_kindl + zvir*q)*eps*desat/press
        endif
      else  ! (present(q))
-       denom = press - (1.0_vkind - eps)*esloc
-       if (denom > 0.0_vkind) then
+       denom = press - (1.0_kindl - eps)*esloc
+       if (denom > 0.0_kindl) then
          qs = eps*esloc/denom
        else
          qs = eps
@@ -684,12 +689,12 @@
        endif
      endif ! (present(q))
    else ! (nbad = 0)
-     qs = -999.0_vkind
+     qs = -999.0_kindl
      if (present (dqsdT)) then
-       dqsdT = -999.0_vkind
+       dqsdT = -999.0_kindl
      endif
      if (present (esat)) then
-       esat = -999.0_vkind
+       esat = -999.0_kindl
      endif
    endif ! (nbad = 0)
 
@@ -713,7 +718,7 @@
 
  real(FMS_SVP_KIND_), dimension(size(temp,1), size(temp,2), size(temp,3)) ::    &
                                                     esloc, desat, denom
- integer, parameter :: vkind=FMS_SVP_KIND_
+ integer, parameter :: kindl=FMS_SVP_KIND_
 
  integer :: i, j, k
  real    :: hc_loc
@@ -721,7 +726,7 @@
    if (present(hc)) then
      hc_loc = hc
    else
-     hc_loc = 1.0_vkind
+     hc_loc = 1.0_kindl
    endif
 
  if (present (es_over_liq)) then
@@ -761,7 +766,7 @@
        do k=1,size(mrs,3)
          do j=1,size(mrs,2)
            do i=1,size(mrs,1)
-             if (denom(i,j,k) > 0.0_vkind) then
+             if (denom(i,j,k) > 0.0_kindl) then
                mrs(i,j,k) = eps*esloc(i,j,k)/denom(i,j,k)
              else
                mrs(i,j,k) = eps
@@ -774,12 +779,12 @@
        endif
      endif !(present (mr))
    else
-     mrs = -999.0_vkind
+     mrs = -999.0_kindl
      if (present (dmrsdT)) then
-       dmrsdT = -999.0_vkind
+       dmrsdT = -999.0_kindl
      endif
      if (present (esat)) then
-       esat = -999.0_vkind
+       esat = -999.0_kindl
      endif
    endif
 
@@ -801,7 +806,7 @@
  logical,intent(in),               optional :: es_over_liq
  logical,intent(in),                  optional :: es_over_liq_and_ice
 
- integer, parameter :: vkind=FMS_SVP_KIND_
+ integer, parameter :: kindl=FMS_SVP_KIND_
 
  real(kind=FMS_SVP_KIND_), dimension(size(temp,1), size(temp,2)) :: esloc, desat, denom
  integer :: i, j
@@ -810,7 +815,7 @@
    if (present(hc)) then
      hc_loc = hc
    else
-     hc_loc = 1.0_vkind
+     hc_loc = 1.0_kindl
    endif
 
  if (present (es_over_liq)) then
@@ -849,7 +854,7 @@
        denom = press - esloc
        do j=1,size(mrs,2)
          do i=1,size(mrs,1)
-           if (denom(i,j) > 0.0_vkind) then
+           if (denom(i,j) > 0.0_kindl) then
              mrs(i,j) = eps*esloc(i,j)/denom(i,j)
            else
              mrs(i,j) = eps
@@ -861,12 +866,12 @@
        endif
      endif !(present (mr))
    else
-     mrs = -999.0_vkind
+     mrs = -999.0_kindl
      if (present (dmrsdT)) then
-       dmrsdT = -999.0_vkind
+       dmrsdT = -999.0_kindl
      endif
      if (present (esat)) then
-       esat = -999.0_vkind
+       esat = -999.0_kindl
      endif
    endif
 
@@ -888,7 +893,7 @@
  logical,intent(in),              optional :: es_over_liq
  logical,intent(in),              optional :: es_over_liq_and_ice
 
- integer, parameter :: vkind=FMS_SVP_KIND_
+ integer, parameter :: kindl=FMS_SVP_KIND_
 
  real(kind=FMS_SVP_KIND_), dimension(size(temp,1)) :: esloc, desat, denom
  integer :: i
@@ -897,7 +902,7 @@
    if (present(hc)) then
      hc_loc = hc
    else
-     hc_loc = 1.0_vkind
+     hc_loc = 1.0_kindl
    endif
 
  if (present (es_over_liq)) then
@@ -935,7 +940,7 @@
      else ! (present (mr))
        denom = press - esloc
        do i=1,size(mrs,1)
-         if (denom(i) > 0.0_vkind) then
+         if (denom(i) > 0.0_kindl) then
            mrs(i) = eps*esloc(i)/denom(i)
          else
            mrs(i) = eps
@@ -946,12 +951,12 @@
        endif
      endif !(present (mr))
    else
-     mrs = -999.0_vkind
+     mrs = -999.0_kindl
      if (present (dmrsdT)) then
-       dmrsdT = -999.0_vkind
+       dmrsdT = -999.0_kindl
      endif
      if (present (esat)) then
-       esat = -999.0_vkind
+       esat = -999.0_kindl
      endif
    endif
 
@@ -973,7 +978,7 @@
  logical,intent(in),                  optional :: es_over_liq
  logical,intent(in),                  optional :: es_over_liq_and_ice
 
- integer, parameter :: vkind=FMS_SVP_KIND_
+ integer, parameter :: kindl=FMS_SVP_KIND_
 
  real(kind=FMS_SVP_KIND_)    :: esloc, desat, denom
  real(kind=FMS_SVP_KIND_)    :: hc_loc
@@ -981,7 +986,7 @@
    if (present(hc)) then
      hc_loc = hc
    else
-     hc_loc = 1.0_vkind
+     hc_loc = 1.0_kindl
    endif
 
  if (present (es_over_liq)) then
@@ -1018,7 +1023,7 @@
        endif
      else ! (present (mr))
        denom = press - esloc
-       if (denom > 0.0_vkind) then
+       if (denom > 0.0_kindl) then
          mrs = eps*esloc/denom
        else
          mrs = eps
@@ -1028,12 +1033,12 @@
        endif
      endif !(present (mr))
    else
-     mrs = -999.0_vkind
+     mrs = -999.0_kindl
      if (present (dmrsdT)) then
-       dmrsdT = -999.0_vkind
+       dmrsdT = -999.0_kindl
      endif
      if (present (esat)) then
-       esat = -999.0_vkind
+       esat = -999.0_kindl
      endif
    endif
 
