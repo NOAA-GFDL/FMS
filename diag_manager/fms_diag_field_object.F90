@@ -68,8 +68,8 @@ type fmsDiagField_type
      class(*), allocatable, dimension(:,:,:,:), private :: data_buffer     !< Buffer for field data
      logical, allocatable, private                    :: data_buffer_allocated !< True if the buffer has
                                                                            !! been allocated
-     logical, allocatable, private                    :: math_needs_to_be_done !< If true, do math 
-                                                                           !! functions. False when done. 
+     logical, allocatable, private                    :: math_needs_to_be_done !< If true, do math
+                                                                           !! functions. False when done.
   contains
 !     procedure :: send_data => fms_send_data  !!TODO
 ! Get ID functions
