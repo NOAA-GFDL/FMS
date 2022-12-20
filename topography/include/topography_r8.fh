@@ -90,6 +90,6 @@
 #undef DETERMINE_OCEAN_POINTS_
 #define DETERMINE_OCEAN_POINTS_ determine_ocean_points_r8
 
-#include "gaussian_topog.inc"
+#include "topography.inc"
 !> @}
 ! close documentation grouping
