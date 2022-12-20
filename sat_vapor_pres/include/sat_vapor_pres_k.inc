@@ -16,9 +16,10 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
-!> @defgroup sat_vapor_pres_k_mod sat_vapor_pres_k_mod
-!> @ingroup sat_vapor_pres
+!> @addtogroup sat_vapor_pres_k_mod
 !> @brief Kernel module to be used by @ref sat_vapor_pres_mod for
+!> @{
+
 !! table lookups and calculations
 
 

@@ -16,6 +16,8 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
+!> @addtogroup sat_vapor_pres_mod
+!> @{
 
 !#######################################################################
 ! <SUBROUTINE NAME="lookup_es_0d" INTERFACE="lookup_es">
@@ -1891,3 +1893,7 @@ real(kind=FMS_SVP_KIND_),  intent(in),              optional :: hc
  enddo
 
  end subroutine SHOW_ALL_BAD_3D_
+
+!--------------------------------------------------------------
+
+!> @}
