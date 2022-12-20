@@ -67,8 +67,10 @@ type fmsDiagField_type
      class(*), allocatable, private                   :: data_RANGE(:)     !< The range of the variable data
      class(*), allocatable, dimension(:,:,:,:), private :: data_buffer     !< Buffer for field data
      logical, allocatable, private                    :: data_buffer_allocated !< True if the buffer has
-                                                                            !! been allocated
-    contains
+                                                                           !! been allocated
+     logical, allocatable, private                    :: math_needs_to_be_done !< If true, do math 
+                                                                           !! functions. False when done. 
+  contains
 !     procedure :: send_data => fms_send_data  !!TODO
 ! Get ID functions
      procedure :: get_id => fms_diag_get_id
@@ -78,6 +80,7 @@ type fmsDiagField_type
      procedure :: setID => set_diag_id
      procedure :: set_type => set_vartype
      procedure :: set_data_buffer => set_data_buffer
+     procedure :: set_math_needs_to_be_done => set_math_needs_to_be_done
      procedure :: add_attribute => diag_field_add_attribute
      procedure :: vartype_inq => what_is_vartype
 ! Check functions
@@ -108,6 +111,7 @@ type fmsDiagField_type
      procedure :: has_volume
      procedure :: has_missing_value
      procedure :: has_data_RANGE
+     procedure :: has_data_buffer
 ! Get functions
      procedure :: get_attributes
      procedure :: get_static
@@ -132,6 +136,7 @@ type fmsDiagField_type
      procedure :: dump_field_obj
      procedure :: get_domain
      procedure :: get_type_of_domain
+     procedure :: get_math_needs_to_be_done
 end type fmsDiagField_type
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! variables !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 type(fmsDiagField_type) :: null_ob
@@ -466,6 +471,12 @@ logical function allocate_data_buffer(this, input_data, diag_axis)
 !$omp end single
   allocate_data_buffer = allocated(this%data_buffer)
 end function allocate_data_buffer
+!> Sets the flag saying that the math functions need to be done
+subroutine set_math_needs_to_be_done (this, math_needs_to_be_done)
+  class (fmsDiagField_type) , intent(inout):: this
+  logical, intent (in) :: math_needs_to_be_done !< Flag saying that the math functions need to be done
+  this%math_needs_to_be_done = math_needs_to_be_done
+end subroutine set_math_needs_to_be_done
 !> \brief Prints to the screen what type the diag variable is
 subroutine what_is_vartype(this)
  class (fmsDiagField_type) , intent(inout):: this
@@ -933,6 +944,12 @@ result(rslt)
 !      rslt = this%data_buffer
 !  end select
 end function get_data_buffer
+!> Gets the flag telling if the math functions need to be done
+!! \return Copy of math_needs_to_be_done flag
+pure logical function get_math_needs_to_be_done(this)
+  class (fmsDiagField_type), intent(in) :: this !< diag object
+  get_math_needs_to_be_done = this%math_needs_to_be_done
+end function get_math_needs_to_be_done
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!! Allocation checks
 
@@ -1081,7 +1098,12 @@ pure logical function has_data_RANGE (this)
   class (fmsDiagField_type), intent(in) :: this !< diag object
   has_data_RANGE = allocated(this%data_RANGE)
 end function has_data_RANGE
-
+!> @brief Checks if obj%data_buffer is allocated
+!! @return true if obj%data_buffer is allocated
+pure logical function has_data_buffer (this)
+  class (fmsDiagField_type), intent(in) :: this !< diag object
+  has_data_buffer = allocated(this%data_buffer)
+end function has_data_buffer
 !> @brief Add a attribute to the diag_obj using the diag_field_id
 subroutine diag_field_add_attribute(this, att_name, att_value)
   class (fmsDiagField_type), intent (inout) :: this !< The field object

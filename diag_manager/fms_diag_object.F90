@@ -463,15 +463,18 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
 #if defined(_OPENMP)
   omp_num_threads = omp_get_num_threads()
   omp_level = omp_get_level()
+  buffer_the_data = (omp_num_threads > 1 .AND. omp_level > 0)
 #endif
 !If this is true, buffer data
-  main_if: if ((omp_num_threads > 1 .AND. omp_level > 0) .or. buffer_the_data) then
+  main_if: if (buffer_the_data) then
 !> Buffer the data
     call this%FMS_diag_fields(diag_field_id)%set_data_buffer(field_data, FMS_diag_object%diag_axis)
+    call this%FMS_diag_fields(diag_field_id)%set_math_needs_to_be_done(.TRUE.)
     fms_diag_accept_data = .TRUE.
     return
   else
 !!TODO: Loop through fields and do averages/math functions
+    call this%FMS_diag_fields(diag_field_id)%set_math_needs_to_be_done(.FALSE.)
     fms_diag_accept_data = .TRUE.
     return
   end if main_if
@@ -487,19 +490,33 @@ subroutine fms_diag_send_complete(this, time_step)
   class(fmsDiagObject_type), target, intent (inout) :: this !< The diag object
   TYPE (time_type),                  INTENT(in)     :: time_step !< The current model time
 
-  integer :: i !< For do loops
+  integer :: ifile !< For file loops
+  integer :: ifield !< For field loops
 
 #ifndef use_yaml
 CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling with -Duse_yaml")
 #else
   class(fmsDiagFileContainer_type), pointer :: diag_file !< Pointer to this%FMS_diag_files(i) (for convenience)
-
+  class(fmsDiagField_type), pointer :: diag_field !< Pointer to this%FMS_diag_files(i)%diag_field(j)
   logical :: file_is_opened_this_time_step !< True if the file was opened in this time_step
                                            !! If true the metadata will need to be written
-
-  do i = 1, size(this%FMS_diag_files)
-    diag_file => this%FMS_diag_files(i)
-
+  logical :: math !< True if the math functions need to be called using the data buffer,
+                  !! False if the math functions were done in accept_data
+  integer, dimension(:), allocatable :: file_field_ids !< Array of field IDs for a file
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! In the future, this may be parallelized for offloading
+  file_loop: do ifile = 1, size(this%FMS_diag_files)
+    diag_file => this%FMS_diag_files(ifile)
+    allocate (file_field_ids(size(diag_file%FMS_diag_file%get_field_ids() )))
+    file_field_ids = diag_file%FMS_diag_file%get_field_ids()
+    field_loop: do ifield = 1, size(file_field_ids)
+      diag_field => this%FMS_diag_fields(file_field_ids(ifield))
+      !> Check if math needs to be done
+      math = diag_field%get_math_needs_to_be_done()
+      calling_math: if (math) then
+        !!TODO: call math functions !!
+      endif calling_math
+    enddo field_loop
     !< Go away if the file is a subregional file and the current PE does not have any data for it
     if (.not. diag_file%writing_on_this_pe()) cycle
 
@@ -516,7 +533,7 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
     !TODO call diag_file%add_variable_data()
       call diag_file%update_next_write(time_step)
     endif
-  enddo
+  enddo file_loop
 #endif
 
 end subroutine fms_diag_send_complete
