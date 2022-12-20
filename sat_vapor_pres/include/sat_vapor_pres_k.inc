@@ -50,12 +50,12 @@
   real(kind=FMS_SVP_KIND_) :: hdtinv, tinrc, tfact
   integer :: i
 
-!local module variables
+! local module variables
   real(kind=FMS_SVP_KIND_) :: dtres_loc, tepsl_loc, tminl_loc, dtinvl_loc
 
    dtres_loc  = real(dtres, FMS_SVP_KIND_)
    tepsl_loc  = real(tepsl, FMS_SVP_KIND_)
-   tminl_loc  = real(tmin,  FMS_SVP_KIND_)
+   tminl_loc  = real(tminl,  FMS_SVP_KIND_)
    dtinvl_loc = real(dtinvl, FMS_SVP_KIND_)
 
    err_msg = ''
