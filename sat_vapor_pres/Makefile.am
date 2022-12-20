@@ -33,14 +33,23 @@ noinst_LTLIBRARIES = libsat_vapor_pres.la
 libsat_vapor_pres_la_SOURCES = \
 	sat_vapor_pres.F90 \
 	include/sat_vapor_pres_r4.fh \
+	include/sat_vapor_pres_r8.fh \
 	include/sat_vapor_pres.inc \
 	sat_vapor_pres_k.F90 \
 	include/sat_vapor_pres_k_r4.fh \
+	include/sat_vapor_pres_k_r8.fh \
 	include/sat_vapor_pres_k.inc
 
 # Some mods are dependant on other mods in this dir.
-sat_vapor_pres_mod.$(FC_MODEXT): sat_vapor_pres_k_mod.$(FC_MODEXT) include/sat_vapor_pres_r4.fh include/sat_vapor_pres.inc
-sat_vapor_pres_k_mod.$(FC_MODEXT): include/sat_vapor_pres_k_r4.fh include/sat_vapor_pres_k_r8.fh include/sat_vapor_pres_k.inc
+sat_vapor_pres_mod.$(FC_MODEXT): \
+	sat_vapor_pres_k_mod.$(FC_MODEXT) \
+	include/sat_vapor_pres_r4.fh \
+	include/sat_vapor_pres_r8.fh \
+	include/sat_vapor_pres.inc
+sat_vapor_pres_k_mod.$(FC_MODEXT): \
+	include/sat_vapor_pres_k_r4.fh \
+	include/sat_vapor_pres_k_r8.fh \
+	include/sat_vapor_pres_k.inc
 
 # Mod files are built and then installed as headers.
 MODFILES = \
