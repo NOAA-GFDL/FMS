@@ -1502,7 +1502,7 @@ subroutine fms_diag_yaml_out()
   type(diagYamlFilesVar_type), pointer :: varptr !< pointer for individual variables
   type (fmsyamloutkeys_type), allocatable :: keys(:), keys2(:), keys3(:)
   type (fmsyamloutvalues_type), allocatable :: vals(:), vals2(:), vals3(:)
-  integer :: i, j
+  integer :: i, j, k
   character(len=128) :: tmpstr1, tmpstr2 !< string to store output fields
   integer, parameter :: tier1size = 3 !< size of first tier, will always be 3 for basedate, title and diag_files
   integer :: tier2size, tier3size !< size of each 'tier'(based one numbers of tabs) in the yaml
@@ -1563,32 +1563,43 @@ subroutine fms_diag_yaml_out()
     call fms_f2c_string(keys2(i)%key5, 'unlimdim')
     call fms_f2c_string(keys2(i)%key6, 'new_file_freq')
     call fms_f2c_string(keys2(i)%key7, 'new_file_freq_units')
-    !! gcc bug causes this key to sometimes not show up
     call fms_f2c_string(keys2(i)%key8, 'start_time')
     call fms_f2c_string(keys2(i)%key9, 'file_duration')
     call fms_f2c_string(keys2(i)%key10, 'file_duration_units')
     if (fileptr%has_file_fname())     call fms_f2c_string(vals2(i)%val1, fileptr%file_fname)
     if (fileptr%has_file_unlimdim())  call fms_f2c_string(vals2(i)%val5, fileptr%file_unlimdim)
     if (fileptr%has_file_timeunit()) then
-      if ( get_diag_unit_string(fileptr%file_timeunit) .eq. 'N/A' ) call mpp_error(FATAL, &
+      if ( get_diag_unit_string((/ fileptr%file_timeunit /)) .eq. '' ) call mpp_error(FATAL, &
             "fms_diag_yaml_out: invalid time unit for file:"//fileptr%file_fname)
-      call fms_f2c_string(vals2(i)%val4, get_diag_unit_string(fileptr%file_timeunit))
+      call fms_f2c_string(vals2(i)%val4, get_diag_unit_string((/fileptr%file_timeunit/)))
     endif
     if (fileptr%has_file_freq()) then
-      write(tmpstr1, '(I0)') fileptr%file_freq
+      tmpstr1 = ''
+      do k=1, SIZE(fileptr%file_freq) 
+        if(fileptr%file_freq(k) .eq. -999) exit
+        tmpstr2 = ''
+        write(tmpstr2, '(I0)') fileptr%file_freq(k)
+        tmpstr1 = trim(tmpstr1)//trim(tmpstr2)//" " 
+      enddo
       call fms_f2c_string(vals2(i)%val2, trim(tmpstr1))
     endif
-    if (fileptr%has_file_frequnit()) then
-      if ( get_diag_unit_string(fileptr%file_frequnit) .eq. 'N/A' ) call mpp_error(FATAL, &
+    if (fileptr%file_frequnit(1) .ne. DIAG_NULL) then
+      if ( get_diag_unit_string((/fileptr%file_frequnit/)) .eq. '' ) call mpp_error(FATAL, &
             "fms_diag_yaml_out: invalid frequency unit for file:"//fileptr%file_fname)
-      call fms_f2c_string(vals2(i)%val3, get_diag_unit_string(fileptr%file_frequnit))
+      call fms_f2c_string(vals2(i)%val3, get_diag_unit_string( (/fileptr%file_frequnit/)))
     endif
-    if(fileptr%has_file_new_file_freq()) then
-      write(tmpstr1, '(I0)') fileptr%file_new_file_freq
-      call fms_f2c_string(vals2(i)%val6, tmpstr1)
+    if(fileptr%file_new_file_freq(1) .ne. -999) then
+      tmpstr1 = ''
+      do k=1, SIZE(fileptr%file_new_file_freq) 
+        if(fileptr%file_new_file_freq(k) .eq. -999) exit
+        tmpstr2 = ''
+        write(tmpstr2, '(I0)') fileptr%file_new_file_freq(k)
+        tmpstr1 = trim(tmpstr1)//trim(tmpstr2)//" "
+      enddo
+      call fms_f2c_string(vals2(i)%val6, trim(tmpstr1))
     endif
-    if(fileptr%has_file_new_file_freq_units()) then
-      if ( get_diag_unit_string(fileptr%file_new_file_freq_units) .eq. 'N/A' ) call mpp_error(FATAL, &
+    if(fileptr%file_new_file_freq_units(1) .ne. DIAG_NULL) then
+      if ( get_diag_unit_string(fileptr%file_new_file_freq_units) .eq. '' ) call mpp_error(FATAL, &
             "fms_diag_yaml_out: invalid new file frequency unit for file:"//fileptr%file_fname)
       call fms_f2c_string(vals2(i)%val7, get_diag_unit_string(fileptr%file_new_file_freq_units))
     endif
@@ -1596,12 +1607,18 @@ subroutine fms_diag_yaml_out()
       call fms_f2c_string(vals(i)%val8, trim(fileptr%get_file_start_time()))
       st_vals(i) = fileptr%get_file_start_time()
     endif
-    if(fileptr%has_file_duration()) then
-      write(tmpstr1, '(I0)') fileptr%file_duration
-      call fms_f2c_string(vals2(i)%val9, tmpstr1)
+    if(fileptr%file_duration(1) .ne. -999) then
+      tmpstr1 = ''
+      do k=1, SIZE(fileptr%file_duration) 
+        if(fileptr%file_duration(k) .eq. -999) exit
+        tmpstr2 = ''
+        write(tmpstr2, '(I0)') fileptr%file_duration(k)
+        tmpstr1 = trim(tmpstr1)//trim(tmpstr2)//" " 
+      enddo
+      call fms_f2c_string(vals2(i)%val9, trim(tmpstr1))
     endif
-    if(fileptr%has_file_duration_units()) then
-      if ( get_diag_unit_string(fileptr%file_duration_units) .eq. 'N/A' ) call mpp_error(FATAL, &
+    if(fileptr%file_duration_units(1) .ne. DIAG_NULL) then
+      if ( get_diag_unit_string(fileptr%file_duration_units) .eq. '' ) call mpp_error(FATAL, &
             "fms_diag_yaml_out: invalid new file duration unit for file:"//fileptr%file_fname)
       call fms_f2c_string(vals2(i)%val10, get_diag_unit_string(fileptr%file_duration_units))
     endif
@@ -1639,10 +1656,12 @@ subroutine fms_diag_yaml_out()
         call fms_f2c_string(keys3(key3_i)%key10, 'pow_value')
         if (varptr%has_var_module())   call fms_f2c_string(vals3(key3_i)%val1, varptr%var_module)
         if (varptr%has_var_varname())  call fms_f2c_string(vals3(key3_i)%val2, varptr%var_varname)
-        if( get_diag_reduction_string(varptr%var_reduction) .eq. 'N/A') call mpp_error(FATAL,  &
+        if (varptr%has_var_reduction()) then
+            if( get_diag_reduction_string((/varptr%var_reduction/)) .eq. '') call mpp_error(FATAL,  &
                     "fms_diag_yaml_out: invalid reduction type for variable:" //varptr%var_varname)
-        if (varptr%has_var_reduction())call fms_f2c_string(vals3(key3_i)%val3, &
-                                                           get_diag_reduction_string(varptr%var_reduction))
+            call fms_f2c_string(vals3(key3_i)%val3, &
+                    get_diag_reduction_string((/varptr%var_reduction/)))
+        endif
         if (varptr%has_var_outname())  call fms_f2c_string(vals3(key3_i)%val5, varptr%var_outname)
         if (varptr%has_var_longname()) call fms_f2c_string(vals3(key3_i)%val6, varptr%var_longname)
         if (varptr%has_var_units()) call fms_f2c_string(vals3(key3_i)%val7, varptr%var_units)
@@ -1658,7 +1677,7 @@ subroutine fms_diag_yaml_out()
               call fms_f2c_string(vals3(key3_i)%val4, 'r8')
           end select
         endif
-        if (varptr%has_var_zbounds()) then
+        if (varptr%has_var_zbounds() .and. ANY(varptr%var_zbounds .ne. -999)) then
           tmpstr1 = ''
           !! trims don't seem to work with just (F) for the format code
           !! these are just abritrary lengths
@@ -1702,7 +1721,7 @@ subroutine fms_diag_yaml_out()
         call fms_f2c_string(vals3(key3_i)%val1, 'null')
     end select
     tmpstr1 = ''; write(tmpstr1, '(I0)') fileptr%file_sub_region%tile
-    call fms_f2c_string(vals3(key3_i)%val2, tmpstr1)
+    if(fileptr%file_sub_region%tile .ne. -999) call fms_f2c_string(vals3(key3_i)%val2, tmpstr1)
     if( allocated(fileptr%file_sub_region%corners)) then
       select type (corners => fileptr%file_sub_region%corners)
       type is (real(r8_kind))
@@ -1821,11 +1840,13 @@ subroutine fms_diag_yaml_out()
   enddo
   tier2size = i
   ! gcc bug seems to occasionally ignore the start_time key when its set in the loop above
-  ! so we'll just set it again
+  ! so we'll just set them again
   do i=1, SIZE(keys2)
     call fms_f2c_string(keys2(i)%key8, 'start_time')
     call fms_f2c_string(vals2(i)%val8, st_vals(i))
   enddo
+  call fms_f2c_string(keys3(1)%key4, 'kind') !! also misses the first kind key unless its set again
+
   if (DEBUG) print *, 'tier1size', 1, 'tier2size', SIZE(diag_yaml%diag_files), &
                                                       & 'tier3size', tier3size, 'tier3each', tier3each
   call write_yaml_from_struct_3( 'diag_out.yaml'//c_null_char,  1, keys, vals,          &
@@ -1837,45 +1858,59 @@ subroutine fms_diag_yaml_out()
 end subroutine
 
 !> private function for getting unit string from diag_data parameter values
-character(len=7) pure function get_diag_unit_string( unit_param )
-  integer, intent(in) :: unit_param !< A diag unit parameter value from diag_data_mod.
-                                    !! <br>eg. DIAG_SECONDS, DIAG_MINUTES,DIAG_HOURS, DIAG_DAYS, DIAG_YEARS
-  select case(unit_param)
-    case (DIAG_SECONDS)
-      get_diag_unit_string = 'seconds'
-    case (DIAG_MINUTES)
-      get_diag_unit_string = 'minutes'
-    case (DIAG_HOURS)
-      get_diag_unit_string = 'hours'
-    case (DIAG_DAYS)
-      get_diag_unit_string = 'days'
-    case (DIAG_YEARS)
-      get_diag_unit_string = 'years'
-    case default
-      get_diag_unit_string = 'N/A'
-  end select
+pure function get_diag_unit_string( unit_param )
+    integer, intent(in) :: unit_param(:) !< diag unit parameter values from diag_data_mod.
+                                      !! <br>eg. DIAG_SECONDS, DIAG_MINUTES,DIAG_HOURS, DIAG_DAYS, DIAG_YEARS
+    character(len=8 * SIZE(unit_param)) :: get_diag_unit_string
+    character(len=7) :: tmp
+    integer :: i
+    get_diag_unit_string = ' '
+    do i=1, SIZE(unit_param) 
+        select case(unit_param(i))
+            case (DIAG_SECONDS)
+                tmp = 'seconds'
+            case (DIAG_MINUTES)
+                tmp = 'minutes'
+            case (DIAG_HOURS)
+                tmp = 'hours'
+            case (DIAG_DAYS)
+                tmp = 'days'
+            case (DIAG_YEARS)
+                tmp = 'years'
+            case default 
+                exit 
+        end select
+        get_diag_unit_string = trim(get_diag_unit_string) // trim(tmp) // ' '
+    enddo
+    
 end function
 
 !> private function for getting reduction type string from parameter values
-character(len=7) pure function get_diag_reduction_string( reduction_val ) &
-  result(rslt)
-  integer, intent(in) :: reduction_val !< reduction type (eg. time_average)
-  select case (reduction_val)
-    case (time_none)
-      rslt = 'none'
-    case (time_average)
-      rslt = 'average'
-    case (time_min)
-      rslt = 'min'
-    case (time_max)
-      rslt = 'max'
-    case (time_rms)
-      rslt = 'rms'
-    case (time_sum)
-      rslt = 'sum'
-    case default
-      rslt = 'N/A'
-  end select
+pure function get_diag_reduction_string( reduction_val )
+    integer, intent(in) :: reduction_val(:) !< reduction types (eg. time_average)
+    integer :: i
+    character(len=8 * MAX_FREQ) :: get_diag_reduction_string
+    character(len=7) :: tmp
+    get_diag_reduction_string = ''
+    do i=1, SIZE(reduction_val) 
+        select case (reduction_val(i))
+            case (time_none)
+                tmp = 'none'
+            case (time_average)
+                tmp = 'average'
+            case (time_min)
+                tmp = 'min'
+            case (time_max)
+                tmp = 'max'
+            case (time_rms)
+                tmp = 'rms'
+            case (time_sum)
+                tmp = 'sum'
+            case default
+                exit 
+        end select
+        get_diag_reduction_string = trim(get_diag_reduction_string) // trim(tmp) // ' '
+    enddo
 end function
 
 #endif

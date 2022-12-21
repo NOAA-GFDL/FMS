@@ -891,7 +891,7 @@ diag_files:
   new_file_freq:
   new_file_freq_units:
   start_time:
-  file_duration: -999
+  file_duration:
   file_duration_units:
   varlist:
   - module: ocn_mod
@@ -901,7 +901,7 @@ diag_files:
     output_name:
     long_name:
     units:
-    zbounds: -999.00000, -999.00000
+    zbounds:
     n_diurnal:
     pow_value:
   - module: ocn_mod
@@ -911,12 +911,12 @@ diag_files:
     output_name: potato
     long_name:
     units:
-    zbounds: -999.00000, -999.00000
+    zbounds:
     n_diurnal:
     pow_value:
   sub_region:
   - grid_type: null
-    tile: -999
+    tile:
     corner1:
     corner2:
     corner3:
@@ -932,7 +932,7 @@ diag_files:
   new_file_freq:
   new_file_freq_units:
   start_time:
-  file_duration: -999
+  file_duration:
   file_duration_units:
   varlist:
   - module: atm_mod
@@ -942,7 +942,7 @@ diag_files:
     output_name:
     long_name:
     units:
-    zbounds: -999.00000, -999.00000
+    zbounds:
     n_diurnal:
     pow_value:
   - module: atm_mod
@@ -952,7 +952,7 @@ diag_files:
     output_name: i_on_a_sphere
     long_name:
     units:
-    zbounds: -999.00000, -999.00000
+    zbounds:
     n_diurnal:
     pow_value:
   - module: atm_mod
@@ -962,12 +962,12 @@ diag_files:
     output_name:
     long_name:
     units:
-    zbounds: -999.00000, -999.00000
+    zbounds:
     n_diurnal:
     pow_value:
   sub_region:
   - grid_type: null
-    tile: -999
+    tile:
     corner1:
     corner2:
     corner3:
@@ -982,7 +982,7 @@ diag_files:
   new_file_freq:
   new_file_freq_units:
   start_time:
-  file_duration: -999
+  file_duration:
   file_duration_units:
   varlist:
   - module: lnd_mod
@@ -992,7 +992,7 @@ diag_files:
     output_name:
     long_name:
     units:
-    zbounds: -999.00000, -999.00000
+    zbounds:
     n_diurnal:
     pow_value:
   - module: lnd_mod
@@ -1002,12 +1002,12 @@ diag_files:
     output_name:
     long_name:
     units:
-    zbounds: -999.00000, -999.00000
+    zbounds:
     n_diurnal:
     pow_value:
   sub_region:
   - grid_type: null
-    tile: -999
+    tile:
     corner1:
     corner2:
     corner3:
@@ -1022,7 +1022,7 @@ diag_files:
   new_file_freq:
   new_file_freq_units:
   start_time:
-  file_duration: -999
+  file_duration:
   file_duration_units:
   varlist:
   - module: lnd_mod
@@ -1032,12 +1032,12 @@ diag_files:
     output_name:
     long_name:
     units:
-    zbounds: -999.00000, -999.00000
+    zbounds:
     n_diurnal:
     pow_value:
   sub_region:
   - grid_type: null
-    tile: -999
+    tile:
     corner1:
     corner2:
     corner3:
@@ -1052,7 +1052,7 @@ diag_files:
   new_file_freq:
   new_file_freq_units:
   start_time:
-  file_duration: -999
+  file_duration:
   file_duration_units:
   varlist:
   - module: atm_mod
@@ -1062,7 +1062,7 @@ diag_files:
     output_name:
     long_name:
     units:
-    zbounds: -999.00000, -999.00000
+    zbounds:
     n_diurnal:
     pow_value:
   sub_region:
@@ -1092,12 +1092,12 @@ diag_files:
     output_name:
     long_name:
     units:
-    zbounds: -999.00000, -999.00000
+    zbounds:
     n_diurnal:
     pow_value:
   sub_region:
   - grid_type: null
-    tile: -999
+    tile:
     corner1:
     corner2:
     corner3:
