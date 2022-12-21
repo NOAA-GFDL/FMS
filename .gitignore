@@ -17,7 +17,7 @@
 #* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 #***********************************************************************
 # https://github.com/github/gitignore/blob/main/Fortran.gitignore
-# github uses C++ template, this only includes what fms generates 
+# github uses C++ template, this only includes what fms generates
 *~
 *.a
 *.o
