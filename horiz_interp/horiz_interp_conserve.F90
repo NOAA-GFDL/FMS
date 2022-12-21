@@ -150,6 +150,7 @@ contains
         if(associated(Interp%jlat))                 deallocate(Interp%jlat)
         if(associated(Interp%kind8_reals%faci))     deallocate(Interp%kind8_reals%faci)
         if(associated(Interp%ilon))                 deallocate(Interp%ilon)
+        deallocate(Interp%kind8_reals)
       else if( allocated( Interp%kind4_reals)) then
         if(associated(Interp%kind4_reals%area_src)) deallocate(Interp%kind4_reals%area_src)
         if(associated(Interp%kind4_reals%area_dst)) deallocate(Interp%kind4_reals%area_dst)
@@ -157,6 +158,7 @@ contains
         if(associated(Interp%jlat))                 deallocate(Interp%jlat)
         if(associated(Interp%kind4_reals%faci))     deallocate(Interp%kind4_reals%faci)
         if(associated(Interp%ilon))                 deallocate(Interp%ilon)
+        deallocate(Interp%kind4_reals)
       endif
     case (2)
       if( allocated( Interp%kind8_reals)) then
@@ -165,12 +167,14 @@ contains
         if(associated(Interp%i_dst)) deallocate(Interp%i_dst)
         if(associated(Interp%j_dst)) deallocate(Interp%j_dst)
         if(associated(Interp%kind8_reals%area_frac_dst)) deallocate(Interp%kind8_reals%area_frac_dst)
+        deallocate(Interp%kind8_reals)
       else if( allocated( Interp%kind4_reals)) then
         if(associated(Interp%i_src)) deallocate(Interp%i_src)
         if(associated(Interp%j_src)) deallocate(Interp%j_src)
         if(associated(Interp%i_dst)) deallocate(Interp%i_dst)
         if(associated(Interp%j_dst)) deallocate(Interp%j_dst)
         if(associated(Interp%kind4_reals%area_frac_dst)) deallocate(Interp%kind4_reals%area_frac_dst)
+        deallocate(Interp%kind4_reals)
        endif
     end select
 

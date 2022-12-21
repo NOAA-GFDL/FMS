@@ -50,8 +50,8 @@ subroutine CONSERVE_NEW_1DX1D_ ( Interp, lon_in, lat_in, lon_out, lat_out, verbo
     pe      = mpp_pe()
     root_pe = mpp_root_pe()
     !-----------------------------------------------------------------------
-    hpi = real(0.5, FMS_HI_KIND_)*pi
-    tpi = real(4., FMS_HI_KIND_)*hpi
+    hpi = real(0.5, FMS_HI_KIND_)*real(pi, FMS_HI_KIND_)
+    tpi = real(4., FMS_HI_KIND_)*real(hpi, FMS_HI_KIND_)
     Interp%version = 1
     nlon_in = size(lon_in(:))-1;  nlat_in = size(lat_in(:))-1
     nlon_out = size(lon_out(:))-1;  nlat_out = size(lat_out(:))-1
@@ -801,7 +801,7 @@ subroutine CONSERVE_NEW_1DX1D_ ( Interp, lon_in, lat_in, lon_out, lat_out, verbo
     integer, intent(in),        optional :: verbose
     integer :: i, i_src, j_src, i_dst, j_dst
 
-    data_out = 0.0
+    data_out = real(0.0, FMS_HI_KIND_)
     do i = 1, Interp%nxgrid
        i_src = Interp%i_src(i); j_src = Interp%j_src(i)
        i_dst = Interp%i_dst(i); j_dst = Interp%j_dst(i)

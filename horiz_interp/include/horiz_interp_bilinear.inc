@@ -113,7 +113,7 @@
                 wtw = (lon_in(ie) -lon+tpi+epsln)/(lon_in(ie)-lon_in(is)+tpi+epsln)
              endif
           endif
-          wte = 1. - wtw
+          wte = real(1., FMS_HI_KIND_) - wtw
 
           js = INDP_(lat, lat_in )
 
@@ -169,7 +169,7 @@
 
     return
 
-  end subroutine
+  end subroutine HORIZ_INTERP_BILINEAR_NEW_1D_
 
   !#######################################################################
 
@@ -317,7 +317,7 @@
           b  = a1*b2-a2*b1+c1*d2-c2*d1+c2*lon-c1*lat
           c  = a2*lon-a1*lat+a1*d2-a2*d1
           quadra = b*b-real(4., FMS_HI_KIND_)*a*c
-          if(abs(quadra) < epsln) quadra = 0.0
+          if(abs(quadra) < epsln) quadra = real(0.0, FMS_HI_KIND_)
           if(quadra < 0.0) call mpp_error(FATAL, &
                "horiz_interp_bilinear_mod: No solution existed for this quadratic equation")
           if ( abs(a) .lt. epsln2) then  ! a = 0 is a linear equation
@@ -329,8 +329,8 @@
              y2 = real(0.5, FMS_HI_KIND_)*(-b-sqrt(quadra))/a
              if(abs(y1) < epsln2) y1 = real(0.0, FMS_HI_KIND_)
              if(abs(y2) < epsln2) y2 = real(0.0, FMS_HI_KIND_)
-             if(abs(1.0-y1) < epsln2) y1 = real(1.0, FMS_HI_KIND_)
-             if(abs(1.0-y2) < epsln2) y2 = real(1.0, FMS_HI_KIND_)
+             if(abs(real(1.0, FMS_HI_KIND_)-y1) < epsln2) y1 = real(1.0, FMS_HI_KIND_)
+             if(abs(real(1.0, FMS_HI_KIND_)-y2) < epsln2) y2 = real(1.0, FMS_HI_KIND_)
              num_solution = 0
              if(y1 >= real(0.0, FMS_HI_KIND_) .and. y1 <= real(1.0, FMS_HI_KIND_)) then
                 y = y1
@@ -349,17 +349,17 @@
            if(abs(a1+c1*y) < epsln) call mpp_error(FATAL, &
                "horiz_interp_bilinear_mod: the denomenator is 0")
            if(abs(y) < epsln2) y = real(0.0, FMS_HI_KIND_)
-           if(abs(1.0-y) < epsln2) y = real(1.0, FMS_HI_KIND_)
+           if(abs(real(1.0. FMS_HI_KIND_)-y) < epsln2) y = real(1.0, FMS_HI_KIND_)
            x = (lon-b1*y-d1)/(a1+c1*y)
            if(abs(x) < epsln2) x = real(0.0, FMS_HI_KIND_)
-           if(abs(1.0-x) < epsln2) x = real(1.0, FMS_HI_KIND_)
+           if(abs(real(1.0, FMS_HI_KIND_)-x) < epsln2) x = real(1.0, FMS_HI_KIND_)
            ! x and y should be between 0 and 1.
            !! Added for ECDA
            if(use_new_search) then
-             if (x < 0.0) x = real(0.0, FMS_HI_KIND_) ! snz
-             if (y < 0.0) y = real(0.0, FMS_HI_KIND_) ! snz
-             if (x > 1.0) x = real(1.0, FMS_HI_KIND_)
-             if (y > 1.0) y = real(1.0, FMS_HI_KIND_)
+             if (x < real(0.0, FMS_HI_KIND_)) x = real(0.0, FMS_HI_KIND_) ! snz
+             if (y < real(0.0, FMS_HI_KIND_)) y = real(0.0, FMS_HI_KIND_) ! snz
+             if (x > real(1.0, FMS_HI_KIND_)) x = real(1.0, FMS_HI_KIND_)
+             if (y > real(1.0, FMS_HI_KIND_)) y = real(1.0, FMS_HI_KIND_)
            endif
            if( x>real(1., FMS_HI_KIND_) .or. x< real(0., FMS_HI_KIND_) .or. y>real(1.,FMS_HI_KIND_) .or. &
                y < real(0., FMS_HI_KIND_)) &
@@ -1019,7 +1019,7 @@
                    endif
                 endif
 
-                if( wtw .GE. 0.5 .AND. wts .GE. 0.5 ) then  ! zone 1
+                if( wtw .GE. real(0.5,FMS_HI_KIND_) .AND. wts .GE. real(0.5,FMS_HI_KIND_) ) then  ! zone 1
                    w = real(2.0, FMS_HI_KIND_)*(wtw-real(0.5, FMS_HI_KIND_))
                    s = real(2.0, FMS_HI_KIND_)*(wts-real(0.5, FMS_HI_KIND_))
                    f1 = data_in(is,js)

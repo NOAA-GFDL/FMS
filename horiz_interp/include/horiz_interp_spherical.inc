@@ -65,7 +65,7 @@
     pe      = mpp_pe()
     root_pe = mpp_root_pe()
 
-    tpi = real(2.0, FMS_HI_KIND_)*PI; hpi = real(0.5, FMS_HI_KIND_)*PI
+    tpi = real(2.0, FMS_HI_KIND_)*PI; hpi = real(0.5, FMS_HI_KIND_)*real(PI<FMS_HI_KIND_)
 
     num_neighbors = num_nbrs_default
     if(present(num_nbrs)) num_neighbors = num_nbrs
@@ -98,10 +98,10 @@
     min_theta_dst=tpi;max_theta_dst=real(0.0, FMS_HI_KIND_);min_phi_dst=pi;max_phi_dst=-pi
     min_theta_src=tpi;max_theta_src=real(0.0, FMS_HI_KIND_);min_phi_src=pi;max_phi_src=-pi
 
-    where(theta_dst<real(0.0, FMS_HI_KIND_))  theta_dst = theta_dst+tpi
-    where(theta_dst>tpi)  theta_dst = theta_dst-tpi
-    where(theta_src<real(0.0, FMS_HI_KIND_))  theta_src = theta_src+tpi
-    where(theta_src>tpi)  theta_src = theta_src-tpi
+    where(theta_dst<real(0.0, FMS_HI_KIND_))  theta_dst = theta_dst+real(tpi,FMS_HI_KIND_)
+    where(theta_dst>real(tpi,FMS_HI_KIND_))  theta_dst = theta_dst-real(tpi,FMS_HI_KIND_)
+    where(theta_src<real(0.0, FMS_HI_KIND_))  theta_src = theta_src+real(tpi,FMS_HI_KIND_)
+    where(theta_src>real(tpi,FMS_HI_KIND_))  theta_src = theta_src-real(tpi,FMS_HI_KIND_)
 
     where(phi_dst < -hpi) phi_dst = -hpi
     where(phi_dst > hpi)  phi_dst =  hpi
@@ -461,7 +461,7 @@
                       i0 = mod(step,map_src_xsize)
 
                       if (i0 == 0) i0 = map_src_xsize
-                      res = float(step)/float(map_src_xsize)
+                      res = real(step, FMS_HI_KIND_)/real(map_src_xsize, FMS_HI_KIND_)
                       j0 = ceiling(res)
                       continue_RADIAL_SEARCH_ = .true.
                       do while (continue_RADIAL_SEARCH_)

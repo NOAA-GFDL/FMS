@@ -774,13 +774,13 @@
    nlat_in = size(data_in,2)
 
    do i = 1, nlon_in+1
-      blon_in(i) = wb + float(i-1)*dx
+      blon_in(i) = wb + real(i-1, FMS_HI_KIND_)*dx
    enddo
       if (abs(blon_in(nlon_in+1)-blon_in(1)-tpi) < epsilon(blon_in)) &
               blon_in(nlon_in+1)=blon_in(1)+tpi
 
    do j = 2, nlat_in
-      blat_in(j) = sb + float(j-1)*dy
+      blat_in(j) = sb + real(j-1, FMS_HI_KIND_)*dy
    enddo
       blat_in(1)         = real(-0.5, FMS_HI_KIND_)*real(pi, FMS_HI_KIND_)
       blat_in(nlat_in+1) = real(0.5, FMS_HI_KIND_)*real(pi, FMS_HI_KIND_)

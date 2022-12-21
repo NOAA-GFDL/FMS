@@ -159,13 +159,13 @@
           icl = 0
           icu = 0
           !--- cyclic condition, do we need to use do while
-          if( xz .gt. Interp%HI_KIND_TYPE_%lon_in(nlon_in) ) xz = xz - tpi
-          if( xz .le. Interp%HI_KIND_TYPE_%lon_in(1) ) xz = xz + tpi
+          if( xz .gt. Interp%HI_KIND_TYPE_%lon_in(nlon_in) ) xz = xz - real(tpi,FMS_HI_KIND_)
+          if( xz .le. Interp%HI_KIND_TYPE_%lon_in(1) ) xz = xz + real(tpi,FMS_HI_KIND_)
           if( xz .ge. Interp%HI_KIND_TYPE_%lon_in(nlon_in) ) then
             icl = nlon_in
             icu = 1
             Interp%HI_KIND_TYPE_%rat_x(i,j) = (xz - Interp%HI_KIND_TYPE_%lon_in(icl))/(Interp%HI_KIND_TYPE_%lon_in(icu) &
-                                             & - Interp%HI_KIND_TYPE_%lon_in(icl) + tpi)
+                                             & - Interp%HI_KIND_TYPE_%lon_in(icl) + real(tpi,FMS_HI_KIND_))
           else
             icl = INDL_(Interp%HI_KIND_TYPE_%lon_in, xz)
             icu = INDU_(Interp%HI_KIND_TYPE_%lon_in, xz)
@@ -177,7 +177,7 @@
           Interp%i_lon(i,j,1) = icl
           Interp%i_lon(i,j,2) = icu
           if(jcl == jcu) then
-             Interp%HI_KIND_TYPE_%rat_y(i,j) = 0.0
+             Interp%HI_KIND_TYPE_%rat_y(i,j) = real(0.0,FMS_HI_KIND_)
           else
              Interp%HI_KIND_TYPE_%rat_y(i,j) = (yz - Interp%HI_KIND_TYPE_%lat_in(jcl))/(Interp%HI_KIND_TYPE_%lat_in(jcu) &
                                               & - Interp%HI_KIND_TYPE_%lat_in(jcl))
@@ -310,13 +310,13 @@
           icl = 0
           icu = 0
          !--- cyclic condition, do we need to use do while
-          if( xz .gt. lon_in(nlon_in) ) xz = xz - tpi
+          if( xz .gt. lon_in(nlon_in) ) xz = xz - real(tpi,FMS_HI_KIND_)
           if( xz .le. lon_in(1) ) xz = xz + tpi
           if( xz .ge. lon_in(nlon_in) ) then
             icl = nlon_in
             icu = 1
             Interp%HI_KIND_TYPE_%rat_x(i,j) = (xz - Interp%HI_KIND_TYPE_%lon_in(icl))/(Interp%HI_KIND_TYPE_%lon_in(icu) &
-                                            & - Interp%HI_KIND_TYPE_%lon_in(icl) + tpi)
+                                            & - Interp%HI_KIND_TYPE_%lon_in(icl) + real(tpi,FMS_HI_KIND_))
           else
             icl = INDL_(lon_in, xz)
             icu = INDU_(lon_in, xz)

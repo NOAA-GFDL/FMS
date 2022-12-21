@@ -79,12 +79,12 @@ implicit none
    real(r8_kind), allocatable, dimension(:)   :: lon1D_src, lat1D_src, lon1D_dst, lat1D_dst
    real(r8_kind), allocatable, dimension(:,:) :: lon2D_src, lat2D_src, lon2D_dst, lat2D_dst
    real(r8_kind), allocatable, dimension(:,:) :: data_src, data1_dst, data2_dst, data3_dst, data4_dst
-   real(r8_kind) :: lon_src_beg = 0,    lon_src_end = 360
-   real(r8_kind) :: lat_src_beg = -90,  lat_src_end = 90
-   real(r8_kind) :: lon_dst_beg = -280, lon_dst_end = 80
-   real(r8_kind) :: lat_dst_beg = -90,  lat_dst_end = 90
-   real(r8_kind) :: D2R = PI/180.
-   real(r8_kind), parameter :: SMALL = 1.0e-10
+   real(r8_kind) :: lon_src_beg = 0_r8_kind,    lon_src_end = 360_r8_kind
+   real(r8_kind) :: lat_src_beg = -90_r8_kind,  lat_src_end = 90_r8_kind
+   real(r8_kind) :: lon_dst_beg = -280_r8_kind, lon_dst_end = 80_r8_kind
+   real(r8_kind) :: lat_dst_beg = -90_r8_kind,  lat_dst_end = 90_r8_kind
+   real(r8_kind) :: D2R = real(PI,r8_kind)/180_r8_kind
+   real(r8_kind), parameter :: SMALL = 1.0e-10_r8_kind
 
    allocate(lon2D_src(ni_src+1, nj_src+1), lat2D_src(ni_src+1, nj_src+1) )
    allocate(lon1D_src(ni_src+1), lat1D_src(nj_src+1), data_src(ni_src, nj_src) )
@@ -141,7 +141,7 @@ implicit none
    !--- set up the source data
    do j = 1, nj_src
       do i = 1, ni_src
-         data_src(i,j) = i + j*0.001
+         data_src(i,j) = i + j*0.001_r8_kind
       end do
    end do
 
@@ -228,12 +228,12 @@ implicit none
    real(r4_kind), allocatable, dimension(:)   :: lon1D_src, lat1D_src, lon1D_dst, lat1D_dst
    real(r4_kind), allocatable, dimension(:,:) :: lon2D_src, lat2D_src, lon2D_dst, lat2D_dst
    real(r4_kind), allocatable, dimension(:,:) :: data_src, data1_dst, data2_dst, data3_dst, data4_dst
-   real(r4_kind) :: lon_src_beg = 0,    lon_src_end = 360
-   real(r4_kind) :: lat_src_beg = -90,  lat_src_end = 90
-   real(r4_kind) :: lon_dst_beg = -280, lon_dst_end = 80
-   real(r4_kind) :: lat_dst_beg = -90,  lat_dst_end = 90
-   real(r4_kind) :: D2R = PI/180.
-   real(r4_kind), parameter :: SMALL = 1.0e-10
+   real(r4_kind) :: lon_src_beg = 0_r4_kind,    lon_src_end = 360_r4_kind
+   real(r4_kind) :: lat_src_beg = -90_r4_kind,  lat_src_end = 90_r4_kind
+   real(r4_kind) :: lon_dst_beg = -280_r4_kind, lon_dst_end = 80_r4_kind
+   real(r4_kind) :: lat_dst_beg = -90_r4_kind,  lat_dst_end = 90_r4_kind
+   real(r4_kind) :: D2R = real(PI,r4_kind)/180_r4_kind
+   real(r4_kind), parameter :: SMALL = 1.0e-10_r4_kind
 
    allocate(lon2D_src(ni_src+1, nj_src+1), lat2D_src(ni_src+1, nj_src+1) )
    allocate(lon1D_src(ni_src+1), lat1D_src(nj_src+1), data_src(ni_src, nj_src) )
@@ -290,7 +290,7 @@ implicit none
    !--- set up the source data
    do j = 1, nj_src
       do i = 1, ni_src
-         data_src(i,j) = i + j*0.001
+         data_src(i,j) = i + j*0.001_r4_kind
       end do
    end do
 
