@@ -3119,6 +3119,589 @@ CONTAINS
     DEALLOCATE(oor_mask)
   END FUNCTION send_data_3d
 
+
+    !> @return true if send is successful
+  LOGICAL FUNCTION send_data_3d_refac(diag_field_id, field, time, is_in, js_in, ks_in, &
+             & mask, rmask, ie_in, je_in, ke_in, weight, err_msg)
+    INTEGER, INTENT(in) :: diag_field_id
+    CLASS(*), DIMENSION(:,:,:), INTENT(in) :: field
+    CLASS(*), INTENT(in), OPTIONAL :: weight
+    TYPE (time_type), INTENT(in), OPTIONAL :: time
+    INTEGER, INTENT(in), OPTIONAL :: is_in, js_in, ks_in,ie_in,je_in, ke_in
+    LOGICAL, DIMENSION(:,:,:), INTENT(in), OPTIONAL :: mask
+    CLASS(*), DIMENSION(:,:,:), INTENT(in), OPTIONAL :: rmask
+    CHARACTER(len=*), INTENT(out), OPTIONAL :: err_msg
+
+    REAL :: weight1
+    REAL :: missvalue
+    INTEGER :: pow_value
+    INTEGER :: ksr, ker
+    INTEGER :: i, out_num, file_num, n1, n2, n3, number_of_outputs, ii,f1,f2,f3,f4
+    INTEGER :: freq, units, is, js, ks, ie, je, ke, i1, j1,k1, j, k
+    INTEGER, DIMENSION(3) :: l_start !< local start indices on 3 axes for regional output
+    INTEGER, DIMENSION(3) :: l_end !< local end indices on 3 axes for regional output
+    INTEGER   :: hi !< halo size in x direction
+    INTEGER   :: hj !< halo size in y direction
+    INTEGER   :: twohi !< halo size in x direction
+    INTEGER   :: twohj !< halo size in y direction
+    INTEGER :: sample !< index along the diurnal time axis
+    INTEGER :: day !< components of the current date
+    INTEGER :: second !< components of the current date
+    INTEGER :: tick !< components of the current date
+    INTEGER :: status
+    INTEGER :: numthreads
+    INTEGER :: active_omp_level
+#if defined(_OPENMP)
+    INTEGER :: omp_get_num_threads !< OMP function
+    INTEGER :: omp_get_level !< OMP function
+#endif
+    LOGICAL :: average, phys_window, need_compute
+    LOGICAL :: reduced_k_range, local_output
+    LOGICAL :: time_max, time_min, time_rms, time_sum
+    LOGICAL :: missvalue_present
+    LOGICAL, ALLOCATABLE, DIMENSION(:,:,:) :: oor_mask
+    CHARACTER(len=256) :: err_msg_local
+    CHARACTER(len=128) :: error_string, error_string1
+
+    REAL, ALLOCATABLE, DIMENSION(:,:,:) :: field_out !< Local copy of field
+
+    ! If diag_field_id is < 0 it means that this field is not registered, simply return
+    IF ( diag_field_id <= 0 ) THEN
+       send_data_3d = .FALSE.
+       RETURN
+    ELSE
+       send_data_3d = .TRUE.
+    END IF
+
+    IF ( PRESENT(err_msg) ) err_msg = ''
+    IF ( .NOT.module_is_initialized ) THEN
+       IF ( fms_error_handler('diag_manager_mod::send_data_3d', 'diag_manager NOT initialized', err_msg) ) RETURN
+    END IF
+    err_msg_local = ''
+    ! The following lines are commented out as they have not been included in the code prior to now,
+    ! and there are a lot of send_data calls before register_diag_field calls.  A method to do this safely
+    ! needs to be developed.
+    !
+    ! Set first_send_data_call to .FALSE. on first non-static field.
+!!$    IF ( .NOT.input_fields(diag_field_id)%static .AND. first_send_data_call ) THEN
+!!$       first_send_data_call = .FALSE.
+!!$    END IF
+
+    ! First copy the data to a three d array
+    ALLOCATE(field_out(SIZE(field,1),SIZE(field,2),SIZE(field,3)), STAT=status)
+    IF ( status .NE. 0 ) THEN
+       WRITE (err_msg_local, FMT='("Unable to allocate field_out(",I5,",",I5,",",I5,"). (STAT: ",I5,")")')&
+            & SIZE(field,1), SIZE(field,2), SIZE(field,3), status
+       IF ( fms_error_handler('diag_manager_mod::send_data_3d', err_msg_local, err_msg) ) RETURN
+    END IF
+    SELECT TYPE (field)
+    TYPE IS (real(kind=r4_kind))
+       field_out = field
+    TYPE IS (real(kind=r8_kind))
+       field_out = real(field)
+    CLASS DEFAULT
+       CALL error_mesg ('diag_manager_mod::send_data_3d',&
+            & 'The field is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)
+    END SELECT
+
+    ! oor_mask is only used for checking out of range values.
+    ALLOCATE(oor_mask(SIZE(field,1),SIZE(field,2),SIZE(field,3)), STAT=status)
+    IF ( status .NE. 0 ) THEN
+       WRITE (err_msg_local, FMT='("Unable to allocate oor_mask(",I5,",",I5,",",I5,"). (STAT: ",I5,")")')&
+            & SIZE(field,1), SIZE(field,2), SIZE(field,3), status
+       IF ( fms_error_handler('diag_manager_mod::send_data_3d', err_msg_local, err_msg) ) RETURN
+    END IF
+
+    IF ( PRESENT(mask) ) THEN
+       oor_mask = mask
+    ELSE
+       oor_mask = .TRUE.
+    END IF
+
+    IF ( PRESENT(rmask) ) THEN
+       SELECT TYPE (rmask)
+       TYPE IS (real(kind=r4_kind))
+          WHERE ( rmask < 0.5_r4_kind ) oor_mask = .FALSE.
+       TYPE IS (real(kind=r8_kind))
+          WHERE ( rmask < 0.5_r8_kind ) oor_mask = .FALSE.
+       CLASS DEFAULT
+          CALL error_mesg ('diag_manager_mod::send_data_3d',&
+               & 'The rmask is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)
+       END SELECT
+    END IF
+
+    ! send_data works in either one or another of two modes.
+    ! 1. Input field is a window (e.g. FMS physics)
+    ! 2. Input field includes halo data
+    ! It cannot handle a window of data that has halos.
+    ! (A field with no windows or halos can be thought of as a special case of either mode.)
+    ! The logic for indexing is quite different for these two modes, but is not clearly separated.
+    ! If both the beggining and ending indices are present, then field is assumed to have halos.
+    ! If only beggining indices are present, then field is assumed to be a window.
+
+    ! There are a number of ways a user could mess up this logic, depending on the combination
+    ! of presence/absence of is,ie,js,je. The checks below should catch improper combinations.
+    IF ( PRESENT(ie_in) ) THEN
+       IF ( .NOT.PRESENT(is_in) ) THEN
+          IF ( fms_error_handler('diag_manager_mod::send_data_3d', 'ie_in present without is_in', err_msg) ) THEN
+             DEALLOCATE(field_out)
+             DEALLOCATE(oor_mask)
+             RETURN
+          END IF
+       END IF
+       IF ( PRESENT(js_in) .AND. .NOT.PRESENT(je_in) ) THEN
+          IF ( fms_error_handler('diag_manager_modsend_data_3d',&
+               & 'is_in and ie_in present, but js_in present without je_in', err_msg) ) THEN
+             DEALLOCATE(field_out)
+             DEALLOCATE(oor_mask)
+             RETURN
+          END IF
+       END IF
+    END IF
+    IF ( PRESENT(je_in) ) THEN
+       IF ( .NOT.PRESENT(js_in) ) THEN
+          IF ( fms_error_handler('diag_manager_mod::send_data_3d', 'je_in present without js_in', err_msg) ) THEN
+             DEALLOCATE(field_out)
+             DEALLOCATE(oor_mask)
+             RETURN
+          END IF
+       END IF
+       IF ( PRESENT(is_in) .AND. .NOT.PRESENT(ie_in) ) THEN
+          IF ( fms_error_handler('diag_manager_mod::send_data_3d',&
+               & 'js_in and je_in present, but is_in present without ie_in', err_msg)) THEN
+             DEALLOCATE(field_out)
+             DEALLOCATE(oor_mask)
+             RETURN
+          END IF
+       END IF
+    END IF
+
+    ! If is, js, or ks not present default them to 1
+    is = 1
+    js = 1
+    ks = 1
+    IF ( PRESENT(is_in) ) is = is_in
+    IF ( PRESENT(js_in) ) js = js_in
+    IF ( PRESENT(ks_in) ) ks = ks_in
+    n1 = SIZE(field, 1)
+    n2 = SIZE(field, 2)
+    n3 = SIZE(field, 3)
+    ie = is+n1-1
+    je = js+n2-1
+    ke = ks+n3-1
+    IF ( PRESENT(ie_in) ) ie = ie_in
+    IF ( PRESENT(je_in) ) je = je_in
+    IF ( PRESENT(ke_in) ) ke = ke_in
+    twohi = n1-(ie-is+1)
+    IF ( MOD(twohi,2) /= 0 ) THEN
+       IF ( fms_error_handler('diag_manager_mod::send_data_3d', 'non-symmetric halos in first dimension', &
+          & err_msg) ) THEN
+          DEALLOCATE(field_out)
+          DEALLOCATE(oor_mask)
+          RETURN
+       END IF
+    END IF
+    twohj = n2-(je-js+1)
+    IF ( MOD(twohj,2) /= 0 ) THEN
+       IF ( fms_error_handler('diag_manager_mod::send_data_3d', 'non-symmetric halos in second dimension', &
+          & err_msg) ) THEN
+          DEALLOCATE(field_out)
+          DEALLOCATE(oor_mask)
+          RETURN
+       END IF
+    END IF
+    hi = twohi/2
+    hj = twohj/2
+
+    ! The next line is necessary to ensure that is,ie,js,ie are relative to field(1:,1:)
+    ! But this works only when there is no windowing.
+    IF ( PRESENT(ie_in) .AND. PRESENT(je_in) ) THEN
+       is=1+hi
+       ie=n1-hi
+       js=1+hj
+       je=n2-hj
+    END IF
+
+    ! used for field, mask and rmask bounds
+    f1=1+hi
+    f2=n1-hi
+    f3=1+hj
+    f4=n2-hj
+
+    ! weight is for time averaging where each time level may has a different weight
+    IF ( PRESENT(weight) ) THEN
+       SELECT TYPE (weight)
+       TYPE IS (real(kind=r4_kind))
+          weight1 = weight
+       TYPE IS (real(kind=r8_kind))
+          weight1 = real(weight)
+       CLASS DEFAULT
+          CALL error_mesg ('diag_manager_mod::send_data_3d',&
+               & 'The weight is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)
+       END SELECT
+    ELSE
+       weight1 = 1.
+    END IF
+
+    ! Is there a missing_value?
+    missvalue_present = input_fields(diag_field_id)%missing_value_present
+    IF ( missvalue_present ) missvalue = input_fields(diag_field_id)%missing_value
+
+    number_of_outputs = input_fields(diag_field_id)%num_output_fields
+!$OMP CRITICAL
+    input_fields(diag_field_id)%numthreads = 1
+    active_omp_level=0
+#if defined(_OPENMP)
+    input_fields(diag_field_id)%numthreads = omp_get_num_threads()
+    input_fields(diag_field_id)%active_omp_level = omp_get_level()
+#endif
+    numthreads = input_fields(diag_field_id)%numthreads
+    active_omp_level = input_fields(diag_field_id)%active_omp_level
+!$OMP END CRITICAL
+
+    if(present(time)) input_fields(diag_field_id)%time = time
+
+    ! Issue a warning if any value in field is outside the valid range
+    IF ( input_fields(diag_field_id)%range_present ) THEN
+       IF ( ISSUE_OOR_WARNINGS .OR. OOR_WARNINGS_FATAL ) THEN
+          WRITE (error_string, '("[",ES14.5E3,",",ES14.5E3,"]")')&
+               & input_fields(diag_field_id)%range(1:2)
+          WRITE (error_string1, '("(Min: ",ES14.5E3,", Max: ",ES14.5E3, ")")')&
+                  & MINVAL(field_out(f1:f2,f3:f4,ks:ke),MASK=oor_mask(f1:f2,f3:f4,ks:ke)),&
+                  & MAXVAL(field_out(f1:f2,f3:f4,ks:ke),MASK=oor_mask(f1:f2,f3:f4,ks:ke))
+          IF ( missvalue_present ) THEN
+             IF ( ANY(oor_mask(f1:f2,f3:f4,ks:ke) .AND.&
+                  &   ((field_out(f1:f2,f3:f4,ks:ke) < input_fields(diag_field_id)%range(1) .OR.&
+                  &     field_out(f1:f2,f3:f4,ks:ke) > input_fields(diag_field_id)%range(2)).AND.&
+                  &     field_out(f1:f2,f3:f4,ks:ke) .NE. missvalue)) ) THEN
+                ! <ERROR STATUS="WARNING/FATAL">
+                !   A value for <module_name> in field <field_name> (Min: <min_val>, Max: <max_val>)
+                !   is outside the range [<lower_val>,<upper_val>] and not equal to the missing
+                !   value.
+                ! </ERROR>
+                CALL error_mesg('diag_manager_mod::send_data_3d',&
+                     & 'A value for '//&
+                     &TRIM(input_fields(diag_field_id)%module_name)//' in field '//&
+                     &TRIM(input_fields(diag_field_id)%field_name)//' '&
+                     &//TRIM(error_string1)//&
+                     &' is outside the range '//TRIM(error_string)//',&
+                     & and not equal to the missing value.',&
+                     &OOR_WARNING)
+             END IF
+          ELSE
+             IF ( ANY(oor_mask(f1:f2,f3:f4,ks:ke) .AND.&
+                  &   (field_out(f1:f2,f3:f4,ks:ke) < input_fields(diag_field_id)%range(1) .OR.&
+                  &    field_out(f1:f2,f3:f4,ks:ke) > input_fields(diag_field_id)%range(2))) ) THEN
+                ! <ERROR STATUS="WARNING/FATAL">
+                !   A value for <module_name> in field <field_name> (Min: <min_val>, Max: <max_val>)
+                !   is outside the range [<lower_val>,<upper_val>].
+                ! </ERROR>
+                CALL error_mesg('diag_manager_mod::send_data_3d',&
+                     & 'A value for '//&
+                     &TRIM(input_fields(diag_field_id)%module_name)//' in field '//&
+                     &TRIM(input_fields(diag_field_id)%field_name)//' '&
+                     &//TRIM(error_string1)//&
+                     &' is outside the range '//TRIM(error_string)//'.',&
+                     &OOR_WARNING)
+             END IF
+          END IF
+       END IF
+    END IF
+
+    ! Loop through each output field that depends on this input field
+    num_out_fields: DO ii = 1, number_of_outputs
+       ! Get index to an output field
+       out_num = input_fields(diag_field_id)%output_fields(ii)
+
+      ! is this field output on a local domain only?
+       local_output = output_fields(out_num)%local_output
+       ! if local_output, does the current PE take part in send_data?
+       need_compute = output_fields(out_num)%need_compute
+
+       reduced_k_range = output_fields(out_num)%reduced_k_range
+
+      ! skip all PEs not participating in outputting this field
+       IF ( local_output .AND. (.NOT.need_compute) ) CYCLE
+
+       ! Get index to output file for this field
+       file_num = output_fields(out_num)%output_file
+       IF(file_num == max_files) CYCLE
+       ! Output frequency and units for this file is
+       freq = files(file_num)%output_freq
+       units = files(file_num)%output_units
+       ! Is this output field being time averaged?
+       average = output_fields(out_num)%time_average
+       ! Is this output field the rms?
+       ! If so, then average is also .TRUE.
+       time_rms = output_fields(out_num)%time_rms
+       ! Power value for rms or pow(x) calculations
+       pow_value = output_fields(out_num)%pow_value
+       ! Looking for max and min value of this field over the sampling interval?
+       time_max = output_fields(out_num)%time_max
+       time_min = output_fields(out_num)%time_min
+       ! Sum output over time interval
+       time_sum = output_fields(out_num)%time_sum
+       IF ( output_fields(out_num)%total_elements > SIZE(field_out(f1:f2,f3:f4,ks:ke)) ) THEN
+          output_fields(out_num)%phys_window = .TRUE.
+       ELSE
+          output_fields(out_num)%phys_window = .FALSE.
+       END IF
+       phys_window = output_fields(out_num)%phys_window
+       IF ( need_compute ) THEN
+          l_start = output_fields(out_num)%output_grid%l_start_indx
+          l_end = output_fields(out_num)%output_grid%l_end_indx
+       END IF
+
+       ! compute the diurnal index
+       sample = 1
+       IF ( PRESENT(time) ) THEN
+          CALL get_time(time,second,day,tick) ! current date
+          sample = floor( (second+real(tick)/get_ticks_per_second()) &
+                       & * output_fields(out_num)%n_diurnal_samples/SECONDS_PER_DAY) + 1
+       END IF
+
+       ! Get the vertical layer start and end index.
+       IF ( reduced_k_range ) THEN
+!----------
+!ug support
+           if (output_fields(out_num)%reduced_k_unstruct) then
+               js = output_fields(out_num)%output_grid%l_start_indx(2)
+               je = output_fields(out_num)%output_grid%l_end_indx(2)
+           endif
+           l_start(3) = output_fields(out_num)%output_grid%l_start_indx(3)
+           l_end(3) = output_fields(out_num)%output_grid%l_end_indx(3)
+!----------
+       END IF
+       ksr= l_start(3)
+       ker= l_end(3)
+
+       ! Initialize output time for fields output every time step
+       IF ( freq == EVERY_TIME .AND. .NOT.output_fields(out_num)%static ) THEN
+          IF (output_fields(out_num)%next_output == output_fields(out_num)%last_output) THEN
+             IF(PRESENT(time)) THEN
+                output_fields(out_num)%next_output = time
+             ELSE
+                WRITE (error_string,'(a,"/",a)')&
+                     & TRIM(input_fields(diag_field_id)%module_name),&
+                     & TRIM(output_fields(out_num)%output_name)
+                IF ( fms_error_handler('diag_manager_mod::send_data_3d', 'module/output_field '//TRIM(error_string)//&
+                     & ', time must be present when output frequency = EVERY_TIME', err_msg)) THEN
+                   DEALLOCATE(field_out)
+                   DEALLOCATE(oor_mask)
+                   RETURN
+                END IF
+             END IF
+          END IF
+       END IF
+       IF ( .NOT.output_fields(out_num)%static .AND. .NOT.PRESENT(time) ) THEN
+          WRITE (error_string,'(a,"/",a)')&
+               & TRIM(input_fields(diag_field_id)%module_name), &
+               & TRIM(output_fields(out_num)%output_name)
+          IF ( fms_error_handler('diag_manager_mod::send_data_3d', 'module/output_field '//TRIM(error_string)//&
+               & ', time must be present for nonstatic field', err_msg)) THEN
+             DEALLOCATE(field_out)
+             DEALLOCATE(oor_mask)
+             RETURN
+          END IF
+       END IF
+
+       ! Is it time to output for this field; CAREFUL ABOUT > vs >= HERE
+       !--- The fields send out within openmp parallel region will be written out in
+       !--- diag_send_complete.
+       IF ( (numthreads == 1) .AND. (active_omp_level.LE.1) ) then
+          IF ( .NOT.output_fields(out_num)%static .AND. freq /= END_OF_RUN ) THEN
+             IF ( time > output_fields(out_num)%next_output ) THEN
+                ! A non-static field that has skipped a time level is an error
+                IF ( time > output_fields(out_num)%next_next_output .AND. freq > 0 ) THEN
+                   IF ( mpp_pe() .EQ. mpp_root_pe() ) THEN
+                      WRITE (error_string,'(a,"/",a)')&
+                           & TRIM(input_fields(diag_field_id)%module_name), &
+                           & TRIM(output_fields(out_num)%output_name)
+                      IF ( fms_error_handler('diag_manager_mod::send_data_3d', 'module/output_field '//&
+                           & TRIM(error_string)//' is skipped one time level in output data', err_msg)) THEN
+                         DEALLOCATE(field_out)
+                         DEALLOCATE(oor_mask)
+                         RETURN
+                      END IF
+                   END IF
+                END IF
+
+                status = writing_field(out_num, .FALSE., error_string, time)
+                IF(status == -1) THEN
+                   IF ( mpp_pe() .EQ. mpp_root_pe() ) THEN
+                      IF(fms_error_handler('diag_manager_mod::send_data_3d','module/output_field '//TRIM(error_string)&
+                           & //', write EMPTY buffer', err_msg)) THEN
+                         DEALLOCATE(field_out)
+                         DEALLOCATE(oor_mask)
+                         RETURN
+                      END IF
+                   END IF
+                END IF
+             END IF  !time > output_fields(out_num)%next_output
+          END IF  !.not.output_fields(out_num)%static .and. freq /= END_OF_RUN
+          ! Finished output of previously buffered data, now deal with buffering new data
+       END IF
+
+       IF ( .NOT.output_fields(out_num)%static .AND. .NOT.need_compute .AND. debug_diag_manager ) THEN
+          CALL check_bounds_are_exact_dynamic(out_num, diag_field_id, Time, err_msg=err_msg_local)
+          IF ( err_msg_local /= '' ) THEN
+             IF ( fms_error_handler('diag_manager_mod::send_data_3d', err_msg_local, err_msg) ) THEN
+                DEALLOCATE(field_out)
+                DEALLOCATE(oor_mask)
+                RETURN
+             END IF
+          END IF
+       END IF
+
+              !!CALL FIELD WHEITING FUNCTIONS:!!START REFACTORED SECTION WITH WEIGHTING FUNCTIONS.!!
+        ALLOCATE(sprocs_obj)
+        CALL sprocs_obj%initialize(is, js, ks, ie, je, ke, &
+              &  hi, hj, f1, f2, f3, f4, &
+              &  output_fields(out_num)%pow_value, output_fields(out_num)%phys_window, &
+              &  output_fields(out_num)%need_compute,output_fields(out_num)%reduced_k_range, &
+              &  output_fields(out_num)%time_rms,  output_fields(out_num)%time_max, &
+              &  output_fields(out_num)%time_min,  output_fields(out_num)%time_sum)
+
+        ! Take care of submitted field data
+        IF ( average ) THEN
+          temp_result = sprocs_obj%average_the_field(diag_field_id, field_out, sample, &
+              & output_fields(out_num)%buffer, output_fields(out_num)%counter, &
+              & output_fields(out_num)%ntval,  output_fields(out_num)%count_0d(sample), &
+              & output_fields(out_num)%num_elements(sample), output_fields(out_num)%output_name, &
+              & input_fields(diag_field_id)%field_name, input_fields(diag_field_id)%module_name, &
+              & input_fields(diag_field_id)%issued_mask_ignore_warning, &
+              & mask, weight1, missvalue, missvalue_present, &
+              & l_start, l_end, err_msg, err_msg_local )
+            IF (temp_result .eqv. .FALSE.) THEN
+                DEALLOCATE(oor_mask)
+                RETURN
+            END IF
+             ! Add processing for Max and Min
+        ELSE !!.NOT. average
+          temp_result = sprocs_obj%sample_the_field(diag_field_id, field_out, &
+              & sample,  output_fields(out_num)%buffer, output_fields(out_num)%ntval, &
+              & output_fields(out_num)%count_0d(sample), &
+              & output_fields(out_num)%output_name,input_fields(diag_field_id)%module_name, mask, &
+              & missvalue, missvalue_present, l_start, l_end, err_msg, err_msg_local)
+          IF (temp_result .eqv. .FALSE.) THEN
+            DEALLOCATE(oor_mask)
+            RETURN
+          END IF
+        END IF
+      DEALLOCATE(sprocs_obj)
+      !!END REFACTORED SECTION WITH WEIGHTING FUNCTIONS - END
+
+       IF ( output_fields(out_num)%static .AND. .NOT.need_compute .AND. debug_diag_manager ) THEN
+          CALL check_bounds_are_exact_static(out_num, diag_field_id, err_msg=err_msg_local)
+          IF ( err_msg_local /= '' ) THEN
+             IF ( fms_error_handler('diag_manager_mod::send_data_3d', err_msg_local, err_msg)) THEN
+                DEALLOCATE(field_out)
+                DEALLOCATE(oor_mask)
+                RETURN
+             END IF
+          END IF
+       END IF
+
+       ! If rmask and missing value present, then insert missing value
+       IF ( PRESENT(rmask) .AND. missvalue_present ) THEN
+          IF ( need_compute ) THEN
+             SELECT TYPE (rmask)
+             TYPE IS (real(kind=r4_kind))
+                DO k = l_start(3), l_end(3)
+                   k1 = k - l_start(3) + 1
+                   DO j = js, je
+                      DO i = is, ie
+                         IF ( l_start(1)+hi <= i .AND. i <= l_end(1)+hi .AND. l_start(2)+hj <= j .AND.&
+                            & j <= l_end(2)+hj ) THEN
+                            i1 = i-l_start(1)-hi+1
+                            j1 =  j-l_start(2)-hj+1
+                            IF ( rmask(i-is+1+hi,j-js+1+hj,k) < 0.5_r4_kind ) &
+                                 & output_fields(out_num)%buffer(i1,j1,k1,sample) = missvalue
+                         END IF
+                      END DO
+                   END DO
+                END DO
+             TYPE IS (real(kind=r8_kind))
+                DO k = l_start(3), l_end(3)
+                   k1 = k - l_start(3) + 1
+                   DO j = js, je
+                      DO i = is, ie
+                         IF ( l_start(1)+hi <= i .AND. i <= l_end(1)+hi .AND. l_start(2)+hj <= j .AND.&
+                            & j <= l_end(2)+hj ) THEN
+                            i1 = i-l_start(1)-hi+1
+                            j1 =  j-l_start(2)-hj+1
+                            IF ( rmask(i-is+1+hi,j-js+1+hj,k) < 0.5_r8_kind ) &
+                                 & output_fields(out_num)%buffer(i1,j1,k1,sample) = missvalue
+                         END IF
+                      END DO
+                   END DO
+                END DO
+             CLASS DEFAULT
+                CALL error_mesg ('diag_manager_mod::send_data_3d',&
+                     & 'The rmask is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)
+             END SELECT
+          ELSE IF ( reduced_k_range ) THEN
+             ksr= l_start(3)
+             ker= l_end(3)
+             SELECT TYPE (rmask)
+             TYPE IS (real(kind=r4_kind))
+                DO k= ksr, ker
+                   k1 = k - ksr + 1
+                   DO j=js, je
+                      DO i=is, ie
+                         IF ( rmask(i-is+1+hi,j-js+1+hj,k) < 0.5_r4_kind ) &
+                              & output_fields(out_num)%buffer(i-hi,j-hj,k1,sample)= missvalue
+                      END DO
+                   END DO
+                END DO
+             TYPE IS (real(kind=r8_kind))
+                DO k= ksr, ker
+                   k1 = k - ksr + 1
+                   DO j=js, je
+                      DO i=is, ie
+                         IF ( rmask(i-is+1+hi,j-js+1+hj,k) < 0.5_r8_kind ) &
+                              & output_fields(out_num)%buffer(i-hi,j-hj,k1,sample)= missvalue
+                      END DO
+                   END DO
+                END DO
+             CLASS DEFAULT
+                CALL error_mesg ('diag_manager_mod::send_data_3d',&
+                     & 'The rmask is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)
+             END SELECT
+          ELSE
+             SELECT TYPE (rmask)
+             TYPE IS (real(kind=r4_kind))
+                DO k=ks, ke
+                   DO j=js, je
+                      DO i=is, ie
+                         IF ( rmask(i-is+1+hi,j-js+1+hj,k) < 0.5_r4_kind ) &
+                              & output_fields(out_num)%buffer(i-hi,j-hj,k,sample)= missvalue
+                      END DO
+                   END DO
+                END DO
+             TYPE IS (real(kind=r8_kind))
+                DO k=ks, ke
+                   DO j=js, je
+                      DO i=is, ie
+                         IF ( rmask(i-is+1+hi,j-js+1+hj,k) < 0.5_r8_kind ) &
+                              & output_fields(out_num)%buffer(i-hi,j-hj,k,sample)= missvalue
+                      END DO
+                   END DO
+                END DO
+             CLASS DEFAULT
+                CALL error_mesg ('diag_manager_mod::send_data_3d',&
+                     & 'The rmask is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)
+             END SELECT
+          END IF
+       END IF
+
+    END DO num_out_fields
+
+    DEALLOCATE(field_out)
+    DEALLOCATE(oor_mask)
+  END FUNCTION send_data_3d_refac
+
+
   !> @return true if send is successful
   LOGICAL FUNCTION send_tile_averaged_data1d ( id, field, area, time, mask )
     INTEGER, INTENT(in) :: id  !< id od the diagnostic field
