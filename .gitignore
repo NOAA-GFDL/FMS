@@ -30,6 +30,7 @@ pathnames*
 *.swp
 *.PC
 *.so
+core
 
 Makefile
 # From https://github.com/github/gitignore/blob/master/Autotools.gitignore
