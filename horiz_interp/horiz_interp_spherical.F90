@@ -29,7 +29,7 @@
 !> @{
 module horiz_interp_spherical_mod
 
-  use platform_mod
+  use platform_mod,          only : r4_kind, r8_kind
   use mpp_mod,               only : mpp_error, FATAL, WARNING, stdout
   use mpp_mod,               only : mpp_root_pe, mpp_pe
   use mpp_mod,               only : input_nml_file

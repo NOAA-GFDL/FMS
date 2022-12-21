@@ -58,6 +58,7 @@ use horiz_interp_bicubic_mod,   only: horiz_interp_bicubic_init, horiz_interp_bi
 use horiz_interp_bicubic_mod,   only: horiz_interp_bicubic_new, horiz_interp_bicubic_del
 use horiz_interp_spherical_mod, only: horiz_interp_spherical_init, horiz_interp_spherical
 use horiz_interp_spherical_mod, only: horiz_interp_spherical_new, horiz_interp_spherical_del
+use platform_mod,               only: r4_kind, r8_kind
 
  implicit none
  private

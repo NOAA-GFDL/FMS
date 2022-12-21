@@ -23,7 +23,7 @@
   !!
   !> Allocates space and initializes a derived-type variable
   !! that contains pre-computed interpolation indices and weights.
-  subroutine BICUBIC_NEW_1D_S ( Interp, lon_in, lat_in, lon_out, lat_out, &
+  subroutine HORIZ_INTERP_BICUBIC_NEW_1D_S_ ( Interp, lon_in, lat_in, lon_out, lat_out, &
        verbose, src_modulo )
 
     !-----------------------------------------------------------------------
@@ -31,11 +31,11 @@
                                        !! and weights used for subsequent interpolations. To
                                        !! reinitialize this variable for a different grid-to-grid
                                        !! interpolation you must first use the
-                                       !! @ref BICUBIC_NEW_del interface.
-    real(FMS_HI_KIND), intent(in),  dimension(:)        :: lon_in !< Longitude (radians) for source data grid
-    real(FMS_HI_KIND), intent(in),  dimension(:)        :: lat_in !< Latitude (radians) for source data grid
-    real(FMS_HI_KIND), intent(in),  dimension(:,:)      :: lon_out !< Longitude (radians) for output data grid
-    real(FMS_HI_KIND), intent(in),  dimension(:,:)      :: lat_out !< Latitude (radians) for output data grid
+                                       !! @ref HORIZ_INTERP_BICUBIC_NEW__del interface.
+    real(FMS_HI_KIND_), intent(in),  dimension(:)        :: lon_in !< Longitude (radians) for source data grid
+    real(FMS_HI_KIND_), intent(in),  dimension(:)        :: lat_in !< Latitude (radians) for source data grid
+    real(FMS_HI_KIND_), intent(in),  dimension(:,:)      :: lon_out !< Longitude (radians) for output data grid
+    real(FMS_HI_KIND_), intent(in),  dimension(:,:)      :: lat_out !< Latitude (radians) for output data grid
     integer, intent(in),          optional :: verbose !< flag for print output amount
     logical, intent(in),          optional :: src_modulo !< indicates if the boundary condition along
                                        !! zonal boundary is cyclic or not. Zonal boundary condition
@@ -44,7 +44,7 @@
     logical                                :: src_is_modulo
     integer                                :: nlon_in, nlat_in, nlon_out, nlat_out
     integer                                :: jcl, jcu, icl, icu, jj
-    real(FMS_HI_KIND)                                   :: xz, yz
+    real(FMS_HI_KIND_)                                   :: xz, yz
     integer                                :: unit
 
     if(present(verbose)) verbose_bicubic = verbose
@@ -61,25 +61,25 @@
     Interp%nlon_src = nlon_in;  Interp%nlat_src = nlat_in
     Interp%nlon_dst = nlon_out; Interp%nlat_dst = nlat_out
 !   use wti(:,:,1) for x-derivative, wti(:,:,2) for y-derivative, wti(:,:,3) for xy-derivative
-    if( .not. allocated(Interp%HI_KIND_TYPE)) allocate(Interp%HI_KIND_TYPE)
-    allocate ( Interp%HI_KIND_TYPE%wti    (nlon_in, nlat_in, 3) )
-    allocate ( Interp%HI_KIND_TYPE%lon_in (nlon_in) )
-    allocate ( Interp%HI_KIND_TYPE%lat_in (nlat_in) )
-    allocate ( Interp%HI_KIND_TYPE%rat_x  (nlon_out, nlat_out) )
-    allocate ( Interp%HI_KIND_TYPE%rat_y  (nlon_out, nlat_out) )
+    if( .not. allocated(Interp%HI_KIND_TYPE_)) allocate(Interp%HI_KIND_TYPE_)
+    allocate ( Interp%HI_KIND_TYPE_%wti    (nlon_in, nlat_in, 3) )
+    allocate ( Interp%HI_KIND_TYPE_%lon_in (nlon_in) )
+    allocate ( Interp%HI_KIND_TYPE_%lat_in (nlat_in) )
+    allocate ( Interp%HI_KIND_TYPE_%rat_x  (nlon_out, nlat_out) )
+    allocate ( Interp%HI_KIND_TYPE_%rat_y  (nlon_out, nlat_out) )
     allocate ( Interp%i_lon  (nlon_out, nlat_out, 2) )
     allocate ( Interp%j_lat  (nlon_out, nlat_out, 2) )
 
-    Interp%HI_KIND_TYPE%lon_in = lon_in
-    Interp%HI_KIND_TYPE%lat_in = lat_in
+    Interp%HI_KIND_TYPE_%lon_in = lon_in
+    Interp%HI_KIND_TYPE_%lat_in = lat_in
 
     if ( verbose_bicubic > 0 ) then
        unit = stdout()
-       write (unit,'(/,"Initialising bicubic interpolation, interface BICUBIC_NEW_1D_S")')
+       write (unit,'(/,"Initialising bicubic interpolation, interface HORIZ_INTERP_BICUBIC_NEW_1D_S_")')
        write (unit,'(/," Longitude of coarse grid points (radian): xc(i) i=1, ",i4)') Interp%nlon_src
-       write (unit,'(1x,10f10.4)') (Interp%HI_KIND_TYPE%lon_in(jj),jj=1,Interp%nlon_src)
+       write (unit,'(1x,10f10.4)') (Interp%HI_KIND_TYPE_%lon_in(jj),jj=1,Interp%nlon_src)
        write (unit,'(/," Latitude of coarse grid points (radian):  yc(j) j=1, ",i4)') Interp%nlat_src
-       write (unit,'(1x,10f10.4)') (Interp%HI_KIND_TYPE%lat_in(jj),jj=1,Interp%nlat_src)
+       write (unit,'(1x,10f10.4)') (Interp%HI_KIND_TYPE_%lat_in(jj),jj=1,Interp%nlat_src)
        do i=1, Interp%nlat_dst
          write (unit,*)
          write (unit,'(/," Longitude of fine grid points (radian): xf(i) i=1, ",i4)') Interp%nlat_dst
@@ -101,8 +101,8 @@
       do i=1,nlon_in
         ip1=min(i+1,nlon_in)
         im1=max(i-1,1)
-        Interp%HI_KIND_TYPE%wti(i,j,1) = real(1.0, FMS_HI_KIND)/ &
-                                         (Interp%HI_KIND_TYPE%lon_in(ip1)-Interp%HI_KIND_TYPE%lon_in(im1))
+        Interp%HI_KIND_TYPE_%wti(i,j,1) = real(1.0, FMS_HI_KIND_)/ &
+                                         (Interp%HI_KIND_TYPE_%lon_in(ip1)-Interp%HI_KIND_TYPE_%lon_in(im1))
       enddo
     enddo
 
@@ -115,8 +115,8 @@
         jp1=min(j+1,nlat_in)
         jm1=max(j-1,1)
         do i=1,nlon_in
-          Interp%HI_KIND_TYPE%wti(i,j,2) = real(1.0, FMS_HI_KIND)/ &
-                                           (Interp%HI_KIND_TYPE%lat_in(jp1)-Interp%HI_KIND_TYPE%lat_in(jm1))
+          Interp%HI_KIND_TYPE_%wti(i,j,2) = real(1.0, FMS_HI_KIND_)/ &
+                                           (Interp%HI_KIND_TYPE_%lat_in(jp1)-Interp%HI_KIND_TYPE_%lat_in(jm1))
         enddo
       enddo
 
@@ -130,9 +130,9 @@
         do i=1,nlon_in
           ip1=min(i+1,nlon_in)
           im1=max(i-1,1)
-          Interp%HI_KIND_TYPE%wti(i,j,3) = real(1.0, FMS_HI_KIND)/ &
-                                               ((Interp%HI_KIND_TYPE%lon_in(ip1)-Interp%HI_KIND_TYPE%lon_in(im1)) * &
-                                                (Interp%HI_KIND_TYPE%lat_in(jp1)-Interp%HI_KIND_TYPE%lat_in(jm1)))
+          Interp%HI_KIND_TYPE_%wti(i,j,3) = real(1.0, FMS_HI_KIND_)/ &
+                                               ((Interp%HI_KIND_TYPE_%lon_in(ip1)-Interp%HI_KIND_TYPE_%lon_in(im1)) * &
+                                                (Interp%HI_KIND_TYPE_%lat_in(jp1)-Interp%HI_KIND_TYPE_%lat_in(jm1)))
         enddo
       enddo
 !---------------------------------------------------------------------------
@@ -145,73 +145,73 @@
 
           jcl = 0
           jcu = 0
-          if( yz .le. Interp%HI_KIND_TYPE%lat_in(1) ) then
+          if( yz .le. Interp%HI_KIND_TYPE_%lat_in(1) ) then
              jcl = 1
              jcu = 1
-          else if( yz .ge. Interp%HI_KIND_TYPE%lat_in(nlat_in) ) then
+          else if( yz .ge. Interp%HI_KIND_TYPE_%lat_in(nlat_in) ) then
              jcl = nlat_in
              jcu = nlat_in
           else
-             jcl = INDL(Interp%HI_KIND_TYPE%lat_in, yz)
-             jcu = INDU(Interp%HI_KIND_TYPE%lat_in, yz)
+             jcl = INDL_(Interp%HI_KIND_TYPE_%lat_in, yz)
+             jcu = INDU_(Interp%HI_KIND_TYPE_%lat_in, yz)
           endif
 
           icl = 0
           icu = 0
           !--- cyclic condition, do we need to use do while
-          if( xz .gt. Interp%HI_KIND_TYPE%lon_in(nlon_in) ) xz = xz - tpi
-          if( xz .le. Interp%HI_KIND_TYPE%lon_in(1) ) xz = xz + tpi
-          if( xz .ge. Interp%HI_KIND_TYPE%lon_in(nlon_in) ) then
+          if( xz .gt. Interp%HI_KIND_TYPE_%lon_in(nlon_in) ) xz = xz - tpi
+          if( xz .le. Interp%HI_KIND_TYPE_%lon_in(1) ) xz = xz + tpi
+          if( xz .ge. Interp%HI_KIND_TYPE_%lon_in(nlon_in) ) then
             icl = nlon_in
             icu = 1
-            Interp%HI_KIND_TYPE%rat_x(i,j) = (xz - Interp%HI_KIND_TYPE%lon_in(icl))/(Interp%HI_KIND_TYPE%lon_in(icu) &
-                                             & - Interp%HI_KIND_TYPE%lon_in(icl) + tpi)
+            Interp%HI_KIND_TYPE_%rat_x(i,j) = (xz - Interp%HI_KIND_TYPE_%lon_in(icl))/(Interp%HI_KIND_TYPE_%lon_in(icu) &
+                                             & - Interp%HI_KIND_TYPE_%lon_in(icl) + tpi)
           else
-            icl = INDL(Interp%HI_KIND_TYPE%lon_in, xz)
-            icu = INDU(Interp%HI_KIND_TYPE%lon_in, xz)
-            Interp%HI_KIND_TYPE%rat_x(i,j) = (xz - Interp%HI_KIND_TYPE%lon_in(icl))/(Interp%HI_KIND_TYPE%lon_in(icu) &
-                                             & - Interp%HI_KIND_TYPE%lon_in(icl))
+            icl = INDL_(Interp%HI_KIND_TYPE_%lon_in, xz)
+            icu = INDU_(Interp%HI_KIND_TYPE_%lon_in, xz)
+            Interp%HI_KIND_TYPE_%rat_x(i,j) = (xz - Interp%HI_KIND_TYPE_%lon_in(icl))/(Interp%HI_KIND_TYPE_%lon_in(icu) &
+                                             & - Interp%HI_KIND_TYPE_%lon_in(icl))
           endif
           Interp%j_lat(i,j,1) = jcl
           Interp%j_lat(i,j,2) = jcu
           Interp%i_lon(i,j,1) = icl
           Interp%i_lon(i,j,2) = icu
           if(jcl == jcu) then
-             Interp%HI_KIND_TYPE%rat_y(i,j) = 0.0
+             Interp%HI_KIND_TYPE_%rat_y(i,j) = 0.0
           else
-             Interp%HI_KIND_TYPE%rat_y(i,j) = (yz - Interp%HI_KIND_TYPE%lat_in(jcl))/(Interp%HI_KIND_TYPE%lat_in(jcu) &
-                                              & - Interp%HI_KIND_TYPE%lat_in(jcl))
+             Interp%HI_KIND_TYPE_%rat_y(i,j) = (yz - Interp%HI_KIND_TYPE_%lat_in(jcl))/(Interp%HI_KIND_TYPE_%lat_in(jcu) &
+                                              & - Interp%HI_KIND_TYPE_%lat_in(jcl))
           endif
-!          if(yz.gt.Interp%HI_KIND_TYPE%lat_in(jcu)) call mpp_error(FATAL, ' BICUBIC_NEW_1D_S:
+!          if(yz.gt.Interp%HI_KIND_TYPE_%lat_in(jcu)) call mpp_error(FATAL, ' HORIZ_INTERP_BICUBIC_NEW_1D_S_:
 !          yf < ycl, no valid boundary point')
-!          if(yz.lt.Interp%HI_KIND_TYPE%lat_in(jcl)) call mpp_error(FATAL, ' BICUBIC_NEW_1D_S:
+!          if(yz.lt.Interp%HI_KIND_TYPE_%lat_in(jcl)) call mpp_error(FATAL, ' HORIZ_INTERP_BICUBIC_NEW_1D_S_:
 !          yf > ycu, no valid boundary point')
-!          if(xz.gt.Interp%HI_KIND_TYPE%lon_in(icu)) call mpp_error(FATAL, ' BICUBIC_NEW_1D_S:
+!          if(xz.gt.Interp%HI_KIND_TYPE_%lon_in(icu)) call mpp_error(FATAL, ' HORIZ_INTERP_BICUBIC_NEW_1D_S_:
 !          xf < xcl, no valid boundary point')
-!          if(xz.lt.Interp%HI_KIND_TYPE%lon_in(icl)) call mpp_error(FATAL, ' BICUBIC_NEW_1D_S:
+!          if(xz.lt.Interp%HI_KIND_TYPE_%lon_in(icl)) call mpp_error(FATAL, ' HORIZ_INTERP_BICUBIC_NEW_1D_S_:
 !          xf > xcu, no valid boundary point')
         enddo
       enddo
-  end subroutine BICUBIC_NEW_1D_S
+  end subroutine HORIZ_INTERP_BICUBIC_NEW_1D_S_
 
   !> @brief Creates a new @ref horiz_interp_type
   !!
   !> Allocates space and initializes a derived-type variable
   !! that contains pre-computed interpolation indices and weights.
-  subroutine BICUBIC_NEW_1D ( Interp, lon_in, lat_in, lon_out, lat_out, &
+  subroutine HORIZ_INTERP_BICUBIC_NEW_1D_ ( Interp, lon_in, lat_in, lon_out, lat_out, &
        verbose, src_modulo )
 
     !-----------------------------------------------------------------------
     type(horiz_interp_type), intent(inout) :: Interp
-    real(FMS_HI_KIND), intent(in),  dimension(:)        :: lon_in , lat_in
-    real(FMS_HI_KIND), intent(in),  dimension(:)        :: lon_out, lat_out
+    real(FMS_HI_KIND_), intent(in),  dimension(:)        :: lon_in , lat_in
+    real(FMS_HI_KIND_), intent(in),  dimension(:)        :: lon_out, lat_out
     integer, intent(in),          optional :: verbose
     logical, intent(in),          optional :: src_modulo
     integer                                :: i, j, ip1, im1, jp1, jm1
     logical                                :: src_is_modulo
     integer                                :: nlon_in, nlat_in, nlon_out, nlat_out
     integer                                :: jcl, jcu, icl, icu, jj
-    real(FMS_HI_KIND)                                   :: xz, yz
+    real(FMS_HI_KIND_)                                   :: xz, yz
     integer                                :: unit
 
     if(present(verbose)) verbose_bicubic = verbose
@@ -223,25 +223,25 @@
     nlon_out = size(lon_out); nlat_out = size(lat_out)
     Interp%nlon_src = nlon_in;  Interp%nlat_src = nlat_in
     Interp%nlon_dst = nlon_out; Interp%nlat_dst = nlat_out
-    if( .not. allocated(Interp%HI_KIND_TYPE)) allocate(Interp%HI_KIND_TYPE)
-    allocate ( Interp%HI_KIND_TYPE%wti     (nlon_in, nlat_in, 3) )
-    allocate ( Interp%HI_KIND_TYPE%lon_in  (nlon_in) )
-    allocate ( Interp%HI_KIND_TYPE%lat_in  (nlat_in) )
-    allocate ( Interp%HI_KIND_TYPE%rat_x   (nlon_out, nlat_out) )
-    allocate ( Interp%HI_KIND_TYPE%rat_y   (nlon_out, nlat_out) )
+    if( .not. allocated(Interp%HI_KIND_TYPE_)) allocate(Interp%HI_KIND_TYPE_)
+    allocate ( Interp%HI_KIND_TYPE_%wti     (nlon_in, nlat_in, 3) )
+    allocate ( Interp%HI_KIND_TYPE_%lon_in  (nlon_in) )
+    allocate ( Interp%HI_KIND_TYPE_%lat_in  (nlat_in) )
+    allocate ( Interp%HI_KIND_TYPE_%rat_x   (nlon_out, nlat_out) )
+    allocate ( Interp%HI_KIND_TYPE_%rat_y   (nlon_out, nlat_out) )
     allocate ( Interp%i_lon   (nlon_out, nlat_out, 2) )
     allocate ( Interp%j_lat   (nlon_out, nlat_out, 2) )
 
-    Interp%HI_KIND_TYPE%lon_in = lon_in
-    Interp%HI_KIND_TYPE%lat_in = lat_in
+    Interp%HI_KIND_TYPE_%lon_in = lon_in
+    Interp%HI_KIND_TYPE_%lat_in = lat_in
 
     if ( verbose_bicubic > 0 ) then
        unit = stdout()
-       write (unit,'(/,"Initialising bicubic interpolation, interface BICUBIC_NEW_1D")')
+       write (unit,'(/,"Initialising bicubic interpolation, interface HORIZ_INTERP_BICUBIC_NEW_1D_")')
        write (unit,'(/," Longitude of coarse grid points (radian): xc(i) i=1, ",i4)') Interp%nlon_src
-       write (unit,'(1x,10f10.4)') (Interp%HI_KIND_TYPE%lon_in(jj),jj=1,Interp%nlon_src)
+       write (unit,'(1x,10f10.4)') (Interp%HI_KIND_TYPE_%lon_in(jj),jj=1,Interp%nlon_src)
        write (unit,'(/," Latitude of coarse grid points (radian):  yc(j) j=1, ",i4)') Interp%nlat_src
-       write (unit,'(1x,10f10.4)') (Interp%HI_KIND_TYPE%lat_in(jj),jj=1,Interp%nlat_src)
+       write (unit,'(1x,10f10.4)') (Interp%HI_KIND_TYPE_%lat_in(jj),jj=1,Interp%nlat_src)
        write (unit,*)
        write (unit,'(/," Longitude of fine grid points (radian): xf(i) i=1, ",i4)') Interp%nlat_dst
        write (unit,'(1x,10f10.4)') (lon_out(jj),jj=1,Interp%nlon_dst)
@@ -258,7 +258,7 @@
       do i=1,nlon_in
         ip1=min(i+1,nlon_in)
         im1=max(i-1,1)
-        Interp%HI_KIND_TYPE%wti(i,j,1) = real(1.0, FMS_HI_KIND)/(lon_in(ip1)-lon_in(im1))
+        Interp%HI_KIND_TYPE_%wti(i,j,1) = real(1.0, FMS_HI_KIND_)/(lon_in(ip1)-lon_in(im1))
       enddo
     enddo
 
@@ -271,7 +271,7 @@
         jp1=min(j+1,nlat_in)
         jm1=max(j-1,1)
         do i=1,nlon_in
-          Interp%HI_KIND_TYPE%wti(i,j,2) = real(1.0, FMS_HI_KIND)/(lat_in(jp1)-lat_in(jm1))
+          Interp%HI_KIND_TYPE_%wti(i,j,2) = real(1.0, FMS_HI_KIND_)/(lat_in(jp1)-lat_in(jm1))
         enddo
       enddo
 
@@ -285,7 +285,7 @@
         do i=1,nlon_in
           ip1=min(i+1,nlon_in)
           im1=max(i-1,1)
-          Interp%HI_KIND_TYPE%wti(i,j,3) = real(1.0, FMS_HI_KIND)/((lon_in(ip1)-lon_in(im1))*(lat_in(jp1)-lat_in(jm1)))
+          Interp%HI_KIND_TYPE_%wti(i,j,3) = real(1.0, FMS_HI_KIND_)/((lon_in(ip1)-lon_in(im1))*(lat_in(jp1)-lat_in(jm1)))
         enddo
       enddo
 !---------------------------------------------------------------------------
@@ -302,8 +302,8 @@
            jcl = nlat_in
            jcu = nlat_in
         else
-           jcl = INDL(lat_in, yz)
-           jcu = INDU(lat_in, yz)
+           jcl = INDL_(lat_in, yz)
+           jcu = INDU_(lat_in, yz)
         endif
         do i=1,nlon_out
           xz = lon_out(i)
@@ -315,54 +315,54 @@
           if( xz .ge. lon_in(nlon_in) ) then
             icl = nlon_in
             icu = 1
-            Interp%HI_KIND_TYPE%rat_x(i,j) = (xz - Interp%HI_KIND_TYPE%lon_in(icl))/(Interp%HI_KIND_TYPE%lon_in(icu) &
-                                            & - Interp%HI_KIND_TYPE%lon_in(icl) + tpi)
+            Interp%HI_KIND_TYPE_%rat_x(i,j) = (xz - Interp%HI_KIND_TYPE_%lon_in(icl))/(Interp%HI_KIND_TYPE_%lon_in(icu) &
+                                            & - Interp%HI_KIND_TYPE_%lon_in(icl) + tpi)
           else
-            icl = INDL(lon_in, xz)
-            icu = INDU(lon_in, xz)
-            Interp%HI_KIND_TYPE%rat_x(i,j) = (xz - Interp%HI_KIND_TYPE%lon_in(icl))/(Interp%HI_KIND_TYPE%lon_in(icu) &
-                                            & - Interp%HI_KIND_TYPE%lon_in(icl))
+            icl = INDL_(lon_in, xz)
+            icu = INDU_(lon_in, xz)
+            Interp%HI_KIND_TYPE_%rat_x(i,j) = (xz - Interp%HI_KIND_TYPE_%lon_in(icl))/(Interp%HI_KIND_TYPE_%lon_in(icu) &
+                                            & - Interp%HI_KIND_TYPE_%lon_in(icl))
           endif
-          icl = INDL(lon_in, xz)
-          icu = INDU(lon_in, xz)
+          icl = INDL_(lon_in, xz)
+          icu = INDU_(lon_in, xz)
           Interp%j_lat(i,j,1) = jcl
           Interp%j_lat(i,j,2) = jcu
           Interp%i_lon(i,j,1) = icl
           Interp%i_lon(i,j,2) = icu
           if(jcl == jcu) then
-             Interp%HI_KIND_TYPE%rat_y(i,j) = real(0.0, FMS_HI_KIND)
+             Interp%HI_KIND_TYPE_%rat_y(i,j) = real(0.0, FMS_HI_KIND_)
           else
-             Interp%HI_KIND_TYPE%rat_y(i,j) = (yz - Interp%HI_KIND_TYPE%lat_in(jcl))/(Interp%HI_KIND_TYPE%lat_in(jcu) &
-                                             & - Interp%HI_KIND_TYPE%lat_in(jcl))
+             Interp%HI_KIND_TYPE_%rat_y(i,j) = (yz - Interp%HI_KIND_TYPE_%lat_in(jcl))/(Interp%HI_KIND_TYPE_%lat_in(jcu) &
+                                             & - Interp%HI_KIND_TYPE_%lat_in(jcl))
           endif
-!          if(yz.gt.lat_in(jcu)) call mpp_error(FATAL, ' BICUBIC_NEW_1D: yf <
+!          if(yz.gt.lat_in(jcu)) call mpp_error(FATAL, ' HORIZ_INTERP_BICUBIC_NEW_1D_: yf <
 !          ycl, no valid boundary point')
-!          if(yz.lt.lat_in(jcl)) call mpp_error(FATAL, ' BICUBIC_NEW_1D: yf >
+!          if(yz.lt.lat_in(jcl)) call mpp_error(FATAL, ' HORIZ_INTERP_BICUBIC_NEW_1D_: yf >
 !          ycu, no valid boundary point')
-!          if(xz.gt.lon_in(icu)) call mpp_error(FATAL, ' BICUBIC_NEW_1D: xf <
+!          if(xz.gt.lon_in(icu)) call mpp_error(FATAL, ' HORIZ_INTERP_BICUBIC_NEW_1D_: xf <
 !          xcl, no valid boundary point')
-!          if(xz.lt.lon_in(icl)) call mpp_error(FATAL, ' BICUBIC_NEW_1D: xf >
+!          if(xz.lt.lon_in(icl)) call mpp_error(FATAL, ' HORIZ_INTERP_BICUBIC_NEW_1D_: xf >
 !          xcu, no valid boundary point')
         enddo
       enddo
 
-  end subroutine BICUBIC_NEW_1D
+  end subroutine HORIZ_INTERP_BICUBIC_NEW_1D_
 
   !> @brief Perform bicubic horizontal interpolation
-  subroutine BICUBIC_NEW( Interp, data_in, data_out, verbose, mask_in, mask_out, missing_value, &
+  subroutine HORIZ_INTERP_BICUBIC_NEW_( Interp, data_in, data_out, verbose, mask_in, mask_out, missing_value, &
                                  &  missing_permit)
     type (horiz_interp_type), intent(in)        :: Interp
-    real(FMS_HI_KIND), intent(in),  dimension(:,:)           :: data_in
-    real(FMS_HI_KIND), intent(out), dimension(:,:)           :: data_out
+    real(FMS_HI_KIND_), intent(in),  dimension(:,:)           :: data_in
+    real(FMS_HI_KIND_), intent(out), dimension(:,:)           :: data_out
     integer, intent(in),               optional :: verbose
-    real(FMS_HI_KIND), intent(in),  dimension(:,:), optional :: mask_in
-    real(FMS_HI_KIND), intent(out), dimension(:,:), optional :: mask_out
-    real(FMS_HI_KIND), intent(in),                  optional :: missing_value
+    real(FMS_HI_KIND_), intent(in),  dimension(:,:), optional :: mask_in
+    real(FMS_HI_KIND_), intent(out), dimension(:,:), optional :: mask_out
+    real(FMS_HI_KIND_), intent(in),                  optional :: missing_value
     integer, intent(in),               optional :: missing_permit
-    real(FMS_HI_KIND) :: yz, ycu, ycl
-    real(FMS_HI_KIND) :: xz, xcu, xcl
-    real(FMS_HI_KIND) :: val, val1, val2
-    real(FMS_HI_KIND), dimension(4) :: y, y1, y2, y12
+    real(FMS_HI_KIND_) :: yz, ycu, ycl
+    real(FMS_HI_KIND_) :: xz, xcu, xcl
+    real(FMS_HI_KIND_) :: val, val1, val2
+    real(FMS_HI_KIND_), dimension(4) :: y, y1, y2, y12
     integer :: icl, icu, jcl, jcu
     integer :: iclp1, icup1, jclp1, jcup1
     integer :: iclm1, icum1, jclm1, jcum1
@@ -373,12 +373,12 @@
 !    if ( present(fill) ) fill_in = fill
 !   use dfc_x and dfc_y as workspace
 !    if ( fill_in ) call fill_xy(fc(ics:ice,jcs:jce), ics, ice, jcs, jce, maxpass=2)
-!    where ( data_in .le. missing ) data_in(:,:) = real(0.0, FMS_HI_KIND)
+!    where ( data_in .le. missing ) data_in(:,:) = real(0.0, FMS_HI_KIND_)
 !!
     do j=1, Interp%nlat_dst
       do i=1, Interp%nlon_dst
-        yz  = Interp%HI_KIND_TYPE%rat_y(i,j)
-        xz  = Interp%HI_KIND_TYPE%rat_x(i,j)
+        yz  = Interp%HI_KIND_TYPE_%rat_y(i,j)
+        xz  = Interp%HI_KIND_TYPE_%rat_x(i,j)
         jcl = Interp%j_lat(i,j,1)
         jcu = Interp%j_lat(i,j,2)
         icl = Interp%i_lon(i,j,1)
@@ -386,13 +386,13 @@
         if( icl > icu ) then
           iclp1 = icu
           icum1 = icl
-          xcl = Interp%HI_KIND_TYPE%lon_in(icl)
-          xcu = Interp%HI_KIND_TYPE%lon_in(icu)+tpi
+          xcl = Interp%HI_KIND_TYPE_%lon_in(icl)
+          xcu = Interp%HI_KIND_TYPE_%lon_in(icu)+tpi
         else
           iclp1 = min(icl+1,Interp%nlon_src)
           icum1 = max(icu-1,1)
-          xcl = Interp%HI_KIND_TYPE%lon_in(icl)
-          xcu = Interp%HI_KIND_TYPE%lon_in(icu)
+          xcl = Interp%HI_KIND_TYPE_%lon_in(icl)
+          xcu = Interp%HI_KIND_TYPE_%lon_in(icu)
         endif
         iclm1 = max(icl-1,1)
         icup1 = min(icu+1,Interp%nlon_src)
@@ -400,50 +400,50 @@
         jclm1 = max(jcl-1,1)
         jcup1 = min(jcu+1,Interp%nlat_src)
         jcum1 = max(jcu-1,1)
-        ycl = Interp%HI_KIND_TYPE%lat_in(jcl)
-        ycu = Interp%HI_KIND_TYPE%lat_in(jcu)
-!        xcl = Interp%HI_KIND_TYPE%lon_in(icl)
-!        xcu = Interp%HI_KIND_TYPE%lon_in(icu)
+        ycl = Interp%HI_KIND_TYPE_%lat_in(jcl)
+        ycu = Interp%HI_KIND_TYPE_%lat_in(jcu)
+!        xcl = Interp%HI_KIND_TYPE_%lon_in(icl)
+!        xcu = Interp%HI_KIND_TYPE_%lon_in(icu)
         y(1)  =  data_in(icl,jcl)
         y(2)  =  data_in(icu,jcl)
         y(3)  =  data_in(icu,jcu)
         y(4)  =  data_in(icl,jcu)
-        y1(1) = ( data_in(iclp1,jcl) - data_in(iclm1,jcl) ) * Interp%HI_KIND_TYPE%wti(icl,jcl,1)
-        y1(2) = ( data_in(icup1,jcl) - data_in(icum1,jcl) ) * Interp%HI_KIND_TYPE%wti(icu,jcl,1)
-        y1(3) = ( data_in(icup1,jcu) - data_in(icum1,jcu) ) * Interp%HI_KIND_TYPE%wti(icu,jcu,1)
-        y1(4) = ( data_in(iclp1,jcu) - data_in(iclm1,jcu) ) * Interp%HI_KIND_TYPE%wti(icl,jcu,1)
-        y2(1) = ( data_in(icl,jclp1) - data_in(icl,jclm1) ) * Interp%HI_KIND_TYPE%wti(icl,jcl,2)
-        y2(2) = ( data_in(icu,jclp1) - data_in(icu,jclm1) ) * Interp%HI_KIND_TYPE%wti(icu,jcl,2)
-        y2(3) = ( data_in(icu,jcup1) - data_in(icu,jcum1) ) * Interp%HI_KIND_TYPE%wti(icu,jcu,2)
-        y2(4) = ( data_in(icl,jcup1) - data_in(icl,jcum1) ) * Interp%HI_KIND_TYPE%wti(icl,jcu,2)
+        y1(1) = ( data_in(iclp1,jcl) - data_in(iclm1,jcl) ) * Interp%HI_KIND_TYPE_%wti(icl,jcl,1)
+        y1(2) = ( data_in(icup1,jcl) - data_in(icum1,jcl) ) * Interp%HI_KIND_TYPE_%wti(icu,jcl,1)
+        y1(3) = ( data_in(icup1,jcu) - data_in(icum1,jcu) ) * Interp%HI_KIND_TYPE_%wti(icu,jcu,1)
+        y1(4) = ( data_in(iclp1,jcu) - data_in(iclm1,jcu) ) * Interp%HI_KIND_TYPE_%wti(icl,jcu,1)
+        y2(1) = ( data_in(icl,jclp1) - data_in(icl,jclm1) ) * Interp%HI_KIND_TYPE_%wti(icl,jcl,2)
+        y2(2) = ( data_in(icu,jclp1) - data_in(icu,jclm1) ) * Interp%HI_KIND_TYPE_%wti(icu,jcl,2)
+        y2(3) = ( data_in(icu,jcup1) - data_in(icu,jcum1) ) * Interp%HI_KIND_TYPE_%wti(icu,jcu,2)
+        y2(4) = ( data_in(icl,jcup1) - data_in(icl,jcum1) ) * Interp%HI_KIND_TYPE_%wti(icl,jcu,2)
         y12(1)= ( data_in(iclp1,jclp1) + data_in(iclm1,jclm1) - data_in(iclm1,jclp1) &
-                - data_in(iclp1,jclm1) ) * Interp%HI_KIND_TYPE%wti(icl,jcl,3)
+                - data_in(iclp1,jclm1) ) * Interp%HI_KIND_TYPE_%wti(icl,jcl,3)
         y12(2)= ( data_in(icup1,jclp1) + data_in(icum1,jclm1) - data_in(icum1,jclp1) &
-                - data_in(icup1,jclm1) ) * Interp%HI_KIND_TYPE%wti(icu,jcl,3)
+                - data_in(icup1,jclm1) ) * Interp%HI_KIND_TYPE_%wti(icu,jcl,3)
         y12(3)= ( data_in(icup1,jcup1) + data_in(icum1,jcum1) - data_in(icum1,jcup1) &
-                - data_in(icup1,jcum1) ) * Interp%HI_KIND_TYPE%wti(icu,jcu,3)
+                - data_in(icup1,jcum1) ) * Interp%HI_KIND_TYPE_%wti(icu,jcu,3)
         y12(4)= ( data_in(iclp1,jcup1) + data_in(iclm1,jcum1) - data_in(iclm1,jcup1) &
-                - data_in(iclp1,jcum1) ) * Interp%HI_KIND_TYPE%wti(icl,jcu,3)
+                - data_in(iclp1,jcum1) ) * Interp%HI_KIND_TYPE_%wti(icl,jcu,3)
 
-        call BCUINT(y,y1,y2,y12,xcl,xcu,ycl,ycu,xz,yz,val,val1,val2)
+        call BCUINT_(y,y1,y2,y12,xcl,xcu,ycl,ycu,xz,yz,val,val1,val2)
         data_out   (i,j) = val
-        if(present(mask_out)) mask_out(i,j) = real(1.0, FMS_HI_KIND)
+        if(present(mask_out)) mask_out(i,j) = real(1.0, FMS_HI_KIND_)
 !!        dff_x(i,j) = val1
 !!        dff_y(i,j) = val2
       enddo
     enddo
   return
-  end subroutine BICUBIC_NEW
+  end subroutine HORIZ_INTERP_BICUBIC_NEW_
 
 
 !---------------------------------------------------------------------------
 
-   subroutine BCUINT(y,y1,y2,y12,x1l,x1u,x2l,x2u,t,u,ansy,ansy1,ansy2)
-      real(FMS_HI_KIND) ansy,ansy1,ansy2,x1l,x1u,x2l,x2u,y(4),y1(4),y12(4),y2(4)
-!     uses BCUCOF
+   subroutine BCUINT_(y,y1,y2,y12,x1l,x1u,x2l,x2u,t,u,ansy,ansy1,ansy2)
+      real(FMS_HI_KIND_) ansy,ansy1,ansy2,x1l,x1u,x2l,x2u,y(4),y1(4),y12(4),y2(4)
+!     uses BCUCOF_
       integer i
-      real(FMS_HI_KIND) t,u,c(4,4)
-      call BCUCOF(y,y1,y2,y12,x1u-x1l,x2u-x2l,c)
+      real(FMS_HI_KIND_) t,u,c(4,4)
+      call BCUCOF_(y,y1,y2,y12,x1u-x1l,x2u-x2l,c)
       ansy=0.
       ansy2=0.
       ansy1=0.
@@ -456,15 +456,15 @@
 !      ansy2=ansy2/(x2u-x2l) ! could be used for accuracy checks
       return
 !  (c) copr. 1986-92 numerical recipes software -3#(-)f.
-   end subroutine BCUINT
+   end subroutine BCUINT_
 !---------------------------------------------------------------------------
 
-   subroutine BCUCOF(y,y1,y2,y12,d1,d2,c)
-      real(FMS_HI_KIND) d1,d2,c(4,4),y(4),y1(4),y12(4),y2(4)
+   subroutine BCUCOF_(y,y1,y2,y12,d1,d2,c)
+      real(FMS_HI_KIND_) d1,d2,c(4,4),y(4),y1(4),y12(4),y2(4)
       integer i,j,k,l
-      real(FMS_HI_KIND) d1d2,xx,cl(16),x(16)
+      real(FMS_HI_KIND_) d1d2,xx,cl(16),x(16)
       !! previous set by a data block, zeroing out since last few rows werent st
-      real(FMS_HI_KIND), save, dimension(16,16) :: wt
+      real(FMS_HI_KIND_), save, dimension(16,16) :: wt
       wt = 0.
       wt(1,:) = (/1., 0., -3., 2., 4*0., -3., 0., 9., -6., 2., 0., -6., 4., 8*0., 3., 0./)
       wt(2,:) = (/-9., 6., -2., 0., 6., -4., 10*0., 9., -6., 2*0., -6., 4., 2*0., 3., -2., 6*0. /)
@@ -499,53 +499,53 @@
       enddo
       return
 !  (c) copr. 1986-92 numerical recipes software -3#(-)f.
-   end subroutine BCUCOF
+   end subroutine BCUCOF_
 
 !-----------------------------------------------------------------------
 
 !> find the lower neighbour of xf in field xc, return is the index
-    function INDL(xc, xf)
-    real(FMS_HI_KIND), intent(in) :: xc(1:)
-    real(FMS_HI_KIND), intent(in) :: xf
-    integer             :: INDL
+    function INDL_(xc, xf)
+    real(FMS_HI_KIND_), intent(in) :: xc(1:)
+    real(FMS_HI_KIND_), intent(in) :: xf
+    integer             :: INDL_
     integer             :: ii
-       INDL = 1
+       INDL_ = 1
        do ii=1, size(xc)
          if(xc(ii).gt.xf) return
-         INDL = ii
+         INDL_ = ii
        enddo
-       call mpp_error(FATAL,'Error in INDL')
+       call mpp_error(FATAL,'Error in INDL_')
     return
-    end function INDL
+    end function INDL_
 
 !-----------------------------------------------------------------------
 
 !> find the upper neighbour of xf in field xc, return is the index
-    function INDU(xc, xf)
-    real(FMS_HI_KIND), intent(in) :: xc(1:)
-    real(FMS_HI_KIND), intent(in) :: xf
-    integer             :: INDU
+    function INDU_(xc, xf)
+    real(FMS_HI_KIND_), intent(in) :: xc(1:)
+    real(FMS_HI_KIND_), intent(in) :: xf
+    integer             :: INDU_
     integer             :: ii
        do ii=1, size(xc)
-         INDU = ii
+         INDU_ = ii
          if(xc(ii).gt.xf) return
        enddo
-       call mpp_error(FATAL,'Error in INDU')
+       call mpp_error(FATAL,'Error in INDU_')
     return
-    end function INDU
+    end function INDU_
 
 !-----------------------------------------------------------------------
 
-    subroutine FILL_XY(fi, ics, ice, jcs, jce, mask, maxpass)
+    subroutine FILL_XY_(fi, ics, ice, jcs, jce, mask, maxpass)
       integer, intent(in)        :: ics,ice,jcs,jce
-      real(FMS_HI_KIND), intent(inout)        :: fi(ics:ice,jcs:jce)
-      real(FMS_HI_KIND), intent(in), optional :: mask(ics:ice,jcs:jce)
+      real(FMS_HI_KIND_), intent(inout)        :: fi(ics:ice,jcs:jce)
+      real(FMS_HI_KIND_), intent(in), optional :: mask(ics:ice,jcs:jce)
       integer, intent(in)        :: maxpass
-      real(FMS_HI_KIND)                       :: work_old(ics:ice,jcs:jce)
-      real(FMS_HI_KIND)                       :: work_new(ics:ice,jcs:jce)
+      real(FMS_HI_KIND_)                       :: work_old(ics:ice,jcs:jce)
+      real(FMS_HI_KIND_)                       :: work_new(ics:ice,jcs:jce)
       logical :: ready
-      real(FMS_HI_KIND)    :: blank = real(-1.e30,FMS_HI_KIND)
-      real(FMS_HI_KIND)    :: tavr
+      real(FMS_HI_KIND_)    :: blank = real(-1.e30,FMS_HI_KIND_)
+      real(FMS_HI_KIND_)    :: tavr
       integer :: ipass = 0
       integer :: inl, inr, jnl, jnu, i, j, is, js,  iavr
 
@@ -653,5 +653,5 @@
         fi(:,:) = work_new(:,:)
       endif
       return
-    end subroutine FILL_XY
+    end subroutine FILL_XY_
 !> @}

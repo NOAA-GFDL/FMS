@@ -29,7 +29,7 @@ module horiz_interp_type_mod
 use mpp_mod, only : mpp_send, mpp_recv, mpp_sync_self, mpp_error, FATAL
 use mpp_mod, only : mpp_pe, mpp_root_pe, mpp_npes
 use mpp_mod, only : COMM_TAG_1, COMM_TAG_2
-use platform_mod
+use platform_mod, only: r4_kind, r8_kind
 
 implicit none
 private

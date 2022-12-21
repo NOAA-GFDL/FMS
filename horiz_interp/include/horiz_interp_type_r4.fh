@@ -18,11 +18,11 @@
 !***********************************************************************
 !> @addtogroup horiz_interp_type
 !> @{
-#undef FMS_HI_KIND
-#define FMS_HI_KIND 4
+#undef FMS_HI_KIND_
+#define FMS_HI_KIND_ r4_kind
 
-#undef HI_STATS
-#define HI_STATS stats_r4
+#undef HI_STATS_
+#define HI_STATS_ stats_r4
 
 #include "horiz_interp_type.inc"
 !> @}

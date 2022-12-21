@@ -18,35 +18,35 @@
 !***********************************************************************
 !> @addtogroup horiz_interp_bicubic
 !> @{
-#undef FMS_HI_KIND
-#define FMS_HI_KIND 8
+#undef FMS_HI_KIND_
+#define FMS_HI_KIND_ r8_kind
 
-#undef HI_KIND_TYPE
-#define HI_KIND_TYPE kind8_reals
+#undef HI_KIND_TYPE_
+#define HI_KIND_TYPE_ kind8_reals
 
-#undef BICUBIC_NEW_1D_S
-#define BICUBIC_NEW_1D_S horiz_interp_bicubic_new_1d_s_r8
+#undef HORIZ_INTERP_BICUBIC_NEW_1D_S_
+#define HORIZ_INTERP_BICUBIC_NEW_1D_S_ horiz_interp_bicubic_new_1d_s_r8
 
-#undef BICUBIC_NEW_1D
-#define BICUBIC_NEW_1D horiz_interp_bicubic_new_1d_r8
+#undef HORIZ_INTERP_BICUBIC_NEW_1D_
+#define HORIZ_INTERP_BICUBIC_NEW_1D_ horiz_interp_bicubic_new_1d_r8
 
-#undef BICUBIC_NEW
-#define BICUBIC_NEW horiz_interp_bicubic_r8
+#undef HORIZ_INTERP_BICUBIC_NEW_
+#define HORIZ_INTERP_BICUBIC_NEW_ horiz_interp_bicubic_r8
 
-#undef BCUINT
-#define BCUINT bcuint_r8
+#undef BCUINT_
+#define BCUINT_ bcuint_r8
 
-#undef BCUCOF
-#define BCUCOF bcucof_r8
+#undef BCUCOF_
+#define BCUCOF_ bcucof_r8
 
-#undef INDL
-#define INDL indl_r8
+#undef INDL_
+#define INDL_ indl_r8
 
-#undef INDU
-#define INDU indu_r8
+#undef INDU_
+#define INDU_ indu_r8
 
-#undef FILL_XY
-#define FILL_XY fill_xy_r8
+#undef FILL_XY_
+#define FILL_XY_ fill_xy_r8
 
 #include "horiz_interp_bicubic.inc"
 !> @}

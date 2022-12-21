@@ -19,14 +19,14 @@
 !> @addtogroup horiz_interp_type_mod
 !> @{
  !> @brief This statistics is for bilinear interpolation and spherical regrid.
- subroutine HI_STATS ( dat, low, high, avg, miss, missing_value, mask )
- real(FMS_HI_KIND),    intent(in)  :: dat(:,:)
- real(FMS_HI_KIND),    intent(out) :: low, high, avg
+ subroutine HI_STATS_ ( dat, low, high, avg, miss, missing_value, mask )
+ real(FMS_HI_KIND_),    intent(in)  :: dat(:,:)
+ real(FMS_HI_KIND_),    intent(out) :: low, high, avg
  integer, intent(out) :: miss
- real(FMS_HI_KIND), intent(in), optional :: missing_value
- real(FMS_HI_KIND),    intent(in), optional :: mask(:,:)
+ real(FMS_HI_KIND_), intent(in), optional :: missing_value
+ real(FMS_HI_KIND_),    intent(in), optional :: mask(:,:)
 
- real(FMS_HI_KIND) :: dsum, buffer_real(3)
+ real(FMS_HI_KIND_) :: dsum, buffer_real(3)
  integer :: pe, root_pe, npes, p, buffer_int(2), npts
  integer :: kind_size
 
@@ -34,7 +34,7 @@
    root_pe = mpp_root_pe()
    npes = mpp_npes()
 
-   dsum = real(0.0, FMS_HI_KIND)
+   dsum = real(0.0, FMS_HI_KIND_)
    miss = 0
 
    if (present(missing_value)) then
@@ -43,17 +43,17 @@
       high = maxval(dat(:,:), dat(:,:) /= missing_value)
       dsum = sum(dat(:,:), dat(:,:) /= missing_value)
    else if(present(mask)) then
-      miss = count(mask(:,:) <= real(0.5, FMS_HI_KIND))
-      low  = minval(dat(:,:),mask=mask(:,:) > real(0.5, FMS_HI_KIND))
-      high = maxval(dat(:,:),mask=mask(:,:) > real(0.5, FMS_HI_KIND))
-      dsum = sum(dat(:,:), mask=mask(:,:) > real(0.5, FMS_HI_KIND))
+      miss = count(mask(:,:) <= real(0.5, FMS_HI_KIND_))
+      low  = minval(dat(:,:),mask=mask(:,:) > real(0.5, FMS_HI_KIND_))
+      high = maxval(dat(:,:),mask=mask(:,:) > real(0.5, FMS_HI_KIND_))
+      dsum = sum(dat(:,:), mask=mask(:,:) > real(0.5, FMS_HI_KIND_))
    else
       miss = 0
       low  = minval(dat(:,:))
       high = maxval(dat(:,:))
       dsum = sum(dat(:,:))
    endif
-   avg = real(0.0, FMS_HI_KIND)
+   avg = real(0.0, FMS_HI_KIND_)
 
    npts = size(dat(:,:)) - miss
    if(pe == root_pe) then

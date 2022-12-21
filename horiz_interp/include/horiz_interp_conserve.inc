@@ -18,20 +18,20 @@
 !***********************************************************************
 !> @addtogroup horiz_interp_conserve_mod
 !> @{
-subroutine CONSERVE_NEW_1DX1D ( Interp, lon_in, lat_in, lon_out, lat_out, verbose)
+subroutine CONSERVE_NEW_1DX1D_ ( Interp, lon_in, lat_in, lon_out, lat_out, verbose)
     type(horiz_interp_type), intent(inout) :: Interp
-    real(FMS_HI_KIND), intent(in),       dimension(:)   :: lon_in , lat_in
-    real(FMS_HI_KIND), intent(in),       dimension(:)   :: lon_out, lat_out
+    real(FMS_HI_KIND_), intent(in),       dimension(:)   :: lon_in , lat_in
+    real(FMS_HI_KIND_), intent(in),       dimension(:)   :: lon_out, lat_out
     integer, intent(in),       optional    :: verbose
 
     !-----------------------------------------------------------------------
-    real(FMS_HI_KIND), dimension(size(lat_out(:))-1,2) :: sph
-    real(FMS_HI_KIND), dimension(size(lon_out(:))-1,2) :: theta
-    real(FMS_HI_KIND), dimension(size(lat_in(:)))      :: slat_in
-    real(FMS_HI_KIND), dimension(size(lon_in(:))-1)    :: dlon_in
-    real(FMS_HI_KIND), dimension(size(lat_in(:))-1)    :: dsph_in
-    real(FMS_HI_KIND), dimension(size(lon_out(:))-1)   :: dlon_out
-    real(FMS_HI_KIND), dimension(size(lat_out(:))-1)   :: dsph_out
+    real(FMS_HI_KIND_), dimension(size(lat_out(:))-1,2) :: sph
+    real(FMS_HI_KIND_), dimension(size(lon_out(:))-1,2) :: theta
+    real(FMS_HI_KIND_), dimension(size(lat_in(:)))      :: slat_in
+    real(FMS_HI_KIND_), dimension(size(lon_in(:))-1)    :: dlon_in
+    real(FMS_HI_KIND_), dimension(size(lat_in(:))-1)    :: dsph_in
+    real(FMS_HI_KIND_), dimension(size(lon_out(:))-1)   :: dlon_out
+    real(FMS_HI_KIND_), dimension(size(lat_out(:))-1)   :: dsph_out
     real    :: blon, fac, hpi, tpi, eps
     integer :: num_iters = 4
     integer :: i, j, m, n, nlon_in, nlat_in, nlon_out, nlat_out,   &
@@ -40,27 +40,27 @@ subroutine CONSERVE_NEW_1DX1D ( Interp, lon_in, lat_in, lon_out, lat_out, verbos
     character(len=64) :: mesg
 
     if(.not. module_is_initialized) call mpp_error(FATAL, &
-         'CONSERVE_NEW_1DX1D: horiz_interp_conserve_init is not called')
+         'CONSERVE_NEW_1DX1D_: horiz_interp_conserve_init is not called')
 
     if(great_circle_algorithm) call mpp_error(FATAL, &
-         'CONSERVE_NEW_1DX1D: great_circle_algorithm is not implemented, contact developer')
+         'CONSERVE_NEW_1DX1D_: great_circle_algorithm is not implemented, contact developer')
     !-----------------------------------------------------------------------
     iverbose = 0;  if (present(verbose)) iverbose = verbose
 
     pe      = mpp_pe()
     root_pe = mpp_root_pe()
     !-----------------------------------------------------------------------
-    hpi = real(0.5, FMS_HI_KIND)*pi
-    tpi = real(4., FMS_HI_KIND)*hpi
+    hpi = real(0.5, FMS_HI_KIND_)*pi
+    tpi = real(4., FMS_HI_KIND_)*hpi
     Interp%version = 1
     nlon_in = size(lon_in(:))-1;  nlat_in = size(lat_in(:))-1
     nlon_out = size(lon_out(:))-1;  nlat_out = size(lat_out(:))-1
 
-    if( .not. allocated(Interp % HI_KIND_TYPE)) allocate (Interp % HI_KIND_TYPE)
-    allocate ( Interp % HI_KIND_TYPE % facj (nlat_out,2), Interp % jlat (nlat_out,2),      &
-               Interp % HI_KIND_TYPE % faci (nlon_out,2), Interp % ilon (nlon_out,2),      &
-               Interp % HI_KIND_TYPE % area_src (nlon_in, nlat_in),   &
-               Interp % HI_KIND_TYPE % area_dst (nlon_out, nlat_out) )
+    if( .not. allocated(Interp % HI_KIND_TYPE_)) allocate (Interp % HI_KIND_TYPE_)
+    allocate ( Interp % HI_KIND_TYPE_ % facj (nlat_out,2), Interp % jlat (nlat_out,2),      &
+               Interp % HI_KIND_TYPE_ % faci (nlon_out,2), Interp % ilon (nlon_out,2),      &
+               Interp % HI_KIND_TYPE_ % area_src (nlon_in, nlat_in),   &
+               Interp % HI_KIND_TYPE_ % area_dst (nlon_out, nlat_out) )
 
     !-----------------------------------------------------------------------
     !  --- set-up for input grid boxes ---
@@ -114,7 +114,7 @@ subroutine CONSERVE_NEW_1DX1D ( Interp, lon_in, lat_in, lon_out, lat_out, verbos
     Interp%jlat = 0
     do n2 = 1, 2         ! looping on grid box edges
        do n = 1, nlat_out   ! looping on output latitudes
-          eps = real(0.0, FMS_HI_KIND)
+          eps = real(0.0, FMS_HI_KIND_)
           do iter=1,num_iters
              ! find indices from input latitudes
              do j = 1, nlat_in
@@ -126,11 +126,11 @@ subroutine CONSERVE_NEW_1DX1D ( Interp, lon_in, lat_in, lon_out, lat_out, verbos
                    ! weight with sin(lat) to exactly conserve area-integral
                    fac = (sph(n,n2)-slat_in(j))/(slat_in(j+1)-slat_in(j))
                    if (s2n) then
-                      if (n2 == 1) Interp%HI_KIND_TYPE%facj(n,n2) = real(1.0, FMS_HI_KIND) - fac
-                      if (n2 == 2) Interp%HI_KIND_TYPE%facj(n,n2) = fac
+                      if (n2 == 1) Interp%HI_KIND_TYPE_%facj(n,n2) = real(1.0, FMS_HI_KIND_) - fac
+                      if (n2 == 2) Interp%HI_KIND_TYPE_%facj(n,n2) = fac
                    else
-                      if (n2 == 1) Interp%HI_KIND_TYPE%facj(n,n2) = fac
-                      if (n2 == 2) Interp%HI_KIND_TYPE%facj(n,n2) = real(1.0, FMS_HI_KIND) - fac
+                      if (n2 == 1) Interp%HI_KIND_TYPE_%facj(n,n2) = fac
+                      if (n2 == 2) Interp%HI_KIND_TYPE_%facj(n,n2) = real(1.0, FMS_HI_KIND_) - fac
                    endif
                    exit
                 endif
@@ -157,7 +157,7 @@ subroutine CONSERVE_NEW_1DX1D ( Interp, lon_in, lat_in, lon_out, lat_out, verbos
           blon = theta(m,m2)
           if ( blon < lon_in(1)         ) blon = blon + tpi
           if ( blon > lon_in(nlon_in+1) ) blon = blon - tpi
-          eps = real(0.0, FMS_HI_KIND)
+          eps = real(0.0, FMS_HI_KIND_)
           do iter=1,num_iters
              ! find indices from input longitudes
              do i = 1, nlon_in
@@ -165,8 +165,8 @@ subroutine CONSERVE_NEW_1DX1D ( Interp, lon_in, lat_in, lon_out, lat_out, verbos
                      (blon-lon_in(i+1)) <= eps ) then
                    Interp%ilon(m,m2) = i
                    fac = (blon-lon_in(i))/(lon_in(i+1)-lon_in(i))
-                   if (m2 == 1) Interp%HI_KIND_TYPE%faci(m,m2) = real(1.0, FMS_HI_KIND) - fac
-                   if (m2 == 2) Interp%HI_KIND_TYPE%faci(m,m2) = fac
+                   if (m2 == 1) Interp%HI_KIND_TYPE_%faci(m,m2) = real(1.0, FMS_HI_KIND_) - fac
+                   if (m2 == 2) Interp%HI_KIND_TYPE_%faci(m,m2) = fac
                    exit
                 endif
              enddo
@@ -188,7 +188,7 @@ subroutine CONSERVE_NEW_1DX1D ( Interp, lon_in, lat_in, lon_out, lat_out, verbos
 
     do j = 1,nlat_in
        do i = 1,nlon_in
-          Interp%HI_KIND_TYPE%area_src(i,j) = dlon_in(i) * dsph_in(j)
+          Interp%HI_KIND_TYPE_%area_src(i,j) = dlon_in(i) * dsph_in(j)
        enddo
     enddo
 
@@ -196,7 +196,7 @@ subroutine CONSERVE_NEW_1DX1D ( Interp, lon_in, lat_in, lon_out, lat_out, verbos
 
     do n = 1, nlat_out
        do m = 1, nlon_out
-          Interp%HI_KIND_TYPE%area_dst(m,n) = dlon_out(m) * dsph_out(n)
+          Interp%HI_KIND_TYPE_%area_dst(m,n) = dlon_out(m) * dsph_out(n)
        enddo
     enddo
 
@@ -205,9 +205,9 @@ subroutine CONSERVE_NEW_1DX1D ( Interp, lon_in, lat_in, lon_out, lat_out, verbos
     ! when using more than one processor
     if (iverbose > 2) then
        write (*,801) (i,Interp%ilon(i,1),Interp%ilon(i,2),  &
-            Interp%HI_KIND_TYPE%faci(i,1),Interp%HI_KIND_TYPE%faci(i,2),i=1,nlon_out)
+            Interp%HI_KIND_TYPE_%faci(i,1),Interp%HI_KIND_TYPE_%faci(i,2),i=1,nlon_out)
        write (*,802) (j,Interp%jlat(j,1),Interp%jlat(j,2),  &
-            Interp%HI_KIND_TYPE%facj(j,1),Interp%HI_KIND_TYPE%facj(j,2),j=1,nlat_out)
+            Interp%HI_KIND_TYPE_%facj(j,1),Interp%HI_KIND_TYPE_%facj(j,2),j=1,nlat_out)
 801    format (/,2x,'i',4x,'is',5x,'ie',4x,'facis',4x,'facie',  &
             /,(i4,2i7,2f10.5))
 802    format (/,2x,'j',4x,'js',5x,'je',4x,'facjs',4x,'facje',  &
@@ -215,17 +215,17 @@ subroutine CONSERVE_NEW_1DX1D ( Interp, lon_in, lat_in, lon_out, lat_out, verbos
     endif
     !-----------------------------------------------------------------------
 
-  end subroutine CONSERVE_NEW_1DX1D
+  end subroutine CONSERVE_NEW_1DX1D_
 
   !#######################################################################
 
-  subroutine CONSERVE_NEW_1DX2D ( Interp, lon_in, lat_in, lon_out, lat_out, &
+  subroutine CONSERVE_NEW_1DX2D_ ( Interp, lon_in, lat_in, lon_out, lat_out, &
                                                mask_in, mask_out, verbose)
     type(horiz_interp_type),        intent(inout) :: Interp
-    real(FMS_HI_KIND), intent(in),              dimension(:)   :: lon_in , lat_in
-    real(FMS_HI_KIND), intent(in),              dimension(:,:) :: lon_out, lat_out
-    real(FMS_HI_KIND), intent(in),    optional, dimension(:,:) :: mask_in
-    real(FMS_HI_KIND), intent(inout), optional, dimension(:,:) :: mask_out
+    real(FMS_HI_KIND_), intent(in),              dimension(:)   :: lon_in , lat_in
+    real(FMS_HI_KIND_), intent(in),              dimension(:,:) :: lon_out, lat_out
+    real(FMS_HI_KIND_), intent(in),    optional, dimension(:,:) :: mask_in
+    real(FMS_HI_KIND_), intent(inout), optional, dimension(:,:) :: mask_out
     integer, intent(in), optional                 :: verbose
 
 
@@ -247,20 +247,20 @@ subroutine CONSERVE_NEW_1DX1D ( Interp, lon_in, lat_in, lon_out, lat_out, verbos
     integer(kind=1) :: one_byte(8)
 
     if(.not. module_is_initialized) call mpp_error(FATAL, &
-         'CONSERVE_NEW_1DX2D: horiz_interp_conserve_init is not called')
+         'CONSERVE_NEW_1DX2D_: horiz_interp_conserve_init is not called')
 
-    if( .not. allocated(Interp%HI_KIND_TYPE)) allocate(Interp%HI_KIND_TYPE)
+    if( .not. allocated(Interp%HI_KIND_TYPE_)) allocate(Interp%HI_KIND_TYPE_)
 
     wordsz=size(transfer(lon_in(1), one_byte))
     if(wordsz .NE. 4 .AND. wordsz .NE. 8) call mpp_error(FATAL, &
-         'CONSERVE_NEW_1DX2D: wordsz should be 4 or 8')
+         'CONSERVE_NEW_1DX2D_: wordsz should be 4 or 8')
 
     if( (size(lon_out,1) .NE. size(lat_out,1)) .OR. (size(lon_out,2) .NE. size(lat_out,2)) )  &
         call mpp_error(FATAL, 'horiz_interp_conserve_mod: size mismatch between lon_out and lat_out')
     nlon_in  = size(lon_in(:)) - 1;  nlat_in  = size(lat_in(:)) - 1
     nlon_out = size(lon_out,1) - 1;  nlat_out = size(lon_out,2) - 1
 
-    mask_src = real(1., FMS_HI_KIND)
+    mask_src = real(1., FMS_HI_KIND_)
     if(present(mask_in)) then
        if( (size(mask_in,1) .NE. nlon_in) .OR.  (size(mask_in,2) .NE. nlat_in)) call mpp_error(FATAL, &
          'horiz_interp_conserve_mod: size mismatch between mask_in and lon_in/lat_in')
@@ -352,7 +352,7 @@ subroutine CONSERVE_NEW_1DX1D ( Interp, lon_in, lat_in, lon_out, lat_out, verbos
 
     allocate(Interp%i_src(nxgrid), Interp%j_src(nxgrid) )
     allocate(Interp%i_dst(nxgrid), Interp%j_dst(nxgrid) )
-    allocate(Interp%HI_KIND_TYPE%area_frac_dst(nxgrid) )
+    allocate(Interp%HI_KIND_TYPE_%area_frac_dst(nxgrid) )
     Interp%version = 2
     Interp%nxgrid   = nxgrid
     Interp%i_src = i_src(1:nxgrid)+1 ! in C, the starting index is 0
@@ -362,46 +362,46 @@ subroutine CONSERVE_NEW_1DX1D ( Interp, lon_in, lat_in, lon_out, lat_out, verbos
     Interp%j_dst = j_dst(1:nxgrid)+1
 
     ! sum over exchange grid area to get destination grid area
-    dst_area = real(0., FMS_HI_KIND)
+    dst_area = real(0., FMS_HI_KIND_)
     do i = 1, nxgrid
        dst_area(Interp%i_dst(i), Interp%j_dst(i)) = dst_area(Interp%i_dst(i), Interp%j_dst(i)) + xgrid_area(i)
     end do
 
     do i = 1, nxgrid
-       Interp%HI_KIND_TYPE%area_frac_dst(i) = xgrid_area(i)/dst_area(Interp%i_dst(i), Interp%j_dst(i) )
+       Interp%HI_KIND_TYPE_%area_frac_dst(i) = xgrid_area(i)/dst_area(Interp%i_dst(i), Interp%j_dst(i) )
     end do
     Interp%nlon_src = nlon_in;  Interp%nlat_src = nlat_in
     Interp%nlon_dst = nlon_out; Interp%nlat_dst = nlat_out
     if(present(mask_out)) then
        if( (size(mask_out,1) .NE. nlon_out) .OR. (size(mask_out,2) .NE. nlat_out) ) call mpp_error(FATAL, &
          'horiz_interp_conserve_mod: size mismatch between mask_out and lon_out/lat_out')
-       mask_out = real(0.0, FMS_HI_KIND)
+       mask_out = real(0.0, FMS_HI_KIND_)
        do i = 1, nxgrid
           mask_out(Interp%i_dst(i),Interp%j_dst(i)) = mask_out(Interp%i_dst(i), &
-                  & Interp%j_dst(i)) + Interp%HI_KIND_TYPE%area_frac_dst(i)
+                  & Interp%j_dst(i)) + Interp%HI_KIND_TYPE_%area_frac_dst(i)
        end do
     end if
 
     deallocate(i_src, j_src, i_dst, j_dst, xgrid_area, dst_area )
 
-  end subroutine CONSERVE_NEW_1DX2D
+  end subroutine CONSERVE_NEW_1DX2D_
 
   !#######################################################################
 
-  subroutine CONSERVE_NEW_2DX1D ( Interp, lon_in, lat_in, lon_out, lat_out, &
+  subroutine CONSERVE_NEW_2DX1D_ ( Interp, lon_in, lat_in, lon_out, lat_out, &
                                                mask_in, mask_out, verbose)
     type(horiz_interp_type),        intent(inout) :: Interp
-    real(FMS_HI_KIND), intent(in),              dimension(:,:) :: lon_in , lat_in
-    real(FMS_HI_KIND), intent(in),              dimension(:)   :: lon_out, lat_out
-    real(FMS_HI_KIND), intent(in),    optional, dimension(:,:) :: mask_in
-    real(FMS_HI_KIND), intent(inout), optional, dimension(:,:) :: mask_out
+    real(FMS_HI_KIND_), intent(in),              dimension(:,:) :: lon_in , lat_in
+    real(FMS_HI_KIND_), intent(in),              dimension(:)   :: lon_out, lat_out
+    real(FMS_HI_KIND_), intent(in),    optional, dimension(:,:) :: mask_in
+    real(FMS_HI_KIND_), intent(inout), optional, dimension(:,:) :: mask_out
     integer, intent(in), optional                 :: verbose
 
     integer :: create_xgrid_2DX1D_order1, get_maxxgrid, maxxgrid
     integer :: create_xgrid_great_circle
     integer :: nlon_in, nlat_in, nlon_out, nlat_out, nxgrid, i, j
     integer, allocatable, dimension(:)   :: i_src, j_src, i_dst, j_dst
-    real(FMS_HI_KIND),    allocatable, dimension(:,:) :: dst_area
+    real(FMS_HI_KIND_),    allocatable, dimension(:,:) :: dst_area
     real(r8_kind), dimension(size(lon_in,1)-1, size(lon_in,2)-1) :: mask_src
     real(r8_kind), allocatable, dimension(:)   :: xgrid_area, clon, clat
     real(r8_kind), allocatable, dimension(:)   :: lon_out_r8, lat_out_r8
@@ -411,20 +411,20 @@ subroutine CONSERVE_NEW_1DX1D ( Interp, lon_in, lat_in, lon_out, lat_out, verbos
     integer(kind=1) :: one_byte(8)
 
     if(.not. module_is_initialized) call mpp_error(FATAL, &
-         'CONSERVE_NEW_2DX1D: horiz_interp_conserve_init is not called')
+         'CONSERVE_NEW_2DX1D_: horiz_interp_conserve_init is not called')
 
-    if( .not. allocated(Interp%HI_KIND_TYPE)) allocate(Interp%HI_KIND_TYPE)
+    if( .not. allocated(Interp%HI_KIND_TYPE_)) allocate(Interp%HI_KIND_TYPE_)
 
     wordsz=size(transfer(lon_in(1,1), one_byte))
     if(wordsz .NE. 8) call mpp_error(FATAL, &
-         'CONSERVE_NEW_2DX1D: currently only support 64-bit real(FMS_HI_KIND), contact developer')
+         'CONSERVE_NEW_2DX1D_: currently only support 64-bit real(FMS_HI_KIND_), contact developer')
 
     if( (size(lon_in,1) .NE. size(lat_in,1)) .OR. (size(lon_in,2) .NE. size(lat_in,2)) )  &
         call mpp_error(FATAL, 'horiz_interp_conserve_mod: size mismatch between lon_in and lat_in')
     nlon_in  = size(lon_in,1)   - 1;  nlat_in  = size(lon_in,2)   - 1
     nlon_out = size(lon_out(:)) - 1;  nlat_out = size(lat_out(:)) - 1
 
-    mask_src = real(1., FMS_HI_KIND)
+    mask_src = real(1., FMS_HI_KIND_)
     if(present(mask_in)) then
        if( (size(mask_in,1) .NE. nlon_in) .OR. (size(mask_in,2) .NE. nlat_in)) call mpp_error(FATAL, &
          'horiz_interp_conserve_mod: size mismatch between mask_in and lon_in/lat_in')
@@ -462,7 +462,7 @@ subroutine CONSERVE_NEW_1DX1D ( Interp, lon_in, lat_in, lon_out, lat_out, verbos
     endif
     allocate(Interp%i_src(nxgrid), Interp%j_src(nxgrid) )
     allocate(Interp%i_dst(nxgrid), Interp%j_dst(nxgrid) )
-    allocate(Interp%HI_KIND_TYPE%area_frac_dst(nxgrid) )
+    allocate(Interp%HI_KIND_TYPE_%area_frac_dst(nxgrid) )
     Interp%version = 2
     Interp%nxgrid   = nxgrid
     Interp%i_src = i_src(1:nxgrid)+1 ! in C, the starting index is 0
@@ -471,39 +471,39 @@ subroutine CONSERVE_NEW_1DX1D ( Interp, lon_in, lat_in, lon_out, lat_out, verbos
     Interp%j_dst = j_dst(1:nxgrid)+1
 
     ! sum over exchange grid area to get destination grid area
-    dst_area = real(0., FMS_HI_KIND)
+    dst_area = real(0., FMS_HI_KIND_)
     do i = 1, nxgrid
        dst_area(Interp%i_dst(i), Interp%j_dst(i)) = dst_area(Interp%i_dst(i), Interp%j_dst(i)) + xgrid_area(i)
     end do
 
     do i = 1, nxgrid
-       Interp%HI_KIND_TYPE%area_frac_dst(i) = xgrid_area(i)/dst_area(Interp%i_dst(i), Interp%j_dst(i) )
+       Interp%HI_KIND_TYPE_%area_frac_dst(i) = xgrid_area(i)/dst_area(Interp%i_dst(i), Interp%j_dst(i) )
     end do
     Interp%nlon_src = nlon_in;  Interp%nlat_src = nlat_in
     Interp%nlon_dst = nlon_out; Interp%nlat_dst = nlat_out
     if(present(mask_out)) then
        if( (size(mask_out,1) .NE. nlon_out) .OR. (size(mask_out,2) .NE. nlat_out) ) call mpp_error(FATAL, &
          'horiz_interp_conserve_mod: size mismatch between mask_out and lon_out/lat_out')
-       mask_out = real(0.0, FMS_HI_KIND)
+       mask_out = real(0.0, FMS_HI_KIND_)
        do i = 1, nxgrid
           mask_out(Interp%i_dst(i),Interp%j_dst(i)) = mask_out(Interp%i_dst(i), &
-                  & Interp%j_dst(i)) + Interp%HI_KIND_TYPE%area_frac_dst(i)
+                  & Interp%j_dst(i)) + Interp%HI_KIND_TYPE_%area_frac_dst(i)
        end do
     end if
 
     deallocate(i_src, j_src, i_dst, j_dst, xgrid_area, dst_area)
 
-  end subroutine CONSERVE_NEW_2DX1D
+  end subroutine CONSERVE_NEW_2DX1D_
 
   !#######################################################################
 
-  subroutine CONSERVE_NEW_2DX2D ( Interp, lon_in, lat_in, lon_out, lat_out, &
+  subroutine CONSERVE_NEW_2DX2D_ ( Interp, lon_in, lat_in, lon_out, lat_out, &
                                                mask_in, mask_out, verbose)
     type(horiz_interp_type),        intent(inout) :: Interp
-    real(FMS_HI_KIND), intent(in),              dimension(:,:) :: lon_in , lat_in
-    real(FMS_HI_KIND), intent(in),              dimension(:,:) :: lon_out, lat_out
-    real(FMS_HI_KIND), intent(in),    optional, dimension(:,:) :: mask_in
-    real(FMS_HI_KIND), intent(inout), optional, dimension(:,:) :: mask_out
+    real(FMS_HI_KIND_), intent(in),              dimension(:,:) :: lon_in , lat_in
+    real(FMS_HI_KIND_), intent(in),              dimension(:,:) :: lon_out, lat_out
+    real(FMS_HI_KIND_), intent(in),    optional, dimension(:,:) :: mask_in
+    real(FMS_HI_KIND_), intent(inout), optional, dimension(:,:) :: mask_out
     integer, intent(in), optional                 :: verbose
 
     integer :: create_xgrid_2DX2D_order1, get_maxxgrid, maxxgrid
@@ -519,13 +519,13 @@ subroutine CONSERVE_NEW_1DX1D ( Interp, lon_in, lat_in, lon_out, lat_out, verbos
     integer(kind=1) :: one_byte(8)
 
     if(.not. module_is_initialized) call mpp_error(FATAL, &
-         'CONSERVE_NEW_2DX2D: horiz_interp_conserve_init is not called')
+         'CONSERVE_NEW_2DX2D_: horiz_interp_conserve_init is not called')
 
-    if( .not. allocated(Interp%HI_KIND_TYPE)) allocate(Interp%HI_KIND_TYPE)
+    if( .not. allocated(Interp%HI_KIND_TYPE_)) allocate(Interp%HI_KIND_TYPE_)
 
     wordsz=size(transfer(lon_in(1,1), one_byte))
     if(wordsz .NE. 4 .AND. wordsz .NE. 8) call mpp_error(FATAL, &
-         'CONSERVE_NEW_2DX2D: wordsz should be 4 or 8')
+         'CONSERVE_NEW_2DX2D_: wordsz should be 4 or 8')
 
     if( (size(lon_in,1) .NE. size(lat_in,1)) .OR. (size(lon_in,2) .NE. size(lat_in,2)) )  &
         call mpp_error(FATAL, 'horiz_interp_conserve_mod: size mismatch between lon_in and lat_in')
@@ -534,7 +534,7 @@ subroutine CONSERVE_NEW_1DX1D ( Interp, lon_in, lat_in, lon_out, lat_out, verbos
     nlon_in  = size(lon_in,1)  - 1;  nlat_in  = size(lon_in,2)  - 1
     nlon_out = size(lon_out,1) - 1;  nlat_out = size(lon_out,2) - 1
 
-    mask_src = real(1., FMS_HI_KIND)
+    mask_src = real(1., FMS_HI_KIND_)
     if(present(mask_in)) then
        if( (size(mask_in,1) .NE. nlon_in) .OR.  (size(mask_in,2) .NE. nlat_in)) call mpp_error(FATAL, &
          'horiz_interp_conserve_mod: size mismatch between mask_in and lon_in/lat_in')
@@ -568,7 +568,7 @@ subroutine CONSERVE_NEW_1DX1D ( Interp, lon_in, lat_in, lon_out, lat_out, verbos
 
     allocate(Interp%i_src(nxgrid), Interp%j_src(nxgrid) )
     allocate(Interp%i_dst(nxgrid), Interp%j_dst(nxgrid) )
-    allocate(Interp%HI_KIND_TYPE%area_frac_dst(nxgrid) )
+    allocate(Interp%HI_KIND_TYPE_%area_frac_dst(nxgrid) )
     Interp%version = 2
     Interp%nxgrid   = nxgrid
     Interp%i_src = i_src(1:nxgrid)+1 ! in C, the starting index is 0
@@ -577,13 +577,13 @@ subroutine CONSERVE_NEW_1DX1D ( Interp, lon_in, lat_in, lon_out, lat_out, verbos
     Interp%j_dst = j_dst(1:nxgrid)+1
 
     ! sum over exchange grid area to get destination grid area
-    dst_area = real(0., FMS_HI_KIND)
+    dst_area = real(0., FMS_HI_KIND_)
     do i = 1, nxgrid
        dst_area(Interp%i_dst(i), Interp%j_dst(i)) = dst_area(Interp%i_dst(i), Interp%j_dst(i)) + xgrid_area(i)
     end do
 
     do i = 1, nxgrid
-       Interp%HI_KIND_TYPE%area_frac_dst(i) = xgrid_area(i)/dst_area(Interp%i_dst(i), Interp%j_dst(i) )
+       Interp%HI_KIND_TYPE_%area_frac_dst(i) = xgrid_area(i)/dst_area(Interp%i_dst(i), Interp%j_dst(i) )
     end do
 
     Interp%nlon_src = nlon_in;  Interp%nlat_src = nlat_in
@@ -591,16 +591,16 @@ subroutine CONSERVE_NEW_1DX1D ( Interp, lon_in, lat_in, lon_out, lat_out, verbos
     if(present(mask_out)) then
        if( (size(mask_out,1) .NE. nlon_out) .OR. (size(mask_out,2) .NE. nlat_out) ) call mpp_error(FATAL, &
          'horiz_interp_conserve_mod: size mismatch between mask_out and lon_out/lat_out')
-       mask_out = real(0.0, FMS_HI_KIND)
+       mask_out = real(0.0, FMS_HI_KIND_)
        do i = 1, nxgrid
           mask_out(Interp%i_dst(i),Interp%j_dst(i)) = mask_out(Interp%i_dst(i), &
-                  & Interp%j_dst(i)) + Interp%HI_KIND_TYPE%area_frac_dst(i)
+                  & Interp%j_dst(i)) + Interp%HI_KIND_TYPE_%area_frac_dst(i)
        end do
     end if
 
     deallocate(i_src, j_src, i_dst, j_dst, xgrid_area, dst_area )
 
-  end subroutine CONSERVE_NEW_2DX2D
+  end subroutine CONSERVE_NEW_2DX2D_
 
   !########################################################################
 
@@ -608,20 +608,20 @@ subroutine CONSERVE_NEW_1DX1D ( Interp, lon_in, lat_in, lon_out, lat_out, verbos
   !!
   !> Subroutine for performing the horizontal interpolation between two grids.
   !! horiz_interp_conserve_new must be called before calling this routine.
-  subroutine CONSERVE( Interp, data_in, data_out, verbose, &
+  subroutine CONSERVE_( Interp, data_in, data_out, verbose, &
        mask_in, mask_out)
     !-----------------------------------------------------------------------
     type (horiz_interp_type), intent(in) :: Interp
-    real(FMS_HI_KIND), intent(in),  dimension(:,:) :: data_in !< Input data on source grid
-    real(FMS_HI_KIND), intent(out), dimension(:,:) :: data_out !< Output data on destination grid
+    real(FMS_HI_KIND_), intent(in),  dimension(:,:) :: data_in !< Input data on source grid
+    real(FMS_HI_KIND_), intent(out), dimension(:,:) :: data_out !< Output data on destination grid
     integer, intent(in),                   optional :: verbose !< 0 = no output; 1 = min,max,means;
                                                                !! 2 = max output
-    real(FMS_HI_KIND), intent(in),   dimension(:,:), optional :: mask_in !< Input mask, must be the same size as
+    real(FMS_HI_KIND_), intent(in),   dimension(:,:), optional :: mask_in !< Input mask, must be the same size as
                         !! the input data. The real value of mask_in must be in the range (0.,1.).
                         !! Set mask_in=0.0 for data points that should not be used or have missing
                         !! data. mask_in will be applied only when horiz_interp_conserve_new_1d is
                         !! called. mask_in will be passed into horiz_interp_conserve_new_2d
-    real(FMS_HI_KIND), intent(out),  dimension(:,:), optional :: mask_out !< Output mask that specifies whether
+    real(FMS_HI_KIND_), intent(out),  dimension(:,:), optional :: mask_out !< Output mask that specifies whether
                         !! data was computed. mask_out will be computed only when
                         !! horiz_interp_conserve_new_1d is called. mask_out will be computed in
                         !! horiz_interp_conserve_new_2d
@@ -635,30 +635,30 @@ subroutine CONSERVE_NEW_1DX1D ( Interp, lon_in, lat_in, lon_out, lat_out, verbos
 
     select case ( Interp%version)
     case (1)
-       call CONSERVE_VERSION1(Interp, data_in, data_out, verbose, mask_in, mask_out)
+       call CONSERVE_VERSION1_(Interp, data_in, data_out, verbose, mask_in, mask_out)
     case (2)
-       if(present(mask_in) .OR. present(mask_out) ) call mpp_error(FATAL, 'CONSERVE:'// &
+       if(present(mask_in) .OR. present(mask_out) ) call mpp_error(FATAL, 'CONSERVE_:'// &
             & ' for version 2, mask_in and mask_out must be passed in horiz_interp_new, not in horiz_interp')
-       call CONSERVE_VERSION2(Interp, data_in, data_out, verbose)
+       call CONSERVE_VERSION2_(Interp, data_in, data_out, verbose)
     end select
 
-  end subroutine CONSERVE
+  end subroutine CONSERVE_
 
   !##############################################################################
-  subroutine CONSERVE_VERSION1 ( Interp, data_in, data_out, verbose, &
+  subroutine CONSERVE_VERSION1_ ( Interp, data_in, data_out, verbose, &
        mask_in, mask_out)
     !-----------------------------------------------------------------------
     type (horiz_interp_type), intent(in) :: Interp
-    real(FMS_HI_KIND), intent(in),  dimension(:,:) :: data_in
-    real(FMS_HI_KIND), intent(out), dimension(:,:) :: data_out
+    real(FMS_HI_KIND_), intent(in),  dimension(:,:) :: data_in
+    real(FMS_HI_KIND_), intent(out), dimension(:,:) :: data_out
     integer, intent(in),                   optional :: verbose
-    real(FMS_HI_KIND), intent(in),   dimension(:,:), optional :: mask_in
-    real(FMS_HI_KIND), intent(out),  dimension(:,:), optional :: mask_out
+    real(FMS_HI_KIND_), intent(in),   dimension(:,:), optional :: mask_in
+    real(FMS_HI_KIND_), intent(out),  dimension(:,:), optional :: mask_out
     !----------local variables----------------------------------------------------
     integer :: m, n, nlon_in, nlat_in, nlon_out, nlat_out,   &
          miss_in, miss_out, is, ie, js, je,   &
          np, npass, iverbose
-    real(FMS_HI_KIND) :: dsum, wsum, avg_in, min_in, max_in,   &
+    real(FMS_HI_KIND_) :: dsum, wsum, avg_in, min_in, max_in,   &
          avg_out, min_out, max_out, eps, asum,   &
          dwtsum, wtsum, arsum, fis, fie, fjs, fje
     !-----------------------------------------------------------------------
@@ -670,39 +670,39 @@ subroutine CONSERVE_NEW_1DX1D ( Interp, lon_in, lat_in, lon_out, lat_out, verbos
     nlon_out = Interp%nlon_dst; nlat_out = Interp%nlat_dst
 
     if (present(mask_in)) then
-       if ( count(mask_in < real(-.0001, FMS_HI_KIND) .or. mask_in > real(1.0001, FMS_HI_KIND)) > 0 ) &
+       if ( count(mask_in < real(-.0001, FMS_HI_KIND_) .or. mask_in > real(1.0001, FMS_HI_KIND_)) > 0 ) &
             call mpp_error(FATAL, 'horiz_interp_conserve_mod: input mask not between 0,1')
     endif
 
     !-----------------------------------------------------------------------
     !---- loop through output grid boxes ----
 
-    data_out = real(0.0, FMS_HI_KIND)
+    data_out = real(0.0, FMS_HI_KIND_)
     do n = 1, nlat_out
        ! latitude window
        ! setup ascending latitude indices and weights
        if (Interp%jlat(n,1) <= Interp%jlat(n,2)) then
           js = Interp%jlat(n,1); je = Interp%jlat(n,2)
-          fjs = Interp%HI_KIND_TYPE%facj(n,1); fje = Interp%HI_KIND_TYPE%facj(n,2)
+          fjs = Interp%HI_KIND_TYPE_%facj(n,1); fje = Interp%HI_KIND_TYPE_%facj(n,2)
        else
           js = Interp%jlat(n,2); je = Interp%jlat(n,1)
-          fjs = Interp%HI_KIND_TYPE%facj(n,2); fje = Interp%HI_KIND_TYPE%facj(n,1)
+          fjs = Interp%HI_KIND_TYPE_%facj(n,2); fje = Interp%HI_KIND_TYPE_%facj(n,1)
        endif
 
        do m = 1, nlon_out
           ! longitude window
           is = Interp%ilon(m,1); ie = Interp%ilon(m,2)
-          fis = Interp%HI_KIND_TYPE%faci(m,1); fie = Interp%HI_KIND_TYPE%faci(m,2)
+          fis = Interp%HI_KIND_TYPE_%faci(m,1); fie = Interp%HI_KIND_TYPE_%faci(m,2)
           npass = 1
-          dwtsum = real(0., FMS_HI_KIND)
-          wtsum = real(0., FMS_HI_KIND)
-          arsum = real(0., FMS_HI_KIND)
+          dwtsum = real(0., FMS_HI_KIND_)
+          wtsum = real(0., FMS_HI_KIND_)
+          arsum = real(0., FMS_HI_KIND_)
 
           ! wrap-around on input grid
           ! sum using 2 passes (pass 1: end of input grid)
           if ( ie < is ) then
              ie = nlon_in
-             fie = real(1.0, FMS_HI_KIND)
+             fie = real(1.0, FMS_HI_KIND_)
              npass = 2
           endif
 
@@ -710,20 +710,20 @@ subroutine CONSERVE_NEW_1DX1D ( Interp, lon_in, lat_in, lon_out, lat_out, verbos
              ! pass 2: beginning of input grid
              if ( np == 2 ) then
                 is = 1
-                fis = real(1.0, FMS_HI_KIND)
+                fis = real(1.0, FMS_HI_KIND_)
                 ie = Interp%ilon(m,2)
-                fie = Interp%HI_KIND_TYPE%faci(m,2)
+                fie = Interp%HI_KIND_TYPE_%faci(m,2)
              endif
 
              ! summing data*weight and weight for single grid point
              if (present(mask_in)) then
-                call DATA_SUM ( data_in(is:ie,js:je), Interp%HI_KIND_TYPE%area_src(is:ie,js:je), &
+                call DATA_SUM_ ( data_in(is:ie,js:je), Interp%HI_KIND_TYPE_%area_src(is:ie,js:je), &
                      fis, fie, fjs,fje, dwtsum, wtsum, arsum, mask_in(is:ie,js:je)  )
-             else if( ASSOCIATED(Interp%HI_KIND_TYPE%mask_in) ) then
-                call DATA_SUM ( data_in(is:ie,js:je), Interp%HI_KIND_TYPE%area_src(is:ie,js:je), &
-                     fis, fie, fjs,fje, dwtsum, wtsum, arsum, Interp%HI_KIND_TYPE%mask_in(is:ie,js:je)  )
+             else if( ASSOCIATED(Interp%HI_KIND_TYPE_%mask_in) ) then
+                call DATA_SUM_ ( data_in(is:ie,js:je), Interp%HI_KIND_TYPE_%area_src(is:ie,js:je), &
+                     fis, fie, fjs,fje, dwtsum, wtsum, arsum, Interp%HI_KIND_TYPE_%mask_in(is:ie,js:je)  )
              else
-                call DATA_SUM ( data_in(is:ie,js:je), Interp%HI_KIND_TYPE%area_src(is:ie,js:je), &
+                call DATA_SUM_ ( data_in(is:ie,js:je), Interp%HI_KIND_TYPE_%area_src(is:ie,js:je), &
                      fis, fie, fjs,fje,  dwtsum, wtsum, arsum    )
              endif
           enddo
@@ -732,8 +732,8 @@ subroutine CONSERVE_NEW_1DX1D ( Interp, lon_in, lat_in, lon_out, lat_out, verbos
              data_out(m,n) = dwtsum/wtsum
              if (present(mask_out)) mask_out(m,n) = wtsum/arsum
           else
-             data_out(m,n) = real(0., FMS_HI_KIND)
-             if (present(mask_out)) mask_out(m,n) = real(0.0, FMS_HI_KIND)
+             data_out(m,n) = real(0., FMS_HI_KIND_)
+             if (present(mask_out)) mask_out(m,n) = real(0.0, FMS_HI_KIND_)
           endif
 
        enddo
@@ -747,28 +747,28 @@ subroutine CONSERVE_NEW_1DX1D ( Interp, lon_in, lat_in, lon_out, lat_out, verbos
 
        ! compute statistics of input data
 
-       call STATS(data_in, Interp%HI_KIND_TYPE%area_src, asum, dsum, wsum, min_in, max_in, miss_in, mask_in)
+       call STATS_(data_in, Interp%HI_KIND_TYPE_%area_src, asum, dsum, wsum, min_in, max_in, miss_in, mask_in)
        ! diagnostic messages
        ! on the root_pe, we can calculate the global mean, minimum and maximum.
        if(pe == root_pe) then
-          if (wsum > real(0.0, FMS_HI_KIND)) then
+          if (wsum > real(0.0, FMS_HI_KIND_)) then
              avg_in=dsum/wsum
           else
-             print *, 'horiz_interp STATS: input area equals zero '
-             avg_in=real(0.0, FMS_HI_KIND)
+             print *, 'horiz_interp STATS_: input area equals zero '
+             avg_in=real(0.0, FMS_HI_KIND_)
           endif
           if (iverbose > 1) print '(2f16.11)', 'global sum area_in  = ',  asum, wsum
        endif
 
        ! compute statistics of output data
-       call STATS(data_out, Interp%HI_KIND_TYPE%area_dst, asum, dsum, wsum, min_out, max_out, miss_out, mask_out)
+       call STATS_(data_out, Interp%HI_KIND_TYPE_%area_dst, asum, dsum, wsum, min_out, max_out, miss_out, mask_out)
        ! diagnostic messages
        if(pe == root_pe) then
-          if (wsum > real(0.0, FMS_HI_KIND)) then
+          if (wsum > real(0.0, FMS_HI_KIND_)) then
              avg_out=dsum/wsum
           else
-             print *, 'horiz_interp STATS: output area equals zero '
-             avg_out=real(0.0, FMS_HI_KIND)
+             print *, 'horiz_interp STATS_: output area equals zero '
+             avg_out=real(0.0, FMS_HI_KIND_)
           endif
           if (iverbose > 1) print '(2f16.11)', 'global sum area_out = ',  asum, wsum
        endif
@@ -790,14 +790,14 @@ subroutine CONSERVE_NEW_1DX1D ( Interp, lon_in, lat_in, lon_out, lat_out, verbos
     endif
 
     !-----------------------------------------------------------------------
-  end subroutine CONSERVE_VERSION1
+  end subroutine CONSERVE_VERSION1_
 
   !#############################################################################
-  subroutine CONSERVE_VERSION2 ( Interp, data_in, data_out, verbose )
+  subroutine CONSERVE_VERSION2_ ( Interp, data_in, data_out, verbose )
     !-----------------------------------------------------------------------
     type (horiz_interp_type), intent(in) :: Interp
-    real(FMS_HI_KIND),    intent(in),  dimension(:,:) :: data_in
-    real(FMS_HI_KIND),    intent(out), dimension(:,:) :: data_out
+    real(FMS_HI_KIND_),    intent(in),  dimension(:,:) :: data_in
+    real(FMS_HI_KIND_),    intent(out), dimension(:,:) :: data_out
     integer, intent(in),        optional :: verbose
     integer :: i, i_src, j_src, i_dst, j_dst
 
@@ -805,19 +805,19 @@ subroutine CONSERVE_NEW_1DX1D ( Interp, lon_in, lat_in, lon_out, lat_out, verbos
     do i = 1, Interp%nxgrid
        i_src = Interp%i_src(i); j_src = Interp%j_src(i)
        i_dst = Interp%i_dst(i); j_dst = Interp%j_dst(i)
-       data_out(i_dst, j_dst) = data_out(i_dst, j_dst) + data_in(i_src,j_src)*Interp%HI_KIND_TYPE%area_frac_dst(i)
+       data_out(i_dst, j_dst) = data_out(i_dst, j_dst) + data_in(i_src,j_src)*Interp%HI_KIND_TYPE_%area_frac_dst(i)
     end do
 
-  end subroutine CONSERVE_VERSION2
+  end subroutine CONSERVE_VERSION2_
 
 
   !#######################################################################
   !> This statistics is for conservative scheme
-  subroutine STATS ( dat, area, asum, dsum, wsum, low, high, miss, mask )
-    real(FMS_HI_KIND),    intent(in)  :: dat(:,:), area(:,:)
-    real(FMS_HI_KIND),    intent(out) :: asum, dsum, wsum, low, high
+  subroutine STATS_ ( dat, area, asum, dsum, wsum, low, high, miss, mask )
+    real(FMS_HI_KIND_),    intent(in)  :: dat(:,:), area(:,:)
+    real(FMS_HI_KIND_),    intent(out) :: asum, dsum, wsum, low, high
     integer, intent(out) :: miss
-    real(FMS_HI_KIND),    intent(in), optional :: mask(:,:)
+    real(FMS_HI_KIND_),    intent(in), optional :: mask(:,:)
 
     integer :: pe, root_pe, npes, p, buffer_int(1)
     real    :: buffer_real(5)
@@ -832,9 +832,9 @@ subroutine CONSERVE_NEW_1DX1D ( Interp, lon_in, lat_in, lon_out, lat_out, verbos
        asum = sum(area(:,:))
        dsum = sum(area(:,:)*dat(:,:)*mask(:,:))
        wsum = sum(area(:,:)*mask(:,:))
-       miss = count(mask(:,:) <= real(0.5, FMS_HI_KIND))
-       low  = minval(dat(:,:),mask=mask(:,:) > real(0.5, FMS_HI_KIND))
-       high = maxval(dat(:,:),mask=mask(:,:) > real(0.5, FMS_HI_KIND))
+       miss = count(mask(:,:) <= real(0.5, FMS_HI_KIND_))
+       low  = minval(dat(:,:),mask=mask(:,:) > real(0.5, FMS_HI_KIND_))
+       high = maxval(dat(:,:),mask=mask(:,:) > real(0.5, FMS_HI_KIND_))
     else
        asum = sum(area(:,:))
        dsum = sum(area(:,:)*dat(:,:))
@@ -873,19 +873,19 @@ subroutine CONSERVE_NEW_1DX1D ( Interp, lon_in, lat_in, lon_out, lat_out, verbos
 
     call mpp_sync_self()
 
-  end subroutine STATS
+  end subroutine STATS_
 
   !#######################################################################
 
   !> sums up the data and weights for a single output grid box
-  subroutine DATA_SUM( data, area, facis, facie, facjs, facje,  &
+  subroutine DATA_SUM_( data, area, facis, facie, facjs, facje,  &
        dwtsum, wtsum, arsum, mask )
 
     !-----------------------------------------------------------------------
-    real(FMS_HI_KIND), intent(in), dimension(:,:) :: data, area
-    real(FMS_HI_KIND), intent(in)                 :: facis, facie, facjs, facje
-    real(FMS_HI_KIND), intent(inout)              :: dwtsum, wtsum, arsum
-    real(FMS_HI_KIND), intent(in), optional       :: mask(:,:)
+    real(FMS_HI_KIND_), intent(in), dimension(:,:) :: data, area
+    real(FMS_HI_KIND_), intent(in)                 :: facis, facie, facjs, facje
+    real(FMS_HI_KIND_), intent(inout)              :: dwtsum, wtsum, arsum
+    real(FMS_HI_KIND_), intent(in), optional       :: mask(:,:)
 
     !  fac__ = fractional portion of each boundary grid box included
     !          in the integral
@@ -893,7 +893,7 @@ subroutine CONSERVE_NEW_1DX1D ( Interp, lon_in, lat_in, lon_out, lat_out, verbos
     !  wtsum  = sum(area*mask)
     !  arsum  = sum(area)
     !-----------------------------------------------------------------------
-    real(FMS_HI_KIND), dimension(size(area,1),size(area,2)) :: wt
+    real(FMS_HI_KIND_), dimension(size(area,1),size(area,2)) :: wt
     real    :: asum
     integer :: id, jd
     !-----------------------------------------------------------------------
@@ -919,5 +919,5 @@ subroutine CONSERVE_NEW_1DX1D ( Interp, lon_in, lat_in, lon_out, lat_out, verbos
     endif
     !-----------------------------------------------------------------------
 
-  end subroutine DATA_SUM
+  end subroutine DATA_SUM_
 !> @}

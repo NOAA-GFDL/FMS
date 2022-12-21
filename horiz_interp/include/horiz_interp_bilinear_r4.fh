@@ -18,35 +18,35 @@
 !***********************************************************************
 !> @addtogroup horiz_interp_bilinear
 !> @{
-#undef FMS_HI_KIND
-#define FMS_HI_KIND 4
+#undef FMS_HI_KIND_
+#define FMS_HI_KIND_ r4_kind
 
-#undef HI_KIND_TYPE
-#define HI_KIND_TYPE kind4_reals
+#undef HI_KIND_TYPE_
+#define HI_KIND_TYPE_ kind4_reals
 
-#undef BILINEAR_NEW_1D
-#define BILINEAR_NEW_1D horiz_interp_bilinear_new_1d_r4
+#undef HORIZ_INTERP_BILINEAR_NEW_1D_
+#define HORIZ_INTERP_BILINEAR_NEW_1D_ horiz_interp_bilinear_new_1d_r4
 
-#undef BILINEAR_NEW_2D
-#define BILINEAR_NEW_2D horiz_interp_bilinear_new_2d_r4
+#undef HORIZ_INTERP_BILINEAR_NEW_2D_
+#define HORIZ_INTERP_BILINEAR_NEW_2D_ horiz_interp_bilinear_new_2d_r4
 
-#undef DO_BILINEAR
-#define DO_BILINEAR horiz_interp_bilinear_r4
+#undef DO_BILINEAR_
+#define DO_BILINEAR_ horiz_interp_bilinear_r4
 
-#undef FIND_NEIGHBOR
-#define FIND_NEIGHBOR find_neighbor_r4
+#undef FIND_NEIGHBOR_
+#define FIND_NEIGHBOR_ find_neighbor_r4
 
-#undef FIND_NEIGHBOR_NEW
-#define FIND_NEIGHBOR_NEW find_neighbor_new_r4
+#undef FIND_NEIGHBOR_NEW_
+#define FIND_NEIGHBOR_NEW_ find_neighbor_new_r4
 
-#undef INSIDE_POLYGON
-#define INSIDE_POLYGON inside_polygon_r4
+#undef INSIDE_POLYGON_
+#define INSIDE_POLYGON_ inside_polygon_r4
 
-#undef INTERSECT
-#define INTERSECT intersect_r4
+#undef INTERSECT_
+#define INTERSECT_ intersect_r4
 
-#undef INDP
-#define INDP indp_r4
+#undef INDP_
+#define INDP_ indp_r4
 
 #include "horiz_interp_bilinear.inc"
 !> @}

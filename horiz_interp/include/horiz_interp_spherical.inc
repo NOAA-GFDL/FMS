@@ -22,17 +22,17 @@
   !!
   !> Allocates space and initializes a derived-type variable
   !! that contains pre-computed interpolation indices and weights.
-  subroutine SPHERICAL_NEW(Interp, lon_in,lat_in,lon_out,lat_out, &
+  subroutine HORIZ_INTERP_SPHERICAL_NEW_(Interp, lon_in,lat_in,lon_out,lat_out, &
        num_nbrs, max_dist, src_modulo)
 
     type(horiz_interp_type), intent(inout) :: Interp !< A derived type variable containing indices
                                           !! and weights for subsequent interpolations. To
                                           !! reinitialize for different grid-to-grid interpolation
                                           !! @ref horiz_interp_del must be used first.
-    real(FMS_HI_KIND), intent(in),  dimension(:,:)      :: lon_in !< Latitude (radians) for source data grid
-    real(FMS_HI_KIND), intent(in),  dimension(:,:)      :: lat_in !< Longitude (radians) for source data grid
-    real(FMS_HI_KIND), intent(in),  dimension(:,:)      :: lon_out !< Longitude (radians) for output data grid
-    real(FMS_HI_KIND), intent(in),  dimension(:,:)      :: lat_out !< Latitude (radians) for output data grid
+    real(FMS_HI_KIND_), intent(in),  dimension(:,:)      :: lon_in !< Latitude (radians) for source data grid
+    real(FMS_HI_KIND_), intent(in),  dimension(:,:)      :: lat_in !< Longitude (radians) for source data grid
+    real(FMS_HI_KIND_), intent(in),  dimension(:,:)      :: lon_out !< Longitude (radians) for output data grid
+    real(FMS_HI_KIND_), intent(in),  dimension(:,:)      :: lat_out !< Latitude (radians) for output data grid
     logical, intent(in),          optional :: src_modulo !< indicates if the boundary condition
                                           !! along zonal boundary is cyclic or not. Cyclic when true
     integer, intent(in),        optional   :: num_nbrs !< Number of nearest neighbors for regridding
@@ -42,40 +42,40 @@
                                            !! neighbors within the radius max_dist is greater than
                                            !! num_nbrs, at least "num_nbrs"
   !     neighbors will be used to remap onto destination grid
-    real(FMS_HI_KIND), optional,             intent(in) :: max_dist !< Maximum region of influence around
+    real(FMS_HI_KIND_), optional,             intent(in) :: max_dist !< Maximum region of influence around
                                                        !! destination grid points
 
     !------local variables ---------------------------------------
     integer :: i, j, n
     integer :: map_dst_xsize, map_dst_ysize, map_src_xsize, map_src_ysize
     integer :: map_src_size, num_neighbors
-    real(FMS_HI_KIND)    :: max_src_dist, tpi, hpi
+    real(FMS_HI_KIND_)    :: max_src_dist, tpi, hpi
     logical :: src_is_modulo
-    real(FMS_HI_KIND)    :: min_theta_dst, max_theta_dst, min_phi_dst, max_phi_dst
-    real(FMS_HI_KIND)    :: min_theta_src, max_theta_src, min_phi_src, max_phi_src
+    real(FMS_HI_KIND_)    :: min_theta_dst, max_theta_dst, min_phi_dst, max_phi_dst
+    real(FMS_HI_KIND_)    :: min_theta_src, max_theta_src, min_phi_src, max_phi_src
     integer :: map_src_add(size(lon_out,1),size(lon_out,2),max_neighbors)
-    real(FMS_HI_KIND)    :: map_src_dist(size(lon_out,1),size(lon_out,2),max_neighbors)
+    real(FMS_HI_KIND_)    :: map_src_dist(size(lon_out,1),size(lon_out,2),max_neighbors)
     integer :: num_found(size(lon_out,1),size(lon_out,2))
     integer :: ilon(max_neighbors), jlat(max_neighbors)
-    real(FMS_HI_KIND), dimension(size(lon_out,1),size(lon_out,2)) :: theta_dst, phi_dst
-    real(FMS_HI_KIND), dimension(size(lon_in,1)*size(lon_in,2))   :: theta_src, phi_src
+    real(FMS_HI_KIND_), dimension(size(lon_out,1),size(lon_out,2)) :: theta_dst, phi_dst
+    real(FMS_HI_KIND_), dimension(size(lon_in,1)*size(lon_in,2))   :: theta_src, phi_src
 
     !--------------------------------------------------------------
 
     pe      = mpp_pe()
     root_pe = mpp_root_pe()
 
-    tpi = real(2.0, FMS_HI_KIND)*PI; hpi = real(0.5, FMS_HI_KIND)*PI
+    tpi = real(2.0, FMS_HI_KIND_)*PI; hpi = real(0.5, FMS_HI_KIND_)*PI
 
     num_neighbors = num_nbrs_default
     if(present(num_nbrs)) num_neighbors = num_nbrs
     if (num_neighbors <= 0) call mpp_error(FATAL,'horiz_interp_spherical_mod: num_neighbors must be > 0')
 
-    if( .not. allocated(Interp%HI_KIND_TYPE)) allocate(Interp%HI_KIND_TYPE)
+    if( .not. allocated(Interp%HI_KIND_TYPE_)) allocate(Interp%HI_KIND_TYPE_)
 
     max_src_dist = max_dist_default
     if (PRESENT(max_dist)) max_src_dist = max_dist
-    Interp%HI_KIND_TYPE%max_src_dist = max_src_dist
+    Interp%HI_KIND_TYPE_%max_src_dist = max_src_dist
 
     src_is_modulo = .true.
     if (PRESENT(src_modulo)) src_is_modulo = src_modulo
@@ -95,12 +95,12 @@
     theta_dst(:,:) = lon_out(:,:)
     phi_dst(:,:)   = lat_out(:,:)
 
-    min_theta_dst=tpi;max_theta_dst=real(0.0, FMS_HI_KIND);min_phi_dst=pi;max_phi_dst=-pi
-    min_theta_src=tpi;max_theta_src=real(0.0, FMS_HI_KIND);min_phi_src=pi;max_phi_src=-pi
+    min_theta_dst=tpi;max_theta_dst=real(0.0, FMS_HI_KIND_);min_phi_dst=pi;max_phi_dst=-pi
+    min_theta_src=tpi;max_theta_src=real(0.0, FMS_HI_KIND_);min_phi_src=pi;max_phi_src=-pi
 
-    where(theta_dst<real(0.0, FMS_HI_KIND))  theta_dst = theta_dst+tpi
+    where(theta_dst<real(0.0, FMS_HI_KIND_))  theta_dst = theta_dst+tpi
     where(theta_dst>tpi)  theta_dst = theta_dst-tpi
-    where(theta_src<real(0.0, FMS_HI_KIND))  theta_src = theta_src+tpi
+    where(theta_src<real(0.0, FMS_HI_KIND_))  theta_src = theta_src+tpi
     where(theta_src>tpi)  theta_src = theta_src-tpi
 
     where(phi_dst < -hpi) phi_dst = -hpi
@@ -141,7 +141,7 @@
     else
        allocate(Interp%i_lon(map_dst_xsize,map_dst_ysize,max_neighbors), &
             Interp%j_lat(map_dst_xsize,map_dst_ysize,max_neighbors),     &
-            Interp%HI_KIND_TYPE%src_dist(map_dst_xsize,map_dst_ysize,max_neighbors),  &
+            Interp%HI_KIND_TYPE_%src_dist(map_dst_xsize,map_dst_ysize,max_neighbors),  &
             Interp%num_found(map_dst_xsize,map_dst_ysize)       )
     endif
 
@@ -149,17 +149,17 @@
     map_src_dist        = large
     num_found           = 0
 
-    !using RADIAL_SEARCH to find the nearest points and corresponding distance.
+    !using RADIAL_SEARCH_ to find the nearest points and corresponding distance.
 
     select case(trim(search_method))
-    case ("RADIAL_SEARCH") ! will be efficient, but may be not so accurate for some cases
-       call RADIAL_SEARCH(theta_src, phi_src, theta_dst, phi_dst, map_src_xsize, map_src_ysize, &
+    case ("RADIAL_SEARCH_") ! will be efficient, but may be not so accurate for some cases
+       call RADIAL_SEARCH_(theta_src, phi_src, theta_dst, phi_dst, map_src_xsize, map_src_ysize, &
             map_src_add, map_src_dist, num_found, num_neighbors,max_src_dist,src_is_modulo)
-    case ("FULL_SEARCH")   ! always accurate, but less efficient.
-       call FULL_SEARCH(theta_src, phi_src, theta_dst, phi_dst, map_src_add, map_src_dist, &
+    case ("FULL_SEARCH_")   ! always accurate, but less efficient.
+       call FULL_SEARCH_(theta_src, phi_src, theta_dst, phi_dst, map_src_add, map_src_dist, &
             num_found, num_neighbors,max_src_dist )
     case default
-       call mpp_error(FATAL,"SPHERICAL_NEW: nml search_method = "// &
+       call mpp_error(FATAL,"HORIZ_INTERP_SPHERICAL_NEW_: nml search_method = "// &
                   trim(search_method)//" is not a valid namelist option")
     end select
 
@@ -180,7 +180,7 @@
           Interp%i_lon(i,j,:)         = ilon(:)
           Interp%j_lat(i,j,:)         = jlat(:)
           Interp%num_found(i,j)       = num_found(i,j)
-          Interp%HI_KIND_TYPE%src_dist(i,j,:)      = map_src_dist(i,j,:)
+          Interp%HI_KIND_TYPE_%src_dist(i,j,:)      = map_src_dist(i,j,:)
        enddo
     enddo
 
@@ -189,34 +189,34 @@
 
     return
 
-  end subroutine SPHERICAL_NEW
+  end subroutine HORIZ_INTERP_SPHERICAL_NEW_
 
   !#######################################################################
 
   !> Subroutine for performing the horizontal interpolation between two grids.
-  !! SPHERICAL_NEW must be called before calling this routine.
-  subroutine SPHERICAL( Interp, data_in, data_out, verbose, mask_in, mask_out, missing_value)
+  !! HORIZ_INTERP_SPHERICAL_NEW_ must be called before calling this routine.
+  subroutine HORIZ_INTERP_SPHERICAL_( Interp, data_in, data_out, verbose, mask_in, mask_out, missing_value)
     type(horiz_interp_type), intent(in) :: Interp !< A derived type variable containing indices
                                           !! and weights for subsequent interpolations. Returned
-                                          !! by a previous call to SPHERICAL_NEW
-    real(FMS_HI_KIND), intent(in),  dimension(:,:)           :: data_in !< Input data on source grid
-    real(FMS_HI_KIND), intent(out), dimension(:,:)           :: data_out !< Output data on destination grid
+                                          !! by a previous call to HORIZ_INTERP_SPHERICAL_NEW_
+    real(FMS_HI_KIND_), intent(in),  dimension(:,:)           :: data_in !< Input data on source grid
+    real(FMS_HI_KIND_), intent(out), dimension(:,:)           :: data_out !< Output data on destination grid
     integer, intent(in),               optional :: verbose !< 0 = no output; 1 = min,max,means; 2 = most output
-    real(FMS_HI_KIND), intent(in), dimension(:,:),  optional :: mask_in !< Input mask, must be the same size as
-                                             !! the input data. The real(FMS_HI_KIND) value of mask_in must be
+    real(FMS_HI_KIND_), intent(in), dimension(:,:),  optional :: mask_in !< Input mask, must be the same size as
+                                             !! the input data. The real(FMS_HI_KIND_) value of mask_in must be
                                              !! in the range (0.,1.). Set mask_in=0.0 for data points
                                              !! that should not be used or have missing data
-    real(FMS_HI_KIND), intent(out), dimension(:,:), optional :: mask_out !< Output mask that specifies whether data
+    real(FMS_HI_KIND_), intent(out), dimension(:,:), optional :: mask_out !< Output mask that specifies whether data
                                                                          !! was computed.
-    real(FMS_HI_KIND), intent(in),                  optional :: missing_value !< Used to indicate missing data
+    real(FMS_HI_KIND_), intent(in),                  optional :: missing_value !< Used to indicate missing data
 
     !--- some local variables ----------------------------------------
-    real(FMS_HI_KIND), dimension(Interp%nlon_dst, Interp%nlat_dst,size(Interp%HI_KIND_TYPE%src_dist,3)) :: wt
-    real(FMS_HI_KIND), dimension(Interp%nlon_src, Interp%nlat_src) :: mask_src
-    real(FMS_HI_KIND), dimension(Interp%nlon_dst, Interp%nlat_dst) :: mask_dst
+    real(FMS_HI_KIND_), dimension(Interp%nlon_dst, Interp%nlat_dst,size(Interp%HI_KIND_TYPE_%src_dist,3)) :: wt
+    real(FMS_HI_KIND_), dimension(Interp%nlon_src, Interp%nlat_src) :: mask_src
+    real(FMS_HI_KIND_), dimension(Interp%nlon_dst, Interp%nlat_dst) :: mask_dst
     integer :: nlon_in, nlat_in, nlon_out, nlat_out, num_found
     integer :: m, n, i, j, k, miss_in, miss_out, i1, i2, j1, j2, iverbose
-    real(FMS_HI_KIND)    :: min_in, max_in, avg_in, min_out, max_out, avg_out, sum
+    real(FMS_HI_KIND_)    :: min_in, max_in, avg_in, min_out, max_out, avg_out, sum
     !-----------------------------------------------------------------
 
     iverbose = 0;  if (present(verbose)) iverbose = verbose
@@ -230,7 +230,7 @@
     if(size(data_out,1) .ne. nlon_out .or. size(data_out,2) .ne. nlat_out ) &
          call mpp_error(FATAL,'horiz_interp_spherical_mod: size of output array incorrect')
 
-    mask_src = real(1.0, FMS_HI_KIND); mask_dst = real(1.0, FMS_HI_KIND)
+    mask_src = real(1.0, FMS_HI_KIND_); mask_dst = real(1.0, FMS_HI_KIND_)
     if(present(mask_in)) mask_src = mask_in
 
     do n=1,nlat_out
@@ -239,35 +239,35 @@
           ! check nearest to see if it is a land point
           num_found = Interp%num_found(m,n)
           if(num_found == 0 ) then
-             mask_dst(m,n) = real(0.0, FMS_HI_KIND)
+             mask_dst(m,n) = real(0.0, FMS_HI_KIND_)
           else
              i1 = Interp%i_lon(m,n,1); j1 = Interp%j_lat(m,n,1)
-             if (mask_src(i1,j1) .lt. real(0.5, FMS_HI_KIND)) then
-                mask_dst(m,n) = real(0.0, FMS_HI_KIND)
+             if (mask_src(i1,j1) .lt. real(0.5, FMS_HI_KIND_)) then
+                mask_dst(m,n) = real(0.0, FMS_HI_KIND_)
              endif
 
              if(num_found .gt. 1 ) then
                 i2 = Interp%i_lon(m,n,2); j2 = Interp%j_lat(m,n,2)
                 ! compare first 2 nearest neighbors -- if they are nearly
                 ! equidistant then use this mask for robustness
-                if(abs(Interp%HI_KIND_TYPE%src_dist(m,n,2)-Interp%HI_KIND_TYPE%src_dist(m,n,1)) .lt. epsln) then
-                   if((mask_src(i1,j1) .lt. real(0.5, FMS_HI_KIND)))  mask_dst(m,n) = real(0.0, FMS_HI_KIND)
+                if(abs(Interp%HI_KIND_TYPE_%src_dist(m,n,2)-Interp%HI_KIND_TYPE_%src_dist(m,n,1)) .lt. epsln) then
+                   if((mask_src(i1,j1) .lt. real(0.5, FMS_HI_KIND_)))  mask_dst(m,n) = real(0.0, FMS_HI_KIND_)
                 endif
              endif
 
-             sum=real(0.0, FMS_HI_KIND)
+             sum=real(0.0, FMS_HI_KIND_)
              do k=1, num_found
-                if(mask_src(Interp%i_lon(m,n,k),Interp%j_lat(m,n,k)) .lt. real(0.5, FMS_HI_KIND) ) then
-                   wt(m,n,k) = real(0.0, FMS_HI_KIND)
+                if(mask_src(Interp%i_lon(m,n,k),Interp%j_lat(m,n,k)) .lt. real(0.5, FMS_HI_KIND_) ) then
+                   wt(m,n,k) = real(0.0, FMS_HI_KIND_)
                 else
-                   if (Interp%HI_KIND_TYPE%src_dist(m,n,k) <= epsln) then
+                   if (Interp%HI_KIND_TYPE_%src_dist(m,n,k) <= epsln) then
                       wt(m,n,k) = large
                       sum = sum + large
-                   else if(Interp%HI_KIND_TYPE%src_dist(m,n,k) <= Interp%HI_KIND_TYPE%max_src_dist ) then
-                      wt(m,n,k) = real(1.0, FMS_HI_KIND)/Interp%HI_KIND_TYPE%src_dist(m,n,k)
+                   else if(Interp%HI_KIND_TYPE_%src_dist(m,n,k) <= Interp%HI_KIND_TYPE_%max_src_dist ) then
+                      wt(m,n,k) = real(1.0, FMS_HI_KIND_)/Interp%HI_KIND_TYPE_%src_dist(m,n,k)
                       sum = sum+wt(m,n,k)
                    else
-                      wt(m,n,k) = real(0.0, FMS_HI_KIND)
+                      wt(m,n,k) = real(0.0, FMS_HI_KIND_)
                    endif
                 endif
              enddo
@@ -276,16 +276,16 @@
                    wt(m,n,k) = wt(m,n,k)/sum
                 enddo
              else
-                mask_dst(m,n) = real(0.0, FMS_HI_KIND)
+                mask_dst(m,n) = real(0.0, FMS_HI_KIND_)
              endif
           endif
        enddo
     enddo
 
-    data_out = real(0.0, FMS_HI_KIND)
+    data_out = real(0.0, FMS_HI_KIND_)
     do n=1,nlat_out
        do m=1,nlon_out
-          if(mask_dst(m,n) .gt. real(0.5, FMS_HI_KIND)) then
+          if(mask_dst(m,n) .gt. real(0.5, FMS_HI_KIND_)) then
              do k=1, Interp%num_found(m,n)
                 i = Interp%i_lon(m,n,k)
                 j = Interp%j_lat(m,n,k)
@@ -295,7 +295,7 @@
              if(present(missing_value)) then
                 data_out(m,n) = missing_value
              else
-                data_out(m,n) = real(0.0, FMS_HI_KIND)
+                data_out(m,n) = real(0.0, FMS_HI_KIND_)
              endif
           endif
        enddo
@@ -333,23 +333,23 @@
     endif
 
     return
-  end subroutine SPHERICAL
+  end subroutine HORIZ_INTERP_SPHERICAL_
 
   !#######################################################################
-  subroutine SPHERICAL_WGHT( Interp, wt, verbose, mask_in, mask_out, missing_value)
+  subroutine HORIZ_INTERP_SPHERICAL_WGHT_( Interp, wt, verbose, mask_in, mask_out, missing_value)
     type (horiz_interp_type), intent(in)        :: Interp
-    real(FMS_HI_KIND), intent(out), dimension(:,:,:)         :: wt
+    real(FMS_HI_KIND_), intent(out), dimension(:,:,:)         :: wt
     integer, intent(in),               optional :: verbose
-    real(FMS_HI_KIND), intent(in), dimension(:,:),  optional :: mask_in
-    real(FMS_HI_KIND), intent(inout), dimension(:,:), optional :: mask_out
-    real(FMS_HI_KIND), intent(in),                  optional :: missing_value
+    real(FMS_HI_KIND_), intent(in), dimension(:,:),  optional :: mask_in
+    real(FMS_HI_KIND_), intent(inout), dimension(:,:), optional :: mask_out
+    real(FMS_HI_KIND_), intent(in),                  optional :: missing_value
 
     !--- some local variables ----------------------------------------
-    real(FMS_HI_KIND), dimension(Interp%nlon_src, Interp%nlat_src) :: mask_src
-    real(FMS_HI_KIND), dimension(Interp%nlon_dst, Interp%nlat_dst) :: mask_dst
+    real(FMS_HI_KIND_), dimension(Interp%nlon_src, Interp%nlat_src) :: mask_src
+    real(FMS_HI_KIND_), dimension(Interp%nlon_dst, Interp%nlat_dst) :: mask_dst
     integer :: nlon_in, nlat_in, nlon_out, nlat_out, num_found
     integer :: m, n, k, i1, i2, j1, j2, iverbose
-    real(FMS_HI_KIND)    :: sum
+    real(FMS_HI_KIND_)    :: sum
     !-----------------------------------------------------------------
 
     iverbose = 0;  if (present(verbose)) iverbose = verbose
@@ -357,7 +357,7 @@
     nlon_in  = Interp%nlon_src; nlat_in  = Interp%nlat_src
     nlon_out = Interp%nlon_dst; nlat_out = Interp%nlat_dst
 
-    mask_src = real(1.0, FMS_HI_KIND); mask_dst = real(1.0, FMS_HI_KIND)
+    mask_src = real(1.0, FMS_HI_KIND_); mask_dst = real(1.0, FMS_HI_KIND_)
     if(present(mask_in)) mask_src = mask_in
 
     do n=1,nlat_out
@@ -372,35 +372,35 @@
           end if
 
           if(num_found == 0 ) then
-             mask_dst(m,n) = real(0.0, FMS_HI_KIND)
+             mask_dst(m,n) = real(0.0, FMS_HI_KIND_)
           else
              i1 = Interp%i_lon(m,n,1); j1 = Interp%j_lat(m,n,1)
-             if (mask_src(i1,j1) .lt. real(0.5, FMS_HI_KIND)) then
-                mask_dst(m,n) = real(0.0, FMS_HI_KIND)
+             if (mask_src(i1,j1) .lt. real(0.5, FMS_HI_KIND_)) then
+                mask_dst(m,n) = real(0.0, FMS_HI_KIND_)
              endif
 
              if(num_found .gt. 1 ) then
                 i2 = Interp%i_lon(m,n,2); j2 = Interp%j_lat(m,n,2)
                 ! compare first 2 nearest neighbors -- if they are nearly
                 ! equidistant then use this mask for robustness
-                if(abs(Interp%HI_KIND_TYPE%src_dist(m,n,2)-Interp%HI_KIND_TYPE%src_dist(m,n,1)) .lt. epsln) then
-                   if((mask_src(i1,j1) .lt. real(0.5, FMS_HI_KIND)))  mask_dst(m,n) = real(0.0, FMS_HI_KIND)
+                if(abs(Interp%HI_KIND_TYPE_%src_dist(m,n,2)-Interp%HI_KIND_TYPE_%src_dist(m,n,1)) .lt. epsln) then
+                   if((mask_src(i1,j1) .lt. real(0.5, FMS_HI_KIND_)))  mask_dst(m,n) = real(0.0, FMS_HI_KIND_)
                 endif
              endif
 
-             sum=real(0.0, FMS_HI_KIND)
+             sum=real(0.0, FMS_HI_KIND_)
              do k=1, num_found
-                if(mask_src(Interp%i_lon(m,n,k),Interp%j_lat(m,n,k)) .lt. real(0.5, FMS_HI_KIND) ) then
-                   wt(m,n,k) = real(0.0, FMS_HI_KIND)
+                if(mask_src(Interp%i_lon(m,n,k),Interp%j_lat(m,n,k)) .lt. real(0.5, FMS_HI_KIND_) ) then
+                   wt(m,n,k) = real(0.0, FMS_HI_KIND_)
                 else
-                   if (Interp%HI_KIND_TYPE%src_dist(m,n,k) <= epsln) then
+                   if (Interp%HI_KIND_TYPE_%src_dist(m,n,k) <= epsln) then
                       wt(m,n,k) = large
                       sum = sum + large
-                   else if(Interp%HI_KIND_TYPE%src_dist(m,n,k) <= Interp%HI_KIND_TYPE%max_src_dist ) then
-                      wt(m,n,k) = real(1.0, FMS_HI_KIND)/Interp%HI_KIND_TYPE%src_dist(m,n,k)
+                   else if(Interp%HI_KIND_TYPE_%src_dist(m,n,k) <= Interp%HI_KIND_TYPE_%max_src_dist ) then
+                      wt(m,n,k) = real(1.0, FMS_HI_KIND_)/Interp%HI_KIND_TYPE_%src_dist(m,n,k)
                       sum = sum+wt(m,n,k)
                    else
-                      wt(m,n,k) = real(0.0, FMS_HI_KIND)
+                      wt(m,n,k) = real(0.0, FMS_HI_KIND_)
                    endif
                 endif
              enddo
@@ -409,27 +409,27 @@
                    wt(m,n,k) = wt(m,n,k)/sum
                 enddo
              else
-                mask_dst(m,n) = real(0.0, FMS_HI_KIND)
+                mask_dst(m,n) = real(0.0, FMS_HI_KIND_)
              endif
           endif
        enddo
     enddo
 
     return
-  end subroutine SPHERICAL_WGHT
+  end subroutine HORIZ_INTERP_SPHERICAL_WGHT_
 
   !#######################################################################
 
-  subroutine RADIAL_SEARCH(theta_src,phi_src,theta_dst,phi_dst, map_src_xsize, map_src_ysize, &
+  subroutine RADIAL_SEARCH_(theta_src,phi_src,theta_dst,phi_dst, map_src_xsize, map_src_ysize, &
        map_src_add, map_src_dist, num_found, num_neighbors,max_src_dist,src_is_modulo)
-    real(FMS_HI_KIND),    intent(in),    dimension(:)   :: theta_src, phi_src
-    real(FMS_HI_KIND),    intent(in),    dimension(:,:) :: theta_dst, phi_dst
+    real(FMS_HI_KIND_),    intent(in),    dimension(:)   :: theta_src, phi_src
+    real(FMS_HI_KIND_),    intent(in),    dimension(:,:) :: theta_dst, phi_dst
     integer, intent(in)                    :: map_src_xsize, map_src_ysize
     integer, intent(out), dimension(:,:,:) :: map_src_add
-    real(FMS_HI_KIND),    intent(out), dimension(:,:,:) :: map_src_dist
+    real(FMS_HI_KIND_),    intent(out), dimension(:,:,:) :: map_src_dist
     integer, intent(inout), dimension(:,:) :: num_found
     integer, intent(in)                    :: num_neighbors
-    real(FMS_HI_KIND),    intent(in)                    :: max_src_dist
+    real(FMS_HI_KIND_),    intent(in)                    :: max_src_dist
     logical, intent(in)                    :: src_is_modulo
 
     !---------- local variables ----------------------------------------
@@ -438,8 +438,8 @@
     integer :: map_dst_xsize, map_dst_ysize
     integer :: i_left1, i_left2, i_right1, i_right2
     integer :: map_src_size, step, step_size, bound, bound_start, bound_end
-    logical :: continue_search, result, continue_RADIAL_SEARCH
-    real(FMS_HI_KIND)    :: d, res
+    logical :: continue_search, result, continue_RADIAL_SEARCH_
+    real(FMS_HI_KIND_)    :: d, res
     !------------------------------------------------------------------
     map_dst_xsize=size(theta_dst,1);map_dst_ysize=size(theta_dst,2)
     map_src_size = map_src_xsize*map_src_ysize
@@ -448,13 +448,13 @@
        do i=1,map_dst_xsize
           continue_search=.true.
           step = 1
-          step_size = int( sqrt(real(map_src_size, kind=FMS_HI_KIND )))
+          step_size = int( sqrt(real(map_src_size, kind=FMS_HI_KIND_ )))
           do while (continue_search .and. step_size > 0)
              do while (step <= map_src_size .and. continue_search)
                 ! count land points as nearest neighbors
-                d = SPHERICAL_DISTANCE(theta_dst(i,j),phi_dst(i,j),theta_src(step),phi_src(step))
+                d = HORIZ_INTERP_SPHERICAL_DISTANCE_(theta_dst(i,j),phi_dst(i,j),theta_src(step),phi_src(step))
                 if (d <= max_src_dist) then
-                   result = UPDATE_DEST_NEIGHBORS(map_src_add(i,j,:),map_src_dist(i,j,:), &
+                   result = UPDATE_DEST_NEIGHBORS_(map_src_add(i,j,:),map_src_dist(i,j,:), &
                         step,d, num_found(i,j), num_neighbors )
                    if (result) then
                       n = 0
@@ -463,9 +463,9 @@
                       if (i0 == 0) i0 = map_src_xsize
                       res = float(step)/float(map_src_xsize)
                       j0 = ceiling(res)
-                      continue_RADIAL_SEARCH = .true.
-                      do while (continue_RADIAL_SEARCH)
-                         continue_RADIAL_SEARCH = .false.
+                      continue_RADIAL_SEARCH_ = .true.
+                      do while (continue_RADIAL_SEARCH_)
+                         continue_RADIAL_SEARCH_ = .false.
                          n = n+1 ! radial counter
                          if(n > max_nbrs) exit
                          ! ************** left boundary *******************************
@@ -488,11 +488,11 @@
                                bound = jj * map_src_xsize + i_left
                             endif
 
-                            d = SPHERICAL_DISTANCE(theta_dst(i,j),phi_dst(i,j),theta_src(bound),phi_src(bound))
+                            d = HORIZ_INTERP_SPHERICAL_DISTANCE_(theta_dst(i,j),phi_dst(i,j),theta_src(bound),phi_src(bound))
                             if(d<=max_src_dist) then
-                               result = UPDATE_DEST_NEIGHBORS(map_src_add(i,j,:),map_src_dist(i,j,:), &
+                               result = UPDATE_DEST_NEIGHBORS_(map_src_add(i,j,:),map_src_dist(i,j,:), &
                                     bound,d, num_found(i,j), num_neighbors)
-                               if (result) continue_RADIAL_SEARCH = .true.
+                               if (result) continue_RADIAL_SEARCH_ = .true.
                             endif
                          enddo
 
@@ -517,11 +517,11 @@
                                bound = jj * map_src_xsize + i_right
                             endif
 
-                            d = SPHERICAL_DISTANCE(theta_dst(i,j),phi_dst(i,j),theta_src(bound),phi_src(bound))
+                            d = HORIZ_INTERP_SPHERICAL_DISTANCE_(theta_dst(i,j),phi_dst(i,j),theta_src(bound),phi_src(bound))
                             if(d<=max_src_dist) then
-                               result = UPDATE_DEST_NEIGHBORS(map_src_add(i,j,:),map_src_dist(i,j,:), &
+                               result = UPDATE_DEST_NEIGHBORS_(map_src_add(i,j,:),map_src_dist(i,j,:), &
                                     bound,d, num_found(i,j), num_neighbors)
-                               if (result) continue_RADIAL_SEARCH = .true.
+                               if (result) continue_RADIAL_SEARCH_ = .true.
                             endif
                          enddo
 
@@ -548,11 +548,11 @@
 
                          bound = bound_start
                          do while (bound <= bound_end)
-                            d = SPHERICAL_DISTANCE(theta_dst(i,j),phi_dst(i,j),theta_src(bound),phi_src(bound))
+                            d = HORIZ_INTERP_SPHERICAL_DISTANCE_(theta_dst(i,j),phi_dst(i,j),theta_src(bound),phi_src(bound))
                             if(d<=max_src_dist) then
-                               result = UPDATE_DEST_NEIGHBORS(map_src_add(i,j,:),map_src_dist(i,j,:), &
+                               result = UPDATE_DEST_NEIGHBORS_(map_src_add(i,j,:),map_src_dist(i,j,:), &
                                     bound,d, num_found(i,j), num_neighbors)
-                               if (result) continue_RADIAL_SEARCH = .true.
+                               if (result) continue_RADIAL_SEARCH_ = .true.
                             endif
                             bound = bound + 1
 
@@ -569,11 +569,11 @@
 
                             bound = bound_start
                             do while (bound <= bound_end)
-                               d = SPHERICAL_DISTANCE(theta_dst(i,j),phi_dst(i,j),theta_src(bound),phi_src(bound))
+                               d = HORIZ_INTERP_SPHERICAL_DISTANCE_(theta_dst(i,j),phi_dst(i,j),theta_src(bound),phi_src(bound))
                                if(d<=max_src_dist) then
-                                  result = UPDATE_DEST_NEIGHBORS(map_src_add(i,j,:),map_src_dist(i,j,:), &
+                                  result = UPDATE_DEST_NEIGHBORS_(map_src_add(i,j,:),map_src_dist(i,j,:), &
                                        bound,d, num_found(i,j), num_neighbors)
-                                  if (result) continue_RADIAL_SEARCH = .true.
+                                  if (result) continue_RADIAL_SEARCH_ = .true.
                                endif
                                bound = bound + 1
                             enddo
@@ -591,11 +591,11 @@
 
                          bound = bound_start
                          do while (bound <= bound_end)
-                            d = SPHERICAL_DISTANCE(theta_dst(i,j),phi_dst(i,j),theta_src(bound),phi_src(bound))
+                            d = HORIZ_INTERP_SPHERICAL_DISTANCE_(theta_dst(i,j),phi_dst(i,j),theta_src(bound),phi_src(bound))
                             if(d<=max_src_dist) then
-                               result = UPDATE_DEST_NEIGHBORS(map_src_add(i,j,:),map_src_dist(i,j,:), &
+                               result = UPDATE_DEST_NEIGHBORS_(map_src_add(i,j,:),map_src_dist(i,j,:), &
                                     bound,d, num_found(i,j), num_neighbors)
-                               if (result) continue_RADIAL_SEARCH = .true.
+                               if (result) continue_RADIAL_SEARCH_ = .true.
                             endif
                             bound = bound + 1
                          enddo
@@ -611,11 +611,11 @@
 
                             bound = bound_start
                             do while (bound <= bound_end)
-                               d = SPHERICAL_DISTANCE(theta_dst(i,j),phi_dst(i,j),theta_src(bound),phi_src(bound))
+                               d = HORIZ_INTERP_SPHERICAL_DISTANCE_(theta_dst(i,j),phi_dst(i,j),theta_src(bound),phi_src(bound))
                                if(d<=max_src_dist) then
-                                  result = UPDATE_DEST_NEIGHBORS(map_src_add(i,j,:),map_src_dist(i,j,:), &
+                                  result = UPDATE_DEST_NEIGHBORS_(map_src_add(i,j,:),map_src_dist(i,j,:), &
                                        bound,d, num_found(i,j), num_neighbors)
-                                  if (result) continue_RADIAL_SEARCH = .true.
+                                  if (result) continue_RADIAL_SEARCH_ = .true.
                                endif
                                bound = bound + 1
                             enddo
@@ -635,25 +635,25 @@
 
     return
 
-  end subroutine RADIAL_SEARCH
+  end subroutine RADIAL_SEARCH_
 
 
   !#####################################################################
 
-  function UPDATE_DEST_NEIGHBORS(map_src_add, map_src_dist, src_add,d, num_found, min_nbrs)
+  function UPDATE_DEST_NEIGHBORS_(map_src_add, map_src_dist, src_add,d, num_found, min_nbrs)
 
     integer, intent(inout), dimension(:) :: map_src_add
-    real(FMS_HI_KIND), intent(inout),    dimension(:) :: map_src_dist
+    real(FMS_HI_KIND_), intent(inout),    dimension(:) :: map_src_dist
     integer, intent(in)                  :: src_add
-    real(FMS_HI_KIND), intent(in)                     :: d
+    real(FMS_HI_KIND_), intent(in)                     :: d
     integer, intent(inout)               :: num_found
     integer, intent(in)                  :: min_nbrs
 
-    logical :: UPDATE_DEST_NEIGHBORS, already_exist = .false.
+    logical :: UPDATE_DEST_NEIGHBORS_, already_exist = .false.
 
     integer :: n,m
 
-    UPDATE_DEST_NEIGHBORS = .false.
+    UPDATE_DEST_NEIGHBORS_ = .false.
 
     n = 0
     NLOOP : do while ( n .le. num_found )
@@ -668,7 +668,7 @@
           if(num_found < max_neighbors) then
              num_found = num_found + 1
           else
-             call mpp_error(FATAL,'UPDATE_DEST_NEIGHBORS: '// &
+             call mpp_error(FATAL,'UPDATE_DEST_NEIGHBORS_: '// &
                   'number of neighbor points found is greated than maxium neighbor points' )
           endif
           do m=num_found,n+1,-1
@@ -677,7 +677,7 @@
           enddo
           map_src_add(n) = src_add
           map_src_dist(n) = d
-          UPDATE_DEST_NEIGHBORS = .true.
+          UPDATE_DEST_NEIGHBORS_ = .true.
           if( num_found > min_nbrs ) then
              if( map_src_dist(num_found) > map_src_dist(num_found-1) ) then
                 num_found = num_found - 1
@@ -691,10 +691,10 @@
     end do NLOOP
     if(already_exist) return
 
-    if( .not. UPDATE_DEST_NEIGHBORS ) then
+    if( .not. UPDATE_DEST_NEIGHBORS_ ) then
        if( num_found < min_nbrs ) then
           num_found               = num_found + 1
-          UPDATE_DEST_NEIGHBORS   = .true.
+          UPDATE_DEST_NEIGHBORS_   = .true.
           map_src_add(num_found)  = src_add
           map_src_dist(num_found) = d
        endif
@@ -703,15 +703,15 @@
 
     return
 
-  end function UPDATE_DEST_NEIGHBORS
+  end function UPDATE_DEST_NEIGHBORS_
 
   !########################################################################
-!  function SPHERICAL_DISTANCE(theta1,phi1,theta2,phi2)
+!  function HORIZ_INTERP_SPHERICAL_DISTANCE_(theta1,phi1,theta2,phi2)
 
-!    real(FMS_HI_KIND), intent(in) :: theta1, phi1, theta2, phi2
-!    real(FMS_HI_KIND) :: SPHERICAL_DISTANCE
+!    real(FMS_HI_KIND_), intent(in) :: theta1, phi1, theta2, phi2
+!    real(FMS_HI_KIND_) :: HORIZ_INTERP_SPHERICAL_DISTANCE_
 
-!    real(FMS_HI_KIND) :: r1(3), r2(3), cross(3), s, dot, ang
+!    real(FMS_HI_KIND_) :: r1(3), r2(3), cross(3), s, dot, ang
 
     ! this is a simple, enough way to calculate distance on the sphere
     ! first, construct cartesian vectors r1 and r2
@@ -732,7 +732,7 @@
 
 !    s = sqrt(cross(1)**2.+cross(2)**2.+cross(3)**2.)
 
-!    s = min(s,real(1.0, FMS_HI_KIND)-epsln)
+!    s = min(s,real(1.0, FMS_HI_KIND_)-epsln)
 
 !    dot = r1(1)*r2(1) + r1(2)*r2(2) + r1(3)*r2(3)
 
@@ -741,50 +741,50 @@
 !    else if (dot < 0) then
 !       ang = pi + asin(s)  !?  original is pi - asin(s)
 !    else
-!       ang = pi/real(2., FMS_HI_KIND)
+!       ang = pi/real(2., FMS_HI_KIND_)
 !    endif
 
-!    SPHERICAL_DISTANCE = abs(ang) ! in radians
+!    HORIZ_INTERP_SPHERICAL_DISTANCE_ = abs(ang) ! in radians
 
 !    return
 
-!  end function SPHERICAL_DISTANCE
+!  end function HORIZ_INTERP_SPHERICAL_DISTANCE_
   ! The great cycle distance
-  function SPHERICAL_DISTANCE(theta1,phi1,theta2,phi2)
+  function HORIZ_INTERP_SPHERICAL_DISTANCE_(theta1,phi1,theta2,phi2)
 
-    real(FMS_HI_KIND), intent(in) :: theta1, phi1, theta2, phi2
-    real(FMS_HI_KIND) :: SPHERICAL_DISTANCE, dot
+    real(FMS_HI_KIND_), intent(in) :: theta1, phi1, theta2, phi2
+    real(FMS_HI_KIND_) :: HORIZ_INTERP_SPHERICAL_DISTANCE_, dot
 
     if(theta1 == theta2 .and. phi1 == phi2) then
-        SPHERICAL_DISTANCE = real(0.0, FMS_HI_KIND)
+        HORIZ_INTERP_SPHERICAL_DISTANCE_ = real(0.0, FMS_HI_KIND_)
         return
     endif
 
     dot = cos(phi1)*cos(phi2)*cos(theta1-theta2) + sin(phi1)*sin(phi2)
-    if(dot > real(1., FMS_HI_KIND))  dot = real(1., FMS_HI_KIND)
-    if(dot < real(-1., FMS_HI_KIND)) dot = real(-1., FMS_HI_KIND)
-    SPHERICAL_DISTANCE = acos(dot)
+    if(dot > real(1., FMS_HI_KIND_))  dot = real(1., FMS_HI_KIND_)
+    if(dot < real(-1., FMS_HI_KIND_)) dot = real(-1., FMS_HI_KIND_)
+    HORIZ_INTERP_SPHERICAL_DISTANCE_ = acos(dot)
 
     return
 
-  end function SPHERICAL_DISTANCE
+  end function HORIZ_INTERP_SPHERICAL_DISTANCE_
 
 
   !#######################################################################
 
-  subroutine FULL_SEARCH(theta_src,phi_src,theta_dst,phi_dst,map_src_add, map_src_dist,num_found, &
+  subroutine FULL_SEARCH_(theta_src,phi_src,theta_dst,phi_dst,map_src_add, map_src_dist,num_found, &
                          num_neighbors,max_src_dist)
-    real(FMS_HI_KIND),    intent(in),    dimension(:)   :: theta_src, phi_src
-    real(FMS_HI_KIND),    intent(in),    dimension(:,:) :: theta_dst, phi_dst
+    real(FMS_HI_KIND_),    intent(in),    dimension(:)   :: theta_src, phi_src
+    real(FMS_HI_KIND_),    intent(in),    dimension(:,:) :: theta_dst, phi_dst
     integer, intent(out), dimension(:,:,:) :: map_src_add
-    real(FMS_HI_KIND),    intent(out), dimension(:,:,:) :: map_src_dist
+    real(FMS_HI_KIND_),    intent(out), dimension(:,:,:) :: map_src_dist
     integer, intent(out), dimension(:,:)   :: num_found
     integer, intent(in)                    :: num_neighbors
-    real(FMS_HI_KIND), intent(in)                       :: max_src_dist
+    real(FMS_HI_KIND_), intent(in)                       :: max_src_dist
 
     integer :: i,j,map_src_size, step
     integer :: map_dst_xsize,map_dst_ysize
-    real(FMS_HI_KIND)    :: d
+    real(FMS_HI_KIND_)    :: d
     logical :: found
 
     map_dst_xsize=size(theta_dst,1);map_dst_ysize=size(theta_dst,2)
@@ -793,14 +793,14 @@
     do j=1,map_dst_ysize
        do i=1,map_dst_xsize
           do step = 1, map_src_size
-             d = SPHERICAL_DISTANCE(theta_dst(i,j),phi_dst(i,j),theta_src(step),phi_src(step))
+             d = HORIZ_INTERP_SPHERICAL_DISTANCE_(theta_dst(i,j),phi_dst(i,j),theta_src(step),phi_src(step))
              if( d <= max_src_dist) then
-                found = UPDATE_DEST_NEIGHBORS(map_src_add(i,j,:),map_src_dist(i,j,:), &
+                found = UPDATE_DEST_NEIGHBORS_(map_src_add(i,j,:),map_src_dist(i,j,:), &
                      step,d,num_found(i,j), num_neighbors )
              endif
           enddo
        enddo
     enddo
 
-  end subroutine FULL_SEARCH
+  end subroutine FULL_SEARCH_
 !> @}

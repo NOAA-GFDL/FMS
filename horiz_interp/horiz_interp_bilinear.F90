@@ -33,6 +33,7 @@ module horiz_interp_bilinear_mod
   use fms_mod,               only: write_version_number
   use constants_mod,         only: PI
   use horiz_interp_type_mod, only: horiz_interp_type, stats
+  use platform_mod,          only: r4_kind, r8_kind
 
   implicit none
   private

@@ -49,6 +49,7 @@ module horiz_interp_bicubic_mod
   use fms_mod,               only: write_version_number
   use horiz_interp_type_mod, only: horiz_interp_type
   use constants_mod,         only: PI
+  use platform_mod,          only: r4_kind, r8_kind
 
 
  implicit none
@@ -93,7 +94,7 @@ module horiz_interp_bicubic_mod
 !     dff_xy : x-y-derivative of fc at the fine grid
 
 
-   real               :: tpi
+   real(r8_kind)               :: tpi
 
    interface fill_xy
       module procedure fill_xy_r4

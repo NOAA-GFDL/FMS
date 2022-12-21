@@ -79,3 +79,6 @@ m4/lt~obsolete.m4
 # ignore build and install trees (from cmake)
 build*/
 install*/
+
+# ignore vscode settings files
+.vscode/settings.json

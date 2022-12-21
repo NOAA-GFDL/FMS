@@ -37,7 +37,7 @@
 
 module horiz_interp_conserve_mod
 
-  use platform_mod
+  use platform_mod,          only: r4_kind, r8_kind
   use mpp_mod,               only: mpp_send, mpp_recv, mpp_pe, mpp_root_pe, mpp_npes
   use mpp_mod,               only: mpp_error, FATAL,  mpp_sync_self
   use mpp_mod,               only: COMM_TAG_1, COMM_TAG_2
