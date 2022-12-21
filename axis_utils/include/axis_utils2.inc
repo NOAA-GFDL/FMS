@@ -152,7 +152,7 @@ end subroutine AXIS_EDGES_
 
     do
       if (LON_IN_RANGE_ < l_strt) then
-        LON_IN_RANGE_ = LON_IN_RANGE_ + f360
+        LON_IN_RANGE_ = LON_IN_RANGE_ + real(f360,kind=r8_kind)
       else if (LON_IN_RANGE_  >  l_end) then
         LON_IN_RANGE_ = LON_IN_RANGE_ - f360
       else
@@ -202,7 +202,7 @@ end subroutine AXIS_EDGES_
     enddo
 
     if (istrt>1) then ! grid is not monotonic
-       if (abs(lon(len)-lon(1)) < epsln) then
+       if (abs(lon(len)-lon(1)) < real(epsln,kind=r8_kind)) then
           tmp = cshift(lon(1:len-1),istrt-1)
           lon(1:len-1) = tmp
           lon(len)     = lon(1)
@@ -290,7 +290,7 @@ end subroutine AXIS_EDGES_
        do while (i <= ia .and. keep_going)
           i = i+1
           if (value <= array(i)) then
-             FRAC_INDEX_ = float(i-1) + (value-array(i-1))/(array(i)-array(i-1))
+             FRAC_INDEX_ = real(i-1) + (value-array(i-1))/(array(i)-array(i-1))
              keep_going  = .false.
           endif
        enddo
