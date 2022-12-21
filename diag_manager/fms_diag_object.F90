@@ -72,15 +72,12 @@ private
     procedure :: fms_get_diag_field_id_from_name
     procedure :: fms_get_axis_name_from_id
     procedure :: fms_diag_send_complete
-    procedure :: fms_set_field_log_separator
 #ifdef use_yaml
     procedure :: get_diag_buffer
 #endif
 end type fmsDiagObject_type
 
 type (fmsDiagObject_type), target :: fms_diag_object
-
-character(len=1) :: logfile_sep = '|' !< separator used in csv-style log file of registered fields
 
 public :: fms_register_diag_field_obj
 public :: fms_register_diag_field_scalar
@@ -158,7 +155,7 @@ end subroutine fms_diag_object_end
 integer function fms_register_diag_field_obj &
        (this, modname, varname, axes, init_time, &
        longname, units, missing_value, varRange, mask_variant, standname, &
-       do_not_log, err_msg, interp_method, tile_count, area, volume, realm, static)
+       err_msg, interp_method, tile_count, area, volume, realm, static)
 
  class(fmsDiagObject_type),TARGET,INTENT(inout):: this       !< Diaj_obj to fill
  CHARACTER(len=*),               INTENT(in)    :: modname               !< The module name
@@ -171,7 +168,6 @@ integer function fms_register_diag_field_obj &
  class(*),         OPTIONAL,     INTENT(in)    :: missing_value         !< Missing value to add as a attribute
  class(*),         OPTIONAL,     INTENT(in)    :: varRANGE(2)           !< Range to add as a attribute
  LOGICAL,          OPTIONAL,     INTENT(in)    :: mask_variant          !< Mask
- LOGICAL,          OPTIONAL,     INTENT(in)    :: do_not_log            !< if TRUE, field info is not logged
  CHARACTER(len=*), OPTIONAL,     INTENT(out)   :: err_msg               !< Error message to be passed back up
  CHARACTER(len=*), OPTIONAL,     INTENT(in)    :: interp_method         !< The interp method to be used when
                                                                         !! regridding the field in post-processing.
@@ -214,7 +210,8 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
 !> Register the data for the field
   call fieldptr%register(modname, varname, diag_field_indices, fms_diag_object%diag_axis, &
        axes, longname, units, missing_value, varRange, mask_variant, standname, &
-       do_not_log, err_msg, interp_method, tile_count, area, volume, realm, static)
+       err_msg=err_msg, interp_method=interp_method, tile_count=tile_count, area=area, volume=volume, realm=realm, &
+       static=static)
 !> Get the file IDs from the field indicies from the yaml
   file_ids = get_diag_files_id(diag_field_indices)
 !> Add the axis information, initial time, and field IDs to the files
@@ -258,7 +255,7 @@ end function fms_register_diag_field_obj
   !> @brief Registers a scalar field
   !! @return field index for subsequent call to send_data.
 INTEGER FUNCTION fms_register_diag_field_scalar(this,module_name, field_name, init_time, &
-       & long_name, units, missing_value, var_range, standard_name, do_not_log, err_msg,&
+       & long_name, units, missing_value, var_range, standard_name, err_msg,&
        & area, volume, realm)
     class(fmsDiagObject_type),TARGET,INTENT(inout):: this       !< Diaj_obj to fill
     CHARACTER(len=*),           INTENT(in) :: module_name   !< Module where the field comes from
@@ -269,7 +266,6 @@ INTEGER FUNCTION fms_register_diag_field_scalar(this,module_name, field_name, in
     CHARACTER(len=*), OPTIONAL, INTENT(in) :: standard_name !< Standard_name to name the variable in the file
     CLASS(*),         OPTIONAL, INTENT(in) :: missing_value !< Missing value to add as a variable attribute
     CLASS(*),         OPTIONAL, INTENT(in) :: var_range(:)  !< Range to add a variable attribute
-    LOGICAL,          OPTIONAL, INTENT(in) :: do_not_log    !< If TRUE, field information is not logged
     CHARACTER(len=*), OPTIONAL, INTENT(out):: err_msg       !< Error_msg from call
     INTEGER,          OPTIONAL, INTENT(in) :: area          !< Id of the area field
     INTEGER,          OPTIONAL, INTENT(in) :: volume        !< Id of the volume field
@@ -281,7 +277,7 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
     fms_register_diag_field_scalar = this%register(&
       & module_name, field_name, init_time=init_time, &
       & longname=long_name, units=units, missing_value=missing_value, varrange=var_range, &
-      & standname=standard_name, do_not_log=do_not_log, err_msg=err_msg, &
+      & standname=standard_name, err_msg=err_msg, &
       & area=area, volume=volume, realm=realm)
 #endif
 end function fms_register_diag_field_scalar
@@ -290,7 +286,7 @@ end function fms_register_diag_field_scalar
   !> @return field index for subsequent call to send_data.
 INTEGER FUNCTION fms_register_diag_field_array(this, module_name, field_name, axes, init_time, &
        & long_name, units, missing_value, var_range, mask_variant, standard_name, verbose,&
-       & do_not_log, err_msg, interp_method, tile_count, area, volume, realm)
+       & err_msg, interp_method, tile_count, area, volume, realm)
     class(fmsDiagObject_type),TARGET,INTENT(inout):: this       !< Diaj_obj to fill
     CHARACTER(len=*),           INTENT(in) :: module_name   !< Module where the field comes from
     CHARACTER(len=*),           INTENT(in) :: field_name    !< Name of the field
@@ -303,7 +299,6 @@ INTEGER FUNCTION fms_register_diag_field_array(this, module_name, field_name, ax
     LOGICAL,          OPTIONAL, INTENT(in) :: mask_variant  !< Mask variant
     CHARACTER(len=*), OPTIONAL, INTENT(in) :: standard_name !< Standard_name to name the variable in the file
     LOGICAL,          OPTIONAL, INTENT(in) :: verbose       !< Print more information
-    LOGICAL,          OPTIONAL, INTENT(in) :: do_not_log    !< If TRUE, field information is not logged
     CHARACTER(len=*), OPTIONAL, INTENT(out):: err_msg       !< Error_msg from call
     CHARACTER(len=*), OPTIONAL, INTENT(in) :: interp_method !< The interp method to be used when
                                                             !! regridding the field in post-processing.
@@ -321,19 +316,15 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
     fms_register_diag_field_array = this%register( &
       & module_name, field_name, init_time=init_time, &
       & axes=axes, longname=long_name, units=units, missing_value=missing_value, varrange=var_range, &
-      & mask_variant=mask_variant, standname=standard_name, do_not_log=do_not_log, err_msg=err_msg, &
+      & mask_variant=mask_variant, standname=standard_name, err_msg=err_msg, &
       & interp_method=interp_method, tile_count=tile_count, area=area, volume=volume, realm=realm)
-    if( present(do_not_log)) then
-      if( .not. do_not_log ) call fms_log_field_info(module_name, field_name, axes, long_name, units,&
-                                   & missing_value, range=var_range, dynamic=.true.)
-    end if
 #endif
 end function fms_register_diag_field_array
 
 !> @brief Return field index for subsequent call to send_data.
 !! @return field index for subsequent call to send_data.
 INTEGER FUNCTION fms_register_static_field(this, module_name, field_name, axes, long_name, units,&
-       & missing_value, range, mask_variant, standard_name, DYNAMIC, do_not_log, interp_method,&
+       & missing_value, range, mask_variant, standard_name, DYNAMIC, interp_method,&
        & tile_count, area, volume, realm)
     class(fmsDiagObject_type),TARGET,INTENT(inout):: this       !< Diaj_obj to fill
     CHARACTER(len=*),                         INTENT(in) :: module_name   !< Name of the module, the field is on
@@ -347,7 +338,6 @@ INTEGER FUNCTION fms_register_static_field(this, module_name, field_name, axes, 
     LOGICAL,                        OPTIONAL, INTENT(in) :: mask_variant  !< Flag indicating if the field is has
                                                                           !! a mask variant
     LOGICAL,                        OPTIONAL, INTENT(in) :: DYNAMIC       !< Flag indicating if the field is dynamic
-    LOGICAL,                        OPTIONAL, INTENT(in) :: do_not_log    !< if TRUE, field information is not logged
     CHARACTER(len=*),               OPTIONAL, INTENT(in) :: interp_method !< The interp method to be used when
                                                                           !! regridding the field in post-processing
                                                                           !! Valid options are "conserve_order1",
@@ -368,12 +358,8 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
   fms_register_static_field = this%register( &
       & module_name, field_name, axes=axes, &
       & longname=long_name, units=units, missing_value=missing_value, varrange=range, &
-      & standname=standard_name, do_not_log=do_not_log, area=area, volume=volume, realm=realm, &
+      & standname=standard_name, area=area, volume=volume, realm=realm, &
       & static=.true.)
-  if( present(do_not_log)) then
-    if( .not. do_not_log ) call fms_log_field_info(module_name, field_name, axes, long_name, units,&
-                                   & missing_value, range, dynamic=.false.)
-  end if
 #endif
 end function fms_register_static_field
 
@@ -689,140 +675,5 @@ subroutine dump_diag_obj( filename )
 #endif
 end subroutine
 
-!> @brief Writes brief diagnostic field info to the log file.
-!! @details If the <TT>do_diag_field_log</TT> namelist parameter is .TRUE.,
-!!     then a line briefly describing diagnostic field is added to
-!!     the log file.  Normally users should not call this subroutine
-!!     directly, since it is called by register_static_field and
-!!     register_diag_field if do_not_log is not set to .TRUE..  It is
-!!     used, however, in LM3 to avoid excessive logs due to the
-!!     number of fields registered for each of the tile types.  LM3
-!!     code uses a do_not_log parameter in the registration calls,
-!!     and subsequently calls this subroutine to log field information
-!!     under a generic name.
-SUBROUTINE fms_log_field_info(module_name, field_name, axes, long_name, units,&
-                            & missing_value, range, dynamic )
-  CHARACTER(len=*), INTENT(in) :: module_name !< Module name
-  CHARACTER(len=*), INTENT(in) :: field_name !< Field name
-  INTEGER, DIMENSION(:), INTENT(in) :: axes !< Axis IDs
-  CHARACTER(len=*), OPTIONAL, INTENT(in) :: long_name !< Long name for field.
-  CHARACTER(len=*), OPTIONAL, INTENT(in) :: units !< Unit of field.
-  CLASS(*), OPTIONAL, INTENT(in) :: missing_value !< Missing value value.
-  CLASS(*), DIMENSION(:), OPTIONAL, INTENT(IN) :: range !< Valid range of values for field.
-  LOGICAL, OPTIONAL, INTENT(in) :: dynamic !< <TT>.TRUE.</TT> if field is not static.
-
-  logical, save :: wrote_header = .false. !< set if header was already written
-
-  ! ---- local vars
-  CHARACTER(len=256) :: lmodule, lfield, lname, lunits
-  CHARACTER(len=64)  :: lmissval, lmin, lmax
-  CHARACTER(len=8)   :: numaxis, timeaxis
-  CHARACTER(len=256) :: axis_name, axes_list
-  INTEGER :: i
-  REAL :: missing_value_use !< Local copy of missing_value
-  REAL, DIMENSION(2) :: range_use !< Local copy of range
-  ! return if disabled via nml, we'll just get the nml val from the original call
-  !IF ( .NOT.do_diag_field_log ) RETURN
-  IF ( mpp_pe().NE.mpp_root_pe() ) RETURN
-
-  ! Fatal error if range is present and its extent is not 2.
-  IF ( PRESENT(range) ) THEN
-    IF ( SIZE(range) .NE. 2 ) THEN
-      CALL mpp_error (FATAL, 'fms_diag_object_mod::fms_log_field_info: extent of range should be 2')
-    END IF
-  END IF
-
-  lmodule = TRIM(module_name)
-  lfield = TRIM(field_name)
-
-  IF ( PRESENT(long_name) ) THEN
-    lname  = TRIM(long_name)
-  ELSE
-    lname  = ''
-  END IF
-
-  IF ( PRESENT(units) ) THEN
-    lunits = TRIM(units)
-  ELSE
-    lunits = ''
-  END IF
-
-  WRITE (numaxis,'(i1)') SIZE(axes)
-
-  IF (PRESENT(missing_value)) THEN
-    IF ( use_cmor ) THEN
-      WRITE (lmissval,*) CMOR_MISSING_VALUE
-    ELSE
-      SELECT TYPE (missing_value)
-        TYPE IS (real(kind=r4_kind))
-          missing_value_use = missing_value
-        TYPE IS (real(kind=r8_kind))
-          missing_value_use = real(missing_value)
-        CLASS DEFAULT
-          CALL mpp_error( FATAL, 'diag_util_mod::log_diag_field_info: The missing_value is not one of the supported'// &
-                        & ' types of real(kind=4) or real(kind=8)')
-      END SELECT
-      WRITE (lmissval,*) missing_value_use
-    END IF
-  ELSE
-     lmissval = ''
-  ENDIF
-
-  IF ( PRESENT(range) ) THEN
-     SELECT TYPE (range)
-     TYPE IS (real(kind=r4_kind))
-        range_use = range
-     TYPE IS (real(kind=r8_kind))
-        range_use = real(range)
-     CLASS DEFAULT
-        CALL mpp_error('diag_util_mod::log_diag_field_info',&
-             & 'The range is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)
-     END SELECT
-     WRITE (lmin,*) range_use(1)
-     WRITE (lmax,*) range_use(2)
-  ELSE
-     lmin = ''
-     lmax = ''
-  END IF
-
-  IF ( PRESENT(dynamic) ) THEN
-     IF (dynamic) THEN
-        timeaxis = 'T'
-     ELSE
-        timeaxis = 'F'
-     END IF
-  ELSE
-     timeaxis = ''
-  END IF
-
-  axes_list=''
-  DO i = 1, SIZE(axes)
-     axis_name = fms_diag_object%fms_get_axis_name_from_id(axes(i))
-     IF ( TRIM(axes_list) /= '' ) axes_list = TRIM(axes_list)//','
-     axes_list = TRIM(axes_list)//TRIM(axis_name)
-    END DO
-
-  if ( .not. wrote_header ) then
-    WRITE (diag_log_unit,'(777a)') &
-        & 'Module',        logfile_sep, 'Field',          logfile_sep, 'Long Name',    logfile_sep,&
-        & 'Units',         logfile_sep, 'Number of Axis', logfile_sep, 'Time Axis',    logfile_sep,&
-        & 'Missing Value', logfile_sep, 'Min Value',      logfile_sep, 'Max Value',    logfile_sep,&
-        & 'AXES LIST'
-    wrote_header = .true.
-  endif
-
-  WRITE (diag_log_unit,'(777a)') &
-       & TRIM(lmodule),  logfile_sep, TRIM(lfield),  logfile_sep, TRIM(lname),    logfile_sep,&
-       & TRIM(lunits),   logfile_sep, TRIM(numaxis), logfile_sep, TRIM(timeaxis), logfile_sep,&
-       & TRIM(lmissval), logfile_sep, TRIM(lmin),    logfile_sep, TRIM(lmax),     logfile_sep,&
-       & TRIM(axes_list)
-END SUBROUTINE fms_log_field_info
-
-!> Staticly sets the separator for the log file if one is passed during initialization
-subroutine fms_set_field_log_separator(this, separator)
-  class(fmsDiagObject_type) :: this
-  character(len=1), intent(in) :: separator
-  logfile_sep = separator
-end subroutine fms_set_field_log_separator
 
 end module fms_diag_object_mod
