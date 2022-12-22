@@ -349,7 +349,7 @@
            if(abs(a1+c1*y) < epsln) call mpp_error(FATAL, &
                "horiz_interp_bilinear_mod: the denomenator is 0")
            if(abs(y) < epsln2) y = real(0.0, FMS_HI_KIND_)
-           if(abs(real(1.0. FMS_HI_KIND_)-y) < epsln2) y = real(1.0, FMS_HI_KIND_)
+           if(abs(real(1.0,FMS_HI_KIND_)-y) < epsln2) y = real(1.0, FMS_HI_KIND_)
            x = (lon-b1*y-d1)/(a1+c1*y)
            if(abs(x) < epsln2) x = real(0.0, FMS_HI_KIND_)
            if(abs(real(1.0, FMS_HI_KIND_)-x) < epsln2) x = real(1.0, FMS_HI_KIND_)

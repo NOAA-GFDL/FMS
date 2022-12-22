@@ -164,12 +164,12 @@
           if( xz .ge. Interp%HI_KIND_TYPE_%lon_in(nlon_in) ) then
             icl = nlon_in
             icu = 1
-            Interp%HI_KIND_TYPE_%rat_x(i,j) = (xz - Interp%HI_KIND_TYPE_%lon_in(icl))/(Interp%HI_KIND_TYPE_%lon_in(icu) &
+            Interp%HI_KIND_TYPE_%rat_x(i,j) = (xz - Interp%HI_KIND_TYPE_%lon_in(icl))/(Interp%HI_KIND_TYPE_%lon_in(icu)&
                                              & - Interp%HI_KIND_TYPE_%lon_in(icl) + real(tpi,FMS_HI_KIND_))
           else
             icl = INDL_(Interp%HI_KIND_TYPE_%lon_in, xz)
             icu = INDU_(Interp%HI_KIND_TYPE_%lon_in, xz)
-            Interp%HI_KIND_TYPE_%rat_x(i,j) = (xz - Interp%HI_KIND_TYPE_%lon_in(icl))/(Interp%HI_KIND_TYPE_%lon_in(icu) &
+            Interp%HI_KIND_TYPE_%rat_x(i,j) = (xz - Interp%HI_KIND_TYPE_%lon_in(icl))/(Interp%HI_KIND_TYPE_%lon_in(icu)&
                                              & - Interp%HI_KIND_TYPE_%lon_in(icl))
           endif
           Interp%j_lat(i,j,1) = jcl
@@ -179,7 +179,7 @@
           if(jcl == jcu) then
              Interp%HI_KIND_TYPE_%rat_y(i,j) = real(0.0,FMS_HI_KIND_)
           else
-             Interp%HI_KIND_TYPE_%rat_y(i,j) = (yz - Interp%HI_KIND_TYPE_%lat_in(jcl))/(Interp%HI_KIND_TYPE_%lat_in(jcu) &
+             Interp%HI_KIND_TYPE_%rat_y(i,j) = (yz-Interp%HI_KIND_TYPE_%lat_in(jcl))/(Interp%HI_KIND_TYPE_%lat_in(jcu)&
                                               & - Interp%HI_KIND_TYPE_%lat_in(jcl))
           endif
 !          if(yz.gt.Interp%HI_KIND_TYPE_%lat_in(jcu)) call mpp_error(FATAL, ' HORIZ_INTERP_BICUBIC_NEW_1D_S_:
@@ -285,7 +285,7 @@
         do i=1,nlon_in
           ip1=min(i+1,nlon_in)
           im1=max(i-1,1)
-          Interp%HI_KIND_TYPE_%wti(i,j,3) = real(1.0, FMS_HI_KIND_)/((lon_in(ip1)-lon_in(im1))*(lat_in(jp1)-lat_in(jm1)))
+          Interp%HI_KIND_TYPE_%wti(i,j,3) =real(1.0, FMS_HI_KIND_)/((lon_in(ip1)-lon_in(im1))*(lat_in(jp1)-lat_in(jm1)))
         enddo
       enddo
 !---------------------------------------------------------------------------
@@ -315,12 +315,12 @@
           if( xz .ge. lon_in(nlon_in) ) then
             icl = nlon_in
             icu = 1
-            Interp%HI_KIND_TYPE_%rat_x(i,j) = (xz - Interp%HI_KIND_TYPE_%lon_in(icl))/(Interp%HI_KIND_TYPE_%lon_in(icu) &
+            Interp%HI_KIND_TYPE_%rat_x(i,j) = (xz - Interp%HI_KIND_TYPE_%lon_in(icl))/(Interp%HI_KIND_TYPE_%lon_in(icu)&
                                             & - Interp%HI_KIND_TYPE_%lon_in(icl) + real(tpi,FMS_HI_KIND_))
           else
             icl = INDL_(lon_in, xz)
             icu = INDU_(lon_in, xz)
-            Interp%HI_KIND_TYPE_%rat_x(i,j) = (xz - Interp%HI_KIND_TYPE_%lon_in(icl))/(Interp%HI_KIND_TYPE_%lon_in(icu) &
+            Interp%HI_KIND_TYPE_%rat_x(i,j) = (xz - Interp%HI_KIND_TYPE_%lon_in(icl))/(Interp%HI_KIND_TYPE_%lon_in(icu)&
                                             & - Interp%HI_KIND_TYPE_%lon_in(icl))
           endif
           icl = INDL_(lon_in, xz)
@@ -332,7 +332,7 @@
           if(jcl == jcu) then
              Interp%HI_KIND_TYPE_%rat_y(i,j) = real(0.0, FMS_HI_KIND_)
           else
-             Interp%HI_KIND_TYPE_%rat_y(i,j) = (yz - Interp%HI_KIND_TYPE_%lat_in(jcl))/(Interp%HI_KIND_TYPE_%lat_in(jcu) &
+             Interp%HI_KIND_TYPE_%rat_y(i,j) = (yz- Interp%HI_KIND_TYPE_%lat_in(jcl))/(Interp%HI_KIND_TYPE_%lat_in(jcu)&
                                              & - Interp%HI_KIND_TYPE_%lat_in(jcl))
           endif
 !          if(yz.gt.lat_in(jcu)) call mpp_error(FATAL, ' HORIZ_INTERP_BICUBIC_NEW_1D_: yf <
