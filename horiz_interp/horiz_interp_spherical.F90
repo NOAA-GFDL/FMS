@@ -61,10 +61,10 @@ module horiz_interp_spherical_mod
 
 
   integer, parameter :: max_neighbors = 400
-  real(R8_KIND),    parameter :: max_dist_default = 0.1  ! radians
+  real(R8_KIND),    parameter :: max_dist_default = 0.1_r8_kind  ! radians
   integer, parameter :: num_nbrs_default = 4
-  real(R8_KIND),    parameter :: large=1.e20
-  real(R8_KIND),    parameter :: epsln=1.e-10
+  real(R8_KIND),    parameter :: large=1.e20_r8_kind
+  real(R8_KIND),    parameter :: epsln=1.e-10_r8_kind
 
   integer            :: pe, root_pe
 

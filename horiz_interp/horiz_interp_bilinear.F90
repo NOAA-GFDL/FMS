@@ -59,7 +59,7 @@ module horiz_interp_bilinear_mod
 !> @addtogroup horiz_interp_bilinear_mod
 !> @{
 
-  real, parameter :: epsln=1.e-10
+  real(r8_kind), parameter :: epsln=1.e-10_r8_kind
   integer, parameter :: DUMMY = -999
 
   !-----------------------------------------------------------------------
