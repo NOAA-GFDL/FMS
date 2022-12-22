@@ -550,7 +550,7 @@
 
                          bound = bound_start
                          do while (bound <= bound_end)
-                            d = HORIZ_INTERP_SPHERICAL_DISTANCE_(theta_dst(i,j),phi_dst(i,j),theta_src(bound),
+                            d = HORIZ_INTERP_SPHERICAL_DISTANCE_(theta_dst(i,j),phi_dst(i,j),theta_src(bound), &
                                                                  phi_src(bound))
                             if(d<=max_src_dist) then
                                result = UPDATE_DEST_NEIGHBORS_(map_src_add(i,j,:),map_src_dist(i,j,:), &
