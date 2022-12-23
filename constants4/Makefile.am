@@ -32,12 +32,12 @@ noinst_LTLIBRARIES = libconstants4.la
 # The convenience library depends on its source.
 libconstants4_la_SOURCES = \
   fmsconstantsr4.F90 \
-  gfdl_constantsR4.h \
-  gfs_constantsR4.h \
-  geos_constantsR4.h \
+  gfdl_constantsR4.fh \
+  gfs_constantsR4.fh \
+  geos_constantsR4.fh \
   constantsr4.F90
 
-fmsconstantsr4.$(FC_MODEXT): gfdl_constantsR4.h gfs_constantsR4.h geos_constantsR4.h
+fmsconstantsr4.$(FC_MODEXT): gfdl_constantsR4.fh gfs_constantsR4.fh geos_constantsR4.fh
 constantsr4_mod.$(FC_MODEXT): fmsconstantsr4.$(FC_MODEXT)
 
 # Mod files are built and then installed as headers
