@@ -36,7 +36,8 @@ logical            :: lavail, avail_dummy(1)
 integer            :: n, ier
 
 integer,                 parameter :: max_iter = 20
-real(kind=FMS_MO_KIND_), parameter :: error=1.e-04, zeta_min=1.e-06, small=1.e-04
+real(kind=FMS_MO_KIND_), parameter :: error = real(1.e-04,kind=FMS_MO_KIND_), &
+                         zeta_min = real(1.e-06,kind=FMS_MO_KIND_), small = real(1.e-04,kind=FMS_MO_KIND_)
 
 ! #include "monin_obukhov_interfaces.h"
 
@@ -120,14 +121,17 @@ integer :: n, m, i, j, k, ier
 real(kind=FMS_MO_KIND_), dimension(:), allocatable :: rich1d
 real(kind=FMS_MO_KIND_), dimension(:), allocatable :: mix1d
 
+! kind parameter
+integer, parameter :: kind_m = FMS_MO_KIND_ ! local kind parameter
+
 if(.not.module_is_initialized) call error_mesg('stable_mix_3d in monin_obukhov_mod', &
 'monin_obukhov_init has not been called', FATAL)
 
 n = size(rich,1)*size(rich,2)*size(rich,3)
 
 allocate(rich1d(n), mix1d(n))
-rich1d = 0.0
-mix1d = 0.0
+rich1d = 0.0_kind_m
+mix1d = 0.0_kind_m
 
 do k = 1, size(rich,3)
         do j = 1, size(rich,2)
@@ -153,7 +157,8 @@ real(kind=FMS_MO_KIND_), intent(in),  dimension(:,:)   :: u_star, b_star
 real(kind=FMS_MO_KIND_), intent(out), dimension(:,:,:) :: k_m, k_h
 
 integer                               :: ni, nj, nk, ier
-real(kind=FMS_MO_KIND_), parameter    :: ustar_min = 1.e-10
+real(kind=FMS_MO_KIND_), parameter    :: ustar_min = real(1.e-10,kind=FMS_MO_KIND_)
+
 
 if(.not.module_is_initialized) call error_mesg('mo_diff_2d_n in monin_obukhov_mod', &
 'monin_obukhov_init has not been called', FATAL)
@@ -177,8 +182,8 @@ logical,                 intent(in) , dimension(:) :: mask
 real(kind=FMS_MO_KIND_), intent(out), dimension(:) :: f_m, f_t, f_q
 
 
-real(kind=FMS_MO_KIND_), parameter :: error    = 1.e-04
-real(kind=FMS_MO_KIND_), parameter :: zeta_min = 1.e-06
+real(kind=FMS_MO_KIND_), parameter :: error    = real(1.e-04,kind=FMS_MO_KIND_)
+real(kind=FMS_MO_KIND_), parameter :: zeta_min = real(1.e-06,kind=FMS_MO_KIND_)
 integer,                 parameter :: max_iter = 20
 
 real(kind=FMS_MO_KIND_)    :: max_cor
@@ -192,6 +197,9 @@ real(kind=FMS_MO_KIND_), dimension(size(rich(:))) ::       &
 
 logical,                 dimension(size(rich(:))) :: mask_1
 
+! kind parameter
+integer, parameter :: kind_m = FMS_MO_KIND_ ! local kind parameter
+
 
 z_z0    = z/z0
 z_zt    = z/zt
@@ -200,7 +208,7 @@ ln_z_z0 = log(z_z0)
 ln_z_zt = log(z_zt)
 ln_z_zq = log(z_zq)
 
-corr = real(0.0,kind=FMS_MO_KIND_)
+corr = 0.0_kind_m
 mask_1 = mask
 
 ! initial guess
@@ -208,17 +216,17 @@ mask_1 = mask
 where(mask_1)
 zeta = rich*ln_z_z0*ln_z_z0/ln_z_zt
 elsewhere
-zeta = real(0.0,kind=FMS_MO_KIND_)
+zeta = 0.0_kind_m
 end where
 
-where (mask_1 .and. rich >= real(0.0,kind=FMS_MO_KIND_))
-zeta = zeta/(real(1.0,kind=FMS_MO_KIND_) - rich/real(rich_crit,kind=FMS_MO_KIND_))
+where (mask_1 .and. rich >= 0.0_kind_m)
+zeta = zeta/(1.0_kind_m - rich/real(rich_crit,kind=FMS_MO_KIND_))
 end where
 
 iter_loop: do iter = 1, max_iter
 
 where (mask_1 .and. abs(zeta).lt.zeta_min)
-zeta = real(0.0,kind=FMS_MO_KIND_)
+zeta = 0.0_kind_m
 f_m  = ln_z_z0
 f_t  = ln_z_zt
 f_q  = ln_z_zq
@@ -226,14 +234,14 @@ mask_1 = .false.  ! don't do any more calculations at these pts
 end where
 
 where (mask_1)
-rzeta  = real(1.0,kind=FMS_MO_KIND_)/zeta
+rzeta  = 1.0_kind_m/zeta
 zeta_0 = zeta/z_z0
 zeta_t = zeta/z_zt
 zeta_q = zeta/z_zq
 elsewhere
-zeta_0 = real(0.0,kind=FMS_MO_KIND_)
-zeta_t = real(0.0,kind=FMS_MO_KIND_)
-zeta_q = real(0.0,kind=FMS_MO_KIND_)
+zeta_0 = 0.0_kind_m
+zeta_t = 0.0_kind_m
+zeta_q = 0.0_kind_m
 end where
 
 call mo_derivative_m(phi_m  , zeta  , mask_1)
@@ -248,7 +256,7 @@ where (mask_1)
 df_m       = (phi_m - phi_m_0)*rzeta
 df_t       = (phi_t - phi_t_0)*rzeta
 rich_1     = zeta*f_t/(f_m*f_m)
-d_rich     = rich_1*( rzeta +  df_t/f_t - real(2.0,kind=FMS_MO_KIND_) *df_m/f_m)
+d_rich     = rich_1*( rzeta +  df_t/f_t - 2.0_kind_m *df_m/f_m)
 correction = (rich - rich_1)/d_rich
 corr = min(abs(correction),abs(correction/zeta))
  ! the criterion corr < error seems to work ok, but is a bit arbitrary
@@ -288,25 +296,28 @@ logical,                 intent(in),  dimension(:) :: mask
 logical,                  dimension(size(zeta(:))) :: stable, unstable
 real(kind=FMS_MO_KIND_),  dimension(size(zeta(:))) :: x
 
-stable   = mask .and. zeta >= real(0.0,kind=FMS_MO_KIND_)
-unstable = mask .and. zeta <  real(0.0,kind=FMS_MO_KIND_)
+! kind parameter
+integer, parameter :: kind_m = FMS_MO_KIND_ ! local kind parameter
+
+stable   = mask .and. zeta >= 0.0_kind_m
+unstable = mask .and. zeta <  0.0_kind_m
 
 where (unstable)
-x     = (1 - real(16.0,kind=FMS_MO_KIND_)*zeta  )**(real(-0.5,kind=FMS_MO_KIND_))
+x     = (1 - 16.0_kind_m*zeta)**-0.5_kind_m
 phi_m = sqrt(x)  ! phi_m = (1 - 16.0*zeta)**(-0.25)
 end where
 
 if(stable_option == 1) then
 
 where (stable)
-phi_m = real(1.0,kind=FMS_MO_KIND_) + zeta * (real(5.0,kind=FMS_MO_KIND_) &
-       + real(b_stab,kind=FMS_MO_KIND_)*zeta)/(real(1.0,kind=FMS_MO_KIND_) + zeta)
+phi_m = 1.0_kind_m + zeta * (5.0_kind_m &
+       + real(b_stab,kind=FMS_MO_KIND_)*zeta)/(1.0_kind_m + zeta)
 end where
 
 else if(stable_option == 2) then
 
 where (stable .and. zeta < real(zeta_trans,kind=FMS_MO_KIND_))
-phi_m = 1 + real(5.0,kind=FMS_MO_KIND_)*zeta
+phi_m = 1 + 5.0_kind_m*zeta
 end where
 where (stable .and. zeta >= real(zeta_trans,kind=FMS_MO_KIND_))
 phi_m = real(lambda,kind=FMS_MO_KIND_) + real(b_stab,kind=FMS_MO_KIND_)*zeta
@@ -329,24 +340,27 @@ logical,                 intent(in),  dimension(:) :: mask
 
 logical, dimension(size(zeta(:))) :: stable, unstable
 
-stable   = mask .and. zeta >= real(0.0,kind=FMS_MO_KIND_)
-unstable = mask .and. zeta <  real(0.0,kind=FMS_MO_KIND_)
+! kind parameter
+integer, parameter :: kind_m = FMS_MO_KIND_ ! local kind parameter
+
+stable   = mask .and. zeta >= 0.0_kind_m
+unstable = mask .and. zeta <  0.0_kind_m
 
 where (unstable)
-phi_t = (1 - real(16.0,kind=FMS_MO_KIND_)*zeta)**(real(-0.5,kind=FMS_MO_KIND_))
+phi_t = (1 - 16.0_kind_m*zeta)**(-0.5_kind_m)
 end where
 
 if(stable_option == 1) then
 
 where (stable)
-phi_t = real(1.0,kind=FMS_MO_KIND_) + zeta*(real(5.0,kind=FMS_MO_KIND_) &
-       + real(b_stab,kind=FMS_MO_KIND_)*zeta)/(real(1.0,kind=FMS_MO_KIND_) + zeta)
+phi_t = 1.0_kind_m + zeta*(5.0_kind_m &
+       + real(b_stab,kind=FMS_MO_KIND_)*zeta)/(1.0_kind_m + zeta)
 end where
 
 else if(stable_option == 2) then
 
 where (stable .and. zeta < real(zeta_trans,kind=FMS_MO_KIND_))
-phi_t = 1 + real(5.0,kind=FMS_MO_KIND_)*zeta
+phi_t = 1 + 5.0_kind_m*zeta
 end where
 where (stable .and. zeta >= real(zeta_trans,kind=FMS_MO_KIND_))
 phi_t = real(lambda,kind=FMS_MO_KIND_) + real(b_stab,kind=FMS_MO_KIND_)*zeta
@@ -372,19 +386,20 @@ real(kind=FMS_MO_KIND_), dimension(size(zeta(:)))  :: x, x_t, x_q
 
 logical, dimension(size(zeta(:))) :: stable, unstable, weakly_stable, strongly_stable
 
-stable   = mask .and. zeta >= real(0.0,kind=FMS_MO_KIND_)
-unstable = mask .and. zeta <  real(0.0,kind=FMS_MO_KIND_)
+! kind parameter
+integer, parameter :: kind_m = FMS_MO_KIND_ ! local kind parameter
+
+stable   = mask .and. zeta >= 0.0_kind_m
+unstable = mask .and. zeta <  0.0_kind_m
 
 where(unstable)
 
-x     = sqrt(1 - real(16.0,kind=FMS_MO_KIND_)*zeta)
-x_t   = sqrt(1 - real(16.0,kind=FMS_MO_KIND_)*zeta_t)
-x_q   = sqrt(1 - real(16.0,kind=FMS_MO_KIND_)*zeta_q)
+x     = sqrt(1 - 16.0_kind_m*zeta)
+x_t   = sqrt(1 - 16.0_kind_m*zeta_t)
+x_q   = sqrt(1 - 16.0_kind_m*zeta_q)
 
-psi_t = ln_z_zt - real(2.0,kind=FMS_MO_KIND_)*log( (real(1.0,kind=FMS_MO_KIND_) + x) &
-        /(real(1.0,kind=FMS_MO_KIND_) + x_t) )
-psi_q = ln_z_zq - real(2.0,kind=FMS_MO_KIND_)*log( (real(1.0,kind=FMS_MO_KIND_) + x) &
-        /(real(1.0,kind=FMS_MO_KIND_) + x_q) )
+psi_t = ln_z_zt - 2.0_kind_m*log((1.0_kind_m + x) / (1.0_kind_m + x_t))
+psi_q = ln_z_zq - 2.0_kind_m*log((1.0_kind_m + x) / (1.0_kind_m + x_q)) 
 
 end where
 
@@ -392,11 +407,11 @@ if( stable_option == 1) then
 
 where (stable)
 
-psi_t = ln_z_zt + (real(5.0,kind=FMS_MO_KIND_) - real(b_stab,kind=FMS_MO_KIND_))*log((real(1.0,kind=FMS_MO_KIND_) &
-        + zeta)/(real(1.0,kind=FMS_MO_KIND_) + zeta_t)) + real(b_stab,kind=FMS_MO_KIND_)*(zeta - zeta_t)
+psi_t = ln_z_zt + (5.0_kind_m - real(b_stab,kind=FMS_MO_KIND_))*log((1.0_kind_m &
+        + zeta)/(1.0_kind_m + zeta_t)) + real(b_stab,kind=FMS_MO_KIND_)*(zeta - zeta_t)
 
-psi_q = ln_z_zq + (real(5.0,kind=FMS_MO_KIND_) - real(b_stab,kind=FMS_MO_KIND_))*log((real(1.0,kind=FMS_MO_KIND_) &
-        + zeta)/(real(1.0,kind=FMS_MO_KIND_) + zeta_q)) + real(b_stab,kind=FMS_MO_KIND_)*(zeta - zeta_q)
+psi_q = ln_z_zq + (5.0_kind_m - real(b_stab,kind=FMS_MO_KIND_))*log((1.0_kind_m &
+        + zeta)/(1.0_kind_m + zeta_q)) + real(b_stab,kind=FMS_MO_KIND_)*(zeta - zeta_q)
 
 end where
 
@@ -406,24 +421,24 @@ weakly_stable   = stable .and. zeta <= real(zeta_trans,kind=FMS_MO_KIND_)
 strongly_stable = stable .and. zeta >  real(zeta_trans,kind=FMS_MO_KIND_)
 
 where (weakly_stable)
-psi_t = ln_z_zt + real(5.0,kind=FMS_MO_KIND_)*(zeta - zeta_t)
-psi_q = ln_z_zq + real(5.0,kind=FMS_MO_KIND_)*(zeta - zeta_q)
+psi_t = ln_z_zt + 5.0_kind_m*(zeta - zeta_t)
+psi_q = ln_z_zq + 5.0_kind_m*(zeta - zeta_q)
 end where
 
 where(strongly_stable)
-x = (real(lambda,kind=FMS_MO_KIND_) - real(1.0,kind=FMS_MO_KIND_))*log(zeta/real(zeta_trans,kind=FMS_MO_KIND_)) &
+x = (real(lambda,kind=FMS_MO_KIND_) - 1.0_kind_m)*log(zeta/real(zeta_trans,kind=FMS_MO_KIND_)) &
      + real(b_stab,kind=FMS_MO_KIND_)*(zeta - real(zeta_trans,kind=FMS_MO_KIND_))
 endwhere
 
 where (strongly_stable .and. zeta_t <= real(zeta_trans,kind=FMS_MO_KIND_))
-psi_t = ln_z_zt + x + real(5.0,kind=FMS_MO_KIND_)*(real(zeta_trans,kind=FMS_MO_KIND_) - zeta_t)
+psi_t = ln_z_zt + x + 5.0_kind_m*(real(zeta_trans,kind=FMS_MO_KIND_) - zeta_t)
 end where
 where (strongly_stable .and. zeta_t > real(zeta_trans,kind=FMS_MO_KIND_))
 psi_t = real(lambda,kind=FMS_MO_KIND_)*ln_z_zt + real(b_stab,kind=FMS_MO_KIND_)*(zeta  - zeta_t)
 endwhere
 
 where (strongly_stable .and. zeta_q <= real(zeta_trans,kind=FMS_MO_KIND_))
-psi_q = ln_z_zq + x + real(5.0,kind=FMS_MO_KIND_)*(real(zeta_trans,kind=FMS_MO_KIND_) - zeta_q)
+psi_q = ln_z_zq + x + 5.0_kind_m*(real(zeta_trans,kind=FMS_MO_KIND_) - zeta_q)
 end where
 where (strongly_stable .and. zeta_q > real(zeta_trans,kind=FMS_MO_KIND_))
 psi_q = real(lambda,kind=FMS_MO_KIND_)*ln_z_zq + real(b_stab,kind=FMS_MO_KIND_)*(zeta  - zeta_q)
@@ -448,22 +463,25 @@ real(kind=FMS_MO_KIND_), dimension(size(zeta(:)))  :: x, x_0, x1, x1_0, num, den
 
 logical, dimension(size(zeta(:)))  :: stable, unstable, weakly_stable, strongly_stable
 
-stable   = mask .and. zeta >= real(0.0,kind=FMS_MO_KIND_)
-unstable = mask .and. zeta <  real(0.0,kind=FMS_MO_KIND_)
+! kind parameter
+integer, parameter :: kind_m = FMS_MO_KIND_ ! local kind parameter
+
+stable   = mask .and. zeta >= 0.0_kind_m
+unstable = mask .and. zeta <  0.0_kind_m
 
 where(unstable)
 
-x      = sqrt(1 - real(16.0,kind=FMS_MO_KIND_)*zeta)
-x_0    = sqrt(1 - real(16.0,kind=FMS_MO_KIND_)*zeta_0)
+x      = sqrt(1 - 16.0_kind_m*zeta)
+x_0    = sqrt(1 - 16.0_kind_m*zeta_0)
 
 x      = sqrt(x)
 x_0    = sqrt(x_0)
 
-x1     = real(1.0,kind=FMS_MO_KIND_) + x
-x1_0   = real(1.0,kind=FMS_MO_KIND_) + x_0
+x1     = 1.0_kind_m + x
+x1_0   = 1.0_kind_m + x_0
 
-num    = x1*x1*(real(1.0,kind=FMS_MO_KIND_) + x*x)
-denom  = x1_0*x1_0*(real(1.0,kind=FMS_MO_KIND_) + x_0*x_0)
+num    = x1*x1*(1.0_kind_m + x*x)
+denom  = x1_0*x1_0*(1.0_kind_m + x_0*x_0)
 y      = atan(x) - atan(x_0)
 psi_m  = ln_z_z0 - log(num/denom) + 2*y
 
@@ -472,8 +490,8 @@ end where
 if( stable_option == 1) then
 
 where (stable)
-psi_m = ln_z_z0 + (real(5.0,kind=FMS_MO_KIND_) - real(b_stab,kind=FMS_MO_KIND_))*log((real(1.0,kind=FMS_MO_KIND_) &
-        + zeta)/(real(1.0,kind=FMS_MO_KIND_) + zeta_0)) + real(b_stab,kind=FMS_MO_KIND_)*(zeta - zeta_0)
+psi_m = ln_z_z0 + (5.0_kind_m - real(b_stab,kind=FMS_MO_KIND_))*log((1.0_kind_m &
+        + zeta)/(1.0_kind_m + zeta_0)) + real(b_stab,kind=FMS_MO_KIND_)*(zeta - zeta_0)
 end where
 
 else if (stable_option == 2) then
@@ -482,16 +500,16 @@ weakly_stable   = stable .and. zeta <= real(zeta_trans,kind=FMS_MO_KIND_)
 strongly_stable = stable .and. zeta >  real(zeta_trans,kind=FMS_MO_KIND_)
 
 where (weakly_stable)
-psi_m = ln_z_z0 + real(5.0,kind=FMS_MO_KIND_)*(zeta - zeta_0)
+psi_m = ln_z_z0 + 5.0_kind_m * (zeta - zeta_0)
 end where
 
 where(strongly_stable)
-x = (real(lambda,kind=FMS_MO_KIND_) - real(1.0,kind=FMS_MO_KIND_))*log(zeta/real(zeta_trans,kind=FMS_MO_KIND_)) &
+x = (real(lambda,kind=FMS_MO_KIND_) - 1.0_kind_m)*log(zeta/real(zeta_trans,kind=FMS_MO_KIND_)) &
     + real(b_stab,kind=FMS_MO_KIND_)*(zeta - real(zeta_trans,kind=FMS_MO_KIND_))
 endwhere
 
 where (strongly_stable .and. zeta_0 <= real(zeta_trans,kind=FMS_MO_KIND_))
-psi_m = ln_z_z0 + x + real(5.0,kind=FMS_MO_KIND_)*(real(zeta_trans,kind=FMS_MO_KIND_)- zeta_0)
+psi_m = ln_z_z0 + x + 5.0_kind_m*(real(zeta_trans,kind=FMS_MO_KIND_)- zeta_0)
 end where
 where (strongly_stable .and. zeta_0 > real(zeta_trans,kind=FMS_MO_KIND_))
 psi_m = real(lambda,kind=FMS_MO_KIND_)*ln_z_z0 + real(b_stab,kind=FMS_MO_KIND_)*(zeta  - zeta_0)
