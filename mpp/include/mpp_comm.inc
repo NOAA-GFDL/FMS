@@ -39,7 +39,7 @@
 #define MPP_TYPE_ integer(i8_kind)
 #undef MPP_RANK_
 #define MPP_RANK_  (:)
-#include <mpp_chksum_int.h>
+#include <mpp_chksum_int.fh>
 
 #undef MPP_CHKSUM_INT_
 #define MPP_CHKSUM_INT_ mpp_chksum_i8_2d
@@ -49,7 +49,7 @@
 #define MPP_TYPE_ integer(i8_kind)
 #undef MPP_RANK_
 #define MPP_RANK_  (:,:)
-#include <mpp_chksum_int.h>
+#include <mpp_chksum_int.fh>
 
 #undef MPP_CHKSUM_INT_
 #define MPP_CHKSUM_INT_ mpp_chksum_i8_3d
@@ -59,7 +59,7 @@
 #define MPP_TYPE_ integer(i8_kind)
 #undef MPP_RANK_
 #define MPP_RANK_  (:,:,:)
-#include <mpp_chksum_int.h>
+#include <mpp_chksum_int.fh>
 
 #undef MPP_CHKSUM_INT_
 #define MPP_CHKSUM_INT_ mpp_chksum_i8_4d
@@ -69,7 +69,7 @@
 #define MPP_TYPE_ integer(i8_kind)
 #undef MPP_RANK_
 #define MPP_RANK_  (:,:,:,:)
-#include <mpp_chksum_int.h>
+#include <mpp_chksum_int.fh>
 
 #undef MPP_CHKSUM_INT_
 #define MPP_CHKSUM_INT_ mpp_chksum_i8_5d
@@ -79,7 +79,7 @@
 #define MPP_TYPE_ integer(i8_kind)
 #undef MPP_RANK_
 #define MPP_RANK_  (:,:,:,:,:)
-#include <mpp_chksum_int.h>
+#include <mpp_chksum_int.fh>
 
 #undef MPP_CHKSUM_INT_
 #define MPP_CHKSUM_INT_ mpp_chksum_i4_1d
@@ -89,7 +89,7 @@
 #define MPP_TYPE_ integer(i4_kind)
 #undef MPP_RANK_
 #define MPP_RANK_  (:)
-#include <mpp_chksum_int.h>
+#include <mpp_chksum_int.fh>
 
 #undef MPP_CHKSUM_INT_
 #define MPP_CHKSUM_INT_ mpp_chksum_i4_2d
@@ -99,7 +99,7 @@
 #define MPP_TYPE_ integer(i4_kind)
 #undef MPP_RANK_
 #define MPP_RANK_  (:,:)
-#include <mpp_chksum_int.h>
+#include <mpp_chksum_int.fh>
 
 #undef MPP_CHKSUM_INT_
 #define MPP_CHKSUM_INT_ mpp_chksum_i4_3d
@@ -109,7 +109,7 @@
 #define MPP_TYPE_ integer(i4_kind)
 #undef MPP_RANK_
 #define MPP_RANK_  (:,:,:)
-#include <mpp_chksum_int.h>
+#include <mpp_chksum_int.fh>
 
 #undef MPP_CHKSUM_INT_
 #define MPP_CHKSUM_INT_ mpp_chksum_i4_4d
@@ -119,7 +119,7 @@
 #define MPP_TYPE_ integer(i4_kind)
 #undef MPP_RANK_
 #define MPP_RANK_  (:,:,:,:)
-#include <mpp_chksum_int.h>
+#include <mpp_chksum_int.fh>
 
 #undef MPP_CHKSUM_INT_
 #define MPP_CHKSUM_INT_ mpp_chksum_i4_5d
@@ -129,7 +129,7 @@
 #define MPP_TYPE_ integer(i4_kind)
 #undef MPP_RANK_
 #define MPP_RANK_  (:,:,:,:,:)
-#include <mpp_chksum_int.h>
+#include <mpp_chksum_int.fh>
 
 #undef MPP_CHKSUM_
 #define MPP_CHKSUM_ mpp_chksum_r8_0d
@@ -137,7 +137,7 @@
 #define MPP_TYPE_ real(r8_kind)
 #undef MPP_RANK_
 #define MPP_RANK_ !
-#include <mpp_chksum_scalar.h>
+#include <mpp_chksum_scalar.fh>
 
 #undef MPP_CHKSUM_
 #define MPP_CHKSUM_ mpp_chksum_r8_1d
@@ -147,7 +147,7 @@
 #define MPP_TYPE_ real(r8_kind)
 #undef MPP_RANK_
 #define MPP_RANK_ (:)
-#include <mpp_chksum.h>
+#include <mpp_chksum.fh>
 
 #undef MPP_CHKSUM_
 #define MPP_CHKSUM_ mpp_chksum_r8_2d
@@ -157,7 +157,7 @@
 #define MPP_TYPE_ real(r8_kind)
 #undef MPP_RANK_
 #define MPP_RANK_ (:,:)
-#include <mpp_chksum.h>
+#include <mpp_chksum.fh>
 
 #undef MPP_CHKSUM_
 #define MPP_CHKSUM_ mpp_chksum_r8_3d
@@ -167,7 +167,7 @@
 #define MPP_TYPE_ real(r8_kind)
 #undef MPP_RANK_
 #define MPP_RANK_ (:,:,:)
-#include <mpp_chksum.h>
+#include <mpp_chksum.fh>
 
 #undef MPP_CHKSUM_
 #define MPP_CHKSUM_ mpp_chksum_r8_4d
@@ -177,7 +177,7 @@
 #define MPP_TYPE_ real(r8_kind)
 #undef MPP_RANK_
 #define MPP_RANK_ (:,:,:,:)
-#include <mpp_chksum.h>
+#include <mpp_chksum.fh>
 
 #undef MPP_CHKSUM_
 #define MPP_CHKSUM_ mpp_chksum_r8_5d
@@ -187,7 +187,7 @@
 #define MPP_TYPE_ real(r8_kind)
 #undef MPP_RANK_
 #define MPP_RANK_ (:,:,:,:,:)
-#include <mpp_chksum.h>
+#include <mpp_chksum.fh>
 
 #ifdef OVERLOAD_C8
 #undef MPP_CHKSUM_
@@ -198,7 +198,7 @@
 #define MPP_TYPE_ complex(c8_kind)
 #undef MPP_RANK_
 #define MPP_RANK_ !
-#include <mpp_chksum_scalar.h>
+#include <mpp_chksum_scalar.fh>
 
 #undef MPP_CHKSUM_
 #define MPP_CHKSUM_ mpp_chksum_c8_1d
@@ -208,7 +208,7 @@
 #define MPP_TYPE_ complex(c8_kind)
 #undef MPP_RANK_
 #define MPP_RANK_ (:)
-#include <mpp_chksum.h>
+#include <mpp_chksum.fh>
 
 #undef MPP_CHKSUM_
 #define MPP_CHKSUM_ mpp_chksum_c8_2d
@@ -218,7 +218,7 @@
 #define MPP_TYPE_ complex(c8_kind)
 #undef MPP_RANK_
 #define MPP_RANK_ (:,:)
-#include <mpp_chksum.h>
+#include <mpp_chksum.fh>
 
 #undef MPP_CHKSUM_
 #define MPP_CHKSUM_ mpp_chksum_c8_3d
@@ -228,7 +228,7 @@
 #define MPP_TYPE_ complex(c8_kind)
 #undef MPP_RANK_
 #define MPP_RANK_ (:,:,:)
-#include <mpp_chksum.h>
+#include <mpp_chksum.fh>
 
 #undef MPP_CHKSUM_
 #define MPP_CHKSUM_ mpp_chksum_c8_4d
@@ -238,7 +238,7 @@
 #define MPP_TYPE_ complex(c8_kind)
 #undef MPP_RANK_
 #define MPP_RANK_ (:,:,:,:)
-#include <mpp_chksum.h>
+#include <mpp_chksum.fh>
 
 #undef MPP_CHKSUM_
 #define MPP_CHKSUM_ mpp_chksum_c8_5d
@@ -248,7 +248,7 @@
 #define MPP_TYPE_ complex(c8_kind)
 #undef MPP_RANK_
 #define MPP_RANK_ (:,:,:,:,:)
-#include <mpp_chksum.h>
+#include <mpp_chksum.fh>
 #endif
 
 #undef MPP_CHKSUM_
@@ -259,7 +259,7 @@
 #define MPP_TYPE_ real(r4_kind)
 #undef MPP_RANK_
 #define MPP_RANK_ !
-#include <mpp_chksum_scalar.h>
+#include <mpp_chksum_scalar.fh>
 
 #undef MPP_CHKSUM_
 #define MPP_CHKSUM_ mpp_chksum_r4_1d
@@ -269,7 +269,7 @@
 #define MPP_TYPE_ real(r4_kind)
 #undef MPP_RANK_
 #define MPP_RANK_ (:)
-#include <mpp_chksum.h>
+#include <mpp_chksum.fh>
 
 #undef MPP_CHKSUM_
 #define MPP_CHKSUM_ mpp_chksum_r4_2d
@@ -279,7 +279,7 @@
 #define MPP_TYPE_ real(r4_kind)
 #undef MPP_RANK_
 #define MPP_RANK_ (:,:)
-#include <mpp_chksum.h>
+#include <mpp_chksum.fh>
 
 #undef MPP_CHKSUM_
 #define MPP_CHKSUM_ mpp_chksum_r4_3d
@@ -289,7 +289,7 @@
 #define MPP_TYPE_ real(r4_kind)
 #undef MPP_RANK_
 #define MPP_RANK_ (:,:,:)
-#include <mpp_chksum.h>
+#include <mpp_chksum.fh>
 
 #undef MPP_CHKSUM_
 #define MPP_CHKSUM_ mpp_chksum_r4_4d
@@ -299,7 +299,7 @@
 #define MPP_TYPE_ real(r4_kind)
 #undef MPP_RANK_
 #define MPP_RANK_ (:,:,:,:)
-#include <mpp_chksum.h>
+#include <mpp_chksum.fh>
 
 #undef MPP_CHKSUM_
 #define MPP_CHKSUM_ mpp_chksum_r4_5d
@@ -309,7 +309,7 @@
 #define MPP_TYPE_ real(r4_kind)
 #undef MPP_RANK_
 #define MPP_RANK_ (:,:,:,:,:)
-#include <mpp_chksum.h>
+#include <mpp_chksum.fh>
 
 #ifdef OVERLOAD_C4
 #undef MPP_CHKSUM_
@@ -320,7 +320,7 @@
 #define MPP_TYPE_ complex(c4_kind)
 #undef MPP_RANK_
 #define MPP_RANK_ !
-#include <mpp_chksum_scalar.h>
+#include <mpp_chksum_scalar.fh>
 
 #undef MPP_CHKSUM_
 #define MPP_CHKSUM_ mpp_chksum_c4_1d
@@ -330,7 +330,7 @@
 #define MPP_TYPE_ complex(c4_kind)
 #undef MPP_RANK_
 #define MPP_RANK_ (:)
-#include <mpp_chksum.h>
+#include <mpp_chksum.fh>
 
 #undef MPP_CHKSUM_
 #define MPP_CHKSUM_ mpp_chksum_c4_2d
@@ -340,7 +340,7 @@
 #define MPP_TYPE_ complex(c4_kind)
 #undef MPP_RANK_
 #define MPP_RANK_ (:,:)
-#include <mpp_chksum.h>
+#include <mpp_chksum.fh>
 
 #undef MPP_CHKSUM_
 #define MPP_CHKSUM_ mpp_chksum_c4_3d
@@ -350,7 +350,7 @@
 #define MPP_TYPE_ complex(c4_kind)
 #undef MPP_RANK_
 #define MPP_RANK_ (:,:,:)
-#include <mpp_chksum.h>
+#include <mpp_chksum.fh>
 
 #undef MPP_CHKSUM_
 #define MPP_CHKSUM_ mpp_chksum_c4_4d
@@ -360,7 +360,7 @@
 #define MPP_TYPE_ complex(c4_kind)
 #undef MPP_RANK_
 #define MPP_RANK_ (:,:,:,:)
-#include <mpp_chksum.h>
+#include <mpp_chksum.fh>
 
 #undef MPP_CHKSUM_
 #define MPP_CHKSUM_ mpp_chksum_c4_5d
@@ -370,7 +370,7 @@
 #define MPP_TYPE_ complex(c4_kind)
 #undef MPP_RANK_
 #define MPP_RANK_ (:,:,:,:,:)
-#include <mpp_chksum.h>
+#include <mpp_chksum.fh>
 #endif
 
 !#################################################
@@ -384,7 +384,7 @@
 #undef  MPP_GATHER_PELIST_3D_
 #define MPP_GATHER_PELIST_2D_ mpp_gather_pelist_logical_2d
 #define MPP_GATHER_PELIST_3D_ mpp_gather_pelist_logical_3d
-#include <mpp_gather.h>
+#include <mpp_gather.fh>
 
 #undef MPP_GATHER_1D_
 #undef MPP_GATHER_1DV_
@@ -396,7 +396,7 @@
 #undef  MPP_GATHER_PELIST_3D_
 #define MPP_GATHER_PELIST_2D_ mpp_gather_pelist_int4_2d
 #define MPP_GATHER_PELIST_3D_ mpp_gather_pelist_int4_3d
-#include <mpp_gather.h>
+#include <mpp_gather.fh>
 
 #undef MPP_GATHER_1D_
 #undef MPP_GATHER_1DV_
@@ -408,7 +408,7 @@
 #undef  MPP_GATHER_PELIST_3D_
 #define MPP_GATHER_PELIST_2D_ mpp_gather_pelist_real4_2d
 #define MPP_GATHER_PELIST_3D_ mpp_gather_pelist_real4_3d
-#include <mpp_gather.h>
+#include <mpp_gather.fh>
 
 #undef MPP_GATHER_1D_
 #undef MPP_GATHER_1DV_
@@ -420,7 +420,7 @@
 #undef  MPP_GATHER_PELIST_3D_
 #define MPP_GATHER_PELIST_2D_ mpp_gather_pelist_real8_2d
 #define MPP_GATHER_PELIST_3D_ mpp_gather_pelist_real8_3d
-#include <mpp_gather.h>
+#include <mpp_gather.fh>
 
 !#################################################
 #undef  MPP_SCATTER_PELIST_2D_
@@ -429,7 +429,7 @@
 #define MPP_TYPE_ integer(i4_kind)
 #define MPP_SCATTER_PELIST_2D_ mpp_scatter_pelist_int4_2d
 #define MPP_SCATTER_PELIST_3D_ mpp_scatter_pelist_int4_3d
-#include <mpp_scatter.h>
+#include <mpp_scatter.fh>
 
 #undef  MPP_SCATTER_PELIST_2D_
 #undef  MPP_SCATTER_PELIST_3D_
@@ -437,7 +437,7 @@
 #define MPP_TYPE_ real(r4_kind)
 #define MPP_SCATTER_PELIST_2D_ mpp_scatter_pelist_real4_2d
 #define MPP_SCATTER_PELIST_3D_ mpp_scatter_pelist_real4_3d
-#include <mpp_scatter.h>
+#include <mpp_scatter.fh>
 
 #undef  MPP_SCATTER_PELIST_2D_
 #undef  MPP_SCATTER_PELIST_3D_
@@ -445,5 +445,5 @@
 #define MPP_TYPE_ real(r8_kind)
 #define MPP_SCATTER_PELIST_2D_ mpp_scatter_pelist_real8_2d
 #define MPP_SCATTER_PELIST_3D_ mpp_scatter_pelist_real8_3d
-#include <mpp_scatter.h>
+#include <mpp_scatter.fh>
 !> @}
