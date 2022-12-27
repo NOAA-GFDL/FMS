@@ -193,14 +193,14 @@ type, public  :: interpolate_type
 private
 !Redundant data between fields
 !All climatology data
-real, pointer            :: lat(:) =>NULL()               !< No description
-real, pointer            :: lon(:) =>NULL()               !< No description
-real, pointer            :: latb(:) =>NULL()          !< No description
-real, pointer            :: lonb(:) =>NULL()          !< No description
-real, pointer            :: levs(:) =>NULL()          !< No description
-real, pointer            :: halflevs(:) =>NULL()     !< No description
+real, allocatable        :: lat(:)               !< No description
+real, allocatable        :: lon(:)               !< No description
+real, allocatable        :: latb(:)              !< No description
+real, allocatable        :: lonb(:)              !< No description
+real, allocatable        :: levs(:)              !< No description
+real, allocatable        :: halflevs(:)          !< No description
 type(horiz_interp_type)  :: interph                         !< No description
-type(time_type), pointer :: time_slice(:) =>NULL() !< An array of the times within the climatology.
+type(time_type), allocatable :: time_slice(:) !< An array of the times within the climatology.
 type(FmsNetcdfFile_t)    :: fileobj       ! object that stores opened file information
 character(len=64)        :: file_name     !< Climatology filename
 integer                  :: TIME_FLAG     !< Linear or seaonal interpolation?
@@ -211,27 +211,27 @@ integer                  :: vertical_indices !< direction of vertical
 logical                  :: climatological_year !< Is data for year = 0000?
 
 !Field specific data  for nfields
-character(len=64), pointer :: field_name(:) =>NULL()   !< name of this field
-logical,           pointer :: has_level(:) =>NULL()    !< indicate if the variable has level dimension
-integer,           pointer :: time_init(:,:) =>NULL()  !< second index is the number of time_slices being
+character(len=64), allocatable :: field_name(:)    !< name of this field
+logical,           allocatable :: has_level(:)     !< indicate if the variable has level dimension
+integer,           allocatable :: time_init(:,:)   !< second index is the number of time_slices being
                                                        !! kept. 2 or ntime.
-integer,           pointer :: mr(:) =>NULL()           !< Flag for conversion of climatology to mixing ratio.
-integer,           pointer :: out_of_bounds(:) =>NULL()!< Flag for when surface pressure is out of bounds.
+integer,           allocatable :: mr(:)            !< Flag for conversion of climatology to mixing ratio.
+integer,           allocatable :: out_of_bounds(:) !< Flag for when surface pressure is out of bounds.
 !++lwh
-integer,           pointer :: vert_interp(:) =>NULL()  !< Flag for type of vertical interpolation.
+integer,           allocatable :: vert_interp(:)   !< Flag for type of vertical interpolation.
 !--lwh
-real,              pointer :: data(:,:,:,:,:) =>NULL() !< (nlatmod,nlonmod,nlevclim,size(time_init,2),nfields)
+real,              allocatable :: data(:,:,:,:,:)  !< (nlatmod,nlonmod,nlevclim,size(time_init,2),nfields)
 
-real,              pointer :: pmon_pyear(:,:,:,:) =>NULL()          !< No description
-real,              pointer :: pmon_nyear(:,:,:,:) =>NULL()          !< No description
-real,              pointer :: nmon_nyear(:,:,:,:) =>NULL()          !< No description
-real,              pointer :: nmon_pyear(:,:,:,:) =>NULL()          !< No description
+real,              allocatable :: pmon_pyear(:,:,:,:)           !< No description
+real,              allocatable :: pmon_nyear(:,:,:,:)           !< No description
+real,              allocatable :: nmon_nyear(:,:,:,:)           !< No description
+real,              allocatable :: nmon_pyear(:,:,:,:)           !< No description
 !integer                    :: indexm, indexp, climatology
-integer,dimension(:),  pointer :: indexm =>NULL()                    !< No description
-integer,dimension(:),  pointer :: indexp =>NULL()                    !< No description
-integer,dimension(:),  pointer :: climatology =>NULL()               !< No description
+integer,dimension(:),  allocatable :: indexm                     !< No description
+integer,dimension(:),  allocatable :: indexp                     !< No description
+integer,dimension(:),  allocatable :: climatology                !< No description
 
-type(time_type), pointer :: clim_times(:,:) => NULL()               !< No description
+type(time_type), allocatable :: clim_times(:,:)                !< No description
 logical :: separate_time_vary_calc                                        !< No description
 real :: tweight          !< No description
 real :: tweight1     !< The time weight between the climatology years
@@ -337,15 +337,15 @@ type(interpolate_type), intent(in) :: In
 type(interpolate_type), intent(inout) :: Out
 
 
-     if (associated(In%lat))      Out%lat      =>  In%lat
-     if (associated(In%lon))      Out%lon      =>  In%lon
-     if (associated(In%latb))     Out%latb     =>  In%latb
-     if (associated(In%lonb))     Out%lonb     =>  In%lonb
-     if (associated(In%levs))     Out%levs     =>  In%levs
-     if (associated(In%halflevs)) Out%halflevs =>  In%halflevs
+     if (allocated(In%lat))      Out%lat      =  In%lat
+     if (allocated(In%lon))      Out%lon      =  In%lon
+     if (allocated(In%latb))     Out%latb     =  In%latb
+     if (allocated(In%lonb))     Out%lonb     =  In%lonb
+     if (allocated(In%levs))     Out%levs     =  In%levs
+     if (allocated(In%halflevs)) Out%halflevs =  In%halflevs
 
      Out%interph = In%interph
-     if (associated(In%time_slice)) Out%time_slice =>  In%time_slice
+     if (allocated(In%time_slice)) Out%time_slice =  In%time_slice
      Out%file_name = In%file_name
      Out%time_flag = In%time_flag
      Out%level_type = In%level_type
@@ -355,21 +355,21 @@ type(interpolate_type), intent(inout) :: Out
      Out%je = In%je
      Out%vertical_indices = In%vertical_indices
      Out%climatological_year = In%climatological_year
-     if (associated(In%has_level    )) Out%has_level     =>  In%has_level
-     if (associated(In%field_name   )) Out%field_name    =>  In%field_name
-     if (associated(In%time_init    )) Out%time_init     =>  In%time_init
-     if (associated(In%mr           )) Out%mr            =>  In%mr
-     if (associated(In%out_of_bounds)) Out%out_of_bounds =>  In%out_of_bounds
-     if (associated(In%vert_interp  )) Out%vert_interp   =>  In%vert_interp
-     if (associated(In%data         )) Out%data          =>  In%data
-     if (associated(In%pmon_pyear   )) Out%pmon_pyear    =>  In%pmon_pyear
-     if (associated(In%pmon_nyear   )) Out%pmon_nyear    =>  In%pmon_nyear
-     if (associated(In%nmon_nyear   )) Out%nmon_nyear    =>  In%nmon_nyear
-     if (associated(In%nmon_pyear   )) Out%nmon_pyear    =>  In%nmon_pyear
-     if (associated(In%indexm       )) Out%indexm        =>  In%indexm
-     if (associated(In%indexp       )) Out%indexp        =>  In%indexp
-     if (associated(In%climatology  )) Out%climatology   =>  In%climatology
-     if (associated(In%clim_times   )) Out%clim_times    =>  In%clim_times
+     if (allocated(In%has_level    )) Out%has_level     =  In%has_level
+     if (allocated(In%field_name   )) Out%field_name    =  In%field_name
+     if (allocated(In%time_init    )) Out%time_init     =  In%time_init
+     if (allocated(In%mr           )) Out%mr            =  In%mr
+     if (allocated(In%out_of_bounds)) Out%out_of_bounds =  In%out_of_bounds
+     if (allocated(In%vert_interp  )) Out%vert_interp   =  In%vert_interp
+     if (allocated(In%data         )) Out%data          =  In%data
+     if (allocated(In%pmon_pyear   )) Out%pmon_pyear    =  In%pmon_pyear
+     if (allocated(In%pmon_nyear   )) Out%pmon_nyear    =  In%pmon_nyear
+     if (allocated(In%nmon_nyear   )) Out%nmon_nyear    =  In%nmon_nyear
+     if (allocated(In%nmon_pyear   )) Out%nmon_pyear    =  In%nmon_pyear
+     if (allocated(In%indexm       )) Out%indexm        =  In%indexm
+     if (allocated(In%indexp       )) Out%indexp        =  In%indexp
+     if (allocated(In%climatology  )) Out%climatology   =  In%climatology
+     if (allocated(In%clim_times   )) Out%clim_times    =  In%clim_times
       Out%separate_time_vary_calc = In%separate_time_vary_calc
       Out%tweight = In%tweight
       Out%tweight1 = In%tweight1
@@ -1419,7 +1419,7 @@ type(domain2d) :: domain
 integer :: domain_layout(2), iscomp, iecomp,jscomp,jecomp
 
 
-if (.not. module_is_initialized .or. .not. associated(clim_type%lon)) &
+if (.not. module_is_initialized .or. .not. allocated(clim_type%lon)) &
    call mpp_error(FATAL, "init_clim_diag : You must call interpolator_init before calling init_clim_diag")
 
 
@@ -1822,7 +1822,7 @@ integer :: indexm, indexp, yearm, yearp
 integer :: i, j, k, n
 character(len=256) :: err_msg
 
-if (.not. module_is_initialized .or. .not. associated(clim_type%lon)) &
+if (.not. module_is_initialized .or. .not. allocated(clim_type%lon)) &
    call mpp_error(FATAL, "interpolator_4D : You must call interpolator_init before calling interpolator")
 
    do n=2,size(clim_type%field_name(:))
@@ -2292,7 +2292,7 @@ character(len=256) :: err_msg
 
 
 
-if (.not. module_is_initialized .or. .not. associated(clim_type%lon)) &
+if (.not. module_is_initialized .or. .not. allocated(clim_type%lon)) &
    call mpp_error(FATAL, "interpolator_3D : You must call interpolator_init before calling interpolator")
 
 istart = 1
@@ -2712,7 +2712,7 @@ integer :: indexm, indexp, yearm, yearp
 integer :: j, i, n
 character(len=256) :: err_msg
 
-if (.not. module_is_initialized .or. .not. associated(clim_type%lon)) &
+if (.not. module_is_initialized .or. .not. allocated(clim_type%lon)) &
    call mpp_error(FATAL, "interpolator_2D : You must call interpolator_init before calling interpolator")
 
 istart = 1
@@ -3082,7 +3082,7 @@ integer :: istart,iend,jstart,jend
 logical :: found_field=.false.
 integer :: i, j, k, n
 
-if (.not. module_is_initialized .or. .not. associated(clim_type%lon)) &
+if (.not. module_is_initialized .or. .not. allocated(clim_type%lon)) &
    call mpp_error(FATAL, "interpolator_4D_no_time_axis : You must call interpolator_init before calling interpolator")
 
 do n=2,size(clim_type%field_name(:))
@@ -3246,7 +3246,7 @@ integer :: istart,iend,jstart,jend                                   !< No descr
 logical :: found_field=.false.          !< No description
 integer :: i, j, k                   !< No description
 
-if (.not. module_is_initialized .or. .not. associated(clim_type%lon)) &
+if (.not. module_is_initialized .or. .not. allocated(clim_type%lon)) &
    call mpp_error(FATAL, "interpolator_3D_no_time_axis : You must call interpolator_init before calling interpolator")
 
 istart = 1
@@ -3372,7 +3372,7 @@ integer :: istart,iend,jstart,jend
 logical :: found_field=.false.
 integer :: i
 
-if (.not. module_is_initialized .or. .not. associated(clim_type%lon)) &
+if (.not. module_is_initialized .or. .not. allocated(clim_type%lon)) &
    call mpp_error(FATAL, "interpolator_2D_no_time_axis : You must call interpolator_init before calling interpolator")
 
 istart = 1
@@ -3428,22 +3428,22 @@ if ( mpp_pe() == mpp_root_pe() ) then
    write (logunit,'(/,(a))') 'Exiting interpolator, have a nice day ...'
 end if
 
-if (associated (clim_type%lat     )) deallocate(clim_type%lat)
-if (associated (clim_type%lon     )) deallocate(clim_type%lon)
-if (associated (clim_type%latb    )) deallocate(clim_type%latb)
-if (associated (clim_type%lonb    )) deallocate(clim_type%lonb)
-if (associated (clim_type%levs    )) deallocate(clim_type%levs)
-if (associated (clim_type%halflevs)) deallocate(clim_type%halflevs)
+if (allocated (clim_type%lat     )) deallocate(clim_type%lat)
+if (allocated (clim_type%lon     )) deallocate(clim_type%lon)
+if (allocated (clim_type%latb    )) deallocate(clim_type%latb)
+if (allocated (clim_type%lonb    )) deallocate(clim_type%lonb)
+if (allocated (clim_type%levs    )) deallocate(clim_type%levs)
+if (allocated (clim_type%halflevs)) deallocate(clim_type%halflevs)
 call horiz_interp_del(clim_type%interph)
-if (associated (clim_type%time_slice)) deallocate(clim_type%time_slice)
-if (associated (clim_type%has_level))  deallocate(clim_type%has_level)
-if (associated (clim_type%field_name)) deallocate(clim_type%field_name)
-if (associated (clim_type%time_init )) deallocate(clim_type%time_init)
-if (associated (clim_type%mr        )) deallocate(clim_type%mr)
-if (associated (clim_type%data)) then
+if (allocated (clim_type%time_slice)) deallocate(clim_type%time_slice)
+if (allocated (clim_type%has_level))  deallocate(clim_type%has_level)
+if (allocated (clim_type%field_name)) deallocate(clim_type%field_name)
+if (allocated (clim_type%time_init )) deallocate(clim_type%time_init)
+if (allocated (clim_type%mr        )) deallocate(clim_type%mr)
+if (allocated (clim_type%data)) then
   deallocate(clim_type%data)
 endif
-if (associated (clim_type%pmon_pyear)) then
+if (allocated (clim_type%pmon_pyear)) then
   deallocate(clim_type%pmon_pyear)
   deallocate(clim_type%pmon_nyear)
   deallocate(clim_type%nmon_nyear)
