@@ -28,15 +28,11 @@ use   diag_manager_mod, only: diag_manager_init, diag_manager_end, diag_axis_ini
                               diag_axis_add_attribute, diag_field_add_attribute, diag_send_complete, &
                               diag_manager_set_time_end
 use   fms_mod,          only: fms_init, fms_end
-use   mpp_mod,          only: FATAL, mpp_error, mpp_npes, mpp_pe, mpp_root_pe, mpp_broadcast, input_nml_file
+use   mpp_mod,          only: FATAL, mpp_error, mpp_npes, mpp_pe, mpp_root_pe, mpp_broadcast
 use   time_manager_mod, only: time_type, set_calendar_type, set_date, JULIAN, set_time
 use fms_diag_object_mod,only: dump_diag_obj
 
 implicit none
-
-logical :: check_output_log = .false. !< enables checing of the outputted diag_out.yaml file with a reference file
-
-namelist /test_modern_diag_nml/ check_output_log
 
 type(time_type)                   :: Time             !< Time of the simulation
 integer, dimension(2)             :: layout           !< Layout to use when setting up the domain
@@ -66,13 +62,10 @@ integer                           :: id_var4          !< diag_field id for 3d va
 integer                           :: id_var5          !< diag_field id for var in UG grid
 integer                           :: id_var6          !< diag_field id for var that is not domain decomposed
 integer                           :: id_var7          !< Scalar var
-integer                           :: ierr
 
 call fms_init
 call set_calendar_type(JULIAN)
 call diag_manager_init
-
-read (input_nml_file, NML=test_modern_diag_nml, IOSTAT=ierr)
 
 nx = 96
 ny = 96
@@ -143,15 +136,13 @@ id_var6 = register_diag_field  ('atm_mod', 'var6', (/id_z/), Time, 'Var not doma
 !! so it should have its own diag_obj
 id_var7 = register_diag_field  ('lnd_mod', 'var1', Time, 'Some scalar var', 'mullions')
 
-if( .not. check_output_log) then
-  if (id_var1  .ne. 1) call mpp_error(FATAL, "var1 does not have the expected id")
-  if (id_var2  .ne. 2) call mpp_error(FATAL, "var2 does not have the expected id")
-  if (id_var3  .ne. 3) call mpp_error(FATAL, "var3 does not have the expected id")
-  if (id_var4  .ne. 4) call mpp_error(FATAL, "var4 does not have the expected id")
-  if (id_var5  .ne. 5) call mpp_error(FATAL, "var5 does not have the expected id")
-  if (id_var6  .ne. 6) call mpp_error(FATAL, "var6 does not have the expected id")
-  if (id_var7  .ne. 7) call mpp_error(FATAL, "var7 does not have the expected id")
-endif
+if (id_var1  .ne. 1) call mpp_error(FATAL, "var1 does not have the expected id")
+if (id_var2  .ne. 2) call mpp_error(FATAL, "var2 does not have the expected id")
+if (id_var3  .ne. 3) call mpp_error(FATAL, "var3 does not have the expected id")
+if (id_var4  .ne. 4) call mpp_error(FATAL, "var4 does not have the expected id")
+if (id_var5  .ne. 5) call mpp_error(FATAL, "var5 does not have the expected id")
+if (id_var6  .ne. 6) call mpp_error(FATAL, "var6 does not have the expected id")
+if (id_var7  .ne. 7) call mpp_error(FATAL, "var7 does not have the expected id")
 
 call diag_field_add_attribute (id_var1, "some string", "this is a string")
 call diag_field_add_attribute (id_var1, "integer", 10)
@@ -173,10 +164,6 @@ do i=1,23
 enddo
 
 call diag_manager_end(Time)
-!! check output yaml file to match reference if enabled
-if( check_output_log) then
-  call check_output_yaml()
-endif
 call fms_end
 
 contains
@@ -225,26 +212,4 @@ subroutine set_up_cube_sph_domain(Domain_cube_sph, nx, ny, io_layout)
                                 global_indices, layout, pe_start, pe_end, &
                                 io_layout, Domain_cube_sph)
 end subroutine set_up_cube_sph_domain
-
-subroutine check_output_yaml
-  integer :: i, un_out, un_ref
-  integer, parameter :: yaml_len = 226
-  character(len=128) :: out_yaml_line, ref_yaml_line
-  character(len=17), parameter :: ref_fname = 'diag_out_ref.yaml'
-  character(len=13), parameter :: out_fname = 'diag_out.yaml'
-  if( mpp_root_pe() .ne. mpp_pe()) return
-  open(newunit=un_out, file=out_fname, status="old", action="read")
-  open(newunit=un_ref, file=ref_fname, status="old", action="read")
-  do i=1, yaml_len
-    read(un_out, '(A)') out_yaml_line
-    read(un_ref, '(A)') ref_yaml_line
-    if(out_yaml_line .ne. ref_yaml_line) call mpp_error(FATAL, 'diag_out.yaml does not match reference file.' &
-                                                               //'reference line:'//ref_yaml_line &
-                                                               //'output line:'//out_yaml_line)
-  enddo
-  close(un_out)
-  close(un_ref)
-
-end subroutine
-
 end program test_modern_diag

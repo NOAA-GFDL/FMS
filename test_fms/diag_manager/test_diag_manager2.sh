@@ -1106,12 +1106,20 @@ diag_files:
   - {}
 ...
 _EOF
-  # add nml to input.nml
-  printf "\n&test_modern_diag_nml \n check_output_log = .true. \n/" | cat >> input.nml
+  printf "&diag_manager_nml \n use_modern_diag = .true.\n /" | cat > input.nml
   my_test_count=`expr $my_test_count + 1`
   test_expect_success "Test the modern diag manager output yaml(test $my_test_count)" '
-    mpirun -n 6 ../test_modern_diag
+    mpirun -n 6 ../test_diag_out_yaml
   '
+  # add some arrays to table
+  #sed -i 's/freq: 6/freq: 6 2 1 5' diag_table.yaml diag_out_ref.yaml
+  #sed -i 's/freq_units: hours/freq_units: hours minutes years seconds/' diag_table.yaml diag_out_ref.yaml
+  #sed -i 's/time_units: hours/time_units: hours minutes years seconds/' diag_table.yaml diag_out_ref.yaml
+  #sed -i 's/new_file_freq: 6/new_file_freq: 6 2 1 5/'
+  #my_test_count=`expr $my_test_count + 1`
+  #test_expect_success "Test the modern diag manager output yaml(test $my_test_count)" '
+  #  mpirun -n 6 ../test_diag_out_yaml
+  #'
 
 printf "&diag_manager_nml \n use_modern_diag = .true. \n use_clock_average = .true. \n /" | cat > input.nml
 cat <<_EOF > diag_table.yaml
