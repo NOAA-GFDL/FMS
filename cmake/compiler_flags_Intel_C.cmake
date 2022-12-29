@@ -1,16 +1,8 @@
 # Intel C
-if(CMAKE_C_COMPILER_ID STREQUAL "Intel")
-  message(WARNING "C compiler with ID ${CMAKE_C_COMPILER_ID} will be used with CMake default options")
-  set( CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -sox -traceback")
-  set( CMAKE_C_FLAGS_RELEASE "-qno-opt-dynamic-align -O2 -debug minimal -fp-model source")
-  set( CMAKE_C_FLAGS_DEBUG "-O0 -g -ftrapuv")
-elseif(CMAKE_C_COMPILER_ID STREQUAL "IntelLLVM")
-  message(WARNING "C compiler with ID ${CMAKE_C_COMPILER_ID} will be used with CMake default options")
-  set( CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -traceback")
-  set( CMAKE_C_FLAGS_RELEASE "-qno-opt-dynamic-align -O2 -debug minimal")
-  set( CMAKE_C_FLAGS_DEBUG "-O0 -g -ftrapuv")
-else()
-  message(WARNING "C compiler with ID ${CMAKE_C_COMPILER_ID} will be used with CMake default options")
-endif()
+set( CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -sox -traceback")
+
+set( CMAKE_C_FLAGS_RELEASE "-qno-opt-dynamic-align -O2 -debug minimal -fp-model source")
+
+set( CMAKE_C_FLAGS_DEBUG "-O0 -g -ftrapuv")
 
 set( CMAKE_C_LINK_FLAGS "")
