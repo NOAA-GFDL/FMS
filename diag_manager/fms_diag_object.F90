@@ -507,16 +507,23 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
 !! In the future, this may be parallelized for offloading
   file_loop: do ifile = 1, size(this%FMS_diag_files)
     diag_file => this%FMS_diag_files(ifile)
-    allocate (file_field_ids(size(diag_file%FMS_diag_file%get_field_ids() )))
-    file_field_ids = diag_file%FMS_diag_file%get_field_ids()
-    field_loop: do ifield = 1, size(file_field_ids)
-      diag_field => this%FMS_diag_fields(file_field_ids(ifield))
-      !> Check if math needs to be done
-      math = diag_field%get_math_needs_to_be_done()
-      calling_math: if (math) then
-        !!TODO: call math functions !!
-      endif calling_math
-    enddo field_loop
+    field_outer_if: if (size(diag_file%FMS_diag_file%get_field_ids()) .ge. 1) then
+      allocate (file_field_ids(size(diag_file%FMS_diag_file%get_field_ids() )))
+      file_field_ids = diag_file%FMS_diag_file%get_field_ids()
+      field_loop: do ifield = 1, size(file_field_ids)
+        diag_field => this%FMS_diag_fields(file_field_ids(ifield))
+        !> Check if math needs to be done
+!        math = diag_field%get_math_needs_to_be_done()
+        math = .false. !TODO: replace this with real thing
+        calling_math: if (math) then
+          !!TODO: call math functions !!
+        endif calling_math
+        !> Clean up, clean up, everybody everywhere
+        if (associated(diag_field)) nullify(diag_field)
+      enddo field_loop
+      !> Clean up, clean up, everybody do your share
+      if (allocated(file_field_ids)) deallocate(file_field_ids)
+    endif field_outer_if
     !< Go away if the file is a subregional file and the current PE does not have any data for it
     if (.not. diag_file%writing_on_this_pe()) cycle
 
