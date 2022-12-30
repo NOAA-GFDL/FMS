@@ -1576,7 +1576,7 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
   LOGICAL FUNCTION send_data_3d(diag_field_id, field, time, is_in, js_in, ks_in, &
              & mask, rmask, ie_in, je_in, ke_in, weight, err_msg)
     INTEGER, INTENT(in) :: diag_field_id
-    CLASS(*), DIMENSION(:,:,:), INTENT(in), TARGET, CONTIGUOUS :: field
+    CLASS(*), DIMENSION(:,:,:), INTENT(in), TARGET :: field
     CLASS(*), INTENT(in), OPTIONAL :: weight
     TYPE (time_type), INTENT(in), OPTIONAL :: time
     INTEGER, INTENT(in), OPTIONAL :: is_in, js_in, ks_in,ie_in,je_in, ke_in
@@ -1650,7 +1650,7 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
       ie = SIZE(field,1)
       je = SIZE(field,2)
       ke = SIZE(field,3)
-      field_modern(1:ie,1:je,1:ke,1:1) => field(1:ie,1:je,1:ke)
+      field_modern(1:ie,1:je,1:ke,1:1) => field(:,:,:)
     endif
     SELECT TYPE (field)
     TYPE IS (real(kind=r4_kind))
