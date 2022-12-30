@@ -1650,7 +1650,7 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
       ie = SIZE(field,1)
       je = SIZE(field,2)
       ke = SIZE(field,3)
-      field_modern(1:ie,1:je,1:ke,1:1) => field(:,:,:)
+      field_modern(1:ie,1:je,1:ke,1:1) => field
     endif
     SELECT TYPE (field)
     TYPE IS (real(kind=r4_kind))
