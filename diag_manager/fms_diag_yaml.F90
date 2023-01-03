@@ -686,6 +686,8 @@ subroutine set_file_freq(fileobj, file_freq, file_frequnit)
   read(file_freq, *, iostat=err_unit) fileobj%file_freq
   read(file_frequnit, *, iostat=err_unit) file_freq_units
 
+  fileobj%file_frequnit = DIAG_NULL
+
   do i = 1, MAX_FREQ
     if (fileobj%file_freq(i) >= -1) then
       if (trim(file_freq_units(i)) .eq. "") &
@@ -1577,7 +1579,8 @@ subroutine fms_diag_yaml_out()
         tmpstr1 = trim(tmpstr1)//" "//trim(tmpstr2)
     enddo
     call fms_f2c_string(vals2(i)%val2, adjustl(tmpstr1))
-    call fms_f2c_string(vals2(i)%val3, get_diag_unit_string( (/fileptr%file_frequnit/)))
+    print *, 'iusadisaundsiuadnasid', fileptr%file_frequnit
+    call fms_f2c_string(vals2(i)%val3, get_diag_unit_string(fileptr%file_frequnit))
     tmpstr1 = ''
     do k=1, SIZE(fileptr%file_new_file_freq) 
         tmpstr2 = ''
@@ -1845,6 +1848,8 @@ pure function get_diag_unit_string( unit_param )
                 tmp = 'hours'
             case (DIAG_DAYS)
                 tmp = 'days'
+            case (DIAG_MONTHS)
+                tmp = 'months'
             case (DIAG_YEARS)
                 tmp = 'years'
             case default 

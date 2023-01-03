@@ -237,6 +237,7 @@ use platform_mod
   USE diag_output_mod, ONLY: get_diag_global_att, set_diag_global_att
   USE diag_grid_mod, ONLY: diag_grid_init, diag_grid_end
   use fms_diag_object_mod, only:fms_diag_object
+
   USE constants_mod, ONLY: SECONDS_PER_DAY
 
 #ifdef use_netCDF

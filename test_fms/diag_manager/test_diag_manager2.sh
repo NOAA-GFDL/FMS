@@ -645,11 +645,6 @@ _EOF
     mpirun -n 2 ../test_diag_ocean
   '
 
-  my_test_count=`expr $my_test_count + 1`
-  test_expect_success "buffer functionality (test $my_test_count)" '
-    mpirun -n 1 ../test_diag_buffer
-  '
-
   printf "&diag_manager_nml \n use_modern_diag = .true. \n/" | cat > input.nml
   cat <<_EOF > diag_table.yaml
 title: test_diag_manager
@@ -773,8 +768,13 @@ diag_files:
 _EOF
 
   my_test_count=`expr $my_test_count + 1`
+  test_expect_success "buffer functionality (test $my_test_count)" '
+    mpirun -n 1 ../test_diag_buffer
+  '
+
+  my_test_count=`expr $my_test_count + 1`
   test_expect_success "Test the modern diag manager end to end (test $my_test_count)" '
-    mpirun -n 6 ../test_modern_diag
+    mpirun -n 1 ../test_modern_diag
   '
 
   cat <<_EOF > diag_table.yaml
