@@ -1566,62 +1566,37 @@ subroutine fms_diag_yaml_out()
     call fms_f2c_string(keys2(i)%key8, 'start_time')
     call fms_f2c_string(keys2(i)%key9, 'file_duration')
     call fms_f2c_string(keys2(i)%key10, 'file_duration_units')
-    if (fileptr%has_file_fname())     call fms_f2c_string(vals2(i)%val1, fileptr%file_fname)
-    if (fileptr%has_file_unlimdim())  call fms_f2c_string(vals2(i)%val5, fileptr%file_unlimdim)
-    if (fileptr%has_file_timeunit()) then
-      if ( get_diag_unit_string((/ fileptr%file_timeunit /)) .eq. '' ) call mpp_error(FATAL, &
-            "fms_diag_yaml_out: invalid time unit for file:"//fileptr%file_fname)
-      call fms_f2c_string(vals2(i)%val4, get_diag_unit_string((/fileptr%file_timeunit/)))
-    endif
-    if (fileptr%has_file_freq()) then
-      tmpstr1 = ''
-      do k=1, SIZE(fileptr%file_freq) 
-        if(fileptr%file_freq(k) .eq. -999) exit
+
+    call fms_f2c_string(vals2(i)%val1, fileptr%file_fname)
+    call fms_f2c_string(vals2(i)%val5, fileptr%file_unlimdim)
+    call fms_f2c_string(vals2(i)%val4, get_diag_unit_string((/fileptr%file_timeunit/)))
+    tmpstr1 = ''
+    do k=1, SIZE(fileptr%file_freq) 
         tmpstr2 = ''
         write(tmpstr2, '(I0)') fileptr%file_freq(k)
-        tmpstr1 = trim(tmpstr1)//trim(tmpstr2)//" " 
-      enddo
-      call fms_f2c_string(vals2(i)%val2, trim(tmpstr1))
-    endif
-    if (fileptr%file_frequnit(1) .ne. DIAG_NULL) then
-      if ( get_diag_unit_string((/fileptr%file_frequnit/)) .eq. '' ) call mpp_error(FATAL, &
-            "fms_diag_yaml_out: invalid frequency unit for file:"//fileptr%file_fname)
-      call fms_f2c_string(vals2(i)%val3, get_diag_unit_string( (/fileptr%file_frequnit/)))
-    endif
-    if(fileptr%file_new_file_freq(1) .ne. -999) then
-      tmpstr1 = ''
-      do k=1, SIZE(fileptr%file_new_file_freq) 
-        if(fileptr%file_new_file_freq(k) .eq. -999) exit
+        tmpstr1 = trim(tmpstr1)//" "//trim(tmpstr2)
+    enddo
+    call fms_f2c_string(vals2(i)%val2, adjustl(tmpstr1))
+    call fms_f2c_string(vals2(i)%val3, get_diag_unit_string( (/fileptr%file_frequnit/)))
+    tmpstr1 = ''
+    do k=1, SIZE(fileptr%file_new_file_freq) 
         tmpstr2 = ''
         write(tmpstr2, '(I0)') fileptr%file_new_file_freq(k)
-        tmpstr1 = trim(tmpstr1)//trim(tmpstr2)//" "
-      enddo
-      call fms_f2c_string(vals2(i)%val6, trim(tmpstr1))
-    endif
-    if(fileptr%file_new_file_freq_units(1) .ne. DIAG_NULL) then
-      if ( get_diag_unit_string(fileptr%file_new_file_freq_units) .eq. '' ) call mpp_error(FATAL, &
-            "fms_diag_yaml_out: invalid new file frequency unit for file:"//fileptr%file_fname)
-      call fms_f2c_string(vals2(i)%val7, get_diag_unit_string(fileptr%file_new_file_freq_units))
-    endif
-    if(fileptr%has_file_start_time()) then
-      call fms_f2c_string(vals(i)%val8, trim(fileptr%get_file_start_time()))
-      st_vals(i) = fileptr%get_file_start_time()
-    endif
-    if(fileptr%file_duration(1) .ne. -999) then
-      tmpstr1 = ''
-      do k=1, SIZE(fileptr%file_duration) 
-        if(fileptr%file_duration(k) .eq. -999) exit
+        tmpstr1 = trim(tmpstr1)//" "//trim(tmpstr2)
+    enddo
+    call fms_f2c_string(vals2(i)%val6, adjustl(tmpstr1))
+    call fms_f2c_string(vals2(i)%val7, get_diag_unit_string(fileptr%file_new_file_freq_units))
+    call fms_f2c_string(vals(i)%val8, trim(fileptr%get_file_start_time()))
+    st_vals(i) = fileptr%get_file_start_time()
+    tmpstr1 = ''
+    do k=1, SIZE(fileptr%file_duration) 
         tmpstr2 = ''
         write(tmpstr2, '(I0)') fileptr%file_duration(k)
-        tmpstr1 = trim(tmpstr1)//trim(tmpstr2)//" " 
-      enddo
-      call fms_f2c_string(vals2(i)%val9, trim(tmpstr1))
-    endif
-    if(fileptr%file_duration_units(1) .ne. DIAG_NULL) then
-      if ( get_diag_unit_string(fileptr%file_duration_units) .eq. '' ) call mpp_error(FATAL, &
-            "fms_diag_yaml_out: invalid new file duration unit for file:"//fileptr%file_fname)
-      call fms_f2c_string(vals2(i)%val10, get_diag_unit_string(fileptr%file_duration_units))
-    endif
+        tmpstr1 = trim(tmpstr1)//" "//trim(tmpstr2)
+    enddo
+    call fms_f2c_string(vals2(i)%val9, adjustl(tmpstr1))
+    call fms_f2c_string(vals2(i)%val10, get_diag_unit_string(fileptr%file_duration_units))
+
     !! tier 3 - varlists, subregion, global metadata
     call yaml_out_add_level2key('varlist', keys2(i))
     j = 0
@@ -1657,8 +1632,6 @@ subroutine fms_diag_yaml_out()
         if (varptr%has_var_module())   call fms_f2c_string(vals3(key3_i)%val1, varptr%var_module)
         if (varptr%has_var_varname())  call fms_f2c_string(vals3(key3_i)%val2, varptr%var_varname)
         if (varptr%has_var_reduction()) then
-            if( get_diag_reduction_string((/varptr%var_reduction/)) .eq. '') call mpp_error(FATAL,  &
-                    "fms_diag_yaml_out: invalid reduction type for variable:" //varptr%var_varname)
             call fms_f2c_string(vals3(key3_i)%val3, &
                     get_diag_reduction_string((/varptr%var_reduction/)))
         endif
@@ -1677,24 +1650,21 @@ subroutine fms_diag_yaml_out()
               call fms_f2c_string(vals3(key3_i)%val4, 'r8')
           end select
         endif
-        if (varptr%has_var_zbounds() .and. ANY(varptr%var_zbounds .ne. -999)) then
-          tmpstr1 = ''
-          !! trims don't seem to work with just (F) for the format code
-          !! these are just abritrary lengths
-          write (tmpstr1, '(F10.5)') varptr%var_zbounds(1)
-          tmpstr2 = trim(tmpstr1)
-          write (tmpstr1, '(F10.5)') varptr%var_zbounds(2)
-          tmpstr2 = trim(tmpstr2) // ', ' // trim(tmpstr1)
-          call fms_f2c_string(vals3(key3_i)%val8, trim(tmpstr2))
-        endif
-        if (varptr%has_n_diurnal()) then
-          tmpstr1 = ''; write(tmpstr1, '(I0)') varptr%n_diurnal
-          call fms_f2c_string(vals3(key3_i)%val9, tmpstr1)
-        endif
-        if (varptr%has_pow_value()) then
-          tmpstr1 = ''; write(tmpstr1, '(I0)') varptr%pow_value
-          call fms_f2c_string(vals3(key3_i)%val10, tmpstr1)
-        endif
+
+        tmpstr1 = ''
+        !! trims don't seem to work with just (F) for the format code
+        !! these are just abritrary lengths
+        write (tmpstr1, '(F10.5)') varptr%var_zbounds(1)
+        tmpstr2 = trim(tmpstr1)
+        write (tmpstr1, '(F10.5)') varptr%var_zbounds(2)
+        tmpstr2 = trim(tmpstr2) // ', ' // trim(tmpstr1)
+        call fms_f2c_string(vals3(key3_i)%val8, trim(tmpstr2))
+
+        tmpstr1 = ''; write(tmpstr1, '(I0)') varptr%n_diurnal
+        call fms_f2c_string(vals3(key3_i)%val9, tmpstr1)
+        tmpstr1 = ''; write(tmpstr1, '(I0)') varptr%pow_value
+        call fms_f2c_string(vals3(key3_i)%val10, tmpstr1)
+
       enddo
     endif
 
@@ -1721,7 +1691,7 @@ subroutine fms_diag_yaml_out()
         call fms_f2c_string(vals3(key3_i)%val1, 'null')
     end select
     tmpstr1 = ''; write(tmpstr1, '(I0)') fileptr%file_sub_region%tile
-    if(fileptr%file_sub_region%tile .ne. -999) call fms_f2c_string(vals3(key3_i)%val2, tmpstr1)
+    call fms_f2c_string(vals3(key3_i)%val2, tmpstr1)
     if( allocated(fileptr%file_sub_region%corners)) then
       select type (corners => fileptr%file_sub_region%corners)
       type is (real(r8_kind))
@@ -1878,10 +1848,11 @@ pure function get_diag_unit_string( unit_param )
             case (DIAG_YEARS)
                 tmp = 'years'
             case default 
-                exit 
+                tmp = 'null' 
         end select
-        get_diag_unit_string = trim(get_diag_unit_string) // trim(tmp) // ' '
+        get_diag_unit_string = trim(get_diag_unit_string)//" "//trim(tmp)
     enddo
+    get_diag_unit_string = adjustl(get_diag_unit_string)
     
 end function
 
@@ -1909,8 +1880,9 @@ pure function get_diag_reduction_string( reduction_val )
             case default
                 exit 
         end select
-        get_diag_reduction_string = trim(get_diag_reduction_string) // trim(tmp) // ' '
+        get_diag_reduction_string = trim(get_diag_reduction_string) //" "//trim(tmp)
     enddo
+    get_diag_reduction_string = adjustl(get_diag_reduction_string)
 end function
 
 #endif

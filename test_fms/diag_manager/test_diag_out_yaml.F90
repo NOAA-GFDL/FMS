@@ -18,7 +18,8 @@
 !***********************************************************************
 !> @author Ryan Mulhall
 !> @brief Simple test program for diag manager output yaml file.
-!! Input table and output reference are printed in the script. 
+!! reads input yaml with diag_manager_init and prints
+!! out output yaml including all possible fields with diag_manager_end
 program test_diag_out_yaml
 
 use fms_mod,          only: fms_init, fms_end
@@ -40,9 +41,10 @@ call fms_end
 
 contains
 
+!> checks output and reference file are equivalent
 subroutine check_output_yaml
   integer :: i, un_out, un_ref
-  integer, parameter :: yaml_len = 100
+  integer, parameter :: yaml_len = 228
   character(len=128) :: out_yaml_line, ref_yaml_line
   character(len=17), parameter :: ref_fname = 'diag_out_ref.yaml'
   character(len=13), parameter :: out_fname = 'diag_out.yaml'
