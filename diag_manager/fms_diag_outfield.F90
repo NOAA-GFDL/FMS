@@ -1,0 +1,256 @@
+!***********************************************************************
+!*                   GNU Lesser General Public License
+!*
+!* This file is part of the GFDL Flexible Modeling System (FMS).
+!*
+!* FMS is free software: you can redistribute it and/or modify it under
+!* the terms of the GNU Lesser General Public License as published by
+!* the Free Software Foundation, either version 3 of the License, or (at
+!* your option) any later version.
+!*
+!* FMS is distributed in the hope that it will be useful, but WITHOUT
+!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+!* for more details.
+!*
+!* You should have received a copy of the GNU Lesser General Public
+!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!***********************************************************************
+
+!> @defgroup fms_diag_outfield_mod fms_diag_outfield_mod
+!> @ingroup diag_manager
+!> @brief fms_diag_outfield_mod defines data types and utility or auxiliary routines
+!! useful in updating the output buffer.
+!!
+!> @author Miguel Zuniga
+!!
+!! <TT>fms_diag_outfield_mod</TT> The output buffer updating routines are passed configuration
+!!  and control data with types defined in this module; and some utility functions called by the
+!! updating routines are
+!! defined here.
+!!
+!> @file
+!> @brief File for @ref fms_diag_outfield_mod
+!> @addtogroup fms_diag_outfield_mod
+!> @{
+MODULE fms_diag_outfield_mod
+
+   USE mpp_mod, only :FATAL
+   USE fms_mod, only :lowercase, uppercase,  error_mesg, fms_error_handler
+
+
+   !! TODO: these might need removal or replacement
+   USE diag_data_mod, only:Time_zero
+   USE diag_data_mod, only: GLO_REG_VAL, GLO_REG_VAL_ALT, region_out_use_alt_value, VERY_LARGE_AXIS_LENGTH, coord_type
+   USE diag_data_mod, only: fms_diag_ibounds_type, input_field_type, output_field_type
+   USE fms_diag_time_reduction_mod, only: time_reduction_type
+
+   !!TODO: for modern diag: if use_yaml then
+   !! USE fms_diag_yaml_mod, only : diagYamlFiles_type, diagYamlFilesVar_type
+   !!USE fms_diag_field_object_mod, only: fmsDiagField_type
+   !!USE diag_data_mod, only: fms_diag_buff_intervals_t, diag_grid
+   !!USE time_manager_mod,ONLY: time_type, OPERATOR(==), OPERATOR(>), NO_CALENDAR, increment_date,&
+   !!& increment_time, get_calendar_type, get_date, get_time, leap_year, OPERATOR(-),&
+   !!& OPERATOR(<), OPERATOR(>=), OPERATOR(<=), OPERATOR(==)
+
+   implicit none
+
+   ABSTRACT INTERFACE
+      PURE FUNCTION weight_the_field ( field_val, weight, pow_value )
+         REAL, INTENT(in) :: field_val
+         REAL, INTENT(in) :: weight
+         INTEGER, INTENT(in) :: pow_value
+         REAL :: weight_the_field
+      END FUNCTION
+   END INTERFACE
+
+
+   TYPE fms_diag_field_weighting_type
+      PROCEDURE (weight_the_field), NOPASS, POINTER::fwf_ptr=>null()   !! A pointer to the field weighting function.
+   CONTAINS
+   PROCEDURE, PASS :: WF
+   END TYPE
+
+
+
+   !> @brief Class fms_diag_outfield_type (along with class ms_diag_outfield_index_type )
+   !! contain information used in updating the output buffers by the diag_manager
+   !! send_data routines. In some sense they can be seen as encapsulating related
+   !! information in a convenient way (e.g. to pass to functions and for do loop
+   !! controls.
+   !!
+   !! Class fms_diag_outfield_type also contains a significant subset of the fields
+   !! and routines of of the legacy class output_field_type
+   !! TODO: Developemnt of this class is in a seperate and future PR. For its development,
+   !! consider the legacy diag_util::init_output_field already in place. Fields added so
+   !! are uesd the the field buffer math/dupdate functions.
+   !> @ingroup fms_diag_outfield_mod
+   TYPE fms_diag_outfield_type
+      CHARACTER(len=:), ALLOCATABLE :: module_name !< Module name.
+      CHARACTER(len=:), ALLOCATABLE :: field_name  !< Output field name.
+      CHARACTER(len=:), ALLOCATABLE :: output_name !< Output name written to file.
+      CHARACTER(len=:), ALLOCATABLE :: output_file !< File where field should be written.
+
+      !!Major outer loop controls in send_data functions.
+      INTEGER :: pow_value     !< Power value for rms or pow(x) calculations
+      LOGICAL :: phys_window   !< TODO: Rename? OMP subsetted data, See output_fields
+      LOGICAL :: need_compute  !< True iff is local_output and current PE take part in send_data.
+      LOGICAL :: reduced_k_range !< If true, the local start and end indecies are used in k (i.e. 3rd) dim.
+      LOGICAL :: mask_variant
+      LOGICAL :: mask_present !< True iff mars arguemnt is present in user-facing send function call.
+                              !< Note this field exist since the actual mask argument in the send
+                              !< function call may be downstream replaced by a null pointer which
+                              !< is considered present.
+
+      TYPE(time_reduction_type) :: time_reduction !< Instance of the time_reduction_type.
+
+      TYPE(fms_diag_ibounds_type) :: buff_bounds !< Instance of a fms_diag_buff_intervals_t type.
+
+      !!TODO: Is nopass really needed here? Note that the functions are being passed pow_val, which
+      !! may not be necessary is designed in a cenetain way as power value is also a member
+      ! of fms_diag_outfield_type.
+     !! PROCEDURE (weight_the_field), POINTER, NOPASS::fwf_ptr=>null()   !! A pointer to the field weighting function.
+      TYPE (fms_diag_field_weighting_type) :: wf
+
+      !! possibly useful in modern:
+      !!  INTEGER :: n_diurnal_samples !< Size of diurnal axis (also number of diurnal samples).value is >= 1
+
+      !LOGICAL :: static  !< True iff the field is static.
+      !TYPE(time_type) :: last_output, next_output, next_next_output
+      !INTEGER  :: pack !< The packing method.
+
+      ! TYPE(diag_grid) :: output_grid
+      ! LOGICAL :: local_output  !< True if the field output is on a local domain only.
+      ! TYPE(time_type) :: Time_of_prev_field_data
+
+      ! logical :: reduced_k_unstruct = .false.  !!Related to unstructured grid support
+      ! INTEGER :: total_elements
+   CONTAINS
+      procedure, public  :: initialize => initialize_outfield_imp
+   END TYPE fms_diag_outfield_type
+
+
+   !> @brief Class fms_diag_outfield_index_type which (along with class fms_diag_outfield_type)
+   !! encapsulate related information used in updating the output buffers by the diag_manager
+   !! send_data routines. This class in particular focuses on do loop index controls or settings.
+   !! Note that the index names in this class should be indentical to the names used in the
+   !! diag_manager send_data functions and in the "math" buffer update functions. The purpose
+   !! of this class is also to allow for a smaller call function signature for the math/buffer
+   !! update functions.
+   !> @ingroup fms_diag_outfield_mod
+   TYPE, public :: fms_diag_outfield_index_type
+      INTEGER :: f1,f2 !< Indecies used specify 1st dim bounds of field, mask and rmask.
+      INTEGER :: f3,f4 !< Indecies used specify 2st dim bounds of field, mask and rmask.
+      INTEGER :: is, js, ks  !< Start indecies in each spatial dim of the field_data; and
+      !! may be user provided in send_data
+      Integer :: ie, je, ke  !< End indecies in each spatial dim of the field_data; and
+      !! may be user provided in send_data
+      INTEGER :: hi !< halo size in x direction. Same name as in send_data
+      INTEGER :: hj !< halo size in y direction. Same
+   CONTAINS
+      procedure :: initialize => initialize_outfield_index_type
+   END TYPE fms_diag_outfield_index_type
+
+CONTAINS
+   !!TODO: In the modern diag, the field_val and weight may also be of integer type,
+   !!      and so may need to use the pre-processor.
+
+
+!> #brief initialize all the memebers of the class.
+   SUBROUTINE initialize_outfield_index_type(this, is, js , ks, ie, je, ke, hi, hj, f1, f2, f3, f4)
+      CLASS(fms_diag_outfield_index_type), INTENT(inout)  :: this
+      INTEGER, INTENT(in) :: is, js, ks !< Variable used to update class member of same names.
+      INTEGER, INTENT(in) :: ie, je, ke !< Variable used to update class member of same names.
+      INTEGER, INTENT(in) :: hi, hj !< Variable used to update class member of same names.
+      INTEGER, INTENT(in) :: f1, f2, f3, f4 !< Variable used to update class member of same names.
+
+      this%is = is
+      this%js = js
+      this%ks = ks
+      this%ie = ie
+      this%je = je
+      this%ke = ke
+
+      this%hi = hi
+      this%hj = hj
+
+      this%f1 = f1
+      this%f2 = f2
+      this%f3 = f3
+      this%f4 = f4
+   END SUBROUTINE initialize_outfield_index_type
+
+
+   !!output_frequency in file_type;
+   !! num_elements in output_field; possibly pass by itself to update_field.
+   !!output_frequecy in file_type.
+   !> @brief Update with those fields used in the legacy diag manager.
+   SUBROUTINE initialize_outfield_imp(this, input_field,  output_field )
+      CLASS(fms_diag_outfield_type), INTENT(inout) :: this
+      TYPE(input_field_type),     INTENT(in) :: input_field
+      TYPE(output_field_type),    INTENT(in) :: output_field
+
+      this%module_name = input_field%module_name
+      this%field_name = input_field%field_name
+1     this%output_name =   output_field%output_name
+
+      this%pow_value =  output_field%pow_value
+      this%phys_window = output_field%phys_window
+      this%need_compute =output_field%need_compute
+      this%reduced_k_range = output_field%reduced_k_range
+      this%mask_variant = input_field%mask_variant
+
+
+      !!And set the power function
+      if ( this%pow_value == 1) then
+         this%wf%fwf_ptr => weight_the_field_p1
+      else if ( this%pow_value == 2 ) then
+         this%wf%fwf_ptr => weight_the_field_p2
+      else
+         this%wf%fwf_ptr => weight_the_field_pp
+      end if
+      !!TODO:
+      !!init the time_reduction, using
+      !!possibly using output_field%time_rms,  output_field%time_max output_field%time_min,
+      !!   and output_field%time_sum ?
+   END SUBROUTINE initialize_outfield_imp
+
+   ELEMENTAL PURE REAL FUNCTION wf(this,  field_val, weight, pow_value )
+   CLASS( fms_diag_field_weighting_type), INTENT (in) :: this
+     REAL, INTENT(in) :: field_val
+     REAL, INTENT(in) :: weight
+     INTEGER, INTENT(in) :: pow_value
+     wf = this%fwf_ptr(field_val, weight, pow_value)
+END FUNCTION
+
+  PURE REAL FUNCTION weight_the_field_p1 (field_val, weight, pow_value )
+      REAL, INTENT(in) :: field_val        !< The field values.
+      REAL, INTENT(in) :: weight           !< The weighting coefficient.
+      INTEGER, INTENT(in) :: pow_value     !< The weighting exponent.
+      weight_the_field_p1 = field_val * weight
+   END FUNCTION weight_the_field_p1
+
+!> A function to quadraticaly weight scalar fields.
+   PURE REAL FUNCTION weight_the_field_p2 (field_val, weight,  pow_value  )
+   REAL, INTENT(in) :: field_val        !< The field values.
+      REAL, INTENT(in) :: weight           !< The weighting coefficient.
+      INTEGER, INTENT(in) :: pow_value    !< The weighting exponent.
+      REAL :: fTw
+      fTw =  field_val * weight
+      weight_the_field_p2 = fTw * fTw
+   END FUNCTION weight_the_field_p2
+
+!> A function to weight scalar fields by a an exponent.
+  PURE  REAL FUNCTION weight_the_field_pp (field_val, weight, pow_value  )
+      !!CLASS(fms_diag_field_weighting_type), INTENT(in) :: this
+      REAL, INTENT(in) :: field_val       !< The field values.
+      REAL, INTENT(in) :: weight          !< The weighting coefficient.
+      INTEGER, INTENT(in) :: pow_value    !< The weighting exponent.
+      weight_the_field_pp = (field_val * weight) ** pow_value
+   END FUNCTION weight_the_field_pp
+
+END MODULE fms_diag_outfield_mod
+!> @}
+! close documentation grouping
+
+

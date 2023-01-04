@@ -33,15 +33,13 @@
 !> @addtogroup fms_diag_fieldbuff_update_mod
 !> @{
 MODULE fms_diag_fieldbuff_update_mod
-#ifdef use_yaml
    USE platform_mod
    USE mpp_mod, ONLY: mpp_pe, mpp_root_pe
    USE time_manager_mod, ONLY: time_type
    USE fms_mod, ONLY: error_mesg, FATAL, WARNING, NOTE, stdout, stdlog, write_version_number,fms_error_handler
-   USE diag_data_mod, ONLY:  debug_diag_manager, fms_diag_buff_intervals_t
-   USE fms_diag_outfield_mod, ONLY: fms_diag_outfield_type, fms_diag_outfield_index_type
-   USE diag_util_mod, ONLY: check_out_of_bounds_m, update_bounds_m
-   USE fms_diag_field_object_mod, ONLY: fmsDiagField_type
+   USE diag_data_mod, ONLY:  debug_diag_manager, fms_diag_ibounds_type
+   USE fms_diag_outfield_mod, ONLY: fms_diag_outfield_index_type, fms_diag_outfield_type
+   USE diag_util_mod, ONLY: check_out_of_bounds, update_bounds
 
    implicit none
 
@@ -54,9 +52,9 @@ MODULE fms_diag_fieldbuff_update_mod
       !< r8 version of the interface
       module procedure fieldbuff_update_r8
       !< i4 version of the interface
-      module procedure fieldbuff_update_i4
+      !module procedure fieldbuff_update_i4
       !< i8 version of the interface
-      module procedure fieldbuff_update_i8
+     ! module procedure fieldbuff_update_i8
    end interface
 
    !> @brief Interface fieldbuff_copy_misvals updates elements of the field output buffer with
@@ -68,9 +66,9 @@ MODULE fms_diag_fieldbuff_update_mod
       !< r8 version of the interface
       module procedure fieldbuff_copy_misvals_r8
       !< i4 version of the interface
-      module procedure fieldbuff_copy_misvals_i4
+      !module procedure fieldbuff_copy_misvals_i4
       !< i8 version of the interface
-      module procedure fieldbuff_copy_misvals_i8
+      !module procedure fieldbuff_copy_misvals_i8
    end interface
 
    !> @brief Interface fieldbuff_copy_fieldvals updates elements of the field output buffer with
@@ -82,16 +80,15 @@ MODULE fms_diag_fieldbuff_update_mod
       !< r8 version of the interface
       module procedure fieldbuff_copy_fieldvals_r8
       !< i4 version of the interface
-      module procedure fieldbuff_copy_fieldvals_i4
+      !module procedure fieldbuff_copy_fieldvals_i4
       !< i8 version of the interface
-      module procedure fieldbuff_copy_fieldvals_i8
+      !module procedure fieldbuff_copy_fieldvals_i8
   end interface
 
 contains
 
 #include <fms_diag_fieldbuff_update.inc>
 
-#endif
 
 END MODULE fms_diag_fieldbuff_update_mod
 !> @}

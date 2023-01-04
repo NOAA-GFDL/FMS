@@ -239,6 +239,7 @@ use platform_mod
   USE diag_output_mod, ONLY: get_diag_global_att, set_diag_global_att
   USE diag_grid_mod, ONLY: diag_grid_init, diag_grid_end
   USE constants_mod, ONLY: SECONDS_PER_DAY
+  USE fms_diag_outfield_mod, ONLY: fms_diag_outfield_index_type, fms_diag_outfield_type
 
 #ifdef use_netCDF
   USE netcdf, ONLY: NF90_INT, NF90_FLOAT, NF90_CHAR
@@ -3165,12 +3166,22 @@ CONTAINS
 
     REAL, ALLOCATABLE, DIMENSION(:,:,:) :: field_out !< Local copy of field
 
+    TYPE(fms_diag_outfield_index_type), ALLOCATABLE:: ofield_index_cfg
+    TYPE(fms_diag_outfield_type), ALLOCATABLE:: ofield_cfg
+
+    REAL, dimension(:,:,:,:), pointer::field_ptr => null() !< Ptr to field data array
+    REAL, dimension(:,:,:,:), pointer::mask_ptr => null() !< Ptr to field data mask array
+    REAL, dimension(:,:,:,:), pointer::rmask_ptr => null() !< Ptr to field data rmask array
+    REAL, dimension(:,:,:,:,:), pointer::ofb_ptr => null() !<Ptr to  buffer member of buffer obj.
+    REAL, dimension(:,:,:,:,:), pointer::ofc_ptr => null()  !<Ptr to counter  member of buffer obj.
+
+
     ! If diag_field_id is < 0 it means that this field is not registered, simply return
     IF ( diag_field_id <= 0 ) THEN
-       send_data_3d = .FALSE.
+       send_data_3d_refac = .FALSE.
        RETURN
     ELSE
-       send_data_3d = .TRUE.
+       send_data_3d_refac = .TRUE.
     END IF
 
     IF ( PRESENT(err_msg) ) err_msg = ''
@@ -3553,42 +3564,59 @@ CONTAINS
           END IF
        END IF
 
-              !!CALL FIELD WHEITING FUNCTIONS:!!START REFACTORED SECTION WITH WEIGHTING FUNCTIONS.!!
-        ALLOCATE(sprocs_obj)
-        CALL sprocs_obj%initialize(is, js, ks, ie, je, ke, &
-              &  hi, hj, f1, f2, f3, f4, &
-              &  output_fields(out_num)%pow_value, output_fields(out_num)%phys_window, &
-              &  output_fields(out_num)%need_compute,output_fields(out_num)%reduced_k_range, &
-              &  output_fields(out_num)%time_rms,  output_fields(out_num)%time_max, &
-              &  output_fields(out_num)%time_min,  output_fields(out_num)%time_sum)
+      !!START REFACTORED SECTION WITH WEIGHTING FUNCTIONS.!!
+      ALLOCATE( ofield_index_cfg )
+      CALL ofield_index_cfg%initialize( is, js, ks, ie, je, ke, &
+                &  hi, hj,  f1, f2, f3, f4)
 
-        ! Take care of submitted field data
-        IF ( average ) THEN
-          temp_result = sprocs_obj%average_the_field(diag_field_id, field_out, sample, &
-              & output_fields(out_num)%buffer, output_fields(out_num)%counter, &
-              & output_fields(out_num)%ntval,  output_fields(out_num)%count_0d(sample), &
-              & output_fields(out_num)%num_elements(sample), output_fields(out_num)%output_name, &
-              & input_fields(diag_field_id)%field_name, input_fields(diag_field_id)%module_name, &
-              & input_fields(diag_field_id)%issued_mask_ignore_warning, &
-              & mask, weight1, missvalue, missvalue_present, &
-              & l_start, l_end, err_msg, err_msg_local )
+      ALLOCATE( ofield_cfg )
+      CALL ofield_cfg%initialize( input_fields(diag_field_id), output_fields(out_num))
+      !! TODO: missing time_reduction
+
+      !!Possibly explicitly pass in num_thread, active_omp_level,has_mask_variant,issued_mask_ignore_warning
+      !!TODO: Pass in  ofb0d_r4_ptr (sample), buff_obj%num_elements(sample) using sample ?? Other use of
+      !!  sample in args? E.g. see line 2083 in original send_data_3d uses
+      !!  output_fields(out_num)%num_elements(sample) ...
+
+      ASSOCIATE(ofb =>  output_fields(out_num)%buffer, &
+        & ofc =>   output_fields(out_num)%counter)
+
+      IF ( average ) THEN
+          field_ptr(1:size(field,1),1:size(field,2),1:size(field,3),1:1) => field
+         rmask_ptr(1:size(rmask,1),1:size(rmask,2),1:size(rmask,3),1:1) => rmask
+          ofb_ptr(1:size(ofb,1),1:size(ofb,2),1:size(ofb,3),1:1) => ofb
+          ofc_ptr(1:size(ofc,1),1:size(ofc,2),1:size(ofc,3),1:1) => ofc
+          IF(PRESENT ( mask) ) THEN
+            mask_ptr(1:size(mask,1),1:size(mask,2),1:size(mask,3),1:1) => mask
+         ENDIF
+
+        IF(PRESENT ( mask) ) THEN
+          mask_ptr(1:size(mask,1),1:size(mask,2),1:size(mask,3),1:1) => mask
+        ENDIF
+
+        temp_result = fieldbuff_update(ofield_cfg, ofield_index_cfg, field_ptr, sample, &
+            & ofb_ptr,ofc_ptr, ofield_cfg%buff_bounds, &
+            & output_fields(out_num)%count_0d(sample), output_fields(out_num)%num_elements(sample), &
+            & mask, weight, missval_r4_ptr, missvalue_present, &
+            & input_fields(diag_field_id)%numthreads, input_fields(diag_field_id)%active_omp_level,&
+            & has_mask_variant, input_fields(diag_field_id)%issued_mask_ignore_warning, &
+            & l_start, l_end, err_msg, err_msg_local )
             IF (temp_result .eqv. .FALSE.) THEN
-                DEALLOCATE(oor_mask)
-                RETURN
+              DEALLOCATE(oor_mask)
+              RETURN
             END IF
-             ! Add processing for Max and Min
-        ELSE !!.NOT. average
-          temp_result = sprocs_obj%sample_the_field(diag_field_id, field_out, &
-              & sample,  output_fields(out_num)%buffer, output_fields(out_num)%ntval, &
-              & output_fields(out_num)%count_0d(sample), &
-              & output_fields(out_num)%output_name,input_fields(diag_field_id)%module_name, mask, &
-              & missvalue, missvalue_present, l_start, l_end, err_msg, err_msg_local)
-          IF (temp_result .eqv. .FALSE.) THEN
-            DEALLOCATE(oor_mask)
-            RETURN
-          END IF
+      ELSE !!NOT AVERAGE
+        !!fieldbuff_sample
+        IF (temp_result .eqv. .FALSE.) THEN
+          DEALLOCATE(oor_mask)
+          RETURN
         END IF
-      DEALLOCATE(sprocs_obj)
+      END IF
+      DEALLOCATE(ofield_index_cfg)
+      DEALLOCATE(ofield_cfg)
+      END ASSOCIATE
+
+
       !!END REFACTORED SECTION WITH WEIGHTING FUNCTIONS - END
 
        IF ( output_fields(out_num)%static .AND. .NOT.need_compute .AND. debug_diag_manager ) THEN

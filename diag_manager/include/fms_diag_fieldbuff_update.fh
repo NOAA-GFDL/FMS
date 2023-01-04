@@ -26,16 +26,16 @@
 !! Note this function may set field object members active_omp_level and  num_threads.
 !> @addtogroup fms_diag_fieldbuff_update_mod
 !> @{
-   FUNCTION FMS_DIAG_FBU_PNAME_ (ofield_cfg, ofield_index_cfg, field_obj, field_d, sample, &
-    & ofb, ofc, ntval, count_0d, num_elements, mask, weight1, missvalue, missvalue_present, &
+   FUNCTION FMS_DIAG_FBU_PNAME_ (ofield_cfg, ofield_index_cfg, field_d, sample, &
+    & ofb, ofc, bbounds, count_0d, num_elements, mask, weight1, missvalue, missvalue_present, &
+    & field_num_threads, field_active_omp_level, issued_mask_ignore_warning, &
     & l_start, l_end, err_msg,  err_msg_local ) result( succeded )
       TYPE(fms_diag_outfield_type), INTENT(inout) :: ofield_cfg  !< The ofield_cfg object
       TYPE(fms_diag_outfield_index_type) , INTENT(inout) :: ofield_index_cfg  !< The ofield_index_cfg object
-      TYPE(fmsDiagField_type), INTENT(inout) :: field_obj !< The field object
       FMS_DIAG_FBU_DATA_TYPE_ , DIMENSION(:,:,:,:), INTENT(in) :: field_d !< The input field data array.
       FMS_DIAG_FBU_DATA_TYPE_ , DIMENSION(:,:,:,:,:), INTENT(inout) :: ofb !< Output Field Buffer
       FMS_DIAG_FBU_DATA_TYPE_ , DIMENSION(:,:,:,:,:), INTENT(inout) :: ofc !< Output Field Counter
-      TYPE(fms_diag_buff_intervals_t), INTENT(inout) :: ntval !< An instance of the class fms_diag_buff_intervals_t
+      TYPE(fms_diag_ibounds_type), INTENT(inout) :: bbounds !< An instance of the class fms_diag_buff_intervals_t
       INTEGER, INTENT(in) :: sample  !< The index along the diurnal time axis
       FMS_DIAG_FBU_DATA_TYPE_, INTENT(inout):: count_0d !< Normally the member of the buffer object of the same name.
       INTEGER, INTENT(inout) :: num_elements
@@ -44,6 +44,10 @@
       REAL, INTENT(in) :: weight1 !< Field data is multiplied by weight !!TODO: Change to same type as field data?
       FMS_DIAG_FBU_DATA_TYPE_, INTENT(in) :: missvalue !< Buffer may be set to missvalue where mask is false.
       LOGICAL, INTENT(in) :: missvalue_present !< .true. if missvalue is present.
+      INTEGER, INTENT(inout) :: field_num_threads
+      INTEGER, INTENT(inout) :: field_active_omp_level
+
+      LOGICAL, INTENT(inout) :: issued_mask_ignore_warning
       INTEGER, DIMENSION(3), INTENT(in)  :: l_start !< local start indices on 3 axes for regional output
       INTEGER, DIMENSION(3), INTENT(in)  :: l_end !< local end indices on 3 axes for regional output
       CHARACTER(len=*), INTENT(inout), OPTIONAL :: err_msg
@@ -56,6 +60,8 @@
       LOGICAL :: phys_window !< A copy of same variable in ofield_cfg
       LOGICAL :: need_compute !< A copy of same variable in ofield_cfg
       LOGICAL :: reduced_k_range !< A copy of same variable in ofield_cfg
+      LOGICAL :: mask_variant !< A copy of same variable in ofield_cfg
+      LOGICAL :: mask_present !< A copy of same variable in ofield_cfg
 
       !> The indecies copied directly from the ofield_index_cfg:
       INTEGER:: is, js, ks, ls, ie, je, ke, le, hi, hj, f1, f2, f3, f4
@@ -64,11 +70,12 @@
       !> Looping indecies, derived from ofield_index_cfg:
       INTEGER :: i, j, k, i1, j1, k1
 
+      INTEGER :: numthreads
+      INTEGER :: active_omp_level
+
       LOGICAL :: succeded !> True iff no errors encountered.
       CHARACTER(len=128):: error_string
 
-      INTEGER :: numthreads
-      INTEGER :: active_omp_level
 #if defined(_OPENMP)
       INTEGER :: omp_get_num_threads !< OMP function
       INTEGER :: omp_get_level !< OMP function
@@ -99,19 +106,21 @@
       phys_window = ofield_cfg%phys_window
       reduced_k_range = ofield_cfg%reduced_k_range
       need_compute = ofield_cfg%need_compute
+      mask_variant =  ofield_cfg%mask_variant
+      mask_present =  ofield_cfg%mask_present
 
 !$OMP CRITICAL
-      call field_obj%set_num_threads (1)
-      call field_obj%set_active_omp_level (0)
+      field_num_threads = 1
+      active_omp_level = 0
 #if defined(_OPENMP)
-      call field_obj%set_num_threads (omp_get_num_threads())
-      call field_obj%set_active_omp_level (omp_get_level())
+      field_num_threads = omp_get_num_threads()
+      field_active_omp_level = omp_get_level()
 #endif
-      numthreads = field_obj%get_num_threads()
-      active_omp_level = field_obj%get_active_omp_level()
+      numthreads = field_num_threads
+      active_omp_level = field_active_omp_level
 !$OMP END CRITICAL
 
-      MASK_VAR_IF: IF ( field_obj%has_mask_variant() ) THEN
+      MASK_VAR_IF: IF ( mask_variant ) THEN
          IF ( need_compute ) THEN
             WRITE (error_string,'(a,"/",a)') TRIM(module_name), TRIM(output_name)
             IF ( fms_error_handler('diag_manager_mod::send_data_3d', 'module/output_field '//TRIM(error_string)//&
@@ -124,11 +133,11 @@
 
          ! Should reduced_k_range data be supported with the mask_variant option   ?????
          ! If not, error message should be produced and the reduced_k_range loop below eliminated
-         MASK_PR_1_IF: IF ( PRESENT(mask) ) THEN
+         MASK_PR_1_IF: IF (mask_present ) THEN
             MISSVAL_PR_1_IF: IF ( missvalue_present ) THEN !!(section: mask_varian .eq. true + mask present)
                IF ( debug_diag_manager ) THEN
-                  CALL update_bounds_m(ntval, is-hi, ie-hi, js-hj, je-hj, ks, ke)
-                  CALL check_out_of_bounds_m(ofb, ntval, output_name, module_name, err_msg_local)
+                  CALL update_bounds_m(bbounds, is-hi, ie-hi, js-hj, je-hj, ks, ke)
+                  CALL check_out_of_bounds_m(ofb, bbounds, output_name, module_name, err_msg_local)
                   IF ( err_msg_local /= '' ) THEN
                      IF ( fms_error_handler('diag_manager_mod::send_data_3d', err_msg_local, err_msg) ) THEN
                         succeded = .FALSE.
@@ -212,7 +221,7 @@
             END IF
          END IF MASK_PR_1_IF
       ELSE MASK_VAR_IF
-         MASK_PR_2_IF: IF ( PRESENT(mask) ) THEN
+         MASK_PR_2_IF: IF (mask_present ) THEN
             MISSVAL_PR_2_IF: IF ( missvalue_present ) THEN !!section:(mask_var false +mask present +missval prsnt)
                NDCMP_RKR_1_IF: IF ( need_compute ) THEN
                   IF (numthreads>1 .AND. phys_window) then
@@ -300,8 +309,8 @@
                   END IF
                ELSE NDCMP_RKR_1_IF
                   IF ( debug_diag_manager ) THEN
-                     CALL update_bounds_m(ntval, is-hi, ie-hi, js-hj, je-hj, ks, ke)
-                     CALL check_out_of_bounds_m(ofb, ntval, output_name, module_name, err_msg_local)
+                     CALL update_bounds_m(bbounds, is-hi, ie-hi, js-hj, je-hj, ks, ke)
+                     CALL check_out_of_bounds_m(ofb, bbounds, output_name, module_name, err_msg_local)
                      IF ( err_msg_local /= '' ) THEN
                         IF ( fms_error_handler('diag_manager_mod::send_data_3d', err_msg_local, err_msg) ) THEN
                            succeded = .FALSE.
@@ -349,7 +358,7 @@
 !$OMP END CRITICAL
             ELSE MISSVAL_PR_2_IF !! (section: mask_varian .eq. false + mask present + miss value not present)
                IF (   (.NOT.ALL(mask(f1:f2,f3:f4,ks:ke,:)) .AND. mpp_pe() .EQ. mpp_root_pe()).AND.&
-               &  .NOT. field_obj%get_issued_mask_ignore_warning() ) THEN
+               &  .NOT. issued_mask_ignore_warning) THEN
                   ! <ERROR STATUS="WARNING">
                   !   Mask will be ignored since missing values were not specified for field <field_name>
                   !   in module <module_name>
@@ -358,7 +367,7 @@
                     & 'Mask will be ignored since missing values were not specified for field '//&
                     & trim(field_name)//' in module '//&
                     & trim(module_name), WARNING)
-                  CALL field_obj%set_issued_mask_ignore_warning(.TRUE.)
+                  issued_mask_ignore_warning = .TRUE.
                END IF
                NDCMP_RKR_2_IF: IF ( need_compute ) THEN
                   IF (numthreads>1 .AND. phys_window) then
@@ -414,8 +423,8 @@
                   END IF
                ELSE NDCMP_RKR_2_IF
                   IF ( debug_diag_manager ) THEN
-                     CALL update_bounds_m(ntval, is-hi, ie-hi, js-hj, je-hj, ks, ke)
-                     CALL check_out_of_bounds_m(ofb, ntval, output_name, module_name, err_msg_local)
+                     CALL update_bounds_m(bbounds, is-hi, ie-hi, js-hj, je-hj, ks, ke)
+                     CALL check_out_of_bounds_m(ofb, bbounds, output_name, module_name, err_msg_local)
                      IF ( err_msg_local /= '') THEN
                         IF ( fms_error_handler('diag_manager_mod::send_data_3d', err_msg_local, err_msg) ) THEN
                            succeded = .FALSE.
@@ -557,8 +566,8 @@
 !$OMP END CRITICAL
                ELSE NDCMP_RKR_3_IF
                   IF ( debug_diag_manager ) THEN
-                     CALL update_bounds_m(ntval, is-hi, ie-hi, js-hj, je-hj, ks, ke)
-                     CALL check_out_of_bounds_m(ofb, ntval, output_name, module_name, err_msg_local)
+                     CALL update_bounds_m(bbounds, is-hi, ie-hi, js-hj, je-hj, ks, ke)
+                     CALL check_out_of_bounds_m(ofb, bbounds, output_name, module_name, err_msg_local)
                      IF ( err_msg_local /= '' ) THEN
                         IF ( fms_error_handler('diag_manager_mod::send_data_3d', err_msg_local, err_msg) ) THEN
                            succeded = .FALSE.
@@ -665,8 +674,8 @@
 
                ELSE NDCMP_RKR_4_IF
                   IF ( debug_diag_manager ) THEN
-                     CALL update_bounds_m(ntval, is-hi, ie-hi, js-hj, je-hj, ks, ke)
-                     CALL check_out_of_bounds_m(ofb, ntval, output_name, module_name, err_msg_local)
+                     CALL update_bounds_m(bbounds, is-hi, ie-hi, js-hj, je-hj, ks, ke)
+                     CALL check_out_of_bounds_m(ofb, bbounds, output_name, module_name, err_msg_local)
                      IF ( err_msg_local /= '' ) THEN
                         IF (fms_error_handler('diag_manager_mod::send_data_3d', err_msg_local, err_msg) ) THEN
                            succeded = .FALSE.
@@ -708,14 +717,14 @@
 !> \Description May set or add to the output field buffer (argument ofb) with the input
 !! field data array  (argument field)
 FUNCTION FMS_DIAG_FBCF_PNAME_ (ofield_cfg, ofield_index_cfg, field, sample, ofb, &
-   & ntval, count_0d, mask,  missvalue, missvalue_present, &
+   & bbounds, count_0d, mask,  missvalue, missvalue_present, &
    & l_start, l_end, err_msg,  err_msg_local) result( succeded )
       TYPE(fms_diag_outfield_type), INTENT(inout) :: ofield_cfg   !< The ofield_cfg object
       TYPE(fms_diag_outfield_index_type) , INTENT(inout) :: ofield_index_cfg    !< The ofield_index_cfg object
       FMS_DIAG_FBU_DATA_TYPE_ , DIMENSION(:,:,:,:), INTENT(in) :: field   !< The field value array.
       INTEGER, INTENT(in) :: sample   !< index along the diurnal time axis
       FMS_DIAG_FBU_DATA_TYPE_ , DIMENSION(:,:,:,:,:), INTENT(inout) :: ofb   !< The Output Field Buffer
-      TYPE(fms_diag_buff_intervals_t), INTENT(inout) :: ntval
+      TYPE(fms_diag_ibounds_type), INTENT(inout) :: bbounds
       FMS_DIAG_FBU_DATA_TYPE_ , INTENT(inout) :: count_0d   !> Normally the member of the buffer of same name,
       LOGICAL, DIMENSION(:,:,:,:), INTENT(in), OPTIONAL :: mask
       FMS_DIAG_FBU_DATA_TYPE_ , INTENT(in) :: missvalue !> buffer may be set to this value where mask is false.
@@ -730,15 +739,17 @@ FUNCTION FMS_DIAG_FBCF_PNAME_ (ofield_cfg, ofield_index_cfg, field, sample, ofb,
       !> The indecies copied directly from the ofield_index_cfg
       INTEGER :: is, js, ks, ie, je, ke, hi, hj, f1, f2, f3, f4
 
+      CHARACTER(:), ALLOCATABLE  :: output_name !< A copy of same variable in ofield_cfg
+      CHARACTER(:), ALLOCATABLE  :: module_name !< A copy of same variable in ofield_cfg
       LOGICAL :: need_compute !< A copy of same variable in ofield_cfg
       LOGICAL :: reduced_k_range !< A copy of same variable in ofield_cfg
+      LOGICAL :: mask_present !< A copy of same variable in ofield_cfg
 
       INTEGER :: ksr, ker !> Loop indeccies used in reduced_k_range calculations
       !> Looping indecies, derived from ofield_index_cfg:
       INTEGER :: i, j, k, i1, j1, k1
 
-      CHARACTER(:), ALLOCATABLE  :: output_name
-      CHARACTER(:), ALLOCATABLE  :: module_name
+
       LOGICAL :: time_max, time_min, time_sum
 
       ksr= l_start(3)
@@ -765,10 +776,12 @@ FUNCTION FMS_DIAG_FBCF_PNAME_ (ofield_cfg, ofield_index_cfg, field, sample, ofb,
       module_name = trim(ofield_cfg%module_name)
       reduced_k_range = ofield_cfg%reduced_k_range
       need_compute = ofield_cfg%need_compute
+      mask_present =  ofield_cfg%mask_present
+
 
          ! Add processing for Max and Min
          TIME_IF: IF ( time_max ) THEN
-            MASK_PRSNT_1_IF: IF ( PRESENT(mask) ) THEN
+            MASK_PRSNT_1_IF: IF (mask_present ) THEN
                IF ( need_compute ) THEN
                   DO k = l_start(3), l_end(3)
                      k1 = k - l_start(3) + 1
@@ -795,8 +808,8 @@ FUNCTION FMS_DIAG_FBCF_PNAME_ (ofield_cfg, ofield_index_cfg, field, sample, ofb,
                   & OFB(is-hi:ie-hi,js-hj:je-hj,:,:,sample) = field(f1:f2,f3:f4,ksr:ker,:)
                ELSE
                   IF ( debug_diag_manager ) THEN
-                     CALL update_bounds_m(ntval, is-hi, ie-hi, js-hj, je-hj, ks, ke)
-                     CALL check_out_of_bounds_m(ofb, ntval, output_name,  module_name, err_msg_local)
+                     CALL update_bounds_m(bbounds, is-hi, ie-hi, js-hj, je-hj, ks, ke)
+                     CALL check_out_of_bounds_m(ofb, bbounds, output_name,  module_name, err_msg_local)
                      IF ( err_msg_local /= '' ) THEN
                         IF ( fms_error_handler('diag_manager_mod::send_data_3d', err_msg_local, err_msg) ) THEN
                            succeded = .FALSE.
@@ -833,8 +846,8 @@ FUNCTION FMS_DIAG_FBCF_PNAME_ (ofield_cfg, ofield_index_cfg, field, sample, ofb,
                   & OFB(is-hi:ie-hi,js-hj:je-hj,:,:,sample) = field(f1:f2,f3:f4,ksr:ker,:)
                ELSE
                   IF ( debug_diag_manager ) THEN
-                     CALL update_bounds_m(ntval, is-hi, ie-hi, js-hj, je-hj, ks, ke)
-                     CALL check_out_of_bounds_m(ofb, ntval, output_name, module_name, err_msg_local)
+                     CALL update_bounds_m(bbounds, is-hi, ie-hi, js-hj, je-hj, ks, ke)
+                     CALL check_out_of_bounds_m(ofb, bbounds, output_name, module_name, err_msg_local)
                      IF ( err_msg_local /= '' ) THEN
                         IF ( fms_error_handler('diag_manager_mod::send_data_3d', err_msg_local, err_msg) ) THEN
                            succeded = .FALSE.
@@ -849,7 +862,7 @@ FUNCTION FMS_DIAG_FBCF_PNAME_ (ofield_cfg, ofield_index_cfg, field, sample, ofb,
             count_0d = 1
             !END TIME MAX
          ELSE IF ( time_min ) THEN TiME_IF
-            MASK_PRSNT_2_IF: IF ( PRESENT(mask) ) THEN
+            MASK_PRSNT_2_IF: IF (mask_present ) THEN
                IF ( need_compute ) THEN
                   DO k = l_start(3), l_end(3)
                      k1 = k - l_start(3) + 1
@@ -876,8 +889,8 @@ FUNCTION FMS_DIAG_FBCF_PNAME_ (ofield_cfg, ofield_index_cfg, field, sample, ofb,
                   & OFB(is-hi:ie-hi,js-hj:je-hj,:,:,sample) = field(f1:f2,f3:f4,ksr:ker,:)
                ELSE
                   IF ( debug_diag_manager ) THEN
-                     CALL update_bounds_m(ntval, is-hi, ie-hi, js-hj, je-hj, ks, ke)
-                     CALL check_out_of_bounds_m(ofb, ntval, output_name, module_name, err_msg_local)
+                     CALL update_bounds_m(bbounds, is-hi, ie-hi, js-hj, je-hj, ks, ke)
+                     CALL check_out_of_bounds_m(ofb, bbounds, output_name, module_name, err_msg_local)
                      IF ( err_msg_local /= '' ) THEN
                         IF ( fms_error_handler('diag_manager_mod::send_data_3d', err_msg_local, err_msg) ) THEN
                            succeded = .FALSE.
@@ -913,8 +926,8 @@ FUNCTION FMS_DIAG_FBCF_PNAME_ (ofield_cfg, ofield_index_cfg, field, sample, ofb,
                   & OFB(is-hi:ie-hi,js-hj:je-hj,:,:,sample) = field(f1:f2,f3:f4,ksr:ker,:)
                ELSE
                   IF ( debug_diag_manager ) THEN
-                     CALL update_bounds_m(ntval, is-hi, ie-hi, js-hj, je-hj, ks, ke)
-                     CALL check_out_of_bounds_m(ofb, ntval, output_name, module_name, err_msg_local)
+                     CALL update_bounds_m(bbounds, is-hi, ie-hi, js-hj, je-hj, ks, ke)
+                     CALL check_out_of_bounds_m(ofb, bbounds, output_name, module_name, err_msg_local)
                      IF ( err_msg_local /= '' ) THEN
                         IF ( fms_error_handler('diag_manager_mod::send_data_3d', err_msg_local, err_msg) ) THEN
                            succeded = .FALSE.
@@ -930,7 +943,7 @@ FUNCTION FMS_DIAG_FBCF_PNAME_ (ofield_cfg, ofield_index_cfg, field, sample, ofb,
 
             !! END_TIME_MIN
          ELSE IF ( time_sum ) THEN TIME_IF
-            MASK_PRSNT_3_IF: IF ( PRESENT(mask) ) THEN
+            MASK_PRSNT_3_IF: IF (mask_present ) THEN
                IF ( need_compute ) THEN
                   DO k = l_start(3), l_end(3)
                      k1 = k - l_start(3) + 1
@@ -956,8 +969,8 @@ FUNCTION FMS_DIAG_FBCF_PNAME_ (ofield_cfg, ofield_index_cfg, field, sample, ofb,
                   &   field(f1:f2,f3:f4,ksr:ker,:)
                ELSE
                   IF ( debug_diag_manager ) THEN
-                     CALL update_bounds_m(ntval, is-hi, ie-hi, js-hj, je-hj, ks, ke)
-                     CALL check_out_of_bounds_m(ofb, ntval, output_name, module_name, err_msg_local)
+                     CALL update_bounds_m(bbounds, is-hi, ie-hi, js-hj, je-hj, ks, ke)
+                     CALL check_out_of_bounds_m(ofb, bbounds, output_name, module_name, err_msg_local)
                      IF ( err_msg_local /= '' ) THEN
                         IF ( fms_error_handler('diag_manager_mod::send_data_3d', err_msg_local, err_msg) ) THEN
                            succeded = .FALSE.
@@ -991,8 +1004,8 @@ FUNCTION FMS_DIAG_FBCF_PNAME_ (ofield_cfg, ofield_index_cfg, field, sample, ofb,
                   &  field(f1:f2,f3:f4,ksr:ker,:)
                ELSE
                   IF ( debug_diag_manager ) THEN
-                     CALL update_bounds_m(ntval, is-hi, ie-hi, js-hj, je-hj, ks, ke)
-                     CALL check_out_of_bounds_m(ofb, ntval, output_name, module_name, err_msg_local)
+                     CALL update_bounds_m(bbounds, is-hi, ie-hi, js-hj, je-hj, ks, ke)
+                     CALL check_out_of_bounds_m(ofb, bbounds, output_name, module_name, err_msg_local)
                      IF ( err_msg_local /= '' ) THEN
                         IF ( fms_error_handler('diag_manager_mod::send_data_3d', err_msg_local, err_msg) ) THEN
                            succeded = .FALSE.
@@ -1025,8 +1038,8 @@ FUNCTION FMS_DIAG_FBCF_PNAME_ (ofield_cfg, ofield_index_cfg, field, sample, ofb,
                OFB(is-hi:ie-hi,js-hj:je-hj,:,:,sample) = field(f1:f2,f3:f4,ksr:ker,:)
             ELSE
                IF ( debug_diag_manager ) THEN
-                  CALL update_bounds_m(ntval, is-hi, ie-hi, js-hj, je-hj, ks, ke)
-                  CALL check_out_of_bounds_m(ofb, ntval, output_name, module_name, err_msg_local)
+                  CALL update_bounds_m(bbounds, is-hi, ie-hi, js-hj, je-hj, ks, ke)
+                  CALL check_out_of_bounds_m(ofb, bbounds, output_name, module_name, err_msg_local)
                   IF ( err_msg_local /= '' ) THEN
                      IF ( fms_error_handler('diag_manager_mod::send_data_3d', err_msg_local, err_msg) ) THEN
                         succeded = .FALSE.
@@ -1037,7 +1050,7 @@ FUNCTION FMS_DIAG_FBCF_PNAME_ (ofield_cfg, ofield_index_cfg, field, sample, ofb,
                OFB(is-hi:ie-hi,js-hj:je-hj,ks:ke,:,sample) = field(f1:f2,f3:f4,ks:ke,:)
             END IF
 
-            IF ( PRESENT(mask) .AND. missvalue_present ) THEN
+            IF (mask_present .AND. missvalue_present ) THEN
                IF ( need_compute ) THEN
                   DO k = l_start(3), l_end(3)
                      k1 = k - l_start(3) + 1

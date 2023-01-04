@@ -115,6 +115,8 @@ use platform_mod
      INTEGER, allocatable, DIMENSION(:) :: iatt !< INTEGER array to hold value of INTEGER attributes
   END TYPE diag_atttype
 
+  !!TODO: coord_type deserves a better name, like coord_interval_type or coord_bbox_type.
+  !!  additionally, consider using a 2D array.
   !> @brief Define the region for field output
   !> @ingroup diag_data_mod
   TYPE coord_type
@@ -125,6 +127,23 @@ use platform_mod
      REAL :: zbegin
      REAL :: zend
   END TYPE coord_type
+
+!!TODO: consider using an array for this.
+  !> @brief Data structure holding intervals (or interval bounds or limits).
+  !! Used for checking the bounds of the field output buffer arrays.
+TYPE, public :: fms_diag_ibounds_type
+  INTEGER :: imin !< Lower i bound.
+  INTEGER :: imax !< Upper i bound.
+  INTEGER :: jmin !< Lower j bound.
+  INTEGER :: jmax !< Upper j bound.
+  INTEGER :: kmin !< Lower k bound.
+  INTEGER :: kmax !< Upper k bound.
+  contains
+  procedure :: reset => ibounds_reset
+END TYPE fms_diag_ibounds_type
+
+
+
 
   !> @brief Type to define the diagnostic files that will be written as defined by the diagnostic table.
   !> @ingroup diag_data_mod
@@ -240,7 +259,7 @@ use platform_mod
      TYPE(diag_grid) :: output_grid
      LOGICAL :: local_output, need_compute, phys_window, written_once
      LOGICAL :: reduced_k_range
-     INTEGER :: imin, imax, jmin, jmax, kmin, kmax
+     TYPE(fms_diag_ibounds_type) :: buff_bounds
      TYPE(time_type) :: Time_of_prev_field_data
      TYPE(diag_atttype), allocatable, dimension(:) :: attributes
      INTEGER :: num_attributes
@@ -383,6 +402,21 @@ CONTAINS
     ! Write version number out to log file
     call write_version_number("DIAG_DATA_MOD", version)
   END SUBROUTINE diag_data_init
+
+
+!> @brief Sets the lower and upper bounds to lower_val and upper_val, respectively.
+  SUBROUTINE ibounds_reset (this, lower_val, upper_val)
+  class (fms_diag_ibounds_type), target, intent(inout) :: this   !< ibounds instance
+  integer, intent(in) :: lower_val  !< value for the lower bounds in each dimension
+  integer, intent(in) :: upper_val  !< value for the upper bounds in each dimension
+  this%imin = lower_val
+  this%jmin = lower_val
+  this%kmin = lower_val
+  this%imax = upper_val
+  this%jmax = upper_val
+  this%kmax = upper_val
+end   SUBROUTINE ibounds_reset
+
 
 END MODULE diag_data_mod
 !> @}
