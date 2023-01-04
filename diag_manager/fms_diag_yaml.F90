@@ -1304,7 +1304,7 @@ end function has_var_write
 pure logical function has_var_outname (obj)
   class(diagYamlFilesVar_type), intent(in) :: obj !< diagYamlvar_type object to initialize
   if (allocated(obj%var_outname)) then
-    if (obj%var_outname .ne. "") then
+    if (trim(obj%var_outname) .ne. "") then
       has_var_outname = .true.
     else
       has_var_outname = .false.

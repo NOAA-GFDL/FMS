@@ -443,6 +443,8 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
 
 end subroutine fms_diag_send_complete
 
+!> @brief Loops through all the files, open the file, writes out axis and
+!! variable metadata and data when necessary.
 subroutine fms_diag_do_io(this, time_step, is_end_of_run)
   class(fmsDiagObject_type), target, intent (inout) :: this          !< The diag object
   TYPE (time_type),                  INTENT(in)     :: time_step     !< The current model time

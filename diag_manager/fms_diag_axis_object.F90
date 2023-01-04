@@ -289,6 +289,8 @@ module fms_diag_axis_object_mod
 
     !< Add the axis as a dimension in the netcdf file based on the type of axis_domain and the fileobj type
     select type (fileobj)
+      !< The register_field calls need to be inside the select type block so that it can go inside the correct
+      !! register_field interface
       type is (FmsNetcdfFile_t)
         !< Here the axis is not domain decomposed (i.e z_axis)
         call register_axis(fileobj, axis_name, axis_length)
@@ -636,7 +638,7 @@ module fms_diag_axis_object_mod
 
   end function fms_diag_axis_object_end
 
-  !< @brief Determinet the axis name of an axis_object
+  !< @brief Determine the axis name of an axis_object
   !! @return The name of the axis
   !! @note This function may be called from the field object (i.e. to determine the dimension names for io),
   !! The field object only contains the parent axis ids, because the subregion is defined in a per file basis,

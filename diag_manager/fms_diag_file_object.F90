@@ -747,14 +747,16 @@ logical pure function is_regional(this)
 
 end function is_regional
 
+!> @brief Determine if a file is static
+!! @return Flag indicating if the file is static or not
 logical pure function is_file_static(this)
 class(fmsDiagFileContainer_type), intent(in) :: this            !< The file object
 
 is_file_static = .false.
 
-select type (wut=>this%FMS_diag_file)
+select type (fileptr=>this%FMS_diag_file)
 type is (fmsDiagFile_type)
-  is_file_static = wut%is_static
+  is_file_static = fileptr%is_static
 end select
 
 end function is_file_static
@@ -1162,6 +1164,8 @@ subroutine write_field_metadata(this, diag_field, diag_axis)
     j = diag_file%field_ids(i)
     if (.not. diag_file%field_registered(i)) cycle !TODO do something else here
 
+    !TODO I think if the area and the volume field are no in the same file, a global attribute containing the
+    !the file that the fields are in needs to be added
     cell_measures = ""
     if (diag_field(j)%has_area()) then
       cell_measures = "area:"//diag_field(diag_field(j)%get_area())%get_varname()

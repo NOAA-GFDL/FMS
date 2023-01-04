@@ -229,6 +229,8 @@ subroutine fms_register_diag_field_obj &
 !> get the optional arguments if included and the diagnostic is in the diag table
   if (present(longname))      this%longname      = trim(longname)
   if (present(standname))     this%standname     = trim(standname)
+
+  !> Ignore the units if the file they are set to "none". This it to reproduce previous diag_manager
   if (present(units)) then
     if (trim(units) .ne. "none") this%units = trim(units)
   endif
@@ -690,10 +692,14 @@ end function get_volume
 
 !> @brief Gets missing_value
 !! @return copy of The missing value
+!! @note Netcdf requires the type of the variable and the type of the missing_value and _Fillvalue to be the same
+!! var_type is the type of the variable which may not be in the same type as the missing_value in the register call
+!! For example, if compiling with r8 but the in diag_table.yaml the kind is r4
 function get_missing_value (this, var_type) &
 result(rslt)
-  class (fmsDiagField_type), intent(in) :: this !< diag object
-  integer, intent(in) :: var_type
+  class (fmsDiagField_type), intent(in) :: this     !< diag object
+  integer,                   intent(in) :: var_type !< The type of the variable as it will writen to the netcdf file
+                                                    !! and the missing value is return as
 
   class(*),allocatable :: rslt
 
@@ -702,6 +708,8 @@ result(rslt)
                  "The missing value is not allocated", FATAL)
   endif
 
+  !< The select types are needed so that the missing_value can be correctly converted and copied as the needed variable
+  !! type
   select case (var_type)
   case (r4)
     allocate (real(kind=r4_kind) :: rslt)
@@ -731,25 +739,27 @@ result(rslt)
         rslt = real(miss, kind=r8_kind)
       end select
     end select
-  case (i4)
-    allocate (integer(kind=i4_kind) :: rslt)
-  case (i8)
-    allocate (integer(kind=i8_kind) :: rslt)
   end select
 
 end function get_missing_value
 
 !> @brief Gets data_range
 !! @return copy of the data range
+!! @note Netcdf requires the type of the variable and the type of the range to be the same
+!! var_type is the type of the variable which may not be in the same type as the range in the register call
+!! For example, if compiling with r8 but the in diag_table.yaml the kind is r4
 function get_data_RANGE (this, var_type) &
 result(rslt)
-  class (fmsDiagField_type), intent(in) :: this !< diag object
+  class (fmsDiagField_type), intent(in) :: this      !< diag object
+  integer,                   intent(in) :: var_type  !< The type of the variable as it will writen to the netcdf file
+                                                     !! and the data_range is returned as
   class(*),allocatable :: rslt(:)
-  integer, intent(in) :: var_type
 
   if ( .not. allocated(this%data_RANGE)) call mpp_error ("get_data_RANGE", &
     "The data_RANGE value is not allocated", FATAL)
 
+  !< The select types are needed so that the range can be correctly converted and copied as the needed variable
+  !! type
   select case (var_type)
   case (r4)
     allocate (real(kind=r4_kind) :: rslt(2))
@@ -903,11 +913,13 @@ subroutine get_dimnames(this, diag_axis, unlim_dimname, rslt, is_regional)
 
 end subroutine get_dimnames
 
+!> @brief Wrapper for the register_field call. The select types are needed so that the code can go
+!! in the correct interface
 subroutine register_field_wrap(fileobj, varname, vartype, dimensions)
   class(FmsNetcdfFile_t),            INTENT(INOUT) :: fileobj       !< Fms2_io fileobj to write to
-  character(len=*),                  INTENT(IN)    :: varname
-  character(len=*),                  INTENT(IN)    :: vartype
-  character(len=*), optional,        INTENT(IN)    :: dimensions(:)
+  character(len=*),                  INTENT(IN)    :: varname       !< Name of the variable
+  character(len=*),                  INTENT(IN)    :: vartype       !< The type of the variable
+  character(len=*), optional,        INTENT(IN)    :: dimensions(:) !< The dimension names of the field
 
   select type(fileobj)
   type is (FmsNetcdfFile_t)
@@ -917,8 +929,8 @@ subroutine register_field_wrap(fileobj, varname, vartype, dimensions)
   type is (FmsNetcdfUnstructuredDomainFile_t)
     call register_field(fileobj, varname, vartype, dimensions)
   end select
-
 end subroutine register_field_wrap
+
 !> @brief Write the field's metadata to the file
 subroutine write_field_metadata(this, fileobj, file_id, yaml_id, diag_axis, unlim_dimname, is_regional, &
                                 cell_measures)
@@ -1153,10 +1165,12 @@ subroutine diag_field_add_attribute(this, att_name, att_value)
   call this%attributes(this%num_attributes)%add(att_name, att_value)
 end subroutine diag_field_add_attribute
 
+!> @brief Determine the default missing value to use based on the requested variable type
+!! @return The missing value
 function get_default_missing_value(var_type) &
   result(rslt)
 
-  integer, intent(in) :: var_type
+  integer, intent(in) :: var_type !< The type of the variable to return the missing value as
   class(*),allocatable :: rslt
 
   select case(var_type)
@@ -1169,6 +1183,7 @@ function get_default_missing_value(var_type) &
   case default
   end select
 end function
+
 !> @brief Determines the diag_obj id corresponding to a module name and field_name
 !> @return diag_obj id
 PURE FUNCTION diag_field_id_from_name(this, module_name, field_name) &
@@ -1186,9 +1201,10 @@ PURE FUNCTION diag_field_id_from_name(this, module_name, field_name) &
   endif
 end function diag_field_id_from_name
 
+!> @brief Append the time cell measured based on the variable's reduction
 subroutine append_time_cell_measure(cell_measures, field_yaml)
-  character(len=*), intent(inout) :: cell_measures
-  type(diagYamlFilesVar_type), intent(in) :: field_yaml
+  character(len=*),            intent(inout) :: cell_measures !< The cell measures to append to
+  type(diagYamlFilesVar_type), intent(in)    :: field_yaml    !< The field's yaml
 
   select case (field_yaml%get_var_reduction())
   case (time_none)
