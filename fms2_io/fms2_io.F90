@@ -410,7 +410,8 @@ subroutine fms2_io_init ()
     call mpp_error(FATAL, "header_buffer_val in fms2_io_nml must be a positive number.")
   endif
   if (deflate_level .lt. 0 .or. deflate_level .gt. 9) then
-    call mpp_error(FATAL, "deflate_level in fms2_io_nml must be a positive number between 1 and 9")
+    call mpp_error(FATAL, &
+      "deflate_level in fms2_io_nml must be a positive number between 1 and 9 as it is required by NetCDF")
   endif
   call netcdf_io_init (ncchksz,header_buffer_val,netcdf_default_format, deflate_level, shuffle)
   call blackboxio_init (ncchksz)

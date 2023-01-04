@@ -614,7 +614,7 @@ deallocate(restart_file)
 - **ncchksz:** Sets chunksize (in bytes) argument in netcdf file creation calls. The default is `64*1024`.
 - **netcdf_default_format:** Sets the netcdf file type. The acceptable values are  "64bit", "classic", "netcdf4". This can be overwritten per file if you specify `nc_format` in the open_file call. The default is 64bit.
 - **header_buffer_val:** Sets the netCDF header buffer size(in bytes). The default is 16384 bytes.
-- **deflate_level:** Determines how much to compress the variable. Chosen by an integer of 1 through 9. The higher the number the more compression will take place, but will take longer to write the file. NOTE: the higher the number, the more time it will take to write the file. The default is no compression. This is loseless compression so that every bit of the original data can be recovered.
+- **deflate_level:** Determines how much to compress the variable. Chosen by an integer of 1 through 9. The higher the number the more compression will take place, but will take longer to write the file. The default is no compression. This is loseless compression so that every bit of the original data can be recovered. See the NETCDF user guide for more information: https://www.unidata.ucar.edu/blogs/developer/en/entry/netcdf_compression
 - **shuffle:** Flag indicating whether to use the netcdf shuffle filter.
 
 ### I. Chunking
