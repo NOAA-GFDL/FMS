@@ -240,6 +240,8 @@ use platform_mod
   USE diag_grid_mod, ONLY: diag_grid_init, diag_grid_end
   USE constants_mod, ONLY: SECONDS_PER_DAY
   USE fms_diag_outfield_mod, ONLY: fms_diag_outfield_index_type, fms_diag_outfield_type
+  USE fms_diag_fieldbuff_update_mod, ONLY: fieldbuff_update, fieldbuff_copy_misvals, &
+   & fieldbuff_copy_fieldvals
 
 #ifdef use_netCDF
   USE netcdf, ONLY: NF90_INT, NF90_FLOAT, NF90_CHAR
@@ -3125,11 +3127,11 @@ CONTAINS
   LOGICAL FUNCTION send_data_3d_refac(diag_field_id, field, time, is_in, js_in, ks_in, &
              & mask, rmask, ie_in, je_in, ke_in, weight, err_msg)
     INTEGER, INTENT(in) :: diag_field_id
-    CLASS(*), DIMENSION(:,:,:), INTENT(in) :: field
+    CLASS(*),  DIMENSION(:,:,:), INTENT(in) :: field
     CLASS(*), INTENT(in), OPTIONAL :: weight
     TYPE (time_type), INTENT(in), OPTIONAL :: time
     INTEGER, INTENT(in), OPTIONAL :: is_in, js_in, ks_in,ie_in,je_in, ke_in
-    LOGICAL, DIMENSION(:,:,:), INTENT(in), OPTIONAL :: mask
+    LOGICAL, ALLOCATABLE, DIMENSION(:,:,:), INTENT(in), OPTIONAL :: mask
     CLASS(*), DIMENSION(:,:,:), INTENT(in), OPTIONAL :: rmask
     CHARACTER(len=*), INTENT(out), OPTIONAL :: err_msg
 
@@ -3168,12 +3170,9 @@ CONTAINS
 
     TYPE(fms_diag_outfield_index_type), ALLOCATABLE:: ofield_index_cfg
     TYPE(fms_diag_outfield_type), ALLOCATABLE:: ofield_cfg
+    LOGICAL :: temp_result
 
-    REAL, dimension(:,:,:,:), pointer::field_ptr => null() !< Ptr to field data array
-    REAL, dimension(:,:,:,:), pointer::mask_ptr => null() !< Ptr to field data mask array
     REAL, dimension(:,:,:,:), pointer::rmask_ptr => null() !< Ptr to field data rmask array
-    REAL, dimension(:,:,:,:,:), pointer::ofb_ptr => null() !<Ptr to  buffer member of buffer obj.
-    REAL, dimension(:,:,:,:,:), pointer::ofc_ptr => null()  !<Ptr to counter  member of buffer obj.
 
 
     ! If diag_field_id is < 0 it means that this field is not registered, simply return
@@ -3564,48 +3563,36 @@ CONTAINS
           END IF
        END IF
 
+
       !!START REFACTORED SECTION WITH WEIGHTING FUNCTIONS.!!
       ALLOCATE( ofield_index_cfg )
       CALL ofield_index_cfg%initialize( is, js, ks, ie, je, ke, &
                 &  hi, hj,  f1, f2, f3, f4)
 
       ALLOCATE( ofield_cfg )
-      CALL ofield_cfg%initialize( input_fields(diag_field_id), output_fields(out_num))
+      CALL ofield_cfg%initialize( input_fields(diag_field_id), output_fields(out_num), PRESENT(mask))
       !! TODO: missing time_reduction
 
-      !!Possibly explicitly pass in num_thread, active_omp_level,has_mask_variant,issued_mask_ignore_warning
-      !!TODO: Pass in  ofb0d_r4_ptr (sample), buff_obj%num_elements(sample) using sample ?? Other use of
-      !!  sample in args? E.g. see line 2083 in original send_data_3d uses
-      !!  output_fields(out_num)%num_elements(sample) ...
 
-      ASSOCIATE(ofb =>  output_fields(out_num)%buffer, &
-        & ofc =>   output_fields(out_num)%counter)
-
+      !! TODO: Question: note that mask was declared allocatable in order to call fieldbuff_update (which
+      !!    in tuen needs mask to be allocatable for pointer remapping). Is this an issue as
+      !!    original send_data_3d did not have mask as so.
       IF ( average ) THEN
-          field_ptr(1:size(field,1),1:size(field,2),1:size(field,3),1:1) => field
-         rmask_ptr(1:size(rmask,1),1:size(rmask,2),1:size(rmask,3),1:1) => rmask
-          ofb_ptr(1:size(ofb,1),1:size(ofb,2),1:size(ofb,3),1:1) => ofb
-          ofc_ptr(1:size(ofc,1),1:size(ofc,2),1:size(ofc,3),1:1) => ofc
-          IF(PRESENT ( mask) ) THEN
-            mask_ptr(1:size(mask,1),1:size(mask,2),1:size(mask,3),1:1) => mask
-         ENDIF
-
-        IF(PRESENT ( mask) ) THEN
-          mask_ptr(1:size(mask,1),1:size(mask,2),1:size(mask,3),1:1) => mask
-        ENDIF
-
-        temp_result = fieldbuff_update(ofield_cfg, ofield_index_cfg, field_ptr, sample, &
-            & ofb_ptr,ofc_ptr, ofield_cfg%buff_bounds, &
+        !!TODO: the copy that is filed_out should not be necessary
+        temp_result = fieldbuff_update(ofield_cfg, ofield_index_cfg, field_out, sample, &
+            & output_fields(out_num)%buffer, output_fields(out_num)%counter , ofield_cfg%buff_bounds, &
             & output_fields(out_num)%count_0d(sample), output_fields(out_num)%num_elements(sample), &
-            & mask, weight, missval_r4_ptr, missvalue_present, &
+            & mask, weight1 ,missvalue, &
             & input_fields(diag_field_id)%numthreads, input_fields(diag_field_id)%active_omp_level,&
-            & has_mask_variant, input_fields(diag_field_id)%issued_mask_ignore_warning, &
+            & input_fields(diag_field_id)%issued_mask_ignore_warning, &
             & l_start, l_end, err_msg, err_msg_local )
-            IF (temp_result .eqv. .FALSE.) THEN
-              DEALLOCATE(oor_mask)
-              RETURN
-            END IF
+        IF (temp_result .eqv. .FALSE.) THEN
+          DEALLOCATE(oor_mask)
+          RETURN
+        END IF
       ELSE !!NOT AVERAGE
+        !!rmask_ptr(1:size(rmask,1),1:size(rmask,2),1:size(rmask,3),1:1) => rmask
+
         !!fieldbuff_sample
         IF (temp_result .eqv. .FALSE.) THEN
           DEALLOCATE(oor_mask)
@@ -3614,7 +3601,7 @@ CONTAINS
       END IF
       DEALLOCATE(ofield_index_cfg)
       DEALLOCATE(ofield_cfg)
-      END ASSOCIATE
+
 
 
       !!END REFACTORED SECTION WITH WEIGHTING FUNCTIONS - END

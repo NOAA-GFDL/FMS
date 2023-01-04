@@ -96,11 +96,13 @@ MODULE fms_diag_outfield_mod
       LOGICAL :: phys_window   !< TODO: Rename? OMP subsetted data, See output_fields
       LOGICAL :: need_compute  !< True iff is local_output and current PE take part in send_data.
       LOGICAL :: reduced_k_range !< If true, the local start and end indecies are used in k (i.e. 3rd) dim.
+      LOGICAL :: missvalue_present !<
       LOGICAL :: mask_variant
       LOGICAL :: mask_present !< True iff mars arguemnt is present in user-facing send function call.
                               !< Note this field exist since the actual mask argument in the send
                               !< function call may be downstream replaced by a null pointer which
                               !< is considered present.
+
 
       TYPE(time_reduction_type) :: time_reduction !< Instance of the time_reduction_type.
 
@@ -185,10 +187,11 @@ CONTAINS
    !! num_elements in output_field; possibly pass by itself to update_field.
    !!output_frequecy in file_type.
    !> @brief Update with those fields used in the legacy diag manager.
-   SUBROUTINE initialize_outfield_imp(this, input_field,  output_field )
+   SUBROUTINE initialize_outfield_imp(this, input_field,  output_field, mask_present)
       CLASS(fms_diag_outfield_type), INTENT(inout) :: this
       TYPE(input_field_type),     INTENT(in) :: input_field
       TYPE(output_field_type),    INTENT(in) :: output_field
+      LOGICAL, INTENT(in) :: mask_present
 
       this%module_name = input_field%module_name
       this%field_name = input_field%field_name
@@ -199,6 +202,10 @@ CONTAINS
       this%need_compute =output_field%need_compute
       this%reduced_k_range = output_field%reduced_k_range
       this%mask_variant = input_field%mask_variant
+      !!Note: in legacy diag manager, presence of missing value vs presence of mask
+      !! is determined in different ways (diag table vs send function call)
+      this%missvalue_present = input_field%missing_value_present
+      this%mask_present = mask_present
 
 
       !!And set the power function

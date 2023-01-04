@@ -51,7 +51,11 @@ MODULE fms_diag_fieldbuff_update_mod
       module procedure fieldbuff_update_r4
       !< r8 version of the interface
       module procedure fieldbuff_update_r8
-      !< i4 version of the interface
+      !< r4 version of the interface, where the field is 3D
+      module procedure fieldbuff_update_3d_r4
+      !< r8 version of the interface
+      module procedure fieldbuff_update_3d_r8
+      !< i4 version of the interface, , where the field is 3D
       !module procedure fieldbuff_update_i4
       !< i8 version of the interface
      ! module procedure fieldbuff_update_i8
