@@ -774,7 +774,7 @@ _EOF
 
   my_test_count=`expr $my_test_count + 1`
   test_expect_success "Test the modern diag manager end to end (test $my_test_count)" '
-    mpirun -n 1 ../test_modern_diag
+    mpirun -n 6 ../test_modern_diag
   '
 
   cat <<_EOF > diag_table.yaml
@@ -1115,7 +1115,7 @@ _EOF
 
 my_test_count=`expr $my_test_count + 1`
 test_expect_success "Test the modern diag manager yaml output (test $my_test_count)" '
-    mpirun -n 6 ../test_diag_out_yaml
+    mpirun -n 1 ../test_diag_out_yaml
 '
 
 printf "&diag_manager_nml \n use_modern_diag = .true. \n use_clock_average = .true. \n /" | cat > input.nml
