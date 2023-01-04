@@ -3700,7 +3700,7 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
     if (allocated(fnum_for_domain)) deallocate(fnum_for_domain)
 
     if (use_modern_diag) then
-      call fms_diag_object%diag_end()
+      call fms_diag_object%diag_end(time)
     endif
   END SUBROUTINE diag_manager_end
 

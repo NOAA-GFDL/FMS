@@ -33,7 +33,7 @@ module fms_diag_yaml_mod
 use diag_data_mod,   only: DIAG_NULL, DIAG_OCEAN, DIAG_ALL, DIAG_OTHER, set_base_time, latlon_gridtype, &
                            index_gridtype, null_gridtype, DIAG_SECONDS, DIAG_MINUTES, DIAG_HOURS, DIAG_DAYS, &
                            DIAG_MONTHS, DIAG_YEARS, time_average, time_rms, time_max, time_min, time_sum, &
-                           time_diurnal, time_power, time_none, r8, i8, r4, i4
+                           time_diurnal, time_power, time_none, r8, i8, r4, i4, DIAG_NOT_REGISTERED
 use yaml_parser_mod, only: open_and_parse_file, get_value_from_key, get_num_blocks, get_nkeys, &
                            get_block_ids, get_key_value, get_key_ids, get_key_name
 use mpp_mod,         only: mpp_error, FATAL, mpp_pe, mpp_root_pe, stdout
@@ -228,6 +228,7 @@ type diagYamlObject_type
   procedure :: get_basedate     !< Returns the basedate array
   procedure :: get_diag_files   !< Returns the diag_files array
   procedure :: get_diag_fields  !< Returns the diag_field array
+  procedure :: get_diag_field_from_id
 
   procedure :: has_diag_title
   procedure :: has_diag_basedate
@@ -296,6 +297,22 @@ result(diag_files)
 
   diag_files = diag_yaml%diag_files
 end function get_diag_files
+
+!> @brief Get the diag_field yaml corresponding to a yaml_id
+!! @return Pointer to the diag_field yaml entry
+function get_diag_field_from_id(diag_yaml, yaml_id) &
+  result(diag_field)
+    class (diagYamlObject_type), target, intent(in) :: diag_yaml !< The diag_yaml
+    integer,                             intent(in) :: yaml_id   !< Yaml id
+
+    type(diagYamlFilesVar_type), pointer :: diag_field !< Diag fields info
+
+    if (yaml_id .eq. DIAG_NOT_REGISTERED) call mpp_error(FATAL, &
+      "Diag_manager: The yaml id for this field is not is not set")
+
+    diag_field => diag_yaml%diag_fields(variable_list%diag_field_indices(yaml_id))
+
+end function get_diag_field_from_id
 
 !> @brief get the diag_fields of a diag_yaml type
 !! @return the diag_fields
@@ -1077,7 +1094,12 @@ pure function get_var_outname (diag_var_obj) &
 result (res)
  class (diagYamlFilesVar_type), intent(in) :: diag_var_obj !< The object being inquiried
  character (len=:), allocatable :: res !< What is returned
-  res = diag_var_obj%var_outname
+
+ if (diag_var_obj%has_var_outname()) then
+   res = diag_var_obj%var_outname
+ else
+   res = diag_var_obj%var_varname !< If outname is not set, the variable name will be used
+ endif
 end function get_var_outname
 !> @brief Inquiry for diag_yaml_files_var_obj%var_longname
 !! @return var_longname of a diag_yaml_files_var_obj
@@ -1281,7 +1303,15 @@ end function has_var_write
 !! @return true if obj%var_outname is allocated
 pure logical function has_var_outname (obj)
   class(diagYamlFilesVar_type), intent(in) :: obj !< diagYamlvar_type object to initialize
-  has_var_outname = allocated(obj%var_outname)
+  if (allocated(obj%var_outname)) then
+    if (obj%var_outname .ne. "") then
+      has_var_outname = .true.
+    else
+      has_var_outname = .false.
+    endif
+  else
+    has_var_outname = .true.
+  endif
 end function has_var_outname
 !> @brief Checks if obj%var_longname is allocated
 !! @return true if obj%var_longname is allocated

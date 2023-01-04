@@ -818,6 +818,12 @@ diag_files:
     var_name: var1
     reduction: average
     kind: r4
+    output_name: var1_min
+  - module: atm_mod
+    var_name: var1
+    reduction: average
+    kind: r4
+    output_name: var2_max
 _EOF
 
 my_test_count=`expr $my_test_count + 1`
