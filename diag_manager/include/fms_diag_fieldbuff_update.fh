@@ -22,8 +22,8 @@ FUNCTION FMS_DIAG_FBU_3D_PNAME_(ofield_cfg, ofield_index_cfg, field_d, sample, &
   & field_num_threads, field_active_omp_level, issued_mask_ignore_warning, &
   & l_start, l_end, err_msg,  err_msg_local ) result( succeded )
     TYPE(fms_diag_outfield_type), INTENT(inout), ALLOCATABLE:: ofield_cfg  !< The ofield_cfg object
-    TYPE(fms_diag_outfield_index_type) , INTENT(inout), ALLOCATABLE :: ofield_index_cfg  !< The ofield_index_cfg object
-    FMS_DIAG_FBU_DATA_TYPE_ , ALLOCATABLE, DIMENSION(:,:,:), INTENT(in), target :: field_d !< The input field data array.
+    TYPE(fms_diag_outfield_index_type) , INTENT(inout), ALLOCATABLE :: ofield_index_cfg !<The ofield_index_cfg object
+    FMS_DIAG_FBU_DATA_TYPE_ , ALLOCATABLE, DIMENSION(:,:,:), INTENT(in), target :: field_d !< The input field data
     INTEGER, INTENT(in) :: sample  !< The index along the diurnal time axis
     FMS_DIAG_FBU_DATA_TYPE_ , ALLOCATABLE, DIMENSION(:,:,:,:), INTENT(inout), target :: ofb !< Output Field Buffer
     FMS_DIAG_FBU_DATA_TYPE_ , ALLOCATABLE, DIMENSION(:,:,:,:), INTENT(inout), target :: ofc !< Output Field Counter
