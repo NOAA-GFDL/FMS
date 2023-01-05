@@ -3539,8 +3539,8 @@ CONTAINS
                 status = writing_field(out_num, .FALSE., error_string, time)
                 IF(status == -1) THEN
                    IF ( mpp_pe() .EQ. mpp_root_pe() ) THEN
-                      IF(fms_error_handler('diag_manager_mod::send_data_3d','module/output_field '//TRIM(error_string)&
-                           & //', write EMPTY buffer', err_msg)) THEN
+                      IF(fms_error_handler('diag_manager_mod::send_data_3d','module/output_field '&
+                        &//TRIM(error_string)//', write EMPTY buffer', err_msg)) THEN
                          DEALLOCATE(field_out)
                          DEALLOCATE(oor_mask)
                          RETURN

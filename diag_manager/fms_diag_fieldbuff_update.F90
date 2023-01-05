@@ -40,6 +40,7 @@ MODULE fms_diag_fieldbuff_update_mod
    USE diag_data_mod, ONLY:  debug_diag_manager, fms_diag_ibounds_type
    USE fms_diag_outfield_mod, ONLY: fms_diag_outfield_index_type, fms_diag_outfield_type
    USE diag_util_mod, ONLY: check_out_of_bounds, update_bounds
+   USE fms_diag_elem_weight_procs_mod, ONLY: addwf
 
    implicit none
 

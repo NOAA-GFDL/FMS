@@ -206,6 +206,8 @@ FUNCTION FMS_DIAG_FBU_3D_PNAME_(ofield_cfg, ofield_index_cfg, field_d, sample, &
                               where ( mask(i-is+1+hi, j-js+1+hj, k, :) )
                                  ofb(i-hi,j-hj,k1,:,sample) = ofb(i-hi,j-hj,k1,:,sample) +&
                                  & (field_d(i-is+1+hi, j-js+1+hj, k, :) * weight1) ** pow_value
+                                 !ofb(i-hi,j-hj,k1,:,sample) = ofb(i-hi,j-hj,k1,:,sample) +&
+                                 !& ofield_cfg%wf%fwf_ptr (field_d(i-is+1+hi, j-js+1+hj, k, :), weight1, pow_value)
                                  ofc(i-hi,j-hj,k1,:,sample) = ofc(i-hi,j-hj,k1,:,sample) + weight1
                               END where
                            END DO
@@ -690,8 +692,10 @@ FUNCTION FMS_DIAG_FBU_3D_PNAME_(ofield_cfg, ofield_index_cfg, field_d, sample, &
                            & j <= l_end(2)+hj ) THEN
                               i1 = i-l_start(1)-hi+1
                               j1=  j-l_start(2)-hj+1
-                              ofb(i1,j1,:,:,sample)= ofb(i1,j1,:,:,sample) +&
-                              & (field_d(i-is+1+hi,j-js+1+hj,l_start(3):l_end(3), :) * weight1) ** pow_value
+                              !ofb(i1,j1,:,:,sample)= ofb(i1,j1,:,:,sample) +&
+                              !& (field_d(i-is+1+hi,j-js+1+hj,l_start(3):l_end(3), :) * weight1) ** pow_value
+                              call addwf(ofb(i1,j1,:,:,sample), &
+                              &  field_d(i-is+1+hi,j-js+1+hj,l_start(3):l_end(3), :), weight1, pow_value)
                            END IF
                         END DO
                      END DO

@@ -34,7 +34,7 @@
 !> @addtogroup fms_diag_outfield_mod
 !> @{
 MODULE fms_diag_outfield_mod
-
+   USE platform_mod
    USE mpp_mod, only :FATAL
    USE fms_mod, only :lowercase, uppercase,  error_mesg, fms_error_handler
 
@@ -54,24 +54,6 @@ MODULE fms_diag_outfield_mod
    !!& OPERATOR(<), OPERATOR(>=), OPERATOR(<=), OPERATOR(==)
 
    implicit none
-
-   ABSTRACT INTERFACE
-      PURE FUNCTION weight_the_field ( field_val, weight, pow_value )
-         REAL, INTENT(in) :: field_val
-         REAL, INTENT(in) :: weight
-         INTEGER, INTENT(in) :: pow_value
-         REAL :: weight_the_field
-      END FUNCTION
-   END INTERFACE
-
-
-   TYPE fms_diag_field_weighting_type
-      PROCEDURE (weight_the_field), NOPASS, POINTER::fwf_ptr=>null()   !! A pointer to the field weighting function.
-   CONTAINS
-   PROCEDURE, PASS :: WF
-   END TYPE
-
-
 
    !> @brief Class fms_diag_outfield_type (along with class ms_diag_outfield_index_type )
    !! contain information used in updating the output buffers by the diag_manager
@@ -103,30 +85,13 @@ MODULE fms_diag_outfield_mod
                               !< function call may be downstream replaced by a null pointer which
                               !< is considered present.
 
-
       TYPE(time_reduction_type) :: time_reduction !< Instance of the time_reduction_type.
 
       TYPE(fms_diag_ibounds_type) :: buff_bounds !< Instance of a fms_diag_buff_intervals_t type.
 
-      !!TODO: Is nopass really needed here? Note that the functions are being passed pow_val, which
-      !! may not be necessary is designed in a cenetain way as power value is also a member
-      ! of fms_diag_outfield_type.
-     !! PROCEDURE (weight_the_field), POINTER, NOPASS::fwf_ptr=>null()   !! A pointer to the field weighting function.
-      TYPE (fms_diag_field_weighting_type) :: wf
+      !! gcc error: Interface ‘addwf’ at (1) must be explicit
+      ! procedure (addwf), pointer, nopass :: f_ptr => null () !!A pointer to the field weighing procedure
 
-      !! possibly useful in modern:
-      !!  INTEGER :: n_diurnal_samples !< Size of diurnal axis (also number of diurnal samples).value is >= 1
-
-      !LOGICAL :: static  !< True iff the field is static.
-      !TYPE(time_type) :: last_output, next_output, next_next_output
-      !INTEGER  :: pack !< The packing method.
-
-      ! TYPE(diag_grid) :: output_grid
-      ! LOGICAL :: local_output  !< True if the field output is on a local domain only.
-      ! TYPE(time_type) :: Time_of_prev_field_data
-
-      ! logical :: reduced_k_unstruct = .false.  !!Related to unstructured grid support
-      ! INTEGER :: total_elements
    CONTAINS
       procedure, public  :: initialize => initialize_outfield_imp
    END TYPE fms_diag_outfield_type
@@ -207,54 +172,15 @@ CONTAINS
       this%missvalue_present = input_field%missing_value_present
       this%mask_present = mask_present
 
+      !!And set the power function ?
+      !! if ( this%pow_value == 1) then
+      ! this%f_ptr => ?
+      !! else end etc.
 
-      !!And set the power function
-      if ( this%pow_value == 1) then
-         this%wf%fwf_ptr => weight_the_field_p1
-      else if ( this%pow_value == 2 ) then
-         this%wf%fwf_ptr => weight_the_field_p2
-      else
-         this%wf%fwf_ptr => weight_the_field_pp
-      end if
-      !!TODO:
-      !!init the time_reduction, using
-      !!possibly using output_field%time_rms,  output_field%time_max output_field%time_min,
-      !!   and output_field%time_sum ?
+      !!TODO: init the time_reduction, possibly using output_field%time_rms,
+      !! output_field%time_max output_field%time_min, and output_field%time_sum ?
    END SUBROUTINE initialize_outfield_imp
 
-   ELEMENTAL PURE REAL FUNCTION wf(this,  field_val, weight, pow_value )
-   CLASS( fms_diag_field_weighting_type), INTENT (in) :: this
-     REAL, INTENT(in) :: field_val
-     REAL, INTENT(in) :: weight
-     INTEGER, INTENT(in) :: pow_value
-     wf = this%fwf_ptr(field_val, weight, pow_value)
-END FUNCTION
-
-  PURE REAL FUNCTION weight_the_field_p1 (field_val, weight, pow_value )
-      REAL, INTENT(in) :: field_val        !< The field values.
-      REAL, INTENT(in) :: weight           !< The weighting coefficient.
-      INTEGER, INTENT(in) :: pow_value     !< The weighting exponent.
-      weight_the_field_p1 = field_val * weight
-   END FUNCTION weight_the_field_p1
-
-!> A function to quadraticaly weight scalar fields.
-   PURE REAL FUNCTION weight_the_field_p2 (field_val, weight,  pow_value  )
-   REAL, INTENT(in) :: field_val        !< The field values.
-      REAL, INTENT(in) :: weight           !< The weighting coefficient.
-      INTEGER, INTENT(in) :: pow_value    !< The weighting exponent.
-      REAL :: fTw
-      fTw =  field_val * weight
-      weight_the_field_p2 = fTw * fTw
-   END FUNCTION weight_the_field_p2
-
-!> A function to weight scalar fields by a an exponent.
-  PURE  REAL FUNCTION weight_the_field_pp (field_val, weight, pow_value  )
-      !!CLASS(fms_diag_field_weighting_type), INTENT(in) :: this
-      REAL, INTENT(in) :: field_val       !< The field values.
-      REAL, INTENT(in) :: weight          !< The weighting coefficient.
-      INTEGER, INTENT(in) :: pow_value    !< The weighting exponent.
-      weight_the_field_pp = (field_val * weight) ** pow_value
-   END FUNCTION weight_the_field_pp
 
 END MODULE fms_diag_outfield_mod
 !> @}
