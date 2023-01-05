@@ -84,17 +84,18 @@ Intel classic compiler (ifort) but will be transitioning to the llvm-based ifx i
 available for production.
 
 Below shows the status of our compiler support for various compilers and versions. Testing was done on
-CentOS 8, with additional testing on Gaea using a cray SLES system.
+CentOS 8, with additional testing using a larger cray SLES system. MPICH is used as the MPI library
+except for the intel compilers, which use intel's mpi library.
 Compilers used in our Github continuous integration testing are in bold.
 
-|Compiler                | Version |Builds Successfully        | Unit Testing |
+|Compiler                | Version |Builds Successfully        | Unit Testing        |
 |------------------------|---------|---------------------------|---------------------|
 |**intel classic(ifort)**| 2021.6.0| yes                       | passes              |
 |**GNU (gfortran)**      | 9.3.0   | yes                       | passes              |
 |intel oneapi (ifx)      | 2021.6.0| yes                       | passes              |
 |GNU (gfortran)          | 11.2.0  | yes                       | passes              |
 |HP/Cray (cce)           | 9.1.1   | yes                       | not passing         |
-|Nvidia/PGI(nvfortran)   | 22.9-0  | no                        | not passing         |
+|Nvidia/PGI(nvfortran)   | 22.9    | no                        | not passing         |
 |AMD (aocc)              | 3.2.0   | no(compiles,fails to link)| not passing         |
 
 ## Documentation
