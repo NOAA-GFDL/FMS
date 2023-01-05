@@ -87,15 +87,15 @@ Below shows the status of our compiler support for various compilers and version
 CentOS 8, with additional testing on Gaea using a cray SLES system.
 Compilers used in our Github continuous integration testing are in bold.
 
-|Compiler                | Version |Builds Successfully | Unit Testing |
-|------------------------|---------|--------------------|---------------------|
-|**intel classic(ifort)**| 2021.6.0| yes                | passes              |
-|**GNU (gfortran)**      | 9.3.0   | yes                | passes              |
-|intel oneapi (ifx)      | 2021.6.0| yes                | passes              |
-|GNU (gfortran)          | 11.2.0  | yes                | passes              |
-|HP/Cray (cce)           | 9.1.1   | yes                | not passing         |
-|Nvidia/PGI(nvfortran)   | 22.9-0  | no                 | not passing         |
-|AMD (aocc)              | 3.2.0   | yes                | TODO                |
+|Compiler                | Version |Builds Successfully        | Unit Testing |
+|------------------------|---------|---------------------------|---------------------|
+|**intel classic(ifort)**| 2021.6.0| yes                       | passes              |
+|**GNU (gfortran)**      | 9.3.0   | yes                       | passes              |
+|intel oneapi (ifx)      | 2021.6.0| yes                       | passes              |
+|GNU (gfortran)          | 11.2.0  | yes                       | passes              |
+|HP/Cray (cce)           | 9.1.1   | yes                       | not passing         |
+|Nvidia/PGI(nvfortran)   | 22.9-0  | no                        | not passing         |
+|AMD (aocc)              | 3.2.0   | no(compiles,fails to link)| not passing         |
 
 ## Documentation
 
