@@ -474,7 +474,7 @@
        un = 0.0_lkind
     else
        qn = 0.5_lkind
-       un = real((3.0_lkind)/(grid1(n)-grid1(n-1))*(ypn-(data1(n)-data1(n-1))/, &
+       un = real((3.0_lkind)/(grid1(n)-grid1(n-1))*(ypn-(data1(n)-data1(n-1))/ &
             (grid1(n)-grid1(n-1))), FMS_AU_KIND_)
     endif
 
