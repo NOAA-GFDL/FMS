@@ -107,13 +107,13 @@ end interface mo_derivative_t
 
 !  DEFAULT VALUES OF NAMELIST PARAMETERS:
 
-real(r8_kind)    :: rich_crit      = 2.0d0
-real(r8_kind)    :: drag_min_heat  = 1.d-05
-real(r8_kind)    :: drag_min_moist = 1.d-05
-real(r8_kind)    :: drag_min_mom   = 1.d-05
+real(r8_kind)    :: rich_crit      = real(2.0, FMS_MO_KIND_)
+real(r8_kind)    :: drag_min_heat  = real(1.d-05, FMS_MO_KIND_)
+real(r8_kind)    :: drag_min_moist = real(1.d-05, FMS_MO_KIND_)
+real(r8_kind)    :: drag_min_mom   = real(1.d-05, FMS_MO_KIND_)
 logical          :: neutral        = .false.
 integer          :: stable_option  = 1
-real(r8_kind)    :: zeta_trans     = 0.5d0
+real(r8_kind)    :: zeta_trans     = real(0.5, FMS_MO_KIND_)
 logical          :: new_mo_option  = .false.
 
 
@@ -125,7 +125,7 @@ namelist /monin_obukhov_nml/ rich_crit, neutral, drag_min_heat, &
 
 !  MODULE VARIABLES
 
-real(r8_kind), parameter  :: small  = 1.d-04
+real(r8_kind), parameter  :: small  = real(1.d-04, FMS_MO_KIND_)
 real(r8_kind)             :: b_stab, r_crit, lambda, rich_trans
 real(r8_kind)             :: sqrt_drag_min_heat, sqrt_drag_min_moist, sqrt_drag_min_mom
 logical                   :: module_is_initialized = .false.
@@ -134,71 +134,71 @@ contains
 
 subroutine monin_obukhov_init
 
-    integer :: ierr, io, logunit
+  integer :: ierr, io, logunit
 
-    !------------------- read namelist input -------------------------------
+  !------------------- read namelist input -------------------------------
 
-        read (input_nml_file, nml=monin_obukhov_nml, iostat=io)
-        ierr = check_nml_error(io,"monin_obukhov_nml")
+    read (input_nml_file, nml=monin_obukhov_nml, iostat=io)
+    ierr = check_nml_error(io,"monin_obukhov_nml")
 
-    !---------- output namelist to log-------------------------------------
+  !---------- output namelist to log-------------------------------------
 
-        if ( mpp_pe() == mpp_root_pe() ) then
-            call write_version_number('MONIN_OBUKOV_MOD', version)
-            logunit = stdlog()
-            write (logunit, nml=monin_obukhov_nml)
-        endif
+    if ( mpp_pe() == mpp_root_pe() ) then
+      call write_version_number('MONIN_OBUKOV_MOD', version)
+      logunit = stdlog()
+      write (logunit, nml=monin_obukhov_nml)
+    endif
 
-    !----------------------------------------------------------------------
+  !----------------------------------------------------------------------
 
-        if(rich_crit.le.real(0.25,kind=r8_kind))  call error_mesg( &
-                'MONIN_OBUKHOV_INIT in MONIN_OBUKHOV_MOD', &
-                'rich_crit in monin_obukhov_mod must be > 0.25', FATAL)
+    if(rich_crit.le.real(0.25,kind=r8_kind))  call error_mesg( &
+      'MONIN_OBUKHOV_INIT in MONIN_OBUKHOV_MOD', &
+      'rich_crit in monin_obukhov_mod must be > 0.25', FATAL)
 
-        if(drag_min_heat.le.real(0.0,kind=r8_kind))  call error_mesg( &
-                'MONIN_OBUKHOV_INIT in MONIN_OBUKHOV_MOD', &
-                'drag_min_heat in monin_obukhov_mod must be >= 0.0', FATAL)
+    if(drag_min_heat.le.real(0.0,kind=r8_kind))  call error_mesg( &
+      'MONIN_OBUKHOV_INIT in MONIN_OBUKHOV_MOD', &
+      'drag_min_heat in monin_obukhov_mod must be >= 0.0', FATAL)
 
-        if(drag_min_moist.le.real(0.0,kind=r8_kind))  call error_mesg( &
-                'MONIN_OBUKHOV_INIT in MONIN_OBUKHOV_MOD', &
-                'drag_min_moist in monin_obukhov_mod must be >= 0.0', FATAL)
+    if(drag_min_moist.le.real(0.0,kind=r8_kind))  call error_mesg( &
+      'MONIN_OBUKHOV_INIT in MONIN_OBUKHOV_MOD', &
+      'drag_min_moist in monin_obukhov_mod must be >= 0.0', FATAL)
 
-        if(drag_min_mom.le.real(0.0,kind=r8_kind))  call error_mesg( &
-                'MONIN_OBUKHOV_INIT in MONIN_OBUKHOV_MOD', &
-                'drag_min_mom in monin_obukhov_mod must be >= 0.0', FATAL)
+    if(drag_min_mom.le.real(0.0,kind=r8_kind))  call error_mesg( &
+      'MONIN_OBUKHOV_INIT in MONIN_OBUKHOV_MOD', &
+      'drag_min_mom in monin_obukhov_mod must be >= 0.0', FATAL)
 
-        if(stable_option < 1 .or. stable_option > 2) call error_mesg( &
-                'MONIN_OBUKHOV_INIT in MONIN_OBUKHOV_MOD', &
-                'the only allowable values of stable_option are 1 and 2', FATAL)
+    if(stable_option < 1 .or. stable_option > 2) call error_mesg( &
+      'MONIN_OBUKHOV_INIT in MONIN_OBUKHOV_MOD', &
+      'the only allowable values of stable_option are 1 and 2', FATAL)
 
-        if(stable_option == 2 .and. zeta_trans < 0) call error_mesg( &
-                'MONIN_OBUKHOV_INIT in MONIN_OBUKHOV_MOD', &
-                'zeta_trans must be positive', FATAL)
+    if(stable_option == 2 .and. zeta_trans < 0) call error_mesg( &
+      'MONIN_OBUKHOV_INIT in MONIN_OBUKHOV_MOD', &
+      'zeta_trans must be positive', FATAL)
 
-        b_stab = real(1.0,kind=r8_kind)/rich_crit
-        r_crit = real(0.95,kind=r8_kind)*rich_crit  ! convergence can get slow if one is
+    b_stab = real(1.0,kind=r8_kind)/rich_crit
+    r_crit = real(0.95,kind=r8_kind)*rich_crit  ! convergence can get slow if one is
                                  ! close to rich_crit
 
-        sqrt_drag_min_heat = real(0.0,kind=r8_kind)
-        if(drag_min_heat.ne.real(0.0,kind=r8_kind)) sqrt_drag_min_heat = sqrt(drag_min_heat)
+    sqrt_drag_min_heat = real(0.0,kind=r8_kind)
+    if(drag_min_heat.ne.real(0.0,kind=r8_kind)) sqrt_drag_min_heat = sqrt(drag_min_heat)
 
-        sqrt_drag_min_moist = real(0.0,kind=r8_kind)
-        if(drag_min_moist.ne.real(0.0,kind=r8_kind)) sqrt_drag_min_moist = sqrt(drag_min_moist)
+    sqrt_drag_min_moist = real(0.0,kind=r8_kind)
+    if(drag_min_moist.ne.real(0.0,kind=r8_kind)) sqrt_drag_min_moist = sqrt(drag_min_moist)
 
-        sqrt_drag_min_mom = real(0.0,kind=r8_kind)
-        if(drag_min_mom.ne.real(0.0,kind=r8_kind)) sqrt_drag_min_mom = sqrt(drag_min_mom)
+    sqrt_drag_min_mom = real(0.0,kind=r8_kind)
+    if(drag_min_mom.ne.real(0.0,kind=r8_kind)) sqrt_drag_min_mom = sqrt(drag_min_mom)
 
-        lambda     = real(1.0,kind=r8_kind) + (real(5.0,kind=r8_kind) &
-                     - b_stab)*zeta_trans  !used only if stable_option = 2
-        rich_trans = zeta_trans/(real(1.0,kind=r8_kind) + real(5.0,kind=r8_kind) &
-                     *zeta_trans)!used only if stable_option = 2
+    lambda     = real(1.0,kind=r8_kind) + (real(5.0,kind=r8_kind) &
+               - b_stab)*zeta_trans  !used only if stable_option = 2
+    rich_trans = zeta_trans/(real(1.0,kind=r8_kind) + real(5.0,kind=r8_kind) &
+               *zeta_trans)!used only if stable_option = 2
 
-        module_is_initialized = .true.
+    module_is_initialized = .true.
 
-        return
-        end subroutine monin_obukhov_init
+    return
+end subroutine monin_obukhov_init
 
-  !=======================================================================
+!=======================================================================
 
 subroutine monin_obukhov_end
 

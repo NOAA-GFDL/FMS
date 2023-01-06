@@ -37,7 +37,7 @@ integer            :: n, ier
 
 integer,                 parameter :: max_iter = 20
 real(kind=FMS_MO_KIND_), parameter :: error = real(1.e-04,kind=FMS_MO_KIND_), &
-                         zeta_min = real(1.e-06,kind=FMS_MO_KIND_), small = real(1.e-04,kind=FMS_MO_KIND_)
+                         zeta_min = real(1.e-06,kind=FMS_MO_KIND_), small = real(1.e-04,r8_kind)
 
 ! #include "monin_obukhov_interfaces.h"
 
@@ -52,17 +52,17 @@ if(present(avail)) lavail = .true.
 if(lavail) then
 if (count(avail) .eq. 0) return
 call monin_obukhov_drag_1d(real(grav,kind=FMS_MO_KIND_), real(vonkarm,kind=FMS_MO_KIND_),  &
-   & error, zeta_min, max_iter, real(small,kind=FMS_MO_KIND_), neutral, stable_option,     &
-   & new_mo_option, real(rich_crit,kind=FMS_MO_KIND_), real(zeta_trans,kind=FMS_MO_KIND_), &!miz
-   & real(drag_min_heat,kind=FMS_MO_KIND_), real(drag_min_moist,kind=FMS_MO_KIND_),        &
-   & real(drag_min_mom,kind=FMS_MO_KIND_), n, pt, pt0, z, z0, zt, zq, speed, drag_m,       &
+   & error, zeta_min, max_iter, real(small,r8_kind), neutral, stable_option,     &
+   & new_mo_option, real(rich_crit,r8_kind), real(zeta_trans,r8_kind), &!miz
+   & real(drag_min_heat,r8_kind), real(drag_min_moist,r8_kind),        &
+   & real(drag_min_mom,r8_kind), n, pt, pt0, z, z0, zt, zq, speed, drag_m,       &
    & drag_t, drag_q, u_star, b_star, lavail, avail, ier)
 else
 call monin_obukhov_drag_1d(real(grav,kind=FMS_MO_KIND_), real(vonkarm,kind=FMS_MO_KIND_),  &
-   & error, zeta_min, max_iter, real(small,kind=FMS_MO_KIND_), neutral, stable_option,     &
-   & new_mo_option, real(rich_crit,kind=FMS_MO_KIND_), real(zeta_trans,kind=FMS_MO_KIND_), &!miz
-   & real(drag_min_heat,kind=FMS_MO_KIND_), real(drag_min_moist,kind=FMS_MO_KIND_),        &
-   & real(drag_min_mom,kind=FMS_MO_KIND_), n, pt, pt0, z, z0, zt, zq, speed, drag_m,       &
+   & error, zeta_min, max_iter, real(small,r8_kind), neutral, stable_option,     &
+   & new_mo_option, real(rich_crit,r8_kind), real(zeta_trans,r8_kind), &!miz
+   & real(drag_min_heat,r8_kind), real(drag_min_moist,r8_kind),        &
+   & real(drag_min_mom,r8_kind), n, pt, pt0, z, z0, zt, zq, speed, drag_m,       &
    & drag_t, drag_q, u_star, b_star, lavail, avail_dummy, ier)
 endif
 
@@ -93,16 +93,16 @@ if(present(avail)) then
 if (count(avail) .eq. 0) return
 
 call monin_obukhov_profile_1d(real(vonkarm,kind=FMS_MO_KIND_), neutral, &
-   & stable_option, new_mo_option, real(rich_crit,kind=FMS_MO_KIND_),   &
-   & real(zeta_trans,kind=FMS_MO_KIND_),                                &
+   & stable_option, new_mo_option, real(rich_crit,r8_kind),   &
+   & real(zeta_trans,r8_kind),                                &
    & n, zref, zref_t, z, z0, zt, zq, u_star, b_star, q_star,            &
    & del_m, del_t, del_q, .true., avail, ier)
 
 else
 
 call monin_obukhov_profile_1d(real(vonkarm,kind=FMS_MO_KIND_), neutral, &
-   & stable_option, new_mo_option, real(rich_crit,kind=FMS_MO_KIND_),   &
-   & real(zeta_trans,kind=FMS_MO_KIND_),                                &
+   & stable_option, new_mo_option, real(rich_crit,r8_kind),   &
+   & real(zeta_trans,r8_kind),                                &
    & n, zref, zref_t, z, z0, zt, zq, u_star, b_star, q_star,            &
    & del_m, del_t, del_q, .false., dummy_avail, ier)
 
@@ -143,8 +143,8 @@ do k = 1, size(rich,3)
         end do
 end do
 
-call monin_obukhov_stable_mix(stable_option, real(rich_crit,kind=FMS_MO_KIND_), &
-     & real(zeta_trans,kind=FMS_MO_KIND_), n, rich1d, mix1d, ier)
+call monin_obukhov_stable_mix(stable_option, real(rich_crit,r8_kind), &
+     & real(zeta_trans,r8_kind), n, rich1d, mix1d, ier)
 
 end subroutine STABLE_MIX_3D_
 
@@ -166,7 +166,7 @@ if(.not.module_is_initialized) call error_mesg('mo_diff_2d_n in monin_obukhov_mo
 ni = size(z, 1); nj = size(z, 2); nk = size(z, 3)
 call monin_obukhov_diff(real(vonkarm,kind=FMS_MO_KIND_),                      &
      & ustar_min, neutral, stable_option, new_mo_option,                      &
-     & real(rich_crit,kind=FMS_MO_KIND_), real(zeta_trans,kind=FMS_MO_KIND_), &
+     & real(rich_crit,r8_kind), real(zeta_trans,r8_kind), &
      & ni, nj, nk, z, u_star, b_star, k_m, k_h, ier)
 
 end subroutine MO_DIFF_2D_N_
@@ -220,7 +220,7 @@ zeta = 0.0_kind_m
 end where
 
 where (mask_1 .and. rich >= 0.0_kind_m)
-zeta = zeta/(1.0_kind_m - rich/real(rich_crit,kind=FMS_MO_KIND_))
+zeta = zeta/(1.0_kind_m - rich/real(rich_crit,r8_kind))
 end where
 
 iter_loop: do iter = 1, max_iter
@@ -311,16 +311,16 @@ if(stable_option == 1) then
 
 where (stable)
 phi_m = 1.0_kind_m + zeta * (5.0_kind_m &
-       + real(b_stab,kind=FMS_MO_KIND_)*zeta)/(1.0_kind_m + zeta)
+       + real(b_stab,r8_kind)*zeta)/(1.0_kind_m + zeta)
 end where
 
 else if(stable_option == 2) then
 
-where (stable .and. zeta < real(zeta_trans,kind=FMS_MO_KIND_))
+where (stable .and. zeta < real(zeta_trans,r8_kind))
 phi_m = 1 + 5.0_kind_m*zeta
 end where
-where (stable .and. zeta >= real(zeta_trans,kind=FMS_MO_KIND_))
-phi_m = real(lambda,kind=FMS_MO_KIND_) + real(b_stab,kind=FMS_MO_KIND_)*zeta
+where (stable .and. zeta >= real(zeta_trans,r8_kind))
+phi_m = real(lambda,r8_kind) + real(b_stab,r8_kind)*zeta
 end where
 
 endif
@@ -354,16 +354,16 @@ if(stable_option == 1) then
 
 where (stable)
 phi_t = 1.0_kind_m + zeta*(5.0_kind_m &
-       + real(b_stab,kind=FMS_MO_KIND_)*zeta)/(1.0_kind_m + zeta)
+       + real(b_stab,r8_kind)*zeta)/(1.0_kind_m + zeta)
 end where
 
 else if(stable_option == 2) then
 
-where (stable .and. zeta < real(zeta_trans,kind=FMS_MO_KIND_))
+where (stable .and. zeta < real(zeta_trans,r8_kind))
 phi_t = 1 + 5.0_kind_m*zeta
 end where
-where (stable .and. zeta >= real(zeta_trans,kind=FMS_MO_KIND_))
-phi_t = real(lambda,kind=FMS_MO_KIND_) + real(b_stab,kind=FMS_MO_KIND_)*zeta
+where (stable .and. zeta >= real(zeta_trans,r8_kind))
+phi_t = real(lambda,r8_kind) + real(b_stab,r8_kind)*zeta
 end where
 
 endif
@@ -407,18 +407,18 @@ if( stable_option == 1) then
 
 where (stable)
 
-psi_t = ln_z_zt + (5.0_kind_m - real(b_stab,kind=FMS_MO_KIND_))*log((1.0_kind_m &
-        + zeta)/(1.0_kind_m + zeta_t)) + real(b_stab,kind=FMS_MO_KIND_)*(zeta - zeta_t)
+psi_t = ln_z_zt + (5.0_kind_m - real(b_stab,r8_kind))*log((1.0_kind_m &
+        + zeta)/(1.0_kind_m + zeta_t)) + real(b_stab,r8_kind)*(zeta - zeta_t)
 
-psi_q = ln_z_zq + (5.0_kind_m - real(b_stab,kind=FMS_MO_KIND_))*log((1.0_kind_m &
-        + zeta)/(1.0_kind_m + zeta_q)) + real(b_stab,kind=FMS_MO_KIND_)*(zeta - zeta_q)
+psi_q = ln_z_zq + (5.0_kind_m - real(b_stab,r8_kind))*log((1.0_kind_m &
+        + zeta)/(1.0_kind_m + zeta_q)) + real(b_stab,r8_kind)*(zeta - zeta_q)
 
 end where
 
 else if (stable_option == 2) then
 
-weakly_stable   = stable .and. zeta <= real(zeta_trans,kind=FMS_MO_KIND_)
-strongly_stable = stable .and. zeta >  real(zeta_trans,kind=FMS_MO_KIND_)
+weakly_stable   = stable .and. zeta <= real(zeta_trans,r8_kind)
+strongly_stable = stable .and. zeta >  real(zeta_trans,r8_kind)
 
 where (weakly_stable)
 psi_t = ln_z_zt + 5.0_kind_m*(zeta - zeta_t)
@@ -426,22 +426,22 @@ psi_q = ln_z_zq + 5.0_kind_m*(zeta - zeta_q)
 end where
 
 where(strongly_stable)
-x = (real(lambda,kind=FMS_MO_KIND_) - 1.0_kind_m)*log(zeta/real(zeta_trans,kind=FMS_MO_KIND_)) &
-     + real(b_stab,kind=FMS_MO_KIND_)*(zeta - real(zeta_trans,kind=FMS_MO_KIND_))
+x = (real(lambda,r8_kind) - 1.0_kind_m)*log(zeta/real(zeta_trans,r8_kind)) &
+     + real(b_stab,r8_kind)*(zeta - real(zeta_trans,r8_kind))
 endwhere
 
-where (strongly_stable .and. zeta_t <= real(zeta_trans,kind=FMS_MO_KIND_))
-psi_t = ln_z_zt + x + 5.0_kind_m*(real(zeta_trans,kind=FMS_MO_KIND_) - zeta_t)
+where (strongly_stable .and. zeta_t <= real(zeta_trans,r8_kind))
+psi_t = ln_z_zt + x + 5.0_kind_m*(real(zeta_trans,r8_kind) - zeta_t)
 end where
-where (strongly_stable .and. zeta_t > real(zeta_trans,kind=FMS_MO_KIND_))
-psi_t = real(lambda,kind=FMS_MO_KIND_)*ln_z_zt + real(b_stab,kind=FMS_MO_KIND_)*(zeta  - zeta_t)
+where (strongly_stable .and. zeta_t > real(zeta_trans,r8_kind))
+psi_t = real(lambda,r8_kind)*ln_z_zt + real(b_stab,r8_kind)*(zeta  - zeta_t)
 endwhere
 
-where (strongly_stable .and. zeta_q <= real(zeta_trans,kind=FMS_MO_KIND_))
-psi_q = ln_z_zq + x + 5.0_kind_m*(real(zeta_trans,kind=FMS_MO_KIND_) - zeta_q)
+where (strongly_stable .and. zeta_q <= real(zeta_trans,r8_kind))
+psi_q = ln_z_zq + x + 5.0_kind_m*(real(zeta_trans,r8_kind) - zeta_q)
 end where
-where (strongly_stable .and. zeta_q > real(zeta_trans,kind=FMS_MO_KIND_))
-psi_q = real(lambda,kind=FMS_MO_KIND_)*ln_z_zq + real(b_stab,kind=FMS_MO_KIND_)*(zeta  - zeta_q)
+where (strongly_stable .and. zeta_q > real(zeta_trans,r8_kind))
+psi_q = real(lambda,r8_kind)*ln_z_zq + real(b_stab,r8_kind)*(zeta  - zeta_q)
 endwhere
 
 end if
@@ -490,29 +490,29 @@ end where
 if( stable_option == 1) then
 
 where (stable)
-psi_m = ln_z_z0 + (5.0_kind_m - real(b_stab,kind=FMS_MO_KIND_))*log((1.0_kind_m &
-        + zeta)/(1.0_kind_m + zeta_0)) + real(b_stab,kind=FMS_MO_KIND_)*(zeta - zeta_0)
+psi_m = ln_z_z0 + (5.0_kind_m - real(b_stab,r8_kind))*log((1.0_kind_m &
+        + zeta)/(1.0_kind_m + zeta_0)) + real(b_stab,r8_kind)*(zeta - zeta_0)
 end where
 
 else if (stable_option == 2) then
 
-weakly_stable   = stable .and. zeta <= real(zeta_trans,kind=FMS_MO_KIND_)
-strongly_stable = stable .and. zeta >  real(zeta_trans,kind=FMS_MO_KIND_)
+weakly_stable   = stable .and. zeta <= real(zeta_trans,r8_kind)
+strongly_stable = stable .and. zeta >  real(zeta_trans,r8_kind)
 
 where (weakly_stable)
 psi_m = ln_z_z0 + 5.0_kind_m * (zeta - zeta_0)
 end where
 
 where(strongly_stable)
-x = (real(lambda,kind=FMS_MO_KIND_) - 1.0_kind_m)*log(zeta/real(zeta_trans,kind=FMS_MO_KIND_)) &
-    + real(b_stab,kind=FMS_MO_KIND_)*(zeta - real(zeta_trans,kind=FMS_MO_KIND_))
+x = (real(lambda,r8_kind) - 1.0_kind_m)*log(zeta/real(zeta_trans,r8_kind)) &
+    + real(b_stab,r8_kind)*(zeta - real(zeta_trans,r8_kind))
 endwhere
 
-where (strongly_stable .and. zeta_0 <= real(zeta_trans,kind=FMS_MO_KIND_))
-psi_m = ln_z_z0 + x + 5.0_kind_m*(real(zeta_trans,kind=FMS_MO_KIND_)- zeta_0)
+where (strongly_stable .and. zeta_0 <= real(zeta_trans,r8_kind))
+psi_m = ln_z_z0 + x + 5.0_kind_m*(real(zeta_trans,r8_kind)- zeta_0)
 end where
-where (strongly_stable .and. zeta_0 > real(zeta_trans,kind=FMS_MO_KIND_))
-psi_m = real(lambda,kind=FMS_MO_KIND_)*ln_z_z0 + real(b_stab,kind=FMS_MO_KIND_)*(zeta  - zeta_0)
+where (strongly_stable .and. zeta_0 > real(zeta_trans,r8_kind))
+psi_m = real(lambda,r8_kind)*ln_z_z0 + real(b_stab,r8_kind)*(zeta  - zeta_0)
 endwhere
 
 end if
@@ -781,7 +781,7 @@ u_star_a(1,1) = u_star
 b_star_a(1,1) = b_star
 
 call monin_obukhov_diff(real(vonkarm,kind=FMS_MO_KIND_), ustar_min, neutral, stable_option,  &
-     & new_mo_option, real(rich_crit,kind=FMS_MO_KIND_), real(zeta_trans,kind=FMS_MO_KIND_), &!miz
+     & new_mo_option, real(rich_crit,r8_kind), real(zeta_trans,r8_kind), &!miz
      & ni, nj, nk, z_a, u_star_a, b_star_a, k_m_a, k_h_a, ier)
 
 k_m = k_m_a(1,1,1)
@@ -811,7 +811,7 @@ u_star_a(1,1) = u_star
 b_star_a(1,1) = b_star
 
 call monin_obukhov_diff(real(vonkarm,kind=FMS_MO_KIND_), ustar_min, neutral, stable_option,  &
-     & new_mo_option, real(rich_crit,kind=FMS_MO_KIND_), real(zeta_trans,kind=FMS_MO_KIND_), &!miz
+     & new_mo_option, real(rich_crit,r8_kind), real(zeta_trans,r8_kind), &!miz
      & ni, nj, nk, z_a, u_star_a, b_star_a, k_m_a, k_h_a, ier)
 
 k_m(:) = k_m_a(1,1,:)
