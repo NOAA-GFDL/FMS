@@ -80,18 +80,18 @@ end interface column_diagnostics_header
 !--------------------------------------------------------------------
 !----    namelist -----
 
-real(kind=r8_kind) :: crit_xdistance = 4.0 !< model grid points must be within crit_xdistance in
+real(kind=r8_kind) :: crit_xdistance = 4.0_r8_kind !< model grid points must be within crit_xdistance in
                                       !! longitude of the requested diagnostics point
                                       !! coordinates in order to be flagged as the desired
                                       !! point
                                       !! [ degrees ]
-real(kind=r8_kind) :: crit_ydistance = 4.0 !< model grid points must be within crit_ydistance in
+real(kind=r8_kind) :: crit_ydistance = 4.0_r8_kind !< model grid points must be within crit_ydistance in
                                       !! latitude of the requested diagnostics point
                                       !! coordinates in order to be flagged as the desired
                                       !! point
                                       !! [ degrees ]
 
-namelist / column_diagnostics_nml /              &
+namelist / column_diagnostics_nml /                   &
                                       crit_xdistance, &
                                       crit_ydistance
 
