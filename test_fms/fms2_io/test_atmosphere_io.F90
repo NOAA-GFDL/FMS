@@ -322,9 +322,6 @@ names(3) = "lev"
 names(4) = "time"
 call create_data(var11, (/nxd, nyd, test_params%nz/))
 call register_restart_field(fileobj, "var11", var11, names(1:4))
-call register_restart_field(fileobj, "var12", var11, names(1:4),chunksizes &
- =(/10, 10, 10, 1 /), deflate_level=5)
-
 
 !Perform a "simulation" and write restart data.
 do i = 1, nt
