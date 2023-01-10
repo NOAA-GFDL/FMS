@@ -233,7 +233,7 @@ use platform_mod
        & use_cmor, issue_oor_warnings, oor_warnings_fatal, oor_warning, pack_size,&
        & max_out_per_in_field, flush_nc_files, region_out_use_alt_value, max_field_attributes, output_field_type,&
        & max_file_attributes, max_axis_attributes, prepend_date, DIAG_FIELD_NOT_FOUND, diag_init_time, diag_data_init,&
-       & use_mpp_io
+       & use_mpp_io, use_refactored_send
   USE diag_data_mod, ONLY:  fileobj, fileobjU, fnum_for_domain, fileobjND
   USE diag_table_mod, ONLY: parse_diag_table
   USE diag_output_mod, ONLY: get_diag_global_att, set_diag_global_att
@@ -1328,7 +1328,7 @@ CONTAINS
     CHARACTER(len=*), INTENT(out), OPTIONAL :: err_msg
 
     REAL, DIMENSION(SIZE(field(:)), 1, 1) :: field_out !< Local copy of field
-    LOGICAL, DIMENSION(SIZE(field(:)), 1, 1) ::  mask_out !< Local copy of mask
+    LOGICAL, ALLOCATABLE, DIMENSION(:,:,:) ::  mask_out !< Local copy of mask
 
     ! If diag_field_id is < 0 it means that this field is not registered, simply return
     IF ( diag_field_id <= 0 ) THEN
@@ -1346,6 +1346,8 @@ CONTAINS
        CALL error_mesg ('diag_manager_mod::send_data_1d',&
             & 'The field is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)
     END SELECT
+
+    ALLOCATE(mask_out(SIZE(field(:)), 1, 1))
 
     ! Default values for mask
     IF ( PRESENT(mask) ) THEN
@@ -1397,7 +1399,7 @@ CONTAINS
     CHARACTER(len=*), INTENT(out), OPTIONAL :: err_msg
 
     REAL, DIMENSION(SIZE(field,1),SIZE(field,2),1) :: field_out !< Local copy of field
-    LOGICAL, DIMENSION(SIZE(field,1),SIZE(field,2),1) ::  mask_out !< Local copy of mask
+    LOGICAL, ALLOCATABLE, DIMENSION(:,:,:) ::  mask_out !< Local copy of mask
 
     ! If diag_field_id is < 0 it means that this field is not registered, simply return
     IF ( diag_field_id <= 0 ) THEN
@@ -1416,6 +1418,7 @@ CONTAINS
             & 'The field is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)
     END SELECT
 
+    ALLOCATE(mask_out(SIZE(field,1),SIZE(field,2),1))
     ! Default values for mask
     IF ( PRESENT(mask) ) THEN
        mask_out(:, :, 1) = mask
@@ -1452,7 +1455,7 @@ CONTAINS
     CLASS(*), INTENT(in), OPTIONAL :: weight
     TYPE (time_type), INTENT(in), OPTIONAL :: time
     INTEGER, INTENT(in), OPTIONAL :: is_in, js_in, ks_in,ie_in,je_in, ke_in
-    LOGICAL, DIMENSION(:,:,:), INTENT(in), OPTIONAL :: mask
+    LOGICAL, ALLOCATABLE, DIMENSION(:,:,:), INTENT(in), OPTIONAL :: mask
     CLASS(*), DIMENSION(:,:,:), INTENT(in), OPTIONAL :: rmask
     CHARACTER(len=*), INTENT(out), OPTIONAL :: err_msg
 
@@ -1488,6 +1491,10 @@ CONTAINS
     CHARACTER(len=128) :: error_string, error_string1
 
     REAL, ALLOCATABLE, DIMENSION(:,:,:) :: field_out !< Local copy of field
+
+    TYPE(fms_diag_outfield_index_type), ALLOCATABLE:: ofield_index_cfg
+    TYPE(fms_diag_outfield_type), ALLOCATABLE:: ofield_cfg
+    LOGICAL :: temp_result
 
     ! If diag_field_id is < 0 it means that this field is not registered, simply return
     IF ( diag_field_id <= 0 ) THEN
@@ -1876,6 +1883,50 @@ CONTAINS
              END IF
           END IF
        END IF
+
+      IF (USE_REFACTORED_SEND) THEN
+         ALLOCATE( ofield_index_cfg )
+         CALL ofield_index_cfg%initialize( is, js, ks, ie, je, ke, &
+                &  hi, hj,  f1, f2, f3, f4)
+
+         ALLOCATE( ofield_cfg )
+         CALL ofield_cfg%initialize( input_fields(diag_field_id), output_fields(out_num), PRESENT(mask))
+         !! TODO: missing time_reduction
+
+         !! TODO: Question: note that mask was declared allocatable in order to call fieldbuff_update (which
+         !!    in tuen needs mask to be allocatable for pointer remapping). Is this an issue as
+         !!    original send_data_3d did not have mask as so.
+         IF ( average ) THEN
+            !!TODO: the copy that is filed_out should not be necessary
+            temp_result = fieldbuff_update(ofield_cfg, ofield_index_cfg, field_out, sample, &
+               & output_fields(out_num)%buffer, output_fields(out_num)%counter , ofield_cfg%buff_bounds, &
+               & output_fields(out_num)%count_0d(sample), output_fields(out_num)%num_elements(sample), &
+               & mask, weight1 ,missvalue, &
+               & input_fields(diag_field_id)%numthreads, input_fields(diag_field_id)%active_omp_level,&
+               & input_fields(diag_field_id)%issued_mask_ignore_warning, &
+               & l_start, l_end, err_msg, err_msg_local )
+            IF (temp_result .eqv. .FALSE.) THEN
+               DEALLOCATE(oor_mask)
+               RETURN
+            END IF
+         ELSE !!NOT AVERAGE
+
+            temp_result = fieldbuff_copy_fieldvals(ofield_cfg, ofield_index_cfg, field_out, sample, &
+               & output_fields(out_num)%buffer, ofield_cfg%buff_bounds, output_fields(out_num)%count_0d(sample), &
+               & mask, missvalue, l_start, l_end, err_msg, err_msg_local)
+            IF (temp_result .eqv. .FALSE.) THEN
+               DEALLOCATE(oor_mask)
+               RETURN
+            END IF
+          END IF
+          IF ( PRESENT(rmask) .AND. missvalue_present ) THEN
+            temp_result = .true. !!TODO call :fieldbuff_copy_misvals()
+         END IF
+         DEALLOCATE(ofield_index_cfg)
+         DEALLOCATE(ofield_cfg)
+
+         CYCLE !!. I.e. skip src code below and go to the next output field
+      END IF !! END USE_REFACTORED_SEND
 
        ! Take care of submitted field data
        IF ( average ) THEN
@@ -3723,7 +3774,8 @@ CONTAINS
     REAL, INTENT(in) :: field(:,:) !< field to average and send
     REAL, INTENT(in) :: area (:,:) !< area of tiles (== averaging weights), arbitrary units
     TYPE(time_type), INTENT(in)  :: time !< current time
-    LOGICAL, INTENT(in),OPTIONAL :: mask (:,:) !< land mask
+    LOGICAL, ALLOCATABLE, INTENT(in),OPTIONAL :: mask (:,:) !< land mask
+    !!TODO: make_mask allocatable or send copy to allocatable? RE user interface.
 
     REAL, DIMENSION(SIZE(field,1)) :: out(SIZE(field,1))
 
@@ -3790,7 +3842,9 @@ CONTAINS
     REAL, INTENT(in) :: field(:,:,:) !< field to average and send
     REAL, INTENT(in) :: area (:,:,:) !< area of tiles (== averaging weights), arbitrary units
     TYPE(time_type), INTENT(in)  :: time !< current time
-    LOGICAL, INTENT(in),OPTIONAL :: mask (:,:,:) !< land mask
+    LOGICAL, ALLOCATABLE, INTENT(in),OPTIONAL :: mask (:,:,:) !< land mask
+    !!TODO:  make_mask allocatable or send copy to allocatable? RE user interface.
+    !!LOGICAL, ALLOCATABLE, DIMENSION(:,:,:) ::  mask_out
 
     REAL, DIMENSION(SIZE(field,1),SIZE(field,2)) :: out(SIZE(field,1), SIZE(field,2))
 
@@ -3799,6 +3853,7 @@ CONTAINS
        send_tile_averaged_data2d = .FALSE.
        RETURN
     END IF
+
 
     CALL average_tiles(id, field, area, mask, out)
     send_tile_averaged_data2d = send_data(id, out, time, mask=ANY(mask,DIM=3))
@@ -3811,10 +3866,14 @@ CONTAINS
     REAL, DIMENSION(:,:,:), INTENT(in) :: area (:,:,:) !< (lon, lat, tile) tile areas ( == averaging
                                                        !! weights), arbitrary units
     TYPE(time_type), INTENT(in)  :: time !< current time
-    LOGICAL, DIMENSION(:,:,:), INTENT(in), OPTIONAL :: mask !< (lon, lat, tile) land mask
+    LOGICAL, ALLOCATABLE, DIMENSION(:,:,:), INTENT(in), OPTIONAL :: mask !< (lon, lat, tile) land mask
+     !!TODO:  make_mask allocatable or send copy to allocatable? RE user interface.
+    !!LOGICAL, ALLOCATABLE, DIMENSION(:,:,:) ::  mask_out
 
     REAL, DIMENSION(SIZE(field,1),SIZE(field,2),SIZE(field,4)) :: out
-    LOGICAL, DIMENSION(SIZE(field,1),SIZE(field,2),SIZE(field,4)) :: mask3
+    !!LOGICAL ,DIMENSION(SIZE(field,1),SIZE(field,2),SIZE(field,4)) :: mask3
+    LOGICAL, ALLOCATABLE,DIMENSION(:,:,:) :: mask3
+
     INTEGER :: it
 
     ! If id is < 0 it means that this field is not registered, simply return
@@ -3826,6 +3885,8 @@ CONTAINS
     DO it=1, SIZE(field,4)
        CALL average_tiles(id, field(:,:,:,it), area, mask, out(:,:,it) )
     END DO
+
+    ALLOCATE( mask3 (SIZE(field,1),SIZE(field,2),SIZE(field,4)))
 
     mask3(:,:,1) = ANY(mask,DIM=3)
     DO it = 2, SIZE(field,4)
