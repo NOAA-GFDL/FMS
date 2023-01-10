@@ -772,9 +772,9 @@ FUNCTION FMS_DIAG_FBU_3D_PNAME_(ofield_cfg, ofield_index_cfg, field_d, sample, &
       & l_start, l_end, err_msg,  err_msg_local) result( succeded )
          TYPE(fms_diag_outfield_type), INTENT(inout) :: ofield_cfg   !< The ofield_cfg object
          TYPE(fms_diag_outfield_index_type) , INTENT(inout) :: ofield_index_cfg    !< The ofield_index_cfg object
-         FMS_DIAG_FBU_DATA_TYPE_ , ALLOCATABLE,  DIMENSION(:,:,:), INTENT(in), target:: field   !< The field value array.
+         FMS_DIAG_FBU_DATA_TYPE_ ,ALLOCATABLE,DIMENSION(:,:,:),INTENT(in),target:: field !< The field value array.
          INTEGER, INTENT(in) :: sample   !< index along the diurnal time axis
-         FMS_DIAG_FBU_DATA_TYPE_ , ALLOCATABLE, DIMENSION(:,:,:,:), INTENT(inout), target :: ofb   !< The Output Field Buffer
+         FMS_DIAG_FBU_DATA_TYPE_ ,ALLOCATABLE,DIMENSION(:,:,:,:),INTENT(inout),target:: ofb !<The Output Field Buffer
          TYPE(fms_diag_ibounds_type), INTENT(inout) :: bbounds
          FMS_DIAG_FBU_DATA_TYPE_ , INTENT(inout) :: count_0d   !> Normally the member of the buffer of same name,
          LOGICAL, ALLOCATABLE, DIMENSION(:,:,:), INTENT(in), OPTIONAL, target :: mask

@@ -791,7 +791,7 @@ CONTAINS
     INTEGER, INTENT(in) :: upper_j !< Upper j bound.
     INTEGER, INTENT(in) :: lower_k !< Lower k bound.
     INTEGER, INTENT(in) :: upper_k !< Upper k bound.
-    CALL update_bounds_imp(output_fields(out_num)%buff_bounds, lower_i, upper_i, lower_j, upper_j, lower_k, upper_k )
+    CALL update_bounds_modern(output_fields(out_num)%buff_bounds, lower_i, upper_i, lower_j, upper_j, lower_k, upper_k )
   END SUBROUTINE update_bounds_legacy
 
     !> @brief Update the <TT>output_fields</TT> x, y, and z (and optionally l) min and
