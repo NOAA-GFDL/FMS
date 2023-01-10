@@ -41,9 +41,9 @@ libdrifters_la_SOURCES = drifters.F90 \
   drifters_io.F90 \
   cloud_interpolator.F90 \
   quicksort.F90 \
-  drifters_compute_k.h \
-  drifters_push.h \
-  drifters_set_field.h \
+  drifters_compute_k.fh \
+  drifters_push.fh \
+  drifters_set_field.fh \
   fms_switches.h
 
 drifters_mod.$(FC_MODEXT): drifters_core_mod.$(FC_MODEXT) drifters_input_mod.$(FC_MODEXT) drifters_io_mod.$(FC_MODEXT) \
