@@ -120,7 +120,7 @@ use,intrinsic :: iso_c_binding, only: c_double,c_float,c_int64_t, &
   END INTERFACE check_bounds_are_exact_static
 
   INTERFACE bounds_from_array
-    module procedure bounds_from_array_legacy
+    module procedure fms_bounds_from_array_4D
     module procedure bounds_from_array_modern
   END INTERFACE bounds_from_array
 
@@ -132,7 +132,6 @@ use,intrinsic :: iso_c_binding, only: c_double,c_float,c_int64_t, &
 #include <file_version.h>
 
   LOGICAL :: module_initialized = .FALSE.
-
 
 CONTAINS
 
@@ -758,8 +757,8 @@ CONTAINS
          & TRIM(axes_list)
   END SUBROUTINE log_diag_field_info
 
-  !!3D spatial bounds
-  SUBROUTINE bounds_from_array_legacy(bounds, array)
+  !!TODO: Rename like this: not with _legacy and _modern
+  SUBROUTINE fms_bounds_from_array_4D(bounds, array)
     REAL, INTENT( in), DIMENSION(:,:,:,:) :: array
     TYPE (fms_diag_ibounds_type), INTENT(inout) :: bounds
       bounds%imin = LBOUND(array,1)
@@ -768,7 +767,7 @@ CONTAINS
       bounds%jmax = UBOUND(array,2)
       bounds%kmin = LBOUND(array,3)
       bounds%kmax = UBOUND(array,3)
-  END SUBROUTINE  bounds_from_array_legacy
+  END SUBROUTINE  fms_bounds_from_array_4D
 
 
   SUBROUTINE bounds_from_array_modern(bounds, array)
@@ -816,10 +815,9 @@ END SUBROUTINE update_bounds_modern
 
   !> @brief Compares the indecies in bounds to the corresponding lower and upper bounds of array buffer.
 !! Comparison is done by the two user specified input functions lowerb_comp and upperb_comp.
-!! If any compariosn function returns true, then, after filling error_str, this routine returns
-!! false indicating one of the comparison tests indicated a problem. So the comparison test should
-!! return true for errors : for indecies out of bounds, or indecies are not equal when expected to
-!! be equal.
+!! If any compariosn function returns true, then, after filling error_str, this routine also returns
+!! true. The suplied comparison functions should return true for errors : for indecies out of bounds,
+!! or indecies are not equal when expected to be equal.
 LOGICAL FUNCTION compare_buffer_bounds_to_size(array_bounds, bounds, output_name, module_name, error_str, &
      & lowerb_comp, upperb_comp)
   TYPE (fms_diag_ibounds_type), INTENT(in) :: array_bounds
@@ -842,7 +840,7 @@ LOGICAL FUNCTION compare_buffer_bounds_to_size(array_bounds, bounds, output_name
      END FUNCTION upperb_comp
   END INTERFACE
 
-  compare_buffer_bounds_to_size = .TRUE.
+  compare_buffer_bounds_to_size = .FALSE.
 
   IF (lowerb_comp( bounds%imin , array_bounds%imin) .OR. &
        upperb_comp( bounds%imax , array_bounds%imax).OR.&
@@ -850,7 +848,7 @@ LOGICAL FUNCTION compare_buffer_bounds_to_size(array_bounds, bounds, output_name
        upperb_comp( bounds%jmax , array_bounds%jmax) .OR.&
        lowerb_comp( bounds%kmin , array_bounds%kmin) .OR.&
        upperb_comp( bounds%kmax , array_bounds%kmax)) THEN
-    compare_buffer_bounds_to_size = .FALSE.
+    compare_buffer_bounds_to_size = .TRUE.
      error_str ='Buffer bounds=   :   ,   :   ,   :     Actual bounds=   :   ,   :   ,   :   '
      WRITE(error_str(15:17),'(i3)') array_bounds%imin
      WRITE(error_str(19:21),'(i3)') array_bounds%imax

@@ -21,16 +21,16 @@ FUNCTION FMS_DIAG_FBU_3D_PNAME_(ofield_cfg, ofield_index_cfg, field_d, sample, &
   & ofb, ofc, bbounds, count_0d, num_elements, mask, weight1, missvalue,  &
   & field_num_threads, field_active_omp_level, issued_mask_ignore_warning, &
   & l_start, l_end, err_msg,  err_msg_local ) result( succeded )
-    TYPE(fms_diag_outfield_type), INTENT(inout), ALLOCATABLE:: ofield_cfg  !< The ofield_cfg object
-    TYPE(fms_diag_outfield_index_type) , INTENT(inout), ALLOCATABLE :: ofield_index_cfg !<The ofield_index_cfg object
-    FMS_DIAG_FBU_DATA_TYPE_ , ALLOCATABLE, DIMENSION(:,:,:), INTENT(in), target :: field_d !< The input field data
+    TYPE(fms_diag_outfield_type), INTENT(inout):: ofield_cfg  !< The ofield_cfg object
+    TYPE(fms_diag_outfield_index_type) , INTENT(inout) :: ofield_index_cfg !<The ofield_index_cfg object
+    FMS_DIAG_FBU_DATA_TYPE_ , CONTIGUOUS, DIMENSION(:,:,:), INTENT(in), target :: field_d !< The input field data
     INTEGER, INTENT(in) :: sample  !< The index along the diurnal time axis
-    FMS_DIAG_FBU_DATA_TYPE_ , ALLOCATABLE, DIMENSION(:,:,:,:), INTENT(inout), target :: ofb !< Output Field Buffer
-    FMS_DIAG_FBU_DATA_TYPE_ , ALLOCATABLE, DIMENSION(:,:,:,:), INTENT(inout), target :: ofc !< Output Field Counter
+    FMS_DIAG_FBU_DATA_TYPE_ , CONTIGUOUS, DIMENSION(:,:,:,:), INTENT(inout), target :: ofb !< Output Field Buffer
+    FMS_DIAG_FBU_DATA_TYPE_ , CONTIGUOUS, DIMENSION(:,:,:,:), INTENT(inout), target :: ofc !< Output Field Counter
     TYPE(fms_diag_ibounds_type), INTENT(inout) :: bbounds !< An instance of the class fms_diag_buff_intervals_t
     FMS_DIAG_FBU_DATA_TYPE_, INTENT(inout):: count_0d !< Normally the member of the buffer object of the same name.
     INTEGER, INTENT(inout) :: num_elements
-    LOGICAL, ALLOCATABLE, DIMENSION(:,:,:), INTENT(in), OPTIONAL, target :: mask !< mask
+    LOGICAL, CONTIGUOUS, DIMENSION(:,:,:), INTENT(in), OPTIONAL, target :: mask !< mask
     REAL, INTENT(in) :: weight1 !< Field data is multiplied by weight !!TODO: Change to same type as field data?
     FMS_DIAG_FBU_DATA_TYPE_, INTENT(in) :: missvalue !< Buffer may be set to missvalue where mask is false.
 
@@ -47,7 +47,7 @@ FUNCTION FMS_DIAG_FBU_3D_PNAME_(ofield_cfg, ofield_index_cfg, field_d, sample, &
     FMS_DIAG_FBU_DATA_TYPE_ , pointer, DIMENSION(:,:,:,:) :: field_ptr => null()!<
     FMS_DIAG_FBU_DATA_TYPE_ , pointer, DIMENSION(:,:,:,:,:) :: ofb_ptr => null()!<
     FMS_DIAG_FBU_DATA_TYPE_ , pointer, DIMENSION(:,:,:,:,:) :: ofc_ptr => null()!<
-    LOGICAL , pointer, DIMENSION(:,:,:,:) :: mask_ptr !<
+    LOGICAL , pointer, DIMENSION(:,:,:,:) :: mask_ptr => null()!<
 
     LOGICAL :: succeded !> True iff no errors encountered.
 
@@ -55,7 +55,9 @@ FUNCTION FMS_DIAG_FBU_3D_PNAME_(ofield_cfg, ofield_index_cfg, field_d, sample, &
     field_ptr(1:size(field_d,1),1:size(field_d,2),1:size(field_d,3),1:1) => field_d(:,:,:)
     ofb_ptr(1:size(ofb,1),1:size(ofb,2),1:size(ofb,3), 1:size(ofb,4),1:1) => ofb
     ofc_ptr(1:size(ofc,1),1:size(ofc,2),1:size(ofc,3), 1:size(ofc,4),1:1) => ofc
-    mask_ptr(1:size(mask,1),1:size(mask,2),1:size(mask,3),1:1) => mask
+    IF  (PRESENT (mask)) THEN
+      mask_ptr(1:size(mask,1),1:size(mask,2),1:size(mask,3),1:1) => mask
+    ENDIF
 
     succeded = FMS_DIAG_FBU_PNAME_ (ofield_cfg, ofield_index_cfg, field_ptr, sample, &
       & ofb_ptr, ofc_ptr, bbounds, count_0d, num_elements, mask_ptr, weight1, missvalue,  &
@@ -772,32 +774,35 @@ FUNCTION FMS_DIAG_FBU_3D_PNAME_(ofield_cfg, ofield_index_cfg, field_d, sample, &
       & l_start, l_end, err_msg,  err_msg_local) result( succeded )
          TYPE(fms_diag_outfield_type), INTENT(inout) :: ofield_cfg   !< The ofield_cfg object
          TYPE(fms_diag_outfield_index_type) , INTENT(inout) :: ofield_index_cfg    !< The ofield_index_cfg object
-         FMS_DIAG_FBU_DATA_TYPE_ ,ALLOCATABLE,DIMENSION(:,:,:),INTENT(in),target:: field !< The field value array.
+         FMS_DIAG_FBU_DATA_TYPE_ , CONTIGUOUS, DIMENSION(:,:,:),INTENT(in),target:: field !< The field value array.
          INTEGER, INTENT(in) :: sample   !< index along the diurnal time axis
-         FMS_DIAG_FBU_DATA_TYPE_ ,ALLOCATABLE,DIMENSION(:,:,:,:),INTENT(inout),target:: ofb !<The Output Field Buffer
+         FMS_DIAG_FBU_DATA_TYPE_ ,CONTIGUOUS,DIMENSION(:,:,:,:),INTENT(inout),target:: ofb !<The Output Field Buffer
          TYPE(fms_diag_ibounds_type), INTENT(inout) :: bbounds
          FMS_DIAG_FBU_DATA_TYPE_ , INTENT(inout) :: count_0d   !> Normally the member of the buffer of same name,
-         LOGICAL, ALLOCATABLE, DIMENSION(:,:,:), INTENT(in), OPTIONAL, target :: mask
+         LOGICAL, CONTIGUOUS, DIMENSION(:,:,:), INTENT(in), OPTIONAL, target :: mask
          FMS_DIAG_FBU_DATA_TYPE_ , INTENT(in) :: missvalue !> buffer may be set to this value where mask is false.
          INTEGER, DIMENSION(3), INTENT(in)  :: l_start   !< local start indices on spatial axes for regional output
          INTEGER, DIMENSION(3), INTENT(in)  :: l_end   !< local end indices on spatial for regional output
          CHARACTER(len=*), INTENT(inout), OPTIONAL :: err_msg
          CHARACTER(len=256), INTENT(inout) :: err_msg_local
 
-          !! For pointer bounds remapping
-        FMS_DIAG_FBU_DATA_TYPE_ , pointer, DIMENSION(:,:,:,:) :: field_ptr !<
-        FMS_DIAG_FBU_DATA_TYPE_ , pointer, DIMENSION(:,:,:,:,:) :: ofb_ptr !<
-        LOGICAL , pointer, DIMENSION(:,:,:,:) :: mask_ptr !<
+        !! For pointer bounds remapping
+        FMS_DIAG_FBU_DATA_TYPE_ , pointer, DIMENSION(:,:,:,:) :: field_ptr => null() !<
+        FMS_DIAG_FBU_DATA_TYPE_ , pointer, DIMENSION(:,:,:,:,:) :: ofb_ptr => null() !<
+        LOGICAL , pointer, DIMENSION(:,:,:,:) :: mask_ptr => null() !<
 
         LOGICAL :: succeded !> True iff no errors encountered.
 
-      field_ptr(1:size(field,1),1:size(field,2),1:size(field,3),1:1) => field(:,:,:)
-      ofb_ptr(1:size(ofb,1),1:size(ofb,2),1:size(ofb,3), 1:size(ofb,4),1:1) => ofb
-      mask_ptr(1:size(mask,1),1:size(mask,2),1:size(mask,3),1:1) => mask
+        field_ptr(1:size(field,1),1:size(field,2),1:size(field,3),1:1) => field(:,:,:)
+        ofb_ptr(1:size(ofb,1),1:size(ofb,2),1:size(ofb,3), 1:size(ofb,4),1:1) => ofb
 
-      succeded = FMS_DIAG_FBCF_PNAME_ (ofield_cfg, ofield_index_cfg, field_ptr, sample, &
-        & ofb_ptr, bbounds, count_0d, mask_ptr, missvalue,  &
-        & l_start, l_end, err_msg,  err_msg_local)
+        IF  (PRESENT (mask)) THEN
+          mask_ptr(1:size(mask,1),1:size(mask,2),1:size(mask,3),1:1) => mask
+        ENDIF
+
+        succeded = FMS_DIAG_FBCF_PNAME_ (ofield_cfg, ofield_index_cfg, field_ptr, sample, &
+          & ofb_ptr, bbounds, count_0d, mask_ptr, missvalue,  &
+          & l_start, l_end, err_msg,  err_msg_local)
     END FUNCTION FMS_DIAG_FBCF_3D_PNAME_
 
 
