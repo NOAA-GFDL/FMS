@@ -815,7 +815,7 @@ end subroutine mpp_deallocate_domainUG
 #define mpp_pass_UG_to_SG_2D_ mpp_pass_UG_to_SG_r8_2d
 #undef mpp_pass_UG_to_SG_3D_
 #define mpp_pass_UG_to_SG_3D_ mpp_pass_UG_to_SG_r8_3d
-#include <mpp_unstruct_pass_data.h>
+#include <mpp_unstruct_pass_data.fh>
 
 #undef MPP_TYPE_
 #define MPP_TYPE_ real(r4_kind)
@@ -827,7 +827,7 @@ end subroutine mpp_deallocate_domainUG
 #define mpp_pass_UG_to_SG_2D_ mpp_pass_UG_to_SG_r4_2d
 #undef mpp_pass_UG_to_SG_3D_
 #define mpp_pass_UG_to_SG_3D_ mpp_pass_UG_to_SG_r4_3d
-#include <mpp_unstruct_pass_data.h>
+#include <mpp_unstruct_pass_data.fh>
 
 #undef MPP_TYPE_
 #define MPP_TYPE_ integer(i4_kind)
@@ -839,7 +839,7 @@ end subroutine mpp_deallocate_domainUG
 #define mpp_pass_UG_to_SG_2D_ mpp_pass_UG_to_SG_i4_2d
 #undef mpp_pass_UG_to_SG_3D_
 #define mpp_pass_UG_to_SG_3D_ mpp_pass_UG_to_SG_i4_3d
-#include <mpp_unstruct_pass_data.h>
+#include <mpp_unstruct_pass_data.fh>
 
 #undef MPP_TYPE_
 #define MPP_TYPE_ logical(i4_kind)
@@ -851,7 +851,7 @@ end subroutine mpp_deallocate_domainUG
 #define mpp_pass_UG_to_SG_2D_ mpp_pass_UG_to_SG_l4_2d
 #undef mpp_pass_UG_to_SG_3D_
 #define mpp_pass_UG_to_SG_3D_ mpp_pass_UG_to_SG_l4_3d
-#include <mpp_unstruct_pass_data.h>
+#include <mpp_unstruct_pass_data.fh>
 
 #undef MPP_GLOBAL_FIELD_UG_2D_
 #define MPP_GLOBAL_FIELD_UG_2D_ mpp_global_field2D_ug_r8_2d
@@ -863,7 +863,7 @@ end subroutine mpp_deallocate_domainUG
 #define MPP_GLOBAL_FIELD_UG_5D_ mpp_global_field2D_ug_r8_5d
 #undef MPP_TYPE_
 #define MPP_TYPE_ real(r8_kind)
-#include <mpp_global_field_ug.h>
+#include <mpp_global_field_ug.fh>
 
 #undef MPP_GLOBAL_FIELD_UG_2D_
 #define MPP_GLOBAL_FIELD_UG_2D_ mpp_global_field2D_ug_i8_2d
@@ -875,7 +875,7 @@ end subroutine mpp_deallocate_domainUG
 #define MPP_GLOBAL_FIELD_UG_5D_ mpp_global_field2D_ug_i8_5d
 #undef MPP_TYPE_
 #define MPP_TYPE_ integer(i8_kind)
-#include <mpp_global_field_ug.h>
+#include <mpp_global_field_ug.fh>
 
 #undef MPP_GLOBAL_FIELD_UG_2D_
 #define MPP_GLOBAL_FIELD_UG_2D_ mpp_global_field2D_ug_r4_2d
@@ -887,7 +887,7 @@ end subroutine mpp_deallocate_domainUG
 #define MPP_GLOBAL_FIELD_UG_5D_ mpp_global_field2D_ug_r4_5d
 #undef MPP_TYPE_
 #define MPP_TYPE_ real(r4_kind)
-#include <mpp_global_field_ug.h>
+#include <mpp_global_field_ug.fh>
 
 #undef MPP_GLOBAL_FIELD_UG_2D_
 #define MPP_GLOBAL_FIELD_UG_2D_ mpp_global_field2D_ug_i4_2d
@@ -899,5 +899,5 @@ end subroutine mpp_deallocate_domainUG
 #define MPP_GLOBAL_FIELD_UG_5D_ mpp_global_field2D_ug_i4_5d
 #undef MPP_TYPE_
 #define MPP_TYPE_ integer(i4_kind)
-#include <mpp_global_field_ug.h>
+#include <mpp_global_field_ug.fh>
 !> @}
