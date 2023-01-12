@@ -619,7 +619,7 @@ x_q   = real((1 - 16.0_lkind*zeta_q)**(1.0_lkind / 3.0_lkind), FMS_MO_KIND_)
 
 psi_t = real(ln_z_zt - 1.5_lkind*log((x**2+x+1)/(x_t**2 + x_t + 1)) &
         + s3*(atan((2*x+1)/s3) - atan((2*x_t + 1)/s3)), FMS_MO_KIND_)
-psi_q = real(ln_z_zq - 1.5_lkindm*log((x**2+x+1)/(x_q**2 + x_q + 1)) &
+psi_q = real(ln_z_zq - 1.5_lkind*log((x**2+x+1)/(x_q**2 + x_q + 1)) &
         + s3*(atan((2*x+1)/s3) - atan((2*x_q + 1)/s3)), FMS_MO_KIND_)
 end where
 else
@@ -631,7 +631,7 @@ x_t   = real(sqrt(1 - 16.0_lkind * zeta_t), FMS_MO_KIND_)
 x_q   = real(sqrt(1 - 16.0_lkind * zeta_q), FMS_MO_KIND_)
 
 psi_t = real(ln_z_zt - 2.0_lkind * log(1.0_lkind + x) / (1.0_lkind + x_t), FMS_MO_KIND_)
-psi_q = real(n_z_zq - 2.0_lkind * log((1.0_lkind + x) / (1.0_lkind + x_q)), FMS_MO_KIND_)
+psi_q = real(ln_z_zq - 2.0_lkind * log((1.0_lkind + x) / (1.0_lkind + x_q)), FMS_MO_KIND_)
 
 end where
 end if
