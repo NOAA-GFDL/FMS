@@ -1535,7 +1535,7 @@ subroutine amip_interp_type_eq(amip_interp_out, amip_interp_in)
     endif
 
     amip_interp_out%Hintrp     =  amip_interp_in%Hintrp
-    amip_interp_out%Hintrp2    =  amip_interp_in%Hintrp2 ! Added GPP
+    amip_interp_out%Hintrp2    =  amip_interp_in%Hintrp2 !< missing assignment statement; added by GPP
     amip_interp_out%data1      =  amip_interp_in%data1
     amip_interp_out%data2      =  amip_interp_in%data2
     amip_interp_out%Date1      =  amip_interp_in%Date1
