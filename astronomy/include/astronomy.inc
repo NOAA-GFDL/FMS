@@ -304,7 +304,7 @@ integer, parameter                                           :: lkind = FMS_AST_
     where (abs(t) <= h .and. abs(tt) <= h) fracday = real((tt - t )/dt, FMS_AST_KIND_)
     where (abs(t) <= h .and. h < tt)       fracday = real(( h - t )/dt, FMS_AST_KIND_)
     where (h <  t)                         fracday = 0.0_lkind
-    where (real(twopi, r8_kind) - h < tt)  fracday = real(fracday + 
+    where (real(twopi, r8_kind) - h < tt)  fracday = real(fracday + &
                                                           (tt + h - real(twopi, r8_kind))/dt, FMS_AST_KIND_)
 !----------------------------------------------------------------------
 !>    if instantaneous values are desired, define cosz at time t.
