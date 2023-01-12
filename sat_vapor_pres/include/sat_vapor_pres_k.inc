@@ -39,24 +39,13 @@
  logical, intent(in)  :: construct_table_wrt_liq
  logical, intent(in)  :: construct_table_wrt_liq_and_ice
  character(len=*), intent(out) :: err_msg
- real(kind=r8_kind), intent(out), optional :: teps, tmin, dtinv !< sat_vapor_pres module variables
+ real(kind=FMS_SVP_KIND_), intent(out), optional :: teps, tmin, dtinv !< sat_vapor_pres module variables
                                                                 ! are declared as r8_kind
 
-! kind parameter
- integer, parameter :: kindl = FMS_SVP_KIND_ ! local kind parameter
-
 ! increment used to generate derivative table
-  real(kind=FMS_SVP_KIND_), dimension(3) :: tem(3), es(3)
-  real(kind=FMS_SVP_KIND_) :: hdtinv, tinrc, tfact
+  real(kind=r8_kind), dimension(3) :: tem(3), es(3)
+  real(kind=r8_kind) :: hdtinv, tinrc, tfact
   integer :: i
-
-! local module variables
-  real(kind=FMS_SVP_KIND_) :: dtres_loc, tepsl_loc, tminl_loc, dtinvl_loc
-
-   dtres_loc  = real(dtres, FMS_SVP_KIND_)
-   tepsl_loc  = real(tepsl, FMS_SVP_KIND_)
-   tminl_loc  = real(tminl,  FMS_SVP_KIND_)
-   dtinvl_loc = real(dtinvl, FMS_SVP_KIND_)
 
    err_msg = ''
 
@@ -88,21 +77,21 @@
    endif
 
       table_siz = table_size
-      dtres_loc  = (tcmax - tcmin)/real(table_size-1,FMS_SVP_KIND_)
-      tminl_loc  = real(tcmin,FMS_SVP_KIND_)+TFREEZE  ! minimum valid temp in table
-      dtinvl_loc = 1.0_kindl/dtres_loc
-      tepsl_loc  = 0.5_kindl*dtres_loc
-      tinrc   = 0.1_kindl*dtres_loc
-      if(present(teps )) teps =real(tepsl_loc,  r8_kind)
-      if(present(tmin )) tmin =real(tminl_loc,  r8_kind)
-      if(present(dtinv)) dtinv=real(dtinvl_loc, r8_kind)
+      dtres  = (real(tcmax,r8_kind)-real(tcmin,r8_kind))/real(table_size-1,r8_kind)
+      tminl  = real(tcmin,r8_kind)+real(TFREEZE,r8_kind)  ! minimum valid temp in table
+      dtinvl = 1.0_r8_kind/dtres
+      tepsl  = 0.5_r8_kind*dtres
+      tinrc  = 0.1_r8_kind*dtres
+      if(present(teps )) teps =real(tepsl,  FMS_SVP_KIND_)
+      if(present(tmin )) tmin =real(tminl,  FMS_SVP_KIND_)
+      if(present(dtinv)) dtinv=real(dtinvl, FMS_SVP_KIND_)
 
 ! To be able to compute tables for any temperature range and resolution,
 ! and at the same time exactly reproduce answers from memphis revision,
 ! it is necessary to compute ftact differently than it is in memphis.
-      tfact = 5.0_kindl*dtinvl_loc
+      tfact = 5.0_r8_kind*dtinvl
 
-      hdtinv = 0.5_kindl*dtinvl_loc
+      hdtinv = 0.5_r8_kind*dtinvl
 
 ! compute es tables from tcmin to tcmax
 ! estimate es derivative with small +/- difference
@@ -110,21 +99,21 @@
       if (do_simple) then
 
         do i = 1, table_size
-          tem(1) = tminl_loc + dtres_loc*real(i-1,FMS_SVP_KIND_)
-          TABLE(i) = real( &
-               ES0*610.78_kindl*exp(-hlv/rvgas*(1.0_kindl/tem(1) - 1.0_kindl/tfreeze)), r8_kind)
-          DTABLE(i) = real( hlv*TABLE(i)/rvgas/tem(1)**2._kindl, r8_kind)
+          tem(1) = tminl + dtres*real(i-1,r8_kind)
+          TABLE(i) = real(ES0,r8_kind)*610.78_r8_kind* &
+               exp(-real(HLV,r8_kind)/real(RVGAS,r8_kind)*(1.0_r8_kind/tem(1) - 1.0_r8_kind/real(TFREEZE,r8_kind)))
+          DTABLE(i) = real(HLV,r8_kind)*TABLE(i)/real(RVGAS,r8_kind)/tem(1)**2._r8_kind
         enddo
 
       else
 
         do i = 1, table_size
-          tem(1) = tminl_loc + dtres_loc*real(i-1,FMS_SVP_KIND_)
+          tem(1) = tminl + dtres*real(i-1,r8_kind)
           tem(2) = tem(1)-tinrc
           tem(3) = tem(1)+tinrc
-          es = compute_es_k (tem, TFREEZE)
-          TABLE(i) = real(es(1), r8_kind)
-          DTABLE(i) = real( (es(3)-es(2))*tfact, r8_kind)
+          es = compute_es_k (tem, real(TFREEZE,r8_kind))
+          TABLE(i) = es(1)
+          DTABLE(i) = (es(3)-es(2))*tfact
         enddo
 
       endif !if (do_simple)
@@ -133,45 +122,39 @@
 ! differencing des values in the table
 
       do i = 2, table_size-1
-         D2TABLE(i) = real( 0.25_kindl*dtinvl_loc* &
-              (real( DTABLE(i+1)-DTABLE(i-1), FMS_SVP_KIND_)), r8_kind)
+         D2TABLE(i) = 0.25_r8_kind*dtinvl*(DTABLE(i+1)-DTABLE(i-1))
       enddo
     ! one-sided derivatives at boundaries
 
-         D2TABLE(1) = real(0.50_kindl*dtinvl_loc* &
-              (real(DTABLE(2)-DTABLE(1),FMS_SVP_KIND_)), r8_kind)
+         D2TABLE(1) = 0.50_r8_kind*dtinvl*(DTABLE(2)-DTABLE(1))
 
-         D2TABLE(table_size) = real(0.50_kindl*dtinvl_loc* &
-              (real(DTABLE(table_size)-DTABLE(table_size-1),FMS_SVP_KIND_)), r8_kind)
+         D2TABLE(table_size) = 0.50_r8_kind*dtinvl*(DTABLE(table_size)-DTABLE(table_size-1))
 
    if (construct_table_wrt_liq) then
 ! compute es tables from tcmin to tcmax
 ! estimate es derivative with small +/- difference
 
       do i = 1, table_size
-        tem(1) = tminl_loc + dtres_loc*real(i-1,FMS_SVP_KIND_)
+        tem(1) = tminl + dtres*real(i-1,r8_kind)
         tem(2) = tem(1)-tinrc
         tem(3) = tem(1)+tinrc
 !   pass in flag to force all values to be wrt liquid
-        es = compute_es_liq_k (tem, TFREEZE)
-        TABLE2(i) = real( es(1), r8_kind )
-        DTABLE2(i) = real( (es(3)-es(2))*tfact, r8_kind )
+        es = compute_es_liq_k (tem, real(TFREEZE,r8_kind))
+        TABLE2(i) = es(1)
+        DTABLE2(i) = (es(3)-es(2))*tfact
       enddo
 
 ! compute one-half second derivative using centered differences
 ! differencing des values in the table
 
      do i = 2, table_size-1
-       D2TABLE2(i) = real(0.25_kindl*dtinvl_loc* &
-            real(DTABLE2(i+1)-DTABLE2(i-1),FMS_SVP_KIND_), r8_kind)
+       D2TABLE2(i) = 0.25_r8_kind*dtinvl*(DTABLE2(i+1)-DTABLE2(i-1))
      enddo
 ! one-sided derivatives at boundaries
 
-     D2TABLE2(1) = real(0.50_kindl*dtinvl_loc* &
-          (real(DTABLE2(2)-DTABLE2(1),FMS_SVP_KIND_)), r8_kind)
+     D2TABLE2(1) = 0.50_r8_kind*dtinvl*(DTABLE2(2)-DTABLE2(1))
 
-     D2TABLE2(table_size) = real(0.50_kindl*dtinvl_loc* &
-          (real(DTABLE2(table_size)-DTABLE2(table_size-1),FMS_SVP_KIND_)), r8_kind)
+     D2TABLE2(table_size) = 0.50_r8_kind*dtinvl*(DTABLE2(table_size)-DTABLE2(table_size-1))
    endif
 
 
@@ -180,35 +163,27 @@
 ! estimate es derivative with small +/- difference
 
       do i = 1, table_size
-        tem(1) = tminl_loc + dtres_loc*real(i-1,FMS_SVP_KIND_)
+        tem(1) = tminl + dtres*real(i-1,r8_kind)
         tem(2) = tem(1)-tinrc
         tem(3) = tem(1)+tinrc
 !   pass in flag to force all values to be wrt liquid
-        es = compute_es_liq_ice_k (tem, TFREEZE)
-        TABLE3(i) = real(es(1), r8_kind)
-        DTABLE3(i) = real( (es(3)-es(2))*tfact, r8_kind)
+        es = compute_es_liq_ice_k (tem, real(TFREEZE,r8_kind))
+        TABLE3(i) = es(1)
+        DTABLE3(i) = (es(3)-es(2))*tfact
       enddo
 
 ! compute one-half second derivative using centered differences
 ! differencing des values in the table
 
      do i = 2, table_size-1
-       D2TABLE3(i) = real(0.25_kindl*dtinvl* &
-            (real(DTABLE3(i+1)-DTABLE3(i-1),FMS_SVP_KIND_)), r8_kind)
+       D2TABLE3(i) = 0.25_r8_kind*dtinvl*(DTABLE3(i+1)-DTABLE3(i-1))
      enddo
 ! one-sided derivatives at boundaries
 
-     D2TABLE3(1) = real(0.50_kindl*dtinvl* &
-          (real(DTABLE3(2)-DTABLE3(1),FMS_SVP_KIND_)), r8_kind)
+     D2TABLE3(1) = 0.50_r8_kind*dtinvl*(DTABLE3(2)-DTABLE3(1))
 
-     D2TABLE3(table_size) = real(0.50_kindl*dtinvl* &
-          (real(DTABLE3(table_size)-DTABLE3(table_size-1),FMS_SVP_KIND_)), r8_kind)
+     D2TABLE3(table_size) = 0.50_r8_kind*dtinvl*(DTABLE3(table_size)-DTABLE3(table_size-1))
    endif
-
-   dtres  = real(dtres_loc,  r8_kind)
-   tepsl  = real(tepsl_loc,  r8_kind)
-   tminl  = real(tminl_loc,  r8_kind)
-   dtinvl = real(dtinvl_loc, r8_kind)
 
       use_exact_qs = use_exact_qs_input
       module_is_initialized = .true.
