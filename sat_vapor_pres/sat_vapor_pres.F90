@@ -750,8 +750,8 @@ private
 !-----------------------------------------------------------------------
 !  parameters for use in computing qs and mrs
 
- real(r8_kind), parameter :: EPSILO = real(RDGAS/RVGAS, r8_kind)
- real(r8_kind), parameter :: ZVIR = real(RVGAS/RDGAS,r8_kind) - 1.0_r8_kind
+ real(r8_kind), parameter :: EPSILO = real(RDGAS,r8_kind)/real(RVGAS, r8_kind)
+ real(r8_kind), parameter :: ZVIR = real(RVGAS,r8_kind)/real(RDGAS,r8_kind) - 1.0_r8_kind
 
 !-----------------------------------------------------------------------
 !  parameters for table size and resolution
@@ -822,8 +822,8 @@ contains
   endif
   nsize = (tcmax-tcmin)*esres+1
   nlim  = nsize-1
-  call sat_vapor_pres_init_k(nsize, real(tcmin,r8_kind), real(tcmax,r8_kind), TFREEZE, HLV, &
-                             RVGAS, ES0, err_msg_local, use_exact_qs, do_simple, &
+  call sat_vapor_pres_init_k(nsize, real(tcmin,r8_kind), real(tcmax,r8_kind), real(TFREEZE,r8_kind), real(HLV,r8_kind), &
+                             real(RVGAS,r8_kind), real(ES0,r8_kind), err_msg_local, use_exact_qs, do_simple, &
                              construct_table_wrt_liq, &
                              construct_table_wrt_liq_and_ice, &
                              teps, tmin, dtinv)
