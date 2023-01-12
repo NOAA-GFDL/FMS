@@ -822,7 +822,7 @@ contains
   endif
   nsize = (tcmax-tcmin)*esres+1
   nlim  = nsize-1
-  call sat_vapor_pres_init_k(nsize, real(tcmin), real(tcmax), TFREEZE, HLV, &
+  call sat_vapor_pres_init_k(nsize, real(tcmin,r8_kind), real(tcmax,r8_kind), TFREEZE, HLV, &
                              RVGAS, ES0, err_msg_local, use_exact_qs, do_simple, &
                              construct_table_wrt_liq, &
                              construct_table_wrt_liq_and_ice, &
