@@ -107,13 +107,13 @@ end interface mo_derivative_t
 
 !  DEFAULT VALUES OF NAMELIST PARAMETERS:
 
-real(r8_kind)    :: rich_crit      = real(2.0, FMS_MO_KIND_)
-real(r8_kind)    :: drag_min_heat  = real(1.d-05, FMS_MO_KIND_)
-real(r8_kind)    :: drag_min_moist = real(1.d-05, FMS_MO_KIND_)
-real(r8_kind)    :: drag_min_mom   = real(1.d-05, FMS_MO_KIND_)
+real(r8_kind)    :: rich_crit      = real(2.0, r8_kind)
+real(r8_kind)    :: drag_min_heat  = real(1.d-05, r8_kind)
+real(r8_kind)    :: drag_min_moist = real(1.d-05, r8_kind)
+real(r8_kind)    :: drag_min_mom   = real(1.d-05, r8_kind)
 logical          :: neutral        = .false.
 integer          :: stable_option  = 1
-real(r8_kind)    :: zeta_trans     = real(0.5, FMS_MO_KIND_)
+real(r8_kind)    :: zeta_trans     = real(0.5, r8_kind)
 logical          :: new_mo_option  = .false.
 
 
@@ -125,7 +125,7 @@ namelist /monin_obukhov_nml/ rich_crit, neutral, drag_min_heat, &
 
 !  MODULE VARIABLES
 
-real(r8_kind), parameter  :: small  = real(1.d-04, FMS_MO_KIND_)
+real(r8_kind), parameter  :: small  = real(1.d-04, r8_kind)
 real(r8_kind)             :: b_stab, r_crit, lambda, rich_trans
 real(r8_kind)             :: sqrt_drag_min_heat, sqrt_drag_min_moist, sqrt_drag_min_mom
 logical                   :: module_is_initialized = .false.
