@@ -151,19 +151,19 @@ subroutine monin_obukhov_init
 
   !----------------------------------------------------------------------
 
-    if(rich_crit.le.real(0.25,kind=r8_kind))  call error_mesg( &
+    if(rich_crit.le.real(0.25, r8_kind))  call error_mesg( &
       'MONIN_OBUKHOV_INIT in MONIN_OBUKHOV_MOD', &
       'rich_crit in monin_obukhov_mod must be > 0.25', FATAL)
 
-    if(drag_min_heat.le.real(0.0,kind=r8_kind))  call error_mesg( &
+    if(drag_min_heat.le.real(0.0, r8_kind))  call error_mesg( &
       'MONIN_OBUKHOV_INIT in MONIN_OBUKHOV_MOD', &
       'drag_min_heat in monin_obukhov_mod must be >= 0.0', FATAL)
 
-    if(drag_min_moist.le.real(0.0,kind=r8_kind))  call error_mesg( &
+    if(drag_min_moist.le.real(0.0, r8_kind))  call error_mesg( &
       'MONIN_OBUKHOV_INIT in MONIN_OBUKHOV_MOD', &
       'drag_min_moist in monin_obukhov_mod must be >= 0.0', FATAL)
 
-    if(drag_min_mom.le.real(0.0,kind=r8_kind))  call error_mesg( &
+    if(drag_min_mom.le.real(0.0, r8_kind))  call error_mesg( &
       'MONIN_OBUKHOV_INIT in MONIN_OBUKHOV_MOD', &
       'drag_min_mom in monin_obukhov_mod must be >= 0.0', FATAL)
 
@@ -175,22 +175,22 @@ subroutine monin_obukhov_init
       'MONIN_OBUKHOV_INIT in MONIN_OBUKHOV_MOD', &
       'zeta_trans must be positive', FATAL)
 
-    b_stab = real(1.0,kind=r8_kind)/rich_crit
-    r_crit = real(0.95,kind=r8_kind)*rich_crit  ! convergence can get slow if one is
+    b_stab = real(1.0, r8_kind)/rich_crit
+    r_crit = real(0.95, r8_kind)*rich_crit  ! convergence can get slow if one is
                                  ! close to rich_crit
 
-    sqrt_drag_min_heat = real(0.0,kind=r8_kind)
-    if(drag_min_heat.ne.real(0.0,kind=r8_kind)) sqrt_drag_min_heat = sqrt(drag_min_heat)
+    sqrt_drag_min_heat = real(0.0, r8_kind)
+    if(drag_min_heat.ne.real(0.0, r8_kind)) sqrt_drag_min_heat = sqrt(drag_min_heat)
 
-    sqrt_drag_min_moist = real(0.0,kind=r8_kind)
-    if(drag_min_moist.ne.real(0.0,kind=r8_kind)) sqrt_drag_min_moist = sqrt(drag_min_moist)
+    sqrt_drag_min_moist = real(0.0, r8_kind)
+    if(drag_min_moist.ne.real(0.0, r8_kind)) sqrt_drag_min_moist = sqrt(drag_min_moist)
 
-    sqrt_drag_min_mom = real(0.0,kind=r8_kind)
-    if(drag_min_mom.ne.real(0.0,kind=r8_kind)) sqrt_drag_min_mom = sqrt(drag_min_mom)
+    sqrt_drag_min_mom = real(0.0, r8_kind)
+    if(drag_min_mom.ne.real(0.0, r8_kind)) sqrt_drag_min_mom = sqrt(drag_min_mom)
 
-    lambda     = real(1.0,kind=r8_kind) + (real(5.0,kind=r8_kind) &
+    lambda     = real(1.0, r8_kind) + (real(5.0, r8_kind) &
                - b_stab)*zeta_trans  !used only if stable_option = 2
-    rich_trans = zeta_trans/(real(1.0,kind=r8_kind) + real(5.0,kind=r8_kind) &
+    rich_trans = zeta_trans/(real(1.0, r8_kind) + real(5.0, r8_kind) &
                *zeta_trans)!used only if stable_option = 2
 
     module_is_initialized = .true.
