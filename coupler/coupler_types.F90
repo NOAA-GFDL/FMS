@@ -3191,6 +3191,7 @@ contains
 
     if (num_rest_files == 0) return
 
+    if (associated(bc_rest_files)) deallocate(bc_rest_files) !< Add extra safe-guard before allocation since the history of the pointer is not known.
     allocate(bc_rest_files(num_rest_files))
 
     !< Open the files
@@ -3394,6 +3395,7 @@ contains
 
     if (num_rest_files == 0) return
 
+    if (associated(bc_rest_files)) deallocate(bc_rest_files) !< Add extra safe-guard before allocation since the history of the pointer is not known.
     allocate(bc_rest_files(num_rest_files))
 
     !< Open the files
@@ -3776,6 +3778,7 @@ contains
     if (num_rest_files == 0) return
 
     ! Register the fields with the restart files
+    if (associated(bc_rest_files)) deallocate(bc_rest_files) !< Add extra safe-guard before allocation since the history of the pointer is not known.
     allocate(bc_rest_files(num_rest_files))
     do n = 1, var%num_bcs
       if (var%bc(n)%num_fields <= 0) cycle
@@ -3866,6 +3869,7 @@ contains
     if (num_rest_files == 0) return
 
     ! Register the fields with the restart files
+    if (associated(bc_rest_files)) deallocate(bc_rest_files) !< Add extra safe-guard before allocation since the history of the pointer is not known.
     allocate(bc_rest_files(num_rest_files))
     do n = 1, var%num_bcs
       if (var%bc(n)%num_fields <= 0) cycle
