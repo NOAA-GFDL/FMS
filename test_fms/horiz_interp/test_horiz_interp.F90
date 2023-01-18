@@ -79,11 +79,11 @@ implicit none
    real(r8_kind), allocatable, dimension(:)   :: lon1D_src, lat1D_src, lon1D_dst, lat1D_dst
    real(r8_kind), allocatable, dimension(:,:) :: lon2D_src, lat2D_src, lon2D_dst, lat2D_dst
    real(r8_kind), allocatable, dimension(:,:) :: data_src, data1_dst, data2_dst, data3_dst, data4_dst
-   real(r8_kind) :: lon_src_beg = 0_r8_kind,    lon_src_end = 360_r8_kind
-   real(r8_kind) :: lat_src_beg = -90_r8_kind,  lat_src_end = 90_r8_kind
-   real(r8_kind) :: lon_dst_beg = -280_r8_kind, lon_dst_end = 80_r8_kind
-   real(r8_kind) :: lat_dst_beg = -90_r8_kind,  lat_dst_end = 90_r8_kind
-   real(r8_kind) :: D2R = real(PI,r8_kind)/180_r8_kind
+   real(r8_kind) :: lon_src_beg = 0._r8_kind,    lon_src_end = 360._r8_kind
+   real(r8_kind) :: lat_src_beg = -90._r8_kind,  lat_src_end = 90._r8_kind
+   real(r8_kind) :: lon_dst_beg = -280._r8_kind, lon_dst_end = 80._r8_kind
+   real(r8_kind) :: lat_dst_beg = -90._r8_kind,  lat_dst_end = 90._r8_kind
+   real(r8_kind) :: D2R = real(PI,r8_kind)/180._r8_kind
    real(r8_kind), parameter :: SMALL = 1.0e-10_r8_kind
 
    allocate(lon2D_src(ni_src+1, nj_src+1), lat2D_src(ni_src+1, nj_src+1) )

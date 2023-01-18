@@ -30,8 +30,8 @@
 #undef HORIZ_INTERP_BILINEAR_NEW_2D_
 #define HORIZ_INTERP_BILINEAR_NEW_2D_ horiz_interp_bilinear_new_2d_r8
 
-#undef DO_BILINEAR_
-#define DO_BILINEAR_ horiz_interp_bilinear_r8
+#undef HORIZ_INTERP_BILINEAR_
+#define HORIZ_INTERP_BILINEAR_ horiz_interp_bilinear_r8
 
 #undef FIND_NEIGHBOR_
 #define FIND_NEIGHBOR_ find_neighbor_r8

@@ -364,8 +364,10 @@
            if( x>real(1., FMS_HI_KIND_) .or. x< real(0., FMS_HI_KIND_) .or. y>real(1.,FMS_HI_KIND_) .or. &
                y < real(0., FMS_HI_KIND_)) &
                   call mpp_error(FATAL, "horiz_interp_bilinear_mod: weight should be between 0 and 1")
-           Interp % HI_KIND_TYPE_ % wti(m,n,1)=1.0-x; Interp % HI_KIND_TYPE_ % wti(m,n,2)=x
-           Interp % HI_KIND_TYPE_ % wtj(m,n,1)=1.0-y; Interp % HI_KIND_TYPE_ % wtj(m,n,2)=y
+           Interp % HI_KIND_TYPE_ % wti(m,n,1)=real(1.0, FMS_HI_KIND_)-x
+           Interp % HI_KIND_TYPE_ % wti(m,n,2)=x
+           Interp % HI_KIND_TYPE_ % wtj(m,n,1)=real(1.0, FMS_HI_KIND_)-y
+           Interp % HI_KIND_TYPE_ % wtj(m,n,2)=y
        enddo
     enddo
 
@@ -383,11 +385,11 @@
     integer                                :: max_step, n, m, l, i, j, ip1, jp1, step
     integer                                :: is, js, jstart, jend, istart, iend, npts
     integer, allocatable, dimension(:)     :: ilon, jlat
-    real(FMS_HI_KIND_)                      :: lon_min, lon_max, lon, lat, tpi
+    real(FMS_HI_KIND_)                     :: lon_min, lon_max, lon, lat, tpi
     logical                                :: found
-    real(FMS_HI_KIND_)                      :: lon1, lat1, lon2, lat2, lon3, lat3, lon4, lat4
+    real(FMS_HI_KIND_)                     :: lon1, lat1, lon2, lat2, lon3, lat3, lon4, lat4
 
-    tpi = 2.0*pi
+    tpi = 2.0*real(pi, FMS_HI_KIND_)
     nlon_in  = size(lon_in,1) ; nlat_in  = size(lat_in,2)
     nlon_out = size(lon_out,1); nlat_out = size(lon_out,2)
 
@@ -867,7 +869,7 @@
   !> Subroutine for performing the horizontal interpolation between two grids
   !!
   !! @ref horiz_interp_bilinear_new must be called before calling this routine.
-  subroutine DO_BILINEAR_ ( Interp, data_in, data_out, verbose, mask_in,mask_out, &
+  subroutine HORIZ_INTERP_BILINEAR_ ( Interp, data_in, data_out, verbose, mask_in,mask_out, &
        missing_value, missing_permit, new_handle_missing )
     !-----------------------------------------------------------------------
     type (horiz_interp_type), intent(in)        :: Interp !< Derived type variable containing

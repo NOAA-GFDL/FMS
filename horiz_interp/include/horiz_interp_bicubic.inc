@@ -444,9 +444,9 @@
       integer i
       real(FMS_HI_KIND_) t,u,c(4,4)
       call BCUCOF_(y,y1,y2,y12,x1u-x1l,x2u-x2l,c)
-      ansy=0.
-      ansy2=0.
-      ansy1=0.
+      ansy=real(0., FMS_HI_KIND_)
+      ansy2=real(0., FMS_HI_KIND_)
+      ansy1=real(0., FMS_HI_KIND_)
       do i=4,1,-1
         ansy=t*ansy+((c(i,4)*u+c(i,3))*u+c(i,2))*u+c(i,1)
 !        ansy2=t*ansy2+(3.*c(i,4)*u+2.*c(i,3))*u+c(i,2)

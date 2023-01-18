@@ -24,26 +24,26 @@
 #undef FMS_HI_KIND_
 #define FMS_HI_KIND_ r8_kind
 
-#undef CONSERVE_NEW_1DX1D_
-#define CONSERVE_NEW_1DX1D_ horiz_interp_conserve_new_1dx1d_r8
+#undef HORIZ_INTERP_CONSERVE_NEW_1DX1D_
+#define HORIZ_INTERP_CONSERVE_NEW_1DX1D_ horiz_interp_conserve_new_1dx1d_r8
 
-#undef CONSERVE_NEW_1DX2D_
-#define CONSERVE_NEW_1DX2D_ horiz_interp_conserve_new_1dx2d_r8
+#undef HORIZ_INTERP_CONSERVE_NEW_1DX2D_
+#define HORIZ_INTERP_CONSERVE_NEW_1DX2D_ horiz_interp_conserve_new_1dx2d_r8
 
-#undef CONSERVE_NEW_2DX1D_
-#define CONSERVE_NEW_2DX1D_ horiz_interp_conserve_new_2dx1d_r8
+#undef HORIZ_INTERP_CONSERVE_NEW_2DX1D_
+#define HORIZ_INTERP_CONSERVE_NEW_2DX1D_ horiz_interp_conserve_new_2dx1d_r8
 
-#undef CONSERVE_NEW_2DX2D_
-#define CONSERVE_NEW_2DX2D_ horiz_interp_conserve_new_2dx2d_r8
+#undef HORIZ_INTERP_CONSERVE_NEW_2DX2D_
+#define HORIZ_INTERP_CONSERVE_NEW_2DX2D_ horiz_interp_conserve_new_2dx2d_r8
 
-#undef CONSERVE_
-#define CONSERVE_ horiz_interp_conserve_r8
+#undef HORIZ_INTERP_CONSERVE_
+#define HORIZ_INTERP_CONSERVE_ horiz_interp_conserve_r8
 
-#undef CONSERVE_VERSION1_
-#define CONSERVE_VERSION1_ horiz_interp_conserve_version1_r8
+#undef HORIZ_INTERP_CONSERVE_VERSION1_
+#define HORIZ_INTERP_CONSERVE_VERSION1_ horiz_interp_conserve_version1_r8
 
-#undef CONSERVE_VERSION2_
-#define CONSERVE_VERSION2_ horiz_interp_conserve_version2_r8
+#undef HORIZ_INTERP_CONSERVE_VERSION2_
+#define HORIZ_INTERP_CONSERVE_VERSION2_ horiz_interp_conserve_version2_r8
 
 #undef STATS_
 #define STATS_ stats_r8

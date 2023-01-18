@@ -18,7 +18,7 @@
 !***********************************************************************
 !> @addtogroup horiz_interp_conserve_mod
 !> @{
-subroutine CONSERVE_NEW_1DX1D_ ( Interp, lon_in, lat_in, lon_out, lat_out, verbose)
+subroutine HORIZ_INTERP_CONSERVE_NEW_1DX1D_ ( Interp, lon_in, lat_in, lon_out, lat_out, verbose)
     type(horiz_interp_type), intent(inout) :: Interp
     real(FMS_HI_KIND_), intent(in),       dimension(:)   :: lon_in , lat_in
     real(FMS_HI_KIND_), intent(in),       dimension(:)   :: lon_out, lat_out
@@ -40,10 +40,10 @@ subroutine CONSERVE_NEW_1DX1D_ ( Interp, lon_in, lat_in, lon_out, lat_out, verbo
     character(len=64) :: mesg
 
     if(.not. module_is_initialized) call mpp_error(FATAL, &
-         'CONSERVE_NEW_1DX1D_: horiz_interp_conserve_init is not called')
+         'HORIZ_INTERP_CONSERVE_NEW_1DX1D_: horiz_interp_conserve_init is not called')
 
     if(great_circle_algorithm) call mpp_error(FATAL, &
-         'CONSERVE_NEW_1DX1D_: great_circle_algorithm is not implemented, contact developer')
+         'HORIZ_INTERP_CONSERVE_NEW_1DX1D_: great_circle_algorithm is not implemented, contact developer')
     !-----------------------------------------------------------------------
     iverbose = 0;  if (present(verbose)) iverbose = verbose
 
@@ -215,11 +215,11 @@ subroutine CONSERVE_NEW_1DX1D_ ( Interp, lon_in, lat_in, lon_out, lat_out, verbo
     endif
     !-----------------------------------------------------------------------
 
-  end subroutine CONSERVE_NEW_1DX1D_
+  end subroutine HORIZ_INTERP_CONSERVE_NEW_1DX1D_
 
   !#######################################################################
 
-  subroutine CONSERVE_NEW_1DX2D_ ( Interp, lon_in, lat_in, lon_out, lat_out, &
+  subroutine HORIZ_INTERP_CONSERVE_NEW_1DX2D_ ( Interp, lon_in, lat_in, lon_out, lat_out, &
                                                mask_in, mask_out, verbose)
     type(horiz_interp_type),        intent(inout) :: Interp
     real(FMS_HI_KIND_), intent(in),              dimension(:)   :: lon_in , lat_in
@@ -247,13 +247,13 @@ subroutine CONSERVE_NEW_1DX1D_ ( Interp, lon_in, lat_in, lon_out, lat_out, verbo
     integer(kind=1) :: one_byte(8)
 
     if(.not. module_is_initialized) call mpp_error(FATAL, &
-         'CONSERVE_NEW_1DX2D_: horiz_interp_conserve_init is not called')
+         'HORIZ_INTERP_CONSERVE_NEW_1DX2D_: horiz_interp_conserve_init is not called')
 
     if( .not. allocated(Interp%HI_KIND_TYPE_)) allocate(Interp%HI_KIND_TYPE_)
 
     wordsz=size(transfer(lon_in(1), one_byte))
     if(wordsz .NE. 4 .AND. wordsz .NE. 8) call mpp_error(FATAL, &
-         'CONSERVE_NEW_1DX2D_: wordsz should be 4 or 8')
+         'HORIZ_INTERP_CONSERVE_NEW_1DX2D_: wordsz should be 4 or 8')
 
     if( (size(lon_out,1) .NE. size(lat_out,1)) .OR. (size(lon_out,2) .NE. size(lat_out,2)) )  &
         call mpp_error(FATAL, 'horiz_interp_conserve_mod: size mismatch between lon_out and lat_out')
@@ -384,11 +384,11 @@ subroutine CONSERVE_NEW_1DX1D_ ( Interp, lon_in, lat_in, lon_out, lat_out, verbo
 
     deallocate(i_src, j_src, i_dst, j_dst, xgrid_area, dst_area )
 
-  end subroutine CONSERVE_NEW_1DX2D_
+  end subroutine HORIZ_INTERP_CONSERVE_NEW_1DX2D_
 
   !#######################################################################
 
-  subroutine CONSERVE_NEW_2DX1D_ ( Interp, lon_in, lat_in, lon_out, lat_out, &
+  subroutine HORIZ_INTERP_CONSERVE_NEW_2DX1D_ ( Interp, lon_in, lat_in, lon_out, lat_out, &
                                                mask_in, mask_out, verbose)
     type(horiz_interp_type),        intent(inout) :: Interp
     real(FMS_HI_KIND_), intent(in),              dimension(:,:) :: lon_in , lat_in
@@ -411,13 +411,13 @@ subroutine CONSERVE_NEW_1DX1D_ ( Interp, lon_in, lat_in, lon_out, lat_out, verbo
     integer(kind=1) :: one_byte(8)
 
     if(.not. module_is_initialized) call mpp_error(FATAL, &
-         'CONSERVE_NEW_2DX1D_: horiz_interp_conserve_init is not called')
+         'HORIZ_INTERP_CONSERVE_NEW_2DX1D_: horiz_interp_conserve_init is not called')
 
     if( .not. allocated(Interp%HI_KIND_TYPE_)) allocate(Interp%HI_KIND_TYPE_)
 
     wordsz=size(transfer(lon_in(1,1), one_byte))
     if(wordsz .NE. 8) call mpp_error(FATAL, &
-         'CONSERVE_NEW_2DX1D_: currently only support 64-bit real(FMS_HI_KIND_), contact developer')
+         'HORIZ_INTERP_CONSERVE_NEW_2DX1D_: currently only support 64-bit real(FMS_HI_KIND_), contact developer')
 
     if( (size(lon_in,1) .NE. size(lat_in,1)) .OR. (size(lon_in,2) .NE. size(lat_in,2)) )  &
         call mpp_error(FATAL, 'horiz_interp_conserve_mod: size mismatch between lon_in and lat_in')
@@ -493,11 +493,11 @@ subroutine CONSERVE_NEW_1DX1D_ ( Interp, lon_in, lat_in, lon_out, lat_out, verbo
 
     deallocate(i_src, j_src, i_dst, j_dst, xgrid_area, dst_area)
 
-  end subroutine CONSERVE_NEW_2DX1D_
+  end subroutine HORIZ_INTERP_CONSERVE_NEW_2DX1D_
 
   !#######################################################################
 
-  subroutine CONSERVE_NEW_2DX2D_ ( Interp, lon_in, lat_in, lon_out, lat_out, &
+  subroutine HORIZ_INTERP_CONSERVE_NEW_2DX2D_ ( Interp, lon_in, lat_in, lon_out, lat_out, &
                                                mask_in, mask_out, verbose)
     type(horiz_interp_type),        intent(inout) :: Interp
     real(FMS_HI_KIND_), intent(in),              dimension(:,:) :: lon_in , lat_in
@@ -519,13 +519,13 @@ subroutine CONSERVE_NEW_1DX1D_ ( Interp, lon_in, lat_in, lon_out, lat_out, verbo
     integer(kind=1) :: one_byte(8)
 
     if(.not. module_is_initialized) call mpp_error(FATAL, &
-         'CONSERVE_NEW_2DX2D_: horiz_interp_conserve_init is not called')
+         'HORIZ_INTERP_CONSERVE_NEW_2DX2D_: horiz_interp_conserve_init is not called')
 
     if( .not. allocated(Interp%HI_KIND_TYPE_)) allocate(Interp%HI_KIND_TYPE_)
 
     wordsz=size(transfer(lon_in(1,1), one_byte))
     if(wordsz .NE. 4 .AND. wordsz .NE. 8) call mpp_error(FATAL, &
-         'CONSERVE_NEW_2DX2D_: wordsz should be 4 or 8')
+         'HORIZ_INTERP_CONSERVE_NEW_2DX2D_: wordsz should be 4 or 8')
 
     if( (size(lon_in,1) .NE. size(lat_in,1)) .OR. (size(lon_in,2) .NE. size(lat_in,2)) )  &
         call mpp_error(FATAL, 'horiz_interp_conserve_mod: size mismatch between lon_in and lat_in')
@@ -600,7 +600,7 @@ subroutine CONSERVE_NEW_1DX1D_ ( Interp, lon_in, lat_in, lon_out, lat_out, verbo
 
     deallocate(i_src, j_src, i_dst, j_dst, xgrid_area, dst_area )
 
-  end subroutine CONSERVE_NEW_2DX2D_
+  end subroutine HORIZ_INTERP_CONSERVE_NEW_2DX2D_
 
   !########################################################################
 
@@ -608,7 +608,7 @@ subroutine CONSERVE_NEW_1DX1D_ ( Interp, lon_in, lat_in, lon_out, lat_out, verbo
   !!
   !> Subroutine for performing the horizontal interpolation between two grids.
   !! horiz_interp_conserve_new must be called before calling this routine.
-  subroutine CONSERVE_( Interp, data_in, data_out, verbose, &
+  subroutine HORIZ_INTERP_CONSERVE_( Interp, data_in, data_out, verbose, &
        mask_in, mask_out)
     !-----------------------------------------------------------------------
     type (horiz_interp_type), intent(in) :: Interp
@@ -635,17 +635,17 @@ subroutine CONSERVE_NEW_1DX1D_ ( Interp, lon_in, lat_in, lon_out, lat_out, verbo
 
     select case ( Interp%version)
     case (1)
-       call CONSERVE_VERSION1_(Interp, data_in, data_out, verbose, mask_in, mask_out)
+       call HORIZ_INTERP_CONSERVE_VERSION1_(Interp, data_in, data_out, verbose, mask_in, mask_out)
     case (2)
-       if(present(mask_in) .OR. present(mask_out) ) call mpp_error(FATAL, 'CONSERVE_:'// &
+       if(present(mask_in) .OR. present(mask_out) ) call mpp_error(FATAL, 'HORIZ_INTERP_CONSERVE_:'// &
             & ' for version 2, mask_in and mask_out must be passed in horiz_interp_new, not in horiz_interp')
-       call CONSERVE_VERSION2_(Interp, data_in, data_out, verbose)
+       call HORIZ_INTERP_CONSERVE_VERSION2_(Interp, data_in, data_out, verbose)
     end select
 
-  end subroutine CONSERVE_
+  end subroutine HORIZ_INTERP_CONSERVE_
 
   !##############################################################################
-  subroutine CONSERVE_VERSION1_ ( Interp, data_in, data_out, verbose, &
+  subroutine HORIZ_INTERP_CONSERVE_VERSION1_ ( Interp, data_in, data_out, verbose, &
        mask_in, mask_out)
     !-----------------------------------------------------------------------
     type (horiz_interp_type), intent(in) :: Interp
@@ -790,10 +790,10 @@ subroutine CONSERVE_NEW_1DX1D_ ( Interp, lon_in, lat_in, lon_out, lat_out, verbo
     endif
 
     !-----------------------------------------------------------------------
-  end subroutine CONSERVE_VERSION1_
+  end subroutine HORIZ_INTERP_CONSERVE_VERSION1_
 
   !#############################################################################
-  subroutine CONSERVE_VERSION2_ ( Interp, data_in, data_out, verbose )
+  subroutine HORIZ_INTERP_CONSERVE_VERSION2_ ( Interp, data_in, data_out, verbose )
     !-----------------------------------------------------------------------
     type (horiz_interp_type), intent(in) :: Interp
     real(FMS_HI_KIND_),    intent(in),  dimension(:,:) :: data_in
@@ -808,7 +808,7 @@ subroutine CONSERVE_NEW_1DX1D_ ( Interp, lon_in, lat_in, lon_out, lat_out, verbo
        data_out(i_dst, j_dst) = data_out(i_dst, j_dst) + data_in(i_src,j_src)*Interp%HI_KIND_TYPE_%area_frac_dst(i)
     end do
 
-  end subroutine CONSERVE_VERSION2_
+  end subroutine HORIZ_INTERP_CONSERVE_VERSION2_
 
 
   !#######################################################################

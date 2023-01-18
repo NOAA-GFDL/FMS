@@ -19,7 +19,7 @@
 !> @addtogroup horiz_interp_type_mod
 !> @{
  !> @brief This statistics is for bilinear interpolation and spherical regrid.
- subroutine HI_STATS_ ( dat, low, high, avg, miss, missing_value, mask )
+ subroutine STATS_ ( dat, low, high, avg, miss, missing_value, mask )
  real(FMS_HI_KIND_),    intent(in)  :: dat(:,:)
  real(FMS_HI_KIND_),    intent(out) :: low, high, avg
  integer, intent(out) :: miss

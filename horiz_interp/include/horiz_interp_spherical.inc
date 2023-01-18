@@ -95,8 +95,10 @@
     theta_dst(:,:) = lon_out(:,:)
     phi_dst(:,:)   = lat_out(:,:)
 
-    min_theta_dst=tpi;max_theta_dst=real(0.0, FMS_HI_KIND_);min_phi_dst=pi;max_phi_dst=-pi
-    min_theta_src=tpi;max_theta_src=real(0.0, FMS_HI_KIND_);min_phi_src=pi;max_phi_src=-pi
+    min_theta_dst=real(tpi, FMS_HI_KIND_);max_theta_dst=real(0.0, FMS_HI_KIND_)
+    min_phi_dst=real(pi, FMS_HI_KIND_);max_phi_dst=real(-pi, FMS_HI_KIND_)
+    min_theta_src=real(tpi, FMS_HI_KIND_);max_theta_src=real(0.0, FMS_HI_KIND_)
+    min_phi_src=real(pi, FMS_HI_KIND_);max_phi_src=real(-pi, FMS_HI_KIND_)
 
     where(theta_dst<real(0.0, FMS_HI_KIND_))  theta_dst = theta_dst+real(tpi,FMS_HI_KIND_)
     where(theta_dst>real(tpi,FMS_HI_KIND_))  theta_dst = theta_dst-real(tpi,FMS_HI_KIND_)
