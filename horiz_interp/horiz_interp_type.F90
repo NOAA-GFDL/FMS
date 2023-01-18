@@ -69,7 +69,7 @@ end interface
                                                         !! and spherical regrid
    real,    dimension(:,:,:), allocatable :: src_dist               !< distance between destination grid and
                                                                         !! neighbor source grid.
-   logical, dimension(:,:), pointer   :: found_neighbors =>NULL()       !< indicate whether destination grid
+   logical, dimension(:,:), allocatable   :: found_neighbors       !< indicate whether destination grid
                                                                         !! has some source grid around it.
    real                               :: max_src_dist
    integer, dimension(:,:), allocatable   :: num_found
@@ -201,7 +201,7 @@ contains
     horiz_interp_out%i_lon           =  horiz_interp_in%i_lon
     horiz_interp_out%j_lat           =  horiz_interp_in%j_lat
     horiz_interp_out%src_dist        =  horiz_interp_in%src_dist
-    horiz_interp_out%found_neighbors => horiz_interp_in%found_neighbors
+    if (allocated(horiz_interp_in%found_neighbors)) horiz_interp_out%found_neighbors = horiz_interp_in%found_neighbors
     horiz_interp_out%max_src_dist    =  horiz_interp_in%max_src_dist
     horiz_interp_out%num_found       =  horiz_interp_in%num_found
     horiz_interp_out%nlon_src        =  horiz_interp_in%nlon_src
