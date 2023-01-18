@@ -818,13 +818,10 @@ END SUBROUTINE update_bounds_modern
 !! If any compariosn function returns true, then, after filling error_str, this routine also returns
 !! true. The suplied comparison functions should return true for errors : for indecies out of bounds,
 !! or indecies are not equal when expected to be equal.
-LOGICAL FUNCTION compare_buffer_bounds_to_size(array_bounds, bounds, output_name, module_name, error_str, &
-     & lowerb_comp, upperb_comp)
+LOGICAL FUNCTION compare_buffer_bounds_to_size(array_bounds, bounds, error_str, lowerb_comp, upperb_comp)
   TYPE (fms_diag_ibounds_type), INTENT(in) :: array_bounds
   TYPE (fms_diag_ibounds_type), INTENT(in):: bounds
-  CHARACTER(len=*), INTENT(in) :: output_name
-  CHARACTER(len=*), INTENT(in) :: module_name
-  CHARACTER(len=*), INTENT(inout) :: error_str
+  CHARACTER(*), INTENT(inout) :: error_str
 
   !> @brief Interface lowerb_comp should be used for comparison to lower bounds of buffer.
   INTERFACE
@@ -863,7 +860,8 @@ LOGICAL FUNCTION compare_buffer_bounds_to_size(array_bounds, bounds, output_name
      WRITE(error_str(70:72),'(i3)') bounds%kmin
      WRITE(error_str(74:76),'(i3)') bounds%kmax
   ELSE
-     error_str = ''
+    compare_buffer_bounds_to_size = .FALSE.
+    error_str = ''
   END IF
 END FUNCTION compare_buffer_bounds_to_size
 
@@ -903,20 +901,15 @@ SUBROUTINE check_out_of_bounds_legacy(out_num, diag_field_id, err_msg)
   CALL bounds_from_array(array_bounds, output_fields(out_num)%buffer)
 
   out_of_bounds = compare_buffer_bounds_to_size(array_bounds, buff_bounds, &
-     & output_fields(out_num)%output_name, input_fields(diag_field_id)%module_name,&
      & error_string2, a_lessthan_b, a_greaterthan_b)
 
   IF (out_of_bounds .EQV. .true.) THEN
-     WRITE(error_string1,'(a,"/",a)')  input_fields(diag_field_id)%module_name, output_fields(out_num)%output_name
+     WRITE(error_string1,'(a,"/",a)')  TRIM(input_fields(diag_field_id)%module_name), &
+       & TRIM(output_fields(out_num)%output_name)
      err_msg = 'module/output_field='//TRIM(error_string1)//&
           & '  Bounds of buffer exceeded.  '//TRIM(error_string2)
      !   imax, imin, etc need to be reset in case the program is not terminated.
-     buff_bounds%imax = 0
-     buff_bounds%imin = VERY_LARGE_AXIS_LENGTH
-     buff_bounds%jmax = 0
-     buff_bounds%jmin = VERY_LARGE_AXIS_LENGTH
-     buff_bounds%kmax = 0
-     buff_bounds%kmin = VERY_LARGE_AXIS_LENGTH
+     call buff_bounds%reset(VERY_LARGE_AXIS_LENGTH, 0)
   ELSE
      err_msg = ''
   END IF
@@ -929,30 +922,24 @@ SUBROUTINE check_out_of_bounds_modern_r4(ofb, bounds, output_name, module_name, 
   TYPE (fms_diag_ibounds_type), INTENT(inout) :: bounds
   CHARACTER(:), ALLOCATABLE, INTENT(in) :: output_name
   CHARACTER(:), ALLOCATABLE, INTENT(in) :: module_name
-  CHARACTER(len=256), INTENT(out) :: err_msg !< Return status of <TT>check_out_of_bounds</TT>.  An empty
+  CHARACTER(len=*), INTENT(out) :: err_msg !< Return status of <TT>check_out_of_bounds</TT>.  An empty
                                            !! error string indicates the x, y, and z indices are not outside the
 
   CHARACTER(len=128) :: error_string1, error_string2
   LOGICAL :: out_of_bounds = .true.
   TYPE (fms_diag_ibounds_type) :: array_bounds
-  TYPE (fms_diag_ibounds_type), ALLOCATABLE :: buff_bounds
 
   CALL bounds_from_array(array_bounds, ofb)
 
-  out_of_bounds = compare_buffer_bounds_to_size(array_bounds, buff_bounds, &
-     & output_name, module_name, error_string2, a_lessthan_b, a_greaterthan_b)
+  out_of_bounds = compare_buffer_bounds_to_size(array_bounds, bounds, &
+     & error_string2, a_lessthan_b, a_greaterthan_b)
 
   IF (out_of_bounds .EQV. .true.) THEN
      WRITE(error_string1,'(a,"/",a)')  TRIM(module_name), TRIM(output_name)
      err_msg = 'module/output_field='//TRIM(error_string1)//&
           & '  Bounds of buffer exceeded.  '//TRIM(error_string2)
      !   imax, imin, etc need to be reset in case the program is not terminated.
-     buff_bounds%imax = 0
-     buff_bounds%imin = VERY_LARGE_AXIS_LENGTH
-     buff_bounds%jmax = 0
-     buff_bounds%jmin = VERY_LARGE_AXIS_LENGTH
-     buff_bounds%kmax = 0
-     buff_bounds%kmin = VERY_LARGE_AXIS_LENGTH
+     call bounds%reset(VERY_LARGE_AXIS_LENGTH,0)
   ELSE
      err_msg = ''
   END IF
@@ -965,30 +952,24 @@ SUBROUTINE check_out_of_bounds_modern_r8(ofb, bounds, output_name, module_name, 
   TYPE (fms_diag_ibounds_type), INTENT(inout) :: bounds
   CHARACTER(:), ALLOCATABLE, INTENT(in) :: output_name
   CHARACTER(:), ALLOCATABLE, INTENT(in) :: module_name
-  CHARACTER(len=256), INTENT(out) :: err_msg !< Return status of <TT>check_out_of_bounds</TT>.  An empty
+  CHARACTER(len=*), INTENT(out) :: err_msg !< Return status of <TT>check_out_of_bounds</TT>.  An empty
                                            !! error string indicates the x, y, and z indices are not outside the
 
   CHARACTER(len=128) :: error_string1, error_string2
   LOGICAL :: out_of_bounds = .true.
   TYPE (fms_diag_ibounds_type) :: array_bounds
-  TYPE (fms_diag_ibounds_type), ALLOCATABLE :: buff_bounds
 
   CALL bounds_from_array(array_bounds, ofb)
 
-  out_of_bounds = compare_buffer_bounds_to_size(array_bounds, buff_bounds, &
-     & output_name, module_name, error_string2, a_lessthan_b, a_greaterthan_b)
+  out_of_bounds = compare_buffer_bounds_to_size(array_bounds, bounds, &
+     &  error_string2, a_lessthan_b, a_greaterthan_b)
 
   IF (out_of_bounds .EQV. .true.) THEN
      WRITE(error_string1,'(a,"/",a)')  TRIM(module_name), TRIM(output_name)
      err_msg = 'module/output_field='//TRIM(error_string1)//&
           & '  Bounds of buffer exceeded.  '//TRIM(error_string2)
      !   imax, imin, etc need to be reset in case the program is not terminated.
-     buff_bounds%imax = 0
-     buff_bounds%imin = VERY_LARGE_AXIS_LENGTH
-     buff_bounds%jmax = 0
-     buff_bounds%jmin = VERY_LARGE_AXIS_LENGTH
-     buff_bounds%kmax = 0
-     buff_bounds%kmin = VERY_LARGE_AXIS_LENGTH
+     call bounds%reset(VERY_LARGE_AXIS_LENGTH,0)
   ELSE
      err_msg = ''
   END IF
@@ -1006,15 +987,16 @@ SUBROUTINE check_bounds_are_exact_dynamic_modern(array_bounds, bounds, output_na
   !! <TT>output_fields(out_num)%Time_of_prev_field_data</TT> is not
   !! equal to <TT>Time</TT> or <TT>Time_zero</TT>.
   TYPE(time_type), INTENT(inout) :: field_prev_Time  !< <TT>output_fields(out_num)%Time_of_prev_field_data</TT>
-  CHARACTER(len=256), INTENT(out) :: err_msg !< Return status of <TT>check_bounds_are_exact_dynamic</TT>.
+  CHARACTER(len=*), INTENT(out) :: err_msg !< Return status of <TT>check_bounds_are_exact_dynamic</TT>.
   !! An empty error string indicates the x, y, and z indices are
   !!     equal to the buffer array boundaries.
 
-  CHARACTER(len=128), ALLOCATABLE :: error_string1, error_string2
+  CHARACTER(len=128) :: error_string1, error_string2
   LOGICAL :: do_check
   LOGICAL :: lims_not_exact = .true.
 
   err_msg = ''
+
 
   ! Check bounds only when the value of Time changes. When windows are used,
   ! a change in Time indicates that a new loop through the windows has begun,
@@ -1033,17 +1015,13 @@ SUBROUTINE check_bounds_are_exact_dynamic_modern(array_bounds, bounds, output_na
   END IF
 
   IF ( do_check ) THEN
-     lims_not_exact = compare_buffer_bounds_to_size(array_bounds, bounds, output_name, module_name, &
+     lims_not_exact = compare_buffer_bounds_to_size(array_bounds, bounds, &
           & error_string2, a_noteq_b, a_noteq_b)
      IF( lims_not_exact .eqv. .TRUE.) THEN
+        WRITE(error_string1,'(a,"/",a)') TRIM(module_name), TRIM(output_name)
         err_msg = TRIM(error_string1)//' Bounds of data do not match those of buffer. '//TRIM(error_string2)
      END IF
-     bounds%imax = 0
-     bounds%imin = VERY_LARGE_AXIS_LENGTH
-     bounds%jmax = 0
-     bounds%jmin = VERY_LARGE_AXIS_LENGTH
-     bounds%kmax = 0
-     bounds%kmin = VERY_LARGE_AXIS_LENGTH
+     call bounds%reset(VERY_LARGE_AXIS_LENGTH, 0)
   END IF
 END SUBROUTINE check_bounds_are_exact_dynamic_modern
 
@@ -1058,7 +1036,7 @@ SUBROUTINE check_bounds_are_exact_dynamic_legacy(out_num, diag_field_id, Time, e
   TYPE(time_type), INTENT(in) :: Time !< Time to use in check.  The check is only performed if
                                       !! <TT>output_fields(out_num)%Time_of_prev_field_data</TT> is not
                                       !! equal to <TT>Time</TT> or <TT>Time_zero</TT>.
-  CHARACTER(len=*), INTENT(out) :: err_msg !< Return status of <TT>check_bounds_are_exact_dynamic</TT>.
+  CHARACTER(len=*), INTENT(inout) :: err_msg !< Return status of <TT>check_bounds_are_exact_dynamic</TT>.
                                            !! An empty error string indicates the x, y, and z indices are
                                            !!     equal to the buffer array boundaries.
   CHARACTER(:), ALLOCATABLE :: output_name
@@ -1083,10 +1061,9 @@ END SUBROUTINE check_bounds_are_exact_dynamic_legacy
   SUBROUTINE check_bounds_are_exact_static_legacy(out_num, diag_field_id, err_msg)
     INTEGER, INTENT(in) :: out_num !< Output field ID
     INTEGER, INTENT(in) :: diag_field_id !< Input field ID.
-    CHARACTER(len=256), INTENT(out) :: err_msg
+    CHARACTER(len=*), INTENT(out) :: err_msg
     CHARACTER(:), ALLOCATABLE :: output_name
     CHARACTER(:), ALLOCATABLE :: module_name
-    CHARACTER(len=128)  :: error_string1, error_string2
     TYPE (fms_diag_ibounds_type) :: array_bounds
 
     output_name = output_fields(out_num)%output_name
@@ -1112,19 +1089,13 @@ END SUBROUTINE check_bounds_are_exact_dynamic_legacy
     LOGICAL :: lims_not_exact = .true.
 
     err_msg = ''
-    lims_not_exact = compare_buffer_bounds_to_size(array_bounds, bounds, output_name, module_name, &
+    lims_not_exact = compare_buffer_bounds_to_size(array_bounds, bounds,  &
          & error_string2, a_noteq_b, a_noteq_b)
     IF( lims_not_exact .eqv. .TRUE.) THEN
        WRITE(error_string1,'(a,"/",a)') TRIM(module_name), TRIM(output_name)
        err_msg = TRIM(error_string1)//' Bounds of data do not match those of buffer. '//TRIM(error_string2)
     END IF
-
-  bounds%imax = 0
-  bounds%imin = VERY_LARGE_AXIS_LENGTH
-  bounds%jmax = 0
-  bounds%jmin = VERY_LARGE_AXIS_LENGTH
-  bounds%kmax = 0
-  bounds%kmin = VERY_LARGE_AXIS_LENGTH
+  call bounds%reset(VERY_LARGE_AXIS_LENGTH, 0)
   END SUBROUTINE check_bounds_are_exact_static_modern
 
 
@@ -1611,7 +1582,7 @@ END SUBROUTINE check_bounds_are_exact_dynamic_legacy
     output_fields(out_num)%num_axes = 0
     output_fields(out_num)%total_elements = 0
     output_fields(out_num)%region_elements = 0
-    call output_fields(out_num)%buff_bounds%reset(0, VERY_LARGE_AXIS_LENGTH)
+    call output_fields(out_num)%buff_bounds%reset(VERY_LARGE_AXIS_LENGTH, 0)
 
     ! initialize the size of the diurnal axis to 1
     output_fields(out_num)%n_diurnal_samples = 1

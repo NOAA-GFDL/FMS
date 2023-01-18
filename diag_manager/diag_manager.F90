@@ -1887,12 +1887,8 @@ CONTAINS
                 &  hi, hj,  f1, f2, f3, f4)
 
          ALLOCATE( ofield_cfg )
-         CALL ofield_cfg%initialize( input_fields(diag_field_id), output_fields(out_num), PRESENT(mask))
-         !! TODO: missing time_reduction
+         CALL ofield_cfg%initialize( input_fields(diag_field_id), output_fields(out_num), PRESENT(mask), freq)
 
-         !! TODO: Question: note that mask was declared allocatable in order to call fieldbuff_update (which
-         !!    in tuen needs mask to be allocatable for pointer remapping). Is this an issue as
-         !!    original send_data_3d did not have mask as so.
          IF ( average ) THEN
             !!TODO: the copy that is filed_out should not be necessary
             temp_result = fieldbuff_update(ofield_cfg, ofield_index_cfg, field_out, sample, &

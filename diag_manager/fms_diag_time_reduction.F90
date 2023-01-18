@@ -38,6 +38,7 @@ MODULE fms_diag_time_reduction_mod
    implicit none
 
    !!These parametes may be put in diag_data?
+   !!TODO: time_diurnal "not really" same kind as others, so remove?
    INTEGER, PARAMETER :: time_none    = 0 !< There is no reduction method
    INTEGER, PARAMETER :: time_average = 1 !< The reduction method is avera
    INTEGER, PARAMETER :: time_rms     = 2 !< The reduction method is rms
@@ -85,7 +86,7 @@ CONTAINS
 
    !> @brief The class contructors. Just allocates the class and calls an initializer
    function time_reduction_type_constructor(dt, out_frequency) result(time_redux)
-      integer, intent(in) :: dt  !> The redution type (time_rms, time_porer, etc)
+      integer, intent(in) :: dt  !> The redution type (time_rms, time_power, etc)
       integer, intent(in) :: out_frequency  !> The output frequency.
       class (time_reduction_type), allocatable :: time_redux
       allocate(time_redux)
@@ -118,8 +119,6 @@ CONTAINS
          ENDIF
       END IF
 
-      !!See legacy init_output_fields concerning time_ops
-      !!TODO: how about time_rms ...
       IF((dt .EQ. time_min) .OR. (dt .EQ. time_max) .OR. &
       & ( dt .EQ. time_average) .OR. (dt .EQ. time_sum)  ) THEN
          this%time_ops = .true.
@@ -127,6 +126,7 @@ CONTAINS
          this%time_ops = .false.
       END IF
    end subroutine initialize
+
 
 
 
@@ -209,6 +209,7 @@ CONTAINS
       logical :: is_time_power_imp
       is_time_power_imp = this%the_type .EQ. time_power
    end function is_time_power_imp
+
 
 end module fms_diag_time_reduction_mod
 !> @}

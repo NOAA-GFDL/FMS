@@ -43,7 +43,8 @@ MODULE fms_diag_outfield_mod
    USE diag_data_mod, only:Time_zero
    USE diag_data_mod, only: GLO_REG_VAL, GLO_REG_VAL_ALT, region_out_use_alt_value, VERY_LARGE_AXIS_LENGTH, coord_type
    USE diag_data_mod, only: fms_diag_ibounds_type, input_field_type, output_field_type
-   USE fms_diag_time_reduction_mod, only: time_reduction_type
+   USE fms_diag_time_reduction_mod, only: time_reduction_type, time_none , time_average, time_rms
+   USE fms_diag_time_reduction_mod, only:  time_max, time_min, time_sum, time_power
 
    !!TODO: for modern diag: if use_yaml then
    !! USE fms_diag_yaml_mod, only : diagYamlFiles_type, diagYamlFilesVar_type
@@ -88,6 +89,9 @@ MODULE fms_diag_outfield_mod
       TYPE(time_reduction_type) :: time_reduction !< Instance of the time_reduction_type.
 
       TYPE(fms_diag_ibounds_type) :: buff_bounds !< Instance of a fms_diag_buff_intervals_t type.
+
+      !!TODO : a pointer for time_min and time_max comparison function
+      !!       min_max_f_ptr => (should point to < or > operators)
 
       !! gcc error: Interface ‘addwf’ at (1) must be explicit
       ! procedure (addwf), pointer, nopass :: f_ptr => null () !!A pointer to the field weighing procedure
@@ -148,23 +152,24 @@ CONTAINS
    END SUBROUTINE initialize_outfield_index_type
 
 
-   !!output_frequency in file_type;
-   !! num_elements in output_field; possibly pass by itself to update_field.
-   !!output_frequecy in file_type.
    !> @brief Update with those fields used in the legacy diag manager.
-   SUBROUTINE initialize_outfield_imp(this, input_field,  output_field, mask_present)
+  !! Note that this is initializing from the legacy structures.
+   !! Note that output_frequency  came from file_type;
+   SUBROUTINE initialize_outfield_imp(this, input_field,  output_field, mask_present, freq)
       CLASS(fms_diag_outfield_type), INTENT(inout) :: this
       TYPE(input_field_type),     INTENT(in) :: input_field
       TYPE(output_field_type),    INTENT(in) :: output_field
       LOGICAL, INTENT(in) :: mask_present
+      INTEGER, INTENT(in) :: freq
+      INTEGER ::  time_redux
 
-      this%module_name = input_field%module_name
-      this%field_name = input_field%field_name
-1     this%output_name =   output_field%output_name
+      this%module_name = TRIM(input_field%module_name)
+      this%field_name = TRIM(input_field%field_name)
+      this%output_name = TRIM(output_field%output_name)
 
-      this%pow_value =  output_field%pow_value
+      this%pow_value = output_field%pow_value
       this%phys_window = output_field%phys_window
-      this%need_compute =output_field%need_compute
+      this%need_compute = output_field%need_compute
       this%reduced_k_range = output_field%reduced_k_range
       this%mask_variant = input_field%mask_variant
       !!Note: in legacy diag manager, presence of missing value vs presence of mask
@@ -172,15 +177,39 @@ CONTAINS
       this%missvalue_present = input_field%missing_value_present
       this%mask_present = mask_present
 
-      !!And set the power function ?
-      !! if ( this%pow_value == 1) then
-      ! this%f_ptr => ?
-      !! else end etc.
+      time_redux = get_output_field_time_reduction (output_field)
+      call this%time_reduction%initialize( time_redux , freq)
 
-      !!TODO: init the time_reduction, possibly using output_field%time_rms,
-      !! output_field%time_max output_field%time_min, and output_field%time_sum ?
+      !!TODO: the time_min and time_max buffer update code is almost the exact same src code, except
+      !!  for the compariosn function. Simplify code and set comparison function:
+      !!TODO: If possible add to the power function. See issue with pointers and elemental functions
+
    END SUBROUTINE initialize_outfield_imp
 
+
+   !> \brief Get the time reduction from a legacy output field.
+    !! Note we do not place this in the time_reduction class to avoid circular dependencies.
+   function get_output_field_time_reduction(ofield) result (rslt)
+    TYPE(output_field_type), INTENT(in) :: ofield
+    INTEGER ::  rslt
+    if(ofield%time_max) then
+      rslt = time_max
+    elseif(ofield%time_min)then
+      rslt = time_min
+    else if (ofield%time_sum) then
+      rslt = time_sum
+    else if (ofield%time_rms) then
+      rslt = time_rms
+    else if (ofield%time_average) then
+      rslt = time_average
+    else
+      rslt = time_none
+      if(.NOT. ofield%static) then
+         CALL error_mesg('fms_diag_outfield:get_output_field_time_reduction', &
+            & 'result is time_none but out_field%static is not true', FATAL)
+      end if
+    endif
+    end function get_output_field_time_reduction
 
 END MODULE fms_diag_outfield_mod
 !> @}
