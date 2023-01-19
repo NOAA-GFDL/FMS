@@ -31,18 +31,16 @@ subroutine MO_DRAG_1D_(pt, pt0, z, z0, zt, zq, speed, drag_m, drag_t, drag_q, &
 real(kind=FMS_MO_KIND_), intent(in)   , dimension(:) :: pt, pt0, z, z0, zt, zq, speed
 real(kind=FMS_MO_KIND_), intent(inout), dimension(:) :: drag_m, drag_t, drag_q, u_star, b_star
 logical, optional,       intent(in),    dimension(:) :: avail
-
-logical            :: lavail, avail_dummy(1)
-integer            :: n, ier
-
+integer                                              :: n, ier
 integer,                 parameter :: max_iter = 20
 real(kind=FMS_MO_KIND_), parameter :: error = real(1.e-04, FMS_MO_KIND_), &
-                         zeta_min = real(1.e-06, FMS_MO_KIND_), small = real(1.e-04, FMS_MO_KIND_)
+                         zeta_min = real(1.e-06, FMS_MO_KIND_), small = real(1.e-04, FMS_MO_KIND_
 
 ! #include "monin_obukhov_interfaces.h"
 
 if(.not.module_is_initialized) call error_mesg('mo_drag_1d in monin_obukhov_mod', &
-'monin_obukhov_init has not been called', FATAL)
+    'monin_obukhov_init has not been called', FATAL)
+
 
 n      = size(pt)
 lavail = .false.
@@ -50,6 +48,7 @@ if(present(avail)) lavail = .true.
 
 
 if(lavail) then
+
 if (count(avail) .eq. 0) return
 call monin_obukhov_drag_1d(real(grav, FMS_MO_KIND_), real(vonkarm, FMS_MO_KIND_),  &
    & error, zeta_min, max_iter, real(small, FMS_MO_KIND_), neutral, stable_option,     &
@@ -68,7 +67,6 @@ endif
 
 end subroutine MO_DRAG_1D_
 
-
 !=======================================================================
 
 subroutine MO_PROFILE_1D_(zref, zref_t, z, z0, zt, zq, u_star, b_star, q_star, &
@@ -79,13 +77,14 @@ real(kind=FMS_MO_KIND_), intent(in) , dimension(:) :: z, z0, zt, zq, u_star, b_s
 real(kind=FMS_MO_KIND_), intent(out), dimension(:) :: del_m, del_t, del_q
 logical, optional,       intent(in) , dimension(:) :: avail
 
+
 logical                            :: dummy_avail(1)
 integer                            :: n, ier
 
 ! #include "monin_obukhov_interfaces.h"
 
 if(.not.module_is_initialized) call error_mesg('mo_profile_1d in monin_obukhov_mod', &
-'monin_obukhov_init has not been called', FATAL)
+     'monin_obukhov_init has not been called', FATAL)
 
 n = size(z)
 if(present(avail)) then
@@ -171,6 +170,7 @@ call monin_obukhov_diff(real(vonkarm, FMS_MO_KIND_),                      &
 
 end subroutine MO_DIFF_2D_N_
 
+
 !=======================================================================
 ! The following routines are used by the public interfaces above
 !=======================================================================
@@ -209,11 +209,13 @@ ln_z_zt = real(log(z_zt), FMS_MO_KIND_)
 ln_z_zq = real(log(z_zq), FMS_MO_KIND_)
 
 corr = 0.0_lkind
+
 mask_1 = mask
 
 ! initial guess
 
 where(mask_1)
+                                                                             
 zeta = real(rich*ln_z_z0*ln_z_z0/ln_z_zt, FMS_MO_KIND_)
 elsewhere
 zeta = 0.0_lkind
@@ -221,9 +223,11 @@ end where
 
 where (mask_1 .and. rich >= 0.0_lkind)
 zeta = real(zeta/(1.0_lkind - rich/real(rich_crit, FMS_MO_KIND_)), FMS_MO_KIND_)
+
 end where
 
 iter_loop: do iter = 1, max_iter
+
 
 where (mask_1 .and. abs(zeta).lt.zeta_min)
 zeta = 0.0_lkind
@@ -275,7 +279,6 @@ cycle iter_loop
 else
 return
 end if
-
 end do iter_loop
 
 call error_mesg ('solve_zeta in monin_obukhov_mod',  &
@@ -305,6 +308,7 @@ unstable = mask .and. zeta <  0.0_lkind
 where (unstable)
 x     = real((1 - 16.0_lkind*zeta)**-0.5_lkind, FMS_MO_KIND_)
 phi_m = real(sqrt(x), FMS_MO_KIND_)  ! phi_m = (1 - 16.0*zeta)**(-0.25)
+
 end where
 
 if(stable_option == 1) then
@@ -326,6 +330,7 @@ end where
 endif
 
 return
+
 end subroutine MO_DERIVATIVE_M_
 
 !=======================================================================
@@ -352,6 +357,7 @@ end where
 
 if(stable_option == 1) then
 
+
 where (stable)
 phi_t = real(1.0_lkind + zeta*(5.0_lkind &
        + real(b_stab, FMS_MO_KIND_)*zeta)/(1.0_lkind + zeta), FMS_MO_KIND_)
@@ -369,6 +375,7 @@ end where
 endif
 
 return
+
 end subroutine MO_DERIVATIVE_T_
 
 !=======================================================================
@@ -400,6 +407,7 @@ x_q   = real(sqrt(1 - 16.0_lkind*zeta_q), FMS_MO_KIND_)
 
 psi_t = real(ln_z_zt - 2.0_lkind*log((1.0_lkind + x) / (1.0_lkind + x_t)), FMS_MO_KIND_)
 psi_q = real(ln_z_zq - 2.0_lkind*log((1.0_lkind + x) / (1.0_lkind + x_q)), FMS_MO_KIND_)
+
 
 end where
 
@@ -447,6 +455,7 @@ endwhere
 end if
 
 return
+
 end subroutine MO_INTEGRAL_TQ_
 
 !=======================================================================
@@ -489,6 +498,7 @@ end where
 
 if( stable_option == 1) then
 
+
 where (stable)
 psi_m = real(ln_z_z0 + (5.0_lkind - real(b_stab, FMS_MO_KIND_))*log((1.0_lkind &
         + zeta)/(1.0_lkind + zeta_0)) + real(b_stab, FMS_MO_KIND_)*(zeta - zeta_0), FMS_MO_KIND_)
@@ -518,6 +528,7 @@ endwhere
 end if
 
 return
+
 end subroutine MO_INTEGRAL_M_
 
 
@@ -534,6 +545,7 @@ real(kind=FMS_MO_KIND_), intent(in)   , dimension(:,:) :: z, speed, pt, pt0, z0,
 real(kind=FMS_MO_KIND_), intent(out)  , dimension(:,:) :: drag_m, drag_t, drag_q
 real(kind=FMS_MO_KIND_), intent(inout), dimension(:,:) :: u_star, b_star
 
+
 integer :: j
 
 do j = 1, size(pt,2)
@@ -544,6 +556,7 @@ end do
 
 
 return
+
 end subroutine MO_DRAG_2D_
 
 !=======================================================================
@@ -586,6 +599,7 @@ real(kind=FMS_MO_KIND_), intent(out), dimension(:,:) :: del_m, del_h, del_q
 integer :: j
 
 do j = 1, size(z,2)
+
 call mo_profile(zref, zref_t, z(:,j), z0(:,j), zt(:,j), &
      & zq(:,j), u_star(:,j), b_star(:,j), q_star(:,j),  &
      & del_m(:,j), del_h (:,j), del_q (:,j))
@@ -639,6 +653,7 @@ logical, optional,       intent(in) , dimension(:)   :: avail
 integer :: k
 
 do k = 1, size(zref(:))
+
 if(present(avail)) then
 call mo_profile(zref(k), zref(k), z, z0, zt, zq, &
      & u_star, b_star, q_star, del_m(:,k), del_t(:,k), del_q(:,k), avail)
@@ -660,9 +675,11 @@ real(kind=FMS_MO_KIND_),    intent(in),  dimension(:) :: zref
 real(kind=FMS_MO_KIND_),    intent(in)                :: z, z0, zt, zq, u_star, b_star, q_star
 real(kind=FMS_MO_KIND_),    intent(out), dimension(:) :: del_m, del_t, del_q
 
+
 integer :: k
 
 do k = 1, size(zref(:))
+
 call mo_profile(zref(k), zref(k), z, z0, zt, zq, &
      & u_star, b_star, q_star, del_m(k), del_t(k), del_q(k))
 enddo
@@ -679,9 +696,11 @@ real(kind=FMS_MO_KIND_),    intent(in),  dimension(:)     :: zref
 real(kind=FMS_MO_KIND_),    intent(in),  dimension(:,:)   :: z, z0, zt, zq, u_star, b_star, q_star
 real(kind=FMS_MO_KIND_),    intent(out), dimension(:,:,:) :: del_m, del_t, del_q
 
+
 integer :: k
 
 do k = 1, size(zref(:))
+
 call mo_profile(zref(k), zref(k), z, z0, zt, zq, &
      & u_star, b_star, q_star, del_m(:,:,k), del_t(:,:,k), del_q(:,:,k))
 enddo
@@ -742,9 +761,11 @@ real(kind=FMS_MO_KIND_), intent(out), dimension(:,:) :: k_m, k_h
 real(kind=FMS_MO_KIND_), dimension(size(z,1),1)            :: u_star2, b_star2
 real(kind=FMS_MO_KIND_), dimension(size(z,1),1, size(z,2)) :: z2, k_m2, k_h2
 
+
 integer :: n
 
 do n = 1, size(z,2)
+
 z2   (:,1,n) = real(z(:,n), FMS_MO_KIND_)
 enddo
 u_star2(:,1) = real(u_star, FMS_MO_KIND_)

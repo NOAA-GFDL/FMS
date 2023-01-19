@@ -306,6 +306,7 @@ end subroutine MONIN_OBUKHOV_SOLVE_ZETA_
 
 !> The differential similarity function for buoyancy and tracers
 ! seems to be the same as monin_obukhov_derivative_m?
+
 pure subroutine MONIN_OBUKHOV_DERIVATIVE_T_(stable_option,new_mo_option,rich_crit, zeta_trans, &
 & n, phi_t, zeta, mask, ier)
 
@@ -626,6 +627,7 @@ else
 
 where(unstable)
 
+
 x     = real(sqrt(1 - 16.0_lkind * zeta), FMS_MO_KIND_)
 x_t   = real(sqrt(1 - 16.0_lkind * zeta_t), FMS_MO_KIND_)
 x_q   = real(sqrt(1 - 16.0_lkind * zeta_q), FMS_MO_KIND_)
@@ -633,11 +635,13 @@ x_q   = real(sqrt(1 - 16.0_lkind * zeta_q), FMS_MO_KIND_)
 psi_t = real(ln_z_zt - 2.0_lkind * log(1.0_lkind + x) / (1.0_lkind + x_t), FMS_MO_KIND_)
 psi_q = real(ln_z_zq - 2.0_lkind * log((1.0_lkind + x) / (1.0_lkind + x_q)), FMS_MO_KIND_)
 
+
 end where
 end if
 !miz
 
 if( stable_option == 1) then
+
 
 where (stable)
 
