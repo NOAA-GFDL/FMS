@@ -369,7 +369,7 @@ end function fms_register_static_field
 !! interface the same
 !> @return Axis id
 FUNCTION fms_diag_axis_init(this, axis_name, axis_data, units, cart_name, long_name, direction,&
-  & set_name, edges, Domain, Domain2, DomainU, aux, req, tile_count, domain_position ) &
+  & set_name, edges, Domain, Domain2, DomainU, aux, req, tile_count, domain_position, axis_length ) &
   & result(id)
 
   class(fmsDiagObject_type),TARGET,INTENT(inout):: this       !< Diaj_obj to fill
@@ -389,6 +389,7 @@ FUNCTION fms_diag_axis_init(this, axis_name, axis_data, units, cart_name, long_n
   CHARACTER(len=*),   INTENT(in), OPTIONAL :: req             !< Required field names.
   INTEGER,            INTENT(in), OPTIONAL :: tile_count      !< Number of tiles
   INTEGER,            INTENT(in), OPTIONAL :: domain_position !< Domain position, "NORTH" or "EAST"
+  integer,            intent(in), OPTIONAL :: axis_length     !< The length of the axis size(axis_data(:))
   integer :: id
 
 #ifndef use_yaml
@@ -418,7 +419,7 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
     endif
     call axis%register(axis_name, axis_data, units, cart_name, long_name=long_name, &
       & direction=direction, set_name=set_name, Domain=Domain, Domain2=Domain2, DomainU=DomainU, aux=aux, &
-      & req=req, tile_count=tile_count, domain_position=domain_position)
+      & req=req, tile_count=tile_count, domain_position=domain_position, axis_length=axis_length)
 
     id = this%registered_axis
     call axis%set_axis_id(id)

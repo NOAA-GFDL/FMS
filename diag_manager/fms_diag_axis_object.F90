@@ -165,7 +165,7 @@ module fms_diag_axis_object_mod
   !!!!!!!!!!!!!!!!! DIAG AXIS PROCEDURES !!!!!!!!!!!!!!!!!
   !> @brief Initialize the axis
   subroutine register_diag_axis_obj(this, axis_name, axis_data, units, cart_name, long_name, direction,&
-  & set_name, Domain, Domain2, DomainU, aux, req, tile_count, domain_position )
+  & set_name, Domain, Domain2, DomainU, aux, req, tile_count, domain_position, axis_length )
     class(fmsDiagFullAxis_type),INTENT(out)  :: this            !< Diag_axis obj
     CHARACTER(len=*),   INTENT(in)           :: axis_name       !< Name of the axis
     class(*),           INTENT(in)           :: axis_data(:)    !< Array of coordinate values
@@ -182,6 +182,7 @@ module fms_diag_axis_object_mod
     CHARACTER(len=*),   INTENT(in), OPTIONAL :: req             !< Required field names.
     INTEGER,            INTENT(in), OPTIONAL :: tile_count      !< Number of tiles
     INTEGER,            INTENT(in), OPTIONAL :: domain_position !< Domain position, "NORTH" or "EAST"
+    integer,            intent(in), optional :: axis_length     !< The length of the axis size(axis_data(:))
 
     this%axis_name = trim(axis_name)
     this%units = trim(units)
@@ -192,14 +193,14 @@ module fms_diag_axis_object_mod
 
     select type (axis_data)
     type is (real(kind=r8_kind))
-      allocate(real(kind=r8_kind) :: this%axis_data(size(axis_data)))
+      allocate(real(kind=r8_kind) :: this%axis_data(axis_length))
       this%axis_data = axis_data
-      this%length = size(axis_data)
+      this%length = axis_length
       this%type_of_data = "double" !< This is what fms2_io expects in the register_field call
     type is (real(kind=r4_kind))
-      allocate(real(kind=r4_kind) :: this%axis_data(size(axis_data)))
+      allocate(real(kind=r4_kind) :: this%axis_data(axis_length))
       this%axis_data = axis_data
-      this%length = size(axis_data)
+      this%length = axis_length
       this%type_of_data = "float" !< This is what fms2_io expects in the register_field call
     class default
       call mpp_error(FATAL, "The axis_data in your diag_axis_init call is not a supported type. &

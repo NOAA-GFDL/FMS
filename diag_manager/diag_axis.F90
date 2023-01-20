@@ -138,9 +138,11 @@ CONTAINS
     ENDIF
 
     if (use_modern_diag) then
+      !TODO Passing in the axis_length because of a gnu issue where inside fms_diag_axis_init, the size of DATA
+      !was 2 which was causing the axis_data to not be written correctly...
       diag_axis_init = fms_diag_object%fms_diag_axis_init(name, DATA, units, cart_name, long_name=long_name,&
        & direction=direction, set_name=set_name, edges=edges, Domain=Domain, Domain2=Domain2, DomainU=DomainU, &
-       & aux=aux, req=req, tile_count=tile_count, domain_position=domain_position )
+       & aux=aux, req=req, tile_count=tile_count, domain_position=domain_position, axis_length=size(DATA(:)) )
       return
     endif
     IF ( PRESENT(tile_count)) THEN
