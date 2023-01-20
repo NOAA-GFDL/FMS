@@ -39,6 +39,41 @@ public :: monin_obukhov_integral_m
 public :: monin_obukhov_integral_tq
 public :: monin_obukhov_stable_mix
 
+interface monin_obukhov_diff
+    module procedure monin_obukhov_diff_r4, monin_obukhov_diff_r8
+end interface monin_obukhov_diff
+
+interface monin_obukhov_drag_1d
+    module procedure monin_obukhov_drag_1d_r4, monin_obukhov_drag_1d_r8
+end interface monin_obukhov_drag_1d
+
+interface monin_obukhov_solve_zeta
+    module procedure monin_obukhov_solve_zeta_r4, monin_obukhov_solve_zeta_r8
+end interface monin_obukhov_solve_zeta
+
+interface monin_obukhov_derivative_t
+    module procedure monin_obukhov_derivative_t_r4, monin_obukhov_derivative_t_r8
+end interface monin_obukhov_derivative_t
+
+interface monin_obukhov_derivative_m
+    module procedure monin_obukhov_derivative_m_r4, monin_obukhov_derivative_m_r8
+end interface monin_obukhov_derivative_m
+
+interface monin_obukhov_profile_1d
+    module procedure monin_obukhov_profile_1d_r4, monin_obukhov_profile_1d_r8
+end interface monin_obukhov_profile_1d
+
+interface monin_obukhov_integral_m
+    module procedure monin_obukhov_integral_m_r4, monin_obukhov_integral_m_r8
+end interface monin_obukhov_integral_m
+
+interface monin_obukhov_integral_tq
+    module procedure monin_obukhov_integral_tq_r4, monin_obukhov_integral_tq_r8
+end interface monin_obukhov_integral_tq
+
+interface monin_obukhov_stable_mix
+    module procedure monin_obukhov_stable_mix_r4, monin_obukhov_stable_mix_r8
+end interface monin_obukhov_stable_mix
 
 contains
 
