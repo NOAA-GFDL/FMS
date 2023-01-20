@@ -292,6 +292,7 @@ foreach(kind ${kinds})
                                                  mpp/include
                                                  constants
                                                  astronomy/include)
+                                                 
   target_compile_definitions(${libTgt}_f PRIVATE "${fms_defs}")
   target_compile_definitions(${libTgt}_f PRIVATE "${${kind}_defs}")
 
