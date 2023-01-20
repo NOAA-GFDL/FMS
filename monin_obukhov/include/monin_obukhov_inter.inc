@@ -22,23 +22,6 @@
 
 !> @addtogroup monin_obukhov_inter
 !> @{
-module monin_obukhov_inter
-implicit none
-private
-
-
-public :: monin_obukhov_diff
-public :: monin_obukhov_drag_1d
-public :: monin_obukhov_solve_zeta
-public :: monin_obukhov_derivative_t
-public :: monin_obukhov_derivative_m
-public :: monin_obukhov_profile_1d
-public :: monin_obukhov_integral_m
-public :: monin_obukhov_integral_tq
-public :: monin_obukhov_stable_mix
-
-
-contains
 
 
 pure subroutine monin_obukhov_diff(vonkarm,                &
