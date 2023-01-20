@@ -209,6 +209,8 @@ end subroutine monin_obukhov_end
 
 !=======================================================================
 
+#include "monin_obukhov_r4.fh"
+#include "monin_obukhov_r8.fh"
 
 end module monin_obukhov_mod
 !> @}
