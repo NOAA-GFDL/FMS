@@ -516,7 +516,7 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
       !< If the attribute is the "compress" attribute, get the axis names,
       !! and the ids of the axis and add it to the axis object so it can be written to netcdf files
       !! that use this axis
-      axis_names = parse_compress_att(att_value(1))
+      axis_names = parse_compress_att(att_value)
       do j = 1, size(axis_names)
         uncmx_ids(j) = get_axis_id_from_name(axis_names(j), this%diag_axis, this%registered_axis)
         if (uncmx_ids(j) .eq. diag_null) call mpp_error(FATAL, &

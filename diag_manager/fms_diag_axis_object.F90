@@ -194,10 +194,12 @@ module fms_diag_axis_object_mod
     type is (real(kind=r8_kind))
       allocate(real(kind=r8_kind) :: this%axis_data(size(axis_data)))
       this%axis_data = axis_data
+      this%length = size(axis_data)
       this%type_of_data = "double" !< This is what fms2_io expects in the register_field call
     type is (real(kind=r4_kind))
       allocate(real(kind=r4_kind) :: this%axis_data(size(axis_data)))
       this%axis_data = axis_data
+      this%length = size(axis_data)
       this%type_of_data = "float" !< This is what fms2_io expects in the register_field call
     class default
       call mpp_error(FATAL, "The axis_data in your diag_axis_init call is not a supported type. &
@@ -230,8 +232,6 @@ module fms_diag_axis_object_mod
     this%domain_position = CENTER
     if (present(domain_position)) this%domain_position = domain_position
     call check_if_valid_domain_position(this%domain_position)
-
-    this%length = size(axis_data)
 
     this%direction = 0
     if (present(direction)) this%direction = direction
@@ -998,14 +998,14 @@ module fms_diag_axis_object_mod
   !! @return the names of the structured axis
   pure function parse_compress_att(compress_att) &
   result(axis_names)
-    class(*), intent(in) :: compress_att !< The compress attribute to parse
+    class(*), intent(in) :: compress_att(:) !< The compress attribute to parse
     character(len=120)   :: axis_names(2)
 
     integer            :: ios           !< Errorcode after parsting the compress attribute
 
     select type (compress_att)
       type is (character(len=*))
-        read(compress_att,*, iostat=ios) axis_names
+        read(compress_att(1),*, iostat=ios) axis_names
         if (ios .ne. 0) axis_names = ""
       class default
         axis_names = ""
