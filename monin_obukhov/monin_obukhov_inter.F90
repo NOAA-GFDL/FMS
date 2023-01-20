@@ -23,6 +23,8 @@
 !> @addtogroup monin_obukhov_inter
 !> @{
 module monin_obukhov_inter
+
+use platform_mod,    only: r4_kind, r8_kind
 implicit none
 private
 

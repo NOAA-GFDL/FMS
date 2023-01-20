@@ -33,6 +33,7 @@ use fms_mod,       only: error_mesg, FATAL, check_nml_error,   &
                          write_version_number
 use monin_obukhov_inter, only: monin_obukhov_diff, monin_obukhov_drag_1d, &
                                monin_obukhov_profile_1d, monin_obukhov_stable_mix
+use platform_mod,        only: r4_kind, r8_kind
 implicit none
 private
 
