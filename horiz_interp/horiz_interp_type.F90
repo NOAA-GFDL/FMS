@@ -181,7 +181,7 @@ contains
  end subroutine stats
 
 !######################################################################################################################
-!> @brief Creates a copy of the horiz_interp_type object
+!> @brief horiz_interp_type_eq creates a copy of the horiz_interp_type object
  subroutine horiz_interp_type_eq(horiz_interp_out, horiz_interp_in)
     type(horiz_interp_type), intent(inout) :: horiz_interp_out !< Output object being set
     type(horiz_interp_type), intent(in)    :: horiz_interp_in !< Input object being copied
