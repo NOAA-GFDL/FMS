@@ -95,8 +95,8 @@ module fms_diag_axis_object_mod
        procedure :: get_subaxes_id
        procedure :: write_axis_metadata
        procedure :: write_axis_data
-       procedure :: add_uncompress_axis_ids
-       procedure :: get_uncompress_axis
+       procedure :: add_structured_axis_ids
+       procedure :: get_structured_axis
        procedure :: is_unstructured_grid
   END TYPE fmsDiagAxis_type
 
@@ -140,8 +140,8 @@ module fms_diag_axis_object_mod
      TYPE(fmsDiagAttribute_type),allocatable , private :: attributes(:) !< Array to hold user definable attributes
      INTEGER                        , private :: num_attributes  !< Number of defined attibutes
      INTEGER                        , private :: domain_position !< The position in the doman (NORTH, EAST or CENTER)
-     integer                        , private :: uncompress_ids(2) !< If the axis is in the unstructured grid,
-                                                                   !! this is the axis ids of the uncompressed axis
+     integer                        , private :: structured_ids(2) !< If the axis is in the unstructured grid,
+                                                                   !! this is the axis ids of the structured axis
 
      contains
 
@@ -242,7 +242,7 @@ module fms_diag_axis_object_mod
 
     this%nsubaxis = 0
     this%num_attributes = 0
-    this%uncompress_ids = diag_null
+    this%structured_ids = diag_null
   end subroutine register_diag_axis_obj
 
   !> @brief Add an attribute to an axis
@@ -395,20 +395,20 @@ module fms_diag_axis_object_mod
     end select
   end function is_unstructured_grid
 
-  !< @brief Adds the uncompress axis ids to the axis object
-  subroutine add_uncompress_axis_ids(this, axis_ids)
+  !< @brief Adds the structured axis ids to the axis object
+  subroutine add_structured_axis_ids(this, axis_ids)
     class(fmsDiagAxis_type),           target, INTENT(inout) :: this        !< diag_axis obj
     integer,                                   intent(in)    :: axis_ids(2) !< axis ids to add to the axis object
 
     select type (this)
     type is (fmsDiagFullAxis_type)
-      this%uncompress_ids = axis_ids
+      this%structured_ids = axis_ids
     end select
-  end subroutine add_uncompress_axis_ids
+  end subroutine add_structured_axis_ids
 
-  !< @brief Get the uncompress axis from the axis object
-  !! @return the uncompress axis ids
-  pure function get_uncompress_axis(this) &
+  !< @brief Get the structured axis ids from the axis object
+  !! @return the structured axis ids
+  pure function get_structured_axis(this) &
   result(rslt)
     class(fmsDiagAxis_type),           target, INTENT(in) :: this !< diag_axis obj
     integer :: rslt(2)
@@ -416,9 +416,9 @@ module fms_diag_axis_object_mod
     rslt = diag_null
     select type (this)
     type is (fmsDiagFullAxis_type)
-      rslt = this%uncompress_ids
+      rslt = this%structured_ids
     end select
-  end function get_uncompress_axis
+  end function get_structured_axis
 
   !> @brief Get the starting and ending indices of the global io domain of the axis
   subroutine get_global_io_domain(this, global_io_index)
@@ -995,7 +995,7 @@ module fms_diag_axis_object_mod
   end function
 
   !< @brief Parses the "compress" attribute to get the names of the two axis
-  !! @return the names of the uncompress axis
+  !! @return the names of the structured axis
   pure function parse_compress_att(compress_att) &
   result(axis_names)
     class(*), intent(in) :: compress_att !< The compress attribute to parse

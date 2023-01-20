@@ -523,7 +523,7 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
           &"Error parsing the compress attribute for axis: "//trim(axis%get_axis_name())//&
           &". Be sure that the axes in the compress attribute are registered")
       enddo
-      call axis%add_uncompress_axis_ids(uncmx_ids)
+      call axis%add_structured_axis_ids(uncmx_ids)
     endif
   end select
 #endif
