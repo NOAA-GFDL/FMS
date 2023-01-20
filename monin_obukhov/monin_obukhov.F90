@@ -49,29 +49,52 @@ private
 !> @brief Compute surface drag coefficients
 !> @ingroup monin_obukhov_mod
 interface mo_drag
-    module procedure  mo_drag_0d, mo_drag_1d, mo_drag_2d
+    module procedure mo_drag_0d_r4, mo_drag_0d_r8
+    module procedure mo_drag_1d_r4, mo_drag_1d_r8
+    module procedure mo_drag_2d_r4, mo_drag_2d_r8
 end interface
 
 
 !> @ingroup monin_obukhov_mod
 interface mo_profile
-    module procedure  mo_profile_0d,   mo_profile_1d,   mo_profile_2d, &
-                      mo_profile_0d_n, mo_profile_1d_n, mo_profile_2d_n
+    module procedure mo_profile_0d_r4, mo_profile_0d_r8
+    module procedure mo_profile_1d_r4, mo_profile_1d_r8 
+    module procedure mo_profile_2d_r4, mo_profile_2d_r8
+    module procedure mo_profile_0d_n_r4, mo_profile_0d_n_r8
+    module procedure mo_profile_1d_n_r4, mo_profile_1d_n_r8 
+    module procedure mo_profile_2d_n_r4, mo_profile_2d_n_r8
 end interface
 
 !> @ingroup monin_obukhov_mod
 interface mo_diff
-    module procedure  mo_diff_0d_n, mo_diff_0d_1, &
-                      mo_diff_1d_n, mo_diff_1d_1, &
-                      mo_diff_2d_n, mo_diff_2d_1
+    module procedure mo_diff_0d_n_r4, mo_diff_0d_n_r8
+    module procedure mo_diff_0d_1_r4, mo_diff_0d_1_r8
+    module procedure mo_diff_1d_n_r4, mo_diff_1d_n_r8
+    module procedure mo_diff_1d_1_r4, mo_diff_1d_1_r8
+    module procedure mo_diff_2d_n_r4, mo_diff_2d_n_r8
+    module procedure mo_diff_2d_1_r4, mo_diff_2d_1_r8
 end interface
 
 !> @ingroup monin_obukhov_mod
 interface stable_mix
-    module procedure  stable_mix_0d, stable_mix_1d, &
-                      stable_mix_2d, stable_mix_3d
+    module procedure stable_mix_0d_r4, stable_mix_0d_r8
+    module procedure stable_mix_1d_r4, stable_mix_1d_r8
+    module procedure stable_mix_2d_r4, stable_mix_2d_r8
+    module procedure stable_mix_3d_r4, stable_mix_3d_r8
 end interface
 
+interface mo_integral
+    module procedure mo_integral_m_r4, mo_integral_m_r8
+    module procedure mo_integral_tq_r4, mo_integral_tq_r8
+end interface mo_integral
+
+interface mo_derivative_m
+    module procedure mo_derivative_m_r4, mo_derivative_m_r8
+end interface mo_derivative_m
+
+interface mo_derivative_t
+    module procedure mo_derivative_t_r4, mo_derivative_t_r8
+end interface mo_derivative_t
 !> @addtogroup monin_obukhov_mod
 !> @{
 
