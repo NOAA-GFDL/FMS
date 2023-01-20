@@ -1077,9 +1077,10 @@ subroutine write_axis_metadata(this, diag_axis)
 
   class(fmsDiagFile_type), pointer     :: diag_file      !< Diag_file object to open
   class(FmsNetcdfFile_t),  pointer     :: fileobj        !< The fileobj to write to
-  integer                              :: i              !< For do loops
+  integer                              :: i,k            !< For do loops
   integer                              :: j              !< diag_file%axis_ids(i) (for less typing)
   integer                              :: parent_axis_id !< Id of the parent_axis
+  integer                              :: uncmx_ids(2)   !< Ids of the uncompress axis
 
   diag_file => this%FMS_diag_file
   fileobj => diag_file%fileobj
@@ -1092,6 +1093,13 @@ subroutine write_axis_metadata(this, diag_axis)
     else
       call diag_axis(j)%axis%write_axis_metadata(fileobj, diag_axis(parent_axis_id)%axis)
     endif
+
+    if (diag_axis(j)%axis%is_unstructured_grid()) then
+      uncmx_ids = diag_axis(j)%axis%get_uncompress_axis()
+      do k = 1, size(uncmx_ids)
+        call diag_axis(uncmx_ids(k))%axis%write_axis_metadata(fileobj)
+      enddo
+    endif
   enddo
 
 end subroutine write_axis_metadata
@@ -1103,9 +1111,10 @@ subroutine write_axis_data(this, diag_axis)
 
   class(fmsDiagFile_type), pointer     :: diag_file      !< Diag_file object to open
   class(FmsNetcdfFile_t),  pointer     :: fileobj        !< The fileobj to write to
-  integer                              :: i              !< For do loops
+  integer                              :: i, k           !< For do loops
   integer                              :: j              !< diag_file%axis_ids(i) (for less typing)
   integer                              :: parent_axis_id !< Id of the parent_axis
+  integer                              :: uncmx_ids(2)   !< Ids of the uncompress axis
 
   diag_file => this%FMS_diag_file
   fileobj => diag_file%fileobj
@@ -1117,6 +1126,13 @@ subroutine write_axis_data(this, diag_axis)
       call diag_axis(j)%axis%write_axis_data(fileobj)
     else
       call diag_axis(j)%axis%write_axis_data(fileobj, diag_axis(parent_axis_id)%axis)
+    endif
+
+    if (diag_axis(j)%axis%is_unstructured_grid()) then
+      uncmx_ids = diag_axis(j)%axis%get_uncompress_axis()
+      do k = 1, size(uncmx_ids)
+        call diag_axis(uncmx_ids(k))%axis%write_axis_data(fileobj)
+      enddo
     endif
   enddo
 

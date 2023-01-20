@@ -49,7 +49,7 @@ module fms_diag_axis_object_mod
   public :: fmsDiagAxis_type, fms_diag_axis_object_init, fms_diag_axis_object_end, &
           & get_domain_and_domain_type, diagDomain_t, &
           & DIAGDOMAIN2D_T, fmsDiagSubAxis_type, fmsDiagAxisContainer_type, fmsDiagFullAxis_type, DIAGDOMAINUG_T
-  public :: define_new_axis, define_subaxis
+  public :: define_new_axis, define_subaxis, parse_compress_att, get_axis_id_from_name
 
   !> @}
 
@@ -95,6 +95,9 @@ module fms_diag_axis_object_mod
        procedure :: get_subaxes_id
        procedure :: write_axis_metadata
        procedure :: write_axis_data
+       procedure :: add_uncompress_axis_ids
+       procedure :: get_uncompress_axis
+       procedure :: is_unstructured_grid
   END TYPE fmsDiagAxis_type
 
   !> @brief Type to hold the subaxis
@@ -137,6 +140,8 @@ module fms_diag_axis_object_mod
      TYPE(fmsDiagAttribute_type),allocatable , private :: attributes(:) !< Array to hold user definable attributes
      INTEGER                        , private :: num_attributes  !< Number of defined attibutes
      INTEGER                        , private :: domain_position !< The position in the doman (NORTH, EAST or CENTER)
+     integer                        , private :: uncompress_ids(2) !< If the axis is in the unstructured grid,
+                                                                   !! this is the axis ids of the uncompressed axis
 
      contains
 
@@ -237,6 +242,7 @@ module fms_diag_axis_object_mod
 
     this%nsubaxis = 0
     this%num_attributes = 0
+    this%uncompress_ids = diag_null
   end subroutine register_diag_axis_obj
 
   !> @brief Add an attribute to an axis
@@ -304,13 +310,13 @@ module fms_diag_axis_object_mod
         end select
       type is (FmsNetcdfUnstructuredDomainFile_t)
         select case (diag_axis%type_of_domain)
-        case (NO_DOMAIN)
-          !< Here the fileobj is in the unstructured domain, but the axis is not
-          !< Unstructured domain fileobjs can have axis that are not domain decomposed (i.e "Z" axis)
-          call register_axis(fileobj, axis_name, axis_length)
         case (UG_DOMAIN)
           !< Here the axis is in a unstructured domain
           call register_axis(fileobj, axis_name)
+        case default
+          !< Here the fileobj is in the unstructured domain, but the axis is not
+          !< Unstructured domain fileobjs can have axis that are not unstructured (i.e "Z" axis)
+          call register_axis(fileobj, axis_name, axis_length)
         end select
     end select
 
@@ -376,6 +382,43 @@ module fms_diag_axis_object_mod
       endif
     end select
   end subroutine write_axis_data
+
+  !< @brief Determine if the axis is in the unstructured grid
+  !! @return .True. if the axis is in unstructured grid
+  pure logical function is_unstructured_grid(this)
+    class(fmsDiagAxis_type),           target, INTENT(in)    :: this        !< diag_axis obj
+
+    is_unstructured_grid = .false.
+    select type (this)
+    type is (fmsDiagFullAxis_type)
+      is_unstructured_grid = trim(this%cart_name) .eq. "U"
+    end select
+  end function is_unstructured_grid
+
+  !< @brief Adds the uncompress axis ids to the axis object
+  subroutine add_uncompress_axis_ids(this, axis_ids)
+    class(fmsDiagAxis_type),           target, INTENT(inout) :: this        !< diag_axis obj
+    integer,                                   intent(in)    :: axis_ids(2) !< axis ids to add to the axis object
+
+    select type (this)
+    type is (fmsDiagFullAxis_type)
+      this%uncompress_ids = axis_ids
+    end select
+  end subroutine add_uncompress_axis_ids
+
+  !< @brief Get the uncompress axis from the axis object
+  !! @return the uncompress axis ids
+  pure function get_uncompress_axis(this) &
+  result(rslt)
+    class(fmsDiagAxis_type),           target, INTENT(in) :: this !< diag_axis obj
+    integer :: rslt(2)
+
+    rslt = diag_null
+    select type (this)
+    type is (fmsDiagFullAxis_type)
+      rslt = this%uncompress_ids
+    end select
+  end function get_uncompress_axis
 
   !> @brief Get the starting and ending indices of the global io domain of the axis
   subroutine get_global_io_domain(this, global_io_index)
@@ -950,6 +993,48 @@ module fms_diag_axis_object_mod
     end select
 
   end function
+
+  !< @brief Parses the "compress" attribute to get the names of the two axis
+  !! @return the names of the uncompress axis
+  pure function parse_compress_att(compress_att) &
+  result(axis_names)
+    class(*), intent(in) :: compress_att !< The compress attribute to parse
+    character(len=120)   :: axis_names(2)
+
+    integer            :: ios           !< Errorcode after parsting the compress attribute
+
+    select type (compress_att)
+      type is (character(len=*))
+        read(compress_att,*, iostat=ios) axis_names
+        if (ios .ne. 0) axis_names = ""
+      class default
+        axis_names = ""
+    end select
+  end function parse_compress_att
+
+  !< @brief Determine the axis id of a axis
+  !! @return Axis id
+  pure function get_axis_id_from_name(axis_name, diag_axis, naxis) &
+  result(axis_id)
+    class(fmsDiagAxisContainer_type), intent(in) :: diag_axis(:) !< Array of axis object
+    character(len=*),                 intent(in) :: axis_name    !< Name of the axis
+    integer,                          intent(in) :: naxis        !< Number of axis that have been registered
+    integer                                      :: axis_id
+
+    integer :: i !< For do loops
+
+    axis_id = diag_null
+    do i = 1, naxis
+      select type(axis => diag_axis(i)%axis)
+      type is (fmsDiagFullAxis_type)
+        if (trim(axis%axis_name) .eq. trim(axis_name)) then
+          axis_id = i
+          return
+        endif
+      end select
+    enddo
+
+  end function get_axis_id_from_name
 
 #endif
 end module fms_diag_axis_object_mod

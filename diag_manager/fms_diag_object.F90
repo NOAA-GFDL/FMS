@@ -30,7 +30,8 @@ use fms_diag_yaml_mod, only: diag_yaml_object_init, diag_yaml_object_end, find_d
                             & get_diag_files_id, diag_yaml
 use fms_diag_axis_object_mod, only: fms_diag_axis_object_init, fmsDiagAxis_type, fmsDiagSubAxis_type, &
                                    &diagDomain_t, get_domain_and_domain_type, diagDomain2d_t, &
-                                   &fmsDiagAxisContainer_type, fms_diag_axis_object_end, fmsDiagFullAxis_type
+                                   &fmsDiagAxisContainer_type, fms_diag_axis_object_end, fmsDiagFullAxis_type, &
+                                   &parse_compress_att, get_axis_id_from_name
 use fms_diag_buffer_mod
 #endif
 use mpp_domains_mod, only: domain1d, domain2d, domainUG, null_domain2d
@@ -493,6 +494,9 @@ subroutine fms_diag_axis_add_attribute(this, axis_id, att_name, att_value)
   character(len=*), intent(in) :: att_name     !< Name of the attribute
   class(*),         intent(in) :: att_value(:) !< The attribute value to add
 
+  character(len=20) :: axis_names(2) !< Names of the uncompress axis
+  integer           :: uncmx_ids(2)  !< Ids of the uncompress axis
+  integer           :: j             !< For do loops
 #ifndef use_yaml
 CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling with -Duse_yaml")
 #else
@@ -502,6 +506,25 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
   select type (axis => this%diag_axis(axis_id)%axis)
   type is (fmsDiagFullAxis_type)
     call axis%add_axis_attribute(att_name, att_value)
+
+    !! Axis that are in the "unstructured" domain require a "compress" attribute for the
+    !! combiner and PP. This attribute is passed in via a diag_axis_add_attribute call in the model code
+    !! The compress attribute indicates the names of the axis that were compressed
+    !! For example grid_index:compress = "grid_yt grid_xt"
+    !! The metadata and the data for these axis also needs to be written to the file
+    if (trim(att_name) .eq. "compress") then
+      !< If the attribute is the "compress" attribute, get the axis names,
+      !! and the ids of the axis and add it to the axis object so it can be written to netcdf files
+      !! that use this axis
+      axis_names = parse_compress_att(att_value(1))
+      do j = 1, size(axis_names)
+        uncmx_ids(j) = get_axis_id_from_name(axis_names(j), this%diag_axis, this%registered_axis)
+        if (uncmx_ids(j) .eq. diag_null) call mpp_error(FATAL, &
+          &"Error parsing the compress attribute for axis: "//trim(axis%get_axis_name())//&
+          &". Be sure that the axes in the compress attribute are registered")
+      enddo
+      call axis%add_uncompress_axis_ids(uncmx_ids)
+    endif
   end select
 #endif
 end subroutine fms_diag_axis_add_attribute
