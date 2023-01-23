@@ -107,14 +107,14 @@ end interface mo_derivative_t
 
 !  DEFAULT VALUES OF NAMELIST PARAMETERS:
 
-real    :: rich_crit      = 2.0
-real    :: drag_min_heat  = 1.e-05
-real    :: drag_min_moist = 1.e-05
-real    :: drag_min_mom   = 1.e-05
-logical :: neutral        = .false.
-integer :: stable_option  = 1
-real    :: zeta_trans     = 0.5
-logical :: new_mo_option  = .false.
+real(kind=r8_kind) :: rich_crit      = 2.0
+real(kind=r8_kind) :: drag_min_heat  = 1.e-05
+real(kind=r8_kind) :: drag_min_moist = 1.e-05
+real(kind=r8_kind) :: drag_min_mom   = 1.e-05
+logical            :: neutral        = .false.
+integer            :: stable_option  = 1
+real(kind=r8_kind) :: zeta_trans     = 0.5
+logical            :: new_mo_option  = .false.
 
 
 namelist /monin_obukhov_nml/ rich_crit, neutral, drag_min_heat, &
@@ -125,10 +125,10 @@ namelist /monin_obukhov_nml/ rich_crit, neutral, drag_min_heat, &
 
 !  MODULE VARIABLES
 
-real, parameter    :: small  = 1.e-04
-real               :: b_stab, r_crit, lambda, rich_trans
-real               :: sqrt_drag_min_heat, sqrt_drag_min_moist, sqrt_drag_min_mom
-logical            :: module_is_initialized = .false.
+real(kind=r8_kind), parameter    :: small  = 1.e-04
+real(kind=r8_kind)               :: b_stab, r_crit, lambda, rich_trans
+real(kind=r8_kind)               :: sqrt_drag_min_heat, sqrt_drag_min_moist, sqrt_drag_min_mom
+logical                          :: module_is_initialized = .false.
 
 
 contains
@@ -154,19 +154,19 @@ integer :: ierr, io, logunit
 
 !----------------------------------------------------------------------
 
-if(rich_crit.le.0.25)  call error_mesg( &
+if(rich_crit.le.0.25_r8_kind)  call error_mesg( &
         'MONIN_OBUKHOV_INIT in MONIN_OBUKHOV_MOD', &
         'rich_crit in monin_obukhov_mod must be > 0.25', FATAL)
 
-if(drag_min_heat.le.0.0)  call error_mesg( &
+if(drag_min_heat.le.0.0_r8_kind)  call error_mesg( &
         'MONIN_OBUKHOV_INIT in MONIN_OBUKHOV_MOD', &
         'drag_min_heat in monin_obukhov_mod must be >= 0.0', FATAL)
 
-if(drag_min_moist.le.0.0)  call error_mesg( &
+if(drag_min_moist.le.0.0_r8_kind)  call error_mesg( &
         'MONIN_OBUKHOV_INIT in MONIN_OBUKHOV_MOD', &
         'drag_min_moist in monin_obukhov_mod must be >= 0.0', FATAL)
 
-if(drag_min_mom.le.0.0)  call error_mesg( &
+if(drag_min_mom.le.0.0_r8_kind)  call error_mesg( &
         'MONIN_OBUKHOV_INIT in MONIN_OBUKHOV_MOD', &
         'drag_min_mom in monin_obukhov_mod must be >= 0.0', FATAL)
 
@@ -178,21 +178,21 @@ if(stable_option == 2 .and. zeta_trans < 0) call error_mesg( &
         'MONIN_OBUKHOV_INIT in MONIN_OBUKHOV_MOD', &
         'zeta_trans must be positive', FATAL)
 
-b_stab = 1.0/rich_crit
-r_crit = 0.95*rich_crit  ! convergence can get slow if one is
+b_stab = 1.0_r8_kind/rich_crit
+r_crit = 0.95_r8_kind*rich_crit  ! convergence can get slow if one is
                          ! close to rich_crit
 
-sqrt_drag_min_heat = 0.0
-if(drag_min_heat.ne.0.0) sqrt_drag_min_heat = sqrt(drag_min_heat)
+sqrt_drag_min_heat = 0.0_r8_kind
+if(drag_min_heat.ne.0.0_r8_kind) sqrt_drag_min_heat = sqrt(drag_min_heat)
 
-sqrt_drag_min_moist = 0.0
-if(drag_min_moist.ne.0.0) sqrt_drag_min_moist = sqrt(drag_min_moist)
+sqrt_drag_min_moist = 0.0_r8_kind
+if(drag_min_moist.ne.0.0_r8_kind) sqrt_drag_min_moist = sqrt(drag_min_moist)
 
-sqrt_drag_min_mom = 0.0
-if(drag_min_mom.ne.0.0) sqrt_drag_min_mom = sqrt(drag_min_mom)
+sqrt_drag_min_mom = 0.0_r8_kind
+if(drag_min_mom.ne.0.0_r8_kind) sqrt_drag_min_mom = sqrt(drag_min_mom)
 
-lambda     = 1.0 + (5.0 - b_stab)*zeta_trans   ! used only if stable_option = 2
-rich_trans = zeta_trans/(1.0 + 5.0*zeta_trans) ! used only if stable_option = 2
+lambda     = 1.0_r8_kind + (5.0_r8_kind - b_stab)*zeta_trans   ! used only if stable_option = 2
+rich_trans = zeta_trans/(1.0_r8_kind + 5.0_r8_kind*zeta_trans) ! used only if stable_option = 2
 
 module_is_initialized = .true.
 
