@@ -24,7 +24,7 @@
 !> @{
 
 
-pure subroutine monin_obukhov_diff(vonkarm,                &
+pure subroutine MONIN_OBUKHOV_DIFF_(vonkarm,                &
      & ustar_min,                                     &
      & neutral, stable_option,new_mo_option,rich_crit, zeta_trans, &
      & ni, nj, nk, z, u_star, b_star, k_m, k_h, ier)
@@ -69,10 +69,10 @@ pure subroutine monin_obukhov_diff(vonkarm,                &
      end do
   endif
 
-end subroutine monin_obukhov_diff
+end subroutine MONIN_OBUKHOV_DIFF_
 
 
-pure subroutine monin_obukhov_drag_1d(grav, vonkarm,               &
+pure subroutine MONIN_OBUKHOV_DRAG_1D_(grav, vonkarm,               &
      & error, zeta_min, max_iter, small,                         &
      & neutral, stable_option, new_mo_option, rich_crit, zeta_trans,&
      & drag_min_heat, drag_min_moist, drag_min_mom,              &
@@ -180,10 +180,10 @@ pure subroutine monin_obukhov_drag_1d(grav, vonkarm,               &
 
   end if
 
-end subroutine monin_obukhov_drag_1d
+end subroutine MONIN_OBUKHOV_DRAG_1D_
 
 
-pure subroutine monin_obukhov_solve_zeta(error, zeta_min, max_iter, small,  &
+pure subroutine MONIN_OBUKHOV_SOLVE_ZETA_(error, zeta_min, max_iter, small,  &
      & stable_option, new_mo_option, rich_crit, zeta_trans,        & !miz
      & n, rich, z, z0, zt, zq, f_m, f_t, f_q, mask, ier)
 
@@ -295,12 +295,12 @@ pure subroutine monin_obukhov_solve_zeta(error, zeta_min, max_iter, small,  &
 
   ier = 1 ! surface drag iteration did not converge
 
-end subroutine monin_obukhov_solve_zeta
+end subroutine MONIN_OBUKHOV_SOLVE_ZETA_
 
 
 !> The differential similarity function for buoyancy and tracers
 ! seems to be the same as monin_obukhov_derivative_m?
-pure subroutine monin_obukhov_derivative_t(stable_option,new_mo_option,rich_crit, zeta_trans, &
+pure subroutine MONIN_OBUKHOV_DERIVATIVE_T_(stable_option,new_mo_option,rich_crit, zeta_trans, &
      & n, phi_t, zeta, mask, ier)
 
   integer, intent(in   )                :: stable_option
@@ -352,11 +352,11 @@ pure subroutine monin_obukhov_derivative_t(stable_option,new_mo_option,rich_crit
 
   endif
 
-end subroutine monin_obukhov_derivative_t
+end subroutine MONIN_OBUKHOV_DERIVATIVE_T_
 
 
 ! the differential similarity function for momentum
-pure subroutine monin_obukhov_derivative_m(stable_option, rich_crit, zeta_trans, &
+pure subroutine MONIN_OBUKHOV_DERIVATIVE_M_(stable_option, rich_crit, zeta_trans, &
      & n, phi_m, zeta, mask, ier)
 
   integer, intent(in   )                :: stable_option
@@ -401,10 +401,10 @@ pure subroutine monin_obukhov_derivative_m(stable_option, rich_crit, zeta_trans,
 
   endif
 
-end subroutine monin_obukhov_derivative_m
+end subroutine MONIN_OBUKHOV_DERIVATIVE_M_
 
 
-pure subroutine monin_obukhov_profile_1d(vonkarm, &
+pure subroutine MONIN_OBUKHOV_PROFILE_1D_(vonkarm, &
      & neutral, stable_option, new_mo_option, rich_crit, zeta_trans, &
      & n, zref, zref_t, z, z0, zt, zq, u_star, b_star, q_star, &
      & del_m, del_t, del_q, lavail, avail, ier)
@@ -484,11 +484,11 @@ pure subroutine monin_obukhov_profile_1d(vonkarm, &
   end if
 
 
-end subroutine monin_obukhov_profile_1d
+end subroutine MONIN_OBUKHOV_PROFILE_1D_
 
 
 !> The integral similarity function for momentum
-pure subroutine monin_obukhov_integral_m(stable_option, rich_crit, zeta_trans, &
+pure subroutine MONIN_OBUKHOV_INTEGRAL_M_(stable_option, rich_crit, zeta_trans, &
      & n, psi_m, zeta, zeta_0, ln_z_z0, mask, ier)
 
   integer, intent(in   )                :: stable_option
@@ -560,11 +560,11 @@ pure subroutine monin_obukhov_integral_m(stable_option, rich_crit, zeta_trans, &
 
   end if
 
-end subroutine monin_obukhov_integral_m
+end subroutine MONIN_OBUKHOV_INTEGRAL_M_
 
 
 !> The integral similarity function for moisture and tracers
-pure subroutine monin_obukhov_integral_tq(stable_option, new_mo_option, rich_crit, zeta_trans, &
+pure subroutine MONIN_OBUKHOV_INTEGRAL_TQ_(stable_option, new_mo_option, rich_crit, zeta_trans, &
      & n, psi_t, psi_q, zeta, zeta_t, zeta_q, &
      & ln_z_zt, ln_z_zq, mask, ier)
 
@@ -659,10 +659,10 @@ else if (stable_option == 2) then
 
 end if
 
-end subroutine monin_obukhov_integral_tq
+end subroutine MONIN_OBUKHOV_INTEGRAL_TQ_
 
 
-pure subroutine monin_obukhov_stable_mix(stable_option, rich_crit, zeta_trans, &
+pure subroutine MONIN_OBUKHOV_STABLE_MIX_(stable_option, rich_crit, zeta_trans, &
      &                              n, rich, mix, ier)
 
   integer, intent(in   )                 :: stable_option
@@ -709,8 +709,7 @@ else if(stable_option == 2) then
 
 end if
 
-end subroutine monin_obukhov_stable_mix
+end subroutine MONIN_OBUKHOV_STABLE_MIX_
 
-end module monin_obukhov_inter
 !> @}
 ! close documentation grouping
