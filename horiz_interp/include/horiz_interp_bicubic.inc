@@ -44,7 +44,7 @@
     logical                                :: src_is_modulo
     integer                                :: nlon_in, nlat_in, nlon_out, nlat_out
     integer                                :: jcl, jcu, icl, icu, jj
-    real(FMS_HI_KIND_)                                   :: xz, yz
+    real(FMS_HI_KIND_)                     :: xz, yz
     integer                                :: unit
 
     if(present(verbose)) verbose_bicubic = verbose
@@ -425,7 +425,7 @@
         y12(4)= ( data_in(iclp1,jcup1) + data_in(iclm1,jcum1) - data_in(iclm1,jcup1) &
                 - data_in(iclp1,jcum1) ) * Interp%HI_KIND_TYPE_%wti(icl,jcu,3)
 
-        call BCUINT_(y,y1,y2,y12,xcl,xcu,ycl,ycu,xz,yz,val,val1,val2)
+        call bcuint(y,y1,y2,y12,xcl,xcu,ycl,ycu,xz,yz,val,val1,val2)
         data_out   (i,j) = val
         if(present(mask_out)) mask_out(i,j) = real(1.0, FMS_HI_KIND_)
 !!        dff_x(i,j) = val1

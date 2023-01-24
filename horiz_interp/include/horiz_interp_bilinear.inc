@@ -95,7 +95,7 @@
           glt_min = min(lat,glt_min);  glt_max = max(lat,glt_max)
           gln_min = min(lon,gln_min);  gln_max = max(lon,gln_max)
 
-          is = INDP_(lon, lon_in )
+          is = indp(lon, lon_in )
           if( lon_in(is) .gt. lon ) is = max(is-1,1)
           if( lon_in(is) .eq. lon .and. is .eq. nlon_in) is = max(is - 1,1)
           ie = min(is+1,nlon_in)
@@ -115,7 +115,7 @@
           endif
           wte = real(1., FMS_HI_KIND_) - wtw
 
-          js = INDP_(lat, lat_in )
+          js = indp(lat, lat_in )
 
           if( lat_in(js) .gt. lat ) js = max(js - 1, 1)
           if( lat_in(js) .eq. lat .and. js .eq. nlat_in) js = max(js - 1, 1)
@@ -446,10 +446,10 @@
                       endif
                    endif
 
-                   if(lat .ge. INTERSECT_(lon1,lat1,lon2,lat2,lon))then ! south
-                      if(lon .le. INTERSECT_(lat2,lon2,lat3,lon3,lat))then ! east
-                         if(lat .le. INTERSECT_(lon3,lat3,lon4,lat4,lon))then ! north
-                            if(lon .ge. INTERSECT_(lat4,lon4,lat1,lon1,lat))then  ! west
+                   if(lat .ge. intersect(lon1,lat1,lon2,lat2,lon))then ! south
+                      if(lon .le. intersect(lat2,lon2,lat3,lon3,lat))then ! east
+                         if(lat .le. intersect(lon3,lat3,lon4,lat4,lon))then ! north
+                            if(lon .ge. intersect(lat4,lon4,lat1,lon1,lat))then  ! west
                                found = .true.
                                Interp % i_lon (m,n,1) = i; Interp % i_lon (m,n,2) = ip1
                                Interp % j_lat (m,n,1) = j; Interp % j_lat (m,n,2) = jp1
@@ -576,10 +576,10 @@
                       endif
                    endif
 
-                   if(lat .ge. INTERSECT_(lon1,lat1,lon2,lat2,lon))then ! south
-                      if(lon .le. INTERSECT_(lat2,lon2,lat3,lon3,lat))then ! east
-                         if(lat .le. INTERSECT_(lon3,lat3,lon4,lat4,lon))then !north
-                            if(lon .ge. INTERSECT_(lat4,lon4,lat1,lon1,lat))then ! west
+                   if(lat .ge. intersect(lon1,lat1,lon2,lat2,lon))then ! south
+                      if(lon .le. intersect(lat2,lon2,lat3,lon3,lat))then ! east
+                         if(lat .le. intersect(lon3,lat3,lon4,lat4,lon))then !north
+                            if(lon .ge. intersect(lat4,lon4,lat1,lon1,lat))then ! west
                                found = .true.
                                is=i; js=j
                                Interp % i_lon (m,n,1) = i; Interp % i_lon (m,n,2) = ip1
@@ -1177,8 +1177,6 @@
     return
 
   end subroutine
-
-  !#######################################################################
 
 
   !#######################################################################

@@ -719,9 +719,9 @@ subroutine HORIZ_INTERP_CONSERVE_NEW_1DX1D_ ( Interp, lon_in, lat_in, lon_out, l
              if (present(mask_in)) then
                 call DATA_SUM_ ( data_in(is:ie,js:je), Interp%HI_KIND_TYPE_%area_src(is:ie,js:je), &
                      fis, fie, fjs,fje, dwtsum, wtsum, arsum, mask_in(is:ie,js:je)  )
-             else if( ALLOCATED(Interp%HI_KIND_TYPE_%mask_in) ) then
-                call DATA_SUM_ ( data_in(is:ie,js:je), Interp%HI_KIND_TYPE_%area_src(is:ie,js:je), &
-                     fis, fie, fjs,fje, dwtsum, wtsum, arsum, Interp%HI_KIND_TYPE_%mask_in(is:ie,js:je)  )
+             else if( allocated(Interp%mask_in) ) then
+                call data_sum ( data_in(is:ie,js:je), Interp%area_src(is:ie,js:je), &
+                     fis, fie, fjs,fje, dwtsum, wtsum, arsum, Interp%mask_in(is:ie,js:je)  )
              else
                 call DATA_SUM_ ( data_in(is:ie,js:je), Interp%HI_KIND_TYPE_%area_src(is:ie,js:je), &
                      fis, fie, fjs,fje,  dwtsum, wtsum, arsum    )

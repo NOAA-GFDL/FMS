@@ -18,8 +18,8 @@
 !***********************************************************************
 !> @addtogroup horiz_interp_type_mod
 !> @{
- !> @brief This statistics is for bilinear interpolation and spherical regrid.
- subroutine STATS_ ( dat, low, high, avg, miss, missing_value, mask )
+!> @brief This statistics is for bilinear interpolation and spherical regrid.
+ subroutine HI_STATS_ ( dat, low, high, avg, miss, missing_value, mask )
  real(FMS_HI_KIND_),    intent(in)  :: dat(:,:)
  real(FMS_HI_KIND_),    intent(out) :: low, high, avg
  integer, intent(out) :: miss
@@ -87,5 +87,54 @@
 
     return
 
- end subroutine
+ end subroutine stats
+
+!######################################################################################################################
+!> @brief horiz_interp_type_eq creates a copy of the horiz_interp_type object
+ subroutine horiz_interp_type_eq(horiz_interp_out, horiz_interp_in)
+    type(horiz_interp_type), intent(inout) :: horiz_interp_out !< Output object being set
+    type(horiz_interp_type), intent(in)    :: horiz_interp_in !< Input object being copied
+
+    if(.not.horiz_interp_in%I_am_initialized) then
+      call mpp_error(FATAL,'horiz_interp_type_eq: horiz_interp_type variable on right hand side is unassigned')
+    endif
+
+    horiz_interp_out%faci            =  horiz_interp_in%faci
+    horiz_interp_out%facj            =  horiz_interp_in%facj
+    horiz_interp_out%ilon            =  horiz_interp_in%ilon
+    horiz_interp_out%jlat            =  horiz_interp_in%jlat
+    horiz_interp_out%area_src        =  horiz_interp_in%area_src
+    horiz_interp_out%area_dst        =  horiz_interp_in%area_dst
+    horiz_interp_out%wti             =  horiz_interp_in%wti
+    horiz_interp_out%wtj             =  horiz_interp_in%wtj
+    horiz_interp_out%i_lon           =  horiz_interp_in%i_lon
+    horiz_interp_out%j_lat           =  horiz_interp_in%j_lat
+    horiz_interp_out%src_dist        =  horiz_interp_in%src_dist
+    if (allocated(horiz_interp_in%found_neighbors)) horiz_interp_out%found_neighbors = horiz_interp_in%found_neighbors
+    horiz_interp_out%max_src_dist    =  horiz_interp_in%max_src_dist
+    horiz_interp_out%num_found       =  horiz_interp_in%num_found
+    horiz_interp_out%nlon_src        =  horiz_interp_in%nlon_src
+    horiz_interp_out%nlat_src        =  horiz_interp_in%nlat_src
+    horiz_interp_out%nlon_dst        =  horiz_interp_in%nlon_dst
+    horiz_interp_out%nlat_dst        =  horiz_interp_in%nlat_dst
+    horiz_interp_out%interp_method   =  horiz_interp_in%interp_method
+    horiz_interp_out%rat_x           =  horiz_interp_in%rat_x
+    horiz_interp_out%rat_y           =  horiz_interp_in%rat_y
+    horiz_interp_out%lon_in          =  horiz_interp_in%lon_in
+    horiz_interp_out%lat_in          =  horiz_interp_in%lat_in
+    horiz_interp_out%I_am_initialized = .true.
+    horiz_interp_out%i_src           =  horiz_interp_in%i_src
+    horiz_interp_out%j_src           =  horiz_interp_in%j_src
+    horiz_interp_out%i_dst           =  horiz_interp_in%i_dst
+    horiz_interp_out%j_dst           =  horiz_interp_in%j_dst
+    horiz_interp_out%area_frac_dst   =  horiz_interp_in%area_frac_dst
+    if(horiz_interp_in%interp_method == CONSERVE) then
+       horiz_interp_out%version =  horiz_interp_in%version
+       if(horiz_interp_in%version==2) horiz_interp_out%nxgrid = horiz_interp_in%nxgrid
+    end if
+
+ end subroutine horiz_interp_type_eq
+!######################################################################################################################
+
+end module horiz_interp_type_mod
 !> @}
