@@ -60,8 +60,8 @@
 module tridiagonal_mod
 
 !--------------------------------------------------------------------------
-real,    private, allocatable, dimension(:,:,:) :: e,g,cc !< Make local to subroutine below
-real,    private, allocatable, dimension(:,:)   :: bb     !< Make local to subroutine below
+real,    private, allocatable, dimension(:,:,:) :: e,g,cc 
+real,    private, allocatable, dimension(:,:)   :: bb     
 logical, private :: init_tridiagonal = .false.
 !--------------------------------------------------------------------------
 
@@ -91,6 +91,10 @@ integer :: k
 if(present(a)) then
   init_tridiagonal = .true.
   
+  if(allocated(e))     deallocate(e)
+  if(allocated(g))     deallocate(g)
+  if(allocated(bb))    deallocate(bb)
+  if(allocated(cc))    deallocate(cc)
   allocate(e (size(x,1),size(x,2),size(x,3)))
   allocate(g (size(x,1),size(x,2),size(x,3)))
   allocate(bb(size(x,1),size(x,2)))
