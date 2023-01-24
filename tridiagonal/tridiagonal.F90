@@ -60,8 +60,8 @@
 module tridiagonal_mod
 
 !--------------------------------------------------------------------------
-!real,    private, allocatable, dimension(:,:,:) :: e,g,cc !< Make local to subroutine below
-!real,    private, allocatable, dimension(:,:)   :: bb     !< Make local to subroutine below
+real,    private, allocatable, dimension(:,:,:) :: e,g,cc !< Make local to subroutine below
+real,    private, allocatable, dimension(:,:)   :: bb     !< Make local to subroutine below
 logical, private :: init_tridiagonal = .false.
 !--------------------------------------------------------------------------
 
@@ -90,13 +90,13 @@ real, optional,    dimension(:,:,:) :: a,b,c !< Left hand side terms(see schemat
 real, dimension(size(x,1),size(x,2),size(x,3)) :: f
 integer :: k
 
-allocate(e (size(x,1),size(x,2),size(x,3)))
-allocate(g (size(x,1),size(x,2),size(x,3)))
-allocate(bb(size(x,1),size(x,2)))
-allocate(cc(size(x,1),size(x,2),size(x,3)))
-
 if(present(a)) then
   init_tridiagonal = .true.
+  
+  allocate(e (size(x,1),size(x,2),size(x,3)))
+  allocate(g (size(x,1),size(x,2),size(x,3)))
+  allocate(bb(size(x,1),size(x,2)))
+  allocate(cc(size(x,1),size(x,2),size(x,3)))
 
   e(:,:,1) = - a(:,:,1)/b(:,:,1)
   a(:,:,size(x,3)) = 0.0
@@ -122,11 +122,6 @@ do k = size(x,3)-1,1,-1
   x(:,:,k) = e(:,:,k)*x(:,:,k+1)+f(:,:,k)
 end do
 
-if(allocated(e)) deallocate(e)
-if(allocated(g)) deallocate(g)
-if(allocated(bb)) deallocate(bb)
-if(allocated(cc)) deallocate(cc)
-
 return
 end subroutine tri_invert
 
@@ -136,6 +131,12 @@ end subroutine tri_invert
 subroutine close_tridiagonal
 
 implicit none
+
+!> @brief Check if module variables are allocated
+if(allocated(e)) deallocate(e)
+if(allocated(g)) deallocate(g)
+if(allocated(bb)) deallocate(bb)
+if(allocated(cc)) deallocate(cc)
 
 return
 end subroutine close_tridiagonal
