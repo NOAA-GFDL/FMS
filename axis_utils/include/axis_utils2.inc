@@ -122,7 +122,7 @@
          edge_data(i) = r_var(i-1) + 0.5_lkind*(r_var(i) - r_var(i-1))
       enddo
       edge_data(1)    = r_var(1) - 0.5_lkind*(r_var(2) - r_var(1))
-      if (abs(edge_data(1)) .lt. real(1.e-10, FMS_AU_KIND_)) then
+      if (abs(edge_data(1)) .lt. real(1.d-10, FMS_AU_KIND_)) then
          edge_data(1) = 0.0_lkind
       endif
       edge_data(n+1)  = r_var(n) + 0.5_lkind*(r_var(n) - r_var(n-1))
@@ -142,12 +142,12 @@
     LON_IN_RANGE_ = lon
     l_end = l_strt + 360.0_lkind
 
-    if (abs(LON_IN_RANGE_ - l_strt) < real(1.e-4, FMS_AU_KIND_)) then
+    if (abs(LON_IN_RANGE_ - l_strt) < real(1.d-4, FMS_AU_KIND_)) then
       LON_IN_RANGE_ = l_strt
       return
     endif
 
-    if (abs(LON_IN_RANGE_ - l_end) < real(1.e-4, FMS_AU_KIND_)) then
+    if (abs(LON_IN_RANGE_ - l_end) < real(1.d-4, FMS_AU_KIND_)) then
       LON_IN_RANGE_ = l_strt
       return
     endif
@@ -453,7 +453,7 @@
     if (grid1(1) > grid2(1) ) call mpp_error(FATAL, 'grid2 lies outside grid1')
     if (grid1(n) < grid2(m) ) call mpp_error(FATAL, 'grid2 lies outside grid1')
 
-    if (yp1>real(0.99e30, FMS_AU_KIND_)) then
+    if (yp1>real(0.99d30, FMS_AU_KIND_)) then
        y2(1) = 0.0_lkind
        u(1)  = 0.0_lkind
     else
@@ -469,7 +469,7 @@
                /(grid1(i)-grid1(i-1)))/(grid1(i+1)-grid1(i-1))-sig*u(i-1))/p
     enddo
 
-    if (ypn>real(.99e30, FMS_AU_KIND_)) then
+    if (ypn>real(.99d30, FMS_AU_KIND_)) then
        qn = 0.0_lkind
        un = 0.0_lkind
     else
@@ -523,10 +523,10 @@
 
     interp_method = "linear"
     if(present(method)) interp_method = method
-    y1 = real(1.0e30, FMS_AU_KIND_)
+    y1 = real(1.0d30, FMS_AU_KIND_)
 
     if(present(yp1)) y1 = real(yp1, FMS_AU_KIND_)
-    y2 = real(1.0e30, FMS_AU_KIND_)
+    y2 = real(1.0d30, FMS_AU_KIND_)
 
     if(present(yp2)) y2 = real(yp2, FMS_AU_KIND_)
     call find_index(grid1, grid2(1), grid2(k2), ks, ke)
@@ -590,10 +590,10 @@
 
     interp_method = "linear"
     if(present(method)) interp_method = method
-    y1 = real(1.0e30, FMS_AU_KIND_)
+    y1 = real(1.0d30, FMS_AU_KIND_)
 
     if(present(yp1)) y1 = yp1
-    y2 = real(1.0e30, FMS_AU_KIND_)
+    y2 = real(1.0d30, FMS_AU_KIND_)
     if(present(yp2)) y2 = yp2
 
     if (n1 /= n2 .or. m1 /= m2) call mpp_error(FATAL,'grid size mismatch')
