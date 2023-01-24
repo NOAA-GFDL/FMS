@@ -128,6 +128,23 @@ if(.not.module_is_initialized) call error_mesg('stable_mix_3d in monin_obukhov_m
      'monin_obukhov_init has not been called', FATAL)
 
 n = size(rich,1)*size(rich,2)*size(rich,3)
+  allocate(rich1d(n), mix1d(n))
+  rich1d = 0.0_lkind
+  mix1d = 0.0_lkind
+     
+  do k = 1, size(rich,3)
+    do j = 1, size(rich,2)
+      do i = 1, size(rich,1)
+        rich1d(m) = rich(i, j, k)
+        mix1d(m) = mix(i, j, k)
+        m = m+1
+      end do
+    end do
+  end do
+
+call monin_obukhov_stable_mix(stable_option, real(rich_crit, FMS_MO_KIND_), real(zeta_trans, FMS_MO_KIND_), &
+     & n, real(rich1d, FMS_MO_KIND_), mix1d, ier)
+
 
 
 end subroutine STABLE_MIX_3D_
