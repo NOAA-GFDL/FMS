@@ -43,7 +43,7 @@
   real(kind=FMS_AU_KIND_), dimension(:,:), allocatable :: r2d
   integer                                              :: i
   integer                                              :: n
-  logical                                              :: reproduce_null_char_bug  !< Local flag 
+  logical                                              :: reproduce_null_char_bug  !< Local flag
                                               !! indicating to reproduce the mpp_io bug where
                                               !! the null characters were not removed after reading a string attribute
   integer, parameter                                   :: lkind = FMS_AU_KIND_
