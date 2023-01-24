@@ -59,6 +59,16 @@ module horiz_interp_spherical_mod
   public :: horiz_interp_spherical_new, horiz_interp_spherical, horiz_interp_spherical_del
   public :: horiz_interp_spherical_init, horiz_interp_spherical_wght
 
+ !> private helper routines 
+  interface full_search
+    module procedure full_search_r4
+    module procedure full_search_r8
+  end interface
+
+  interface radial_search
+    module procedure radial_search_r4
+    module procedure radial_search_r8
+  end interface
 
   integer, parameter :: max_neighbors = 400
   real(R8_KIND),    parameter :: max_dist_default = 0.1_r8_kind  ! radians
