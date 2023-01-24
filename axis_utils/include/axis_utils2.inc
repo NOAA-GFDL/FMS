@@ -453,7 +453,7 @@
     if (grid1(1) > grid2(1) ) call mpp_error(FATAL, 'grid2 lies outside grid1')
     if (grid1(n) < grid2(m) ) call mpp_error(FATAL, 'grid2 lies outside grid1')
 
-    if (yp1>real(0.99d30, FMS_AU_KIND_)) then
+if (yp1>real(0.99d30, FMS_AU_KIND_)) then
        y2(1) = 0.0_lkind
        u(1)  = 0.0_lkind
     else
