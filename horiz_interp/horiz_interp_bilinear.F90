@@ -89,14 +89,14 @@ contains
                                    !! deallocated arrays
 
     if( allocated(Interp%kind4_reals)) then
-      if(associated(Interp%kind4_reals%wti))   deallocate(Interp%kind4_reals%wti)
-      if(associated(Interp%kind4_reals%wtj))   deallocate(Interp%kind4_reals%wtj)
+      if(allocated(Interp%kind4_reals%wti))   deallocate(Interp%kind4_reals%wti)
+      if(allocated(Interp%kind4_reals%wtj))   deallocate(Interp%kind4_reals%wtj)
     else if (allocated(Interp%kind8_reals)) then
-      if(associated(Interp%kind8_reals%wti))   deallocate(Interp%kind8_reals%wti)
-      if(associated(Interp%kind8_reals%wtj))   deallocate(Interp%kind8_reals%wtj)
+      if(allocated(Interp%kind8_reals%wti))   deallocate(Interp%kind8_reals%wti)
+      if(allocated(Interp%kind8_reals%wtj))   deallocate(Interp%kind8_reals%wtj)
     endif
-    if(associated(Interp%i_lon)) deallocate(Interp%i_lon)
-    if(associated(Interp%j_lat)) deallocate(Interp%j_lat)
+    if(allocated(Interp%i_lon)) deallocate(Interp%i_lon)
+    if(allocated(Interp%j_lat)) deallocate(Interp%j_lat)
 
   end subroutine horiz_interp_bilinear_del
 

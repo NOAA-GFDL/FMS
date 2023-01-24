@@ -59,12 +59,13 @@ end interface
 
 !> Holds data pointers and metadata for horizontal interpolations, passed between the horiz_interp modules
 !> @ingroup horiz_interp_type_mod
- type :: horiz_interp_type
-   integer, dimension(:,:), pointer   :: ilon =>NULL()   !< indices for conservative scheme
-   integer, dimension(:,:), pointer   :: jlat =>NULL()   !< indices for conservative scheme
-   integer, dimension(:,:,:), pointer :: i_lon =>NULL() !< indices for bilinear interpolation
+ type horiz_interp_type
+   integer, dimension(:,:), allocatable   :: ilon    !< indices for conservative scheme
+   integer, dimension(:,:), allocatable   :: jlat    !< indices for conservative scheme
+                                                           !! wti ist used for derivative "weights" in bicubic
+   integer, dimension(:,:,:), allocatable :: i_lon  !< indices for bilinear interpolation
                                                         !! and spherical regrid
-   integer, dimension(:,:,:), pointer :: j_lat =>NULL() !< indices for bilinear interpolation
+   integer, dimension(:,:,:), allocatable :: j_lat  !< indices for bilinear interpolation
                                                         !! and spherical regrid
    logical, dimension(:,:), pointer   :: found_neighbors =>NULL()       !< indicate whether destination grid
                                                                         !! has some source grid around it.
@@ -95,52 +96,52 @@ end interface
 
 !> real(8) pointers for use in horiz_interp_type
 type horiz_interp_reals8
-   real(kind=r8_kind),    dimension(:,:), pointer   :: faci =>NULL()   !< weights for conservative scheme
-   real(kind=r8_kind),    dimension(:,:), pointer   :: facj =>NULL()   !< weights for conservative scheme
-   real(kind=r8_kind),    dimension(:,:), pointer   :: area_src =>NULL()              !< area of the source grid
-   real(kind=r8_kind),    dimension(:,:), pointer   :: area_dst =>NULL()              !< area of the destination grid
-   real(kind=r8_kind),    dimension(:,:,:), pointer :: wti =>NULL()      !< weights for bilinear interpolation
+   real(kind=r8_kind),    dimension(:,:), allocatable   :: faci =>NULL()   !< weights for conservative scheme
+   real(kind=r8_kind),    dimension(:,:), allocatable   :: facj =>NULL()   !< weights for conservative scheme
+   real(kind=r8_kind),    dimension(:,:), allocatable   :: area_src =>NULL()              !< area of the source grid
+   real(kind=r8_kind),    dimension(:,:), allocatable   :: area_dst =>NULL()              !< area of the destination grid
+   real(kind=r8_kind),    dimension(:,:,:), allocatable :: wti =>NULL()      !< weights for bilinear interpolation
                                                            !! wti ist used for derivative "weights" in bicubic
-   real(kind=r8_kind),    dimension(:,:,:), pointer :: wtj =>NULL()      !< weights for bilinear interpolation
+   real(kind=r8_kind),    dimension(:,:,:), allocatable :: wtj =>NULL()      !< weights for bilinear interpolation
                                                            !! wti ist used for derivative "weights" in bicubic
-   real(kind=r8_kind),    dimension(:,:,:), pointer :: src_dist =>NULL() !< distance between destination grid and
+   real(kind=r8_kind),    dimension(:,:,:), allocatable :: src_dist =>NULL() !< distance between destination grid and
                                                                         !! neighbor source grid.
-   real(kind=r8_kind),    dimension(:,:), pointer   :: rat_x =>NULL() !< the ratio of coordinates of the dest grid
+   real(kind=r8_kind),    dimension(:,:), allocatable   :: rat_x =>NULL() !< the ratio of coordinates of the dest grid
                                                         !! (x_dest -x_src_r)/(x_src_l -x_src_r)
                                                         !! and (y_dest -y_src_r)/(y_src_l -y_src_r)
-   real(kind=r8_kind),    dimension(:,:), pointer   :: rat_y =>NULL() !< the ratio of coordinates of the dest grid
+   real(kind=r8_kind),    dimension(:,:), allocatable   :: rat_y =>NULL() !< the ratio of coordinates of the dest grid
                                                         !! (x_dest -x_src_r)/(x_src_l -x_src_r)
                                                         !! and (y_dest -y_src_r)/(y_src_l -y_src_r)
-   real(kind=r8_kind),    dimension(:), pointer     :: lon_in =>NULL()  !< the coordinates of the source grid
-   real(kind=r8_kind),    dimension(:), pointer     :: lat_in =>NULL()  !< the coordinates of the source grid
-   real(kind=r8_kind),    dimension(:), pointer     :: area_frac_dst=>NULL() !< area fraction in destination grid.
-   real(kind=r8_kind),    dimension(:,:), pointer   :: mask_in=>NULL()
+   real(kind=r8_kind),    dimension(:), allocatable     :: lon_in =>NULL()  !< the coordinates of the source grid
+   real(kind=r8_kind),    dimension(:), allocatable     :: lat_in =>NULL()  !< the coordinates of the source grid
+   real(kind=r8_kind),    dimension(:), allocatable     :: area_frac_dst=>NULL() !< area fraction in destination grid.
+   real(kind=r8_kind),    dimension(:,:), allocatable   :: mask_in=>NULL()
    real(kind=r8_kind)                               :: max_src_dist
 
 end type horiz_interp_reals8
 
 !> holds real(4) pointers for use in horiz_interp_type
 type horiz_interp_reals4
-   real(kind=r4_kind),    dimension(:,:), pointer   :: faci =>NULL()   !< weights for conservative scheme
-   real(kind=r4_kind),    dimension(:,:), pointer   :: facj =>NULL()   !< weights for conservative scheme
-   real(kind=r4_kind),    dimension(:,:), pointer   :: area_src =>NULL()              !< area of the source grid
-   real(kind=r4_kind),    dimension(:,:), pointer   :: area_dst =>NULL()              !< area of the destination grid
-   real(kind=r4_kind),    dimension(:,:,:), pointer :: wti =>NULL()      !< weights for bilinear interpolation
+   real(kind=r4_kind),    dimension(:,:), allocatable   :: faci =>NULL()   !< weights for conservative scheme
+   real(kind=r4_kind),    dimension(:,:), allocatable   :: facj =>NULL()   !< weights for conservative scheme
+   real(kind=r4_kind),    dimension(:,:), allocatable   :: area_src =>NULL()              !< area of the source grid
+   real(kind=r4_kind),    dimension(:,:), allocatable   :: area_dst =>NULL()              !< area of the destination grid
+   real(kind=r4_kind),    dimension(:,:,:), allocatable :: wti =>NULL()      !< weights for bilinear interpolation
                                                            !! wti ist used for derivative "weights" in bicubic
-   real(kind=r4_kind),    dimension(:,:,:), pointer :: wtj =>NULL()      !< weights for bilinear interpolation
+   real(kind=r4_kind),    dimension(:,:,:), allocatable :: wtj =>NULL()      !< weights for bilinear interpolation
                                                            !! wti ist used for derivative "weights" in bicubic
-   real(kind=r4_kind),    dimension(:,:,:), pointer :: src_dist =>NULL()!< distance between destination grid and
+   real(kind=r4_kind),    dimension(:,:,:), allocatable :: src_dist =>NULL()!< distance between destination grid and
                                                                         !! neighbor source grid.
-   real(kind=r4_kind),    dimension(:,:), pointer   :: rat_x =>NULL() !< the ratio of coordinates of the dest grid
+   real(kind=r4_kind),    dimension(:,:), allocatable   :: rat_x =>NULL() !< the ratio of coordinates of the dest grid
                                                         !! (x_dest -x_src_r)/(x_src_l -x_src_r)
                                                         !! and (y_dest -y_src_r)/(y_src_l -y_src_r)
-   real(kind=r4_kind),    dimension(:,:), pointer   :: rat_y =>NULL() !< the ratio of coordinates of the dest grid
+   real(kind=r4_kind),    dimension(:,:), allocatable   :: rat_y =>NULL() !< the ratio of coordinates of the dest grid
                                                         !! (x_dest -x_src_r)/(x_src_l -x_src_r)
                                                         !! and (y_dest -y_src_r)/(y_src_l -y_src_r)
-   real(kind=r4_kind),    dimension(:), pointer     :: lon_in =>NULL()  !< the coordinates of the source grid
-   real(kind=r4_kind),    dimension(:), pointer     :: lat_in =>NULL()  !< the coordinates of the source grid
-   real(kind=r4_kind),    dimension(:), pointer     :: area_frac_dst=>NULL() !< area fraction in destination grid.
-   real(kind=r4_kind),    dimension(:,:), pointer   :: mask_in=>NULL()
+   real(kind=r4_kind),    dimension(:), allocatable     :: lon_in =>NULL()  !< the coordinates of the source grid
+   real(kind=r4_kind),    dimension(:), allocatable     :: lat_in =>NULL()  !< the coordinates of the source grid
+   real(kind=r4_kind),    dimension(:), allocatable     :: area_frac_dst=>NULL() !< area fraction in destination grid.
+   real(kind=r4_kind),    dimension(:,:), allocatable   :: mask_in=>NULL()
    real(kind=r4_kind)                               :: max_src_dist
 
 end type horiz_interp_reals4
@@ -150,9 +151,10 @@ end type horiz_interp_reals4
 contains
 
 !######################################################################################################################
+!> @brief horiz_interp_type_eq creates a copy of the horiz_interp_type object
  subroutine horiz_interp_type_eq(horiz_interp_out, horiz_interp_in)
-    type(horiz_interp_type), intent(inout) :: horiz_interp_out
-    type(horiz_interp_type), intent(in)    :: horiz_interp_in
+    type(horiz_interp_type), intent(inout) :: horiz_interp_out !< Output object being set
+    type(horiz_interp_type), intent(in)    :: horiz_interp_in !< Input object being copied
 
     if(.not.horiz_interp_in%I_am_initialized) then
       call mpp_error(FATAL,'horiz_interp_type_eq: horiz_interp_type variable on right hand side is unassigned')
@@ -214,12 +216,12 @@ contains
       horiz_interp_out%kind4_reals%mask_in         => horiz_interp_in%kind4_reals%mask_in
 
     else
-      !! error out
+        call mpp_error(FATAL, "horiz_interp_type_eq: cannot assign unallocated real values from horiz_interp_in")
     endif
 
     if(horiz_interp_in%interp_method == CONSERVE) then
-       horiz_interp_out%version =  horiz_interp_in%version
-       if(horiz_interp_in%version==2) horiz_interp_out%nxgrid = horiz_interp_in%nxgrid
+        horiz_interp_out%version =  horiz_interp_in%version
+        if(horiz_interp_in%version==2) horiz_interp_out%nxgrid = horiz_interp_in%nxgrid
     end if
 
  end subroutine horiz_interp_type_eq

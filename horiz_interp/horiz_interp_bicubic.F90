@@ -136,8 +136,13 @@ module horiz_interp_bicubic_mod
       deallocate(Interp%kind4_reals)
     endif
 
-    if(associated(Interp%i_lon))  deallocate ( Interp%i_lon )
-    if(associated(Interp%j_lat))  deallocate ( Interp%j_lat )
+    if(allocated(Interp%rat_x))  deallocate ( Interp%rat_x )
+    if(allocated(Interp%rat_y))  deallocate ( Interp%rat_y )
+    if(allocated(Interp%lon_in)) deallocate ( Interp%lon_in )
+    if(allocated(Interp%lat_in)) deallocate ( Interp%lat_in )
+    if(allocated(Interp%i_lon))  deallocate ( Interp%i_lon )
+    if(allocated(Interp%j_lat))  deallocate ( Interp%j_lat )
+    if(allocated(Interp%wti))    deallocate ( Interp%wti )
 
   end subroutine horiz_interp_bicubic_del
 

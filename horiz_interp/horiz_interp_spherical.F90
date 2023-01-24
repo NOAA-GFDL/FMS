@@ -121,15 +121,15 @@ end subroutine horiz_interp_spherical_init
                                            !! contain deallocated arrays.
 
     if(allocated(Interp%kind4_reals)) then
-      deallocate(Interp%kind4_reals%src_dist)
+      if(allocated(Interp%kind4_reals%src_dist)) deallocate(Interp%kind4_reals%src_dist)
       deallocate(Interp%kind4_reals)
     else if (allocated(Interp%kind8_reals)) then
-      deallocate(Interp%kind8_reals%src_dist)
+      if(allocated(Interp%kind8_reals%src_dist)) deallocate(Interp%kind8_reals%src_dist)
       deallocate(Interp%kind8_reals)
     endif
-    if(associated(Interp%num_found)) deallocate(Interp%num_found)
-    if(associated(Interp%i_lon))     deallocate(Interp%i_lon)
-    if(associated(Interp%j_lat))     deallocate(Interp%j_lat)
+    if(allocated(Interp%num_found)) deallocate(Interp%num_found)
+    if(allocated(Interp%i_lon))     deallocate(Interp%i_lon)
+    if(allocated(Interp%j_lat))     deallocate(Interp%j_lat)
 
   end subroutine horiz_interp_spherical_del
 

@@ -27,13 +27,13 @@
 #define MPP_READ_DISTRIBUTED_ASCII_1D_ mpp_read_distributed_ascii_r1D
 #undef MPP_TYPE_
 #define MPP_TYPE_ real
-#include <mpp_read_distributed_ascii.h>
+#include <mpp_read_distributed_ascii.fh>
 
 #undef MPP_READ_DISTRIBUTED_ASCII_1D_
 #define MPP_READ_DISTRIBUTED_ASCII_1D_ mpp_read_distributed_ascii_i1D
 #undef MPP_TYPE_
 #define MPP_TYPE_ integer
-#include <mpp_read_distributed_ascii.h>
+#include <mpp_read_distributed_ascii.fh>
 
 subroutine mpp_read_distributed_ascii_a1D(unit,fmt,ssize,data,iostat)
   integer, intent(in)               :: unit
