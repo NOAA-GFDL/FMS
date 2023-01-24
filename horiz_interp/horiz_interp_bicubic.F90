@@ -106,26 +106,26 @@ module horiz_interp_bicubic_mod
       module procedure fill_xy_r8
    end interface
 
-   interface bcuint 
-      module procedure bcuint_r4 
-      module procedure bcuint_r8 
+   interface bcuint
+      module procedure bcuint_r4
+      module procedure bcuint_r8
    end interface
 
-   interface bcucof 
-      module procedure bcucof_r4 
-      module procedure bcucof_r8 
+   interface bcucof
+      module procedure bcucof_r4
+      module procedure bcucof_r8
    end interface
 
    !> find the lower neighbour of xf in field xc, return is the index
-   interface indl 
-      module procedure indl_r4 
-      module procedure indl_r8 
+   interface indl
+      module procedure indl_r4
+      module procedure indl_r8
    end interface
 
    !> find the upper neighbour of xf in field xc, return is the index
-   interface indu 
-      module procedure indu_r4 
-      module procedure indu_r8 
+   interface indu
+      module procedure indu_r4
+      module procedure indu_r8
    end interface
 
    contains

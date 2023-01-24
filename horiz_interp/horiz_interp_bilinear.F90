@@ -65,12 +65,12 @@ module horiz_interp_bilinear_mod
 !! Private helper routines, interfaces for mixed real precision support
 
   interface indp
-    module procedure indp_r4  
+    module procedure indp_r4
     module procedure indp_r8
   end interface
 
   interface intersect
-    module procedure intersect_r4  
+    module procedure intersect_r4
     module procedure intersect_r8
   end interface
 
