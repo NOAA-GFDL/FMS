@@ -199,22 +199,22 @@ integer, parameter                                           :: lkind = FMS_AST_
 !!    earth sun distance factor. use functions contained in this module.
 !---------------------------------------------------------------------
 
-    ang   = real(angle(time_since_ae), FMS_AST_KIND_)
-    dec   = real(declination(ang),     FMS_AST_KIND_)
-    rrsun = real(r_inv_squared(ang),   FMS_AST_KIND_)
+    ang   = angle(time_since_ae)
+    dec   = declination(ang)
+    rrsun = r_inv_squared(ang)
 
 !---------------------------------------------------------------------
 !>    define terms needed in the cosine zenith angle equation.
 !--------------------------------------------------------------------
 
-    aa = real(sin(lat)*sin(dec), FMS_AST_KIND_)
-    bb = real(cos(lat)*cos(dec), FMS_AST_KIND_)
+    aa = sin(lat)*sin(dec)
+    bb = cos(lat)*cos(dec)
 
 !---------------------------------------------------------------------
 !>    define local time. force it to be between -pi and pi.
 !--------------------------------------------------------------------
 
-    t = real(gmt + lon - PI, FMS_AST_KIND_)
+    t = gmt + lon - PI
     where(t >= PI) t = real(t - real(twopi, r8_kind), FMS_AST_KIND_)
     where(t < -PI) t = real(t + real(twopi, r8_kind), FMS_AST_KIND_)
 
@@ -229,17 +229,17 @@ integer, parameter                                           :: lkind = FMS_AST_
 !!    output is valid over the period from t to t + dt.
 !--------------------------------------------------------------------
 
-    h   = real(half_day(lat,dec), FMS_AST_KIND_)
+    h   = half_day(lat,dec)
 
     if ( present(half_day_out) ) then
-        half_day_out = real(h, FMS_AST_KIND_)
+        half_day_out = h
     end if
 
     if ( present(dt) ) then   ! (perform time averaging)
-        tt   = real(t + dt,  FMS_AST_KIND_)
-        st   = real(sin(t),  FMS_AST_KIND_)
-        stt  = real(sin(tt), FMS_AST_KIND_)
-        sh   = real(sin(h),  FMS_AST_KIND_)
+        tt   = t + dt
+        st   = sin(t)
+        stt  = sin(tt)
+        sh   = sin(h)
         cosz = 0.0_lkind
 
         if (.not. Lallow_negative) then
@@ -255,7 +255,7 @@ integer, parameter                                           :: lkind = FMS_AST_
 !-------------------------------------------------------------------
 
         where ( (tt+h) /= 0.0_lkind .and. t < -h .and. abs(tt) <= h)   &
-            cosz = real(aa + bb*(stt + sh)/ (tt + h), FMS_AST_KIND_)
+            cosz = aa + bb*(stt + sh)/ (tt + h)
 
 !-------------------------------------------------------------------
 !    case 3: averaging period begins before sunrise, ends after sunset,
@@ -265,14 +265,14 @@ integer, parameter                                           :: lkind = FMS_AST_
 !-------------------------------------------------------------------
 
         where (t < -h .and. h /= 0.0_lkind .and. h < tt)    &
-            cosz = real(aa + bb*( sh + sh)/(h+h), FMS_AST_KIND_)
+            cosz = aa + bb*( sh + sh)/(h+h)
 
 !-------------------------------------------------------------------
 !    case 4: averaging period begins after sunrise, ends before sunset.
 !-------------------------------------------------------------------
         where ( abs(t) <= h .and. abs(tt) <= h)    &
 
-            cosz = real(aa + bb*(stt - st)/ (tt - t), FMS_AST_KIND_)
+            cosz = aa + bb*(stt - st)/ (tt - t)
 
 !-------------------------------------------------------------------
 !    case 5: averaging period begins after sunrise, ends after sunset.
@@ -280,7 +280,7 @@ integer, parameter                                           :: lkind = FMS_AST_
 !-------------------------------------------------------------------
 
         where ((h-t) /= 0.0_lkind .and. abs(t) <= h .and. h < tt)    &
-            cosz = real(aa + bb*(sh - st)/(h-t), FMS_AST_KIND_)
+            cosz = aa + bb*(sh - st)/(h-t)
 
 !-------------------------------------------------------------------
 !    case 6: averaging period begins after sunrise , ends after the
@@ -313,7 +313,7 @@ integer, parameter                                           :: lkind = FMS_AST_
         end where
 
         else
-            cosz = real(aa + bb*(stt - st)/ (tt - t), FMS_AST_KIND_)
+            cosz = aa + bb*(stt - st)/ (tt - t)
         end if
 
 
@@ -324,10 +324,10 @@ integer, parameter                                           :: lkind = FMS_AST_
 !-------------------------------------------------------------------
 
     where (t < -h .and. tt < -h)           fracday = 0.0_lkind
-    where (t < -h .and. abs(tt) <= h)      fracday = real((tt + h )/dt, FMS_AST_KIND_)
-    where (t < -h .and. h < tt)            fracday = real(( h + h )/dt, FMS_AST_KIND_)
-    where (abs(t) <= h .and. abs(tt) <= h) fracday = real((tt - t )/dt, FMS_AST_KIND_)
-    where (abs(t) <= h .and. h < tt)       fracday = real(( h - t )/dt, FMS_AST_KIND_)
+    where (t < -h .and. abs(tt) <= h)      fracday = (tt + h )/dt
+    where (t < -h .and. h < tt)            fracday = ( h + h )/dt
+    where (abs(t) <= h .and. abs(tt) <= h) fracday = (tt - t )/dt
+    where (abs(t) <= h .and. h < tt)       fracday = ( h - t )/dt
     where (h <  t)                         fracday = 0.0_lkind
     where (real(twopi, r8_kind) - h < tt)  fracday = real(fracday + &
                                                           (tt + h - real(twopi, r8_kind))/dt, FMS_AST_KIND_)
@@ -337,14 +337,14 @@ integer, parameter                                           :: lkind = FMS_AST_
     else  ! (no time averaging)
         if (.not. Lallow_negative) then
             where (abs(t) < h)
-              cosz    = real(aa + bb*cos(t), FMS_AST_KIND_)
+              cosz    = aa + bb*cos(t)
               fracday = 1.0_lkind
             elsewhere
               cosz    = 0.0_lkind
               fracday = 0.0_lkind
         end where
         else
-            cosz = real(aa + bb*cos(t), FMS_AST_KIND_)
+            cosz = aa + bb*cos(t)
             where (abs(t) < h)
               fracday = 1.0_lkind
             elsewhere
@@ -359,7 +359,7 @@ integer, parameter                                           :: lkind = FMS_AST_
 !----------------------------------------------------------------------
 
     if (.not. Lallow_negative) then
-        cosz = real(max(0.0_lkind, cosz), FMS_AST_KIND_)
+        cosz = max(0.0_lkind, cosz)
     end if
 
 end subroutine DIURNAL_SOLAR_2D_
@@ -406,8 +406,8 @@ real(kind=FMS_AST_KIND_), dimension(size(lat),1) :: lat_2d, lon_2d, cosz_2d, fra
 !>    define 2-d versions of input data arrays.
 !--------------------------------------------------------------------
 
-    lat_2d(:,1) = real(lat, FMS_AST_KIND_)
-    lon_2d(:,1) = real(lon, FMS_AST_KIND_)
+    lat_2d(:,1) = lat
+    lon_2d(:,1) = lon
 
 
 !--------------------------------------------------------------------
@@ -428,10 +428,10 @@ real(kind=FMS_AST_KIND_), dimension(size(lat),1) :: lat_2d, lon_2d, cosz_2d, fra
 !!    calling routine.
 !-------------------------------------------------------------------
 
-    fracday = real(fracday_2d(:,1), FMS_AST_KIND_)
-    cosz    = real(cosz_2d (:,1),   FMS_AST_KIND_)
+    fracday = fracday_2d(:,1)
+    cosz    = cosz_2d (:,1)
     if (present(half_day_out)) then
-        half_day_out = real(halfday_2d(:,1), FMS_AST_KIND_)
+        half_day_out = halfday_2d(:,1)
     end if
 
 end subroutine DIURNAL_SOLAR_1D_
@@ -474,8 +474,8 @@ real(kind=FMS_AST_KIND_), dimension(1,1) :: lat_2d, lon_2d, cosz_2d, fracday_2d,
 !>    create 2d arrays from the scalar input fields.
 !---------------------------------------------------------------------
 
-    lat_2d = real(lat, FMS_AST_KIND_)
-    lon_2d = real(lon, FMS_AST_KIND_)
+    lat_2d = lat
+    lon_2d = lon
 
 !--------------------------------------------------------------------
 !>    call diurnal_solar_2d to calculate astronomy fields.
@@ -494,10 +494,10 @@ real(kind=FMS_AST_KIND_), dimension(1,1) :: lat_2d, lon_2d, cosz_2d, fracday_2d,
 !>    place output fields into scalars for return to calling routine.
 !-------------------------------------------------------------------
 
-    fracday = real(fracday_2d(1,1), FMS_AST_KIND_)
-    cosz    = real(cosz_2d(1,1),    FMS_AST_KIND_)
+    fracday = fracday_2d(1,1)
+    cosz    = cosz_2d(1,1)
     if (present(half_day_out)) then
-        half_day_out = real(halfday_2d(1,1), FMS_AST_KIND_)
+        half_day_out = halfday_2d(1,1)
     end if
 
 end subroutine DIURNAL_SOLAR_0D_
@@ -551,14 +551,14 @@ integer, parameter       :: lkind = FMS_AST_KIND_
 !!    function universal_time.
 !---------------------------------------------------------------------
 
-    gmt = real(universal_time(time), FMS_AST_KIND_)
+    gmt = universal_time(time)
 
 !---------------------------------------------------------------------
 !>   Extract the time of year (time_since_ae) from time_type variable
 !!   time using the function orbital_time.
 !---------------------------------------------------------------------
 
-    time_since_ae = real(orbital_time(time), FMS_AST_KIND_)
+    time_since_ae = orbital_time(time)
 
 !---------------------------------------------------------------------
 !>    Convert optional time_type variable dt_time (length of averaging
@@ -566,7 +566,7 @@ integer, parameter       :: lkind = FMS_AST_KIND_
 !---------------------------------------------------------------------
 
     if (present(dt_time))  then
-        dt = real(universal_time(dt_time), FMS_AST_KIND_)
+        dt = universal_time(dt_time)
         if (dt > PI) then
            call error_mesg('astronomy_mod', 'radiation time step must be no longer than 12 hrs', FATAL)
         endif
@@ -634,8 +634,8 @@ real(kind=FMS_AST_KIND_), dimension(size(lat),1) :: lat_2d, lon_2d, cosz_2d, &
 !>    Define 2-d versions of input data arrays.
 !--------------------------------------------------------------------
 
-    lat_2d(:,1) = real(lat, FMS_AST_KIND_)
-    lon_2d(:,1) = real(lon, FMS_AST_KIND_)
+    lat_2d(:,1) = lat
+    lon_2d(:,1) = lon
 
 !--------------------------------------------------------------------
 !>    Call diurnal_solar_cal_2d to convert the time_types to reals and
@@ -658,10 +658,10 @@ real(kind=FMS_AST_KIND_), dimension(size(lat),1) :: lat_2d, lon_2d, cosz_2d, &
 !!    calling routine.
 !-------------------------------------------------------------------
 
-    fracday = real(fracday_2d(:,1), FMS_AST_KIND_)
-    cosz    = real(cosz_2d (:,1), FMS_AST_KIND_)
+    fracday = fracday_2d(:,1)
+    cosz    = cosz_2d (:,1)
     if (present(half_day_out)) then
-        half_day_out = real(halfday_2d(:,1), FMS_AST_KIND_)
+        half_day_out = halfday_2d(:,1)
     end if
 
 end subroutine DIURNAL_SOLAR_CAL_1D_
@@ -706,8 +706,8 @@ real(kind=FMS_AST_KIND_), dimension(1,1) :: lat_2d, lon_2d, cosz_2d, fracday_2d,
 !>    Define 2-d versions of input data arrays.
 !--------------------------------------------------------------------
 
-    lat_2d = real(lat, FMS_AST_KIND_)
-    lon_2d = real(lon, FMS_AST_KIND_)
+    lat_2d = lat
+    lon_2d = lon
 
 !--------------------------------------------------------------------
 !>    Call diurnal_solar_cal_2d to convert the time_types to reals and
@@ -730,10 +730,10 @@ real(kind=FMS_AST_KIND_), dimension(1,1) :: lat_2d, lon_2d, cosz_2d, fracday_2d,
 !!    calling routine.
 !-------------------------------------------------------------------
 
-    fracday = real(fracday_2d(1,1), FMS_AST_KIND_)
-    cosz    = real(cosz_2d(1,1),    FMS_AST_KIND_)
+    fracday = fracday_2d(1,1)
+    cosz    = cosz_2d(1,1)
     if (present(half_day_out)) then
-          half_day_out = real(halfday_2d(1,1), FMS_AST_KIND_)
+          half_day_out = halfday_2d(1,1)
       end if
 
 end subroutine DIURNAL_SOLAR_CAL_0D_
@@ -781,10 +781,10 @@ integer, parameter       :: lkind = FMS_AST_KIND_
 !!    contained in this module.
 !---------------------------------------------------------------------
 
-    ang = real(angle (time_since_ae), FMS_AST_KIND_)
-    dec = real(declination (ang),     FMS_AST_KIND_)
-    h   = real(half_day (lat, dec),   FMS_AST_KIND_)
-    rr  = real(r_inv_squared (ang),   FMS_AST_KIND_)
+    ang = angle (time_since_ae)
+    dec = declination (ang)
+    h   = half_day (lat, dec)
+    rr  = r_inv_squared (ang)
 
 !---------------------------------------------------------------------
 !>    Where the entire day is dark, define cosz to be zero. otherwise
@@ -795,10 +795,10 @@ integer, parameter       :: lkind = FMS_AST_KIND_
     where (h == 0.0_lkind)
           cosz = 0.0_lkind
     elsewhere
-          cosz = real(sin(lat)*sin(dec) + cos(lat)*cos(dec)*sin(h)/h, FMS_AST_KIND_)
+          cosz = sin(lat)*sin(dec) + cos(lat)*cos(dec)*sin(h)/h
     end where
-      h_out    = real(h/PI, FMS_AST_KIND_)
-      rr_out   = real(rr,   FMS_AST_KIND_)
+      h_out    = h/PI
+      rr_out   = rr
 
 end subroutine DAILY_MEAN_SOLAR_2D_
 
@@ -835,7 +835,7 @@ real(kind=FMS_AST_KIND_), dimension(size(lat),1) :: lat_2d, cosz_2d, hout_2d
 !>    define 2-d versions of input data array.
 !--------------------------------------------------------------------
 
-    lat_2d(:,1) = real(lat, FMS_AST_KIND_)
+    lat_2d(:,1) = lat
 
 !--------------------------------------------------------------------
 !>    call daily_mean_solar_2d to calculate astronomy fields.
@@ -849,8 +849,8 @@ real(kind=FMS_AST_KIND_), dimension(size(lat),1) :: lat_2d, cosz_2d, hout_2d
 !!    calling routine.
 !-------------------------------------------------------------------
 
-    h_out = real(hout_2d(:,1), FMS_AST_KIND_)
-    cosz  = real(cosz_2d(:,1), FMS_AST_KIND_)
+    h_out = hout_2d(:,1)
+    cosz  = cosz_2d(:,1)
 
 end subroutine DAILY_MEAN_SOLAR_1D_
 
@@ -885,7 +885,7 @@ real(kind=FMS_AST_KIND_)                         :: rr_out
 !>    define 2-d versions of input data array.
 !--------------------------------------------------------------------
 
-    lat_2d(:,1) = real(lat, FMS_AST_KIND_)
+    lat_2d(:,1) = lat
 
 !--------------------------------------------------------------------
 !>    call daily_mean_solar_2d to calculate astronomy fields.
@@ -899,8 +899,8 @@ real(kind=FMS_AST_KIND_)                         :: rr_out
 !!    calling routine.
 !-------------------------------------------------------------------
 
-    solar = real(cosz_2d(:,1)*hout_2d(:,1)*rr_out, FMS_AST_KIND_)
-    cosz  = real(cosz_2d(:,1),                     FMS_AST_KIND_)
+    solar = cosz_2d(:,1)*hout_2d(:,1)*rr_out
+    cosz  = cosz_2d(:,1)
 
 end subroutine DAILY_MEAN_SOLAR_2LEVEL_
 
@@ -931,7 +931,7 @@ real(kind=FMS_AST_KIND_), dimension(1,1) :: lat_2d, cosz_2d, hout_2d
 !>    define 2-d versions of input data array.
 !--------------------------------------------------------------------
 
-    lat_2d = real(lat, FMS_AST_KIND_)
+    lat_2d = lat
 
 !--------------------------------------------------------------------
 !>    call daily_mean_solar_2d to calculate astronomy fields.
@@ -944,9 +944,9 @@ real(kind=FMS_AST_KIND_), dimension(1,1) :: lat_2d, cosz_2d, hout_2d
 !>    return output fields to scalars for return to calling routine.
 !-------------------------------------------------------------------
 
-    h_out = real(hout_2d(1,1), FMS_AST_KIND_)
-    cosz  = real(cosz_2d(1,1), FMS_AST_KIND_)
-
+    h_out = hout_2d(1,1)
+    cosz  = cosz_2d(1,1)
+  
 end subroutine DAILY_MEAN_SOLAR_0D_
 
 
@@ -982,7 +982,7 @@ integer, parameter       :: lkind = FMS_AST_KIND_
 !    be sure the time in the annual cycle is legitimate.
 !---------------------------------------------------------------------
 
-    time_since_ae = real(orbital_time(time), FMS_AST_KIND_)
+    time_since_ae = orbital_time(time)
     if (time_since_ae < 0.0_lkind .or. time_since_ae > real(twopi, r8_kind)) &
         call error_mesg('astronomy_mod', 'time_since_ae not between 0 and 2pi', FATAL)
 
@@ -1022,7 +1022,7 @@ real(kind=FMS_AST_KIND_), dimension(size(lat),1) :: lat_2d, cosz_2d, fracday_2d
 !>    define 2-d versions of input data array.
 !--------------------------------------------------------------------
 
-    lat_2d(:,1) = real(lat, FMS_AST_KIND_)
+    lat_2d(:,1) = lat
 
 !--------------------------------------------------------------------
 !>    call daily_mean_solar_cal_2d to convert the time_types to reals and
@@ -1036,8 +1036,8 @@ real(kind=FMS_AST_KIND_), dimension(size(lat),1) :: lat_2d, cosz_2d, fracday_2d
 !!    calling routine.
 !-------------------------------------------------------------------
 
-    fracday = real(fracday_2d(:,1), FMS_AST_KIND_)
-    cosz    = real(cosz_2d(:,1),    FMS_AST_KIND_)
+    fracday = fracday_2d(:,1)
+    cosz    = cosz_2d(:,1)
 
 end subroutine DAILY_MEAN_SOLAR_CAL_1D_
 
@@ -1083,8 +1083,8 @@ real(kind=FMS_AST_KIND_)                         :: rrsun
 !!    calling routine.
 !-------------------------------------------------------------------
 
-    solar = real(cosz_2d(:,1)*fracday_2d(:,1)*rrsun, FMS_AST_KIND_)
-    cosz  = real(cosz_2d(:,1),                       FMS_AST_KIND_)
+    solar = cosz_2d(:,1)*fracday_2d(:,1)*rrsun
+    cosz  = cosz_2d(:,1)
 
 end subroutine DAILY_MEAN_SOLAR_CAL_2LEVEL_
 
@@ -1116,7 +1116,7 @@ real(kind=FMS_AST_KIND_), dimension(1,1) :: lat_2d, cosz_2d, fracday_2d
 !>    define 2-d versions of input data array.
 !--------------------------------------------------------------------
 
-      lat_2d = real(lat, FMS_AST_KIND_)
+      lat_2d = lat
 
 !--------------------------------------------------------------------
 !>    call daily_mean_solar_cal_2d to convert the time_types to reals and
@@ -1130,8 +1130,8 @@ real(kind=FMS_AST_KIND_), dimension(1,1) :: lat_2d, cosz_2d, fracday_2d
 !!    calling routine.
 !-------------------------------------------------------------------
 
-    fracday = real(fracday_2d(1,1), FMS_AST_KIND_)
-      cosz  = real(cosz_2d(1,1),    FMS_AST_KIND_)
+    fracday = fracday_2d(1,1)
+      cosz  = cosz_2d(1,1)
 
 end subroutine DAILY_MEAN_SOLAR_CAL_0D_
 
@@ -1184,12 +1184,12 @@ integer, parameter                                           :: lkind = FMS_AST_
         do n =1, num_angles
           t     = real(float(n-1)*real(twopi, r8_kind)/float(num_angles), FMS_AST_KIND_)
           call daily_mean_solar(lat,t, z, fracday, rrsun)
-          s     = real(z*rrsun*fracday, FMS_AST_KIND_)
+          s     = z*rrsun*fracday
           solar = solar + s
           cosz  = cosz  + z*s
         end do
-        solar   = real(solar/float(num_angles), FMS_AST_KIND_)
-        cosz    = real(cosz/float(num_angles),  FMS_AST_KIND_)
+        solar   = solar/float(num_angles)
+        cosz    = cosz/float(num_angles)
 
 !--------------------------------------------------------------------
 !>   define the flux-weighted annual mean cosine of the zenith angle.
@@ -1198,7 +1198,7 @@ integer, parameter                                           :: lkind = FMS_AST_
         where(solar .eq. 0.0_lkind)
           cosz = 0.0_lkind
         elsewhere
-          cosz = real(cosz/solar, FMS_AST_KIND_)
+          cosz = cosz/solar
         end where
 
 !-------------------------------------------------------------------
@@ -1211,7 +1211,7 @@ integer, parameter                                           :: lkind = FMS_AST_
         where(solar .eq. 0.0_lkind)
           fracday = 0.0_lkind
         elsewhere
-          fracday = real(solar/cosz, FMS_AST_KIND_)
+          fracday = solar/cosz
         end where
         rrsun = 1.00_lkind
 
@@ -1292,7 +1292,7 @@ real(kind=FMS_AST_KIND_)                         :: rrsun
 !>    define 2-d versions of input data array.
 !--------------------------------------------------------------------
 
-        lat_2d(:,1) = real(lat, FMS_AST_KIND_)
+        lat_2d(:,1) = lat
 
 !--------------------------------------------------------------------
 !>    call annual_mean_solar_2d to calculate the astronomy fields.
@@ -1304,10 +1304,10 @@ real(kind=FMS_AST_KIND_)                         :: rrsun
 !>    place output fields into 1-D arrays for return to calling routine.
 !-------------------------------------------------------------------
 
-        fracday   = real(fracday_2d(:,1), FMS_AST_KIND_)
-        rrsun_out = real(rrsun,           FMS_AST_KIND_)
-        solar     = real(solar_2d(:,1),   FMS_AST_KIND_)
-        cosz      =  real(cosz_2d(:,1),   FMS_AST_KIND_)
+        fracday   = fracday_2d(:,1)
+        rrsun_out = rrsun
+        solar     = solar_2d(:,1)
+        cosz      = cosz_2d(:,1)
 
 !--------------------------------------------------------------------
 !>    if the calculation has been done, simply return the module
@@ -1358,7 +1358,7 @@ real(kind=FMS_AST_KIND_)                         :: rrsun
 !>    define 2-d versions of input data array.
 !--------------------------------------------------------------------
 
-        lat_2d(:,1) = real(lat, FMS_AST_KIND_)
+        lat_2d(:,1) = lat
         jst         = 1
         jnd         = size(lat(:))
 
@@ -1372,8 +1372,8 @@ real(kind=FMS_AST_KIND_)                         :: rrsun
 !>    place output fields into 1-D arrays for return to calling routine.
 !-------------------------------------------------------------------
 
-        solar = real(solar_2d(:,1), FMS_AST_KIND_)
-        cosz  =  real(cosz_2d(:,1), FMS_AST_KIND_)
+        solar = solar_2d(:,1)
+        cosz  = cosz_2d(:,1)
 
 !--------------------------------------------------------------------
 !>    if the calculation has been done, print an error message since
@@ -1495,8 +1495,8 @@ real(kind=FMS_AST_KIND_) :: sin_dec !< Sine of the solar declination [dimensionl
 !---------------------------------------------------------------------
 
     rad_obliq    = real(obliq, r8_kind)*real(deg_to_rad, r8_kind)
-    sin_dec      = real(- sin(rad_obliq)*sin(ang), FMS_AST_KIND_)
-    DECLINATION_ = real(asin(sin_dec),             FMS_AST_KIND_)
+    sin_dec      = - sin(rad_obliq)*sin(ang)
+    DECLINATION_ = asin(sin_dec)
 
 end function DECLINATION_
 
@@ -1528,15 +1528,15 @@ integer, parameter       :: lkind = FMS_AST_KIND_
 !>    define tangent of the declination.
 !--------------------------------------------------------------------
 
-    tan_dec = real(tan(dec), FMS_AST_KIND_)
+    tan_dec = tan(dec)
 
 !--------------------------------------------------------------------
 !>    adjust latitude so that its tangent will be defined.
 !--------------------------------------------------------------------
 
-    lat = real(latitude, FMS_AST_KIND_)
-    where (latitude == 0.5_lkind*PI)  lat = real(latitude - eps, FMS_AST_KIND_)
-    where (latitude == -0.5_lkind*PI) lat = real(latitude + eps, FMS_AST_KIND_)
+    lat = latitude
+    where (latitude == 0.5_lkind*PI)  lat = latitude - eps
+    where (latitude == -0.5_lkind*PI) lat = latitude + eps
 
 !--------------------------------------------------------------------
 !>    define the cosine of the half-day length. adjust for cases of
@@ -1544,10 +1544,10 @@ integer, parameter       :: lkind = FMS_AST_KIND_
 !--------------------------------------------------------------------
 
     cos_half_day = -tan(lat)*tan_dec
-    where (cos_half_day <= -1.0_lkind) h = real(PI, FMS_AST_KIND_)
+    where (cos_half_day <= -1.0_lkind) h = PI
     where (cos_half_day >=  1.0_lkind) h = 0.0_lkind
     where (cos_half_day >  -1.0_lkind .and.  &
-           cos_half_day <   1.0_lkind) h = real(acos(cos_half_day), FMS_AST_KIND_)
+           cos_half_day <   1.0_lkind) h = acos(cos_half_day)
 
 end function HALF_DAY_2D_
 
@@ -1574,19 +1574,19 @@ real(kind=FMS_AST_KIND_), dimension(1,1) :: lat_2d, h_2d
 !    create 2d array from the input latitude field.
 !---------------------------------------------------------------------
 
-    lat_2d = real(latitude, FMS_AST_KIND_)
+    lat_2d = latitude
 
 !---------------------------------------------------------------------
 !    call half_day with the 2d arguments to calculate half-day length.
 !---------------------------------------------------------------------
 
-    h_2d = real(half_day(lat_2d, dec), FMS_AST_KIND_)
+    h_2d = half_day(lat_2d, dec)
 
 !---------------------------------------------------------------------
 !    create scalar from 2d array.
 !---------------------------------------------------------------------
 
-    h = real(h_2d(1,1), FMS_AST_KIND_)
+    h = h_2d(1,1)
 
 end function HALF_DAY_0D_
 
