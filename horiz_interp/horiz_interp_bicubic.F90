@@ -121,29 +121,22 @@ module horiz_interp_bicubic_mod
     type(horiz_interp_type), intent(inout) :: Interp
 
     if(allocated(Interp%kind8_reals)) then
-      if(associated(Interp%kind8_reals%rat_x))  deallocate ( Interp%kind8_reals%rat_x )
-      if(associated(Interp%kind8_reals%rat_y))  deallocate ( Interp%kind8_reals%rat_y )
-      if(associated(Interp%kind8_reals%lon_in)) deallocate ( Interp%kind8_reals%lon_in )
-      if(associated(Interp%kind8_reals%lat_in)) deallocate ( Interp%kind8_reals%lat_in )
-      if(associated(Interp%kind8_reals%wti))    deallocate ( Interp%kind8_reals%wti )
+      if(allocated(Interp%kind8_reals%rat_x))  deallocate ( Interp%kind8_reals%rat_x )
+      if(allocated(Interp%kind8_reals%rat_y))  deallocate ( Interp%kind8_reals%rat_y )
+      if(allocated(Interp%kind8_reals%lon_in)) deallocate ( Interp%kind8_reals%lon_in )
+      if(allocated(Interp%kind8_reals%lat_in)) deallocate ( Interp%kind8_reals%lat_in )
+      if(allocated(Interp%kind8_reals%wti))    deallocate ( Interp%kind8_reals%wti )
       deallocate(Interp%kind8_reals)
     else if(allocated(Interp%kind4_reals)) then
-      if(associated(Interp%kind4_reals%rat_x))  deallocate ( Interp%kind4_reals%rat_x )
-      if(associated(Interp%kind4_reals%rat_y))  deallocate ( Interp%kind4_reals%rat_y )
-      if(associated(Interp%kind4_reals%lon_in)) deallocate ( Interp%kind4_reals%lon_in )
-      if(associated(Interp%kind4_reals%lat_in)) deallocate ( Interp%kind4_reals%lat_in )
-      if(associated(Interp%kind4_reals%wti))    deallocate ( Interp%kind4_reals%wti )
+      if(allocated(Interp%kind4_reals%rat_x))  deallocate ( Interp%kind4_reals%rat_x )
+      if(allocated(Interp%kind4_reals%rat_y))  deallocate ( Interp%kind4_reals%rat_y )
+      if(allocated(Interp%kind4_reals%lon_in)) deallocate ( Interp%kind4_reals%lon_in )
+      if(allocated(Interp%kind4_reals%lat_in)) deallocate ( Interp%kind4_reals%lat_in )
+      if(allocated(Interp%kind4_reals%wti))    deallocate ( Interp%kind4_reals%wti )
       deallocate(Interp%kind4_reals)
     endif
-
-    if(allocated(Interp%rat_x))  deallocate ( Interp%rat_x )
-    if(allocated(Interp%rat_y))  deallocate ( Interp%rat_y )
-    if(allocated(Interp%lon_in)) deallocate ( Interp%lon_in )
-    if(allocated(Interp%lat_in)) deallocate ( Interp%lat_in )
-    if(allocated(Interp%i_lon))  deallocate ( Interp%i_lon )
-    if(allocated(Interp%j_lat))  deallocate ( Interp%j_lat )
-    if(allocated(Interp%wti))    deallocate ( Interp%wti )
-
+    if( allocated(Interp%i_lon) ) deallocate( Interp%i_lon )
+    if( allocated(Interp%j_lat) ) deallocate( Interp%j_lat )
   end subroutine horiz_interp_bicubic_del
 
 #include "horiz_interp_bicubic_r4.fh"

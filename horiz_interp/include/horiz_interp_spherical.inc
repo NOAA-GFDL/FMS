@@ -135,7 +135,7 @@
     endif
 
     ! allocate memory to data type
-    if(ASSOCIATED(Interp%i_lon)) then
+    if(ALLOCATED(Interp%i_lon)) then
        if(size(Interp%i_lon,1) .NE. map_dst_xsize .OR.     &
           size(Interp%i_lon,2) .NE. map_dst_ysize )  call mpp_error(FATAL, &
           'horiz_interp_spherical_mod: size(Interp%i_lon(:),1) .NE. map_dst_xsize .OR. '// &

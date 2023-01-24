@@ -67,9 +67,9 @@ end interface
                                                         !! and spherical regrid
    integer, dimension(:,:,:), allocatable :: j_lat  !< indices for bilinear interpolation
                                                         !! and spherical regrid
-   logical, dimension(:,:), pointer   :: found_neighbors =>NULL()       !< indicate whether destination grid
-                                                                        !! has some source grid around it.
-   integer, dimension(:,:), pointer   :: num_found => NULL()
+   logical, dimension(:,:), allocatable :: found_neighbors   !< indicate whether destination grid
+                                                            !! has some source grid around it.
+   integer, dimension(:,:), allocatable :: num_found
    integer                            :: nlon_src !< size of source grid
    integer                            :: nlat_src !< size of source grid
    integer                            :: nlon_dst !< size of destination grid
@@ -85,10 +85,10 @@ end interface
    !--- The following are for conservative interpolation scheme version 2 ( through xgrid)
    integer                            :: nxgrid                             !< number of exchange grid
                                                                             !! between src and dst grid.
-   integer, dimension(:), pointer     :: i_src=>NULL()       !< indices in source grid.
-   integer, dimension(:), pointer     :: j_src=>NULL()       !< indices in source grid.
-   integer, dimension(:), pointer     :: i_dst=>NULL()       !< indices in destination grid.
-   integer, dimension(:), pointer     :: j_dst=>NULL()       !< indices in destination grid.
+   integer, dimension(:), allocatable     :: i_src       !< indices in source grid.
+   integer, dimension(:), allocatable     :: j_src       !< indices in source grid.
+   integer, dimension(:), allocatable     :: i_dst       !< indices in destination grid.
+   integer, dimension(:), allocatable     :: j_dst       !< indices in destination grid.
    type(horiz_interp_reals8), allocatable :: kind8_reals !< derived type holding kind 8 real data pointers if used
    type(horiz_interp_reals4), allocatable :: kind4_reals !< derived type holding kind 4 real data pointers if used
 
@@ -96,52 +96,52 @@ end interface
 
 !> real(8) pointers for use in horiz_interp_type
 type horiz_interp_reals8
-   real(kind=r8_kind),    dimension(:,:), allocatable   :: faci =>NULL()   !< weights for conservative scheme
-   real(kind=r8_kind),    dimension(:,:), allocatable   :: facj =>NULL()   !< weights for conservative scheme
-   real(kind=r8_kind),    dimension(:,:), allocatable   :: area_src =>NULL()              !< area of the source grid
-   real(kind=r8_kind),    dimension(:,:), allocatable   :: area_dst =>NULL()              !< area of the destination grid
-   real(kind=r8_kind),    dimension(:,:,:), allocatable :: wti =>NULL()      !< weights for bilinear interpolation
-                                                           !! wti ist used for derivative "weights" in bicubic
-   real(kind=r8_kind),    dimension(:,:,:), allocatable :: wtj =>NULL()      !< weights for bilinear interpolation
-                                                           !! wti ist used for derivative "weights" in bicubic
-   real(kind=r8_kind),    dimension(:,:,:), allocatable :: src_dist =>NULL() !< distance between destination grid and
+   real(kind=r8_kind),    dimension(:,:), allocatable   :: faci     !< weights for conservative scheme
+   real(kind=r8_kind),    dimension(:,:), allocatable   :: facj     !< weights for conservative scheme
+   real(kind=r8_kind),    dimension(:,:), allocatable   :: area_src !< area of the source grid
+   real(kind=r8_kind),    dimension(:,:), allocatable   :: area_dst !< area of the destination grid
+   real(kind=r8_kind),    dimension(:,:,:), allocatable :: wti      !< weights for bilinear interpolation
+                                                                    !! wti ist used for derivative "weights" in bicubic
+   real(kind=r8_kind),    dimension(:,:,:), allocatable :: wtj      !< weights for bilinear interpolation
+                                                                    !! wti ist used for derivative "weights" in bicubic
+   real(kind=r8_kind),    dimension(:,:,:), allocatable :: src_dist !< distance between destination grid and
                                                                         !! neighbor source grid.
-   real(kind=r8_kind),    dimension(:,:), allocatable   :: rat_x =>NULL() !< the ratio of coordinates of the dest grid
-                                                        !! (x_dest -x_src_r)/(x_src_l -x_src_r)
-                                                        !! and (y_dest -y_src_r)/(y_src_l -y_src_r)
-   real(kind=r8_kind),    dimension(:,:), allocatable   :: rat_y =>NULL() !< the ratio of coordinates of the dest grid
-                                                        !! (x_dest -x_src_r)/(x_src_l -x_src_r)
-                                                        !! and (y_dest -y_src_r)/(y_src_l -y_src_r)
-   real(kind=r8_kind),    dimension(:), allocatable     :: lon_in =>NULL()  !< the coordinates of the source grid
-   real(kind=r8_kind),    dimension(:), allocatable     :: lat_in =>NULL()  !< the coordinates of the source grid
-   real(kind=r8_kind),    dimension(:), allocatable     :: area_frac_dst=>NULL() !< area fraction in destination grid.
-   real(kind=r8_kind),    dimension(:,:), allocatable   :: mask_in=>NULL()
+   real(kind=r8_kind),    dimension(:,:), allocatable   :: rat_x    !< the ratio of coordinates of the dest grid
+                                                                    !! (x_dest -x_src_r)/(x_src_l -x_src_r)
+                                                                    !! and (y_dest -y_src_r)/(y_src_l -y_src_r)
+   real(kind=r8_kind),    dimension(:,:), allocatable   :: rat_y  !< the ratio of coordinates of the dest grid
+                                                                  !! (x_dest -x_src_r)/(x_src_l -x_src_r)
+                                                                  !! and (y_dest -y_src_r)/(y_src_l -y_src_r)
+   real(kind=r8_kind),    dimension(:), allocatable     :: lon_in   !< the coordinates of the source grid
+   real(kind=r8_kind),    dimension(:), allocatable     :: lat_in   !< the coordinates of the source grid
+   real(kind=r8_kind),    dimension(:), allocatable     :: area_frac_dst !< area fraction in destination grid.
+   real(kind=r8_kind),    dimension(:,:), allocatable   :: mask_in
    real(kind=r8_kind)                               :: max_src_dist
 
 end type horiz_interp_reals8
 
 !> holds real(4) pointers for use in horiz_interp_type
 type horiz_interp_reals4
-   real(kind=r4_kind),    dimension(:,:), allocatable   :: faci =>NULL()   !< weights for conservative scheme
-   real(kind=r4_kind),    dimension(:,:), allocatable   :: facj =>NULL()   !< weights for conservative scheme
-   real(kind=r4_kind),    dimension(:,:), allocatable   :: area_src =>NULL()              !< area of the source grid
-   real(kind=r4_kind),    dimension(:,:), allocatable   :: area_dst =>NULL()              !< area of the destination grid
-   real(kind=r4_kind),    dimension(:,:,:), allocatable :: wti =>NULL()      !< weights for bilinear interpolation
-                                                           !! wti ist used for derivative "weights" in bicubic
-   real(kind=r4_kind),    dimension(:,:,:), allocatable :: wtj =>NULL()      !< weights for bilinear interpolation
-                                                           !! wti ist used for derivative "weights" in bicubic
-   real(kind=r4_kind),    dimension(:,:,:), allocatable :: src_dist =>NULL()!< distance between destination grid and
+   real(kind=r4_kind),    dimension(:,:), allocatable   :: faci     !< weights for conservative scheme
+   real(kind=r4_kind),    dimension(:,:), allocatable   :: facj     !< weights for conservative scheme
+   real(kind=r4_kind),    dimension(:,:), allocatable   :: area_src !< area of the source grid
+   real(kind=r4_kind),    dimension(:,:), allocatable   :: area_dst !< area of the destination grid
+   real(kind=r4_kind),    dimension(:,:,:), allocatable :: wti      !< weights for bilinear interpolation
+                                                                    !! wti ist used for derivative "weights" in bicubic
+   real(kind=r4_kind),    dimension(:,:,:), allocatable :: wtj      !< weights for bilinear interpolation
+                                                                    !! wti ist used for derivative "weights" in bicubic
+   real(kind=r4_kind),    dimension(:,:,:), allocatable :: src_dist !< distance between destination grid and
                                                                         !! neighbor source grid.
-   real(kind=r4_kind),    dimension(:,:), allocatable   :: rat_x =>NULL() !< the ratio of coordinates of the dest grid
-                                                        !! (x_dest -x_src_r)/(x_src_l -x_src_r)
-                                                        !! and (y_dest -y_src_r)/(y_src_l -y_src_r)
-   real(kind=r4_kind),    dimension(:,:), allocatable   :: rat_y =>NULL() !< the ratio of coordinates of the dest grid
-                                                        !! (x_dest -x_src_r)/(x_src_l -x_src_r)
-                                                        !! and (y_dest -y_src_r)/(y_src_l -y_src_r)
-   real(kind=r4_kind),    dimension(:), allocatable     :: lon_in =>NULL()  !< the coordinates of the source grid
-   real(kind=r4_kind),    dimension(:), allocatable     :: lat_in =>NULL()  !< the coordinates of the source grid
-   real(kind=r4_kind),    dimension(:), allocatable     :: area_frac_dst=>NULL() !< area fraction in destination grid.
-   real(kind=r4_kind),    dimension(:,:), allocatable   :: mask_in=>NULL()
+   real(kind=r4_kind),    dimension(:,:), allocatable   :: rat_x    !< the ratio of coordinates of the dest grid
+                                                                    !! (x_dest -x_src_r)/(x_src_l -x_src_r)
+                                                                    !! and (y_dest -y_src_r)/(y_src_l -y_src_r)
+   real(kind=r4_kind),    dimension(:,:), allocatable   :: rat_y  !< the ratio of coordinates of the dest grid
+                                                                  !! (x_dest -x_src_r)/(x_src_l -x_src_r)
+                                                                  !! and (y_dest -y_src_r)/(y_src_l -y_src_r)
+   real(kind=r4_kind),    dimension(:), allocatable     :: lon_in   !< the coordinates of the source grid
+   real(kind=r4_kind),    dimension(:), allocatable     :: lat_in   !< the coordinates of the source grid
+   real(kind=r4_kind),    dimension(:), allocatable     :: area_frac_dst !< area fraction in destination grid.
+   real(kind=r4_kind),    dimension(:,:), allocatable   :: mask_in
    real(kind=r4_kind)                               :: max_src_dist
 
 end type horiz_interp_reals4
@@ -160,60 +160,60 @@ contains
       call mpp_error(FATAL,'horiz_interp_type_eq: horiz_interp_type variable on right hand side is unassigned')
     endif
 
-    horiz_interp_out%ilon            => horiz_interp_in%ilon
-    horiz_interp_out%jlat            => horiz_interp_in%jlat
-    horiz_interp_out%i_lon           => horiz_interp_in%i_lon
-    horiz_interp_out%j_lat           => horiz_interp_in%j_lat
-    horiz_interp_out%found_neighbors => horiz_interp_in%found_neighbors
-    horiz_interp_out%num_found       => horiz_interp_in%num_found
+    horiz_interp_out%ilon            = horiz_interp_in%ilon
+    horiz_interp_out%jlat            = horiz_interp_in%jlat
+    horiz_interp_out%i_lon           = horiz_interp_in%i_lon
+    horiz_interp_out%j_lat           = horiz_interp_in%j_lat
+    horiz_interp_out%found_neighbors = horiz_interp_in%found_neighbors
+    horiz_interp_out%num_found       = horiz_interp_in%num_found
     horiz_interp_out%nlon_src        =  horiz_interp_in%nlon_src
     horiz_interp_out%nlat_src        =  horiz_interp_in%nlat_src
     horiz_interp_out%nlon_dst        =  horiz_interp_in%nlon_dst
     horiz_interp_out%nlat_dst        =  horiz_interp_in%nlat_dst
     horiz_interp_out%interp_method   =  horiz_interp_in%interp_method
     horiz_interp_out%I_am_initialized = .true.
-    horiz_interp_out%i_src           => horiz_interp_in%i_src
-    horiz_interp_out%j_src           => horiz_interp_in%j_src
-    horiz_interp_out%i_dst           => horiz_interp_in%i_dst
-    horiz_interp_out%j_dst           => horiz_interp_in%j_dst
+    horiz_interp_out%i_src           = horiz_interp_in%i_src
+    horiz_interp_out%j_src           = horiz_interp_in%j_src
+    horiz_interp_out%i_dst           = horiz_interp_in%i_dst
+    horiz_interp_out%j_dst           = horiz_interp_in%j_dst
 
     if(allocated(horiz_interp_in%kind8_reals)) then
       if(.not. allocated(horiz_interp_out%kind8_reals)) &
         allocate(horiz_interp_out%kind8_reals)
-      horiz_interp_out%kind8_reals%faci            => horiz_interp_in%kind8_reals%faci
-      horiz_interp_out%kind8_reals%facj            => horiz_interp_in%kind8_reals%facj
-      horiz_interp_out%kind8_reals%area_src        => horiz_interp_in%kind8_reals%area_src
-      horiz_interp_out%kind8_reals%area_dst        => horiz_interp_in%kind8_reals%area_dst
-      horiz_interp_out%kind8_reals%wti             => horiz_interp_in%kind8_reals%wti
-      horiz_interp_out%kind8_reals%wtj             => horiz_interp_in%kind8_reals%wtj
-      horiz_interp_out%kind8_reals%src_dist        => horiz_interp_in%kind8_reals%src_dist
-      horiz_interp_out%kind8_reals%rat_x           => horiz_interp_in%kind8_reals%rat_x
-      horiz_interp_out%kind8_reals%rat_y           => horiz_interp_in%kind8_reals%rat_y
-      horiz_interp_out%kind8_reals%lon_in          => horiz_interp_in%kind8_reals%lon_in
-      horiz_interp_out%kind8_reals%lat_in          => horiz_interp_in%kind8_reals%lat_in
-      horiz_interp_out%kind8_reals%area_frac_dst   => horiz_interp_in%kind8_reals%area_frac_dst
+      horiz_interp_out%kind8_reals%faci            = horiz_interp_in%kind8_reals%faci
+      horiz_interp_out%kind8_reals%facj            = horiz_interp_in%kind8_reals%facj
+      horiz_interp_out%kind8_reals%area_src        = horiz_interp_in%kind8_reals%area_src
+      horiz_interp_out%kind8_reals%area_dst        = horiz_interp_in%kind8_reals%area_dst
+      horiz_interp_out%kind8_reals%wti             = horiz_interp_in%kind8_reals%wti
+      horiz_interp_out%kind8_reals%wtj             = horiz_interp_in%kind8_reals%wtj
+      horiz_interp_out%kind8_reals%src_dist        = horiz_interp_in%kind8_reals%src_dist
+      horiz_interp_out%kind8_reals%rat_x           = horiz_interp_in%kind8_reals%rat_x
+      horiz_interp_out%kind8_reals%rat_y           = horiz_interp_in%kind8_reals%rat_y
+      horiz_interp_out%kind8_reals%lon_in          = horiz_interp_in%kind8_reals%lon_in
+      horiz_interp_out%kind8_reals%lat_in          = horiz_interp_in%kind8_reals%lat_in
+      horiz_interp_out%kind8_reals%area_frac_dst   = horiz_interp_in%kind8_reals%area_frac_dst
       horiz_interp_out%kind8_reals%max_src_dist    =  horiz_interp_in%kind8_reals%max_src_dist
       ! this was left out previous to mixed mode
-      horiz_interp_out%kind8_reals%mask_in         => horiz_interp_in%kind8_reals%mask_in
+      horiz_interp_out%kind8_reals%mask_in         = horiz_interp_in%kind8_reals%mask_in
 
     else if (allocated(horiz_interp_in%kind4_reals)) then
       if(.not. allocated(horiz_interp_out%kind4_reals)) &
         allocate(horiz_interp_out%kind4_reals)
-      horiz_interp_out%kind4_reals%faci            => horiz_interp_in%kind4_reals%faci
-      horiz_interp_out%kind4_reals%facj            => horiz_interp_in%kind4_reals%facj
-      horiz_interp_out%kind4_reals%area_src        => horiz_interp_in%kind4_reals%area_src
-      horiz_interp_out%kind4_reals%area_dst        => horiz_interp_in%kind4_reals%area_dst
-      horiz_interp_out%kind4_reals%wti             => horiz_interp_in%kind4_reals%wti
-      horiz_interp_out%kind4_reals%wtj             => horiz_interp_in%kind4_reals%wtj
-      horiz_interp_out%kind4_reals%src_dist        => horiz_interp_in%kind4_reals%src_dist
-      horiz_interp_out%kind4_reals%rat_x           => horiz_interp_in%kind4_reals%rat_x
-      horiz_interp_out%kind4_reals%rat_y           => horiz_interp_in%kind4_reals%rat_y
-      horiz_interp_out%kind4_reals%lon_in          => horiz_interp_in%kind4_reals%lon_in
-      horiz_interp_out%kind4_reals%lat_in          => horiz_interp_in%kind4_reals%lat_in
-      horiz_interp_out%kind4_reals%area_frac_dst   => horiz_interp_in%kind4_reals%area_frac_dst
+      horiz_interp_out%kind4_reals%faci            = horiz_interp_in%kind4_reals%faci
+      horiz_interp_out%kind4_reals%facj            = horiz_interp_in%kind4_reals%facj
+      horiz_interp_out%kind4_reals%area_src        = horiz_interp_in%kind4_reals%area_src
+      horiz_interp_out%kind4_reals%area_dst        = horiz_interp_in%kind4_reals%area_dst
+      horiz_interp_out%kind4_reals%wti             = horiz_interp_in%kind4_reals%wti
+      horiz_interp_out%kind4_reals%wtj             = horiz_interp_in%kind4_reals%wtj
+      horiz_interp_out%kind4_reals%src_dist        = horiz_interp_in%kind4_reals%src_dist
+      horiz_interp_out%kind4_reals%rat_x           = horiz_interp_in%kind4_reals%rat_x
+      horiz_interp_out%kind4_reals%rat_y           = horiz_interp_in%kind4_reals%rat_y
+      horiz_interp_out%kind4_reals%lon_in          = horiz_interp_in%kind4_reals%lon_in
+      horiz_interp_out%kind4_reals%lat_in          = horiz_interp_in%kind4_reals%lat_in
+      horiz_interp_out%kind4_reals%area_frac_dst   = horiz_interp_in%kind4_reals%area_frac_dst
       horiz_interp_out%kind4_reals%max_src_dist    =  horiz_interp_in%kind4_reals%max_src_dist
       ! this was left out previous to mixed mode
-      horiz_interp_out%kind4_reals%mask_in         => horiz_interp_in%kind4_reals%mask_in
+      horiz_interp_out%kind4_reals%mask_in         = horiz_interp_in%kind4_reals%mask_in
 
     else
         call mpp_error(FATAL, "horiz_interp_type_eq: cannot assign unallocated real values from horiz_interp_in")
