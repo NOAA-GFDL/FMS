@@ -42,7 +42,7 @@
       call mpp_broadcast ( gdata, len, mpp_root_pe() )
    endif
 ! return data for compute domain
-   if(.not. no_halo .or. read_data_bug) then
+   if(.not. no_halo) then
 ! data defined on data domain
       data(is:ie,js:je,:,:) = gdata(is:ie,js:je,:,:)
    else

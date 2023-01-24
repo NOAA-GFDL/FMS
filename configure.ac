@@ -210,6 +210,14 @@ if test $nc_has_nc4 = no; then
   AC_MSG_ERROR([NetCDF must be built with HDF5.])
 fi
 
+# Check if ncdump is avaiable
+AC_CHECK_PROG([USE_NCDUMP],[ncdump], [yes], [no])
+if test $USE_NCDUMP = yes; then
+  AM_CONDITIONAL([SKIP_NCDUMP_CHECKS], true )
+else
+  AM_CONDITIONAL([SKIP_NCDUMP_CHECKS], false )
+fi
+
 # Check if Linux gettid is avaiable
 AC_CHECK_FUNCS([gettid], [], [])
 
