@@ -188,7 +188,7 @@
       if(PRESENT(is_latlon_out)) then
          dst_is_latlon = is_latlon_out
       else
-         dst_is_latlon = IS_LAT_LON_(lon_out, lat_out)
+         dst_is_latlon = is_lat_lon(lon_out, lat_out)
       end if
       if(dst_is_latlon ) then
          if(present(mask_in)) then
@@ -298,12 +298,12 @@
       if(PRESENT(is_latlon_in)) then
          src_is_latlon = is_latlon_in
       else
-         src_is_latlon = IS_LAT_LON_(lon_in, lat_in)
+         src_is_latlon = is_lat_lon(lon_in, lat_in)
       end if
       if(PRESENT(is_latlon_out)) then
          dst_is_latlon = is_latlon_out
       else
-         dst_is_latlon = IS_LAT_LON_(lon_out, lat_out)
+         dst_is_latlon = is_lat_lon(lon_out, lat_out)
       end if
       if(src_is_latlon .AND. dst_is_latlon) then
          if(present(mask_in)) then
@@ -387,7 +387,7 @@
       if(PRESENT(is_latlon_in)) then
          src_is_latlon = is_latlon_in
       else
-         src_is_latlon = IS_LAT_LON_(lon_in, lat_in)
+         src_is_latlon = is_lat_lon(lon_in, lat_in)
       end if
 
       if(src_is_latlon) then
@@ -596,7 +596,7 @@
     method = 'conservative'
     if(present(interp_method)) method = interp_method
     dst_is_latlon = .true.
-    if(trim(method) == 'conservative') dst_is_latlon = IS_LAT_LON_(lon_out, lat_out)
+    if(trim(method) == 'conservative') dst_is_latlon = is_lat_lon(lon_out, lat_out)
 
     if(dst_is_latlon) then
        call horiz_interp_new ( Interp, lon_in, lat_in, lon_out, lat_out, verbose, &
@@ -653,8 +653,8 @@
     dst_is_latlon = .true.
     src_is_latlon = .true.
     if(trim(method) == 'conservative') then
-       dst_is_latlon = IS_LAT_LON_(lon_out, lat_out)
-       src_is_latlon = IS_LAT_LON_(lon_in, lat_in)
+       dst_is_latlon = is_lat_lon(lon_out, lat_out)
+       src_is_latlon = is_lat_lon(lon_in, lat_in)
     end if
 
     if(dst_is_latlon .and. src_is_latlon) then
@@ -710,7 +710,7 @@
     method = 'conservative'
     if(present(interp_method)) method = interp_method
     src_is_latlon = .true.
-    if(trim(method) == 'conservative') src_is_latlon = IS_LAT_LON_(lon_in, lat_in)
+    if(trim(method) == 'conservative') src_is_latlon = is_lat_lon(lon_in, lat_in)
 
     if(src_is_latlon) then
        call horiz_interp_new ( Interp, lon_in, lat_in, lon_out, lat_out, verbose, &

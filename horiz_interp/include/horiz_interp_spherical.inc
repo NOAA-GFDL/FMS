@@ -151,14 +151,14 @@
     map_src_dist        = large
     num_found           = 0
 
-    !using RADIAL_SEARCH_ to find the nearest points and corresponding distance.
+    !using radial_search to find the nearest points and corresponding distance.
 
     select case(trim(search_method))
-    case ("RADIAL_SEARCH_") ! will be efficient, but may be not so accurate for some cases
-       call RADIAL_SEARCH_(theta_src, phi_src, theta_dst, phi_dst, map_src_xsize, map_src_ysize, &
+    case ("radial_search") ! will be efficient, but may be not so accurate for some cases
+       call radial_search(theta_src, phi_src, theta_dst, phi_dst, map_src_xsize, map_src_ysize, &
             map_src_add, map_src_dist, num_found, num_neighbors,max_src_dist,src_is_modulo)
-    case ("FULL_SEARCH_")   ! always accurate, but less efficient.
-       call FULL_SEARCH_(theta_src, phi_src, theta_dst, phi_dst, map_src_add, map_src_dist, &
+    case ("full_search")   ! always accurate, but less efficient.
+       call full_search(theta_src, phi_src, theta_dst, phi_dst, map_src_add, map_src_dist, &
             num_found, num_neighbors,max_src_dist )
     case default
        call mpp_error(FATAL,"HORIZ_INTERP_SPHERICAL_NEW_: nml search_method = "// &

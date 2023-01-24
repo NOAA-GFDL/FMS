@@ -717,13 +717,13 @@ subroutine HORIZ_INTERP_CONSERVE_NEW_1DX1D_ ( Interp, lon_in, lat_in, lon_out, l
 
              ! summing data*weight and weight for single grid point
              if (present(mask_in)) then
-                call DATA_SUM_ ( data_in(is:ie,js:je), Interp%HI_KIND_TYPE_%area_src(is:ie,js:je), &
+                call data_sum( data_in(is:ie,js:je), Interp%HI_KIND_TYPE_%area_src(is:ie,js:je), &
                      fis, fie, fjs,fje, dwtsum, wtsum, arsum, mask_in(is:ie,js:je)  )
-             else if( allocated(Interp%mask_in) ) then
-                call data_sum ( data_in(is:ie,js:je), Interp%area_src(is:ie,js:je), &
-                     fis, fie, fjs,fje, dwtsum, wtsum, arsum, Interp%mask_in(is:ie,js:je)  )
+             else if( allocated(Interp%HI_KIND_TYPE_%mask_in) ) then
+                call data_sum( data_in(is:ie,js:je), Interp%HI_KIND_TYPE_%area_src(is:ie,js:je), &
+                     fis, fie, fjs,fje, dwtsum, wtsum, arsum, Interp%HI_KIND_TYPE_%mask_in(is:ie,js:je)  )
              else
-                call DATA_SUM_ ( data_in(is:ie,js:je), Interp%HI_KIND_TYPE_%area_src(is:ie,js:je), &
+                call data_sum( data_in(is:ie,js:je), Interp%HI_KIND_TYPE_%area_src(is:ie,js:je), &
                      fis, fie, fjs,fje,  dwtsum, wtsum, arsum    )
              endif
           enddo
@@ -747,27 +747,27 @@ subroutine HORIZ_INTERP_CONSERVE_NEW_1DX1D_ ( Interp, lon_in, lat_in, lon_out, l
 
        ! compute statistics of input data
 
-       call STATS_(data_in, Interp%HI_KIND_TYPE_%area_src, asum, dsum, wsum, min_in, max_in, miss_in, mask_in)
+       call stats(data_in, Interp%HI_KIND_TYPE_%area_src, asum, dsum, wsum, min_in, max_in, miss_in, mask_in)
        ! diagnostic messages
        ! on the root_pe, we can calculate the global mean, minimum and maximum.
        if(pe == root_pe) then
           if (wsum > real(0.0, FMS_HI_KIND_)) then
              avg_in=dsum/wsum
           else
-             print *, 'horiz_interp STATS_: input area equals zero '
+             print *, 'horiz_interp stats: input area equals zero '
              avg_in=real(0.0, FMS_HI_KIND_)
           endif
           if (iverbose > 1) print '(2f16.11)', 'global sum area_in  = ',  asum, wsum
        endif
 
        ! compute statistics of output data
-       call STATS_(data_out, Interp%HI_KIND_TYPE_%area_dst, asum, dsum, wsum, min_out, max_out, miss_out, mask_out)
+       call stats(data_out, Interp%HI_KIND_TYPE_%area_dst, asum, dsum, wsum, min_out, max_out, miss_out, mask_out)
        ! diagnostic messages
        if(pe == root_pe) then
           if (wsum > real(0.0, FMS_HI_KIND_)) then
              avg_out=dsum/wsum
           else
-             print *, 'horiz_interp STATS_: output area equals zero '
+             print *, 'horiz_interp stats: output area equals zero '
              avg_out=real(0.0, FMS_HI_KIND_)
           endif
           if (iverbose > 1) print '(2f16.11)', 'global sum area_out = ',  asum, wsum

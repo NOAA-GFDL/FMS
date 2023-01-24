@@ -152,8 +152,8 @@
              jcl = nlat_in
              jcu = nlat_in
           else
-             jcl = INDL_(Interp%HI_KIND_TYPE_%lat_in, yz)
-             jcu = INDU_(Interp%HI_KIND_TYPE_%lat_in, yz)
+             jcl = indl(Interp%HI_KIND_TYPE_%lat_in, yz)
+             jcu = indu(Interp%HI_KIND_TYPE_%lat_in, yz)
           endif
 
           icl = 0
@@ -167,8 +167,8 @@
             Interp%HI_KIND_TYPE_%rat_x(i,j) = (xz - Interp%HI_KIND_TYPE_%lon_in(icl))/(Interp%HI_KIND_TYPE_%lon_in(icu)&
                                              & - Interp%HI_KIND_TYPE_%lon_in(icl) + real(tpi,FMS_HI_KIND_))
           else
-            icl = INDL_(Interp%HI_KIND_TYPE_%lon_in, xz)
-            icu = INDU_(Interp%HI_KIND_TYPE_%lon_in, xz)
+            icl = indl(Interp%HI_KIND_TYPE_%lon_in, xz)
+            icu = indu(Interp%HI_KIND_TYPE_%lon_in, xz)
             Interp%HI_KIND_TYPE_%rat_x(i,j) = (xz - Interp%HI_KIND_TYPE_%lon_in(icl))/(Interp%HI_KIND_TYPE_%lon_in(icu)&
                                              & - Interp%HI_KIND_TYPE_%lon_in(icl))
           endif
@@ -302,8 +302,8 @@
            jcl = nlat_in
            jcu = nlat_in
         else
-           jcl = INDL_(lat_in, yz)
-           jcu = INDU_(lat_in, yz)
+           jcl = indl(lat_in, yz)
+           jcu = indu(lat_in, yz)
         endif
         do i=1,nlon_out
           xz = lon_out(i)
@@ -318,13 +318,13 @@
             Interp%HI_KIND_TYPE_%rat_x(i,j) = (xz - Interp%HI_KIND_TYPE_%lon_in(icl))/(Interp%HI_KIND_TYPE_%lon_in(icu)&
                                             & - Interp%HI_KIND_TYPE_%lon_in(icl) + real(tpi,FMS_HI_KIND_))
           else
-            icl = INDL_(lon_in, xz)
-            icu = INDU_(lon_in, xz)
+            icl = indl(lon_in, xz)
+            icu = indu(lon_in, xz)
             Interp%HI_KIND_TYPE_%rat_x(i,j) = (xz - Interp%HI_KIND_TYPE_%lon_in(icl))/(Interp%HI_KIND_TYPE_%lon_in(icu)&
                                             & - Interp%HI_KIND_TYPE_%lon_in(icl))
           endif
-          icl = INDL_(lon_in, xz)
-          icu = INDU_(lon_in, xz)
+          icl = indl(lon_in, xz)
+          icu = indu(lon_in, xz)
           Interp%j_lat(i,j,1) = jcl
           Interp%j_lat(i,j,2) = jcu
           Interp%i_lon(i,j,1) = icl
@@ -443,7 +443,7 @@
 !     uses BCUCOF_
       integer i
       real(FMS_HI_KIND_) t,u,c(4,4)
-      call BCUCOF_(y,y1,y2,y12,x1u-x1l,x2u-x2l,c)
+      call bcucof(y,y1,y2,y12,x1u-x1l,x2u-x2l,c)
       ansy=real(0., FMS_HI_KIND_)
       ansy2=real(0., FMS_HI_KIND_)
       ansy1=real(0., FMS_HI_KIND_)

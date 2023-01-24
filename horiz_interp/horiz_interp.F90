@@ -211,6 +211,11 @@ use platform_mod,               only: r4_kind, r8_kind
     module procedure horiz_interp_solo_old_r8
  end interface
 
+!> Private helper routines
+interface is_lat_lon
+    module procedure is_lat_lon_r4
+    module procedure is_lat_lon_r8
+end interface
 
 !> @addtogroup horiz_interp_mod
 !> @{

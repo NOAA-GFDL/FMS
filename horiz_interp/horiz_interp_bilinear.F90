@@ -62,6 +62,18 @@ module horiz_interp_bilinear_mod
   real(r8_kind), parameter :: epsln=1.e-10_r8_kind
   integer, parameter :: DUMMY = -999
 
+!! Private helper routines, interfaces for mixed real precision support
+
+  interface indp
+    module procedure indp_r4  
+    module procedure indp_r8
+  end interface
+
+  interface intersect
+    module procedure intersect_r4  
+    module procedure intersect_r8
+  end interface
+
   !-----------------------------------------------------------------------
 ! Include variable "version" to be written to log file.
 #include<file_version.h>

@@ -105,6 +105,17 @@ module horiz_interp_conserve_mod
     module procedure horiz_interp_conserve_r8
   end interface
 
+!> private helper routines
+  interface data_sum
+    module procedure data_sum_r4
+    module procedure data_sum_r8
+  end interface
+
+  interface stats
+    module procedure stats_r4
+    module procedure stats_r8
+  end interface
+
 
   !> @addtogroup horiz_interp_conserve_mod
   !> @{

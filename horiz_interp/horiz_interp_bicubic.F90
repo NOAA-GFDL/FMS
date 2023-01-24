@@ -60,6 +60,8 @@ module horiz_interp_bicubic_mod
    public  :: horiz_interp_bicubic_init
 
   !> Creates a new @ref horiz_interp_type for bicubic interpolation.
+  !! Allocates space and initializes a derived-type variable
+  !! that contains pre-computed interpolation indices and weights.
   !> @ingroup horiz_interp_bicubic_mod
   interface horiz_interp_bicubic_new
     module procedure horiz_interp_bicubic_new_1d_r8
@@ -68,6 +70,7 @@ module horiz_interp_bicubic_mod
     module procedure horiz_interp_bicubic_new_1d_s_r4
   end interface
 
+  !> @brief Perform bicubic horizontal interpolation
   interface horiz_interp_bicubic
     module procedure horiz_interp_bicubic_r4
     module procedure horiz_interp_bicubic_r8
@@ -96,11 +99,34 @@ module horiz_interp_bicubic_mod
 
    real(r8_kind)               :: tpi
 
+   !! Private interfaces for mixed precision helper routines
+
    interface fill_xy
       module procedure fill_xy_r4
       module procedure fill_xy_r8
    end interface
 
+   interface bcuint 
+      module procedure bcuint_r4 
+      module procedure bcuint_r8 
+   end interface
+
+   interface bcucof 
+      module procedure bcucof_r4 
+      module procedure bcucof_r8 
+   end interface
+
+   !> find the lower neighbour of xf in field xc, return is the index
+   interface indl 
+      module procedure indl_r4 
+      module procedure indl_r8 
+   end interface
+
+   !> find the upper neighbour of xf in field xc, return is the index
+   interface indu 
+      module procedure indu_r4 
+      module procedure indu_r8 
+   end interface
 
    contains
 
@@ -114,9 +140,8 @@ module horiz_interp_bicubic_mod
 
   end subroutine horiz_interp_bicubic_init
 
-  !#######################################################################
-
-
+  !> Free memory from a horiz_interp_type used for bicubic interpolation
+  !! (allocated via @ref horiz_bicubic_new)
   subroutine horiz_interp_bicubic_del( Interp )
     type(horiz_interp_type), intent(inout) :: Interp
 
