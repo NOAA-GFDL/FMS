@@ -108,8 +108,8 @@
 
       allocate(r2d(dim_sizes(1), dim_sizes(2)))
       call read_data(fileobj, buffer, r2d)
-      edge_data(1:dim_sizes(2)) = real(r2d(1,:), FMS_AU_KIND_)
-      edge_data(dim_sizes(2)+1) = real(r2d(2,dim_sizes(2)), FMS_AU_KIND_)
+      edge_data(1:dim_sizes(2)) = r2d(1,:)
+      edge_data(dim_sizes(2)+1) = r2d(2,dim_sizes(2))
       deallocate(r2d)
     endif
     deallocate(dim_sizes)
@@ -119,13 +119,13 @@
       call read_data(fileobj, name, r_var)
 
       do i = 2, n
-         edge_data(i) = real(r_var(i-1) + 0.5_lkind*(r_var(i) - r_var(i-1)), FMS_AU_KIND_)
+         edge_data(i) = r_var(i-1) + 0.5_lkind*(r_var(i) - r_var(i-1))
       enddo
-      edge_data(1)    = real(r_var(1) - 0.5_lkind*(r_var(2) - r_var(1)), FMS_AU_KIND_)
+      edge_data(1)    = r_var(1) - 0.5_lkind*(r_var(2) - r_var(1))
       if (abs(edge_data(1)) .lt. real(1.e-10, FMS_AU_KIND_)) then
          edge_data(1) = 0.0_lkind
       endif
-      edge_data(n+1)  = real(r_var(n) + 0.5_lkind*(r_var(n) - r_var(n-1)), FMS_AU_KIND_)
+      edge_data(n+1)  = r_var(n) + 0.5_lkind*(r_var(n) - r_var(n-1))
       deallocate(r_var)
   endif
   end subroutine AXIS_EDGES_
@@ -139,16 +139,16 @@
     real(kind=FMS_AU_KIND_)             :: l_end
     integer, parameter                  :: lkind = FMS_AU_KIND_
 
-    LON_IN_RANGE_ = real(lon, FMS_AU_KIND_)
-    l_end = real(l_strt + 360.0_lkind, FMS_AU_KIND_)
+    LON_IN_RANGE_ = lon
+    l_end = l_strt + 360.0_lkind
 
     if (abs(LON_IN_RANGE_ - l_strt) < real(1.e-4, FMS_AU_KIND_)) then
-      LON_IN_RANGE_ = real(l_strt, FMS_AU_KIND_)
+      LON_IN_RANGE_ = l_strt
       return
     endif
 
     if (abs(LON_IN_RANGE_ - l_end) < real(1.e-4, FMS_AU_KIND_)) then
-      LON_IN_RANGE_ = real(l_strt, FMS_AU_KIND_)
+      LON_IN_RANGE_ = l_strt
       return
     endif
 
@@ -192,7 +192,7 @@
     len = size(lon(:))
 
     do i = 1, len
-       lon(i) = real(lon_in_range(lon(i),lon_start), FMS_AU_KIND_)
+       lon(i) = lon_in_range(lon(i),lon_start)
     enddo
 
     istrt = 0
@@ -206,16 +206,16 @@
     if (istrt>1) then ! grid is not monotonic
        if (abs(lon(len)-lon(1)) < real(epsln, r8_kind)) then
           tmp = cshift(lon(1:len-1),istrt-1)
-          lon(1:len-1) = real(tmp, FMS_AU_KIND_)
-          lon(len)     = real(lon(1), FMS_AU_KIND_)
+          lon(1:len-1) = tmp
+          lon(len)     = lon(1)
        else
-          lon = real(cshift(lon,istrt-1), FMS_AU_KIND_)
+          lon = cshift(lon,istrt-1)
        endif
 
-       lon_strt = real(lon(1), FMS_AU_KIND_)
+       lon_strt = lon(1)
        do i=2,len+1
-          lon(i)   = real(lon_in_range(lon(i),lon_strt), FMS_AU_KIND_)
-          lon_strt = real(lon(i), FMS_AU_KIND_)
+          lon(i)   = lon_in_range(lon(i),lon_strt)
+          lon_strt = lon(i)
        enddo
     endif
 
@@ -292,7 +292,7 @@
        do while (i <= ia .and. keep_going)
           i = i+1
           if (value <= array(i)) then
-             FRAC_INDEX_ = real((i-1) + (value-array(i-1))/(array(i)-array(i-1)), FMS_AU_KIND_)
+             FRAC_INDEX_ = (i-1) + (value-array(i-1))/(array(i)-array(i-1))
              keep_going  = .false.
           endif
        enddo
@@ -410,14 +410,14 @@
        n = nearest_index(grid2(i),grid1)
 
        if (grid1(n) < grid2(i)) then
-          w        = real((grid2(i)-grid1(n))/(grid1(n+1)-grid1(n)), FMS_AU_KIND_)
-          data2(i) = real((1.0_lkind-w)*data1(n) + w*data1(n+1), FMS_AU_KIND_)
+          w        = (grid2(i)-grid1(n))/(grid1(n+1)-grid1(n))
+          data2(i) = (1.0_lkind-w)*data1(n) + w*data1(n+1)
        else
           if(n==1) then
-             data2(i) = real(data1(n), FMS_AU_KIND_)
+             data2(i) = data1(n)
           else
-             w        = real((grid2(i)-grid1(n-1))/(grid1(n)-grid1(n-1)), FMS_AU_KIND_)
-             data2(i) = real((1.0_lkind-w)*data1(n-1) + w*data1(n), FMS_AU_KIND_)
+             w        = (grid2(i)-grid1(n-1))/(grid1(n)-grid1(n-1))
+             data2(i) = (1.0_lkind-w)*data1(n-1) + w*data1(n)
           endif
        endif
     enddo
@@ -458,15 +458,15 @@
        u(1)  = 0.0_lkind
     else
        y2(1) = -0.5_lkind
-       u(1)  = real((3.0_lkind)/(grid1(2)-grid1(1))*((data1(2)-data1(1))/(grid1(2)-grid1(1))-yp1), FMS_AU_KIND_)
+       u(1)  = (3.0_lkind)/(grid1(2)-grid1(1))*((data1(2)-data1(1))/(grid1(2)-grid1(1))-yp1)
     endif
 
     do i = 2, n-1
-       sig   = real((grid1(i)-grid1(i-1))/(grid1(i+1)-grid1(i-1)), FMS_AU_KIND_)
-       p     = real(sig*y2(i-1) + 2.0_lkind, FMS_AU_KIND_)
-       y2(i) = real((sig-1.0_lkind)/p, FMS_AU_KIND_)
-       u(i)  = real((6.0_lkind*((data1(i+1)-data1(i))/(grid1(i+1)-grid1(i))-(data1(i)-data1(i-1)) &
-               /(grid1(i)-grid1(i-1)))/(grid1(i+1)-grid1(i-1))-sig*u(i-1))/p, FMS_AU_KIND_)
+       sig   = (grid1(i)-grid1(i-1))/(grid1(i+1)-grid1(i-1))
+       p     = sig*y2(i-1) + 2.0_lkind
+       y2(i) = (sig-1.0_lkind)/p
+       u(i)  = (6.0_lkind*((data1(i+1)-data1(i))/(grid1(i+1)-grid1(i))-(data1(i)-data1(i-1)) &
+               /(grid1(i)-grid1(i-1)))/(grid1(i+1)-grid1(i-1))-sig*u(i-1))/p
     enddo
 
     if (ypn>real(.99e30, FMS_AU_KIND_)) then
@@ -474,14 +474,14 @@
        un = 0.0_lkind
     else
        qn = 0.5_lkind
-       un = real((3.0_lkind)/(grid1(n)-grid1(n-1))*(ypn-(data1(n)-data1(n-1))/ &
-            (grid1(n)-grid1(n-1))), FMS_AU_KIND_)
+       un = (3.0_lkind)/(grid1(n)-grid1(n-1))*(ypn-(data1(n)-data1(n-1))/ &
+            (grid1(n)-grid1(n-1)))
     endif
 
-    y2(n) = real((un-qn*u(n-1))/(qn*y2(n-1)+1.0_lkind), FMS_AU_KIND_)
+    y2(n) = (un-qn*u(n-1))/(qn*y2(n-1)+1.0_lkind)
 
     do  k = n-1,1,-1
-       y2(k) = real(y2(k)*y2(k+1)+u(k), FMS_AU_KIND_)
+       y2(k) = y2(k)*y2(k+1)+u(k)
     enddo
 
     do k = 1, m
@@ -497,11 +497,11 @@
        endif
 
        khi      = klo+1
-       h        = real(grid1(khi)-grid1(klo), FMS_AU_KIND_)
-       a        = real((grid1(khi) - grid2(k))/h, FMS_AU_KIND_)
-       b        = real((grid2(k) - grid1(klo))/h, FMS_AU_KIND_)
-       data2(k) = real(a*data1(klo) + b*data1(khi)+ ((a**3-a)*y2(klo) + (b**3-b)*y2(khi))*(h**2) &
-                 /6.0_lkind, FMS_AU_KIND_)
+       h        = grid1(khi)-grid1(klo)
+       a        = (grid1(khi) - grid2(k))/h
+       b        = (grid2(k) - grid1(klo))/h
+       data2(k) = a*data1(klo) + b*data1(khi)+ ((a**3-a)*y2(klo) + (b**3-b)*y2(khi))*(h**2) &
+                 /6.0_lkind
     enddo
 
   end subroutine INTERP_1D_CUBIC_SPLINE_
