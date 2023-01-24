@@ -154,9 +154,9 @@
 
     do
       if (LON_IN_RANGE_ < l_strt) then
-        LON_IN_RANGE_ = real(LON_IN_RANGE_ + real(f360, r8_kind), FMS_AU_KIND_)
+        LON_IN_RANGE_ = real(LON_IN_RANGE_, FMS_AU_KIND_) + real(f360, FMS_AU_KIND_)
       else if (LON_IN_RANGE_  >  l_end) then
-        LON_IN_RANGE_ = real(LON_IN_RANGE_ - real(f360, r8_kind), FMS_AU_KIND_)
+        LON_IN_RANGE_ = real(LON_IN_RANGE_, FMS_AU_KIND_) - real(f360, FMS_AU_KIND_)
       else
         exit
       end if
@@ -204,7 +204,7 @@
     enddo
 
     if (istrt>1) then ! grid is not monotonic
-       if (abs(lon(len)-lon(1)) < real(epsln, r8_kind)) then
+       if (abs(lon(len)-lon(1)) < real(epsln, FMS_AU_KIND_)) then
           tmp = cshift(lon(1:len-1),istrt-1)
           lon(1:len-1) = tmp
           lon(len)     = lon(1)
@@ -525,10 +525,10 @@
     if(present(method)) interp_method = method
     y1 = real(1.0d30, FMS_AU_KIND_)
 
-    if(present(yp1)) y1 = real(yp1, FMS_AU_KIND_)
+    if(present(yp1)) y1 = yp1
     y2 = real(1.0d30, FMS_AU_KIND_)
 
-    if(present(yp2)) y2 = real(yp2, FMS_AU_KIND_)
+    if(present(yp2)) y2 = yp2
     call find_index(grid1, grid2(1), grid2(k2), ks, ke)
     select case(trim(interp_method))
     case("linear")
