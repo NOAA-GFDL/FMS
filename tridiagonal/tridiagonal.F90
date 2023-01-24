@@ -80,8 +80,6 @@ subroutine tri_invert(x,d,a,b,c)
 
 implicit none
 
-real, allocatable, dimension(:,:,:) :: e,g,cc !< Local instead of global to the module
-real, allocatable, dimension(:,:)   :: bb     !< Local instead of global to the module
 real, intent(out), dimension(:,:,:) :: x !< Solution to the tridiagonal system of equations
 real, intent(in),  dimension(:,:,:) :: d !< The right-hand side term, see the schematic above.
 real, optional,    dimension(:,:,:) :: a,b,c !< Left hand side terms(see schematic above).
