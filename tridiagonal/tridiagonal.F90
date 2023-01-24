@@ -60,8 +60,8 @@
 module tridiagonal_mod
 
 !--------------------------------------------------------------------------
-real,    private, allocatable, dimension(:,:,:) :: e,g,cc 
-real,    private, allocatable, dimension(:,:)   :: bb     
+real,    private, allocatable, dimension(:,:,:) :: e,g,cc
+real,    private, allocatable, dimension(:,:)   :: bb 
 logical, private :: init_tridiagonal = .false.
 !--------------------------------------------------------------------------
 
