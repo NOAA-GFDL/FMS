@@ -247,8 +247,8 @@ iter_loop: do iter = 1, max_iter
   call mo_derivative_t(phi_t  , zeta  , mask_1)
   call mo_derivative_t(phi_t_0, zeta_t, mask_1)
 
-  call mo_integral_m(f_m, zeta, zeta_0, ln_z_z0, mask_1)
-  call mo_integral_tq(f_t, f_q, zeta, zeta_t, zeta_q, ln_z_zt, ln_z_zq, mask_1)
+  call mo_integral(f_m, zeta, zeta_0, ln_z_z0, mask_1)
+  call mo_integral(f_t, f_q, zeta, zeta_t, zeta_q, ln_z_zt, ln_z_zq, mask_1)
 
   where (mask_1)
     df_m       = real((phi_m - phi_m_0)*rzeta,                           FMS_MO_KIND_)
@@ -527,7 +527,7 @@ real(kind=FMS_MO_KIND_), intent(inout), dimension(:,:) :: u_star, b_star
 integer :: j
 
 do j = 1, size(pt,2)
-  call mo_drag_1d (pt(:,j), pt0(:,j), z(:,j), z0(:,j), zt(:,j), zq(:,j), &
+  call mo_drag (pt(:,j), pt0(:,j), z(:,j), z0(:,j), zt(:,j), zq(:,j), &
                    speed(:,j), drag_m(:,j), drag_t(:,j), drag_q(:,j), &
                    u_star(:,j), b_star(:,j))
 end do
@@ -554,7 +554,7 @@ zt_1   (1) = real(zt,    FMS_MO_KIND_)
 zq_1   (1) = real(zq,    FMS_MO_KIND_)
 speed_1(1) = real(speed, FMS_MO_KIND_)
 
-call mo_drag_1d (pt_1, pt0_1, z_1, z0_1, zt_1, zq_1, speed_1, &
+call mo_drag (pt_1, pt0_1, z_1, z0_1, zt_1, zq_1, speed_1, &
                  drag_m_1, drag_t_1, drag_q_1, u_star_1, b_star_1)
 
 drag_m = real(drag_m_1(1), FMS_MO_KIND_)
@@ -577,7 +577,7 @@ real(kind=FMS_MO_KIND_), intent(out), dimension(:,:) :: del_m, del_h, del_q
 integer :: j
 
 do j = 1, size(z,2)
-  call mo_profile_1d (zref, zref_t, z(:,j), z0(:,j), zt(:,j),         &
+  call mo_profile (zref, zref_t, z(:,j), z0(:,j), zt(:,j),         &
                       zq(:,j), u_star(:,j), b_star(:,j), q_star(:,j), &
                       del_m(:,j), del_h (:,j), del_q (:,j))
 enddo
@@ -605,7 +605,7 @@ u_star_1(1) = real(u_star, FMS_MO_KIND_)
 b_star_1(1) = real(b_star, FMS_MO_KIND_)
 q_star_1(1) = real(q_star, FMS_MO_KIND_)
 
-call mo_profile_1d (zref, zref_t, z_1, z0_1, zt_1, zq_1, &
+call mo_profile (zref, zref_t, z_1, z0_1, zt_1, zq_1, &
                     u_star_1, b_star_1, q_star_1,        &
                     del_m_1, del_h_1, del_q_1)
 
@@ -631,10 +631,10 @@ integer :: k
 
 do k = 1, size(zref(:))
   if(present(avail)) then
-    call mo_profile_1d (zref(k), zref(k), z, z0, zt, zq, &
+    call mo_profile (zref(k), zref(k), z, z0, zt, zq, &
        u_star, b_star, q_star, del_m(:,k), del_t(:,k), del_q(:,k), avail)
   else
-      call mo_profile_1d (zref(k), zref(k), z, z0, zt, zq, &
+      call mo_profile (zref(k), zref(k), z, z0, zt, zq, &
        u_star, b_star, q_star, del_m(:,k), del_t(:,k), del_q(:,k))
   endif
 enddo
@@ -654,7 +654,7 @@ real(kind=FMS_MO_KIND_),    intent(out), dimension(:) :: del_m, del_t, del_q
 integer :: k
 
 do k = 1, size(zref(:))
-  call mo_profile_0d (zref(k), zref(k), z, z0, zt, zq, &
+  call mo_profile (zref(k), zref(k), z, z0, zt, zq, &
        u_star, b_star, q_star, del_m(k), del_t(k), del_q(k))
 enddo
 
@@ -673,7 +673,7 @@ real(kind=FMS_MO_KIND_),    intent(out), dimension(:,:,:) :: del_m, del_t, del_q
 integer :: k
 
 do k = 1, size(zref(:))
-  call mo_profile_2d (zref(k), zref(k), z, z0, zt, zq, &
+  call mo_profile (zref(k), zref(k), z, z0, zt, zq, &
        u_star, b_star, q_star, del_m(:,:,k), del_t(:,:,k), del_q(:,:,k))
 enddo
 
@@ -691,7 +691,7 @@ real(kind=FMS_MO_KIND_), dimension(size(z,1),size(z,2),1) :: z_n, k_m_n, k_h_n
 
 z_n(:,:,1) = real(z, FMS_MO_KIND_)
 
-call mo_diff_2d_n(z_n, u_star, b_star, k_m_n, k_h_n)
+call mo_diff(z_n, u_star, b_star, k_m_n, k_h_n)
 
 k_m = real(k_m_n(:,:,1), FMS_MO_KIND_)
 k_h = real(k_h_n(:,:,1), FMS_MO_KIND_)
@@ -714,7 +714,7 @@ z_n   (:,1,1) = real(z,      FMS_MO_KIND_)
 u_star_n(:,1) = real(u_star, FMS_MO_KIND_)
 b_star_n(:,1) = real(b_star, FMS_MO_KIND_)
 
-call mo_diff_2d_n(z_n, u_star_n, b_star_n, k_m_n, k_h_n)
+call mo_diff(z_n, u_star_n, b_star_n, k_m_n, k_h_n)
 
 k_m = real(k_m_n(:,1,1), FMS_MO_KIND_)
 k_h = real(k_h_n(:,1,1), FMS_MO_KIND_)
@@ -741,7 +741,7 @@ enddo
 u_star2(:,1) = real(u_star,   FMS_MO_KIND_)
 b_star2(:,1) = real(b_star,   FMS_MO_KIND_)
 
-call mo_diff_2d_n(z2, u_star2, b_star2, k_m2, k_h2)
+call mo_diff(z2, u_star2, b_star2, k_m2, k_h2)
 
 do n = 1, size(z,2)
   k_m(:,n) = real(k_m2(:,1,n), FMS_MO_KIND_)
@@ -818,7 +818,7 @@ real(kind=FMS_MO_KIND_), dimension(size(rich,1),size(rich,2),1) :: rich_3d, mix_
 
 rich_3d(:,:,1) = real(rich, FMS_MO_KIND_)
 
-call stable_mix_3d(rich_3d, mix_3d)
+call stable_mix(rich_3d, mix_3d)
 
 mix = real(mix_3d(:,:,1), FMS_MO_KIND_)
 
@@ -837,7 +837,7 @@ real(kind=FMS_MO_KIND_), dimension(size(rich),1,1) :: rich_3d, mix_3d
 
 rich_3d(:,1,1) = real(rich, FMS_MO_KIND_)
 
-call stable_mix_3d(rich_3d, mix_3d)
+call stable_mix(rich_3d, mix_3d)
 
 mix = real(mix_3d(:,1,1), FMS_MO_KIND_)
 
@@ -855,7 +855,7 @@ real(kind=FMS_MO_KIND_), dimension(1,1,1) :: rich_3d, mix_3d
 
 rich_3d(1,1,1) = real(rich, FMS_MO_KIND_)
 
-call stable_mix_3d(rich_3d, mix_3d)
+call stable_mix(rich_3d, mix_3d)
 
 mix = real(mix_3d(1,1,1), FMS_MO_KIND_)
 
