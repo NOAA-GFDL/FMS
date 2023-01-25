@@ -218,7 +218,7 @@ elsewhere
 end where
 
 where (mask_1 .and. rich >= 0.0_lkind)
-  zeta = real(zeta/(1.0_lkind - rich/real(rich_crit, r8_kind)), FMS_MO_KIND_)
+  zeta = real(zeta, FMS_MO_KIND_)/(1.0_lkind - real(rich, FMS_MO_KIND_)/real(rich_crit, FMS_MO_KIND_))
 end where
 
 iter_loop: do iter = 1, max_iter
@@ -306,7 +306,8 @@ end where
 if(stable_option == 1) then
 
   where (stable)
-    phi_m = real(1.0_lkind + zeta  *(5.0_lkind + real(b_stab, r8_kind)*zeta)/(1.0_lkind + zeta), FMS_MO_KIND_)
+    phi_m = 1.0_lkind + real(zeta, FMS_MO_KIND_)*(5.0_lkind + real(b_stab, FMS_MO_KIND_) &
+            *real(zeta, FMS_MO_KIND_))/(1.0_lkind + real(zeta, FMS_MO_KIND_))
   end where
 
 else if(stable_option == 2) then
@@ -315,7 +316,7 @@ else if(stable_option == 2) then
     phi_m = 1 + 5.0_lkind*zeta
   end where
   where (stable .and. zeta >= zeta_trans)
-    phi_m = real(real(lambda, r8_kind) + real(b_stab, r8_kind)*zeta, FMS_MO_KIND_)
+    phi_m = real(lambda, FMS_MO_KIND_) + real(b_stab, FMS_MO_KIND_)*real(zeta, FMS_MO_KIND_)
   end where
 
 endif
@@ -346,7 +347,8 @@ end where
 if(stable_option == 1) then
 
   where (stable)
-    phi_t = real(1.0_lkind + zeta*(5.0_lkind + real(b_stab, r8_kind)*zeta)/(1.0_lkind + zeta), FMS_MO_KIND_)
+    phi_t = 1.0_lkind + real(zeta, FMS_MO_KIND_)*(5.0_lkind + real(b_stab, FMS_MO_KIND_)&
+            *real(zeta,FMS_MO_KIND_))/(1.0_lkind + real(zeta, FMS_MO_KIND_))
   end where
 
 else if(stable_option == 2) then
@@ -355,7 +357,7 @@ else if(stable_option == 2) then
     phi_t = 1 + 5.0_lkind*zeta
   end where
   where (stable .and. zeta >= zeta_trans)
-    phi_t = real(real(lambda, r8_kind) + real(b_stab, r8_kind)*zeta, FMS_MO_KIND_)
+    phi_t = real(lambda, FMS_MO_KIND_) + real(b_stab, FMS_MO_KIND_)*real(zeta, FMS_MO_KIND_)
   end where
 
 endif
@@ -398,10 +400,12 @@ if( stable_option == 1) then
 
   where (stable)
 
-    psi_t = real(ln_z_zt + (5.0_lkind - real(b_stab, r8_kind))*log((1.0_lkind + zeta)/(1.0_lkind + zeta_t)) &
-       + real(b_stab, r8_kind)*(zeta - zeta_t), FMS_MO_KIND_)
-    psi_q = real(ln_z_zq + (5.0_lkind - real(b_stab, r8_kind))*log((1.0_lkind + zeta)/(1.0_lkind + zeta_q)) &
-       + real(b_stab, r8_kind)*(zeta - zeta_q), FMS_MO_KIND_)
+    psi_t = real(ln_z_zt, FMS_MO_KIND_) + (5.0_lkind - real(b_stab, FMS_MO_KIND_)) &
+            *log((1.0_lkind + real(zeta, FMS_MO_KIND_))/(1.0_lkind + real(zeta_t, FMS_MO_KIND_))) &
+            + real(b_stab, FMS_MO_KIND_)*(real(zeta, FMS_MO_KIND_) - real(zeta_t, FMS_MO_KIND_))
+    psi_q = real(ln_z_zq, FMS_MO_KIND_) + (5.0_lkind - real(b_stab, FMS_MO_KIND_)) &
+            *log((1.0_lkind + real(zeta, FMS_MO_KIND_))/(1.0_lkind + real(zeta_q, FMS_MO_KIND_))) &
+            + real(b_stab, FMS_MO_KIND_)*(real(zeta, FMS_MO_KIND_) - real(zeta_q, FMS_MO_KIND_))
 
   end where
 
@@ -416,22 +420,26 @@ else if (stable_option == 2) then
   end where
 
   where(strongly_stable)
-    x = real((real(lambda, r8_kind) - 1.0_lkind)*log(zeta/real(zeta_trans, r8_kind)) + &
-         real(b_stab, r8_kind)*(zeta - real(zeta_trans, r8_kind)), FMS_MO_KIND_)
+    x = (real(lambda, FMS_MO_KIND_) - 1.0_lkind)*log(real(zeta, FMS_MO_KIND_)/real(zeta_trans, FMS_MO_KIND_)) + &
+         real(b_stab, FMS_MO_KIND_)*(real(zeta, FMS_MO_KIND_) - real(zeta_trans, FMS_MO_KIND_))
   endwhere
 
   where (strongly_stable .and. zeta_t <= zeta_trans)
-    psi_t = real(ln_z_zt + x + 5.0_lkind*(real(zeta_trans, r8_kind) - zeta_t), FMS_MO_KIND_)
+    psi_t = real(ln_z_zt, FMS_MO_KIND_) + real(x, FMS_MO_KIND_) + 5.0_lkind &
+            *(real(zeta_trans, FMS_MO_KIND_) - real(zeta_t, FMS_MO_KIND_))
   end where
   where (strongly_stable .and. zeta_t > zeta_trans)
-    psi_t = real(real(lambda, r8_kind)*ln_z_zt + real(b_stab, r8_kind)*(zeta  - zeta_t),      FMS_MO_KIND_)
+    psi_t = real(lambda, FMS_MO_KIND_)*real(ln_z_zt, FMS_MO_KIND_) &
+            + real(b_stab, FMS_MO_KIND_)*(real(zeta, FMS_MO_KIND_) - real(zeta_t, FMS_MO_KIND_))
   endwhere
 
   where (strongly_stable .and. zeta_q <= zeta_trans)
-    psi_q = real(ln_z_zq + x + 5.0_lkind*(real(zeta_trans, r8_kind) - zeta_q), FMS_MO_KIND_)
+    psi_q = real(ln_z_zq, FMS_MO_KIND_) + real(x, FMS_MO_KIND_) + 5.0_lkind &
+            *(real(zeta_trans, FMS_MO_KIND_) - real(zeta_q, FMS_MO_KIND_))
   end where
   where (strongly_stable .and. zeta_q > zeta_trans)
-    psi_q = real(real(lambda, r8_kind)*ln_z_zq + real(b_stab, r8_kind)*(zeta  - zeta_q),      FMS_MO_KIND_)
+    psi_q = real(lambda, FMS_MO_KIND_)*real(ln_z_zq, FMS_MO_KIND_) + real(b_stab, FMS_MO_KIND_) &
+            * (real(zeta, FMS_MO_KIND_) - real(zeta_q, FMS_MO_KIND_))
   endwhere
 
 end if
@@ -479,8 +487,9 @@ end where
 if( stable_option == 1) then
 
   where (stable)
-    psi_m = real(ln_z_z0 + (5.0_lkind - real(b_stab, r8_kind))*log((1.0_lkind + zeta)/(1.0_lkind + zeta_0)) &
-                  + real(b_stab, r8_kind)*(zeta - zeta_0), FMS_MO_KIND_)
+    psi_m = real(ln_z_z0, FMS_MO_KIND_) + (5.0_lkind - real(b_stab, FMS_MO_KIND_)) &
+            *log((1.0_lkind + real(zeta, FMS_MO_KIND_))/(1.0_lkind + real(zeta_0, FMS_MO_KIND_))) &
+            + real(b_stab, FMS_MO_KIND_)*(real(zeta, FMS_MO_KIND_) - real(zeta_0, FMS_MO_KIND_))
   end where
 
 else if (stable_option == 2) then
@@ -493,15 +502,17 @@ else if (stable_option == 2) then
   end where
 
   where(strongly_stable)
-    x = real((real(lambda, r8_kind) - 1.0_lkind)*log(zeta/real(zeta_trans, r8_kind)) + &
-        real(b_stab, r8_kind)*(zeta - real(zeta_trans, r8_kind)), FMS_MO_KIND_)
+    x = (real(lambda, FMS_MO_KIND_) - 1.0_lkind)*log(real(zeta, FMS_MO_KIND_)/real(zeta_trans, FMS_MO_KIND_)) + &
+        real(b_stab, FMS_MO_KIND_)*(real(zeta, FMS_MO_KIND_) - real(zeta_trans, FMS_MO_KIND_))
   endwhere
 
   where (strongly_stable .and. zeta_0 <= zeta_trans)
-    psi_m = real(ln_z_z0 + x + 5.0_lkind*(real(zeta_trans, r8_kind) - zeta_0), FMS_MO_KIND_)
+    psi_m = real(ln_z_z0, FMS_MO_KIND_) + real(x, FMS_MO_KIND_) + 5.0_lkind &
+            *(real(zeta_trans, FMS_MO_KIND_) - real(zeta_0, FMS_MO_KIND_))
   end where
   where (strongly_stable .and. zeta_0 > zeta_trans)
-    psi_m = real(real(lambda, r8_kind)*ln_z_z0 + real(b_stab, r8_kind)*(zeta  - zeta_0), FMS_MO_KIND_)
+    psi_m = real(lambda, FMS_MO_KIND_)*real(ln_z_z0, FMS_MO_KIND_) + real(b_stab, FMS_MO_KIND_) &
+            *(real(zeta, FMS_MO_KIND_)  - real(zeta_0, FMS_MO_KIND_))
   endwhere
 
 end if
