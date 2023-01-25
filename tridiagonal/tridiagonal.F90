@@ -59,8 +59,6 @@
 !> @{
 module tridiagonal_mod
 
-use OMP_LIB
-
 !--------------------------------------------------------------------------
 real,    private, allocatable, dimension(:,:,:) :: e,g,cc
 real,    private, allocatable, dimension(:,:)   :: bb
