@@ -16,7 +16,8 @@
 #* You should have received a copy of the GNU Lesser General Public
 #* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 #***********************************************************************
-
+# https://github.com/github/gitignore/blob/main/Fortran.gitignore
+# github uses C++ template, this only includes what fms generates
 *~
 *.a
 *.o
@@ -27,6 +28,9 @@ pathnames*
 /*.zip
 /*.tar.gz
 *.swp
+*.PC
+*.so
+core
 
 Makefile
 # From https://github.com/github/gitignore/blob/master/Autotools.gitignore
@@ -79,3 +83,12 @@ m4/lt~obsolete.m4
 # ignore build and install trees (from cmake)
 build*/
 install*/
+
+# https://github.com/github/gitignore/blob/main/VisualStudio.gitignore
+.vscode/
+settings.json
+# VS Code files for those working on multiple tools
+.vscode/*
+*.code-workspace
+# Local History for Visual Studio Code
+.history/

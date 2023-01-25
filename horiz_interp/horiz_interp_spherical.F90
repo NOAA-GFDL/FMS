@@ -208,7 +208,7 @@ end subroutine horiz_interp_spherical_init
     endif
 
     ! allocate memory to data type
-    if(ASSOCIATED(Interp%i_lon)) then
+    if(allocated(Interp%i_lon)) then
        if(size(Interp%i_lon,1) .NE. map_dst_xsize .OR.     &
           size(Interp%i_lon,2) .NE. map_dst_ysize )  call mpp_error(FATAL, &
           'horiz_interp_spherical_mod: size(Interp%i_lon(:),1) .NE. map_dst_xsize .OR. '// &
@@ -503,10 +503,10 @@ end subroutine horiz_interp_spherical_init
                                            !! must have allocated arrays. The returned variable will
                                            !! contain deallocated arrays.
 
-    if(associated(Interp%src_dist))  deallocate(Interp%src_dist)
-    if(associated(Interp%num_found)) deallocate(Interp%num_found)
-    if(associated(Interp%i_lon))     deallocate(Interp%i_lon)
-    if(associated(Interp%j_lat))     deallocate(Interp%j_lat)
+    if(allocated(Interp%src_dist))  deallocate(Interp%src_dist)
+    if(allocated(Interp%num_found)) deallocate(Interp%num_found)
+    if(allocated(Interp%i_lon))     deallocate(Interp%i_lon)
+    if(allocated(Interp%j_lat))     deallocate(Interp%j_lat)
 
   end subroutine horiz_interp_spherical_del
 

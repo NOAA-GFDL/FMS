@@ -1341,7 +1341,7 @@ private
   namelist /mpp_nml/ etc_unit_is_stderr, request_multiply, mpp_record_timing_data, sync_all_clocks
 
   contains
-#include <system_clock.h>
+#include <system_clock.fh>
 #include <mpp_util.inc>
 #include <mpp_comm.inc>
 
