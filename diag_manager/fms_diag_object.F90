@@ -33,6 +33,9 @@ use fms_diag_axis_object_mod, only: fms_diag_axis_object_init, fmsDiagAxis_type,
                                    &fmsDiagAxisContainer_type, fms_diag_axis_object_end, fmsDiagFullAxis_type
 use fms_diag_buffer_mod
 #endif
+#if defined(_OPENMP)
+use omp_lib
+#endif
 use mpp_domains_mod, only: domain1d, domain2d, domainUG, null_domain2d
 implicit none
 private
@@ -69,6 +72,7 @@ private
     procedure :: fms_get_axis_length
     procedure :: fms_get_diag_field_id_from_name
     procedure :: fms_get_axis_name_from_id
+    procedure :: fms_diag_accept_data
     procedure :: fms_diag_send_complete
 #ifdef use_yaml
     procedure :: get_diag_buffer
@@ -425,25 +429,121 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
 #endif
 end function fms_diag_axis_init
 
+!> Accepts data from the send_data functions.  If this is in an openmp region with more than
+!! one thread, the data is buffered in the field object and processed later.  If only a single thread
+!! is being used, then the processing can be done and stored in the buffer object.  The hope is that
+!! the increase in memory footprint related to buffering can be handled by the shared memory of the
+!! multithreaded case.
+!! \note If some of the diag manager is offloaded in the future, then it should be treated similarly
+!! to the multi-threaded option for processing later
+logical function fms_diag_accept_data (this, diag_field_id, field_data, time, is_in, js_in, ks_in, &
+                  mask, rmask, ie_in, je_in, ke_in, weight, err_msg)
+  class(fmsDiagObject_type),TARGET,INTENT(inout):: this !< Diaj_obj to fill
+  INTEGER, INTENT(in) :: diag_field_id !< The ID of the input diagnostic field
+  CLASS(*), DIMENSION(:,:,:,:), INTENT(in) :: field_data !< The data for the input diagnostic
+  CLASS(*), INTENT(in), OPTIONAL :: weight !< The weight used for averaging
+  TYPE (time_type), INTENT(in), OPTIONAL :: time !< The current time
+  INTEGER, INTENT(in), OPTIONAL :: is_in, js_in, ks_in,ie_in,je_in, ke_in !< Indicies for the variable
+  LOGICAL, DIMENSION(:,:,:), INTENT(in), OPTIONAL :: mask !< The location of the mask
+  CLASS(*), DIMENSION(:,:,:), INTENT(in), OPTIONAL :: rmask !< The masking values
+  CHARACTER(len=*), INTENT(out), OPTIONAL :: err_msg !< An error message returned
+  integer :: is, js, ks !< Starting indicies of the field_data
+  integer :: ie, je, ke !< Ending indicied of the field_data
+  integer :: n1, n2, n3 !< Size of the 3 indicies of the field data
+  integer :: omp_num_threads !< Number of openmp threads
+  integer :: omp_level !< The openmp active level
+  logical :: buffer_the_data !< True if the user selects to buffer the data and run the calculations
+                             !! later.  \note This is experimental
+#ifndef use_yaml
+CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling with -Duse_yaml")
+#else
+!> Does the user want to push off calculations until send_diag_complete?
+  buffer_the_data = .false.
+!> initialize the number of threads and level to be 0
+  omp_num_threads = 0
+  omp_level = 0
+#if defined(_OPENMP)
+  omp_num_threads = omp_get_num_threads()
+  omp_level = omp_get_level()
+  buffer_the_data = (omp_num_threads > 1 .AND. omp_level > 0)
+#endif
+!If this is true, buffer data
+  main_if: if (buffer_the_data) then
+!> Calculate the i,j,k start and end
+    ! If is, js, or ks not present default them to 1
+    is = 1
+    js = 1
+    ks = 1
+    IF ( PRESENT(is_in) ) is = is_in
+    IF ( PRESENT(js_in) ) js = js_in
+    IF ( PRESENT(ks_in) ) ks = ks_in
+    n1 = SIZE(field_data, 1)
+    n2 = SIZE(field_data, 2)
+    n3 = SIZE(field_data, 3)
+    ie = is+n1-1
+    je = js+n2-1
+    ke = ks+n3-1
+    IF ( PRESENT(ie_in) ) ie = ie_in
+    IF ( PRESENT(je_in) ) je = je_in
+    IF ( PRESENT(ke_in) ) ke = ke_in
+!> Buffer the data
+    call this%FMS_diag_fields(diag_field_id)%set_data_buffer(field_data, FMS_diag_object%diag_axis,&
+                                                             is, js, ks, ie, je, ke)
+    call this%FMS_diag_fields(diag_field_id)%set_math_needs_to_be_done(.TRUE.)
+    fms_diag_accept_data = .TRUE.
+    return
+  else
+!!TODO: Loop through fields and do averages/math functions
+    call this%FMS_diag_fields(diag_field_id)%set_math_needs_to_be_done(.FALSE.)
+    fms_diag_accept_data = .TRUE.
+    return
+  end if main_if
+!> Return false if nothing is done
+  fms_diag_accept_data = .FALSE.
+  return
+#endif
+end function fms_diag_accept_data
+!! TODO: This entire routine
 !> @brief Loops through all the files, open the file, writes out axis and
 !! variable metadata and data when necessary.
 subroutine fms_diag_send_complete(this, time_step)
   class(fmsDiagObject_type), target, intent (inout) :: this !< The diag object
   TYPE (time_type),                  INTENT(in)     :: time_step !< The current model time
 
-  integer :: i !< For do loops
+  integer :: ifile !< For file loops
+  integer :: ifield !< For field loops
 
 #ifndef use_yaml
 CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling with -Duse_yaml")
 #else
   class(fmsDiagFileContainer_type), pointer :: diag_file !< Pointer to this%FMS_diag_files(i) (for convenience)
-
+  class(fmsDiagField_type), pointer :: diag_field !< Pointer to this%FMS_diag_files(i)%diag_field(j)
   logical :: file_is_opened_this_time_step !< True if the file was opened in this time_step
                                            !! If true the metadata will need to be written
-
-  do i = 1, size(this%FMS_diag_files)
-    diag_file => this%FMS_diag_files(i)
-
+  logical :: math !< True if the math functions need to be called using the data buffer,
+                  !! False if the math functions were done in accept_data
+  integer, dimension(:), allocatable :: file_field_ids !< Array of field IDs for a file
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! In the future, this may be parallelized for offloading
+  file_loop: do ifile = 1, size(this%FMS_diag_files)
+    diag_file => this%FMS_diag_files(ifile)
+    field_outer_if: if (size(diag_file%FMS_diag_file%get_field_ids()) .ge. 1) then
+      allocate (file_field_ids(size(diag_file%FMS_diag_file%get_field_ids() )))
+      file_field_ids = diag_file%FMS_diag_file%get_field_ids()
+      field_loop: do ifield = 1, size(file_field_ids)
+        diag_field => this%FMS_diag_fields(file_field_ids(ifield))
+        !> Check if math needs to be done
+!        math = diag_field%get_math_needs_to_be_done()
+        math = .false. !TODO: replace this with real thing
+        calling_math: if (math) then
+          !!TODO: call math functions !!
+        endif calling_math
+        !> Clean up, clean up, everybody everywhere
+        if (associated(diag_field)) nullify(diag_field)
+      enddo field_loop
+      !> Clean up, clean up, everybody do your share
+      if (allocated(file_field_ids)) deallocate(file_field_ids)
+    endif field_outer_if
     !< Go away if the file is a subregional file and the current PE does not have any data for it
     if (.not. diag_file%writing_on_this_pe()) cycle
 
@@ -462,7 +562,7 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
       call diag_file%update_current_new_file_freq_index(time_step)
       if (diag_file%is_time_to_close_file(time_step)) call diag_file%close_diag_file
     endif
-  enddo
+  enddo file_loop
 #endif
 
 end subroutine fms_diag_send_complete
