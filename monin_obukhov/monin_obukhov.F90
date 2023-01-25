@@ -58,10 +58,10 @@ end interface
 !> @ingroup monin_obukhov_mod
 interface mo_profile
     module procedure mo_profile_0d_r4, mo_profile_0d_r8
-    module procedure mo_profile_1d_r4, mo_profile_1d_r8 
+    module procedure mo_profile_1d_r4, mo_profile_1d_r8
     module procedure mo_profile_2d_r4, mo_profile_2d_r8
     module procedure mo_profile_0d_n_r4, mo_profile_0d_n_r8
-    module procedure mo_profile_1d_n_r4, mo_profile_1d_n_r8 
+    module procedure mo_profile_1d_n_r4, mo_profile_1d_n_r8
     module procedure mo_profile_2d_n_r4, mo_profile_2d_n_r8
 end interface
 

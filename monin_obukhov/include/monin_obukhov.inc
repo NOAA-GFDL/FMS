@@ -131,7 +131,7 @@ n = size(rich,1)*size(rich,2)*size(rich,3)
   allocate(rich1d(n), mix1d(n))
   rich1d = 0.0_lkind
   mix1d = 0.0_lkind
-     
+
   do k = 1, size(rich,3)
     do j = 1, size(rich,2)
       do i = 1, size(rich,1)
