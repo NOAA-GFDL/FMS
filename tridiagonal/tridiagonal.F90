@@ -59,9 +59,11 @@
 !> @{
 module tridiagonal_mod
 
+use OMP_LIB
+
 !--------------------------------------------------------------------------
 real,    private, allocatable, dimension(:,:,:) :: e,g,cc
-real,    private, allocatable, dimension(:,:)   :: bb 
+real,    private, allocatable, dimension(:,:)   :: bb
 logical, private :: init_tridiagonal = .false.
 !--------------------------------------------------------------------------
 
@@ -90,7 +92,7 @@ integer :: k
 
 if(present(a)) then
   init_tridiagonal = .true.
-  
+
   if(allocated(e))     deallocate(e)
   if(allocated(g))     deallocate(g)
   if(allocated(bb))    deallocate(bb)
@@ -134,11 +136,14 @@ subroutine close_tridiagonal
 
 implicit none
 
-!> @brief Check if module variables are allocated
+!$OMP BARRIER
+!< Check if module variables are allocated
+!$OMP CRITICAL
 if(allocated(e)) deallocate(e)
 if(allocated(g)) deallocate(g)
 if(allocated(bb)) deallocate(bb)
 if(allocated(cc)) deallocate(cc)
+!$OMP END CRITICAL
 
 return
 end subroutine close_tridiagonal
