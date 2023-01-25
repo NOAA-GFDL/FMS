@@ -368,8 +368,8 @@ end function fms_register_static_field
 !> @brief Wrapper for the register_diag_axis subroutine. This is needed to keep the diag_axis_init
 !! interface the same
 !> @return Axis id
-FUNCTION fms_diag_axis_init(this, axis_name, axis_data, units, cart_name, long_name, direction,&
-  & set_name, edges, Domain, Domain2, DomainU, aux, req, tile_count, domain_position, axis_length ) &
+FUNCTION fms_diag_axis_init(this, axis_name, axis_data, units, cart_name, axis_length, long_name, direction,&
+  & set_name, edges, Domain, Domain2, DomainU, aux, req, tile_count, domain_position ) &
   & result(id)
 
   class(fmsDiagObject_type),TARGET,INTENT(inout):: this       !< Diaj_obj to fill
@@ -377,6 +377,7 @@ FUNCTION fms_diag_axis_init(this, axis_name, axis_data, units, cart_name, long_n
   CLASS(*),           INTENT(in)           :: axis_data(:)    !< Array of coordinate values
   CHARACTER(len=*),   INTENT(in)           :: units           !< Units for the axis
   CHARACTER(len=1),   INTENT(in)           :: cart_name       !< Cartesian axis ("X", "Y", "Z", "T", "U", "N")
+  integer,            intent(in)           :: axis_length     !< The length of the axis size(axis_data(:))
   CHARACTER(len=*),   INTENT(in), OPTIONAL :: long_name       !< Long name for the axis.
   CHARACTER(len=*),   INTENT(in), OPTIONAL :: set_name        !< Name of the parent axis, if it is a subaxis
   INTEGER,            INTENT(in), OPTIONAL :: direction       !< Indicates the direction of the axis
@@ -389,7 +390,6 @@ FUNCTION fms_diag_axis_init(this, axis_name, axis_data, units, cart_name, long_n
   CHARACTER(len=*),   INTENT(in), OPTIONAL :: req             !< Required field names.
   INTEGER,            INTENT(in), OPTIONAL :: tile_count      !< Number of tiles
   INTEGER,            INTENT(in), OPTIONAL :: domain_position !< Domain position, "NORTH" or "EAST"
-  integer,            intent(in), OPTIONAL :: axis_length     !< The length of the axis size(axis_data(:))
   integer :: id
 
 #ifndef use_yaml

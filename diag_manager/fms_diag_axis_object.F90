@@ -140,7 +140,7 @@ module fms_diag_axis_object_mod
      TYPE(fmsDiagAttribute_type),allocatable , private :: attributes(:) !< Array to hold user definable attributes
      INTEGER                        , private :: num_attributes  !< Number of defined attibutes
      INTEGER                        , private :: domain_position !< The position in the doman (NORTH, EAST or CENTER)
-     integer                        , private :: structured_ids(2) !< If the axis is in the unstructured grid,
+     integer, allocatable           , private :: structured_ids(:) !< If the axis is in the unstructured grid,
                                                                    !! this is the axis ids of the structured axis
 
      contains
@@ -243,7 +243,6 @@ module fms_diag_axis_object_mod
 
     this%nsubaxis = 0
     this%num_attributes = 0
-    this%structured_ids = diag_null
   end subroutine register_diag_axis_obj
 
   !> @brief Add an attribute to an axis
@@ -403,6 +402,7 @@ module fms_diag_axis_object_mod
 
     select type (this)
     type is (fmsDiagFullAxis_type)
+      allocate(this%structured_ids(2))
       this%structured_ids = axis_ids
     end select
   end subroutine add_structured_axis_ids
@@ -1002,7 +1002,7 @@ module fms_diag_axis_object_mod
     class(*), intent(in) :: compress_att(:) !< The compress attribute to parse
     character(len=120)   :: axis_names(2)
 
-    integer            :: ios           !< Errorcode after parsting the compress attribute
+    integer            :: ios           !< Errorcode after parsing the compress attribute
 
     select type (compress_att)
       type is (character(len=*))
