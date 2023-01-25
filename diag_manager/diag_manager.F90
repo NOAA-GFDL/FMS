@@ -3667,7 +3667,7 @@ CONTAINS
          & max_input_fields, max_axes, do_diag_field_log, write_bytes_in_file, debug_diag_manager,&
          & max_num_axis_sets, max_files, use_cmor, issue_oor_warnings,&
          & oor_warnings_fatal, max_out_per_in_field, flush_nc_files, region_out_use_alt_value, max_field_attributes,&
-         & max_file_attributes, max_axis_attributes, prepend_date, field_log_separator
+         & max_file_attributes, max_axis_attributes, prepend_date, use_mpp_io, field_log_separator
 
     ! If the module was already initialized do nothing
     IF ( module_is_initialized ) RETURN
@@ -3758,13 +3758,13 @@ CONTAINS
     END DO
     ALLOCATE(files(max_files))
     if (.not.use_mpp_io) then
-    ALLOCATE(fileobjU(max_files))
-    ALLOCATE(fileobj(max_files))
-    ALLOCATE(fileobjND(max_files))
-    ALLOCATE(fnum_for_domain(max_files))
-    !> Initialize fnum_for_domain with "dn" which stands for done
-    fnum_for_domain(:) = "dn"
-       CALL error_mesg('diag_manager_mod::diag_manager_init',&
+      ALLOCATE(fileobjU(max_files))
+      ALLOCATE(fileobj(max_files))
+      ALLOCATE(fileobjND(max_files))
+      ALLOCATE(fnum_for_domain(max_files))
+      !> Initialize fnum_for_domain with "dn" which stands for done
+      fnum_for_domain(:) = "dn"
+      CALL error_mesg('diag_manager_mod::diag_manager_init',&
                & 'diag_manager is using fms2_io', NOTE)
     else
        CALL error_mesg('diag_manager_mod::diag_manager_init',&
@@ -3787,11 +3787,11 @@ CONTAINS
        END IF
     END IF
 
-     CALL parse_diag_table(DIAG_SUBSET=diag_subset_output, ISTAT=mystat, ERR_MSG=err_msg_local)
-     IF ( mystat /= 0 ) THEN
+   CALL parse_diag_table(DIAG_SUBSET=diag_subset_output, ISTAT=mystat, ERR_MSG=err_msg_local)
+   IF ( mystat /= 0 ) THEN
        IF ( fms_error_handler('diag_manager_mod::diag_manager_init',&
             & 'Error parsing diag_table. '//TRIM(err_msg_local), err_msg) ) RETURN
-     END IF
+   END IF
 
     !initialize files%bytes_written to zero
     files(:)%bytes_written = 0
@@ -4080,7 +4080,7 @@ CONTAINS
     CHARACTER(len=*), INTENT(in) :: att_name !< new attribute name
     REAL, INTENT(in) :: att_value !< new attribute value
 
-      CALL diag_field_add_attribute_r1d(diag_field_id, att_name, (/ att_value /))
+    CALL diag_field_add_attribute_r1d(diag_field_id, att_name, (/ att_value /))
   END SUBROUTINE diag_field_add_attribute_scalar_r
 
   !> @brief Add a scalar integer attribute to the diag field corresponding to a given id
@@ -4089,7 +4089,7 @@ CONTAINS
     CHARACTER(len=*), INTENT(in) :: att_name !< new attribute name
     INTEGER, INTENT(in) :: att_value !< new attribute value
 
-      CALL diag_field_add_attribute_i1d(diag_field_id, att_name, (/ att_value /))
+    CALL diag_field_add_attribute_i1d(diag_field_id, att_name, (/ att_value /))
   END SUBROUTINE diag_field_add_attribute_scalar_i
 
   !> @brief Add a scalar character attribute to the diag field corresponding to a given id
@@ -4098,7 +4098,7 @@ CONTAINS
     CHARACTER(len=*), INTENT(in) :: att_name !< new attribute name
     CHARACTER(len=*), INTENT(in) :: att_value !< new attribute value
 
-      CALL diag_field_attribute_init(diag_field_id, att_name, NF90_CHAR, cval=att_value)
+    CALL diag_field_attribute_init(diag_field_id, att_name, NF90_CHAR, cval=att_value)
   END SUBROUTINE diag_field_add_attribute_scalar_c
 
   !> @brief Add a real 1D array attribute to the diag field corresponding to a given id
@@ -4107,7 +4107,7 @@ CONTAINS
     CHARACTER(len=*), INTENT(in) :: att_name !< new attribute name
     REAL, DIMENSION(:), INTENT(in) :: att_value !< new attribute value
 
-      CALL diag_field_attribute_init(diag_field_id, att_name, NF90_FLOAT, rval=att_value)
+    CALL diag_field_attribute_init(diag_field_id, att_name, NF90_FLOAT, rval=att_value)
   END SUBROUTINE diag_field_add_attribute_r1d
 
   !> @brief Add an integer 1D array attribute to the diag field corresponding to a given id
@@ -4116,7 +4116,7 @@ CONTAINS
     CHARACTER(len=*), INTENT(in) :: att_name !< new attribute name
     INTEGER, DIMENSION(:), INTENT(in) :: att_value !< new attribute value
 
-      CALL diag_field_attribute_init(diag_field_id, att_name, NF90_INT, ival=att_value)
+    CALL diag_field_attribute_init(diag_field_id, att_name, NF90_INT, ival=att_value)
   END SUBROUTINE diag_field_add_attribute_i1d
 
   !> @brief Add the cell_measures attribute to a diag out field
