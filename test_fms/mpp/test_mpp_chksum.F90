@@ -53,7 +53,7 @@ program test_mpp_chksum
     call mpp_error(FATAL, 'test_mpp_chksum: invalid test number given')
   endif
 
-  call MPI_FINALIZE
+  call mpp_exit
 
   contains
   !> tests mixed precision checksums with ints
