@@ -783,7 +783,8 @@ u_star_a(1,1) = u_star
 b_star_a(1,1) = b_star
 call monin_obukhov_diff(real(vonkarm, FMS_MO_KIND_),                       &
           & real(ustar_min, FMS_MO_KIND_),                                     &
-          & neutral, stable_option, new_mo_option, real(rich_crit, FMS_MO_KIND_), real(zeta_trans, FMS_MO_KIND_), &!miz
+          & neutral, stable_option, new_mo_option, real(rich_crit, FMS_MO_KIND_), &
+          & real(zeta_trans, FMS_MO_KIND_), & !miz
           & ni, nj, nk, z_a, u_star_a, b_star_a, k_m_a, k_h_a, ier)
 k_m = k_m_a(1,1,1)
 k_h = k_h_a(1,1,1)
@@ -812,7 +813,8 @@ u_star_a(1,1) = u_star
 b_star_a(1,1) = b_star
 call monin_obukhov_diff(real(vonkarm, FMS_MO_KIND_),                     &
           & real(ustar_min,FMS_MO_KIND_),                                  &
-          & neutral, stable_option,new_mo_option, real(rich_crit, FMS_MO_KIND_), real(zeta_trans, FMS_MO_KIND_), &!miz
+          & neutral, stable_option,new_mo_option, real(rich_crit, FMS_MO_KIND_), &
+          & real(zeta_trans, FMS_MO_KIND_), &!miz
           & ni, nj, nk, z_a, u_star_a, b_star_a, k_m_a, k_h_a, ier)
 k_m(:) = k_m_a(1,1,:)
 k_h(:) = k_h_a(1,1,:)
