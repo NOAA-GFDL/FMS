@@ -290,7 +290,7 @@ integer, parameter                                           :: lkind = FMS_AST_
 
         where (real(twopi, FMS_AST_KIND_) - h < tt .and. &
             (tt+h-real(twopi, FMS_AST_KIND_)) /= 0.0_lkind .and. t <= h ) &
-            cosz = (real(cosz*(h - t), FMS_AST_KIND_) + (real(aa, FMS_AST_KIND_)*(real(tt, FMS_AST_KIND_)
+            cosz = (real(cosz*(h - t), FMS_AST_KIND_) + (real(aa, FMS_AST_KIND_)*(real(tt, FMS_AST_KIND_) &
                    + real(h, FMS_AST_KIND_) - real(twopi, FMS_AST_KIND_)) + real(bb, FMS_AST_KIND_) &
                    * (real(stt, FMS_AST_KIND_) + real(sh, FMS_AST_KIND_)))) / ((real(h, FMS_AST_KIND_) &
                    - real(t, FMS_AST_KIND_)) + (real(tt, FMS_AST_KIND_) + real(h, FMS_AST_KIND_) &
@@ -1467,7 +1467,7 @@ integer, parameter       :: lkind = FMS_AST_KIND_
 !!    angle to be within the range 0 to 2*pi.
 !--------------------------------------------------------------------
 
-    norm_time = real(t, FMS_AST_KIND_)*float(real(num_angles, FMS_AST_KIND_))/real(twopi, FMS_AST_KIND_)
+    norm_time = real(t, FMS_AST_KIND_)*real(float(num_angles), FMS_AST_KIND_)/real(twopi, FMS_AST_KIND_)
     int       = floor(norm_time)
     int       = modulo(int,num_angles)
     int_1     = int+1
