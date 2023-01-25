@@ -1576,7 +1576,7 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
   LOGICAL FUNCTION send_data_3d(diag_field_id, field, time, is_in, js_in, ks_in, &
              & mask, rmask, ie_in, je_in, ke_in, weight, err_msg)
     INTEGER, INTENT(in) :: diag_field_id
-    CLASS(*), DIMENSION(:,:,:), INTENT(in) :: field
+    CLASS(*), DIMENSION(:,:,:), INTENT(in), TARGET, CONTIGUOUS :: field
     CLASS(*), INTENT(in), OPTIONAL :: weight
     TYPE (time_type), INTENT(in), OPTIONAL :: time
     INTEGER, INTENT(in), OPTIONAL :: is_in, js_in, ks_in,ie_in,je_in, ke_in
@@ -1616,7 +1616,7 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
     CHARACTER(len=128) :: error_string, error_string1
 
     REAL, ALLOCATABLE, DIMENSION(:,:,:) :: field_out !< Local copy of field
-
+    class(*), pointer, dimension(:,:,:,:) :: field_modern => null() !< i8 4d remapped pointer
     ! If diag_field_id is < 0 it means that this field is not registered, simply return
     IF ( diag_field_id <= 0 ) THEN
        send_data_3d = .FALSE.
@@ -1646,6 +1646,12 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
             & SIZE(field,1), SIZE(field,2), SIZE(field,3), status
        IF ( fms_error_handler('diag_manager_mod::send_data_3d', err_msg_local, err_msg) ) RETURN
     END IF
+    if (use_modern_diag) then !> Set up array lengths for remapping
+      ie = SIZE(field,1)
+      je = SIZE(field,2)
+      ke = SIZE(field,3)
+      field_modern(1:ie,1:je,1:ke,1:1) => field
+    endif
     SELECT TYPE (field)
     TYPE IS (real(kind=r4_kind))
        field_out = field
@@ -1653,9 +1659,15 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
        field_out = real(field)
     CLASS DEFAULT
        CALL error_mesg ('diag_manager_mod::send_data_3d',&
-            & 'The field is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)
+            & 'The field is not one of the supported types (real(kind=4) or real(kind=8)). '//&
+            & 'If using an integer, please set use_modern_diag=.t. in the diag_manager_nml.', FATAL)
     END SELECT
-
+  ! Split old and modern2023 here
+  modern_if: iF (use_modern_diag) then
+    send_data_3d = fms_diag_object%fms_diag_accept_data(diag_field_id, field_modern, time, is_in, js_in, ks_in, &
+             & mask, rmask, ie_in, je_in, ke_in, weight, err_msg)
+    deallocate (field_modern)
+  elSE ! modern_if
     ! oor_mask is only used for checking out of range values.
     ALLOCATE(oor_mask(SIZE(field,1),SIZE(field,2),SIZE(field,3)), STAT=status)
     IF ( status .NE. 0 ) THEN
@@ -3248,6 +3260,7 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
 
     DEALLOCATE(field_out)
     DEALLOCATE(oor_mask)
+  endIF modern_if
   END FUNCTION send_data_3d
 
   !> @return true if send is successful
