@@ -52,17 +52,17 @@ if(present(avail)) lavail = .true.
 if(lavail) then
    if (count(avail) .eq. 0) return
    call monin_obukhov_drag_1d(real(grav, FMS_MO_KIND_), real(vonkarm, FMS_MO_KIND_),               &
-        & real(error, FMS_MO_KIND_), real(zeta_min, FMS_MO_KIND_), max_iter, real(small, FMS_MO_KIND_),                         &
+        & real(error, FMS_MO_KIND_), real(zeta_min, FMS_MO_KIND_), max_iter, real(small, FMS_MO_KIND_), &
         & neutral, stable_option, new_mo_option, real(rich_crit, FMS_MO_KIND_), real(zeta_trans, FMS_MO_KIND_), &!miz
-        & real(drag_min_heat, FMS_MO_KIND_), real(drag_min_moist, FMS_MO_KIND_), real(drag_min_mom, FMS_MO_KIND_),              &
+        & real(drag_min_heat, FMS_MO_KIND_), real(drag_min_moist, FMS_MO_KIND_), real(drag_min_mom, FMS_MO_KIND_),  &
         & n, real(pt, FMS_MO_KIND_), real(pt0, FMS_MO_KIND_), real(z, FMS_MO_KIND_), real(z0, FMS_MO_KIND_), &
         & real(zt, FMS_MO_KIND_), real(zq, FMS_MO_KIND_), real(speed, FMS_MO_KIND_), drag_m, drag_t,         &
         & drag_q, u_star, b_star, lavail, avail, ier)
 else
 call monin_obukhov_drag_1d(real(grav, FMS_MO_KIND_), real(vonkarm, FMS_MO_KIND_),               &
-        & real(error, FMS_MO_KIND_), real(zeta_min, FMS_MO_KIND_), max_iter, real(small, FMS_MO_KIND_),                         &
+        & real(error, FMS_MO_KIND_), real(zeta_min, FMS_MO_KIND_), max_iter, real(small, FMS_MO_KIND_),   &
         & neutral, stable_option, new_mo_option, real(rich_crit, FMS_MO_KIND_), real(zeta_trans, FMS_MO_KIND_), &!miz
-        & real(drag_min_heat, FMS_MO_KIND_), real(drag_min_moist, FMS_MO_KIND_), real(drag_min_mom, FMS_MO_KIND_),              &
+        & real(drag_min_heat, FMS_MO_KIND_), real(drag_min_moist, FMS_MO_KIND_), real(drag_min_mom, FMS_MO_KIND_),  &
         & n, real(pt, FMS_MO_KIND_), real(pt0, FMS_MO_KIND_), real(z, FMS_MO_KIND_), real(z0, FMS_MO_KIND_), &
         & real(zt, FMS_MO_KIND_), real(zq, FMS_MO_KIND_), real(speed, FMS_MO_KIND_), drag_m, drag_t,         &
         & drag_q, u_star, b_star, lavail, avail, ier)
