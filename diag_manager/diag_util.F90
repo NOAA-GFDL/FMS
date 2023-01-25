@@ -50,6 +50,9 @@ use,intrinsic :: iso_c_binding, only: c_double,c_float,c_int64_t, &
        & debug_diag_manager, flush_nc_files, output_field_type, max_field_attributes, max_file_attributes,&
        & file_type, prepend_date, region_out_use_alt_value, GLO_REG_VAL, GLO_REG_VAL_ALT,&
        & DIAG_FIELD_NOT_FOUND, diag_init_time
+       !! for modern diag
+       !time_unit_list, max_files, get_base_year, get_base_month, get_base_day, get_base_hour, get_base_minute,
+       !get_base_second,
   USE diag_data_mod, ONLY: fileobjU, fileobj, fnum_for_domain, fileobjND
   USE diag_axis_mod, ONLY: get_diag_axis_data, get_axis_global_length, get_diag_axis_cart,&
        & get_domain1d, get_domain2d, diag_subaxes_init, diag_axis_init, get_diag_axis, get_axis_aux,&
@@ -59,6 +62,8 @@ use,intrinsic :: iso_c_binding, only: c_double,c_float,c_int64_t, &
        & write_field_meta_data, done_meta_data, diag_flush
   USE diag_output_mod, ONLY: diag_field_write, diag_write_time !<fms2_io use_mpp_io=.false.
   USE diag_grid_mod, ONLY: get_local_indexes
+  !! for modern diag
+  !USE fms_diag_time_utils_mod, ONLY: diag_time_inc, get_time_string, get_date_dif
   USE fms_mod, ONLY: error_mesg, FATAL, WARNING, NOTE, mpp_pe, mpp_root_pe, lowercase, fms_error_handler,&
        & string, write_version_number
   USE mpp_domains_mod,ONLY: domain1d, domain2d, mpp_get_compute_domain, null_domain1d, null_domain2d,&
@@ -68,7 +73,7 @@ use,intrinsic :: iso_c_binding, only: c_double,c_float,c_int64_t, &
   USE time_manager_mod,ONLY: time_type, OPERATOR(==), OPERATOR(>), NO_CALENDAR, increment_date,&
        & increment_time, get_calendar_type, get_date, get_time, leap_year, OPERATOR(-),&
        & OPERATOR(<), OPERATOR(>=), OPERATOR(<=), OPERATOR(==)
-  USE mpp_mod, ONLY: mpp_npes
+  USE mpp_mod, ONLY: mpp_npes, mpp_error
   USE constants_mod, ONLY: SECONDS_PER_DAY, SECONDS_PER_HOUR, SECONDS_PER_MINUTE
   USE fms2_io_mod
 #ifdef use_netCDF
@@ -105,6 +110,9 @@ use,intrinsic :: iso_c_binding, only: c_double,c_float,c_int64_t, &
 #include <file_version.h>
 
   LOGICAL :: module_initialized = .FALSE.
+
+  character(len=1), public :: field_log_separator = '|' !< separator used for csv-style log of registered fields
+                                                !! set by nml in diag_manager init
 
 
 CONTAINS
@@ -621,114 +629,113 @@ CONTAINS
   !!     code uses a do_not_log parameter in the registration calls,
   !!     and subsequently calls this subroutine to log field information
   !!     under a generic name.
-  SUBROUTINE log_diag_field_info(module_name, field_name, axes, long_name, units,&
-       & missing_value, range, dynamic)
+  SUBROUTINE log_diag_field_info(module_name, field_name, axes, axes_list, long_name, units,&
+                              & missing_value, range, dynamic )
     CHARACTER(len=*), INTENT(in) :: module_name !< Module name
     CHARACTER(len=*), INTENT(in) :: field_name !< Field name
     INTEGER, DIMENSION(:), INTENT(in) :: axes !< Axis IDs
+    CHARACTER(len=*), INTENT(in) :: axes_list !< Comma seperated list of axes names 
     CHARACTER(len=*), OPTIONAL, INTENT(in) :: long_name !< Long name for field.
     CHARACTER(len=*), OPTIONAL, INTENT(in) :: units !< Unit of field.
     CLASS(*), OPTIONAL, INTENT(in) :: missing_value !< Missing value value.
     CLASS(*), DIMENSION(:), OPTIONAL, INTENT(IN) :: range !< Valid range of values for field.
     LOGICAL, OPTIONAL, INTENT(in) :: dynamic !< <TT>.TRUE.</TT> if field is not static.
 
+    logical, save :: wrote_header = .false. !< set if header was already written
+
     ! ---- local vars
     CHARACTER(len=256) :: lmodule, lfield, lname, lunits
     CHARACTER(len=64)  :: lmissval, lmin, lmax
     CHARACTER(len=8)   :: numaxis, timeaxis
-    CHARACTER(len=1)   :: sep = '|'
-    CHARACTER(len=256) :: axis_name, axes_list
     INTEGER :: i
     REAL :: missing_value_use !< Local copy of missing_value
     REAL, DIMENSION(2) :: range_use !< Local copy of range
-
-    IF ( .NOT.do_diag_field_log ) RETURN
     IF ( mpp_pe().NE.mpp_root_pe() ) RETURN
 
     ! Fatal error if range is present and its extent is not 2.
     IF ( PRESENT(range) ) THEN
-       IF ( SIZE(range) .NE. 2 ) THEN
-          ! <ERROR STATUS="FATAL">extent of range should be 2</ERROR>
-          CALL error_mesg ('diag_util_mod::log_diag_field_info', 'extent of range should be 2', FATAL)
-       END IF
+      IF ( SIZE(range) .NE. 2 ) THEN
+        CALL mpp_error (FATAL, 'diag_util_mod::fms_log_field_info: extent of range should be 2')
+      END IF
     END IF
 
     lmodule = TRIM(module_name)
     lfield = TRIM(field_name)
 
     IF ( PRESENT(long_name) ) THEN
-       lname  = TRIM(long_name)
+      lname  = TRIM(long_name)
     ELSE
-       lname  = ''
+      lname  = ''
     END IF
 
     IF ( PRESENT(units) ) THEN
-       lunits = TRIM(units)
+      lunits = TRIM(units)
     ELSE
-       lunits = ''
+      lunits = ''
     END IF
 
     WRITE (numaxis,'(i1)') SIZE(axes)
 
     IF (PRESENT(missing_value)) THEN
-       IF ( use_cmor ) THEN
-          WRITE (lmissval,*) CMOR_MISSING_VALUE
-       ELSE
-          SELECT TYPE (missing_value)
+      IF ( use_cmor ) THEN
+        WRITE (lmissval,*) CMOR_MISSING_VALUE
+      ELSE
+        SELECT TYPE (missing_value)
           TYPE IS (real(kind=r4_kind))
-             missing_value_use = missing_value
+            missing_value_use = missing_value
           TYPE IS (real(kind=r8_kind))
-             missing_value_use = real(missing_value)
+            missing_value_use = real(missing_value)
           CLASS DEFAULT
-             CALL error_mesg ('diag_util_mod::log_diag_field_info',&
-                  & 'The missing_value is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)
-          END SELECT
-          WRITE (lmissval,*) missing_value_use
-       END IF
+            CALL mpp_error( FATAL,'diag_util_mod::log_diag_field_info: The missing_value is not one of the supported'//&
+                          & ' types of real(kind=4) or real(kind=8)')
+        END SELECT
+        WRITE (lmissval,*) missing_value_use
+      END IF
     ELSE
-       lmissval = ''
+      lmissval = ''
     ENDIF
 
     IF ( PRESENT(range) ) THEN
-       SELECT TYPE (range)
-       TYPE IS (real(kind=r4_kind))
+      SELECT TYPE (range)
+      TYPE IS (real(kind=r4_kind))
           range_use = range
-       TYPE IS (real(kind=r8_kind))
+      TYPE IS (real(kind=r8_kind))
           range_use = real(range)
-       CLASS DEFAULT
-          CALL error_mesg ('diag_util_mod::log_diag_field_info',&
-               & 'The range is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)
-       END SELECT
-       WRITE (lmin,*) range_use(1)
-       WRITE (lmax,*) range_use(2)
+      CLASS DEFAULT
+          CALL mpp_error('diag_util_mod::log_diag_field_info',&
+              & 'The range is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)
+      END SELECT
+      WRITE (lmin,*) range_use(1)
+      WRITE (lmax,*) range_use(2)
     ELSE
-       lmin = ''
-       lmax = ''
+      lmin = ''
+      lmax = ''
     END IF
 
     IF ( PRESENT(dynamic) ) THEN
-       IF (dynamic) THEN
+      IF (dynamic) THEN
           timeaxis = 'T'
-       ELSE
+      ELSE
           timeaxis = 'F'
-       END IF
+      END IF
     ELSE
-       timeaxis = ''
+      timeaxis = ''
     END IF
 
-    axes_list=''
-    DO i = 1, SIZE(axes)
-       CALL get_diag_axis_name(axes(i),axis_name)
-       IF ( TRIM(axes_list) /= '' ) axes_list = TRIM(axes_list)//','
-       axes_list = TRIM(axes_list)//TRIM(axis_name)
-    END DO
+    if ( .not. wrote_header ) then
+      WRITE (diag_log_unit,'(777a)') &
+          & 'Module',       field_log_separator,'Field',         field_log_separator,'Long Name', field_log_separator,&
+          & 'Units',        field_log_separator,'Number of Axis',field_log_separator,'Time Axis', field_log_separator,&
+          & 'Missing Value',field_log_separator,'Min Value',     field_log_separator,'Max Value', field_log_separator,&
+          & 'AXES LIST'
+      wrote_header = .true.
+    endif
 
-    !write (diag_log_unit,'(8(a,a),a)') &
     WRITE (diag_log_unit,'(777a)') &
-         & TRIM(lmodule),  sep, TRIM(lfield),  sep, TRIM(lname),    sep,&
-         & TRIM(lunits),   sep, TRIM(numaxis), sep, TRIM(timeaxis), sep,&
-         & TRIM(lmissval), sep, TRIM(lmin),    sep, TRIM(lmax),     sep,&
-         & TRIM(axes_list)
+        & TRIM(lmodule),  field_log_separator, TRIM(lfield),  field_log_separator, TRIM(lname),    field_log_separator,&
+        & TRIM(lunits),   field_log_separator, TRIM(numaxis), field_log_separator, TRIM(timeaxis), field_log_separator,&
+        & TRIM(lmissval), field_log_separator, TRIM(lmin),    field_log_separator, TRIM(lmax),     field_log_separator,&
+        & TRIM(axes_list)
   END SUBROUTINE log_diag_field_info
 
   !> @brief Update the <TT>output_fields</TT> x, y, and z min and max boundaries (array indices).

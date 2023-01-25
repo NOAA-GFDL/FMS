@@ -201,9 +201,6 @@ use platform_mod
   !     The values are defined as <TT>GLO_REG_VAL</TT> (-999) and <TT>GLO_REG_VAL_ALT</TT>
   !     (-1) in <TT>diag_data_mod</TT>.
   !   </DATA>
-  !   <DATA NAME="use_mpp_io" TYPE="LOGICAL" DEFAULT=".false.">
-  !    Set to true, diag_manager uses mpp_io.  Default is fms2_io.
-  !   </DATA>
   ! </NAMELIST>
 
   USE time_manager_mod, ONLY: set_time, set_date, get_time, time_type, OPERATOR(>=), OPERATOR(>),&
@@ -211,17 +208,17 @@ use platform_mod
        & get_ticks_per_second
   USE mpp_mod, ONLY: mpp_get_current_pelist, mpp_pe, mpp_npes, mpp_root_pe, mpp_sum
 
-  USE mpp_mod, ONLY: input_nml_file
+  USE mpp_mod, ONLY: input_nml_file, mpp_error
 
   USE fms_mod, ONLY: error_mesg, FATAL, WARNING, NOTE, stdout, stdlog, write_version_number,&
        & fms_error_handler, check_nml_error, lowercase
   USE diag_axis_mod, ONLY: diag_axis_init, get_axis_length, get_axis_num, get_domain2d, get_tile_count,&
-       & diag_axis_add_attribute, axis_compatible_check, CENTER, NORTH, EAST
+       & diag_axis_add_attribute, axis_compatible_check, CENTER, NORTH, EAST, get_diag_axis_name
   USE diag_util_mod, ONLY: get_subfield_size, log_diag_field_info, update_bounds,&
        & check_out_of_bounds, check_bounds_are_exact_dynamic, check_bounds_are_exact_static,&
        & diag_time_inc, find_input_field, init_input_field, init_output_field,&
        & diag_data_out, write_static, get_date_dif, get_subfield_vert_size, sync_file_times,&
-       & prepend_attribute, attribute_init, diag_util_init
+       & prepend_attribute, attribute_init, diag_util_init, field_log_separator
   USE diag_data_mod, ONLY: max_files, CMOR_MISSING_VALUE, DIAG_OTHER, DIAG_OCEAN, DIAG_ALL, EVERY_TIME,&
        & END_OF_RUN, DIAG_SECONDS, DIAG_MINUTES, DIAG_HOURS, DIAG_DAYS, DIAG_MONTHS, DIAG_YEARS, num_files,&
        & max_input_fields, max_output_fields, num_output_fields, EMPTY, FILL_VALUE, null_axis_id,&
@@ -378,17 +375,19 @@ CONTAINS
   INTEGER FUNCTION register_diag_field_scalar(module_name, field_name, init_time, &
        & long_name, units, missing_value, range, standard_name, do_not_log, err_msg,&
        & area, volume, realm)
-    CHARACTER(len=*), INTENT(in) :: module_name, field_name
-    TYPE(time_type), OPTIONAL, INTENT(in) :: init_time
-    CHARACTER(len=*), OPTIONAL, INTENT(in) :: long_name, units, standard_name
-    CLASS(*), OPTIONAL, INTENT(in) :: missing_value
-    CLASS(*), DIMENSION(:), OPTIONAL, INTENT(in) :: range
-    LOGICAL, OPTIONAL, INTENT(in) :: do_not_log !< if TRUE, field information is not logged
-    CHARACTER(len=*), OPTIONAL, INTENT(out):: err_msg
-    INTEGER, OPTIONAL, INTENT(in) :: area, volume
-    CHARACTER(len=*), OPTIONAL, INTENT(in):: realm !< String to set as the value to the modeling_realm attribute
-
-    IF ( PRESENT(err_msg) ) err_msg = ''
+    CHARACTER(len=*),           INTENT(in) :: module_name   !< Module where the field comes from
+    CHARACTER(len=*),           INTENT(in) :: field_name    !< Name of the field
+    TYPE(time_type),  OPTIONAL, INTENT(in) :: init_time     !< Time to start writing data from
+    CHARACTER(len=*), OPTIONAL, INTENT(in) :: long_name     !< Long_name to add as a variable attribute
+    CHARACTER(len=*), OPTIONAL, INTENT(in) :: units         !< Units to add as a variable_attribute
+    CHARACTER(len=*), OPTIONAL, INTENT(in) :: standard_name !< Standard_name to name the variable in the file
+    CLASS(*),         OPTIONAL, INTENT(in) :: missing_value !< Missing value to add as a variable attribute
+    CLASS(*),         OPTIONAL, INTENT(in) :: range(:)      !< Range to add a variable attribute
+    LOGICAL,          OPTIONAL, INTENT(in) :: do_not_log    !< If TRUE, field information is not logged
+    CHARACTER(len=*), OPTIONAL, INTENT(out):: err_msg       !< Error_msg from call
+    INTEGER,          OPTIONAL, INTENT(in) :: area          !< Id of the area field
+    INTEGER,          OPTIONAL, INTENT(in) :: volume        !< Id of the volume field
+    CHARACTER(len=*), OPTIONAL, INTENT(in) :: realm         !< String to set as the modeling_realm attribute
 
     ! Fatal error if range is present and its extent is not 2.
     IF ( PRESENT(range) ) THEN
@@ -415,23 +414,27 @@ CONTAINS
   INTEGER FUNCTION register_diag_field_array(module_name, field_name, axes, init_time, &
        & long_name, units, missing_value, range, mask_variant, standard_name, verbose,&
        & do_not_log, err_msg, interp_method, tile_count, area, volume, realm)
-    CHARACTER(len=*), INTENT(in) :: module_name, field_name
-    INTEGER, INTENT(in) :: axes(:)
-    TYPE(time_type), INTENT(in) :: init_time
-    CHARACTER(len=*), OPTIONAL, INTENT(in) :: long_name, units, standard_name
-    CLASS(*), OPTIONAL, INTENT(in) :: missing_value
-    CLASS(*), DIMENSION(:), OPTIONAL, INTENT(in) :: range
-    LOGICAL, OPTIONAL, INTENT(in) :: mask_variant,verbose
-    LOGICAL, OPTIONAL, INTENT(in) :: do_not_log !< if TRUE, field info is not logged
-    CHARACTER(len=*), OPTIONAL, INTENT(out):: err_msg
+    CHARACTER(len=*),           INTENT(in) :: module_name   !< Module where the field comes from
+    CHARACTER(len=*),           INTENT(in) :: field_name    !< Name of the field
+    INTEGER,                    INTENT(in) :: axes(:)       !< Ids corresponding to the variable axis
+    TYPE(time_type),  OPTIONAL, INTENT(in) :: init_time     !< Time to start writing data from
+    CHARACTER(len=*), OPTIONAL, INTENT(in) :: long_name     !< Long_name to add as a variable attribute
+    CHARACTER(len=*), OPTIONAL, INTENT(in) :: units         !< Units to add as a variable_attribute
+    CLASS(*),         OPTIONAL, INTENT(in) :: missing_value !< Missing value to add as a variable attribute
+    CLASS(*),         OPTIONAL, INTENT(in) :: range(:)      !< Range to add a variable attribute
+    LOGICAL,          OPTIONAL, INTENT(in) :: mask_variant  !< Mask variant
+    CHARACTER(len=*), OPTIONAL, INTENT(in) :: standard_name !< Standard_name to name the variable in the file
+    LOGICAL,          OPTIONAL, INTENT(in) :: verbose       !< Print more information
+    LOGICAL,          OPTIONAL, INTENT(in) :: do_not_log    !< If TRUE, field information is not logged
+    CHARACTER(len=*), OPTIONAL, INTENT(out):: err_msg       !< Error_msg from call
     CHARACTER(len=*), OPTIONAL, INTENT(in) :: interp_method !< The interp method to be used when
                                                             !! regridding the field in post-processing.
                                                             !! Valid options are "conserve_order1",
                                                             !! "conserve_order2", and "none".
-    INTEGER, OPTIONAL, INTENT(in) :: tile_count
-    INTEGER, OPTIONAL, INTENT(in) :: area !< diag_field_id containing the cell area field
-    INTEGER, OPTIONAL, INTENT(in) :: volume !< diag_field_id containing the cell volume field
-    CHARACTER(len=*), OPTIONAL, INTENT(in):: realm !< String to set as the value to the modeling_realm attribute
+    INTEGER,          OPTIONAL, INTENT(in) :: tile_count    !< The current tile number
+    INTEGER,          OPTIONAL, INTENT(in) :: area          !< Id of the area field
+    INTEGER,          OPTIONAL, INTENT(in) :: volume        !< Id of the volume field
+    CHARACTER(len=*), OPTIONAL, INTENT(in) :: realm         !< String to set as the modeling_realm attribute
 
     INTEGER :: field, j, ind, file_num, freq
     INTEGER :: output_units
@@ -634,12 +637,13 @@ CONTAINS
     INTEGER :: tile, file_num
     LOGICAL :: mask_variant1, dynamic1, allow_log
     CHARACTER(len=128) :: msg
-    INTEGER :: domain_type
+    INTEGER :: domain_type, i
+    character(len=256) :: axes_list, axis_name
 
     ! Fatal error if the module has not been initialized.
     IF ( .NOT.module_is_initialized ) THEN
        ! <ERROR STATUS="FATAL">diag_manager has NOT been initialized</ERROR>
-       CALL error_mesg ('diag_manager_mod::register_static_field', 'diag_manager has NOT been initialized', FATAL)
+       CALL mpp_error(FATAL, 'diag_manager_mod::register_static_field_old. diag_manager has NOT been initialized')
     END IF
 
     ! Check if OPTIONAL parameters were passed in.
@@ -653,8 +657,8 @@ CONTAINS
           TYPE IS (real(kind=r8_kind))
              missing_value_use = real(missing_value)
           CLASS DEFAULT
-             CALL error_mesg ('diag_manager_mod::register_static_field',&
-                  & 'The missing_value is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)
+             CALL mpp_error (FATAL, 'diag_manager_mod::register_static_field. The missing_value is not one of '// &
+                                    'the supported types of real(kind=4) or real(kind=8)', FATAL)
           END SELECT
        END IF
     END IF
@@ -691,12 +695,16 @@ CONTAINS
        END IF
     END IF
 
-    ! Namelist do_diag_field_log is by default false.  Thus to log the
-    ! registration of the data field, but the OPTIONAL parameter
-    ! do_not_log == .FALSE. and the namelist variable
-    ! do_diag_field_log == .TRUE..
+    ! only writes log if do_diag_field_log is true in the namelist (default false)
+    ! if do_diag_field_log is true and do_not_log arg is present as well, it will only print if do_not_log = false
     IF ( do_diag_field_log.AND.allow_log ) THEN
-       CALL log_diag_field_info (module_name, field_name, axes, &
+        axes_list=''
+        DO i = 1, SIZE(axes)
+            CALL get_diag_axis_name(axes(i),axis_name)
+            IF ( TRIM(axes_list) /= '' ) axes_list = TRIM(axes_list)//','
+            axes_list = TRIM(axes_list)//TRIM(axis_name)
+        END DO
+        CALL log_diag_field_info (module_name, field_name, axes, axes_list, &
             & long_name, units, missing_value=missing_value, range=range, &
             & DYNAMIC=dynamic1)
     END IF
@@ -1094,9 +1102,9 @@ CONTAINS
     CHARACTER(len=*), INTENT(in) :: module_name !< Module name that registered the variable
     CHARACTER(len=*), INTENT(in) :: field_name !< Variable name
 
-    ! find_input_field will return DIAG_FIELD_NOT_FOUND if the field is not
-    ! included in the diag_table
-    get_diag_field_id = find_input_field(module_name, field_name, tile_count=1)
+      ! find_input_field will return DIAG_FIELD_NOT_FOUND if the field is not
+      ! included in the diag_table
+      get_diag_field_id = find_input_field(module_name, field_name, tile_count=1)
   END FUNCTION get_diag_field_id
 
   !> @brief Finds the corresponding related output field and file for a given input field
@@ -3645,7 +3653,6 @@ CONTAINS
     INTEGER, DIMENSION(6), OPTIONAL, INTENT(IN) :: time_init !< Model time diag_manager initialized
     CHARACTER(len=*), INTENT(out), OPTIONAL :: err_msg
 
-    CHARACTER(len=*), PARAMETER :: SEP = '|'
 
     INTEGER, PARAMETER :: FltKind = R4_KIND
     INTEGER, PARAMETER :: DblKind = R8_KIND
@@ -3660,7 +3667,7 @@ CONTAINS
          & max_input_fields, max_axes, do_diag_field_log, write_bytes_in_file, debug_diag_manager,&
          & max_num_axis_sets, max_files, use_cmor, issue_oor_warnings,&
          & oor_warnings_fatal, max_out_per_in_field, flush_nc_files, region_out_use_alt_value, max_field_attributes,&
-         & max_file_attributes, max_axis_attributes, prepend_date, use_mpp_io
+         & max_file_attributes, max_axis_attributes, prepend_date, field_log_separator
 
     ! If the module was already initialized do nothing
     IF ( module_is_initialized ) RETURN
@@ -3751,12 +3758,12 @@ CONTAINS
     END DO
     ALLOCATE(files(max_files))
     if (.not.use_mpp_io) then
-      ALLOCATE(fileobjU(max_files))
-      ALLOCATE(fileobj(max_files))
-      ALLOCATE(fileobjND(max_files))
-      ALLOCATE(fnum_for_domain(max_files))
+    ALLOCATE(fileobjU(max_files))
+    ALLOCATE(fileobj(max_files))
+    ALLOCATE(fileobjND(max_files))
+    ALLOCATE(fnum_for_domain(max_files))
     !> Initialize fnum_for_domain with "dn" which stands for done
-      fnum_for_domain(:) = "dn"
+    fnum_for_domain(:) = "dn"
        CALL error_mesg('diag_manager_mod::diag_manager_init',&
                & 'diag_manager is using fms2_io', NOTE)
     else
@@ -3780,23 +3787,18 @@ CONTAINS
        END IF
     END IF
 
-    CALL parse_diag_table(DIAG_SUBSET=diag_subset_output, ISTAT=mystat, ERR_MSG=err_msg_local)
-    IF ( mystat /= 0 ) THEN
+     CALL parse_diag_table(DIAG_SUBSET=diag_subset_output, ISTAT=mystat, ERR_MSG=err_msg_local)
+     IF ( mystat /= 0 ) THEN
        IF ( fms_error_handler('diag_manager_mod::diag_manager_init',&
             & 'Error parsing diag_table. '//TRIM(err_msg_local), err_msg) ) RETURN
-    END IF
+     END IF
 
     !initialize files%bytes_written to zero
     files(:)%bytes_written = 0
 
     ! open diag field log file
     IF ( do_diag_field_log.AND.mpp_pe().EQ.mpp_root_pe() ) THEN
-       open(newunit=diag_log_unit, file='diag_field_log.out', action='WRITE')
-       WRITE (diag_log_unit,'(777a)') &
-            & 'Module',        SEP, 'Field',          SEP, 'Long Name',    SEP,&
-            & 'Units',         SEP, 'Number of Axis', SEP, 'Time Axis',    SEP,&
-            & 'Missing Value', SEP, 'Min Value',      SEP, 'Max Value',    SEP,&
-            & 'AXES LIST'
+      open(newunit=diag_log_unit, file='diag_field_log.out', action='WRITE')
     END IF
 
     module_is_initialized = .TRUE.
@@ -4078,7 +4080,7 @@ CONTAINS
     CHARACTER(len=*), INTENT(in) :: att_name !< new attribute name
     REAL, INTENT(in) :: att_value !< new attribute value
 
-    CALL diag_field_add_attribute_r1d(diag_field_id, att_name, (/ att_value /))
+      CALL diag_field_add_attribute_r1d(diag_field_id, att_name, (/ att_value /))
   END SUBROUTINE diag_field_add_attribute_scalar_r
 
   !> @brief Add a scalar integer attribute to the diag field corresponding to a given id
@@ -4087,7 +4089,7 @@ CONTAINS
     CHARACTER(len=*), INTENT(in) :: att_name !< new attribute name
     INTEGER, INTENT(in) :: att_value !< new attribute value
 
-    CALL diag_field_add_attribute_i1d(diag_field_id, att_name, (/ att_value /))
+      CALL diag_field_add_attribute_i1d(diag_field_id, att_name, (/ att_value /))
   END SUBROUTINE diag_field_add_attribute_scalar_i
 
   !> @brief Add a scalar character attribute to the diag field corresponding to a given id
@@ -4096,7 +4098,7 @@ CONTAINS
     CHARACTER(len=*), INTENT(in) :: att_name !< new attribute name
     CHARACTER(len=*), INTENT(in) :: att_value !< new attribute value
 
-    CALL diag_field_attribute_init(diag_field_id, att_name, NF90_CHAR, cval=att_value)
+      CALL diag_field_attribute_init(diag_field_id, att_name, NF90_CHAR, cval=att_value)
   END SUBROUTINE diag_field_add_attribute_scalar_c
 
   !> @brief Add a real 1D array attribute to the diag field corresponding to a given id
@@ -4105,7 +4107,7 @@ CONTAINS
     CHARACTER(len=*), INTENT(in) :: att_name !< new attribute name
     REAL, DIMENSION(:), INTENT(in) :: att_value !< new attribute value
 
-    CALL diag_field_attribute_init(diag_field_id, att_name, NF90_FLOAT, rval=att_value)
+      CALL diag_field_attribute_init(diag_field_id, att_name, NF90_FLOAT, rval=att_value)
   END SUBROUTINE diag_field_add_attribute_r1d
 
   !> @brief Add an integer 1D array attribute to the diag field corresponding to a given id
@@ -4114,7 +4116,7 @@ CONTAINS
     CHARACTER(len=*), INTENT(in) :: att_name !< new attribute name
     INTEGER, DIMENSION(:), INTENT(in) :: att_value !< new attribute value
 
-    CALL diag_field_attribute_init(diag_field_id, att_name, NF90_INT, ival=att_value)
+      CALL diag_field_attribute_init(diag_field_id, att_name, NF90_INT, ival=att_value)
   END SUBROUTINE diag_field_add_attribute_i1d
 
   !> @brief Add the cell_measures attribute to a diag out field
