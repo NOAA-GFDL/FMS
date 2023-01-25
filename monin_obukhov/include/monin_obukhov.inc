@@ -199,12 +199,12 @@ real(kind=FMS_MO_KIND_), dimension(size(rich(:)))  ::   &
 logical, dimension(size(rich(:)))                  :: mask_1
 integer, parameter                                 :: lkind = FMS_MO_KIND_
 
-z_z0    = real(z/z0,      FMS_MO_KIND_)
-z_zt    = real(z/zt,      FMS_MO_KIND_)
-z_zq    = real(z/zq,      FMS_MO_KIND_)
-ln_z_z0 = real(log(z_z0), FMS_MO_KIND_)
-ln_z_zt = real(log(z_zt), FMS_MO_KIND_)
-ln_z_zq = real(log(z_zq), FMS_MO_KIND_)
+z_z0    = z/z0
+z_zt    = z/zt
+z_zq    = z/zq
+ln_z_z0 = log(z_z0)
+ln_z_zt = log(z_zt)
+ln_z_zq = log(z_zq)
 
 corr = 0.0_lkind
 mask_1 = mask
@@ -212,7 +212,7 @@ mask_1 = mask
 ! initial guess
 
 where(mask_1)
-  zeta = real(rich*ln_z_z0*ln_z_z0/ln_z_zt, FMS_MO_KIND_)
+  zeta = rich*ln_z_z0*ln_z_z0/ln_z_zt
 elsewhere
   zeta = 0.0_lkind
 end where
@@ -225,17 +225,17 @@ iter_loop: do iter = 1, max_iter
 
   where (mask_1 .and. abs(zeta).lt.zeta_min)
     zeta   = 0.0_lkind
-    f_m    = real(ln_z_z0, FMS_MO_KIND_)
-    f_t    = real(ln_z_zt, FMS_MO_KIND_)
-    f_q    = real(ln_z_zq, FMS_MO_KIND_)
+    f_m    = ln_z_z0
+    f_t    = ln_z_zt
+    f_q    = ln_z_zq
     mask_1 = .false.  ! don't do any more calculations at these pts
   end where
 
   where (mask_1)
-    rzeta  = real(1.0_lkind/zeta, FMS_MO_KIND_)
-    zeta_0 = real(zeta/z_z0,      FMS_MO_KIND_)
-    zeta_t = real(zeta/z_zt,      FMS_MO_KIND_)
-    zeta_q = real(zeta/z_zq,      FMS_MO_KIND_)
+    rzeta  = 1.0_lkind/zeta
+    zeta_0 = zeta/z_z0
+    zeta_t = zeta/z_zt
+    zeta_q = zeta/z_zq
   elsewhere
     zeta_0 = 0.0_lkind
     zeta_t = 0.0_lkind
@@ -251,23 +251,23 @@ iter_loop: do iter = 1, max_iter
   call mo_integral(f_t, f_q, zeta, zeta_t, zeta_q, ln_z_zt, ln_z_zq, mask_1)
 
   where (mask_1)
-    df_m       = real((phi_m - phi_m_0)*rzeta,                           FMS_MO_KIND_)
-    df_t       = real((phi_t - phi_t_0)*rzeta,                           FMS_MO_KIND_)
-    rich_1     = real(zeta*f_t/(f_m*f_m),                                FMS_MO_KIND_)
-    d_rich     = real(rich_1*( rzeta +  df_t/f_t - 2.0_lkind *df_m/f_m), FMS_MO_KIND_)
-    correction = real((rich - rich_1)/d_rich,                            FMS_MO_KIND_)
-    corr       = real(min(abs(correction),abs(correction/zeta)),         FMS_MO_KIND_)
+    df_m       = (phi_m - phi_m_0)*rzeta
+    df_t       = (phi_t - phi_t_0)*rzeta
+    rich_1     = zeta*f_t/(f_m*f_m)
+    d_rich     = rich_1*( rzeta +  df_t/f_t - 2.0_lkind *df_m/f_m)
+    correction = (rich - rich_1)/d_rich
+    corr       = min(abs(correction),abs(correction/zeta))
       ! the criterion corr < error seems to work ok, but is a bit arbitrary
       !  when zeta is small the tolerance is reduced
   end where
 
-  max_cor = real(maxval(corr), FMS_MO_KIND_)
+  max_cor = maxval(corr)
 
   if(max_cor > error) then
     mask_1 = mask_1 .and. (corr > error)
        ! change the mask so computation proceeds only on non-converged points
     where(mask_1)
-      zeta = real(zeta + correction, FMS_MO_KIND_)
+      zeta = zeta + correction
     end where
     cycle iter_loop
   else
@@ -299,8 +299,8 @@ stable   = mask .and. zeta >= 0.0_lkind
 unstable = mask .and. zeta <  0.0_lkind
 
 where (unstable)
-  x     = real((1 - 16.0_lkind*zeta  )**(-0.5_lkind), FMS_MO_KIND_)
-  phi_m = real(sqrt(x),                               FMS_MO_KIND_)  ! phi_m = (1 - 16.0*zeta)**(-0.25)
+  x     = (1 - 16.0_lkind*zeta  )**(-0.5_lkind)
+  phi_m = sqrt(x)  ! phi_m = (1 - 16.0*zeta)**(-0.25)
 end where
 
 if(stable_option == 1) then
@@ -312,7 +312,7 @@ if(stable_option == 1) then
 else if(stable_option == 2) then
 
   where (stable .and. zeta < zeta_trans)
-    phi_m = real(1 + 5.0_lkind*zeta, FMS_MO_KIND_)
+    phi_m = 1 + 5.0_lkind*zeta
   end where
   where (stable .and. zeta >= zeta_trans)
     phi_m = real(real(lambda, r8_kind) + real(b_stab, r8_kind)*zeta, FMS_MO_KIND_)
@@ -340,7 +340,7 @@ stable   = mask .and. zeta >= 0.0_lkind
 unstable = mask .and. zeta <  0.0_lkind
 
 where (unstable)
-  phi_t = real((1 - 16.0_lkind*zeta)**(-0.5_lkind), FMS_MO_KIND_)
+  phi_t = (1 - 16.0_lkind*zeta)**(-0.5_lkind)
 end where
 
 if(stable_option == 1) then
@@ -352,7 +352,7 @@ if(stable_option == 1) then
 else if(stable_option == 2) then
 
   where (stable .and. zeta < zeta_trans)
-    phi_t = real(1 + 5.0_lkind*zeta, FMS_MO_KIND_)
+    phi_t = 1 + 5.0_lkind*zeta
   end where
   where (stable .and. zeta >= zeta_trans)
     phi_t = real(real(lambda, r8_kind) + real(b_stab, r8_kind)*zeta, FMS_MO_KIND_)
@@ -385,12 +385,12 @@ unstable = mask .and. zeta <  0.0_lkind
 
 where(unstable)
 
-  x     = real(sqrt(1 - 16.0_lkind*zeta),                                    FMS_MO_KIND_)
-  x_t   = real(sqrt(1 - 16.0_lkind*zeta_t),                                  FMS_MO_KIND_)
-  x_q   = real(sqrt(1 - 16.0_lkind*zeta_q),                                  FMS_MO_KIND_)
+  x     = sqrt(1 - 16.0_lkind*zeta)
+  x_t   = sqrt(1 - 16.0_lkind*zeta_t)
+  x_q   = sqrt(1 - 16.0_lkind*zeta_q)
 
-  psi_t = real(ln_z_zt - 2.0_lkind*log( (1.0_lkind + x)/(1.0_lkind + x_t) ), FMS_MO_KIND_)
-  psi_q = real(ln_z_zq - 2.0_lkind*log( (1.0_lkind + x)/(1.0_lkind + x_q) ), FMS_MO_KIND_)
+  psi_t = ln_z_zt - 2.0_lkind*log( (1.0_lkind + x)/(1.0_lkind + x_t) )
+  psi_q = ln_z_zq - 2.0_lkind*log( (1.0_lkind + x)/(1.0_lkind + x_q) )
 
 end where
 
@@ -411,8 +411,8 @@ else if (stable_option == 2) then
   strongly_stable = stable .and. zeta >  zeta_trans
 
   where (weakly_stable)
-    psi_t = real(ln_z_zt + 5.0_lkind*(zeta - zeta_t), FMS_MO_KIND_)
-    psi_q = real(ln_z_zq + 5.0_lkind*(zeta - zeta_q), FMS_MO_KIND_)
+    psi_t = ln_z_zt + 5.0_lkind*(zeta - zeta_t)
+    psi_q = ln_z_zq + 5.0_lkind*(zeta - zeta_q)
   end where
 
   where(strongly_stable)
@@ -460,19 +460,19 @@ unstable = mask .and. zeta <  0.0_lkind
 
 where(unstable)
 
-  x      = real(sqrt(1 - 16.0_lkind*zeta),       FMS_MO_KIND_)
-  x_0    = real(sqrt(1 - 16.0_lkind*zeta_0),      FMS_MO_KIND_)
+  x      = sqrt(1 - 16.0_lkind*zeta)
+  x_0    = sqrt(1 - 16.0_lkind*zeta_0)
 
-  x      = real(sqrt(x),                         FMS_MO_KIND_)
-  x_0    = real(sqrt(x_0),                       FMS_MO_KIND_)
+  x      = sqrt(x)
+  x_0    = sqrt(x_0)
 
-  x1     = real(1.0_lkind + x,                   FMS_MO_KIND_)
-  x1_0   = real(1.0_lkind + x_0,                 FMS_MO_KIND_)
+  x1     = 1.0_lkind + x
+  x1_0   = 1.0_lkind + x_0
 
-  num    = real(x1*x1*(1.0_lkind + x*x),         FMS_MO_KIND_)
-  denom  = real(x1_0*x1_0*(1.0_lkind + x_0*x_0), FMS_MO_KIND_)
-  y      = real(atan(x) - atan(x_0),             FMS_MO_KIND_)
-  psi_m  = real(ln_z_z0 - log(num/denom) + 2*y,  FMS_MO_KIND_)
+  num    = x1*x1*(1.0_lkind + x*x)
+  denom  = x1_0*x1_0*(1.0_lkind + x_0*x_0)
+  y      = atan(x) - atan(x_0)
+  psi_m  = ln_z_z0 - log(num/denom) + 2*y
 
 end where
 
@@ -489,7 +489,7 @@ else if (stable_option == 2) then
   strongly_stable = stable .and. zeta >  zeta_trans
 
   where (weakly_stable)
-    psi_m = real(ln_z_z0 + 5.0_lkind*(zeta - zeta_0), FMS_MO_KIND_)
+    psi_m = ln_z_z0 + 5.0_lkind*(zeta - zeta_0)
   end where
 
   where(strongly_stable)
@@ -546,22 +546,22 @@ real(kind=FMS_MO_KIND_), intent(out)   :: drag_m, drag_t, drag_q, u_star, b_star
 real(kind=FMS_MO_KIND_), dimension(1)  :: pt_1, pt0_1, z_1, z0_1, zt_1, zq_1, speed_1, &
                       drag_m_1, drag_t_1, drag_q_1, u_star_1, b_star_1
 
-pt_1   (1) = real(pt,    FMS_MO_KIND_)
-pt0_1  (1) = real(pt0,   FMS_MO_KIND_)
-z_1    (1) = real(z,     FMS_MO_KIND_)
-z0_1   (1) = real(z0,    FMS_MO_KIND_)
-zt_1   (1) = real(zt,    FMS_MO_KIND_)
-zq_1   (1) = real(zq,    FMS_MO_KIND_)
-speed_1(1) = real(speed, FMS_MO_KIND_)
+pt_1   (1) = pt
+pt0_1  (1) = pt0
+z_1    (1) = z
+z0_1   (1) = z0
+zt_1   (1) = zt
+zq_1   (1) = zq
+speed_1(1) = speed
 
 call mo_drag (pt_1, pt0_1, z_1, z0_1, zt_1, zq_1, speed_1, &
                  drag_m_1, drag_t_1, drag_q_1, u_star_1, b_star_1)
 
-drag_m = real(drag_m_1(1), FMS_MO_KIND_)
-drag_t = real(drag_t_1(1), FMS_MO_KIND_)
-drag_q = real(drag_q_1(1), FMS_MO_KIND_)
-u_star = real(u_star_1(1), FMS_MO_KIND_)
-b_star = real(b_star_1(1), FMS_MO_KIND_)
+drag_m = drag_m_1(1)
+drag_t = drag_t_1(1)
+drag_q = drag_q_1(1)
+u_star = u_star_1(1)
+b_star = b_star_1(1)
 
 return
 end subroutine MO_DRAG_0D_
@@ -597,21 +597,21 @@ real(kind=FMS_MO_KIND_), intent(out) :: del_m, del_h, del_q
 real(kind=FMS_MO_KIND_), dimension(1) :: z_1, z0_1, zt_1, zq_1, u_star_1, b_star_1, q_star_1, &
                       del_m_1, del_h_1, del_q_1
 
-z_1     (1) = real(z,      FMS_MO_KIND_)
-z0_1    (1) = real(z0,     FMS_MO_KIND_)
-zt_1    (1) = real(zt,     FMS_MO_KIND_)
-zq_1    (1) = real(zq,     FMS_MO_KIND_)
-u_star_1(1) = real(u_star, FMS_MO_KIND_)
-b_star_1(1) = real(b_star, FMS_MO_KIND_)
-q_star_1(1) = real(q_star, FMS_MO_KIND_)
+z_1     (1) = z
+z0_1    (1) = z0
+zt_1    (1) = zt
+zq_1    (1) = zq
+u_star_1(1) = u_star
+b_star_1(1) = b_star
+q_star_1(1) = q_star
 
 call mo_profile (zref, zref_t, z_1, z0_1, zt_1, zq_1, &
                     u_star_1, b_star_1, q_star_1,        &
                     del_m_1, del_h_1, del_q_1)
 
-del_m = real(del_m_1(1), FMS_MO_KIND_)
-del_h = real(del_h_1(1), FMS_MO_KIND_)
-del_q = real(del_q_1(1), FMS_MO_KIND_)
+del_m = del_m_1(1)
+del_h = del_h_1(1)
+del_q = del_q_1(1)
 
 
 return
@@ -689,12 +689,12 @@ real(kind=FMS_MO_KIND_), intent(out), dimension(:,:)      :: k_m, k_h
 
 real(kind=FMS_MO_KIND_), dimension(size(z,1),size(z,2),1) :: z_n, k_m_n, k_h_n
 
-z_n(:,:,1) = real(z, FMS_MO_KIND_)
+z_n(:,:,1) = z
 
 call mo_diff(z_n, u_star, b_star, k_m_n, k_h_n)
 
-k_m = real(k_m_n(:,:,1), FMS_MO_KIND_)
-k_h = real(k_h_n(:,:,1), FMS_MO_KIND_)
+k_m = k_m_n(:,:,1)
+k_h = k_h_n(:,:,1)
 
 return
 end subroutine MO_DIFF_2D_1_
@@ -710,14 +710,14 @@ real(kind=FMS_MO_KIND_), intent(out), dimension(:) :: k_m, k_h
 real(kind=FMS_MO_KIND_), dimension(size(z),1,1)    :: z_n, k_m_n, k_h_n
 real(kind=FMS_MO_KIND_), dimension(size(z),1)      :: u_star_n, b_star_n
 
-z_n   (:,1,1) = real(z,      FMS_MO_KIND_)
-u_star_n(:,1) = real(u_star, FMS_MO_KIND_)
-b_star_n(:,1) = real(b_star, FMS_MO_KIND_)
+z_n   (:,1,1) = z
+u_star_n(:,1) = u_star
+b_star_n(:,1) = b_star
 
 call mo_diff(z_n, u_star_n, b_star_n, k_m_n, k_h_n)
 
-k_m = real(k_m_n(:,1,1), FMS_MO_KIND_)
-k_h = real(k_h_n(:,1,1), FMS_MO_KIND_)
+k_m = k_m_n(:,1,1)
+k_h = k_h_n(:,1,1)
 
 return
 end subroutine MO_DIFF_1D_1_
@@ -736,16 +736,16 @@ real(kind=FMS_MO_KIND_), dimension(size(z,1),1, size(z,2)) :: z2, k_m2, k_h2
 integer :: n
 
 do n = 1, size(z,2)
-  z2   (:,1,n) = real(z(:,n), FMS_MO_KIND_)
+  z2   (:,1,n) = z(:,n)
 enddo
-u_star2(:,1) = real(u_star,   FMS_MO_KIND_)
-b_star2(:,1) = real(b_star,   FMS_MO_KIND_)
+u_star2(:,1) = u_star
+b_star2(:,1) = b_star
 
 call mo_diff(z2, u_star2, b_star2, k_m2, k_h2)
 
 do n = 1, size(z,2)
-  k_m(:,n) = real(k_m2(:,1,n), FMS_MO_KIND_)
-  k_h(:,n) = real(k_h2(:,1,n), FMS_MO_KIND_)
+  k_m(:,n) = k_m2(:,1,n)
+  k_h(:,n) = k_h2(:,1,n)
 enddo
 
 return
@@ -767,15 +767,15 @@ if(.not.module_is_initialized) call error_mesg('mo_diff_0d_1 in monin_obukhov_mo
      'monin_obukhov_init has not been called', FATAL)
 
 ni = 1; nj = 1; nk = 1
-z_a(1,1,1)    = real(z,      FMS_MO_KIND_)
-u_star_a(1,1) = real(u_star, FMS_MO_KIND_)
-b_star_a(1,1) = real(b_star, FMS_MO_KIND_)
+z_a(1,1,1)    = z
+u_star_a(1,1) = u_star
+b_star_a(1,1) = b_star
 call monin_obukhov_diff(real(vonkarm, FMS_MO_KIND_),                       &
           & real(ustar_min, FMS_MO_KIND_),                                     &
           & neutral, stable_option, new_mo_option, real(rich_crit, FMS_MO_KIND_), real(zeta_trans, FMS_MO_KIND_), &!miz
           & ni, nj, nk, z_a, u_star_a, b_star_a, k_m_a, k_h_a, ier)
-k_m = real(k_m_a(1,1,1), FMS_MO_KIND_)
-k_h = real(k_h_a(1,1,1), FMS_MO_KIND_)
+k_m = k_m_a(1,1,1)
+k_h = k_h_a(1,1,1)
 
 end subroutine MO_DIFF_0D_1_
 
@@ -796,15 +796,15 @@ if(.not.module_is_initialized) call error_mesg('mo_diff_0d_n in monin_obukhov_mo
      'monin_obukhov_init has not been called', FATAL)
 
 ni = 1; nj = 1; nk = size(z(:))
-z_a(1,1,:)    = real(z(:),   FMS_MO_KIND_)
-u_star_a(1,1) = real(u_star, FMS_MO_KIND_)
-b_star_a(1,1) = real(b_star, FMS_MO_KIND_)
+z_a(1,1,:)    = z(:)
+u_star_a(1,1) = u_star
+b_star_a(1,1) = b_star
 call monin_obukhov_diff(real(vonkarm, FMS_MO_KIND_),                     &
           & real(ustar_min,FMS_MO_KIND_),                                  &
           & neutral, stable_option,new_mo_option, real(rich_crit, FMS_MO_KIND_), real(zeta_trans, FMS_MO_KIND_), &!miz
           & ni, nj, nk, z_a, u_star_a, b_star_a, k_m_a, k_h_a, ier)
-k_m(:) = real(k_m_a(1,1,:), FMS_MO_KIND_)
-k_h(:) = real(k_h_a(1,1,:), FMS_MO_KIND_)
+k_m(:) = k_m_a(1,1,:)
+k_h(:) = k_h_a(1,1,:)
 end subroutine MO_DIFF_0D_N_
 
 !=======================================================================
@@ -816,11 +816,11 @@ real(kind=FMS_MO_KIND_), intent(out), dimension(:,:)  :: mix
 
 real(kind=FMS_MO_KIND_), dimension(size(rich,1),size(rich,2),1) :: rich_3d, mix_3d
 
-rich_3d(:,:,1) = real(rich, FMS_MO_KIND_)
+rich_3d(:,:,1) = rich
 
 call stable_mix(rich_3d, mix_3d)
 
-mix = real(mix_3d(:,:,1), FMS_MO_KIND_)
+mix = mix_3d(:,:,1)
 
 return
 end subroutine STABLE_MIX_2D_
@@ -835,11 +835,11 @@ real(kind=FMS_MO_KIND_), intent(out), dimension(:)  :: mix
 
 real(kind=FMS_MO_KIND_), dimension(size(rich),1,1) :: rich_3d, mix_3d
 
-rich_3d(:,1,1) = real(rich, FMS_MO_KIND_)
+rich_3d(:,1,1) = rich
 
 call stable_mix(rich_3d, mix_3d)
 
-mix = real(mix_3d(:,1,1), FMS_MO_KIND_)
+mix = mix_3d(:,1,1)
 
 return
 end subroutine STABLE_MIX_1D_
@@ -853,11 +853,11 @@ real(kind=FMS_MO_KIND_), intent(out)      :: mix
 
 real(kind=FMS_MO_KIND_), dimension(1,1,1) :: rich_3d, mix_3d
 
-rich_3d(1,1,1) = real(rich, FMS_MO_KIND_)
+rich_3d(1,1,1) = rich
 
 call stable_mix(rich_3d, mix_3d)
 
-mix = real(mix_3d(1,1,1), FMS_MO_KIND_)
+mix = mix_3d(1,1,1)
 
 return
 end subroutine STABLE_MIX_0D_

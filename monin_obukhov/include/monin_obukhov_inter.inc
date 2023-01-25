@@ -52,20 +52,20 @@ pure subroutine MONIN_OBUKHOV_DIFF_(vonkarm,                &
 
   if(neutral) then
      do k = 1, size(z,3)
-        k_m(:,:,k) = real(vonkarm *uss*z(:,:,k), FMS_MO_KIND_)
-        k_h(:,:,k) = real(k_m(:,:,k), FMS_MO_KIND_)
+        k_m(:,:,k) = vonkarm *uss*z(:,:,k)
+        k_h(:,:,k) = k_m(:,:,k)
      end do
   else
      do k = 1, size(z,3)
-        zeta = real(- vonkarm * b_star*z(:,:,k)/(uss*uss), FMS_MO_KIND_)
+        zeta = - vonkarm * b_star*z(:,:,k)/(uss*uss)
         do j = 1, size(z,2)
            call monin_obukhov_derivative_m(stable_option, rich_crit, zeta_trans, &
                 & ni, phi_m(:,j), zeta(:,j), mask, ier)
            call monin_obukhov_derivative_t(stable_option, new_mo_option,rich_crit, zeta_trans, &
                 & ni, phi_h(:,j), zeta(:,j), mask, ier)
         enddo
-        k_m(:,:,k) = real(vonkarm * uss*z(:,:,k)/phi_m, FMS_MO_KIND_)
-        k_h(:,:,k) = real(vonkarm * uss*z(:,:,k)/phi_h, FMS_MO_KIND_)
+        k_m(:,:,k) = vonkarm * uss*z(:,:,k)/phi_m
+        k_h(:,:,k) = vonkarm * uss*z(:,:,k)/phi_h
      end do
   endif
 
@@ -107,7 +107,7 @@ pure subroutine MONIN_OBUKHOV_DRAG_1D_(grav, vonkarm,               &
   integer, parameter                    :: lkind = FMS_MO_KIND_
 
   ier = 0
-  r_crit = real(0.95_lkind*rich_crit, FMS_MO_KIND_)  ! convergence can get slow if one is
+  r_crit = 0.95_lkind*rich_crit ! convergence can get slow if one is
                            ! close to rich_crit
   sqrt_drag_min_heat = 0.0_lkind
   if(drag_min_heat.ne.0.0_lkind)  sqrt_drag_min_heat  = sqrt(drag_min_heat)
@@ -120,9 +120,9 @@ pure subroutine MONIN_OBUKHOV_DRAG_1D_(grav, vonkarm,               &
   if(lavail) mask = avail
 
   where(mask)
-     delta_b = real(grav*(pt0 - pt)/pt0,               FMS_MO_KIND_)
-     rich    = real(- z*delta_b/(speed*speed + small), FMS_MO_KIND_)
-     zz      = real(max(z,z0,zt,zq),                   FMS_MO_KIND_)
+     delta_b = grav*(pt0 - pt)/pt0
+     rich    = - z*delta_b/(speed*speed + small)
+     zz      = max(z,z0,zt,zq)
   elsewhere
      rich = 0.0_lkind
   end where
@@ -131,17 +131,17 @@ pure subroutine MONIN_OBUKHOV_DRAG_1D_(grav, vonkarm,               &
 
      do i = 1, n
         if(mask(i)) then
-           fm(i)     = real(log(zz(i)/z0(i)), FMS_MO_KIND_)
-           ft(i)     = real(log(zz(i)/zt(i)), FMS_MO_KIND_)
-           fq(i)     = real(log(zz(i)/zq(i)), FMS_MO_KIND_)
-           us        = real(vonkarm/fm(i),    FMS_MO_KIND_)
-           bs        = real(vonkarm/ft(i),    FMS_MO_KIND_)
-           qs        = real(vonkarm/fq(i),    FMS_MO_KIND_)
-           drag_m(i) = real(us*us,            FMS_MO_KIND_)
-           drag_t(i) = real(us*bs,            FMS_MO_KIND_)
-           drag_q(i) = real(us*qs,            FMS_MO_KIND_)
-           u_star(i) = real(us*speed(i),      FMS_MO_KIND_)
-           b_star(i) = real(bs*delta_b(i),    FMS_MO_KIND_)
+           fm(i)     = log(zz(i)/z0(i))
+           ft(i)     = log(zz(i)/zt(i))
+           fq(i)     = log(zz(i)/zq(i))
+           us        = vonkarm/fm(i)
+           bs        = vonkarm/ft(i)
+           qs        = vonkarm/fq(i)
+           drag_m(i) = us*us
+           drag_t(i) = us*bs
+           drag_q(i) = us*qs
+           u_star(i) = us*speed(i)
+           b_star(i) = bs*delta_b(i)
         end if
      enddo
 
@@ -152,13 +152,13 @@ pure subroutine MONIN_OBUKHOV_DRAG_1D_(grav, vonkarm,               &
 
      do i = 1, n
         if(mask_2(i)) then
-           drag_m(i) = real(drag_min_mom,       FMS_MO_KIND_)
-           drag_t(i) = real(drag_min_heat,      FMS_MO_KIND_)
-           drag_q(i) = real(drag_min_moist,     FMS_MO_KIND_)
-           us        = real(sqrt_drag_min_mom,  FMS_MO_KIND_)
-           bs        = real(sqrt_drag_min_heat, FMS_MO_KIND_)
-           u_star(i) = real(us*speed(i),        FMS_MO_KIND_)
-           b_star(i) = real(bs*delta_b(i),      FMS_MO_KIND_)
+           drag_m(i) = drag_min_mom
+           drag_t(i) = drag_min_heat
+           drag_q(i) = drag_min_moist
+           us        = sqrt_drag_min_mom
+           bs        = sqrt_drag_min_heat
+           u_star(i) = us*speed(i)
+           b_star(i) = bs*delta_b(i)
         end if
      enddo
 
@@ -168,14 +168,14 @@ pure subroutine MONIN_OBUKHOV_DRAG_1D_(grav, vonkarm,               &
 
      do i = 1, n
         if(mask_1(i)) then
-           us        = real(max(vonkarm/fm(i), sqrt_drag_min_mom),   FMS_MO_KIND_)
-           bs        = real(max(vonkarm/ft(i), sqrt_drag_min_heat),  FMS_MO_KIND_)
-           qs        = real(max(vonkarm/fq(i), sqrt_drag_min_moist), FMS_MO_KIND_)
-           drag_m(i) = real(us*us,                                   FMS_MO_KIND_)
-           drag_t(i) = real(us*bs,                                   FMS_MO_KIND_)
-           drag_q(i) = real(us*qs,                                   FMS_MO_KIND_)
-           u_star(i) = real(us*speed(i),                             FMS_MO_KIND_)
-           b_star(i) = real(bs*delta_b(i),                           FMS_MO_KIND_)
+           us        = max(vonkarm/fm(i), sqrt_drag_min_mom)
+           bs        = max(vonkarm/ft(i), sqrt_drag_min_heat)
+           qs        = max(vonkarm/fq(i), sqrt_drag_min_moist)
+           drag_m(i) = us*us
+           drag_t(i) = us*bs
+           drag_q(i) = us*qs
+           u_star(i) = us*speed(i)
+           b_star(i) = bs*delta_b(i)
         endif
      enddo
 
@@ -213,12 +213,12 @@ pure subroutine MONIN_OBUKHOV_SOLVE_ZETA_(error, zeta_min, max_iter, small,  &
 
   ier = 0
 
-  z_z0    = real(z/z0,      FMS_MO_KIND_)
-  z_zt    = real(z/zt,      FMS_MO_KIND_)
-  z_zq    = real(z/zq,      FMS_MO_KIND_)
-  ln_z_z0 = real(log(z_z0), FMS_MO_KIND_)
-  ln_z_zt = real(log(z_zt), FMS_MO_KIND_)
-  ln_z_zq = real(log(z_zq), FMS_MO_KIND_)
+  z_z0    = z/z0
+  z_zt    = z/zt
+  z_zq    = z/zq
+  ln_z_z0 = log(z_z0)
+  ln_z_zt = log(z_zt)
+  ln_z_zq = log(z_zq)
 
   corr = 0.0_lkind
   mask_1 = mask
@@ -227,20 +227,20 @@ pure subroutine MONIN_OBUKHOV_SOLVE_ZETA_(error, zeta_min, max_iter, small,  &
 
   zeta = 0.0_lkind
   where(mask_1)
-     zeta = real(rich*ln_z_z0*ln_z_z0/ln_z_zt, FMS_MO_KIND_)
+     zeta = rich*ln_z_z0*ln_z_z0/ln_z_zt
   end where
 
   where (mask_1 .and. rich >= 0.0)
-     zeta = real(zeta/(1.0 - rich/rich_crit), FMS_MO_KIND_)
+     zeta = zeta/(1.0 - rich/rich_crit)
   end where
 
   iter_loop: do iter = 1, max_iter
 
      where (mask_1 .and. abs(zeta).lt.zeta_min)
         zeta = 0.0_lkind
-        f_m = real(ln_z_z0, FMS_MO_KIND_)
-        f_t = real(ln_z_zt, FMS_MO_KIND_)
-        f_q = real(ln_z_zq, FMS_MO_KIND_)
+        f_m = ln_z_z0
+        f_t = ln_z_zt
+        f_q = ln_z_zq
         mask_1 = .false.  ! don't do any more calculations at these pts
      end where
 
@@ -249,10 +249,10 @@ pure subroutine MONIN_OBUKHOV_SOLVE_ZETA_(error, zeta_min, max_iter, small,  &
      zeta_t = 0.0_lkind
      zeta_q = 0.0_lkind
      where (mask_1)
-        rzeta  = real(1.0_lkind/zeta, FMS_MO_KIND_)
-        zeta_0 = real(zeta/z_z0,      FMS_MO_KIND_)
-        zeta_t = real(zeta/z_zt,      FMS_MO_KIND_)
-        zeta_q = real(zeta/z_zq,      FMS_MO_KIND_)
+        rzeta  = 1.0_lkind/zeta
+        zeta_0 = zeta/z_z0
+        zeta_t = zeta/z_zt
+        zeta_q = zeta/z_zq
      end where
 
      call monin_obukhov_derivative_m(stable_option, rich_crit, zeta_trans, &
@@ -270,23 +270,23 @@ pure subroutine MONIN_OBUKHOV_SOLVE_ZETA_(error, zeta_min, max_iter, small,  &
           & n, f_t, f_q, zeta, zeta_t, zeta_q, ln_z_zt, ln_z_zq, mask_1, ier)
 
      where (mask_1)
-        df_m       = real((phi_m - phi_m_0)*rzeta,                           FMS_MO_KIND_)
-        df_t       = real((phi_t - phi_t_0)*rzeta,                           FMS_MO_KIND_)
-        rich_1     = real(zeta*f_t/(f_m*f_m),                                FMS_MO_KIND_)
-        d_rich     = real(rich_1*( rzeta +  df_t/f_t - 2.0_lkind *df_m/f_m), FMS_MO_KIND_)
-        correction = real((rich - rich_1)/d_rich,                            FMS_MO_KIND_)
-        corr       = real(min(abs(correction),abs(correction/zeta)),         FMS_MO_KIND_)
+        df_m       = (phi_m - phi_m_0)*rzeta
+        df_t       = (phi_t - phi_t_0)*rzeta
+        rich_1     = zeta*f_t/(f_m*f_m)
+        d_rich     = rich_1*( rzeta +  df_t/f_t - 2.0_lkind *df_m/f_m)
+        correction = (rich - rich_1)/d_rich
+        corr       = min(abs(correction),abs(correction/zeta))
         ! the criterion corr < error seems to work ok, but is a bit arbitrary
         !  when zeta is small the tolerance is reduced
      end where
 
-     max_cor = real(maxval(corr), FMS_MO_KIND_)
+     max_cor = maxval(corr)
 
      if(max_cor > error) then
         mask_1 = mask_1 .and. (corr > error)
         ! change the mask so computation proceeds only on non-converged points
         where(mask_1)
-           zeta = real(zeta + correction, FMS_MO_KIND_)
+           zeta = zeta + correction
         end where
         cycle iter_loop
      else
@@ -319,7 +319,7 @@ pure subroutine MONIN_OBUKHOV_DERIVATIVE_T_(stable_option,new_mo_option,rich_cri
   integer, parameter                                 :: lkind = FMS_MO_KIND_
 
   ier      = 0
-  b_stab   = real(1.0_lkind/rich_crit, FMS_MO_KIND_)
+  b_stab   = 1.0_lkind/rich_crit
 
   stable   = mask .and. zeta >= 0.0_lkind
   unstable = mask .and. zeta <  0.0_lkind
@@ -327,11 +327,11 @@ pure subroutine MONIN_OBUKHOV_DERIVATIVE_T_(stable_option,new_mo_option,rich_cri
 !miz: modified to include new monin-obukhov option
   if (new_mo_option) then
      where (unstable)
-        phi_t = real((1 - 16.0_lkind*zeta)**(-1.0_lkind/3.0_lkind), FMS_MO_KIND_)
+        phi_t = (1 - 16.0_lkind*zeta)**(-1.0_lkind/3.0_lkind)
      end where
   else
   where (unstable)
-     phi_t = real((1 - 16.0_lkind*zeta)**(-0.5_lkind), FMS_MO_KIND_)
+     phi_t = (1 - 16.0_lkind*zeta)**(-0.5_lkind)
   end where
   end if
 !miz
@@ -339,18 +339,18 @@ pure subroutine MONIN_OBUKHOV_DERIVATIVE_T_(stable_option,new_mo_option,rich_cri
   if(stable_option == 1) then
 
      where (stable)
-        phi_t = real(1.0_lkind + zeta*(5.0_lkind + b_stab*zeta)/(1.0_lkind + zeta), FMS_MO_KIND_)
+        phi_t = 1.0_lkind + zeta*(5.0_lkind + b_stab*zeta)/(1.0_lkind + zeta)
      end where
 
   else if(stable_option == 2) then
 
-     lambda = real(1.0_lkind + (5.0_lkind - b_stab)*zeta_trans, FMS_MO_KIND_)
+     lambda = 1.0_lkind + (5.0_lkind - b_stab)*zeta_trans
 
      where (stable .and. zeta < zeta_trans)
-        phi_t = real(1 + 5.0_lkind*zeta, FMS_MO_KIND_)
+        phi_t = 1 + 5.0_lkind*zeta
      end where
      where (stable .and. zeta >= zeta_trans)
-        phi_t = real(lambda + b_stab*zeta, FMS_MO_KIND_)
+        phi_t = lambda + b_stab*zeta
      end where
 
   endif
@@ -376,31 +376,31 @@ pure subroutine MONIN_OBUKHOV_DERIVATIVE_M_(stable_option, rich_crit, zeta_trans
   integer, parameter                    :: lkind = FMS_MO_KIND_
 
   ier        = 0
-  b_stab     = real(1.0_lkind/rich_crit, FMS_MO_KIND_)
+  b_stab     = 1.0_lkind/rich_crit
 
-  stable   = mask .and. zeta >= 0.0
-  unstable = mask .and. zeta <  0.0
+  stable   = mask .and. zeta >= 0.0_lkind
+  unstable = mask .and. zeta <  0.0_lkind
 
   where (unstable)
-     x     = real((1 - 16.0_lkind*zeta  )**(-0.5_lkind), FMS_MO_KIND_)
-     phi_m = real(sqrt(x),                               FMS_MO_KIND_) ! phi_m = (1 - 16.0*zeta)**(-0.25)
+     x     = (1 - 16.0_lkind*zeta  )**(-0.5_lkind)
+     phi_m = sqrt(x) ! phi_m = (1 - 16.0*zeta)**(-0.25)
   end where
 
   if(stable_option == 1) then
 
      where (stable)
-        phi_m = real(1.0_lkind + zeta  *(5.0_lkind + b_stab*zeta)/(1.0 + zeta), FMS_MO_KIND_)
+        phi_m = 1.0_lkind + zeta  *(5.0_lkind + b_stab*zeta)/(1.0 + zeta)
      end where
 
   else if(stable_option == 2) then
 
-     lambda = real(1.0_lkind + (5.0_lkind - b_stab)*zeta_trans, FMS_MO_KIND_)
+     lambda = 1.0_lkind + (5.0_lkind - b_stab)*zeta_trans
 
      where (stable .and. zeta < zeta_trans)
-        phi_m = real(1 + 5.0_lkind*zeta, FMS_MO_KIND_)
+        phi_m = 1 + 5.0_lkind*zeta
      end where
      where (stable .and. zeta >= zeta_trans)
-        phi_m = real(lambda + b_stab*zeta, FMS_MO_KIND_)
+        phi_m = lambda + b_stab*zeta
      end where
 
   endif
@@ -443,31 +443,31 @@ pure subroutine MONIN_OBUKHOV_PROFILE_1D_(vonkarm, &
   del_q = 0.0_lkind
 
   where(mask)
-     ln_z_z0     = real(log(z/z0),     FMS_MO_KIND_)
-     ln_z_zt     = real(log(z/zt),     FMS_MO_KIND_)
-     ln_z_zq     = real(log(z/zq),     FMS_MO_KIND_)
-     ln_z_zref   = real(log(z/zref),   FMS_MO_KIND_)
-     ln_z_zref_t = real(log(z/zref_t), FMS_MO_KIND_)
+     ln_z_z0     = log(z/z0)
+     ln_z_zt     = log(z/zt)
+     ln_z_zq     = log(z/zq)
+     ln_z_zref   = log(z/zref)
+     ln_z_zref_t = log(z/zref_t)
   endwhere
 
   if(neutral) then
 
      where(mask)
-        del_m = real(1.0_lkind - ln_z_zref  /ln_z_z0, FMS_MO_KIND_)
-        del_t = real(1.0_lkind - ln_z_zref_t/ln_z_zt, FMS_MO_KIND_)
-        del_q = real(1.0_lkind - ln_z_zref_t/ln_z_zq, FMS_MO_KIND_)
+        del_m = 1.0_lkind - ln_z_zref  /ln_z_z0
+        del_t = 1.0_lkind - ln_z_zref_t/ln_z_zt
+        del_q = 1.0_lkind - ln_z_zref_t/ln_z_zq
      endwhere
 
   else
 
      where(mask .and. u_star > 0.0_lkind)
-        mo_length_inv = real(- vonkarm * b_star/(u_star*u_star), FMS_MO_KIND_)
-        zeta          = real(z     *mo_length_inv, FMS_MO_KIND_)
-        zeta_0        = real(z0    *mo_length_inv, FMS_MO_KIND_)
-        zeta_t        = real(zt    *mo_length_inv, FMS_MO_KIND_)
-        zeta_q        = real(zq    *mo_length_inv, FMS_MO_KIND_)
-        zeta_ref      = real(zref  *mo_length_inv, FMS_MO_KIND_)
-        zeta_ref_t    = real(zref_t*mo_length_inv, FMS_MO_KIND_)
+        mo_length_inv = - vonkarm * b_star/(u_star*u_star)
+        zeta          = z     *mo_length_inv
+        zeta_0        = z0    *mo_length_inv
+        zeta_t        = zt    *mo_length_inv
+        zeta_q        = zq    *mo_length_inv
+        zeta_ref      = zref  *mo_length_inv
+        zeta_ref_t    = zref_t*mo_length_inv
      endwhere
 
      call monin_obukhov_integral_m(stable_option, rich_crit, zeta_trans, &
@@ -481,9 +481,9 @@ pure subroutine MONIN_OBUKHOV_PROFILE_1D_(vonkarm, &
           & n, f_t_ref, f_q_ref, zeta, zeta_ref_t, zeta_ref_t, ln_z_zref_t, ln_z_zref_t,  mask, ier)
 
      where(mask)
-        del_m = real(1.0_lkind - f_m_ref/f_m, FMS_MO_KIND_)
-        del_t = real(1.0_lkind - f_t_ref/f_t, FMS_MO_KIND_)
-        del_q = real(1.0_lkind - f_q_ref/f_q, FMS_MO_KIND_)
+        del_m = 1.0_lkind - f_m_ref/f_m
+        del_t = 1.0_lkind - f_t_ref/f_t
+        del_q = 1.0_lkind - f_q_ref/f_q
      endwhere
 
   end if
@@ -512,56 +512,56 @@ pure subroutine MONIN_OBUKHOV_INTEGRAL_M_(stable_option, rich_crit, zeta_trans, 
 
   ier      = 0
 
-  b_stab   = real(1.0_lkind/rich_crit, FMS_MO_KIND_)
+  b_stab   = 1.0_lkind/rich_crit
 
   stable   = mask .and. zeta >= 0.0_lkind
   unstable = mask .and. zeta <  0.0_lkind
 
   where(unstable)
 
-     x      = real(sqrt(1 - 16.0_lkind*zeta),       FMS_MO_KIND_)
-     x_0    = real(sqrt(1 - 16.0_lkind*zeta_0),     FMS_MO_KIND_)
+     x      = sqrt(1 - 16.0_lkind*zeta)
+     x_0    = sqrt(1 - 16.0_lkind*zeta_0)
 
-     x      = real(sqrt(x),                         FMS_MO_KIND_)
-     x_0    = real(sqrt(x_0),                       FMS_MO_KIND_)
+     x      = sqrt(x)
+     x_0    = sqrt(x_0)
 
-     x1     = real(1.0_lkind + x,                   FMS_MO_KIND_)
-     x1_0   = real(1.0_lkind + x_0,                 FMS_MO_KIND_)
+     x1     = 1.0_lkind + x
+     x1_0   = 1.0_lkind + x_0
 
-     num    = real(x1*x1*(1.0_lkind + x*x),         FMS_MO_KIND_)
-     denom  = real(x1_0*x1_0*(1.0_lkind + x_0*x_0), FMS_MO_KIND_)
-     y      = real(atan(x) - atan(x_0),             FMS_MO_KIND_)
-     psi_m  = real(ln_z_z0 - log(num/denom) + 2*y,  FMS_MO_KIND_)
+     num    = x1*x1*(1.0_lkind + x*x)
+     denom  = x1_0*x1_0*(1.0_lkind + x_0*x_0)
+     y      = atan(x) - atan(x_0)
+     psi_m  = ln_z_z0 - log(num/denom) + 2*y
 
   end where
 
   if( stable_option == 1) then
 
      where (stable)
-        psi_m = real(ln_z_z0 + (5.0_lkind - b_stab)*log((1.0_lkind + zeta)/(1.0_lkind + zeta_0)) &
-             + b_stab*(zeta - zeta_0), FMS_MO_KIND_)
+        psi_m = ln_z_z0 + (5.0_lkind - b_stab)*log((1.0_lkind + zeta)/(1.0_lkind + zeta_0)) &
+             + b_stab*(zeta - zeta_0)
      end where
 
   else if (stable_option == 2) then
 
-     lambda = real(1.0_lkind + (5.0_lkind - b_stab)*zeta_trans, FMS_MO_KIND_)
+     lambda = 1.0_lkind + (5.0_lkind - b_stab)*zeta_trans
 
      weakly_stable   = stable .and. zeta <= zeta_trans
      strongly_stable = stable .and. zeta >  zeta_trans
 
      where (weakly_stable)
-        psi_m = real(ln_z_z0 + 5.0_lkind*(zeta - zeta_0), FMS_MO_KIND_)
+        psi_m = ln_z_z0 + 5.0_lkind*(zeta - zeta_0)
      end where
 
      where(strongly_stable)
-        x = real((lambda - 1.0_lkind)*log(zeta/zeta_trans) + b_stab*(zeta - zeta_trans), FMS_MO_KIND_)
+        x = (lambda - 1.0_lkind)*log(zeta/zeta_trans) + b_stab*(zeta - zeta_trans)
      endwhere
 
      where (strongly_stable .and. zeta_0 <= zeta_trans)
-        psi_m = real(ln_z_z0 + x + 5.0_lkind*(zeta_trans - zeta_0), FMS_MO_KIND_)
+        psi_m = ln_z_z0 + x + 5.0_lkind*(zeta_trans - zeta_0)
      end where
      where (strongly_stable .and. zeta_0 > zeta_trans)
-        psi_m = real(lambda*ln_z_z0 + b_stab*(zeta  - zeta_0), FMS_MO_KIND_)
+        psi_m = lambda*ln_z_z0 + b_stab*(zeta  - zeta_0)
      endwhere
 
   end if
@@ -592,7 +592,7 @@ pure subroutine MONIN_OBUKHOV_INTEGRAL_TQ_(stable_option, new_mo_option, rich_cr
 
   ier = 0
 
-  b_stab     = real(1.0_lkind/rich_crit, FMS_MO_KIND_)
+  b_stab     = 1.0_lkind/rich_crit
 
 stable   = mask .and. zeta >= 0.0_lkind
 unstable = mask .and. zeta <  0.0_lkind
@@ -601,25 +601,25 @@ unstable = mask .and. zeta <  0.0_lkind
 if (new_mo_option) then
  s3 = sqrt(3.0_lkind)
  where(unstable)
-  x     = real((1 - 16.0_lkind*zeta)**(1.0_lkind/3.0_lkind),   FMS_MO_KIND_)
-  x_t   = real((1 - 16.0_lkind*zeta_t)**(1.0_lkind/3.0_lkind), FMS_MO_KIND_)
-  x_q   = real((1 - 16.0*zeta_q)**(1.0_lkind/3.0_lkind),       FMS_MO_KIND_)
+  x     = (1 - 16.0_lkind*zeta)**(1.0_lkind/3.0_lkind)
+  x_t   = (1 - 16.0_lkind*zeta_t)**(1.0_lkind/3.0_lkind)
+  x_q   = (1 - 16.0*zeta_q)**(1.0_lkind/3.0_lkind)
 
-  psi_t = real(ln_z_zt - 1.5_lkind*log((x**2+x+1)/(x_t**2 + x_t + 1)) + s3*(atan((2*x+1)/s3) - &
-               atan((2*x_t + 1)/s3)),                          FMS_MO_KIND_)
-  psi_q = real(ln_z_zq - 1.5_lkind*log((x**2+x+1)/(x_q**2 + x_q + 1)) + s3*(atan((2*x+1)/s3) - &
-              atan((2*x_q + 1)/s3)),                           FMS_MO_KIND_)
+  psi_t = ln_z_zt - 1.5_lkind*log((x**2+x+1)/(x_t**2 + x_t + 1)) + s3*(atan((2*x+1)/s3) - &
+               atan((2*x_t + 1)/s3))
+  psi_q = ln_z_zq - 1.5_lkind*log((x**2+x+1)/(x_q**2 + x_q + 1)) + s3*(atan((2*x+1)/s3) - &
+              atan((2*x_q + 1)/s3))
   end where
 else
 
 where(unstable)
 
-  x     = real(sqrt(1 - 16.0_lkind*zeta),                                    FMS_MO_KIND_)
-  x_t   = real(sqrt(1 - 16.0_lkind*zeta_t),                                  FMS_MO_KIND_)
-  x_q   = real(sqrt(1 - 16.0_lkind*zeta_q),                                  FMS_MO_KIND_)
+  x     = sqrt(1 - 16.0_lkind*zeta)
+  x_t   = sqrt(1 - 16.0_lkind*zeta_t)
+  x_q   = sqrt(1 - 16.0_lkind*zeta_q)
 
-  psi_t = real(ln_z_zt - 2.0_lkind*log( (1.0_lkind + x)/(1.0_lkind + x_t) ), FMS_MO_KIND_)
-  psi_q = real(ln_z_zq - 2.0_lkind*log( (1.0_lkind + x)/(1.0_lkind + x_q) ), FMS_MO_KIND_)
+  psi_t = ln_z_zt - 2.0_lkind*log( (1.0_lkind + x)/(1.0_lkind + x_t) )
+  psi_q = ln_z_zq - 2.0_lkind*log( (1.0_lkind + x)/(1.0_lkind + x_q) )
 
 end where
 end if
@@ -629,41 +629,41 @@ if( stable_option == 1) then
 
   where (stable)
 
-    psi_t = real(ln_z_zt + (5.0_lkind - b_stab)*log((1.0_lkind + zeta)/(1.0_lkind + zeta_t)) &
-       + b_stab*(zeta - zeta_t), FMS_MO_KIND_)
-    psi_q = real(ln_z_zq + (5.0_lkind - b_stab)*log((1.0_lkind + zeta)/(1.0_lkind + zeta_q)) &
-       + b_stab*(zeta - zeta_q), FMS_MO_KIND_)
+    psi_t = ln_z_zt + (5.0_lkind - b_stab)*log((1.0_lkind + zeta)/(1.0_lkind + zeta_t)) &
+       + b_stab*(zeta - zeta_t)
+    psi_q = ln_z_zq + (5.0_lkind - b_stab)*log((1.0_lkind + zeta)/(1.0_lkind + zeta_q)) &
+       + b_stab*(zeta - zeta_q)
 
   end where
 
 else if (stable_option == 2) then
 
-   lambda = real(1.0_lkind + (5.0_lkind - b_stab)*zeta_trans, FMS_MO_KIND_)
+   lambda = 1.0_lkind + (5.0_lkind - b_stab)*zeta_trans
 
   weakly_stable   = stable .and. zeta <= zeta_trans
   strongly_stable = stable .and. zeta >  zeta_trans
 
   where (weakly_stable)
-    psi_t = real(ln_z_zt + 5.0_lkind*(zeta - zeta_t), FMS_MO_KIND_)
-    psi_q = real(ln_z_zq + 5.0_lkind*(zeta - zeta_q), FMS_MO_KIND_)
+    psi_t = ln_z_zt + 5.0_lkind*(zeta - zeta_t)
+    psi_q = ln_z_zq + 5.0_lkind*(zeta - zeta_q)
   end where
 
   where(strongly_stable)
-    x = real((lambda - 1.0_lkind)*log(zeta/zeta_trans) + b_stab*(zeta - zeta_trans), FMS_MO_KIND_)
+    x = (lambda - 1.0_lkind)*log(zeta/zeta_trans) + b_stab*(zeta - zeta_trans)
   endwhere
 
   where (strongly_stable .and. zeta_t <= zeta_trans)
-    psi_t = real(ln_z_zt + x + 5.0_lkind*(zeta_trans - zeta_t), FMS_MO_KIND_)
+    psi_t = ln_z_zt + x + 5.0_lkind*(zeta_trans - zeta_t)
   end where
   where (strongly_stable .and. zeta_t > zeta_trans)
-    psi_t = real(lambda*ln_z_zt + b_stab*(zeta  - zeta_t),      FMS_MO_KIND_)
+    psi_t = lambda*ln_z_zt + b_stab*(zeta  - zeta_t)
   endwhere
 
   where (strongly_stable .and. zeta_q <= zeta_trans)
-    psi_q = real(ln_z_zq + x + 5.0_lkind*(zeta_trans - zeta_q), FMS_MO_KIND_)
+    psi_q = ln_z_zq + x + 5.0_lkind*(zeta_trans - zeta_q)
   end where
   where (strongly_stable .and. zeta_q > zeta_trans)
-    psi_q = real(lambda*ln_z_zq + b_stab*(zeta  - zeta_q),      FMS_MO_KIND_)
+    psi_q = lambda*ln_z_zq + b_stab*(zeta  - zeta_q)
   endwhere
 
 end if
@@ -689,32 +689,32 @@ pure subroutine MONIN_OBUKHOV_STABLE_MIX_(stable_option, rich_crit, zeta_trans, 
   ier = 0
 
 mix        = 0.0_lkind
-b_stab     = real(1.0_lkind/rich_crit,                           FMS_MO_KIND_)
-rich_trans = real(zeta_trans/(1.0_lkind + 5.0_lkind*zeta_trans), FMS_MO_KIND_)
+b_stab     = 1.0_lkind/rich_crit
+rich_trans = zeta_trans/(1.0_lkind + 5.0_lkind*zeta_trans)
 
 if(stable_option == 1) then
 
      c = - 1.0_lkind
      do i = 1, n
         if(rich(i) > 0.0_lkind .and. rich(i) < rich_crit) then
-           r      = real(1.0_lkind/rich(i),                                                      FMS_MO_KIND_)
-           a      = real(r - b_stab,                                                             FMS_MO_KIND_)
-           b      = real(r - (1.0_lkind + 5.0_lkind),                                            FMS_MO_KIND_)
-           zeta   = real((-b + sqrt(b*b - 4.0_lkind*a*c))/(2.0_lkind*a),                         FMS_MO_KIND_)
-           phi    = real(1.0_lkind + b_stab*zeta + (5.0_lkind - b_stab)*zeta/(1.0_lkind + zeta), FMS_MO_KIND_)
-           mix(i) = real(1.0_lkind/(phi*phi),                                                    FMS_MO_KIND_)
+           r      = 1.0_lkind/rich(i)
+           a      = r - b_stab
+           b      = r - (1.0_lkind + 5.0_lkind)
+           zeta   = (-b + sqrt(b*b - 4.0_lkind*a*c))/(2.0_lkind*a)
+           phi    = 1.0_lkind + b_stab*zeta + (5.0_lkind - b_stab)*zeta/(1.0_lkind + zeta)
+           mix(i) = 1.0_lkind/(phi*phi)
      endif
   end do
 
 else if(stable_option == 2) then
 
-  lambda = real(1.0_lkind + (5.0_lkind - b_stab)*zeta_trans, FMS_MO_KIND_)
+  lambda = 1.0_lkind + (5.0_lkind - b_stab)*zeta_trans
 
   where(rich > 0.0_lkind .and. rich <= rich_trans)
-    mix = real((1.0_lkind - 5.0_lkind*rich)**2,              FMS_MO_KIND_)
+    mix = (1.0_lkind - 5.0_lkind*rich)**2
   end where
   where(rich > rich_trans .and. rich < rich_crit)
-    mix = real(((1.0_lkind - b_stab*rich)/lambda)**2,        FMS_MO_KIND_)
+    mix = ((1.0_lkind - b_stab*rich)/lambda)**2
   end where
 
 end if
