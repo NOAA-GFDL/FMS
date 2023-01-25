@@ -447,7 +447,9 @@ logical function fms_diag_accept_data (this, diag_field_id, field_data, time, is
   LOGICAL, DIMENSION(:,:,:), INTENT(in), OPTIONAL :: mask !< The location of the mask
   CLASS(*), DIMENSION(:,:,:), INTENT(in), OPTIONAL :: rmask !< The masking values
   CHARACTER(len=*), INTENT(out), OPTIONAL :: err_msg !< An error message returned
-
+  integer :: is, js, ks !< Starting indicies of the field_data
+  integer :: ie, je, ke !< Ending indicied of the field_data
+  integer :: n1, n2, n3 !< Size of the 3 indicies of the field data
   integer :: omp_num_threads !< Number of openmp threads
   integer :: omp_level !< The openmp active level
   logical :: buffer_the_data !< True if the user selects to buffer the data and run the calculations
@@ -467,8 +469,26 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
 #endif
 !If this is true, buffer data
   main_if: if (buffer_the_data) then
+!> Calculate the i,j,k start and end
+    ! If is, js, or ks not present default them to 1
+    is = 1
+    js = 1
+    ks = 1
+    IF ( PRESENT(is_in) ) is = is_in
+    IF ( PRESENT(js_in) ) js = js_in
+    IF ( PRESENT(ks_in) ) ks = ks_in
+    n1 = SIZE(field_data, 1)
+    n2 = SIZE(field_data, 2)
+    n3 = SIZE(field_data, 3)
+    ie = is+n1-1
+    je = js+n2-1
+    ke = ks+n3-1
+    IF ( PRESENT(ie_in) ) ie = ie_in
+    IF ( PRESENT(je_in) ) je = je_in
+    IF ( PRESENT(ke_in) ) ke = ke_in
 !> Buffer the data
-    call this%FMS_diag_fields(diag_field_id)%set_data_buffer(field_data, FMS_diag_object%diag_axis)
+    call this%FMS_diag_fields(diag_field_id)%set_data_buffer(field_data, FMS_diag_object%diag_axis,&
+                                                             is, js, ks, ie, je, ke)
     call this%FMS_diag_fields(diag_field_id)%set_math_needs_to_be_done(.TRUE.)
     fms_diag_accept_data = .TRUE.
     return

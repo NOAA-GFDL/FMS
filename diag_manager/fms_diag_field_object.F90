@@ -370,10 +370,12 @@ subroutine set_vartype(objin , var)
 end subroutine set_vartype
 !> Allocates the data buffer in the field object.
 !! Adds the input data to the buffered data.
-subroutine set_data_buffer (this, input_data, diag_axis)
+subroutine set_data_buffer (this, input_data, diag_axis, is, js, ks, ie, je, ke)
   class (fmsDiagField_type) , intent(inout):: this !< The field object
   class(*), dimension(:,:,:,:), intent(in) :: input_data !< The input array
   class(fmsDiagAxisContainer_type),intent(in)   :: diag_axis(:)          !< Array of diag_axis
+  integer :: is, js, ks !< Starting indicies of the field_data
+  integer :: ie, je, ke !< Ending indicied of the field_data
 !> Allocate the buffer if it is not allocated
   if (.not.allocated(this%data_buffer_allocated)) this%data_buffer_allocated = .false.
   if (.not.this%data_buffer_allocated) &
@@ -387,22 +389,22 @@ subroutine set_data_buffer (this, input_data, diag_axis)
     type is (real(kind=r4_kind))
       select type (db => this%data_buffer)
         type is (real(kind=r4_kind))
-          db = input_data
+          db(is:ie, js:je, ks:ke, :) = input_data
       end select
     type is (real(kind=r8_kind))
       select type (db => this%data_buffer)
         type is (real(kind=r8_kind))
-          db = input_data
+          db(is:ie, js:je, ks:ke, :) = input_data
       end select
     type is (integer(kind=i4_kind))
       select type (db => this%data_buffer)
         type is (integer(kind=i4_kind))
-          db = input_data
+          db(is:ie, js:je, ks:ke, :) = input_data
       end select
     type is (integer(kind=i8_kind))
       select type (db => this%data_buffer)
         type is (integer(kind=i8_kind))
-          db = input_data
+          db(is:ie, js:je, ks:ke, :) = input_data
       end select
     class default
         call mpp_error ("set_data_buffer", "The data input to set_data_buffer for "//&
