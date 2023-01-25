@@ -440,7 +440,7 @@
     integer :: map_dst_xsize, map_dst_ysize
     integer :: i_left1, i_left2, i_right1, i_right2
     integer :: map_src_size, step, step_size, bound, bound_start, bound_end
-    logical :: continue_search, result, continue_RADIAL_SEARCH_
+    logical :: continue_search, result, continue_radial_search
     real(FMS_HI_KIND_)    :: d, res
     !------------------------------------------------------------------
     map_dst_xsize=size(theta_dst,1);map_dst_ysize=size(theta_dst,2)
@@ -465,9 +465,9 @@
                       if (i0 == 0) i0 = map_src_xsize
                       res = real(step, FMS_HI_KIND_)/real(map_src_xsize, FMS_HI_KIND_)
                       j0 = ceiling(res)
-                      continue_RADIAL_SEARCH_ = .true.
-                      do while (continue_RADIAL_SEARCH_)
-                         continue_RADIAL_SEARCH_ = .false.
+                      continue_radial_search = .true.
+                      do while (continue_radial_search)
+                         continue_radial_search = .false.
                          n = n+1 ! radial counter
                          if(n > max_nbrs) exit
                          ! ************** left boundary *******************************
@@ -495,7 +495,7 @@
                             if(d<=max_src_dist) then
                                result = UPDATE_DEST_NEIGHBORS_(map_src_add(i,j,:),map_src_dist(i,j,:), &
                                     bound,d, num_found(i,j), num_neighbors)
-                               if (result) continue_RADIAL_SEARCH_ = .true.
+                               if (result) continue_radial_search = .true.
                             endif
                          enddo
 
@@ -525,7 +525,7 @@
                             if(d<=max_src_dist) then
                                result = UPDATE_DEST_NEIGHBORS_(map_src_add(i,j,:),map_src_dist(i,j,:), &
                                     bound,d, num_found(i,j), num_neighbors)
-                               if (result) continue_RADIAL_SEARCH_ = .true.
+                               if (result) continue_radial_search = .true.
                             endif
                          enddo
 
@@ -557,7 +557,7 @@
                             if(d<=max_src_dist) then
                                result = UPDATE_DEST_NEIGHBORS_(map_src_add(i,j,:),map_src_dist(i,j,:), &
                                     bound,d, num_found(i,j), num_neighbors)
-                               if (result) continue_RADIAL_SEARCH_ = .true.
+                               if (result) continue_radial_search = .true.
                             endif
                             bound = bound + 1
 
@@ -579,7 +579,7 @@
                                if(d<=max_src_dist) then
                                   result = UPDATE_DEST_NEIGHBORS_(map_src_add(i,j,:),map_src_dist(i,j,:), &
                                        bound,d, num_found(i,j), num_neighbors)
-                                  if (result) continue_RADIAL_SEARCH_ = .true.
+                                  if (result) continue_radial_search = .true.
                                endif
                                bound = bound + 1
                             enddo
@@ -602,7 +602,7 @@
                             if(d<=max_src_dist) then
                                result = UPDATE_DEST_NEIGHBORS_(map_src_add(i,j,:),map_src_dist(i,j,:), &
                                     bound,d, num_found(i,j), num_neighbors)
-                               if (result) continue_RADIAL_SEARCH_ = .true.
+                               if (result) continue_radial_search = .true.
                             endif
                             bound = bound + 1
                          enddo
@@ -623,7 +623,7 @@
                                if(d<=max_src_dist) then
                                   result = UPDATE_DEST_NEIGHBORS_(map_src_add(i,j,:),map_src_dist(i,j,:), &
                                        bound,d, num_found(i,j), num_neighbors)
-                                  if (result) continue_RADIAL_SEARCH_ = .true.
+                                  if (result) continue_radial_search = .true.
                                endif
                                bound = bound + 1
                             enddo

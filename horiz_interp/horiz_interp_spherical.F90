@@ -59,7 +59,7 @@ module horiz_interp_spherical_mod
   public :: horiz_interp_spherical_new, horiz_interp_spherical, horiz_interp_spherical_del
   public :: horiz_interp_spherical_init, horiz_interp_spherical_wght
 
- !> private helper routines 
+ !> private helper routines
   interface full_search
     module procedure full_search_r4
     module procedure full_search_r8
