@@ -483,6 +483,7 @@ subroutine fill_in_diag_files(diag_yaml_id, diag_file_id, fileobj)
   call diag_get_value_from_key(diag_yaml_id, diag_file_id, "file_name", fileobj%file_fname)
   call diag_get_value_from_key(diag_yaml_id, diag_file_id, "freq_units", buffer)
   call diag_get_value_from_key(diag_yaml_id, diag_file_id, "freq", freq_buffer)
+  print *, "read freq:", freq_buffer
   call set_file_freq(fileobj, freq_buffer, buffer)
 
   deallocate(freq_buffer, buffer)
@@ -680,6 +681,8 @@ subroutine set_file_freq(fileobj, file_freq, file_frequnit)
   file_freq_units = ""
   read(file_freq, *, iostat=err_unit) fileobj%file_freq
   read(file_frequnit, *, iostat=err_unit) file_freq_units
+
+  print *, "set file freq:", fileobj%file_fname
 
   do i = 1, MAX_FREQ
     if (fileobj%file_freq(i) >= -1) then
