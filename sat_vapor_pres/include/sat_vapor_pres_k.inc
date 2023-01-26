@@ -1045,7 +1045,8 @@
    do j = 1, size(temp,2)
    do i = 1, size(temp,1)
      tmp = temp(i,j,k)-tminl_loc
-     ind = int(dtinvl_loc*(tmp+tepsl_loc)) if (ind < 0 .or. ind >= table_siz) then
+     ind = int(dtinvl_loc*(tmp+tepsl_loc))
+     if (ind < 0 .or. ind >= table_siz) then
        nbad = nbad+1
      else
        del = tmp-real(dtres_loc,FMS_SVP_KIND_)*real(ind,FMS_SVP_KIND_)
