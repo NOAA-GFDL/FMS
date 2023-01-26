@@ -1045,8 +1045,7 @@
    do j = 1, size(temp,2)
    do i = 1, size(temp,1)
      tmp = temp(i,j,k)-tminl_loc
-     ind = int(dtinvl_loc*(tmp+tepsl_loc))
-     if (ind < 0 .or. ind >= table_siz) then
+     ind = int(dtinvl_loc*(tmp+tepsl_loc)) if (ind < 0 .or. ind >= table_siz) then
        nbad = nbad+1
      else
        del = tmp-real(dtres_loc,FMS_SVP_KIND_)*real(ind,FMS_SVP_KIND_)
@@ -1054,7 +1053,7 @@
                          + del*( real(DTABLE(ind+1),FMS_SVP_KIND_) &
                                     + del*real(D2TABLE(ind+1),FMS_SVP_KIND_) )
        desat(i,j,k) = real(DTABLE(ind+1), FMS_SVP_KIND_) &
-                        + real(2.0,FMS_SVP_KIND_)*del*real(D2TABLE(ind+1),FMS_SVP_KIND_)
+                        + real(2.0_r8_kind,FMS_SVP_KIND_)*del*real(D2TABLE(ind+1),FMS_SVP_KIND_)
      endif
    enddo
    enddo
@@ -1093,7 +1092,7 @@
                  + del*( real(DTABLE(ind+1),FMS_SVP_KIND_) &
                                + del*real(D2TABLE(ind+1),FMS_SVP_KIND_) )
        desat(i,j) = real(DTABLE(ind+1),FMS_SVP_KIND_) &
-                  + real(2.0,FMS_SVP_KIND_)*del*real(D2TABLE(ind+1),FMS_SVP_KIND_)
+                  + real(2.0_r8_kind,FMS_SVP_KIND_)*del*real(D2TABLE(ind+1),FMS_SVP_KIND_)
      endif
    enddo
    enddo
@@ -1130,7 +1129,7 @@
                + del*( real(DTABLE(ind+1),FMS_SVP_KIND_) &
                                 + del*real(D2TABLE(ind+1),FMS_SVP_KIND_) )
        desat(i) = real(DTABLE(ind+1),FMS_SVP_KIND_) &
-               + real(2.0,FMS_SVP_KIND_)*del*real(D2TABLE(ind+1),FMS_SVP_KIND_)
+               + real(2.0_r8_kind,FMS_SVP_KIND_)*del*real(D2TABLE(ind+1),FMS_SVP_KIND_)
      endif
    enddo
 
@@ -1164,7 +1163,7 @@
             + del*( real(DTABLE(ind+1),FMS_SVP_KIND_) &
                           + del*real(D2TABLE(ind+1),FMS_SVP_KIND_) )
      desat = real(DTABLE(ind+1),FMS_SVP_KIND_) &
-             + real(2.0,FMS_SVP_KIND_)*del*real(D2TABLE(ind+1),FMS_SVP_KIND_)
+             + real(2.0_r8_kind,FMS_SVP_KIND_)*del*real(D2TABLE(ind+1),FMS_SVP_KIND_)
    endif
 
  end subroutine LOOKUP_ES_DES_K_0D_
@@ -1232,7 +1231,7 @@
      else
        del = tmp-dtres_loc*real(ind,FMS_SVP_KIND_)
        desat(i,j,k) = real(DTABLE(ind+1),FMS_SVP_KIND_) &
-                      + real(2.0,FMS_SVP_KIND_)*del*real(D2TABLE(ind+1),FMS_SVP_KIND_)
+                      + real(2.0_r8_kind,FMS_SVP_KIND_)*del*real(D2TABLE(ind+1),FMS_SVP_KIND_)
      endif
    enddo
    enddo
@@ -1266,7 +1265,7 @@
      else
        del = tmp-dtres_loc*real(ind,FMS_SVP_KIND_)
        desat(i,j) = real(DTABLE(ind+1),FMS_SVP_KIND_) &
-                    + real(2.0,FMS_SVP_KIND_)*del*real(D2TABLE(ind+1),FMS_SVP_KIND_)
+                    + real(2.0_r8_kind,FMS_SVP_KIND_)*del*real(D2TABLE(ind+1),FMS_SVP_KIND_)
      endif
    enddo
    enddo
@@ -1329,7 +1328,7 @@
      else
        del = tmp-dtres_loc*real(ind,FMS_SVP_KIND_)
        desat(i) = real(DTABLE(ind+1),FMS_SVP_KIND_) &
-                  + real(2.0,FMS_SVP_KIND_)*del*real(D2TABLE(ind+1),FMS_SVP_KIND_)
+                  + real(2.0_r8_kind,FMS_SVP_KIND_)*del*real(D2TABLE(ind+1),FMS_SVP_KIND_)
      endif
    enddo
 
@@ -1387,7 +1386,7 @@
    else
      del = tmp-dtres_loc*real(ind,FMS_SVP_KIND_)
      desat = real(DTABLE(ind+1),FMS_SVP_KIND_) &
-             + real(2.0,FMS_SVP_KIND_)*del*real(D2TABLE(ind+1),FMS_SVP_KIND_)
+             + real(2.0_r8_kind,FMS_SVP_KIND_)*del*real(D2TABLE(ind+1),FMS_SVP_KIND_)
    endif
 
  end subroutine LOOKUP_DES_K_0D_
@@ -1450,7 +1449,7 @@
                      + del*( real(DTABLE2(ind+1),FMS_SVP_KIND_) &
                                 + del*real(D2TABLE2(ind+1),FMS_SVP_KIND_) )
        desat(i,j,k) = real(DTABLE2(ind+1),FMS_SVP_KIND_) &
-                      + real(2.0,FMS_SVP_KIND_)*del*real(D2TABLE2(ind+1),FMS_SVP_KIND_)
+                      + real(2.0_r8_kind,FMS_SVP_KIND_)*del*real(D2TABLE2(ind+1),FMS_SVP_KIND_)
      endif
    enddo
    enddo
@@ -1488,7 +1487,7 @@
                    + del*( real(DTABLE2(ind+1),FMS_SVP_KIND_) &
                                  + del*real(D2TABLE2(ind+1),FMS_SVP_KIND_) )
        desat(i,j) = real(DTABLE2(ind+1),FMS_SVP_KIND_) &
-                    + real(2.0,FMS_SVP_KIND_)*del*real(D2TABLE2(ind+1),FMS_SVP_KIND_)
+                    + real(2.0_r8_kind,FMS_SVP_KIND_)*del*real(D2TABLE2(ind+1),FMS_SVP_KIND_)
      endif
    enddo
    enddo
@@ -1524,7 +1523,7 @@
                  + del*( real(DTABLE2(ind+1),FMS_SVP_KIND_) &
                               + del*real(D2TABLE2(ind+1),FMS_SVP_KIND_) )
        desat(i) = real(DTABLE2(ind+1),FMS_SVP_KIND_) &
-                  + real(2.0,FMS_SVP_KIND_)*del*real(D2TABLE2(ind+1),FMS_SVP_KIND_)
+                  + real(2.0_r8_kind,FMS_SVP_KIND_)*del*real(D2TABLE2(ind+1),FMS_SVP_KIND_)
      endif
    enddo
 
@@ -1559,7 +1558,7 @@
             + del*( real(DTABLE2(ind+1),FMS_SVP_KIND_) &
                           + del*real(D2TABLE2(ind+1),FMS_SVP_KIND_) )
      desat = real(DTABLE2(ind+1),FMS_SVP_KIND_) &
-             + real(2.0,FMS_SVP_KIND_)*del*real(D2TABLE2(ind+1),FMS_SVP_KIND_)
+             + real(2.0_r8_kind,FMS_SVP_KIND_)*del*real(D2TABLE2(ind+1),FMS_SVP_KIND_)
    endif
 
  end subroutine LOOKUP_ES2_DES2_K_0D_
@@ -1627,7 +1626,7 @@
      else
        del = tmp-dtres_loc*real(ind,FMS_SVP_KIND_)
        desat(i,j,k) = real(DTABLE2(ind+1),FMS_SVP_KIND_) &
-                      + real(2.0,FMS_SVP_KIND_)*del*real(D2TABLE2(ind+1),FMS_SVP_KIND_)
+                      + real(2.0_r8_kind,FMS_SVP_KIND_)*del*real(D2TABLE2(ind+1),FMS_SVP_KIND_)
      endif
    enddo
    enddo
@@ -1660,7 +1659,7 @@
      else
        del = tmp-dtres_loc*real(ind,FMS_SVP_KIND_)
        desat(i,j) = real(DTABLE2(ind+1),FMS_SVP_KIND_) &
-                    + real(2.0,FMS_SVP_KIND_)*del*real(D2TABLE2(ind+1),FMS_SVP_KIND_)
+                    + real(2.0_r8_kind,FMS_SVP_KIND_)*del*real(D2TABLE2(ind+1),FMS_SVP_KIND_)
      endif
    enddo
    enddo
@@ -1722,7 +1721,7 @@
      else
        del = tmp-dtres_loc*real(ind,FMS_SVP_KIND_)
        desat(i) = real(DTABLE2(ind+1),FMS_SVP_KIND_) &
-                  + real(2.0,FMS_SVP_KIND_)*del*real(D2TABLE2(ind+1),FMS_SVP_KIND_)
+                  + real(2.0_r8_kind,FMS_SVP_KIND_)*del*real(D2TABLE2(ind+1),FMS_SVP_KIND_)
      endif
    enddo
 
@@ -1780,7 +1779,7 @@
    else
      del = tmp-dtres_loc*real(ind,FMS_SVP_KIND_)
      desat = real(DTABLE2(ind+1),FMS_SVP_KIND_) &
-             + real(2.0,FMS_SVP_KIND_)*del*real(D2TABLE2(ind+1),FMS_SVP_KIND_)
+             + real(2.0_r8_kind,FMS_SVP_KIND_)*del*real(D2TABLE2(ind+1),FMS_SVP_KIND_)
    endif
 
  end subroutine LOOKUP_DES2_K_0D_
@@ -1845,7 +1844,7 @@
                      + del*( real(DTABLE3(ind+1),FMS_SVP_KIND_) &
                                   + del*real(D2TABLE3(ind+1),FMS_SVP_KIND_) )
        desat(i,j,k) = real(DTABLE3(ind+1),FMS_SVP_KIND_) &
-                      + real(2.0,FMS_SVP_KIND_)*del*real(D2TABLE3(ind+1),FMS_SVP_KIND_)
+                      + real(2.0_r8_kind,FMS_SVP_KIND_)*del*real(D2TABLE3(ind+1),FMS_SVP_KIND_)
      endif
    enddo
    enddo
@@ -1883,7 +1882,7 @@
                    + del*( real(DTABLE3(ind+1),FMS_SVP_KIND_) &
                                 + del*real(D2TABLE3(ind+1),FMS_SVP_KIND_) )
        desat(i,j) = real(DTABLE3(ind+1),FMS_SVP_KIND_) &
-                    + real(2.0,FMS_SVP_KIND_)*del*real(D2TABLE3(ind+1),FMS_SVP_KIND_)
+                    + real(2.0_r8_kind,FMS_SVP_KIND_)*del*real(D2TABLE3(ind+1),FMS_SVP_KIND_)
      endif
    enddo
    enddo
@@ -1919,7 +1918,7 @@
                  + del*( real(DTABLE3(ind+1),FMS_SVP_KIND_) &
                              + del*real(D2TABLE3(ind+1),FMS_SVP_KIND_) )
        desat(i) = real(DTABLE3(ind+1),FMS_SVP_KIND_) &
-                  + real(2.0,FMS_SVP_KIND_)*del*real(D2TABLE3(ind+1),FMS_SVP_KIND_)
+                  + real(2.0_r8_kind,FMS_SVP_KIND_)*del*real(D2TABLE3(ind+1),FMS_SVP_KIND_)
      endif
    enddo
 
@@ -1953,7 +1952,7 @@
             + del*( real(DTABLE3(ind+1),FMS_SVP_KIND_) &
                            + del*real(D2TABLE3(ind+1),FMS_SVP_KIND_) )
      desat = real(DTABLE3(ind+1),FMS_SVP_KIND_) &
-             + real(2.0,FMS_SVP_KIND_)*del*real(D2TABLE3(ind+1),FMS_SVP_KIND_)
+             + real(2.0_r8_kind,FMS_SVP_KIND_)*del*real(D2TABLE3(ind+1),FMS_SVP_KIND_)
    endif
 
  end subroutine LOOKUP_ES3_DES3_K_0D_
@@ -2021,7 +2020,7 @@
      else
        del = tmp-dtres_loc*real(ind)
        desat(i,j,k) = real(DTABLE3(ind+1),FMS_SVP_KIND_) &
-                      + real(2.0,FMS_SVP_KIND_)*del*real(D2TABLE3(ind+1),FMS_SVP_KIND_)
+                      + real(2.0_r8_kind,FMS_SVP_KIND_)*del*real(D2TABLE3(ind+1),FMS_SVP_KIND_)
      endif
    enddo
    enddo
@@ -2054,7 +2053,7 @@
      else
        del = tmp-dtres_loc*real(ind)
        desat(i,j) = real(DTABLE3(ind+1),FMS_SVP_KIND_) &
-                    + real(2.0,FMS_SVP_KIND_)*del*real(D2TABLE3(ind+1),FMS_SVP_KIND_)
+                    + real(2.0_r8_kind,FMS_SVP_KIND_)*del*real(D2TABLE3(ind+1),FMS_SVP_KIND_)
      endif
    enddo
    enddo
@@ -2116,7 +2115,7 @@
      else
        del = tmp-dtres_loc*real(ind,FMS_SVP_KIND_)
        desat(i) = real(DTABLE3(ind+1),FMS_SVP_KIND_) &
-                  + real(2.0,FMS_SVP_KIND_)*del*real(D2TABLE3(ind+1),FMS_SVP_KIND_)
+                  + real(2.0_r8_kind,FMS_SVP_KIND_)*del*real(D2TABLE3(ind+1),FMS_SVP_KIND_)
      endif
    enddo
 
@@ -2174,7 +2173,7 @@
    else
      del = tmp-dtres_loc*real(ind)
      desat = real(DTABLE3(ind+1),FMS_SVP_KIND_) &
-             + real(2.0,FMS_SVP_KIND_)*del*real(D2TABLE3(ind+1),FMS_SVP_KIND_)
+             + real(2.0_r8_kind,FMS_SVP_KIND_)*del*real(D2TABLE3(ind+1),FMS_SVP_KIND_)
    endif
 
  end subroutine LOOKUP_DES3_K_0D_

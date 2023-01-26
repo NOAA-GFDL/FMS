@@ -1770,7 +1770,7 @@ real(kind=FMS_SVP_KIND_),  intent(in),              optional :: hc
 
    nbad = 0
    do i = 1, size(temp,1)
-     ind = int( dtinv*(temp(i)-real(tmin,FMS_SVP_KIND_)+real(teps,FMS_SVP_KIND_)) )
+     ind = int( real(dtinv,FMS_SVP_KIND_)*(temp(i)-real(tmin,FMS_SVP_KIND_)+real(teps,FMS_SVP_KIND_)) )
      if (ind < 0 .or. ind > nlim) nbad = nbad+1
    enddo
 
@@ -1847,7 +1847,7 @@ real(kind=FMS_SVP_KIND_),  intent(in),              optional :: hc
 
  unit = stdoutunit
  do i=1,size(temp)
-   ind = int( dtinv*(temp(i)-real(tmin,FMS_SVP_KIND_)+real(teps,FMS_SVP_KIND_)) )
+   ind = int( real(dtinv,FMS_SVP_KIND_)*(temp(i)-real(tmin,FMS_SVP_KIND_)+real(teps,FMS_SVP_KIND_)) )
    if (ind < 0 .or. ind > nlim) then
      write(unit,'(a,e10.3,a,i4,a,i6)') 'Bad temperature=',temp(i),'  at i=',i,' pe=',mpp_pe()
    endif
@@ -1883,7 +1883,7 @@ real(kind=FMS_SVP_KIND_),  intent(in),              optional :: hc
  do k=1,size(temp,3)
  do j=1,size(temp,2)
  do i=1,size(temp,1)
-   ind = int( dtinv*(temp(i,j,k)-real(tmin,FMS_SVP_KIND_)+real(teps,FMS_SVP_KIND_)) )
+   ind = int( real(dtinv,FMS_SVP_KIND_)*(temp(i,j,k)-real(tmin,FMS_SVP_KIND_)+real(teps,FMS_SVP_KIND_)) )
    if (ind < 0 .or. ind > nlim) then
      write(unit,'(a,e10.3,a,i4,a,i4,a,i4,a,i6)') 'Bad temperature=',temp(i,j,k),'  at i=',i,' j=',j,' k=',k, &
           & ' pe=',mpp_pe()
