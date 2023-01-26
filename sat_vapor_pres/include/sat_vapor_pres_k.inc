@@ -201,11 +201,11 @@
 
  integer, parameter :: kindl=FMS_SVP_KIND_ !< local kind parameter
 
- real(kind=FMS_SVP_KIND_), parameter :: ESBASW = 101324.60_kindl
- real(kind=FMS_SVP_KIND_), parameter :: ESBASI = 610.71_kindl
+ real(kind=FMS_SVP_KIND_), parameter :: ESBASW = real(101324.60_r8_kind,FMS_SVP_KIND_)
+ real(kind=FMS_SVP_KIND_), parameter :: ESBASI = real(610.71_r8_kind,FMS_SVP_KIND_)
 
- real(FMS_SVP_KIND_), parameter :: one=1.0_kindl
- real(FMS_SVP_KIND_), parameter :: ten=10.0_kindl
+ real(FMS_SVP_KIND_), parameter :: one=real(1.0_r8_kind,FMS_SVP_KIND_)
+ real(FMS_SVP_KIND_), parameter :: ten=real(10.0_r8_kind,FMS_SVP_KIND_)
 
    TBASW = TFREEZE+100.0_kindl
    TBASI = TFREEZE
@@ -230,8 +230,8 @@
      if (tem(i) > -20.0_kindl+TBASI) then
          x = -7.90298_kindl*(TBASW/tem(i)-one)   &
              +5.02808_kindl*log10(TBASW/tem(i)) &
-             -real(1.3816e-07,FMS_SVP_KIND_)*(ten**((one-tem(i)/TBASW)*11.344_kindl)-one) &
-             +real(8.1328e-03,FMS_SVP_KIND_)*(ten**((TBASW/tem(i)-one)*(-3.49149_kindl))-one) &
+             -real(1.3816d-07,FMS_SVP_KIND_)*(ten**((one-tem(i)/TBASW)*11.344_kindl)-one) &
+             +real(8.1328d-03,FMS_SVP_KIND_)*(ten**((TBASW/tem(i)-one)*(-3.49149_kindl))-one) &
              +log10(ESBASW)
          esh2o = ten**(x)
      else
