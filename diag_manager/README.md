@@ -3,24 +3,33 @@
 The purpose of this documents is to explain the diag_table yaml format. 
 
 ## Contents
-- [1. Coverting from legacy ascii diag_table format](README.md#1.-Coverting-from-legacy-ascii-diag_table-format)
-- [2. Diag table yaml organization](README.md#2.Diag-table-yaml-organization)
-- [3. Diag table yaml sections](README.md#3.-Diag-table-yaml-sections)
+- [1. Coverting from legacy ascii diag_table format](README.md#1-coverting-from-legacy-ascii-diag_table-format)
+- [2. Diag table yaml sections](README.md#2-diag-table-yaml-sections)
+- [2.1 Global Section](README.md#21-global-section)
+- [2.2 File Section](README.md#22-file-section)
+- [2.2.1 Flexible output timings](README.md#221-flexible-output-timings)
+- [2.3 Variable Section](README.md#23-variable-section)
+- [2.4 Variable Metadata Section](README.md#24-variable-metadata-section)
+- [2.5 Global Meta Data Section](README.md#25-global-meta-data-section)
+- [2.6 Sub_region Section](/README.md#26-sub_region-section)
+- [3. More examples](README.md#3-more-examples)
 
 ### 1. Coverting from legacy ascii diag_table format
 
 To convert the legacy ascii diad_table format to this yaml format, the python script [**diag_table_to_yaml.py**](https://github.com/NOAA-GFDL/fms_yaml_tools/blob/aafc3293d45df2fc173d3c7afd8b8b0adc18fde4/fms_yaml_tools/diag_table/diag_table_to_yaml.py#L23-L26) can be used. To confirm that your diag_table.yaml was created correctly, the python script [**is_valid_diag_table_yaml.py**](https://github.com/NOAA-GFDL/fms_yaml_tools/blob/aafc3293d45df2fc173d3c7afd8b8b0adc18fde4/fms_yaml_tools/diag_table/is_valid_diag_table_yaml.py#L24-L27) can be used.
 
-### 2. Diag table yaml organization
-The diag_table.yaml is organized by file.  Each file has the required and optional key/values for the file.  There is subsection for all of the variables in the file.  The hierarchical structure looks like this:
+### 2. Diag table yaml sections
+The diag_table.yaml is organized by file.  Each file has the required and optional key/value pairs for the file, an optional subsection defining any additional global metadata to add to the file, an optional subsection defining a subregion of the grid to output the data for and a required subsection for all of the variables in the file. Each variable has the required and optional key/value pairs for the variable and an optional subsection defining any additional variable attributes to add to the file. The hierarchical structure looks like this:
 
 ```yaml
 title:
 base_date:
 diag_files:
 - file1
+  - #key/value pairs for file1
   varlist:
-  - Var1
+  - var1
+    - #key/value pairs for var1
     attributes:
     - #atributes for var1
   global_metadata:
@@ -29,11 +38,9 @@ diag_files:
   - #subregion for file1
 ```
 
-### 3. Diag table yaml sections
-
-### 3.1 Global Section
+### 2.1 Global Section
 The diag_yaml requires “title” and the “baseDate”.
-- The **title** is a string that labels the diag yaml.  The equivalent in the diag table would be the experiment.  It will be recommended that each diag_yaml have a separate title label that is descriptive of the experiment that is using it.
+- The **title** is a string that labels the diag yaml.  The equivalent in the diag table would be the experiment.  It is recommended that each diag_yaml have a separate title label that is descriptive of the experiment that is using it.
 - The **basedate** is an array of 6 integer indicating the base_date in the format [year month day hour minute second].
 
 **Example:** 
@@ -50,7 +57,7 @@ ESM4_piControl
 2022 5 26 12 3 1
 ```
 
-### 3.2 File Section
+### 2.2 File Section
 The files are listed under the diagFiles section as a dashed array. 
 
 Below are the **required** keys needed to define each file.
@@ -124,7 +131,7 @@ ocn_2020_01_01_21.nc for time_bnds [18,24]
 - **global_meta** is a subsection that lists any additional global metadata to add to the file. This is a new feature that is not supported by the legacy ascii data_table.
 - **sub_region** is a subsection that defines the four corners of a subregional section to capture, and the bounds of the z axis.
 
-### 3.2.1 Flexible output timings
+### 2.2.1 Flexible output timings
 
 In order to provide more flexibility in output timings, the new diag_table yaml format allows for different file frequencies for the same file by allowing the `freq`, `freq_units`, `new_file_fre`, `new_file_freq_units`, `file_duration`, `file_duration_units` keys to accept array of integers/strings. 
 
@@ -172,7 +179,7 @@ flexible_timing_0002_01_01_23.nc - using data from hour 23 to hour 24
 
 ```
 
-### 3.3 Variable Section
+### 2.3 Variable Section
 The variables in each file are listed under the varlist section as a dashed array.
 
 - **var_name:**  is a string that defines the variable name as it is defined in the register_diag_field call in the model
@@ -214,7 +221,7 @@ Below are some *optional* keys that may be added.
 - **attributes:** is a subsection with any additional metadata to add to variable. This is a new feature that is not supported by the legacy ascii data_table.
 - **zbounds:** is a 2 member array of integers that define the bounds of the z axis (zmin, zmin), optional default is no limits. 
 
-### 3.4 Variable Metadata Section
+### 2.4 Variable Metadata Section
 Any aditional variable attributes can be added for each varible can be listed under the attributes section as a dashed array. The key is attribute name and the value is the attribute value.
 
 **Example:**
@@ -231,7 +238,7 @@ Although this was not supported by the legacy ascii data_table, with the legacy 
 call diag_field_add_attribute(diag_field_id, attribute_name, attribute_value)
 ```
 
-### 3.5 Global Meta Data Section
+### 2.5 Global Meta Data Section
 Any aditional global attributes can be added for each file can be listed under the global_meta section as a dashed array.  The key is the attribute name and the value is the attribute value.
 
 ```yaml
@@ -240,7 +247,7 @@ Any aditional global attributes can be added for each file can be listed under t
     attribute_name: attribute_value
 ```
 
-### 3.6 Sub_region Section
+### 2.6 Sub_region Section
 The sub region can be listed under the sub_region section as a dashed array. The legacy ascii diag_table only allows regions to be defined using the latitude and longitude, and it only allowed rectangular sub regions. With the yaml diag_table, you can use indices to defined the sub_region and you can define **any** four corner shape. Each file can only have 1 sub_region defined. These are keys that can be used:
 - **grid_type:** is a **required** string defining the method used to define the  fourth sub_region corners. The acceptable values are "latlon" if using latitude/longitude or "indices" if using the indices of the corners.
 - **corner1:** is a **required** 2 member array of reals if using (grid_type="latlon") or integers if using (grid_type="indices") defining the x and y points of the first corner of a sub_grid.
@@ -260,7 +267,7 @@ The sub region can be listed under the sub_region section as a dashed array. The
     corner4: -60, 75
 ```
 
-### 4. More examples
+### 3. More examples
 Bellow is a complete example of diag_table.yaml:
 ```yaml
 title: test_diag_manager
