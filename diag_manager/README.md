@@ -11,7 +11,7 @@ The purpose of this documents is to explain the diag_table yaml format.
 - [2.3 Variable Section](README.md#23-variable-section)
 - [2.4 Variable Metadata Section](README.md#24-variable-metadata-section)
 - [2.5 Global Meta Data Section](README.md#25-global-meta-data-section)
-- [2.6 Sub_region Section](/README.md#26-sub_region-section)
+- [2.6 Sub_region Section](README.md#26-sub_region-section)
 - [3. More examples](README.md#3-more-examples)
 
 ### 1. Coverting from legacy ascii diag_table format
@@ -67,8 +67,8 @@ Below are the **required** keys needed to define each file.
   - =0: output every timestep 
   - \>0: output frequency
 - **freq_units** is a string that defines the units of the frequency from above. The acceptable values are seconds, minutes, hours, days, months, years. 
-- **time_units** is a string that defines units for time. The acceptable values are seconds, minuts, hours, days, months, years. 
-- **unlimdim** is a string that defines the name of the unlimited dimension, usually “time”.
+- **time_units** is a string that defines units for time. The acceptable values are seconds, minutes, hours, days, months, years. 
+- **unlimdim** is a string that defines the name of the unlimited dimension in the output netcdf file, usually “time”.
 - **varlist** is a subsection that list all of the variable in the file
 
 **Example:** The following creates a file with data written every 6 hours. 
@@ -97,7 +97,7 @@ Below are some *optional* keys that may be added.
 - **new_file_freq** is a integer that defines the frequency for closing the existing file
 - **new_file_freq_units** is a string that defines the time units for creating a new file. Required if “new_file_freq” used. The acceptable values are seconds, minuts, hours, days, months, years. 
 - **start_time** is an array of 6 integer indicating when to start the file for the first time. It is in the format [year month day hour minute second]. Requires “new_file_freq”
-- **filename_time** is the time used to set the name of new files when using new_file_freq. The acceptable values are begin (which will using the begining of the file's time bounds), middle (which will use the middle of the file's time bounds), and end (which will use the end of the file's time bounds). The default is middle
+- **filename_time** is the time used to set the name of new files when using new_file_freq. The acceptable values are begin (which will use the begining of the file's time bounds), middle (which will use the middle of the file's time bounds), and end (which will use the end of the file's time bounds). The default is middle
 
 **Example:** The following will create a new file every 6 hours starting at Jan 1 2020. Variable data will be written to the file every 6 hours.
 
@@ -118,7 +118,7 @@ In the legacy ascii format:
 "ocn%4yr%2mo%2dy%2hr",      6,  "hours", 1, "hours", "time", 6, "hours", "1901 1 1 0 0 0"
 ```
 
-**NOTE** If using the new_file_freq, there must be a way to distinguish each file, as it was done in the example above. Because this is using the default `filename_time`, the files created will be:
+Because this is using the default `filename_time` (middle), this example will create the files:
 ```
 ocn_2020_01_01_03.nc for time_bnds [0,6]
 ocn_2020_01_01_09.nc for time_bnds [6,12]
@@ -126,14 +126,16 @@ ocn_2020_01_01_15.nc for time_bnds [12,18]
 ocn_2020_01_01_21.nc for time_bnds [18,24]
 ```
 
-- **file_duration** is an integer that defines how long the file should receive data after start time in “file_duration_units”.  This optional field can only  be used if the start_time field is present.  If this field is absent, then the file duration will be equal to the frequency for creating new files.  NOTE: The file_duration_units field must also be present if this field is present.
-- **file_duration_units** is a string that defines the file duration units. The acceptable values are seconds, minuts, hours, days, months, years. 
+**NOTE** If using the new_file_freq, there must be a way to distinguish each file, as it was done in the example above. 
+
+- **file_duration** is an integer that defines how long the file should receive data after start time in “file_duration_units”.  This optional field can only  be used if the start_time field is present.  If this field is absent, then the file duration will be equal to the frequency for creating new files. The file_duration_units field must also be present if this field is present.
+- **file_duration_units** is a string that defines the file duration units. The acceptable values are seconds, minutes, hours, days, months, years. 
 - **global_meta** is a subsection that lists any additional global metadata to add to the file. This is a new feature that is not supported by the legacy ascii data_table.
-- **sub_region** is a subsection that defines the four corners of a subregional section to capture, and the bounds of the z axis.
+- **sub_region** is a subsection that defines the four corners of a subregional section to capture.
 
 ### 2.2.1 Flexible output timings
 
-In order to provide more flexibility in output timings, the new diag_table yaml format allows for different file frequencies for the same file by allowing the `freq`, `freq_units`, `new_file_fre`, `new_file_freq_units`, `file_duration`, `file_duration_units` keys to accept array of integers/strings. 
+In order to provide more flexibility in output timings, the new diag_table yaml format allows for different file frequencies for the same file by allowing the `freq`, `freq_units`, `new_file_freq`, `new_file_freq_units`, `file_duration`, `file_duration_units` keys to accept array of integers/strings. 
 
 For example, 
 ``` yaml
@@ -183,9 +185,9 @@ flexible_timing_0002_01_01_23.nc - using data from hour 23 to hour 24
 The variables in each file are listed under the varlist section as a dashed array.
 
 - **var_name:**  is a string that defines the variable name as it is defined in the register_diag_field call in the model
-- **reduction:** is a string that describes the data reduction method to perform prior to writing data to disk. Acceptable values are average, diurnalXX, powXX, min, max, none, rms, and sum.  
+- **reduction:** is a string that describes the data reduction method to perform prior to writing data to disk. Acceptable values are average, diurnalXX (where XX is the number of diurnal samples), powXX (whre XX is the power level), min, max, none, rms, and sum.  
 - **module:**  is a string that defines the module where the variable is registered in the model code
-- **kind:** is a string that defines the type of variable  as it will be written out in the file. Acceptable values are r4 r8 i4 i8.
+- **kind:** is a string that defines the type of variable  as it will be written out in the file. Acceptable values are r4, r8, i4, and i8
 
 **Example:**
 
@@ -218,7 +220,7 @@ Below are some *optional* keys that may be added.
 - **write_var:** is a logical that is set to false if the user doesn’t want the variable to be written to the file (default: true).
 - **out_name:** is a string that defines the name of the variable that will be written to the file (default same as var_name)
 - **long_name:** is a string defining the long_name attribute of the variable. It overwrites the long_name in the variable's register_diag_field call
-- **attributes:** is a subsection with any additional metadata to add to variable. This is a new feature that is not supported by the legacy ascii data_table.
+- **attributes:** is a subsection with any additional metadata to add to the variable in the netcdf file. This is a new feature that is not supported by the legacy ascii data_table.
 - **zbounds:** is a 2 member array of integers that define the bounds of the z axis (zmin, zmin), optional default is no limits. 
 
 ### 2.4 Variable Metadata Section
