@@ -40,7 +40,7 @@ SH_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) $(abs_top_srcdir)/test_fms/tap-
 TESTS = test_sat_vapor_pres.sh
 
 # These files will be included in the distribution.
-EXTRA_DIST = test_sap_vapor_pres.sh
+EXTRA_DIST = test_sat_vapor_pres.sh
 
 # Clean up
 CLEANFILES = *.nml *.out* *.dpi *.spi *.dyn *.spl
