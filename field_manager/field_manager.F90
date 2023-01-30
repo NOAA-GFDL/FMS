@@ -2935,7 +2935,7 @@ if (associated(temp_list_p)) then
 !        Array is too small, so allocate new array and copy over
 !        old values
       temp_field_p%array_dim = temp_field_p%array_dim + array_increment
-      allocate (temp_l_value(temp_field_p%array_dim))
+      allocate (temp_l_value(temp_field_p%array_dim)) !< XXXX
       do i = 1, temp_field_p%max_index
         temp_l_value(i) = temp_field_p%l_value(i)
       enddo
@@ -3038,7 +3038,7 @@ if (associated(temp_list_p)) then
 !        If not then reset max_index to 0
     if (temp_field_p%field_type == integer_type) then
        ! promote integer field to real
-       allocate(temp_field_p%r_value(size(temp_field_p%i_value)))
+       allocate(temp_field_p%r_value(size(temp_field_p%i_value))) !< XXXX
        do i = 1, size(temp_field_p%i_value)
           temp_field_p%r_value(i) = temp_field_p%i_value(i)
        enddo
@@ -3078,7 +3078,7 @@ if (associated(temp_list_p)) then
 !        Array is too small, so allocate new array and copy over
 !        old values
       temp_field_p%array_dim = temp_field_p%array_dim + array_increment
-      allocate (temp_r_value(temp_field_p%array_dim))
+      allocate (temp_r_value(temp_field_p%array_dim)) !< XXXX
       do i = 1, temp_field_p%max_index
         temp_r_value(i) = temp_field_p%r_value(i)
       enddo
@@ -3212,7 +3212,7 @@ if (associated(temp_list_p)) then
 !        Array is too small, so allocate new array and copy over
 !        old values
       temp_field_p%array_dim = temp_field_p%array_dim + array_increment
-      allocate (temp_s_value(temp_field_p%array_dim))
+      allocate (temp_s_value(temp_field_p%array_dim)) !< XXXX
       do i = 1, temp_field_p%max_index
         temp_s_value(i) = temp_field_p%s_value(i)
       enddo
