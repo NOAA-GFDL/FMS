@@ -109,8 +109,6 @@ list(APPEND fms_fortran_src_files
   column_diagnostics/column_diagnostics.F90
   constants/constants.F90
   constants/fmsconstants.F90
-  constants4/constantsr4.F90
-  constants4/fmsconstantsr4.F90
   coupler/atmos_ocean_fluxes.F90
   coupler/coupler_types.F90
   coupler/ensemble_manager.F90
@@ -301,7 +299,6 @@ foreach(kind ${kinds})
                                                  fms
                                                  fms2_io/include
                                                  mpp/include
-                                                 constants4
                                                  constants)
   target_compile_definitions(${libTgt}_f PRIVATE "${fms_defs}")
   target_compile_definitions(${libTgt}_f PRIVATE "${${kind}_defs}")
