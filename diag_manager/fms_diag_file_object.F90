@@ -1147,13 +1147,13 @@ subroutine write_field_metadata(this, diag_field, diag_axis)
   class(fmsDiagField_type)        , intent(inout), target :: diag_field(:)   !<
   class(fmsDiagAxisContainer_type), intent(in)            :: diag_axis(:)    !< Diag_axis object
 
-  class(FmsNetcdfFile_t),  pointer     :: fileobj        !< The fileobj to write to
-  class(fmsDiagFile_type), pointer     :: diag_file      !< Diag_file object to open
+  class(FmsNetcdfFile_t),           pointer :: fileobj    !< The fileobj to write to
+  class(fmsDiagFile_type),          pointer :: diag_file  !< Diag_file object to open
+  class(fmsDiagField_type),         pointer :: field_ptr  !< diag_field(diag_file%field_ids(i)), for convenience
 
-  integer :: i           !< For do loops
-  integer :: j           !< For do loops
-  logical :: is_regional !< Flag indicating if the field is in a regional file
-  character(len=255) :: cell_measures
+  integer            :: i             !< For do loops
+  logical            :: is_regional   !< Flag indicating if the field is in a regional file
+  character(len=255) :: cell_measures !< cell_measures attributes for the field
 
   is_regional = this%is_regional()
 
@@ -1161,21 +1161,21 @@ subroutine write_field_metadata(this, diag_field, diag_axis)
   fileobj => diag_file%fileobj
 
   do i = 1, size(diag_file%field_ids)
-    j = diag_file%field_ids(i)
     if (.not. diag_file%field_registered(i)) cycle !TODO do something else here
+    field_ptr => diag_field(diag_file%field_ids(i))
 
     !TODO I think if the area and the volume field are no in the same file, a global attribute containing the
     !the file that the fields are in needs to be added
     cell_measures = ""
-    if (diag_field(j)%has_area()) then
-      cell_measures = "area:"//diag_field(diag_field(j)%get_area())%get_varname()
+    if (field_ptr%has_area()) then
+      cell_measures = "area:"//diag_field(field_ptr%get_area())%get_varname()
     endif
 
-    if (diag_field(j)%has_volume()) then
-      cell_measures = trim(cell_measures)//" volume:"//diag_field(diag_field(j)%get_volume())%get_varname()
+    if (field_ptr%has_volume()) then
+      cell_measures = trim(cell_measures)//" volume:"//diag_field(field_ptr%get_volume())%get_varname()
     endif
 
-    call diag_field(j)%write_field_metadata(fileobj, diag_file%id, diag_file%yaml_ids(i), diag_axis, &
+    call field_ptr%write_field_metadata(fileobj, diag_file%id, diag_file%yaml_ids(i), diag_axis, &
       this%FMS_diag_file%get_file_unlimdim(), is_regional, cell_measures)
   enddo
 

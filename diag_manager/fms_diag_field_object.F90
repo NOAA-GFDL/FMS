@@ -239,7 +239,7 @@ subroutine fms_register_diag_field_obj &
   if (present(longname))      this%longname      = trim(longname)
   if (present(standname))     this%standname     = trim(standname)
 
-  !> Ignore the units if the file they are set to "none". This it to reproduce previous diag_manager
+  !> Ignore the units if they are set to "none". This is to reproduce previous diag_manager behavior
   if (present(units)) then
     if (trim(units) .ne. "none") this%units = trim(units)
   endif
@@ -1001,17 +1001,17 @@ result(rslt)
 end function get_longname_to_write
 
 !> @brief Determine the dimension names to use when registering the field to fms2_io
-subroutine get_dimnames(this, diag_axis, unlim_dimname, rslt, is_regional)
-  class (fmsDiagField_type), target, intent(inout) :: this          !< diag field
-  class(fmsDiagAxisContainer_type),  intent(in)    :: diag_axis(:)  !< Diag_axis object
-  character(len=*),                  intent(in)    :: unlim_dimname !< The name of unlimited dimension
-  logical,                           intent(in)    :: is_regional   !< Flag indicating if the field is regional
-
-  character(len=120), intent(out), allocatable :: rslt(:)
+subroutine get_dimnames(this, diag_axis, unlim_dimname, dimnames, is_regional)
+  class (fmsDiagField_type), target,        intent(inout) :: this          !< diag field
+  class(fmsDiagAxisContainer_type), target, intent(in)    :: diag_axis(:)  !< Diag_axis object
+  character(len=*),                         intent(in)    :: unlim_dimname !< The name of unlimited dimension
+  character(len=120), allocatable,          intent(out)   :: dimnames(:)   !< Array of the dimension names
+                                                                           !! for the field
+  logical,                                  intent(in)    :: is_regional   !< Flag indicating if the field is regional
 
   integer :: i     !< For do loops
-  integer :: j     !< For do loops
   integer :: naxis !< Number of axis for the field
+  class(fmsDiagAxisContainer_type), pointer :: axis_ptr !diag_axis(this%axis_ids(i), for convenience
 
   !TODO there may be more stuff needed for the diurnal axis
   if (this%is_static()) then
@@ -1020,15 +1020,15 @@ subroutine get_dimnames(this, diag_axis, unlim_dimname, rslt, is_regional)
     naxis = size(this%axis_ids) + 1 !< Adding 1 more dimension for the unlimited dimension
   endif
 
-  allocate(rslt(naxis))
+  allocate(dimnames(naxis))
 
   do i = 1, size(this%axis_ids)
-    j = this%axis_ids(i)
-    rslt(i) = diag_axis(j)%axis%get_axis_name(is_regional)
+    axis_ptr => diag_axis(this%axis_ids(i))
+    dimnames(i) = axis_ptr%axis%get_axis_name(is_regional)
   enddo
 
   !< The last dimension is always the unlimited dimensions
-  if (.not. this%is_static()) rslt(naxis) = unlim_dimname
+  if (.not. this%is_static()) dimnames(naxis) = unlim_dimname
 
 end subroutine get_dimnames
 
