@@ -30,7 +30,7 @@ LDADD = $(top_builddir)/libFMS/libFMS.la
 
 # Build this test program.
 check_PROGRAMS = test_get_is_valid test_file_appendix test_fms2_io test_atmosphere_io test_io_simple test_io_with_mask test_global_att \
-                 test_bc_restart test_get_mosaic_tile_grid test_read_ascii_file test_unlimit_compressed
+                 test_bc_restart test_get_mosaic_tile_grid test_read_ascii_file test_unlimit_compressed test_chunksizes
 
 # This is the source code for the test.
 test_get_is_valid_SOURCES = test_get_is_valid.F90
@@ -48,6 +48,7 @@ test_get_mosaic_tile_grid_SOURCES=test_get_mosaic_tile_grid.F90
 test_read_ascii_file_SOURCES=test_read_ascii_file.F90
 test_file_appendix_SOURCES=test_file_appendix.F90
 test_unlimit_compressed_SOURCES=test_unlimit_compressed.F90
+test_chunksizes_SOURCES = test_chunksizes.F90
 
 EXTRA_DIST = test_bc_restart.sh test_fms2_io.sh test_atmosphere_io.sh test_io_simple.sh test_global_att.sh test_io_with_mask.sh test_read_ascii_file.sh
 
@@ -64,10 +65,16 @@ test_fms2_io.$(OBJEXT): argparse.mod
 # Run the test program.
 TESTS = test_bc_restart.sh test_fms2_io.sh test_atmosphere_io.sh test_io_simple.sh test_io_with_mask.sh test_global_att.sh test_read_ascii_file.sh
 
+if SKIP_NCDUMP_CHECKS
+skipflag="skip"
+else
+skipflag=""
+endif
+
 # Set srcdir as evironment variable to be reference in the job script
 TEST_EXTENSIONS = .sh
 SH_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
                   $(abs_top_srcdir)/test_fms/tap-driver.sh
-TESTS_ENVIRONMENT = srcdir="$(abs_top_srcdir)"
+TESTS_ENVIRONMENT = srcdir="$(abs_top_srcdir)" ncdump_skip=${skipflag}
 
 CLEANFILES = *.mod *.nc *.nc.* input.nml logfile.000000.out the_mask ascii_test1 *.dpi *.spi *.dyn *.spl *-files/*

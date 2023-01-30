@@ -42,7 +42,7 @@
 #define MPP_READ_2DDECOMP_4D_ mpp_read_2ddecomp_r4d_r8
 #undef MPP_TYPE_
 #define MPP_TYPE_ real(KIND=r8_kind)
-#include <mpp_read_2Ddecomp.h>
+#include <mpp_read_2Ddecomp.fh>
 
 #undef READ_RECORD_CORE_
 #define READ_RECORD_CORE_ read_record_core_r4
@@ -56,7 +56,7 @@
 #define MPP_READ_2DDECOMP_4D_ mpp_read_2ddecomp_r4d_r4
 #undef MPP_TYPE_
 #define MPP_TYPE_ real(KIND=r4_kind)
-#include <mpp_read_2Ddecomp.h>
+#include <mpp_read_2Ddecomp.fh>
 
 #undef READ_RECORD_
 #define READ_RECORD_ read_record_r8
@@ -68,7 +68,7 @@
 #define MPP_READ_COMPRESSED_3D_ mpp_read_compressed_r3d_r8
 #undef MPP_TYPE_
 #define MPP_TYPE_ real(KIND=r8_kind)
-#include <mpp_read_compressed.h>
+#include <mpp_read_compressed.fh>
 
 #undef READ_RECORD_
 #define READ_RECORD_ read_record_r4
@@ -80,7 +80,7 @@
 #define MPP_READ_COMPRESSED_3D_ mpp_read_compressed_r3d_r4
 #undef MPP_TYPE_
 #define MPP_TYPE_ real(KIND=r4_kind)
-#include <mpp_read_compressed.h>
+#include <mpp_read_compressed.fh>
 
 #include <mpp_read_distributed_ascii.inc>
 
