@@ -127,7 +127,7 @@ function get_value(file_id, key_id) bind(c) &
    type(c_ptr) :: key_value
 end function get_value
 
-!> @brief Private c function that determines they value of a key in yaml_file (see yaml_parser_binding.c)
+!> @brief Private c function that determines the value of a key in yaml_file (see yaml_parser_binding.c)
 !! @return c pointer with the value obtained
 function get_value_from_key_wrap(file_id, block_id, key_name, success) bind(c) &
    result(key_value2)
@@ -258,7 +258,7 @@ subroutine get_value_from_key_0d(file_id, block_id, key_name, key_value, is_opti
    integer, intent(in) :: block_id !< ID corresponding to the block you want the key for
    character(len=*), intent(in) :: key_name !< Name of the key you want the value for
    class(*), intent(inout):: key_value !< Value of the key
-   logical, intent(in), optional :: is_optional !< Flag indicating if it is okay for they key to not exist.
+   logical, intent(in), optional :: is_optional !< Flag indicating if it is okay for the key to not exist.
                                                 !! If the key does not exist key_value will not be set, so it
                                                 !! is the user's responsibility to initialize it before the call
 
@@ -324,7 +324,7 @@ subroutine get_value_from_key_1d(file_id, block_id, key_name, key_value, is_opti
    integer, intent(in) :: block_id !< ID corresponding to the block you want the key for
    character(len=*), intent(in) :: key_name !< Name of the key you want the value for
    class(*), intent(inout):: key_value(:) !< Value of the key
-   logical, intent(in), optional :: is_optional !< Flag indicating if it is okay for they key' to not exist.
+   logical, intent(in), optional :: is_optional !< Flag indicating if it is okay for the key' to not exist.
                                                 !! If the key does not exist key_value will not be set, so it
                                                 !! is the user's responsibility to initialize it before the call
 
