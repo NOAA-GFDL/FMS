@@ -27,7 +27,6 @@ program test_diag_update_buffer
    use mpp_io_mod, only: mpp_io_init !!TODO: To be removed (?) 2022.05
    use fms_mod, ONLY: error_mesg, FATAL,NOTE
 
-   USE fms_diag_buffer_mod
    USE diag_data_mod, ONLY:  i4, i8, r4, r8, time_average, time_rms, fms_diag_buff_intervals_t
 
    use fms_diag_field_object_mod, only : fmsDiagField_type
