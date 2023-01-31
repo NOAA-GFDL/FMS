@@ -23,8 +23,7 @@
 program test_diag_update_buffer
    use platform_mod
    use mpp_mod, only: mpp_init, mpp_set_stack_size, mpp_init_test_requests_allocated
-   use mpp_io_mod, only: mpp_io_init !!TODO: To be removed (?) 2022.05
-   use fms_mod, ONLY: error_mesg, FATAL,NOTE
+   use fms_mod, ONLY: fms_init, fms_end, error_mesg, FATAL,NOTE
    use diag_data_mod, ONLY: fms_diag_ibounds_type, VERY_LARGE_AXIS_LENGTH
    USE fms_diag_outfield_mod, ONLY: fms_diag_outfield_type, fms_diag_outfield_index_type
    USE fms_diag_fieldbuff_update_mod, ONLY: fieldbuff_update, fieldbuff_copy_misvals, &
@@ -35,12 +34,12 @@ program test_diag_update_buffer
 
    !! Class diag_buffer_type is here only for temporary use for modern diag_manager
    !! development until the real buffer class is sufficiently ready and merged.
-   TYPE diag_buffer_type
+   TYPE diag_test_buffer_type
       CLASS(*), ALLOCATABLE, DIMENSION(:,:,:,:,:) :: buffer
       CLASS(*), ALLOCATABLE, DIMENSION(:,:,:,:,:) :: counter
       CLASS(*), ALLOCATABLE, DIMENSION(:)  :: count_0d
       INTEGER, ALLOCATABLE, dimension(:) :: num_elements
-   END TYPE diag_buffer_type
+   END TYPE diag_test_buffer_type
 
    integer,parameter :: SZ=10    !<Field data this size in all spatiall dims.
    integer,parameter :: SL=2     !!Field data this size in 4th dim
@@ -58,7 +57,7 @@ program test_diag_update_buffer
    CLASS(*), ALLOCATABLE, TARGET :: missvalue
    LOGICAL, ALLOCATABLE, DIMENSION(:,:,:,:) :: mask
    LOGICAL, ALLOCATABLE, DIMENSION(:,:,:,:) :: oor_mask
-   TYPE(diag_buffer_type), ALLOCATABLE, TARGET :: buff_obj
+   TYPE(diag_test_buffer_type), ALLOCATABLE, TARGET :: buff_obj
 
    !! In principle, the field_data can be r4,r8,i4,i8,but we will only rest r4,i8
    !!These belwo will be pointers to the data
@@ -90,6 +89,7 @@ program test_diag_update_buffer
    INTEGER :: pow_value     ! Power value for rms or pow(x) calculations
    LOGICAL :: phys_window   ! OMP subsetted data? See output_fields
    LOGICAL :: need_compute  ! if local_output, does the current PE take part in send_data?
+   LOGICAL :: mask_variant
    INTEGER :: num_elems
    LOGICAL :: reduced_k_range
    TYPE(time_reduction_type), allocatable :: time_reduction !!Replaces LOGICAL::time_rms,time_max,time_min...
@@ -111,11 +111,8 @@ program test_diag_update_buffer
    TYPE(fms_diag_outfield_type), ALLOCATABLE :: ofield_cfg
    TYPE(fms_diag_outfield_index_type), ALLOCATABLE :: ofield_index_cfg
 
-   call mpp_init(mpp_init_test_requests_allocated)
-   call mpp_io_init()
-   call mpp_set_stack_size(145746)
+   call fms_init
 
-   print * , "Test has started"
    call error_mesg('test_update_buffers_with_field', 'Test has started',NOTE)
 
    !! Allocate the field data and associated data
@@ -129,13 +126,7 @@ program test_diag_update_buffer
 
    call init_field_values (field_data)
 
-   !!TODO:: Switch to final diang_manager buffer_object type
-   !!call allocate_buffer_obj(buff_obj, r4_datapoint, SZ, 1, NDI)
-   !! Initialize the buffer object
-   !! call buffer_obj%allocate_buffer(field_data(1,1,1,1), (/ SZ, SZ, SZ, SZ, 2/), buffer_fname ) !!TODO:
-   !! call buffer_obj%initialize_buffer( real(0, kind=r8_kind), buffer_fname ) !!
-   !! remap_buffer_out => buffobj5%remap_buffer(fname)
-   !! buffer => buffer_obj%remap_buffer("dummy_name")
+   !!TODO:: Can switch to final diang_manager buffer_object type in modern diag effort.
 
    !!In this version, we will meerely set type specific pointers to data. Some will be
    !! null, but at the end either the r4 pointers are non-null or the i8 pointers are not null
@@ -196,10 +187,15 @@ program test_diag_update_buffer
    missvalue = 1.0e-5
    pow_value = 1
    phys_window = .false.
+   need_compute = .false.
+   mask_variant = .false.
+   reduced_k_range = .false.
    num_elems = 0
    num_threads = 1
    active_omp_level = 0
    issued_mask_ignore_warning = .false.
+   mask = .true.
+
 
    call init_buff_values_1 (buff_obj%buffer, buff_obj%counter, buff_obj%count_0d, buff_obj%num_elements)
 
@@ -215,7 +211,8 @@ program test_diag_update_buffer
 
    ALLOCATE( ofield_cfg )
    call init_ofield_cfg(ofield_cfg, module_name1, field_name1, output_name1, pow_value, &
-      & phys_window, need_compute, reduced_k_range , num_elems, time_reduction_type1, output_freq1 )
+      & phys_window, need_compute, mask_variant, reduced_k_range , &
+      & num_elems, time_reduction_type1, output_freq1 )
    ALLOCATE( ofield_index_cfg )
    CALL init_ofield_index_cfg(ofield_index_cfg, 1+hi, 1+hj, 1, SZ - hi, SZ - hj, SZ,&
       &  hi, hj, 1 + hi, SZ - hi, 1 + hj, SZ - hj)
@@ -236,7 +233,7 @@ program test_diag_update_buffer
       & l_start, l_end, err_msg, err_msg_local )
 
    call check_results_1(ofb_r4_ptr, 1, "Buffer_update_test01")
-   !!call print_output_field_values( buff_obj%buffer, 1 )
+   call print_output_field_values( buff_obj%buffer, 1 )
 
    !! ************ 2ND TEST: **********************
    !!First make sure buffer vals are all zero
@@ -255,18 +252,16 @@ program test_diag_update_buffer
 
    call check_results_1(ofb_r4_ptr, 1, "Buffer_update_test02")
 
-   !!TODO: Why is it that just printing this note makes the unit test fail?
-  !! call error_mesg('test_diag_update_buffer', 'Test has finished',NOTE)
+  call error_mesg('test_diag_update_buffer', 'Test has finished',NOTE)
 
-   call MPI_finalize(ierr)
-
+   call fms_end
 
 CONTAINS
    !> @brief Initialized an fms_diag_outfield_type as needed in the test.
    !! TODO in future PR: There may in the future ne a member function of fms_diag_outfield_type
    !! to call.
    subroutine init_ofield_cfg( of_cfg, module_name, field_name, output_name, &
-   &  power_val, phys_window, need_compute, reduced_k_range, num_elems, &
+   &  power_val, phys_window, need_compute, mask_variant,  reduced_k_range, num_elems, &
    & time_reduction_type,output_freq)
       type(fms_diag_outfield_type)  :: of_cfg
       CHARACTER(len=*), INTENT(in) :: module_name !< Var with same name in fms_diag_outfield_type
@@ -275,10 +270,12 @@ CONTAINS
       INTEGER, INTENT(in) :: power_val    !< Var with same name in fms_diag_outfield_type
       LOGICAL, INTENT(in) :: phys_window  !< Var with same name in fms_diag_outfield_type
       LOGICAL, INTENT(in) :: need_compute  !< Var with same name in fms_diag_outfield_type
+      LOGICAL, INTENT(in) :: mask_variant  !< Var with same name in fms_diag_outfield_type
       LOGICAL, INTENT(in) :: reduced_k_range !< Var with same name in fms_diag_outfield_type
       INTEGER, INTENT(in) :: num_elems !< Var with same name in fms_diag_outfield_type
       INTEGER, INTENT(in) :: time_reduction_type !< Var with same name in fms_diag_outfield_type
       INTEGER, INTENT(in) :: output_freq !< The output_freq need in initaliztion of time_reduction_type
+
       of_cfg%module_name = module_name
       of_cfg%field_name = field_name
       of_cfg%output_name = output_name
@@ -286,6 +283,7 @@ CONTAINS
       of_cfg%phys_window = phys_window
       of_cfg%need_compute = need_compute
       of_cfg%reduced_k_range = reduced_k_range
+      of_cfg%mask_variant = mask_variant
       call of_cfg%time_reduction%initialize(time_reduction_type, output_freq)
    end subroutine init_ofield_cfg
 
@@ -393,18 +391,22 @@ CONTAINS
       INTEGER :: NX,NY,NZ, NL
       INTEGER :: i,j,k,l
       LOGICAL :: pass
-
+      integer :: idx
+      real :: bv
       pass = .true.
       NX = size(buff,1)
       NY= size(buff,2)
       NZ= size(buff,3)
       NL= size(buff,4)
+
       DO l = 1, NL
          DO k = 1, NZ
             DO j = 1, NY
                DO i = 1, NX
                   SELECT TYPE ( buff)
                    TYPE IS (real(kind=r4_kind))
+                      idx =  get_array_index_from_4D(i,j,k,l,NX,NY,NZ)
+                      bv = buff(i,j,k,l,sample)
                      if ( get_array_index_from_4D(i,j,k,l,NX,NY,NZ)  /= buff(i,j,k,l,sample) ) then
                         pass = .false.
                      endif
@@ -491,7 +493,7 @@ CONTAINS
 
 
    subroutine allocate_buffer_obj( data_point, bo, NX,NY,NZ, NL, NDI)
-      TYPE(diag_buffer_type), INTENT(inout), allocatable :: bo
+      TYPE(diag_test_buffer_type), INTENT(inout), allocatable :: bo
       CLASS(*), INTENT(in) :: data_point !> Sample point allocated to the type being tested.
       INTEGER, INTENT(IN) :: NX, NY, NZ !> The three spatial dimensions.
       INTEGER, INTENT(IN) :: NL !> Size of the 4th dimentions
@@ -499,18 +501,18 @@ CONTAINS
       allocate (bo)
       select type (data_point)
        type is (integer(kind=i8_kind))
-         allocate(integer(kind=i8_kind) :: buff_obj%buffer(NX,NY,NZ,NL, NDI))
-         allocate(integer(kind=i8_kind) :: buff_obj%counter(NX,NY,NZ,NL, NDI))
-         allocate(integer(kind=i8_kind) :: buff_obj%count_0d(NDI))
+         allocate(integer(kind=i8_kind) :: bo%buffer(NX,NY,NZ,NL, NDI))
+         allocate(integer(kind=i8_kind) :: bo%counter(NX,NY,NZ,NL, NDI))
+         allocate(integer(kind=i8_kind) :: bo%count_0d(NDI))
        type is (real(kind=r4_kind))
-         allocate(real(kind=r4_kind) :: buff_obj%buffer(NX,NY,NZ,NL,NDI))
-         allocate(real(kind=r4_kind) :: buff_obj%counter(NX,NY,NZ,NL,NDI))
-         allocate(real(kind=r4_kind) :: buff_obj%count_0d(NDI))
+         allocate(real(kind=r4_kind) :: bo%buffer(NX,NY,NZ,NL,NDI))
+         allocate(real(kind=r4_kind) :: bo%counter(NX,NY,NZ,NL,NDI))
+         allocate(real(kind=r4_kind) :: bo%count_0d(NDI))
        class default
          call error_mesg("allocate buffer obj", "The input data type is not a  r4 or i8", FATAL)
       end select
 
-      allocate( buff_obj%num_elements(NDI))
+      allocate( bo%num_elements(NDI))
 
    END subroutine allocate_buffer_obj
 end program test_diag_update_buffer
