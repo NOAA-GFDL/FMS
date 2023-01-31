@@ -41,7 +41,7 @@ module axis_utils2_mod
 
   integer, parameter :: maxatts = 100
   real(r8_kind), parameter    :: epsln = real(1.d-10, kind=r8_kind)
-  real(r8_kind), parameter    :: fp5 = real(0.5, kind=r8_kind), f360 = real(360.0, kind=r8_kind)
+  real(r8_kind), parameter    :: fp5 = 0.5_r8_kind, f360 = 360.0_r8_kind
 
 !> @}
 ! Include variable "version" to be written to log file.
