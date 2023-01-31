@@ -74,6 +74,7 @@ private
     procedure :: fms_get_axis_name_from_id
     procedure :: fms_diag_accept_data
     procedure :: fms_diag_send_complete
+    procedure :: fms_diag_do_io
 #ifdef use_yaml
     procedure :: get_diag_buffer
 #endif
@@ -123,19 +124,16 @@ end subroutine fms_diag_object_init
 !! Closes all files
 !! Deallocates all buffers, fields, and files
 !! Uninitializes the fms_diag_object
-subroutine fms_diag_object_end (this)
+subroutine fms_diag_object_end (this, time)
   class(fmsDiagObject_type) :: this
+  TYPE(time_type), INTENT(in) :: time
+
   integer                   :: i
 #ifdef use_yaml
   !TODO: loop through files and force write
   if (.not. this%initialized) return
 
-  do i = 1, size(this%FMS_diag_files)
-    !< Go away if the file is a subregional file and the current PE does not have any data for it
-    if (.not. this%FMS_diag_files(i)%writing_on_this_pe()) cycle
-
-    call this%FMS_diag_files(i)%close_diag_file()
-  enddo
+  call this%fms_diag_do_io(time, is_end_of_run=.true.)
   !TODO: Deallocate diag object arrays and clean up all memory
   do i=1, size(this%FMS_diag_buffers)
     if(allocated(this%FMS_diag_buffers(i)%diag_buffer_obj)) then
@@ -212,15 +210,18 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
   fieldptr => this%FMS_diag_fields(this%registered_variables)
 !> Register the data for the field
   call fieldptr%register(modname, varname, diag_field_indices, fms_diag_object%diag_axis, &
-       axes, longname, units, missing_value, varRange, mask_variant, standname, &
-       do_not_log, err_msg, interp_method, tile_count, area, volume, realm, static)
+       axes=axes, longname=longname, units=units, missing_value=missing_value, varRange= varRange, &
+       mask_variant= mask_variant, standname=standname, do_not_log=do_not_log, err_msg=err_msg, &
+       interp_method=interp_method, tile_count=tile_count, area=area, volume=volume, realm=realm, &
+       static=static)
 !> Get the file IDs from the field indicies from the yaml
   file_ids = get_diag_files_id(diag_field_indices)
+  call fieldptr%set_file_ids(file_ids)
 !> Add the axis information, initial time, and field IDs to the files
   if (present(axes) .and. present(init_time)) then
     do i = 1, size(file_ids)
      fileptr => this%FMS_diag_files(file_ids(i))%FMS_diag_file
-     call fileptr%add_field_id(fieldptr%get_id())
+     call fileptr%add_field_and_yaml_id(fieldptr%get_id(), diag_field_indices(i))
      call fileptr%set_file_domain(fieldptr%get_domain(), fieldptr%get_type_of_domain())
      call fileptr%add_axes(axes, this%diag_axis, this%registered_axis)
      call fileptr%add_start_time(init_time)
@@ -229,7 +230,7 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
   elseif (present(axes)) then !only axes present
     do i = 1, size(file_ids)
      fileptr => this%FMS_diag_files(file_ids(i))%FMS_diag_file
-     call fileptr%add_field_id(fieldptr%get_id())
+     call fileptr%add_field_and_yaml_id(fieldptr%get_id(), diag_field_indices(i))
      call fileptr%set_file_domain(fieldptr%get_domain(), fieldptr%get_type_of_domain())
      call fileptr%add_axes(axes, this%diag_axis, this%registered_axis)
      call fileptr%set_file_time_ops (fieldptr%diag_field(i), fieldptr%is_static())
@@ -237,14 +238,14 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
   elseif (present(init_time)) then !only inti time present
     do i = 1, size(file_ids)
      fileptr => this%FMS_diag_files(file_ids(i))%FMS_diag_file
-     call fileptr%add_field_id(fieldptr%get_id())
+     call fileptr%add_field_and_yaml_id(fieldptr%get_id(), diag_field_indices(i))
      call fileptr%add_start_time(init_time)
      call fileptr%set_file_time_ops (fieldptr%diag_field(i), fieldptr%is_static())
     enddo
   else !no axis or init time present
     do i = 1, size(file_ids)
      fileptr => this%FMS_diag_files(file_ids(i))%FMS_diag_file
-     call fileptr%add_field_id(fieldptr%get_id())
+     call fileptr%add_field_and_yaml_id(fieldptr%get_id(), diag_field_indices(i))
      call fileptr%set_file_time_ops (fieldptr%diag_field(i), fieldptr%is_static())
     enddo
   endif
@@ -363,7 +364,8 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
   fms_register_static_field = this%register( &
       & module_name, field_name, axes=axes, &
       & longname=long_name, units=units, missing_value=missing_value, varrange=range, &
-      & standname=standard_name, do_not_log=do_not_log, area=area, volume=volume, realm=realm, &
+      & mask_variant=mask_variant, do_not_log=do_not_log, interp_method=interp_method, tile_count=tile_count, &
+      & standname=standard_name, area=area, volume=volume, realm=realm, &
       & static=.true.)
 #endif
 end function fms_register_static_field
@@ -507,24 +509,25 @@ end function fms_diag_accept_data
 !> @brief Loops through all the files, open the file, writes out axis and
 !! variable metadata and data when necessary.
 subroutine fms_diag_send_complete(this, time_step)
-  class(fmsDiagObject_type), target, intent (inout) :: this !< The diag object
+  class(fmsDiagObject_type), target, intent (inout) :: this      !< The diag object
   TYPE (time_type),                  INTENT(in)     :: time_step !< The current model time
+
+  integer :: i !< For do loops
 
   integer :: ifile !< For file loops
   integer :: ifield !< For field loops
-
 #ifndef use_yaml
 CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling with -Duse_yaml")
 #else
-  class(fmsDiagFileContainer_type), pointer :: diag_file !< Pointer to this%FMS_diag_files(i) (for convenience)
+
+  class(fmsDiagFileContainer_type), pointer :: diag_file !< Pointer to this%FMS_diag_files(i) (for convenience
   class(fmsDiagField_type), pointer :: diag_field !< Pointer to this%FMS_diag_files(i)%diag_field(j)
-  logical :: file_is_opened_this_time_step !< True if the file was opened in this time_step
-                                           !! If true the metadata will need to be written
   logical :: math !< True if the math functions need to be called using the data buffer,
-                  !! False if the math functions were done in accept_data
+  !! False if the math functions were done in accept_data
   integer, dimension(:), allocatable :: file_field_ids !< Array of field IDs for a file
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!! In the future, this may be parallelized for offloading
+
+  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  !! In the future, this may be parallelized for offloading
   file_loop: do ifile = 1, size(this%FMS_diag_files)
     diag_file => this%FMS_diag_files(ifile)
     field_outer_if: if (size(diag_file%FMS_diag_file%get_field_ids()) .ge. 1) then
@@ -533,7 +536,7 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
       field_loop: do ifield = 1, size(file_field_ids)
         diag_field => this%FMS_diag_fields(file_field_ids(ifield))
         !> Check if math needs to be done
-!        math = diag_field%get_math_needs_to_be_done()
+        ! math = diag_field%get_math_needs_to_be_done()
         math = .false. !TODO: replace this with real thing
         calling_math: if (math) then
           !!TODO: call math functions !!
@@ -544,6 +547,35 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
       !> Clean up, clean up, everybody do your share
       if (allocated(file_field_ids)) deallocate(file_field_ids)
     endif field_outer_if
+  enddo file_loop
+
+  call this%fms_diag_do_io(time_step)
+#endif
+
+end subroutine fms_diag_send_complete
+
+!> @brief Loops through all the files, open the file, writes out axis and
+!! variable metadata and data when necessary.
+subroutine fms_diag_do_io(this, time_step, is_end_of_run)
+  class(fmsDiagObject_type), target, intent (inout) :: this          !< The diag object
+  TYPE (time_type),                  INTENT(in)     :: time_step     !< The current model time
+  logical,                 optional, intent(in)     :: is_end_of_run !< If .true. this is the end of the run,
+                                                                     !! so force write
+#ifdef use_yaml
+  integer :: i !< For do loops
+  class(fmsDiagFileContainer_type), pointer :: diag_file !< Pointer to this%FMS_diag_files(i) (for convenience)
+
+
+  logical :: file_is_opened_this_time_step !< True if the file was opened in this time_step
+                                           !! If true the metadata will need to be written
+  logical :: force_write
+
+  force_write = .false.
+  if (present (is_end_of_run)) force_write = .true.
+
+  do i = 1, size(this%FMS_diag_files)
+    diag_file => this%FMS_diag_files(i)
+
     !< Go away if the file is a subregional file and the current PE does not have any data for it
     if (.not. diag_file%writing_on_this_pe()) cycle
 
@@ -551,6 +583,7 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
     if (file_is_opened_this_time_step) then
       call diag_file%write_time_metadata()
       call diag_file%write_axis_metadata(this%diag_axis)
+      call diag_file%write_field_metadata(this%FMS_diag_fields, this%diag_axis)
       call diag_file%write_axis_data(this%diag_axis)
     endif
 
@@ -560,12 +593,15 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
       !TODO call diag_file%add_variable_data()
       call diag_file%update_next_write(time_step)
       call diag_file%update_current_new_file_freq_index(time_step)
-      if (diag_file%is_time_to_close_file(time_step)) call diag_file%close_diag_file
+      if (diag_file%is_time_to_close_file(time_step)) call diag_file%close_diag_file()
+    else if (force_write .and. .not. diag_file%is_file_static()) then
+      call diag_file%increase_unlimited_dimension()
+      call diag_file%write_time_data()
+      call diag_file%close_diag_file()
     endif
-  enddo file_loop
+  enddo
 #endif
-
-end subroutine fms_diag_send_complete
+end subroutine fms_diag_do_io
 
 !> @brief Add a attribute to the diag_obj using the diag_field_id
 subroutine fms_diag_field_add_attribute(this, diag_field_id, att_name, att_value)
