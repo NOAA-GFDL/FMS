@@ -202,11 +202,11 @@ CONTAINS
       rslt = time_average
     else
       rslt = time_none
-      if(.NOT. ofield%static) then
+      !if(.NOT. ofield%static) then
          !!TODO: Set error to FATAL. When legacy diag_manager is removed?
-         CALL error_mesg('fms_diag_outfield:get_output_field_time_reduction', &
-            & 'result is time_none but out_field%static is not true', WARNING)
-      end if
+      !   CALL error_mesg('fms_diag_outfield:get_output_field_time_reduction', &
+      !      & 'result is time_none but out_field%static is not true', WARNING)
+      !end if
     endif
     end function get_output_field_time_reduction
 
