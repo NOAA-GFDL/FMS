@@ -1900,7 +1900,6 @@ CONTAINS
 
         !! ofield_cfg%buff_bounds, &
          IF ( average ) THEN
-          CALL error_mesg('send_data_3d','flag 1', NOTE)
             !!TODO: the copy that is filed_out should not be necessary
             temp_result = fieldbuff_update(ofield_cfg, ofield_index_cfg, field_out, sample, &
                & output_fields(out_num)%buffer, output_fields(out_num)%counter ,output_fields(out_num)%buff_bounds,&
@@ -1922,7 +1921,6 @@ CONTAINS
                & output_fields(out_num)%buffer, output_fields(out_num)%buff_bounds , &
                & output_fields(out_num)%count_0d(sample), &
                & mask_ptr, missvalue, l_start, l_end, err_msg, err_msg_local)
-               CALL error_mesg('send_data_3d','flag 3', NOTE)
             IF (temp_result .eqv. .FALSE.) THEN
               DEALLOCATE(ofield_index_cfg)
               DEALLOCATE(ofield_cfg)
