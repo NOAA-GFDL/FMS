@@ -29,7 +29,6 @@ program test_diag_update_buffer
 
    USE diag_data_mod, ONLY:  i4, i8, r4, r8, time_average, time_rms, fms_diag_buff_intervals_t
 
-   use fms_diag_field_object_mod, only : fmsDiagField_type
    USE fms_diag_outfield_mod, ONLY: fms_diag_outfield_type, fms_diag_outfield_index_type
    USE fms_diag_fieldbuff_update_mod, ONLY: fieldbuff_update, fieldbuff_copy_misvals, &
    & fieldbuff_copy_fieldvals
