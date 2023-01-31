@@ -235,7 +235,7 @@ program test_diag_update_buffer
       & issued_mask_ignore_warning, &
       & l_start, l_end, err_msg, err_msg_local )
 
-   call check_results_1(ofb_r4_ptr, 1, "Tets01")
+   call check_results_1(ofb_r4_ptr, 1, "Buffer_update_test01")
    !!call print_output_field_values( buff_obj%buffer, 1 )
 
    !! ************ 2ND TEST: **********************
@@ -245,17 +245,18 @@ program test_diag_update_buffer
 
    !! Update the buffer values with the copy_fieldvals function.
    ! missvalue_present = .true. TBD
-   call print_output_field_values( buff_obj%buffer, 1 )
+   !!call print_output_field_values( buff_obj%buffer, 1 )
    temp_result = fieldbuff_copy_fieldvals(ofield_cfg, ofield_index_cfg, field_r4_ptr, sample, &
       & ofb_r4_ptr, buff_bounds, &
       & ofb0d_r4_ptr(sample),  mask, missval_r4_ptr, &
       & l_start, l_end, err_msg, err_msg_local )
 
-   call print_output_field_values(  buff_obj%buffer, 1 )
+   !!call print_output_field_values(  buff_obj%buffer, 1 )
 
-   call check_results_1(ofb_r4_ptr, 1, "Test02")
+   call check_results_1(ofb_r4_ptr, 1, "Buffer_update_test02")
 
-   call error_mesg('test_diag_update_buffer', 'Test has finished',NOTE)
+   !!TODO: Why is it that just printing this note makes the unit test fail?
+  !! call error_mesg('test_diag_update_buffer', 'Test has finished',NOTE)
 
    call MPI_finalize(ierr)
 
