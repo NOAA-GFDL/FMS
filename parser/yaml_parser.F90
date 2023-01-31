@@ -61,13 +61,13 @@ end interface get_value_from_key
 interface
 
 !> @brief Private c function that opens and parses a yaml file (see yaml_parser_binding.c)
-!! @return Flag indicating if the read was sucessful
+!! @return Flag indicating if the read was successful
 function open_and_parse_file_wrap(filename, file_id) bind(c) &
-   result(sucess)
+   result(success)
    use iso_c_binding, only: c_char, c_int, c_bool
    character(kind=c_char), intent(in) :: filename(*) !< Filename of the yaml file
    integer(kind=c_int), intent(out) :: file_id !< File id corresponding to the yaml file that was opened
-   logical(kind=c_bool) :: sucess !< Flag indicating if the read was sucessful
+   logical(kind=c_bool) :: success !< Flag indicating if the read was successful
 end function open_and_parse_file_wrap
 
 !> @brief Private c function that checks if a file_id is valid (see yaml_parser_binding.c)
@@ -129,14 +129,14 @@ end function get_value
 
 !> @brief Private c function that determines they value of a key in yaml_file (see yaml_parser_binding.c)
 !! @return c pointer with the value obtained
-function get_value_from_key_wrap(file_id, block_id, key_name, sucess) bind(c) &
+function get_value_from_key_wrap(file_id, block_id, key_name, success) bind(c) &
    result(key_value2)
 
    use iso_c_binding, only: c_ptr, c_char, c_int, c_bool
    integer(kind=c_int), intent(in) :: file_id !< File id of the yaml file to search
    integer(kind=c_int), intent(in) :: block_id !< ID corresponding to the block you want the key for
    character(kind=c_char), intent(in) :: key_name(*) !< Name of the key you want the value for
-   integer(kind=c_int), intent(out) :: sucess !< Flag indicating if the call was sucessful
+   integer(kind=c_int), intent(out) :: success !< Flag indicating if the call was successful
    type(c_ptr) :: key_value2
 end function get_value_from_key_wrap
 
@@ -206,7 +206,7 @@ function open_and_parse_file(filename) &
    result(file_id)
 
    character(len=*), intent(in) :: filename !< Filename of the yaml file
-   logical :: sucess !< Flag indicating if the read was sucessful
+   logical :: success !< Flag indicating if the read was successful
    logical :: yaml_exists !< Flag indicating whether the yaml exists
 
    integer :: file_id
@@ -217,8 +217,8 @@ function open_and_parse_file(filename) &
       call mpp_error(NOTE, "The yaml file:"//trim(filename)//" does not exist, hopefully this is your intent!")
       return
    end if
-   sucess = open_and_parse_file_wrap(trim(filename)//c_null_char, file_id)
-   if (.not. sucess) call mpp_error(FATAL, "Error opening the yaml file:"//trim(filename)//". Check the file!")
+   success = open_and_parse_file_wrap(trim(filename)//c_null_char, file_id)
+   if (.not. success) call mpp_error(FATAL, "Error opening the yaml file:"//trim(filename)//". Check the file!")
 
 end function open_and_parse_file
 
@@ -265,7 +265,7 @@ subroutine get_value_from_key_0d(file_id, block_id, key_name, key_value, is_opti
    character(len=255) :: buffer !< String buffer with the value
 
    type(c_ptr) :: c_buffer !< c pointer with the value
-   integer(kind=c_int) :: sucess !< Flag indicating if the value was obtained sucessfully
+   integer(kind=c_int) :: success !< Flag indicating if the value was obtained successfully
    logical :: optional !< Flag indicating that the key was optional
    integer :: err_unit !< integer with io error
 
@@ -277,8 +277,8 @@ subroutine get_value_from_key_0d(file_id, block_id, key_name, key_value, is_opti
    if (.not. is_valid_block_id(file_id, block_id)) call mpp_error(FATAL, &
        &  "The block id in your get_value_from_key call is invalid! Check your call.")
 
-   c_buffer = get_value_from_key_wrap(file_id, block_id, trim(key_name)//c_null_char, sucess)
-   if (sucess == 1) then
+   c_buffer = get_value_from_key_wrap(file_id, block_id, trim(key_name)//c_null_char, success)
+   if (success == 1) then
      buffer = fms_c2f_string(c_buffer)
 
      select type (key_value)
@@ -331,7 +331,7 @@ subroutine get_value_from_key_1d(file_id, block_id, key_name, key_value, is_opti
    character(len=255) :: buffer !< String buffer with the value
 
    type(c_ptr) :: c_buffer !< c pointer with the value
-   integer(kind=c_int) :: sucess !< Flag indicating if the value was obtained sucessfully
+   integer(kind=c_int) :: success !< Flag indicating if the value was obtained successfully
    logical :: optional !< Flag indicating that the key was optional
    integer :: err_unit !< integer with io error
 
@@ -343,8 +343,8 @@ subroutine get_value_from_key_1d(file_id, block_id, key_name, key_value, is_opti
    if (.not. is_valid_block_id(file_id, block_id)) call mpp_error(FATAL, &
        &  "The block id in your get_value_from_key call is invalid! Check your call.")
 
-   c_buffer = get_value_from_key_wrap(file_id, block_id, trim(key_name)//c_null_char, sucess)
-   if (sucess == 1) then
+   c_buffer = get_value_from_key_wrap(file_id, block_id, trim(key_name)//c_null_char, success)
+   if (success == 1) then
      buffer = fms_c2f_string(c_buffer)
 
      select type (key_value)
