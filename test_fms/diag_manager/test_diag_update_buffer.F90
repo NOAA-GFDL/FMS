@@ -21,18 +21,15 @@
 !! the  "math" functions in module fms_diag_fieldbuff_update_mod. It mimics
 !! the daig_manager::send_4d operation of calling those functions.
 program test_diag_update_buffer
-#ifdef use_yaml
    use platform_mod
    use mpp_mod, only: mpp_init, mpp_set_stack_size, mpp_init_test_requests_allocated
    use mpp_io_mod, only: mpp_io_init !!TODO: To be removed (?) 2022.05
    use fms_mod, ONLY: error_mesg, FATAL,NOTE
-
-   USE diag_data_mod, ONLY:  i4, i8, r4, r8, time_average, time_rms, fms_diag_buff_intervals_t
-
+   use diag_data_mod, ONLY: fms_diag_ibounds_type, VERY_LARGE_AXIS_LENGTH
    USE fms_diag_outfield_mod, ONLY: fms_diag_outfield_type, fms_diag_outfield_index_type
    USE fms_diag_fieldbuff_update_mod, ONLY: fieldbuff_update, fieldbuff_copy_misvals, &
    & fieldbuff_copy_fieldvals
-   USE fms_diag_time_reduction_mod, ONLY: time_reduction_type
+   USE fms_diag_time_reduction_mod, ONLY: time_reduction_type, time_average, time_rms
 
    implicit  none
 
@@ -50,6 +47,8 @@ program test_diag_update_buffer
    integer,parameter :: NDI=1    !!Number of diurnal elemes
    CLASS(*), ALLOCATABLE :: r4_datapoint, i8_datapoint !> to be allocated of rype data (e.g. r4. i8)
                               !! to be used thought.
+
+   TYPE(fms_diag_ibounds_type) ::  buff_bounds
 
    !!Diag_manager::send_data uses CLASS(*) in function signature, SO
    !! we mimic the resulting operations. The set of ClASS(*) data needs to be allocated of same
@@ -83,7 +82,6 @@ program test_diag_update_buffer
    logical :: test_passed        !< Flag indicating if the test_passed
    logical :: temp_result !< Set to result of one of the update functions.
 
-   TYPE(fmsDiagField_type) :: field
    CHARACTER(LEN=*), PARAMETER :: module_name1 = "modX" !< Some dummy valuel
    CHARACTER(LEN=*), PARAMETER:: field_name1 = "fieldX" !< Some dummy valuel
    CHARACTER(LEN=*), PARAMETER :: output_name1 = "ofieldX" !< Some dummy valuel
@@ -100,8 +98,12 @@ program test_diag_update_buffer
    INTEGER:: sample !!diurnal_index
    REAL ::   weight
    INTEGER:: hi, hj  !!for halo sizes
+   integer num_threads
+   integer active_omp_level
+   logical issued_mask_ignore_warning
 
-   CHARACTER(len=128) :: err_msg, err_msg_local
+
+   CHARACTER(len=256) :: err_msg, err_msg_local
    integer, dimension(3) :: l_start, l_end
 
    LOGICAL :: missvalue_present = .false.
@@ -123,8 +125,7 @@ program test_diag_update_buffer
    call allocate_input_data_and_ptrs(r4_datapoint, field_data, rmask, missvalue, mask, SZ,SZ,SZ,SL)
 
    call allocate_buffer_obj(r4_datapoint, buff_obj, SZ, SZ, SZ, SL, NDI)
-
-   call init_field_obj(field, diag_field_id )
+   call buff_bounds%reset(VERY_LARGE_AXIS_LENGTH, 0)
 
    call init_field_values (field_data)
 
@@ -196,6 +197,9 @@ program test_diag_update_buffer
    pow_value = 1
    phys_window = .false.
    num_elems = 0
+   num_threads = 1
+   active_omp_level = 0
+   issued_mask_ignore_warning = .false.
 
    call init_buff_values_1 (buff_obj%buffer, buff_obj%counter, buff_obj%count_0d, buff_obj%num_elements)
 
@@ -223,11 +227,12 @@ program test_diag_update_buffer
    !! Case: mask_var=false & missval not present & mask not present & not_reduced_k_range
    test_passed = .true.  !! will be set to false if there are any issues.
 
-   temp_result = fieldbuff_update(ofield_cfg, ofield_index_cfg, field, field_r4_ptr, sample, &
-      & ofb_r4_ptr,ofc_r4_ptr, &
-      & ofield_cfg%ntval,  ofb0d_r4_ptr (sample), &
-      & buff_obj%num_elements(sample), &
-      & mask, weight, missval_r4_ptr, missvalue_present, &
+   temp_result = fieldbuff_update(ofield_cfg, ofield_index_cfg, field_r4_ptr, sample, &
+      & ofb_r4_ptr, ofc_r4_ptr, buff_bounds, &
+      & ofb0d_r4_ptr (sample), buff_obj%num_elements(sample), &
+      & mask, weight, missval_r4_ptr, &
+      & num_threads, active_omp_level, &
+      & issued_mask_ignore_warning, &
       & l_start, l_end, err_msg, err_msg_local )
 
    call check_results_1(ofb_r4_ptr, 1, "Tets01")
@@ -242,7 +247,8 @@ program test_diag_update_buffer
    ! missvalue_present = .true. TBD
    call print_output_field_values( buff_obj%buffer, 1 )
    temp_result = fieldbuff_copy_fieldvals(ofield_cfg, ofield_index_cfg, field_r4_ptr, sample, &
-      & ofb_r4_ptr, ofield_cfg%ntval, ofb0d_r4_ptr(sample), mask, missval_r4_ptr, missvalue_present, &
+      & ofb_r4_ptr, buff_bounds, &
+      & ofb0d_r4_ptr(sample),  mask, missval_r4_ptr, &
       & l_start, l_end, err_msg, err_msg_local )
 
    call print_output_field_values(  buff_obj%buffer, 1 )
@@ -255,15 +261,6 @@ program test_diag_update_buffer
 
 
 CONTAINS
-   !! The fied object in these tests are not really used, except that
-   !! the buffer update functions may get and set memebers
-   !! active_omp_level and num_threads
-   subroutine init_field_obj( field, field_id)
-      type(fmsDiagField_type) , intent(inout):: field
-      integer, intent(in):: field_id
-      call field%setID (field_id)
-   end subroutine init_field_obj
-
    !> @brief Initialized an fms_diag_outfield_type as needed in the test.
    !! TODO in future PR: There may in the future ne a member function of fms_diag_outfield_type
    !! to call.
@@ -515,7 +512,6 @@ CONTAINS
       allocate( buff_obj%num_elements(NDI))
 
    END subroutine allocate_buffer_obj
-#endif
 end program test_diag_update_buffer
 
 
