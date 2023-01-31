@@ -37,7 +37,10 @@ MODULE fms_diag_time_reduction_mod
 
    implicit none
 
-   !!These parametes may be put in diag_data?
+   !!These parametes are the possible kinds of time reduction operations.
+   !!Note that sometimes one kind inplies another.
+   !!TODO: should they be put in diag_data ?
+   !!TODO:
    !!TODO: time_diurnal "not really" same kind as others, so remove?
    INTEGER, PARAMETER :: time_none    = 0 !< There is no reduction method
    INTEGER, PARAMETER :: time_average = 1 !< The reduction method is avera
@@ -101,23 +104,22 @@ CONTAINS
 
       this%the_type = dt
 
-      !! set the time_averaging flag
+      !! Set the time_averaging flag
       !! See legacy init_ouput_fields function, lines 1470ff
       IF(( dt .EQ. time_average) .OR. (dt .EQ. time_rms) .OR. (dt .EQ. time_power) .OR. &
       & (dt .EQ. time_diurnal)) THEN
          this%time_averaging = .true.
       ELSE
          this%time_averaging= .false.
-         IF(out_frequency .NE. EVERY_TIME) THEN
-            CALL error_mesg('time_reduction_type:time_reduction_type_new', &
-            & 'time_averaging=.false. but out_frequency .ne. EVERY_TIME', FATAL)
-         ENDIF
          IF((dt .NE. time_max) .AND. (dt .ne. time_min) .AND. (dt .NE. time_sum) &
          & .AND. (dt .NE. time_none)) THEN
-            CALL error_mesg('time_reduction_type: time_reduction_type_new', &
+            CALL error_mesg('time_reduction_type: initialize', &
             & 'time_averaging=.false. but reduction type not compatible', FATAL)
          ENDIF
       END IF
+
+      !!TODO: Add other checks? E.g. If time_averaging == .false., then
+      !!  out_frequency == EVERY_TIME
 
       IF((dt .EQ. time_min) .OR. (dt .EQ. time_max) .OR. &
       & ( dt .EQ. time_average) .OR. (dt .EQ. time_sum)  ) THEN

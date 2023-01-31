@@ -35,7 +35,7 @@
 !> @{
 MODULE fms_diag_outfield_mod
    USE platform_mod
-   USE mpp_mod, only :FATAL
+   USE mpp_mod, only :FATAL, WARNING
    USE fms_mod, only :lowercase, uppercase,  error_mesg, fms_error_handler
 
 
@@ -87,8 +87,6 @@ MODULE fms_diag_outfield_mod
                               !< is considered present.
 
       TYPE(time_reduction_type) :: time_reduction !< Instance of the time_reduction_type.
-
-      TYPE(fms_diag_ibounds_type) :: buff_bounds !< Instance of a fms_diag_buff_intervals_t type.
 
       !!TODO : a pointer for time_min and time_max comparison function
       !!       min_max_f_ptr => (should point to < or > operators)
@@ -163,9 +161,9 @@ CONTAINS
       INTEGER, INTENT(in) :: freq
       INTEGER ::  time_redux
 
-      this%module_name = TRIM(input_field%module_name)
-      this%field_name = TRIM(input_field%field_name)
-      this%output_name = TRIM(output_field%output_name)
+      this%module_name = input_field%module_name
+      this%field_name = input_field%field_name
+      this%output_name = output_field%output_name
 
       this%pow_value = output_field%pow_value
       this%phys_window = output_field%phys_window
@@ -205,8 +203,9 @@ CONTAINS
     else
       rslt = time_none
       if(.NOT. ofield%static) then
+         !!TODO: Set error to FATAL. When legacy diag_manager is removed?
          CALL error_mesg('fms_diag_outfield:get_output_field_time_reduction', &
-            & 'result is time_none but out_field%static is not true', FATAL)
+            & 'result is time_none but out_field%static is not true', WARNING)
       end if
     endif
     end function get_output_field_time_reduction

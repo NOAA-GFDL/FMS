@@ -1452,7 +1452,7 @@ CONTAINS
     CLASS(*), INTENT(in), OPTIONAL :: weight
     TYPE (time_type), INTENT(in), OPTIONAL :: time
     INTEGER, INTENT(in), OPTIONAL :: is_in, js_in, ks_in,ie_in,je_in, ke_in
-    LOGICAL, DIMENSION(:,:,:), INTENT(in), OPTIONAL :: mask
+    LOGICAL, DIMENSION(:,:,:), INTENT(in), OPTIONAL, contiguous, target :: mask
     CLASS(*), DIMENSION(:,:,:), INTENT(in), OPTIONAL :: rmask
     CHARACTER(len=*), INTENT(out), OPTIONAL :: err_msg
 
@@ -1492,6 +1492,9 @@ CONTAINS
     TYPE(fms_diag_outfield_index_type), ALLOCATABLE:: ofield_index_cfg
     TYPE(fms_diag_outfield_type), ALLOCATABLE:: ofield_cfg
     LOGICAL :: temp_result
+
+    LOGICAL, DIMENSION(1,1,1), target :: mask_dummy
+    LOGICAL , pointer, DIMENSION(:,:,:) :: mask_ptr => null()
 
     ! If diag_field_id is < 0 it means that this field is not registered, simply return
     IF ( diag_field_id <= 0 ) THEN
@@ -1889,25 +1892,41 @@ CONTAINS
          ALLOCATE( ofield_cfg )
          CALL ofield_cfg%initialize( input_fields(diag_field_id), output_fields(out_num), PRESENT(mask), freq)
 
+         IF  (PRESENT (mask)) THEN
+          mask_ptr(1:size(mask,1),1:size(mask,2),1:size(mask,3)) => mask
+         else
+          mask_ptr(1:size(mask_dummy,1),1:size(mask_dummy,2),1:size(mask_dummy,3)) => mask_dummy
+        ENDIF
+
+        !! ofield_cfg%buff_bounds, &
          IF ( average ) THEN
+          CALL error_mesg('send_data_3d','flag 1', NOTE)
             !!TODO: the copy that is filed_out should not be necessary
             temp_result = fieldbuff_update(ofield_cfg, ofield_index_cfg, field_out, sample, &
-               & output_fields(out_num)%buffer, output_fields(out_num)%counter , ofield_cfg%buff_bounds, &
+               & output_fields(out_num)%buffer, output_fields(out_num)%counter ,output_fields(out_num)%buff_bounds,&
                & output_fields(out_num)%count_0d(sample), output_fields(out_num)%num_elements(sample), &
-               & mask, weight1 ,missvalue, &
+               & mask_ptr, weight1 ,missvalue, &
                & input_fields(diag_field_id)%numthreads, input_fields(diag_field_id)%active_omp_level,&
                & input_fields(diag_field_id)%issued_mask_ignore_warning, &
                & l_start, l_end, err_msg, err_msg_local )
             IF (temp_result .eqv. .FALSE.) THEN
+              DEALLOCATE(ofield_index_cfg)
+              DEALLOCATE(ofield_cfg)
+               DEALLOCATE(field_out)
                DEALLOCATE(oor_mask)
                RETURN
             END IF
          ELSE !!NOT AVERAGE
 
             temp_result = fieldbuff_copy_fieldvals(ofield_cfg, ofield_index_cfg, field_out, sample, &
-               & output_fields(out_num)%buffer, ofield_cfg%buff_bounds, output_fields(out_num)%count_0d(sample), &
-               & mask, missvalue, l_start, l_end, err_msg, err_msg_local)
+               & output_fields(out_num)%buffer, output_fields(out_num)%buff_bounds , &
+               & output_fields(out_num)%count_0d(sample), &
+               & mask_ptr, missvalue, l_start, l_end, err_msg, err_msg_local)
+               CALL error_mesg('send_data_3d','flag 3', NOTE)
             IF (temp_result .eqv. .FALSE.) THEN
+              DEALLOCATE(ofield_index_cfg)
+              DEALLOCATE(ofield_cfg)
+               DEALLOCATE(field_out)
                DEALLOCATE(oor_mask)
                RETURN
             END IF
@@ -1915,8 +1934,12 @@ CONTAINS
           IF ( PRESENT(rmask) .AND. missvalue_present ) THEN
             temp_result = .true. !!TODO call :fieldbuff_copy_misvals()
          END IF
-         DEALLOCATE(ofield_index_cfg)
-         DEALLOCATE(ofield_cfg)
+         IF(ALLOCATED(ofield_index_cfg)) THEN
+          DEALLOCATE(ofield_index_cfg)
+         ENDIF
+         IF(ALLOCATED(ofield_cfg)) THEN
+          DEALLOCATE(ofield_cfg)
+         ENDIF
 
          CYCLE !!. I.e. skip src code below and go to the next output field
       END IF !! END USE_REFACTORED_SEND

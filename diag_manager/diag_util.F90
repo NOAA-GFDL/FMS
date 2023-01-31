@@ -796,7 +796,7 @@ CONTAINS
     !> @brief Update the <TT>output_fields</TT> x, y, and z (and optionally l) min and
   !! max boundaries (array indices).
 SUBROUTINE update_bounds_modern(bounds, lower_i, upper_i, lower_j, upper_j, lower_k, upper_k)
-  TYPE  (fms_diag_ibounds_type) :: bounds !< the bounding box of the output field buffer inindex space.
+  TYPE  (fms_diag_ibounds_type), intent(inout) :: bounds !< the bounding box of the output field buffer inindex space.
   INTEGER, INTENT(in) :: lower_i !< Lower i bound.
   INTEGER, INTENT(in) :: upper_i !< Upper i bound.
   INTEGER, INTENT(in) :: lower_j !< Lower j bound.
@@ -888,20 +888,19 @@ END FUNCTION a_noteq_b
 SUBROUTINE check_out_of_bounds_legacy(out_num, diag_field_id, err_msg)
   INTEGER, INTENT(in) :: out_num !< Output field ID number.
   INTEGER, INTENT(in) :: diag_field_id !< Input field ID number.
-  CHARACTER(len=*), INTENT(out) :: err_msg !< Return status of <TT>check_out_of_bounds</TT>.  An empty
+  CHARACTER(len=*), INTENT(inout) :: err_msg !< Return status of <TT>check_out_of_bounds</TT>.  An empty
                                            !! error string indicates the x, y, and z indices are not outside the
 
   CHARACTER(len=128) :: error_string1, error_string2
   LOGICAL :: out_of_bounds = .true.
   TYPE (fms_diag_ibounds_type) :: array_bounds
-  TYPE (fms_diag_ibounds_type), ALLOCATABLE :: buff_bounds
+  associate (buff_bounds => output_fields(out_num)%buff_bounds)
 
-  buff_bounds = output_fields(out_num)%buff_bounds
+    CALL bounds_from_array(array_bounds, output_fields(out_num)%buffer)
 
-  CALL bounds_from_array(array_bounds, output_fields(out_num)%buffer)
-
-  out_of_bounds = compare_buffer_bounds_to_size(array_bounds, buff_bounds, &
+    out_of_bounds = compare_buffer_bounds_to_size(array_bounds, buff_bounds, &
      & error_string2, a_lessthan_b, a_greaterthan_b)
+
 
   IF (out_of_bounds .EQV. .true.) THEN
      WRITE(error_string1,'(a,"/",a)')  TRIM(input_fields(diag_field_id)%module_name), &
@@ -913,6 +912,7 @@ SUBROUTINE check_out_of_bounds_legacy(out_num, diag_field_id, err_msg)
   ELSE
      err_msg = ''
   END IF
+  end associate
 END SUBROUTINE check_out_of_bounds_legacy
 
  !> @brief Checks if the array indices for <TT>output_fields(out_num)</TT> are outside the
@@ -922,7 +922,7 @@ SUBROUTINE check_out_of_bounds_modern_r4(ofb, bounds, output_name, module_name, 
   TYPE (fms_diag_ibounds_type), INTENT(inout) :: bounds
   CHARACTER(:), ALLOCATABLE, INTENT(in) :: output_name
   CHARACTER(:), ALLOCATABLE, INTENT(in) :: module_name
-  CHARACTER(len=*), INTENT(out) :: err_msg !< Return status of <TT>check_out_of_bounds</TT>.  An empty
+  CHARACTER(len=*), INTENT(inout) :: err_msg !< Return status of <TT>check_out_of_bounds</TT>.  An empty
                                            !! error string indicates the x, y, and z indices are not outside the
 
   CHARACTER(len=128) :: error_string1, error_string2
@@ -987,7 +987,7 @@ SUBROUTINE check_bounds_are_exact_dynamic_modern(array_bounds, bounds, output_na
   !! <TT>output_fields(out_num)%Time_of_prev_field_data</TT> is not
   !! equal to <TT>Time</TT> or <TT>Time_zero</TT>.
   TYPE(time_type), INTENT(inout) :: field_prev_Time  !< <TT>output_fields(out_num)%Time_of_prev_field_data</TT>
-  CHARACTER(len=*), INTENT(out) :: err_msg !< Return status of <TT>check_bounds_are_exact_dynamic</TT>.
+  CHARACTER(len=*), INTENT(inout) :: err_msg !< Return status of <TT>check_bounds_are_exact_dynamic</TT>.
   !! An empty error string indicates the x, y, and z indices are
   !!     equal to the buffer array boundaries.
 
@@ -1061,7 +1061,7 @@ END SUBROUTINE check_bounds_are_exact_dynamic_legacy
   SUBROUTINE check_bounds_are_exact_static_legacy(out_num, diag_field_id, err_msg)
     INTEGER, INTENT(in) :: out_num !< Output field ID
     INTEGER, INTENT(in) :: diag_field_id !< Input field ID.
-    CHARACTER(len=*), INTENT(out) :: err_msg
+    CHARACTER(len=*), INTENT(inout) :: err_msg
     CHARACTER(:), ALLOCATABLE :: output_name
     CHARACTER(:), ALLOCATABLE :: module_name
     TYPE (fms_diag_ibounds_type) :: array_bounds
@@ -1083,7 +1083,7 @@ END SUBROUTINE check_bounds_are_exact_dynamic_legacy
     TYPE (fms_diag_ibounds_type), INTENT(inout) :: bounds
     CHARACTER(:), ALLOCATABLE, INTENT(in) :: output_name
     CHARACTER(:), ALLOCATABLE, INTENT(in) :: module_name
-    CHARACTER(len=*), INTENT(out) :: err_msg
+    CHARACTER(len=*), INTENT(inout) :: err_msg
 
     CHARACTER(len=128)  :: error_string1, error_string2
     LOGICAL :: lims_not_exact = .true.
@@ -1582,6 +1582,7 @@ END SUBROUTINE check_bounds_are_exact_dynamic_legacy
     output_fields(out_num)%num_axes = 0
     output_fields(out_num)%total_elements = 0
     output_fields(out_num)%region_elements = 0
+
     call output_fields(out_num)%buff_bounds%reset(VERY_LARGE_AXIS_LENGTH, 0)
 
     ! initialize the size of the diurnal axis to 1
