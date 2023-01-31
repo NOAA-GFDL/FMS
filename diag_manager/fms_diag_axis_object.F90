@@ -315,14 +315,14 @@ module fms_diag_axis_object_mod
         end select
       type is (FmsNetcdfUnstructuredDomainFile_t)
         select case (diag_axis%type_of_domain)
-        case (NO_DOMAIN)
-          !< Here the fileobj is in the unstructured domain, but the axis is not
-          !< Unstructured domain fileobjs can have axis that are not domain decomposed (i.e "Z" axis)
-          call register_axis(fileobj, axis_name, axis_length)
-          call register_field(fileobj, axis_name, diag_axis%type_of_data, (/axis_name/))
         case (UG_DOMAIN)
           !< Here the axis is in a unstructured domain
           call register_axis(fileobj, axis_name)
+          call register_field(fileobj, axis_name, diag_axis%type_of_data, (/axis_name/))
+        case default
+          !< Here the fileobj is in the unstructured domain, but the axis is not
+          !< Unstructured domain fileobjs can have axis that are not domain decomposed (i.e "Z" axis)
+          call register_axis(fileobj, axis_name, axis_length)
           call register_field(fileobj, axis_name, diag_axis%type_of_data, (/axis_name/))
         end select
     end select
