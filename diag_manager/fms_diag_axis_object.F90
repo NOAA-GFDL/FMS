@@ -93,6 +93,7 @@ module fms_diag_axis_object_mod
      contains
        procedure :: get_parent_axis_id
        procedure :: get_subaxes_id
+       procedure :: get_axis_name
        procedure :: write_axis_metadata
        procedure :: write_axis_data
   END TYPE fmsDiagAxis_type
@@ -143,7 +144,6 @@ module fms_diag_axis_object_mod
      PROCEDURE :: add_axis_attribute
      PROCEDURE :: register => register_diag_axis_obj
      PROCEDURE :: axis_length => get_axis_length
-     PROCEDURE :: get_axis_name
      PROCEDURE :: set_edges_name
      PROCEDURE :: set_axis_id
      PROCEDURE :: get_compute_domain
@@ -289,18 +289,23 @@ module fms_diag_axis_object_mod
 
     !< Add the axis as a dimension in the netcdf file based on the type of axis_domain and the fileobj type
     select type (fileobj)
+      !< The register_field calls need to be inside the select type block so that it can go inside the correct
+      !! register_field interface
       type is (FmsNetcdfFile_t)
         !< Here the axis is not domain decomposed (i.e z_axis)
         call register_axis(fileobj, axis_name, axis_length)
+        call register_field(fileobj, axis_name, diag_axis%type_of_data, (/axis_name/))
       type is (FmsNetcdfDomainFile_t)
         select case (diag_axis%type_of_domain)
         case (NO_DOMAIN)
           !< Here the fileobj is domain decomposed, but the axis is not
           !! Domain decomposed fileobjs can have axis that are not domain decomposed (i.e "Z" axis)
           call register_axis(fileobj, axis_name, axis_length)
+          call register_field(fileobj, axis_name, diag_axis%type_of_data, (/axis_name/))
         case (TWO_D_DOMAIN)
           !< Here the axis is domain decomposed
           call register_axis(fileobj, axis_name, diag_axis%cart_name, domain_position=diag_axis%domain_position)
+          call register_field(fileobj, axis_name, diag_axis%type_of_data, (/axis_name/))
         end select
       type is (FmsNetcdfUnstructuredDomainFile_t)
         select case (diag_axis%type_of_domain)
@@ -308,15 +313,16 @@ module fms_diag_axis_object_mod
           !< Here the fileobj is in the unstructured domain, but the axis is not
           !< Unstructured domain fileobjs can have axis that are not domain decomposed (i.e "Z" axis)
           call register_axis(fileobj, axis_name, axis_length)
+          call register_field(fileobj, axis_name, diag_axis%type_of_data, (/axis_name/))
         case (UG_DOMAIN)
           !< Here the axis is in a unstructured domain
           call register_axis(fileobj, axis_name)
+          call register_field(fileobj, axis_name, diag_axis%type_of_data, (/axis_name/))
         end select
     end select
 
-    !< Add the axis as a variable and write its metada
-    call register_field(fileobj, axis_name, diag_axis%type_of_data, (/axis_name/))
-    call register_variable_attribute(fileobj, axis_name, "longname", diag_axis%long_name, &
+    !< Write its metadata
+    call register_variable_attribute(fileobj, axis_name, "long_name", diag_axis%long_name, &
       str_len=len_trim(diag_axis%long_name))
 
     if (diag_axis%cart_name .NE. "N") &
@@ -416,16 +422,6 @@ module fms_diag_axis_object_mod
       axis_length = this%length
     endif
 
-  end function
-
-  !> @brief Get the name of the axis
-  !> @return axis name
-  pure function get_axis_name(this) &
-  result (axis_name)
-    class(fmsDiagFullAxis_type), intent(in)    :: this !< diag_axis obj
-    CHARACTER(len=:),   ALLOCATABLE            :: axis_name
-
-    axis_name = this%axis_name
   end function
 
   !> @brief Set the axis_id
@@ -641,6 +637,31 @@ module fms_diag_axis_object_mod
     fms_diag_axis_object_end = .false.
 
   end function fms_diag_axis_object_end
+
+  !< @brief Determine the axis name of an axis_object
+  !! @return The name of the axis
+  !! @note This function may be called from the field object (i.e. to determine the dimension names for io),
+  !! The field object only contains the parent axis ids, because the subregion is defined in a per file basis,
+  !! so the is_regional flag is needed so that the correct axis name can be used
+  pure function get_axis_name(this, is_regional) &
+  result(axis_name)
+    class(fmsDiagAxis_type), intent(in)           :: this        !< Axis object
+    logical,                 intent(in), optional :: is_regional !< Flag indicating if the axis is regional
+
+    character(len=:),       allocatable :: axis_name
+
+    select type (this)
+    type is (fmsDiagFullAxis_type)
+      axis_name = this%axis_name
+      if (present(is_regional)) then
+        if (is_regional) then
+          if (this%cart_name .eq. "X" .or. this%cart_name .eq. "Y") axis_name = axis_name//"_sub01"
+        endif
+      endif
+    type is (fmsDiagSubAxis_type)
+      axis_name = this%subaxis_name
+    end select
+  end function get_axis_name
 
   !> @brief Check if a cart_name is valid and crashes if it isn't
   subroutine check_if_valid_cart_name(cart_name)
