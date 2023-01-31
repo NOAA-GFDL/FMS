@@ -266,11 +266,11 @@ subroutine get_value_from_key_0d(file_id, block_id, key_name, key_value, is_opti
 
    type(c_ptr) :: c_buffer !< c pointer with the value
    integer(kind=c_int) :: success !< Flag indicating if the value was obtained successfully
-   logical :: optional !< Flag indicating that the key was optional
+   logical :: optional_flag !< Flag indicating that the key was optional
    integer :: err_unit !< integer with io error
 
-   optional = .false.
-   if (present(is_optional)) optional = is_optional
+   optional_flag = .false.
+   if (present(is_optional)) optional_flag = is_optional
 
    if (.not. is_valid_file_id(file_id)) call mpp_error(FATAL, &
        &  "The file id in your get_value_from_key call is invalid! Check your call.")
@@ -313,7 +313,7 @@ subroutine get_value_from_key_0d(file_id, block_id, key_name, key_value, is_opti
                             &" is not supported. Only i4, i8, r4, r8 and strings are supported.")
      end select
    else
-     if(.not. optional) call mpp_error(FATAL, "Error getting the value for key:"//trim(key_name))
+     if(.not. optional_flag) call mpp_error(FATAL, "Error getting the value for key:"//trim(key_name))
    endif
 
 end subroutine get_value_from_key_0d
@@ -332,11 +332,11 @@ subroutine get_value_from_key_1d(file_id, block_id, key_name, key_value, is_opti
 
    type(c_ptr) :: c_buffer !< c pointer with the value
    integer(kind=c_int) :: success !< Flag indicating if the value was obtained successfully
-   logical :: optional !< Flag indicating that the key was optional
+   logical :: optional_flag !< Flag indicating that the key was optional
    integer :: err_unit !< integer with io error
 
-   optional=.false.
-   if (present(is_optional)) optional = is_optional
+   optional_flag=.false.
+   if (present(is_optional)) optional_flag = is_optional
 
    if (.not. is_valid_file_id(file_id)) call mpp_error(FATAL, &
        &  "The file id in your get_value_from_key call is invalid! Check your call.")
@@ -371,7 +371,7 @@ subroutine get_value_from_key_1d(file_id, block_id, key_name, key_value, is_opti
                             &" is not supported. Only i4, i8, r4, r8 and strings are supported.")
      end select
    else
-     if(.not. optional) call mpp_error(FATAL, "Error getting the value for key:"//trim(key_name))
+     if(.not. optional_flag) call mpp_error(FATAL, "Error getting the value for key:"//trim(key_name))
    endif
 end subroutine get_value_from_key_1d
 
