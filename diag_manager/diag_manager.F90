@@ -208,7 +208,7 @@ use platform_mod
        & get_ticks_per_second
   USE mpp_mod, ONLY: mpp_get_current_pelist, mpp_pe, mpp_npes, mpp_root_pe, mpp_sum
 
-  USE mpp_mod, ONLY: input_nml_file, mpp_error
+  USE mpp_mod, ONLY: input_nml_file
 
   USE fms_mod, ONLY: error_mesg, FATAL, WARNING, NOTE, stdout, stdlog, write_version_number,&
        & fms_error_handler, check_nml_error, lowercase
@@ -643,7 +643,7 @@ CONTAINS
     ! Fatal error if the module has not been initialized.
     IF ( .NOT.module_is_initialized ) THEN
        ! <ERROR STATUS="FATAL">diag_manager has NOT been initialized</ERROR>
-       CALL mpp_error(FATAL, 'diag_manager_mod::register_static_field_old. diag_manager has NOT been initialized')
+       CALL error_mesg ('diag_manager_mod::register_static_field', 'diag_manager has NOT been initialized', FATAL)
     END IF
 
     ! Check if OPTIONAL parameters were passed in.
@@ -657,8 +657,8 @@ CONTAINS
           TYPE IS (real(kind=r8_kind))
              missing_value_use = real(missing_value)
           CLASS DEFAULT
-             CALL mpp_error (FATAL, 'diag_manager_mod::register_static_field. The missing_value is not one of '// &
-                                    'the supported types of real(kind=4) or real(kind=8)', FATAL)
+             CALL error_mesg ('diag_manager_mod::register_static_field',&
+                  & 'The missing_value is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)
           END SELECT
        END IF
     END IF
@@ -3799,6 +3799,12 @@ CONTAINS
     ! open diag field log file
     IF ( do_diag_field_log.AND.mpp_pe().EQ.mpp_root_pe() ) THEN
       open(newunit=diag_log_unit, file='diag_field_log.out', action='WRITE')
+      WRITE (diag_log_unit,'(777a)') &
+           & 'Module',         FIELD_LOG_SEPARATOR, 'Field',     FIELD_LOG_SEPARATOR, &
+           & 'Long Name',      FIELD_LOG_SEPARATOR, 'Units',     FIELD_LOG_SEPARATOR, &
+           & 'Number of Axis', FIELD_LOG_SEPARATOR, 'Time Axis', FIELD_LOG_SEPARATOR, &
+           & 'Missing Value',  FIELD_LOG_SEPARATOR, 'Min Value', FIELD_LOG_SEPARATOR,  &
+           & 'Max Value',      FIELD_LOG_SEPARATOR, 'AXES LIST'
     END IF
 
     module_is_initialized = .TRUE.
