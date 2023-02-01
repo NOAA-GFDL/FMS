@@ -1689,7 +1689,7 @@
      if (ind < 0 .or. ind >= table_siz)  then
        nbad = nbad+1
      else
-       del = tmp-dtres_loc*real(ind)
+       del = tmp-dtres_loc*real(ind,kind=FMS_SVP_KIND_))
        esat(i,j) = real(TABLE2(ind+1),FMS_SVP_KIND_) &
                    + del*( real(DTABLE2(ind+1),FMS_SVP_KIND_) &
                                    + del*real(D2TABLE2(ind+1),FMS_SVP_KIND_) )
