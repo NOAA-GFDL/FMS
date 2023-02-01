@@ -392,7 +392,12 @@ use platform_mod
   REAL :: FILL_VALUE = 9.9692099683868690e+36
 #endif
 
+  !! @note `pack_size` and `pack_size_str` are set in diag_manager_init depending on how FMS was compiled
+  !! if FMS was compiled with default reals as 64bit, it will be set to 1 and "double",
+  !! if FMS was compiled with default reals as 32bit, it will set to 2 and "float"
+  !! This is to reproduce previous diag manager behavior.
   INTEGER :: pack_size = 1 !< 1 for double and 2 for float
+  CHARACTER(len=10) :: pack_size_str="double" !< Pack size as a string to be used in fms2_io register call
 
   ! <!-- REAL public variables -->
   REAL :: EMPTY = 0.0

@@ -32,7 +32,7 @@ use diag_data_mod, only: DIAG_NULL, NO_DOMAIN, max_axes, SUB_REGIONAL, get_base_
                          TWO_D_DOMAIN, UG_DOMAIN, prepend_date, DIAG_DAYS, VERY_LARGE_FILE_FREQ, &
                          get_base_year, get_base_month, get_base_day, get_base_hour, get_base_minute, &
                          get_base_second, time_unit_list, time_average, time_rms, time_max, time_min, time_sum, &
-                         time_diurnal, time_power, time_none, avg_name, no_units
+                         time_diurnal, time_power, time_none, avg_name, no_units, pack_size_str
 use time_manager_mod, only: time_type, operator(>), operator(/=), operator(==), get_date, get_calendar_type, &
                             VALID_CALENDAR_TYPES, operator(>=), date_to_string, &
                             OPERATOR(/), OPERATOR(+), operator(<)
@@ -903,8 +903,7 @@ subroutine write_var_metadata(fileobj, variable_name, dimensions, long_name, uni
   character(len=*)      , intent(in)    :: long_name      !< The long_name of the variable
   character(len=*)      , intent(in)    :: units          !< The units of the variable
 
-  !TODO harcodded double
-  call register_field(fileobj, variable_name, "double", dimensions)
+  call register_field(fileobj, variable_name, pack_size_str, dimensions)
   call register_variable_attribute(fileobj, variable_name, "long_name", &
                                   trim(long_name), str_len=len_trim(long_name))
   if (trim(units) .ne. no_units) &
