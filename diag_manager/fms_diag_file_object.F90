@@ -1118,24 +1118,33 @@ end subroutine increase_unlimited_dimension
 !< @brief Writes the axis metadata for the file
 subroutine write_axis_metadata(this, diag_axis)
   class(fmsDiagFileContainer_type), intent(inout), target :: this            !< The file object
-  class(fmsDiagAxisContainer_type), intent(in)            :: diag_axis(:)    !< Diag_axis object
+  class(fmsDiagAxisContainer_type), intent(in),    target :: diag_axis(:)    !< Diag_axis object
 
   class(fmsDiagFile_type), pointer     :: diag_file      !< Diag_file object to open
   class(FmsNetcdfFile_t),  pointer     :: fileobj        !< The fileobj to write to
-  integer                              :: i              !< For do loops
-  integer                              :: j              !< diag_file%axis_ids(i) (for less typing)
+  integer                              :: i,k            !< For do loops
   integer                              :: parent_axis_id !< Id of the parent_axis
+  integer                              :: structured_ids(2) !< Ids of the uncompress axis
+
+  class(fmsDiagAxisContainer_type), pointer :: axis_ptr !< pointer to the axis object currently writing
 
   diag_file => this%FMS_diag_file
   fileobj => diag_file%fileobj
 
   do i = 1, diag_file%number_of_axis
-    j = diag_file%axis_ids(i)
-    parent_axis_id = diag_axis(j)%axis%get_parent_axis_id()
+    axis_ptr => diag_axis(diag_file%axis_ids(i))
+    parent_axis_id = axis_ptr%axis%get_parent_axis_id()
     if (parent_axis_id .eq. DIAG_NULL) then
-      call diag_axis(j)%axis%write_axis_metadata(fileobj)
+      call axis_ptr%axis%write_axis_metadata(fileobj)
     else
-      call diag_axis(j)%axis%write_axis_metadata(fileobj, diag_axis(parent_axis_id)%axis)
+      call axis_ptr%axis%write_axis_metadata(fileobj, diag_axis(parent_axis_id)%axis)
+    endif
+
+    if (axis_ptr%axis%is_unstructured_grid()) then
+      structured_ids = axis_ptr%axis%get_structured_axis()
+      do k = 1, size(structured_ids)
+        call diag_axis(structured_ids(k))%axis%write_axis_metadata(fileobj)
+      enddo
     endif
   enddo
 
@@ -1188,9 +1197,10 @@ subroutine write_axis_data(this, diag_axis)
 
   class(fmsDiagFile_type), pointer     :: diag_file      !< Diag_file object to open
   class(FmsNetcdfFile_t),  pointer     :: fileobj        !< The fileobj to write to
-  integer                              :: i              !< For do loops
+  integer                              :: i, k           !< For do loops
   integer                              :: j              !< diag_file%axis_ids(i) (for less typing)
   integer                              :: parent_axis_id !< Id of the parent_axis
+  integer                              :: structured_ids(2) !< Ids of the uncompress axis
 
   diag_file => this%FMS_diag_file
   fileobj => diag_file%fileobj
@@ -1202,6 +1212,13 @@ subroutine write_axis_data(this, diag_axis)
       call diag_axis(j)%axis%write_axis_data(fileobj)
     else
       call diag_axis(j)%axis%write_axis_data(fileobj, diag_axis(parent_axis_id)%axis)
+    endif
+
+    if (diag_axis(j)%axis%is_unstructured_grid()) then
+      structured_ids = diag_axis(j)%axis%get_structured_axis()
+      do k = 1, size(structured_ids)
+        call diag_axis(structured_ids(k))%axis%write_axis_data(fileobj)
+      enddo
     endif
   enddo
 

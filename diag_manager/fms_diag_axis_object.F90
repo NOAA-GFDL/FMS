@@ -49,7 +49,7 @@ module fms_diag_axis_object_mod
   public :: fmsDiagAxis_type, fms_diag_axis_object_init, fms_diag_axis_object_end, &
           & get_domain_and_domain_type, diagDomain_t, &
           & DIAGDOMAIN2D_T, fmsDiagSubAxis_type, fmsDiagAxisContainer_type, fmsDiagFullAxis_type, DIAGDOMAINUG_T
-  public :: define_new_axis, define_subaxis
+  public :: define_new_axis, define_subaxis, parse_compress_att, get_axis_id_from_name
 
   !> @}
 
@@ -96,6 +96,9 @@ module fms_diag_axis_object_mod
        procedure :: get_axis_name
        procedure :: write_axis_metadata
        procedure :: write_axis_data
+       procedure :: add_structured_axis_ids
+       procedure :: get_structured_axis
+       procedure :: is_unstructured_grid
   END TYPE fmsDiagAxis_type
 
   !> @brief Type to hold the subaxis
@@ -138,6 +141,8 @@ module fms_diag_axis_object_mod
      TYPE(fmsDiagAttribute_type),allocatable , private :: attributes(:) !< Array to hold user definable attributes
      INTEGER                        , private :: num_attributes  !< Number of defined attibutes
      INTEGER                        , private :: domain_position !< The position in the doman (NORTH, EAST or CENTER)
+     integer, allocatable           , private :: structured_ids(:) !< If the axis is in the unstructured grid,
+                                                                   !! this is the axis ids of the structured axis
 
      contains
 
@@ -160,7 +165,7 @@ module fms_diag_axis_object_mod
   !!!!!!!!!!!!!!!!! DIAG AXIS PROCEDURES !!!!!!!!!!!!!!!!!
   !> @brief Initialize the axis
   subroutine register_diag_axis_obj(this, axis_name, axis_data, units, cart_name, long_name, direction,&
-  & set_name, Domain, Domain2, DomainU, aux, req, tile_count, domain_position )
+  & set_name, Domain, Domain2, DomainU, aux, req, tile_count, domain_position, axis_length )
     class(fmsDiagFullAxis_type),INTENT(out)  :: this            !< Diag_axis obj
     CHARACTER(len=*),   INTENT(in)           :: axis_name       !< Name of the axis
     class(*),           INTENT(in)           :: axis_data(:)    !< Array of coordinate values
@@ -177,6 +182,7 @@ module fms_diag_axis_object_mod
     CHARACTER(len=*),   INTENT(in), OPTIONAL :: req             !< Required field names.
     INTEGER,            INTENT(in), OPTIONAL :: tile_count      !< Number of tiles
     INTEGER,            INTENT(in), OPTIONAL :: domain_position !< Domain position, "NORTH" or "EAST"
+    integer,            intent(in), optional :: axis_length     !< The length of the axis size(axis_data(:))
 
     this%axis_name = trim(axis_name)
     this%units = trim(units)
@@ -187,12 +193,14 @@ module fms_diag_axis_object_mod
 
     select type (axis_data)
     type is (real(kind=r8_kind))
-      allocate(real(kind=r8_kind) :: this%axis_data(size(axis_data)))
+      allocate(real(kind=r8_kind) :: this%axis_data(axis_length))
       this%axis_data = axis_data
+      this%length = axis_length
       this%type_of_data = "double" !< This is what fms2_io expects in the register_field call
     type is (real(kind=r4_kind))
-      allocate(real(kind=r4_kind) :: this%axis_data(size(axis_data)))
+      allocate(real(kind=r4_kind) :: this%axis_data(axis_length))
       this%axis_data = axis_data
+      this%length = axis_length
       this%type_of_data = "float" !< This is what fms2_io expects in the register_field call
     class default
       call mpp_error(FATAL, "The axis_data in your diag_axis_init call is not a supported type. &
@@ -225,8 +233,6 @@ module fms_diag_axis_object_mod
     this%domain_position = CENTER
     if (present(domain_position)) this%domain_position = domain_position
     call check_if_valid_domain_position(this%domain_position)
-
-    this%length = size(axis_data)
 
     this%direction = 0
     if (present(direction)) this%direction = direction
@@ -309,14 +315,14 @@ module fms_diag_axis_object_mod
         end select
       type is (FmsNetcdfUnstructuredDomainFile_t)
         select case (diag_axis%type_of_domain)
-        case (NO_DOMAIN)
-          !< Here the fileobj is in the unstructured domain, but the axis is not
-          !< Unstructured domain fileobjs can have axis that are not domain decomposed (i.e "Z" axis)
-          call register_axis(fileobj, axis_name, axis_length)
-          call register_field(fileobj, axis_name, diag_axis%type_of_data, (/axis_name/))
         case (UG_DOMAIN)
           !< Here the axis is in a unstructured domain
           call register_axis(fileobj, axis_name)
+          call register_field(fileobj, axis_name, diag_axis%type_of_data, (/axis_name/))
+        case default
+          !< Here the fileobj is in the unstructured domain, but the axis is not
+          !< Unstructured domain fileobjs can have axis that are not domain decomposed (i.e "Z" axis)
+          call register_axis(fileobj, axis_name, axis_length)
           call register_field(fileobj, axis_name, diag_axis%type_of_data, (/axis_name/))
         end select
     end select
@@ -382,6 +388,44 @@ module fms_diag_axis_object_mod
       endif
     end select
   end subroutine write_axis_data
+
+  !< @brief Determine if the axis is in the unstructured grid
+  !! @return .True. if the axis is in unstructured grid
+  pure logical function is_unstructured_grid(this)
+    class(fmsDiagAxis_type),           target, INTENT(in)    :: this        !< diag_axis obj
+
+    is_unstructured_grid = .false.
+    select type (this)
+    type is (fmsDiagFullAxis_type)
+      is_unstructured_grid = trim(this%cart_name) .eq. "U"
+    end select
+  end function is_unstructured_grid
+
+  !< @brief Adds the structured axis ids to the axis object
+  subroutine add_structured_axis_ids(this, axis_ids)
+    class(fmsDiagAxis_type),           target, INTENT(inout) :: this        !< diag_axis obj
+    integer,                                   intent(in)    :: axis_ids(2) !< axis ids to add to the axis object
+
+    select type (this)
+    type is (fmsDiagFullAxis_type)
+      allocate(this%structured_ids(2))
+      this%structured_ids = axis_ids
+    end select
+  end subroutine add_structured_axis_ids
+
+  !< @brief Get the structured axis ids from the axis object
+  !! @return the structured axis ids
+  pure function get_structured_axis(this) &
+  result(rslt)
+    class(fmsDiagAxis_type),           target, INTENT(in) :: this !< diag_axis obj
+    integer :: rslt(2)
+
+    rslt = diag_null
+    select type (this)
+    type is (fmsDiagFullAxis_type)
+      rslt = this%structured_ids
+    end select
+  end function get_structured_axis
 
   !> @brief Get the starting and ending indices of the global io domain of the axis
   subroutine get_global_io_domain(this, global_io_index)
@@ -971,6 +1015,48 @@ module fms_diag_axis_object_mod
     end select
 
   end function
+
+  !< @brief Parses the "compress" attribute to get the names of the two axis
+  !! @return the names of the structured axis
+  pure function parse_compress_att(compress_att) &
+  result(axis_names)
+    class(*), intent(in) :: compress_att(:) !< The compress attribute to parse
+    character(len=120)   :: axis_names(2)
+
+    integer            :: ios           !< Errorcode after parsing the compress attribute
+
+    select type (compress_att)
+      type is (character(len=*))
+        read(compress_att(1),*, iostat=ios) axis_names
+        if (ios .ne. 0) axis_names = ""
+      class default
+        axis_names = ""
+    end select
+  end function parse_compress_att
+
+  !< @brief Determine the axis id of a axis
+  !! @return Axis id
+  pure function get_axis_id_from_name(axis_name, diag_axis, naxis) &
+  result(axis_id)
+    class(fmsDiagAxisContainer_type), intent(in) :: diag_axis(:) !< Array of axis object
+    character(len=*),                 intent(in) :: axis_name    !< Name of the axis
+    integer,                          intent(in) :: naxis        !< Number of axis that have been registered
+    integer                                      :: axis_id
+
+    integer :: i !< For do loops
+
+    axis_id = diag_null
+    do i = 1, naxis
+      select type(axis => diag_axis(i)%axis)
+      type is (fmsDiagFullAxis_type)
+        if (trim(axis%axis_name) .eq. trim(axis_name)) then
+          axis_id = i
+          return
+        endif
+      end select
+    enddo
+
+  end function get_axis_id_from_name
 
 #endif
 end module fms_diag_axis_object_mod
