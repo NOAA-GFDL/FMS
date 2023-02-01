@@ -31,8 +31,8 @@ use      constants_mod, only: RDGAS, RVGAS, TFREEZE
 
 use sat_vapor_pres_mod, only: sat_vapor_pres_init, &
                               compute_qs, compute_mrs, &
-                              lookup_es,  lookup_es2, &
-                              tcmin
+                              lookup_es, lookup_es2, lookup_es3, &
+                              TCMIN
 
 
 implicit none
@@ -44,6 +44,7 @@ call test_compute_qs_k_0d()
 call test_mrs_k_0d()
 call test_lookup_es_0d()
 call test_lookup_es2_0d()
+call test_lookup_es3_0d()
 
 call fms_end()
 
@@ -95,8 +96,8 @@ contains
     real(kind=r4_kind) :: temp4(1), esat4(1), answer4(1)
     real(kind=r8_kind) :: temp8(1), esat8(1), answer8(1)
 
-    temp4(1) = real(tcmin,r4_kind) + real(TFREEZE,r4_kind) !tminl corresponding to TABLE(1)
-    temp8(1) = real(tcmin,r8_kind) + real(TFREEZE,r8_kind) !tminl corresponding to TABLE(1)
+    temp4(1) = real(TCMIN,r4_kind) + real(TFREEZE,r4_kind) !tminl corresponding to TABLE(1)
+    temp8(1) = real(TCMIN,r8_kind) + real(TFREEZE,r8_kind) !tminl corresponding to TABLE(1)
 
     !get answers.  The TABLE is computed with r8_kind precision
     answer8 = compute_es_k(temp8,real(TFREEZE,r8_kind))
@@ -119,8 +120,8 @@ contains
     real(kind=r8_kind) :: temp8(1), esat8(1), answer8(1)
     character(100) :: err_msg
 
-    temp4(1) = real(tcmin,r4_kind) + real(TFREEZE,r4_kind) !tminl corresponding to TABLE(1)
-    temp8(1) = real(tcmin,r8_kind) + real(TFREEZE,r8_kind) !tminl corresponding to TABLE(1)
+    temp4(1) = real(TCMIN,r4_kind) + real(TFREEZE,r4_kind) !tminl corresponding to TABLE(1)
+    temp8(1) = real(TCMIN,r8_kind) + real(TFREEZE,r8_kind) !tminl corresponding to TABLE(1)
 
     !get answers.  The TABLE is computed with r8_kind precision
     answer8 = compute_es_liq_k(temp8,real(TFREEZE,r8_kind))
@@ -128,12 +129,42 @@ contains
 
     ! test r4
     call lookup_es2(temp4, esat4, err_msg)
-    if(esat4(1).ne.answer4(1)) call mpp_error(FATAL,'ERROR: test_lookup_es_0d fails r4')
+    if(esat4(1).ne.answer4(1)) then
+       write(*,*) 'Expected ', answer4(1), 'but got ', esat4(1)
+       call mpp_error(FATAL,'ERROR: test_lookup_es2_0d fails r4')
+    end if
     ! test r8
     call lookup_es2(temp8, esat8)
-    if(esat8(1).ne.answer8(1))call mpp_error(FATAL,'ERROR:  test_lookup_es_0d fails r8')
+    if(esat8(1).ne.answer8(1)) then
+       write(*,*) 'Expected ', answer8(1), 'but got ', esat8(1)
+       call mpp_error(FATAL,'ERROR:  test_lookup_es2_0d fails r8')
+    end if
 
   end subroutine test_lookup_es2_0d
+  !-----------------------------------------------------------------------
+  subroutine test_lookup_es3_0d
+
+    implicit none
+
+    real(kind=r4_kind) :: temp4(1), esat4(1), answer4(1)
+    real(kind=r8_kind) :: temp8(1), esat8(1), answer8(1)
+    character(100) :: err_msg
+
+    temp4(1) = real(TCMIN,r4_kind) + real(TFREEZE,r4_kind) !tminl corresponding to TABLE(1)
+    temp8(1) = real(TCMIN,r8_kind) + real(TFREEZE,r8_kind) !tminl corresponding to TABLE(1)
+
+    !get answers.  The TABLE is computed with r8_kind precision
+    answer8 = compute_es_liq_ice_k(temp8,real(TFREEZE,r8_kind))
+    answer4 = real(answer8, r4_kind)
+
+    ! test r4
+    call lookup_es3(temp4, esat4, err_msg)
+    if(esat4(1).ne.answer4(1)) call mpp_error(FATAL,'ERROR: test_lookup_es3_0d fails r4')
+    ! test r8
+    call lookup_es3(temp8, esat8)
+    if(esat8(1).ne.answer8(1))call mpp_error(FATAL,'ERROR:  test_lookup_es3_0d fails r8')
+
+  end subroutine test_lookup_es3_0d
   !-----------------------------------------------------------------------
  function compute_es_k(tem, TFREEZE) result (es)
  real(kind=r8_kind), intent(in) :: tem(:), TFREEZE
@@ -212,8 +243,8 @@ end function compute_es_k
 !  see smithsonian meteorological tables page 350.
          x = -7.90298_r8_kind*(TBASW/tem(i)-one) &
              +5.02808_r8_kind*log10(TBASW/tem(i)) &
-             -1.3816d-07*(ten**((one-tem(i)/TBASW)*11.344_r8_kind)-one)    &
-             +8.1328d-03*(ten**((TBASW/tem(i)-one)*(-3.49149_r8_kind))-one)&
+             -real(1.3816d-07,r8_kind)*(ten**((one-tem(i)/TBASW)*11.344_r8_kind)-one)    &
+             +real(8.1328d-03,r8_kind)*(ten**((TBASW/tem(i)-one)*(-3.49149_r8_kind))-one)&
              +log10(ESBASW)
          esh2o = ten**(x)
          es(i) = esh2o
@@ -221,5 +252,48 @@ end function compute_es_k
    enddo
 
  end function compute_es_liq_k
-!-----------------------------------------------------------------------
+ !-----------------------------------------------------------------------
+ function compute_es_liq_ice_k(tem, TFREEZE) result (es)
+
+ real(kind=r8_kind), intent(in) :: tem(:), TFREEZE
+ real(kind=r8_kind) :: es(size(tem,1))
+
+ real(kind=r8_kind)    :: x, TBASW, TBASI
+ integer :: i
+
+ real(kind=r8_kind), parameter :: ESBASW = 101324.60_r8_kind
+ real(kind=r8_kind), parameter :: ESBASI = 610.71_r8_kind
+ real(kind=r8_kind), parameter :: one=  1.0_r8_kind
+ real(kind=r8_kind), parameter :: ten= 10.0_r8_kind
+
+   TBASW = TFREEZE+100.0_r8_kind
+   TBASI = TFREEZE
+
+   do i = 1, size(tem)
+
+     if (tem(i) < TBASI) then
+
+!  compute es over ice
+
+         x = -9.09718_r8_kind*(TBASI/tem(i)-one)   &
+             -3.56654_r8_kind*log10(TBASI/tem(i)) &
+             +0.876793_r8_kind*(one-tem(i)/TBASI) + log10(ESBASI)
+         es(i) =ten**(x)
+     else
+
+!  compute es over water
+!  values over 100 c may not be valid
+!  see smithsonian meteorological tables page 350.
+
+          x = -7.90298_r8_kind*(TBASW/tem(i)-one) &
+              +5.02808_r8_kind*log10(TBASW/tem(i)) &
+              -real(1.3816d-07,r8_kind)*(ten**((one-tem(i)/TBASW)*11.344_r8_kind)-one)      &
+              +real(8.1328d-03,r8_kind)*(ten**((TBASW/tem(i)-one)*(-3.49149_r8_kind))-one) &
+             +log10(ESBASW)
+         es(i) = ten**(x)
+     endif
+   enddo
+
+ end function compute_es_liq_ice_k
+ !-----------------------------------------------------------------------
 end program test_sat_vap_pressure
