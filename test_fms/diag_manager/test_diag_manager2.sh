@@ -514,6 +514,7 @@ title: test_diag_manager
 base_date: 2 1 1 0 0 0
 diag_files:
 - file_name: wild_card_name%4yr%2mo%2dy%2hr
+  filename_time: end
   freq: 6
   freq_units: hours
   time_units: hours
@@ -752,7 +753,23 @@ diag_files:
     var_name: var1
     reduction: none
     kind: r4
-- file_name: file8%4yr%2mo%2dy%2hr
+- file_name: file8%4yr%2mo%2dy%2hr%2min
+  freq: 1 1 1
+  freq_units: hours hours hours
+  time_units: hours
+  unlimdim: time
+  new_file_freq: 6 3 1
+  new_file_freq_units: hours hours hours
+  start_time: 2 1 1 0 0 0
+  file_duration: 12 3 9
+  file_duration_units: hours hours hours
+  varlist:
+  - module: ocn_mod
+    var_name: var1
+    reduction: average
+    kind: r4
+- file_name: file9%4yr%2mo%2dy%2hr%2min
+  filename_time: begin
   freq: 1 1 1
   freq_units: hours hours hours
   time_units: hours

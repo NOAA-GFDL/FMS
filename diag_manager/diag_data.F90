@@ -123,6 +123,9 @@ use platform_mod
   INTEGER, PARAMETER :: time_power   = 7 !< The reduction method is power
   CHARACTER(len=7)   :: avg_name = 'average' !< Name of the average fields
   CHARACTER(len=8)   :: no_units = "NO UNITS"!< String indicating that the variable has no units
+  INTEGER, PARAMETER :: begin_time  = 1 !< Use the begining of the time average bounds
+  INTEGER, PARAMETER :: middle_time = 2 !< Use the middle of the time average bounds
+  INTEGER, PARAMETER :: end_time    = 3 !< Use the end of the time average bounds
   !> @}
 
   !> @brief Contains the coordinates of the local domain to output.
