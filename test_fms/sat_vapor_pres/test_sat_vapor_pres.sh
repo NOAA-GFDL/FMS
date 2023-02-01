@@ -19,7 +19,15 @@
 . ../test-lib.sh
 
 # Prepare the directory to run the tests.
-touch input.nml
+cat << EOF > input.nml
+&sat_vapor_pres_nml
+      construct_table_wrt_liq = .true.,
+      construct_table_wrt_liq_and_ice = .true.,
+      use_exact_qs = .true.
+/
+EOF
+
+
 
 test_expect_success "Test sat_vapor_pres" '
   mpirun -n 1 ./test_sat_vapor_pres
