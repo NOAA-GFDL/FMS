@@ -32,6 +32,8 @@ use      constants_mod, only: RDGAS, RVGAS, TFREEZE
 use sat_vapor_pres_mod, only: sat_vapor_pres_init, &
                               compute_qs, compute_mrs, &
                               lookup_es, lookup_es2, lookup_es3, &
+                              lookup_des, lookup_des2, lookup_des3, &
+                              lookup_es_des, lookup_es2_des2, lookup_es3_des3, &
                               TCMIN, TCMAX
 
 
@@ -47,9 +49,9 @@ call sat_vapor_pres_init()
 call compute_tables()
 call test_compute_qs_k_0d()
 call test_mrs_k_0d()
-call test_lookup_es()
-call test_lookup_es2()
-call test_lookup_es3()
+call test_lookup_es_des()
+call test_lookup_es2_des2()
+call test_lookup_es3_des3()
 
 call fms_end()
 
@@ -95,20 +97,20 @@ contains
 
   end subroutine test_mrs_k_0d
   !-----------------------------------------------------------------------
-  subroutine test_lookup_es
+  subroutine test_lookup_es_des
 
     implicit none
-    real(kind=r4_kind) :: temp4, esat4, answer4
-    real(kind=r8_kind) :: temp8, esat8, answer8
+    real(kind=r4_kind) :: temp4, esat4, desat4, esat_answer4, desat_answer4
+    real(kind=r8_kind) :: temp8, esat8, desat8, esat_answer8, desat_answer8
 
-    real(kind=r4_kind), dimension(1) :: temp4_1d, esat4_1d, answer4_1d
-    real(kind=r8_kind), dimension(1) :: temp8_1d, esat8_1d, answer8_1d
+    real(kind=r4_kind), dimension(1) :: temp4_1d, esat4_1d, desat4_1d, esat_answer4_1d, desat_answer4_1d
+    real(kind=r8_kind), dimension(1) :: temp8_1d, esat8_1d, desat8_1d, esat_answer8_1d, desat_answer8_1d
 
-    real(kind=r4_kind), dimension(1,1) :: temp4_2d, esat4_2d, answer4_2d
-    real(kind=r8_kind), dimension(1,1) :: temp8_2d, esat8_2d, answer8_2d
+    real(kind=r4_kind), dimension(1,1) :: temp4_2d, esat4_2d, desat4_2d, esat_answer4_2d, desat_answer4_2d
+    real(kind=r8_kind), dimension(1,1) :: temp8_2d, esat8_2d, desat8_2d, esat_answer8_2d, desat_answer8_2d
 
-    real(kind=r4_kind), dimension(1,1,1) :: temp4_3d, esat4_3d, answer4_3d
-    real(kind=r8_kind), dimension(1,1,1) :: temp8_3d, esat8_3d, answer8_3d
+    real(kind=r4_kind), dimension(1,1,1) :: temp4_3d, esat4_3d, desat4_3d, esat_answer4_3d, desat_answer4_3d
+    real(kind=r8_kind), dimension(1,1,1) :: temp8_3d, esat8_3d, desat8_3d, esat_answer8_3d, desat_answer8_3d
 
 
     !-----0d test-------!
@@ -116,41 +118,52 @@ contains
     temp8 = real(TCMIN,r8_kind) + real(TFREEZE,r8_kind) !tminl corresponding to TABLE(1)
 
     !get answers.  The TABLE is computed with r8_kind precision
-    answer8 = TABLE(1)
-    answer4 = real(answer8, r4_kind)
+    esat_answer8 = TABLE(1)                     ; desat_answer8=DTABLE(1)
+    esat_answer4 = real(esat_answer8, r4_kind)  ; desat_answer4=real(desat_answer8,r4_kind)
     ! test r4
     call lookup_es(temp4,esat4)
-    if(esat4 .ne. answer4) then
-       write(*,*) 'Expected ', answer4, ' but got ', esat4
-       call mpp_error(FATAL,'ERROR: test_lookup_es_0d fails r4')
-    end if
+    call lookup_des(temp4,desat4)
+    call check_answer4_0d(esat_answer4, esat4, ' test_lookup_es_0d_r4')
+    call check_answer4_0d(desat_answer4, desat4, 'test_lookup_des_0d_r4')
+    esat4 = 0._r4_kind ; desat4 = 0.0_r4_kind
+    call lookup_es_des(temp4,esat4,desat4)
+    call check_answer4_0d(esat_answer4, esat4, ' test_lookup_es_des_0d_r4')
+    call check_answer4_0d(desat_answer4, desat4, 'test_lookup_es_des_0d_r4')
     ! test r8
-    call lookup_es(temp8, esat8)
-    if(esat8 .ne. answer8) then
-       write(*,*) 'Expected ', answer8, ' but got ', esat8
-       call mpp_error(FATAL,'ERROR:  test_lookup_es_0d fails r8')
-    end if
-
+    call lookup_es(temp8,esat8)
+    call lookup_des(temp8,desat8)
+    call check_answer8_0d(esat_answer8, esat8, ' test_lookup_es_0d_r8')
+    call check_answer8_0d(desat_answer8, desat8, 'test_lookup_des_0d_r8')
+    esat8 = 0._r8_kind ; desat8 = 0.0_r8_kind
+    call lookup_es_des(temp8,esat8,desat8)
+    call check_answer8_0d(esat_answer8, esat8, ' test_lookup_es_des_0d_r8')
+    call check_answer8_0d(desat_answer8, desat8, 'test_lookup_es_des_0d_r8')
 
     !-----1d test-------!
     temp4_1d(1) = real(TCMIN,r4_kind) + real(TFREEZE,r4_kind) !tminl corresponding to TABLE(1)
     temp8_1d(1) = real(TCMIN,r8_kind) + real(TFREEZE,r8_kind) !tminl corresponding to TABLE(1)
 
     !get answers.  The TABLE is computed with r8_kind precision
-    answer8_1d = TABLE(1)
-    answer4_1d = real(answer8_1d, r4_kind)
+    esat_answer8_1d = TABLE(1)                       ; desat_answer8_1d = DTABLE(1)
+    esat_answer4_1d = real(esat_answer8_1d, r4_kind) ; desat_answer4_1d = real(desat_answer8_1d,r4_kind)
     ! test r4
     call lookup_es(temp4_1d,esat4_1d)
-    if(esat4_1d(1) .ne. answer4_1d(1) ) then
-       write(*,*) 'Expected ', answer4_1d(1), ' but got ', esat4_1d(1)
-       call mpp_error(FATAL,'ERROR: test_lookup_es_1d fails r4')
-    end if
+    call lookup_des(temp4_1d,desat4_1d)
+    call check_answer4_1d(esat_answer4_1d, esat4_1d, ' test_lookup_es_1d_r4')
+    call check_answer4_1d(desat_answer4_1d, desat4_1d, 'test_lookup_des_1d_r4')
+    esat4_1d = 0._r4_kind ; desat4_1d = 0._r4_kind
+    call lookup_es_des(temp4_1d,esat4_1d,desat4_1d)
+    call check_answer4_1d(esat_answer4_1d, esat4_1d, ' test_lookup_es_des_1d_r4')
+    call check_answer4_1d(desat_answer4_1d, desat4_1d, 'test_lookup_es_des_1d_r4')
     ! test r8
-    call lookup_es(temp8_1d, esat8_1d)
-    if(esat8_1d(1) .ne. answer8_1d(1) ) then
-       write(*,*) 'Expected ', answer8_1d(1), ' but got ', esat8_1d(1)
-       call mpp_error(FATAL,'ERROR:  test_lookup_es_1d fails r8')
-    end if
+    call lookup_es(temp8_1d,esat8_1d)
+    call lookup_des(temp8_1d,desat8_1d)
+    call check_answer8_1d(esat_answer8_1d, esat8_1d, ' test_lookup_es_1d_r8')
+    call check_answer8_1d(desat_answer8_1d, desat8_1d, 'test_lookup_des_1d_r8')
+    esat8_1d = 0._r8_kind ; desat8_1d = 0._r8_kind
+    call lookup_es_des(temp8_1d,esat8_1d,desat8_1d)
+    call check_answer8_1d(esat_answer8_1d, esat8_1d, ' test_lookup_es_des_1d_r8')
+    call check_answer8_1d(desat_answer8_1d, desat8_1d, 'test_lookup_es_des_1d_r8')
 
 
     !-----2d test-------!
@@ -158,58 +171,69 @@ contains
     temp8_2d(1,1) = real(TCMIN,r8_kind) + real(TFREEZE,r8_kind) !tminl corresponding to TABLE(1)
 
     !get answers.  The TABLE is computed with r8_kind precision
-    answer8_2d(1,1) = TABLE(1)
-    answer4_2d(1,1) = real(answer8_2d(1,1), r4_kind)
+    esat_answer8_2d = TABLE(1)                            ; desat_answer8_2d = DTABLE(1)
+    esat_answer4_2d = real(esat_answer8_2d(1,1), r4_kind) ; desat_answer4_2d = real(desat_answer8_2d,r4_kind)
     ! test r4
     call lookup_es(temp4_2d,esat4_2d)
-    if(esat4_2d(1,1) .ne. answer4_2d(1,1)) then
-       write(*,*) 'Expected ', answer4_2d(1,1), ' but got ', esat4_2d(1,1)
-       call mpp_error(FATAL,'ERROR: test_lookup_es_2d fails r4')
-    end if
+    call lookup_des(temp4_2d,desat4_2d)
+    call check_answer4_2d(esat_answer4_2d, esat4_2d, ' test_lookup_es_2d_r4')
+    call check_answer4_2d(desat_answer4_2d, desat4_2d, 'test_lookup_des_2d_r4')
+    esat4_2d = 0._r4_kind ; desat4_2d = 0._r4_kind
+    call lookup_es_des(temp4_2d,esat4_2d,desat4_2d)
+    call check_answer4_2d(esat_answer4_2d, esat4_2d, ' test_lookup_es_des_2d_r4')
+    call check_answer4_2d(desat_answer4_2d, desat4_2d, 'test_lookup_es_des_2d_r4')
     ! test r8
-    call lookup_es(temp8_2d, esat8_2d)
-    if(esat8_2d(1,1) .ne. answer8_2d(1,1)) then
-       write(*,*) 'Expected ', answer8_2d(1,1), ' but got ', esat8_2d(1,1)
-       call mpp_error(FATAL,'ERROR:  test_lookup_es_2d fails r8')
-    end if
-
+    call lookup_es(temp8_2d,esat8_2d)
+    call lookup_des(temp8_2d,desat8_2d)
+    call check_answer8_2d(esat_answer8_2d, esat8_2d, ' test_lookup_es_2d_r8')
+    call check_answer8_2d(desat_answer8_2d, desat8_2d, 'test_lookup_des_2d_r8')
+    esat8_2d = 0._r8_kind ; desat8_2d = 0._r8_kind
+    call lookup_es_des(temp8_2d,esat8_2d,desat8_2d)
+    call check_answer8_2d(esat_answer8_2d, esat8_2d, ' test_lookup_es_des_2d_r8')
+    call check_answer8_2d(desat_answer8_2d, desat8_2d, 'test_lookup_es_des_2d_r8')
 
     !-----3d test-------!
     temp4_3d(1,1,1) = real(TCMIN,r4_kind) + real(TFREEZE,r4_kind) !tminl corresponding to TABLE(1)
     temp8_3d(1,1,1) = real(TCMIN,r8_kind) + real(TFREEZE,r8_kind) !tminl corresponding to TABLE(1)
 
     !get answers.  The TABLE is computed with r8_kind precision
-    answer8_3d(1,1,1) = TABLE(1)
-    answer4_3d(1,1,1) = real(answer8_3d(1,1,1), r4_kind)
+    esat_answer8_3d = TABLE(1)                              ; desat_answer8_3d = DTABLE(1)
+    esat_answer4_3d = real(esat_answer8_3d(1,1,1), r4_kind) ; desat_answer4_3d = real(desat_answer8_3d,r4_kind)
     ! test r4
     call lookup_es(temp4_3d,esat4_3d)
-    if(esat4_3d(1,1,1) .ne. answer4_3d(1,1,1)) then
-       write(*,*) 'Expected ', answer4_3d(1,1,1), ' but got ', esat4_3d(1,1,1)
-       call mpp_error(FATAL,'ERROR: test_lookup_es_3d fails r4')
-    end if
+    call lookup_des(temp4_3d,desat4_3d)
+    call check_answer4_2d(esat_answer4_3d, esat4_3d, ' test_lookup_es_3d_r4')
+    call check_answer4_2d(desat_answer4_3d, desat4_3d, 'test_lookup_des_3d_r4')
+    esat4_3d = 0._r4_kind ; desat4_3d = 0._r4_kind
+    call lookup_es_des(temp4_3d,esat4_3d,desat4_3d)
+    call check_answer4_2d(esat_answer4_3d, esat4_3d, ' test_lookup_es_des_3d_r4')
+    call check_answer4_2d(desat_answer4_3d, desat4_3d, 'test_lookup_es_des_3d_r4')
     ! test r8
-    call lookup_es(temp8_3d, esat8_3d)
-    if(esat8_3d(1,1,1) .ne. answer8_3d(1,1,1)) then
-       write(*,*) 'Expected ', answer8_3d(1,1,1), ' but got ', esat8_3d(1,1,1)
-       call mpp_error(FATAL,'ERROR:  test_lookup_es_3d fails r8')
-    end if
+    call lookup_es(temp8_3d,esat8_3d)
+    call lookup_des(temp8_3d,desat8_3d)
+    call check_answer8_2d(esat_answer8_3d, esat8_3d, ' test_lookup_es_3d_r8')
+    call check_answer8_2d(desat_answer8_3d, desat8_3d, 'test_lookup_des_3d_r8')
+    esat8_3d = 0._r8_kind ; desat8_3d = 0._r8_kind
+    call lookup_es_des(temp8_3d,esat8_3d,desat8_3d)
+    call check_answer8_2d(esat_answer8_3d, esat8_3d, ' test_lookup_es_des_3d_r8')
+    call check_answer8_2d(desat_answer8_3d, desat8_3d, 'test_lookup_es_des_2d_r8')
 
-  end subroutine test_lookup_es
-  !-----------------------------------------------------------------------
-  subroutine test_lookup_es2
+  end subroutine test_lookup_es_des
+  !----------------------------------------------------------------------
+  subroutine test_lookup_es2_des2
 
     implicit none
-    real(kind=r4_kind) :: temp4, esat4, answer4
-    real(kind=r8_kind) :: temp8, esat8, answer8
+    real(kind=r4_kind) :: temp4, esat4, desat4, esat_answer4, desat_answer4
+    real(kind=r8_kind) :: temp8, esat8, desat8, esat_answer8, desat_answer8
 
-    real(kind=r4_kind), dimension(1) :: temp4_1d, esat4_1d, answer4_1d
-    real(kind=r8_kind), dimension(1) :: temp8_1d, esat8_1d, answer8_1d
+    real(kind=r4_kind), dimension(1) :: temp4_1d, esat4_1d, desat4_1d, esat_answer4_1d, desat_answer4_1d
+    real(kind=r8_kind), dimension(1) :: temp8_1d, esat8_1d, desat8_1d, esat_answer8_1d, desat_answer8_1d
 
-    real(kind=r4_kind), dimension(1,1) :: temp4_2d, esat4_2d, answer4_2d
-    real(kind=r8_kind), dimension(1,1) :: temp8_2d, esat8_2d, answer8_2d
+    real(kind=r4_kind), dimension(1,1) :: temp4_2d, esat4_2d, desat4_2d, esat_answer4_2d, desat_answer4_2d
+    real(kind=r8_kind), dimension(1,1) :: temp8_2d, esat8_2d, desat8_2d, esat_answer8_2d, desat_answer8_2d
 
-    real(kind=r4_kind), dimension(1,1,1) :: temp4_3d, esat4_3d, answer4_3d
-    real(kind=r8_kind), dimension(1,1,1) :: temp8_3d, esat8_3d, answer8_3d
+    real(kind=r4_kind), dimension(1,1,1) :: temp4_3d, esat4_3d, desat4_3d, esat_answer4_3d, desat_answer4_3d
+    real(kind=r8_kind), dimension(1,1,1) :: temp8_3d, esat8_3d, desat8_3d, esat_answer8_3d, desat_answer8_3d
 
 
     !-----0d test-------!
@@ -217,140 +241,52 @@ contains
     temp8 = real(TCMIN,r8_kind) + real(TFREEZE,r8_kind) !tminl corresponding to TABLE(1)
 
     !get answers.  The TABLE is computed with r8_kind precision
-    answer8 = TABLE2(1)
-    answer4 = real(answer8, r4_kind)
+    esat_answer8 = TABLE2(1)                     ; desat_answer8=DTABLE2(1)
+    esat_answer4 = real(esat_answer8, r4_kind)   ; desat_answer4=real(desat_answer8,r4_kind)
     ! test r4
     call lookup_es2(temp4,esat4)
-    if(esat4 .ne. answer4) then
-       write(*,*) 'Expected ', answer4, ' but got ', esat4
-       call mpp_error(FATAL,'ERROR: test_lookup_es2_0d fails r4')
-    end if
+    call lookup_des2(temp4,desat4)
+    call check_answer4_0d(esat_answer4, esat4, ' test_lookup_es2_0d_r4')
+    call check_answer4_0d(desat_answer4, desat4, 'test_lookup_des2_0d_r4')
+    esat4 = 0._r4_kind ; desat4 = 0.0_r4_kind
+    call lookup_es2_des2(temp4,esat4,desat4)
+    call check_answer4_0d(esat_answer4, esat4, ' test_lookup_es2_des2_0d_r4')
+    call check_answer4_0d(desat_answer4, desat4, 'test_lookup_es2_des2_0d_r4')
     ! test r8
-    call lookup_es2(temp8, esat8)
-    if(esat8 .ne. answer8) then
-       write(*,*) 'Expected ', answer8, ' but got ', esat8
-       call mpp_error(FATAL,'ERROR:  test_lookup_es2_0d fails r8')
-    end if
-
-        !-----1d test-------!
-    temp4_1d(1) = real(TCMIN,r4_kind) + real(TFREEZE,r4_kind) !tminl corresponding to TABLE(1)
-    temp8_1d(1) = real(TCMIN,r8_kind) + real(TFREEZE,r8_kind) !tminl corresponding to TABLE(1)
-
-    !get answers.  The TABLE is computed with r8_kind precision
-    answer8_1d = TABLE2(1)
-    answer4_1d = real(answer8_1d, r4_kind)
-    ! test r4
-    call lookup_es2(temp4_1d,esat4_1d)
-    if(esat4_1d(1) .ne. answer4_1d(1) ) then
-       write(*,*) 'Expected ', answer4_1d(1), ' but got ', esat4_1d(1)
-       call mpp_error(FATAL,'ERROR: test_lookup_es2_1d fails r4')
-    end if
-    ! test r8
-    call lookup_es2(temp8_1d, esat8_1d)
-    if(esat8_1d(1) .ne. answer8_1d(1) ) then
-       write(*,*) 'Expected ', answer8_1d(1), ' but got ', esat8_1d(1)
-       call mpp_error(FATAL,'ERROR:  test_lookup_es2_1d fails r8')
-    end if
-
-    !-----2d test-------!
-    temp4_2d(1,1) = real(TCMIN,r4_kind) + real(TFREEZE,r4_kind) !tminl corresponding to TABLE(1)
-    temp8_2d(1,1) = real(TCMIN,r8_kind) + real(TFREEZE,r8_kind) !tminl corresponding to TABLE(1)
-
-    !get answers.  The TABLE is computed with r8_kind precision
-    answer8_2d(1,1) = TABLE2(1)
-    answer4_2d(1,1) = real(answer8_2d(1,1), r4_kind)
-    ! test r4
-    call lookup_es2(temp4_2d,esat4_2d)
-    if(esat4_2d(1,1) .ne. answer4_2d(1,1)) then
-       write(*,*) 'Expected ', answer4_2d(1,1), ' but got ', esat4_2d(1,1)
-       call mpp_error(FATAL,'ERROR: test_lookup_es2_2d fails r4')
-    end if
-    ! test r8
-    call lookup_es2(temp8_2d, esat8_2d)
-    if(esat8_2d(1,1) .ne. answer8_2d(1,1)) then
-       write(*,*) 'Expected ', answer8_2d(1,1), ' but got ', esat8_2d(1,1)
-       call mpp_error(FATAL,'ERROR:  test_lookup_es2_2d fails r8')
-    end if
-
-
-    !-----3d test-------!
-    temp4_3d(1,1,1) = real(TCMIN,r4_kind) + real(TFREEZE,r4_kind) !tminl corresponding to TABLE(1)
-    temp8_3d(1,1,1) = real(TCMIN,r8_kind) + real(TFREEZE,r8_kind) !tminl corresponding to TABLE(1)
-
-    !get answers.  The TABLE is computed with r8_kind precision
-    answer8_3d(1,1,1) = TABLE2(1)
-    answer4_3d(1,1,1) = real(answer8_3d(1,1,1), r4_kind)
-    ! test r4
-    call lookup_es2(temp4_3d,esat4_3d)
-    if(esat4_3d(1,1,1) .ne. answer4_3d(1,1,1)) then
-       write(*,*) 'Expected ', answer4_3d(1,1,1), ' but got ', esat4_3d(1,1,1)
-       call mpp_error(FATAL,'ERROR: test_lookup_es2_3d fails r4')
-    end if
-    ! test r8
-    call lookup_es2(temp8_3d, esat8_3d)
-    if(esat8_3d(1,1,1) .ne. answer8_3d(1,1,1)) then
-       write(*,*) 'Expected ', answer8_3d(1,1,1), ' but got ', esat8_3d(1,1,1)
-       call mpp_error(FATAL,'ERROR:  test_lookup_es2_3d fails r8')
-    end if
-
-  end subroutine test_lookup_es2
-  !-----------------------------------------------------------------------
-  subroutine test_lookup_es3
-
-    implicit none
-    real(kind=r4_kind) :: temp4, esat4, answer4
-    real(kind=r8_kind) :: temp8, esat8, answer8
-
-    real(kind=r4_kind), dimension(1) :: temp4_1d, esat4_1d, answer4_1d
-    real(kind=r8_kind), dimension(1) :: temp8_1d, esat8_1d, answer8_1d
-
-    real(kind=r4_kind), dimension(1,1) :: temp4_2d, esat4_2d, answer4_2d
-    real(kind=r8_kind), dimension(1,1) :: temp8_2d, esat8_2d, answer8_2d
-
-    real(kind=r4_kind), dimension(1,1,1) :: temp4_3d, esat4_3d, answer4_3d
-    real(kind=r8_kind), dimension(1,1,1) :: temp8_3d, esat8_3d, answer8_3d
-
-
-    !-----0d test-------!
-    temp4 = real(TCMIN,r4_kind) + real(TFREEZE,r4_kind) !tminl corresponding to TABLE(1)
-    temp8 = real(TCMIN,r8_kind) + real(TFREEZE,r8_kind) !tminl corresponding to TABLE(1)
-
-    !get answers.  The TABLE is computed with r8_kind precision
-    answer8 = TABLE3(1)
-    answer4 = real(answer8, r4_kind)
-    ! test r4
-    call lookup_es3(temp4,esat4)
-    if(esat4 .ne. answer4) then
-       write(*,*) 'Expected ', answer4, ' but got ', esat4
-       call mpp_error(FATAL,'ERROR: test_lookup_es3_0d fails r4')
-    end if
-    ! test r8
-    call lookup_es3(temp8, esat8)
-    if(esat8 .ne. answer8) then
-       write(*,*) 'Expected ', answer8, ' but got ', esat8
-       call mpp_error(FATAL,'ERROR:  test_lookup_es3_0d fails r8')
-    end if
-
+    call lookup_es2(temp8,esat8)
+    call lookup_des2(temp8,desat8)
+    call check_answer8_0d(esat_answer8, esat8, ' test_lookup_es2_0d_r8')
+    call check_answer8_0d(desat_answer8, desat8, 'test_lookup_des2_0d_r8')
+    esat8 = 0._r8_kind ; desat8 = 0.0_r8_kind
+    call lookup_es2_des2(temp8,esat8,desat8)
+    call check_answer8_0d(esat_answer8, esat8, ' test_lookup_es2_des2_0d_r8')
+    call check_answer8_0d(desat_answer8, desat8, 'test_lookup_es2_des2_0d_r8')
 
     !-----1d test-------!
     temp4_1d(1) = real(TCMIN,r4_kind) + real(TFREEZE,r4_kind) !tminl corresponding to TABLE(1)
     temp8_1d(1) = real(TCMIN,r8_kind) + real(TFREEZE,r8_kind) !tminl corresponding to TABLE(1)
 
     !get answers.  The TABLE is computed with r8_kind precision
-    answer8_1d = TABLE3(1)
-    answer4_1d = real(answer8_1d, r4_kind)
+    esat_answer8_1d = TABLE2(1)                       ; desat_answer8_1d = DTABLE2(1)
+    esat_answer4_1d = real(esat_answer8_1d, r4_kind)  ; desat_answer4_1d = real(desat_answer8_1d,r4_kind)
     ! test r4
-    call lookup_es3(temp4_1d,esat4_1d)
-    if(esat4_1d(1) .ne. answer4_1d(1) ) then
-       write(*,*) 'Expected ', answer4_1d(1), ' but got ', esat4_1d(1)
-       call mpp_error(FATAL,'ERROR: test_lookup_es3_1d fails r4')
-    end if
+    call lookup_es2(temp4_1d,esat4_1d)
+    call lookup_des2(temp4_1d,desat4_1d)
+    call check_answer4_1d(esat_answer4_1d, esat4_1d, ' test_lookup_es2_1d_r4')
+    call check_answer4_1d(desat_answer4_1d, desat4_1d, 'test_lookup_des2_1d_r4')
+    esat4_1d = 0._r4_kind ; desat4_1d = 0._r4_kind
+    call lookup_es2_des2(temp4_1d,esat4_1d,desat4_1d)
+    call check_answer4_1d(esat_answer4_1d, esat4_1d, ' test_lookup_es2_des2_1d_r4')
+    call check_answer4_1d(desat_answer4_1d, desat4_1d, 'test_lookup_es2_des2_1d_r4')
     ! test r8
-    call lookup_es3(temp8_1d, esat8_1d)
-    if(esat8_1d(1) .ne. answer8_1d(1) ) then
-       write(*,*) 'Expected ', answer8_1d(1), ' but got ', esat8_1d(1)
-       call mpp_error(FATAL,'ERROR:  test_lookup_es3_1d fails r8')
-    end if
+    call lookup_es2(temp8_1d,esat8_1d)
+    call lookup_des2(temp8_1d,desat8_1d)
+    call check_answer8_1d(esat_answer8_1d, esat8_1d, ' test_lookup_es2_1d_r8')
+    call check_answer8_1d(desat_answer8_1d, desat8_1d, 'test_lookup_des2_1d_r8')
+    esat8_1d = 0._r8_kind ; desat8_1d = 0._r8_kind
+    call lookup_es2_des2(temp8_1d,esat8_1d,desat8_1d)
+    call check_answer8_1d(esat_answer8_1d, esat8_1d, ' test_lookup_es2_des2_1d_r8')
+    call check_answer8_1d(desat_answer8_1d, desat8_1d, 'test_lookup_es2_des2_1d_r8')
 
 
     !-----2d test-------!
@@ -358,55 +294,281 @@ contains
     temp8_2d(1,1) = real(TCMIN,r8_kind) + real(TFREEZE,r8_kind) !tminl corresponding to TABLE(1)
 
     !get answers.  The TABLE is computed with r8_kind precision
-    answer8_2d(1,1) = TABLE3(1)
-    answer4_2d(1,1) = real(answer8_2d(1,1), r4_kind)
+    esat_answer8_2d = TABLE2(1)                            ; desat_answer8_2d = DTABLE2(1)
+    esat_answer4_2d = real(esat_answer8_2d(1,1), r4_kind)  ; desat_answer4_2d = real(desat_answer8_2d,r4_kind)
     ! test r4
-    call lookup_es3(temp4_2d,esat4_2d)
-    if(esat4_2d(1,1) .ne. answer4_2d(1,1)) then
-       write(*,*) 'Expected ', answer4_2d(1,1), ' but got ', esat4_2d(1,1)
-       call mpp_error(FATAL,'ERROR: test_lookup_es3_2d fails r4')
-    end if
+    call lookup_es2(temp4_2d,esat4_2d)
+    call lookup_des2(temp4_2d,desat4_2d)
+    call check_answer4_2d(esat_answer4_2d, esat4_2d, ' test_lookup_es2_2d_r4')
+    call check_answer4_2d(desat_answer4_2d, desat4_2d, 'test_lookup_des2_2d_r4')
+    esat4_2d = 0._r4_kind ; desat4_2d = 0._r4_kind
+    call lookup_es2_des2(temp4_2d,esat4_2d,desat4_2d)
+    call check_answer4_2d(esat_answer4_2d, esat4_2d, ' test_lookup_es2_des2_2d_r4')
+    call check_answer4_2d(desat_answer4_2d, desat4_2d, 'test_lookup_es2_des2_2d_r4')
     ! test r8
-    call lookup_es3(temp8_2d, esat8_2d)
-    if(esat8_2d(1,1) .ne. answer8_2d(1,1)) then
-       write(*,*) 'Expected ', answer8_2d(1,1), ' but got ', esat8_2d(1,1)
-       call mpp_error(FATAL,'ERROR:  test_lookup_es3_2d fails r8')
-    end if
-
+    call lookup_es2(temp8_2d,esat8_2d)
+    call lookup_des2(temp8_2d,desat8_2d)
+    call check_answer8_2d(esat_answer8_2d, esat8_2d, ' test_lookup_es2_2d_r8')
+    call check_answer8_2d(desat_answer8_2d, desat8_2d, 'test_lookup_des2_2d_r8')
+    esat8_2d = 0._r8_kind ; desat8_2d = 0._r8_kind
+    call lookup_es2_des2(temp8_2d,esat8_2d,desat8_2d)
+    call check_answer8_2d(esat_answer8_2d, esat8_2d, ' test_lookup_es2_des2_2d_r8')
+    call check_answer8_2d(desat_answer8_2d, desat8_2d, 'test_lookup_es2_des2_2d_r8')
 
     !-----3d test-------!
     temp4_3d(1,1,1) = real(TCMIN,r4_kind) + real(TFREEZE,r4_kind) !tminl corresponding to TABLE(1)
     temp8_3d(1,1,1) = real(TCMIN,r8_kind) + real(TFREEZE,r8_kind) !tminl corresponding to TABLE(1)
 
     !get answers.  The TABLE is computed with r8_kind precision
-    answer8_3d(1,1,1) = TABLE3(1)
-    answer4_3d(1,1,1) = real(answer8_3d(1,1,1), r4_kind)
+    esat_answer8_3d = TABLE2(1)                              ; desat_answer8_3d = DTABLE2(1)
+    esat_answer4_3d = real(esat_answer8_3d(1,1,1), r4_kind)  ; desat_answer4_3d = real(desat_answer8_3d,r4_kind)
+    ! test r4
+    call lookup_es2(temp4_3d,esat4_3d)
+    call lookup_des2(temp4_3d,desat4_3d)
+    call check_answer4_2d(esat_answer4_3d, esat4_3d, ' test_lookup_es2_3d_r4')
+    call check_answer4_2d(desat_answer4_3d, desat4_3d, 'test_lookup_des2_3d_r4')
+    esat4_3d = 0._r4_kind ; desat4_3d = 0._r4_kind
+    call lookup_es2_des2(temp4_3d,esat4_3d,desat4_3d)
+    call check_answer4_2d(esat_answer4_3d, esat4_3d, ' test_lookup_es2_des2_3d_r4')
+    call check_answer4_2d(desat_answer4_3d, desat4_3d, 'test_lookup_es2_des2_3d_r4')
+    ! test r8
+    call lookup_es2(temp8_3d,esat8_3d)
+    call lookup_des2(temp8_3d,desat8_3d)
+    call check_answer8_2d(esat_answer8_3d, esat8_3d, ' test_lookup_es2_3d_r8')
+    call check_answer8_2d(desat_answer8_3d, desat8_3d, 'test_lookup_des2_3d_r8')
+    esat8_3d = 0._r8_kind ; desat8_3d = 0._r8_kind
+    call lookup_es2_des2(temp8_3d,esat8_3d,desat8_3d)
+    call check_answer8_2d(esat_answer8_3d, esat8_3d, ' test_lookup_es2_des2_3d_r8')
+    call check_answer8_2d(desat_answer8_3d, desat8_3d, 'test_lookup_es2_des2_3d_r8')
+
+  end subroutine test_lookup_es2_des2
+  !----------------------------------------------------------------------
+  subroutine test_lookup_es3_des3
+
+    implicit none
+    real(kind=r4_kind) :: temp4, esat4, desat4, esat_answer4, desat_answer4
+    real(kind=r8_kind) :: temp8, esat8, desat8, esat_answer8, desat_answer8
+
+    real(kind=r4_kind), dimension(1) :: temp4_1d, esat4_1d, desat4_1d, esat_answer4_1d, desat_answer4_1d
+    real(kind=r8_kind), dimension(1) :: temp8_1d, esat8_1d, desat8_1d, esat_answer8_1d, desat_answer8_1d
+
+    real(kind=r4_kind), dimension(1,1) :: temp4_2d, esat4_2d, desat4_2d, esat_answer4_2d, desat_answer4_2d
+    real(kind=r8_kind), dimension(1,1) :: temp8_2d, esat8_2d, desat8_2d, esat_answer8_2d, desat_answer8_2d
+
+    real(kind=r4_kind), dimension(1,1,1) :: temp4_3d, esat4_3d, desat4_3d, esat_answer4_3d, desat_answer4_3d
+    real(kind=r8_kind), dimension(1,1,1) :: temp8_3d, esat8_3d, desat8_3d, esat_answer8_3d, desat_answer8_3d
+
+
+    !-----0d test-------!
+    temp4 = real(TCMIN,r4_kind) + real(TFREEZE,r4_kind) !tminl corresponding to TABLE(1)
+    temp8 = real(TCMIN,r8_kind) + real(TFREEZE,r8_kind) !tminl corresponding to TABLE(1)
+
+    !get answers.  The TABLE is computed with r8_kind precision
+    esat_answer8 = TABLE3(1)                     ; desat_answer8=DTABLE3(1)
+    esat_answer4 = real(esat_answer8, r4_kind)   ; desat_answer4=real(desat_answer8,r4_kind)
+    ! test r4
+    call lookup_es3(temp4,esat4)
+    call lookup_des3(temp4,desat4)
+    call check_answer4_0d(esat_answer4, esat4, ' test_lookup_es3_0d_r4')
+    call check_answer4_0d(desat_answer4, desat4, 'test_lookup_des3_0d_r4')
+    esat4 = 0._r4_kind ; desat4 = 0.0_r4_kind
+    call lookup_es3_des3(temp4,esat4,desat4)
+    call check_answer4_0d(esat_answer4, esat4, ' test_lookup_es3_des3_0d_r4')
+    call check_answer4_0d(desat_answer4, desat4, 'test_lookup_es3_des3_0d_r4')
+    ! test r8
+    call lookup_es3(temp8,esat8)
+    call lookup_des3(temp8,desat8)
+    call check_answer8_0d(esat_answer8, esat8, ' test_lookup_es3_0d_r8')
+    call check_answer8_0d(desat_answer8, desat8, 'test_lookup_des3_0d_r8')
+    esat8 = 0._r8_kind ; desat8 = 0.0_r8_kind
+    call lookup_es3_des3(temp8,esat8,desat8)
+    call check_answer8_0d(esat_answer8, esat8, ' test_lookup_es3_des3_0d_r8')
+    call check_answer8_0d(desat_answer8, desat8, 'test_lookup_es3_des3_0d_r8')
+
+    !-----1d test-------!
+    temp4_1d(1) = real(TCMIN,r4_kind) + real(TFREEZE,r4_kind) !tminl corresponding to TABLE(1)
+    temp8_1d(1) = real(TCMIN,r8_kind) + real(TFREEZE,r8_kind) !tminl corresponding to TABLE(1)
+
+    !get answers.  The TABLE is computed with r8_kind precision
+    esat_answer8_1d = TABLE3(1)                       ; desat_answer8_1d = DTABLE3(1)
+    esat_answer4_1d = real(esat_answer8_1d, r4_kind)  ; desat_answer4_1d = real(desat_answer8_1d,r4_kind)
+    ! test r4
+    call lookup_es3(temp4_1d,esat4_1d)
+    call lookup_des3(temp4_1d,desat4_1d)
+    call check_answer4_1d(esat_answer4_1d, esat4_1d, ' test_lookup_es3_1d_r4')
+    call check_answer4_1d(desat_answer4_1d, desat4_1d, 'test_lookup_des3_1d_r4')
+    esat4_1d = 0._r4_kind ; desat4_1d = 0._r4_kind
+    call lookup_es3_des3(temp4_1d,esat4_1d,desat4_1d)
+    call check_answer4_1d(esat_answer4_1d, esat4_1d, ' test_lookup_es3_des3_1d_r4')
+    call check_answer4_1d(desat_answer4_1d, desat4_1d, 'test_lookup_es3_des3_1d_r4')
+    ! test r8
+    call lookup_es3(temp8_1d,esat8_1d)
+    call lookup_des3(temp8_1d,desat8_1d)
+    call check_answer8_1d(esat_answer8_1d, esat8_1d, ' test_lookup_es3_1d_r8')
+    call check_answer8_1d(desat_answer8_1d, desat8_1d, 'test_lookup_des3_1d_r8')
+    esat8_1d = 0._r8_kind ; desat8_1d = 0._r8_kind
+    call lookup_es3_des3(temp8_1d,esat8_1d,desat8_1d)
+    call check_answer8_1d(esat_answer8_1d, esat8_1d, ' test_lookup_es3_des3_1d_r8')
+    call check_answer8_1d(desat_answer8_1d, desat8_1d, 'test_lookup_es3_des3_1d_r8')
+
+
+    !-----2d test-------!
+    temp4_2d(1,1) = real(TCMIN,r4_kind) + real(TFREEZE,r4_kind) !tminl corresponding to TABLE(1)
+    temp8_2d(1,1) = real(TCMIN,r8_kind) + real(TFREEZE,r8_kind) !tminl corresponding to TABLE(1)
+
+    !get answers.  The TABLE is computed with r8_kind precision
+    esat_answer8_2d = TABLE3(1)                            ; desat_answer8_2d = DTABLE3(1)
+    esat_answer4_2d = real(esat_answer8_2d(1,1), r4_kind)  ; desat_answer4_2d = real(desat_answer8_2d,r4_kind)
+    ! test r4
+    call lookup_es3(temp4_2d,esat4_2d)
+    call lookup_des3(temp4_2d,desat4_2d)
+    call check_answer4_2d(esat_answer4_2d, esat4_2d, ' test_lookup_es3_2d_r4')
+    call check_answer4_2d(desat_answer4_2d, desat4_2d, 'test_lookup_des3_2d_r4')
+    esat4_2d = 0._r4_kind ; desat4_2d = 0._r4_kind
+    call lookup_es3_des3(temp4_2d,esat4_2d,desat4_2d)
+    call check_answer4_2d(esat_answer4_2d, esat4_2d, ' test_lookup_es3_des3_2d_r4')
+    call check_answer4_2d(desat_answer4_2d, desat4_2d, 'test_lookup_es3_des3_2d_r4')
+    ! test r8
+    call lookup_es3(temp8_2d,esat8_2d)
+    call lookup_des3(temp8_2d,desat8_2d)
+    call check_answer8_2d(esat_answer8_2d, esat8_2d, ' test_lookup_es3_2d_r8')
+    call check_answer8_2d(desat_answer8_2d, desat8_2d, 'test_lookup_des3_2d_r8')
+    esat8_2d = 0._r8_kind ; desat8_2d = 0._r8_kind
+    call lookup_es3_des3(temp8_2d,esat8_2d,desat8_2d)
+    call check_answer8_2d(esat_answer8_2d, esat8_2d, ' test_lookup_es3_des3_2d_r8')
+    call check_answer8_2d(desat_answer8_2d, desat8_2d, 'test_lookup_es3_des3_2d_r8')
+
+    !-----3d test-------!
+    temp4_3d(1,1,1) = real(TCMIN,r4_kind) + real(TFREEZE,r4_kind) !tminl corresponding to TABLE(1)
+    temp8_3d(1,1,1) = real(TCMIN,r8_kind) + real(TFREEZE,r8_kind) !tminl corresponding to TABLE(1)
+
+    !get answers.  The TABLE is computed with r8_kind precision
+    esat_answer8_3d = TABLE3(1)                              ; desat_answer8_3d = DTABLE3(1)
+    esat_answer4_3d = real(esat_answer8_3d(1,1,1), r4_kind)  ; desat_answer4_3d = real(desat_answer8_3d,r4_kind)
     ! test r4
     call lookup_es3(temp4_3d,esat4_3d)
-    if(esat4_3d(1,1,1) .ne. answer4_3d(1,1,1)) then
-       write(*,*) 'Expected ', answer4_3d(1,1,1), ' but got ', esat4_3d(1,1,1)
-       call mpp_error(FATAL,'ERROR: test_lookup_es3_3d fails r4')
-    end if
+    call lookup_des3(temp4_3d,desat4_3d)
+    call check_answer4_2d(esat_answer4_3d, esat4_3d, ' test_lookup_es3_3d_r4')
+    call check_answer4_2d(desat_answer4_3d, desat4_3d, 'test_lookup_des3_3d_r4')
+    esat4_3d = 0._r4_kind ; desat4_3d = 0._r4_kind
+    call lookup_es3_des3(temp4_3d,esat4_3d,desat4_3d)
+    call check_answer4_2d(esat_answer4_3d, esat4_3d, ' test_lookup_es3_des3_3d_r4')
+    call check_answer4_2d(desat_answer4_3d, desat4_3d, 'test_lookup_es3_des3_3d_r4')
     ! test r8
-    call lookup_es3(temp8_3d, esat8_3d)
-    if(esat8_3d(1,1,1) .ne. answer8_3d(1,1,1)) then
-       write(*,*) 'Expected ', answer8_3d(1,1,1), ' but got ', esat8_3d(1,1,1)
-       call mpp_error(FATAL,'ERROR:  test_lookup_es3_3d fails r8')
+    call lookup_es3(temp8_3d,esat8_3d)
+    call lookup_des3(temp8_3d,desat8_3d)
+    call check_answer8_2d(esat_answer8_3d, esat8_3d, ' test_lookup_es3_3d_r8')
+    call check_answer8_2d(desat_answer8_3d, desat8_3d, 'test_lookup_des3_3d_r8')
+    esat8_3d = 0._r8_kind ; desat8_3d = 0._r8_kind
+    call lookup_es3_des3(temp8_3d,esat8_3d,desat8_3d)
+    call check_answer8_2d(esat_answer8_3d, esat8_3d, ' test_lookup_es3_des3_3d_r8')
+    call check_answer8_2d(desat_answer8_3d, desat8_3d, 'test_lookup_es3_des3_3d_r8')
+
+  end subroutine test_lookup_es3_des3
+  !----------------------------------------------------------------------
+  subroutine check_answer4_0d(answer,fms_result,whoami)
+
+    implicit none
+    real(r4_kind), intent(in) :: answer, fms_result
+    character(len=*), intent(in) :: whoami
+
+    if(answer .ne. fms_result) then
+       write(*,*) 'Expected ', answer, ' but got ', fms_result
+       call mpp_error(FATAL,'ERROR:'//trim(whoami) )
     end if
 
-  end subroutine test_lookup_es3
+  end subroutine check_answer4_0d
   !-----------------------------------------------------------------------
-  !subroutine test_lookup_des
+  subroutine check_answer4_1d(answer,fms_result,whoami)
 
+    implicit none
+    real(r4_kind), dimension(1), intent(in) :: answer, fms_result
+    character(len=*), intent(in) :: whoami
+
+    if(answer(1) .ne. fms_result(1)) then
+       write(*,*) 'Expected ', answer(1), ' but got ', fms_result(1)
+       call mpp_error(FATAL,'ERROR:'//trim(whoami) )
+    end if
+
+  end subroutine check_answer4_1d
   !-----------------------------------------------------------------------
-  !subroutine test_lookup_des2
-  !subroutine test_lookup_des3
-  !subroutine test_lookup_es_des
-  !subroutine test_lookup_es2_des2
-  !subroutine test_lookup_es3_des3
+  subroutine check_answer4_2d(answer,fms_result,whoami)
 
+    implicit none
+    real(r4_kind), dimension(1,1), intent(in) :: answer, fms_result
+    character(len=*), intent(in) :: whoami
 
+    if(answer(1,1) .ne. fms_result(1,1)) then
+       write(*,*) 'Expected ', answer(1,1), ' but got ', fms_result(1,1)
+       call mpp_error(FATAL,'ERROR:'//trim(whoami) )
+    end if
 
+  end subroutine check_answer4_2d
+  !-----------------------------------------------------------------------
+  subroutine check_answer4_3d(answer,fms_result,whoami)
+
+    implicit none
+    real(r4_kind), dimension(1,1,1), intent(in) :: answer, fms_result
+    character(len=*), intent(in) :: whoami
+
+    if(answer(1,1,1) .ne. fms_result(1,1,1)) then
+       write(*,*) 'Expected ', answer(1,1,1), ' but got ', fms_result(1,1,1)
+       call mpp_error(FATAL,'ERROR:'//trim(whoami) )
+    end if
+
+  end subroutine check_answer4_3d
+  !-----------------------------------------------------------------------
+  subroutine check_answer8_0d(answer,fms_result,whoami)
+
+    implicit none
+    real(r8_kind), intent(in) :: answer, fms_result
+    character(len=*), intent(in)  :: whoami
+
+    if(answer .ne. fms_result) then
+       write(*,*) 'Expected ', answer, ' but got ', fms_result
+       call mpp_error(FATAL,'ERROR:'//trim(whoami) )
+    end if
+
+  end subroutine check_answer8_0d
+  !-----------------------------------------------------------------------
+  subroutine check_answer8_1d(answer,fms_result,whoami)
+
+    implicit none
+    real(r8_kind), dimension(1), intent(in) :: answer, fms_result
+    character(len=*), intent(in)  :: whoami
+
+    if(answer(1) .ne. fms_result(1)) then
+       write(*,*) 'Expected ', answer(1), ' but got ', fms_result(1)
+       call mpp_error(FATAL,'ERROR:'//trim(whoami) )
+    end if
+
+  end subroutine check_answer8_1d
+  !-----------------------------------------------------------------------
+  subroutine check_answer8_2d(answer,fms_result,whoami)
+
+    implicit none
+    real(r8_kind), dimension(1,1), intent(in) :: answer, fms_result
+    character(len=*), intent(in)  :: whoami
+
+    if(answer(1,1) .ne. fms_result(1,1)) then
+       write(*,*) 'Expected ', answer(1,1), ' but got ', fms_result(1,1)
+       call mpp_error(FATAL,'ERROR:'//trim(whoami) )
+    end if
+
+  end subroutine check_answer8_2d
+  !-----------------------------------------------------------------------
+  subroutine check_answer8_3d(answer,fms_result,whoami)
+
+    implicit none
+    real(r8_kind), dimension(1,1,1), intent(in) :: answer, fms_result
+    character(len=*), intent(in)  :: whoami
+
+    if(answer(1,1,1) .ne. fms_result(1,1,1)) then
+       write(*,*) 'Expected ', answer(1,1,1), ' but got ', fms_result(1,1,1)
+       call mpp_error(FATAL,'ERROR:'//trim(whoami) )
+    end if
+
+  end subroutine check_answer8_3d
   !-----------------------------------------------------------------------
   subroutine compute_tables
 
