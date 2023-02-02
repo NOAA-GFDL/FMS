@@ -24,78 +24,167 @@
 
 program test_sat_vap_pressure
 
-use            fms_mod, only: fms_init, fms_end
-use            mpp_mod, only: mpp_error, FATAL
+use            fms_mod, only: fms_init, fms_end, check_nml_error
+use            mpp_mod, only: input_nml_file, mpp_error, FATAL
 use       platform_mod, only: r4_kind, r8_kind
 use      constants_mod, only: RDGAS, RVGAS, TFREEZE
-
-use sat_vapor_pres_mod, only: sat_vapor_pres_init, &
-                              compute_qs, compute_mrs, &
-                              lookup_es, lookup_es2, lookup_es3, &
-                              lookup_des, lookup_des2, lookup_des3, &
-                              lookup_es_des, lookup_es2_des2, lookup_es3_des3, &
-                              TCMIN, TCMAX
-
+use sat_vapor_pres_mod, only: TCMIN, TCMAX, sat_vapor_pres_init, &
+                              compute_qs, compute_mrs,           &
+                              lookup_es,   lookup_des,  lookup_es_des,   &
+                              lookup_es2,  lookup_des2, lookup_es2_des2, &
+                              lookup_es3,  lookup_des3, lookup_es3_des3
 
 implicit none
 
 integer, parameter :: N=4
 real(r8_kind), dimension(N) :: TABLE, DTABLE, TABLE2, DTABLE2, TABLE3, DTABLE3
-real(r8_kind), dimension(N) :: D2TABLE, D2TABLE2, D2TABLE3
+
+!test_sat_vapor_pres_nml
+integer :: io
+logical :: test1, test2, test3, test4, test5
+NAMELIST / test_sat_vapor_pres_nml/ test1, test2, test3, test4, test5
 
 call fms_init()
-
 call sat_vapor_pres_init()
 call compute_tables()
-call test_compute_qs_k_0d()
-call test_mrs_k_0d()
-call test_lookup_es_des()
-call test_lookup_es2_des2()
-call test_lookup_es3_des3()
+
+read(input_nml_file, test_sat_vapor_pres_nml,iostat=io)
+
+if(test1) call test_compute_qs()
+if(test2) call test_mrs()
+if(test3) call test_lookup_es_des()
+if(test4) call test_lookup_es2_des2()
+if(test5) call test_lookup_es3_des3()
 
 call fms_end()
 
 contains
   !-----------------------------------------------------------------------
-  subroutine test_compute_qs_k_0d()
+  subroutine test_compute_qs()
 
     implicit none
 
     real(kind=r4_kind) :: temp4, press4, answer4, qsat4
+    real(kind=r4_kind), dimension(1) :: temp4_1d, press4_1d, answer4_1d, qsat4_1d
+    real(kind=r4_kind), dimension(1,1) :: temp4_2d, press4_2d, answer4_2d, qsat4_2d
+    real(kind=r4_kind), dimension(1,1,1) :: temp4_3d, press4_3d, answer4_3d, qsat4_3d
+
     real(kind=r8_kind) :: temp8, press8, answer8, qsat8
+    real(kind=r8_kind), dimension(1) :: temp8_1d, press8_1d, answer8_1d, qsat8_1d
+    real(kind=r8_kind), dimension(1,1) :: temp8_2d, press8_2d, answer8_2d, qsat8_2d
+    real(kind=r8_kind), dimension(1,1,1) :: temp8_3d, press8_3d, answer8_3d, qsat8_3d
+
     real(kind=r8_kind), parameter :: EPSILO=real(RDGAS,r8_kind)/real(RVGAS, r8_kind)
 
-    !test 1:   press is 0.  Therefore answer should be eps=EPSILO=RDGAS/RVGAS
+    !---- 0d ----!
+    !press is 0.  Therefore answer should be eps=EPSILO=RDGAS/RVGAS
     temp4 = 270.0_r4_kind ; press4 = 0.0_r4_kind ; answer4=real(EPSILO,r4_kind)
     temp8 = 270.0_r8_kind ; press8 = 0.0_r8_kind ; answer8=EPSILO
     ! test r4
     call compute_qs(temp4, press4, qsat4)
-    if( qsat4 .ne. answer4 )call mpp_error(FATAL,"ERROR: test_compute_qs_0d fails r4")
+    call check_answer4_0d( answer4, qsat4, 'test_compute_qs_0d_r4')
     ! test r8
     call compute_qs(temp8, press8, qsat8)
-    if( qsat8 .ne. answer8 )call mpp_error(FATAL,"ERROR: test_compute_qs_0d fails r8")
+    call check_answer8_0d( answer8, qsat8, 'test_compute_qs_0d_r8')
+
+    !---- 1d ----!
+    !press is 0.  Therefore answer should be eps=EPSILO=RDGAS/RVGAS
+    temp4_1d = 270.0_r4_kind ; press4_1d = 0.0_r4_kind ; answer4_1d=real(EPSILO,r4_kind)
+    temp8_1d = 270.0_r8_kind ; press8_1d = 0.0_r8_kind ; answer8_1d=EPSILO
+    ! test r4
+    call compute_qs(temp4_1d, press4_1d, qsat4_1d)
+    call check_answer4_1d( answer4_1d, qsat4_1d, 'test_compute_qs_1d_r4')
+    ! test r8
+    call compute_qs(temp8_1d, press8_1d, qsat8_1d)
+    call check_answer8_1d( answer8_1d, qsat8_1d, 'test_compute_qs_1d_r8')
+
+    !---- 2d ----!
+    !press is 0.  Therefore answer should be eps=EPSILO=RDGAS/RVGAS
+    temp4_2d = 270.0_r4_kind ; press4_2d = 0.0_r4_kind ; answer4_2d=real(EPSILO,r4_kind)
+    temp8_2d = 270.0_r8_kind ; press8_2d = 0.0_r8_kind ; answer8_2d=EPSILO
+    ! test r4
+    call compute_qs(temp4_2d, press4_2d, qsat4_2d)
+    call check_answer4_2d( answer4_2d, qsat4_2d, 'test_compute_qs_2d_r4')
+    ! test r8
+    call compute_qs(temp8_2d, press8_2d, qsat8_2d)
+    call check_answer8_2d( answer8_2d, qsat8_2d, 'test_compute_qs_2d_r8')
+
+    !---- 3d ----!
+    !press is 0.  Therefore answer should be eps=EPSILO=RDGAS/RVGAS
+    temp4_3d = 270.0_r4_kind ; press4_3d = 0.0_r4_kind ; answer4_3d=real(EPSILO,r4_kind)
+    temp8_3d = 270.0_r8_kind ; press8_3d = 0.0_r8_kind ; answer8_3d=EPSILO
+    ! test r4
+    call compute_qs(temp4_3d, press4_3d, qsat4_3d)
+    call check_answer4_3d( answer4_3d, qsat4_3d, 'test_compute_qs_3d_r4')
+    ! test r8
+    call compute_qs(temp8_3d, press8_3d, qsat8_3d)
+    call check_answer8_3d( answer8_3d, qsat8_3d, 'test_compute_qs_3d_r8')
 
 
-  end subroutine test_compute_qs_k_0d
+  end subroutine test_compute_qs
   !-----------------------------------------------------------------------
-  subroutine test_mrs_k_0d()
+  subroutine test_mrs()
 
     implicit none
     real(kind=r4_kind) :: temp4, press4, answer4, mrsat4
     real(kind=r8_kind) :: temp8, press8, answer8, mrsat8
+
+    real(kind=r4_kind), dimension(1) :: temp4_1d, press4_1d, answer4_1d, mrsat4_1d
+    real(kind=r8_kind), dimension(1) :: temp8_1d, press8_1d, answer8_1d, mrsat8_1d
+
+    real(kind=r4_kind), dimension(1,1) :: temp4_2d , press4_2d, answer4_2d, mrsat4_2d
+    real(kind=r8_kind), dimension(1,1) :: temp8_2d , press8_2d, answer8_2d, mrsat8_2d
+
+    real(kind=r4_kind), dimension(1,1,1) :: temp4_3d , press4_3d, answer4_3d, mrsat4_3d
+    real(kind=r8_kind), dimension(1,1,1) :: temp8_3d , press8_3d, answer8_3d, mrsat8_3d
+
     real(kind=r8_kind), parameter :: EPSILO=real(RDGAS,r8_kind)/real(RVGAS, r8_kind)
 
+    !--------0d--------!
     !press is 0.  Therefore answer should be eps=EPSILO=RDGAS/RVGAS
     temp4 = 270.0_r4_kind ; press4 = 0.0_r4_kind ; answer4=real(EPSILO,r4_kind)
     temp8 = 270.0_r8_kind ; press8 = 0.0_r8_kind ; answer8=EPSILO
     ! test r4
     call compute_mrs(temp4, press4, mrsat4)
-    if( mrsat4 .ne. answer4 )call mpp_error(FATAL,"ERROR: test_compute_qs_0d fails r4")
+    call check_answer4_0d(answer4,mrsat4,'test_compute_mrs_0d_r4')
     ! test r8
     call compute_mrs(temp8, press8, mrsat8)
-    if( mrsat8 .ne. answer8 )call mpp_error(FATAL,"ERROR: test_compute_qs_0d fails r8")
+    call check_answer8_0d(answer8,mrsat8,'test_compute_mrs_0d_r8')
 
-  end subroutine test_mrs_k_0d
+    !--------1d--------!
+    !press is 0.  Therefore answer should be eps=EPSILO=RDGAS/RVGAS
+    temp4_1d = 270.0_r4_kind ; press4_1d = 0.0_r4_kind ; answer4_1d=real(EPSILO,r4_kind)
+    temp8_1d = 270.0_r8_kind ; press8_1d = 0.0_r8_kind ; answer8_1d=EPSILO
+    ! test r4
+    call compute_mrs(temp4_1d, press4_1d, mrsat4_1d)
+    call check_answer4_1d(answer4_1d,mrsat4_1d,'test_compute_mrs_1d_r4')
+    ! test r8
+    call compute_mrs(temp8_1d, press8_1d, mrsat8_1d)
+    call check_answer8_1d(answer8_1d,mrsat8_1d,'test_compute_mrs_1d_r8')
+
+    !--------2d--------!
+    !press is 0.  Therefore answer should be eps=EPSILO=RDGAS/RVGAS
+    temp4_2d = 270.0_r4_kind ; press4_2d = 0.0_r4_kind ; answer4_2d=real(EPSILO,r4_kind)
+    temp8_2d = 270.0_r8_kind ; press8_2d = 0.0_r8_kind ; answer8_2d=EPSILO
+    ! test r4
+    call compute_mrs(temp4_2d, press4_2d, mrsat4_2d)
+    call check_answer4_2d(answer4_2d,mrsat4_2d,'test_compute_mrs_2d_r4')
+    ! test r8
+    call compute_mrs(temp8_2d, press8_2d, mrsat8_2d)
+    call check_answer8_2d(answer8_2d,mrsat8_2d,'test_compute_mrs_2d_r8')
+
+    !--------3d--------!
+    !press is 0.  Therefore answer should be eps=EPSILO=RDGAS/RVGAS
+    temp4_3d = 270.0_r4_kind ; press4_3d = 0.0_r4_kind ; answer4_3d=real(EPSILO,r4_kind)
+    temp8_3d = 270.0_r8_kind ; press8_3d = 0.0_r8_kind ; answer8_3d=EPSILO
+    ! test r4
+    call compute_mrs(temp4_3d, press4_3d, mrsat4_3d)
+    call check_answer4_3d(answer4_1d,mrsat4_1d,'test_compute_mrs_3d_r4')
+    ! test r8
+    call compute_mrs(temp8_3d, press8_3d, mrsat8_3d)
+    call check_answer8_3d(answer8_3d,mrsat8_3d,'test_compute_mrs_3d_r8')
+
+  end subroutine test_mrs
   !-----------------------------------------------------------------------
   subroutine test_lookup_es_des
 
@@ -123,20 +212,20 @@ contains
     ! test r4
     call lookup_es(temp4,esat4)
     call lookup_des(temp4,desat4)
-    call check_answer4_0d(esat_answer4, esat4, ' test_lookup_es_0d_r4')
+    call check_answer4_0d(esat_answer4, esat4,   'test_lookup_es_0d_r4')
     call check_answer4_0d(desat_answer4, desat4, 'test_lookup_des_0d_r4')
     esat4 = 0._r4_kind ; desat4 = 0.0_r4_kind
     call lookup_es_des(temp4,esat4,desat4)
-    call check_answer4_0d(esat_answer4, esat4, ' test_lookup_es_des_0d_r4')
+    call check_answer4_0d(esat_answer4, esat4,   'test_lookup_es_des_0d_r4')
     call check_answer4_0d(desat_answer4, desat4, 'test_lookup_es_des_0d_r4')
     ! test r8
     call lookup_es(temp8,esat8)
     call lookup_des(temp8,desat8)
-    call check_answer8_0d(esat_answer8, esat8, ' test_lookup_es_0d_r8')
+    call check_answer8_0d(esat_answer8, esat8,   'test_lookup_es_0d_r8')
     call check_answer8_0d(desat_answer8, desat8, 'test_lookup_des_0d_r8')
     esat8 = 0._r8_kind ; desat8 = 0.0_r8_kind
     call lookup_es_des(temp8,esat8,desat8)
-    call check_answer8_0d(esat_answer8, esat8, ' test_lookup_es_des_0d_r8')
+    call check_answer8_0d(esat_answer8, esat8,   'test_lookup_es_des_0d_r8')
     call check_answer8_0d(desat_answer8, desat8, 'test_lookup_es_des_0d_r8')
 
     !-----1d test-------!
@@ -149,20 +238,20 @@ contains
     ! test r4
     call lookup_es(temp4_1d,esat4_1d)
     call lookup_des(temp4_1d,desat4_1d)
-    call check_answer4_1d(esat_answer4_1d, esat4_1d, ' test_lookup_es_1d_r4')
+    call check_answer4_1d(esat_answer4_1d, esat4_1d,   'test_lookup_es_1d_r4')
     call check_answer4_1d(desat_answer4_1d, desat4_1d, 'test_lookup_des_1d_r4')
     esat4_1d = 0._r4_kind ; desat4_1d = 0._r4_kind
     call lookup_es_des(temp4_1d,esat4_1d,desat4_1d)
-    call check_answer4_1d(esat_answer4_1d, esat4_1d, ' test_lookup_es_des_1d_r4')
+    call check_answer4_1d(esat_answer4_1d, esat4_1d,   'test_lookup_es_des_1d_r4')
     call check_answer4_1d(desat_answer4_1d, desat4_1d, 'test_lookup_es_des_1d_r4')
     ! test r8
     call lookup_es(temp8_1d,esat8_1d)
     call lookup_des(temp8_1d,desat8_1d)
-    call check_answer8_1d(esat_answer8_1d, esat8_1d, ' test_lookup_es_1d_r8')
+    call check_answer8_1d(esat_answer8_1d, esat8_1d,   'test_lookup_es_1d_r8')
     call check_answer8_1d(desat_answer8_1d, desat8_1d, 'test_lookup_des_1d_r8')
     esat8_1d = 0._r8_kind ; desat8_1d = 0._r8_kind
     call lookup_es_des(temp8_1d,esat8_1d,desat8_1d)
-    call check_answer8_1d(esat_answer8_1d, esat8_1d, ' test_lookup_es_des_1d_r8')
+    call check_answer8_1d(esat_answer8_1d, esat8_1d,   'test_lookup_es_des_1d_r8')
     call check_answer8_1d(desat_answer8_1d, desat8_1d, 'test_lookup_es_des_1d_r8')
 
 
@@ -176,20 +265,20 @@ contains
     ! test r4
     call lookup_es(temp4_2d,esat4_2d)
     call lookup_des(temp4_2d,desat4_2d)
-    call check_answer4_2d(esat_answer4_2d, esat4_2d, ' test_lookup_es_2d_r4')
+    call check_answer4_2d(esat_answer4_2d, esat4_2d,   'test_lookup_es_2d_r4')
     call check_answer4_2d(desat_answer4_2d, desat4_2d, 'test_lookup_des_2d_r4')
     esat4_2d = 0._r4_kind ; desat4_2d = 0._r4_kind
     call lookup_es_des(temp4_2d,esat4_2d,desat4_2d)
-    call check_answer4_2d(esat_answer4_2d, esat4_2d, ' test_lookup_es_des_2d_r4')
+    call check_answer4_2d(esat_answer4_2d, esat4_2d,   'test_lookup_es_des_2d_r4')
     call check_answer4_2d(desat_answer4_2d, desat4_2d, 'test_lookup_es_des_2d_r4')
     ! test r8
     call lookup_es(temp8_2d,esat8_2d)
     call lookup_des(temp8_2d,desat8_2d)
-    call check_answer8_2d(esat_answer8_2d, esat8_2d, ' test_lookup_es_2d_r8')
+    call check_answer8_2d(esat_answer8_2d, esat8_2d,   'test_lookup_es_2d_r8')
     call check_answer8_2d(desat_answer8_2d, desat8_2d, 'test_lookup_des_2d_r8')
     esat8_2d = 0._r8_kind ; desat8_2d = 0._r8_kind
     call lookup_es_des(temp8_2d,esat8_2d,desat8_2d)
-    call check_answer8_2d(esat_answer8_2d, esat8_2d, ' test_lookup_es_des_2d_r8')
+    call check_answer8_2d(esat_answer8_2d, esat8_2d,   'test_lookup_es_des_2d_r8')
     call check_answer8_2d(desat_answer8_2d, desat8_2d, 'test_lookup_es_des_2d_r8')
 
     !-----3d test-------!
@@ -202,20 +291,20 @@ contains
     ! test r4
     call lookup_es(temp4_3d,esat4_3d)
     call lookup_des(temp4_3d,desat4_3d)
-    call check_answer4_2d(esat_answer4_3d, esat4_3d, ' test_lookup_es_3d_r4')
+    call check_answer4_2d(esat_answer4_3d, esat4_3d,   'test_lookup_es_3d_r4')
     call check_answer4_2d(desat_answer4_3d, desat4_3d, 'test_lookup_des_3d_r4')
     esat4_3d = 0._r4_kind ; desat4_3d = 0._r4_kind
     call lookup_es_des(temp4_3d,esat4_3d,desat4_3d)
-    call check_answer4_2d(esat_answer4_3d, esat4_3d, ' test_lookup_es_des_3d_r4')
+    call check_answer4_2d(esat_answer4_3d, esat4_3d,   'test_lookup_es_des_3d_r4')
     call check_answer4_2d(desat_answer4_3d, desat4_3d, 'test_lookup_es_des_3d_r4')
     ! test r8
     call lookup_es(temp8_3d,esat8_3d)
     call lookup_des(temp8_3d,desat8_3d)
-    call check_answer8_2d(esat_answer8_3d, esat8_3d, ' test_lookup_es_3d_r8')
+    call check_answer8_2d(esat_answer8_3d, esat8_3d,   'test_lookup_es_3d_r8')
     call check_answer8_2d(desat_answer8_3d, desat8_3d, 'test_lookup_des_3d_r8')
     esat8_3d = 0._r8_kind ; desat8_3d = 0._r8_kind
     call lookup_es_des(temp8_3d,esat8_3d,desat8_3d)
-    call check_answer8_2d(esat_answer8_3d, esat8_3d, ' test_lookup_es_des_3d_r8')
+    call check_answer8_2d(esat_answer8_3d, esat8_3d,   'test_lookup_es_des_3d_r8')
     call check_answer8_2d(desat_answer8_3d, desat8_3d, 'test_lookup_es_des_2d_r8')
 
   end subroutine test_lookup_es_des
@@ -246,20 +335,20 @@ contains
     ! test r4
     call lookup_es2(temp4,esat4)
     call lookup_des2(temp4,desat4)
-    call check_answer4_0d(esat_answer4, esat4, ' test_lookup_es2_0d_r4')
+    call check_answer4_0d(esat_answer4, esat4,   'test_lookup_es2_0d_r4')
     call check_answer4_0d(desat_answer4, desat4, 'test_lookup_des2_0d_r4')
     esat4 = 0._r4_kind ; desat4 = 0.0_r4_kind
     call lookup_es2_des2(temp4,esat4,desat4)
-    call check_answer4_0d(esat_answer4, esat4, ' test_lookup_es2_des2_0d_r4')
+    call check_answer4_0d(esat_answer4, esat4,   'test_lookup_es2_des2_0d_r4')
     call check_answer4_0d(desat_answer4, desat4, 'test_lookup_es2_des2_0d_r4')
     ! test r8
     call lookup_es2(temp8,esat8)
     call lookup_des2(temp8,desat8)
-    call check_answer8_0d(esat_answer8, esat8, ' test_lookup_es2_0d_r8')
+    call check_answer8_0d(esat_answer8, esat8,   'test_lookup_es2_0d_r8')
     call check_answer8_0d(desat_answer8, desat8, 'test_lookup_des2_0d_r8')
     esat8 = 0._r8_kind ; desat8 = 0.0_r8_kind
     call lookup_es2_des2(temp8,esat8,desat8)
-    call check_answer8_0d(esat_answer8, esat8, ' test_lookup_es2_des2_0d_r8')
+    call check_answer8_0d(esat_answer8, esat8,   'test_lookup_es2_des2_0d_r8')
     call check_answer8_0d(desat_answer8, desat8, 'test_lookup_es2_des2_0d_r8')
 
     !-----1d test-------!
@@ -272,20 +361,20 @@ contains
     ! test r4
     call lookup_es2(temp4_1d,esat4_1d)
     call lookup_des2(temp4_1d,desat4_1d)
-    call check_answer4_1d(esat_answer4_1d, esat4_1d, ' test_lookup_es2_1d_r4')
+    call check_answer4_1d(esat_answer4_1d, esat4_1d,   'test_lookup_es2_1d_r4')
     call check_answer4_1d(desat_answer4_1d, desat4_1d, 'test_lookup_des2_1d_r4')
     esat4_1d = 0._r4_kind ; desat4_1d = 0._r4_kind
     call lookup_es2_des2(temp4_1d,esat4_1d,desat4_1d)
-    call check_answer4_1d(esat_answer4_1d, esat4_1d, ' test_lookup_es2_des2_1d_r4')
+    call check_answer4_1d(esat_answer4_1d, esat4_1d,   'test_lookup_es2_des2_1d_r4')
     call check_answer4_1d(desat_answer4_1d, desat4_1d, 'test_lookup_es2_des2_1d_r4')
     ! test r8
     call lookup_es2(temp8_1d,esat8_1d)
     call lookup_des2(temp8_1d,desat8_1d)
-    call check_answer8_1d(esat_answer8_1d, esat8_1d, ' test_lookup_es2_1d_r8')
+    call check_answer8_1d(esat_answer8_1d, esat8_1d,   'test_lookup_es2_1d_r8')
     call check_answer8_1d(desat_answer8_1d, desat8_1d, 'test_lookup_des2_1d_r8')
     esat8_1d = 0._r8_kind ; desat8_1d = 0._r8_kind
     call lookup_es2_des2(temp8_1d,esat8_1d,desat8_1d)
-    call check_answer8_1d(esat_answer8_1d, esat8_1d, ' test_lookup_es2_des2_1d_r8')
+    call check_answer8_1d(esat_answer8_1d, esat8_1d,   'test_lookup_es2_des2_1d_r8')
     call check_answer8_1d(desat_answer8_1d, desat8_1d, 'test_lookup_es2_des2_1d_r8')
 
 
@@ -299,20 +388,20 @@ contains
     ! test r4
     call lookup_es2(temp4_2d,esat4_2d)
     call lookup_des2(temp4_2d,desat4_2d)
-    call check_answer4_2d(esat_answer4_2d, esat4_2d, ' test_lookup_es2_2d_r4')
+    call check_answer4_2d(esat_answer4_2d, esat4_2d,   'test_lookup_es2_2d_r4')
     call check_answer4_2d(desat_answer4_2d, desat4_2d, 'test_lookup_des2_2d_r4')
     esat4_2d = 0._r4_kind ; desat4_2d = 0._r4_kind
     call lookup_es2_des2(temp4_2d,esat4_2d,desat4_2d)
-    call check_answer4_2d(esat_answer4_2d, esat4_2d, ' test_lookup_es2_des2_2d_r4')
+    call check_answer4_2d(esat_answer4_2d, esat4_2d,   'test_lookup_es2_des2_2d_r4')
     call check_answer4_2d(desat_answer4_2d, desat4_2d, 'test_lookup_es2_des2_2d_r4')
     ! test r8
     call lookup_es2(temp8_2d,esat8_2d)
     call lookup_des2(temp8_2d,desat8_2d)
-    call check_answer8_2d(esat_answer8_2d, esat8_2d, ' test_lookup_es2_2d_r8')
+    call check_answer8_2d(esat_answer8_2d, esat8_2d,   'test_lookup_es2_2d_r8')
     call check_answer8_2d(desat_answer8_2d, desat8_2d, 'test_lookup_des2_2d_r8')
     esat8_2d = 0._r8_kind ; desat8_2d = 0._r8_kind
     call lookup_es2_des2(temp8_2d,esat8_2d,desat8_2d)
-    call check_answer8_2d(esat_answer8_2d, esat8_2d, ' test_lookup_es2_des2_2d_r8')
+    call check_answer8_2d(esat_answer8_2d, esat8_2d,   'test_lookup_es2_des2_2d_r8')
     call check_answer8_2d(desat_answer8_2d, desat8_2d, 'test_lookup_es2_des2_2d_r8')
 
     !-----3d test-------!
@@ -325,21 +414,21 @@ contains
     ! test r4
     call lookup_es2(temp4_3d,esat4_3d)
     call lookup_des2(temp4_3d,desat4_3d)
-    call check_answer4_2d(esat_answer4_3d, esat4_3d, ' test_lookup_es2_3d_r4')
-    call check_answer4_2d(desat_answer4_3d, desat4_3d, 'test_lookup_des2_3d_r4')
+    call check_answer4_3d(esat_answer4_3d, esat4_3d,   'test_lookup_es2_3d_r4')
+    call check_answer4_3d(desat_answer4_3d, desat4_3d, 'test_lookup_des2_3d_r4')
     esat4_3d = 0._r4_kind ; desat4_3d = 0._r4_kind
     call lookup_es2_des2(temp4_3d,esat4_3d,desat4_3d)
-    call check_answer4_2d(esat_answer4_3d, esat4_3d, ' test_lookup_es2_des2_3d_r4')
-    call check_answer4_2d(desat_answer4_3d, desat4_3d, 'test_lookup_es2_des2_3d_r4')
+    call check_answer4_3d(esat_answer4_3d, esat4_3d,   'test_lookup_es2_des2_3d_r4')
+    call check_answer4_3d(desat_answer4_3d, desat4_3d, 'test_lookup_es2_des2_3d_r4')
     ! test r8
     call lookup_es2(temp8_3d,esat8_3d)
     call lookup_des2(temp8_3d,desat8_3d)
-    call check_answer8_2d(esat_answer8_3d, esat8_3d, ' test_lookup_es2_3d_r8')
-    call check_answer8_2d(desat_answer8_3d, desat8_3d, 'test_lookup_des2_3d_r8')
+    call check_answer8_3d(esat_answer8_3d, esat8_3d,   'test_lookup_es2_3d_r8')
+    call check_answer8_3d(desat_answer8_3d, desat8_3d, 'test_lookup_des2_3d_r8')
     esat8_3d = 0._r8_kind ; desat8_3d = 0._r8_kind
     call lookup_es2_des2(temp8_3d,esat8_3d,desat8_3d)
-    call check_answer8_2d(esat_answer8_3d, esat8_3d, ' test_lookup_es2_des2_3d_r8')
-    call check_answer8_2d(desat_answer8_3d, desat8_3d, 'test_lookup_es2_des2_3d_r8')
+    call check_answer8_3d(esat_answer8_3d, esat8_3d,   'test_lookup_es2_des2_3d_r8')
+    call check_answer8_3d(desat_answer8_3d, desat8_3d, 'test_lookup_es2_des2_3d_r8')
 
   end subroutine test_lookup_es2_des2
   !----------------------------------------------------------------------
@@ -369,20 +458,20 @@ contains
     ! test r4
     call lookup_es3(temp4,esat4)
     call lookup_des3(temp4,desat4)
-    call check_answer4_0d(esat_answer4, esat4, ' test_lookup_es3_0d_r4')
+    call check_answer4_0d(esat_answer4, esat4,   'test_lookup_es3_0d_r4')
     call check_answer4_0d(desat_answer4, desat4, 'test_lookup_des3_0d_r4')
     esat4 = 0._r4_kind ; desat4 = 0.0_r4_kind
     call lookup_es3_des3(temp4,esat4,desat4)
-    call check_answer4_0d(esat_answer4, esat4, ' test_lookup_es3_des3_0d_r4')
+    call check_answer4_0d(esat_answer4, esat4,   'test_lookup_es3_des3_0d_r4')
     call check_answer4_0d(desat_answer4, desat4, 'test_lookup_es3_des3_0d_r4')
     ! test r8
     call lookup_es3(temp8,esat8)
     call lookup_des3(temp8,desat8)
-    call check_answer8_0d(esat_answer8, esat8, ' test_lookup_es3_0d_r8')
+    call check_answer8_0d(esat_answer8, esat8,   'test_lookup_es3_0d_r8')
     call check_answer8_0d(desat_answer8, desat8, 'test_lookup_des3_0d_r8')
     esat8 = 0._r8_kind ; desat8 = 0.0_r8_kind
     call lookup_es3_des3(temp8,esat8,desat8)
-    call check_answer8_0d(esat_answer8, esat8, ' test_lookup_es3_des3_0d_r8')
+    call check_answer8_0d(esat_answer8, esat8,   'test_lookup_es3_des3_0d_r8')
     call check_answer8_0d(desat_answer8, desat8, 'test_lookup_es3_des3_0d_r8')
 
     !-----1d test-------!
@@ -395,20 +484,20 @@ contains
     ! test r4
     call lookup_es3(temp4_1d,esat4_1d)
     call lookup_des3(temp4_1d,desat4_1d)
-    call check_answer4_1d(esat_answer4_1d, esat4_1d, ' test_lookup_es3_1d_r4')
+    call check_answer4_1d(esat_answer4_1d, esat4_1d,   'test_lookup_es3_1d_r4')
     call check_answer4_1d(desat_answer4_1d, desat4_1d, 'test_lookup_des3_1d_r4')
     esat4_1d = 0._r4_kind ; desat4_1d = 0._r4_kind
     call lookup_es3_des3(temp4_1d,esat4_1d,desat4_1d)
-    call check_answer4_1d(esat_answer4_1d, esat4_1d, ' test_lookup_es3_des3_1d_r4')
+    call check_answer4_1d(esat_answer4_1d, esat4_1d,   'test_lookup_es3_des3_1d_r4')
     call check_answer4_1d(desat_answer4_1d, desat4_1d, 'test_lookup_es3_des3_1d_r4')
     ! test r8
     call lookup_es3(temp8_1d,esat8_1d)
     call lookup_des3(temp8_1d,desat8_1d)
-    call check_answer8_1d(esat_answer8_1d, esat8_1d, ' test_lookup_es3_1d_r8')
+    call check_answer8_1d(esat_answer8_1d, esat8_1d,   'test_lookup_es3_1d_r8')
     call check_answer8_1d(desat_answer8_1d, desat8_1d, 'test_lookup_des3_1d_r8')
     esat8_1d = 0._r8_kind ; desat8_1d = 0._r8_kind
     call lookup_es3_des3(temp8_1d,esat8_1d,desat8_1d)
-    call check_answer8_1d(esat_answer8_1d, esat8_1d, ' test_lookup_es3_des3_1d_r8')
+    call check_answer8_1d(esat_answer8_1d, esat8_1d,   'test_lookup_es3_des3_1d_r8')
     call check_answer8_1d(desat_answer8_1d, desat8_1d, 'test_lookup_es3_des3_1d_r8')
 
 
@@ -422,20 +511,20 @@ contains
     ! test r4
     call lookup_es3(temp4_2d,esat4_2d)
     call lookup_des3(temp4_2d,desat4_2d)
-    call check_answer4_2d(esat_answer4_2d, esat4_2d, ' test_lookup_es3_2d_r4')
+    call check_answer4_2d(esat_answer4_2d, esat4_2d,   'test_lookup_es3_2d_r4')
     call check_answer4_2d(desat_answer4_2d, desat4_2d, 'test_lookup_des3_2d_r4')
     esat4_2d = 0._r4_kind ; desat4_2d = 0._r4_kind
     call lookup_es3_des3(temp4_2d,esat4_2d,desat4_2d)
-    call check_answer4_2d(esat_answer4_2d, esat4_2d, ' test_lookup_es3_des3_2d_r4')
+    call check_answer4_2d(esat_answer4_2d, esat4_2d,   'test_lookup_es3_des3_2d_r4')
     call check_answer4_2d(desat_answer4_2d, desat4_2d, 'test_lookup_es3_des3_2d_r4')
     ! test r8
     call lookup_es3(temp8_2d,esat8_2d)
     call lookup_des3(temp8_2d,desat8_2d)
-    call check_answer8_2d(esat_answer8_2d, esat8_2d, ' test_lookup_es3_2d_r8')
+    call check_answer8_2d(esat_answer8_2d, esat8_2d,   'test_lookup_es3_2d_r8')
     call check_answer8_2d(desat_answer8_2d, desat8_2d, 'test_lookup_des3_2d_r8')
     esat8_2d = 0._r8_kind ; desat8_2d = 0._r8_kind
     call lookup_es3_des3(temp8_2d,esat8_2d,desat8_2d)
-    call check_answer8_2d(esat_answer8_2d, esat8_2d, ' test_lookup_es3_des3_2d_r8')
+    call check_answer8_2d(esat_answer8_2d, esat8_2d,   'test_lookup_es3_des3_2d_r8')
     call check_answer8_2d(desat_answer8_2d, desat8_2d, 'test_lookup_es3_des3_2d_r8')
 
     !-----3d test-------!
@@ -448,21 +537,21 @@ contains
     ! test r4
     call lookup_es3(temp4_3d,esat4_3d)
     call lookup_des3(temp4_3d,desat4_3d)
-    call check_answer4_2d(esat_answer4_3d, esat4_3d, ' test_lookup_es3_3d_r4')
-    call check_answer4_2d(desat_answer4_3d, desat4_3d, 'test_lookup_des3_3d_r4')
+    call check_answer4_3d(esat_answer4_3d, esat4_3d,   'test_lookup_es3_3d_r4')
+    call check_answer4_3d(desat_answer4_3d, desat4_3d, 'test_lookup_des3_3d_r4')
     esat4_3d = 0._r4_kind ; desat4_3d = 0._r4_kind
     call lookup_es3_des3(temp4_3d,esat4_3d,desat4_3d)
-    call check_answer4_2d(esat_answer4_3d, esat4_3d, ' test_lookup_es3_des3_3d_r4')
-    call check_answer4_2d(desat_answer4_3d, desat4_3d, 'test_lookup_es3_des3_3d_r4')
+    call check_answer4_3d(esat_answer4_3d, esat4_3d,   'test_lookup_es3_des3_3d_r4')
+    call check_answer4_3d(desat_answer4_3d, desat4_3d, 'test_lookup_es3_des3_3d_r4')
     ! test r8
     call lookup_es3(temp8_3d,esat8_3d)
     call lookup_des3(temp8_3d,desat8_3d)
-    call check_answer8_2d(esat_answer8_3d, esat8_3d, ' test_lookup_es3_3d_r8')
-    call check_answer8_2d(desat_answer8_3d, desat8_3d, 'test_lookup_des3_3d_r8')
+    call check_answer8_3d(esat_answer8_3d, esat8_3d,   'test_lookup_es3_3d_r8')
+    call check_answer8_3d(desat_answer8_3d, desat8_3d, 'test_lookup_des3_3d_r8')
     esat8_3d = 0._r8_kind ; desat8_3d = 0._r8_kind
     call lookup_es3_des3(temp8_3d,esat8_3d,desat8_3d)
-    call check_answer8_2d(esat_answer8_3d, esat8_3d, ' test_lookup_es3_des3_3d_r8')
-    call check_answer8_2d(desat_answer8_3d, desat8_3d, 'test_lookup_es3_des3_3d_r8')
+    call check_answer8_3d(esat_answer8_3d, esat8_3d,   'test_lookup_es3_des3_3d_r8')
+    call check_answer8_3d(desat_answer8_3d, desat8_3d, 'test_lookup_es3_des3_3d_r8')
 
   end subroutine test_lookup_es3_des3
   !----------------------------------------------------------------------
@@ -597,11 +686,6 @@ contains
        TABLE(i)  = es(1)
        DTABLE(i) = (es(3)-es(2))*tfact
     enddo
-    do i = 2, N-1
-       D2TABLE(i) = 0.25_r8_kind*dtinvl*(DTABLE(i+1)-DTABLE(i-1))
-    enddo
-    ! one-sided derivatives at boundaries
-    D2TABLE(1) = 0.50_r8_kind*dtinvl*(DTABLE(2)-DTABLE(1))
 
     do i = 1, N
         tem(1) = tminl + dtres*real(i-1,r8_kind)
@@ -612,11 +696,6 @@ contains
         TABLE2(i) = es(1)
         DTABLE2(i) = (es(3)-es(2))*tfact
      enddo
-     do i = 2, N-1
-        D2TABLE2(i) = 0.25_r8_kind*dtinvl*(DTABLE2(i+1)-DTABLE2(i-1))
-     enddo
-     ! one-sided derivatives at boundaries
-     D2TABLE2(1) = 0.50_r8_kind*dtinvl*(DTABLE2(2)-DTABLE2(1))
 
     do i = 1, N
        tem(1) = tminl + dtres*real(i-1,r8_kind)
@@ -627,11 +706,6 @@ contains
        TABLE3(i) = es(1)
        DTABLE3(i) = (es(3)-es(2))*tfact
     enddo
-    do i = 2, N-1
-       D2TABLE3(i) = 0.25_r8_kind*dtinvl*(DTABLE3(i+1)-DTABLE3(i-1))
-    enddo
-    ! one-sided derivatives at boundaries
-    D2TABLE3(1) = 0.50_r8_kind*dtinvl*(DTABLE3(2)-DTABLE3(1))
 
   end subroutine compute_tables
   !-----------------------------------------------------------------------
