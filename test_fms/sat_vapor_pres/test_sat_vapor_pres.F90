@@ -42,9 +42,9 @@ call fms_init()
 call sat_vapor_pres_init()
 call test_compute_qs_k_0d()
 call test_mrs_k_0d()
-call test_lookup_es_0d()
-call test_lookup_es2_0d()
-call test_lookup_es3_0d()
+call test_lookup_es()
+call test_lookup_es2()
+call test_lookup_es3()
 
 call fms_end()
 
@@ -90,81 +90,308 @@ contains
 
   end subroutine test_mrs_k_0d
   !-----------------------------------------------------------------------
-  subroutine test_lookup_es_0d
+  subroutine test_lookup_es
 
     implicit none
-    real(kind=r4_kind) :: temp4(1), esat4(1), answer4(1)
-    real(kind=r8_kind) :: temp8(1), esat8(1), answer8(1)
+    real(kind=r4_kind) :: temp4, esat4, answer4
+    real(kind=r8_kind) :: temp8, esat8, answer8
 
-    temp4(1) = real(TCMIN,r4_kind) + real(TFREEZE,r4_kind) !tminl corresponding to TABLE(1)
-    temp8(1) = real(TCMIN,r8_kind) + real(TFREEZE,r8_kind) !tminl corresponding to TABLE(1)
+    real(kind=r4_kind), dimension(1) :: temp4_1d, esat4_1d, answer4_1d
+    real(kind=r8_kind), dimension(1) :: temp8_1d, esat8_1d, answer8_1d
+
+    real(kind=r4_kind), dimension(1,1) :: temp4_2d, esat4_2d, answer4_2d
+    real(kind=r8_kind), dimension(1,1) :: temp8_2d, esat8_2d, answer8_2d
+
+    real(kind=r4_kind), dimension(1,1,1) :: temp4_3d, esat4_3d, answer4_3d
+    real(kind=r8_kind), dimension(1,1,1) :: temp8_3d, esat8_3d, answer8_3d
+
+
+    !-----1d test-------!
+    temp4_1d(1) = real(TCMIN,r4_kind) + real(TFREEZE,r4_kind) !tminl corresponding to TABLE(1)
+    temp8_1d(1) = real(TCMIN,r8_kind) + real(TFREEZE,r8_kind) !tminl corresponding to TABLE(1)
 
     !get answers.  The TABLE is computed with r8_kind precision
-    answer8 = compute_es_k(temp8,real(TFREEZE,r8_kind))
-    answer4 = real(answer8, r4_kind)
+    answer8_1d = compute_es_k(temp8_1d,real(TFREEZE,r8_kind))
+    answer4_1d = real(answer8_1d, r4_kind)
+    ! test r4
+    call lookup_es(temp4_1d,esat4_1d)
+    if(esat4_1d(1) .ne. answer4_1d(1) ) then
+       write(*,*) 'Expected ', answer4_1d(1), ' but got ', esat4_1d(1)
+       call mpp_error(FATAL,'ERROR: test_lookup_es_1d fails r4')
+    end if
+    ! test r8
+    call lookup_es(temp8_1d, esat8_1d)
+    if(esat8_1d(1) .ne. answer8_1d(1) ) then
+       write(*,*) 'Expected ', answer8_1d(1), ' but got ', esat8_1d(1)
+       call mpp_error(FATAL,'ERROR:  test_lookup_es_1d fails r8')
+    end if
 
+
+    !-----0d test-------!
+    temp4 = real(TCMIN,r4_kind) + real(TFREEZE,r4_kind) !tminl corresponding to TABLE(1)
+    temp8 = real(TCMIN,r8_kind) + real(TFREEZE,r8_kind) !tminl corresponding to TABLE(1)
+
+    !get answers.  The TABLE is computed with r8_kind precision
+    answer8 = answer8_1d(1)
+    answer4 = real(answer8, r4_kind)
     ! test r4
     call lookup_es(temp4,esat4)
-    if(esat4(1).ne.answer4(1)) call mpp_error(FATAL,'ERROR: test_lookup_es_0d fails r4')
+    if(esat4 .ne. answer4) then
+       write(*,*) 'Expected ', answer4, ' but got ', esat4
+       call mpp_error(FATAL,'ERROR: test_lookup_es_0d fails r4')
+    end if
     ! test r8
     call lookup_es(temp8, esat8)
-    if(esat8(1).ne.answer8(1))call mpp_error(FATAL,'ERROR:  test_lookup_es_0d fails r8')
+    if(esat8 .ne. answer8) then
+       write(*,*) 'Expected ', answer8, ' but got ', esat8
+       call mpp_error(FATAL,'ERROR:  test_lookup_es_0d fails r8')
+    end if
 
-  end subroutine test_lookup_es_0d
-  !-----------------------------------------------------------------------
-  subroutine test_lookup_es2_0d
 
-    implicit none
-
-    real(kind=r4_kind) :: temp4(1), esat4(1), answer4(1)
-    real(kind=r8_kind) :: temp8(1), esat8(1), answer8(1)
-    character(100) :: err_msg
-
-    temp4(1) = real(TCMIN,r4_kind) + real(TFREEZE,r4_kind) !tminl corresponding to TABLE(1)
-    temp8(1) = real(TCMIN,r8_kind) + real(TFREEZE,r8_kind) !tminl corresponding to TABLE(1)
+    !-----2d test-------!
+    temp4_2d(1,1) = real(TCMIN,r4_kind) + real(TFREEZE,r4_kind) !tminl corresponding to TABLE(1)
+    temp8_2d(1,1) = real(TCMIN,r8_kind) + real(TFREEZE,r8_kind) !tminl corresponding to TABLE(1)
 
     !get answers.  The TABLE is computed with r8_kind precision
-    answer8 = compute_es_liq_k(temp8,real(TFREEZE,r8_kind))
-    answer4 = real(answer8, r4_kind)
-
+    answer8_2d(1,1) = answer8_1d(1)
+    answer4_2d(1,1) = real(answer8_2d(1,1), r4_kind)
     ! test r4
-    call lookup_es2(temp4, esat4, err_msg)
-    if(esat4(1).ne.answer4(1)) then
-       write(*,*) 'Expected ', answer4(1), 'but got ', esat4(1)
+    call lookup_es(temp4_2d,esat4_2d)
+    if(esat4_2d(1,1) .ne. answer4_2d(1,1)) then
+       write(*,*) 'Expected ', answer4_2d(1,1), ' but got ', esat4_2d(1,1)
+       call mpp_error(FATAL,'ERROR: test_lookup_es_2d fails r4')
+    end if
+    ! test r8
+    call lookup_es(temp8_2d, esat8_2d)
+    if(esat8_2d(1,1) .ne. answer8_2d(1,1)) then
+       write(*,*) 'Expected ', answer8_2d(1,1), ' but got ', esat8_2d(1,1)
+       call mpp_error(FATAL,'ERROR:  test_lookup_es_2d fails r8')
+    end if
+
+
+    !-----3d test-------!
+    temp4_3d(1,1,1) = real(TCMIN,r4_kind) + real(TFREEZE,r4_kind) !tminl corresponding to TABLE(1)
+    temp8_3d(1,1,1) = real(TCMIN,r8_kind) + real(TFREEZE,r8_kind) !tminl corresponding to TABLE(1)
+
+    !get answers.  The TABLE is computed with r8_kind precision
+    answer8_3d(1,1,1) = answer8_1d(1)
+    answer4_3d(1,1,1) = real(answer8_3d(1,1,1), r4_kind)
+    ! test r4
+    call lookup_es(temp4_3d,esat4_3d)
+    if(esat4_3d(1,1,1) .ne. answer4_3d(1,1,1)) then
+       write(*,*) 'Expected ', answer4_3d(1,1,1), ' but got ', esat4_3d(1,1,1)
+       call mpp_error(FATAL,'ERROR: test_lookup_es_3d fails r4')
+    end if
+    ! test r8
+    call lookup_es(temp8_3d, esat8_3d)
+    if(esat8_3d(1,1,1) .ne. answer8_3d(1,1,1)) then
+       write(*,*) 'Expected ', answer8_3d(1,1,1), ' but got ', esat8_3d(1,1,1)
+       call mpp_error(FATAL,'ERROR:  test_lookup_es_3d fails r8')
+    end if
+
+  end subroutine test_lookup_es
+  !-----------------------------------------------------------------------
+  subroutine test_lookup_es2
+
+    implicit none
+    real(kind=r4_kind) :: temp4, esat4, answer4
+    real(kind=r8_kind) :: temp8, esat8, answer8
+
+    real(kind=r4_kind), dimension(1) :: temp4_1d, esat4_1d, answer4_1d
+    real(kind=r8_kind), dimension(1) :: temp8_1d, esat8_1d, answer8_1d
+
+    real(kind=r4_kind), dimension(1,1) :: temp4_2d, esat4_2d, answer4_2d
+    real(kind=r8_kind), dimension(1,1) :: temp8_2d, esat8_2d, answer8_2d
+
+    real(kind=r4_kind), dimension(1,1,1) :: temp4_3d, esat4_3d, answer4_3d
+    real(kind=r8_kind), dimension(1,1,1) :: temp8_3d, esat8_3d, answer8_3d
+
+
+    !-----1d test-------!
+    temp4_1d(1) = real(TCMIN,r4_kind) + real(TFREEZE,r4_kind) !tminl corresponding to TABLE(1)
+    temp8_1d(1) = real(TCMIN,r8_kind) + real(TFREEZE,r8_kind) !tminl corresponding to TABLE(1)
+
+    !get answers.  The TABLE is computed with r8_kind precision
+    answer8_1d = compute_es_liq_k(temp8_1d,real(TFREEZE,r8_kind))
+    answer4_1d = real(answer8_1d, r4_kind)
+    ! test r4
+    call lookup_es2(temp4_1d,esat4_1d)
+    if(esat4_1d(1) .ne. answer4_1d(1) ) then
+       write(*,*) 'Expected ', answer4_1d(1), ' but got ', esat4_1d(1)
+       call mpp_error(FATAL,'ERROR: test_lookup_es2_1d fails r4')
+    end if
+    ! test r8
+    call lookup_es2(temp8_1d, esat8_1d)
+    if(esat8_1d(1) .ne. answer8_1d(1) ) then
+       write(*,*) 'Expected ', answer8_1d(1), ' but got ', esat8_1d(1)
+       call mpp_error(FATAL,'ERROR:  test_lookup_es2_1d fails r8')
+    end if
+
+
+    !-----0d test-------!
+    temp4 = real(TCMIN,r4_kind) + real(TFREEZE,r4_kind) !tminl corresponding to TABLE(1)
+    temp8 = real(TCMIN,r8_kind) + real(TFREEZE,r8_kind) !tminl corresponding to TABLE(1)
+
+    !get answers.  The TABLE is computed with r8_kind precision
+    answer8 = answer8_1d(1)
+    answer4 = real(answer8, r4_kind)
+    ! test r4
+    call lookup_es2(temp4,esat4)
+    if(esat4 .ne. answer4) then
+       write(*,*) 'Expected ', answer4, ' but got ', esat4
        call mpp_error(FATAL,'ERROR: test_lookup_es2_0d fails r4')
     end if
     ! test r8
     call lookup_es2(temp8, esat8)
-    if(esat8(1).ne.answer8(1)) then
-       write(*,*) 'Expected ', answer8(1), 'but got ', esat8(1)
+    if(esat8 .ne. answer8) then
+       write(*,*) 'Expected ', answer8, ' but got ', esat8
        call mpp_error(FATAL,'ERROR:  test_lookup_es2_0d fails r8')
     end if
 
-  end subroutine test_lookup_es2_0d
-  !-----------------------------------------------------------------------
-  subroutine test_lookup_es3_0d
 
-    implicit none
-
-    real(kind=r4_kind) :: temp4(1), esat4(1), answer4(1)
-    real(kind=r8_kind) :: temp8(1), esat8(1), answer8(1)
-    character(100) :: err_msg
-
-    temp4(1) = real(TCMIN,r4_kind) + real(TFREEZE,r4_kind) !tminl corresponding to TABLE(1)
-    temp8(1) = real(TCMIN,r8_kind) + real(TFREEZE,r8_kind) !tminl corresponding to TABLE(1)
+    !-----2d test-------!
+    temp4_2d(1,1) = real(TCMIN,r4_kind) + real(TFREEZE,r4_kind) !tminl corresponding to TABLE(1)
+    temp8_2d(1,1) = real(TCMIN,r8_kind) + real(TFREEZE,r8_kind) !tminl corresponding to TABLE(1)
 
     !get answers.  The TABLE is computed with r8_kind precision
-    answer8 = compute_es_liq_ice_k(temp8,real(TFREEZE,r8_kind))
-    answer4 = real(answer8, r4_kind)
-
+    answer8_2d(1,1) = answer8_1d(1)
+    answer4_2d(1,1) = real(answer8_2d(1,1), r4_kind)
     ! test r4
-    call lookup_es3(temp4, esat4, err_msg)
-    if(esat4(1).ne.answer4(1)) call mpp_error(FATAL,'ERROR: test_lookup_es3_0d fails r4')
+    call lookup_es2(temp4_2d,esat4_2d)
+    if(esat4_2d(1,1) .ne. answer4_2d(1,1)) then
+       write(*,*) 'Expected ', answer4_2d(1,1), ' but got ', esat4_2d(1,1)
+       call mpp_error(FATAL,'ERROR: test_lookup_es2_2d fails r4')
+    end if
+    ! test r8
+    call lookup_es2(temp8_2d, esat8_2d)
+    if(esat8_2d(1,1) .ne. answer8_2d(1,1)) then
+       write(*,*) 'Expected ', answer8_2d(1,1), ' but got ', esat8_2d(1,1)
+       call mpp_error(FATAL,'ERROR:  test_lookup_es2_2d fails r8')
+    end if
+
+
+    !-----3d test-------!
+    temp4_3d(1,1,1) = real(TCMIN,r4_kind) + real(TFREEZE,r4_kind) !tminl corresponding to TABLE(1)
+    temp8_3d(1,1,1) = real(TCMIN,r8_kind) + real(TFREEZE,r8_kind) !tminl corresponding to TABLE(1)
+
+    !get answers.  The TABLE is computed with r8_kind precision
+    answer8_3d(1,1,1) = answer8_1d(1)
+    answer4_3d(1,1,1) = real(answer8_3d(1,1,1), r4_kind)
+    ! test r4
+    call lookup_es2(temp4_3d,esat4_3d)
+    if(esat4_3d(1,1,1) .ne. answer4_3d(1,1,1)) then
+       write(*,*) 'Expected ', answer4_3d(1,1,1), ' but got ', esat4_3d(1,1,1)
+       call mpp_error(FATAL,'ERROR: test_lookup_es2_3d fails r4')
+    end if
+    ! test r8
+    call lookup_es2(temp8_3d, esat8_3d)
+    if(esat8_3d(1,1,1) .ne. answer8_3d(1,1,1)) then
+       write(*,*) 'Expected ', answer8_3d(1,1,1), ' but got ', esat8_3d(1,1,1)
+       call mpp_error(FATAL,'ERROR:  test_lookup_es2_3d fails r8')
+    end if
+
+  end subroutine test_lookup_es2
+  !-----------------------------------------------------------------------
+  subroutine test_lookup_es3
+
+    implicit none
+    real(kind=r4_kind) :: temp4, esat4, answer4
+    real(kind=r8_kind) :: temp8, esat8, answer8
+
+    real(kind=r4_kind), dimension(1) :: temp4_1d, esat4_1d, answer4_1d
+    real(kind=r8_kind), dimension(1) :: temp8_1d, esat8_1d, answer8_1d
+
+    real(kind=r4_kind), dimension(1,1) :: temp4_2d, esat4_2d, answer4_2d
+    real(kind=r8_kind), dimension(1,1) :: temp8_2d, esat8_2d, answer8_2d
+
+    real(kind=r4_kind), dimension(1,1,1) :: temp4_3d, esat4_3d, answer4_3d
+    real(kind=r8_kind), dimension(1,1,1) :: temp8_3d, esat8_3d, answer8_3d
+
+
+    !-----1d test-------!
+    temp4_1d(1) = real(TCMIN,r4_kind) + real(TFREEZE,r4_kind) !tminl corresponding to TABLE(1)
+    temp8_1d(1) = real(TCMIN,r8_kind) + real(TFREEZE,r8_kind) !tminl corresponding to TABLE(1)
+
+    !get answers.  The TABLE is computed with r8_kind precision
+    answer8_1d = compute_es_liq_ice_k(temp8_1d,real(TFREEZE,r8_kind))
+    answer4_1d = real(answer8_1d, r4_kind)
+    ! test r4
+    call lookup_es3(temp4_1d,esat4_1d)
+    if(esat4_1d(1) .ne. answer4_1d(1) ) then
+       write(*,*) 'Expected ', answer4_1d(1), ' but got ', esat4_1d(1)
+       call mpp_error(FATAL,'ERROR: test_lookup_es3_1d fails r4')
+    end if
+    ! test r8
+    call lookup_es3(temp8_1d, esat8_1d)
+    if(esat8_1d(1) .ne. answer8_1d(1) ) then
+       write(*,*) 'Expected ', answer8_1d(1), ' but got ', esat8_1d(1)
+       call mpp_error(FATAL,'ERROR:  test_lookup_es3_1d fails r8')
+    end if
+
+
+    !-----0d test-------!
+    temp4 = real(TCMIN,r4_kind) + real(TFREEZE,r4_kind) !tminl corresponding to TABLE(1)
+    temp8 = real(TCMIN,r8_kind) + real(TFREEZE,r8_kind) !tminl corresponding to TABLE(1)
+
+    !get answers.  The TABLE is computed with r8_kind precision
+    answer8 = answer8_1d(1)
+    answer4 = real(answer8, r4_kind)
+    ! test r4
+    call lookup_es3(temp4,esat4)
+    if(esat4 .ne. answer4) then
+       write(*,*) 'Expected ', answer4, ' but got ', esat4
+       call mpp_error(FATAL,'ERROR: test_lookup_es3_0d fails r4')
+    end if
     ! test r8
     call lookup_es3(temp8, esat8)
-    if(esat8(1).ne.answer8(1))call mpp_error(FATAL,'ERROR:  test_lookup_es3_0d fails r8')
+    if(esat8 .ne. answer8) then
+       write(*,*) 'Expected ', answer8, ' but got ', esat8
+       call mpp_error(FATAL,'ERROR:  test_lookup_es3_0d fails r8')
+    end if
 
-  end subroutine test_lookup_es3_0d
+
+    !-----2d test-------!
+    temp4_2d(1,1) = real(TCMIN,r4_kind) + real(TFREEZE,r4_kind) !tminl corresponding to TABLE(1)
+    temp8_2d(1,1) = real(TCMIN,r8_kind) + real(TFREEZE,r8_kind) !tminl corresponding to TABLE(1)
+
+    !get answers.  The TABLE is computed with r8_kind precision
+    answer8_2d(1,1) = answer8_1d(1)
+    answer4_2d(1,1) = real(answer8_2d(1,1), r4_kind)
+    ! test r4
+    call lookup_es3(temp4_2d,esat4_2d)
+    if(esat4_2d(1,1) .ne. answer4_2d(1,1)) then
+       write(*,*) 'Expected ', answer4_2d(1,1), ' but got ', esat4_2d(1,1)
+       call mpp_error(FATAL,'ERROR: test_lookup_es3_2d fails r4')
+    end if
+    ! test r8
+    call lookup_es3(temp8_2d, esat8_2d)
+    if(esat8_2d(1,1) .ne. answer8_2d(1,1)) then
+       write(*,*) 'Expected ', answer8_2d(1,1), ' but got ', esat8_2d(1,1)
+       call mpp_error(FATAL,'ERROR:  test_lookup_es3_2d fails r8')
+    end if
+
+
+    !-----3d test-------!
+    temp4_3d(1,1,1) = real(TCMIN,r4_kind) + real(TFREEZE,r4_kind) !tminl corresponding to TABLE(1)
+    temp8_3d(1,1,1) = real(TCMIN,r8_kind) + real(TFREEZE,r8_kind) !tminl corresponding to TABLE(1)
+
+    !get answers.  The TABLE is computed with r8_kind precision
+    answer8_3d(1,1,1) = answer8_1d(1)
+    answer4_3d(1,1,1) = real(answer8_3d(1,1,1), r4_kind)
+    ! test r4
+    call lookup_es3(temp4_3d,esat4_3d)
+    if(esat4_3d(1,1,1) .ne. answer4_3d(1,1,1)) then
+       write(*,*) 'Expected ', answer4_3d(1,1,1), ' but got ', esat4_3d(1,1,1)
+       call mpp_error(FATAL,'ERROR: test_lookup_es3_3d fails r4')
+    end if
+    ! test r8
+    call lookup_es3(temp8_3d, esat8_3d)
+    if(esat8_3d(1,1,1) .ne. answer8_3d(1,1,1)) then
+       write(*,*) 'Expected ', answer8_3d(1,1,1), ' but got ', esat8_3d(1,1,1)
+       call mpp_error(FATAL,'ERROR:  test_lookup_es3_3d fails r8')
+    end if
+
+  end subroutine test_lookup_es3
   !-----------------------------------------------------------------------
  function compute_es_k(tem, TFREEZE) result (es)
  real(kind=r8_kind), intent(in) :: tem(:), TFREEZE
