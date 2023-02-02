@@ -1684,7 +1684,7 @@
    nbad = 0
    do j = 1, size(temp,2)
    do i = 1, size(temp,1)
-     tmp = temp(i,j)-tminl
+     tmp = temp(i,j)-tminl_loc
      ind = int(dtinvl_loc*(tmp+tepsl_loc))
      if (ind < 0 .or. ind >= table_siz)  then
        nbad = nbad+1
