@@ -1740,7 +1740,7 @@ end subroutine daily_mean_solar_cal_0d
 !! (earth-sun distance squared)
 !! @param [out] <fracday> Daylight fraction of time interval
 !! @param [out] <rrsun> Earth-Sun distance (r) relative to semi-major axis of orbital ellipse (a):(a/r)**2
-subroutine annual_mean_solar_2d (js, je, lat, cosz, solar, fracday,  &
+subroutine annual_mean_solar_2d (lat, cosz, solar, fracday,  &
                                  rrsun)
 
 !--------------------------------------------------------------------
