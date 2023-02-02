@@ -181,7 +181,7 @@ contains
     temp8_3d = 270.0_r8_kind ; press8_3d = 0.0_r8_kind ; answer8_3d=EPSILO
     ! test r4
     call compute_mrs(temp4_3d, press4_3d, mrsat4_3d)
-    call check_answer4_3d(answer4_1d,mrsat4_1d,'test_compute_mrs_3d_r4')
+    call check_answer4_3d(answer4_3d,mrsat4_3d,'test_compute_mrs_3d_r4')
     ! test r8
     call compute_mrs(temp8_3d, press8_3d, mrsat8_3d)
     call check_answer8_3d(answer8_3d,mrsat8_3d,'test_compute_mrs_3d_r8')
@@ -573,7 +573,7 @@ contains
   subroutine check_answer4_1d(answer,fms_result,whoami)
 
     implicit none
-    real(r4_kind), dimension(1), intent(in) :: answer, fms_result
+    real(r4_kind), dimension(:), intent(in) :: answer, fms_result
     character(len=*), intent(in) :: whoami
 
     if(answer(1) .ne. fms_result(1)) then
@@ -586,7 +586,7 @@ contains
   subroutine check_answer4_2d(answer,fms_result,whoami)
 
     implicit none
-    real(r4_kind), dimension(1,1), intent(in) :: answer, fms_result
+    real(r4_kind), dimension(:,:), intent(in) :: answer, fms_result
     character(len=*), intent(in) :: whoami
 
     if(answer(1,1) .ne. fms_result(1,1)) then
@@ -599,7 +599,7 @@ contains
   subroutine check_answer4_3d(answer,fms_result,whoami)
 
     implicit none
-    real(r4_kind), dimension(1,1,1), intent(in) :: answer, fms_result
+    real(r4_kind), dimension(:,:,:), intent(in) :: answer, fms_result
     character(len=*), intent(in) :: whoami
 
     if(answer(1,1,1) .ne. fms_result(1,1,1)) then
@@ -625,7 +625,7 @@ contains
   subroutine check_answer8_1d(answer,fms_result,whoami)
 
     implicit none
-    real(r8_kind), dimension(1), intent(in) :: answer, fms_result
+    real(r8_kind), dimension(:), intent(in) :: answer, fms_result
     character(len=*), intent(in)  :: whoami
 
     if(answer(1) .ne. fms_result(1)) then
@@ -638,7 +638,7 @@ contains
   subroutine check_answer8_2d(answer,fms_result,whoami)
 
     implicit none
-    real(r8_kind), dimension(1,1), intent(in) :: answer, fms_result
+    real(r8_kind), dimension(:,:), intent(in) :: answer, fms_result
     character(len=*), intent(in)  :: whoami
 
     if(answer(1,1) .ne. fms_result(1,1)) then
@@ -651,7 +651,7 @@ contains
   subroutine check_answer8_3d(answer,fms_result,whoami)
 
     implicit none
-    real(r8_kind), dimension(1,1,1), intent(in) :: answer, fms_result
+    real(r8_kind), dimension(:,:,:), intent(in) :: answer, fms_result
     character(len=*), intent(in)  :: whoami
 
     if(answer(1,1,1) .ne. fms_result(1,1,1)) then
