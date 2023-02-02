@@ -1616,7 +1616,7 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
     CHARACTER(len=128) :: error_string, error_string1
 
     REAL, ALLOCATABLE, DIMENSION(:,:,:) :: field_out !< Local copy of field
-    class(*), pointer, dimension(:,:,:,:) :: field_modern => null() !< i8 4d remapped pointer
+    class(*), pointer, dimension(:,:,:,:) :: field_modern !< i8 4d remapped pointer
     ! If diag_field_id is < 0 it means that this field is not registered, simply return
     IF ( diag_field_id <= 0 ) THEN
        send_data_3d = .FALSE.
@@ -1647,6 +1647,7 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
        IF ( fms_error_handler('diag_manager_mod::send_data_3d', err_msg_local, err_msg) ) RETURN
     END IF
     if (use_modern_diag) then !> Set up array lengths for remapping
+      field_modern => null()
       ie = SIZE(field,1)
       je = SIZE(field,2)
       ke = SIZE(field,3)
@@ -1666,7 +1667,7 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
   modern_if: iF (use_modern_diag) then
     send_data_3d = fms_diag_object%fms_diag_accept_data(diag_field_id, field_modern, time, is_in, js_in, ks_in, &
              & mask, rmask, ie_in, je_in, ke_in, weight, err_msg)
-    deallocate (field_modern)
+    nullify (field_modern)
   elSE ! modern_if
     ! oor_mask is only used for checking out of range values.
     ALLOCATE(oor_mask(SIZE(field,1),SIZE(field,2),SIZE(field,3)), STAT=status)
