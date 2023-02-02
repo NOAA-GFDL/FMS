@@ -20,7 +20,9 @@
 !! @brief unit test for the mpp_root_pe() function
 !! @author MiKyung Lee
 !! @email gfdl.climate.model.info@noaa.gov
-!! @description This program tests some of the procedures in the sat_vap_pressure_mod module.
+!! @description This program tests mainly the lookup* procedures in sat_vapor_pres_mod.
+!!              The compute_tables, compute_es_k, and compute_es_liq_k subroutines found in
+!!              this file are copied from sat_vapor_pres_k.F90 in order to generate answers.
 
 program test_sat_vap_pressure
 
@@ -45,8 +47,8 @@ logical :: test1, test2, test3, test4, test5
 NAMELIST / test_sat_vapor_pres_nml/ test1, test2, test3, test4, test5
 
 call fms_init()
-call sat_vapor_pres_init()
-call compute_tables()
+call sat_vapor_pres_init()  !compute tables to be used for testing
+call compute_tables()       !compute tables to generate answers/reference values
 
 read(input_nml_file, test_sat_vapor_pres_nml,iostat=io)
 
@@ -77,7 +79,7 @@ contains
     real(kind=r8_kind), parameter :: EPSILO=real(RDGAS,r8_kind)/real(RVGAS, r8_kind)
 
     !---- 0d ----!
-    !press is 0.  Therefore answer should be eps=EPSILO=RDGAS/RVGAS
+    !press is 0.  Therefore the answer should be eps=EPSILO=RDGAS/RVGAS
     temp4 = 270.0_r4_kind ; press4 = 0.0_r4_kind ; answer4=real(EPSILO,r4_kind)
     temp8 = 270.0_r8_kind ; press8 = 0.0_r8_kind ; answer8=EPSILO
     ! test r4
@@ -88,7 +90,7 @@ contains
     call check_answer8_0d( answer8, qsat8, 'test_compute_qs_0d_r8')
 
     !---- 1d ----!
-    !press is 0.  Therefore answer should be eps=EPSILO=RDGAS/RVGAS
+    !press is 0.  Therefore the answer should be eps=EPSILO=RDGAS/RVGAS
     temp4_1d = 270.0_r4_kind ; press4_1d = 0.0_r4_kind ; answer4_1d=real(EPSILO,r4_kind)
     temp8_1d = 270.0_r8_kind ; press8_1d = 0.0_r8_kind ; answer8_1d=EPSILO
     ! test r4
@@ -99,7 +101,7 @@ contains
     call check_answer8_1d( answer8_1d, qsat8_1d, 'test_compute_qs_1d_r8')
 
     !---- 2d ----!
-    !press is 0.  Therefore answer should be eps=EPSILO=RDGAS/RVGAS
+    !press is 0.  Therefore the answer should be eps=EPSILO=RDGAS/RVGAS
     temp4_2d = 270.0_r4_kind ; press4_2d = 0.0_r4_kind ; answer4_2d=real(EPSILO,r4_kind)
     temp8_2d = 270.0_r8_kind ; press8_2d = 0.0_r8_kind ; answer8_2d=EPSILO
     ! test r4
@@ -110,7 +112,7 @@ contains
     call check_answer8_2d( answer8_2d, qsat8_2d, 'test_compute_qs_2d_r8')
 
     !---- 3d ----!
-    !press is 0.  Therefore answer should be eps=EPSILO=RDGAS/RVGAS
+    !press is 0.  Therefore the answer should be eps=EPSILO=RDGAS/RVGAS
     temp4_3d = 270.0_r4_kind ; press4_3d = 0.0_r4_kind ; answer4_3d=real(EPSILO,r4_kind)
     temp8_3d = 270.0_r8_kind ; press8_3d = 0.0_r8_kind ; answer8_3d=EPSILO
     ! test r4
@@ -141,7 +143,7 @@ contains
     real(kind=r8_kind), parameter :: EPSILO=real(RDGAS,r8_kind)/real(RVGAS, r8_kind)
 
     !--------0d--------!
-    !press is 0.  Therefore answer should be eps=EPSILO=RDGAS/RVGAS
+    !press is 0.  Therefore the answer should be eps=EPSILO=RDGAS/RVGAS
     temp4 = 270.0_r4_kind ; press4 = 0.0_r4_kind ; answer4=real(EPSILO,r4_kind)
     temp8 = 270.0_r8_kind ; press8 = 0.0_r8_kind ; answer8=EPSILO
     ! test r4
@@ -152,7 +154,7 @@ contains
     call check_answer8_0d(answer8,mrsat8,'test_compute_mrs_0d_r8')
 
     !--------1d--------!
-    !press is 0.  Therefore answer should be eps=EPSILO=RDGAS/RVGAS
+    !press is 0.  Therefore the answer should be eps=EPSILO=RDGAS/RVGAS
     temp4_1d = 270.0_r4_kind ; press4_1d = 0.0_r4_kind ; answer4_1d=real(EPSILO,r4_kind)
     temp8_1d = 270.0_r8_kind ; press8_1d = 0.0_r8_kind ; answer8_1d=EPSILO
     ! test r4
@@ -163,7 +165,7 @@ contains
     call check_answer8_1d(answer8_1d,mrsat8_1d,'test_compute_mrs_1d_r8')
 
     !--------2d--------!
-    !press is 0.  Therefore answer should be eps=EPSILO=RDGAS/RVGAS
+    !press is 0.  Therefore the answer should be eps=EPSILO=RDGAS/RVGAS
     temp4_2d = 270.0_r4_kind ; press4_2d = 0.0_r4_kind ; answer4_2d=real(EPSILO,r4_kind)
     temp8_2d = 270.0_r8_kind ; press8_2d = 0.0_r8_kind ; answer8_2d=EPSILO
     ! test r4
@@ -174,7 +176,7 @@ contains
     call check_answer8_2d(answer8_2d,mrsat8_2d,'test_compute_mrs_2d_r8')
 
     !--------3d--------!
-    !press is 0.  Therefore answer should be eps=EPSILO=RDGAS/RVGAS
+    !press is 0.  Therefore the answer should be eps=EPSILO=RDGAS/RVGAS
     temp4_3d = 270.0_r4_kind ; press4_3d = 0.0_r4_kind ; answer4_3d=real(EPSILO,r4_kind)
     temp8_3d = 270.0_r8_kind ; press8_3d = 0.0_r8_kind ; answer8_3d=EPSILO
     ! test r4
@@ -206,7 +208,7 @@ contains
     temp4 = real(TCMIN,r4_kind) + real(TFREEZE,r4_kind) !tminl corresponding to TABLE(1)
     temp8 = real(TCMIN,r8_kind) + real(TFREEZE,r8_kind) !tminl corresponding to TABLE(1)
 
-    !get answers.  The TABLE is computed with r8_kind precision
+    !at temp=TCMIN, the answers should be TABLE(1) and DTABLE(1) respectively
     esat_answer8 = TABLE(1)                     ; desat_answer8=DTABLE(1)
     esat_answer4 = real(esat_answer8, r4_kind)  ; desat_answer4=real(desat_answer8,r4_kind)
     ! test r4
@@ -232,7 +234,7 @@ contains
     temp4_1d(1) = real(TCMIN,r4_kind) + real(TFREEZE,r4_kind) !tminl corresponding to TABLE(1)
     temp8_1d(1) = real(TCMIN,r8_kind) + real(TFREEZE,r8_kind) !tminl corresponding to TABLE(1)
 
-    !get answers.  The TABLE is computed with r8_kind precision
+    !at temp=TCMIN, the answers should be TABLE(1) and DTABLE(1) respectively
     esat_answer8_1d = TABLE(1)                       ; desat_answer8_1d = DTABLE(1)
     esat_answer4_1d = real(esat_answer8_1d, r4_kind) ; desat_answer4_1d = real(desat_answer8_1d,r4_kind)
     ! test r4
@@ -259,7 +261,7 @@ contains
     temp4_2d(1,1) = real(TCMIN,r4_kind) + real(TFREEZE,r4_kind) !tminl corresponding to TABLE(1)
     temp8_2d(1,1) = real(TCMIN,r8_kind) + real(TFREEZE,r8_kind) !tminl corresponding to TABLE(1)
 
-    !get answers.  The TABLE is computed with r8_kind precision
+    !at temp=TCMIN, the answers should be TABLE(1) and DTABLE(1) respectively
     esat_answer8_2d = TABLE(1)                            ; desat_answer8_2d = DTABLE(1)
     esat_answer4_2d = real(esat_answer8_2d(1,1), r4_kind) ; desat_answer4_2d = real(desat_answer8_2d,r4_kind)
     ! test r4
@@ -285,27 +287,27 @@ contains
     temp4_3d(1,1,1) = real(TCMIN,r4_kind) + real(TFREEZE,r4_kind) !tminl corresponding to TABLE(1)
     temp8_3d(1,1,1) = real(TCMIN,r8_kind) + real(TFREEZE,r8_kind) !tminl corresponding to TABLE(1)
 
-    !get answers.  The TABLE is computed with r8_kind precision
+    !at temp=TCMIN, the answers should be TABLE(1) and DTABLE(1) respectively
     esat_answer8_3d = TABLE(1)                              ; desat_answer8_3d = DTABLE(1)
     esat_answer4_3d = real(esat_answer8_3d(1,1,1), r4_kind) ; desat_answer4_3d = real(desat_answer8_3d,r4_kind)
     ! test r4
     call lookup_es(temp4_3d,esat4_3d)
     call lookup_des(temp4_3d,desat4_3d)
-    call check_answer4_2d(esat_answer4_3d, esat4_3d,   'test_lookup_es_3d_r4')
-    call check_answer4_2d(desat_answer4_3d, desat4_3d, 'test_lookup_des_3d_r4')
+    call check_answer4_3d(esat_answer4_3d, esat4_3d,   'test_lookup_es_3d_r4')
+    call check_answer4_3d(desat_answer4_3d, desat4_3d, 'test_lookup_des_3d_r4')
     esat4_3d = 0._r4_kind ; desat4_3d = 0._r4_kind
     call lookup_es_des(temp4_3d,esat4_3d,desat4_3d)
-    call check_answer4_2d(esat_answer4_3d, esat4_3d,   'test_lookup_es_des_3d_r4')
-    call check_answer4_2d(desat_answer4_3d, desat4_3d, 'test_lookup_es_des_3d_r4')
+    call check_answer4_3d(esat_answer4_3d, esat4_3d,   'test_lookup_es_des_3d_r4')
+    call check_answer4_3d(desat_answer4_3d, desat4_3d, 'test_lookup_es_des_3d_r4')
     ! test r8
     call lookup_es(temp8_3d,esat8_3d)
     call lookup_des(temp8_3d,desat8_3d)
-    call check_answer8_2d(esat_answer8_3d, esat8_3d,   'test_lookup_es_3d_r8')
-    call check_answer8_2d(desat_answer8_3d, desat8_3d, 'test_lookup_des_3d_r8')
+    call check_answer8_3d(esat_answer8_3d, esat8_3d,   'test_lookup_es_3d_r8')
+    call check_answer8_3d(desat_answer8_3d, desat8_3d, 'test_lookup_des_3d_r8')
     esat8_3d = 0._r8_kind ; desat8_3d = 0._r8_kind
     call lookup_es_des(temp8_3d,esat8_3d,desat8_3d)
-    call check_answer8_2d(esat_answer8_3d, esat8_3d,   'test_lookup_es_des_3d_r8')
-    call check_answer8_2d(desat_answer8_3d, desat8_3d, 'test_lookup_es_des_2d_r8')
+    call check_answer8_3d(esat_answer8_3d, esat8_3d,   'test_lookup_es_des_3d_r8')
+    call check_answer8_3d(desat_answer8_3d, desat8_3d, 'test_lookup_es_des_2d_r8')
 
   end subroutine test_lookup_es_des
   !----------------------------------------------------------------------
@@ -329,7 +331,7 @@ contains
     temp4 = real(TCMIN,r4_kind) + real(TFREEZE,r4_kind) !tminl corresponding to TABLE(1)
     temp8 = real(TCMIN,r8_kind) + real(TFREEZE,r8_kind) !tminl corresponding to TABLE(1)
 
-    !get answers.  The TABLE is computed with r8_kind precision
+    !at temp=TCMIN, the answers should be TABLE2(1) and DTABLE2(1) respectively
     esat_answer8 = TABLE2(1)                     ; desat_answer8=DTABLE2(1)
     esat_answer4 = real(esat_answer8, r4_kind)   ; desat_answer4=real(desat_answer8,r4_kind)
     ! test r4
@@ -355,7 +357,7 @@ contains
     temp4_1d(1) = real(TCMIN,r4_kind) + real(TFREEZE,r4_kind) !tminl corresponding to TABLE(1)
     temp8_1d(1) = real(TCMIN,r8_kind) + real(TFREEZE,r8_kind) !tminl corresponding to TABLE(1)
 
-    !get answers.  The TABLE is computed with r8_kind precision
+    !at temp=TCMIN, the answers should be TABLE2(1) and DTABLE2(1) respectively
     esat_answer8_1d = TABLE2(1)                       ; desat_answer8_1d = DTABLE2(1)
     esat_answer4_1d = real(esat_answer8_1d, r4_kind)  ; desat_answer4_1d = real(desat_answer8_1d,r4_kind)
     ! test r4
@@ -382,7 +384,7 @@ contains
     temp4_2d(1,1) = real(TCMIN,r4_kind) + real(TFREEZE,r4_kind) !tminl corresponding to TABLE(1)
     temp8_2d(1,1) = real(TCMIN,r8_kind) + real(TFREEZE,r8_kind) !tminl corresponding to TABLE(1)
 
-    !get answers.  The TABLE is computed with r8_kind precision
+    !at temp=TCMIN, the answers should be TABLE2(1) and DTABLE2(1) respectively
     esat_answer8_2d = TABLE2(1)                            ; desat_answer8_2d = DTABLE2(1)
     esat_answer4_2d = real(esat_answer8_2d(1,1), r4_kind)  ; desat_answer4_2d = real(desat_answer8_2d,r4_kind)
     ! test r4
@@ -408,7 +410,7 @@ contains
     temp4_3d(1,1,1) = real(TCMIN,r4_kind) + real(TFREEZE,r4_kind) !tminl corresponding to TABLE(1)
     temp8_3d(1,1,1) = real(TCMIN,r8_kind) + real(TFREEZE,r8_kind) !tminl corresponding to TABLE(1)
 
-    !get answers.  The TABLE is computed with r8_kind precision
+    !at temp=TCMIN, the answers should be TABLE2(1) and DTABLE2(1) respectively
     esat_answer8_3d = TABLE2(1)                              ; desat_answer8_3d = DTABLE2(1)
     esat_answer4_3d = real(esat_answer8_3d(1,1,1), r4_kind)  ; desat_answer4_3d = real(desat_answer8_3d,r4_kind)
     ! test r4
@@ -452,7 +454,7 @@ contains
     temp4 = real(TCMIN,r4_kind) + real(TFREEZE,r4_kind) !tminl corresponding to TABLE(1)
     temp8 = real(TCMIN,r8_kind) + real(TFREEZE,r8_kind) !tminl corresponding to TABLE(1)
 
-    !get answers.  The TABLE is computed with r8_kind precision
+    !at temp=TCMIN, the answers should be TABLE3(1) and DTABLE3(1) respectively
     esat_answer8 = TABLE3(1)                     ; desat_answer8=DTABLE3(1)
     esat_answer4 = real(esat_answer8, r4_kind)   ; desat_answer4=real(desat_answer8,r4_kind)
     ! test r4
@@ -478,7 +480,7 @@ contains
     temp4_1d(1) = real(TCMIN,r4_kind) + real(TFREEZE,r4_kind) !tminl corresponding to TABLE(1)
     temp8_1d(1) = real(TCMIN,r8_kind) + real(TFREEZE,r8_kind) !tminl corresponding to TABLE(1)
 
-    !get answers.  The TABLE is computed with r8_kind precision
+    !at temp=TCMIN, the answers should be TABLE3(1) and DTABLE3(1) respectively
     esat_answer8_1d = TABLE3(1)                       ; desat_answer8_1d = DTABLE3(1)
     esat_answer4_1d = real(esat_answer8_1d, r4_kind)  ; desat_answer4_1d = real(desat_answer8_1d,r4_kind)
     ! test r4
@@ -505,7 +507,7 @@ contains
     temp4_2d(1,1) = real(TCMIN,r4_kind) + real(TFREEZE,r4_kind) !tminl corresponding to TABLE(1)
     temp8_2d(1,1) = real(TCMIN,r8_kind) + real(TFREEZE,r8_kind) !tminl corresponding to TABLE(1)
 
-    !get answers.  The TABLE is computed with r8_kind precision
+    !at temp=TCMIN, the answers should be TABLE3(1) and DTABLE3(1) respectively
     esat_answer8_2d = TABLE3(1)                            ; desat_answer8_2d = DTABLE3(1)
     esat_answer4_2d = real(esat_answer8_2d(1,1), r4_kind)  ; desat_answer4_2d = real(desat_answer8_2d,r4_kind)
     ! test r4
@@ -531,7 +533,7 @@ contains
     temp4_3d(1,1,1) = real(TCMIN,r4_kind) + real(TFREEZE,r4_kind) !tminl corresponding to TABLE(1)
     temp8_3d(1,1,1) = real(TCMIN,r8_kind) + real(TFREEZE,r8_kind) !tminl corresponding to TABLE(1)
 
-    !get answers.  The TABLE is computed with r8_kind precision
+    !at temp=TCMIN, the answers should be TABLE3(1) and DTABLE3(1) respectively
     esat_answer8_3d = TABLE3(1)                              ; desat_answer8_3d = DTABLE3(1)
     esat_answer4_3d = real(esat_answer8_3d(1,1,1), r4_kind)  ; desat_answer4_3d = real(desat_answer8_3d,r4_kind)
     ! test r4
@@ -663,7 +665,7 @@ contains
 
     ! increment used to generate derivative table
     real(kind=r8_kind), dimension(3) :: tem, es
-    real(kind=r8_kind) :: dtres, tminl, dtinvl, tepsl, hdtinv, tinrc, tfact
+    real(kind=r8_kind) :: dtres, tminl, dtinvl, tepsl, tinrc, tfact
     integer :: i, t
 
     integer, parameter ::esres=10
@@ -676,7 +678,6 @@ contains
     tepsl  = 0.5_r8_kind*dtres
     tinrc  = 0.1_r8_kind*dtres
     tfact  = 5.0_r8_kind*dtinvl
-    hdtinv = 0.5_r8_kind*dtinvl
 
     do i = 1, N
        tem(1) = tminl + dtres*real(i-1,r8_kind)
@@ -744,8 +745,8 @@ contains
        if (tem(i) > -20.0_r8_kind+TBASI) then
           x = -7.90298_r8_kind*(TBASW/tem(i)-one)   &
                +5.02808_r8_kind*log10(TBASW/tem(i)) &
-               -1.3816d-07*(ten**((one-tem(i)/TBASW)*11.344_r8_kind)-one) &
-               +8.1328d-03*(ten**((TBASW/tem(i)-one)*(-3.49149_r8_kind))-one) &
+               -real(1.3816d-07,r8_kind)*(ten**((one-tem(i)/TBASW)*11.344_r8_kind)-one) &
+               +real(8.1328d-03,r8_kind)*(ten**((TBASW/tem(i)-one)*(-3.49149_r8_kind))-one) &
                +log10(ESBASW)
           esh2o = ten**(x)
        else
