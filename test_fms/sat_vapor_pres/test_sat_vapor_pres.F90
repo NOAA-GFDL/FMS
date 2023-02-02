@@ -32,14 +32,19 @@ use      constants_mod, only: RDGAS, RVGAS, TFREEZE
 use sat_vapor_pres_mod, only: sat_vapor_pres_init, &
                               compute_qs, compute_mrs, &
                               lookup_es, lookup_es2, lookup_es3, &
-                              TCMIN
+                              TCMIN, TCMAX
 
 
 implicit none
 
+integer, parameter :: N=4
+real(r8_kind), dimension(N) :: TABLE, DTABLE, TABLE2, DTABLE2, TABLE3, DTABLE3
+real(r8_kind), dimension(N) :: D2TABLE, D2TABLE2, D2TABLE3
+
 call fms_init()
 
 call sat_vapor_pres_init()
+call compute_tables()
 call test_compute_qs_k_0d()
 call test_mrs_k_0d()
 call test_lookup_es()
@@ -106,33 +111,12 @@ contains
     real(kind=r8_kind), dimension(1,1,1) :: temp8_3d, esat8_3d, answer8_3d
 
 
-    !-----1d test-------!
-    temp4_1d(1) = real(TCMIN,r4_kind) + real(TFREEZE,r4_kind) !tminl corresponding to TABLE(1)
-    temp8_1d(1) = real(TCMIN,r8_kind) + real(TFREEZE,r8_kind) !tminl corresponding to TABLE(1)
-
-    !get answers.  The TABLE is computed with r8_kind precision
-    answer8_1d = compute_es_k(temp8_1d,real(TFREEZE,r8_kind))
-    answer4_1d = real(answer8_1d, r4_kind)
-    ! test r4
-    call lookup_es(temp4_1d,esat4_1d)
-    if(esat4_1d(1) .ne. answer4_1d(1) ) then
-       write(*,*) 'Expected ', answer4_1d(1), ' but got ', esat4_1d(1)
-       call mpp_error(FATAL,'ERROR: test_lookup_es_1d fails r4')
-    end if
-    ! test r8
-    call lookup_es(temp8_1d, esat8_1d)
-    if(esat8_1d(1) .ne. answer8_1d(1) ) then
-       write(*,*) 'Expected ', answer8_1d(1), ' but got ', esat8_1d(1)
-       call mpp_error(FATAL,'ERROR:  test_lookup_es_1d fails r8')
-    end if
-
-
     !-----0d test-------!
     temp4 = real(TCMIN,r4_kind) + real(TFREEZE,r4_kind) !tminl corresponding to TABLE(1)
     temp8 = real(TCMIN,r8_kind) + real(TFREEZE,r8_kind) !tminl corresponding to TABLE(1)
 
     !get answers.  The TABLE is computed with r8_kind precision
-    answer8 = answer8_1d(1)
+    answer8 = TABLE(1)
     answer4 = real(answer8, r4_kind)
     ! test r4
     call lookup_es(temp4,esat4)
@@ -148,12 +132,33 @@ contains
     end if
 
 
+    !-----1d test-------!
+    temp4_1d(1) = real(TCMIN,r4_kind) + real(TFREEZE,r4_kind) !tminl corresponding to TABLE(1)
+    temp8_1d(1) = real(TCMIN,r8_kind) + real(TFREEZE,r8_kind) !tminl corresponding to TABLE(1)
+
+    !get answers.  The TABLE is computed with r8_kind precision
+    answer8_1d = TABLE(1)
+    answer4_1d = real(answer8_1d, r4_kind)
+    ! test r4
+    call lookup_es(temp4_1d,esat4_1d)
+    if(esat4_1d(1) .ne. answer4_1d(1) ) then
+       write(*,*) 'Expected ', answer4_1d(1), ' but got ', esat4_1d(1)
+       call mpp_error(FATAL,'ERROR: test_lookup_es_1d fails r4')
+    end if
+    ! test r8
+    call lookup_es(temp8_1d, esat8_1d)
+    if(esat8_1d(1) .ne. answer8_1d(1) ) then
+       write(*,*) 'Expected ', answer8_1d(1), ' but got ', esat8_1d(1)
+       call mpp_error(FATAL,'ERROR:  test_lookup_es_1d fails r8')
+    end if
+
+
     !-----2d test-------!
     temp4_2d(1,1) = real(TCMIN,r4_kind) + real(TFREEZE,r4_kind) !tminl corresponding to TABLE(1)
     temp8_2d(1,1) = real(TCMIN,r8_kind) + real(TFREEZE,r8_kind) !tminl corresponding to TABLE(1)
 
     !get answers.  The TABLE is computed with r8_kind precision
-    answer8_2d(1,1) = answer8_1d(1)
+    answer8_2d(1,1) = TABLE(1)
     answer4_2d(1,1) = real(answer8_2d(1,1), r4_kind)
     ! test r4
     call lookup_es(temp4_2d,esat4_2d)
@@ -174,7 +179,7 @@ contains
     temp8_3d(1,1,1) = real(TCMIN,r8_kind) + real(TFREEZE,r8_kind) !tminl corresponding to TABLE(1)
 
     !get answers.  The TABLE is computed with r8_kind precision
-    answer8_3d(1,1,1) = answer8_1d(1)
+    answer8_3d(1,1,1) = TABLE(1)
     answer4_3d(1,1,1) = real(answer8_3d(1,1,1), r4_kind)
     ! test r4
     call lookup_es(temp4_3d,esat4_3d)
@@ -207,33 +212,12 @@ contains
     real(kind=r8_kind), dimension(1,1,1) :: temp8_3d, esat8_3d, answer8_3d
 
 
-    !-----1d test-------!
-    temp4_1d(1) = real(TCMIN,r4_kind) + real(TFREEZE,r4_kind) !tminl corresponding to TABLE(1)
-    temp8_1d(1) = real(TCMIN,r8_kind) + real(TFREEZE,r8_kind) !tminl corresponding to TABLE(1)
-
-    !get answers.  The TABLE is computed with r8_kind precision
-    answer8_1d = compute_es_liq_k(temp8_1d,real(TFREEZE,r8_kind))
-    answer4_1d = real(answer8_1d, r4_kind)
-    ! test r4
-    call lookup_es2(temp4_1d,esat4_1d)
-    if(esat4_1d(1) .ne. answer4_1d(1) ) then
-       write(*,*) 'Expected ', answer4_1d(1), ' but got ', esat4_1d(1)
-       call mpp_error(FATAL,'ERROR: test_lookup_es2_1d fails r4')
-    end if
-    ! test r8
-    call lookup_es2(temp8_1d, esat8_1d)
-    if(esat8_1d(1) .ne. answer8_1d(1) ) then
-       write(*,*) 'Expected ', answer8_1d(1), ' but got ', esat8_1d(1)
-       call mpp_error(FATAL,'ERROR:  test_lookup_es2_1d fails r8')
-    end if
-
-
     !-----0d test-------!
     temp4 = real(TCMIN,r4_kind) + real(TFREEZE,r4_kind) !tminl corresponding to TABLE(1)
     temp8 = real(TCMIN,r8_kind) + real(TFREEZE,r8_kind) !tminl corresponding to TABLE(1)
 
     !get answers.  The TABLE is computed with r8_kind precision
-    answer8 = answer8_1d(1)
+    answer8 = TABLE2(1)
     answer4 = real(answer8, r4_kind)
     ! test r4
     call lookup_es2(temp4,esat4)
@@ -248,13 +232,32 @@ contains
        call mpp_error(FATAL,'ERROR:  test_lookup_es2_0d fails r8')
     end if
 
+        !-----1d test-------!
+    temp4_1d(1) = real(TCMIN,r4_kind) + real(TFREEZE,r4_kind) !tminl corresponding to TABLE(1)
+    temp8_1d(1) = real(TCMIN,r8_kind) + real(TFREEZE,r8_kind) !tminl corresponding to TABLE(1)
+
+    !get answers.  The TABLE is computed with r8_kind precision
+    answer8_1d = TABLE2(1)
+    answer4_1d = real(answer8_1d, r4_kind)
+    ! test r4
+    call lookup_es2(temp4_1d,esat4_1d)
+    if(esat4_1d(1) .ne. answer4_1d(1) ) then
+       write(*,*) 'Expected ', answer4_1d(1), ' but got ', esat4_1d(1)
+       call mpp_error(FATAL,'ERROR: test_lookup_es2_1d fails r4')
+    end if
+    ! test r8
+    call lookup_es2(temp8_1d, esat8_1d)
+    if(esat8_1d(1) .ne. answer8_1d(1) ) then
+       write(*,*) 'Expected ', answer8_1d(1), ' but got ', esat8_1d(1)
+       call mpp_error(FATAL,'ERROR:  test_lookup_es2_1d fails r8')
+    end if
 
     !-----2d test-------!
     temp4_2d(1,1) = real(TCMIN,r4_kind) + real(TFREEZE,r4_kind) !tminl corresponding to TABLE(1)
     temp8_2d(1,1) = real(TCMIN,r8_kind) + real(TFREEZE,r8_kind) !tminl corresponding to TABLE(1)
 
     !get answers.  The TABLE is computed with r8_kind precision
-    answer8_2d(1,1) = answer8_1d(1)
+    answer8_2d(1,1) = TABLE2(1)
     answer4_2d(1,1) = real(answer8_2d(1,1), r4_kind)
     ! test r4
     call lookup_es2(temp4_2d,esat4_2d)
@@ -275,7 +278,7 @@ contains
     temp8_3d(1,1,1) = real(TCMIN,r8_kind) + real(TFREEZE,r8_kind) !tminl corresponding to TABLE(1)
 
     !get answers.  The TABLE is computed with r8_kind precision
-    answer8_3d(1,1,1) = answer8_1d(1)
+    answer8_3d(1,1,1) = TABLE2(1)
     answer4_3d(1,1,1) = real(answer8_3d(1,1,1), r4_kind)
     ! test r4
     call lookup_es2(temp4_3d,esat4_3d)
@@ -308,33 +311,12 @@ contains
     real(kind=r8_kind), dimension(1,1,1) :: temp8_3d, esat8_3d, answer8_3d
 
 
-    !-----1d test-------!
-    temp4_1d(1) = real(TCMIN,r4_kind) + real(TFREEZE,r4_kind) !tminl corresponding to TABLE(1)
-    temp8_1d(1) = real(TCMIN,r8_kind) + real(TFREEZE,r8_kind) !tminl corresponding to TABLE(1)
-
-    !get answers.  The TABLE is computed with r8_kind precision
-    answer8_1d = compute_es_liq_ice_k(temp8_1d,real(TFREEZE,r8_kind))
-    answer4_1d = real(answer8_1d, r4_kind)
-    ! test r4
-    call lookup_es3(temp4_1d,esat4_1d)
-    if(esat4_1d(1) .ne. answer4_1d(1) ) then
-       write(*,*) 'Expected ', answer4_1d(1), ' but got ', esat4_1d(1)
-       call mpp_error(FATAL,'ERROR: test_lookup_es3_1d fails r4')
-    end if
-    ! test r8
-    call lookup_es3(temp8_1d, esat8_1d)
-    if(esat8_1d(1) .ne. answer8_1d(1) ) then
-       write(*,*) 'Expected ', answer8_1d(1), ' but got ', esat8_1d(1)
-       call mpp_error(FATAL,'ERROR:  test_lookup_es3_1d fails r8')
-    end if
-
-
     !-----0d test-------!
     temp4 = real(TCMIN,r4_kind) + real(TFREEZE,r4_kind) !tminl corresponding to TABLE(1)
     temp8 = real(TCMIN,r8_kind) + real(TFREEZE,r8_kind) !tminl corresponding to TABLE(1)
 
     !get answers.  The TABLE is computed with r8_kind precision
-    answer8 = answer8_1d(1)
+    answer8 = TABLE3(1)
     answer4 = real(answer8, r4_kind)
     ! test r4
     call lookup_es3(temp4,esat4)
@@ -350,12 +332,33 @@ contains
     end if
 
 
+    !-----1d test-------!
+    temp4_1d(1) = real(TCMIN,r4_kind) + real(TFREEZE,r4_kind) !tminl corresponding to TABLE(1)
+    temp8_1d(1) = real(TCMIN,r8_kind) + real(TFREEZE,r8_kind) !tminl corresponding to TABLE(1)
+
+    !get answers.  The TABLE is computed with r8_kind precision
+    answer8_1d = TABLE3(1)
+    answer4_1d = real(answer8_1d, r4_kind)
+    ! test r4
+    call lookup_es3(temp4_1d,esat4_1d)
+    if(esat4_1d(1) .ne. answer4_1d(1) ) then
+       write(*,*) 'Expected ', answer4_1d(1), ' but got ', esat4_1d(1)
+       call mpp_error(FATAL,'ERROR: test_lookup_es3_1d fails r4')
+    end if
+    ! test r8
+    call lookup_es3(temp8_1d, esat8_1d)
+    if(esat8_1d(1) .ne. answer8_1d(1) ) then
+       write(*,*) 'Expected ', answer8_1d(1), ' but got ', esat8_1d(1)
+       call mpp_error(FATAL,'ERROR:  test_lookup_es3_1d fails r8')
+    end if
+
+
     !-----2d test-------!
     temp4_2d(1,1) = real(TCMIN,r4_kind) + real(TFREEZE,r4_kind) !tminl corresponding to TABLE(1)
     temp8_2d(1,1) = real(TCMIN,r8_kind) + real(TFREEZE,r8_kind) !tminl corresponding to TABLE(1)
 
     !get answers.  The TABLE is computed with r8_kind precision
-    answer8_2d(1,1) = answer8_1d(1)
+    answer8_2d(1,1) = TABLE3(1)
     answer4_2d(1,1) = real(answer8_2d(1,1), r4_kind)
     ! test r4
     call lookup_es3(temp4_2d,esat4_2d)
@@ -376,7 +379,7 @@ contains
     temp8_3d(1,1,1) = real(TCMIN,r8_kind) + real(TFREEZE,r8_kind) !tminl corresponding to TABLE(1)
 
     !get answers.  The TABLE is computed with r8_kind precision
-    answer8_3d(1,1,1) = answer8_1d(1)
+    answer8_3d(1,1,1) = TABLE3(1)
     answer4_3d(1,1,1) = real(answer8_3d(1,1,1), r4_kind)
     ! test r4
     call lookup_es3(temp4_3d,esat4_3d)
@@ -393,62 +396,139 @@ contains
 
   end subroutine test_lookup_es3
   !-----------------------------------------------------------------------
- function compute_es_k(tem, TFREEZE) result (es)
- real(kind=r8_kind), intent(in) :: tem(:), TFREEZE
- real(kind=r8_kind) :: es(size(tem,1))
+  !subroutine test_lookup_des
 
- real(kind=r8_kind)  :: x, esice, esh2o, TBASW, TBASI
- integer :: i
+  !-----------------------------------------------------------------------
+  !subroutine test_lookup_des2
+  !subroutine test_lookup_des3
+  !subroutine test_lookup_es_des
+  !subroutine test_lookup_es2_des2
+  !subroutine test_lookup_es3_des3
 
- real(kind=r8_kind), parameter :: ESBASW = 101324.60_r8_kind
- real(kind=r8_kind), parameter :: ESBASI = 610.71_r8_kind
 
- real(r8_kind), parameter :: one=1.0_r8_kind
- real(r8_kind), parameter :: ten=10.0_r8_kind
 
-   TBASW = TFREEZE+100.0_r8_kind
-   TBASI = TFREEZE
-   do i = 1, size(tem)
+  !-----------------------------------------------------------------------
+  subroutine compute_tables
 
-!  compute es over ice
+    ! increment used to generate derivative table
+    real(kind=r8_kind), dimension(3) :: tem, es
+    real(kind=r8_kind) :: dtres, tminl, dtinvl, tepsl, hdtinv, tinrc, tfact
+    integer :: i, t
 
-     if (tem(i) < TBASI) then
-         x = -9.09718_r8_kind*(TBASI/tem(i)-one)   &
-             -3.56654_r8_kind*log10(TBASI/tem(i)) &
-             +0.876793_r8_kind*(one-tem(i)/TBASI) + log10(ESBASI)
-         esice =ten**(x)
-     else
-         esice = 0.0_r8_kind
-     endif
+    integer, parameter ::esres=10
 
-!  compute es over water greater than -20 c.
-!  values over 100 c may not be valid
-!  see smithsonian meteorological tables page 350.
 
-     if (tem(i) > -20.0_r8_kind+TBASI) then
-         x = -7.90298_r8_kind*(TBASW/tem(i)-one)   &
-             +5.02808_r8_kind*log10(TBASW/tem(i)) &
-             -1.3816d-07*(ten**((one-tem(i)/TBASW)*11.344_r8_kind)-one) &
-             +8.1328d-03*(ten**((TBASW/tem(i)-one)*(-3.49149_r8_kind))-one) &
-             +log10(ESBASW)
-         esh2o = ten**(x)
-     else
-         esh2o = 0.0_r8_kind
-     endif
+    t = (TCMAX-TCMIN)*esres
+    dtres  = (real(TCMAX,r8_kind)-real(TCMIN,r8_kind))/real(t,r8_kind)
+    tminl  = real(tcmin,r8_kind)+real(TFREEZE,r8_kind)  ! minimum valid temp in table
+    dtinvl = 1.0_r8_kind/dtres
+    tepsl  = 0.5_r8_kind*dtres
+    tinrc  = 0.1_r8_kind*dtres
+    tfact  = 5.0_r8_kind*dtinvl
+    hdtinv = 0.5_r8_kind*dtinvl
 
-!  derive blended es over ice and supercooled water between -20c and 0c
+    do i = 1, N
+       tem(1) = tminl + dtres*real(i-1,r8_kind)
+       tem(2) = tem(1)-tinrc
+       tem(3) = tem(1)+tinrc
+       es = compute_es_k (tem, real(TFREEZE,r8_kind))
+       TABLE(i)  = es(1)
+       DTABLE(i) = (es(3)-es(2))*tfact
+    enddo
+    do i = 2, N-1
+       D2TABLE(i) = 0.25_r8_kind*dtinvl*(DTABLE(i+1)-DTABLE(i-1))
+    enddo
+    ! one-sided derivatives at boundaries
+    D2TABLE(1) = 0.50_r8_kind*dtinvl*(DTABLE(2)-DTABLE(1))
 
-     if (tem(i) <= -20.0_r8_kind+TBASI) then
-         es(i) = esice
-     else if (tem(i) >= TBASI) then
-         es(i) = esh2o
-     else
-         es(i) = 0.05_r8_kind*((TBASI-tem(i))*esice + (tem(i)-TBASI+20.0_r8_kind)*esh2o)
-     endif
+    do i = 1, N
+        tem(1) = tminl + dtres*real(i-1,r8_kind)
+        tem(2) = tem(1)-tinrc
+        tem(3) = tem(1)+tinrc
+        !   pass in flag to force all values to be wrt liquid
+        es = compute_es_liq_k (tem, real(TFREEZE,r8_kind))
+        TABLE2(i) = es(1)
+        DTABLE2(i) = (es(3)-es(2))*tfact
+     enddo
+     do i = 2, N-1
+        D2TABLE2(i) = 0.25_r8_kind*dtinvl*(DTABLE2(i+1)-DTABLE2(i-1))
+     enddo
+     ! one-sided derivatives at boundaries
+     D2TABLE2(1) = 0.50_r8_kind*dtinvl*(DTABLE2(2)-DTABLE2(1))
 
-  enddo
+    do i = 1, N
+       tem(1) = tminl + dtres*real(i-1,r8_kind)
+       tem(2) = tem(1)-tinrc
+       tem(3) = tem(1)+tinrc
+       !   pass in flag to force all values to be wrt liquid
+       es = compute_es_liq_ice_k (tem, real(TFREEZE,r8_kind))
+       TABLE3(i) = es(1)
+       DTABLE3(i) = (es(3)-es(2))*tfact
+    enddo
+    do i = 2, N-1
+       D2TABLE3(i) = 0.25_r8_kind*dtinvl*(DTABLE3(i+1)-DTABLE3(i-1))
+    enddo
+    ! one-sided derivatives at boundaries
+    D2TABLE3(1) = 0.50_r8_kind*dtinvl*(DTABLE3(2)-DTABLE3(1))
 
-end function compute_es_k
+  end subroutine compute_tables
+  !-----------------------------------------------------------------------
+  function compute_es_k(tem, TFREEZE) result (es)
+    real(kind=r8_kind), intent(in) :: tem(:), TFREEZE
+    real(kind=r8_kind) :: es(size(tem,1))
+
+    real(kind=r8_kind)  :: x, esice, esh2o, TBASW, TBASI
+    integer :: i
+
+    real(kind=r8_kind), parameter :: ESBASW = 101324.60_r8_kind
+    real(kind=r8_kind), parameter :: ESBASI = 610.71_r8_kind
+
+    real(r8_kind), parameter :: one=1.0_r8_kind
+    real(r8_kind), parameter :: ten=10.0_r8_kind
+
+    TBASW = TFREEZE+100.0_r8_kind
+    TBASI = TFREEZE
+    do i = 1, size(tem)
+
+       !  compute es over ice
+
+       if (tem(i) < TBASI) then
+          x = -9.09718_r8_kind*(TBASI/tem(i)-one)   &
+               -3.56654_r8_kind*log10(TBASI/tem(i)) &
+               +0.876793_r8_kind*(one-tem(i)/TBASI) + log10(ESBASI)
+          esice =ten**(x)
+       else
+          esice = 0.0_r8_kind
+       endif
+
+       !  compute es over water greater than -20 c.
+       !  values over 100 c may not be valid
+       !  see smithsonian meteorological tables page 350.
+
+       if (tem(i) > -20.0_r8_kind+TBASI) then
+          x = -7.90298_r8_kind*(TBASW/tem(i)-one)   &
+               +5.02808_r8_kind*log10(TBASW/tem(i)) &
+               -1.3816d-07*(ten**((one-tem(i)/TBASW)*11.344_r8_kind)-one) &
+               +8.1328d-03*(ten**((TBASW/tem(i)-one)*(-3.49149_r8_kind))-one) &
+               +log10(ESBASW)
+          esh2o = ten**(x)
+       else
+          esh2o = 0.0_r8_kind
+       endif
+
+       !  derive blended es over ice and supercooled water between -20c and 0c
+
+       if (tem(i) <= -20.0_r8_kind+TBASI) then
+          es(i) = esice
+       else if (tem(i) >= TBASI) then
+          es(i) = esh2o
+       else
+          es(i) = 0.05_r8_kind*((TBASI-tem(i))*esice + (tem(i)-TBASI+20.0_r8_kind)*esh2o)
+       endif
+
+    enddo
+
+  end function compute_es_k
 !-----------------------------------------------------------------------
  function compute_es_liq_k(tem, TFREEZE) result (es)
  real(kind=r8_kind), intent(in) :: tem(:), TFREEZE
