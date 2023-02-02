@@ -217,6 +217,12 @@ interface is_lat_lon
     module procedure is_lat_lon_r8
 end interface
 
+interface horiz_interp_solo_1d
+  module procedure horiz_interp_solo_1d_r4
+  module procedure horiz_interp_solo_1d_r8
+end interface
+
+
 !> @addtogroup horiz_interp_mod
 !> @{
 

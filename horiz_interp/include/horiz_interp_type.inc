@@ -28,13 +28,13 @@
 
  real(FMS_HI_KIND_) :: dsum, buffer_real(3)
  integer :: pe, root_pe, npes, p, buffer_int(2), npts
- integer :: kind_size
+ integer, parameter :: kindl = FMS_HI_KIND_ !< compiled kind size
 
    pe = mpp_pe()
    root_pe = mpp_root_pe()
    npes = mpp_npes()
 
-   dsum = real(0.0, FMS_HI_KIND_)
+   dsum = 0.0_kindl
    miss = 0
 
    if (present(missing_value)) then
@@ -43,10 +43,10 @@
       high = maxval(dat(:,:), dat(:,:) /= missing_value)
       dsum = sum(dat(:,:), dat(:,:) /= missing_value)
    else if(present(mask)) then
-      miss = count(mask(:,:) <= real(0.5, FMS_HI_KIND_))
-      low  = minval(dat(:,:),mask=mask(:,:) > real(0.5, FMS_HI_KIND_))
-      high = maxval(dat(:,:),mask=mask(:,:) > real(0.5, FMS_HI_KIND_))
-      dsum = sum(dat(:,:), mask=mask(:,:) > real(0.5, FMS_HI_KIND_))
+      miss = count(mask(:,:) <= 0.5_kindl )
+      low  = minval(dat(:,:),mask=mask(:,:) > 0.5_kindl)
+      high = maxval(dat(:,:),mask=mask(:,:) > 0.5_kindl)
+      dsum = sum(dat(:,:), mask=mask(:,:) > 0.5_kindl)
    else
       miss = 0
       low  = minval(dat(:,:))

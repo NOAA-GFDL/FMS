@@ -46,6 +46,7 @@
     integer                                :: jcl, jcu, icl, icu, jj
     real(FMS_HI_KIND_)                     :: xz, yz
     integer                                :: unit
+    integer, parameter   :: kindl = FMS_HI_KIND_ !< real size at compile time
 
     if(present(verbose)) verbose_bicubic = verbose
     src_is_modulo = .false.
@@ -75,7 +76,7 @@
 
     if ( verbose_bicubic > 0 ) then
        unit = stdout()
-       write (unit,'(/,"Initialising bicubic interpolation, interface HORIZ_INTERP_BICUBIC_NEW_1D_S_")')
+       write (unit,'(/,"Initialising bicubic interpolation, interface horiz_interp_bicubic_new_1d_s")')
        write (unit,'(/," Longitude of coarse grid points (radian): xc(i) i=1, ",i4)') Interp%nlon_src
        write (unit,'(1x,10f10.4)') (Interp%HI_KIND_TYPE_%lon_in(jj),jj=1,Interp%nlon_src)
        write (unit,'(/," Latitude of coarse grid points (radian):  yc(j) j=1, ",i4)') Interp%nlat_src
@@ -101,8 +102,7 @@
       do i=1,nlon_in
         ip1=min(i+1,nlon_in)
         im1=max(i-1,1)
-        Interp%HI_KIND_TYPE_%wti(i,j,1) = real(1.0, FMS_HI_KIND_)/ &
-                                         (Interp%HI_KIND_TYPE_%lon_in(ip1)-Interp%HI_KIND_TYPE_%lon_in(im1))
+        Interp%HI_KIND_TYPE_%wti(i,j,1) = 1.0_kindl/(Interp%HI_KIND_TYPE_%lon_in(ip1)-Interp%HI_KIND_TYPE_%lon_in(im1))
       enddo
     enddo
 
@@ -115,8 +115,7 @@
         jp1=min(j+1,nlat_in)
         jm1=max(j-1,1)
         do i=1,nlon_in
-          Interp%HI_KIND_TYPE_%wti(i,j,2) = real(1.0, FMS_HI_KIND_)/ &
-                                           (Interp%HI_KIND_TYPE_%lat_in(jp1)-Interp%HI_KIND_TYPE_%lat_in(jm1))
+          Interp%HI_KIND_TYPE_%wti(i,j,2) =1.0_kindl/(Interp%HI_KIND_TYPE_%lat_in(jp1)-Interp%HI_KIND_TYPE_%lat_in(jm1))
         enddo
       enddo
 
@@ -130,9 +129,9 @@
         do i=1,nlon_in
           ip1=min(i+1,nlon_in)
           im1=max(i-1,1)
-          Interp%HI_KIND_TYPE_%wti(i,j,3) = real(1.0, FMS_HI_KIND_)/ &
-                                               ((Interp%HI_KIND_TYPE_%lon_in(ip1)-Interp%HI_KIND_TYPE_%lon_in(im1)) * &
-                                                (Interp%HI_KIND_TYPE_%lat_in(jp1)-Interp%HI_KIND_TYPE_%lat_in(jm1)))
+          Interp%HI_KIND_TYPE_%wti(i,j,3) = 1.0_kindl / &
+                                              ((Interp%HI_KIND_TYPE_%lon_in(ip1)-Interp%HI_KIND_TYPE_%lon_in(im1)) * &
+                                               (Interp%HI_KIND_TYPE_%lat_in(jp1)-Interp%HI_KIND_TYPE_%lat_in(jm1)))
         enddo
       enddo
 !---------------------------------------------------------------------------
@@ -177,7 +176,7 @@
           Interp%i_lon(i,j,1) = icl
           Interp%i_lon(i,j,2) = icu
           if(jcl == jcu) then
-             Interp%HI_KIND_TYPE_%rat_y(i,j) = real(0.0,FMS_HI_KIND_)
+             Interp%HI_KIND_TYPE_%rat_y(i,j) = 0.0_kindl
           else
              Interp%HI_KIND_TYPE_%rat_y(i,j) = (yz-Interp%HI_KIND_TYPE_%lat_in(jcl))/(Interp%HI_KIND_TYPE_%lat_in(jcu)&
                                               & - Interp%HI_KIND_TYPE_%lat_in(jcl))
@@ -213,6 +212,7 @@
     integer                                :: jcl, jcu, icl, icu, jj
     real(FMS_HI_KIND_)                                   :: xz, yz
     integer                                :: unit
+    integer, parameter                     :: kindl = FMS_HI_KIND_ !< real size at compile time
 
     if(present(verbose)) verbose_bicubic = verbose
     src_is_modulo = .false.
@@ -258,7 +258,7 @@
       do i=1,nlon_in
         ip1=min(i+1,nlon_in)
         im1=max(i-1,1)
-        Interp%HI_KIND_TYPE_%wti(i,j,1) = real(1.0, FMS_HI_KIND_)/(lon_in(ip1)-lon_in(im1))
+        Interp%HI_KIND_TYPE_%wti(i,j,1) = 1.0_kindl /(lon_in(ip1)-lon_in(im1))
       enddo
     enddo
 
@@ -271,7 +271,7 @@
         jp1=min(j+1,nlat_in)
         jm1=max(j-1,1)
         do i=1,nlon_in
-          Interp%HI_KIND_TYPE_%wti(i,j,2) = real(1.0, FMS_HI_KIND_)/(lat_in(jp1)-lat_in(jm1))
+          Interp%HI_KIND_TYPE_%wti(i,j,2) = 1.0_kindl /(lat_in(jp1)-lat_in(jm1))
         enddo
       enddo
 
@@ -285,7 +285,7 @@
         do i=1,nlon_in
           ip1=min(i+1,nlon_in)
           im1=max(i-1,1)
-          Interp%HI_KIND_TYPE_%wti(i,j,3) =real(1.0, FMS_HI_KIND_)/((lon_in(ip1)-lon_in(im1))*(lat_in(jp1)-lat_in(jm1)))
+          Interp%HI_KIND_TYPE_%wti(i,j,3) = 1.0_kindl /((lon_in(ip1)-lon_in(im1))*(lat_in(jp1)-lat_in(jm1)))
         enddo
       enddo
 !---------------------------------------------------------------------------
@@ -330,7 +330,7 @@
           Interp%i_lon(i,j,1) = icl
           Interp%i_lon(i,j,2) = icu
           if(jcl == jcu) then
-             Interp%HI_KIND_TYPE_%rat_y(i,j) = real(0.0, FMS_HI_KIND_)
+             Interp%HI_KIND_TYPE_%rat_y(i,j) = 0.0_kindl
           else
              Interp%HI_KIND_TYPE_%rat_y(i,j) = (yz- Interp%HI_KIND_TYPE_%lat_in(jcl))/(Interp%HI_KIND_TYPE_%lat_in(jcu)&
                                              & - Interp%HI_KIND_TYPE_%lat_in(jcl))
@@ -367,14 +367,10 @@
     integer :: iclp1, icup1, jclp1, jcup1
     integer :: iclm1, icum1, jclm1, jcum1
     integer :: i,j
+    integer, parameter :: kindl = FMS_HI_KIND_ !< set kind size at compile time
 
     if ( present(verbose) ) verbose_bicubic = verbose
-!    fill_in = .false.
-!    if ( present(fill) ) fill_in = fill
-!   use dfc_x and dfc_y as workspace
-!    if ( fill_in ) call fill_xy(fc(ics:ice,jcs:jce), ics, ice, jcs, jce, maxpass=2)
-!    where ( data_in .le. missing ) data_in(:,:) = real(0.0, FMS_HI_KIND_)
-!!
+
     do j=1, Interp%nlat_dst
       do i=1, Interp%nlon_dst
         yz  = Interp%HI_KIND_TYPE_%rat_y(i,j)
@@ -427,7 +423,7 @@
 
         call bcuint(y,y1,y2,y12,xcl,xcu,ycl,ycu,xz,yz,val,val1,val2)
         data_out   (i,j) = val
-        if(present(mask_out)) mask_out(i,j) = real(1.0, FMS_HI_KIND_)
+        if(present(mask_out)) mask_out(i,j) = 1.0_kindl
 !!        dff_x(i,j) = val1
 !!        dff_y(i,j) = val2
       enddo
@@ -435,18 +431,18 @@
   return
   end subroutine HORIZ_INTERP_BICUBIC_NEW_
 
-
 !---------------------------------------------------------------------------
 
    subroutine BCUINT_(y,y1,y2,y12,x1l,x1u,x2l,x2u,t,u,ansy,ansy1,ansy2)
       real(FMS_HI_KIND_) ansy,ansy1,ansy2,x1l,x1u,x2l,x2u,y(4),y1(4),y12(4),y2(4)
 !     uses BCUCOF_
       integer i
+      integer, parameter :: kindl = FMS_HI_KIND_ !< compiled kind size
       real(FMS_HI_KIND_) t,u,c(4,4)
       call bcucof(y,y1,y2,y12,x1u-x1l,x2u-x2l,c)
-      ansy=real(0., FMS_HI_KIND_)
-      ansy2=real(0., FMS_HI_KIND_)
-      ansy1=real(0., FMS_HI_KIND_)
+      ansy=0.0_kindl
+      ansy2=0.0_kindl
+      ansy1=0.0_kindl
       do i=4,1,-1
         ansy=t*ansy+((c(i,4)*u+c(i,3))*u+c(i,2))*u+c(i,1)
 !        ansy2=t*ansy2+(3.*c(i,4)*u+2.*c(i,3))*u+c(i,2)
@@ -463,18 +459,28 @@
       real(FMS_HI_KIND_) d1,d2,c(4,4),y(4),y1(4),y12(4),y2(4)
       integer i,j,k,l
       real(FMS_HI_KIND_) d1d2,xx,cl(16),x(16)
+      integer, parameter :: kindl = FMS_HI_KIND_!< compiled kind type
       !! previous set by a data block, zeroing out since last few rows werent st
       real(FMS_HI_KIND_), save, dimension(16,16) :: wt
-      wt = 0.
-      wt(1,:) = (/1., 0., -3., 2., 4*0., -3., 0., 9., -6., 2., 0., -6., 4., 8*0., 3., 0./)
-      wt(2,:) = (/-9., 6., -2., 0., 6., -4., 10*0., 9., -6., 2*0., -6., 4., 2*0., 3., -2., 6*0. /)
-      wt(3,:) = (/ -9., 6., 2*0., 6., -4., 4*0., 1., 0., -3., 2., -2., 0., 6., -4., 1., 0. /)
-      wt(4,:) = (/ -3., 2., 8*0., -1., 0., 3., -2., 1., 0., -3., 2., 10*0., -3., 2., 2*0., 3./)
-      wt(5,:) = (/ -2., 6*0., 3., -2., 2*0., -6., 4., 2*0., 3., -2., 0., 1., -2., 1., 5*0., -3. /)
-      wt(6,:) = (/ 6., -3., 0., 2., -4., 2., 9*0., 3., -6., 3., 0., -2., 4., -2., 10*0., -3. /)
-      wt(7,:) = (/ 3., 2*0., 2., -2., 2*0., -1., 1., 6*0., 3., -3., 2*0., -2., 2., 5*0., 1., -2. /)
-      wt(8,:) = (/ 1., 0., -2., 4., -2., 0., 1., -2., 1., 9*0., -1., 2., -1., 0., 1., -2. /)
-      wt(9,:) = (/ 1., 10*0., 1., -1., 2*0., -1., 1., 6*0., -1., 1., 2*0., 2., -2., 2*0., -1., 1./)
+      wt = 0.0_kindl
+      wt(1,:) = (/1.0_kindl, 0.0_kindl, -3.0_kindl, 2.0_kindl, 4*0.0_kindl, -3.0_kindl, 0.0_kindl, 9.0_kindl, &
+                  -6.0_kindl, 2.0_kindl, 0.0_kindl, -6.0_kindl, 4.0_kindl, 8*0.0_kindl, 3.0_kindl, 0.0_kindl/)
+      wt(2,:) = (/-9.0_kindl, 6.0_kindl, -2.0_kindl, 0.0_kindl, 6.0_kindl, -4.0_kindl, 10*0.0_kindl, 9.0_kindl, &
+                  -6.0_kindl, 2*0.0_kindl, -6.0_kindl, 4.0_kindl, 2*0.0_kindl, 3.0_kindl, -2.0_kindl, 6*0.0_kindl /)
+      wt(3,:) = (/ -9.0_kindl, 6.0_kindl, 2*0.0_kindl, 6.0_kindl, -4.0_kindl, 4*0.0_kindl, 1.0_kindl, 0.0_kindl, &
+                   -3.0_kindl, 2.0_kindl, -2.0_kindl, 0.0_kindl, 6.0_kindl, -4.0_kindl, 1.0_kindl, 0.0_kindl /)
+      wt(4,:) = (/ -3.0_kindl, 2.0_kindl, 8*0.0_kindl, -1.0_kindl, 0.0_kindl, 3.0_kindl, -2.0_kindl, 1.0_kindl, &
+                    0.0_kindl, -3.0_kindl, 2.0_kindl, 10*0.0_kindl, -3.0_kindl, 2.0_kindl, 2*0.0_kindl, 3.0_kindl/)
+      wt(5,:) = (/ -2.0_kindl, 6*0.0_kindl, 3.0_kindl, -2.0_kindl, 2*0.0_kindl, -6.0_kindl, 4.0_kindl, 2*0.0_kindl, &
+                    3.0_kindl, -2.0_kindl, 0.0_kindl, 1.0_kindl, -2.0_kindl, 1.0_kindl, 5*0.0_kindl, -3.0_kindl /)
+      wt(6,:) = (/ 6.0_kindl, -3.0_kindl, 0.0_kindl, 2.0_kindl, -4.0_kindl, 2.0_kindl, 9*0.0_kindl, 3.0_kindl, &
+                  -6.0_kindl, 3.0_kindl, 0.0_kindl, -2.0_kindl, 4.0_kindl, -2.0_kindl, 10*0.0_kindl, -3.0_kindl /)
+      wt(7,:) = (/ 3.0_kindl, 2*0.0_kindl, 2.0_kindl, -2.0_kindl, 2*0.0_kindl, -1.0_kindl, 1.0_kindl, 6*0.0_kindl, &
+                   3.0_kindl, -3.0_kindl, 2*0.0_kindl, -2.0_kindl, 2.0_kindl, 5*0.0_kindl, 1.0_kindl, -2.0_kindl /)
+      wt(8,:) = (/ 1.0_kindl, 0.0_kindl, -2.0_kindl, 4.0_kindl, -2.0_kindl, 0.0_kindl, 1.0_kindl, -2.0_kindl, &
+                   1.0_kindl, 9*0.0_kindl, -1.0_kindl, 2.0_kindl, -1.0_kindl, 0.0_kindl, 1.0_kindl, -2.0_kindl /)
+      wt(9,:) = (/ 1.0_kindl, 10*0.0_kindl, 1.0_kindl, -1.0_kindl, 2*0.0_kindl, -1.0_kindl, 1.0_kindl, 6*0.0_kindl, &
+                  -1.0_kindl, 1.0_kindl, 2*0.0_kindl, 2.0_kindl, -2.0_kindl, 2*0.0_kindl, -1.0_kindl, 1.0_kindl/)
 
       d1d2=d1*d2
       do i=1,4
@@ -544,9 +550,9 @@
       real(FMS_HI_KIND_)                       :: work_old(ics:ice,jcs:jce)
       real(FMS_HI_KIND_)                       :: work_new(ics:ice,jcs:jce)
       logical :: ready
-      real(FMS_HI_KIND_)    :: blank = real(-1.e30,FMS_HI_KIND_)
+      real(FMS_HI_KIND_), parameter    :: blank = -1.d30
       real(FMS_HI_KIND_)    :: tavr
-      integer :: ipass = 0
+      integer :: ipass
       integer :: inl, inr, jnl, jnu, i, j, is, js,  iavr
 
 

@@ -41,6 +41,7 @@
     integer                           :: i, j, nlon_in, nlat_in, nlon_out, nlat_out
     logical                           :: center
     character(len=40)                 :: method
+    integer, parameter                :: kindl = FMS_HI_KIND_ !> real kind size currently compiling
     !-----------------------------------------------------------------------
     call horiz_interp_init
 
@@ -74,16 +75,16 @@
           allocate(lon_src_1d(nlon_in), lat_src_1d(nlat_in))
           allocate(lon_dst(nlon_out,nlat_out), lat_dst(nlon_out,nlat_out))
           do i = 1, nlon_in
-             lon_src_1d(i) = (lon_in(i) + lon_in(i+1)) * real(0.5, FMS_HI_KIND_)
+             lon_src_1d(i) = (lon_in(i) + lon_in(i+1)) * 0.5_kindl
           enddo
           do j = 1, nlat_in
-             lat_src_1d(j) = (lat_in(j) + lat_in(j+1)) * real(0.5, FMS_HI_KIND_)
+             lat_src_1d(j) = (lat_in(j) + lat_in(j+1)) * 0.5_kindl
           enddo
           do i = 1, nlon_out
-             lon_dst(i,:) = (lon_out(i) + lon_out(i+1)) * real(0.5, FMS_HI_KIND_)
+             lon_dst(i,:) = (lon_out(i) + lon_out(i+1)) * 0.5_kindl
           enddo
           do j = 1, nlat_out
-             lat_dst(:,j) = (lat_out(j) + lat_out(j+1)) * real(0.5, FMS_HI_KIND_)
+             lat_dst(:,j) = (lat_out(j) + lat_out(j+1)) * 0.5_kindl
           enddo
           call horiz_interp_bilinear_new ( Interp, lon_src_1d, lat_src_1d, lon_dst, lat_dst, &
                verbose, src_modulo)
@@ -103,16 +104,16 @@
           allocate(lon_src_1d(nlon_in), lat_src_1d(nlat_in))
           allocate(lon_dst_1d(nlon_out), lat_dst_1d(nlat_out))
           do i = 1, nlon_in
-             lon_src_1d(i) = (lon_in(i) + lon_in(i+1)) * real(0.5, FMS_HI_KIND_)
+             lon_src_1d(i) = (lon_in(i) + lon_in(i+1)) * 0.5_kindl
           enddo
           do j = 1, nlat_in
-             lat_src_1d(j) = (lat_in(j) + lat_in(j+1)) * real(0.5, FMS_HI_KIND_)
+             lat_src_1d(j) = (lat_in(j) + lat_in(j+1)) * 0.5_kindl
           enddo
           do i = 1, nlon_out
-             lon_dst_1d(i) = (lon_out(i) + lon_out(i+1)) * real(0.5, FMS_HI_KIND_)
+             lon_dst_1d(i) = (lon_out(i) + lon_out(i+1)) * 0.5_kindl
           enddo
           do j = 1, nlat_out
-             lat_dst_1d(j) = (lat_out(j) + lat_out(j+1)) * real(0.5, FMS_HI_KIND_)
+             lat_dst_1d(j) = (lat_out(j) + lat_out(j+1)) * 0.5_kindl
           enddo
           call horiz_interp_bicubic_new ( Interp, lon_src_1d, lat_src_1d, lon_dst_1d, lat_dst_1d, &
                verbose, src_modulo)
@@ -173,6 +174,7 @@
    character(len=40)                 :: method
    logical                           :: center
    logical                           :: dst_is_latlon
+   integer, parameter                :: kindl = FMS_HI_KIND_ !< real kind size currently compiling
    !-----------------------------------------------------------------------
    call horiz_interp_init
 
@@ -192,7 +194,7 @@
       end if
       if(dst_is_latlon ) then
          if(present(mask_in)) then
-            if ( ANY(mask_in < real(-.0001,FMS_HI_KIND_) .or. ANY(mask_in > real(1.0001,FMS_HI_KIND_)))) &
+            if ( ANY(mask_in < -.0001_kindl) .or. ANY(mask_in > 1.0001_kindl)) &
                call mpp_error(FATAL, &
                   'horiz_interp_conserve_new_1d_src(horiz_interp_conserve_mod): input mask not between 0,1')
             allocate(Interp%HI_KIND_TYPE_%mask_in(size(mask_in,1), size(mask_in,2)) )
@@ -215,10 +217,10 @@
          nlon_in  = size(lon_in(:))-1;  nlat_in  = size(lat_in(:))-1
          allocate(lon_src_1d(nlon_in), lat_src_1d(nlat_in))
          do i = 1, nlon_in
-            lon_src_1d(i) = (lon_in(i) + lon_in(i+1)) * real(0.5, FMS_HI_KIND_)
+            lon_src_1d(i) = (lon_in(i) + lon_in(i+1)) * 0.5_kindl
          enddo
          do j = 1, nlat_in
-            lat_src_1d(j) = (lat_in(j) + lat_in(j+1)) * real(0.5, FMS_HI_KIND_)
+            lat_src_1d(j) = (lat_in(j) + lat_in(j+1)) * 0.5_kindl
          enddo
          call horiz_interp_bilinear_new ( Interp, lon_src_1d, lat_src_1d, lon_out, lat_out, &
               verbose, src_modulo )
@@ -235,10 +237,10 @@
          nlon_in  = size(lon_in(:))-1;  nlat_in  = size(lat_in(:))-1
          allocate(lon_src_1d(nlon_in), lat_src_1d(nlat_in))
          do i = 1, nlon_in
-            lon_src_1d(i) = (lon_in(i) + lon_in(i+1)) * real(0.5, FMS_HI_KIND_)
+            lon_src_1d(i) = (lon_in(i) + lon_in(i+1)) * 0.5_kindl
          enddo
          do j = 1, nlat_in
-            lat_src_1d(j) = (lat_in(j) + lat_in(j+1)) * real(0.5, FMS_HI_KIND_)
+            lat_src_1d(j) = (lat_in(j) + lat_in(j+1)) * 0.5_kindl
          enddo
            call horiz_interp_bicubic_new ( Interp, lon_src_1d, lat_src_1d, lon_out, lat_out, &
               verbose, src_modulo )
@@ -284,6 +286,7 @@
  logical, intent(in),              optional :: is_latlon_in, is_latlon_out
  logical           :: src_is_latlon, dst_is_latlon
  character(len=40) :: method
+ integer, parameter                :: kindl = FMS_HI_KIND_ !< real kind size currently compiling
 !-----------------------------------------------------------------------
    call horiz_interp_init
 
@@ -307,7 +310,7 @@
       end if
       if(src_is_latlon .AND. dst_is_latlon) then
          if(present(mask_in)) then
-            if ( ANY(mask_in < real(-.0001,FMS_HI_KIND_)) .or. ANY(mask_in > real(1.0001, FMS_HI_KIND_))  ) then
+            if ( ANY(mask_in < -.0001_kindl) .or. ANY(mask_in > 1.0001_kindl)) then
                 call mpp_error(FATAL, 'horiz_interp_conserve_new_2d(horiz_interp_conserve_mod):' // &
                                        ' input mask not between 0,1')
             endif
@@ -360,6 +363,7 @@
    logical, intent(in),              optional :: is_latlon_in
 
    character(len=40) :: method
+   integer, parameter                :: kindl = FMS_HI_KIND_ !< real kind size currently compiling
    !-------------some local variables-----------------------------------------------
    integer                           :: i, j, nlon_out, nlat_out
    real(FMS_HI_KIND_), dimension(:,:), allocatable :: lon_dst, lat_dst
@@ -392,7 +396,7 @@
 
       if(src_is_latlon) then
          if(present(mask_in)) then
-            if ( ANY(mask_in < real(-.0001,FMS_HI_KIND_)) .or. ANY(mask_in > real(1.0001, FMS_HI_KIND_))  ) &
+            if ( ANY(mask_in < -.0001_kindl) .or. ANY(mask_in > 1.0001_kindl)) &
                  call mpp_error(FATAL, &
                      'horiz_interp_conserve_new_1d_dst(horiz_interp_conserve_mod): input mask not between 0,1')
             allocate(Interp%HI_KIND_TYPE_%mask_in(size(mask_in,1), size(mask_in,2)) )
@@ -497,21 +501,21 @@
    do n = 1, size(data_in,3)
       if (present(mask_in))then
          if(present(mask_out)) then
-            call HORIZ_INTERP_BASE_2D_ ( Interp, data_in(:,:,n), data_out(:,:,n), &
+            call horiz_interp( Interp, data_in(:,:,n), data_out(:,:,n), &
                  verbose, mask_in(:,:,n), mask_out(:,:,n), &
                  missing_value, missing_permit )
          else
-            call HORIZ_INTERP_BASE_2D_ ( Interp, data_in(:,:,n), data_out(:,:,n), &
+            call horiz_interp( Interp, data_in(:,:,n), data_out(:,:,n), &
                  verbose, mask_in(:,:,n), missing_value = missing_value,  &
                  missing_permit = missing_permit )
          endif
       else
          if(present(mask_out)) then
-            call HORIZ_INTERP_BASE_2D_ ( Interp, data_in(:,:,n), data_out(:,:,n), &
+            call horiz_interp( Interp, data_in(:,:,n), data_out(:,:,n), &
                  verbose, mask_out=mask_out(:,:,n), missing_value = missing_value,  &
                  missing_permit = missing_permit )
          else
-            call HORIZ_INTERP_BASE_2D_ ( Interp, data_in(:,:,n), data_out(:,:,n), &
+            call horiz_interp( Interp, data_in(:,:,n), data_out(:,:,n), &
                  verbose, missing_value = missing_value,  &
                  missing_permit = missing_permit )
          endif
@@ -768,10 +772,11 @@
      real(FMS_HI_KIND_), dimension(size(data_in,2)+1)  :: blat_in
      integer :: i, j, nlon_in, nlat_in
      real(FMS_HI_KIND_)    :: tpi
+     integer, parameter    :: kindl = FMS_HI_KIND_ !< real size at compile time
 !-----------------------------------------------------------------------
    call horiz_interp_init
 
-   tpi = real(2., FMS_HI_KIND_)*real(pi, FMS_HI_KIND_)
+   tpi = 2.0_kindl * pi
    nlon_in = size(data_in,1)
    nlat_in = size(data_in,2)
 
@@ -784,11 +789,11 @@
    do j = 2, nlat_in
       blat_in(j) = sb + real(j-1, FMS_HI_KIND_)*dy
    enddo
-      blat_in(1)         = real(-0.5, FMS_HI_KIND_)*real(pi, FMS_HI_KIND_)
-      blat_in(nlat_in+1) = real(0.5, FMS_HI_KIND_)*real(pi, FMS_HI_KIND_)
+      blat_in(1)         = -0.5_kindl * pi
+      blat_in(nlat_in+1) =  0.5_kindl * pi
 
 
-   call HORIZ_INTERP_SOLO_1D_ (data_in, blon_in, blat_in,    &
+   call horiz_interp_solo_1d (data_in, blon_in, blat_in,    &
                               lon_out, lat_out, data_out,   &
                               verbose, mask_in, mask_out    )
 

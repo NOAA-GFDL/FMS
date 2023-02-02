@@ -116,6 +116,17 @@ module horiz_interp_conserve_mod
     module procedure stats_r8
   end interface
 
+  interface horiz_interp_conserve_version1
+    module procedure horiz_interp_conserve_version1_r8
+    module procedure horiz_interp_conserve_version1_r4
+  end interface
+
+  interface horiz_interp_conserve_version2
+    module procedure horiz_interp_conserve_version2_r8
+    module procedure horiz_interp_conserve_version2_r4
+  end interface
+
+
 
   !> @addtogroup horiz_interp_conserve_mod
   !> @{
