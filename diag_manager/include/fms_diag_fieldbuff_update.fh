@@ -21,8 +21,8 @@ FUNCTION FMS_DIAG_FBU_3D_PNAME_(ofield_cfg, ofield_index_cfg, field_d, sample, &
   & ofb, ofc, bbounds, count_0d, num_elements, mask, weight1, missvalue,  &
   & field_num_threads, field_active_omp_level, issued_mask_ignore_warning, &
   & l_start, l_end, err_msg,  err_msg_local ) result( succeded )
-    TYPE(fms_diag_outfield_type), INTENT(inout):: ofield_cfg  !< The ofield_cfg object
-    TYPE(fms_diag_outfield_index_type) , INTENT(inout) :: ofield_index_cfg !<The ofield_index_cfg object
+    TYPE(fms_diag_outfield_type), INTENT(in):: ofield_cfg  !< The ofield_cfg object
+    TYPE(fms_diag_outfield_index_type) , INTENT(in) :: ofield_index_cfg !<The ofield_index_cfg object
     FMS_DIAG_FBU_DATA_TYPE_ , CONTIGUOUS, DIMENSION(:,:,:), INTENT(in), target :: field_d !< The input field data
     INTEGER, INTENT(in) :: sample  !< The index along the diurnal time axis
     FMS_DIAG_FBU_DATA_TYPE_ , CONTIGUOUS, DIMENSION(:,:,:,:), INTENT(inout), target :: ofb !< Output Field Buffer
@@ -53,7 +53,6 @@ FUNCTION FMS_DIAG_FBU_3D_PNAME_(ofield_cfg, ofield_index_cfg, field_d, sample, &
 
     LOGICAL :: succeded !> True iff no errors encountered.
 
-    !!TODO: Why did field_d, ofb, and ofc need to be allocatable"?
     field_ptr(1:size(field_d,1),1:size(field_d,2),1:size(field_d,3),1:1) => field_d
     ofb_ptr(1:size(ofb,1),1:size(ofb,2),1:size(ofb,3),1:1, 1:size(ofb,4)) => ofb
 
@@ -89,8 +88,8 @@ FUNCTION FMS_DIAG_FBU_3D_PNAME_(ofield_cfg, ofield_index_cfg, field_d, sample, &
     & ofb, ofc, bbounds, count_0d, num_elements, mask, weight1, missvalue,  &
     & field_num_threads, field_active_omp_level, issued_mask_ignore_warning, &
     & l_start, l_end, err_msg,  err_msg_local ) result( succeded )
-      TYPE(fms_diag_outfield_type), INTENT(inout) :: ofield_cfg  !< The ofield_cfg object
-      TYPE(fms_diag_outfield_index_type) , INTENT(inout) :: ofield_index_cfg  !< The ofield_index_cfg object
+      TYPE(fms_diag_outfield_type), INTENT(in) :: ofield_cfg  !< The ofield_cfg object
+      TYPE(fms_diag_outfield_index_type) , INTENT(in) :: ofield_index_cfg  !< The ofield_index_cfg object
       FMS_DIAG_FBU_DATA_TYPE_ , CONTIGUOUS, DIMENSION(:,:,:,:), INTENT(in) :: field_d !< The input field data array.
       FMS_DIAG_FBU_DATA_TYPE_ , DIMENSION(:,:,:,:,:), INTENT(inout) :: ofb !< Output Field Buffer
       FMS_DIAG_FBU_DATA_TYPE_ , DIMENSION(:,:,:,:,:), INTENT(inout) :: ofc !< Output Field Counter
@@ -213,12 +212,9 @@ FUNCTION FMS_DIAG_FBU_3D_PNAME_(ofield_cfg, ofield_index_cfg, field_d, sample, &
                         DO j=js, je
                            DO i=is, ie
                               where ( mask(i-is+1+hi, j-js+1+hj, k, :) )
-                                 !!TODO: we can use the power function, or elem function addfw (or pointer ?)
-                                 !ofb(i-hi,j-hj,k1,:,sample) = ofb(i-hi,j-hj,k1,:,sample) +&
-                                 !& (field_d(i-is+1+hi, j-js+1+hj, k, :) * weight1) ** pow_value
-                                  ofb(i-hi,j-hj,k1,:,sample) = addwf( ofb(i-hi,j-hj,k1,:,sample), &
+                                ofb(i-hi,j-hj,k1,:,sample) = addwf( ofb(i-hi,j-hj,k1,:,sample), &
                                  & field_d(i-is+1+hi, j-js+1+hj, k, :), weight1, pow_value)
-                                 ofc(i-hi,j-hj,k1,:,sample) = ofc(i-hi,j-hj,k1,:,sample) + weight1
+                                ofc(i-hi,j-hj,k1,:,sample) = ofc(i-hi,j-hj,k1,:,sample) + weight1
                               END where
                            END DO
                         END DO
@@ -228,8 +224,8 @@ FUNCTION FMS_DIAG_FBU_3D_PNAME_(ofield_cfg, ofield_index_cfg, field_d, sample, &
                         DO j=js, je
                            DO i=is, ie
                               where ( mask(i-is+1+hi, j-js+1+hj, k, :) )
-                                 ofb(i-hi,j-hj,k,:,sample) = ofb(i-hi,j-hj,k,:,sample) + &
-                                 & (field_d(i-is+1+hi,j-js+1+hj, k, :) * weight1) ** pow_value
+                                 ofb(i-hi,j-hj,k,:,sample) = addwf( ofb(i-hi,j-hj,k,:,sample) , &
+                                 & field_d(i-is+1+hi,j-js+1+hj, k, :) , weight1, pow_value)
                                  ofc(i-hi,j-hj,k,:,sample) = ofc(i-hi,j-hj,k,:,sample) + weight1
                               END where
                            END DO
@@ -244,8 +240,8 @@ FUNCTION FMS_DIAG_FBU_3D_PNAME_(ofield_cfg, ofield_index_cfg, field_d, sample, &
                         DO j=js, je
                            DO i=is, ie
                               where ( mask(i-is+1+hi, j-js+1+hj, k, :) )
-                                 ofb(i-hi,j-hj,k1,:,sample) = ofb(i-hi,j-hj,k1,:,sample) + &
-                                 & (field_d(i-is+1+hi, j-js+1+hj, k, :) * weight1) ** pow_value
+                                 ofb(i-hi,j-hj,k1,:,sample) = addwf( ofb(i-hi,j-hj,k1,:,sample) , &
+                                 & field_d(i-is+1+hi, j-js+1+hj, k, :) , weight1, pow_value)
                                  ofc(i-hi,j-hj,k1,:,sample) = ofc(i-hi,j-hj,k1,:,sample) + weight1
                               END where
                            END DO
@@ -256,8 +252,8 @@ FUNCTION FMS_DIAG_FBU_3D_PNAME_(ofield_cfg, ofield_index_cfg, field_d, sample, &
                         DO j=js, je
                            DO i=is, ie
                               where ( mask(i-is+1+hi, j-js+1+hj, k, :) )
-                                 ofb(i-hi,j-hj,k,:,sample) = ofb(i-hi,j-hj,k,:,sample) +  &
-                                 & ( field_d(i-is+1+hi,j-js+1+hj, k, :) * weight1) ** pow_value
+                                 ofb(i-hi,j-hj,k,:,sample) = addwf( ofb(i-hi,j-hj,k,:,sample) , &
+                                 & field_d(i-is+1+hi,j-js+1+hj, k, :) , weight1, pow_value)
                                  ofc(i-hi,j-hj,k,:,sample) = ofc(i-hi,j-hj,k,:,sample) + weight1
                               END where
                            END DO
@@ -297,8 +293,8 @@ FUNCTION FMS_DIAG_FBU_3D_PNAME_(ofield_cfg, ofield_index_cfg, field_d, sample, &
                                  i1 = i-l_start(1)-hi+1
                                  j1=  j-l_start(2)-hj+1
                                  where ( mask(i-is+1+hi, j-js+1+hj, k, :) )
-                                    ofb(i1,j1,k1,:,sample) = ofb(i1,j1,k1,:,sample) +&
-                                    & ( field_d(i-is+1+hi,j-js+1+hj, k, :) * weight1) ** pow_value
+                                    ofb(i1,j1,k1,:,sample) = addwf( ofb(i1,j1,k1,:,sample) , &
+                                    & field_d(i-is+1+hi,j-js+1+hj, k, :) , weight1, pow_value)
                                  elsewhere
                                     ofb(i1,j1,k1,:,sample) = missvalue
                                  END where
@@ -317,8 +313,8 @@ FUNCTION FMS_DIAG_FBU_3D_PNAME_(ofield_cfg, ofield_index_cfg, field_d, sample, &
                                  i1 = i-l_start(1)-hi+1
                                  j1=  j-l_start(2)-hj+1
                                  where ( mask(i-is+1+hi, j-js+1+hj, k, :) )
-                                    ofb(i1,j1,k1,:,sample) = ofb(i1,j1,k1,:,sample) + &
-                                    & ( field_d(i-is+1+hi,j-js+1+hj, k, :) * weight1) ** pow_value
+                                    ofb(i1,j1,k1,:,sample) = addwf( ofb(i1,j1,k1,:,sample) , &
+                                    & field_d(i-is+1+hi,j-js+1+hj, k, :) , weight1, pow_value)
                                  elsewhere
                                     ofb(i1,j1,k1,:,sample) = missvalue
                                  END where
@@ -345,8 +341,8 @@ FUNCTION FMS_DIAG_FBU_3D_PNAME_(ofield_cfg, ofield_index_cfg, field_d, sample, &
                         DO j=js, je
                            DO i=is, ie
                               where ( mask(i-is+1+hi,j-js+1+hj, k, :) )
-                                 ofb(i-hi,j-hj,k1,:,sample) = ofb(i-hi,j-hj,k1,:,sample) + &
-                                 & (field_d(i-is+1+hi,j-js+1+hj, k, :) * weight1) ** pow_value
+                                 ofb(i-hi,j-hj,k1,:,sample) = addwf( ofb(i-hi,j-hj,k1,:,sample) , &
+                                 & field_d(i-is+1+hi,j-js+1+hj, k, :) , weight1, pow_value)
                               elsewhere
                                  ofb(i-hi,j-hj,k1,:,sample)= missvalue
                               END where
@@ -360,8 +356,8 @@ FUNCTION FMS_DIAG_FBU_3D_PNAME_(ofield_cfg, ofield_index_cfg, field_d, sample, &
                         DO j=js, je
                            DO i=is, ie
                               where ( mask(i-is+1+hi,j-js+1+hj, k, :) )
-                                 ofb(i-hi,j-hj,k1,:,sample) = ofb(i-hi,j-hj,k1,:,sample) + &
-                                 & ( field_d(i-is+1+hi,j-js+1+hj, k, :) * weight1) ** pow_value
+                                 ofb(i-hi,j-hj,k1,:,sample) = addwf( ofb(i-hi,j-hj,k1,:,sample) , &
+                                 & field_d(i-is+1+hi,j-js+1+hj, k, :) , weight1, pow_value)
                               elsewhere
                                  ofb(i-hi,j-hj,k1,:,sample)= missvalue
                               END where
@@ -386,8 +382,8 @@ FUNCTION FMS_DIAG_FBU_3D_PNAME_(ofield_cfg, ofield_index_cfg, field_d, sample, &
                         DO j=js, je
                            DO i=is, ie
                               where ( mask(i-is+1+hi,j-js+1+hj, k, :) )
-                                 ofb(i-hi,j-hj,k,:,sample) = ofb(i-hi,j-hj,k,:,sample) + &
-                                 & ( field_d(i-is+1+hi,j-js+1+hj, k, :) * weight1) ** pow_value
+                                 ofb(i-hi,j-hj,k,:,sample) = addwf( ofb(i-hi,j-hj,k,:,sample) , &
+                                 & field_d(i-is+1+hi,j-js+1+hj, k, :) , weight1, pow_value)
                               elsewhere
                                  ofb(i-hi,j-hj,k,:,sample)= missvalue
                               END where
@@ -400,8 +396,8 @@ FUNCTION FMS_DIAG_FBU_3D_PNAME_(ofield_cfg, ofield_index_cfg, field_d, sample, &
                         DO j=js, je
                            DO i=is, ie
                               where ( mask(i-is+1+hi,j-js+1+hj, k, :) )
-                                 ofb(i-hi,j-hj,k,:,sample) = ofb(i-hi,j-hj,k,:,sample) + &
-                                 & ( field_d(i-is+1+hi,j-js+1+hj, k, :) * weight1) ** pow_value
+                                 ofb(i-hi,j-hj,k,:,sample) = addwf( ofb(i-hi,j-hj,k,:,sample) , &
+                                 & field_d(i-is+1+hi,j-js+1+hj, k, :) , weight1, pow_value)
                               elsewhere
                                  ofb(i-hi,j-hj,k,:,sample)= missvalue
                               END where
@@ -440,8 +436,8 @@ FUNCTION FMS_DIAG_FBU_3D_PNAME_(ofield_cfg, ofield_index_cfg, field_d, sample, &
                            & j <= l_end(2)+hj ) THEN
                               i1 = i-l_start(1)-hi+1
                               j1 =  j-l_start(2)-hj+1
-                              ofb(i1,j1,:,:,sample)=  ofb(i1,j1,:,:,sample)+ &
-                              & (field_d(i-is+1+hi,j-js+1+hj,l_start(3):l_end(3), :) * weight1) ** pow_value
+                              ofb(i1,j1,:,:,sample)= addwf(ofb(i1,j1,:,:,sample) , &
+                              & field_d(i-is+1+hi,j-js+1+hj,l_start(3):l_end(3), :) , weight1, pow_value)
                            END IF
                         END DO
                      END DO
@@ -453,8 +449,8 @@ FUNCTION FMS_DIAG_FBU_3D_PNAME_(ofield_cfg, ofield_index_cfg, field_d, sample, &
                            & j <= l_end(2)+hj ) THEN
                               i1 = i-l_start(1)-hi+1
                               j1 =  j-l_start(2)-hj+1
-                              ofb(i1,j1,:,:,sample) = ofb(i1,j1,:,:,sample) + &
-                              & (field_d(i-is+1+hi,j-js+1+hj,l_start(3):l_end(3), :) * weight1) ** pow_value
+                              ofb(i1,j1,:,:,sample) = addwf( ofb(i1,j1,:,:,sample) , &
+                              & field_d(i-is+1+hi,j-js+1+hj,l_start(3):l_end(3), :) , weight1, pow_value)
                            END IF
                         END DO
                      END DO
@@ -474,14 +470,14 @@ FUNCTION FMS_DIAG_FBU_3D_PNAME_(ofield_cfg, ofield_index_cfg, field_d, sample, &
                   IF (numthreads>1 .AND. phys_window) then
                      ksr= l_start(3)
                      ker= l_end(3)
-                     ofb(is-hi:ie-hi,js-hj:je-hj,:,:,sample) = ofb(is-hi:ie-hi,js-hj:je-hj,:,:,sample) +&
-                     & (field_d(f1:f2,f3:f4,ksr:ker, :) * weight1) ** pow_value
+                     ofb(is-hi:ie-hi,js-hj:je-hj,:,:,sample) = addwf( ofb(is-hi:ie-hi,js-hj:je-hj,:,:,sample) , &
+                     & field_d(f1:f2,f3:f4,ksr:ker, :) , weight1, pow_value)
                   ELSE
 !$OMP CRITICAL
                      ksr= l_start(3)
                      ker= l_end(3)
-                     ofb(is-hi:ie-hi,js-hj:je-hj,:,:,sample) = ofb(is-hi:ie-hi,js-hj:je-hj,:,:,sample) +&
-                     & (field_d(f1:f2,f3:f4,ksr:ker,:) * weight1) ** pow_value
+                     ofb(is-hi:ie-hi,js-hj:je-hj,:,:,sample) = addwf( ofb(is-hi:ie-hi,js-hj:je-hj,:,:,sample) , &
+                     & field_d(f1:f2,f3:f4,ksr:ker,:) , weight1, pow_value)
 !$OMP END CRITICAL
                   END IF
                ELSE NDCMP_RKR_2_IF
@@ -497,13 +493,13 @@ FUNCTION FMS_DIAG_FBU_3D_PNAME_(ofield_cfg, ofield_index_cfg, field_d, sample, &
                   END IF
                   IF (numthreads>1 .AND. phys_window) then
                      ofb(is-hi:ie-hi,js-hj:je-hj,ks:ke,:,sample) =&
-                     & ofb(is-hi:ie-hi,js-hj:je-hj,ks:ke,:,sample) +&
-                     & (field_d(f1:f2,f3:f4,ks:ke,:) * weight1) ** pow_value
+                     & addwf( ofb(is-hi:ie-hi,js-hj:je-hj,ks:ke,:,sample) , &
+                     & field_d(f1:f2,f3:f4,ks:ke,:) , weight1, pow_value)
                   ELSE
 !$OMP CRITICAL
                      ofb(is-hi:ie-hi,js-hj:je-hj,ks:ke,:,sample) =&
-                     & ofb(is-hi:ie-hi,js-hj:je-hj,ks:ke,:,sample) +&
-                     & (field_d(f1:f2,f3:f4,ks:ke,:) * weight1) ** pow_value
+                     & addwf(ofb(is-hi:ie-hi,js-hj:je-hj,ks:ke,:,sample) , &
+                     & field_d(f1:f2,f3:f4,ks:ke,:) , weight1, pow_value)
 !$OMP END CRITICAL
                   END IF
                END IF NDCMP_RKR_2_IF
@@ -524,8 +520,8 @@ FUNCTION FMS_DIAG_FBU_3D_PNAME_(ofield_cfg, ofield_index_cfg, field_d, sample, &
                                  i1 = i-l_start(1)-hi+1
                                  j1=  j-l_start(2)-hj+1
                                  where ( field_d(i-is+1+hi,j-js+1+hj, k, :) /= missvalue )
-                                    ofb(i1,j1,k1,:,sample) = ofb(i1,j1,k1,:,sample) + &
-                                    & (field_d(i-is+1+hi,j-js+1+hj, k, :) * weight1) ** pow_value
+                                    ofb(i1,j1,k1,:,sample) = addwf( ofb(i1,j1,k1,:,sample) , &
+                                    & field_d(i-is+1+hi,j-js+1+hj, k, :) , weight1, pow_value)
                                   elsewhere
                                     ofb(i1,j1,k1,:,sample) = missvalue
                                  END where
@@ -544,8 +540,8 @@ FUNCTION FMS_DIAG_FBU_3D_PNAME_(ofield_cfg, ofield_index_cfg, field_d, sample, &
                                  i1 = i-l_start(1)-hi+1
                                  j1=  j-l_start(2)-hj+1
                                  where ( field_d(i-is+1+hi,j-js+1+hj, k, :) /= missvalue )
-                                    ofb(i1,j1,k1,:,sample) = ofb(i1,j1,k1,:,sample) + &
-                                    & (field_d(i-is+1+hi,j-js+1+hj, k, :) * weight1) ** pow_value
+                                    ofb(i1,j1,k1,:,sample) = addwf( ofb(i1,j1,k1,:,sample) , &
+                                    & field_d(i-is+1+hi,j-js+1+hj, k, :) , weight1, pow_value)
                                  elsewhere
                                     ofb(i1,j1,k1,:,sample) = missvalue
                                  END where
@@ -586,8 +582,8 @@ FUNCTION FMS_DIAG_FBU_3D_PNAME_(ofield_cfg, ofield_index_cfg, field_d, sample, &
                         DO j=js, je
                            DO i=is, ie
                               where ( field_d(i-is+1+hi,j-js+1+hj, k, :) /= missvalue )
-                                 ofb(i-hi,j-hj,k1,:,sample) =  ofb(i-hi,j-hj,k1,:,sample) + &
-                                 & (field_d(i-is+1+hi,j-js+1+hj, k, :) * weight1) ** pow_value
+                                 ofb(i-hi,j-hj,k1,:,sample) =  addwf(ofb(i-hi,j-hj,k1,:,sample) , &
+                                 & field_d(i-is+1+hi,j-js+1+hj, k, :) , weight1, pow_value)
                               elsewhere
                                  ofb(i-hi,j-hj,k1,:,sample) = missvalue
                               END where
@@ -603,8 +599,8 @@ FUNCTION FMS_DIAG_FBU_3D_PNAME_(ofield_cfg, ofield_index_cfg, field_d, sample, &
                         DO j=js, je
                            DO i=is, ie
                               where ( field_d(i-is+1+hi,j-js+1+hj, k, :) /= missvalue )
-                                 ofb(i-hi,j-hj,k1,:,sample) = ofb(i-hi,j-hj,k1,:,sample) +&
-                                 & (field_d(i-is+1+hi,j-js+1+hj, k, :) * weight1) ** pow_value
+                                 ofb(i-hi,j-hj,k1,:,sample) = addwf( ofb(i-hi,j-hj,k1,:,sample) , &
+                                 & field_d(i-is+1+hi,j-js+1+hj, k, :) , weight1, pow_value)
                               elsewhere
                                  ofb(i-hi,j-hj,k1,:,sample) = missvalue
                               END where
@@ -643,8 +639,8 @@ FUNCTION FMS_DIAG_FBU_3D_PNAME_(ofield_cfg, ofield_index_cfg, field_d, sample, &
                         DO j=js, je
                            DO i=is, ie
                               where ( field_d(i-is+1+hi,j-js+1+hj, k, :) /= missvalue )
-                                 ofb(i-hi,j-hj,k,:,sample) = ofb(i-hi,j-hj,k,:,sample) +&
-                                 & (field_d(i-is+1+hi,j-js+1+hj, k, :) * weight1) ** pow_value
+                                 ofb(i-hi,j-hj,k,:,sample) = addwf( ofb(i-hi,j-hj,k,:,sample) , &
+                                 & field_d(i-is+1+hi,j-js+1+hj, k, :) , weight1, pow_value)
                               elsewhere
                                  ofb(i-hi,j-hj,k,:,sample) = missvalue
                               END where
@@ -657,8 +653,8 @@ FUNCTION FMS_DIAG_FBU_3D_PNAME_(ofield_cfg, ofield_index_cfg, field_d, sample, &
                         DO j=js, je
                            DO i=is, ie
                               where ( field_d(i-is+1+hi,j-js+1+hj, k, :) /= missvalue )
-                                 ofb(i-hi,j-hj,k,:,sample) = ofb(i-hi,j-hj,k,:,sample) +&
-                                 & (field_d(i-is+1+hi,j-js+1+hj, k, :) * weight1) ** pow_value
+                                 ofb(i-hi,j-hj,k,:,sample) = addwf( ofb(i-hi,j-hj,k,:,sample) , &
+                                 & field_d(i-is+1+hi,j-js+1+hj, k, :) , weight1, pow_value)
                               elsewhere
                                  ofb(i-hi,j-hj,k,:,sample) = missvalue
                               END where
@@ -689,8 +685,8 @@ FUNCTION FMS_DIAG_FBU_3D_PNAME_(ofield_cfg, ofield_index_cfg, field_d, sample, &
                            & j <= l_end(2)+hj ) THEN
                               i1 = i-l_start(1)-hi+1
                               j1=  j-l_start(2)-hj+1
-                              ofb(i1,j1,:,:,sample) = ofb(i1,j1,:,:,sample) + &
-                              & (field_d(i-is+1+hi,j-js+1+hj,l_start(3):l_end(3), :) * weight1) ** pow_value
+                              ofb(i1,j1,:,:,sample) = addwf( ofb(i1,j1,:,:,sample) , &
+                              & field_d(i-is+1+hi,j-js+1+hj,l_start(3):l_end(3), :) , weight1, pow_value)
                            END IF
                         END DO
                      END DO
@@ -702,8 +698,6 @@ FUNCTION FMS_DIAG_FBU_3D_PNAME_(ofield_cfg, ofield_index_cfg, field_d, sample, &
                            & j <= l_end(2)+hj ) THEN
                               i1 = i-l_start(1)-hi+1
                               j1=  j-l_start(2)-hj+1
-                              !ofb(i1,j1,:,:,sample)= ofb(i1,j1,:,:,sample) +&
-                              !& (field_d(i-is+1+hi,j-js+1+hj,l_start(3):l_end(3), :) * weight1) ** pow_value
                               ofb(i1,j1,:,:,sample) = addwf(ofb(i1,j1,:,:,sample), &
                                 &  field_d(i-is+1+hi,j-js+1+hj,l_start(3):l_end(3), :), weight1, pow_value)
                            END IF
@@ -727,13 +721,13 @@ FUNCTION FMS_DIAG_FBU_3D_PNAME_(ofield_cfg, ofield_index_cfg, field_d, sample, &
                   ker= l_end(3)
                   IF( numthreads > 1 .AND. phys_window ) then
                      ofb(is-hi:ie-hi,js-hj:je-hj,:,:,sample) =&
-                     & ofb(is-hi:ie-hi,js-hj:je-hj,:,:,sample) + &
-                     & (field_d(f1:f2,f3:f4,ksr:ker, :) * weight1) ** pow_value
+                     & addwf( ofb(is-hi:ie-hi,js-hj:je-hj,:,:,sample) , &
+                     & field_d(f1:f2,f3:f4,ksr:ker, :) , weight1, pow_value)
                   ELSE
 !$OMP CRITICAL
                      ofb(is-hi:ie-hi,js-hj:je-hj,:,:,sample) =&
-                     & ofb(is-hi:ie-hi,js-hj:je-hj,:,:,sample) + &
-                     & (field_d(f1:f2,f3:f4,ksr:ker, :) * weight1) ** pow_value
+                     & addwf( ofb(is-hi:ie-hi,js-hj:je-hj,:,:,sample) , &
+                     & field_d(f1:f2,f3:f4,ksr:ker, :) , weight1, pow_value)
 !$OMP END CRITICAL
                   END IF
 
@@ -750,13 +744,13 @@ FUNCTION FMS_DIAG_FBU_3D_PNAME_(ofield_cfg, ofield_index_cfg, field_d, sample, &
                   END IF
                   IF( numthreads > 1 .AND. phys_window ) then
                      ofb(is-hi:ie-hi,js-hj:je-hj,ks:ke,:,sample) =&
-                     & ofb(is-hi:ie-hi,js-hj:je-hj,ks:ke,:,sample) +&
-                     & (field_d(f1:f2,f3:f4,ks:ke, :) * weight1) ** pow_value
+                     & addwf( ofb(is-hi:ie-hi,js-hj:je-hj,ks:ke,:,sample) , &
+                     & field_d(f1:f2,f3:f4,ks:ke, :) , weight1, pow_value)
                   ELSE
 !$OMP CRITICAL
                      ofb(is-hi:ie-hi,js-hj:je-hj,ks:ke,:,sample) =&
-                     & ofb(is-hi:ie-hi,js-hj:je-hj,ks:ke,:,sample) +&
-                     & (field_d(f1:f2,f3:f4,ks:ke, :) * weight1) ** pow_value
+                     & addwf( ofb(is-hi:ie-hi,js-hj:je-hj,ks:ke,:,sample) , &
+                     & field_d(f1:f2,f3:f4,ks:ke, :) , weight1, pow_value)
                      !!
 !$OMP END CRITICAL
                   END IF
@@ -781,8 +775,8 @@ FUNCTION FMS_DIAG_FBU_3D_PNAME_(ofield_cfg, ofield_index_cfg, field_d, sample, &
     FUNCTION FMS_DIAG_FBCF_3D_PNAME_ (ofield_cfg, ofield_index_cfg, field, sample, ofb, &
       & bbounds, count_0d, mask,  missvalue,  &
       & l_start, l_end, err_msg,  err_msg_local) result( succeded )
-         TYPE(fms_diag_outfield_type), INTENT(inout) :: ofield_cfg   !< The ofield_cfg object
-         TYPE(fms_diag_outfield_index_type) , INTENT(inout) :: ofield_index_cfg    !< The ofield_index_cfg object
+         TYPE(fms_diag_outfield_type), INTENT(in) :: ofield_cfg   !< The ofield_cfg object
+         TYPE(fms_diag_outfield_index_type) , INTENT(in) :: ofield_index_cfg    !< The ofield_index_cfg object
          FMS_DIAG_FBU_DATA_TYPE_ , CONTIGUOUS,  DIMENSION(:,:,:),INTENT(in),target:: field !< The field value array.
          INTEGER, INTENT(in) :: sample   !< index along the diurnal time axis
          FMS_DIAG_FBU_DATA_TYPE_ , ALLOCATABLE, DIMENSION(:,:,:,:),INTENT(inout),target:: ofb !<The Output Field Buffer
@@ -820,8 +814,8 @@ FUNCTION FMS_DIAG_FBU_3D_PNAME_(ofield_cfg, ofield_index_cfg, field_d, sample, &
 FUNCTION FMS_DIAG_FBCF_PNAME_ (ofield_cfg, ofield_index_cfg, field, sample, ofb, &
    & bbounds, count_0d, mask,  missvalue,  &
    & l_start, l_end, err_msg,  err_msg_local) result( succeded )
-      TYPE(fms_diag_outfield_type), INTENT(inout) :: ofield_cfg   !< The ofield_cfg object
-      TYPE(fms_diag_outfield_index_type) , INTENT(inout) :: ofield_index_cfg    !< The ofield_index_cfg object
+      TYPE(fms_diag_outfield_type), INTENT(in) :: ofield_cfg   !< The ofield_cfg object
+      TYPE(fms_diag_outfield_index_type) , INTENT(in) :: ofield_index_cfg    !< The ofield_index_cfg object
       FMS_DIAG_FBU_DATA_TYPE_ , CONTIGUOUS, DIMENSION(:,:,:,:), INTENT(in) :: field   !< The field value array.
       INTEGER, INTENT(in) :: sample   !< index along the diurnal time axis
       FMS_DIAG_FBU_DATA_TYPE_ , DIMENSION(:,:,:,:,:), INTENT(inout) :: ofb   !< The Output Field Buffer
@@ -1200,29 +1194,65 @@ FUNCTION FMS_DIAG_FBCF_PNAME_ (ofield_cfg, ofield_index_cfg, field, sample, ofb,
    END FUNCTION FMS_DIAG_FBCF_PNAME_
 
 
+   SUBROUTINE FMS_DIAG_FBCM_3D_PNAME_ (ofield_cfg, ofield_index_cfg, ofb, sample, &
+    & l_start, l_end, rmask, rmask_thresh, missvalue)
+      TYPE(fms_diag_outfield_type), INTENT(in) :: ofield_cfg   !< The ofield_cfg object
+      TYPE(fms_diag_outfield_index_type) , INTENT(in) :: ofield_index_cfg    !< The ofield_index_cfg object
+      FMS_DIAG_FBU_DATA_TYPE_ , CONTIGUOUS,DIMENSION(:,:,:,:),INTENT(inout),target:: ofb !<The Output Field Buffer
+      INTEGER, INTENT(in) :: sample   !< index along the diurnal time axis
+      !!Updates where rmask < rmask_thresh:
+      FMS_DIAG_FBU_DATA_TYPE_ , CONTIGUOUS, DIMENSION(:,:,:), INTENT(in),target :: rmask
+      FMS_DIAG_FBU_DATA_TYPE_ , INTENT(in) :: rmask_thresh  !< Updates where rmask < rmask_thresh
+      FMS_DIAG_FBU_DATA_TYPE_ , INTENT(in) :: missvalue  !< Value used to update the buffer.
+      INTEGER, DIMENSION(3), INTENT(in)  :: l_start   !< local start indices on spatial axes for regional output
+      INTEGER, DIMENSION(3), INTENT(in)  :: l_end   !< local end indices on spatial for regional output
+
+      !! For pointer bounds remapping
+      FMS_DIAG_FBU_DATA_TYPE_ , pointer, DIMENSION(:,:,:,:,:) :: ofb_ptr => null() !<
+      FMS_DIAG_FBU_DATA_TYPE_ , pointer, DIMENSION(:,:,:,:) :: rmask_ptr => null() !<
+
+      ofb_ptr(1:size(ofb,1),1:size(ofb,2),1:size(ofb,3), 1:1, 1:size(ofb,4)) => ofb
+      rmask_ptr(1:size(rmask,1),1:size(rmask,2),1:size(rmask,3),1:1) => rmask
+
+      call FMS_DIAG_FBCM_PNAME_ (ofield_cfg, ofield_index_cfg, ofb_ptr, sample, &
+        & l_start, l_end, rmask_ptr, rmask_thresh, missvalue)
+  END SUBROUTINE FMS_DIAG_FBCM_3D_PNAME_
+
+
    !> \Description Updates where appropriate and depending on the rmask argument,
    !! elements of the running field output buffer (argument buffer) with value missvalue.
    !! NOTE: It appears these OFB updates were introcuded by EMC MM into the tail end of the
    !! legacy send_data_3d.
-   SUBROUTINE  FMS_DIAG_FBCM_PNAME_ (is, js, ks, &
-      & ie, je, ke, hi, hj, sample, l_start, l_end, &
-      & buffer, rmask, rmask_thresh, missvalue, &
-      & need_compute, reduced_k_range)
-         INTEGER, INTENT(in):: is, js, ks, ie, je, ke, hi, hj
+   SUBROUTINE  FMS_DIAG_FBCM_PNAME_ (ofield_cfg, ofield_index_cfg, buffer, sample, &
+      & l_start, l_end, rmask, rmask_thresh, missvalue)
+        TYPE(fms_diag_outfield_type), INTENT(in) :: ofield_cfg   !< The ofield_cfg object
+        TYPE(fms_diag_outfield_index_type) , INTENT(in) :: ofield_index_cfg    !< The ofield_index_cfg object
+        FMS_DIAG_FBU_DATA_TYPE_ , INTENT(inout), DIMENSION(:,:,:,:,:) :: buffer !< the buffer to update
          INTEGER, INTENT(in) :: sample !< index along the diurnal time axis
          INTEGER, INTENT(in), DIMENSION(3):: l_start !< local start indices on 3 axes for regional output
          INTEGER, INTENT(in), DIMENSION(3):: l_end !< local end indices on 3 axes for regional output
          FMS_DIAG_FBU_DATA_TYPE_ , INTENT(in), DIMENSION(:,:,:,:):: rmask  !< Updates where rmask < rmask_thresh
-         FMS_DIAG_FBU_DATA_TYPE_ , INTENT(inout), DIMENSION(:,:,:,:,:) :: buffer !< the buffer to update
-         FMS_DIAG_FBU_DATA_TYPE_ , INTENT(in), TARGET :: missvalue  !< Value used to update the buffer.
-         FMS_DIAG_FBU_DATA_TYPE_ , INTENT(in), TARGET :: rmask_thresh  !< Updates where rmask < rmask_thresh
-         LOGICAL, INTENT(in) :: need_compute
-         LOGICAL, INTENT(in) :: reduced_k_range
-         !!
-         !!
+         FMS_DIAG_FBU_DATA_TYPE_ , INTENT(in) :: rmask_thresh  !< Updates where rmask < rmask_thresh
+         FMS_DIAG_FBU_DATA_TYPE_ , INTENT(in) :: missvalue  !< Value used to update the buffer.
+
+         INTEGER :: is, js, ks, ie, je, ke, hi, hj
+         LOGICAL :: need_compute
+         LOGICAL :: reduced_k_range
          INTEGER :: ksr, ker !> Loop indeccies used in reduced_k_range calculations
-         !> Looping indecies, derived from ofield_index_cfg:
+         !> Looping indecies, derived from ofield_index_cfg info:
          INTEGER :: i, j, k, i1, j1, k1
+
+         is = ofield_index_cfg%is
+         js = ofield_index_cfg%js
+         ks = ofield_index_cfg%ks
+         ie = ofield_index_cfg%ie
+         je = ofield_index_cfg%je
+         ke = ofield_index_cfg%ke
+         hi = ofield_index_cfg%hi
+         hj = ofield_index_cfg%hj
+
+         reduced_k_range = ofield_cfg%reduced_k_range
+         need_compute = ofield_cfg%need_compute
 
          associate(ofb => buffer)
 

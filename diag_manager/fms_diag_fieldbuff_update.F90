@@ -70,6 +70,10 @@ MODULE fms_diag_fieldbuff_update_mod
       module procedure fieldbuff_copy_misvals_r4
       !< r8 version of the interface
       module procedure fieldbuff_copy_misvals_r8
+      !< r4 version of the interface, , where the field is 3D
+      module procedure fieldbuff_copy_misvals_3d_r4
+      !< r8 version of the interface, , where the field is 3D
+      module procedure fieldbuff_copy_misvals_3d_r8
       !< i4 version of the interface
       !module procedure fieldbuff_copy_misvals_i4
       !< i8 version of the interface
@@ -84,7 +88,7 @@ MODULE fms_diag_fieldbuff_update_mod
       module procedure fieldbuff_copy_fieldvals_r4
       !< r8 version of the interface
       module procedure fieldbuff_copy_fieldvals_r8
-        !< r4 version of the interface, , where the field is 3D
+      !< r4 version of the interface, , where the field is 3D
       module procedure fieldbuff_copy_fieldvals_3d_r4
       !< r8 version of the interface, , where the field is 3D
       module procedure fieldbuff_copy_fieldvals_3d_r8

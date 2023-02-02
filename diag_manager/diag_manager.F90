@@ -1453,7 +1453,7 @@ CONTAINS
     TYPE (time_type), INTENT(in), OPTIONAL :: time
     INTEGER, INTENT(in), OPTIONAL :: is_in, js_in, ks_in,ie_in,je_in, ke_in
     LOGICAL, DIMENSION(:,:,:), INTENT(in), OPTIONAL, contiguous, target :: mask
-    CLASS(*), DIMENSION(:,:,:), INTENT(in), OPTIONAL :: rmask
+    CLASS(*), DIMENSION(:,:,:), INTENT(in), OPTIONAL, target :: rmask
     CHARACTER(len=*), INTENT(out), OPTIONAL :: err_msg
 
     REAL :: weight1
@@ -1489,12 +1489,15 @@ CONTAINS
 
     REAL, ALLOCATABLE, DIMENSION(:,:,:) :: field_out !< Local copy of field
 
-    TYPE(fms_diag_outfield_index_type), ALLOCATABLE:: ofield_index_cfg
-    TYPE(fms_diag_outfield_type), ALLOCATABLE:: ofield_cfg
-    LOGICAL :: temp_result
+    REAL(kind=r4_kind), POINTER, DIMENSION(:,:,:) :: rmask_ptr_r4 => null() !< A pointer to r4 type of rmask
+    REAL(kind=r8_kind), POINTER, DIMENSION(:,:,:) :: rmask_ptr_r8 => null() !<A pointer to r8 type of rmask
+    LOGICAL , pointer, DIMENSION(:,:,:) :: mask_ptr => null() !< A pointer to mask
 
+    TYPE(fms_diag_outfield_index_type), ALLOCATABLE:: ofield_index_cfg !<Instance  used in calling math funcsions.
+    TYPE(fms_diag_outfield_type), ALLOCATABLE:: ofield_cfg !<Instance  used in calling math funcsions.
+    LOGICAL :: mf_result !<Logical result returned from some math (buffer udate) functions.
     LOGICAL, DIMENSION(1,1,1), target :: mask_dummy
-    LOGICAL , pointer, DIMENSION(:,:,:) :: mask_ptr => null()
+    REAL :: rmask_threshold
 
     ! If diag_field_id is < 0 it means that this field is not registered, simply return
     IF ( diag_field_id <= 0 ) THEN
@@ -1553,8 +1556,12 @@ CONTAINS
        SELECT TYPE (rmask)
        TYPE IS (real(kind=r4_kind))
           WHERE ( rmask < 0.5_r4_kind ) oor_mask = .FALSE.
+          rmask_threshold = 0.5_r4_kind
+          rmask_ptr_r4  => rmask
        TYPE IS (real(kind=r8_kind))
           WHERE ( rmask < 0.5_r8_kind ) oor_mask = .FALSE.
+          rmask_threshold = 0.5_r8_kind
+          rmask_ptr_r8 => rmask
        CLASS DEFAULT
           CALL error_mesg ('diag_manager_mod::send_data_3d',&
                & 'The rmask is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)
@@ -1898,49 +1905,76 @@ CONTAINS
           mask_ptr(1:size(mask_dummy,1),1:size(mask_dummy,2),1:size(mask_dummy,3)) => mask_dummy
         ENDIF
 
-        !! ofield_cfg%buff_bounds, &
-         IF ( average ) THEN
+        IF ( average ) THEN
             !!TODO: the copy that is filed_out should not be necessary
-            temp_result = fieldbuff_update(ofield_cfg, ofield_index_cfg, field_out, sample, &
+            mf_result = fieldbuff_update(ofield_cfg, ofield_index_cfg, field_out, sample, &
                & output_fields(out_num)%buffer, output_fields(out_num)%counter ,output_fields(out_num)%buff_bounds,&
                & output_fields(out_num)%count_0d(sample), output_fields(out_num)%num_elements(sample), &
                & mask_ptr, weight1 ,missvalue, &
                & input_fields(diag_field_id)%numthreads, input_fields(diag_field_id)%active_omp_level,&
                & input_fields(diag_field_id)%issued_mask_ignore_warning, &
                & l_start, l_end, err_msg, err_msg_local )
-            IF (temp_result .eqv. .FALSE.) THEN
+            IF (mf_result .eqv. .FALSE.) THEN
               DEALLOCATE(ofield_index_cfg)
               DEALLOCATE(ofield_cfg)
                DEALLOCATE(field_out)
                DEALLOCATE(oor_mask)
                RETURN
             END IF
-         ELSE !!NOT AVERAGE
-
-            temp_result = fieldbuff_copy_fieldvals(ofield_cfg, ofield_index_cfg, field_out, sample, &
+        ELSE !!NOT AVERAGE
+            mf_result = fieldbuff_copy_fieldvals(ofield_cfg, ofield_index_cfg, field_out, sample, &
                & output_fields(out_num)%buffer, output_fields(out_num)%buff_bounds , &
                & output_fields(out_num)%count_0d(sample), &
                & mask_ptr, missvalue, l_start, l_end, err_msg, err_msg_local)
-            IF (temp_result .eqv. .FALSE.) THEN
+            IF (mf_result .eqv. .FALSE.) THEN
               DEALLOCATE(ofield_index_cfg)
               DEALLOCATE(ofield_cfg)
                DEALLOCATE(field_out)
                DEALLOCATE(oor_mask)
                RETURN
             END IF
-          END IF
-          IF ( PRESENT(rmask) .AND. missvalue_present ) THEN
-            temp_result = .true. !!TODO call :fieldbuff_copy_misvals()
-         END IF
-         IF(ALLOCATED(ofield_index_cfg)) THEN
-          DEALLOCATE(ofield_index_cfg)
-         ENDIF
-         IF(ALLOCATED(ofield_cfg)) THEN
-          DEALLOCATE(ofield_cfg)
-         ENDIF
+        END IF
 
-         CYCLE !!. I.e. skip src code below and go to the next output field
-      END IF !! END USE_REFACTORED_SEND
+        IF ( output_fields(out_num)%static .AND. .NOT.need_compute .AND. debug_diag_manager ) THEN
+          CALL check_bounds_are_exact_static(out_num, diag_field_id, err_msg=err_msg_local)
+          IF ( err_msg_local /= '' ) THEN
+              IF ( fms_error_handler('diag_manager_mod::send_data_3d', err_msg_local, err_msg)) THEN
+                DEALLOCATE(field_out)
+                DEALLOCATE(oor_mask)
+                RETURN
+              END IF
+          END IF
+        END IF
+
+        !!TODO: One (or the other) of the calls below will not compile depending
+        !! on the value of REAL. This is to the mixed use of REAL, R4, R8 and CLASS(*)
+        !! in send_data_3d. A copy of rmask can be made to avoid but it would be wasteful.
+         !!  Instead, the original functionality is used at the end.
+        !IF ( PRESENT(rmask)  .AND. missvalue_present ) THEN
+        !  SELECT TYPE (rmask)
+        !  TYPE IS (real(kind=r4_kind))
+        !  call fieldbuff_copy_misvals(ofield_cfg, ofield_index_cfg, &
+        !  & output_fields(out_num)%buffer, sample, &
+        !  & l_start, l_end, rmask_ptr_r4, rmask_threshold, missvalue)
+        !  TYPE IS (real(kind=r8_kind))
+        !    call fieldbuff_copy_misvals(ofield_cfg, ofield_index_cfg, &
+        !    & output_fields(out_num)%buffer, sample, &
+       !     & l_start, l_end, rmask_ptr_r8, rmask_threshold, missvalue)
+        !  CLASS DEFAULT
+        !    CALL error_mesg ('diag_manager_mod::send_data_3d',&
+         !     & 'The rmask is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)
+        !  END SELECT
+       !END IF
+
+        IF(ALLOCATED(ofield_index_cfg)) THEN
+          DEALLOCATE(ofield_index_cfg)
+        ENDIF
+        IF(ALLOCATED(ofield_cfg)) THEN
+          DEALLOCATE(ofield_cfg)
+        ENDIF
+
+        !!CYCLE !!. I.e. skip src code below and go to the next output field
+      ELSE  !! END USE_REFACTORED_SEND
 
        ! Take care of submitted field data
        IF ( average ) THEN
@@ -3087,6 +3121,8 @@ CONTAINS
              END IF
           END IF
        END IF
+
+      END IF !! END OF IS_USE_REFACTORED SEND
 
        ! If rmask and missing value present, then insert missing value
        IF ( PRESENT(rmask) .AND. missvalue_present ) THEN
