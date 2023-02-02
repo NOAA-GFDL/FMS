@@ -361,7 +361,7 @@ CONTAINS
        endif
 
        !> Write additional axis attributes, from diag_axis_add_attribute calls
-       CALL write_attribute_meta(file_unit, num_attributes, attributes, err_msg, varname=axis_name, fileob=fileob)
+       CALL write_attribute_meta(num_attributes, attributes, err_msg, varname=axis_name, fileob=fileob)
        IF ( LEN_TRIM(err_msg) .GT. 0 ) THEN
           CALL error_mesg('diag_output_mod::write_axis_meta_data', TRIM(err_msg), FATAL)
        END IF
@@ -660,7 +660,7 @@ character(len=128),dimension(size(axes)) :: axis_names
     IF ( PRESENT(num_attributes) ) THEN
        IF ( PRESENT(attributes) ) THEN
           IF ( num_attributes .GT. 0 .AND. allocated(attributes) ) THEN
-             CALL write_attribute_meta(file_unit, num_attributes, attributes, time_method, err_msg, &
+             CALL write_attribute_meta(num_attributes, attributes, time_method, err_msg, &
                                      & fileob=fileob, varname=name)
              IF ( LEN_TRIM(err_msg) .GT. 0 ) THEN
                 CALL error_mesg('diag_output_mod::write_field_meta_data',&
@@ -723,8 +723,8 @@ character(len=128),dimension(size(axes)) :: axis_names
   !> \brief Write out attribute meta data to file
   !!
   !! Write out the attribute meta data to file, for field and axes
-  SUBROUTINE write_attribute_meta(file_unit, num_attributes, attributes, time_method, err_msg, varname, fileob)
-    INTEGER, INTENT(in) :: file_unit !< File unit number
+  SUBROUTINE write_attribute_meta(num_attributes, attributes, time_method, err_msg, varname, fileob)
+    !INTEGER, INTENT(in) :: file_unit !< File unit number
     INTEGER, INTENT(in) :: num_attributes !< Number of attributes to write
     TYPE(diag_atttype), DIMENSION(:), INTENT(in) :: attributes !< Array of attributes
     CHARACTER(len=*), INTENT(in), OPTIONAL :: time_method !< To include in cell_methods attribute if present

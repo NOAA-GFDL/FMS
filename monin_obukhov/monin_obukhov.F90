@@ -254,14 +254,14 @@ if(present(avail)) then
 
    call monin_obukhov_profile_1d(vonkarm, &
         & neutral, stable_option, new_mo_option,rich_crit, zeta_trans, &
-        & n, zref, zref_t, z, z0, zt, zq, u_star, b_star, q_star, &
+        & n, zref, zref_t, z, z0, zt, zq, u_star, b_star, &
         & del_m, del_t, del_q, .true., avail, ier)
 
 else
 
    call monin_obukhov_profile_1d(vonkarm, &
         & neutral, stable_option, new_mo_option,rich_crit, zeta_trans, &
-        & n, zref, zref_t, z, z0, zt, zq, u_star, b_star, q_star, &
+        & n, zref, zref_t, z, z0, zt, zq, u_star, b_star, &
         & del_m, del_t, del_q, .false., dummy_avail, ier)
 
 endif

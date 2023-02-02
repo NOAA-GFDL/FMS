@@ -426,16 +426,15 @@ module horiz_interp_bicubic_mod
   end subroutine horiz_interp_bicubic_new_1d
 
   !> @brief Perform bicubic horizontal interpolation
-  subroutine horiz_interp_bicubic( Interp, data_in, data_out, verbose, mask_in, mask_out, missing_value, &
-                                 &  missing_permit)
+  subroutine horiz_interp_bicubic( Interp, data_in, data_out, verbose, mask_out)
     type (horiz_interp_type), intent(in)        :: Interp
     real, intent(in),  dimension(:,:)           :: data_in
     real, intent(out), dimension(:,:)           :: data_out
     integer, intent(in),               optional :: verbose
-    real, intent(in),  dimension(:,:), optional :: mask_in
+    !real, intent(in),  dimension(:,:), optional :: mask_in
     real, intent(out), dimension(:,:), optional :: mask_out
-    real, intent(in),                  optional :: missing_value
-    integer, intent(in),               optional :: missing_permit
+    !real, intent(in),                  optional :: missing_value
+    !integer, intent(in),               optional :: missing_permit
     real :: yz, ycu, ycl
     real :: xz, xcu, xcl
     real :: val, val1, val2

@@ -2696,7 +2696,7 @@ if(present(err_msg)) err_msg = ''
 
 select case(calendar_type)
 case(THIRTY_DAY_MONTHS)
-   days_in_month = days_in_month_thirty(Time)
+   days_in_month = days_in_month_thirty()
 case(GREGORIAN)
    days_in_month = days_in_month_gregorian(Time)
 case(JULIAN)
@@ -2744,13 +2744,13 @@ if(leap_year_julian(Time) .and. month == 2) days_in_month_julian = 29
 end function days_in_month_julian
 
 !--------------------------------------------------------------------------
-function days_in_month_thirty(Time)
+function days_in_month_thirty()
 
 ! Returns the number of days in a thirty day month (needed for transparent
 ! changes to calendar type).
 
 integer :: days_in_month_thirty
-type(time_type), intent(in) :: Time
+!type(time_type), intent(in) :: Time
 
 days_in_month_thirty = 30
 
@@ -2809,7 +2809,7 @@ case(GREGORIAN)
 case(JULIAN)
    leap_year = leap_year_julian(Time)
 case(NOLEAP)
-   leap_year = leap_year_no_leap(Time)
+   leap_year = leap_year_no_leap()
 case default
    if(error_handler('function leap_year', 'Invalid calendar type in leap_year', err_msg)) return
 end select
@@ -2873,12 +2873,12 @@ end function leap_year_thirty
 
 !--------------------------------------------------------------------------
 
-function leap_year_no_leap(Time)
+function leap_year_no_leap()
 
 ! Another tough one; no leap year returns false for leap year inquiry.
 
 logical :: leap_year_no_leap
-type(time_type), intent(in) :: Time
+!type(time_type), intent(in) :: Time
 
 leap_year_no_leap = .FALSE.
 
@@ -2990,13 +2990,13 @@ if(.not.module_is_initialized) call time_manager_init
 
 select case(calendar_type)
 case(THIRTY_DAY_MONTHS)
-   days_in_year = days_in_year_thirty(Time)
+   days_in_year = days_in_year_thirty()
 case(GREGORIAN)
    days_in_year = days_in_year_gregorian(Time)
 case(JULIAN)
    days_in_year = days_in_year_julian(Time)
 case(NOLEAP)
-   days_in_year = days_in_year_no_leap(Time)
+   days_in_year = days_in_year_no_leap()
 case default
    call error_mesg('days_in_year','Invalid calendar type in days_in_year',FATAL)
 end select
@@ -3005,10 +3005,10 @@ end function days_in_year
 
 !--------------------------------------------------------------------------
 
-function days_in_year_thirty(Time)
+function days_in_year_thirty()
 
 integer :: days_in_year_thirty
-type(time_type), intent(in) :: Time
+!type(time_type), intent(in) :: Time
 
 days_in_year_thirty = 360
 
@@ -3045,10 +3045,10 @@ end function days_in_year_julian
 
 !--------------------------------------------------------------------------
 
-function days_in_year_no_leap(Time)
+function days_in_year_no_leap()
 
 integer :: days_in_year_no_leap
-type(time_type), intent(in) :: Time
+!type(time_type), intent(in) :: Time
 
 days_in_year_no_leap = 365
 

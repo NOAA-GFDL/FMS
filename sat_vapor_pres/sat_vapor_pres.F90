@@ -2248,7 +2248,7 @@ contains
      endif
    endif
 
-   call compute_mrs_k (temp, press, EPSILO, ZVIR, mrsat, nbad, mr,  &
+   call compute_mrs_k (temp, press, EPSILO, mrsat, nbad, mr,  &
                      hc, dmrsdT, esat, es_over_liq, es_over_liq_and_ice)
 
    if ( nbad == 0 ) then
@@ -2310,7 +2310,7 @@ contains
 
 !  call compute_mrs_k (temp, press, EPSILO, ZVIR, mrsat,  &
 !                                                     nbad, mr, dmrsdT)
-   call compute_mrs_k (temp, press, EPSILO, ZVIR, mrsat, nbad, mr,  &
+   call compute_mrs_k (temp, press, EPSILO, mrsat, nbad, mr,  &
                      hc, dmrsdT, esat, es_over_liq, es_over_liq_and_ice)
 
    if ( nbad == 0 ) then
@@ -2372,7 +2372,7 @@ contains
 
 !  call compute_mrs_k (temp, press, EPSILO, ZVIR, mrsat,  &
 !                                                     nbad, mr, dmrsdT)
-   call compute_mrs_k (temp, press, EPSILO, ZVIR, mrsat, nbad, mr,  &
+   call compute_mrs_k (temp, press, EPSILO, mrsat, nbad, mr,  &
                      hc, dmrsdT, esat, es_over_liq, es_over_liq_and_ice)
 
    if ( nbad == 0 ) then
@@ -2434,7 +2434,7 @@ contains
 
 !  call compute_mrs_k (temp, press, EPSILO, ZVIR, mrsat,   &
 !                                                    nbad, mr, dmrsdT)
-   call compute_mrs_k (temp, press, EPSILO, ZVIR, mrsat, nbad, mr,  &
+   call compute_mrs_k (temp, press, EPSILO, mrsat, nbad, mr,  &
                      hc, dmrsdT, esat, es_over_liq, es_over_liq_and_ice)
 
    if ( nbad == 0 ) then

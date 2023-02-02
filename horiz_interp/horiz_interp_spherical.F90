@@ -410,13 +410,13 @@ end subroutine horiz_interp_spherical_init
   end subroutine horiz_interp_spherical
 
   !#######################################################################
-  subroutine horiz_interp_spherical_wght( Interp, wt, verbose, mask_in, mask_out, missing_value)
+  subroutine horiz_interp_spherical_wght( Interp, wt, verbose, mask_in)
     type (horiz_interp_type), intent(in)        :: Interp
     real, intent(out), dimension(:,:,:)         :: wt
     integer, intent(in),               optional :: verbose
     real, intent(in), dimension(:,:),  optional :: mask_in
-    real, intent(inout), dimension(:,:), optional :: mask_out
-    real, intent(in),                  optional :: missing_value
+    !real, intent(inout), dimension(:,:), optional :: mask_out
+    !real, intent(in),                  optional :: missing_value
 
     !--- some local variables ----------------------------------------
     real, dimension(Interp%nlon_src, Interp%nlat_src) :: mask_src

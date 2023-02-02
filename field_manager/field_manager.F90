@@ -3476,7 +3476,7 @@ call find_base(name_loc, path, base)
 
 if (associated(temp_list_p)) then
 ! Find the entry values for the list.
-  success = query_method(temp_list_p, recursive_t, base, method_name, method_control)
+  success = query_method(temp_list_p, recursive_t, method_name, method_control)
 else
 ! This is not a list but it may be a parameter with a value
 ! If so put the parameter value in method_name.
@@ -3510,12 +3510,12 @@ end function  fm_query_method
 !! associated with a field.
 !> @return A flag to indicate whether the function operated with (FALSE) or
 !! without (TRUE) errors
-recursive function query_method(list_p, recursive, name, method_name, method_control) &
+recursive function query_method(list_p, recursive, method_name, method_control) &
           result (success)
 logical :: success
 type (field_def), pointer     :: list_p !< A pointer to the field that is of interest
 logical,          intent(in)  :: recursive !< A flag to enable recursive searching if true
-character(len=*), intent(in)  :: name !<  name of a list that the user wishes to change to
+!character(len=*), intent(in)  :: name !<  name of a list that the user wishes to change to
 character(len=*), intent(out) :: method_name !< name of a parameter associated with the named field
 character(len=*), intent(out) :: method_control !< value of parameters associated with the named field
 
@@ -3541,7 +3541,7 @@ else
     case(list_type)
       ! If this is a list, then this is the method name
       if (recursive) then
-        if (.not. query_method(this_field_p, .true., this_field_p%name, method_name, method_control)) then
+        if (.not. query_method(this_field_p, .true., method_name, method_control)) then
           success = .false.
           exit
         else
@@ -3743,7 +3743,7 @@ else
 endif
 !        Find the list
 if (success) then
-  success = find_method(temp_list_p, recursive_t, num_meth, methods, control)
+  success = find_method(temp_list_p, num_meth, methods, control)
 endif
 
 end function fm_find_methods
@@ -3752,11 +3752,11 @@ end function fm_find_methods
 !! associated parameters for the field list.
 !! @returns A flag to indicate whether the function operated with (FALSE) or
 !!     without (TRUE) errors.
-recursive function find_method(list_p, recursive, num_meth, method, control)   &
+recursive function find_method(list_p, num_meth, method, control)   &
           result (success)
 logical                                     :: success
 type (field_def), pointer                   :: list_p !< A pointer to the field of interest
-logical,          intent(in)                :: recursive !< If true, search recursively for fields
+!logical,          intent(in)                :: recursive !< If true, search recursively for fields
 integer,          intent(inout)             :: num_meth !< The number of methods found
 character(len=*), intent(out), dimension(:) :: method !< The methods associated with the field pointed to by list_p
 character(len=*), intent(out), dimension(:) :: control !< The control parameters for the methods found
@@ -3792,7 +3792,7 @@ else
            write (method(num_meth),'(a,a,a,$)') trim(method(num_meth)), &
                                                 trim(this_field_p%name), list_sep
         endif
-        success = find_method(this_field_p, .true., num_meth, method, control)
+        success = find_method(this_field_p, num_meth, method, control)
 
     case(integer_type)
         write (scratch,*) this_field_p%i_value

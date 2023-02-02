@@ -1744,7 +1744,7 @@ subroutine annual_mean_solar_2d (lat, cosz, solar, fracday,  &
                                  rrsun)
 
 !--------------------------------------------------------------------
-integer,                 intent(in)    :: js, je
+!integer,                 intent(in)    :: js, je
 real, dimension(:,:),    intent(in)    :: lat
 real, dimension(:,:),    intent(out)   :: solar, cosz, fracday
 real,                    intent(out)   :: rrsun
@@ -1878,7 +1878,7 @@ real,               intent(out)    :: rrsun_out
 !--------------------------------------------------------------------
 !>    call annual_mean_solar_2d to calculate the astronomy fields.
 !--------------------------------------------------------------------
-        call annual_mean_solar_2d (jst, jnd, lat_2d, cosz_2d,   &
+        call annual_mean_solar_2d (lat_2d, cosz_2d,   &
                                    solar_2d, fracday_2d, rrsun)
 
 !-------------------------------------------------------------------
@@ -1941,7 +1941,7 @@ real, dimension(:), intent(out)    :: solar !< shortwave flux factor: cosine of 
 !--------------------------------------------------------------------
 !>    call annual_mean_solar_2d to calculate the astronomy fields.
 !--------------------------------------------------------------------
-        call annual_mean_solar_2d (jst, jnd, lat_2d, cosz_2d,   &
+        call annual_mean_solar_2d (lat_2d, cosz_2d,   &
                                    solar_2d, fracday_2d, rrsun)
 
 !-------------------------------------------------------------------

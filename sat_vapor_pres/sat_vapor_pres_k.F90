@@ -1757,11 +1757,11 @@
 
 !#######################################################################
 
- subroutine compute_mrs_k_3d (temp, press, eps, zvir, mrs, nbad,   &
+ subroutine compute_mrs_k_3d (temp, press, eps, mrs, nbad,   &
                  mr, hc, dmrsdT, esat,es_over_liq, es_over_liq_and_ice)
 
  real, intent(in),  dimension(:,:,:)           :: temp, press
- real, intent(in)                              :: eps, zvir
+ real, intent(in)                              :: eps  !, zvir
  real, intent(out), dimension(:,:,:)           :: mrs
  integer, intent(out)                          :: nbad
  real, intent(in),  dimension(:,:,:), optional :: mr
@@ -1845,11 +1845,11 @@
 
 !#######################################################################
 
- subroutine compute_mrs_k_2d (temp, press, eps, zvir, mrs, nbad,  &
+ subroutine compute_mrs_k_2d (temp, press, eps, mrs, nbad,  &
                  mr, hc, dmrsdT, esat,es_over_liq, es_over_liq_and_ice)
 
  real, intent(in),  dimension(:,:)           :: temp, press
- real, intent(in)                            :: eps, zvir
+ real, intent(in)                            :: eps  !, zvir
  real, intent(out), dimension(:,:)           :: mrs
  integer, intent(out)                        :: nbad
  real, intent(in), dimension(:,:), optional  :: mr
@@ -1930,11 +1930,11 @@
 
 !#######################################################################
 
- subroutine compute_mrs_k_1d (temp, press, eps, zvir, mrs, nbad,  &
+ subroutine compute_mrs_k_1d (temp, press, eps, mrs, nbad,  &
                  mr, hc, dmrsdT, esat,es_over_liq, es_over_liq_and_ice)
 
  real, intent(in),  dimension(:)           :: temp, press
- real, intent(in)                          :: eps, zvir
+ real, intent(in)                          :: eps   !, zvir
  real, intent(out), dimension(:)           :: mrs
  integer, intent(out)                      :: nbad
  real, intent(in),  dimension(:), optional :: mr
@@ -2013,11 +2013,11 @@
 
 !#######################################################################
 
- subroutine compute_mrs_k_0d (temp, press, eps, zvir, mrs, nbad,   &
+ subroutine compute_mrs_k_0d (temp, press, eps, mrs, nbad,   &
                  mr, hc, dmrsdT, esat,es_over_liq, es_over_liq_and_ice)
 
  real, intent(in)                              :: temp, press
- real, intent(in)                              :: eps, zvir
+ real, intent(in)                              :: eps   !, zvir
  real, intent(out)                             :: mrs
  integer, intent(out)                          :: nbad
  real, intent(in),                    optional :: mr

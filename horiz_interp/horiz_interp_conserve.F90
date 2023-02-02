@@ -328,13 +328,13 @@ contains
   !#######################################################################
 
   subroutine horiz_interp_conserve_new_1dx2d ( Interp, lon_in, lat_in, lon_out, lat_out, &
-                                               mask_in, mask_out, verbose)
+                                               mask_in, mask_out)
     type(horiz_interp_type),        intent(inout) :: Interp
     real, intent(in),              dimension(:)   :: lon_in , lat_in
     real, intent(in),              dimension(:,:) :: lon_out, lat_out
     real, intent(in),    optional, dimension(:,:) :: mask_in
     real, intent(inout), optional, dimension(:,:) :: mask_out
-    integer, intent(in), optional                 :: verbose
+    !integer, intent(in), optional                 :: verbose
 
 
     integer :: create_xgrid_1DX2D_order1, get_maxxgrid, maxxgrid
@@ -495,13 +495,13 @@ contains
   !#######################################################################
 
   subroutine horiz_interp_conserve_new_2dx1d ( Interp, lon_in, lat_in, lon_out, lat_out, &
-                                               mask_in, mask_out, verbose)
+                                               mask_in, mask_out)
     type(horiz_interp_type),        intent(inout) :: Interp
     real, intent(in),              dimension(:,:) :: lon_in , lat_in
     real, intent(in),              dimension(:)   :: lon_out, lat_out
     real, intent(in),    optional, dimension(:,:) :: mask_in
     real, intent(inout), optional, dimension(:,:) :: mask_out
-    integer, intent(in), optional                 :: verbose
+    !integer, intent(in), optional                 :: verbose
 
     integer :: create_xgrid_2DX1D_order1, get_maxxgrid, maxxgrid
     integer :: create_xgrid_great_circle
@@ -602,13 +602,13 @@ contains
   !#######################################################################
 
   subroutine horiz_interp_conserve_new_2dx2d ( Interp, lon_in, lat_in, lon_out, lat_out, &
-                                               mask_in, mask_out, verbose)
+                                               mask_in, mask_out)
     type(horiz_interp_type),        intent(inout) :: Interp
     real, intent(in),              dimension(:,:) :: lon_in , lat_in
     real, intent(in),              dimension(:,:) :: lon_out, lat_out
     real, intent(in),    optional, dimension(:,:) :: mask_in
     real, intent(inout), optional, dimension(:,:) :: mask_out
-    integer, intent(in), optional                 :: verbose
+    !integer, intent(in), optional                 :: verbose
 
     integer :: create_xgrid_2DX2D_order1, get_maxxgrid, maxxgrid
     integer :: create_xgrid_great_circle
@@ -741,7 +741,7 @@ contains
     case (2)
        if(present(mask_in) .OR. present(mask_out) ) call mpp_error(FATAL, 'horiz_interp_conserve:'// &
             & ' for version 2, mask_in and mask_out must be passed in horiz_interp_new, not in horiz_interp')
-       call horiz_interp_conserve_version2(Interp, data_in, data_out, verbose)
+       call horiz_interp_conserve_version2(Interp, data_in, data_out)
     end select
 
   end subroutine horiz_interp_conserve
@@ -895,12 +895,12 @@ contains
   end subroutine horiz_interp_conserve_version1
 
   !#############################################################################
-  subroutine horiz_interp_conserve_version2 ( Interp, data_in, data_out, verbose )
+  subroutine horiz_interp_conserve_version2 ( Interp, data_in, data_out )
     !-----------------------------------------------------------------------
     type (horiz_interp_type), intent(in) :: Interp
     real,    intent(in),  dimension(:,:) :: data_in
     real,    intent(out), dimension(:,:) :: data_out
-    integer, intent(in),        optional :: verbose
+    !integer, intent(in),        optional :: verbose
     integer :: i, i_src, j_src, i_dst, j_dst
 
     data_out = 0.0

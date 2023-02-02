@@ -141,12 +141,12 @@ contains
   end subroutine get_axis_cart
 
   !> @brief Return axis_bound either from an array of available axes, or defined based on axis mid-points
-  subroutine get_axis_bounds(axis,axis_bound,axes,bnd_name,err_msg)
+  subroutine get_axis_bounds(axis,axis_bound,err_msg)
 
     type(axistype), intent(in) :: axis
     type(axistype), intent(inout) :: axis_bound
-    type(axistype), intent(in), dimension(:) :: axes
-    character(len=*), intent(inout), optional :: bnd_name
+    !type(axistype), intent(in), dimension(:) :: axes
+    !character(len=*), intent(inout), optional :: bnd_name
     character(len=*), intent(out), optional :: err_msg
 
     real, dimension(:), allocatable :: data, tmp

@@ -774,11 +774,11 @@ endif
 !#######################################################################
 
  !> @return A newly created @ref amip_interp_type
- function amip_interp_new_1d ( lon , lat , mask , use_climo, use_annual, &
+ function amip_interp_new_1d ( lon , lat , use_climo, use_annual, &
                                 interp_method ) result (Interp)
 
  real,    intent(in), dimension(:)   :: lon, lat
- logical, intent(in), dimension(:,:) :: mask
+ !logical, intent(in), dimension(:,:) :: mask
  character(len=*), intent(in), optional       :: interp_method
  logical, intent(in), optional       :: use_climo, use_annual
 
@@ -814,11 +814,11 @@ endif
    end function amip_interp_new_1d
 
  !> @return A newly created @ref amip_interp_type
- function amip_interp_new_2d ( lon , lat , mask , use_climo, use_annual, &
+ function amip_interp_new_2d ( lon , lat , use_climo, use_annual, &
                                 interp_method ) result (Interp)
 
  real,    intent(in), dimension(:,:)   :: lon, lat
- logical, intent(in), dimension(:,:) :: mask
+ !logical, intent(in), dimension(:,:) :: mask
  character(len=*), intent(in), optional :: interp_method
  logical, intent(in), optional       :: use_climo, use_annual
 

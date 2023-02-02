@@ -1987,11 +1987,11 @@ subroutine setup_xmap(xmap, grid_ids, grid_domains, grid_file, atm_grid, lnd_ug_
   call mpp_clock_begin(id_conservation_check)
 
   if(lnd_ug_id ==0) then
-     xxx = conservation_check(grid1%area*0.0+1.0, grid1%id, xmap)
+     xxx = conservation_check(grid1%area*0.0+1.0, xmap)
   else
      allocate(tmp_2d(grid1%is_me:grid1%ie_me, grid1%js_me:grid1%je_me))
      tmp_2d = 1.0
-     xxx = conservation_check_ug(tmp_2d, grid1%id, xmap)
+     xxx = conservation_check_ug(tmp_2d, xmap)
      deallocate(tmp_2d)
   endif
   write(out_unit,* )"Checked data is array of constant 1"
@@ -2019,9 +2019,9 @@ subroutine setup_xmap(xmap, grid_ids, grid_domains, grid_file, atm_grid, lnd_ug_
 
      !--- second order along both zonal and meridinal direction
      if(lnd_ug_id ==0) then
-        xxx = conservation_check(check_data, grid1%id, xmap,  remap_method = remapping_method )
+        xxx = conservation_check(check_data, xmap,  remap_method = remapping_method )
      else
-        xxx = conservation_check_ug(check_data, grid1%id, xmap,  remap_method = remapping_method )
+        xxx = conservation_check_ug(check_data, xmap,  remap_method = remapping_method )
      endif
      write( out_unit,* ) &
           "Checked data is array of random number between 0 and 1 using "//trim(interp_method)
@@ -3991,9 +3991,9 @@ end subroutine get_1_from_xgrid_repro
 !!   variable (1) on its home model grid, (2) after interpolation to the other
 !!   side grid(s), and (3) after re_interpolation back onto its home side grid(s).
 !! @return real(r8_kind) conservation_check_side1
-function conservation_check_side1(d, grid_id, xmap,remap_method) ! this one for 1->2->1
+function conservation_check_side1(d, xmap,remap_method) ! this one for 1->2->1
 real(r8_kind), dimension(:,:),    intent(in   ) :: d !< model data to check
-character(len=3),        intent(in   ) :: grid_id !< 3 character grid id
+!character(len=3),        intent(in   ) :: grid_id !< 3 character grid id
 type (xmap_type),        intent(inout) :: xmap !< exchange grid
 real(r8_kind), dimension(3)                     :: conservation_check_side1
 integer, intent(in), optional :: remap_method
@@ -4094,9 +4094,9 @@ end function conservation_check_side2
 !!   variable (1) on its home model grid, (2) after interpolation to the other
 !!   side grid(s), and (3) after re_interpolation back onto its home side grid(s).
 !! @return real(r8_kind) conservation_check_ug_side1
-function conservation_check_ug_side1(d, grid_id, xmap,remap_method) ! this one for 1->2->1
+function conservation_check_ug_side1(d, xmap,remap_method) ! this one for 1->2->1
 real(r8_kind), dimension(:,:),    intent(in   ) :: d !< model data to check
-character(len=3),        intent(in   ) :: grid_id !< 3 character grid ID
+!character(len=3),        intent(in   ) :: grid_id !< 3 character grid ID
 type (xmap_type),        intent(inout) :: xmap !< exchange grid
 real(r8_kind), dimension(3)                     :: conservation_check_ug_side1
 integer, intent(in), optional :: remap_method

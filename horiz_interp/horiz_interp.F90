@@ -252,7 +252,7 @@ contains
   !> @brief Creates a 1D @ref horiz_interp_type with the given parameters
   subroutine horiz_interp_new_1d (Interp, lon_in, lat_in, lon_out, lat_out, verbose, &
                                   interp_method, num_nbrs, max_dist, src_modulo,     &
-                                  grid_at_center, mask_in, mask_out)
+                                  grid_at_center)
 
     !-----------------------------------------------------------------------
     type(horiz_interp_type), intent(inout)        :: Interp
@@ -264,8 +264,8 @@ contains
     real,    intent(in),                 optional :: max_dist
     logical, intent(in),                 optional :: src_modulo
     logical, intent(in),                 optional :: grid_at_center
-    real, intent(in), dimension(:,:),    optional :: mask_in  !< dummy variable
-    real, intent(inout),dimension(:,:),  optional :: mask_out !< dummy variable
+    !real, intent(in), dimension(:,:),    optional :: mask_in  !< dummy variable
+    !real, intent(inout),dimension(:,:),  optional :: mask_out !< dummy variable
     !-----------------------------------------------------------------------
     real, dimension(:,:), allocatable :: lon_src, lat_src, lon_dst, lat_dst
     real, dimension(:),   allocatable :: lon_src_1d, lat_src_1d, lon_dst_1d, lat_dst_1d
@@ -430,7 +430,7 @@ contains
               verbose=verbose )
       else
          call horiz_interp_conserve_new ( Interp, lon_in, lat_in, lon_out, lat_out, &
-              verbose=verbose, mask_in=mask_in, mask_out=mask_out )
+              mask_in=mask_in, mask_out=mask_out )
       end if
    case ("bilinear")
       Interp%interp_method = BILINEAR
@@ -542,13 +542,13 @@ contains
               verbose=verbose )
       else if(src_is_latlon) then
          call horiz_interp_conserve_new ( Interp, lon_in(:,1), lat_in(1,:), lon_out, lat_out, &
-              verbose=verbose, mask_in=mask_in, mask_out=mask_out )
+              mask_in=mask_in, mask_out=mask_out )
       else if(dst_is_latlon) then
          call horiz_interp_conserve_new ( Interp, lon_in, lat_in, lon_out(:,1), lat_out(1,:), &
-              verbose=verbose, mask_in=mask_in, mask_out=mask_out )
+              mask_in=mask_in, mask_out=mask_out )
       else
          call horiz_interp_conserve_new ( Interp, lon_in, lat_in, lon_out, lat_out, &
-              verbose=verbose, mask_in=mask_in, mask_out=mask_out )
+              mask_in=mask_in, mask_out=mask_out )
       end if
 
    case ("spherical")
@@ -623,7 +623,7 @@ contains
               verbose=verbose)
       else
          call horiz_interp_conserve_new ( Interp, lon_in, lat_in, lon_out, lat_out, &
-              verbose=verbose, mask_in=mask_in, mask_out=mask_out )
+              mask_in=mask_in, mask_out=mask_out )
       end if
    case ("bilinear")
       Interp%interp_method = BILINEAR
@@ -673,8 +673,7 @@ contains
       call horiz_interp_bilinear(Interp,data_in, data_out, verbose, mask_in, mask_out, &
                              missing_value, missing_permit, new_missing_handle )
    case(BICUBIC)
-      call horiz_interp_bicubic(Interp,data_in, data_out, verbose, mask_in, mask_out, &
-                             missing_value, missing_permit )
+      call horiz_interp_bicubic(Interp,data_in, data_out, verbose, mask_out)
    case(SPHERICA)
       call horiz_interp_spherical(Interp,data_in, data_out, verbose, mask_in, mask_out, &
                              missing_value )
