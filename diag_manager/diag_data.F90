@@ -128,7 +128,6 @@ use platform_mod
      REAL :: zend
   END TYPE coord_type
 
-!!TODO: consider using an array for this.
   !> @brief Data structure holding intervals (or interval bounds or limits).
   !! Used for checking the bounds of the field output buffer arrays.
 TYPE, public :: fms_diag_ibounds_type
@@ -347,6 +346,8 @@ END TYPE fms_diag_ibounds_type
                                    !! routine is called with the optional time_init parameter.
   LOGICAL :: use_mpp_io = .false. !< false is fms2_io (default); true is mpp_io
   LOGICAL :: use_refactored_send = .true. !< Namelist flag to use refactored send_data math funcitons.
+
+  !!TODO: leave use_refactored_send as false
 
   ! <!-- netCDF variable -->
 

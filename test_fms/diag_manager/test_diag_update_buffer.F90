@@ -96,12 +96,11 @@ program test_diag_update_buffer
 
    INTEGER:: diag_field_id
    INTEGER:: sample !!diurnal_index
-   REAL ::   weight
+   REAL(kind=r4_kind) ::   weight
    INTEGER:: hi, hj  !!for halo sizes
    integer num_threads
    integer active_omp_level
    logical issued_mask_ignore_warning
-
 
    CHARACTER(len=256) :: err_msg, err_msg_local
    integer, dimension(3) :: l_start, l_end

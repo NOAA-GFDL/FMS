@@ -1906,7 +1906,7 @@ CONTAINS
         ENDIF
 
         IF ( average ) THEN
-            !!TODO: the copy that is filed_out should not be necessary
+            !!TODO (Future work): the copy that is filed_out should not be necessary
             mf_result = fieldbuff_update(ofield_cfg, ofield_index_cfg, field_out, sample, &
                & output_fields(out_num)%buffer, output_fields(out_num)%counter ,output_fields(out_num)%buff_bounds,&
                & output_fields(out_num)%count_0d(sample), output_fields(out_num)%num_elements(sample), &
@@ -1946,10 +1946,11 @@ CONTAINS
           END IF
         END IF
 
-        !!TODO: One (or the other) of the calls below will not compile depending
+        !!TODO: (Discusssion) One of the calls below will not compile depending
         !! on the value of REAL. This is to the mixed use of REAL, R4, R8 and CLASS(*)
         !! in send_data_3d. A copy of rmask can be made to avoid but it would be wasteful.
-         !!  Instead, the original functionality is used at the end.
+        !! The option used for now is that the original code to copy missing values is
+        !!  is used at the end of this procedure.
         !IF ( PRESENT(rmask)  .AND. missvalue_present ) THEN
         !  SELECT TYPE (rmask)
         !  TYPE IS (real(kind=r4_kind))
@@ -1973,8 +1974,7 @@ CONTAINS
           DEALLOCATE(ofield_cfg)
         ENDIF
 
-        !!CYCLE !!. I.e. skip src code below and go to the next output field
-      ELSE  !! END USE_REFACTORED_SEND
+      ELSE  !! END USE_REFACTORED_SEND; Don''t use CYCLE option.
 
        ! Take care of submitted field data
        IF ( average ) THEN

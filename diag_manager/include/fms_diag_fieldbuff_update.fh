@@ -16,7 +16,10 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
-!!
+
+ !> @brief This code will be used by the preprecessor to generate an implementation
+ !! to the module procudure for the fieldbuff_update interface. The
+  !! generated function is a wrapper calling 4D field/5D buffer version of the same.
 FUNCTION FMS_DIAG_FBU_3D_PNAME_(ofield_cfg, ofield_index_cfg, field_d, sample, &
   & ofb, ofc, bbounds, count_0d, num_elements, mask, weight1, missvalue,  &
   & field_num_threads, field_active_omp_level, issued_mask_ignore_warning, &
@@ -31,7 +34,7 @@ FUNCTION FMS_DIAG_FBU_3D_PNAME_(ofield_cfg, ofield_index_cfg, field_d, sample, &
     FMS_DIAG_FBU_DATA_TYPE_, INTENT(inout):: count_0d !< Normally the member of the buffer object of the same name.
     INTEGER, INTENT(inout) :: num_elements
     LOGICAL, CONTIGUOUS, DIMENSION(:,:,:), INTENT(in), OPTIONAL, target :: mask !< mask
-    REAL, INTENT(in) :: weight1 !< Field data is multiplied by weight !!TODO: Change to same type as field data?
+    FMS_DIAG_FBU_DATA_TYPE_, INTENT(in) :: weight1 !< Field data is multiplied by weight.
     FMS_DIAG_FBU_DATA_TYPE_, INTENT(in) :: missvalue !< Buffer may be set to missvalue where mask is false.
 
     INTEGER, INTENT(inout) :: field_num_threads
@@ -75,7 +78,9 @@ FUNCTION FMS_DIAG_FBU_3D_PNAME_(ofield_cfg, ofield_index_cfg, field_d, sample, &
   END FUNCTION FMS_DIAG_FBU_3D_PNAME_
 
 
-!> @brief Updates elements of the running field output buffer (argument ofb)
+!> @brief This code will be used by the preprecessor to generate an implementation
+!! to the module procudure for the fieldbuff_update interface.
+!! Updates elements of the running field output buffer (argument ofb)
 !! and counter (argument ofc) based on the input field data array (argument field_d).
 !! In general the formulas are :
 !! A) ofb(l) = ofb(l) + (weight * field(l))**pow_value
@@ -99,7 +104,7 @@ FUNCTION FMS_DIAG_FBU_3D_PNAME_(ofield_cfg, ofield_index_cfg, field_d, sample, &
       INTEGER, INTENT(inout) :: num_elements
 
       LOGICAL, CONTIGUOUS, DIMENSION(:,:,:,:), INTENT(in), OPTIONAL :: mask !< mask
-      REAL, INTENT(in) :: weight1 !< Field data is multiplied by weight !!TODO: Change to same type as field data?
+      FMS_DIAG_FBU_DATA_TYPE_, INTENT(in) :: weight1 !< Field data is multiplied by weight
       FMS_DIAG_FBU_DATA_TYPE_, INTENT(in) :: missvalue !< Buffer may be set to missvalue where mask is false.
 
       INTEGER, INTENT(inout) :: field_num_threads
@@ -123,11 +128,12 @@ FUNCTION FMS_DIAG_FBU_3D_PNAME_(ofield_cfg, ofield_index_cfg, field_d, sample, &
       LOGICAL :: missvalue_present !< A copy of same variable in ofield_cfg
 
       !> The indecies copied directly from the ofield_index_cfg:
-      INTEGER:: is, js, ks, ls, ie, je, ke, le, hi, hj, f1, f2, f3, f4
+      INTEGER:: is, js, ks, ie, je, ke, hi, hj, f1, f2, f3, f4
+      INTEGER:: ls, le !> start and end indecies for the 4th dimension.
 
       INTEGER :: ksr, ker !> Loop indeccies used in reduced_k_range calculations
       !> Looping indecies, derived from ofield_index_cfg:
-      INTEGER :: i, j, k, i1, j1, k1
+      INTEGER :: i, j, k, l, i1, j1, k1
 
       INTEGER :: numthreads
       INTEGER :: active_omp_level
@@ -140,8 +146,9 @@ FUNCTION FMS_DIAG_FBU_3D_PNAME_(ofield_cfg, ofield_index_cfg, field_d, sample, &
       INTEGER :: omp_get_level !< OMP function
 #endif
 
-      !!TODO: Update all of 4th dim via ":", or pass "ls:le" of L do loop" ?
-      !!Currently see where clause in loops, optionally use ls = 1, le = SIZE(field_d, 4)
+      !!TODO: (MDM) Will the interface allow passing in is, ie?
+      ls = 1
+      le = SIZE(field_d, 4)
 
       ksr= l_start(3)
       ker= l_end(3)
@@ -325,13 +332,15 @@ FUNCTION FMS_DIAG_FBU_3D_PNAME_(ofield_cfg, ofield_index_cfg, field_d, sample, &
 !$OMP END CRITICAL
                   ENDIF
 !$OMP CRITICAL
-                  DO j = js, je
-                     DO i = is, ie
-                        IF ( l_start(1)+hi <= i .AND. i <= l_end(1)+hi .AND. l_start(2)+hj <= j .AND. &
-                        & j <= l_end(2)+hj ) THEN
-                           num_elements = num_elements + l_end(3) - l_start(3) + 1
-                        END IF
-                     END DO
+                  DO l = ls, le
+                    DO j = js, je
+                      DO i = is, ie
+                          IF ( l_start(1)+hi <= i .AND. i <= l_end(1)+hi .AND. l_start(2)+hj <= j .AND. &
+                            & j <= l_end(2)+hj ) THEN
+                            num_elements = num_elements + l_end(3) - l_start(3) + 1
+                          END IF
+                      END DO
+                   END DO
                   END DO
 !$OMP END CRITICAL
                ELSE IF ( reduced_k_range ) THEN NDCMP_RKR_1_IF
@@ -457,13 +466,15 @@ FUNCTION FMS_DIAG_FBU_3D_PNAME_(ofield_cfg, ofield_index_cfg, field_d, sample, &
 !$OMP END CRITICAL
                   END IF
 !$OMP CRITICAL
-                  DO j = js, je
-                     DO i = is, ie
+                  DO l = ls, le
+                    DO j = js, je
+                      DO i = is, ie
                         IF ( l_start(1)+hi <= i .AND. i <= l_end(1)+hi .AND. l_start(2)+hj <= j .AND. &
-                        & j <= l_end(2)+hj ) THEN
-                           num_elements = num_elements + l_end(3)-l_start(3)+1
+                          & j <= l_end(2)+hj ) THEN
+                            num_elements = num_elements + l_end(3)-l_start(3)+1
                         END IF
-                     END DO
+                      END DO
+                    END DO
                   END DO
 !$OMP END CRITICAL
                ELSE IF ( reduced_k_range ) THEN NDCMP_RKR_2_IF
@@ -552,25 +563,29 @@ FUNCTION FMS_DIAG_FBU_3D_PNAME_(ofield_cfg, ofield_index_cfg, field_d, sample, &
 !$OMP END CRITICAL
                   END IF NTAPW_IF
 !$OMP CRITICAL
-                  DO j = js, je
-                     DO i = is, ie
+                  DO l = ls, le
+                    DO j = js, je
+                      DO i = is, ie
                         IF ( l_start(1)+hi <= i .AND. i <= l_end(1)+hi .AND. l_start(2)+hj <= j .AND. &
-                        & j <= l_end(2)+hj) THEN
-                           num_elements = num_elements + l_end(3) - l_start(3) + 1
+                          & j <= l_end(2)+hj) THEN
+                          num_elements = num_elements + l_end(3) - l_start(3) + 1
                         END IF
-                     END DO
+                      END DO
+                    END DO
                   END DO
                   IF ( .NOT.phys_window ) THEN
-                     DO k = l_start(3), l_end(3)
-                        DO j=l_start(2)+hj, l_end(2)+hj
-                           DO i=l_start(1)+hi, l_end(1)+hi
-                              IF ( ANY (field_d(i,j, k, :) /= missvalue )) THEN
-                                 count_0d = count_0d + weight1
-                                 EXIT
+                     DO l = ls, le
+                       DO k = l_start(3), l_end(3)
+                          DO j=l_start(2)+hj, l_end(2)+hj
+                             DO i=l_start(1)+hi, l_end(1)+hi
+                                IF (field_d(i,j, k, l) /= missvalue ) THEN
+                                  count_0d = count_0d + weight1
+                                  EXIT
                               END IF
-                           END DO
-                        END DO
-                     END DO
+                            END DO
+                         END DO
+                      END DO
+                    END DO
                   END IF
 !$OMP END CRITICAL
                ELSE IF ( reduced_k_range ) THEN NDCMP_RKR_3_IF
@@ -610,18 +625,20 @@ FUNCTION FMS_DIAG_FBU_3D_PNAME_(ofield_cfg, ofield_index_cfg, field_d, sample, &
 !$OMP END CRITICAL
                   END IF
 !$OMP CRITICAL
-                  DO k = ksr, ker
-                     k1=k-ksr+1
-                     DO j=f3, f4
+                  DO l = ls, le
+                    DO k = ksr, ker
+                      k1=k-ksr+1
+                      DO j=f3, f4
                         DO i=f1, f2
-                           !! TODO: verify this below
-                           IF ( ANY (field_d(i,j, k, :) /= missvalue )) THEN
+                           !!TODO: verify this and similar ones. Note the EXIT statement
+                           IF ( field_d(i,j, k, l) /= missvalue ) THEN
                               count_0d = count_0d + weight1
                               EXIT
                            END IF
                         END DO
                      END DO
                   END DO
+                END DO
 !$OMP END CRITICAL
                ELSE NDCMP_RKR_3_IF
                   IF ( debug_diag_manager ) THEN
@@ -664,15 +681,17 @@ FUNCTION FMS_DIAG_FBU_3D_PNAME_(ofield_cfg, ofield_index_cfg, field_d, sample, &
 !$OMP END CRITICAL
                   END IF
 !$OMP CRITICAL
-                  DO k=ks, ke
-                     DO j=f3, f4
-                        DO i=f1, f2
-                           IF ( any (field_d(i,j, k, :) /= missvalue )) THEN
+                  DO l = ls, le
+                    DO k=ks, ke
+                       DO j=f3, f4
+                         DO i=f1, f2
+                            IF ( field_d(i,j, k, l) /= missvalue ) THEN
                               count_0d = count_0d + weight1
                               EXIT
-                           END IF
-                        END DO
-                     END DO
+                            END IF
+                          END DO
+                      END DO
+                    END DO
                   END DO
 !$OMP END CRITICAL
                END IF NDCMP_RKR_3_IF
@@ -706,13 +725,15 @@ FUNCTION FMS_DIAG_FBU_3D_PNAME_(ofield_cfg, ofield_index_cfg, field_d, sample, &
 !$OMP END CRITICAL
                   END IF
 !$OMP CRITICAL
-                  DO j = js, je
-                     DO i = is, ie
+                  DO l = ls, le
+                    DO j = js, je
+                      DO i = is, ie
                         IF ( l_start(1)+hi <= i .AND. i <= l_end(1)+hi .AND. l_start(2)+hj <= j .AND. &
-                        & j <= l_end(2)+hj ) THEN
-                           num_elements = num_elements + l_end(3)-l_start(3)+1
+                           & j <= l_end(2)+hj ) THEN
+                          num_elements = num_elements + l_end(3)-l_start(3)+1
                         END IF
-                     END DO
+                      END DO
+                    END DO
                   END DO
 !$OMP END CRITICAL
                   ! Accumulate time average
@@ -763,8 +784,10 @@ FUNCTION FMS_DIAG_FBU_3D_PNAME_(ofield_cfg, ofield_index_cfg, field_d, sample, &
       END IF MASK_VAR_IF
 
 !$OMP CRITICAL
-      IF ( .NOT.need_compute .AND. .NOT.reduced_k_range ) num_elements = num_elements + (ie-is+1)*(je-js+1)*(ke-ks+1)
-      IF ( reduced_k_range ) num_elements = num_elements +  (ie-is+1)*(je-js+1)*(ker-ksr+1)
+      IF ( .NOT.need_compute .AND. .NOT.reduced_k_range ) num_elements = num_elements + &
+        & (ie-is+1)*(je-js+1)*(ke-ks+1)*(le-ls+1)
+      IF ( reduced_k_range ) num_elements = num_elements + &
+        & (ie-is+1)*(je-js+1)*(ker-ksr+1)*(le-ls+1)
 !$OMP END CRITICAL
 
       succeded = .TRUE.
@@ -772,6 +795,10 @@ FUNCTION FMS_DIAG_FBU_3D_PNAME_(ofield_cfg, ofield_index_cfg, field_d, sample, &
 
     END FUNCTION FMS_DIAG_FBU_PNAME_
 
+
+  !> @brief This code will be used by the preprecessor to generate an implementation
+  !! to the module procudure for the fieldbuff_copy_fieldvals interface. The
+  !! generated function is a wrapper calling 4D field/5D buffer version of the same.
     FUNCTION FMS_DIAG_FBCF_3D_PNAME_ (ofield_cfg, ofield_index_cfg, field, sample, ofb, &
       & bbounds, count_0d, mask,  missvalue,  &
       & l_start, l_end, err_msg,  err_msg_local) result( succeded )
@@ -808,8 +835,9 @@ FUNCTION FMS_DIAG_FBU_3D_PNAME_(ofield_cfg, ofield_index_cfg, field_d, sample, &
           & l_start, l_end, err_msg,  err_msg_local)
     END FUNCTION FMS_DIAG_FBCF_3D_PNAME_
 
-
-!> \Description May set or add to the output field buffer (argument ofb) with the input
+!> @brief This code will be used by the preprecessor to generate an implementation
+!! to the module procudure for the fieldbuff_copy_fieldvals interface.
+!! The function may set or add to the output field buffer (argument ofb) with the input
 !! field data array  (argument field)
 FUNCTION FMS_DIAG_FBCF_PNAME_ (ofield_cfg, ofield_index_cfg, field, sample, ofb, &
    & bbounds, count_0d, mask,  missvalue,  &
@@ -863,7 +891,7 @@ FUNCTION FMS_DIAG_FBCF_PNAME_ (ofield_cfg, ofield_index_cfg, field, sample, ofb,
       f3 = ofield_index_cfg%f3
       f4 = ofield_index_cfg%f4
 
-      time_max = ofield_cfg%time_reduction%is_time_max() !!TODO:
+      time_max = ofield_cfg%time_reduction%is_time_max()
       time_min = ofield_cfg%time_reduction%is_time_min()
       time_sum = ofield_cfg%time_reduction%is_time_sum()
 
@@ -1194,6 +1222,10 @@ FUNCTION FMS_DIAG_FBCF_PNAME_ (ofield_cfg, ofield_index_cfg, field, sample, ofb,
    END FUNCTION FMS_DIAG_FBCF_PNAME_
 
 
+
+  !> @brief This code will be used by the preprecessor to generate an implementation
+  !! to the module procudure for the fieldbuff_copy_misvals interface. The
+  !! generated function is a wrapper calling 4D field/5D buffer version of the same.
    SUBROUTINE FMS_DIAG_FBCM_3D_PNAME_ (ofield_cfg, ofield_index_cfg, ofb, sample, &
     & l_start, l_end, rmask, rmask_thresh, missvalue)
       TYPE(fms_diag_outfield_type), INTENT(in) :: ofield_cfg   !< The ofield_cfg object
@@ -1219,7 +1251,9 @@ FUNCTION FMS_DIAG_FBCF_PNAME_ (ofield_cfg, ofield_index_cfg, field, sample, ofb,
   END SUBROUTINE FMS_DIAG_FBCM_3D_PNAME_
 
 
-   !> \Description Updates where appropriate and depending on the rmask argument,
+  !> @brief This code will be used by the preprecessor to generate an implementation
+  !! to the module procudure for the fieldbuff_copy_misvals interface.
+  !!  The function updates where appropriate and depending on the rmask argument,
    !! elements of the running field output buffer (argument buffer) with value missvalue.
    !! NOTE: It appears these OFB updates were introcuded by EMC MM into the tail end of the
    !! legacy send_data_3d.

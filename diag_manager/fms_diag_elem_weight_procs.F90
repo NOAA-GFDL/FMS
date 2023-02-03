@@ -59,7 +59,7 @@ CONTAINS
    ELEMENTAL REAL(r4_kind) FUNCTION addwf_r4(buff,  field, weight, pow_value )
       REAL(r4_kind), INTENT(in) :: buff !< The buffer cell (point) value
       REAL(r4_kind), INTENT(IN) :: field !< The field value
-      REAL, INTENT(IN) ::  weight !< The weight factor for the field
+      REAL(r4_kind), INTENT(IN) ::  weight !< The weight factor for the field
       INTEGER, INTENT(IN) :: pow_value !< The power value for the power function
 
       SELECT  CASE(pow_value)
@@ -78,7 +78,7 @@ CONTAINS
    ELEMENTAL REAL(r8_kind) FUNCTION addwf_r8(buff,  field, weight, pow_value )
       REAL(r8_kind), INTENT(in) :: buff !< The buffer cell (point) value
       REAL(r8_kind) ,INTENT(IN) :: field !< The field value
-      REAL, INTENT(IN) :: weight !< The weight factor for the field
+      REAL(r8_kind), INTENT(IN) :: weight !< The weight factor for the field
       INTEGER, INTENT(IN) :: pow_value !< The power value for the power function
 
       SELECT  CASE(pow_value)

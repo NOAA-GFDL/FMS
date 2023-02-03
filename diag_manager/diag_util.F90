@@ -99,29 +99,29 @@ use,intrinsic :: iso_c_binding, only: c_double,c_float,c_int64_t, &
   END INTERFACE attribute_init
 
   INTERFACE update_bounds
-    module procedure update_bounds_legacy
-    module procedure update_bounds_modern
+    module procedure fms_update_bounds_legacy
+    module procedure fms_update_bounds_modern
   END INTERFACE update_bounds
 
   INTERFACE check_out_of_bounds
     module procedure check_out_of_bounds_legacy
-    module procedure check_out_of_bounds_modern_r4
-    module procedure check_out_of_bounds_modern_r8
+    module procedure fms_check_out_of_bounds_modern_r4
+    module procedure fms_check_out_of_bounds_modern_r8
   END INTERFACE check_out_of_bounds
 
   INTERFACE check_bounds_are_exact_dynamic
     module procedure check_bounds_are_exact_dynamic_legacy
-    !!TODO: module procedure check_bounds_are_exact_dynamic_modern ?
+    !!TODO: (MDM) module procedure check_bounds_are_exact_dynamic_modern ?
   END INTERFACE check_bounds_are_exact_dynamic
 
   INTERFACE check_bounds_are_exact_static
-    module procedure check_bounds_are_exact_static_legacy
-   !! TODO: module procedure check_bounds_are_exact_static_modern
+    module procedure fms_check_bounds_are_exact_static_legacy
+   !! TODO: (MDM)  module procedure check_bounds_are_exact_static_modern
   END INTERFACE check_bounds_are_exact_static
 
   INTERFACE bounds_from_array
     module procedure fms_bounds_from_array_4D
-    module procedure bounds_from_array_modern
+    module procedure fms_bounds_from_array_5D
   END INTERFACE bounds_from_array
 
 
@@ -757,10 +757,11 @@ CONTAINS
          & TRIM(axes_list)
   END SUBROUTINE log_diag_field_info
 
-  !!TODO: Rename like this: not with _legacy and _modern
+  !> @brief Determine the dounds of the first three dimentions
+  !! of the "array" argument and store it the bounding box argument "bounds"
   SUBROUTINE fms_bounds_from_array_4D(bounds, array)
-    REAL, INTENT( in), DIMENSION(:,:,:,:) :: array
-    TYPE (fms_diag_ibounds_type), INTENT(inout) :: bounds
+    REAL, INTENT( in), DIMENSION(:,:,:,:) :: array !< The 4D input array.
+    TYPE (fms_diag_ibounds_type), INTENT(inout) :: bounds !< The instance of the bounding box.
       bounds%imin = LBOUND(array,1)
       bounds%imax = UBOUND(array,1)
       bounds%jmin = LBOUND(array,2)
@@ -769,20 +770,22 @@ CONTAINS
       bounds%kmax = UBOUND(array,3)
   END SUBROUTINE  fms_bounds_from_array_4D
 
-
-  SUBROUTINE bounds_from_array_modern(bounds, array)
-    CLASS(*), INTENT( in), DIMENSION(:,:,:,:,:) :: array
-    TYPE (fms_diag_ibounds_type), INTENT(inout) :: bounds
+ !> @brief Determine the dounds of the first three dimentions
+  !! of the "array" argument and store it the bounding box argument "bounds"
+  SUBROUTINE fms_bounds_from_array_5D(bounds, array)
+    CLASS(*), INTENT( in), DIMENSION(:,:,:,:,:) :: array !< The 4D input array.
+    TYPE (fms_diag_ibounds_type), INTENT(inout) :: bounds !< The instance of the bounding box.
       bounds%imin = LBOUND(array,1)
       bounds%imax = UBOUND(array,1)
       bounds%jmin = LBOUND(array,2)
       bounds%jmax = UBOUND(array,2)
       bounds%kmin = LBOUND(array,3)
       bounds%kmax = UBOUND(array,3)
-  END SUBROUTINE  bounds_from_array_modern
+  END SUBROUTINE  fms_bounds_from_array_5D
 
-  !> @brief Update the <TT>output_fields</TT> x, y, and z min and max boundaries (array indices).
-  SUBROUTINE update_bounds_legacy(out_num, lower_i, upper_i, lower_j, upper_j, lower_k, upper_k)
+  !> @brief Update the <TT>output_fields</TT> x, y, and z min and max boundaries (array indices)
+  !! with the six specified bounds values.
+  SUBROUTINE fms_update_bounds_legacy(out_num, lower_i, upper_i, lower_j, upper_j, lower_k, upper_k)
     INTEGER, INTENT(in) :: out_num !< output field ID
     INTEGER, INTENT(in) :: lower_i !< Lower i bound.
     INTEGER, INTENT(in) :: upper_i !< Upper i bound.
@@ -790,12 +793,13 @@ CONTAINS
     INTEGER, INTENT(in) :: upper_j !< Upper j bound.
     INTEGER, INTENT(in) :: lower_k !< Lower k bound.
     INTEGER, INTENT(in) :: upper_k !< Upper k bound.
-    CALL update_bounds_modern(output_fields(out_num)%buff_bounds, lower_i, upper_i, lower_j, upper_j, lower_k, upper_k )
-  END SUBROUTINE update_bounds_legacy
+    CALL fms_update_bounds_modern(output_fields(out_num)%buff_bounds, lower_i, upper_i, lower_j, upper_j, lower_k, upper_k )
+  END SUBROUTINE fms_update_bounds_legacy
 
-    !> @brief Update the <TT>output_fields</TT> x, y, and z (and optionally l) min and
-  !! max boundaries (array indices).
-SUBROUTINE update_bounds_modern(bounds, lower_i, upper_i, lower_j, upper_j, lower_k, upper_k)
+  !> @brief Update the the first three (normally  x, y, and z)  min and
+  !! max boundaries (array indices) of the input bounding box "bounds" with
+  !! the six specified bounds values.
+SUBROUTINE fms_update_bounds_modern(bounds, lower_i, upper_i, lower_j, upper_j, lower_k, upper_k)
   TYPE  (fms_diag_ibounds_type), intent(inout) :: bounds !< the bounding box of the output field buffer inindex space.
   INTEGER, INTENT(in) :: lower_i !< Lower i bound.
   INTEGER, INTENT(in) :: upper_i !< Upper i bound.
@@ -809,19 +813,20 @@ SUBROUTINE update_bounds_modern(bounds, lower_i, upper_i, lower_j, upper_j, lowe
   bounds%jmax = MAX(bounds%jmax, upper_j)
   bounds%kmin = MIN(bounds%kmin, lower_k)
   bounds%kmax = MAX(bounds%kmax, upper_k)
-END SUBROUTINE update_bounds_modern
+END SUBROUTINE fms_update_bounds_modern
 
-
-
-  !> @brief Compares the indecies in bounds to the corresponding lower and upper bounds of array buffer.
+  !> @brief Compares the dounding indecies of an array specified in "current_bounds"
+!! to the corresponding lower and upper bounds specified in "bounds"
 !! Comparison is done by the two user specified input functions lowerb_comp and upperb_comp.
 !! If any compariosn function returns true, then, after filling error_str, this routine also returns
 !! true. The suplied comparison functions should return true for errors : for indecies out of bounds,
 !! or indecies are not equal when expected to be equal.
-LOGICAL FUNCTION compare_buffer_bounds_to_size(array_bounds, bounds, error_str, lowerb_comp, upperb_comp)
-  TYPE (fms_diag_ibounds_type), INTENT(in) :: array_bounds
-  TYPE (fms_diag_ibounds_type), INTENT(in):: bounds
-  CHARACTER(*), INTENT(inout) :: error_str
+LOGICAL FUNCTION compare_buffer_bounds_to_size(current_bounds, bounds, error_str, lowerb_comp, upperb_comp)
+  TYPE (fms_diag_ibounds_type), INTENT(in) :: current_bounds  !<A bounding box holding the current bounds
+                                                                     !! of an array.
+  TYPE (fms_diag_ibounds_type), INTENT(in):: bounds !< The bounding box to check agains.
+  CHARACTER(*), INTENT(inout) :: error_str !< The return status, which is set to non-empty message
+                                             !! if the check fails.
 
   !> @brief Interface lowerb_comp should be used for comparison to lower bounds of buffer.
   INTERFACE
@@ -839,20 +844,20 @@ LOGICAL FUNCTION compare_buffer_bounds_to_size(array_bounds, bounds, error_str, 
 
   compare_buffer_bounds_to_size = .FALSE.
 
-  IF (lowerb_comp( bounds%imin , array_bounds%imin) .OR. &
-       upperb_comp( bounds%imax , array_bounds%imax).OR.&
-       lowerb_comp( bounds%jmin , array_bounds%jmin) .OR.&
-       upperb_comp( bounds%jmax , array_bounds%jmax) .OR.&
-       lowerb_comp( bounds%kmin , array_bounds%kmin) .OR.&
-       upperb_comp( bounds%kmax , array_bounds%kmax)) THEN
+  IF (lowerb_comp( bounds%imin , current_bounds%imin) .OR. &
+       upperb_comp( bounds%imax , current_bounds%imax).OR.&
+       lowerb_comp( bounds%jmin , current_bounds%jmin) .OR.&
+       upperb_comp( bounds%jmax , current_bounds%jmax) .OR.&
+       lowerb_comp( bounds%kmin , current_bounds%kmin) .OR.&
+       upperb_comp( bounds%kmax , current_bounds%kmax)) THEN
     compare_buffer_bounds_to_size = .TRUE.
      error_str ='Buffer bounds=   :   ,   :   ,   :     Actual bounds=   :   ,   :   ,   :   '
-     WRITE(error_str(15:17),'(i3)') array_bounds%imin
-     WRITE(error_str(19:21),'(i3)') array_bounds%imax
-     WRITE(error_str(23:25),'(i3)') array_bounds%jmin
-     WRITE(error_str(27:29),'(i3)') array_bounds%jmax
-     WRITE(error_str(31:33),'(i3)') array_bounds%kmin
-     WRITE(error_str(35:37),'(i3)') array_bounds%kmax
+     WRITE(error_str(15:17),'(i3)') current_bounds%imin
+     WRITE(error_str(19:21),'(i3)') current_bounds%imax
+     WRITE(error_str(23:25),'(i3)') current_bounds%jmin
+     WRITE(error_str(27:29),'(i3)') current_bounds%jmax
+     WRITE(error_str(31:33),'(i3)') current_bounds%kmin
+     WRITE(error_str(35:37),'(i3)') current_bounds%kmax
      WRITE(error_str(54:56),'(i3)') bounds%imin
      WRITE(error_str(58:60),'(i3)') bounds%imax
      WRITE(error_str(62:64),'(i3)') bounds%jmin
@@ -885,6 +890,7 @@ END FUNCTION a_noteq_b
 
   !> @brief Checks if the array indices for <TT>output_fields(out_num)</TT> are outside the
   !! <TT>output_fields(out_num)%buffer</TT> upper and lower bounds.
+  !! If there is an error then error message will be filled.
 SUBROUTINE check_out_of_bounds_legacy(out_num, diag_field_id, err_msg)
   INTEGER, INTENT(in) :: out_num !< Output field ID number.
   INTEGER, INTENT(in) :: diag_field_id !< Input field ID number.
@@ -901,27 +907,27 @@ SUBROUTINE check_out_of_bounds_legacy(out_num, diag_field_id, err_msg)
     out_of_bounds = compare_buffer_bounds_to_size(array_bounds, buff_bounds, &
      & error_string2, a_lessthan_b, a_greaterthan_b)
 
-
-  IF (out_of_bounds .EQV. .true.) THEN
-     WRITE(error_string1,'(a,"/",a)')  TRIM(input_fields(diag_field_id)%module_name), &
-       & TRIM(output_fields(out_num)%output_name)
-     err_msg = 'module/output_field='//TRIM(error_string1)//&
+    IF (out_of_bounds .EQV. .true.) THEN
+      WRITE(error_string1,'(a,"/",a)')  TRIM(input_fields(diag_field_id)%module_name), &
+        & TRIM(output_fields(out_num)%output_name)
+      err_msg = 'module/output_field='//TRIM(error_string1)//&
           & '  Bounds of buffer exceeded.  '//TRIM(error_string2)
-     !   imax, imin, etc need to be reset in case the program is not terminated.
-     call buff_bounds%reset(VERY_LARGE_AXIS_LENGTH, 0)
-  ELSE
-     err_msg = ''
-  END IF
+      !   imax, imin, etc need to be reset in case the program is not terminated.
+      call buff_bounds%reset(VERY_LARGE_AXIS_LENGTH, 0)
+    ELSE
+      err_msg = ''
+    END IF
   end associate
 END SUBROUTINE check_out_of_bounds_legacy
 
  !> @brief Checks if the array indices for <TT>output_fields(out_num)</TT> are outside the
   !! <TT>output_fields(out_num)%buffer</TT> upper and lower bounds.
-SUBROUTINE check_out_of_bounds_modern_r4(ofb, bounds, output_name, module_name, err_msg)
-  REAL(kind=r4_kind), INTENT (in), DIMENSION(:,:,:,:,:) :: ofb
-  TYPE (fms_diag_ibounds_type), INTENT(inout) :: bounds
-  CHARACTER(:), ALLOCATABLE, INTENT(in) :: output_name
-  CHARACTER(:), ALLOCATABLE, INTENT(in) :: module_name
+  !! If there is an error then error message will be filled.
+SUBROUTINE fms_check_out_of_bounds_modern_r4(ofb, bounds, output_name, module_name, err_msg)
+  REAL(kind=r4_kind), INTENT (in), DIMENSION(:,:,:,:,:) :: ofb !< The output field buffer to check
+  TYPE (fms_diag_ibounds_type), INTENT(inout) :: bounds !< The bounding box to check against
+  CHARACTER(:), ALLOCATABLE, INTENT(in) :: output_name !< output name for placing in error message
+  CHARACTER(:), ALLOCATABLE, INTENT(in) :: module_name !< module name for placing in error message
   CHARACTER(len=*), INTENT(inout) :: err_msg !< Return status of <TT>check_out_of_bounds</TT>.  An empty
                                            !! error string indicates the x, y, and z indices are not outside the
 
@@ -943,21 +949,23 @@ SUBROUTINE check_out_of_bounds_modern_r4(ofb, bounds, output_name, module_name, 
   ELSE
      err_msg = ''
   END IF
-END SUBROUTINE check_out_of_bounds_modern_r4
+END SUBROUTINE fms_check_out_of_bounds_modern_r4
 
- !> @brief Checks if the array indices for <TT>output_fields(out_num)</TT> are outside the
-  !! <TT>output_fields(out_num)%buffer</TT> upper and lower bounds.
-SUBROUTINE check_out_of_bounds_modern_r8(ofb, bounds, output_name, module_name, err_msg)
-  REAL(kind=r8_kind), INTENT (in), DIMENSION(:,:,:,:,:) :: ofb
-  TYPE (fms_diag_ibounds_type), INTENT(inout) :: bounds
-  CHARACTER(:), ALLOCATABLE, INTENT(in) :: output_name
-  CHARACTER(:), ALLOCATABLE, INTENT(in) :: module_name
+ !> @brief Checks if the array indices for output_field buffer (ofb) are outside the
+  !! are outside the bounding box (bounds).
+  !! If there is an error then error message will be filled.
+
+SUBROUTINE fms_check_out_of_bounds_modern_r8(ofb, bounds, output_name, module_name, err_msg)
+  REAL(kind=r8_kind), INTENT (in), DIMENSION(:,:,:,:,:) :: ofb !< The output field buffer to check
+  TYPE (fms_diag_ibounds_type), INTENT(inout) :: bounds !< The bounding box to check against
+  CHARACTER(:), ALLOCATABLE, INTENT(in) :: output_name  !< output name for placing in error message
+  CHARACTER(:), ALLOCATABLE, INTENT(in) :: module_name   !< module name for placing in error message
   CHARACTER(len=*), INTENT(out) :: err_msg !< Return status of <TT>check_out_of_bounds</TT>.  An empty
                                            !! error string indicates the x, y, and z indices are not outside the
 
   CHARACTER(len=128) :: error_string1, error_string2
   LOGICAL :: out_of_bounds = .true.
-  TYPE (fms_diag_ibounds_type) :: array_bounds
+  TYPE (fms_diag_ibounds_type) :: array_bounds  !<A bounding box holdstore the current bounds ofb
 
   CALL bounds_from_array(array_bounds, ofb)
 
@@ -973,16 +981,20 @@ SUBROUTINE check_out_of_bounds_modern_r8(ofb, bounds, output_name, module_name, 
   ELSE
      err_msg = ''
   END IF
-END SUBROUTINE check_out_of_bounds_modern_r8
+END SUBROUTINE fms_check_out_of_bounds_modern_r8
 
 
-
-SUBROUTINE check_bounds_are_exact_dynamic_modern(array_bounds, bounds, output_name, module_name, &
+!> @brief Checks that array indecies specified in the bounding box "current_bounds"
+!! are identical to those in the bounding box "bounds" match exactly. The check
+!! occurs only when the time changed.
+!! If there is an error then error message will be filled.
+SUBROUTINE check_bounds_are_exact_dynamic_modern(current_bounds, bounds, output_name, module_name, &
      &  Time, field_prev_Time, err_msg)
-  TYPE (fms_diag_ibounds_type), INTENT(in) :: array_bounds
-  TYPE (fms_diag_ibounds_type), INTENT(inout) :: bounds
-  CHARACTER(:), ALLOCATABLE, INTENT(in) :: output_name
-  CHARACTER(:), ALLOCATABLE, INTENT(in) :: module_name
+  TYPE (fms_diag_ibounds_type), INTENT(in) :: current_bounds !<A bounding box holding the current bounds
+                                                           !! of an array.
+  TYPE (fms_diag_ibounds_type), INTENT(inout) :: bounds !<The bounding box to check against
+  CHARACTER(:), ALLOCATABLE, INTENT(in) :: output_name  !< output name for placing in error message
+  CHARACTER(:), ALLOCATABLE, INTENT(in) :: module_name  !< module name for placing in error message
   TYPE(time_type), INTENT(in)  ::  Time !< Time to use in check.  The check is only performed if
   !! <TT>output_fields(out_num)%Time_of_prev_field_data</TT> is not
   !! equal to <TT>Time</TT> or <TT>Time_zero</TT>.
@@ -996,7 +1008,6 @@ SUBROUTINE check_bounds_are_exact_dynamic_modern(array_bounds, bounds, output_na
   LOGICAL :: lims_not_exact = .true.
 
   err_msg = ''
-
 
   ! Check bounds only when the value of Time changes. When windows are used,
   ! a change in Time indicates that a new loop through the windows has begun,
@@ -1015,7 +1026,7 @@ SUBROUTINE check_bounds_are_exact_dynamic_modern(array_bounds, bounds, output_na
   END IF
 
   IF ( do_check ) THEN
-     lims_not_exact = compare_buffer_bounds_to_size(array_bounds, bounds, &
+     lims_not_exact = compare_buffer_bounds_to_size(current_bounds, bounds, &
           & error_string2, a_noteq_b, a_noteq_b)
      IF( lims_not_exact .eqv. .TRUE.) THEN
         WRITE(error_string1,'(a,"/",a)') TRIM(module_name), TRIM(output_name)
@@ -1026,10 +1037,8 @@ SUBROUTINE check_bounds_are_exact_dynamic_modern(array_bounds, bounds, output_na
 END SUBROUTINE check_bounds_are_exact_dynamic_modern
 
 
-  !> @brief This is an adaptor to the check_out_of_bounds function to
-!! maintain an interface servicing the older diag_manager (particularly the
-!! send_data_3d function) and maintain a version of it as unchaged as possible.
-
+!> @brief This is an adaptor to the check_bounds_are_exact_dynamic_modern function to
+!! maintain an interface servicing the legacy diag_manager.
 SUBROUTINE check_bounds_are_exact_dynamic_legacy(out_num, diag_field_id, Time, err_msg)
   INTEGER, INTENT(in) :: out_num !< Output field ID number.
   INTEGER, INTENT(in) :: diag_field_id !< Input field ID number.
@@ -1038,17 +1047,17 @@ SUBROUTINE check_bounds_are_exact_dynamic_legacy(out_num, diag_field_id, Time, e
                                       !! equal to <TT>Time</TT> or <TT>Time_zero</TT>.
   CHARACTER(len=*), INTENT(inout) :: err_msg !< Return status of <TT>check_bounds_are_exact_dynamic</TT>.
                                            !! An empty error string indicates the x, y, and z indices are
-                                           !!     equal to the buffer array boundaries.
-  CHARACTER(:), ALLOCATABLE :: output_name
-  CHARACTER(:), ALLOCATABLE :: module_name
-  TYPE (fms_diag_ibounds_type) :: array_bounds
+                                           !! equal to the buffer array boundaries.
+  CHARACTER(:), ALLOCATABLE :: output_name  !< output name for placing in error message
+  CHARACTER(:), ALLOCATABLE :: module_name  !< module name for placing in error message
+  TYPE (fms_diag_ibounds_type) :: current_bounds  !< a bounding box to store the current bounds of the array.
 
   output_name = output_fields(out_num)%output_name
   module_name = input_fields(diag_field_id)%module_name
 
-  CALL bounds_from_array(array_bounds, output_fields(out_num)%buffer)
+  CALL bounds_from_array(current_bounds, output_fields(out_num)%buffer)
 
-  CALL check_bounds_are_exact_dynamic_modern(array_bounds, output_fields(out_num)%buff_bounds, &
+  CALL check_bounds_are_exact_dynamic_modern(current_bounds, output_fields(out_num)%buff_bounds, &
        &  output_name, module_name, &
        & Time, output_fields(out_num)%Time_of_prev_field_data, err_msg)
 
@@ -1056,47 +1065,50 @@ END SUBROUTINE check_bounds_are_exact_dynamic_legacy
 
 
   !> @brief Check if the array indices for <TT>output_fields(out_num)</TT> are equal to the
-  !! <TT>output_fields(out_num)%buffer</TT>
-  !!     upper and lower bounds.
-  SUBROUTINE check_bounds_are_exact_static_legacy(out_num, diag_field_id, err_msg)
+  !! <TT>output_fields(out_num)%buffer</TT> upper and lower bounds.
+  SUBROUTINE fms_check_bounds_are_exact_static_legacy(out_num, diag_field_id, err_msg)
     INTEGER, INTENT(in) :: out_num !< Output field ID
     INTEGER, INTENT(in) :: diag_field_id !< Input field ID.
-    CHARACTER(len=*), INTENT(inout) :: err_msg
-    CHARACTER(:), ALLOCATABLE :: output_name
-    CHARACTER(:), ALLOCATABLE :: module_name
-    TYPE (fms_diag_ibounds_type) :: array_bounds
+    CHARACTER(len=*), INTENT(inout) :: err_msg !< The return status, which is set to non-empty message
+                                                  !! if the check fails.
+    CHARACTER(:), ALLOCATABLE :: output_name !< output name for placing in error message
+    CHARACTER(:), ALLOCATABLE :: module_name !< output name for placing in error message
+    TYPE (fms_diag_ibounds_type) :: current_bounds !< a bounding box to store the current bounds of the array.
 
     output_name = output_fields(out_num)%output_name
     module_name = input_fields(diag_field_id)%module_name
 
-    CALL bounds_from_array(array_bounds, output_fields(out_num)%buffer)
+    CALL bounds_from_array(current_bounds, output_fields(out_num)%buffer)
 
-    CALL check_bounds_are_exact_static_modern(array_bounds, output_fields(out_num)%buff_bounds, &
+    CALL fms_check_bounds_are_exact_static_modern(current_bounds, output_fields(out_num)%buff_bounds, &
        &  output_name, module_name, err_msg)
-  END   SUBROUTINE check_bounds_are_exact_static_legacy
+  END   SUBROUTINE fms_check_bounds_are_exact_static_legacy
 
 
-  !> @brief Check if the array indices for output_fields are equal to the
-  !! buffer upper and lower bounds.
-  SUBROUTINE check_bounds_are_exact_static_modern(array_bounds, bounds, output_name, module_name, err_msg)
-    TYPE (fms_diag_ibounds_type), INTENT(in) :: array_bounds
-    TYPE (fms_diag_ibounds_type), INTENT(inout) :: bounds
-    CHARACTER(:), ALLOCATABLE, INTENT(in) :: output_name
-    CHARACTER(:), ALLOCATABLE, INTENT(in) :: module_name
-    CHARACTER(len=*), INTENT(inout) :: err_msg
+  !> @brief Check if the array indices specified in the bounding box "current_bounds" are equal to those
+  !! specified in the bounding box "bounds" output_fields are equal to the buffer upper and lower bounds.
+    !! If there is an error then error message will be filled.
+  SUBROUTINE fms_check_bounds_are_exact_static_modern(current_bounds, bounds, output_name, module_name, err_msg)
+    TYPE (fms_diag_ibounds_type), INTENT(in) :: current_bounds  !<A bounding box holding the current bounds
+                                                             !! of the array.
+    TYPE (fms_diag_ibounds_type), INTENT(inout) :: bounds  !<The bounding box to check against
+    CHARACTER(:), ALLOCATABLE, INTENT(in) :: output_name !< output name for placing in error message
+    CHARACTER(:), ALLOCATABLE, INTENT(in) :: module_name  !< module name for placing in error message
+    CHARACTER(len=*), INTENT(inout) :: err_msg !< The return status, which is set to non-empty message
+                                               !! if the check fails.
 
     CHARACTER(len=128)  :: error_string1, error_string2
     LOGICAL :: lims_not_exact = .true.
 
     err_msg = ''
-    lims_not_exact = compare_buffer_bounds_to_size(array_bounds, bounds,  &
+    lims_not_exact = compare_buffer_bounds_to_size(current_bounds, bounds,  &
          & error_string2, a_noteq_b, a_noteq_b)
     IF( lims_not_exact .eqv. .TRUE.) THEN
        WRITE(error_string1,'(a,"/",a)') TRIM(module_name), TRIM(output_name)
        err_msg = TRIM(error_string1)//' Bounds of data do not match those of buffer. '//TRIM(error_string2)
     END IF
   call bounds%reset(VERY_LARGE_AXIS_LENGTH, 0)
-  END SUBROUTINE check_bounds_are_exact_static_modern
+  END SUBROUTINE fms_check_bounds_are_exact_static_modern
 
 
   !> @brief Initialize the output file.

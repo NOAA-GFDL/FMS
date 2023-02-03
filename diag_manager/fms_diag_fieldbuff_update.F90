@@ -44,6 +44,8 @@ MODULE fms_diag_fieldbuff_update_mod
 
    implicit none
 
+   !!TODO: (MDM) Remove commented integer versions.
+
    !> @brief Interface fieldbuff_update updates elements of field output buffer based on input field
    !! data and mathematical operations on the field data.
    !> @ingroup fms_diag_fieldbuff_update_mod
@@ -100,7 +102,7 @@ MODULE fms_diag_fieldbuff_update_mod
 
 contains
 
-#include <fms_diag_fieldbuff_update.inc>
+#include "fms_diag_fieldbuff_update.inc"
 
 END MODULE fms_diag_fieldbuff_update_mod
 !> @}
