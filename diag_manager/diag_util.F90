@@ -793,14 +793,15 @@ CONTAINS
     INTEGER, INTENT(in) :: upper_j !< Upper j bound.
     INTEGER, INTENT(in) :: lower_k !< Lower k bound.
     INTEGER, INTENT(in) :: upper_k !< Upper k bound.
-    CALL fms_update_bounds_modern(output_fields(out_num)%buff_bounds, lower_i, upper_i, lower_j, upper_j, lower_k, upper_k )
+    CALL fms_update_bounds_modern(output_fields(out_num)%buff_bounds, &
+      & lower_i, upper_i, lower_j, upper_j, lower_k, upper_k )
   END SUBROUTINE fms_update_bounds_legacy
 
   !> @brief Update the the first three (normally  x, y, and z)  min and
   !! max boundaries (array indices) of the input bounding box "bounds" with
   !! the six specified bounds values.
 SUBROUTINE fms_update_bounds_modern(bounds, lower_i, upper_i, lower_j, upper_j, lower_k, upper_k)
-  TYPE  (fms_diag_ibounds_type), intent(inout) :: bounds !< the bounding box of the output field buffer inindex space.
+  TYPE  (fms_diag_ibounds_type), intent(inout) :: bounds !<The bounding box of the output field buffer inindex space.
   INTEGER, INTENT(in) :: lower_i !< Lower i bound.
   INTEGER, INTENT(in) :: upper_i !< Upper i bound.
   INTEGER, INTENT(in) :: lower_j !< Lower j bound.

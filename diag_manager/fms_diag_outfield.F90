@@ -46,13 +46,7 @@ MODULE fms_diag_outfield_mod
    USE fms_diag_time_reduction_mod, only: time_reduction_type, time_none , time_average, time_rms
    USE fms_diag_time_reduction_mod, only:  time_max, time_min, time_sum, time_power
 
-   !!TODO: for modern diag: if use_yaml then
-   !! USE fms_diag_yaml_mod, only : diagYamlFiles_type, diagYamlFilesVar_type
-   !!USE fms_diag_field_object_mod, only: fmsDiagField_type
-   !!USE diag_data_mod, only: fms_diag_buff_intervals_t, diag_grid
-   !!USE time_manager_mod,ONLY: time_type, OPERATOR(==), OPERATOR(>), NO_CALENDAR, increment_date,&
-   !!& increment_time, get_calendar_type, get_date, get_time, leap_year, OPERATOR(-),&
-   !!& OPERATOR(<), OPERATOR(>=), OPERATOR(<=), OPERATOR(==)
+
 
    implicit none
 
@@ -64,9 +58,9 @@ MODULE fms_diag_outfield_mod
    !!
    !! Class fms_diag_outfield_type also contains a significant subset of the fields
    !! and routines of of the legacy class output_field_type
-   !! TODO: Developemnt of this class is in a seperate and future PR. For its development,
-   !! consider the legacy diag_util::init_output_field already in place. Fields added so
-   !! are uesd the the field buffer math/dupdate functions.
+   !! TODO: (MDM) This class will need further developemnt for the modern_diag effor.
+   !! For its development, but consider the legacy diag_util::init_output_field already
+   !! in place. Fields added so are uesd the the field buffer math/dupdate functions.
    !> @ingroup fms_diag_outfield_mod
    TYPE fms_diag_outfield_type
       CHARACTER(len=:), ALLOCATABLE :: module_name !< Module name.
@@ -88,7 +82,8 @@ MODULE fms_diag_outfield_mod
 
       TYPE(time_reduction_type) :: time_reduction !< Instance of the time_reduction_type.
 
-      !!TODO : a pointer for time_min and time_max comparison function
+      !!TODO (Future effort? ) : a pointer for time_min and time_max comparison function
+      !! If possible, this can reove the innermost if/then/else construct in the buffer update loops.
       !!       min_max_f_ptr => (should point to < or > operators)
 
       !! gcc error: Interface ‘addwf’ at (1) must be explicit
