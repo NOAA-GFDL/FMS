@@ -231,11 +231,11 @@ end subroutine mo_drag_1d
 
 !=======================================================================
 
-subroutine mo_profile_1d(zref, zref_t, z, z0, zt, zq, u_star, b_star, q_star, &
+subroutine mo_profile_1d(zref, zref_t, z, z0, zt, zq, u_star, b_star, &
                          del_m, del_t, del_q, avail)
 
 real,    intent(in)                :: zref, zref_t
-real,    intent(in) , dimension(:) :: z, z0, zt, zq, u_star, b_star, q_star
+real,    intent(in) , dimension(:) :: z, z0, zt, zq, u_star, b_star  !, q_star
 real,    intent(out), dimension(:) :: del_m, del_t, del_q
 logical, intent(in) , optional, dimension(:) :: avail
 
@@ -709,7 +709,7 @@ integer :: j
 
 do j = 1, size(z,2)
   call mo_profile_1d (zref, zref_t, z(:,j), z0(:,j), zt(:,j),         &
-                      zq(:,j), u_star(:,j), b_star(:,j), q_star(:,j), &
+                      zq(:,j), u_star(:,j), b_star(:,j),              &
                       del_m(:,j), del_h (:,j), del_q (:,j))
 enddo
 
@@ -737,7 +737,7 @@ b_star_1(1) = b_star
 q_star_1(1) = q_star
 
 call mo_profile_1d (zref, zref_t, z_1, z0_1, zt_1, zq_1, &
-                    u_star_1, b_star_1, q_star_1,        &
+                    u_star_1, b_star_1,                  &
                     del_m_1, del_h_1, del_q_1)
 
 del_m = del_m_1(1)
@@ -763,10 +763,10 @@ integer :: k
 do k = 1, size(zref(:))
   if(present(avail)) then
     call mo_profile_1d (zref(k), zref(k), z, z0, zt, zq, &
-       u_star, b_star, q_star, del_m(:,k), del_t(:,k), del_q(:,k), avail)
+       u_star, b_star, del_m(:,k), del_t(:,k), del_q(:,k), avail)
   else
       call mo_profile_1d (zref(k), zref(k), z, z0, zt, zq, &
-       u_star, b_star, q_star, del_m(:,k), del_t(:,k), del_q(:,k))
+       u_star, b_star, del_m(:,k), del_t(:,k), del_q(:,k))
   endif
 enddo
 
