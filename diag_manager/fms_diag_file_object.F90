@@ -274,7 +274,7 @@ end subroutine add_field_and_yaml_id
 
 !> \brief Initializes a diurnal axis for a fileobj
 !! \note This is going to be called for every variable in the file, if the variable is not a diurnal variable
-!! it will do nothing. It only defined a diurnal axis once. 
+!! it will do nothing. It only defined a diurnal axis once.
 subroutine init_diurnal_axis(this, diag_axis, naxis, yaml_id)
   class(fmsDiagFile_type),          intent(inout) :: this         !< The file object
   class(fmsDiagAxisContainer_type), intent(inout) :: diag_axis(:) !< Array of diag_axis object
