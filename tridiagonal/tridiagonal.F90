@@ -91,6 +91,9 @@ integer :: k
 if(present(a)) then
   init_tridiagonal = .true.
 
+  !$OMP BARRIER
+  !< Check if module variables are allocated
+  !$OMP CRITICAL
   if(allocated(e))     deallocate(e)
   if(allocated(g))     deallocate(g)
   if(allocated(bb))    deallocate(bb)
@@ -99,6 +102,7 @@ if(present(a)) then
   allocate(g (size(x,1),size(x,2),size(x,3)))
   allocate(bb(size(x,1),size(x,2)))
   allocate(cc(size(x,1),size(x,2),size(x,3)))
+  !$OMP END CRITICAL
 
   e(:,:,1) = - a(:,:,1)/b(:,:,1)
   a(:,:,size(x,3)) = 0.0
