@@ -41,8 +41,8 @@ use fms_diag_time_utils_mod, only: diag_time_inc, get_time_string, get_date_dif
 use fms_diag_yaml_mod, only: diag_yaml, diagYamlObject_type, diagYamlFiles_type, subRegion_type, diagYamlFilesVar_type
 use fms_diag_axis_object_mod, only: diagDomain_t, get_domain_and_domain_type, fmsDiagAxis_type, &
                                     fmsDiagAxisContainer_type, DIAGDOMAIN2D_T, DIAGDOMAINUG_T, &
-                                    fmsDiagFullAxis_type, define_subaxis, define_diurnal_axis, fmsDiagDiurnalAxis_type, &
-                                    create_new_z_subaxis
+                                    fmsDiagFullAxis_type, define_subaxis, define_diurnal_axis, &
+                                    fmsDiagDiurnalAxis_type, create_new_z_subaxis
 use fms_diag_field_object_mod, only: fmsDiagField_type
 use mpp_mod, only: mpp_get_current_pelist, mpp_npes, mpp_root_pe, mpp_pe, mpp_error, FATAL, stdout, &
                    uppercase, lowercase
