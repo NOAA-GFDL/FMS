@@ -1214,12 +1214,18 @@ module fms_diag_axis_object_mod
                                             !! axis
     integer           :: i                  !< For do loops
     integer           :: subaxis_id         !< The id of the new z subaxis
+    logical           :: axis_found         !< Flag that indicated if the zsubaxis already exists
 
     !< Determine if the axis was already created
+    axis_found = .false.
     do i = 1, nfile_axis
       select type (axis => diag_axis(file_axis_id(i))%axis)
       type is (fmsDiagSubAxis_type)
-        if (axis%zbounds(1) .eq. zbounds(1) .and. axis%zbounds(2) .eq. zbounds(2)) return
+        if (axis%zbounds(1) .eq. zbounds(1) .and. axis%zbounds(2) .eq. zbounds(2)) then
+          axis_found = .true.
+          subaxis_id = file_axis_id(i)
+          exit
+        endif
       end select
     enddo
 
@@ -1228,6 +1234,11 @@ module fms_diag_axis_object_mod
       select type (parent_axis => diag_axis(var_axis_ids(i))%axis)
       type is (fmsDiagFullAxis_type)
         if (parent_axis%cart_name .eq. "Z") then
+          !< If the axis was previously defined set the var_axis_ids and leave
+          if (axis_found) then
+            var_axis_ids(i) = subaxis_id
+            return
+          endif
           zaxis_data => parent_axis%axis_data
 
           select type(zaxis_data)
