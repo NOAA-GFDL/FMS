@@ -1213,7 +1213,6 @@ module fms_diag_axis_object_mod
     integer           :: subaxis_indices(2) !< The starting and ending indices of the subaxis relative to the full
                                             !! axis
     integer           :: i                  !< For do loops
-    integer           :: zaxis_id           !< The id of the full zaxis
     integer           :: subaxis_id         !< The id of the new z subaxis
 
     !< Determine if the axis was already created
@@ -1229,7 +1228,6 @@ module fms_diag_axis_object_mod
       select type (parent_axis => diag_axis(var_axis_ids(i))%axis)
       type is (fmsDiagFullAxis_type)
         if (parent_axis%cart_name .eq. "Z") then
-          zaxis_id = i
           zaxis_data => parent_axis%axis_data
 
           select type(zaxis_data)
@@ -1242,7 +1240,7 @@ module fms_diag_axis_object_mod
             subaxis_indices(2) = nearest_index(real(zbounds(2)), real(zaxis_data))
           end select
 
-          call define_new_axis(diag_axis, parent_axis, naxis, zaxis_id, &
+          call define_new_axis(diag_axis, parent_axis, naxis, parent_axis%axis_id, &
                         &subaxis_indices(1), subaxis_indices(2), subaxis_id, zbounds)
           var_axis_ids(i) = subaxis_id
           return
