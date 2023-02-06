@@ -653,6 +653,16 @@ title: test_diag_manager
 base_date: 2 1 1 0 0 0
 
 diag_files:
+- file_name: static_file
+  freq: -1
+  freq_units: hours
+  time_units: hours
+  unlimdim: time
+  varlist:
+  - module: atm_mod
+    var_name: var7
+    reduction: none
+    kind: r4
 - file_name: file1
   freq: 6
   freq_units: hours
