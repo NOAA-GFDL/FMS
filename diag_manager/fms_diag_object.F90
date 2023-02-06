@@ -225,7 +225,7 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
      call fileptr%add_field_and_yaml_id(fieldptr%get_id(), diag_field_indices(i))
      call fileptr%set_file_domain(fieldptr%get_domain(), fieldptr%get_type_of_domain())
      call fileptr%init_diurnal_axis(this%diag_axis, this%registered_axis, diag_field_indices(i))
-     call fileptr%add_axes(axes, this%diag_axis, this%registered_axis)
+     call fileptr%add_axes(axes, this%diag_axis, this%registered_axis, diag_field_indices(i))
      call fileptr%add_start_time(init_time)
      call fileptr%set_file_time_ops (fieldptr%diag_field(i), fieldptr%is_static())
     enddo
@@ -235,7 +235,7 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
      call fileptr%add_field_and_yaml_id(fieldptr%get_id(), diag_field_indices(i))
      call fileptr%init_diurnal_axis(this%diag_axis, this%registered_axis, diag_field_indices(i))
      call fileptr%set_file_domain(fieldptr%get_domain(), fieldptr%get_type_of_domain())
-     call fileptr%add_axes(axes, this%diag_axis, this%registered_axis)
+     call fileptr%add_axes(axes, this%diag_axis, this%registered_axis, diag_field_indices(i))
      call fileptr%set_file_time_ops (fieldptr%diag_field(i), fieldptr%is_static())
     enddo
   elseif (present(init_time)) then !only inti time present
