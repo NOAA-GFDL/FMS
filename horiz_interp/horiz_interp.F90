@@ -264,6 +264,8 @@ contains
     real,    intent(in),                 optional :: max_dist
     logical, intent(in),                 optional :: src_modulo
     logical, intent(in),                 optional :: grid_at_center
+    !real, intent(in), dimension(:,:),    optional :: mask_in  !< dummy variable
+    !real, intent(inout),dimension(:,:),  optional :: mask_out !< dummy variable
     !-----------------------------------------------------------------------
     real, dimension(:,:), allocatable :: lon_src, lat_src, lon_dst, lat_dst
     real, dimension(:),   allocatable :: lon_src_1d, lat_src_1d, lon_dst_1d, lat_dst_1d

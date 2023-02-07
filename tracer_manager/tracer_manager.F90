@@ -1319,6 +1319,7 @@ subroutine set_tracer_method(model, name, method_type, method_control)
 integer, intent(in)                    :: model !< A parameter representing component model in use
 character(len=*), intent(in)           :: name !< Tracer name
 character(len=*), intent(in)           :: method_type !< type of method to be set
+!character(len=*), intent(in)           :: method_name !< name of method to be set
 character(len=*), intent(in)           :: method_control !< control parameters of the given method
 
 integer :: n, num_method, index

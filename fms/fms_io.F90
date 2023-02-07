@@ -1270,7 +1270,7 @@ end subroutine write_data_3d_new
 !-------------------------------------------------------------------------------
 subroutine register_restart_axis_r1d(fileObj,fieldname,data,cartesian,units,longname,sense,min,calendar)
   type(restart_file_type),    intent(inout)      :: fileObj
-  character(len=*),           intent(in)         :: fieldname
+  character(len=*),           intent(in)         :: fieldname  !filename,
   real,                       intent(in), target :: data(:)
   character(len=*),           intent(in)         :: cartesian
   character(len=*), optional, intent(in)         :: units, longname
@@ -1331,7 +1331,7 @@ end subroutine register_restart_axis_r1d
 subroutine register_restart_axis_i1d(fileObj,fieldname,data,compressed, &
                                      compressed_axis,dimlen,dimlen_name,dimlen_lname,units,longname,imin)
   type(restart_file_type),    intent(inout)      :: fileObj
-  character(len=*),           intent(in)         :: fieldname
+  character(len=*),           intent(in)         :: fieldname   !filename,
   integer,                    intent(in)         :: data(:)
   character(len=*),           intent(in)         :: compressed
   character(len=*),           intent(in)         :: compressed_axis !< which compressed axis (C or H)
@@ -1401,7 +1401,7 @@ end subroutine register_restart_axis_i1d
 
 subroutine register_restart_axis_unlimited(fileObj,fieldname,nelem,units,longname)
   type(restart_file_type),    intent(inout)      :: fileObj
-  character(len=*),           intent(in)         :: fieldname
+  character(len=*),           intent(in)         :: fieldname  !filename,
   integer                                        :: nelem  ! Number of elements on rank
   character(len=*), optional, intent(in)         :: units, longname
 

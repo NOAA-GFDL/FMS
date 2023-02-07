@@ -415,6 +415,8 @@ end subroutine horiz_interp_spherical_init
     real, intent(out), dimension(:,:,:)         :: wt
     integer, intent(in),               optional :: verbose
     real, intent(in), dimension(:,:),  optional :: mask_in
+    !real, intent(inout), dimension(:,:), optional :: mask_out
+    !real, intent(in),                  optional :: missing_value
 
     !--- some local variables ----------------------------------------
     real, dimension(Interp%nlon_src, Interp%nlat_src) :: mask_src

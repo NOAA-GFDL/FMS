@@ -431,7 +431,10 @@ module horiz_interp_bicubic_mod
     real, intent(in),  dimension(:,:)           :: data_in
     real, intent(out), dimension(:,:)           :: data_out
     integer, intent(in),               optional :: verbose
+    !real, intent(in),  dimension(:,:), optional :: mask_in
     real, intent(out), dimension(:,:), optional :: mask_out
+    !real, intent(in),                  optional :: missing_value
+    !integer, intent(in),               optional :: missing_permit
     real :: yz, ycu, ycl
     real :: xz, xcu, xcl
     real :: val, val1, val2

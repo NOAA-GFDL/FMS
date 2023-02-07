@@ -334,6 +334,7 @@ contains
     real, intent(in),              dimension(:,:) :: lon_out, lat_out
     real, intent(in),    optional, dimension(:,:) :: mask_in
     real, intent(inout), optional, dimension(:,:) :: mask_out
+    !integer, intent(in), optional                 :: verbose
 
 
     integer :: create_xgrid_1DX2D_order1, get_maxxgrid, maxxgrid
@@ -500,6 +501,8 @@ contains
     real, intent(in),              dimension(:)   :: lon_out, lat_out
     real, intent(in),    optional, dimension(:,:) :: mask_in
     real, intent(inout), optional, dimension(:,:) :: mask_out
+    !integer, intent(in), optional                 :: verbose
+
     integer :: create_xgrid_2DX1D_order1, get_maxxgrid, maxxgrid
     integer :: create_xgrid_great_circle
     integer :: nlon_in, nlat_in, nlon_out, nlat_out, nxgrid, i, j
@@ -605,6 +608,8 @@ contains
     real, intent(in),              dimension(:,:) :: lon_out, lat_out
     real, intent(in),    optional, dimension(:,:) :: mask_in
     real, intent(inout), optional, dimension(:,:) :: mask_out
+    !integer, intent(in), optional                 :: verbose
+
     integer :: create_xgrid_2DX2D_order1, get_maxxgrid, maxxgrid
     integer :: create_xgrid_great_circle
     integer :: nlon_in, nlat_in, nlon_out, nlat_out, nxgrid, i
@@ -895,6 +900,7 @@ contains
     type (horiz_interp_type), intent(in) :: Interp
     real,    intent(in),  dimension(:,:) :: data_in
     real,    intent(out), dimension(:,:) :: data_out
+    !integer, intent(in),        optional :: verbose
     integer :: i, i_src, j_src, i_dst, j_dst
 
     data_out = 0.0

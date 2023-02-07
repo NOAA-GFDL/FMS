@@ -3515,6 +3515,7 @@ recursive function query_method(list_p, recursive, method_name, method_control) 
 logical :: success
 type (field_def), pointer     :: list_p !< A pointer to the field that is of interest
 logical,          intent(in)  :: recursive !< A flag to enable recursive searching if true
+!character(len=*), intent(in)  :: name !<  name of a list that the user wishes to change to
 character(len=*), intent(out) :: method_name !< name of a parameter associated with the named field
 character(len=*), intent(out) :: method_control !< value of parameters associated with the named field
 
@@ -3755,6 +3756,7 @@ recursive function find_method(list_p, num_meth, method, control)   &
           result (success)
 logical                                     :: success
 type (field_def), pointer                   :: list_p !< A pointer to the field of interest
+!logical,          intent(in)                :: recursive !< If true, search recursively for fields
 integer,          intent(inout)             :: num_meth !< The number of methods found
 character(len=*), intent(out), dimension(:) :: method !< The methods associated with the field pointed to by list_p
 character(len=*), intent(out), dimension(:) :: control !< The control parameters for the methods found
