@@ -1401,7 +1401,7 @@ end subroutine register_restart_axis_i1d
 
 subroutine register_restart_axis_unlimited(fileObj,fieldname,nelem,units,longname)
   type(restart_file_type),    intent(inout)      :: fileObj
-  character(len=*),           intent(in)         :: fieldname  !filename, 
+  character(len=*),           intent(in)         :: fieldname  !filename,
   integer                                        :: nelem  ! Number of elements on rank
   character(len=*), optional, intent(in)         :: units, longname
 
