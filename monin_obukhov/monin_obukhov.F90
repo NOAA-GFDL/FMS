@@ -698,11 +698,11 @@ return
 end subroutine mo_drag_0d
 !=======================================================================
 
-subroutine mo_profile_2d(zref, zref_t, z, z0, zt, zq, u_star, b_star, &
+subroutine mo_profile_2d(zref, zref_t, z, z0, zt, zq, u_star, b_star, q_star, &
                          del_m, del_h, del_q)
 
 real, intent(in)                  :: zref, zref_t
-real, intent(in) , dimension(:,:) :: z, z0, zt, zq, u_star, b_star
+real, intent(in) , dimension(:,:) :: z, z0, zt, zq, u_star, b_star, q_star
 real, intent(out), dimension(:,:) :: del_m, del_h, del_q
 
 integer :: j
@@ -750,11 +750,11 @@ end subroutine mo_profile_0d
 
 !=======================================================================
 
-subroutine mo_profile_1d_n(zref, z, z0, zt, zq, u_star, b_star, &
+subroutine mo_profile_1d_n(zref, z, z0, zt, zq, u_star, b_star, q_star, &
                          del_m, del_t, del_q, avail)
 
 real,    intent(in),  dimension(:)   :: zref
-real,    intent(in) , dimension(:)   :: z, z0, zt, zq, u_star, b_star
+real,    intent(in) , dimension(:)   :: z, z0, zt, zq, u_star, b_star, q_star
 real,    intent(out), dimension(:,:) :: del_m, del_t, del_q
 logical, intent(in) , optional, dimension(:) :: avail
 
@@ -805,7 +805,7 @@ integer :: k
 
 do k = 1, size(zref(:))
   call mo_profile_2d (zref(k), zref(k), z, z0, zt, zq, &
-       u_star, b_star, del_m(:,:,k), del_t(:,:,k), del_q(:,:,k))
+       u_star, b_star, q_star, del_m(:,:,k), del_t(:,:,k), del_q(:,:,k))
 enddo
 
 return
