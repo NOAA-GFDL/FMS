@@ -207,7 +207,6 @@ pure subroutine monin_obukhov_solve_zeta(error, zeta_min, max_iter,  &
   real   , intent(in   )                :: error    !< = 1.e-04
   real   , intent(in   )                :: zeta_min !< = 1.e-06
   integer, intent(in   )                :: max_iter !< = 20
-  !real   , intent(in   )                :: small    !< = 1.e-04
   integer, intent(in   )                :: stable_option
   logical, intent(in   )                :: new_mo_option
   real   , intent(in   )                :: rich_crit, zeta_trans
@@ -433,7 +432,7 @@ pure subroutine monin_obukhov_profile_1d(vonkarm, &
   real   , intent(in   )                :: rich_crit, zeta_trans
   integer, intent(in   )                :: n
   real,    intent(in   )                :: zref, zref_t
-  real,    intent(in   ), dimension(n)  :: z, z0, zt, zq, u_star, b_star  !, q_star
+  real,    intent(in   ), dimension(n)  :: z, z0, zt, zq, u_star, b_star
   real,    intent(  out), dimension(n)  :: del_m, del_t, del_q
   logical, intent(in   )                :: lavail !< whether to use provided mask or not
   logical, intent(in   ), dimension(n)  :: avail  !< provided mask

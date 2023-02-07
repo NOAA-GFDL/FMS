@@ -724,7 +724,6 @@ character(len=128),dimension(size(axes)) :: axis_names
   !!
   !! Write out the attribute meta data to file, for field and axes
   SUBROUTINE write_attribute_meta(num_attributes, attributes, time_method, err_msg, varname, fileob)
-    !INTEGER, INTENT(in) :: file_unit !< File unit number
     INTEGER, INTENT(in) :: num_attributes !< Number of attributes to write
     TYPE(diag_atttype), DIMENSION(:), INTENT(in) :: attributes !< Array of attributes
     CHARACTER(len=*), INTENT(in), OPTIONAL :: time_method !< To include in cell_methods attribute if present

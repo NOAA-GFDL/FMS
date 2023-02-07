@@ -235,7 +235,7 @@ subroutine mo_profile_1d(zref, zref_t, z, z0, zt, zq, u_star, b_star, &
                          del_m, del_t, del_q, avail)
 
 real,    intent(in)                :: zref, zref_t
-real,    intent(in) , dimension(:) :: z, z0, zt, zq, u_star, b_star  !, q_star
+real,    intent(in) , dimension(:) :: z, z0, zt, zq, u_star, b_star
 real,    intent(out), dimension(:) :: del_m, del_t, del_q
 logical, intent(in) , optional, dimension(:) :: avail
 

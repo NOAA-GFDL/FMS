@@ -778,7 +778,6 @@ endif
                                 interp_method ) result (Interp)
 
  real,    intent(in), dimension(:)   :: lon, lat
- !logical, intent(in), dimension(:,:) :: mask
  character(len=*), intent(in), optional       :: interp_method
  logical, intent(in), optional       :: use_climo, use_annual
 
@@ -818,7 +817,6 @@ endif
                                 interp_method ) result (Interp)
 
  real,    intent(in), dimension(:,:)   :: lon, lat
- !logical, intent(in), dimension(:,:) :: mask
  character(len=*), intent(in), optional :: interp_method
  logical, intent(in), optional       :: use_climo, use_annual
 

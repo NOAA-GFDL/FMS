@@ -3993,7 +3993,6 @@ end subroutine get_1_from_xgrid_repro
 !! @return real(r8_kind) conservation_check_side1
 function conservation_check_side1(d, xmap,remap_method) ! this one for 1->2->1
 real(r8_kind), dimension(:,:),    intent(in   ) :: d !< model data to check
-!character(len=3),        intent(in   ) :: grid_id !< 3 character grid id
 type (xmap_type),        intent(inout) :: xmap !< exchange grid
 real(r8_kind), dimension(3)                     :: conservation_check_side1
 integer, intent(in), optional :: remap_method
@@ -4096,7 +4095,6 @@ end function conservation_check_side2
 !! @return real(r8_kind) conservation_check_ug_side1
 function conservation_check_ug_side1(d, xmap,remap_method) ! this one for 1->2->1
 real(r8_kind), dimension(:,:),    intent(in   ) :: d !< model data to check
-!character(len=3),        intent(in   ) :: grid_id !< 3 character grid ID
 type (xmap_type),        intent(inout) :: xmap !< exchange grid
 real(r8_kind), dimension(3)                     :: conservation_check_ug_side1
 integer, intent(in), optional :: remap_method

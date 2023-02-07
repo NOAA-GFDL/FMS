@@ -1744,7 +1744,6 @@ subroutine annual_mean_solar_2d (lat, cosz, solar, fracday,  &
                                  rrsun)
 
 !--------------------------------------------------------------------
-!integer,                 intent(in)    :: js, je
 real, dimension(:,:),    intent(in)    :: lat
 real, dimension(:,:),    intent(out)   :: solar, cosz, fracday
 real,                    intent(out)   :: rrsun

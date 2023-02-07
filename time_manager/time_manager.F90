@@ -2750,7 +2750,6 @@ function days_in_month_thirty()
 ! changes to calendar type).
 
 integer :: days_in_month_thirty
-!type(time_type), intent(in) :: Time
 
 days_in_month_thirty = 30
 
@@ -2878,7 +2877,6 @@ function leap_year_no_leap()
 ! Another tough one; no leap year returns false for leap year inquiry.
 
 logical :: leap_year_no_leap
-!type(time_type), intent(in) :: Time
 
 leap_year_no_leap = .FALSE.
 
@@ -3008,7 +3006,6 @@ end function days_in_year
 function days_in_year_thirty()
 
 integer :: days_in_year_thirty
-!type(time_type), intent(in) :: Time
 
 days_in_year_thirty = 360
 
@@ -3048,7 +3045,6 @@ end function days_in_year_julian
 function days_in_year_no_leap()
 
 integer :: days_in_year_no_leap
-!type(time_type), intent(in) :: Time
 
 days_in_year_no_leap = 365
 

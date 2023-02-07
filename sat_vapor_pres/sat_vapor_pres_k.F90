@@ -1761,7 +1761,7 @@
                  mr, hc, dmrsdT, esat,es_over_liq, es_over_liq_and_ice)
 
  real, intent(in),  dimension(:,:,:)           :: temp, press
- real, intent(in)                              :: eps  !, zvir
+ real, intent(in)                              :: eps
  real, intent(out), dimension(:,:,:)           :: mrs
  integer, intent(out)                          :: nbad
  real, intent(in),  dimension(:,:,:), optional :: mr
@@ -1934,7 +1934,7 @@
                  mr, hc, dmrsdT, esat,es_over_liq, es_over_liq_and_ice)
 
  real, intent(in),  dimension(:)           :: temp, press
- real, intent(in)                          :: eps   !, zvir
+ real, intent(in)                          :: eps
  real, intent(out), dimension(:)           :: mrs
  integer, intent(out)                      :: nbad
  real, intent(in),  dimension(:), optional :: mr
@@ -2017,7 +2017,7 @@
                  mr, hc, dmrsdT, esat,es_over_liq, es_over_liq_and_ice)
 
  real, intent(in)                              :: temp, press
- real, intent(in)                              :: eps   !, zvir
+ real, intent(in)                              :: eps
  real, intent(out)                             :: mrs
  integer, intent(out)                          :: nbad
  real, intent(in),                    optional :: mr
