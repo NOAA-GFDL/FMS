@@ -23,6 +23,7 @@
 # execute tests in the test_fms/horiz_interp directory.
 
 # Ed Hartnett 11/29/19
+# Ryan Mulhall 01/23
 
 # Set common test settings.
 . ../test-lib.sh
@@ -30,6 +31,7 @@
 # Create file for test.
 cat <<_EOF > input.nml
 &test_horiz_interp_nml
+  test_conserve = .true.
   ni_src = 360
   nj_src = 180
   ni_dst = 144
@@ -37,13 +39,13 @@ cat <<_EOF > input.nml
 /
 _EOF
 
-test_expect_success "Horiz_interp test (kind 8 reals)" '
+test_expect_success "conservative method" '
   mpirun -n 2 ./test_horiz_interp
 '
 
 cat <<_EOF > input.nml
 &test_horiz_interp_nml
-  test_r4 = .true.
+  test_bicubic= .true.
   ni_src = 360
   nj_src = 180
   ni_dst = 144
@@ -51,7 +53,35 @@ cat <<_EOF > input.nml
 /
 _EOF
 
-test_expect_success "Horiz_interp test (kind 4 reals)" '
+test_expect_success "bicubic method" '
+  mpirun -n 2 ./test_horiz_interp
+'
+
+cat <<_EOF > input.nml
+&test_horiz_interp_nml
+  test_bilinear= .true.
+  ni_src = 360
+  nj_src = 180
+  ni_dst = 144
+  nj_dst = 72
+/
+_EOF
+
+test_expect_success "bilinear method" '
+  mpirun -n 2 ./test_horiz_interp
+'
+
+cat <<_EOF > input.nml
+&test_horiz_interp_nml
+  test_spherical= .true.
+  ni_src = 360
+  nj_src = 180
+  ni_dst = 144
+  nj_dst = 72
+/
+_EOF
+
+test_expect_success "spherical method" '
   mpirun -n 2 ./test_horiz_interp
 '
 
