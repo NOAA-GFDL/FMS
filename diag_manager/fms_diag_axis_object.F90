@@ -458,6 +458,7 @@ module fms_diag_axis_object_mod
       do i = 1, n_diurnal_samples
         diurnal_data(i) = 24.0*(REAL(i)-0.5)/n_diurnal_samples
       enddo
+      WRITE (edges_name,'(a,i2.2)') 'time_of_day_edges_', n_diurnal_samples
     endif
 
     WRITE (units,11) 'hours', get_base_year(), get_base_month(), &
