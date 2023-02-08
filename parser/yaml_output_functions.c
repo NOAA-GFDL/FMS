@@ -395,7 +395,8 @@ void write_yaml_from_struct_3 (char *yamlname, int asize, struct fmsyamloutkeys 
   char* curr_topkey = topkeys->level2key;
 
   /* loop through the top level 2 keys */
-  for (int top_ind=0; top_ind < topkeys->level2key_offset; top_ind++) {
+  int top_ind;
+  for (top_ind=0; top_ind < topkeys->level2key_offset; top_ind++) {
     /* Start the secodn level event */
     yaml_scalar_event_initialize(&event, NULL, (yaml_char_t *)YAML_STR_TAG,
       				 (yaml_char_t *)curr_topkey, strlen(curr_topkey), 1, 0,
@@ -412,7 +413,8 @@ void write_yaml_from_struct_3 (char *yamlname, int asize, struct fmsyamloutkeys 
 	    return;
     }
     /* loop through the structs for this key*/
-    for (int s2 = 0 ; s2 < lvl2keyeach[top_ind]; s2++){
+    int s2;
+    for (s2 = 0 ; s2 < lvl2keyeach[top_ind]; s2++){
       yaml_mapping_start_event_initialize(&event, NULL, (yaml_char_t *)YAML_MAP_TAG,
         				  1, YAML_ANY_MAPPING_STYLE);
       if (!yaml_emitter_emit(&emitter, &event)){
@@ -424,7 +426,8 @@ void write_yaml_from_struct_3 (char *yamlname, int asize, struct fmsyamloutkeys 
 
       /* Next level keys */
       char * curr_l2key = (&l2keys[s2count])->level2key;
-      for (int l2_ind = 0; l2_ind < (&l2keys[s2count])->level2key_offset; l2_ind++) {
+      int l2_ind;
+      for (l2_ind = 0; l2_ind < (&l2keys[s2count])->level2key_offset; l2_ind++) {
         /* Start the third level event */
      	  yaml_scalar_event_initialize(&event, NULL, (yaml_char_t *)YAML_STR_TAG,
      		                            (yaml_char_t *)curr_l2key, strlen(curr_l2key), 1, 0,
@@ -444,7 +447,8 @@ void write_yaml_from_struct_3 (char *yamlname, int asize, struct fmsyamloutkeys 
         int s3start = s3count;
         int s3end = s3start + n3each[i_n3];
         i_n3++;
-        for (int s3 = s3start ; s3 < s3end ; s3++){
+        int s3;
+        for (s3 = s3start ; s3 < s3end ; s3++){
           yaml_mapping_start_event_initialize(&event, NULL, (yaml_char_t *)YAML_MAP_TAG,
                     1, YAML_ANY_MAPPING_STYLE);
           if (!yaml_emitter_emit(&emitter, &event)){

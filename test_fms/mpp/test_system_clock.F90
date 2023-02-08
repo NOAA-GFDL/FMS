@@ -33,7 +33,7 @@ module include_files_mod
   use platform_mod
   logical :: first_call_system_clock_mpi=.TRUE.
 contains
-#include "../../mpp/include/system_clock.h"
+#include "../../mpp/include/system_clock.fh"
 end module include_files_mod
 
 program test_system_clock

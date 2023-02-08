@@ -28,9 +28,9 @@
 !!    statement.<br><br>
 !!
 !!    The currently support contant systems are:
-!!       GFDL constants (gfdl_constants.h)
-!!       GEOS constants (geos_constants.h)
-!!       GFS  constants (gfs_constants.h)
+!!       GFDL constants (gfdl_constants.fh)
+!!       GEOS constants (geos_constants.fh)
+!!       GFS  constants (gfs_constants.fh)
 !!       <br><br>
 !!
 !!    The name given to a particular constant may be changed.<br><br>
@@ -71,13 +71,13 @@ module FMSconstants
 !--- perform error checking and include the correct system of constants
 #if defined(GFDL_CONSTANTS) && !defined(GFS_CONSTANTS) && !defined(GEOS_CONSTANTS)
 #warning "Using GFDL constants"
-#include <gfdl_constants.h>
+#include <gfdl_constants.fh>
 #elif !defined(GFDL_CONSTANTS) && defined(GFS_CONSTANTS) && !defined(GEOS_CONSTANTS)
 #warning "Using GFS constants"
-#include <gfs_constants.h>
+#include <gfs_constants.fh>
 #elif !defined(GFDL_CONSTANTS) && !defined(GFS_CONSTANTS) && defined(GEOS_CONSTANTS)
 #warning "Using GEOS constants"
-#include <geos_constants.h>
+#include <geos_constants.fh>
 #else
 #error FATAL FMSConstants error -  multiple constants macros are defined for FMS
 #endif

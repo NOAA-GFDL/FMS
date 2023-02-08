@@ -25,7 +25,7 @@
 
 !> @brief Add a restart variable to a netcdf file.
 subroutine netcdf_add_restart_variable_0d(fileobj, variable_name, vdata, dimensions, &
-                                          is_optional, deflate_level, chunksizes)
+                                          is_optional,  chunksizes)
 
   class(FmsNetcdfFile_t), intent(inout) :: fileobj !< File object.
   character(len=*), intent(in) :: variable_name !< Variable name.
@@ -34,9 +34,6 @@ subroutine netcdf_add_restart_variable_0d(fileobj, variable_name, vdata, dimensi
   character(len=*), dimension(1), intent(in), optional :: dimensions !< Dimension names.
   logical, intent(in), optional :: is_optional !< Prevent errors in read-only files
                                                !! if a variable does not exist.
-  integer, intent(in), optional :: deflate_level !< The netcdf deflate level
-                                                 !! This feature is only
-                                                 !! available for netcdf4 files
   integer, intent(in), optional :: chunksizes(:) !< netcdf chunksize to use for this variable
                                                  !! This feature is only
                                                  !! available for netcdf4 files
@@ -57,7 +54,7 @@ subroutine netcdf_add_restart_variable_0d(fileobj, variable_name, vdata, dimensi
       endif
     endif
     call netcdf_add_variable(fileobj, variable_name, buf, dimensions, &
-                             deflate_level=deflate_level, chunksizes=chunksizes)
+                              chunksizes=chunksizes)
   endif
 end subroutine netcdf_add_restart_variable_0d
 
@@ -65,7 +62,7 @@ end subroutine netcdf_add_restart_variable_0d
 !> @brief Wrapper to distinguish interfaces.
 subroutine netcdf_add_restart_variable_0d_wrap(fileobj, variable_name, vdata, &
                                                dimensions, is_optional, &
-                                                deflate_level, chunksizes)
+                                                 chunksizes)
   type(FmsNetcdfFile_t), intent(inout) :: fileobj !< File object.
   character(len=*), intent(in) :: variable_name !< Variable name.
   class(*),  intent(in), target :: vdata !< Pointer to
@@ -73,21 +70,18 @@ subroutine netcdf_add_restart_variable_0d_wrap(fileobj, variable_name, vdata, &
   character(len=*), dimension(1), intent(in), optional :: dimensions !< Dimension names.
   logical, intent(in), optional :: is_optional !< Prevent errors in read-only files
                                                !! if a variable does not exist.
-  integer, intent(in), optional :: deflate_level !< The netcdf deflate level
-                                                 !! This feature is only
-                                                 !! available for netcdf4 files
   integer, intent(in), optional :: chunksizes(:) !< netcdf chunksize to use for this variable
                                                  !! This feature is only
                                                  !! available for netcdf4 files
 
   call netcdf_add_restart_variable(fileobj, variable_name, vdata, dimensions, is_optional, &
-                                   deflate_level=deflate_level, chunksizes=chunksizes)
+                                    chunksizes=chunksizes)
 end subroutine netcdf_add_restart_variable_0d_wrap
 
 
 !> @brief Add a restart variable to a netcdf file.
 subroutine netcdf_add_restart_variable_1d(fileobj, variable_name, vdata, &
-                                          dimensions, is_optional, deflate_level, &
+                                          dimensions, is_optional,  &
                                           chunksizes)
   class(FmsNetcdfFile_t), intent(inout) :: fileobj !< File object.
   character(len=*), intent(in) :: variable_name !< Variable name.
@@ -96,9 +90,6 @@ subroutine netcdf_add_restart_variable_1d(fileobj, variable_name, vdata, &
   character(len=*), dimension(:), intent(in), optional :: dimensions !< Dimension names.
   logical, intent(in), optional :: is_optional !< Prevent errors in read-only files
                                                !! if a variable does not exist.
-  integer, intent(in), optional :: deflate_level !< The netcdf deflate level
-                                                 !! This feature is only
-                                                 !! available for netcdf4 files
   integer, intent(in), optional :: chunksizes(:) !< netcdf chunksize to use for this variable
                                                  !! This feature is only
                                                  !! available for netcdf4 files
@@ -128,14 +119,14 @@ subroutine netcdf_add_restart_variable_1d(fileobj, variable_name, vdata, &
       call error("rank mismatch between vdata and dimensions arrays.")
     endif
     call netcdf_add_variable(fileobj, variable_name, buf, dimensions, &
-                             deflate_level=deflate_level, chunksizes=chunksizes)
+                              chunksizes=chunksizes)
   endif
 end subroutine netcdf_add_restart_variable_1d
 
 
 !> @brief Wrapper to distinguish interfaces.
 subroutine netcdf_add_restart_variable_1d_wrap(fileobj, variable_name, vdata, &
-                                               dimensions, is_optional, deflate_level, &
+                                               dimensions, is_optional,  &
                                                chunksizes)
   type(FmsNetcdfFile_t), intent(inout) :: fileobj !< File object.
   character(len=*), intent(in) :: variable_name !< Variable name.
@@ -144,21 +135,18 @@ subroutine netcdf_add_restart_variable_1d_wrap(fileobj, variable_name, vdata, &
   character(len=*), dimension(:), intent(in), optional :: dimensions !< Dimension names.
   logical, intent(in), optional :: is_optional !< Prevent errors in read-only files
                                                !! if a variable does not exist.
-  integer, intent(in), optional :: deflate_level !< The netcdf deflate level
-                                                 !! This feature is only
-                                                 !! available for netcdf4 files
   integer, intent(in), optional :: chunksizes(:) !< netcdf chunksize to use for this variable
                                                  !! This feature is only
                                                  !! available for netcdf4 files
 
   call netcdf_add_restart_variable(fileobj, variable_name, vdata, dimensions, is_optional, &
-                                   deflate_level=deflate_level, chunksizes=chunksizes)
+                                    chunksizes=chunksizes)
 end subroutine netcdf_add_restart_variable_1d_wrap
 
 
 !> @brief Add a restart variable to a netcdf file.
 subroutine netcdf_add_restart_variable_2d(fileobj, variable_name, vdata, &
-                                          dimensions, is_optional, deflate_level, &
+                                          dimensions, is_optional,  &
                                           chunksizes)
   class(FmsNetcdfFile_t), intent(inout) :: fileobj !< File object.
   character(len=*), intent(in) :: variable_name !< Variable name.
@@ -167,9 +155,6 @@ subroutine netcdf_add_restart_variable_2d(fileobj, variable_name, vdata, &
   character(len=*), dimension(:), intent(in), optional :: dimensions !< Dimension names.
   logical, intent(in), optional :: is_optional !< Prevent errors in read-only files
                                                !! if a variable does not exist.
-  integer, intent(in), optional :: deflate_level !< The netcdf deflate level
-                                                 !! This feature is only
-                                                 !! available for netcdf4 files
   integer, intent(in), optional :: chunksizes(:) !< netcdf chunksize to use for this variable
                                                  !! This feature is only
                                                  !! available for netcdf4 files
@@ -199,14 +184,14 @@ subroutine netcdf_add_restart_variable_2d(fileobj, variable_name, vdata, &
       call error("rank mismatch between vdata and dimensions arrays.")
     endif
     call netcdf_add_variable(fileobj, variable_name, buf, dimensions, &
-                             deflate_level=deflate_level, chunksizes=chunksizes)
+                              chunksizes=chunksizes)
   endif
 end subroutine netcdf_add_restart_variable_2d
 
 
 !> @brief Wrapper to distinguish interfaces.
 subroutine netcdf_add_restart_variable_2d_wrap(fileobj, variable_name, vdata, &
-                                               dimensions, is_optional, deflate_level, &
+                                               dimensions, is_optional,  &
                                                chunksizes)
   type(FmsNetcdfFile_t), intent(inout) :: fileobj !< File object.
   character(len=*), intent(in) :: variable_name !< Variable name.
@@ -215,21 +200,18 @@ subroutine netcdf_add_restart_variable_2d_wrap(fileobj, variable_name, vdata, &
   character(len=*), dimension(:), intent(in), optional :: dimensions !< Dimension names.
   logical, intent(in), optional :: is_optional !< Prevent errors in read-only files
                                                !! if a variable does not exist.
-  integer, intent(in), optional :: deflate_level !< The netcdf deflate level
-                                                 !! This feature is only
-                                                 !! available for netcdf4 files
   integer, intent(in), optional :: chunksizes(:) !< netcdf chunksize to use for this variable
                                                  !! This feature is only
                                                  !! available for netcdf4 files
 
   call netcdf_add_restart_variable(fileobj, variable_name, vdata, dimensions, is_optional, &
-                                   deflate_level=deflate_level, chunksizes=chunksizes)
+                                    chunksizes=chunksizes)
 end subroutine netcdf_add_restart_variable_2d_wrap
 
 
 !> @brief Add a restart variable to a netcdf file.
 subroutine netcdf_add_restart_variable_3d(fileobj, variable_name, vdata, &
-                                          dimensions, is_optional, deflate_level, &
+                                          dimensions, is_optional,  &
                                           chunksizes)
   class(FmsNetcdfFile_t), intent(inout) :: fileobj !< File object.
   character(len=*), intent(in) :: variable_name !< Variable name.
@@ -238,9 +220,6 @@ subroutine netcdf_add_restart_variable_3d(fileobj, variable_name, vdata, &
   character(len=*), dimension(:), intent(in), optional :: dimensions !< Dimension names.
   logical, intent(in), optional :: is_optional !< Prevent errors in read-only files
                                                !! if a variable does not exist.
-  integer, intent(in), optional :: deflate_level !< The netcdf deflate level
-                                                 !! This feature is only
-                                                 !! available for netcdf4 files
   integer, intent(in), optional :: chunksizes(:) !< netcdf chunksize to use for this variable
                                                  !! This feature is only
                                                  !! available for netcdf4 files
@@ -270,14 +249,14 @@ subroutine netcdf_add_restart_variable_3d(fileobj, variable_name, vdata, &
       call error("rank mismatch between vdata and dimensions arrays.")
     endif
     call netcdf_add_variable(fileobj, variable_name, buf, dimensions, &
-                             deflate_level=deflate_level, chunksizes=chunksizes)
+                              chunksizes=chunksizes)
   endif
 end subroutine netcdf_add_restart_variable_3d
 
 
 !> @brief Wrapper to distinguish interfaces.
 subroutine netcdf_add_restart_variable_3d_wrap(fileobj, variable_name, vdata, &
-                                               dimensions, is_optional, deflate_level, &
+                                               dimensions, is_optional,  &
                                                chunksizes)
   type(FmsNetcdfFile_t), intent(inout) :: fileobj !< File object.
   character(len=*), intent(in) :: variable_name !< Variable name.
@@ -286,21 +265,18 @@ subroutine netcdf_add_restart_variable_3d_wrap(fileobj, variable_name, vdata, &
   character(len=*), dimension(:), intent(in), optional :: dimensions !< Dimension names.
   logical, intent(in), optional :: is_optional !< Prevent errors in read-only files
                                                !! if a variable does not exist.
-  integer, intent(in), optional :: deflate_level !< The netcdf deflate level
-                                                 !! This feature is only
-                                                 !! available for netcdf4 files
   integer, intent(in), optional :: chunksizes(:) !< netcdf chunksize to use for this variable
                                                  !! This feature is only
                                                  !! available for netcdf4 files
 
   call netcdf_add_restart_variable(fileobj, variable_name, vdata, dimensions, is_optional, &
-                                   deflate_level=deflate_level, chunksizes=chunksizes)
+                                    chunksizes=chunksizes)
 end subroutine netcdf_add_restart_variable_3d_wrap
 
 
 !> @brief Add a restart variable to a netcdf file.
 subroutine netcdf_add_restart_variable_4d(fileobj, variable_name, vdata, &
-                                          dimensions, is_optional, deflate_level, &
+                                          dimensions, is_optional,  &
                                           chunksizes)
   class(FmsNetcdfFile_t), intent(inout) :: fileobj !< File object.
   character(len=*), intent(in) :: variable_name !< Variable name.
@@ -309,9 +285,6 @@ subroutine netcdf_add_restart_variable_4d(fileobj, variable_name, vdata, &
   character(len=*), dimension(:), intent(in), optional :: dimensions !< Dimension names.
   logical, intent(in), optional :: is_optional !< Prevent errors in read-only files
                                                !! if a variable does not exist.
-  integer, intent(in), optional :: deflate_level !< The netcdf deflate level
-                                                 !! This feature is only
-                                                 !! available for netcdf4 files
   integer, intent(in), optional :: chunksizes(:) !< netcdf chunksize to use for this variable
                                                  !! This feature is only
                                                  !! available for netcdf4 files
@@ -341,14 +314,14 @@ subroutine netcdf_add_restart_variable_4d(fileobj, variable_name, vdata, &
       call error("rank mismatch between vdata and dimensions arrays.")
     endif
     call netcdf_add_variable(fileobj, variable_name, buf, dimensions, &
-                            deflate_level=deflate_level, chunksizes=chunksizes)
+                             chunksizes=chunksizes)
   endif
 end subroutine netcdf_add_restart_variable_4d
 
 
 !> @brief Wrapper to distinguish interfaces.
 subroutine netcdf_add_restart_variable_4d_wrap(fileobj, variable_name, vdata, &
-                                               dimensions, is_optional, deflate_level, &
+                                               dimensions, is_optional,  &
                                                chunksizes)
   type(FmsNetcdfFile_t), intent(inout) :: fileobj !< File object.
   character(len=*), intent(in) :: variable_name !< Variable name.
@@ -357,21 +330,18 @@ subroutine netcdf_add_restart_variable_4d_wrap(fileobj, variable_name, vdata, &
   character(len=*), dimension(:), intent(in), optional :: dimensions !< Dimension names.
   logical, intent(in), optional :: is_optional !< Prevent errors in read-only files
                                                !! if a variable does not exist.
-  integer, intent(in), optional :: deflate_level !< The netcdf deflate level
-                                                 !! This feature is only
-                                                 !! available for netcdf4 files
   integer, intent(in), optional :: chunksizes(:) !< netcdf chunksize to use for this variable
                                                  !! This feature is only
                                                  !! available for netcdf4 files
 
   call netcdf_add_restart_variable(fileobj, variable_name, vdata, dimensions, is_optional, &
-                                   deflate_level=deflate_level, chunksizes=chunksizes)
+                                    chunksizes=chunksizes)
 end subroutine netcdf_add_restart_variable_4d_wrap
 
 
 !> @brief Add a restart variable to a netcdf file.
 subroutine netcdf_add_restart_variable_5d(fileobj, variable_name, vdata, &
-                                          dimensions, is_optional, deflate_level, &
+                                          dimensions, is_optional,  &
                                           chunksizes)
   class(FmsNetcdfFile_t), intent(inout) :: fileobj !< File object.
   character(len=*), intent(in) :: variable_name !< Variable name.
@@ -380,9 +350,6 @@ subroutine netcdf_add_restart_variable_5d(fileobj, variable_name, vdata, &
   character(len=*), dimension(:), intent(in), optional :: dimensions !< Dimension names.
   logical, intent(in), optional :: is_optional !< Prevent errors in read-only files
                                                !! if a variable does not exist.
-  integer, intent(in), optional :: deflate_level !< The netcdf deflate level
-                                                 !! This feature is only
-                                                 !! available for netcdf4 files
   integer, intent(in), optional :: chunksizes(:) !< netcdf chunksize to use for this variable
                                                  !! This feature is only
                                                  !! available for netcdf4 files
@@ -412,14 +379,14 @@ subroutine netcdf_add_restart_variable_5d(fileobj, variable_name, vdata, &
       call error("rank mismatch between vdata and dimensions arrays.")
     endif
     call netcdf_add_variable(fileobj, variable_name, buf, dimensions, &
-                             deflate_level=deflate_level, chunksizes=chunksizes)
+                              chunksizes=chunksizes)
   endif
 end subroutine netcdf_add_restart_variable_5d
 
 
 !> @brief Wrapper to distinguish interfaces.
 subroutine netcdf_add_restart_variable_5d_wrap(fileobj, variable_name, vdata, &
-                                               dimensions, is_optional, deflate_level, &
+                                               dimensions, is_optional,  &
                                                chunksizes)
   type(FmsNetcdfFile_t), intent(inout) :: fileobj !< File object.
   character(len=*), intent(in) :: variable_name !< Variable name.
@@ -428,15 +395,12 @@ subroutine netcdf_add_restart_variable_5d_wrap(fileobj, variable_name, vdata, &
   character(len=*), dimension(:), intent(in), optional :: dimensions !< Dimension names.
   logical, intent(in), optional :: is_optional !< Prevent errors in read-only files
                                                !! if a variable does not exist.
-  integer, intent(in), optional :: deflate_level !< The netcdf deflate level
-                                                 !! This feature is only
-                                                 !! available for netcdf4 files
   integer, intent(in), optional :: chunksizes(:) !< netcdf chunksize to use for this variable
                                                  !! This feature is only
                                                  !! available for netcdf4 files
 
  call netcdf_add_restart_variable(fileobj, variable_name, vdata, dimensions, is_optional, &
-                                   deflate_level=deflate_level, chunksizes=chunksizes)
+                                    chunksizes=chunksizes)
 end subroutine netcdf_add_restart_variable_5d_wrap
 
 !> @brief Registers a regional 2D variable and stores the information needed
