@@ -1240,10 +1240,10 @@ contains
                                    !! have allocated arrays. The returned variable will contain
                                    !! deallocated arrays
 
-    if(associated(Interp%wti))   deallocate(Interp%wti)
-    if(associated(Interp%wtj))   deallocate(Interp%wtj)
-    if(associated(Interp%i_lon)) deallocate(Interp%i_lon)
-    if(associated(Interp%j_lat)) deallocate(Interp%j_lat)
+    if(allocated(Interp%wti))   deallocate(Interp%wti)
+    if(allocated(Interp%wtj))   deallocate(Interp%wtj)
+    if(allocated(Interp%i_lon)) deallocate(Interp%i_lon)
+    if(allocated(Interp%j_lat)) deallocate(Interp%j_lat)
 
   end subroutine horiz_interp_bilinear_del
 
