@@ -9,9 +9,9 @@
 #undef  FMS_DIAG_FBCF_3D_PNAME_
 #define FMS_DIAG_FBCF_3D_PNAME_ fieldbuff_copy_fieldvals_3d_r4
 #undef  FMS_DIAG_FBCM_PNAME_
-#define FMS_DIAG_FBCM_PNAME_ fieldbuff_copy_misvals_r4
+#define FMS_DIAG_FBCM_PNAME_ fieldbuff_copy_missvals_r4
 #undef  FMS_DIAG_FBCM_3D_PNAME_
-#define FMS_DIAG_FBCM_3D_PNAME_ fieldbuff_copy_misvals_3d_r4
+#define FMS_DIAG_FBCM_3D_PNAME_ fieldbuff_copy_missvals_3d_r4
 #include <fms_diag_fieldbuff_update.fh>
 
 #undef FMS_DIAG_FBU_DATA_TYPE_
@@ -25,7 +25,7 @@
 #undef  FMS_DIAG_FBCF_3D_PNAME_
 #define FMS_DIAG_FBCF_3D_PNAME_ fieldbuff_copy_fieldvals_3d_r8
 #undef  FMS_DIAG_FBCM_PNAME_
-#define FMS_DIAG_FBCM_PNAME_ fieldbuff_copy_misvals_r8
+#define FMS_DIAG_FBCM_PNAME_ fieldbuff_copy_missvals_r8
 #undef  FMS_DIAG_FBCM_3D_PNAME_
-#define FMS_DIAG_FBCM_3D_PNAME_ fieldbuff_copy_misvals_3d_r8
+#define FMS_DIAG_FBCM_3D_PNAME_ fieldbuff_copy_missvals_3d_r8
 #include <fms_diag_fieldbuff_update.fh>

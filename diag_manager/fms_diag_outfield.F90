@@ -43,7 +43,7 @@ MODULE fms_diag_outfield_mod
    USE diag_data_mod, only:Time_zero
    USE diag_data_mod, only: GLO_REG_VAL, GLO_REG_VAL_ALT, region_out_use_alt_value, VERY_LARGE_AXIS_LENGTH, coord_type
    USE diag_data_mod, only: fms_diag_ibounds_type, input_field_type, output_field_type
-   USE fms_diag_time_reduction_mod, only: time_reduction_type, time_none , time_average, time_rms
+   USE fms_diag_time_reduction_mod, only: fmsDiagTimeReduction_type, time_none , time_average, time_rms
    USE fms_diag_time_reduction_mod, only:  time_max, time_min, time_sum, time_power
 
 
@@ -58,11 +58,11 @@ MODULE fms_diag_outfield_mod
    !!
    !! Class fms_diag_outfield_type also contains a significant subset of the fields
    !! and routines of of the legacy class output_field_type
-   !! TODO: (MDM) This class will need further developemnt for the modern_diag effor.
-   !! For its development, but consider the legacy diag_util::init_output_field already
-   !! in place. Fields added so are uesd the the field buffer math/dupdate functions.
+   !! TODO: (MDM) This class will need further development for the modern_diag effort.
+   !! For its development, consider the legacy diag_util::init_output_field already
+   !! in place. Fields added so are used the the field buffer math/dmUpdate functions.
    !> @ingroup fms_diag_outfield_mod
-   TYPE fms_diag_outfield_type
+   TYPE fmsDiagOutfield_type
       CHARACTER(len=:), ALLOCATABLE :: module_name !< Module name.
       CHARACTER(len=:), ALLOCATABLE :: field_name  !< Output field name.
       CHARACTER(len=:), ALLOCATABLE :: output_name !< Output name written to file.
@@ -80,7 +80,7 @@ MODULE fms_diag_outfield_mod
                               !< function call may be downstream replaced by a null pointer which
                               !< is considered present.
 
-      TYPE(time_reduction_type) :: time_reduction !< Instance of the time_reduction_type.
+      TYPE(fmsDiagTimeReduction_type) :: time_reduction !< Instance of the fmsDiagTimeTeduction_type.
 
       !!TODO (Future effort? ) : a pointer for time_min and time_max comparison function
       !! If possible, this can reove the innermost if/then/else construct in the buffer update loops.
@@ -91,7 +91,7 @@ MODULE fms_diag_outfield_mod
 
    CONTAINS
       procedure, public  :: initialize => initialize_outfield_imp
-   END TYPE fms_diag_outfield_type
+   END TYPE fmsDiagOutfield_type
 
 
    !> @brief Class fms_diag_outfield_index_type which (along with class fms_diag_outfield_type)
@@ -102,7 +102,8 @@ MODULE fms_diag_outfield_mod
    !! of this class is also to allow for a smaller call function signature for the math/buffer
    !! update functions.
    !> @ingroup fms_diag_outfield_mod
-   TYPE, public :: fms_diag_outfield_index_type
+   TYPE, public :: fmsDiagOutfieldIndex_type
+   PRIVATE
       INTEGER :: f1,f2 !< Indecies used specify 1st dim bounds of field, mask and rmask.
       INTEGER :: f3,f4 !< Indecies used specify 2st dim bounds of field, mask and rmask.
       INTEGER :: is, js, ks  !< Start indecies in each spatial dim of the field_data; and
@@ -113,16 +114,113 @@ MODULE fms_diag_outfield_mod
       INTEGER :: hj !< halo size in y direction. Same
    CONTAINS
       procedure :: initialize => initialize_outfield_index_type
-   END TYPE fms_diag_outfield_index_type
+      procedure :: get_f1
+      procedure :: get_f2
+      procedure :: get_f3
+      procedure :: get_f4
+      procedure :: get_is
+      procedure :: get_js
+      procedure :: get_ks
+      procedure :: get_ie
+      procedure :: get_je
+      procedure :: get_ke
+      procedure :: get_hi
+      procedure :: get_hj
+
+   END TYPE fmsDiagOutfieldIndex_type
 
 CONTAINS
-   !!TODO: In the modern diag, the field_val and weight may also be of integer type,
-   !!      and so may need to use the pre-processor.
+
+  !> @brief Gets f1
+  !! @return copy of integer memeber f1
+   pure integer function get_f1 (this) result(rslt)
+      class (fmsDiagOutfieldIndex_type), intent(in) :: this !< The index object
+      rslt = this%f1
+   end function get_f1
+
+   !> @brief Gets f2
+  !! @return copy of integer memeber f2
+   pure integer function get_f2 (this) result(rslt)
+      class (fmsDiagOutfieldIndex_type), intent(in) :: this !< The index object
+      rslt = this%f2
+   end function get_f2
+
+   !> @brief Gets f3
+  !! @return copy of integer memeber f3
+   pure integer function get_f3 (this) result(rslt)
+      class (fmsDiagOutfieldIndex_type), intent(in) :: this !< The index object
+      rslt = this%f3
+   end function get_f3
+
+  !> @brief Gets f4
+  !! @return copy of integer memeber f4
+   pure integer function get_f4 (this) result(rslt)
+      class (fmsDiagOutfieldIndex_type), intent(in) :: this !< The index object
+      rslt = this%f4
+   end function get_f4
+
+    !> @brief Gets is
+  !! @return copy of integer memeber is
+   pure integer function get_is (this) result(rslt)
+      class (fmsDiagOutfieldIndex_type), intent(in) :: this !< The index object
+      rslt = this%is
+   end function get_is
+
+    !> @brief Gets js
+  !! @return copy of integer memeber js
+   pure integer function get_js (this) result(rslt)
+      class (fmsDiagOutfieldIndex_type), intent(in) :: this !< The index object
+      rslt = this%js
+   end function get_js
+
+    !> @brief Gets ks
+  !! @return copy of integer memeber ks
+   pure integer function get_ks (this) result(rslt)
+      class (fmsDiagOutfieldIndex_type), intent(in) :: this !< The index object
+      rslt = this%ks
+   end function get_ks
+
+
+  !> @brief Gets ie
+  !! @return copy of integer memeber ie
+   pure integer function get_ie (this) result(rslt)
+      class (fmsDiagOutfieldIndex_type), intent(in) :: this !< The index object
+      rslt = this%ie
+   end function get_ie
+
+  !> @brief Gets je
+  !! @return copy of integer memeber je
+   pure integer function get_je (this) result(rslt)
+      class (fmsDiagOutfieldIndex_type), intent(in) :: this !< The index object
+      rslt = this%je
+   end function get_je
+
+  !> @brief Gets ke
+  !! @return copy of integer memeber ke
+   pure integer function get_ke (this) result(rslt)
+      class (fmsDiagOutfieldIndex_type), intent(in) :: this !< The index object
+      rslt = this%ke
+   end function get_ke
+
+   !> @brief Gets hi
+  !! @return copy of integer memeber hi
+   pure integer function get_hi (this) result(rslt)
+      class (fmsDiagOutfieldIndex_type), intent(in) :: this !< The index object
+      rslt = this%hi
+   end function get_hi
+
+   !> @brief Gets hj
+  !! @return copy of integer memeber hj
+   pure integer function get_hj (this) result(rslt)
+      class (fmsDiagOutfieldIndex_type), intent(in) :: this !< The index object
+      rslt = this%hj
+   end function get_hj
+
 
 
 !> #brief initialize all the memebers of the class.
    SUBROUTINE initialize_outfield_index_type(this, is, js , ks, ie, je, ke, hi, hj, f1, f2, f3, f4)
-      CLASS(fms_diag_outfield_index_type), INTENT(inout)  :: this
+      CLASS(fmsDiagOutfieldIndex_type), INTENT(inout)  :: this
       INTEGER, INTENT(in) :: is, js, ks !< Variable used to update class member of same names.
       INTEGER, INTENT(in) :: ie, je, ke !< Variable used to update class member of same names.
       INTEGER, INTENT(in) :: hi, hj !< Variable used to update class member of same names.
@@ -145,16 +243,16 @@ CONTAINS
    END SUBROUTINE initialize_outfield_index_type
 
 
-   !> @brief Update with those fields used in the legacy diag manager.
+   !> @brief Update the fmsDiagOutfield_type instance with those fields used in the legacy diag manager.
   !! Note that this is initializing from the legacy structures.
    !! Note that output_frequency  came from file_type;
    SUBROUTINE initialize_outfield_imp(this, input_field,  output_field, mask_present, freq)
-      CLASS(fms_diag_outfield_type), INTENT(inout) :: this
-      TYPE(input_field_type),     INTENT(in) :: input_field
-      TYPE(output_field_type),    INTENT(in) :: output_field
-      LOGICAL, INTENT(in) :: mask_present
-      INTEGER, INTENT(in) :: freq
-      INTEGER ::  time_redux
+      CLASS(fmsDiagOutfield_type), INTENT(inout) :: this !< An instance of the fmsDiagOutfield_type
+      TYPE(input_field_type),     INTENT(in) :: input_field !< An instance of the input_field_type
+      TYPE(output_field_type),    INTENT(in) :: output_field !< An instance of the output_field_type
+      LOGICAL, INTENT(in) :: mask_present !< Was the mask present in the call to send_data?
+      INTEGER, INTENT(in) :: freq !< The output frequency.
+      INTEGER ::  time_redux !< The time reduction type integer.
 
       this%module_name = input_field%module_name
       this%field_name = input_field%field_name
@@ -181,10 +279,10 @@ CONTAINS
 
 
    !> \brief Get the time reduction from a legacy output field.
-    !! Note we do not place this in the time_reduction class to avoid circular dependencies.
+    !\note Note we do not place this in the time_reduction class to avoid circular dependencies.
    function get_output_field_time_reduction(ofield) result (rslt)
-    TYPE(output_field_type), INTENT(in) :: ofield
-    INTEGER ::  rslt
+    TYPE(output_field_type), INTENT(in) :: ofield !< An instance of the output_field_type
+    INTEGER ::  rslt !< The result integer which is the time reduction.
     if(ofield%time_max) then
       rslt = time_max
     elseif(ofield%time_min)then

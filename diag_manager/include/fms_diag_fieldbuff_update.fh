@@ -18,14 +18,16 @@
 !***********************************************************************
 
  !> @brief This code will be used by the preprecessor to generate an implementation
- !! to the module procudure for the fieldbuff_update interface. The
+ !! to the module procedure for the fieldbuff_update interface. The
   !! generated function is a wrapper calling 4D field/5D buffer version of the same.
 FUNCTION FMS_DIAG_FBU_3D_PNAME_(ofield_cfg, ofield_index_cfg, field_d, sample, &
   & ofb, ofc, bbounds, count_0d, num_elements, mask, weight1, missvalue,  &
   & field_num_threads, field_active_omp_level, issued_mask_ignore_warning, &
   & l_start, l_end, err_msg,  err_msg_local ) result( succeded )
-    TYPE(fms_diag_outfield_type), INTENT(in):: ofield_cfg  !< The ofield_cfg object
-    TYPE(fms_diag_outfield_index_type) , INTENT(in) :: ofield_index_cfg !<The ofield_index_cfg object
+    TYPE(fmsDiagOutfield_type), INTENT(in):: ofield_cfg  !< The fmsDiagOutfield_type object,
+                                                         !! where "cfg" is short for configuration
+    TYPE(fmsDiagOutfieldIndex_type) , INTENT(in) :: ofield_index_cfg !<The fmsDiagOutfieldIndex_type object,
+                                                                !! where "cfg" is short for configuration
     FMS_DIAG_FBU_DATA_TYPE_ , CONTIGUOUS, DIMENSION(:,:,:), INTENT(in), target :: field_d !< The input field data
     INTEGER, INTENT(in) :: sample  !< The index along the diurnal time axis
     FMS_DIAG_FBU_DATA_TYPE_ , CONTIGUOUS, DIMENSION(:,:,:,:), INTENT(inout), target :: ofb !< Output Field Buffer
@@ -43,18 +45,19 @@ FUNCTION FMS_DIAG_FBU_3D_PNAME_(ofield_cfg, ofield_index_cfg, field_d, sample, &
     LOGICAL, INTENT(inout) :: issued_mask_ignore_warning
     INTEGER, DIMENSION(3), INTENT(in)  :: l_start !< local start indices on 3 axes for regional output
     INTEGER, DIMENSION(3), INTENT(in)  :: l_end !< local end indices on 3 axes for regional output
-    CHARACTER(len=*), INTENT(inout), OPTIONAL :: err_msg
-    CHARACTER(len=256), INTENT(inout) :: err_msg_local
+    CHARACTER(len=*), INTENT(inout),OPTIONAL::err_msg !!Possibly passed in by the caller, and sent to error handler
+    CHARACTER(len=256), INTENT(inout) :: err_msg_local !!Possibly set by bounds checker, and sent to error handler
 
+    !!TODO: can the use of a dummy be removed.
     FMS_DIAG_FBU_DATA_TYPE_ , ALLOCATABLE, DIMENSION(:,:,:,:),target :: ofc_dummy
 
     !! For pointer bounds remapping
-    FMS_DIAG_FBU_DATA_TYPE_ , pointer, DIMENSION(:,:,:,:) :: field_ptr => null()!<
-    FMS_DIAG_FBU_DATA_TYPE_ , pointer, DIMENSION(:,:,:,:,:) :: ofb_ptr => null()!<
-    FMS_DIAG_FBU_DATA_TYPE_ , pointer, DIMENSION(:,:,:,:,:) :: ofc_ptr => null()!<
-    LOGICAL , pointer, DIMENSION(:,:,:,:) :: mask_ptr => null()!<
+    FMS_DIAG_FBU_DATA_TYPE_ , pointer, DIMENSION(:,:,:,:) :: field_ptr => null()!< Pointer to the field
+    FMS_DIAG_FBU_DATA_TYPE_ , pointer, DIMENSION(:,:,:,:,:) :: ofb_ptr => null()!< Pointer to the outfield buffer.
+    FMS_DIAG_FBU_DATA_TYPE_ , pointer, DIMENSION(:,:,:,:,:) :: ofc_ptr => null()!< Pointer to the outfield counter.
+    LOGICAL , pointer, DIMENSION(:,:,:,:) :: mask_ptr => null()!< Pointer to the mask.
 
-    LOGICAL :: succeded !> True iff no errors encountered.
+    LOGICAL :: succeded !< True iff no errors encountered.
 
     field_ptr(1:size(field_d,1),1:size(field_d,2),1:size(field_d,3),1:1) => field_d
     ofb_ptr(1:size(ofb,1),1:size(ofb,2),1:size(ofb,3),1:1, 1:size(ofb,4)) => ofb
@@ -79,22 +82,25 @@ FUNCTION FMS_DIAG_FBU_3D_PNAME_(ofield_cfg, ofield_index_cfg, field_d, sample, &
 
 
 !> @brief This code will be used by the preprecessor to generate an implementation
-!! to the module procudure for the fieldbuff_update interface.
+!! to the module procedure for the fieldbuff_update interface.
 !! Updates elements of the running field output buffer (argument ofb)
 !! and counter (argument ofc) based on the input field data array (argument field_d).
 !! In general the formulas are :
 !! A) ofb(l) = ofb(l) + (weight * field(l))**pow_value
 !! B) ofc(l) = ofc(l) + weight
-!! where l is a standing for some set of indecies in multiple dimensions.
+!! where l is a standing for some set of indices in multiple dimensions.
 !! Note this function may set field object members active_omp_level and  num_threads.
+!! TODO: (MDM) revisit passing in and need of field_num_threads and field_active_omp_level
 !> @addtogroup fms_diag_fieldbuff_update_mod
 !> @{
    FUNCTION FMS_DIAG_FBU_PNAME_ (ofield_cfg, ofield_index_cfg, field_d, sample, &
     & ofb, ofc, bbounds, count_0d, num_elements, mask, weight1, missvalue,  &
     & field_num_threads, field_active_omp_level, issued_mask_ignore_warning, &
     & l_start, l_end, err_msg,  err_msg_local ) result( succeded )
-      TYPE(fms_diag_outfield_type), INTENT(in) :: ofield_cfg  !< The ofield_cfg object
-      TYPE(fms_diag_outfield_index_type) , INTENT(in) :: ofield_index_cfg  !< The ofield_index_cfg object
+      TYPE(fmsDiagOutfield_type), INTENT(in) :: ofield_cfg  !< The fmsDiagOutfield_type object,
+                                          !!where "cfg" is short for configuration
+      TYPE(fmsDiagOutfieldIndex_type) , INTENT(in) :: ofield_index_cfg  !< The fmsDiagOutfieldIndex_type object,
+      !!                                                                where "cfg" is short for configuration
       FMS_DIAG_FBU_DATA_TYPE_ , CONTIGUOUS, DIMENSION(:,:,:,:), INTENT(in) :: field_d !< The input field data array.
       FMS_DIAG_FBU_DATA_TYPE_ , DIMENSION(:,:,:,:,:), INTENT(inout) :: ofb !< Output Field Buffer
       FMS_DIAG_FBU_DATA_TYPE_ , DIMENSION(:,:,:,:,:), INTENT(inout) :: ofc !< Output Field Counter
@@ -113,8 +119,8 @@ FUNCTION FMS_DIAG_FBU_3D_PNAME_(ofield_cfg, ofield_index_cfg, field_d, sample, &
       LOGICAL, INTENT(inout) :: issued_mask_ignore_warning
       INTEGER, DIMENSION(3), INTENT(in)  :: l_start !< local start indices on 3 axes for regional output
       INTEGER, DIMENSION(3), INTENT(in)  :: l_end !< local end indices on 3 axes for regional output
-      CHARACTER(len=*), INTENT(inout), OPTIONAL :: err_msg
-      CHARACTER(len=256), INTENT(inout) :: err_msg_local
+      CHARACTER(len=*), INTENT(inout),OPTIONAL::err_msg !!Possibly passed by the caller, and sent to error handler
+      CHARACTER(len=256), INTENT(inout) :: err_msg_local !!Possibly set by bounds checker, and sent to error handler
 
       INTEGER :: pow_value !< A copy of same variable in ofield_cfg
       CHARACTER(:), ALLOCATABLE :: output_name !< A copy of same variable in ofield_cfg
@@ -127,18 +133,18 @@ FUNCTION FMS_DIAG_FBU_3D_PNAME_(ofield_cfg, ofield_index_cfg, field_d, sample, &
       LOGICAL :: mask_present !< A copy of same variable in ofield_cfg
       LOGICAL :: missvalue_present !< A copy of same variable in ofield_cfg
 
-      !> The indecies copied directly from the ofield_index_cfg:
+      !< The indices copied directly from the ofield_index_cfg:
       INTEGER:: is, js, ks, ie, je, ke, hi, hj, f1, f2, f3, f4
-      INTEGER:: ls, le !> start and end indecies for the 4th dimension.
+      INTEGER:: ls, le !< start and end indices for the 4th dimension.
 
-      INTEGER :: ksr, ker !> Loop indeccies used in reduced_k_range calculations
-      !> Looping indecies, derived from ofield_index_cfg:
+      INTEGER :: ksr, ker !< Loop indices used in reduced_k_range calculations
+      !< Looping indices, derived from ofield_index_cfg:
       INTEGER :: i, j, k, l, i1, j1, k1
 
       INTEGER :: numthreads
       INTEGER :: active_omp_level
 
-      LOGICAL :: succeded !> True iff no errors encountered.
+      LOGICAL :: succeded !< True iff no errors encountered.
       CHARACTER(len=128):: error_string
 
 #if defined(_OPENMP)
@@ -152,18 +158,18 @@ FUNCTION FMS_DIAG_FBU_3D_PNAME_(ofield_cfg, ofield_index_cfg, field_d, sample, &
 
       ksr= l_start(3)
       ker= l_end(3)
-      is = ofield_index_cfg%is
-      js = ofield_index_cfg%js
-      ks = ofield_index_cfg%ks
-      ie = ofield_index_cfg%ie
-      je = ofield_index_cfg%je
-      ke = ofield_index_cfg%ke
-      hi = ofield_index_cfg%hi
-      hj = ofield_index_cfg%hj
-      f1 = ofield_index_cfg%f1
-      f2 = ofield_index_cfg%f2
-      f3 = ofield_index_cfg%f3
-      f4 = ofield_index_cfg%f4
+      is = ofield_index_cfg%get_is()
+      js = ofield_index_cfg%get_js()
+      ks = ofield_index_cfg%get_ks()
+      ie = ofield_index_cfg%get_ie()
+      je = ofield_index_cfg%get_je()
+      ke = ofield_index_cfg%get_ke()
+      hi = ofield_index_cfg%get_hi()
+      hj = ofield_index_cfg%get_hj()
+      f1 = ofield_index_cfg%get_f1()
+      f2 = ofield_index_cfg%get_f2()
+      f3 = ofield_index_cfg%get_f3()
+      f4 = ofield_index_cfg%get_f4()
 
       output_name = trim(ofield_cfg%output_name)
       field_name = trim(ofield_cfg%field_name)
@@ -203,7 +209,7 @@ FUNCTION FMS_DIAG_FBU_3D_PNAME_(ofield_cfg, ofield_index_cfg, field_d, sample, &
             MISSVAL_PR_1_IF: IF ( missvalue_present ) THEN !!(section: mask_varian .eq. true + mask present)
                IF ( debug_diag_manager ) THEN
                   CALL update_bounds(bbounds, is-hi, ie-hi, js-hj, je-hj, ks, ke)
-                  CALL check_out_of_bounds(ofb, bbounds, output_name, module_name, err_msg_local)
+                  CALL fms_diag_check_out_of_bounds(ofb, bbounds, output_name, module_name, err_msg_local)
                   IF ( err_msg_local /= '' ) THEN
                      IF ( fms_error_handler('diag_manager_mod::send_data_3d', err_msg_local, err_msg) ) THEN
                         succeded = .FALSE.
@@ -378,7 +384,7 @@ FUNCTION FMS_DIAG_FBU_3D_PNAME_(ofield_cfg, ofield_index_cfg, field_d, sample, &
                ELSE NDCMP_RKR_1_IF
                   IF ( debug_diag_manager ) THEN
                      CALL update_bounds(bbounds, is-hi, ie-hi, js-hj, je-hj, ks, ke)
-                     CALL check_out_of_bounds(ofb, bbounds, output_name, module_name, err_msg_local)
+                     CALL fms_diag_check_out_of_bounds(ofb, bbounds, output_name, module_name, err_msg_local)
                      IF ( err_msg_local /= '' ) THEN
                         IF ( fms_error_handler('diag_manager_mod::send_data_3d', err_msg_local, err_msg) ) THEN
                            succeded = .FALSE.
@@ -494,7 +500,7 @@ FUNCTION FMS_DIAG_FBU_3D_PNAME_(ofield_cfg, ofield_index_cfg, field_d, sample, &
                ELSE NDCMP_RKR_2_IF
                   IF ( debug_diag_manager ) THEN
                      CALL update_bounds(bbounds, is-hi, ie-hi, js-hj, je-hj, ks, ke)
-                     CALL check_out_of_bounds(ofb, bbounds, output_name, module_name, err_msg_local)
+                     CALL fms_diag_check_out_of_bounds(ofb, bbounds, output_name, module_name, err_msg_local)
                      IF ( err_msg_local /= '') THEN
                         IF ( fms_error_handler('diag_manager_mod::send_data_3d', err_msg_local, err_msg) ) THEN
                            succeded = .FALSE.
@@ -643,7 +649,7 @@ FUNCTION FMS_DIAG_FBU_3D_PNAME_(ofield_cfg, ofield_index_cfg, field_d, sample, &
                ELSE NDCMP_RKR_3_IF
                   IF ( debug_diag_manager ) THEN
                      CALL update_bounds(bbounds, is-hi, ie-hi, js-hj, je-hj, ks, ke)
-                     CALL check_out_of_bounds(ofb, bbounds, output_name, module_name, err_msg_local)
+                     CALL fms_diag_check_out_of_bounds(ofb, bbounds, output_name, module_name, err_msg_local)
                      IF ( err_msg_local /= '' ) THEN
                         IF ( fms_error_handler('diag_manager_mod::send_data_3d', err_msg_local, err_msg) ) THEN
                            succeded = .FALSE.
@@ -755,7 +761,7 @@ FUNCTION FMS_DIAG_FBU_3D_PNAME_(ofield_cfg, ofield_index_cfg, field_d, sample, &
                ELSE NDCMP_RKR_4_IF
                   IF ( debug_diag_manager ) THEN
                      CALL update_bounds(bbounds, is-hi, ie-hi, js-hj, je-hj, ks, ke)
-                     CALL check_out_of_bounds(ofb, bbounds, output_name, module_name, err_msg_local)
+                     CALL fms_diag_check_out_of_bounds(ofb, bbounds, output_name, module_name, err_msg_local)
                      IF ( err_msg_local /= '' ) THEN
                         IF (fms_error_handler('diag_manager_mod::send_data_3d', err_msg_local, err_msg) ) THEN
                            succeded = .FALSE.
@@ -797,31 +803,33 @@ FUNCTION FMS_DIAG_FBU_3D_PNAME_(ofield_cfg, ofield_index_cfg, field_d, sample, &
 
 
   !> @brief This code will be used by the preprecessor to generate an implementation
-  !! to the module procudure for the fieldbuff_copy_fieldvals interface. The
+  !! to the module procedure for the fieldbuff_copy_fieldvals interface. The
   !! generated function is a wrapper calling 4D field/5D buffer version of the same.
     FUNCTION FMS_DIAG_FBCF_3D_PNAME_ (ofield_cfg, ofield_index_cfg, field, sample, ofb, &
       & bbounds, count_0d, mask,  missvalue,  &
       & l_start, l_end, err_msg,  err_msg_local) result( succeded )
-         TYPE(fms_diag_outfield_type), INTENT(in) :: ofield_cfg   !< The ofield_cfg object
-         TYPE(fms_diag_outfield_index_type) , INTENT(in) :: ofield_index_cfg    !< The ofield_index_cfg object
+         TYPE(fmsDiagOutfield_type), INTENT(in) :: ofield_cfg   !< The fmsDiagOutfield_type object,
+                                                                !!where "cfg" is short for configuration
+         TYPE(fmsDiagOutfieldIndex_type) , INTENT(in) :: ofield_index_cfg    !< The fmsDiagOutfieldIndex_type object,
+                                                                          !! where "cfg" is short for configuration
          FMS_DIAG_FBU_DATA_TYPE_ , CONTIGUOUS,  DIMENSION(:,:,:),INTENT(in),target:: field !< The field value array.
          INTEGER, INTENT(in) :: sample   !< index along the diurnal time axis
          FMS_DIAG_FBU_DATA_TYPE_ , ALLOCATABLE, DIMENSION(:,:,:,:),INTENT(inout),target:: ofb !<The Output Field Buffer
          TYPE(fms_diag_ibounds_type), INTENT(inout) :: bbounds
-         FMS_DIAG_FBU_DATA_TYPE_ , INTENT(inout) :: count_0d   !> Normally the member of the buffer of same name,
+         FMS_DIAG_FBU_DATA_TYPE_ , INTENT(inout) :: count_0d   !< Normally the member of the buffer of same name,
          LOGICAL, CONTIGUOUS, DIMENSION(:,:,:), INTENT(in), OPTIONAL, target :: mask
-         FMS_DIAG_FBU_DATA_TYPE_ , INTENT(in) :: missvalue !> buffer may be set to this value where mask is false.
+         FMS_DIAG_FBU_DATA_TYPE_ , INTENT(in) :: missvalue !< buffer may be set to this value where mask is false.
          INTEGER, DIMENSION(3), INTENT(in)  :: l_start   !< local start indices on spatial axes for regional output
          INTEGER, DIMENSION(3), INTENT(in)  :: l_end   !< local end indices on spatial for regional output
-         CHARACTER(len=*), INTENT(inout), OPTIONAL :: err_msg
-         CHARACTER(len=256), INTENT(inout) :: err_msg_local
+         CHARACTER(len=*), INTENT(inout),OPTIONAL::err_msg !!Possibly passed in by the caller,and sent to handler
+         CHARACTER(len=256), INTENT(inout) :: err_msg_local !!Possibly set by bounds checker, and sent to handler
 
         !! For pointer bounds remapping
-        FMS_DIAG_FBU_DATA_TYPE_ , pointer, DIMENSION(:,:,:,:) :: field_ptr => null() !<
-        FMS_DIAG_FBU_DATA_TYPE_ , pointer, DIMENSION(:,:,:,:,:) :: ofb_ptr => null() !<
-        LOGICAL , pointer, DIMENSION(:,:,:,:) :: mask_ptr => null() !<
+        FMS_DIAG_FBU_DATA_TYPE_ , pointer, DIMENSION(:,:,:,:) :: field_ptr => null() !< Pointer to the field
+        FMS_DIAG_FBU_DATA_TYPE_ , pointer, DIMENSION(:,:,:,:,:) :: ofb_ptr => null() !< Pointer to the outfield buffer.
+        LOGICAL , pointer, DIMENSION(:,:,:,:) :: mask_ptr => null() !< !< Pointer to the mask.
 
-        LOGICAL :: succeded !> True iff no errors encountered.
+        LOGICAL :: succeded !< True iff no errors encountered.
 
         field_ptr(1:size(field,1),1:size(field,2),1:size(field,3),1:1) => field(:,:,:)
         ofb_ptr(1:size(ofb,1),1:size(ofb,2),1:size(ofb,3), 1:1, 1:size(ofb,4)) => ofb
@@ -836,29 +844,31 @@ FUNCTION FMS_DIAG_FBU_3D_PNAME_(ofield_cfg, ofield_index_cfg, field_d, sample, &
     END FUNCTION FMS_DIAG_FBCF_3D_PNAME_
 
 !> @brief This code will be used by the preprecessor to generate an implementation
-!! to the module procudure for the fieldbuff_copy_fieldvals interface.
+!! to the module procedure for the fieldbuff_copy_fieldvals interface.
 !! The function may set or add to the output field buffer (argument ofb) with the input
 !! field data array  (argument field)
 FUNCTION FMS_DIAG_FBCF_PNAME_ (ofield_cfg, ofield_index_cfg, field, sample, ofb, &
    & bbounds, count_0d, mask,  missvalue,  &
    & l_start, l_end, err_msg,  err_msg_local) result( succeded )
-      TYPE(fms_diag_outfield_type), INTENT(in) :: ofield_cfg   !< The ofield_cfg object
-      TYPE(fms_diag_outfield_index_type) , INTENT(in) :: ofield_index_cfg    !< The ofield_index_cfg object
+      TYPE(fmsDiagOutfield_type), INTENT(in) :: ofield_cfg   !< The fmsDiagOutfield_type object,
+                                                             !! where "cfg" is short for configuration
+      TYPE(fmsDiagOutfieldIndex_type) , INTENT(in) :: ofield_index_cfg    !< The fmsDiagOutfieldIndex_type object,
+                                                               !!where "cfg" is short for configuration
       FMS_DIAG_FBU_DATA_TYPE_ , CONTIGUOUS, DIMENSION(:,:,:,:), INTENT(in) :: field   !< The field value array.
       INTEGER, INTENT(in) :: sample   !< index along the diurnal time axis
       FMS_DIAG_FBU_DATA_TYPE_ , DIMENSION(:,:,:,:,:), INTENT(inout) :: ofb   !< The Output Field Buffer
       TYPE(fms_diag_ibounds_type), INTENT(inout) :: bbounds
-      FMS_DIAG_FBU_DATA_TYPE_ , INTENT(inout) :: count_0d   !> Normally the member of the buffer of same name,
+      FMS_DIAG_FBU_DATA_TYPE_ , INTENT(inout) :: count_0d   !< Normally the member of the buffer of same name,
       LOGICAL, CONTIGUOUS, DIMENSION(:,:,:,:), INTENT(in), OPTIONAL :: mask
-      FMS_DIAG_FBU_DATA_TYPE_ , INTENT(in) :: missvalue !> buffer may be set to this value where mask is false.
+      FMS_DIAG_FBU_DATA_TYPE_ , INTENT(in) :: missvalue !< buffer may be set to this value where mask is false.
       INTEGER, DIMENSION(3), INTENT(in)  :: l_start   !< local start indices on spatial axes for regional output
       INTEGER, DIMENSION(3), INTENT(in)  :: l_end   !< local end indices on spatial for regional output
-      CHARACTER(len=*), INTENT(inout), OPTIONAL :: err_msg
-      CHARACTER(len=256), INTENT(inout) :: err_msg_local
-      LOGICAL :: succeded !> Return true iff errors are not encounterd.
+      CHARACTER(len=*), INTENT(inout),OPTIONAL::err_msg !!Possibly passed in by the caller, and sent to handler
+      CHARACTER(len=256), INTENT(inout) :: err_msg_local  !!Possibly set by bounds checker, and sent to handler
+      LOGICAL :: succeded !< Return true iff errors are not encounterd.
       !!
       !!
-      !> The indecies copied directly from the ofield_index_cfg
+      !< The indices copied directly from the ofield_index_cfg
       INTEGER :: is, js, ks, ie, je, ke, hi, hj, f1, f2, f3, f4
 
       CHARACTER(:), ALLOCATABLE  :: output_name !< A copy of same variable in ofield_cfg
@@ -868,8 +878,8 @@ FUNCTION FMS_DIAG_FBCF_PNAME_ (ofield_cfg, ofield_index_cfg, field, sample, ofb,
       LOGICAL :: mask_present !< A copy of same variable in ofield_cfg
       LOGICAL :: missvalue_present !< A copy of same variable in ofield_cfg
 
-      INTEGER :: ksr, ker !> Loop indeccies used in reduced_k_range calculations
-      !> Looping indecies, derived from ofield_index_cfg:
+      INTEGER :: ksr, ker !< Loop indices used in reduced_k_range calculations
+      !< Looping indices, derived from ofield_index_cfg:
       INTEGER :: i, j, k, i1, j1, k1
 
 
@@ -878,18 +888,18 @@ FUNCTION FMS_DIAG_FBCF_PNAME_ (ofield_cfg, ofield_index_cfg, field, sample, ofb,
       ksr= l_start(3)
       ker= l_end(3)
 
-      is = ofield_index_cfg%is
-      js = ofield_index_cfg%js
-      ks = ofield_index_cfg%ks
-      ie = ofield_index_cfg%ie
-      je = ofield_index_cfg%je
-      ke = ofield_index_cfg%ke
-      hi = ofield_index_cfg%hi
-      hj = ofield_index_cfg%hj
-      f1 = ofield_index_cfg%f1
-      f2 = ofield_index_cfg%f2
-      f3 = ofield_index_cfg%f3
-      f4 = ofield_index_cfg%f4
+      is = ofield_index_cfg%get_is()
+      js = ofield_index_cfg%get_js()
+      ks = ofield_index_cfg%get_ks()
+      ie = ofield_index_cfg%get_ie()
+      je = ofield_index_cfg%get_je()
+      ke = ofield_index_cfg%get_ke()
+      hi = ofield_index_cfg%get_hi()
+      hj = ofield_index_cfg%get_hj()
+      f1 = ofield_index_cfg%get_f1()
+      f2 = ofield_index_cfg%get_f2()
+      f3 = ofield_index_cfg%get_f3()
+      f4 = ofield_index_cfg%get_f4()
 
       time_max = ofield_cfg%time_reduction%is_time_max()
       time_min = ofield_cfg%time_reduction%is_time_min()
@@ -932,7 +942,7 @@ FUNCTION FMS_DIAG_FBCF_PNAME_ (ofield_cfg, ofield_index_cfg, field, sample, ofb,
                ELSE
                   IF ( debug_diag_manager ) THEN
                      CALL update_bounds(bbounds, is-hi, ie-hi, js-hj, je-hj, ks, ke)
-                     CALL check_out_of_bounds(ofb, bbounds, output_name,  module_name, err_msg_local)
+                     CALL fms_diag_check_out_of_bounds(ofb, bbounds, output_name,  module_name, err_msg_local)
                      IF ( err_msg_local /= '' ) THEN
                         IF ( fms_error_handler('diag_manager_mod::send_data_3d', err_msg_local, err_msg) ) THEN
                            succeded = .FALSE.
@@ -970,7 +980,7 @@ FUNCTION FMS_DIAG_FBCF_PNAME_ (ofield_cfg, ofield_index_cfg, field, sample, ofb,
                ELSE
                   IF ( debug_diag_manager ) THEN
                      CALL update_bounds(bbounds, is-hi, ie-hi, js-hj, je-hj, ks, ke)
-                     CALL check_out_of_bounds(ofb, bbounds, output_name, module_name, err_msg_local)
+                     CALL fms_diag_check_out_of_bounds(ofb, bbounds, output_name, module_name, err_msg_local)
                      IF ( err_msg_local /= '' ) THEN
                         IF ( fms_error_handler('diag_manager_mod::send_data_3d', err_msg_local, err_msg) ) THEN
                            succeded = .FALSE.
@@ -1013,7 +1023,7 @@ FUNCTION FMS_DIAG_FBCF_PNAME_ (ofield_cfg, ofield_index_cfg, field, sample, ofb,
                ELSE
                   IF ( debug_diag_manager ) THEN
                      CALL update_bounds(bbounds, is-hi, ie-hi, js-hj, je-hj, ks, ke)
-                     CALL check_out_of_bounds(ofb, bbounds, output_name, module_name, err_msg_local)
+                     CALL fms_diag_check_out_of_bounds(ofb, bbounds, output_name, module_name, err_msg_local)
                      IF ( err_msg_local /= '' ) THEN
                         IF ( fms_error_handler('diag_manager_mod::send_data_3d', err_msg_local, err_msg) ) THEN
                            succeded = .FALSE.
@@ -1050,7 +1060,7 @@ FUNCTION FMS_DIAG_FBCF_PNAME_ (ofield_cfg, ofield_index_cfg, field, sample, ofb,
                ELSE
                   IF ( debug_diag_manager ) THEN
                      CALL update_bounds(bbounds, is-hi, ie-hi, js-hj, je-hj, ks, ke)
-                     CALL check_out_of_bounds(ofb, bbounds, output_name, module_name, err_msg_local)
+                     CALL fms_diag_check_out_of_bounds(ofb, bbounds, output_name, module_name, err_msg_local)
                      IF ( err_msg_local /= '' ) THEN
                         IF ( fms_error_handler('diag_manager_mod::send_data_3d', err_msg_local, err_msg) ) THEN
                            succeded = .FALSE.
@@ -1093,7 +1103,7 @@ FUNCTION FMS_DIAG_FBCF_PNAME_ (ofield_cfg, ofield_index_cfg, field, sample, ofb,
                ELSE
                   IF ( debug_diag_manager ) THEN
                      CALL update_bounds(bbounds, is-hi, ie-hi, js-hj, je-hj, ks, ke)
-                     CALL check_out_of_bounds(ofb, bbounds, output_name, module_name, err_msg_local)
+                     CALL fms_diag_check_out_of_bounds(ofb, bbounds, output_name, module_name, err_msg_local)
                      IF ( err_msg_local /= '' ) THEN
                         IF ( fms_error_handler('diag_manager_mod::send_data_3d', err_msg_local, err_msg) ) THEN
                            succeded = .FALSE.
@@ -1128,7 +1138,7 @@ FUNCTION FMS_DIAG_FBCF_PNAME_ (ofield_cfg, ofield_index_cfg, field, sample, ofb,
                ELSE
                   IF ( debug_diag_manager ) THEN
                      CALL update_bounds(bbounds, is-hi, ie-hi, js-hj, je-hj, ks, ke)
-                     CALL check_out_of_bounds(ofb, bbounds, output_name, module_name, err_msg_local)
+                     CALL fms_diag_check_out_of_bounds(ofb, bbounds, output_name, module_name, err_msg_local)
                      IF ( err_msg_local /= '' ) THEN
                         IF ( fms_error_handler('diag_manager_mod::send_data_3d', err_msg_local, err_msg) ) THEN
                            succeded = .FALSE.
@@ -1162,7 +1172,7 @@ FUNCTION FMS_DIAG_FBCF_PNAME_ (ofield_cfg, ofield_index_cfg, field, sample, ofb,
             ELSE
                IF ( debug_diag_manager ) THEN
                   CALL update_bounds(bbounds, is-hi, ie-hi, js-hj, je-hj, ks, ke)
-                  CALL check_out_of_bounds(ofb, bbounds, output_name, module_name, err_msg_local)
+                  CALL fms_diag_check_out_of_bounds(ofb, bbounds, output_name, module_name, err_msg_local)
                   IF ( err_msg_local /= '' ) THEN
                      IF ( fms_error_handler('diag_manager_mod::send_data_3d', err_msg_local, err_msg) ) THEN
                         succeded = .FALSE.
@@ -1224,24 +1234,26 @@ FUNCTION FMS_DIAG_FBCF_PNAME_ (ofield_cfg, ofield_index_cfg, field, sample, ofb,
 
 
   !> @brief This code will be used by the preprecessor to generate an implementation
-  !! to the module procudure for the fieldbuff_copy_misvals interface. The
+  !! to the module procedure for the fieldbuff_copy_misvals interface. The
   !! generated function is a wrapper calling 4D field/5D buffer version of the same.
    SUBROUTINE FMS_DIAG_FBCM_3D_PNAME_ (ofield_cfg, ofield_index_cfg, ofb, sample, &
     & l_start, l_end, rmask, rmask_thresh, missvalue)
-      TYPE(fms_diag_outfield_type), INTENT(in) :: ofield_cfg   !< The ofield_cfg object
-      TYPE(fms_diag_outfield_index_type) , INTENT(in) :: ofield_index_cfg    !< The ofield_index_cfg object
+      TYPE(fmsDiagOutfield_type), INTENT(in) :: ofield_cfg   !< The ofield_cfg object
+      TYPE(fmsDiagOutfieldIndex_type) , INTENT(in) :: ofield_index_cfg    !< The ofield_index_cfg object
       FMS_DIAG_FBU_DATA_TYPE_ , CONTIGUOUS,DIMENSION(:,:,:,:),INTENT(inout),target:: ofb !<The Output Field Buffer
       INTEGER, INTENT(in) :: sample   !< index along the diurnal time axis
-      !!Updates where rmask < rmask_thresh:
-      FMS_DIAG_FBU_DATA_TYPE_ , CONTIGUOUS, DIMENSION(:,:,:), INTENT(in),target :: rmask
+      FMS_DIAG_FBU_DATA_TYPE_ , CONTIGUOUS, DIMENSION(:,:,:), INTENT(in),target :: rmask !< A real valued mask,
+                                                      !! determined by logical mask. Updates where rmask < rmask_thresh
       FMS_DIAG_FBU_DATA_TYPE_ , INTENT(in) :: rmask_thresh  !< Updates where rmask < rmask_thresh
       FMS_DIAG_FBU_DATA_TYPE_ , INTENT(in) :: missvalue  !< Value used to update the buffer.
       INTEGER, DIMENSION(3), INTENT(in)  :: l_start   !< local start indices on spatial axes for regional output
       INTEGER, DIMENSION(3), INTENT(in)  :: l_end   !< local end indices on spatial for regional output
 
-      !! For pointer bounds remapping
-      FMS_DIAG_FBU_DATA_TYPE_ , pointer, DIMENSION(:,:,:,:,:) :: ofb_ptr => null() !<
-      FMS_DIAG_FBU_DATA_TYPE_ , pointer, DIMENSION(:,:,:,:) :: rmask_ptr => null() !<
+      !! These below are used in pointer bounds remapping
+      FMS_DIAG_FBU_DATA_TYPE_ , pointer, DIMENSION(:,:,:,:,:) :: ofb_ptr => null() !< Pointer to the output field
+                                                                                   !! buffer - used in remapping
+      FMS_DIAG_FBU_DATA_TYPE_ , pointer, DIMENSION(:,:,:,:) :: rmask_ptr => null() !< Pointer to the rmask - used
+                                                                                   !! in remapping
 
       ofb_ptr(1:size(ofb,1),1:size(ofb,2),1:size(ofb,3), 1:1, 1:size(ofb,4)) => ofb
       rmask_ptr(1:size(rmask,1),1:size(rmask,2),1:size(rmask,3),1:1) => rmask
@@ -1252,15 +1264,17 @@ FUNCTION FMS_DIAG_FBCF_PNAME_ (ofield_cfg, ofield_index_cfg, field, sample, ofb,
 
 
   !> @brief This code will be used by the preprecessor to generate an implementation
-  !! to the module procudure for the fieldbuff_copy_misvals interface.
+  !! to the module procedure for the fieldbuff_copy_misvals interface.
   !!  The function updates where appropriate and depending on the rmask argument,
    !! elements of the running field output buffer (argument buffer) with value missvalue.
    !! NOTE: It appears these OFB updates were introcuded by EMC MM into the tail end of the
    !! legacy send_data_3d.
    SUBROUTINE  FMS_DIAG_FBCM_PNAME_ (ofield_cfg, ofield_index_cfg, buffer, sample, &
       & l_start, l_end, rmask, rmask_thresh, missvalue)
-        TYPE(fms_diag_outfield_type), INTENT(in) :: ofield_cfg   !< The ofield_cfg object
-        TYPE(fms_diag_outfield_index_type) , INTENT(in) :: ofield_index_cfg    !< The ofield_index_cfg object
+        TYPE(fmsDiagOutfield_type), INTENT(in) :: ofield_cfg   !< The fmsDiagOutfield_type object,
+                                                               !! where "cfg" is short for configuration
+        TYPE(fmsDiagOutfieldIndex_type) , INTENT(in) :: ofield_index_cfg    !< The fmsDiagOutfieldIndex_type object,
+                                                               !!where "cfg" is short for configuration
         FMS_DIAG_FBU_DATA_TYPE_ , INTENT(inout), DIMENSION(:,:,:,:,:) :: buffer !< the buffer to update
          INTEGER, INTENT(in) :: sample !< index along the diurnal time axis
          INTEGER, INTENT(in), DIMENSION(3):: l_start !< local start indices on 3 axes for regional output
@@ -1269,21 +1283,23 @@ FUNCTION FMS_DIAG_FBCF_PNAME_ (ofield_cfg, ofield_index_cfg, field, sample, ofb,
          FMS_DIAG_FBU_DATA_TYPE_ , INTENT(in) :: rmask_thresh  !< Updates where rmask < rmask_thresh
          FMS_DIAG_FBU_DATA_TYPE_ , INTENT(in) :: missvalue  !< Value used to update the buffer.
 
+         !< Looping indices copied from corresponding one in ofield_index_cfg info:
          INTEGER :: is, js, ks, ie, je, ke, hi, hj
+         !< Floags copied from corresponding one in ofield_cfg info:
          LOGICAL :: need_compute
          LOGICAL :: reduced_k_range
-         INTEGER :: ksr, ker !> Loop indeccies used in reduced_k_range calculations
-         !> Looping indecies, derived from ofield_index_cfg info:
+         INTEGER :: ksr, ker !< Loop indices used in reduced_k_range calculations
+         !< Looping indices, derived from ofield_index_cfg info:
          INTEGER :: i, j, k, i1, j1, k1
 
-         is = ofield_index_cfg%is
-         js = ofield_index_cfg%js
-         ks = ofield_index_cfg%ks
-         ie = ofield_index_cfg%ie
-         je = ofield_index_cfg%je
-         ke = ofield_index_cfg%ke
-         hi = ofield_index_cfg%hi
-         hj = ofield_index_cfg%hj
+         is = ofield_index_cfg%get_is()
+         js = ofield_index_cfg%get_js()
+         ks = ofield_index_cfg%get_ks()
+         ie = ofield_index_cfg%get_ie()
+         je = ofield_index_cfg%get_je()
+         ke = ofield_index_cfg%get_ke()
+         hi = ofield_index_cfg%get_hi()
+         hj = ofield_index_cfg%get_hj()
 
          reduced_k_range = ofield_cfg%reduced_k_range
          need_compute = ofield_cfg%need_compute

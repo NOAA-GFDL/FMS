@@ -36,7 +36,7 @@ MODULE fms_diag_elem_weight_procs_mod
 
    implicit none
 
-  !> @brief Interface for the elemental function addwf, whihc
+  !> @brief Interface for the elemental function addwf, which
   !! Calculates and returns the value given by this formula:
   !! returned_value  = buff  + (weight * field)**pow_value
   !> @ingroup fms_diag_elem_weight_procs_mod
@@ -51,7 +51,7 @@ CONTAINS
 
    !!TODO: Note that in the functions below, the case for pow_value == 2 was
    !! not in the original send_data_3d code and the power function was used.
-   !! So this case may need to be deleted is reproducability is an issue.
+   !! So this case may need to be deleted if reproducability is an issue.
 
   !> @brief Calculates and returns the value given by this formula:
   !! returned_value  = buff  + (weight * field)**pow_value

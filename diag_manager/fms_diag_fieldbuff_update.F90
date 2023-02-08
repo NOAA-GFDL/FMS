@@ -38,8 +38,8 @@ MODULE fms_diag_fieldbuff_update_mod
    USE time_manager_mod, ONLY: time_type
    USE fms_mod, ONLY: error_mesg, FATAL, WARNING, NOTE, stdout, stdlog, write_version_number,fms_error_handler
    USE diag_data_mod, ONLY:  debug_diag_manager, fms_diag_ibounds_type
-   USE fms_diag_outfield_mod, ONLY: fms_diag_outfield_index_type, fms_diag_outfield_type
-   USE diag_util_mod, ONLY: check_out_of_bounds, update_bounds
+   USE fms_diag_outfield_mod, ONLY: fmsDiagOutfieldIndex_type, fmsDiagOutfield_type
+   USE diag_util_mod, ONLY: fms_diag_check_out_of_bounds, update_bounds
    USE fms_diag_elem_weight_procs_mod, ONLY: addwf
 
    implicit none
@@ -64,26 +64,26 @@ MODULE fms_diag_fieldbuff_update_mod
      ! module procedure fieldbuff_update_i8
    end interface
 
-   !> @brief Interface fieldbuff_copy_misvals updates elements of the field output buffer with
-   !! with the missvalue input argument.
+   !> @brief Interface fieldbuff_copy_missvals updates elements of the field output buffer with
+   !! the missvalue input argument.
    !> @ingroup fms_diag_fieldbuff_update_mod
-   interface fieldbuff_copy_misvals
+   interface fieldbuff_copy_missvals
       !< r4 version of the interface
-      module procedure fieldbuff_copy_misvals_r4
+      module procedure fieldbuff_copy_missvals_r4
       !< r8 version of the interface
-      module procedure fieldbuff_copy_misvals_r8
+      module procedure fieldbuff_copy_missvals_r8
       !< r4 version of the interface, , where the field is 3D
-      module procedure fieldbuff_copy_misvals_3d_r4
+      module procedure fieldbuff_copy_missvals_3d_r4
       !< r8 version of the interface, , where the field is 3D
-      module procedure fieldbuff_copy_misvals_3d_r8
+      module procedure fieldbuff_copy_missvals_3d_r8
       !< i4 version of the interface
-      !module procedure fieldbuff_copy_misvals_i4
+      !module procedure fieldbuff_copy_missvals_i4
       !< i8 version of the interface
-      !module procedure fieldbuff_copy_misvals_i8
+      !module procedure fieldbuff_copy_missvals_i8
    end interface
 
    !> @brief Interface fieldbuff_copy_fieldvals updates elements of the field output buffer with
-   !! with copies of correspondind element values in the input field data.
+   !! copies of corresponding element values in the input field data.
    !> @ingroup fms_diag_fieldbuff_update_mod
    interface fieldbuff_copy_fieldvals
       !< r4 version of the interface

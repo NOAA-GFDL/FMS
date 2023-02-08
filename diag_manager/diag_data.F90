@@ -345,7 +345,7 @@ END TYPE fms_diag_ibounds_type
                                    !! <TT>.TRUE.</TT> is only supported if the diag_manager_init
                                    !! routine is called with the optional time_init parameter.
   LOGICAL :: use_mpp_io = .false. !< false is fms2_io (default); true is mpp_io
-  LOGICAL :: use_refactored_send = .true. !< Namelist flag to use refactored send_data math funcitons.
+  LOGICAL :: use_refactored_send = .false. !< Namelist flag to use refactored send_data math funcitons.
 
   !!TODO: leave use_refactored_send as false
 
@@ -406,19 +406,18 @@ CONTAINS
   END SUBROUTINE diag_data_init
 
 
-!> @brief Sets the lower and upper bounds to lower_val and upper_val, respectively.
+  !> @brief Sets the lower and upper bounds to lower_val and upper_val, respectively.
   SUBROUTINE ibounds_reset (this, lower_val, upper_val)
-  class (fms_diag_ibounds_type), target, intent(inout) :: this   !< ibounds instance
-  integer, intent(in) :: lower_val  !< value for the lower bounds in each dimension
-  integer, intent(in) :: upper_val  !< value for the upper bounds in each dimension
-  this%imin = lower_val
-  this%jmin = lower_val
-  this%kmin = lower_val
-  this%imax = upper_val
-  this%jmax = upper_val
-  this%kmax = upper_val
-end   SUBROUTINE ibounds_reset
-
+    class (fms_diag_ibounds_type), target, intent(inout) :: this   !< ibounds instance
+    integer, intent(in) :: lower_val  !< value for the lower bounds in each dimension
+    integer, intent(in) :: upper_val  !< value for the upper bounds in each dimension
+    this%imin = lower_val
+    this%jmin = lower_val
+    this%kmin = lower_val
+    this%imax = upper_val
+    this%jmax = upper_val
+    this%kmax = upper_val
+  END SUBROUTINE ibounds_reset
 
 END MODULE diag_data_mod
 !> @}

@@ -31,19 +31,16 @@
 MODULE fms_diag_time_reduction_mod
 
   USE diag_data_mod, only: EVERY_TIME
-   !!use diag_data_mod, only: time_min, time_max, time_sum, time_rms, time_average, time_none, time_power, &
-   !!& time_diurnal, every_time
   USE fms_mod, ONLY: error_mesg, FATAL
 
    implicit none
 
    !!These parametes are the possible kinds of time reduction operations.
-   !!Note that sometimes one kind inplies another.
    !!TODO: should they be put in diag_data ?
    !!TODO:
    !!TODO: time_diurnal "not really" same kind as others, so remove?
    INTEGER, PARAMETER :: time_none    = 0 !< There is no reduction method
-   INTEGER, PARAMETER :: time_average = 1 !< The reduction method is avera
+   INTEGER, PARAMETER :: time_average = 1 !< The reduction method is average
    INTEGER, PARAMETER :: time_rms     = 2 !< The reduction method is rms
    INTEGER, PARAMETER :: time_max     = 3 !< The reduction method is max
    INTEGER, PARAMETER :: time_min     = 4 !< The reduction method is min
@@ -51,18 +48,18 @@ MODULE fms_diag_time_reduction_mod
    INTEGER, PARAMETER :: time_diurnal = 6 !< The reduction method is diurnal
    INTEGER, PARAMETER :: time_power   = 7 !< The reduction method is power
 
-!> @brief Class time_reduction_type has an encapsulation of the "Fortran enum" time
+!> @brief Class fmsDiagTimeReduction_type has an encapsulation of the "Fortran enum" time
 !! reduction integer parameters, plus an encapsulation of the groupings of
 !! the time reduction types. It is inteded to provide some of the functionality
 !! that was coded in the legacy function diag_data.F90:init_output_fields.
 !! The functionality in the end is used by send_data in (EFFICIENT) do loops calling
 !! the weighting or math functions to update buffers.
-!!  the The integer parameters above are the legal time_reduction_types,
+!!  the The integer parameters above are the legal time reduction types,
 !! but they are not necessarily mutually exclusive in some contexts.
 !!
 !> @addtogroup fms_diag_time_reduction_mod
-   TYPE time_reduction_type
-      integer , private :: the_type !< The time reduction type; integer as per diag_data_mod entries.
+   TYPE fmsDiagTimeReduction_type
+      integer , private :: the_time_reduction !< The time reduction type, as an  integer defined above.
       logical , private :: time_averaging !< Set true iff time_average, time_rms, time_power or time_diurnal is true
       logical , private :: time_ops !< Set true iff time_min, time_max, time_rms or time_average is true.
    CONTAINS
@@ -77,32 +74,33 @@ MODULE fms_diag_time_reduction_mod
       procedure, public :: is_time_diurnal => is_time_diurnal_imp
       procedure, public :: is_time_power => is_time_power_imp
       procedure, public :: initialize
-   END TYPE time_reduction_type
+   END TYPE fmsDiagTimeReduction_type
 
 !> @brief This interface is for the class constructor.
 !> @addtogroup fms_diag_time_reduction_mod
-   interface  time_reduction_type
-      procedure  :: time_reduction_type_constructor
-   end interface time_reduction_type
+   interface  fmsDiagTimeReduction_type
+      procedure  :: fmsDiagTimeReduction_type_constructor
+   end interface fmsDiagTimeReduction_type
 
 CONTAINS
 
    !> @brief The class contructors. Just allocates the class and calls an initializer
-   function time_reduction_type_constructor(dt, out_frequency) result(time_redux)
-      integer, intent(in) :: dt  !> The redution type (time_rms, time_power, etc)
-      integer, intent(in) :: out_frequency  !> The output frequency.
-      class (time_reduction_type), allocatable :: time_redux
+   function fmsDiagTimeReduction_type_constructor(dt, out_frequency) result(time_redux)
+      integer, intent(in) :: dt  !< The redution type (time_rms, time_power, etc)
+      integer, intent(in) :: out_frequency  !< The output frequency.
+      class (fmsDiagTimeReduction_type), allocatable :: time_redux !< The instance of the  fmsDiagTimeReduction_type class
+                                                                   !! allocated and returned by this constructor.
       allocate(time_redux)
       call time_redux%initialize(dt, out_frequency)
-   end function time_reduction_type_constructor
+   end function fmsDiagTimeReduction_type_constructor
 
 !> @brief Initialize the object.
    subroutine initialize(this, dt, out_frequency)
-      class (time_reduction_type), intent(inout) :: this !> The time_reduction_type object
-      integer, intent(in) :: dt !> The redution type (time_rms, time_porer, etc)
-      integer, intent(in) :: out_frequency !> The output frequency.
+      class (fmsDiagTimeReduction_type), intent(inout) :: this !< The fmsDiagTimeReduction_type object
+      integer, intent(in) :: dt !< The redution type (time_rms, time_porer, etc)
+      integer, intent(in) :: out_frequency !< The output frequency.
 
-      this%the_type = dt
+      this%the_time_reduction = dt
 
       !! Set the time_averaging flag
       !! See legacy init_ouput_fields function, lines 1470ff
@@ -113,7 +111,7 @@ CONTAINS
          this%time_averaging= .false.
          IF((dt .NE. time_max) .AND. (dt .ne. time_min) .AND. (dt .NE. time_sum) &
          & .AND. (dt .NE. time_none)) THEN
-            CALL error_mesg('time_reduction_type: initialize', &
+            CALL error_mesg('fmsDiagTimeReduction_type: initialize', &
             & 'time_averaging=.false. but reduction type not compatible', FATAL)
          ENDIF
       END IF
@@ -133,9 +131,9 @@ CONTAINS
 
 
 !> \brief Returns true if any of time_min, time_max, time_rms or time_average is true.
-!! @return true if if any of time_min, time_max, time_rms or time_average is true.
+!! @return true if any of time_min, time_max, time_rms or time_average is true.
    pure function has_time_ops_imp (this)
-      class (time_reduction_type), intent(in) :: this  !<The object this function is bound to.
+      class (fmsDiagTimeReduction_type), intent(in) :: this  !<The object this function is bound to.
       logical :: has_time_ops_imp
       has_time_ops_imp = this%time_ops
    end function has_time_ops_imp
@@ -143,73 +141,73 @@ CONTAINS
    !> \brief Returns true iff time_averaging is true.
    !! @return true iff time_averaging is true.
    pure function do_time_averaging_imp (this)
-      class (time_reduction_type), intent(in) :: this  !<The object this function is bound to.
+      class (fmsDiagTimeReduction_type), intent(in) :: this  !<The object this function is bound to.
       logical :: do_time_averaging_imp
       do_time_averaging_imp = this%time_averaging
    end function do_time_averaging_imp
 
-   !> \brief Returns true iff the_type is time_average
-   !! @return true iff the_type is time_average
+   !> \brief Returns true iff the_time_reduction is time_average
+   !! @return true iff the_time_reduction is time_average
    pure function is_time_average_imp (this)
-      class (time_reduction_type), intent(in) :: this  !<The object this function is bound to.
+      class (fmsDiagTimeReduction_type), intent(in) :: this  !<The object this function is bound to.
       logical :: is_time_average_imp
-      is_time_average_imp = this%the_type .EQ. time_average
+      is_time_average_imp = this%the_time_reduction .EQ. time_average
    end function is_time_average_imp
 
-   !> \brief Returns true iff the_type is time_none
-   !! @return true iff the_type is time_none
+   !> \brief Returns true iff the_time_reduction is time_none
+   !! @return true iff the_time_reduction is time_none
    pure function is_time_none_imp (this)
-      class (time_reduction_type), intent(in) :: this  !<The object this function is bound to.
+      class (fmsDiagTimeReduction_type), intent(in) :: this  !<The object this function is bound to.
       logical :: is_time_none_imp
-      is_time_none_imp = (this%the_type .EQ. time_none)
+      is_time_none_imp = (this%the_time_reduction .EQ. time_none)
    end function is_time_none_imp
 
-   !> \brief Returns true iff the_type is time_rms
-   !! @return true iff the_type is time_rms
+   !> \brief Returns true iff the_time_reduction is time_rms
+   !! @return true iff the_time_reduction is time_rms
    pure function is_time_rms_imp (this)
-      class (time_reduction_type), intent(in) :: this  !<The object this function is bound to.
+      class (fmsDiagTimeReduction_type), intent(in) :: this  !<The object this function is bound to.
       logical :: is_time_rms_imp
-      is_time_rms_imp = this%the_type .EQ. time_rms
+      is_time_rms_imp = this%the_time_reduction .EQ. time_rms
    end function is_time_rms_imp
 
-   !> \brief Returns true iff the_type is time_max
-   !! @return true iff the_type is time_max
+   !> \brief Returns true iff the_time_reduction is time_max
+   !! @return true iff the_time_reduction is time_max
    pure function is_time_max_imp (this)
-      class (time_reduction_type), intent(in) :: this  !<The object this function is bound to.
+      class (fmsDiagTimeReduction_type), intent(in) :: this  !<The object this function is bound to.
       logical :: is_time_max_imp
-      is_time_max_imp = this%the_type .EQ. time_max
+      is_time_max_imp = this%the_time_reduction .EQ. time_max
    end function is_time_max_imp
 
-   !> \brief Returns true iff the_type is time_min
-   !! @return true iff the_type is time_min
+   !> \brief Returns true iff the_time_reduction is time_min
+   !! @return true iff the_time_reduction is time_min
    pure function is_time_min_imp (this)
-      class (time_reduction_type), intent(in) :: this  !<The object this function is bound to.
+      class (fmsDiagTimeReduction_type), intent(in) :: this  !<The object this function is bound to.
       logical :: is_time_min_imp
-      is_time_min_imp = this%the_type .EQ. time_min
+      is_time_min_imp = this%the_time_reduction .EQ. time_min
    end function is_time_min_imp
 
-   !> \brief Returns true iff the_type is time_sum
-   !! @return true iff the_type is time_sum
+   !> \brief Returns true iff the_time_reduction is time_sum
+   !! @return true iff the_time_reduction is time_sum
    pure function is_time_sum_imp (this)
-      class (time_reduction_type), intent(in) :: this  !<The object this function is bound to.
+      class (fmsDiagTimeReduction_type), intent(in) :: this  !<The object this function is bound to.
       logical :: is_time_sum_imp
-      is_time_sum_imp = this%the_type .EQ. time_sum
+      is_time_sum_imp = this%the_time_reduction .EQ. time_sum
    end function is_time_sum_imp
 
-   !> \brief Returns true iff the_type is time_diurnal
-   !! @return true iff the_type is time_diurnal
+   !> \brief Returns true iff the_time_reduction is time_diurnal
+   !! @return true iff the_time_reduction is time_diurnal
    pure function is_time_diurnal_imp (this)
-      class (time_reduction_type), intent(in) :: this  !<The object this function is bound to.
+      class (fmsDiagTimeReduction_type), intent(in) :: this  !<The object this function is bound to.
       logical :: is_time_diurnal_imp
-      is_time_diurnal_imp = this%the_type .EQ. time_diurnal
+      is_time_diurnal_imp = this%the_time_reduction .EQ. time_diurnal
    end function is_time_diurnal_imp
 
-   !> \brief Returns true iff the_type is time_power
-   !! @return true iff the_type is time_power
+   !> \brief Returns true iff the_time_reduction is time_power
+   !! @return true iff the_time_reduction is time_power
    pure function is_time_power_imp (this)
-      class (time_reduction_type), intent(in) :: this  !<The object this function is bound to.
+      class (fmsDiagTimeReduction_type), intent(in) :: this  !<The object this function is bound to.
       logical :: is_time_power_imp
-      is_time_power_imp = this%the_type .EQ. time_power
+      is_time_power_imp = this%the_time_reduction .EQ. time_power
    end function is_time_power_imp
 
 

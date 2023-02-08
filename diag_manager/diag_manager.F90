@@ -239,8 +239,8 @@ use platform_mod
   USE diag_output_mod, ONLY: get_diag_global_att, set_diag_global_att
   USE diag_grid_mod, ONLY: diag_grid_init, diag_grid_end
   USE constants_mod, ONLY: SECONDS_PER_DAY
-  USE fms_diag_outfield_mod, ONLY: fms_diag_outfield_index_type, fms_diag_outfield_type
-  USE fms_diag_fieldbuff_update_mod, ONLY: fieldbuff_update, fieldbuff_copy_misvals, &
+  USE fms_diag_outfield_mod, ONLY: fmsDiagOutfieldIndex_type, fmsDiagOutfield_type
+  USE fms_diag_fieldbuff_update_mod, ONLY: fieldbuff_update, fieldbuff_copy_missvals, &
    & fieldbuff_copy_fieldvals
 
 #ifdef use_netCDF
@@ -1493,8 +1493,8 @@ CONTAINS
     REAL(kind=r8_kind), POINTER, DIMENSION(:,:,:) :: rmask_ptr_r8 => null() !<A pointer to r8 type of rmask
     LOGICAL , pointer, DIMENSION(:,:,:) :: mask_ptr => null() !< A pointer to mask
 
-    TYPE(fms_diag_outfield_index_type), ALLOCATABLE:: ofield_index_cfg !<Instance  used in calling math funcsions.
-    TYPE(fms_diag_outfield_type), ALLOCATABLE:: ofield_cfg !<Instance  used in calling math funcsions.
+    TYPE(fmsDiagOutfieldIndex_type), ALLOCATABLE:: ofield_index_cfg !<Instance  used in calling math funcsions.
+    TYPE(fmsDiagOutfield_type), ALLOCATABLE:: ofield_cfg !<Instance  used in calling math funcsions.
     LOGICAL :: mf_result !<Logical result returned from some math (buffer udate) functions.
     LOGICAL, DIMENSION(1,1,1), target :: mask_dummy
     REAL :: rmask_threshold
@@ -1954,11 +1954,11 @@ CONTAINS
         !IF ( PRESENT(rmask)  .AND. missvalue_present ) THEN
         !  SELECT TYPE (rmask)
         !  TYPE IS (real(kind=r4_kind))
-        !  call fieldbuff_copy_misvals(ofield_cfg, ofield_index_cfg, &
+        !  call fieldbuff_copy_missvals(ofield_cfg, ofield_index_cfg, &
         !  & output_fields(out_num)%buffer, sample, &
         !  & l_start, l_end, rmask_ptr_r4, rmask_threshold, missvalue)
         !  TYPE IS (real(kind=r8_kind))
-        !    call fieldbuff_copy_misvals(ofield_cfg, ofield_index_cfg, &
+        !    call fieldbuff_copy_missvals(ofield_cfg, ofield_index_cfg, &
         !    & output_fields(out_num)%buffer, sample, &
        !     & l_start, l_end, rmask_ptr_r8, rmask_threshold, missvalue)
         !  CLASS DEFAULT

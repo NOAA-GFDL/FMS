@@ -25,10 +25,10 @@ program test_diag_update_buffer
    use mpp_mod, only: mpp_init, mpp_set_stack_size, mpp_init_test_requests_allocated
    use fms_mod, ONLY: fms_init, fms_end, error_mesg, FATAL,NOTE
    use diag_data_mod, ONLY: fms_diag_ibounds_type, VERY_LARGE_AXIS_LENGTH
-   USE fms_diag_outfield_mod, ONLY: fms_diag_outfield_type, fms_diag_outfield_index_type
-   USE fms_diag_fieldbuff_update_mod, ONLY: fieldbuff_update, fieldbuff_copy_misvals, &
+   USE fms_diag_outfield_mod, ONLY: fmsDiagOutfield_type, fmsDiagOutfieldIndex_type
+   USE fms_diag_fieldbuff_update_mod, ONLY: fieldbuff_update, fieldbuff_copy_missvals, &
    & fieldbuff_copy_fieldvals
-   USE fms_diag_time_reduction_mod, ONLY: time_reduction_type, time_average, time_rms
+   USE fms_diag_time_reduction_mod, ONLY: fmsDiagTimeReduction_type, time_average, time_rms
 
    implicit  none
 
@@ -41,10 +41,10 @@ program test_diag_update_buffer
       INTEGER, ALLOCATABLE, dimension(:) :: num_elements
    END TYPE diag_test_buffer_type
 
-   integer,parameter :: SZ=10    !<Field data this size in all spatiall dims.
-   integer,parameter :: SL=2     !!Field data this size in 4th dim
-   integer,parameter :: NDI=1    !!Number of diurnal elemes
-   CLASS(*), ALLOCATABLE :: r4_datapoint, i8_datapoint !> to be allocated of rype data (e.g. r4. i8)
+   integer,parameter :: SZ=10    !< Field data this size in all spatiall dims.
+   integer,parameter :: SL=2     !< Field data this size in 4th dim
+   integer,parameter :: NDI=1    !< Number of diurnal elemes
+   CLASS(*), ALLOCATABLE :: r4_datapoint, i8_datapoint !< to be allocated of rype data (e.g. r4. i8)
                               !! to be used thought.
 
    TYPE(fms_diag_ibounds_type) ::  buff_bounds
@@ -92,7 +92,7 @@ program test_diag_update_buffer
    LOGICAL :: mask_variant
    INTEGER :: num_elems
    LOGICAL :: reduced_k_range
-   TYPE(time_reduction_type), allocatable :: time_reduction !!Replaces LOGICAL::time_rms,time_max,time_min...
+   TYPE(fmsDiagTimeReduction_type), allocatable :: time_reduction !!Replaces LOGICAL::time_rms,time_max,time_min...
 
    INTEGER:: diag_field_id
    INTEGER:: sample !!diurnal_index
@@ -107,8 +107,8 @@ program test_diag_update_buffer
 
    LOGICAL :: missvalue_present = .false.
 
-   TYPE(fms_diag_outfield_type), ALLOCATABLE :: ofield_cfg
-   TYPE(fms_diag_outfield_index_type), ALLOCATABLE :: ofield_index_cfg
+   TYPE(fmsDiagOutfield_type), ALLOCATABLE :: ofield_cfg
+   TYPE(fmsDiagOutfieldIndex_type), ALLOCATABLE :: ofield_index_cfg
 
    call fms_init
 
@@ -262,7 +262,7 @@ CONTAINS
    subroutine init_ofield_cfg( of_cfg, module_name, field_name, output_name, &
    &  power_val, phys_window, need_compute, mask_variant,  reduced_k_range, num_elems, &
    & time_reduction_type,output_freq)
-      type(fms_diag_outfield_type)  :: of_cfg
+      type(fmsDiagOutfield_type)  :: of_cfg
       CHARACTER(len=*), INTENT(in) :: module_name !< Var with same name in fms_diag_outfield_type
       CHARACTER(len=*), INTENT(in) :: field_name !< Var with same name in fms_diag_outfield_type
       CHARACTER(len=*), INTENT(in) :: output_name !< Var with same name in fms_diag_outfield_type
@@ -289,7 +289,7 @@ CONTAINS
    !> @brief Initialized an fms_diag_outfield_index_type by calling member funtion of
    !! fms_diag_outfield_index_type input object.
    SUBROUTINE init_ofield_index_cfg(idx_cfg, is, js , ks, ie, je, ke, hi, hj, f1, f2, f3, f4)
-      type(fms_diag_outfield_index_type), INTENT(inout)  :: idx_cfg !< The object to initialize.
+      type(fmsDiagOutfieldIndex_type), INTENT(inout)  :: idx_cfg !< The object to initialize.
       INTEGER, INTENT(in) :: is, js, ks  !< Var with same name in fms_diag_outfield_index_type
       INTEGER, INTENT(in) ::  ie, je, ke !< Var with same name in fms_diag_outfield_index_type
       INTEGER, INTENT(in) :: hi, hj !< Var with same name in fms_diag_outfield_index_type
@@ -325,11 +325,11 @@ CONTAINS
 
   !> @brief Init to zero the buffer, counter , an
    SUBROUTINE init_buff_values_1 (buffer, counter, count_0d, num_elems)
-      CLASS(*), DIMENSION(:,:,:,:,:), INTENT(INOUT) :: buffer
-      CLASS(*), DIMENSION(:,:,:,:,:), INTENT(INOUT) :: counter
-      CLASS(*), DIMENSION(:), INTENT(INOUT) :: count_0d
-      INTEGER, DIMENSION(:), INTENT(INOUT) :: num_elems
-      INTEGER, PARAMETER :: sample = 1
+      CLASS(*), DIMENSION(:,:,:,:,:), INTENT(INOUT) :: buffer !< The actual buffer array of the buffer class.
+      CLASS(*), DIMENSION(:,:,:,:,:), INTENT(INOUT) :: counter  !< The actual buffer array of the buffer class.
+      CLASS(*), DIMENSION(:), INTENT(INOUT) :: count_0d  !< A counter used in time averaging.
+      INTEGER, DIMENSION(:), INTENT(INOUT) :: num_elems  !< A counter used in time averaging.
+      INTEGER, PARAMETER :: sample = 1  !< The diurnal sample.
 
       SELECT TYPE ( buffer)
        TYPE IS (real(kind=r4_kind))
@@ -462,8 +462,8 @@ CONTAINS
    !> @brief Calculate the unique index into a 4D array given the first four indecies
    !! i,j,k,l and the with in the fist three dimensions.
    pure integer function get_array_index_from_4D(i,j,k, l, NX,NY,NZ)
-      INTEGER, INTENT(IN) :: i, j, k, l !> The three spatial dimentsions plus another
-      INTEGER, INTENT(IN) :: NX, NY, NZ !> The size of the spatial dimentions.
+      INTEGER, INTENT(IN) :: i, j, k, l !< The three spatial dimentsions plus another
+      INTEGER, INTENT(IN) :: NX, NY, NZ !< The size of the spatial dimentions.
       get_array_index_from_4D =  (l-1)* (NX * NY * NZ) + (k-1) * NX * NY + (j-1) * NX + i
    end function get_array_index_from_4D
 
@@ -493,10 +493,10 @@ CONTAINS
 
    subroutine allocate_buffer_obj( data_point, bo, NX,NY,NZ, NL, NDI)
       TYPE(diag_test_buffer_type), INTENT(inout), allocatable :: bo
-      CLASS(*), INTENT(in) :: data_point !> Sample point allocated to the type being tested.
-      INTEGER, INTENT(IN) :: NX, NY, NZ !> The three spatial dimensions.
-      INTEGER, INTENT(IN) :: NL !> Size of the 4th dimentions
-      INTEGER, INTENT(IN) :: NDI !> Diurnal axis length,
+      CLASS(*), INTENT(in) :: data_point !< Sample point allocated to the type being tested.
+      INTEGER, INTENT(IN) :: NX, NY, NZ !< The three spatial dimensions.
+      INTEGER, INTENT(IN) :: NL !< Size of the 4th dimentions
+      INTEGER, INTENT(IN) :: NDI !< Diurnal axis length,
       allocate (bo)
       select type (data_point)
        type is (integer(kind=i8_kind))

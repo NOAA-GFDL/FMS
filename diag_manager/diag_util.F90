@@ -81,7 +81,8 @@ use,intrinsic :: iso_c_binding, only: c_double,c_float,c_int64_t, &
        & check_bounds_are_exact_dynamic, check_bounds_are_exact_static, init_file, diag_time_inc,&
        & find_input_field, init_input_field, init_output_field, diag_data_out, write_static,&
        & check_duplicate_output_fields, get_date_dif, get_subfield_vert_size, sync_file_times,&
-       & prepend_attribute, attribute_init, diag_util_init
+       & prepend_attribute, attribute_init, diag_util_init,&
+       & fms_diag_check_out_of_bounds
 
 
   !> @brief Prepend a value to a string attribute in the output field or output file.
@@ -103,11 +104,11 @@ use,intrinsic :: iso_c_binding, only: c_double,c_float,c_int64_t, &
     module procedure fms_update_bounds_modern
   END INTERFACE update_bounds
 
-  INTERFACE check_out_of_bounds
-    module procedure check_out_of_bounds_legacy
-    module procedure fms_check_out_of_bounds_modern_r4
-    module procedure fms_check_out_of_bounds_modern_r8
-  END INTERFACE check_out_of_bounds
+  INTERFACE fms_diag_check_out_of_bounds
+    !!module procedure check_out_of_bounds_legacy
+    module procedure fms_diag_check_out_of_bounds_modern_r4
+    module procedure fms_diag_check_out_of_bounds_modern_r8
+  END INTERFACE fms_diag_check_out_of_bounds
 
   INTERFACE check_bounds_are_exact_dynamic
     module procedure check_bounds_are_exact_dynamic_legacy
@@ -757,7 +758,7 @@ CONTAINS
          & TRIM(axes_list)
   END SUBROUTINE log_diag_field_info
 
-  !> @brief Determine the dounds of the first three dimentions
+  !> @brief Determine the bounds of the first three dimentions
   !! of the "array" argument and store it the bounding box argument "bounds"
   SUBROUTINE fms_bounds_from_array_4D(bounds, array)
     REAL, INTENT( in), DIMENSION(:,:,:,:) :: array !< The 4D input array.
@@ -770,7 +771,7 @@ CONTAINS
       bounds%kmax = UBOUND(array,3)
   END SUBROUTINE  fms_bounds_from_array_4D
 
- !> @brief Determine the dounds of the first three dimentions
+ !> @brief Determine the bounds of the first three dimentions
   !! of the "array" argument and store it the bounding box argument "bounds"
   SUBROUTINE fms_bounds_from_array_5D(bounds, array)
     CLASS(*), INTENT( in), DIMENSION(:,:,:,:,:) :: array !< The 4D input array.
@@ -816,12 +817,12 @@ SUBROUTINE fms_update_bounds_modern(bounds, lower_i, upper_i, lower_j, upper_j, 
   bounds%kmax = MAX(bounds%kmax, upper_k)
 END SUBROUTINE fms_update_bounds_modern
 
-  !> @brief Compares the dounding indecies of an array specified in "current_bounds"
+  !> @brief Compares the bounding indices of an array specified in "current_bounds"
 !! to the corresponding lower and upper bounds specified in "bounds"
 !! Comparison is done by the two user specified input functions lowerb_comp and upperb_comp.
 !! If any compariosn function returns true, then, after filling error_str, this routine also returns
-!! true. The suplied comparison functions should return true for errors : for indecies out of bounds,
-!! or indecies are not equal when expected to be equal.
+!! true. The suplied comparison functions should return true for errors : for indices out of bounds,
+!! or indices are not equal when expected to be equal.
 LOGICAL FUNCTION compare_buffer_bounds_to_size(current_bounds, bounds, error_str, lowerb_comp, upperb_comp)
   TYPE (fms_diag_ibounds_type), INTENT(in) :: current_bounds  !<A bounding box holding the current bounds
                                                                      !! of an array.
@@ -832,14 +833,16 @@ LOGICAL FUNCTION compare_buffer_bounds_to_size(current_bounds, bounds, error_str
   !> @brief Interface lowerb_comp should be used for comparison to lower bounds of buffer.
   INTERFACE
      LOGICAL FUNCTION lowerb_comp(a , b)
-       INTEGER, INTENT(IN) :: a, b
+       INTEGER, INTENT(IN) :: a !< One of the two args that are to be compared to each other.
+       INTEGER, INTENT(IN) :: b !< One of the two args that are to be compared to each other.
      END FUNCTION lowerb_comp
   END INTERFACE
 
   !> @brief Interface lowerb_comp should be used for comparison to upper bounds of buffer.
   INTERFACE
      LOGICAL FUNCTION upperb_comp(a, b)
-       INTEGER, INTENT(IN) :: a, b
+       INTEGER, INTENT(IN) :: a !< One of the two args that are to be compared to each other.
+       INTEGER, INTENT(IN) :: b !< One of the two args that are to be compared to each other.
      END FUNCTION upperb_comp
   END INTERFACE
 
@@ -873,26 +876,29 @@ END FUNCTION compare_buffer_bounds_to_size
 
 !> @brief return true iff a<b.
 LOGICAL FUNCTION a_lessthan_b(a , b)
- INTEGER, INTENT(IN) :: a, b
+ INTEGER, INTENT(IN) :: a !< The first of the two integer args that are to be compared to each other.
+ INTEGER, INTENT(IN) :: b !< The first of the two integer args that are to be compared to each other.
  a_lessthan_b = A < B
 END FUNCTION a_lessthan_b
 
 !> @brief return true iff a>b.
 LOGICAL FUNCTION a_greaterthan_b(a, b)
- INTEGER, INTENT(IN) :: a, b
+ INTEGER, INTENT(IN) :: a !< The first of the two integer args that are to be compared to each other.
+ INTEGER, INTENT(IN) :: b !< The first of the two integer args that are to be compared to each other.
  a_greaterthan_b = A > B
 END FUNCTION a_greaterthan_b
 
-!> @brief return true iff a != b
+!> @brief return true iff a /= b
 LOGICAL FUNCTION a_noteq_b(a, b)
-INTEGER, INTENT(IN) :: a, b
+INTEGER, INTENT(IN) :: a !< The first of the two integer args that are to be compared to each other.
+INTEGER, INTENT(IN) :: b !< The first of the two integer args that are to be compared to each other.
 a_noteq_b = a /= b
 END FUNCTION a_noteq_b
 
   !> @brief Checks if the array indices for <TT>output_fields(out_num)</TT> are outside the
   !! <TT>output_fields(out_num)%buffer</TT> upper and lower bounds.
   !! If there is an error then error message will be filled.
-SUBROUTINE check_out_of_bounds_legacy(out_num, diag_field_id, err_msg)
+SUBROUTINE check_out_of_bounds(out_num, diag_field_id, err_msg)
   INTEGER, INTENT(in) :: out_num !< Output field ID number.
   INTEGER, INTENT(in) :: diag_field_id !< Input field ID number.
   CHARACTER(len=*), INTENT(inout) :: err_msg !< Return status of <TT>check_out_of_bounds</TT>.  An empty
@@ -919,12 +925,12 @@ SUBROUTINE check_out_of_bounds_legacy(out_num, diag_field_id, err_msg)
       err_msg = ''
     END IF
   end associate
-END SUBROUTINE check_out_of_bounds_legacy
+END SUBROUTINE check_out_of_bounds
 
  !> @brief Checks if the array indices for <TT>output_fields(out_num)</TT> are outside the
   !! <TT>output_fields(out_num)%buffer</TT> upper and lower bounds.
   !! If there is an error then error message will be filled.
-SUBROUTINE fms_check_out_of_bounds_modern_r4(ofb, bounds, output_name, module_name, err_msg)
+SUBROUTINE fms_diag_check_out_of_bounds_modern_r4(ofb, bounds, output_name, module_name, err_msg)
   REAL(kind=r4_kind), INTENT (in), DIMENSION(:,:,:,:,:) :: ofb !< The output field buffer to check
   TYPE (fms_diag_ibounds_type), INTENT(inout) :: bounds !< The bounding box to check against
   CHARACTER(:), ALLOCATABLE, INTENT(in) :: output_name !< output name for placing in error message
@@ -950,18 +956,18 @@ SUBROUTINE fms_check_out_of_bounds_modern_r4(ofb, bounds, output_name, module_na
   ELSE
      err_msg = ''
   END IF
-END SUBROUTINE fms_check_out_of_bounds_modern_r4
+END SUBROUTINE fms_diag_check_out_of_bounds_modern_r4
 
  !> @brief Checks if the array indices for output_field buffer (ofb) are outside the
   !! are outside the bounding box (bounds).
   !! If there is an error then error message will be filled.
 
-SUBROUTINE fms_check_out_of_bounds_modern_r8(ofb, bounds, output_name, module_name, err_msg)
+SUBROUTINE fms_diag_check_out_of_bounds_modern_r8(ofb, bounds, output_name, module_name, err_msg)
   REAL(kind=r8_kind), INTENT (in), DIMENSION(:,:,:,:,:) :: ofb !< The output field buffer to check
   TYPE (fms_diag_ibounds_type), INTENT(inout) :: bounds !< The bounding box to check against
   CHARACTER(:), ALLOCATABLE, INTENT(in) :: output_name  !< output name for placing in error message
   CHARACTER(:), ALLOCATABLE, INTENT(in) :: module_name   !< module name for placing in error message
-  CHARACTER(len=*), INTENT(out) :: err_msg !< Return status of <TT>check_out_of_bounds</TT>.  An empty
+  CHARACTER(len=*), INTENT(inout) :: err_msg !< Return status of <TT>check_out_of_bounds</TT>.  An empty
                                            !! error string indicates the x, y, and z indices are not outside the
 
   CHARACTER(len=128) :: error_string1, error_string2
@@ -982,10 +988,10 @@ SUBROUTINE fms_check_out_of_bounds_modern_r8(ofb, bounds, output_name, module_na
   ELSE
      err_msg = ''
   END IF
-END SUBROUTINE fms_check_out_of_bounds_modern_r8
+END SUBROUTINE fms_diag_check_out_of_bounds_modern_r8
 
 
-!> @brief Checks that array indecies specified in the bounding box "current_bounds"
+!> @brief Checks that array indices specified in the bounding box "current_bounds"
 !! are identical to those in the bounding box "bounds" match exactly. The check
 !! occurs only when the time changed.
 !! If there is an error then error message will be filled.
@@ -1083,7 +1089,7 @@ END SUBROUTINE check_bounds_are_exact_dynamic_legacy
 
     CALL fms_check_bounds_are_exact_static_modern(current_bounds, output_fields(out_num)%buff_bounds, &
        &  output_name, module_name, err_msg)
-  END   SUBROUTINE fms_check_bounds_are_exact_static_legacy
+  END SUBROUTINE fms_check_bounds_are_exact_static_legacy
 
 
   !> @brief Check if the array indices specified in the bounding box "current_bounds" are equal to those
