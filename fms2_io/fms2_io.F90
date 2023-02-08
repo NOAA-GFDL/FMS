@@ -375,7 +375,6 @@ end interface read_new_restart
 !> @{
 
 logical, private :: fms2_io_is_initialized = .false. !< True after fms2_io_init is run
-
 ! Namelist variables
 integer :: ncchksz = 64*1024  !< User defined chunksize (in bytes) argument in netcdf file
                               !! creation calls. Replaces setting the NC_CHKSZ environment variable.
@@ -384,8 +383,11 @@ character (len = 10) :: netcdf_default_format = "64bit" !< User defined netcdf f
                               !! "nc_format" in the open_file call
 integer :: header_buffer_val = 16384 !< Use defined netCDF header buffer size(in bytes) used in
                                      !! NF__ENDDEF
+integer :: deflate_level = default_deflate_level !< Netcdf deflate level to use in nf90_def_var
+                                                 !! (integer between 1 to 9)
+logical :: shuffle = .false. !< Flag indicating whether to use the netcdf shuffle filter
 namelist / fms2_io_nml / &
-                      ncchksz, netcdf_default_format, header_buffer_val
+                      ncchksz, netcdf_default_format, header_buffer_val, deflate_level, shuffle
 
 contains
 
@@ -402,12 +404,16 @@ subroutine fms2_io_init ()
   READ (input_nml_file, NML=fms2_io_nml, IOSTAT=mystat)
 !>Send the namelist variables to their respective modules
   if (ncchksz .le. 0) then
-        call mpp_error(FATAL, "ncchksz in fms2_io_nml must be a positive number.")
+    call mpp_error(FATAL, "ncchksz in fms2_io_nml must be a positive number.")
   endif
-  call netcdf_io_init (ncchksz,header_buffer_val,netcdf_default_format)
   if (header_buffer_val .le. 0) then
-        call mpp_error(FATAL, "header_buffer_val in fms2_io_nml must be a positive number.")
+    call mpp_error(FATAL, "header_buffer_val in fms2_io_nml must be a positive number.")
   endif
+  if (deflate_level .lt. 0 .or. deflate_level .gt. 9) then
+    call mpp_error(FATAL, &
+      "deflate_level in fms2_io_nml must be a positive number between 1 and 9 as it is required by NetCDF")
+  endif
+  call netcdf_io_init (ncchksz,header_buffer_val,netcdf_default_format, deflate_level, shuffle)
   call blackboxio_init (ncchksz)
 !> Mark the fms2_io as initialized
   fms2_io_is_initialized = .true.

@@ -43,18 +43,6 @@
     void error_handler(char *str)
     error handler: will print out error message and then abort
 ***********************************************************/
-int reproduce_siena = 0;
-
-void set_reproduce_siena_true(void)
-{
-  reproduce_siena = 1;
-}
-
-void set_reproduce_siena_true_(void)
-{
-  reproduce_siena = 1;
-}
-
 
 void error_handler(const char *msg)
 {
@@ -298,14 +286,9 @@ double poly_area_dimensionless(const double x[], const double y[], int n)
     if ( fabs(lat1-lat2) < SMALL_VALUE) /* cheap area calculation along latitude */
       area -= dx*sin(0.5*(lat1+lat2));
     else {
-      if(reproduce_siena) {
-        area += dx*(cos(lat1)-cos(lat2))/(lat1-lat2);
-      }
-      else {
-        dy = 0.5*(lat1-lat2);
-        dat = sin(dy)/dy;
-        area -= dx*sin(0.5*(lat1+lat2))*dat;
-      }
+      dy = 0.5*(lat1-lat2);
+      dat = sin(dy)/dy;
+      area -= dx*sin(0.5*(lat1+lat2))*dat;
     }
   }
   if(area < 0)
@@ -335,14 +318,9 @@ double poly_area(const double x[], const double y[], int n)
     if ( fabs(lat1-lat2) < SMALL_VALUE) /* cheap area calculation along latitude */
       area -= dx*sin(0.5*(lat1+lat2));
     else {
-      if(reproduce_siena) {
-        area += dx*(cos(lat1)-cos(lat2))/(lat1-lat2);
-      }
-      else {
-        dy = 0.5*(lat1-lat2);
-        dat = sin(dy)/dy;
-        area -= dx*sin(0.5*(lat1+lat2))*dat;
-      }
+      dy = 0.5*(lat1-lat2);
+      dat = sin(dy)/dy;
+      area -= dx*sin(0.5*(lat1+lat2))*dat;
     }
   }
   if(area < 0)

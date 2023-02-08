@@ -104,7 +104,7 @@ program test_io_simple
   call mpp_get_compute_domain(io_domain, xbegin=isc_east, xend=iec_east, xsize=nx_east, position=east)
   call mpp_get_compute_domain(io_domain, ybegin=jsc_north, yend=jec_north, ysize=ny_north, position=north)
 
-  call netcdf_io_init(ncchksz, header_buffer_val, netcdf_default_format)
+  call fms2_io_init
 
   do i = 1, 3
      write(testfile,'(a,a,a)') 'test_io_simple_', trim(my_format(i)), '.nc'

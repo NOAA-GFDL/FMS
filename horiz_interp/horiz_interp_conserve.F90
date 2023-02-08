@@ -821,7 +821,7 @@ contains
              if (present(mask_in)) then
                 call data_sum ( data_in(is:ie,js:je), Interp%area_src(is:ie,js:je), &
                      fis, fie, fjs,fje, dwtsum, wtsum, arsum, mask_in(is:ie,js:je)  )
-             else if( ASSOCIATED(Interp%mask_in) ) then
+             else if( allocated(Interp%mask_in) ) then
                 call data_sum ( data_in(is:ie,js:je), Interp%area_src(is:ie,js:je), &
                      fis, fie, fjs,fje, dwtsum, wtsum, arsum, Interp%mask_in(is:ie,js:je)  )
              else
@@ -924,18 +924,18 @@ contains
 
     select case(Interp%version)
     case (1)
-       if(associated(Interp%area_src)) deallocate(Interp%area_src)
-       if(associated(Interp%area_dst)) deallocate(Interp%area_dst)
-       if(associated(Interp%facj))     deallocate(Interp%facj)
-       if(associated(Interp%jlat))     deallocate(Interp%jlat)
-       if(associated(Interp%faci))     deallocate(Interp%faci)
-       if(associated(Interp%ilon))     deallocate(Interp%ilon)
+       if(allocated(Interp%area_src)) deallocate(Interp%area_src)
+       if(allocated(Interp%area_dst)) deallocate(Interp%area_dst)
+       if(allocated(Interp%facj))     deallocate(Interp%facj)
+       if(allocated(Interp%jlat))     deallocate(Interp%jlat)
+       if(allocated(Interp%faci))     deallocate(Interp%faci)
+       if(allocated(Interp%ilon))     deallocate(Interp%ilon)
     case (2)
-       if(associated(Interp%i_src)) deallocate(Interp%i_src)
-       if(associated(Interp%j_src)) deallocate(Interp%j_src)
-       if(associated(Interp%i_dst)) deallocate(Interp%i_dst)
-       if(associated(Interp%j_dst)) deallocate(Interp%j_dst)
-       if(associated(Interp%area_frac_dst)) deallocate(Interp%area_frac_dst)
+       if(allocated(Interp%i_src)) deallocate(Interp%i_src)
+       if(allocated(Interp%j_src)) deallocate(Interp%j_src)
+       if(allocated(Interp%i_dst)) deallocate(Interp%i_dst)
+       if(allocated(Interp%j_dst)) deallocate(Interp%j_dst)
+       if(allocated(Interp%area_frac_dst)) deallocate(Interp%area_frac_dst)
     end select
 
   end subroutine horiz_interp_conserve_del

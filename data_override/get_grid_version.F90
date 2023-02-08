@@ -61,15 +61,13 @@ endif
 end subroutine check_grid_sizes
 
 !> Get global lon and lat of three model (target) grids, with a given file name
-subroutine get_grid_version_1(grid_file, mod_name, domain, isc, iec, jsc, jec, lon, lat, min_lon, max_lon, &
-                             &  grid_center_bug)
+subroutine get_grid_version_1(grid_file, mod_name, domain, isc, iec, jsc, jec, lon, lat, min_lon, max_lon)
   character(len=*),            intent(in) :: grid_file !< name of grid file
   character(len=*),            intent(in) :: mod_name !< module name
   type(domain2d),              intent(in) :: domain !< 2D domain
   integer,                     intent(in) :: isc, iec, jsc, jec
   real, dimension(isc:,jsc:), intent(out) :: lon, lat
   real,                       intent(out) :: min_lon, max_lon
-  logical,           intent(in), optional :: grid_center_bug !< Enables legacy behaviour
 
   integer                                      :: i, j, siz(4)
   integer                                      :: nlon, nlat !< size of global lon and lat
@@ -83,7 +81,6 @@ subroutine get_grid_version_1(grid_file, mod_name, domain, isc, iec, jsc, jec, l
   integer                                      :: start(2), nread(2)
   type(FmsNetcdfDomainFile_t)                  :: fileobj
   integer                                      :: ndims  !< Number of dimensions
-  logical                                      :: gc_bug !< local grid_center_bug variable, default is .false.
 
   if(.not. open_file(fileobj, grid_file, 'read', domain )) then
      call mpp_error(FATAL, 'data_override_mod(get_grid_version_1): Error in opening file '//trim(grid_file))
@@ -118,15 +115,6 @@ subroutine get_grid_version_1(grid_file, mod_name, domain, isc, iec, jsc, jec, l
       lat(:,:) = (lat_vert(:,:,1) + lat_vert(:,:,2) + lat_vert(:,:,3) + lat_vert(:,:,4))*0.25
     else
 
-      if (present(grid_center_bug)) then
-          gc_bug = grid_center_bug
-      else
-          gc_bug = .false.
-      endif
-
-      if(gc_bug) call mpp_error(NOTE, &
-           'data_override: grid_center_bug is set to true, the grid center location may be incorrect')
-
       ndims = get_variable_num_dimensions(fileobj, 'geolon_vert_t')
       call get_variable_size(fileobj, 'geolon_vert_t', siz(1:ndims))
       nlon = siz(1) - 1; nlat = siz(2) - 1;
@@ -141,23 +129,14 @@ subroutine get_grid_version_1(grid_file, mod_name, domain, isc, iec, jsc, jec, l
       call read_data(fileobj, 'geolon_vert_t', lon_vert(:,:,1), corner=start, edge_lengths=nread)
       call read_data(fileobj, 'geolat_vert_t', lat_vert(:,:,1), corner=start, edge_lengths=nread)
 
-      if(gc_bug) then
-         do j = jsc, jec
-            do i = isc, iec
-               lon(i,j) = (lon_vert(i,j,1) + lon_vert(i+1,j,1))/2.
-               lat(i,j) = (lat_vert(i,j,1) + lat_vert(i,j+1,1))/2.
-            enddo
+      do j = jsc, jec
+         do i = isc, iec
+            lon(i,j) = (lon_vert(i,j,1) + lon_vert(i+1,j,1) + &
+                 lon_vert(i+1,j+1,1) + lon_vert(i,j+1,1))*0.25
+            lat(i,j) = (lat_vert(i,j,1) + lat_vert(i+1,j,1) + &
+                 lat_vert(i+1,j+1,1) + lat_vert(i,j+1,1))*0.25
          enddo
-      else
-         do j = jsc, jec
-            do i = isc, iec
-               lon(i,j) = (lon_vert(i,j,1) + lon_vert(i+1,j,1) + &
-                    lon_vert(i+1,j+1,1) + lon_vert(i,j+1,1))*0.25
-               lat(i,j) = (lat_vert(i,j,1) + lat_vert(i+1,j,1) + &
-                    lat_vert(i+1,j+1,1) + lat_vert(i,j+1,1))*0.25
-            enddo
-         enddo
-      end if
+      enddo
     endif
     deallocate(lon_vert)
     deallocate(lat_vert)
