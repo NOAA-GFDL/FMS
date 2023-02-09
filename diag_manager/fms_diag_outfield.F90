@@ -104,6 +104,7 @@ MODULE fms_diag_outfield_mod
   procedure :: get_mask_present
   procedure :: get_time_reduction
   procedure, public  :: initialize => initialize_outfield_imp
+  procedure :: initialize_for_ut
 
   END TYPE fmsDiagOutfield_type
 
@@ -139,7 +140,6 @@ MODULE fms_diag_outfield_mod
      procedure :: get_ke
      procedure :: get_hi
      procedure :: get_hj
-
   END TYPE fmsDiagOutfieldIndex_type
 
 CONTAINS
@@ -381,6 +381,42 @@ CONTAINS
     !!TODO: If possible add to the power function. See issue with pointers and elemental functions
 
   END SUBROUTINE initialize_outfield_imp
+
+   !> @brief Initialized an fms_diag_outfield_type as needed for unit tests.
+  subroutine initialize_for_ut(this, module_name, field_name, output_name, &
+    &  power_val, phys_window, need_compute, mask_variant,  reduced_k_range, num_elems, &
+    & time_reduction_type,output_freq)
+       CLASS(fmsDiagOutfield_type), intent(inout)  :: this
+       CHARACTER(len=*), INTENT(in) :: module_name !< Var with same name in fms_diag_outfield_type
+       CHARACTER(len=*), INTENT(in) :: field_name !< Var with same name in fms_diag_outfield_type
+       CHARACTER(len=*), INTENT(in) :: output_name !< Var with same name in fms_diag_outfield_type
+       INTEGER, INTENT(in) :: power_val    !< Var with same name in fms_diag_outfield_type
+       LOGICAL, INTENT(in) :: phys_window  !< Var with same name in fms_diag_outfield_type
+       LOGICAL, INTENT(in) :: need_compute  !< Var with same name in fms_diag_outfield_type
+       LOGICAL, INTENT(in) :: mask_variant  !< Var with same name in fms_diag_outfield_type
+       LOGICAL, INTENT(in) :: reduced_k_range !< Var with same name in fms_diag_outfield_type
+       INTEGER, INTENT(in) :: num_elems !< Var with same name in fms_diag_outfield_type
+       INTEGER, INTENT(in) :: time_reduction_type !< Var with same name in fms_diag_outfield_type
+       INTEGER, INTENT(in) :: output_freq !< The output_freq need in initaliztion of time_reduction_type
+
+       this%module_name = module_name
+       this%field_name = field_name
+       this%output_name = output_name
+       this%pow_value = power_val
+       this%phys_window = phys_window
+       this%need_compute = need_compute
+       this%reduced_k_range = reduced_k_range
+       this%mask_variant = mask_variant
+       call this%time_reduction%initialize(time_reduction_type, output_freq)
+  end subroutine initialize_for_ut
+
+  !> @brief Reset the time reduction member field. Intended for use in unit tests only.
+  SUBROUTINE reset_time_reduction_ut(this,  source )
+    CLASS(fmsDiagOutfield_type), INTENT(inout) :: this !< An instance of the fmsDiagOutfield_type
+    TYPE(fmsDiagTimeReduction_type) :: source !< The fmsDiagTimeReduction_type to copy from
+    call this%time_reduction%copy(source)
+ END SUBROUTINE reset_time_reduction_ut
+
 
 
   !> \brief Get the time reduction from a legacy output field.

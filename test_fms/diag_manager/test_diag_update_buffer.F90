@@ -209,7 +209,7 @@ program test_diag_update_buffer
 
 
    ALLOCATE( ofield_cfg )
-   call init_ofield_cfg(ofield_cfg, module_name1, field_name1, output_name1, pow_value, &
+   call ofield_cfg%initialize_for_ut(module_name1, field_name1, output_name1, pow_value, &
       & phys_window, need_compute, mask_variant, reduced_k_range , &
       & num_elems, time_reduction_type1, output_freq1 )
    ALLOCATE( ofield_index_cfg )
@@ -256,35 +256,6 @@ program test_diag_update_buffer
    call fms_end
 
 CONTAINS
-   !> @brief Initialized an fms_diag_outfield_type as needed in the test.
-   !! TODO in future PR: There may in the future ne a member function of fms_diag_outfield_type
-   !! to call.
-   subroutine init_ofield_cfg( of_cfg, module_name, field_name, output_name, &
-   &  power_val, phys_window, need_compute, mask_variant,  reduced_k_range, num_elems, &
-   & time_reduction_type,output_freq)
-      type(fmsDiagOutfield_type)  :: of_cfg
-      CHARACTER(len=*), INTENT(in) :: module_name !< Var with same name in fms_diag_outfield_type
-      CHARACTER(len=*), INTENT(in) :: field_name !< Var with same name in fms_diag_outfield_type
-      CHARACTER(len=*), INTENT(in) :: output_name !< Var with same name in fms_diag_outfield_type
-      INTEGER, INTENT(in) :: power_val    !< Var with same name in fms_diag_outfield_type
-      LOGICAL, INTENT(in) :: phys_window  !< Var with same name in fms_diag_outfield_type
-      LOGICAL, INTENT(in) :: need_compute  !< Var with same name in fms_diag_outfield_type
-      LOGICAL, INTENT(in) :: mask_variant  !< Var with same name in fms_diag_outfield_type
-      LOGICAL, INTENT(in) :: reduced_k_range !< Var with same name in fms_diag_outfield_type
-      INTEGER, INTENT(in) :: num_elems !< Var with same name in fms_diag_outfield_type
-      INTEGER, INTENT(in) :: time_reduction_type !< Var with same name in fms_diag_outfield_type
-      INTEGER, INTENT(in) :: output_freq !< The output_freq need in initaliztion of time_reduction_type
-
-      of_cfg%module_name = module_name
-      of_cfg%field_name = field_name
-      of_cfg%output_name = output_name
-      of_cfg%pow_value = pow_value
-      of_cfg%phys_window = phys_window
-      of_cfg%need_compute = need_compute
-      of_cfg%reduced_k_range = reduced_k_range
-      of_cfg%mask_variant = mask_variant
-      call of_cfg%time_reduction%initialize(time_reduction_type, output_freq)
-   end subroutine init_ofield_cfg
 
    !> @brief Initialized an fms_diag_outfield_index_type by calling member funtion of
    !! fms_diag_outfield_index_type input object.
