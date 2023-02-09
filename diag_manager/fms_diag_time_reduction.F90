@@ -74,6 +74,7 @@ MODULE fms_diag_time_reduction_mod
       procedure, public :: is_time_diurnal => is_time_diurnal_imp
       procedure, public :: is_time_power => is_time_power_imp
       procedure, public :: initialize
+      procedure, public :: copy
    END TYPE fmsDiagTimeReduction_type
 
 !> @brief This interface is for the class constructor.
@@ -88,22 +89,22 @@ CONTAINS
    function fmsDiagTimeReduction_type_constructor(dt, out_frequency) result(time_redux)
       integer, intent(in) :: dt  !< The redution type (time_rms, time_power, etc)
       integer, intent(in) :: out_frequency  !< The output frequency.
-      class (fmsDiagTimeReduction_type), allocatable :: time_redux !< The instance of the  fmsDiagTimeReduction_type class
-                                                                   !! allocated and returned by this constructor.
+      class (fmsDiagTimeReduction_type), allocatable :: time_redux !< The instance of the  fmsDiagTimeReduction_type
+                                                                  !!class allocated and returned by this constructor.
       allocate(time_redux)
       call time_redux%initialize(dt, out_frequency)
    end function fmsDiagTimeReduction_type_constructor
 
-!> @brief Initialize the object.
-   subroutine initialize(this, dt, out_frequency)
-      class (fmsDiagTimeReduction_type), intent(inout) :: this !< The fmsDiagTimeReduction_type object
-      integer, intent(in) :: dt !< The redution type (time_rms, time_porer, etc)
-      integer, intent(in) :: out_frequency !< The output frequency.
+  !> @brief Initialize the object.
+  subroutine initialize(this, dt, out_frequency)
+    class (fmsDiagTimeReduction_type), intent(inout) :: this !< The fmsDiagTimeReduction_type object
+    integer, intent(in) :: dt !< The redution type (time_rms, time_porer, etc)
+    integer, intent(in) :: out_frequency !< The output frequency.
 
-      this%the_time_reduction = dt
+    this%the_time_reduction = dt
 
-      !! Set the time_averaging flag
-      !! See legacy init_ouput_fields function, lines 1470ff
+    !! Set the time_averaging flag
+    !! See legacy init_ouput_fields function, lines 1470ff
       IF(( dt .EQ. time_average) .OR. (dt .EQ. time_rms) .OR. (dt .EQ. time_power) .OR. &
       & (dt .EQ. time_diurnal)) THEN
          this%time_averaging = .true.
@@ -125,18 +126,24 @@ CONTAINS
       ELSE
          this%time_ops = .false.
       END IF
-   end subroutine initialize
+  end subroutine initialize
 
+  !> @brief Copy the source time reduction object into the this object.
+  subroutine copy(this, source)
+    class (fmsDiagTimeReduction_type),intent(inout):: this !< The fmsDiagTimeReduction_type object
+    class (fmsDiagTimeReduction_type),intent(in):: source !< The fmsDiagTimeReduction_type object
+    this%the_time_reduction = source%the_time_reduction
+    this%time_averaging = source%time_averaging
+    this%time_ops = source%time_ops
+  end subroutine copy
 
-
-
-!> \brief Returns true if any of time_min, time_max, time_rms or time_average is true.
-!! @return true if any of time_min, time_max, time_rms or time_average is true.
-   pure function has_time_ops_imp (this)
-      class (fmsDiagTimeReduction_type), intent(in) :: this  !<The object this function is bound to.
-      logical :: has_time_ops_imp
-      has_time_ops_imp = this%time_ops
-   end function has_time_ops_imp
+  !> \brief Returns true if any of time_min, time_max, time_rms or time_average is true.
+  !! @return true if any of time_min, time_max, time_rms or time_average is true.
+  pure function has_time_ops_imp (this)
+    class (fmsDiagTimeReduction_type), intent(in) :: this  !<The object this function is bound to.
+    logical :: has_time_ops_imp
+    has_time_ops_imp = this%time_ops
+  end function has_time_ops_imp
 
    !> \brief Returns true iff time_averaging is true.
    !! @return true iff time_averaging is true.

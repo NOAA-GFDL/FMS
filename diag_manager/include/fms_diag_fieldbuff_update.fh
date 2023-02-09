@@ -138,8 +138,7 @@ FUNCTION FMS_DIAG_FBU_3D_PNAME_(ofield_cfg, ofield_index_cfg, field_d, sample, &
       INTEGER:: ls, le !< start and end indices for the 4th dimension.
 
       INTEGER :: ksr, ker !< Loop indices used in reduced_k_range calculations
-      !< Looping indices, derived from ofield_index_cfg:
-      INTEGER :: i, j, k, l, i1, j1, k1
+      INTEGER :: i, j, k, l, i1, j1, k1  !< Looping indices, derived from ofield_index_cfg:
 
       INTEGER :: numthreads
       INTEGER :: active_omp_level
@@ -171,16 +170,16 @@ FUNCTION FMS_DIAG_FBU_3D_PNAME_(ofield_cfg, ofield_index_cfg, field_d, sample, &
       f3 = ofield_index_cfg%get_f3()
       f4 = ofield_index_cfg%get_f4()
 
-      output_name = trim(ofield_cfg%output_name)
-      field_name = trim(ofield_cfg%field_name)
-      module_name = trim(ofield_cfg%module_name)
-      pow_value = ofield_cfg%pow_value
-      phys_window = ofield_cfg%phys_window
-      reduced_k_range = ofield_cfg%reduced_k_range
-      need_compute = ofield_cfg%need_compute
-      mask_variant =  ofield_cfg%mask_variant
-      mask_present =  ofield_cfg%mask_present
-      missvalue_present = ofield_cfg%missvalue_present
+      output_name = trim(ofield_cfg%get_output_name())
+      field_name = trim(ofield_cfg%get_field_name())
+      module_name = trim(ofield_cfg%get_module_name())
+      pow_value = ofield_cfg%get_pow_value()
+      phys_window = ofield_cfg%get_phys_window()
+      reduced_k_range = ofield_cfg%get_reduced_k_range()
+      need_compute = ofield_cfg%get_need_compute()
+      mask_variant =  ofield_cfg%get_mask_variant()
+      mask_present =  ofield_cfg%get_mask_present()
+      missvalue_present = ofield_cfg%get_missvalue_present()
 
 !$OMP CRITICAL
       field_num_threads = 1
@@ -877,13 +876,11 @@ FUNCTION FMS_DIAG_FBCF_PNAME_ (ofield_cfg, ofield_index_cfg, field, sample, ofb,
       LOGICAL :: reduced_k_range !< A copy of same variable in ofield_cfg
       LOGICAL :: mask_present !< A copy of same variable in ofield_cfg
       LOGICAL :: missvalue_present !< A copy of same variable in ofield_cfg
+      class (fmsDiagTimeReduction_type), allocatable :: time_redux !< The instance of the fmsDiagTimeReduction_type
 
       INTEGER :: ksr, ker !< Loop indices used in reduced_k_range calculations
-      !< Looping indices, derived from ofield_index_cfg:
-      INTEGER :: i, j, k, i1, j1, k1
-
-
-      LOGICAL :: time_max, time_min, time_sum
+      INTEGER :: i, j, k, i1, j1, k1 !< Looping indices, derived from ofield_index_cfg:
+      LOGICAL :: time_max, time_min, time_sum  !< A copies of same variables in ofield_cfg%time_reduction
 
       ksr= l_start(3)
       ker= l_end(3)
@@ -901,16 +898,18 @@ FUNCTION FMS_DIAG_FBCF_PNAME_ (ofield_cfg, ofield_index_cfg, field, sample, ofb,
       f3 = ofield_index_cfg%get_f3()
       f4 = ofield_index_cfg%get_f4()
 
-      time_max = ofield_cfg%time_reduction%is_time_max()
-      time_min = ofield_cfg%time_reduction%is_time_min()
-      time_sum = ofield_cfg%time_reduction%is_time_sum()
+      allocate(time_redux)
+      call time_redux%copy(ofield_cfg%get_time_reduction())
+      time_max = time_redux%is_time_max()
+      time_min = time_redux%is_time_min()
+      time_sum = time_redux%is_time_sum()
 
-      output_name = trim(ofield_cfg%output_name)
-      module_name = trim(ofield_cfg%module_name)
-      reduced_k_range = ofield_cfg%reduced_k_range
-      need_compute = ofield_cfg%need_compute
-      mask_present =  ofield_cfg%mask_present
-      missvalue_present = ofield_cfg%missvalue_present
+      output_name = trim(ofield_cfg%get_output_name())
+      module_name = trim(ofield_cfg%get_module_name())
+      reduced_k_range = ofield_cfg%get_reduced_k_range()
+      need_compute = ofield_cfg%get_need_compute()
+      mask_present =  ofield_cfg%get_mask_present()
+      missvalue_present = ofield_cfg%get_missvalue_present()
 
          ! Add processing for Max and Min
          TIME_IF: IF ( time_max ) THEN
@@ -1301,8 +1300,8 @@ FUNCTION FMS_DIAG_FBCF_PNAME_ (ofield_cfg, ofield_index_cfg, field, sample, ofb,
          hi = ofield_index_cfg%get_hi()
          hj = ofield_index_cfg%get_hj()
 
-         reduced_k_range = ofield_cfg%reduced_k_range
-         need_compute = ofield_cfg%need_compute
+         reduced_k_range = ofield_cfg%get_reduced_k_range()
+         need_compute = ofield_cfg%get_need_compute()
 
          associate(ofb => buffer)
 
