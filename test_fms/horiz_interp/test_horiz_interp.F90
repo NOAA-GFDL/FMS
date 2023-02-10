@@ -65,7 +65,7 @@ implicit none
   !    integer checksum and global sum will be printed out for both the 1D and 2D version.
   if (test_conserve) then
     call test_horiz_interp_conserve_r4
-    call test_horiz_interp_conserve_r8 
+    call test_horiz_interp_conserve_r8
   else if(test_bicubic) then
     call test_horiz_interp_bicubic_r8
   else if(test_bilinear) then
@@ -144,7 +144,7 @@ implicit none
     end do
 
     !! init input data
-      
+
 
     !! perform and time interpolations
     id1 = mpp_clock_id( 'horiz_interp_1dx1d', flags=MPP_CLOCK_SYNC+MPP_CLOCK_DETAILED )
@@ -187,74 +187,36 @@ implicit none
   subroutine test_horiz_interp_bilinear_r8
     real(r8_kind)                              :: dlon_src, dlat_src, dlon_dst, dlat_dst
     real(r8_kind), allocatable, dimension(:)   :: lon1D_src, lat1D_src, lon1D_dst, lat1D_dst
-    real(r8_kind), allocatable, dimension(:,:) :: lon2D_src, lat2D_src, lon2D_dst, lat2D_dst
-    real(r8_kind), allocatable, dimension(:,:) :: data_src, data1_dst, data2_dst, data3_dst, data4_dst
-    real(r8_kind) :: lon_src_beg = 0._r8_kind,    lon_src_end = 360._r8_kind
-    real(r8_kind) :: lat_src_beg = -90._r8_kind,  lat_src_end = 90._r8_kind
-    real(r8_kind) :: lon_dst_beg = -280._r8_kind, lon_dst_end = 80._r8_kind
-    real(r8_kind) :: lat_dst_beg = -90._r8_kind,  lat_dst_end = 90._r8_kind
-    real(r8_kind) :: D2R = real(PI,r8_kind)/180._r8_kind
-    real(r8_kind), parameter :: SMALL = 1.0e-10_r8_kind
-    type(horiz_interp_type)           :: interp_bilinear
+    real(r8_kind), allocatable, dimension(:,:) :: lon2D_dst, lat2D_dst
+    real(r8_kind), allocatable, dimension(:,:) :: data_src, data1_dst, data2_dst
+    real(r8_kind), parameter :: lon_src_beg =   0._r8_kind,  lon_src_end = 360._r8_kind
+    real(r8_kind), parameter :: lat_src_beg = -90._r8_kind,  lat_src_end = 90._r8_kind
+    real(r8_kind), parameter :: D2R = real(PI,r8_kind)/180._r8_kind
+    type(horiz_interp_type) :: interp
 
-    allocate(lon2D_src(ni_src+1, nj_src+1), lat2D_src(ni_src+1, nj_src+1) )
-    allocate(lon1D_src(ni_src+1), lat1D_src(nj_src+1), data_src(ni_src, nj_src) )
-
-    allocate(lon2D_dst(isc:iec+1, jsc:jec+1), lat2D_dst(isc:iec+1, jsc:jec+1) )
-    allocate(lon1D_dst(isc:iec+1), lat1D_dst(jsc:jec+1) )
-    !allocate(data1_dst(isc:iec, jsc:jec), data2_dst(isc:iec, jsc:jec) )
-    allocate(data1_dst(isc:iec, jsc:jec), data2_dst(isc:iec+1, jsc:jec+1) )
-    allocate(data3_dst(isc:iec+1, jsc:jec+1), data4_dst(isc:iec+1, jsc:jec+1) )
+    allocate( lon1D_src(ni_src+1), lat1D_src(nj_src+1) )
+    allocate( lon1D_dst(ni_src+1), lat1D_dst(nj_src+1) )
+    allocate( lon2d_dst(ni_src,nj_src), lat2d_dst(ni_src,nj_src) )
+    allocate( data_src(ni_src, nj_src) )
+    allocate( data1_dst(ni_src,nj_src), data2_dst(ni_src,nj_src) )
 
     ! set up longitude and latitude of source/destination grid.
-    dlon_src = (lon_src_end-lon_src_beg)/ni_src
-    dlat_src = (lat_src_end-lat_src_beg)/nj_src
-    dlon_dst = (lon_dst_end-lon_dst_beg)/ni_dst
-    dlat_dst = (lat_dst_end-lat_dst_beg)/nj_dst
+    dlon_src = (lon_src_end-lon_src_beg)/real(ni_src,r8_kind)  ;  dlon_dst = dlon_src
+    dlat_src = (lat_src_end-lat_src_beg)/real(nj_src,r8_kind)  ;  dlat_dst = dlat_src
 
+    ! set up 1d source grid
     do i = 1, ni_src+1
-        lon1D_src(i) = lon_src_beg + (i-1)*dlon_src
+       lon1D_src(i) = ( lon_src_beg + real(i-1,r8_kind)*dlon_src ) * D2R
     end do
-
     do j = 1, nj_src+1
-        lat1D_src(j) = lat_src_beg + (j-1)*dlat_src
-    end do
-
-    do i = isc, iec+1
-        lon1D_dst(i) = lon_dst_beg + (i-1)*dlon_dst
-    end do
-
-    do j = jsc, jec+1
-        lat1D_dst(j) = lat_dst_beg + (j-1)*dlat_dst
-    end do
-
-    ! scale grid to radians.
-    lon1D_src = lon1D_src * D2R
-    lat1D_src = lat1D_src * D2R
-    lon1D_dst = lon1D_dst * D2R
-    lat1D_dst = lat1D_dst * D2R
-
-    do i = 1, ni_src+1
-        lon2D_src(i,:) = lon1D_src(i)
-    end do
-
-    do j = 1, nj_src+1
-        lat2D_src(:,j) = lat1D_src(j)
-    end do
-
-    do i = isc, iec+1
-        lon2D_dst(i,:) = lon1D_dst(i)
-    end do
-
-    do j = jsc, jec+1
-        lat2D_dst(:,j) = lat1D_dst(j)
+       lat1D_src(j) = ( lat_src_beg + real(j-1,r8_kind)*dlat_src ) * D2R
     end do
 
     !--- set up the source data
     do j = 1, nj_src
-        do i = 1, ni_src
+       do i = 1, ni_src
           data_src(i,j) = i + j*0.001_r8_kind
-        end do
+       end do
     end do
 
     id1 = mpp_clock_id( 'horiz_interp_1dx1d', flags=MPP_CLOCK_SYNC+MPP_CLOCK_DETAILED )
@@ -262,88 +224,53 @@ implicit none
     id3 = mpp_clock_id( 'horiz_interp_2dx1d', flags=MPP_CLOCK_SYNC+MPP_CLOCK_DETAILED )
     id4 = mpp_clock_id( 'horiz_interp_2dx2d', flags=MPP_CLOCK_SYNC+MPP_CLOCK_DETAILED )
 
-    ! --- 1dx1d version bilinear interpolation
+    ! --- 1dx1d version conservative interpolation
+    data1_dst = 0.0_r8_kind
+    lon1d_dst = lon1d_src
+    lat1d_dst = lat1d_src
     call mpp_clock_begin(id1)
-    call horiz_interp_new(interp_bilinear, lon1D_src, lat1D_src, lon1D_dst, lat1D_dst, interp_method = "bilinear")
-    call horiz_interp(interp_bilinear, data_src, data1_dst)
-    call horiz_interp_del(interp_bilinear)
+    call horiz_interp_new(interp, lon1D_src, lat1D_src, lon1D_dst, lat1D_dst, interp_method = "bilinear")
+    call horiz_interp(interp, data_src, data1_dst)
+    call horiz_interp_del(interp)
     call mpp_clock_end(id1)
+    !check
+    do j=1, nj_src
+       do i=1, ni_src
+          if( data_src(i,j).ne.data1_dst(i,j) ) then
+             write(*,*) 'expected ', data_src(i,j), ' but computed ', data1_dst(i,j)
+             call mpp_error(FATAL, "failed at horiz_interp_1d")
+          end if
+       end do
+    end do
 
-    ! --- 1dx2d version bilinear interpolation
+    ! --- 1dx2d version conservative interpolation
+    data2_dst = 0.0_r8_kind
+
+    ! taking the midpoint
+    do i = 1, ni_src
+       lon2D_dst(i,:) = (lon1D_src(i) + lon1D_src(i+1)) * 0.5_r8_kind
+    end do
+    do j = 1, nj_src
+       lat2D_dst(:,j) = (lat1D_src(j) + lat1D_src(j+1)) * 0.5_r8_kind
+    end do
+
     call mpp_clock_begin(id2)
-    call horiz_interp_new(interp_bilinear, lon1D_src, lat1D_src, lon2D_dst, lat2D_dst, interp_method = "bilinear")
-    call horiz_interp(interp_bilinear, data_src, data2_dst)
-    call horiz_interp_del(interp_bilinear)
+    call horiz_interp_new(interp, lon1D_src, lat1D_src, lon2D_dst, lat2D_dst, interp_method = "bilinear")
+    call horiz_interp(interp, data_src, data2_dst)
+    call horiz_interp_del(interp)
     call mpp_clock_end(id2)
-
-    ! reallocate src data
-    deallocate(data_src)
-    allocate(data_src(ni_src+1, nj_src+1))
-    do j = 1, nj_src+1
-        do i = 1, ni_src+1
-          data_src(i,j) = i + j*0.001_r8_kind
-        end do
-    end do
-
-    ! --- 2dx1d version bilinear interpolation
-    call mpp_clock_begin(id3)
-    call horiz_interp_new(interp_bilinear, lon2D_src, lat2D_src, lon1D_dst, lat1D_dst, interp_method = "bilinear")
-    call horiz_interp(interp_bilinear, data_src, data3_dst)
-    call horiz_interp_del(interp_bilinear)
-    call mpp_clock_end(id3)
-
-    ! --- 2dx2d version bilinear interpolation
-    call mpp_clock_begin(id4)
-    call horiz_interp_new(interp_bilinear, lon2D_src, lat2D_src, lon2D_dst, lat2D_dst, interp_method = "bilinear")
-    call horiz_interp(interp_bilinear, data_src, data4_dst)
-    call horiz_interp_del(interp_bilinear)
-    call mpp_clock_end(id4)
-
-    !--- compare the data after interpolation between 1-D and 2-D version interpolation
-    ! TODO reference check
-    do j = jsc, jsc
-        do i = isc, iec
-
-          if( abs(data1_dst(i,j)-data2_dst(i,j)) > SMALL ) then
-              !print*, "After interpolation At point (i,j) = (", i, ",", j, "), data1 = ", data1_dst(i,j), &
-              !", data2 = ", data2_dst(i,j), ", data1-data2 = ",  data1_dst(i,j) - data2_dst(i,j)
-              !call mpp_error(FATAL,"horiz_interp_test: data1_dst does not approxiamate data2_dst")
+    !check
+    do j=1, nj_src
+       do i=1, ni_src
+          if( data_src(i,j).ne.data2_dst(i,j) ) then
+             write(*,*) 'expected ', data_src(i,j), ' but computed ', data2_dst(i,j)
+             call mpp_error(FATAL, "failed at horiz_interp_1d")
           end if
-        end do
+       end do
     end do
+    write(*,*) 'HELLOOOO'
 
-    if(mpp_pe() == mpp_root_pe()) call mpp_error(NOTE,   &
-          "The test that verify 1dx2d version horiz_interp can reproduce 1dx1d version of horiz_interp is succesful")
-
-    do j = jsc, jsc
-        do i = isc, iec
-
-          if( abs(data1_dst(i,j)-data3_dst(i,j)) > SMALL ) then
-              !print*, "After interpolation At point (i,j) = (", i, ",", j, "), data1 = ", data1_dst(i,j), &
-              !", data2 = ", data3_dst(i,j), ", data1-data2 = ",  data1_dst(i,j) - data3_dst(i,j)
-              !call mpp_error(FATAL,"horiz_interp_test: data1_dst does not approxiamate data3_dst")
-          end if
-        end do
-    end do
-
-    if(mpp_pe() == mpp_root_pe()) call mpp_error(NOTE,   &
-          "The test that verify 2dx1d version horiz_interp can reproduce 1dx1d version of horiz_interp is succesful")
-
-    do j = jsc, jsc
-        do i = isc, iec
-
-          if( abs(data1_dst(i,j)-data4_dst(i,j)) > SMALL ) then
-              !print*, "After interpolation At point (i,j) = (", i, ",", j, "), data1 = ", data1_dst(i,j), &
-              !", data2 = ", data4_dst(i,j), ", data1-data2 = ",  data1_dst(i,j) - data4_dst(i,j)
-              !call mpp_error(FATAL,"horiz_interp_test: data1_dst does not approxiamate data4_dst")
-          end if
-        end do
-    end do
-
-    if(mpp_pe() == mpp_root_pe()) call mpp_error(NOTE,   &
-          "The test that verify 2dx2d version horiz_interp can reproduce 1dx1d version of horiz_interp is succesful")
-
-  end subroutine
+  end subroutine test_horiz_interp_bilinear_r8
 
   subroutine test_horiz_interp_bicubic_r8
     real(r8_kind)                              :: dlon_src, dlat_src, dlon_dst, dlat_dst
@@ -408,7 +335,7 @@ implicit none
     end do
 
     !! init input data
-      
+
 
     !! perform and time interpolations
     id1 = mpp_clock_id( 'horiz_interp_1dx1d', flags=MPP_CLOCK_SYNC+MPP_CLOCK_DETAILED )
