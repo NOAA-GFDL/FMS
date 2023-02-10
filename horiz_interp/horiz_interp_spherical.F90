@@ -113,11 +113,9 @@ contains
     read (input_nml_file, horiz_interp_spherical_nml, iostat=io)
     ierr = check_nml_error(io,'horiz_interp_spherical_nml')
 
- module_is_initialized = .true.
+     module_is_initialized = .true.
 
-
-
-end subroutine horiz_interp_spherical_init
+  end subroutine horiz_interp_spherical_init
 
   !#######################################################################
 

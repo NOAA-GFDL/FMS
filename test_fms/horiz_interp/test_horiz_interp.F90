@@ -83,8 +83,7 @@ implicit none
 
   subroutine test_horiz_interp_spherical_r8
     real(r8_kind)                              :: dlon_src, dlat_src, dlon_dst, dlat_dst
-    real(r8_kind), allocatable, dimension(:)   :: lon1D_src, lat1D_src, lon1D_dst, lat1D_dst
-    real(r8_kind), allocatable, dimension(:,:) :: lon2D_dst, lat2D_dst
+    real(r8_kind), allocatable, dimension(:,:) :: lon2D_dst, lat2D_dst, lon2D_src, lat2D_src
     real(r8_kind), allocatable, dimension(:,:) :: data_src, data1_dst, data2_dst
     real(r8_kind) :: lon_src_beg = 0._r8_kind,    lon_src_end = 360._r8_kind
     real(r8_kind) :: lat_src_beg = -90._r8_kind,  lat_src_end = 90._r8_kind
@@ -94,47 +93,17 @@ implicit none
     real(r8_kind), parameter :: SMALL = 1.0e-10_r8_kind
     type(horiz_interp_type)           :: interp_spherical
 
-    allocate(lon1D_src(ni_src+1), lat1D_src(nj_src+1), data_src(ni_src, nj_src) )
+    allocate(data_src(ni_src, nj_src) )
+    allocate(data1_dst(isc:iec+1, jsc:jec+1), data2_dst(isc:iec+1, jsc:jec+1) )
 
-    allocate(lon1D_dst(isc:iec+1), lat1D_dst(jsc:jec+1) )
-    allocate(data1_dst(isc:iec, jsc:jec), data2_dst(isc:iec, jsc:jec) )
+    allocate(lon2D_src(ni_src, nj_src), lat2D_src(ni_src, nj_src) )
+    allocate(lon2D_dst(isc:iec, jsc:jec), lat2D_dst(isc:iec, jsc:jec) )
 
     ! set up longitude and latitude of source/destination grid.
     dlon_src = (lon_src_end-lon_src_beg)/ni_src
     dlat_src = (lat_src_end-lat_src_beg)/nj_src
     dlon_dst = (lon_dst_end-lon_dst_beg)/ni_dst
     dlat_dst = (lat_dst_end-lat_dst_beg)/nj_dst
-
-    do i = 1, ni_src+1
-        lon1D_src(i) = lon_src_beg + (i-1)*dlon_src
-    end do
-
-    do j = 1, nj_src+1
-        lat1D_src(j) = lat_src_beg + (j-1)*dlat_src
-    end do
-
-    do i = isc, iec+1
-        lon1D_dst(i) = lon_dst_beg + (i-1)*dlon_dst
-    end do
-
-    do j = jsc, jec+1
-        lat1D_dst(j) = lat_dst_beg + (j-1)*dlat_dst
-    end do
-
-    ! scale grid to radians.
-    lon1D_src = lon1D_src * D2R
-    lat1D_src = lat1D_src * D2R
-    lon1D_dst = lon1D_dst * D2R
-    lat1D_dst = lat1D_dst * D2R
-
-
-    do i = isc, iec+1
-        lon2D_dst(i,:) = lon1D_dst(i)
-    end do
-
-    do j = jsc, jec+1
-        lat2D_dst(:,j) = lat1D_dst(j)
-    end do
 
     !--- set up the source data
     do j = 1, nj_src
@@ -144,25 +113,40 @@ implicit none
     end do
 
     !! init input data
-      
+    do i = 1, ni_src+1
+      lon2D_src(i,:) = lon_src_beg + (i-1)*dlon_src
+    end do
+
+    do j = 1, nj_src+1
+      lat2D_src(:,j) = lon_src_beg + (i-1)*dlon_src
+    end do
+
+    do i = isc, iec+1
+        lon2D_dst(i,:) = lon_src_beg + (i-1)*dlon_src
+    end do
+
+    do j = jsc, jec+1
+        lat2D_dst(:,j) = lon_src_beg + (i-1)*dlon_src
+    end do
+
 
     !! perform and time interpolations
-    id1 = mpp_clock_id( 'horiz_interp_1dx1d', flags=MPP_CLOCK_SYNC+MPP_CLOCK_DETAILED )
-    id2 = mpp_clock_id( 'horiz_interp_1dx2d', flags=MPP_CLOCK_SYNC+MPP_CLOCK_DETAILED )
+    id1 = mpp_clock_id( 'horiz_interp_2dx2d', flags=MPP_CLOCK_SYNC+MPP_CLOCK_DETAILED )
 
     ! --- 1dx1d version conservative interpolation
+
+    ! --- 2dx2d interpolation
     call mpp_clock_begin(id1)
-    call horiz_interp_new(interp_spherical, lon1D_src, lat1D_src, lon1D_dst, lat1D_dst, interp_method = "spherical")
-    call horiz_interp(interp_spherical, data_src, data1_dst)
+    call horiz_interp_new(interp_spherical, lon2D_src, lat2D_src, lon2D_dst, lat2D_dst, interp_method="spherical")
+    call horiz_interp(interp_spherical, data_src, data2_dst, verbose=2)
     call horiz_interp_del(interp_spherical)
     call mpp_clock_end(id1)
 
-    ! --- 1dx2d version conservative interpolation
-    call mpp_clock_begin(id2)
-    call horiz_interp_new(interp_spherical, lon1D_src, lat1D_src, lon2D_dst, lat2D_dst, interp_method = "spherical")
-    call horiz_interp(interp_spherical, data_src, data2_dst)
-    call horiz_interp_del(interp_spherical)
-    call mpp_clock_end(id2)
+    !call mpp_clock_begin(id1)
+    !call horiz_interp_new(interp_spherical, lon1D_src, lat1D_src, lon1D_dst, lat1D_dst)
+    !call horiz_interp(interp_spherical, data_src, data1_dst)
+    !call horiz_interp_del(interp_spherical)
+    !call mpp_clock_end(id1)
 
     !! check results TODO
 

@@ -32,7 +32,7 @@ subroutine HORIZ_INTERP_CONSERVE_NEW_1DX1D_ ( Interp, lon_in, lat_in, lon_out, l
     real(FMS_HI_KIND_), dimension(size(lat_in(:))-1)    :: dsph_in
     real(FMS_HI_KIND_), dimension(size(lon_out(:))-1)   :: dlon_out
     real(FMS_HI_KIND_), dimension(size(lat_out(:))-1)   :: dsph_out
-    real    :: blon, fac, hpi, tpi, eps
+    real(FMS_HI_KIND_)                                  :: blon, fac, hpi, tpi, eps
     integer, parameter :: num_iters = 4
     integer :: i, j, m, n, nlon_in, nlat_in, nlon_out, nlat_out,   &
          iverbose, m2, n2, iter
