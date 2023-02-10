@@ -143,7 +143,7 @@ if(allocated(e)) deallocate(e)
 if(allocated(g)) deallocate(g)
 if(allocated(bb)) deallocate(bb)
 if(allocated(cc)) deallocate(cc)
-!$OMP END SINGLE !< There is an implicit barrier 
+!$OMP END SINGLE !< There is an implicit barrier
 
 return
 end subroutine close_tridiagonal
