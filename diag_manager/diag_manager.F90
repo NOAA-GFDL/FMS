@@ -1497,7 +1497,8 @@ CONTAINS
     TYPE(fmsDiagOutfield_type), ALLOCATABLE:: ofield_cfg !<Instance  used in calling math funcsions.
     LOGICAL :: mf_result !<Logical result returned from some math (buffer udate) functions.
     LOGICAL, DIMENSION(1,1,1), target :: mask_dummy
-    REAL :: rmask_threshold
+    REAL :: rmask_threshold !< Holds the values 0.5_r4_kind or 0.5_r8_kind, or related threhold values
+                            !! needed to be passed to the math/buffer update functions.
 
     ! If diag_field_id is < 0 it means that this field is not registered, simply return
     IF ( diag_field_id <= 0 ) THEN

@@ -49,7 +49,7 @@ use,intrinsic :: iso_c_binding, only: c_double,c_float,c_int64_t, &
        & mix_snapshot_average_fields, global_descriptor, CMOR_MISSING_VALUE, use_cmor, pack_size,&
        & debug_diag_manager, flush_nc_files, output_field_type, max_field_attributes, max_file_attributes,&
        & file_type, prepend_date, region_out_use_alt_value, GLO_REG_VAL, GLO_REG_VAL_ALT,&
-       & DIAG_FIELD_NOT_FOUND, diag_init_time, fms_diag_ibounds_type
+       & DIAG_FIELD_NOT_FOUND, diag_init_time, fmsDiagIbounds_type
   USE diag_data_mod, ONLY: fileobjU, fileobj, fnum_for_domain, fileobjND
   USE diag_axis_mod, ONLY: get_diag_axis_data, get_axis_global_length, get_diag_axis_cart,&
        & get_domain1d, get_domain2d, diag_subaxes_init, diag_axis_init, get_diag_axis, get_axis_aux,&
@@ -758,11 +758,11 @@ CONTAINS
          & TRIM(axes_list)
   END SUBROUTINE log_diag_field_info
 
-  !> @brief Determine the bounds of the first three dimentions
+  !> @brief Determine the bounds of the first three dimensions
   !! of the "array" argument and store it the bounding box argument "bounds"
   SUBROUTINE fms_bounds_from_array_4D(bounds, array)
     REAL, INTENT( in), DIMENSION(:,:,:,:) :: array !< The 4D input array.
-    TYPE (fms_diag_ibounds_type), INTENT(inout) :: bounds !< The instance of the bounding box.
+    TYPE (fmsDiagIbounds_type), INTENT(inout) :: bounds !< The instance of the bounding box.
       bounds%imin = LBOUND(array,1)
       bounds%imax = UBOUND(array,1)
       bounds%jmin = LBOUND(array,2)
@@ -771,11 +771,11 @@ CONTAINS
       bounds%kmax = UBOUND(array,3)
   END SUBROUTINE  fms_bounds_from_array_4D
 
- !> @brief Determine the bounds of the first three dimentions
+ !> @brief Determine the bounds of the first three dimensions
   !! of the "array" argument and store it the bounding box argument "bounds"
   SUBROUTINE fms_bounds_from_array_5D(bounds, array)
-    CLASS(*), INTENT( in), DIMENSION(:,:,:,:,:) :: array !< The 4D input array.
-    TYPE (fms_diag_ibounds_type), INTENT(inout) :: bounds !< The instance of the bounding box.
+    CLASS(*), INTENT( in), DIMENSION(:,:,:,:,:) :: array !< The 5D input array.
+    TYPE (fmsDiagIbounds_type), INTENT(inout) :: bounds !< The instance of the bounding box.
       bounds%imin = LBOUND(array,1)
       bounds%imax = UBOUND(array,1)
       bounds%jmin = LBOUND(array,2)
@@ -802,7 +802,7 @@ CONTAINS
   !! max boundaries (array indices) of the input bounding box "bounds" with
   !! the six specified bounds values.
 SUBROUTINE fms_update_bounds_modern(bounds, lower_i, upper_i, lower_j, upper_j, lower_k, upper_k)
-  TYPE  (fms_diag_ibounds_type), intent(inout) :: bounds !<The bounding box of the output field buffer inindex space.
+  TYPE  (fmsDiagIbounds_type), intent(inout) :: bounds !<The bounding box of the output field buffer inindex space.
   INTEGER, INTENT(in) :: lower_i !< Lower i bound.
   INTEGER, INTENT(in) :: upper_i !< Upper i bound.
   INTEGER, INTENT(in) :: lower_j !< Lower j bound.
@@ -824,9 +824,9 @@ END SUBROUTINE fms_update_bounds_modern
 !! true. The suplied comparison functions should return true for errors : for indices out of bounds,
 !! or indices are not equal when expected to be equal.
 LOGICAL FUNCTION compare_buffer_bounds_to_size(current_bounds, bounds, error_str, lowerb_comp, upperb_comp)
-  TYPE (fms_diag_ibounds_type), INTENT(in) :: current_bounds  !<A bounding box holding the current bounds
+  TYPE (fmsDiagIbounds_type), INTENT(in) :: current_bounds  !<A bounding box holding the current bounds
                                                                      !! of an array.
-  TYPE (fms_diag_ibounds_type), INTENT(in):: bounds !< The bounding box to check agains.
+  TYPE (fmsDiagIbounds_type), INTENT(in):: bounds !< The bounding box to check against.
   CHARACTER(*), INTENT(inout) :: error_str !< The return status, which is set to non-empty message
                                              !! if the check fails.
 
@@ -906,7 +906,7 @@ SUBROUTINE check_out_of_bounds(out_num, diag_field_id, err_msg)
 
   CHARACTER(len=128) :: error_string1, error_string2
   LOGICAL :: out_of_bounds = .true.
-  TYPE (fms_diag_ibounds_type) :: array_bounds
+  TYPE (fmsDiagIbounds_type) :: array_bounds
   associate (buff_bounds => output_fields(out_num)%buff_bounds)
 
     CALL bounds_from_array(array_bounds, output_fields(out_num)%buffer)
@@ -932,7 +932,7 @@ END SUBROUTINE check_out_of_bounds
   !! If there is an error then error message will be filled.
 SUBROUTINE fms_diag_check_out_of_bounds_modern_r4(ofb, bounds, output_name, module_name, err_msg)
   REAL(kind=r4_kind), INTENT (in), DIMENSION(:,:,:,:,:) :: ofb !< The output field buffer to check
-  TYPE (fms_diag_ibounds_type), INTENT(inout) :: bounds !< The bounding box to check against
+  TYPE (fmsDiagIbounds_type), INTENT(inout) :: bounds !< The bounding box to check against
   CHARACTER(:), ALLOCATABLE, INTENT(in) :: output_name !< output name for placing in error message
   CHARACTER(:), ALLOCATABLE, INTENT(in) :: module_name !< module name for placing in error message
   CHARACTER(len=*), INTENT(inout) :: err_msg !< Return status of <TT>check_out_of_bounds</TT>.  An empty
@@ -940,7 +940,7 @@ SUBROUTINE fms_diag_check_out_of_bounds_modern_r4(ofb, bounds, output_name, modu
 
   CHARACTER(len=128) :: error_string1, error_string2
   LOGICAL :: out_of_bounds = .true.
-  TYPE (fms_diag_ibounds_type) :: array_bounds
+  TYPE (fmsDiagIbounds_type) :: array_bounds
 
   CALL bounds_from_array(array_bounds, ofb)
 
@@ -964,7 +964,7 @@ END SUBROUTINE fms_diag_check_out_of_bounds_modern_r4
 
 SUBROUTINE fms_diag_check_out_of_bounds_modern_r8(ofb, bounds, output_name, module_name, err_msg)
   REAL(kind=r8_kind), INTENT (in), DIMENSION(:,:,:,:,:) :: ofb !< The output field buffer to check
-  TYPE (fms_diag_ibounds_type), INTENT(inout) :: bounds !< The bounding box to check against
+  TYPE (fmsDiagIbounds_type), INTENT(inout) :: bounds !< The bounding box to check against
   CHARACTER(:), ALLOCATABLE, INTENT(in) :: output_name  !< output name for placing in error message
   CHARACTER(:), ALLOCATABLE, INTENT(in) :: module_name   !< module name for placing in error message
   CHARACTER(len=*), INTENT(inout) :: err_msg !< Return status of <TT>check_out_of_bounds</TT>.  An empty
@@ -972,7 +972,7 @@ SUBROUTINE fms_diag_check_out_of_bounds_modern_r8(ofb, bounds, output_name, modu
 
   CHARACTER(len=128) :: error_string1, error_string2
   LOGICAL :: out_of_bounds = .true.
-  TYPE (fms_diag_ibounds_type) :: array_bounds  !<A bounding box holdstore the current bounds ofb
+  TYPE (fmsDiagIbounds_type) :: array_bounds  !<A bounding box holdstore the current bounds ofb
 
   CALL bounds_from_array(array_bounds, ofb)
 
@@ -997,9 +997,9 @@ END SUBROUTINE fms_diag_check_out_of_bounds_modern_r8
 !! If there is an error then error message will be filled.
 SUBROUTINE check_bounds_are_exact_dynamic_modern(current_bounds, bounds, output_name, module_name, &
      &  Time, field_prev_Time, err_msg)
-  TYPE (fms_diag_ibounds_type), INTENT(in) :: current_bounds !<A bounding box holding the current bounds
+  TYPE (fmsDiagIbounds_type), INTENT(in) :: current_bounds !<A bounding box holding the current bounds
                                                            !! of an array.
-  TYPE (fms_diag_ibounds_type), INTENT(inout) :: bounds !<The bounding box to check against
+  TYPE (fmsDiagIbounds_type), INTENT(inout) :: bounds !<The bounding box to check against
   CHARACTER(:), ALLOCATABLE, INTENT(in) :: output_name  !< output name for placing in error message
   CHARACTER(:), ALLOCATABLE, INTENT(in) :: module_name  !< module name for placing in error message
   TYPE(time_type), INTENT(in)  ::  Time !< Time to use in check.  The check is only performed if
@@ -1057,7 +1057,7 @@ SUBROUTINE check_bounds_are_exact_dynamic_legacy(out_num, diag_field_id, Time, e
                                            !! equal to the buffer array boundaries.
   CHARACTER(:), ALLOCATABLE :: output_name  !< output name for placing in error message
   CHARACTER(:), ALLOCATABLE :: module_name  !< module name for placing in error message
-  TYPE (fms_diag_ibounds_type) :: current_bounds  !< a bounding box to store the current bounds of the array.
+  TYPE (fmsDiagIbounds_type) :: current_bounds  !< a bounding box to store the current bounds of the array.
 
   output_name = output_fields(out_num)%output_name
   module_name = input_fields(diag_field_id)%module_name
@@ -1080,7 +1080,7 @@ END SUBROUTINE check_bounds_are_exact_dynamic_legacy
                                                   !! if the check fails.
     CHARACTER(:), ALLOCATABLE :: output_name !< output name for placing in error message
     CHARACTER(:), ALLOCATABLE :: module_name !< output name for placing in error message
-    TYPE (fms_diag_ibounds_type) :: current_bounds !< a bounding box to store the current bounds of the array.
+    TYPE (fmsDiagIbounds_type) :: current_bounds !< a bounding box to store the current bounds of the array.
 
     output_name = output_fields(out_num)%output_name
     module_name = input_fields(diag_field_id)%module_name
@@ -1096,9 +1096,9 @@ END SUBROUTINE check_bounds_are_exact_dynamic_legacy
   !! specified in the bounding box "bounds" output_fields are equal to the buffer upper and lower bounds.
     !! If there is an error then error message will be filled.
   SUBROUTINE fms_check_bounds_are_exact_static_modern(current_bounds, bounds, output_name, module_name, err_msg)
-    TYPE (fms_diag_ibounds_type), INTENT(in) :: current_bounds  !<A bounding box holding the current bounds
+    TYPE (fmsDiagIbounds_type), INTENT(in) :: current_bounds  !<A bounding box holding the current bounds
                                                              !! of the array.
-    TYPE (fms_diag_ibounds_type), INTENT(inout) :: bounds  !<The bounding box to check against
+    TYPE (fmsDiagIbounds_type), INTENT(inout) :: bounds  !<The bounding box to check against
     CHARACTER(:), ALLOCATABLE, INTENT(in) :: output_name !< output name for placing in error message
     CHARACTER(:), ALLOCATABLE, INTENT(in) :: module_name  !< module name for placing in error message
     CHARACTER(len=*), INTENT(inout) :: err_msg !< The return status, which is set to non-empty message

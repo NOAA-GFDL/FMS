@@ -17,8 +17,8 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 
- !> @brief This code will be used by the preprecessor to generate an implementation
- !! to the module procedure for the fieldbuff_update interface. The
+ !> @brief This code will be used by the preprocessor to generate an implementation
+ !! of the module procedure for the fieldbuff_update interface. The
   !! generated function is a wrapper calling 4D field/5D buffer version of the same.
 FUNCTION FMS_DIAG_FBU_3D_PNAME_(ofield_cfg, ofield_index_cfg, field_d, sample, &
   & ofb, ofc, bbounds, count_0d, num_elements, mask, weight1, missvalue,  &
@@ -32,7 +32,7 @@ FUNCTION FMS_DIAG_FBU_3D_PNAME_(ofield_cfg, ofield_index_cfg, field_d, sample, &
     INTEGER, INTENT(in) :: sample  !< The index along the diurnal time axis
     FMS_DIAG_FBU_DATA_TYPE_ , CONTIGUOUS, DIMENSION(:,:,:,:), INTENT(inout), target :: ofb !< Output Field Buffer
     FMS_DIAG_FBU_DATA_TYPE_ , ALLOCATABLE, DIMENSION(:,:,:,:), INTENT(inout), target :: ofc !< Output Field Counter
-    TYPE(fms_diag_ibounds_type), INTENT(inout) :: bbounds !< An instance of the class fms_diag_buff_intervals_t
+    TYPE(fmsDiagIbounds_type), INTENT(inout) :: bbounds !< An instance of the class fms_diag_buff_intervals_t
     FMS_DIAG_FBU_DATA_TYPE_, INTENT(inout):: count_0d !< Normally the member of the buffer object of the same name.
     INTEGER, INTENT(inout) :: num_elements
     LOGICAL, CONTIGUOUS, DIMENSION(:,:,:), INTENT(in), OPTIONAL, target :: mask !< mask
@@ -81,8 +81,8 @@ FUNCTION FMS_DIAG_FBU_3D_PNAME_(ofield_cfg, ofield_index_cfg, field_d, sample, &
   END FUNCTION FMS_DIAG_FBU_3D_PNAME_
 
 
-!> @brief This code will be used by the preprecessor to generate an implementation
-!! to the module procedure for the fieldbuff_update interface.
+!> @brief This code will be used by the  preprocessor to generate an implementation
+!! of the module procedure for the fieldbuff_update interface.
 !! Updates elements of the running field output buffer (argument ofb)
 !! and counter (argument ofc) based on the input field data array (argument field_d).
 !! In general the formulas are :
@@ -104,7 +104,7 @@ FUNCTION FMS_DIAG_FBU_3D_PNAME_(ofield_cfg, ofield_index_cfg, field_d, sample, &
       FMS_DIAG_FBU_DATA_TYPE_ , CONTIGUOUS, DIMENSION(:,:,:,:), INTENT(in) :: field_d !< The input field data array.
       FMS_DIAG_FBU_DATA_TYPE_ , DIMENSION(:,:,:,:,:), INTENT(inout) :: ofb !< Output Field Buffer
       FMS_DIAG_FBU_DATA_TYPE_ , DIMENSION(:,:,:,:,:), INTENT(inout) :: ofc !< Output Field Counter
-      TYPE(fms_diag_ibounds_type), INTENT(inout) :: bbounds !< An instance of the class fms_diag_buff_intervals_t
+      TYPE(fmsDiagIbounds_type), INTENT(inout) :: bbounds !< An instance of the class fms_diag_buff_intervals_t
       INTEGER, INTENT(in) :: sample  !< The index along the diurnal time axis
       FMS_DIAG_FBU_DATA_TYPE_, INTENT(inout):: count_0d !< Normally the member of the buffer object of the same name.
       INTEGER, INTENT(inout) :: num_elements
@@ -801,8 +801,8 @@ FUNCTION FMS_DIAG_FBU_3D_PNAME_(ofield_cfg, ofield_index_cfg, field_d, sample, &
     END FUNCTION FMS_DIAG_FBU_PNAME_
 
 
-  !> @brief This code will be used by the preprecessor to generate an implementation
-  !! to the module procedure for the fieldbuff_copy_fieldvals interface. The
+  !> @brief This code will be used by the  preprocessor to generate an implementation
+  !! of the module procedure for the fieldbuff_copy_fieldvals interface. The
   !! generated function is a wrapper calling 4D field/5D buffer version of the same.
     FUNCTION FMS_DIAG_FBCF_3D_PNAME_ (ofield_cfg, ofield_index_cfg, field, sample, ofb, &
       & bbounds, count_0d, mask,  missvalue,  &
@@ -814,7 +814,7 @@ FUNCTION FMS_DIAG_FBU_3D_PNAME_(ofield_cfg, ofield_index_cfg, field_d, sample, &
          FMS_DIAG_FBU_DATA_TYPE_ , CONTIGUOUS,  DIMENSION(:,:,:),INTENT(in),target:: field !< The field value array.
          INTEGER, INTENT(in) :: sample   !< index along the diurnal time axis
          FMS_DIAG_FBU_DATA_TYPE_ , ALLOCATABLE, DIMENSION(:,:,:,:),INTENT(inout),target:: ofb !<The Output Field Buffer
-         TYPE(fms_diag_ibounds_type), INTENT(inout) :: bbounds
+         TYPE(fmsDiagIbounds_type), INTENT(inout) :: bbounds
          FMS_DIAG_FBU_DATA_TYPE_ , INTENT(inout) :: count_0d   !< Normally the member of the buffer of same name,
          LOGICAL, CONTIGUOUS, DIMENSION(:,:,:), INTENT(in), OPTIONAL, target :: mask
          FMS_DIAG_FBU_DATA_TYPE_ , INTENT(in) :: missvalue !< buffer may be set to this value where mask is false.
@@ -842,8 +842,8 @@ FUNCTION FMS_DIAG_FBU_3D_PNAME_(ofield_cfg, ofield_index_cfg, field_d, sample, &
           & l_start, l_end, err_msg,  err_msg_local)
     END FUNCTION FMS_DIAG_FBCF_3D_PNAME_
 
-!> @brief This code will be used by the preprecessor to generate an implementation
-!! to the module procedure for the fieldbuff_copy_fieldvals interface.
+!> @brief This code will be used by the preprocessor to generate an implementation
+!! of the module procedure for the fieldbuff_copy_fieldvals interface.
 !! The function may set or add to the output field buffer (argument ofb) with the input
 !! field data array  (argument field)
 FUNCTION FMS_DIAG_FBCF_PNAME_ (ofield_cfg, ofield_index_cfg, field, sample, ofb, &
@@ -856,7 +856,7 @@ FUNCTION FMS_DIAG_FBCF_PNAME_ (ofield_cfg, ofield_index_cfg, field, sample, ofb,
       FMS_DIAG_FBU_DATA_TYPE_ , CONTIGUOUS, DIMENSION(:,:,:,:), INTENT(in) :: field   !< The field value array.
       INTEGER, INTENT(in) :: sample   !< index along the diurnal time axis
       FMS_DIAG_FBU_DATA_TYPE_ , DIMENSION(:,:,:,:,:), INTENT(inout) :: ofb   !< The Output Field Buffer
-      TYPE(fms_diag_ibounds_type), INTENT(inout) :: bbounds
+      TYPE(fmsDiagIbounds_type), INTENT(inout) :: bbounds
       FMS_DIAG_FBU_DATA_TYPE_ , INTENT(inout) :: count_0d   !< Normally the member of the buffer of same name,
       LOGICAL, CONTIGUOUS, DIMENSION(:,:,:,:), INTENT(in), OPTIONAL :: mask
       FMS_DIAG_FBU_DATA_TYPE_ , INTENT(in) :: missvalue !< buffer may be set to this value where mask is false.
@@ -1232,8 +1232,8 @@ FUNCTION FMS_DIAG_FBCF_PNAME_ (ofield_cfg, ofield_index_cfg, field, sample, ofb,
 
 
 
-  !> @brief This code will be used by the preprecessor to generate an implementation
-  !! to the module procedure for the fieldbuff_copy_misvals interface. The
+  !> @brief This code will be used by the  preprocessor to generate an implementation
+  !! of the module procedure for the fieldbuff_copy_misvals interface. The
   !! generated function is a wrapper calling 4D field/5D buffer version of the same.
    SUBROUTINE FMS_DIAG_FBCM_3D_PNAME_ (ofield_cfg, ofield_index_cfg, ofb, sample, &
     & l_start, l_end, rmask, rmask_thresh, missvalue)
@@ -1262,8 +1262,8 @@ FUNCTION FMS_DIAG_FBCF_PNAME_ (ofield_cfg, ofield_index_cfg, field, sample, ofb,
   END SUBROUTINE FMS_DIAG_FBCM_3D_PNAME_
 
 
-  !> @brief This code will be used by the preprecessor to generate an implementation
-  !! to the module procedure for the fieldbuff_copy_misvals interface.
+  !> @brief This code will be used by the  preprocessor to generate an implementation
+  !! of the module procedure for the fieldbuff_copy_misvals interface.
   !!  The function updates where appropriate and depending on the rmask argument,
    !! elements of the running field output buffer (argument buffer) with value missvalue.
    !! NOTE: It appears these OFB updates were introcuded by EMC MM into the tail end of the

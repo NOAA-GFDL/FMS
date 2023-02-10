@@ -24,7 +24,7 @@ program test_diag_update_buffer
    use platform_mod
    use mpp_mod, only: mpp_init, mpp_set_stack_size, mpp_init_test_requests_allocated
    use fms_mod, ONLY: fms_init, fms_end, error_mesg, FATAL,NOTE
-   use diag_data_mod, ONLY: fms_diag_ibounds_type, VERY_LARGE_AXIS_LENGTH
+   use diag_data_mod, ONLY: fmsDiagIbounds_type, VERY_LARGE_AXIS_LENGTH
    USE fms_diag_outfield_mod, ONLY: fmsDiagOutfield_type, fmsDiagOutfieldIndex_type
    USE fms_diag_fieldbuff_update_mod, ONLY: fieldbuff_update, fieldbuff_copy_missvals, &
    & fieldbuff_copy_fieldvals
@@ -34,12 +34,12 @@ program test_diag_update_buffer
 
    !! Class diag_buffer_type is here only for temporary use for modern diag_manager
    !! development until the real buffer class is sufficiently ready and merged.
-   TYPE diag_test_buffer_type
+   TYPE diagTestBuffer_type
       CLASS(*), ALLOCATABLE, DIMENSION(:,:,:,:,:) :: buffer
       CLASS(*), ALLOCATABLE, DIMENSION(:,:,:,:,:) :: counter
       CLASS(*), ALLOCATABLE, DIMENSION(:)  :: count_0d
       INTEGER, ALLOCATABLE, dimension(:) :: num_elements
-   END TYPE diag_test_buffer_type
+   END TYPE diagTestBuffer_type
 
    integer,parameter :: SZ=10    !< Field data this size in all spatiall dims.
    integer,parameter :: SL=2     !< Field data this size in 4th dim
@@ -47,7 +47,7 @@ program test_diag_update_buffer
    CLASS(*), ALLOCATABLE :: r4_datapoint, i8_datapoint !< to be allocated of rype data (e.g. r4. i8)
                               !! to be used thought.
 
-   TYPE(fms_diag_ibounds_type) ::  buff_bounds
+   TYPE(fmsDiagIbounds_type) ::  buff_bounds
 
    !!Diag_manager::send_data uses CLASS(*) in function signature, SO
    !! we mimic the resulting operations. The set of ClASS(*) data needs to be allocated of same
@@ -57,7 +57,7 @@ program test_diag_update_buffer
    CLASS(*), ALLOCATABLE, TARGET :: missvalue
    LOGICAL, ALLOCATABLE, DIMENSION(:,:,:,:) :: mask
    LOGICAL, ALLOCATABLE, DIMENSION(:,:,:,:) :: oor_mask
-   TYPE(diag_test_buffer_type), ALLOCATABLE, TARGET :: buff_obj
+   TYPE(diagTestBuffer_type), ALLOCATABLE, TARGET :: buff_obj
 
    !! In principle, the field_data can be r4,r8,i4,i8,but we will only rest r4,i8
    !!These belwo will be pointers to the data
@@ -125,7 +125,7 @@ program test_diag_update_buffer
 
    call init_field_values (field_data)
 
-   !!TODO:: Can switch to final diang_manager buffer_object type in modern diag effort.
+   !!TODO: (MDM) Can switch to final diang_manager buffer_object type in modern diag effort.
 
    !!In this version, we will meerely set type specific pointers to data. Some will be
    !! null, but at the end either the r4 pointers are non-null or the i8 pointers are not null
@@ -463,7 +463,7 @@ CONTAINS
 
 
    subroutine allocate_buffer_obj( data_point, bo, NX,NY,NZ, NL, NDI)
-      TYPE(diag_test_buffer_type), INTENT(inout), allocatable :: bo
+      TYPE(diagTestBuffer_type), INTENT(inout), allocatable :: bo
       CLASS(*), INTENT(in) :: data_point !< Sample point allocated to the type being tested.
       INTEGER, INTENT(IN) :: NX, NY, NZ !< The three spatial dimensions.
       INTEGER, INTENT(IN) :: NL !< Size of the 4th dimentions

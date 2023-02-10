@@ -50,11 +50,11 @@ MODULE fms_diag_time_reduction_mod
 
 !> @brief Class fmsDiagTimeReduction_type has an encapsulation of the "Fortran enum" time
 !! reduction integer parameters, plus an encapsulation of the groupings of
-!! the time reduction types. It is inteded to provide some of the functionality
+!! the time reduction types. It is intended to provide some of the functionality
 !! that was coded in the legacy function diag_data.F90:init_output_fields.
 !! The functionality in the end is used by send_data in (EFFICIENT) do loops calling
 !! the weighting or math functions to update buffers.
-!!  the The integer parameters above are the legal time reduction types,
+!! The integer parameters above are the legal time reduction types,
 !! but they are not necessarily mutually exclusive in some contexts.
 !!
 !> @addtogroup fms_diag_time_reduction_mod

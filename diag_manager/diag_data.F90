@@ -130,7 +130,7 @@ use platform_mod
 
   !> @brief Data structure holding intervals (or interval bounds or limits).
   !! Used for checking the bounds of the field output buffer arrays.
-TYPE, public :: fms_diag_ibounds_type
+TYPE, public :: fmsDiagIbounds_type
   INTEGER :: imin !< Lower i bound.
   INTEGER :: imax !< Upper i bound.
   INTEGER :: jmin !< Lower j bound.
@@ -139,7 +139,7 @@ TYPE, public :: fms_diag_ibounds_type
   INTEGER :: kmax !< Upper k bound.
   contains
   procedure :: reset => ibounds_reset
-END TYPE fms_diag_ibounds_type
+END TYPE fmsDiagIbounds_type
 
 
 
@@ -258,7 +258,7 @@ END TYPE fms_diag_ibounds_type
      TYPE(diag_grid) :: output_grid
      LOGICAL :: local_output, need_compute, phys_window, written_once
      LOGICAL :: reduced_k_range
-     TYPE(fms_diag_ibounds_type) :: buff_bounds
+     TYPE(fmsDiagIbounds_type) :: buff_bounds
      TYPE(time_type) :: Time_of_prev_field_data
      TYPE(diag_atttype), allocatable, dimension(:) :: attributes
      INTEGER :: num_attributes
@@ -408,7 +408,7 @@ CONTAINS
 
   !> @brief Sets the lower and upper bounds to lower_val and upper_val, respectively.
   SUBROUTINE ibounds_reset (this, lower_val, upper_val)
-    class (fms_diag_ibounds_type), target, intent(inout) :: this   !< ibounds instance
+    class (fmsDiagIbounds_type), target, intent(inout) :: this   !< ibounds instance
     integer, intent(in) :: lower_val  !< value for the lower bounds in each dimension
     integer, intent(in) :: upper_val  !< value for the upper bounds in each dimension
     this%imin = lower_val
