@@ -53,6 +53,9 @@ CONTAINS
    !! not in the original send_data_3d code and the power function was used.
    !! So this case may need to be deleted if reproducability is an issue.
 
+   !!TODO: (MDM) Discuss whether or not the pow_value should be allowed to
+   !! also be real though legacy interface has it satic.
+
   !> @brief Calculates and returns the value given by this formula:
   !! returned_value  = buff  + (weight * field)**pow_value
   !! Special cases when pow_value is equal to 1 or 2 do not explicitly use the power function.

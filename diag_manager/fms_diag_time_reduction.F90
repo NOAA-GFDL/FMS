@@ -86,6 +86,8 @@ MODULE fms_diag_time_reduction_mod
 CONTAINS
 
    !> @brief The class contructors. Just allocates the class and calls an initializer
+   !! @return An allocated instance of fmsDiagTimeReduction_type, which is nitialized using
+   !! provided values for arguments dt and out_freqeuncy.
    function fmsDiagTimeReduction_type_constructor(dt, out_frequency) result(time_redux)
       integer, intent(in) :: dt  !< The redution type (time_rms, time_power, etc)
       integer, intent(in) :: out_frequency  !< The output frequency.
@@ -117,7 +119,7 @@ CONTAINS
          ENDIF
       END IF
 
-      !!TODO: Add other checks? E.g. If time_averaging == .false., then
+      !!TODO: (MDM) Add other checks? E.g. If time_averaging == .false., then
       !!  out_frequency == EVERY_TIME
 
       IF((dt .EQ. time_min) .OR. (dt .EQ. time_max) .OR. &
