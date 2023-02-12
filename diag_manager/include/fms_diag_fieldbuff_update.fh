@@ -36,7 +36,7 @@ FUNCTION FMS_DIAG_FBU_3D_PNAME_(ofield_cfg, ofield_index_cfg, field_d, sample, &
     FMS_DIAG_FBU_DATA_TYPE_, INTENT(inout):: count_0d !< Normally the member of the buffer object of the same name.
     INTEGER, INTENT(inout) :: num_elements !< Used in counting updated buffer elements; Other functions (e.g. wrting
                                            !!field) may nprmalize output buffer elements with the same.
-    LOGICAL, CONTIGUOUS, DIMENSION(:,:,:), INTENT(in), OPTIONAL, target :: mask !< The mask of the corresponding field.
+    LOGICAL, CONTIGUOUS, DIMENSION(:,:,:), INTENT(in), OPTIONAL, target:: mask !< The mask of the corresponding field.
     FMS_DIAG_FBU_DATA_TYPE_, INTENT(in) :: weight1 !< Field data is multiplied by weight.
     FMS_DIAG_FBU_DATA_TYPE_, INTENT(in) :: missvalue !< Buffer may be set to missvalue where mask is false.
 
@@ -108,7 +108,7 @@ FUNCTION FMS_DIAG_FBU_3D_PNAME_(ofield_cfg, ofield_index_cfg, field_d, sample, &
       TYPE(fmsDiagIbounds_type), INTENT(inout) :: bbounds  !< The array bounds of the ofb argument.
       INTEGER, INTENT(in) :: sample  !< The index along the diurnal time axis
       FMS_DIAG_FBU_DATA_TYPE_, INTENT(inout):: count_0d !< Normally the member of the buffer object of the same name.
-      INTEGER, INTENT(inout) :: num_elements !< Used in counting updated buffer elements; Other functions (e.g. wrting
+      INTEGER, INTENT(inout):: num_elements !< Used in counting updated buffer elements; Other functions (e.g. wrting
                                            !!field) may nprmalize output buffer elements with the same.
       LOGICAL, CONTIGUOUS, DIMENSION(:,:,:,:), INTENT(in), OPTIONAL:: mask !< The mask of the corresponding field.
       FMS_DIAG_FBU_DATA_TYPE_, INTENT(in) :: weight1 !< Field data is multiplied by weight
@@ -814,7 +814,7 @@ FUNCTION FMS_DIAG_FBU_3D_PNAME_(ofield_cfg, ofield_index_cfg, field_d, sample, &
                                                                           !! where "cfg" is short for configuration
          FMS_DIAG_FBU_DATA_TYPE_ , CONTIGUOUS,  DIMENSION(:,:,:),INTENT(in),target:: field !< The field value array.
          INTEGER, INTENT(in) :: sample   !< index along the diurnal time axis
-         FMS_DIAG_FBU_DATA_TYPE_ , ALLOCATABLE, DIMENSION(:,:,:,:),INTENT(inout),target:: ofb !<The Output Field Buffer
+         FMS_DIAG_FBU_DATA_TYPE_ , ALLOCATABLE, DIMENSION(:,:,:,:),INTENT(inout),target::ofb !<The Output Field Buffer
          TYPE(fmsDiagIbounds_type), INTENT(inout) :: bbounds  !< The array bounds of the ofb argument.
          FMS_DIAG_FBU_DATA_TYPE_ , INTENT(inout) :: count_0d   !< Normally the member of the buffer of same name,
          LOGICAL, CONTIGUOUS, DIMENSION(:,:,:),INTENT(in),OPTIONAL,target::mask !<The mask of the corresponding field.
@@ -826,7 +826,7 @@ FUNCTION FMS_DIAG_FBU_3D_PNAME_(ofield_cfg, ofield_index_cfg, field_d, sample, &
 
         !! For pointer bounds remapping
         FMS_DIAG_FBU_DATA_TYPE_ , pointer, DIMENSION(:,:,:,:) :: field_ptr => null() !< Pointer to the field
-        FMS_DIAG_FBU_DATA_TYPE_ , pointer, DIMENSION(:,:,:,:,:) :: ofb_ptr => null() !< Pointer to the outfield buffer.
+        FMS_DIAG_FBU_DATA_TYPE_ , pointer,DIMENSION(:,:,:,:,:):: ofb_ptr => null() !< Pointer to the outfield buffer.
         LOGICAL , pointer, DIMENSION(:,:,:,:) :: mask_ptr => null() !< !< Pointer to the mask.
 
         LOGICAL :: succeded !< True iff no errors encountered.
@@ -1243,7 +1243,7 @@ FUNCTION FMS_DIAG_FBCF_PNAME_ (ofield_cfg, ofield_index_cfg, field, sample, ofb,
       TYPE(fmsDiagOutfieldIndex_type) , INTENT(in) :: ofield_index_cfg    !< The ofield_index_cfg object
       FMS_DIAG_FBU_DATA_TYPE_ , CONTIGUOUS,DIMENSION(:,:,:,:),INTENT(inout),target:: ofb !<The Output Field Buffer
       INTEGER, INTENT(in) :: sample   !< index along the diurnal time axis
-      FMS_DIAG_FBU_DATA_TYPE_ , CONTIGUOUS, DIMENSION(:,:,:), INTENT(in),target :: rmask !< A real valued mask for the field
+      FMS_DIAG_FBU_DATA_TYPE_ , CONTIGUOUS,DIMENSION(:,:,:),INTENT(in),target:: mask !<A real valued mask 4 the field
                                                       !! determined by logical mask. Updates where rmask < rmask_thresh
       FMS_DIAG_FBU_DATA_TYPE_ , INTENT(in) :: rmask_thresh  !< Updates where rmask < rmask_thresh
       FMS_DIAG_FBU_DATA_TYPE_ , INTENT(in) :: missvalue  !< Value used to update the buffer.
