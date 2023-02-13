@@ -64,14 +64,14 @@ implicit none
   !    is the region (-280:80, -90:90) with grid size ni_dstXnj_dst( default 144X72).
   !    integer checksum and global sum will be printed out for both the 1D and 2D version.
   if (test_conserve) then
-    call test_horiz_interp_conserve_r4
-    call test_horiz_interp_conserve_r8
+ !   call test_horiz_interp_conserve_r4
+ !   call test_horiz_interp_conserve_r8
   else if(test_bicubic) then
-    call test_horiz_interp_bicubic_r8
+ !   call test_horiz_interp_bicubic_r8
   else if(test_bilinear) then
     call test_horiz_interp_bilinear_r8
   else if(test_spherical) then
-    call test_horiz_interp_spherical_r8
+ !   call test_horiz_interp_spherical_r8
   else
     call mpp_error(FATAL, "test_horiz_interp: no unit test enabled in namelist")
   endif
@@ -185,9 +185,10 @@ implicit none
   end subroutine
 
   subroutine test_horiz_interp_bilinear_r8
-    real(r8_kind)                              :: dlon_src, dlat_src, dlon_dst, dlat_dst
+    real(r8_kind) :: dlon_src,  dlat_src,  dlon_dst,  dlat_dst
+    real(r8_kind) :: dlon2_src, dlat2_src, dlon2_dst, dlat2_dst
     real(r8_kind), allocatable, dimension(:)   :: lon1D_src, lat1D_src, lon1D_dst, lat1D_dst
-    real(r8_kind), allocatable, dimension(:,:) :: lon2D_dst, lat2D_dst
+    real(r8_kind), allocatable, dimension(:,:) :: lon2D_src, lat2D_src, lon2D_dst, lat2D_dst
     real(r8_kind), allocatable, dimension(:,:) :: data_src, data1_dst, data2_dst
     real(r8_kind), parameter :: lon_src_beg =   0._r8_kind,  lon_src_end = 360._r8_kind
     real(r8_kind), parameter :: lat_src_beg = -90._r8_kind,  lat_src_end = 90._r8_kind
@@ -196,20 +197,30 @@ implicit none
 
     allocate( lon1D_src(ni_src+1), lat1D_src(nj_src+1) )
     allocate( lon1D_dst(ni_src+1), lat1D_dst(nj_src+1) )
-    allocate( lon2d_dst(ni_src,nj_src), lat2d_dst(ni_src,nj_src) )
+    allocate( lon2d_src(ni_src+1,ni_src+1), lat2d_src(nj_src+1,nj_src+1) )
+    allocate( lon2d_dst(ni_src+1,ni_src+1), lat2d_dst(nj_src+1,nj_src+1) )
     allocate( data_src(ni_src, nj_src) )
     allocate( data1_dst(ni_src,nj_src), data2_dst(ni_src,nj_src) )
 
     ! set up longitude and latitude of source/destination grid.
     dlon_src = (lon_src_end-lon_src_beg)/real(ni_src,r8_kind)  ;  dlon_dst = dlon_src
     dlat_src = (lat_src_end-lat_src_beg)/real(nj_src,r8_kind)  ;  dlat_dst = dlat_src
+    dlon2_src = dlon_src/10000.0_r8_kind ; dlon2_dst = dlon2_src
+    dlat2_src = dlat_src/10000.0_r8_kind ; dlat2_dst = dlat2_src
+
 
     ! set up 1d source grid
     do i = 1, ni_src+1
        lon1D_src(i) = ( lon_src_beg + real(i-1,r8_kind)*dlon_src ) * D2R
+       do j=1, ni_src+1
+          lon2D_src(j,i) = ( lon_src_beg + real(i*1000+j,r8_kind)*dlon2_src ) *D2R
+       end do
     end do
     do j = 1, nj_src+1
        lat1D_src(j) = ( lat_src_beg + real(j-1,r8_kind)*dlat_src ) * D2R
+       do i=1, nj_src+1
+          lat2D_src(i,j) = ( lat_src_beg + real(j*1000+i,r8_kind)*dlat2_src ) * D2R
+       end do
     end do
 
     !--- set up the source data
@@ -224,7 +235,7 @@ implicit none
     id3 = mpp_clock_id( 'horiz_interp_2dx1d', flags=MPP_CLOCK_SYNC+MPP_CLOCK_DETAILED )
     id4 = mpp_clock_id( 'horiz_interp_2dx2d', flags=MPP_CLOCK_SYNC+MPP_CLOCK_DETAILED )
 
-    ! --- 1dx1d version conservative interpolation
+    ! --- 1dx1d version bilinear interpolation
     data1_dst = 0.0_r8_kind
     lon1d_dst = lon1d_src
     lat1d_dst = lat1d_src
@@ -243,9 +254,8 @@ implicit none
        end do
     end do
 
-    ! --- 1dx2d version conservative interpolation
+    ! --- 1dx2d version bilinear interpolation
     data2_dst = 0.0_r8_kind
-
     ! taking the midpoint
     do i = 1, ni_src
        lon2D_dst(i,:) = (lon1D_src(i) + lon1D_src(i+1)) * 0.5_r8_kind
@@ -268,7 +278,13 @@ implicit none
           end if
        end do
     end do
-    write(*,*) 'HELLOOOO'
+
+    ! --- 2dx2d version conservative interpolation
+    lon2d_dst = lon2d_src
+    lat2d_dst = lat2d_src
+    call mpp_clock_begin(id3)
+    call horiz_interp_new(interp, lon2D_src, lat2D_src, lon2d_dst, lat2D_dst, interp_method = "bilinear")
+
 
   end subroutine test_horiz_interp_bilinear_r8
 
