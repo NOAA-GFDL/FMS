@@ -46,8 +46,8 @@ FUNCTION FMS_DIAG_FBU_3D_PNAME_(ofield_cfg, ofield_index_cfg, field_d, sample, &
     LOGICAL, INTENT(inout) :: issued_mask_ignore_warning
     INTEGER, DIMENSION(3), INTENT(in)  :: l_start !< local start indices on 3 axes for regional output
     INTEGER, DIMENSION(3), INTENT(in)  :: l_end !< local end indices on 3 axes for regional output
-    CHARACTER(len=*), INTENT(inout),OPTIONAL::err_msg !< Possibly passed in by the caller, and sent to error handler
-    CHARACTER(len=256), INTENT(inout) :: err_msg_local !< Possibly set by bounds checker, and sent to error handler
+    CHARACTER(len=*), INTENT(out),OPTIONAL::err_msg !< Possibly passed in by the caller, and sent to error handler
+    CHARACTER(len=256), INTENT(out) :: err_msg_local !< Possibly set by bounds checker, and sent to error handler
 
     !!TODO: can the use of a dummy be removed.
     FMS_DIAG_FBU_DATA_TYPE_ , ALLOCATABLE, DIMENSION(:,:,:,:),target :: ofc_dummy
@@ -120,8 +120,8 @@ FUNCTION FMS_DIAG_FBU_3D_PNAME_(ofield_cfg, ofield_index_cfg, field_d, sample, &
       LOGICAL, INTENT(inout) :: issued_mask_ignore_warning
       INTEGER, DIMENSION(3), INTENT(in)  :: l_start !< local start indices on 3 axes for regional output
       INTEGER, DIMENSION(3), INTENT(in)  :: l_end !< local end indices on 3 axes for regional output
-      CHARACTER(len=*), INTENT(inout),OPTIONAL::err_msg !< Possibly passed by the caller, and sent to error handler
-      CHARACTER(len=256), INTENT(inout) :: err_msg_local !< Possibly set by bounds checker, and sent to error handler
+      CHARACTER(len=*), INTENT(out),OPTIONAL::err_msg !< Possibly passed by the caller, and sent to error handler
+      CHARACTER(len=256), INTENT(out) :: err_msg_local !< Possibly set by bounds checker, and sent to error handler
 
       INTEGER :: pow_value !< A copy of same variable in ofield_cfg
       CHARACTER(:), ALLOCATABLE :: output_name !< A copy of same variable in ofield_cfg
@@ -821,8 +821,8 @@ FUNCTION FMS_DIAG_FBU_3D_PNAME_(ofield_cfg, ofield_index_cfg, field_d, sample, &
          FMS_DIAG_FBU_DATA_TYPE_ , INTENT(in) :: missvalue !< buffer may be set to this value where mask is false.
          INTEGER, DIMENSION(3), INTENT(in)  :: l_start   !< local start indices on spatial axes for regional output
          INTEGER, DIMENSION(3), INTENT(in)  :: l_end   !< local end indices on spatial for regional output
-         CHARACTER(len=*), INTENT(inout),OPTIONAL::err_msg !< Possibly passed in by the caller,and sent to handler
-         CHARACTER(len=256), INTENT(inout) :: err_msg_local !< Possibly set by bounds checker, and sent to handler
+         CHARACTER(len=*), INTENT(out),OPTIONAL::err_msg !< Possibly passed in by the caller,and sent to handler
+         CHARACTER(len=256), INTENT(out) :: err_msg_local !< Possibly set by bounds checker, and sent to handler
 
         !! For pointer bounds remapping
         FMS_DIAG_FBU_DATA_TYPE_ , pointer, DIMENSION(:,:,:,:) :: field_ptr => null() !< Pointer to the field
@@ -863,8 +863,8 @@ FUNCTION FMS_DIAG_FBCF_PNAME_ (ofield_cfg, ofield_index_cfg, field, sample, ofb,
       FMS_DIAG_FBU_DATA_TYPE_ , INTENT(in) :: missvalue !< buffer may be set to this value where mask is false.
       INTEGER, DIMENSION(3), INTENT(in)  :: l_start   !< local start indices on spatial axes for regional output
       INTEGER, DIMENSION(3), INTENT(in)  :: l_end   !< local end indices on spatial for regional output
-      CHARACTER(len=*), INTENT(inout),OPTIONAL::err_msg !< Possibly passed in by the caller, and sent to handler
-      CHARACTER(len=256), INTENT(inout) :: err_msg_local  !< Possibly set by bounds checker, and sent to handler
+      CHARACTER(len=*), INTENT(out),OPTIONAL::err_msg !< Possibly passed in by the caller, and sent to handler
+      CHARACTER(len=256), INTENT(out) :: err_msg_local  !< Possibly set by bounds checker, and sent to handler
       LOGICAL :: succeded !< Return true iff errors are not encounterd.
       !!
       !!
@@ -1287,8 +1287,8 @@ FUNCTION FMS_DIAG_FBCF_PNAME_ (ofield_cfg, ofield_index_cfg, field, sample, ofb,
          !< Looping indices copied from corresponding one in ofield_index_cfg info:
          INTEGER :: is, js, ks, ie, je, ke, hi, hj
          !< Floags copied from corresponding one in ofield_cfg info:
-         LOGICAL :: need_compute
-         LOGICAL :: reduced_k_range
+         LOGICAL :: need_compute !< A copy of same variable in ofield_cfg
+         LOGICAL :: reduced_k_range !< A copy of same variable in ofield_cfg
          INTEGER :: ksr, ker !< Loop indices used in reduced_k_range calculations
          !< Looping indices, derived from ofield_index_cfg info:
          INTEGER :: i, j, k, i1, j1, k1

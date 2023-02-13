@@ -48,13 +48,13 @@ MODULE fms_diag_outfield_mod
 
   implicit none
 
-  !> @brief Class fmsDiagOutfiled_type (along with class ms_diag_outfield_index_type )
+  !> @brief Class fmsDiagOutfield_type (along with class ms_diag_outfield_index_type )
   !! contain information used in updating the output buffers by the diag_manager
   !! send_data routines. In some sense they can be seen as encapsulating related
   !! information in a convenient way (e.g. to pass to functions and for do loop
-  !! controls.
+  !! controls.)
   !!
-  !! Class fmsDiagOutfiled_type also contains a significant subset of the fields
+  !! Class fmsDiagOutfield_type also contains a significant subset of the fields
   !! and routines of of the legacy class output_field_type
   !! TODO: (MDM) This class will need further development for the modern_diag effort.
   !! For its development, consider the legacy diag_util::init_output_field already
@@ -106,7 +106,7 @@ MODULE fms_diag_outfield_mod
 
   END TYPE fmsDiagOutfield_type
 
-  !> @brief Class fms_diag_outfield_index_type which (along with class fmsDiagOutfiled_type)
+  !> @brief Class fms_diag_outfield_index_type which (along with class fmsDiagOutfield_type)
   !! encapsulate related information used in updating the output buffers by the diag_manager
   !! send_data routines. This class in particular focuses on do loop index controls or settings.
   !! Note that the index names in this class should be indentical to the names used in the
@@ -380,21 +380,21 @@ CONTAINS
 
   END SUBROUTINE initialize_outfield_imp
 
-   !> @brief Initialized an fmsDiagOutfiled_type as needed for unit tests.
+   !> @brief Initialized an fmsDiagOutfield_type as needed for unit tests.
   subroutine initialize_for_ut(this, module_name, field_name, output_name, &
     &  power_val, phys_window, need_compute, mask_variant,  reduced_k_range, num_elems, &
     & time_reduction_type,output_freq)
        CLASS(fmsDiagOutfield_type), intent(inout)  :: this
-       CHARACTER(len=*), INTENT(in) :: module_name !< Var with same name in fmsDiagOutfiled_type
-       CHARACTER(len=*), INTENT(in) :: field_name !< Var with same name in fmsDiagOutfiled_type
-       CHARACTER(len=*), INTENT(in) :: output_name !< Var with same name in fmsDiagOutfiled_type
-       INTEGER, INTENT(in) :: power_val    !< Var with same name in fmsDiagOutfiled_type
-       LOGICAL, INTENT(in) :: phys_window  !< Var with same name in fmsDiagOutfiled_type
-       LOGICAL, INTENT(in) :: need_compute  !< Var with same name in fmsDiagOutfiled_type
-       LOGICAL, INTENT(in) :: mask_variant  !< Var with same name in fmsDiagOutfiled_type
-       LOGICAL, INTENT(in) :: reduced_k_range !< Var with same name in fmsDiagOutfiled_type
-       INTEGER, INTENT(in) :: num_elems !< Var with same name in fmsDiagOutfiled_type
-       INTEGER, INTENT(in) :: time_reduction_type !< Var with same name in fmsDiagOutfiled_type
+       CHARACTER(len=*), INTENT(in) :: module_name !< Var with same name in fmsDiagOutfield_type
+       CHARACTER(len=*), INTENT(in) :: field_name !< Var with same name in fmsDiagOutfield_type
+       CHARACTER(len=*), INTENT(in) :: output_name !< Var with same name in fmsDiagOutfield_type
+       INTEGER, INTENT(in) :: power_val    !< Var with same name in fmsDiagOutfield_type
+       LOGICAL, INTENT(in) :: phys_window  !< Var with same name in fmsDiagOutfield_type
+       LOGICAL, INTENT(in) :: need_compute  !< Var with same name in fmsDiagOutfield_type
+       LOGICAL, INTENT(in) :: mask_variant  !< Var with same name in fmsDiagOutfield_type
+       LOGICAL, INTENT(in) :: reduced_k_range !< Var with same name in fmsDiagOutfield_type
+       INTEGER, INTENT(in) :: num_elems !< Var with same name in fmsDiagOutfield_type
+       INTEGER, INTENT(in) :: time_reduction_type !< Var with same name in fmsDiagOutfield_type
        INTEGER, INTENT(in) :: output_freq !< The output_freq need in initaliztion of time_reduction_type
 
        this%module_name = module_name

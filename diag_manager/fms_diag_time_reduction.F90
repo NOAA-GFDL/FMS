@@ -97,7 +97,8 @@ CONTAINS
       call time_redux%initialize(dt, out_frequency)
    end function fmsDiagTimeReduction_type_constructor
 
-  !> @brief Initialize the object.
+  !> @brief Initialize the object. As an alternative to the constructor, one can 
+  !! allocate an fmsDiagTimeReduction_type instance, then call its initialize function.
   subroutine initialize(this, dt, out_frequency)
     class (fmsDiagTimeReduction_type), intent(inout) :: this !< The fmsDiagTimeReduction_type object
     integer, intent(in) :: dt !< The redution type (time_rms, time_porer, etc)
