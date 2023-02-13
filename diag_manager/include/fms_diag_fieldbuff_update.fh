@@ -1243,7 +1243,7 @@ FUNCTION FMS_DIAG_FBCF_PNAME_ (ofield_cfg, ofield_index_cfg, field, sample, ofb,
       TYPE(fmsDiagOutfieldIndex_type) , INTENT(in) :: ofield_index_cfg    !< The ofield_index_cfg object
       FMS_DIAG_FBU_DATA_TYPE_ , CONTIGUOUS,DIMENSION(:,:,:,:),INTENT(inout),target:: ofb !<The Output Field Buffer
       INTEGER, INTENT(in) :: sample   !< index along the diurnal time axis
-      FMS_DIAG_FBU_DATA_TYPE_ , CONTIGUOUS,DIMENSION(:,:,:),INTENT(in),target:: mask !<A real valued mask 4 the field
+      FMS_DIAG_FBU_DATA_TYPE_ , CONTIGUOUS,DIMENSION(:,:,:),INTENT(in),target:: rmask !<A real valued mask 4 the field
                                                       !! determined by logical mask. Updates where rmask < rmask_thresh
       FMS_DIAG_FBU_DATA_TYPE_ , INTENT(in) :: rmask_thresh  !< Updates where rmask < rmask_thresh
       FMS_DIAG_FBU_DATA_TYPE_ , INTENT(in) :: missvalue  !< Value used to update the buffer.
