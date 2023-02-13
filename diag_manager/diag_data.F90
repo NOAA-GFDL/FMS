@@ -347,8 +347,6 @@ END TYPE fmsDiagIbounds_type
   LOGICAL :: use_mpp_io = .false. !< false is fms2_io (default); true is mpp_io
   LOGICAL :: use_refactored_send = .false. !< Namelist flag to use refactored send_data math funcitons.
 
-  !!TODO: leave use_refactored_send as false
-
   ! <!-- netCDF variable -->
 
 #ifdef use_netCDF

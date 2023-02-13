@@ -1491,12 +1491,12 @@ CONTAINS
 
     REAL(kind=r4_kind), POINTER, DIMENSION(:,:,:) :: rmask_ptr_r4 => null() !< A pointer to r4 type of rmask
     REAL(kind=r8_kind), POINTER, DIMENSION(:,:,:) :: rmask_ptr_r8 => null() !<A pointer to r8 type of rmask
-    LOGICAL , pointer, DIMENSION(:,:,:) :: mask_ptr => null() !< A pointer to mask
+    !!LOGICAL , pointer, DIMENSION(:,:,:) :: mask_ptr => null() !< A pointer to mask
 
     TYPE(fmsDiagOutfieldIndex_type), ALLOCATABLE:: ofield_index_cfg !<Instance  used in calling math funcsions.
     TYPE(fmsDiagOutfield_type), ALLOCATABLE:: ofield_cfg !<Instance  used in calling math funcsions.
     LOGICAL :: mf_result !<Logical result returned from some math (buffer udate) functions.
-    LOGICAL, DIMENSION(1,1,1), target :: mask_dummy
+
     REAL :: rmask_threshold !< Holds the values 0.5_r4_kind or 0.5_r8_kind, or related threhold values
                             !! needed to be passed to the math/buffer update functions.
 
@@ -1900,18 +1900,12 @@ CONTAINS
          ALLOCATE( ofield_cfg )
          CALL ofield_cfg%initialize( input_fields(diag_field_id), output_fields(out_num), PRESENT(mask), freq)
 
-         IF  (PRESENT (mask)) THEN
-          mask_ptr(1:size(mask,1),1:size(mask,2),1:size(mask,3)) => mask
-         else
-          mask_ptr(1:size(mask_dummy,1),1:size(mask_dummy,2),1:size(mask_dummy,3)) => mask_dummy
-        ENDIF
-
         IF ( average ) THEN
             !!TODO (Future work): the copy that is filed_out should not be necessary
             mf_result = fieldbuff_update(ofield_cfg, ofield_index_cfg, field_out, sample, &
                & output_fields(out_num)%buffer, output_fields(out_num)%counter ,output_fields(out_num)%buff_bounds,&
                & output_fields(out_num)%count_0d(sample), output_fields(out_num)%num_elements(sample), &
-               & mask_ptr, weight1 ,missvalue, &
+               & mask, weight1 ,missvalue, &
                & input_fields(diag_field_id)%numthreads, input_fields(diag_field_id)%active_omp_level,&
                & input_fields(diag_field_id)%issued_mask_ignore_warning, &
                & l_start, l_end, err_msg, err_msg_local )
@@ -1926,7 +1920,7 @@ CONTAINS
             mf_result = fieldbuff_copy_fieldvals(ofield_cfg, ofield_index_cfg, field_out, sample, &
                & output_fields(out_num)%buffer, output_fields(out_num)%buff_bounds , &
                & output_fields(out_num)%count_0d(sample), &
-               & mask_ptr, missvalue, l_start, l_end, err_msg, err_msg_local)
+               & mask, missvalue, l_start, l_end, err_msg, err_msg_local)
             IF (mf_result .eqv. .FALSE.) THEN
               DEALLOCATE(ofield_index_cfg)
               DEALLOCATE(ofield_cfg)
@@ -3765,7 +3759,7 @@ CONTAINS
          & max_input_fields, max_axes, do_diag_field_log, write_bytes_in_file, debug_diag_manager,&
          & max_num_axis_sets, max_files, use_cmor, issue_oor_warnings,&
          & oor_warnings_fatal, max_out_per_in_field, flush_nc_files, region_out_use_alt_value, max_field_attributes,&
-         & max_file_attributes, max_axis_attributes, prepend_date, use_mpp_io
+         & max_file_attributes, max_axis_attributes, prepend_date, use_mpp_io, use_refactored_send
 
     ! If the module was already initialized do nothing
     IF ( module_is_initialized ) RETURN

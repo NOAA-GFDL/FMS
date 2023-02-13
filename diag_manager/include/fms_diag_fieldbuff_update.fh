@@ -49,8 +49,15 @@ FUNCTION FMS_DIAG_FBU_3D_PNAME_(ofield_cfg, ofield_index_cfg, field_d, sample, &
     CHARACTER(len=*), INTENT(out),OPTIONAL::err_msg !< Possibly passed in by the caller, and sent to error handler
     CHARACTER(len=256), INTENT(out) :: err_msg_local !< Possibly set by bounds checker, and sent to error handler
 
-    !!TODO: can the use of a dummy be removed.
-    FMS_DIAG_FBU_DATA_TYPE_ , ALLOCATABLE, DIMENSION(:,:,:,:),target :: ofc_dummy
+    LOGICAL :: succeded !< True iff no errors encountered.
+
+    !!TODO: Can the two dummy variables below be removed. The variables were introduced because of pointer
+    !! bounds remapping to call the next routine. Note that mask is an optional argument, and ofc might not
+    !! have been allocated. The program hangs if the approach of having pointers to the dummy arrays are not used.
+    !! Also note that a sepeate logical field (in fmsDiagOutfield_type, but was used in
+    !! the legacy diag manager also) is used to determine "if the mask was preent"!
+    FMS_DIAG_FBU_DATA_TYPE_ , DIMENSION(1),target :: ofc_dummy
+    LOGICAL, DIMENSION(1), target :: mask_dummy
 
     !! For pointer bounds remapping
     FMS_DIAG_FBU_DATA_TYPE_ , pointer, DIMENSION(:,:,:,:) :: field_ptr => null()!< Pointer to the field
@@ -58,7 +65,6 @@ FUNCTION FMS_DIAG_FBU_3D_PNAME_(ofield_cfg, ofield_index_cfg, field_d, sample, &
     FMS_DIAG_FBU_DATA_TYPE_ , pointer, DIMENSION(:,:,:,:,:) :: ofc_ptr => null()!< Pointer to the outfield counter.
     LOGICAL , pointer, DIMENSION(:,:,:,:) :: mask_ptr => null()!< Pointer to the mask.
 
-    LOGICAL :: succeded !< True iff no errors encountered.
 
     field_ptr(1:size(field_d,1),1:size(field_d,2),1:size(field_d,3),1:1) => field_d
     ofb_ptr(1:size(ofb,1),1:size(ofb,2),1:size(ofb,3),1:1, 1:size(ofb,4)) => ofb
@@ -67,13 +73,16 @@ FUNCTION FMS_DIAG_FBU_3D_PNAME_(ofield_cfg, ofield_index_cfg, field_d, sample, &
     if(allocated(ofc)) then
       ofc_ptr(1:size(ofc,1),1:size(ofc,2),1:size(ofc,3), 1:1, 1:size(ofc,4)) => ofc
     else
-      allocate(ofc_dummy(1,1,1,1))
-      ofc_ptr(1:1,1:1,1:1, 1:1,1:1) => ofc_dummy
+     ofc_ptr(1:1,1:1,1:1,1:1,1:1) => ofc_dummy
     endif
 
     IF  (PRESENT (mask)) THEN
       mask_ptr(1:size(mask,1),1:size(mask,2),1:size(mask,3),1:1) => mask
+    ELSE
+      mask_ptr(1:1,1:1,1:1,1:1) => mask_dummy
     ENDIF
+
+
 
     succeded = FMS_DIAG_FBU_PNAME_ (ofield_cfg, ofield_index_cfg, field_ptr, sample, &
       & ofb_ptr, ofc_ptr, bbounds, count_0d, num_elements, mask_ptr, weight1, missvalue,  &
@@ -824,18 +833,27 @@ FUNCTION FMS_DIAG_FBU_3D_PNAME_(ofield_cfg, ofield_index_cfg, field_d, sample, &
          CHARACTER(len=*), INTENT(out),OPTIONAL::err_msg !< Possibly passed in by the caller,and sent to handler
          CHARACTER(len=256), INTENT(out) :: err_msg_local !< Possibly set by bounds checker, and sent to handler
 
+         LOGICAL :: succeded !< True iff no errors encountered.
+
+        !!TODO: Can the dummy variable array below be removed. The variable was introduced because of pointer
+        !! bounds remapping to call the next routine. Note that mask is an optional argument.
+        !! The program hangs if the approach of having a pointer to the dummy array is not used.
+        !! Also note that a seperate logical field (in fmsDiagOutfield_type, but was used in
+        !! the legacy diag manager also) is used to determine "if the mask was preent"!
+         LOGICAL, DIMENSION(1,1,1,1), target :: mask_dummy
+
         !! For pointer bounds remapping
         FMS_DIAG_FBU_DATA_TYPE_ , pointer, DIMENSION(:,:,:,:) :: field_ptr => null() !< Pointer to the field
         FMS_DIAG_FBU_DATA_TYPE_ , pointer,DIMENSION(:,:,:,:,:):: ofb_ptr => null() !< Pointer to the outfield buffer.
         LOGICAL , pointer, DIMENSION(:,:,:,:) :: mask_ptr => null() !< !< Pointer to the mask.
-
-        LOGICAL :: succeded !< True iff no errors encountered.
 
         field_ptr(1:size(field,1),1:size(field,2),1:size(field,3),1:1) => field(:,:,:)
         ofb_ptr(1:size(ofb,1),1:size(ofb,2),1:size(ofb,3), 1:1, 1:size(ofb,4)) => ofb
 
         IF  (PRESENT (mask)) THEN
           mask_ptr(1:size(mask,1),1:size(mask,2),1:size(mask,3),1:1) => mask
+        ELSE
+          mask_ptr(1:1,1:1,1:1,1:1) => mask_dummy
         ENDIF
 
         succeded = FMS_DIAG_FBCF_PNAME_ (ofield_cfg, ofield_index_cfg, field_ptr, sample, &
