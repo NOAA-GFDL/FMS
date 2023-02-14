@@ -33,7 +33,8 @@
 !!      ANY_PE:  if remote PE for the put or get is to be unspecific
 !!      ALL_PES: broadcast and collect operations (collect not yet implemented)
 !!ideally we would not pass length, but this f77-style call performs better (arrays passed by address, not descriptor)
-!!further, this permits <length> contiguous words from an array of any rank to be passed (avoiding f90 rank conformance check)
+!!further, this permits <length> contiguous words from an array of any rank to be passed
+!!(avoiding f90 rank conformance check)
 !!caller is responsible for completion checks (mpp_sync_self) before and after
     subroutine MPP_TRANSMIT_( put_data, put_len, to_pe, get_data, get_len, from_pe, block, tag, recv_request, &
                             &  send_request )
@@ -78,16 +79,17 @@
              call MPI_ISEND( put_data, put_len, MPI_TYPE_, to_pe, comm_tag, mpp_comm_private, send_request, error)
           else
              cur_send_request = cur_send_request + 1
-             if( cur_send_request > max_request ) call mpp_error(FATAL, &
-                "MPP_TRANSMIT: cur_send_request is greater than max_request, increase mpp_nml request_multiply")
+             if( cur_send_request > max_request ) &
+             call mpp_error(FATAL, &
+                  & "MPP_TRANSMIT: cur_send_request is greater than max_request, increase mpp_nml request_multiply")
              call MPI_ISEND( put_data, put_len, MPI_TYPE_, to_pe, comm_tag, mpp_comm_private, &
                              request_send(cur_send_request), error)
           endif
-          if( debug .and. (current_clock.NE.0) )call increment_current_clock( EVENT_SEND, put_len*MPP_TYPE_BYTELEN_ )
-      else if( to_pe.EQ.ALL_PES )then !this is a broadcast from from_pe
-          if( from_pe.LT.0 .OR. from_pe.GE.npes )call mpp_error( FATAL, 'MPP_TRANSMIT: broadcasting from invalid PE.' )
-          if( put_len.GT.get_len )call mpp_error( FATAL, 'MPP_TRANSMIT: size mismatch between put_data and get_data.' )
-          if( pe.EQ.from_pe )then
+          if (debug .and. (current_clock.NE.0)) call increment_current_clock(EVENT_SEND, put_len*MPP_TYPE_BYTELEN_)
+      else if (to_pe.EQ.ALL_PES) then !this is a broadcast from from_pe
+          if(from_pe.LT.0 .OR. from_pe.GE.npes) call mpp_error(FATAL, 'MPP_TRANSMIT: broadcasting from invalid PE.')
+          if(put_len.GT.get_len) call mpp_error(FATAL, 'MPP_TRANSMIT: size mismatch between put_data and get_data.')
+          if(pe.EQ.from_pe)then
               if( LOC(get_data).NE.LOC(put_data) )then
 !dir$ IVDEP
                   do i = 1,get_len
@@ -125,8 +127,9 @@
                   recv_request, error )
              else
                 cur_recv_request = cur_recv_request + 1
-                if( cur_recv_request > max_request ) call mpp_error(FATAL, &
-                "MPP_TRANSMIT: cur_recv_request is greater than max_request, increase mpp_nml request_multiply")
+                if( cur_recv_request > max_request ) &
+                call mpp_error(FATAL, &
+                     "MPP_TRANSMIT: cur_recv_request is greater than max_request, increase mpp_nml request_multiply")
                 call MPI_IRECV( get_data, get_len, MPI_TYPE_, from_pe, comm_tag, mpp_comm_private, &
                      request_recv(cur_recv_request), error )
                 size_recv(cur_recv_request) = get_len
@@ -140,7 +143,8 @@
           call MPI_RECV( get_data, get_len, MPI_TYPE_, MPI_ANY_SOURCE, comm_tag, mpp_comm_private, stat, error )
           if( debug .and. (current_clock.NE.0) )call increment_current_clock( EVENT_RECV, get_len*MPP_TYPE_BYTELEN_ )
       else if( from_pe.EQ.ALL_PES )then
-          call mpp_error( FATAL, 'MPP_TRANSMIT: from_pe=ALL_PES has ambiguous meaning, and hence is not implemented.' )
+          call mpp_error( FATAL, 'MPP_TRANSMIT: from_pe=ALL_PES has ambiguous meaning,' &
+               & // 'and hence is not implemented.')
       else if( from_pe.NE.NULL_PE )then !only remaining valid choice is NULL_PE
           call mpp_error( FATAL, 'MPP_TRANSMIT: invalid from_pe.' )
       end if

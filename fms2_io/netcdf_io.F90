@@ -37,6 +37,7 @@ private
 
 
 !Module constants.
+integer, parameter, public :: default_deflate_level = 0 !< The default (no compression) deflate level to use
 integer, parameter :: variable_missing = -1
 integer, parameter :: dimension_missing = -1
 integer, parameter, public :: no_unlimited_dimension = -1 !> No unlimited dimension in file.
@@ -54,6 +55,10 @@ integer, private :: fms2_ncchksz = -1 !< Chunksize (bytes) used in nc_open and n
 integer, private :: fms2_nc_format_param = -1 !< Netcdf format type param used in nc_create
 character (len = 10), private :: fms2_nc_format !< Netcdf format type used in netcdf_file_open
 integer, private :: fms2_header_buffer_val = -1  !< value used in NF__ENDDEF
+integer, private :: fms2_deflate_level = default_deflate_level !< Netcdf deflate level to use in
+                                                               !! nf90_def_var (integer between 1 to 9)
+logical, private :: fms2_shuffle = .false. !< Flag indicating whether to use the netcdf shuffle filter
+logical, private :: fms2_is_netcdf4 = .false. !< Flag indicating whether the default netcdf file format is netcdf4
 
 !> @}
 
@@ -332,12 +337,18 @@ end interface is_valid
 contains
 
 !> @brief Accepts the namelist fms2_io_nml variables relevant to netcdf_io_mod
-subroutine netcdf_io_init (chksz, header_buffer_val, netcdf_default_format)
-integer, intent(in) :: chksz
-character (len = 10), intent(in) :: netcdf_default_format
-integer, intent(in) :: header_buffer_val
+subroutine netcdf_io_init (chksz, header_buffer_val, netcdf_default_format, deflate_level, shuffle)
+integer,              intent(in) :: chksz                 !< Chunksize (bytes) used in nc_open and nc_create
+character (len = 10), intent(in) :: netcdf_default_format !< Netcdf format type param used in nc_create
+integer,              intent(in) :: header_buffer_val     !< Value used in NF__ENDDEF
+integer,              intent(in) :: deflate_level         !< Netcdf deflate level to use in nf90_def_var
+                                                          !! (integer between 1 to 9)
+logical,              intent(in) :: shuffle               !< Flag indicating whether to use the netcdf shuffle filter
 
  fms2_ncchksz = chksz
+ fms2_deflate_level = deflate_level
+ fms2_shuffle = shuffle
+ fms2_is_netcdf4 = .false.
  fms2_header_buffer_val = header_buffer_val
  if (string_compare(netcdf_default_format, "64bit", .true.)) then
      fms2_nc_format_param = nf90_64bit_offset
@@ -347,6 +358,7 @@ integer, intent(in) :: header_buffer_val
      call string_copy(fms2_nc_format, "classic")
  elseif (string_compare(netcdf_default_format, "netcdf4", .true.)) then
      fms2_nc_format_param = nf90_netcdf4
+     fms2_is_netcdf4 = .true.
      call string_copy(fms2_nc_format, "netcdf4")
  else
      call error("unrecognized netcdf file format "//trim(netcdf_default_format)// &
@@ -628,6 +640,7 @@ function netcdf_file_open(fileobj, path, mode, nc_format, pelist, is_restart, do
     else
       call string_copy(fileobj%nc_format, trim(fms2_nc_format))
       nc_format_param = fms2_nc_format_param
+      fileobj%is_netcdf4 = fms2_is_netcdf4
     endif
 
     if (string_compare(mode, "read", .true.)) then
@@ -893,7 +906,7 @@ end subroutine register_compressed_dimension
 
 
 !> @brief Add a variable to a file.
-subroutine netcdf_add_variable(fileobj, variable_name, variable_type, dimensions, deflate_level, chunksizes)
+subroutine netcdf_add_variable(fileobj, variable_name, variable_type, dimensions, chunksizes)
 
   class(FmsNetcdfFile_t), intent(in) :: fileobj !< File object.
   character(len=*), intent(in) :: variable_name !< Variable name.
@@ -901,9 +914,6 @@ subroutine netcdf_add_variable(fileobj, variable_name, variable_type, dimensions
                                                 !! values are: "char", "int", "int64",
                                                 !! "float", or "double".
   character(len=*), dimension(:), intent(in), optional :: dimensions !< Dimension names.
-  integer, optional, intent(in) :: deflate_level !< The netcdf deflate level
-                                                 !! This feature is only
-                                                 !! available for netcdf4 files
   integer, optional, intent(in) :: chunksizes(:) !< netcdf chunksize to use for this variable
                                                  !! This feature is only
                                                  !! available for netcdf4 files
@@ -945,9 +955,9 @@ subroutine netcdf_add_variable(fileobj, variable_name, variable_type, dimensions
       enddo
       if (fileobj%is_netcdf4) then
         err = nf90_def_var(fileobj%ncid, trim(variable_name), vtype, dimids, varid, &
-          &deflate_level=deflate_level, chunksizes=chunksizes)
+          &deflate_level=fms2_deflate_level, shuffle=fms2_shuffle, chunksizes=chunksizes)
       else
-        if (present(deflate_level) .or. present(chunksizes)) &
+        if (fms2_deflate_level .ne. default_deflate_level .or. fms2_shuffle .or. present(chunksizes)) &
           &call mpp_error(NOTE,"Not able to use deflate_level or chunksizes if not using netcdf4"// &
           & " ignoring them")
         err = nf90_def_var(fileobj%ncid, trim(variable_name), vtype, dimids, varid)

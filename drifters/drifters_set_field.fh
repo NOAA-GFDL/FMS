@@ -76,7 +76,8 @@ subroutine drifters_set_field_XXX(self, index_field, x, y, &
      ij(1) = i
 #ifdef _DEBUG
      if(i<1) then
-        print *,'drifters_set_field_XXX::OUT OF BOUND ERROR. xmin, x, xmax=', minval(x), self%core%positions(1,ip), maxval(x)
+        print *,'drifters_set_field_XXX::OUT OF BOUND ERROR. xmin, x, xmax=', &
+          & minval(x), self%core%positions(1,ip), maxval(x)
      endif
 #endif
      ts(1) = (self%core%positions(1,ip) - x(i))/(x(i+1) - x(i))
@@ -85,7 +86,8 @@ subroutine drifters_set_field_XXX(self, index_field, x, y, &
      ij(2) = j
 #ifdef _DEBUG
      if(j<1) then
-        print *,'drifters_set_field_XXX::OUT OF BOUND ERROR. ymin, y, ymax=', minval(y), self%core%positions(2,ip), maxval(y)
+        print *,'drifters_set_field_XXX::OUT OF BOUND ERROR. ymin, y, ymax=', &
+          & minval(y), self%core%positions(2,ip), maxval(y)
      endif
 #endif
      ts(2) = (self%core%positions(2,ip) - y(j))/(y(j+1) - y(j))
@@ -95,7 +97,8 @@ subroutine drifters_set_field_XXX(self, index_field, x, y, &
      ij(3) = j
 #ifdef _DEBUG
      if(j<1) then
-        print *,'drifters_set_field_XXX::OUT OF BOUND ERROR. ymin, y, ymax=', minval(y), self%core%positions(2,ip), maxval(y)
+        print *,'drifters_set_field_XXX::OUT OF BOUND ERROR. ymin, y, ymax=', &
+          & minval(y), self%core%positions(2,ip), maxval(y)
      endif
 #endif
      ts(3) = (self%core%positions(3,ip) - z(j))/(z(j+1) - z(j))
