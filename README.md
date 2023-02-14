@@ -77,6 +77,27 @@ The following external libraries are required when building libFMS
 Please see the [Build and Installation page](http://noaa-gfdl.github.io/FMS/build.html)
 for more information on building with each build system.
 
+## Compiler Support
+
+For most production environments and large scale regression testing, FMS is currently compiled with the
+Intel classic compiler (ifort) but will be transitioning to the llvm-based ifx intel compiler when it is
+available for production.
+
+Below shows the status of our compiler support for various compilers and versions. Testing was done on
+CentOS 8, with additional testing using a larger cray SLES system. MPICH is used as the MPI library
+except for the intel compilers, which use intel's mpi library.
+Compilers used in our Github continuous integration testing are in bold.
+
+|Compiler                | Version |Builds Successfully        | Unit Testing        |
+|------------------------|---------|---------------------------|---------------------|
+|**intel classic(ifort)**| 2021.6.0| yes                       | passes              |
+|**GNU (gfortran)**      | 9.3.0   | yes                       | passes              |
+|intel oneapi (ifx)      | 2021.6.0| yes                       | passes              |
+|GNU (gfortran)          | 11.2.0  | yes                       | passes              |
+|HP/Cray (cce)           | 9.1.1   | yes                       | not passing         |
+|Nvidia/PGI(nvfortran)   | 22.9    | no                        | not passing         |
+|AMD (aocc)              | 3.2.0   | no(compiles,fails to link)| not passing         |
+
 ## Documentation
 
 Source code documentation for the FMS code base is available at http://noaa-gfdl.github.io/FMS.

@@ -231,10 +231,11 @@ contains
      write (unit, nml=horiz_interp_nml)
   endif
 
-  if( reproduce_siena ) then
-     call mpp_error(FATAL, "horiz_interp_mod: You have overridden the default value of reproduce_siena " // &
-                           "and set it to .true. in horiz_interp_nml. This is a temporary workaround to " // &
-                           "allow for consistency in continuing experiments. Please remove this namelist " )
+  if (reproduce_siena) then
+    call mpp_error(FATAL, "horiz_interp_mod: You have overridden the default value of " // &
+       "reproduce_siena and set it to .true. in horiz_interp_nml. This was a temporary workaround to " // &
+       "allow for consistency in continuing experiments and is no longer supported. " // &
+       "Please remove this namelist.")
   endif
 
   call horiz_interp_conserve_init

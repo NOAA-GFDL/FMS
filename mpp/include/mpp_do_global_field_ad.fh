@@ -87,13 +87,13 @@
                if(size(global,1).NE.(domain%x(tile)%global%size+ishift) .OR. &
                    size(global,2).NE.(domain%y(tile)%compute%size+jshift)) &
                   call mpp_error( FATAL, &
-                                 &  'MPP_GLOBAL_FIELD: incoming arrays do not match domain for xonly global field.' )
+                       &  'MPP_GLOBAL_FIELD: incoming arrays do not match domain for xonly global field.' )
                jpos = -domain%y(tile)%compute%begin + 1
             else if(yonly) then
                if(size(global,1).NE.(domain%x(tile)%compute%size+ishift) .OR. &
                    size(global,2).NE.(domain%y(tile)%global%size+jshift)) &
                   call mpp_error( FATAL, &
-                                 &  'MPP_GLOBAL_FIELD: incoming arrays do not match domain for yonly global field.' )
+                       &  'MPP_GLOBAL_FIELD: incoming arrays do not match domain for yonly global field.' )
                ipos = -domain%x(tile)%compute%begin + 1
             else
                call mpp_error( FATAL, 'MPP_GLOBAL_FIELD: incoming arrays do not match domain.' )
@@ -113,7 +113,7 @@
          joff = -domain%y(tile)%data%begin + 1
       else
          call mpp_error( FATAL, &
-                       & 'MPP_GLOBAL_FIELD_: incoming field array must match either compute domain or memory domain.')
+              & 'MPP_GLOBAL_FIELD_: incoming field array must match either compute domain or memory domain.')
       end if
 
       ke  = size(local,3)
@@ -142,7 +142,8 @@
              rpos = mod(domain%x(1)%pos   +n,nd)
              from_pe = domain%x(1)%list(rpos)%pe
              rpos = from_pe - root_pe ! for concurrent run, root_pe may not be 0.
-             num_words = (domain%list(rpos)%x(1)%compute%size+ishift) * (domain%list(rpos)%y(1)%compute%size+jshift) * ke
+             num_words = (domain%list(rpos)%x(1)%compute%size+ishift) * &
+          (domain%list(rpos)%y(1)%compute%size+jshift) * ke
            ! Force use of scalar, integer ptr interface
              m = 0
              is = domain%list(rpos)%x(1)%compute%begin; ie = domain%list(rpos)%x(1)%compute%end+ishift
