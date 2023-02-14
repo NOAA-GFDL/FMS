@@ -61,7 +61,7 @@ MODULE fms_diag_outfield_mod
   !! in place. Fields added so are used the the field buffer math/dmUpdate functions.
   !> @ingroup fms_diag_outfield_mod
   TYPE, public :: fmsDiagOutfield_type
-    PRIVATE
+     PRIVATE
      CHARACTER(len=:), ALLOCATABLE :: module_name !< Module name.
      CHARACTER(len=:), ALLOCATABLE :: field_name  !< Output field name.
      CHARACTER(len=:), ALLOCATABLE :: output_name !< Output name written to file.
@@ -88,21 +88,21 @@ MODULE fms_diag_outfield_mod
      !! gcc error: Interface ‘addwf’ at (1) must be explicit
      ! procedure (addwf), pointer, nopass :: f_ptr => null () !!A pointer to the field weighing procedure
 
-  CONTAINS
-  procedure :: get_module_name
-  procedure :: get_field_name
-  procedure :: get_output_name
-  procedure :: get_output_file
-  procedure :: get_pow_value
-  procedure :: get_phys_window
-  procedure :: get_need_compute
-  procedure :: get_reduced_k_range
-  procedure :: get_missvalue_present
-  procedure :: get_mask_variant
-  procedure :: get_mask_present
-  procedure :: get_time_reduction
-  procedure, public  :: initialize => initialize_outfield_imp
-  procedure :: initialize_for_ut
+   CONTAINS
+     procedure :: get_module_name
+     procedure :: get_field_name
+     procedure :: get_output_name
+     procedure :: get_output_file
+     procedure :: get_pow_value
+     procedure :: get_phys_window
+     procedure :: get_need_compute
+     procedure :: get_reduced_k_range
+     procedure :: get_missvalue_present
+     procedure :: get_mask_variant
+     procedure :: get_mask_present
+     procedure :: get_time_reduction
+     procedure, public  :: initialize => initialize_outfield_imp
+     procedure :: initialize_for_ut
 
   END TYPE fmsDiagOutfield_type
 
@@ -119,9 +119,9 @@ MODULE fms_diag_outfield_mod
      INTEGER :: f1,f2 !< Indecies used specify 1st dim bounds of field, mask and rmask.
      INTEGER :: f3,f4 !< Indecies used specify 2st dim bounds of field, mask and rmask.
      INTEGER :: is, js, ks  !< Start indecies in each spatial dim of the field_data; and
-                                             !! may be user provided in send_data
+                                                    !! may be user provided in send_data
      Integer :: ie, je, ke  !< End indecies in each spatial dim of the field_data; and
-                                             !! may be user provided in send_data
+                                                     !! may be user provided in send_data
      INTEGER :: hi !< halo size in x direction. Same name as in send_data
      INTEGER :: hj !< halo size in y direction. Same
    CONTAINS
@@ -380,32 +380,32 @@ CONTAINS
 
   END SUBROUTINE initialize_outfield_imp
 
-   !> @brief Initialized an fmsDiagOutfield_type as needed for unit tests.
+  !> @brief Initialized an fmsDiagOutfield_type as needed for unit tests.
   subroutine initialize_for_ut(this, module_name, field_name, output_name, &
-    &  power_val, phys_window, need_compute, mask_variant,  reduced_k_range, num_elems, &
-    & time_reduction_type,output_freq)
-       CLASS(fmsDiagOutfield_type), intent(inout)  :: this
-       CHARACTER(len=*), INTENT(in) :: module_name !< Var with same name in fmsDiagOutfield_type
-       CHARACTER(len=*), INTENT(in) :: field_name !< Var with same name in fmsDiagOutfield_type
-       CHARACTER(len=*), INTENT(in) :: output_name !< Var with same name in fmsDiagOutfield_type
-       INTEGER, INTENT(in) :: power_val    !< Var with same name in fmsDiagOutfield_type
-       LOGICAL, INTENT(in) :: phys_window  !< Var with same name in fmsDiagOutfield_type
-       LOGICAL, INTENT(in) :: need_compute  !< Var with same name in fmsDiagOutfield_type
-       LOGICAL, INTENT(in) :: mask_variant  !< Var with same name in fmsDiagOutfield_type
-       LOGICAL, INTENT(in) :: reduced_k_range !< Var with same name in fmsDiagOutfield_type
-       INTEGER, INTENT(in) :: num_elems !< Var with same name in fmsDiagOutfield_type
-       INTEGER, INTENT(in) :: time_reduction_type !< Var with same name in fmsDiagOutfield_type
-       INTEGER, INTENT(in) :: output_freq !< The output_freq need in initaliztion of time_reduction_type
+       &  power_val, phys_window, need_compute, mask_variant,  reduced_k_range, num_elems, &
+       & time_reduction_type,output_freq)
+    CLASS(fmsDiagOutfield_type), intent(inout)  :: this
+    CHARACTER(len=*), INTENT(in) :: module_name !< Var with same name in fmsDiagOutfield_type
+    CHARACTER(len=*), INTENT(in) :: field_name !< Var with same name in fmsDiagOutfield_type
+    CHARACTER(len=*), INTENT(in) :: output_name !< Var with same name in fmsDiagOutfield_type
+    INTEGER, INTENT(in) :: power_val    !< Var with same name in fmsDiagOutfield_type
+    LOGICAL, INTENT(in) :: phys_window  !< Var with same name in fmsDiagOutfield_type
+    LOGICAL, INTENT(in) :: need_compute  !< Var with same name in fmsDiagOutfield_type
+    LOGICAL, INTENT(in) :: mask_variant  !< Var with same name in fmsDiagOutfield_type
+    LOGICAL, INTENT(in) :: reduced_k_range !< Var with same name in fmsDiagOutfield_type
+    INTEGER, INTENT(in) :: num_elems !< Var with same name in fmsDiagOutfield_type
+    INTEGER, INTENT(in) :: time_reduction_type !< Var with same name in fmsDiagOutfield_type
+    INTEGER, INTENT(in) :: output_freq !< The output_freq need in initaliztion of time_reduction_type
 
-       this%module_name = module_name
-       this%field_name = field_name
-       this%output_name = output_name
-       this%pow_value = power_val
-       this%phys_window = phys_window
-       this%need_compute = need_compute
-       this%reduced_k_range = reduced_k_range
-       this%mask_variant = mask_variant
-       call this%time_reduction%initialize(time_reduction_type, output_freq)
+    this%module_name = module_name
+    this%field_name = field_name
+    this%output_name = output_name
+    this%pow_value = power_val
+    this%phys_window = phys_window
+    this%need_compute = need_compute
+    this%reduced_k_range = reduced_k_range
+    this%mask_variant = mask_variant
+    call this%time_reduction%initialize(time_reduction_type, output_freq)
   end subroutine initialize_for_ut
 
   !> @brief Reset the time reduction member field. Intended for use in unit tests only.
@@ -413,7 +413,7 @@ CONTAINS
     CLASS(fmsDiagOutfield_type), INTENT(inout) :: this !< An instance of the fmsDiagOutfield_type
     TYPE(fmsDiagTimeReduction_type) :: source !< The fmsDiagTimeReduction_type to copy from
     call this%time_reduction%copy(source)
- END SUBROUTINE reset_time_reduction_ut
+  END SUBROUTINE reset_time_reduction_ut
 
 
 
