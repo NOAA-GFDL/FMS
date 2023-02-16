@@ -29,6 +29,7 @@
 module fms_string_utils_mod
   use, intrinsic :: iso_c_binding
   use mpp_mod
+  use platform_mod, only: r4_kind, r8_kind
 
   implicit none
   private
@@ -116,7 +117,8 @@ end interface
 !> @ingroup fms_mod
 interface string
    module procedure string_from_integer
-   module procedure string_from_real
+   module procedure string_from_r4
+   module procedure string_from_r8
 end interface
 
 !> @addtogroup fms_string_utils_mod
@@ -251,17 +253,30 @@ end subroutine fms_f2c_string
   end function string_from_integer
 
   !#######################################################################
-  !> @brief Converts a real to a string
+  !> @brief Converts a 4-byte real to a string
   !> @return The real number as a string
-  function string_from_real(r)
-    real, intent(in) :: r !< Real number to be converted to a string
-    character(len=32) :: string_from_real
+  function string_from_r4(r)
+    real(r4_kind), intent(in) :: r !< Real number to be converted to a string
+    character(len=32) :: string_from_r4
 
-    write(string_from_real,*) r
+    write(string_from_r4,*) r
 
     return
 
-  end function string_from_real
+  end function string_from_r4
+
+  !#######################################################################
+  !> @brief Converts an 8-byte real to a string
+  !> @return The real number as a string
+  function string_from_r8(r)
+    real(r8_kind), intent(in) :: r !< Real number to be converted to a string
+    character(len=32) :: string_from_r8
+
+    write(string_from_r8,*) r
+
+    return
+
+  end function string_from_r8
 
   !> @brief Safely copy a string from one buffer to another.
   subroutine string_copy(dest, source, check_for_null)

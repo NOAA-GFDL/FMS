@@ -27,11 +27,22 @@
 # Prepare the directory to run the tests.
 touch input.nml
 
-# Run the test.
-test_expect_success "Test AXIS utils r4_kind" '
-  mpirun -n 2 ./test_axis_utils_r4
-'
-test_expect_success "Test AXIS utils r8_kind" '
-  mpirun -n 2 ./test_axis_utils_r8
-'
+TESTS_SUCCESS='--get-axis-modulo --get-axis-modulo-times --get-axis-cart --lon-in-range --frac-index --nearest-index --axis-edges --tranlon --interp-1d-1d --interp-1d-2d --interp-1d-3d'
+
+TESTS_FAIL='--frac-index-fail --nearest-index-fail'
+
+# Run the tests
+
+for t in $TESTS_SUCCESS
+do
+  test_expect_success "Test axis_utils (r4_kind)" "mpirun -n 2 ./test_axis_utils_r4 $t"
+  test_expect_success "Test axis_utils (r8_kind)" "mpirun -n 2 ./test_axis_utils_r8 $t"
+done
+
+for t in $TESTS_FAIL
+do
+  test_expect_failure "Test axis_utils for failure (r4_kind)" "mpirun -n 2 ./test_axis_utils_r4 $t"
+  test_expect_failure "Test axis_utils for failure (r8_kind)" "mpirun -n 2 ./test_axis_utils_r8 $t"
+done
+
 test_done
