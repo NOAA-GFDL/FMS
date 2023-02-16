@@ -624,12 +624,11 @@ CONTAINS
   !!     code uses a do_not_log parameter in the registration calls,
   !!     and subsequently calls this subroutine to log field information
   !!     under a generic name.
-  SUBROUTINE log_diag_field_info(module_name, field_name, axes, axes_list, long_name, units,&
+  SUBROUTINE log_diag_field_info(module_name, field_name, axes, long_name, units,&
                               & missing_value, range, dynamic )
     CHARACTER(len=*), INTENT(in) :: module_name !< Module name
     CHARACTER(len=*), INTENT(in) :: field_name !< Field name
     INTEGER, DIMENSION(:), INTENT(in) :: axes !< Axis IDs
-    CHARACTER(len=*), INTENT(in) :: axes_list !< Comma seperated list of axes names
     CHARACTER(len=*), OPTIONAL, INTENT(in) :: long_name !< Long name for field.
     CHARACTER(len=*), OPTIONAL, INTENT(in) :: units !< Unit of field.
     CLASS(*), OPTIONAL, INTENT(in) :: missing_value !< Missing value value.
@@ -643,6 +642,9 @@ CONTAINS
     INTEGER :: i
     REAL :: missing_value_use !< Local copy of missing_value
     REAL, DIMENSION(2) :: range_use !< Local copy of range
+    CHARACTER(len=256) :: axis_name, axes_list
+
+    IF ( .NOT.do_diag_field_log ) RETURN
     IF ( mpp_pe().NE.mpp_root_pe() ) RETURN
 
     ! Fatal error if range is present and its extent is not 2.
@@ -714,6 +716,13 @@ CONTAINS
     ELSE
       timeaxis = ''
     END IF
+
+    axes_list=''
+    DO i = 1, SIZE(axes)
+       CALL get_diag_axis_name(axes(i),axis_name)
+       IF ( TRIM(axes_list) /= '' ) axes_list = TRIM(axes_list)//','
+       axes_list = TRIM(axes_list)//TRIM(axis_name)
+    END DO
 
     WRITE (diag_log_unit,'(777a)') &
         & TRIM(lmodule),  field_log_separator, TRIM(lfield),  field_log_separator, TRIM(lname),    field_log_separator,&

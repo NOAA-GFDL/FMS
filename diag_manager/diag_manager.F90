@@ -698,13 +698,7 @@ CONTAINS
     ! only writes log if do_diag_field_log is true in the namelist (default false)
     ! if do_diag_field_log is true and do_not_log arg is present as well, it will only print if do_not_log = false
     IF ( do_diag_field_log.AND.allow_log ) THEN
-        axes_list=''
-        DO i = 1, SIZE(axes)
-            CALL get_diag_axis_name(axes(i),axis_name)
-            IF ( TRIM(axes_list) /= '' ) axes_list = TRIM(axes_list)//','
-            axes_list = TRIM(axes_list)//TRIM(axis_name)
-        END DO
-        CALL log_diag_field_info (module_name, field_name, axes, axes_list, &
+        CALL log_diag_field_info (module_name, field_name, axes,          &
             & long_name, units, missing_value=missing_value, range=range, &
             & DYNAMIC=dynamic1)
     END IF
