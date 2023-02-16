@@ -35,14 +35,20 @@ TESTS_FAIL='--frac-index-fail --nearest-index-fail'
 
 for t in $TESTS_SUCCESS
 do
-  test_expect_success "Test axis_utils (r4_kind)" "mpirun -n 2 ./test_axis_utils_r4 $t"
-  test_expect_success "Test axis_utils (r8_kind)" "mpirun -n 2 ./test_axis_utils_r8 $t"
+  r4cmd="./test_axis_utils_r4 $t"
+  r8cmd="./test_axis_utils_r8 $t"
+
+  test_expect_success "Testing axis utils: $r4cmd" "mpirun -n 2 $r4cmd"
+  test_expect_success "Testing axis utils: $r8cmd" "mpirun -n 2 $r8cmd"
 done
 
 for t in $TESTS_FAIL
 do
-  test_expect_failure "Test axis_utils for failure (r4_kind)" "mpirun -n 2 ./test_axis_utils_r4 $t"
-  test_expect_failure "Test axis_utils for failure (r8_kind)" "mpirun -n 2 ./test_axis_utils_r8 $t"
+  r4cmd="./test_axis_utils_r4 $t"
+  r8cmd="./test_axis_utils_r8 $t"
+
+  test_expect_failure "Testing axis utils: $r4cmd" "mpirun -n 2 $r4cmd"
+  test_expect_failure "Testing axis utils: $r8cmd" "mpirun -n 2 $r8cmd"
 done
 
 test_done
