@@ -63,19 +63,18 @@ implicit none
   !    (0:360,-90:90) with grid size ni_src, nj_src ( default 360X180). and the destination
   !    is the region (-280:80, -90:90) with grid size ni_dstXnj_dst( default 144X72).
   !    integer checksum and global sum will be printed out for both the 1D and 2D version.
-!  if (test_conserve) then
-!    call test_horiz_interp_conserve_r4
-!    call test_horiz_interp_conserve_r8
-!  else if(test_bicubic) then
-!    call test_horiz_interp_bicubic_r8
-  if(test_bilinear) then
+  if (test_conserve) then
+     call test_horiz_interp_conserve_r4
+     call test_horiz_interp_conserve_r8
+  else if(test_bicubic) then
+     call test_horiz_interp_bicubic_r8
+  else if(test_bilinear) then
      call test_horiz_interp_bilinear_r8
-  end if
-!  else if(test_spherical) then
-!    call test_horiz_interp_spherical_r8
-!  else
-!    call mpp_error(FATAL, "test_horiz_interp: no unit test enabled in namelist")
-!  endif
+  else if(test_spherical) then
+    call test_horiz_interp_spherical_r8
+  else
+    call mpp_error(FATAL, "test_horiz_interp: no unit test enabled in namelist")
+  endif
 
 
   call mpp_exit
