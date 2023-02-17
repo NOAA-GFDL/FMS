@@ -37,8 +37,8 @@ implicit none
   integer :: ni_src = 360, nj_src = 180
   integer :: ni_dst = 144, nj_dst = 72
 
-  namelist /test_horiz_interp_nml/ test_conserve, test_bicubic, test_spherical, test_bilinear, ni_src, nj_src, ni_dst, &
-                                   nj_dst
+  namelist /test_horiz_interp_nml/ test_conserve, test_bicubic, test_spherical, test_bilinear, &
+                                   ni_src, nj_src, ni_dst,nj_dst
 
 
   type(domain2d)                    :: domain
@@ -324,7 +324,7 @@ implicit none
        lat2d_src(:,j) = lat1d_dst(j)
     end do
     call mpp_clock_begin(id3)
-    call horiz_interp_new(interp, lon2D_src, lat2D_src, lon1D_dst(1:ni_src), lat1D_dst(1:nj_src), interp_method = "bilinear")
+    call horiz_interp_new(interp,lon2D_src,lat2D_src,lon1D_dst(1:ni_src),lat1D_dst(1:nj_src),interp_method = "bilinear")
     call horiz_interp(interp, data_src, data_dst)
     ! check weights
     !j=1,i=1 is a special case; see subroutine find_neighbor
