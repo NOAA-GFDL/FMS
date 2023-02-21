@@ -23,22 +23,22 @@
 # uramirez, Ed Hartnett
 
 # Find the fms and mpp mod files.
-AM_CPPFLAGS = -I$(MODDIR) -I$(top_srcdir)/test_fms/axis_utils/include
+AM_CPPFLAGS = -I$(MODDIR)
 
 # Link to the FMS library.
 LDADD = $(top_builddir)/libFMS/libFMS.la
 
 # Build this test program.
 check_PROGRAMS = \
-test_axis_utils_r4 \
-test_axis_utils_r8
+    test_axis_utils_r4 \
+    test_axis_utils_r8
 
 # This is the source code for the test.
-test_axis_utils_r4_SOURCES = \
-test_axis_utils_r4.F90
+test_axis_utils_r4_SOURCES = test_axis_utils.F90
+test_axis_utils_r8_SOURCES = test_axis_utils.F90
 
-test_axis_utils_r8_SOURCES = \
-test_axis_utils_r8.F90
+test_axis_utils_r4_CPPFLAGS = $(AM_CPPFLAGS) -DAU_TEST_KIND=r4_kind
+test_axis_utils_r8_CPPFLAGS = $(AM_CPPFLAGS) -DAU_TEST_KIND=r8_kind
 
 TEST_EXTENSIONS = .sh
 SH_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
