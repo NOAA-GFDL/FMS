@@ -40,7 +40,11 @@ cat <<_EOF > input.nml
 _EOF
 
 test_expect_success "conservative method" '
-  mpirun -n 2 ./test_horiz_interp
+  mpirun -n 2 ./test_horiz_interp_r8
+'
+
+test_expect_success "conservative method" '
+  mpirun -n 2 ./test_horiz_interp_r4
 '
 
 cat <<_EOF > input.nml
@@ -81,8 +85,8 @@ cat <<_EOF > input.nml
 /
 _EOF
 #TODO
-#test_expect_success "spherical method" '
-#  mpirun -n 2 ./test_horiz_interp
-#'
+test_expect_success "spherical method" '
+  mpirun -n 2 ./test_horiz_interp
+'
 
 test_done

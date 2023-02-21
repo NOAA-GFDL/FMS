@@ -102,7 +102,7 @@
     min_phi_src=real(pi, FMS_HI_KIND_);max_phi_src=real(-pi, FMS_HI_KIND_)
 
     where(theta_dst<0.0_kindl)  theta_dst = theta_dst+real(tpi,FMS_HI_KIND_)
-   
+
     where(theta_dst>real(tpi,FMS_HI_KIND_))  theta_dst = theta_dst-real(tpi,FMS_HI_KIND_)
     where(theta_src<0.0_kindl)  theta_src = theta_src+real(tpi,FMS_HI_KIND_)
     where(theta_src>real(tpi,FMS_HI_KIND_))  theta_src = theta_src-real(tpi,FMS_HI_KIND_)
@@ -248,7 +248,7 @@
           else
              i1 = Interp%i_lon(m,n,1); j1 = Interp%j_lat(m,n,1)
              if (mask_src(i1,j1) .lt. 0.5_kindl ) then
-                mask_dst(m,n) = 0.0_kindl 
+                mask_dst(m,n) = 0.0_kindl
              endif
 
              if(num_found .gt. 1 ) then
@@ -378,7 +378,7 @@
           end if
 
           if(num_found == 0 ) then
-             mask_dst(m,n) = 0.0_kindl 
+             mask_dst(m,n) = 0.0_kindl
           else
              i1 = Interp%i_lon(m,n,1); j1 = Interp%j_lat(m,n,1)
              if (mask_src(i1,j1) .lt. 0.5_kindl) then
