@@ -205,7 +205,9 @@
     real(FMS_HI_KIND_)                                   :: epsln2
     logical                                :: use_new_search, no_crash
 
-    tpi = real(2.0, FMS_HI_KIND_) * real(pi, FMS_HI_KIND_)
+    integer, parameter :: lkind=FMS_HI_KIND_
+
+    tpi = 2.0_lkind * real(pi, FMS_HI_KIND_)
 
     warns = 0
     if(present(verbose)) warns = verbose
@@ -239,10 +241,10 @@
 
     !--- first fine the neighbor points for the destination points.
     if(use_new_search) then
-       epsln2 = epsln*1e5
+       epsln2 = real(epsln,FMS_HI_KIND_)*real(1d5,FMS_HI_KIND_)
        call FIND_NEIGHBOR_NEW_(Interp, lon_in, lat_in, lon_out, lat_out, src_is_modulo, no_crash)
     else
-       epsln2 = epsln
+       epsln2 = real(epsln,FMS_HI_KIND_)
        call FIND_NEIGHBOR_(Interp, lon_in, lat_in, lon_out, lat_out, src_is_modulo)
     endif
 
@@ -316,27 +318,27 @@
           a  = b2*c1-b1*c2
           b  = a1*b2-a2*b1+c1*d2-c2*d1+c2*lon-c1*lat
           c  = a2*lon-a1*lat+a1*d2-a2*d1
-          quadra = b*b-real(4., FMS_HI_KIND_)*a*c
-          if(abs(quadra) < epsln) quadra = real(0.0, FMS_HI_KIND_)
-          if(quadra < 0.0) call mpp_error(FATAL, &
+          quadra = b*b-4._lkind*a*c
+          if(abs(quadra) < epsln) quadra = 0.0_lkind
+          if(quadra < 0.0_lkind) call mpp_error(FATAL, &
                "horiz_interp_bilinear_mod: No solution existed for this quadratic equation")
           if ( abs(a) .lt. epsln2) then  ! a = 0 is a linear equation
              if( abs(b) .lt. epsln) call mpp_error(FATAL, &
                   "horiz_interp_bilinear_mod: no unique solution existed for this linear equation")
              y = -c/b
           else
-             y1 = real(0.5, FMS_HI_KIND_)*(-b+sqrt(quadra))/a
-             y2 = real(0.5, FMS_HI_KIND_)*(-b-sqrt(quadra))/a
-             if(abs(y1) < epsln2) y1 = real(0.0, FMS_HI_KIND_)
-             if(abs(y2) < epsln2) y2 = real(0.0, FMS_HI_KIND_)
-             if(abs(real(1.0, FMS_HI_KIND_)-y1) < epsln2) y1 = real(1.0, FMS_HI_KIND_)
-             if(abs(real(1.0, FMS_HI_KIND_)-y2) < epsln2) y2 = real(1.0, FMS_HI_KIND_)
+             y1 = 0.5_lkind*(-b+sqrt(quadra))/a
+             y2 = 0.5_lkind*(-b-sqrt(quadra))/a
+             if(abs(y1) < epsln2) y1 = 0.0_lkind
+             if(abs(y2) < epsln2) y2 = 0.0_lkind
+             if(abs(1.0_lkind-y1) < epsln2) y1 = 1.0_lkind
+             if(abs(1.0_lkind-y2) < epsln2) y2 = 1.0_lkind
              num_solution = 0
-             if(y1 >= real(0.0, FMS_HI_KIND_) .and. y1 <= real(1.0, FMS_HI_KIND_)) then
+             if(y1 >= 0.0_lkind .and. y1 <= 1.0_lkind) then
                 y = y1
                 num_solution = num_solution +1
              endif
-             if(y2 >= real(0.0, FMS_HI_KIND_) .and. y2 <= real(1.0, FMS_HI_KIND_)) then
+             if(y2 >= 0.0_lkind .and. y2 <= 1.0_lkind) then
                 y = y2
                 num_solution = num_solution + 1
              endif
@@ -348,25 +350,24 @@
            endif
            if(abs(a1+c1*y) < epsln) call mpp_error(FATAL, &
                "horiz_interp_bilinear_mod: the denomenator is 0")
-           if(abs(y) < epsln2) y = real(0.0, FMS_HI_KIND_)
-           if(abs(real(1.0,FMS_HI_KIND_)-y) < epsln2) y = real(1.0, FMS_HI_KIND_)
+           if(abs(y) < epsln2) y = 0.0_lkind
+           if(abs(1.0_lkind-y) < epsln2) y = 1.0_lkind
            x = (lon-b1*y-d1)/(a1+c1*y)
-           if(abs(x) < epsln2) x = real(0.0, FMS_HI_KIND_)
+           if(abs(x) < epsln2) x = 0.0_lkind
            if(abs(real(1.0, FMS_HI_KIND_)-x) < epsln2) x = real(1.0, FMS_HI_KIND_)
            ! x and y should be between 0 and 1.
            !! Added for ECDA
            if(use_new_search) then
-             if (x < real(0.0, FMS_HI_KIND_)) x = real(0.0, FMS_HI_KIND_) ! snz
-             if (y < real(0.0, FMS_HI_KIND_)) y = real(0.0, FMS_HI_KIND_) ! snz
-             if (x > real(1.0, FMS_HI_KIND_)) x = real(1.0, FMS_HI_KIND_)
-             if (y > real(1.0, FMS_HI_KIND_)) y = real(1.0, FMS_HI_KIND_)
+             if (x < 0.0_lkind) x = 0.0_lkind ! snz
+             if (y < 0.0_lkind) y = 0.0_lkind ! snz
+             if (x > 1.0_lkind) x = 1.0_lkind
+             if (y > 1.0_lkind) y = 1.0_lkind
            endif
-           if( x>real(1., FMS_HI_KIND_) .or. x< real(0., FMS_HI_KIND_) .or. y>real(1.,FMS_HI_KIND_) .or. &
-               y < real(0., FMS_HI_KIND_)) &
+           if( x>1._lkind .or. x<0._lkind .or. y>1._lkind .or. y < 0._lkind) &
                   call mpp_error(FATAL, "horiz_interp_bilinear_mod: weight should be between 0 and 1")
-           Interp % HI_KIND_TYPE_ % wti(m,n,1)=real(1.0, FMS_HI_KIND_)-x
+           Interp % HI_KIND_TYPE_ % wti(m,n,1)=1.0_lkind-x
            Interp % HI_KIND_TYPE_ % wti(m,n,2)=x
-           Interp % HI_KIND_TYPE_ % wtj(m,n,1)=real(1.0, FMS_HI_KIND_)-y
+           Interp % HI_KIND_TYPE_ % wtj(m,n,1)=1.0_lkind-y
            Interp % HI_KIND_TYPE_ % wtj(m,n,2)=y
        enddo
     enddo
@@ -389,7 +390,9 @@
     logical                                :: found
     real(FMS_HI_KIND_)                     :: lon1, lat1, lon2, lat2, lon3, lat3, lon4, lat4
 
-    tpi = 2.0*real(pi, FMS_HI_KIND_)
+    integer, parameter :: lkind=FMS_HI_KIND_
+
+    tpi = 2.0_lkind*real(pi, FMS_HI_KIND_)
     nlon_in  = size(lon_in,1) ; nlat_in  = size(lat_in,2)
     nlon_out = size(lon_out,1); nlat_out = size(lon_out,2)
 
