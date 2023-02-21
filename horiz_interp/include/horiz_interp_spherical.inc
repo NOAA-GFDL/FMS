@@ -59,13 +59,14 @@
     integer :: ilon(max_neighbors), jlat(max_neighbors)
     real(FMS_HI_KIND_), dimension(size(lon_out,1),size(lon_out,2)) :: theta_dst, phi_dst
     real(FMS_HI_KIND_), dimension(size(lon_in,1)*size(lon_in,2))   :: theta_src, phi_src
+    integer, parameter                                             :: kindl = FMS_HI_KIND_
 
     !--------------------------------------------------------------
 
     pe      = mpp_pe()
     root_pe = mpp_root_pe()
 
-    tpi = real(2.0, FMS_HI_KIND_)*PI; hpi = real(0.5, FMS_HI_KIND_)*real(PI,FMS_HI_KIND_)
+    tpi = 2.0_kindl*real(PI, FMS_HI_KIND_); hpi = 0.5_kindl*real(PI,FMS_HI_KIND_)
 
     num_neighbors = num_nbrs_default
     if(present(num_nbrs)) num_neighbors = num_nbrs
@@ -95,14 +96,15 @@
     theta_dst(:,:) = lon_out(:,:)
     phi_dst(:,:)   = lat_out(:,:)
 
-    min_theta_dst=real(tpi, FMS_HI_KIND_);max_theta_dst=real(0.0, FMS_HI_KIND_)
+    min_theta_dst=real(tpi, FMS_HI_KIND_);max_theta_dst=0.0_kindl
     min_phi_dst=real(pi, FMS_HI_KIND_);max_phi_dst=real(-pi, FMS_HI_KIND_)
-    min_theta_src=real(tpi, FMS_HI_KIND_);max_theta_src=real(0.0, FMS_HI_KIND_)
+    min_theta_src=real(tpi, FMS_HI_KIND_);max_theta_src=0.0_kindl
     min_phi_src=real(pi, FMS_HI_KIND_);max_phi_src=real(-pi, FMS_HI_KIND_)
 
-    where(theta_dst<real(0.0, FMS_HI_KIND_))  theta_dst = theta_dst+real(tpi,FMS_HI_KIND_)
+    where(theta_dst<0.0_kindl)  theta_dst = theta_dst+real(tpi,FMS_HI_KIND_)
+
     where(theta_dst>real(tpi,FMS_HI_KIND_))  theta_dst = theta_dst-real(tpi,FMS_HI_KIND_)
-    where(theta_src<real(0.0, FMS_HI_KIND_))  theta_src = theta_src+real(tpi,FMS_HI_KIND_)
+    where(theta_src<0.0_kindl)  theta_src = theta_src+real(tpi,FMS_HI_KIND_)
     where(theta_src>real(tpi,FMS_HI_KIND_))  theta_src = theta_src-real(tpi,FMS_HI_KIND_)
 
     where(phi_dst < -hpi) phi_dst = -hpi
@@ -219,6 +221,7 @@
     integer :: nlon_in, nlat_in, nlon_out, nlat_out, num_found
     integer :: m, n, i, j, k, miss_in, miss_out, i1, i2, j1, j2, iverbose
     real(FMS_HI_KIND_)    :: min_in, max_in, avg_in, min_out, max_out, avg_out, sum
+    integer, parameter    :: kindl = FMS_HI_KIND_ !< compiled real kind size
     !-----------------------------------------------------------------
 
     iverbose = 0;  if (present(verbose)) iverbose = verbose
@@ -232,7 +235,7 @@
     if(size(data_out,1) .ne. nlon_out .or. size(data_out,2) .ne. nlat_out ) &
          call mpp_error(FATAL,'horiz_interp_spherical_mod: size of output array incorrect')
 
-    mask_src = real(1.0, FMS_HI_KIND_); mask_dst = real(1.0, FMS_HI_KIND_)
+    mask_src = 1.0_kindl; mask_dst = 1.0_kindl
     if(present(mask_in)) mask_src = mask_in
 
     do n=1,nlat_out
@@ -241,11 +244,11 @@
           ! check nearest to see if it is a land point
           num_found = Interp%num_found(m,n)
           if(num_found == 0 ) then
-             mask_dst(m,n) = real(0.0, FMS_HI_KIND_)
+             mask_dst(m,n) = 0.0_kindl
           else
              i1 = Interp%i_lon(m,n,1); j1 = Interp%j_lat(m,n,1)
-             if (mask_src(i1,j1) .lt. real(0.5, FMS_HI_KIND_)) then
-                mask_dst(m,n) = real(0.0, FMS_HI_KIND_)
+             if (mask_src(i1,j1) .lt. 0.5_kindl ) then
+                mask_dst(m,n) = 0.0_kindl
              endif
 
              if(num_found .gt. 1 ) then
@@ -253,23 +256,23 @@
                 ! compare first 2 nearest neighbors -- if they are nearly
                 ! equidistant then use this mask for robustness
                 if(abs(Interp%HI_KIND_TYPE_%src_dist(m,n,2)-Interp%HI_KIND_TYPE_%src_dist(m,n,1)) .lt. epsln) then
-                   if((mask_src(i1,j1) .lt. real(0.5, FMS_HI_KIND_)))  mask_dst(m,n) = real(0.0, FMS_HI_KIND_)
+                   if((mask_src(i1,j1) .lt. 0.5_kindl ))  mask_dst(m,n) = 0.0_kindl
                 endif
              endif
 
-             sum=real(0.0, FMS_HI_KIND_)
+             sum=0.0_kindl
              do k=1, num_found
-                if(mask_src(Interp%i_lon(m,n,k),Interp%j_lat(m,n,k)) .lt. real(0.5, FMS_HI_KIND_) ) then
-                   wt(m,n,k) = real(0.0, FMS_HI_KIND_)
+                if(mask_src(Interp%i_lon(m,n,k),Interp%j_lat(m,n,k)) .lt. 0.5_kindl ) then
+                   wt(m,n,k) = 0.0_kindl
                 else
                    if (Interp%HI_KIND_TYPE_%src_dist(m,n,k) <= epsln) then
                       wt(m,n,k) = large
                       sum = sum + large
                    else if(Interp%HI_KIND_TYPE_%src_dist(m,n,k) <= Interp%HI_KIND_TYPE_%max_src_dist ) then
-                      wt(m,n,k) = real(1.0, FMS_HI_KIND_)/Interp%HI_KIND_TYPE_%src_dist(m,n,k)
+                      wt(m,n,k) = 1.0_kindl /Interp%HI_KIND_TYPE_%src_dist(m,n,k)
                       sum = sum+wt(m,n,k)
                    else
-                      wt(m,n,k) = real(0.0, FMS_HI_KIND_)
+                      wt(m,n,k) = 0.0_kindl
                    endif
                 endif
              enddo
@@ -278,16 +281,16 @@
                    wt(m,n,k) = wt(m,n,k)/sum
                 enddo
              else
-                mask_dst(m,n) = real(0.0, FMS_HI_KIND_)
+                mask_dst(m,n) = 0.0_kindl
              endif
           endif
        enddo
     enddo
 
-    data_out = real(0.0, FMS_HI_KIND_)
+    data_out = 0.0_kindl
     do n=1,nlat_out
        do m=1,nlon_out
-          if(mask_dst(m,n) .gt. real(0.5, FMS_HI_KIND_)) then
+          if(mask_dst(m,n) .gt. 0.5_kindl ) then
              do k=1, Interp%num_found(m,n)
                 i = Interp%i_lon(m,n,k)
                 j = Interp%j_lat(m,n,k)
@@ -297,7 +300,7 @@
              if(present(missing_value)) then
                 data_out(m,n) = missing_value
              else
-                data_out(m,n) = real(0.0, FMS_HI_KIND_)
+                data_out(m,n) = 0.0_kindl
              endif
           endif
        enddo
@@ -352,6 +355,7 @@
     integer :: nlon_in, nlat_in, nlon_out, nlat_out, num_found
     integer :: m, n, k, i1, i2, j1, j2, iverbose
     real(FMS_HI_KIND_)    :: sum
+    integer, parameter    :: kindl = FMS_HI_KIND_
     !-----------------------------------------------------------------
 
     iverbose = 0;  if (present(verbose)) iverbose = verbose
@@ -359,7 +363,7 @@
     nlon_in  = Interp%nlon_src; nlat_in  = Interp%nlat_src
     nlon_out = Interp%nlon_dst; nlat_out = Interp%nlat_dst
 
-    mask_src = real(1.0, FMS_HI_KIND_); mask_dst = real(1.0, FMS_HI_KIND_)
+    mask_src = 1.0_kindl ; mask_dst = 1.0_kindl
     if(present(mask_in)) mask_src = mask_in
 
     do n=1,nlat_out
@@ -374,11 +378,11 @@
           end if
 
           if(num_found == 0 ) then
-             mask_dst(m,n) = real(0.0, FMS_HI_KIND_)
+             mask_dst(m,n) = 0.0_kindl
           else
              i1 = Interp%i_lon(m,n,1); j1 = Interp%j_lat(m,n,1)
-             if (mask_src(i1,j1) .lt. real(0.5, FMS_HI_KIND_)) then
-                mask_dst(m,n) = real(0.0, FMS_HI_KIND_)
+             if (mask_src(i1,j1) .lt. 0.5_kindl) then
+                mask_dst(m,n) = 0.0_kindl
              endif
 
              if(num_found .gt. 1 ) then
@@ -386,23 +390,23 @@
                 ! compare first 2 nearest neighbors -- if they are nearly
                 ! equidistant then use this mask for robustness
                 if(abs(Interp%HI_KIND_TYPE_%src_dist(m,n,2)-Interp%HI_KIND_TYPE_%src_dist(m,n,1)) .lt. epsln) then
-                   if((mask_src(i1,j1) .lt. real(0.5, FMS_HI_KIND_)))  mask_dst(m,n) = real(0.0, FMS_HI_KIND_)
+                   if((mask_src(i1,j1) .lt. 0.5_kindl ))  mask_dst(m,n) = 0.0_kindl
                 endif
              endif
 
-             sum=real(0.0, FMS_HI_KIND_)
+             sum=0.0_kindl
              do k=1, num_found
-                if(mask_src(Interp%i_lon(m,n,k),Interp%j_lat(m,n,k)) .lt. real(0.5, FMS_HI_KIND_) ) then
-                   wt(m,n,k) = real(0.0, FMS_HI_KIND_)
+                if(mask_src(Interp%i_lon(m,n,k),Interp%j_lat(m,n,k)) .lt. 0.5_kindl ) then
+                   wt(m,n,k) = 0.0_kindl
                 else
                    if (Interp%HI_KIND_TYPE_%src_dist(m,n,k) <= epsln) then
                       wt(m,n,k) = large
                       sum = sum + large
                    else if(Interp%HI_KIND_TYPE_%src_dist(m,n,k) <= Interp%HI_KIND_TYPE_%max_src_dist ) then
-                      wt(m,n,k) = real(1.0, FMS_HI_KIND_)/Interp%HI_KIND_TYPE_%src_dist(m,n,k)
+                      wt(m,n,k) = 1.0_kindl /Interp%HI_KIND_TYPE_%src_dist(m,n,k)
                       sum = sum+wt(m,n,k)
                    else
-                      wt(m,n,k) = real(0.0, FMS_HI_KIND_)
+                      wt(m,n,k) = 0.0_kindl
                    endif
                 endif
              enddo
@@ -411,7 +415,7 @@
                    wt(m,n,k) = wt(m,n,k)/sum
                 enddo
              else
-                mask_dst(m,n) = real(0.0, FMS_HI_KIND_)
+                mask_dst(m,n) = 0.0_kindl
              endif
           endif
        enddo
@@ -762,14 +766,15 @@
 
     real(FMS_HI_KIND_), intent(in) :: theta1, phi1, theta2, phi2
     real(FMS_HI_KIND_) :: HORIZ_INTERP_SPHERICAL_DISTANCE_, dot
+    integer, parameter :: kindl = FMS_HI_KIND_
 
     if(theta1 == theta2 .and. phi1 == phi2) then
-        HORIZ_INTERP_SPHERICAL_DISTANCE_ = real(0.0, FMS_HI_KIND_)
+        HORIZ_INTERP_SPHERICAL_DISTANCE_ = 0.0_kindl
         return
     endif
 
     dot = cos(phi1)*cos(phi2)*cos(theta1-theta2) + sin(phi1)*sin(phi2)
-    if(dot > real(1., FMS_HI_KIND_))  dot = real(1., FMS_HI_KIND_)
+    if(dot > 1.0_kindl)  dot = 1.0_kindl
     if(dot < real(-1., FMS_HI_KIND_)) dot = real(-1., FMS_HI_KIND_)
     HORIZ_INTERP_SPHERICAL_DISTANCE_ = acos(dot)
 

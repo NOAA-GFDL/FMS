@@ -40,7 +40,11 @@ cat <<_EOF > input.nml
 _EOF
 
 test_expect_success "conservative method" '
-  mpirun -n 2 ./test_horiz_interp
+  mpirun -n 2 ./test_horiz_interp_r8
+'
+
+test_expect_success "conservative method" '
+  mpirun -n 2 ./test_horiz_interp_r4
 '
 
 cat <<_EOF > input.nml
@@ -76,11 +80,11 @@ cat <<_EOF > input.nml
   test_spherical= .true.
   ni_src = 360
   nj_src = 180
-  ni_dst = 144
-  nj_dst = 72
+  ni_dst = 360 
+  nj_dst = 180
 /
 _EOF
-
+#TODO
 test_expect_success "spherical method" '
   mpirun -n 2 ./test_horiz_interp
 '

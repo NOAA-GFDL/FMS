@@ -136,7 +136,7 @@ module horiz_interp_bicubic_mod
      if(module_is_initialized) return
      call write_version_number("HORIZ_INTERP_BICUBIC_MOD", version)
      module_is_initialized = .true.
-     tpi = 2.0*PI
+     tpi = real(2.0*PI, R8_KIND)
 
   end subroutine horiz_interp_bicubic_init
 

@@ -311,7 +311,7 @@
           icu = 0
          !--- cyclic condition, do we need to use do while
           if( xz .gt. lon_in(nlon_in) ) xz = xz - real(tpi,FMS_HI_KIND_)
-          if( xz .le. lon_in(1) ) xz = xz + tpi
+          if( xz .le. lon_in(1) ) xz = xz + real(tpi, FMS_HI_KIND_)
           if( xz .ge. lon_in(nlon_in) ) then
             icl = nlon_in
             icu = 1
@@ -383,7 +383,7 @@
           iclp1 = icu
           icum1 = icl
           xcl = Interp%HI_KIND_TYPE_%lon_in(icl)
-          xcu = Interp%HI_KIND_TYPE_%lon_in(icu)+tpi
+          xcu = Interp%HI_KIND_TYPE_%lon_in(icu)+real(tpi, FMS_HI_KIND_)
         else
           iclp1 = min(icl+1,Interp%nlon_src)
           icum1 = max(icu-1,1)
