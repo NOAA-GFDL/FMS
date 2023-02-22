@@ -122,6 +122,9 @@ use platform_mod
   INTEGER, PARAMETER :: time_power   = 7 !< The reduction method is power
   CHARACTER(len=7)   :: avg_name = 'average' !< Name of the average fields
   CHARACTER(len=8)   :: no_units = "NO UNITS"!< String indicating that the variable has no units
+  INTEGER, PARAMETER :: begin_time  = 1 !< Use the begining of the time average bounds
+  INTEGER, PARAMETER :: middle_time = 2 !< Use the middle of the time average bounds
+  INTEGER, PARAMETER :: end_time    = 3 !< Use the end of the time average bounds
   !> @}
 
   !> @brief Contains the coordinates of the local domain to output.
@@ -389,7 +392,15 @@ use platform_mod
                                     !! netCDF module, otherwise will be 9.9692099683868690e+36.
                                     ! from file /usr/local/include/netcdf.inc
 
+  !! @note `pack_size` and `pack_size_str` are set in diag_manager_init depending on how FMS was compiled
+  !! if FMS was compiled with default reals as 64bit, it will be set to 1 and "double",
+  !! if FMS was compiled with default reals as 32bit, it will set to 2 and "float"
+  !! The time variables will written in the precision defined by `pack_size_str`
+  !! This is to reproduce previous diag manager behavior.
+  !TODO This may not be mixed precision friendly
   INTEGER :: pack_size = 1 !< 1 for double and 2 for float
+  CHARACTER(len=6) :: pack_size_str="double" !< Pack size as a string to be used in fms2_io register call
+                                             !! set to "double" or "float"
 
   ! <!-- REAL public variables -->
   REAL :: EMPTY = 0.0
