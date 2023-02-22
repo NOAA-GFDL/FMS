@@ -230,8 +230,7 @@ use platform_mod
        & use_cmor, issue_oor_warnings, oor_warnings_fatal, oor_warning, pack_size,&
        & max_out_per_in_field, flush_nc_files, region_out_use_alt_value, max_field_attributes, output_field_type,&
        & max_file_attributes, max_axis_attributes, prepend_date, DIAG_FIELD_NOT_FOUND, diag_init_time,diag_data_init,&
-       & use_modern_diag, use_clock_average, diag_null
-
+       & use_modern_diag, use_clock_average, diag_null, pack_size_str
   USE diag_data_mod, ONLY:  fileobj, fileobjU, fnum_for_domain, fileobjND
   USE diag_table_mod, ONLY: parse_diag_table
   USE diag_output_mod, ONLY: get_diag_global_att, set_diag_global_att
@@ -3834,7 +3833,11 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
 
     ! Determine pack_size from how many bytes a real value has (how compiled)
     pack_size = SIZE(TRANSFER(0.0_DblKind, (/0.0, 0.0, 0.0, 0.0/)))
-    IF ( pack_size.NE.1 .AND. pack_size.NE.2 ) THEN
+    IF (pack_size .EQ. 1) then
+      pack_size_str = "double"
+    else if (pack_size .EQ. 2) then
+      pack_size_str = "float"
+    else
        IF ( fms_error_handler('diag_manager_mod::diag_manager_init', 'unknown pack_size.  Must be 1, or 2.', &
           &  err_msg) ) RETURN
     END IF

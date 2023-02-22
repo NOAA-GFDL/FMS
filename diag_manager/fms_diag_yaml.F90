@@ -33,7 +33,8 @@ module fms_diag_yaml_mod
 use diag_data_mod,   only: DIAG_NULL, DIAG_OCEAN, DIAG_ALL, DIAG_OTHER, set_base_time, latlon_gridtype, &
                            index_gridtype, null_gridtype, DIAG_SECONDS, DIAG_MINUTES, DIAG_HOURS, DIAG_DAYS, &
                            DIAG_MONTHS, DIAG_YEARS, time_average, time_rms, time_max, time_min, time_sum, &
-                           time_diurnal, time_power, time_none, r8, i8, r4, i4, DIAG_NOT_REGISTERED
+                           time_diurnal, time_power, time_none, r8, i8, r4, i4, DIAG_NOT_REGISTERED, &
+                           middle_time, begin_time, end_time
 use yaml_parser_mod, only: open_and_parse_file, get_value_from_key, get_num_blocks, get_nkeys, &
                            get_block_ids, get_key_value, get_key_ids, get_key_name
 use mpp_mod,         only: mpp_error, FATAL, mpp_pe, mpp_root_pe, stdout
@@ -104,6 +105,9 @@ type diagYamlFiles_type
                                                                          !! DIAG_HOURS, DIAG_DAYS, DIAG_YEARS)
   character (len=:),   allocatable :: file_start_time                    !< Time to start the file for the
                                                                          !! first time. Requires “new_file_freq”
+  integer                          :: filename_time                      !< The time to use when setting the name of
+                                                                         !! new files: begin, middle, or end of the
+                                                                         !! time_bounds
   integer                          :: file_duration(MAX_FREQ)            !< How long the file should receive data
                                                                          !! after start time in file_duration_units.
                                                                          !! This optional field can only be used if
@@ -142,6 +146,7 @@ type diagYamlFiles_type
  procedure, public :: get_file_duration_units
  procedure, public :: get_file_varlist
  procedure, public :: get_file_global_meta
+ procedure, public :: get_filename_time
  procedure, public :: is_global_meta
  !> Has functions to determine if allocatable variables are true.  If a variable is not an allocatable
  !! then is will always return .true.
@@ -513,6 +518,10 @@ subroutine fill_in_diag_files(diag_yaml_id, diag_file_id, fileobj)
          is_optional=.true.)
   call set_new_file_freq(fileobj, freq_buffer, buffer)
 
+  deallocate(buffer)
+  call diag_get_value_from_key(diag_yaml_id, diag_file_id, "filename_time", buffer, is_optional=.true.)
+  call set_filename_time(fileobj, buffer)
+
   deallocate(freq_buffer, buffer)
   call diag_get_value_from_key(diag_yaml_id, diag_file_id, "start_time", fileobj%file_start_time, is_optional=.true.)
   call diag_get_value_from_key(diag_yaml_id, diag_file_id, "file_duration", freq_buffer, is_optional=.true.)
@@ -749,6 +758,27 @@ subroutine set_new_file_freq(fileobj, new_file_freq, new_file_freq_units)
     endif
   enddo
 end subroutine set_new_file_freq
+
+!> @brief This checks if the filename_time in a diag file is correct and sets the integer equivalent
+subroutine set_filename_time(fileobj, filename_time)
+  type(diagYamlFiles_type), intent(inout) :: fileobj             !< diagYamlFiles_type obj to check
+  character(len=*),         intent(in)    :: filename_time       !< filename_time as it is read from the yaml
+
+  select case (trim(filename_time))
+  case ("")
+    fileobj%filename_time = middle_time !< This is the default
+  case ("begin")
+    fileobj%filename_time = begin_time
+  case ("middle")
+    fileobj%filename_time = middle_time
+  case ("end")
+    fileobj%filename_time = end_time
+  case default
+    call mpp_error(FATAL, trim(filename_time)//" is an invalid filename_time &
+    &The acceptable values are begin, middle, and end. &
+    &Check your entry for file "//trim(fileobj%file_fname))
+  end select
+end subroutine set_filename_time
 
 !> @brief This checks if the file duration and the file duration units in a diag file are valid
 !! and sets the integer equivalent
@@ -1025,6 +1055,15 @@ result (res)
  character (:), allocatable :: res(:,:) !< What is returned
   res = diag_files_obj%file_global_meta
 end function get_file_global_meta
+!> @brief Get the integer equivalent of the time to use to determine the filename,
+!! if using a wildcard file name (i.e ocn%4yr%2mo%2dy%2hr)
+!! @return the integer equivalent of the time to use to determine the filename
+pure function get_filename_time(diag_files_obj) &
+result (res)
+ class (diagYamlFiles_type), intent(in) :: diag_files_obj !< The object being inquiried
+ integer :: res !< What is returned
+  res = diag_files_obj%filename_time
+end function
 !> @brief Inquiry for whether file_global_meta is allocated
 !! @return Flag indicating if file_global_meta is allocated
 function is_global_meta(diag_files_obj) &

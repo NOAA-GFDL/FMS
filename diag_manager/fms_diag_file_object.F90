@@ -32,7 +32,8 @@ use diag_data_mod, only: DIAG_NULL, NO_DOMAIN, max_axes, SUB_REGIONAL, get_base_
                          TWO_D_DOMAIN, UG_DOMAIN, prepend_date, DIAG_DAYS, VERY_LARGE_FILE_FREQ, &
                          get_base_year, get_base_month, get_base_day, get_base_hour, get_base_minute, &
                          get_base_second, time_unit_list, time_average, time_rms, time_max, time_min, time_sum, &
-                         time_diurnal, time_power, time_none, avg_name, no_units
+                         time_diurnal, time_power, time_none, avg_name, no_units, pack_size_str, &
+                         middle_time, begin_time, end_time
 use time_manager_mod, only: time_type, operator(>), operator(/=), operator(==), get_date, get_calendar_type, &
                             VALID_CALENDAR_TYPES, operator(>=), date_to_string, &
                             OPERATOR(/), OPERATOR(+), operator(<)
@@ -114,6 +115,7 @@ type :: fmsDiagFile_type
  procedure, public :: get_file_unlimdim
  procedure, public :: get_file_sub_region
  procedure, public :: get_file_new_file_freq
+ procedure, public :: get_filename_time
  procedure, public :: get_file_new_file_freq_units
  procedure, public :: get_file_start_time
  procedure, public :: get_file_duration
@@ -310,6 +312,23 @@ pure logical function has_diag_yaml_file (this)
   class(fmsDiagFile_type), intent(in) :: this !< The file object
   has_diag_yaml_file = associated(this%diag_yaml_file)
 end function has_diag_yaml_file
+
+!> \brief Get the time to use to determine the filename, if using a wildcard file name (i.e ocn%4yr%2mo%2dy%2hr)
+!! \return The time to use when determining the filename
+function get_filename_time(this) &
+  result(res)
+    class(fmsDiagFile_type), intent(in) :: this !< The file object
+    type(time_type) :: res
+
+    select case (this%diag_yaml_file%get_filename_time())
+    case (begin_time)
+      res = this%last_output
+    case (middle_time)
+      res = (this%last_output + this%next_close)/2
+    case (end_time)
+      res = this%next_close
+    end select
+end function get_filename_time
 
 !> \brief Logical function to determine if the variable field_ids has been allocated or associated
 !! \return .True. if field_ids exists .False. if field_ids has not been set
@@ -826,7 +845,7 @@ subroutine open_diag_file(this, time_step, file_is_opened)
     !< If using a wildcard file name (i.e ocn%4yr%2mo%2dy%2hr), get the basename (i.e ocn)
     pos = INDEX(diag_file_name, '%')
     if (pos > 0) base_name = diag_file_name(1:pos-1)
-    suffix = get_time_string(diag_file_name, time_step) !TODO fname_time?
+    suffix = get_time_string(diag_file_name, diag_file%get_filename_time())
     base_name = trim(base_name)//trim(suffix)
   else
     base_name = trim(diag_file_name)
@@ -903,8 +922,7 @@ subroutine write_var_metadata(fileobj, variable_name, dimensions, long_name, uni
   character(len=*)      , intent(in)    :: long_name      !< The long_name of the variable
   character(len=*)      , intent(in)    :: units          !< The units of the variable
 
-  !TODO harcodded double
-  call register_field(fileobj, variable_name, "double", dimensions)
+  call register_field(fileobj, variable_name, pack_size_str, dimensions)
   call register_variable_attribute(fileobj, variable_name, "long_name", &
                                   trim(long_name), str_len=len_trim(long_name))
   if (trim(units) .ne. no_units) &

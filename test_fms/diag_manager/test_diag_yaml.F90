@@ -25,7 +25,7 @@ use FMS_mod, only: fms_init, fms_end
 use fms_diag_yaml_mod
 use diag_data_mod, only: DIAG_NULL, DIAG_ALL, get_base_year, get_base_month, get_base_day, get_base_hour, &
                        & get_base_minute, get_base_second, diag_data_init, DIAG_HOURS, DIAG_NULL, DIAG_DAYS, &
-                       & time_average, r4
+                       & time_average, r4, middle_time, end_time
 use  time_manager_mod, only: set_calendar_type, JULIAN
 use mpp_mod
 use platform_mod
@@ -209,6 +209,10 @@ subroutine compare_diag_files(res)
   call compare_result("file_fname 1", res(1)%get_file_fname(), "wild_card_name%4yr%2mo%2dy%2hr")
   call compare_result("file_fname 2", res(2)%get_file_fname(), "normal")
   call compare_result("file_fname 3", res(3)%get_file_fname(), "normal2")
+
+  call compare_result("get_filename_time 1", res(1)%get_filename_time(), end_time)
+  call compare_result("get_filename_time 2", res(2)%get_filename_time(), middle_time)
+  call compare_result("get_filename_time 3", res(3)%get_filename_time(), middle_time)
 
   call compare_result("file_freq 1", res(1)%get_file_freq(), 6)
   call compare_result("file_freq 2", res(2)%get_file_freq(), 24)
