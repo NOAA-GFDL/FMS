@@ -82,7 +82,7 @@ use,intrinsic :: iso_c_binding, only: c_double,c_float,c_int64_t, &
        & check_duplicate_output_fields, get_date_dif, get_subfield_vert_size, sync_file_times,&
        & prepend_attribute, attribute_init, diag_util_init,&
        & update_bounds, check_out_of_bounds, check_bounds_are_exact_dynamic, check_bounds_are_exact_static,&
-       & fms_diag_bounds_from_array, fms_diag_check_out_of_bounds, fms_diag_update_bounds, &
+       & fms_diag_check_out_of_bounds, &
        & fms_diag_check_bounds_are_exact_dynamic, fms_diag_check_bounds_are_exact_static
 
 
@@ -105,10 +105,6 @@ use,intrinsic :: iso_c_binding, only: c_double,c_float,c_int64_t, &
     module procedure fms_diag_check_out_of_bounds_r8
   END INTERFACE fms_diag_check_out_of_bounds
 
-  INTERFACE fms_diag_bounds_from_array
-    module procedure bounds_from_array_4D
-    module procedure bounds_from_array_5D
-  END INTERFACE fms_diag_bounds_from_array
 
 !> @addtogroup diag_util_mod
 !> @{
@@ -741,31 +737,7 @@ CONTAINS
          & TRIM(axes_list)
   END SUBROUTINE log_diag_field_info
 
-  !> @brief Determine the bounds of the first three dimensions
-  !! of the "array" argument and store it the bounding box argument "bounds"
-  SUBROUTINE bounds_from_array_4D(bounds, array)
-    REAL, INTENT( in), DIMENSION(:,:,:,:) :: array !< The 4D input array.
-    TYPE (fmsDiagIbounds_type), INTENT(inout) :: bounds !< The instance of the bounding box.
-      bounds%imin = LBOUND(array,1)
-      bounds%imax = UBOUND(array,1)
-      bounds%jmin = LBOUND(array,2)
-      bounds%jmax = UBOUND(array,2)
-      bounds%kmin = LBOUND(array,3)
-      bounds%kmax = UBOUND(array,3)
-  END SUBROUTINE  bounds_from_array_4D
 
- !> @brief Determine the bounds of the first three dimensions
-  !! of the "array" argument and store it the bounding box argument "bounds"
-  SUBROUTINE bounds_from_array_5D(bounds, array)
-    CLASS(*), INTENT( in), DIMENSION(:,:,:,:,:) :: array !< The 5D input array.
-    TYPE (fmsDiagIbounds_type), INTENT(inout) :: bounds !< The instance of the bounding box.
-      bounds%imin = LBOUND(array,1)
-      bounds%imax = UBOUND(array,1)
-      bounds%jmin = LBOUND(array,2)
-      bounds%jmax = UBOUND(array,2)
-      bounds%kmin = LBOUND(array,3)
-      bounds%kmax = UBOUND(array,3)
-  END SUBROUTINE  bounds_from_array_5D
 
   !> @brief Update the <TT>output_fields</TT> x, y, and z min and max boundaries (array indices)
   !! with the six specified bounds values.
@@ -777,28 +749,11 @@ CONTAINS
     INTEGER, INTENT(in) :: upper_j !< Upper j bound.
     INTEGER, INTENT(in) :: lower_k !< Lower k bound.
     INTEGER, INTENT(in) :: upper_k !< Upper k bound.
-    CALL fms_diag_update_bounds(output_fields(out_num)%buff_bounds, &
-      & lower_i, upper_i, lower_j, upper_j, lower_k, upper_k )
+    CALL output_fields(out_num)%buff_bounds%update_bounds &
+      & ( lower_i, upper_i, lower_j, upper_j, lower_k, upper_k )
   END SUBROUTINE update_bounds
 
-  !> @brief Update the the first three (normally  x, y, and z)  min and
-  !! max boundaries (array indices) of the input bounding box "bounds" with
-  !! the six specified bounds values.
-SUBROUTINE fms_diag_update_bounds(bounds, lower_i, upper_i, lower_j, upper_j, lower_k, upper_k)
-  TYPE  (fmsDiagIbounds_type), intent(inout) :: bounds !<The bounding box of the output field buffer inindex space.
-  INTEGER, INTENT(in) :: lower_i !< Lower i bound.
-  INTEGER, INTENT(in) :: upper_i !< Upper i bound.
-  INTEGER, INTENT(in) :: lower_j !< Lower j bound.
-  INTEGER, INTENT(in) :: upper_j !< Upper j bound.
-  INTEGER, INTENT(in) :: lower_k !< Lower k bound.
-  INTEGER, INTENT(in) :: upper_k !< Upper k bound.
-  bounds%imin = MIN(bounds%imin, lower_i)
-  bounds%imax = MAX(bounds%imax, upper_i)
-  bounds%jmin = MIN(bounds%jmin, lower_j)
-  bounds%jmax = MAX(bounds%jmax, upper_j)
-  bounds%kmin = MIN(bounds%kmin, lower_k)
-  bounds%kmax = MAX(bounds%kmax, upper_k)
-END SUBROUTINE fms_diag_update_bounds
+
 
   !> @brief Compares the bounding indices of an array specified in "current_bounds"
 !! to the corresponding lower and upper bounds specified in "bounds"
@@ -831,26 +786,26 @@ LOGICAL FUNCTION compare_buffer_bounds_to_size(current_bounds, bounds, error_str
 
   compare_buffer_bounds_to_size = .FALSE.
 
-  IF (lowerb_comp( bounds%imin , current_bounds%imin) .OR. &
-       upperb_comp( bounds%imax , current_bounds%imax).OR.&
-       lowerb_comp( bounds%jmin , current_bounds%jmin) .OR.&
-       upperb_comp( bounds%jmax , current_bounds%jmax) .OR.&
-       lowerb_comp( bounds%kmin , current_bounds%kmin) .OR.&
-       upperb_comp( bounds%kmax , current_bounds%kmax)) THEN
+  IF (lowerb_comp( bounds%get_imin() , current_bounds%get_imin()) .OR. &
+       upperb_comp( bounds%get_imax() , current_bounds%get_imax()).OR.&
+       lowerb_comp( bounds%get_jmin() , current_bounds%get_jmin()) .OR.&
+       upperb_comp( bounds%get_jmax() , current_bounds%get_jmax()) .OR.&
+       lowerb_comp( bounds%get_kmin() , current_bounds%get_kmin()) .OR.&
+       upperb_comp( bounds%get_kmax() , current_bounds%get_kmax())) THEN
     compare_buffer_bounds_to_size = .TRUE.
      error_str ='Buffer bounds=   :   ,   :   ,   :     Actual bounds=   :   ,   :   ,   :   '
-     WRITE(error_str(15:17),'(i3)') current_bounds%imin
-     WRITE(error_str(19:21),'(i3)') current_bounds%imax
-     WRITE(error_str(23:25),'(i3)') current_bounds%jmin
-     WRITE(error_str(27:29),'(i3)') current_bounds%jmax
-     WRITE(error_str(31:33),'(i3)') current_bounds%kmin
-     WRITE(error_str(35:37),'(i3)') current_bounds%kmax
-     WRITE(error_str(54:56),'(i3)') bounds%imin
-     WRITE(error_str(58:60),'(i3)') bounds%imax
-     WRITE(error_str(62:64),'(i3)') bounds%jmin
-     WRITE(error_str(66:68),'(i3)') bounds%jmax
-     WRITE(error_str(70:72),'(i3)') bounds%kmin
-     WRITE(error_str(74:76),'(i3)') bounds%kmax
+     WRITE(error_str(15:17),'(i3)') current_bounds%get_imin()
+     WRITE(error_str(19:21),'(i3)') current_bounds%get_imax()
+     WRITE(error_str(23:25),'(i3)') current_bounds%get_jmin()
+     WRITE(error_str(27:29),'(i3)') current_bounds%get_jmax()
+     WRITE(error_str(31:33),'(i3)') current_bounds%get_kmin()
+     WRITE(error_str(35:37),'(i3)') current_bounds%get_kmax()
+     WRITE(error_str(54:56),'(i3)') bounds%get_imin()
+     WRITE(error_str(58:60),'(i3)') bounds%get_imax()
+     WRITE(error_str(62:64),'(i3)') bounds%get_jmin()
+     WRITE(error_str(66:68),'(i3)') bounds%get_jmax()
+     WRITE(error_str(70:72),'(i3)') bounds%get_kmin()
+     WRITE(error_str(74:76),'(i3)') bounds%get_kmax()
   ELSE
     compare_buffer_bounds_to_size = .FALSE.
     error_str = ''
@@ -892,7 +847,7 @@ SUBROUTINE check_out_of_bounds(out_num, diag_field_id, err_msg)
   TYPE (fmsDiagIbounds_type) :: array_bounds
   associate (buff_bounds => output_fields(out_num)%buff_bounds)
 
-    CALL fms_diag_bounds_from_array(array_bounds, output_fields(out_num)%buffer)
+    CALL array_bounds%reset_bounds_from_array_4D(output_fields(out_num)%buffer)
 
     out_of_bounds = compare_buffer_bounds_to_size(array_bounds, buff_bounds, &
      & error_string2, a_lessthan_b, a_greaterthan_b)
@@ -925,7 +880,7 @@ SUBROUTINE fms_diag_check_out_of_bounds_r4(ofb, bounds, output_name, module_name
   LOGICAL :: out_of_bounds = .true.
   TYPE (fmsDiagIbounds_type) :: array_bounds
 
-  CALL fms_diag_bounds_from_array(array_bounds, ofb)
+  CALL array_bounds%reset_bounds_from_array_5D(ofb)
 
   out_of_bounds = compare_buffer_bounds_to_size(array_bounds, bounds, &
      & error_string2, a_lessthan_b, a_greaterthan_b)
@@ -957,7 +912,7 @@ SUBROUTINE fms_diag_check_out_of_bounds_r8(ofb, bounds, output_name, module_name
   LOGICAL :: out_of_bounds = .true.
   TYPE (fmsDiagIbounds_type) :: array_bounds  !<A bounding box holdstore the current bounds ofb
 
-  CALL fms_diag_bounds_from_array(array_bounds, ofb)
+  CALL array_bounds%reset_bounds_from_array_5D(ofb)
 
   out_of_bounds = compare_buffer_bounds_to_size(array_bounds, bounds, &
      &  error_string2, a_lessthan_b, a_greaterthan_b)
@@ -995,7 +950,7 @@ SUBROUTINE fms_diag_check_bounds_are_exact_dynamic(current_bounds, bounds, outpu
 
   CHARACTER(len=128) :: error_string1, error_string2
   LOGICAL :: do_check
-  LOGICAL :: lims_not_exact = .true.
+  LOGICAL :: lims_not_exact
 
   err_msg = ''
 
@@ -1045,7 +1000,7 @@ SUBROUTINE check_bounds_are_exact_dynamic(out_num, diag_field_id, Time, err_msg)
   output_name = output_fields(out_num)%output_name
   module_name = input_fields(diag_field_id)%module_name
 
-  CALL fms_diag_bounds_from_array(current_bounds, output_fields(out_num)%buffer)
+  CALL current_bounds%reset_bounds_from_array_4D(output_fields(out_num)%buffer)
 
   CALL fms_diag_check_bounds_are_exact_dynamic(current_bounds, output_fields(out_num)%buff_bounds, &
        &  output_name, module_name, &
@@ -1068,7 +1023,7 @@ END SUBROUTINE check_bounds_are_exact_dynamic
     output_name = output_fields(out_num)%output_name
     module_name = input_fields(diag_field_id)%module_name
 
-    CALL fms_diag_bounds_from_array(current_bounds, output_fields(out_num)%buffer)
+    CALL current_bounds%reset_bounds_from_array_4D(output_fields(out_num)%buffer)
 
     CALL fms_diag_check_bounds_are_exact_static(current_bounds, output_fields(out_num)%buff_bounds, &
        &  output_name, module_name, err_msg)

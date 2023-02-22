@@ -60,12 +60,12 @@ FUNCTION FMS_DIAG_FBU_3D_PNAME_(ofield_cfg, ofield_index_cfg, field_d, sample, &
     LOGICAL, DIMENSION(1), target :: mask_dummy
 
     !! For pointer bounds remapping
-    FMS_DIAG_FBU_DATA_TYPE_ , pointer, DIMENSION(:,:,:,:) :: field_ptr => null()!< Pointer to the field
-    FMS_DIAG_FBU_DATA_TYPE_ , pointer, DIMENSION(:,:,:,:,:) :: ofb_ptr => null()!< Pointer to the outfield buffer.
-    FMS_DIAG_FBU_DATA_TYPE_ , pointer, DIMENSION(:,:,:,:,:) :: ofc_ptr => null()!< Pointer to the outfield counter.
-    LOGICAL , pointer, DIMENSION(:,:,:,:) :: mask_ptr => null()!< Pointer to the mask.
+    FMS_DIAG_FBU_DATA_TYPE_ , pointer, DIMENSION(:,:,:,:) :: field_ptr !< Pointer to the field
+    FMS_DIAG_FBU_DATA_TYPE_ , pointer, DIMENSION(:,:,:,:,:) :: ofb_ptr !< Pointer to the outfield buffer.
+    FMS_DIAG_FBU_DATA_TYPE_ , pointer, DIMENSION(:,:,:,:,:) :: ofc_ptr !< Pointer to the outfield counter.
+    LOGICAL , pointer, DIMENSION(:,:,:,:) :: mask_ptr !< Pointer to the mask.
 
-
+    !!Set all the pointers!
     field_ptr(1:size(field_d,1),1:size(field_d,2),1:size(field_d,3),1:1) => field_d
     ofb_ptr(1:size(ofb,1),1:size(ofb,2),1:size(ofb,3),1:1, 1:size(ofb,4)) => ofb
 
@@ -81,8 +81,6 @@ FUNCTION FMS_DIAG_FBU_3D_PNAME_(ofield_cfg, ofield_index_cfg, field_d, sample, &
     ELSE
       mask_ptr(1:1,1:1,1:1,1:1) => mask_dummy
     ENDIF
-
-
 
     succeded = FMS_DIAG_FBU_PNAME_ (ofield_cfg, ofield_index_cfg, field_ptr, sample, &
       & ofb_ptr, ofc_ptr, bbounds, count_0d, num_elements, mask_ptr, weight1, missvalue,  &
@@ -217,7 +215,7 @@ FUNCTION FMS_DIAG_FBU_3D_PNAME_(ofield_cfg, ofield_index_cfg, field_d, sample, &
          MASK_PR_1_IF: IF (mask_present ) THEN
             MISSVAL_PR_1_IF: IF ( missvalue_present ) THEN !!(section: mask_variant .eq. true + mask present)
                IF ( debug_diag_manager ) THEN
-                  CALL fms_diag_update_bounds(bbounds, is-hi, ie-hi, js-hj, je-hj, ks, ke)
+                  CALL bbounds%update_bounds(is-hi, ie-hi, js-hj, je-hj, ks, ke)
                   CALL fms_diag_check_out_of_bounds(ofb, bbounds, output_name, module_name, err_msg_local)
                   IF ( err_msg_local /= '' ) THEN
                      IF ( fms_error_handler('diag_manager_mod::send_data_3d', err_msg_local, err_msg) ) THEN
@@ -392,7 +390,7 @@ FUNCTION FMS_DIAG_FBU_3D_PNAME_(ofield_cfg, ofield_index_cfg, field_d, sample, &
                   END IF
                ELSE NDCMP_RKR_1_IF
                   IF ( debug_diag_manager ) THEN
-                     CALL fms_diag_update_bounds(bbounds, is-hi, ie-hi, js-hj, je-hj, ks, ke)
+                     CALL bbounds%update_bounds(is-hi, ie-hi, js-hj, je-hj, ks, ke)
                      CALL fms_diag_check_out_of_bounds(ofb, bbounds, output_name, module_name, err_msg_local)
                      IF ( err_msg_local /= '' ) THEN
                         IF ( fms_error_handler('diag_manager_mod::send_data_3d', err_msg_local, err_msg) ) THEN
@@ -508,7 +506,7 @@ FUNCTION FMS_DIAG_FBU_3D_PNAME_(ofield_cfg, ofield_index_cfg, field_d, sample, &
                   END IF
                ELSE NDCMP_RKR_2_IF
                   IF ( debug_diag_manager ) THEN
-                     CALL fms_diag_update_bounds(bbounds, is-hi, ie-hi, js-hj, je-hj, ks, ke)
+                     CALL bbounds%update_bounds(is-hi, ie-hi, js-hj, je-hj, ks, ke)
                      CALL fms_diag_check_out_of_bounds(ofb, bbounds, output_name, module_name, err_msg_local)
                      IF ( err_msg_local /= '') THEN
                         IF ( fms_error_handler('diag_manager_mod::send_data_3d', err_msg_local, err_msg) ) THEN
@@ -657,7 +655,7 @@ FUNCTION FMS_DIAG_FBU_3D_PNAME_(ofield_cfg, ofield_index_cfg, field_d, sample, &
 !$OMP END CRITICAL
                ELSE NDCMP_RKR_3_IF
                   IF ( debug_diag_manager ) THEN
-                     CALL fms_diag_update_bounds(bbounds, is-hi, ie-hi, js-hj, je-hj, ks, ke)
+                     CALL bbounds%update_bounds(is-hi, ie-hi, js-hj, je-hj, ks, ke)
                      CALL fms_diag_check_out_of_bounds(ofb, bbounds, output_name, module_name, err_msg_local)
                      IF ( err_msg_local /= '' ) THEN
                         IF ( fms_error_handler('diag_manager_mod::send_data_3d', err_msg_local, err_msg) ) THEN
@@ -769,7 +767,7 @@ FUNCTION FMS_DIAG_FBU_3D_PNAME_(ofield_cfg, ofield_index_cfg, field_d, sample, &
 
                ELSE NDCMP_RKR_4_IF
                   IF ( debug_diag_manager ) THEN
-                     CALL fms_diag_update_bounds(bbounds, is-hi, ie-hi, js-hj, je-hj, ks, ke)
+                     CALL bbounds%update_bounds(is-hi, ie-hi, js-hj, je-hj, ks, ke)
                      CALL fms_diag_check_out_of_bounds(ofb, bbounds, output_name, module_name, err_msg_local)
                      IF ( err_msg_local /= '' ) THEN
                         IF (fms_error_handler('diag_manager_mod::send_data_3d', err_msg_local, err_msg) ) THEN
@@ -843,13 +841,13 @@ FUNCTION FMS_DIAG_FBU_3D_PNAME_(ofield_cfg, ofield_index_cfg, field_d, sample, &
          LOGICAL, DIMENSION(1,1,1,1), target :: mask_dummy
 
         !! For pointer bounds remapping
-        FMS_DIAG_FBU_DATA_TYPE_ , pointer, DIMENSION(:,:,:,:) :: field_ptr => null() !< Pointer to the field
-        FMS_DIAG_FBU_DATA_TYPE_ , pointer,DIMENSION(:,:,:,:,:):: ofb_ptr => null() !< Pointer to the outfield buffer.
-        LOGICAL , pointer, DIMENSION(:,:,:,:) :: mask_ptr => null() !< !< Pointer to the mask.
+        FMS_DIAG_FBU_DATA_TYPE_ , pointer, DIMENSION(:,:,:,:) :: field_ptr!< Pointer to the field
+        FMS_DIAG_FBU_DATA_TYPE_ , pointer,DIMENSION(:,:,:,:,:):: ofb_ptr!< Pointer to the outfield buffer.
+        LOGICAL , pointer, DIMENSION(:,:,:,:) :: mask_ptr !< Pointer to the mask.
 
+        !Initialize all the pointers
         field_ptr(1:size(field,1),1:size(field,2),1:size(field,3),1:1) => field(:,:,:)
         ofb_ptr(1:size(ofb,1),1:size(ofb,2),1:size(ofb,3), 1:1, 1:size(ofb,4)) => ofb
-
         IF  (PRESENT (mask)) THEN
           mask_ptr(1:size(mask,1),1:size(mask,2),1:size(mask,3),1:1) => mask
         ELSE
@@ -959,7 +957,7 @@ FUNCTION FMS_DIAG_FBCF_PNAME_ (ofield_cfg, ofield_index_cfg, field, sample, ofb,
                   & OFB(is-hi:ie-hi,js-hj:je-hj,:,:,sample) = field(f1:f2,f3:f4,ksr:ker,:)
                ELSE
                   IF ( debug_diag_manager ) THEN
-                     CALL fms_diag_update_bounds(bbounds, is-hi, ie-hi, js-hj, je-hj, ks, ke)
+                     CALL bbounds%update_bounds(is-hi, ie-hi, js-hj, je-hj, ks, ke)
                      CALL fms_diag_check_out_of_bounds(ofb, bbounds, output_name,  module_name, err_msg_local)
                      IF ( err_msg_local /= '' ) THEN
                         IF ( fms_error_handler('diag_manager_mod::send_data_3d', err_msg_local, err_msg) ) THEN
@@ -997,7 +995,7 @@ FUNCTION FMS_DIAG_FBCF_PNAME_ (ofield_cfg, ofield_index_cfg, field, sample, ofb,
                   & OFB(is-hi:ie-hi,js-hj:je-hj,:,:,sample) = field(f1:f2,f3:f4,ksr:ker,:)
                ELSE
                   IF ( debug_diag_manager ) THEN
-                     CALL fms_diag_update_bounds(bbounds, is-hi, ie-hi, js-hj, je-hj, ks, ke)
+                     CALL bbounds%update_bounds(is-hi, ie-hi, js-hj, je-hj, ks, ke)
                      CALL fms_diag_check_out_of_bounds(ofb, bbounds, output_name, module_name, err_msg_local)
                      IF ( err_msg_local /= '' ) THEN
                         IF ( fms_error_handler('diag_manager_mod::send_data_3d', err_msg_local, err_msg) ) THEN
@@ -1040,7 +1038,7 @@ FUNCTION FMS_DIAG_FBCF_PNAME_ (ofield_cfg, ofield_index_cfg, field, sample, ofb,
                   & OFB(is-hi:ie-hi,js-hj:je-hj,:,:,sample) = field(f1:f2,f3:f4,ksr:ker,:)
                ELSE
                   IF ( debug_diag_manager ) THEN
-                     CALL fms_diag_update_bounds(bbounds, is-hi, ie-hi, js-hj, je-hj, ks, ke)
+                     CALL bbounds%update_bounds(is-hi, ie-hi, js-hj, je-hj, ks, ke)
                      CALL fms_diag_check_out_of_bounds(ofb, bbounds, output_name, module_name, err_msg_local)
                      IF ( err_msg_local /= '' ) THEN
                         IF ( fms_error_handler('diag_manager_mod::send_data_3d', err_msg_local, err_msg) ) THEN
@@ -1077,7 +1075,7 @@ FUNCTION FMS_DIAG_FBCF_PNAME_ (ofield_cfg, ofield_index_cfg, field, sample, ofb,
                   & OFB(is-hi:ie-hi,js-hj:je-hj,:,:,sample) = field(f1:f2,f3:f4,ksr:ker,:)
                ELSE
                   IF ( debug_diag_manager ) THEN
-                     CALL fms_diag_update_bounds(bbounds, is-hi, ie-hi, js-hj, je-hj, ks, ke)
+                     CALL bbounds%update_bounds(is-hi, ie-hi, js-hj, je-hj, ks, ke)
                      CALL fms_diag_check_out_of_bounds(ofb, bbounds, output_name, module_name, err_msg_local)
                      IF ( err_msg_local /= '' ) THEN
                         IF ( fms_error_handler('diag_manager_mod::send_data_3d', err_msg_local, err_msg) ) THEN
@@ -1120,7 +1118,7 @@ FUNCTION FMS_DIAG_FBCF_PNAME_ (ofield_cfg, ofield_index_cfg, field, sample, ofb,
                   &   field(f1:f2,f3:f4,ksr:ker,:)
                ELSE
                   IF ( debug_diag_manager ) THEN
-                     CALL fms_diag_update_bounds(bbounds, is-hi, ie-hi, js-hj, je-hj, ks, ke)
+                     CALL bbounds%update_bounds(is-hi, ie-hi, js-hj, je-hj, ks, ke)
                      CALL fms_diag_check_out_of_bounds(ofb, bbounds, output_name, module_name, err_msg_local)
                      IF ( err_msg_local /= '' ) THEN
                         IF ( fms_error_handler('diag_manager_mod::send_data_3d', err_msg_local, err_msg) ) THEN
@@ -1155,7 +1153,7 @@ FUNCTION FMS_DIAG_FBCF_PNAME_ (ofield_cfg, ofield_index_cfg, field, sample, ofb,
                   &  field(f1:f2,f3:f4,ksr:ker,:)
                ELSE
                   IF ( debug_diag_manager ) THEN
-                     CALL fms_diag_update_bounds(bbounds, is-hi, ie-hi, js-hj, je-hj, ks, ke)
+                     CALL bbounds%update_bounds(is-hi, ie-hi, js-hj, je-hj, ks, ke)
                      CALL fms_diag_check_out_of_bounds(ofb, bbounds, output_name, module_name, err_msg_local)
                      IF ( err_msg_local /= '' ) THEN
                         IF ( fms_error_handler('diag_manager_mod::send_data_3d', err_msg_local, err_msg) ) THEN
@@ -1189,7 +1187,7 @@ FUNCTION FMS_DIAG_FBCF_PNAME_ (ofield_cfg, ofield_index_cfg, field, sample, ofb,
                OFB(is-hi:ie-hi,js-hj:je-hj,:,:,sample) = field(f1:f2,f3:f4,ksr:ker,:)
             ELSE
                IF ( debug_diag_manager ) THEN
-                  CALL fms_diag_update_bounds(bbounds, is-hi, ie-hi, js-hj, je-hj, ks, ke)
+                  CALL bbounds%update_bounds(is-hi, ie-hi, js-hj, je-hj, ks, ke)
                   CALL fms_diag_check_out_of_bounds(ofb, bbounds, output_name, module_name, err_msg_local)
                   IF ( err_msg_local /= '' ) THEN
                      IF ( fms_error_handler('diag_manager_mod::send_data_3d', err_msg_local, err_msg) ) THEN
@@ -1269,11 +1267,12 @@ FUNCTION FMS_DIAG_FBCF_PNAME_ (ofield_cfg, ofield_index_cfg, field, sample, ofb,
       INTEGER, DIMENSION(3), INTENT(in)  :: l_end   !< local end indices on spatial for regional output
 
       !! These below are used in pointer bounds remapping
-      FMS_DIAG_FBU_DATA_TYPE_ , pointer, DIMENSION(:,:,:,:,:) :: ofb_ptr => null() !< Pointer to the output field
-                                                                                   !! buffer - used in remapping
-      FMS_DIAG_FBU_DATA_TYPE_ , pointer, DIMENSION(:,:,:,:) :: rmask_ptr => null() !< Pointer to the rmask - used
-                                                                                   !! in remapping
+      FMS_DIAG_FBU_DATA_TYPE_ , pointer, DIMENSION(:,:,:,:,:) :: ofb_ptr !< Pointer to the output field
+                                                                        !! buffer - used in remapping
+      FMS_DIAG_FBU_DATA_TYPE_ , pointer, DIMENSION(:,:,:,:) :: rmask_ptr !< Pointer to the rmask - used
+                                                                         !! in remapping
 
+      !!Initialize all the pointers
       ofb_ptr(1:size(ofb,1),1:size(ofb,2),1:size(ofb,3), 1:1, 1:size(ofb,4)) => ofb
       rmask_ptr(1:size(rmask,1),1:size(rmask,2),1:size(rmask,3),1:1) => rmask
 

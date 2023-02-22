@@ -59,6 +59,7 @@ MODULE fms_diag_outfield_mod
   !! TODO: (MDM) This class will need further development for the modern_diag effort.
   !! For its development, consider the legacy diag_util::init_output_field already
   !! in place. Fields added so are used the the field buffer math/dmUpdate functions.
+  !! TODO (MDM) : Should the MDM have pow_value be type REAL?
   !> @ingroup fms_diag_outfield_mod
   TYPE, public :: fmsDiagOutfield_type
      PRIVATE
