@@ -24,11 +24,12 @@ program test_diag_update_buffer
    use platform_mod
    use mpp_mod, only: mpp_init, mpp_set_stack_size, mpp_init_test_requests_allocated
    use fms_mod, ONLY: fms_init, fms_end, error_mesg, FATAL,NOTE
-   use diag_data_mod, ONLY: fmsDiagIbounds_type, VERY_LARGE_AXIS_LENGTH
+   use diag_data_mod, ONLY: VERY_LARGE_AXIS_LENGTH
    USE fms_diag_outfield_mod, ONLY: fmsDiagOutfield_type, fmsDiagOutfieldIndex_type
    USE fms_diag_fieldbuff_update_mod, ONLY: fieldbuff_update, fieldbuff_copy_missvals, &
    & fieldbuff_copy_fieldvals
    USE fms_diag_time_reduction_mod, ONLY: fmsDiagTimeReduction_type, time_average, time_rms
+   USE fms_diag_bbox_mod, ONLY: fmsDiagIbounds_type
 
    implicit  none
 

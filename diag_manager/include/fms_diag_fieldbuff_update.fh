@@ -40,10 +40,12 @@ FUNCTION FMS_DIAG_FBU_3D_PNAME_(ofield_cfg, ofield_index_cfg, field_d, sample, &
     FMS_DIAG_FBU_DATA_TYPE_, INTENT(in) :: weight1 !< Field data is multiplied by weight.
     FMS_DIAG_FBU_DATA_TYPE_, INTENT(in) :: missvalue !< Buffer may be set to missvalue where mask is false.
 
-    INTEGER, INTENT(inout) :: field_num_threads
-    INTEGER, INTENT(inout) :: field_active_omp_level
+    INTEGER, INTENT(inout) :: field_num_threads !< Number of OMP threads used processing the input field;
+                                                   !!expected 1 if no OMP.
+    INTEGER, INTENT(inout) :: field_active_omp_level !<The OMP active level for the input field; expected 0 if no OMP.
 
-    LOGICAL, INTENT(inout) :: issued_mask_ignore_warning
+    LOGICAL, INTENT(inout) :: issued_mask_ignore_warning !< Will be set true if mask is ignored do ti missing values
+                                                        !! not present for this field
     INTEGER, DIMENSION(3), INTENT(in)  :: l_start !< local start indices on 3 axes for regional output
     INTEGER, DIMENSION(3), INTENT(in)  :: l_end !< local end indices on 3 axes for regional output
     CHARACTER(len=*), INTENT(out),OPTIONAL::err_msg !< Possibly passed in by the caller, and sent to error handler
@@ -56,8 +58,8 @@ FUNCTION FMS_DIAG_FBU_3D_PNAME_(ofield_cfg, ofield_index_cfg, field_d, sample, &
     !! have been allocated. The program hangs if the approach of having pointers to the dummy arrays are not used.
     !! Also note that a sepeate logical field (in fmsDiagOutfield_type, but was used in
     !! the legacy diag manager also) is used to determine "if the mask was preent"!
-    FMS_DIAG_FBU_DATA_TYPE_ , DIMENSION(1),target :: ofc_dummy
-    LOGICAL, DIMENSION(1), target :: mask_dummy
+    FMS_DIAG_FBU_DATA_TYPE_ , DIMENSION(1),target :: ofc_dummy !> A target for ofc_ptr, in case ofc is not allocated
+    LOGICAL, DIMENSION(1), target :: mask_dummy !> A target for mask_ptr, in case mask is not present
 
     !! For pointer bounds remapping
     FMS_DIAG_FBU_DATA_TYPE_ , pointer, DIMENSION(:,:,:,:) :: field_ptr !< Pointer to the field
@@ -121,10 +123,12 @@ FUNCTION FMS_DIAG_FBU_3D_PNAME_(ofield_cfg, ofield_index_cfg, field_d, sample, &
       FMS_DIAG_FBU_DATA_TYPE_, INTENT(in) :: weight1 !< Field data is multiplied by weight
       FMS_DIAG_FBU_DATA_TYPE_, INTENT(in) :: missvalue !< Buffer may be set to missvalue where mask is false.
 
-      INTEGER, INTENT(inout) :: field_num_threads
-      INTEGER, INTENT(inout) :: field_active_omp_level
+      INTEGER, INTENT(inout) :: field_num_threads !< Number of OMP threads used processing the input field;
+                                                   !! expected 1 if no OMP.
+      INTEGER, INTENT(inout)::field_active_omp_level !<The OMP active level for the input field; expected 0 if no OMP.
 
-      LOGICAL, INTENT(inout) :: issued_mask_ignore_warning
+      LOGICAL, INTENT(inout) :: issued_mask_ignore_warning !< Will be set true if mask is ignored do ti missing values
+                                                           !! not present for this field
       INTEGER, DIMENSION(3), INTENT(in)  :: l_start !< local start indices on 3 axes for regional output
       INTEGER, DIMENSION(3), INTENT(in)  :: l_end !< local end indices on 3 axes for regional output
       CHARACTER(len=*), INTENT(out),OPTIONAL::err_msg !< Possibly passed by the caller, and sent to error handler
@@ -838,9 +842,9 @@ FUNCTION FMS_DIAG_FBU_3D_PNAME_(ofield_cfg, ofield_index_cfg, field_d, sample, &
         !! The program hangs if the approach of having a pointer to the dummy array is not used.
         !! Also note that a seperate logical field (in fmsDiagOutfield_type, but was used in
         !! the legacy diag manager also) is used to determine "if the mask was preent"!
-         LOGICAL, DIMENSION(1,1,1,1), target :: mask_dummy
+         LOGICAL, DIMENSION(1), target :: mask_dummy !> A target for mask_ptr, in case mask is not present
 
-        !! For pointer bounds remapping
+        !! For pointer bounds remapping:
         FMS_DIAG_FBU_DATA_TYPE_ , pointer, DIMENSION(:,:,:,:) :: field_ptr!< Pointer to the field
         FMS_DIAG_FBU_DATA_TYPE_ , pointer,DIMENSION(:,:,:,:,:):: ofb_ptr!< Pointer to the outfield buffer.
         LOGICAL , pointer, DIMENSION(:,:,:,:) :: mask_ptr !< Pointer to the mask.
@@ -873,7 +877,7 @@ FUNCTION FMS_DIAG_FBCF_PNAME_ (ofield_cfg, ofield_index_cfg, field, sample, ofb,
       FMS_DIAG_FBU_DATA_TYPE_ , CONTIGUOUS, DIMENSION(:,:,:,:), INTENT(in) :: field   !< The field value array.
       INTEGER, INTENT(in) :: sample   !< index along the diurnal time axis
       FMS_DIAG_FBU_DATA_TYPE_ , DIMENSION(:,:,:,:,:), INTENT(inout) :: ofb   !< The Output Field Buffer
-      TYPE(fmsDiagIbounds_type), INTENT(inout) :: bbounds
+      TYPE(fmsDiagIbounds_type), INTENT(inout) :: bbounds !< The array bounds of the ofb argument.
       FMS_DIAG_FBU_DATA_TYPE_ , INTENT(inout) :: count_0d   !< Normally the member of the buffer of same name,
       LOGICAL, CONTIGUOUS, DIMENSION(:,:,:,:), INTENT(in), OPTIONAL :: mask
       FMS_DIAG_FBU_DATA_TYPE_ , INTENT(in) :: missvalue !< buffer may be set to this value where mask is false.

@@ -51,6 +51,8 @@ use platform_mod
   USE time_manager_mod, ONLY: time_type
   USE mpp_domains_mod, ONLY: domain1d, domain2d, domainUG
   USE fms_mod, ONLY: WARNING, write_version_number
+  USE fms_diag_bbox_mod, ONLY: fmsDiagIbounds_type
+
 #ifdef use_netCDF
   ! NF90_FILL_REAL has value of 9.9692099683868690e+36.
   USE netcdf, ONLY: NF_FILL_REAL => NF90_FILL_REAL
@@ -127,37 +129,6 @@ use platform_mod
      REAL :: zbegin
      REAL :: zend
   END TYPE coord_type
-
-  !> @brief Data structure holding intervals (or interval bounds or limits).
-  !! Used for checking the bounds of the field output buffer arrays.
-TYPE, public :: fmsDiagIbounds_type
-PRIVATE
-  INTEGER :: imin !< Lower i bound.
-  INTEGER :: imax !< Upper i bound.
-  INTEGER :: jmin !< Lower j bound.
-  INTEGER :: jmax !< Upper j bound.
-  INTEGER :: kmin !< Lower k bound.
-  INTEGER :: kmax !< Upper k bound.
-  contains
-  procedure :: reset => reset_bounds
-  procedure :: reset_bounds_from_array_4D
-  procedure :: reset_bounds_from_array_5D
-  procedure :: update_bounds
-  procedure :: get_imin
-  procedure :: get_imax
-  procedure :: get_jmin
-  procedure :: get_jmax
-  procedure :: get_kmin
-  procedure :: get_kmax
-END TYPE fmsDiagIbounds_type
-
-!INTERFACE fms_diag_bounds_from_array
-!module procedure bounds_from_array_4D
-!module procedure bounds_from_array_5D
-!END INTERFACE fms_diag_bounds_from_array
-
-
-
 
   !> @brief Type to define the diagnostic files that will be written as defined by the diagnostic table.
   !> @ingroup diag_data_mod
@@ -417,107 +388,6 @@ CONTAINS
     ! Write version number out to log file
     call write_version_number("DIAG_DATA_MOD", version)
   END SUBROUTINE diag_data_init
-
-  !> @brief Gets imin of fmsDiagIbounds_type
-  !! @return copy of integer member imin
-  pure integer function get_imin (this) result(rslt)
-    class (fmsDiagIbounds_type), intent(in) :: this !< The !< ibounds instance
-    rslt = this%imin
-  end function get_imin
-
-  !> @brief Gets imax of fmsDiagIbounds_type
-  !! @return copy of integer member imax
-  pure integer function get_imax (this) result(rslt)
-    class (fmsDiagIbounds_type), intent(in) :: this !< The !< ibounds instance
-    rslt = this%imax
-  end function get_imax
-
-  !> @brief Gets jmin of fmsDiagIbounds_type
-  !! @return copy of integer member jmin
-  pure integer function get_jmin (this) result(rslt)
-    class (fmsDiagIbounds_type), intent(in) :: this !< The !< ibounds instance
-    rslt = this%jmin
-  end function get_jmin
-
-  !> @brief Gets jmax of fmsDiagIbounds_type
-  !! @return copy of integer member jmax
-  pure integer function get_jmax (this) result(rslt)
-    class (fmsDiagIbounds_type), intent(in) :: this !< The !< ibounds instance
-    rslt = this%jmax
-  end function get_jmax
-
-
-  !> @brief Gets kmin of fmsDiagIbounds_type
-  !! @return copy of integer member kmin
-  pure integer function get_kmin (this) result(rslt)
-    class (fmsDiagIbounds_type), intent(in) :: this !< The !< ibounds instance
-    rslt = this%kmin
-  end function get_kmin
-
-  !> @brief Gets kmax of fmsDiagIbounds_type
-  !! @return copy of integer member kmax
-  pure integer function get_kmax (this) result(rslt)
-    class (fmsDiagIbounds_type), intent(in) :: this !< The !< ibounds instance
-    rslt = this%kmax
-  end function get_kmax
-
-  !> @brief Reset the instance bounding lower and upper bounds to lower_val and upper_val, respectively.
-  SUBROUTINE reset_bounds (this, lower_val, upper_val)
-    class (fmsDiagIbounds_type), target, intent(inout) :: this   !< ibounds instance
-    integer, intent(in) :: lower_val  !< value for the lower bounds in each dimension
-    integer, intent(in) :: upper_val  !< value for the upper bounds in each dimension
-    this%imin = lower_val
-    this%jmin = lower_val
-    this%kmin = lower_val
-    this%imax = upper_val
-    this%jmax = upper_val
-    this%kmax = upper_val
-  END SUBROUTINE reset_bounds
-
-  !> @brief Update the the first three (normally  x, y, and z)  min and
-  !! max boundaries (array indices) of the instance bounding box
-  !! the six specified bounds values.
-  SUBROUTINE update_bounds(this, lower_i, upper_i, lower_j, upper_j, lower_k, upper_k)
-    CLASS  (fmsDiagIbounds_type), intent(inout) :: this !<The bounding box of the output field buffer inindex space.
-    INTEGER, INTENT(in) :: lower_i !< Lower i bound.
-    INTEGER, INTENT(in) :: upper_i !< Upper i bound.
-    INTEGER, INTENT(in) :: lower_j !< Lower j bound.
-    INTEGER, INTENT(in) :: upper_j !< Upper j bound.
-    INTEGER, INTENT(in) :: lower_k !< Lower k bound.
-    INTEGER, INTENT(in) :: upper_k !< Upper k bound.
-    this%imin = MIN(this%imin, lower_i)
-    this%imax = MAX(this%imax, upper_i)
-    this%jmin = MIN(this%jmin, lower_j)
-    this%jmax = MAX(this%jmax, upper_j)
-    this%kmin = MIN(this%kmin, lower_k)
-    this%kmax = MAX(this%kmax, upper_k)
-  END SUBROUTINE update_bounds
-
-  !> @brief Reset the instance bounding box with the bounds determined from the
-  !! first three dimensions of the 5D "array" argument
-  SUBROUTINE reset_bounds_from_array_4D(this, array)
-    CLASS (fmsDiagIbounds_type), INTENT(inout) :: this !< The instance of the bounding box.
-    REAL, INTENT( in), DIMENSION(:,:,:,:) :: array !< The 4D input array.
-    this%imin = LBOUND(array,1)
-    this%imax = UBOUND(array,1)
-    this%jmin = LBOUND(array,2)
-    this%jmax = UBOUND(array,2)
-    this%kmin = LBOUND(array,3)
-    this%kmax = UBOUND(array,3)
-  END SUBROUTINE  reset_bounds_from_array_4D
-
-  !> @brief Reset the instance bounding box with the bounds determined from the
-  !! first three dimensions of the 5D "array" argument
-  SUBROUTINE reset_bounds_from_array_5D(this, array)
-    CLASS (fmsDiagIbounds_type), INTENT(inout) :: this !< The instance of the bounding box.
-    CLASS(*), INTENT( in), DIMENSION(:,:,:,:,:) :: array !< The 5D input array.
-    this%imin = LBOUND(array,1)
-    this%imax = UBOUND(array,1)
-    this%jmin = LBOUND(array,2)
-    this%jmax = UBOUND(array,2)
-    this%kmin = LBOUND(array,3)
-    this%kmax = UBOUND(array,3)
-  END SUBROUTINE  reset_bounds_from_array_5D
 
 
 

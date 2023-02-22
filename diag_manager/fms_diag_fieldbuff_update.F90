@@ -37,11 +37,12 @@ MODULE fms_diag_fieldbuff_update_mod
    USE mpp_mod, ONLY: mpp_pe, mpp_root_pe
    USE time_manager_mod, ONLY: time_type
    USE fms_mod, ONLY: error_mesg, FATAL, WARNING, NOTE, stdout, stdlog, write_version_number,fms_error_handler
-   USE diag_data_mod, ONLY:  debug_diag_manager, fmsDiagIbounds_type
+   USE diag_data_mod, ONLY:  debug_diag_manager
    USE fms_diag_outfield_mod, ONLY: fmsDiagOutfieldIndex_type, fmsDiagOutfield_type
    USE diag_util_mod, ONLY: fms_diag_check_out_of_bounds
    USE fms_diag_time_reduction_mod, ONLY: fmsDiagTimeReduction_type
    USE fms_diag_elem_weight_procs_mod, ONLY: addwf
+   USE fms_diag_bbox_mod, ONLY: fmsDiagIbounds_type
 
    implicit none
 
