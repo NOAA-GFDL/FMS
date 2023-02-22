@@ -8,6 +8,7 @@ The purpose of this documents is to explain the diag_table yaml format.
 - [2.1 Global Section](README.md#21-global-section)
 - [2.2 File Section](README.md#22-file-section)
 - [2.2.1 Flexible output timings](README.md#221-flexible-output-timings)
+- [2.2.2 Coupled Model Diag Files](README.md#222-coupled-model-diag-files)
 - [2.3 Variable Section](README.md#23-variable-section)
 - [2.4 Variable Metadata Section](README.md#24-variable-metadata-section)
 - [2.5 Global Meta Data Section](README.md#25-global-meta-data-section)
@@ -180,6 +181,15 @@ flexible_timing_0002_01_01_22.nc - using data from hour 22 to hour 23
 flexible_timing_0002_01_01_23.nc - using data from hour 23 to hour 24
 
 ```
+
+### 2.2.2 Coupled Model Diag Files
+In the *legacy ascii diag_table*, when running a coupled model (ATM + OCN) in a seperate PE list:
+  - The ATM PEs ignored the files in the diag_table that contain "OCEAN" in the filename
+  - The OCN PEs ignored the files in the diag_table that did not contain "OCEAN" in the filename
+
+In the *yaml diag_table*:
+  - The ATM PEs will ignore the files in the diag_table.yaml that contain the key/value pair `is_ocean: true`
+  - The OCN PEs will ignore the files in the diag_table.yaml that do not contain the key/value pair `is_ocean: true`
 
 ### 2.3 Variable Section
 The variables in each file are listed under the varlist section as a dashed array.
