@@ -18,23 +18,34 @@
 !***********************************************************************
 
 ! Status values:
-! * (3/14) TODO     : Not yet implemented
+! * (2/14) TODO     : Not yet implemented
 ! * (8/14) SKELETAL : Skeletal test has been implemented; comprehensive test has not yet been implemented
-! * (3/14) DONE     : Comprehensive test has been implemented
+! * (4/14) DONE     : Comprehensive test has been implemented
 
 #define PRETTY(x) trim(adjustl(string(x)))
 
 program test_axis_utils
 
-use fms_mod,         only : fms_init, fms_end
+use fms_mod,         only : fms_init, fms_end, lowercase
 use fms2_io_mod, only: FmsNetcdfFile_t, open_file, close_file, register_axis, register_field, &
                      & register_variable_attribute, write_data
 use platform_mod, only: r4_kind, r8_kind
-use mpp_mod, only: mpp_error, fatal, mpp_pe, mpp_root_pe, mpp_npes, mpp_get_current_pelist, mpp_sync, stderr
-use axis_utils2_mod
+use mpp_mod, only: mpp_error, fatal, stderr
 use fms_string_utils_mod, only: string
+use axis_utils2_mod
 
 implicit none
+
+type GetAxisCartTest_t
+  type(FmsNetcdfFile_t) :: fileobj
+  type(GetAxisCartTestCase_t), pointer :: test0, test1
+end type
+
+type GetAxisCartTestCase_t
+  character(:), allocatable :: var
+  character(1) :: cart
+  type(GetAxisCartTestCase_t), pointer :: next => NULL()
+end type
 
 integer :: i
 character(100) :: arg
@@ -126,12 +137,132 @@ subroutine test_get_axis_modulo_times
   write(stderr(), "(A)") "Warning: get_axis_modulo_times unit test not yet implemented"
 end subroutine
 
-! Status: TODO
-! subroutine get_axis_cart(fileobj, axisname, cart)
+! Status: DONE
 subroutine test_get_axis_cart
-  type(FmsNetcdfFile_t) :: fileobj
+  type(GetAxisCartTest_t) :: test
+  type(GetAxisCartTestCase_t), pointer :: test_nonexistent_var
+  character(:), allocatable :: var_name, attr_name, attr_value
+  integer :: i, j
 
-  write(stderr(), "(A)") "Warning: get_axis_cart unit test not yet implemented"
+  character(*), parameter, dimension(*) :: &
+    & special_axis_names_x = [character(12) :: "lon", "x", "degrees_e", "degrees_east", "degreese"], &
+    & special_axis_names_y = [character(13) :: "lat", "y", "degrees_n", "degrees_north", "degreesn"], &
+    & special_axis_names_z = [character(6) :: "depth", "height", "z", "cm", "m", "pa", "hpa"], &
+    & special_axis_names_t = [character(4) :: "time", "t", "sec", "min", "hou", "day", "mon", "yea"], &
+    & attr_names           = [character(14) :: "cartesian_axis", "axis"], &
+    & xyzt_uc              = ["X", "Y", "Z", "T"]
+
+  call open_netcdf_w(test%fileobj)
+  call register_axis(test%fileobj, "dim1", 1)
+
+  ! Check a variable which does not exist
+
+  allocate(test_nonexistent_var)
+  test_nonexistent_var%var = "does_not_exist"
+  test_nonexistent_var%cart = "N"
+
+  test%test0 => test_nonexistent_var
+  test%test1 => test_nonexistent_var
+
+  ! Check a variable which exists, but which has neither a "cartesian_axis" nor an "axis" attribute.
+  var_name = "exists_no_attributes"
+  call get_axis_cart_test_add(test, var_name, "N")
+
+  do i=1,size(attr_names)
+    attr_name = trim(attr_names(i))
+
+    ! Check an unknown value on a "cartesian_axis" or "axis" attribute
+    ! TODO: This test fails. Should get_axis_cart be changed, or should this test be changed?
+    attr_value = "unexpected"
+    var_name = attr_name // "_attr_value_" // attr_value
+    call get_axis_cart_test_add(test, var_name, "N")
+    call register_variable_attribute(test%fileobj, var_name, attr_name, attr_value, str_len=len(attr_value))
+
+    do j=1,size(xyzt_uc)
+      ! Check upper-case "axis" attributes"
+      attr_value = xyzt_uc(j)
+      var_name = attr_name // "_attr_value_" // attr_value
+      call get_axis_cart_test_add(test, var_name, xyzt_uc(j))
+      call register_variable_attribute(test%fileobj, var_name, attr_name, attr_value, str_len=len(attr_value))
+
+      ! Check lower-case "axis" attributes"
+      attr_value = lowercase(xyzt_uc(j))
+      var_name = attr_name // "_attr_value_" // attr_value
+      call get_axis_cart_test_add(test, var_name, xyzt_uc(j))
+      call register_variable_attribute(test%fileobj, var_name, attr_name, attr_value, str_len=len(attr_value))
+    enddo
+  enddo
+
+  call test_special_axis_names(test, special_axis_names_x, "X")
+  call test_special_axis_names(test, special_axis_names_y, "Y")
+  call test_special_axis_names(test, special_axis_names_z, "Z")
+  call test_special_axis_names(test, special_axis_names_t, "T")
+
+  call close_file(test%fileobj)
+
+  call get_axis_cart_tests_run(test)
+end subroutine
+
+subroutine get_axis_cart_test_add(test, var_name, cart)
+  type(GetAxisCartTest_t), intent(inout) :: test
+  type(GetAxisCartTestCase_t), pointer :: test_case
+  character(*), intent(in) :: var_name
+  character(1), intent(in) :: cart
+
+#define r4_kind "float"
+#define r8_kind "double"
+  character(*), parameter :: kind_str = AU_TEST_KIND
+#undef r4_kind
+#undef r8_kind
+
+  call register_field(test%fileobj, var_name, kind_str, dimensions=["dim1"])
+
+  allocate(test_case)
+  test_case%var = var_name
+  test_case%cart = cart
+
+  test%test1%next => test_case
+  test%test1 => test_case
+end subroutine
+
+subroutine get_axis_cart_tests_run(test)
+  type(GetAxisCartTest_t), intent(inout) :: test
+  type(GetAxisCartTestCase_t), pointer :: test_case, next
+  character(1) :: cart_test
+  integer :: i
+
+  call open_netcdf_r(test%fileobj)
+
+  test_case => test%test0
+
+  do while (associated(test_case))
+    cart_test = " "
+    call get_axis_cart(test%fileobj, test_case%var, cart_test)
+
+    if (cart_test .ne. test_case%cart) then
+      write(stderr(), "(A)") "get_axis_cart result for variable '" // test_case%var // "': " // cart_test
+      write(stderr(), "(A)") "Expected result: " // test_case%cart
+      call mpp_error(FATAL, "get_axis_cart unit test failed")
+    endif
+
+    next => test_case%next
+    deallocate(test_case)
+    test_case => next
+  enddo
+
+  call close_file(test%fileobj)
+end subroutine
+
+subroutine test_special_axis_names(test, special_axis_names, ret_expected)
+  type(GetAxisCartTest_t), intent(inout) :: test
+  character(*), intent(in) :: special_axis_names(:), ret_expected
+  character(:), allocatable :: var_name
+  integer :: i
+
+  do i=1,size(special_axis_names)
+    var_name = trim(special_axis_names(i))
+    call get_axis_cart_test_add(test, var_name, ret_expected)
+  enddo
 end subroutine
 
 ! Status: DONE
@@ -325,32 +456,28 @@ subroutine test_axis_edges
 
   data_in_answers(11) = 10.
 
-  if (mpp_pe() .eq. mpp_root_pe()) then
-    call open_netcdf_w(fileobj)
+  call open_netcdf_w(fileobj)
 
-    call register_axis(fileobj, "dim1", 10)
-    call register_axis(fileobj, "dim2", 2)
+  call register_axis(fileobj, "dim1", 10)
+  call register_axis(fileobj, "dim2", 2)
 
-    call register_field(fileobj, "axis", "double", dimensions=["dim1"])
+  call register_field(fileobj, "axis", "double", dimensions=["dim1"])
 
-    call register_field(fileobj, "axis_with_bounds", "double", dimensions=["dim1"])
-    call register_variable_attribute(fileobj, "axis_with_bounds", "bounds", "bounds", str_len=6)
-    call register_field(fileobj, "bounds", "double", dimensions=["dim2", "dim1"])
+  call register_field(fileobj, "axis_with_bounds", "double", dimensions=["dim1"])
+  call register_variable_attribute(fileobj, "axis_with_bounds", "bounds", "bounds", str_len=6)
+  call register_field(fileobj, "bounds", "double", dimensions=["dim2", "dim1"])
 
-    call register_field(fileobj, "axis_with_edges", "double", dimensions=["dim1"])
-    call register_variable_attribute(fileobj, "axis_with_edges", "edges", "edges"//char(0), str_len=6)
-    call register_field(fileobj, "edges", "double", dimensions=["dim2", "dim1"])
+  call register_field(fileobj, "axis_with_edges", "double", dimensions=["dim1"])
+  call register_variable_attribute(fileobj, "axis_with_edges", "edges", "edges"//char(0), str_len=6)
+  call register_field(fileobj, "edges", "double", dimensions=["dim2", "dim1"])
 
-    call write_data(fileobj, "axis", data_in_var)
-    call write_data(fileobj, "axis_with_bounds", data_in_var)
-    call write_data(fileobj, "axis_with_edges", data_in_var)
-    call write_data(fileobj, "bounds", data_in_var_edges)
-    call write_data(fileobj, "edges", data_in_var_edges)
+  call write_data(fileobj, "axis", data_in_var)
+  call write_data(fileobj, "axis_with_bounds", data_in_var)
+  call write_data(fileobj, "axis_with_edges", data_in_var)
+  call write_data(fileobj, "bounds", data_in_var_edges)
+  call write_data(fileobj, "edges", data_in_var_edges)
 
-    call close_file(fileobj)
-  endif
-
-  call mpp_sync
+  call close_file(fileobj)
 
   call open_netcdf_r(fileobj)
 
@@ -570,16 +697,10 @@ end subroutine
 
 subroutine open_netcdf_r(fileobj)
   type(FmsNetcdfFile_t), intent(out) :: fileobj
-  integer, allocatable  :: pes(:)
 
-  allocate(pes(mpp_npes()))
-  call mpp_get_current_pelist(pes)
-
-  if (.not.open_file(fileobj, "test_axis_utils.nc", "read", pelist=pes)) then
+  if (.not.open_file(fileobj, "test_axis_utils.nc", "read")) then
     call mpp_error(FATAL, "Error opening test_axis_utils.nc to read")
   endif
-
-  deallocate(pes)
 end subroutine
 
 subroutine array_compare_1d(arr1, arr2, msg)
