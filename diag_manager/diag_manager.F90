@@ -1494,8 +1494,8 @@ CONTAINS
     REAL(kind=r4_kind), POINTER, DIMENSION(:,:,:) :: rmask_ptr_r4 !< A pointer to r4 type of rmask
     REAL(kind=r8_kind), POINTER, DIMENSION(:,:,:) :: rmask_ptr_r8 !<A pointer to r8 type of rmask
 
-    TYPE(fmsDiagOutfieldIndex_type), ALLOCATABLE:: ofield_index_cfg !<Instance  used in calling math funcsions.
-    TYPE(fmsDiagOutfield_type), ALLOCATABLE:: ofield_cfg !<Instance  used in calling math funcsions.
+    TYPE(fmsDiagOutfieldIndex_type), ALLOCATABLE:: ofield_index_cfg !<Instance used in calling math functions.
+    TYPE(fmsDiagOutfield_type), ALLOCATABLE:: ofield_cfg !<Instance  used in calling math functions.
     LOGICAL :: mf_result !<Logical result returned from some math (buffer udate) functions.
 
     REAL :: rmask_threshold !< Holds the values 0.5_r4_kind or 0.5_r8_kind, or related threhold values
