@@ -1491,9 +1491,8 @@ CONTAINS
 
     REAL, ALLOCATABLE, DIMENSION(:,:,:) :: field_out !< Local copy of field
 
-    REAL(kind=r4_kind), POINTER, DIMENSION(:,:,:) :: rmask_ptr_r4 => null() !< A pointer to r4 type of rmask
-    REAL(kind=r8_kind), POINTER, DIMENSION(:,:,:) :: rmask_ptr_r8 => null() !<A pointer to r8 type of rmask
-    !!LOGICAL , pointer, DIMENSION(:,:,:) :: mask_ptr => null() !< A pointer to mask
+    REAL(kind=r4_kind), POINTER, DIMENSION(:,:,:) :: rmask_ptr_r4 !< A pointer to r4 type of rmask
+    REAL(kind=r8_kind), POINTER, DIMENSION(:,:,:) :: rmask_ptr_r8 !<A pointer to r8 type of rmask
 
     TYPE(fmsDiagOutfieldIndex_type), ALLOCATABLE:: ofield_index_cfg !<Instance  used in calling math funcsions.
     TYPE(fmsDiagOutfield_type), ALLOCATABLE:: ofield_cfg !<Instance  used in calling math funcsions.
@@ -1555,6 +1554,8 @@ CONTAINS
        oor_mask = .TRUE.
     END IF
 
+    rmask_ptr_r4  => null()
+    rmask_ptr_r8  => null()
     IF ( PRESENT(rmask) ) THEN
        SELECT TYPE (rmask)
        TYPE IS (real(kind=r4_kind))

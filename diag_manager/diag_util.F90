@@ -1045,7 +1045,7 @@ END SUBROUTINE check_bounds_are_exact_dynamic
                                                !! if the check fails.
 
     CHARACTER(len=128)  :: error_string1, error_string2
-    LOGICAL :: lims_not_exact = .true.
+    LOGICAL :: lims_not_exact
 
     err_msg = ''
     lims_not_exact = compare_buffer_bounds_to_size(current_bounds, bounds,  &

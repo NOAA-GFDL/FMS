@@ -879,7 +879,7 @@ FUNCTION FMS_DIAG_FBCF_PNAME_ (ofield_cfg, ofield_index_cfg, field, sample, ofb,
       FMS_DIAG_FBU_DATA_TYPE_ , DIMENSION(:,:,:,:,:), INTENT(inout) :: ofb   !< The Output Field Buffer
       TYPE(fmsDiagIbounds_type), INTENT(inout) :: bbounds !< The array bounds of the ofb argument.
       FMS_DIAG_FBU_DATA_TYPE_ , INTENT(inout) :: count_0d   !< Normally the member of the buffer of same name,
-      LOGICAL, CONTIGUOUS, DIMENSION(:,:,:,:), INTENT(in), OPTIONAL :: mask
+      LOGICAL, CONTIGUOUS, DIMENSION(:,:,:,:), INTENT(in), OPTIONAL :: mask !< The mask of the corresponding field.
       FMS_DIAG_FBU_DATA_TYPE_ , INTENT(in) :: missvalue !< buffer may be set to this value where mask is false.
       INTEGER, DIMENSION(3), INTENT(in)  :: l_start   !< local start indices on spatial axes for regional output
       INTEGER, DIMENSION(3), INTENT(in)  :: l_end   !< local end indices on spatial for regional output
