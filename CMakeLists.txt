@@ -124,6 +124,11 @@ list(APPEND fms_fortran_src_files
   diag_manager/diag_output.F90
   diag_manager/diag_table.F90
   diag_manager/diag_util.F90
+  diag_manager/fms_diag_time_reduction.F90
+  diag_manager/fms_diag_outfield.F90
+  diag_manager/fms_diag_elem_weight_procs.F90
+  diag_manager/fms_diag_fieldbuff_update.F90
+  diag_manager/fms_diag_bbox.F90
   drifters/cloud_interpolator.F90
   drifters/drifters.F90
   drifters/drifters_comm.F90
@@ -292,6 +297,7 @@ foreach(kind ${kinds})
                                                  fms
                                                  fms2_io/include
                                                  mpp/include
+                                                 diag_manager/include
                                                  constants4
                                                  constants)
   target_compile_definitions(${libTgt}_f PRIVATE "${fms_defs}")
@@ -328,7 +334,8 @@ foreach(kind ${kinds})
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/fms>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/fms2_io/include>
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/mpp/include>)
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/mpp/include>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/diag_manager/include>)
 
   target_include_directories(${libTgt} INTERFACE
     $<BUILD_INTERFACE:${moduleDir}>
