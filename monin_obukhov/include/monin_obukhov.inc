@@ -37,7 +37,8 @@ logical                                              :: lavail, avail_dummy(1)
 integer                                              :: n, ier
 
 integer, parameter                                   :: max_iter = 20
-real(kind=FMS_MO_KIND_), parameter                   :: error=1.e-04, zeta_min=1.e-06, small=1.e-04
+real(kind=FMS_MO_KIND_), parameter                   :: error=real(1.d-04, FMS_MO_KIND_), &
+                                                        zeta_min=real(1.d-06, FMS_MO_KIND_), small=real(1.d-04, FMS_MO_KIND_)
 
 ! #include "monin_obukhov_interfaces.h"
 
@@ -183,8 +184,8 @@ logical, intent(in) , dimension(:)                 :: mask
 real(kind=FMS_MO_KIND_), intent(out), dimension(:) :: f_m, f_t, f_q
 
 
-real(kind=FMS_MO_KIND_), parameter                 :: error    = 1.e-04
-real(kind=FMS_MO_KIND_), parameter                 :: zeta_min = 1.e-06
+real(kind=FMS_MO_KIND_), parameter                 :: error    = real(1.d-04, FMS_MO_KIND_)
+real(kind=FMS_MO_KIND_), parameter                 :: zeta_min = real(1.d-06, FMS_MO_KIND_)
 integer, parameter                                 :: max_iter = 20
 
 real(kind=FMS_MO_KIND_)                            :: max_cor

@@ -81,8 +81,8 @@ pure subroutine MONIN_OBUKHOV_DRAG_1D_(grav, vonkarm,               &
 
   real(kind=FMS_MO_KIND_), intent(in)                  :: grav
   real(kind=FMS_MO_KIND_), intent(in)                  :: vonkarm
-  real(kind=FMS_MO_KIND_), intent(in)                  :: error    !< = 1.e-04
-  real(kind=FMS_MO_KIND_), intent(in)                  :: zeta_min !< = 1.e-06
+  real(kind=FMS_MO_KIND_), intent(in)                  :: error    !< = 1.d-04
+  real(kind=FMS_MO_KIND_), intent(in)                  :: zeta_min !< = 1.d-06
   integer, intent(in)                                  :: max_iter !< = 20
   real(kind=FMS_MO_KIND_), intent(in)                  :: small    !< = 1.e-04
   logical, intent(in)                                  :: neutral
