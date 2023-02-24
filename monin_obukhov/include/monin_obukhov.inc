@@ -301,7 +301,7 @@ stable   = mask .and. zeta >= 0.0_lkind
 unstable = mask .and. zeta <  0.0_lkind
 
 where (unstable)
-  x     = (1 - 16.0_lkind*zeta  )**(-0.5_lkind)
+  x     = (1.0_lkind - 16.0_lkind*zeta  )**(-0.5_lkind)
   phi_m = sqrt(x)  ! phi_m = (1 - 16.0*zeta)**(-0.25)
 end where
 
@@ -315,7 +315,7 @@ if(stable_option == 1) then
 else if(stable_option == 2) then
 
   where (stable .and. zeta < zeta_trans)
-    phi_m = 1 + 5.0_lkind*zeta
+    phi_m = 1.0_lkind + 5.0_lkind*zeta
   end where
   where (stable .and. zeta >= zeta_trans)
     phi_m = real(lambda, FMS_MO_KIND_) + real(b_stab, FMS_MO_KIND_)*real(zeta, FMS_MO_KIND_)
@@ -343,7 +343,7 @@ stable   = mask .and. zeta >= 0.0_lkind
 unstable = mask .and. zeta <  0.0_lkind
 
 where (unstable)
-  phi_t = (1 - 16.0_lkind*zeta)**(-0.5_lkind)
+  phi_t = (1.0_lkind - 16.0_lkind*zeta)**(-0.5_lkind)
 end where
 
 if(stable_option == 1) then
@@ -356,7 +356,7 @@ if(stable_option == 1) then
 else if(stable_option == 2) then
 
   where (stable .and. zeta < zeta_trans)
-    phi_t = 1 + 5.0_lkind*zeta
+    phi_t = 1.0_lkind + 5.0_lkind*zeta
   end where
   where (stable .and. zeta >= zeta_trans)
     phi_t = real(lambda, FMS_MO_KIND_) + real(b_stab, FMS_MO_KIND_)*real(zeta, FMS_MO_KIND_)
@@ -389,9 +389,9 @@ unstable = mask .and. zeta <  0.0_lkind
 
 where(unstable)
 
-  x     = sqrt(1 - 16.0_lkind*zeta)
-  x_t   = sqrt(1 - 16.0_lkind*zeta_t)
-  x_q   = sqrt(1 - 16.0_lkind*zeta_q)
+  x     = sqrt(1.0_lkind - 16.0_lkind*zeta)
+  x_t   = sqrt(1.0_lkind - 16.0_lkind*zeta_t)
+  x_q   = sqrt(1.0_lkind - 16.0_lkind*zeta_q)
 
   psi_t = ln_z_zt - 2.0_lkind*log( (1.0_lkind + x)/(1.0_lkind + x_t) )
   psi_q = ln_z_zq - 2.0_lkind*log( (1.0_lkind + x)/(1.0_lkind + x_q) )
@@ -470,8 +470,8 @@ unstable = mask .and. zeta <  0.0_lkind
 
 where(unstable)
 
-  x      = sqrt(1 - 16.0_lkind*zeta)
-  x_0    = sqrt(1 - 16.0_lkind*zeta_0)
+  x      = sqrt(1.0_lkind - 16.0_lkind*zeta)
+  x_0    = sqrt(1.0_lkind - 16.0_lkind*zeta_0)
 
   x      = sqrt(x)
   x_0    = sqrt(x_0)
@@ -482,7 +482,7 @@ where(unstable)
   num    = x1*x1*(1.0_lkind + x*x)
   denom  = x1_0*x1_0*(1.0_lkind + x_0*x_0)
   y      = atan(x) - atan(x_0)
-  psi_m  = ln_z_z0 - log(num/denom) + 2*y
+  psi_m  = ln_z_z0 - log(num/denom) + 2.0_lkind*y
 
 end where
 

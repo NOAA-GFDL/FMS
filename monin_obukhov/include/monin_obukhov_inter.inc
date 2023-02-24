@@ -327,11 +327,11 @@ pure subroutine MONIN_OBUKHOV_DERIVATIVE_T_(stable_option,new_mo_option,rich_cri
 !miz: modified to include new monin-obukhov option
   if (new_mo_option) then
      where (unstable)
-        phi_t = (1 - 16.0_lkind*zeta)**(-1.0_lkind/3.0_lkind)
+        phi_t = (1.0_lkind - 16.0_lkind*zeta)**(-1.0_lkind/3.0_lkind)
      end where
   else
   where (unstable)
-     phi_t = (1 - 16.0_lkind*zeta)**(-0.5_lkind)
+     phi_t = (1.0_lkind - 16.0_lkind*zeta)**(-0.5_lkind)
   end where
   end if
 !miz
@@ -347,7 +347,7 @@ pure subroutine MONIN_OBUKHOV_DERIVATIVE_T_(stable_option,new_mo_option,rich_cri
      lambda = 1.0_lkind + (5.0_lkind - b_stab)*zeta_trans
 
      where (stable .and. zeta < zeta_trans)
-        phi_t = 1 + 5.0_lkind*zeta
+        phi_t = 1.0_lkind + 5.0_lkind*zeta
      end where
      where (stable .and. zeta >= zeta_trans)
         phi_t = lambda + b_stab*zeta
@@ -382,14 +382,14 @@ pure subroutine MONIN_OBUKHOV_DERIVATIVE_M_(stable_option, rich_crit, zeta_trans
   unstable = mask .and. zeta <  0.0_lkind
 
   where (unstable)
-     x     = (1 - 16.0_lkind*zeta  )**(-0.5_lkind)
+     x     = (1.0_lkind - 16.0_lkind*zeta  )**(-0.5_lkind)
      phi_m = sqrt(x) ! phi_m = (1 - 16.0*zeta)**(-0.25)
   end where
 
   if(stable_option == 1) then
 
      where (stable)
-        phi_m = 1.0_lkind + zeta  *(5.0_lkind + b_stab*zeta)/(1.0 + zeta)
+        phi_m = 1.0_lkind + zeta  *(5.0_lkind + b_stab*zeta)/(1.0_lkind + zeta)
      end where
 
   else if(stable_option == 2) then
@@ -397,7 +397,7 @@ pure subroutine MONIN_OBUKHOV_DERIVATIVE_M_(stable_option, rich_crit, zeta_trans
      lambda = 1.0_lkind + (5.0_lkind - b_stab)*zeta_trans
 
      where (stable .and. zeta < zeta_trans)
-        phi_m = 1 + 5.0_lkind*zeta
+        phi_m = 1.0_lkind + 5.0_lkind*zeta
      end where
      where (stable .and. zeta >= zeta_trans)
         phi_m = lambda + b_stab*zeta
@@ -519,8 +519,8 @@ pure subroutine MONIN_OBUKHOV_INTEGRAL_M_(stable_option, rich_crit, zeta_trans, 
 
   where(unstable)
 
-     x      = sqrt(1 - 16.0_lkind*zeta)
-     x_0    = sqrt(1 - 16.0_lkind*zeta_0)
+     x      = sqrt(1.0_lkind - 16.0_lkind*zeta)
+     x_0    = sqrt(1.0_lkind - 16.0_lkind*zeta_0)
 
      x      = sqrt(x)
      x_0    = sqrt(x_0)
@@ -531,7 +531,7 @@ pure subroutine MONIN_OBUKHOV_INTEGRAL_M_(stable_option, rich_crit, zeta_trans, 
      num    = x1*x1*(1.0_lkind + x*x)
      denom  = x1_0*x1_0*(1.0_lkind + x_0*x_0)
      y      = atan(x) - atan(x_0)
-     psi_m  = ln_z_z0 - log(num/denom) + 2*y
+     psi_m  = ln_z_z0 - log(num/denom) + 2.0_lkind*y
 
   end where
 
@@ -601,22 +601,22 @@ unstable = mask .and. zeta <  0.0_lkind
 if (new_mo_option) then
  s3 = sqrt(3.0_lkind)
  where(unstable)
-  x     = (1 - 16.0_lkind*zeta)**(1.0_lkind/3.0_lkind)
-  x_t   = (1 - 16.0_lkind*zeta_t)**(1.0_lkind/3.0_lkind)
-  x_q   = (1 - 16.0*zeta_q)**(1.0_lkind/3.0_lkind)
+  x     = (1.0_lkind - 16.0_lkind*zeta)**(1.0_lkind/3.0_lkind)
+  x_t   = (1.0_lkind - 16.0_lkind*zeta_t)**(1.0_lkind/3.0_lkind)
+  x_q   = (1.0_lkind - 16.0*zeta_q)**(1.0_lkind/3.0_lkind)
 
-  psi_t = ln_z_zt - 1.5_lkind*log((x**2+x+1)/(x_t**2 + x_t + 1)) + s3*(atan((2*x+1)/s3) - &
-               atan((2*x_t + 1)/s3))
-  psi_q = ln_z_zq - 1.5_lkind*log((x**2+x+1)/(x_q**2 + x_q + 1)) + s3*(atan((2*x+1)/s3) - &
-              atan((2*x_q + 1)/s3))
+  psi_t = ln_z_zt - 1.5_lkind*log((x**2+x+1.0_lkind)/(x_t**2 + x_t + 1.0_lkind)) + s3 * &
+          (atan((2.0_lkind*x+1.0_lkind)/s3) - atan((2.0_lkind*x_t + 1.0_lkind)/s3))
+  psi_q = ln_z_zq - 1.5_lkind*log((x**2+x+1.0_lkind)/(x_q**2 + x_q + 1.0_lkind)) + s3 * &
+          (atan((2.0_lkind*x+1.0_lkind)/s3) - atan((2.0_lkind*x_q + 1.0_lkind)/s3))
   end where
 else
 
 where(unstable)
 
-  x     = sqrt(1 - 16.0_lkind*zeta)
-  x_t   = sqrt(1 - 16.0_lkind*zeta_t)
-  x_q   = sqrt(1 - 16.0_lkind*zeta_q)
+  x     = sqrt(1.0_lkind - 16.0_lkind*zeta)
+  x_t   = sqrt(1.0_lkind - 16.0_lkind*zeta_t)
+  x_q   = sqrt(1.0_lkind - 16.0_lkind*zeta_q)
 
   psi_t = ln_z_zt - 2.0_lkind*log( (1.0_lkind + x)/(1.0_lkind + x_t) )
   psi_q = ln_z_zq - 2.0_lkind*log( (1.0_lkind + x)/(1.0_lkind + x_q) )
