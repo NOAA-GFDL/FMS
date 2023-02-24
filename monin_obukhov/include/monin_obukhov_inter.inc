@@ -230,8 +230,8 @@ pure subroutine MONIN_OBUKHOV_SOLVE_ZETA_(error, zeta_min, max_iter, small,  &
      zeta = rich*ln_z_z0*ln_z_z0/ln_z_zt
   end where
 
-  where (mask_1 .and. rich >= 0.0)
-     zeta = zeta/(1.0 - rich/rich_crit)
+  where (mask_1 .and. rich >= 0.0_lkind)
+     zeta = zeta/(1.0_lkind - rich/rich_crit)
   end where
 
   iter_loop: do iter = 1, max_iter
