@@ -22,6 +22,7 @@
 ! * (8/14) SKELETAL : Skeletal test has been implemented; comprehensive test has not yet been implemented
 ! * (4/14) DONE     : Comprehensive test has been implemented
 
+#define C(x) x _ AU_TEST_KIND
 #define PRETTY(x) trim(adjustl(string(x)))
 
 program test_axis_utils
@@ -267,40 +268,40 @@ end subroutine
 
 ! Status: DONE
 subroutine test_lon_in_range
-  real(AU_TEST_KIND), parameter :: eps_big = 1e-3, eps_tiny = 1e-5
+  real(AU_TEST_KIND), parameter :: eps_big = C(1e-3), eps_tiny = C(1e-5)
 
   ! Test some cases where no translation is needed
-  call lon_in_range_assert(0._   AU_TEST_KIND,            0._  AU_TEST_KIND, 0._   AU_TEST_KIND)
-  call lon_in_range_assert(1._   AU_TEST_KIND,            0._  AU_TEST_KIND, 1._   AU_TEST_KIND)
-  call lon_in_range_assert(350._ AU_TEST_KIND,            0._  AU_TEST_KIND, 350._ AU_TEST_KIND)
-  call lon_in_range_assert(1._   AU_TEST_KIND,            1._  AU_TEST_KIND, 1._   AU_TEST_KIND)
-  call lon_in_range_assert(350._ AU_TEST_KIND,            1._  AU_TEST_KIND, 350._ AU_TEST_KIND)
-  call lon_in_range_assert(359._ AU_TEST_KIND,            0._  AU_TEST_KIND, 359._ AU_TEST_KIND)
-  call lon_in_range_assert(359._ AU_TEST_KIND,            1._  AU_TEST_KIND, 359._ AU_TEST_KIND)
+  call lon_in_range_assert(C(0.),              C(0.),  C(0.))
+  call lon_in_range_assert(C(1.),              C(0.),  C(1.))
+  call lon_in_range_assert(C(350.),            C(0.),  C(350.))
+  call lon_in_range_assert(C(1.),              C(1.),  C(1.))
+  call lon_in_range_assert(C(350.),            C(1.),  C(350.))
+  call lon_in_range_assert(C(359.),            C(0.),  C(359.))
+  call lon_in_range_assert(C(359.),            C(1.),  C(359.))
 
   ! Test up-translation
-  call lon_in_range_assert(-2._  AU_TEST_KIND,            -1._ AU_TEST_KIND, 358._ AU_TEST_KIND)
-  call lon_in_range_assert(-2._  AU_TEST_KIND,            0._  AU_TEST_KIND, 358._ AU_TEST_KIND)
-  call lon_in_range_assert(-2._  AU_TEST_KIND,            5._  AU_TEST_KIND, 358._ AU_TEST_KIND)
-  call lon_in_range_assert(-1._  AU_TEST_KIND,            0._  AU_TEST_KIND, 359._ AU_TEST_KIND)
-  call lon_in_range_assert(-1._  AU_TEST_KIND,            5._  AU_TEST_KIND, 359._ AU_TEST_KIND)
-  call lon_in_range_assert(0._   AU_TEST_KIND,            5._  AU_TEST_KIND, 360._ AU_TEST_KIND)
-  call lon_in_range_assert(1._   AU_TEST_KIND,            5._  AU_TEST_KIND, 361._ AU_TEST_KIND)
+  call lon_in_range_assert(C(-2.),             C(-1.), C(358.))
+  call lon_in_range_assert(C(-2.),             C(0.),  C(358.))
+  call lon_in_range_assert(C(-2.),             C(5.),  C(358.))
+  call lon_in_range_assert(C(-1.),             C(0.),  C(359.))
+  call lon_in_range_assert(C(-1.),             C(5.),  C(359.))
+  call lon_in_range_assert(C(0.),              C(5.),  C(360.))
+  call lon_in_range_assert(C(1.),              C(5.),  C(361.))
 
   ! Test down-translation
-  call lon_in_range_assert(359._ AU_TEST_KIND,            -1._ AU_TEST_KIND, -1._  AU_TEST_KIND)
-  call lon_in_range_assert(360._ AU_TEST_KIND,            -1._ AU_TEST_KIND, 0._   AU_TEST_KIND)
-  call lon_in_range_assert(360._ AU_TEST_KIND,            0._  AU_TEST_KIND, 0._   AU_TEST_KIND)
-  call lon_in_range_assert(361._ AU_TEST_KIND,            -1._ AU_TEST_KIND, 1._   AU_TEST_KIND)
-  call lon_in_range_assert(361._ AU_TEST_KIND,            0._  AU_TEST_KIND, 1._   AU_TEST_KIND)
-  call lon_in_range_assert(362._ AU_TEST_KIND,            -1._ AU_TEST_KIND, 2._   AU_TEST_KIND)
-  call lon_in_range_assert(362._ AU_TEST_KIND,            0._  AU_TEST_KIND, 2._   AU_TEST_KIND)
+  call lon_in_range_assert(C(359.),            C(-1.), C(-1.))
+  call lon_in_range_assert(C(360.),            C(-1.), C(0.))
+  call lon_in_range_assert(C(360.),            C(0.),  C(0.))
+  call lon_in_range_assert(C(361.),            C(-1.), C(1.))
+  call lon_in_range_assert(C(361.),            C(0.),  C(1.))
+  call lon_in_range_assert(C(362.),            C(-1.), C(2.))
+  call lon_in_range_assert(C(362.),            C(0.),  C(2.))
 
   ! Test rounding behavior
-  call lon_in_range_assert(eps_tiny,                      0._  AU_TEST_KIND, 0._   AU_TEST_KIND)
-  call lon_in_range_assert(eps_big,                       0._  AU_TEST_KIND, eps_big)
-  call lon_in_range_assert(360._ AU_TEST_KIND - eps_tiny, 0._  AU_TEST_KIND, 0._   AU_TEST_KIND)
-  call lon_in_range_assert(360._ AU_TEST_KIND - eps_big,  0._  AU_TEST_KIND, 360._ AU_TEST_KIND - eps_big)
+  call lon_in_range_assert(eps_tiny,           C(0.),  C(0.))
+  call lon_in_range_assert(eps_big,            C(0.),  eps_big)
+  call lon_in_range_assert(C(360.) - eps_tiny, C(0.),  C(0.))
+  call lon_in_range_assert(C(360.) - eps_big,  C(0.),  C(360.) - eps_big)
 end subroutine
 
 subroutine lon_in_range_assert(lon, l_start, ret_expected)
@@ -322,14 +323,14 @@ end subroutine
 subroutine test_frac_index
   real(AU_TEST_KIND) :: values(6), v, fi
   integer :: i, n
-  real(AU_TEST_KIND), parameter :: f10=0.1, f25=0.25, f50=0.5, f99=0.99
+  real(AU_TEST_KIND), parameter :: f10=C(0.1), f25=C(0.25), f50=C(0.5), f99=C(0.99)
 
-  values = [1., 2., 3., 5., 10., 11.]
+  values = [C(1.), C(2.), C(3.), C(5.), C(10.), C(11.)]
   n = size(values)
 
   ! Test values outside of the input array
-  call frac_index_assert(real(values(1), AU_TEST_KIND) - f50, values, -1._ AU_TEST_KIND)
-  call frac_index_assert(real(values(n), AU_TEST_KIND) + f50, values, -1._ AU_TEST_KIND)
+  call frac_index_assert(real(values(1), AU_TEST_KIND) - f50, values, C(-1.))
+  call frac_index_assert(real(values(n), AU_TEST_KIND) + f50, values, C(-1.))
 
   ! Test the actual indices
   do i=1,n
@@ -384,33 +385,33 @@ subroutine test_frac_index_fail
   real(AU_TEST_KIND) :: values(5)
   real(AU_TEST_KIND) :: ret_test
 
-  values = [1., 2., 4., 3., 5.]
-  ret_test = frac_index(1.5_ AU_TEST_KIND, values)
+  values = [C(1.), C(2.), C(4.), C(3.), C(5.)]
+  ret_test = frac_index(C(1.5), values)
 end subroutine
 
 ! Status: SKELETAL
 subroutine test_nearest_index
   real(AU_TEST_KIND) :: arr(5)
 
-  arr = [5., 12., 20., 40., 100.]
+  arr = [C(5.), C(12.), C(20.), C(40.), C(100.)]
 
   ! Test values beyond array boundaries
-  call nearest_index_assert(4._ AU_TEST_KIND, arr, 1)
-  call nearest_index_assert(1000._ AU_TEST_KIND, arr, size(arr))
+  call nearest_index_assert(C(4.), arr, 1)
+  call nearest_index_assert(C(1000.), arr, size(arr))
 
   ! Test values actually in the array
-  call nearest_index_assert(5._ AU_TEST_KIND, arr, 1)
-  call nearest_index_assert(12._ AU_TEST_KIND, arr, 2)
-  call nearest_index_assert(20._ AU_TEST_KIND, arr, 3)
-  call nearest_index_assert(40._ AU_TEST_KIND, arr, 4)
-  call nearest_index_assert(100._ AU_TEST_KIND, arr, 5)
+  call nearest_index_assert(C(5.), arr, 1)
+  call nearest_index_assert(C(12.), arr, 2)
+  call nearest_index_assert(C(20.), arr, 3)
+  call nearest_index_assert(C(40.), arr, 4)
+  call nearest_index_assert(C(100.), arr, 5)
 
   ! Test the intervals between array values
-  call nearest_index_assert(6._ AU_TEST_KIND, arr, 1)
-  call nearest_index_assert(11._ AU_TEST_KIND, arr, 2)
-  call nearest_index_assert(15._ AU_TEST_KIND, arr, 2)
-  call nearest_index_assert(18._ AU_TEST_KIND, arr, 3)
-  call nearest_index_assert(29._ AU_TEST_KIND, arr, 3)
+  call nearest_index_assert(C(6.), arr, 1)
+  call nearest_index_assert(C(11.), arr, 2)
+  call nearest_index_assert(C(15.), arr, 2)
+  call nearest_index_assert(C(18.), arr, 3)
+  call nearest_index_assert(C(29.), arr, 3)
 end subroutine
 
 subroutine nearest_index_assert(val, arr, ret_expected)
@@ -432,8 +433,8 @@ subroutine test_nearest_index_fail
   real(AU_TEST_KIND) :: arr(5)
   integer :: ret_test
 
-  arr=[5., 12., 40., 20., 100.]
-  ret_test = nearest_index(5._ AU_TEST_KIND, arr)
+  arr=[C(5.), C(12.), C(40.), C(20.), C(100.)]
+  ret_test = nearest_index(C(5.), arr)
 end subroutine
 
 ! Status: DONE
@@ -446,7 +447,7 @@ subroutine test_axis_edges
   integer :: i
 
   do i=1,10
-     data_in_var(i) = real(i, AU_TEST_KIND) - 0.5_ AU_TEST_KIND
+     data_in_var(i) = real(i, AU_TEST_KIND) - C(0.5)
 
      data_in_var_edges(1,i) = real(i-1, AU_TEST_KIND)
      data_in_var_edges(2,i) = real(i, AU_TEST_KIND)
@@ -454,7 +455,7 @@ subroutine test_axis_edges
      data_in_answers(i) = real(i-1, AU_TEST_KIND)
   enddo
 
-  data_in_answers(11) = 10.
+  data_in_answers(11) = C(10.)
 
   call open_netcdf_w(fileobj)
 
@@ -483,26 +484,26 @@ subroutine test_axis_edges
 
   !< Case 1: Here the variable "axis" in the file does not have the attribute "bounds" or "edges", so
   !! it calculates them from the data in "axis"
-  answers = 0.0
+  answers = C(0.)
   call axis_edges(fileobj, "axis", answers)
   call array_compare_1d(answers, data_in_answers, "axis_edges unit test failed (case 1)")
 
   !< Case 2: Here the variable "axis_with_bounds" in the file has the attribute
   !! "bounds", so the data is read from the variable "bounds"
-  answers = 0.0
+  answers = C(0.)
   call axis_edges(fileobj, "axis_with_bounds", answers)
   call array_compare_1d(answers, data_in_answers, "axis_edges unit test failed (case 2)")
 
   !< Case 3: Here the variable "axis_with_edges" in the file has the attribute
   !"edges", so the data is read from the variable "edges"
-  answers = 0.0
+  answers = C(0.)
   call axis_edges(fileobj, "axis_with_edges", answers)
   call array_compare_1d(answers, data_in_answers, "axis_edges unit test failed (case 3)")
 
   !< Case 4: Here the flag "reproduce_null_char_bug_flag" is turned on, so the
   !! edges are calculated from the data in axis because edges has a null character
   !! in the end
-  answers = 0.0
+  answers = C(0.)
   call axis_edges(fileobj, "axis_with_edges", answers, reproduce_null_char_bug_flag=.true.)
   call array_compare_1d(answers, data_in_answers, "axis_edges unit test failed (case 4)")
 
@@ -513,17 +514,17 @@ end subroutine
 subroutine test_tranlon
   real(AU_TEST_KIND), dimension(5) :: lon1, lon2, lon3
 
-  lon1 = [1., 2., 3., 4., 5.]
-  lon2 = [2., 3., 4., 5., 361.]
-  lon3 = [3., 4., 5., 361., 362.]
+  lon1 = [C(1.), C(2.), C(3.), C(4.), C(5.)]
+  lon2 = [C(2.), C(3.), C(4.), C(5.), C(361.)]
+  lon3 = [C(3.), C(4.), C(5.), C(361.), C(362.)]
 
   ! The first two cases seem to reveal an error in tranlon. Should tranlon be changed so that
   ! istrt=1 in the first two cases?
-  call tranlon_assert(lon1, lon1, 0.0_   AU_TEST_KIND, 0)
-  call tranlon_assert(lon1, lon1, 1.0_   AU_TEST_KIND, 0)
-  call tranlon_assert(lon1, lon2, 1.5_   AU_TEST_KIND, 2)
-  call tranlon_assert(lon1, lon2, 2.0_   AU_TEST_KIND, 2)
-  call tranlon_assert(lon1, lon3, 2.001_ AU_TEST_KIND, 3)
+  call tranlon_assert(lon1, lon1, C(0.0),    0)
+  call tranlon_assert(lon1, lon1, C(1.0),    0)
+  call tranlon_assert(lon1, lon2, C(1.5),    2)
+  call tranlon_assert(lon1, lon2, C(2.0),    2)
+  call tranlon_assert(lon1, lon3, C(2.001),  3)
 end subroutine
 
 subroutine tranlon_assert(lon0, lon_expected, lon_start, istrt_expected)
@@ -551,10 +552,10 @@ end subroutine
 subroutine test_interp_1d_1d
   real(AU_TEST_KIND) :: grid1(8), grid2(5), data1(8), data2(5)
 
-  grid1 = [1., 2., 3., 4., 5., 6., 7., 8.]
-  grid2 = [2., 3., 4., 5., 6.]
-  data1 = [101., 102., 103., 104., 105., 106., 107., 108.]
-  data2 = [102., 103., 104., 105., 106.]
+  grid1 = [C(1.), C(2.), C(3.), C(4.), C(5.), C(6.), C(7.), C(8.)]
+  grid2 = [C(2.), C(3.), C(4.), C(5.), C(6.)]
+  data1 = [C(101.), C(102.), C(103.), C(104.), C(105.), C(106.), C(107.), C(108.)]
+  data2 = [C(102.), C(103.), C(104.), C(105.), C(106.)]
 
   call interp_1d_1d_assert(grid1, grid2, data1, data2, "linear")
   call interp_1d_1d_assert(grid1, grid2, data1, data2, "cubic_spline")
@@ -594,17 +595,17 @@ end subroutine
 subroutine test_interp_1d_2d
   real(AU_TEST_KIND) :: grid1(2,4), grid2(2,2), data1(2,4), data2(2,2)
 
-  grid1(1,:) = [1., 2., 3., 4.]
-  grid1(2,:) = [5., 6., 7., 8.]
+  grid1(1,:) = [C(1.), C(2.), C(3.), C(4.)]
+  grid1(2,:) = [C(5.), C(6.), C(7.), C(8.)]
 
-  grid2(1,:) = [2., 3.]
-  grid2(2,:) = [6., 7.]
+  grid2(1,:) = [C(2.), C(3.)]
+  grid2(2,:) = [C(6.), C(7.)]
 
-  data1(1,:) = [101., 102., 103., 104.]
-  data1(2,:) = [105., 106., 107., 108.]
+  data1(1,:) = [C(101.), C(102.), C(103.), C(104.)]
+  data1(2,:) = [C(105.), C(106.), C(107.), C(108.)]
 
-  data2(1,:) = [102., 103.]
-  data2(2,:) = [106., 107.]
+  data2(1,:) = [C(102.), C(103.)]
+  data2(2,:) = [C(106.), C(107.)]
 
   call interp_1d_2d_assert(grid1, grid2, data1, data2)
 end subroutine
@@ -627,25 +628,25 @@ end subroutine
 subroutine test_interp_1d_3d
   real(AU_TEST_KIND) :: grid1(2,2,4), grid2(2,2,2), data1(2,2,4), data2(2,2,2)
 
-  grid1(1,1,:) = [1., 2., 3., 4.]
-  grid1(1,2,:) = [5., 6., 7., 8.]
-  grid1(2,1,:) = [21., 22., 23., 24.]
-  grid1(2,2,:) = [25., 26., 27., 28.]
+  grid1(1,1,:) = [C(1.), C(2.), C(3.), C(4.)]
+  grid1(1,2,:) = [C(5.), C(6.), C(7.), C(8.)]
+  grid1(2,1,:) = [C(21.), C(22.), C(23.), C(24.)]
+  grid1(2,2,:) = [C(25.), C(26.), C(27.), C(28.)]
 
-  grid2(1,1,:) = [2., 3.]
-  grid2(1,2,:) = [6., 7.]
-  grid2(2,1,:) = [22., 23.]
-  grid2(2,2,:) = [26., 27.]
+  grid2(1,1,:) = [C(2.), C(3.)]
+  grid2(1,2,:) = [C(6.), C(7.)]
+  grid2(2,1,:) = [C(22.), C(23.)]
+  grid2(2,2,:) = [C(26.), C(27.)]
 
-  data1(1,1,:) = [101., 102., 103., 104.]
-  data1(1,2,:) = [105., 106., 107., 108.]
-  data1(2,1,:) = [201., 202., 203., 204.]
-  data1(2,2,:) = [205., 206., 207., 208.]
+  data1(1,1,:) = [C(101.), C(102.), C(103.), C(104.)]
+  data1(1,2,:) = [C(105.), C(106.), C(107.), C(108.)]
+  data1(2,1,:) = [C(201.), C(202.), C(203.), C(204.)]
+  data1(2,2,:) = [C(205.), C(206.), C(207.), C(208.)]
 
-  data2(1,1,:) = [102., 103.]
-  data2(1,2,:) = [106., 107.]
-  data2(2,1,:) = [202., 203.]
-  data2(2,2,:) = [206., 207.]
+  data2(1,1,:) = [C(102.), C(103.)]
+  data2(1,2,:) = [C(106.), C(107.)]
+  data2(2,1,:) = [C(202.), C(203.)]
+  data2(2,2,:) = [C(206.), C(207.)]
 
   call interp_1d_3d_assert(grid1, grid2, data1, data2)
   call interp_1d_3d_assert(grid1, grid2, data1, data2, "linear")
