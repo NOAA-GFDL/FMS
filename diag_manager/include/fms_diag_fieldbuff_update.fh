@@ -591,18 +591,18 @@ FUNCTION FMS_DIAG_FBU_3D_PNAME_(ofield_cfg, ofield_index_cfg, field_d, sample, &
                     END DO
                   END DO
                   IF ( .NOT.phys_window ) THEN
-                     DO l = ls, le
+                     outer0: DO l = ls, le
                        DO k = l_start(3), l_end(3)
                           DO j=l_start(2)+hj, l_end(2)+hj
                              DO i=l_start(1)+hi, l_end(1)+hi
                                 IF (field_d(i,j, k, l) /= missvalue ) THEN
                                   count_0d = count_0d + weight1
-                                  EXIT
+                                  EXIT outer0
                               END IF
                             END DO
                          END DO
                       END DO
-                    END DO
+                    END DO outer0
                   END IF
 !$OMP END CRITICAL
                ELSE IF ( reduced_k_range ) THEN NDCMP_RKR_3_IF
@@ -642,20 +642,19 @@ FUNCTION FMS_DIAG_FBU_3D_PNAME_(ofield_cfg, ofield_index_cfg, field_d, sample, &
 !$OMP END CRITICAL
                   END IF
 !$OMP CRITICAL
-                  DO l = ls, le
+                  outer3: DO l = ls, le
                     DO k = ksr, ker
                       k1=k-ksr+1
                       DO j=f3, f4
                         DO i=f1, f2
-                           !!TODO: verify this and similar ones. Note the EXIT statement
                            IF ( field_d(i,j, k, l) /= missvalue ) THEN
                               count_0d = count_0d + weight1
-                              EXIT
+                              EXIT outer3
                            END IF
                         END DO
                      END DO
                   END DO
-                END DO
+                END DO outer3
 !$OMP END CRITICAL
                ELSE NDCMP_RKR_3_IF
                   IF ( debug_diag_manager ) THEN
@@ -698,18 +697,18 @@ FUNCTION FMS_DIAG_FBU_3D_PNAME_(ofield_cfg, ofield_index_cfg, field_d, sample, &
 !$OMP END CRITICAL
                   END IF
 !$OMP CRITICAL
-                  DO l = ls, le
+                  outer1: DO l = ls, le
                     DO k=ks, ke
                        DO j=f3, f4
                          DO i=f1, f2
                             IF ( field_d(i,j, k, l) /= missvalue ) THEN
                               count_0d = count_0d + weight1
-                              EXIT
+                              EXIT outer1
                             END IF
                           END DO
                       END DO
                     END DO
-                  END DO
+                  END DO outer1
 !$OMP END CRITICAL
                END IF NDCMP_RKR_3_IF
             ELSE MISSVAL_PR_3_IF !!(section: mask_variant .eq. false + mask not present + missvalue not present)
@@ -1213,7 +1212,6 @@ FUNCTION FMS_DIAG_FBCF_PNAME_ (ofield_cfg, ofield_index_cfg, field, sample, ofb,
                            & j <= l_end(2)+hj ) THEN
                               i1 = i-l_start(1)-hi+1
                               j1 =  j-l_start(2)-hj+1
-                              !!TODO: Make sure this where is appropritate with .NOT.
                               WHERE ( .NOT.mask(i-is+1+hi,j-js+1+hj,k,:) ) &
                                & OFB(i1,j1,k1,:,sample) = missvalue
                            END IF
@@ -1227,7 +1225,6 @@ FUNCTION FMS_DIAG_FBCF_PNAME_ (ofield_cfg, ofield_index_cfg, field, sample, ofb,
                      k1= k - ksr + 1
                      DO j=js, je
                         DO i=is, ie
-                          !!TODO: Make sure this where is appropritate with .NOT.
                           WHERE ( mask(i-is+1+hi,j-js+1+hj,k,:) .eqv. .false.) &
                               & OFB(i-hi,j-hj,k1,:,sample)= missvalue
                         END DO
@@ -1237,7 +1234,6 @@ FUNCTION FMS_DIAG_FBCF_PNAME_ (ofield_cfg, ofield_index_cfg, field, sample, ofb,
                   DO k=ks, ke
                      DO j=js, je
                         DO i=is, ie
-                           !!TODO: Make sure this where is appropritate with .NOT.
                            WHERE ( .NOT. mask(i-is+1+hi,j-js+1+hj,k,:) )&
                               & OFB(i-hi,j-hj,k,:,sample)= missvalue
                         END DO
