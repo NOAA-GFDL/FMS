@@ -53,7 +53,7 @@
       high = maxval(dat(:,:))
       dsum = sum(dat(:,:))
    endif
-   avg = real(0.0, FMS_HI_KIND_)
+   avg = 0.0_kindl
 
    npts = size(dat(:,:)) - miss
    if(pe == root_pe) then
