@@ -201,6 +201,9 @@ use platform_mod
   !     The values are defined as <TT>GLO_REG_VAL</TT> (-999) and <TT>GLO_REG_VAL_ALT</TT>
   !     (-1) in <TT>diag_data_mod</TT>.
   !   </DATA>
+  !   <DATA NAME="use_mpp_io" TYPE="LOGICAL" DEFAULT=".false.">
+  !    Set to true, diag_manager uses mpp_io.  Default is fms2_io.
+  !   </DATA>
   ! </NAMELIST>
 
   USE time_manager_mod, ONLY: set_time, set_date, get_time, time_type, OPERATOR(>=), OPERATOR(>),&
@@ -229,7 +232,8 @@ use platform_mod
        & diag_log_unit, time_unit_list, pelist_name, max_axes, module_is_initialized, max_num_axis_sets,&
        & use_cmor, issue_oor_warnings, oor_warnings_fatal, oor_warning, pack_size,&
        & max_out_per_in_field, flush_nc_files, region_out_use_alt_value, max_field_attributes, output_field_type,&
-       & max_file_attributes, max_axis_attributes, prepend_date, DIAG_FIELD_NOT_FOUND, diag_init_time,diag_data_init,&
+       & max_file_attributes, max_axis_attributes, prepend_date, DIAG_FIELD_NOT_FOUND, diag_init_time, diag_data_init,&
+       & use_mpp_io, use_refactored_send, &
        & use_modern_diag, use_clock_average, diag_null, pack_size_str
   USE diag_data_mod, ONLY:  fileobj, fileobjU, fnum_for_domain, fileobjND
   USE diag_table_mod, ONLY: parse_diag_table
@@ -238,6 +242,9 @@ use platform_mod
   use fms_diag_object_mod, only:fms_diag_object
 
   USE constants_mod, ONLY: SECONDS_PER_DAY
+  USE fms_diag_outfield_mod, ONLY: fmsDiagOutfieldIndex_type, fmsDiagOutfield_type
+  USE fms_diag_fieldbuff_update_mod, ONLY: fieldbuff_update, fieldbuff_copy_missvals, &
+   & fieldbuff_copy_fieldvals
 
 #ifdef use_netCDF
   USE netcdf, ONLY: NF90_INT, NF90_FLOAT, NF90_CHAR
@@ -371,6 +378,7 @@ use platform_mod
 !> @addtogroup diag_manager_mod
 !> @{
 CONTAINS
+
   !> @brief Registers a scalar field
   !! @return field index for subsequent call to send_data.
   INTEGER FUNCTION register_diag_field_scalar(module_name, field_name, init_time, &
@@ -520,33 +528,31 @@ END FUNCTION register_static_field
     IF ( PRESENT(err_msg) ) err_msg = ''
 
     IF ( PRESENT(init_time) ) THEN
-       register_diag_field_scalar_old = register_diag_field_array(module_name, field_name,&
+       register_diag_field_scalar = register_diag_field_array(module_name, field_name,&
             & (/null_axis_id/), init_time,long_name, units, missing_value, range, &
             & standard_name=standard_name, do_not_log=do_not_log, err_msg=err_msg,&
             & area=area, volume=volume, realm=realm)
     ELSE
-       register_diag_field_scalar_old = register_static_field(module_name, field_name,&
+       register_diag_field_scalar = register_static_field(module_name, field_name,&
             & (/null_axis_id/),long_name, units, missing_value, range,&
             & standard_name=standard_name, do_not_log=do_not_log, realm=realm)
     END IF
-  END FUNCTION register_diag_field_scalar_old
+  END FUNCTION register_diag_field_scalar
 
-INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, init_time, &
+  !> @brief Registers an array field
+  !> @return field index for subsequent call to send_data.
+  INTEGER FUNCTION register_diag_field_array(module_name, field_name, axes, init_time, &
        & long_name, units, missing_value, range, mask_variant, standard_name, verbose,&
        & do_not_log, err_msg, interp_method, tile_count, area, volume, realm)
-    CHARACTER(len=*),           INTENT(in) :: module_name   !< Module where the field comes from
-    CHARACTER(len=*),           INTENT(in) :: field_name    !< Name of the field
-    INTEGER,                    INTENT(in) :: axes(:)       !< Ids corresponding to the variable axis
-    TYPE(time_type),  OPTIONAL, INTENT(in) :: init_time     !< Time to start writing data from
-    CHARACTER(len=*), OPTIONAL, INTENT(in) :: long_name     !< Long_name to add as a variable attribute
-    CHARACTER(len=*), OPTIONAL, INTENT(in) :: units         !< Units to add as a variable_attribute
-    CLASS(*),         OPTIONAL, INTENT(in) :: missing_value !< Missing value to add as a variable attribute
-    CLASS(*),         OPTIONAL, INTENT(in) :: range(:)      !< Range to add a variable attribute
-    LOGICAL,          OPTIONAL, INTENT(in) :: mask_variant  !< Mask variant
-    CHARACTER(len=*), OPTIONAL, INTENT(in) :: standard_name !< Standard_name to name the variable in the file
-    LOGICAL,          OPTIONAL, INTENT(in) :: verbose       !< Print more information
-    LOGICAL,          OPTIONAL, INTENT(in) :: do_not_log    !< If TRUE, field information is not logged
-    CHARACTER(len=*), OPTIONAL, INTENT(out):: err_msg       !< Error_msg from call
+    CHARACTER(len=*), INTENT(in) :: module_name, field_name
+    INTEGER, INTENT(in) :: axes(:)
+    TYPE(time_type), INTENT(in) :: init_time
+    CHARACTER(len=*), OPTIONAL, INTENT(in) :: long_name, units, standard_name
+    CLASS(*), OPTIONAL, INTENT(in) :: missing_value
+    CLASS(*), DIMENSION(:), OPTIONAL, INTENT(in) :: range
+    LOGICAL, OPTIONAL, INTENT(in) :: mask_variant,verbose
+    LOGICAL, OPTIONAL, INTENT(in) :: do_not_log !< if TRUE, field info is not logged
+    CHARACTER(len=*), OPTIONAL, INTENT(out):: err_msg
     CHARACTER(len=*), OPTIONAL, INTENT(in) :: interp_method !< The interp method to be used when
                                                             !! regridding the field in post-processing.
                                                             !! Valid options are "conserve_order1",
@@ -1621,6 +1627,16 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
 
     REAL, ALLOCATABLE, DIMENSION(:,:,:) :: field_out !< Local copy of field
     class(*), pointer, dimension(:,:,:,:) :: field_modern !< i8 4d remapped pointer
+    REAL(kind=r4_kind), POINTER, DIMENSION(:,:,:) :: rmask_ptr_r4 !< A pointer to r4 type of rmask
+    REAL(kind=r8_kind), POINTER, DIMENSION(:,:,:) :: rmask_ptr_r8 !<A pointer to r8 type of rmask
+
+    TYPE(fmsDiagOutfieldIndex_type), ALLOCATABLE:: ofield_index_cfg !<Instance used in calling math functions.
+    TYPE(fmsDiagOutfield_type), ALLOCATABLE:: ofield_cfg !<Instance  used in calling math functions.
+    LOGICAL :: mf_result !<Logical result returned from some math (buffer udate) functions.
+
+    REAL :: rmask_threshold !< Holds the values 0.5_r4_kind or 0.5_r8_kind, or related threhold values
+                            !! needed to be passed to the math/buffer update functions.
+
     ! If diag_field_id is < 0 it means that this field is not registered, simply return
     IF ( diag_field_id <= 0 ) THEN
        send_data_3d = .FALSE.
@@ -1687,12 +1703,18 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
        oor_mask = .TRUE.
     END IF
 
+    rmask_ptr_r4  => null()
+    rmask_ptr_r8  => null()
     IF ( PRESENT(rmask) ) THEN
        SELECT TYPE (rmask)
        TYPE IS (real(kind=r4_kind))
           WHERE ( rmask < 0.5_r4_kind ) oor_mask = .FALSE.
+          rmask_threshold = 0.5_r4_kind
+          rmask_ptr_r4  => rmask
        TYPE IS (real(kind=r8_kind))
           WHERE ( rmask < 0.5_r8_kind ) oor_mask = .FALSE.
+          rmask_threshold = 0.5_r8_kind
+          rmask_ptr_r8 => rmask
        CLASS DEFAULT
           CALL error_mesg ('diag_manager_mod::send_data_3d',&
                & 'The rmask is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)
@@ -2021,6 +2043,85 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
              END IF
           END IF
        END IF
+
+      IF (USE_REFACTORED_SEND) THEN
+         ALLOCATE( ofield_index_cfg )
+         CALL ofield_index_cfg%initialize( is, js, ks, ie, je, ke, &
+                &  hi, hj,  f1, f2, f3, f4)
+
+         ALLOCATE( ofield_cfg )
+         CALL ofield_cfg%initialize( input_fields(diag_field_id), output_fields(out_num), PRESENT(mask), freq)
+
+        IF ( average ) THEN
+            !!TODO (Future work): the copy that is filed_out should not be necessary
+            mf_result = fieldbuff_update(ofield_cfg, ofield_index_cfg, field_out, sample, &
+               & output_fields(out_num)%buffer, output_fields(out_num)%counter ,output_fields(out_num)%buff_bounds,&
+               & output_fields(out_num)%count_0d(sample), output_fields(out_num)%num_elements(sample), &
+               & mask, weight1 ,missvalue, &
+               & input_fields(diag_field_id)%numthreads, input_fields(diag_field_id)%active_omp_level,&
+               & input_fields(diag_field_id)%issued_mask_ignore_warning, &
+               & l_start, l_end, err_msg, err_msg_local )
+            IF (mf_result .eqv. .FALSE.) THEN
+              DEALLOCATE(ofield_index_cfg)
+              DEALLOCATE(ofield_cfg)
+               DEALLOCATE(field_out)
+               DEALLOCATE(oor_mask)
+               RETURN
+            END IF
+        ELSE !!NOT AVERAGE
+            mf_result = fieldbuff_copy_fieldvals(ofield_cfg, ofield_index_cfg, field_out, sample, &
+               & output_fields(out_num)%buffer, output_fields(out_num)%buff_bounds , &
+               & output_fields(out_num)%count_0d(sample), &
+               & mask, missvalue, l_start, l_end, err_msg, err_msg_local)
+            IF (mf_result .eqv. .FALSE.) THEN
+              DEALLOCATE(ofield_index_cfg)
+              DEALLOCATE(ofield_cfg)
+               DEALLOCATE(field_out)
+               DEALLOCATE(oor_mask)
+               RETURN
+            END IF
+        END IF
+
+        IF ( output_fields(out_num)%static .AND. .NOT.need_compute .AND. debug_diag_manager ) THEN
+          CALL check_bounds_are_exact_static(out_num, diag_field_id, err_msg=err_msg_local)
+          IF ( err_msg_local /= '' ) THEN
+              IF ( fms_error_handler('diag_manager_mod::send_data_3d', err_msg_local, err_msg)) THEN
+                DEALLOCATE(field_out)
+                DEALLOCATE(oor_mask)
+                RETURN
+              END IF
+          END IF
+        END IF
+
+        !!TODO: (Discusssion) One of the calls below will not compile depending
+        !! on the value of REAL. This is to the mixed use of REAL, R4, R8 and CLASS(*)
+        !! in send_data_3d. A copy of rmask can be made to avoid but it would be wasteful.
+        !! The option used for now is that the original code to copy missing values is
+        !!  is used at the end of this procedure.
+        !IF ( PRESENT(rmask)  .AND. missvalue_present ) THEN
+        !  SELECT TYPE (rmask)
+        !  TYPE IS (real(kind=r4_kind))
+        !  call fieldbuff_copy_missvals(ofield_cfg, ofield_index_cfg, &
+        !  & output_fields(out_num)%buffer, sample, &
+        !  & l_start, l_end, rmask_ptr_r4, rmask_threshold, missvalue)
+        !  TYPE IS (real(kind=r8_kind))
+        !    call fieldbuff_copy_missvals(ofield_cfg, ofield_index_cfg, &
+        !    & output_fields(out_num)%buffer, sample, &
+       !     & l_start, l_end, rmask_ptr_r8, rmask_threshold, missvalue)
+        !  CLASS DEFAULT
+        !    CALL error_mesg ('diag_manager_mod::send_data_3d',&
+         !     & 'The rmask is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)
+        !  END SELECT
+       !END IF
+
+        IF(ALLOCATED(ofield_index_cfg)) THEN
+          DEALLOCATE(ofield_index_cfg)
+        ENDIF
+        IF(ALLOCATED(ofield_cfg)) THEN
+          DEALLOCATE(ofield_cfg)
+        ENDIF
+
+      ELSE  !! END USE_REFACTORED_SEND; Don''t use CYCLE option.
 
        ! Take care of submitted field data
        IF ( average ) THEN
@@ -3168,6 +3269,8 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
           END IF
        END IF
 
+      END IF !! END OF IS_USE_REFACTORED SEND
+
        ! If rmask and missing value present, then insert missing value
        IF ( PRESENT(rmask) .AND. missvalue_present ) THEN
           IF ( need_compute ) THEN
@@ -3803,6 +3906,7 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
     INTEGER, DIMENSION(6), OPTIONAL, INTENT(IN) :: time_init !< Model time diag_manager initialized
     CHARACTER(len=*), INTENT(out), OPTIONAL :: err_msg
 
+    CHARACTER(len=*), PARAMETER :: SEP = '|'
 
     INTEGER, PARAMETER :: FltKind = R4_KIND
     INTEGER, PARAMETER :: DblKind = R8_KIND
@@ -3818,7 +3922,7 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
          & max_num_axis_sets, max_files, use_cmor, issue_oor_warnings,&
          & oor_warnings_fatal, max_out_per_in_field, flush_nc_files, region_out_use_alt_value, max_field_attributes,&
          & max_file_attributes, max_axis_attributes, prepend_date, use_modern_diag, use_clock_average, &
-           field_log_separator
+         & field_log_separator, use_refactored_send
 
     ! If the module was already initialized do nothing
     IF ( module_is_initialized ) RETURN
@@ -3968,6 +4072,18 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
     if(.not. use_modern_diag) null_axis_id = diag_axis_init('scalar_axis', (/0./), 'none', 'N', 'none')
     RETURN
   END SUBROUTINE diag_manager_init
+
+  !> @brief Return base time for diagnostics.
+  !! @return time_type get_base_time
+  !! @details Return base time for diagnostics (note: base time must be >= model time).
+  TYPE(time_type) FUNCTION get_base_time ()
+    ! <ERROR STATUS="FATAL">
+    !   MODULE has not been initialized
+    ! </ERROR>
+    IF ( .NOT.module_is_initialized ) CALL error_mesg('diag_manager_mod::get_base_time', &
+         & 'module has not been initialized', FATAL)
+    get_base_time = base_time
+  END FUNCTION get_base_time
 
   !> @brief Return base date for diagnostics.
   !! @details Return date information for diagnostic reference time.
