@@ -41,8 +41,8 @@ implicit none
 integer, parameter :: ESRES=10  !taken from sat_vapor_pres_mod
 real(r8_kind), dimension(:), allocatable :: TABLE, DTABLE, TABLE2, DTABLE2, TABLE3, DTABLE3
 integer :: io, N
-character(100) :: nml_file
 
+character(100) :: nml_file
 logical :: test1, test2, test3, test4, test5
 NAMELIST / test_sat_vapor_pres_nml/ test1, test2, test3, test4, test5
 
@@ -60,25 +60,31 @@ open(unit=100, file=trim(nml_file), action='read')
 read(unit=100, nml=test_sat_vapor_pres_nml,iostat=io)
 close(100)
 
+!CALL TESTS
 if(test1) then
    write(*,*)'****************************************'
-   call test_compute_qs()      ! test compute_qs 1d-3d
+   write(*,*)'TEST COMPUTE_QS 1D-3D'
+   call test_compute_qs()
 end if
 if(test2) then
    write(*,*)'****************************************'
-   call test_mrs()             ! test compute_mrs 1d-3d
+   write(*,*)'TEST COMPUTE_MRS 1D-3D'
+   call test_compute_mrs()
 end if
 if(test3) then
    write(*,*)'****************************************'
-   call test_lookup_es_des()   ! test lookup_es,  loopup_des,  lookup_es_des,   all 1d-3d
+   write(*,*)'TEST LOOKUP_ES,  LOOPUP_DES,  LOOKUP_ES_DES,   ALL 1D-3D'
+   call test_lookup_es_des()
 end if
 if(test4) then
    write(*,*)'****************************************'
-   call test_lookup_es2_des2() ! test lookup_es2, lookup_des2, lookup_es2_des2, all 1d-3d
+   write(*,*)'TEST LOOKUP_ES2, LOOKUP_DES2, LOOKUP_ES2_DES2, ALL 1D-3D'
+   call test_lookup_es2_des2()
 end if
 if(test5) then
    write(*,*)'****************************************'
-   call test_lookup_es3_des3() ! test_lookup_es3, lookup_des3, lookup_es3_des3, all 1d-3d
+   write(*,*)'TEST_LOOKUP_ES3, LOOKUP_DES3, LOOKUP_ES3_DES3, ALL 1D-3D'
+   call test_lookup_es3_des3()
 end if
 
 call fms_end()
@@ -126,7 +132,7 @@ contains
 
   end subroutine test_compute_qs
   !-----------------------------------------------------------------------
-  subroutine test_mrs()
+  subroutine test_compute_mrs()
 
     implicit none
     real(kind=TEST_SVP_KIND_) :: temp, press, answer, mrsat
@@ -163,7 +169,7 @@ contains
     call compute_mrs(temp_3d, press_3d, mrsat_3d)
     call check_answer_3d(answer_3d,mrsat_3d,'test_compute_mrs_3d precision=TEST_SVP_KIND_')
 
-  end subroutine test_mrs
+  end subroutine test_compute_mrs
   !-----------------------------------------------------------------------
   subroutine test_lookup_es_des
 
@@ -188,7 +194,7 @@ contains
     call lookup_es(temp,esat)
     call check_answer_0d(esat_answer, esat,   'test_lookup_es_0d TCMIN')
     !at temp=TCMAX, the answers should be TABLE(N)
-    temp=real(TCMAX,lkind)+real(TFREEZE,lkind)
+    temp=real(TCMAX,lkind) + real(TFREEZE,lkind)
     esat_answer = real(TABLE(N),lkind)
     call lookup_es(temp,esat)
     call check_answer_0d(esat_answer, esat,   'test_lookup_es_0d precision TCMAX')
@@ -366,12 +372,12 @@ contains
     ! test lookup_es2
     !at temp=TCMIN, the answers should be TABLE2(1)
     temp = real(TCMIN,lkind) + real(TFREEZE,lkind)
-    esat_answer = real(TABLE2(1),lkind) ; desat_answer=real(DTABLE2(1),lkind)
+    esat_answer = real(TABLE2(1),lkind)
     call lookup_es2(temp,esat)
     call check_answer_0d(esat_answer, esat,   'test_lookup_es2_0d TCMIN')
     !at temp=TCMAX, the answers should be TABLE2(N)
     temp = real(TCMAX,lkind) + real(TFREEZE,lkind)
-    esat_answer = real(TABLE2(N),lkind) ; desat_answer=real(DTABLE2(N),lkind)
+    esat_answer = real(TABLE2(N),lkind)
     ! test lookup_es2
     call lookup_es2(temp,esat)
     call check_answer_0d(esat_answer, esat,   'test_lookup_es2_0d TCMAX')
@@ -379,12 +385,12 @@ contains
     ! test lookup_des2
     !at temp=TCMIN, the answers should be DTABLE2(1)
     temp = real(TCMIN,lkind) + real(TFREEZE,lkind)
-    esat_answer = real(TABLE2(1),lkind) ; desat_answer=real(DTABLE2(1),lkind)
+    desat_answer=real(DTABLE2(1),lkind)
     call lookup_des2(temp,desat)
     call check_answer_0d(desat_answer, desat, 'test_lookup_des2_0d TCMIN')
     !at temp=TCMAX, the answers should be DTABLE2(N)
     temp = real(TCMAX,lkind) + real(TFREEZE,lkind)
-    esat_answer = real(TABLE2(N),lkind) ; desat_answer=real(DTABLE2(N),lkind)
+    desat_answer=real(DTABLE2(N),lkind)
     call lookup_des2(temp,desat)
     call check_answer_0d(desat_answer, desat, 'test_lookup_des2_0d TCMAX')
 
@@ -408,24 +414,24 @@ contains
     ! test lookup_es2
     !at temp=TCMIN, the answers should be TABLE2(1)
     temp_1d(1) = real(TCMIN,lkind) + real(TFREEZE,lkind)
-    esat_answer_1d = TABLE2(1) ; desat_answer_1d = DTABLE2(1)
+    esat_answer_1d = TABLE2(1)
     call lookup_es2(temp_1d,esat_1d)
     call check_answer_1d(esat_answer_1d, esat_1d,   'test_lookup_es2_1d TCMIN')
     !at temp=TCMAX, the answers should be TABLE2(N)
     temp_1d(1) = real(TCMAX,lkind) + real(TFREEZE,lkind)
-    esat_answer_1d = TABLE2(N) ; desat_answer_1d = DTABLE2(N)
+    esat_answer_1d = TABLE2(N)
     call lookup_es2(temp_1d,esat_1d)
     call check_answer_1d(esat_answer_1d, esat_1d,   'test_lookup_es2_1d TCMAX')
 
     ! test lookup_des2
     !at temp=TCMIN, the answers should be DTABLE2(1)
     temp_1d(1) = real(TCMIN,lkind) + real(TFREEZE,lkind)
-    esat_answer_1d = TABLE2(1) ; desat_answer_1d = DTABLE2(1)
+    desat_answer_1d = DTABLE2(1)
     call lookup_des2(temp_1d,desat_1d)
     call check_answer_1d(desat_answer_1d, desat_1d, 'test_lookup_des2_1d TCMIN')
     !at temp=TCMAX, the answers should be DTABLE2(N)
     temp_1d(1) = real(TCMAX,lkind) + real(TFREEZE,lkind)
-    esat_answer_1d = TABLE2(N) ; desat_answer_1d = DTABLE2(N)
+    desat_answer_1d = DTABLE2(N)
     call lookup_des2(temp_1d,desat_1d)
     call check_answer_1d(desat_answer_1d, desat_1d, 'test_lookup_des2_1d TCMAX')
 
@@ -450,24 +456,24 @@ contains
     ! test lookup_es2
     !at temp=TCMIN, the answers should be TABLE2(1)
     temp_2d(1,1) = real(TCMIN,lkind) + real(TFREEZE,lkind)
-    esat_answer_2d = TABLE2(1) ; desat_answer_2d = DTABLE2(1)
+    esat_answer_2d = TABLE2(1)
     call lookup_es2(temp_2d,esat_2d)
     call check_answer_2d(esat_answer_2d, esat_2d,   'test_lookup_es2_2d TCMIN')
     !at temp=TCMAX, the answers should be TABLE2(N)
     temp_2d(1,1) = real(TCMAX,lkind) + real(TFREEZE,lkind)
-    esat_answer_2d = TABLE2(N) ; desat_answer_2d = DTABLE2(N)
+    esat_answer_2d = TABLE2(N)
     call lookup_es2(temp_2d,esat_2d)
     call check_answer_2d(esat_answer_2d, esat_2d,   'test_lookup_es2_2d TCMAX')
 
     ! test lookup_des2
     !at temp=TCMIN, the answers should be DTABLE2(1)
     temp_2d(1,1) = real(TCMIN,lkind) + real(TFREEZE,lkind)
-    esat_answer_2d = TABLE2(1) ; desat_answer_2d = DTABLE2(1)
+    desat_answer_2d = DTABLE2(1)
     call lookup_des2(temp_2d,desat_2d)
     call check_answer_2d(desat_answer_2d, desat_2d, 'test_lookup_des2_2d TCMIN')
     !at temp=TCMAX, the answers should be DTABLE2(N)
     temp_2d(1,1) = real(TCMAX,lkind) + real(TFREEZE,lkind)
-    esat_answer_2d = TABLE2(N) ; desat_answer_2d = DTABLE2(N)
+    desat_answer_2d = DTABLE2(N)
     call lookup_des2(temp_2d,desat_2d)
     call check_answer_2d(desat_answer_2d, desat_2d, 'test_lookup_des2_2d TCMAX')
 
@@ -492,24 +498,24 @@ contains
     ! test lookup_es2
     !at temp=TCMIN, the answers should be TABLE2(1)
     temp_3d(1,1,1) = real(TCMIN,lkind) + real(TFREEZE,lkind)
-    esat_answer_3d = TABLE2(1) ; desat_answer_3d = DTABLE2(1)
+    esat_answer_3d = TABLE2(1)
     call lookup_es2(temp_3d,esat_3d)
     call check_answer_3d(esat_answer_3d, esat_3d,   'test_lookup_es2_3d TCMIN')
     !at temp=TCMAX, the answers should be TABLE2(N)
     temp_3d(1,1,1) = real(TCMAX,lkind) + real(TFREEZE,lkind)
-    esat_answer_3d = TABLE2(N) ; desat_answer_3d = DTABLE2(N)
+    esat_answer_3d = TABLE2(N)
     call lookup_es2(temp_3d,esat_3d)
     call check_answer_3d(esat_answer_3d, esat_3d,   'test_lookup_es2_3d TCMAX')
 
     ! test lookup_des2
     !at temp=TCMIN, the answers should be DTABLE2(1)
     temp_3d(1,1,1) = real(TCMIN,lkind) + real(TFREEZE,lkind)
-    esat_answer_3d = TABLE2(1) ; desat_answer_3d = DTABLE2(1)
+    desat_answer_3d = DTABLE2(1)
     call lookup_des2(temp_3d,desat_3d)
     call check_answer_3d(desat_answer_3d, desat_3d, 'test_lookup_des2_3d TCMIN')
     !at temp=TCMAX, the answers should be DTABLE2(N)
     temp_3d(1,1,1) = real(TCMAX,lkind) + real(TFREEZE,lkind)
-    esat_answer_3d = TABLE2(N) ; desat_answer_3d = DTABLE2(N)
+    desat_answer_3d = DTABLE2(N)
     call lookup_des2(temp_3d,desat_3d)
     call check_answer_3d(desat_answer_3d, desat_3d, 'test_lookup_des2_3d TCMAX')
 
@@ -550,24 +556,24 @@ contains
     ! test lookup_es3
     !at temp=TCMIN, the answers should be TABLE3(1)
     temp = real(TCMIN,lkind) + real(TFREEZE,lkind)
-    esat_answer = TABLE3(1) ; desat_answer=DTABLE3(1)
+    esat_answer = TABLE3(1)
     call lookup_es3(temp,esat)
     call check_answer_0d(esat_answer, esat,   'test_lookup_es3_0d TCMIN')
     !at temp=TCMAX, the answers should be TABLE3(N)
     temp = real(TCMAX,lkind) + real(TFREEZE,lkind)
-    esat_answer = TABLE3(N) ; desat_answer=DTABLE3(N)
+    esat_answer = TABLE3(N)
     call lookup_es3(temp,esat)
     call check_answer_0d(esat_answer, esat,   'test_lookup_es3_0d TCMAX')
 
     ! test lookup_des3
     !at temp=TCMIN, the answers should be DTABLE3(1)
     temp = real(TCMIN,lkind) + real(TFREEZE,lkind)
-    esat_answer = TABLE3(1) ; desat_answer=DTABLE3(1)
+    desat_answer=DTABLE3(1)
     call lookup_des3(temp,desat)
     call check_answer_0d(desat_answer, desat, 'test_lookup_des3_0d TCMIN')
     !at temp=TCMAX, the answers should be DTABLE3(N)
     temp = real(TCMAX,lkind) + real(TFREEZE,lkind)
-    esat_answer = TABLE3(N) ; desat_answer=DTABLE3(N)
+    desat_answer=DTABLE3(N)
     call lookup_des3(temp,desat)
     call check_answer_0d(desat_answer, desat, 'test_lookup_des3_0d TCMAX')
 
@@ -591,24 +597,24 @@ contains
     ! test lookup_es3
     !at temp=TCMIN, the answers should be TABLE3(1)
     temp_1d(1) = real(TCMIN,lkind) + real(TFREEZE,lkind)
-    esat_answer_1d = real(TABLE3(1),lkind) ; desat_answer_1d = real(DTABLE3(1),lkind)
+    esat_answer_1d = real(TABLE3(1),lkind)
     call lookup_es3(temp_1d,esat_1d)
     call check_answer_1d(esat_answer_1d, esat_1d,   'test_lookup_es3_1d TCMIN')
     !at temp=TCMAX, the answers should be TABLE3(N)
     temp_1d(1) = real(TCMAX,lkind) + real(TFREEZE,lkind)
-    esat_answer_1d = real(TABLE3(N),lkind) ; desat_answer_1d = real(DTABLE3(N),lkind)
+    esat_answer_1d = real(TABLE3(N),lkind)
     call lookup_es3(temp_1d,esat_1d)
     call check_answer_1d(esat_answer_1d, esat_1d,   'test_lookup_es3_1d TCMAX')
 
     ! test looup_des3
     !at temp=TCMIN, the answers should be DTABLE3(1)
     temp_1d(1) = real(TCMIN,lkind) + real(TFREEZE,lkind)
-    esat_answer_1d = real(TABLE3(1),lkind) ; desat_answer_1d = real(DTABLE3(1),lkind)
+    desat_answer_1d = real(DTABLE3(1),lkind)
     call lookup_des3(temp_1d,desat_1d)
     call check_answer_1d(desat_answer_1d, desat_1d, 'test_lookup_des3_1d TCMIN')
     !at temp=TCMAX, the answers should be DTABLE3(N)
     temp_1d(1) = real(TCMAX,lkind) + real(TFREEZE,lkind)
-    esat_answer_1d = real(TABLE3(N),lkind) ; desat_answer_1d = real(DTABLE3(N),lkind)
+    desat_answer_1d = real(DTABLE3(N),lkind)
     call lookup_des3(temp_1d,desat_1d)
     call check_answer_1d(desat_answer_1d, desat_1d, 'test_lookup_des3_1d TCMAX')
 
@@ -633,24 +639,24 @@ contains
     ! test lookup_es3
     !at temp=TCMIN, the answers should be TABLE3(1)
     temp_2d(1,1) = real(TCMIN,lkind) + real(TFREEZE,lkind)
-    esat_answer_2d = real(TABLE3(1),lkind) ; desat_answer_2d = real(DTABLE3(1),lkind)
+    esat_answer_2d = real(TABLE3(1),lkind)
     call lookup_es3(temp_2d,esat_2d)
     call check_answer_2d(esat_answer_2d, esat_2d,   'test_lookup_es3_2d TCMIN')
     !at temp=TCMAX, the answers should be TABLE3(N)
     temp_2d(1,1) = real(TCMAX,lkind) + real(TFREEZE,lkind)
-    esat_answer_2d = real(TABLE3(N),lkind) ; desat_answer_2d = real(DTABLE3(N),lkind)
+    esat_answer_2d = real(TABLE3(N),lkind)
     call lookup_es3(temp_2d,esat_2d)
     call check_answer_2d(esat_answer_2d, esat_2d,   'test_lookup_es3_2d TCMAX')
 
     ! test lookup_des3
     !at temp=TCMIN, the answers should be DTABLE3(1)
     temp_2d(1,1) = real(TCMIN,lkind) + real(TFREEZE,lkind)
-    esat_answer_2d = real(TABLE3(1),lkind) ; desat_answer_2d = real(DTABLE3(1),lkind)
+    desat_answer_2d = real(DTABLE3(1),lkind)
     call lookup_des3(temp_2d,desat_2d)
     call check_answer_2d(desat_answer_2d, desat_2d, 'test_lookup_des3_2d TCMIN')
     !at temp=TCMAX, the answers should be DTABLE3(N)
     temp_2d(1,1) = real(TCMAX,lkind) + real(TFREEZE,lkind)
-    esat_answer_2d = real(TABLE3(N),lkind) ; desat_answer_2d = real(DTABLE3(N),lkind)
+    desat_answer_2d = real(DTABLE3(N),lkind)
     call lookup_des3(temp_2d,desat_2d)
     call check_answer_2d(desat_answer_2d, desat_2d, 'test_lookup_des3_2d TCMAX')
 
@@ -674,24 +680,24 @@ contains
     ! test lookup_es3
     !at temp=TCMIN, the answers should be TABLE3(1)
     temp_3d(1,1,1) = real(TCMIN,lkind) + real(TFREEZE,lkind)
-    esat_answer_3d = TABLE3(1) ; desat_answer_3d = DTABLE3(1)
+    esat_answer_3d = TABLE3(1)
     call lookup_es3(temp_3d,esat_3d)
     call check_answer_3d(esat_answer_3d, esat_3d,   'test_lookup_es3_3d TCMIN')
     !at temp=TCMAX, the answers should be TABLE3(N)
     temp_3d(1,1,1) = real(TCMAX,lkind) + real(TFREEZE,lkind)
-    esat_answer_3d = TABLE3(N) ; desat_answer_3d = DTABLE3(N)
+    esat_answer_3d = TABLE3(N)
     call lookup_es3(temp_3d,esat_3d)
     call check_answer_3d(esat_answer_3d, esat_3d,   'test_lookup_es3_3d TCMAX')
 
     ! test lookup_des3
     !at temp=TCMIN, the answers should be DTABLE3(1)
     temp_3d(1,1,1) = real(TCMIN,lkind) + real(TFREEZE,lkind)
-    esat_answer_3d = TABLE3(1) ; desat_answer_3d = DTABLE3(1)
+    desat_answer_3d = DTABLE3(1)
     call lookup_des3(temp_3d,desat_3d)
     call check_answer_3d(desat_answer_3d, desat_3d, 'test_lookup_des3_3d TCMIN')
     !at temp=TCMAX, the answers should be DTABLE3(N)
     temp_3d(1,1,1) = real(TCMAX,lkind) + real(TFREEZE,lkind)
-    esat_answer_3d = TABLE3(N) ; desat_answer_3d = DTABLE3(N)
+    desat_answer_3d = DTABLE3(N)
     call lookup_des3(temp_3d,desat_3d)
     call check_answer_3d(desat_answer_3d, desat_3d, 'test_lookup_des3_3d TCMAX')
 

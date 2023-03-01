@@ -27,31 +27,75 @@ cat << EOF > input.nml
 /
 EOF
 
-cat <<EOF > test_sat_vapor_pres_in.nml
+
+#####
+cat <<EOF > test_sat_vapor_pres.nml
+&test_sat_vapor_pres_nml
+  test1=.true.
+  test2=.false.
+  test3=.false.
+  test4=.false.
+  test5=.false.
+ /
+EOF
+test_expect_success "test_compute_qs" '
+      mpirun -n 1 ./test_sat_vapor_pres
+  '
+
+####
+cat <<EOF > test_sat_vapor_pres.nml
+&test_sat_vapor_pres_nml
+  test1=.false.
+  test2=.true.
+  test3=.false.
+  test4=.false.
+  test5=.false.
+ /
+EOF
+test_expect_success "test_compute_mrs" '
+      mpirun -n 1 ./test_sat_vapor_pres
+  '
+
+####
+cat <<EOF > test_sat_vapor_pres.nml
+&test_sat_vapor_pres_nml
+  test1=.false.
+  test2=.false.
+  test3=.true.
+  test4=.false.
+  test5=.false.
+ /
+EOF
+test_expect_success "test_lookup_es_des" '
+      mpirun -n 1 ./test_sat_vapor_pres
+  '
+
+####
+cat <<EOF > test_sat_vapor_pres.nml
+&test_sat_vapor_pres_nml
+  test1=.false.
+  test2=.false.
+  test3=.false.
+  test4=.true.
+  test5=.false.
+ /
+EOF
+test_expect_success "test_lookup_es2_des2" '
+      mpirun -n 1 ./test_sat_vapor_pres
+  '
+
+####
+cat <<EOF > test_sat_vapor_pres.nml
 &test_sat_vapor_pres_nml
   test1=.false.
   test2=.false.
   test3=.false.
   test4=.false.
+  test5=.true.
  /
 EOF
-
-# selects next test to run through nml
-testNum=0
-test_next()
-{
-  testNum=$((testNum + 1))
-  sed "s/test$testNum *=.false./test$testNum =.true./" test_sat_vapor_pres_in.nml > test_sat_vapor_pres.nml
-  # test #8 must set calendar type for #9 to pass
-  test_expect_success "$1" '
+test_expect_success "test_lookup_es3_des3" '
       mpirun -n 1 ./test_sat_vapor_pres
   '
-}
-
-test_next "test_compute_qs"
-test_next "test_mrs"
-test_next "test_lookup_es_des"
-test_next "test_lookup_es2_des2"
-test_next "test_lookup_es3_des3"
 
 test_done
