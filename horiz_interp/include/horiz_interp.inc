@@ -776,7 +776,7 @@
 !-----------------------------------------------------------------------
    call horiz_interp_init
 
-   tpi = 2.0_kindl * pi
+   tpi = 2.0_kindl * real(pi, FMS_HI_KIND_)
    nlon_in = size(data_in,1)
    nlat_in = size(data_in,2)
 
@@ -789,8 +789,8 @@
    do j = 2, nlat_in
       blat_in(j) = sb + real(j-1, FMS_HI_KIND_)*dy
    enddo
-      blat_in(1)         = -0.5_kindl * pi
-      blat_in(nlat_in+1) =  0.5_kindl * pi
+      blat_in(1)         = -0.5_kindl * real(pi, FMS_HI_KIND_)
+      blat_in(nlat_in+1) =  0.5_kindl * real(pi, FMS_HI_KIND_)
 
 
    call horiz_interp_solo_1d (data_in, blon_in, blat_in,    &

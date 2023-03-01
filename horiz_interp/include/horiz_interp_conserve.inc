@@ -266,7 +266,7 @@ subroutine HORIZ_INTERP_CONSERVE_NEW_1DX1D_ ( Interp, lon_in, lat_in, lon_out, l
     if(present(mask_in)) then
        if( (size(mask_in,1) .NE. nlon_in) .OR.  (size(mask_in,2) .NE. nlat_in)) call mpp_error(FATAL, &
          'horiz_interp_conserve_mod: size mismatch between mask_in and lon_in/lat_in')
-       mask_src = mask_in
+       mask_src = real(mask_in, r8_kind)
     end if
 
     maxxgrid = get_maxxgrid()
@@ -294,14 +294,14 @@ subroutine HORIZ_INTERP_CONSERVE_NEW_1DX1D_ ( Interp, lon_in, lat_in, lon_out, l
 
     allocate(lon_out_r8(size(lon_out,1),size(lon_out,2)))
     allocate(lat_out_r8(size(lat_out,1),size(lat_out,2)))
-    lon_out_r8 = lon_out
-    lat_out_r8 = lat_out
+    lon_out_r8 = real(lon_out, r8_kind)
+    lat_out_r8 = real(lat_out, r8_kind)
 
     if( .not. great_circle_algorithm ) then
        if(flip_lat) then
           allocate(lat_in_flip(nlat_in+1), mask_src_flip(nlon_in,nlat_in))
           do j = 1, nlat_in+1
-             lat_in_flip(j) = lat_in(nlat_in+2-j)
+             lat_in_flip(j) = real(lat_in(nlat_in+2-j), r8_kind)
           enddo
           do j = 1, nlat_in
              mask_src_flip(:,j) = mask_src(:,nlat_in+1-j)
@@ -314,8 +314,8 @@ subroutine HORIZ_INTERP_CONSERVE_NEW_1DX1D_ ( Interp, lon_in, lat_in, lon_out, l
        else
           allocate(lon_in_r8(size(lon_in)))
           allocate(lat_in_r8(size(lat_in)))
-          lon_in_r8 = lon_in
-          lat_in_r8 = lat_in
+          lon_in_r8 = real(lon_in, r8_kind)
+          lat_in_r8 = real(lat_in, r8_kind)
           nxgrid = create_xgrid_1DX2D_order1(nlon_in, nlat_in, nlon_out, nlat_out, lon_in_r8, lat_in_r8, lon_out_r8, &
                                            & lat_out_r8, mask_src, i_src, j_src, i_dst, j_dst, xgrid_area)
           deallocate(lon_in_r8,lat_in_r8)
@@ -327,8 +327,8 @@ subroutine HORIZ_INTERP_CONSERVE_NEW_1DX1D_ ( Interp, lon_in, lat_in, lon_out, l
           allocate(mask_src_flip(nlon_in,nlat_in))
           do j = 1, nlat_in+1
              do i = 1, nlon_in+1
-                lon_src(i,j) = lon_in(i)
-                lat_src(i,j) = lat_in(nlat_in+2-j)
+                lon_src(i,j) = real(lon_in(i), r8_kind)
+                lat_src(i,j) = real(lat_in(nlat_in+2-j), r8_kind)
              enddo
           enddo
           do j = 1, nlat_in
@@ -340,8 +340,8 @@ subroutine HORIZ_INTERP_CONSERVE_NEW_1DX1D_ ( Interp, lon_in, lat_in, lon_out, l
        else
           do j = 1, nlat_in+1
              do i = 1, nlon_in+1
-                lon_src(i,j) = lon_in(i)
-                lat_src(i,j) = lat_in(j)
+                lon_src(i,j) = real(lon_in(i), r8_kind)
+                lat_src(i,j) = real(lat_in(j), r8_kind)
              enddo
           enddo
           nxgrid =  create_xgrid_great_circle(nlon_in, nlat_in, nlon_out, nlat_out, lon_src, lat_src, lon_out_r8, &
@@ -441,22 +441,22 @@ subroutine HORIZ_INTERP_CONSERVE_NEW_1DX1D_ ( Interp, lon_in, lat_in, lon_out, l
     if( .not. great_circle_algorithm ) then
        allocate(lon_out_r8(size(lon_out)))
        allocate(lat_out_r8(size(lat_out)))
-       lon_out_r8 = lon_out
-       lat_out_r8 = lat_out
+       lon_out_r8 = real(lon_out, r8_kind)
+       lat_out_r8 = real(lat_out, r8_kind)
        nxgrid = create_xgrid_2DX1D_order1(nlon_in, nlat_in, nlon_out, nlat_out, lon_in, lat_in, lon_out, lat_out, &
                                           mask_src, i_src, j_src, i_dst, j_dst, xgrid_area)
        deallocate(lon_out_r8,lat_out_r8)
     else
        allocate(lon_in_r8(size(lon_in,1),size(lon_in,2)))
        allocate(lat_in_r8(size(lat_in,1),size(lat_in,2)))
-       lon_in_r8 = lon_in
-       lat_in_r8 = lat_in
+       lon_in_r8 = real(lon_in, r8_kind)
+       lat_in_r8 = real(lat_in, r8_kind)
        allocate(lon_dst(nlon_out+1, nlat_out+1), lat_dst(nlon_out+1, nlat_out+1) )
        allocate(clon(maxxgrid), clat(maxxgrid))
        do j = 1, nlat_out+1
           do i = 1, nlon_out+1
-             lon_dst(i,j) = lon_out(i)
-             lat_dst(i,j) = lat_out(j)
+             lon_dst(i,j) = real(lon_out(i), r8_kind)
+             lat_dst(i,j) = real(lat_out(j), r8_kind)
           enddo
        enddo
        nxgrid =  create_xgrid_great_circle(nlon_in, nlat_in, nlon_out, nlat_out, lon_in_r8, lat_in_r8, lon_dst, &
@@ -553,10 +553,10 @@ subroutine HORIZ_INTERP_CONSERVE_NEW_1DX1D_ ( Interp, lon_in, lat_in, lon_out, l
     allocate(lat_in_r8(size(lat_in,1),size(lat_in,2)))
     allocate(lon_out_r8(size(lon_out,1),size(lon_out,2)))
     allocate(lat_out_r8(size(lat_out,1),size(lat_out,2)))
-    lon_in_r8 = lon_in
-    lat_in_r8 = lat_in
-    lon_out_r8 = lon_out
-    lat_out_r8 = lat_out
+    lon_in_r8 = real(lon_in,r8_kind)
+    lat_in_r8 = real(lat_in, r8_kind)
+    lon_out_r8 = real(lon_out, r8_kind)
+    lat_out_r8 = real(lat_out, r8_kind)
 
     if( .not. great_circle_algorithm ) then
        nxgrid = create_xgrid_2DX2D_order1(nlon_in, nlat_in, nlon_out, nlat_out, lon_in_r8, lat_in_r8, lon_out_r8, &

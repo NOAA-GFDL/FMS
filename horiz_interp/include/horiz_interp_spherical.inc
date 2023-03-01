@@ -775,7 +775,7 @@
 
     dot = cos(phi1)*cos(phi2)*cos(theta1-theta2) + sin(phi1)*sin(phi2)
     if(dot > 1.0_kindl)  dot = 1.0_kindl
-    if(dot < real(-1., FMS_HI_KIND_)) dot = real(-1., FMS_HI_KIND_)
+    if(dot < real(-1.d0, FMS_HI_KIND_)) dot = -1.0_kindl
     HORIZ_INTERP_SPHERICAL_DISTANCE_ = acos(dot)
 
     return

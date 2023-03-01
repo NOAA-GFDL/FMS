@@ -550,7 +550,8 @@
       real(FMS_HI_KIND_)                       :: work_old(ics:ice,jcs:jce)
       real(FMS_HI_KIND_)                       :: work_new(ics:ice,jcs:jce)
       logical :: ready
-      real(FMS_HI_KIND_), parameter    :: blank = -1.d30
+      integer, parameter :: kindl = FMS_HI_KIND_
+      real(FMS_HI_KIND_), parameter    :: blank = real(-1.d30, FMS_HI_KIND_)
       real(FMS_HI_KIND_)    :: tavr
       integer :: ipass
       integer :: inl, inr, jnl, jnu, i, j, is, js,  iavr

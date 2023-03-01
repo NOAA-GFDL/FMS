@@ -69,7 +69,7 @@
             call mpp_error(FATAL,'horiz_interp_bilinear_mod: '// &
             'The range of source grid longitude should be no larger than tpi')
 
-       if(lon_in(1) .lt. 0.0 .OR. lon_in(nlon_in) > tpi ) then
+       if(lon_in(1) .lt. 0.0_kindl .OR. lon_in(nlon_in) > tpi ) then
           min_lon = lon_in(1)
           max_lon = lon_in(nlon_in)
        endif
@@ -129,10 +129,10 @@
              !     pole is not included in the data set or the dataset is too small.
              !     in either case extrapolate north or south
              lt_err = 1
-             wts = 1.
+             wts = 1.0_kindl
           endif
 
-          wtn = 1. - wts
+          wtn = 1.0_kindl - wts
 
           Interp % i_lon (m,n,1) = is; Interp % i_lon (m,n,2) = ie
           Interp % j_lat (m,n,1) = js; Interp % j_lat (m,n,2) = je
