@@ -201,11 +201,11 @@
 
  integer, parameter :: kindl=FMS_SVP_KIND_ !< local kind parameter
 
- real(kind=FMS_SVP_KIND_), parameter :: ESBASW = real(101324.60_r8_kind,FMS_SVP_KIND_)
- real(kind=FMS_SVP_KIND_), parameter :: ESBASI = real(610.71_r8_kind,FMS_SVP_KIND_)
+ real(kind=FMS_SVP_KIND_), parameter :: ESBASW = real(101324.60d0,FMS_SVP_KIND_)
+ real(kind=FMS_SVP_KIND_), parameter :: ESBASI = real(610.71d0,FMS_SVP_KIND_)
 
- real(FMS_SVP_KIND_), parameter :: one=real(1.0_r8_kind,FMS_SVP_KIND_)
- real(FMS_SVP_KIND_), parameter :: ten=real(10.0_r8_kind,FMS_SVP_KIND_)
+ real(FMS_SVP_KIND_), parameter :: one=real(1.0d0,FMS_SVP_KIND_)
+ real(FMS_SVP_KIND_), parameter :: ten=real(10.0d0,FMS_SVP_KIND_)
 
    TBASW = TFREEZE+100.0_kindl
    TBASI = TFREEZE
@@ -262,9 +262,9 @@
  integer :: i
 
  integer, parameter :: kindl=FMS_SVP_KIND_
- real(kind=FMS_SVP_KIND_), parameter :: one=real(1.0_r8_kind,FMS_SVP_KIND_)
- real(kind=FMS_SVP_KIND_), parameter :: ten=real(10.0_r8_kind,FMS_SVP_KIND_)
- real(kind=FMS_SVP_KIND_), parameter :: ESBASW = real(101324.60_r8_kind,FMS_SVP_KIND_)
+ real(kind=FMS_SVP_KIND_), parameter :: one=real(1.0d0,FMS_SVP_KIND_)
+ real(kind=FMS_SVP_KIND_), parameter :: ten=real(10.0d0,FMS_SVP_KIND_)
+ real(kind=FMS_SVP_KIND_), parameter :: ESBASW = real(101324.60d0,FMS_SVP_KIND_)
 
 
    TBASW = TFREEZE+100.0_kindl
@@ -300,10 +300,10 @@
  integer :: i
 
  integer, parameter :: kindl=FMS_SVP_KIND_
- real(kind=FMS_SVP_KIND_), parameter :: ESBASW = real(101324.60_r8_kind,FMS_SVP_KIND_)
- real(kind=FMS_SVP_KIND_), parameter :: ESBASI = real(610.71_r8_kind,FMS_SVP_KIND_)
- real(kind=FMS_SVP_KIND_), parameter :: one=real(1.0_r8_kind,FMS_SVP_KIND_)
- real(kind=FMS_SVP_KIND_), parameter :: ten=real(10.0_r8_kind,FMS_SVP_KIND_)
+ real(kind=FMS_SVP_KIND_), parameter :: ESBASW = real(101324.60d0,FMS_SVP_KIND_)
+ real(kind=FMS_SVP_KIND_), parameter :: ESBASI = real(610.71d0,FMS_SVP_KIND_)
+ real(kind=FMS_SVP_KIND_), parameter :: one=real(1.0d0,FMS_SVP_KIND_)
+ real(kind=FMS_SVP_KIND_), parameter :: ten=real(10.0d0,FMS_SVP_KIND_)
 
    TBASW = TFREEZE+100.0_kindl
    TBASI = TFREEZE
@@ -1087,7 +1087,7 @@
      if (ind < 0 .or. ind >= table_siz)  then
        nbad = nbad+1
      else
-       del = tmp-dtres_loc*real(ind)
+       del = tmp-dtres_loc*real(ind,FMS_SVP_KIND_)
        esat(i,j) = real(TABLE(ind+1),FMS_SVP_KIND_) &
                  + del*( real(DTABLE(ind+1),FMS_SVP_KIND_) &
                                + del*real(D2TABLE(ind+1),FMS_SVP_KIND_) )
@@ -1120,7 +1120,7 @@
    nbad = 0
    do i = 1, size(temp,1)
      tmp = temp(i)-tminl_loc
-     ind = int(dtinvl*(tmp+tepsl_loc))
+     ind = int(dtinvl_loc*(tmp+tepsl_loc))
      if (ind < 0 .or. ind >= table_siz)  then
        nbad = nbad+1
      else
@@ -1163,7 +1163,7 @@
             + del*( real(DTABLE(ind+1),FMS_SVP_KIND_) &
                           + del*real(D2TABLE(ind+1),FMS_SVP_KIND_) )
      desat = real(DTABLE(ind+1),FMS_SVP_KIND_) &
-             + real(2.0_r8_kind,FMS_SVP_KIND_)*del*real(D2TABLE(ind+1),FMS_SVP_KIND_)
+             + real(2.0d0,FMS_SVP_KIND_)*del*real(D2TABLE(ind+1),FMS_SVP_KIND_)
    endif
 
  end subroutine LOOKUP_ES_DES_K_0D_
@@ -1386,7 +1386,7 @@
    else
      del = tmp-dtres_loc*real(ind,FMS_SVP_KIND_)
      desat = real(DTABLE(ind+1),FMS_SVP_KIND_) &
-             + real(2.0_r8_kind,FMS_SVP_KIND_)*del*real(D2TABLE(ind+1),FMS_SVP_KIND_)
+             + real(2.0d0,FMS_SVP_KIND_)*del*real(D2TABLE(ind+1),FMS_SVP_KIND_)
    endif
 
  end subroutine LOOKUP_DES_K_0D_
@@ -1779,7 +1779,7 @@
    else
      del = tmp-dtres_loc*real(ind,FMS_SVP_KIND_)
      desat = real(DTABLE2(ind+1),FMS_SVP_KIND_) &
-             + real(2.0_r8_kind,FMS_SVP_KIND_)*del*real(D2TABLE2(ind+1),FMS_SVP_KIND_)
+            + real(2.0d0,FMS_SVP_KIND_)*del*real(D2TABLE2(ind+1),FMS_SVP_KIND_)
    endif
 
  end subroutine LOOKUP_DES2_K_0D_
