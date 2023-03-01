@@ -110,7 +110,6 @@ MODFILES = \
 	fms_diag_bbox_mod.$(FC_MODEXT) \
   fms_diag_elem_weight_procs_mod.$(FC_MODEXT) \
   fms_diag_fieldbuff_update_mod.$(FC_MODEXT) \
-  diag_manager_mod.$(FC_MODEXT) \
   include/fms_diag_fieldbuff_update.inc \
   include/fms_diag_fieldbuff_update.fh
 
