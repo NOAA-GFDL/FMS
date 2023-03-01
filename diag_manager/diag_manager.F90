@@ -528,20 +528,20 @@ END FUNCTION register_static_field
     IF ( PRESENT(err_msg) ) err_msg = ''
 
     IF ( PRESENT(init_time) ) THEN
-       register_diag_field_scalar = register_diag_field_array(module_name, field_name,&
+       register_diag_field_scalar_old = register_diag_field_array(module_name, field_name,&
             & (/null_axis_id/), init_time,long_name, units, missing_value, range, &
             & standard_name=standard_name, do_not_log=do_not_log, err_msg=err_msg,&
             & area=area, volume=volume, realm=realm)
     ELSE
-       register_diag_field_scalar = register_static_field(module_name, field_name,&
+       register_diag_field_scalar_old = register_static_field(module_name, field_name,&
             & (/null_axis_id/),long_name, units, missing_value, range,&
             & standard_name=standard_name, do_not_log=do_not_log, realm=realm)
     END IF
-  END FUNCTION register_diag_field_scalar
+  END FUNCTION register_diag_field_scalar_old
 
   !> @brief Registers an array field
   !> @return field index for subsequent call to send_data.
-  INTEGER FUNCTION register_diag_field_array(module_name, field_name, axes, init_time, &
+  INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, init_time, &
        & long_name, units, missing_value, range, mask_variant, standard_name, verbose,&
        & do_not_log, err_msg, interp_method, tile_count, area, volume, realm)
     CHARACTER(len=*), INTENT(in) :: module_name, field_name
@@ -764,7 +764,7 @@ END FUNCTION register_static_field
     LOGICAL :: mask_variant1, dynamic1, allow_log
     CHARACTER(len=128) :: msg
     INTEGER :: domain_type, i
-    character(len=256) :: axes_list, axis_name
+    character(len=256) :: axis_name
 
     ! Fatal error if the module has not been initialized.
     IF ( .NOT.module_is_initialized ) THEN
@@ -824,13 +824,7 @@ END FUNCTION register_static_field
     ! only writes log if do_diag_field_log is true in the namelist (default false)
     ! if do_diag_field_log is true and do_not_log arg is present as well, it will only print if do_not_log = false
     IF ( do_diag_field_log.AND.allow_log ) THEN
-        axes_list=''
-        DO i = 1, SIZE(axes)
-            CALL get_diag_axis_name(axes(i),axis_name)
-            IF ( TRIM(axes_list) /= '' ) axes_list = TRIM(axes_list)//','
-            axes_list = TRIM(axes_list)//TRIM(axis_name)
-        END DO
-        CALL log_diag_field_info (module_name, field_name, axes, axes_list, &
+        CALL log_diag_field_info (module_name, field_name, axes, &
             & long_name, units, missing_value=missing_value, range=range, &
             & DYNAMIC=dynamic1)
     END IF
@@ -1591,7 +1585,7 @@ END FUNCTION register_static_field
     TYPE (time_type), INTENT(in), OPTIONAL :: time
     INTEGER, INTENT(in), OPTIONAL :: is_in, js_in, ks_in,ie_in,je_in, ke_in
     LOGICAL, DIMENSION(:,:,:), INTENT(in), OPTIONAL :: mask
-    CLASS(*), DIMENSION(:,:,:), INTENT(in), OPTIONAL :: rmask
+    CLASS(*), DIMENSION(:,:,:), INTENT(in), OPTIONAL, TARGET :: rmask
     CHARACTER(len=*), INTENT(out), OPTIONAL :: err_msg
 
     REAL :: weight1
@@ -4072,18 +4066,6 @@ END FUNCTION register_static_field
     if(.not. use_modern_diag) null_axis_id = diag_axis_init('scalar_axis', (/0./), 'none', 'N', 'none')
     RETURN
   END SUBROUTINE diag_manager_init
-
-  !> @brief Return base time for diagnostics.
-  !! @return time_type get_base_time
-  !! @details Return base time for diagnostics (note: base time must be >= model time).
-  TYPE(time_type) FUNCTION get_base_time ()
-    ! <ERROR STATUS="FATAL">
-    !   MODULE has not been initialized
-    ! </ERROR>
-    IF ( .NOT.module_is_initialized ) CALL error_mesg('diag_manager_mod::get_base_time', &
-         & 'module has not been initialized', FATAL)
-    get_base_time = base_time
-  END FUNCTION get_base_time
 
   !> @brief Return base date for diagnostics.
   !! @details Return date information for diagnostic reference time.

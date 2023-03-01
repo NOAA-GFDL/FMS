@@ -507,7 +507,6 @@ my_test_count=`expr $my_test_count + 1`
 test_expect_success "Test the diag update_buffer (test $my_test_count)" '
   mpirun -n 1 ../test_diag_update_buffer
 '
-  test_done
 ## uses some updated code but doesn't need flag
 my_test_count=`expr $my_test_count + 1`
 test_expect_success "test_diag_dlinked_list (test $my_test_count)" '
