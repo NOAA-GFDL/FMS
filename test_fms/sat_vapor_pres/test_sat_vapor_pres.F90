@@ -663,17 +663,24 @@ contains
   !-----------------------------------------------------------------------
   subroutine compute_tables
 
-    ! increment used to generate derivative table
+    !This subroutine is taken from the sat_vapor_pres_init_k subroutine in sat_vapor_pres/include
+    !Thus, sat_vapor_pres_init_k subroutine is not tested and is assumed to be correct.
+    !The TABLE* and DTABLE* values are required to test compute_qs, compute_mrs, and the 3 flavors of
+    !loopup_es_des subroutines
+    !The TABLE* and DTABLE* values are computed with r8_precision.
+
+
     real(kind=r8_kind), dimension(3) :: tem, es
     real(kind=r8_kind) :: dtres, tminl, dtinvl, tepsl, tinrc, tfact
     integer :: i, t
 
-    integer, parameter ::esres=10
+    integer, parameter ::esres=10 !< value taken from subroutine sat_vapor_pres_init_k
 
 
+    !TCMAX, TCMIN,TFREEZE are module level variables in sat_vapor_pres_mod
     t = (TCMAX-TCMIN)*esres
     dtres  = (real(TCMAX,r8_kind)-real(TCMIN,r8_kind))/real(t,r8_kind)
-    tminl  = real(tcmin,r8_kind)+real(TFREEZE,r8_kind)  ! minimum valid temp in table
+    tminl  = real(TCMIN,r8_kind)+real(TFREEZE,r8_kind)
     dtinvl = 1.0_r8_kind/dtres
     tepsl  = 0.5_r8_kind*dtres
     tinrc  = 0.1_r8_kind*dtres
@@ -711,6 +718,14 @@ contains
   end subroutine compute_tables
   !-----------------------------------------------------------------------
   function compute_es_k(tem, TFREEZE) result (es)
+
+    !This subroutine is taken from the compute_es_k subroutine in sat_vapor_pres/include
+    !and is required to compute the TABLE and DTABLE  values.
+    !Thus, compute_es_k subroutine is not tested and is assumed to be correct.
+    !Since the TABLE and DTABLE values are computed with r8_precision, all variables here
+    !are in r8_kind precision.
+
+
     real(kind=r8_kind), intent(in) :: tem(:), TFREEZE
     real(kind=r8_kind) :: es(size(tem,1))
 
@@ -768,15 +783,22 @@ contains
   end function compute_es_k
 !-----------------------------------------------------------------------
  function compute_es_liq_k(tem, TFREEZE) result (es)
- real(kind=r8_kind), intent(in) :: tem(:), TFREEZE
- real(kind=r8_kind) :: es(size(tem,1))
 
- real(kind=r8_kind) :: x, esh2o, TBASW
- integer :: i
+   !This subroutine is taken from the compute_es_liq_k subroutine in sat_vapor_pres/include
+   !and is required to compute the TABLE2 and DTABLE2 values.
+   !Thus, compute_es_liq_k subroutine is not tested and is assumed to be correct.
+   !Since the TABLE2 and DTABLE2 values are computed with r8_precision, all variables here
+   !are in r8_kind precision.
 
- real(kind=r8_kind), parameter :: one=1.0_r8_kind
- real(kind=r8_kind), parameter :: ten=10.0_r8_kind
- real(kind=r8_kind), parameter :: ESBASW = 101324.60_r8_kind
+   real(kind=r8_kind), intent(in) :: tem(:), TFREEZE
+   real(kind=r8_kind) :: es(size(tem,1))
+
+   real(kind=r8_kind) :: x, esh2o, TBASW
+   integer :: i
+
+   real(kind=r8_kind), parameter :: one=1.0_r8_kind
+   real(kind=r8_kind), parameter :: ten=10.0_r8_kind
+   real(kind=r8_kind), parameter :: ESBASW = 101324.60_r8_kind
 
 
    TBASW = TFREEZE+100.0_r8_kind
@@ -799,16 +821,22 @@ contains
  !-----------------------------------------------------------------------
  function compute_es_liq_ice_k(tem, TFREEZE) result (es)
 
- real(kind=r8_kind), intent(in) :: tem(:), TFREEZE
- real(kind=r8_kind) :: es(size(tem,1))
+   !This subroutine is taken from the compute_es_liq_ice_k subroutine in sat_vapor_pres/include
+   !and is required to compute the TABLE3 and DTABLE3 values.
+   !Thus, compute_es_liq_ice_k subroutine is not tested and is assumed to be correct.
+   !Since the TABLE3 and DTABLE3 values are computed with r8_precision, all variables here
+   !are in r8_kind precision.
 
- real(kind=r8_kind)    :: x, TBASW, TBASI
- integer :: i
+   real(kind=r8_kind), intent(in) :: tem(:), TFREEZE
+   real(kind=r8_kind) :: es(size(tem,1))
 
- real(kind=r8_kind), parameter :: ESBASW = 101324.60_r8_kind
- real(kind=r8_kind), parameter :: ESBASI = 610.71_r8_kind
- real(kind=r8_kind), parameter :: one=  1.0_r8_kind
- real(kind=r8_kind), parameter :: ten= 10.0_r8_kind
+   real(kind=r8_kind)    :: x, TBASW, TBASI
+   integer :: i
+
+   real(kind=r8_kind), parameter :: ESBASW = 101324.60_r8_kind
+   real(kind=r8_kind), parameter :: ESBASI = 610.71_r8_kind
+   real(kind=r8_kind), parameter :: one=  1.0_r8_kind
+   real(kind=r8_kind), parameter :: ten= 10.0_r8_kind
 
    TBASW = TFREEZE+100.0_r8_kind
    TBASI = TFREEZE
