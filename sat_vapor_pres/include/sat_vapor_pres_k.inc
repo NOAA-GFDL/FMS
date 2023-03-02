@@ -30,6 +30,10 @@
                                   teps, tmin, dtinv)
 
 ! This routine has been generalized to return tables for any temperature range and resolution
+! This routine does not assume the passed in arguments are with r8_precision.
+! Thus all variables used for the computation of the TABLES (e.g. TABLE, DTABLE*, D2TABLE*) are promoted
+! to r8_kind precision.  Consequently, all local variables used for computation are in r8_kind precision
+
 
  integer, intent(in) :: table_size
  real(kind=FMS_SVP_KIND_), intent(in) :: tcmin ! TABLE(1)          = sat vapor pressure at temperature tcmin (deg C)
@@ -39,10 +43,13 @@
  logical, intent(in)  :: construct_table_wrt_liq
  logical, intent(in)  :: construct_table_wrt_liq_and_ice
  character(len=*), intent(out) :: err_msg
- real(kind=FMS_SVP_KIND_), intent(out), optional :: teps, tmin, dtinv !< sat_vapor_pres module variables
-                                                                ! are declared as r8_kind
+ real(kind=FMS_SVP_KIND_), intent(out), optional :: teps, tmin, dtinv ! these variables are declared as
+                                                                      ! r8_kind in sat_vapor_pres_mod
 
 ! increment used to generate derivative table
+! the following variables are used in the computation
+! of the *TABLES* (which is defined in r8_kind in sat_vapor_pres_mod)
+! Thus these variables are declared with r8_kind
   real(kind=r8_kind), dimension(3) :: tem(3), es(3)
   real(kind=r8_kind) :: hdtinv, tinrc, tfact
   integer :: i
@@ -79,9 +86,9 @@
       table_siz = table_size
       dtres  = (real(tcmax,r8_kind)-real(tcmin,r8_kind))/real(table_size-1,r8_kind)
       tminl  = real(tcmin,r8_kind)+real(TFREEZE,r8_kind)  ! minimum valid temp in table
-      dtinvl = 1.0_r8_kind/dtres
-      tepsl  = 0.5_r8_kind*dtres
-      tinrc  = 0.1_r8_kind*dtres
+      dtinvl = 1.0d0/dtres
+      tepsl  = 0.5d0*dtres
+      tinrc  = 0.1d0*dtres
       if(present(teps )) teps =real(tepsl,  FMS_SVP_KIND_)
       if(present(tmin )) tmin =real(tminl,  FMS_SVP_KIND_)
       if(present(dtinv)) dtinv=real(dtinvl, FMS_SVP_KIND_)
@@ -89,19 +96,21 @@
 ! To be able to compute tables for any temperature range and resolution,
 ! and at the same time exactly reproduce answers from memphis revision,
 ! it is necessary to compute ftact differently than it is in memphis.
-      tfact = 5.0_r8_kind*dtinvl
+      tfact = 5.0d0*dtinvl
 
-      hdtinv = 0.5_r8_kind*dtinvl
+      hdtinv = 0.5d0*dtinvl
 
 ! compute es tables from tcmin to tcmax
 ! estimate es derivative with small +/- difference
 
       if (do_simple) then
 
+        ! TABLE = 610.78ES0*exp(-HLV/RGAS[1/tem - 1.TFREEZE])
+        ! DTABLE = HLV(TABLE/RVGAS)^2
         do i = 1, table_size
           tem(1) = tminl + dtres*real(i-1,r8_kind)
-          TABLE(i) = real(ES0,r8_kind)*610.78_r8_kind* &
-               exp(-real(HLV,r8_kind)/real(RVGAS,r8_kind)*(1.0_r8_kind/tem(1) - 1.0_r8_kind/real(TFREEZE,r8_kind)))
+          TABLE(i) = real(ES0,r8_kind)*610.78d0* &
+               exp( -real(HLV,r8_kind)/real(RVGAS,r8_kind) * (1.0d0/tem(1) - 1.0d0/real(TFREEZE,r8_kind)) )
           DTABLE(i) = real(HLV,r8_kind)*TABLE(i)/real(RVGAS,r8_kind)/tem(1)**2._r8_kind
         enddo
 
@@ -122,13 +131,13 @@
 ! differencing des values in the table
 
       do i = 2, table_size-1
-         D2TABLE(i) = 0.25_r8_kind*dtinvl*(DTABLE(i+1)-DTABLE(i-1))
+         D2TABLE(i) = 0.25d0*dtinvl*(DTABLE(i+1)-DTABLE(i-1))
       enddo
     ! one-sided derivatives at boundaries
 
-         D2TABLE(1) = 0.50_r8_kind*dtinvl*(DTABLE(2)-DTABLE(1))
+         D2TABLE(1) = 0.50d0*dtinvl*(DTABLE(2)-DTABLE(1))
 
-         D2TABLE(table_size) = 0.50_r8_kind*dtinvl*(DTABLE(table_size)-DTABLE(table_size-1))
+         D2TABLE(table_size) = 0.50d0*dtinvl*(DTABLE(table_size)-DTABLE(table_size-1))
 
    if (construct_table_wrt_liq) then
 ! compute es tables from tcmin to tcmax
@@ -148,13 +157,13 @@
 ! differencing des values in the table
 
      do i = 2, table_size-1
-       D2TABLE2(i) = 0.25_r8_kind*dtinvl*(DTABLE2(i+1)-DTABLE2(i-1))
+       D2TABLE2(i) = 0.25d0*dtinvl*(DTABLE2(i+1)-DTABLE2(i-1))
      enddo
 ! one-sided derivatives at boundaries
 
-     D2TABLE2(1) = 0.50_r8_kind*dtinvl*(DTABLE2(2)-DTABLE2(1))
+     D2TABLE2(1) = 0.50d0*dtinvl*(DTABLE2(2)-DTABLE2(1))
 
-     D2TABLE2(table_size) = 0.50_r8_kind*dtinvl*(DTABLE2(table_size)-DTABLE2(table_size-1))
+     D2TABLE2(table_size) = 0.50d0*dtinvl*(DTABLE2(table_size)-DTABLE2(table_size-1))
    endif
 
 
@@ -176,13 +185,13 @@
 ! differencing des values in the table
 
      do i = 2, table_size-1
-       D2TABLE3(i) = 0.25_r8_kind*dtinvl*(DTABLE3(i+1)-DTABLE3(i-1))
+       D2TABLE3(i) = 0.25d0*dtinvl*(DTABLE3(i+1)-DTABLE3(i-1))
      enddo
 ! one-sided derivatives at boundaries
 
-     D2TABLE3(1) = 0.50_r8_kind*dtinvl*(DTABLE3(2)-DTABLE3(1))
+     D2TABLE3(1) = 0.50d0*dtinvl*(DTABLE3(2)-DTABLE3(1))
 
-     D2TABLE3(table_size) = 0.50_r8_kind*dtinvl*(DTABLE3(table_size)-DTABLE3(table_size-1))
+     D2TABLE3(table_size) = 0.50d0*dtinvl*(DTABLE3(table_size)-DTABLE3(table_size-1))
    endif
 
       use_exact_qs = use_exact_qs_input
@@ -204,6 +213,8 @@
  real(kind=FMS_SVP_KIND_), parameter :: ESBASW = real(101324.60d0,FMS_SVP_KIND_)
  real(kind=FMS_SVP_KIND_), parameter :: ESBASI = real(610.71d0,FMS_SVP_KIND_)
 
+ ! one and ten are declared for code readability.  For example, one is easier to read
+ ! then 1.0_lkind where lkind=FMS_SVP_KIND_ throughout the code
  real(FMS_SVP_KIND_), parameter :: one=real(1.0d0,FMS_SVP_KIND_)
  real(FMS_SVP_KIND_), parameter :: ten=real(10.0d0,FMS_SVP_KIND_)
 
@@ -214,6 +225,7 @@
 
 !  compute es over ice
 
+     ! x = -9.09718(TBASI/tem-1) - 3.56654log(TBASI/tem) + 0.876793(1-tem/TBASI) + log(ESBASI)
      if (tem(i) < TBASI) then
          x = -9.09718_kindl*(TBASI/tem(i)-one)   &
              -3.56654_kindl*log10(TBASI/tem(i)) &
@@ -227,6 +239,9 @@
 !  values over 100 c may not be valid
 !  see smithsonian meteorological tables page 350.
 
+     ! x = -7.90298(TBASW/tem-1) + 5.02808log(TBASW/tem)
+     !     -1.3816d-07*10^[11.344(1-tem/TBASW)-1]
+     !     +8.1328d-03*10^[-3.49149(TBASW/tem-1)-1] + log(ESBASW)
      if (tem(i) > -20.0_kindl+TBASI) then
          x = -7.90298_kindl*(TBASW/tem(i)-one)   &
              +5.02808_kindl*log10(TBASW/tem(i)) &
@@ -240,6 +255,7 @@
 
 !  derive blended es over ice and supercooled water between -20c and 0c
 
+     ! es = 0.05*[esice*(TBASI-10)+esh2o*(tem-TBASI+20)]
      if (tem(i) <= -20.0_kindl+TBASI) then
          es(i) = esice
      else if (tem(i) >= TBASI) then
@@ -262,27 +278,29 @@
  integer :: i
 
  integer, parameter :: kindl=FMS_SVP_KIND_
+ ! one and ten are declared for code readability.  For example, one is easier to read
+ ! then 1.0_lkind where lkind=FMS_SVP_KIND_ throughout the code
  real(kind=FMS_SVP_KIND_), parameter :: one=real(1.0d0,FMS_SVP_KIND_)
  real(kind=FMS_SVP_KIND_), parameter :: ten=real(10.0d0,FMS_SVP_KIND_)
  real(kind=FMS_SVP_KIND_), parameter :: ESBASW = real(101324.60d0,FMS_SVP_KIND_)
-
 
    TBASW = TFREEZE+100.0_kindl
 
    do i = 1, size(tem)
 
-
 !  compute es over water for all temps.
 !  values over 100 c may not be valid
 !  see smithsonian meteorological tables page 350.
 
+   ! x = -7.90298(TBASW/tem-1) + 5.02808log(TBASW/tem)
+   !     -1.3816d-07*10^[11.344(1-tem/TBASW)-1]
+   !     +8.1328d-03*10^[-3.49149(TBASW/tem-1)-1] + log(ESBASW)
          x = -7.90298_kindl*(TBASW/tem(i)-one) &
              +5.02808_kindl*log10(TBASW/tem(i)) &
              -real(1.3816d-07,FMS_SVP_KIND_)*(ten**((one-tem(i)/TBASW)*11.344_kindl)-one)    &
              +real(8.1328d-03,FMS_SVP_KIND_)*(ten**((TBASW/tem(i)-one)*(-3.49149_kindl))-one)&
              +log10(ESBASW)
          esh2o = ten**(x)
-
 
          es(i) = esh2o
 
@@ -302,18 +320,23 @@
  integer, parameter :: kindl=FMS_SVP_KIND_
  real(kind=FMS_SVP_KIND_), parameter :: ESBASW = real(101324.60d0,FMS_SVP_KIND_)
  real(kind=FMS_SVP_KIND_), parameter :: ESBASI = real(610.71d0,FMS_SVP_KIND_)
+ ! one and ten are declared for code readability.  For example, one is easier to read
+ ! then 1.0_lkind where lkind=FMS_SVP_KIND_ throughout the code
  real(kind=FMS_SVP_KIND_), parameter :: one=real(1.0d0,FMS_SVP_KIND_)
  real(kind=FMS_SVP_KIND_), parameter :: ten=real(10.0d0,FMS_SVP_KIND_)
 
+
    TBASW = TFREEZE+100.0_kindl
    TBASI = TFREEZE
+
+
 
    do i = 1, size(tem)
 
      if (tem(i) < TBASI) then
 
 !  compute es over ice
-
+        ! x= -9.09718(TBASI/tem-1) -3.56654log(TBASI/tem) +0.87679(1-tem/TBASI)+log(EBASI)
          x = -9.09718_kindl*(TBASI/tem(i)-one)   &
              -3.56654_kindl*log10(TBASI/tem(i)) &
              +0.876793_kindl*(one-tem(i)/TBASI) + log10(ESBASI)
@@ -323,7 +346,9 @@
 !  compute es over water
 !  values over 100 c may not be valid
 !  see smithsonian meteorological tables page 350.
-
+        ! x = -7.90298(TBASW/tem-1) + 5.02808log(TBASW/tem)
+        !     -1.3816d-07*10^[11.344(1-tem/TBASW)-1]
+        !     +8.1328d-03*10^[-3.49149(TBASW/tem-1)-1] + log(ESBASW)
           x = -7.90298_kindl*(TBASW/tem(i)-one) &
               +5.02808_kindl*log10(TBASW/tem(i)) &
               -real(1.3816d-07,FMS_SVP_KIND_)*(ten**((one-tem(i)/TBASW)*11.344_kindl)-one)      &
@@ -1032,6 +1057,9 @@
 
  real(kind=FMS_SVP_KIND_) :: tmp, del
  integer :: ind, i, j, k
+ !dtres, tminl, tepsl, dtinvl are module level variables declared in r8_kind precision
+ !for presicion consistency and for code readability, the *_loc variables are declared
+ !and used
  real(kind=FMS_SVP_KIND_) :: dtres_loc, tepsl_loc, tminl_loc,  dtinvl_loc
 
    dtres_loc=real(dtres, FMS_SVP_KIND_)
@@ -1049,11 +1077,13 @@
        nbad = nbad+1
      else
        del = tmp-real(dtres_loc,FMS_SVP_KIND_)*real(ind,FMS_SVP_KIND_)
+       ! esat = TABLE + del*(TABLE + del*D2TABLE)
        esat(i,j,k) = real(TABLE(ind+1),FMS_SVP_KIND_)              &
                          + del*( real(DTABLE(ind+1),FMS_SVP_KIND_) &
                                     + del*real(D2TABLE(ind+1),FMS_SVP_KIND_) )
+       ! desat = DTABLE + 2del*D2TABLE
        desat(i,j,k) = real(DTABLE(ind+1), FMS_SVP_KIND_) &
-                        + real(2.0_r8_kind,FMS_SVP_KIND_)*del*real(D2TABLE(ind+1),FMS_SVP_KIND_)
+                        + real(2.0d0,FMS_SVP_KIND_)*del*real(D2TABLE(ind+1),FMS_SVP_KIND_)
      endif
    enddo
    enddo
@@ -1070,7 +1100,9 @@
 
  real    :: tmp, del
  integer :: ind, i, j
-
+ !dtres, tminl, tepsl, dtinvl are module level variables declared in r8_kind precision
+ !for presicion consistency and for code readability, the *_loc variables are declared
+ !and used
  real(kind=FMS_SVP_KIND_) :: dtres_loc, tepsl_loc, tminl_loc,  dtinvl_loc
 
    dtres_loc=real(dtres, FMS_SVP_KIND_)
@@ -1088,9 +1120,11 @@
        nbad = nbad+1
      else
        del = tmp-dtres_loc*real(ind,FMS_SVP_KIND_)
+       ! esat = TABLE + del*(TABLE + del*D2TABLE)
        esat(i,j) = real(TABLE(ind+1),FMS_SVP_KIND_) &
                  + del*( real(DTABLE(ind+1),FMS_SVP_KIND_) &
-                               + del*real(D2TABLE(ind+1),FMS_SVP_KIND_) )
+                 + del*real(D2TABLE(ind+1),FMS_SVP_KIND_) )
+       ! desat = DTABLE + 2del*D2TABLE
        desat(i,j) = real(DTABLE(ind+1),FMS_SVP_KIND_) &
                   + real(2.0_r8_kind,FMS_SVP_KIND_)*del*real(D2TABLE(ind+1),FMS_SVP_KIND_)
      endif
@@ -1108,7 +1142,9 @@
 
  real(kind=FMS_SVP_KIND_) :: tmp, del
  integer :: ind, i
-
+ !dtres, tminl, tepsl, dtinvl are module level variables declared in r8_kind precision
+ !for presicion consistency and for code readability, the *_loc variables are declared
+ !and used
  real(kind=FMS_SVP_KIND_) :: dtres_loc, tepsl_loc, tminl_loc,  dtinvl_loc
 
    dtres_loc=real(dtres, FMS_SVP_KIND_)
@@ -1124,12 +1160,14 @@
      if (ind < 0 .or. ind >= table_siz)  then
        nbad = nbad+1
      else
-       del = tmp-dtres_loc*real(ind,FMS_SVP_KIND_)
-       esat(i) = real(TABLE(ind+1),FMS_SVP_KIND_) &
+        del = tmp-dtres_loc*real(ind,FMS_SVP_KIND_)
+        ! esat = TABLE + del*(TABLE + del*D2TABLE)
+        esat(i) = real(TABLE(ind+1),FMS_SVP_KIND_) &
                + del*( real(DTABLE(ind+1),FMS_SVP_KIND_) &
                                 + del*real(D2TABLE(ind+1),FMS_SVP_KIND_) )
-       desat(i) = real(DTABLE(ind+1),FMS_SVP_KIND_) &
-               + real(2.0_r8_kind,FMS_SVP_KIND_)*del*real(D2TABLE(ind+1),FMS_SVP_KIND_)
+        ! desat = DTABLE + 2del*D2TABLE
+        desat(i) = real(DTABLE(ind+1),FMS_SVP_KIND_) &
+             + real(2.0_r8_kind,FMS_SVP_KIND_)*del*real(D2TABLE(ind+1),FMS_SVP_KIND_)
      endif
    enddo
 
@@ -1144,7 +1182,9 @@
 
  real(kind=FMS_SVP_KIND_) :: tmp, del
  integer :: ind
-
+ !dtres, tminl, tepsl, dtinvl are module level variables declared in r8_kind precision
+ !for presicion consistency and for code readability, the *_loc variables are declared
+ !and used
  real(kind=FMS_SVP_KIND_) :: dtres_loc, tepsl_loc, tminl_loc,  dtinvl_loc
 
    dtres_loc=real(dtres, FMS_SVP_KIND_)
@@ -1159,9 +1199,11 @@
      nbad = nbad+1
    else
      del = tmp-dtres_loc*real(ind,FMS_SVP_KIND_)
+     ! esat = TABLE + del*(TABLE + del*D2TABLE)
      esat = real(TABLE(ind+1),FMS_SVP_KIND_) &
             + del*( real(DTABLE(ind+1),FMS_SVP_KIND_) &
                           + del*real(D2TABLE(ind+1),FMS_SVP_KIND_) )
+     ! desat = DTABLE + 2del*D2TABLE
      desat = real(DTABLE(ind+1),FMS_SVP_KIND_) &
              + real(2.0d0,FMS_SVP_KIND_)*del*real(D2TABLE(ind+1),FMS_SVP_KIND_)
    endif
@@ -1176,7 +1218,9 @@
  integer, intent(out) :: nbad
  real(kind=FMS_SVP_KIND_) :: tmp, del
  integer :: ind, i, j, k
-
+ !dtres, tminl, tepsl, dtinvl are module level variables declared in r8_kind precision
+ !for presicion consistency and for code readability, the *_loc variables are declared
+ !and used
  real(kind=FMS_SVP_KIND_) :: dtres_loc, tepsl_loc, tminl_loc,  dtinvl_loc
 
    dtres_loc=real(dtres, FMS_SVP_KIND_)
@@ -1194,6 +1238,7 @@
        nbad = nbad+1
      else
        del = tmp-dtres_loc*real(ind,FMS_SVP_KIND_)
+       ! esat = TABLE + del*(TABLE + del*D2TABLE)
        esat(i,j,k) = real(TABLE(ind+1),FMS_SVP_KIND_) &
                      + del*( real(DTABLE(ind+1),FMS_SVP_KIND_) &
                                     + del*real(D2TABLE(ind+1),FMS_SVP_KIND_) )
@@ -1212,7 +1257,9 @@
  integer, intent(out) :: nbad
  real(kind=FMS_SVP_KIND_) :: tmp, del
  integer :: ind, i, j, k
-
+ !dtres, tminl, tepsl, dtinvl are module level variables declared in r8_kind precision
+ !for presicion consistency and for code readability, the *_loc variables are declared
+ !and used
  real(kind=FMS_SVP_KIND_) :: dtres_loc, tepsl_loc, tminl_loc,  dtinvl_loc
 
    dtres_loc=real(dtres, FMS_SVP_KIND_)
@@ -1229,7 +1276,8 @@
      if (ind < 0 .or. ind >= table_siz)  then
        nbad = nbad+1
      else
-       del = tmp-dtres_loc*real(ind,FMS_SVP_KIND_)
+        del = tmp-dtres_loc*real(ind,FMS_SVP_KIND_)
+        ! desat = DTABLE + 2del*D2TABLE
        desat(i,j,k) = real(DTABLE(ind+1),FMS_SVP_KIND_) &
                       + real(2.0_r8_kind,FMS_SVP_KIND_)*del*real(D2TABLE(ind+1),FMS_SVP_KIND_)
      endif
@@ -1247,7 +1295,9 @@
  real(kind=FMS_SVP_KIND_)    :: tmp, del
  integer :: ind, i, j
 
-
+ !dtres, tminl, tepsl, dtinvl are module level variables declared in r8_kind precision
+ !for presicion consistency and for code readability, the *_loc variables are declared
+ !and used
  real(kind=FMS_SVP_KIND_) :: dtres_loc, tepsl_loc, tminl_loc,  dtinvl_loc
 
    dtres_loc=real(dtres, FMS_SVP_KIND_)
@@ -1263,9 +1313,10 @@
      if (ind < 0 .or. ind >= table_siz)  then
        nbad = nbad+1
      else
-       del = tmp-dtres_loc*real(ind,FMS_SVP_KIND_)
-       desat(i,j) = real(DTABLE(ind+1),FMS_SVP_KIND_) &
-                    + real(2.0_r8_kind,FMS_SVP_KIND_)*del*real(D2TABLE(ind+1),FMS_SVP_KIND_)
+        del = tmp-dtres_loc*real(ind,FMS_SVP_KIND_)
+        ! desat = DTABLE + 2del*D2TABLE
+        desat(i,j) = real(DTABLE(ind+1),FMS_SVP_KIND_) &
+             + real(2.0_r8_kind,FMS_SVP_KIND_)*del*real(D2TABLE(ind+1),FMS_SVP_KIND_)
      endif
    enddo
    enddo
@@ -1278,7 +1329,9 @@
  integer, intent(out) :: nbad
  real(kind=FMS_SVP_KIND_) :: tmp, del
  integer :: ind, i, j
-
+ !dtres, tminl, tepsl, dtinvl are module level variables declared in r8_kind precision
+ !for presicion consistency and for code readability, the *_loc variables are declared
+ !and used
  real(kind=FMS_SVP_KIND_) :: dtres_loc, tepsl_loc, tminl_loc,  dtinvl_loc
 
    dtres_loc=real(dtres, FMS_SVP_KIND_)
@@ -1296,6 +1349,7 @@
        nbad = nbad+1
      else
        del = tmp-dtres_loc*real(ind,FMS_SVP_KIND_)
+       ! esat = TABLE + del*(TABLE + del*D2TABLE)
        esat(i,j) = real(TABLE(ind+1),FMS_SVP_KIND_) &
                    + del*(real(DTABLE(ind+1),FMS_SVP_KIND_) &
                                   + del*real(D2TABLE(ind+1),FMS_SVP_KIND_)  )
@@ -1311,7 +1365,9 @@
  integer, intent(out) :: nbad
  real(kind=FMS_SVP_KIND_) :: tmp, del
  integer :: ind, i
-
+ !dtres, tminl, tepsl, dtinvl are module level variables declared in r8_kind precision
+ !for presicion consistency and for code readability, the *_loc variables are declared
+ !and used
  real(kind=FMS_SVP_KIND_) :: dtres_loc, tepsl_loc, tminl_loc,  dtinvl_loc
 
    dtres_loc=real(dtres, FMS_SVP_KIND_)
@@ -1326,8 +1382,9 @@
      if (ind < 0 .or. ind >= table_siz)  then
        nbad = nbad+1
      else
-       del = tmp-dtres_loc*real(ind,FMS_SVP_KIND_)
-       desat(i) = real(DTABLE(ind+1),FMS_SVP_KIND_) &
+        del = tmp-dtres_loc*real(ind,FMS_SVP_KIND_)
+        ! desat = DTABLE + 2del*D2TABLE
+        desat(i) = real(DTABLE(ind+1),FMS_SVP_KIND_) &
                   + real(2.0_r8_kind,FMS_SVP_KIND_)*del*real(D2TABLE(ind+1),FMS_SVP_KIND_)
      endif
    enddo
@@ -1340,7 +1397,9 @@
  integer, intent(out) :: nbad
  real(kind=FMS_SVP_KIND_)    :: tmp, del
  integer :: ind, i
-
+ !dtres, tminl, tepsl, dtinvl are module level variables declared in r8_kind precision
+ !for presicion consistency and for code readability, the *_loc variables are declared
+ !and used
  real(kind=FMS_SVP_KIND_) :: dtres_loc, tepsl_loc, tminl_loc,  dtinvl_loc
 
    dtres_loc=real(dtres, FMS_SVP_KIND_)
@@ -1356,6 +1415,7 @@
        nbad = nbad+1
      else
        del = tmp-dtres_loc*real(ind,FMS_SVP_KIND_)
+       ! esat = TABLE + del*(TABLE + del*D2TABLE)
        esat(i) = real(TABLE(ind+1),FMS_SVP_KIND_) &
                  + del*(real(DTABLE(ind+1),FMS_SVP_KIND_) &
                                 + del*real(D2TABLE(ind+1),FMS_SVP_KIND_) )
@@ -1370,7 +1430,9 @@
  integer, intent(out) :: nbad
  real(kind=FMS_SVP_KIND_) :: tmp, del
  integer :: ind
-
+ !dtres, tminl, tepsl, dtinvl are module level variables declared in r8_kind precision
+ !for presicion consistency and for code readability, the *_loc variables are declared
+ !and used
  real(kind=FMS_SVP_KIND_) :: dtres_loc, tepsl_loc, tminl_loc,  dtinvl_loc
 
    dtres_loc=real(dtres, FMS_SVP_KIND_)
@@ -1384,9 +1446,10 @@
    if (ind < 0 .or. ind >= table_siz)  then
      nbad = nbad+1
    else
-     del = tmp-dtres_loc*real(ind,FMS_SVP_KIND_)
-     desat = real(DTABLE(ind+1),FMS_SVP_KIND_) &
-             + real(2.0d0,FMS_SVP_KIND_)*del*real(D2TABLE(ind+1),FMS_SVP_KIND_)
+      del = tmp-dtres_loc*real(ind,FMS_SVP_KIND_)
+      ! desat = DTABLE + 2del*D2TABLE
+      desat = real(DTABLE(ind+1),FMS_SVP_KIND_) &
+           + real(2.0d0,FMS_SVP_KIND_)*del*real(D2TABLE(ind+1),FMS_SVP_KIND_)
    endif
 
  end subroutine LOOKUP_DES_K_0D_
@@ -1397,7 +1460,9 @@
  integer, intent(out) :: nbad
  real(kind=FMS_SVP_KIND_) :: tmp, del
  integer :: ind
-
+ !dtres, tminl, tepsl, dtinvl are module level variables declared in r8_kind precision
+ !for presicion consistency and for code readability, the *_loc variables are declared
+ !and used
  real(kind=FMS_SVP_KIND_) :: dtres_loc, tepsl_loc, tminl_loc,  dtinvl_loc
 
    dtres_loc=real(dtres, FMS_SVP_KIND_)
@@ -1411,8 +1476,9 @@
    if (ind < 0 .or. ind >= table_siz)  then
      nbad = nbad+1
    else
-     del = tmp-dtres_loc*real(ind,FMS_SVP_KIND_)
-     esat = real(TABLE(ind+1),FMS_SVP_KIND_) &
+      del = tmp-dtres_loc*real(ind,FMS_SVP_KIND_)
+      ! esat = TABLE + del*(TABLE + del*D2TABLE)
+      esat = real(TABLE(ind+1),FMS_SVP_KIND_) &
             + del*( real(DTABLE(ind+1),FMS_SVP_KIND_) &
                              + del*real(D2TABLE(ind+1),FMS_SVP_KIND_) )
    endif
@@ -1427,7 +1493,9 @@
 
  real(kind=FMS_SVP_KIND_) :: tmp, del
  integer :: ind, i, j, k
-
+ !dtres, tminl, tepsl, dtinvl are module level variables declared in r8_kind precision
+ !for presicion consistency and for code readability, the *_loc variables are declared
+ !and used
  real(kind=FMS_SVP_KIND_) :: dtres_loc, tepsl_loc, tminl_loc,  dtinvl_loc
 
    dtres_loc=real(dtres, FMS_SVP_KIND_)
@@ -1444,11 +1512,13 @@
      if (ind < 0 .or. ind >= table_siz) then
        nbad = nbad+1
      else
-       del = tmp-dtres_loc*real(ind,FMS_SVP_KIND_)
-       esat(i,j,k) = real(TABLE2(ind+1),FMS_SVP_KIND_) &
+        del = tmp-dtres_loc*real(ind,FMS_SVP_KIND_)
+        ! esat = TABLE + del*(TABLE + del*D2TABLE)
+        esat(i,j,k) = real(TABLE2(ind+1),FMS_SVP_KIND_) &
                      + del*( real(DTABLE2(ind+1),FMS_SVP_KIND_) &
                                 + del*real(D2TABLE2(ind+1),FMS_SVP_KIND_) )
-       desat(i,j,k) = real(DTABLE2(ind+1),FMS_SVP_KIND_) &
+        ! desat = DTABLE + 2del*D2TABLE
+        desat(i,j,k) = real(DTABLE2(ind+1),FMS_SVP_KIND_) &
                       + real(2.0_r8_kind,FMS_SVP_KIND_)*del*real(D2TABLE2(ind+1),FMS_SVP_KIND_)
      endif
    enddo
@@ -1466,7 +1536,9 @@
 
  real(kind=FMS_SVP_KIND_) :: tmp, del
  integer :: ind, i, j
-
+ !dtres, tminl, tepsl, dtinvl are module level variables declared in r8_kind precision
+ !for presicion consistency and for code readability, the *_loc variables are declared
+ !and used
  real(kind=FMS_SVP_KIND_) :: dtres_loc, tepsl_loc, tminl_loc,  dtinvl_loc
 
    dtres_loc=real(dtres, FMS_SVP_KIND_)
@@ -1482,11 +1554,13 @@
      if (ind < 0 .or. ind >= table_siz)  then
        nbad = nbad+1
      else
-       del = tmp-dtres_loc*real(ind,FMS_SVP_KIND_)
-       esat(i,j) = real(TABLE2(ind+1),FMS_SVP_KIND_) &
+        del = tmp-dtres_loc*real(ind,FMS_SVP_KIND_)
+        ! esat = TABLE + del*(TABLE + del*D2TABLE)
+        esat(i,j) = real(TABLE2(ind+1),FMS_SVP_KIND_) &
                    + del*( real(DTABLE2(ind+1),FMS_SVP_KIND_) &
                                  + del*real(D2TABLE2(ind+1),FMS_SVP_KIND_) )
-       desat(i,j) = real(DTABLE2(ind+1),FMS_SVP_KIND_) &
+        ! desat = DTABLE + 2del*D2TABLE
+        desat(i,j) = real(DTABLE2(ind+1),FMS_SVP_KIND_) &
                     + real(2.0_r8_kind,FMS_SVP_KIND_)*del*real(D2TABLE2(ind+1),FMS_SVP_KIND_)
      endif
    enddo
@@ -1503,7 +1577,9 @@
 
  real(kind=FMS_SVP_KIND_) :: tmp, del
  integer :: ind, i
-
+ !dtres, tminl, tepsl, dtinvl are module level variables declared in r8_kind precision
+ !for presicion consistency and for code readability, the *_loc variables are declared
+ !and used
  real(kind=FMS_SVP_KIND_) :: dtres_loc, tepsl_loc, tminl_loc,  dtinvl_loc
 
    dtres_loc=real(dtres, FMS_SVP_KIND_)
@@ -1518,12 +1594,14 @@
      if (ind < 0 .or. ind >= table_siz)  then
        nbad = nbad+1
      else
-       del = tmp-dtres_loc*real(ind,FMS_SVP_KIND_)
-       esat(i) = real(TABLE2(ind+1),FMS_SVP_KIND_) &
+        del = tmp-dtres_loc*real(ind,FMS_SVP_KIND_)
+        ! esat = TABLE + del*(TABLE + del*D2TABLE)
+        esat(i) = real(TABLE2(ind+1),FMS_SVP_KIND_) &
                  + del*( real(DTABLE2(ind+1),FMS_SVP_KIND_) &
-                              + del*real(D2TABLE2(ind+1),FMS_SVP_KIND_) )
-       desat(i) = real(DTABLE2(ind+1),FMS_SVP_KIND_) &
-                  + real(2.0_r8_kind,FMS_SVP_KIND_)*del*real(D2TABLE2(ind+1),FMS_SVP_KIND_)
+                 + del*real(D2TABLE2(ind+1),FMS_SVP_KIND_) )
+        ! desat = DTABLE + 2del*D2TABLE
+        desat(i) = real(DTABLE2(ind+1),FMS_SVP_KIND_) &
+                 + real(2.0_r8_kind,FMS_SVP_KIND_)*del*real(D2TABLE2(ind+1),FMS_SVP_KIND_)
      endif
    enddo
 
@@ -1538,7 +1616,9 @@
 
  real(kind=FMS_SVP_KIND_) :: tmp, del
  integer :: ind
-
+ !dtres, tminl, tepsl, dtinvl are module level variables declared in r8_kind precision
+ !for presicion consistency and for code readability, the *_loc variables are declared
+ !and used
  real(kind=FMS_SVP_KIND_) :: dtres_loc, tepsl_loc, tminl_loc,  dtinvl_loc
 
    dtres_loc=real(dtres, FMS_SVP_KIND_)
@@ -1553,11 +1633,13 @@
    if (ind < 0 .or. ind >= table_siz)  then
      nbad = nbad+1
    else
-     del = tmp-dtres_loc*real(ind,FMS_SVP_KIND_)
-     esat = real(TABLE2(ind+1),FMS_SVP_KIND_) &
+      del = tmp-dtres_loc*real(ind,FMS_SVP_KIND_)
+      ! esat = TABLE + del*(TABLE + del*D2TABLE)
+      esat = real(TABLE2(ind+1),FMS_SVP_KIND_) &
             + del*( real(DTABLE2(ind+1),FMS_SVP_KIND_) &
                           + del*real(D2TABLE2(ind+1),FMS_SVP_KIND_) )
-     desat = real(DTABLE2(ind+1),FMS_SVP_KIND_) &
+      ! desat = DTABLE + 2del*D2TABLE
+      desat = real(DTABLE2(ind+1),FMS_SVP_KIND_) &
              + real(2.0_r8_kind,FMS_SVP_KIND_)*del*real(D2TABLE2(ind+1),FMS_SVP_KIND_)
    endif
 
@@ -1571,7 +1653,9 @@
  integer, intent(out) :: nbad
  real(kind=FMS_SVP_KIND_) :: tmp, del
  integer :: ind, i, j, k
-
+ !dtres, tminl, tepsl, dtinvl are module level variables declared in r8_kind precision
+ !for presicion consistency and for code readability, the *_loc variables are declared
+ !and used
  real(kind=FMS_SVP_KIND_) :: dtres_loc, tepsl_loc, tminl_loc,  dtinvl_loc
 
    dtres_loc=real(dtres, FMS_SVP_KIND_)
@@ -1589,6 +1673,7 @@
        nbad = nbad+1
      else
        del = tmp-dtres_loc*real(ind,FMS_SVP_KIND_)
+       ! esat = TABLE + del*(TABLE + del*D2TABLE)
        esat(i,j,k) = real(TABLE2(ind+1),FMS_SVP_KIND_) &
                      + del*( real(DTABLE2(ind+1),FMS_SVP_KIND_) &
                                   + del*real(D2TABLE2(ind+1),FMS_SVP_KIND_) )
@@ -1607,7 +1692,9 @@
  integer, intent(out) :: nbad
  real(kind=FMS_SVP_KIND_) :: tmp, del
  integer :: ind, i, j, k
-
+ !dtres, tminl, tepsl, dtinvl are module level variables declared in r8_kind precision
+ !for presicion consistency and for code readability, the *_loc variables are declared
+ !and used
  real(kind=FMS_SVP_KIND_) :: dtres_loc, tepsl_loc, tminl_loc,  dtinvl_loc
 
    dtres_loc=real(dtres, FMS_SVP_KIND_)
@@ -1625,6 +1712,7 @@
        nbad = nbad+1
      else
        del = tmp-dtres_loc*real(ind,FMS_SVP_KIND_)
+       ! desat = DTABLE + 2del*D2TABLE
        desat(i,j,k) = real(DTABLE2(ind+1),FMS_SVP_KIND_) &
                       + real(2.0_r8_kind,FMS_SVP_KIND_)*del*real(D2TABLE2(ind+1),FMS_SVP_KIND_)
      endif
@@ -1641,7 +1729,9 @@
  integer, intent(out) :: nbad
  real(kind=FMS_SVP_KIND_) :: tmp, del
  integer :: ind, i, j
-
+ !dtres, tminl, tepsl, dtinvl are module level variables declared in r8_kind precision
+ !for presicion consistency and for code readability, the *_loc variables are declared
+ !and used
  real(kind=FMS_SVP_KIND_) :: dtres_loc, tepsl_loc, tminl_loc,  dtinvl_loc
 
    dtres_loc=real(dtres, FMS_SVP_KIND_)
@@ -1658,6 +1748,7 @@
        nbad = nbad+1
      else
        del = tmp-dtres_loc*real(ind,FMS_SVP_KIND_)
+       ! desat = DTABLE + 2del*D2TABLE
        desat(i,j) = real(DTABLE2(ind+1),FMS_SVP_KIND_) &
                     + real(2.0_r8_kind,FMS_SVP_KIND_)*del*real(D2TABLE2(ind+1),FMS_SVP_KIND_)
      endif
@@ -1672,7 +1763,9 @@
  integer, intent(out) :: nbad
  real(kind=FMS_SVP_KIND_) :: tmp, del
  integer :: ind, i, j
-
+ !dtres, tminl, tepsl, dtinvl are module level variables declared in r8_kind precision
+ !for presicion consistency and for code readability, the *_loc variables are declared
+ !and used
  real(kind=FMS_SVP_KIND_) :: dtres_loc, tepsl_loc, tminl_loc,  dtinvl_loc
 
    dtres_loc=real(dtres, FMS_SVP_KIND_)
@@ -1688,8 +1781,9 @@
      if (ind < 0 .or. ind >= table_siz)  then
        nbad = nbad+1
      else
-       del = tmp-dtres_loc*real(ind,kind=FMS_SVP_KIND_)
-       esat(i,j) = real(TABLE2(ind+1),FMS_SVP_KIND_) &
+        del = tmp-dtres_loc*real(ind,kind=FMS_SVP_KIND_)
+        ! esat = TABLE + del*(TABLE + del*D2TABLE)
+        esat(i,j) = real(TABLE2(ind+1),FMS_SVP_KIND_) &
                    + del*( real(DTABLE2(ind+1),FMS_SVP_KIND_) &
                                    + del*real(D2TABLE2(ind+1),FMS_SVP_KIND_) )
      endif
@@ -1704,7 +1798,9 @@
  integer, intent(out) :: nbad
  real(kind=FMS_SVP_KIND_) :: tmp, del
  integer :: ind, i
-
+ !dtres, tminl, tepsl, dtinvl are module level variables declared in r8_kind precision
+ !for presicion consistency and for code readability, the *_loc variables are declared
+ !and used
  real(kind=FMS_SVP_KIND_) :: dtres_loc, tepsl_loc, tminl_loc,  dtinvl_loc
 
    dtres_loc=real(dtres, FMS_SVP_KIND_)
@@ -1719,8 +1815,9 @@
      if (ind < 0 .or. ind >= table_siz)  then
        nbad = nbad+1
      else
-       del = tmp-dtres_loc*real(ind,FMS_SVP_KIND_)
-       desat(i) = real(DTABLE2(ind+1),FMS_SVP_KIND_) &
+        del = tmp-dtres_loc*real(ind,FMS_SVP_KIND_)
+        ! desat = DTABLE + 2del*D2TABLE
+        desat(i) = real(DTABLE2(ind+1),FMS_SVP_KIND_) &
                   + real(2.0_r8_kind,FMS_SVP_KIND_)*del*real(D2TABLE2(ind+1),FMS_SVP_KIND_)
      endif
    enddo
@@ -1733,7 +1830,9 @@
  integer, intent(out) :: nbad
  real(kind=FMS_SVP_KIND_) :: tmp, del
  integer :: ind, i
-
+ !dtres, tminl, tepsl, dtinvl are module level variables declared in r8_kind precision
+ !for presicion consistency and for code readability, the *_loc variables are declared
+ !and used
  real(kind=FMS_SVP_KIND_) :: dtres_loc, tepsl_loc, tminl_loc,  dtinvl_loc
 
    dtres_loc=real(dtres, FMS_SVP_KIND_)
@@ -1748,8 +1847,9 @@
      if (ind < 0 .or. ind >= table_siz)  then
        nbad = nbad+1
      else
-       del = tmp-dtres_loc*real(ind,FMS_SVP_KIND_)
-       esat(i) = real(TABLE2(ind+1),FMS_SVP_KIND_) &
+        del = tmp-dtres_loc*real(ind,FMS_SVP_KIND_)
+        ! esat = TABLE + del*(TABLE + del*D2TABLE)
+        esat(i) = real(TABLE2(ind+1),FMS_SVP_KIND_) &
                  + del*( real(DTABLE2(ind+1),FMS_SVP_KIND_) &
                                + del*real(D2TABLE2(ind+1),FMS_SVP_KIND_) )
      endif
@@ -1763,7 +1863,9 @@
  integer, intent(out) :: nbad
  real(kind=FMS_SVP_KIND_)    :: tmp, del
  integer :: ind
-
+ !dtres, tminl, tepsl, dtinvl are module level variables declared in r8_kind precision
+ !for presicion consistency and for code readability, the *_loc variables are declared
+ !and used
  real(kind=FMS_SVP_KIND_) :: dtres_loc, tepsl_loc, tminl_loc,  dtinvl_loc
 
    dtres_loc=real(dtres, FMS_SVP_KIND_)
@@ -1777,8 +1879,9 @@
    if (ind < 0 .or. ind >= table_siz)  then
      nbad = nbad+1
    else
-     del = tmp-dtres_loc*real(ind,FMS_SVP_KIND_)
-     desat = real(DTABLE2(ind+1),FMS_SVP_KIND_) &
+      del = tmp-dtres_loc*real(ind,FMS_SVP_KIND_)
+      ! desat = DTABLE + 2del*D2TABLE
+      desat = real(DTABLE2(ind+1),FMS_SVP_KIND_) &
             + real(2.0d0,FMS_SVP_KIND_)*del*real(D2TABLE2(ind+1),FMS_SVP_KIND_)
    endif
 
@@ -1790,7 +1893,9 @@
  integer, intent(out) :: nbad
  real(kind=FMS_SVP_KIND_) :: tmp, del
  integer :: ind
-
+ !dtres, tminl, tepsl, dtinvl are module level variables declared in r8_kind precision
+ !for presicion consistency and for code readability, the *_loc variables are declared
+ !and used
  real(kind=FMS_SVP_KIND_) :: dtres_loc, tepsl_loc, tminl_loc,  dtinvl_loc
 
    dtres_loc=real(dtres, FMS_SVP_KIND_)
@@ -1804,8 +1909,9 @@
    if (ind < 0 .or. ind >= table_siz)  then
      nbad = nbad+1
    else
-     del = tmp-dtres_loc*real(ind,FMS_SVP_KIND_)
-     esat = real(TABLE2(ind+1),FMS_SVP_KIND_) &
+      del = tmp-dtres_loc*real(ind,FMS_SVP_KIND_)
+      ! esat = TABLE + del*(TABLE + del*D2TABLE)
+      esat = real(TABLE2(ind+1),FMS_SVP_KIND_) &
             + del*( DTABLE2(ind+1) &
                        + del*real(D2TABLE2(ind+1),FMS_SVP_KIND_) )
    endif
@@ -1822,7 +1928,9 @@
 
  real(kind=FMS_SVP_KIND_) :: tmp, del
  integer :: ind, i, j, k
-
+ !dtres, tminl, tepsl, dtinvl are module level variables declared in r8_kind precision
+ !for presicion consistency and for code readability, the *_loc variables are declared
+ !and used
  real(kind=FMS_SVP_KIND_) :: dtres_loc, tepsl_loc, tminl_loc,  dtinvl_loc
 
    dtres_loc=real(dtres, FMS_SVP_KIND_)
@@ -1839,11 +1947,13 @@
      if (ind < 0 .or. ind >= table_siz) then
        nbad = nbad+1
      else
-       del = tmp-dtres_loc*real(ind,FMS_SVP_KIND_)
-       esat(i,j,k) = real(TABLE3(ind+1),FMS_SVP_KIND_) &
+        del = tmp-dtres_loc*real(ind,FMS_SVP_KIND_)
+        ! esat = TABLE + del*(TABLE + del*D2TABLE)
+        esat(i,j,k) = real(TABLE3(ind+1),FMS_SVP_KIND_) &
                      + del*( real(DTABLE3(ind+1),FMS_SVP_KIND_) &
                                   + del*real(D2TABLE3(ind+1),FMS_SVP_KIND_) )
-       desat(i,j,k) = real(DTABLE3(ind+1),FMS_SVP_KIND_) &
+        ! desat = DTABLE + 2del*D2TABLE
+        desat(i,j,k) = real(DTABLE3(ind+1),FMS_SVP_KIND_) &
                       + real(2.0_r8_kind,FMS_SVP_KIND_)*del*real(D2TABLE3(ind+1),FMS_SVP_KIND_)
      endif
    enddo
@@ -1861,7 +1971,9 @@
 
  real(kind=FMS_SVP_KIND_) :: tmp, del
  integer :: ind, i, j
-
+ !dtres, tminl, tepsl, dtinvl are module level variables declared in r8_kind precision
+ !for presicion consistency and for code readability, the *_loc variables are declared
+ !and used
  real(kind=FMS_SVP_KIND_) :: dtres_loc, tepsl_loc, tminl_loc,  dtinvl_loc
 
    dtres_loc=real(dtres, FMS_SVP_KIND_)
@@ -1878,9 +1990,11 @@
        nbad = nbad+1
      else
        del = tmp-dtres_loc*real(ind,FMS_SVP_KIND_)
+       ! esat = TABLE + del*(TABLE + del*D2TABLE)
        esat(i,j) = real(TABLE3(ind+1),FMS_SVP_KIND_) &
                    + del*( real(DTABLE3(ind+1),FMS_SVP_KIND_) &
-                                + del*real(D2TABLE3(ind+1),FMS_SVP_KIND_) )
+                   + del*real(D2TABLE3(ind+1),FMS_SVP_KIND_) )
+       ! desat = DTABLE + 2del*D2TABLE
        desat(i,j) = real(DTABLE3(ind+1),FMS_SVP_KIND_) &
                     + real(2.0_r8_kind,FMS_SVP_KIND_)*del*real(D2TABLE3(ind+1),FMS_SVP_KIND_)
      endif
@@ -1898,7 +2012,9 @@
 
  real(kind=FMS_SVP_KIND_) :: tmp, del
  integer :: ind, i
-
+ !dtres, tminl, tepsl, dtinvl are module level variables declared in r8_kind precision
+ !for presicion consistency and for code readability, the *_loc variables are declared
+ !and used
  real(kind=FMS_SVP_KIND_) :: dtres_loc, tepsl_loc, tminl_loc,  dtinvl_loc
 
    dtres_loc=real(dtres, FMS_SVP_KIND_)
@@ -1913,11 +2029,13 @@
      if (ind < 0 .or. ind >= table_siz)  then
        nbad = nbad+1
      else
-       del = tmp-dtres_loc*real(ind,FMS_SVP_KIND_)
-       esat(i) = real(TABLE3(ind+1),FMS_SVP_KIND_) &
+        del = tmp-dtres_loc*real(ind,FMS_SVP_KIND_)
+        ! esat = TABLE + del*(TABLE + del*D2TABLE)
+        esat(i) = real(TABLE3(ind+1),FMS_SVP_KIND_) &
                  + del*( real(DTABLE3(ind+1),FMS_SVP_KIND_) &
-                             + del*real(D2TABLE3(ind+1),FMS_SVP_KIND_) )
-       desat(i) = real(DTABLE3(ind+1),FMS_SVP_KIND_) &
+                 + del*real(D2TABLE3(ind+1),FMS_SVP_KIND_) )
+        ! desat = DTABLE + 2del*D2TABLE
+        desat(i) = real(DTABLE3(ind+1),FMS_SVP_KIND_) &
                   + real(2.0_r8_kind,FMS_SVP_KIND_)*del*real(D2TABLE3(ind+1),FMS_SVP_KIND_)
      endif
    enddo
@@ -1933,7 +2051,9 @@
 
  real(kind=FMS_SVP_KIND_) :: tmp, del
  integer :: ind
-
+ !dtres, tminl, tepsl, dtinvl are module level variables declared in r8_kind precision
+ !for presicion consistency and for code readability, the *_loc variables are declared
+ !and used
  real(kind=FMS_SVP_KIND_) :: dtres_loc, tepsl_loc, tminl_loc,  dtinvl_loc
 
    dtres_loc=real(dtres, FMS_SVP_KIND_)
@@ -1947,11 +2067,13 @@
    if (ind < 0 .or. ind >= table_siz)  then
      nbad = nbad+1
    else
-     del = tmp-dtres_loc*real(ind,FMS_SVP_KIND_)
-     esat = real(TABLE3(ind+1),FMS_SVP_KIND_) &
+      del = tmp-dtres_loc*real(ind,FMS_SVP_KIND_)
+      ! esat = TABLE + del*(TABLE + del*D2TABLE)
+      esat = real(TABLE3(ind+1),FMS_SVP_KIND_) &
             + del*( real(DTABLE3(ind+1),FMS_SVP_KIND_) &
                            + del*real(D2TABLE3(ind+1),FMS_SVP_KIND_) )
-     desat = real(DTABLE3(ind+1),FMS_SVP_KIND_) &
+      ! desat = DTABLE + 2del*D2TABLE
+      desat = real(DTABLE3(ind+1),FMS_SVP_KIND_) &
              + real(2.0_r8_kind,FMS_SVP_KIND_)*del*real(D2TABLE3(ind+1),FMS_SVP_KIND_)
    endif
 
@@ -1965,7 +2087,9 @@
  integer, intent(out) :: nbad
  real(kind=FMS_SVP_KIND_) :: tmp, del
  integer :: ind, i, j, k
-
+ !dtres, tminl, tepsl, dtinvl are module level variables declared in r8_kind precision
+ !for presicion consistency and for code readability, the *_loc variables are declared
+ !and used
  real(kind=FMS_SVP_KIND_) :: dtres_loc, tepsl_loc, tminl_loc,  dtinvl_loc
 
    dtres_loc=real(dtres, FMS_SVP_KIND_)
@@ -1983,6 +2107,7 @@
        nbad = nbad+1
      else
        del = tmp-dtres_loc*real(ind,FMS_SVP_KIND_)
+       ! esat = TABLE + del*(TABLE + del*D2TABLE)
        esat(i,j,k) = real(TABLE3(ind+1),FMS_SVP_KIND_) &
                      + del*( real(DTABLE3(ind+1),FMS_SVP_KIND_) &
                                     + del*real(D2TABLE3(ind+1),FMS_SVP_KIND_) )
@@ -2001,7 +2126,9 @@
  integer, intent(out) :: nbad
  real(kind=FMS_SVP_KIND_) :: tmp, del
  integer :: ind, i, j, k
-
+ !dtres, tminl, tepsl, dtinvl are module level variables declared in r8_kind precision
+ !for presicion consistency and for code readability, the *_loc variables are declared
+ !and used
  real(kind=FMS_SVP_KIND_) :: dtres_loc, tepsl_loc, tminl_loc,  dtinvl_loc
 
    dtres_loc=real(dtres, FMS_SVP_KIND_)
@@ -2018,8 +2145,9 @@
      if (ind < 0 .or. ind >= table_siz)  then
        nbad = nbad+1
      else
-       del = tmp-dtres_loc*real(ind,FMS_SVP_KIND_)
-       desat(i,j,k) = real(DTABLE3(ind+1),FMS_SVP_KIND_) &
+        del = tmp-dtres_loc*real(ind,FMS_SVP_KIND_)
+        ! desat = DTABLE + 2del*D2TABLE
+        desat(i,j,k) = real(DTABLE3(ind+1),FMS_SVP_KIND_) &
                       + real(2.0_r8_kind,FMS_SVP_KIND_)*del*real(D2TABLE3(ind+1),FMS_SVP_KIND_)
      endif
    enddo
@@ -2035,7 +2163,9 @@
  integer, intent(out) :: nbad
  real(kind=FMS_SVP_KIND_) :: tmp, del
  integer :: ind, i, j
-
+ !dtres, tminl, tepsl, dtinvl are module level variables declared in r8_kind precision
+ !for presicion consistency and for code readability, the *_loc variables are declared
+ !and used
  real(kind=FMS_SVP_KIND_) :: dtres_loc, tepsl_loc, tminl_loc,  dtinvl_loc
 
    dtres_loc=real(dtres, FMS_SVP_KIND_)
@@ -2051,8 +2181,9 @@
      if (ind < 0 .or. ind >= table_siz)  then
        nbad = nbad+1
      else
-       del = tmp-dtres_loc*real(ind,FMS_SVP_KIND_)
-       desat(i,j) = real(DTABLE3(ind+1),FMS_SVP_KIND_) &
+        del = tmp-dtres_loc*real(ind,FMS_SVP_KIND_)
+        ! desat = DTABLE + 2del*D2TABLE
+        desat(i,j) = real(DTABLE3(ind+1),FMS_SVP_KIND_) &
                     + real(2.0_r8_kind,FMS_SVP_KIND_)*del*real(D2TABLE3(ind+1),FMS_SVP_KIND_)
      endif
    enddo
@@ -2066,7 +2197,9 @@
  integer, intent(out) :: nbad
  real(kind=FMS_SVP_KIND_) :: tmp, del
  integer :: ind, i, j
-
+ !dtres, tminl, tepsl, dtinvl are module level variables declared in r8_kind precision
+ !for presicion consistency and for code readability, the *_loc variables are declared
+ !and used
  real(kind=FMS_SVP_KIND_) :: dtres_loc, tepsl_loc, tminl_loc,  dtinvl_loc
 
    dtres_loc=real(dtres, FMS_SVP_KIND_)
@@ -2082,8 +2215,9 @@
      if (ind < 0 .or. ind >= table_siz)  then
        nbad = nbad+1
      else
-       del = tmp-dtres_loc*real(ind,FMS_SVP_KIND_)
-       esat(i,j) = real(TABLE3(ind+1),FMS_SVP_KIND_) &
+        del = tmp-dtres_loc*real(ind,FMS_SVP_KIND_)
+        ! esat = TABLE + del*(TABLE + del*D2TABLE)
+        esat(i,j) = real(TABLE3(ind+1),FMS_SVP_KIND_) &
                    + del*( real(DTABLE3(ind+1),FMS_SVP_KIND_) &
                                  + del*real(D2TABLE3(ind+1),FMS_SVP_KIND_) )
      endif
@@ -2098,7 +2232,9 @@
  integer, intent(out) :: nbad
  real(kind=FMS_SVP_KIND_) :: tmp, del
  integer :: ind, i
-
+ !dtres, tminl, tepsl, dtinvl are module level variables declared in r8_kind precision
+ !for presicion consistency and for code readability, the *_loc variables are declared
+ !and used
  real(kind=FMS_SVP_KIND_) :: dtres_loc, tepsl_loc, tminl_loc,  dtinvl_loc
 
    dtres_loc=real(dtres, FMS_SVP_KIND_)
@@ -2113,8 +2249,9 @@
      if (ind < 0 .or. ind >= table_siz)  then
        nbad = nbad+1
      else
-       del = tmp-dtres_loc*real(ind,FMS_SVP_KIND_)
-       desat(i) = real(DTABLE3(ind+1),FMS_SVP_KIND_) &
+        del = tmp-dtres_loc*real(ind,FMS_SVP_KIND_)
+        ! desat = DTABLE + 2del*D2TABLE
+        desat(i) = real(DTABLE3(ind+1),FMS_SVP_KIND_) &
                   + real(2.0_r8_kind,FMS_SVP_KIND_)*del*real(D2TABLE3(ind+1),FMS_SVP_KIND_)
      endif
    enddo
@@ -2127,7 +2264,9 @@
  integer, intent(out) :: nbad
  real(kind=FMS_SVP_KIND_) :: tmp, del
  integer :: ind, i
-
+ !dtres, tminl, tepsl, dtinvl are module level variables declared in r8_kind precision
+ !for presicion consistency and for code readability, the *_loc variables are declared
+ !and used
  real(kind=FMS_SVP_KIND_) :: dtres_loc, tepsl_loc, tminl_loc,  dtinvl_loc
 
    dtres_loc=real(dtres, FMS_SVP_KIND_)
@@ -2142,8 +2281,9 @@
      if (ind < 0 .or. ind >= table_siz)  then
        nbad = nbad+1
      else
-       del = tmp-dtres_loc*real(ind,FMS_SVP_KIND_)
-       esat(i) = real(TABLE3(ind+1),FMS_SVP_KIND_) &
+        del = tmp-dtres_loc*real(ind,FMS_SVP_KIND_)
+        ! esat = TABLE + del*(TABLE + del*D2TABLE)
+        esat(i) = real(TABLE3(ind+1),FMS_SVP_KIND_) &
                  + del*( real(DTABLE3(ind+1),FMS_SVP_KIND_) &
                                 + del*real(D2TABLE3(ind+1),FMS_SVP_KIND_) )
      endif
@@ -2157,7 +2297,9 @@
  integer, intent(out) :: nbad
  real(kind=FMS_SVP_KIND_) :: tmp, del
  integer :: ind
-
+ !dtres, tminl, tepsl, dtinvl are module level variables declared in r8_kind precision
+ !for presicion consistency and for code readability, the *_loc variables are declared
+ !and used
  real(kind=FMS_SVP_KIND_) :: dtres_loc, tepsl_loc, tminl_loc,  dtinvl_loc
 
    dtres_loc=real(dtres, FMS_SVP_KIND_)
@@ -2171,8 +2313,9 @@
    if (ind < 0 .or. ind >= table_siz)  then
      nbad = nbad+1
    else
-     del = tmp-dtres_loc*real(ind,FMS_SVP_KIND_)
-     desat = real(DTABLE3(ind+1),FMS_SVP_KIND_) &
+      del = tmp-dtres_loc*real(ind,FMS_SVP_KIND_)
+      ! desat = DTABLE + 2del*D2TABLE
+      desat = real(DTABLE3(ind+1),FMS_SVP_KIND_) &
              + real(2.0_r8_kind,FMS_SVP_KIND_)*del*real(D2TABLE3(ind+1),FMS_SVP_KIND_)
    endif
 
@@ -2184,7 +2327,9 @@
  integer, intent(out) :: nbad
  real(kind=FMS_SVP_KIND_) :: tmp, del
  integer :: ind
-
+ !dtres, tminl, tepsl, dtinvl are module level variables declared in r8_kind precision
+ !for presicion consistency and for code readability, the *_loc variables are declared
+ !and used
  real(kind=FMS_SVP_KIND_) :: dtres_loc, tepsl_loc, tminl_loc,  dtinvl_loc
 
    dtres_loc=real(dtres, FMS_SVP_KIND_)
@@ -2198,8 +2343,9 @@
    if (ind < 0 .or. ind >= table_siz)  then
      nbad = nbad+1
    else
-     del = tmp-dtres_loc*real(ind,FMS_SVP_KIND_)
-     esat = real(TABLE3(ind+1),FMS_SVP_KIND_) &
+      del = tmp-dtres_loc*real(ind,FMS_SVP_KIND_)
+      ! esat = TABLE + del*(TABLE + del*D2TABLE)
+      esat = real(TABLE3(ind+1),FMS_SVP_KIND_) &
             + del*( real(DTABLE3(ind+1),FMS_SVP_KIND_) &
                           + del*real(D2TABLE3(ind+1),FMS_SVP_KIND_) )
    endif
