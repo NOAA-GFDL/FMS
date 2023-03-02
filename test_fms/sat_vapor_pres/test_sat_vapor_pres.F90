@@ -81,7 +81,7 @@ if(test2) then
 end if
 if(test3) then
    write(*,*)'****************************************'
-   write(*,*)'TEST LOOKUP_ES,  LOOPUP_DES,  LOOKUP_ES_DES, 1D-3D'
+   write(*,*)'TEST LOOKUP_ES,  LOOKUP_DES,  LOOKUP_ES_DES, 1D-3D'
    call test_lookup_es_des()
 end if
 if(test4) then
@@ -824,10 +824,10 @@ contains
     !TCMAX, TCMIN,TFREEZE are module level variables in sat_vapor_pres_mod
     dtres  = (real(TCMAX,r8_kind)-real(TCMIN,r8_kind))/real(N-1,r8_kind)
     tminl  = real(TCMIN,r8_kind)+real(TFREEZE,r8_kind)
-    dtinvl = 1.0d0/dtres
-    tepsl  = 0.5d0*dtres
-    tinrc  = 0.1d0*dtres
-    tfact  = 5.0d0*dtinvl
+    dtinvl = 1.0_r8_kind/dtres
+    tepsl  = 0.5_r8_kind*dtres
+    tinrc  = 0.1_r8_kind*dtres
+    tfact  = 5.0_r8_kind*dtinvl
 
     do i = 1, N
        tem(1) = tminl + dtres*real(i-1,r8_kind)
@@ -875,50 +875,50 @@ contains
     real(kind=r8_kind)  :: x, esice, esh2o, TBASW, TBASI
     integer :: i
 
-    real(kind=r8_kind), parameter :: ESBASW = 101324.60d0
-    real(kind=r8_kind), parameter :: ESBASI = 610.71d0
+    real(kind=r8_kind), parameter :: ESBASW = 101324.60_r8_kind
+    real(kind=r8_kind), parameter :: ESBASI = 610.71_r8_kind
 
-    real(r8_kind), parameter :: one=1.0d0
-    real(r8_kind), parameter :: ten=10.0d0
+    real(r8_kind), parameter :: one=1.0_r8_kind
+    real(r8_kind), parameter :: ten=10.0_r8_kind
 
-    TBASW = TFREEZE+100.0d0
+    TBASW = TFREEZE+100.0_r8_kind
     TBASI = TFREEZE
     do i = 1, size(tem)
 
        !  compute es over ice
 
        if (tem(i) < TBASI) then
-          x = -9.09718d0*(TBASI/tem(i)-one)   &
-               -3.56654d0*log10(TBASI/tem(i)) &
-               +0.876793d0*(one-tem(i)/TBASI) + log10(ESBASI)
+          x = -9.09718_r8_kind*(TBASI/tem(i)-one)   &
+               -3.56654_r8_kind*log10(TBASI/tem(i)) &
+               +0.876793_r8_kind*(one-tem(i)/TBASI) + log10(ESBASI)
           esice =ten**(x)
        else
-          esice = 0.0d0
+          esice = 0.0_r8_kind
        endif
 
        !  compute es over water greater than -20 c.
        !  values over 100 c may not be valid
        !  see smithsonian meteorological tables page 350.
 
-       if (tem(i) > -20.0d0+TBASI) then
-          x = -7.90298d0*(TBASW/tem(i)-one)   &
-               +5.02808d0*log10(TBASW/tem(i)) &
-               -1.3816d-07*(ten**((one-tem(i)/TBASW)*11.344d0)-one) &
-               +8.1328d-03*(ten**((TBASW/tem(i)-one)*(-3.49149d0))-one) &
+       if (tem(i) > -20.0_r8_kind+TBASI) then
+          x = -7.90298_r8_kind*(TBASW/tem(i)-one)   &
+               +5.02808_r8_kind*log10(TBASW/tem(i)) &
+               -1.3816e-07_r8_kind*(ten**((one-tem(i)/TBASW)*11.344d0)-one) &
+               +8.1328e-03_r8_kind*(ten**((TBASW/tem(i)-one)*(-3.49149d0))-one) &
                +log10(ESBASW)
           esh2o = ten**(x)
        else
-          esh2o = 0.0d0
+          esh2o = 0.0_r8_kind
        endif
 
        !  derive blended es over ice and supercooled water between -20c and 0c
 
-       if (tem(i) <= -20.0d0+TBASI) then
+       if (tem(i) <= -20.0_r8_kind+TBASI) then
           es(i) = esice
        else if (tem(i) >= TBASI) then
           es(i) = esh2o
        else
-          es(i) = 0.05d0*((TBASI-tem(i))*esice + (tem(i)-TBASI+20.0d0)*esh2o)
+          es(i) = 0.05_r8_kind*((TBASI-tem(i))*esice + (tem(i)-TBASI+20.0_r8_kind)*esh2o)
        endif
 
     enddo
@@ -939,21 +939,21 @@ contains
    real(kind=r8_kind) :: x, esh2o, TBASW
    integer :: i
 
-   real(kind=r8_kind), parameter :: one=1.0d0
-   real(kind=r8_kind), parameter :: ten=10.0d0
-   real(kind=r8_kind), parameter :: ESBASW = 101324.60d0
+   real(kind=r8_kind), parameter :: one=1.0_r8_kind
+   real(kind=r8_kind), parameter :: ten=10.0_r8_kind
+   real(kind=r8_kind), parameter :: ESBASW = 101324.60_r8_kind
 
 
-   TBASW = TFREEZE+100.0d0
+   TBASW = TFREEZE+100.0_r8_kind
 
    do i = 1, size(tem)
 !  compute es over water for all temps.
 !  values over 100 c may not be valid
 !  see smithsonian meteorological tables page 350.
-      x = -7.90298d0*(TBASW/tem(i)-one) &
-           +5.02808d0*log10(TBASW/tem(i)) &
-           -1.3816d-07*(ten**((one-tem(i)/TBASW)*11.344d0)-one)    &
-           +8.1328d-03*(ten**((TBASW/tem(i)-one)*-3.49149d0)-one)&
+      x = -7.90298_r8_kind*(TBASW/tem(i)-one) &
+           +5.02808_r8_kind*log10(TBASW/tem(i)) &
+           -1.3816e-07_r8_kind*(ten**((one-tem(i)/TBASW)*11.344_r8_kind)-one)    &
+           +8.1328e-03_r8_kind*(ten**((TBASW/tem(i)-one)*-3.49149_r8_kind)-one)&
            +log10(ESBASW)
       esh2o = ten**(x)
       es(i) = esh2o
@@ -976,10 +976,10 @@ contains
    real(kind=r8_kind)    :: x, TBASW, TBASI
    integer :: i
 
-   real(kind=r8_kind), parameter :: ESBASW = 101324.60d0
-   real(kind=r8_kind), parameter :: ESBASI = 610.71d0
-   real(kind=r8_kind), parameter :: one=  1.0d0
-   real(kind=r8_kind), parameter :: ten= 10.0d0
+   real(kind=r8_kind), parameter :: ESBASW = 101324.60_r8_kind
+   real(kind=r8_kind), parameter :: ESBASI = 610.71_r8_kind
+   real(kind=r8_kind), parameter :: one=  1.0_r8_kind
+   real(kind=r8_kind), parameter :: ten= 10.0_r8_kind
 
    TBASW = TFREEZE+100.0_r8_kind
    TBASI = TFREEZE
@@ -990,9 +990,9 @@ contains
 
 !  compute es over ice
 
-         x = -9.09718d0*(TBASI/tem(i)-one)   &
-             -3.56654d0*log10(TBASI/tem(i)) &
-             +0.876793d0*(one-tem(i)/TBASI) + log10(ESBASI)
+         x = -9.09718_r8_kind*(TBASI/tem(i)-one)   &
+             -3.56654_r8_kind*log10(TBASI/tem(i)) &
+             +0.876793_r8_kind*(one-tem(i)/TBASI) + log10(ESBASI)
          es(i) =ten**(x)
      else
 
@@ -1000,10 +1000,10 @@ contains
 !  values over 100 c may not be valid
 !  see smithsonian meteorological tables page 350.
 
-          x = -7.90298d0*(TBASW/tem(i)-one) &
-              +5.02808d0*log10(TBASW/tem(i)) &
-              -1.3816d-07*(ten**((one-tem(i)/TBASW)*11.344d0)-one)      &
-              +8.1328d-03*(ten**((TBASW/tem(i)-one)*(-3.49149d0))-one) &
+          x = -7.90298_r8_kind*(TBASW/tem(i)-one) &
+              +5.02808_r8_kind*log10(TBASW/tem(i)) &
+              -1.3816e-07_r8_kind*(ten**((one-tem(i)/TBASW)*11.344_r8_kind)-one)      &
+              +8.1328e-03_r8_kind*(ten**((TBASW/tem(i)-one)*(-3.49149_r8_kind))-one) &
              +log10(ESBASW)
          es(i) = ten**(x)
      endif

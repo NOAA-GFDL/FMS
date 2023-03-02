@@ -86,9 +86,9 @@
       table_siz = table_size
       dtres  = (real(tcmax,r8_kind)-real(tcmin,r8_kind))/real(table_size-1,r8_kind)
       tminl  = real(tcmin,r8_kind)+real(TFREEZE,r8_kind)  ! minimum valid temp in table
-      dtinvl = 1.0d0/dtres
-      tepsl  = 0.5d0*dtres
-      tinrc  = 0.1d0*dtres
+      dtinvl = 1.0_r8_kind/dtres
+      tepsl  = 0.5_r8_kind*dtres
+      tinrc  = 0.1_r8_kind*dtres
       if(present(teps )) teps =real(tepsl,  FMS_SVP_KIND_)
       if(present(tmin )) tmin =real(tminl,  FMS_SVP_KIND_)
       if(present(dtinv)) dtinv=real(dtinvl, FMS_SVP_KIND_)
@@ -96,9 +96,9 @@
 ! To be able to compute tables for any temperature range and resolution,
 ! and at the same time exactly reproduce answers from memphis revision,
 ! it is necessary to compute ftact differently than it is in memphis.
-      tfact = 5.0d0*dtinvl
+      tfact = 5.0_r8_kind*dtinvl
 
-      hdtinv = 0.5d0*dtinvl
+      hdtinv = 0._r8_kind*dtinvl
 
 ! compute es tables from tcmin to tcmax
 ! estimate es derivative with small +/- difference
@@ -109,8 +109,8 @@
         ! DTABLE = HLV(TABLE/RVGAS)^2
         do i = 1, table_size
           tem(1) = tminl + dtres*real(i-1,r8_kind)
-          TABLE(i) = real(ES0,r8_kind)*610.78d0* &
-               exp( -real(HLV,r8_kind)/real(RVGAS,r8_kind) * (1.0d0/tem(1) - 1.0d0/real(TFREEZE,r8_kind)) )
+          TABLE(i) = real(ES0,r8_kind)*610.78_r8_kind* &
+               exp( -real(HLV,r8_kind)/real(RVGAS,r8_kind) * (1.0_r8_kind/tem(1) - 1._r8_kind/real(TFREEZE,r8_kind)) )
           DTABLE(i) = real(HLV,r8_kind)*TABLE(i)/real(RVGAS,r8_kind)/tem(1)**2._r8_kind
         enddo
 
@@ -131,13 +131,13 @@
 ! differencing des values in the table
 
       do i = 2, table_size-1
-         D2TABLE(i) = 0.25d0*dtinvl*(DTABLE(i+1)-DTABLE(i-1))
+         D2TABLE(i) = 0.25_r8_kind*dtinvl*(DTABLE(i+1)-DTABLE(i-1))
       enddo
     ! one-sided derivatives at boundaries
 
-         D2TABLE(1) = 0.50d0*dtinvl*(DTABLE(2)-DTABLE(1))
+         D2TABLE(1) = 0.50_r8_kind*dtinvl*(DTABLE(2)-DTABLE(1))
 
-         D2TABLE(table_size) = 0.50d0*dtinvl*(DTABLE(table_size)-DTABLE(table_size-1))
+         D2TABLE(table_size) = 0.50_r8_kind*dtinvl*(DTABLE(table_size)-DTABLE(table_size-1))
 
    if (construct_table_wrt_liq) then
 ! compute es tables from tcmin to tcmax
@@ -157,13 +157,13 @@
 ! differencing des values in the table
 
      do i = 2, table_size-1
-       D2TABLE2(i) = 0.25d0*dtinvl*(DTABLE2(i+1)-DTABLE2(i-1))
+       D2TABLE2(i) = 0.25_r8_kind*dtinvl*(DTABLE2(i+1)-DTABLE2(i-1))
      enddo
 ! one-sided derivatives at boundaries
 
-     D2TABLE2(1) = 0.50d0*dtinvl*(DTABLE2(2)-DTABLE2(1))
+     D2TABLE2(1) = 0.50_r8_kind*dtinvl*(DTABLE2(2)-DTABLE2(1))
 
-     D2TABLE2(table_size) = 0.50d0*dtinvl*(DTABLE2(table_size)-DTABLE2(table_size-1))
+     D2TABLE2(table_size) = 0.50_r8_kind*dtinvl*(DTABLE2(table_size)-DTABLE2(table_size-1))
    endif
 
 
@@ -185,13 +185,13 @@
 ! differencing des values in the table
 
      do i = 2, table_size-1
-       D2TABLE3(i) = 0.25d0*dtinvl*(DTABLE3(i+1)-DTABLE3(i-1))
+       D2TABLE3(i) = 0.25_r8_kind*dtinvl*(DTABLE3(i+1)-DTABLE3(i-1))
      enddo
 ! one-sided derivatives at boundaries
 
-     D2TABLE3(1) = 0.50d0*dtinvl*(DTABLE3(2)-DTABLE3(1))
+     D2TABLE3(1) = 0.50_r8_kind*dtinvl*(DTABLE3(2)-DTABLE3(1))
 
-     D2TABLE3(table_size) = 0.50d0*dtinvl*(DTABLE3(table_size)-DTABLE3(table_size-1))
+     D2TABLE3(table_size) = 0.50_r8_kind*dtinvl*(DTABLE3(table_size)-DTABLE3(table_size-1))
    endif
 
       use_exact_qs = use_exact_qs_input
@@ -210,13 +210,13 @@
 
  integer, parameter :: kindl=FMS_SVP_KIND_ !< local kind parameter
 
- real(kind=FMS_SVP_KIND_), parameter :: ESBASW = real(101324.60d0,FMS_SVP_KIND_)
- real(kind=FMS_SVP_KIND_), parameter :: ESBASI = real(610.71d0,FMS_SVP_KIND_)
+ real(kind=FMS_SVP_KIND_), parameter :: ESBASW = 101324.60_kindl
+ real(kind=FMS_SVP_KIND_), parameter :: ESBASI = 610.71_kindl
 
  ! one and ten are declared for code readability.  For example, one is easier to read
  ! then 1.0_lkind where lkind=FMS_SVP_KIND_ throughout the code
- real(FMS_SVP_KIND_), parameter :: one=real(1.0d0,FMS_SVP_KIND_)
- real(FMS_SVP_KIND_), parameter :: ten=real(10.0d0,FMS_SVP_KIND_)
+ real(FMS_SVP_KIND_), parameter :: one=1.0_kindl
+ real(FMS_SVP_KIND_), parameter :: ten=10.0_kindl
 
    TBASW = TFREEZE+100.0_kindl !to Kelvin
    TBASI = TFREEZE
@@ -245,8 +245,8 @@
      if (tem(i) > -20.0_kindl+TBASI) then
          x = -7.90298_kindl*(TBASW/tem(i)-one)   &
              +5.02808_kindl*log10(TBASW/tem(i)) &
-             -real(1.3816d-07,FMS_SVP_KIND_)*(ten**((one-tem(i)/TBASW)*11.344_kindl)-one) &
-             +real(8.1328d-03,FMS_SVP_KIND_)*(ten**((TBASW/tem(i)-one)*(-3.49149_kindl))-one) &
+             -1.3816e-07_kindl*(ten**((one-tem(i)/TBASW)*11.344_kindl)-one) &
+             +8.1328e-03_kindl*(ten**((TBASW/tem(i)-one)*(-3.49149_kindl))-one) &
              +log10(ESBASW)
          esh2o = ten**(x)
      else
@@ -280,9 +280,9 @@
  integer, parameter :: kindl=FMS_SVP_KIND_ !< local kind variable
  ! one and ten are declared for code readability.  For example, one is easier to read
  ! then 1.0_lkind where lkind=FMS_SVP_KIND_ throughout the code
- real(kind=FMS_SVP_KIND_), parameter :: one=real(1.0d0,FMS_SVP_KIND_)
- real(kind=FMS_SVP_KIND_), parameter :: ten=real(10.0d0,FMS_SVP_KIND_)
- real(kind=FMS_SVP_KIND_), parameter :: ESBASW = real(101324.60d0,FMS_SVP_KIND_)
+ real(kind=FMS_SVP_KIND_), parameter :: one=1.0_kindl
+ real(kind=FMS_SVP_KIND_), parameter :: ten=10.0_kindl
+ real(kind=FMS_SVP_KIND_), parameter :: ESBASW = 101324.60_kindl
 
    TBASW = TFREEZE+100.0_kindl
 
@@ -295,10 +295,10 @@
    ! x = -7.90298(TBASW/tem-1) + 5.02808log(TBASW/tem)
    !     -1.3816d-07*10^[11.344(1-tem/TBASW)-1]
    !     +8.1328d-03*10^[-3.49149(TBASW/tem-1)-1] + log(ESBASW)
-         x = -7.90298_kindl*(TBASW/tem(i)-one) &
+         x = -7.90298_kindl*(TBASW/tem(i)-one)  &
              +5.02808_kindl*log10(TBASW/tem(i)) &
-             -real(1.3816d-07,FMS_SVP_KIND_)*(ten**((one-tem(i)/TBASW)*11.344_kindl)-one)    &
-             +real(8.1328d-03,FMS_SVP_KIND_)*(ten**((TBASW/tem(i)-one)*(-3.49149_kindl))-one)&
+             -1.3816e-07_kindl*(ten**((one-tem(i)/TBASW)*11.344_kindl)-one)   &
+             +8.1328e-03_kindl*(ten**((TBASW/tem(i)-one)*(-3.49149_kindl))-one)&
              +log10(ESBASW)
          esh2o = ten**(x)
 
@@ -318,12 +318,12 @@
  integer :: i
 
  integer, parameter :: kindl=FMS_SVP_KIND_
- real(kind=FMS_SVP_KIND_), parameter :: ESBASW = real(101324.60d0,FMS_SVP_KIND_)
- real(kind=FMS_SVP_KIND_), parameter :: ESBASI = real(610.71d0,FMS_SVP_KIND_)
+ real(kind=FMS_SVP_KIND_), parameter :: ESBASW = 101324.60_kindl
+ real(kind=FMS_SVP_KIND_), parameter :: ESBASI = 610.71_kindl
  ! one and ten are declared for code readability.  For example, one is easier to read
  ! then 1.0_lkind where lkind=FMS_SVP_KIND_ throughout the code
- real(kind=FMS_SVP_KIND_), parameter :: one=real(1.0d0,FMS_SVP_KIND_)
- real(kind=FMS_SVP_KIND_), parameter :: ten=real(10.0d0,FMS_SVP_KIND_)
+ real(kind=FMS_SVP_KIND_), parameter :: one=1.0_kindl
+ real(kind=FMS_SVP_KIND_), parameter :: ten=10.0_kindl
 
    TBASW = TFREEZE+100.0_kindl
    TBASI = TFREEZE
@@ -348,8 +348,8 @@
         !     +8.1328d-03*10^[-3.49149(TBASW/tem-1)-1] + log(ESBASW)
           x = -7.90298_kindl*(TBASW/tem(i)-one) &
               +5.02808_kindl*log10(TBASW/tem(i)) &
-              -real(1.3816d-07,FMS_SVP_KIND_)*(ten**((one-tem(i)/TBASW)*11.344_kindl)-one)      &
-              +real(8.1328d-03,FMS_SVP_KIND_)*(ten**((TBASW/tem(i)-one)*(-3.49149_kindl))-one) &
+              -1.3816e-07_kindl*(ten**((one-tem(i)/TBASW)*11.344_kindl)-one)      &
+              +8.1328e-03_kindl*(ten**((TBASW/tem(i)-one)*(-3.49149_kindl))-one) &
              +log10(ESBASW)
          es(i) = ten**(x)
      endif
@@ -1058,6 +1058,7 @@
  !for presicion consistency and for code readability, the *_loc variables are declared
  !and used
  real(kind=FMS_SVP_KIND_) :: dtresl, tepsll, tminll,  dtinvll
+ integer, parameter :: kindl=FMS_SVP_KIND_
 
    dtresl=real(dtres, FMS_SVP_KIND_)
    tminll=real(tminl, FMS_SVP_KIND_)
@@ -1080,7 +1081,7 @@
                                     + del*real(D2TABLE(ind+1),FMS_SVP_KIND_) )
        ! desat = DTABLE + 2del*D2TABLE
        desat(i,j,k) = real(DTABLE(ind+1), FMS_SVP_KIND_) &
-                        + real(2.0d0,FMS_SVP_KIND_)*del*real(D2TABLE(ind+1),FMS_SVP_KIND_)
+                        + 2.0_kindl*del*real(D2TABLE(ind+1),FMS_SVP_KIND_)
      endif
    enddo
    enddo
@@ -1101,6 +1102,7 @@
  !for presicion consistency and for code readability, the *_loc variables are declared
  !and used
  real(kind=FMS_SVP_KIND_) :: dtresl, tepsll, tminll,  dtinvll
+ integer, parameter :: kindl=FMS_SVP_KIND_
 
    dtresl=real(dtres, FMS_SVP_KIND_)
    tminll=real(tminl, FMS_SVP_KIND_)
@@ -1123,7 +1125,7 @@
                  + del*real(D2TABLE(ind+1),FMS_SVP_KIND_) )
        ! desat = DTABLE + 2del*D2TABLE
        desat(i,j) = real(DTABLE(ind+1),FMS_SVP_KIND_) &
-                  + real(2.0_r8_kind,FMS_SVP_KIND_)*del*real(D2TABLE(ind+1),FMS_SVP_KIND_)
+                  + 2.0_kindl*del*real(D2TABLE(ind+1),FMS_SVP_KIND_)
      endif
    enddo
    enddo
@@ -1144,6 +1146,7 @@
  !for presicion consistency and for code readability, the *_loc variables are declared
  !and used
  real(kind=FMS_SVP_KIND_) :: dtresl, tepsll, tminll,  dtinvll
+ integer, parameter :: kindl=FMS_SVP_KIND_
 
    dtresl=real(dtres, FMS_SVP_KIND_)
    tminll=real(tminl, FMS_SVP_KIND_)
@@ -1165,7 +1168,7 @@
                                 + del*real(D2TABLE(ind+1),FMS_SVP_KIND_) )
         ! desat = DTABLE + 2del*D2TABLE
         desat(i) = real(DTABLE(ind+1),FMS_SVP_KIND_) &
-             + real(2.0_r8_kind,FMS_SVP_KIND_)*del*real(D2TABLE(ind+1),FMS_SVP_KIND_)
+             + 2.0_kindl*del*real(D2TABLE(ind+1),FMS_SVP_KIND_)
      endif
    enddo
 
@@ -1185,6 +1188,7 @@
  !for presicion consistency and for code readability, the *_loc variables are declared
  !and used
  real(kind=FMS_SVP_KIND_) :: dtresl, tepsll, tminll,  dtinvll
+ integer, parameter :: kindl=FMS_SVP_KIND_
 
    dtresl=real(dtres, FMS_SVP_KIND_)
    tminll=real(tminl, FMS_SVP_KIND_)
@@ -1204,7 +1208,7 @@
                           + del*real(D2TABLE(ind+1),FMS_SVP_KIND_) )
      ! desat = DTABLE + 2del*D2TABLE
      desat = real(DTABLE(ind+1),FMS_SVP_KIND_) &
-             + real(2.0d0,FMS_SVP_KIND_)*del*real(D2TABLE(ind+1),FMS_SVP_KIND_)
+             + 2.0_kindl*del*real(D2TABLE(ind+1),FMS_SVP_KIND_)
    endif
 
  end subroutine LOOKUP_ES_DES_K_0D_
@@ -1261,6 +1265,7 @@
  !for presicion consistency and for code readability, the *_loc variables are declared
  !and used
  real(kind=FMS_SVP_KIND_) :: dtresl, tepsll, tminll,  dtinvll
+ integer, parameter :: kindl=FMS_SVP_KIND_
 
    dtresl=real(dtres, FMS_SVP_KIND_)
    tminll=real(tminl, FMS_SVP_KIND_)
@@ -1279,7 +1284,7 @@
         del = tmp-dtresl*real(ind,FMS_SVP_KIND_)
         ! desat = DTABLE + 2del*D2TABLE
        desat(i,j,k) = real(DTABLE(ind+1),FMS_SVP_KIND_) &
-                      + real(2.0_r8_kind,FMS_SVP_KIND_)*del*real(D2TABLE(ind+1),FMS_SVP_KIND_)
+                      + 2.0_kindl*del*real(D2TABLE(ind+1),FMS_SVP_KIND_)
      endif
    enddo
    enddo
@@ -1300,6 +1305,7 @@
  !for presicion consistency and for code readability, the *_loc variables are declared
  !and used
  real(kind=FMS_SVP_KIND_) :: dtresl, tepsll, tminll,  dtinvll
+ integer, parameter :: kindl=FMS_SVP_KIND_
 
    dtresl=real(dtres, FMS_SVP_KIND_)
    tminll=real(tminl, FMS_SVP_KIND_)
@@ -1317,7 +1323,7 @@
         del = tmp-dtresl*real(ind,FMS_SVP_KIND_)
         ! desat = DTABLE + 2del*D2TABLE
         desat(i,j) = real(DTABLE(ind+1),FMS_SVP_KIND_) &
-             + real(2.0_r8_kind,FMS_SVP_KIND_)*del*real(D2TABLE(ind+1),FMS_SVP_KIND_)
+             + 2.0_kindl*del*real(D2TABLE(ind+1),FMS_SVP_KIND_)
      endif
    enddo
    enddo
@@ -1371,6 +1377,7 @@
  !for presicion consistency and for code readability, the *_loc variables are declared
  !and used
  real(kind=FMS_SVP_KIND_) :: dtresl, tepsll, tminll,  dtinvll
+ integer, parameter :: kindl=FMS_SVP_KIND_
 
    dtresl=real(dtres, FMS_SVP_KIND_)
    tminll=real(tminl, FMS_SVP_KIND_)
@@ -1387,7 +1394,7 @@
         del = tmp-dtresl*real(ind,FMS_SVP_KIND_)
         ! desat = DTABLE + 2del*D2TABLE
         desat(i) = real(DTABLE(ind+1),FMS_SVP_KIND_) &
-                  + real(2.0_r8_kind,FMS_SVP_KIND_)*del*real(D2TABLE(ind+1),FMS_SVP_KIND_)
+                  + 2.0_kindl*del*real(D2TABLE(ind+1),FMS_SVP_KIND_)
      endif
    enddo
 
@@ -1437,6 +1444,7 @@
  !for presicion consistency and for code readability, the *_loc variables are declared
  !and used
  real(kind=FMS_SVP_KIND_) :: dtresl, tepsll, tminll,  dtinvll
+ integer, parameter :: kindl=FMS_SVP_KIND_
 
    dtresl=real(dtres, FMS_SVP_KIND_)
    tminll=real(tminl, FMS_SVP_KIND_)
@@ -1452,7 +1460,7 @@
       del = tmp-dtresl*real(ind,FMS_SVP_KIND_)
       ! desat = DTABLE + 2del*D2TABLE
       desat = real(DTABLE(ind+1),FMS_SVP_KIND_) &
-           + real(2.0d0,FMS_SVP_KIND_)*del*real(D2TABLE(ind+1),FMS_SVP_KIND_)
+           + 2.0_kindl*del*real(D2TABLE(ind+1),FMS_SVP_KIND_)
    endif
 
  end subroutine LOOKUP_DES_K_0D_
@@ -1501,6 +1509,7 @@
  !for presicion consistency and for code readability, the *_loc variables are declared
  !and used
  real(kind=FMS_SVP_KIND_) :: dtresl, tepsll, tminll,  dtinvll
+ integer, parameter :: kindl=FMS_SVP_KIND_
 
    dtresl=real(dtres, FMS_SVP_KIND_)
    tminll=real(tminl, FMS_SVP_KIND_)
@@ -1523,7 +1532,7 @@
                                 + del*real(D2TABLE2(ind+1),FMS_SVP_KIND_) )
         ! desat = DTABLE + 2del*D2TABLE
         desat(i,j,k) = real(DTABLE2(ind+1),FMS_SVP_KIND_) &
-                      + real(2.0_r8_kind,FMS_SVP_KIND_)*del*real(D2TABLE2(ind+1),FMS_SVP_KIND_)
+                      + 2.0_kindl*del*real(D2TABLE2(ind+1),FMS_SVP_KIND_)
      endif
    enddo
    enddo
@@ -1545,6 +1554,7 @@
  !for presicion consistency and for code readability, the *_loc variables are declared
  !and used
  real(kind=FMS_SVP_KIND_) :: dtresl, tepsll, tminll,  dtinvll
+ integer, parameter :: kindl=FMS_SVP_KIND_
 
    dtresl=real(dtres, FMS_SVP_KIND_)
    tminll=real(tminl, FMS_SVP_KIND_)
@@ -1566,7 +1576,7 @@
                                  + del*real(D2TABLE2(ind+1),FMS_SVP_KIND_) )
         ! desat = DTABLE + 2del*D2TABLE
         desat(i,j) = real(DTABLE2(ind+1),FMS_SVP_KIND_) &
-                    + real(2.0_r8_kind,FMS_SVP_KIND_)*del*real(D2TABLE2(ind+1),FMS_SVP_KIND_)
+                   + 2.0_kindl*del*real(D2TABLE2(ind+1),FMS_SVP_KIND_)
      endif
    enddo
    enddo
@@ -1587,6 +1597,7 @@
  !for presicion consistency and for code readability, the *_loc variables are declared
  !and used
  real(kind=FMS_SVP_KIND_) :: dtresl, tepsll, tminll,  dtinvll
+ integer, parameter :: kindl=FMS_SVP_KIND_
 
    dtresl=real(dtres, FMS_SVP_KIND_)
    tminll=real(tminl, FMS_SVP_KIND_)
@@ -1607,7 +1618,7 @@
                  + del*real(D2TABLE2(ind+1),FMS_SVP_KIND_) )
         ! desat = DTABLE + 2del*D2TABLE
         desat(i) = real(DTABLE2(ind+1),FMS_SVP_KIND_) &
-                 + real(2.0_r8_kind,FMS_SVP_KIND_)*del*real(D2TABLE2(ind+1),FMS_SVP_KIND_)
+                 + 2.0_kindl*del*real(D2TABLE2(ind+1),FMS_SVP_KIND_)
      endif
    enddo
 
@@ -1627,6 +1638,7 @@
  !for presicion consistency and for code readability, the *_loc variables are declared
  !and used
  real(kind=FMS_SVP_KIND_) :: dtresl, tepsll, tminll,  dtinvll
+ integer, parameter :: kindl=FMS_SVP_KIND_
 
    dtresl=real(dtres, FMS_SVP_KIND_)
    tminll=real(tminl, FMS_SVP_KIND_)
@@ -1647,7 +1659,7 @@
                           + del*real(D2TABLE2(ind+1),FMS_SVP_KIND_) )
       ! desat = DTABLE + 2del*D2TABLE
       desat = real(DTABLE2(ind+1),FMS_SVP_KIND_) &
-             + real(2.0_r8_kind,FMS_SVP_KIND_)*del*real(D2TABLE2(ind+1),FMS_SVP_KIND_)
+             + 2.0_kindl*del*real(D2TABLE2(ind+1),FMS_SVP_KIND_)
    endif
 
  end subroutine LOOKUP_ES2_DES2_K_0D_
@@ -1704,6 +1716,7 @@
  !for presicion consistency and for code readability, the *_loc variables are declared
  !and used
  real(kind=FMS_SVP_KIND_) :: dtresl, tepsll, tminll,  dtinvll
+ integer, parameter :: kindl=FMS_SVP_KIND_
 
    dtresl=real(dtres, FMS_SVP_KIND_)
    tminll=real(tminl, FMS_SVP_KIND_)
@@ -1722,7 +1735,7 @@
        del = tmp-dtresl*real(ind,FMS_SVP_KIND_)
        ! desat = DTABLE + 2del*D2TABLE
        desat(i,j,k) = real(DTABLE2(ind+1),FMS_SVP_KIND_) &
-                      + real(2.0_r8_kind,FMS_SVP_KIND_)*del*real(D2TABLE2(ind+1),FMS_SVP_KIND_)
+                      + 2.0_kindl*del*real(D2TABLE2(ind+1),FMS_SVP_KIND_)
      endif
    enddo
    enddo
@@ -1742,6 +1755,7 @@
  !for presicion consistency and for code readability, the *_loc variables are declared
  !and used
  real(kind=FMS_SVP_KIND_) :: dtresl, tepsll, tminll,  dtinvll
+ integer, parameter :: kindl=FMS_SVP_KIND_
 
    dtresl=real(dtres, FMS_SVP_KIND_)
    tminll=real(tminl, FMS_SVP_KIND_)
@@ -1759,7 +1773,7 @@
        del = tmp-dtresl*real(ind,FMS_SVP_KIND_)
        ! desat = DTABLE + 2del*D2TABLE
        desat(i,j) = real(DTABLE2(ind+1),FMS_SVP_KIND_) &
-                    + real(2.0_r8_kind,FMS_SVP_KIND_)*del*real(D2TABLE2(ind+1),FMS_SVP_KIND_)
+                    + 2.0_kindl*del*real(D2TABLE2(ind+1),FMS_SVP_KIND_)
      endif
    enddo
    enddo
@@ -1812,6 +1826,7 @@
  !for presicion consistency and for code readability, the *_loc variables are declared
  !and used
  real(kind=FMS_SVP_KIND_) :: dtresl, tepsll, tminll,  dtinvll
+ integer, parameter :: kindl=FMS_SVP_KIND_
 
    dtresl=real(dtres, FMS_SVP_KIND_)
    tminll=real(tminl, FMS_SVP_KIND_)
@@ -1828,7 +1843,7 @@
         del = tmp-dtresl*real(ind,FMS_SVP_KIND_)
         ! desat = DTABLE + 2del*D2TABLE
         desat(i) = real(DTABLE2(ind+1),FMS_SVP_KIND_) &
-                  + real(2.0_r8_kind,FMS_SVP_KIND_)*del*real(D2TABLE2(ind+1),FMS_SVP_KIND_)
+                  + 2.0_kindl*del*real(D2TABLE2(ind+1),FMS_SVP_KIND_)
      endif
    enddo
 
@@ -1878,6 +1893,7 @@
  !for presicion consistency and for code readability, the *_loc variables are declared
  !and used
  real(kind=FMS_SVP_KIND_) :: dtresl, tepsll, tminll,  dtinvll
+ integer, parameter :: kindl=FMS_SVP_KIND_
 
    dtresl=real(dtres, FMS_SVP_KIND_)
    tminll=real(tminl, FMS_SVP_KIND_)
@@ -1893,7 +1909,7 @@
       del = tmp-dtresl*real(ind,FMS_SVP_KIND_)
       ! desat = DTABLE + 2del*D2TABLE
       desat = real(DTABLE2(ind+1),FMS_SVP_KIND_) &
-            + real(2.0d0,FMS_SVP_KIND_)*del*real(D2TABLE2(ind+1),FMS_SVP_KIND_)
+            + 2.0_kindl*del*real(D2TABLE2(ind+1),FMS_SVP_KIND_)
    endif
 
  end subroutine LOOKUP_DES2_K_0D_
@@ -1944,6 +1960,7 @@
  !for presicion consistency and for code readability, the *_loc variables are declared
  !and used
  real(kind=FMS_SVP_KIND_) :: dtresl, tepsll, tminll,  dtinvll
+ integer, parameter :: kindl=FMS_SVP_KIND_
 
    dtresl=real(dtres, FMS_SVP_KIND_)
    tminll=real(tminl, FMS_SVP_KIND_)
@@ -1966,7 +1983,7 @@
                                   + del*real(D2TABLE3(ind+1),FMS_SVP_KIND_) )
         ! desat = DTABLE + 2del*D2TABLE
         desat(i,j,k) = real(DTABLE3(ind+1),FMS_SVP_KIND_) &
-                      + real(2.0_r8_kind,FMS_SVP_KIND_)*del*real(D2TABLE3(ind+1),FMS_SVP_KIND_)
+                      + 2.0_kindl*del*real(D2TABLE3(ind+1),FMS_SVP_KIND_)
      endif
    enddo
    enddo
@@ -1988,6 +2005,7 @@
  !for presicion consistency and for code readability, the *_loc variables are declared
  !and used
  real(kind=FMS_SVP_KIND_) :: dtresl, tepsll, tminll,  dtinvll
+ integer, parameter :: kindl=FMS_SVP_KIND_
 
    dtresl=real(dtres, FMS_SVP_KIND_)
    tminll=real(tminl, FMS_SVP_KIND_)
@@ -2009,7 +2027,7 @@
                    + del*real(D2TABLE3(ind+1),FMS_SVP_KIND_) )
        ! desat = DTABLE + 2del*D2TABLE
        desat(i,j) = real(DTABLE3(ind+1),FMS_SVP_KIND_) &
-                    + real(2.0_r8_kind,FMS_SVP_KIND_)*del*real(D2TABLE3(ind+1),FMS_SVP_KIND_)
+                    + 2.0_kindl*del*real(D2TABLE3(ind+1),FMS_SVP_KIND_)
      endif
    enddo
    enddo
@@ -2030,6 +2048,7 @@
  !for presicion consistency and for code readability, the *_loc variables are declared
  !and used
  real(kind=FMS_SVP_KIND_) :: dtresl, tepsll, tminll,  dtinvll
+ integer, parameter :: kindl=FMS_SVP_KIND_
 
    dtresl=real(dtres, FMS_SVP_KIND_)
    tminll=real(tminl, FMS_SVP_KIND_)
@@ -2050,7 +2069,7 @@
                  + del*real(D2TABLE3(ind+1),FMS_SVP_KIND_) )
         ! desat = DTABLE + 2del*D2TABLE
         desat(i) = real(DTABLE3(ind+1),FMS_SVP_KIND_) &
-                  + real(2.0_r8_kind,FMS_SVP_KIND_)*del*real(D2TABLE3(ind+1),FMS_SVP_KIND_)
+                  + 2.0_kindl*del*real(D2TABLE3(ind+1),FMS_SVP_KIND_)
      endif
    enddo
 
@@ -2070,6 +2089,7 @@
  !for presicion consistency and for code readability, the *_loc variables are declared
  !and used
  real(kind=FMS_SVP_KIND_) :: dtresl, tepsll, tminll,  dtinvll
+ integer, parameter :: kindl=FMS_SVP_KIND_
 
    dtresl=real(dtres, FMS_SVP_KIND_)
    tminll=real(tminl, FMS_SVP_KIND_)
@@ -2089,7 +2109,7 @@
                            + del*real(D2TABLE3(ind+1),FMS_SVP_KIND_) )
       ! desat = DTABLE + 2del*D2TABLE
       desat = real(DTABLE3(ind+1),FMS_SVP_KIND_) &
-             + real(2.0_r8_kind,FMS_SVP_KIND_)*del*real(D2TABLE3(ind+1),FMS_SVP_KIND_)
+             + 2.0_kindl*del*real(D2TABLE3(ind+1),FMS_SVP_KIND_)
    endif
 
  end subroutine LOOKUP_ES3_DES3_K_0D_
@@ -2146,6 +2166,7 @@
  !for presicion consistency and for code readability, the *_loc variables are declared
  !and used
  real(kind=FMS_SVP_KIND_) :: dtresl, tepsll, tminll,  dtinvll
+ integer, parameter :: kindl=FMS_SVP_KIND_
 
    dtresl=real(dtres, FMS_SVP_KIND_)
    tminll=real(tminl, FMS_SVP_KIND_)
@@ -2164,7 +2185,7 @@
         del = tmp-dtresl*real(ind,FMS_SVP_KIND_)
         ! desat = DTABLE + 2del*D2TABLE
         desat(i,j,k) = real(DTABLE3(ind+1),FMS_SVP_KIND_) &
-                      + real(2.0_r8_kind,FMS_SVP_KIND_)*del*real(D2TABLE3(ind+1),FMS_SVP_KIND_)
+                      + 2.0_kindl*del*real(D2TABLE3(ind+1),FMS_SVP_KIND_)
      endif
    enddo
    enddo
@@ -2184,6 +2205,7 @@
  !for presicion consistency and for code readability, the *_loc variables are declared
  !and used
  real(kind=FMS_SVP_KIND_) :: dtresl, tepsll, tminll,  dtinvll
+ integer, parameter :: kindl=FMS_SVP_KIND_
 
    dtresl=real(dtres, FMS_SVP_KIND_)
    tminll=real(tminl, FMS_SVP_KIND_)
@@ -2201,7 +2223,7 @@
         del = tmp-dtresl*real(ind,FMS_SVP_KIND_)
         ! desat = DTABLE + 2del*D2TABLE
         desat(i,j) = real(DTABLE3(ind+1),FMS_SVP_KIND_) &
-                    + real(2.0_r8_kind,FMS_SVP_KIND_)*del*real(D2TABLE3(ind+1),FMS_SVP_KIND_)
+                    + 2.0_kindl*del*real(D2TABLE3(ind+1),FMS_SVP_KIND_)
      endif
    enddo
    enddo
@@ -2254,6 +2276,7 @@
  !for presicion consistency and for code readability, the *_loc variables are declared
  !and used
  real(kind=FMS_SVP_KIND_) :: dtresl, tepsll, tminll,  dtinvll
+ integer, parameter :: kindl=FMS_SVP_KIND_
 
    dtresl=real(dtres, FMS_SVP_KIND_)
    tminll=real(tminl, FMS_SVP_KIND_)
@@ -2270,7 +2293,7 @@
         del = tmp-dtresl*real(ind,FMS_SVP_KIND_)
         ! desat = DTABLE + 2del*D2TABLE
         desat(i) = real(DTABLE3(ind+1),FMS_SVP_KIND_) &
-                  + real(2.0_r8_kind,FMS_SVP_KIND_)*del*real(D2TABLE3(ind+1),FMS_SVP_KIND_)
+                  + 2.0_kindl*del*real(D2TABLE3(ind+1),FMS_SVP_KIND_)
      endif
    enddo
 
@@ -2320,6 +2343,7 @@
  !for presicion consistency and for code readability, the *_loc variables are declared
  !and used
  real(kind=FMS_SVP_KIND_) :: dtresl, tepsll, tminll,  dtinvll
+ integer, parameter :: kindl=FMS_SVP_KIND_
 
    dtresl=real(dtres, FMS_SVP_KIND_)
    tminll=real(tminl, FMS_SVP_KIND_)
@@ -2335,7 +2359,7 @@
       del = tmp-dtresl*real(ind,FMS_SVP_KIND_)
       ! desat = DTABLE + 2del*D2TABLE
       desat = real(DTABLE3(ind+1),FMS_SVP_KIND_) &
-             + real(2.0_r8_kind,FMS_SVP_KIND_)*del*real(D2TABLE3(ind+1),FMS_SVP_KIND_)
+             + 2.0_kindl*del*real(D2TABLE3(ind+1),FMS_SVP_KIND_)
    endif
 
  end subroutine LOOKUP_DES3_K_0D_
