@@ -117,6 +117,7 @@ end interface
 interface string
    module procedure string_from_integer
    module procedure string_from_real
+   module procedure string_from_logical
 end interface
 
 !> @addtogroup fms_string_utils_mod
@@ -262,6 +263,23 @@ end subroutine fms_f2c_string
     return
 
   end function string_from_real
+
+  !#######################################################################
+  !> @brief Converts a Boolean value to a string
+  !> @return The Boolean value as a string
+  function string_from_logical(v)
+    logical, intent(in) :: v !< Boolean value to be converted to a string
+    character(:), allocatable :: string_from_logical
+
+    if (v) then
+      string_from_logical = "True"
+    else
+      string_from_logical = "False"
+    endif
+
+    return
+
+  end function string_from_logical
 
   !> @brief Safely copy a string from one buffer to another.
   subroutine string_copy(dest, source, check_for_null)
