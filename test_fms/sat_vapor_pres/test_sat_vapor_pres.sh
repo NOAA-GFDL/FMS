@@ -39,7 +39,8 @@ cat <<EOF > test_sat_vapor_pres.nml
  /
 EOF
 test_expect_success "test_compute_qs" '
-      mpirun -n 1 ./test_sat_vapor_pres
+      mpirun -n 1 ./test_sat_vapor_pres_r4
+      mpirun -n 1 ./test_sat_vapor_pres_r8
   '
 
 ####
@@ -53,7 +54,8 @@ cat <<EOF > test_sat_vapor_pres.nml
  /
 EOF
 test_expect_success "test_compute_mrs" '
-      mpirun -n 1 ./test_sat_vapor_pres
+      mpirun -n 1 ./test_sat_vapor_pres_r4
+      mpirun -n 1 ./test_sat_vapor_pres_r8
   '
 
 ####
@@ -67,7 +69,8 @@ cat <<EOF > test_sat_vapor_pres.nml
  /
 EOF
 test_expect_success "test_lookup_es_des" '
-      mpirun -n 1 ./test_sat_vapor_pres
+      mpirun -n 1 ./test_sat_vapor_pres_r4
+      mpirun -n 1 ./test_sat_vapor_pres_r8
   '
 
 ####
@@ -81,7 +84,8 @@ cat <<EOF > test_sat_vapor_pres.nml
  /
 EOF
 test_expect_success "test_lookup_es2_des2" '
-      mpirun -n 1 ./test_sat_vapor_pres
+      mpirun -n 1 ./test_sat_vapor_pres_r4
+      mpirun -n 1 ./test_sat_vapor_pres_r8
   '
 
 ####
@@ -95,7 +99,8 @@ cat <<EOF > test_sat_vapor_pres.nml
  /
 EOF
 test_expect_success "test_lookup_es3_des3" '
-      mpirun -n 1 ./test_sat_vapor_pres
+      mpirun -n 1 ./test_sat_vapor_pres_r4
+      mpirun -n 1 ./test_sat_vapor_pres_r8
   '
 
 test_done

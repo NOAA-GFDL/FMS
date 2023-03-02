@@ -28,14 +28,14 @@ AM_CPPFLAGS = -I$(top_srcdir)/include -I$(MODDIR)
 LDADD = $(top_builddir)/libFMS/libFMS.la
 
 # Build this test program.
-check_PROGRAMS = test_sat_vapor_pres #_r4 test_sat_vapor_pres_r8
+check_PROGRAMS = test_sat_vapor_pres_r4 test_sat_vapor_pres_r8
 
 # This is the source code for the test.
-test_sat_vapor_pres_SOURCES = test_sat_vapor_pres.F90
-#test_sat_vapor_pres_r8_SOURCES = test_sat_vapor_pres.F90
+test_sat_vapor_pres_r4_SOURCES = test_sat_vapor_pres.F90
+test_sat_vapor_pres_r8_SOURCES = test_sat_vapor_pres.F90
 
-#test_sat_vapor_pres_r4_CPPFLAGS=-DTEST_SVP_KIND_=4 -I$(MODDIR)
-#test_sat_vapor_pres_r8_CPPFLAGS=-DTEST_SVP_KIND_=8 -I$(MODDIR)
+test_sat_vapor_pres_r4_CPPFLAGS=-DTEST_SVP_KIND_=4 -I$(MODDIR)
+test_sat_vapor_pres_r8_CPPFLAGS=-DTEST_SVP_KIND_=8 -I$(MODDIR)
 
 TEST_EXTENSIONS = .sh
 SH_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) $(abs_top_srcdir)/test_fms/tap-driver.sh

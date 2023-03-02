@@ -54,8 +54,6 @@ character(100) :: nml_file
 logical :: test1, test2, test3, test4, test5
 NAMELIST / test_sat_vapor_pres_nml/ test1, test2, test3, test4, test5
 
-#define TEST_SVP_KIND_ r4_kind
-
 N=(TCMAX-TCMIN)*ESRES+1
 allocate( TABLE(N),DTABLE(N),TABLE2(N),DTABLE2(N),TABLE3(N),DTABLE3(N) )
 
