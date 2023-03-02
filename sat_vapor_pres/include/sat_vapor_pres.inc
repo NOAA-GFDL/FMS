@@ -1274,6 +1274,8 @@
  integer :: nbad
  character(len=128) :: err_msg_tmp
 
+ !> EPSILO and ZVIR are module level variables that are declared in r8_kind.
+ !! Thus they need to be converted to FMS_SVP_KIND_
  real(kind=FMS_SVP_KIND_), parameter :: EPSILO_loc=real(EPSILO,FMS_SVP_KIND_)
  real(kind=FMS_SVP_KIND_), parameter :: ZVIR_loc=real(ZVIR,FMS_SVP_KIND_)
 
@@ -1335,7 +1337,8 @@ real(kind=FMS_SVP_KIND_),  intent(in),              optional :: hc
 
  integer :: nbad
  character(len=128) :: err_msg_tmp
-
+ !> EPSILO and ZVIR are module level variables that are declared in r8_kind.
+ !! Thus they need to be converted to FMS_SVP_KIND_
  real(kind=FMS_SVP_KIND_), parameter :: EPSILO_loc=real(EPSILO,FMS_SVP_KIND_)
  real(kind=FMS_SVP_KIND_), parameter :: ZVIR_loc=real(ZVIR,FMS_SVP_KIND_)
 
@@ -1400,7 +1403,8 @@ real(kind=FMS_SVP_KIND_),  intent(in),              optional :: hc
 
  integer :: nbad
  character(len=128) :: err_msg_tmp
-
+ !> EPSILO and ZVIR are module level variables that are declared in r8_kind.
+ !! Thus they need to be converted to FMS_SVP_KIND_
  real(kind=FMS_SVP_KIND_), parameter :: EPSILO_loc=real(EPSILO,FMS_SVP_KIND_)
  real(kind=FMS_SVP_KIND_), parameter :: ZVIR_loc=real(ZVIR,FMS_SVP_KIND_)
 
@@ -1464,7 +1468,8 @@ real(kind=FMS_SVP_KIND_),  intent(in),              optional :: hc
 
  integer :: nbad
  character(len=128) :: err_msg_tmp
-
+ !> EPSILO and ZVIR are module level variables that are declared in r8_kind.
+ !! Thus they need to be converted to FMS_SVP_KIND_
  real(kind=FMS_SVP_KIND_), parameter :: EPSILO_loc=real(EPSILO,FMS_SVP_KIND_)
  real(kind=FMS_SVP_KIND_), parameter :: ZVIR_loc=real(ZVIR,FMS_SVP_KIND_)
 
@@ -1529,7 +1534,8 @@ real(kind=FMS_SVP_KIND_),  intent(in),              optional :: hc
 
  integer :: nbad
  character(len=128) :: err_msg_tmp
-
+ !> EPSILO and ZVIR are module level variables that are declared in r8_kind.
+ !! Thus they need to be converted to FMS_SVP_KIND_
  real(kind=FMS_SVP_KIND_), parameter :: EPSILO_loc=real(EPSILO,FMS_SVP_KIND_)
  real(kind=FMS_SVP_KIND_), parameter :: ZVIR_loc=real(ZVIR,FMS_SVP_KIND_)
 
@@ -1592,7 +1598,8 @@ real(kind=FMS_SVP_KIND_),  intent(in),              optional :: hc
 
  integer :: nbad
  character(len=128) :: err_msg_tmp
-
+ !> EPSILO and ZVIR are module level variables that are declared in r8_kind.
+ !! Thus they need to be converted to FMS_SVP_KIND_
  real(kind=FMS_SVP_KIND_), parameter :: EPSILO_loc=real(EPSILO,FMS_SVP_KIND_)
  real(kind=FMS_SVP_KIND_), parameter :: ZVIR_loc=real(ZVIR,FMS_SVP_KIND_)
 
@@ -1657,7 +1664,8 @@ real(kind=FMS_SVP_KIND_),  intent(in),              optional :: hc
 
  integer :: nbad
  character(len=128) :: err_msg_tmp
-
+ !> EPSILO and ZVIR are module level variables that are declared in r8_kind.
+ !! Thus they need to be converted to FMS_SVP_KIND_
  real(kind=FMS_SVP_KIND_), parameter :: EPSILO_loc=real(EPSILO,FMS_SVP_KIND_)
  real(kind=FMS_SVP_KIND_), parameter :: ZVIR_loc=real(ZVIR,FMS_SVP_KIND_)
 
@@ -1722,7 +1730,8 @@ real(kind=FMS_SVP_KIND_),  intent(in),              optional :: hc
 
  integer :: nbad
  character(len=128) :: err_msg_tmp
-
+ !> EPSILO and ZVIR are module level variables that are declared in r8_kind.
+ !! Thus they need to be converted to FMS_SVP_KIND_
  real(kind=FMS_SVP_KIND_), parameter :: EPSILO_loc=real(EPSILO,FMS_SVP_KIND_)
  real(kind=FMS_SVP_KIND_), parameter :: ZVIR_loc=real(ZVIR,FMS_SVP_KIND_)
 
@@ -1768,9 +1777,17 @@ real(kind=FMS_SVP_KIND_),  intent(in),              optional :: hc
  real(kind=FMS_SVP_KIND_)   , intent(in)  :: temp(:)
  integer :: nbad, ind, i
 
+ !> DTINV, TMIN, TEPS are module level variables declared in r8_kind
+ !! Thus they need to be converted to FMS_SVP_KIND_
+ real(FMS_SVP_KIND_) :: dtinvll, tminll, tepsll
+
+ dtinvll=real(dtinv,FMS_SVP_KIND_)
+ tminll=real(tmin,FMS_SVP_KIND_)
+ tepsll=real(teps,FMS_SVP_KIND_)
+
    nbad = 0
    do i = 1, size(temp,1)
-     ind = int( real(dtinv,FMS_SVP_KIND_)*(temp(i)-real(tmin,FMS_SVP_KIND_)+real(teps,FMS_SVP_KIND_)) )
+      ind = int( dtinvll*(temp(i)-tminll + tepsll) )
      if (ind < 0 .or. ind > nlim) nbad = nbad+1
    enddo
 
@@ -1830,9 +1847,16 @@ real(kind=FMS_SVP_KIND_),  intent(in),              optional :: hc
  subroutine SHOW_ALL_BAD_0D_ ( temp )
  real(kind=FMS_SVP_KIND_)   , intent(in) :: temp
  integer :: ind, unit
+ !> DTINV, TMIN, TEPS are module level variables declared in r8_kind
+ !! Thus they need to be converted to FMS_SVP_KIND_
+ real(FMS_SVP_KIND_) :: dtinvll, tminll, tepsll
+
+ dtinvll=real(dtinv,FMS_SVP_KIND_)
+ tminll=real(tmin,FMS_SVP_KIND_)
+ tepsll=real(teps,FMS_SVP_KIND_)
 
  unit = stdoutunit
- ind = int( dtinv*(temp-real(tmin,FMS_SVP_KIND_)+real(teps,FMS_SVP_KIND_)) )
+ ind = int( dtinvll*(temp-tminll+tepsll) )
  if (ind < 0 .or. ind > nlim) then
    write(unit,'(a,e10.3,a,i6)') 'Bad temperature=',temp,' pe=',mpp_pe()
  endif
@@ -1844,10 +1868,17 @@ real(kind=FMS_SVP_KIND_),  intent(in),              optional :: hc
  subroutine SHOW_ALL_BAD_1D_ ( temp )
  real(kind=FMS_SVP_KIND_)   , intent(in) :: temp(:)
  integer :: i, ind, unit
+ !> DTINV, TMIN, TEPS are module level variables declared in r8_kind
+ !! Thus they need to be converted to FMS_SVP_KIND_
+ real(FMS_SVP_KIND_) :: dtinvll, tminll, tepsll
+
+ dtinvll=real(dtinv,FMS_SVP_KIND_)
+ tminll=real(tmin,FMS_SVP_KIND_)
+ tepsll=real(teps,FMS_SVP_KIND_)
 
  unit = stdoutunit
  do i=1,size(temp)
-   ind = int( real(dtinv,FMS_SVP_KIND_)*(temp(i)-real(tmin,FMS_SVP_KIND_)+real(teps,FMS_SVP_KIND_)) )
+   ind = int( dtinvll*(temp(i)-tminll+tepsll) )
    if (ind < 0 .or. ind > nlim) then
      write(unit,'(a,e10.3,a,i4,a,i6)') 'Bad temperature=',temp(i),'  at i=',i,' pe=',mpp_pe()
    endif
@@ -1860,11 +1891,18 @@ real(kind=FMS_SVP_KIND_),  intent(in),              optional :: hc
  subroutine SHOW_ALL_BAD_2D_ ( temp )
  real(kind=FMS_SVP_KIND_)   , intent(in) :: temp(:,:)
  integer :: i, j, ind, unit
+ !> DTINV, TMIN, TEPS are module level variables declared in r8_kind
+ !! Thus they need to be converted to FMS_SVP_KIND_
+ real(FMS_SVP_KIND_) :: dtinvll, tminll, tepsll
+
+ dtinvll=real(dtinv,FMS_SVP_KIND_)
+ tminll=real(tmin,FMS_SVP_KIND_)
+ tepsll=real(teps,FMS_SVP_KIND_)
 
  unit = stdoutunit
  do j=1,size(temp,2)
  do i=1,size(temp,1)
-   ind = int( dtinv*(temp(i,j)-real(tmin,FMS_SVP_KIND_)+real(teps,FMS_SVP_KIND_)) )
+   ind = int( dtinvll*(temp(i,j)-tminll+tepsll) )
    if (ind < 0 .or. ind > nlim) then
      write(unit,'(a,e10.3,a,i4,a,i4,a,i6)') 'Bad temperature=',temp(i,j),'  at i=',i,' j=',j,' pe=',mpp_pe()
    endif
@@ -1878,12 +1916,19 @@ real(kind=FMS_SVP_KIND_),  intent(in),              optional :: hc
  subroutine SHOW_ALL_BAD_3D_ ( temp )
  real(kind=FMS_SVP_KIND_), intent(in)  :: temp(:,:,:)
  integer :: i, j, k, ind, unit
+ !> DTINV, TMIN, TEPS are module level variables declared in r8_kind
+ !! Thus they need to be converted to FMS_SVP_KIND_
+ real(FMS_SVP_KIND_) :: dtinvll, tminll, tepsll
+
+ dtinvll=real(dtinv,FMS_SVP_KIND_)
+ tminll=real(tmin,FMS_SVP_KIND_)
+ tepsll=real(teps,FMS_SVP_KIND_)
 
  unit = stdoutunit
  do k=1,size(temp,3)
  do j=1,size(temp,2)
  do i=1,size(temp,1)
-   ind = int( real(dtinv,FMS_SVP_KIND_)*(temp(i,j,k)-real(tmin,FMS_SVP_KIND_)+real(teps,FMS_SVP_KIND_)) )
+   ind = int( dtinvll*(temp(i,j,k)-tminll+tepsll) )
    if (ind < 0 .or. ind > nlim) then
      write(unit,'(a,e10.3,a,i4,a,i4,a,i4,a,i6)') 'Bad temperature=',temp(i,j,k),'  at i=',i,' j=',j,' k=',k, &
           & ' pe=',mpp_pe()
