@@ -89,10 +89,10 @@ real, dimension(size(x,1),size(x,2),size(x,3)) :: f
 integer :: k
 
 if(present(a)) then
-  init_tridiagonal = .true.
 
   !< Check if module variables are allocated
   !$OMP SINGLE
+  init_tridiagonal = .true.
   if(allocated(e))     deallocate(e)
   if(allocated(g))     deallocate(g)
   if(allocated(bb))    deallocate(bb)
