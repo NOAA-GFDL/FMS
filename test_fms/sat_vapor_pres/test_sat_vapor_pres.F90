@@ -31,6 +31,8 @@
 !!        Current tests for the lookup* subroutines only checks esat and desat for temperatures
 !!        = TCMIN and TCMAX.  The D2* tables are not involved in the computation for these two cases.
 !!        Thus, testing suite that involves these D2* table values should be incorporated here.
+!! TODO:  Test the computation of nbads and test to to see if the expected error occurs if the temperature
+!!        is less than TCMIN or higher than TCMAX
 
 program test_sat_vap_pressure
 
