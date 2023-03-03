@@ -28,6 +28,7 @@
 !> @{
 module fms_string_utils_mod
   use, intrinsic :: iso_c_binding
+  use platform_mod, only: r4_kind, r8_kind
   use mpp_mod
 
   implicit none
@@ -112,11 +113,14 @@ interface fms_c2f_string
   module procedure cpointer_fortran_conversion
 end interface
 
-!> Converts a number to a string
+!> Converts a number or a real array to a string
 !> @ingroup fms_mod
 interface string
-   module procedure string_from_integer
-   module procedure string_from_real
+  module procedure string_from_integer
+  module procedure string_from_r4, string_from_r8
+  module procedure string_from_array_1d_r4, string_from_array_1d_r8
+  module procedure string_from_array_2d_r4, string_from_array_2d_r8
+  module procedure string_from_array_3d_r4, string_from_array_3d_r8
 end interface
 
 !> @addtogroup fms_string_utils_mod
@@ -250,19 +254,6 @@ end subroutine fms_f2c_string
 
   end function string_from_integer
 
-  !#######################################################################
-  !> @brief Converts a real to a string
-  !> @return The real number as a string
-  function string_from_real(r)
-    real, intent(in) :: r !< Real number to be converted to a string
-    character(len=32) :: string_from_real
-
-    write(string_from_real,*) r
-
-    return
-
-  end function string_from_real
-
   !> @brief Safely copy a string from one buffer to another.
   subroutine string_copy(dest, source, check_for_null)
     character(len=*), intent(inout) :: dest !< Destination string.
@@ -289,6 +280,9 @@ end subroutine fms_f2c_string
     dest = ""
     dest = adjustl(trim(source(1:i)))
   end subroutine string_copy
+
+#include "fms_string_utils_r4.fh"
+#include "fms_string_utils_r8.fh"
 
 end module fms_string_utils_mod
 !> @}
