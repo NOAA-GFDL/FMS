@@ -30,6 +30,9 @@ noinst_LTLIBRARIES = libstring_utils.la
 # The convenience library depends on its source.
 libstring_utils_la_SOURCES = \
   fms_string_utils.F90 \
+  include/fms_string_utils.inc \
+  include/fms_string_utils_r4.fh \
+  include/fms_string_utils_r8.fh \
   fms_string_utils_binding.c
 
 MODFILES = \
