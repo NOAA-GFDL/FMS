@@ -251,8 +251,29 @@ end subroutine fms_f2c_string
     write(tmp,'(i0)') i
     res = trim(tmp)
    return
-
   end function string_from_integer
+
+  !> @brief Converts a real number (r4_kind) to a string
+  !> @return The real number as a string
+  function string_from_r4(r)
+    real(r4_kind), intent(in) :: r !< Real number to be converted to a string
+    character(:), allocatable :: string_from_r4
+    character(15) :: s
+
+    write(s, "(ES15.7E2)") r
+    string_from_r4 = trim(adjustl(s))
+  end function
+
+  !> @brief Converts a real number (r8_kind) to a string
+  !> @return The real number as a string
+  function string_from_r8(r)
+    real(r8_kind), intent(in) :: r !< Real number to be converted to a string
+    character(:), allocatable :: string_from_r8
+    character(25) :: s
+
+    write(s, "(ES25.16E2)") r
+    string_from_r8 = trim(adjustl(s))
+  end function
 
   !> @brief Safely copy a string from one buffer to another.
   subroutine string_copy(dest, source, check_for_null)

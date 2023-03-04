@@ -17,17 +17,6 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 
-!> @brief Converts a real number to a string
-!> @return The real number as a string
-function STRING_FROM_REAL_(r)
-  real(STRING_UTILS_KIND_), intent(in) :: r !< Real number to be converted to a string
-  character(:), allocatable :: STRING_FROM_REAL_
-  character(32) :: s
-
-  write(s, *) r
-  STRING_FROM_REAL_ = trim(adjustl(s))
-end function
-
 !> @brief Converts a 1D array of real numbers to a string
 !> @return The 1D array as a string
 function STRING_FROM_ARRAY_1D_(arr)
@@ -38,13 +27,13 @@ function STRING_FROM_ARRAY_1D_(arr)
   n = size(arr)
 
   if (n .gt. 0) then
-    STRING_FROM_ARRAY_1D_ = "[" // STRING_FROM_REAL_(arr(1))
+    STRING_FROM_ARRAY_1D_ = "[" // string(arr(1))
   else
     STRING_FROM_ARRAY_1D_ = "["
   endif
 
   do i = 2,n
-    STRING_FROM_ARRAY_1D_ = STRING_FROM_ARRAY_1D_ // ", " // STRING_FROM_REAL_(arr(i))
+    STRING_FROM_ARRAY_1D_ = STRING_FROM_ARRAY_1D_ // ", " // string(arr(i))
   enddo
 
   STRING_FROM_ARRAY_1D_ = STRING_FROM_ARRAY_1D_ // "]"
