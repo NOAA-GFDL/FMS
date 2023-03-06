@@ -30,12 +30,18 @@
                                   teps, tmin, dtinv)
 
 !> This routine has been generalized to return tables for any temperature range and resolution
-!! The TABLEs for saturation vapor pressure require computation with r8_kind precision for accuracy.
-!! (for example, because the table values canb be very small numbers.)
+!! The TABLEs for saturation vapor pressure are computed  with r8_kind precision since
+!! these TABLES are module level variables that are decared as r8_kind.
+!! The subroutines compute_es_k, compute_es_k, compute_es_liq_k, and compute_es_liq_ice_k
+!! seem to be mostly used to compute the TABLE values (and thus all variables within them can be declared
+!! as r8_kind).  However, these subroutines have been modified to accept both r4_kind and r8_kind arguments
+!! for general usage and the math can be conducted in either r4_kind and r8_kind.
+!! In this initialization routine, r8_kind arguments are passed to these subroutines.
 !! This routine does not assume the passed in arguments are in r8_precision.
 !! Thus all variables used for the computation of the TABLES (e.g. TABLE, DTABLE*, D2TABLE*) are promoted
-!! to r8_kind precision.  Consequently, all local variables used for computation are in r8_kind precision
-
+!! to r8_kind precision.  All local variables used for computation are in r8_kind precision
+!! Thus the TABLEs are constructed as accurately as possible and are promoted down to r4_kind when users
+!! pass in r4_kind arguments to the LOOKUP* subroutines.
 
  integer, intent(in) :: table_size
  real(kind=FMS_SVP_KIND_), intent(in) :: tcmin !< TABLE(1) = sat vapor pressure at temperature tcmin (deg C)
@@ -45,8 +51,8 @@
  logical, intent(in)  :: construct_table_wrt_liq
  logical, intent(in)  :: construct_table_wrt_liq_and_ice
  character(len=*), intent(out) :: err_msg
- real(kind=FMS_SVP_KIND_), intent(out), optional :: teps, tmin, dtinv !< these variables are declared as
-                                                                      !! r8_kind in sat_vapor_pres_mod
+ real(kind=FMS_SVP_KIND_), intent(out), optional :: teps, tmin, dtinv
+
 
 ! increment used to generate derivative table
 ! the following variables are used in the computation
