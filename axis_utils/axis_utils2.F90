@@ -40,7 +40,7 @@ module axis_utils2_mod
   private
 
   integer, parameter :: maxatts = 100
-  real(r8_kind), parameter    :: epsln = real(1.e-10, kind=r8_kind)
+  real(r8_kind), parameter    :: epsln = 1.e-10_r8_kind
   real(r8_kind), parameter    :: fp5 = 0.5_r8_kind, f360 = 360.0_r8_kind
 
 !> @}
