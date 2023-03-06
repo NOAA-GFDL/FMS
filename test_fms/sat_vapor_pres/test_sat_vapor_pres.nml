@@ -1,7 +1,0 @@
-&test_sat_vapor_pres_nml
-  test1=.false.
-  test2=.false.
-  test3=.false.
-  test4=.false.
-  test5=.true.
- /
