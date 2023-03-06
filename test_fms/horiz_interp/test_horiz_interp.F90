@@ -42,10 +42,12 @@ use platform_mod
 implicit none
 
   logical :: test_conserve = .false. , test_bicubic = .false. , test_spherical =.false. , test_bilinear =.false.
+  logical :: test_assign = .false.
+  logical :: test_solo = .false.!< test with the 'solo' wrappers that hide the _new and _del calls for the derived type
   integer :: ni_src = 360, nj_src = 180
   integer :: ni_dst = 144, nj_dst = 72
 
-  namelist /test_horiz_interp_nml/ test_conserve, test_bicubic, test_spherical, test_bilinear, &
+  namelist /test_horiz_interp_nml/ test_conserve, test_bicubic, test_spherical, test_bilinear, test_assign, test_solo,&
                                    ni_src, nj_src, ni_dst,nj_dst
 
 
@@ -81,6 +83,8 @@ implicit none
     call test_horiz_interp_bilinear
   else if(test_spherical) then
     call test_horiz_interp_spherical
+  else if(test_assign) then
+    call test_assignment
   else
     call mpp_error(FATAL, "test_horiz_interp: no unit test enabled in namelist")
   endif
@@ -163,15 +167,19 @@ implicit none
     nlon_in = ni_src;  nlat_in = nj_src
     nlon_out = iec - isc; nlat_out = jec - jsc 
 
-    ! 2D x 2D (only one supported for spherical)
-    ! TODO seg fault on call entry
-    !call horiz_interp_new(interp_t, lon_in_2d, lat_in_2d, lon_out_2d, lon_out_2d, interp_method="spherical")
-    ! allocate grids and interpolate 
     allocate(data_src(ni_src, nj_src))
     allocate(data_dst(isc:iec, jsc:jec))
     data_dst = 0.0_lkind ; data_src = 1.0_lkind
-    !call horiz_interp(interp_t, data_src, data_dst)
-    ! TODO wti/j aren't used for this 
+
+    ! 2D x 2D (only one supported for spherical)
+    if(.not. test_solo) then
+        ! TODO seg fault on call entry
+        !call horiz_interp_new(interp_t, lon_in_2d, lat_in_2d, lon_out_2d, lon_out_2d, interp_method="spherical")
+        !call horiz_interp(interp_t, data_src, data_dst)
+        ! TODO wti/j aren't used for this 
+    else
+        !call horiz_inter(data_src, lon_in_2D, lat_in_2D, lon_out_2D, lat_out_2D, interp_method="spherical")
+    endif
     do i=1, ni_src-1
         do j=1, nj_src-1
             if( allocated(interp_t%kind4_reals)) then
@@ -179,7 +187,9 @@ implicit none
             endif
         enddo
     enddo
-    !call horiz_interp_del(interp_t)
+    if(.not. test_solo) then
+        !call horiz_interp_del(interp_t)
+    endif
     deallocate(data_src, data_dst)
     deallocate(lat_in_1D, lon_in_1D, lat_in_2D, lon_in_2D)
     deallocate(lat_out_1D, lon_out_1D, lat_out_2D, lon_out_2D)
@@ -236,48 +246,54 @@ implicit none
     lon1d_dst = lon1d_src
     lat1d_dst = lat1d_src
     call mpp_clock_begin(id1)
-    call horiz_interp_new(interp, lon1D_src, lat1D_src, lon1D_dst, lat1D_dst, interp_method = "bilinear")
-    call horiz_interp(interp, data_src, data_dst)
+    if (.not. test_solo) then
+        call horiz_interp_new(interp, lon1D_src, lat1D_src, lon1D_dst, lat1D_dst, interp_method = "bilinear")
+        call horiz_interp(interp, data_src, data_dst)
+    else
+        call horiz_interp(data_src, lon1D_src, lat1D_src, lon1D_dst, lat1D_dst, data_dst, interp_method = "bilinear")
+    endif
     ! check weights
-    do j=1, nj_src-1
-       do i=1, ni_src-1
-         if(allocated(interp%kind8_reals)) then
-            if( interp%kind8_reals%wtj(i,j,1).ne.1.0_r8_kind ) then
-               write(*,*) 'expected ', 1.0_r8_kind, ' but computed ', interp%kind8_reals%wtj(i,j,1)
-               call mpp_error(FATAL, "failed at horiz_interp_bilinear_1d1d with wtj1")
-            end if
-            if( interp%kind8_reals%wtj(i,j,2).ne.0.0_r8_kind ) then
-               write(*,*) 'expected ', 0.0_r8_kind, ' but computed ', interp%kind8_reals%wtj(i,j,2)
-               call mpp_error(FATAL, "failed at horiz_interp_bilinear_1d1d with wtj2")
-            end if
-            if( interp%kind8_reals%wti(i,j,1).ne.1.0_r8_kind ) then
-               write(*,*) 'expected ', 1.0_r8_kind, ' but computed ', interp%kind8_reals%wti(i,j,1)
-               call mpp_error(FATAL, "failed at horiz_interp_bilinear_1d1d with wti1")
-            end if
-            if( interp%kind8_reals%wti(i,j,2).ne.0.0_r8_kind ) then
-               write(*,*) 'expected ', 0.0_r8_kind, ' but computed ', interp%kind8_reals%wti(i,j,2)
-               call mpp_error(FATAL, "failed at horiz_interp_bilinear_1d1d with wtj2")
-            end if
-         else
-            if( interp%kind4_reals%wtj(i,j,1).ne.1.0_r4_kind ) then
-               write(*,*) 'expected ', 1.0_r4_kind, ' but computed ', interp%kind4_reals%wtj(i,j,1)
-               call mpp_error(FATAL, "failed at horiz_interp_bilinear_1d1d with wtj1")
-            end if
-            if( interp%kind4_reals%wtj(i,j,2).ne.0.0_r4_kind ) then
-               write(*,*) 'expected ', 0.0_r4_kind, ' but computed ', interp%kind4_reals%wtj(i,j,2)
-               call mpp_error(FATAL, "failed at horiz_interp_bilinear_1d1d with wtj2")
-            end if
-            if( interp%kind4_reals%wti(i,j,1).ne.1.0_r4_kind ) then
-               write(*,*) 'expected ', 1.0_r4_kind, ' but computed ', interp%kind4_reals%wti(i,j,1)
-               call mpp_error(FATAL, "failed at horiz_interp_bilinear_1d1d with wti1")
-            end if
-            if( interp%kind4_reals%wti(i,j,2).ne.0.0_r4_kind ) then
-               write(*,*) 'expected ', 0.0_r4_kind, ' but computed ', interp%kind4_reals%wti(i,j,2)
-               call mpp_error(FATAL, "failed at horiz_interp_bilinear_1d1d with wtj2")
-            end if
-         endif 
-       end do
-    end do
+    if( .not. test_solo) then
+        do j=1, nj_src-1
+            do i=1, ni_src-1
+                if(allocated(interp%kind8_reals)) then
+                    if( interp%kind8_reals%wtj(i,j,1).ne.1.0_r8_kind ) then
+                        write(*,*) 'expected ', 1.0_r8_kind, ' but computed ', interp%kind8_reals%wtj(i,j,1)
+                        call mpp_error(FATAL, "failed at horiz_interp_bilinear_1d1d with wtj1")
+                    end if
+                    if( interp%kind8_reals%wtj(i,j,2).ne.0.0_r8_kind ) then
+                        write(*,*) 'expected ', 0.0_r8_kind, ' but computed ', interp%kind8_reals%wtj(i,j,2)
+                        call mpp_error(FATAL, "failed at horiz_interp_bilinear_1d1d with wtj2")
+                    end if
+                        if( interp%kind8_reals%wti(i,j,1).ne.1.0_r8_kind ) then
+                        write(*,*) 'expected ', 1.0_r8_kind, ' but computed ', interp%kind8_reals%wti(i,j,1)
+                        call mpp_error(FATAL, "failed at horiz_interp_bilinear_1d1d with wti1")
+                    end if
+                    if( interp%kind8_reals%wti(i,j,2).ne.0.0_r8_kind ) then
+                        write(*,*) 'expected ', 0.0_r8_kind, ' but computed ', interp%kind8_reals%wti(i,j,2)
+                        call mpp_error(FATAL, "failed at horiz_interp_bilinear_1d1d with wtj2")
+                    end if
+                else
+                    if( interp%kind4_reals%wtj(i,j,1).ne.1.0_r4_kind ) then
+                        write(*,*) 'expected ', 1.0_r4_kind, ' but computed ', interp%kind4_reals%wtj(i,j,1)
+                        call mpp_error(FATAL, "failed at horiz_interp_bilinear_1d1d with wtj1")
+                    end if
+                    if( interp%kind4_reals%wtj(i,j,2).ne.0.0_r4_kind ) then
+                        write(*,*) 'expected ', 0.0_r4_kind, ' but computed ', interp%kind4_reals%wtj(i,j,2)
+                        call mpp_error(FATAL, "failed at horiz_interp_bilinear_1d1d with wtj2")
+                    end if
+                    if( interp%kind4_reals%wti(i,j,1).ne.1.0_r4_kind ) then
+                        write(*,*) 'expected ', 1.0_r4_kind, ' but computed ', interp%kind4_reals%wti(i,j,1)
+                        call mpp_error(FATAL, "failed at horiz_interp_bilinear_1d1d with wti1")
+                    end if
+                    if( interp%kind4_reals%wti(i,j,2).ne.0.0_r4_kind ) then
+                        write(*,*) 'expected ', 0.0_r4_kind, ' but computed ', interp%kind4_reals%wti(i,j,2)
+                        call mpp_error(FATAL, "failed at horiz_interp_bilinear_1d1d with wtj2")
+                    end if
+                endif 
+            end do
+        end do
+    endif
     call mpp_clock_end(id1)
     !checking to make sure data_src is equal to data_dst
     do j=1, nj_src
@@ -288,7 +304,9 @@ implicit none
           end if
        end do
     end do
-    call horiz_interp_del(interp)
+    if(.not. test_solo) then
+        call horiz_interp_del(interp)
+    endif
 
     ! --- 1dx2d version bilinear interpolation
     data_dst = 0.0_lkind
@@ -300,59 +318,67 @@ implicit none
        lat2D_dst(:,j) = (lat1D_src(j) + lat1D_src(j+1)) * 0.5_lkind
     end do
     call mpp_clock_begin(id2)
-    call horiz_interp_new(interp, lon1D_src, lat1D_src, lon2D_dst, lat2D_dst, interp_method = "bilinear")
-    call horiz_interp(interp, data_src, data_dst)
+    if(.not. test_solo) then
+        call horiz_interp_new(interp, lon1D_src, lat1D_src, lon2D_dst, lat2D_dst, interp_method = "bilinear")
+        call horiz_interp(interp, data_src, data_dst)
+    else
+        call horiz_interp(data_src, lon1D_src, lat1D_src, lon2D_dst, lat2D_dst, data_dst,interp_method="bilinear")
+    endif
     call mpp_clock_end(id2)
     ! check weights
-    do j=1, nj_src-1
-       do i=1, ni_src-1
-         if(allocated(interp%kind8_reals)) then
-            if( interp%kind8_reals%wtj(i,j,1).ne.1.0_r8_kind ) then
-               write(*,*) 'expected ', 1.0_r8_kind, ' but computed ', interp%kind8_reals%wtj(i,j,1)
-               call mpp_error(FATAL, "failed at horiz_interp_bilinear_1d2d with wtj1")
-            end if
-            if( interp%kind8_reals%wtj(i,j,2).ne.0.0_r8_kind ) then
-               write(*,*) 'expected ', 0.0_r8_kind, ' but computed ', interp%kind8_reals%wtj(i,j,2)
-               call mpp_error(FATAL, "failed at horiz_interp_bilinear_1d2d with wtj2")
-            end if
-            if( interp%kind8_reals%wti(i,j,1).ne.1.0_r8_kind ) then
-               write(*,*) 'expected ', 1.0_r8_kind, ' but computed ', interp%kind8_reals%wti(i,j,1)
-               call mpp_error(FATAL, "failed at horiz_interp_bilinear_1d2d with wti1")
-            end if
-            if( interp%kind8_reals%wti(i,j,2).ne.0.0_r8_kind ) then
-               write(*,*) 'expected ', 0.0_r8_kind, ' but computed ', interp%kind8_reals%wti(i,j,2)
-               call mpp_error(FATAL, "failed at horiz_interp_bilinear_1d2d with wti2")
-            end if
-         else
-            if( interp%kind4_reals%wtj(i,j,1).ne.1.0_r4_kind ) then
-               write(*,*) 'expected ', 1.0_r4_kind, ' but computed ', interp%kind4_reals%wtj(i,j,1)
-               call mpp_error(FATAL, "failed at horiz_interp_bilinear_1d2d with wtj1")
-            end if
-            if( interp%kind4_reals%wtj(i,j,2).ne.0.0_r4_kind ) then
-               write(*,*) 'expected ', 0.0_r4_kind, ' but computed ', interp%kind4_reals%wtj(i,j,2)
-               call mpp_error(FATAL, "failed at horiz_interp_bilinear_1d2d with wtj2")
-            end if
-            if( interp%kind4_reals%wti(i,j,1).ne.1.0_r4_kind ) then
-               write(*,*) 'expected ', 1.0_r4_kind, ' but computed ', interp%kind4_reals%wti(i,j,1)
-               call mpp_error(FATAL, "failed at horiz_interp_bilinear_1d2d with wti1")
-            end if
-            if( interp%kind4_reals%wti(i,j,2).ne.0.0_r4_kind ) then
-               write(*,*) 'expected ', 0.0_r4_kind, ' but computed ', interp%kind4_reals%wti(i,j,2)
-               call mpp_error(FATAL, "failed at horiz_interp_bilinear_1d2d with wti2")
-            end if
-         endif
-       end do
-    end do
+    if(.not. test_solo) then
+        do j=1, nj_src-1
+            do i=1, ni_src-1
+                if(allocated(interp%kind8_reals)) then
+                    if( interp%kind8_reals%wtj(i,j,1).ne.1.0_r8_kind ) then
+                        write(*,*) 'expected ', 1.0_r8_kind, ' but computed ', interp%kind8_reals%wtj(i,j,1)
+                        call mpp_error(FATAL, "failed at horiz_interp_bilinear_1d2d with wtj1")
+                    end if
+                    if( interp%kind8_reals%wtj(i,j,2).ne.0.0_r8_kind ) then
+                        write(*,*) 'expected ', 0.0_r8_kind, ' but computed ', interp%kind8_reals%wtj(i,j,2)
+                        call mpp_error(FATAL, "failed at horiz_interp_bilinear_1d2d with wtj2")
+                    end if
+                    if( interp%kind8_reals%wti(i,j,1).ne.1.0_r8_kind ) then
+                        write(*,*) 'expected ', 1.0_r8_kind, ' but computed ', interp%kind8_reals%wti(i,j,1)
+                        call mpp_error(FATAL, "failed at horiz_interp_bilinear_1d2d with wti1")
+                    end if
+                    if( interp%kind8_reals%wti(i,j,2).ne.0.0_r8_kind ) then
+                        write(*,*) 'expected ', 0.0_r8_kind, ' but computed ', interp%kind8_reals%wti(i,j,2)
+                        call mpp_error(FATAL, "failed at horiz_interp_bilinear_1d2d with wti2")
+                    end if
+                else
+                    if( interp%kind4_reals%wtj(i,j,1).ne.1.0_r4_kind ) then
+                        write(*,*) 'expected ', 1.0_r4_kind, ' but computed ', interp%kind4_reals%wtj(i,j,1)
+                        call mpp_error(FATAL, "failed at horiz_interp_bilinear_1d2d with wtj1")
+                    end if
+                    if( interp%kind4_reals%wtj(i,j,2).ne.0.0_r4_kind ) then
+                        write(*,*) 'expected ', 0.0_r4_kind, ' but computed ', interp%kind4_reals%wtj(i,j,2)
+                        call mpp_error(FATAL, "failed at horiz_interp_bilinear_1d2d with wtj2")
+                    end if
+                    if( interp%kind4_reals%wti(i,j,1).ne.1.0_r4_kind ) then
+                        write(*,*) 'expected ', 1.0_r4_kind, ' but computed ', interp%kind4_reals%wti(i,j,1)
+                        call mpp_error(FATAL, "failed at horiz_interp_bilinear_1d2d with wti1")
+                    end if
+                    if( interp%kind4_reals%wti(i,j,2).ne.0.0_r4_kind ) then
+                        write(*,*) 'expected ', 0.0_r4_kind, ' but computed ', interp%kind4_reals%wti(i,j,2)
+                        call mpp_error(FATAL, "failed at horiz_interp_bilinear_1d2d with wti2")
+                    end if
+                endif
+            end do
+        end do
+    endif
     !check that data are equal
     do j=1, nj_src
-       do i=1, ni_src
-          if( data_src(i,j).ne.data_dst(i,j) ) then
-             write(*,*) 'expected ', data_src(i,j), ' but computed ', data_dst(i,j)
-             call mpp_error(FATAL, "failed at horiz_interp_bilinear_1d2d data comparison")
-          end if
-       end do
+        do i=1, ni_src
+            if( data_src(i,j).ne.data_dst(i,j) ) then
+                write(*,*) 'expected ', data_src(i,j), ' but computed ', data_dst(i,j)
+                call mpp_error(FATAL, "failed at horiz_interp_bilinear_1d2d data comparison")
+            end if
+        end do
     end do
-    call horiz_interp_del(interp)
+    if(.not. test_solo) then
+        call horiz_interp_del(interp)
+    endif
 
     ! --- 2dx1d version bilinear interpolation
     data_dst = 0.0_lkind
@@ -365,86 +391,93 @@ implicit none
        lat2d_src(:,j) = lat1d_dst(j)
     end do
     call mpp_clock_begin(id3)
-    call horiz_interp_new(interp,lon2D_src,lat2D_src,lon1D_dst(1:ni_src),lat1D_dst(1:nj_src),interp_method = "bilinear")
-    call horiz_interp(interp, data_src, data_dst)
+    if(.not. test_solo) then
+        call horiz_interp_new(interp,lon2D_src,lat2D_src,lon1D_dst(1:ni_src),lat1D_dst(1:nj_src),interp_method = "bilinear")
+        call horiz_interp(interp, data_src, data_dst)
+    else
+        call horiz_interp(data_src, lon2D_src, lat2d_src, lon1D_dst(1:ni_src),lat1D_dst(1:nj_src), data_dst, &
+                        & interp_method="bilinear")
+    endif
+    call mpp_clock_end(id3)
     ! check weights
     !j=1,i=1 is a special case; see subroutine find_neighbor
-    i=1 ; j=1
-    if(allocated(interp%kind8_reals)) then
-        if( interp%kind8_reals%wtj(i,j,1).ne.1.0_r8_kind ) then
-            write(*,*) 'expected ', 1.0_r8_kind, ' but computed ', i,j,interp%kind8_reals%wtj(i,j,1)
-            call mpp_error(FATAL, "failed at horiz_interp_bilinear_2d1d with wtj(1,1,1)")
-        end if
-        if( interp%kind8_reals%wtj(i,j,2).ne.0.0_r8_kind ) then
-            write(*,*) 'expected ', 0.0_r8_kind, ' but computed ', interp%kind8_reals%wtj(i,j,2)
-            call mpp_error(FATAL, "failed at horiz_interp_bilinear_2d1d with wtj(1,1,2)")
-        end if
-        if( interp%kind8_reals%wti(i,j,1).ne.1.0_r8_kind ) then
-            write(*,*) 'expected ', 1.0_r8_kind, ' but computed ', interp%kind8_reals%wti(i,j,1)
-            call mpp_error(FATAL, "failed at horiz_interp_bilinear_2d1d with wti(1,1,1)")
-        end if
-        if( interp%kind8_reals%wti(i,j,2).ne.0.0_r8_kind ) then
-            write(*,*) 'expected ', 0.0_r8_kind, ' but computed ', interp%kind8_reals%wti(i,j,2)
-            call mpp_error(FATAL, "failed at horiz_interp_bilinear_2d1d with wti(1,1,2)")
-        end if
-    else
-        if( interp%kind4_reals%wtj(i,j,1).ne.1.0_r4_kind ) then
-            write(*,*) 'expected ', 1.0_r4_kind, ' but computed ', i,j,interp%kind4_reals%wtj(i,j,1)
-            call mpp_error(FATAL, "failed at horiz_interp_bilinear_2d1d with wtj(1,1,1)")
-        end if
-        if( interp%kind4_reals%wtj(i,j,2).ne.0.0_r4_kind ) then
-            write(*,*) 'expected ', 0.0_r4_kind, ' but computed ', interp%kind4_reals%wtj(i,j,2)
-            call mpp_error(FATAL, "failed at horiz_interp_bilinear_2d1d with wtj(1,1,2)")
-        end if
-        if( interp%kind4_reals%wti(i,j,1).ne.1.0_r4_kind ) then
-            write(*,*) 'expected ', 1.0_r4_kind, ' but computed ', interp%kind4_reals%wti(i,j,1)
-            call mpp_error(FATAL, "failed at horiz_interp_bilinear_2d1d with wti(1,1,1)")
-        end if
-        if( interp%kind4_reals%wti(i,j,2).ne.0.0_r4_kind ) then
-            write(*,*) 'expected ', 0.0_r4_kind, ' but computed ', interp%kind4_reals%wti(i,j,2)
-            call mpp_error(FATAL, "failed at horiz_interp_bilinear_2d1d with wti(1,1,2)")
-        end if
+    if(.not. test_solo) then
+        i=1 ; j=1
+        if(allocated(interp%kind8_reals)) then
+            if( interp%kind8_reals%wtj(i,j,1).ne.1.0_r8_kind ) then
+                write(*,*) 'expected ', 1.0_r8_kind, ' but computed ', i,j,interp%kind8_reals%wtj(i,j,1)
+                call mpp_error(FATAL, "failed at horiz_interp_bilinear_2d1d with wtj(1,1,1)")
+            end if
+            if( interp%kind8_reals%wtj(i,j,2).ne.0.0_r8_kind ) then
+                write(*,*) 'expected ', 0.0_r8_kind, ' but computed ', interp%kind8_reals%wtj(i,j,2)
+                call mpp_error(FATAL, "failed at horiz_interp_bilinear_2d1d with wtj(1,1,2)")
+            end if
+            if( interp%kind8_reals%wti(i,j,1).ne.1.0_r8_kind ) then
+                write(*,*) 'expected ', 1.0_r8_kind, ' but computed ', interp%kind8_reals%wti(i,j,1)
+                call mpp_error(FATAL, "failed at horiz_interp_bilinear_2d1d with wti(1,1,1)")
+            end if
+            if( interp%kind8_reals%wti(i,j,2).ne.0.0_r8_kind ) then
+                write(*,*) 'expected ', 0.0_r8_kind, ' but computed ', interp%kind8_reals%wti(i,j,2)
+                call mpp_error(FATAL, "failed at horiz_interp_bilinear_2d1d with wti(1,1,2)")
+            end if
+        else
+            if( interp%kind4_reals%wtj(i,j,1).ne.1.0_r4_kind ) then
+                write(*,*) 'expected ', 1.0_r4_kind, ' but computed ', i,j,interp%kind4_reals%wtj(i,j,1)
+                call mpp_error(FATAL, "failed at horiz_interp_bilinear_2d1d with wtj(1,1,1)")
+            end if
+            if( interp%kind4_reals%wtj(i,j,2).ne.0.0_r4_kind ) then
+                write(*,*) 'expected ', 0.0_r4_kind, ' but computed ', interp%kind4_reals%wtj(i,j,2)
+                call mpp_error(FATAL, "failed at horiz_interp_bilinear_2d1d with wtj(1,1,2)")
+            end if
+            if( interp%kind4_reals%wti(i,j,1).ne.1.0_r4_kind ) then
+                write(*,*) 'expected ', 1.0_r4_kind, ' but computed ', interp%kind4_reals%wti(i,j,1)
+                call mpp_error(FATAL, "failed at horiz_interp_bilinear_2d1d with wti(1,1,1)")
+            end if
+            if( interp%kind4_reals%wti(i,j,2).ne.0.0_r4_kind ) then
+                write(*,*) 'expected ', 0.0_r4_kind, ' but computed ', interp%kind4_reals%wti(i,j,2)
+                call mpp_error(FATAL, "failed at horiz_interp_bilinear_2d1d with wti(1,1,2)")
+            end if
+        endif
+        do j=2, nj_src
+            do i=2, ni_src
+                if(allocated(interp%kind8_reals)) then
+                    if( interp%kind8_reals%wtj(i,j,1).ne.0.0_r8_kind ) then
+                        write(*,*) 'expected ', 1.0_r8_kind, ' but computed ', i,j,interp%kind8_reals%wtj(i,j,1)
+                        call mpp_error(FATAL, "failed at horiz_interp_bilinear_2d1d with wtj1")
+                    end if
+                    if( interp%kind8_reals%wtj(i,j,2).ne.1.0_r8_kind ) then
+                        write(*,*) 'expected ', 0.0_r8_kind, ' but computed ', interp%kind8_reals%wtj(i,j,2)
+                        call mpp_error(FATAL, "failed at horiz_interp_bilinear_2d1d with wtj2")
+                    end if
+                    if( interp%kind8_reals%wti(i,j,1).ne.0.0_r8_kind ) then
+                        write(*,*) 'expected ', 1.0_r8_kind, ' but computed ', interp%kind8_reals%wti(i,j,1)
+                        call mpp_error(FATAL, "failed at horiz_interp_bilinear_2d1d with wti1")
+                    end if
+                    if( interp%kind8_reals%wti(i,j,2).ne.1.0_r8_kind ) then
+                        write(*,*) 'expected ', 0.0_r8_kind, ' but computed ', interp%kind8_reals%wti(i,j,2)
+                        call mpp_error(FATAL, "failed at horiz_interp_bilinear_2d1d with wti2")
+                    end if
+                else
+                    if( interp%kind4_reals%wtj(i,j,1).ne.0.0_r4_kind ) then
+                        write(*,*) 'expected ', 1.0_r4_kind, ' but computed ', i,j,interp%kind4_reals%wtj(i,j,1)
+                        call mpp_error(FATAL, "failed at horiz_interp_bilinear_2d1d with wtj1")
+                    end if
+                    if( interp%kind4_reals%wtj(i,j,2).ne.1.0_r4_kind ) then
+                        write(*,*) 'expected ', 0.0_r4_kind, ' but computed ', interp%kind4_reals%wtj(i,j,2)
+                        call mpp_error(FATAL, "failed at horiz_interp_bilinear_2d1d with wtj2")
+                    end if
+                    if( interp%kind4_reals%wti(i,j,1).ne.0.0_r4_kind ) then
+                        write(*,*) 'expected ', 1.0_r4_kind, ' but computed ', interp%kind4_reals%wti(i,j,1)
+                        call mpp_error(FATAL, "failed at horiz_interp_bilinear_2d1d with wti1")
+                    end if
+                    if( interp%kind4_reals%wti(i,j,2).ne.1.0_r4_kind ) then
+                        write(*,*) 'expected ', 0.0_r4_kind, ' but computed ', interp%kind4_reals%wti(i,j,2)
+                        call mpp_error(FATAL, "failed at horiz_interp_bilinear_2d1d with wti2")
+                    end if
+                endif
+            end do
+        end do
     endif
-    do j=2, nj_src
-       do i=2, ni_src
-            if(allocated(interp%kind8_reals)) then
-                if( interp%kind8_reals%wtj(i,j,1).ne.0.0_r8_kind ) then
-                    write(*,*) 'expected ', 1.0_r8_kind, ' but computed ', i,j,interp%kind8_reals%wtj(i,j,1)
-                    call mpp_error(FATAL, "failed at horiz_interp_bilinear_2d1d with wtj1")
-                end if
-                if( interp%kind8_reals%wtj(i,j,2).ne.1.0_r8_kind ) then
-                    write(*,*) 'expected ', 0.0_r8_kind, ' but computed ', interp%kind8_reals%wtj(i,j,2)
-                    call mpp_error(FATAL, "failed at horiz_interp_bilinear_2d1d with wtj2")
-                end if
-                if( interp%kind8_reals%wti(i,j,1).ne.0.0_r8_kind ) then
-                    write(*,*) 'expected ', 1.0_r8_kind, ' but computed ', interp%kind8_reals%wti(i,j,1)
-                    call mpp_error(FATAL, "failed at horiz_interp_bilinear_2d1d with wti1")
-                end if
-                if( interp%kind8_reals%wti(i,j,2).ne.1.0_r8_kind ) then
-                    write(*,*) 'expected ', 0.0_r8_kind, ' but computed ', interp%kind8_reals%wti(i,j,2)
-                    call mpp_error(FATAL, "failed at horiz_interp_bilinear_2d1d with wti2")
-                end if
-            else
-                if( interp%kind4_reals%wtj(i,j,1).ne.0.0_r4_kind ) then
-                    write(*,*) 'expected ', 1.0_r4_kind, ' but computed ', i,j,interp%kind4_reals%wtj(i,j,1)
-                    call mpp_error(FATAL, "failed at horiz_interp_bilinear_2d1d with wtj1")
-                end if
-                if( interp%kind4_reals%wtj(i,j,2).ne.1.0_r4_kind ) then
-                    write(*,*) 'expected ', 0.0_r4_kind, ' but computed ', interp%kind4_reals%wtj(i,j,2)
-                    call mpp_error(FATAL, "failed at horiz_interp_bilinear_2d1d with wtj2")
-                end if
-                if( interp%kind4_reals%wti(i,j,1).ne.0.0_r4_kind ) then
-                    write(*,*) 'expected ', 1.0_r4_kind, ' but computed ', interp%kind4_reals%wti(i,j,1)
-                    call mpp_error(FATAL, "failed at horiz_interp_bilinear_2d1d with wti1")
-                end if
-                if( interp%kind4_reals%wti(i,j,2).ne.1.0_r4_kind ) then
-                    write(*,*) 'expected ', 0.0_r4_kind, ' but computed ', interp%kind4_reals%wti(i,j,2)
-                    call mpp_error(FATAL, "failed at horiz_interp_bilinear_2d1d with wti2")
-                end if
-            endif
-       end do
-    end do
-    call mpp_clock_end(id3)
     !check that data are equal
     do j=1, nj_src
        do i=1, ni_src
@@ -454,7 +487,9 @@ implicit none
           end if
        end do
     end do
-    call horiz_interp_del(interp)
+    if(.not. test_solo) then
+        call horiz_interp_del(interp)
+    endif
 
     ! --- 2dx2d version bilinear interpolation
     data_dst = 0.0_lkind
@@ -462,95 +497,103 @@ implicit none
     lat2D_dst = lat2D_src
 
     call mpp_clock_begin(id4)
-    call horiz_interp_new(interp, lon2D_src, lat2D_src, lon2D_dst, lat2D_dst, interp_method = "bilinear")
-    call horiz_interp(interp, data_src, data_dst)
+    if(.not. test_solo) then
+        call horiz_interp_new(interp, lon2D_src, lat2D_src, lon2D_dst, lat2D_dst, interp_method = "bilinear")
+        call horiz_interp(interp, data_src, data_dst)
+    else
+        call horiz_interp(data_src, lon2D_src, lat2d_src, lon2D_dst, lat2D_dst, data_dst, interp_method="bilinear")
+    endif
     call mpp_clock_end(id4)
     ! check weights
-    !j=1,i=1 is a special case; see subroutine find_neighbor
-    i=1 ; j=1
-    if(allocated(interp%kind8_reals)) then
-        if( interp%kind8_reals%wtj(i,j,1).ne.1.0_r8_kind ) then
-            write(*,*) 'expected ', 1.0_r8_kind, ' but computed ', i,j,interp%kind8_reals%wtj(i,j,1)
-            call mpp_error(FATAL, "failed at horiz_interp_bilinear_2d2d wtj(1,1,1)")
-        end if
-        if( interp%kind8_reals%wtj(i,j,2).ne.0.0_r8_kind ) then
-            write(*,*) 'expected ', 0.0_r8_kind, ' but computed ', interp%kind8_reals%wtj(i,j,2)
-            call mpp_error(FATAL, "failed at horiz_interp_bilinear_2d2d wtj(1,1,2)")
-        end if
-        if( interp%kind8_reals%wti(i,j,1).ne.1.0_r8_kind ) then
-            write(*,*) 'expected ', 1.0_r8_kind, ' but computed ', interp%kind8_reals%wti(i,j,1)
-            call mpp_error(FATAL, "failed at horiz_interp_bilinear_2d2d wti(1,1,1)")
-        end if
-        if( interp%kind8_reals%wti(i,j,2).ne.0.0_r8_kind ) then
-            write(*,*) 'expected ', 0.0_r8_kind, ' but computed ', interp%kind8_reals%wti(i,j,2)
-            call mpp_error(FATAL, "failed at horiz_interp_bilinear_2d2d wti(1,1,2)")
-        end if
-    else
-        if( interp%kind4_reals%wtj(i,j,1).ne.1.0_r4_kind ) then
-            write(*,*) 'expected ', 1.0_r4_kind, ' but computed ', i,j,interp%kind4_reals%wtj(i,j,1)
-            call mpp_error(FATAL, "failed at horiz_interp_bilinear_2d2d wtj(1,1,1)")
-        end if
-        if( interp%kind4_reals%wtj(i,j,2).ne.0.0_r4_kind ) then
-            write(*,*) 'expected ', 0.0_r4_kind, ' but computed ', interp%kind4_reals%wtj(i,j,2)
-            call mpp_error(FATAL, "failed at horiz_interp_bilinear_2d2d wtj(1,1,2)")
-        end if
-        if( interp%kind4_reals%wti(i,j,1).ne.1.0_r4_kind ) then
-            write(*,*) 'expected ', 1.0_r4_kind, ' but computed ', interp%kind4_reals%wti(i,j,1)
-            call mpp_error(FATAL, "failed at horiz_interp_bilinear_2d2d wti(1,1,1)")
-        end if
-        if( interp%kind4_reals%wti(i,j,2).ne.0.0_r4_kind ) then
-            write(*,*) 'expected ', 0.0_r4_kind, ' but computed ', interp%kind4_reals%wti(i,j,2)
-            call mpp_error(FATAL, "failed at horiz_interp_bilinear_2d2d wti(1,1,2)")
-        end if
-    endif
-    do j=2, nj_src
-        do i=2, ni_src
-            if(allocated(interp%kind8_reals)) then
-                if( interp%kind8_reals%wtj(i,j,1).ne.0.0_r8_kind ) then
-                    write(*,*) 'expected ', 1.0_r8_kind, ' but computed ', i,j,interp%kind8_reals%wtj(i,j,1)
-                    call mpp_error(FATAL, "failed at horiz_interp_bilinear_2d2d wtj1")
-                end if
-                if( interp%kind8_reals%wtj(i,j,2).ne.1.0_r8_kind ) then
-                    write(*,*) 'expected ', 0.0_r8_kind, ' but computed ', interp%kind8_reals%wtj(i,j,2)
-                    call mpp_error(FATAL, "failed at horiz_interp_bilinear_2d2d wtj2")
-                end if
-                if( interp%kind8_reals%wti(i,j,1).ne.0.0_r8_kind ) then
-                    write(*,*) 'expected ', 1.0_r8_kind, ' but computed ', interp%kind8_reals%wti(i,j,1)
-                    call mpp_error(FATAL, "failed at horiz_interp_bilinear_2d2d wti1")
-                end if
-                if( interp%kind8_reals%wti(i,j,2).ne.1.0_r8_kind ) then
-                    write(*,*) 'expected ', 0.0_r8_kind, ' but computed ', interp%kind8_reals%wti(i,j,2)
-                    call mpp_error(FATAL, "failed at horiz_interp_bilinear_2d2d wti2")
-                end if
-            else
-                if( interp%kind4_reals%wtj(i,j,1).ne.0.0_r4_kind ) then
-                    write(*,*) 'expected ', 1.0_r4_kind, ' but computed ', i,j,interp%kind4_reals%wtj(i,j,1)
-                    call mpp_error(FATAL, "failed at horiz_interp_bilinear_2d2d wtj1")
-                end if
-                if( interp%kind4_reals%wtj(i,j,2).ne.1.0_r4_kind ) then
-                    write(*,*) 'expected ', 0.0_r4_kind, ' but computed ', interp%kind4_reals%wtj(i,j,2)
-                    call mpp_error(FATAL, "failed at horiz_interp_bilinear_2d2d wtj2")
-                end if
-                if( interp%kind4_reals%wti(i,j,1).ne.0.0_r4_kind ) then
-                    write(*,*) 'expected ', 1.0_r4_kind, ' but computed ', interp%kind4_reals%wti(i,j,1)
-                    call mpp_error(FATAL, "failed at horiz_interp_bilinear_2d2d wti1")
-                end if
-                if( interp%kind4_reals%wti(i,j,2).ne.1.0_r4_kind ) then
-                    write(*,*) 'expected ', 0.0_r4_kind, ' but computed ', interp%kind4_reals%wti(i,j,2)
-                    call mpp_error(FATAL, "failed at horiz_interp_bilinear_2d2d wti2")
-                end if
-            endif
+    if(.not. test_solo) then
+        !j=1,i=1 is a special case; see subroutine find_neighbor
+        i=1 ; j=1
+        if(allocated(interp%kind8_reals)) then
+            if( interp%kind8_reals%wtj(i,j,1).ne.1.0_r8_kind ) then
+                write(*,*) 'expected ', 1.0_r8_kind, ' but computed ', i,j,interp%kind8_reals%wtj(i,j,1)
+                call mpp_error(FATAL, "failed at horiz_interp_bilinear_2d2d wtj(1,1,1)")
+            end if
+            if( interp%kind8_reals%wtj(i,j,2).ne.0.0_r8_kind ) then
+                write(*,*) 'expected ', 0.0_r8_kind, ' but computed ', interp%kind8_reals%wtj(i,j,2)
+                call mpp_error(FATAL, "failed at horiz_interp_bilinear_2d2d wtj(1,1,2)")
+            end if
+            if( interp%kind8_reals%wti(i,j,1).ne.1.0_r8_kind ) then
+                write(*,*) 'expected ', 1.0_r8_kind, ' but computed ', interp%kind8_reals%wti(i,j,1)
+                call mpp_error(FATAL, "failed at horiz_interp_bilinear_2d2d wti(1,1,1)")
+            end if
+            if( interp%kind8_reals%wti(i,j,2).ne.0.0_r8_kind ) then
+                write(*,*) 'expected ', 0.0_r8_kind, ' but computed ', interp%kind8_reals%wti(i,j,2)
+                call mpp_error(FATAL, "failed at horiz_interp_bilinear_2d2d wti(1,1,2)")
+            end if
+        else
+            if( interp%kind4_reals%wtj(i,j,1).ne.1.0_r4_kind ) then
+                write(*,*) 'expected ', 1.0_r4_kind, ' but computed ', i,j,interp%kind4_reals%wtj(i,j,1)
+                call mpp_error(FATAL, "failed at horiz_interp_bilinear_2d2d wtj(1,1,1)")
+            end if
+            if( interp%kind4_reals%wtj(i,j,2).ne.0.0_r4_kind ) then
+                write(*,*) 'expected ', 0.0_r4_kind, ' but computed ', interp%kind4_reals%wtj(i,j,2)
+                call mpp_error(FATAL, "failed at horiz_interp_bilinear_2d2d wtj(1,1,2)")
+            end if
+            if( interp%kind4_reals%wti(i,j,1).ne.1.0_r4_kind ) then
+                write(*,*) 'expected ', 1.0_r4_kind, ' but computed ', interp%kind4_reals%wti(i,j,1)
+                call mpp_error(FATAL, "failed at horiz_interp_bilinear_2d2d wti(1,1,1)")
+            end if
+            if( interp%kind4_reals%wti(i,j,2).ne.0.0_r4_kind ) then
+                write(*,*) 'expected ', 0.0_r4_kind, ' but computed ', interp%kind4_reals%wti(i,j,2)
+                call mpp_error(FATAL, "failed at horiz_interp_bilinear_2d2d wti(1,1,2)")
+            end if
+        endif
+        do j=2, nj_src
+            do i=2, ni_src
+                if(allocated(interp%kind8_reals)) then
+                    if( interp%kind8_reals%wtj(i,j,1).ne.0.0_r8_kind ) then
+                        write(*,*) 'expected ', 1.0_r8_kind, ' but computed ', i,j,interp%kind8_reals%wtj(i,j,1)
+                        call mpp_error(FATAL, "failed at horiz_interp_bilinear_2d2d wtj1")
+                    end if
+                    if( interp%kind8_reals%wtj(i,j,2).ne.1.0_r8_kind ) then
+                        write(*,*) 'expected ', 0.0_r8_kind, ' but computed ', interp%kind8_reals%wtj(i,j,2)
+                        call mpp_error(FATAL, "failed at horiz_interp_bilinear_2d2d wtj2")
+                    end if
+                    if( interp%kind8_reals%wti(i,j,1).ne.0.0_r8_kind ) then
+                        write(*,*) 'expected ', 1.0_r8_kind, ' but computed ', interp%kind8_reals%wti(i,j,1)
+                        call mpp_error(FATAL, "failed at horiz_interp_bilinear_2d2d wti1")
+                    end if
+                    if( interp%kind8_reals%wti(i,j,2).ne.1.0_r8_kind ) then
+                        write(*,*) 'expected ', 0.0_r8_kind, ' but computed ', interp%kind8_reals%wti(i,j,2)
+                        call mpp_error(FATAL, "failed at horiz_interp_bilinear_2d2d wti2")
+                    end if
+                else
+                    if( interp%kind4_reals%wtj(i,j,1).ne.0.0_r4_kind ) then
+                        write(*,*) 'expected ', 1.0_r4_kind, ' but computed ', i,j,interp%kind4_reals%wtj(i,j,1)
+                        call mpp_error(FATAL, "failed at horiz_interp_bilinear_2d2d wtj1")
+                    end if
+                    if( interp%kind4_reals%wtj(i,j,2).ne.1.0_r4_kind ) then
+                        write(*,*) 'expected ', 0.0_r4_kind, ' but computed ', interp%kind4_reals%wtj(i,j,2)
+                        call mpp_error(FATAL, "failed at horiz_interp_bilinear_2d2d wtj2")
+                    end if
+                    if( interp%kind4_reals%wti(i,j,1).ne.0.0_r4_kind ) then
+                        write(*,*) 'expected ', 1.0_r4_kind, ' but computed ', interp%kind4_reals%wti(i,j,1)
+                        call mpp_error(FATAL, "failed at horiz_interp_bilinear_2d2d wti1")
+                    end if
+                    if( interp%kind4_reals%wti(i,j,2).ne.1.0_r4_kind ) then
+                        write(*,*) 'expected ', 0.0_r4_kind, ' but computed ', interp%kind4_reals%wti(i,j,2)
+                        call mpp_error(FATAL, "failed at horiz_interp_bilinear_2d2d wti2")
+                    end if
+                endif
+            end do
         end do
-    end do
-    call horiz_interp_del(interp)
+    endif
+    if(.not. test_solo) then
+        call horiz_interp_del(interp)
+    endif
     !check that data are equal
     do j=1, nj_src
-       do i=1, ni_src
-          if( data_src(i,j).ne.data_dst(i,j) ) then
-             write(*,*) 'expected ', data_src(i,j), ' but computed ', data_dst(i,j)
-             call mpp_error(FATAL, "failed at horiz_interp_bilinear_2d2d data comparison")
-          end if
-       end do
+        do i=1, ni_src
+            if( data_src(i,j).ne.data_dst(i,j) ) then
+                write(*,*) 'expected ', data_src(i,j), ' but computed ', data_dst(i,j)
+                call mpp_error(FATAL, "failed at horiz_interp_bilinear_2d2d data comparison")
+            end if
+        end do
     end do
 
   end subroutine test_horiz_interp_bilinear
@@ -618,14 +661,19 @@ implicit none
     nlon_in = ni_src;  nlat_in = nj_src
     nlon_out = iec - isc; nlat_out = jec - jsc 
 
-    ! 1D x 1D
-    ! set up weights
-    call horiz_interp_new(interp_t, lon_in_1d, lat_in_1d, lon_out_1d, lon_out_1d, interp_method="bicubic")
-    ! allocate grids and interpolate 
+    ! allocate grids
     allocate(data_src(ni_src, nj_src))
     allocate(data_dst(isc:iec, jsc:jec))
     data_dst = 0.0_lkind ; data_src = 1.0_lkind
-    call horiz_interp(interp_t, data_src, data_dst)
+
+    ! 1D x 1D
+    ! set up weights
+    if(.not. test_solo) then
+        call horiz_interp_new(interp_t, lon_in_1d, lat_in_1d, lon_out_1d, lat_out_1d, interp_method="bicubic")
+        call horiz_interp(interp_t, data_src, data_dst)
+    else
+        call horiz_interp(data_src, lon_in_1D, lat_in_1D, lon_out_1D, lat_out_1D, data_dst, interp_method="bicubic")
+    endif
     call mpp_sync()
     ! check weights (for last index, 1=x,2=y,3=xy derivatives)
     ! x and y should be 1 at edges, 0.5 otherwise
@@ -657,17 +705,22 @@ implicit none
         enddo
     enddo
     ! free memory
-    call horiz_interp_del(interp_t)
+    if(.not. test_solo) then
+        call horiz_interp_del(interp_t)
+    endif
 
     ! 1D x 2D
-    ! set up weights
-    call horiz_interp_new(interp_t, lon_in_1d, lat_in_1d, lon_out_2d, lon_out_2d, interp_method="bicubic")
-    ! allocate grids and interpolate 
+    ! allocate grids
     deallocate(data_src, data_dst)
     allocate(data_src(ni_src, nj_src))
     allocate(data_dst(isc:iec, jsc:jec))
     data_dst = 0.0_lkind ; data_src = 1.0_lkind
-    call horiz_interp(interp_t, data_src, data_dst)
+    if(.not. test_solo) then
+        call horiz_interp_new(interp_t, lon_in_1d, lat_in_1d, lon_out_2d, lat_out_2d, interp_method="bicubic")
+        call horiz_interp(interp_t, data_src, data_dst)
+    else
+        call horiz_interp(data_src, lon_in_1D, lat_in_1D, lon_out_2D, lat_out_2D, data_dst, interp_method="bicubic")
+    endif
     ! check weights (for last index, 1=x,2=y,3=xy derivatives)
     do i=1, ni_src-1
         do j=1, nj_src-1
@@ -696,7 +749,9 @@ implicit none
             endif
         enddo
     enddo
-    call horiz_interp_del(interp_t)
+    if( .not. test_solo) then
+        call horiz_interp_del(interp_t)
+    endif
     deallocate(data_src, data_dst)
     deallocate(lat_in_1D, lon_in_1D, lat_in_2D, lon_in_2D)
     deallocate(lat_out_1D, lon_out_1D, lat_out_2D, lon_out_2D)
@@ -708,6 +763,7 @@ implicit none
     real(HI_TEST_KIND_), allocatable, dimension(:)   :: lon1D_src, lat1D_src, lon1D_dst, lat1D_dst
     real(HI_TEST_KIND_), allocatable, dimension(:,:) :: lon2D_src, lat2D_src, lon2D_dst, lat2D_dst
     real(HI_TEST_KIND_), allocatable, dimension(:,:) :: data_src, data1_dst, data2_dst, data3_dst, data4_dst
+    real(HI_TEST_KIND_), allocatable, dimension(:,:) :: data1_solo, data2_solo, data3_solo, data4_solo
     real(HI_TEST_KIND_) :: lon_src_beg = 0._lkind,    lon_src_end = 360._lkind
     real(HI_TEST_KIND_) :: lat_src_beg = -90._lkind,  lat_src_end = 90._lkind
     real(HI_TEST_KIND_) :: lon_dst_beg = -280._lkind, lon_dst_end = 80._lkind
@@ -782,30 +838,46 @@ implicit none
 
     ! --- 1dx1d version conservative interpolation
     call mpp_clock_begin(id1)
-    call horiz_interp_new(interp_conserve, lon1D_src, lat1D_src, lon1D_dst, lat1D_dst, interp_method = "conservative")
-    call horiz_interp(interp_conserve, data_src, data1_dst)
-    call horiz_interp_del(interp_conserve)
+    if(.not. test_solo) then
+        call horiz_interp_new(interp_conserve, lon1D_src, lat1D_src, lon1D_dst, lat1D_dst, interp_method = "conservative")
+        call horiz_interp(interp_conserve, data_src, data1_dst)
+        call horiz_interp_del(interp_conserve)
+    else
+        call horiz_interp(data_src, lon1D_src, lat1D_src, lon1D_dst, lat1D_dst, data1_dst, interp_method="conservative")
+    endif
     call mpp_clock_end(id1)
 
     ! --- 1dx2d version conservative interpolation
     call mpp_clock_begin(id2)
-    call horiz_interp_new(interp_conserve, lon1D_src, lat1D_src, lon2D_dst, lat2D_dst, interp_method = "conservative")
-    call horiz_interp(interp_conserve, data_src, data2_dst)
-    call horiz_interp_del(interp_conserve)
+    if(.not. test_solo) then
+        call horiz_interp_new(interp_conserve, lon1D_src, lat1D_src, lon2D_dst, lat2D_dst, interp_method = "conservative")
+        call horiz_interp(interp_conserve, data_src, data2_dst)
+        call horiz_interp_del(interp_conserve)
+    else
+        call horiz_interp(data_src, lon1D_src, lat1D_src, lon2D_dst, lat2D_dst, data2_dst, interp_method="conservative")
+    endif
     call mpp_clock_end(id2)
 
     ! --- 2dx1d version conservative interpolation
     call mpp_clock_begin(id3)
-    call horiz_interp_new(interp_conserve, lon2D_src, lat2D_src, lon1D_dst, lat1D_dst, interp_method = "conservative")
-    call horiz_interp(interp_conserve, data_src, data3_dst)
-    call horiz_interp_del(interp_conserve)
+    if(.not. test_solo) then
+        call horiz_interp_new(interp_conserve, lon2D_src, lat2D_src, lon1D_dst, lat1D_dst, interp_method = "conservative")
+        call horiz_interp(interp_conserve, data_src, data3_dst)
+        call horiz_interp_del(interp_conserve)
+    else
+        call horiz_interp(data_src, lon2D_src, lat2D_src, lon1D_dst, lat1D_dst, data3_dst, interp_method="conservative")
+    endif
     call mpp_clock_end(id3)
 
     ! --- 2dx2d version conservative interpolation
     call mpp_clock_begin(id4)
-    call horiz_interp_new(interp_conserve, lon2D_src, lat2D_src, lon2D_dst, lat2D_dst, interp_method = "conservative")
-    call horiz_interp(interp_conserve, data_src, data4_dst)
-    call horiz_interp_del(interp_conserve)
+    if(.not. test_solo) then
+        call horiz_interp_new(interp_conserve, lon2D_src, lat2D_src, lon2D_dst, lat2D_dst, interp_method = "conservative")
+        call horiz_interp(interp_conserve, data_src, data4_dst)
+        call horiz_interp_del(interp_conserve)
+    else
+        call horiz_interp(data_src, lon2D_src, lat2D_src, lon2D_dst, lat2D_dst, data4_dst, interp_method="conservative")
+    endif
     call mpp_clock_end(id4)
 
     !--- compare the data after interpolation between 1-D and 2-D version interpolation
@@ -851,6 +923,202 @@ implicit none
     if(mpp_pe() == mpp_root_pe()) call mpp_error(NOTE,   &
           "The test that verify 2dx2d version horiz_interp can reproduce 1dx1d version of horiz_interp is succesful")
 
+
    end subroutine
+
+    !> Tests the assignment overload for horiz_interp_type
+    !! creates some new instances of the derived type for the different methods
+    !! and tests equality of fields after an assignment
+    subroutine test_assignment()
+        type(horiz_interp_type) :: Interp_new1, Interp_new2, Interp_cp
+        !! grid data points
+        real(HI_TEST_KIND_), allocatable, dimension(:) :: lat_in_1D, lon_in_1D
+        real(HI_TEST_KIND_), allocatable, dimension(:,:) :: lat_in_2D, lon_in_2D
+        !! output data points 
+        real(HI_TEST_KIND_), allocatable, dimension(:)   :: lat_out_1D, lon_out_1D
+        real(HI_TEST_KIND_), allocatable, dimension(:,:) :: lat_out_2D, lon_out_2D
+        real(HI_TEST_KIND_), allocatable, dimension(:,:) :: lat_out_bil, lon_out_bil
+        real(HI_TEST_KIND_), allocatable, dimension(:,:) :: lat_in_bil, lon_in_bil
+        !! array sizes and number of lat/lon per index
+        integer :: nlon_in, nlat_in
+        integer :: nlon_out, nlat_out
+        integer :: dlon_src, dlat_src, dlon_dst, dlat_dst
+        !! parameters for lon/lat setup
+        real(HI_TEST_KIND_) :: lon_src_beg = 0._lkind,    lon_src_end = 360._lkind
+        real(HI_TEST_KIND_) :: lat_src_beg = -90._lkind,  lat_src_end = 90._lkind
+        real(HI_TEST_KIND_) :: lon_dst_beg = -280._lkind, lon_dst_end = 80._lkind
+        real(HI_TEST_KIND_) :: lat_dst_beg = -90._lkind,  lat_dst_end = 90._lkind
+        real(HI_TEST_KIND_) :: D2R = real(PI,HI_TEST_KIND_)/180._lkind
+        real(HI_TEST_KIND_) :: R2D = 180._lkind/real(PI,HI_TEST_KIND_)
+        real(HI_TEST_KIND_), parameter :: SMALL = 1.0e-10_lkind
+        character(len=16), dimension(4):: methods
+        methods = (/ "conservative", "bicubic", "bilinear", "spherical" /)
+
+        ! set up longitude and latitude of source/destination grid.
+        dlon_src = (lon_src_end-lon_src_beg)/ni_src
+        dlat_src = (lat_src_end-lat_src_beg)/nj_src
+        dlon_dst = (lon_dst_end-lon_dst_beg)/ni_dst
+        dlat_dst = (lat_dst_end-lat_dst_beg)/nj_dst
+
+        allocate(lon_in_1D(ni_src+1), lat_in_1D(nj_src+1))
+        do i = 1, ni_src+1
+            lon_in_1D(i) = lon_src_beg + (i-1)*dlon_src
+        end do
+        do j = 1, nj_src+1
+            lat_in_1D(j) = lat_src_beg + (j-1)*dlat_src
+        end do
+        allocate(lon_out_1D(isc:iec), lat_out_1D(isc:iec))
+        do i = isc, iec+1
+            lon_out_1D(i) = lon_dst_beg + (i-1)*dlon_dst
+        end do
+        do j = jsc, jec+1
+            lat_out_1D(j) = lat_dst_beg + (j-1)*dlat_dst
+        end do
+
+        lon_in_1D = lon_in_1D * D2R
+        lat_in_1D = lat_in_1D * D2R
+        lon_out_1D = lon_out_1D * D2R
+        lat_out_1D = lat_out_1D * D2R
+
+        ! set up 2d lon/lat  
+        allocate(lon_in_2D(ni_src, nj_src), lat_in_2D(ni_src, nj_src))
+        do i = 1, ni_src+1
+            lon_in_2D(i,:) = lon_in_1D(i)
+        end do
+        do j = 1, nj_src+1
+            lat_in_2D(:,j) = lat_in_1D(j)
+        end do
+        allocate(lon_out_2D(isc:iec+1, jsc:jec+1), lat_out_2D(isc:iec+1, jsc:jec+1))
+        do i = isc, iec+1
+            lon_out_2D(i,:) = lon_out_1D(i)
+        end do
+        do j = jsc, jec+1
+            lat_out_2D(:,j) = lat_out_1D(j)
+        end do
+
+
+        ! --- 1dx2d version bilinear interpolation
+        allocate(lon_out_bil(ni_src, nj_src), lat_in_bil(ni_src, nj_src))
+        ! taking the midpoint
+        do i = 1, ni_src
+            lon_out_bil(i,:) = (lon_out_1D(i) + lon_out_1D(i+1)) * 0.5_lkind
+        end do
+        do j = 1, nj_src
+            lat_out_bil(:,j) = (lat_out_1D(j) + lat_out_1D(j+1)) * 0.5_lkind
+        end do
+        
+        do i=1, ni_src
+            lon_in_bil(i,:) = lon_in_1D(i)
+        end do
+        do j=1, nj_src
+            lat_in_bil(:,j) = lat_in_1D(j)
+        end do
+
+        !lon_in_2D = lon_in_bil; lat_in_2D = lat_in_bil
+        !lon_out_2D = lon_out_bil; lat_out_2D = lat_out_bil
+
+
+        do i=1, 4
+            print *, 'testing assignment for ', methods(i)
+            if( i .ne. 4) then !spherical is only 2dx2d
+                ! 1dx1d assignments
+                call horiz_interp_new(Interp_new1, lat_in_1D, lon_in_1D, lat_out_1D, lon_out_1D, interp_method=methods(i))
+                !call horiz_interp_new(Interp_new2, lat_in_1D, lon_in_1D, lat_out_1D, lon_out_1D, interp_method=method(i))
+                Interp_cp = Interp_new1
+                !if (.not. check_type_eq(Interp_cp, Interp_new2)) call mpp_error(FATAL, "")
+                call horiz_interp_del(Interp_new1)
+                call horiz_interp_del(Interp_cp)
+
+                ! 1dx2d
+                call horiz_interp_new(Interp_new1, lat_in_1D, lon_in_1D, lat_out_2D, lon_out_2D, interp_method=methods(i))
+                Interp_cp = Interp_new1
+                call horiz_interp_del(Interp_new1)
+                call horiz_interp_del(Interp_cp)
+            endif
+
+            if(i .ne. 2 .and. i .ne. 3) then !bicubic only works with 1d src, bilinear needs different lat/lon
+                ! 2dx1d
+                call horiz_interp_new(Interp_new1, lat_in_2D, lon_in_2D, lat_out_1D, lon_out_1D, interp_method=methods(i))
+                Interp_cp = Interp_new1
+                call horiz_interp_del(Interp_new1)
+                call horiz_interp_del(Interp_cp)
+                ! 2dx2d
+                call horiz_interp_new(Interp_new1, lat_in_2D, lon_in_2D, lat_out_2D, lon_out_2D, interp_method=methods(i))
+                Interp_cp = Interp_new1
+                call horiz_interp_del(Interp_new1)
+                call horiz_interp_del(Interp_cp)
+            else
+                ! 2dx1d
+                call horiz_interp_new(Interp_new1, lat_in_bil, lon_in_bil, lat_out_1D, lon_out_1D, interp_method=methods(i))
+                Interp_cp = Interp_new1
+                call horiz_interp_del(Interp_new1)
+                call horiz_interp_del(Interp_cp)
+                ! 2dx2d
+                call horiz_interp_new(Interp_new1, lat_in_bil, lon_in_bil, lat_out_bil, lon_out_bil, interp_method=methods(i))
+                Interp_cp = Interp_new1
+                call horiz_interp_del(Interp_new1)
+                call horiz_interp_del(Interp_cp)
+            endif
+        enddo
+
+
+
+   end subroutine
+    !> helps assignment test with derived type comparisons 
+    logical function check_type_eq(interp_1, interp_2)
+        type(horiz_interp_type), intent(in) :: interp_1, interp_2
+        check_type_eq = .true.
+        if(allocated(interp_1%kind4_reals)) then
+            check_type_eq = check_type_eq .and. ALL(interp_2%kind4_reals%faci .eq. interp_1%kind4_reals%faci)
+            check_type_eq = check_type_eq .and. ALL(interp_2%kind4_reals%facj .eq. interp_1%kind4_reals%facj)
+            check_type_eq = check_type_eq .and. ALL(interp_2%kind4_reals%area_src .eq. interp_1%kind4_reals%area_src)
+            check_type_eq = check_type_eq .and. ALL(interp_2%kind4_reals%area_dst .eq. interp_1%kind4_reals%area_dst)
+            check_type_eq = check_type_eq .and. ALL(interp_2%kind4_reals%wti .eq. interp_1%kind4_reals%wti)
+            check_type_eq = check_type_eq .and. ALL(interp_2%kind4_reals%wtj .eq. interp_1%kind4_reals%wtj)
+            check_type_eq = check_type_eq .and. ALL(interp_2%kind4_reals%src_dist .eq. interp_1%kind4_reals%src_dist)
+            check_type_eq = check_type_eq .and. ALL(interp_2%kind4_reals%rat_x .eq. interp_1%kind4_reals%rat_x)
+            check_type_eq = check_type_eq .and. ALL(interp_2%kind4_reals%rat_y .eq. interp_1%kind4_reals%rat_y)
+            check_type_eq = check_type_eq .and. ALL(interp_2%kind4_reals%lon_in .eq. interp_1%kind4_reals%lon_in)
+            check_type_eq = check_type_eq .and. ALL(interp_2%kind4_reals%lat_in .eq. interp_1%kind4_reals%lat_in)
+            check_type_eq = check_type_eq .and. ALL(interp_2%kind4_reals%area_frac_dst.eq.interp_1%kind4_reals%area_frac_dst)
+            check_type_eq = check_type_eq .and. ALL(interp_2%kind4_reals%mask_in .eq. interp_1%kind4_reals%mask_in)
+            check_type_eq = check_type_eq .and. interp_2%kind4_reals%max_src_dist .eq. interp_1%kind4_reals%max_src_dist
+        else if(allocated(interp_1%kind8_reals)) then
+            check_type_eq = check_type_eq .and. ALL(interp_2%kind8_reals%faci .eq. interp_1%kind8_reals%faci)
+            check_type_eq = check_type_eq .and. ALL(interp_2%kind8_reals%facj .eq. interp_1%kind8_reals%facj)
+            check_type_eq = check_type_eq .and. ALL(interp_2%kind8_reals%area_src .eq. interp_1%kind8_reals%area_src)
+            check_type_eq = check_type_eq .and. ALL(interp_2%kind8_reals%area_dst .eq. interp_1%kind8_reals%area_dst)
+            check_type_eq = check_type_eq .and. ALL(interp_2%kind8_reals%wti .eq. interp_1%kind8_reals%wti)
+            check_type_eq = check_type_eq .and. ALL(interp_2%kind8_reals%wtj .eq. interp_1%kind8_reals%wtj)
+            check_type_eq = check_type_eq .and. ALL(interp_2%kind8_reals%src_dist .eq. interp_1%kind8_reals%src_dist)
+            check_type_eq = check_type_eq .and. ALL(interp_2%kind8_reals%rat_x .eq. interp_1%kind8_reals%rat_x)
+            check_type_eq = check_type_eq .and. ALL(interp_2%kind8_reals%rat_y .eq. interp_1%kind8_reals%rat_y)
+            check_type_eq = check_type_eq .and. ALL(interp_2%kind8_reals%lon_in .eq. interp_1%kind8_reals%lon_in)
+            check_type_eq = check_type_eq .and. ALL(interp_2%kind8_reals%lat_in .eq. interp_1%kind8_reals%lat_in)
+            check_type_eq = check_type_eq.and.ALL(interp_2%kind8_reals%area_frac_dst.eq.interp_1%kind8_reals%area_frac_dst)
+            check_type_eq = check_type_eq .and. ALL(interp_2%kind8_reals%mask_in .eq. interp_1%kind8_reals%mask_in)
+            check_type_eq = check_type_eq .and. interp_2%kind8_reals%max_src_dist .eq.interp_1%kind8_reals%max_src_dist
+        else
+            call mpp_error(FATAL, "test_horiz_interp: both real kinds unallocated")
+        endif
+
+        check_type_eq = check_type_eq .and. ALL(interp_2%ilon .eq. interp_1%ilon)
+        check_type_eq = check_type_eq .and. ALL(interp_2%jlat .eq. interp_1%jlat)
+        check_type_eq = check_type_eq .and. ALL(interp_2%i_lon .eq. interp_1%i_lon)
+        check_type_eq = check_type_eq .and. ALL(interp_2%j_lat .eq. interp_1%j_lat)
+        check_type_eq = check_type_eq .and. ALL(interp_2%found_neighbors .eq. interp_1%found_neighbors)
+        check_type_eq = check_type_eq .and. ALL(interp_2%num_found .eq. interp_1%num_found)
+        check_type_eq = check_type_eq .and. ALL(interp_2%i_src .eq. interp_1%i_src)
+        check_type_eq = check_type_eq .and. ALL(interp_2%j_src .eq. interp_1%j_src)
+        check_type_eq = check_type_eq .and. ALL(interp_2%i_dst .eq. interp_1%i_dst)
+        check_type_eq = check_type_eq .and. ALL(interp_2%j_dst .eq. interp_1%j_dst)
+        check_type_eq = check_type_eq .and. interp_2%nlon_src .eq. interp_1%nlon_src
+        check_type_eq = check_type_eq .and. interp_2%nlat_src .eq. interp_1%nlat_src
+        check_type_eq = check_type_eq .and. interp_2%nlon_dst .eq. interp_1%nlon_dst
+        check_type_eq = check_type_eq .and. interp_2%nlat_dst .eq. interp_1%nlat_dst
+        check_type_eq = check_type_eq .and. interp_2%interp_method .eq.  interp_1%interp_method
+        check_type_eq = check_type_eq .and. interp_2%I_am_initialized .eq. interp_1%I_am_initialized
+    end function
+
 
 end program horiz_interp_test

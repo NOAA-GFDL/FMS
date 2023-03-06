@@ -49,6 +49,25 @@ test_expect_success "conservative method with real kind=8" '
 
 cat <<_EOF > input.nml
 &test_horiz_interp_nml
+  test_conserve = .true.
+  test_solo = .true.
+  ni_src = 360
+  nj_src = 180
+  ni_dst = 144
+  nj_dst = 72
+/
+_EOF
+
+test_expect_success "conservative method solo wrappers with real kind=4" '
+  mpirun -n 2 ./test_horiz_interp_r8
+'
+
+test_expect_success "conservative method solo wrappers with real kind=8" '
+  mpirun -n 2 ./test_horiz_interp_r4
+'
+
+cat <<_EOF > inpVut.nml
+&test_horiz_interp_nml
   test_bicubic= .true.
   ni_src = 360
   nj_src = 180
@@ -61,6 +80,24 @@ test_expect_success "bicubic method with real kind=4" '
   mpirun -n 2 ./test_horiz_interp_r4
 '
 test_expect_success "bicubic method with real kind=8" '
+  mpirun -n 2 ./test_horiz_interp_r8
+'
+
+cat <<_EOF > inpVut.nml
+&test_horiz_interp_nml
+  test_bicubic= .true.
+  test_solo = .true.
+  ni_src = 360
+  nj_src = 180
+  ni_dst = 144
+  nj_dst = 72
+/
+_EOF
+
+test_expect_success "bicubic method solo wrappers with real kind=4" '
+  mpirun -n 2 ./test_horiz_interp_r4
+'
+test_expect_success "bicubic method solo wrappers with real kind=8" '
   mpirun -n 2 ./test_horiz_interp_r8
 '
 
@@ -83,6 +120,24 @@ test_expect_success "bilinear method with real kind=8" '
 
 cat <<_EOF > input.nml
 &test_horiz_interp_nml
+  test_bilinear= .true.
+  test_solo = .true.
+  ni_src = 360
+  nj_src = 180
+  ni_dst = 144
+  nj_dst = 72
+/
+_EOF
+
+test_expect_success "bilinear method solo wrapper with real kind=4" '
+  mpirun -n 2 ./test_horiz_interp_r4
+'
+test_expect_success "bilinear method solo wrapper with real kind=8" '
+  mpirun -n 2 ./test_horiz_interp_r8
+'
+
+cat <<_EOF > input.nml
+&test_horiz_interp_nml
   test_spherical= .true.
   ni_src = 360
   nj_src = 180
@@ -95,6 +150,41 @@ test_expect_success "spherical method with real kind=4" '
   mpirun -n 2 ./test_horiz_interp_r4
 '
 test_expect_success "spherical method with real kind=8" '
+  mpirun -n 2 ./test_horiz_interp_r8
+'
+
+cat <<_EOF > input.nml
+&test_horiz_interp_nml
+  test_spherical= .true.
+  test_solo= .true.
+  ni_src = 360
+  nj_src = 180
+  ni_dst = 144 
+  nj_dst = 72
+/
+_EOF
+
+test_expect_success "spherical method solo wrappers with real kind=4" '
+  mpirun -n 2 ./test_horiz_interp_r4
+'
+test_expect_success "spherical method solo wrappers with real kind=8" '
+  mpirun -n 2 ./test_horiz_interp_r8
+'
+
+cat <<_EOF > input.nml
+&test_horiz_interp_nml
+  test_assign= .true.
+  ni_src = 360
+  nj_src = 180
+  ni_dst = 144 
+  nj_dst = 72
+/
+_EOF
+
+test_expect_success "assignment overloads with real kind=4" '
+  mpirun -n 2 ./test_horiz_interp_r4
+'
+test_expect_success "assignment overloads with real kind=8" '
   mpirun -n 2 ./test_horiz_interp_r8
 '
 

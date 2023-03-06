@@ -47,6 +47,7 @@
 
     method = 'conservative'
     if(present(interp_method)) method = interp_method
+    if(allocated(Interp%HI_KIND_TYPE_)) allocate(Interp%HI_KIND_TYPE_)
 
     select case (trim(method))
     case ("conservative")
