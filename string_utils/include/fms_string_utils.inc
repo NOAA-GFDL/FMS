@@ -17,23 +17,41 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 
+!> @brief Converts a real number to a string
+!> @return The real number as a string
+function STRING_FROM_REAL_(r, fmt)
+  real(STRING_UTILS_KIND_), intent(in) :: r !< Real number to be converted to a string
+  character(*), intent(in), optional :: fmt !< Optional format string for the real number
+  character(:), allocatable :: STRING_FROM_REAL_
+  character(25) :: s
+
+  if (present(fmt)) then
+    write(s, "(" // fmt // ")") r
+  else
+    write(s, *) r
+  endif
+
+  STRING_FROM_REAL_ = trim(adjustl(s))
+end function
+
 !> @brief Converts a 1D array of real numbers to a string
 !> @return The 1D array as a string
-function STRINGIFY_1D_(arr)
-  real(STRING_UTILS_KIND_), dimension(:), intent(in) :: arr
+function STRINGIFY_1D_(arr, fmt)
+  real(STRING_UTILS_KIND_), dimension(:), intent(in) :: arr !< Real array to be converted to a string
+  character(*), intent(in), optional :: fmt !< Optional format string for the real array entries
   character(:), allocatable :: STRINGIFY_1D_
   integer :: i, n
 
   n = size(arr)
 
   if (n .gt. 0) then
-    STRINGIFY_1D_ = "[" // string(arr(1))
+    STRINGIFY_1D_ = "[" // string(arr(1), fmt)
   else
     STRINGIFY_1D_ = "["
   endif
 
   do i = 2,n
-    STRINGIFY_1D_ = STRINGIFY_1D_ // ", " // string(arr(i))
+    STRINGIFY_1D_ = STRINGIFY_1D_ // ", " // string(arr(i), fmt)
   enddo
 
   STRINGIFY_1D_ = STRINGIFY_1D_ // "]"
@@ -41,21 +59,22 @@ end function
 
 !> @brief Converts a 2D array of real numbers to a string
 !> @return The 2D array as a string
-function STRINGIFY_2D_(arr)
-  real(STRING_UTILS_KIND_), dimension(:,:), intent(in) :: arr
+function STRINGIFY_2D_(arr, fmt)
+  real(STRING_UTILS_KIND_), dimension(:,:), intent(in) :: arr !< Real array to be converted to a string
+  character(*), intent(in), optional :: fmt !< Optional format string for the real array entries
   character(:), allocatable :: STRINGIFY_2D_
   integer :: i, n
 
   n = size(arr, 2)
 
   if (n .gt. 0) then
-    STRINGIFY_2D_ = "[" // STRINGIFY_1D_(arr(:,1))
+    STRINGIFY_2D_ = "[" // STRINGIFY_1D_(arr(:,1), fmt)
   else
     STRINGIFY_2D_ = "["
   endif
 
   do i = 2,n
-    STRINGIFY_2D_ = STRINGIFY_2D_ // ", " // STRINGIFY_1D_(arr(:,i))
+    STRINGIFY_2D_ = STRINGIFY_2D_ // ", " // STRINGIFY_1D_(arr(:,i), fmt)
   enddo
 
   STRINGIFY_2D_ = STRINGIFY_2D_ // "]"
@@ -63,21 +82,22 @@ end function
 
 !> @brief Converts a 3D array of real numbers to a string
 !> @return The 3D array as a string
-function STRINGIFY_3D_(arr)
-  real(STRING_UTILS_KIND_), dimension(:,:,:), intent(in) :: arr
+function STRINGIFY_3D_(arr, fmt)
+  real(STRING_UTILS_KIND_), dimension(:,:,:), intent(in) :: arr !< Real array to be converted to a string
+  character(*), intent(in), optional :: fmt !< Optional format string for the real array entries
   character(:), allocatable :: STRINGIFY_3D_
   integer :: i, n
 
   n = size(arr, 3)
 
   if (n .gt. 0) then
-    STRINGIFY_3D_ = "[" // STRINGIFY_2D_(arr(:,:,1))
+    STRINGIFY_3D_ = "[" // STRINGIFY_2D_(arr(:,:,1), fmt)
   else
     STRINGIFY_3D_ = "["
   endif
 
   do i = 2,n
-    STRINGIFY_3D_ = STRINGIFY_3D_ // ", " // STRINGIFY_2D_(arr(:,:,i))
+    STRINGIFY_3D_ = STRINGIFY_3D_ // ", " // STRINGIFY_2D_(arr(:,:,i), fmt)
   enddo
 
   STRINGIFY_3D_ = STRINGIFY_3D_ // "]"

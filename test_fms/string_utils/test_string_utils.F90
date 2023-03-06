@@ -190,19 +190,19 @@ program test_fms_string_utils
       call mpp_error(FATAL, "string() unit test failed for negative integer")
     endif
 
-    if (string(1._r4_kind) .ne. "1.0000000E+00") then
+    if (string(1._r4_kind, "F15.7") .ne. "1.0000000") then
       call mpp_error(FATAL, "string() unit test failed for positive r4 real")
     endif
 
-    if (string(-1._r4_kind) .ne. "-1.0000000E+00") then
+    if (string(-1._r4_kind, "F15.7") .ne. "-1.0000000") then
       call mpp_error(FATAL, "string() unit test failed for negative r4 real")
     endif
 
-    if (string(1._r8_kind) .ne. "1.0000000000000000E+00") then
+    if (string(1._r8_kind, "F25.16") .ne. "1.0000000000000000") then
       call mpp_error(FATAL, "string() unit test failed for positive r8 real")
     endif
 
-    if (string(-1._r8_kind) .ne. "-1.0000000000000000E+00") then
+    if (string(-1._r8_kind, "F25.16") .ne. "-1.0000000000000000") then
       call mpp_error(FATAL, "string() unit test failed for negative r8 real")
     endif
   end subroutine
@@ -212,24 +212,24 @@ program test_fms_string_utils
     real(r8_kind) :: arr_1d_r8(3), arr_2d_r8(2, 2), arr_3d_r8(2, 2, 2)
 
     arr_1d_r4 = [0._r4_kind, 1._r4_kind, 2._r4_kind]
-    if (stringify(arr_1d_r4) .ne. "[0.0000000E+00, 1.0000000E+00, 2.0000000E+00]") then
+    if (stringify(arr_1d_r4, "F15.7") .ne. "[0.0000000, 1.0000000, 2.0000000]") then
       call mpp_error(FATAL, "stringify() unit test failed for 1D r4 array")
     endif
 
     arr_1d_r8 = [0._r8_kind, 1._r8_kind, 2._r8_kind]
-    if (stringify(arr_1d_r8) .ne. "[0.0000000000000000E+00, 1.0000000000000000E+00, 2.0000000000000000E+00]") then
+    if (stringify(arr_1d_r8, "F25.16") .ne. "[0.0000000000000000, 1.0000000000000000, 2.0000000000000000]") then
       call mpp_error(FATAL, "stringify() unit test failed for 1D r8 array")
     endif
 
     arr_2d_r4 = reshape([[0._r4_kind, 1._r4_kind], [2._r4_kind, 3._r4_kind]], [2, 2])
-    if (stringify(arr_2d_r4) .ne. &
-    & "[[0.0000000E+00, 1.0000000E+00], [2.0000000E+00, 3.0000000E+00]]") then
+    if (stringify(arr_2d_r4, "F15.7") .ne. &
+    & "[[0.0000000, 1.0000000], [2.0000000, 3.0000000]]") then
       call mpp_error(FATAL, "stringify() unit test failed for 2D r4 array")
     endif
 
     arr_2d_r8 = reshape([[0._r8_kind, 1._r8_kind], [2._r8_kind, 3._r8_kind]], [2, 2])
-    if (stringify(arr_2d_r8) .ne. &
-    & "[[0.0000000000000000E+00, 1.0000000000000000E+00], [2.0000000000000000E+00, 3.0000000000000000E+00]]") then
+    if (stringify(arr_2d_r8, "F25.16") .ne. &
+    & "[[0.0000000000000000, 1.0000000000000000], [2.0000000000000000, 3.0000000000000000]]") then
       call mpp_error(FATAL, "stringify() unit test failed for 2D r8 array")
     endif
 
@@ -237,9 +237,9 @@ program test_fms_string_utils
       & [[0._r4_kind, 1._r4_kind], [2._r4_kind, 3._r4_kind]], &
       & [[4._r4_kind, 5._r4_kind], [6._r4_kind, 7._r4_kind]] &
     & ], [2, 2, 2])
-    if (stringify(arr_3d_r4) .ne. &
-    & "[[[0.0000000E+00, 1.0000000E+00], [2.0000000E+00, 3.0000000E+00]],&
-      & [[4.0000000E+00, 5.0000000E+00], [6.0000000E+00, 7.0000000E+00]]]") then
+    if (stringify(arr_3d_r4, "F15.7") .ne. &
+    & "[[[0.0000000, 1.0000000], [2.0000000, 3.0000000]],&
+      & [[4.0000000, 5.0000000], [6.0000000, 7.0000000]]]") then
       call mpp_error(FATAL, "stringify() unit test failed for 3D r4 array")
     endif
 
@@ -247,9 +247,9 @@ program test_fms_string_utils
       & [[0._r8_kind, 1._r8_kind], [2._r8_kind, 3._r8_kind]], &
       & [[4._r8_kind, 5._r8_kind], [6._r8_kind, 7._r8_kind]] &
     & ], [2, 2, 2])
-    if (stringify(arr_3d_r8) .ne. &
-    & "[[[0.0000000000000000E+00, 1.0000000000000000E+00], [2.0000000000000000E+00, 3.0000000000000000E+00]],&
-      & [[4.0000000000000000E+00, 5.0000000000000000E+00], [6.0000000000000000E+00, 7.0000000000000000E+00]]]") then
+    if (stringify(arr_3d_r8, "F25.16") .ne. &
+    & "[[[0.0000000000000000, 1.0000000000000000], [2.0000000000000000, 3.0000000000000000]],&
+      & [[4.0000000000000000, 5.0000000000000000], [6.0000000000000000, 7.0000000000000000]]]") then
       call mpp_error(FATAL, "stringify() unit test failed for 3D r8 array")
     endif
   end subroutine
