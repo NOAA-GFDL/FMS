@@ -112,6 +112,7 @@ program test_fms_string_utils
   if (nunique .ne. 7) call mpp_error(FATAL, "The number of unique strings in your array is not correct")
 
   call check_string
+  call check_stringify
 
   call fms_end()
 
@@ -169,9 +170,6 @@ program test_fms_string_utils
   end subroutine check_my_indices
 
   subroutine check_string
-    real(r4_kind) :: arr_1d_r4(3), arr_2d_r4(2, 2), arr_3d_r4(2, 2, 2)
-    real(r8_kind) :: arr_1d_r8(3), arr_2d_r8(2, 2), arr_3d_r8(2, 2, 2)
-
     if (string(.true.) .ne. "True") then
       call mpp_error(FATAL, "string() unit test failed for Boolean true value")
     endif
@@ -207,47 +205,52 @@ program test_fms_string_utils
     if (string(-1._r8_kind) .ne. "-1.0000000000000000E+00") then
       call mpp_error(FATAL, "string() unit test failed for negative r8 real")
     endif
+  end subroutine
+
+  subroutine check_stringify
+    real(r4_kind) :: arr_1d_r4(3), arr_2d_r4(2, 2), arr_3d_r4(2, 2, 2)
+    real(r8_kind) :: arr_1d_r8(3), arr_2d_r8(2, 2), arr_3d_r8(2, 2, 2)
 
     arr_1d_r4 = [0._r4_kind, 1._r4_kind, 2._r4_kind]
-    if (string(arr_1d_r4) .ne. "[0.0000000E+00, 1.0000000E+00, 2.0000000E+00]") then
-      call mpp_error(FATAL, "string() unit test failed for 1D r4 array")
+    if (stringify(arr_1d_r4) .ne. "[0.0000000E+00, 1.0000000E+00, 2.0000000E+00]") then
+      call mpp_error(FATAL, "stringify() unit test failed for 1D r4 array")
     endif
 
     arr_1d_r8 = [0._r8_kind, 1._r8_kind, 2._r8_kind]
-    if (string(arr_1d_r8) .ne. "[0.0000000000000000E+00, 1.0000000000000000E+00, 2.0000000000000000E+00]") then
-      call mpp_error(FATAL, "string() unit test failed for 1D r8 array")
+    if (stringify(arr_1d_r8) .ne. "[0.0000000000000000E+00, 1.0000000000000000E+00, 2.0000000000000000E+00]") then
+      call mpp_error(FATAL, "stringify() unit test failed for 1D r8 array")
     endif
 
     arr_2d_r4 = reshape([[0._r4_kind, 1._r4_kind], [2._r4_kind, 3._r4_kind]], [2, 2])
-    if (string(arr_2d_r4) .ne. &
+    if (stringify(arr_2d_r4) .ne. &
     & "[[0.0000000E+00, 1.0000000E+00], [2.0000000E+00, 3.0000000E+00]]") then
-      call mpp_error(FATAL, "string() unit test failed for 2D r4 array")
+      call mpp_error(FATAL, "stringify() unit test failed for 2D r4 array")
     endif
 
     arr_2d_r8 = reshape([[0._r8_kind, 1._r8_kind], [2._r8_kind, 3._r8_kind]], [2, 2])
-    if (string(arr_2d_r8) .ne. &
+    if (stringify(arr_2d_r8) .ne. &
     & "[[0.0000000000000000E+00, 1.0000000000000000E+00], [2.0000000000000000E+00, 3.0000000000000000E+00]]") then
-      call mpp_error(FATAL, "string() unit test failed for 2D r8 array")
+      call mpp_error(FATAL, "stringify() unit test failed for 2D r8 array")
     endif
 
     arr_3d_r4 = reshape([ &
       & [[0._r4_kind, 1._r4_kind], [2._r4_kind, 3._r4_kind]], &
       & [[4._r4_kind, 5._r4_kind], [6._r4_kind, 7._r4_kind]] &
     & ], [2, 2, 2])
-    if (string(arr_3d_r4) .ne. &
+    if (stringify(arr_3d_r4) .ne. &
     & "[[[0.0000000E+00, 1.0000000E+00], [2.0000000E+00, 3.0000000E+00]],&
       & [[4.0000000E+00, 5.0000000E+00], [6.0000000E+00, 7.0000000E+00]]]") then
-      call mpp_error(FATAL, "string() unit test failed for 3D r4 array")
+      call mpp_error(FATAL, "stringify() unit test failed for 3D r4 array")
     endif
 
     arr_3d_r8 = reshape([ &
       & [[0._r8_kind, 1._r8_kind], [2._r8_kind, 3._r8_kind]], &
       & [[4._r8_kind, 5._r8_kind], [6._r8_kind, 7._r8_kind]] &
     & ], [2, 2, 2])
-    if (string(arr_3d_r8) .ne. &
+    if (stringify(arr_3d_r8) .ne. &
     & "[[[0.0000000000000000E+00, 1.0000000000000000E+00], [2.0000000000000000E+00, 3.0000000000000000E+00]],&
       & [[4.0000000000000000E+00, 5.0000000000000000E+00], [6.0000000000000000E+00, 7.0000000000000000E+00]]]") then
-      call mpp_error(FATAL, "string() unit test failed for 3D r8 array")
+      call mpp_error(FATAL, "stringify() unit test failed for 3D r8 array")
     endif
   end subroutine
 

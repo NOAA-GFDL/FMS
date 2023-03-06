@@ -44,6 +44,7 @@ module fms_string_utils_mod
   public :: fms_cstring2cpointer
   public :: string
   public :: string_copy
+  public :: stringify
 !> @}
 
   interface
@@ -113,15 +114,20 @@ interface fms_c2f_string
   module procedure cpointer_fortran_conversion
 end interface
 
-!> Converts a number or a real array to a string
+!> Converts a number or a Boolean value to a string
 !> @ingroup fms_mod
 interface string
   module procedure string_from_logical
   module procedure string_from_integer
   module procedure string_from_r4, string_from_r8
-  module procedure string_from_array_1d_r4, string_from_array_1d_r8
-  module procedure string_from_array_2d_r4, string_from_array_2d_r8
-  module procedure string_from_array_3d_r4, string_from_array_3d_r8
+end interface
+
+!> Converts an array of real numbers to a string
+!> @ingroup fms_mod
+interface stringify
+  module procedure stringify_1d_r4, stringify_1d_r8
+  module procedure stringify_2d_r4, stringify_2d_r8
+  module procedure stringify_3d_r4, stringify_3d_r8
 end interface
 
 !> @addtogroup fms_string_utils_mod

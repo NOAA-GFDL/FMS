@@ -19,66 +19,66 @@
 
 !> @brief Converts a 1D array of real numbers to a string
 !> @return The 1D array as a string
-function STRING_FROM_ARRAY_1D_(arr)
+function STRINGIFY_1D_(arr)
   real(STRING_UTILS_KIND_), dimension(:), intent(in) :: arr
-  character(:), allocatable :: STRING_FROM_ARRAY_1D_
+  character(:), allocatable :: STRINGIFY_1D_
   integer :: i, n
 
   n = size(arr)
 
   if (n .gt. 0) then
-    STRING_FROM_ARRAY_1D_ = "[" // string(arr(1))
+    STRINGIFY_1D_ = "[" // string(arr(1))
   else
-    STRING_FROM_ARRAY_1D_ = "["
+    STRINGIFY_1D_ = "["
   endif
 
   do i = 2,n
-    STRING_FROM_ARRAY_1D_ = STRING_FROM_ARRAY_1D_ // ", " // string(arr(i))
+    STRINGIFY_1D_ = STRINGIFY_1D_ // ", " // string(arr(i))
   enddo
 
-  STRING_FROM_ARRAY_1D_ = STRING_FROM_ARRAY_1D_ // "]"
+  STRINGIFY_1D_ = STRINGIFY_1D_ // "]"
 end function
 
 !> @brief Converts a 2D array of real numbers to a string
 !> @return The 2D array as a string
-function STRING_FROM_ARRAY_2D_(arr)
+function STRINGIFY_2D_(arr)
   real(STRING_UTILS_KIND_), dimension(:,:), intent(in) :: arr
-  character(:), allocatable :: STRING_FROM_ARRAY_2D_
+  character(:), allocatable :: STRINGIFY_2D_
   integer :: i, n
 
   n = size(arr, 2)
 
   if (n .gt. 0) then
-    STRING_FROM_ARRAY_2D_ = "[" // STRING_FROM_ARRAY_1D_(arr(:,1))
+    STRINGIFY_2D_ = "[" // STRINGIFY_1D_(arr(:,1))
   else
-    STRING_FROM_ARRAY_2D_ = "["
+    STRINGIFY_2D_ = "["
   endif
 
   do i = 2,n
-    STRING_FROM_ARRAY_2D_ = STRING_FROM_ARRAY_2D_ // ", " // STRING_FROM_ARRAY_1D_(arr(:,i))
+    STRINGIFY_2D_ = STRINGIFY_2D_ // ", " // STRINGIFY_1D_(arr(:,i))
   enddo
 
-  STRING_FROM_ARRAY_2D_ = STRING_FROM_ARRAY_2D_ // "]"
+  STRINGIFY_2D_ = STRINGIFY_2D_ // "]"
 end function
 
 !> @brief Converts a 3D array of real numbers to a string
 !> @return The 3D array as a string
-function STRING_FROM_ARRAY_3D_(arr)
+function STRINGIFY_3D_(arr)
   real(STRING_UTILS_KIND_), dimension(:,:,:), intent(in) :: arr
-  character(:), allocatable :: STRING_FROM_ARRAY_3D_
+  character(:), allocatable :: STRINGIFY_3D_
   integer :: i, n
 
   n = size(arr, 3)
 
   if (n .gt. 0) then
-    STRING_FROM_ARRAY_3D_ = "[" // STRING_FROM_ARRAY_2D_(arr(:,:,1))
+    STRINGIFY_3D_ = "[" // STRINGIFY_2D_(arr(:,:,1))
   else
-    STRING_FROM_ARRAY_3D_ = "["
+    STRINGIFY_3D_ = "["
   endif
 
   do i = 2,n
-    STRING_FROM_ARRAY_3D_ = STRING_FROM_ARRAY_3D_ // ", " // STRING_FROM_ARRAY_2D_(arr(:,:,i))
+    STRINGIFY_3D_ = STRINGIFY_3D_ // ", " // STRINGIFY_2D_(arr(:,:,i))
   enddo
 
-  STRING_FROM_ARRAY_3D_ = STRING_FROM_ARRAY_3D_ // "]"
+  STRINGIFY_3D_ = STRINGIFY_3D_ // "]"
 end function
