@@ -38,8 +38,10 @@ cat <<EOF > test_sat_vapor_pres.nml
   test5=.false.
  /
 EOF
-test_expect_success "test_compute_qs" '
+test_expect_success "test_compute_qs_r4" '
       mpirun -n 1 ./test_sat_vapor_pres_r4
+  '
+test_expect_success "test_compute_qs_r8" '
       mpirun -n 1 ./test_sat_vapor_pres_r8
   '
 
@@ -53,8 +55,10 @@ cat <<EOF > test_sat_vapor_pres.nml
   test5=.false.
  /
 EOF
-test_expect_success "test_compute_mrs" '
+test_expect_success "test_compute_mrs_r4" '
       mpirun -n 1 ./test_sat_vapor_pres_r4
+  '
+test_expect_success "test_compute_mrs_r8" '
       mpirun -n 1 ./test_sat_vapor_pres_r8
   '
 
@@ -68,8 +72,10 @@ cat <<EOF > test_sat_vapor_pres.nml
   test5=.false.
  /
 EOF
-test_expect_success "test_lookup_es_des" '
+test_expect_success "test_lookup_es_des_r4" '
       mpirun -n 1 ./test_sat_vapor_pres_r4
+  '
+test_expect_success "test_lookup_es_des_r8" '
       mpirun -n 1 ./test_sat_vapor_pres_r8
   '
 
@@ -83,8 +89,10 @@ cat <<EOF > test_sat_vapor_pres.nml
   test5=.false.
  /
 EOF
-test_expect_success "test_lookup_es2_des2" '
+test_expect_success "test_lookup_es2_des2_r4" '
       mpirun -n 1 ./test_sat_vapor_pres_r4
+  '
+test_expect_success "test_lookup_es2_des2_r8" '
       mpirun -n 1 ./test_sat_vapor_pres_r8
   '
 
@@ -98,8 +106,10 @@ cat <<EOF > test_sat_vapor_pres.nml
   test5=.true.
  /
 EOF
-test_expect_success "test_lookup_es3_des3" '
+test_expect_success "test_lookup_es3_des3_r4" '
       mpirun -n 1 ./test_sat_vapor_pres_r4
+  '
+test_expect_success "test_lookup_es3_des3_r8" '
       mpirun -n 1 ./test_sat_vapor_pres_r8
   '
 

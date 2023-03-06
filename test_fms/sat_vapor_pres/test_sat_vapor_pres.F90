@@ -70,28 +70,23 @@ close(100)
 
 !CALL TESTS
 if(test1) then
-   write(*,*)'****************************************'
-   write(*,*)'TEST COMPUTE_QS 1D-3D'
+   write(*,*)'***TEST COMPUTE_QS 1D-3D***'
    call test_compute_qs()
 end if
 if(test2) then
-   write(*,*)'****************************************'
-   write(*,*)'TEST COMPUTE_MRS 1D-3D'
+   write(*,*)'***TEST COMPUTE_MRS 1D-3D***'
    call test_compute_mrs()
 end if
 if(test3) then
-   write(*,*)'****************************************'
-   write(*,*)'TEST LOOKUP_ES,  LOOKUP_DES,  LOOKUP_ES_DES, 1D-3D'
+   write(*,*)'***TEST LOOKUP_ES,  LOOKUP_DES,  LOOKUP_ES_DES, 1D-3D***'
    call test_lookup_es_des()
 end if
 if(test4) then
-   write(*,*)'****************************************'
-   write(*,*)'TEST LOOKUP_ES2, LOOKUP_DES2, LOOKUP_ES2_DES2, 1D-3D'
+   write(*,*)'***TEST LOOKUP_ES2, LOOKUP_DES2, LOOKUP_ES2_DES2, 1D-3D***'
    call test_lookup_es2_des2()
 end if
 if(test5) then
-   write(*,*)'****************************************'
-   write(*,*)'TEST_LOOKUP_ES3, LOOKUP_DES3, LOOKUP_ES3_DES3, 1D-3D'
+   write(*,*)'***TEST_LOOKUP_ES3, LOOKUP_DES3, LOOKUP_ES3_DES3, 1D-3D***'
    call test_lookup_es3_des3()
 end if
 
