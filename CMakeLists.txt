@@ -295,11 +295,8 @@ foreach(kind ${kinds})
                                                  fms
                                                  fms2_io/include
                                                  mpp/include
-<<<<<<< HEAD
-=======
                                                  diag_manager/include
                                                  constants4
->>>>>>> origin/main
                                                  constants)
   target_compile_definitions(${libTgt}_f PRIVATE "${fms_defs}")
   target_compile_definitions(${libTgt}_f PRIVATE "${${kind}_defs}")
