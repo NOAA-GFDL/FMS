@@ -148,7 +148,7 @@
       return
     endif
 
-    if (abs(LON_IN_RANGE_ - l_end) < 1.e-4_lkind)) then
+    if (abs(LON_IN_RANGE_ - l_end) < 1.e-4_lkind) then
       LON_IN_RANGE_ = l_strt
       return
     endif
@@ -471,7 +471,7 @@ if (yp1>0.99e30_lkind) then
                /(grid1(i)-grid1(i-1)))/(grid1(i+1)-grid1(i-1))-sig*u(i-1))/p
     enddo
 
-    if (ypn>0.99e30_lkind)) then
+    if (ypn>0.99e30_lkind) then
        qn = 0.0_lkind
        un = 0.0_lkind
     else
@@ -520,6 +520,7 @@ if (yp1>0.99e30_lkind) then
     real(kind=FMS_AU_KIND_)                                      :: y1, y2
     character(len=32)                                            :: interp_method
     integer                                                      :: k2, ks, ke
+    integer, parameter                                           :: lkind = FMS_AU_KIND_
 
     k2 = size(grid2(:))
 
@@ -583,6 +584,7 @@ if (yp1>0.99e30_lkind) then
     real(kind=FMS_AU_KIND_)                             :: y1, y2
     character(len=32)                                   :: interp_method
     integer                                             :: ks, ke
+    integer, parameter                                  :: lkind = FMS_AU_KIND_
 
     n1 = size(grid1,1)
     n2 = size(grid2,1)
