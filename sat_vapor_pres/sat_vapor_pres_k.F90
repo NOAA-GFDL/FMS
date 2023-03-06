@@ -486,6 +486,53 @@
                                                   esloc, desat, denom
  integer :: i, j, k
  real    :: hc_loc
+ logical :: valid_types !< For checking if variable types match
+
+   valid_types = .false.
+   select type (temp)
+   type is (real(kind=r4_kind))
+     select type (press)
+     type is (real(kind=r4_kind))
+       select type (qs)
+       type is (real(kind=r4_kind))
+         valid_types = .true.
+       end select
+     end select
+   type is (real(kind=r8_kind))
+     select type (press)
+     type is (real(kind=r8_kind))
+       select type (qs)
+       type is (real(kind=r8_kind))
+         valid_types = .true.
+       end select
+     end select
+   end select
+   if ( .not. valid_types ) then
+     call error_mesg ('sat_vapor_pres_k_mod::compute_qs_k_0d',&
+          & 'temp is not one of the supported types of real(kind=4) or real(kind=8) OR' &
+            //' temp, press and qs types do not match', FATAL)
+   end if
+
+   if (present(q)) then
+     valid_types = .false.
+     select type (temp)
+     type is (real(kind=r4_kind))
+       select type (q)
+       type is (real(kind=r4_kind))
+         valid_types = .true.
+       end select
+     type is (real(kind=r8_kind))
+       select type (q)
+       type is (real(kind=r8_kind))
+         valid_types = .true.
+       end select
+     end select
+   end if
+   if ( .not. valid_types ) then
+     call error_mesg ('sat_vapor_pres_k_mod::compute_qs_k_0d',&
+          & 'temp is not one of the supported types of real(kind=4) or real(kind=8) OR' &
+            //' temp and q types do not match', FATAL)
+   end if
 
    if (present(hc)) then
      hc_loc = hc
@@ -572,6 +619,53 @@
  real, dimension(size(temp,1), size(temp,2)) :: esloc, desat, denom
  integer :: i, j
  real    :: hc_loc
+ logical :: valid_types !< For checking if variable types match
+
+   valid_types = .false.
+   select type (temp)
+   type is (real(kind=r4_kind))
+     select type (press)
+     type is (real(kind=r4_kind))
+       select type (qs)
+       type is (real(kind=r4_kind))
+         valid_types = .true.
+       end select
+     end select
+   type is (real(kind=r8_kind))
+     select type (press)
+     type is (real(kind=r8_kind))
+       select type (qs)
+       type is (real(kind=r8_kind))
+         valid_types = .true.
+       end select
+     end select
+   end select
+   if ( .not. valid_types ) then
+     call error_mesg ('sat_vapor_pres_k_mod::compute_qs_k_0d',&
+          & 'temp is not one of the supported types of real(kind=4) or real(kind=8) OR' &
+            //' temp, press and qs types do not match', FATAL)
+   end if
+
+   if (present(q)) then
+     valid_types = .false.
+     select type (temp)
+     type is (real(kind=r4_kind))
+       select type (q)
+       type is (real(kind=r4_kind))
+         valid_types = .true.
+       end select
+     type is (real(kind=r8_kind))
+       select type (q)
+       type is (real(kind=r8_kind))
+         valid_types = .true.
+       end select
+     end select
+   end if
+   if ( .not. valid_types ) then
+     call error_mesg ('sat_vapor_pres_k_mod::compute_qs_k_0d',&
+          & 'temp is not one of the supported types of real(kind=4) or real(kind=8) OR' &
+            //' temp and q types do not match', FATAL)
+   end if
 
    if (present(hc)) then
      hc_loc = hc
@@ -657,6 +751,53 @@
  real, dimension(size(temp,1)) :: esloc, desat, denom
  integer :: i
  real    :: hc_loc
+ logical :: valid_types !< For checking if variable types match
+
+   valid_types = .false.
+   select type (temp)
+   type is (real(kind=r4_kind))
+     select type (press)
+     type is (real(kind=r4_kind))
+       select type (qs)
+       type is (real(kind=r4_kind))
+         valid_types = .true.
+       end select
+     end select
+   type is (real(kind=r8_kind))
+     select type (press)
+     type is (real(kind=r8_kind))
+       select type (qs)
+       type is (real(kind=r8_kind))
+         valid_types = .true.
+       end select
+     end select
+   end select
+   if ( .not. valid_types ) then
+     call error_mesg ('sat_vapor_pres_k_mod::compute_qs_k_0d',&
+          & 'temp is not one of the supported types of real(kind=4) or real(kind=8) OR' &
+            //' temp, press and qs types do not match', FATAL)
+   end if
+
+   if (present(q)) then
+     valid_types = .false.
+     select type (temp)
+     type is (real(kind=r4_kind))
+       select type (q)
+       type is (real(kind=r4_kind))
+         valid_types = .true.
+       end select
+     type is (real(kind=r8_kind))
+       select type (q)
+       type is (real(kind=r8_kind))
+         valid_types = .true.
+       end select
+     end select
+   end if
+   if ( .not. valid_types ) then
+     call error_mesg ('sat_vapor_pres_k_mod::compute_qs_k_0d',&
+          & 'temp is not one of the supported types of real(kind=4) or real(kind=8) OR' &
+            //' temp and q types do not match', FATAL)
+   end if
 
    if (present(hc)) then
      hc_loc = hc
@@ -739,6 +880,53 @@
 
  real    :: esloc, desat, denom
  real    :: hc_loc
+ logical :: valid_types !< For checking if variable types match
+
+   valid_types = .false.
+   select type (temp)
+   type is (real(kind=r4_kind))
+     select type (press)
+     type is (real(kind=r4_kind))
+       select type (qs)
+       type is (real(kind=r4_kind))
+         valid_types = .true.
+       end select
+     end select
+   type is (real(kind=r8_kind))
+     select type (press)
+     type is (real(kind=r8_kind))
+       select type (qs)
+       type is (real(kind=r8_kind))
+         valid_types = .true.
+       end select
+     end select
+   end select
+   if ( .not. valid_types ) then
+     call error_mesg ('sat_vapor_pres_k_mod::compute_qs_k_0d',&
+          & 'temp is not one of the supported types of real(kind=4) or real(kind=8) OR' &
+            //' temp, press and qs types do not match', FATAL)
+   end if
+
+   if (present(q)) then
+     valid_types = .false.
+     select type (temp)
+     type is (real(kind=r4_kind))
+       select type (q)
+       type is (real(kind=r4_kind))
+         valid_types = .true.
+       end select
+     type is (real(kind=r8_kind))
+       select type (q)
+       type is (real(kind=r8_kind))
+         valid_types = .true.
+       end select
+     end select
+   end if
+   if ( .not. valid_types ) then
+     call error_mesg ('sat_vapor_pres_k_mod::compute_qs_k_0d',&
+          & 'temp is not one of the supported types of real(kind=4) or real(kind=8) OR' &
+            //' temp and q types do not match', FATAL)
+   end if
 
    if (present(hc)) then
      hc_loc = hc
@@ -1151,6 +1339,32 @@
 
  real    :: tmp, del
  integer :: ind, i, j, k
+ logical :: valid_types !< For checking if variable types match
+
+   valid_types = .false.
+   select type (temp)
+   type is (real(kind=r4_kind))
+     select type (esat)
+     type is (real(kind=r4_kind))
+       select type (desat)
+       type is (real(kind=r4_kind))
+         valid_types = .true.
+       end select
+     end select
+   type is (real(kind=r8_kind))
+     select type (esat)
+     type is (real(kind=r8_kind))
+       select type (desat)
+       type is (real(kind=r8_kind))
+         valid_types = .true.
+       end select
+     end select
+   end select
+   if ( .not. valid_types ) then
+     call error_mesg ('sat_vapor_pres_k_mod::lookup_es_des_k_3d',&
+          & 'temp is not one of the supported types of real(kind=4) or real(kind=8) OR' &
+            //' temp, esat and desat types do not match', FATAL)
+   end if
 
    nbad = 0
    do k = 1, size(temp,3)
@@ -1181,6 +1395,32 @@
 
  real    :: tmp, del
  integer :: ind, i, j
+ logical :: valid_types !< For checking if variable types match
+
+   valid_types = .false.
+   select type (temp)
+   type is (real(kind=r4_kind))
+     select type (esat)
+     type is (real(kind=r4_kind))
+       select type (desat)
+       type is (real(kind=r4_kind))
+         valid_types = .true.
+       end select
+     end select
+   type is (real(kind=r8_kind))
+     select type (esat)
+     type is (real(kind=r8_kind))
+       select type (desat)
+       type is (real(kind=r8_kind))
+         valid_types = .true.
+       end select
+     end select
+   end select
+   if ( .not. valid_types ) then
+     call error_mesg ('sat_vapor_pres_k_mod::lookup_es_des_k_2d',&
+          & 'temp is not one of the supported types of real(kind=4) or real(kind=8) OR' &
+            //' temp, esat and desat types do not match', FATAL)
+   end if
 
    nbad = 0
    do j = 1, size(temp,2)
@@ -1209,6 +1449,32 @@
 
  real    :: tmp, del
  integer :: ind, i
+ logical :: valid_types !< For checking if variable types match
+
+   valid_types = .false.
+   select type (temp)
+   type is (real(kind=r4_kind))
+     select type (esat)
+     type is (real(kind=r4_kind))
+       select type (desat)
+       type is (real(kind=r4_kind))
+         valid_types = .true.
+       end select
+     end select
+   type is (real(kind=r8_kind))
+     select type (esat)
+     type is (real(kind=r8_kind))
+       select type (desat)
+       type is (real(kind=r8_kind))
+         valid_types = .true.
+       end select
+     end select
+   end select
+   if ( .not. valid_types ) then
+     call error_mesg ('sat_vapor_pres_k_mod::lookup_es_des_k_1d',&
+          & 'temp is not one of the supported types of real(kind=4) or real(kind=8) OR' &
+            //' temp, esat and desat types do not match', FATAL)
+   end if
 
    nbad = 0
    do i = 1, size(temp,1)
@@ -1258,6 +1524,26 @@
  integer, intent(out) :: nbad
  real    :: tmp, del
  integer :: ind, i, j, k
+ logical :: valid_types !< For checking if variable types match
+
+   valid_types = .false.
+   select type (temp)
+   type is (real(kind=r4_kind))
+      select type (esat)
+      type is (real(kind=r4_kind))
+         valid_types = .true.
+      end select
+   type is (real(kind=r8_kind))
+      select type (esat)
+      type is (real(kind=r8_kind))
+         valid_types = .true.
+      end select
+   end select
+   if ( .not. valid_types ) then
+      call error_mesg ('sat_vapor_pres_k_mod::lookup_k_3d',&
+           & 'temp is not one of the supported types of real(kind=4) or real(kind=8) OR' &
+             //' temp and esat types do not match', FATAL)
+   end if
 
    nbad = 0
    do k = 1, size(temp,3)
@@ -1286,6 +1572,26 @@
  integer, intent(out) :: nbad
  real    :: tmp, del
  integer :: ind, i, j, k
+ logical :: valid_types !< For checking if variable types match
+
+   valid_types = .false.
+   select type (temp)
+   type is (real(kind=r4_kind))
+     select type (desat)
+     type is (real(kind=r4_kind))
+       valid_types = .true.
+     end select
+   type is (real(kind=r8_kind))
+     select type (desat)
+     type is (real(kind=r8_kind))
+       valid_types = .true.
+     end select
+   end select
+   if ( .not. valid_types ) then
+     call error_mesg ('sat_vapor_pres_k_mod::lookup_des_k_3d',&
+          & 'temp is not one of the supported types of real(kind=4) or real(kind=8) OR' &
+            //' temp and desat types do not match', FATAL)
+   end if
 
    nbad = 0
    do k = 1, size(temp,3)
@@ -1312,6 +1618,26 @@
  integer, intent(out) :: nbad
  real    :: tmp, del
  integer :: ind, i, j
+ logical :: valid_types !< For checking if variable types match
+
+   valid_types = .false.
+   select type (temp)
+   type is (real(kind=r4_kind))
+     select type (desat)
+     type is (real(kind=r4_kind))
+       valid_types = .true.
+     end select
+   type is (real(kind=r8_kind))
+     select type (desat)
+     type is (real(kind=r8_kind))
+       valid_types = .true.
+     end select
+   end select
+   if ( .not. valid_types ) then
+     call error_mesg ('sat_vapor_pres_k_mod::lookup_des_k_2d',&
+          & 'temp is not one of the supported types of real(kind=4) or real(kind=8) OR' &
+            //' temp and desat types do not match', FATAL)
+   end if
 
    nbad = 0
    do j = 1, size(temp,2)
@@ -1335,6 +1661,26 @@
  integer, intent(out) :: nbad
  real    :: tmp, del
  integer :: ind, i, j
+ logical :: valid_types !< For checking if variable types match
+
+   valid_types = .false.
+   select type (temp)
+   type is (real(kind=r4_kind))
+      select type (esat)
+      type is (real(kind=r4_kind))
+         valid_types = .true.
+      end select
+   type is (real(kind=r8_kind))
+      select type (esat)
+      type is (real(kind=r8_kind))
+         valid_types = .true.
+      end select
+   end select
+   if ( .not. valid_types ) then
+      call error_mesg ('sat_vapor_pres_k_mod::lookup_k_2d',&
+           & 'temp is not one of the supported types of real(kind=4) or real(kind=8) OR' &
+             //' temp and esat types do not match', FATAL)
+   end if
 
    nbad = 0
    do j = 1, size(temp,2)
@@ -1359,6 +1705,26 @@
  integer, intent(out) :: nbad
  real    :: tmp, del
  integer :: ind, i
+ logical :: valid_types !< For checking if variable types match
+
+   valid_types = .false.
+   select type (temp)
+   type is (real(kind=r4_kind))
+     select type (desat)
+     type is (real(kind=r4_kind))
+       valid_types = .true.
+     end select
+   type is (real(kind=r8_kind))
+     select type (desat)
+     type is (real(kind=r8_kind))
+       valid_types = .true.
+     end select
+   end select
+   if ( .not. valid_types ) then
+     call error_mesg ('sat_vapor_pres_k_mod::lookup_des_k_1d',&
+          & 'temp is not one of the supported types of real(kind=4) or real(kind=8) OR' &
+            //' temp and desat types do not match', FATAL)
+   end if
 
    nbad = 0
    do i = 1, size(temp,1)
@@ -1380,6 +1746,26 @@
  integer, intent(out) :: nbad
  real    :: tmp, del
  integer :: ind, i
+ logical :: valid_types !< For checking if variable types match
+
+   valid_types = .false.
+   select type (temp)
+   type is (real(kind=r4_kind))
+      select type (esat)
+      type is (real(kind=r4_kind))
+         valid_types = .true.
+      end select
+   type is (real(kind=r8_kind))
+      select type (esat)
+      type is (real(kind=r8_kind))
+         valid_types = .true.
+      end select
+   end select
+   if ( .not. valid_types ) then
+      call error_mesg ('sat_vapor_pres_k_mod::lookup_k_1d',&
+           & 'temp is not one of the supported types of real(kind=4) or real(kind=8) OR' &
+             //' temp and esat types do not match', FATAL)
+   end if
 
    nbad = 0
    do i = 1, size(temp,1)
@@ -1441,6 +1827,32 @@
 
  real    :: tmp, del
  integer :: ind, i, j, k
+ logical :: valid_types !< For checking if variable types match
+
+   valid_types = .false.
+   select type (temp)
+   type is (real(kind=r4_kind))
+     select type (esat)
+     type is (real(kind=r4_kind))
+       select type (desat)
+       type is (real(kind=r4_kind))
+         valid_types = .true.
+       end select
+     end select
+   type is (real(kind=r8_kind))
+     select type (esat)
+     type is (real(kind=r8_kind))
+       select type (desat)
+       type is (real(kind=r8_kind))
+         valid_types = .true.
+       end select
+     end select
+   end select
+   if ( .not. valid_types ) then
+     call error_mesg ('sat_vapor_pres_k_mod::lookup_es2_des2_k_3d',&
+          & 'temp is not one of the supported types of real(kind=4) or real(kind=8) OR' &
+            //' temp, esat and desat types do not match', FATAL)
+   end if
 
    nbad = 0
    do k = 1, size(temp,3)
@@ -1471,6 +1883,32 @@
 
  real    :: tmp, del
  integer :: ind, i, j
+ logical :: valid_types !< For checking if variable types match
+
+   valid_types = .false.
+   select type (temp)
+   type is (real(kind=r4_kind))
+     select type (esat)
+     type is (real(kind=r4_kind))
+       select type (desat)
+       type is (real(kind=r4_kind))
+         valid_types = .true.
+       end select
+     end select
+   type is (real(kind=r8_kind))
+     select type (esat)
+     type is (real(kind=r8_kind))
+       select type (desat)
+       type is (real(kind=r8_kind))
+         valid_types = .true.
+       end select
+     end select
+   end select
+   if ( .not. valid_types ) then
+     call error_mesg ('sat_vapor_pres_k_mod::lookup_es2_des2_k_2d',&
+          & 'temp is not one of the supported types of real(kind=4) or real(kind=8) OR' &
+            //' temp, esat and desat types do not match', FATAL)
+   end if
 
    nbad = 0
    do j = 1, size(temp,2)
@@ -1499,6 +1937,32 @@
 
  real    :: tmp, del
  integer :: ind, i
+ logical :: valid_types !< For checking if variable types match
+
+   valid_types = .false.
+   select type (temp)
+   type is (real(kind=r4_kind))
+     select type (esat)
+     type is (real(kind=r4_kind))
+       select type (desat)
+       type is (real(kind=r4_kind))
+         valid_types = .true.
+       end select
+     end select
+   type is (real(kind=r8_kind))
+     select type (esat)
+     type is (real(kind=r8_kind))
+       select type (desat)
+       type is (real(kind=r8_kind))
+         valid_types = .true.
+       end select
+     end select
+   end select
+   if ( .not. valid_types ) then
+     call error_mesg ('sat_vapor_pres_k_mod::lookup_es2_des2_k_1d',&
+          & 'temp is not one of the supported types of real(kind=4) or real(kind=8) OR' &
+            //' temp, esat and desat types do not match', FATAL)
+   end if
 
    nbad = 0
    do i = 1, size(temp,1)
@@ -1548,6 +2012,26 @@
  integer, intent(out) :: nbad
  real    :: tmp, del
  integer :: ind, i, j, k
+ logical :: valid_types !< For checking if variable types match
+
+   valid_types = .false.
+   select type (temp)
+   type is (real(kind=r4_kind))
+      select type (esat)
+      type is (real(kind=r4_kind))
+         valid_types = .true.
+      end select
+   type is (real(kind=r8_kind))
+      select type (esat)
+      type is (real(kind=r8_kind))
+         valid_types = .true.
+      end select
+   end select
+   if ( .not. valid_types ) then
+      call error_mesg ('sat_vapor_pres_k_mod::lookup_es2_k_3d',&
+           & 'temp is not one of the supported types of real(kind=4) or real(kind=8) OR' &
+             //' temp and esat types do not match', FATAL)
+   end if
 
    nbad = 0
    do k = 1, size(temp,3)
@@ -1576,6 +2060,26 @@
  integer, intent(out) :: nbad
  real    :: tmp, del
  integer :: ind, i, j, k
+ logical :: valid_types !< For checking if variable types match
+
+   valid_types = .false.
+   select type (temp)
+   type is (real(kind=r4_kind))
+     select type (desat)
+     type is (real(kind=r4_kind))
+       valid_types = .true.
+     end select
+   type is (real(kind=r8_kind))
+     select type (desat)
+     type is (real(kind=r8_kind))
+       valid_types = .true.
+     end select
+   end select
+   if ( .not. valid_types ) then
+     call error_mesg ('sat_vapor_pres_k_mod::lookup_des2_k_3d',&
+          & 'temp is not one of the supported types of real(kind=4) or real(kind=8) OR' &
+            //' temp and desat types do not match', FATAL)
+   end if
 
    nbad = 0
    do k = 1, size(temp,3)
@@ -1602,6 +2106,26 @@
  integer, intent(out) :: nbad
  real    :: tmp, del
  integer :: ind, i, j
+ logical :: valid_types !< For checking if variable types match
+
+   valid_types = .false.
+   select type (temp)
+   type is (real(kind=r4_kind))
+     select type (desat)
+     type is (real(kind=r4_kind))
+       valid_types = .true.
+     end select
+   type is (real(kind=r8_kind))
+     select type (desat)
+     type is (real(kind=r8_kind))
+       valid_types = .true.
+     end select
+   end select
+   if ( .not. valid_types ) then
+     call error_mesg ('sat_vapor_pres_k_mod::lookup_des2_k_2d',&
+          & 'temp is not one of the supported types of real(kind=4) or real(kind=8) OR' &
+            //' temp and desat types do not match', FATAL)
+   end if
 
    nbad = 0
    do j = 1, size(temp,2)
@@ -1625,6 +2149,26 @@
  integer, intent(out) :: nbad
  real    :: tmp, del
  integer :: ind, i, j
+ logical :: valid_types !< For checking if variable types match
+
+   valid_types = .false.
+   select type (temp)
+   type is (real(kind=r4_kind))
+      select type (esat)
+      type is (real(kind=r4_kind))
+         valid_types = .true.
+      end select
+   type is (real(kind=r8_kind))
+      select type (esat)
+      type is (real(kind=r8_kind))
+         valid_types = .true.
+      end select
+   end select
+   if ( .not. valid_types ) then
+      call error_mesg ('sat_vapor_pres_k_mod::lookup_es2_k_2d',&
+           & 'temp is not one of the supported types of real(kind=4) or real(kind=8) OR' &
+             //' temp and esat types do not match', FATAL)
+   end if
 
    nbad = 0
    do j = 1, size(temp,2)
@@ -1649,6 +2193,26 @@
  integer, intent(out) :: nbad
  real    :: tmp, del
  integer :: ind, i
+ logical :: valid_types !< For checking if variable types match
+
+   valid_types = .false.
+   select type (temp)
+   type is (real(kind=r4_kind))
+     select type (desat)
+     type is (real(kind=r4_kind))
+       valid_types = .true.
+     end select
+   type is (real(kind=r8_kind))
+     select type (desat)
+     type is (real(kind=r8_kind))
+       valid_types = .true.
+     end select
+   end select
+   if ( .not. valid_types ) then
+     call error_mesg ('sat_vapor_pres_k_mod::lookup_des2_k_1d',&
+          & 'temp is not one of the supported types of real(kind=4) or real(kind=8) OR' &
+            //' temp and desat types do not match', FATAL)
+   end if
 
    nbad = 0
    do i = 1, size(temp,1)
@@ -1670,6 +2234,26 @@
  integer, intent(out) :: nbad
  real    :: tmp, del
  integer :: ind, i
+ logical :: valid_types !< For checking if variable types match
+
+   valid_types = .false.
+   select type (temp)
+   type is (real(kind=r4_kind))
+      select type (esat)
+      type is (real(kind=r4_kind))
+         valid_types = .true.
+      end select
+   type is (real(kind=r8_kind))
+      select type (esat)
+      type is (real(kind=r8_kind))
+         valid_types = .true.
+      end select
+   end select
+   if ( .not. valid_types ) then
+      call error_mesg ('sat_vapor_pres_k_mod::lookup_es2_k_1d',&
+           & 'temp is not one of the supported types of real(kind=4) or real(kind=8) OR' &
+             //' temp and esat types do not match', FATAL)
+   end if
 
    nbad = 0
    do i = 1, size(temp,1)
@@ -1733,6 +2317,32 @@
 
  real    :: tmp, del
  integer :: ind, i, j, k
+ logical :: valid_types !< For checking if variable types match
+
+   valid_types = .false.
+   select type (temp)
+   type is (real(kind=r4_kind))
+     select type (esat)
+     type is (real(kind=r4_kind))
+       select type (desat)
+       type is (real(kind=r4_kind))
+         valid_types = .true.
+       end select
+     end select
+   type is (real(kind=r8_kind))
+     select type (esat)
+     type is (real(kind=r8_kind))
+       select type (desat)
+       type is (real(kind=r8_kind))
+         valid_types = .true.
+       end select
+     end select
+   end select
+   if ( .not. valid_types ) then
+     call error_mesg ('sat_vapor_pres_k_mod::lookup_es3_des3_k_3d',&
+          & 'temp is not one of the supported types of real(kind=4) or real(kind=8) OR' &
+            //' temp, esat and desat types do not match', FATAL)
+   end if
 
    nbad = 0
    do k = 1, size(temp,3)
@@ -1763,6 +2373,32 @@
 
  real    :: tmp, del
  integer :: ind, i, j
+ logical :: valid_types !< For checking if variable types match
+
+   valid_types = .false.
+   select type (temp)
+   type is (real(kind=r4_kind))
+     select type (esat)
+     type is (real(kind=r4_kind))
+       select type (desat)
+       type is (real(kind=r4_kind))
+         valid_types = .true.
+       end select
+     end select
+   type is (real(kind=r8_kind))
+     select type (esat)
+     type is (real(kind=r8_kind))
+       select type (desat)
+       type is (real(kind=r8_kind))
+         valid_types = .true.
+       end select
+     end select
+   end select
+   if ( .not. valid_types ) then
+     call error_mesg ('sat_vapor_pres_k_mod::lookup_es3_des3_k_2d',&
+          & 'temp is not one of the supported types of real(kind=4) or real(kind=8) OR' &
+            //' temp, esat and desat types do not match', FATAL)
+   end if
 
    nbad = 0
    do j = 1, size(temp,2)
@@ -1791,6 +2427,32 @@
 
  real    :: tmp, del
  integer :: ind, i
+ logical :: valid_types !< For checking if variable types match
+
+   valid_types = .false.
+   select type (temp)
+   type is (real(kind=r4_kind))
+     select type (esat)
+     type is (real(kind=r4_kind))
+       select type (desat)
+       type is (real(kind=r4_kind))
+         valid_types = .true.
+       end select
+     end select
+   type is (real(kind=r8_kind))
+     select type (esat)
+     type is (real(kind=r8_kind))
+       select type (desat)
+       type is (real(kind=r8_kind))
+         valid_types = .true.
+       end select
+     end select
+   end select
+   if ( .not. valid_types ) then
+     call error_mesg ('sat_vapor_pres_k_mod::lookup_es3_des3_k_1d',&
+          & 'temp is not one of the supported types of real(kind=4) or real(kind=8) OR' &
+            //' temp, esat and desat types do not match', FATAL)
+   end if
 
    nbad = 0
    do i = 1, size(temp,1)
@@ -1840,6 +2502,26 @@
  integer, intent(out) :: nbad
  real    :: tmp, del
  integer :: ind, i, j, k
+ logical :: valid_types !< For checking if variable types match
+
+   valid_types = .false.
+   select type (temp)
+   type is (real(kind=r4_kind))
+      select type (esat)
+      type is (real(kind=r4_kind))
+         valid_types = .true.
+      end select
+   type is (real(kind=r8_kind))
+      select type (esat)
+      type is (real(kind=r8_kind))
+         valid_types = .true.
+      end select
+   end select
+   if ( .not. valid_types ) then
+      call error_mesg ('sat_vapor_pres_k_mod::lookup_es3_k_3d',&
+           & 'temp is not one of the supported types of real(kind=4) or real(kind=8) OR' &
+             //' temp and esat types do not match', FATAL)
+   end if
 
    nbad = 0
    do k = 1, size(temp,3)
@@ -1868,6 +2550,26 @@
  integer, intent(out) :: nbad
  real    :: tmp, del
  integer :: ind, i, j, k
+ logical :: valid_types !< For checking if variable types match
+
+   valid_types = .false.
+   select type (temp)
+   type is (real(kind=r4_kind))
+     select type (desat)
+     type is (real(kind=r4_kind))
+       valid_types = .true.
+     end select
+   type is (real(kind=r8_kind))
+     select type (desat)
+     type is (real(kind=r8_kind))
+       valid_types = .true.
+     end select
+   end select
+   if ( .not. valid_types ) then
+     call error_mesg ('sat_vapor_pres_k_mod::lookup_des3_k_3d',&
+          & 'temp is not one of the supported types of real(kind=4) or real(kind=8) OR' &
+            //' temp and desat types do not match', FATAL)
+   end if
 
    nbad = 0
    do k = 1, size(temp,3)
@@ -1894,6 +2596,26 @@
  integer, intent(out) :: nbad
  real    :: tmp, del
  integer :: ind, i, j
+ logical :: valid_types !< For checking if variable types match
+
+   valid_types = .false.
+   select type (temp)
+   type is (real(kind=r4_kind))
+     select type (desat)
+     type is (real(kind=r4_kind))
+       valid_types = .true.
+     end select
+   type is (real(kind=r8_kind))
+     select type (desat)
+     type is (real(kind=r8_kind))
+       valid_types = .true.
+     end select
+   end select
+   if ( .not. valid_types ) then
+     call error_mesg ('sat_vapor_pres_k_mod::lookup_des3_k_2d',&
+          & 'temp is not one of the supported types of real(kind=4) or real(kind=8) OR' &
+            //' temp and desat types do not match', FATAL)
+   end if
 
    nbad = 0
    do j = 1, size(temp,2)
@@ -1917,6 +2639,26 @@
  integer, intent(out) :: nbad
  real    :: tmp, del
  integer :: ind, i, j
+ logical :: valid_types !< For checking if variable types match
+
+   valid_types = .false.
+   select type (temp)
+   type is (real(kind=r4_kind))
+      select type (esat)
+      type is (real(kind=r4_kind))
+         valid_types = .true.
+      end select
+   type is (real(kind=r8_kind))
+      select type (esat)
+      type is (real(kind=r8_kind))
+         valid_types = .true.
+      end select
+   end select
+   if ( .not. valid_types ) then
+      call error_mesg ('sat_vapor_pres_k_mod::lookup_es3_k_2d',&
+           & 'temp is not one of the supported types of real(kind=4) or real(kind=8) OR' &
+             //' temp and esat types do not match', FATAL)
+   end if
 
    nbad = 0
    do j = 1, size(temp,2)
@@ -1941,6 +2683,26 @@
  integer, intent(out) :: nbad
  real    :: tmp, del
  integer :: ind, i
+ logical :: valid_types !< For checking if variable types match
+
+   valid_types = .false.
+   select type (temp)
+   type is (real(kind=r4_kind))
+     select type (desat)
+     type is (real(kind=r4_kind))
+       valid_types = .true.
+     end select
+   type is (real(kind=r8_kind))
+     select type (desat)
+     type is (real(kind=r8_kind))
+       valid_types = .true.
+     end select
+   end select
+   if ( .not. valid_types ) then
+     call error_mesg ('sat_vapor_pres_k_mod::lookup_des3_k_1d',&
+          & 'temp is not one of the supported types of real(kind=4) or real(kind=8) OR' &
+            //' temp and desat types do not match', FATAL)
+   end if
 
    nbad = 0
    do i = 1, size(temp,1)
@@ -1962,6 +2724,26 @@
  integer, intent(out) :: nbad
  real    :: tmp, del
  integer :: ind, i
+ logical :: valid_types !< For checking if variable types match
+
+   valid_types = .false.
+   select type (temp)
+   type is (real(kind=r4_kind))
+      select type (esat)
+      type is (real(kind=r4_kind))
+         valid_types = .true.
+      end select
+   type is (real(kind=r8_kind))
+      select type (esat)
+      type is (real(kind=r8_kind))
+         valid_types = .true.
+      end select
+   end select
+   if ( .not. valid_types ) then
+      call error_mesg ('sat_vapor_pres_k_mod::lookup_es3_k_1d',&
+           & 'temp is not one of the supported types of real(kind=4) or real(kind=8) OR' &
+             //' temp and esat types do not match', FATAL)
+   end if
 
    nbad = 0
    do i = 1, size(temp,1)
