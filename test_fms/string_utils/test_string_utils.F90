@@ -172,6 +172,18 @@ program test_fms_string_utils
     real(r4_kind) :: arr_1d_r4(3), arr_2d_r4(2, 2), arr_3d_r4(2, 2, 2)
     real(r8_kind) :: arr_1d_r8(3), arr_2d_r8(2, 2), arr_3d_r8(2, 2, 2)
 
+    if (string(.true.) .ne. "True") then
+      call mpp_error(FATAL, "string() unit test failed for Boolean true value")
+    endif
+
+    if (string(.false.) .ne. "False") then
+      call mpp_error(FATAL, "string() unit test failed for Boolean false value")
+    endif
+
+    if (string(0) .ne. "0") then
+      call mpp_error(FATAL, "string() unit test failed for zero integer")
+    endif
+
     if (string(12345) .ne. "12345") then
       call mpp_error(FATAL, "string() unit test failed for positive integer")
     endif

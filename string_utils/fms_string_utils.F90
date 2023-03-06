@@ -116,6 +116,7 @@ end interface
 !> Converts a number or a real array to a string
 !> @ingroup fms_mod
 interface string
+  module procedure string_from_logical
   module procedure string_from_integer
   module procedure string_from_r4, string_from_r8
   module procedure string_from_array_1d_r4, string_from_array_1d_r8
@@ -241,6 +242,18 @@ contains
     enddo
 end subroutine fms_f2c_string
 
+  !> @brief Converts a Boolean value to a string
+  !> @return The Boolean value as a string
+  function string_from_logical(v)
+    logical, intent(in) :: v !< Boolean value to be converted to a string
+    character(:), allocatable :: string_from_logical
+
+    if (v) then
+      string_from_logical = "True"
+    else
+      string_from_logical = "False"
+    endif
+  end function
 
   !> @brief Converts an integer to a string
   !> @return The integer as a string
