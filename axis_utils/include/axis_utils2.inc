@@ -123,7 +123,7 @@
          edge_data(i) = r_var(i-1) + 0.5_lkind*(r_var(i) - r_var(i-1))
       enddo
       edge_data(1)    = r_var(1) - 0.5_lkind*(r_var(2) - r_var(1))
-      if (abs(edge_data(1)) .lt. real(1.d-10, FMS_AU_KIND_)) then
+      if (abs(edge_data(1)) .lt. 1.e-10_lkind) then
          edge_data(1) = 0.0_lkind
       endif
       edge_data(n+1)  = r_var(n) + 0.5_lkind*(r_var(n) - r_var(n-1))
@@ -143,12 +143,12 @@
     LON_IN_RANGE_ = lon
     l_end = l_strt + 360.0_lkind
 
-    if (abs(LON_IN_RANGE_ - l_strt) < real(1.d-4, FMS_AU_KIND_)) then
+    if (abs(LON_IN_RANGE_ - l_strt) < 1.e-4_lkind) then
       LON_IN_RANGE_ = l_strt
       return
     endif
 
-    if (abs(LON_IN_RANGE_ - l_end) < real(1.d-4, FMS_AU_KIND_)) then
+    if (abs(LON_IN_RANGE_ - l_end) < 1.e-4_lkind)) then
       LON_IN_RANGE_ = l_strt
       return
     endif
@@ -205,7 +205,7 @@
     enddo
 
     if (istrt>1) then ! grid is not monotonic
-       if (abs(lon(len)-lon(1)) < real(epsln, FMS_AU_KIND_)) then
+       if (abs(lon(len)-lon(1)) < real(epsln, r8_kind)) then
           tmp = cshift(lon(1:len-1),istrt-1)
           lon(1:len-1) = tmp
           lon(len)     = lon(1)
@@ -455,7 +455,7 @@
     if (grid1(1) > grid2(1) ) call mpp_error(FATAL, 'grid2 lies outside grid1')
     if (grid1(n) < grid2(m) ) call mpp_error(FATAL, 'grid2 lies outside grid1')
 
-if (yp1>real(0.99d30, FMS_AU_KIND_)) then
+if (yp1>0.99e30_lkind) then
        y2(1) = 0.0_lkind
        u(1)  = 0.0_lkind
     else
@@ -471,7 +471,7 @@ if (yp1>real(0.99d30, FMS_AU_KIND_)) then
                /(grid1(i)-grid1(i-1)))/(grid1(i+1)-grid1(i-1))-sig*u(i-1))/p
     enddo
 
-    if (ypn>real(.99d30, FMS_AU_KIND_)) then
+    if (ypn>0.99e30_lkind)) then
        qn = 0.0_lkind
        un = 0.0_lkind
     else
@@ -525,10 +525,10 @@ if (yp1>real(0.99d30, FMS_AU_KIND_)) then
 
     interp_method = "linear"
     if(present(method)) interp_method = method
-    y1 = real(1.0d30, FMS_AU_KIND_)
+    y1 = 1.0e30_lkind
 
     if(present(yp1)) y1 = yp1
-    y2 = real(1.0d30, FMS_AU_KIND_)
+    y2 = 1.0e30_lkind
 
     if(present(yp2)) y2 = yp2
     call find_index(grid1, grid2(1), grid2(k2), ks, ke)
@@ -592,10 +592,10 @@ if (yp1>real(0.99d30, FMS_AU_KIND_)) then
 
     interp_method = "linear"
     if(present(method)) interp_method = method
-    y1 = real(1.0d30, FMS_AU_KIND_)
+    y1 = 1.0e30_lkind
 
     if(present(yp1)) y1 = yp1
-    y2 = real(1.0d30, FMS_AU_KIND_)
+    y2 = 1.0d30_lkind
     if(present(yp2)) y2 = yp2
 
     if (n1 /= n2 .or. m1 /= m2) call mpp_error(FATAL,'grid size mismatch')
