@@ -595,7 +595,7 @@ if (yp1>0.99e30_lkind) then
     y1 = 1.0e30_lkind
 
     if(present(yp1)) y1 = yp1
-    y2 = 1.0d30_lkind
+    y2 = 1.0e30_lkind
     if(present(yp2)) y2 = yp2
 
     if (n1 /= n2 .or. m1 /= m2) call mpp_error(FATAL,'grid size mismatch')
