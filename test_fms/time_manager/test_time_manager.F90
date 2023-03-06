@@ -25,7 +25,7 @@ program test_time_manager
  use    constants_mod, only: constants_init, rseconds_per_day=>seconds_per_day
  use time_manager_mod, only: time_type, set_date, get_date, set_time, set_calendar_type, real_to_time_type
  use time_manager_mod, only: length_of_year, leap_year, days_in_month, days_in_year, print_time
- use time_manager_mod, only: set_ticks_per_second, get_ticks_per_second, safe_rtoi
+ use time_manager_mod, only: set_ticks_per_second, get_ticks_per_second, safe_rtoi, time_type_to_real
  use time_manager_mod, only: decrement_date, increment_date, get_time, increment_time, decrement_time
  use time_manager_mod, only: JULIAN, GREGORIAN, THIRTY_DAY_MONTHS, NOLEAP
  use time_manager_mod, only: operator(-), operator(+),  operator(*),  operator(/),  &
@@ -37,8 +37,8 @@ program test_time_manager
 
  type(time_type) :: Time, Time0, time1, time2
  real    :: xx
- real(r4_kind) :: rtoi4
- real(r8_kind) :: rtoi8
+ real(r4_kind) :: rtoi4, rconv4
+ real(r8_kind) :: rtoi8, rconv8
  integer :: yr, mo, day, hr, min, sec, ticks
  integer :: yr0, mo0, day0, hr0, min0, sec0, ticks0
  integer :: year, month, dday, days_this_month
@@ -51,6 +51,7 @@ program test_time_manager
  character(len=8) :: test_name
  character(len=256) :: out_msg
  integer, parameter :: do_floor = 0, do_nearest = 1
+ type(time_type) :: time_r
 
  !: for testing set/get_date_gregorian
  integer, parameter :: days_in_400_year_period = 146097
@@ -62,10 +63,11 @@ program test_time_manager
  logical :: test9 =.true.,test10=.true.,test11=.true.,test12=.true.,test13=.true.,test14=.true.,test15=.true., &
          & test16=.true.
  logical :: test17=.true.,test18=.true.,test19=.true.,test20=.true., test21=.true., test22=.true.
+ logical :: test23 = .true.
 
  namelist / test_nml / test1 ,test2 ,test3 ,test4 ,test5 ,test6 ,test7 ,test8,  &
                        test9 ,test10,test11,test12,test13,test14,test15,test16, &
-                       test17,test18,test19,test20,test21, test22
+                       test17,test18,test19,test20,test21, test22, test23
 
  call fms_init
  call constants_init
@@ -718,6 +720,25 @@ program test_time_manager
     if ( safe_rtoi(rtoi4, do_nearest) .ne. safe_rtoi(rtoi8, do_nearest)) call mpp_error(FATAL, "safe_rtoi failed on"// &
                                                                       "mixed precision do_nearest")
 
+  endif
+
+  if(test23) then
+    time_r = set_time( 123, days=3, ticks=123)
+    ! check function (original)
+    rconv8 = time_type_to_real(time_r)
+    if( rconv8 .ne. 123.0_r8_kind + 86400.0_r8_kind * 3.0_r8_kind + 12.3_r8_kind) then
+        call mpp_error(FATAL, "test_time_manager: time_type_to_real failed reference check with converted real value")
+    endif
+    ! check equivalent with r8
+    call time_type_to_real(time_r, rconv8)
+    if( rconv8 .ne. time_type_to_real(time_r)) 
+        call mpp_error(FATAL, "test_time_manager: time_type_to_real failed equivalency check with mixed precision r8")
+    endif
+    ! check r4
+    call time_type_to_real(time_r, rconv4)
+    if( rconv4 .ne. 123.0_r4_kind + 86400.0_r4_kind * 3.0_r4_kind + 12.3_r4_kind) then
+        call mpp_error(FATAL, "test_time_manager: time_type_to_real failed reference check with mixed precision r4")
+    endif
   endif
 
   call fms_end

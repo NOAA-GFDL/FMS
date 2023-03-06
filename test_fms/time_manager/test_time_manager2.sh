@@ -52,6 +52,7 @@ test19=.false.
 test20=.false.
 test21=.false.
 test22=.false.
+test23=.false.
 /
 _EOF
 
@@ -91,5 +92,6 @@ test_next "real_to_time_type"
 test_next "compare updated set/get_date_gregorian"
 test_next "real_to_time_type mixed precision"
 test_next "safe_rtoi mixed precision"
+test_next "time_type_to_real mixed precision"
 
 test_done

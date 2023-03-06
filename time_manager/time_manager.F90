@@ -252,14 +252,32 @@ interface set_date
   module procedure set_date_i, set_date_c
 end interface
 
+!> Real to int conversion with a given rounding mode (do_floor or do_nearest)
+!! Supports kind=4 and kind=8 reals
+!> @ingroup time_manager_mod
 interface safe_rtoi
   module procedure safe_rtoi_r4
   module procedure safe_rtoi_r8
 end interface
 
+!> Creates a new time_type with filled in fields from the given real value 
 interface real_to_time_type
   module procedure real_to_time_type_r4
   module procedure real_to_time_type_r8
+end interface
+
+!> Calculates the corresponding real value for the fields in a given time_type
+!! By default will give a r8_kind result if just given a time_type (same behavior as b4 mixed precision)
+!! Can also pass in a real kind 4 or 8 to do the calculation in that precision and set the result to the passed in real.
+!! eg.
+!! @code{.f90} real_kind8_var = time_type_to_real(Time_type) 
+!! or
+!! @code{.f90} call time_type_to_real(Time_type, real_kind8_var) 
+!! @code{.f90} call time_type_to_real(Time_type, real_kind4_var) 
+interface time_type_to_real
+    module procedure convert_time_type_to_real
+    module procedure time_type_to_real_kind4
+    module procedure time_type_to_real_kind8
 end interface
 
 !> @addtogroup time_manager_mod
@@ -1064,32 +1082,36 @@ type(time_type), intent(in)  :: time2
    time1%ticks   = time2%ticks
 end subroutine time_assignment
 
-!-------------------------------------------------------------------------
-! <FUNCTION NAME="time_type_to_real">
-!   <OVERVIEW>
-!       Converts time to seconds and returns it as a real number
-!   </OVERVIEW>
-!   <DESCRIPTION>
-!       Converts time to seconds and returns it as a real number
-!   </DESCRIPTION>
-!   <TEMPLATE>
-!     time_type_to_real(time)
-!   </TEMPLATE>
-!   <IN NAME="time" UNITS="" TYPE="time_type" DIM="">
-!      A time interval.
-!   </IN>
-
-function time_type_to_real(time)
-
-real(kind=r8_kind)           :: time_type_to_real
-type(time_type), intent(in) :: time
+!> Converts time to seconds and returns it as a real number
+!! This was renamed to avoid compiler issues with the same interface name
+!! can stil be used via real = time_type_ro_real(time)
+function convert_time_type_to_real(time)
+real(kind=r8_kind)           :: convert_time_type_to_real !< equivalent time in seconds
+type(time_type), intent(in) :: time !< time_type representing an amount time
 
 if(.not.module_is_initialized) call time_manager_init
 
-time_type_to_real = real(dble(time%days) * 86400.d0 + dble(time%seconds) + &
-     dble(time%ticks)/dble(ticks_per_second), kind=r8_kind)
+convert_time_type_to_real = real(time%days, r8_kind) * 86400.0_r8_kind + real(time%seconds, r8_kind) + &
+                    real(time%ticks, r8_kind)/real(ticks_per_second, r8_kind)
 
-end function time_type_to_real
+end function convert_time_type_to_real
+
+!> Converts time to seconds and returns it as a real number
+subroutine time_type_to_real_kind8(time, time_real)
+    type(time_type), intent(in) :: time !< time_type representing an amount time
+    real(kind=r8_kind), intent(out) :: time_real !< equivalent time in seconds
+    time_real = time_type_to_real(time)
+end subroutine time_type_to_real_kind8
+
+!> Converts time to seconds and returns it as a real number
+subroutine time_type_to_real_kind4(time, time_real)
+    type(time_type), intent(in) :: time!< time_type representing an amount time
+    real(kind=r4_kind), intent(out) :: time_real !< equivalent time in seconds
+    if(.not.module_is_initialized) call time_manager_init
+
+    time_real = real(time%days, r4_kind) * 86400.0_r4_kind + real(time%seconds, r4_kind) + &
+                real(time%ticks, r4_kind)/real(ticks_per_second, r4_kind)
+end subroutine time_type_to_real_kind4 
 
 !> Returns the largest time, t, for which n * t <= time.
 function time_scalar_divide(time, n)
