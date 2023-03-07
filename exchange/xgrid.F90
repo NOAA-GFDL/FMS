@@ -2579,7 +2579,7 @@ subroutine set_comm_get1(xmap)
            endif
         endif
      enddo
-     if (associated(unpack_ind)) deallocate(unpack_ind) !< Check if allocated
+     if (associated(comm%unpack_ind)) deallocate(comm%unpack_ind) !< Check if allocated
      allocate(comm%unpack_ind(nrecv))
      pos = 0
      do p = 0, npes-1
