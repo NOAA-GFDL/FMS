@@ -1,67 +1,66 @@
-#define C(x) x _ FMS_MOD_TEST_KIND
+subroutine TEST_MONOTONIC_ARRAY_
+  integer, parameter :: k = FMS_MOD_TEST_KIND_
+  real(FMS_MOD_TEST_KIND_) :: arr1(1), arr2(2), arr5(5)
 
-subroutine TEST_MONOTONIC_ARRAY
-  real(FMS_MOD_TEST_KIND) :: arr1(1), arr2(2), arr5(5)
+  arr1 = [1._k]
+  call TEST_MONOTONIC_ARRAY_ASSERT_(arr1, .false.)
+  call TEST_MONOTONIC_ARRAY_ASSERT_(arr1, .false., 0)
 
-  arr1 = [C(1.)]
-  call TEST_MONOTONIC_ARRAY_ASSERT(arr1, .false.)
-  call TEST_MONOTONIC_ARRAY_ASSERT(arr1, .false., 0)
+  arr1 = [-1._k]
+  call TEST_MONOTONIC_ARRAY_ASSERT_(arr1, .false.)
+  call TEST_MONOTONIC_ARRAY_ASSERT_(arr1, .false., 0)
 
-  arr1 = [C(-1.)]
-  call TEST_MONOTONIC_ARRAY_ASSERT(arr1, .false.)
-  call TEST_MONOTONIC_ARRAY_ASSERT(arr1, .false., 0)
+  arr2 = [-1._k, 1._k]
+  call TEST_MONOTONIC_ARRAY_ASSERT_(arr2, .true.)
+  call TEST_MONOTONIC_ARRAY_ASSERT_(arr2, .true., 1)
 
-  arr2 = [C(-1.), C(1.)]
-  call TEST_MONOTONIC_ARRAY_ASSERT(arr2, .true.)
-  call TEST_MONOTONIC_ARRAY_ASSERT(arr2, .true., 1)
+  arr2 = [1._k, -1._k]
+  call TEST_MONOTONIC_ARRAY_ASSERT_(arr2, .true.)
+  call TEST_MONOTONIC_ARRAY_ASSERT_(arr2, .true., -1)
 
-  arr2 = [C(1.), C(-1.)]
-  call TEST_MONOTONIC_ARRAY_ASSERT(arr2, .true.)
-  call TEST_MONOTONIC_ARRAY_ASSERT(arr2, .true., -1)
+  arr2 = [1e10_k, 1e20_k]
+  call TEST_MONOTONIC_ARRAY_ASSERT_(arr2, .true.)
+  call TEST_MONOTONIC_ARRAY_ASSERT_(arr2, .true., 1)
 
-  arr2 = [C(1e10), C(1e20)]
-  call TEST_MONOTONIC_ARRAY_ASSERT(arr2, .true.)
-  call TEST_MONOTONIC_ARRAY_ASSERT(arr2, .true., 1)
+  arr2 = [1e10_k, 1e-20_k]
+  call TEST_MONOTONIC_ARRAY_ASSERT_(arr2, .true.)
+  call TEST_MONOTONIC_ARRAY_ASSERT_(arr2, .true., -1)
 
-  arr2 = [C(1e10), C(1e-20)]
-  call TEST_MONOTONIC_ARRAY_ASSERT(arr2, .true.)
-  call TEST_MONOTONIC_ARRAY_ASSERT(arr2, .true., -1)
+  arr5 = [-2._k, -1._k, 0._k, 1._k, 2._k]
+  call TEST_MONOTONIC_ARRAY_ASSERT_(arr5, .true.)
+  call TEST_MONOTONIC_ARRAY_ASSERT_(arr5, .true., 1)
 
-  arr5 = [C(-2.), C(-1.), C(0.), C(1.), C(2.)]
-  call TEST_MONOTONIC_ARRAY_ASSERT(arr5, .true.)
-  call TEST_MONOTONIC_ARRAY_ASSERT(arr5, .true., 1)
+  arr5 = [2._k, 1._k, 0._k, -1._k, -2._k]
+  call TEST_MONOTONIC_ARRAY_ASSERT_(arr5, .true.)
+  call TEST_MONOTONIC_ARRAY_ASSERT_(arr5, .true., -1)
 
-  arr5 = [C(2.), C(1.), C(0.), C(-1.), C(-2.)]
-  call TEST_MONOTONIC_ARRAY_ASSERT(arr5, .true.)
-  call TEST_MONOTONIC_ARRAY_ASSERT(arr5, .true., -1)
+  arr5 = [1._k, 2._k, 3._k, 4._k, -5._k]
+  call TEST_MONOTONIC_ARRAY_ASSERT_(arr5, .false.)
+  call TEST_MONOTONIC_ARRAY_ASSERT_(arr5, .false., 0)
 
-  arr5 = [C(1.), C(2.), C(3.), C(4.), C(-5.)]
-  call TEST_MONOTONIC_ARRAY_ASSERT(arr5, .false.)
-  call TEST_MONOTONIC_ARRAY_ASSERT(arr5, .false., 0)
+  arr5 = [-5._k, 4._k, 3._k, 2._k, 1._k]
+  call TEST_MONOTONIC_ARRAY_ASSERT_(arr5, .false.)
+  call TEST_MONOTONIC_ARRAY_ASSERT_(arr5, .false., 0)
 
-  arr5 = [C(-5.), C(4.), C(3.), C(2.), C(1.)]
-  call TEST_MONOTONIC_ARRAY_ASSERT(arr5, .false.)
-  call TEST_MONOTONIC_ARRAY_ASSERT(arr5, .false., 0)
+  arr5 = [1e-8_k, 1e-6_k, 1e-4_k, 1e-2_k, 1e0_k]
+  call TEST_MONOTONIC_ARRAY_ASSERT_(arr5, .true.)
+  call TEST_MONOTONIC_ARRAY_ASSERT_(arr5, .true., 1)
 
-  arr5 = [C(1e-8), C(1e-6), C(1e-4), C(1e-2), C(1e0)]
-  call TEST_MONOTONIC_ARRAY_ASSERT(arr5, .true.)
-  call TEST_MONOTONIC_ARRAY_ASSERT(arr5, .true., 1)
+  arr5 = [1e0_k, 1e-2_k, 1e-4_k, 1e-6_k, 1e-8_k]
+  call TEST_MONOTONIC_ARRAY_ASSERT_(arr5, .true.)
+  call TEST_MONOTONIC_ARRAY_ASSERT_(arr5, .true., -1)
 
-  arr5 = [C(1e0), C(1e-2), C(1e-4), C(1e-6), C(1e-8)]
-  call TEST_MONOTONIC_ARRAY_ASSERT(arr5, .true.)
-  call TEST_MONOTONIC_ARRAY_ASSERT(arr5, .true., -1)
+  arr5 = [1e10_k, 1e20_k, 1e30_k, 1e35_k, 9.99e37_k]
+  call TEST_MONOTONIC_ARRAY_ASSERT_(arr5, .true.)
+  call TEST_MONOTONIC_ARRAY_ASSERT_(arr5, .true., 1)
 
-  arr5 = [C(1e10), C(1e20), C(1e30), C(1e35), C(9.99e37)]
-  call TEST_MONOTONIC_ARRAY_ASSERT(arr5, .true.)
-  call TEST_MONOTONIC_ARRAY_ASSERT(arr5, .true., 1)
-
-  arr5 = [C(-1e10), C(-1e20), C(-1e30), C(-1e35), C(-9.99e37)]
-  call TEST_MONOTONIC_ARRAY_ASSERT(arr5, .true.)
-  call TEST_MONOTONIC_ARRAY_ASSERT(arr5, .true., -1)
+  arr5 = [-1e10_k, -1e20_k, -1e30_k, -1e35_k, -9.99e37_k]
+  call TEST_MONOTONIC_ARRAY_ASSERT_(arr5, .true.)
+  call TEST_MONOTONIC_ARRAY_ASSERT_(arr5, .true., -1)
 end subroutine
 
-subroutine TEST_MONOTONIC_ARRAY_ASSERT(arr, ret_expected, direction_expected)
-  real(FMS_MOD_TEST_KIND), intent(in) :: arr(:)
+subroutine TEST_MONOTONIC_ARRAY_ASSERT_(arr, ret_expected, direction_expected)
+  real(FMS_MOD_TEST_KIND_), intent(in) :: arr(:)
   logical, intent(in) :: ret_expected
   integer, intent(in), optional :: direction_expected
   integer :: direction_test
@@ -84,5 +83,3 @@ subroutine TEST_MONOTONIC_ARRAY_ASSERT(arr, ret_expected, direction_expected)
     call mpp_error(FATAL, "monotonic_array unit test failed")
   endif
 end subroutine
-
-#undef C
