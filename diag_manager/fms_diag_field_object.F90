@@ -1049,6 +1049,11 @@ subroutine get_dimnames(this, diag_axis, field_yaml, unlim_dimname, dimnames, is
     dimnames(naxis - 1) = 'time_of_day_'//int2str(field_yaml%get_n_diurnal())
   endif
 
+  !< The second to last dimension is always the diurnal axis
+  if (field_yaml%has_n_diurnal()) then
+    dimnames(naxis - 1) = 'time_of_day_'//int2str(field_yaml%get_n_diurnal())
+  endif
+
   !< The last dimension is always the unlimited dimensions
   if (.not. this%is_static()) dimnames(naxis) = unlim_dimname
 
