@@ -1164,7 +1164,7 @@ module fms_diag_axis_object_mod
     class(FmsNetcdfFile_t),         intent(inout) :: fileobj  !< Fms2_io fileobj to write the data to
 
     call register_axis(fileobj, this%axis_name, size(this%diurnal_data))
-    call register_field(fileobj, this%axis_name, pack_size_str, (/this%axis_name/))
+    call register_field(fileobj, this%axis_name, pack_size_str, (/trim(this%axis_name)/))
     call register_variable_attribute(fileobj, this%axis_name, "units", &
                                     &trim(this%units), str_len=len_trim(this%units))
     call register_variable_attribute(fileobj, this%axis_name, "long_name", &
