@@ -17,11 +17,6 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 
-! Status values:
-! * (2/14) TODO     : Not yet implemented
-! * (8/14) SKELETAL : Skeletal test has been implemented; comprehensive test has not yet been implemented
-! * (4/14) DONE     : Comprehensive test has been implemented
-
 ! gfortran lacks support for the macro pasting operator, but it does support whitespace around the underscore.
 #ifdef __GFORTRAN__
 #define C(x) x _ AU_TEST_KIND
@@ -122,10 +117,6 @@ call fms_end
 
 contains
 
-!
-! The actual unit tests
-!
-
 ! Status: TODO
 ! function get_axis_modulo(fileobj, axisname)
 subroutine test_get_axis_modulo
@@ -142,7 +133,6 @@ subroutine test_get_axis_modulo_times
   write(stderr(), "(A)") "Warning: get_axis_modulo_times unit test not yet implemented"
 end subroutine
 
-! Status: DONE
 subroutine test_get_axis_cart
   type(GetAxisCartTest_t) :: test
   type(GetAxisCartTestCase_t), pointer :: test_nonexistent_var
@@ -270,7 +260,6 @@ subroutine test_special_axis_names(test, special_axis_names, ret_expected)
   enddo
 end subroutine
 
-! Status: DONE
 subroutine test_lon_in_range
   real(AU_TEST_KIND), parameter :: eps_big = C(1e-3), eps_tiny = C(1e-5)
 
@@ -323,7 +312,6 @@ end subroutine
 
 #define CALC_FRAC_INDEX(i, v, values) real(i, AU_TEST_KIND) + (v - values(i)) / (values(i + 1) - values(i))
 
-! Status: DONE
 subroutine test_frac_index
   real(AU_TEST_KIND) :: values(6), v, fi
   integer :: i, n
@@ -385,7 +373,7 @@ subroutine frac_index_assert(fval, arr, ret_expected)
   endif
 end subroutine
 
-! Status: SKELETAL
+! Test that frac_index fails with a non-monotonic array
 subroutine test_frac_index_fail
   real(AU_TEST_KIND) :: values(5)
   real(AU_TEST_KIND) :: ret_test
@@ -394,7 +382,6 @@ subroutine test_frac_index_fail
   ret_test = frac_index(C(1.5), values)
 end subroutine
 
-! Status: SKELETAL
 subroutine test_nearest_index
   real(AU_TEST_KIND) :: arr(5)
 
@@ -434,7 +421,7 @@ subroutine nearest_index_assert(val, arr, ret_expected)
   endif
 end subroutine
 
-! Status: SKELETAL
+! Test that nearest_index fails with a non-monotonic array
 subroutine test_nearest_index_fail
   real(AU_TEST_KIND) :: arr(5)
   integer :: ret_test
@@ -443,7 +430,6 @@ subroutine test_nearest_index_fail
   ret_test = nearest_index(C(5.), arr)
 end subroutine
 
-! Status: DONE
 subroutine test_axis_edges
   real(AU_TEST_KIND) :: data_in_var(10)
   real(AU_TEST_KIND) :: data_in_var_edges(2,10)
@@ -516,7 +502,6 @@ subroutine test_axis_edges
   call close_file(fileobj)
 end subroutine
 
-! Status: SKELETAL
 subroutine test_tranlon
   real(AU_TEST_KIND), dimension(5) :: lon1, lon2, lon3
 
@@ -524,10 +509,10 @@ subroutine test_tranlon
   lon2 = [C(2.), C(3.), C(4.), C(5.), C(361.)]
   lon3 = [C(3.), C(4.), C(5.), C(361.), C(362.)]
 
-  ! The first two cases seem to reveal an error in tranlon. Should tranlon be changed so that
-  ! istrt=1 in the first two cases?
-  call tranlon_assert(lon1, lon1, C(0.0),    0)
-  call tranlon_assert(lon1, lon1, C(1.0),    0)
+  ! TODO: The first two cases fail due to tranlon's unexpected behavior when no elements are translated.
+  ! Should tranlon be changed so that istrt=1 in the first two cases, or should the test be changed?
+  call tranlon_assert(lon1, lon1, C(0.0),    1)
+  call tranlon_assert(lon1, lon1, C(1.0),    1)
   call tranlon_assert(lon1, lon2, C(1.5),    2)
   call tranlon_assert(lon1, lon2, C(2.0),    2)
   call tranlon_assert(lon1, lon3, C(2.001),  3)
@@ -554,7 +539,7 @@ subroutine tranlon_assert(lon0, lon_expected, lon_start, istrt_expected)
 end subroutine
 
 ! Status: SKELETAL
-! subroutine interp_1d_1d(grid1,grid2,data1,data2, method, yp1, yp2)
+! TODO: More comprehensive interp_1d_1d test
 subroutine test_interp_1d_1d
   real(AU_TEST_KIND) :: grid1(8), grid2(5), data1(8), data2(5)
 
@@ -598,6 +583,7 @@ subroutine interp_1d_1d_assert(grid1, grid2, data1, data2_expected, method, yp1,
 end subroutine
 
 ! Status: SKELETAL
+! TODO: More comprehensive interp_1d_2d test
 subroutine test_interp_1d_2d
   real(AU_TEST_KIND) :: grid1(2,4), grid2(2,2), data1(2,4), data2(2,2)
 
@@ -631,6 +617,7 @@ subroutine interp_1d_2d_assert(grid1, grid2, data1, data2_expected)
 end subroutine
 
 ! Status: SKELETAL
+! TODO: More comprehensive interp_1d_3d test
 subroutine test_interp_1d_3d
   real(AU_TEST_KIND) :: grid1(2,2,4), grid2(2,2,2), data1(2,2,4), data2(2,2,2)
 
