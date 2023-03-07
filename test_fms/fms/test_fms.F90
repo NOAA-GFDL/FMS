@@ -1,5 +1,3 @@
-#define PRETTY(x) trim(adjustl(string(x)))
-
 module test_fms_mod
  use, intrinsic :: iso_c_binding
 

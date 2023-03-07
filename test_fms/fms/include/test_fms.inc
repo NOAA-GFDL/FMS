@@ -70,8 +70,8 @@ subroutine TEST_MONOTONIC_ARRAY_ASSERT(arr, ret_expected, direction_expected)
   if (present(direction_expected)) then
     ret_test = monotonic_array(arr, direction_test)
     if (direction_test .ne. direction_expected) then
-      write(stderr(), "(A)") "monotonic_array(arr, direction) returned incorrect direction: " // PRETTY(direction_test)
-      write(stderr(), "(A)") "Expected value: " // PRETTY(direction_expected)
+      write(stderr(), "(A)") "monotonic_array(arr, direction) returned incorrect direction: " // string(direction_test)
+      write(stderr(), "(A)") "Expected value: " // string(direction_expected)
       call mpp_error(FATAL, "monotonic_array unit test failed")
     endif
   else
