@@ -556,8 +556,6 @@
     if (associated(io_domain%y)) deallocate(io_domain%y) !< Check if associated
     if (associated(io_domain%tile_id)) deallocate(io_domain%tile_id) !< Check if associated
     allocate(io_domain%x(1), io_domain%y(1), io_domain%tile_id(1) )
-    if (associated(io_domain%x(1)%list)) deallocate(io_domain%x(1)%list) !< Check if associated
-    if (associated(io_domain%y(1)%list)) deallocate(io_domain%y(1)%list) !< Check if associated
     allocate(io_domain%x(1)%list(0:npes_x-1), io_domain%y(1)%list(0:npes_y-1) )
     n = -1
     do j = jpos_beg, jpos_beg+jpos
