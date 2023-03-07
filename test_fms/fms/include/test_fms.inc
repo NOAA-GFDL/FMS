@@ -93,7 +93,8 @@ subroutine TEST_MONOTONIC_ARRAY_ASSERT_(arr, monotonic_expected, direction_expec
   if (present(direction_expected)) then
     monotonic_test = monotonic_array(arr, direction_test)
     if (direction_test .ne. direction_expected) then
-      write(stderr(), "(A)") "monotonic_array(" // stringify(arr) // ", direction) returned incorrect direction: " // string(direction_test)
+      write(stderr(), "(A)") "monotonic_array(" // stringify(arr) // &
+                           & ", direction) returned incorrect direction: " // string(direction_test)
       write(stderr(), "(A)") "Expected direction: " // string(direction_expected)
       call mpp_error(FATAL, "monotonic_array unit test failed")
     endif
@@ -102,7 +103,8 @@ subroutine TEST_MONOTONIC_ARRAY_ASSERT_(arr, monotonic_expected, direction_expec
   endif
 
   if (monotonic_test .neqv. monotonic_expected) then
-    write(stderr(), "(A)") "monotonic_array(" // stringify(arr) // ") returned incorrect value: " // string(monotonic_test)
+    write(stderr(), "(A)") "monotonic_array(" // stringify(arr) // &
+                         & ") returned incorrect value: " // string(monotonic_test)
     write(stderr(), "(A)") "Expected return value: " // string(monotonic_expected)
     call mpp_error(FATAL, "monotonic_array unit test failed")
   endif
