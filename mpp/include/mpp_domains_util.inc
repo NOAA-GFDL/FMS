@@ -1730,7 +1730,7 @@ end subroutine mpp_get_tile_compute_domains
      if (associated(domain_in%list)) then
          starting = lbound(domain_in%list, 1)
          ending = ubound(domain_in%list, 1)
-         if (associated(domain_out)) deallocate(domain_out) !< Check if allocated
+         if (associated(domain_out%list)) deallocate(domain_out%list) !< Check if allocated
          allocate(domain_out%list(starting:ending))
 
          do i = starting, ending

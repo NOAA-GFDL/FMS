@@ -7612,7 +7612,7 @@ if(present(whalo) .or. present(ehalo) .or. present(shalo) .or. present(nhalo) ) 
 else
  call mpp_define_null_domain(domain_out)
  nlist = size(domain_in%list(:))
- if (associated(domain_out%list)) deallocate(domain%list) !< Check if allocated
+ if (associated(domain_out%list)) deallocate(domain_out%list) !< Check if allocated
  allocate(domain_out%list(0:nlist-1) )
  do i = 0, nlist-1
     allocate(domain_out%list(i)%tile_id(1))
