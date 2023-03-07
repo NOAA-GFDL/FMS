@@ -17,7 +17,8 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 
-! gfortran lacks support for the macro pasting operator, but it does support whitespace around the underscore.
+! gfortran lacks support for the macro pasting operator, but it does support
+! whitespace around the underscore.
 #ifdef __GFORTRAN__
 #define C(x) x _ AU_TEST_KIND
 #else
@@ -304,7 +305,8 @@ subroutine lon_in_range_assert(lon, l_start, ret_expected)
   ret_test = lon_in_range(lon, l_start)
 
   if (ret_test /= ret_expected) then
-    write(stderr(), "(A)") "lon_in_range(" // string(lon) // ", " // string(l_start) // ") returned erroneous value: " // string(ret_test)
+    write(stderr(), "(A)") "lon_in_range(" // string(lon) // ", " // string(l_start) // &
+                         & ") returned erroneous value: " // string(ret_test)
     write(stderr(), "(A)") "Expected return value: " // string(ret_expected)
     call mpp_error(FATAL, "lon_in_range unit test failed")
   endif
@@ -714,7 +716,8 @@ subroutine array_compare_1d(arr1, arr2, msg)
   do i=1,n
     if (arr1(i).ne.arr2(i)) then
       write(stderr(), "(A)") "1D array comparison failed due to element " // string(i)
-      write(stderr(), "(A)") "Array 1 has value " // string(arr1(i)) // " and array 2 has value " // string(arr2(i))
+      write(stderr(), "(A)") "Array 1 has value " // string(arr1(i)) // &
+                           & " and array 2 has value " // string(arr2(i))
       call mpp_error(FATAL, msg)
     endif
   enddo
@@ -742,7 +745,8 @@ subroutine array_compare_2d(arr1, arr2, msg)
     do j=1,m
       if (arr1(j,i).ne.arr2(j,i)) then
         write(stderr(), "(A)") "2D array comparison failed due to element " // string(j) // "," // string(i)
-        write(stderr(), "(A)") "Array 1 has value " // string(arr1(j,i)) // " and array 2 has value " // string(arr2(j,i))
+        write(stderr(), "(A)") "Array 1 has value " // string(arr1(j,i)) // &
+                             & " and array 2 has value " // string(arr2(j,i))
         call mpp_error(FATAL, msg)
       endif
     enddo
@@ -773,8 +777,10 @@ subroutine array_compare_3d(arr1, arr2, msg)
     do j=1,m
       do k=1,l
         if (arr1(k,j,i).ne.arr2(k,j,i)) then
-          write(stderr(), "(A)") "3D array comparison failed due to element " // string(k) // "," // string(j) // "," // string(i)
-          write(stderr(), "(A)") "Array 1 has value " // string(arr1(k,j,i)) // " and array 2 has value " // string(arr2(k,j,i))
+          write(stderr(), "(A)") "3D array comparison failed due to element " // &
+                               & string(k) // "," // string(j) // "," // string(i)
+          write(stderr(), "(A)") "Array 1 has value " // string(arr1(k,j,i)) // &
+                               & " and array 2 has value " // string(arr2(k,j,i))
           call mpp_error(FATAL, msg)
         endif
       enddo
