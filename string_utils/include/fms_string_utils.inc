@@ -23,7 +23,7 @@ function STRING_FROM_REAL_(r, fmt)
   real(STRING_UTILS_KIND_), intent(in) :: r !< Real number to be converted to a string
   character(*), intent(in), optional :: fmt !< Optional format string for the real number
   character(:), allocatable :: STRING_FROM_REAL_
-  character(25) :: s
+  character(32) :: s
 
   if (present(fmt)) then
     write(s, "(" // fmt // ")") r
