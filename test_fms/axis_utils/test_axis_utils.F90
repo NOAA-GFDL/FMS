@@ -22,7 +22,12 @@
 ! * (8/14) SKELETAL : Skeletal test has been implemented; comprehensive test has not yet been implemented
 ! * (4/14) DONE     : Comprehensive test has been implemented
 
+! gfortran lacks support for the macro pasting operator, but it does support whitespace around the underscore.
+#ifdef __GFORTRAN__
 #define C(x) x _ AU_TEST_KIND
+#else
+#define C(x) x ## _ ## AU_TEST_KIND
+#endif
 
 program test_axis_utils
 
