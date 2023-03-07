@@ -804,6 +804,16 @@ diag_files:
     var_name: var1
     reduction: average
     kind: r4
+- file_name: file10_diurnal
+  freq: 1
+  freq_units: days
+  time_units: hours
+  unlimdim: time
+  varlist:
+  - module: ocn_mod
+    var_name: var1
+    reduction: diurnal12
+    kind: r4
 _EOF
 
   my_test_count=`expr $my_test_count + 1`
