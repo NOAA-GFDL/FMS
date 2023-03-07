@@ -289,6 +289,7 @@ foreach(kind ${kinds})
   target_include_directories(${libTgt}_f PRIVATE include
                                                  fms
                                                  fms2_io/include
+                                                 string_utils/include
                                                  mpp/include
                                                  constants)
   target_compile_definitions(${libTgt}_f PRIVATE "${fms_defs}")
@@ -325,6 +326,7 @@ foreach(kind ${kinds})
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/fms>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/fms2_io/include>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/string_utils/include>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/mpp/include>)
 
   target_include_directories(${libTgt} INTERFACE

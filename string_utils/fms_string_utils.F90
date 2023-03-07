@@ -28,6 +28,7 @@
 !> @{
 module fms_string_utils_mod
   use, intrinsic :: iso_c_binding
+  use platform_mod, only: r4_kind, r8_kind
   use mpp_mod
 
   implicit none
@@ -43,6 +44,7 @@ module fms_string_utils_mod
   public :: fms_cstring2cpointer
   public :: string
   public :: string_copy
+  public :: stringify
 !> @}
 
   interface
@@ -112,12 +114,20 @@ interface fms_c2f_string
   module procedure cpointer_fortran_conversion
 end interface
 
-!> Converts a number to a string
+!> Converts a number or a Boolean value to a string
 !> @ingroup fms_mod
 interface string
-   module procedure string_from_integer
-   module procedure string_from_real
-   module procedure string_from_logical
+  module procedure string_from_logical
+  module procedure string_from_integer
+  module procedure string_from_r4, string_from_r8
+end interface
+
+!> Converts an array of real numbers to a string
+!> @ingroup fms_mod
+interface stringify
+  module procedure stringify_1d_r4, stringify_1d_r8
+  module procedure stringify_2d_r4, stringify_2d_r8
+  module procedure stringify_3d_r4, stringify_3d_r8
 end interface
 
 !> @addtogroup fms_string_utils_mod
@@ -238,33 +248,6 @@ contains
     enddo
 end subroutine fms_f2c_string
 
-
-  !> @brief Converts an integer to a string
-  !> @return The integer as a string
-  function string_from_integer(i) result (res)
-    integer, intent(in) :: i !< Integer to be converted to a string
-    character(:),allocatable :: res !< String converted frominteger
-    character(range(i)+2) :: tmp !< Temp string that is set to correct size
-    write(tmp,'(i0)') i
-    res = trim(tmp)
-   return
-
-  end function string_from_integer
-
-  !#######################################################################
-  !> @brief Converts a real to a string
-  !> @return The real number as a string
-  function string_from_real(r)
-    real, intent(in) :: r !< Real number to be converted to a string
-    character(len=32) :: string_from_real
-
-    write(string_from_real,*) r
-
-    return
-
-  end function string_from_real
-
-  !#######################################################################
   !> @brief Converts a Boolean value to a string
   !> @return The Boolean value as a string
   function string_from_logical(v)
@@ -276,10 +259,18 @@ end subroutine fms_f2c_string
     else
       string_from_logical = "False"
     endif
+  end function
 
-    return
-
-  end function string_from_logical
+  !> @brief Converts an integer to a string
+  !> @return The integer as a string
+  function string_from_integer(i) result (res)
+    integer, intent(in) :: i !< Integer to be converted to a string
+    character(:),allocatable :: res !< String converted frominteger
+    character(range(i)+2) :: tmp !< Temp string that is set to correct size
+    write(tmp,'(i0)') i
+    res = trim(tmp)
+   return
+  end function string_from_integer
 
   !> @brief Safely copy a string from one buffer to another.
   subroutine string_copy(dest, source, check_for_null)
@@ -307,6 +298,9 @@ end subroutine fms_f2c_string
     dest = ""
     dest = adjustl(trim(source(1:i)))
   end subroutine string_copy
+
+#include "fms_string_utils_r4.fh"
+#include "fms_string_utils_r8.fh"
 
 end module fms_string_utils_mod
 !> @}
