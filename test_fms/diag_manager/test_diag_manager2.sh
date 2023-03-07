@@ -45,6 +45,7 @@ setup_test () {
 &diag_manager_nml
    max_field_attributes=3
    debug_diag_manager=.true.
+
 /
 
 &ensemble_nml
@@ -482,6 +483,9 @@ test_expect_success "wildcard filenames (test $my_test_count)" '
   mpirun -n 1 ../test_diag_manager_time
 '
 
+rm -f input.nml diag_table
+
+touch input.nml
 cat <<_EOF > diag_table
 test_diag_manager
 2 1 1 0 0 0
@@ -498,7 +502,11 @@ my_test_count=`expr $my_test_count + 1`
 test_expect_success "diurnal test (test $my_test_count)" '
   mpirun -n 1 ../test_diag_manager_time
 '
-
+setup_test
+my_test_count=`expr $my_test_count + 1`
+test_expect_success "Test the diag update_buffer (test $my_test_count)" '
+  mpirun -n 1 ../test_diag_update_buffer
+'
 ## uses some updated code but doesn't need flag
 my_test_count=`expr $my_test_count + 1`
 test_expect_success "test_diag_dlinked_list (test $my_test_count)" '

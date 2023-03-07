@@ -52,13 +52,15 @@ use platform_mod
   USE constants_mod, ONLY: SECONDS_PER_HOUR, SECONDS_PER_MINUTE
   USE mpp_domains_mod, ONLY: domain1d, domain2d, domainUG
   USE fms_mod, ONLY: write_version_number
+  USE fms_diag_bbox_mod, ONLY: fmsDiagIbounds_type
   use mpp_mod, ONLY: mpp_error, FATAL, WARNING, mpp_pe, mpp_root_pe, stdlog
+
 #ifdef use_netCDF
   ! NF90_FILL_REAL has value of 9.9692099683868690e+36.
   USE netcdf, ONLY: NF_FILL_REAL => NF90_FILL_REAL
 #endif
   use fms2_io_mod
-  use  iso_c_binding
+
   IMPLICIT NONE
 
   PUBLIC
@@ -161,6 +163,8 @@ use platform_mod
      INTEGER, allocatable, DIMENSION(:) :: iatt !< INTEGER array to hold value of INTEGER attributes
   END TYPE diag_atttype
 
+  !!TODO: coord_type deserves a better name, like coord_interval_type or coord_bbox_type.
+  !!  additionally, consider using a 2D array.
   !> @brief Define the region for field output
   !> @ingroup diag_data_mod
   TYPE coord_type
@@ -286,7 +290,7 @@ use platform_mod
      TYPE(diag_grid) :: output_grid
      LOGICAL :: local_output, need_compute, phys_window, written_once
      LOGICAL :: reduced_k_range
-     INTEGER :: imin, imax, jmin, jmax, kmin, kmax
+     TYPE(fmsDiagIbounds_type) :: buff_bounds
      TYPE(time_type) :: Time_of_prev_field_data
      TYPE(diag_atttype), allocatable, dimension(:) :: attributes
      INTEGER :: num_attributes
@@ -380,6 +384,8 @@ use platform_mod
   LOGICAL :: prepend_date = .TRUE. !< Should the history file have the start date prepended to the file name.
                                    !! <TT>.TRUE.</TT> is only supported if the diag_manager_init
                                    !! routine is called with the optional time_init parameter.
+  LOGICAL :: use_mpp_io = .false. !< false is fms2_io (default); true is mpp_io
+  LOGICAL :: use_refactored_send = .false. !< Namelist flag to use refactored send_data math funcitons.
   LOGICAL :: use_modern_diag = .false. !< Namelist flag to use the modernized diag_manager code
   LOGICAL :: use_clock_average = .false. !< .TRUE. if the averaging of variable is done based on the clock
                                          !! For example, if doing daily averages and your start the simulation in
@@ -398,9 +404,12 @@ use platform_mod
   !! @note `pack_size` and `pack_size_str` are set in diag_manager_init depending on how FMS was compiled
   !! if FMS was compiled with default reals as 64bit, it will be set to 1 and "double",
   !! if FMS was compiled with default reals as 32bit, it will set to 2 and "float"
+  !! The time variables will written in the precision defined by `pack_size_str`
   !! This is to reproduce previous diag manager behavior.
+  !TODO This may not be mixed precision friendly
   INTEGER :: pack_size = 1 !< 1 for double and 2 for float
-  CHARACTER(len=10) :: pack_size_str="double" !< Pack size as a string to be used in fms2_io register call
+  CHARACTER(len=6) :: pack_size_str="double" !< Pack size as a string to be used in fms2_io register call
+                                             !! set to "double" or "float"
 
   ! <!-- REAL public variables -->
   REAL :: EMPTY = 0.0
