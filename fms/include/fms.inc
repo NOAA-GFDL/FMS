@@ -22,19 +22,19 @@
 !! @return If the input array of real values either increases or decreases monotonically then true
 !! is returned, otherwise false is returned.
 
-function MONOTONIC_ARRAY ( array, direction )
-real(FMS_MOD_KIND), intent(in) :: array(:) !< An array of real values. If the size(array) < 2 this function
-                                           !! assumes the array is not monotonic, no fatal error will occur.
+function MONOTONIC_ARRAY_(array, direction)
+real(FMS_MOD_KIND_), intent(in) :: array(:) !< An array of real values. If the size(array) < 2 this function
+                                            !! assumes the array is not monotonic, no fatal error will occur.
 integer, intent(out), optional :: direction !< If the input array is:
                                             !! >> monotonic (small to large) then direction = +1.
                                             !! >> monotonic (large to small) then direction = -1.
                                             !! >> not monotonic then direction = 0.
-logical :: MONOTONIC_ARRAY !< If the input array of real values either increases or decreases monotonically
-                           !! then TRUE is returned, otherwise FALSE is returned.
+logical :: MONOTONIC_ARRAY_ !< If the input array of real values either increases or decreases monotonically
+                            !! then TRUE is returned, otherwise FALSE is returned.
 integer :: i
 
 ! initialize
-  MONOTONIC_ARRAY = .false.
+  MONOTONIC_ARRAY_ = .false.
   if (present(direction)) direction = 0
 
 ! array too short
@@ -46,7 +46,7 @@ integer :: i
        if (array(i-1) < array(i)) cycle
        return
      enddo
-     MONOTONIC_ARRAY = .true.
+     MONOTONIC_ARRAY_ = .true.
      if (present(direction)) direction = +1
 
 ! descending
@@ -55,8 +55,8 @@ integer :: i
        if (array(i-1) > array(i)) cycle
        return
      enddo
-     MONOTONIC_ARRAY = .true.
+     MONOTONIC_ARRAY_ = .true.
      if (present(direction)) direction = -1
   endif
 
-end function MONOTONIC_ARRAY
+end function

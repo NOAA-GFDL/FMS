@@ -754,17 +754,8 @@ subroutine write_version_number (version, tag, unit)
 
 end subroutine write_version_number
 
-#define FMS_MOD_KIND r4_kind
-#define MONOTONIC_ARRAY monotonic_array_r4
-#include "include/fms.inc"
-#undef FMS_MOD_KIND
-#undef MONOTONIC_ARRAY
-
-#define FMS_MOD_KIND r8_kind
-#define MONOTONIC_ARRAY monotonic_array_r8
-#include "include/fms.inc"
-#undef FMS_MOD_KIND
-#undef MONOTONIC_ARRAY
+#include "fms_r4.fh"
+#include "fms_r8.fh"
 
 end module fms_mod
 ! <INFO>
