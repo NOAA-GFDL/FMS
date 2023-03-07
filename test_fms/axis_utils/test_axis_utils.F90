@@ -23,7 +23,6 @@
 ! * (4/14) DONE     : Comprehensive test has been implemented
 
 #define C(x) x _ AU_TEST_KIND
-#define PRETTY(x) trim(adjustl(string(x)))
 
 program test_axis_utils
 
@@ -32,7 +31,7 @@ use fms2_io_mod, only: FmsNetcdfFile_t, open_file, close_file, register_axis, re
                      & register_variable_attribute, write_data
 use platform_mod, only: r4_kind, r8_kind
 use mpp_mod, only: mpp_error, fatal, stderr
-use fms_string_utils_mod, only: string
+use fms_string_utils_mod, only: string, stringify
 use axis_utils2_mod
 
 implicit none
@@ -311,8 +310,8 @@ subroutine lon_in_range_assert(lon, l_start, ret_expected)
   ret_test = lon_in_range(lon, l_start)
 
   if (ret_test /= ret_expected) then
-    write(stderr(), "(A)") "lon_in_range(" // PRETTY(lon) // ", " // PRETTY(l_start) // ") returned erroneous value: " // PRETTY(ret_test)
-    write(stderr(), "(A)") "Expected return value: " // PRETTY(ret_expected)
+    write(stderr(), "(A)") "lon_in_range(" // string(lon) // ", " // string(l_start) // ") returned erroneous value: " // string(ret_test)
+    write(stderr(), "(A)") "Expected return value: " // string(ret_expected)
     call mpp_error(FATAL, "lon_in_range unit test failed")
   endif
 end subroutine
@@ -374,8 +373,9 @@ subroutine frac_index_assert(fval, arr, ret_expected)
   ret_test = frac_index(fval, arr)
 
   if (ret_test /= ret_expected) then
-    write(stderr(), "(A)") "frac_index(" // PRETTY(fval) // ", " // array_to_string_1d(arr) // ") returned erroneous value: " // PRETTY(ret_test)
-    write(stderr(), "(A)") "Expected return value: " // PRETTY(ret_expected)
+    write(stderr(), "(A)") "frac_index(" // string(fval) // ", " // stringify(arr) // &
+                         & ") returned erroneous value: " // string(ret_test)
+    write(stderr(), "(A)") "Expected return value: " // string(ret_expected)
     call mpp_error(FATAL, "frac_index unit test failed")
   endif
 end subroutine
@@ -422,8 +422,9 @@ subroutine nearest_index_assert(val, arr, ret_expected)
   ret_test = nearest_index(val, arr)
 
   if (ret_test /= ret_expected) then
-    write(stderr(), "(A)") "nearest_index(" // PRETTY(val) // ", ", array_to_string_1d(arr), ") returned erroneous value: " // PRETTY(ret_test)
-    write(stderr(), "(A)") "Expected return value: " // PRETTY(ret_expected)
+    write(stderr(), "(A)") "nearest_index(" // string(val) // ", " // stringify(arr) // &
+                         & ") returned erroneous value: " // string(ret_test)
+    write(stderr(), "(A)") "Expected return value: " // string(ret_expected)
     call mpp_error(FATAL, "nearest_index unit test failed")
   endif
 end subroutine
@@ -534,15 +535,15 @@ subroutine tranlon_assert(lon0, lon_expected, lon_start, istrt_expected)
   real(AU_TEST_KIND) :: lon_test(size(lon0))
   character(:), allocatable :: test_name
 
-  test_name = "tranlon(" // array_to_string_1d(lon0) // ", " // PRETTY(lon_start) // ", istrt)"
+  test_name = "tranlon(" // stringify(lon0) // ", " // string(lon_start) // ", istrt)"
 
   lon_test = lon0
   call tranlon(lon_test, lon_start, istrt_test)
   call array_compare_1d(lon_test, lon_expected, test_name // " unit test failed")
 
   if (istrt_test.ne.istrt_expected) then
-    write(stderr(), "(A)") test_name // " returned erroneous istrt value: " // PRETTY(istrt_test)
-    write(stderr(), "(A)") "Expected istrt value: " // PRETTY(istrt_expected)
+    write(stderr(), "(A)") test_name // " returned erroneous istrt value: " // string(istrt_test)
+    write(stderr(), "(A)") "Expected istrt value: " // string(istrt_expected)
     call mpp_error(FATAL, "tranlon unit test failed")
   endif
 end subroutine
@@ -569,20 +570,20 @@ subroutine interp_1d_1d_assert(grid1, grid2, data1, data2_expected, method, yp1,
   character(:), allocatable :: test_name
 
   test_name = "interp_1d_1d(" // &
-              array_to_string_1d(grid1) // ", " // &
-              array_to_string_1d(grid2) // ", " // &
-              array_to_string_1d(data1) // ", data2"
+              stringify(grid1) // ", " // &
+              stringify(grid2) // ", " // &
+              stringify(data1) // ", data2"
 
   if (present(method)) then
     test_name = test_name // ", method=" // method
   endif
 
   if (present(yp1)) then
-    test_name = test_name // ", yp1=" // PRETTY(yp1)
+    test_name = test_name // ", yp1=" // string(yp1)
   endif
 
   if (present(yp2)) then
-    test_name = test_name // ", yp2=" // PRETTY(yp2)
+    test_name = test_name // ", yp2=" // string(yp2)
   endif
 
   test_name = test_name // ")"
@@ -616,9 +617,9 @@ subroutine interp_1d_2d_assert(grid1, grid2, data1, data2_expected)
   character(:), allocatable :: test_name
 
   test_name = "interp_1d_2d(" // &
-              array_to_string_2d(grid1) // ", " // &
-              array_to_string_2d(grid2) // ", " // &
-              array_to_string_2d(data1) // ", data2)"
+              stringify(grid1) // ", " // &
+              stringify(grid2) // ", " // &
+              stringify(data1) // ", data2)"
 
   call interp_1d(grid1, grid2, data1, data2_test)
   call array_compare_2d(data2_test, data2_expected, test_name // " unit test failed")
@@ -662,20 +663,20 @@ subroutine interp_1d_3d_assert(grid1, grid2, data1, data2_expected, method, yp1,
   character(:), allocatable :: test_name
 
   test_name = "interp_1d_3d(" // &
-              array_to_string_3d(grid1) // ", " // &
-              array_to_string_3d(grid2) // ", " // &
-              array_to_string_3d(data1) // ", data2"
+              stringify(grid1) // ", " // &
+              stringify(grid2) // ", " // &
+              stringify(data1) // ", data2"
 
   if (present(method)) then
     test_name = test_name // ", method=" // method
   endif
 
   if (present(yp1)) then
-    test_name = test_name // ", yp1=" // PRETTY(yp1)
+    test_name = test_name // ", yp1=" // string(yp1)
   endif
 
   if (present(yp2)) then
-    test_name = test_name // ", yp2=" // PRETTY(yp2)
+    test_name = test_name // ", yp2=" // string(yp2)
   endif
 
   test_name = test_name // ")"
@@ -714,14 +715,14 @@ subroutine array_compare_1d(arr1, arr2, msg)
 
   if (n2.ne.n) then
     write(stderr(), "(A)") "1D array comparison failed due to incompatible array sizes"
-    write(stderr(), "(A)") "Array 1 has size " // PRETTY(n) // " and array 2 has size " // PRETTY(n2)
+    write(stderr(), "(A)") "Array 1 has size " // string(n) // " and array 2 has size " // string(n2)
     call mpp_error(FATAL, msg)
   endif
 
   do i=1,n
     if (arr1(i).ne.arr2(i)) then
-      write(stderr(), "(A)") "1D array comparison failed due to element " // PRETTY(i)
-      write(stderr(), "(A)") "Array 1 has value " // PRETTY(arr1(i)) // " and array 2 has value " // PRETTY(arr2(i))
+      write(stderr(), "(A)") "1D array comparison failed due to element " // string(i)
+      write(stderr(), "(A)") "Array 1 has value " // string(arr1(i)) // " and array 2 has value " // string(arr2(i))
       call mpp_error(FATAL, msg)
     endif
   enddo
@@ -740,16 +741,16 @@ subroutine array_compare_2d(arr1, arr2, msg)
 
   if (m.ne.m2 .or. n.ne.n2) then
     write(stderr(), "(A)") "2D array comparison failed due to incompatible array sizes"
-    write(stderr(), "(A)") "Array 1 has size " // PRETTY(m) // "x" // PRETTY(n) // &
-                          & " and array 2 has size " // PRETTY(m2) // "x" // PRETTY(n2)
+    write(stderr(), "(A)") "Array 1 has size " // string(m) // "x" // string(n) // &
+                          & " and array 2 has size " // string(m2) // "x" // string(n2)
     call mpp_error(FATAL, msg)
   endif
 
   do i=1,n
     do j=1,m
       if (arr1(j,i).ne.arr2(j,i)) then
-        write(stderr(), "(A)") "2D array comparison failed due to element " // PRETTY(j) // "," // PRETTY(i)
-        write(stderr(), "(A)") "Array 1 has value " // PRETTY(arr1(j,i)) // " and array 2 has value " // PRETTY(arr2(j,i))
+        write(stderr(), "(A)") "2D array comparison failed due to element " // string(j) // "," // string(i)
+        write(stderr(), "(A)") "Array 1 has value " // string(arr1(j,i)) // " and array 2 has value " // string(arr2(j,i))
         call mpp_error(FATAL, msg)
       endif
     enddo
@@ -771,8 +772,8 @@ subroutine array_compare_3d(arr1, arr2, msg)
 
   if (l.ne.l2 .or. m.ne.m2 .or. n.ne.n2) then
     write(stderr(), "(A)") "3D array comparison failed due to incompatible array sizes"
-    write(stderr(), "(A)") "Array 1 has size " // PRETTY(l) // "x" // PRETTY(m) // "x" // PRETTY(n) // &
-                           & " and array 2 has size " // PRETTY(l2) // "x" // PRETTY(m2) // "x" // PRETTY(n2)
+    write(stderr(), "(A)") "Array 1 has size " // string(l) // "x" // string(m) // "x" // string(n) // &
+                           & " and array 2 has size " // string(l2) // "x" // string(m2) // "x" // string(n2)
     call mpp_error(FATAL, msg)
   endif
 
@@ -780,73 +781,13 @@ subroutine array_compare_3d(arr1, arr2, msg)
     do j=1,m
       do k=1,l
         if (arr1(k,j,i).ne.arr2(k,j,i)) then
-          write(stderr(), "(A)") "3D array comparison failed due to element " // PRETTY(k) // "," // PRETTY(j) // "," // PRETTY(i)
-          write(stderr(), "(A)") "Array 1 has value " // PRETTY(arr1(k,j,i)) // " and array 2 has value " // PRETTY(arr2(k,j,i))
+          write(stderr(), "(A)") "3D array comparison failed due to element " // string(k) // "," // string(j) // "," // string(i)
+          write(stderr(), "(A)") "Array 1 has value " // string(arr1(k,j,i)) // " and array 2 has value " // string(arr2(k,j,i))
           call mpp_error(FATAL, msg)
         endif
       enddo
     enddo
   enddo
 end subroutine
-
-function array_to_string_1d(arr)
-  real(AU_TEST_KIND), dimension(:), intent(in) :: arr
-  character(:), allocatable :: array_to_string_1d
-  integer :: i,n
-
-  n = size(arr)
-
-  if (n .gt. 0) then
-    array_to_string_1d = "[" // PRETTY(arr(1))
-  else
-    array_to_string_1d = "["
-  endif
-
-  do i=2,n
-    array_to_string_1d = array_to_string_1d // ", " // PRETTY(arr(i))
-  enddo
-
-  array_to_string_1d = array_to_string_1d // "]"
-end function
-
-function array_to_string_2d(arr)
-  real(AU_TEST_KIND), dimension(:,:), intent(in) :: arr
-  character(:), allocatable :: array_to_string_2d
-  integer :: i,n
-
-  n = size(arr, 2)
-
-  if (n .gt. 0) then
-    array_to_string_2d = "[" // array_to_string_1d(arr(:,1))
-  else
-    array_to_string_2d = "["
-  endif
-
-  do i=2,n
-    array_to_string_2d = array_to_string_2d // ", " // array_to_string_1d(arr(:,i))
-  enddo
-
-  array_to_string_2d = array_to_string_2d // "]"
-end function
-
-function array_to_string_3d(arr)
-  real(AU_TEST_KIND), dimension(:,:,:), intent(in) :: arr
-  character(:), allocatable :: array_to_string_3d
-  integer :: i,n
-
-  n = size(arr, 3)
-
-  if (n .gt. 0) then
-    array_to_string_3d = "[" // array_to_string_2d(arr(:,:,1))
-  else
-    array_to_string_3d = "["
-  endif
-
-  do i=2,n
-    array_to_string_3d = array_to_string_3d // ", " // array_to_string_2d(arr(:,:,i))
-  enddo
-
-  array_to_string_3d = array_to_string_3d // "]"
-end function
 
 end program test_axis_utils
