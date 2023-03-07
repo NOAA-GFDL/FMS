@@ -1,0 +1,9 @@
+#define FMS_MOD_TEST_KIND r8_kind
+#define TEST_MONOTONIC_ARRAY test_monotonic_array_r8
+#define TEST_MONOTONIC_ARRAY_ASSERT test_monotonic_array_assert_r8
+
+#include "test_fms.inc"
+
+#undef FMS_MOD_TEST_KIND
+#undef TEST_MONOTONIC_ARRAY
+#undef TEST_MONOTONIC_ARRAY_ASSERT

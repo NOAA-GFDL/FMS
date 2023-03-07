@@ -79,24 +79,7 @@ program test_fms
 
 contains
 
-#define FMS_MOD_TEST_KIND r4_kind
-#define TEST_MONOTONIC_ARRAY test_monotonic_array_r4
-#define TEST_MONOTONIC_ARRAY_ASSERT test_monotonic_array_assert_r4
-
-#include "include/test_fms.inc"
-
-#undef FMS_MOD_TEST_KIND
-#undef TEST_MONOTONIC_ARRAY
-#undef TEST_MONOTONIC_ARRAY_ASSERT
-
-#define FMS_MOD_TEST_KIND r8_kind
-#define TEST_MONOTONIC_ARRAY test_monotonic_array_r8
-#define TEST_MONOTONIC_ARRAY_ASSERT test_monotonic_array_assert_r8
-
-#include "include/test_fms.inc"
-
-#undef FMS_MOD_TEST_KIND
-#undef TEST_MONOTONIC_ARRAY
-#undef TEST_MONOTONIC_ARRAY_ASSERT
+#include "test_fms_r4.fh"
+#include "test_fms_r8.fh"
 
 end program test_fms
