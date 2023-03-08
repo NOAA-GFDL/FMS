@@ -689,6 +689,10 @@ subroutine add_axes(this, axis_ids, diag_axis, naxis, yaml_id)
   is_cube_sphere = .false.
 
   field_yaml => diag_yaml%get_diag_field_from_id(yaml_id)
+  !< Created a copy here, because if the variable has a z subaxis var_axis_ids will be modified in
+  !! `create_new_z_subaxis` to contain the id of the new z subaxis instead of the parent axis,
+  !! which will be added to the the list of axis in the file object (axis_ids is intent(in),
+  !! which is why the copy was needed)
   var_axis_ids = axis_ids
 
   if (field_yaml%has_var_zbounds()) then

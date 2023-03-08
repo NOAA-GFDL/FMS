@@ -1001,7 +1001,7 @@ result(rslt)
 end function get_longname_to_write
 
 !> @brief Determine the dimension names to use when registering the field to fms2_io
-subroutine get_dimnames(this, diag_axis, field_yaml, unlim_dimname, dimnames, is_regional, has_zbounds)
+subroutine get_dimnames(this, diag_axis, field_yaml, unlim_dimname, dimnames, is_regional)
   class (fmsDiagField_type),        target, intent(inout) :: this          !< diag field
   class(fmsDiagAxisContainer_type), target, intent(in)    :: diag_axis(:)  !< Diag_axis object
   type(diagYamlFilesVar_type),              intent(in)    :: field_yaml    !< Field info from diag_table yaml
@@ -1009,8 +1009,6 @@ subroutine get_dimnames(this, diag_axis, field_yaml, unlim_dimname, dimnames, is
   character(len=120), allocatable,          intent(out)   :: dimnames(:)   !< Array of the dimension names
                                                                            !! for the field
   logical,                                  intent(in)    :: is_regional   !< Flag indicating if the field is regional
-  logical,                                  intent(in)    :: has_zbounds   !< Flag indicating if this variable has a
-                                                                           !! sub_zaxis
 
   integer                                   :: i     !< For do loops
   integer                                   :: naxis !< Number of axis for the field
@@ -1029,7 +1027,7 @@ subroutine get_dimnames(this, diag_axis, field_yaml, unlim_dimname, dimnames, is
   allocate(dimnames(naxis))
 
   !< Duplicated do loops for #performance
-  if (has_zbounds) then
+  if (field_yaml%has_var_zbounds()) then
     do i = 1, size(this%axis_ids)
       axis_ptr => diag_axis(this%axis_ids(i))
       if (axis_ptr%axis%is_z_axis()) then
@@ -1043,10 +1041,6 @@ subroutine get_dimnames(this, diag_axis, field_yaml, unlim_dimname, dimnames, is
       axis_ptr => diag_axis(this%axis_ids(i))
       dimnames(i) = axis_ptr%axis%get_axis_name(is_regional)
     enddo
-  endif
-  !< The second to last dimension is always the diurnal axis
-  if (field_yaml%has_n_diurnal()) then
-    dimnames(naxis - 1) = 'time_of_day_'//int2str(field_yaml%get_n_diurnal())
   endif
 
   !< The second to last dimension is always the diurnal axis
@@ -1099,7 +1093,7 @@ subroutine write_field_metadata(this, fileobj, file_id, yaml_id, diag_axis, unli
   var_name = field_yaml%get_var_outname()
 
   if (allocated(this%axis_ids)) then
-    call this%get_dimnames(diag_axis, field_yaml, unlim_dimname, dimnames, is_regional, field_yaml%has_var_zbounds())
+    call this%get_dimnames(diag_axis, field_yaml, unlim_dimname, dimnames, is_regional)
     call register_field_wrap(fileobj, var_name, this%get_var_skind(field_yaml), dimnames)
   else
     call register_field_wrap(fileobj, var_name, this%get_var_skind(field_yaml))
