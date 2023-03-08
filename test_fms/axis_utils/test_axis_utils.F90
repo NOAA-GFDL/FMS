@@ -205,6 +205,8 @@ subroutine get_axis_cart_test_add(test, var_name, cart)
   character(*), intent(in) :: var_name
   character(1), intent(in) :: cart
 
+  ! Temporarily overload `r4_kind` and `r8_kind` with the strings "float" and "double",
+  ! respectively, to obtain a string representation of the kind.
 #define r4_kind "float"
 #define r8_kind "double"
   character(*), parameter :: kind_str = AU_TEST_KIND_
