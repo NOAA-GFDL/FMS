@@ -1450,12 +1450,12 @@ CONTAINS
   LOGICAL FUNCTION send_data_3d(diag_field_id, field, time, is_in, js_in, ks_in, &
              & mask, rmask, ie_in, je_in, ke_in, weight, err_msg)
     INTEGER, INTENT(in) :: diag_field_id
-    REAL, DIMENSION(:,:,:), INTENT(in) :: field
-    REAL, INTENT(in), OPTIONAL :: weight
+    CLASS(*), DIMENSION(:,:,:), INTENT(in) :: field
+    CLASS(*), INTENT(in), OPTIONAL :: weight
     TYPE (time_type), INTENT(in), OPTIONAL :: time
     INTEGER, INTENT(in), OPTIONAL :: is_in, js_in, ks_in,ie_in,je_in, ke_in
     LOGICAL, DIMENSION(:,:,:), INTENT(in), OPTIONAL :: mask
-    REAL, DIMENSION(:,:,:), INTENT(in), OPTIONAL :: rmask
+    CLASS(*), DIMENSION(:,:,:), INTENT(in), OPTIONAL :: rmask
     CHARACTER(len=*), INTENT(out), OPTIONAL :: err_msg
 
     if (present(mask) .and. present(rmask)) then
