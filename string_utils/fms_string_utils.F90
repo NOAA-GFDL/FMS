@@ -114,14 +114,6 @@ interface fms_c2f_string
   module procedure cpointer_fortran_conversion
 end interface
 
-!> Converts a number or a Boolean value to a string
-!> @ingroup fms_mod
-interface string
-  module procedure string_from_logical
-  module procedure string_from_integer
-  module procedure string_from_r4, string_from_r8
-end interface
-
 !> Converts an array of real numbers to a string
 !> @ingroup fms_mod
 interface stringify
@@ -248,29 +240,51 @@ contains
     enddo
 end subroutine fms_f2c_string
 
-  !> @brief Converts a Boolean value to a string
-  !> @return The Boolean value as a string
-  function string_from_logical(v)
-    logical, intent(in) :: v !< Boolean value to be converted to a string
-    character(:), allocatable :: string_from_logical
+  !> @brief Converts a number or a Boolean value to a string
+  !> @return The argument as a string
+  function string(v, fmt)
+    class(*), intent(in) :: v ! Value to be converted to a string
+    character(*), intent(in), optional :: fmt !< Optional format string for a real argument
+    character(:), allocatable :: string
 
-    if (v) then
-      string_from_logical = "True"
-    else
-      string_from_logical = "False"
-    endif
+    select type(v)
+      type is (logical)
+        if (v) then
+          string = "True"
+        else
+          string = "False"
+        endif
+
+      type is (integer)
+        allocate(character(32) :: string)
+        write(string, '(i0)') v
+        string = trim(adjustl(string))
+
+      type is (real(r4_kind))
+        allocate(character(32) :: string)
+        if (present(fmt)) then
+          write(string, "(" // fmt // ")") v
+        else
+          write(string, *) v
+        endif
+        string = trim(adjustl(string))
+
+      type is (real(r8_kind))
+        allocate(character(32) :: string)
+        if (present(fmt)) then
+          write(string, "(" // fmt // ")") v
+        else
+          write(string, *) v
+        endif
+        string = trim(adjustl(string))
+
+      type is (character(*))
+        string = v
+
+      class default
+        call mpp_error(FATAL, "string() called with incompatible argument")
+    end select
   end function
-
-  !> @brief Converts an integer to a string
-  !> @return The integer as a string
-  function string_from_integer(i) result (res)
-    integer, intent(in) :: i !< Integer to be converted to a string
-    character(:),allocatable :: res !< String converted frominteger
-    character(range(i)+2) :: tmp !< Temp string that is set to correct size
-    write(tmp,'(i0)') i
-    res = trim(tmp)
-   return
-  end function string_from_integer
 
   !> @brief Safely copy a string from one buffer to another.
   subroutine string_copy(dest, source, check_for_null)
