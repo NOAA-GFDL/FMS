@@ -223,41 +223,6 @@
     return
   end subroutine TRANLON_
 
-  !>     nearest_index = index of nearest data point within "array" corresponding to
-  !!            "value".
-  !!
-  !!     inputs:
-  !!
-  !!     value  = arbitrary data...same units as elements in "array"
-  !!     array  = array of data points  (must be monotonically increasing)
-  !!
-  !!     output:
-  !!
-  !!     nearest_index =  index of nearest data point to "value"
-  !!             if "value" is outside the domain of "array" then nearest_index = 1
-  !!             or "ia" depending on whether array(1) or array(ia) is
-  !!             closest to "value"
-  !!
-  !!             note: if "array" is dimensioned array(0:ia) in the calling
-  !!                   program, then the returned index should be reduced
-  !!                   by one to account for the zero base.
-  !!
-  !!     example:
-  !!
-  !!     let model depths be defined by the following:
-  !!     parameter (km=5)
-  !!     dimension z(km)
-  !!     data z /5.0, 10.0, 50.0, 100.0, 250.0/
-  !!
-  !!     k1 = nearest_index (12.5, z, km)
-  !!     k2 = nearest_index (0.0, z, km)
-  !!
-  !!     k1 would be set to 2, and k2 would be set to 1 so that
-  !!     z(k1) would be the nearest data point to 12.5 and z(k2) would
-  !!   be the nearest data point to 0.0
-  !!
-  !!   @return real frac_index
-
 
   function FRAC_INDEX_(value, array)
 
