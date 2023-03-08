@@ -28,7 +28,7 @@
 !> @{
 module fms_string_utils_mod
   use, intrinsic :: iso_c_binding
-  use platform_mod, only: r4_kind, r8_kind
+  use platform_mod, only: r4_kind, r8_kind, i4_kind, i8_kind
   use mpp_mod
 
   implicit none
@@ -243,21 +243,37 @@ end subroutine fms_f2c_string
   !> @brief Converts a number or a Boolean value to a string
   !> @return The argument as a string
   function string(v, fmt)
-    class(*), intent(in) :: v ! Value to be converted to a string
-    character(*), intent(in), optional :: fmt !< Optional format string for a real argument
+    class(*), intent(in) :: v !< Value to be converted to a string
+    character(*), intent(in), optional :: fmt !< Optional format string for a real or integral argument
     character(:), allocatable :: string
 
     select type(v)
       type is (logical)
+        if (present(fmt)) then
+          call mpp_error(WARNING, "string(): Ignoring `fmt` argument for type `logical`")
+        endif
         if (v) then
           string = "True"
         else
           string = "False"
         endif
 
-      type is (integer)
+      type is (integer(i4_kind))
         allocate(character(32) :: string)
-        write(string, '(i0)') v
+        if (present(fmt)) then
+          write(string, "(" // fmt // ")") v
+        else
+          write(string, '(i0)') v
+        endif
+        string = trim(adjustl(string))
+
+      type is (integer(i8_kind))
+        allocate(character(32) :: string)
+        if (present(fmt)) then
+          write(string, "(" // fmt // ")") v
+        else
+          write(string, '(i0)') v
+        endif
         string = trim(adjustl(string))
 
       type is (real(r4_kind))
@@ -278,13 +294,11 @@ end subroutine fms_f2c_string
         endif
         string = trim(adjustl(string))
 
-      type is (character(*))
-        string = v
-
       class default
-        call mpp_error(FATAL, "string() called with incompatible argument")
+        call mpp_error(FATAL, "string(): Called with incompatible argument type. Possible types &
+                              &include integer(4), integer(8), real(4), real(8), or logical.")
     end select
-  end function
+  end function string
 
   !> @brief Safely copy a string from one buffer to another.
   subroutine string_copy(dest, source, check_for_null)
