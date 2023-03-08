@@ -299,7 +299,6 @@ foreach(kind ${kinds})
                                                  constants4
                                                  constants
                                                  axis_utils/include)
-
   target_compile_definitions(${libTgt}_f PRIVATE "${fms_defs}")
   target_compile_definitions(${libTgt}_f PRIVATE "${${kind}_defs}")
 
