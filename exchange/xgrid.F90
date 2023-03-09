@@ -1321,7 +1321,7 @@ subroutine get_grid_version1(grid, grid_id, grid_file)
 
   call mpp_get_compute_domain(grid%domain, is, ie, js, je)
   if (associated(grid%lon)) deallocate(grid%lon) !< Check if allocated
-￼ if (associated(grid%lat)) deallocate(grid%lat) !< Check if allocated
+  if (associated(grid%lat)) deallocate(grid%lat) !< Check if allocated
   allocate(grid%lon(grid%im), grid%lat(grid%jm))
   if(grid_id == 'ATM') then
      call read_data(fileobj, 'xta', lonb)
@@ -1417,7 +1417,7 @@ subroutine get_grid_version2(grid, grid_id, grid_file)
         allocate(tmpx(nlon*2+1, 1), tmpy(1, nlat*2+1))
         call read_data(fileobj, "x", tmpx, corner=start, edge_lengths=nread)
         if (associated(grid%lon)) deallocate(grid%lon) !< Check if allocated
-￼       if (associated(grid%lat)) deallocate(grid%lat) !< Check if allocated
+        if (associated(grid%lat)) deallocate(grid%lat) !< Check if allocated
         allocate(grid%lon(grid%im), grid%lat(grid%jm))
         do i = 1, grid%im
            grid%lon(i) = tmpx(2*i,1) * d2r
@@ -1431,7 +1431,7 @@ subroutine get_grid_version2(grid, grid_id, grid_file)
         grid%is_latlon = .true.
      else
         if (associated(grid%geolon)) deallocate(grid%geolon) !< Check if allocated
-￼       if (associated(grid%geolat)) deallocate(grid%geolat) !< Check if allocated
+        if (associated(grid%geolat)) deallocate(grid%geolat) !< Check if allocated
         allocate(grid%geolon(grid%isd_me:grid%ied_me, grid%jsd_me:grid%jed_me))
         allocate(grid%geolat(grid%isd_me:grid%ied_me, grid%jsd_me:grid%jed_me))
         grid%geolon = 1e10
@@ -1978,7 +1978,7 @@ subroutine setup_xmap(xmap, grid_ids, grid_domains, grid_file, atm_grid, lnd_ug_
 
   if (make_exchange_reproduce) then
    if (associated(xmap%send_count_repro)) deallocate(xmap%send_count_repro) !< Check if allocated
-￼   if (associated(xmap%recv_count_repro)) deallocate(xmap%recv_count_repro) !< Check if allocated
+   if (associated(xmap%recv_count_repro)) deallocate(xmap%recv_count_repro) !< Check if allocated
      allocate( xmap%send_count_repro(0:xmap%npes-1) )
      allocate( xmap%recv_count_repro(0:xmap%npes-1) )
      xmap%send_count_repro = 0
