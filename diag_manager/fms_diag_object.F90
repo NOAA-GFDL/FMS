@@ -538,6 +538,9 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
       allocate (file_field_ids(size(diag_file%FMS_diag_file%get_field_ids() )))
       file_field_ids = diag_file%FMS_diag_file%get_field_ids()
       field_loop: do ifield = 1, size(file_field_ids)
+        ! If the field is not registered go away
+        if (diag_file%FMS_diag_field%is_field_registered(ifield)) cycle
+
         diag_field => this%FMS_diag_fields(file_field_ids(ifield))
         !> Check if math needs to be done
         ! math = diag_field%get_math_needs_to_be_done()

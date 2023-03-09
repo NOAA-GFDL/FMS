@@ -93,6 +93,7 @@ type :: fmsDiagFile_type
 
  contains
   procedure, public :: add_field_and_yaml_id
+  procedure, public :: is_field_registered
   procedure, public :: init_diurnal_axis
   procedure, public :: has_file_metadata_from_model
   procedure, public :: has_fileobj
@@ -254,6 +255,15 @@ logical function fms_diag_files_object_init (files_array)
 !    FATAL)
   endif
 end function fms_diag_files_object_init
+
+!< @brief Determine if the field corresponding to the field_id was registered to the file
+!! @return .True. if the field was registed to the file
+logical function is_field_registered(this, field_id)
+  class(fmsDiagFile_type), intent(inout) :: this         !< The file object
+  integer,                 intent(in)    :: field_id     !< Id of the field to check
+
+  is_field_registered = this%field_registered(field_id)
+end function is_field_registered
 
 !> \brief Adds a field and yaml ID to the file
 subroutine add_field_and_yaml_id (this, new_field_id, yaml_id)
