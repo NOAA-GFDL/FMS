@@ -17,14 +17,6 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 
-! gfortran lacks support for the macro pasting operator, but it does support
-! whitespace around the underscore.
-#ifdef __GFORTRAN__
-#define C(x) x _ AU_TEST_KIND_
-#else
-#define C(x) x ## _ ## AU_TEST_KIND_
-#endif
-
 program test_axis_utils
 
 use fms_mod,         only : fms_init, fms_end, lowercase
@@ -48,6 +40,7 @@ type GetAxisCartTestCase_t
   type(GetAxisCartTestCase_t), pointer :: next => NULL()
 end type
 
+integer, parameter :: k = AU_TEST_KIND_
 integer :: i
 character(100) :: arg
 
@@ -264,40 +257,40 @@ subroutine test_special_axis_names(test, special_axis_names, ret_expected)
 end subroutine
 
 subroutine test_lon_in_range
-  real(AU_TEST_KIND_), parameter :: eps_big = C(1e-3), eps_tiny = C(1e-5)
+  real(AU_TEST_KIND_), parameter :: eps_big = 1e-3_k, eps_tiny = 1e-5_k
 
   ! Test some cases where no translation is needed
-  call lon_in_range_assert(C(0.),              C(0.),  C(0.))
-  call lon_in_range_assert(C(1.),              C(0.),  C(1.))
-  call lon_in_range_assert(C(350.),            C(0.),  C(350.))
-  call lon_in_range_assert(C(1.),              C(1.),  C(1.))
-  call lon_in_range_assert(C(350.),            C(1.),  C(350.))
-  call lon_in_range_assert(C(359.),            C(0.),  C(359.))
-  call lon_in_range_assert(C(359.),            C(1.),  C(359.))
+  call lon_in_range_assert(0._k,              0._k,  0._k)
+  call lon_in_range_assert(1._k,              0._k,  1._k)
+  call lon_in_range_assert(350._k,            0._k,  350._k)
+  call lon_in_range_assert(1._k,              1._k,  1._k)
+  call lon_in_range_assert(350._k,            1._k,  350._k)
+  call lon_in_range_assert(359._k,            0._k,  359._k)
+  call lon_in_range_assert(359._k,            1._k,  359._k)
 
   ! Test up-translation
-  call lon_in_range_assert(C(-2.),             C(-1.), C(358.))
-  call lon_in_range_assert(C(-2.),             C(0.),  C(358.))
-  call lon_in_range_assert(C(-2.),             C(5.),  C(358.))
-  call lon_in_range_assert(C(-1.),             C(0.),  C(359.))
-  call lon_in_range_assert(C(-1.),             C(5.),  C(359.))
-  call lon_in_range_assert(C(0.),              C(5.),  C(360.))
-  call lon_in_range_assert(C(1.),              C(5.),  C(361.))
+  call lon_in_range_assert(-2._k,             -1._k, 358._k)
+  call lon_in_range_assert(-2._k,             0._k,  358._k)
+  call lon_in_range_assert(-2._k,             5._k,  358._k)
+  call lon_in_range_assert(-1._k,             0._k,  359._k)
+  call lon_in_range_assert(-1._k,             5._k,  359._k)
+  call lon_in_range_assert(0._k,              5._k,  360._k)
+  call lon_in_range_assert(1._k,              5._k,  361._k)
 
   ! Test down-translation
-  call lon_in_range_assert(C(359.),            C(-1.), C(-1.))
-  call lon_in_range_assert(C(360.),            C(-1.), C(0.))
-  call lon_in_range_assert(C(360.),            C(0.),  C(0.))
-  call lon_in_range_assert(C(361.),            C(-1.), C(1.))
-  call lon_in_range_assert(C(361.),            C(0.),  C(1.))
-  call lon_in_range_assert(C(362.),            C(-1.), C(2.))
-  call lon_in_range_assert(C(362.),            C(0.),  C(2.))
+  call lon_in_range_assert(359._k,            -1._k, -1._k)
+  call lon_in_range_assert(360._k,            -1._k, 0._k)
+  call lon_in_range_assert(360._k,            0._k,  0._k)
+  call lon_in_range_assert(361._k,            -1._k, 1._k)
+  call lon_in_range_assert(361._k,            0._k,  1._k)
+  call lon_in_range_assert(362._k,            -1._k, 2._k)
+  call lon_in_range_assert(362._k,            0._k,  2._k)
 
   ! Test rounding behavior
-  call lon_in_range_assert(eps_tiny,           C(0.),  C(0.))
-  call lon_in_range_assert(eps_big,            C(0.),  eps_big)
-  call lon_in_range_assert(C(360.) - eps_tiny, C(0.),  C(0.))
-  call lon_in_range_assert(C(360.) - eps_big,  C(0.),  C(360.) - eps_big)
+  call lon_in_range_assert(eps_tiny,          0._k,  0._k)
+  call lon_in_range_assert(eps_big,           0._k,  eps_big)
+  call lon_in_range_assert(360._k - eps_tiny, 0._k,  0._k)
+  call lon_in_range_assert(360._k - eps_big,  0._k,  360._k - eps_big)
 end subroutine
 
 subroutine lon_in_range_assert(lon, l_start, ret_expected)
@@ -319,14 +312,14 @@ end subroutine
 subroutine test_frac_index
   real(AU_TEST_KIND_) :: values(6), v, fi
   integer :: i, n
-  real(AU_TEST_KIND_), parameter :: f10=C(0.1), f25=C(0.25), f50=C(0.5), f99=C(0.99)
+  real(AU_TEST_KIND_), parameter :: f10=.1_k, f25=.25_k, f50=.5_k, f99=.99_k
 
-  values = [C(1.), C(2.), C(3.), C(5.), C(10.), C(11.)]
+  values = [1._k, 2._k, 3._k, 5._k, 10._k, 11._k]
   n = size(values)
 
   ! Test values outside of the input array
-  call frac_index_assert(real(values(1), AU_TEST_KIND_) - f50, values, C(-1.))
-  call frac_index_assert(real(values(n), AU_TEST_KIND_) + f50, values, C(-1.))
+  call frac_index_assert(real(values(1), AU_TEST_KIND_) - f50, values, -1._k)
+  call frac_index_assert(real(values(n), AU_TEST_KIND_) + f50, values, -1._k)
 
   ! Test the actual indices
   do i=1,n
@@ -382,32 +375,32 @@ subroutine test_frac_index_fail
   real(AU_TEST_KIND_) :: values(5)
   real(AU_TEST_KIND_) :: ret_test
 
-  values = [C(1.), C(2.), C(4.), C(3.), C(5.)]
-  ret_test = frac_index(C(1.5), values)
+  values = [1._k, 2._k, 4._k, 3._k, 5._k]
+  ret_test = frac_index(1.5_k, values)
 end subroutine
 
 subroutine test_nearest_index
   real(AU_TEST_KIND_) :: arr(5)
 
-  arr = [C(5.), C(12.), C(20.), C(40.), C(100.)]
+  arr = [5._k, 12._k, 20._k, 40._k, 100._k]
 
   ! Test values beyond array boundaries
-  call nearest_index_assert(C(4.), arr, 1)
-  call nearest_index_assert(C(1000.), arr, size(arr))
+  call nearest_index_assert(4._k,    arr, 1)
+  call nearest_index_assert(1000._k, arr, size(arr))
 
   ! Test values actually in the array
-  call nearest_index_assert(C(5.), arr, 1)
-  call nearest_index_assert(C(12.), arr, 2)
-  call nearest_index_assert(C(20.), arr, 3)
-  call nearest_index_assert(C(40.), arr, 4)
-  call nearest_index_assert(C(100.), arr, 5)
+  call nearest_index_assert(5._k,    arr, 1)
+  call nearest_index_assert(12._k,   arr, 2)
+  call nearest_index_assert(20._k,   arr, 3)
+  call nearest_index_assert(40._k,   arr, 4)
+  call nearest_index_assert(100._k,  arr, 5)
 
   ! Test the intervals between array values
-  call nearest_index_assert(C(6.), arr, 1)
-  call nearest_index_assert(C(11.), arr, 2)
-  call nearest_index_assert(C(15.), arr, 2)
-  call nearest_index_assert(C(18.), arr, 3)
-  call nearest_index_assert(C(29.), arr, 3)
+  call nearest_index_assert(6._k,    arr, 1)
+  call nearest_index_assert(11._k,   arr, 2)
+  call nearest_index_assert(15._k,   arr, 2)
+  call nearest_index_assert(18._k,   arr, 3)
+  call nearest_index_assert(29._k,   arr, 3)
 end subroutine
 
 subroutine nearest_index_assert(val, arr, ret_expected)
@@ -430,8 +423,8 @@ subroutine test_nearest_index_fail
   real(AU_TEST_KIND_) :: arr(5)
   integer :: ret_test
 
-  arr=[C(5.), C(12.), C(40.), C(20.), C(100.)]
-  ret_test = nearest_index(C(5.), arr)
+  arr=[5._k, 12._k, 40._k, 20._k, 100._k]
+  ret_test = nearest_index(5._k, arr)
 end subroutine
 
 subroutine test_axis_edges
@@ -443,7 +436,7 @@ subroutine test_axis_edges
   integer :: i
 
   do i=1,10
-     data_in_var(i) = real(i, AU_TEST_KIND_) - C(0.5)
+     data_in_var(i) = real(i, AU_TEST_KIND_) - 0.5_k
 
      data_in_var_edges(1,i) = real(i-1, AU_TEST_KIND_)
      data_in_var_edges(2,i) = real(i, AU_TEST_KIND_)
@@ -451,7 +444,7 @@ subroutine test_axis_edges
      data_in_answers(i) = real(i-1, AU_TEST_KIND_)
   enddo
 
-  data_in_answers(11) = C(10.)
+  data_in_answers(11) = 10._k
 
   call open_netcdf_w(fileobj)
 
@@ -480,26 +473,26 @@ subroutine test_axis_edges
 
   !< Case 1: Here the variable "axis" in the file does not have the attribute "bounds" or "edges", so
   !! it calculates them from the data in "axis"
-  answers = C(0.)
+  answers = 0._k
   call axis_edges(fileobj, "axis", answers)
   call array_compare_1d(answers, data_in_answers, "axis_edges unit test failed (case 1)")
 
   !< Case 2: Here the variable "axis_with_bounds" in the file has the attribute
   !! "bounds", so the data is read from the variable "bounds"
-  answers = C(0.)
+  answers = 0._k
   call axis_edges(fileobj, "axis_with_bounds", answers)
   call array_compare_1d(answers, data_in_answers, "axis_edges unit test failed (case 2)")
 
   !< Case 3: Here the variable "axis_with_edges" in the file has the attribute
   !"edges", so the data is read from the variable "edges"
-  answers = C(0.)
+  answers = 0._k
   call axis_edges(fileobj, "axis_with_edges", answers)
   call array_compare_1d(answers, data_in_answers, "axis_edges unit test failed (case 3)")
 
   !< Case 4: Here the flag "reproduce_null_char_bug_flag" is turned on, so the
   !! edges are calculated from the data in axis because edges has a null character
   !! in the end
-  answers = C(0.)
+  answers = 0._k
   call axis_edges(fileobj, "axis_with_edges", answers, reproduce_null_char_bug_flag=.true.)
   call array_compare_1d(answers, data_in_answers, "axis_edges unit test failed (case 4)")
 
@@ -509,17 +502,17 @@ end subroutine
 subroutine test_tranlon
   real(AU_TEST_KIND_), dimension(5) :: lon1, lon2, lon3
 
-  lon1 = [C(1.), C(2.), C(3.), C(4.), C(5.)]
-  lon2 = [C(2.), C(3.), C(4.), C(5.), C(361.)]
-  lon3 = [C(3.), C(4.), C(5.), C(361.), C(362.)]
+  lon1 = [1._k, 2._k, 3._k, 4._k,   5._k]
+  lon2 = [2._k, 3._k, 4._k, 5._k,   361._k]
+  lon3 = [3._k, 4._k, 5._k, 361._k, 362._k]
 
   ! TODO: The first two cases fail due to tranlon's unexpected behavior when no elements are translated.
   ! Should tranlon be changed so that istrt=1 in the first two cases, or should the test be changed?
-  call tranlon_assert(lon1, lon1, C(0.0),    1)
-  call tranlon_assert(lon1, lon1, C(1.0),    1)
-  call tranlon_assert(lon1, lon2, C(1.5),    2)
-  call tranlon_assert(lon1, lon2, C(2.0),    2)
-  call tranlon_assert(lon1, lon3, C(2.001),  3)
+  call tranlon_assert(lon1, lon1, 0.0_k,    1)
+  call tranlon_assert(lon1, lon1, 1.0_k,    1)
+  call tranlon_assert(lon1, lon2, 1.5_k,    2)
+  call tranlon_assert(lon1, lon2, 2.0_k,    2)
+  call tranlon_assert(lon1, lon3, 2.001_k,  3)
 end subroutine
 
 subroutine tranlon_assert(lon0, lon_expected, lon_start, istrt_expected)
@@ -547,10 +540,10 @@ end subroutine
 subroutine test_interp_1d_1d
   real(AU_TEST_KIND_) :: grid1(8), grid2(5), data1(8), data2(5)
 
-  grid1 = [C(1.), C(2.), C(3.), C(4.), C(5.), C(6.), C(7.), C(8.)]
-  grid2 = [C(2.), C(3.), C(4.), C(5.), C(6.)]
-  data1 = [C(101.), C(102.), C(103.), C(104.), C(105.), C(106.), C(107.), C(108.)]
-  data2 = [C(102.), C(103.), C(104.), C(105.), C(106.)]
+  grid1 = [1._k, 2._k, 3._k, 4._k, 5._k, 6._k, 7._k, 8._k]
+  grid2 = [2._k, 3._k, 4._k, 5._k, 6._k]
+  data1 = [101._k, 102._k, 103._k, 104._k, 105._k, 106._k, 107._k, 108._k]
+  data2 = [102._k, 103._k, 104._k, 105._k, 106._k]
 
   call interp_1d_1d_assert(grid1, grid2, data1, data2, "linear")
   call interp_1d_1d_assert(grid1, grid2, data1, data2, "cubic_spline")
@@ -591,17 +584,17 @@ end subroutine
 subroutine test_interp_1d_2d
   real(AU_TEST_KIND_) :: grid1(2,4), grid2(2,2), data1(2,4), data2(2,2)
 
-  grid1(1,:) = [C(1.), C(2.), C(3.), C(4.)]
-  grid1(2,:) = [C(5.), C(6.), C(7.), C(8.)]
+  grid1(1,:) = [1._k, 2._k, 3._k, 4._k]
+  grid1(2,:) = [5._k, 6._k, 7._k, 8._k]
 
-  grid2(1,:) = [C(2.), C(3.)]
-  grid2(2,:) = [C(6.), C(7.)]
+  grid2(1,:) = [2._k, 3._k]
+  grid2(2,:) = [6._k, 7._k]
 
-  data1(1,:) = [C(101.), C(102.), C(103.), C(104.)]
-  data1(2,:) = [C(105.), C(106.), C(107.), C(108.)]
+  data1(1,:) = [101._k, 102._k, 103._k, 104._k]
+  data1(2,:) = [105._k, 106._k, 107._k, 108._k]
 
-  data2(1,:) = [C(102.), C(103.)]
-  data2(2,:) = [C(106.), C(107.)]
+  data2(1,:) = [102._k, 103._k]
+  data2(2,:) = [106._k, 107._k]
 
   call interp_1d_2d_assert(grid1, grid2, data1, data2)
 end subroutine
@@ -625,25 +618,25 @@ end subroutine
 subroutine test_interp_1d_3d
   real(AU_TEST_KIND_) :: grid1(2,2,4), grid2(2,2,2), data1(2,2,4), data2(2,2,2)
 
-  grid1(1,1,:) = [C(1.), C(2.), C(3.), C(4.)]
-  grid1(1,2,:) = [C(5.), C(6.), C(7.), C(8.)]
-  grid1(2,1,:) = [C(21.), C(22.), C(23.), C(24.)]
-  grid1(2,2,:) = [C(25.), C(26.), C(27.), C(28.)]
+  grid1(1,1,:) = [1._k, 2._k, 3._k, 4._k]
+  grid1(1,2,:) = [5._k, 6._k, 7._k, 8._k]
+  grid1(2,1,:) = [21._k, 22._k, 23._k, 24._k]
+  grid1(2,2,:) = [25._k, 26._k, 27._k, 28._k]
 
-  grid2(1,1,:) = [C(2.), C(3.)]
-  grid2(1,2,:) = [C(6.), C(7.)]
-  grid2(2,1,:) = [C(22.), C(23.)]
-  grid2(2,2,:) = [C(26.), C(27.)]
+  grid2(1,1,:) = [2._k, 3._k]
+  grid2(1,2,:) = [6._k, 7._k]
+  grid2(2,1,:) = [22._k, 23._k]
+  grid2(2,2,:) = [26._k, 27._k]
 
-  data1(1,1,:) = [C(101.), C(102.), C(103.), C(104.)]
-  data1(1,2,:) = [C(105.), C(106.), C(107.), C(108.)]
-  data1(2,1,:) = [C(201.), C(202.), C(203.), C(204.)]
-  data1(2,2,:) = [C(205.), C(206.), C(207.), C(208.)]
+  data1(1,1,:) = [101._k, 102._k, 103._k, 104._k]
+  data1(1,2,:) = [105._k, 106._k, 107._k, 108._k]
+  data1(2,1,:) = [201._k, 202._k, 203._k, 204._k]
+  data1(2,2,:) = [205._k, 206._k, 207._k, 208._k]
 
-  data2(1,1,:) = [C(102.), C(103.)]
-  data2(1,2,:) = [C(106.), C(107.)]
-  data2(2,1,:) = [C(202.), C(203.)]
-  data2(2,2,:) = [C(206.), C(207.)]
+  data2(1,1,:) = [102._k, 103._k]
+  data2(1,2,:) = [106._k, 107._k]
+  data2(2,1,:) = [202._k, 203._k]
+  data2(2,2,:) = [206._k, 207._k]
 
   call interp_1d_3d_assert(grid1, grid2, data1, data2)
   call interp_1d_3d_assert(grid1, grid2, data1, data2, "linear")
@@ -655,7 +648,7 @@ subroutine interp_1d_3d_assert(grid1, grid2, data1, data2_expected, method, yp1,
   character(*), intent(in), optional :: method
   real(AU_TEST_KIND_), intent(in), optional :: yp1, yp2
   real(AU_TEST_KIND_) :: data2_test(size(data2_expected,1), size(data2_expected,2), size(data2_expected,3))
-  integer :: i,j,k
+  integer :: i,i2,i3
   character(:), allocatable :: test_name
 
   test_name = "interp_1d_3d(" // &
@@ -704,18 +697,18 @@ end subroutine
 subroutine array_compare_1d(arr1, arr2, msg)
   real(AU_TEST_KIND_), intent(in), dimension(:) :: arr1, arr2
   character(*), intent(in) :: msg
-  integer :: i, n, n2
+  integer :: i, m, n
 
-  n = size(arr1)
-  n2 = size(arr2)
+  m = size(arr1)
+  n = size(arr2)
 
-  if (n2.ne.n) then
+  if (m.ne.n) then
     write(stderr(), "(A)") "1D array comparison failed due to incompatible array sizes"
-    write(stderr(), "(A)") "Array 1 has size " // string(n) // " and array 2 has size " // string(n2)
+    write(stderr(), "(A)") "Array 1 has size " // string(m) // " and array 2 has size " // string(n)
     call mpp_error(FATAL, msg)
   endif
 
-  do i=1,n
+  do i=1,m
     if (arr1(i).ne.arr2(i)) then
       write(stderr(), "(A)") "1D array comparison failed due to element " // string(i)
       write(stderr(), "(A)") "Array 1 has value " // string(arr1(i)) // &
@@ -728,27 +721,27 @@ end subroutine
 subroutine array_compare_2d(arr1, arr2, msg)
   real(AU_TEST_KIND_), intent(in), dimension(:,:) :: arr1, arr2
   character(*), intent(in) :: msg
-  integer :: i,j,m,n,m2,n2
+  integer :: i1, i2, m1, m2, n1, n2
 
-  m = size(arr1, 1)
-  n = size(arr1, 2)
+  m1 = size(arr1, 1)
+  m2 = size(arr1, 2)
 
-  m2 = size(arr2, 1)
+  n1 = size(arr2, 1)
   n2 = size(arr2, 2)
 
-  if (m.ne.m2 .or. n.ne.n2) then
+  if (m1.ne.n1 .or. m2.ne.n2) then
     write(stderr(), "(A)") "2D array comparison failed due to incompatible array sizes"
-    write(stderr(), "(A)") "Array 1 has size " // string(m) // "x" // string(n) // &
-                          & " and array 2 has size " // string(m2) // "x" // string(n2)
+    write(stderr(), "(A)") "Array 1 has size " // string(m1) // "x" // string(m2) // &
+                          & " and array 2 has size " // string(n1) // "x" // string(n2)
     call mpp_error(FATAL, msg)
   endif
 
-  do i=1,n
-    do j=1,m
-      if (arr1(j,i).ne.arr2(j,i)) then
-        write(stderr(), "(A)") "2D array comparison failed due to element " // string(j) // "," // string(i)
-        write(stderr(), "(A)") "Array 1 has value " // string(arr1(j,i)) // &
-                             & " and array 2 has value " // string(arr2(j,i))
+  do i2=1,m2
+    do i1=1,m1
+      if (arr1(i1,i2).ne.arr2(i1,i2)) then
+        write(stderr(), "(A)") "2D array comparison failed due to element " // string(i1) // "," // string(i2)
+        write(stderr(), "(A)") "Array 1 has value " // string(arr1(i1,i2)) // &
+                             & " and array 2 has value " // string(arr2(i1,i2))
         call mpp_error(FATAL, msg)
       endif
     enddo
@@ -758,31 +751,31 @@ end subroutine
 subroutine array_compare_3d(arr1, arr2, msg)
   real(AU_TEST_KIND_), intent(in), dimension(:,:,:) :: arr1, arr2
   character(*), intent(in) :: msg
-  integer :: i,j,k,l,m,n,l2,m2,n2
+  integer :: i1, i2, i3, m1, m2, m3, n1, n2, n3
 
-  l = size(arr1, 1)
-  m = size(arr1, 2)
-  n = size(arr1, 3)
+  m1 = size(arr1, 1)
+  m2 = size(arr1, 2)
+  m3 = size(arr1, 3)
 
-  l2 = size(arr2, 1)
-  m2 = size(arr2, 2)
-  n2 = size(arr2, 3)
+  n1 = size(arr2, 1)
+  n2 = size(arr2, 2)
+  n3 = size(arr2, 3)
 
-  if (l.ne.l2 .or. m.ne.m2 .or. n.ne.n2) then
+  if (m1.ne.n1 .or. m2.ne.n2 .or. m3.ne.n3) then
     write(stderr(), "(A)") "3D array comparison failed due to incompatible array sizes"
-    write(stderr(), "(A)") "Array 1 has size " // string(l) // "x" // string(m) // "x" // string(n) // &
-                           & " and array 2 has size " // string(l2) // "x" // string(m2) // "x" // string(n2)
+    write(stderr(), "(A)") "Array 1 has size " // string(m1) // "x" // string(m2) // "x" // string(m3) // &
+                           & " and array 2 has size " // string(n1) // "x" // string(n2) // "x" // string(n3)
     call mpp_error(FATAL, msg)
   endif
 
-  do i=1,n
-    do j=1,m
-      do k=1,l
-        if (arr1(k,j,i).ne.arr2(k,j,i)) then
+  do i3=1,m3
+    do i2=1,m2
+      do i1=1,m1
+        if (arr1(i1,i2,i3).ne.arr2(i1,i2,i3)) then
           write(stderr(), "(A)") "3D array comparison failed due to element " // &
-                               & string(k) // "," // string(j) // "," // string(i)
-          write(stderr(), "(A)") "Array 1 has value " // string(arr1(k,j,i)) // &
-                               & " and array 2 has value " // string(arr2(k,j,i))
+                               & string(i1) // "," // string(i2) // "," // string(i3)
+          write(stderr(), "(A)") "Array 1 has value " // string(arr1(i1,i2,i3)) // &
+                               & " and array 2 has value " // string(arr2(i1,i2,i3))
           call mpp_error(FATAL, msg)
         endif
       enddo
