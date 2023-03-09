@@ -72,6 +72,11 @@ subroutine compressed_read_1d(fileobj, variable_name, cdata, unlim_dim_level, &
   call netcdf_read_data(fileobj, variable_name, cdata, &
                         unlim_dim_level=unlim_dim_level, corner=corner, &
                         edge_lengths=edge_lengths, broadcast=.true.)
+  select type(cdata)
+    type is (character(len=*))
+      print*, "compressed_read_1d cdata ", cdata
+  end select
+
 end subroutine compressed_read_1d
 
 

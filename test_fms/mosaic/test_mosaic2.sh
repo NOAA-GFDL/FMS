@@ -34,5 +34,5 @@ mkdir INPUT
 test_expect_success "test mosaic" '
   mpirun -n 2 ./test_mosaic
 '
-rm -rf INPUT
+#rm -rf INPUT
 test_done

@@ -134,6 +134,7 @@ subroutine netcdf_write_data_1d(fileobj, variable_name, variable_data, unlim_dim
   integer :: j
   integer :: tlen
   character(len=200) :: append_error_msg !< Msg to be appended to FATAL error message
+  character(len=:),dimension(:), allocatable :: str_data
 
   append_error_msg = "netcdf_write_data_1d: file:"//trim(fileobj%path)//" variable: "//trim(variable_name)
 
@@ -168,6 +169,7 @@ subroutine netcdf_write_data_1d(fileobj, variable_name, variable_data, unlim_dim
       type is (real(kind=r8_kind))
         err = nf90_put_var(fileobj%ncid, varid, variable_data, start=c, count=e)
       type is (character(len=*))
+        str_data=variable_data
         ndims = get_variable_num_dimensions(fileobj, variable_name, broadcast=.false.)
         if (ndims .ne. 2) then
           call error("currently only scalar and 1d character writes are supported: "//trim(append_error_msg))
@@ -178,15 +180,15 @@ subroutine netcdf_write_data_1d(fileobj, variable_name, variable_data, unlim_dim
         call get_variable_size(fileobj, variable_name, dimsizes, .false.)
         call allocate_array(charbuf, dimsizes)
         charbuf(:,:) = ""
-        tlen = len(variable_data(1))
+        tlen = len(str_data(1))
         if (tlen .gt. dimsizes(1)) then
           call error("character buffer is too big; decrease length: "//trim(append_error_msg))
         endif
-        if (size(variable_data) .ne. dimsizes(2)) then
+        if (size(str_data) .ne. dimsizes(2)) then
           call error("incorrect size of variable_data array: "//trim(append_error_msg))
         endif
         do j = 1, dimsizes(2)
-          call string_copy(sbuf, variable_data(j))
+          call string_copy(sbuf, str_data(j))
           do i = 1, tlen
             charbuf(i,j) = sbuf(i:i)
           enddo
@@ -195,6 +197,7 @@ subroutine netcdf_write_data_1d(fileobj, variable_name, variable_data, unlim_dim
         deallocate(charbuf)
         deallocate(dimsizes)
         deallocate(start)
+	deallocate(str_data)
       class default
         call error("Unsupported variable type: "//trim(append_error_msg))
     end select
