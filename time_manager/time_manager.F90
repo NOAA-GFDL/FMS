@@ -260,7 +260,8 @@ interface safe_rtoi
   module procedure safe_rtoi_r8
 end interface
 
-!> Creates a new time_type with filled in fields from the given real value 
+!> Creates a new time_type with filled in fields from the given real value
+!> @ingroup time_manager_mod
 interface real_to_time_type
   module procedure real_to_time_type_r4
   module procedure real_to_time_type_r8
@@ -270,14 +271,15 @@ end interface
 !! By default will give a r8_kind result if just given a time_type (same behavior as b4 mixed precision)
 !! Can also pass in a real kind 4 or 8 to do the calculation in that precision and set the result to the passed in real.
 !! eg.
-!! @code{.f90} real_kind8_var = time_type_to_real(Time_type) 
+!! @code{.f90} r8_var = time_type_to_real(Time_type)
 !! or
-!! @code{.f90} call time_type_to_real(Time_type, real_kind8_var) 
-!! @code{.f90} call time_type_to_real(Time_type, real_kind4_var) 
+!! @code{.f90} r8_var = time_type_to_real(Time_type, 0.0_r8_kind)
+!! @code{.f90} r4_var = time_type_to_real(Time_type, 0.0_r4_kind)
+!! @ingroup time_manager_mod
 interface time_type_to_real
     module procedure convert_time_type_to_real
-    module procedure time_type_to_real_kind4
-    module procedure time_type_to_real_kind8
+    module procedure convert_time_type_to_real_kind4
+    module procedure convert_time_type_to_real_kind8
 end interface
 
 !> @addtogroup time_manager_mod
@@ -330,9 +332,9 @@ contains
  character(len=*), intent(out) :: err_msg
  integer            :: seconds_new, days_new, ticks_new
 
- seconds_new = seconds + floor(ticks/real(ticks_per_second, r8_kind))
+ seconds_new = seconds + floor(real(ticks,r8_kind)/real(ticks_per_second, r8_kind))
  ticks_new = modulo(ticks,ticks_per_second)
- days_new = days + floor(seconds_new/real(seconds_per_day, r8_kind))
+ days_new = days + floor(real(seconds_new, r8_kind)/real(seconds_per_day, r8_kind))
  seconds_new = modulo(seconds_new,seconds_per_day)
 
  if ( seconds_new < 0 .or. ticks_new < 0) then
@@ -978,23 +980,23 @@ if(.not.module_is_initialized) call time_manager_init
 ! Need to avoid overflowing integers and wrapping around to negatives
 ! ticks could be up to ticks_per_second-1
 
-tick_prod = dble(time%ticks) * dble(n)
-num_sec   = int(tick_prod/dble(ticks_per_second))
-sec_prod  = dble(time%seconds) * dble(n) + num_sec
-ticks     = int(tick_prod - num_sec * ticks_per_second)
+tick_prod = real(time%ticks, r8_kind) * real(n, r8_kind)
+num_sec   = int(tick_prod/real(ticks_per_second, r8_kind))
+sec_prod  = real(time%seconds, r8_kind) * real(n, r8_kind) + real(num_sec, r8_kind)
+ticks     = int(tick_prod - real(num_sec, r8_kind) * real(ticks_per_second, r8_kind))
 
 ! If sec_prod is large compared to precision of double precision, things
 ! can go bad.  Need to warn and abort on this.
 ! The same is true of tick_prod but is is more likely to happen to sec_prod,
 ! so let's just test sec_prod. (A test of tick_prod would be necessary only
 ! if ticks_per_second were greater than seconds_per_day)
-if(sec_prod /= 0.0) then
+if(sec_prod /= 0.0_r8_kind) then
    if(log10(sec_prod) > precision(sec_prod) - 3) call error_mesg('time_scalar_mult', &
       'Insufficient precision to handle scalar product in time_scalar_mult; contact developer',FATAL)
 end if
 
-days = int(sec_prod / dble(seconds_per_day))
-seconds = int(sec_prod - dble(days) * dble(seconds_per_day))
+days = int(sec_prod / real(seconds_per_day, r8_kind))
+seconds = int(sec_prod - real(days, r8_kind) * real(seconds_per_day, r8_kind))
 
 time_scalar_mult = set_time(seconds, time%days * n + days, ticks)
 
@@ -1010,8 +1012,8 @@ real(r8_kind)           :: d1, d2
 if(.not.module_is_initialized) call time_manager_init
 
 ! Convert time intervals to floating point days; risky for general performance?
-d1 = time1%days * dble(seconds_per_day) + dble(time1%seconds) + time1%ticks/dble(ticks_per_second)
-d2 = time2%days * dble(seconds_per_day) + dble(time2%seconds) + time2%ticks/dble(ticks_per_second)
+d1 = time1%days * real(seconds_per_day, r8_kind) + real(time1%seconds, r8_kind) + time1%ticks/real(ticks_per_second, r8_kind)
+d2 = time2%days * real(seconds_per_day, r8_kind) + real(time2%seconds, r8_kind) + time2%ticks/real(ticks_per_second, r8_kind)
 
 ! Get integer quotient of this, check carefully to avoid round-off problems.
 time_divide = int(d1 / d2)
@@ -1032,8 +1034,8 @@ real(r8_kind)               :: d1, d2
 if(.not.module_is_initialized) call time_manager_init
 
 ! Convert time intervals to floating point seconds; risky for general performance?
-d1 = time1%days * dble(seconds_per_day) + dble(time1%seconds) + dble(time1%ticks)/dble(ticks_per_second)
-d2 = time2%days * dble(seconds_per_day) + dble(time2%seconds) + dble(time2%ticks)/dble(ticks_per_second)
+d1 = time1%days * real(seconds_per_day, r8_kind) + real(time1%seconds, r8_kind) + real(time1%ticks, r8_kind)/real(ticks_per_second, r8_kind)
+d2 = time2%days * real(seconds_per_day, r8_kind) + real(time2%seconds, r8_kind) + real(time2%ticks, r8_kind)/real(ticks_per_second, r8_kind)
 
 time_real_divide = d1 / d2
 
@@ -1097,21 +1099,27 @@ convert_time_type_to_real = real(time%days, r8_kind) * 86400.0_r8_kind + real(ti
 end function convert_time_type_to_real
 
 !> Converts time to seconds and returns it as a real number
-subroutine time_type_to_real_kind8(time, time_real)
+!! R8 version just calls the original to get the r8 result
+function convert_time_type_to_real_kind8(time, real_kind)
     type(time_type), intent(in) :: time !< time_type representing an amount time
-    real(kind=r8_kind), intent(out) :: time_real !< equivalent time in seconds
-    time_real = time_type_to_real(time)
-end subroutine time_type_to_real_kind8
+    real(kind=r8_kind), intent(in) :: real_kind !< value is not used, just used to select real kind 
+                                                !! size via the time_type_to_real interface.
+    real(kind=r8_kind) :: convert_time_type_to_real_kind8
+    convert_time_type_to_real_kind8 = convert_time_type_to_real(time)
+end function convert_time_type_to_real_kind8
 
 !> Converts time to seconds and returns it as a real number
-subroutine time_type_to_real_kind4(time, time_real)
+!! does the calculation and returns result in r4
+function convert_time_type_to_real_kind4(time, real_kind)
     type(time_type), intent(in) :: time!< time_type representing an amount time
-    real(kind=r4_kind), intent(out) :: time_real !< equivalent time in seconds
+    real(kind=r4_kind), intent(in) :: real_kind !< value is not used, just used to select real kind 
+                                                 !! size via the time_type_to_real interface.
+    real(kind=r4_kind) :: convert_time_type_to_real_kind4
     if(.not.module_is_initialized) call time_manager_init
 
-    time_real = real(time%days, r4_kind) * 86400.0_r4_kind + real(time%seconds, r4_kind) + &
-                real(time%ticks, r4_kind)/real(ticks_per_second, r4_kind)
-end subroutine time_type_to_real_kind4 
+    convert_time_type_to_real_kind4 = real(time%days, r4_kind) * 86400.0_r4_kind + real(time%seconds, r4_kind) + &
+                                      real(time%ticks, r4_kind)/real(ticks_per_second, r4_kind)
+end function convert_time_type_to_real_kind4
 
 !> Returns the largest time, t, for which n * t <= time.
 function time_scalar_divide(time, n)

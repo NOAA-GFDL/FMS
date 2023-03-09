@@ -23,41 +23,43 @@
 !> @brief Convert a real number of seconds into a time_type variable.
 !! @return A filled time type variable, and an error message if an
 !!         error occurs.
-function REAL_TO_TIME_TYPE(x,err_msg) result(t)
-  real(FMS_TM_KIND),intent(in) :: x !< Number of seconds.
+function REAL_TO_TIME_TYPE_(x,err_msg) result(t)
+  real(FMS_TM_KIND_),intent(in) :: x !< Number of seconds.
   character(len=*),intent(out),optional :: err_msg !< Error message.
   type(time_type) :: t
   integer :: days
   integer :: seconds
   integer :: ticks
   character(len=128) :: err_msg_local
-  real(FMS_TM_KIND),parameter :: spd = real(86400)
-  real(FMS_TM_KIND) :: tps
-  real(FMS_TM_KIND) :: a
-  tps = real(ticks_per_second, FMS_TM_KIND)
+  integer, parameter :: kindl = FMS_TM_KIND_
+  real(FMS_TM_KIND_),parameter :: spd = 86400.0_kindl
+  real(FMS_TM_KIND_) :: tps
+  real(FMS_TM_KIND_) :: a
+  tps = real(ticks_per_second, FMS_TM_KIND_)
   a = x/spd
   days = safe_rtoi(a,do_floor)
-  a = x - real(days, FMS_TM_KIND)*spd
+  a = x - real(days, FMS_TM_KIND_)*spd
   seconds = safe_rtoi(a,do_floor)
-  a = (a - real(seconds, FMS_TM_KIND))*tps
+  a = (a - real(seconds, FMS_TM_KIND_))*tps
   ticks = safe_rtoi(a,do_nearest)
   if (.not. set_time_private(seconds,days,ticks,t,err_msg_local)) then
     if (error_handler('function real_to_time_type',err_msg_local,err_msg)) then
       return
     endif
   endif
-end function REAL_TO_TIME_TYPE
+end function REAL_TO_TIME_TYPE_
 
 !> @brief Convert a floating point value to an integer value.
 !! @return The integer value, using the input rounding mode.
-function SAFE_RTOI(rval,mode) result(ival)
-  real(FMS_TM_KIND),intent(in) :: rval !< A floating point value.
+function SAFE_RTOI_(rval,mode) result(ival)
+  real(FMS_TM_KIND_),intent(in) :: rval !< A floating point value.
   integer,intent(in) :: mode !< A rouding mode (either "do_floor" or
                              !! "do_nearest")
   integer :: ival
-  real(FMS_TM_KIND) :: big
-  big = real(huge(ival), FMS_TM_KIND)
-  if (rval .le. big .and. real(-1., FMS_TM_KIND)*rval .ge. real(-1., FMS_TM_KIND)*big) then
+  real(FMS_TM_KIND_) :: big
+  integer, parameter :: kindl = FMS_TM_KIND_
+  big = real(huge(ival), FMS_TM_KIND_)
+  if (rval .le. big .and. -1.0_kindl*rval .ge. -1.0_kindl*big) then
     if (mode .eq. do_floor) then
       ival = floor(rval)
     elseif (mode .eq. do_nearest) then
@@ -70,7 +72,7 @@ function SAFE_RTOI(rval,mode) result(ival)
     call error_mesg("safe_rtoi","input value cannot be safely" &
                    //" converted to a 32-bit integer.",FATAL)
   endif
-end function SAFE_RTOI
+end function SAFE_RTOI_
 
 
 

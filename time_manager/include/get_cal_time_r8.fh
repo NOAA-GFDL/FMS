@@ -18,9 +18,9 @@
 !***********************************************************************
 !> @addtogroup get_cal_time_mod
 !>@{
-#undef FMS_TM_KIND
-#define FMS_TM_KIND r8_kind
-#undef GET_CAL_TIME
-#define GET_CAL_TIME get_cal_time_r8
+#undef FMS_TM_KIND_
+#define FMS_TM_KIND_ r8_kind
+#undef GET_CAL_TIME_
+#define GET_CAL_TIME_ get_cal_time_r8
 #include "get_cal_time.inc"
 !>@}

@@ -109,22 +109,23 @@
 !!
 !! @note This option was originally coded to allow noleap calendar as input when
 !! the julian calendar was in effect by the time_manager.
-function GET_CAL_TIME(time_increment, units, calendar, permit_calendar_conversion) result(cal_time)
-real(FMS_TM_KIND), intent(in) :: time_increment
+function GET_CAL_TIME_(time_increment, units, calendar, permit_calendar_conversion) result(cal_time)
+real(FMS_TM_KIND_), intent(in) :: time_increment
 character(len=*), intent(in) :: units
 character(len=*), intent(in) :: calendar
 logical, intent(in), optional :: permit_calendar_conversion
 type(time_type) :: cal_time
 integer :: year, month, day, hour, minute, second
 integer :: i1, increment_seconds, increment_days, increment_years, increment_months
-real(FMS_TM_KIND)    :: month_fraction
+real(FMS_TM_KIND_)    :: month_fraction
 integer :: calendar_tm_i, calendar_in_i, ierr, io, logunit
 logical :: correct_form
 character(len=32) :: calendar_in_c
 character(len=64) :: err_msg
 type(time_type) :: base_time, base_time_plus_one_yr
-real(FMS_TM_KIND) :: dt
+real(FMS_TM_KIND_) :: dt
 logical :: permit_conversion_local
+integer, parameter :: kindl = FMS_TM_KIND_
 
 if(.not.module_is_initialized) then
   read (input_nml_file, get_cal_time_nml, iostat=io)
@@ -151,7 +152,7 @@ correct_form = (trim(calendar_in_c)) == 'noleap'     .or. (trim(calendar_in_c)) 
                (trim(calendar_in_c)) == 'gregorian'
 
 if(.not.correct_form) then
-  call error_mesg('GET_CAL_TIME','"'//trim(calendar_in_c)//'"'// &
+  call error_mesg('GET_CAL_TIME_','"'//trim(calendar_in_c)//'"'// &
    ' is not an acceptable calendar attribute. acceptable calendars are: '// &
    ' noleap, 365_day, 365_days, 360_day, julian, no_calendar, thirty_day_months, gregorian',FATAL)
 endif
@@ -168,7 +169,7 @@ if(.not.permit_conversion_local) then
                  (trim(calendar_in_c) == 'no_calendar'       .and. calendar_tm_i == NO_CALENDAR)       .or. &
                  (trim(calendar_in_c) == 'gregorian'         .and. calendar_tm_i == GREGORIAN)
   if(.not.correct_form) then
-    call error_mesg('GET_CAL_TIME','calendar not consistent with calendar type in use by time_manager.'// &
+    call error_mesg('GET_CAL_TIME_','calendar not consistent with calendar type in use by time_manager.'// &
          ' calendar='//trim(calendar_in_c)//'. Type in use by time_manager='// &
                           & valid_calendar_types(calendar_tm_i),FATAL)
   endif
@@ -193,8 +194,8 @@ if (permit_conversion_local) then
     case ('gregorian')
         calendar_in_i = GREGORIAN
     case default
-        call error_mesg('GET_CAL_TIME', &
-                 trim(calendar_in_c)//' is an invalid calendar type (specified in call to GET_CAL_TIME)',FATAL)
+        call error_mesg('GET_CAL_TIME_', &
+                 trim(calendar_in_c)//' is an invalid calendar type (specified in call to GET_CAL_TIME_)',FATAL)
     end select
 else
     calendar_in_i = calendar_tm_i
@@ -212,7 +213,7 @@ if(calendar_in_i /= NO_CALENDAR) then
 endif
 
 if(.not.correct_form) then
-  call error_mesg('GET_CAL_TIME',trim(units)//' is an invalid string for units.' // &
+  call error_mesg('GET_CAL_TIME_',trim(units)//' is an invalid string for units.' // &
         ' units must begin with a time unit then the word "since"' // &
         ' Valid time units are: "seconds" "minutes", "hours", "days", and, ' // &
         ' except when NO_CALENDAR is in effect, "months" and "years"',FATAL)
@@ -241,16 +242,16 @@ endif
 
 if(lowercase(units(1:10)) == 'days since') then
   increment_days = floor(time_increment)
-  increment_seconds = int(86400*(time_increment - increment_days))
+  increment_seconds = int(86400.0_kindl*(time_increment - real(increment_days, FMS_TM_KIND_)))
 else if(lowercase(units(1:11)) == 'hours since') then
-  increment_days = floor(time_increment/24)
-  increment_seconds = int(86400*(time_increment/24 - increment_days))
+  increment_days = floor(time_increment/24.0_kindl)
+  increment_seconds = int(86400.0_kindl*(time_increment/24.0_kindl - real(increment_days, FMS_TM_KIND_)))
 else if(lowercase(units(1:13)) == 'minutes since') then
-  increment_days = floor(time_increment/1440)
-  increment_seconds = int(86400*(time_increment/1440 - increment_days))
+  increment_days = floor(time_increment/1440.0_kindl)
+  increment_seconds = int(86400.0_kindl*(time_increment/1440.0_kindl - real(increment_days, FMS_TM_KIND_)))
 else if(lowercase(units(1:13)) == 'seconds since') then
-  increment_days = floor(time_increment/86400)
-  increment_seconds = int(86400*(time_increment/86400 - increment_days))
+  increment_days = floor(time_increment/86400.0_kindl)
+  increment_seconds = int(86400.0_kindl*(time_increment/86400.0_kindl - real(increment_days, FMS_TM_KIND_)))
 else if(lowercase(units(1:11)) == 'years since') then
 ! The time period between between (base_time + time_increment) and
 ! (base_time + time_increment + 1 year) may be 360, 365, or 366 days.
@@ -259,27 +260,27 @@ else if(lowercase(units(1:11)) == 'years since') then
   base_time             = set_date(year+floor(time_increment)  ,month,day,hour,minute,second)
   base_time_plus_one_yr = set_date(year+floor(time_increment)+1,month,day,hour,minute,second)
   call get_time(base_time_plus_one_yr - base_time, second, day)
-  dt = (day*86400+second)*(time_increment-floor(time_increment))
-  increment_days = floor(dt/86400)
-  increment_seconds = int(dt - increment_days*86400)
+  dt = (real(day, FMS_TM_KIND_)*86400.0_kindl+real(second,FMS_TM_KIND_))*(time_increment-floor(time_increment))
+  increment_days = floor(dt/86400.0_kindl)
+  increment_seconds = int(dt - real(increment_days, FMS_TM_KIND_)*86400.0_kindl)
 else if(lowercase(units(1:12)) == 'months since') then
   month_fraction = time_increment - floor(time_increment)
-  increment_years  = floor(time_increment/12)
-  increment_months = floor(time_increment) - 12*increment_years
+  increment_years  = floor(time_increment/12.0_kindl)
+  increment_months = floor(time_increment) - 12.0_kindl*real(increment_years, FMS_TM_KIND_)
   call get_date(base_time, year,month,day,hour,minute,second)
   base_time = set_date(year+increment_years,month+increment_months  ,day,hour,minute,second)
-  dt = 86400*days_in_month(base_time) * month_fraction
-  increment_days = floor(dt/86400)
-  increment_seconds = int(dt - increment_days*86400)
+  dt = 86400.0_kindl*real(days_in_month(base_time), FMS_TM_KIND_) * month_fraction
+  increment_days = floor(dt/86400.0_kindl)
+  increment_seconds = int(dt - real(increment_days, FMS_TM_KIND_)*86400.0_kindl)
 else
-  call error_mesg('GET_CAL_TIME','"'//trim(units)//'" is not an acceptable units attribute of time.'// &
+  call error_mesg('GET_CAL_TIME_','"'//trim(units)//'" is not an acceptable units attribute of time.'// &
             & ' It must begin with: "years since", "months since", "days since", "hours since", "minutes since",'// &
             & ' or "seconds since"',FATAL)
 endif
 
 if (calendar_in_i /= calendar_tm_i) then
     if(calendar_in_i == NO_CALENDAR .or. calendar_tm_i == NO_CALENDAR) then
-      call error_mesg('GET_CAL_TIME','Cannot do calendar conversion because input calendar is '// &
+      call error_mesg('GET_CAL_TIME_','Cannot do calendar conversion because input calendar is '// &
        trim(valid_calendar_types(calendar_in_i))//' and time_manager is using '// &
        trim(valid_calendar_types(calendar_tm_i))// &
        ' Conversion cannot be done if either is NO_CALENDAR',FATAL)
@@ -290,15 +291,15 @@ if (calendar_in_i /= calendar_tm_i) then
     call set_calendar_type(calendar_tm_i)
     cal_time = set_date(year,month,day,hour,minute,second, err_msg=err_msg)
     if(err_msg /= '') then
-      call error_mesg('GET_CAL_TIME','Error in function GET_CAL_TIME: '//trim(err_msg)// &
+      call error_mesg('GET_CAL_TIME_','Error in function GET_CAL_TIME_: '//trim(err_msg)// &
                ' Note that the time_manager is using the '//trim(valid_calendar_types(calendar_tm_i))//' calendar '// &
-               'while the calendar type passed to function GET_CAL_TIME is '//calendar_in_c,FATAL)
+               'while the calendar type passed to function GET_CAL_TIME_ is '//calendar_in_c,FATAL)
     endif
 else
     cal_time = base_time + set_time(increment_seconds, increment_days)
 endif
 
-end function GET_CAL_TIME
+end function GET_CAL_TIME_
 
 !> @}
 ! close documentation grouping

@@ -19,11 +19,11 @@
 !> @addtogroup time_manager
 !>@{
 
-#undef FMS_TM_KIND
-#define FMS_TM_KIND r8_kind
-#undef REAL_TO_TIME_TYPE
-#define REAL_TO_TIME_TYPE real_to_time_type_r8
-#undef SAFE_RTOI
-#define SAFE_RTOI safe_rtoi_r8
+#undef FMS_TM_KIND_
+#define FMS_TM_KIND_ r8_kind
+#undef REAL_TO_TIME_TYPE_
+#define REAL_TO_TIME_TYPE_ real_to_time_type_r8
+#undef SAFE_RTOI_
+#define SAFE_RTOI_ safe_rtoi_r8
 #include "time_manager.inc"
 !> @}
