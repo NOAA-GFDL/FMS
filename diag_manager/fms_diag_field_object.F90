@@ -1026,7 +1026,7 @@ subroutine get_dimnames(this, diag_axis, field_yaml, unlim_dimname, dimnames, is
 
   allocate(dimnames(naxis))
 
-  !< Duplicated do loops for #performance
+  !< Duplicated do loops for performance
   if (field_yaml%has_var_zbounds()) then
     do i = 1, size(this%axis_ids)
       axis_ptr => diag_axis(this%axis_ids(i))
