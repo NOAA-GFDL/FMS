@@ -1438,8 +1438,8 @@ CONTAINS
     END IF
 
     IF ( PRESENT(mask) .OR. PRESENT(rmask) ) THEN
-       send_data_2d = send_data_3d_class(diag_field_id, field_out, time, is_in=is_in, js_in=js_in, ks_in=1, mask=mask_out,&
-            & ie_in=ie_in, je_in=je_in, ke_in=1, weight=weight, err_msg=err_msg)
+       send_data_2d = send_data_3d_class(diag_field_id, field_out, time, is_in=is_in, js_in=js_in, ks_in=1,&
+            & mask=mask_out, ie_in=ie_in, je_in=je_in, ke_in=1, weight=weight, err_msg=err_msg)
     ELSE
        send_data_2d = send_data_3d_class(diag_field_id, field_out, time, is_in=is_in, js_in=js_in, ks_in=1,&
             & ie_in=ie_in, je_in=je_in, ke_in=1, weight=weight, err_msg=err_msg)
