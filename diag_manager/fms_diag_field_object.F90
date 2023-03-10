@@ -1026,10 +1026,22 @@ subroutine get_dimnames(this, diag_axis, field_yaml, unlim_dimname, dimnames, is
 
   allocate(dimnames(naxis))
 
-  do i = 1, size(this%axis_ids)
-    axis_ptr => diag_axis(this%axis_ids(i))
-    dimnames(i) = axis_ptr%axis%get_axis_name(is_regional)
-  enddo
+  !< Duplicated do loops for performance
+  if (field_yaml%has_var_zbounds()) then
+    do i = 1, size(this%axis_ids)
+      axis_ptr => diag_axis(this%axis_ids(i))
+      if (axis_ptr%axis%is_z_axis()) then
+        dimnames(i) = axis_ptr%axis%get_axis_name(is_regional)//"_sub01"
+      else
+        dimnames(i) = axis_ptr%axis%get_axis_name(is_regional)
+      endif
+    enddo
+  else
+    do i = 1, size(this%axis_ids)
+      axis_ptr => diag_axis(this%axis_ids(i))
+      dimnames(i) = axis_ptr%axis%get_axis_name(is_regional)
+    enddo
+  endif
 
   !< The second to last dimension is always the diurnal axis
   if (field_yaml%has_n_diurnal()) then
