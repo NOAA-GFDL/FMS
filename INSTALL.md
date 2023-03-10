@@ -28,7 +28,7 @@ to not use an MPI aware compiler, you should pass the include and library
 locations to the build system.
 
 libFMS can be built without MPI support (sometimes called "no-comm mode").  To
-build libFMS without MPI support, pass to `configure` the `--disable-mpi` flag.
+build libFMS without MPI support, pass to `configure` the `--with-mpi=no` flag.
 
 ## Supported Build Systems
 
