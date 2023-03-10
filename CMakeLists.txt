@@ -294,6 +294,7 @@ foreach(kind ${kinds})
   target_include_directories(${libTgt}_f PRIVATE include
                                                  fms
                                                  fms2_io/include
+                                                 string_utils/include
                                                  mpp/include
                                                  diag_manager/include
                                                  constants4
@@ -332,6 +333,10 @@ foreach(kind ${kinds})
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/fms>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/fms2_io/include>
+<<<<<<< HEAD
+=======
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/string_utils/include>
+>>>>>>> origin/main
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/mpp/include>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/diag_manager/include>)
 
