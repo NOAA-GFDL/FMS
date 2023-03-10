@@ -41,7 +41,8 @@ use fms_diag_time_utils_mod, only: diag_time_inc, get_time_string, get_date_dif
 use fms_diag_yaml_mod, only: diag_yaml, diagYamlObject_type, diagYamlFiles_type, subRegion_type, diagYamlFilesVar_type
 use fms_diag_axis_object_mod, only: diagDomain_t, get_domain_and_domain_type, fmsDiagAxis_type, &
                                     fmsDiagAxisContainer_type, DIAGDOMAIN2D_T, DIAGDOMAINUG_T, &
-                                    fmsDiagFullAxis_type, define_subaxis, define_diurnal_axis, fmsDiagDiurnalAxis_type
+                                    fmsDiagFullAxis_type, define_subaxis, define_diurnal_axis, &
+                                    fmsDiagDiurnalAxis_type, create_new_z_subaxis
 use fms_diag_field_object_mod, only: fmsDiagField_type
 use mpp_mod, only: mpp_get_current_pelist, mpp_npes, mpp_root_pe, mpp_pe, mpp_error, FATAL, stdout, &
                    uppercase, lowercase
@@ -671,17 +672,33 @@ subroutine set_file_domain(this, domain, type_of_domain)
 end subroutine set_file_domain
 
 !> @brief Loops through a variable's axis_ids and adds them to the FMSDiagFile object if they don't exist
-subroutine add_axes(this, axis_ids, diag_axis, naxis)
+subroutine add_axes(this, axis_ids, diag_axis, naxis, yaml_id)
   class(fmsDiagFile_type),          intent(inout)       :: this          !< The file object
   integer,                          INTENT(in)          :: axis_ids(:)   !< Array of axes_ids
   class(fmsDiagAxisContainer_type), intent(inout)       :: diag_axis(:)  !< Diag_axis object
   integer,                          intent(inout)       :: naxis         !< Number of axis that have been registered
+  integer,                          intent(in)          :: yaml_id       !< Yaml id of the yaml section for this var
 
-  integer :: i, j !< For do loops
-  logical :: is_cube_sphere !< Flag indicating if the file's domain is a cubesphere
-  logical :: axis_found !< Flag indicating that the axis was already to the file obj
+  type(diagYamlFilesVar_type), pointer     :: field_yaml  !< pointer to the yaml entry
+
+  integer              :: i, j             !< For do loops
+  logical              :: is_cube_sphere   !< Flag indicating if the file's domain is a cubesphere
+  logical              :: axis_found       !< Flag indicating that the axis was already to the file obj
+  integer, allocatable :: var_axis_ids(:)  !< Array of the variable's axis ids
 
   is_cube_sphere = .false.
+
+  field_yaml => diag_yaml%get_diag_field_from_id(yaml_id)
+  !< Created a copy here, because if the variable has a z subaxis var_axis_ids will be modified in
+  !! `create_new_z_subaxis` to contain the id of the new z subaxis instead of the parent axis,
+  !! which will be added to the the list of axis in the file object (axis_ids is intent(in),
+  !! which is why the copy was needed)
+  var_axis_ids = axis_ids
+
+  if (field_yaml%has_var_zbounds()) then
+    call create_new_z_subaxis(field_yaml%get_var_zbounds(), var_axis_ids, diag_axis, naxis, &
+                              this%axis_ids, this%number_of_axis)
+  endif
 
   select type(this)
   type is (subRegionalFile_type)
@@ -690,15 +707,15 @@ subroutine add_axes(this, axis_ids, diag_axis, naxis)
         if (this%domain%get_ntiles() .eq. 6) is_cube_sphere = .true.
       endif
 
-      call define_subaxis(diag_axis, axis_ids, naxis, this%get_file_sub_region(), &
+      call define_subaxis(diag_axis, var_axis_ids, naxis, this%get_file_sub_region(), &
         is_cube_sphere, this%write_on_this_pe)
       this%is_subaxis_defined = .true.
 
       !> add the axis to the list of axis in the file
       if (this%write_on_this_pe) then
-        do i = 1, size(axis_ids)
+        do i = 1, size(var_axis_ids)
           this%number_of_axis = this%number_of_axis + 1 !< This is the current number of axis in the file
-          this%axis_ids(this%number_of_axis) = diag_axis(axis_ids(i))%axis%get_subaxes_id()
+          this%axis_ids(this%number_of_axis) = diag_axis(var_axis_ids(i))%axis%get_subaxes_id()
         enddo
       else
         this%axis_ids = diag_null
@@ -706,11 +723,11 @@ subroutine add_axes(this, axis_ids, diag_axis, naxis)
     endif
     return
   type is (fmsDiagFile_type)
-    do i = 1, size(axis_ids)
+    do i = 1, size(var_axis_ids)
       axis_found = .false.
       do j = 1, this%number_of_axis
         !> Check if the axis already exists, move on
-        if (axis_ids(i) .eq. this%axis_ids(j)) then
+        if (var_axis_ids(i) .eq. this%axis_ids(j)) then
           axis_found = .true.
           cycle
         endif
@@ -719,7 +736,7 @@ subroutine add_axes(this, axis_ids, diag_axis, naxis)
       if (.not. axis_found) then
         !> If the axis does not exist add it to the list
         this%number_of_axis = this%number_of_axis + 1
-        this%axis_ids(this%number_of_axis) = axis_ids(i)
+        this%axis_ids(this%number_of_axis) = var_axis_ids(i)
       endif
     enddo
   end select
