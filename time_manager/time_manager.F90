@@ -1102,7 +1102,7 @@ end function convert_time_type_to_real
 !! R8 version just calls the original to get the r8 result
 function convert_time_type_to_real_kind8(time, real_kind)
     type(time_type), intent(in) :: time !< time_type representing an amount time
-    real(kind=r8_kind), intent(in) :: real_kind !< value is not used, just used to select real kind 
+    real(kind=r8_kind), intent(in) :: real_kind !< value is not used, just used to select real kind
                                                 !! size via the time_type_to_real interface.
     real(kind=r8_kind) :: convert_time_type_to_real_kind8
     convert_time_type_to_real_kind8 = convert_time_type_to_real(time)
@@ -1112,7 +1112,7 @@ end function convert_time_type_to_real_kind8
 !! does the calculation and returns result in r4
 function convert_time_type_to_real_kind4(time, real_kind)
     type(time_type), intent(in) :: time!< time_type representing an amount time
-    real(kind=r4_kind), intent(in) :: real_kind !< value is not used, just used to select real kind 
+    real(kind=r4_kind), intent(in) :: real_kind !< value is not used, just used to select real kind
                                                  !! size via the time_type_to_real interface.
     real(kind=r4_kind) :: convert_time_type_to_real_kind4
     if(.not.module_is_initialized) call time_manager_init

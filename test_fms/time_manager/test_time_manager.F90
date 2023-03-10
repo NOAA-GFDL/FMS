@@ -729,7 +729,7 @@ program test_time_manager
     if( rconv8 .ne. 123.0_r8_kind + 86400.0_r8_kind * 3.0_r8_kind + 12.3_r8_kind) then
         call mpp_error(FATAL, "test_time_manager: time_type_to_real failed reference check with converted real value")
     endif
-    ! check kind explicit versions 
+    ! check kind explicit versions
     if( rconv8 .ne. time_type_to_real(time_r, 0.0_r8_kind)) then
         call mpp_error(FATAL, "test_time_manager: time_type_to_real failed equivalency check with mixed precision r8")
     endif
