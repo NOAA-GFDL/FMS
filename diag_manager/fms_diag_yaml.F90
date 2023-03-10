@@ -1367,7 +1367,7 @@ end function has_var_units
 !! @return true if obj%var_zbounds is allocated
 pure logical function has_var_zbounds (obj)
   class(diagYamlFilesVar_type), intent(in) :: obj !< diagYamlvar_type object to initialize
-  has_var_zbounds = any(obj%var_zbounds .eq. diag_null)
+  has_var_zbounds = any(obj%var_zbounds .ne. diag_null)
 end function has_var_zbounds
 !> @brief Checks if obj%var_attributes is allocated
 !! @return true if obj%var_attributes is allocated

@@ -707,6 +707,12 @@ diag_files:
     var_name: var6
     reduction: average
     kind: r8
+  - module: atm_mod
+    var_name: var4
+    output_name: var4_bounded
+    reduction: average
+    kind: r8
+    zbounds: 2.0 3.0
 - file_name: file3
   freq: 6
   freq_units: hours
