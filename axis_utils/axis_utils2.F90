@@ -382,7 +382,7 @@ end subroutine axis_edges
           lon = cshift(lon,istrt-1)
        endif
        lon_strt = lon(1)
-       do i=2,len+1
+       do i=2,len
           lon(i) = lon_in_range(lon(i),lon_strt)
           lon_strt = lon(i)
        enddo
