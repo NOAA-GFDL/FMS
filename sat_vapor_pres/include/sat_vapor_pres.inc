@@ -27,11 +27,11 @@
 ! </SUBROUTINE>
  subroutine LOOKUP_ES_0D_ ( temp, esat, err_msg )
 
- real(kind=FMS_SVP_KIND_), intent(in)  :: temp
- real(kind=FMS_SVP_KIND_), intent(out) :: esat
+ real(kind=FMS_SVP_KIND_), intent(in)  :: temp !< temperature in degrees Kelvin (K)
+ real(kind=FMS_SVP_KIND_), intent(out) :: esat !< saturation vapor pressure
  character(len=*), intent(out), optional :: err_msg
 
- integer :: nbad
+ integer :: nbad !< if temperature is out of range
  character(len=128) :: err_msg_local
 
    if (.not.module_is_initialized) then
@@ -59,12 +59,12 @@
 ! </SUBROUTINE>
  subroutine LOOKUP_ES_1D_ ( temp, esat, err_msg )
 
- real(kind=FMS_SVP_KIND_), intent(in)  :: temp(:)
- real(kind=FMS_SVP_KIND_), intent(out) :: esat(:)
+ real(kind=FMS_SVP_KIND_), intent(in)  :: temp(:) !< temperature in degrees Kelvin (K)
+ real(kind=FMS_SVP_KIND_), intent(out) :: esat(:) !< saturation vapor pressure
  character(len=*), intent(out), optional :: err_msg
 
  character(len=54) :: err_msg_local
- integer :: nbad
+ integer :: nbad !< if temperature is out of range
 !-----------------------------------------------
 
    if (.not.module_is_initialized) then
@@ -95,12 +95,12 @@
 ! </SUBROUTINE>
  subroutine LOOKUP_ES_2D_ ( temp, esat, err_msg )
 
- real(kind=FMS_SVP_KIND_), intent(in)  :: temp(:,:)
- real(kind=FMS_SVP_KIND_), intent(out) :: esat(:,:)
+ real(kind=FMS_SVP_KIND_), intent(in)  :: temp(:,:) !< temperature in degrees Kelvin (K)
+ real(kind=FMS_SVP_KIND_), intent(out) :: esat(:,:) !< saturation vapor pressure
  character(len=*), intent(out), optional :: err_msg
 
  character(len=54) :: err_msg_local
- integer :: nbad
+ integer :: nbad !< if temperature is out of range
 !-----------------------------------------------
 
    if (.not.module_is_initialized) then
@@ -131,11 +131,11 @@
 ! </SUBROUTINE>
  subroutine LOOKUP_ES_3D_ ( temp, esat, err_msg )
 
- real(kind=FMS_SVP_KIND_), intent(in)  :: temp(:,:,:)
- real(kind=FMS_SVP_KIND_), intent(out) :: esat(:,:,:)
+ real(kind=FMS_SVP_KIND_), intent(in)  :: temp(:,:,:) !< temperature in degrees Kelvin (K)
+ real(kind=FMS_SVP_KIND_), intent(out) :: esat(:,:,:) !< saturation vapor pressure
  character(len=*), intent(out), optional :: err_msg
 
- integer :: nbad
+ integer :: nbad !< if temperature is out of range
  character(len=128) :: err_msg_tmp
 
    if (.not.module_is_initialized) then
@@ -164,11 +164,11 @@
 ! </SUBROUTINE>
  subroutine LOOKUP_ES2_0D_ ( temp, esat, err_msg )
 
- real(kind=FMS_SVP_KIND_), intent(in)  :: temp
- real(kind=FMS_SVP_KIND_), intent(out) :: esat
+ real(kind=FMS_SVP_KIND_), intent(in)  :: temp !< temperature in degrees Kelvin (K)
+ real(kind=FMS_SVP_KIND_), intent(out) :: esat !< saturation vapor pressure
  character(len=*), intent(out), optional :: err_msg
 
- integer :: nbad
+ integer :: nbad !< if temperature is out of range
  character(len=128) :: err_msg_local
 
    if (.not.module_is_initialized) then
@@ -196,12 +196,12 @@
 ! </SUBROUTINE>
  subroutine LOOKUP_ES2_1D_ ( temp, esat, err_msg )
 
- real(kind=FMS_SVP_KIND_), intent(in)  :: temp(:)
- real(kind=FMS_SVP_KIND_), intent(out) :: esat(:)
+ real(kind=FMS_SVP_KIND_), intent(in)  :: temp(:) !< temperature in degrees Kelvin (K)
+ real(kind=FMS_SVP_KIND_), intent(out) :: esat(:) !< saturation vapor pressure
  character(len=*), intent(out), optional :: err_msg
 
  character(len=54) :: err_msg_local
- integer :: nbad
+ integer :: nbad !< if temperature is out of range
 !-----------------------------------------------
 
    if (.not.module_is_initialized) then
@@ -232,12 +232,12 @@
 ! </SUBROUTINE>
  subroutine LOOKUP_ES2_2D_ ( temp, esat, err_msg )
 
- real(kind=FMS_SVP_KIND_), intent(in)  :: temp(:,:)
- real(kind=FMS_SVP_KIND_), intent(out) :: esat(:,:)
+ real(kind=FMS_SVP_KIND_), intent(in)  :: temp(:,:) !< temperature in degrees Kelvin (K)
+ real(kind=FMS_SVP_KIND_), intent(out) :: esat(:,:) !< saturation vapor pressure
  character(len=*), intent(out), optional :: err_msg
 
  character(len=54) :: err_msg_local
- integer :: nbad
+ integer :: nbad !< if temperature is out of range
 !-----------------------------------------------
 
    if (.not.module_is_initialized) then
@@ -268,11 +268,11 @@
 ! </SUBROUTINE>
  subroutine LOOKUP_ES2_3D_ ( temp, esat, err_msg )
 
- real(kind=FMS_SVP_KIND_), intent(in)  :: temp(:,:,:)
- real(kind=FMS_SVP_KIND_), intent(out) :: esat(:,:,:)
+ real(kind=FMS_SVP_KIND_), intent(in)  :: temp(:,:,:) !< temperature in degrees Kelvin (K)
+ real(kind=FMS_SVP_KIND_), intent(out) :: esat(:,:,:) !< saturation vapor pressure
  character(len=*), intent(out), optional :: err_msg
 
- integer :: nbad
+ integer :: nbad !< if temperature is out of range
  character(len=128) :: err_msg_tmp
 
    if (.not.module_is_initialized) then
@@ -301,11 +301,11 @@
 ! </SUBROUTINE>
  subroutine LOOKUP_ES3_0D_ ( temp, esat, err_msg )
 
- real(kind=FMS_SVP_KIND_), intent(in)  :: temp
- real(kind=FMS_SVP_KIND_), intent(out) :: esat
+ real(kind=FMS_SVP_KIND_), intent(in)  :: temp !< temperature in degrees Kelvin (K)
+ real(kind=FMS_SVP_KIND_), intent(out) :: esat !< saturation vapor pressure
  character(len=*), intent(out), optional :: err_msg
 
- integer :: nbad
+ integer :: nbad !< if temperature is out of range
  character(len=128) :: err_msg_local
 
    if (.not.module_is_initialized) then
@@ -333,12 +333,12 @@
 ! </SUBROUTINE>
  subroutine LOOKUP_ES3_1D_ ( temp, esat, err_msg )
 
- real(kind=FMS_SVP_KIND_), intent(in)  :: temp(:)
- real(kind=FMS_SVP_KIND_), intent(out) :: esat(:)
+ real(kind=FMS_SVP_KIND_), intent(in)  :: temp(:) !< temperature in degrees Kelvin (K)
+ real(kind=FMS_SVP_KIND_), intent(out) :: esat(:) !< saturation vapor pressure
  character(len=*), intent(out), optional :: err_msg
 
  character(len=54) :: err_msg_local
- integer :: nbad
+ integer :: nbad !< if temperature is out of range
 !-----------------------------------------------
 
    if (.not.module_is_initialized) then
@@ -369,12 +369,12 @@
 ! </SUBROUTINE>
  subroutine LOOKUP_ES3_2D_ ( temp, esat, err_msg )
 
- real(kind=FMS_SVP_KIND_), intent(in)  :: temp(:,:)
- real(kind=FMS_SVP_KIND_), intent(out) :: esat(:,:)
+ real(kind=FMS_SVP_KIND_), intent(in)  :: temp(:,:) !< temperature in degrees Kelvin (K)
+ real(kind=FMS_SVP_KIND_), intent(out) :: esat(:,:) !< saturation vapor pressure
  character(len=*), intent(out), optional :: err_msg
 
  character(len=54) :: err_msg_local
- integer :: nbad
+ integer :: nbad !< if temperature is out of range
 !-----------------------------------------------
 
    if (.not.module_is_initialized) then
@@ -405,11 +405,11 @@
 ! </SUBROUTINE>
  subroutine LOOKUP_ES3_3D_ ( temp, esat, err_msg )
 
- real(kind=FMS_SVP_KIND_), intent(in)  :: temp(:,:,:)
- real(kind=FMS_SVP_KIND_), intent(out) :: esat(:,:,:)
+ real(kind=FMS_SVP_KIND_), intent(in)  :: temp(:,:,:) !< temperature in degrees Kelvin (K)
+ real(kind=FMS_SVP_KIND_), intent(out) :: esat(:,:,:) !< saturation vapor pressure
  character(len=*), intent(out), optional :: err_msg
 
- integer :: nbad
+ integer :: nbad !< if temperature is out of range
  character(len=128) :: err_msg_tmp
 
    if (.not.module_is_initialized) then
@@ -441,11 +441,11 @@
 ! </SUBROUTINE>
  subroutine LOOKUP_DES_0D_ ( temp, desat, err_msg )
 
- real(kind=FMS_SVP_KIND_), intent(in)  :: temp
- real(kind=FMS_SVP_KIND_), intent(out) :: desat
+ real(kind=FMS_SVP_KIND_), intent(in)  :: temp  !< temperature in degrees Kelvin (K)
+ real(kind=FMS_SVP_KIND_), intent(out) :: desat !< derivative of saturation vapor pressure
  character(len=*), intent(out), optional :: err_msg
 
- integer :: nbad
+ integer :: nbad !< if temperature is out of range
  character(len=128) :: err_msg_local
 
    if (.not.module_is_initialized) then
@@ -473,12 +473,12 @@
 ! </SUBROUTINE>
  subroutine LOOKUP_DES_1D_ ( temp, desat, err_msg )
 
- real(kind=FMS_SVP_KIND_), intent(in)  :: temp (:)
- real(kind=FMS_SVP_KIND_), intent(out) :: desat(:)
+ real(kind=FMS_SVP_KIND_), intent(in)  :: temp (:) !< temperature in degrees Kelvin (K)
+ real(kind=FMS_SVP_KIND_), intent(out) :: desat(:) !< derivative of saturation vapor pressure
  character(len=*), intent(out), optional :: err_msg
 
  character(len=54) :: err_msg_local
- integer :: nbad
+ integer :: nbad !< if temperature is out of range
 !-----------------------------------------------
 
    if (.not.module_is_initialized) then
@@ -510,12 +510,12 @@
 ! </SUBROUTINE>
  subroutine LOOKUP_DES_2D_ ( temp, desat, err_msg )
 
- real(kind=FMS_SVP_KIND_), intent(in)  :: temp (:,:)
- real(kind=FMS_SVP_KIND_), intent(out) :: desat(:,:)
+ real(kind=FMS_SVP_KIND_), intent(in)  :: temp (:,:) !< temperature in degrees Kelvin (K)
+ real(kind=FMS_SVP_KIND_), intent(out) :: desat(:,:) !< derivative of saturation vapor pressure
  character(len=*), intent(out), optional :: err_msg
 
  character(len=54) :: err_msg_local
- integer :: nbad
+ integer :: nbad !< if temperature is out of range
 !-----------------------------------------------
 
    if (.not.module_is_initialized) then
@@ -544,11 +544,11 @@
 ! </SUBROUTINE>
  subroutine LOOKUP_DES_3D_ ( temp, desat, err_msg )
 
- real(kind=FMS_SVP_KIND_), intent(in)  :: temp (:,:,:)
- real(kind=FMS_SVP_KIND_), intent(out) :: desat(:,:,:)
+ real(kind=FMS_SVP_KIND_), intent(in)  :: temp (:,:,:) !< temperature in degrees Kelvin (K)
+ real(kind=FMS_SVP_KIND_), intent(out) :: desat(:,:,:) !< derivative of saturation vapor pressure
  character(len=*), intent(out), optional :: err_msg
 
- integer :: nbad
+ integer :: nbad !< if temperature is out of range
  character(len=128) :: err_msg_tmp
 
    if (.not.module_is_initialized) then
@@ -576,11 +576,11 @@
 ! </SUBROUTINE>
  subroutine LOOKUP_DES2_0D_ ( temp, desat, err_msg )
 
- real(kind=FMS_SVP_KIND_), intent(in)  :: temp
- real(kind=FMS_SVP_KIND_), intent(out) :: desat
+ real(kind=FMS_SVP_KIND_), intent(in)  :: temp  !< temperature in degrees Kelvin (K)
+ real(kind=FMS_SVP_KIND_), intent(out) :: desat !< derivative of saturation vapor pressure
  character(len=*), intent(out), optional :: err_msg
 
- integer :: nbad
+ integer :: nbad !< if temperature is out of range
  character(len=128) :: err_msg_local
 
    if (.not.module_is_initialized) then
@@ -608,12 +608,12 @@
 ! </SUBROUTINE>
  subroutine LOOKUP_DES2_1D_ ( temp, desat, err_msg )
 
- real(kind=FMS_SVP_KIND_), intent(in)  :: temp (:)
- real(kind=FMS_SVP_KIND_), intent(out) :: desat(:)
+ real(kind=FMS_SVP_KIND_), intent(in)  :: temp (:) !< temperature in degrees Kelvin (K)
+ real(kind=FMS_SVP_KIND_), intent(out) :: desat(:) !< derivative of saturation vapor pressure
  character(len=*), intent(out), optional :: err_msg
 
  character(len=54) :: err_msg_local
- integer :: nbad
+ integer :: nbad !< if temperature is out of range
 !-----------------------------------------------
 
    if (.not.module_is_initialized) then
@@ -645,12 +645,12 @@
 ! </SUBROUTINE>
  subroutine LOOKUP_DES2_2D_ ( temp, desat, err_msg )
 
- real(kind=FMS_SVP_KIND_), intent(in)  :: temp (:,:)
- real(kind=FMS_SVP_KIND_), intent(out) :: desat(:,:)
+ real(kind=FMS_SVP_KIND_), intent(in)  :: temp (:,:) !< temperature in degrees Kelvin (K)
+ real(kind=FMS_SVP_KIND_), intent(out) :: desat(:,:) !< derivative of saturation vapor pressure
  character(len=*), intent(out), optional :: err_msg
 
  character(len=54) :: err_msg_local
- integer :: nbad
+ integer :: nbad !< if temperature is out of range
 !-----------------------------------------------
 
    if (.not.module_is_initialized) then
@@ -679,11 +679,11 @@
 ! </SUBROUTINE>
  subroutine LOOKUP_DES2_3D_ ( temp, desat, err_msg )
 
- real(kind=FMS_SVP_KIND_), intent(in)  :: temp (:,:,:)
- real(kind=FMS_SVP_KIND_), intent(out) :: desat(:,:,:)
+ real(kind=FMS_SVP_KIND_), intent(in)  :: temp (:,:,:) !< temperature in degrees Kelvin (K)
+ real(kind=FMS_SVP_KIND_), intent(out) :: desat(:,:,:) !< derivative of saturation vapor pressure
  character(len=*), intent(out), optional :: err_msg
 
- integer :: nbad
+ integer :: nbad !< if temperature is out of range
  character(len=128) :: err_msg_tmp
 
    if (.not.module_is_initialized) then
@@ -711,11 +711,11 @@
 ! </SUBROUTINE>
  subroutine LOOKUP_DES3_0D_ ( temp, desat, err_msg )
 
- real(kind=FMS_SVP_KIND_), intent(in)  :: temp
- real(kind=FMS_SVP_KIND_), intent(out) :: desat
+ real(kind=FMS_SVP_KIND_), intent(in)  :: temp  !< temperature in degrees Kelvin (K)
+ real(kind=FMS_SVP_KIND_), intent(out) :: desat !< derivative of saturation vapor pressure
  character(len=*), intent(out), optional :: err_msg
 
- integer :: nbad
+ integer :: nbad !< if temperature is out of range
  character(len=128) :: err_msg_local
 
    if (.not.module_is_initialized) then
@@ -743,12 +743,12 @@
 ! </SUBROUTINE>
  subroutine LOOKUP_DES3_1D_ ( temp, desat, err_msg )
 
- real(kind=FMS_SVP_KIND_), intent(in)  :: temp (:)
- real(kind=FMS_SVP_KIND_), intent(out) :: desat(:)
+ real(kind=FMS_SVP_KIND_), intent(in)  :: temp (:) !< temperature in degrees Kelvin (K)
+ real(kind=FMS_SVP_KIND_), intent(out) :: desat(:) !< derivative of saturation vapor pressure
  character(len=*), intent(out), optional :: err_msg
 
  character(len=54) :: err_msg_local
- integer :: nbad
+ integer :: nbad !< if temperature is out of range
 !-----------------------------------------------
 
    if (.not.module_is_initialized) then
@@ -780,12 +780,12 @@
 ! </SUBROUTINE>
  subroutine LOOKUP_DES3_2D_ ( temp, desat, err_msg )
 
- real(kind=FMS_SVP_KIND_), intent(in)  :: temp (:,:)
- real(kind=FMS_SVP_KIND_), intent(out) :: desat(:,:)
+ real(kind=FMS_SVP_KIND_), intent(in)  :: temp (:,:) !< temperature in degrees Kelvin (K)
+ real(kind=FMS_SVP_KIND_), intent(out) :: desat(:,:) !< derivative of saturation vapor pressure
  character(len=*), intent(out), optional :: err_msg
 
  character(len=54) :: err_msg_local
- integer :: nbad
+ integer :: nbad !< if temperature is out of range
 !-----------------------------------------------
 
    if (.not.module_is_initialized) then
@@ -814,11 +814,11 @@
 ! </SUBROUTINE>
  subroutine LOOKUP_DES3_3D_ ( temp, desat, err_msg )
 
- real(kind=FMS_SVP_KIND_), intent(in)  :: temp (:,:,:)
- real(kind=FMS_SVP_KIND_), intent(out) :: desat(:,:,:)
+ real(kind=FMS_SVP_KIND_), intent(in)  :: temp (:,:,:) !< temperature in degrees Kelvin (K)
+ real(kind=FMS_SVP_KIND_), intent(out) :: desat(:,:,:) !< derivative of saturation vapor pressure
  character(len=*), intent(out), optional :: err_msg
 
- integer :: nbad
+ integer :: nbad !< if temperature is out of range
  character(len=128) :: err_msg_tmp
 
    if (.not.module_is_initialized) then
@@ -850,11 +850,12 @@
 ! </SUBROUTINE>
  subroutine LOOKUP_ES_DES_0D_ ( temp, esat, desat, err_msg )
 
- real(kind=FMS_SVP_KIND_), intent(in)  :: temp
- real(kind=FMS_SVP_KIND_), intent(out) :: esat, desat
+ real(kind=FMS_SVP_KIND_), intent(in)  :: temp  !< temperature in degrees Kelvin (K)
+ real(kind=FMS_SVP_KIND_), intent(out) :: esat  !< saturation vapor pressure
+ real(kind=FMS_SVP_KIND_), intent(out) :: desat !< derivative of saturation vapor pressure
  character(len=*), intent(out), optional :: err_msg
 
- integer :: nbad
+ integer :: nbad !< if temperature is out of range
  character(len=128) :: err_msg_local
 
    if (.not.module_is_initialized) then
@@ -883,11 +884,12 @@
 ! </SUBROUTINE>
  subroutine LOOKUP_ES_DES_1D_ ( temp, esat, desat, err_msg )
 
- real(kind=FMS_SVP_KIND_), dimension(:), intent(in)  :: temp
- real(kind=FMS_SVP_KIND_), dimension(:), intent(out) :: esat, desat
+ real(kind=FMS_SVP_KIND_), dimension(:), intent(in)  :: temp  !< temperature in degrees Kelvin (K)
+ real(kind=FMS_SVP_KIND_), dimension(:), intent(out) :: esat  !< saturation vapor pressure
+ real(kind=FMS_SVP_KIND_), dimension(:), intent(out) :: desat !< derivative of saturation vapor pressure
  character(len=*), intent(out), optional :: err_msg
 
- integer :: nbad
+ integer :: nbad !< if temperature is out of range
  character(len=128) :: err_msg_local
 
    if (.not.module_is_initialized) then
@@ -917,11 +919,12 @@
 ! </SUBROUTINE>
  subroutine LOOKUP_ES_DES_2D_ ( temp, esat, desat, err_msg )
 
- real(kind=FMS_SVP_KIND_), dimension(:,:), intent(in)  :: temp
- real(kind=FMS_SVP_KIND_), dimension(:,:), intent(out) :: esat, desat
+ real(kind=FMS_SVP_KIND_), dimension(:,:), intent(in)  :: temp  !< temperature in degrees Kelvin (K)
+ real(kind=FMS_SVP_KIND_), dimension(:,:), intent(out) :: esat  !< saturation vapor pressure
+ real(kind=FMS_SVP_KIND_), dimension(:,:), intent(out) :: desat !< derivative of saturation vapor pressure
  character(len=*), intent(out), optional :: err_msg
 
- integer :: nbad
+ integer :: nbad !< if temperature is out of range
  character(len=128) :: err_msg_local
 
    if (.not.module_is_initialized) then
@@ -951,11 +954,12 @@
 ! </SUBROUTINE>
  subroutine LOOKUP_ES_DES_3D_ ( temp, esat, desat, err_msg )
 
- real(kind=FMS_SVP_KIND_), dimension(:,:,:), intent(in)  :: temp
- real(kind=FMS_SVP_KIND_), dimension(:,:,:), intent(out) :: esat, desat
+ real(kind=FMS_SVP_KIND_), dimension(:,:,:), intent(in)  :: temp  !< temperature in degrees Kelvin (K)
+ real(kind=FMS_SVP_KIND_), dimension(:,:,:), intent(out) :: esat  !< saturation vapor pressure
+ real(kind=FMS_SVP_KIND_), dimension(:,:,:), intent(out) :: desat !< derivative of saturation vapor pressure
  character(len=*), intent(out), optional :: err_msg
 
- integer :: nbad
+ integer :: nbad !< if temperature is out of range
  character(len=128) :: err_msg_local
 
    if (.not.module_is_initialized) then
@@ -986,11 +990,12 @@
 ! </SUBROUTINE>
  subroutine LOOKUP_ES2_DES2_0D_ ( temp, esat, desat, err_msg )
 
- real(kind=FMS_SVP_KIND_), intent(in)  :: temp
- real(kind=FMS_SVP_KIND_), intent(out) :: esat, desat
+ real(kind=FMS_SVP_KIND_), intent(in)  :: temp  !< temperature in degrees Kelvin (K)
+ real(kind=FMS_SVP_KIND_), intent(out) :: esat  !< saturation vapor pressure
+ real(kind=FMS_SVP_KIND_), intent(out) :: desat !< derivative of saturation vapor pressure
  character(len=*), intent(out), optional :: err_msg
 
- integer :: nbad
+ integer :: nbad !< if temperature is out of range
  character(len=128) :: err_msg_local
 
    if (.not.module_is_initialized) then
@@ -1019,11 +1024,12 @@
 ! </SUBROUTINE>
  subroutine LOOKUP_ES2_DES2_1D_ ( temp, esat, desat, err_msg )
 
- real(kind=FMS_SVP_KIND_), dimension(:), intent(in)  :: temp
- real(kind=FMS_SVP_KIND_), dimension(:), intent(out) :: esat, desat
+ real(kind=FMS_SVP_KIND_), dimension(:), intent(in)  :: temp  !< temperature in degrees Kelvin (K)
+ real(kind=FMS_SVP_KIND_), dimension(:), intent(out) :: esat  !< saturation vapor pressure
+ real(kind=FMS_SVP_KIND_), dimension(:), intent(out) :: desat !< derivative of saturation vapor pressure
  character(len=*), intent(out), optional :: err_msg
 
- integer :: nbad
+ integer :: nbad !< if temperature is out of range
  character(len=128) :: err_msg_local
 
    if (.not.module_is_initialized) then
@@ -1053,11 +1059,12 @@
 ! </SUBROUTINE>
  subroutine LOOKUP_ES2_DES2_2D_ ( temp, esat, desat, err_msg )
 
- real(kind=FMS_SVP_KIND_), dimension(:,:), intent(in)  :: temp
- real(kind=FMS_SVP_KIND_), dimension(:,:), intent(out) :: esat, desat
+ real(kind=FMS_SVP_KIND_), dimension(:,:), intent(in)  :: temp  !< temperature in degrees Kelvin (K)
+ real(kind=FMS_SVP_KIND_), dimension(:,:), intent(out) :: esat  !< saturation vapor pressure
+ real(kind=FMS_SVP_KIND_), dimension(:,:), intent(out) :: desat !< derivative of saturation vapor pressure
  character(len=*), intent(out), optional :: err_msg
 
- integer :: nbad
+ integer :: nbad !< if temperature is out of range
  character(len=128) :: err_msg_local
 
    if (.not.module_is_initialized) then
@@ -1087,11 +1094,12 @@
 ! </SUBROUTINE>
  subroutine LOOKUP_ES2_DES2_3D_ ( temp, esat, desat, err_msg )
 
- real(kind=FMS_SVP_KIND_), dimension(:,:,:), intent(in)  :: temp
- real(kind=FMS_SVP_KIND_), dimension(:,:,:), intent(out) :: esat, desat
+ real(kind=FMS_SVP_KIND_), dimension(:,:,:), intent(in)  :: temp  !< temperature in degrees Kelvin (K)
+ real(kind=FMS_SVP_KIND_), dimension(:,:,:), intent(out) :: esat  !< saturation vapor pressure
+ real(kind=FMS_SVP_KIND_), dimension(:,:,:), intent(out) :: desat !< derivative of saturation vapor pressure
  character(len=*), intent(out), optional :: err_msg
 
- integer :: nbad
+ integer :: nbad !< if temperature is out of range
  character(len=128) :: err_msg_local
 
    if (.not.module_is_initialized) then
@@ -1123,11 +1131,12 @@
 ! </SUBROUTINE>
  subroutine LOOKUP_ES3_DES3_0D_ ( temp, esat, desat, err_msg )
 
- real(kind=FMS_SVP_KIND_), intent(in)  :: temp
- real(kind=FMS_SVP_KIND_), intent(out) :: esat, desat
+ real(kind=FMS_SVP_KIND_), intent(in)  :: temp  !< temperature in degrees Kelvin (K)
+ real(kind=FMS_SVP_KIND_), intent(out) :: esat  !< saturation vapor pressure
+ real(kind=FMS_SVP_KIND_), intent(out) :: desat !< derivative of saturation vapor pressure
  character(len=*), intent(out), optional :: err_msg
 
- integer :: nbad
+ integer :: nbad !< if temperature is out of range
  character(len=128) :: err_msg_local
 
    if (.not.module_is_initialized) then
@@ -1156,11 +1165,12 @@
 ! </SUBROUTINE>
  subroutine LOOKUP_ES3_DES3_1D_ ( temp, esat, desat, err_msg )
 
- real(kind=FMS_SVP_KIND_), dimension(:), intent(in)  :: temp
- real(kind=FMS_SVP_KIND_), dimension(:), intent(out) :: esat, desat
+ real(kind=FMS_SVP_KIND_), dimension(:), intent(in)  :: temp  !< temperature in degrees Kelvin (K)
+ real(kind=FMS_SVP_KIND_), dimension(:), intent(out) :: esat  !< saturation vapor pressure
+ real(kind=FMS_SVP_KIND_), dimension(:), intent(out) :: desat !< derivative of saturation vapor pressure
  character(len=*), intent(out), optional :: err_msg
 
- integer :: nbad
+ integer :: nbad !< if temperature is out of range
  character(len=128) :: err_msg_local
 
    if (.not.module_is_initialized) then
@@ -1190,11 +1200,12 @@
 ! </SUBROUTINE>
  subroutine LOOKUP_ES3_DES3_2D_ ( temp, esat, desat, err_msg )
 
- real(kind=FMS_SVP_KIND_), dimension(:,:), intent(in)  :: temp
- real(kind=FMS_SVP_KIND_), dimension(:,:), intent(out) :: esat, desat
+ real(kind=FMS_SVP_KIND_), dimension(:,:), intent(in)  :: temp  !< temperature in degrees Kelvin (K)
+ real(kind=FMS_SVP_KIND_), dimension(:,:), intent(out) :: esat  !< saturation vapor pressure
+ real(kind=FMS_SVP_KIND_), dimension(:,:), intent(out) :: desat !< derivative of saturation vapor pressure
  character(len=*), intent(out), optional :: err_msg
 
- integer :: nbad
+ integer :: nbad !< if temperature is out of range
  character(len=128) :: err_msg_local
 
    if (.not.module_is_initialized) then
@@ -1224,11 +1235,12 @@
 ! </SUBROUTINE>
  subroutine LOOKUP_ES3_DES3_3D_ ( temp, esat, desat, err_msg )
 
- real(kind=FMS_SVP_KIND_), dimension(:,:,:), intent(in)  :: temp
- real(kind=FMS_SVP_KIND_), dimension(:,:,:), intent(out) :: esat, desat
+ real(kind=FMS_SVP_KIND_), dimension(:,:,:), intent(in)  :: temp  !< temperature in degrees Kelvin (K)
+ real(kind=FMS_SVP_KIND_), dimension(:,:,:), intent(out) :: esat  !< saturation vapor pressure
+ real(kind=FMS_SVP_KIND_), dimension(:,:,:), intent(out) :: desat !< derivative of saturation vapor pressure
  character(len=*), intent(out), optional :: err_msg
 
- integer :: nbad
+ integer :: nbad !< if temperature is out of range
  character(len=128) :: err_msg_local
 
    if (.not.module_is_initialized) then
@@ -1263,21 +1275,24 @@
  subroutine COMPUTE_QS_0D_ ( temp, press, qsat, q, hc, dqsdT, esat, &
                             err_msg, es_over_liq, es_over_liq_and_ice )
 
- real(kind=FMS_SVP_KIND_), intent(in)                        :: temp, press
- real(kind=FMS_SVP_KIND_), intent(out)                       :: qsat
- real(kind=FMS_SVP_KIND_), intent(in),              optional :: q, hc
- real(kind=FMS_SVP_KIND_), intent(out),             optional :: dqsdT, esat
+ real(kind=FMS_SVP_KIND_), intent(in)    :: temp  !< temperature in degrees Kelvin (K)
+ real(kind=FMS_SVP_KIND_), intent(in)    :: press !< pressure
+ real(kind=FMS_SVP_KIND_), intent(out)   :: qsat  !< saturation vapor pressure
+ real(kind=FMS_SVP_KIND_), intent(in),  optional :: q     !< vapor relative humidity
+ real(kind=FMS_SVP_KIND_), intent(in),  optional :: hc    !< relative humidity
+ real(kind=FMS_SVP_KIND_), intent(out), optional :: dqsdT !< d(qsat)/dT
+ real(kind=FMS_SVP_KIND_), intent(out), optional :: esat  !< saturation vapor pressure
  character(len=*), intent(out), optional :: err_msg
  logical,intent(in),            optional :: es_over_liq
  logical,intent(in),            optional :: es_over_liq_and_ice
 
- integer :: nbad
+ integer :: nbad !< if temperature is out of range
  character(len=128) :: err_msg_tmp
 
  !> EPSILO and ZVIR are module level variables that are declared in r8_kind.
  !! Thus they need to be converted to FMS_SVP_KIND_
  real(kind=FMS_SVP_KIND_), parameter :: EPSILO_loc=real(EPSILO,FMS_SVP_KIND_)
- real(kind=FMS_SVP_KIND_), parameter :: ZVIR_loc=real(ZVIR,FMS_SVP_KIND_)
+ real(kind=FMS_SVP_KIND_), parameter :: ZVIRl=real(ZVIR,FMS_SVP_KIND_)
 
    if (.not.module_is_initialized) then
       if(fms_error_handler('lookup_es','sat_vapor_pres_init is not called' ,err_msg)) return
@@ -1298,7 +1313,7 @@
      endif
    endif
 
-   call compute_qs_k (temp, press,  EPSILO_loc, ZVIR_loc, qsat, nbad, q, hc, &
+   call compute_qs_k (temp, press,  EPSILO_loc, ZVIRl, qsat, nbad, q, hc, &
                        dqsdT, esat, es_over_liq, es_over_liq_and_ice)
 
    if ( nbad == 0 ) then
@@ -1326,21 +1341,23 @@
  subroutine COMPUTE_QS_1D_ ( temp, press, qsat, q, hc, dqsdT, esat, &
                             err_msg, es_over_liq, es_over_liq_and_ice )
 
- real(kind=FMS_SVP_KIND_), intent(in)                        :: temp(:), press(:)
- real(kind=FMS_SVP_KIND_), intent(out)                       :: qsat(:)
- real(kind=FMS_SVP_KIND_), intent(in),              optional :: q(:)
-real(kind=FMS_SVP_KIND_),  intent(in),              optional :: hc
- real(kind=FMS_SVP_KIND_), intent(out),             optional :: dqsdT(:), esat(:)
+ real(kind=FMS_SVP_KIND_), intent(in)   :: temp(:)   !< temperature in degrees Kelvin (K)
+ real(kind=FMS_SVP_KIND_), intent(in)   :: press(:)  !< pressure
+ real(kind=FMS_SVP_KIND_), intent(out)  :: qsat(:)   !< specific humidity
+ real(kind=FMS_SVP_KIND_), intent(in),  optional :: q(:)      !< vapor relative humidity
+ real(kind=FMS_SVP_KIND_), intent(in),  optional :: hc        !< relative humidity
+ real(kind=FMS_SVP_KIND_), intent(out), optional :: dqsdT(:)  !< d(qsat)/dT
+  real(kind=FMS_SVP_KIND_),intent(out), optional :: esat(:) !< saturation vapor pressure
  character(len=*), intent(out), optional :: err_msg
  logical,intent(in),            optional :: es_over_liq
  logical,intent(in),            optional :: es_over_liq_and_ice
 
- integer :: nbad
+ integer :: nbad !< if temperature is out of range
  character(len=128) :: err_msg_tmp
  !> EPSILO and ZVIR are module level variables that are declared in r8_kind.
  !! Thus they need to be converted to FMS_SVP_KIND_
- real(kind=FMS_SVP_KIND_), parameter :: EPSILO_loc=real(EPSILO,FMS_SVP_KIND_)
- real(kind=FMS_SVP_KIND_), parameter :: ZVIR_loc=real(ZVIR,FMS_SVP_KIND_)
+ real(kind=FMS_SVP_KIND_), parameter :: EPSILOl=real(EPSILO,FMS_SVP_KIND_)
+ real(kind=FMS_SVP_KIND_), parameter :: ZVIRl=real(ZVIR,FMS_SVP_KIND_)
 
    if (.not.module_is_initialized) then
       if(fms_error_handler('lookup_es','sat_vapor_pres_init is not called' ,err_msg)) return
@@ -1362,7 +1379,7 @@ real(kind=FMS_SVP_KIND_),  intent(in),              optional :: hc
    endif
 
 !  call compute_qs_k (temp, press,  EPSILO, ZVIR, qsat, nbad, q, dqsdT)
-   call compute_qs_k (temp, press,  EPSILO_loc, ZVIR_loc, qsat, nbad, q, hc, &
+   call compute_qs_k (temp, press,  EPSILOl, ZVIRl, qsat, nbad, q, hc, &
                        dqsdT, esat, es_over_liq, es_over_liq_and_ice)
 
    if ( nbad == 0 ) then
@@ -1392,21 +1409,23 @@ real(kind=FMS_SVP_KIND_),  intent(in),              optional :: hc
  subroutine COMPUTE_QS_2D_ ( temp, press, qsat, q, hc, dqsdT, esat, &
                             err_msg, es_over_liq, es_over_liq_and_ice )
 
- real(kind=FMS_SVP_KIND_), intent(in)                        :: temp(:,:), press(:,:)
- real(kind=FMS_SVP_KIND_), intent(out)                       :: qsat(:,:)
- real(kind=FMS_SVP_KIND_), intent(in),              optional :: q(:,:)
- real(kind=FMS_SVP_KIND_), intent(in),              optional :: hc
- real(kind=FMS_SVP_KIND_), intent(out),             optional :: dqsdT(:,:), esat(:,:)
+ real(kind=FMS_SVP_KIND_), intent(in)   :: temp(:,:)   !< temperature in degrees Kelvin (K)
+ real(kind=FMS_SVP_KIND_), intent(in)   :: press(:,:)  !< pressure
+ real(kind=FMS_SVP_KIND_), intent(out)  :: qsat(:,:)   !< specific humidity
+ real(kind=FMS_SVP_KIND_), intent(in),  optional :: q(:,:)     !< vapor relative humidity
+ real(kind=FMS_SVP_KIND_), intent(in),  optional :: hc         !< relative humidity
+ real(kind=FMS_SVP_KIND_), intent(out), optional :: dqsdT(:,:) !< d(qsat)/dT
+ real(kind=FMS_SVP_KIND_), intent(out), optional :: esat(:,:)  !< saturation vapor pressure
  character(len=*), intent(out), optional :: err_msg
  logical,intent(in),            optional :: es_over_liq
  logical,intent(in),            optional :: es_over_liq_and_ice
 
- integer :: nbad
+ integer :: nbad !< if temperature is out of range
  character(len=128) :: err_msg_tmp
  !> EPSILO and ZVIR are module level variables that are declared in r8_kind.
  !! Thus they need to be converted to FMS_SVP_KIND_
- real(kind=FMS_SVP_KIND_), parameter :: EPSILO_loc=real(EPSILO,FMS_SVP_KIND_)
- real(kind=FMS_SVP_KIND_), parameter :: ZVIR_loc=real(ZVIR,FMS_SVP_KIND_)
+ real(kind=FMS_SVP_KIND_), parameter :: EPSILOl=real(EPSILO,FMS_SVP_KIND_)
+ real(kind=FMS_SVP_KIND_), parameter :: ZVIRl=real(ZVIR,FMS_SVP_KIND_)
 
    if (.not.module_is_initialized) then
       if(fms_error_handler('lookup_es','sat_vapor_pres_init is not called' ,err_msg)) return
@@ -1428,7 +1447,7 @@ real(kind=FMS_SVP_KIND_),  intent(in),              optional :: hc
    endif
 
 !  call compute_qs_k (temp, press,  EPSILO, ZVIR, qsat, nbad, q, dqsdT)
-   call compute_qs_k (temp, press,  EPSILO_loc, ZVIR_loc, qsat, nbad, q, hc, &
+   call compute_qs_k (temp, press,  EPSILOl, ZVIRl, qsat, nbad, q, hc, &
                        dqsdT, esat, es_over_liq, es_over_liq_and_ice)
 
    if ( nbad == 0 ) then
@@ -1457,21 +1476,23 @@ real(kind=FMS_SVP_KIND_),  intent(in),              optional :: hc
  subroutine COMPUTE_QS_3D_ ( temp, press, qsat, q, hc, dqsdT, esat, &
                             err_msg, es_over_liq, es_over_liq_and_ice )
 
- real(kind=FMS_SVP_KIND_), intent(in)                        :: temp(:,:,:), press(:,:,:)
- real(kind=FMS_SVP_KIND_), intent(out)                       :: qsat(:,:,:)
- real(kind=FMS_SVP_KIND_), intent(in),              optional :: q(:,:,:)
- real(kind=FMS_SVP_KIND_), intent(in),              optional :: hc
- real(kind=FMS_SVP_KIND_), intent(out),             optional :: dqsdT(:,:,:), esat(:,:,:)
+ real(kind=FMS_SVP_KIND_), intent(in)   :: temp(:,:,:)   !< temperature in degrees Kelvin (K)
+ real(kind=FMS_SVP_KIND_), intent(in)   :: press(:,:,:)  !< pressure
+ real(kind=FMS_SVP_KIND_), intent(out)  :: qsat(:,:,:)   !< specific humidity
+ real(kind=FMS_SVP_KIND_), intent(in),  optional :: q(:,:,:)     !< vapor relative humidity
+ real(kind=FMS_SVP_KIND_), intent(in),  optional :: hc           !< relative humidity
+ real(kind=FMS_SVP_KIND_), intent(out), optional :: dqsdT(:,:,:) !< d(qsat)/dT
+ real(kind=FMS_SVP_KIND_), intent(out), optional :: esat(:,:,:)  !< saturation vapor pressure
  character(len=*), intent(out), optional :: err_msg
  logical,intent(in),            optional :: es_over_liq
  logical,intent(in),            optional :: es_over_liq_and_ice
 
- integer :: nbad
+ integer :: nbad !< if temperature is out of range
  character(len=128) :: err_msg_tmp
  !> EPSILO and ZVIR are module level variables that are declared in r8_kind.
  !! Thus they need to be converted to FMS_SVP_KIND_
- real(kind=FMS_SVP_KIND_), parameter :: EPSILO_loc=real(EPSILO,FMS_SVP_KIND_)
- real(kind=FMS_SVP_KIND_), parameter :: ZVIR_loc=real(ZVIR,FMS_SVP_KIND_)
+ real(kind=FMS_SVP_KIND_), parameter :: EPSILOl=real(EPSILO,FMS_SVP_KIND_)
+ real(kind=FMS_SVP_KIND_), parameter :: ZVIRl=real(ZVIR,FMS_SVP_KIND_)
 
    if (.not.module_is_initialized) then
       if(fms_error_handler('lookup_es','sat_vapor_pres_init is not called' ,err_msg)) return
@@ -1493,7 +1514,7 @@ real(kind=FMS_SVP_KIND_),  intent(in),              optional :: hc
    endif
 
 !  call compute_qs_k (temp, press,  EPSILO, ZVIR, qsat, nbad, q, dqsdT)
-   call compute_qs_k (temp, press,  EPSILO_loc, ZVIR_loc, qsat, nbad, q, hc, &
+   call compute_qs_k (temp, press,  EPSILOl, ZVIRl, qsat, nbad, q, hc, &
                        dqsdT, esat, es_over_liq, es_over_liq_and_ice)
 
 
@@ -1524,20 +1545,23 @@ real(kind=FMS_SVP_KIND_),  intent(in),              optional :: hc
  subroutine COMPUTE_MRS_0D_ ( temp, press, mrsat, mr, hc, dmrsdT, esat, &
                             err_msg, es_over_liq, es_over_liq_and_ice )
 
- real(kind=FMS_SVP_KIND_), intent(in)                        :: temp, press
- real(kind=FMS_SVP_KIND_), intent(out)                       :: mrsat
- real(kind=FMS_SVP_KIND_), intent(in),              optional :: mr, hc
- real(kind=FMS_SVP_KIND_), intent(out),             optional :: dmrsdT, esat
+ real(kind=FMS_SVP_KIND_), intent(in)   :: temp   !< temperature in degrees Kelvin (K)
+ real(kind=FMS_SVP_KIND_), intent(in)   :: press  !< pressure
+ real(kind=FMS_SVP_KIND_), intent(out)  :: mrsat  !< mixing ratio at relative humidity
+ real(kind=FMS_SVP_KIND_), intent(in),  optional :: mr     !< vapor mixing ratio
+ real(kind=FMS_SVP_KIND_), intent(in),  optional :: hc     !< relative humidity
+ real(kind=FMS_SVP_KIND_), intent(out), optional :: dmrsdT !< d(mrsat)/dT
+ real(kind=FMS_SVP_KIND_), intent(out), optional :: esat   !< saturation vapor pressure
  character(len=*), intent(out), optional :: err_msg
  logical,intent(in),            optional :: es_over_liq
  logical,intent(in),            optional :: es_over_liq_and_ice
 
- integer :: nbad
+ integer :: nbad !< if temperature is out of range
  character(len=128) :: err_msg_tmp
  !> EPSILO and ZVIR are module level variables that are declared in r8_kind.
  !! Thus they need to be converted to FMS_SVP_KIND_
- real(kind=FMS_SVP_KIND_), parameter :: EPSILO_loc=real(EPSILO,FMS_SVP_KIND_)
- real(kind=FMS_SVP_KIND_), parameter :: ZVIR_loc=real(ZVIR,FMS_SVP_KIND_)
+ real(kind=FMS_SVP_KIND_), parameter :: EPSILOl=real(EPSILO,FMS_SVP_KIND_)
+ real(kind=FMS_SVP_KIND_), parameter :: ZVIRl=real(ZVIR,FMS_SVP_KIND_)
 
    if (.not.module_is_initialized) then
       if(fms_error_handler('lookup_es','sat_vapor_pres_init is not called' ,err_msg)) return
@@ -1558,7 +1582,7 @@ real(kind=FMS_SVP_KIND_),  intent(in),              optional :: hc
      endif
    endif
 
-   call compute_mrs_k (temp, press, EPSILO_loc, ZVIR_loc, mrsat, nbad, mr,  &
+   call compute_mrs_k (temp, press, EPSILOl, ZVIRl, mrsat, nbad, mr,  &
                      hc, dmrsdT, esat, es_over_liq, es_over_liq_and_ice)
 
    if ( nbad == 0 ) then
@@ -1587,21 +1611,23 @@ real(kind=FMS_SVP_KIND_),  intent(in),              optional :: hc
  subroutine COMPUTE_MRS_1D_ ( temp, press, mrsat, mr, hc, dmrsdT, esat,&
                             err_msg, es_over_liq, es_over_liq_and_ice )
 
- real(kind=FMS_SVP_KIND_), intent(in)                        :: temp(:), press(:)
- real(kind=FMS_SVP_KIND_), intent(out)                       :: mrsat(:)
- real(kind=FMS_SVP_KIND_), intent(in),              optional :: mr(:)
- real(kind=FMS_SVP_KIND_), intent(in),              optional :: hc
- real(kind=FMS_SVP_KIND_), intent(out),             optional :: dmrsdT(:), esat(:)
+ real(kind=FMS_SVP_KIND_), intent(in)   :: temp(:)   !< temperature in degrees Kelvin (K)
+ real(kind=FMS_SVP_KIND_), intent(in)   :: press(:)  !< pressure
+ real(kind=FMS_SVP_KIND_), intent(out)  :: mrsat(:)  !< mixing ratio at relative humidity
+ real(kind=FMS_SVP_KIND_), intent(in),  optional :: mr(:)     !< vapor mixing ratio
+ real(kind=FMS_SVP_KIND_), intent(in),  optional :: hc        !< relative humidity
+ real(kind=FMS_SVP_KIND_), intent(out), optional :: dmrsdT(:) !< d(mrsat)/dT
+ real(kind=FMS_SVP_KIND_), intent(out), optional :: esat(:)   !< saturation vapor pressure
  character(len=*), intent(out), optional :: err_msg
  logical,intent(in),            optional :: es_over_liq
  logical,intent(in),            optional :: es_over_liq_and_ice
 
- integer :: nbad
+ integer :: nbad !< if temperature is out of range
  character(len=128) :: err_msg_tmp
  !> EPSILO and ZVIR are module level variables that are declared in r8_kind.
  !! Thus they need to be converted to FMS_SVP_KIND_
- real(kind=FMS_SVP_KIND_), parameter :: EPSILO_loc=real(EPSILO,FMS_SVP_KIND_)
- real(kind=FMS_SVP_KIND_), parameter :: ZVIR_loc=real(ZVIR,FMS_SVP_KIND_)
+ real(kind=FMS_SVP_KIND_), parameter :: EPSILOl=real(EPSILO,FMS_SVP_KIND_)
+ real(kind=FMS_SVP_KIND_), parameter :: ZVIRl=real(ZVIR,FMS_SVP_KIND_)
 
    if (.not.module_is_initialized) then
       if(fms_error_handler('lookup_es','sat_vapor_pres_init is not called' ,err_msg)) return
@@ -1624,7 +1650,7 @@ real(kind=FMS_SVP_KIND_),  intent(in),              optional :: hc
 
 !  call compute_mrs_k (temp, press, EPSILO, ZVIR, mrsat,  &
 !                                                     nbad, mr, dmrsdT)
-   call compute_mrs_k (temp, press, EPSILO_loc, ZVIR_loc, mrsat, nbad, mr,  &
+   call compute_mrs_k (temp, press, EPSILOl, ZVIRl, mrsat, nbad, mr,  &
                      hc, dmrsdT, esat, es_over_liq, es_over_liq_and_ice)
 
    if ( nbad == 0 ) then
@@ -1653,21 +1679,23 @@ real(kind=FMS_SVP_KIND_),  intent(in),              optional :: hc
  subroutine COMPUTE_MRS_2D_ ( temp, press, mrsat, mr, hc, dmrsdT, esat,&
                             err_msg, es_over_liq, es_over_liq_and_ice )
 
- real(kind=FMS_SVP_KIND_), intent(in)                        :: temp(:,:), press(:,:)
- real(kind=FMS_SVP_KIND_), intent(out)                       :: mrsat(:,:)
- real(kind=FMS_SVP_KIND_), intent(in),              optional :: mr(:,:)
- real(kind=FMS_SVP_KIND_), intent(in),              optional :: hc
- real(kind=FMS_SVP_KIND_), intent(out),             optional :: dmrsdT(:,:), esat(:,:)
+ real(kind=FMS_SVP_KIND_), intent(in)   :: temp(:,:)   !< temperature in degrees Kelvin (K)
+ real(kind=FMS_SVP_KIND_), intent(in)   :: press(:,:)  !< pressure
+ real(kind=FMS_SVP_KIND_), intent(out)  :: mrsat(:,:)  !< mixing ratio at relative humidity
+ real(kind=FMS_SVP_KIND_), intent(in),  optional :: mr(:,:)     !< vapor mixing ratio
+ real(kind=FMS_SVP_KIND_), intent(in),  optional :: hc          !< relative humidity
+ real(kind=FMS_SVP_KIND_), intent(out), optional :: dmrsdT(:,:) !< d(mrsat)/dT
+ real(kind=FMS_SVP_KIND_), intent(out), optional :: esat(:,:)   !< saturation vapor pressure
  character(len=*), intent(out), optional :: err_msg
  logical,intent(in),            optional :: es_over_liq
  logical,intent(in),            optional :: es_over_liq_and_ice
 
- integer :: nbad
+ integer :: nbad !< if temperature is out of range
  character(len=128) :: err_msg_tmp
  !> EPSILO and ZVIR are module level variables that are declared in r8_kind.
  !! Thus they need to be converted to FMS_SVP_KIND_
- real(kind=FMS_SVP_KIND_), parameter :: EPSILO_loc=real(EPSILO,FMS_SVP_KIND_)
- real(kind=FMS_SVP_KIND_), parameter :: ZVIR_loc=real(ZVIR,FMS_SVP_KIND_)
+ real(kind=FMS_SVP_KIND_), parameter :: EPSILOl=real(EPSILO,FMS_SVP_KIND_)
+ real(kind=FMS_SVP_KIND_), parameter :: ZVIRl=real(ZVIR,FMS_SVP_KIND_)
 
    if (.not.module_is_initialized) then
       if(fms_error_handler('lookup_es','sat_vapor_pres_init is not called' ,err_msg)) return
@@ -1690,7 +1718,7 @@ real(kind=FMS_SVP_KIND_),  intent(in),              optional :: hc
 
 !  call compute_mrs_k (temp, press, EPSILO, ZVIR, mrsat,  &
 !                                                     nbad, mr, dmrsdT)
-   call compute_mrs_k (temp, press, EPSILO_loc, ZVIR_loc, mrsat, nbad, mr,  &
+   call compute_mrs_k (temp, press, EPSILOl, ZVIRl, mrsat, nbad, mr,  &
                      hc, dmrsdT, esat, es_over_liq, es_over_liq_and_ice)
 
    if ( nbad == 0 ) then
@@ -1719,21 +1747,23 @@ real(kind=FMS_SVP_KIND_),  intent(in),              optional :: hc
  subroutine COMPUTE_MRS_3D_ ( temp, press, mrsat, mr, hc, dmrsdT, esat,&
                             err_msg, es_over_liq, es_over_liq_and_ice )
 
- real(kind=FMS_SVP_KIND_), intent(in)                        :: temp(:,:,:), press(:,:,:)
- real(kind=FMS_SVP_KIND_), intent(out)                       :: mrsat(:,:,:)
- real(kind=FMS_SVP_KIND_), intent(in),              optional :: mr(:,:,:)
- real(kind=FMS_SVP_KIND_), intent(in),              optional :: hc
- real(kind=FMS_SVP_KIND_), intent(out),             optional :: dmrsdT(:,:,:), esat(:,:,:)
+ real(kind=FMS_SVP_KIND_), intent(in)   :: temp(:,:,:)    !< temperature in degrees Kelvin (K)
+ real(kind=FMS_SVP_KIND_), intent(in)   :: press(:,:,:)   !< pressure
+ real(kind=FMS_SVP_KIND_), intent(out)  :: mrsat(:,:,:)   !< mixing ratio at relative humidity
+ real(kind=FMS_SVP_KIND_), intent(in),  optional :: mr(:,:,:)     !< vapor mixing ratio
+ real(kind=FMS_SVP_KIND_), intent(in),  optional :: hc            !< relative humidity
+ real(kind=FMS_SVP_KIND_), intent(out), optional :: dmrsdT(:,:,:) !< d(mrsat)/dT
+ real(kind=FMS_SVP_KIND_), intent(out), optional :: esat(:,:,:)   !< saturation vapor pressure
  character(len=*), intent(out), optional :: err_msg
  logical,intent(in),            optional :: es_over_liq
  logical,intent(in),            optional :: es_over_liq_and_ice
 
- integer :: nbad
+ integer :: nbad !< if temperature is out of range
  character(len=128) :: err_msg_tmp
  !> EPSILO and ZVIR are module level variables that are declared in r8_kind.
  !! Thus they need to be converted to FMS_SVP_KIND_
- real(kind=FMS_SVP_KIND_), parameter :: EPSILO_loc=real(EPSILO,FMS_SVP_KIND_)
- real(kind=FMS_SVP_KIND_), parameter :: ZVIR_loc=real(ZVIR,FMS_SVP_KIND_)
+ real(kind=FMS_SVP_KIND_), parameter :: EPSILOl=real(EPSILO,FMS_SVP_KIND_)
+ real(kind=FMS_SVP_KIND_), parameter :: ZVIRl=real(ZVIR,FMS_SVP_KIND_)
 
    if (.not.module_is_initialized) then
       if(fms_error_handler('lookup_es','sat_vapor_pres_init is not called' ,err_msg)) return
@@ -1756,7 +1786,7 @@ real(kind=FMS_SVP_KIND_),  intent(in),              optional :: hc
 
 !  call compute_mrs_k (temp, press, EPSILO, ZVIR, mrsat,   &
 !                                                    nbad, mr, dmrsdT)
-   call compute_mrs_k (temp, press, EPSILO_loc, ZVIR_loc, mrsat, nbad, mr,  &
+   call compute_mrs_k (temp, press, EPSILOl, ZVIRl, mrsat, nbad, mr,  &
                      hc, dmrsdT, esat, es_over_liq, es_over_liq_and_ice)
 
    if ( nbad == 0 ) then
@@ -1774,12 +1804,14 @@ real(kind=FMS_SVP_KIND_),  intent(in),              optional :: hc
 !#######################################################################
 
  function CHECK_1D_ ( temp ) result ( nbad )
- real(kind=FMS_SVP_KIND_)   , intent(in)  :: temp(:)
+ real(kind=FMS_SVP_KIND_)   , intent(in)  :: temp(:) !< temperature in degrees Kelvin (K)
  integer :: nbad, ind, i
 
  !> DTINV, TMIN, TEPS are module level variables declared in r8_kind
  !! Thus they need to be converted to FMS_SVP_KIND_
- real(FMS_SVP_KIND_) :: dtinvll, tminll, tepsll
+ real(FMS_SVP_KIND_) :: dtinvll !< local version of module variable dtinvl
+ real(FMS_SVP_KIND_) :: tminll  !< local version of module variable tminl
+ real(FMS_SVP_KIND_) :: tepsll  !< local version of module variable tepsl
 
  dtinvll=real(dtinv,FMS_SVP_KIND_)
  tminll=real(tmin,FMS_SVP_KIND_)
@@ -1796,7 +1828,7 @@ real(kind=FMS_SVP_KIND_),  intent(in),              optional :: hc
 !------------------------------------------------
 
  function CHECK_2D_ ( temp ) result ( nbad )
- real(kind=FMS_SVP_KIND_)   , intent(in)  :: temp(:,:)
+ real(kind=FMS_SVP_KIND_)   , intent(in)  :: temp(:,:) !< temperature in degrees Kelvin (K)
  integer :: nbad
  integer :: j
 
@@ -1809,7 +1841,7 @@ real(kind=FMS_SVP_KIND_),  intent(in),              optional :: hc
 !#######################################################################
 
  subroutine TEMP_CHECK_1D_ ( temp )
- real(kind=FMS_SVP_KIND_)   , intent(in) :: temp(:)
+ real(kind=FMS_SVP_KIND_)   , intent(in) :: temp(:) !< temperature in degrees Kelvin (K)
  integer :: i, unit
 
    unit = stdoutunit
@@ -1820,7 +1852,7 @@ real(kind=FMS_SVP_KIND_),  intent(in),              optional :: hc
 !--------------------------------------------------------------
 
  subroutine TEMP_CHECK_2D_ ( temp )
- real(kind=FMS_SVP_KIND_)   , intent(in) :: temp(:,:)
+ real(kind=FMS_SVP_KIND_)   , intent(in) :: temp(:,:) !< temperature in degrees Kelvin (K)
  integer :: i, j, unit
 
    unit = stdoutunit
@@ -1832,7 +1864,7 @@ real(kind=FMS_SVP_KIND_),  intent(in),              optional :: hc
 !--------------------------------------------------------------
 
  subroutine TEMP_CHECK_3D_ ( temp )
- real(kind=FMS_SVP_KIND_), intent(in)  :: temp(:,:,:)
+ real(kind=FMS_SVP_KIND_), intent(in)  :: temp(:,:,:) !< temperature in degrees Kelvin (K)
  integer :: i, j, k, unit
 
    unit = stdoutunit
@@ -1845,11 +1877,13 @@ real(kind=FMS_SVP_KIND_),  intent(in),              optional :: hc
 !#######################################################################
 
  subroutine SHOW_ALL_BAD_0D_ ( temp )
- real(kind=FMS_SVP_KIND_)   , intent(in) :: temp
+ real(kind=FMS_SVP_KIND_)   , intent(in) :: temp !< temperature in degrees Kelvin (K)
  integer :: ind, unit
  !> DTINV, TMIN, TEPS are module level variables declared in r8_kind
  !! Thus they need to be converted to FMS_SVP_KIND_
- real(FMS_SVP_KIND_) :: dtinvll, tminll, tepsll
+ real(FMS_SVP_KIND_) :: dtinvll !< local version of module variable dtinvl
+ real(FMS_SVP_KIND_) :: tminll  !< local version of module variable tminl
+ real(FMS_SVP_KIND_) :: tepsll  !< local version of module variable tepsl
 
  dtinvll=real(dtinv,FMS_SVP_KIND_)
  tminll=real(tmin,FMS_SVP_KIND_)
@@ -1866,11 +1900,13 @@ real(kind=FMS_SVP_KIND_),  intent(in),              optional :: hc
 !--------------------------------------------------------------
 
  subroutine SHOW_ALL_BAD_1D_ ( temp )
- real(kind=FMS_SVP_KIND_)   , intent(in) :: temp(:)
+ real(kind=FMS_SVP_KIND_)   , intent(in) :: temp(:) !< temperature in degrees Kelvin (K)
  integer :: i, ind, unit
  !> DTINV, TMIN, TEPS are module level variables declared in r8_kind
  !! Thus they need to be converted to FMS_SVP_KIND_
- real(FMS_SVP_KIND_) :: dtinvll, tminll, tepsll
+ real(FMS_SVP_KIND_) :: dtinvll !< local version of module variable dtinvl
+ real(FMS_SVP_KIND_) :: tminll  !< local version of module variable tminl
+ real(FMS_SVP_KIND_) :: tepsll  !< local version of module variable tepsl
 
  dtinvll=real(dtinv,FMS_SVP_KIND_)
  tminll=real(tmin,FMS_SVP_KIND_)
@@ -1889,11 +1925,13 @@ real(kind=FMS_SVP_KIND_),  intent(in),              optional :: hc
 !--------------------------------------------------------------
 
  subroutine SHOW_ALL_BAD_2D_ ( temp )
- real(kind=FMS_SVP_KIND_)   , intent(in) :: temp(:,:)
+ real(kind=FMS_SVP_KIND_)   , intent(in) :: temp(:,:) !< temperature in degrees Kelvin (K)
  integer :: i, j, ind, unit
  !> DTINV, TMIN, TEPS are module level variables declared in r8_kind
  !! Thus they need to be converted to FMS_SVP_KIND_
- real(FMS_SVP_KIND_) :: dtinvll, tminll, tepsll
+ real(FMS_SVP_KIND_) :: dtinvll !< local version of module variable dtinvl
+ real(FMS_SVP_KIND_) :: tminll  !< local version of module variable tminl
+ real(FMS_SVP_KIND_) :: tepsll  !< local version of module variable tepsl
 
  dtinvll=real(dtinv,FMS_SVP_KIND_)
  tminll=real(tmin,FMS_SVP_KIND_)
@@ -1904,7 +1942,7 @@ real(kind=FMS_SVP_KIND_),  intent(in),              optional :: hc
  do i=1,size(temp,1)
    ind = int( dtinvll*(temp(i,j)-tminll+tepsll) )
    if (ind < 0 .or. ind > nlim) then
-     write(unit,'(a,e10.3,a,i4,a,i4,a,i6)') 'Bad temperature=',temp(i,j),'  at i=',i,' j=',j,' pe=',mpp_pe()
+      write(unit,'(a,e10.3,a,i4,a,i4,a,i6)') 'Bad temperature=',temp(i,j),'  at i=',i,' j=',j,' pe=',mpp_pe()
    endif
  enddo
  enddo
@@ -1914,11 +1952,13 @@ real(kind=FMS_SVP_KIND_),  intent(in),              optional :: hc
 !--------------------------------------------------------------
 
  subroutine SHOW_ALL_BAD_3D_ ( temp )
- real(kind=FMS_SVP_KIND_), intent(in)  :: temp(:,:,:)
+ real(kind=FMS_SVP_KIND_), intent(in)  :: temp(:,:,:) !< temperature in degrees Kelvin (K)
  integer :: i, j, k, ind, unit
  !> DTINV, TMIN, TEPS are module level variables declared in r8_kind
  !! Thus they need to be converted to FMS_SVP_KIND_
- real(FMS_SVP_KIND_) :: dtinvll, tminll, tepsll
+ real(FMS_SVP_KIND_) :: dtinvll !< local version of module variable dtinvl
+ real(FMS_SVP_KIND_) :: tminll  !< local version of module variable tminl
+ real(FMS_SVP_KIND_) :: tepsll  !< local version of module variable tepsl
 
  dtinvll=real(dtinv,FMS_SVP_KIND_)
  tminll=real(tmin,FMS_SVP_KIND_)
