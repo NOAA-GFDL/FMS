@@ -1941,7 +1941,8 @@
  do j=1,size(temp,2)
  do i=1,size(temp,1)
    ind = int( dtinvll*(temp(i,j)-tminll+tepsll) )
-   if (ind < 0 .or. ind > nlim) then write(unit,'(a,e10.3,a,i4,a,i4,a,i6)') 'Bad temperature=',temp(i,j),'  at i=',i,' j=',j,' pe=',mpp_pe()
+   if (ind < 0 .or. ind > nlim) then
+      write(unit,'(a,e10.3,a,i4,a,i4,a,i6)') 'Bad temperature=',temp(i,j),'  at i=',i,' j=',j,' pe=',mpp_pe()
    endif
  enddo
  enddo

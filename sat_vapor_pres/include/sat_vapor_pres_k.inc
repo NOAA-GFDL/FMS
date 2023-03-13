@@ -394,7 +394,7 @@
  subroutine COMPUTE_QS_K_3D_ (temp, press, eps, zvir, qs, nbad, q, hc, &
                           dqsdT, esat, es_over_liq, es_over_liq_and_ice)
 
- real(kind=FMS_SVP_KIND_), intent(in),  dimension(:,:,:) :: temp, !< temperature
+ real(kind=FMS_SVP_KIND_), intent(in),  dimension(:,:,:) :: temp  !< temperature
  real(kind=FMS_SVP_KIND_), intent(in),  dimension(:,:,:) :: press !< pressure
  real(kind=FMS_SVP_KIND_), intent(in)                    :: eps   !< EPSILO
  real(kind=FMS_SVP_KIND_), intent(in)                    :: zvir  !< ZVIR
