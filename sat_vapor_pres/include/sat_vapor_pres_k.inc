@@ -221,8 +221,8 @@
  real(kind=FMS_SVP_KIND_), parameter :: ESBASW = 101324.60_lkind
  real(kind=FMS_SVP_KIND_), parameter :: ESBASI = 610.71_lkind
 
- ! one and ten are declared for code readability.  For example, one is easier to read
- ! then 1.0_lkind where lkind=FMS_SVP_KIND_ throughout the code
+ !> one and ten are declared for code readability.  For example, one is easier to read
+ !! then 1.0_lkind where lkind=FMS_SVP_KIND_ throughout the code
  real(FMS_SVP_KIND_), parameter :: one=1.0_lkind
  real(FMS_SVP_KIND_), parameter :: ten=10.0_lkind
 
@@ -234,6 +234,7 @@
 !  compute es over ice
 
      ! x = -9.09718(TBASI/tem-1) - 3.56654log(TBASI/tem) + 0.876793(1-tem/TBASI) + log(ESBASI)
+     ! the coded equation below is the commented equation above
      if (tem(i) < TBASI) then
          x = -9.09718_lkind*(TBASI/tem(i)-one)   &
              -3.56654_lkind*log10(TBASI/tem(i)) &
@@ -250,6 +251,7 @@
      ! x = -7.90298(TBASW/tem-1) + 5.02808log(TBASW/tem)
      !     -1.3816d-07*10^[11.344(1-tem/TBASW)-1]
      !     +8.1328d-03*10^[-3.49149(TBASW/tem-1)-1] + log(ESBASW)
+     ! the coded equation below is the commented equation above
      if (tem(i) > -20.0_lkind+TBASI) then
          x = -7.90298_lkind*(TBASW/tem(i)-one)   &
              +5.02808_lkind*log10(TBASW/tem(i)) &
@@ -264,6 +266,7 @@
 !  derive blended es over ice and supercooled water between -20c and 0c
 
      ! es = 0.05*[esice*(TBASI-10)+esh2o*(tem-TBASI+20)]
+     ! the coded equation below is the commented equation above
      if (tem(i) <= -20.0_lkind+TBASI) then
          es(i) = esice
      else if (tem(i) >= TBASI) then
@@ -285,9 +288,10 @@
  real(kind=FMS_SVP_KIND_) :: x, esh2o, TBASW
  integer :: i
 
- integer, parameter :: lkind=FMS_SVP_KIND_ !< local kind variable
- ! one and ten are declared for code readability.  For example, one is easier to read
- ! then 1.0_lkind where lkind=FMS_SVP_KIND_ throughout the code
+ !> local kind variable
+ !! one and ten are declared for code readability.  For example, one is easier to read
+ !! then 1.0_lkind where lkind=FMS_SVP_KIND_ throughout the code
+ integer, parameter :: lkind=FMS_SVP_KIND_
  real(kind=FMS_SVP_KIND_), parameter :: one=1.0_lkind
  real(kind=FMS_SVP_KIND_), parameter :: ten=10.0_lkind
  real(kind=FMS_SVP_KIND_), parameter :: ESBASW = 101324.60_lkind
@@ -300,9 +304,10 @@
 !  values over 100 c may not be valid
 !  see smithsonian meteorological tables page 350.
 
-   ! x = -7.90298(TBASW/tem-1) + 5.02808log(TBASW/tem)
-   !     -1.3816d-07*10^[11.344(1-tem/TBASW)-1]
-   !     +8.1328d-03*10^[-3.49149(TBASW/tem-1)-1] + log(ESBASW)
+      ! x = -7.90298(TBASW/tem-1) + 5.02808log(TBASW/tem)
+      !     -1.3816d-07*10^[11.344(1-tem/TBASW)-1]
+      !     +8.1328d-03*10^[-3.49149(TBASW/tem-1)-1] + log(ESBASW)
+      ! the coded equation below is the commented equation above
          x = -7.90298_lkind*(TBASW/tem(i)-one)  &
              +5.02808_lkind*log10(TBASW/tem(i)) &
              -1.3816e-07_lkind*(ten**((one-tem(i)/TBASW)*11.344_lkind)-one)   &
@@ -328,8 +333,8 @@
  integer, parameter :: lkind=FMS_SVP_KIND_
  real(kind=FMS_SVP_KIND_), parameter :: ESBASW = 101324.60_lkind
  real(kind=FMS_SVP_KIND_), parameter :: ESBASI = 610.71_lkind
- ! one and ten are declared for code readability.  For example, one is easier to read
- ! then 1.0_lkind where lkind=FMS_SVP_KIND_ throughout the code
+ !> one and ten are declared for code readability.  For example, one is easier to read
+ !! then 1.0_lkind where lkind=FMS_SVP_KIND_ throughout the code
  real(kind=FMS_SVP_KIND_), parameter :: one=1.0_lkind
  real(kind=FMS_SVP_KIND_), parameter :: ten=10.0_lkind
 
@@ -342,6 +347,7 @@
 
 !  compute es over ice
         ! x= -9.09718(TBASI/tem-1) -3.56654log(TBASI/tem) +0.87679(1-tem/TBASI)+log(EBASI)
+        ! the coded equation below is the commented equation above
          x = -9.09718_lkind*(TBASI/tem(i)-one)   &
              -3.56654_lkind*log10(TBASI/tem(i)) &
              +0.876793_lkind*(one-tem(i)/TBASI) + log10(ESBASI)
@@ -354,6 +360,7 @@
         ! x = -7.90298(TBASW/tem-1) + 5.02808log(TBASW/tem)
         !     -1.3816d-07*10^[11.344(1-tem/TBASW)-1]
         !     +8.1328d-03*10^[-3.49149(TBASW/tem-1)-1] + log(ESBASW)
+        ! the coded equation below is the commented equation above
           x = -7.90298_lkind*(TBASW/tem(i)-one) &
               +5.02808_lkind*log10(TBASW/tem(i)) &
               -1.3816e-07_lkind*(ten**((one-tem(i)/TBASW)*11.344_lkind)-one)      &
@@ -1084,10 +1091,12 @@
      else
        del = tmp-real(dtresl,FMS_SVP_KIND_)*real(ind,FMS_SVP_KIND_)
        ! esat = TABLE + del*(TABLE + del*D2TABLE)
+       ! the coded equation below is the commented equation above
        esat(i,j,k) = real(TABLE(ind+1),FMS_SVP_KIND_)              &
                          + del*( real(DTABLE(ind+1),FMS_SVP_KIND_) &
                                     + del*real(D2TABLE(ind+1),FMS_SVP_KIND_) )
        ! desat = DTABLE + 2del*D2TABLE
+       ! the coded equation below is the commented equation above
        desat(i,j,k) = real(DTABLE(ind+1), FMS_SVP_KIND_) &
                         + 2.0_lkind*del*real(D2TABLE(ind+1),FMS_SVP_KIND_)
      endif
@@ -1128,10 +1137,12 @@
      else
        del = tmp-dtresl*real(ind,FMS_SVP_KIND_)
        ! esat = TABLE + del*(TABLE + del*D2TABLE)
+       ! the coded equation below is the commented equation above
        esat(i,j) = real(TABLE(ind+1),FMS_SVP_KIND_) &
                  + del*( real(DTABLE(ind+1),FMS_SVP_KIND_) &
                  + del*real(D2TABLE(ind+1),FMS_SVP_KIND_) )
        ! desat = DTABLE + 2del*D2TABLE
+       ! the coded equation below is the commented equation above
        desat(i,j) = real(DTABLE(ind+1),FMS_SVP_KIND_) &
                   + 2.0_lkind*del*real(D2TABLE(ind+1),FMS_SVP_KIND_)
      endif
@@ -1171,10 +1182,12 @@
      else
         del = tmp-dtresl*real(ind,FMS_SVP_KIND_)
         ! esat = TABLE + del*(TABLE + del*D2TABLE)
+        ! the coded equation below is the commented equation above
         esat(i) = real(TABLE(ind+1),FMS_SVP_KIND_) &
                + del*( real(DTABLE(ind+1),FMS_SVP_KIND_) &
                                 + del*real(D2TABLE(ind+1),FMS_SVP_KIND_) )
         ! desat = DTABLE + 2del*D2TABLE
+        ! the coded equation below is the commented equation above
         desat(i) = real(DTABLE(ind+1),FMS_SVP_KIND_) &
              + 2.0_lkind*del*real(D2TABLE(ind+1),FMS_SVP_KIND_)
      endif
@@ -1211,10 +1224,12 @@
    else
      del = tmp-dtresl*real(ind,FMS_SVP_KIND_)
      ! esat = TABLE + del*(TABLE + del*D2TABLE)
+     ! the coded equation below is the commented equation above
      esat = real(TABLE(ind+1),FMS_SVP_KIND_) &
             + del*( real(DTABLE(ind+1),FMS_SVP_KIND_) &
                           + del*real(D2TABLE(ind+1),FMS_SVP_KIND_) )
      ! desat = DTABLE + 2del*D2TABLE
+     ! the coded equation below is the commented equation above
      desat = real(DTABLE(ind+1),FMS_SVP_KIND_) &
              + 2.0_lkind*del*real(D2TABLE(ind+1),FMS_SVP_KIND_)
    endif
@@ -1250,6 +1265,7 @@
      else
        del = tmp-dtresl*real(ind,FMS_SVP_KIND_)
        ! esat = TABLE + del*(TABLE + del*D2TABLE)
+       ! the coded equation below is the commented equation above
        esat(i,j,k) = real(TABLE(ind+1),FMS_SVP_KIND_) &
                      + del*( real(DTABLE(ind+1),FMS_SVP_KIND_) &
                                     + del*real(D2TABLE(ind+1),FMS_SVP_KIND_) )
@@ -1291,6 +1307,7 @@
      else
         del = tmp-dtresl*real(ind,FMS_SVP_KIND_)
         ! desat = DTABLE + 2del*D2TABLE
+        ! the coded equation below is the commented equation above
        desat(i,j,k) = real(DTABLE(ind+1),FMS_SVP_KIND_) &
                       + 2.0_lkind*del*real(D2TABLE(ind+1),FMS_SVP_KIND_)
      endif
@@ -1330,6 +1347,7 @@
      else
         del = tmp-dtresl*real(ind,FMS_SVP_KIND_)
         ! desat = DTABLE + 2del*D2TABLE
+        ! the coded equation below is the commented equation above
         desat(i,j) = real(DTABLE(ind+1),FMS_SVP_KIND_) &
              + 2.0_lkind*del*real(D2TABLE(ind+1),FMS_SVP_KIND_)
      endif
@@ -1365,6 +1383,7 @@
      else
        del = tmp-dtresl*real(ind,FMS_SVP_KIND_)
        ! esat = TABLE + del*(TABLE + del*D2TABLE)
+       ! the coded equation below is the commented equation above
        esat(i,j) = real(TABLE(ind+1),FMS_SVP_KIND_) &
                    + del*(real(DTABLE(ind+1),FMS_SVP_KIND_) &
                                   + del*real(D2TABLE(ind+1),FMS_SVP_KIND_)  )
@@ -1401,6 +1420,7 @@
      else
         del = tmp-dtresl*real(ind,FMS_SVP_KIND_)
         ! desat = DTABLE + 2del*D2TABLE
+        ! the coded equation below is the commented equation above
         desat(i) = real(DTABLE(ind+1),FMS_SVP_KIND_) &
                   + 2.0_lkind*del*real(D2TABLE(ind+1),FMS_SVP_KIND_)
      endif
@@ -1433,6 +1453,7 @@
      else
        del = tmp-dtresl*real(ind,FMS_SVP_KIND_)
        ! esat = TABLE + del*(TABLE + del*D2TABLE)
+       ! the coded equation below is the commented equation above
        esat(i) = real(TABLE(ind+1),FMS_SVP_KIND_) &
                  + del*(real(DTABLE(ind+1),FMS_SVP_KIND_) &
                                 + del*real(D2TABLE(ind+1),FMS_SVP_KIND_) )
@@ -1467,6 +1488,7 @@
    else
       del = tmp-dtresl*real(ind,FMS_SVP_KIND_)
       ! desat = DTABLE + 2del*D2TABLE
+      ! the coded equation below is the commented equation above
       desat = real(DTABLE(ind+1),FMS_SVP_KIND_) &
            + 2.0_lkind*del*real(D2TABLE(ind+1),FMS_SVP_KIND_)
    endif
@@ -1497,6 +1519,7 @@
    else
       del = tmp-dtresl*real(ind,FMS_SVP_KIND_)
       ! esat = TABLE + del*(TABLE + del*D2TABLE)
+      ! the coded equation below is the commented equation above
       esat = real(TABLE(ind+1),FMS_SVP_KIND_) &
             + del*( real(DTABLE(ind+1),FMS_SVP_KIND_) &
                              + del*real(D2TABLE(ind+1),FMS_SVP_KIND_) )
@@ -1535,10 +1558,12 @@
      else
         del = tmp-dtresl*real(ind,FMS_SVP_KIND_)
         ! esat = TABLE + del*(TABLE + del*D2TABLE)
+        ! the coded equation below is the commented equation above
         esat(i,j,k) = real(TABLE2(ind+1),FMS_SVP_KIND_) &
                      + del*( real(DTABLE2(ind+1),FMS_SVP_KIND_) &
                                 + del*real(D2TABLE2(ind+1),FMS_SVP_KIND_) )
         ! desat = DTABLE + 2del*D2TABLE
+        ! the coded equation below is the commented equation above
         desat(i,j,k) = real(DTABLE2(ind+1),FMS_SVP_KIND_) &
                       + 2.0_lkind*del*real(D2TABLE2(ind+1),FMS_SVP_KIND_)
      endif
@@ -1579,10 +1604,12 @@
      else
         del = tmp-dtresl*real(ind,FMS_SVP_KIND_)
         ! esat = TABLE + del*(TABLE + del*D2TABLE)
+        ! the coded equation below is the commented equation above
         esat(i,j) = real(TABLE2(ind+1),FMS_SVP_KIND_) &
                    + del*( real(DTABLE2(ind+1),FMS_SVP_KIND_) &
                                  + del*real(D2TABLE2(ind+1),FMS_SVP_KIND_) )
         ! desat = DTABLE + 2del*D2TABLE
+        ! the coded equation below is the commented equation above
         desat(i,j) = real(DTABLE2(ind+1),FMS_SVP_KIND_) &
                    + 2.0_lkind*del*real(D2TABLE2(ind+1),FMS_SVP_KIND_)
      endif
@@ -1621,6 +1648,7 @@
      else
         del = tmp-dtresl*real(ind,FMS_SVP_KIND_)
         ! esat = TABLE + del*(TABLE + del*D2TABLE)
+        ! the coded equation below is the commented equation above
         esat(i) = real(TABLE2(ind+1),FMS_SVP_KIND_) &
                  + del*( real(DTABLE2(ind+1),FMS_SVP_KIND_) &
                  + del*real(D2TABLE2(ind+1),FMS_SVP_KIND_) )
@@ -1662,10 +1690,12 @@
    else
       del = tmp-dtresl*real(ind,FMS_SVP_KIND_)
       ! esat = TABLE + del*(TABLE + del*D2TABLE)
+      ! the coded equation below is the commented equation above
       esat = real(TABLE2(ind+1),FMS_SVP_KIND_) &
             + del*( real(DTABLE2(ind+1),FMS_SVP_KIND_) &
                           + del*real(D2TABLE2(ind+1),FMS_SVP_KIND_) )
       ! desat = DTABLE + 2del*D2TABLE
+      ! the coded equation below is the commented equation above
       desat = real(DTABLE2(ind+1),FMS_SVP_KIND_) &
              + 2.0_lkind*del*real(D2TABLE2(ind+1),FMS_SVP_KIND_)
    endif
@@ -1701,6 +1731,7 @@
      else
        del = tmp-dtresl*real(ind,FMS_SVP_KIND_)
        ! esat = TABLE + del*(TABLE + del*D2TABLE)
+       ! the coded equation below is the commented equation above
        esat(i,j,k) = real(TABLE2(ind+1),FMS_SVP_KIND_) &
                      + del*( real(DTABLE2(ind+1),FMS_SVP_KIND_) &
                                   + del*real(D2TABLE2(ind+1),FMS_SVP_KIND_) )
@@ -1742,6 +1773,7 @@
      else
        del = tmp-dtresl*real(ind,FMS_SVP_KIND_)
        ! desat = DTABLE + 2del*D2TABLE
+       ! the coded equation below is the commented equation above
        desat(i,j,k) = real(DTABLE2(ind+1),FMS_SVP_KIND_) &
                       + 2.0_lkind*del*real(D2TABLE2(ind+1),FMS_SVP_KIND_)
      endif
@@ -1780,6 +1812,7 @@
      else
        del = tmp-dtresl*real(ind,FMS_SVP_KIND_)
        ! desat = DTABLE + 2del*D2TABLE
+       ! the coded equation below is the commented equation above
        desat(i,j) = real(DTABLE2(ind+1),FMS_SVP_KIND_) &
                     + 2.0_lkind*del*real(D2TABLE2(ind+1),FMS_SVP_KIND_)
      endif
@@ -1814,6 +1847,7 @@
      else
         del = tmp-dtresl*real(ind,kind=FMS_SVP_KIND_)
         ! esat = TABLE + del*(TABLE + del*D2TABLE)
+        ! the coded equation below is the commented equation above
         esat(i,j) = real(TABLE2(ind+1),FMS_SVP_KIND_) &
                    + del*( real(DTABLE2(ind+1),FMS_SVP_KIND_) &
                                    + del*real(D2TABLE2(ind+1),FMS_SVP_KIND_) )
@@ -1850,6 +1884,7 @@
      else
         del = tmp-dtresl*real(ind,FMS_SVP_KIND_)
         ! desat = DTABLE + 2del*D2TABLE
+        ! the coded equation below is the commented equation above
         desat(i) = real(DTABLE2(ind+1),FMS_SVP_KIND_) &
                   + 2.0_lkind*del*real(D2TABLE2(ind+1),FMS_SVP_KIND_)
      endif
@@ -1882,6 +1917,7 @@
      else
         del = tmp-dtresl*real(ind,FMS_SVP_KIND_)
         ! esat = TABLE + del*(TABLE + del*D2TABLE)
+        ! the coded equation below is the commented equation above
         esat(i) = real(TABLE2(ind+1),FMS_SVP_KIND_) &
                  + del*( real(DTABLE2(ind+1),FMS_SVP_KIND_) &
                                + del*real(D2TABLE2(ind+1),FMS_SVP_KIND_) )
@@ -1916,6 +1952,7 @@
    else
       del = tmp-dtresl*real(ind,FMS_SVP_KIND_)
       ! desat = DTABLE + 2del*D2TABLE
+      ! the coded equation below is the commented equation above
       desat = real(DTABLE2(ind+1),FMS_SVP_KIND_) &
             + 2.0_lkind*del*real(D2TABLE2(ind+1),FMS_SVP_KIND_)
    endif
@@ -1946,6 +1983,7 @@
    else
       del = tmp-dtresl*real(ind,FMS_SVP_KIND_)
       ! esat = TABLE + del*(TABLE + del*D2TABLE)
+      ! the coded equation below is the commented equation above
       esat = real(TABLE2(ind+1),FMS_SVP_KIND_) &
             + del*( DTABLE2(ind+1) &
                        + del*real(D2TABLE2(ind+1),FMS_SVP_KIND_) )
@@ -1986,10 +2024,12 @@
      else
         del = tmp-dtresl*real(ind,FMS_SVP_KIND_)
         ! esat = TABLE + del*(TABLE + del*D2TABLE)
+        ! the coded equation below is the commented equation above
         esat(i,j,k) = real(TABLE3(ind+1),FMS_SVP_KIND_) &
                      + del*( real(DTABLE3(ind+1),FMS_SVP_KIND_) &
                                   + del*real(D2TABLE3(ind+1),FMS_SVP_KIND_) )
         ! desat = DTABLE + 2del*D2TABLE
+        ! the coded equation below is the commented equation above
         desat(i,j,k) = real(DTABLE3(ind+1),FMS_SVP_KIND_) &
                       + 2.0_lkind*del*real(D2TABLE3(ind+1),FMS_SVP_KIND_)
      endif
@@ -2030,10 +2070,12 @@
      else
        del = tmp-dtresl*real(ind,FMS_SVP_KIND_)
        ! esat = TABLE + del*(TABLE + del*D2TABLE)
+       ! the coded equation below is the commented equation above
        esat(i,j) = real(TABLE3(ind+1),FMS_SVP_KIND_) &
                    + del*( real(DTABLE3(ind+1),FMS_SVP_KIND_) &
                    + del*real(D2TABLE3(ind+1),FMS_SVP_KIND_) )
        ! desat = DTABLE + 2del*D2TABLE
+       ! the coded equation below is the commented equation above
        desat(i,j) = real(DTABLE3(ind+1),FMS_SVP_KIND_) &
                     + 2.0_lkind*del*real(D2TABLE3(ind+1),FMS_SVP_KIND_)
      endif
@@ -2072,10 +2114,12 @@
      else
         del = tmp-dtresl*real(ind,FMS_SVP_KIND_)
         ! esat = TABLE + del*(TABLE + del*D2TABLE)
+        ! the coded equation below is the commented equation above
         esat(i) = real(TABLE3(ind+1),FMS_SVP_KIND_) &
                  + del*( real(DTABLE3(ind+1),FMS_SVP_KIND_) &
                  + del*real(D2TABLE3(ind+1),FMS_SVP_KIND_) )
         ! desat = DTABLE + 2del*D2TABLE
+        ! the coded equation below is the commented equation above
         desat(i) = real(DTABLE3(ind+1),FMS_SVP_KIND_) &
                   + 2.0_lkind*del*real(D2TABLE3(ind+1),FMS_SVP_KIND_)
      endif
@@ -2112,10 +2156,12 @@
    else
       del = tmp-dtresl*real(ind,FMS_SVP_KIND_)
       ! esat = TABLE + del*(TABLE + del*D2TABLE)
+      ! the coded equation below is the commented equation above
       esat = real(TABLE3(ind+1),FMS_SVP_KIND_) &
             + del*( real(DTABLE3(ind+1),FMS_SVP_KIND_) &
                            + del*real(D2TABLE3(ind+1),FMS_SVP_KIND_) )
       ! desat = DTABLE + 2del*D2TABLE
+      ! the coded equation below is the commented equation above
       desat = real(DTABLE3(ind+1),FMS_SVP_KIND_) &
              + 2.0_lkind*del*real(D2TABLE3(ind+1),FMS_SVP_KIND_)
    endif
@@ -2151,6 +2197,7 @@
      else
        del = tmp-dtresl*real(ind,FMS_SVP_KIND_)
        ! esat = TABLE + del*(TABLE + del*D2TABLE)
+       ! the coded equation below is the commented equation above
        esat(i,j,k) = real(TABLE3(ind+1),FMS_SVP_KIND_) &
                      + del*( real(DTABLE3(ind+1),FMS_SVP_KIND_) &
                                     + del*real(D2TABLE3(ind+1),FMS_SVP_KIND_) )
@@ -2192,6 +2239,7 @@
      else
         del = tmp-dtresl*real(ind,FMS_SVP_KIND_)
         ! desat = DTABLE + 2del*D2TABLE
+        ! the coded equation below is the commented equation above
         desat(i,j,k) = real(DTABLE3(ind+1),FMS_SVP_KIND_) &
                       + 2.0_lkind*del*real(D2TABLE3(ind+1),FMS_SVP_KIND_)
      endif
@@ -2230,6 +2278,7 @@
      else
         del = tmp-dtresl*real(ind,FMS_SVP_KIND_)
         ! desat = DTABLE + 2del*D2TABLE
+        ! the coded equation below is the commented equation above
         desat(i,j) = real(DTABLE3(ind+1),FMS_SVP_KIND_) &
                     + 2.0_lkind*del*real(D2TABLE3(ind+1),FMS_SVP_KIND_)
      endif
@@ -2264,6 +2313,7 @@
      else
         del = tmp-dtresl*real(ind,FMS_SVP_KIND_)
         ! esat = TABLE + del*(TABLE + del*D2TABLE)
+        ! the coded equation below is the commented equation above
         esat(i,j) = real(TABLE3(ind+1),FMS_SVP_KIND_) &
                    + del*( real(DTABLE3(ind+1),FMS_SVP_KIND_) &
                                  + del*real(D2TABLE3(ind+1),FMS_SVP_KIND_) )
@@ -2300,6 +2350,7 @@
      else
         del = tmp-dtresl*real(ind,FMS_SVP_KIND_)
         ! desat = DTABLE + 2del*D2TABLE
+        ! the coded equation below is the commented equation above
         desat(i) = real(DTABLE3(ind+1),FMS_SVP_KIND_) &
                   + 2.0_lkind*del*real(D2TABLE3(ind+1),FMS_SVP_KIND_)
      endif
@@ -2332,6 +2383,7 @@
      else
         del = tmp-dtresl*real(ind,FMS_SVP_KIND_)
         ! esat = TABLE + del*(TABLE + del*D2TABLE)
+        ! the coded equation below is the commented equation above
         esat(i) = real(TABLE3(ind+1),FMS_SVP_KIND_) &
                  + del*( real(DTABLE3(ind+1),FMS_SVP_KIND_) &
                                 + del*real(D2TABLE3(ind+1),FMS_SVP_KIND_) )
@@ -2366,6 +2418,7 @@
    else
       del = tmp-dtresl*real(ind,FMS_SVP_KIND_)
       ! desat = DTABLE + 2del*D2TABLE
+      ! the coded equation below is the commented equation above
       desat = real(DTABLE3(ind+1),FMS_SVP_KIND_) &
              + 2.0_lkind*del*real(D2TABLE3(ind+1),FMS_SVP_KIND_)
    endif
@@ -2396,6 +2449,7 @@
    else
       del = tmp-dtresl*real(ind,FMS_SVP_KIND_)
       ! esat = TABLE + del*(TABLE + del*D2TABLE)
+      ! the coded equation below is the commented equation above
       esat = real(TABLE3(ind+1),FMS_SVP_KIND_) &
             + del*( real(DTABLE3(ind+1),FMS_SVP_KIND_) &
                           + del*real(D2TABLE3(ind+1),FMS_SVP_KIND_) )
