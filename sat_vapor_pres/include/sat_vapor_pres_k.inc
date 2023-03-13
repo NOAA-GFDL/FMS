@@ -44,8 +44,8 @@
 !! pass in r4_kind arguments to the LOOKUP* subroutines.
 
  integer, intent(in) :: table_size
- real(kind=FMS_SVP_KIND_), intent(in) :: tcmin !< TABLE(1) = sat vapor pressure at temperature tcmin (deg C)
- real(kind=FMS_SVP_KIND_), intent(in) :: tcmax !< TABLE(table_size) = sat vapor pressure at temperature tcmax (deg C)
+ real(kind=FMS_SVP_KIND_), intent(in) :: tcmin   !< TABLE(1) = sat vapor pressure at temperature tcmin (deg C)
+ real(kind=FMS_SVP_KIND_), intent(in) :: tcmax   !< TABLE(table_size) = sat vapor pressure at temperature tcmax (deg C)
  real(kind=FMS_SVP_KIND_), intent(in) :: TFREEZE !< Conversion to Kelvin
  real(kind=FMS_SVP_KIND_), intent(in) :: HLV     !< Latent heat of evaporation [J/kg]
  real(kind=FMS_SVP_KIND_), intent(in) :: RVGAS   !< Gas constant for water vapor
@@ -295,7 +295,7 @@
  function COMPUTE_ES_LIQ_K_(tem, TFREEZE) result (es)
  real(kind=FMS_SVP_KIND_), intent(in) :: tem(:)  !< temperature
  real(kind=FMS_SVP_KIND_), intent(in) :: TFREEZE !< conversion to Kelvin
- real(kind=FMS_SVP_KIND_) :: es(size(tem,1)) !< saturation vapor pressure
+ real(kind=FMS_SVP_KIND_) :: es(size(tem,1))     !< saturation vapor pressure
 
  real(kind=FMS_SVP_KIND_) :: x
  real(kind=FMS_SVP_KIND_) :: esh2o
@@ -340,7 +340,7 @@
  function COMPUTE_ES_LIQ_ICE_K_(tem, TFREEZE) result (es)
  real(kind=FMS_SVP_KIND_), intent(in) :: tem(:)  !< temperature
  real(kind=FMS_SVP_KIND_), intent(in) :: TFREEZE !< conversion to Kelvin
- real(kind=FMS_SVP_KIND_) :: es(size(tem,1)) !< saturation vapor pressure
+ real(kind=FMS_SVP_KIND_) :: es(size(tem,1))     !< saturation vapor pressure
 
  real(kind=FMS_SVP_KIND_) :: x
  real(kind=FMS_SVP_KIND_) :: TBASW
@@ -1126,9 +1126,9 @@
  real(kind=FMS_SVP_KIND_) :: tmp !< temp-TMIN
  real(kind=FMS_SVP_KIND_) :: del !< delta T
  integer :: ind, i, j, k
- !dtres, tminl, tepsl, dtinvl are module level variables declared in r8_kind precision
- !for precision consistency and for code readability, the *ll variables are declared
- !and used
+ !> dtres, tminl, tepsl, dtinvl are module level variables declared in r8_kind precision
+ !! for precision consistency and for code readability, the *ll variables are declared
+ !! and used
  real(kind=FMS_SVP_KIND_) :: dtresl
  real(kind=FMS_SVP_KIND_) :: tepsll
  real(kind=FMS_SVP_KIND_) :: tminll
@@ -1562,9 +1562,9 @@
  real(kind=FMS_SVP_KIND_) :: tmp  !< temp - TMINLL
  real(kind=FMS_SVP_KIND_) :: del  !< delta T
  integer :: ind
- !dtres, tminl, tepsl, dtinvl are module level variables declared in r8_kind precision
- !for precision consistency and for code readability, the *ll variables are declared
- !and used
+ !> dtres, tminl, tepsl, dtinvl are module level variables declared in r8_kind precision
+ !! for precision consistency and for code readability, the *ll variables are declared
+ !! and used
  real(kind=FMS_SVP_KIND_) :: dtresl
  real(kind=FMS_SVP_KIND_) :: tepsll
  real(kind=FMS_SVP_KIND_) :: tminll
@@ -1629,10 +1629,10 @@
 !#######################################################################
 
  subroutine LOOKUP_ES2_DES2_K_3D_ (temp, esat, desat, nbad)
- real(kind=FMS_SVP_KIND_), intent(in),  dimension(:,:,:) :: temp !< temperature
+ real(kind=FMS_SVP_KIND_), intent(in),  dimension(:,:,:) :: temp  !< temperature
  real(kind=FMS_SVP_KIND_), intent(out), dimension(:,:,:) :: esat  !< saturation vapor pressure
  real(kind=FMS_SVP_KIND_), intent(out), dimension(:,:,:) :: desat !< derivative of sat vapor pressure
- integer, intent(out)                                    :: nbad !< if temperature is out of range
+ integer, intent(out)                                    :: nbad  !< if temperature is out of range
 
  real(kind=FMS_SVP_KIND_) :: tmp !< temp-TMINLL
  real(kind=FMS_SVP_KIND_) :: del !< delta T
@@ -1680,7 +1680,7 @@
 !#######################################################################
 
  subroutine LOOKUP_ES2_DES2_K_2D_ (temp, esat, desat, nbad)
- real(kind=FMS_SVP_KIND_), intent(in),  dimension(:,:)  :: temp !< temperature
+ real(kind=FMS_SVP_KIND_), intent(in),  dimension(:,:)  :: temp  !< temperature
  real(kind=FMS_SVP_KIND_), intent(out), dimension(:,:)  :: esat  !< saturation vapor pressure
  real(kind=FMS_SVP_KIND_), intent(out), dimension(:,:)  :: desat !< derivative of sat vapor pressure
  integer, intent(out)     :: nbad !< if temperature is out of range
@@ -1823,9 +1823,9 @@
  subroutine LOOKUP_ES2_K_3D_(temp, esat, nbad)
  real(kind=FMS_SVP_KIND_), intent(in),  dimension(:,:,:)  :: temp !< temperature
  real(kind=FMS_SVP_KIND_), intent(out), dimension(:,:,:)  :: esat !< saturation vapor pressure
- integer, intent(out) :: nbad    !< if temperature is out of range
- real(kind=FMS_SVP_KIND_) :: tmp !< temp-TMINLL
- real(kind=FMS_SVP_KIND_) :: del !< delta T
+ integer, intent(out)     :: nbad !< if temperature is out of range
+ real(kind=FMS_SVP_KIND_) :: tmp  !< temp-TMINLL
+ real(kind=FMS_SVP_KIND_) :: del  !< delta T
  integer :: ind, i, j, k
  !> dtres, tminl, tepsl, dtinvl are module level variables declared in r8_kind precision
  !! for precision consistency and for code readability, the *ll variables are declared
@@ -1867,9 +1867,9 @@
  subroutine LOOKUP_DES2_K_3D_(temp, desat, nbad)
  real(kind=FMS_SVP_KIND_), intent(in),  dimension(:,:,:)  :: temp  !< temperature
  real(kind=FMS_SVP_KIND_), intent(out), dimension(:,:,:)  :: desat !< derivative of sat vapor pressure
- integer, intent(out) :: nbad    !< if temperature is out of range
- real(kind=FMS_SVP_KIND_) :: tmp !< temp-TMINLL
- real(kind=FMS_SVP_KIND_) :: del !< delta T
+ integer, intent(out)     :: nbad !< if temperature is out of range
+ real(kind=FMS_SVP_KIND_) :: tmp  !< temp-TMINLL
+ real(kind=FMS_SVP_KIND_) :: del  !< delta T
  integer :: ind, i, j, k
  !> dtres, tminl, tepsl, dtinvl are module level variables declared in r8_kind precision
  !! for precision consistency and for code readability, the *ll variables are declared
@@ -1910,9 +1910,9 @@
  subroutine LOOKUP_DES2_K_2D_(temp, desat, nbad)
  real(kind=FMS_SVP_KIND_), intent(in),  dimension(:,:)  :: temp  !< temperature
  real(kind=FMS_SVP_KIND_), intent(out), dimension(:,:)  :: desat !< derivative of sat vapor pressure
- integer, intent(out) :: nbad    !< if temperature is out of range
- real(kind=FMS_SVP_KIND_) :: tmp !< temp-TMINLL
- real(kind=FMS_SVP_KIND_) :: del !< delta T
+ integer, intent(out)     :: nbad !< if temperature is out of range
+ real(kind=FMS_SVP_KIND_) :: tmp  !< temp-TMINLL
+ real(kind=FMS_SVP_KIND_) :: del  !< delta T
  integer :: ind, i, j
  !> dtres, tminl, tepsl, dtinvl are module level variables declared in r8_kind precision
  !! for precision consistency and for code readability, the *ll variables are declared
@@ -1950,9 +1950,9 @@
  subroutine LOOKUP_ES2_K_2D_(temp, esat, nbad)
  real(kind=FMS_SVP_KIND_), intent(in),  dimension(:,:)  :: temp !< temperature
  real(kind=FMS_SVP_KIND_), intent(out), dimension(:,:)  :: esat !< saturation vapor pressure
- integer, intent(out) :: nbad    !< if temperature is out of range
- real(kind=FMS_SVP_KIND_) :: tmp !< temp-TMINLL
- real(kind=FMS_SVP_KIND_) :: del !< delta T
+ integer, intent(out)     :: nbad !< if temperature is out of range
+ real(kind=FMS_SVP_KIND_) :: tmp  !< temp-TMINLL
+ real(kind=FMS_SVP_KIND_) :: del  !< delta T
  integer :: ind, i, j
  !> dtres, tminl, tepsl, dtinvl are module level variables declared in r8_kind precision
  !! for precision consistency and for code readability, the *ll variables are declared
@@ -1994,9 +1994,9 @@
  real(kind=FMS_SVP_KIND_) :: tmp  !< temp-TMINLL
  real(kind=FMS_SVP_KIND_) :: del  !< delta T
  integer :: ind, i
- !dtres, tminl, tepsl, dtinvl are module level variables declared in r8_kind precision
- !for precision consistency and for code readability, the *ll variables are declared
- !and used
+ !> dtres, tminl, tepsl, dtinvl are module level variables declared in r8_kind precision
+ !! for precision consistency and for code readability, the *ll variables are declared
+ !! and used
  real(kind=FMS_SVP_KIND_) :: dtresl
  real(kind=FMS_SVP_KIND_) :: tepsll
  real(kind=FMS_SVP_KIND_) :: tminll
@@ -2064,8 +2064,8 @@
  end subroutine LOOKUP_ES2_K_1D_
 !#######################################################################
  subroutine LOOKUP_DES2_K_0D_(temp, desat, nbad)
- real(kind=FMS_SVP_KIND_), intent(in)     :: temp !< temperature
- real(kind=FMS_SVP_KIND_), intent(out)    :: desat <! derivative of sat vapor pressure
+ real(kind=FMS_SVP_KIND_), intent(in)     :: temp  !< temperature
+ real(kind=FMS_SVP_KIND_), intent(out)    :: desat !< derivative of sat vapor pressure
  integer, intent(out)        :: nbad !< if temperature is out of range
  real(kind=FMS_SVP_KIND_)    :: tmp  !< temp-TMINLL
  real(kind=FMS_SVP_KIND_)    :: del  !< delta T
@@ -2498,7 +2498,7 @@
  end subroutine LOOKUP_ES3_K_2D_
 !#######################################################################
  subroutine LOOKUP_DES3_K_1D_(temp, desat, nbad)
- real(kind=FMS_SVP_KIND_), intent(in),  dimension(:)  :: temp !< temperature
+ real(kind=FMS_SVP_KIND_), intent(in),  dimension(:)  :: temp  !< temperature
  real(kind=FMS_SVP_KIND_), intent(out), dimension(:)  :: desat !< derivative of sat vapor pressure
  integer, intent(out)     :: nbad !< if temperature is out of range
  real(kind=FMS_SVP_KIND_) :: tmp  !< temp-TMINLL
@@ -2574,7 +2574,7 @@
  end subroutine LOOKUP_ES3_K_1D_
 !#######################################################################
  subroutine LOOKUP_DES3_K_0D_(temp, desat, nbad)
- real(kind=FMS_SVP_KIND_), intent(in)  :: temp !< temperature
+ real(kind=FMS_SVP_KIND_), intent(in)  :: temp  !< temperature
  real(kind=FMS_SVP_KIND_), intent(out) :: desat !< derivative of sat vapor pressure
  integer, intent(out)     :: nbad !< if temperature is out of range
  real(kind=FMS_SVP_KIND_) :: tmp  !< temp-TMINLL
