@@ -712,9 +712,9 @@ result(rslt)
   class(fmsDiagObject_type), intent(in) :: this
   integer, intent(in)                   :: bufferid
   class(fmsDiagBuffer_class),allocatable:: rslt
-  if( (bufferid .gt. UBOUND(this%FMS_diag_buffers, 1)) .or. (bufferid .lt. UBOUND(this%FMS_diag_buffers, 1))) &
+  if( (bufferid .gt. UBOUND(this%FMS_diag_buffers, 1)) .or. (bufferid .lt. LBOUND(this%FMS_diag_buffers, 1))) &
     call mpp_error(FATAL, 'get_diag_bufer: invalid bufferid given')
-  rslt = fms_diag_object%FMS_diag_buffers(bufferid)%diag_buffer_obj
+  rslt = this%FMS_diag_buffers(bufferid)%diag_buffer_obj
 end function
 #endif
 
