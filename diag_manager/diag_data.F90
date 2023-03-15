@@ -51,6 +51,8 @@ use platform_mod
   USE time_manager_mod, ONLY: time_type
   USE mpp_domains_mod, ONLY: domain1d, domain2d, domainUG
   USE fms_mod, ONLY: WARNING, write_version_number
+  USE fms_diag_bbox_mod, ONLY: fmsDiagIbounds_type
+
 #ifdef use_netCDF
   ! NF90_FILL_REAL has value of 9.9692099683868690e+36.
   USE netcdf, ONLY: NF_FILL_REAL => NF90_FILL_REAL
@@ -115,6 +117,8 @@ use platform_mod
      INTEGER, allocatable, DIMENSION(:) :: iatt !< INTEGER array to hold value of INTEGER attributes
   END TYPE diag_atttype
 
+  !!TODO: coord_type deserves a better name, like coord_interval_type or coord_bbox_type.
+  !!  additionally, consider using a 2D array.
   !> @brief Define the region for field output
   !> @ingroup diag_data_mod
   TYPE coord_type
@@ -240,7 +244,7 @@ use platform_mod
      TYPE(diag_grid) :: output_grid
      LOGICAL :: local_output, need_compute, phys_window, written_once
      LOGICAL :: reduced_k_range
-     INTEGER :: imin, imax, jmin, jmax, kmin, kmax
+     TYPE(fmsDiagIbounds_type) :: buff_bounds
      TYPE(time_type) :: Time_of_prev_field_data
      TYPE(diag_atttype), allocatable, dimension(:) :: attributes
      INTEGER :: num_attributes
@@ -327,6 +331,7 @@ use platform_mod
                                    !! <TT>.TRUE.</TT> is only supported if the diag_manager_init
                                    !! routine is called with the optional time_init parameter.
   LOGICAL :: use_mpp_io = .false. !< false is fms2_io (default); true is mpp_io
+  LOGICAL :: use_refactored_send = .false. !< Namelist flag to use refactored send_data math funcitons.
 
   ! <!-- netCDF variable -->
 
@@ -383,6 +388,8 @@ CONTAINS
     ! Write version number out to log file
     call write_version_number("DIAG_DATA_MOD", version)
   END SUBROUTINE diag_data_init
+
+
 
 END MODULE diag_data_mod
 !> @}

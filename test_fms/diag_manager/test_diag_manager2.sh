@@ -500,5 +500,9 @@ _EOF
 test_expect_success "diurnal test (test $my_test_count)" '
   mpirun -n 1 ../test_diag_manager_time
 '
-
-test_done
+setup_test
+my_test_count=`expr $my_test_count + 1`
+test_expect_success "Test the diag update_buffer (test $my_test_count)" '
+  mpirun -n 1 ../test_diag_update_buffer
+'
+  test_done
