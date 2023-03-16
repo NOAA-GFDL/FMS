@@ -258,7 +258,7 @@
        do while (i <= ia .and. keep_going)
           i = i+1
           if (value <= array(i)) then
-             FRAC_INDEX_ = (i-1) + (value-array(i-1)) / (array(i) - array(i-1))
+             FRAC_INDEX_ = real((i-1), lkind) + (value-array(i-1)) / (array(i) - array(i-1))
              keep_going  = .false.
           endif
        enddo
