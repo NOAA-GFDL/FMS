@@ -66,7 +66,7 @@ test_expect_success "conservative method solo wrappers with real kind=8" '
   mpirun -n 2 ./test_horiz_interp_r4
 '
 
-cat <<_EOF > inpVut.nml
+cat <<_EOF > input.nml
 &test_horiz_interp_nml
   test_bicubic= .true.
   ni_src = 360
@@ -83,7 +83,7 @@ test_expect_success "bicubic method with real kind=8" '
   mpirun -n 2 ./test_horiz_interp_r8
 '
 
-cat <<_EOF > inpVut.nml
+cat <<_EOF > input.nml
 &test_horiz_interp_nml
   test_bicubic= .true.
   test_solo = .true.
@@ -136,6 +136,7 @@ test_expect_success "bilinear method solo wrapper with real kind=8" '
   mpirun -n 2 ./test_horiz_interp_r8
 '
 
+# the spherical module has a namelist with an option for the search algorithm used
 cat <<_EOF > input.nml
 &test_horiz_interp_nml
   test_spherical= .true.
@@ -144,12 +145,37 @@ cat <<_EOF > input.nml
   ni_dst = 144 
   nj_dst = 72
 /
+
+&horiz_interp_sherical_nml
+  search_method = "radial search"
+/
 _EOF
 
-test_expect_success "spherical method with real kind=4" '
+test_expect_success "spherical method (radial search) with real kind=4" '
   mpirun -n 2 ./test_horiz_interp_r4
 '
-test_expect_success "spherical method with real kind=8" '
+test_expect_success "spherical method (radial search) with real kind=8" '
+  mpirun -n 2 ./test_horiz_interp_r8
+'
+
+cat <<_EOF > input.nml
+&test_horiz_interp_nml
+  test_spherical= .true.
+  ni_src = 360
+  nj_src = 180
+  ni_dst = 144 
+  nj_dst = 72
+/
+
+&horiz_interp_sherical_nml
+  search_method = "full search"
+/
+_EOF
+
+test_expect_success "spherical method (full search) with real kind=4" '
+  mpirun -n 2 ./test_horiz_interp_r4
+'
+test_expect_success "spherical method (full search) with real kind=8" '
   mpirun -n 2 ./test_horiz_interp_r8
 '
 

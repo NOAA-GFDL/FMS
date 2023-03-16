@@ -53,10 +53,10 @@
     logical :: src_is_modulo
     real(FMS_HI_KIND_)    :: min_theta_dst, max_theta_dst, min_phi_dst, max_phi_dst
     real(FMS_HI_KIND_)    :: min_theta_src, max_theta_src, min_phi_src, max_phi_src
-    integer :: map_src_add(size(lon_out,1),size(lon_out,2),max_neighbors)
+    integer               :: map_src_add(size(lon_out,1),size(lon_out,2),max_neighbors)
     real(FMS_HI_KIND_)    :: map_src_dist(size(lon_out,1),size(lon_out,2),max_neighbors)
-    integer :: num_found(size(lon_out,1),size(lon_out,2))
-    integer :: ilon(max_neighbors), jlat(max_neighbors)
+    integer               :: num_found(size(lon_out,1),size(lon_out,2))
+    integer               :: ilon(max_neighbors), jlat(max_neighbors)
     real(FMS_HI_KIND_), dimension(size(lon_out,1),size(lon_out,2)) :: theta_dst, phi_dst
     real(FMS_HI_KIND_), dimension(size(lon_in,1)*size(lon_in,2))   :: theta_src, phi_src
     integer, parameter                                             :: kindl = FMS_HI_KIND_
@@ -104,7 +104,7 @@
     where(theta_dst<0.0_kindl)  theta_dst = theta_dst+real(tpi,FMS_HI_KIND_)
 
     where(theta_dst>real(tpi,FMS_HI_KIND_))  theta_dst = theta_dst-real(tpi,FMS_HI_KIND_)
-    where(theta_src<0.0_kindl)  theta_src = theta_src+real(tpi,FMS_HI_KIND_)
+    where(theta_src<0.0_kindl)  theta_src =  theta_src+real(tpi,FMS_HI_KIND_)
     where(theta_src>real(tpi,FMS_HI_KIND_))  theta_src = theta_src-real(tpi,FMS_HI_KIND_)
 
     where(phi_dst < -hpi) phi_dst = -hpi
@@ -341,6 +341,8 @@
   end subroutine HORIZ_INTERP_SPHERICAL_
 
   !#######################################################################
+  !> This routine isn't used internally
+  !! it's similar to the routine above, just gets the weights as an out variable
   subroutine HORIZ_INTERP_SPHERICAL_WGHT_( Interp, wt, verbose, mask_in, mask_out, missing_value)
     type (horiz_interp_type), intent(in)        :: Interp
     real(FMS_HI_KIND_), intent(out), dimension(:,:,:)         :: wt
@@ -373,7 +375,7 @@
           num_found = Interp%num_found(m,n)
 
           if (num_found > num_nbrs_default) then
-            print*,'pe=',mpp_pe(),'num_found=',num_found
+            if( iverbose .gt. 0) print *,'pe=',mpp_pe(),'num_found=',num_found
             num_found = num_nbrs_default
           end if
 

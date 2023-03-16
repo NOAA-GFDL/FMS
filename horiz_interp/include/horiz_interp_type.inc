@@ -70,7 +70,7 @@
       if(npts == 0) then
          print*, 'Warning: no points is valid'
       else
-         avg = dsum/real(npts)
+         avg = dsum/real(npts, FMS_HI_KIND_)
       endif
     else   ! other pe send data to the root_pe.
       buffer_real(1) = dsum

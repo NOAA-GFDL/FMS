@@ -397,7 +397,7 @@
 
       if(src_is_latlon) then
          if(present(mask_in)) then
-            if ( ANY(mask_in < -.0001_kindl) .or. ANY(mask_in > 1.0001_kindl)) &
+            if ( ANY(mask_in < -0.0001_kindl) .or. ANY(mask_in > 1.0001_kindl)) &
                  call mpp_error(FATAL, &
                      'horiz_interp_conserve_new_1d_dst(horiz_interp_conserve_mod): input mask not between 0,1')
             allocate(Interp%HI_KIND_TYPE_%mask_in(size(mask_in,1), size(mask_in,2)) )

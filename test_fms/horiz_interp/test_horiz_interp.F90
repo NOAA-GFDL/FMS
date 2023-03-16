@@ -19,6 +19,8 @@
 !> @author Ryan Mulhall 2023
 !> Original test is in test_conserve, modified to test the other 3 interp_method option and mixed precision reals
 !! tests are split up by interp_method (same way the modules are broken up) and enabled via the nml flags.
+!! Assignment test checks that the override is copying the data type properly
+!! TODO needs ulimited stack size to run
 
 !! defaults to 8 real kind, make check will compile with both 4 and 8
 #ifndef HI_TEST_KIND_
@@ -36,6 +38,7 @@ use mpp_domains_mod,  only : mpp_domains_init, domain2d
 use fms_mod,          only : check_nml_error, fms_init
 use horiz_interp_mod, only : horiz_interp_init, horiz_interp_new, horiz_interp_del
 use horiz_interp_mod, only : horiz_interp, horiz_interp_type
+use horiz_interp_spherical_mod, only: horiz_interp_spherical_wght
 use constants_mod,    only : constants_init, PI
 use platform_mod
 
@@ -46,6 +49,9 @@ implicit none
   logical :: test_solo = .false.!< test with the 'solo' wrappers that hide the _new and _del calls for the derived type
   integer :: ni_src = 360, nj_src = 180
   integer :: ni_dst = 144, nj_dst = 72
+  integer, parameter :: max_neighbors = 400 !! took this from spherical mod
+                !! max amount found neighbors to loop through in spherical search
+                         
 
   namelist /test_horiz_interp_nml/ test_conserve, test_bicubic, test_spherical, test_bilinear, test_assign, test_solo,&
                                    ni_src, nj_src, ni_dst,nj_dst
@@ -93,19 +99,20 @@ implicit none
 
   contains
 
+  !> Tests spherical module interpolation with each dimension conversion
+  !! test without passing in the type when test_solo is true
+  !! The spherical module has a nml option for whether using a full or radially bounded search
+  !! for finding the nearest points and distances so this gets run for both
   subroutine test_horiz_interp_spherical
     !! grid data
-    real(HI_TEST_KIND_), allocatable, dimension(:) :: lat_in_1D, lon_in_1D
     real(HI_TEST_KIND_), allocatable, dimension(:,:) :: lat_in_2D, lon_in_2D
     type(horiz_interp_type)                       :: interp_t
     !! input data
     real(HI_TEST_KIND_), allocatable, dimension(:,:) :: data_src, data_dst
     !! output data
-    real(HI_TEST_KIND_), allocatable, dimension(:)   :: lat_out_1D, lon_out_1D
-    real(HI_TEST_KIND_), allocatable, dimension(:,:) :: lat_out_2D, lon_out_2D
+    real(HI_TEST_KIND_), allocatable, dimension(:,:)   :: lat_out_2D, lon_out_2D
+    real(HI_TEST_KIND_), allocatable, dimension(:,:,:) :: wghts 
     !! array sizes and number of lat/lon per index
-    integer :: nlon_in, nlat_in
-    integer :: nlon_out, nlat_out
     integer :: dlon_src, dlat_src, dlon_dst, dlat_dst
     !! parameters for lon/lat setup
     real(HI_TEST_KIND_) :: lon_src_beg = 0._lkind,    lon_src_end = 360._lkind
@@ -122,80 +129,61 @@ implicit none
     dlon_dst = (lon_dst_end-lon_dst_beg)/ni_dst
     dlat_dst = (lat_dst_end-lat_dst_beg)/nj_dst
 
-    allocate(lon_in_1D(ni_src+1), lat_in_1D(nj_src+1))
-    do i = 1, ni_src+1
-        lon_in_1D(i) = lon_src_beg + (i-1)*dlon_src
-    end do
-    do j = 1, nj_src+1
-        lat_in_1D(j) = lat_src_beg + (j-1)*dlat_src
-    end do
-    allocate(lon_out_1D(isc:iec), lat_out_1D(isc:iec))
-    do i = isc, iec+1
-        lon_out_1D(i) = lon_dst_beg + (i-1)*dlon_dst
-    end do
-    do j = jsc, jec+1
-        lat_out_1D(j) = lat_dst_beg + (j-1)*dlat_dst
-    end do
-
     ! set up 2d lon/lat  
-    allocate(lon_in_2D(ni_src+1, nj_src+1), lat_in_2D(ni_src+1, nj_src+1))
-    do i = 1, ni_src+1
-        lon_in_2D(i,:) = lon_in_1D(i)
+    allocate(lon_in_2D(ni_src, nj_src), lat_in_2D(ni_src, nj_src))
+    do i = 1, ni_src
+        lon_in_2D(i,:) = lon_src_beg + (i-1)*dlon_src
     end do
-    do j = 1, nj_src+1
-        lat_in_2D(:,j) = lat_in_1D(j)
+    do j = 1, nj_src
+        lat_in_2D(:,j) = lat_src_beg + (j-1)*dlat_src
     end do
-    allocate(lon_out_2D(isc:iec+1, jsc:jec+1), lat_out_2D(isc:iec+1, jsc:jec+1))
-    do i = isc, iec+1
-        lon_out_2D(i,:) = lon_out_1D(i)
+    allocate(lon_out_2D(ni_dst, nj_dst), lat_out_2D(ni_dst, nj_dst))
+    do i = 1, ni_dst
+        lon_out_2D(i,:) = lon_dst_beg + (i-1)*dlon_dst
     end do
-    do j = jsc, jec+1
-        lat_out_2D(:,j) = lat_out_1D(j)
+    do j = 1, nj_dst
+        lat_out_2D(:,j) = lat_src_beg + (j-1)*dlat_dst
     end do
 
     ! scale to radians
-    lat_in_1D = lat_in_1D * D2R
-    lon_in_1D = lon_in_1D * D2R
     lat_in_2D = lat_in_2D * D2R
     lon_in_2D = lon_in_2D * D2R
-    lat_out_1D = lat_out_1D * D2R
-    lon_out_1D = lon_out_1D * D2R
     lat_out_2D = lat_out_2D * D2R
     lon_out_2D = lon_out_2D * D2R
 
 
-    nlon_in = ni_src;  nlat_in = nj_src
-    nlon_out = iec - isc; nlat_out = jec - jsc 
-
     allocate(data_src(ni_src, nj_src))
-    allocate(data_dst(isc:iec, jsc:jec))
+    allocate(data_dst(ni_dst, nj_dst))
+    allocate(wghts(ni_dst, nj_dst, max_neighbors))
     data_dst = 0.0_lkind ; data_src = 1.0_lkind
 
     ! 2D x 2D (only one supported for spherical)
     if(.not. test_solo) then
-        ! TODO seg fault on call entry
-        !call horiz_interp_new(interp_t, lon_in_2d, lat_in_2d, lon_out_2d, lon_out_2d, interp_method="spherical")
-        !call horiz_interp(interp_t, data_src, data_dst)
-        ! TODO wti/j aren't used for this 
+        call horiz_interp_new(interp_t, lon_in_2d, lat_in_2d, lon_out_2d, lon_out_2d, interp_method="spherical")
+        call horiz_interp(interp_t, data_src, data_dst)
+        !! spherical also has a separate routine to output weights
+        call horiz_interp_spherical_wght(interp_t, wghts) 
     else
-        !call horiz_inter(data_src, lon_in_2D, lat_in_2D, lon_out_2D, lat_out_2D, interp_method="spherical")
+        call horiz_interp(data_src, lon_in_2D, lat_in_2D, lon_out_2D, lat_out_2D, data_dst, interp_method="spherical")
     endif
-    do i=1, ni_src-1
-        do j=1, nj_src-1
-            if( allocated(interp_t%kind4_reals)) then
-            else
-            endif
+    do i=1, ni_dst-1
+        do j=1, nj_dst-1
+            if(data_dst(i,j) - 1.0_lkind .gt. SMALL) call mpp_error(FATAL, "test_horiz_interp_spherical: "// &
+                                                                    "invalid output data after interpolation")
         enddo
     enddo
+
     if(.not. test_solo) then
-        !call horiz_interp_del(interp_t)
+        call horiz_interp_del(interp_t)
     endif
     deallocate(data_src, data_dst)
-    deallocate(lat_in_1D, lon_in_1D, lat_in_2D, lon_in_2D)
-    deallocate(lat_out_1D, lon_out_1D, lat_out_2D, lon_out_2D)
+    deallocate(lat_in_2D, lon_in_2D)
+    deallocate(lat_out_2D, lon_out_2D)
 
   end subroutine
 
+  !> Tests bilinear module interpolation with each dimension conversion
+  !! test without passing in the type when test_solo is true
   subroutine test_horiz_interp_bilinear
     real(HI_TEST_KIND_)                              :: dlon_src, dlat_src, dlon_dst, dlat_dst
     real(HI_TEST_KIND_), allocatable, dimension(:)   :: lon1D_src, lat1D_src, lon1D_dst, lat1D_dst
@@ -598,6 +586,8 @@ implicit none
 
   end subroutine test_horiz_interp_bilinear
 
+  !> Tests bicubic module interpolation with each dimension conversion
+  !! test without passing in the type when test_solo is true
   subroutine test_horiz_interp_bicubic
     !! grid data
     real(HI_TEST_KIND_), allocatable, dimension(:) :: lat_in_1D, lon_in_1D
@@ -641,6 +631,12 @@ implicit none
     do j = jsc, jec+1
         lat_out_1D(j) = lat_dst_beg + (j-1)*dlat_dst
     end do
+    ! convert to rads
+    lon_in_1D = lon_in_1D * D2R
+    lat_in_1D = lat_in_1D * D2R
+    lon_out_1D = lon_out_1D * D2R
+    lat_out_1D = lat_out_1D * D2R
+
 
     ! set up 2d lon/lat  
     allocate(lon_in_2D(ni_src, nj_src), lat_in_2D(ni_src, nj_src))
@@ -661,13 +657,12 @@ implicit none
     nlon_in = ni_src;  nlat_in = nj_src
     nlon_out = iec - isc; nlat_out = jec - jsc 
 
-    ! allocate grids
+    ! allocate data 
     allocate(data_src(ni_src, nj_src))
     allocate(data_dst(isc:iec, jsc:jec))
     data_dst = 0.0_lkind ; data_src = 1.0_lkind
 
     ! 1D x 1D
-    ! set up weights
     if(.not. test_solo) then
         call horiz_interp_new(interp_t, lon_in_1d, lat_in_1d, lon_out_1d, lat_out_1d, interp_method="bicubic")
         call horiz_interp(interp_t, data_src, data_dst)
@@ -676,88 +671,88 @@ implicit none
     endif
     call mpp_sync()
     ! check weights (for last index, 1=x,2=y,3=xy derivatives)
-    ! x and y should be 1 at edges, 0.5 otherwise
-    do i=1, ni_src-1
-        do j=1, nj_src-1
-            if( allocated(interp_t%kind4_reals)) then
-                if( interp_t%kind4_reals%wti(i,j,1) * interp_t%kind4_reals%wti(i,j,2) & 
-                                                 .ne. interp_t%kind4_reals%wti(i,j,3)) then
-                        call mpp_error(FATAL, "test_horiz_interp: bicubic test failed 1Dx1D r4 weight calculation")
+    ! x and y should be 1 degree(in rads) at edges, 0.5 otherwise
+    !! check weights if type passed in
+    if( .not. test_solo) then
+        do i=1, ni_src-1
+            do j=1, nj_src-1
+                if( allocated(interp_t%kind4_reals)) then
+                    if( interp_t%kind4_reals%wti(i,j,1) * interp_t%kind4_reals%wti(i,j,2) & 
+                        - interp_t%kind4_reals%wti(i,j,3) .gt. SMALL .or.    &
+                        interp_t%kind4_reals%wti(i,j,3) - (57.2958_lkind * 57.2958_lkind) .gt. SMALL) then
+                            print *, i, j, interp_t%kind4_reals%wti(i,j,:)
+                            call mpp_error(FATAL, "test_horiz_interp: bicubic test failed 1Dx1D weight calculation")
+                    endif
+                else
+                    if( interp_t%kind8_reals%wti(i,j,1) * interp_t%kind8_reals%wti(i,j,2) & 
+                        - interp_t%kind8_reals%wti(i,j,3) .gt. SMALL .and. &
+                        interp_t%kind4_reals%wti(i,j,3) - (57.2958_lkind * 57.2958_lkind) .gt. SMALL) then
+                            print *, i, j, interp_t%kind8_reals%wti(i,j,:)
+                            call mpp_error(FATAL, "test_horiz_interp: bicubic test failed 1Dx1D weight calculation")
+                    endif
                 endif
-                if( interp_t%kind4_reals%wti(i,j,1) .ne. 0.5_lkind .and. &
-                    interp_t%kind4_reals%wti(i,j,1) .ne. real(i,HI_TEST_KIND_)) call mpp_error(FATAL, &
-                        "test_horiz_interp: bicubic test failed 1Dx1D r4 weight calculation")
-                if( interp_t%kind4_reals%wti(i,j,2) .ne. 0.5_lkind .and. &
-                    interp_t%kind4_reals%wti(i,j,2) .ne. real(j,HI_TEST_KIND_)) call mpp_error(FATAL, &
-                        "test_horiz_interp: bicubic test failed 1Dx1D r4 weight calculation")
-            else
-                if( interp_t%kind8_reals%wti(i,j,1) * interp_t%kind8_reals%wti(i,j,2) & 
-                                                 .ne. interp_t%kind8_reals%wti(i,j,3)) then
-                        call mpp_error(FATAL, "test_horiz_interp: bicubic test failed 1Dx1D r4 weight calculation")
-                endif
-                if( interp_t%kind8_reals%wti(i,j,1) .ne. 0.5_lkind .and. &
-                    interp_t%kind8_reals%wti(i,j,1) .ne. real(i,HI_TEST_KIND_)) call mpp_error(FATAL, &
-                        "test_horiz_interp: bicubic test failed 1Dx1D r4 weight calculation")
-                if( interp_t%kind8_reals%wti(i,j,2) .ne. 0.5_lkind .and. &
-                    interp_t%kind8_reals%wti(i,j,2) .ne. real(j,HI_TEST_KIND_)) call mpp_error(FATAL, &
-                        "test_horiz_interp: bicubic test failed 1Dx1D r4 weight calculation")
-            endif
+            enddo
         enddo
-    enddo
-    ! free memory
-    if(.not. test_solo) then
         call horiz_interp_del(interp_t)
     endif
+    do i=isc, iec-1
+        do j=jsc, jec-1
+            if( data_dst(i,j) .ne. 1.0_lkind) call mpp_error(FATAL, "test_horiz_interp: error in 1Dx1D output data") 
+        enddo
+    enddo
+    if( ANY(data_dst(ni_dst,:) .ne. 0.0_lkind) .or. ANY(data_dst(:,nj_dst) .ne. 0.0_lkind) ) &
+        call mpp_error(FATAL, "test_horiz_interp_bicubic: error in 1Dx2D edge data")
 
     ! 1D x 2D
-    ! allocate grids
     deallocate(data_src, data_dst)
     allocate(data_src(ni_src, nj_src))
     allocate(data_dst(isc:iec, jsc:jec))
     data_dst = 0.0_lkind ; data_src = 1.0_lkind
+
     if(.not. test_solo) then
-        call horiz_interp_new(interp_t, lon_in_1d, lat_in_1d, lon_out_2d, lat_out_2d, interp_method="bicubic")
+        call horiz_interp_new(interp_t, lon_in_1d, lat_in_1d, lon_out_1d, lat_out_1d, interp_method="bicubic")
         call horiz_interp(interp_t, data_src, data_dst)
     else
-        call horiz_interp(data_src, lon_in_1D, lat_in_1D, lon_out_2D, lat_out_2D, data_dst, interp_method="bicubic")
+        call horiz_interp(data_src, lon_in_1D, lat_in_1D, lon_out_1D, lat_out_1D, data_dst, interp_method="bicubic")
     endif
-    ! check weights (for last index, 1=x,2=y,3=xy derivatives)
-    do i=1, ni_src-1
-        do j=1, nj_src-1
-            if( allocated(interp_t%kind4_reals)) then
-                if( interp_t%kind4_reals%wti(i,j,1) * interp_t%kind4_reals%wti(i,j,2) & 
-                                                 .ne. interp_t%kind4_reals%wti(i,j,3)) then
-                        call mpp_error(FATAL, "test_horiz_interp: bicubic test failed 1Dx1D r4 weight calculation")
-                endif
-                if( interp_t%kind4_reals%wti(i,j,1) .ne. 0.5_lkind .and. &
-                    interp_t%kind4_reals%wti(i,j,1) .ne. real(i,HI_TEST_KIND_)) call mpp_error(FATAL, &
-                        "test_horiz_interp: bicubic test failed 1Dx1D r4 weight calculation")
-                if( interp_t%kind4_reals%wti(i,j,2) .ne. 0.5_lkind .and. &
-                    interp_t%kind4_reals%wti(i,j,2) .ne. real(j,HI_TEST_KIND_)) call mpp_error(FATAL, &
-                        "test_horiz_interp: bicubic test failed 1Dx1D r4 weight calculation")
-            else
-                if( interp_t%kind8_reals%wti(i,j,1) * interp_t%kind8_reals%wti(i,j,2) & 
-                                                 .ne. interp_t%kind8_reals%wti(i,j,3)) then
-                        call mpp_error(FATAL, "test_horiz_interp: bicubic test failed 1Dx1D r4 weight calculation")
-                endif
-                if( interp_t%kind8_reals%wti(i,j,1) .ne. 0.5_lkind .and. &
-                    interp_t%kind8_reals%wti(i,j,1) .ne. real(i,HI_TEST_KIND_)) call mpp_error(FATAL, &
-                        "test_horiz_interp: bicubic test failed 1Dx1D r4 weight calculation")
-                if( interp_t%kind8_reals%wti(i,j,2) .ne. 0.5_lkind .and. &
-                    interp_t%kind8_reals%wti(i,j,2) .ne. real(j,HI_TEST_KIND_)) call mpp_error(FATAL, &
-                        "test_horiz_interp: bicubic test failed 1Dx1D r4 weight calculation")
-            endif
-        enddo
-    enddo
+    call mpp_sync()
     if( .not. test_solo) then
+        do i=1, ni_src-1
+            do j=1, nj_src-1
+                if( allocated(interp_t%kind4_reals)) then
+                    if( interp_t%kind4_reals%wti(i,j,1) * interp_t%kind4_reals%wti(i,j,2) & 
+                        - interp_t%kind4_reals%wti(i,j,3) .gt. SMALL .or.    &
+                        interp_t%kind4_reals%wti(i,j,3) - (57.2958_lkind * 57.2958_lkind) .gt. SMALL) then
+                            print *, i, j, interp_t%kind4_reals%wti(i,j,:)
+                            call mpp_error(FATAL, "test_horiz_interp: bicubic test failed 1Dx1D weight calculation")
+                    endif
+                else
+                    if( interp_t%kind8_reals%wti(i,j,1) * interp_t%kind8_reals%wti(i,j,2) & 
+                        - interp_t%kind8_reals%wti(i,j,3) .gt. SMALL .or. &
+                        interp_t%kind8_reals%wti(i,j,3) - (57.2958_lkind * 57.2958_lkind) .gt. SMALL) then
+                            print *, i, j, interp_t%kind8_reals%wti(i,j,:)
+                            call mpp_error(FATAL, "test_horiz_interp: bicubic test failed 1Dx1D weight calculation")
+                    endif
+                endif
+            enddo
+        enddo
         call horiz_interp_del(interp_t)
     endif
+    do i=isc, iec-1
+        do j=jsc, jec-1
+            if( data_dst(i,j) .ne. 1.0_lkind) call mpp_error(FATAL, "test_horiz_interp: error in 1Dx2D output data") 
+        enddo
+    enddo
+    if( ANY(data_dst(ni_dst,:) .ne. 0.0_lkind) .or. ANY(data_dst(:,nj_dst) .ne. 0.0_lkind) ) &
+        call mpp_error(FATAL, "test_horiz_interp_bicubic: error in 1Dx2D edge data")
+
     deallocate(data_src, data_dst)
     deallocate(lat_in_1D, lon_in_1D, lat_in_2D, lon_in_2D)
     deallocate(lat_out_1D, lon_out_1D, lat_out_2D, lon_out_2D)
 
   end subroutine test_horiz_interp_bicubic
 
+  !> Tests conservative (default) interpolation module and checks grids reproduce across 1/2d versions
   subroutine test_horiz_interp_conserve
     real(HI_TEST_KIND_)                              :: dlon_src, dlat_src, dlon_dst, dlat_dst
     real(HI_TEST_KIND_), allocatable, dimension(:)   :: lon1D_src, lat1D_src, lon1D_dst, lat1D_dst
@@ -928,16 +923,16 @@ implicit none
 
     !> Tests the assignment overload for horiz_interp_type
     !! creates some new instances of the derived type for the different methods
-    !! and tests equality of fields after an assignment
+    !! and tests equality of fields after initial weiht calculations 
     subroutine test_assignment()
-        type(horiz_interp_type) :: Interp_new1, Interp_new2, Interp_cp
+        type(horiz_interp_type) :: Interp_new1, Interp_new2, Interp_cp, intp_3
         !! grid data points
         real(HI_TEST_KIND_), allocatable, dimension(:) :: lat_in_1D, lon_in_1D
         real(HI_TEST_KIND_), allocatable, dimension(:,:) :: lat_in_2D, lon_in_2D
         !! output data points 
         real(HI_TEST_KIND_), allocatable, dimension(:)   :: lat_out_1D, lon_out_1D
         real(HI_TEST_KIND_), allocatable, dimension(:,:) :: lat_out_2D, lon_out_2D
-        real(HI_TEST_KIND_), allocatable, dimension(:,:) :: lat_out_bil, lon_out_bil
+        real(HI_TEST_KIND_), allocatable, dimension(:) :: lat_out_bil, lon_out_bil
         real(HI_TEST_KIND_), allocatable, dimension(:,:) :: lat_in_bil, lon_in_bil
         !! array sizes and number of lat/lon per index
         integer :: nlon_in, nlat_in
@@ -951,28 +946,26 @@ implicit none
         real(HI_TEST_KIND_) :: D2R = real(PI,HI_TEST_KIND_)/180._lkind
         real(HI_TEST_KIND_) :: R2D = 180._lkind/real(PI,HI_TEST_KIND_)
         real(HI_TEST_KIND_), parameter :: SMALL = 1.0e-10_lkind
-        character(len=16), dimension(4):: methods
-        methods = (/ "conservative", "bicubic", "bilinear", "spherical" /)
 
         ! set up longitude and latitude of source/destination grid.
-        dlon_src = (lon_src_end-lon_src_beg)/ni_src
-        dlat_src = (lat_src_end-lat_src_beg)/nj_src
-        dlon_dst = (lon_dst_end-lon_dst_beg)/ni_dst
-        dlat_dst = (lat_dst_end-lat_dst_beg)/nj_dst
+        dlon_src = (lon_src_end-lon_src_beg)/real(ni_src,HI_TEST_KIND_)
+        dlat_src = (lat_src_end-lat_src_beg)/real(nj_src,HI_TEST_KIND_)
+        dlon_dst = (lon_dst_end-lon_dst_beg)/real(ni_dst,HI_TEST_KIND_)
+        dlat_dst = (lat_dst_end-lat_dst_beg)/real(nj_dst,HI_TEST_KIND_)
 
         allocate(lon_in_1D(ni_src+1), lat_in_1D(nj_src+1))
         do i = 1, ni_src+1
-            lon_in_1D(i) = lon_src_beg + (i-1)*dlon_src
+            lon_in_1D(i) = lon_src_beg + real(i-1,HI_TEST_KIND_)*dlon_src
         end do
         do j = 1, nj_src+1
-            lat_in_1D(j) = lat_src_beg + (j-1)*dlat_src
+            lat_in_1D(j) = lat_src_beg + real(j-1,HI_TEST_KIND_)*dlat_src
         end do
-        allocate(lon_out_1D(isc:iec), lat_out_1D(isc:iec))
+        allocate(lon_out_1D(isc:iec+1), lat_out_1D(isc:iec+1))
         do i = isc, iec+1
-            lon_out_1D(i) = lon_dst_beg + (i-1)*dlon_dst
+            lon_out_1D(i) = lon_dst_beg + real(i-1,HI_TEST_KIND_)*dlon_dst
         end do
         do j = jsc, jec+1
-            lat_out_1D(j) = lat_dst_beg + (j-1)*dlat_dst
+            lat_out_1D(j) = lat_dst_beg + real(j-1, HI_TEST_KIND_)*dlat_dst
         end do
 
         lon_in_1D = lon_in_1D * D2R
@@ -980,8 +973,7 @@ implicit none
         lon_out_1D = lon_out_1D * D2R
         lat_out_1D = lat_out_1D * D2R
 
-        ! set up 2d lon/lat  
-        allocate(lon_in_2D(ni_src, nj_src), lat_in_2D(ni_src, nj_src))
+        allocate(lon_in_2D(ni_src+1, nj_src+1), lat_in_2D(ni_src+1, nj_src+1))
         do i = 1, ni_src+1
             lon_in_2D(i,:) = lon_in_1D(i)
         end do
@@ -996,128 +988,209 @@ implicit none
             lat_out_2D(:,j) = lat_out_1D(j)
         end do
 
-
-        ! --- 1dx2d version bilinear interpolation
-        allocate(lon_out_bil(ni_src, nj_src), lat_in_bil(ni_src, nj_src))
         ! taking the midpoint
-        do i = 1, ni_src
-            lon_out_bil(i,:) = (lon_out_1D(i) + lon_out_1D(i+1)) * 0.5_lkind
-        end do
-        do j = 1, nj_src
-            lat_out_bil(:,j) = (lat_out_1D(j) + lat_out_1D(j+1)) * 0.5_lkind
-        end do
-        
-        do i=1, ni_src
-            lon_in_bil(i,:) = lon_in_1D(i)
-        end do
-        do j=1, nj_src
-            lat_in_bil(:,j) = lat_in_1D(j)
-        end do
-
+        !do i = 1, ni_src
+        !    lon_out_bil(i,:) = (lon_in_1D(i) + lon_in_1D(i+1)) * 0.5_lkind
+        !end do
+        !do j = 1, nj_src
+        !    lat_out_bil(:,j) = (lat_in_1D(j) + lat_in_1D(j+1)) * 0.5_lkind
+        !end do
         !lon_in_2D = lon_in_bil; lat_in_2D = lat_in_bil
         !lon_out_2D = lon_out_bil; lat_out_2D = lat_out_bil
 
+        ! conservative
+        ! 1dx1d
+        call horiz_interp_new(Interp_new1, lon_in_1D, lat_in_1D, lon_out_1D, lat_out_1D, interp_method="conservative")
+        call horiz_interp_new(Interp_new2, lon_in_1D, lat_in_1D, lon_out_1D, lat_out_1D, interp_method="conservative")
+        Interp_cp = Interp_new1
+        if (.not. check_type_eq(Interp_cp, Interp_new2)) call mpp_error(FATAL, "test_horiz_interp: 1x1d conservative assignment override not equivalent")
+        call horiz_interp_del(Interp_new1)
+        call horiz_interp_del(Interp_new2)
+        call horiz_interp_del(Interp_cp)
+        ! 1dx2d
+        call horiz_interp_new(Interp_new1, lon_in_1D, lat_in_1D, lon_out_2D, lat_out_2D, interp_method="conservative")
+        call horiz_interp_new(Interp_new2, lon_in_1D, lat_in_1D, lon_out_2D, lat_out_2D, interp_method="conservative")
+        Interp_cp = Interp_new1
+        if (.not. check_type_eq(Interp_cp, Interp_new2)) call mpp_error(FATAL, "test_horiz_interp: 1x2d conservative assignment override not equivalent")
+        call horiz_interp_del(Interp_new1)
+        call horiz_interp_del(Interp_new2)
+        call horiz_interp_del(Interp_cp)
+        ! 2dx1d
+        call horiz_interp_new(Interp_new1, lon_in_2D, lat_in_2D, lon_out_1D, lat_out_1D, interp_method="conservative")
+        call horiz_interp_new(Interp_new2, lon_in_2D, lat_in_2D, lon_out_1D, lat_out_1D, interp_method="conservative")
+        Interp_cp = Interp_new1
+        if (.not. check_type_eq(Interp_cp, Interp_new2)) call mpp_error(FATAL, "test_horiz_interp: 2x1d conservative assignment override not equivalent")
+        call horiz_interp_del(Interp_new1)
+        call horiz_interp_del(Interp_new2)
+        call horiz_interp_del(Interp_cp)
+        ! 2dx2d
+        call horiz_interp_new(Interp_new1, lon_in_2D, lat_in_2D, lon_out_2D, lat_out_2D, interp_method="conservative")
+        call horiz_interp_new(Interp_new2, lon_in_2D, lat_in_2D, lon_out_2D, lat_out_2D, interp_method="conservative")
+        Interp_cp = Interp_new1
+        if (.not. check_type_eq(Interp_cp, Interp_new2)) call mpp_error(FATAL, "test_horiz_interp: 2x2d conservative assignment override not equivalent")
+        call mpp_sync
+        call horiz_interp_del(Interp_new1)
+        call horiz_interp_del(Interp_new2)
+        call horiz_interp_del(Interp_cp)
 
-        do i=1, 4
-            print *, 'testing assignment for ', methods(i)
-            if( i .ne. 4) then !spherical is only 2dx2d
-                ! 1dx1d assignments
-                call horiz_interp_new(Interp_new1, lat_in_1D, lon_in_1D, lat_out_1D, lon_out_1D, interp_method=methods(i))
-                !call horiz_interp_new(Interp_new2, lat_in_1D, lon_in_1D, lat_out_1D, lon_out_1D, interp_method=method(i))
-                Interp_cp = Interp_new1
-                !if (.not. check_type_eq(Interp_cp, Interp_new2)) call mpp_error(FATAL, "")
-                call horiz_interp_del(Interp_new1)
-                call horiz_interp_del(Interp_cp)
+        ! bicubic only works with 1d src
+        ! 1dx1d
+        call horiz_interp_new(Interp_new1, lon_in_1D, lat_in_1D, lon_out_1D, lat_out_1D, interp_method="bicubic")
+        call horiz_interp_new(Interp_new2, lon_in_1D, lat_in_1D, lon_out_1D, lat_out_1D, interp_method="bicubic")
+        Interp_cp = Interp_new1
+        if (.not. check_type_eq(Interp_cp, Interp_new2)) call mpp_error(FATAL, "test_horiz_interp: 1x1d bicubic assignment override not equivalent")
+        call horiz_interp_del(Interp_new1)
+        call horiz_interp_del(Interp_new2)
+        call horiz_interp_del(Interp_cp)
+        ! 1dx2d
+        call horiz_interp_new(Interp_new1, lon_in_1D, lat_in_1D, lon_out_2D, lat_out_2D, interp_method="bicubic")
+        call horiz_interp_new(Interp_new2, lon_in_1D, lat_in_1D, lon_out_2D, lat_out_2D, interp_method="bicubic")
+        Interp_cp = Interp_new1
+        if (.not. check_type_eq(Interp_cp, Interp_new2)) call mpp_error(FATAL, "test_horiz_interp: 1x2d bicubic assignment override not equivalent")
+        call horiz_interp_del(Interp_new1)
+        call horiz_interp_del(Interp_new2)
+        call horiz_interp_del(Interp_cp)
 
-                ! 1dx2d
-                call horiz_interp_new(Interp_new1, lat_in_1D, lon_in_1D, lat_out_2D, lon_out_2D, interp_method=methods(i))
-                Interp_cp = Interp_new1
-                call horiz_interp_del(Interp_new1)
-                call horiz_interp_del(Interp_cp)
-            endif
+        deallocate(lon_out_2D, lat_out_2D, lon_in_2D, lat_in_2D)
+        allocate(lon_out_2D(ni_dst, nj_dst), lat_out_2D(ni_dst, nj_dst))
+        allocate(lon_in_2D(ni_src, nj_src), lat_in_2D(ni_src, nj_src))
+        do i = 1, ni_dst
+            lon_out_2D(i,:) = lon_dst_beg + (i-1)*dlon_dst
+        end do
+        do j = 1, nj_dst
+            lat_out_2D(:,j) = lat_dst_beg + (j-1)*dlat_dst
+        end do
+        do i = 1, ni_src
+            lon_in_2D(i,:) = lon_src_beg + (i-1)*dlon_src
+        end do
+        do j = 1, nj_src
+            lat_in_2D(:,j) = lat_src_beg + (j-1)*dlat_src
+        end do
+        ! scale to radians
+        lat_in_2D = lat_in_2D * D2R
+        lon_in_2D = lon_in_2D * D2R
+        lat_out_2D = lat_out_2D * D2R
+        lon_out_2D = lon_out_2D * D2R
 
-            if(i .ne. 2 .and. i .ne. 3) then !bicubic only works with 1d src, bilinear needs different lat/lon
-                ! 2dx1d
-                call horiz_interp_new(Interp_new1, lat_in_2D, lon_in_2D, lat_out_1D, lon_out_1D, interp_method=methods(i))
-                Interp_cp = Interp_new1
-                call horiz_interp_del(Interp_new1)
-                call horiz_interp_del(Interp_cp)
-                ! 2dx2d
-                call horiz_interp_new(Interp_new1, lat_in_2D, lon_in_2D, lat_out_2D, lon_out_2D, interp_method=methods(i))
-                Interp_cp = Interp_new1
-                call horiz_interp_del(Interp_new1)
-                call horiz_interp_del(Interp_cp)
-            else
-                ! 2dx1d
-                call horiz_interp_new(Interp_new1, lat_in_bil, lon_in_bil, lat_out_1D, lon_out_1D, interp_method=methods(i))
-                Interp_cp = Interp_new1
-                call horiz_interp_del(Interp_new1)
-                call horiz_interp_del(Interp_cp)
-                ! 2dx2d
-                call horiz_interp_new(Interp_new1, lat_in_bil, lon_in_bil, lat_out_bil, lon_out_bil, interp_method=methods(i))
-                Interp_cp = Interp_new1
-                call horiz_interp_del(Interp_new1)
-                call horiz_interp_del(Interp_cp)
-            endif
-        enddo
+        ! spherical
+        ! only 2dx2d
+        call horiz_interp_new(Interp_new1, lon_in_2D, lat_in_2D, lon_out_2D, lat_out_2D, interp_method="spherical")
+        call horiz_interp_new(Interp_new2, lon_in_2D, lat_in_2D, lon_out_2D, lat_out_2D, interp_method="spherical")
+        Interp_cp = Interp_new1
+        if (.not. check_type_eq(Interp_cp, Interp_new1)) call mpp_error(FATAL, "test_horiz_interp: 1x2d bilinear assignment override not equivalent")
+        call horiz_interp_del(Interp_new1)
+        call horiz_interp_del(Interp_new2)
+        call horiz_interp_del(Interp_cp)
 
-
+        ! bilinear
+        ! 1dx1d
+        call horiz_interp_new(Interp_new1, lon_in_1D, lat_in_1D, lon_in_1D, lat_in_1D, interp_method="bilinear")
+        call horiz_interp_new(Interp_new2, lon_in_1D, lat_in_1D, lon_in_1D, lat_in_1D, interp_method="bilinear")
+        Interp_cp = Interp_new1
+        if (.not. check_type_eq(Interp_cp, Interp_new2)) call mpp_error(FATAL, "test_horiz_interp: 1x1d bilinear assignment override not equivalent")
+        call horiz_interp_del(Interp_new1)
+        call horiz_interp_del(Interp_new2)
+        call horiz_interp_del(Interp_cp)
+        ! 1dx2d
+        call horiz_interp_new(Interp_new1, lon_in_1D, lat_in_1D, lon_in_2D, lat_in_2D, interp_method="bilinear")
+        call horiz_interp_new(Interp_new2, lon_in_1D, lat_in_1D, lon_in_2D, lat_in_2D, interp_method="bilinear")
+        Interp_cp = Interp_new1
+        if (.not. check_type_eq(Interp_cp, Interp_new2)) call mpp_error(FATAL, "test_horiz_interp: 1x2d bilinear assignment override not equivalent")
+        call horiz_interp_del(Interp_new1)
+        call horiz_interp_del(Interp_new2)
+        call horiz_interp_del(Interp_cp)
+        ! 2dx1d
+        call horiz_interp_new(Interp_new1, lon_in_2D, lat_in_2D, lon_in_2D, lat_in_2D, interp_method="bilinear")
+        call horiz_interp_new(Interp_new2, lon_in_2D, lat_in_2D, lon_in_2D, lat_in_2D, interp_method="bilinear")
+        Interp_cp = Interp_new1
+        if (.not. check_type_eq(Interp_cp, Interp_new2)) call mpp_error(FATAL, "test_horiz_interp: 1x2d bilinear assignment override not equivalent")
+        call horiz_interp_del(Interp_new1)
+        call horiz_interp_del(Interp_new2)
+        call horiz_interp_del(Interp_cp)
+        ! 2dx2d
+        call horiz_interp_new(Interp_new1, lon_in_2D, lat_in_2D, lon_in_2D, lat_in_2D, interp_method="bilinear")
+        call horiz_interp_new(Interp_new2, lon_in_2D, lat_in_2D, lon_in_2D, lat_in_2D, interp_method="bilinear")
+        Interp_cp = Interp_new1
+        if (.not. check_type_eq(Interp_cp, Interp_new2)) call mpp_error(FATAL, "test_horiz_interp: 1x2d bilinear assignment override not equivalent")
+        call horiz_interp_del(Interp_new1)
+        call horiz_interp_del(Interp_new2)
+        call horiz_interp_del(Interp_cp)
 
    end subroutine
     !> helps assignment test with derived type comparisons 
     logical function check_type_eq(interp_1, interp_2)
         type(horiz_interp_type), intent(in) :: interp_1, interp_2
+        integer :: i, j ,k
         check_type_eq = .true.
         if(allocated(interp_1%kind4_reals)) then
-            check_type_eq = check_type_eq .and. ALL(interp_2%kind4_reals%faci .eq. interp_1%kind4_reals%faci)
-            check_type_eq = check_type_eq .and. ALL(interp_2%kind4_reals%facj .eq. interp_1%kind4_reals%facj)
-            check_type_eq = check_type_eq .and. ALL(interp_2%kind4_reals%area_src .eq. interp_1%kind4_reals%area_src)
-            check_type_eq = check_type_eq .and. ALL(interp_2%kind4_reals%area_dst .eq. interp_1%kind4_reals%area_dst)
-            check_type_eq = check_type_eq .and. ALL(interp_2%kind4_reals%wti .eq. interp_1%kind4_reals%wti)
-            check_type_eq = check_type_eq .and. ALL(interp_2%kind4_reals%wtj .eq. interp_1%kind4_reals%wtj)
-            check_type_eq = check_type_eq .and. ALL(interp_2%kind4_reals%src_dist .eq. interp_1%kind4_reals%src_dist)
-            check_type_eq = check_type_eq .and. ALL(interp_2%kind4_reals%rat_x .eq. interp_1%kind4_reals%rat_x)
-            check_type_eq = check_type_eq .and. ALL(interp_2%kind4_reals%rat_y .eq. interp_1%kind4_reals%rat_y)
-            check_type_eq = check_type_eq .and. ALL(interp_2%kind4_reals%lon_in .eq. interp_1%kind4_reals%lon_in)
-            check_type_eq = check_type_eq .and. ALL(interp_2%kind4_reals%lat_in .eq. interp_1%kind4_reals%lat_in)
-            check_type_eq = check_type_eq .and. ALL(interp_2%kind4_reals%area_frac_dst.eq.interp_1%kind4_reals%area_frac_dst)
-            check_type_eq = check_type_eq .and. ALL(interp_2%kind4_reals%mask_in .eq. interp_1%kind4_reals%mask_in)
+            if(allocated(interp_1%kind4_reals%faci)) check_type_eq = check_type_eq .and. ALL(interp_2%kind4_reals%faci .eq. interp_1%kind4_reals%faci)
+            if(allocated(interp_1%kind4_reals%facj)) check_type_eq = check_type_eq .and. ALL(interp_2%kind4_reals%facj .eq. interp_1%kind4_reals%facj)
+            if(allocated(interp_1%kind4_reals%area_src)) check_type_eq = check_type_eq .and. ALL(interp_2%kind4_reals%area_src .eq. interp_1%kind4_reals%area_src)
+            if(allocated(interp_1%kind4_reals%area_dst)) check_type_eq = check_type_eq .and. ALL(interp_2%kind4_reals%area_dst .eq. interp_1%kind4_reals%area_dst)
+            if(allocated(interp_1%kind4_reals%wti)) check_type_eq = check_type_eq .and. ALL(interp_2%kind4_reals%wti .eq. interp_1%kind4_reals%wti)
+            if(allocated(interp_1%kind4_reals%wtj)) check_type_eq = check_type_eq .and. ALL(interp_2%kind4_reals%wtj .eq. interp_1%kind4_reals%wtj)
+            if(allocated(interp_1%kind4_reals%src_dist)) check_type_eq = check_type_eq .and. ALL(interp_2%kind4_reals%src_dist .eq. interp_1%kind4_reals%src_dist)
+            if(allocated(interp_1%kind4_reals%rat_x)) check_type_eq = check_type_eq .and. ALL(interp_2%kind4_reals%rat_x .eq. interp_1%kind4_reals%rat_x)
+            if(allocated(interp_1%kind4_reals%rat_y)) check_type_eq = check_type_eq .and. ALL(interp_2%kind4_reals%rat_y .eq. interp_1%kind4_reals%rat_y)
+            if(allocated(interp_1%kind4_reals%lon_in)) check_type_eq = check_type_eq .and. ALL(interp_2%kind4_reals%lon_in .eq. interp_1%kind4_reals%lon_in)
+            if(allocated(interp_1%kind4_reals%lat_in)) check_type_eq = check_type_eq .and. ALL(interp_2%kind4_reals%lat_in .eq. interp_1%kind4_reals%lat_in)
+            if(allocated(interp_1%kind4_reals%area_frac_dst)) check_type_eq = check_type_eq .and. ALL(interp_2%kind4_reals%area_frac_dst.eq.interp_1%kind4_reals%area_frac_dst)
+            if(allocated(interp_1%kind4_reals%mask_in)) check_type_eq = check_type_eq .and. ALL(interp_2%kind4_reals%mask_in .eq. interp_1%kind4_reals%mask_in)
             check_type_eq = check_type_eq .and. interp_2%kind4_reals%max_src_dist .eq. interp_1%kind4_reals%max_src_dist
         else if(allocated(interp_1%kind8_reals)) then
-            check_type_eq = check_type_eq .and. ALL(interp_2%kind8_reals%faci .eq. interp_1%kind8_reals%faci)
-            check_type_eq = check_type_eq .and. ALL(interp_2%kind8_reals%facj .eq. interp_1%kind8_reals%facj)
-            check_type_eq = check_type_eq .and. ALL(interp_2%kind8_reals%area_src .eq. interp_1%kind8_reals%area_src)
-            check_type_eq = check_type_eq .and. ALL(interp_2%kind8_reals%area_dst .eq. interp_1%kind8_reals%area_dst)
-            check_type_eq = check_type_eq .and. ALL(interp_2%kind8_reals%wti .eq. interp_1%kind8_reals%wti)
-            check_type_eq = check_type_eq .and. ALL(interp_2%kind8_reals%wtj .eq. interp_1%kind8_reals%wtj)
-            check_type_eq = check_type_eq .and. ALL(interp_2%kind8_reals%src_dist .eq. interp_1%kind8_reals%src_dist)
-            check_type_eq = check_type_eq .and. ALL(interp_2%kind8_reals%rat_x .eq. interp_1%kind8_reals%rat_x)
-            check_type_eq = check_type_eq .and. ALL(interp_2%kind8_reals%rat_y .eq. interp_1%kind8_reals%rat_y)
-            check_type_eq = check_type_eq .and. ALL(interp_2%kind8_reals%lon_in .eq. interp_1%kind8_reals%lon_in)
-            check_type_eq = check_type_eq .and. ALL(interp_2%kind8_reals%lat_in .eq. interp_1%kind8_reals%lat_in)
-            check_type_eq = check_type_eq.and.ALL(interp_2%kind8_reals%area_frac_dst.eq.interp_1%kind8_reals%area_frac_dst)
-            check_type_eq = check_type_eq .and. ALL(interp_2%kind8_reals%mask_in .eq. interp_1%kind8_reals%mask_in)
+            if(allocated(interp_1%kind8_reals%faci)) check_type_eq = check_type_eq .and. ALL(interp_2%kind8_reals%faci .eq. interp_1%kind8_reals%faci)
+            if(allocated(interp_1%kind8_reals%facj)) check_type_eq = check_type_eq .and. ALL(interp_2%kind8_reals%facj .eq. interp_1%kind8_reals%facj)
+            if(allocated(interp_1%kind8_reals%area_src)) check_type_eq = check_type_eq .and. ALL(interp_2%kind8_reals%area_src .eq. interp_1%kind8_reals%area_src)
+            if(allocated(interp_1%kind8_reals%area_dst)) check_type_eq = check_type_eq .and. ALL(interp_2%kind8_reals%area_dst .eq. interp_1%kind8_reals%area_dst)
+            if(allocated(interp_1%kind8_reals%wti)) check_type_eq = check_type_eq .and. ALL(interp_2%kind8_reals%wti .eq. interp_1%kind8_reals%wti)
+            if(allocated(interp_1%kind8_reals%wtj)) check_type_eq = check_type_eq .and. ALL(interp_2%kind8_reals%wtj .eq. interp_1%kind8_reals%wtj)
+            if(allocated(interp_1%kind8_reals%src_dist)) check_type_eq = check_type_eq .and. ALL(interp_2%kind8_reals%src_dist .eq. interp_1%kind8_reals%src_dist)
+            if(allocated(interp_1%kind8_reals%rat_x)) check_type_eq = check_type_eq .and. ALL(interp_2%kind8_reals%rat_x .eq. interp_1%kind8_reals%rat_x)
+            if(allocated(interp_1%kind8_reals%rat_y)) check_type_eq = check_type_eq .and. ALL(interp_2%kind8_reals%rat_y .eq. interp_1%kind8_reals%rat_y)
+            if(allocated(interp_1%kind8_reals%lon_in)) check_type_eq = check_type_eq .and. ALL(interp_2%kind8_reals%lon_in .eq. interp_1%kind8_reals%lon_in)
+            if(allocated(interp_1%kind8_reals%lat_in)) check_type_eq = check_type_eq .and. ALL(interp_2%kind8_reals%lat_in .eq. interp_1%kind8_reals%lat_in)
+            if(allocated(interp_1%kind8_reals%area_frac_dst)) check_type_eq = check_type_eq .and. ALL(interp_2%kind8_reals%area_frac_dst.eq.interp_1%kind8_reals%area_frac_dst)
+            if(allocated(interp_1%kind8_reals%mask_in)) check_type_eq = check_type_eq .and. ALL(interp_2%kind8_reals%mask_in .eq. interp_1%kind8_reals%mask_in)
             check_type_eq = check_type_eq .and. interp_2%kind8_reals%max_src_dist .eq.interp_1%kind8_reals%max_src_dist
         else
-            call mpp_error(FATAL, "test_horiz_interp: both real kinds unallocated")
+            call mpp_error(FATAL, "check_type_eq: both real kinds unallocated")
         endif
 
-        check_type_eq = check_type_eq .and. ALL(interp_2%ilon .eq. interp_1%ilon)
-        check_type_eq = check_type_eq .and. ALL(interp_2%jlat .eq. interp_1%jlat)
-        check_type_eq = check_type_eq .and. ALL(interp_2%i_lon .eq. interp_1%i_lon)
-        check_type_eq = check_type_eq .and. ALL(interp_2%j_lat .eq. interp_1%j_lat)
-        check_type_eq = check_type_eq .and. ALL(interp_2%found_neighbors .eq. interp_1%found_neighbors)
-        check_type_eq = check_type_eq .and. ALL(interp_2%num_found .eq. interp_1%num_found)
-        check_type_eq = check_type_eq .and. ALL(interp_2%i_src .eq. interp_1%i_src)
-        check_type_eq = check_type_eq .and. ALL(interp_2%j_src .eq. interp_1%j_src)
-        check_type_eq = check_type_eq .and. ALL(interp_2%i_dst .eq. interp_1%i_dst)
-        check_type_eq = check_type_eq .and. ALL(interp_2%j_dst .eq. interp_1%j_dst)
+        if(allocated(interp_1%ilon))  check_type_eq = check_type_eq .and. ALL(interp_2%ilon .eq. interp_1%ilon)
+        if(allocated(interp_1%jlat))  check_type_eq = check_type_eq .and. ALL(interp_2%jlat .eq. interp_1%jlat)
+        !if(allocated(interp_1%i_lon)) check_type_eq = check_type_eq .and. ALL(interp_2%i_lon .eq. interp_1%i_lon)
+        !if(allocated(interp_1%j_lat)) check_type_eq = check_type_eq .and. ALL(interp_2%j_lat .eq. interp_1%j_lat)
+        if(allocated(interp_1%found_neighbors))check_type_eq = check_type_eq .and. ALL(interp_2%found_neighbors .eq. interp_1%found_neighbors)
+        if(allocated(interp_1%num_found))check_type_eq = check_type_eq .and. ALL(interp_2%num_found .eq. interp_1%num_found)
+        if(allocated(interp_1%i_src)) check_type_eq = check_type_eq .and. ALL(interp_2%i_src .eq. interp_1%i_src)
+        if(allocated(interp_1%j_src)) check_type_eq = check_type_eq .and. ALL(interp_2%j_src .eq. interp_1%j_src)
+        if(allocated(interp_1%i_dst)) check_type_eq = check_type_eq .and. ALL(interp_2%i_dst .eq. interp_1%i_dst)
+        if(allocated(interp_1%j_dst)) check_type_eq = check_type_eq .and. ALL(interp_2%j_dst .eq. interp_1%j_dst)
         check_type_eq = check_type_eq .and. interp_2%nlon_src .eq. interp_1%nlon_src
         check_type_eq = check_type_eq .and. interp_2%nlat_src .eq. interp_1%nlat_src
         check_type_eq = check_type_eq .and. interp_2%nlon_dst .eq. interp_1%nlon_dst
         check_type_eq = check_type_eq .and. interp_2%nlat_dst .eq. interp_1%nlat_dst
-        check_type_eq = check_type_eq .and. interp_2%interp_method .eq.  interp_1%interp_method
-        check_type_eq = check_type_eq .and. interp_2%I_am_initialized .eq. interp_1%I_am_initialized
+        ! these checks were giving me issues with the ALL comparison, seems to work here tho
+        do i=1, SIZE(interp_1%i_lon, 1)
+            do j=1, SIZE(interp_1%i_lon, 2)
+                do k=1, SIZE(interp_1%i_lon, 3)
+                    if( interp_1%i_lon(i,j,k) .ne. interp_2%i_lon(i,j,k)) then
+                        check_type_eq = .false. 
+                        exit
+                    endif
+                enddo
+            enddo
+        enddo
+        do i=1, SIZE(interp_1%j_lat, 1)
+            do j=1, SIZE(interp_1%j_lat, 2)
+                do k=1, SIZE(interp_1%j_lat, 3)
+                    if( interp_1%j_lat(i,j,k) .ne. interp_2%j_lat(i,j,k)) then
+                        check_type_eq = .false. 
+                        exit
+                    endif
+                enddo
+            enddo
+        enddo
     end function
 
 

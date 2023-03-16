@@ -462,25 +462,19 @@
       integer, parameter :: kindl = FMS_HI_KIND_!< compiled kind type
       !! previous set by a data block, zeroing out since last few rows werent st
       real(FMS_HI_KIND_), save, dimension(16,16) :: wt
-      wt = 0.0_kindl
-      wt(1,:) = (/1.0_kindl, 0.0_kindl, -3.0_kindl, 2.0_kindl, 4*0.0_kindl, -3.0_kindl, 0.0_kindl, 9.0_kindl, &
-                  -6.0_kindl, 2.0_kindl, 0.0_kindl, -6.0_kindl, 4.0_kindl, 8*0.0_kindl, 3.0_kindl, 0.0_kindl/)
-      wt(2,:) = (/-9.0_kindl, 6.0_kindl, -2.0_kindl, 0.0_kindl, 6.0_kindl, -4.0_kindl, 10*0.0_kindl, 9.0_kindl, &
-                  -6.0_kindl, 2*0.0_kindl, -6.0_kindl, 4.0_kindl, 2*0.0_kindl, 3.0_kindl, -2.0_kindl, 6*0.0_kindl /)
-      wt(3,:) = (/ -9.0_kindl, 6.0_kindl, 2*0.0_kindl, 6.0_kindl, -4.0_kindl, 4*0.0_kindl, 1.0_kindl, 0.0_kindl, &
-                   -3.0_kindl, 2.0_kindl, -2.0_kindl, 0.0_kindl, 6.0_kindl, -4.0_kindl, 1.0_kindl, 0.0_kindl /)
-      wt(4,:) = (/ -3.0_kindl, 2.0_kindl, 8*0.0_kindl, -1.0_kindl, 0.0_kindl, 3.0_kindl, -2.0_kindl, 1.0_kindl, &
-                    0.0_kindl, -3.0_kindl, 2.0_kindl, 10*0.0_kindl, -3.0_kindl, 2.0_kindl, 2*0.0_kindl, 3.0_kindl/)
-      wt(5,:) = (/ -2.0_kindl, 6*0.0_kindl, 3.0_kindl, -2.0_kindl, 2*0.0_kindl, -6.0_kindl, 4.0_kindl, 2*0.0_kindl, &
-                    3.0_kindl, -2.0_kindl, 0.0_kindl, 1.0_kindl, -2.0_kindl, 1.0_kindl, 5*0.0_kindl, -3.0_kindl /)
-      wt(6,:) = (/ 6.0_kindl, -3.0_kindl, 0.0_kindl, 2.0_kindl, -4.0_kindl, 2.0_kindl, 9*0.0_kindl, 3.0_kindl, &
-                  -6.0_kindl, 3.0_kindl, 0.0_kindl, -2.0_kindl, 4.0_kindl, -2.0_kindl, 10*0.0_kindl, -3.0_kindl /)
-      wt(7,:) = (/ 3.0_kindl, 2*0.0_kindl, 2.0_kindl, -2.0_kindl, 2*0.0_kindl, -1.0_kindl, 1.0_kindl, 6*0.0_kindl, &
-                   3.0_kindl, -3.0_kindl, 2*0.0_kindl, -2.0_kindl, 2.0_kindl, 5*0.0_kindl, 1.0_kindl, -2.0_kindl /)
-      wt(8,:) = (/ 1.0_kindl, 0.0_kindl, -2.0_kindl, 4.0_kindl, -2.0_kindl, 0.0_kindl, 1.0_kindl, -2.0_kindl, &
-                   1.0_kindl, 9*0.0_kindl, -1.0_kindl, 2.0_kindl, -1.0_kindl, 0.0_kindl, 1.0_kindl, -2.0_kindl /)
-      wt(9,:) = (/ 1.0_kindl, 10*0.0_kindl, 1.0_kindl, -1.0_kindl, 2*0.0_kindl, -1.0_kindl, 1.0_kindl, 6*0.0_kindl, &
-                  -1.0_kindl, 1.0_kindl, 2*0.0_kindl, 2.0_kindl, -2.0_kindl, 2*0.0_kindl, -1.0_kindl, 1.0_kindl/)
+      data wt/1., 0., -3., 2., 4*0., -3., 0., 9., -6., 2., 0., -6., 4., 8*0., &
+              3., 0., -9., 6., -2., 0., 6., -4., 10*0., 9., -6., 2*0., -6., &
+              4., 2*0., 3., -2., 6*0., -9., 6., 2*0., 6., -4., 4*0., 1., 0., &
+              -3., 2., -2., 0., 6., -4., 1., 0., -3., 2., 8*0., -1., 0., 3., &
+              -2., 1., 0., -3., 2., 10*0., -3., 2., 2*0., 3., -2., 6*0., 3., &
+              -2., 2*0., -6., 4., 2*0., 3., -2., 0., 1., -2., 1., 5*0., -3., &
+              6., -3., 0., 2., -4., 2., 9*0., 3., -6., 3., 0., -2., 4., -2., &
+              10*0., -3., 3., 2*0., 2., -2., 2*0., -1., 1., 6*0., 3., -3., &
+              2*0., -2., 2., 5*0., 1., -2., 1., 0., -2., 4., -2., 0., 1., -2., &
+              1., 9*0., -1., 2., -1., 0., 1., -2., 1., 10*0., 1., -1., 2*0., &
+              -1., 1., 6*0., -1., 1., 2*0., 2., -2., 2*0., -1., 1./
+
+
 
       d1d2=d1*d2
       do i=1,4
