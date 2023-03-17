@@ -500,7 +500,9 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
     return
   else
 !!TODO: Loop through fields and do averages/math functions
-    call this%FMS_diag_fields(diag_field_id)%set_math_needs_to_be_done(.FALSE.)
+    do ibuffer = 1 to size(this%FMS_diag_fields(diag_field_id)%diag_field)
+      call this%FMS_diag_fields(diag_field_id)%set_math_needs_to_be_done(.FALSE.)
+    enddo 
     fms_diag_accept_data = .TRUE.
     return
   end if main_if
