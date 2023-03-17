@@ -19,7 +19,7 @@
 !> @addtogroup horiz_interp_conserve
 !> @{
 #undef HI_KIND_TYPE_
-#define HI_KIND_TYPE_ kind8_reals
+#define HI_KIND_TYPE_ horizInterpReals8_type
 
 #undef FMS_HI_KIND_
 #define FMS_HI_KIND_ r8_kind

@@ -100,12 +100,12 @@ contains
                                    !! have allocated arrays. The returned variable will contain
                                    !! deallocated arrays
 
-    if( allocated(Interp%kind4_reals)) then
-      if(allocated(Interp%kind4_reals%wti))   deallocate(Interp%kind4_reals%wti)
-      if(allocated(Interp%kind4_reals%wtj))   deallocate(Interp%kind4_reals%wtj)
-    else if (allocated(Interp%kind8_reals)) then
-      if(allocated(Interp%kind8_reals%wti))   deallocate(Interp%kind8_reals%wti)
-      if(allocated(Interp%kind8_reals%wtj))   deallocate(Interp%kind8_reals%wtj)
+    if( allocated(Interp%horizInterpReals4_type)) then
+      if(allocated(Interp%horizInterpReals4_type%wti))   deallocate(Interp%horizInterpReals4_type%wti)
+      if(allocated(Interp%horizInterpReals4_type%wtj))   deallocate(Interp%horizInterpReals4_type%wtj)
+    else if (allocated(Interp%horizInterpReals8_type)) then
+      if(allocated(Interp%horizInterpReals8_type%wti))   deallocate(Interp%horizInterpReals8_type%wti)
+      if(allocated(Interp%horizInterpReals8_type%wtj))   deallocate(Interp%horizInterpReals8_type%wtj)
     endif
     if(allocated(Interp%i_lon)) deallocate(Interp%i_lon)
     if(allocated(Interp%j_lat)) deallocate(Interp%j_lat)

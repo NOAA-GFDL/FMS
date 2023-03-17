@@ -89,8 +89,8 @@ end interface
    integer, dimension(:), allocatable     :: j_src       !< indices in source grid.
    integer, dimension(:), allocatable     :: i_dst       !< indices in destination grid.
    integer, dimension(:), allocatable     :: j_dst       !< indices in destination grid.
-   type(horiz_interp_reals8), allocatable :: kind8_reals !< derived type holding kind 8 real data pointers if used
-   type(horiz_interp_reals4), allocatable :: kind4_reals !< derived type holding kind 4 real data pointers if used
+   type(horiz_interp_reals8), allocatable :: horizInterpReals8_type !< derived type holding kind 8 real data pointers if used
+   type(horiz_interp_reals4), allocatable :: horizInterpReals4_type !< derived type holding kind 4 real data pointers if used
 
  end type
 
@@ -177,43 +177,43 @@ contains
     horiz_interp_out%i_dst           = horiz_interp_in%i_dst
     horiz_interp_out%j_dst           = horiz_interp_in%j_dst
 
-    if(allocated(horiz_interp_in%kind8_reals)) then
-      if(.not. allocated(horiz_interp_out%kind8_reals)) &
-        allocate(horiz_interp_out%kind8_reals)
-      horiz_interp_out%kind8_reals%faci            = horiz_interp_in%kind8_reals%faci
-      horiz_interp_out%kind8_reals%facj            = horiz_interp_in%kind8_reals%facj
-      horiz_interp_out%kind8_reals%area_src        = horiz_interp_in%kind8_reals%area_src
-      horiz_interp_out%kind8_reals%area_dst        = horiz_interp_in%kind8_reals%area_dst
-      horiz_interp_out%kind8_reals%wti             = horiz_interp_in%kind8_reals%wti
-      horiz_interp_out%kind8_reals%wtj             = horiz_interp_in%kind8_reals%wtj
-      horiz_interp_out%kind8_reals%src_dist        = horiz_interp_in%kind8_reals%src_dist
-      horiz_interp_out%kind8_reals%rat_x           = horiz_interp_in%kind8_reals%rat_x
-      horiz_interp_out%kind8_reals%rat_y           = horiz_interp_in%kind8_reals%rat_y
-      horiz_interp_out%kind8_reals%lon_in          = horiz_interp_in%kind8_reals%lon_in
-      horiz_interp_out%kind8_reals%lat_in          = horiz_interp_in%kind8_reals%lat_in
-      horiz_interp_out%kind8_reals%area_frac_dst   = horiz_interp_in%kind8_reals%area_frac_dst
-      horiz_interp_out%kind8_reals%max_src_dist    =  horiz_interp_in%kind8_reals%max_src_dist
+    if(allocated(horiz_interp_in%horizInterpReals8_type)) then
+      if(.not. allocated(horiz_interp_out%horizInterpReals8_type)) &
+        allocate(horiz_interp_out%horizInterpReals8_type)
+      horiz_interp_out%horizInterpReals8_type%faci            = horiz_interp_in%horizInterpReals8_type%faci
+      horiz_interp_out%horizInterpReals8_type%facj            = horiz_interp_in%horizInterpReals8_type%facj
+      horiz_interp_out%horizInterpReals8_type%area_src        = horiz_interp_in%horizInterpReals8_type%area_src
+      horiz_interp_out%horizInterpReals8_type%area_dst        = horiz_interp_in%horizInterpReals8_type%area_dst
+      horiz_interp_out%horizInterpReals8_type%wti             = horiz_interp_in%horizInterpReals8_type%wti
+      horiz_interp_out%horizInterpReals8_type%wtj             = horiz_interp_in%horizInterpReals8_type%wtj
+      horiz_interp_out%horizInterpReals8_type%src_dist        = horiz_interp_in%horizInterpReals8_type%src_dist
+      horiz_interp_out%horizInterpReals8_type%rat_x           = horiz_interp_in%horizInterpReals8_type%rat_x
+      horiz_interp_out%horizInterpReals8_type%rat_y           = horiz_interp_in%horizInterpReals8_type%rat_y
+      horiz_interp_out%horizInterpReals8_type%lon_in          = horiz_interp_in%horizInterpReals8_type%lon_in
+      horiz_interp_out%horizInterpReals8_type%lat_in          = horiz_interp_in%horizInterpReals8_type%lat_in
+      horiz_interp_out%horizInterpReals8_type%area_frac_dst   = horiz_interp_in%horizInterpReals8_type%area_frac_dst
+      horiz_interp_out%horizInterpReals8_type%max_src_dist    =  horiz_interp_in%horizInterpReals8_type%max_src_dist
       ! this was left out previous to mixed mode
-      horiz_interp_out%kind8_reals%mask_in         = horiz_interp_in%kind8_reals%mask_in
+      horiz_interp_out%horizInterpReals8_type%mask_in         = horiz_interp_in%horizInterpReals8_type%mask_in
 
-    else if (allocated(horiz_interp_in%kind4_reals)) then
-      if(.not. allocated(horiz_interp_out%kind4_reals)) &
-        allocate(horiz_interp_out%kind4_reals)
-      horiz_interp_out%kind4_reals%faci            = horiz_interp_in%kind4_reals%faci
-      horiz_interp_out%kind4_reals%facj            = horiz_interp_in%kind4_reals%facj
-      horiz_interp_out%kind4_reals%area_src        = horiz_interp_in%kind4_reals%area_src
-      horiz_interp_out%kind4_reals%area_dst        = horiz_interp_in%kind4_reals%area_dst
-      horiz_interp_out%kind4_reals%wti             = horiz_interp_in%kind4_reals%wti
-      horiz_interp_out%kind4_reals%wtj             = horiz_interp_in%kind4_reals%wtj
-      horiz_interp_out%kind4_reals%src_dist        = horiz_interp_in%kind4_reals%src_dist
-      horiz_interp_out%kind4_reals%rat_x           = horiz_interp_in%kind4_reals%rat_x
-      horiz_interp_out%kind4_reals%rat_y           = horiz_interp_in%kind4_reals%rat_y
-      horiz_interp_out%kind4_reals%lon_in          = horiz_interp_in%kind4_reals%lon_in
-      horiz_interp_out%kind4_reals%lat_in          = horiz_interp_in%kind4_reals%lat_in
-      horiz_interp_out%kind4_reals%area_frac_dst   = horiz_interp_in%kind4_reals%area_frac_dst
-      horiz_interp_out%kind4_reals%max_src_dist    =  horiz_interp_in%kind4_reals%max_src_dist
+    else if (allocated(horiz_interp_in%horizInterpReals4_type)) then
+      if(.not. allocated(horiz_interp_out%horizInterpReals4_type)) &
+        allocate(horiz_interp_out%horizInterpReals4_type)
+      horiz_interp_out%horizInterpReals4_type%faci            = horiz_interp_in%horizInterpReals4_type%faci
+      horiz_interp_out%horizInterpReals4_type%facj            = horiz_interp_in%horizInterpReals4_type%facj
+      horiz_interp_out%horizInterpReals4_type%area_src        = horiz_interp_in%horizInterpReals4_type%area_src
+      horiz_interp_out%horizInterpReals4_type%area_dst        = horiz_interp_in%horizInterpReals4_type%area_dst
+      horiz_interp_out%horizInterpReals4_type%wti             = horiz_interp_in%horizInterpReals4_type%wti
+      horiz_interp_out%horizInterpReals4_type%wtj             = horiz_interp_in%horizInterpReals4_type%wtj
+      horiz_interp_out%horizInterpReals4_type%src_dist        = horiz_interp_in%horizInterpReals4_type%src_dist
+      horiz_interp_out%horizInterpReals4_type%rat_x           = horiz_interp_in%horizInterpReals4_type%rat_x
+      horiz_interp_out%horizInterpReals4_type%rat_y           = horiz_interp_in%horizInterpReals4_type%rat_y
+      horiz_interp_out%horizInterpReals4_type%lon_in          = horiz_interp_in%horizInterpReals4_type%lon_in
+      horiz_interp_out%horizInterpReals4_type%lat_in          = horiz_interp_in%horizInterpReals4_type%lat_in
+      horiz_interp_out%horizInterpReals4_type%area_frac_dst   = horiz_interp_in%horizInterpReals4_type%area_frac_dst
+      horiz_interp_out%horizInterpReals4_type%max_src_dist    =  horiz_interp_in%horizInterpReals4_type%max_src_dist
       ! this was left out previous to mixed mode
-      horiz_interp_out%kind4_reals%mask_in         = horiz_interp_in%kind4_reals%mask_in
+      horiz_interp_out%horizInterpReals4_type%mask_in         = horiz_interp_in%horizInterpReals4_type%mask_in
 
     else
         call mpp_error(FATAL, "horiz_interp_type_eq: cannot assign unallocated real values from horiz_interp_in")

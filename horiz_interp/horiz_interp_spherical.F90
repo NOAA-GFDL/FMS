@@ -128,12 +128,12 @@ contains
                                            !! must have allocated arrays. The returned variable will
                                            !! contain deallocated arrays.
 
-    if(allocated(Interp%kind4_reals)) then
-      if(allocated(Interp%kind4_reals%src_dist)) deallocate(Interp%kind4_reals%src_dist)
-      deallocate(Interp%kind4_reals)
-    else if (allocated(Interp%kind8_reals)) then
-      if(allocated(Interp%kind8_reals%src_dist)) deallocate(Interp%kind8_reals%src_dist)
-      deallocate(Interp%kind8_reals)
+    if(allocated(Interp%horizInterpReals4_type)) then
+      if(allocated(Interp%horizInterpReals4_type%src_dist)) deallocate(Interp%horizInterpReals4_type%src_dist)
+      deallocate(Interp%horizInterpReals4_type)
+    else if (allocated(Interp%horizInterpReals8_type)) then
+      if(allocated(Interp%horizInterpReals8_type%src_dist)) deallocate(Interp%horizInterpReals8_type%src_dist)
+      deallocate(Interp%horizInterpReals8_type)
     endif
     if(allocated(Interp%num_found)) deallocate(Interp%num_found)
     if(allocated(Interp%i_lon))     deallocate(Interp%i_lon)

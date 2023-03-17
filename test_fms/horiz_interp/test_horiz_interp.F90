@@ -161,7 +161,6 @@ implicit none
     if(.not. test_solo) then
         call horiz_interp_new(interp_t, lon_in_2d, lat_in_2d, lon_out_2d, lon_out_2d, interp_method="spherical")
         call horiz_interp(interp_t, data_src, data_dst)
-        !! spherical also has a separate routine to output weights
         call horiz_interp_spherical_wght(interp_t, wghts)
     else
         call horiz_interp(data_src, lon_in_2D, lat_in_2D, lon_out_2D, lat_out_2D, data_dst, interp_method="spherical")
@@ -172,7 +171,6 @@ implicit none
                                                                     "invalid output data after interpolation")
         enddo
     enddo
-
     if(.not. test_solo) then
         call horiz_interp_del(interp_t)
     endif

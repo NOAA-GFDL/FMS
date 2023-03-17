@@ -145,20 +145,20 @@ module horiz_interp_bicubic_mod
   subroutine horiz_interp_bicubic_del( Interp )
     type(horiz_interp_type), intent(inout) :: Interp
 
-    if(allocated(Interp%kind8_reals)) then
-      if(allocated(Interp%kind8_reals%rat_x))  deallocate ( Interp%kind8_reals%rat_x )
-      if(allocated(Interp%kind8_reals%rat_y))  deallocate ( Interp%kind8_reals%rat_y )
-      if(allocated(Interp%kind8_reals%lon_in)) deallocate ( Interp%kind8_reals%lon_in )
-      if(allocated(Interp%kind8_reals%lat_in)) deallocate ( Interp%kind8_reals%lat_in )
-      if(allocated(Interp%kind8_reals%wti))    deallocate ( Interp%kind8_reals%wti )
-      deallocate(Interp%kind8_reals)
-    else if(allocated(Interp%kind4_reals)) then
-      if(allocated(Interp%kind4_reals%rat_x))  deallocate ( Interp%kind4_reals%rat_x )
-      if(allocated(Interp%kind4_reals%rat_y))  deallocate ( Interp%kind4_reals%rat_y )
-      if(allocated(Interp%kind4_reals%lon_in)) deallocate ( Interp%kind4_reals%lon_in )
-      if(allocated(Interp%kind4_reals%lat_in)) deallocate ( Interp%kind4_reals%lat_in )
-      if(allocated(Interp%kind4_reals%wti))    deallocate ( Interp%kind4_reals%wti )
-      deallocate(Interp%kind4_reals)
+    if(allocated(Interp%horizInterpReals8_type)) then
+      if(allocated(Interp%horizInterpReals8_type%rat_x))  deallocate ( Interp%horizInterpReals8_type%rat_x )
+      if(allocated(Interp%horizInterpReals8_type%rat_y))  deallocate ( Interp%horizInterpReals8_type%rat_y )
+      if(allocated(Interp%horizInterpReals8_type%lon_in)) deallocate ( Interp%horizInterpReals8_type%lon_in )
+      if(allocated(Interp%horizInterpReals8_type%lat_in)) deallocate ( Interp%horizInterpReals8_type%lat_in )
+      if(allocated(Interp%horizInterpReals8_type%wti))    deallocate ( Interp%horizInterpReals8_type%wti )
+      deallocate(Interp%horizInterpReals8_type)
+    else if(allocated(Interp%horizInterpReals4_type)) then
+      if(allocated(Interp%horizInterpReals4_type%rat_x))  deallocate ( Interp%horizInterpReals4_type%rat_x )
+      if(allocated(Interp%horizInterpReals4_type%rat_y))  deallocate ( Interp%horizInterpReals4_type%rat_y )
+      if(allocated(Interp%horizInterpReals4_type%lon_in)) deallocate ( Interp%horizInterpReals4_type%lon_in )
+      if(allocated(Interp%horizInterpReals4_type%lat_in)) deallocate ( Interp%horizInterpReals4_type%lat_in )
+      if(allocated(Interp%horizInterpReals4_type%wti))    deallocate ( Interp%horizInterpReals4_type%wti )
+      deallocate(Interp%horizInterpReals4_type)
     endif
     if( allocated(Interp%i_lon) ) deallocate( Interp%i_lon )
     if( allocated(Interp%j_lat) ) deallocate( Interp%j_lat )

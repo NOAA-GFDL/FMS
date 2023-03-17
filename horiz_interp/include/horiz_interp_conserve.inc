@@ -438,19 +438,19 @@ subroutine HORIZ_INTERP_CONSERVE_NEW_1DX1D_ ( Interp, lon_in, lat_in, lon_out, l
     allocate(i_src(maxxgrid), j_src(maxxgrid), i_dst(maxxgrid), j_dst(maxxgrid) )
     allocate( xgrid_area(maxxgrid), dst_area(nlon_out, nlat_out) )
 
+    allocate(lon_in_r8(size(lon_in,1), size(lon_in, 2)))
+    allocate(lat_in_r8(size(lat_in,1), size(lat_in, 2)))
+    allocate(lon_out_r8(size(lon_out)))
+    allocate(lat_out_r8(size(lat_out)))
+    lon_out_r8 = real(lon_out, r8_kind)
+    lat_out_r8 = real(lat_out, r8_kind)
+    lon_in_r8 = real(lon_in, r8_kind)
+    lat_in_r8 = real(lat_in, r8_kind)
+
     if( .not. great_circle_algorithm ) then
-       allocate(lon_out_r8(size(lon_out)))
-       allocate(lat_out_r8(size(lat_out)))
-       lon_out_r8 = real(lon_out, r8_kind)
-       lat_out_r8 = real(lat_out, r8_kind)
-       nxgrid = create_xgrid_2DX1D_order1(nlon_in, nlat_in, nlon_out, nlat_out, lon_in, lat_in, lon_out, lat_out, &
+       nxgrid = create_xgrid_2DX1D_order1(nlon_in, nlat_in, nlon_out, nlat_out, lon_in_r8, lat_in_r8, lon_out_r8, lat_out_r8, &
                                           mask_src, i_src, j_src, i_dst, j_dst, xgrid_area)
-       deallocate(lon_out_r8,lat_out_r8)
     else
-       allocate(lon_in_r8(size(lon_in,1),size(lon_in,2)))
-       allocate(lat_in_r8(size(lat_in,1),size(lat_in,2)))
-       lon_in_r8 = real(lon_in, r8_kind)
-       lat_in_r8 = real(lat_in, r8_kind)
        allocate(lon_dst(nlon_out+1, nlat_out+1), lat_dst(nlon_out+1, nlat_out+1) )
        allocate(clon(maxxgrid), clat(maxxgrid))
        do j = 1, nlat_out+1
@@ -461,8 +461,8 @@ subroutine HORIZ_INTERP_CONSERVE_NEW_1DX1D_ ( Interp, lon_in, lat_in, lon_out, l
        enddo
        nxgrid =  create_xgrid_great_circle(nlon_in, nlat_in, nlon_out, nlat_out, lon_in_r8, lat_in_r8, lon_dst, &
                                          & lat_dst, mask_src, i_src, j_src, i_dst, j_dst, xgrid_area, clon, clat)
-       deallocate(lon_in_r8, lat_in_r8, lon_dst, lat_dst, clon, clat)
     endif
+    deallocate(lon_out_r8,lat_out_r8, lon_in_r8, lat_in_r8)
     allocate(Interp%i_src(nxgrid), Interp%j_src(nxgrid) )
     allocate(Interp%i_dst(nxgrid), Interp%j_dst(nxgrid) )
     allocate(Interp%HI_KIND_TYPE_%area_frac_dst(nxgrid) )

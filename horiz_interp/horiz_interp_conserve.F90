@@ -165,38 +165,38 @@ contains
 
     select case(Interp%version)
     case (1)
-      if( allocated( Interp%kind8_reals)) then
-        if(allocated(Interp%kind8_reals%area_src)) deallocate(Interp%kind8_reals%area_src)
-        if(allocated(Interp%kind8_reals%area_dst)) deallocate(Interp%kind8_reals%area_dst)
-        if(allocated(Interp%kind8_reals%facj))     deallocate(Interp%kind8_reals%facj)
+      if( allocated( Interp%horizInterpReals8_type)) then
+        if(allocated(Interp%horizInterpReals8_type%area_src)) deallocate(Interp%horizInterpReals8_type%area_src)
+        if(allocated(Interp%horizInterpReals8_type%area_dst)) deallocate(Interp%horizInterpReals8_type%area_dst)
+        if(allocated(Interp%horizInterpReals8_type%facj))     deallocate(Interp%horizInterpReals8_type%facj)
         if(allocated(Interp%jlat))                 deallocate(Interp%jlat)
-        if(allocated(Interp%kind8_reals%faci))     deallocate(Interp%kind8_reals%faci)
+        if(allocated(Interp%horizInterpReals8_type%faci))     deallocate(Interp%horizInterpReals8_type%faci)
         if(allocated(Interp%ilon))                 deallocate(Interp%ilon)
-        deallocate(Interp%kind8_reals)
-      else if( allocated( Interp%kind4_reals)) then
-        if(allocated(Interp%kind4_reals%area_src)) deallocate(Interp%kind4_reals%area_src)
-        if(allocated(Interp%kind4_reals%area_dst)) deallocate(Interp%kind4_reals%area_dst)
-        if(allocated(Interp%kind4_reals%facj))     deallocate(Interp%kind4_reals%facj)
+        deallocate(Interp%horizInterpReals8_type)
+      else if( allocated( Interp%horizInterpReals4_type)) then
+        if(allocated(Interp%horizInterpReals4_type%area_src)) deallocate(Interp%horizInterpReals4_type%area_src)
+        if(allocated(Interp%horizInterpReals4_type%area_dst)) deallocate(Interp%horizInterpReals4_type%area_dst)
+        if(allocated(Interp%horizInterpReals4_type%facj))     deallocate(Interp%horizInterpReals4_type%facj)
         if(allocated(Interp%jlat))                 deallocate(Interp%jlat)
-        if(allocated(Interp%kind4_reals%faci))     deallocate(Interp%kind4_reals%faci)
+        if(allocated(Interp%horizInterpReals4_type%faci))     deallocate(Interp%horizInterpReals4_type%faci)
         if(allocated(Interp%ilon))                 deallocate(Interp%ilon)
-        deallocate(Interp%kind4_reals)
+        deallocate(Interp%horizInterpReals4_type)
       endif
     case (2)
-      if( allocated( Interp%kind8_reals)) then
+      if( allocated( Interp%horizInterpReals8_type)) then
         if(allocated(Interp%i_src)) deallocate(Interp%i_src)
         if(allocated(Interp%j_src)) deallocate(Interp%j_src)
         if(allocated(Interp%i_dst)) deallocate(Interp%i_dst)
         if(allocated(Interp%j_dst)) deallocate(Interp%j_dst)
-        if(allocated(Interp%kind8_reals%area_frac_dst)) deallocate(Interp%kind8_reals%area_frac_dst)
-        deallocate(Interp%kind8_reals)
-      else if( allocated( Interp%kind4_reals)) then
+        if(allocated(Interp%horizInterpReals8_type%area_frac_dst)) deallocate(Interp%horizInterpReals8_type%area_frac_dst)
+        deallocate(Interp%horizInterpReals8_type)
+      else if( allocated( Interp%horizInterpReals4_type)) then
         if(allocated(Interp%i_src)) deallocate(Interp%i_src)
         if(allocated(Interp%j_src)) deallocate(Interp%j_src)
         if(allocated(Interp%i_dst)) deallocate(Interp%i_dst)
         if(allocated(Interp%j_dst)) deallocate(Interp%j_dst)
-        if(allocated(Interp%kind4_reals%area_frac_dst)) deallocate(Interp%kind4_reals%area_frac_dst)
-        deallocate(Interp%kind4_reals)
+        if(allocated(Interp%horizInterpReals4_type%area_frac_dst)) deallocate(Interp%horizInterpReals4_type%area_frac_dst)
+        deallocate(Interp%horizInterpReals4_type)
        endif
     end select
 

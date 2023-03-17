@@ -22,7 +22,7 @@
 #define FMS_HI_KIND_ r4_kind
 
 #undef HI_KIND_TYPE_
-#define HI_KIND_TYPE_ kind4_reals
+#define HI_KIND_TYPE_ horizInterpReals4_type
 
 #undef HORIZ_INTERP_BILINEAR_NEW_1D_
 #define HORIZ_INTERP_BILINEAR_NEW_1D_ horiz_interp_bilinear_new_1d_r4
