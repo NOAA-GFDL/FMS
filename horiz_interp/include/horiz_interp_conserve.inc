@@ -448,8 +448,8 @@ subroutine HORIZ_INTERP_CONSERVE_NEW_1DX1D_ ( Interp, lon_in, lat_in, lon_out, l
     lat_in_r8 = real(lat_in, r8_kind)
 
     if( .not. great_circle_algorithm ) then
-       nxgrid = create_xgrid_2DX1D_order1(nlon_in, nlat_in, nlon_out, nlat_out, lon_in_r8, lat_in_r8, lon_out_r8, lat_out_r8, &
-                                          mask_src, i_src, j_src, i_dst, j_dst, xgrid_area)
+       nxgrid = create_xgrid_2DX1D_order1(nlon_in, nlat_in, nlon_out, nlat_out, lon_in_r8, lat_in_r8, &
+                                          lon_out_r8, lat_out_r8, mask_src, i_src, j_src, i_dst, j_dst, xgrid_area)
     else
        allocate(lon_dst(nlon_out+1, nlat_out+1), lat_dst(nlon_out+1, nlat_out+1) )
        allocate(clon(maxxgrid), clat(maxxgrid))

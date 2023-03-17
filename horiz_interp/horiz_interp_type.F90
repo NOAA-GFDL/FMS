@@ -89,8 +89,10 @@ end interface
    integer, dimension(:), allocatable     :: j_src       !< indices in source grid.
    integer, dimension(:), allocatable     :: i_dst       !< indices in destination grid.
    integer, dimension(:), allocatable     :: j_dst       !< indices in destination grid.
-   type(horiz_interp_reals8), allocatable :: horizInterpReals8_type !< derived type holding kind 8 real data pointers if used
-   type(horiz_interp_reals4), allocatable :: horizInterpReals4_type !< derived type holding kind 4 real data pointers if used
+   type(horiz_interp_reals8), allocatable :: horizInterpReals8_type !< derived type holding kind 8 real data pointers
+                                                                    !! if compiled with r8_kind
+   type(horiz_interp_reals4), allocatable :: horizInterpReals4_type !< derived type holding kind 4 real data pointers
+                                                                    !! if compiled with r8_kind
 
  end type
 

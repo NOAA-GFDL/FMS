@@ -188,14 +188,16 @@ contains
         if(allocated(Interp%j_src)) deallocate(Interp%j_src)
         if(allocated(Interp%i_dst)) deallocate(Interp%i_dst)
         if(allocated(Interp%j_dst)) deallocate(Interp%j_dst)
-        if(allocated(Interp%horizInterpReals8_type%area_frac_dst)) deallocate(Interp%horizInterpReals8_type%area_frac_dst)
+        if(allocated(Interp%horizInterpReals8_type%area_frac_dst)) &
+            deallocate(Interp%horizInterpReals8_type%area_frac_dst)
         deallocate(Interp%horizInterpReals8_type)
       else if( allocated( Interp%horizInterpReals4_type)) then
         if(allocated(Interp%i_src)) deallocate(Interp%i_src)
         if(allocated(Interp%j_src)) deallocate(Interp%j_src)
         if(allocated(Interp%i_dst)) deallocate(Interp%i_dst)
         if(allocated(Interp%j_dst)) deallocate(Interp%j_dst)
-        if(allocated(Interp%horizInterpReals4_type%area_frac_dst)) deallocate(Interp%horizInterpReals4_type%area_frac_dst)
+        if(allocated(Interp%horizInterpReals4_type%area_frac_dst)) &
+            deallocate(Interp%horizInterpReals4_type%area_frac_dst)
         deallocate(Interp%horizInterpReals4_type)
        endif
     end select
