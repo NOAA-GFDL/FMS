@@ -429,7 +429,8 @@ implicit none
             do i=2, ni_src
                 if(allocated(interp%horizInterpReals8_type)) then
                     if( interp%horizInterpReals8_type%wtj(i,j,1).ne.0.0_r8_kind ) then
-                        write(*,*) 'expected ', 1.0_r8_kind, ' but computed ', i,j,interp%horizInterpReals8_type%wtj(i,j,1)
+                        write(*,*) 'expected ', 1.0_r8_kind, ' but computed ', i,j, &
+                                    interp%horizInterpReals8_type%wtj(i,j,1)
                         call mpp_error(FATAL, "failed at horiz_interp_bilinear_2d1d with wtj1")
                     end if
                     if( interp%horizInterpReals8_type%wtj(i,j,2).ne.1.0_r8_kind ) then
@@ -446,7 +447,8 @@ implicit none
                     end if
                 else
                     if( interp%horizInterpReals4_type%wtj(i,j,1).ne.0.0_r4_kind ) then
-                        write(*,*) 'expected ', 1.0_r4_kind, ' but computed ', i,j,interp%horizInterpReals4_type%wtj(i,j,1)
+                        write(*,*) 'expected ', 1.0_r4_kind, ' but computed ', i,j, &
+                                    interp%horizInterpReals4_type%wtj(i,j,1)
                         call mpp_error(FATAL, "failed at horiz_interp_bilinear_2d1d with wtj1")
                     end if
                     if( interp%horizInterpReals4_type%wtj(i,j,2).ne.1.0_r4_kind ) then
@@ -534,7 +536,8 @@ implicit none
             do i=2, ni_src
                 if(allocated(interp%horizInterpReals8_type)) then
                     if( interp%horizInterpReals8_type%wtj(i,j,1).ne.0.0_r8_kind ) then
-                        write(*,*) 'expected ', 1.0_r8_kind, ' but computed ', i,j,interp%horizInterpReals8_type%wtj(i,j,1)
+                        write(*,*) 'expected ', 1.0_r8_kind, ' but computed ', i,j, &
+                                    interp%horizInterpReals8_type%wtj(i,j,1)
                         call mpp_error(FATAL, "failed at horiz_interp_bilinear_2d2d wtj1")
                     end if
                     if( interp%horizInterpReals8_type%wtj(i,j,2).ne.1.0_r8_kind ) then
@@ -551,7 +554,8 @@ implicit none
                     end if
                 else
                     if( interp%horizInterpReals4_type%wtj(i,j,1).ne.0.0_r4_kind ) then
-                        write(*,*) 'expected ', 1.0_r4_kind, ' but computed ', i,j,interp%horizInterpReals4_type%wtj(i,j,1)
+                        write(*,*) 'expected ', 1.0_r4_kind, ' but computed ', i,j, &
+                                    interp%horizInterpReals4_type%wtj(i,j,1)
                         call mpp_error(FATAL, "failed at horiz_interp_bilinear_2d2d wtj1")
                     end if
                     if( interp%horizInterpReals4_type%wtj(i,j,2).ne.1.0_r4_kind ) then
@@ -664,7 +668,7 @@ implicit none
     endif
     call mpp_sync()
     ! check weights (for last index, 1=x,2=y,3=xy derivatives)
-    ! x and y should be 1 degree(in rads) at edges, 0.5 otherwise
+    ! 1 radian (in degrees) at edges, 0.5 otherwise
     !! check weights if type passed in
     if( .not. test_solo) then
         do i=1, ni_src-1
@@ -1131,62 +1135,88 @@ implicit none
         check_type_eq = .true.
         if(allocated(interp_1%horizInterpReals4_type)) then
             if(allocated(interp_1%horizInterpReals4_type%faci)) &
-                check_type_eq = check_type_eq .and. ALL(interp_2%horizInterpReals4_type%faci .eq. interp_1%horizInterpReals4_type%faci)
-            if(allocated(interp_1%horizInterpReals4_type%facj)) &
-                check_type_eq = check_type_eq .and. ALL(interp_2%horizInterpReals4_type%facj .eq. interp_1%horizInterpReals4_type%facj)
-            if(allocated(interp_1%horizInterpReals4_type%area_src)) &
-                check_type_eq = check_type_eq .and. ALL(interp_2%horizInterpReals4_type%area_src .eq.interp_1%horizInterpReals4_type%area_src)
-            if(allocated(interp_1%horizInterpReals4_type%area_dst)) &
-                check_type_eq = check_type_eq .and. ALL(interp_2%horizInterpReals4_type%area_dst .eq.interp_1%horizInterpReals4_type%area_dst)
-            if(allocated(interp_1%horizInterpReals4_type%wti)) &
-                check_type_eq = check_type_eq .and. ALL(interp_2%horizInterpReals4_type%wti .eq. interp_1%horizInterpReals4_type%wti)
-            if(allocated(interp_1%horizInterpReals4_type%wtj)) &
-                check_type_eq = check_type_eq .and. ALL(interp_2%horizInterpReals4_type%wtj .eq. interp_1%horizInterpReals4_type%wtj)
-            if(allocated(interp_1%horizInterpReals4_type%src_dist)) &
-                check_type_eq = check_type_eq .and. ALL(interp_2%horizInterpReals4_type%src_dist .eq.interp_1%horizInterpReals4_type%src_dist)
-            if(allocated(interp_1%horizInterpReals4_type%rat_x)) &
-                check_type_eq = check_type_eq .and. ALL(interp_2%horizInterpReals4_type%rat_x .eq. interp_1%horizInterpReals4_type%rat_x)
-            if(allocated(interp_1%horizInterpReals4_type%rat_y)) &
-                check_type_eq = check_type_eq .and. ALL(interp_2%horizInterpReals4_type%rat_y .eq. interp_1%horizInterpReals4_type%rat_y)
-            if(allocated(interp_1%horizInterpReals4_type%lon_in)) &
-                check_type_eq = check_type_eq .and. ALL(interp_2%horizInterpReals4_type%lon_in .eq. interp_1%horizInterpReals4_type%lon_in)
-            if(allocated(interp_1%horizInterpReals4_type%lat_in)) &
-                check_type_eq = check_type_eq .and. ALL(interp_2%horizInterpReals4_type%lat_in .eq. interp_1%horizInterpReals4_type%lat_in)
-            if(allocated(interp_1%horizInterpReals4_type%area_frac_dst)) &
                 check_type_eq = check_type_eq .and. &
-                                ALL(interp_2%horizInterpReals4_type%area_frac_dst.eq.interp_1%horizInterpReals4_type%area_frac_dst)
+                                ALL(interp_2%horizInterpReals4_type%faci .eq. interp_1%horizInterpReals4_type%faci)
+            if(allocated(interp_1%horizInterpReals4_type%facj)) &
+                check_type_eq = check_type_eq .and. &
+                                ALL(interp_2%horizInterpReals4_type%facj .eq. interp_1%horizInterpReals4_type%facj)
+            if(allocated(interp_1%horizInterpReals4_type%area_src)) &
+                check_type_eq = check_type_eq .and. ALL(interp_2%horizInterpReals4_type%area_src.eq. &
+                                                        interp_1%horizInterpReals4_type%area_src)
+            if(allocated(interp_1%horizInterpReals4_type%area_dst)) &
+                check_type_eq = check_type_eq .and. ALL(interp_2%horizInterpReals4_type%area_dst .eq. &
+                                                        interp_1%horizInterpReals4_type%area_dst)
+            if(allocated(interp_1%horizInterpReals4_type%wti)) &
+                check_type_eq = check_type_eq .and. &
+                                ALL(interp_2%horizInterpReals4_type%wti .eq. interp_1%horizInterpReals4_type%wti)
+            if(allocated(interp_1%horizInterpReals4_type%wtj)) &
+                check_type_eq = check_type_eq .and. &
+                                ALL(interp_2%horizInterpReals4_type%wtj .eq. interp_1%horizInterpReals4_type%wtj)
+            if(allocated(interp_1%horizInterpReals4_type%src_dist)) &
+                check_type_eq = check_type_eq .and. ALL(interp_2%horizInterpReals4_type%src_dist .eq. &
+                                                        interp_1%horizInterpReals4_type%src_dist)
+            if(allocated(interp_1%horizInterpReals4_type%rat_x)) &
+                check_type_eq = check_type_eq .and. &
+                                ALL(interp_2%horizInterpReals4_type%rat_x .eq. interp_1%horizInterpReals4_type%rat_x)
+            if(allocated(interp_1%horizInterpReals4_type%rat_y)) &
+                check_type_eq = check_type_eq .and. &
+                                ALL(interp_2%horizInterpReals4_type%rat_y .eq. interp_1%horizInterpReals4_type%rat_y)
+            if(allocated(interp_1%horizInterpReals4_type%lon_in)) &
+                check_type_eq = check_type_eq .and. &
+                                ALL(interp_2%horizInterpReals4_type%lon_in .eq. interp_1%horizInterpReals4_type%lon_in)
+            if(allocated(interp_1%horizInterpReals4_type%lat_in)) &
+                check_type_eq = check_type_eq .and. &
+                                ALL(interp_2%horizInterpReals4_type%lat_in .eq. interp_1%horizInterpReals4_type%lat_in)
+            if(allocated(interp_1%horizInterpReals4_type%area_frac_dst)) &
+                check_type_eq = check_type_eq .and. ALL(interp_2%horizInterpReals4_type%area_frac_dst .eq. &
+                                                        interp_1%horizInterpReals4_type%area_frac_dst)
             if(allocated(interp_1%horizInterpReals4_type%mask_in)) &
-                check_type_eq = check_type_eq .and. ALL(interp_2%horizInterpReals4_type%mask_in .eq. interp_1%horizInterpReals4_type%mask_in)
-            check_type_eq = check_type_eq .and. interp_2%horizInterpReals4_type%max_src_dist .eq. interp_1%horizInterpReals4_type%max_src_dist
+                check_type_eq = check_type_eq .and. &
+                                ALL(interp_2%horizInterpReals4_type%mask_in.eq.interp_1%horizInterpReals4_type%mask_in)
+            check_type_eq = check_type_eq .and. interp_2%horizInterpReals4_type%max_src_dist .eq. &
+                                                interp_1%horizInterpReals4_type%max_src_dist
         else if(allocated(interp_1%horizInterpReals8_type)) then
             if(allocated(interp_1%horizInterpReals8_type%faci)) &
-                check_type_eq = check_type_eq .and. ALL(interp_2%horizInterpReals8_type%faci .eq. interp_1%horizInterpReals8_type%faci)
-            if(allocated(interp_1%horizInterpReals8_type%facj)) &
-                check_type_eq = check_type_eq .and. ALL(interp_2%horizInterpReals8_type%facj .eq. interp_1%horizInterpReals8_type%facj)
-            if(allocated(interp_1%horizInterpReals8_type%area_src)) &
-                check_type_eq = check_type_eq .and. ALL(interp_2%horizInterpReals8_type%area_src .eq.interp_1%horizInterpReals8_type%area_src)
-            if(allocated(interp_1%horizInterpReals8_type%area_dst)) &
-                check_type_eq = check_type_eq .and. ALL(interp_2%horizInterpReals8_type%area_dst .eq.interp_1%horizInterpReals8_type%area_dst)
-            if(allocated(interp_1%horizInterpReals8_type%wti)) &
-                check_type_eq = check_type_eq .and. ALL(interp_2%horizInterpReals8_type%wti .eq. interp_1%horizInterpReals8_type%wti)
-            if(allocated(interp_1%horizInterpReals8_type%wtj)) &
-                check_type_eq = check_type_eq .and. ALL(interp_2%horizInterpReals8_type%wtj .eq. interp_1%horizInterpReals8_type%wtj)
-            if(allocated(interp_1%horizInterpReals8_type%src_dist)) &
-                check_type_eq = check_type_eq .and. ALL(interp_2%horizInterpReals8_type%src_dist .eq.interp_1%horizInterpReals8_type%src_dist)
-            if(allocated(interp_1%horizInterpReals8_type%rat_x)) &
-                check_type_eq = check_type_eq .and. ALL(interp_2%horizInterpReals8_type%rat_x .eq. interp_1%horizInterpReals8_type%rat_x)
-            if(allocated(interp_1%horizInterpReals8_type%rat_y)) &
-                check_type_eq = check_type_eq .and. ALL(interp_2%horizInterpReals8_type%rat_y .eq. interp_1%horizInterpReals8_type%rat_y)
-            if(allocated(interp_1%horizInterpReals8_type%lon_in)) &
-                check_type_eq = check_type_eq .and. ALL(interp_2%horizInterpReals8_type%lon_in .eq. interp_1%horizInterpReals8_type%lon_in)
-            if(allocated(interp_1%horizInterpReals8_type%lat_in)) &
-                check_type_eq = check_type_eq .and. ALL(interp_2%horizInterpReals8_type%lat_in .eq. interp_1%horizInterpReals8_type%lat_in)
-            if(allocated(interp_1%horizInterpReals8_type%area_frac_dst)) &
                 check_type_eq = check_type_eq .and. &
-                                ALL(interp_2%horizInterpReals8_type%area_frac_dst.eq.interp_1%horizInterpReals8_type%area_frac_dst)
+                                ALL(interp_2%horizInterpReals8_type%faci .eq. interp_1%horizInterpReals8_type%faci)
+            if(allocated(interp_1%horizInterpReals8_type%facj)) &
+                check_type_eq = check_type_eq .and. &
+                                ALL(interp_2%horizInterpReals8_type%facj .eq. interp_1%horizInterpReals8_type%facj)
+            if(allocated(interp_1%horizInterpReals8_type%area_src)) &
+                check_type_eq = check_type_eq .and. ALL(interp_2%horizInterpReals8_type%area_src .eq. &
+                                                        interp_1%horizInterpReals8_type%area_src)
+            if(allocated(interp_1%horizInterpReals8_type%area_dst)) &
+                check_type_eq = check_type_eq .and. ALL(interp_2%horizInterpReals8_type%area_dst .eq. &
+                                                        interp_1%horizInterpReals8_type%area_dst)
+            if(allocated(interp_1%horizInterpReals8_type%wti)) &
+                check_type_eq = check_type_eq .and. &
+                                ALL(interp_2%horizInterpReals8_type%wti .eq. interp_1%horizInterpReals8_type%wti)
+            if(allocated(interp_1%horizInterpReals8_type%wtj)) &
+                check_type_eq = check_type_eq .and. &
+                                ALL(interp_2%horizInterpReals8_type%wtj .eq. interp_1%horizInterpReals8_type%wtj)
+            if(allocated(interp_1%horizInterpReals8_type%src_dist)) &
+                check_type_eq = check_type_eq .and. ALL(interp_2%horizInterpReals8_type%src_dist .eq. &
+                                                        interp_1%horizInterpReals8_type%src_dist)
+            if(allocated(interp_1%horizInterpReals8_type%rat_x)) &
+                check_type_eq = check_type_eq .and. &
+                                ALL(interp_2%horizInterpReals8_type%rat_x .eq. interp_1%horizInterpReals8_type%rat_x)
+            if(allocated(interp_1%horizInterpReals8_type%rat_y)) &
+                check_type_eq = check_type_eq .and. &
+                                ALL(interp_2%horizInterpReals8_type%rat_y .eq. interp_1%horizInterpReals8_type%rat_y)
+            if(allocated(interp_1%horizInterpReals8_type%lon_in)) &
+                check_type_eq = check_type_eq .and. &
+                                ALL(interp_2%horizInterpReals8_type%lon_in .eq. interp_1%horizInterpReals8_type%lon_in)
+            if(allocated(interp_1%horizInterpReals8_type%lat_in)) &
+                check_type_eq = check_type_eq .and. &
+                                ALL(interp_2%horizInterpReals8_type%lat_in .eq. interp_1%horizInterpReals8_type%lat_in)
+            if(allocated(interp_1%horizInterpReals8_type%area_frac_dst)) &
+                check_type_eq = check_type_eq .and. ALL(interp_2%horizInterpReals8_type%area_frac_dst.eq. &
+                                                        interp_1%horizInterpReals8_type%area_frac_dst)
             if(allocated(interp_1%horizInterpReals8_type%mask_in)) &
-                check_type_eq = check_type_eq .and. ALL(interp_2%horizInterpReals8_type%mask_in .eq. interp_1%horizInterpReals8_type%mask_in)
-            check_type_eq = check_type_eq .and. interp_2%horizInterpReals8_type%max_src_dist .eq.interp_1%horizInterpReals8_type%max_src_dist
+                check_type_eq = check_type_eq .and. ALL(interp_2%horizInterpReals8_type%mask_in .eq. &
+                                                        interp_1%horizInterpReals8_type%mask_in)
+            check_type_eq = check_type_eq .and. interp_2%horizInterpReals8_type%max_src_dist .eq. &
+                            interp_1%horizInterpReals8_type%max_src_dist
         else
             call mpp_error(FATAL, "check_type_eq: both real kinds unallocated")
         endif
