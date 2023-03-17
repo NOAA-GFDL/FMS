@@ -460,19 +460,25 @@
       integer i,j,k,l
       real(FMS_HI_KIND_) d1d2,xx,cl(16),x(16)
       integer, parameter :: kindl = FMS_HI_KIND_!< compiled kind type
-      !! previous set by a data block, zeroing out since last few rows werent st
-      real(FMS_HI_KIND_), save, dimension(16,16) :: wt
-      data wt/1., 0., -3., 2., 4*0., -3., 0., 9., -6., 2., 0., -6., 4., 8*0., &
-              3., 0., -9., 6., -2., 0., 6., -4., 10*0., 9., -6., 2*0., -6., &
-              4., 2*0., 3., -2., 6*0., -9., 6., 2*0., 6., -4., 4*0., 1., 0., &
-              -3., 2., -2., 0., 6., -4., 1., 0., -3., 2., 8*0., -1., 0., 3., &
-              -2., 1., 0., -3., 2., 10*0., -3., 2., 2*0., 3., -2., 6*0., 3., &
-              -2., 2*0., -6., 4., 2*0., 3., -2., 0., 1., -2., 1., 5*0., -3., &
-              6., -3., 0., 2., -4., 2., 9*0., 3., -6., 3., 0., -2., 4., -2., &
-              10*0., -3., 3., 2*0., 2., -2., 2*0., -1., 1., 6*0., 3., -3., &
-              2*0., -2., 2., 5*0., 1., -2., 1., 0., -2., 4., -2., 0., 1., -2., &
-              1., 9*0., -1., 2., -1., 0., 1., -2., 1., 10*0., 1., -1., 2*0., &
-              -1., 1., 6*0., -1., 1., 2*0., 2., -2., 2*0., -1., 1./
+      !! n*0.0 represents n consecutive 0.0's
+      real(FMS_HI_KIND_), save, dimension(16,16) :: wt !< weights use
+      data wt/1.0_kindl, 0.0_kindl, -3.0_kindl, 2.0_kindl, 4*0.0_kindl, -3.0_kindl, 0.0_kindl, 9.0_kindl, -6.0_kindl, &
+              2.0_kindl, 0.0_kindl, -6.0_kindl, 4.0_kindl, 8*0.0_kindl, 3.0_kindl, 0.0_kindl, -9.0_kindl, 6.0_kindl,  &
+              -2.0_kindl, 0.0_kindl, 6.0_kindl, -4.0_kindl, 10*0.0_kindl, 9.0_kindl, -6.0_kindl, 2*0.0_kindl,         &
+              -6.0_kindl, 4.0_kindl, 2*0.0_kindl, 3.0_kindl, -2.0_kindl, 6*0.0_kindl, -9.0_kindl, 6.0_kindl,          &
+              2*0.0_kindl, 6.0_kindl, -4.0_kindl, 4*0.0_kindl, 1.0_kindl, 0.0_kindl, -3.0_kindl, 2.0_kindl,-2.0_kindl,&
+              0.0_kindl, 6.0_kindl, -4.0_kindl, 1.0_kindl, 0.0_kindl, -3.0_kindl, 2.0_kindl, 8*0.0_kindl, -1.0_kindl, &
+              0.0_kindl, 3.0_kindl, -2.0_kindl, 1.0_kindl, 0.0_kindl, -3.0_kindl, 2.0_kindl, 10*0.0_kindl, -3.0_kindl,&
+              2.0_kindl, 2*0.0_kindl, 3.0_kindl, -2.0_kindl, 6*0.0_kindl, 3.0_kindl, -2.0_kindl, 2*0.0_kindl,         &
+              -6.0_kindl, 4.0_kindl, 2*0.0_kindl, 3.0_kindl, -2.0_kindl, 0.0_kindl, 1.0_kindl, -2.0_kindl, 1.0_kindl, &
+              5*0.0_kindl, -3.0_kindl, 6.0_kindl, -3.0_kindl, 0.0_kindl, 2.0_kindl, -4.0_kindl, 2.0_kindl,9*0.0_kindl,&
+              3.0_kindl, -6.0_kindl, 3.0_kindl, 0.0_kindl, -2.0_kindl, 4.0_kindl, -2.0_kindl, 10*0.0_kindl,-3.0_kindl,&
+              3.0_kindl, 2*0.0_kindl, 2.0_kindl, -2.0_kindl, 2*0.0_kindl, -1.0_kindl, 1.0_kindl,6*0.0_kindl,3.0_kindl,&
+              -3.0_kindl, 2*0.0_kindl, -2.0_kindl, 2.0_kindl, 5*0.0_kindl, 1.0_kindl, -2.0_kindl, 1.0_kindl,0.0_kindl,&
+              -2.0_kindl, 4.0_kindl, -2.0_kindl, 0.0_kindl, 1.0_kindl, -2.0_kindl, 1.0_kindl, 9*0.0_kindl, -1.0_kindl,&
+              2.0_kindl, -1.0_kindl, 0.0_kindl, 1.0_kindl, -2.0_kindl, 1.0_kindl, 10*0.0_kindl, 1.0_kindl, -1.0_kindl,&
+              2*0.0_kindl, -1.0_kindl, 1.0_kindl, 6*0.0_kindl, -1.0_kindl, 1.0_kindl, 2*0.0_kindl, 2.0_kindl,         &
+              -2.0_kindl, 2*0.0_kindl, -1.0_kindl, 1.0_kindl/
 
 
 
@@ -503,6 +509,7 @@
 
 !-----------------------------------------------------------------------
 
+!! TODO These routines are redundant, we can find the lower neighbor and add 1
 !> find the lower neighbour of xf in field xc, return is the index
     function INDL_(xc, xf)
     real(FMS_HI_KIND_), intent(in) :: xc(1:)

@@ -33,7 +33,7 @@
     integer :: ie, is, je, js, ln_err, lt_err, warns, unit
     real(FMS_HI_KIND_)    :: wtw, wte, wts, wtn, lon, lat, tpi, hpi
     real(FMS_HI_KIND_)    :: glt_min, glt_max, gln_min, gln_max, min_lon, max_lon
-    integer,parameter     :: kindl = FMS_HI_KIND_ 
+    integer,parameter     :: kindl = FMS_HI_KIND_
 
     warns = 0
     if(present(verbose)) warns = verbose
