@@ -68,19 +68,10 @@ subroutine compressed_read_1d(fileobj, variable_name, cdata, unlim_dim_level, &
                                                               !! elements that
                                                               !! will be written
                                                               !! in each dimension.
-  integer :: i
 
   call netcdf_read_data(fileobj, variable_name, cdata, &
                         unlim_dim_level=unlim_dim_level, corner=corner, &
                         edge_lengths=edge_lengths, broadcast=.true.)
-  select type(cdata)
-    type is (character(len=*))
-      print*, "size of cdata ", size(cdata)
-      do i = 1,size(cdata)
-        print*, "compressed_read_1d cdata(",i,") ", cdata(i)
-      enddo
-  end select
-
 end subroutine compressed_read_1d
 
 

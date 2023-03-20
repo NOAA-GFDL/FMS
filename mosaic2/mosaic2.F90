@@ -314,7 +314,6 @@ end subroutine mosaic_init
        call read_data(fileobj, "contact_index", contacts_index)
     endif
     do n = 1, ncontacts
-      print*, "contacts(",n,") is ", contacts(n)
       nstr = parse_string(contacts(n), ":", strlist)
       if(nstr .NE. 4) call mpp_error(FATAL, &
          "mosaic_mod(get_mosaic_contact): number of elements in contact seperated by :/:: should be 4")

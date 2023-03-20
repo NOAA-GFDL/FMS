@@ -115,9 +115,6 @@ subroutine char_read_1d(fileobj, variable_name, buf, c, append_error_msg, err, v
     enddo
     call string_copy(buf(i-start(2)+1), sbuf)
   enddo
-  do i = 1, size(buf)
-    print*, "buf(",i,") is ", buf(i)
-  enddo
   deallocate(charbuf)
 
 end subroutine char_read_1d
