@@ -197,14 +197,13 @@ subroutine get_axis_cart_test_add(test, var_name, cart)
   type(GetAxisCartTestCase_t), pointer :: test_case
   character(*), intent(in) :: var_name
   character(1), intent(in) :: cart
+  character(:), allocatable :: kind_str
 
-  ! Temporarily overload `r4_kind` and `r8_kind` with the strings "float" and "double",
-  ! respectively, to obtain a string representation of the kind.
-#define r4_kind "float"
-#define r8_kind "double"
-  character(*), parameter :: kind_str = AU_TEST_KIND_
-#undef r4_kind
-#undef r8_kind
+  if (k .eq. r4_kind) then
+    kind_str = "float"
+  else
+    kind_str = "double"
+  endif
 
   call register_field(test%fileobj, var_name, kind_str, dimensions=["dim1"])
 
@@ -257,7 +256,7 @@ subroutine test_special_axis_names(test, special_axis_names, ret_expected)
 end subroutine
 
 subroutine test_lon_in_range
-  real(AU_TEST_KIND_), parameter :: eps_big = 1e-3_k, eps_tiny = 1e-5_k
+  real(k), parameter :: eps_big = 1e-3_k, eps_tiny = 1e-5_k
 
   ! Test some cases where no translation is needed
   call lon_in_range_assert(0._k,              0._k,  0._k)
@@ -294,8 +293,8 @@ subroutine test_lon_in_range
 end subroutine
 
 subroutine lon_in_range_assert(lon, l_start, ret_expected)
-  real(AU_TEST_KIND_), intent(in) :: lon, l_start, ret_expected
-  real(AU_TEST_KIND_) :: ret_test
+  real(k), intent(in) :: lon, l_start, ret_expected
+  real(k) :: ret_test
 
   ret_test = lon_in_range(lon, l_start)
 
@@ -307,24 +306,24 @@ subroutine lon_in_range_assert(lon, l_start, ret_expected)
   endif
 end subroutine
 
-#define CALC_FRAC_INDEX(i, v, values) real(i, AU_TEST_KIND_) + (v - values(i)) / (values(i + 1) - values(i))
+#define CALC_FRAC_INDEX(i, v, values) real(i, k) + (v - values(i)) / (values(i + 1) - values(i))
 
 subroutine test_frac_index
-  real(AU_TEST_KIND_) :: values(6), v, fi
+  real(k) :: values(6), v, fi
   integer :: i, n
-  real(AU_TEST_KIND_), parameter :: f10=.1_k, f25=.25_k, f50=.5_k, f99=.99_k
+  real(k), parameter :: f10=.1_k, f25=.25_k, f50=.5_k, f99=.99_k
 
   values = [1._k, 2._k, 3._k, 5._k, 10._k, 11._k]
   n = size(values)
 
   ! Test values outside of the input array
-  call frac_index_assert(real(values(1), AU_TEST_KIND_) - f50, values, -1._k)
-  call frac_index_assert(real(values(n), AU_TEST_KIND_) + f50, values, -1._k)
+  call frac_index_assert(real(values(1), k) - f50, values, -1._k)
+  call frac_index_assert(real(values(n), k) + f50, values, -1._k)
 
   ! Test the actual indices
   do i=1,n
     v = values(i)
-    call frac_index_assert(v, values, real(i, AU_TEST_KIND_))
+    call frac_index_assert(v, values, real(i, k))
   enddo
 
   ! Test the 10% point
@@ -357,8 +356,8 @@ subroutine test_frac_index
 end subroutine
 
 subroutine frac_index_assert(fval, arr, ret_expected)
-  real(AU_TEST_KIND_), intent(in) :: fval, arr(:), ret_expected
-  real(AU_TEST_KIND_) :: ret_test
+  real(k), intent(in) :: fval, arr(:), ret_expected
+  real(k) :: ret_test
 
   ret_test = frac_index(fval, arr)
 
@@ -372,15 +371,15 @@ end subroutine
 
 ! Test that frac_index fails with a non-monotonic array
 subroutine test_frac_index_fail
-  real(AU_TEST_KIND_) :: values(5)
-  real(AU_TEST_KIND_) :: ret_test
+  real(k) :: values(5)
+  real(k) :: ret_test
 
   values = [1._k, 2._k, 4._k, 3._k, 5._k]
   ret_test = frac_index(1.5_k, values)
 end subroutine
 
 subroutine test_nearest_index
-  real(AU_TEST_KIND_) :: arr(5)
+  real(k) :: arr(5)
 
   arr = [5._k, 12._k, 20._k, 40._k, 100._k]
 
@@ -404,7 +403,7 @@ subroutine test_nearest_index
 end subroutine
 
 subroutine nearest_index_assert(val, arr, ret_expected)
-  real(AU_TEST_KIND_), intent(in) :: val, arr(:)
+  real(k), intent(in) :: val, arr(:)
   integer, intent(in) :: ret_expected
   integer :: ret_test
 
@@ -420,7 +419,7 @@ end subroutine
 
 ! Test that nearest_index fails with a non-monotonic array
 subroutine test_nearest_index_fail
-  real(AU_TEST_KIND_) :: arr(5)
+  real(k) :: arr(5)
   integer :: ret_test
 
   arr=[5._k, 12._k, 40._k, 20._k, 100._k]
@@ -428,20 +427,20 @@ subroutine test_nearest_index_fail
 end subroutine
 
 subroutine test_axis_edges
-  real(AU_TEST_KIND_) :: data_in_var(10)
-  real(AU_TEST_KIND_) :: data_in_var_edges(2,10)
-  real(AU_TEST_KIND_) :: data_in_answers(11)
+  real(k) :: data_in_var(10)
+  real(k) :: data_in_var_edges(2,10)
+  real(k) :: data_in_answers(11)
   type(FmsNetcdfFile_t) :: fileobj
-  real(AU_TEST_KIND_)    :: answers(11)
+  real(k)    :: answers(11)
   integer :: i
 
   do i=1,10
-     data_in_var(i) = real(i, AU_TEST_KIND_) - 0.5_k
+     data_in_var(i) = real(i, k) - 0.5_k
 
-     data_in_var_edges(1,i) = real(i-1, AU_TEST_KIND_)
-     data_in_var_edges(2,i) = real(i, AU_TEST_KIND_)
+     data_in_var_edges(1,i) = real(i-1, k)
+     data_in_var_edges(2,i) = real(i, k)
 
-     data_in_answers(i) = real(i-1, AU_TEST_KIND_)
+     data_in_answers(i) = real(i-1, k)
   enddo
 
   data_in_answers(11) = 10._k
@@ -500,7 +499,7 @@ subroutine test_axis_edges
 end subroutine
 
 subroutine test_tranlon
-  real(AU_TEST_KIND_), dimension(5) :: lon1, lon2, lon3
+  real(k), dimension(5) :: lon1, lon2, lon3
 
   lon1 = [1._k, 2._k, 3._k, 4._k,   5._k]
   lon2 = [2._k, 3._k, 4._k, 5._k,   361._k]
@@ -516,10 +515,10 @@ subroutine test_tranlon
 end subroutine
 
 subroutine tranlon_assert(lon0, lon_expected, lon_start, istrt_expected)
-  real(AU_TEST_KIND_), intent(in) :: lon0(:), lon_expected(:), lon_start
+  real(k), intent(in) :: lon0(:), lon_expected(:), lon_start
   integer, intent(in) :: istrt_expected
   integer :: istrt_test, i
-  real(AU_TEST_KIND_) :: lon_test(size(lon0))
+  real(k) :: lon_test(size(lon0))
   character(:), allocatable :: test_name
 
   test_name = "tranlon(" // stringify(lon0) // ", " // string(lon_start) // ", istrt)"
@@ -538,7 +537,7 @@ end subroutine
 ! Status: SKELETAL
 ! TODO: More comprehensive interp_1d_1d test
 subroutine test_interp_1d_1d
-  real(AU_TEST_KIND_) :: grid1(8), grid2(5), data1(8), data2(5)
+  real(k) :: grid1(8), grid2(5), data1(8), data2(5)
 
   grid1 = [1._k, 2._k, 3._k, 4._k, 5._k, 6._k, 7._k, 8._k]
   grid2 = [2._k, 3._k, 4._k, 5._k, 6._k]
@@ -550,10 +549,10 @@ subroutine test_interp_1d_1d
 end subroutine
 
 subroutine interp_1d_1d_assert(grid1, grid2, data1, data2_expected, method, yp1, yp2)
-  real(AU_TEST_KIND_), intent(in), dimension(:) :: grid1, grid2, data1, data2_expected
+  real(k), intent(in), dimension(:) :: grid1, grid2, data1, data2_expected
   character(*), intent(in), optional :: method
-  real(AU_TEST_KIND_), intent(in), optional :: yp1, yp2
-  real(AU_TEST_KIND_) :: data2_test(size(data2_expected))
+  real(k), intent(in), optional :: yp1, yp2
+  real(k) :: data2_test(size(data2_expected))
   character(:), allocatable :: test_name
 
   test_name = "interp_1d_1d(" // &
@@ -582,7 +581,7 @@ end subroutine
 ! Status: SKELETAL
 ! TODO: More comprehensive interp_1d_2d test
 subroutine test_interp_1d_2d
-  real(AU_TEST_KIND_) :: grid1(2,4), grid2(2,2), data1(2,4), data2(2,2)
+  real(k) :: grid1(2,4), grid2(2,2), data1(2,4), data2(2,2)
 
   grid1(1,:) = [1._k, 2._k, 3._k, 4._k]
   grid1(2,:) = [5._k, 6._k, 7._k, 8._k]
@@ -600,8 +599,8 @@ subroutine test_interp_1d_2d
 end subroutine
 
 subroutine interp_1d_2d_assert(grid1, grid2, data1, data2_expected)
-  real(AU_TEST_KIND_), intent(in), dimension(:,:) :: grid1, grid2, data1, data2_expected
-  real(AU_TEST_KIND_) :: data2_test(size(data2_expected,1), size(data2_expected,2))
+  real(k), intent(in), dimension(:,:) :: grid1, grid2, data1, data2_expected
+  real(k) :: data2_test(size(data2_expected,1), size(data2_expected,2))
   character(:), allocatable :: test_name
 
   test_name = "interp_1d_2d(" // &
@@ -616,7 +615,7 @@ end subroutine
 ! Status: SKELETAL
 ! TODO: More comprehensive interp_1d_3d test
 subroutine test_interp_1d_3d
-  real(AU_TEST_KIND_) :: grid1(2,2,4), grid2(2,2,2), data1(2,2,4), data2(2,2,2)
+  real(k) :: grid1(2,2,4), grid2(2,2,2), data1(2,2,4), data2(2,2,2)
 
   grid1(1,1,:) = [1._k, 2._k, 3._k, 4._k]
   grid1(1,2,:) = [5._k, 6._k, 7._k, 8._k]
@@ -644,10 +643,10 @@ subroutine test_interp_1d_3d
 end subroutine
 
 subroutine interp_1d_3d_assert(grid1, grid2, data1, data2_expected, method, yp1, yp2)
-  real(AU_TEST_KIND_), intent(in), dimension(:,:,:) :: grid1, grid2, data1, data2_expected
+  real(k), intent(in), dimension(:,:,:) :: grid1, grid2, data1, data2_expected
   character(*), intent(in), optional :: method
-  real(AU_TEST_KIND_), intent(in), optional :: yp1, yp2
-  real(AU_TEST_KIND_) :: data2_test(size(data2_expected,1), size(data2_expected,2), size(data2_expected,3))
+  real(k), intent(in), optional :: yp1, yp2
+  real(k) :: data2_test(size(data2_expected,1), size(data2_expected,2), size(data2_expected,3))
   integer :: i,i2,i3
   character(:), allocatable :: test_name
 
@@ -695,7 +694,7 @@ subroutine open_netcdf_r(fileobj)
 end subroutine
 
 subroutine array_compare_1d(arr1, arr2, msg)
-  real(AU_TEST_KIND_), intent(in), dimension(:) :: arr1, arr2
+  real(k), intent(in), dimension(:) :: arr1, arr2
   character(*), intent(in) :: msg
   integer :: i, m, n
 
@@ -719,7 +718,7 @@ subroutine array_compare_1d(arr1, arr2, msg)
 end subroutine
 
 subroutine array_compare_2d(arr1, arr2, msg)
-  real(AU_TEST_KIND_), intent(in), dimension(:,:) :: arr1, arr2
+  real(k), intent(in), dimension(:,:) :: arr1, arr2
   character(*), intent(in) :: msg
   integer :: i1, i2, m1, m2, n1, n2
 
@@ -749,7 +748,7 @@ subroutine array_compare_2d(arr1, arr2, msg)
 end subroutine
 
 subroutine array_compare_3d(arr1, arr2, msg)
-  real(AU_TEST_KIND_), intent(in), dimension(:,:,:) :: arr1, arr2
+  real(k), intent(in), dimension(:,:,:) :: arr1, arr2
   character(*), intent(in) :: msg
   integer :: i1, i2, i3, m1, m2, m3, n1, n2, n3
 
