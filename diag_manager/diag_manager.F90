@@ -1706,7 +1706,7 @@ END FUNCTION register_static_field
     END SELECT
   ! Split old and modern2023 here
   modern_if: iF (use_modern_diag) then
-    send_data_3d = fms_diag_object%fms_diag_accept_data(diag_field_id, field_modern, time, is_in, js_in, ks_in, &
+    diag_send_data = fms_diag_object%fms_diag_accept_data(diag_field_id, field_modern, time, is_in, js_in, ks_in, &
              & mask, rmask, ie_in, je_in, ke_in, weight, err_msg)
     nullify (field_modern)
   elSE ! modern_if
