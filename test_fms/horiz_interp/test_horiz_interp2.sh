@@ -142,7 +142,7 @@ cat <<_EOF > input.nml
   test_spherical= .true.
   ni_src = 360
   nj_src = 180
-  ni_dst = 12 
+  ni_dst = 12
   nj_dst = 6
 /
 
@@ -163,7 +163,7 @@ cat <<_EOF > input.nml
   test_spherical= .true.
   ni_src = 360
   nj_src = 180
-  ni_dst = 12 
+  ni_dst = 12
   nj_dst = 6
 /
 
@@ -185,7 +185,7 @@ cat <<_EOF > input.nml
   test_solo= .true.
   ni_src = 360
   nj_src = 180
-  ni_dst = 12 
+  ni_dst = 12
   nj_dst = 6
 /
 _EOF
@@ -202,7 +202,7 @@ cat <<_EOF > input.nml
   test_assign= .true.
   ni_src = 360
   nj_src = 180
-  ni_dst = 12 
+  ni_dst = 12
   nj_dst = 6
 /
 _EOF

@@ -620,7 +620,7 @@ implicit none
     real(HI_TEST_KIND_) :: D2R = real(PI,HI_TEST_KIND_)/180._lkind
     real(HI_TEST_KIND_) :: R2D = 180._lkind/real(PI,HI_TEST_KIND_)
     real(HI_TEST_KIND_), parameter :: SMALL = 1.0e-10_lkind
-    
+
     ! set up longitude and latitude of source/destination grid.
     dlon_src = (lon_src_end-lon_src_beg)/ni_src
     dlat_src = (lat_src_end-lat_src_beg)/nj_src
@@ -1043,7 +1043,6 @@ implicit none
         Interp_cp = Interp_new1
         if (.not. check_type_eq(Interp_cp, Interp_new2)) call mpp_error(FATAL, &
                     "test_horiz_interp: 2x2d conservative assignment override not equivalent")
-        call mpp_sync
         call horiz_interp_del(Interp_new1)
         call horiz_interp_del(Interp_new2)
         call horiz_interp_del(Interp_cp)
@@ -1142,7 +1141,7 @@ implicit none
     !> helps assignment test with derived type comparisons
     logical function check_type_eq(interp_1, interp_2)
         type(horiz_interp_type), intent(in) :: interp_1, interp_2
-        integer :: i, j ,k
+        integer :: k
         check_type_eq = .true.
         if(allocated(interp_1%horizInterpReals4_type)) then
             if(allocated(interp_1%horizInterpReals4_type%faci)) &
@@ -1251,26 +1250,24 @@ implicit none
         check_type_eq = check_type_eq .and. interp_2%nlon_dst .eq. interp_1%nlon_dst
         check_type_eq = check_type_eq .and. interp_2%nlat_dst .eq. interp_1%nlat_dst
         ! these checks were giving me issues with the ALL comparison, seems to work here tho
-        do i=1, SIZE(interp_1%i_lon, 1)
-            do j=1, SIZE(interp_1%i_lon, 2)
-                do k=1, SIZE(interp_1%i_lon, 3)
-                    if( interp_1%i_lon(i,j,k) .ne. interp_2%i_lon(i,j,k)) then
-                        check_type_eq = .false.
-                        exit
-                    endif
+        if( allocated(interp_1%i_lon)) then
+            do i=1, SIZE(interp_1%i_lon, 1)
+                do j=1, SIZE(interp_1%i_lon, 2)
+                    do k=1, SIZE(interp_1%i_lon, 3)
+                        check_type_eq = check_type_eq .and. interp_1%i_lon(i,j,k) .eq. interp_2%i_lon(i,j,k)
+                        if(.not. check_type_eq) exit
+                    enddo
                 enddo
             enddo
-        enddo
-        do i=1, SIZE(interp_1%j_lat, 1)
-            do j=1, SIZE(interp_1%j_lat, 2)
-                do k=1, SIZE(interp_1%j_lat, 3)
-                    if( interp_1%j_lat(i,j,k) .ne. interp_2%j_lat(i,j,k)) then
-                        check_type_eq = .false.
-                        exit
-                    endif
+            do i=1, SIZE(interp_1%j_lat, 1)
+                do j=1, SIZE(interp_1%j_lat, 2)
+                    do k=1, SIZE(interp_1%j_lat, 3)
+                        check_type_eq = check_type_eq .and. interp_1%j_lat(i,j,k) .eq. interp_2%j_lat(i,j,k)
+                        if(.not. check_type_eq) exit
+                    enddo
                 enddo
             enddo
-        enddo
+        endif
     end function
 
 
