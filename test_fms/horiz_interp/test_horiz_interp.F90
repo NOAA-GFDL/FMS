@@ -20,7 +20,7 @@
 !> Original test is in test_conserve, modified to test the other 3 interp_method option and mixed precision reals
 !! tests are split up by interp_method (same way the modules are broken up) and enabled via the nml flags.
 !! Assignment test checks that the override is copying the data type properly
-!! TODO needs ulimited stack size to run
+!! TODO some larger tests with different data sets
 
 !! defaults to 8 real kind, make check will compile with both 4 and 8
 #ifndef HI_TEST_KIND_
@@ -157,18 +157,25 @@ implicit none
     allocate(wghts(ni_dst, nj_dst, max_neighbors))
     data_dst = 0.0_lkind ; data_src = 1.0_lkind
 
+    id1 = mpp_clock_id( 'horiz_interp_spherical_2dx2d', flags=MPP_CLOCK_SYNC+MPP_CLOCK_DETAILED )
+
     ! 2D x 2D (only one supported for spherical)
+    call mpp_clock_begin(id1)
     if(.not. test_solo) then
         call horiz_interp_new(interp_t, lon_in_2d, lat_in_2d, lon_out_2d, lon_out_2d, interp_method="spherical")
         call horiz_interp(interp_t, data_src, data_dst)
-        call horiz_interp_spherical_wght(interp_t, wghts)
+        call horiz_interp_spherical_wght(interp_t, wghts, verbose=1)
     else
         call horiz_interp(data_src, lon_in_2D, lat_in_2D, lon_out_2D, lat_out_2D, data_dst, interp_method="spherical")
     endif
+    call mpp_clock_end(id1)
     do i=1, ni_dst-1
         do j=1, nj_dst-1
-            if(data_dst(i,j) - 1.0_lkind .gt. SMALL) call mpp_error(FATAL, "test_horiz_interp_spherical: "// &
+            if(data_dst(i,j) - 1.0_lkind .gt. SMALL) then
+                print *, 'data_dst(i=', i, ', j=', j, ')=', data_dst(i,j), ' Expected value: 1.0'
+                call mpp_error(FATAL, "test_horiz_interp_spherical: "// &
                                                                     "invalid output data after interpolation")
+            endif
         enddo
     enddo
     if(.not. test_solo) then
@@ -613,7 +620,7 @@ implicit none
     real(HI_TEST_KIND_) :: D2R = real(PI,HI_TEST_KIND_)/180._lkind
     real(HI_TEST_KIND_) :: R2D = 180._lkind/real(PI,HI_TEST_KIND_)
     real(HI_TEST_KIND_), parameter :: SMALL = 1.0e-10_lkind
-
+    
     ! set up longitude and latitude of source/destination grid.
     dlon_src = (lon_src_end-lon_src_beg)/ni_src
     dlat_src = (lat_src_end-lat_src_beg)/nj_src
@@ -640,8 +647,6 @@ implicit none
     lon_out_1D = lon_out_1D * D2R
     lat_out_1D = lat_out_1D * D2R
 
-    !print *, 'Pretest lat_out', lat_out_1D, 'done'
-
     ! set up 2d lon/lat
     allocate(lon_out_2D(isc:iec+1, jsc:jec+1), lat_out_2D(isc:iec+1, jsc:jec+1))
     do i = isc, iec+1
@@ -659,17 +664,21 @@ implicit none
     allocate(data_dst(isc:iec, jsc:jec))
     data_dst = 0.0_lkind ; data_src = 1.0_lkind
 
+    id1 = mpp_clock_id( 'horiz_interp_bicubic_1dx1d', flags=MPP_CLOCK_SYNC+MPP_CLOCK_DETAILED )
+    id2 = mpp_clock_id( 'horiz_interp_bicubic_1dx2d', flags=MPP_CLOCK_SYNC+MPP_CLOCK_DETAILED )
+
     ! 1D x 1D
+    call mpp_clock_begin(id1)
     if(.not. test_solo) then
         call horiz_interp_new(interp_t, lon_in_1d, lat_in_1d, lon_out_1d, lat_out_1d, interp_method="bicubic")
         call horiz_interp(interp_t, data_src, data_dst)
     else
         call horiz_interp(data_src, lon_in_1D, lat_in_1D, lon_out_1D, lat_out_1D, data_dst, interp_method="bicubic")
     endif
+    call mpp_clock_end(id1)
     call mpp_sync()
     ! check weights (for last index, 1=x,2=y,3=xy derivatives)
     ! 1 radian (in degrees) at edges, 0.5 otherwise
-    !! check weights if type passed in
     if( .not. test_solo) then
         do i=1, ni_src-1
             do j=1, nj_src-1
@@ -704,12 +713,14 @@ implicit none
     allocate(data_dst(isc:iec+1, jsc:jec+1))
     data_dst = 0.0_lkind ; data_src = 1.0_lkind
 
+    call mpp_clock_begin(id2)
     if(.not. test_solo) then
         call horiz_interp_new(interp_t, lon_in_1d, lat_in_1d, lon_out_2d, lat_out_2d, interp_method="bicubic")
         call horiz_interp(interp_t, data_src, data_dst)
     else
         call horiz_interp(data_src, lon_in_1D, lat_in_1D, lon_out_2D, lat_out_2D, data_dst, interp_method="bicubic")
     endif
+    call mpp_clock_end(id2)
     if( .not. test_solo) then
         do i=1, ni_src-1
             do j=1, nj_src-1
