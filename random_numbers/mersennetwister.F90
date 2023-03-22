@@ -92,6 +92,8 @@
 !> @{
 module MersenneTwister_mod
 ! -------------------------------------------------------------
+  use platform_mod, only: r8_kind
+
   implicit none
   private
 
@@ -296,7 +298,7 @@ contains
   !! The result is stored as double precision but has 32 bit resolution
   function getRandomReal(twister)
     type(randomNumberSequence), intent(inout) :: twister
-    double precision             :: getRandomReal
+    real(r8_kind)                             :: getRandomReal
 
     integer :: localInt
 
