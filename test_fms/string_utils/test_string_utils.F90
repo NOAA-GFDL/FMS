@@ -22,7 +22,7 @@
 program test_fms_string_utils
   use fms_string_utils_mod
   use fms_mod, only: fms_init, fms_end
-  use platform_mod, only: r4_kind, r8_kind
+  use platform_mod, only: r4_kind, r8_kind, i4_kind, i8_kind
   use mpp_mod
   use, intrinsic :: iso_c_binding
 
@@ -178,32 +178,36 @@ program test_fms_string_utils
       call mpp_error(FATAL, "string() unit test failed for Boolean false value")
     endif
 
-    if (string(0) .ne. "0") then
-      call mpp_error(FATAL, "string() unit test failed for zero integer")
+    if (string(12345_i4_kind) .ne. "12345") then
+      call mpp_error(FATAL, "string() unit test failed for positive integer(4)")
     endif
 
-    if (string(12345) .ne. "12345") then
-      call mpp_error(FATAL, "string() unit test failed for positive integer")
+    if (string(-12345_i4_kind) .ne. "-12345") then
+      call mpp_error(FATAL, "string() unit test failed for negative integer(4)")
     endif
 
-    if (string(-12345) .ne. "-12345") then
-      call mpp_error(FATAL, "string() unit test failed for negative integer")
+    if (string(12345_i8_kind) .ne. "12345") then
+      call mpp_error(FATAL, "string() unit test failed for positive integer(8)")
+    endif
+
+    if (string(-12345_i8_kind) .ne. "-12345") then
+      call mpp_error(FATAL, "string() unit test failed for negative integer(8)")
     endif
 
     if (string(1._r4_kind, "F15.7") .ne. "1.0000000") then
-      call mpp_error(FATAL, "string() unit test failed for positive r4 real")
+      call mpp_error(FATAL, "string() unit test failed for positive real(4)")
     endif
 
     if (string(-1._r4_kind, "F15.7") .ne. "-1.0000000") then
-      call mpp_error(FATAL, "string() unit test failed for negative r4 real")
+      call mpp_error(FATAL, "string() unit test failed for negative real(4)")
     endif
 
     if (string(1._r8_kind, "F25.16") .ne. "1.0000000000000000") then
-      call mpp_error(FATAL, "string() unit test failed for positive r8 real")
+      call mpp_error(FATAL, "string() unit test failed for positive real(8)")
     endif
 
     if (string(-1._r8_kind, "F25.16") .ne. "-1.0000000000000000") then
-      call mpp_error(FATAL, "string() unit test failed for negative r8 real")
+      call mpp_error(FATAL, "string() unit test failed for negative real(8)")
     endif
   end subroutine
 

@@ -287,7 +287,7 @@ contains
    type(time_type), intent(in)  :: Time
    real           , intent(out) :: weight !< fractional time
 
-   integer         :: year, month, day, hour, minute, second
+   integer         :: yr, mo, dy, hour, minute, second
    type(time_type) :: Year_beg, Year_end
 
 
@@ -295,10 +295,10 @@ contains
 
 !  ---- compute fractional time of year -----
 
-     call get_date (Time, year, month, day, hour, minute, second)
+     call get_date (Time, yr, mo, dy, hour, minute, second)
 
-     Year_beg = set_date(year  , 1, 1)
-     Year_end = set_date(year+1, 1, 1)
+     Year_beg = set_date(yr  , 1, 1)
+     Year_end = set_date(yr+1, 1, 1)
 
      weight = real( (Time - Year_beg) // (Year_end - Year_beg) )
 
@@ -338,27 +338,27 @@ contains
    real           , intent(out) :: weight !< fractional time between midpoints of year1 and year2
    integer        , intent(out) :: year1, year2
 
-   integer :: year, month, day, hour, minute, second
+   integer :: yr, mo, dy, hour, minute, second
    type (time_type) :: Mid_year, Mid_year1, Mid_year2
 
 
    if ( .not. module_is_initialized ) call time_interp_init()
 
-      call get_date (Time, year, month, day, hour, minute, second)
+      call get_date (Time, yr, mo, dy, hour, minute, second)
 
     ! mid point of current year
-      Mid_year = year_midpt(year)
+      Mid_year = year_midpt(yr)
 
       if ( Time >= Mid_year ) then
     ! current time is after mid point of current year
-           year1  = year
-           year2  = year+1
+           year1  = yr
+           year2  = yr+1
            Mid_year2 = year_midpt(year2)
            weight = real( (Time - Mid_year) // (Mid_year2 - Mid_year) )
       else
     ! current time is before mid point of current year
-           year2  = year
-           year1  = year-1
+           year2  = yr
+           year1  = yr-1
            Mid_year1 = year_midpt(year1)
            weight = real( (Time - Mid_year1) // (Mid_year - Mid_year1) )
       endif
@@ -381,12 +381,12 @@ contains
    real           , intent(out) :: weight
    integer        , intent(out) :: year1, year2, month1, month2
 
-   integer :: year, month, day, hour, minute, second,  &
+   integer :: yr, mo, dy, hour, minute, second,  &
               mid_month, cur_month, mid1, mid2
 
    if ( .not. module_is_initialized ) call time_interp_init()
 
-      call get_date (Time, year, month, day, hour, minute, second)
+      call get_date (Time, yr, mo, dy, hour, minute, second)
 
     ! mid point of current month in seconds
       mid_month = days_in_month(Time) * halfday
@@ -395,8 +395,8 @@ contains
 
       if ( cur_month >= mid_month ) then
     ! current time is after mid point of current month
-           year1  = year;  month1 = month
-           year2  = year;  month2 = month+1
+           year1  = yr;  month1 = mo
+           year2  = yr;  month2 = mo+1
            if (month2 > monyear)  then
               year2 = year2+1;  month2 = 1
            endif
@@ -405,8 +405,8 @@ contains
            weight = real(cur_month - mid1) / real(mid1+mid2)
       else
     ! current time is before mid point of current month
-           year2  = year;  month2 = month
-           year1  = year;  month1 = month-1
+           year2  = yr;  month2 = mo
+           year1  = yr;  month1 = mo-1
            if (month1 < 1)  then
               year1 = year1-1;  month1 = monyear
            endif
@@ -442,19 +442,19 @@ contains
    real           , intent(out) :: weight
    integer        , intent(out) :: year1, year2, month1, month2, day1, day2
 
-   integer :: year, month, day, hour, minute, second, sday
+   integer :: yr, mo, dy, hour, minute, second, sday
 
    if ( .not. module_is_initialized ) call time_interp_init()
 
-      call get_date (Time, year, month, day, hour, minute, second)
+      call get_date (Time, yr, mo, dy, hour, minute, second)
 
     ! time into current day in seconds
       sday = second + secmin*minute + sechour*hour
 
       if ( sday >= halfday ) then
     ! current time is after mid point of day
-           year1 = year;  month1 = month;  day1 = day
-           year2 = year;  month2 = month;  day2 = day + 1
+           year1 = yr;  month1 = mo;  day1 = dy
+           year2 = yr;  month2 = mo;  day2 = dy + 1
            weight  = real(sday - halfday) / real(secday)
 
            if (day2 > days_in_month(Time)) then
@@ -841,14 +841,14 @@ end subroutine time_interp_list
 !  private routines
 !#######################################################################
 
- function year_midpt (year)
+ function year_midpt (yr)
 
-   integer, intent(in) :: year
+   integer, intent(in) :: yr
    type (time_type)    :: year_midpt, year_beg, year_end
 
 
-   year_beg = set_date(year  , 1, 1)
-   year_end = set_date(year+1, 1, 1)
+   year_beg = set_date(yr  , 1, 1)
+   year_end = set_date(yr+1, 1, 1)
 
    year_midpt = (year_beg + year_end) / 2
 
@@ -856,19 +856,19 @@ end subroutine time_interp_list
 
 !#######################################################################
 
- function month_midpt (year, month)
+ function month_midpt (yr, mo)
 
-   integer, intent(in) :: year, month
+   integer, intent(in) :: yr, mo
    type (time_type)    :: month_midpt, month_beg, month_end
 
 !  --- beginning of this month ---
-   month_beg = set_date(year, month, 1)
+   month_beg = set_date(yr, mo, 1)
 
 !  --- start of next month ---
-   if (month < 12) then
-      month_end = set_date(year, month+1, 1)
+   if (mo < 12) then
+      month_end = set_date(yr, mo+1, 1)
    else
-      month_end = set_date(year+1, 1, 1)
+      month_end = set_date(yr+1, 1, 1)
    endif
 
    month_midpt = (month_beg + month_end) / 2
