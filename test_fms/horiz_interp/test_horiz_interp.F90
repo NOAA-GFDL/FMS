@@ -29,7 +29,7 @@
 
 program horiz_interp_test
 
-use mpp_mod,          only : mpp_init, mpp_exit, mpp_error, FATAL, stdout, mpp_npes
+use mpp_mod,          only : mpp_init, mpp_exit, mpp_error, FATAL, stdout, mpp_npes, WARNING
 use mpp_mod,          only : mpp_clock_id, mpp_clock_begin, mpp_clock_end
 use mpp_mod,          only : mpp_pe, mpp_root_pe, NOTE, MPP_CLOCK_SYNC, MPP_CLOCK_DETAILED
 use mpp_mod,          only : input_nml_file, mpp_sync
@@ -1014,8 +1014,8 @@ implicit none
         call horiz_interp_new(Interp_new1, lon_in_1D, lat_in_1D, lon_out_1D, lat_out_1D, interp_method="conservative")
         call horiz_interp_new(Interp_new2, lon_in_1D, lat_in_1D, lon_out_1D, lat_out_1D, interp_method="conservative")
         Interp_cp = Interp_new1
-        if (.not. check_type_eq(Interp_cp, Interp_new2)) call mpp_error(FATAL, &
-                    "test_horiz_interp: 1x1d conservative assignment override not equivalent")
+        call mpp_error(NOTE,"testing horiz_interp_type assignment 1x1d conservative")
+        call check_type_eq(Interp_cp, Interp_new2)
         call horiz_interp_del(Interp_new1)
         call horiz_interp_del(Interp_new2)
         call horiz_interp_del(Interp_cp)
@@ -1023,8 +1023,8 @@ implicit none
         call horiz_interp_new(Interp_new1, lon_in_1D, lat_in_1D, lon_out_2D, lat_out_2D, interp_method="conservative")
         call horiz_interp_new(Interp_new2, lon_in_1D, lat_in_1D, lon_out_2D, lat_out_2D, interp_method="conservative")
         Interp_cp = Interp_new1
-        if (.not. check_type_eq(Interp_cp, Interp_new2)) call mpp_error(FATAL, &
-                    "test_horiz_interp: 1x2d conservative assignment override not equivalent")
+        call mpp_error(NOTE,"testing horiz_interp_type assignment 1x2d conservative")
+        call check_type_eq(Interp_cp, Interp_new2)
         call horiz_interp_del(Interp_new1)
         call horiz_interp_del(Interp_new2)
         call horiz_interp_del(Interp_cp)
@@ -1032,8 +1032,8 @@ implicit none
         call horiz_interp_new(Interp_new1, lon_in_2D, lat_in_2D, lon_out_1D, lat_out_1D, interp_method="conservative")
         call horiz_interp_new(Interp_new2, lon_in_2D, lat_in_2D, lon_out_1D, lat_out_1D, interp_method="conservative")
         Interp_cp = Interp_new1
-        if (.not. check_type_eq(Interp_cp, Interp_new2)) call mpp_error(FATAL, &
-                    "test_horiz_interp: 2x1d conservative assignment override not equivalent")
+        call mpp_error(NOTE,"testing horiz_interp_type assignment 2x1d conservative")
+        call check_type_eq(Interp_cp, Interp_new2)
         call horiz_interp_del(Interp_new1)
         call horiz_interp_del(Interp_new2)
         call horiz_interp_del(Interp_cp)
@@ -1041,8 +1041,8 @@ implicit none
         call horiz_interp_new(Interp_new1, lon_in_2D, lat_in_2D, lon_out_2D, lat_out_2D, interp_method="conservative")
         call horiz_interp_new(Interp_new2, lon_in_2D, lat_in_2D, lon_out_2D, lat_out_2D, interp_method="conservative")
         Interp_cp = Interp_new1
-        if (.not. check_type_eq(Interp_cp, Interp_new2)) call mpp_error(FATAL, &
-                    "test_horiz_interp: 2x2d conservative assignment override not equivalent")
+        call mpp_error(NOTE,"testing horiz_interp_type assignment 2x2d conservative")
+        call check_type_eq(Interp_cp, Interp_new2)
         call horiz_interp_del(Interp_new1)
         call horiz_interp_del(Interp_new2)
         call horiz_interp_del(Interp_cp)
@@ -1052,8 +1052,8 @@ implicit none
         call horiz_interp_new(Interp_new1, lon_in_1D, lat_in_1D, lon_out_1D, lat_out_1D, interp_method="bicubic")
         call horiz_interp_new(Interp_new2, lon_in_1D, lat_in_1D, lon_out_1D, lat_out_1D, interp_method="bicubic")
         Interp_cp = Interp_new1
-        if (.not. check_type_eq(Interp_cp, Interp_new2)) call mpp_error(FATAL, &
-                    "test_horiz_interp: 1x1d bicubic assignment override not equivalent")
+        call mpp_error(NOTE,"testing horiz_interp_type assignment 1x1d bicubic")
+        call check_type_eq(Interp_cp, Interp_new2)
         call horiz_interp_del(Interp_new1)
         call horiz_interp_del(Interp_new2)
         call horiz_interp_del(Interp_cp)
@@ -1061,8 +1061,8 @@ implicit none
         call horiz_interp_new(Interp_new1, lon_in_1D, lat_in_1D, lon_out_2D, lat_out_2D, interp_method="bicubic")
         call horiz_interp_new(Interp_new2, lon_in_1D, lat_in_1D, lon_out_2D, lat_out_2D, interp_method="bicubic")
         Interp_cp = Interp_new1
-        if (.not. check_type_eq(Interp_cp, Interp_new2)) call mpp_error(FATAL, &
-                    "test_horiz_interp: 1x2d bicubic assignment override not equivalent")
+        call mpp_error(NOTE,"testing horiz_interp_type assignment 1x2d bicubic")
+        call check_type_eq(Interp_cp, Interp_new2)
         call horiz_interp_del(Interp_new1)
         call horiz_interp_del(Interp_new2)
         call horiz_interp_del(Interp_cp)
@@ -1093,8 +1093,8 @@ implicit none
         call horiz_interp_new(Interp_new1, lon_in_2D, lat_in_2D, lon_out_2D, lat_out_2D, interp_method="spherical")
         call horiz_interp_new(Interp_new2, lon_in_2D, lat_in_2D, lon_out_2D, lat_out_2D, interp_method="spherical")
         Interp_cp = Interp_new1
-        if (.not. check_type_eq(Interp_cp, Interp_new1)) call mpp_error(FATAL, &
-                    "test_horiz_interp: 1x2d bilinear assignment override not equivalent")
+        call mpp_error(NOTE,"testing horiz_interp_type assignment 1x2d bilinear")
+        call check_type_eq(Interp_cp, Interp_new1)
         call horiz_interp_del(Interp_new1)
         call horiz_interp_del(Interp_new2)
         call horiz_interp_del(Interp_cp)
@@ -1104,8 +1104,8 @@ implicit none
         call horiz_interp_new(Interp_new1, lon_in_1D, lat_in_1D, lon_in_1D, lat_in_1D, interp_method="bilinear")
         call horiz_interp_new(Interp_new2, lon_in_1D, lat_in_1D, lon_in_1D, lat_in_1D, interp_method="bilinear")
         Interp_cp = Interp_new1
-        if (.not. check_type_eq(Interp_cp, Interp_new2)) call mpp_error(FATAL, &
-                    "test_horiz_interp: 1x1d bilinear assignment override not equivalent")
+        call mpp_error(NOTE,"testing horiz_interp_type assignment 1x1d bilinear")
+        call check_type_eq(Interp_cp, Interp_new2)
         call horiz_interp_del(Interp_new1)
         call horiz_interp_del(Interp_new2)
         call horiz_interp_del(Interp_cp)
@@ -1113,8 +1113,8 @@ implicit none
         call horiz_interp_new(Interp_new1, lon_in_1D, lat_in_1D, lon_in_2D, lat_in_2D, interp_method="bilinear")
         call horiz_interp_new(Interp_new2, lon_in_1D, lat_in_1D, lon_in_2D, lat_in_2D, interp_method="bilinear")
         Interp_cp = Interp_new1
-        if (.not. check_type_eq(Interp_cp, Interp_new2)) call mpp_error(FATAL, &
-                    "test_horiz_interp: 1x2d bilinear assignment override not equivalent")
+        call mpp_error(NOTE,"testing horiz_interp_type assignment 1x2d bilinear")
+        call check_type_eq(Interp_cp, Interp_new2)
         call horiz_interp_del(Interp_new1)
         call horiz_interp_del(Interp_new2)
         call horiz_interp_del(Interp_cp)
@@ -1122,8 +1122,8 @@ implicit none
         call horiz_interp_new(Interp_new1, lon_in_2D, lat_in_2D, lon_in_2D, lat_in_2D, interp_method="bilinear")
         call horiz_interp_new(Interp_new2, lon_in_2D, lat_in_2D, lon_in_2D, lat_in_2D, interp_method="bilinear")
         Interp_cp = Interp_new1
-        if (.not. check_type_eq(Interp_cp, Interp_new2)) call mpp_error(FATAL, &
-                    "test_horiz_interp: 1x2d bilinear assignment override not equivalent")
+        call mpp_error(NOTE,"testing horiz_interp_type assignment 1x2d bilinear")
+        call check_type_eq(Interp_cp, Interp_new2)
         call horiz_interp_del(Interp_new1)
         call horiz_interp_del(Interp_new2)
         call horiz_interp_del(Interp_cp)
@@ -1131,144 +1131,198 @@ implicit none
         call horiz_interp_new(Interp_new1, lon_in_2D, lat_in_2D, lon_in_2D, lat_in_2D, interp_method="bilinear")
         call horiz_interp_new(Interp_new2, lon_in_2D, lat_in_2D, lon_in_2D, lat_in_2D, interp_method="bilinear")
         Interp_cp = Interp_new1
-        if (.not. check_type_eq(Interp_cp, Interp_new2)) call mpp_error(FATAL, &
-                    "test_horiz_interp: 1x2d bilinear assignment override not equivalent")
+        call mpp_error(NOTE,"testing horiz_interp_type assignment 1x2d bilinear")
+        call check_type_eq(Interp_cp, Interp_new2)
         call horiz_interp_del(Interp_new1)
         call horiz_interp_del(Interp_new2)
         call horiz_interp_del(Interp_cp)
 
    end subroutine
     !> helps assignment test with derived type comparisons
-    logical function check_type_eq(interp_1, interp_2)
+    subroutine check_type_eq(interp_1, interp_2)
         type(horiz_interp_type), intent(in) :: interp_1, interp_2
         integer :: k
-        check_type_eq = .true.
         if(allocated(interp_1%horizInterpReals4_type)) then
-            if(allocated(interp_1%horizInterpReals4_type%faci)) &
-                check_type_eq = check_type_eq .and. &
-                                ALL(interp_2%horizInterpReals4_type%faci .eq. interp_1%horizInterpReals4_type%faci)
-            if(allocated(interp_1%horizInterpReals4_type%facj)) &
-                check_type_eq = check_type_eq .and. &
-                                ALL(interp_2%horizInterpReals4_type%facj .eq. interp_1%horizInterpReals4_type%facj)
-            if(allocated(interp_1%horizInterpReals4_type%area_src)) &
-                check_type_eq = check_type_eq .and. ALL(interp_2%horizInterpReals4_type%area_src.eq. &
-                                                        interp_1%horizInterpReals4_type%area_src)
-            if(allocated(interp_1%horizInterpReals4_type%area_dst)) &
-                check_type_eq = check_type_eq .and. ALL(interp_2%horizInterpReals4_type%area_dst .eq. &
-                                                        interp_1%horizInterpReals4_type%area_dst)
-            if(allocated(interp_1%horizInterpReals4_type%wti)) &
-                check_type_eq = check_type_eq .and. &
-                                ALL(interp_2%horizInterpReals4_type%wti .eq. interp_1%horizInterpReals4_type%wti)
-            if(allocated(interp_1%horizInterpReals4_type%wtj)) &
-                check_type_eq = check_type_eq .and. &
-                                ALL(interp_2%horizInterpReals4_type%wtj .eq. interp_1%horizInterpReals4_type%wtj)
-            if(allocated(interp_1%horizInterpReals4_type%src_dist)) &
-                check_type_eq = check_type_eq .and. ALL(interp_2%horizInterpReals4_type%src_dist .eq. &
-                                                        interp_1%horizInterpReals4_type%src_dist)
-            if(allocated(interp_1%horizInterpReals4_type%rat_x)) &
-                check_type_eq = check_type_eq .and. &
-                                ALL(interp_2%horizInterpReals4_type%rat_x .eq. interp_1%horizInterpReals4_type%rat_x)
-            if(allocated(interp_1%horizInterpReals4_type%rat_y)) &
-                check_type_eq = check_type_eq .and. &
-                                ALL(interp_2%horizInterpReals4_type%rat_y .eq. interp_1%horizInterpReals4_type%rat_y)
-            if(allocated(interp_1%horizInterpReals4_type%lon_in)) &
-                check_type_eq = check_type_eq .and. &
-                                ALL(interp_2%horizInterpReals4_type%lon_in .eq. interp_1%horizInterpReals4_type%lon_in)
-            if(allocated(interp_1%horizInterpReals4_type%lat_in)) &
-                check_type_eq = check_type_eq .and. &
-                                ALL(interp_2%horizInterpReals4_type%lat_in .eq. interp_1%horizInterpReals4_type%lat_in)
-            if(allocated(interp_1%horizInterpReals4_type%area_frac_dst)) &
-                check_type_eq = check_type_eq .and. ALL(interp_2%horizInterpReals4_type%area_frac_dst .eq. &
-                                                        interp_1%horizInterpReals4_type%area_frac_dst)
-            if(allocated(interp_1%horizInterpReals4_type%mask_in)) &
-                check_type_eq = check_type_eq .and. &
-                                ALL(interp_2%horizInterpReals4_type%mask_in.eq.interp_1%horizInterpReals4_type%mask_in)
-            check_type_eq = check_type_eq .and. interp_2%horizInterpReals4_type%max_src_dist .eq. &
-                                                interp_1%horizInterpReals4_type%max_src_dist
-        else if(allocated(interp_1%horizInterpReals8_type)) then
-            if(allocated(interp_1%horizInterpReals8_type%faci)) &
-                check_type_eq = check_type_eq .and. &
-                                ALL(interp_2%horizInterpReals8_type%faci .eq. interp_1%horizInterpReals8_type%faci)
-            if(allocated(interp_1%horizInterpReals8_type%facj)) &
-                check_type_eq = check_type_eq .and. &
-                                ALL(interp_2%horizInterpReals8_type%facj .eq. interp_1%horizInterpReals8_type%facj)
-            if(allocated(interp_1%horizInterpReals8_type%area_src)) &
-                check_type_eq = check_type_eq .and. ALL(interp_2%horizInterpReals8_type%area_src .eq. &
-                                                        interp_1%horizInterpReals8_type%area_src)
-            if(allocated(interp_1%horizInterpReals8_type%area_dst)) &
-                check_type_eq = check_type_eq .and. ALL(interp_2%horizInterpReals8_type%area_dst .eq. &
-                                                        interp_1%horizInterpReals8_type%area_dst)
-            if(allocated(interp_1%horizInterpReals8_type%wti)) &
-                check_type_eq = check_type_eq .and. &
-                                ALL(interp_2%horizInterpReals8_type%wti .eq. interp_1%horizInterpReals8_type%wti)
-            if(allocated(interp_1%horizInterpReals8_type%wtj)) &
-                check_type_eq = check_type_eq .and. &
-                                ALL(interp_2%horizInterpReals8_type%wtj .eq. interp_1%horizInterpReals8_type%wtj)
-            if(allocated(interp_1%horizInterpReals8_type%src_dist)) &
-                check_type_eq = check_type_eq .and. ALL(interp_2%horizInterpReals8_type%src_dist .eq. &
-                                                        interp_1%horizInterpReals8_type%src_dist)
-            if(allocated(interp_1%horizInterpReals8_type%rat_x)) &
-                check_type_eq = check_type_eq .and. &
-                                ALL(interp_2%horizInterpReals8_type%rat_x .eq. interp_1%horizInterpReals8_type%rat_x)
-            if(allocated(interp_1%horizInterpReals8_type%rat_y)) &
-                check_type_eq = check_type_eq .and. &
-                                ALL(interp_2%horizInterpReals8_type%rat_y .eq. interp_1%horizInterpReals8_type%rat_y)
-            if(allocated(interp_1%horizInterpReals8_type%lon_in)) &
-                check_type_eq = check_type_eq .and. &
-                                ALL(interp_2%horizInterpReals8_type%lon_in .eq. interp_1%horizInterpReals8_type%lon_in)
-            if(allocated(interp_1%horizInterpReals8_type%lat_in)) &
-                check_type_eq = check_type_eq .and. &
-                                ALL(interp_2%horizInterpReals8_type%lat_in .eq. interp_1%horizInterpReals8_type%lat_in)
-            if(allocated(interp_1%horizInterpReals8_type%area_frac_dst)) &
-                check_type_eq = check_type_eq .and. ALL(interp_2%horizInterpReals8_type%area_frac_dst.eq. &
-                                                        interp_1%horizInterpReals8_type%area_frac_dst)
-            if(allocated(interp_1%horizInterpReals8_type%mask_in)) &
-                check_type_eq = check_type_eq .and. ALL(interp_2%horizInterpReals8_type%mask_in .eq. &
-                                                        interp_1%horizInterpReals8_type%mask_in)
-            check_type_eq = check_type_eq .and. interp_2%horizInterpReals8_type%max_src_dist .eq. &
-                            interp_1%horizInterpReals8_type%max_src_dist
-        else
-            call mpp_error(FATAL, "check_type_eq: both real kinds unallocated")
-        endif
+            if(allocated(interp_1%horizInterpReals4_type%faci)) then
+                if( ANY(interp_2%horizInterpReals4_type%faci .ne. interp_1%horizInterpReals4_type%faci)) &
+                    call mpp_error(FATAL, "Invalid value for copied horiz_interp_type field: faci")
+            endif
+            if(allocated(interp_1%horizInterpReals4_type%facj)) then 
+                if( ANY(interp_2%horizInterpReals4_type%facj .ne. interp_1%horizInterpReals4_type%facj)) &
+                    call mpp_error(FATAL, "Invalid value for copied horiz_interp_type field: facj")
+            endif
+            if(allocated(interp_1%horizInterpReals4_type%area_src)) then 
+                if( ANY(interp_2%horizInterpReals4_type%area_src .ne. interp_1%horizInterpReals4_type%area_src)) &
+                    call mpp_error(FATAL, "Invalid value for copied horiz_interp_type field: area_src")
+            endif
+            if(allocated(interp_1%horizInterpReals4_type%area_dst)) then 
+                if( ANY(interp_2%horizInterpReals4_type%area_dst .ne. interp_1%horizInterpReals4_type%area_dst)) &
+                    call mpp_error(FATAL, "Invalid value for copied horiz_interp_type field: area_dst")
+            endif
+            if(allocated(interp_1%horizInterpReals4_type%wti)) then
+                if( ANY(interp_2%horizInterpReals4_type%wti .ne. interp_1%horizInterpReals4_type%wti)) &
+                    call mpp_error(FATAL, "Invalid value for copied horiz_interp_type field: wti")
+            endif
+            if(allocated(interp_1%horizInterpReals4_type%wtj)) then 
+                if( ANY(interp_2%horizInterpReals4_type%wtj .ne. interp_1%horizInterpReals4_type%wtj)) &
+                    call mpp_error(FATAL, "Invalid value for copied horiz_interp_type field: wtj")
+            endif
+            if(allocated(interp_1%horizInterpReals4_type%src_dist)) then
+                if( ANY(interp_2%horizInterpReals4_type%src_dist .ne. interp_1%horizInterpReals4_type%src_dist)) &
+                    call mpp_error(FATAL, "Invalid value for copied horiz_interp_type field: src_dst")
+            endif
+            if(allocated(interp_1%horizInterpReals4_type%rat_x)) then
+                if( ANY(interp_2%horizInterpReals4_type%rat_x .ne. interp_1%horizInterpReals4_type%rat_x)) &
+                    call mpp_error(FATAL, "Invalid value for copied horiz_interp_type field: src_dst")
+            endif
+            if(allocated(interp_1%horizInterpReals4_type%rat_y)) then
+                if( ANY(interp_2%horizInterpReals4_type%rat_y .ne. interp_1%horizInterpReals4_type%rat_y)) &
+                    call mpp_error(FATAL, "Invalid value for copied horiz_interp_type field: src_dst")
+            endif
+            if(allocated(interp_1%horizInterpReals4_type%lon_in)) then
+                if( ANY(interp_2%horizInterpReals4_type%lon_in .ne. interp_1%horizInterpReals4_type%lon_in)) &
+                    call mpp_error(FATAL, "Invalid value for copied horiz_interp_type field: lon_in")
+            endif
+            if(allocated(interp_1%horizInterpReals4_type%lat_in)) then
+                if( ANY(interp_2%horizInterpReals4_type%lat_in .ne. interp_1%horizInterpReals4_type%lat_in)) &
+                    call mpp_error(FATAL, "Invalid value for copied horiz_interp_type field: lat_in")
+            endif
 
-        if(allocated(interp_1%ilon)) &
-                 check_type_eq = check_type_eq .and. ALL(interp_2%ilon .eq. interp_1%ilon)
-        if(allocated(interp_1%jlat)) &
-                 check_type_eq = check_type_eq .and. ALL(interp_2%jlat .eq. interp_1%jlat)
-        !if(allocated(interp_1%i_lon)) check_type_eq = check_type_eq .and. ALL(interp_2%i_lon .eq. interp_1%i_lon)
-        !if(allocated(interp_1%j_lat)) check_type_eq = check_type_eq .and. ALL(interp_2%j_lat .eq. interp_1%j_lat)
-        if(allocated(interp_1%found_neighbors)) &
-            check_type_eq = check_type_eq .and. ALL(interp_2%found_neighbors .eqv. interp_1%found_neighbors)
-        if(allocated(interp_1%num_found)) &
-            check_type_eq = check_type_eq .and. ALL(interp_2%num_found .eq. interp_1%num_found)
-        if(allocated(interp_1%i_src)) check_type_eq = check_type_eq .and. ALL(interp_2%i_src .eq. interp_1%i_src)
-        if(allocated(interp_1%j_src)) check_type_eq = check_type_eq .and. ALL(interp_2%j_src .eq. interp_1%j_src)
-        if(allocated(interp_1%i_dst)) check_type_eq = check_type_eq .and. ALL(interp_2%i_dst .eq. interp_1%i_dst)
-        if(allocated(interp_1%j_dst)) check_type_eq = check_type_eq .and. ALL(interp_2%j_dst .eq. interp_1%j_dst)
-        check_type_eq = check_type_eq .and. interp_2%nlon_src .eq. interp_1%nlon_src
-        check_type_eq = check_type_eq .and. interp_2%nlat_src .eq. interp_1%nlat_src
-        check_type_eq = check_type_eq .and. interp_2%nlon_dst .eq. interp_1%nlon_dst
-        check_type_eq = check_type_eq .and. interp_2%nlat_dst .eq. interp_1%nlat_dst
-        ! these checks were giving me issues with the ALL comparison, seems to work here tho
+            if(allocated(interp_1%horizInterpReals4_type%area_frac_dst)) then 
+                if(ANY(interp_2%horizInterpReals4_type%area_frac_dst.ne.interp_1%horizInterpReals4_type%area_frac_dst)) &
+                    call mpp_error(FATAL, "Invalid value for copied horiz_interp_type field: area_frac_dst")
+            endif
+            if(allocated(interp_1%horizInterpReals4_type%mask_in)) then
+                if(ANY(interp_2%horizInterpReals4_type%mask_in.ne.interp_1%horizInterpReals4_type%mask_in)) &
+                    call mpp_error(FATAL, "Invalid value for copied horiz_interp_type field: mask_in")
+            endif
+
+            if( interp_2%horizInterpReals4_type%max_src_dist .ne. interp_1%horizInterpReals4_type%max_src_dist) &
+                call mpp_error(FATAL, "Invalid value for copied horiz_interp_type field: max_src_dist")
+
+        else if(allocated(interp_1%horizInterpReals8_type)) then
+            !!
+            if(allocated(interp_1%horizInterpReals8_type%faci)) then
+                if( ANY(interp_2%horizInterpReals8_type%faci .ne. interp_1%horizInterpReals8_type%faci)) &
+                    call mpp_error(FATAL, "Invalid value for copied horiz_interp_type field: faci")
+            endif
+            if(allocated(interp_1%horizInterpReals8_type%facj)) then 
+                if( ANY(interp_2%horizInterpReals8_type%facj .ne. interp_1%horizInterpReals8_type%facj)) &
+                    call mpp_error(FATAL, "Invalid value for copied horiz_interp_type field: facj")
+            endif
+            if(allocated(interp_1%horizInterpReals8_type%area_src)) then 
+                if( ANY(interp_2%horizInterpReals8_type%area_src .ne. interp_1%horizInterpReals8_type%area_src)) &
+                    call mpp_error(FATAL, "Invalid value for copied horiz_interp_type field: area_src")
+            endif
+            if(allocated(interp_1%horizInterpReals8_type%area_dst)) then 
+                if( ANY(interp_2%horizInterpReals8_type%area_dst .ne. interp_1%horizInterpReals8_type%area_dst)) &
+                    call mpp_error(FATAL, "Invalid value for copied horiz_interp_type field: area_dst")
+            endif
+            if(allocated(interp_1%horizInterpReals8_type%wti)) then
+                if( ANY(interp_2%horizInterpReals8_type%wti .ne. interp_1%horizInterpReals8_type%wti)) &
+                    call mpp_error(FATAL, "Invalid value for copied horiz_interp_type field: wti")
+            endif
+            if(allocated(interp_1%horizInterpReals8_type%wtj)) then 
+                if( ANY(interp_2%horizInterpReals8_type%wtj .ne. interp_1%horizInterpReals8_type%wtj)) &
+                    call mpp_error(FATAL, "Invalid value for copied horiz_interp_type field: wtj")
+            endif
+            if(allocated(interp_1%horizInterpReals8_type%src_dist)) then
+                if( ANY(interp_2%horizInterpReals8_type%src_dist .ne. interp_1%horizInterpReals8_type%src_dist)) &
+                    call mpp_error(FATAL, "Invalid value for copied horiz_interp_type field: src_dst")
+            endif
+            if(allocated(interp_1%horizInterpReals8_type%rat_x)) then
+                if( ANY(interp_2%horizInterpReals8_type%rat_x .ne. interp_1%horizInterpReals8_type%rat_x)) &
+                    call mpp_error(FATAL, "Invalid value for copied horiz_interp_type field: src_dst")
+            endif
+            if(allocated(interp_1%horizInterpReals8_type%rat_y)) then
+                if( ANY(interp_2%horizInterpReals8_type%rat_y .ne. interp_1%horizInterpReals8_type%rat_y)) &
+                    call mpp_error(FATAL, "Invalid value for copied horiz_interp_type field: src_dst")
+            endif
+            if(allocated(interp_1%horizInterpReals8_type%lon_in)) then
+                if( ANY(interp_2%horizInterpReals8_type%lon_in .ne. interp_1%horizInterpReals8_type%lon_in)) &
+                    call mpp_error(FATAL, "Invalid value for copied horiz_interp_type field: lon_in")
+            endif
+            if(allocated(interp_1%horizInterpReals8_type%lat_in)) then
+                if( ANY(interp_2%horizInterpReals8_type%lat_in .ne. interp_1%horizInterpReals8_type%lat_in)) &
+                    call mpp_error(FATAL, "Invalid value for copied horiz_interp_type field: lat_in")
+            endif
+
+            if(allocated(interp_1%horizInterpReals8_type%area_frac_dst)) then 
+                if(ANY(interp_2%horizInterpReals8_type%area_frac_dst.ne.interp_1%horizInterpReals8_type%area_frac_dst)) &
+                    call mpp_error(FATAL, "Invalid value for copied horiz_interp_type field: area_frac_dst")
+            endif
+            if(allocated(interp_1%horizInterpReals8_type%mask_in)) then
+                if(ANY(interp_2%horizInterpReals8_type%mask_in.ne.interp_1%horizInterpReals8_type%mask_in)) &
+                    call mpp_error(FATAL, "Invalid value for copied horiz_interp_type field: mask_in")
+            endif
+
+            if( interp_2%horizInterpReals8_type%max_src_dist .ne. interp_1%horizInterpReals8_type%max_src_dist) &
+                call mpp_error(FATAL, "Invalid value for copied horiz_interp_type field: max_src_dist")
+        else
+            call mpp_error(FATAL, "check_type.ne. both real kinds unallocated")
+        endif
+        ! non reals
+        if(allocated(interp_1%ilon)) then
+            if( ANY(interp_2%ilon .ne. interp_1%ilon)) &
+                call mpp_error(FATAL, "Invalid value for copied horiz_interp_type field: ilon")
+        endif
+        if(allocated(interp_1%jlat)) then
+            if( ANY(interp_2%jlat .ne. interp_1%jlat)) &
+                call mpp_error(FATAL, "Invalid value for copied horiz_interp_type field: ilon")
+        endif
+        if(allocated(interp_1%found_neighbors)) then 
+            if( ANY(interp_2%found_neighbors .neqv. interp_1%found_neighbors)) &
+                call mpp_error(FATAL, "Invalid value for copied horiz_interp_type field: found_neighbors")
+        endif
+        if(allocated(interp_1%num_found)) then
+            if( ANY(interp_2%num_found .ne. interp_1%num_found)) &
+                call mpp_error(FATAL, "Invalid value for copied horiz_interp_type field: num_found")
+        endif
+        if(allocated(interp_1%i_src)) then
+            if(ANY(interp_2%i_src .ne. interp_1%i_src)) &
+                call mpp_error(FATAL, "Invalid value for copied horiz_interp_type field: i_src")
+        endif
+        if(allocated(interp_1%j_src)) then
+            if(ANY(interp_2%j_src .ne. interp_1%j_src)) &
+                call mpp_error(FATAL, "Invalid value for copied horiz_interp_type field: j_src")
+        endif
+        if(allocated(interp_1%i_dst)) then
+            if(ANY(interp_2%i_dst .ne. interp_1%i_dst)) &
+                call mpp_error(FATAL, "Invalid value for copied horiz_interp_type field: i_dst")
+        endif
+        if(allocated(interp_1%j_dst)) then
+            if(ANY(interp_2%j_dst .ne. interp_1%j_dst)) &
+                call mpp_error(FATAL, "Invalid value for copied horiz_interp_type field: j_dst")
+        endif
+        if(ANY(interp_2%nlon_src .ne. interp_1%j_dst)) &
+            call mpp_error(FATAL, "Invalid value for copied horiz_interp_type field: nlon_src")
+        if(ANY(interp_2%nlat_src .ne. interp_1%j_dst)) &
+            call mpp_error(FATAL, "Invalid value for copied horiz_interp_type field: nlat_src")
+        if(ANY(interp_2%nlon_dst .ne. interp_1%j_dst)) &
+            call mpp_error(FATAL, "Invalid value for copied horiz_interp_type field: nlon_dst")
+        if(ANY(interp_2%nlat_dst .ne. interp_1%j_dst)) &
+                call mpp_error(FATAL, "Invalid value for copied horiz_interp_type field: nlat_dst")
+
+        ! these checks were giving me issues with the ALL comparison (gnu), seems to work here tho
         if( allocated(interp_1%i_lon)) then
             do i=1, SIZE(interp_1%i_lon, 1)
                 do j=1, SIZE(interp_1%i_lon, 2)
                     do k=1, SIZE(interp_1%i_lon, 3)
-                        check_type_eq = check_type_eq .and. interp_1%i_lon(i,j,k) .eq. interp_2%i_lon(i,j,k)
-                        if(.not. check_type_eq) exit
+                        if(interp_1%i_lon(i,j,k) .ne. interp_2%i_lon(i,j,k)) &
+                            call mpp_error(FATAL, "Invalid value for copied horiz_interp_type field: i_lon")
                     enddo
                 enddo
             enddo
             do i=1, SIZE(interp_1%j_lat, 1)
                 do j=1, SIZE(interp_1%j_lat, 2)
                     do k=1, SIZE(interp_1%j_lat, 3)
-                        check_type_eq = check_type_eq .and. interp_1%j_lat(i,j,k) .eq. interp_2%j_lat(i,j,k)
-                        if(.not. check_type_eq) exit
+                        if(interp_1%j_lat(i,j,k) .ne. interp_2%j_lat(i,j,k)) &
+                            call mpp_error(FATAL, "Invalid value for copied horiz_interp_type field: j_lat")
                     enddo
                 enddo
             enddo
         endif
-    end function
+    end subroutine 
 
 
 end program horiz_interp_test
