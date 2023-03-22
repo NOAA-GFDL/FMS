@@ -19,7 +19,8 @@
 module fms_diag_object_mod
 use mpp_mod, only: fatal, note, warning, mpp_error, mpp_pe, mpp_root_pe, stdout
 use diag_data_mod,  only: diag_null, diag_not_found, diag_not_registered, diag_registered_id, &
-                         &DIAG_FIELD_NOT_FOUND, diag_not_registered, max_axes, TWO_D_DOMAIN
+                         &DIAG_FIELD_NOT_FOUND, diag_not_registered, max_axes, TWO_D_DOMAIN, &
+                         &get_base_time
   USE time_manager_mod, ONLY: set_time, set_date, get_time, time_type, OPERATOR(>=), OPERATOR(>),&
        & OPERATOR(<), OPERATOR(==), OPERATOR(/=), OPERATOR(/), OPERATOR(+), ASSIGNMENT(=), get_date, &
        & get_ticks_per_second
@@ -51,6 +52,7 @@ private
   type(fmsDiagBufferContainer_type), allocatable :: FMS_diag_buffers(:) !< array of buffer objects
   integer, private :: registered_buffers = 0 !< number of registered buffers, per dimension
   class(fmsDiagAxisContainer_type), allocatable :: diag_axis(:) !< Array of diag_axis
+  type(time_type)  :: current_model_time !< The current model time
   integer, private :: registered_variables !< Number of registered variables
   integer, private :: registered_axis !< Number of registered axis
   logical, private :: initialized=.false. !< True if the fmsDiagObject is initialized
@@ -114,6 +116,7 @@ subroutine fms_diag_object_init (this,diag_subset_output)
   this%buffers_initialized = fms_diag_buffer_init(this%FMS_diag_buffers, SIZE(diag_yaml%get_diag_fields()))
   this%registered_variables = 0
   this%registered_axis = 0
+  this%current_model_time = get_base_time()
   this%initialized = .true.
 #else
   call mpp_error("fms_diag_object_init",&
@@ -134,7 +137,7 @@ subroutine fms_diag_object_end (this, time)
   !TODO: loop through files and force write
   if (.not. this%initialized) return
 
-  call this%fms_diag_do_io(time, is_end_of_run=.true.)
+  call this%fms_diag_do_io(is_end_of_run=.true.)
   !TODO: Deallocate diag object arrays and clean up all memory
   do i=1, size(this%FMS_diag_buffers)
     if(allocated(this%FMS_diag_buffers(i)%diag_buffer_obj)) then
@@ -226,7 +229,7 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
      call fileptr%set_file_domain(fieldptr%get_domain(), fieldptr%get_type_of_domain())
      call fileptr%init_diurnal_axis(this%diag_axis, this%registered_axis, diag_field_indices(i))
      call fileptr%add_axes(axes, this%diag_axis, this%registered_axis, diag_field_indices(i))
-     call fileptr%add_start_time(init_time)
+     call fileptr%add_start_time(init_time, this%current_model_time)
      call fileptr%set_file_time_ops (fieldptr%diag_field(i), fieldptr%is_static())
     enddo
   elseif (present(axes)) then !only axes present
@@ -242,7 +245,7 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
     do i = 1, size(file_ids)
      fileptr => this%FMS_diag_files(file_ids(i))%FMS_diag_file
      call fileptr%add_field_and_yaml_id(fieldptr%get_id(), diag_field_indices(i))
-     call fileptr%add_start_time(init_time)
+     call fileptr%add_start_time(init_time, this%current_model_time)
      call fileptr%set_file_time_ops (fieldptr%diag_field(i), fieldptr%is_static())
     enddo
   else !no axis or init time present
@@ -514,7 +517,7 @@ end function fms_diag_accept_data
 !! variable metadata and data when necessary.
 subroutine fms_diag_send_complete(this, time_step)
   class(fmsDiagObject_type), target, intent (inout) :: this      !< The diag object
-  TYPE (time_type),                  INTENT(in)     :: time_step !< The current model time
+  TYPE (time_type),                  INTENT(in)     :: time_step !< The time_step
 
   integer :: i !< For do loops
 
@@ -529,6 +532,9 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
   logical :: math !< True if the math functions need to be called using the data buffer,
   !! False if the math functions were done in accept_data
   integer, dimension(:), allocatable :: file_field_ids !< Array of field IDs for a file
+
+  !< Update the current model time by adding the time_step
+  this%current_model_time = this%current_model_time + time_step
 
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   !! In the future, this may be parallelized for offloading
@@ -553,22 +559,21 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
     endif field_outer_if
   enddo file_loop
 
-  call this%fms_diag_do_io(time_step)
+  call this%fms_diag_do_io()
 #endif
 
 end subroutine fms_diag_send_complete
 
 !> @brief Loops through all the files, open the file, writes out axis and
 !! variable metadata and data when necessary.
-subroutine fms_diag_do_io(this, time_step, is_end_of_run)
-  class(fmsDiagObject_type), target, intent (inout) :: this          !< The diag object
-  TYPE (time_type),                  INTENT(in)     :: time_step     !< The current model time
+subroutine fms_diag_do_io(this, is_end_of_run)
+  class(fmsDiagObject_type), target, intent(inout)  :: this          !< The diag object
   logical,                 optional, intent(in)     :: is_end_of_run !< If .true. this is the end of the run,
                                                                      !! so force write
 #ifdef use_yaml
   integer :: i !< For do loops
   class(fmsDiagFileContainer_type), pointer :: diag_file !< Pointer to this%FMS_diag_files(i) (for convenience)
-
+  TYPE (time_type),                 pointer :: model_time!< The current model time
 
   logical :: file_is_opened_this_time_step !< True if the file was opened in this time_step
                                            !! If true the metadata will need to be written
@@ -577,13 +582,15 @@ subroutine fms_diag_do_io(this, time_step, is_end_of_run)
   force_write = .false.
   if (present (is_end_of_run)) force_write = .true.
 
+  model_time => this%current_model_time
+
   do i = 1, size(this%FMS_diag_files)
     diag_file => this%FMS_diag_files(i)
 
     !< Go away if the file is a subregional file and the current PE does not have any data for it
     if (.not. diag_file%writing_on_this_pe()) cycle
 
-    call diag_file%open_diag_file(time_step, file_is_opened_this_time_step)
+    call diag_file%open_diag_file(model_time, file_is_opened_this_time_step)
     if (file_is_opened_this_time_step) then
       call diag_file%write_time_metadata()
       call diag_file%write_axis_metadata(this%diag_axis)
@@ -591,13 +598,13 @@ subroutine fms_diag_do_io(this, time_step, is_end_of_run)
       call diag_file%write_axis_data(this%diag_axis)
     endif
 
-    if (diag_file%is_time_to_write(time_step)) then
+    if (diag_file%is_time_to_write(model_time)) then
       call diag_file%increase_unlimited_dimension()
       call diag_file%write_time_data()
       !TODO call diag_file%add_variable_data()
-      call diag_file%update_next_write(time_step)
-      call diag_file%update_current_new_file_freq_index(time_step)
-      if (diag_file%is_time_to_close_file(time_step)) call diag_file%close_diag_file()
+      call diag_file%update_next_write(model_time)
+      call diag_file%update_current_new_file_freq_index(model_time)
+      if (diag_file%is_time_to_close_file(model_time)) call diag_file%close_diag_file()
     else if (force_write .and. .not. diag_file%is_file_static()) then
       call diag_file%increase_unlimited_dimension()
       call diag_file%write_time_data()

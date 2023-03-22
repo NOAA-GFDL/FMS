@@ -21,7 +21,7 @@
 program test_flexible_time
 use   fms_mod,          only: fms_init, fms_end
 use   time_manager_mod, only: set_date, time_type, increment_date, set_calendar_type, &
-                              JULIAN
+                              JULIAN, set_time
 use   diag_manager_mod, only: diag_manager_init, diag_axis_init, register_diag_field, &
                               diag_manager_set_time_end, diag_send_complete, diag_manager_end
 use   mpp_mod,          only: FATAL, mpp_error
@@ -51,9 +51,7 @@ call diag_manager_set_time_end(End_Time)
 
 !< Set up the simulation
 do i=1,48
-  !< Increase the time by 1 hour
-  Time = increment_date(Start_Time, 0, 0, 0, i, 0, 0)
-  call diag_send_complete(Time)
+  call diag_send_complete(set_time(3600,0))
 enddo
 
 call diag_manager_end(End_Time)
