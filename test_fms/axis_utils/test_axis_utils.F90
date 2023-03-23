@@ -162,8 +162,8 @@ subroutine test_get_axis_cart
   do i=1,size(attr_names)
     attr_name = trim(attr_names(i))
 
-    ! Check an unknown value on a "cartesian_axis" or "axis" attribute
-    ! TODO: This test fails. Should get_axis_cart be changed, or should this test be changed?
+    ! Check an unknown value on a "cartesian_axis" or "axis" attribute.
+    ! TODO: This test fails. It should be uncommented if/when get_axis_cart's behavior is fixed.
 
     !attr_value = "unexpected"
     !var_name = attr_name // "_attr_value_" // attr_value
@@ -512,8 +512,8 @@ subroutine test_tranlon
   lon2 = [2._k, 3._k, 4._k, 5._k,   361._k]
   lon3 = [3._k, 4._k, 5._k, 361._k, 362._k]
 
-  ! TODO: The first two cases fail due to tranlon's unexpected behavior when no elements are translated.
-  ! Should tranlon be changed so that istrt=1 in the first two cases, or should the test be changed?
+  ! The first two cases fail due to tranlon's unexpected behavior when no elements are translated.
+  ! TODO: Uncomment these tests if/when tranlon's behavior is fixed.
 
   !call tranlon_assert(lon1, lon1, 0.0_k,    1)
   !call tranlon_assert(lon1, lon1, 1.0_k,    1)
