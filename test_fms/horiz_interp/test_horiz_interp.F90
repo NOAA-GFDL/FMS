@@ -181,6 +181,7 @@ implicit none
     enddo
     if(.not. test_solo) then
         call horiz_interp_del(interp_t)
+        call check_dealloc(interp_t)
     endif
     deallocate(data_src, data_dst)
     deallocate(lat_in_2D, lon_in_2D)
@@ -300,6 +301,7 @@ implicit none
     end do
     if(.not. test_solo) then
         call horiz_interp_del(interp)
+        call check_dealloc(interp)
     endif
 
     ! --- 1dx2d version bilinear interpolation
@@ -372,6 +374,7 @@ implicit none
     end do
     if(.not. test_solo) then
         call horiz_interp_del(interp)
+        call check_dealloc(interp)
     endif
 
     ! --- 2dx1d version bilinear interpolation
@@ -486,6 +489,7 @@ implicit none
     end do
     if(.not. test_solo) then
         call horiz_interp_del(interp)
+        call check_dealloc(interp)
     endif
 
     ! --- 2dx2d version bilinear interpolation
@@ -584,6 +588,7 @@ implicit none
     endif
     if(.not. test_solo) then
         call horiz_interp_del(interp)
+        call check_dealloc(interp)
     endif
     !check that data are equal
     do j=1, nj_src
@@ -701,6 +706,7 @@ implicit none
             enddo
         enddo
         call horiz_interp_del(interp_t)
+        call check_dealloc(interp_t)
     endif
     do i=isc, iec
         do j=jsc, jec
@@ -743,6 +749,7 @@ implicit none
             enddo
         enddo
         call horiz_interp_del(interp_t)
+        call check_dealloc(interp_t)
     endif
     do i=isc, iec
         do j=jsc, jec
@@ -842,6 +849,7 @@ implicit none
                               interp_method = "conservative")
         call horiz_interp(interp_conserve, data_src, data1_dst)
         call horiz_interp_del(interp_conserve)
+        call check_dealloc(interp_conserve)
     else
         call horiz_interp(data_src, lon1D_src, lat1D_src, lon1D_dst, lat1D_dst, data1_dst, &
                           interp_method="conservative")
@@ -855,6 +863,7 @@ implicit none
                               interp_method = "conservative")
         call horiz_interp(interp_conserve, data_src, data2_dst)
         call horiz_interp_del(interp_conserve)
+        call check_dealloc(interp_conserve)
     else
         call horiz_interp(data_src, lon1D_src, lat1D_src, lon2D_dst, lat2D_dst, data2_dst, &
                           interp_method="conservative")
@@ -868,6 +877,7 @@ implicit none
                               interp_method = "conservative")
         call horiz_interp(interp_conserve, data_src, data3_dst)
         call horiz_interp_del(interp_conserve)
+        call check_dealloc(interp_conserve)
     else
         call horiz_interp(data_src, lon2D_src, lat2D_src, lon1D_dst, lat1D_dst, data3_dst, &
                           interp_method="conservative")
@@ -881,6 +891,7 @@ implicit none
                               interp_method = "conservative")
         call horiz_interp(interp_conserve, data_src, data4_dst)
         call horiz_interp_del(interp_conserve)
+        call check_dealloc(interp_conserve)
     else
         call horiz_interp(data_src, lon2D_src, lat2D_src, lon2D_dst, lat2D_dst, data4_dst, &
                           interp_method="conservative")
@@ -1328,6 +1339,43 @@ implicit none
                 enddo
             enddo
         endif
+    end subroutine
+
+    subroutine check_dealloc(hi_type)
+        type(horiz_interp_type), intent(in) :: hi_type
+        !! can only check the encapsulating real types, inner fields are inaccessible after deallocation
+        if(allocated(hi_type%horizInterpReals4_type)) then
+            call mpp_error(FATAL, "horiz_interp_test: field left allocated after type deletion: horizInterpReals4_type")
+        endif
+        if(allocated(hi_type%horizInterpReals8_type)) then
+            call mpp_error(FATAL, "horiz_interp_test: field left allocated after type deletion: horizInterpReals8_type")
+        endif
+        !! non reals
+        if(allocated(hi_type%ilon)) then
+            call mpp_error(FATAL, "horiz_interp_test: field left allocated after type deletion: ilon")
+        endif
+        if(allocated(hi_type%jlat)) then
+            call mpp_error(FATAL, "horiz_interp_test: field left allocated after type deletion: jlat")
+        endif
+        if(allocated(hi_type%found_neighbors)) then
+            call mpp_error(FATAL, "horiz_interp_test: field left allocated after type deletion: found_neighbors")
+        endif
+        if(allocated(hi_type%num_found)) then
+            call mpp_error(FATAL, "horiz_interp_test: field left allocated after type deletion: num_found")
+        endif
+        if(allocated(hi_type%i_src)) then
+            call mpp_error(FATAL, "horiz_interp_test: field left allocated after type deletion: i_src")
+        endif
+        if(allocated(hi_type%j_src)) then
+            call mpp_error(FATAL, "horiz_interp_test: field left allocated after type deletion: j_src")
+        endif
+        if(allocated(hi_type%i_dst)) then
+            call mpp_error(FATAL, "horiz_interp_test: field left allocated after type deletion: i_dst")
+        endif
+        if(allocated(hi_type%j_dst)) then
+            call mpp_error(FATAL, "horiz_interp_test: field left allocated after type deletion: j_dst")
+        endif
+
     end subroutine
 
 

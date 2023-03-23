@@ -103,9 +103,11 @@ contains
     if( allocated(Interp%horizInterpReals4_type)) then
       if(allocated(Interp%horizInterpReals4_type%wti))   deallocate(Interp%horizInterpReals4_type%wti)
       if(allocated(Interp%horizInterpReals4_type%wtj))   deallocate(Interp%horizInterpReals4_type%wtj)
+      deallocate(Interp%horizInterpReals4_type)
     else if (allocated(Interp%horizInterpReals8_type)) then
       if(allocated(Interp%horizInterpReals8_type%wti))   deallocate(Interp%horizInterpReals8_type%wti)
       if(allocated(Interp%horizInterpReals8_type%wtj))   deallocate(Interp%horizInterpReals8_type%wtj)
+      deallocate(Interp%horizInterpReals8_type)
     endif
     if(allocated(Interp%i_lon)) deallocate(Interp%i_lon)
     if(allocated(Interp%j_lat)) deallocate(Interp%j_lat)
