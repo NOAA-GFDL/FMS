@@ -41,6 +41,8 @@ type GetAxisCartTestCase_t
 end type
 
 integer, parameter :: k = AU_TEST_KIND_
+real(k), parameter :: pi = 4._k * atan(1._k)
+
 integer :: i
 character(100) :: arg
 
@@ -257,6 +259,7 @@ end subroutine
 
 subroutine test_lon_in_range
   real(k), parameter :: eps_big = 1e-3_k, eps_tiny = 1e-5_k
+  real(k), parameter :: pi_plus_360 = 360._k + pi
 
   ! Test some cases where no translation is needed
   call lon_in_range_assert(0._k,              0._k,  0._k)
@@ -266,6 +269,7 @@ subroutine test_lon_in_range
   call lon_in_range_assert(350._k,            1._k,  350._k)
   call lon_in_range_assert(359._k,            0._k,  359._k)
   call lon_in_range_assert(359._k,            1._k,  359._k)
+  call lon_in_range_assert(pi,                0._k,  pi)
 
   ! Test up-translation
   call lon_in_range_assert(-2._k,             -1._k, 358._k)
@@ -275,6 +279,7 @@ subroutine test_lon_in_range
   call lon_in_range_assert(-1._k,             5._k,  359._k)
   call lon_in_range_assert(0._k,              5._k,  360._k)
   call lon_in_range_assert(1._k,              5._k,  361._k)
+  call lon_in_range_assert(-pi,               0._k,  360._k - pi)
 
   ! Test down-translation
   call lon_in_range_assert(359._k,            -1._k, -1._k)
@@ -284,6 +289,7 @@ subroutine test_lon_in_range
   call lon_in_range_assert(361._k,            0._k,  1._k)
   call lon_in_range_assert(362._k,            -1._k, 2._k)
   call lon_in_range_assert(362._k,            0._k,  2._k)
+  call lon_in_range_assert(pi_plus_360,       0._k,  pi_plus_360 - 360._k)
 
   ! Test rounding behavior
   call lon_in_range_assert(eps_tiny,          0._k,  0._k)
