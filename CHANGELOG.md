@@ -6,6 +6,42 @@ and this project uses `yyyy.rr[.pp]`, where `yyyy` is the year a patch is releas
 `rr` is a sequential release number (starting from `01`), and an optional two-digit
 sequential patch number (starting from `01`).
 
+## [2023.01] - 2023-03-27
+### Known Issues
+- If using GCC 10 or higher as well as MPICH, compilation errors will occur unless `-fallow-argument-mismatch` is included in the Fortran compiler flags(the flag will now be added automatically if building with autotools or CMake).
+- GCC 11.1.0 is unsupported due to compilation issues with select type. The issue is resolved in later GCC releases.
+- When outputting sub-region diagnostics, the current diag_manager does not add "tileX" to the filename when using a cube sphere. This leads to trouble when trying to combine the files and regrid them (if the region is in two different tiles)
+
+### Added
+- DIAG_MANAGER: Added code refactored as part of larger diag_manager rewrite for the send_data routines. The refactored code is disabled by default and enabled by setting  `use_refactored_send` to true in the diag_manager_nml, and should mirror current behaviour.
+- FMS2_IO: Added the ability to set deflate_level and shuffle netcdf options in `fms2_io_nml`. Also added functionality for registering dimensions as unlimited compressed.
+- YAML_PARSER: Added support for emitting multiple tabbed section keys to allow diag manager yaml output
+
+### Changed
+- STRING_UTILS: Extended the `string` interface in fms_string_utils_mod to accept reals of 4 or 8 kind, as well as 1, 2, and 3 dimensional real arrays
+- DIAG_MANAGER: Changed the `log_diag_field_info` routine to allow for specifying seperator
+- INTERPOLATOR(s): In horiz_interp, amip_interp and interpolator, changed pointers arrays into allocatables
+
+### Fixed
+- TRIDIAGONAL: Added OMP directives to prevent race conditions
+- DIAG_MANAGER: Added `diag_send_data` routine to fix class(\*) related compiler issues from the refactor update
+- SAT_VAPOR_PRES_K: Removed implied saves causing issues with class(\*) type checking
+- TIME_INTERP: Fixed naming conflicts between module level and local variables
+- YAML_PARSER: Fixed typo in variable name, rename variables to avoid fortran keywords
+- DOCS: Fixed incorrect serial build instructions
+- COMPILER SUPPORT: Fixed compilation errors with Intel's llvm-based compiler and added support for the CMake build. Also fixed mpp_checksum unit test failures with openmpi and nvhpc compilation issues.
+
+### Tag Commit Hashes
+- 2023.01-beta4		(63626578cb8ed4bed1ce670b88acd6a1ec438e32)
+- 2023.01-beta3		(0ff254e409b74d7d17ab234abe5ecd985967256c)
+- 2023.01-beta2		(74d8e734bd43b0ce043003da74896e5d747afc2f)
+- 2023.01-beta1		(6255971af28381fad22547bdc2c538fc3ea2e8bf)
+- 2023.01-alpha4	(4526cc94a3e19fe8fa151f54b0db432e1fb2f7d0)
+- 2023.01-alpha3	(f0e8cab3d8e58195f7c2663b84fd0bed12fa8b64)
+- 2023.01-alpha2	(91e732473f7cffce070f9ce239f8ffa22c081261)
+- 2023.01-alpha1	(203c8bf464ff26fe0fe39b1451caedd026bbce55)
+
+
 ## [2022.04] - 2022-10-13
 ### Known Issues
 - If using GCC 10 or higher as well as MPICH, compilation errors will occur unless `-fallow-argument-mismatch` is included in the Fortran compiler flags(the flag will now be added automatically if building with autotools or CMake).
