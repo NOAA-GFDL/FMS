@@ -39,6 +39,7 @@ use fms_mod,          only : check_nml_error, fms_init
 use horiz_interp_mod, only : horiz_interp_init, horiz_interp_new, horiz_interp_del
 use horiz_interp_mod, only : horiz_interp, horiz_interp_type
 use horiz_interp_spherical_mod, only: horiz_interp_spherical_wght
+use horiz_interp_type_mod, only: SPHERICA
 use constants_mod,    only : constants_init, PI
 use platform_mod
 
@@ -952,7 +953,7 @@ implicit none
         !! parameters for lon/lat setup
         real(HI_TEST_KIND_) :: lon_src_beg = 0._lkind,    lon_src_end = 360._lkind
         real(HI_TEST_KIND_) :: lat_src_beg = -90._lkind,  lat_src_end = 90._lkind
-        real(HI_TEST_KIND_) :: lon_dst_beg = -280._lkind, lon_dst_end = 80._lkind
+        real(HI_TEST_KIND_) :: lon_dst_beg = 0.0_lkind, lon_dst_end = 360._lkind
         real(HI_TEST_KIND_) :: lat_dst_beg = -90._lkind,  lat_dst_end = 90._lkind
         real(HI_TEST_KIND_) :: D2R = real(PI,HI_TEST_KIND_)/180._lkind
         real(HI_TEST_KIND_) :: R2D = 180._lkind/real(PI,HI_TEST_KIND_)
@@ -998,16 +999,6 @@ implicit none
         do j = jsc, jec+1
             lat_out_2D(:,j) = lat_out_1D(j)
         end do
-
-        ! taking the midpoint
-        !do i = 1, ni_src
-        !    lon_out_bil(i,:) = (lon_in_1D(i) + lon_in_1D(i+1)) * 0.5_lkind
-        !end do
-        !do j = 1, nj_src
-        !    lat_out_bil(:,j) = (lat_in_1D(j) + lat_in_1D(j+1)) * 0.5_lkind
-        !end do
-        !lon_in_2D = lon_in_bil; lat_in_2D = lat_in_bil
-        !lon_out_2D = lon_out_bil; lat_out_2D = lat_out_bil
 
         ! conservative
         ! 1dx1d
@@ -1119,8 +1110,18 @@ implicit none
         call horiz_interp_del(Interp_new2)
         call horiz_interp_del(Interp_cp)
         ! 2dx1d
-        call horiz_interp_new(Interp_new1, lon_in_2D, lat_in_2D, lon_in_2D, lat_in_2D, interp_method="bilinear")
-        call horiz_interp_new(Interp_new2, lon_in_2D, lat_in_2D, lon_in_2D, lat_in_2D, interp_method="bilinear")
+        deallocate(lon_out_1D, lat_out_1D)
+        allocate(lon_out_1D(ni_dst+1), lat_out_1D(nj_dst+1))
+        do i=1, ni_dst
+            lon_out_1d(i) = (i-1) * dlon_dst + lon_dst_beg
+        enddo
+        do j=1, nj_dst
+            lat_out_1d(j) = (j-1) * dlat_dst + lat_dst_beg 
+        enddo
+        lat_out_1d = lat_out_1D * D2R
+        lon_out_1d = lon_out_1D * D2R
+        call horiz_interp_new(Interp_new1, lon_in_2D, lat_in_2D, lon_out_1D, lat_out_1D, interp_method="bilinear")
+        call horiz_interp_new(Interp_new2, lon_in_2D, lat_in_2D, lon_out_1D, lat_out_1D, interp_method="bilinear")
         Interp_cp = Interp_new1
         call mpp_error(NOTE,"testing horiz_interp_type assignment 1x2d bilinear")
         call check_type_eq(Interp_cp, Interp_new2)
@@ -1196,9 +1197,11 @@ implicit none
                 if(ANY(interp_2%horizInterpReals4_type%mask_in.ne.interp_1%horizInterpReals4_type%mask_in)) &
                     call mpp_error(FATAL, "Invalid value for copied horiz_interp_type field: mask_in")
             endif
-
-            if( interp_2%horizInterpReals4_type%max_src_dist .ne. interp_1%horizInterpReals4_type%max_src_dist) &
-                call mpp_error(FATAL, "Invalid value for copied horiz_interp_type field: max_src_dist")
+            !! only set during spherical
+            if(interp_1%interp_method .eq. SPHERICA) then
+                if( interp_2%horizInterpReals4_type%max_src_dist .ne. interp_1%horizInterpReals4_type%max_src_dist) &
+                    call mpp_error(FATAL, "Invalid value for copied horiz_interp_type field: max_src_dist")
+            endif
 
         else if(allocated(interp_1%horizInterpReals8_type)) then
             !!
