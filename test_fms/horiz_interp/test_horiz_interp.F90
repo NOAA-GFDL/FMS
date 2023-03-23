@@ -1259,8 +1259,11 @@ implicit none
                     call mpp_error(FATAL, "Invalid value for copied horiz_interp_type field: mask_in")
             endif
 
-            if( interp_2%horizInterpReals8_type%max_src_dist .ne. interp_1%horizInterpReals8_type%max_src_dist) &
-                call mpp_error(FATAL, "Invalid value for copied horiz_interp_type field: max_src_dist")
+            !! only set during spherical
+            if(interp_1%interp_method .eq. SPHERICA) then
+                if( interp_2%horizInterpReals8_type%max_src_dist .ne. interp_1%horizInterpReals8_type%max_src_dist) &
+                    call mpp_error(FATAL, "Invalid value for copied horiz_interp_type field: max_src_dist")
+            endif
         else
             call mpp_error(FATAL, "check_type.ne. both real kinds unallocated")
         endif
