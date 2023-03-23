@@ -89,15 +89,15 @@ end interface
    integer, dimension(:), allocatable     :: j_src       !< indices in source grid.
    integer, dimension(:), allocatable     :: i_dst       !< indices in destination grid.
    integer, dimension(:), allocatable     :: j_dst       !< indices in destination grid.
-   type(horiz_interp_reals8), allocatable :: horizInterpReals8_type !< derived type holding kind 8 real data pointers
+   type(horizInterpReals8_type), allocatable :: horizInterpReals8_type !< derived type holding kind 8 real data pointers
                                                                     !! if compiled with r8_kind
-   type(horiz_interp_reals4), allocatable :: horizInterpReals4_type !< derived type holding kind 4 real data pointers
+   type(horizInterpReals4_type), allocatable :: horizInterpReals4_type !< derived type holding kind 4 real data pointers
                                                                     !! if compiled with r8_kind
 
  end type
 
 !> real(8) pointers for use in horiz_interp_type
-type horiz_interp_reals8
+type horizInterpReals8_type
    real(kind=r8_kind),    dimension(:,:), allocatable   :: faci     !< weights for conservative scheme
    real(kind=r8_kind),    dimension(:,:), allocatable   :: facj     !< weights for conservative scheme
    real(kind=r8_kind),    dimension(:,:), allocatable   :: area_src !< area of the source grid
@@ -120,10 +120,10 @@ type horiz_interp_reals8
    real(kind=r8_kind),    dimension(:,:), allocatable   :: mask_in
    real(kind=r8_kind)                               :: max_src_dist
 
-end type horiz_interp_reals8
+end type horizInterpReals8_type
 
 !> holds real(4) pointers for use in horiz_interp_type
-type horiz_interp_reals4
+type horizInterpReals4_type
    real(kind=r4_kind),    dimension(:,:), allocatable   :: faci     !< weights for conservative scheme
    real(kind=r4_kind),    dimension(:,:), allocatable   :: facj     !< weights for conservative scheme
    real(kind=r4_kind),    dimension(:,:), allocatable   :: area_src !< area of the source grid
@@ -146,7 +146,7 @@ type horiz_interp_reals4
    real(kind=r4_kind),    dimension(:,:), allocatable   :: mask_in
    real(kind=r4_kind)                               :: max_src_dist
 
-end type horiz_interp_reals4
+end type horizInterpReals4_type
 
 !> @addtogroup horiz_interp_type_mod
 !> @{

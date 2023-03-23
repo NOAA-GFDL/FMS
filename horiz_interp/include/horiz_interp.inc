@@ -311,7 +311,7 @@
       end if
       if(src_is_latlon .AND. dst_is_latlon) then
          if(present(mask_in)) then
-            if ( ANY(mask_in < -.0001_kindl) .or. ANY(mask_in > 1.0001_kindl)) then
+            if ( ANY(mask_in < -0.0001_kindl) .or. ANY(mask_in > 1.0001_kindl)) then
                 call mpp_error(FATAL, 'horiz_interp_conserve_new_2d(horiz_interp_conserve_mod):' // &
                                        ' input mask not between 0,1')
             endif
