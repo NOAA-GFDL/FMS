@@ -1,3 +1,6 @@
+#undef FMS_MOD_KIND_
+#undef MONOTONIC_ARRAY_
+
 #define FMS_MOD_KIND_ r4_kind
 #define MONOTONIC_ARRAY_ monotonic_array_r4
 #include "fms.inc"
