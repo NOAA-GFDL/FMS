@@ -50,7 +50,12 @@ libfms_la_SOURCES = \
   fms_io_unstructured_save_restart.inc \
   read_data_3d.inc
 
-fms_mod.$(FC_MODEXT): fms_io_mod.$(FC_MODEXT)
+fms_mod.$(FC_MODEXT): fms_io_mod.$(FC_MODEXT) \
+  fms.F90 \
+  include/fms.inc \
+  include/fms_r4.fh \
+  include/fms_r8.fh
+
 fms_io_mod.$(FC_MODEXT): fms_io_unstructured_field_exist.inc \
   fms_io_unstructured_get_file_name.inc \
   fms_io_unstructured_register_restart_axis.inc \
