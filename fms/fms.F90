@@ -96,7 +96,7 @@ module fms_mod
 !
 !  uppercase           Convert character strings to all upper case
 !
-!  monotonic_array     Determines if the real input array has
+!  monotonic_array     Determines if the real input array has strictly
 !                      monotonically increasing or decreasing values.
 !
 !  string_array_index  Match the input character string to a string

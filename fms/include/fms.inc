@@ -17,21 +17,22 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 
-!> @brief Determines if a real input array has monotonically increasing or
-!!     decreasing values.
-!! @return If the input array of real values either increases or decreases monotonically then true
-!! is returned, otherwise false is returned.
+!> @brief Determines if a real input array has values which increase or
+!!     decrease with strict monotonicity.
+!! @return If the input array of real values either increases or decreases in a strictly monotonic manner,
+!!     then true is returned. Otherwise, false is returned.
 
 function MONOTONIC_ARRAY_(array, direction) result(ret)
-real(FMS_MOD_KIND_), intent(in) :: array(:) !< An array of real values. If the size(array) < 2 this function
-                                            !! assumes the array is not monotonic, no fatal error will occur.
+real(FMS_MOD_KIND_), intent(in) :: array(:) !< An array of real values. If size(array) < 2, this function
+                                            !! assumes the array is not monotonic; no fatal error will occur
+                                            !! in this case.
 integer, intent(out), optional :: direction !< If the input array is:
-                                            !! >> monotonic (small to large) then direction = +1.
-                                            !! >> monotonic (large to small) then direction = -1.
-                                            !! >> not monotonic then direction = 0.
+                                            !! >> strictly monotonic (small to large), then direction = +1.
+                                            !! >> strictly monotonic (large to small), then direction = -1.
+                                            !! >> not strictly monotonic, then direction = 0.
 logical :: ret                              !< If the input array of real values either increases or
-                                            !! decreases monotonically, then TRUE is returned; otherwise,
-                                            !! FALSE is returned.
+                                            !! decreases with strict monotonicity, then TRUE is returned;
+                                            !! otherwise, FALSE is returned.
 integer :: i
 
 ! initialize
