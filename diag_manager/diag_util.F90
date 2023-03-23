@@ -637,7 +637,6 @@ CONTAINS
     CHARACTER(len=*), INTENT(in) :: module_name !< Module name
     CHARACTER(len=*), INTENT(in) :: field_name !< Field name
     INTEGER, DIMENSION(:), INTENT(in) :: axes !< Axis IDs
-    CHARACTER(len=*), INTENT(in) :: axes_list !< Comma seperated list of axes names
     CHARACTER(len=*), OPTIONAL, INTENT(in) :: long_name !< Long name for field.
     CHARACTER(len=*), OPTIONAL, INTENT(in) :: units !< Unit of field.
     CLASS(*), OPTIONAL, INTENT(in) :: missing_value !< Missing value value.
