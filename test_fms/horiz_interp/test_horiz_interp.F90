@@ -1116,7 +1116,7 @@ implicit none
             lon_out_1d(i) = (i-1) * dlon_dst + lon_dst_beg
         enddo
         do j=1, nj_dst
-            lat_out_1d(j) = (j-1) * dlat_dst + lat_dst_beg 
+            lat_out_1d(j) = (j-1) * dlat_dst + lat_dst_beg
         enddo
         lat_out_1d = lat_out_1D * D2R
         lon_out_1d = lon_out_1D * D2R
@@ -1148,15 +1148,15 @@ implicit none
                 if( ANY(interp_2%horizInterpReals4_type%faci .ne. interp_1%horizInterpReals4_type%faci)) &
                     call mpp_error(FATAL, "Invalid value for copied horiz_interp_type field: faci")
             endif
-            if(allocated(interp_1%horizInterpReals4_type%facj)) then 
+            if(allocated(interp_1%horizInterpReals4_type%facj)) then
                 if( ANY(interp_2%horizInterpReals4_type%facj .ne. interp_1%horizInterpReals4_type%facj)) &
                     call mpp_error(FATAL, "Invalid value for copied horiz_interp_type field: facj")
             endif
-            if(allocated(interp_1%horizInterpReals4_type%area_src)) then 
+            if(allocated(interp_1%horizInterpReals4_type%area_src)) then
                 if( ANY(interp_2%horizInterpReals4_type%area_src .ne. interp_1%horizInterpReals4_type%area_src)) &
                     call mpp_error(FATAL, "Invalid value for copied horiz_interp_type field: area_src")
             endif
-            if(allocated(interp_1%horizInterpReals4_type%area_dst)) then 
+            if(allocated(interp_1%horizInterpReals4_type%area_dst)) then
                 if( ANY(interp_2%horizInterpReals4_type%area_dst .ne. interp_1%horizInterpReals4_type%area_dst)) &
                     call mpp_error(FATAL, "Invalid value for copied horiz_interp_type field: area_dst")
             endif
@@ -1164,7 +1164,7 @@ implicit none
                 if( ANY(interp_2%horizInterpReals4_type%wti .ne. interp_1%horizInterpReals4_type%wti)) &
                     call mpp_error(FATAL, "Invalid value for copied horiz_interp_type field: wti")
             endif
-            if(allocated(interp_1%horizInterpReals4_type%wtj)) then 
+            if(allocated(interp_1%horizInterpReals4_type%wtj)) then
                 if( ANY(interp_2%horizInterpReals4_type%wtj .ne. interp_1%horizInterpReals4_type%wtj)) &
                     call mpp_error(FATAL, "Invalid value for copied horiz_interp_type field: wtj")
             endif
@@ -1189,8 +1189,8 @@ implicit none
                     call mpp_error(FATAL, "Invalid value for copied horiz_interp_type field: lat_in")
             endif
 
-            if(allocated(interp_1%horizInterpReals4_type%area_frac_dst)) then 
-                if(ANY(interp_2%horizInterpReals4_type%area_frac_dst.ne.interp_1%horizInterpReals4_type%area_frac_dst)) &
+            if(allocated(interp_1%horizInterpReals4_type%area_frac_dst)) then
+                if(ANY(interp_2%horizInterpReals4_type%area_frac_dst.ne.interp_1%horizInterpReals4_type%area_frac_dst))&
                     call mpp_error(FATAL, "Invalid value for copied horiz_interp_type field: area_frac_dst")
             endif
             if(allocated(interp_1%horizInterpReals4_type%mask_in)) then
@@ -1209,15 +1209,15 @@ implicit none
                 if( ANY(interp_2%horizInterpReals8_type%faci .ne. interp_1%horizInterpReals8_type%faci)) &
                     call mpp_error(FATAL, "Invalid value for copied horiz_interp_type field: faci")
             endif
-            if(allocated(interp_1%horizInterpReals8_type%facj)) then 
+            if(allocated(interp_1%horizInterpReals8_type%facj)) then
                 if( ANY(interp_2%horizInterpReals8_type%facj .ne. interp_1%horizInterpReals8_type%facj)) &
                     call mpp_error(FATAL, "Invalid value for copied horiz_interp_type field: facj")
             endif
-            if(allocated(interp_1%horizInterpReals8_type%area_src)) then 
+            if(allocated(interp_1%horizInterpReals8_type%area_src)) then
                 if( ANY(interp_2%horizInterpReals8_type%area_src .ne. interp_1%horizInterpReals8_type%area_src)) &
                     call mpp_error(FATAL, "Invalid value for copied horiz_interp_type field: area_src")
             endif
-            if(allocated(interp_1%horizInterpReals8_type%area_dst)) then 
+            if(allocated(interp_1%horizInterpReals8_type%area_dst)) then
                 if( ANY(interp_2%horizInterpReals8_type%area_dst .ne. interp_1%horizInterpReals8_type%area_dst)) &
                     call mpp_error(FATAL, "Invalid value for copied horiz_interp_type field: area_dst")
             endif
@@ -1225,7 +1225,7 @@ implicit none
                 if( ANY(interp_2%horizInterpReals8_type%wti .ne. interp_1%horizInterpReals8_type%wti)) &
                     call mpp_error(FATAL, "Invalid value for copied horiz_interp_type field: wti")
             endif
-            if(allocated(interp_1%horizInterpReals8_type%wtj)) then 
+            if(allocated(interp_1%horizInterpReals8_type%wtj)) then
                 if( ANY(interp_2%horizInterpReals8_type%wtj .ne. interp_1%horizInterpReals8_type%wtj)) &
                     call mpp_error(FATAL, "Invalid value for copied horiz_interp_type field: wtj")
             endif
@@ -1250,8 +1250,8 @@ implicit none
                     call mpp_error(FATAL, "Invalid value for copied horiz_interp_type field: lat_in")
             endif
 
-            if(allocated(interp_1%horizInterpReals8_type%area_frac_dst)) then 
-                if(ANY(interp_2%horizInterpReals8_type%area_frac_dst.ne.interp_1%horizInterpReals8_type%area_frac_dst)) &
+            if(allocated(interp_1%horizInterpReals8_type%area_frac_dst)) then
+                if(ANY(interp_2%horizInterpReals8_type%area_frac_dst.ne.interp_1%horizInterpReals8_type%area_frac_dst))&
                     call mpp_error(FATAL, "Invalid value for copied horiz_interp_type field: area_frac_dst")
             endif
             if(allocated(interp_1%horizInterpReals8_type%mask_in)) then
@@ -1273,7 +1273,7 @@ implicit none
             if( ANY(interp_2%jlat .ne. interp_1%jlat)) &
                 call mpp_error(FATAL, "Invalid value for copied horiz_interp_type field: ilon")
         endif
-        if(allocated(interp_1%found_neighbors)) then 
+        if(allocated(interp_1%found_neighbors)) then
             if( ANY(interp_2%found_neighbors .neqv. interp_1%found_neighbors)) &
                 call mpp_error(FATAL, "Invalid value for copied horiz_interp_type field: found_neighbors")
         endif
@@ -1325,7 +1325,7 @@ implicit none
                 enddo
             enddo
         endif
-    end subroutine 
+    end subroutine
 
 
 end program horiz_interp_test
