@@ -306,7 +306,7 @@ subroutine lon_in_range_assert(lon, l_start, ret_expected)
   endif
 end subroutine
 
-#define CALC_FRAC_INDEX(i, v, values) real(i, k) + (v - values(i)) / (values(i + 1) - values(i))
+#define CALC_FRAC_INDEX_(i, v, values) real(i, k) + (v - values(i)) / (values(i + 1) - values(i))
 
 subroutine test_frac_index
   real(k) :: values(6), v, fi
@@ -329,28 +329,28 @@ subroutine test_frac_index
   ! Test the 10% point
   do i=1,n-1
     v = values(i) + f10*(values(i+1) - values(i))
-    fi = CALC_FRAC_INDEX(i, v, values)
+    fi = CALC_FRAC_INDEX_(i, v, values)
     call frac_index_assert(v, values, fi)
   enddo
 
   ! Test the 25% point
   do i=1,n-1
     v = values(i) + f25*(values(i+1) - values(i))
-    fi = CALC_FRAC_INDEX(i, v, values)
+    fi = CALC_FRAC_INDEX_(i, v, values)
     call frac_index_assert(v, values, fi)
   enddo
 
   ! Test the mid-point
   do i=1,n-1
     v = values(i) + f50*(values(i+1) - values(i))
-    fi = CALC_FRAC_INDEX(i, v, values)
+    fi = CALC_FRAC_INDEX_(i, v, values)
     call frac_index_assert(v, values, fi)
   enddo
 
   ! Test the 99% point
   do i=1,n-1
     v = values(i) + f99*(values(i+1) - values(i))
-    fi = CALC_FRAC_INDEX(i, v, values)
+    fi = CALC_FRAC_INDEX_(i, v, values)
     call frac_index_assert(v, values, fi)
   enddo
 end subroutine
