@@ -776,7 +776,7 @@
  integer, parameter :: lkind=FMS_SVP_KIND_ !< local FMS_SVP_KIND_
 
  integer :: i, j, k
- real    :: hc_loc
+ real(FMS_SVP_KIND_) :: hc_loc
 
    if (present(hc)) then
      hc_loc = hc
@@ -2129,7 +2129,7 @@
       !> esat = TABLE + del*(TABLE + del*D2TABLE)
       !! the coded equation below is the commented equation above
       esat = real(TABLE2(ind+1),FMS_SVP_KIND_) &
-            + del*( DTABLE2(ind+1) &
+            + del*( real(DTABLE2(ind+1),FMS_SVP_KIND_) &
                        + del*real(D2TABLE2(ind+1),FMS_SVP_KIND_) )
    endif
 
