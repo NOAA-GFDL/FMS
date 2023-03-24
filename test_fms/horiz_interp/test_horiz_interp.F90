@@ -125,25 +125,25 @@ implicit none
     real(HI_TEST_KIND_), parameter :: SMALL = 1.0e-10_lkind
 
     ! set up longitude and latitude of source/destination grid.
-    dlon_src = (lon_src_end-lon_src_beg)/ni_src
-    dlat_src = (lat_src_end-lat_src_beg)/nj_src
-    dlon_dst = (lon_dst_end-lon_dst_beg)/ni_dst
-    dlat_dst = (lat_dst_end-lat_dst_beg)/nj_dst
+    dlon_src = (lon_src_end-lon_src_beg)/real(ni_src, HI_TEST_KIND_)
+    dlat_src = (lat_src_end-lat_src_beg)/real(nj_src, HI_TEST_KIND_)
+    dlon_dst = (lon_dst_end-lon_dst_beg)/real(ni_dst, HI_TEST_KIND_)
+    dlat_dst = (lat_dst_end-lat_dst_beg)/real(nj_dst, HI_TEST_KIND_)
 
     ! set up 2d lon/lat
     allocate(lon_in_2D(ni_src, nj_src), lat_in_2D(ni_src, nj_src))
     do i = 1, ni_src
-        lon_in_2D(i,:) = lon_src_beg + (i-1)*dlon_src
+        lon_in_2D(i,:) = lon_src_beg + real(i-1, HI_TEST_KIND_)*dlon_src
     end do
     do j = 1, nj_src
-        lat_in_2D(:,j) = lat_src_beg + (j-1)*dlat_src
+        lat_in_2D(:,j) = lat_src_beg + real(j-1, HI_TEST_KIND_)*dlat_src
     end do
     allocate(lon_out_2D(ni_dst, nj_dst), lat_out_2D(ni_dst, nj_dst))
     do i = 1, ni_dst
-        lon_out_2D(i,:) = lon_dst_beg + (i-1)*dlon_dst
+        lon_out_2D(i,:) = lon_dst_beg + real(i-1, HI_TEST_KIND_)*dlon_dst
     end do
     do j = 1, nj_dst
-        lat_out_2D(:,j) = lat_src_beg + (j-1)*dlat_dst
+        lat_out_2D(:,j) = lat_src_beg + real(j-1, HI_TEST_KIND_)*dlat_dst
     end do
 
     ! scale to radians
@@ -1018,6 +1018,7 @@ implicit none
         Interp_cp = Interp_new1
         call mpp_error(NOTE,"testing horiz_interp_type assignment 1x1d conservative")
         call check_type_eq(Interp_cp, Interp_new2)
+        call check_type_eq(Interp_cp, Interp_new1)
         call horiz_interp_del(Interp_new1)
         call horiz_interp_del(Interp_new2)
         call horiz_interp_del(Interp_cp)
@@ -1027,6 +1028,7 @@ implicit none
         Interp_cp = Interp_new1
         call mpp_error(NOTE,"testing horiz_interp_type assignment 1x2d conservative")
         call check_type_eq(Interp_cp, Interp_new2)
+        call check_type_eq(Interp_cp, Interp_new1)
         call horiz_interp_del(Interp_new1)
         call horiz_interp_del(Interp_new2)
         call horiz_interp_del(Interp_cp)
@@ -1036,6 +1038,7 @@ implicit none
         Interp_cp = Interp_new1
         call mpp_error(NOTE,"testing horiz_interp_type assignment 2x1d conservative")
         call check_type_eq(Interp_cp, Interp_new2)
+        call check_type_eq(Interp_cp, Interp_new1)
         call horiz_interp_del(Interp_new1)
         call horiz_interp_del(Interp_new2)
         call horiz_interp_del(Interp_cp)
@@ -1045,6 +1048,7 @@ implicit none
         Interp_cp = Interp_new1
         call mpp_error(NOTE,"testing horiz_interp_type assignment 2x2d conservative")
         call check_type_eq(Interp_cp, Interp_new2)
+        call check_type_eq(Interp_cp, Interp_new1)
         call horiz_interp_del(Interp_new1)
         call horiz_interp_del(Interp_new2)
         call horiz_interp_del(Interp_cp)
@@ -1056,6 +1060,7 @@ implicit none
         Interp_cp = Interp_new1
         call mpp_error(NOTE,"testing horiz_interp_type assignment 1x1d bicubic")
         call check_type_eq(Interp_cp, Interp_new2)
+        call check_type_eq(Interp_cp, Interp_new1)
         call horiz_interp_del(Interp_new1)
         call horiz_interp_del(Interp_new2)
         call horiz_interp_del(Interp_cp)
@@ -1065,6 +1070,7 @@ implicit none
         Interp_cp = Interp_new1
         call mpp_error(NOTE,"testing horiz_interp_type assignment 1x2d bicubic")
         call check_type_eq(Interp_cp, Interp_new2)
+        call check_type_eq(Interp_cp, Interp_new1)
         call horiz_interp_del(Interp_new1)
         call horiz_interp_del(Interp_new2)
         call horiz_interp_del(Interp_cp)
@@ -1097,6 +1103,7 @@ implicit none
         Interp_cp = Interp_new1
         call mpp_error(NOTE,"testing horiz_interp_type assignment 1x2d bilinear")
         call check_type_eq(Interp_cp, Interp_new1)
+        call check_type_eq(Interp_cp, Interp_new1)
         call horiz_interp_del(Interp_new1)
         call horiz_interp_del(Interp_new2)
         call horiz_interp_del(Interp_cp)
@@ -1108,6 +1115,7 @@ implicit none
         Interp_cp = Interp_new1
         call mpp_error(NOTE,"testing horiz_interp_type assignment 1x1d bilinear")
         call check_type_eq(Interp_cp, Interp_new2)
+        call check_type_eq(Interp_cp, Interp_new1)
         call horiz_interp_del(Interp_new1)
         call horiz_interp_del(Interp_new2)
         call horiz_interp_del(Interp_cp)
@@ -1117,6 +1125,7 @@ implicit none
         Interp_cp = Interp_new1
         call mpp_error(NOTE,"testing horiz_interp_type assignment 1x2d bilinear")
         call check_type_eq(Interp_cp, Interp_new2)
+        call check_type_eq(Interp_cp, Interp_new1)
         call horiz_interp_del(Interp_new1)
         call horiz_interp_del(Interp_new2)
         call horiz_interp_del(Interp_cp)
@@ -1136,6 +1145,7 @@ implicit none
         Interp_cp = Interp_new1
         call mpp_error(NOTE,"testing horiz_interp_type assignment 1x2d bilinear")
         call check_type_eq(Interp_cp, Interp_new2)
+        call check_type_eq(Interp_cp, Interp_new1)
         call horiz_interp_del(Interp_new1)
         call horiz_interp_del(Interp_new2)
         call horiz_interp_del(Interp_cp)
@@ -1145,6 +1155,7 @@ implicit none
         Interp_cp = Interp_new1
         call mpp_error(NOTE,"testing horiz_interp_type assignment 1x2d bilinear")
         call check_type_eq(Interp_cp, Interp_new2)
+        call check_type_eq(Interp_cp, Interp_new1)
         call horiz_interp_del(Interp_new1)
         call horiz_interp_del(Interp_new2)
         call horiz_interp_del(Interp_cp)

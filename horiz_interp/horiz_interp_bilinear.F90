@@ -59,7 +59,7 @@ module horiz_interp_bilinear_mod
 !> @addtogroup horiz_interp_bilinear_mod
 !> @{
 
-  real(r8_kind), parameter :: epsln=1.d-10
+  real(r8_kind), parameter :: epsln=1.e-10_r8_kind
   integer, parameter :: DUMMY = -999
 
 !! Private helper routines, interfaces for mixed real precision support
