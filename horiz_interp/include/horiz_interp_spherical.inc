@@ -74,7 +74,7 @@
 
     if( .not. allocated(Interp%HI_KIND_TYPE_)) allocate(Interp%HI_KIND_TYPE_)
 
-    max_src_dist = max_dist_default
+    max_src_dist = real(max_dist_default, FMS_HI_KIND_)
     if (PRESENT(max_dist)) max_src_dist = max_dist
     Interp%HI_KIND_TYPE_%max_src_dist = max_src_dist
 
@@ -150,7 +150,7 @@
     endif
 
     map_src_add         = 0
-    map_src_dist        = large
+    map_src_dist        = real(large, FMS_HI_KIND_)
     num_found           = 0
 
     !using radial_search to find the nearest points and corresponding distance.
@@ -255,7 +255,8 @@
                 i2 = Interp%i_lon(m,n,2); j2 = Interp%j_lat(m,n,2)
                 ! compare first 2 nearest neighbors -- if they are nearly
                 ! equidistant then use this mask for robustness
-                if(abs(Interp%HI_KIND_TYPE_%src_dist(m,n,2)-Interp%HI_KIND_TYPE_%src_dist(m,n,1)) .lt. epsln) then
+                if(abs(Interp%HI_KIND_TYPE_%src_dist(m,n,2)-Interp%HI_KIND_TYPE_%src_dist(m,n,1)) .lt. &
+                       real(epsln,FMS_HI_KIND_)) then
                    if((mask_src(i1,j1) .lt. 0.5_kindl ))  mask_dst(m,n) = 0.0_kindl
                 endif
              endif
@@ -265,9 +266,9 @@
                 if(mask_src(Interp%i_lon(m,n,k),Interp%j_lat(m,n,k)) .lt. 0.5_kindl ) then
                    wt(m,n,k) = 0.0_kindl
                 else
-                   if (Interp%HI_KIND_TYPE_%src_dist(m,n,k) <= epsln) then
-                      wt(m,n,k) = large
-                      sum = sum + large
+                   if (Interp%HI_KIND_TYPE_%src_dist(m,n,k) <= real(epsln,FMS_HI_KIND_)) then
+                      wt(m,n,k) = real(large, FMS_HI_KIND_)
+                      sum = sum + real(large, FMS_HI_KIND_)
                    else if(Interp%HI_KIND_TYPE_%src_dist(m,n,k) <= Interp%HI_KIND_TYPE_%max_src_dist ) then
                       wt(m,n,k) = 1.0_kindl /Interp%HI_KIND_TYPE_%src_dist(m,n,k)
                       sum = sum+wt(m,n,k)
@@ -276,7 +277,7 @@
                    endif
                 endif
              enddo
-             if (sum > epsln) then
+             if (sum > real(epsln,FMS_HI_KIND_)) then
                 do k = 1, num_found
                    wt(m,n,k) = wt(m,n,k)/sum
                 enddo
@@ -391,7 +392,8 @@
                 i2 = Interp%i_lon(m,n,2); j2 = Interp%j_lat(m,n,2)
                 ! compare first 2 nearest neighbors -- if they are nearly
                 ! equidistant then use this mask for robustness
-                if(abs(Interp%HI_KIND_TYPE_%src_dist(m,n,2)-Interp%HI_KIND_TYPE_%src_dist(m,n,1)) .lt. epsln) then
+                if(abs(Interp%HI_KIND_TYPE_%src_dist(m,n,2)-Interp%HI_KIND_TYPE_%src_dist(m,n,1)) .lt. &
+                   real(epsln,FMS_HI_KIND_)) then
                    if((mask_src(i1,j1) .lt. 0.5_kindl ))  mask_dst(m,n) = 0.0_kindl
                 endif
              endif
@@ -401,9 +403,9 @@
                 if(mask_src(Interp%i_lon(m,n,k),Interp%j_lat(m,n,k)) .lt. 0.5_kindl ) then
                    wt(m,n,k) = 0.0_kindl
                 else
-                   if (Interp%HI_KIND_TYPE_%src_dist(m,n,k) <= epsln) then
-                      wt(m,n,k) = large
-                      sum = sum + large
+                   if (Interp%HI_KIND_TYPE_%src_dist(m,n,k) <= real(epsln, FMS_HI_KIND_)) then
+                      wt(m,n,k) = real(large, FMS_HI_KIND_)
+                      sum = sum + real(large, FMS_HI_KIND_)
                    else if(Interp%HI_KIND_TYPE_%src_dist(m,n,k) <= Interp%HI_KIND_TYPE_%max_src_dist ) then
                       wt(m,n,k) = 1.0_kindl /Interp%HI_KIND_TYPE_%src_dist(m,n,k)
                       sum = sum+wt(m,n,k)
@@ -412,7 +414,7 @@
                    endif
                 endif
              enddo
-             if (sum > epsln) then
+             if (sum > real(epsln,FMS_HI_KIND_)) then
                 do k = 1, num_found
                    wt(m,n,k) = wt(m,n,k)/sum
                 enddo

@@ -570,7 +570,7 @@
            do j=jcs, jce
              do i=ics, ice
                if (work_old(i,j).le.blank) then
-                 tavr=0.
+                 tavr=0.0_kindl
                  iavr=0
                  inl = max(i-1,ics)
                  inr = min(i+1,ice)
@@ -578,7 +578,7 @@
                  jnu = min(j+1,jce)
                  do js=jnl,jnu
                    do is=inl,inr
-                     if (work_old(is,js) .ne. blank .and. mask(is,js).ne.0.) then
+                     if (work_old(is,js) .ne. blank .and. mask(is,js).ne.0.0_kindl) then
                        tavr = tavr + work_old(is,js)
                        iavr = iavr+1
                      endif
@@ -595,11 +595,11 @@
                          work_old(inr,jnu).eq.blank.and.&
                          work_old(inr,jnl).eq.blank.and.&
                          work_old(inl,jnl).eq.blank) then
-                           work_new(i,j)=tavr/iavr
+                           work_new(i,j)=tavr/real(iavr,FMS_HI_KIND_)
                            ready = .false.
                      endif
                   else
-                    work_new(i,j)=tavr/iavr
+                    work_new(i,j)=tavr/real(iavr,FMS_HI_KIND_)
                     ready = .false.
                   endif
                 endif
@@ -618,7 +618,7 @@
            do j=jcs, jce
              do i=ics, ice
                if (work_old(i,j).le.blank) then
-                 tavr=0.
+                 tavr=0.0_kindl
                  iavr=0
                  inl = max(i-1,ics)
                  inr = min(i+1,ice)
@@ -643,11 +643,11 @@
                          work_old(inr,jnu).le.blank.and. &
                          work_old(inr,jnl).le.blank.and. &
                          work_old(inl,jnl).le.blank) then
-                           work_new(i,j)=tavr/iavr
+                           work_new(i,j)=tavr/real(iavr,FMS_HI_KIND_)
                            ready = .false.
                      endif
                   else
-                    work_new(i,j)=tavr/iavr
+                    work_new(i,j)=tavr/real(iavr,FMS_HI_KIND_)
                     ready = .false.
                   endif
                 endif

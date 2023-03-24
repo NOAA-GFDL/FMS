@@ -65,7 +65,7 @@
     Interp%nlon_dst = nlon_out; Interp%nlat_dst = nlat_out
 
     if(src_is_modulo) then
-       if(lon_in(nlon_in) - lon_in(1) .gt. tpi + epsln) &
+       if(lon_in(nlon_in) - lon_in(1) .gt. tpi + real(epsln, FMS_HI_KIND_)) &
             call mpp_error(FATAL,'horiz_interp_bilinear_mod: '// &
             'The range of source grid longitude should be no larger than tpi')
 
@@ -109,9 +109,9 @@
              ie = 1
              is = nlon_in
              if (lon_in(ie) .ge. lon ) then
-                wtw = (lon_in(ie) -lon)/(lon_in(ie)-lon_in(is)+tpi+epsln)
+                wtw = (lon_in(ie) -lon)/(lon_in(ie)-lon_in(is)+tpi+real(epsln,FMS_HI_KIND_))
              else
-                wtw = (lon_in(ie) -lon+tpi+epsln)/(lon_in(ie)-lon_in(is)+tpi+epsln)
+                wtw = (lon_in(ie) -lon+tpi+real(epsln,FMS_HI_KIND_))/(lon_in(ie)-lon_in(is)+tpi+real(epsln,FMS_HI_KIND_))
              endif
           endif
           wte = 1.0_kindl - wtw
@@ -320,11 +320,11 @@
           b  = a1*b2-a2*b1+c1*d2-c2*d1+c2*lon-c1*lat
           c  = a2*lon-a1*lat+a1*d2-a2*d1
           quadra = b*b-4._kindl*a*c
-          if(abs(quadra) < epsln) quadra = 0.0_kindl
+          if(abs(quadra) < real(epsln, FMS_HI_KIND_)) quadra = 0.0_kindl
           if(quadra < 0.0_kindl) call mpp_error(FATAL, &
                "horiz_interp_bilinear_mod: No solution existed for this quadratic equation")
           if ( abs(a) .lt. epsln2) then  ! a = 0 is a linear equation
-             if( abs(b) .lt. epsln) call mpp_error(FATAL, &
+             if( abs(b) .lt. real(epsln,FMS_HI_KIND_)) call mpp_error(FATAL, &
                   "horiz_interp_bilinear_mod: no unique solution existed for this linear equation")
              y = -c/b
           else
@@ -349,7 +349,7 @@
                 call mpp_error(FATAL, "horiz_interp_bilinear_mod: Two solutions found")
              endif
            endif
-           if(abs(a1+c1*y) < epsln) call mpp_error(FATAL, &
+           if(abs(a1+c1*y) < real(epsln,FMS_HI_KIND_)) call mpp_error(FATAL, &
                "horiz_interp_bilinear_mod: the denomenator is 0")
            if(abs(y) < epsln2) y = 0.0_kindl
            if(abs(1.0_kindl-y) < epsln2) y = 1.0_kindl
@@ -598,18 +598,18 @@
              enddo
           endif
           if(.not.found) then
-              print *,'lon,lat=',lon*180./PI,lat*180./PI
+              print *,'lon,lat=',lon*180.0_kindl/real(PI,FMS_HI_KIND_),lat*180.0_kindl/real(PI,FMS_HI_KIND_)
               print *,'npts=',npts
               print *,'is,ie= ',istart,iend
               print *,'js,je= ',jstart,jend
-              print *,'lon_in(is,js)=',lon_in(istart,jstart)*180./PI
-              print *,'lon_in(ie,js)=',lon_in(iend,jstart)*180./PI
-              print *,'lat_in(is,js)=',lat_in(istart,jstart)*180./PI
-              print *,'lat_in(ie,js)=',lat_in(iend,jstart)*180./PI
-              print *,'lon_in(is,je)=',lon_in(istart,jend)*180./PI
-              print *,'lon_in(ie,je)=',lon_in(iend,jend)*180./PI
-              print *,'lat_in(is,je)=',lat_in(istart,jend)*180./PI
-              print *,'lat_in(ie,je)=',lat_in(iend,jend)*180./PI
+              print *,'lon_in(is,js)=',lon_in(istart,jstart)*180.0_kindl/real(PI,FMS_HI_KIND_)
+              print *,'lon_in(ie,js)=',lon_in(iend,jstart)*180.0_kindl/real(PI,FMS_HI_KIND_)
+              print *,'lat_in(is,js)=',lat_in(istart,jstart)*180.0_kindl/real(PI,FMS_HI_KIND_)
+              print *,'lat_in(ie,js)=',lat_in(iend,jstart)*180.0_kindl/real(PI,FMS_HI_KIND_)
+              print *,'lon_in(is,je)=',lon_in(istart,jend)*180.0_kindl/real(PI,FMS_HI_KIND_)
+              print *,'lon_in(ie,je)=',lon_in(iend,jend)*180.0_kindl/real(PI,FMS_HI_KIND_)
+              print *,'lat_in(is,je)=',lat_in(istart,jend)*180.0_kindl/real(PI,FMS_HI_KIND_)
+              print *,'lat_in(ie,je)=',lat_in(iend,jend)*180.0_kindl/real(PI,FMS_HI_KIND_)
 
              call mpp_error(FATAL, &
                   'FIND_NEIGHBOR_: the destination point is not inside the source grid' )
@@ -1138,7 +1138,7 @@
              if(num_missing .gt. max_missing ) then
                 data_out(m,n) = missing_value
                 if(present(mask_out)) mask_out(m,n) = 0.0_kindl
-             else if(wtsum .lt. epsln) then
+             else if(wtsum .lt. real(epsln, FMS_HI_KIND_)) then
                 if(present(missing_value)) then
                    data_out(m,n) = missing_value
                 else

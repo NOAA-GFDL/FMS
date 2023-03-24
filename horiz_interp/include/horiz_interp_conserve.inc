@@ -262,7 +262,7 @@ subroutine HORIZ_INTERP_CONSERVE_NEW_1DX1D_ ( Interp, lon_in, lat_in, lon_out, l
     nlon_in  = size(lon_in(:)) - 1;  nlat_in  = size(lat_in(:)) - 1
     nlon_out = size(lon_out,1) - 1;  nlat_out = size(lon_out,2) - 1
 
-    mask_src = 1.0_kindl
+    mask_src = 1.0_r8_kind
     if(present(mask_in)) then
        if( (size(mask_in,1) .NE. nlon_in) .OR.  (size(mask_in,2) .NE. nlat_in)) call mpp_error(FATAL, &
          'horiz_interp_conserve_mod: size mismatch between mask_in and lon_in/lat_in')
@@ -307,7 +307,7 @@ subroutine HORIZ_INTERP_CONSERVE_NEW_1DX1D_ ( Interp, lon_in, lat_in, lon_out, l
              mask_src_flip(:,j) = mask_src(:,nlat_in+1-j)
           enddo
           allocate(lon_in_r8(size(lon_in)))
-          lon_in_r8 = lon_in
+          lon_in_r8 = real(lon_in, r8_kind)
           nxgrid = create_xgrid_1DX2D_order1(nlon_in, nlat_in, nlon_out, nlat_out, lon_in_r8, lat_in_flip, &
                                lon_out_r8, lat_out_r8, mask_src_flip, i_src, j_src, i_dst, j_dst, xgrid_area)
           deallocate(lon_in_r8, lat_in_flip, mask_src_flip)
@@ -364,13 +364,13 @@ subroutine HORIZ_INTERP_CONSERVE_NEW_1DX1D_ ( Interp, lon_in, lat_in, lon_out, l
     Interp%j_dst = j_dst(1:nxgrid)+1
 
     ! sum over exchange grid area to get destination grid area
-    dst_area = 0.0_kindl
+    dst_area = 0.0_r8_kind
     do i = 1, nxgrid
        dst_area(Interp%i_dst(i), Interp%j_dst(i)) = dst_area(Interp%i_dst(i), Interp%j_dst(i)) + xgrid_area(i)
     end do
 
     do i = 1, nxgrid
-       Interp%HI_KIND_TYPE_%area_frac_dst(i) = xgrid_area(i)/dst_area(Interp%i_dst(i), Interp%j_dst(i) )
+       Interp%HI_KIND_TYPE_%area_frac_dst(i) = real(xgrid_area(i)/dst_area(Interp%i_dst(i), Interp%j_dst(i) ), FMS_HI_KIND_)
     end do
     Interp%nlon_src = nlon_in;  Interp%nlat_src = nlat_in
     Interp%nlon_dst = nlon_out; Interp%nlat_dst = nlat_out
@@ -431,7 +431,7 @@ subroutine HORIZ_INTERP_CONSERVE_NEW_1DX1D_ ( Interp, lon_in, lat_in, lon_out, l
     if(present(mask_in)) then
        if( (size(mask_in,1) .NE. nlon_in) .OR. (size(mask_in,2) .NE. nlat_in)) call mpp_error(FATAL, &
          'horiz_interp_conserve_mod: size mismatch between mask_in and lon_in/lat_in')
-       mask_src = mask_in
+       mask_src = real(mask_in, r8_kind)
     end if
 
     maxxgrid = get_maxxgrid()
@@ -480,7 +480,7 @@ subroutine HORIZ_INTERP_CONSERVE_NEW_1DX1D_ ( Interp, lon_in, lat_in, lon_out, l
     end do
 
     do i = 1, nxgrid
-       Interp%HI_KIND_TYPE_%area_frac_dst(i) = xgrid_area(i)/dst_area(Interp%i_dst(i), Interp%j_dst(i) )
+       Interp%HI_KIND_TYPE_%area_frac_dst(i) = real(xgrid_area(i)/dst_area(Interp%i_dst(i), Interp%j_dst(i) ), FMS_HI_KIND_)
     end do
     Interp%nlon_src = nlon_in;  Interp%nlat_src = nlat_in
     Interp%nlon_dst = nlon_out; Interp%nlat_dst = nlat_out
@@ -542,7 +542,7 @@ subroutine HORIZ_INTERP_CONSERVE_NEW_1DX1D_ ( Interp, lon_in, lat_in, lon_out, l
     if(present(mask_in)) then
        if( (size(mask_in,1) .NE. nlon_in) .OR.  (size(mask_in,2) .NE. nlat_in)) call mpp_error(FATAL, &
          'horiz_interp_conserve_mod: size mismatch between mask_in and lon_in/lat_in')
-       mask_src = mask_in
+       mask_src = real(mask_in, r8_kind)
     end if
 
     maxxgrid = get_maxxgrid()
@@ -587,7 +587,7 @@ subroutine HORIZ_INTERP_CONSERVE_NEW_1DX1D_ ( Interp, lon_in, lat_in, lon_out, l
     end do
 
     do i = 1, nxgrid
-       Interp%HI_KIND_TYPE_%area_frac_dst(i) = xgrid_area(i)/dst_area(Interp%i_dst(i), Interp%j_dst(i) )
+       Interp%HI_KIND_TYPE_%area_frac_dst(i) = real(xgrid_area(i)/dst_area(Interp%i_dst(i), Interp%j_dst(i)), FMS_HI_KIND_)
     end do
 
     Interp%nlon_src = nlon_in;  Interp%nlat_src = nlat_in
@@ -827,7 +827,7 @@ subroutine HORIZ_INTERP_CONSERVE_NEW_1DX1D_ ( Interp, lon_in, lat_in, lon_out, l
     integer, parameter :: kindl = FMS_HI_KIND_ !< compiled kind size
 
     integer :: pe, root_pe, npes, p, buffer_int(1)
-    real    :: buffer_real(5)
+    real(FMS_HI_KIND_)    :: buffer_real(5)
 
     pe = mpp_pe()
     root_pe = mpp_root_pe()
@@ -901,7 +901,7 @@ subroutine HORIZ_INTERP_CONSERVE_NEW_1DX1D_ ( Interp, lon_in, lat_in, lon_out, l
     !  arsum  = sum(area)
     !-----------------------------------------------------------------------
     real(FMS_HI_KIND_), dimension(size(area,1),size(area,2)) :: wt
-    real    :: asum
+    real(FMS_HI_KIND_)                                       :: asum
     integer :: id, jd
     !-----------------------------------------------------------------------
 
