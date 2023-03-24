@@ -114,7 +114,7 @@ implicit none
     real(HI_TEST_KIND_), allocatable, dimension(:,:)   :: lat_out_2D, lon_out_2D
     real(HI_TEST_KIND_), allocatable, dimension(:,:,:) :: wghts
     !! array sizes and number of lat/lon per index
-    integer :: dlon_src, dlat_src, dlon_dst, dlat_dst
+    real(HI_TEST_KIND_) :: dlon_src, dlat_src, dlon_dst, dlat_dst
     !! parameters for lon/lat setup
     real(HI_TEST_KIND_) :: lon_src_beg = 0._lkind,    lon_src_end = 360._lkind
     real(HI_TEST_KIND_) :: lat_src_beg = -90._lkind,  lat_src_end = 90._lkind
@@ -615,9 +615,9 @@ implicit none
     real(HI_TEST_KIND_), allocatable, dimension(:)   :: lat_out_1D, lon_out_1D
     real(HI_TEST_KIND_), allocatable, dimension(:,:) :: lat_out_2D, lon_out_2D
     !! array sizes and number of lat/lon per index
-    integer :: nlon_in, nlat_in
-    integer :: nlon_out, nlat_out
-    integer :: dlon_src, dlat_src, dlon_dst, dlat_dst
+    real(HI_TEST_KIND_) :: nlon_in, nlat_in
+    real(HI_TEST_KIND_) :: nlon_out, nlat_out
+    real(HI_TEST_KIND_) :: dlon_src, dlat_src, dlon_dst, dlat_dst
     !! parameters for lon/lat setup
     real(HI_TEST_KIND_) :: lon_src_beg = 0._lkind,    lon_src_end = 360._lkind
     real(HI_TEST_KIND_) :: lat_src_beg = -90._lkind,  lat_src_end = 90._lkind
@@ -958,9 +958,9 @@ implicit none
         real(HI_TEST_KIND_), allocatable, dimension(:) :: lat_out_bil, lon_out_bil
         real(HI_TEST_KIND_), allocatable, dimension(:,:) :: lat_in_bil, lon_in_bil
         !! array sizes and number of lat/lon per index
-        integer :: nlon_in, nlat_in
-        integer :: nlon_out, nlat_out
-        integer :: dlon_src, dlat_src, dlon_dst, dlat_dst
+        real(HI_TEST_KIND_) :: nlon_in, nlat_in
+        real(HI_TEST_KIND_) :: nlon_out, nlat_out
+        real(HI_TEST_KIND_) :: dlon_src, dlat_src, dlon_dst, dlat_dst
         !! parameters for lon/lat setup
         real(HI_TEST_KIND_) :: lon_src_beg = 0._lkind,    lon_src_end = 360._lkind
         real(HI_TEST_KIND_) :: lat_src_beg = -90._lkind,  lat_src_end = 90._lkind
