@@ -139,7 +139,7 @@ subroutine HORIZ_INTERP_CONSERVE_NEW_1DX1D_ ( Interp, lon_in, lat_in, lon_out, l
              if ( Interp%jlat(n,n2) /= 0 ) exit
              ! did not find this output grid edge in the input grid
              ! increase tolerance for multiple passes
-             eps  = epsilon(sph)*real(10**iter)
+             eps  = epsilon(sph)*real(10.0_kindl**iter, kindl)
           enddo
           ! no match
           if ( Interp%jlat(n,n2) == 0 ) then
@@ -174,7 +174,7 @@ subroutine HORIZ_INTERP_CONSERVE_NEW_1DX1D_ ( Interp, lon_in, lat_in, lon_out, l
              if ( Interp%ilon(m,m2) /= 0 ) exit
              ! did not find this output grid edge in the input grid
              ! increase tolerance for multiple passes
-             eps  = epsilon(blon)*real(10**iter)
+             eps  = epsilon(blon)*real(10.0_kindl**iter, kindl)
           enddo
           ! no match
           if ( Interp%ilon(m,m2) == 0 ) then
@@ -403,7 +403,7 @@ subroutine HORIZ_INTERP_CONSERVE_NEW_1DX1D_ ( Interp, lon_in, lat_in, lon_out, l
     integer :: create_xgrid_great_circle
     integer :: nlon_in, nlat_in, nlon_out, nlat_out, nxgrid, i, j
     integer, allocatable, dimension(:)   :: i_src, j_src, i_dst, j_dst
-    real(FMS_HI_KIND_),    allocatable, dimension(:,:) :: dst_area
+    real(r8_kind),    allocatable, dimension(:,:) :: dst_area
     real(r8_kind), dimension(size(lon_in,1)-1, size(lon_in,2)-1) :: mask_src
     real(r8_kind), allocatable, dimension(:)   :: xgrid_area, clon, clat
     real(r8_kind), allocatable, dimension(:)   :: lon_out_r8, lat_out_r8
@@ -427,7 +427,7 @@ subroutine HORIZ_INTERP_CONSERVE_NEW_1DX1D_ ( Interp, lon_in, lat_in, lon_out, l
     nlon_in  = size(lon_in,1)   - 1;  nlat_in  = size(lon_in,2)   - 1
     nlon_out = size(lon_out(:)) - 1;  nlat_out = size(lat_out(:)) - 1
 
-    mask_src = 1.0_kindl
+    mask_src = 1.0_r8_kind
     if(present(mask_in)) then
        if( (size(mask_in,1) .NE. nlon_in) .OR. (size(mask_in,2) .NE. nlat_in)) call mpp_error(FATAL, &
          'horiz_interp_conserve_mod: size mismatch between mask_in and lon_in/lat_in')
@@ -474,7 +474,7 @@ subroutine HORIZ_INTERP_CONSERVE_NEW_1DX1D_ ( Interp, lon_in, lat_in, lon_out, l
     Interp%j_dst = j_dst(1:nxgrid)+1
 
     ! sum over exchange grid area to get destination grid area
-    dst_area = 0.0_kindl
+    dst_area = 0.0_r8_kind
     do i = 1, nxgrid
        dst_area(Interp%i_dst(i), Interp%j_dst(i)) = dst_area(Interp%i_dst(i), Interp%j_dst(i)) + xgrid_area(i)
     end do
@@ -538,7 +538,7 @@ subroutine HORIZ_INTERP_CONSERVE_NEW_1DX1D_ ( Interp, lon_in, lat_in, lon_out, l
     nlon_in  = size(lon_in,1)  - 1;  nlat_in  = size(lon_in,2)  - 1
     nlon_out = size(lon_out,1) - 1;  nlat_out = size(lon_out,2) - 1
 
-    mask_src = 1.0_kindl
+    mask_src = 1.0_r8_kind
     if(present(mask_in)) then
        if( (size(mask_in,1) .NE. nlon_in) .OR.  (size(mask_in,2) .NE. nlat_in)) call mpp_error(FATAL, &
          'horiz_interp_conserve_mod: size mismatch between mask_in and lon_in/lat_in')
@@ -581,7 +581,7 @@ subroutine HORIZ_INTERP_CONSERVE_NEW_1DX1D_ ( Interp, lon_in, lat_in, lon_out, l
     Interp%j_dst = j_dst(1:nxgrid)+1
 
     ! sum over exchange grid area to get destination grid area
-    dst_area = 0.0_kindl
+    dst_area = 0.0_r8_kind
     do i = 1, nxgrid
        dst_area(Interp%i_dst(i), Interp%j_dst(i)) = dst_area(Interp%i_dst(i), Interp%j_dst(i)) + xgrid_area(i)
     end do

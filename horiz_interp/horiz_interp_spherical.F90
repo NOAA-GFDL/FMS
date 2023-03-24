@@ -70,6 +70,11 @@ module horiz_interp_spherical_mod
     module procedure radial_search_r8
   end interface
 
+  interface spherical_distance
+    module procedure spherical_distance_r4
+    module procedure spherical_distance_r8
+  end interface
+
   integer, parameter :: max_neighbors = 400
   real(R8_KIND),    parameter :: max_dist_default = 0.1_r8_kind  ! radians
   integer, parameter :: num_nbrs_default = 4

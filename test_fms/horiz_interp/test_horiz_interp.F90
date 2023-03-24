@@ -1322,13 +1322,13 @@ implicit none
             if(ANY(interp_2%j_dst .ne. interp_1%j_dst)) &
                 call mpp_error(FATAL, "Invalid value for copied horiz_interp_type field: j_dst")
         endif
-        if(ANY(interp_2%nlon_src .ne. interp_1%j_dst)) &
+        if(interp_2%nlon_src .ne. interp_1%nlon_src) &
             call mpp_error(FATAL, "Invalid value for copied horiz_interp_type field: nlon_src")
-        if(ANY(interp_2%nlat_src .ne. interp_1%j_dst)) &
+        if(interp_2%nlat_src .ne. interp_1%nlat_src) &
             call mpp_error(FATAL, "Invalid value for copied horiz_interp_type field: nlat_src")
-        if(ANY(interp_2%nlon_dst .ne. interp_1%j_dst)) &
+        if(interp_2%nlon_dst .ne. interp_1%nlon_dst) &
             call mpp_error(FATAL, "Invalid value for copied horiz_interp_type field: nlon_dst")
-        if(ANY(interp_2%nlat_dst .ne. interp_1%j_dst)) &
+        if(interp_2%nlat_dst .ne. interp_1%nlat_dst) &
                 call mpp_error(FATAL, "Invalid value for copied horiz_interp_type field: nlat_dst")
 
         ! these checks were giving me issues with the ALL comparison (gnu), seems to work here tho

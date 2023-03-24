@@ -460,7 +460,7 @@
           do while (continue_search .and. step_size > 0)
              do while (step <= map_src_size .and. continue_search)
                 ! count land points as nearest neighbors
-                d = HORIZ_INTERP_SPHERICAL_DISTANCE_(theta_dst(i,j),phi_dst(i,j),theta_src(step),phi_src(step))
+                d = spherical_distance(theta_dst(i,j),phi_dst(i,j),theta_src(step),phi_src(step))
                 if (d <= max_src_dist) then
                    result = UPDATE_DEST_NEIGHBORS_(map_src_add(i,j,:),map_src_dist(i,j,:), &
                         step,d, num_found(i,j), num_neighbors )
@@ -496,7 +496,7 @@
                                bound = jj * map_src_xsize + i_left
                             endif
 
-                            d = HORIZ_INTERP_SPHERICAL_DISTANCE_(theta_dst(i,j),phi_dst(i,j),theta_src(bound), &
+                            d = spherical_distance(theta_dst(i,j),phi_dst(i,j),theta_src(bound), &
                                                                  phi_src(bound))
                             if(d<=max_src_dist) then
                                result = UPDATE_DEST_NEIGHBORS_(map_src_add(i,j,:),map_src_dist(i,j,:), &
@@ -526,7 +526,7 @@
                                bound = jj * map_src_xsize + i_right
                             endif
 
-                            d = HORIZ_INTERP_SPHERICAL_DISTANCE_(theta_dst(i,j),phi_dst(i,j),theta_src(bound), &
+                            d = spherical_distance(theta_dst(i,j),phi_dst(i,j),theta_src(bound), &
                                                                  phi_src(bound))
                             if(d<=max_src_dist) then
                                result = UPDATE_DEST_NEIGHBORS_(map_src_add(i,j,:),map_src_dist(i,j,:), &
@@ -558,7 +558,7 @@
 
                          bound = bound_start
                          do while (bound <= bound_end)
-                            d = HORIZ_INTERP_SPHERICAL_DISTANCE_(theta_dst(i,j),phi_dst(i,j),theta_src(bound), &
+                            d = spherical_distance(theta_dst(i,j),phi_dst(i,j),theta_src(bound), &
                                                                  phi_src(bound))
                             if(d<=max_src_dist) then
                                result = UPDATE_DEST_NEIGHBORS_(map_src_add(i,j,:),map_src_dist(i,j,:), &
@@ -580,7 +580,7 @@
 
                             bound = bound_start
                             do while (bound <= bound_end)
-                               d = HORIZ_INTERP_SPHERICAL_DISTANCE_(theta_dst(i,j),phi_dst(i,j),theta_src(bound), &
+                               d = spherical_distance(theta_dst(i,j),phi_dst(i,j),theta_src(bound), &
                                                                     phi_src(bound))
                                if(d<=max_src_dist) then
                                   result = UPDATE_DEST_NEIGHBORS_(map_src_add(i,j,:),map_src_dist(i,j,:), &
@@ -603,7 +603,7 @@
 
                          bound = bound_start
                          do while (bound <= bound_end)
-                            d = HORIZ_INTERP_SPHERICAL_DISTANCE_(theta_dst(i,j),phi_dst(i,j),theta_src(bound), &
+                            d = spherical_distance(theta_dst(i,j),phi_dst(i,j),theta_src(bound), &
                                                                  phi_src(bound))
                             if(d<=max_src_dist) then
                                result = UPDATE_DEST_NEIGHBORS_(map_src_add(i,j,:),map_src_dist(i,j,:), &
@@ -624,7 +624,7 @@
 
                             bound = bound_start
                             do while (bound <= bound_end)
-                               d = HORIZ_INTERP_SPHERICAL_DISTANCE_(theta_dst(i,j),phi_dst(i,j),theta_src(bound), &
+                               d = spherical_distance(theta_dst(i,j),phi_dst(i,j),theta_src(bound), &
                                                                     phi_src(bound))
                                if(d<=max_src_dist) then
                                   result = UPDATE_DEST_NEIGHBORS_(map_src_add(i,j,:),map_src_dist(i,j,:), &
@@ -777,7 +777,7 @@
 
     dot = cos(phi1)*cos(phi2)*cos(theta1-theta2) + sin(phi1)*sin(phi2)
     if(dot > 1.0_kindl)  dot = 1.0_kindl
-    if(dot < real(-1.d0, FMS_HI_KIND_)) dot = -1.0_kindl
+    if(dot < real(-1.0_kindl, FMS_HI_KIND_)) dot = -1.0_kindl
     HORIZ_INTERP_SPHERICAL_DISTANCE_ = acos(dot)
 
     return
@@ -808,7 +808,7 @@
     do j=1,map_dst_ysize
        do i=1,map_dst_xsize
           do step = 1, map_src_size
-             d = HORIZ_INTERP_SPHERICAL_DISTANCE_(theta_dst(i,j),phi_dst(i,j),theta_src(step),phi_src(step))
+             d = spherical_distance(theta_dst(i,j),phi_dst(i,j),theta_src(step),phi_src(step))
              if( d <= max_src_dist) then
                 found = UPDATE_DEST_NEIGHBORS_(map_src_add(i,j,:),map_src_dist(i,j,:), &
                      step,d,num_found(i,j), num_neighbors )

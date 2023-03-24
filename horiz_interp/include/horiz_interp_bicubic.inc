@@ -490,7 +490,7 @@
         x(i+12)=y12(i)*d1d2
       enddo
       do i=1,16
-        xx=0.
+        xx=0.0_kindl
         do k=1,16
           xx=xx+wt(i,k)*x(k)
         enddo
@@ -552,7 +552,7 @@
       real(FMS_HI_KIND_)                       :: work_new(ics:ice,jcs:jce)
       logical :: ready
       integer, parameter :: kindl = FMS_HI_KIND_
-      real(FMS_HI_KIND_), parameter    :: blank = real(-1.d30, FMS_HI_KIND_)
+      real(FMS_HI_KIND_), parameter    :: blank = real(-1.e30, FMS_HI_KIND_)
       real(FMS_HI_KIND_)    :: tavr
       integer :: ipass
       integer :: inl, inr, jnl, jnu, i, j, is, js,  iavr
