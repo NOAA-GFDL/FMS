@@ -260,7 +260,7 @@ end function fms_diag_files_object_init
 !< @brief Determine if the field corresponding to the field_id was registered to the file
 !! @return .True. if the field was registed to the file
 pure logical function is_field_registered(this, field_id)
-  class(fmsDiagFile_type), intent(inout) :: this         !< The file object
+  class(fmsDiagFile_type), intent(in)    :: this         !< The file object
   integer,                 intent(in)    :: field_id     !< Id of the field to check
 
   is_field_registered = this%field_registered(field_id)
