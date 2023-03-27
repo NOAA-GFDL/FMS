@@ -205,7 +205,7 @@
     enddo
 
     if (istrt>1) then ! grid is not monotonic
-       if (abs(lon(len)-lon(1)) < real(epsln, r8_kind)) then
+       if (abs(lon(len)-lon(1)) < real(epsln, FMS_AU_KIND_)) then
           tmp = cshift(lon(1:len-1),istrt-1)
           lon(1:len-1) = tmp
           lon(len)     = lon(1)
