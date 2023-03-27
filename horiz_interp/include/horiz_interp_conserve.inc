@@ -370,7 +370,8 @@ subroutine HORIZ_INTERP_CONSERVE_NEW_1DX1D_ ( Interp, lon_in, lat_in, lon_out, l
     end do
 
     do i = 1, nxgrid
-       Interp%HI_KIND_TYPE_%area_frac_dst(i) = real(xgrid_area(i)/dst_area(Interp%i_dst(i), Interp%j_dst(i) ), FMS_HI_KIND_)
+       Interp%HI_KIND_TYPE_%area_frac_dst(i) = real(xgrid_area(i)/dst_area(Interp%i_dst(i), Interp%j_dst(i) ), &
+                                                    FMS_HI_KIND_)
     end do
     Interp%nlon_src = nlon_in;  Interp%nlat_src = nlat_in
     Interp%nlon_dst = nlon_out; Interp%nlat_dst = nlat_out
@@ -480,7 +481,8 @@ subroutine HORIZ_INTERP_CONSERVE_NEW_1DX1D_ ( Interp, lon_in, lat_in, lon_out, l
     end do
 
     do i = 1, nxgrid
-       Interp%HI_KIND_TYPE_%area_frac_dst(i) = real(xgrid_area(i)/dst_area(Interp%i_dst(i), Interp%j_dst(i) ), FMS_HI_KIND_)
+       Interp%HI_KIND_TYPE_%area_frac_dst(i) = real(xgrid_area(i)/dst_area(Interp%i_dst(i), Interp%j_dst(i) ), &
+                                                    FMS_HI_KIND_)
     end do
     Interp%nlon_src = nlon_in;  Interp%nlat_src = nlat_in
     Interp%nlon_dst = nlon_out; Interp%nlat_dst = nlat_out
@@ -587,7 +589,8 @@ subroutine HORIZ_INTERP_CONSERVE_NEW_1DX1D_ ( Interp, lon_in, lat_in, lon_out, l
     end do
 
     do i = 1, nxgrid
-       Interp%HI_KIND_TYPE_%area_frac_dst(i) = real(xgrid_area(i)/dst_area(Interp%i_dst(i), Interp%j_dst(i)), FMS_HI_KIND_)
+       Interp%HI_KIND_TYPE_%area_frac_dst(i) = real(xgrid_area(i)/dst_area(Interp%i_dst(i), Interp%j_dst(i)), &
+                                                    FMS_HI_KIND_)
     end do
 
     Interp%nlon_src = nlon_in;  Interp%nlat_src = nlat_in

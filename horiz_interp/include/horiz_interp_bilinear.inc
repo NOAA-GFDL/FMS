@@ -111,7 +111,7 @@
              if (lon_in(ie) .ge. lon ) then
                 wtw = (lon_in(ie) -lon)/(lon_in(ie)-lon_in(is)+tpi+real(epsln,FMS_HI_KIND_))
              else
-                wtw = (lon_in(ie) -lon+tpi+real(epsln,FMS_HI_KIND_))/(lon_in(ie)-lon_in(is)+tpi+real(epsln,FMS_HI_KIND_))
+                wtw = (lon_in(ie)-lon+tpi+real(epsln,FMS_HI_KIND_))/(lon_in(ie)-lon_in(is)+tpi+real(epsln,FMS_HI_KIND_))
              endif
           endif
           wte = 1.0_kindl - wtw

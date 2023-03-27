@@ -628,24 +628,24 @@ implicit none
     real(HI_TEST_KIND_), parameter :: SMALL = 1.0e-10_lkind
 
     ! set up longitude and latitude of source/destination grid.
-    dlon_src = (lon_src_end-lon_src_beg)/ni_src
-    dlat_src = (lat_src_end-lat_src_beg)/nj_src
-    dlon_dst = (lon_dst_end-lon_dst_beg)/ni_dst
-    dlat_dst = (lat_dst_end-lat_dst_beg)/nj_dst
+    dlon_src = (lon_src_end-lon_src_beg)/real(ni_src, lkind)
+    dlat_src = (lat_src_end-lat_src_beg)/real(nj_src, lkind)
+    dlon_dst = (lon_dst_end-lon_dst_beg)/real(ni_dst, lkind)
+    dlat_dst = (lat_dst_end-lat_dst_beg)/real(nj_dst, lkind)
 
     allocate(lon_in_1D(ni_src+1), lat_in_1D(nj_src+1))
     do i = 1, ni_src+1
-        lon_in_1D(i) = lon_src_beg + (i-1)*dlon_src
+        lon_in_1D(i) = lon_src_beg + real(i-1, lkind)*dlon_src
     end do
     do j = 1, nj_src+1
-        lat_in_1D(j) = lat_src_beg + (j-1)*dlat_src
+        lat_in_1D(j) = lat_src_beg + real(j-1, lkind)*dlat_src
     end do
     allocate(lon_out_1D(isc:iec+1), lat_out_1D(jsc:jec+1))
     do i = isc, iec+1
-        lon_out_1D(i) = lon_dst_beg + (i-1)*dlon_dst
+        lon_out_1D(i) = lon_dst_beg + real(i-1,lkind)*dlon_dst
     end do
     do j = jsc, jec+1
-        lat_out_1D(j) = lat_dst_beg + (j-1)*dlat_dst
+        lat_out_1D(j) = lat_dst_beg + real(j-1,lkind)*dlat_dst
     end do
     ! convert to rads
     lon_in_1D = lon_in_1D * D2R
@@ -662,8 +662,8 @@ implicit none
         lat_out_2D(:,j) = lat_out_1D(j)
     end do
 
-    nlon_in = ni_src;  nlat_in = nj_src
-    nlon_out = iec - isc; nlat_out = jec - jsc
+    nlon_in = real(ni_src, lkind);  nlat_in = real(nj_src, lkind)
+    nlon_out = real(iec - isc, lkind); nlat_out = real(jec - jsc, lkind)
 
     ! allocate data
     allocate(data_src(ni_src, nj_src))
@@ -787,25 +787,25 @@ implicit none
     allocate(data3_dst(isc:iec, jsc:jec), data4_dst(isc:iec, jsc:jec) )
 
     ! set up longitude and latitude of source/destination grid.
-    dlon_src = (lon_src_end-lon_src_beg)/ni_src
-    dlat_src = (lat_src_end-lat_src_beg)/nj_src
-    dlon_dst = (lon_dst_end-lon_dst_beg)/ni_dst
-    dlat_dst = (lat_dst_end-lat_dst_beg)/nj_dst
+    dlon_src = (lon_src_end-lon_src_beg)/real(ni_src, lkind)
+    dlat_src = (lat_src_end-lat_src_beg)/real(nj_src, lkind)
+    dlon_dst = (lon_dst_end-lon_dst_beg)/real(ni_dst, lkind)
+    dlat_dst = (lat_dst_end-lat_dst_beg)/real(nj_dst, lkind)
 
     do i = 1, ni_src+1
-        lon1D_src(i) = lon_src_beg + (i-1)*dlon_src
+        lon1D_src(i) = lon_src_beg + real(i-1, lkind)*dlon_src
     end do
 
     do j = 1, nj_src+1
-        lat1D_src(j) = lat_src_beg + (j-1)*dlat_src
+        lat1D_src(j) = lat_src_beg + real(j-1, lkind)*dlat_src
     end do
 
     do i = isc, iec+1
-        lon1D_dst(i) = lon_dst_beg + (i-1)*dlon_dst
+        lon1D_dst(i) = lon_dst_beg + real(i-1, lkind)*dlon_dst
     end do
 
     do j = jsc, jec+1
-        lat1D_dst(j) = lat_dst_beg + (j-1)*dlat_dst
+        lat1D_dst(j) = lat_dst_beg + real(j-1, lkind)*dlat_dst
     end do
 
     ! scale grid to radians.
@@ -833,7 +833,7 @@ implicit none
     !--- set up the source data
     do j = 1, nj_src
         do i = 1, ni_src
-          data_src(i,j) = i + j*0.001_lkind
+          data_src(i,j) = real(i,lkind) + real(j,lkind)*0.001_lkind
         end do
     end do
 
@@ -971,10 +971,10 @@ implicit none
         real(HI_TEST_KIND_), parameter :: SMALL = 1.0e-10_lkind
 
         ! set up longitude and latitude of source/destination grid.
-        dlon_src = (lon_src_end-lon_src_beg)/ni_src
-        dlat_src = (lat_src_end-lat_src_beg)/nj_src
-        dlon_dst = (lon_dst_end-lon_dst_beg)/ni_dst
-        dlat_dst = (lat_dst_end-lat_dst_beg)/nj_dst
+        dlon_src = (lon_src_end-lon_src_beg)/real(ni_src, lkind)
+        dlat_src = (lat_src_end-lat_src_beg)/real(nj_src, lkind)
+        dlon_dst = (lon_dst_end-lon_dst_beg)/real(ni_dst, lkind)
+        dlat_dst = (lat_dst_end-lat_dst_beg)/real(nj_dst, lkind)
 
         allocate(lon_in_1D(ni_src+1), lat_in_1D(nj_src+1))
         allocate(lon_out_1D(isc:iec+1), lat_out_1D(jsc:jec+1))
@@ -1079,16 +1079,16 @@ implicit none
         allocate(lon_out_2D(ni_dst, nj_dst), lat_out_2D(ni_dst, nj_dst))
         allocate(lon_in_2D(ni_src, nj_src), lat_in_2D(ni_src, nj_src))
         do i = 1, ni_dst
-            lon_out_2D(i,:) = lon_dst_beg + (i-1)*dlon_dst
+            lon_out_2D(i,:) = lon_dst_beg + real(i-1, HI_TEST_KIND_)*dlon_dst
         end do
         do j = 1, nj_dst
-            lat_out_2D(:,j) = lat_dst_beg + (j-1)*dlat_dst
+            lat_out_2D(:,j) = lat_dst_beg + real(j-1, HI_TEST_KIND_)*dlat_dst
         end do
         do i = 1, ni_src
-            lon_in_2D(i,:) = lon_src_beg + (i-1)*dlon_src
+            lon_in_2D(i,:) = lon_src_beg + real(i-1, HI_TEST_KIND_)*dlon_src
         end do
         do j = 1, nj_src
-            lat_in_2D(:,j) = lat_src_beg + (j-1)*dlat_src
+            lat_in_2D(:,j) = lat_src_beg + real(j-1, HI_TEST_KIND_)*dlat_src
         end do
         ! scale to radians
         lat_in_2D = lat_in_2D * D2R
@@ -1133,10 +1133,10 @@ implicit none
         deallocate(lon_out_1D, lat_out_1D)
         allocate(lon_out_1D(ni_dst+1), lat_out_1D(nj_dst+1))
         do i=1, ni_dst
-            lon_out_1d(i) = (i-1) * dlon_dst + lon_dst_beg
+            lon_out_1d(i) = real(i-1, HI_TEST_KIND_) * dlon_dst + lon_dst_beg
         enddo
         do j=1, nj_dst
-            lat_out_1d(j) = (j-1) * dlat_dst + lat_dst_beg
+            lat_out_1d(j) = real(j-1, HI_TEST_KIND_) * dlat_dst + lat_dst_beg
         enddo
         lat_out_1d = lat_out_1D * D2R
         lon_out_1d = lon_out_1D * D2R
