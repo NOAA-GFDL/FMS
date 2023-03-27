@@ -264,20 +264,20 @@ end function get_diag_yaml_obj
 
 !> @brief get the basedate of a diag_yaml type
 !! @return the basedate as an integer array
-pure function get_basedate (diag_yaml) &
+pure function get_basedate (this) &
 result (diag_basedate)
-  class (diagYamlObject_type), intent(in) :: diag_yaml               !< The diag_yaml
-  integer, dimension (basedate_size) :: diag_basedate !< Basedate array result to return
+  class (diagYamlObject_type), intent(in) :: this          !< The diag_yaml
+  integer, dimension (basedate_size)      :: diag_basedate !< Basedate array result to return
 
-  diag_basedate = diag_yaml%diag_basedate
+  diag_basedate = this%diag_basedate
 end function get_basedate
 
 !> @brief Find the number of files listed in the diag yaml
 !! @return the number of files in the diag yaml
-pure integer function size_diag_files(diag_yaml)
-  class (diagYamlObject_type), intent(in) :: diag_yaml      !< The diag_yaml
-  if (diag_yaml%has_diag_files()) then
-    size_diag_files = size(diag_yaml%diag_files)
+pure integer function size_diag_files(this)
+  class (diagYamlObject_type), intent(in) :: this      !< The diag_yaml
+  if (this%has_diag_files()) then
+    size_diag_files = size(this%diag_files)
   else
     size_diag_files = 0
   endif
@@ -285,29 +285,29 @@ end function size_diag_files
 
 !> @brief get the title of a diag_yaml type
 !! @return the title of the diag table as an allocated string
-pure function get_title (diag_yaml) &
+pure function get_title (this) &
   result (diag_title)
-  class (diagYamlObject_type), intent(in) :: diag_yaml      !< The diag_yaml
-  character(len=:),allocatable :: diag_title !< Basedate array result to return
+  class (diagYamlObject_type), intent(in) :: this       !< The diag_yaml
+  character(len=:),allocatable            :: diag_title !< Basedate array result to return
 
-  diag_title = diag_yaml%diag_title
+  diag_title = this%diag_title
 end function get_title
 
 !> @brief get the diag_files of a diag_yaml type
 !! @return the diag_files
-function get_diag_files(diag_yaml) &
+function get_diag_files(this) &
 result(diag_files)
-  class (diagYamlObject_type), intent(in) :: diag_yaml               !< The diag_yaml
-  type(diagYamlFiles_type), allocatable, dimension (:) :: diag_files!< History file info
+  class (diagYamlObject_type), intent(in)              :: this       !< The diag_yaml
+  type(diagYamlFiles_type), allocatable, dimension (:) :: diag_files !< History file info
 
-  diag_files = diag_yaml%diag_files
+  diag_files = this%diag_files
 end function get_diag_files
 
 !> @brief Get the diag_field yaml corresponding to a yaml_id
 !! @return Pointer to the diag_field yaml entry
-function get_diag_field_from_id(diag_yaml, yaml_id) &
+function get_diag_field_from_id(this, yaml_id) &
   result(diag_field)
-    class (diagYamlObject_type), target, intent(in) :: diag_yaml !< The diag_yaml
+    class (diagYamlObject_type), target, intent(in) :: this      !< The diag_yaml
     integer,                             intent(in) :: yaml_id   !< Yaml id
 
     type(diagYamlFilesVar_type), pointer :: diag_field !< Diag fields info
@@ -315,18 +315,18 @@ function get_diag_field_from_id(diag_yaml, yaml_id) &
     if (yaml_id .eq. DIAG_NOT_REGISTERED) call mpp_error(FATAL, &
       "Diag_manager: The yaml id for this field is not is not set")
 
-    diag_field => diag_yaml%diag_fields(variable_list%diag_field_indices(yaml_id))
+    diag_field => this%diag_fields(variable_list%diag_field_indices(yaml_id))
 
 end function get_diag_field_from_id
 
 !> @brief get the diag_fields of a diag_yaml type
 !! @return the diag_fields
-pure function get_diag_fields(diag_yaml) &
+pure function get_diag_fields(this) &
 result(diag_fields)
-  class (diagYamlObject_type), intent(in) :: diag_yaml               !< The diag_yaml
+  class (diagYamlObject_type), intent(in)                 :: this        !< The diag_yaml
   type(diagYamlFilesVar_type), allocatable, dimension (:) :: diag_fields !< Diag fields info
 
-  diag_fields = diag_yaml%diag_fields
+  diag_fields = this%diag_fields
 end function get_diag_fields
 
 !> @brief Uses the yaml_parser_mod to read in the diag_table and fill in the
@@ -946,132 +946,132 @@ end function set_valid_time_units
 !!!!!!! YAML FILE INQUIRIES !!!!!!!
 !> @brief Finds the number of variables in the file_varlist
 !! @return the size of the diag_files_obj%file_varlist array
-integer pure function size_file_varlist (diag_files_obj)
- class (diagYamlFiles_type), intent(in) :: diag_files_obj !< The object being inquiried
- size_file_varlist = size(diag_files_obj%file_varlist)
+integer pure function size_file_varlist (this)
+ class (diagYamlFiles_type), intent(in) :: this !< The object being inquiried
+ size_file_varlist = size(this%file_varlist)
 end function size_file_varlist
 
 !> @brief Inquiry for diag_files_obj%file_fname
 !! @return file_fname of a diag_yaml_file obj
-pure function get_file_fname (diag_files_obj) &
+pure function get_file_fname (this) &
 result (res)
- class (diagYamlFiles_type), intent(in) :: diag_files_obj !< The object being inquiried
+ class (diagYamlFiles_type), intent(in) :: this !< The object being inquiried
  character (len=:), allocatable :: res !< What is returned
-  res = diag_files_obj%file_fname
+  res = this%file_fname
 end function get_file_fname
 !> @brief Inquiry for diag_files_obj%file_frequnit
 !! @return file_frequnit of a diag_yaml_file_obj
-pure function get_file_frequnit (diag_files_obj) &
+pure function get_file_frequnit (this) &
 result (res)
- class (diagYamlFiles_type), intent(in) :: diag_files_obj !< The object being inquiried
+ class (diagYamlFiles_type), intent(in) :: this !< The object being inquiried
  integer :: res !< What is returned
-  res = diag_files_obj%file_frequnit(diag_files_obj%current_new_file_freq_index)
+  res = this%file_frequnit(this%current_new_file_freq_index)
 end function get_file_frequnit
 !> @brief Inquiry for diag_files_obj%file_freq
 !! @return file_freq of a diag_yaml_file_obj
-pure function get_file_freq(diag_files_obj) &
+pure function get_file_freq(this) &
 result (res)
- class (diagYamlFiles_type), intent(in) :: diag_files_obj !< The object being inquiried
+ class (diagYamlFiles_type), intent(in) :: this !< The object being inquiried
  integer :: res !< What is returned
-  res = diag_files_obj%file_freq(diag_files_obj%current_new_file_freq_index)
+  res = this%file_freq(this%current_new_file_freq_index)
 end function get_file_freq
 !> @brief Inquiry for diag_files_obj%file_timeunit
 !! @return file_timeunit of a diag_yaml_file_obj
-pure function get_file_timeunit (diag_files_obj) &
+pure function get_file_timeunit (this) &
 result (res)
- class (diagYamlFiles_type), intent(in) :: diag_files_obj !< The object being inquiried
+ class (diagYamlFiles_type), intent(in) :: this !< The object being inquiried
  integer :: res !< What is returned
-  res = diag_files_obj%file_timeunit
+  res = this%file_timeunit
 end function get_file_timeunit
 !> @brief Inquiry for diag_files_obj%file_unlimdim
 !! @return file_unlimdim of a diag_yaml_file_obj
-pure function get_file_unlimdim(diag_files_obj) &
+pure function get_file_unlimdim(this) &
 result (res)
- class (diagYamlFiles_type), intent(in) :: diag_files_obj !< The object being inquiried
+ class (diagYamlFiles_type), intent(in) :: this !< The object being inquiried
  character (len=:), allocatable :: res !< What is returned
-  res = diag_files_obj%file_unlimdim
+  res = this%file_unlimdim
 end function get_file_unlimdim
 !> @brief Inquiry for diag_files_obj%file_subregion
 !! @return file_sub_region of a diag_yaml_file_obj
-function get_file_sub_region (diag_files_obj) &
+function get_file_sub_region (this) &
 result (res)
- class (diagYamlFiles_type), intent(in) :: diag_files_obj !< The object being inquiried
+ class (diagYamlFiles_type), intent(in) :: this !< The object being inquiried
  type(subRegion_type) :: res !< What is returned
-  res = diag_files_obj%file_sub_region
+  res = this%file_sub_region
 end function get_file_sub_region
 !> @brief Inquiry for diag_files_obj%file_new_file_freq
 !! @return file_new_file_freq of a diag_yaml_file_obj
-pure function get_file_new_file_freq(diag_files_obj) &
+pure function get_file_new_file_freq(this) &
 result (res)
- class (diagYamlFiles_type), intent(in) :: diag_files_obj !< The object being inquiried
+ class (diagYamlFiles_type), intent(in) :: this !< The object being inquiried
  integer :: res !< What is returned
-  res = diag_files_obj%file_new_file_freq(diag_files_obj%current_new_file_freq_index)
+  res = this%file_new_file_freq(this%current_new_file_freq_index)
 end function get_file_new_file_freq
 !> @brief Inquiry for diag_files_obj%file_new_file_freq_units
 !! @return file_new_file_freq_units of a diag_yaml_file_obj
-pure function get_file_new_file_freq_units (diag_files_obj) &
+pure function get_file_new_file_freq_units (this) &
 result (res)
- class (diagYamlFiles_type), intent(in) :: diag_files_obj !< The object being inquiried
+ class (diagYamlFiles_type), intent(in) :: this !< The object being inquiried
  integer :: res !< What is returned
-  res = diag_files_obj%file_new_file_freq_units(diag_files_obj%current_new_file_freq_index)
+  res = this%file_new_file_freq_units(this%current_new_file_freq_index)
 end function get_file_new_file_freq_units
 !> @brief Inquiry for diag_files_obj%file_start_time
 !! @return file_start_time of a diag_yaml_file_obj
-pure function get_file_start_time (diag_files_obj) &
+pure function get_file_start_time (this) &
 result (res)
- class (diagYamlFiles_type), intent(in) :: diag_files_obj !< The object being inquiried
+ class (diagYamlFiles_type), intent(in) :: this !< The object being inquiried
  character (len=:), allocatable :: res !< What is returned
-  res = diag_files_obj%file_start_time
+  res = this%file_start_time
 end function get_file_start_time
 !> @brief Inquiry for diag_files_obj%file_duration
 !! @return file_duration of a diag_yaml_file_obj
-pure function get_file_duration (diag_files_obj) &
+pure function get_file_duration (this) &
 result (res)
- class (diagYamlFiles_type), intent(in) :: diag_files_obj !< The object being inquiried
+ class (diagYamlFiles_type), intent(in) :: this !< The object being inquiried
  integer :: res !< What is returned
-  res = diag_files_obj%file_duration(diag_files_obj%current_new_file_freq_index)
+  res = this%file_duration(this%current_new_file_freq_index)
 end function get_file_duration
 !> @brief Inquiry for diag_files_obj%file_duration_units
 !! @return file_duration_units of a diag_yaml_file_obj
-pure function get_file_duration_units (diag_files_obj) &
+pure function get_file_duration_units (this) &
 result (res)
- class (diagYamlFiles_type), intent(in) :: diag_files_obj !< The object being inquiried
+ class (diagYamlFiles_type), intent(in) :: this !< The object being inquiried
   integer :: res !< What is returned
-  res = diag_files_obj%file_duration_units(diag_files_obj%current_new_file_freq_index)
+  res = this%file_duration_units(this%current_new_file_freq_index)
 end function get_file_duration_units
 !> @brief Inquiry for diag_files_obj%file_varlist
 !! @return file_varlist of a diag_yaml_file_obj
-pure function get_file_varlist (diag_files_obj) &
+pure function get_file_varlist (this) &
 result (res)
- class (diagYamlFiles_type), intent(in) :: diag_files_obj !< The object being inquiried
+ class (diagYamlFiles_type), intent(in) :: this !< The object being inquiried
  character (:), allocatable :: res(:) !< What is returned
-  res = diag_files_obj%file_varlist
+  res = this%file_varlist
 end function get_file_varlist
 !> @brief Inquiry for diag_files_obj%file_global_meta
 !! @return file_global_meta of a diag_yaml_file_obj
-pure function get_file_global_meta (diag_files_obj) &
+pure function get_file_global_meta (this) &
 result (res)
- class (diagYamlFiles_type), intent(in) :: diag_files_obj !< The object being inquiried
+ class (diagYamlFiles_type), intent(in) :: this !< The object being inquiried
  character (:), allocatable :: res(:,:) !< What is returned
-  res = diag_files_obj%file_global_meta
+  res = this%file_global_meta
 end function get_file_global_meta
 !> @brief Get the integer equivalent of the time to use to determine the filename,
 !! if using a wildcard file name (i.e ocn%4yr%2mo%2dy%2hr)
 !! @return the integer equivalent of the time to use to determine the filename
-pure function get_filename_time(diag_files_obj) &
+pure function get_filename_time(this) &
 result (res)
- class (diagYamlFiles_type), intent(in) :: diag_files_obj !< The object being inquiried
+ class (diagYamlFiles_type), intent(in) :: this !< The object being inquiried
  integer :: res !< What is returned
-  res = diag_files_obj%filename_time
+  res = this%filename_time
 end function
 !> @brief Inquiry for whether file_global_meta is allocated
 !! @return Flag indicating if file_global_meta is allocated
-function is_global_meta(diag_files_obj) &
+function is_global_meta(this) &
   result(res)
- class (diagYamlFiles_type), intent(in) :: diag_files_obj !< The object being inquiried
+ class (diagYamlFiles_type), intent(in) :: this !< The object being inquiried
  logical :: res
  res = .false.
- if (allocated(diag_files_obj%file_global_meta)) &
+ if (allocated(this%file_global_meta)) &
    res = .true.
 end function
 
@@ -1089,113 +1089,113 @@ end subroutine
 !!!!!!! YAML VAR INQUIRIES !!!!!!!
 !> @brief Inquiry for diag_yaml_files_var_obj%var_fname
 !! @return var_fname of a diag_yaml_files_var_obj
-pure function get_var_fname (diag_var_obj) &
+pure function get_var_fname (this) &
 result (res)
- class (diagYamlFilesVar_type), intent(in) :: diag_var_obj !< The object being inquiried
+ class (diagYamlFilesVar_type), intent(in) :: this !< The object being inquiried
  character (len=:), allocatable :: res !< What is returned
-  res = diag_var_obj%var_fname
+  res = this%var_fname
 end function get_var_fname
 !> @brief Inquiry for diag_yaml_files_var_obj%var_varname
 !! @return var_varname of a diag_yaml_files_var_obj
-pure function get_var_varname (diag_var_obj) &
+pure function get_var_varname (this) &
 result (res)
- class (diagYamlFilesVar_type), intent(in) :: diag_var_obj !< The object being inquiried
+ class (diagYamlFilesVar_type), intent(in) :: this !< The object being inquiried
  character (len=:), allocatable :: res !< What is returned
-  res = diag_var_obj%var_varname
+  res = this%var_varname
 end function get_var_varname
 !> @brief Inquiry for diag_yaml_files_var_obj%var_reduction
 !! @return var_reduction of a diag_yaml_files_var_obj
-pure function get_var_reduction (diag_var_obj) &
+pure function get_var_reduction (this) &
 result (res)
- class (diagYamlFilesVar_type), intent(in) :: diag_var_obj !< The object being inquiried
+ class (diagYamlFilesVar_type), intent(in) :: this !< The object being inquiried
  integer, allocatable :: res !< What is returned
-  res = diag_var_obj%var_reduction
+  res = this%var_reduction
 end function get_var_reduction
 !> @brief Inquiry for diag_yaml_files_var_obj%var_module
 !! @return var_module of a diag_yaml_files_var_obj
-pure function get_var_module (diag_var_obj) &
+pure function get_var_module (this) &
 result (res)
- class (diagYamlFilesVar_type), intent(in) :: diag_var_obj !< The object being inquiried
+ class (diagYamlFilesVar_type), intent(in) :: this !< The object being inquiried
  character (len=:), allocatable :: res !< What is returned
-  res = diag_var_obj%var_module
+  res = this%var_module
 end function get_var_module
 !> @brief Inquiry for diag_yaml_files_var_obj%var_kind
 !! @return var_kind of a diag_yaml_files_var_obj
-pure function get_var_kind (diag_var_obj) &
+pure function get_var_kind (this) &
 result (res)
- class (diagYamlFilesVar_type), intent(in) :: diag_var_obj !< The object being inquiried
+ class (diagYamlFilesVar_type), intent(in) :: this !< The object being inquiried
  integer, allocatable :: res !< What is returned
-  res = diag_var_obj%var_kind
+  res = this%var_kind
 end function get_var_kind
 !> @brief Inquiry for diag_yaml_files_var_obj%var_outname
 !! @return var_outname of a diag_yaml_files_var_obj
-pure function get_var_outname (diag_var_obj) &
+pure function get_var_outname (this) &
 result (res)
- class (diagYamlFilesVar_type), intent(in) :: diag_var_obj !< The object being inquiried
+ class (diagYamlFilesVar_type), intent(in) :: this !< The object being inquiried
  character (len=:), allocatable :: res !< What is returned
 
- if (diag_var_obj%has_var_outname()) then
-   res = diag_var_obj%var_outname
+ if (this%has_var_outname()) then
+   res = this%var_outname
  else
-   res = diag_var_obj%var_varname !< If outname is not set, the variable name will be used
+   res = this%var_varname !< If outname is not set, the variable name will be used
  endif
 end function get_var_outname
 !> @brief Inquiry for diag_yaml_files_var_obj%var_longname
 !! @return var_longname of a diag_yaml_files_var_obj
-pure function get_var_longname (diag_var_obj) &
+pure function get_var_longname (this) &
 result (res)
- class (diagYamlFilesVar_type), intent(in) :: diag_var_obj !< The object being inquiried
+ class (diagYamlFilesVar_type), intent(in) :: this !< The object being inquiried
  character (len=:), allocatable :: res !< What is returned
-  res = diag_var_obj%var_longname
+  res = this%var_longname
 end function get_var_longname
 !> @brief Inquiry for diag_yaml_files_var_obj%var_units
 !! @return var_units of a diag_yaml_files_var_obj
-pure function get_var_units (diag_var_obj) &
+pure function get_var_units (this) &
 result (res)
- class (diagYamlFilesVar_type), intent(in) :: diag_var_obj !< The object being inquiried
+ class (diagYamlFilesVar_type), intent(in) :: this !< The object being inquiried
  character (len=:), allocatable :: res !< What is returned
-  res = diag_var_obj%var_units
+  res = this%var_units
 end function get_var_units
 !> @brief Inquiry for diag_yaml_files_var_obj%var_zbounds
 !! @return var_zbounds of a diag_yaml_files_var_obj
-pure function get_var_zbounds (diag_var_obj) &
+pure function get_var_zbounds (this) &
 result (res)
- class (diagYamlFilesVar_type), intent(in) :: diag_var_obj !< The object being inquiried
+ class (diagYamlFilesVar_type), intent(in) :: this !< The object being inquiried
  real(kind=r4_kind) :: res(2) !< What is returned
-  res = diag_var_obj%var_zbounds
+  res = this%var_zbounds
 end function get_var_zbounds
 !> @brief Inquiry for diag_yaml_files_var_obj%var_attributes
 !! @return var_attributes of a diag_yaml_files_var_obj
-pure function get_var_attributes(diag_var_obj) &
+pure function get_var_attributes(this) &
 result (res)
- class (diagYamlFilesVar_type), intent(in) :: diag_var_obj !< The object being inquiried
+ class (diagYamlFilesVar_type), intent(in) :: this !< The object being inquiried
  character (len=MAX_STR_LEN), allocatable :: res (:,:) !< What is returned
- res = diag_var_obj%var_attributes
+ res = this%var_attributes
 end function get_var_attributes
 !> @brief Inquiry for diag_yaml_files_var_obj%n_diurnal
 !! @return the number of diurnal samples of a diag_yaml_files_var_obj
-pure function get_n_diurnal(diag_var_obj) &
+pure function get_n_diurnal(this) &
 result (res)
-  class (diagYamlFilesVar_type), intent(in) :: diag_var_obj !< The object being inquiried
+  class (diagYamlFilesVar_type), intent(in) :: this !< The object being inquiried
   integer :: res !< What is returned
-  res = diag_var_obj%n_diurnal
+  res = this%n_diurnal
 end function get_n_diurnal
 !> @brief Inquiry for diag_yaml_files_var_obj%pow_value
 !! @return the pow_value of a diag_yaml_files_var_obj
-pure function get_pow_value(diag_var_obj) &
+pure function get_pow_value(this) &
 result (res)
-  class (diagYamlFilesVar_type), intent(in) :: diag_var_obj !< The object being inquiried
+  class (diagYamlFilesVar_type), intent(in) :: this !< The object being inquiried
   integer :: res !< What is returned
-  res = diag_var_obj%pow_value
+  res = this%pow_value
 end function get_pow_value
 !> @brief Inquiry for whether var_attributes is allocated
 !! @return Flag indicating if var_attributes is allocated
-function is_var_attributes(diag_var_obj) &
+function is_var_attributes(this) &
 result(res)
- class (diagYamlFilesVar_type), intent(in) :: diag_var_obj !< The object being inquiried
+ class (diagYamlFilesVar_type), intent(in) :: this !< The object being inquiried
  logical :: res
  res = .false.
- if (allocated(diag_var_obj%var_attributes)) &
+ if (allocated(this%var_attributes)) &
    res = .true.
 end function is_var_attributes
 
@@ -1213,137 +1213,137 @@ subroutine diag_yaml_files_obj_init(obj)
   obj%current_new_file_freq_index = 1
 end subroutine diag_yaml_files_obj_init
 
-!> @brief Checks if obj%file_fname is allocated
-!! @return true if obj%file_fname is allocated
-pure logical function has_file_fname (obj)
-  class(diagYamlFiles_type), intent(in) :: obj !< diagYamlFiles_type object to initialize
-  has_file_fname = allocated(obj%file_fname)
+!> @brief Checks if diag_file_obj%file_fname is allocated
+!! @return true if diag_file_obj%file_fname is allocated
+pure logical function has_file_fname (this)
+  class(diagYamlFiles_type), intent(in) :: this !< diagYamlFiles_type object to initialize
+  has_file_fname = allocated(this%file_fname)
 end function has_file_fname
-!> @brief Checks if obj%file_frequnit is allocated
-!! @return true if obj%file_frequnit is allocated
-pure logical function has_file_frequnit (obj)
-  class(diagYamlFiles_type), intent(in) :: obj !< diagYamlFiles_type object to initialize
-  has_file_frequnit = obj%file_frequnit(obj%current_new_file_freq_index) .NE. DIAG_NULL
+!> @brief Checks if diag_file_obj%file_frequnit is allocated
+!! @return true if diag_file_obj%file_frequnit is allocated
+pure logical function has_file_frequnit (this)
+  class(diagYamlFiles_type), intent(in) :: this !< diagYamlFiles_type object to initialize
+  has_file_frequnit = this%file_frequnit(this%current_new_file_freq_index) .NE. DIAG_NULL
 end function has_file_frequnit
-!> @brief obj%file_freq is on the stack, so the object always has it
-!! @return true if obj%file_freq is allocated
-pure logical function has_file_freq (obj)
-  class(diagYamlFiles_type), intent(in) :: obj !< diagYamlFiles_type object to initialize
+!> @brief diag_file_obj%file_freq is on the stack, so the object always has it
+!! @return true if diag_file_obj%file_freq is allocated
+pure logical function has_file_freq (this)
+  class(diagYamlFiles_type), intent(in) :: this !< diagYamlFiles_type object to initialize
   has_file_freq = .true.
 end function has_file_freq
-!> @brief Checks if obj%file_timeunit is allocated
-!! @return true if obj%file_timeunit is allocated
-pure logical function has_file_timeunit (obj)
-  class(diagYamlFiles_type), intent(in) :: obj !< diagYamlFiles_type object to initialize
-  has_file_timeunit = obj%file_timeunit .ne. diag_null
+!> @brief Checks if diag_file_obj%file_timeunit is allocated
+!! @return true if diag_file_obj%file_timeunit is allocated
+pure logical function has_file_timeunit (this)
+  class(diagYamlFiles_type), intent(in) :: this !< diagYamlFiles_type object to initialize
+  has_file_timeunit = this%file_timeunit .ne. diag_null
 end function has_file_timeunit
-!> @brief Checks if obj%file_unlimdim is allocated
-!! @return true if obj%file_unlimdim is allocated
-pure logical function has_file_unlimdim (obj)
-  class(diagYamlFiles_type), intent(in) :: obj !< diagYamlFiles_type object to initialize
-  has_file_unlimdim = allocated(obj%file_unlimdim)
+!> @brief Checks if diag_file_obj%file_unlimdim is allocated
+!! @return true if diag_file_obj%file_unlimdim is allocated
+pure logical function has_file_unlimdim (this)
+  class(diagYamlFiles_type), intent(in) :: this !< diagYamlFiles_type object to initialize
+  has_file_unlimdim = allocated(this%file_unlimdim)
 end function has_file_unlimdim
-!> @brief Checks if obj%file_write is on the stack, so this will always be true
+!> @brief Checks if diag_file_obj%file_write is on the stack, so this will always be true
 !! @return true
-pure logical function has_file_write (obj)
-  class(diagYamlFiles_type), intent(in) :: obj !< diagYamlFiles_type object to initialize
+pure logical function has_file_write (this)
+  class(diagYamlFiles_type), intent(in) :: this !< diagYamlFiles_type object to initialize
   has_file_write = .true.
 end function has_file_write
-!> @brief Checks if obj%file_sub_region is being used and has the sub region variables allocated
-!! @return true if obj%file_sub_region sub region variables are allocated
-pure logical function has_file_sub_region (obj)
-  class(diagYamlFiles_type), intent(in) :: obj !< diagYamlFiles_type object to initialize
-  if ( obj%file_sub_region%grid_type .eq. latlon_gridtype .or. obj%file_sub_region%grid_type .eq. index_gridtype) then
+!> @brief Checks if diag_file_obj%file_sub_region is being used and has the sub region variables allocated
+!! @return true if diag_file_obj%file_sub_region sub region variables are allocated
+pure logical function has_file_sub_region (this)
+  class(diagYamlFiles_type), intent(in) :: this !< diagYamlFiles_type object to initialize
+  if ( this%file_sub_region%grid_type .eq. latlon_gridtype .or. this%file_sub_region%grid_type .eq. index_gridtype) then
        has_file_sub_region = .true.
   else
        has_file_sub_region = .false.
   endif
 end function has_file_sub_region
-!> @brief obj%file_new_file_freq is defined on the stack, so this will return true
+!> @brief diag_file_obj%file_new_file_freq is defined on the stack, so this will return true
 !! @return true
-pure logical function has_file_new_file_freq (obj)
-  class(diagYamlFiles_type), intent(in) :: obj !< diagYamlFiles_type object to initialize
-  has_file_new_file_freq = obj%file_new_file_freq(obj%current_new_file_freq_index) .ne. DIAG_NULL
+pure logical function has_file_new_file_freq (this)
+  class(diagYamlFiles_type), intent(in) :: this !< diagYamlFiles_type object to initialize
+  has_file_new_file_freq = this%file_new_file_freq(this%current_new_file_freq_index) .ne. DIAG_NULL
 end function has_file_new_file_freq
-!> @brief Checks if obj%file_new_file_freq_units is allocated
-!! @return true if obj%file_new_file_freq_units is allocated
-pure logical function has_file_new_file_freq_units (obj)
-  class(diagYamlFiles_type), intent(in) :: obj !< diagYamlFiles_type object to initialize
-  has_file_new_file_freq_units = obj%file_new_file_freq_units(obj%current_new_file_freq_index) .ne. diag_null
+!> @brief Checks if diag_file_obj%file_new_file_freq_units is allocated
+!! @return true if diag_file_obj%file_new_file_freq_units is allocated
+pure logical function has_file_new_file_freq_units (this)
+  class(diagYamlFiles_type), intent(in) :: this !< diagYamlFiles_type object to initialize
+  has_file_new_file_freq_units = this%file_new_file_freq_units(this%current_new_file_freq_index) .ne. diag_null
 end function has_file_new_file_freq_units
-!> @brief Checks if obj%file_start_time is allocated
-!! @return true if obj%file_start_time is allocated
-pure logical function has_file_start_time (obj)
-  class(diagYamlFiles_type), intent(in) :: obj !< diagYamlFiles_type object to initialize
-  has_file_start_time = allocated(obj%file_start_time)
+!> @brief Checks if diag_file_obj%file_start_time is allocated
+!! @return true if diag_file_obj%file_start_time is allocated
+pure logical function has_file_start_time (this)
+  class(diagYamlFiles_type), intent(in) :: this !< diagYamlFiles_type object to initialize
+  has_file_start_time = allocated(this%file_start_time)
 end function has_file_start_time
-!> @brief obj%file_duration is allocated on th stack, so this is always true
+!> @brief diag_file_obj%file_duration is allocated on th stack, so this is always true
 !! @return true
-pure logical function has_file_duration (obj)
-  class(diagYamlFiles_type), intent(in) :: obj !< diagYamlFiles_type object to initialize
-  has_file_duration = obj%file_duration(obj%current_new_file_freq_index) .ne. DIAG_NULL
+pure logical function has_file_duration (this)
+  class(diagYamlFiles_type), intent(in) :: this !< diagYamlFiles_type object to initialize
+  has_file_duration = this%file_duration(this%current_new_file_freq_index) .ne. DIAG_NULL
 end function has_file_duration
-!> @brief obj%file_duration_units is on the stack, so this will retrun true
+!> @brief diag_file_obj%file_duration_units is on the stack, so this will retrun true
 !! @return true
-pure logical function has_file_duration_units (obj)
-  class(diagYamlFiles_type), intent(in) :: obj !< diagYamlFiles_type object to initialize
-  has_file_duration_units = obj%file_duration_units(obj%current_new_file_freq_index) .ne. diag_null
+pure logical function has_file_duration_units (this)
+  class(diagYamlFiles_type), intent(in) :: this !< diagYamlFiles_type object to initialize
+  has_file_duration_units = this%file_duration_units(this%current_new_file_freq_index) .ne. diag_null
 end function has_file_duration_units
-!> @brief Checks if obj%file_varlist is allocated
-!! @return true if obj%file_varlist is allocated
-pure logical function has_file_varlist (obj)
-  class(diagYamlFiles_type), intent(in) :: obj !< diagYamlFiles_type object to initialize
-  has_file_varlist = allocated(obj%file_varlist)
+!> @brief Checks if diag_file_obj%file_varlist is allocated
+!! @return true if diag_file_obj%file_varlist is allocated
+pure logical function has_file_varlist (this)
+  class(diagYamlFiles_type), intent(in) :: this !< diagYamlFiles_type object to initialize
+  has_file_varlist = allocated(this%file_varlist)
 end function has_file_varlist
-!> @brief Checks if obj%file_global_meta is allocated
-!! @return true if obj%file_global_meta is allocated
-pure logical function has_file_global_meta (obj)
-  class(diagYamlFiles_type), intent(in) :: obj !< diagYamlFiles_type object to initialize
-  has_file_global_meta = allocated(obj%file_global_meta)
+!> @brief Checks if diag_file_obj%file_global_meta is allocated
+!! @return true if diag_file_obj%file_global_meta is allocated
+pure logical function has_file_global_meta (this)
+  class(diagYamlFiles_type), intent(in) :: this !< diagYamlFiles_type object to initialize
+  has_file_global_meta = allocated(this%file_global_meta)
 end function has_file_global_meta
 
-!> @brief Checks if obj%var_fname is allocated
-!! @return true if obj%var_fname is allocated
-pure logical function has_var_fname (obj)
-  class(diagYamlFilesVar_type), intent(in) :: obj !< diagYamlvar_type object to initialize
-  has_var_fname = allocated(obj%var_fname)
+!> @brief Checks if diag_file_obj%var_fname is allocated
+!! @return true if diag_file_obj%var_fname is allocated
+pure logical function has_var_fname (this)
+  class(diagYamlFilesVar_type), intent(in) :: this !< diagYamlvar_type object to initialize
+  has_var_fname = allocated(this%var_fname)
 end function has_var_fname
-!> @brief Checks if obj%var_varname is allocated
-!! @return true if obj%var_varname is allocated
-pure logical function has_var_varname (obj)
-  class(diagYamlFilesVar_type), intent(in) :: obj !< diagYamlvar_type object to initialize
-  has_var_varname = allocated(obj%var_varname)
+!> @brief Checks if diag_file_obj%var_varname is allocated
+!! @return true if diag_file_obj%var_varname is allocated
+pure logical function has_var_varname (this)
+  class(diagYamlFilesVar_type), intent(in) :: this !< diagYamlvar_type object to initialize
+  has_var_varname = allocated(this%var_varname)
 end function has_var_varname
-!> @brief Checks if obj%var_reduction is allocated
-!! @return true if obj%var_reduction is allocated
-pure logical function has_var_reduction (obj)
-  class(diagYamlFilesVar_type), intent(in) :: obj !< diagYamlvar_type object to initialize
-  has_var_reduction = allocated(obj%var_reduction)
+!> @brief Checks if diag_file_obj%var_reduction is allocated
+!! @return true if diag_file_obj%var_reduction is allocated
+pure logical function has_var_reduction (this)
+  class(diagYamlFilesVar_type), intent(in) :: this !< diagYamlvar_type object to initialize
+  has_var_reduction = allocated(this%var_reduction)
 end function has_var_reduction
-!> @brief Checks if obj%var_module is allocated
-!! @return true if obj%var_module is allocated
-pure logical function has_var_module (obj)
-  class(diagYamlFilesVar_type), intent(in) :: obj !< diagYamlvar_type object to initialize
-  has_var_module = allocated(obj%var_module)
+!> @brief Checks if diag_file_obj%var_module is allocated
+!! @return true if diag_file_obj%var_module is allocated
+pure logical function has_var_module (this)
+  class(diagYamlFilesVar_type), intent(in) :: this !< diagYamlvar_type object to initialize
+  has_var_module = allocated(this%var_module)
 end function has_var_module
-!> @brief Checks if obj%var_kind is allocated
-!! @return true if obj%var_kind is allocated
-pure logical function has_var_kind (obj)
-  class(diagYamlFilesVar_type), intent(in) :: obj !< diagYamlvar_type object to initialize
-  has_var_kind = allocated(obj%var_kind)
+!> @brief Checks if diag_file_obj%var_kind is allocated
+!! @return true if diag_file_obj%var_kind is allocated
+pure logical function has_var_kind (this)
+  class(diagYamlFilesVar_type), intent(in) :: this !< diagYamlvar_type object to initialize
+  has_var_kind = allocated(this%var_kind)
 end function has_var_kind
-!> @brief obj%var_write is on the stack, so this returns true
+!> @brief diag_file_obj%var_write is on the stack, so this returns true
 !! @return true
-pure logical function has_var_write (obj)
-  class(diagYamlFilesVar_type), intent(in) :: obj !< diagYamlvar_type object to initialize
+pure logical function has_var_write (this)
+  class(diagYamlFilesVar_type), intent(in) :: this !< diagYamlvar_type object to initialize
   has_var_write = .true.
 end function has_var_write
-!> @brief Checks if obj%var_outname is allocated
-!! @return true if obj%var_outname is allocated
-pure logical function has_var_outname (obj)
-  class(diagYamlFilesVar_type), intent(in) :: obj !< diagYamlvar_type object to initialize
-  if (allocated(obj%var_outname)) then
-    if (trim(obj%var_outname) .ne. "") then
+!> @brief Checks if diag_file_obj%var_outname is allocated
+!! @return true if diag_file_obj%var_outname is allocated
+pure logical function has_var_outname (this)
+  class(diagYamlFilesVar_type), intent(in) :: this !< diagYamlvar_type object to initialize
+  if (allocated(this%var_outname)) then
+    if (trim(this%var_outname) .ne. "") then
       has_var_outname = .true.
     else
       has_var_outname = .false.
@@ -1352,66 +1352,66 @@ pure logical function has_var_outname (obj)
     has_var_outname = .true.
   endif
 end function has_var_outname
-!> @brief Checks if obj%var_longname is allocated
-!! @return true if obj%var_longname is allocated
-pure logical function has_var_longname (obj)
-  class(diagYamlFilesVar_type), intent(in) :: obj !< diagYamlvar_type object to initialize
-  has_var_longname = allocated(obj%var_longname)
+!> @brief Checks if diag_file_obj%var_longname is allocated
+!! @return true if diag_file_obj%var_longname is allocated
+pure logical function has_var_longname (this)
+  class(diagYamlFilesVar_type), intent(in) :: this !< diagYamlvar_type object to initialize
+  has_var_longname = allocated(this%var_longname)
 end function has_var_longname
-!> @brief Checks if obj%var_units is allocated
-!! @return true if obj%var_units is allocated
-pure logical function has_var_units (obj)
-  class(diagYamlFilesVar_type), intent(in) :: obj !< diagYamlvar_type object to initialize
-  has_var_units = allocated(obj%var_units)
+!> @brief Checks if diag_file_obj%var_units is allocated
+!! @return true if diag_file_obj%var_units is allocated
+pure logical function has_var_units (this)
+  class(diagYamlFilesVar_type), intent(in) :: this !< diagYamlvar_type object to initialize
+  has_var_units = allocated(this%var_units)
 end function has_var_units
-!> @brief Checks if obj%var_zbounds is allocated
-!! @return true if obj%var_zbounds is allocated
-pure logical function has_var_zbounds (obj)
-  class(diagYamlFilesVar_type), intent(in) :: obj !< diagYamlvar_type object to initialize
-  has_var_zbounds = any(obj%var_zbounds .eq. diag_null)
+!> @brief Checks if diag_file_obj%var_zbounds is allocated
+!! @return true if diag_file_obj%var_zbounds is allocated
+pure logical function has_var_zbounds (this)
+  class(diagYamlFilesVar_type), intent(in) :: this !< diagYamlvar_type object to initialize
+  has_var_zbounds = any(this%var_zbounds .ne. diag_null)
 end function has_var_zbounds
-!> @brief Checks if obj%var_attributes is allocated
-!! @return true if obj%var_attributes is allocated
-pure logical function has_var_attributes (obj)
-  class(diagYamlFilesVar_type), intent(in) :: obj !< diagYamlvar_type object to initialize
-  has_var_attributes = allocated(obj%var_attributes)
+!> @brief Checks if diag_file_obj%var_attributes is allocated
+!! @return true if diag_file_obj%var_attributes is allocated
+pure logical function has_var_attributes (this)
+  class(diagYamlFilesVar_type), intent(in) :: this !< diagYamlvar_type object to initialize
+  has_var_attributes = allocated(this%var_attributes)
 end function has_var_attributes
-!> @brief Checks if obj%n_diurnal is set
-!! @return true if obj%n_diurnal is set
-pure logical function has_n_diurnal(obj)
-  class(diagYamlFilesVar_type), intent(in) :: obj !< diagYamlvar_type object to inquire
-  has_n_diurnal = (obj%n_diurnal .ne. 0)
+!> @brief Checks if diag_file_obj%n_diurnal is set
+!! @return true if diag_file_obj%n_diurnal is set
+pure logical function has_n_diurnal(this)
+  class(diagYamlFilesVar_type), intent(in) :: this !< diagYamlvar_type object to inquire
+  has_n_diurnal = (this%n_diurnal .ne. 0)
 end function has_n_diurnal
-!> @brief Checks if obj%pow_value is set
-!! @return true if obj%pow_value is set
-pure logical function has_pow_value(obj)
-  class(diagYamlFilesVar_type), intent(in) :: obj !< diagYamlvar_type object to inquire
-  has_pow_value = (obj%pow_value .ne. 0)
+!> @brief Checks if diag_file_obj%pow_value is set
+!! @return true if diag_file_obj%pow_value is set
+pure logical function has_pow_value(this)
+  class(diagYamlFilesVar_type), intent(in) :: this !< diagYamlvar_type object to inquire
+  has_pow_value = (this%pow_value .ne. 0)
 end function has_pow_value
 
-!> @brief Checks if obj%diag_title is allocated
-!! @return true if obj%diag_title is allocated
-pure logical function has_diag_title (obj)
-  class(diagYamlObject_type), intent(in) :: obj !< diagYamlObject_type object to initialize
-  has_diag_title = allocated(obj%diag_title)
+!> @brief Checks if diag_file_obj%diag_title is allocated
+!! @return true if diag_file_obj%diag_title is allocated
+pure logical function has_diag_title (this)
+  class(diagYamlObject_type), intent(in) :: this !< diagYamlObject_type object to inquire
+  has_diag_title = allocated(this%diag_title)
 end function has_diag_title
-!> @brief obj%diag_basedate is on the stack, so this is always true
+!> @brief diag_file_obj%diag_basedate is on the stack, so this is always true
 !! @return true
-pure logical function has_diag_basedate (obj)
-  class(diagYamlObject_type), intent(in) :: obj !< diagYamlObject_type object to initialize
+pure logical function has_diag_basedate (this)
+  class(diagYamlObject_type), intent(in) :: this !< diagYamlObject_type object to initialize
   has_diag_basedate = .true.
 end function has_diag_basedate
-!> @brief Checks if obj%diag_files is allocated
-!! @return true if obj%diag_files is allocated
-pure logical function has_diag_files (obj)
-  class(diagYamlObject_type), intent(in) :: obj !< diagYamlObject_type object to initialize
-  has_diag_files = allocated(obj%diag_files)
+!> @brief Checks if diag_file_obj%diag_files is allocated
+!! @return true if diag_file_obj%diag_files is allocated
+pure logical function has_diag_files (this)
+  class(diagYamlObject_type), intent(in) :: this !< diagYamlObject_type object to initialize
+  has_diag_files = allocated(this%diag_files)
 end function has_diag_files
-!> @brief Checks if obj%diag_fields is allocated
-!! @return true if obj%diag_fields is allocated
-pure logical function has_diag_fields (obj)
-  class(diagYamlObject_type), intent(in) :: obj !< diagYamlObject_type object to initialize
-  has_diag_fields = allocated(obj%diag_fields)
+!> @brief Checks if diag_file_obj%diag_fields is allocated
+!! @return true if diag_file_obj%diag_fields is allocated
+pure logical function has_diag_fields (this)
+  class(diagYamlObject_type), intent(in) :: this !< diagYamlObject_type object to initialize
+  has_diag_fields = allocated(this%diag_fields)
 end function has_diag_fields
 
 !> @brief Determine the number of unique diag_fields in the diag_yaml_object

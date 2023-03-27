@@ -30,7 +30,7 @@ use   diag_manager_mod, only: diag_manager_init, diag_manager_end, diag_axis_ini
 use   platform_mod,     only: r8_kind, r4_kind
 use   fms_mod,          only: fms_init, fms_end
 use   mpp_mod,          only: FATAL, mpp_error, mpp_npes, mpp_pe, mpp_root_pe, mpp_broadcast, input_nml_file
-use   time_manager_mod, only: time_type, set_calendar_type, set_date, JULIAN, set_time
+use   time_manager_mod, only: time_type, set_calendar_type, set_date, JULIAN, set_time, OPERATOR(+)
 use fms_diag_object_mod,only: dump_diag_obj
 
 implicit none
@@ -46,6 +46,7 @@ type data_type
 end type data_type
 
 type(time_type)                   :: Time             !< Time of the simulation
+type(time_type)                   :: Time_step        !< Time_step of the simulation
 integer, dimension(2)             :: layout           !< Layout to use when setting up the domain
 integer, dimension(2)             :: io_layout        !< io layout to use when setting up the io domain
 integer                           :: nx               !< Number of x points
@@ -193,8 +194,9 @@ call diag_manager_set_time_end(Time)
 call diag_manager_set_time_end(set_date(2,1,2,0,0,0))
 
 call allocate_dummy_data(var_data, domain, Domain_cube_sph, land_domain, nz)
+Time_step = set_time (3600,0) !< 1 hour
 do i=1,23
-  Time = set_date(2,1,1,i,0,0)
+  Time = Time + Time_step
   call set_dummy_data(var_data, i)
   used = send_data(id_var1, var_data%var1, Time)
   used = send_data(id_var2, var_data%var2, Time)
@@ -207,7 +209,7 @@ do i=1,23
   !TODO I don't know about this (scalar field) or how this is suppose to work #WUT
   used = send_data(id_var8, var_data%var6, Time)
 
-  call diag_send_complete(Time)
+  call diag_send_complete(Time_step)
 enddo
 call deallocate_dummy_data(var_data)
 

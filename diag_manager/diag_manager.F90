@@ -1445,7 +1445,7 @@ END FUNCTION register_static_field
             & 'The field is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)
     END SELECT
 
-    send_data_0d = send_data_3d(diag_field_id, field_out, time, err_msg=err_msg)
+    send_data_0d = diag_send_data(diag_field_id, field_out, time, err_msg=err_msg)
   END FUNCTION send_data_0d
 
   !> @return true if send is successful
@@ -1500,18 +1500,18 @@ END FUNCTION register_static_field
 
     IF ( PRESENT(mask) .OR. PRESENT(rmask) ) THEN
        IF ( PRESENT(is_in) .OR. PRESENT(ie_in) ) THEN
-          send_data_1d = send_data_3d(diag_field_id, field_out, time, is_in=is_in, js_in=1, ks_in=1,&
+          send_data_1d = diag_send_data(diag_field_id, field_out, time, is_in=is_in, js_in=1, ks_in=1,&
                & mask=mask_out, ie_in=ie_in, je_in=1, ke_in=1, weight=weight, err_msg=err_msg)
        ELSE
-          send_data_1d = send_data_3d(diag_field_id, field_out, time, mask=mask_out,&
+          send_data_1d = diag_send_data(diag_field_id, field_out, time, mask=mask_out,&
                & weight=weight, err_msg=err_msg)
        END IF
     ELSE
        IF ( PRESENT(is_in) .OR. PRESENT(ie_in) ) THEN
-          send_data_1d = send_data_3d(diag_field_id, field_out, time, is_in=is_in, js_in=1, ks_in=1,&
+          send_data_1d = diag_send_data(diag_field_id, field_out, time, is_in=is_in, js_in=1, ks_in=1,&
                & ie_in=ie_in, je_in=1, ke_in=1, weight=weight, err_msg=err_msg)
        ELSE
-          send_data_1d = send_data_3d(diag_field_id, field_out, time, weight=weight, err_msg=err_msg)
+          send_data_1d = diag_send_data(diag_field_id, field_out, time, weight=weight, err_msg=err_msg)
        END IF
     END IF
   END FUNCTION send_data_1d
@@ -1568,10 +1568,10 @@ END FUNCTION register_static_field
     END IF
 
     IF ( PRESENT(mask) .OR. PRESENT(rmask) ) THEN
-       send_data_2d = send_data_3d(diag_field_id, field_out, time, is_in=is_in, js_in=js_in, ks_in=1, mask=mask_out,&
-            & ie_in=ie_in, je_in=je_in, ke_in=1, weight=weight, err_msg=err_msg)
+       send_data_2d = diag_send_data(diag_field_id, field_out, time, is_in=is_in, js_in=js_in, ks_in=1,&
+            & mask=mask_out, ie_in=ie_in, je_in=je_in, ke_in=1, weight=weight, err_msg=err_msg)
     ELSE
-       send_data_2d = send_data_3d(diag_field_id, field_out, time, is_in=is_in, js_in=js_in, ks_in=1,&
+       send_data_2d = diag_send_data(diag_field_id, field_out, time, is_in=is_in, js_in=js_in, ks_in=1,&
             & ie_in=ie_in, je_in=je_in, ke_in=1, weight=weight, err_msg=err_msg)
     END IF
   END FUNCTION send_data_2d
@@ -1585,7 +1585,34 @@ END FUNCTION register_static_field
     TYPE (time_type), INTENT(in), OPTIONAL :: time
     INTEGER, INTENT(in), OPTIONAL :: is_in, js_in, ks_in,ie_in,je_in, ke_in
     LOGICAL, DIMENSION(:,:,:), INTENT(in), OPTIONAL :: mask
-    CLASS(*), DIMENSION(:,:,:), INTENT(in), OPTIONAL, TARGET :: rmask
+    CLASS(*), DIMENSION(:,:,:), INTENT(in), OPTIONAL :: rmask
+    CHARACTER(len=*), INTENT(out), OPTIONAL :: err_msg
+
+    if (present(mask) .and. present(rmask)) then
+      send_data_3d = diag_send_data(diag_field_id, field, time=time, is_in=is_in, js_in=js_in, ks_in=ks_in, &
+                               mask=mask, rmask=rmask, ie_in=ie_in, je_in=je_in, ke_in=ke_in, weight=weight, &
+                               err_msg=err_msg)
+    elseif (present(rmask)) then
+      send_data_3d = diag_send_data(diag_field_id, field, time=time, is_in=is_in, js_in=js_in, ks_in=ks_in, &
+                               rmask=rmask, ie_in=ie_in, je_in=je_in, ke_in=ke_in, weight=weight, err_msg=err_msg)
+    elseif (present(mask)) then
+      send_data_3d = diag_send_data(diag_field_id, field, time=time, is_in=is_in, js_in=js_in, ks_in=ks_in, &
+                               mask=mask, ie_in=ie_in, je_in=je_in, ke_in=ke_in, weight=weight, err_msg=err_msg)
+    else
+      send_data_3d = diag_send_data(diag_field_id, field, time=time, is_in=is_in, js_in=js_in, ks_in=ks_in, &
+                               ie_in=ie_in, je_in=je_in, ke_in=ke_in, weight=weight, err_msg=err_msg)
+    endif
+  END FUNCTION send_data_3d
+  !> @return true if send is successful
+  LOGICAL FUNCTION diag_send_data(diag_field_id, field, time, is_in, js_in, ks_in, &
+             & mask, rmask, ie_in, je_in, ke_in, weight, err_msg)
+    INTEGER, INTENT(in) :: diag_field_id
+    CLASS(*), DIMENSION(:,:,:), INTENT(in), TARGET, CONTIGUOUS :: field
+    CLASS(*), INTENT(in), OPTIONAL :: weight
+    TYPE (time_type), INTENT(in), OPTIONAL :: time
+    INTEGER, INTENT(in), OPTIONAL :: is_in, js_in, ks_in,ie_in,je_in, ke_in
+    LOGICAL, DIMENSION(:,:,:), INTENT(in), OPTIONAL, contiguous, target :: mask
+    CLASS(*), DIMENSION(:,:,:), INTENT(in), OPTIONAL, target :: rmask
     CHARACTER(len=*), INTENT(out), OPTIONAL :: err_msg
 
     REAL :: weight1
@@ -1633,10 +1660,10 @@ END FUNCTION register_static_field
 
     ! If diag_field_id is < 0 it means that this field is not registered, simply return
     IF ( diag_field_id <= 0 ) THEN
-       send_data_3d = .FALSE.
+       diag_send_data = .FALSE.
        RETURN
     ELSE
-       send_data_3d = .TRUE.
+       diag_send_data = .TRUE.
     END IF
 
     IF ( PRESENT(err_msg) ) err_msg = ''
@@ -1679,7 +1706,7 @@ END FUNCTION register_static_field
     END SELECT
   ! Split old and modern2023 here
   modern_if: iF (use_modern_diag) then
-    send_data_3d = fms_diag_object%fms_diag_accept_data(diag_field_id, field_modern, time, is_in, js_in, ks_in, &
+    diag_send_data = fms_diag_object%fms_diag_accept_data(diag_field_id, field_modern, time, is_in, js_in, ks_in, &
              & mask, rmask, ie_in, je_in, ke_in, weight, err_msg)
     nullify (field_modern)
   elSE ! modern_if
@@ -3363,7 +3390,7 @@ END FUNCTION register_static_field
     DEALLOCATE(field_out)
     DEALLOCATE(oor_mask)
   endIF modern_if
-  END FUNCTION send_data_3d
+  END FUNCTION diag_send_data
 
   !> @return true if send is successful
   LOGICAL FUNCTION send_tile_averaged_data1d ( id, field, area, time, mask )
