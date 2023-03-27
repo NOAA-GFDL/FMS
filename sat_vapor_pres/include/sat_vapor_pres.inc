@@ -31,7 +31,7 @@
  real(kind=FMS_SVP_KIND_), intent(out) :: esat !< saturation vapor pressure
  character(len=*), intent(out), optional :: err_msg
 
- integer :: nbad  !< if temperature is out of range
+ integer :: nbad !< if temperature is out of range COMMENT
  character(len=128) :: err_msg_local
 
    if (.not.module_is_initialized) then
