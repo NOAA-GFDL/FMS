@@ -27,7 +27,27 @@
 # Set common test settings.
 . ../test-lib.sh
 
-test_expect_success "global array functions with mixed precision" '
+cat <<_EOF  > input.nml
+&test_global_arrays_nml
+  test_sum = .true.
+  test_max_min = .false.
+/
+_EOF
+
+test_expect_success "mpp_global_sum with mixed precision" '
     mpirun -n 8 ./test_global_arrays
 '
+
+cat <<_EOF  > input.nml
+&test_global_arrays_nml
+  test_sum = .false.
+  test_max_min = .true.
+/
+_EOF
+
+
+test_expect_success "mpp_global_max/min with mixed precision" '
+    mpirun -n 8 ./test_global_arrays
+'
+
 test_done

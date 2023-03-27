@@ -27,7 +27,7 @@ program test_global_arrays
   use mpp_mod,         only: mpp_init, mpp_exit, mpp_pe, mpp_npes, mpp_root_pe
   use mpp_mod,         only: mpp_set_stack_size, mpp_sync, mpp_sync_self
   use mpp_mod,         only: mpp_error, FATAL, NOTE, mpp_send, mpp_recv, WARNING
-  use mpp_mod,         only: mpp_init_test_init_true_only, mpp_set_root_pe
+  use mpp_mod,         only: mpp_init_test_init_true_only, mpp_set_root_pe, input_nml_file
   use mpp_io_mod,      only: mpp_io_init
   use mpp_domains_mod, only: mpp_domains_init, mpp_define_domains, domain2d
   use mpp_domains_mod, only: mpp_define_layout, mpp_domains_set_stack_size
@@ -35,21 +35,22 @@ program test_global_arrays
   use mpp_domains_mod, only: mpp_global_min, mpp_get_data_domain,mpp_get_compute_domain
   use mpp_domains_mod, only: mpp_domains_exit, mpp_update_domains
   use mpp_domains_mod, only: mpp_get_domain_shift, mpp_global_sum
+  use fms_mod,         only: check_nml_error
 
   implicit none
 
   integer, parameter            :: length=64
-  integer                       :: id, pe, npes, root, i, j, icount, jcount
-  integer(i4_kind)              :: maxI4, minI4, ierr, sumI4, sumI4_5d
-  integer(i8_kind)              :: maxI8, minI8, sumI8, sumI8_5d
-  integer(i4_kind), allocatable :: dataI4(:,:), dataI4_5d(:,:,:,:,:), dataI4_shuf(:,:)
-  integer(i8_kind), allocatable :: dataI8(:,:), dataI8_5d(:,:,:,:,:), dataI8_shuf(:,:)
-  real(r4_kind), allocatable    :: dataR4(:,:), dataR4_5d(:,:,:,:,:), dataR4_shuf(:,:)
-  real(r8_kind), allocatable    :: dataR8(:,:), dataR8_5d(:,:,:,:,:), dataR8_shuf(:,:)
+  integer                       :: id, pe, npes, root, i, j, icount, jcount, io
+  integer(i4_kind)              :: maxI4, minI4, ierr, sumI4, sumI4_5d, sumI4_shuf
+  integer(i8_kind)              :: maxI8, minI8, sumI8, sumI8_5d, sumI8_shuf
+  integer(i4_kind), allocatable :: dataI4(:,:), dataI4_shuf(:,:), recv_data_i4(:,:)
+  integer(i8_kind), allocatable :: dataI8(:,:), dataI8_shuf(:,:), recv_data_i8(:,:)
+  real(r4_kind), allocatable    :: dataR4(:,:), dataR4_shuf(:,:), recv_data_r4(:,:)
+  real(r8_kind), allocatable    :: dataR8(:,:), dataR8_shuf(:,:), recv_data_r8(:,:)
   real, allocatable             :: rands(:)
   type(domain2D)                :: domain
-  real(r8_kind)                 :: rcoef, maxR8, minR8, sumR8, sumR8_5d
-  real(r4_kind)                 :: maxR4, minR4, sumR4, sumR4_5d
+  real(r8_kind)                 :: rcoef, maxR8, minR8, sumR8, sumR8_shuf
+  real(r4_kind)                 :: maxR4, minR4, sumR4, sumR4_shuf
   integer                       :: isc, iec, jsc, jec
   integer                       :: isd, ied, jsd, jed
   character(len=32)             :: strTmp1, strTmp2
@@ -57,23 +58,33 @@ program test_global_arrays
   integer(i8_kind), parameter   :: randmaxI8 = 4096
   real(r8_kind), parameter      :: tol4 = 1e-4, tol8 = 1e-6!> tolerance for real comparisons
 
+  ! namelist variables - just logicals to enable individual tests
+  logical :: test_sum, test_max_min
+  namelist / test_global_arrays_nml / test_sum, test_max_min
+  
+
   call mpp_init(mpp_init_test_init_true_only)
   call mpp_io_init()
   call mpp_domains_init()
   call mpp_set_stack_size(3145746)
   call mpp_domains_set_stack_size(3145746)
+
+  read(input_nml_file, nml=test_global_arrays_nml, iostat=io)
+  ierr = check_nml_error(io, 'test_global_arrays_nml')
   pe = mpp_pe()
   npes = mpp_npes()
   call mpp_set_root_pe(0)
   root = mpp_root_pe()
   !> define domains and allocate
-  call mpp_define_domains( (/1,length,1,length/), (/4,2/), domain, xhalo=0)
+  call mpp_define_domains( (/1,length,1,length/), (/1,8/), domain, xhalo=0)
   call mpp_get_compute_domain(domain, jsc, jec, isc, iec)
   call mpp_get_data_domain(domain, jsd, jed, isd, ied)
   allocate(dataI4(jsd:jed, isd:ied),dataI8(jsd:jed, isd:ied), rands(length*length))
   allocate(dataR4(jsd:jed, isd:ied), dataR8(jsd:jed, isd:ied))
   allocate(dataR4_shuf(jsd:jed, isd:ied), dataR8_shuf(jsd:jed, isd:ied))
   allocate(dataI4_shuf(jsd:jed, isd:ied), dataI8_shuf(jsd:jed, isd:ied))
+  allocate(recv_data_r4(jsd:jed, isd:ied), recv_data_r8(jsd:jed, isd:ied))
+  allocate(recv_data_i4(jsd:jed, isd:ied), recv_data_i8(jsd:jed, isd:ied))
 
   dataI4 = 0; dataI8 = 0; dataR4 = 0.0; dataR8 = 0.0
   dataR8_shuf=0.0; dataR4_shuf=0.0;dataI8_shuf=0; dataI4_shuf=0
@@ -91,6 +102,24 @@ program test_global_arrays
     end do
   end do
   call mpp_sync()
+
+  if( test_max_min) then
+    call test_mpp_global_maxmin()
+  else if( test_sum) then
+    call test_mpp_global_sum()
+  else
+    call mpp_error(FATAL, "test_global_arrays: either test_sum or test_max_min must be true in input.nml")
+  endif
+  call mpp_sync()
+
+  deallocate(dataI4, dataI8, dataR4, dataR8, rands)
+  deallocate(dataR4_shuf, dataR8_shuf,dataI4_shuf, dataI8_shuf)
+  call mpp_domains_exit()
+  call MPI_FINALIZE(ierr)
+
+  contains
+
+subroutine test_mpp_global_maxmin()
 
   !> test global max and mins from each kind
   call mpp_error(NOTE, "----------Testing 32-bit int mpp_global_max and mpp_global_min----------")
@@ -134,6 +163,9 @@ program test_global_arrays
                                NEW_LINE('a')//"Max: "//strTmp1//" Min: "//strTmp2 )
   endif
 
+end subroutine test_mpp_global_maxmin
+
+subroutine test_mpp_global_sum
   !> test global sums for each kind
   call mpp_error(NOTE, "----------Testing 32-bit real mpp_global_sum----------")
   call mpp_update_domains(dataR4, domain)
@@ -168,97 +200,92 @@ program test_global_arrays
                                NEW_LINE('a')//"Sum: "// strTmp1 )
   endif
 
-  !> shuffle real data ordering and copy into array with 5 ranks
-  dataR4_shuf = dataR4
-  dataR8_shuf = dataR8
-  call shuffleDataR4(dataR4_shuf)
-  call shuffleDataR8(dataR8_shuf)
-  allocate(dataR4_5d(jsd:jed, isd:ied, 1, 1, 1), dataR8_5d(jsd:jed,isd:ied, 1, 1, 1))
-
-  dataR4_5d = 0.0
-  dataR8_5d = 0.0
-
-  do i=isc,iec
-    do j=jsc,jec
-       dataR4_5d(j, i, 1, 1, 1) = dataR4_shuf(j, i)
-       dataR8_5d(j, i, 1, 1, 1) = dataR8_shuf(j, i)
-    end do
-  end do
+  !> moves the data into different pe's and checks the sum still matches 
+  dataR4_shuf = dataR4 ; dataR8_shuf = dataR8
+  dataI4_shuf = dataI4 ; dataI8_shuf = dataI8
+  !! swap data with neighboring pe
+  if(modulo(pe, 2) .eq. 0) then
+    print *, pe, pe+1, SUM(dataR8_shuf)
+    call mpp_send(dataR4_shuf, SIZE(dataR4_shuf), pe+1)
+    call mpp_recv(recv_data_r4, SIZE(dataR4_shuf), pe+1)
+    call mpp_sync()
+    call mpp_send(dataR8_shuf, SIZE(dataR8_shuf), pe+1)
+    call mpp_recv(recv_data_r8, SIZE(dataR8_shuf), pe+1)
+    call mpp_sync()
+    call mpp_send(dataI4_shuf, SIZE(dataI4_shuf), pe+1)
+    call mpp_recv(recv_data_I4, SIZE(dataI4_shuf), pe+1)
+    call mpp_sync()
+    call mpp_send(dataI8_shuf, SIZE(dataI8_shuf), pe+1)
+    call mpp_recv(recv_data_I8, SIZE(dataI8_shuf), pe+1)
+  else
+    print *, pe, pe-1, SUM(dataR8_shuf)
+    call mpp_recv(recv_data_r4, SIZE(dataR4_shuf), pe-1)
+    call mpp_send(dataR4_shuf, SIZE(dataR4_shuf), pe-1)
+    call mpp_sync()
+    call mpp_recv(recv_data_r8, SIZE(dataR8_shuf), pe-1)
+    call mpp_send(dataR8_shuf, SIZE(dataR8_shuf), pe-1)
+    call mpp_sync()
+    call mpp_send(dataI4_shuf, SIZE(dataI4_shuf), pe-1)
+    call mpp_recv(recv_data_I4, SIZE(dataI4_shuf), pe-1)
+    call mpp_sync()
+    call mpp_send(dataI8_shuf, SIZE(dataI8_shuf), pe-1)
+    call mpp_recv(recv_data_I8, SIZE(dataI8_shuf), pe-1)
+  endif
   call mpp_sync()
+  dataR4_shuf = recv_data_r4
+  dataR8_shuf = recv_data_r8
 
-  call mpp_error(NOTE, "----------Testing 32-bit real mpp_global_sum with 5 ranks and reordering----------")
-  call mpp_update_domains(dataR4_5d, domain)
-  sumR4_5d = mpp_global_sum(domain, dataR4_5d)
+  call mpp_error(NOTE, "----------Testing 32-bit real mpp_global_sum with reordering----------")
+  call mpp_update_domains(dataR4_shuf, domain)
+  sumR4_shuf = mpp_global_sum(domain, dataR4_shuf)
   ! check that shuffled array results are approximately the same as the original array
-  if(abs(sumR4-sumR4_5d) .gt. 1E-4 ) then
+  if(abs(sumR4-sumR4_shuf) .gt. 1E-4 ) then
     strTmp1 = ""; strTmp2=""
-    write(strTmp1,*) sumR4_5d
+    write(strTmp1,*) sumR4_shuf
     write(strTmp2,*) sumR4
     call mpp_error(FATAL,"test_global_arrays: invalid 32-bit real answer after reordering"// &
                    NEW_LINE('a')//"Sum: "// strTmp1// " ne "//strTmp2)
   endif
 
-  call mpp_error(NOTE, "----------Testing 64-bit real mpp_global_sum with 5 ranks and reordering----------")
-  call mpp_update_domains(dataR8_5d, domain)
-  sumR8_5d = mpp_global_sum(domain, dataR8_5d)
+  call mpp_sync()
+  call mpp_error(NOTE, "----------Testing 64-bit real mpp_global_sum with reordering----------")
+  call mpp_update_domains(dataR8_shuf, domain)
+  sumR8_shuf = mpp_global_sum(domain, dataR8_shuf)
   ! check that shuffled array results are approximately the same as the original array
-  if(abs(sumR8-sumR8_5d) .gt. 1E-7) then
+  if(abs(sumR8-sumR8_shuf) .gt. 1E-7) then
     strTmp1 = ""; strTmp2=""
-    write(strTmp1,*) sumR8_5d
+    write(strTmp1,*) sumR8_shuf
     write(strTmp2,*) sumR8
     call mpp_error(FATAL,"test_global_arrays: invalid 64-bit real answer after reordering"// &
                    NEW_LINE('a')//"Sum: "// strTmp1// " ne "//strTmp2)
   endif
 
-  !> shuffle integer data ordering and copy into array with 5 ranks
-  dataI4_shuf = dataI4
-  dataI8_shuf = dataI8
-  call shuffleDataI4(dataI4_shuf)
-  call shuffleDataI8(dataI8_shuf)
-  allocate(dataI4_5d(jsd:jed, isd:ied, 1, 1, 1), dataI8_5d(jsd:jed,isd:ied, 1, 1, 1))
-
-  dataI4_5d = 0
-  dataI8_5d = 0
-  do i=isc,iec
-    do j=jsc,jec
-      dataI4_5d(j, i, 1, 1, 1) = dataI4_shuf(j, i)
-      dataI8_5d(j, i, 1, 1, 1) = dataI8_shuf(j, i)
-    end do
-  end do
-  call mpp_sync()
-
-  call mpp_error(NOTE, "----------Testing 32-bit integer mpp_global_sum with 5 ranks and reordering----------")
-  call mpp_update_domains(dataI4_5d, domain)
-  sumI4_5d = mpp_global_sum(domain, dataI4_5d)
+  call mpp_error(NOTE, "----------Testing 32-bit integer mpp_global_sum with reordering----------")
+  call mpp_update_domains(dataI4_shuf, domain)
+  sumI4_shuf = mpp_global_sum(domain, dataI4_shuf)
 
   ! check that shuffled array results are approximately the same as the original array
-  if(sumI4 .ne. sumI4_5d) then
+  if(sumI4 .ne. sumI4_shuf) then
     strTmp1 = ""; strTmp2=""
-    write(strTmp1,*) sumI4_5d
+    write(strTmp1,*) sumI4_shuf
     write(strTmp2,*) sumI4
     call mpp_error(FATAL,"test_global_arrays: invalid 32-bit integer answer after reordering"// &
                    NEW_LINE('a')//"Sum: "// strTmp1// " ne "//strTmp2)
   endif
 
-  call mpp_error(NOTE, "----------Testing 64-bit integer mpp_global_sum with 5 ranks and reordering----------")
-  call mpp_update_domains(dataI8_5d, domain)
-  sumI8_5d = mpp_global_sum(domain, dataI8_5d)
+  call mpp_error(NOTE, "----------Testing 64-bit integer mpp_global_sum with reordering----------")
+  call mpp_update_domains(dataI8_shuf, domain)
+  sumI8_shuf = mpp_global_sum(domain, dataI8_shuf)
 
   ! check that shuffled array results are approximately the same as the original array
-  if(sumI8 .ne. sumI8_5d) then
+  if(sumI8 .ne. sumI8_shuf) then
     strTmp1 = ""; strTmp2=""
-    write(strTmp1,*) sumI8_5d
+    write(strTmp1,*) sumI8_shuf
     write(strTmp2,*) sumI8
     call mpp_error(FATAL,"test_global_arrays: invalid 64-bit integer answer after reordering"// &
                    NEW_LINE('a')//"Sum: "// strTmp1// " ne "//strTmp2)
   endif
-
-  deallocate(dataI4, dataI8, dataR4, dataR8, rands, dataI4_5d, dataI8_5d, dataR4_5d, dataR8_5d)
-  deallocate(dataR4_shuf, dataR8_shuf,dataI4_shuf, dataI8_shuf)
-  call mpp_domains_exit()
-  call MPI_FINALIZE(ierr)
-
-  contains
+end subroutine test_mpp_global_sum
 
 !> true if all pes return the same result and have a lower/higher local max/min
 function checkResultInt4(res)
@@ -498,193 +525,5 @@ function checkSumInt8(gsum)
   call mpp_sync()
   deallocate(recv)
 end function checkSumInt8
-
-!> aggregates data on root and randomizes ordering, then sends partitions back to pes
-subroutine shuffleDataI4(dataI4)
-  integer(i4_kind), intent(INOUT) :: dataI4(:,:)
-  integer(i4_kind), allocatable :: trans(:,:), shuffled(:),tmp
-  integer :: rind
-
-  allocate(trans(SIZE(dataI4,1), SIZE(dataI4,2)))
-  allocate(shuffled(1:length*length))
-
-  if( pe.eq.root) then
-    !> get array partitions and aggregate into 1d
-    shuffled(1:SIZE(dataI4)) = RESHAPE(dataI4, (/SIZE(dataI4)/))
-    do i=1, npes-1
-      call mpp_recv(trans, SIZE(dataI4) , i)
-      shuffled( SIZE(trans)*i+1 : SIZE(trans)*(i+1)) = RESHAPE(trans, (/SIZE(trans)/))
-    end do
-
-    !> shuffle order
-    do i=1, length*length
-      rind = (rands(i) * length * length)
-      if( rind .eq. 0) then
-        rind = 1
-      endif
-      tmp = shuffled(i)
-      shuffled(i) = shuffled(rind)
-      shuffled(rind) = tmp
-    end do
-    trans = 0
-
-    !> send back to pes
-    do i=0, npes-1
-      trans = RESHAPE(shuffled(SIZE(trans)*i + 1:SIZE(trans)*(i+1)), &
-                         (/SIZE(trans,1), SIZE(trans,2) /) )
-      if(i.ne.root) then
-        call mpp_send(trans, SIZE(trans), i)
-      else
-        dataI4 = trans
-      endif
-    end do
-  else
-    call mpp_send(dataI4, SIZE(dataI4), root)
-    call mpp_recv(trans, SIZE(dataI4), root)
-    dataI4 = trans
-  endif
-  deallocate(trans, shuffled)
-end subroutine shuffleDataI4
-
-!> aggregates data on root and randomizes ordering, then sends partitions back to pes
-subroutine shuffleDataI8(dataI8)
-  integer(i8_kind), intent(INOUT) :: dataI8(:,:)
-  integer(i8_kind), allocatable :: trans(:,:), shuffled(:), tmp
-  integer :: rind
-
-  allocate(trans(SIZE(dataI8,1), SIZE(dataI8,2)))
-  allocate(shuffled(1:length*length))
-
-  if( pe.eq.root) then
-    !> get array partitions and aggregate into 1d
-    shuffled(1:SIZE(dataI8)) = RESHAPE(dataI8, (/SIZE(dataI8)/))
-    do i=1, npes-1
-      call mpp_recv(trans, SIZE(dataI8) , i)
-      shuffled( SIZE(trans)*i+1 : SIZE(trans)*(i+1)) = RESHAPE(trans, (/SIZE(trans)/))
-    end do
-
-    !> shuffle order
-    do i=1, length*length
-      rind = (rands(i) * length * length)
-      if( rind .eq. 0) then
-        rind = 1
-      endif
-      tmp = shuffled(i)
-      shuffled(i) = shuffled(rind)
-      shuffled(rind) = tmp
-    end do
-    trans = 0
-
-    !> send back to pes
-    do i=0, npes-1
-      trans = RESHAPE(shuffled(SIZE(trans)*i + 1:SIZE(trans)*(i+1)), &
-                         (/SIZE(trans,1), SIZE(trans,2) /) )
-      if(i.ne.root) then
-        call mpp_send(trans, SIZE(trans), i)
-      else
-        dataI8 = trans
-      endif
-    end do
-  else
-    call mpp_send(dataI8, SIZE(dataI8), root)
-    call mpp_recv(trans, SIZE(dataI8), root)
-    dataI8 = trans
-  endif
-  deallocate(trans, shuffled)
-end subroutine shuffleDataI8
-
-!> aggregates 32-bit real data on root and randomizes ordering, then sends partitions back to pes
-subroutine shuffleDataR4(dataR4)
-  real(r4_kind), intent(INOUT) :: dataR4(:,:)
-  real(r4_kind), allocatable :: trans(:,:), shuffled(:), tmp
-  integer :: rind
-
-  allocate(trans(SIZE(dataR4,1), SIZE(dataR4,2)))
-  allocate(shuffled(1:length*length))
-
-  if( pe.eq.root) then
-    !> get array partitions and aggregate into 1d
-    shuffled(1:SIZE(dataR4)) = RESHAPE(dataR4, (/SIZE(dataR4)/))
-    do i=1, npes-1
-      call mpp_recv(trans, SIZE(dataR4) , i)
-      shuffled( SIZE(trans)*i+1 : SIZE(trans)*(i+1)) = RESHAPE(trans, (/SIZE(trans)/))
-    end do
-
-    !> shuffle order
-    do i=1, length*length
-      rind = (rands(i) * length * length)
-      if( rind .eq. 0) then
-        rind = 1
-      endif
-      tmp = shuffled(i)
-      shuffled(i) = shuffled(rind)
-      shuffled(rind) = tmp
-    end do
-    trans = 0
-
-    !> send back to pes
-    do i=0, npes-1
-      trans = RESHAPE(shuffled(SIZE(trans)*i + 1:SIZE(trans)*(i+1)), &
-                         (/SIZE(trans,1), SIZE(trans,2) /) )
-      if(i.ne.root) then
-        call mpp_send(trans, SIZE(trans), i)
-      else
-        dataR4 = trans
-      endif
-    end do
-  else
-    call mpp_send(dataR4, SIZE(dataR4), root)
-    call mpp_recv(trans, SIZE(dataR4), root)
-    dataR4 = trans
-  endif
-  deallocate(trans, shuffled)
-end subroutine shuffleDataR4
-
-!> aggregates 64-bit real data on root and randomizes ordering, then sends partitions back to pes
-subroutine shuffleDataR8(dataR8)
-  real(r8_kind), intent(INOUT) :: dataR8(:,:)
-  real(r8_kind), allocatable :: trans(:,:), shuffled(:), tmp
-  integer :: rind
-
-  allocate(trans(SIZE(dataR8,1), SIZE(dataR8,2)))
-  allocate(shuffled(1:length*length))
-
-  if( pe.eq.root) then
-    !> get array partitions and aggregate into 1d
-    shuffled(1:SIZE(dataR8)) = RESHAPE(dataR8, (/SIZE(dataR8)/))
-    do i=1, npes-1
-      call mpp_recv(trans, SIZE(dataR8) , i)
-      shuffled( SIZE(trans)*i+1 : SIZE(trans)*(i+1)) = RESHAPE(trans, (/SIZE(trans)/))
-    end do
-
-    !> shuffle order
-    do i=1, length*length
-      rind = (rands(i) * length * length)
-      if( rind .eq. 0) then
-        rind = 1
-      endif
-      tmp = shuffled(i)
-      shuffled(i) = shuffled(rind)
-      shuffled(rind) = tmp
-    end do
-    trans = 0
-
-    !> send back to pes
-    do i=0, npes-1
-      trans = RESHAPE(shuffled(SIZE(trans)*i + 1:SIZE(trans)*(i+1)), &
-                         (/SIZE(trans,1), SIZE(trans,2) /) )
-      if(i.ne.root) then
-        call mpp_send(trans, SIZE(trans), i)
-      else
-        dataR8 = trans
-      endif
-    end do
-  else
-    call mpp_send(dataR8, SIZE(dataR8), root)
-    call mpp_recv(trans, SIZE(dataR8), root)
-    dataR8 = trans
-  endif
-  deallocate(trans, shuffled)
-end subroutine shuffleDataR8
 
 end program test_global_arrays
