@@ -74,7 +74,7 @@ subroutine allocate_array_char_2d(buf, sizes, initialize)
       do i = 1, sizes(1)
         do c = 1, len(buf(i,j))
           buf(i,j)(c:c) = " "
-	enddo
+        enddo
       enddo
     enddo
   endif
@@ -104,9 +104,9 @@ subroutine allocate_array_char_3d(buf, sizes, initialize)
     do k = 1, sizes(3)
       do j = 1, sizes(2)
         do i = 1, sizes(1)
-	  do c = 1, len(buf(i,j,k))
+          do c = 1, len(buf(i,j,k))
             buf(i,j,k)(c:c) = " "
-	  enddo
+          enddo
         enddo
       enddo
     enddo
@@ -138,9 +138,9 @@ subroutine allocate_array_char_4d(buf, sizes, initialize)
       do k = 1, sizes(3)
         do j = 1, sizes(2)
           do i = 1, sizes(1)
-	    do c = 1, len(buf(i,j,k,l))
+            do c = 1, len(buf(i,j,k,l))
               buf(i,j,k,l)(c:c) = " "
-	    enddo
+            enddo
           enddo
         enddo
       enddo
@@ -173,7 +173,7 @@ subroutine allocate_array_char_5d(buf, sizes, initialize)
         do k = 1, sizes(3)
           do j = 1, sizes(2)
             do i = 1, sizes(1)
-	      do c = 1, len(buf(i,j,k,l,m))
+              do c = 1, len(buf(i,j,k,l,m))
                 buf(i,j,k,l,m)(c:c) = " "
               enddo
             enddo
@@ -210,9 +210,9 @@ subroutine allocate_array_char_6d(buf, sizes, initialize)
           do k = 1, sizes(3)
             do j = 1, sizes(2)
               do i = 1, sizes(1)
-	        do c = 1, len(buf(i,j,k,l,m,n))
+                do c = 1, len(buf(i,j,k,l,m,n))
                   buf(i,j,k,l,m,n)(c:c) = " "
-		enddo
+                enddo
               enddo
             enddo
           enddo
