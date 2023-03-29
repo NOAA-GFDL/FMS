@@ -1347,7 +1347,7 @@
  real(kind=FMS_SVP_KIND_), intent(in),  optional :: q(:)      !< vapor relative humidity
  real(kind=FMS_SVP_KIND_), intent(in),  optional :: hc        !< relative humidity
  real(kind=FMS_SVP_KIND_), intent(out), optional :: dqsdT(:)  !< d(qsat)/dT
-  real(kind=FMS_SVP_KIND_),intent(out), optional :: esat(:) !< saturation vapor pressure
+ real(kind=FMS_SVP_KIND_),intent(out), optional :: esat(:) !< saturation vapor pressure
  character(len=*), intent(out), optional :: err_msg
  logical,intent(in),            optional :: es_over_liq
  logical,intent(in),            optional :: es_over_liq_and_ice
@@ -1819,7 +1819,7 @@
 
    nbad = 0
    do i = 1, size(temp,1)
-      ind = int( dtinvll*(temp(i)-tminll + tepsll) )
+     ind = int( dtinvll*(temp(i)-tminll + tepsll) )
      if (ind < 0 .or. ind > nlim) nbad = nbad+1
    enddo
 
@@ -1942,7 +1942,7 @@
  do i=1,size(temp,1)
    ind = int( dtinvll*(temp(i,j)-tminll+tepsll) )
    if (ind < 0 .or. ind > nlim) then
-      write(unit,'(a,e10.3,a,i4,a,i4,a,i6)') 'Bad temperature=',temp(i,j),'  at i=',i,' j=',j,' pe=',mpp_pe()
+     write(unit,'(a,e10.3,a,i4,a,i4,a,i6)') 'Bad temperature=',temp(i,j),'  at i=',i,' j=',j,' pe=',mpp_pe()
    endif
  enddo
  enddo
