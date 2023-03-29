@@ -52,6 +52,7 @@ integer, parameter :: ESRES=10  !> taken from sat_vapor_pres_mod
 real(r8_kind), dimension(:), allocatable :: TABLE, DTABLE, TABLE2, DTABLE2, TABLE3, DTABLE3
 integer :: io, N
 
+integer, parameter :: nml_unit_var=100
 character(100) :: nml_file
 logical :: test1, test2, test3, test4, test5
 NAMELIST / test_sat_vapor_pres_nml/ test1, test2, test3, test4, test5
@@ -64,9 +65,9 @@ call sat_vapor_pres_init()  !> compute tables to be used for testing
 call compute_tables()       !> compute tables to generate answers/reference values
 
 nml_file='test_sat_vapor_pres.nml'
-open(unit=100, file=trim(nml_file), action='read')
-read(unit=100, nml=test_sat_vapor_pres_nml,iostat=io)
-close(100)
+open(unit=nml_unit_var, file=trim(nml_file), action='read')
+read(unit=nml_unit_var, nml=test_sat_vapor_pres_nml,iostat=io)
+close(nml_unit_var)
 
 !CALL TESTS
 if(test1) then
