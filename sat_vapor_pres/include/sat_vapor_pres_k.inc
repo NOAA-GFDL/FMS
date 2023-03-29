@@ -22,13 +22,6 @@
 
 !! table lookups and calculations
 
-
- subroutine SAT_VAPOR_PRES_INIT_K_(table_size, tcmin, tcmax, TFREEZE, HLV, RVGAS, ES0, err_msg, &
-                                  use_exact_qs_input, do_simple,  &
-                                  construct_table_wrt_liq, &
-                                  construct_table_wrt_liq_and_ice, &
-                                  teps, tmin, dtinv)
-
 !> This routine has been generalized to return tables for any temperature range and resolution
 !! The TABLEs for saturation vapor pressure are computed  with r8_kind precision since
 !! these TABLES are module level variables that are decared as r8_kind.
@@ -42,6 +35,11 @@
 !! to r8_kind precision.  All local variables used for computation are in r8_kind precision
 !! Thus the TABLEs are constructed as accurately as possible and are promoted down to r4_kind when users
 !! pass in r4_kind arguments to the LOOKUP* subroutines.
+ subroutine SAT_VAPOR_PRES_INIT_K_(table_size, tcmin, tcmax, TFREEZE, HLV, RVGAS, ES0, err_msg, &
+                                  use_exact_qs_input, do_simple,  &
+                                  construct_table_wrt_liq, &
+                                  construct_table_wrt_liq_and_ice, &
+                                  teps, tmin, dtinv)
 
  integer, intent(in) :: table_size
  real(kind=FMS_SVP_KIND_), intent(in) :: tcmin   !< TABLE(1) = sat vapor pressure at temperature tcmin (deg C)
