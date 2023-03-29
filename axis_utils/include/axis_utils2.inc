@@ -123,7 +123,7 @@
          edge_data(i) = r_var(i-1) + 0.5_lkind*(r_var(i) - r_var(i-1))
       enddo
       edge_data(1)    = r_var(1) - 0.5_lkind*(r_var(2) - r_var(1))
-      if (abs(edge_data(1)) .lt. real(1.d-10, FMS_AU_KIND_)) then
+      if (abs(edge_data(1)) .lt. 1.e-10_lkind) then
          edge_data(1) = 0.0_lkind
       endif
       edge_data(n+1)  = r_var(n) + 0.5_lkind*(r_var(n) - r_var(n-1))
@@ -143,12 +143,12 @@
     LON_IN_RANGE_ = lon
     l_end = l_strt + 360.0_lkind
 
-    if (abs(LON_IN_RANGE_ - l_strt) < real(1.d-4, FMS_AU_KIND_)) then
+    if (abs(LON_IN_RANGE_ - l_strt) < 1.e-4_lkind) then
       LON_IN_RANGE_ = l_strt
       return
     endif
 
-    if (abs(LON_IN_RANGE_ - l_end) < real(1.d-4, FMS_AU_KIND_)) then
+    if (abs(LON_IN_RANGE_ - l_end) < 1.e-4_lkind) then
       LON_IN_RANGE_ = l_strt
       return
     endif
@@ -223,41 +223,6 @@
     return
   end subroutine TRANLON_
 
-  !>     nearest_index = index of nearest data point within "array" corresponding to
-  !!            "value".
-  !!
-  !!     inputs:
-  !!
-  !!     value  = arbitrary data...same units as elements in "array"
-  !!     array  = array of data points  (must be monotonically increasing)
-  !!
-  !!     output:
-  !!
-  !!     nearest_index =  index of nearest data point to "value"
-  !!             if "value" is outside the domain of "array" then nearest_index = 1
-  !!             or "ia" depending on whether array(1) or array(ia) is
-  !!             closest to "value"
-  !!
-  !!             note: if "array" is dimensioned array(0:ia) in the calling
-  !!                   program, then the returned index should be reduced
-  !!                   by one to account for the zero base.
-  !!
-  !!     example:
-  !!
-  !!     let model depths be defined by the following:
-  !!     parameter (km=5)
-  !!     dimension z(km)
-  !!     data z /5.0, 10.0, 50.0, 100.0, 250.0/
-  !!
-  !!     k1 = nearest_index (12.5, z, km)
-  !!     k2 = nearest_index (0.0, z, km)
-  !!
-  !!     k1 would be set to 2, and k2 would be set to 1 so that
-  !!     z(k1) would be the nearest data point to 12.5 and z(k2) would
-  !!   be the nearest data point to 0.0
-  !!
-  !!   @return real frac_index
-
 
   function FRAC_INDEX_(value, array)
 
@@ -293,8 +258,7 @@
        do while (i <= ia .and. keep_going)
           i = i+1
           if (value <= array(i)) then
-             FRAC_INDEX_ = real((i-1), FMS_AU_KIND_) + (real(value-array(i-1), FMS_AU_KIND_)) &
-                           /(real(array(i), FMS_AU_KIND_)-real(array(i-1), FMS_AU_KIND_))
+             FRAC_INDEX_ = real((i-1), lkind) + (value-array(i-1)) / (array(i) - array(i-1))
              keep_going  = .false.
           endif
        enddo
@@ -455,7 +419,7 @@
     if (grid1(1) > grid2(1) ) call mpp_error(FATAL, 'grid2 lies outside grid1')
     if (grid1(n) < grid2(m) ) call mpp_error(FATAL, 'grid2 lies outside grid1')
 
-if (yp1>real(0.99d30, FMS_AU_KIND_)) then
+if (yp1>0.99e30_lkind) then
        y2(1) = 0.0_lkind
        u(1)  = 0.0_lkind
     else
@@ -471,7 +435,7 @@ if (yp1>real(0.99d30, FMS_AU_KIND_)) then
                /(grid1(i)-grid1(i-1)))/(grid1(i+1)-grid1(i-1))-sig*u(i-1))/p
     enddo
 
-    if (ypn>real(.99d30, FMS_AU_KIND_)) then
+    if (ypn>0.99e30_lkind) then
        qn = 0.0_lkind
        un = 0.0_lkind
     else
@@ -520,15 +484,16 @@ if (yp1>real(0.99d30, FMS_AU_KIND_)) then
     real(kind=FMS_AU_KIND_)                                      :: y1, y2
     character(len=32)                                            :: interp_method
     integer                                                      :: k2, ks, ke
+    integer, parameter                                           :: lkind = FMS_AU_KIND_
 
     k2 = size(grid2(:))
 
     interp_method = "linear"
     if(present(method)) interp_method = method
-    y1 = real(1.0d30, FMS_AU_KIND_)
+    y1 = 1.0e30_lkind
 
     if(present(yp1)) y1 = yp1
-    y2 = real(1.0d30, FMS_AU_KIND_)
+    y2 = 1.0e30_lkind
 
     if(present(yp2)) y2 = yp2
     call find_index(grid1, grid2(1), grid2(k2), ks, ke)
@@ -583,6 +548,7 @@ if (yp1>real(0.99d30, FMS_AU_KIND_)) then
     real(kind=FMS_AU_KIND_)                             :: y1, y2
     character(len=32)                                   :: interp_method
     integer                                             :: ks, ke
+    integer, parameter                                  :: lkind = FMS_AU_KIND_
 
     n1 = size(grid1,1)
     n2 = size(grid2,1)
@@ -592,10 +558,10 @@ if (yp1>real(0.99d30, FMS_AU_KIND_)) then
 
     interp_method = "linear"
     if(present(method)) interp_method = method
-    y1 = real(1.0d30, FMS_AU_KIND_)
+    y1 = 1.0e30_lkind
 
     if(present(yp1)) y1 = yp1
-    y2 = real(1.0d30, FMS_AU_KIND_)
+    y2 = 1.0e30_lkind
     if(present(yp2)) y2 = yp2
 
     if (n1 /= n2 .or. m1 /= m2) call mpp_error(FATAL,'grid size mismatch')

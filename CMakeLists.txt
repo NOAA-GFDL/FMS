@@ -293,14 +293,14 @@ foreach(kind ${kinds})
 
   target_include_directories(${libTgt}_f PRIVATE include
                                                  fms
+                                                 fms/include
                                                  fms2_io/include
                                                  string_utils/include
                                                  mpp/include
-                                                 axis_utils/include
                                                  diag_manager/include
                                                  constants4
-                                                 constants)
-
+                                                 constants
+                                                 axis_utils/include)
   target_compile_definitions(${libTgt}_f PRIVATE "${fms_defs}")
   target_compile_definitions(${libTgt}_f PRIVATE "${${kind}_defs}")
 
@@ -334,10 +334,10 @@ foreach(kind ${kinds})
   target_include_directories(${libTgt} PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/fms>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/fms/include>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/fms2_io/include>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/string_utils/include>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/mpp/include>
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/axis_utils/include>)
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/diag_manager/include>)
 
   target_include_directories(${libTgt} INTERFACE
