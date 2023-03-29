@@ -17,7 +17,7 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 
-program test_axis_utils
+program test_axis_utils_r8
 
 use fms_mod,         only : fms_init, fms_end, check_nml_error
 use mpp_mod,         only : mpp_sync, mpp_pe, mpp_root_pe, mpp_error, FATAL, stdout, &
@@ -58,26 +58,26 @@ endif
 
 !< Case 1: Here the variable "axis" in the file does not have the attribute "bounds" or "edges", so
 !! it calculates them from the data in "axis"
-answers = 0.0
+answers = 0.0_r8_kind
 call axis_edges(fileobj, "axis", answers)
 call compare_answers(answers, data_in%answers, "1")
 
 !< Case 2: Here the variable "axis_with_bounds" in the file has the attribute
 !! "bounds", so the data is read from the variable "bounds"
-answers = 0.0
+answers = 0.0_r8_kind
 call axis_edges(fileobj, "axis_with_bounds", answers)
 call compare_answers(answers, data_in%answers, "2")
 
 !< Case 3: Here the variable "axis_with_edges" in the file has the attribute
 !"edges", so the data is read from the variable "edges"
-answers = 0.0
+answers = 0.0_r8_kind
 call axis_edges(fileobj, "axis_with_edges", answers)
 call compare_answers(answers, data_in%answers, "3")
 
 !< Case 4: Here the flag "reproduce_null_char_bug_flag" is turned on, so the
 !! edges are calculated from the data in axis because edges has a null character
 !! in the end
-answers = 0.0
+answers = 0.0_r8_kind
 call axis_edges(fileobj, "axis_with_edges", answers, reproduce_null_char_bug_flag=.true.)
 call compare_answers(answers, data_in%answers, "4")
 
@@ -163,4 +163,4 @@ call mpp_sync()
 
 end subroutine create_input_files
 
-end program test_axis_utils
+end program test_axis_utils_r8
