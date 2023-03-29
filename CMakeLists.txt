@@ -296,7 +296,7 @@ foreach(kind ${kinds})
                                                  fms2_io/include
                                                  string_utils/include
                                                  mpp/include
-                                                 axis_utils/include)
+                                                 axis_utils/include
                                                  diag_manager/include
                                                  constants4
                                                  constants)
