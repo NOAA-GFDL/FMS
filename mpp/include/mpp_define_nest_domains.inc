@@ -194,7 +194,7 @@ subroutine mpp_define_nest_domains(nest_domain, domain, num_nest, nest_level, ti
    if (associated(nest_domain%istart_fine)) deallocate(nest_domain%istart_fine) !< Check if allocated
    if (associated(nest_domain%iend_fine)) deallocate(nest_domain%iend_fine) !< Check if allocated
    if (associated(nest_domain%jstart_fine)) deallocate(nest_domain%jstart_fine) !< Check if allocated
-   if (associated(nest_domain%jend_fine)) deallocate(nest_domain%jend_fine) !< Check if allocated
+   !if (associated(nest_domain%jend_fine)) deallocate(nest_domain%jend_fine) !< Check if allocated
    if (associated(nest_domain%istart_coarse)) deallocate(nest_domain%istart_coarse) !< Check if allocated
    if (associated(nest_domain%iend_coarse)) deallocate(nest_domain%iend_coarse) !< Check if allocated
    if (associated(nest_domain%jstart_coarse)) deallocate(nest_domain%jstart_coarse) !< Check if allocated
