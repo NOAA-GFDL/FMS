@@ -189,16 +189,6 @@ subroutine mpp_define_nest_domains(nest_domain, domain, num_nest, nest_level, ti
   call mpp_get_current_pelist(pes)
 
   nest_domain%num_nest = num_nest
-   if (associated(nest_domain%tile_fine)) deallocate(nest_domain%tile_fine) !< Check if allocated
-   if (associated(nest_domain%tile_coarse)) deallocate(nest_domain%tile_coarse) !< Check if allocated
-   if (associated(nest_domain%istart_fine)) deallocate(nest_domain%istart_fine) !< Check if allocated
-   if (associated(nest_domain%iend_fine)) deallocate(nest_domain%iend_fine) !< Check if allocated
-   if (associated(nest_domain%jstart_fine)) deallocate(nest_domain%jstart_fine) !< Check if allocated
-   !if (associated(nest_domain%jend_fine)) deallocate(nest_domain%jend_fine) !< Check if allocated
-   if (associated(nest_domain%istart_coarse)) deallocate(nest_domain%istart_coarse) !< Check if allocated
-   if (associated(nest_domain%iend_coarse)) deallocate(nest_domain%iend_coarse) !< Check if allocated
-   if (associated(nest_domain%jstart_coarse)) deallocate(nest_domain%jstart_coarse) !< Check if allocated
-   if (associated(nest_domain%jend_coarse)) deallocate(nest_domain%jend_coarse) !< Check if allocated
   allocate(nest_domain%tile_fine(num_nest), nest_domain%tile_coarse(num_nest) )
   allocate(nest_domain%istart_fine(num_nest), nest_domain%iend_fine(num_nest) )
   allocate(nest_domain%jstart_fine(num_nest), nest_domain%jend_fine(num_nest) )
