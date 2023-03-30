@@ -1640,7 +1640,6 @@ subroutine setup_xmap(xmap, grid_ids, grid_domains, grid_file, atm_grid, lnd_ug_
      endif
 
      npes = grid%npes
-     if (associated(grid%pelist)) deallocate(grid%pelist) !< Check if allocated
      allocate(grid%pelist(0:npes-1))
      call mpp_get_domain_pelist(grid%domain, grid%pelist)
      grid%root_pe = mpp_get_domain_root_pe(grid%domain)
