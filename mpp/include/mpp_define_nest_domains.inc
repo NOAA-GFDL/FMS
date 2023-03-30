@@ -534,7 +534,6 @@ subroutine define_nest_level_type(nest_domain, x_refine, y_refine, extra_halo)
 
   nest_domain%my_num_nest = my_num_nest
   if(my_num_nest>0) then
-   if (associated(nest_domain%my_nest_id)) deallocate(nest_domain%my_nest_id) !< Check if allocated
      allocate(nest_domain%my_nest_id(my_num_nest))
      nest_domain%my_nest_id(:) = my_nest_id(1:my_num_nest)
   endif
