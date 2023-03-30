@@ -29,25 +29,24 @@
 
 cat <<_EOF  > input.nml
 &test_global_arrays_nml
-  test_sum = .true.
-  test_max_min = .false.
+  test_simple = .true.
+  test_full = .false.
 /
 _EOF
 
-test_expect_success "mpp_global_sum with mixed precision" '
+test_expect_success "mpp_global_sum/max/min with simple domain" '
     mpirun -n 8 ./test_global_arrays
 '
 
 cat <<_EOF  > input.nml
 &test_global_arrays_nml
-  test_sum = .false.
-  test_max_min = .true.
+  test_simple = .false.
+  test_full = .true.
 /
 _EOF
 
-
-test_expect_success "mpp_global_max/min with mixed precision" '
-    mpirun -n 8 ./test_global_arrays
+test_expect_success "mpp_global_sum/max/min with symmetry and halos" '
+    mpirun -n 6 ./test_global_arrays
 '
 
 test_done

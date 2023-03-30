@@ -29,12 +29,13 @@ program test_global_arrays
   use mpp_mod,         only: mpp_error, FATAL, NOTE, mpp_send, mpp_recv, WARNING
   use mpp_mod,         only: mpp_init_test_init_true_only, mpp_set_root_pe, input_nml_file
   use mpp_io_mod,      only: mpp_io_init
-  use mpp_domains_mod, only: mpp_domains_init, mpp_define_domains, domain2d
-  use mpp_domains_mod, only: mpp_define_layout, mpp_domains_set_stack_size
-  use mpp_domains_mod, only: mpp_get_global_domain, mpp_global_max
-  use mpp_domains_mod, only: mpp_global_min, mpp_get_data_domain,mpp_get_compute_domain
+  use mpp_domains_mod, only: mpp_domains_init, mpp_define_domains, domain2d, CYCLIC_GLOBAL_DOMAIN
+  use mpp_domains_mod, only: mpp_define_layout, mpp_domains_set_stack_size, CENTER, CORNER, EAST, WEST, NORTH, SOUTH
+  use mpp_domains_mod, only: mpp_get_global_domain, mpp_global_max, BITWISE_EXACT_SUM, BITWISE_EFP_SUM
+  use mpp_domains_mod, only: mpp_global_min, mpp_get_data_domain,mpp_get_compute_domain 
   use mpp_domains_mod, only: mpp_domains_exit, mpp_update_domains
   use mpp_domains_mod, only: mpp_get_domain_shift, mpp_global_sum
+  use mpp_mod,         only: MPP_CLOCK_SYNC, MPP_CLOCK_DETAILED, mpp_clock_id, mpp_clock_begin, mpp_clock_end
   use fms_mod,         only: check_nml_error
 
   implicit none
@@ -59,15 +60,15 @@ program test_global_arrays
   real(r8_kind), parameter      :: tol4 = 1e-4, tol8 = 1e-6!> tolerance for real comparisons
 
   ! namelist variables - just logicals to enable individual tests
-  logical :: test_sum, test_max_min
-  namelist / test_global_arrays_nml / test_sum, test_max_min
+  ! simple just does normal max/min + sums across a domain
+  ! full does max/min+sums with halos and symmetry 
+  logical :: test_simple= .false. , test_full = .false.
+  namelist / test_global_arrays_nml / test_simple, test_full
   
-
-  call mpp_init(mpp_init_test_init_true_only)
-  call mpp_io_init()
+  call mpp_init()
   call mpp_domains_init()
-  call mpp_set_stack_size(3145746)
-  call mpp_domains_set_stack_size(3145746)
+  !call mpp_set_stack_size(3145746)
+  call mpp_domains_set_stack_size(4000000)
 
   read(input_nml_file, nml=test_global_arrays_nml, iostat=io)
   ierr = check_nml_error(io, 'test_global_arrays_nml')
@@ -75,6 +76,32 @@ program test_global_arrays
   npes = mpp_npes()
   call mpp_set_root_pe(0)
   root = mpp_root_pe()
+  if( test_simple) then
+    call test_mpp_global_simple()
+  else if(test_full) then
+    call test_global_reduce( 'Simple')
+    call test_global_reduce( 'Simple symmetry center')
+    call test_global_reduce( 'Simple symmetry corner')
+    call test_global_reduce( 'Simple symmetry east')
+    call test_global_reduce( 'Simple symmetry north')
+    call test_global_reduce( 'Cyclic symmetry center')
+    call test_global_reduce( 'Cyclic symmetry corner')
+    call test_global_reduce( 'Cyclic symmetry east')
+    call test_global_reduce( 'Cyclic symmetry north')
+  else
+    call mpp_error(FATAL, "test_global_arrays: either test_sum or test_max_min must be true in input.nml")
+  endif
+  call mpp_sync()
+
+  deallocate(dataI4, dataI8, dataR4, dataR8, rands)
+  deallocate(dataR4_shuf, dataR8_shuf,dataI4_shuf, dataI8_shuf)
+  call mpp_domains_exit()
+  call MPI_FINALIZE(ierr)
+
+  contains
+
+subroutine test_mpp_global_simple()
+
   !> define domains and allocate
   call mpp_define_domains( (/1,length,1,length/), (/1,8/), domain, xhalo=0)
   call mpp_get_compute_domain(domain, jsc, jec, isc, iec)
@@ -102,24 +129,6 @@ program test_global_arrays
     end do
   end do
   call mpp_sync()
-
-  if( test_max_min) then
-    call test_mpp_global_maxmin()
-  else if( test_sum) then
-    call test_mpp_global_sum()
-  else
-    call mpp_error(FATAL, "test_global_arrays: either test_sum or test_max_min must be true in input.nml")
-  endif
-  call mpp_sync()
-
-  deallocate(dataI4, dataI8, dataR4, dataR8, rands)
-  deallocate(dataR4_shuf, dataR8_shuf,dataI4_shuf, dataI8_shuf)
-  call mpp_domains_exit()
-  call MPI_FINALIZE(ierr)
-
-  contains
-
-subroutine test_mpp_global_maxmin()
 
   !> test global max and mins from each kind
   call mpp_error(NOTE, "----------Testing 32-bit int mpp_global_max and mpp_global_min----------")
@@ -163,9 +172,6 @@ subroutine test_mpp_global_maxmin()
                                NEW_LINE('a')//"Max: "//strTmp1//" Min: "//strTmp2 )
   endif
 
-end subroutine test_mpp_global_maxmin
-
-subroutine test_mpp_global_sum
   !> test global sums for each kind
   call mpp_error(NOTE, "----------Testing 32-bit real mpp_global_sum----------")
   call mpp_update_domains(dataR4, domain)
@@ -285,7 +291,7 @@ subroutine test_mpp_global_sum
     call mpp_error(FATAL,"test_global_arrays: invalid 64-bit integer answer after reordering"// &
                    NEW_LINE('a')//"Sum: "// strTmp1// " ne "//strTmp2)
   endif
-end subroutine test_mpp_global_sum
+end subroutine test_mpp_global_simple
 
 !> true if all pes return the same result and have a lower/higher local max/min
 function checkResultInt4(res)
@@ -499,7 +505,6 @@ function checkSumInt8(gsum)
   integer(i8_kind),intent(in)  :: gsum
   integer(i8_kind),allocatable :: recv(:) !> pe's local sum at 1, global sum at 2
   integer(i8_kind)             :: nsum
-  integer                      :: i
 
   allocate(recv(2))
   ! root receives and sums local sums from each pe
@@ -525,5 +530,136 @@ function checkSumInt8(gsum)
   call mpp_sync()
   deallocate(recv)
 end function checkSumInt8
+
+subroutine test_global_reduce (type)
+    character(len=*), intent(in) :: type
+    real    :: lsum, gsum, lmax, gmax, lmin, gmin
+    integer :: ni, nj, ishift, jshift, position
+    integer              :: is, ie, js, je, k
+    real, allocatable, dimension(:,:,:) :: global1, x
+    real, allocatable, dimension(:,:)   :: global2D
+    integer :: ehalo, whalo, nhalo, shalo
+    integer :: layout(2)
+    integer :: nx=64, ny=64, nz=10
+    real    :: tol  
+    tol = 0.1e-8
+    ehalo = 2; whalo = 2
+    nhalo = 2; shalo = 2
+    !--- set up domain
+    call mpp_define_layout( (/1,nx,1,ny/), npes, layout )
+    select case(type)
+    case( 'Simple' )
+           call mpp_define_domains( (/1,nx,1,ny/), layout, domain, whalo=whalo, ehalo=ehalo, &
+                                    shalo=shalo, nhalo=nhalo, name=type )
+    case( 'Simple symmetry center', 'Simple symmetry corner', 'Simple symmetry east', 'Simple symmetry north' )
+           call mpp_define_domains( (/1,nx,1,ny/), layout, domain, whalo=whalo, ehalo=ehalo, &
+                                    shalo=shalo, nhalo=nhalo, name=type, symmetry = .true. )
+    case( 'Cyclic symmetry center', 'Cyclic symmetry corner', 'Cyclic symmetry east', 'Cyclic symmetry north' )
+           call mpp_define_domains( (/1,nx,1,ny/), layout, domain, whalo=whalo, ehalo=ehalo, shalo=shalo, nhalo=nhalo,&
+                                    name=type, symmetry = .true., xflags=CYCLIC_GLOBAL_DOMAIN, &
+                                            &  yflags=CYCLIC_GLOBAL_DOMAIN )
+    case default
+        call mpp_error( FATAL, 'TEST_MPP_DOMAINS: no such test: '//type//' in test_global_field' )
+    end select
+    call mpp_get_compute_domain( domain, is,  ie,  js,  je  )
+    call mpp_get_data_domain   ( domain, isd, ied, jsd, jed )
+
+    print * ,nx, ny, npes, layout, whalo, shalo, nhalo, ehalo
+    print * , is, ie, isd, ied, pe
+    print * , js, je, jsd, jed, pe
+    !--- determine if an extra point is needed
+    ishift = 0; jshift = 0; position = CENTER
+    select case(type)
+    case ('Simple symmetry corner', 'Cyclic symmetry corner')
+       ishift = 1; jshift = 1; position = CORNER
+    case ('Simple symmetry east', 'Cyclic symmetry east' )
+       ishift = 1; jshift = 0; position = EAST
+    case ('Simple symmetry north', 'Cyclic symmetry north')
+       ishift = 0; jshift = 1; position = NORTH
+    end select
+
+    ie  = ie+ishift;  je  = je+jshift
+    ied = ied+ishift; jed = jed+jshift
+    ni  = nx+ishift;  nj  = ny+jshift
+    allocate(global1(1-whalo:ni+ehalo, 1-shalo:nj+nhalo, nz))
+    global1 = 0.0
+    do k = 1,nz
+       do j = 1,nj
+          do i = 1,ni
+             global1(i,j,k) = k + i*1e-3 + j*1e-6
+          end do
+       end do
+    enddo
+
+    !--- NOTE: even though the domain is cyclic, no need to apply cyclic condition on the global data
+
+    allocate( x (isd:ied,jsd:jed,nz) )
+    allocate( global2D(ni,nj))
+
+    x(:,:,:) = global1(isd:ied,jsd:jed,:)
+    do j = 1, nj
+       do i = 1, ni
+          global2D(i,j) = sum(global1(i,j,:))
+       enddo
+    enddo
+    !test mpp_global_sum
+
+    if(type(1:6) == 'Simple') then
+       gsum = sum( global2D(1:ni,1:nj) )
+    else
+       gsum = sum( global2D(1:nx, 1:ny) )
+    endif
+    id = mpp_clock_id( type//' sum', flags=MPP_CLOCK_SYNC+MPP_CLOCK_DETAILED )
+    call mpp_clock_begin(id)
+    lsum = mpp_global_sum( domain, x, position = position  )
+    call mpp_clock_end  (id)
+    !! not exact, tests with tolerance
+    if(abs(lmin - gmin) .gt. tol) then
+        print *, ' on pe ', mpp_pe(),' lsum = ', lsum, ', gsum = ', gsum, &
+              ', lsum-gsum =', lsum-gsum
+        call mpp_error( FATAL, 'test_mpp_global_sum: data comparison are not OK.' )
+    end if
+
+    !test exact mpp_global_sum
+    id = mpp_clock_id( type//' exact sum', flags=MPP_CLOCK_SYNC+MPP_CLOCK_DETAILED )
+    call mpp_clock_begin(id)
+    lsum = mpp_global_sum( domain, x, BITWISE_EXACT_SUM, position = position )
+    call mpp_clock_end  (id)
+    !--- The following check will fail on altix in normal mode, but it is ok
+    !--- in debugging mode. It is ok on irix.
+    if( lmin .NE. gmin) then
+        print *, ' on pe ', mpp_pe(),' lsum = ', lsum, ', gsum = ', gsum, &
+              ', lsum-gsum =', lsum-gsum
+        call mpp_error( FATAL, 'test_mpp_global_sum: bitwise exact data comparison are not OK.' )
+    end if
+
+    !test mpp_global_min
+    gmin = minval(global1(1:ni, 1:nj, :))
+    id = mpp_clock_id( type//' min', flags=MPP_CLOCK_SYNC+MPP_CLOCK_DETAILED )
+    call mpp_clock_begin(id)
+    lmin = mpp_global_min( domain, x, position = position )
+    call mpp_clock_end  (id)
+    if(lmin .NE. gmin)then
+        print *, ' on pe ', mpp_pe(),' lmin = ', lmin, ', gmin = ', gmin, &
+              ', lmin-gmin =', lmin-gmin 
+        call mpp_error( FATAL, 'test_mpp_global_min: data comparison are not OK.' )
+    end if
+
+    !test mpp_global_max
+    gmax = maxval(global1(1:ni, 1:nj, :))
+    id = mpp_clock_id( type//' max', flags=MPP_CLOCK_SYNC+MPP_CLOCK_DETAILED )
+    call mpp_clock_begin(id)
+    lmax = mpp_global_max( domain, x, position = position )
+    call mpp_clock_end  (id)
+    if(lmin .NE. gmin) then
+        print *, ' on pe ', mpp_pe(),' lmax = ', lmax, ', gmax = ', gmax, &
+              ', lmax-gmax =', lmax-gmax 
+        call mpp_error( FATAL, 'test_mpp_global_max: data comparison are not OK.' )
+    end if
+    call mpp_sync()
+
+    deallocate(global1, x)
+
+  end subroutine test_global_reduce
 
 end program test_global_arrays
