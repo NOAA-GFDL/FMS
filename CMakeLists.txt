@@ -297,15 +297,14 @@ foreach(kind ${kinds})
                                                  fms2_io/include
                                                  string_utils/include
                                                  mpp/include
-                                                 constants
-                                                 astronomy/include)
-
                                                  sat_vapor_pres/include
                                                  horiz_interp/include
                                                  diag_manager/include
                                                  constants4
+                                                 axis_utils/include
                                                  constants
-                                                 axis_utils/include)
+                                                 astronomy/include)
+
   target_compile_definitions(${libTgt}_f PRIVATE "${fms_defs}")
   target_compile_definitions(${libTgt}_f PRIVATE "${${kind}_defs}")
 
