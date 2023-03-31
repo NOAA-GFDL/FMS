@@ -1432,7 +1432,7 @@ integer, parameter       :: lkind = FMS_AST_KIND_
                     + real(ecc, FMS_AST_KIND_)*cos(real(ang, FMS_AST_KIND_) - real(rad_per, FMS_AST_KIND_)))
     R_INV_SQUARED_ = r**(-2)
 
- 
+
 end function R_INV_SQUARED_
 
 
