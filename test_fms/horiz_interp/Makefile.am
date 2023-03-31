@@ -29,10 +29,14 @@ AM_CPPFLAGS = -I$(MODDIR)
 LDADD = $(top_builddir)/libFMS/libFMS.la
 
 # Build these test programs.
-check_PROGRAMS = test_horiz_interp
+check_PROGRAMS = test_horiz_interp_r4 test_horiz_interp_r8
 
 # These are the sources for the tests.
-test_horiz_interp_SOURCES = test_horiz_interp.F90
+test_horiz_interp_r4_SOURCES = test_horiz_interp.F90
+test_horiz_interp_r8_SOURCES = test_horiz_interp.F90
+
+test_horiz_interp_r4_CPPFLAGS=-DHI_TEST_KIND=4 -I$(MODDIR)
+test_horiz_interp_r8_CPPFLAGS=-DHI_TEST_KIND=8 -I$(MODDIR)
 
 TEST_EXTENSIONS = .sh
 SH_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
