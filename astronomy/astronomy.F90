@@ -231,10 +231,10 @@ end interface half_day
 !---------------------------------------------------------------------
 !-------- namelist  ---------
 
-real(r8_kind)   :: ecc   = real(0.01671d0, r8_kind)!< Eccentricity of Earth's orbit [dimensionless]
-real(r8_kind)   :: obliq = real(23.439d0, r8_kind)    !< Obliquity [degrees]
-real(r8_kind)   :: per   = real(102.932d0, r8_kind)   !< Longitude of perihelion with respect
-                                     !! to autumnal equinox in NH [degrees]
+real(r8_kind)   :: ecc   = 0.01671_r8_kind    !< Eccentricity of Earth's orbit [dimensionless]
+real(r8_kind)   :: obliq = 23.439_r8_kind   !< Obliquity [degrees]
+real(r8_kind)   :: per   = 102.932_r8_kind  !< Longitude of perihelion with respect
+                                              !! to autumnal equinox in NH [degrees]
 integer         :: period = 0        !< Specified length of year [seconds];
                                      !! must be specified to override default
                                      !! value given by length_of_year in
@@ -273,10 +273,10 @@ real(r8_kind), dimension(:), allocatable :: orb_angle !< table of orbital positi
                                              !! to find actual orbital position
                                              !! via interpolation
 
-real(r8_kind)    :: seconds_per_day = real(86400.0d0, r8_kind) !< seconds in a day
-real(r8_kind)    :: deg_to_rad               !< conversion from degrees to radians
-real(r8_kind)    :: twopi                    !< 2 *PI
-logical          :: module_is_initialized=.false. !< has the module been initialized ?
+real(r8_kind)    :: seconds_per_day = 86400.0_r8_kind !< seconds in a day
+real(r8_kind)    :: deg_to_rad                        !< conversion from degrees to radians
+real(r8_kind)    :: twopi                             !< 2 *PI
+logical          :: module_is_initialized=.false.     !< has the module been initialized ?
 
 real(r8_kind), dimension(:,:), allocatable ::       &
                        cosz_ann, &  !< annual mean cos of zenith angle
@@ -348,13 +348,13 @@ integer :: unit, ierr, io, seconds, days, jd, id
 !>    Be sure input values are within valid ranges.
 !    QUESTION : ARE THESE THE RIGHT LIMITS ???
 !---------------------------------------------------------------------
-    if (ecc < real(0.0,kind=r8_kind) .or. ecc > real(0.99,kind=r8_kind)) &
+    if (real(ecc, r8_kind) < 0.0_r8_kind .or. real(ecc, r8_kind) > 0.99_r8_kind) &
        call error_mesg ('astronomy_mod', &
             'ecc must be between 0 and 0.99', FATAL)
-    if (obliq < real(-90.0,kind=r8_kind) .or. obliq > real(90.0,kind=r8_kind)) &
+    if (real(obliq, r8_kind) < -90.0_r8_kind .or. real(obliq, r8_kind) > 90.0_r8_kind) &
         call error_mesg ('astronomy_mod', &
              'obliquity must be between -90 and 90 degrees', FATAL)
-    if (per < real(0.0,kind=r8_kind) .or. per > real(360.0,kind=r8_kind)) &
+    if (real(per, r8_kind) < 0.0_r8_kind .or. real(per, r8_kind) > 360.0_r8_kind) &
         call error_mesg ('astronomy_mod', &
              'perihelion must be between 0 and 360 degrees', FATAL)
 
@@ -370,7 +370,7 @@ integer :: unit, ierr, io, seconds, days, jd, id
     if (period == 0) then
         period_time_type = length_of_year()
         call get_time (period_time_type, seconds, days)
-            period = int(seconds_per_day*days + seconds)
+            period = int(real(seconds_per_day, r8_kind)*days + seconds)
     else
         period_time_type = set_time(period,0)
     endif
@@ -378,8 +378,8 @@ integer :: unit, ierr, io, seconds, days, jd, id
 !---------------------------------------------------------------------
 !>    Define useful module variables.
 !----------------------------------------------------------------------
-    twopi = real(2.0,kind=r8_kind)*PI
-    deg_to_rad = twopi/real(360.0,kind=r8_kind)
+    twopi = 2.0_r8_kind * PI
+    deg_to_rad = twopi/360.0_r8_kind
 
 !---------------------------------------------------------------------
 !>    Call orbit to define table of orbital angles as function of
@@ -436,7 +436,7 @@ integer :: seconds, days
 !    define length of year in seconds.
 !--------------------------------------------------------------------
     call get_time (period_time_type, seconds, days)
-    period_out = int(seconds_per_day*days + seconds)
+    period_out = int(real(seconds_per_day, r8_kind)*days + seconds)
 
 
 end subroutine get_period_integer
@@ -653,9 +653,9 @@ real(kind=r8_kind) :: d1, d2, d3, d4, d5, dt, norm
 !--------------------------------------------------------------------
 ! wfc moving to astronomy_init
 !     allocate ( orb_angle(0:num_angles) )
-orb_angle(0) = real(0.0,kind=r8_kind)
+orb_angle(0) = 0.0_r8_kind
 dt = twopi/float(num_angles)
-norm = sqrt(real(1.0,kind=r8_kind) - ecc**2)
+norm = sqrt(1.0_r8_kind - real(ecc, r8_kind)**2)
 dt = dt*norm
 
 !---------------------------------------------------------------------
@@ -663,13 +663,12 @@ dt = dt*norm
 !!    the orbit.
 !---------------------------------------------------------------------
     do n = 1, num_angles
-       d1 = dt*r_inv_squared(real(orb_angle(n-1),kind=r8_kind))
-       d2 = dt*r_inv_squared(real(orb_angle(n-1),kind=r8_kind) + real(0.5,kind=r8_kind)*d1)
-       d3 = dt*r_inv_squared(real(orb_angle(n-1),kind=r8_kind) + real(0.5,kind=r8_kind)*d2)
-       d4 = dt*r_inv_squared(real(orb_angle(n-1),kind=r8_kind) + d3)
-       d5 = d1/real(6.0,kind=r8_kind) + d2/real(3.0,kind=r8_kind) &
-            + d3/real(3.0,kind=r8_kind) + d4/real(6.0,kind=r8_kind)
-        orb_angle(n) = real(orb_angle(n-1),kind=r8_kind) + d5
+       d1 = dt*r_inv_squared(real(orb_angle(n-1), r8_kind))
+       d2 = dt*r_inv_squared(real(orb_angle(n-1), r8_kind) + 0.5_r8_kind * d1)
+       d3 = dt*r_inv_squared(real(orb_angle(n-1), r8_kind) + 0.5_r8_kind * d2)
+       d4 = dt*r_inv_squared(real(orb_angle(n-1), r8_kind) + d3)
+       d5 = d1/6.0_r8_kind + d2/3.0_r8_kind + d3/3.0_r8_kind + d4/6.0_r8_kind
+        orb_angle(n) = real(orb_angle(n-1), r8_kind) + d5
     end do
 
 end subroutine orbit
@@ -688,9 +687,9 @@ function orbital_time(time) result(t)
 type(time_type), intent(in) :: time !< time (1 year = 2*pi) since autumnal equinox
 real(kind=r8_kind)    :: t
 
-    t = real ( (time - autumnal_eq_ref)//period_time_type)
-    t = real(twopi,kind=r8_kind)*(t - floor(t))
-    if (time < autumnal_eq_ref) t = real(twopi,kind=r8_kind) - t
+    t = (time - autumnal_eq_ref)//period_time_type
+    t = real(twopi, r8_kind)*(t - floor(t))
+    if (time < autumnal_eq_ref) t = real(twopi, r8_kind) - t
 
 end function orbital_time
 
@@ -708,7 +707,7 @@ real(kind=r8_kind)    :: t
     integer ::  seconds, days
 
     call get_time(time, seconds, days)
-        t = real(twopi,kind=r8_kind)*real(seconds,kind=r8_kind)/real(seconds_per_day,kind=r8_kind)
+        t = real(twopi, r8_kind)* seconds/real(seconds_per_day, r8_kind)
 
 end function universal_time
 

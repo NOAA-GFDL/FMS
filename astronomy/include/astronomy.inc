@@ -389,7 +389,6 @@ end subroutine DIURNAL_SOLAR_2D_
 !! @param [out] <half_day_out> half_day_out
 
 subroutine DIURNAL_SOLAR_1D_(lat, lon, gmt, time_since_ae, cosz, &
-
                              fracday, rrsun, dt, allow_negative_cosz, &
                              half_day_out)
 
@@ -779,7 +778,7 @@ integer, parameter       :: lkind = FMS_AST_KIND_
 !    be sure the time in the annual cycle is legitimate.
 !---------------------------------------------------------------------
 
-    if (time_since_ae < 0.0_lkind .or. time_since_ae > real(twopi, r8_kind)) &
+    if (time_since_ae < 0.0_lkind .or. time_since_ae > real(twopi, FMS_AST_KIND_)) &
         call error_mesg('astronomy_mod', 'time_since_ae not between 0 and 2pi', FATAL)
 
 !---------------------------------------------------------------------
@@ -1433,7 +1432,7 @@ integer, parameter       :: lkind = FMS_AST_KIND_
                     + real(ecc, FMS_AST_KIND_)*cos(real(ang, FMS_AST_KIND_) - real(rad_per, FMS_AST_KIND_)))
     R_INV_SQUARED_ = r**(-2)
 
-
+ 
 end function R_INV_SQUARED_
 
 
