@@ -195,7 +195,7 @@ contains
   !!     This string is used as suffix in output file name
   !! @return Character(len=128) get_time_string
   CHARACTER(len=128) FUNCTION get_time_string(filename, current_time)
-    CHARACTER(len=128), INTENT(in) :: filename     !< File name.
+    CHARACTER(len=*),   INTENT(in) :: filename     !< File name.
     TYPE(time_type),    INTENT(in) :: current_time !< Current model time.
 
     INTEGER :: yr1 !< get from current time
