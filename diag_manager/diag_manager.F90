@@ -4432,6 +4432,11 @@ END FUNCTION register_static_field
                & 'either area or volume arguments must be present', FATAL )
        END IF
 
+       if (use_modern_diag) then
+         call fms_diag_object%fms_diag_field_add_cell_measures(diag_field_id, area, volume)
+         return
+       ENDIF
+
        DO j=1, input_fields(diag_field_id)%num_output_fields
           ind = input_fields(diag_field_id)%output_fields(j)
           CALL init_field_cell_measures(output_fields(ind), area=area, volume=volume)

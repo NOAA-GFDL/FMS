@@ -103,6 +103,7 @@ module fms_diag_axis_object_mod
        procedure :: add_structured_axis_ids
        procedure :: get_structured_axis
        procedure :: is_unstructured_grid
+       procedure :: get_edges_id
   END TYPE fmsDiagAxis_type
 
   !> @brief Type to hold the subaxis
@@ -152,6 +153,8 @@ module fms_diag_axis_object_mod
                                                                  !! or "UG_DOMAIN")
      INTEGER                        , private :: length          !< Global axis length
      INTEGER                        , private :: direction       !< Direction of the axis 0, 1, -1
+     INTEGER,            ALLOCATABLE, private :: edges_id        !< Axis ID for the edges axis
+                                                                 !! This axis will be written to the file
      CHARACTER(len=:),   ALLOCATABLE, private :: edges_name      !< Name for the previously defined "edges axis"
                                                                  !! This will be written as an attribute
      CHARACTER(len=128)             , private :: aux             !< Auxiliary name, can only be <TT>geolon_t</TT>
@@ -169,7 +172,7 @@ module fms_diag_axis_object_mod
      PROCEDURE :: add_axis_attribute
      PROCEDURE :: register => register_diag_axis_obj
      PROCEDURE :: axis_length => get_axis_length
-     PROCEDURE :: set_edges_name
+     PROCEDURE :: set_edges
      PROCEDURE :: set_axis_id
      PROCEDURE :: get_compute_domain
      PROCEDURE :: get_indices
@@ -186,7 +189,7 @@ module fms_diag_axis_object_mod
   !> @brief Initialize the axis
   subroutine register_diag_axis_obj(this, axis_name, axis_data, units, cart_name, long_name, direction,&
   & set_name, Domain, Domain2, DomainU, aux, req, tile_count, domain_position, axis_length )
-    class(fmsDiagFullAxis_type),INTENT(out)  :: this            !< Diag_axis obj
+    class(fmsDiagFullAxis_type),INTENT(inout):: this            !< Diag_axis obj
     CHARACTER(len=*),   INTENT(in)           :: axis_name       !< Name of the axis
     class(*),           INTENT(in)           :: axis_data(:)    !< Array of coordinate values
     CHARACTER(len=*),   INTENT(in)           :: units           !< Units for the axis
@@ -297,6 +300,9 @@ module fms_diag_axis_object_mod
     type(fmsDiagFullAxis_type), pointer   :: diag_axis       !< Local pointer to the diag_axis
 
     integer :: type_of_domain !< The type of domain the current axis is in
+    logical :: is_subaxis     !< .true. if the axis is a subaxis
+
+    is_subaxis = .false.
 
     select type(this)
     type is (fmsDiagFullAxis_type)
@@ -305,6 +311,7 @@ module fms_diag_axis_object_mod
       diag_axis => this
       type_of_domain = this%type_of_domain
     type is (fmsDiagSubAxis_type)
+      is_subaxis = .true.
       axis_name => this%subaxis_name
       axis_length = this%ending_index - this%starting_index + 1
       !< Get all the other information from the parent axis (i.e the cart_name, units, etc)
@@ -371,7 +378,7 @@ module fms_diag_axis_object_mod
       call register_variable_attribute(fileobj, axis_name, "positive", "down", str_len=4)
     end select
 
-    if (allocated(diag_axis%edges_name)) then
+    if (allocated(diag_axis%edges_name) .and. .not. is_subaxis) then
       call register_variable_attribute(fileobj, axis_name, "edges", diag_axis%edges_name, &
         str_len=len_trim(diag_axis%edges_name))
     endif
@@ -519,6 +526,19 @@ module fms_diag_axis_object_mod
     end select
   end function get_structured_axis
 
+
+  !< @brief Get the edges_id of an axis_object
+  !! @return The edges_id of an axis object
+  pure integer function get_edges_id(this)
+    class(fmsDiagAxis_type), INTENT(in)    :: this        !< diag_axis obj
+
+    get_edges_id = diag_null
+    select type (this)
+    type is (fmsDiagFullAxis_type)
+      if (allocated(this%edges_id)) get_edges_id = this%edges_id
+    end select
+  end function
+
   !> @brief Get the starting and ending indices of the global io domain of the axis
   subroutine get_global_io_domain(this, global_io_index)
     class(fmsDiagFullAxis_type), intent(in)  :: this               !< diag_axis obj
@@ -569,13 +589,19 @@ module fms_diag_axis_object_mod
 
   end subroutine set_axis_id
 
-  !> @brief Set the name of the edges
-  subroutine set_edges_name(this, edges_name)
-    class(fmsDiagFullAxis_type), intent(inout) :: this !< diag_axis obj
-    CHARACTER(len=*),        intent(in)        :: edges_name !< Name of the edges
+    !> @brief Set the name and ids of the edges
+  subroutine set_edges(this, edges_name, edges_id)
+    class(fmsDiagFullAxis_type), intent(inout) :: this       !< diag_axis obj
+    CHARACTER(len=*),            intent(in)    :: edges_name !< Name of the edges
+    integer,                     intent(in)    :: edges_id   !< Axis id of the edges
 
+    !< Saving the name and the id of the edges axis because it will make it easier to use
+    !! downstream (i.e you need the edges name to write the attribute to the current axis,
+    !! and you need the edges id to add to the diag file object so that you can write the edges
+    !! to the file)
     this%edges_name = edges_name
-  end subroutine
+    this%edges_id = edges_id
+  end subroutine set_edges
 
   !> @brief Determine if the subRegion is in the current PE.
   !! If it is, determine the starting and ending indices of the current PE that belong to the subRegion
