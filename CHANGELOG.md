@@ -6,7 +6,7 @@ and this project uses `yyyy.rr[.pp]`, where `yyyy` is the year a patch is releas
 `rr` is a sequential release number (starting from `01`), and an optional two-digit
 sequential patch number (starting from `01`).
 
-## [2023.01] - 2023-03-27
+## [2023.01] - 2023-04-03
 ### Known Issues
 - If using GCC 10 or higher as well as MPICH, compilation errors will occur unless `-fallow-argument-mismatch` is included in the Fortran compiler flags(the flag will now be added automatically if building with autotools or CMake).
 - GCC 11.1.0 is unsupported due to compilation issues with select type. The issue is resolved in later GCC releases.
@@ -30,6 +30,7 @@ sequential patch number (starting from `01`).
 - YAML_PARSER: Fixed typo in variable name, rename variables to avoid fortran keywords
 - DOCS: Fixed incorrect serial build instructions
 - COMPILER SUPPORT: Fixed compilation errors with Intel's llvm-based compiler and added support for the CMake build. Also fixed mpp_checksum unit test failures with openmpi and nvhpc compilation issues.
+- TIME_MANAGER: Fixed an bug from PR #1169 that was causing answer changes in land models
 
 ### Tag Commit Hashes
 - 2023.01-beta4		(63626578cb8ed4bed1ce670b88acd6a1ec438e32)
