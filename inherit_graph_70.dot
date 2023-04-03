@@ -5,5 +5,5 @@ digraph "Graphical Class Hierarchy"
   edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
   node [fontname="Helvetica",fontsize="10",shape=record];
   rankdir="LR";
-  Node0 [label="diag_atttype",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$group__diag__data__mod.html#structdiag__data__mod_1_1diag__atttype",tooltip="Attribute type for diagnostic fields."];
+  Node0 [label="descomp",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$group__sat__vapor__pres__mod.html#interfacesat__vapor__pres__mod_1_1descomp",tooltip="Provided for backward compatibility (to be removed soon)"];
 }

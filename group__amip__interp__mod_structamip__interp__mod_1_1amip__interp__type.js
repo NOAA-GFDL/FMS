@@ -1,7 +1,7 @@
 var group__amip__interp__mod_structamip__interp__mod_1_1amip__interp__type =
 [
-    [ "data1", "group__amip__interp__mod.html#aa46d014f9ee64f1448e201fb8c19e37a", null ],
-    [ "data2", "group__amip__interp__mod.html#a1352daad8fcd286b8cf6d05b2f2acbbf", null ],
+    [ "data1", "group__amip__interp__mod.html#ac823968a12529487a5871ac50fc5db1c", null ],
+    [ "data2", "group__amip__interp__mod.html#abd10cf692e84586c084e678a533108c3", null ],
     [ "date1", "group__amip__interp__mod.html#ab3f72349a482edc1ca14bbf16d352324", null ],
     [ "date2", "group__amip__interp__mod.html#ad940823a251d96df7993d5087405d93a", null ],
     [ "hintrp", "group__amip__interp__mod.html#ab91b47a8a7e82257eb181a6319dfcf9d", null ],

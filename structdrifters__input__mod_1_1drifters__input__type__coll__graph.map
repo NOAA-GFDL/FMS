@@ -1,6 +1,7 @@
 <map id="drifters_input_type" name="drifters_input_type">
-<area shape="rect" id="node1" title="Input data type for drifters." alt="" coords="195,197,339,224"/>
-<area shape="rect" id="node2" title=" " alt="" coords="5,5,209,32"/>
-<area shape="rect" id="node3" title=" " alt="" coords="233,5,301,32"/>
-<area shape="rect" id="node4" title=" " alt="" coords="325,5,372,32"/>
+<area shape="rect" id="node1" title="Input data type for drifters." alt="" coords="361,168,505,195"/>
+<area shape="rect" id="node2" title=" " alt="" coords="5,32,209,59"/>
+<area shape="rect" id="node3" title=" " alt="" coords="21,111,193,167"/>
+<area shape="rect" id="node4" title=" " alt="" coords="73,191,141,217"/>
+<area shape="rect" id="node5" title=" " alt="" coords="84,241,131,268"/>
 </map>

@@ -7,8 +7,8 @@ digraph "mpp_type_list"
   Node1 [label="mpp_type_list",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled", fontcolor="black",tooltip="Persisent elements for linked list interaction."];
   Node2 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" head\ntail" ,fontname="Helvetica"];
   Node2 [label="mpp_type",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$group__mpp__mod.html#structmpp__mod_1_1mpp__type",tooltip="Data types for generalized data transfer (e.g. MPI_Type)"];
-  Node2 -> Node2 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" prev\nnext" ,fontname="Helvetica"];
-  Node3 -> Node2 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" starts\npassing\nelementary\nndims\nlibrary\nidentifier\ninstances\nof\nnumber\netype\n..." ,fontname="Helvetica"];
+  Node2 -> Node2 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" next\nprev" ,fontname="Helvetica"];
+  Node3 -> Node2 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" counter\ndata\nelementary\netype\nid\nidentifier\ninstances\nlibrary\nmessage\nndims\n..." ,fontname="Helvetica"];
   Node3 [label="integer",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
   Node3 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" length" ,fontname="Helvetica"];
 }

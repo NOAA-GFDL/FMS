@@ -7,7 +7,7 @@ digraph "unstruct_domain_spec"
   Node1 [label="unstruct_domain_spec",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled", fontcolor="black",tooltip="Private type for axis specification data for an unstructured domain."];
   Node2 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" compute" ,fontname="Helvetica"];
   Node2 [label="unstruct_axis_spec",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$group__mpp__domains__mod.html#structmpp__domains__mod_1_1unstruct__axis__spec",tooltip="Private type for axis specification data for an unstructured grid."];
-  Node3 -> Node2 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" max_size\nsize\nbegin\nend\nend_index\nbegin_index" ,fontname="Helvetica"];
+  Node3 -> Node2 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" begin\nbegin_index\nend\nend_index\nmax_size\nsize" ,fontname="Helvetica"];
   Node3 [label="integer",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
-  Node3 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" tile_id\npe\npos" ,fontname="Helvetica"];
+  Node3 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" pe\npos\ntile_id" ,fontname="Helvetica"];
 }

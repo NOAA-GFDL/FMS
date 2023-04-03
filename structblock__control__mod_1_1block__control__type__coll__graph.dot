@@ -11,6 +11,6 @@ digraph "block_control_type"
   Node3 [label="integer",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
   Node4 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" index" ,fontname="Helvetica"];
   Node4 [label="pk_type",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$group__block__control__mod.html#structblock__control__mod_1_1pk__type",tooltip="Type to dereference packed index from global indices."];
-  Node3 -> Node4 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" jj\nii" ,fontname="Helvetica"];
-  Node3 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" ny_block\nnpz\niec\nblksz\njec\nibs\njbs\nisc\njsc\nibe\n..." ,fontname="Helvetica"];
+  Node3 -> Node4 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" ii\njj" ,fontname="Helvetica"];
+  Node3 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" blkno\nblksz\nibe\nibs\niec\nisc\nixp\njbe\njbs\njec\n..." ,fontname="Helvetica"];
 }

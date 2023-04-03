@@ -5,5 +5,5 @@ digraph "Graphical Class Hierarchy"
   edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
   node [fontname="Helvetica",fontsize="10",shape=record];
   rankdir="LR";
-  Node0 [label="domain2d_spec",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$group__mpp__domains__mod.html#structmpp__domains__mod_1_1domain2d__spec",tooltip="Private type to specify multiple index limits and pe information for a 2D domain."];
+  Node0 [label="domain2d",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$group__mpp__domains__mod.html#structmpp__domains__mod_1_1domain2d",tooltip="The domain2D type contains all the necessary information to define the global, compute and data domai..."];
 }

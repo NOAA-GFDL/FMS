@@ -5,5 +5,5 @@ digraph "Graphical Class Hierarchy"
   edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
   node [fontname="Helvetica",fontsize="10",shape=record];
   rankdir="LR";
-  Node0 [label="compute_mrs_k",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$group__sat__vapor__pres__k__mod.html#interfacesat__vapor__pres__k__mod_1_1compute__mrs__k",tooltip=" "];
+  Node0 [label="compute_mrs",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$group__sat__vapor__pres__mod.html#interfacesat__vapor__pres__mod_1_1compute__mrs",tooltip="For the given temperatures, pressures and optionally vapor mixing ratio, returns the vapor mixing rat..."];
 }

@@ -5,5 +5,5 @@ digraph "Graphical Class Hierarchy"
   edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
   node [fontname="Helvetica",fontsize="10",shape=record];
   rankdir="LR";
-  Node0 [label="date_type",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$group__amip__interp__mod.html#structamip__interp__mod_1_1date__type",tooltip="Private data type for representing a calendar date."];
+  Node0 [label="data_type",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$group__data__override__mod.html#structdata__override__mod_1_1data__type",tooltip="Private type for holding field and grid information from a data table."];
 }

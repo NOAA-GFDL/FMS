@@ -5,5 +5,5 @@ digraph "Graphical Class Hierarchy"
   edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
   node [fontname="Helvetica",fontsize="10",shape=record];
   rankdir="LR";
-  Node0 [label="getrandomnumbers",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$group__random__numbers__mod.html#interfacerandom__numbers__mod_1_1getrandomnumbers",tooltip="Returns scalar, 1 or 2 D random real numbers."];
+  Node0 [label="get_topog_stdev",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$interfacetopography__mod_1_1get__topog__stdev.html",tooltip="Returns a standard deviation of higher resolution topography with the given model grid boxes."];
 }

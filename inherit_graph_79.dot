@@ -5,5 +5,5 @@ digraph "Graphical Class Hierarchy"
   edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
   node [fontname="Helvetica",fontsize="10",shape=record];
   rankdir="LR";
-  Node0 [label="diurnal_solar",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$group__astronomy__mod.html#interfaceastronomy__mod_1_1diurnal__solar",tooltip="Calculates solar information for the given location(lat & lon) and time."];
+  Node0 [label="dimension_information",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$group__netcdf__io__mod.html#structnetcdf__io__mod_1_1dimension__information",tooltip="information about the current dimensions for regional restart variables"];
 }

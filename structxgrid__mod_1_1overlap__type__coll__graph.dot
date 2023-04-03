@@ -7,6 +7,6 @@ digraph "overlap_type"
   Node1 [label="overlap_type",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled", fontcolor="black",tooltip="Private type for overlap exchange grid data."];
   Node2 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" di\ndj" ,fontname="Helvetica"];
   Node2 [label="real(r8_kind)",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
-  Node3 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" g\ni\nj\npe\ncount\nxloc\nbuffer_pos\ntile" ,fontname="Helvetica"];
+  Node3 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" buffer_pos\ncount\ng\ni\nj\npe\ntile\nxloc" ,fontname="Helvetica"];
   Node3 [label="integer",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
 }

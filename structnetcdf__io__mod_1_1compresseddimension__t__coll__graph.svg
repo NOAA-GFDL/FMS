@@ -48,8 +48,8 @@
 <title>Node3&#45;&gt;Node1</title>
 <path fill="none" stroke="#9a32cd" stroke-dasharray="5,2" d="M150.09,-79.6C146.57,-67.18 140.84,-50.8 132.5,-38 127.93,-30.98 121.22,-24.43 115.51,-19.54"/>
 <polygon fill="#9a32cd" stroke="#9a32cd" points="146.71,-80.5 152.62,-89.29 153.48,-78.73 146.71,-80.5"/>
-<text text-anchor="middle" x="179" y="-63" font-family="Helvetica,sans-Serif" font-size="10.00"> npes_corner</text>
-<text text-anchor="middle" x="179" y="-52" font-family="Helvetica,sans-Serif" font-size="10.00">nelems</text>
+<text text-anchor="middle" x="179" y="-63" font-family="Helvetica,sans-Serif" font-size="10.00"> nelems</text>
+<text text-anchor="middle" x="179" y="-52" font-family="Helvetica,sans-Serif" font-size="10.00">npes_corner</text>
 <text text-anchor="middle" x="179" y="-41" font-family="Helvetica,sans-Serif" font-size="10.00">npes_nelems</text>
 </g>
 </g>

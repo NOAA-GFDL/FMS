@@ -7,7 +7,7 @@ digraph "unstruct_pass_type"
   Node1 [label="unstruct_pass_type",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled", fontcolor="black",tooltip="Private type."];
   Node2 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" recv\nsend" ,fontname="Helvetica"];
   Node2 [label="unstruct_overlap_type",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$group__mpp__domains__mod.html#structmpp__domains__mod_1_1unstruct__overlap__type",tooltip="Private type."];
-  Node3 -> Node2 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" i\nj\npe\ncount" ,fontname="Helvetica"];
+  Node3 -> Node2 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" count\ni\nj\npe" ,fontname="Helvetica"];
   Node3 [label="integer",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
-  Node3 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" nsend\nnrecv" ,fontname="Helvetica"];
+  Node3 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" nrecv\nnsend" ,fontname="Helvetica"];
 }

@@ -128,17 +128,12 @@ var group__diag__data__mod =
     [ "output_field_type", "group__diag__data__mod.html#structdiag__data__mod_1_1output__field__type", [
       [ "attributes", "group__diag__data__mod.html#a255430c019eb64c96a4608622e5166f8", null ],
       [ "axes", "group__diag__data__mod.html#a1cccbc47cab5259fadb9ba87b6718b75", null ],
+      [ "buff_bounds", "group__diag__data__mod.html#af88424101d9e77843e0951bf45e07b1d", null ],
       [ "buffer", "group__diag__data__mod.html#ac896f19687fd6c1222c78e157575fa9f", null ],
       [ "count_0d", "group__diag__data__mod.html#a213828f9467caf25a2e5a57b9de5ca30", null ],
       [ "counter", "group__diag__data__mod.html#af7cad26bba48992d9423997ae3fe6af8", null ],
       [ "f_type", "group__diag__data__mod.html#af7a5b2ef730c3775f92eaaee1bcbeb57", null ],
-      [ "imax", "group__diag__data__mod.html#a5646df863cab11b8da52520fbc2cf256", null ],
-      [ "imin", "group__diag__data__mod.html#aa060957bc5333a2f5427e0d1fb7991b6", null ],
       [ "input_field", "group__diag__data__mod.html#a08f957eebd6e3ed72c40b096d9de0a68", null ],
-      [ "jmax", "group__diag__data__mod.html#aa71b83da068695da501d25c09b1da96c", null ],
-      [ "jmin", "group__diag__data__mod.html#a965f9302d40b4835f354d4fd2a6594ca", null ],
-      [ "kmax", "group__diag__data__mod.html#a95f09a30312d7a7866c7a2a720337462", null ],
-      [ "kmin", "group__diag__data__mod.html#a757c719e88d1000d420da26b73fc1751", null ],
       [ "last_output", "group__diag__data__mod.html#ab6198d96c4d83153f40b95d45c06e852", null ],
       [ "local_output", "group__diag__data__mod.html#a98bd491223629dc597e9f51d72dd7359", null ],
       [ "n_diurnal_samples", "group__diag__data__mod.html#aada4f6b3e75cc8282df48173b938fb8e", null ],
@@ -196,5 +191,6 @@ var group__diag__data__mod =
     [ "prepend_date", "group__diag__data__mod.html#gaa90e712f4dde91f884f68b63bf7ebe19", null ],
     [ "region_out_use_alt_value", "group__diag__data__mod.html#ga784c45f38ca668f74e866a41aae732e1", null ],
     [ "use_cmor", "group__diag__data__mod.html#ga3420a40310788729f1afb40d8a6d66e3", null ],
-    [ "use_mpp_io", "group__diag__data__mod.html#ga6354efeadfde9254bc8a3c2698bff1a0", null ]
+    [ "use_mpp_io", "group__diag__data__mod.html#ga6354efeadfde9254bc8a3c2698bff1a0", null ],
+    [ "use_refactored_send", "group__diag__data__mod.html#gaf3c66e6470586fe13e1b6fa26b420bfb", null ]
 ];

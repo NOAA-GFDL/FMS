@@ -12,9 +12,9 @@
 <!-- Node0 -->
 <g id="node1" class="node">
 <title>Node0</title>
-<g id="a_node1"><a xlink:href="group__time__manager__mod.html#interfacetime__manager__mod_1_1operator_07_3_08" target="_top" xlink:title="Operator override interface for use with time_type.">
+<g id="a_node1"><a xlink:href="group__time__manager__mod.html#interfacetime__manager__mod_1_1operator_07_09_08" target="_top" xlink:title="Operator override interface for use with time_type.">
 <polygon fill="white" stroke="black" points="0,-0.5 0,-19.5 74,-19.5 74,-0.5 0,-0.5"/>
-<text text-anchor="middle" x="37" y="-7.5" font-family="Helvetica,sans-Serif" font-size="10.00">operator(&lt;)</text>
+<text text-anchor="middle" x="37" y="-7.5" font-family="Helvetica,sans-Serif" font-size="10.00">operator(+)</text>
 </a>
 </g>
 </g>

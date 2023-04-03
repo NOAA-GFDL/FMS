@@ -7,8 +7,8 @@ digraph "drifters_comm_type"
   Node1 [label="drifters_comm_type",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled", fontcolor="black",tooltip="Type for drifter communication between PE's."];
   Node2 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" xperiodic\nyperiodic" ,fontname="Helvetica"];
   Node2 [label="logical",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
-  Node3 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" pe_end\npe_n\npe_se\npe_sw\npe_s\npe_beg\npe_ne\npe_e\npe_nw\npe_w\n..." ,fontname="Helvetica"];
+  Node3 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" pe_beg\npe_e\npe_end\npe_n\npe_ne\npe_nw\npe_s\npe_se\npe_sw\npe_w\n..." ,fontname="Helvetica"];
   Node3 [label="integer",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
-  Node4 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" ydmax\nycmin\nxcmax\nycmax\nxgmin\nygmin\nxgmax\nygmax\nxdmin\nydmin\n..." ,fontname="Helvetica"];
+  Node4 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" xcmax\nxcmin\nxdmax\nxdmin\nxgmax\nxgmin\nycmax\nycmin\nydmax\nydmin\n..." ,fontname="Helvetica"];
   Node4 [label="real",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
 }

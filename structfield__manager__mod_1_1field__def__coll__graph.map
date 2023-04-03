@@ -1,8 +1,8 @@
 <map id="field_def" name="field_def">
-<area shape="rect" id="node1" title="Private type for internal use." alt="" coords="359,206,437,233"/>
-<area shape="rect" id="node2" title=" " alt="" coords="5,13,71,39"/>
-<area shape="rect" id="node3" title=" " alt="" coords="95,5,267,47"/>
-<area shape="rect" id="node4" title=" " alt="" coords="291,13,505,39"/>
-<area shape="rect" id="node5" title=" " alt="" coords="529,13,576,39"/>
-<area shape="rect" id="node6" title=" " alt="" coords="601,13,669,39"/>
+<area shape="rect" id="node1" title="Private type for internal use." alt="" coords="325,129,404,156"/>
+<area shape="rect" id="node2" title=" " alt="" coords="72,5,137,32"/>
+<area shape="rect" id="node3" title=" " alt="" coords="19,57,191,98"/>
+<area shape="rect" id="node4" title=" " alt="" coords="5,122,204,163"/>
+<area shape="rect" id="node5" title=" " alt="" coords="81,188,128,215"/>
+<area shape="rect" id="node6" title=" " alt="" coords="71,300,139,327"/>
 </map>

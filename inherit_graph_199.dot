@@ -5,5 +5,5 @@ digraph "Graphical Class Hierarchy"
   edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
   node [fontname="Helvetica",fontsize="10",shape=record];
   rankdir="LR";
-  Node0 [label="lookup_des",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$group__sat__vapor__pres__mod.html#interfacesat__vapor__pres__mod_1_1lookup__des",tooltip="For the given temperatures, returns the derivative of saturation vapor pressure with respect to tempe..."];
+  Node0 [label="interp_1d",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$group__axis__utils2__mod.html#interfaceaxis__utils2__mod_1_1interp__1d",tooltip="Perform 1D interpolation between grids."];
 }

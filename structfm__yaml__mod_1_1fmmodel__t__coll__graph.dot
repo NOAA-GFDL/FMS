@@ -14,14 +14,14 @@ digraph "fmmodel_t"
   Node5 -> Node4 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" children" ,fontname="Helvetica"];
   Node5 [label="fmattr_t",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$group__fm__yaml__mod.html#structfm__yaml__mod_1_1fmattr__t",tooltip="This type represents the subparameters for a given variable parameter. This type contains the name of..."];
   Node2 -> Node5 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" paramname" ,fontname="Helvetica"];
-  Node6 -> Node5 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" values\nkeys" ,fontname="Helvetica"];
+  Node6 -> Node5 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" keys\nvalues" ,fontname="Helvetica"];
   Node6 [label="character(len=:), dimension\l(:), allocatable",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
-  Node7 -> Node5 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" yfid\nid" ,fontname="Helvetica"];
+  Node7 -> Node5 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" id\nyfid" ,fontname="Helvetica"];
   Node7 [label="integer",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
   Node8 -> Node4 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" blockname" ,fontname="Helvetica"];
   Node8 [label="character(len=9)",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
   Node2 -> Node4 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" name" ,fontname="Helvetica"];
-  Node6 -> Node4 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" values\nkeys" ,fontname="Helvetica"];
-  Node7 -> Node4 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" key_ids\nchild_ids\nyfid\nnchildren\nid" ,fontname="Helvetica"];
-  Node7 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" child_ids\nyfid\nnchildren\nid" ,fontname="Helvetica"];
+  Node6 -> Node4 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" keys\nvalues" ,fontname="Helvetica"];
+  Node7 -> Node4 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" child_ids\nid\nkey_ids\nnchildren\nyfid" ,fontname="Helvetica"];
+  Node7 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" child_ids\nid\nnchildren\nyfid" ,fontname="Helvetica"];
 }

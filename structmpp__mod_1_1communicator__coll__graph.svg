@@ -51,9 +51,9 @@
 <text text-anchor="middle" x="169" y="-96" font-family="Helvetica,sans-Serif" font-size="10.00"> count</text>
 <text text-anchor="middle" x="169" y="-85" font-family="Helvetica,sans-Serif" font-size="10.00">group</text>
 <text text-anchor="middle" x="169" y="-74" font-family="Helvetica,sans-Serif" font-size="10.00">id</text>
-<text text-anchor="middle" x="169" y="-63" font-family="Helvetica,sans-Serif" font-size="10.00">start</text>
+<text text-anchor="middle" x="169" y="-63" font-family="Helvetica,sans-Serif" font-size="10.00">list</text>
 <text text-anchor="middle" x="169" y="-52" font-family="Helvetica,sans-Serif" font-size="10.00">log2stride</text>
-<text text-anchor="middle" x="169" y="-41" font-family="Helvetica,sans-Serif" font-size="10.00">list</text>
+<text text-anchor="middle" x="169" y="-41" font-family="Helvetica,sans-Serif" font-size="10.00">start</text>
 </g>
 </g>
 </svg>

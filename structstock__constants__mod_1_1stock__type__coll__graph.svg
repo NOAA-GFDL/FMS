@@ -32,10 +32,10 @@
 <title>Node2&#45;&gt;Node1</title>
 <path fill="none" stroke="#9a32cd" stroke-dasharray="5,2" d="M35,-90.22C35,-68.95 35,-35.22 35,-19.54"/>
 <polygon fill="#9a32cd" stroke="#9a32cd" points="31.5,-90.3 35,-100.3 38.5,-90.3 31.5,-90.3"/>
-<text text-anchor="middle" x="52.5" y="-74" font-family="Helvetica,sans-Serif" font-size="10.00"> q_now</text>
-<text text-anchor="middle" x="52.5" y="-63" font-family="Helvetica,sans-Serif" font-size="10.00">dq_in</text>
-<text text-anchor="middle" x="52.5" y="-52" font-family="Helvetica,sans-Serif" font-size="10.00">dq</text>
-<text text-anchor="middle" x="52.5" y="-41" font-family="Helvetica,sans-Serif" font-size="10.00">q_start</text>
+<text text-anchor="middle" x="52" y="-74" font-family="Helvetica,sans-Serif" font-size="10.00"> dq</text>
+<text text-anchor="middle" x="52" y="-63" font-family="Helvetica,sans-Serif" font-size="10.00">dq_in</text>
+<text text-anchor="middle" x="52" y="-52" font-family="Helvetica,sans-Serif" font-size="10.00">q_now</text>
+<text text-anchor="middle" x="52" y="-41" font-family="Helvetica,sans-Serif" font-size="10.00">q_start</text>
 </g>
 </g>
 </svg>

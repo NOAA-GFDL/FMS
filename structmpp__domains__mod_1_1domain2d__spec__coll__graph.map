@@ -2,6 +2,6 @@
 <area shape="rect" id="node1" title="Private type to specify multiple index limits and pe information for a 2D domain." alt="" coords="5,376,129,403"/>
 <area shape="rect" id="node2" href="$group__mpp__domains__mod.html#structmpp__domains__mod_1_1domain1d__spec" title="A private type used to specify index limits for a domain decomposition." alt="" coords="69,272,193,299"/>
 <area shape="rect" id="node3" href="$group__mpp__domains__mod.html#structmpp__domains__mod_1_1domain__axis__spec" title="Used to specify index limits along an axis of a domain." alt="" coords="181,139,324,165"/>
-<area shape="rect" id="node4" title=" " alt="" coords="237,5,303,32"/>
+<area shape="rect" id="node4" title=" " alt="" coords="233,5,299,32"/>
 <area shape="rect" id="node5" title=" " alt="" coords="95,5,163,32"/>
 </map>

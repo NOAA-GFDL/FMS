@@ -5,6 +5,6 @@ digraph "index_type"
   edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
   node [fontname="Helvetica",fontsize="10",shape=record];
   Node1 [label="index_type",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled", fontcolor="black",tooltip="index bounds for use in nestSpec"];
-  Node2 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" ie_me\njs_you\nje_me\nis_you\nis_me\nje_you\njs_me\nie_you" ,fontname="Helvetica"];
+  Node2 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" ie_me\nie_you\nis_me\nis_you\nje_me\nje_you\njs_me\njs_you" ,fontname="Helvetica"];
   Node2 [label="integer",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
 }

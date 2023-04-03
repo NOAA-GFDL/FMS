@@ -1,6 +1,6 @@
 <map id="domain1d_spec" name="domain1d_spec">
-<area shape="rect" id="node1" title="A private type used to specify index limits for a domain decomposition." alt="" coords="96,243,220,269"/>
-<area shape="rect" id="node2" href="$group__mpp__domains__mod.html#structmpp__domains__mod_1_1domain__axis__spec" title="Used to specify index limits along an axis of a domain." alt="" coords="27,139,169,165"/>
+<area shape="rect" id="node1" title="A private type used to specify index limits for a domain decomposition." alt="" coords="92,243,216,269"/>
+<area shape="rect" id="node2" href="$group__mpp__domains__mod.html#structmpp__domains__mod_1_1domain__axis__spec" title="Used to specify index limits along an axis of a domain." alt="" coords="23,139,165,165"/>
 <area shape="rect" id="node3" title=" " alt="" coords="5,5,71,32"/>
-<area shape="rect" id="node4" title=" " alt="" coords="140,5,208,32"/>
+<area shape="rect" id="node4" title=" " alt="" coords="139,5,207,32"/>
 </map>

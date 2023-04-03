@@ -5,5 +5,5 @@ digraph "Graphical Class Hierarchy"
   edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
   node [fontname="Helvetica",fontsize="10",shape=record];
   rankdir="LR";
-  Node0 [label="drifters_push",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$group__drifters__mod.html#interfacedrifters__mod_1_1drifters__push",tooltip="\"Push\" a given drifter at a given velocity for either 2D or 3D data"];
+  Node0 [label="drifters_io_type",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$group__drifters__input__mod.html#structdrifters__io__mod_1_1drifters__io__type",tooltip="IO data for drifters."];
 }

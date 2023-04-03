@@ -81,8 +81,8 @@
 <path fill="none" stroke="#9a32cd" stroke-dasharray="5,2" d="M332.14,-80.57C323.65,-67.47 310.59,-49.82 295.5,-38 285.43,-30.11 272.69,-23.96 261.54,-19.53"/>
 <polygon fill="#9a32cd" stroke="#9a32cd" points="329.23,-82.52 337.49,-89.16 335.18,-78.82 329.23,-82.52"/>
 <text text-anchor="middle" x="335.5" y="-63" font-family="Helvetica,sans-Serif" font-size="10.00"> iatt</text>
-<text text-anchor="middle" x="335.5" y="-52" font-family="Helvetica,sans-Serif" font-size="10.00">type</text>
-<text text-anchor="middle" x="335.5" y="-41" font-family="Helvetica,sans-Serif" font-size="10.00">len</text>
+<text text-anchor="middle" x="335.5" y="-52" font-family="Helvetica,sans-Serif" font-size="10.00">len</text>
+<text text-anchor="middle" x="335.5" y="-41" font-family="Helvetica,sans-Serif" font-size="10.00">type</text>
 </g>
 </g>
 </svg>

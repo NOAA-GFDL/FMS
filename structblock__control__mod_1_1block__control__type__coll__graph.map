@@ -1,6 +1,6 @@
 <map id="block_control_type" name="block_control_type">
-<area shape="rect" id="node1" title="Block data and extents for OpenMP threading of column&#45;based calculations." alt="" coords="68,333,213,360"/>
-<area shape="rect" id="node2" href="$group__block__control__mod.html#structblock__control__mod_1_1ix__type" title="Type to dereference packed index from global index." alt="" coords="105,177,176,203"/>
-<area shape="rect" id="node3" title=" " alt="" coords="106,5,174,32"/>
-<area shape="rect" id="node4" href="$group__block__control__mod.html#structblock__control__mod_1_1pk__type" title="Type to dereference packed index from global indices." alt="" coords="200,177,275,203"/>
+<area shape="rect" id="node1" title="Block data and extents for OpenMP threading of column&#45;based calculations." alt="" coords="44,333,189,360"/>
+<area shape="rect" id="node2" href="$group__block__control__mod.html#structblock__control__mod_1_1ix__type" title="Type to dereference packed index from global index." alt="" coords="81,177,152,203"/>
+<area shape="rect" id="node3" title=" " alt="" coords="83,5,151,32"/>
+<area shape="rect" id="node4" href="$group__block__control__mod.html#structblock__control__mod_1_1pk__type" title="Type to dereference packed index from global indices." alt="" coords="177,177,251,203"/>
 </map>

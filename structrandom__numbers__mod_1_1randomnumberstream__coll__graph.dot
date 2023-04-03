@@ -6,5 +6,7 @@ digraph "randomnumberstream"
   node [fontname="Helvetica",fontsize="10",shape=record];
   Node1 [label="randomnumberstream",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled", fontcolor="black",tooltip="Type to hold a stream of randomly generated numbers."];
   Node2 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" thenumbers" ,fontname="Helvetica"];
-  Node2 [label="type(randomnumbersequence)",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
+  Node2 [label="randomnumbersequence",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$group__mersennetwister__mod.html#structmersennetwister__mod_1_1randomnumbersequence",tooltip="The type containing the state variable."];
+  Node3 -> Node2 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" currentelement\nstate" ,fontname="Helvetica"];
+  Node3 [label="integer",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
 }

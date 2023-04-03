@@ -6,5 +6,5 @@ digraph "ptr2dr8"
   node [fontname="Helvetica",fontsize="10",shape=record];
   Node1 [label="ptr2dr8",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled", fontcolor="black",tooltip=" "];
   Node2 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" p" ,fontname="Helvetica"];
-  Node2 [label="real(double_kind)",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
+  Node2 [label="real(double_kind),\l dimension(:,:), pointer",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
 }

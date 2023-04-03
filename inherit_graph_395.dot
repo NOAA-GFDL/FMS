@@ -5,5 +5,5 @@ digraph "Graphical Class Hierarchy"
   edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
   node [fontname="Helvetica",fontsize="10",shape=record];
   rankdir="LR";
-  Node0 [label="reset_field_pointer",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$group__fms__io__mod.html#interfacefms__io__mod_1_1reset__field__pointer",tooltip=" "];
+  Node0 [label="read_restart",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$group__fms2__io__mod.html#interfacefms2__io__mod_1_1read__restart",tooltip="Reads in restart variables from a given file  Example usage: call read_restart(fileobj) Reads registe..."];
 }

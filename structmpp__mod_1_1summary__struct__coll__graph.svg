@@ -88,9 +88,9 @@
 <title>Node5&#45;&gt;Node2</title>
 <path fill="none" stroke="#9a32cd" stroke-dasharray="5,2" d="M273.16,-157.02C270.23,-141.11 263.75,-118.84 249.5,-105 240.67,-96.43 229.06,-90.58 217.39,-86.58"/>
 <polygon fill="#9a32cd" stroke="#9a32cd" points="269.75,-157.91 274.72,-167.27 276.67,-156.86 269.75,-157.91"/>
-<text text-anchor="middle" x="311" y="-141" font-family="Helvetica,sans-Serif" font-size="10.00"> total_data</text>
-<text text-anchor="middle" x="311" y="-130" font-family="Helvetica,sans-Serif" font-size="10.00">msg_size_sums</text>
-<text text-anchor="middle" x="311" y="-119" font-family="Helvetica,sans-Serif" font-size="10.00">msg_time_sums</text>
+<text text-anchor="middle" x="311" y="-141" font-family="Helvetica,sans-Serif" font-size="10.00"> msg_size_sums</text>
+<text text-anchor="middle" x="311" y="-130" font-family="Helvetica,sans-Serif" font-size="10.00">msg_time_sums</text>
+<text text-anchor="middle" x="311" y="-119" font-family="Helvetica,sans-Serif" font-size="10.00">total_data</text>
 <text text-anchor="middle" x="311" y="-108" font-family="Helvetica,sans-Serif" font-size="10.00">total_time</text>
 </g>
 </g>

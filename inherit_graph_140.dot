@@ -5,5 +5,5 @@ digraph "Graphical Class Hierarchy"
   edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
   node [fontname="Helvetica",fontsize="10",shape=record];
   rankdir="LR";
-  Node0 [label="get_from_xgrid",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$group__xgrid__mod.html#interfacexgrid__mod_1_1get__from__xgrid",tooltip="Sums data from exchange grid to model grid."];
+  Node0 [label="fmtype_t",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$group__fm__yaml__mod.html#structfm__yaml__mod_1_1fmtype__t",tooltip="This type represents the entries for a specific field type, e.g. a tracer. This type contains the nam..."];
 }

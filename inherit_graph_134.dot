@@ -5,5 +5,5 @@ digraph "Graphical Class Hierarchy"
   edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
   node [fontname="Helvetica",fontsize="10",shape=record];
   rankdir="LR";
-  Node0 [label="get_area_elements",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$group__xgrid__mod.html#interfacexgrid__mod_1_1get__area__elements",tooltip=" "];
+  Node0 [label="fmsdiagoutfieldindex_type",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$group__fms__diag__outfield__mod.html#structfms__diag__outfield__mod_1_1fmsdiagoutfieldindex__type",tooltip="Class fms_diag_outfield_index_type which (along with class fmsDiagOutfield_type) encapsulate related ..."];
 }

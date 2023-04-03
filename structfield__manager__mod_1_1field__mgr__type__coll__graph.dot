@@ -7,11 +7,11 @@ digraph "field_mgr_type"
   Node1 [label="field_mgr_type",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled", fontcolor="black",tooltip="Private type for internal use."];
   Node2 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" methods" ,fontname="Helvetica"];
   Node2 [label="method_type",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$group__field__manager__mod.html#structfield__manager__mod_1_1method__type",tooltip="This method_type is a way to allow a component module to alter the parameters it needs for various tr..."];
-  Node3 -> Node2 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" method_control\nmethod_type\nmethod_name" ,fontname="Helvetica"];
+  Node3 -> Node2 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" method_control\nmethod_name\nmethod_type" ,fontname="Helvetica"];
   Node3 [label="character(len=fm_string_len)",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
   Node4 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" field_type" ,fontname="Helvetica"];
   Node4 [label="character(len=fm_field\l_name_len)",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
-  Node5 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" num_methods\nmodel" ,fontname="Helvetica"];
+  Node5 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" model\nnum_methods" ,fontname="Helvetica"];
   Node5 [label="integer",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
   Node3 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" field_name" ,fontname="Helvetica"];
 }

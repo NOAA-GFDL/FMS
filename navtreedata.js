@@ -1,24 +1,26 @@
 /*
-@licstart  The following is the entire license notice for the
-JavaScript code in this file.
+ @licstart  The following is the entire license notice for the JavaScript code in this file.
 
-Copyright (C) 1997-2019 by Dimitri van Heesch
+ The MIT License (MIT)
 
-This program is free software; you can redistribute it and/or modify
-it under the terms of version 2 of the GNU General Public License as published by
-the Free Software Foundation
+ Copyright (C) 1997-2020 by Dimitri van Heesch
 
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-GNU General Public License for more details.
+ Permission is hereby granted, free of charge, to any person obtaining a copy of this software
+ and associated documentation files (the "Software"), to deal in the Software without restriction,
+ including without limitation the rights to use, copy, modify, merge, publish, distribute,
+ sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is
+ furnished to do so, subject to the following conditions:
 
-You should have received a copy of the GNU General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ The above copyright notice and this permission notice shall be included in all copies or
+ substantial portions of the Software.
 
-@licend  The above is the entire license notice
-for the JavaScript code in this file
+ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING
+ BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+ NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+ DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+ @licend  The above is the entire license notice for the JavaScript code in this file
 */
 var NAVTREE =
 [
@@ -38,29 +40,29 @@ var NAVTREE =
 
 var NAVTREEINDEX =
 [
-".html",
-"group__blackboxio.html",
-"group__coupler__types__mod.html#gaa2e7027dd9ed67bdc8993982d4027cde",
-"group__diag__data__mod.html#abcf33092ed5e63a052019e856a6a26bf",
-"group__diag__table__mod.html#a7311b3497a0d891de9b432626b2cf725",
-"group__field__manager__mod.html#ga2490331bea59c02616a06b1da832e240",
-"group__fms2__io__mod.html#a8b980647370bf8fba36dbf1b64de32dc",
-"group__fms__io__mod.html#aa9d140a80c2bd5a77f76d139500ce7e9",
-"group__fms__io__utils__mod.html#ga5c28900f1b693a2d0b3667a51fac36e3",
-"group__grid2__mod.html#a6c40906bf3167a63692d8c7f7696a8ef",
-"group__memutils__mod.html",
-"group__mpp__domains__mod.html#a35133357cd48b6a2a06fecc9a06d2f8f",
-"group__mpp__domains__mod.html#a750454e69a42f3fc24d335da75f07586",
-"group__mpp__domains__mod.html#abea09dfb4a32cb0d3a4465dd82f6a500",
-"group__mpp__domains__mod.html#ga24f3c3fbd27cb63cbdf8c451932f83b6",
-"group__mpp__efp__mod.html#ga6756bc06eb4e5c362a007af14dae0d2f",
-"group__mpp__mod.html",
-"group__mpp__mod.html#a8e536566f3c631be4dd4ae119b24a660",
-"group__mpp__pset__mod.html#gacd12b7ee59d989846feaec3327943ea6",
-"group__sat__vapor__pres__k__mod.html#a00e0f65fa028cd9db715e20fc24b0253",
-"group__time__interp__external__mod.html#gaa8bf9c54a34906df4ea20b36cca8edd5",
-"group__xgrid__mod.html#a8a5f299eef1abe4c0df23ebd220ce83e",
-"structinterpolator__mod_1_1interpolate__type.html#ae347444ad2a20432382be9214fa66f62"
+"annotated.html",
+"group__constants.html",
+"group__data__override__mod.html",
+"group__diag__data__mod.html#ga8b500568ab5de2d6d4e604c28209fdea",
+"group__diag__util__mod.html#gaf04fa5bd74518dd9e15e377ee7bcd1db",
+"group__field__manager__mod.html#gad9e55e1938dbd96a4776dd8a4378583d",
+"group__fms2__io__mod.html#ga55402102f24dd0d5cc6fb32b12b3bc3a",
+"group__fms__diag__time__reduction__mod.html#gac011f0d97beddf22508643c262bae539",
+"group__fms__io__mod.html#gacdcb373c251e060179c3f0508c2929e6",
+"group__fms__mod.html#ga76099928e3f2e58ea5efe717c7809fce",
+"group__horiz__interp__bicubic__mod.html#gac5c14ec4bdc77a63bae594f2b08b0a16",
+"group__mpp__domains__mod.html#a01246b2d8247f88e5b4a74e92811d2c0",
+"group__mpp__domains__mod.html#a4a049fcca61d4c84d003820fbc16de61",
+"group__mpp__domains__mod.html#a8d589573ff87f7c50b70c0577bc4ee89",
+"group__mpp__domains__mod.html#ad647e9d34add429dd842471b09d57723",
+"group__mpp__domains__mod.html#gabdeceb852404b0cdfe9ee2b4876353e8",
+"group__mpp__io__mod.html#ga33df53cc512d976bbd9295c0b30c4b1e",
+"group__mpp__mod.html#a3e68adb2f58768d9733b82f2e8eda950",
+"group__mpp__mod.html#ad5490452d28d969a84df0980ae41650e",
+"group__netcdf__io__mod.html#ga0a62a0d9ecf06458c63f8ec83ea025ac",
+"group__sat__vapor__pres__mod.html#interfacesat__vapor__pres__mod_1_1lookup__des3",
+"group__topography__mod.html#ga8f6023f3f9642f052adce17be3d06f8e",
+"group__xgrid__mod.html#interfacexgrid__mod_1_1get__area__elements"
 ];
 
 var SYNCONMSG = 'click to disable panel synchronisation';

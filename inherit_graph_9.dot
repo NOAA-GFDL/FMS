@@ -5,5 +5,5 @@ digraph "Graphical Class Hierarchy"
   edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
   node [fontname="Helvetica",fontsize="10",shape=record];
   rankdir="LR";
-  Node0 [label="assignment(=)",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$group__drifters__input__mod.html#interfacedrifters__input__mod_1_1assignment_07_0a_08",tooltip="Assignment override for drifters_input_type."];
+  Node0 [label="assignment(=)",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$group__mpp__efp__mod.html#interfacempp__efp__mod_1_1assignment_07_0a_08",tooltip="Assignment override interface for mpp_efp_type."];
 }

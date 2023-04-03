@@ -5,5 +5,5 @@ digraph "Graphical Class Hierarchy"
   edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
   node [fontname="Helvetica",fontsize="10",shape=record];
   rankdir="LR";
-  Node0 [label="mpp_start_group_update",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$group__mpp__domains__mod.html#interfacempp__domains__mod_1_1mpp__start__group__update",tooltip="Starts non-blocking group update Must be followed up with a call to mpp_complete_group_update mpp_gro..."];
+  Node0 [label="mpp_reproducing_sum",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$group__mpp__efp__mod.html#interfacempp__efp__mod_1_1mpp__reproducing__sum",tooltip="This interface uses a conversion to an integer representation of real numbers to give order-invariant..."];
 }

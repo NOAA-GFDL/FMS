@@ -1,10 +1,10 @@
 <map id="fmmodel_t" name="fmmodel_t">
 <area shape="rect" id="node1" title="This type represents the entries for a given model, e.g. land, ocean, atmosphere. This type contains ..." alt="" coords="215,393,308,420"/>
-<area shape="rect" id="node2" title=" " alt="" coords="33,13,241,39"/>
+<area shape="rect" id="node2" title=" " alt="" coords="32,13,240,39"/>
 <area shape="rect" id="node4" href="$group__fm__yaml__mod.html#structfm__yaml__mod_1_1fmvar__t" title="This type represents the entries for a given variable, e.g. dust. This type contains the name of the ..." alt="" coords="289,304,362,331"/>
-<area shape="rect" id="node5" href="$group__fm__yaml__mod.html#structfm__yaml__mod_1_1fmattr__t" title="This type represents the subparameters for a given variable parameter. This type contains the name of..." alt="" coords="397,147,472,174"/>
+<area shape="rect" id="node5" href="$group__fm__yaml__mod.html#structfm__yaml__mod_1_1fmattr__t" title="This type represents the subparameters for a given variable parameter. This type contains the name of..." alt="" coords="393,147,468,174"/>
 <area shape="rect" id="node3" title=" " alt="" coords="133,304,265,331"/>
-<area shape="rect" id="node6" title=" " alt="" coords="266,5,470,47"/>
-<area shape="rect" id="node7" title=" " alt="" coords="494,13,562,39"/>
+<area shape="rect" id="node6" title=" " alt="" coords="265,5,469,47"/>
+<area shape="rect" id="node7" title=" " alt="" coords="493,13,561,39"/>
 <area shape="rect" id="node8" title=" " alt="" coords="26,147,158,174"/>
 </map>

@@ -8,14 +8,16 @@ digraph "bc_information"
   Node1 [label="bc_information",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled", fontcolor="black",tooltip="information needed fr regional restart variables"];
   Node2 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" data_on_file_root\nis_root_pe" ,fontname="Helvetica"];
   Node2 [label="logical",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
-  Node3 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" globaldata2d_r8\nglobaldata3d_r8" ,fontname="Helvetica"];
-  Node3 [label="real(kind=r8_kind)",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
-  Node4 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" chksum" ,fontname="Helvetica"];
-  Node4 [label="character(len=32)",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
-  Node5 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" global_size\ny_halo\npelist\nx_halo\njshift\nishift\nindices" ,fontname="Helvetica"];
-  Node5 [label="integer",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
-  Node6 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" globaldata3d_r4" ,fontname="Helvetica"];
-  Node6 [label="real(kind=r4_kind),\l dimension(:,:,:), allocatable",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
-  Node7 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" globaldata2d_r4" ,fontname="Helvetica"];
-  Node7 [label="real(kind=r4_kind),\l dimension(:,:), allocatable",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
+  Node3 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" globaldata2d_r8" ,fontname="Helvetica"];
+  Node3 [label="real(kind=r8_kind),\l dimension(:,:), allocatable",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
+  Node4 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" globaldata3d_r8" ,fontname="Helvetica"];
+  Node4 [label="real(kind=r8_kind),\l dimension(:,:,:), allocatable",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
+  Node5 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" chksum" ,fontname="Helvetica"];
+  Node5 [label="character(len=32)",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
+  Node6 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" global_size\nindices\nishift\njshift\npelist\nx_halo\ny_halo" ,fontname="Helvetica"];
+  Node6 [label="integer",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
+  Node7 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" globaldata3d_r4" ,fontname="Helvetica"];
+  Node7 [label="real(kind=r4_kind),\l dimension(:,:,:), allocatable",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
+  Node8 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" globaldata2d_r4" ,fontname="Helvetica"];
+  Node8 [label="real(kind=r4_kind),\l dimension(:,:), allocatable",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
 }

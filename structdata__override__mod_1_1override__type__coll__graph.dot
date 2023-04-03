@@ -15,6 +15,6 @@ digraph "override_type"
   Node5 [label="horiz_interp_type",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
   Node6 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" lat_in\nlon_in" ,fontname="Helvetica"];
   Node6 [label="real",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
-  Node7 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" je_src\nie_src\nnumwindows\nt_index\nwindow_size\ncomp_domain\ndims\nnumthreads\njs_src\nis_src\n..." ,fontname="Helvetica"];
+  Node7 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" comp_domain\ndims\nie_src\nis_src\nje_src\njs_src\nnumthreads\nnumwindows\nt_index\nwindow_size\n..." ,fontname="Helvetica"];
   Node7 [label="integer",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
 }

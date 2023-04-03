@@ -5,5 +5,5 @@ digraph "Graphical Class Hierarchy"
   edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
   node [fontname="Helvetica",fontsize="10",shape=record];
   rankdir="LR";
-  Node0 [label="coupler_1d_bc_type",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$group__coupler__types__mod.html#structcoupler__types__mod_1_1coupler__1d__bc__type",tooltip="Coupler data for 1D boundary conditions."];
+  Node0 [label="coord_type",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$group__diag__data__mod.html#structdiag__data__mod_1_1coord__type",tooltip="Define the region for field output."];
 }

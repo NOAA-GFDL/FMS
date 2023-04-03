@@ -5,13 +5,13 @@ digraph "clock"
   edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
   node [fontname="Helvetica",fontsize="10",shape=record];
   Node1 [label="clock",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled", fontcolor="black",tooltip="a clock contains an array of event profiles for a region"];
-  Node2 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" detailed\ninitialize\nmpp_clock_begin\ncalling\nsync_on_begin\nwhen\nset\nto\nfalse\ntrue\n..." ,fontname="Helvetica"];
+  Node2 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" calling\ndetailed\nfalse\ninitialize\nis_on\nmpp_clock_begin\nset\nsync_on_begin\nto\ntrue\n..." ,fontname="Helvetica"];
   Node2 [label="logical",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
-  Node3 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" hits\ntotal_ticks\ntick" ,fontname="Helvetica"];
+  Node3 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" hits\ntick\ntotal_ticks" ,fontname="Helvetica"];
   Node3 [label="integer(i8_kind)",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
   Node4 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" name" ,fontname="Helvetica"];
   Node4 [label="character(len=32)",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
-  Node5 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" max_event_types\nneeded\nevents\nto\nallocate\nif" ,fontname="Helvetica"];
+  Node5 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" allocate\nevents\nif\nmax_event_types\nneeded\nto" ,fontname="Helvetica"];
   Node5 [label="event",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$group__mpp__mod.html#structmpp__mod_1_1event",tooltip="Communication event profile."];
   Node6 -> Node5 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" name" ,fontname="Helvetica"];
   Node6 [label="character(len=16)",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];

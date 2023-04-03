@@ -1,5 +1,5 @@
 <map id="clock" name="clock">
-<area shape="rect" id="node1" title="a clock contains an array of event profiles for a region" alt="" coords="251,363,307,389"/>
+<area shape="rect" id="node1" title="a clock contains an array of event profiles for a region" alt="" coords="255,363,311,389"/>
 <area shape="rect" id="node2" title=" " alt="" coords="5,118,71,145"/>
 <area shape="rect" id="node3" title=" " alt="" coords="74,5,199,32"/>
 <area shape="rect" id="node5" href="$group__mpp__mod.html#structmpp__mod_1_1event" title="Communication event profile." alt="" coords="265,118,323,145"/>

@@ -9,11 +9,11 @@ digraph "nestspec"
   Node2 [label="overlap_type",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$group__mpp__domains__mod.html#structmpp__domains__mod_1_1overlap__type",tooltip="Type for overlapping data."];
   Node3 -> Node2 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" from_contact" ,fontname="Helvetica"];
   Node3 [label="logical",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
-  Node4 -> Node2 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" rotation\ntotsize\npe\ndir\ntileme\njs\ncount\nis\ntilenbr\nindex\n..." ,fontname="Helvetica"];
+  Node4 -> Node2 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" count\ndir\nie\nindex\nis\nje\njs\nmsgsize\npe\nrotation\n..." ,fontname="Helvetica"];
   Node4 [label="integer",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
-  Node5 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" west\ncenter\nsouth\neast\nnorth" ,fontname="Helvetica"];
+  Node5 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" center\neast\nnorth\nsouth\nwest" ,fontname="Helvetica"];
   Node5 [label="index_type",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$group__mpp__domains__mod.html#structmpp__domains__mod_1_1index__type",tooltip="index bounds for use in nestSpec"];
-  Node4 -> Node5 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" ie_me\njs_you\nje_me\nis_you\nis_me\nje_you\njs_me\nie_you" ,fontname="Helvetica"];
+  Node4 -> Node5 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" ie_me\nie_you\nis_me\nis_you\nje_me\nje_you\njs_me\njs_you" ,fontname="Helvetica"];
   Node1 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" next" ,fontname="Helvetica"];
-  Node4 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" extra_halo\nnsend\nxsize_c\nybegin\nxbegin\nyend\nxend\nyend_c\nxbegin_c\nysize_c\n..." ,fontname="Helvetica"];
+  Node4 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" extra_halo\nnrecv\nnsend\nxbegin\nxbegin_c\nxbegin_f\nxend\nxend_c\nxend_f\nxsize_c\n..." ,fontname="Helvetica"];
 }

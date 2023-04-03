@@ -1,12 +1,13 @@
 <map id="drifters_type" name="drifters_type">
-<area shape="rect" id="node1" title="Holds all data needed for drifters communication, io, and input." alt="" coords="607,648,711,675"/>
-<area shape="rect" id="node2" title=" " alt="" coords="75,23,140,49"/>
-<area shape="rect" id="node4" href="$group__drifters__input__mod.html#structdrifters__io__mod_1_1drifters__io__type" title="IO data for drifters." alt="" coords="376,183,499,209"/>
-<area shape="rect" id="node7" href="$group__drifters__comm__mod.html#structdrifters__comm__mod_1_1drifters__comm__type" title="Type for drifter communication between PE&#39;s." alt="" coords="361,313,513,340"/>
-<area shape="rect" id="node3" title=" " alt="" coords="5,1193,209,1220"/>
-<area shape="rect" id="node8" href="$group__drifters__input__mod.html#structdrifters__input__mod_1_1drifters__input__type" title="Input data type for drifters." alt="" coords="365,853,509,880"/>
-<area shape="rect" id="node5" title=" " alt="" coords="73,783,141,809"/>
-<area shape="rect" id="node9" href="$group__drifters__core__mod.html#structdrifters__core__mod_1_1drifters__core__type" title="Core data needed for drifters. Be sure to update drifters_core_new, drifters_core_del and drifters_co..." alt="" coords="368,1007,507,1033"/>
-<area shape="rect" id="node6" title=" " alt="" coords="84,512,131,539"/>
-<area shape="rect" id="node10" title=" " alt="" coords="25,1143,189,1169"/>
+<area shape="rect" id="node1" title="Holds all data needed for drifters communication, io, and input." alt="" coords="607,543,711,569"/>
+<area shape="rect" id="node2" title=" " alt="" coords="75,21,140,48"/>
+<area shape="rect" id="node4" href="$group__drifters__input__mod.html#structdrifters__io__mod_1_1drifters__io__type" title="IO data for drifters." alt="" coords="376,221,499,248"/>
+<area shape="rect" id="node7" href="$group__drifters__comm__mod.html#structdrifters__comm__mod_1_1drifters__comm__type" title="Type for drifter communication between PE&#39;s." alt="" coords="361,429,513,456"/>
+<area shape="rect" id="node3" title=" " alt="" coords="5,1197,209,1224"/>
+<area shape="rect" id="node8" href="$group__drifters__input__mod.html#structdrifters__input__mod_1_1drifters__input__type" title="Input data type for drifters." alt="" coords="365,1023,509,1049"/>
+<area shape="rect" id="node5" title=" " alt="" coords="73,511,141,537"/>
+<area shape="rect" id="node10" href="$group__drifters__core__mod.html#structdrifters__core__mod_1_1drifters__core__type" title="Core data needed for drifters. Be sure to update drifters_core_new, drifters_core_del and drifters_co..." alt="" coords="368,731,507,757"/>
+<area shape="rect" id="node6" title=" " alt="" coords="84,867,131,893"/>
+<area shape="rect" id="node9" title=" " alt="" coords="21,1085,193,1141"/>
+<area shape="rect" id="node11" title=" " alt="" coords="25,917,189,944"/>
 </map>

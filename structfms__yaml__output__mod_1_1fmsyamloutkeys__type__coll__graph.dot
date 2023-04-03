@@ -4,7 +4,12 @@ digraph "fmsyamloutkeys_type"
  // LATEX_PDF_SIZE
   edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
   node [fontname="Helvetica",fontsize="10",shape=record];
+  rankdir="LR";
   Node1 [label="fmsyamloutkeys_type",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled", fontcolor="black",tooltip="Keys for the output yaml on a given level corresponding to the struct in yaml_output_functions...."];
-  Node2 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" key10\nkey1\nkey11\nkey2\nkey12\nkey3\nkey13\nkey4\nkey14\nkey5\n..." ,fontname="Helvetica"];
-  Node2 [label="character(c_char),\l dimension(string_len\l_parameter)",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
+  Node2 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" level2key_offset" ,fontname="Helvetica"];
+  Node2 [label="integer(c_int)",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
+  Node3 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" key1\nkey10\nkey11\nkey12\nkey13\nkey14\nkey15\nkey16\nkey2\nkey3\n..." ,fontname="Helvetica"];
+  Node3 [label="character(c_char),\l dimension(string_len\l_parameter)",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
+  Node4 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" level2key" ,fontname="Helvetica"];
+  Node4 [label="character(c_char),\l dimension(string_len\l_parameter *lvl2_key_parameter)",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
 }

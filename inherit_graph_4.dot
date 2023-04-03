@@ -5,5 +5,5 @@ digraph "Graphical Class Hierarchy"
   edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
   node [fontname="Helvetica",fontsize="10",shape=record];
   rankdir="LR";
-  Node0 [label="array_to_char",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$group__mpp__mod.html#interfacempp__mod_1_1array__to__char",tooltip="Takes a given integer or real array and returns it as a string."];
+  Node0 [label="annual_mean_solar",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$group__astronomy__mod.html#interfaceastronomy__mod_1_1annual__mean__solar",tooltip="Calculates the annual mean of solar information for a given latitude and time."];
 }

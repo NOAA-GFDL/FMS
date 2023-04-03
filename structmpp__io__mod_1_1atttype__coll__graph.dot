@@ -9,7 +9,7 @@ digraph "atttype"
   Node2 [label="character(len=128)",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
   Node3 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" fatt" ,fontname="Helvetica"];
   Node3 [label="real",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
-  Node4 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" type\nlen" ,fontname="Helvetica"];
+  Node4 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" len\ntype" ,fontname="Helvetica"];
   Node4 [label="integer",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
   Node5 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" catt" ,fontname="Helvetica"];
   Node5 [label="character(len=max_att\l_length)",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];

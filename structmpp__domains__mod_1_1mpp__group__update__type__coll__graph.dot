@@ -5,10 +5,10 @@ digraph "mpp_group_update_type"
   edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
   node [fontname="Helvetica",fontsize="10",shape=record];
   Node1 [label="mpp_group_update_type",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled", fontcolor="black",tooltip="used for updates on a group"];
-  Node2 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" k_loop_inside\nrecv_s\nnonsym_edge\nrecv_x\ninitialized\nrecv_y" ,fontname="Helvetica"];
+  Node2 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" initialized\nk_loop_inside\nnonsym_edge\nrecv_s\nrecv_x\nrecv_y" ,fontname="Helvetica"];
   Node2 [label="logical",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
-  Node3 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" addrs_y\naddrs_s\naddrs_x" ,fontname="Helvetica"];
+  Node3 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" addrs_s\naddrs_x\naddrs_y" ,fontname="Helvetica"];
   Node3 [label="integer(i8_kind)",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
-  Node4 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" request_send\njs_x\nfrom_pe\nnpack\nnsend\njs_y\nis_x\nis_y\nnhalo_s\nflags_v\n..." ,fontname="Helvetica"];
+  Node4 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" buffer_pos_recv\nbuffer_pos_send\nbuffer_start_pos\nehalo_s\nehalo_v\nflags_s\nflags_v\nfrom_pe\ngridtype\nie_s\n..." ,fontname="Helvetica"];
   Node4 [label="integer",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
 }

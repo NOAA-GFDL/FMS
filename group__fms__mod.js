@@ -11,9 +11,13 @@ var group__fms__mod =
       [ "multiplenmlsinfile", "group__fms__mod.html#aeef287b5667f4a81a041cbbaafc6e707", null ],
       [ "notinfile", "group__fms__mod.html#ae4939f16a1734b3d5134b93d505e6850", null ]
     ] ],
-    [ "string", "group__fms__mod.html#interfacefms__string__utils__mod_1_1string", [
-      [ "string_from_integer", "group__fms__mod.html#aa376b42bf56dc366fd3fcf116abe93e8", null ],
-      [ "string_from_real", "group__fms__mod.html#a6ccc1a91862455f5aaf10c32e1a276b6", null ]
+    [ "stringify", "group__fms__mod.html#interfacefms__string__utils__mod_1_1stringify", [
+      [ "stringify_1d_r4", "group__fms__mod.html#ad35b182041a9cb45dea27fcb094e5208", null ],
+      [ "stringify_1d_r8", "group__fms__mod.html#ae623079cbfc252c4b227b779a9862a2d", null ],
+      [ "stringify_2d_r4", "group__fms__mod.html#adb8cca68494a4cbaf6632c2d08f14b05", null ],
+      [ "stringify_2d_r8", "group__fms__mod.html#a72caf8abe9791033751de2b103962c7a", null ],
+      [ "stringify_3d_r4", "group__fms__mod.html#ab6b7165ec311214456eb58f071010197", null ],
+      [ "stringify_3d_r8", "group__fms__mod.html#ae8f689558dd2ae8e1fa63e59a8b7d92c", null ]
     ] ],
     [ "check_nml_error", "group__fms__mod.html#ga05e7686befc1e49d2be9bdb81d479a76", null ],
     [ "error_mesg", "group__fms__mod.html#gae5c7420e421293e2be14717dd7b3d97f", null ],

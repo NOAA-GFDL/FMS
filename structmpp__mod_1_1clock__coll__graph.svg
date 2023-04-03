@@ -13,8 +13,8 @@
 <g id="node1" class="node">
 <title>Node1</title>
 <g id="a_node1"><a xlink:title="a clock contains an array of event profiles for a region">
-<polygon fill="#bfbfbf" stroke="black" points="184.5,-0.5 184.5,-19.5 226.5,-19.5 226.5,-0.5 184.5,-0.5"/>
-<text text-anchor="middle" x="205.5" y="-7.5" font-family="Helvetica,sans-Serif" font-size="10.00">clock</text>
+<polygon fill="#bfbfbf" stroke="black" points="187.5,-0.5 187.5,-19.5 229.5,-19.5 229.5,-0.5 187.5,-0.5"/>
+<text text-anchor="middle" x="208.5" y="-7.5" font-family="Helvetica,sans-Serif" font-size="10.00">clock</text>
 </a>
 </g>
 </g>
@@ -30,17 +30,17 @@
 <!-- Node2&#45;&gt;Node1 -->
 <g id="edge1" class="edge">
 <title>Node2&#45;&gt;Node1</title>
-<path fill="none" stroke="#9a32cd" stroke-dasharray="5,2" d="M17.8,-174.03C7.53,-142.09 -7.66,-76.26 25.5,-38 45.89,-14.48 141.49,-11.17 184.47,-10.89"/>
-<polygon fill="#9a32cd" stroke="#9a32cd" points="14.6,-175.49 21.15,-183.82 21.23,-173.23 14.6,-175.49"/>
-<text text-anchor="middle" x="68" y="-151" font-family="Helvetica,sans-Serif" font-size="10.00"> detailed</text>
-<text text-anchor="middle" x="68" y="-140" font-family="Helvetica,sans-Serif" font-size="10.00">initialize</text>
-<text text-anchor="middle" x="68" y="-129" font-family="Helvetica,sans-Serif" font-size="10.00">mpp_clock_begin</text>
-<text text-anchor="middle" x="68" y="-118" font-family="Helvetica,sans-Serif" font-size="10.00">calling</text>
-<text text-anchor="middle" x="68" y="-107" font-family="Helvetica,sans-Serif" font-size="10.00">sync_on_begin</text>
-<text text-anchor="middle" x="68" y="-96" font-family="Helvetica,sans-Serif" font-size="10.00">when</text>
+<path fill="none" stroke="#9a32cd" stroke-dasharray="5,2" d="M17.8,-174.03C7.51,-142.07 -7.71,-76.22 25.5,-38 46.3,-14.06 143.93,-10.99 187.46,-10.84"/>
+<polygon fill="#9a32cd" stroke="#9a32cd" points="14.6,-175.49 21.14,-183.82 21.22,-173.22 14.6,-175.49"/>
+<text text-anchor="middle" x="68" y="-151" font-family="Helvetica,sans-Serif" font-size="10.00"> calling</text>
+<text text-anchor="middle" x="68" y="-140" font-family="Helvetica,sans-Serif" font-size="10.00">detailed</text>
+<text text-anchor="middle" x="68" y="-129" font-family="Helvetica,sans-Serif" font-size="10.00">false</text>
+<text text-anchor="middle" x="68" y="-118" font-family="Helvetica,sans-Serif" font-size="10.00">initialize</text>
+<text text-anchor="middle" x="68" y="-107" font-family="Helvetica,sans-Serif" font-size="10.00">is_on</text>
+<text text-anchor="middle" x="68" y="-96" font-family="Helvetica,sans-Serif" font-size="10.00">mpp_clock_begin</text>
 <text text-anchor="middle" x="68" y="-85" font-family="Helvetica,sans-Serif" font-size="10.00">set</text>
-<text text-anchor="middle" x="68" y="-74" font-family="Helvetica,sans-Serif" font-size="10.00">to</text>
-<text text-anchor="middle" x="68" y="-63" font-family="Helvetica,sans-Serif" font-size="10.00">false</text>
+<text text-anchor="middle" x="68" y="-74" font-family="Helvetica,sans-Serif" font-size="10.00">sync_on_begin</text>
+<text text-anchor="middle" x="68" y="-63" font-family="Helvetica,sans-Serif" font-size="10.00">to</text>
 <text text-anchor="middle" x="68" y="-52" font-family="Helvetica,sans-Serif" font-size="10.00">true</text>
 <text text-anchor="middle" x="68" y="-41" font-family="Helvetica,sans-Serif" font-size="10.00">...</text>
 </g>
@@ -56,11 +56,11 @@
 <!-- Node3&#45;&gt;Node1 -->
 <g id="edge2" class="edge">
 <title>Node3&#45;&gt;Node1</title>
-<path fill="none" stroke="#9a32cd" stroke-dasharray="5,2" d="M104.49,-258.62C111.16,-238.45 122.47,-205.18 133.5,-177 157.42,-115.86 190.27,-43.91 201.53,-19.55"/>
-<polygon fill="#9a32cd" stroke="#9a32cd" points="101.08,-257.77 101.29,-268.36 107.73,-259.95 101.08,-257.77"/>
+<path fill="none" stroke="#9a32cd" stroke-dasharray="5,2" d="M104.41,-258.59C111.01,-238.39 122.26,-205.1 133.5,-177 158.05,-115.63 192.5,-43.82 204.33,-19.53"/>
+<polygon fill="#9a32cd" stroke="#9a32cd" points="101,-257.75 101.25,-268.34 107.66,-259.91 101,-257.75"/>
 <text text-anchor="middle" x="159.5" y="-202" font-family="Helvetica,sans-Serif" font-size="10.00"> hits</text>
-<text text-anchor="middle" x="159.5" y="-191" font-family="Helvetica,sans-Serif" font-size="10.00">total_ticks</text>
-<text text-anchor="middle" x="159.5" y="-180" font-family="Helvetica,sans-Serif" font-size="10.00">tick</text>
+<text text-anchor="middle" x="159.5" y="-191" font-family="Helvetica,sans-Serif" font-size="10.00">tick</text>
+<text text-anchor="middle" x="159.5" y="-180" font-family="Helvetica,sans-Serif" font-size="10.00">total_ticks</text>
 </g>
 <!-- Node5 -->
 <g id="node5" class="node">
@@ -91,21 +91,21 @@
 <!-- Node4&#45;&gt;Node1 -->
 <g id="edge3" class="edge">
 <title>Node4&#45;&gt;Node1</title>
-<path fill="none" stroke="#9a32cd" stroke-dasharray="5,2" d="M429.8,-174.56C414.79,-141.89 378.43,-72.86 325.5,-38 295.18,-18.03 252.21,-12.68 226.76,-11.33"/>
-<polygon fill="#9a32cd" stroke="#9a32cd" points="426.64,-176.09 433.91,-183.8 433.04,-173.24 426.64,-176.09"/>
+<path fill="none" stroke="#9a32cd" stroke-dasharray="5,2" d="M429.78,-174.59C414.75,-141.97 378.33,-73 325.5,-38 296.13,-18.54 254.55,-13.01 229.68,-11.49"/>
+<polygon fill="#9a32cd" stroke="#9a32cd" points="426.62,-176.11 433.9,-183.81 433.02,-173.26 426.62,-176.11"/>
 <text text-anchor="middle" x="437" y="-96" font-family="Helvetica,sans-Serif" font-size="10.00"> name</text>
 </g>
 <!-- Node5&#45;&gt;Node1 -->
 <g id="edge4" class="edge">
 <title>Node5&#45;&gt;Node1</title>
-<path fill="none" stroke="#9a32cd" stroke-dasharray="5,2" d="M210.01,-174.15C208.57,-169.29 207.25,-164 206.5,-159 198.67,-106.65 202.79,-42.72 204.7,-19.74"/>
-<polygon fill="#9a32cd" stroke="#9a32cd" points="206.74,-175.42 213.17,-183.84 213.39,-173.25 206.74,-175.42"/>
-<text text-anchor="middle" x="252" y="-123.5" font-family="Helvetica,sans-Serif" font-size="10.00"> max_event_types</text>
-<text text-anchor="middle" x="252" y="-112.5" font-family="Helvetica,sans-Serif" font-size="10.00">needed</text>
-<text text-anchor="middle" x="252" y="-101.5" font-family="Helvetica,sans-Serif" font-size="10.00">events</text>
-<text text-anchor="middle" x="252" y="-90.5" font-family="Helvetica,sans-Serif" font-size="10.00">to</text>
-<text text-anchor="middle" x="252" y="-79.5" font-family="Helvetica,sans-Serif" font-size="10.00">allocate</text>
-<text text-anchor="middle" x="252" y="-68.5" font-family="Helvetica,sans-Serif" font-size="10.00">if</text>
+<path fill="none" stroke="#9a32cd" stroke-dasharray="5,2" d="M211.88,-173.65C210.9,-168.9 210.01,-163.79 209.5,-159 203.88,-106.37 206.66,-42.61 207.96,-19.71"/>
+<polygon fill="#9a32cd" stroke="#9a32cd" points="208.54,-174.78 214.17,-183.76 215.37,-173.23 208.54,-174.78"/>
+<text text-anchor="middle" x="253.5" y="-123.5" font-family="Helvetica,sans-Serif" font-size="10.00"> allocate</text>
+<text text-anchor="middle" x="253.5" y="-112.5" font-family="Helvetica,sans-Serif" font-size="10.00">events</text>
+<text text-anchor="middle" x="253.5" y="-101.5" font-family="Helvetica,sans-Serif" font-size="10.00">if</text>
+<text text-anchor="middle" x="253.5" y="-90.5" font-family="Helvetica,sans-Serif" font-size="10.00">max_event_types</text>
+<text text-anchor="middle" x="253.5" y="-79.5" font-family="Helvetica,sans-Serif" font-size="10.00">needed</text>
+<text text-anchor="middle" x="253.5" y="-68.5" font-family="Helvetica,sans-Serif" font-size="10.00">to</text>
 </g>
 <!-- Node6 -->
 <g id="node6" class="node">
@@ -135,8 +135,8 @@
 <!-- Node7&#45;&gt;Node1 -->
 <g id="edge8" class="edge">
 <title>Node7&#45;&gt;Node1</title>
-<path fill="none" stroke="#9a32cd" stroke-dasharray="5,2" d="M313.97,-258.37C317.53,-208.2 324.46,-71.75 297.5,-38 280.67,-16.93 248.3,-11.71 226.8,-10.73"/>
-<polygon fill="#9a32cd" stroke="#9a32cd" points="310.47,-258.2 313.22,-268.44 317.45,-258.73 310.47,-258.2"/>
+<path fill="none" stroke="#9a32cd" stroke-dasharray="5,2" d="M313.96,-258.38C317.48,-208.25 324.31,-71.87 297.5,-38 281.37,-17.61 250.33,-12.19 229.51,-10.97"/>
+<polygon fill="#9a32cd" stroke="#9a32cd" points="310.46,-258.21 313.21,-268.44 317.44,-258.73 310.46,-258.21"/>
 <text text-anchor="middle" x="344" y="-196.5" font-family="Helvetica,sans-Serif" font-size="10.00"> grain</text>
 <text text-anchor="middle" x="344" y="-185.5" font-family="Helvetica,sans-Serif" font-size="10.00">peset_num</text>
 </g>

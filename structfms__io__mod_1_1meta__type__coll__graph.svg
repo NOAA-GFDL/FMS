@@ -23,8 +23,8 @@
 <title>Node1&#45;&gt;Node1</title>
 <path fill="none" stroke="#9a32cd" stroke-dasharray="5,2" d="M199.19,-17.24C203.95,-16.04 207,-13.95 207,-11 207,-6.27 199.18,-3.78 189.09,-3.52"/>
 <polygon fill="#9a32cd" stroke="#9a32cd" points="198.59,-13.79 189.09,-18.48 199.44,-20.74 198.59,-13.79"/>
-<text text-anchor="middle" x="219.5" y="-14" font-family="Helvetica,sans-Serif" font-size="10.00"> prev</text>
-<text text-anchor="middle" x="219.5" y="-3" font-family="Helvetica,sans-Serif" font-size="10.00">next</text>
+<text text-anchor="middle" x="219.5" y="-14" font-family="Helvetica,sans-Serif" font-size="10.00"> next</text>
+<text text-anchor="middle" x="219.5" y="-3" font-family="Helvetica,sans-Serif" font-size="10.00">prev</text>
 </g>
 <!-- Node2 -->
 <g id="node2" class="node">

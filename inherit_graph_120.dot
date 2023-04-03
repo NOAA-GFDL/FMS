@@ -5,5 +5,5 @@ digraph "Graphical Class Hierarchy"
   edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
   node [fontname="Helvetica",fontsize="10",shape=record];
   rankdir="LR";
-  Node0 [label="fms_cstring2cpointer",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$interfacefms__string__utils__mod_1_1fms__cstring2cpointer.html",tooltip="converts a kind=c_char to type c_ptr"];
+  Node0 [label="fmattr_t",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$group__fm__yaml__mod.html#structfm__yaml__mod_1_1fmattr__t",tooltip="This type represents the subparameters for a given variable parameter. This type contains the name of..."];
 }

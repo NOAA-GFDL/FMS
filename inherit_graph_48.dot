@@ -5,5 +5,5 @@ digraph "Graphical Class Hierarchy"
   edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
   node [fontname="Helvetica",fontsize="10",shape=record];
   rankdir="LR";
-  Node0 [label="coupler_type_copy",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$group__coupler__types__mod.html#interfacecoupler__types__mod_1_1coupler__type__copy",tooltip="This is the interface to spawn one coupler_bc_type into another and then register diagnostics associa..."];
+  Node0 [label="coupler_3d_values_type",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$group__coupler__types__mod.html#structcoupler__types__mod_1_1coupler__3d__values__type",tooltip="Coupler data for 3D values."];
 }

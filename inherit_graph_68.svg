@@ -12,9 +12,9 @@
 <!-- Node0 -->
 <g id="node1" class="node">
 <title>Node0</title>
-<g id="a_node1"><a xlink:href="group__amip__interp__mod.html#structamip__interp__mod_1_1date__type" target="_top" xlink:title="Private data type for representing a calendar date.">
+<g id="a_node1"><a xlink:href="group__data__override__mod.html#structdata__override__mod_1_1data__type" target="_top" xlink:title="Private type for holding field and grid information from a data table.">
 <polygon fill="white" stroke="black" points="0,-0.5 0,-19.5 65,-19.5 65,-0.5 0,-0.5"/>
-<text text-anchor="middle" x="32.5" y="-7.5" font-family="Helvetica,sans-Serif" font-size="10.00">date_type</text>
+<text text-anchor="middle" x="32.5" y="-7.5" font-family="Helvetica,sans-Serif" font-size="10.00">data_type</text>
 </a>
 </g>
 </g>

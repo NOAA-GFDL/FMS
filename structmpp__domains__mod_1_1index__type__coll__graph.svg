@@ -33,13 +33,13 @@
 <path fill="none" stroke="#9a32cd" stroke-dasharray="5,2" d="M35.5,-134.11C35.5,-102.93 35.5,-41.93 35.5,-19.52"/>
 <polygon fill="#9a32cd" stroke="#9a32cd" points="32,-134.12 35.5,-144.12 39,-134.12 32,-134.12"/>
 <text text-anchor="middle" x="52.5" y="-118" font-family="Helvetica,sans-Serif" font-size="10.00"> ie_me</text>
-<text text-anchor="middle" x="52.5" y="-107" font-family="Helvetica,sans-Serif" font-size="10.00">js_you</text>
-<text text-anchor="middle" x="52.5" y="-96" font-family="Helvetica,sans-Serif" font-size="10.00">je_me</text>
+<text text-anchor="middle" x="52.5" y="-107" font-family="Helvetica,sans-Serif" font-size="10.00">ie_you</text>
+<text text-anchor="middle" x="52.5" y="-96" font-family="Helvetica,sans-Serif" font-size="10.00">is_me</text>
 <text text-anchor="middle" x="52.5" y="-85" font-family="Helvetica,sans-Serif" font-size="10.00">is_you</text>
-<text text-anchor="middle" x="52.5" y="-74" font-family="Helvetica,sans-Serif" font-size="10.00">is_me</text>
+<text text-anchor="middle" x="52.5" y="-74" font-family="Helvetica,sans-Serif" font-size="10.00">je_me</text>
 <text text-anchor="middle" x="52.5" y="-63" font-family="Helvetica,sans-Serif" font-size="10.00">je_you</text>
 <text text-anchor="middle" x="52.5" y="-52" font-family="Helvetica,sans-Serif" font-size="10.00">js_me</text>
-<text text-anchor="middle" x="52.5" y="-41" font-family="Helvetica,sans-Serif" font-size="10.00">ie_you</text>
+<text text-anchor="middle" x="52.5" y="-41" font-family="Helvetica,sans-Serif" font-size="10.00">js_you</text>
 </g>
 </g>
 </svg>

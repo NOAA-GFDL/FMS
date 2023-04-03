@@ -5,5 +5,5 @@ digraph "Graphical Class Hierarchy"
   edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
   node [fontname="Helvetica",fontsize="10",shape=record];
   rankdir="LR";
-  Node0 [label="fms_sort_this",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$interfacefms__string__utils__mod_1_1fms__sort__this.html",tooltip="Sorts an array of pointers (my pointer) of size (p_size) in alphabetical order."];
+  Node0 [label="fms_find_my_string\l_binding",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$interfacefms__string__utils__mod_1_1fms__find__my__string__binding.html",tooltip="Private c function that finds a string in a SORTED array of c pointers."];
 }

@@ -94,14 +94,14 @@ var sectionId = 'dynsection-1';
 <title>Node3&#45;&gt;Node1</title>
 <path fill="none" stroke="#9a32cd" stroke-dasharray="5,2" d="M18.5,-258.65C7.35,-226.13 -10.37,-157.44 18.5,-111 56.62,-49.69 140.88,-25.95 198.45,-16.77"/>
 <polygon fill="#9a32cd" stroke="#9a32cd" points="15.26,-259.99 21.95,-268.21 21.84,-257.61 15.26,-259.99"/>
-<text text-anchor="middle" x="67.5" y="-191" font-family="Helvetica,sans-Serif" font-size="10.00"> itime_units</text>
-<text text-anchor="middle" x="67.5" y="-180" font-family="Helvetica,sans-Serif" font-size="10.00">file_duration</text>
-<text text-anchor="middle" x="67.5" y="-169" font-family="Helvetica,sans-Serif" font-size="10.00">inew_file_freq_units</text>
-<text text-anchor="middle" x="67.5" y="-158" font-family="Helvetica,sans-Serif" font-size="10.00">ifile_duration_units</text>
-<text text-anchor="middle" x="67.5" y="-147" font-family="Helvetica,sans-Serif" font-size="10.00">output_freq</text>
-<text text-anchor="middle" x="67.5" y="-136" font-family="Helvetica,sans-Serif" font-size="10.00">ioutput_freq_units</text>
-<text text-anchor="middle" x="67.5" y="-125" font-family="Helvetica,sans-Serif" font-size="10.00">file_format</text>
-<text text-anchor="middle" x="67.5" y="-114" font-family="Helvetica,sans-Serif" font-size="10.00">new_file_freq</text>
+<text text-anchor="middle" x="67.5" y="-191" font-family="Helvetica,sans-Serif" font-size="10.00"> file_duration</text>
+<text text-anchor="middle" x="67.5" y="-180" font-family="Helvetica,sans-Serif" font-size="10.00">file_format</text>
+<text text-anchor="middle" x="67.5" y="-169" font-family="Helvetica,sans-Serif" font-size="10.00">ifile_duration_units</text>
+<text text-anchor="middle" x="67.5" y="-158" font-family="Helvetica,sans-Serif" font-size="10.00">inew_file_freq_units</text>
+<text text-anchor="middle" x="67.5" y="-147" font-family="Helvetica,sans-Serif" font-size="10.00">ioutput_freq_units</text>
+<text text-anchor="middle" x="67.5" y="-136" font-family="Helvetica,sans-Serif" font-size="10.00">itime_units</text>
+<text text-anchor="middle" x="67.5" y="-125" font-family="Helvetica,sans-Serif" font-size="10.00">new_file_freq</text>
+<text text-anchor="middle" x="67.5" y="-114" font-family="Helvetica,sans-Serif" font-size="10.00">output_freq</text>
 </g>
 <!-- Node3&#45;&gt;Node2 -->
 <g id="edge2" class="edge">
@@ -126,10 +126,10 @@ var sectionId = 'dynsection-1';
 <title>Node4&#45;&gt;Node1</title>
 <path fill="none" stroke="#9a32cd" stroke-dasharray="5,2" d="M261,-135.16C260.11,-123.11 259.05,-107.14 258.5,-93 257.46,-66.25 257.41,-34.57 257.45,-19.62"/>
 <polygon fill="#9a32cd" stroke="#9a32cd" points="257.53,-135.62 261.78,-145.32 264.51,-135.08 257.53,-135.62"/>
-<text text-anchor="middle" x="314.5" y="-85" font-family="Helvetica,sans-Serif" font-size="10.00"> new_file_freq_units</text>
+<text text-anchor="middle" x="314.5" y="-85" font-family="Helvetica,sans-Serif" font-size="10.00"> file_duration_units</text>
 <text text-anchor="middle" x="314.5" y="-74" font-family="Helvetica,sans-Serif" font-size="10.00">filename_time_bounds</text>
-<text text-anchor="middle" x="314.5" y="-63" font-family="Helvetica,sans-Serif" font-size="10.00">output_freq_units</text>
-<text text-anchor="middle" x="314.5" y="-52" font-family="Helvetica,sans-Serif" font-size="10.00">file_duration_units</text>
+<text text-anchor="middle" x="314.5" y="-63" font-family="Helvetica,sans-Serif" font-size="10.00">new_file_freq_units</text>
+<text text-anchor="middle" x="314.5" y="-52" font-family="Helvetica,sans-Serif" font-size="10.00">output_freq_units</text>
 <text text-anchor="middle" x="314.5" y="-41" font-family="Helvetica,sans-Serif" font-size="10.00">time_units</text>
 </g>
 <!-- Node5 -->

@@ -9,11 +9,11 @@ digraph "file_description_type"
   Node2 [label="time_type",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$group__time__manager__mod.html#structtime__manager__mod_1_1time__type",tooltip="Type to represent amounts of time. Implemented as seconds and days to allow for larger intervals."];
   Node3 -> Node2 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" days\nseconds\nticks" ,fontname="Helvetica"];
   Node3 [label="integer",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
-  Node4 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" new_file_freq_units\nfilename_time_bounds\noutput_freq_units\nfile_duration_units\ntime_units" ,fontname="Helvetica"];
+  Node4 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" file_duration_units\nfilename_time_bounds\nnew_file_freq_units\noutput_freq_units\ntime_units" ,fontname="Helvetica"];
   Node4 [label="character(len=10)",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
   Node5 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" file_name\nlong_name" ,fontname="Helvetica"];
   Node5 [label="character(len=128)",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
-  Node3 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" itime_units\nfile_duration\ninew_file_freq_units\nifile_duration_units\noutput_freq\nioutput_freq_units\nfile_format\nnew_file_freq" ,fontname="Helvetica"];
+  Node3 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" file_duration\nfile_format\nifile_duration_units\ninew_file_freq_units\nioutput_freq_units\nitime_units\nnew_file_freq\noutput_freq" ,fontname="Helvetica"];
   Node6 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" start_time_s" ,fontname="Helvetica"];
   Node6 [label="character(len=25)",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
 }

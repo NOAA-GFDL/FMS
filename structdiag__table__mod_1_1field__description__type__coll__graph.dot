@@ -7,11 +7,11 @@ digraph "field_description_type"
   Node1 [label="field_description_type",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled", fontcolor="black",tooltip="Private type to hold field information for the diag table."];
   Node2 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" regional_coords" ,fontname="Helvetica"];
   Node2 [label="coord_type",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$group__diag__data__mod.html#structdiag__data__mod_1_1coord__type",tooltip="Define the region for field output."];
-  Node3 -> Node2 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" zbegin\nybegin\nxbegin\nzend\nyend\nxend" ,fontname="Helvetica"];
+  Node3 -> Node2 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" xbegin\nxend\nybegin\nyend\nzbegin\nzend" ,fontname="Helvetica"];
   Node3 [label="real",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
-  Node4 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" time_method\nspatial_ops\ntime_sampling" ,fontname="Helvetica"];
+  Node4 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" spatial_ops\ntime_method\ntime_sampling" ,fontname="Helvetica"];
   Node4 [label="character(len=50)",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
-  Node5 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" field_name\noutput_name\nfile_name\nmodule_name" ,fontname="Helvetica"];
+  Node5 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" field_name\nfile_name\nmodule_name\noutput_name" ,fontname="Helvetica"];
   Node5 [label="character(len=128)",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
   Node6 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" pack" ,fontname="Helvetica"];
   Node6 [label="integer",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];

@@ -9,8 +9,8 @@ digraph "overlapspec"
   Node2 [label="overlap_type",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$group__mpp__domains__mod.html#structmpp__domains__mod_1_1overlap__type",tooltip="Type for overlapping data."];
   Node3 -> Node2 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" from_contact" ,fontname="Helvetica"];
   Node3 [label="logical",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
-  Node4 -> Node2 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" rotation\ntotsize\npe\ndir\ntileme\njs\ncount\nis\ntilenbr\nindex\n..." ,fontname="Helvetica"];
+  Node4 -> Node2 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" count\ndir\nie\nindex\nis\nje\njs\nmsgsize\npe\nrotation\n..." ,fontname="Helvetica"];
   Node4 [label="integer",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
   Node1 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" next" ,fontname="Helvetica"];
-  Node4 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" nsend\nybegin\nxbegin\nyend\nnhalo\nxend\nrecvsize\nshalo\nehalo\nsendsize\n..." ,fontname="Helvetica"];
+  Node4 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" ehalo\nnhalo\nnrecv\nnsend\nrecvsize\nsendsize\nshalo\nwhalo\nxbegin\nxend\n..." ,fontname="Helvetica"];
 }

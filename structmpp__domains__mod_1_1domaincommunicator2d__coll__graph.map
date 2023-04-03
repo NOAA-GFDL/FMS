@@ -1,15 +1,15 @@
 <map id="domaincommunicator2d" name="domaincommunicator2d">
-<area shape="rect" id="node1" title="Used for sending domain data between pe&#39;s." alt="" coords="428,1387,609,1413"/>
+<area shape="rect" id="node1" title="Used for sending domain data between pe&#39;s." alt="" coords="422,1372,603,1399"/>
 <area shape="rect" id="node2" title=" " alt="" coords="85,5,150,32"/>
-<area shape="rect" id="node4" href="$group__mpp__domains__mod.html#structmpp__domains__mod_1_1domain2d" title="The domain2D type contains all the necessary information to define the global, compute and data domai..." alt="" coords="475,1201,562,1227"/>
-<area shape="rect" id="node5" href="$group__mpp__domains__mod.html#structmpp__domains__mod_1_1domain1d" title="One dimensional domain used to manage shared data access between pes." alt="" coords="206,584,293,611"/>
-<area shape="rect" id="node6" href="$group__mpp__domains__mod.html#structmpp__domains__mod_1_1domain__axis__spec" title="Used to specify index limits along an axis of a domain." alt="" coords="277,309,419,335"/>
-<area shape="rect" id="node9" href="$group__mpp__domains__mod.html#structmpp__domains__mod_1_1overlap__type" title="Type for overlapping data." alt="" coords="692,309,799,335"/>
-<area shape="rect" id="node3" title=" " alt="" coords="43,962,168,989"/>
-<area shape="rect" id="node11" href="$group__mpp__domains__mod.html#structmpp__domains__mod_1_1domain1d__spec" title="A private type used to specify index limits for a domain decomposition." alt="" coords="369,584,493,611"/>
-<area shape="rect" id="node7" title=" " alt="" coords="633,5,701,32"/>
-<area shape="rect" id="node8" href="$group__mpp__domains__mod.html#structmpp__domains__mod_1_1overlapspec" title="Private type for overlap specifications." alt="" coords="729,777,831,803"/>
-<area shape="rect" id="node10" href="$group__mpp__domains__mod.html#structmpp__domains__mod_1_1domain2d__spec" title="Private type to specify multiple index limits and pe information for a 2D domain." alt="" coords="382,962,506,989"/>
-<area shape="rect" id="node12" href="$group__mpp__domains__mod.html#structmpp__domains__mod_1_1tile__type" title="Upper and lower x and y bounds for a tile." alt="" coords="615,443,694,469"/>
-<area shape="rect" id="node13" title=" " alt="" coords="694,955,850,996"/>
+<area shape="rect" id="node4" href="$group__mpp__domains__mod.html#structmpp__domains__mod_1_1domain2d" title="The domain2D type contains all the necessary information to define the global, compute and data domai..." alt="" coords="469,1186,556,1213"/>
+<area shape="rect" id="node5" href="$group__mpp__domains__mod.html#structmpp__domains__mod_1_1domain1d" title="One dimensional domain used to manage shared data access between pes." alt="" coords="194,577,281,603"/>
+<area shape="rect" id="node6" href="$group__mpp__domains__mod.html#structmpp__domains__mod_1_1domain__axis__spec" title="Used to specify index limits along an axis of a domain." alt="" coords="281,309,424,335"/>
+<area shape="rect" id="node9" href="$group__mpp__domains__mod.html#structmpp__domains__mod_1_1overlap__type" title="Type for overlapping data." alt="" coords="683,309,790,335"/>
+<area shape="rect" id="node3" title=" " alt="" coords="43,947,168,974"/>
+<area shape="rect" id="node11" href="$group__mpp__domains__mod.html#structmpp__domains__mod_1_1domain1d__spec" title="A private type used to specify index limits for a domain decomposition." alt="" coords="360,577,484,603"/>
+<area shape="rect" id="node7" title=" " alt="" coords="637,5,705,32"/>
+<area shape="rect" id="node8" href="$group__mpp__domains__mod.html#structmpp__domains__mod_1_1overlapspec" title="Private type for overlap specifications." alt="" coords="732,762,834,789"/>
+<area shape="rect" id="node10" href="$group__mpp__domains__mod.html#structmpp__domains__mod_1_1domain2d__spec" title="Private type to specify multiple index limits and pe information for a 2D domain." alt="" coords="376,947,500,974"/>
+<area shape="rect" id="node12" href="$group__mpp__domains__mod.html#structmpp__domains__mod_1_1tile__type" title="Upper and lower x and y bounds for a tile." alt="" coords="606,443,685,469"/>
+<area shape="rect" id="node13" title=" " alt="" coords="685,940,841,981"/>
 </map>

@@ -5,8 +5,8 @@ digraph "nonblock_type"
   edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
   node [fontname="Helvetica",fontsize="10",shape=record];
   Node1 [label="nonblock_type",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled", fontcolor="black",tooltip="Used for nonblocking data transfer."];
-  Node2 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" field_addrs2\nfield_addrs" ,fontname="Helvetica"];
+  Node2 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" field_addrs\nfield_addrs2" ,fontname="Helvetica"];
   Node2 [label="integer(i8_kind)",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
-  Node3 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" request_send\nupdate_whalo\nsend_msgsize\nsend_pos\nbuffer_pos_send\nupdate_ehalo\nrequest_recv\nupdate_shalo\nnfields\nupdate_flags\n..." ,fontname="Helvetica"];
+  Node3 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" buffer_pos_recv\nbuffer_pos_send\nnfields\nrecv_msgsize\nrecv_pos\nrequest_recv\nrequest_recv_count\nrequest_send\nrequest_send_count\nsend_msgsize\n..." ,fontname="Helvetica"];
   Node3 [label="integer",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
 }

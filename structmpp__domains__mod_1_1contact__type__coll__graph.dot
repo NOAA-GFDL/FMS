@@ -7,6 +7,6 @@ digraph "contact_type"
   Node1 [label="contact_type",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled", fontcolor="black",tooltip="Type used to represent the contact between tiles."];
   Node2 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" refine1\nrefine2" ,fontname="Helvetica"];
   Node2 [label="real",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
-  Node3 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" align2\nie1\nie2\nje1\nje2\nis1\nis2\njs1\nncontact\njs2\n..." ,fontname="Helvetica"];
+  Node3 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" align1\nalign2\nie1\nie2\nis1\nis2\nje1\nje2\njs1\njs2\n..." ,fontname="Helvetica"];
   Node3 [label="integer",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
 }

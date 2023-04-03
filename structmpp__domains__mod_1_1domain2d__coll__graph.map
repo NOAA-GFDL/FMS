@@ -6,7 +6,7 @@
 <area shape="rect" id="node8" href="$group__mpp__domains__mod.html#structmpp__domains__mod_1_1overlap__type" title="Type for overlapping data." alt="" coords="230,447,337,473"/>
 <area shape="rect" id="node10" href="$group__mpp__domains__mod.html#structmpp__domains__mod_1_1domain1d__spec" title="A private type used to specify index limits for a domain decomposition." alt="" coords="481,317,605,344"/>
 <area shape="rect" id="node5" title=" " alt="" coords="5,487,73,513"/>
-<area shape="rect" id="node7" href="$group__mpp__domains__mod.html#structmpp__domains__mod_1_1overlapspec" title="Private type for overlap specifications." alt="" coords="493,493,594,520"/>
+<area shape="rect" id="node7" href="$group__mpp__domains__mod.html#structmpp__domains__mod_1_1overlapspec" title="Private type for overlap specifications." alt="" coords="493,508,594,535"/>
 <area shape="rect" id="node9" href="$group__mpp__domains__mod.html#structmpp__domains__mod_1_1domain2d__spec" title="Private type to specify multiple index limits and pe information for a 2D domain." alt="" coords="715,380,839,407"/>
 <area shape="rect" id="node11" href="$group__mpp__domains__mod.html#structmpp__domains__mod_1_1tile__type" title="Upper and lower x and y bounds for a tile." alt="" coords="379,777,457,804"/>
 <area shape="rect" id="node6" title=" " alt="" coords="714,431,839,457"/>

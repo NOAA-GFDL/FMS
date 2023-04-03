@@ -8,10 +8,10 @@ digraph "domain1d"
   Node2 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" cyclic" ,fontname="Helvetica"];
   Node2 [label="logical",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
   Node1 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" list" ,fontname="Helvetica"];
-  Node3 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" memory\nglobal\ncompute\ndata" ,fontname="Helvetica"];
+  Node3 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" compute\ndata\nglobal\nmemory" ,fontname="Helvetica"];
   Node3 [label="domain_axis_spec",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$group__mpp__domains__mod.html#structmpp__domains__mod_1_1domain__axis__spec",tooltip="Used to specify index limits along an axis of a domain."];
   Node2 -> Node3 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" is_global" ,fontname="Helvetica"];
-  Node4 -> Node3 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" max_size\nsize\nbegin\nend" ,fontname="Helvetica"];
+  Node4 -> Node3 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" begin\nend\nmax_size\nsize" ,fontname="Helvetica"];
   Node4 [label="integer",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
-  Node4 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" pe\ngoffset\npos\nloffset" ,fontname="Helvetica"];
+  Node4 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" goffset\nloffset\npe\npos" ,fontname="Helvetica"];
 }

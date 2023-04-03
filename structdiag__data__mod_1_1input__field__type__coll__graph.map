@@ -1,11 +1,11 @@
 <map id="input_field_type" name="input_field_type">
-<area shape="rect" id="node1" title="Type to hold the input field description." alt="" coords="508,411,635,437"/>
-<area shape="rect" id="node2" href="$group__time__manager__mod.html#structtime__manager__mod_1_1time__type" title="Type to represent amounts of time. Implemented as seconds and days to allow for larger intervals." alt="" coords="205,195,293,221"/>
-<area shape="rect" id="node3" title=" " alt="" coords="5,164,73,191"/>
-<area shape="rect" id="node4" title=" " alt="" coords="216,320,281,347"/>
-<area shape="rect" id="node5" href="$group__diag__data__mod.html#structdiag__data__mod_1_1coord__type" title="Define the region for field output." alt="" coords="201,448,296,475"/>
-<area shape="rect" id="node6" title=" " alt="" coords="16,440,63,467"/>
-<area shape="rect" id="node7" title=" " alt="" coords="175,499,323,525"/>
-<area shape="rect" id="node8" title=" " alt="" coords="179,549,319,576"/>
-<area shape="rect" id="node9" title=" " alt="" coords="175,636,323,663"/>
+<area shape="rect" id="node1" title="Type to hold the input field description." alt="" coords="521,397,648,424"/>
+<area shape="rect" id="node2" href="$group__time__manager__mod.html#structtime__manager__mod_1_1time__type" title="Type to represent amounts of time. Implemented as seconds and days to allow for larger intervals." alt="" coords="205,196,293,223"/>
+<area shape="rect" id="node3" title=" " alt="" coords="5,165,73,192"/>
+<area shape="rect" id="node4" title=" " alt="" coords="216,307,281,333"/>
+<area shape="rect" id="node5" href="$group__diag__data__mod.html#structdiag__data__mod_1_1coord__type" title="Define the region for field output." alt="" coords="201,435,296,461"/>
+<area shape="rect" id="node6" title=" " alt="" coords="16,427,63,453"/>
+<area shape="rect" id="node7" title=" " alt="" coords="175,485,323,512"/>
+<area shape="rect" id="node8" title=" " alt="" coords="179,536,319,563"/>
+<area shape="rect" id="node9" title=" " alt="" coords="175,623,323,649"/>
 </map>

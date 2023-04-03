@@ -5,5 +5,5 @@ digraph "Graphical Class Hierarchy"
   edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
   node [fontname="Helvetica",fontsize="10",shape=record];
   rankdir="LR";
-  Node0 [label="write_data",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$group__fms__io__mod.html#interfacefms__io__mod_1_1write__data",tooltip=" "];
+  Node0 [label="tracer_type",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$group__tracer__manager__mod.html#structtracer__manager__mod_1_1tracer__type",tooltip="Private type to hold metadata for a tracer."];
 }

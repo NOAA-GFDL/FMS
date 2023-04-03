@@ -1,9 +1,10 @@
 <map id="bc_information" name="bc_information">
-<area shape="rect" id="node1" title="information needed fr regional restart variables" alt="" coords="375,200,495,227"/>
-<area shape="rect" id="node2" title=" " alt="" coords="75,25,140,52"/>
-<area shape="rect" id="node3" title=" " alt="" coords="35,84,179,111"/>
-<area shape="rect" id="node4" title=" " alt="" coords="37,135,177,161"/>
-<area shape="rect" id="node5" title=" " alt="" coords="73,260,141,287"/>
-<area shape="rect" id="node6" title=" " alt="" coords="5,311,209,353"/>
-<area shape="rect" id="node7" title=" " alt="" coords="9,377,205,418"/>
+<area shape="rect" id="node1" title="information needed fr regional restart variables" alt="" coords="375,175,495,201"/>
+<area shape="rect" id="node2" title=" " alt="" coords="75,5,140,32"/>
+<area shape="rect" id="node3" title=" " alt="" coords="9,57,205,98"/>
+<area shape="rect" id="node4" title=" " alt="" coords="5,122,209,163"/>
+<area shape="rect" id="node5" title=" " alt="" coords="37,188,177,215"/>
+<area shape="rect" id="node6" title=" " alt="" coords="73,301,141,328"/>
+<area shape="rect" id="node7" title=" " alt="" coords="5,353,209,394"/>
+<area shape="rect" id="node8" title=" " alt="" coords="9,418,205,459"/>
 </map>

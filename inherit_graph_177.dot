@@ -5,5 +5,5 @@ digraph "Graphical Class Hierarchy"
   edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
   node [fontname="Helvetica",fontsize="10",shape=record];
   rankdir="LR";
-  Node0 [label="grid_type",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$group__xgrid__mod.html#structxgrid__mod_1_1grid__type",tooltip="Private type to hold all data needed from given grid for an exchange grid."];
+  Node0 [label="get_value",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$interfaceyaml__parser__mod_1_1get__value.html",tooltip="Private c function that get the value from a key_id in a yaml file."];
 }

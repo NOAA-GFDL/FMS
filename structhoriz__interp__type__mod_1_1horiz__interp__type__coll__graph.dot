@@ -5,10 +5,10 @@ digraph "horiz_interp_type"
   edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
   node [fontname="Helvetica",fontsize="10",shape=record];
   Node1 [label="horiz_interp_type",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled", fontcolor="black",tooltip=" "];
-  Node2 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" i_am_initialized\nfound_neighbors" ,fontname="Helvetica"];
+  Node2 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" found_neighbors\ni_am_initialized" ,fontname="Helvetica"];
   Node2 [label="logical",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
-  Node3 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" nlat_dst\nnlat_src\nj_lat\nilon\nnum_found\njlat\ninterp_method\ni_src\ni_dst\nj_src\n..." ,fontname="Helvetica"];
+  Node3 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" i_dst\ni_lon\ni_src\nilon\ninterp_method\nj_dst\nj_lat\nj_src\njlat\nnlat_dst\n..." ,fontname="Helvetica"];
   Node3 [label="integer",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
-  Node4 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" faci\nfacj\narea_frac_dst\nmax_src_dist\nsrc_dist\nrat_x\nrat_y\nwti\nlat_in\nwtj\n..." ,fontname="Helvetica"];
+  Node4 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" area_dst\narea_frac_dst\narea_src\nfaci\nfacj\nlat_in\nlon_in\nmask_in\nmax_src_dist\nrat_x\n..." ,fontname="Helvetica"];
   Node4 [label="real",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
 }

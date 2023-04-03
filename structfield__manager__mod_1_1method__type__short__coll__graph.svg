@@ -32,8 +32,8 @@
 <title>Node2&#45;&gt;Node1</title>
 <path fill="none" stroke="#9a32cd" stroke-dasharray="5,2" d="M80,-68.22C80,-52.7 80,-31.36 80,-19.62"/>
 <polygon fill="#9a32cd" stroke="#9a32cd" points="76.5,-68.28 80,-78.28 83.5,-68.28 76.5,-68.28"/>
-<text text-anchor="middle" x="115.5" y="-52" font-family="Helvetica,sans-Serif" font-size="10.00"> method_type</text>
-<text text-anchor="middle" x="115.5" y="-41" font-family="Helvetica,sans-Serif" font-size="10.00">method_name</text>
+<text text-anchor="middle" x="117" y="-52" font-family="Helvetica,sans-Serif" font-size="10.00"> method_name</text>
+<text text-anchor="middle" x="117" y="-41" font-family="Helvetica,sans-Serif" font-size="10.00">method_type</text>
 </g>
 </g>
 </svg>

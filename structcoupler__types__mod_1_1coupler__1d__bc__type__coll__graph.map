@@ -1,10 +1,11 @@
 <map id="coupler_1d_bc_type" name="coupler_1d_bc_type">
-<area shape="rect" id="node1" title="Coupler data for 1D boundary conditions." alt="" coords="415,335,565,361"/>
-<area shape="rect" id="node2" title=" " alt="" coords="5,5,71,32"/>
-<area shape="rect" id="node3" href="$group__coupler__types__mod.html#structcoupler__types__mod_1_1coupler__1d__field__type" title="Coupler data for 1D fields." alt="" coords="408,245,572,272"/>
-<area shape="rect" id="node5" href="$group__coupler__types__mod.html#structcoupler__types__mod_1_1coupler__1d__values__type" title="Coupler data for 1D values." alt="" coords="311,140,490,167"/>
-<area shape="rect" id="node4" title=" " alt="" coords="353,5,493,32"/>
-<area shape="rect" id="node6" title=" " alt="" coords="529,5,677,32"/>
-<area shape="rect" id="node7" title=" " alt="" coords="759,5,827,32"/>
-<area shape="rect" id="node8" title=" " alt="" coords="237,5,284,32"/>
+<area shape="rect" id="node1" title="Coupler data for 1D boundary conditions." alt="" coords="800,307,951,334"/>
+<area shape="rect" id="node2" title=" " alt="" coords="47,43,112,70"/>
+<area shape="rect" id="node3" href="$group__coupler__types__mod.html#structcoupler__types__mod_1_1coupler__1d__field__type" title="Coupler data for 1D fields." alt="" coords="568,307,732,334"/>
+<area shape="rect" id="node6" href="$group__coupler__types__mod.html#structcoupler__types__mod_1_1coupler__1d__values__type" title="Coupler data for 1D values." alt="" coords="279,211,457,238"/>
+<area shape="rect" id="node4" title=" " alt="" coords="297,432,439,473"/>
+<area shape="rect" id="node5" title=" " alt="" coords="9,347,149,374"/>
+<area shape="rect" id="node7" title=" " alt="" coords="5,259,153,286"/>
+<area shape="rect" id="node8" title=" " alt="" coords="45,514,113,541"/>
+<area shape="rect" id="node9" title=" " alt="" coords="56,169,103,195"/>
 </map>

@@ -5,5 +5,5 @@ digraph "Graphical Class Hierarchy"
   edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
   node [fontname="Helvetica",fontsize="10",shape=record];
   rankdir="LR";
-  Node0 [label="allocate_array",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$group__fms__io__utils__mod.html#interfacefms__io__utils__mod_1_1allocate__array",tooltip=" "];
+  Node0 [label="addwf",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$group__fms__diag__elem__weight__procs__mod.html#interfacefms__diag__elem__weight__procs__mod_1_1addwf",tooltip="Interface for the elemental function addwf, which Calculates and returns the value given by this form..."];
 }

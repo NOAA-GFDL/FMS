@@ -5,5 +5,5 @@ digraph "Graphical Class Hierarchy"
   edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
   node [fontname="Helvetica",fontsize="10",shape=record];
   rankdir="LR";
-  Node0 [label="descomp",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$group__sat__vapor__pres__mod.html#interfacesat__vapor__pres__mod_1_1descomp",tooltip="Provided for backward compatibility (to be removed soon)"];
+  Node0 [label="date_type",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$group__amip__interp__mod.html#structamip__interp__mod_1_1date__type",tooltip="Private data type for representing a calendar date."];
 }

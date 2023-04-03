@@ -5,14 +5,14 @@ digraph "amip_interp_type"
   edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
   node [fontname="Helvetica",fontsize="10",shape=record];
   Node1 [label="amip_interp_type",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled", fontcolor="black",tooltip="Contains information needed by the interpolation module (exchange_mod) and buffers data."];
-  Node2 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" use_climo\ni_am_initialized\nuse_annual" ,fontname="Helvetica"];
+  Node2 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" i_am_initialized\nuse_annual\nuse_climo" ,fontname="Helvetica"];
   Node2 [label="logical",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
-  Node3 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" date2\ndate1" ,fontname="Helvetica"];
+  Node3 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" date1\ndate2" ,fontname="Helvetica"];
   Node3 [label="date_type",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$group__amip__interp__mod.html#structamip__interp__mod_1_1date__type",tooltip="Private data type for representing a calendar date."];
   Node4 -> Node3 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" day\nmonth\nyear" ,fontname="Helvetica"];
   Node4 [label="integer",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
-  Node5 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" hintrp\nhintrp2" ,fontname="Helvetica"];
-  Node5 [label="horiz_interp_type",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
-  Node6 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" data1\ndata2" ,fontname="Helvetica"];
-  Node6 [label="real",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
+  Node5 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" data1\ndata2" ,fontname="Helvetica"];
+  Node5 [label="real, dimension(:,\l:), allocatable",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
+  Node6 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" hintrp\nhintrp2" ,fontname="Helvetica"];
+  Node6 [label="horiz_interp_type",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
 }

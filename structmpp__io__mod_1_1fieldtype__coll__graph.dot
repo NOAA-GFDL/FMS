@@ -4,10 +4,9 @@ digraph "fieldtype"
  // LATEX_PDF_SIZE
   edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
   node [fontname="Helvetica",fontsize="10",shape=record];
-  rankdir="LR";
   Node1 [label="fieldtype",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled", fontcolor="black",tooltip=" "];
   Node2 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" checksum" ,fontname="Helvetica"];
-  Node2 [label="integer(i8_kind), dimension(3)",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
+  Node2 [label="integer(i8_kind)",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
   Node3 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" longname\nstandard_name" ,fontname="Helvetica"];
   Node3 [label="character(len=256)",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
   Node4 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" att" ,fontname="Helvetica"];
@@ -16,7 +15,7 @@ digraph "fieldtype"
   Node5 [label="character(len=128)",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
   Node6 -> Node4 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" fatt" ,fontname="Helvetica"];
   Node6 [label="real",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
-  Node7 -> Node4 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" type\nlen" ,fontname="Helvetica"];
+  Node7 -> Node4 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" len\ntype" ,fontname="Helvetica"];
   Node7 [label="integer",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
   Node8 -> Node4 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" catt" ,fontname="Helvetica"];
   Node8 [label="character(len=max_att\l_length)",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
@@ -27,21 +26,21 @@ digraph "fieldtype"
   Node11 -> Node10 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" cyclic" ,fontname="Helvetica"];
   Node11 [label="logical",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
   Node10 -> Node10 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" list" ,fontname="Helvetica"];
-  Node12 -> Node10 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" memory\nglobal\ncompute\ndata" ,fontname="Helvetica"];
+  Node12 -> Node10 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" compute\ndata\nglobal\nmemory" ,fontname="Helvetica"];
   Node12 [label="domain_axis_spec",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$group__mpp__domains__mod.html#structmpp__domains__mod_1_1domain__axis__spec",tooltip="Used to specify index limits along an axis of a domain."];
   Node11 -> Node12 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" is_global" ,fontname="Helvetica"];
-  Node7 -> Node12 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" max_size\nsize\nbegin\nend" ,fontname="Helvetica"];
-  Node7 -> Node10 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" pe\ngoffset\npos\nloffset" ,fontname="Helvetica"];
-  Node3 -> Node9 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" longname\ncompressed" ,fontname="Helvetica"];
+  Node7 -> Node12 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" begin\nend\nmax_size\nsize" ,fontname="Helvetica"];
+  Node7 -> Node10 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" goffset\nloffset\npe\npos" ,fontname="Helvetica"];
+  Node3 -> Node9 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" compressed\nlongname" ,fontname="Helvetica"];
   Node4 -> Node9 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" att" ,fontname="Helvetica"];
   Node13 -> Node9 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" cartesian" ,fontname="Helvetica"];
   Node13 [label="character(len=8)",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
-  Node5 -> Node9 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" units\nname\nname_bounds" ,fontname="Helvetica"];
-  Node6 -> Node9 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" data_bounds\ndata" ,fontname="Helvetica"];
-  Node7 -> Node9 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" natt\nsense\ndid\nshift\ntype\nid\nidata\nlen" ,fontname="Helvetica"];
+  Node5 -> Node9 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" name\nname_bounds\nunits" ,fontname="Helvetica"];
+  Node6 -> Node9 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" data\ndata_bounds" ,fontname="Helvetica"];
+  Node7 -> Node9 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" did\nid\nidata\nlen\nnatt\nsense\nshift\ntype" ,fontname="Helvetica"];
   Node14 -> Node9 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" calendar" ,fontname="Helvetica"];
   Node14 [label="character(len=24)",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
-  Node5 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" units\nname" ,fontname="Helvetica"];
-  Node7 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" size\nnatt\ntime_axis_index\nposition\npack\nndim\ntype\nid" ,fontname="Helvetica"];
-  Node6 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" fill\nscale\nmissing\nadd\nmin\nmax" ,fontname="Helvetica"];
+  Node5 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" name\nunits" ,fontname="Helvetica"];
+  Node7 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" id\nnatt\nndim\npack\nposition\nsize\ntime_axis\l_index\ntype" ,fontname="Helvetica"];
+  Node6 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" add\nfill\nmax\nmin\nmissing\nscale" ,fontname="Helvetica"];
 }

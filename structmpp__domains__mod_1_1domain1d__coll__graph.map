@@ -1,6 +1,6 @@
 <map id="domain1d" name="domain1d">
 <area shape="rect" id="node1" title="One dimensional domain used to manage shared data access between pes." alt="" coords="97,304,184,331"/>
-<area shape="rect" id="node2" title=" " alt="" coords="9,5,75,32"/>
+<area shape="rect" id="node2" title=" " alt="" coords="12,5,77,32"/>
 <area shape="rect" id="node3" href="$group__mpp__domains__mod.html#structmpp__domains__mod_1_1domain__axis__spec" title="Used to specify index limits along an axis of a domain." alt="" coords="69,155,212,181"/>
-<area shape="rect" id="node4" title=" " alt="" coords="175,5,243,32"/>
+<area shape="rect" id="node4" title=" " alt="" coords="176,5,244,32"/>
 </map>

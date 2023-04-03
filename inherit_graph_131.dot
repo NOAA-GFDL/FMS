@@ -5,5 +5,5 @@ digraph "Graphical Class Hierarchy"
   edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
   node [fontname="Helvetica",fontsize="10",shape=record];
   rankdir="LR";
-  Node0 [label="fmtype_t",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$group__fm__yaml__mod.html#structfm__yaml__mod_1_1fmtype__t",tooltip="This type represents the entries for a specific field type, e.g. a tracer. This type contains the nam..."];
+  Node0 [label="fms_sort_this",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$interfacefms__string__utils__mod_1_1fms__sort__this.html",tooltip="Sorts an array of pointers (my pointer) of size (p_size) in alphabetical order."];
 }
