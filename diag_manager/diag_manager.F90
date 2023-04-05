@@ -1611,6 +1611,33 @@ END FUNCTION register_static_field
     CLASS(*), INTENT(in), OPTIONAL :: weight
     TYPE (time_type), INTENT(in), OPTIONAL :: time
     INTEGER, INTENT(in), OPTIONAL :: is_in, js_in, ks_in,ie_in,je_in, ke_in
+    LOGICAL, DIMENSION(:,:,:), INTENT(in), OPTIONAL :: mask
+    CLASS(*), DIMENSION(:,:,:), INTENT(in), OPTIONAL :: rmask
+    CHARACTER(len=*), INTENT(out), OPTIONAL :: err_msg
+
+    if (present(mask) .and. present(rmask)) then
+      send_data_3d = diag_send_data(diag_field_id, field, time=time, is_in=is_in, js_in=js_in, ks_in=ks_in, &
+                               mask=mask, rmask=rmask, ie_in=ie_in, je_in=je_in, ke_in=ke_in, weight=weight, &
+                               err_msg=err_msg)
+    elseif (present(rmask)) then
+      send_data_3d = diag_send_data(diag_field_id, field, time=time, is_in=is_in, js_in=js_in, ks_in=ks_in, &
+                               rmask=rmask, ie_in=ie_in, je_in=je_in, ke_in=ke_in, weight=weight, err_msg=err_msg)
+    elseif (present(mask)) then
+      send_data_3d = diag_send_data(diag_field_id, field, time=time, is_in=is_in, js_in=js_in, ks_in=ks_in, &
+                               mask=mask, ie_in=ie_in, je_in=je_in, ke_in=ke_in, weight=weight, err_msg=err_msg)
+    else
+      send_data_3d = diag_send_data(diag_field_id, field, time=time, is_in=is_in, js_in=js_in, ks_in=ks_in, &
+                               ie_in=ie_in, je_in=je_in, ke_in=ke_in, weight=weight, err_msg=err_msg)
+    endif
+  END FUNCTION send_data_3d
+  !> @return true if send is successful
+  LOGICAL FUNCTION diag_send_data(diag_field_id, field, time, is_in, js_in, ks_in, &
+             & mask, rmask, ie_in, je_in, ke_in, weight, err_msg)
+    INTEGER, INTENT(in) :: diag_field_id
+    CLASS(*), DIMENSION(:,:,:), INTENT(in),TARGET,CONTIGUOUS :: field
+    CLASS(*), INTENT(in), OPTIONAL :: weight
+    TYPE (time_type), INTENT(in), OPTIONAL :: time
+    INTEGER, INTENT(in), OPTIONAL :: is_in, js_in, ks_in,ie_in,je_in, ke_in
     LOGICAL, DIMENSION(:,:,:), INTENT(in), OPTIONAL, contiguous, target :: mask
     CLASS(*), DIMENSION(:,:,:), INTENT(in), OPTIONAL, target :: rmask
     CHARACTER(len=*), INTENT(out), OPTIONAL :: err_msg
