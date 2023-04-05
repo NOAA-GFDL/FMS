@@ -111,6 +111,7 @@ type fmsDiagField_type
      procedure :: has_interp_method
      procedure :: has_frequency
      procedure :: has_tile_count
+     procedure :: has_axis_ids
      procedure :: has_area
      procedure :: has_volume
      procedure :: has_missing_value
@@ -1307,6 +1308,13 @@ pure logical function has_tile_count (this)
   class (fmsDiagField_type), intent(in) :: this !< diag object
   has_tile_count = allocated(this%tile_count)
 end function has_tile_count
+
+!> @brief Checks if axis_ids of the object is allocated
+!! @return true if it is allocated
+pure logical function has_axis_ids (this)
+  class (fmsDiagField_type), intent(in) :: this !< diag field object
+  has_axis_ids = allocated(this%axis_ids)
+end function has_axis_ids
 
 !> @brief Checks if obj%area is allocated
 !! @return true if obj%area is allocated
