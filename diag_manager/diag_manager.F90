@@ -1473,7 +1473,6 @@ CONTAINS
                                ie_in=ie_in, je_in=je_in, ke_in=ke_in, weight=weight, err_msg=err_msg)
     endif
   END FUNCTION send_data_3d
-
   !> @return true if send is successful
   LOGICAL FUNCTION diag_send_data(diag_field_id, field, time, is_in, js_in, ks_in, &
              & mask, rmask, ie_in, je_in, ke_in, weight, err_msg)
