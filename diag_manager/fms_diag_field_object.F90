@@ -44,6 +44,7 @@ type fmsDiagField_type
      type(fmsDiagAttribute_type), allocatable         :: attributes(:)     !< attributes for the variable
      integer,              private                    :: num_attributes    !< Number of attributes currently added
      logical, allocatable, private                    :: static            !< true if this is a static var
+     logical, allocatable, private                    :: scalar            !< .True. if the variable is a scalar
      logical, allocatable, private                    :: registered        !< true when registered
      logical, allocatable, private                    :: mask_variant      !< If there is a mask variant
      logical, allocatable, private                    :: do_not_log        !< .true. if no need to log the diag_field
@@ -89,6 +90,7 @@ type fmsDiagField_type
      procedure :: vartype_inq => what_is_vartype
 ! Check functions
      procedure :: is_static => diag_obj_is_static
+     procedure :: is_scalar
      procedure :: is_registered => get_registered
      procedure :: is_registeredB => diag_obj_is_registered
      procedure :: is_mask_variant => get_mask_variant
@@ -228,10 +230,12 @@ subroutine fms_register_diag_field_obj &
 
 !> Add axis and domain information
   if (present(axes)) then
+    this%scalar = .false.
     this%axis_ids = axes
     call get_domain_and_domain_type(diag_axis, this%axis_ids, this%type_of_domain, this%domain, this%varname)
   else
-     !> The variable is a scalar
+    !> The variable is a scalar
+    this%scalar = .true.
     this%type_of_domain = NO_DOMAIN
     this%domain => null()
   endif
@@ -609,6 +613,14 @@ function diag_obj_is_static (this) result (rslt)
     logical :: rslt
     rslt = this%static
 end function diag_obj_is_static
+
+!> @brief Determine if the field is a scalar
+!! @return .True. if the field is a scalar
+function is_scalar (this) result (rslt)
+  class(fmsDiagField_type), intent(in) :: this !< diag_field object
+  logical                              :: rslt
+  rslt = this%scalar
+end function is_scalar
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! Get functions
