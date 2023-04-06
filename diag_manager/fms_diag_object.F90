@@ -213,7 +213,7 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
 !> Use pointers for convenience
   fieldptr => this%FMS_diag_fields(this%registered_variables)
 !> Register the data for the field
-  call fieldptr%register(modname, varname, diag_field_indices, fms_diag_object%diag_axis, &
+  call fieldptr%register(modname, varname, diag_field_indices, this%diag_axis, &
        axes=axes, longname=longname, units=units, missing_value=missing_value, varRange= varRange, &
        mask_variant= mask_variant, standname=standname, do_not_log=do_not_log, err_msg=err_msg, &
        interp_method=interp_method, tile_count=tile_count, area=area, volume=volume, realm=realm, &
@@ -681,9 +681,9 @@ end subroutine fms_diag_axis_add_attribute
 #ifdef use_yaml
 !> \brief Gets the diag field ID from the module name and field name.
 !> \returns a copy of the ID of the diag field or DIAG_FIELD_NOT_FOUND if the field is not registered
-PURE FUNCTION fms_get_diag_field_id_from_name(fms_diag_object, module_name, field_name) &
+PURE FUNCTION fms_get_diag_field_id_from_name(this, module_name, field_name) &
   result(diag_field_id)
-  class(fmsDiagObject_type), intent (in) :: fms_diag_object !< The diag object
+  class(fmsDiagObject_type), intent (in) :: this !< The diag object, the caller
   CHARACTER(len=*), INTENT(in) :: module_name !< Module name that registered the variable
   CHARACTER(len=*), INTENT(in) :: field_name !< Variable name
   integer :: diag_field_id
@@ -691,9 +691,9 @@ PURE FUNCTION fms_get_diag_field_id_from_name(fms_diag_object, module_name, fiel
 !> Initialize to not found
   diag_field_id = DIAG_FIELD_NOT_FOUND
 !> Loop through fields to find it.
-  if (fms_diag_object%registered_variables < 1) return
-  do i=1,fms_diag_object%registered_variables
-   diag_field_id = fms_diag_object%FMS_diag_fields(i)%id_from_name(module_name, field_name)
+  if (this%registered_variables < 1) return
+  do i=1, this%registered_variables
+   diag_field_id = this%FMS_diag_fields(i)%id_from_name(module_name, field_name)
    if(diag_field_id .ne. DIAG_FIELD_NOT_FOUND) return
   enddo
 END FUNCTION fms_get_diag_field_id_from_name
