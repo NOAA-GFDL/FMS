@@ -50,7 +50,8 @@ type, abstract :: fmsDiagBuffer_class
   procedure :: flush_buffer
   procedure :: remap_buffer
   procedure :: set_buffer_id
-  ! TODO deferred routines, will require some interfaces
+  ! TODO could make these 'defered' ie. declared here but defined in each child type
+  ! holding off cause the class(*) + polymorphism in here is probably already enough to upset the gods of compilation
   !procedure(allocate_buffer), deferred :: allocate_buffer
   !procedure, deferred :: get_buffer
   !procedure, deferred :: initialize_buffer
@@ -64,7 +65,7 @@ end type
 
 !> Scalar buffer type to extend fmsDiagBufferContainer_type
 type, extends(fmsDiagBuffer_class) :: buffer0d_type
-  class(*), allocatable :: buffer(:) !< "scalar" numberic buffer value
+  class(*), allocatable :: buffer(:) !< "scalar" numeric buffer value
                                      !! will only be allocated to hold 1 value
   class(*), allocatable :: counter(:) !< (x,y,z, time-of-day) used in the time averaging functions
   contains
