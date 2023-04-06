@@ -1457,6 +1457,22 @@ function get_diag_fields_entries(indices) &
 
 end function get_diag_fields_entries
 
+!> @brief Gets the output buffer ids corresponding to the indicies in the sorted variable_list
+!! @return Array of indicies of the output buffers
+function get_output_buffer_ids(indices) result(buffer_ids)
+
+  integer, intent(in) :: indices(:) !< Indicies of the fields in the sorted variable_list array
+  integer, allocatable :: buffer_ids(:)
+  integer :: i !< For do loop
+
+  allocate(buffer_ids(size(indices)))
+
+  do i = 1, size(indices)
+    buffer_ids(i) = variable_list%diag_field_indices(indices(i))
+  end do
+
+end function get_output_buffer_ids
+
 !> @brief Finds the indices of the diag_yaml%diag_files(:) corresponding to fields in variable_list(indices)
 !! @return indices of the diag_yaml%diag_files(:)
 function get_diag_files_id(indices) &
