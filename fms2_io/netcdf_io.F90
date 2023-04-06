@@ -924,7 +924,7 @@ subroutine netcdf_add_variable(fileobj, variable_name, variable_type, dimensions
   integer :: i
   character(len=200) :: append_error_msg !< Msg to be appended to FATAL error message
 
-  append_error_msg = "netcdf_add_variable: file:"//trim(fileobj%path)//"variable:"//trim(variable_name)
+  append_error_msg = "netcdf_add_variable: file:"//trim(fileobj%path)//" variable:"//trim(variable_name)
 
   if (fileobj%is_root) then
     call set_netcdf_mode(fileobj%ncid, define_mode)
@@ -1056,7 +1056,8 @@ subroutine netcdf_save_restart(fileobj, unlim_dim_level)
   integer :: i
 
   if (.not. fileobj%is_restart) then
-    call error("file "//trim(fileobj%path)//" is not a restart file.")
+    call error("write_restart:: file "//trim(fileobj%path)//" is not a restart file."&
+              &" Be sure the file was opened with is_restart=.true.")
   endif
   do i = 1, fileobj%num_restart_vars
     if (associated(fileobj%restart_vars(i)%data0d)) then
@@ -1097,7 +1098,8 @@ subroutine netcdf_restore_state(fileobj, unlim_dim_level)
   integer :: i
 
   if (.not. fileobj%is_restart) then
-    call error("file "//trim(fileobj%path)//" is not a restart file.")
+    call error("read_restart:: file "//trim(fileobj%path)//" is not a restart file."&
+              &" Be sure the file was opened with is_restart=.true.")
   endif
   do i = 1, fileobj%num_restart_vars
     if (associated(fileobj%restart_vars(i)%data0d)) then
