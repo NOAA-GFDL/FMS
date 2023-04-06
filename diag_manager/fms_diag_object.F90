@@ -113,7 +113,7 @@ subroutine fms_diag_object_init (this,diag_subset_output)
   this%axes_initialized = fms_diag_axis_object_init(this%diag_axis)
   this%files_initialized = fms_diag_files_object_init(this%FMS_diag_files)
   this%fields_initialized = fms_diag_fields_object_init(this%FMS_diag_fields)
-  this%buffers_initialized = fms_diag_output_buffer_init(this%FMS_diag_output_buffers, SIZE(diag_yaml%get_diag_fields()))
+  this%buffers_initialized = fms_diag_output_buffer_init(this%FMS_diag_output_buffers,SIZE(diag_yaml%get_diag_fields()))
   this%registered_variables = 0
   this%registered_axis = 0
   this%current_model_time = get_base_time()

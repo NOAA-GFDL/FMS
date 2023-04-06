@@ -156,7 +156,7 @@ logical function fms_diag_output_buffer_init(buffobjs, buff_list_size)
   integer, intent(in)                                          :: buff_list_size !< size of buffer array to allocate
   if (allocated(buffobjs)) call mpp_error(FATAL,'fms_diag_buffer_init: passed in buffobjs array is already allocated')
   allocate(buffobjs(buff_list_size))
-  fms_diag_buffer_init = allocated(buffobjs)
+  fms_diag_output_buffer_init = allocated(buffobjs)
 end function fms_diag_output_buffer_init
 
 !> Creates a container type encapsulating a new buffer object for the given dimensions.
