@@ -50,6 +50,7 @@ private
   class(fmsDiagFileContainer_type), allocatable :: FMS_diag_files (:) !< array of diag files
   class(fmsDiagField_type), allocatable :: FMS_diag_fields(:) !< Array of diag fields
   type(fmsDiagOutputBufferContainer_type), allocatable :: FMS_diag_output_buffers(:) !< array of output buffer objects
+                                                                       !! one for each variable in the diag_table.yaml
   integer, private :: registered_buffers = 0 !< number of registered buffers, per dimension
   class(fmsDiagAxisContainer_type), allocatable :: diag_axis(:) !< Array of diag_axis
   type(time_type)  :: current_model_time !< The current model time
