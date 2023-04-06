@@ -33,7 +33,7 @@ use fms_diag_axis_object_mod, only: fms_diag_axis_object_init, fmsDiagAxis_type,
                                    &diagDomain_t, get_domain_and_domain_type, diagDomain2d_t, &
                                    &fmsDiagAxisContainer_type, fms_diag_axis_object_end, fmsDiagFullAxis_type, &
                                    &parse_compress_att, get_axis_id_from_name
-use fms_diag_buffer_mod
+use fms_diag_output_buffer_mod
 #endif
 #if defined(_OPENMP)
 use omp_lib
@@ -49,7 +49,8 @@ private
 !TODO: Remove FMS prefix from variables in this type
   class(fmsDiagFileContainer_type), allocatable :: FMS_diag_files (:) !< array of diag files
   class(fmsDiagField_type), allocatable :: FMS_diag_fields(:) !< Array of diag fields
-  type(fmsDiagBufferContainer_type), allocatable :: FMS_diag_buffers(:) !< array of buffer objects
+  type(fmsDiagOutputBufferContainer_type), allocatable :: FMS_diag_output_buffers(:) !< array of output buffer objects
+                                                                       !! one for each variable in the diag_table.yaml
   integer, private :: registered_buffers = 0 !< number of registered buffers, per dimension
   class(fmsDiagAxisContainer_type), allocatable :: diag_axis(:) !< Array of diag_axis
   type(time_type)  :: current_model_time !< The current model time
@@ -113,7 +114,7 @@ subroutine fms_diag_object_init (this,diag_subset_output)
   this%axes_initialized = fms_diag_axis_object_init(this%diag_axis)
   this%files_initialized = fms_diag_files_object_init(this%FMS_diag_files)
   this%fields_initialized = fms_diag_fields_object_init(this%FMS_diag_fields)
-  this%buffers_initialized = fms_diag_buffer_init(this%FMS_diag_buffers, SIZE(diag_yaml%get_diag_fields()))
+  this%buffers_initialized =fms_diag_output_buffer_init(this%FMS_diag_output_buffers,SIZE(diag_yaml%get_diag_fields()))
   this%registered_variables = 0
   this%registered_axis = 0
   this%current_model_time = get_base_time()
@@ -139,12 +140,12 @@ subroutine fms_diag_object_end (this, time)
 
   call this%fms_diag_do_io(is_end_of_run=.true.)
   !TODO: Deallocate diag object arrays and clean up all memory
-  do i=1, size(this%FMS_diag_buffers)
-    if(allocated(this%FMS_diag_buffers(i)%diag_buffer_obj)) then
-      call this%FMS_diag_buffers(i)%diag_buffer_obj%flush_buffer()
+  do i=1, size(this%FMS_diag_output_buffers)
+    if(allocated(this%FMS_diag_output_buffers(i)%diag_buffer_obj)) then
+      call this%FMS_diag_output_buffers(i)%diag_buffer_obj%flush_buffer()
     endif
   enddo
-  deallocate(this%FMS_diag_buffers)
+  deallocate(this%FMS_diag_output_buffers)
   this%axes_initialized = fms_diag_axis_object_end(this%diag_axis)
   this%initialized = .false.
   call diag_yaml_object_end
@@ -721,10 +722,11 @@ function get_diag_buffer(this, bufferid) &
 result(rslt)
   class(fmsDiagObject_type), intent(in) :: this
   integer, intent(in)                   :: bufferid
-  class(fmsDiagBuffer_class),allocatable:: rslt
-  if( (bufferid .gt. UBOUND(this%FMS_diag_buffers, 1)) .or. (bufferid .lt. LBOUND(this%FMS_diag_buffers, 1))) &
+  class(fmsDiagOutputBuffer_class),allocatable:: rslt
+  if( (bufferid .gt. UBOUND(this%FMS_diag_output_buffers, 1)) .or. &
+      (bufferid .lt. LBOUND(this%FMS_diag_output_buffers, 1))) &
     call mpp_error(FATAL, 'get_diag_bufer: invalid bufferid given')
-  rslt = this%FMS_diag_buffers(bufferid)%diag_buffer_obj
+  rslt = this%FMS_diag_output_buffers(bufferid)%diag_buffer_obj
 end function
 #endif
 
