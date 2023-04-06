@@ -1457,11 +1457,11 @@ function get_diag_fields_entries(indices) &
 
 end function get_diag_fields_entries
 
-!> @brief Gets the output buffer ids corresponding to the indicies in the sorted variable_list
-!! @return Array of indicies of the output buffers
+!> @brief Gets the output buffer ids corresponding to the indices in the sorted variable_list
+!! @return Array of indices of the output buffers
 function get_output_buffer_ids(indices) result(buffer_ids)
 
-  integer, intent(in) :: indices(:) !< Indicies of the fields in the sorted variable_list array
+  integer, intent(in) :: indices(:) !< Indices of the fields in the sorted variable_list array
   integer, allocatable :: buffer_ids(:)
   integer :: i !< For do loop
 
