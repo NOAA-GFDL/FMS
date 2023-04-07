@@ -167,6 +167,7 @@ type fmsDiagFileContainer_type
   procedure :: update_next_write
   procedure :: update_current_new_file_freq_index
   procedure :: increase_unlimited_dimension
+  procedure :: get_unlimited_dimension
   procedure :: close_diag_file
 end type fmsDiagFileContainer_type
 
@@ -1206,6 +1207,16 @@ subroutine increase_unlimited_dimension(this)
 
   this%FMS_diag_file%unlimited_dimension = this%FMS_diag_file%unlimited_dimension + 1
 end subroutine increase_unlimited_dimension
+
+!> \brief Get the unlimited dimension that is in the file
+!! \return The unlimited dimension
+pure function get_unlimited_dimension(this) &
+result(res)
+  class(fmsDiagFileContainer_type), intent(inout), target   :: this            !< The file object
+  integer :: res
+
+  res = this%FMS_diag_file%unlimited_dimension
+end function
 
 !< @brief Writes the axis metadata for the file
 subroutine write_axis_metadata(this, diag_axis)
