@@ -43,7 +43,7 @@
 !                               gdata, len, 0        )
       call mpp_broadcast ( gdata, len, mpp_root_pe() )
    endif
-   if(.not. no_halo .or. read_data_bug) then
+   if(.not. no_halo) then
 ! data dimensioned on data domain
       data(is:ie,js:je) = gdata(is:ie,js:je)
    else

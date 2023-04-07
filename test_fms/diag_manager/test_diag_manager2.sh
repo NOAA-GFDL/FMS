@@ -45,6 +45,7 @@ setup_test () {
 &diag_manager_nml
    max_field_attributes=3
    debug_diag_manager=.true.
+
 /
 
 &ensemble_nml
@@ -482,6 +483,9 @@ test_expect_success "wildcard filenames (test $my_test_count)" '
   mpirun -n 1 ../test_diag_manager_time
 '
 
+rm -f input.nml diag_table
+
+touch input.nml
 cat <<_EOF > diag_table
 test_diag_manager
 2 1 1 0 0 0
@@ -498,7 +502,11 @@ my_test_count=`expr $my_test_count + 1`
 test_expect_success "diurnal test (test $my_test_count)" '
   mpirun -n 1 ../test_diag_manager_time
 '
-
+setup_test
+my_test_count=`expr $my_test_count + 1`
+test_expect_success "Test the diag update_buffer (test $my_test_count)" '
+  mpirun -n 1 ../test_diag_update_buffer
+'
 ## uses some updated code but doesn't need flag
 my_test_count=`expr $my_test_count + 1`
 test_expect_success "test_diag_dlinked_list (test $my_test_count)" '
@@ -514,6 +522,7 @@ title: test_diag_manager
 base_date: 2 1 1 0 0 0
 diag_files:
 - file_name: wild_card_name%4yr%2mo%2dy%2hr
+  filename_time: end
   freq: 6
   freq_units: hours
   time_units: hours
@@ -652,6 +661,16 @@ title: test_diag_manager
 base_date: 2 1 1 0 0 0
 
 diag_files:
+- file_name: static_file
+  freq: -1
+  freq_units: hours
+  time_units: hours
+  unlimdim: time
+  varlist:
+  - module: atm_mod
+    var_name: var7
+    reduction: none
+    kind: r4
 - file_name: file1
   freq: 6
   freq_units: hours
@@ -686,6 +705,12 @@ diag_files:
     var_name: var6
     reduction: average
     kind: r8
+  - module: atm_mod
+    var_name: var4
+    output_name: var4_bounded
+    reduction: average
+    kind: r8
+    zbounds: 2.0 3.0
 - file_name: file3
   freq: 6
   freq_units: hours
@@ -752,7 +777,7 @@ diag_files:
     var_name: var1
     reduction: none
     kind: r4
-- file_name: file8%4yr%2mo%2dy%2hr
+- file_name: file8%4yr%2mo%2dy%2hr%2min
   freq: 1 1 1
   freq_units: hours hours hours
   time_units: hours
@@ -766,6 +791,32 @@ diag_files:
   - module: ocn_mod
     var_name: var1
     reduction: average
+    kind: r4
+- file_name: file9%4yr%2mo%2dy%2hr%2min
+  filename_time: begin
+  freq: 1 1 1
+  freq_units: hours hours hours
+  time_units: hours
+  unlimdim: time
+  new_file_freq: 6 3 1
+  new_file_freq_units: hours hours hours
+  start_time: 2 1 1 0 0 0
+  file_duration: 12 3 9
+  file_duration_units: hours hours hours
+  varlist:
+  - module: ocn_mod
+    var_name: var1
+    reduction: average
+    kind: r4
+- file_name: file10_diurnal
+  freq: 1
+  freq_units: days
+  time_units: hours
+  unlimdim: time
+  varlist:
+  - module: ocn_mod
+    var_name: var1
+    reduction: diurnal12
     kind: r4
 _EOF
 
@@ -818,6 +869,12 @@ diag_files:
     var_name: var1
     reduction: average
     kind: r4
+    output_name: var1_min
+  - module: atm_mod
+    var_name: var1
+    reduction: average
+    kind: r4
+    output_name: var2_max
 _EOF
 
 my_test_count=`expr $my_test_count + 1`

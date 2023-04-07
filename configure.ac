@@ -25,7 +25,7 @@ AC_PREREQ([2.69])
 
 # Initialize with name, version, and support email address.
 AC_INIT([GFDL FMS Library],
-  [2022.04.00-dev],
+  [2023.01.00-dev],
   [gfdl.climate.model.info@noaa.gov],
   [FMS],
   [https://www.github.com/NOAA-GFDL/FMS])
@@ -208,6 +208,14 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([], [[
 AC_MSG_RESULT([$nc_has_nc4])
 if test $nc_has_nc4 = no; then
   AC_MSG_ERROR([NetCDF must be built with HDF5.])
+fi
+
+# Check if ncdump is avaiable
+AC_CHECK_PROG([USE_NCDUMP],[ncdump], [yes], [no])
+if test $USE_NCDUMP = yes; then
+  AM_CONDITIONAL([SKIP_NCDUMP_CHECKS], true )
+else
+  AM_CONDITIONAL([SKIP_NCDUMP_CHECKS], false )
 fi
 
 # Check if Linux gettid is avaiable

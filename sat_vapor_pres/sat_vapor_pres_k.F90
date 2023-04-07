@@ -491,8 +491,9 @@
                                                                                    !! when called with r8 arguments
  integer :: i, j, k
  real    :: hc_loc
- logical :: valid_types = .false. !< For checking if variable types match
+ logical :: valid_types !< For checking if variable types match
 
+   valid_types = .false.
    select type (temp)
    type is (real(kind=r4_kind))
      select type (press)
@@ -823,8 +824,9 @@
                                                                                  !! when called with r8 arguments
  integer :: i, j
  real    :: hc_loc
- logical :: valid_types = .false. !< For checking if variable types match
+ logical :: valid_types !< For checking if variable types match
 
+   valid_types = .false.
    select type (temp)
    type is (real(kind=r4_kind))
      select type (press)
@@ -1151,8 +1153,9 @@
                                                                                !! when called with r8 arguments
  integer :: i
  real    :: hc_loc
- logical :: valid_types = .false. !< For checking if variable types match
+ logical :: valid_types !< For checking if variable types match
 
+   valid_types = .false.
    select type (temp)
    type is (real(kind=r4_kind))
      select type (press)
@@ -1472,8 +1475,9 @@
  real(kind=r4_kind) :: esloc_r4, desat_r4, denom_r4 !< Local variables to use when called with r4 arguments
  real(kind=r8_kind) :: esloc_r8, desat_r8, denom_r8 !< Local variables to use when called with r8 arguments
  real    :: hc_loc
- logical :: valid_types = .false. !< For checking if variable types match
+ logical :: valid_types !< For checking if variable types match
 
+   valid_types = .false.
    select type (temp)
    type is (real(kind=r4_kind))
      select type (press)
@@ -2102,8 +2106,9 @@
 
  real    :: tmp, del
  integer :: ind, i, j, k
- logical :: valid_types = .false. !< For checking if variable types match
+ logical :: valid_types !< For checking if variable types match
 
+   valid_types = .false.
    select type (temp)
    type is (real(kind=r4_kind))
      select type (esat)
@@ -2188,8 +2193,9 @@
 
  real    :: tmp, del
  integer :: ind, i, j
- logical :: valid_types = .false. !< For checking if variable types match
+ logical :: valid_types !< For checking if variable types match
 
+   valid_types = .false.
    select type (temp)
    type is (real(kind=r4_kind))
      select type (esat)
@@ -2270,8 +2276,9 @@
 
  real    :: tmp, del
  integer :: ind, i
- logical :: valid_types = .false. !< For checking if variable types match
+ logical :: valid_types !< For checking if variable types match
 
+   valid_types = .false.
    select type (temp)
    type is (real(kind=r4_kind))
      select type (esat)
@@ -2397,8 +2404,9 @@
  integer, intent(out) :: nbad
  real    :: tmp, del
  integer :: ind, i, j, k
- logical :: valid_types = .false. !< For checking if variable types match
+ logical :: valid_types !< For checking if variable types match
 
+   valid_types = .false.
    select type (temp)
    type is (real(kind=r4_kind))
       select type (esat)
@@ -2468,8 +2476,9 @@
  integer, intent(out) :: nbad
  real    :: tmp, del
  integer :: ind, i, j, k
- logical :: valid_types = .false. !< For checking if variable types match
+ logical :: valid_types !< For checking if variable types match
 
+   valid_types = .false.
    select type (temp)
    type is (real(kind=r4_kind))
      select type (desat)
@@ -2538,8 +2547,9 @@
  integer, intent(out) :: nbad
  real    :: tmp, del
  integer :: ind, i, j
- logical :: valid_types = .false. !< For checking if variable types match
+ logical :: valid_types !< For checking if variable types match
 
+   valid_types = .false.
    select type (temp)
    type is (real(kind=r4_kind))
      select type (desat)
@@ -2603,8 +2613,9 @@
  integer, intent(out) :: nbad
  real    :: tmp, del
  integer :: ind, i, j
- logical :: valid_types = .false. !< For checking if variable types match
+ logical :: valid_types !< For checking if variable types match
 
+   valid_types = .false.
    select type (temp)
    type is (real(kind=r4_kind))
       select type (esat)
@@ -2668,8 +2679,9 @@
  integer, intent(out) :: nbad
  real    :: tmp, del
  integer :: ind, i
- logical :: valid_types = .false. !< For checking if variable types match
+ logical :: valid_types !< For checking if variable types match
 
+   valid_types = .false.
    select type (temp)
    type is (real(kind=r4_kind))
      select type (desat)
@@ -2729,8 +2741,9 @@
  integer, intent(out) :: nbad
  real    :: tmp, del
  integer :: ind, i
- logical :: valid_types = .false. !< For checking if variable types match
+ logical :: valid_types !< For checking if variable types match
 
+   valid_types = .false.
    select type (temp)
    type is (real(kind=r4_kind))
       select type (esat)
@@ -2866,8 +2879,9 @@
 
  real    :: tmp, del
  integer :: ind, i, j, k
- logical :: valid_types = .false. !< For checking if variable types match
+ logical :: valid_types !< For checking if variable types match
 
+   valid_types = .false.
    select type (temp)
    type is (real(kind=r4_kind))
      select type (esat)
@@ -2952,8 +2966,9 @@
 
  real    :: tmp, del
  integer :: ind, i, j
- logical :: valid_types = .false. !< For checking if variable types match
+ logical :: valid_types !< For checking if variable types match
 
+   valid_types = .false.
    select type (temp)
    type is (real(kind=r4_kind))
      select type (esat)
@@ -3034,8 +3049,9 @@
 
  real    :: tmp, del
  integer :: ind, i
- logical :: valid_types = .false. !< For checking if variable types match
+ logical :: valid_types !< For checking if variable types match
 
+   valid_types = .false.
    select type (temp)
    type is (real(kind=r4_kind))
      select type (esat)
@@ -3161,8 +3177,9 @@
  integer, intent(out) :: nbad
  real    :: tmp, del
  integer :: ind, i, j, k
- logical :: valid_types = .false. !< For checking if variable types match
+ logical :: valid_types !< For checking if variable types match
 
+   valid_types = .false.
    select type (temp)
    type is (real(kind=r4_kind))
       select type (esat)
@@ -3232,8 +3249,9 @@
  integer, intent(out) :: nbad
  real    :: tmp, del
  integer :: ind, i, j, k
- logical :: valid_types = .false. !< For checking if variable types match
+ logical :: valid_types !< For checking if variable types match
 
+   valid_types = .false.
    select type (temp)
    type is (real(kind=r4_kind))
      select type (desat)
@@ -3302,8 +3320,9 @@
  integer, intent(out) :: nbad
  real    :: tmp, del
  integer :: ind, i, j
- logical :: valid_types = .false. !< For checking if variable types match
+ logical :: valid_types !< For checking if variable types match
 
+   valid_types = .false.
    select type (temp)
    type is (real(kind=r4_kind))
      select type (desat)
@@ -3367,8 +3386,9 @@
  integer, intent(out) :: nbad
  real    :: tmp, del
  integer :: ind, i, j
- logical :: valid_types = .false. !< For checking if variable types match
+ logical :: valid_types !< For checking if variable types match
 
+   valid_types = .false.
    select type (temp)
    type is (real(kind=r4_kind))
       select type (esat)
@@ -3432,8 +3452,9 @@
  integer, intent(out) :: nbad
  real    :: tmp, del
  integer :: ind, i
- logical :: valid_types = .false. !< For checking if variable types match
+ logical :: valid_types !< For checking if variable types match
 
+   valid_types = .false.
    select type (temp)
    type is (real(kind=r4_kind))
      select type (desat)
@@ -3493,8 +3514,9 @@
  integer, intent(out) :: nbad
  real    :: tmp, del
  integer :: ind, i
- logical :: valid_types = .false. !< For checking if variable types match
+ logical :: valid_types !< For checking if variable types match
 
+   valid_types = .false.
    select type (temp)
    type is (real(kind=r4_kind))
       select type (esat)
@@ -3632,8 +3654,9 @@
 
  real    :: tmp, del
  integer :: ind, i, j, k
- logical :: valid_types = .false. !< For checking if variable types match
+ logical :: valid_types !< For checking if variable types match
 
+   valid_types = .false.
    select type (temp)
    type is (real(kind=r4_kind))
      select type (esat)
@@ -3718,8 +3741,9 @@
 
  real    :: tmp, del
  integer :: ind, i, j
- logical :: valid_types = .false. !< For checking if variable types match
+ logical :: valid_types !< For checking if variable types match
 
+   valid_types = .false.
    select type (temp)
    type is (real(kind=r4_kind))
      select type (esat)
@@ -3800,8 +3824,9 @@
 
  real    :: tmp, del
  integer :: ind, i
- logical :: valid_types = .false. !< For checking if variable types match
+ logical :: valid_types !< For checking if variable types match
 
+   valid_types = .false.
    select type (temp)
    type is (real(kind=r4_kind))
      select type (esat)
@@ -3927,8 +3952,9 @@
  integer, intent(out) :: nbad
  real    :: tmp, del
  integer :: ind, i, j, k
- logical :: valid_types = .false. !< For checking if variable types match
+ logical :: valid_types !< For checking if variable types match
 
+   valid_types = .false.
    select type (temp)
    type is (real(kind=r4_kind))
       select type (esat)
@@ -3998,8 +4024,9 @@
  integer, intent(out) :: nbad
  real    :: tmp, del
  integer :: ind, i, j, k
- logical :: valid_types = .false. !< For checking if variable types match
+ logical :: valid_types !< For checking if variable types match
 
+   valid_types = .false.
    select type (temp)
    type is (real(kind=r4_kind))
      select type (desat)
@@ -4068,8 +4095,9 @@
  integer, intent(out) :: nbad
  real    :: tmp, del
  integer :: ind, i, j
- logical :: valid_types = .false. !< For checking if variable types match
+ logical :: valid_types !< For checking if variable types match
 
+   valid_types = .false.
    select type (temp)
    type is (real(kind=r4_kind))
      select type (desat)
@@ -4133,8 +4161,9 @@
  integer, intent(out) :: nbad
  real    :: tmp, del
  integer :: ind, i, j
- logical :: valid_types = .false. !< For checking if variable types match
+ logical :: valid_types !< For checking if variable types match
 
+   valid_types = .false.
    select type (temp)
    type is (real(kind=r4_kind))
       select type (esat)
@@ -4198,8 +4227,9 @@
  integer, intent(out) :: nbad
  real    :: tmp, del
  integer :: ind, i
- logical :: valid_types = .false. !< For checking if variable types match
+ logical :: valid_types !< For checking if variable types match
 
+   valid_types = .false.
    select type (temp)
    type is (real(kind=r4_kind))
      select type (desat)
@@ -4259,8 +4289,9 @@
  integer, intent(out) :: nbad
  real    :: tmp, del
  integer :: ind, i
- logical :: valid_types = .false. !< For checking if variable types match
+ logical :: valid_types !< For checking if variable types match
 
+   valid_types = .false.
    select type (temp)
    type is (real(kind=r4_kind))
       select type (esat)

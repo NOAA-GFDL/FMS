@@ -203,7 +203,7 @@ end subroutine mpp_error_Ra
 #define _SUBNAME_ mpp_error_ia_ia
 #define _ARRAY1TYPE_ integer
 #define _ARRAY2TYPE_ integer
-#include <mpp_error_a_a.h>
+#include <mpp_error_a_a.fh>
 #undef _SUBNAME_
 #undef _ARRAY1TYPE_
 #undef _ARRAY2TYPE_
@@ -211,7 +211,7 @@ end subroutine mpp_error_Ra
 #define _SUBNAME_ mpp_error_ia_ra
 #define _ARRAY1TYPE_ integer
 #define _ARRAY2TYPE_ real
-#include <mpp_error_a_a.h>
+#include <mpp_error_a_a.fh>
 #undef _SUBNAME_
 #undef _ARRAY1TYPE_
 #undef _ARRAY2TYPE_
@@ -219,7 +219,7 @@ end subroutine mpp_error_Ra
 #define _SUBNAME_ mpp_error_ra_ia
 #define _ARRAY1TYPE_ real
 #define _ARRAY2TYPE_ integer
-#include <mpp_error_a_a.h>
+#include <mpp_error_a_a.fh>
 #undef _SUBNAME_
 #undef _ARRAY1TYPE_
 #undef _ARRAY2TYPE_
@@ -227,7 +227,7 @@ end subroutine mpp_error_Ra
 #define _SUBNAME_ mpp_error_ra_ra
 #define _ARRAY1TYPE_ real
 #define _ARRAY2TYPE_ real
-#include <mpp_error_a_a.h>
+#include <mpp_error_a_a.fh>
 #undef _SUBNAME_
 #undef _ARRAY1TYPE_
 #undef _ARRAY2TYPE_
@@ -235,7 +235,7 @@ end subroutine mpp_error_Ra
 #define _SUBNAME_ mpp_error_ia_is
 #define _ARRAY1TYPE_ integer
 #define _ARRAY2TYPE_ integer
-#include <mpp_error_a_s.h>
+#include <mpp_error_a_s.fh>
 #undef _SUBNAME_
 #undef _ARRAY1TYPE_
 #undef _ARRAY2TYPE_
@@ -243,7 +243,7 @@ end subroutine mpp_error_Ra
 #define _SUBNAME_ mpp_error_ia_rs
 #define _ARRAY1TYPE_ integer
 #define _ARRAY2TYPE_ real
-#include <mpp_error_a_s.h>
+#include <mpp_error_a_s.fh>
 #undef _SUBNAME_
 #undef _ARRAY1TYPE_
 #undef _ARRAY2TYPE_
@@ -251,7 +251,7 @@ end subroutine mpp_error_Ra
 #define _SUBNAME_ mpp_error_ra_is
 #define _ARRAY1TYPE_ real
 #define _ARRAY2TYPE_ integer
-#include <mpp_error_a_s.h>
+#include <mpp_error_a_s.fh>
 #undef _SUBNAME_
 #undef _ARRAY1TYPE_
 #undef _ARRAY2TYPE_
@@ -259,7 +259,7 @@ end subroutine mpp_error_Ra
 #define _SUBNAME_ mpp_error_ra_rs
 #define _ARRAY1TYPE_ real
 #define _ARRAY2TYPE_ real
-#include <mpp_error_a_s.h>
+#include <mpp_error_a_s.fh>
 #undef _SUBNAME_
 #undef _ARRAY1TYPE_
 #undef _ARRAY2TYPE_
@@ -267,7 +267,7 @@ end subroutine mpp_error_Ra
 #define _SUBNAME_ mpp_error_is_ia
 #define _ARRAY1TYPE_ integer
 #define _ARRAY2TYPE_ integer
-#include <mpp_error_s_a.h>
+#include <mpp_error_s_a.fh>
 #undef _SUBNAME_
 #undef _ARRAY1TYPE_
 #undef _ARRAY2TYPE_
@@ -275,7 +275,7 @@ end subroutine mpp_error_Ra
 #define _SUBNAME_ mpp_error_is_ra
 #define _ARRAY1TYPE_ integer
 #define _ARRAY2TYPE_ real
-#include <mpp_error_s_a.h>
+#include <mpp_error_s_a.fh>
 #undef _SUBNAME_
 #undef _ARRAY1TYPE_
 #undef _ARRAY2TYPE_
@@ -283,7 +283,7 @@ end subroutine mpp_error_Ra
 #define _SUBNAME_ mpp_error_rs_ia
 #define _ARRAY1TYPE_ real
 #define _ARRAY2TYPE_ integer
-#include <mpp_error_s_a.h>
+#include <mpp_error_s_a.fh>
 #undef _SUBNAME_
 #undef _ARRAY1TYPE_
 #undef _ARRAY2TYPE_
@@ -291,7 +291,7 @@ end subroutine mpp_error_Ra
 #define _SUBNAME_ mpp_error_rs_ra
 #define _ARRAY1TYPE_ real
 #define _ARRAY2TYPE_ real
-#include <mpp_error_s_a.h>
+#include <mpp_error_s_a.fh>
 #undef _SUBNAME_
 #undef _ARRAY1TYPE_
 #undef _ARRAY2TYPE_
@@ -299,7 +299,7 @@ end subroutine mpp_error_Ra
 #define _SUBNAME_ mpp_error_is_is
 #define _ARRAY1TYPE_ integer
 #define _ARRAY2TYPE_ integer
-#include <mpp_error_s_s.h>
+#include <mpp_error_s_s.fh>
 #undef _SUBNAME_
 #undef _ARRAY1TYPE_
 #undef _ARRAY2TYPE_
@@ -307,7 +307,7 @@ end subroutine mpp_error_Ra
 #define _SUBNAME_ mpp_error_is_rs
 #define _ARRAY1TYPE_ integer
 #define _ARRAY2TYPE_ real
-#include <mpp_error_s_s.h>
+#include <mpp_error_s_s.fh>
 #undef _SUBNAME_
 #undef _ARRAY1TYPE_
 #undef _ARRAY2TYPE_
@@ -315,7 +315,7 @@ end subroutine mpp_error_Ra
 #define _SUBNAME_ mpp_error_rs_is
 #define _ARRAY1TYPE_ real
 #define _ARRAY2TYPE_ integer
-#include <mpp_error_s_s.h>
+#include <mpp_error_s_s.fh>
 #undef _SUBNAME_
 #undef _ARRAY1TYPE_
 #undef _ARRAY2TYPE_
@@ -323,7 +323,7 @@ end subroutine mpp_error_Ra
 #define _SUBNAME_ mpp_error_rs_rs
 #define _ARRAY1TYPE_ real
 #define _ARRAY2TYPE_ real
-#include <mpp_error_s_s.h>
+#include <mpp_error_s_s.fh>
 #undef _SUBNAME_
 #undef _ARRAY1TYPE_
 #undef _ARRAY2TYPE_

@@ -89,8 +89,10 @@ real, dimension(size(x,1),size(x,2),size(x,3)) :: f
 integer :: k
 
 if(present(a)) then
-  init_tridiagonal = .true.
 
+  !< Check if module variables are allocated
+  !$OMP SINGLE
+  init_tridiagonal = .true.
   if(allocated(e))     deallocate(e)
   if(allocated(g))     deallocate(g)
   if(allocated(bb))    deallocate(bb)
@@ -99,6 +101,7 @@ if(present(a)) then
   allocate(g (size(x,1),size(x,2),size(x,3)))
   allocate(bb(size(x,1),size(x,2)))
   allocate(cc(size(x,1),size(x,2),size(x,3)))
+  !$OMP END SINGLE !< There is an implicit barrier.
 
   e(:,:,1) = - a(:,:,1)/b(:,:,1)
   a(:,:,size(x,3)) = 0.0
@@ -132,12 +135,15 @@ end subroutine tri_invert
 !> @brief Releases memory used by the solver
 subroutine close_tridiagonal
 
-implicit none
+  implicit none
 
-deallocate(e)
-deallocate(g)
-deallocate(bb)
-deallocate(cc)
+  !< Check if module variables are allocated
+  !$OMP SINGLE
+  if(allocated(e)) deallocate(e)
+  if(allocated(g)) deallocate(g)
+  if(allocated(bb)) deallocate(bb)
+  if(allocated(cc)) deallocate(cc)
+  !$OMP END SINGLE !< There is an implicit barrier.
 
 return
 end subroutine close_tridiagonal

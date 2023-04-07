@@ -26,7 +26,7 @@ set(CMAKE_Fortran_FLAGS_DEBUG)
 
 # Define the CMake project
 project(FMS
-  VERSION 2022.04.0
+  VERSION 2023.01.0
   DESCRIPTION  "GFDL FMS Library"
   HOMEPAGE_URL "https://www.gfdl.noaa.gov/fms"
   LANGUAGES C Fortran)
@@ -41,12 +41,12 @@ if(NOT CMAKE_BUILD_TYPE MATCHES "^(Debug|Release|RelWithDebInfo|MinSizeRel)$")
   set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug" "Release" "MinSizeRel" "RelWithDebInfo")
 endif()
 
-if(NOT CMAKE_C_COMPILER_ID MATCHES "^(Intel|GNU|Clang)$")
+if(NOT CMAKE_C_COMPILER_ID MATCHES "^(Intel|GNU|Clang|IntelLLVM)$")
   message(
     WARNING "Compiler not officially supported: ${CMAKE_C_COMPILER_ID}")
 endif()
 
-if(NOT CMAKE_Fortran_COMPILER_ID MATCHES "^(Intel|GNU)$")
+if(NOT CMAKE_Fortran_COMPILER_ID MATCHES "^(Intel|GNU|IntelLLVM)$")
   message(
     WARNING "Compiler not officially supported: ${CMAKE_Fortran_COMPILER_ID}")
 endif()
@@ -132,7 +132,12 @@ list(APPEND fms_fortran_src_files
   diag_manager/fms_diag_axis_object.F90
   diag_manager/fms_diag_dlinked_list.F90
   diag_manager/fms_diag_object_container.F90
-  diag_manager/fms_diag_buffer.F90
+  diag_manager/fms_diag_output_buffer.F90
+  diag_manager/fms_diag_time_reduction.F90
+  diag_manager/fms_diag_outfield.F90
+  diag_manager/fms_diag_elem_weight_procs.F90
+  diag_manager/fms_diag_fieldbuff_update.F90
+  diag_manager/fms_diag_bbox.F90
   drifters/cloud_interpolator.F90
   drifters/drifters.F90
   drifters/drifters_comm.F90
@@ -300,7 +305,9 @@ foreach(kind ${kinds})
   target_include_directories(${libTgt}_f PRIVATE include
                                                  fms
                                                  fms2_io/include
+                                                 string_utils/include
                                                  mpp/include
+                                                 diag_manager/include
                                                  constants4
                                                  constants)
   target_compile_definitions(${libTgt}_f PRIVATE "${fms_defs}")
@@ -337,7 +344,9 @@ foreach(kind ${kinds})
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/fms>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/fms2_io/include>
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/mpp/include>)
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/string_utils/include>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/mpp/include>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/diag_manager/include>)
 
   target_include_directories(${libTgt} INTERFACE
     $<BUILD_INTERFACE:${moduleDir}>

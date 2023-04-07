@@ -108,7 +108,8 @@
     end subroutine READ_RECORD_CORE_
 
 
-    subroutine READ_RECORD_( unit, field, num_words, data, time_level, domain, position, tile_count, start_in, axsiz_in )
+    subroutine READ_RECORD_( unit, field, num_words, data, time_level, &
+    & domain, position, tile_count, start_in, axsiz_in )
 !routine that is finally called by all mpp_read routines to perform the read
 !a non-netCDF record contains:
 !      field ID
@@ -151,7 +152,8 @@
       if( .NOT.mpp_file(unit)%read_on_this_pe )return
 
       if( .NOT.mpp_file(unit)%initialized ) call mpp_error( FATAL, 'MPP_READ: must first call mpp_read_meta.' )
-      if( mpp_file(unit)%format .NE. MPP_NETCDF ) call mpp_error( FATAL, 'Currently dont support non-NetCDF mpp read' )
+      if( mpp_file(unit)%format .NE. MPP_NETCDF ) &
+         call mpp_error( FATAL, 'Currently dont support non-NetCDF mpp read' )
 
       if (.not.PRESENT(time_level)) then
           tlevel = 0
@@ -215,8 +217,8 @@
                  end if
               else if( mpp_file(unit)%io_domain_exist ) then
                  io_domain=>mpp_get_io_domain(domain)
-                 call mpp_get_compute_domain( io_domain, is,  ie,  js,  je, tile_count=tile_count, position=position  )
-                 call mpp_get_global_domain ( io_domain, isg, ieg, jsg, jeg, tile_count=tile_count, position=position )
+                 call mpp_get_compute_domain(io_domain, is,  ie,  js,  je, tile_count=tile_count, position=position)
+                 call mpp_get_global_domain (io_domain, isg, ieg, jsg, jeg, tile_count=tile_count, position=position)
                  start(1) = is - isg + 1
                  start(2) = js - jsg + 1
                  io_domain => NULL()
