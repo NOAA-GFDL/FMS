@@ -27,7 +27,8 @@ module fms_diag_file_object_mod
 #ifdef use_yaml
 use fms2_io_mod, only: FmsNetcdfFile_t, FmsNetcdfUnstructuredDomainFile_t, FmsNetcdfDomainFile_t, &
                        get_instance_filename, open_file, close_file, get_mosaic_tile_file, unlimited, &
-                       register_axis, register_field, register_variable_attribute, write_data
+                       register_axis, register_field, register_variable_attribute, write_data, &
+                       dimension_exists
 use diag_data_mod, only: DIAG_NULL, NO_DOMAIN, max_axes, SUB_REGIONAL, get_base_time, DIAG_NOT_REGISTERED, &
                          TWO_D_DOMAIN, UG_DOMAIN, prepend_date, DIAG_DAYS, VERY_LARGE_FILE_FREQ, &
                          get_base_year, get_base_month, get_base_day, get_base_hour, get_base_minute, &
@@ -1051,10 +1052,13 @@ subroutine write_time_metadata(this)
     call write_var_metadata(fileobj, avg_name//"_DT", dimensions(2:2), &
       "Length of average period", time_unit_list(diag_file%get_file_timeunit()))
 
-    !< Write out the *_bounds variable metadata
-    call register_axis(fileobj, "nv", 2) !< Time bounds need a vertex number
-    call write_var_metadata(fileobj, "nv", dimensions(1:1), &
-      "vertex number", no_units)
+    !< It is possible that the "nv" "axis" was registered via "diag_axis_init" call
+    !! so only adding it if it doesn't exist already
+    if ( .not. dimension_exists(fileobj, "nv")) then
+      call register_axis(fileobj, "nv", 2) !< Time bounds need a vertex number
+      call write_var_metadata(fileobj, "nv", dimensions(1:1), &
+        "vertex number", no_units)
+    endif
     call write_var_metadata(fileobj, time_var_name//"_bnds", dimensions, &
       trim(time_var_name)//" axis boundaries", time_units_str)
   endif
