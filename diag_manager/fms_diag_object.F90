@@ -20,7 +20,7 @@ module fms_diag_object_mod
 use mpp_mod, only: fatal, note, warning, mpp_error, mpp_pe, mpp_root_pe, stdout
 use diag_data_mod,  only: diag_null, diag_not_found, diag_not_registered, diag_registered_id, &
                          &DIAG_FIELD_NOT_FOUND, diag_not_registered, max_axes, TWO_D_DOMAIN, &
-                         & diag_log_unit, CMOR_MISSING_VALUE, use_cmor
+                         &get_base_time
   USE time_manager_mod, ONLY: set_time, set_date, get_time, time_type, OPERATOR(>=), OPERATOR(>),&
        & OPERATOR(<), OPERATOR(==), OPERATOR(/=), OPERATOR(/), OPERATOR(+), ASSIGNMENT(=), get_date, &
        & get_ticks_per_second
@@ -31,11 +31,14 @@ use fms_diag_yaml_mod, only: diag_yaml_object_init, diag_yaml_object_end, find_d
                             & get_diag_files_id, diag_yaml
 use fms_diag_axis_object_mod, only: fms_diag_axis_object_init, fmsDiagAxis_type, fmsDiagSubAxis_type, &
                                    &diagDomain_t, get_domain_and_domain_type, diagDomain2d_t, &
-                                   &fmsDiagAxisContainer_type, fms_diag_axis_object_end, fmsDiagFullAxis_type
-use fms_diag_buffer_mod
+                                   &fmsDiagAxisContainer_type, fms_diag_axis_object_end, fmsDiagFullAxis_type, &
+                                   &parse_compress_att, get_axis_id_from_name
+use fms_diag_output_buffer_mod
+#endif
+#if defined(_OPENMP)
+use omp_lib
 #endif
 use mpp_domains_mod, only: domain1d, domain2d, domainUG, null_domain2d
-use platform_mod
 implicit none
 private
 
@@ -46,9 +49,11 @@ private
 !TODO: Remove FMS prefix from variables in this type
   class(fmsDiagFileContainer_type), allocatable :: FMS_diag_files (:) !< array of diag files
   class(fmsDiagField_type), allocatable :: FMS_diag_fields(:) !< Array of diag fields
-  type(fmsDiagBufferContainer_type), allocatable :: FMS_diag_buffers(:) !< array of buffer objects
+  type(fmsDiagOutputBufferContainer_type), allocatable :: FMS_diag_output_buffers(:) !< array of output buffer objects
+                                                                       !! one for each variable in the diag_table.yaml
   integer, private :: registered_buffers = 0 !< number of registered buffers, per dimension
   class(fmsDiagAxisContainer_type), allocatable :: diag_axis(:) !< Array of diag_axis
+  type(time_type)  :: current_model_time !< The current model time
   integer, private :: registered_variables !< Number of registered variables
   integer, private :: registered_axis !< Number of registered axis
   logical, private :: initialized=.false. !< True if the fmsDiagObject is initialized
@@ -71,7 +76,9 @@ private
     procedure :: fms_get_axis_length
     procedure :: fms_get_diag_field_id_from_name
     procedure :: fms_get_axis_name_from_id
+    procedure :: fms_diag_accept_data
     procedure :: fms_diag_send_complete
+    procedure :: fms_diag_do_io
 #ifdef use_yaml
     procedure :: get_diag_buffer
 #endif
@@ -107,9 +114,10 @@ subroutine fms_diag_object_init (this,diag_subset_output)
   this%axes_initialized = fms_diag_axis_object_init(this%diag_axis)
   this%files_initialized = fms_diag_files_object_init(this%FMS_diag_files)
   this%fields_initialized = fms_diag_fields_object_init(this%FMS_diag_fields)
-  this%buffers_initialized = fms_diag_buffer_init(this%FMS_diag_buffers, SIZE(diag_yaml%get_diag_fields()))
+  this%buffers_initialized =fms_diag_output_buffer_init(this%FMS_diag_output_buffers,SIZE(diag_yaml%get_diag_fields()))
   this%registered_variables = 0
   this%registered_axis = 0
+  this%current_model_time = get_base_time()
   this%initialized = .true.
 #else
   call mpp_error("fms_diag_object_init",&
@@ -121,26 +129,23 @@ end subroutine fms_diag_object_init
 !! Closes all files
 !! Deallocates all buffers, fields, and files
 !! Uninitializes the fms_diag_object
-subroutine fms_diag_object_end (this)
+subroutine fms_diag_object_end (this, time)
   class(fmsDiagObject_type) :: this
+  TYPE(time_type), INTENT(in) :: time
+
   integer                   :: i
 #ifdef use_yaml
   !TODO: loop through files and force write
   if (.not. this%initialized) return
 
-  do i = 1, size(this%FMS_diag_files)
-    !< Go away if the file is a subregional file and the current PE does not have any data for it
-    if (.not. this%FMS_diag_files(i)%writing_on_this_pe()) cycle
-
-    call this%FMS_diag_files(i)%close_diag_file()
-  enddo
+  call this%fms_diag_do_io(is_end_of_run=.true.)
   !TODO: Deallocate diag object arrays and clean up all memory
-  do i=1, size(this%FMS_diag_buffers)
-    if(allocated(this%FMS_diag_buffers(i)%diag_buffer_obj)) then
-      call this%FMS_diag_buffers(i)%diag_buffer_obj%flush_buffer()
+  do i=1, size(this%FMS_diag_output_buffers)
+    if(allocated(this%FMS_diag_output_buffers(i)%diag_buffer_obj)) then
+      call this%FMS_diag_output_buffers(i)%diag_buffer_obj%flush_buffer()
     endif
   enddo
-  deallocate(this%FMS_diag_buffers)
+  deallocate(this%FMS_diag_output_buffers)
   this%axes_initialized = fms_diag_axis_object_end(this%diag_axis)
   this%initialized = .false.
   call diag_yaml_object_end
@@ -155,7 +160,7 @@ end subroutine fms_diag_object_end
 integer function fms_register_diag_field_obj &
        (this, modname, varname, axes, init_time, &
        longname, units, missing_value, varRange, mask_variant, standname, &
-       err_msg, interp_method, tile_count, area, volume, realm, static)
+       do_not_log, err_msg, interp_method, tile_count, area, volume, realm, static)
 
  class(fmsDiagObject_type),TARGET,INTENT(inout):: this       !< Diaj_obj to fill
  CHARACTER(len=*),               INTENT(in)    :: modname               !< The module name
@@ -168,6 +173,7 @@ integer function fms_register_diag_field_obj &
  class(*),         OPTIONAL,     INTENT(in)    :: missing_value         !< Missing value to add as a attribute
  class(*),         OPTIONAL,     INTENT(in)    :: varRANGE(2)           !< Range to add as a attribute
  LOGICAL,          OPTIONAL,     INTENT(in)    :: mask_variant          !< Mask
+ LOGICAL,          OPTIONAL,     INTENT(in)    :: do_not_log            !< if TRUE, field info is not logged
  CHARACTER(len=*), OPTIONAL,     INTENT(out)   :: err_msg               !< Error message to be passed back up
  CHARACTER(len=*), OPTIONAL,     INTENT(in)    :: interp_method         !< The interp method to be used when
                                                                         !! regridding the field in post-processing.
@@ -208,41 +214,45 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
 !> Use pointers for convenience
   fieldptr => this%FMS_diag_fields(this%registered_variables)
 !> Register the data for the field
-  call fieldptr%register(modname, varname, diag_field_indices, fms_diag_object%diag_axis, &
-       axes, longname, units, missing_value, varRange, mask_variant, standname, &
-       err_msg=err_msg, interp_method=interp_method, tile_count=tile_count, area=area, volume=volume, realm=realm, &
+  call fieldptr%register(modname, varname, diag_field_indices, this%diag_axis, &
+       axes=axes, longname=longname, units=units, missing_value=missing_value, varRange= varRange, &
+       mask_variant= mask_variant, standname=standname, do_not_log=do_not_log, err_msg=err_msg, &
+       interp_method=interp_method, tile_count=tile_count, area=area, volume=volume, realm=realm, &
        static=static)
 !> Get the file IDs from the field indicies from the yaml
   file_ids = get_diag_files_id(diag_field_indices)
+  call fieldptr%set_file_ids(file_ids)
 !> Add the axis information, initial time, and field IDs to the files
   if (present(axes) .and. present(init_time)) then
     do i = 1, size(file_ids)
      fileptr => this%FMS_diag_files(file_ids(i))%FMS_diag_file
-     call fileptr%add_field_id(fieldptr%get_id())
+     call fileptr%add_field_and_yaml_id(fieldptr%get_id(), diag_field_indices(i))
      call fileptr%set_file_domain(fieldptr%get_domain(), fieldptr%get_type_of_domain())
-     call fileptr%add_axes(axes, this%diag_axis, this%registered_axis)
-     call fileptr%add_start_time(init_time)
+     call fileptr%init_diurnal_axis(this%diag_axis, this%registered_axis, diag_field_indices(i))
+     call fileptr%add_axes(axes, this%diag_axis, this%registered_axis, diag_field_indices(i))
+     call fileptr%add_start_time(init_time, this%current_model_time)
      call fileptr%set_file_time_ops (fieldptr%diag_field(i), fieldptr%is_static())
     enddo
   elseif (present(axes)) then !only axes present
     do i = 1, size(file_ids)
      fileptr => this%FMS_diag_files(file_ids(i))%FMS_diag_file
-     call fileptr%add_field_id(fieldptr%get_id())
+     call fileptr%add_field_and_yaml_id(fieldptr%get_id(), diag_field_indices(i))
+     call fileptr%init_diurnal_axis(this%diag_axis, this%registered_axis, diag_field_indices(i))
      call fileptr%set_file_domain(fieldptr%get_domain(), fieldptr%get_type_of_domain())
-     call fileptr%add_axes(axes, this%diag_axis, this%registered_axis)
+     call fileptr%add_axes(axes, this%diag_axis, this%registered_axis, diag_field_indices(i))
      call fileptr%set_file_time_ops (fieldptr%diag_field(i), fieldptr%is_static())
     enddo
   elseif (present(init_time)) then !only inti time present
     do i = 1, size(file_ids)
      fileptr => this%FMS_diag_files(file_ids(i))%FMS_diag_file
-     call fileptr%add_field_id(fieldptr%get_id())
-     call fileptr%add_start_time(init_time)
+     call fileptr%add_field_and_yaml_id(fieldptr%get_id(), diag_field_indices(i))
+     call fileptr%add_start_time(init_time, this%current_model_time)
      call fileptr%set_file_time_ops (fieldptr%diag_field(i), fieldptr%is_static())
     enddo
   else !no axis or init time present
     do i = 1, size(file_ids)
      fileptr => this%FMS_diag_files(file_ids(i))%FMS_diag_file
-     call fileptr%add_field_id(fieldptr%get_id())
+     call fileptr%add_field_and_yaml_id(fieldptr%get_id(), diag_field_indices(i))
      call fileptr%set_file_time_ops (fieldptr%diag_field(i), fieldptr%is_static())
     enddo
   endif
@@ -255,7 +265,7 @@ end function fms_register_diag_field_obj
   !> @brief Registers a scalar field
   !! @return field index for subsequent call to send_data.
 INTEGER FUNCTION fms_register_diag_field_scalar(this,module_name, field_name, init_time, &
-       & long_name, units, missing_value, var_range, standard_name, err_msg,&
+       & long_name, units, missing_value, var_range, standard_name, do_not_log, err_msg,&
        & area, volume, realm)
     class(fmsDiagObject_type),TARGET,INTENT(inout):: this       !< Diaj_obj to fill
     CHARACTER(len=*),           INTENT(in) :: module_name   !< Module where the field comes from
@@ -266,6 +276,7 @@ INTEGER FUNCTION fms_register_diag_field_scalar(this,module_name, field_name, in
     CHARACTER(len=*), OPTIONAL, INTENT(in) :: standard_name !< Standard_name to name the variable in the file
     CLASS(*),         OPTIONAL, INTENT(in) :: missing_value !< Missing value to add as a variable attribute
     CLASS(*),         OPTIONAL, INTENT(in) :: var_range(:)  !< Range to add a variable attribute
+    LOGICAL,          OPTIONAL, INTENT(in) :: do_not_log    !< If TRUE, field information is not logged
     CHARACTER(len=*), OPTIONAL, INTENT(out):: err_msg       !< Error_msg from call
     INTEGER,          OPTIONAL, INTENT(in) :: area          !< Id of the area field
     INTEGER,          OPTIONAL, INTENT(in) :: volume        !< Id of the volume field
@@ -277,7 +288,7 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
     fms_register_diag_field_scalar = this%register(&
       & module_name, field_name, init_time=init_time, &
       & longname=long_name, units=units, missing_value=missing_value, varrange=var_range, &
-      & standname=standard_name, err_msg=err_msg, &
+      & standname=standard_name, do_not_log=do_not_log, err_msg=err_msg, &
       & area=area, volume=volume, realm=realm)
 #endif
 end function fms_register_diag_field_scalar
@@ -286,7 +297,7 @@ end function fms_register_diag_field_scalar
   !> @return field index for subsequent call to send_data.
 INTEGER FUNCTION fms_register_diag_field_array(this, module_name, field_name, axes, init_time, &
        & long_name, units, missing_value, var_range, mask_variant, standard_name, verbose,&
-       & err_msg, interp_method, tile_count, area, volume, realm)
+       & do_not_log, err_msg, interp_method, tile_count, area, volume, realm)
     class(fmsDiagObject_type),TARGET,INTENT(inout):: this       !< Diaj_obj to fill
     CHARACTER(len=*),           INTENT(in) :: module_name   !< Module where the field comes from
     CHARACTER(len=*),           INTENT(in) :: field_name    !< Name of the field
@@ -299,6 +310,7 @@ INTEGER FUNCTION fms_register_diag_field_array(this, module_name, field_name, ax
     LOGICAL,          OPTIONAL, INTENT(in) :: mask_variant  !< Mask variant
     CHARACTER(len=*), OPTIONAL, INTENT(in) :: standard_name !< Standard_name to name the variable in the file
     LOGICAL,          OPTIONAL, INTENT(in) :: verbose       !< Print more information
+    LOGICAL,          OPTIONAL, INTENT(in) :: do_not_log    !< If TRUE, field information is not logged
     CHARACTER(len=*), OPTIONAL, INTENT(out):: err_msg       !< Error_msg from call
     CHARACTER(len=*), OPTIONAL, INTENT(in) :: interp_method !< The interp method to be used when
                                                             !! regridding the field in post-processing.
@@ -316,7 +328,7 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
     fms_register_diag_field_array = this%register( &
       & module_name, field_name, init_time=init_time, &
       & axes=axes, longname=long_name, units=units, missing_value=missing_value, varrange=var_range, &
-      & mask_variant=mask_variant, standname=standard_name, err_msg=err_msg, &
+      & mask_variant=mask_variant, standname=standard_name, do_not_log=do_not_log, err_msg=err_msg, &
       & interp_method=interp_method, tile_count=tile_count, area=area, volume=volume, realm=realm)
 #endif
 end function fms_register_diag_field_array
@@ -324,7 +336,7 @@ end function fms_register_diag_field_array
 !> @brief Return field index for subsequent call to send_data.
 !! @return field index for subsequent call to send_data.
 INTEGER FUNCTION fms_register_static_field(this, module_name, field_name, axes, long_name, units,&
-       & missing_value, range, mask_variant, standard_name, DYNAMIC, interp_method,&
+       & missing_value, range, mask_variant, standard_name, DYNAMIC, do_not_log, interp_method,&
        & tile_count, area, volume, realm)
     class(fmsDiagObject_type),TARGET,INTENT(inout):: this       !< Diaj_obj to fill
     CHARACTER(len=*),                         INTENT(in) :: module_name   !< Name of the module, the field is on
@@ -338,6 +350,7 @@ INTEGER FUNCTION fms_register_static_field(this, module_name, field_name, axes, 
     LOGICAL,                        OPTIONAL, INTENT(in) :: mask_variant  !< Flag indicating if the field is has
                                                                           !! a mask variant
     LOGICAL,                        OPTIONAL, INTENT(in) :: DYNAMIC       !< Flag indicating if the field is dynamic
+    LOGICAL,                        OPTIONAL, INTENT(in) :: do_not_log    !< if TRUE, field information is not logged
     CHARACTER(len=*),               OPTIONAL, INTENT(in) :: interp_method !< The interp method to be used when
                                                                           !! regridding the field in post-processing
                                                                           !! Valid options are "conserve_order1",
@@ -358,6 +371,7 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
   fms_register_static_field = this%register( &
       & module_name, field_name, axes=axes, &
       & longname=long_name, units=units, missing_value=missing_value, varrange=range, &
+      & mask_variant=mask_variant, do_not_log=do_not_log, interp_method=interp_method, tile_count=tile_count, &
       & standname=standard_name, area=area, volume=volume, realm=realm, &
       & static=.true.)
 #endif
@@ -366,7 +380,7 @@ end function fms_register_static_field
 !> @brief Wrapper for the register_diag_axis subroutine. This is needed to keep the diag_axis_init
 !! interface the same
 !> @return Axis id
-FUNCTION fms_diag_axis_init(this, axis_name, axis_data, units, cart_name, long_name, direction,&
+FUNCTION fms_diag_axis_init(this, axis_name, axis_data, units, cart_name, axis_length, long_name, direction,&
   & set_name, edges, Domain, Domain2, DomainU, aux, req, tile_count, domain_position ) &
   & result(id)
 
@@ -375,6 +389,7 @@ FUNCTION fms_diag_axis_init(this, axis_name, axis_data, units, cart_name, long_n
   CLASS(*),           INTENT(in)           :: axis_data(:)    !< Array of coordinate values
   CHARACTER(len=*),   INTENT(in)           :: units           !< Units for the axis
   CHARACTER(len=1),   INTENT(in)           :: cart_name       !< Cartesian axis ("X", "Y", "Z", "T", "U", "N")
+  integer,            intent(in)           :: axis_length     !< The length of the axis size(axis_data(:))
   CHARACTER(len=*),   INTENT(in), OPTIONAL :: long_name       !< Long name for the axis.
   CHARACTER(len=*),   INTENT(in), OPTIONAL :: set_name        !< Name of the parent axis, if it is a subaxis
   INTEGER,            INTENT(in), OPTIONAL :: direction       !< Indicates the direction of the axis
@@ -416,7 +431,7 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
     endif
     call axis%register(axis_name, axis_data, units, cart_name, long_name=long_name, &
       & direction=direction, set_name=set_name, Domain=Domain, Domain2=Domain2, DomainU=DomainU, aux=aux, &
-      & req=req, tile_count=tile_count, domain_position=domain_position)
+      & req=req, tile_count=tile_count, domain_position=domain_position, axis_length=axis_length)
 
     id = this%registered_axis
     call axis%set_axis_id(id)
@@ -424,21 +439,154 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
 #endif
 end function fms_diag_axis_init
 
-!> @brief Loops through all the files, open the file, writes out axis and
-!! variable metadata and data when necessary.
-subroutine fms_diag_send_complete(this, time_step)
-  class(fmsDiagObject_type), target, intent (inout) :: this !< The diag object
-  TYPE (time_type),                  INTENT(in)     :: time_step !< The current model time
-
-  integer :: i !< For do loops
-
+!> Accepts data from the send_data functions.  If this is in an openmp region with more than
+!! one thread, the data is buffered in the field object and processed later.  If only a single thread
+!! is being used, then the processing can be done and stored in the buffer object.  The hope is that
+!! the increase in memory footprint related to buffering can be handled by the shared memory of the
+!! multithreaded case.
+!! \note If some of the diag manager is offloaded in the future, then it should be treated similarly
+!! to the multi-threaded option for processing later
+logical function fms_diag_accept_data (this, diag_field_id, field_data, time, is_in, js_in, ks_in, &
+                  mask, rmask, ie_in, je_in, ke_in, weight, err_msg)
+  class(fmsDiagObject_type),TARGET,INTENT(inout):: this !< Diaj_obj to fill
+  INTEGER, INTENT(in) :: diag_field_id !< The ID of the input diagnostic field
+  CLASS(*), DIMENSION(:,:,:,:), INTENT(in) :: field_data !< The data for the input diagnostic
+  CLASS(*), INTENT(in), OPTIONAL :: weight !< The weight used for averaging
+  TYPE (time_type), INTENT(in), OPTIONAL :: time !< The current time
+  INTEGER, INTENT(in), OPTIONAL :: is_in, js_in, ks_in,ie_in,je_in, ke_in !< Indicies for the variable
+  LOGICAL, DIMENSION(:,:,:), INTENT(in), OPTIONAL :: mask !< The location of the mask
+  CLASS(*), DIMENSION(:,:,:), INTENT(in), OPTIONAL :: rmask !< The masking values
+  CHARACTER(len=*), INTENT(out), OPTIONAL :: err_msg !< An error message returned
+  integer :: is, js, ks !< Starting indicies of the field_data
+  integer :: ie, je, ke !< Ending indicied of the field_data
+  integer :: n1, n2, n3 !< Size of the 3 indicies of the field data
+  integer :: omp_num_threads !< Number of openmp threads
+  integer :: omp_level !< The openmp active level
+  logical :: buffer_the_data !< True if the user selects to buffer the data and run the calculations
+                             !! later.  \note This is experimental
 #ifndef use_yaml
 CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling with -Duse_yaml")
 #else
+!> Does the user want to push off calculations until send_diag_complete?
+  buffer_the_data = .false.
+!> initialize the number of threads and level to be 0
+  omp_num_threads = 0
+  omp_level = 0
+#if defined(_OPENMP)
+  omp_num_threads = omp_get_num_threads()
+  omp_level = omp_get_level()
+  buffer_the_data = (omp_num_threads > 1 .AND. omp_level > 0)
+#endif
+!If this is true, buffer data
+  main_if: if (buffer_the_data) then
+!> Calculate the i,j,k start and end
+    ! If is, js, or ks not present default them to 1
+    is = 1
+    js = 1
+    ks = 1
+    IF ( PRESENT(is_in) ) is = is_in
+    IF ( PRESENT(js_in) ) js = js_in
+    IF ( PRESENT(ks_in) ) ks = ks_in
+    n1 = SIZE(field_data, 1)
+    n2 = SIZE(field_data, 2)
+    n3 = SIZE(field_data, 3)
+    ie = is+n1-1
+    je = js+n2-1
+    ke = ks+n3-1
+    IF ( PRESENT(ie_in) ) ie = ie_in
+    IF ( PRESENT(je_in) ) je = je_in
+    IF ( PRESENT(ke_in) ) ke = ke_in
+!> Buffer the data
+    call this%FMS_diag_fields(diag_field_id)%set_data_buffer(field_data, FMS_diag_object%diag_axis,&
+                                                             is, js, ks, ie, je, ke)
+    call this%FMS_diag_fields(diag_field_id)%set_math_needs_to_be_done(.TRUE.)
+    fms_diag_accept_data = .TRUE.
+    return
+  else
+!!TODO: Loop through fields and do averages/math functions
+    call this%FMS_diag_fields(diag_field_id)%set_math_needs_to_be_done(.FALSE.)
+    fms_diag_accept_data = .TRUE.
+    return
+  end if main_if
+!> Return false if nothing is done
+  fms_diag_accept_data = .FALSE.
+  return
+#endif
+end function fms_diag_accept_data
+!! TODO: This entire routine
+!> @brief Loops through all the files, open the file, writes out axis and
+!! variable metadata and data when necessary.
+subroutine fms_diag_send_complete(this, time_step)
+  class(fmsDiagObject_type), target, intent (inout) :: this      !< The diag object
+  TYPE (time_type),                  INTENT(in)     :: time_step !< The time_step
+
+  integer :: i !< For do loops
+
+  integer :: ifile !< For file loops
+  integer :: ifield !< For field loops
+#ifndef use_yaml
+CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling with -Duse_yaml")
+#else
+
+  class(fmsDiagFileContainer_type), pointer :: diag_file !< Pointer to this%FMS_diag_files(i) (for convenience
+  class(fmsDiagField_type), pointer :: diag_field !< Pointer to this%FMS_diag_files(i)%diag_field(j)
+  logical :: math !< True if the math functions need to be called using the data buffer,
+  !! False if the math functions were done in accept_data
+  integer, dimension(:), allocatable :: file_field_ids !< Array of field IDs for a file
+
+  !< Update the current model time by adding the time_step
+  this%current_model_time = this%current_model_time + time_step
+
+  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  !! In the future, this may be parallelized for offloading
+  file_loop: do ifile = 1, size(this%FMS_diag_files)
+    diag_file => this%FMS_diag_files(ifile)
+    field_outer_if: if (size(diag_file%FMS_diag_file%get_field_ids()) .ge. 1) then
+      allocate (file_field_ids(size(diag_file%FMS_diag_file%get_field_ids() )))
+      file_field_ids = diag_file%FMS_diag_file%get_field_ids()
+      field_loop: do ifield = 1, size(file_field_ids)
+        ! If the field is not registered go away
+        if (.not. diag_file%FMS_diag_file%is_field_registered(ifield)) cycle
+
+        diag_field => this%FMS_diag_fields(file_field_ids(ifield))
+        !> Check if math needs to be done
+        ! math = diag_field%get_math_needs_to_be_done()
+        math = .false. !TODO: replace this with real thing
+        calling_math: if (math) then
+          !!TODO: call math functions !!
+        endif calling_math
+        !> Clean up, clean up, everybody everywhere
+        if (associated(diag_field)) nullify(diag_field)
+      enddo field_loop
+      !> Clean up, clean up, everybody do your share
+      if (allocated(file_field_ids)) deallocate(file_field_ids)
+    endif field_outer_if
+  enddo file_loop
+
+  call this%fms_diag_do_io()
+#endif
+
+end subroutine fms_diag_send_complete
+
+!> @brief Loops through all the files, open the file, writes out axis and
+!! variable metadata and data when necessary.
+subroutine fms_diag_do_io(this, is_end_of_run)
+  class(fmsDiagObject_type), target, intent(inout)  :: this          !< The diag object
+  logical,                 optional, intent(in)     :: is_end_of_run !< If .true. this is the end of the run,
+                                                                     !! so force write
+#ifdef use_yaml
+  integer :: i !< For do loops
   class(fmsDiagFileContainer_type), pointer :: diag_file !< Pointer to this%FMS_diag_files(i) (for convenience)
+  TYPE (time_type),                 pointer :: model_time!< The current model time
 
   logical :: file_is_opened_this_time_step !< True if the file was opened in this time_step
                                            !! If true the metadata will need to be written
+  logical :: force_write
+
+  force_write = .false.
+  if (present (is_end_of_run)) force_write = .true.
+
+  model_time => this%current_model_time
 
   do i = 1, size(this%FMS_diag_files)
     diag_file => this%FMS_diag_files(i)
@@ -446,25 +594,29 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
     !< Go away if the file is a subregional file and the current PE does not have any data for it
     if (.not. diag_file%writing_on_this_pe()) cycle
 
-    call diag_file%open_diag_file(time_step, file_is_opened_this_time_step)
+    call diag_file%open_diag_file(model_time, file_is_opened_this_time_step)
     if (file_is_opened_this_time_step) then
       call diag_file%write_time_metadata()
       call diag_file%write_axis_metadata(this%diag_axis)
+      call diag_file%write_field_metadata(this%FMS_diag_fields, this%diag_axis)
       call diag_file%write_axis_data(this%diag_axis)
     endif
 
-    if (diag_file%is_time_to_write(time_step)) then
+    if (diag_file%is_time_to_write(model_time)) then
       call diag_file%increase_unlimited_dimension()
       call diag_file%write_time_data()
       !TODO call diag_file%add_variable_data()
-      call diag_file%update_next_write(time_step)
-      call diag_file%update_current_new_file_freq_index(time_step)
-      if (diag_file%is_time_to_close_file(time_step)) call diag_file%close_diag_file
+      call diag_file%update_next_write(model_time)
+      call diag_file%update_current_new_file_freq_index(model_time)
+      if (diag_file%is_time_to_close_file(model_time)) call diag_file%close_diag_file()
+    else if (force_write .and. .not. diag_file%is_file_static()) then
+      call diag_file%increase_unlimited_dimension()
+      call diag_file%write_time_data()
+      call diag_file%close_diag_file()
     endif
   enddo
 #endif
-
-end subroutine fms_diag_send_complete
+end subroutine fms_diag_do_io
 
 !> @brief Add a attribute to the diag_obj using the diag_field_id
 subroutine fms_diag_field_add_attribute(this, diag_field_id, att_name, att_value)
@@ -492,6 +644,9 @@ subroutine fms_diag_axis_add_attribute(this, axis_id, att_name, att_value)
   character(len=*), intent(in) :: att_name     !< Name of the attribute
   class(*),         intent(in) :: att_value(:) !< The attribute value to add
 
+  character(len=20) :: axis_names(2) !< Names of the uncompress axis
+  integer           :: uncmx_ids(2)  !< Ids of the uncompress axis
+  integer           :: j             !< For do loops
 #ifndef use_yaml
 CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling with -Duse_yaml")
 #else
@@ -501,6 +656,25 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
   select type (axis => this%diag_axis(axis_id)%axis)
   type is (fmsDiagFullAxis_type)
     call axis%add_axis_attribute(att_name, att_value)
+
+    !! Axis that are in the "unstructured" domain require a "compress" attribute for the
+    !! combiner and PP. This attribute is passed in via a diag_axis_add_attribute call in the model code
+    !! The compress attribute indicates the names of the axis that were compressed
+    !! For example grid_index:compress = "grid_yt grid_xt"
+    !! The metadata and the data for these axis also needs to be written to the file
+    if (trim(att_name) .eq. "compress") then
+      !< If the attribute is the "compress" attribute, get the axis names,
+      !! and the ids of the axis and add it to the axis object so it can be written to netcdf files
+      !! that use this axis
+      axis_names = parse_compress_att(att_value)
+      do j = 1, size(axis_names)
+        uncmx_ids(j) = get_axis_id_from_name(axis_names(j), this%diag_axis, this%registered_axis)
+        if (uncmx_ids(j) .eq. diag_null) call mpp_error(FATAL, &
+          &"Error parsing the compress attribute for axis: "//trim(axis%get_axis_name())//&
+          &". Be sure that the axes in the compress attribute are registered")
+      enddo
+      call axis%add_structured_axis_ids(uncmx_ids)
+    endif
   end select
 #endif
 end subroutine fms_diag_axis_add_attribute
@@ -508,9 +682,9 @@ end subroutine fms_diag_axis_add_attribute
 #ifdef use_yaml
 !> \brief Gets the diag field ID from the module name and field name.
 !> \returns a copy of the ID of the diag field or DIAG_FIELD_NOT_FOUND if the field is not registered
-PURE FUNCTION fms_get_diag_field_id_from_name(fms_diag_object, module_name, field_name) &
+PURE FUNCTION fms_get_diag_field_id_from_name(this, module_name, field_name) &
   result(diag_field_id)
-  class(fmsDiagObject_type), intent (in) :: fms_diag_object !< The diag object
+  class(fmsDiagObject_type), intent (in) :: this !< The diag object, the caller
   CHARACTER(len=*), INTENT(in) :: module_name !< Module name that registered the variable
   CHARACTER(len=*), INTENT(in) :: field_name !< Variable name
   integer :: diag_field_id
@@ -518,9 +692,9 @@ PURE FUNCTION fms_get_diag_field_id_from_name(fms_diag_object, module_name, fiel
 !> Initialize to not found
   diag_field_id = DIAG_FIELD_NOT_FOUND
 !> Loop through fields to find it.
-  if (fms_diag_object%registered_variables < 1) return
-  do i=1,fms_diag_object%registered_variables
-   diag_field_id = fms_diag_object%FMS_diag_fields(i)%id_from_name(module_name, field_name)
+  if (this%registered_variables < 1) return
+  do i=1, this%registered_variables
+   diag_field_id = this%FMS_diag_fields(i)%id_from_name(module_name, field_name)
    if(diag_field_id .ne. DIAG_FIELD_NOT_FOUND) return
   enddo
 END FUNCTION fms_get_diag_field_id_from_name
@@ -548,10 +722,11 @@ function get_diag_buffer(this, bufferid) &
 result(rslt)
   class(fmsDiagObject_type), intent(in) :: this
   integer, intent(in)                   :: bufferid
-  class(fmsDiagBuffer_class),allocatable:: rslt
-  if( (bufferid .gt. UBOUND(this%FMS_diag_buffers, 1)) .or. (bufferid .lt. UBOUND(this%FMS_diag_buffers, 1))) &
+  class(fmsDiagOutputBuffer_class),allocatable:: rslt
+  if( (bufferid .gt. UBOUND(this%FMS_diag_output_buffers, 1)) .or. &
+      (bufferid .lt. LBOUND(this%FMS_diag_output_buffers, 1))) &
     call mpp_error(FATAL, 'get_diag_bufer: invalid bufferid given')
-  rslt = fms_diag_object%FMS_diag_buffers(bufferid)%diag_buffer_obj
+  rslt = this%FMS_diag_output_buffers(bufferid)%diag_buffer_obj
 end function
 #endif
 
@@ -674,6 +849,4 @@ subroutine dump_diag_obj( filename )
   call mpp_error( FATAL, "You can not use the modern diag manager without compiling with -Duse_yaml")
 #endif
 end subroutine
-
-
 end module fms_diag_object_mod
