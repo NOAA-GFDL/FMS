@@ -411,7 +411,7 @@ CONTAINS
              if(.not. do_not_log) call log_diag_field_info(module_name, field_name, (/NULL_AXIS_ID/), long_name,&
                            & units, missing_value, range, dynamic=.true.)
          else
-             call log_diag_field_info(module_name, field_name, (/NULL_AXIS_ID/), "", long_name, units,&
+             call log_diag_field_info(module_name, field_name, (/NULL_AXIS_ID/), long_name, units,&
                            & missing_value, range, dynamic=.true.)
          endif
      endif
@@ -456,10 +456,10 @@ CONTAINS
     if (use_modern_diag) then
       if( do_diag_field_log) then
          if ( PRESENT(do_not_log) ) THEN
-             if(.not. do_not_log) call log_diag_field_info(module_name, field_name, axes, "", long_name,&
+             if(.not. do_not_log) call log_diag_field_info(module_name, field_name, axes, long_name,&
                            & units, missing_value, range, dynamic=.true.)
          else
-             call log_diag_field_info(module_name, field_name, axes, "", long_name, units,&
+             call log_diag_field_info(module_name, field_name, axes, long_name, units,&
                            & missing_value, range, dynamic=.true.)
          endif
      endif
@@ -512,6 +512,15 @@ end function register_diag_field_array
     END IF
 
     if (use_modern_diag) then
+      if( do_diag_field_log) then
+         if ( PRESENT(do_not_log) ) THEN
+             if(.not. do_not_log) call log_diag_field_info(module_name, field_name, axes, long_name,&
+                           & units, missing_value, range, dynamic=.false.)
+         else
+             call log_diag_field_info(module_name, field_name, axes, long_name, units,&
+                           & missing_value, range, dynamic=.false.)
+         endif
+     endif
       register_static_field = fms_diag_object%fms_register_static_field(module_name, field_name, axes, &
        & long_name=long_name, units=units, missing_value=missing_value, range=range, mask_variant=mask_variant, &
        & standard_name=standard_name, dynamic=DYNAMIC, do_not_log=do_not_log, interp_method=interp_method,&
