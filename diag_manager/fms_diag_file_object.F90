@@ -1212,7 +1212,7 @@ end subroutine increase_unlimited_dimension
 !! \return The unlimited dimension
 pure function get_unlimited_dimension(this) &
 result(res)
-  class(fmsDiagFileContainer_type), intent(inout), target   :: this            !< The file object
+  class(fmsDiagFileContainer_type), intent(in), target   :: this            !< The file object
   integer :: res
 
   res = this%FMS_diag_file%unlimited_dimension
