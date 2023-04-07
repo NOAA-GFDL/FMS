@@ -20,7 +20,7 @@ module fms_diag_object_mod
 use mpp_mod, only: fatal, note, warning, mpp_error, mpp_pe, mpp_root_pe, stdout
 use diag_data_mod,  only: diag_null, diag_not_found, diag_not_registered, diag_registered_id, &
                          &DIAG_FIELD_NOT_FOUND, diag_not_registered, max_axes, TWO_D_DOMAIN, &
-                         &get_base_time
+                         &get_base_time, null_axis_id
   USE time_manager_mod, ONLY: set_time, set_date, get_time, time_type, OPERATOR(>=), OPERATOR(>),&
        & OPERATOR(<), OPERATOR(==), OPERATOR(/=), OPERATOR(/), OPERATOR(+), ASSIGNMENT(=), get_date, &
        & get_ticks_per_second
@@ -367,13 +367,24 @@ INTEGER FUNCTION fms_register_static_field(this, module_name, field_name, axes, 
 fms_register_static_field=diag_null
 CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling with -Duse_yaml")
 #else
-! Include static as optional variable to register here
-  fms_register_static_field = this%register( &
+  !TODO The register_static_field interface does not have the capabiliy to register a variable as a "scalar"
+  !     since the axes argument is required, this forced model code to pass in a null_axis_id as an argument
+  if (size(axes) .eq. 1 .and. axes(1) .eq. null_axis_id) then
+    ! If they are passing in the null_axis_ids, ignore the `axes` argument
+    fms_register_static_field = this%register( &
+      & module_name, field_name, &
+      & longname=long_name, units=units, missing_value=missing_value, varrange=range, &
+      & mask_variant=mask_variant, do_not_log=do_not_log, interp_method=interp_method, tile_count=tile_count, &
+      & standname=standard_name, area=area, volume=volume, realm=realm, &
+      & static=.true.)
+  else
+    fms_register_static_field = this%register( &
       & module_name, field_name, axes=axes, &
       & longname=long_name, units=units, missing_value=missing_value, varrange=range, &
       & mask_variant=mask_variant, do_not_log=do_not_log, interp_method=interp_method, tile_count=tile_count, &
       & standname=standard_name, area=area, volume=volume, realm=realm, &
       & static=.true.)
+  endif
 #endif
 end function fms_register_static_field
 
