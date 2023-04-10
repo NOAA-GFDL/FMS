@@ -1460,16 +1460,16 @@ end function get_diag_fields_entries
 
 !> @brief Gets field indices corresponding to the indices (input argument) in the sorted variable_list
 !! @return Array of field indices
-function get_diag_field_ids(indices) result(buffer_ids)
+function get_diag_field_ids(indices) result(field_ids)
 
   integer, intent(in) :: indices(:) !< Indices of the fields in the sorted variable_list array
-  integer, allocatable :: buffer_ids(:)
+  integer, allocatable :: field_ids(:)
   integer :: i !< For do loop
 
-  allocate(buffer_ids(size(indices)))
+  allocate(field_ids(size(indices)))
 
   do i = 1, size(indices)
-    buffer_ids(i) = variable_list%diag_field_indices(indices(i))
+    field_ids(i) = variable_list%diag_field_indices(indices(i))
   end do
 
 end function get_diag_field_ids
