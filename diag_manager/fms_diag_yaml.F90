@@ -51,7 +51,7 @@ public :: diag_yaml_object_init, diag_yaml_object_end
 public :: diagYamlObject_type, get_diag_yaml_obj, subRegion_type
 public :: diagYamlFiles_type, diagYamlFilesVar_type
 public :: get_num_unique_fields, find_diag_field, get_diag_fields_entries, get_diag_files_id
-public :: get_output_buffer_ids
+public :: get_diag_field_ids
 public :: dump_diag_yaml_obj
 !> @}
 
@@ -1458,9 +1458,9 @@ function get_diag_fields_entries(indices) &
 
 end function get_diag_fields_entries
 
-!> @brief Gets the output buffer ids corresponding to the indices in the sorted variable_list
-!! @return Array of indices of the output buffers
-function get_output_buffer_ids(indices) result(buffer_ids)
+!> @brief Gets the field indices from the sorted variable_list
+!! @return Array of field indices
+function get_diag_field_ids(indices) result(buffer_ids)
 
   integer, intent(in) :: indices(:) !< Indices of the fields in the sorted variable_list array
   integer, allocatable :: buffer_ids(:)
@@ -1472,7 +1472,7 @@ function get_output_buffer_ids(indices) result(buffer_ids)
     buffer_ids(i) = variable_list%diag_field_indices(indices(i))
   end do
 
-end function get_output_buffer_ids
+end function get_diag_field_ids
 
 !> @brief Finds the indices of the diag_yaml%diag_files(:) corresponding to fields in variable_list(indices)
 !! @return indices of the diag_yaml%diag_files(:)
