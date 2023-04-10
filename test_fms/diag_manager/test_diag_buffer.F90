@@ -1,18 +1,18 @@
 program test_diag_buffer
 #ifdef use_yaml
 
-    use fms_diag_buffer_mod
+    use fms_diag_output_buffer_mod
     use platform_mod
     use diag_data_mod, only: i4, i8, r4, r8
 
     implicit none
 
-    type(buffer0d_type) :: buffobj0(10)
-    type(buffer1d_type) :: buffobj1
-    type(buffer2d_type) :: buffobj2
-    type(buffer3d_type) :: buffobj3
-    type(buffer4d_type) :: buffobj4
-    type(buffer5d_type) :: buffobj5
+    type(outputBuffer0d_type) :: buffobj0(10)
+    type(outputBuffer1d_type) :: buffobj1
+    type(outputBuffer2d_type) :: buffobj2
+    type(outputBuffer3d_type) :: buffobj3
+    type(outputBuffer4d_type) :: buffobj4
+    type(outputBuffer5d_type) :: buffobj5
     class(*),allocatable       :: p_val, p_data1(:), p_data2(:,:)
     real(r8_kind)  :: r8_data
     real(r4_kind)  :: r4_data
