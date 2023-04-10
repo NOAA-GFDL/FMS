@@ -57,44 +57,6 @@ interface stats
   module procedure stats_r8
 end interface
 
-!> Holds data pointers and metadata for horizontal interpolations, passed between the horiz_interp modules
-!> @ingroup horiz_interp_type_mod
- type horiz_interp_type
-   integer, dimension(:,:), allocatable   :: ilon    !< indices for conservative scheme
-   integer, dimension(:,:), allocatable   :: jlat    !< indices for conservative scheme
-                                                           !! wti ist used for derivative "weights" in bicubic
-   integer, dimension(:,:,:), allocatable :: i_lon  !< indices for bilinear interpolation
-                                                        !! and spherical regrid
-   integer, dimension(:,:,:), allocatable :: j_lat  !< indices for bilinear interpolation
-                                                        !! and spherical regrid
-   logical, dimension(:,:), allocatable :: found_neighbors   !< indicate whether destination grid
-                                                            !! has some source grid around it.
-   integer, dimension(:,:), allocatable :: num_found
-   integer                            :: nlon_src !< size of source grid
-   integer                            :: nlat_src !< size of source grid
-   integer                            :: nlon_dst !< size of destination grid
-   integer                            :: nlat_dst !< size of destination grid
-   integer                            :: interp_method      !< interpolation method.
-                                                            !! =1, conservative scheme
-                                                            !! =2, bilinear interpolation
-                                                            !! =3, spherical regrid
-                                                            !! =4, bicubic regrid
-   logical                            :: I_am_initialized=.false.
-   integer                            :: version                            !< indicate conservative
-                                                                            !! interpolation version with value 1 or 2
-   !--- The following are for conservative interpolation scheme version 2 ( through xgrid)
-   integer                            :: nxgrid                             !< number of exchange grid
-                                                                            !! between src and dst grid.
-   integer, dimension(:), allocatable     :: i_src       !< indices in source grid.
-   integer, dimension(:), allocatable     :: j_src       !< indices in source grid.
-   integer, dimension(:), allocatable     :: i_dst       !< indices in destination grid.
-   integer, dimension(:), allocatable     :: j_dst       !< indices in destination grid.
-   type(horizInterpReals8_type), allocatable :: horizInterpReals8_type !< derived type holding kind 8 real data pointers
-                                                                    !! if compiled with r8_kind
-   type(horizInterpReals4_type), allocatable :: horizInterpReals4_type !< derived type holding kind 4 real data pointers
-                                                                    !! if compiled with r8_kind
-
- end type
 
 !> real(8) pointers for use in horiz_interp_type
 type horizInterpReals8_type
@@ -147,6 +109,45 @@ type horizInterpReals4_type
    real(kind=r4_kind)                               :: max_src_dist
 
 end type horizInterpReals4_type
+
+!> Holds data pointers and metadata for horizontal interpolations, passed between the horiz_interp modules
+!> @ingroup horiz_interp_type_mod
+ type horiz_interp_type
+   integer, dimension(:,:), allocatable   :: ilon    !< indices for conservative scheme
+   integer, dimension(:,:), allocatable   :: jlat    !< indices for conservative scheme
+                                                           !! wti ist used for derivative "weights" in bicubic
+   integer, dimension(:,:,:), allocatable :: i_lon  !< indices for bilinear interpolation
+                                                        !! and spherical regrid
+   integer, dimension(:,:,:), allocatable :: j_lat  !< indices for bilinear interpolation
+                                                        !! and spherical regrid
+   logical, dimension(:,:), allocatable :: found_neighbors   !< indicate whether destination grid
+                                                            !! has some source grid around it.
+   integer, dimension(:,:), allocatable :: num_found
+   integer                            :: nlon_src !< size of source grid
+   integer                            :: nlat_src !< size of source grid
+   integer                            :: nlon_dst !< size of destination grid
+   integer                            :: nlat_dst !< size of destination grid
+   integer                            :: interp_method      !< interpolation method.
+                                                            !! =1, conservative scheme
+                                                            !! =2, bilinear interpolation
+                                                            !! =3, spherical regrid
+                                                            !! =4, bicubic regrid
+   logical                            :: I_am_initialized=.false.
+   integer                            :: version                            !< indicate conservative
+                                                                            !! interpolation version with value 1 or 2
+   !--- The following are for conservative interpolation scheme version 2 ( through xgrid)
+   integer                            :: nxgrid                             !< number of exchange grid
+                                                                            !! between src and dst grid.
+   integer, dimension(:), allocatable     :: i_src       !< indices in source grid.
+   integer, dimension(:), allocatable     :: j_src       !< indices in source grid.
+   integer, dimension(:), allocatable     :: i_dst       !< indices in destination grid.
+   integer, dimension(:), allocatable     :: j_dst       !< indices in destination grid.
+   type(horizInterpReals8_type), allocatable :: horizInterpReals8_type !< derived type holding kind 8 real data pointers
+                                                                    !! if compiled with r8_kind
+   type(horizInterpReals4_type), allocatable :: horizInterpReals4_type !< derived type holding kind 4 real data pointers
+                                                                    !! if compiled with r8_kind
+
+ end type
 
 !> @addtogroup horiz_interp_type_mod
 !> @{
