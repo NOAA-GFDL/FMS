@@ -1458,7 +1458,7 @@ function get_diag_fields_entries(indices) &
 
 end function get_diag_fields_entries
 
-!> @brief Gets the field indices from the sorted variable_list
+!> @brief Gets field indices corresponding to the indices (input argument) in the sorted variable_list
 !! @return Array of field indices
 function get_diag_field_ids(indices) result(buffer_ids)
 
