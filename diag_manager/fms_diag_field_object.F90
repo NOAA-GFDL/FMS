@@ -1022,6 +1022,12 @@ result(rslt)
   if (rslt .eq. "") then !! If the long name is not defined in the yaml, use the long name in the
                          !! register_diag_field
     rslt = this%get_longname()
+  else
+    return
+  endif
+  if (rslt .eq. "") then !! If the long name is not defined in the yaml and in the register_diag_field
+                         !! use the variable name
+    rslt = this%get_varname(to_write=.true.)
   endif
 end function get_longname_to_write
 
@@ -1126,7 +1132,6 @@ subroutine write_field_metadata(this, fileobj, file_id, yaml_id, diag_axis, unli
     call register_field_wrap(fileobj, var_name, this%get_var_skind(field_yaml))
   endif
 
-  !TODO Not sure what the old diag_manager did if long_name was never defined
   long_name = this%get_longname_to_write(field_yaml)
   call register_variable_attribute(fileobj, var_name, "long_name", long_name, str_len=len_trim(long_name))
 
