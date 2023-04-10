@@ -286,12 +286,14 @@ module fms_diag_axis_object_mod
   end subroutine add_axis_attribute
 
   !> @brief Write the axis meta data to an open fileobj
-  subroutine write_axis_metadata(this, fileobj, parent_axis)
-    class(fmsDiagAxis_type),          target,  INTENT(IN)    :: this        !< diag_axis obj
-    class(FmsNetcdfFile_t),                    INTENT(INOUT) :: fileobj     !< Fms2_io fileobj to write the data to
-    class(fmsDiagAxis_type), OPTIONAL, target, INTENT(IN)    :: parent_axis !< If the axis is a subaxis, axis object
-                                                                            !! for the parent axis (this will be used
-                                                                            !! to get some of the metadata info)
+  subroutine write_axis_metadata(this, fileobj, edges_in_file, parent_axis)
+    class(fmsDiagAxis_type),          target,  INTENT(IN)    :: this          !< diag_axis obj
+    class(FmsNetcdfFile_t),                    INTENT(INOUT) :: fileobj       !< Fms2_io fileobj to write the data to
+    logical,                                   INTENT(IN)    :: edges_in_file !< .True. if the edges to this axis are
+                                                                              !! already in the file
+    class(fmsDiagAxis_type), OPTIONAL, target, INTENT(IN)    :: parent_axis   !< If the axis is a subaxis, axis object
+                                                                              !! for the parent axis (this will be used
+                                                                              !! to get some of the metadata info)
 
     character(len=:), ALLOCATABLE         :: axis_edges_name !< Name of the edges, if it exist
     character(len=:), pointer             :: axis_name       !< Name of the axis
@@ -378,7 +380,8 @@ module fms_diag_axis_object_mod
       call register_variable_attribute(fileobj, axis_name, "positive", "down", str_len=4)
     end select
 
-    if (allocated(diag_axis%edges_name) .and. .not. is_subaxis) then
+    !< Ignore the edges attribute, if the edges are already in the file or if it is subaxis
+    if (.not. edges_in_file .and. allocated(diag_axis%edges_name) .and. .not. is_subaxis) then
       call register_variable_attribute(fileobj, axis_name, "edges", diag_axis%edges_name, &
         str_len=len_trim(diag_axis%edges_name))
     endif
