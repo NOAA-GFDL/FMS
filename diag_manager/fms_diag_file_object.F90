@@ -329,6 +329,9 @@ subroutine set_file_time_ops(this, VarYaml, is_static)
   type (diagYamlFilesVar_type), intent(in)    :: VarYaml   !< The variable's yaml file
   logical,                      intent(in)    :: is_static !< Flag indicating if variable is static
 
+  !< Go away if the file is static
+  if (this%is_static) return
+
   if (this%time_ops) then
     if (is_static) return
     if (VarYaml%get_var_reduction() .eq. time_none) then
