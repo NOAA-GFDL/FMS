@@ -28,12 +28,12 @@ use diag_data_mod,  only: diag_null, diag_not_found, diag_not_registered, diag_r
 use fms_diag_file_object_mod, only: fmsDiagFileContainer_type, fmsDiagFile_type, fms_diag_files_object_init
 use fms_diag_field_object_mod, only: fmsDiagField_type, fms_diag_fields_object_init
 use fms_diag_yaml_mod, only: diag_yaml_object_init, diag_yaml_object_end, find_diag_field, &
-                            & get_diag_files_id, diag_yaml
+                            & get_diag_files_id, diag_yaml, fmsDiagYamlFilesVar_type
 use fms_diag_axis_object_mod, only: fms_diag_axis_object_init, fmsDiagAxis_type, fmsDiagSubAxis_type, &
                                    &diagDomain_t, get_domain_and_domain_type, diagDomain2d_t, &
                                    &fmsDiagAxisContainer_type, fms_diag_axis_object_end, fmsDiagFullAxis_type, &
                                    &parse_compress_att, get_axis_id_from_name
-use fms_diag_output_buffer_mod
+use fms_diag_output_buffer_mod, only: fmsDiagOutputBuffer_class, fmsDiagOutputBufferContainer_type
 #endif
 #if defined(_OPENMP)
 use omp_lib
@@ -862,7 +862,8 @@ subroutine allocate_diag_field_output_buffers(this, field_data, field_id)
   integer :: num_diurnal_samples !< Number of diurnal samples from diag_yaml
   integer, allocatable :: axes_length(:) !< Length of each axis
   integer :: i, j !< For looping
-  class(fmsDiagOutputBuffer_class), pointer :: diag_buffer_obj !< Pointer to the buffer class
+  class(fmsDiagOutputBuffer_class), pointer :: ptr_diag_buffer_obj !< Pointer to the buffer class
+  class(fmsDiagYamlFilesVar_type), pointer :: ptr_diag_field_yaml !< Pointer to a field from yaml fields
   integer, pointer :: axis_ids(:) !< Pointer to indices of axes of the field variable
 
   ! Determine dimensions of the field
@@ -875,8 +876,9 @@ subroutine allocate_diag_field_output_buffers(this, field_data, field_id)
   ! Loop over a number of fields/buffers where this variable occurs
   do i = 1, size(this%FMS_diag_fields(field_id)%buffer_ids)
     buffer_id = this%FMS_diag_fields(field_id)%buffer_ids(i)
-    num_diurnal_samples = diag_yaml%diag_fields(buffer_id)%get_n_diurnal() !< Get number of diurnal samples
-    diag_buffer_obj => this%FMS_diag_output_buffers(buffer_id)%diag_buffer_obj
+    ptr_diag_field_yaml => diag_yaml%get_diag_field_from_id(buffer_id)
+    num_diurnal_samples = ptr_diag_field_yaml%get_n_diurnal() !< Get number of diurnal samples
+    ptr_diag_buffer_obj => this%FMS_diag_output_buffers(buffer_id)%diag_buffer_obj
 
     ! If diurnal axis exists, fill lengths of axes.
     if (num_diurnal_samples .ne. 0) then
@@ -888,22 +890,22 @@ subroutine allocate_diag_field_output_buffers(this, field_data, field_id)
       ndims = ndims + 1 !< Add one more dimension for the diurnal axis
     endif
 
-    if (allocated(diag_buffer_obj)) then
-      if (allocated(diag_buffer_obj%buffer)) cycle !< If allocated, loop back
+    if (allocated(ptr_diag_buffer_obj)) then
+      if (allocated(ptr_diag_buffer_obj%buffer)) cycle !< If allocated, loop back
       if (ndims .eq. 0) then
-        diag_buffer_obj%allocate_buffer(field_data(1, 1, 1, 1), & !< If scalar field variable
+        ptr_diag_buffer_obj%allocate_buffer(field_data(1, 1, 1, 1), & !< If scalar field variable
           this%FMS_diag_fields(field_id)%varname)
       else
-        diag_buffer_obj%allocate_buffer(field_data(1, 1, 1, 1), axes_length, &
+        ptr_diag_buffer_obj%allocate_buffer(field_data(1, 1, 1, 1), axes_length, &
           this%FMS_diag_fields(field_id)%varname, num_diurnal_samples)
       endif
     else
-      diag_buffer_obj = fms_diag_output_buffer_create_container(ndims)
+      ptr_diag_buffer_obj = fms_diag_output_buffer_create_container(ndims)
       if (ndims .eq. 0) then
-        diag_buffer_obj%allocate_buffer(field_data(1, 1, 1, 1), & !< If scalar field variable
+        ptr_diag_buffer_obj%allocate_buffer(field_data(1, 1, 1, 1), & !< If scalar field variable
           this%FMS_diag_fields(field_id)%varname)
       else
-        diag_buffer_obj%allocate_buffer(field_data(1, 1, 1, 1), axes_length, &
+        ptr_diag_buffer_obj%allocate_buffer(field_data(1, 1, 1, 1), axes_length, &
           this%FMS_diag_fields(field_id)%varname, num_diurnal_samples)
       endif
     endif
