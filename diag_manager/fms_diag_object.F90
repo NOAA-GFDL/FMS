@@ -867,14 +867,14 @@ subroutine allocate_diag_field_output_buffers(this, field_data, field_id)
 
   ! Determine dimensions of the field
   ndims = 0
-  if (this%FMS_diag_fields(diag_field_id)%has_axis_ids()) then
-    axis_ids => this%FMS_diag_fields(diag_field_id)%get_axis_id() !< Get ids of axes of the variable
+  if (this%FMS_diag_fields(field_id)%has_axis_ids()) then
+    axis_ids => this%FMS_diag_fields(field_id)%get_axis_id() !< Get ids of axes of the variable
     ndims = size(axis_ids) !< Dimensions of the field
   endif
 
   ! Loop over a number of fields/buffers where this variable occurs
-  do i = 1, size(this%FMS_diag_fields(diag_field_id)%buffer_ids)
-    buffer_id = this%FMS_diag_fields(diag_field_id)%buffer_ids(i)
+  do i = 1, size(this%FMS_diag_fields(field_id)%buffer_ids)
+    buffer_id = this%FMS_diag_fields(field_id)%buffer_ids(i)
     num_diurnal_samples = diag_yaml%diag_fields(buffer_id)%get_n_diurnal() !< Get number of diurnal samples
     diag_buffer_obj => this%FMS_diag_output_buffers(buffer_id)%diag_buffer_obj
 
@@ -892,19 +892,19 @@ subroutine allocate_diag_field_output_buffers(this, field_data, field_id)
       if (allocated(diag_buffer_obj%buffer)) cycle !< If allocated, loop back
       if (ndims .eq. 0) then
         diag_buffer_obj%allocate_buffer(field_data(1, 1, 1, 1), & !< If scalar field variable
-          this%FMS_diag_fields(diag_field_id)%varname)
+          this%FMS_diag_fields(field_id)%varname)
       else
         diag_buffer_obj%allocate_buffer(field_data(1, 1, 1, 1), axes_length, &
-          this%FMS_diag_fields(diag_field_id)%varname, num_diurnal_samples)
+          this%FMS_diag_fields(field_id)%varname, num_diurnal_samples)
       endif
     else
-      diag_buffer_obj = fms_diag_buffer_create_container(ndims)
+      diag_buffer_obj = fms_diag_output_buffer_create_container(ndims)
       if (ndims .eq. 0) then
         diag_buffer_obj%allocate_buffer(field_data(1, 1, 1, 1), & !< If scalar field variable
-          this%FMS_diag_fields(diag_field_id)%varname)
+          this%FMS_diag_fields(field_id)%varname)
       else
         diag_buffer_obj%allocate_buffer(field_data(1, 1, 1, 1), axes_length, &
-          this%FMS_diag_fields(diag_field_id)%varname, num_diurnal_samples)
+          this%FMS_diag_fields(field_id)%varname, num_diurnal_samples)
       endif
     endif
   enddo
