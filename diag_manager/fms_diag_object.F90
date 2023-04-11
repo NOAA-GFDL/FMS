@@ -862,7 +862,7 @@ subroutine allocate_diag_field_output_buffers(this, field_data, field_id)
   integer :: num_diurnal_samples !< Number of diurnal samples from diag_yaml
   integer, allocatable :: axes_length(:) !< Length of each axis
   integer :: i, j !< For looping
-  class(fmsDiagBuffer_class), pointer :: diag_buffer_obj !< Pointer to the buffer class
+  class(fmsDiagOutputBuffer_class), pointer :: diag_buffer_obj !< Pointer to the buffer class
   integer, pointer :: axis_ids(:) !< Pointer to indices of axes of the field variable
 
   ! Determine dimensions of the field
