@@ -30,7 +30,8 @@ subroutine GET_GRID_CELL_AREA_SG_(component, tile, cellarea, domain)
   integer :: nlon, nlat
   real(kind=FMS_MOS_KIND_), allocatable :: glonb(:,:), glatb(:,:)
 
-  real(kind=FMS_MOS_KIND_), parameter :: v180 = real(180.0,FMS_MOS_KIND_)
+  integer, parameter :: lkind=FMS_MOS_KIND_
+  real(kind=FMS_MOS_KIND_), parameter :: v180 = 180.0_lkind
   real(kind=FMS_MOS_KIND_) :: pi_loc
 
   pi_loc = real(PI,FMS_MOS_KIND_)
@@ -50,7 +51,7 @@ subroutine GET_GRID_CELL_AREA_SG_(component, tile, cellarea, domain)
              'Illegal component name "'//trim(component)//'": must be one of ATM, LND, or OCN')
      end select
      ! convert area to m2
-     cellarea = cellarea*real(4.0,FMS_MOS_KIND_)*pi_loc*radius**2
+     cellarea = cellarea*4.0_lkind*pi_loc*real(radius,FMS_MOS_KIND_)**2
   case(VERSION_OCN_MOSAIC_FILE, VERSION_GRIDFILES)
      if (present(domain)) then
         call mpp_get_compute_domain(domain,xsize=nlon,ysize=nlat)
@@ -98,6 +99,8 @@ subroutine GET_GRID_COMP_AREA_SG_(component,tile,area,domain)
   integer :: found_xgrid_files ! how many xgrid files we actually found in the grid spec
   integer :: ibegin, iend, bsize, l
   type(FmsNetcdfFile_t) :: tilefileobj, xgrid_fileobj
+
+  integer, parameter :: lkind=FMS_MOS_KIND_
 
   select case (grid_version   )
   case(VERSION_GEOLON_T,VERSION_X_T)
@@ -179,7 +182,7 @@ subroutine GET_GRID_COMP_AREA_SG_(component,tile,area,domain)
         end if
         call close_file(tilefileobj)
      end do
-     area(:,:) = real(0.,FMS_MOS_KIND_)
+     area(:,:) = 0.0_lkind
      if (.not. grid_spec_exists) then
         call mpp_error(FATAL, 'grid2_mod(get_grid_comp_area_SG): grid_spec does not exist')
      end if
@@ -242,7 +245,7 @@ subroutine GET_GRID_COMP_AREA_SG_(component,tile,area,domain)
      deallocate(nest_tile_name)
   end select ! version
   ! convert area to m2
-  area = area*real(4.0,FMS_MOS_KIND_)*real(PI,kind=FMS_MOS_KIND_)*radius**2
+  area = area*4.0_lkind*real(PI,kind=FMS_MOS_KIND_)*real(radius,FMS_MOS_KIND_)**2
 end subroutine GET_GRID_COMP_AREA_SG_
 
 !> @brief return grid cell area for the specified model component and tile on an
