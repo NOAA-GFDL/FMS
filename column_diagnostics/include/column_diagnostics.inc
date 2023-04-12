@@ -103,6 +103,8 @@ integer, dimension(:), intent(out)   :: diag_units            !< unit number for
       logical            ::  allow_ij_input
       logical            ::  open_file
       integer            ::  io
+
+      integer, parameter :: lkind=FMS_CD_KIND_
 !--------------------------------------------------------------------
 !    local variables:
 !
@@ -122,17 +124,17 @@ integer, dimension(:), intent(out)   :: diag_units            !< unit number for
 !    save the input lat and lon fields. define the delta of latitude
 !    and longitude.
 !--------------------------------------------------------------------
-      latb_deg = latb_in*RADIAN
-      lonb_deg = lonb_in*RADIAN
+      latb_deg = latb_in*real(RADIAN,FMS_CD_KIND_)
+      lonb_deg = lonb_in*real(RADIAN,FMS_CD_KIND_)
       dellat = latb_in(1,2) - latb_in(1,1)
       dellon = lonb_in(2,1) - lonb_in(1,1)
       latb_max = MAXVAL (latb_deg(:,:))
       latb_min = MINVAL (latb_deg(:,:))
       lonb_max = MAXVAL (lonb_deg(:,:))
       lonb_min = MINVAL (lonb_deg(:,:))
-      if (lonb_min < real(10.0,FMS_CD_KIND_) .or. lonb_max > real(350.0,FMS_CD_KIND_)) then
-        lonb_min = real(0.0,  FMS_CD_KIND_)
-        lonb_max = real(360.0,FMS_CD_KIND_)
+      if (lonb_min < 10.0_lkind .or. lonb_max > 350.0_lkind) then
+        lonb_min = 0.0_lkind
+        lonb_max = 360.0_lkind
       endif
 
       allow_ij_input = .true.
@@ -161,8 +163,8 @@ integer, dimension(:), intent(out)   :: diag_units            !< unit number for
       diag_units(:) = -1
       diag_i(:) = -99
       diag_j(:) = -99
-      diag_lat(:) = real(-999.0,FMS_CD_KIND_)
-      diag_lon(:) = real(-999.0,FMS_CD_KIND_)
+      diag_lat(:) = -999.0_lkind
+      diag_lon(:) = -999.0_lkind
       num_diag_pts = size(diag_i(:))
 
 !--------------------------------------------------------------------
@@ -175,11 +177,10 @@ integer, dimension(:), intent(out)   :: diag_units            !< unit number for
 
       do nn = 1, num_diag_pts_ij
         global_lat(nn+num_diag_pts_latlon) =    &
-                         ( (real(-0.5*acos(-1.0),FMS_CD_KIND_) + &
-                            real(0.5,FMS_CD_KIND_)*dellat) + &
-                         (global_j (nn)-1) *dellat )*RADIAN
-        global_lon(nn+num_diag_pts_latlon) = (real(0.5,FMS_CD_KIND_)*dellon + &
-                          (global_i (nn)-1)*dellon)*RADIAN
+                         ( (-0.5_lkind*acos(-1.0_lkind) + 0.5_lkind*dellat) + &
+                            real(global_j(nn)-1,FMS_CD_KIND_)*dellat )*real(RADIAN,FMS_CD_KIND_)
+        global_lon(nn+num_diag_pts_latlon) = ( 0.5_lkind*dellon + &
+                          real(global_i(nn)-1,FMS_CD_KIND_)*dellon )*real(RADIAN,FMS_CD_KIND_)
       end do
 
 !----------------------------------------------------------------------
@@ -192,14 +193,14 @@ integer, dimension(:), intent(out)   :: diag_units            !< unit number for
 !----------------------------------------------------------------------
 !    verify that the values of lat and lon are valid.
 !----------------------------------------------------------------------
-        if (global_lon(nn) >= real(0.0,FMS_CD_KIND_) .and. &
-            global_lon(nn) <= real(360.0,FMS_CD_KIND_)) then
+        if (global_lon(nn) >= 0.0_lkind .and. &
+            global_lon(nn) <= 360.0_lkind) then
         else
           call error_mesg ('column_diagnostics_mod', &
                ' invalid longitude', FATAL)
         endif
-        if (global_lat(nn) >= real(-90.0,FMS_CD_KIND_) .and. &
-            global_lat(nn) <= real( 90.0,FMS_CD_KIND_)) then
+        if (global_lat(nn) >= -90.0_lkind .and. &
+            global_lat(nn) <=  90.0_lkind) then
         else
           call error_mesg ('column_diagnostics_mod', &
                ' invalid latitude', FATAL)
@@ -219,12 +220,12 @@ integer, dimension(:), intent(out)   :: diag_units            !< unit number for
               do i=1,size(lonb_deg,1) - 1
                 distance_y(i,j) = ABS(global_lat(nn) - latb_deg(i,j))
                 distance_x(i,j) = ABS(global_lon(nn) - lonb_deg(i,j))
-                distance_x2(i,j) = ABS((global_lon(nn)-real(360.0,FMS_CD_KIND_)) -  &
+                distance_x2(i,j) = ABS((global_lon(nn)-360.0_lkind) -  &
                                                        lonb_deg(i,j))
                 distance(i,j) = (global_lat(nn) - latb_deg(i,j))**2 + &
                                 (global_lon(nn) - lonb_deg(i,j))**2
                 distance2(i,j) = (global_lat(nn) - latb_deg(i,j))**2 + &
-                                 ((global_lon(nn)-real(360.0,FMS_CD_KIND_)) -    &
+                                 ((global_lon(nn)-360.0_lkind) -    &
                                                    lonb_deg(i,j))**2
               end do
             end do
