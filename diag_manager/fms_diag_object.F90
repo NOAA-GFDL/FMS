@@ -856,7 +856,7 @@ subroutine allocate_diag_field_output_buffers(this, field_data, field_id)
   class(fmsDiagObject_type), intent(inout) :: this !< diag object
   class(*), dimension(:,:,:,:), intent(in) :: field_data !< field data
   integer, intent(in) :: field_id !< Id of the field data
-
+#ifdef use_yaml
   integer :: ndims !< Number of dimensions in the input field data
   integer :: buffer_id !< Buffer index of FMS_diag_buffers
   integer :: num_diurnal_samples !< Number of diurnal samples from diag_yaml
@@ -910,6 +910,9 @@ subroutine allocate_diag_field_output_buffers(this, field_data, field_id)
       endif
     endif
   enddo
+#else
+  call mpp_error( FATAL, "You can not use the modern diag manager without compiling with -Duse_yaml")
+#endif
 end subroutine allocate_diag_field_output_buffers
 
 end module fms_diag_object_mod
