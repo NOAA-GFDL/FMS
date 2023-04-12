@@ -1,0 +1,174 @@
+!***********************************************************************
+!*                   GNU Lesser General Public License
+!*
+!* This file is part of the GFDL Flexible Modeling System (FMS).
+!*
+!* FMS is free software: you can redistribute it and/or modify it under
+!* the terms of the GNU Lesser General Public License as published by
+!* the Free Software Foundation, either version 3 of the License, or (at
+!* your option) any later version.
+!*
+!* FMS is distributed in the hope that it will be useful, but WITHOUT
+!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+!* for more details.
+!*
+!* You should have received a copy of the GNU Lesser General Public
+!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!***********************************************************************
+!> @addtogroup sat_vapor_pres_k_mod
+!> @{
+
+#undef  FMS_SVP_KIND_
+#define FMS_SVP_KIND_ r4_kind
+
+#undef  SAT_VAPOR_PRES_INIT_K_
+#define SAT_VAPOR_PRES_INIT_K_ sat_vapor_pres_init_k_r4
+
+#undef  COMPUTE_ES_K_
+#define COMPUTE_ES_K_ compute_es_k_r4
+
+#undef  COMPUTE_ES_LIQ_K_
+#define COMPUTE_ES_LIQ_K_ compute_es_liq_k_r4
+
+#undef  COMPUTE_ES_LIQ_ICE_K_
+#define COMPUTE_ES_LIQ_ICE_K_ compute_es_liq_ice_k_r4
+
+#undef  COMPUTE_QS_K_3D_
+#define COMPUTE_QS_K_3D_ compute_qs_k_3d_r4
+
+#undef  COMPUTE_QS_K_2D_
+#define COMPUTE_QS_K_2D_ compute_qs_k_2d_r4
+
+#undef  COMPUTE_QS_K_1D_
+#define COMPUTE_QS_K_1D_ compute_qs_k_1d_r4
+
+#undef  COMPUTE_QS_K_0D_
+#define COMPUTE_QS_K_0D_ compute_qs_k_0d_r4
+
+#undef  COMPUTE_MRS_K_3D_
+#define COMPUTE_MRS_K_3D_ compute_mrs_k_3d_r4
+
+#undef  COMPUTE_MRS_K_2D_
+#define COMPUTE_MRS_K_2D_ compute_mrs_k_2d_r4
+
+#undef  COMPUTE_MRS_K_1D_
+#define COMPUTE_MRS_K_1D_ compute_mrs_k_1d_r4
+
+#undef  COMPUTE_MRS_K_0D_
+#define COMPUTE_MRS_K_0D_ compute_mrs_k_0d_r4
+
+#undef  LOOKUP_ES_DES_K_3D_
+#define LOOKUP_ES_DES_K_3D_ lookup_es_des_k_3d_r4
+
+#undef  LOOKUP_ES_DES_K_2D_
+#define LOOKUP_ES_DES_K_2D_ lookup_es_des_k_2d_r4
+
+#undef  LOOKUP_ES_DES_K_1D_
+#define LOOKUP_ES_DES_K_1D_ lookup_es_des_k_1d_r4
+
+#undef  LOOKUP_ES_DES_K_0D_
+#define LOOKUP_ES_DES_K_0D_ lookup_es_des_k_0d_r4
+
+#undef  LOOKUP_ES_K_3D_
+#define LOOKUP_ES_K_3D_ lookup_es_k_3d_r4
+
+#undef  LOOKUP_DES_K_3D_
+#define LOOKUP_DES_K_3D_ lookup_des_k_3d_r4
+
+#undef  LOOKUP_DES_K_2D_
+#define LOOKUP_DES_K_2D_ lookup_des_k_2d_r4
+
+#undef  LOOKUP_ES_K_2D_
+#define LOOKUP_ES_K_2D_ lookup_es_k_2d_r4
+
+#undef  LOOKUP_DES_K_1D_
+#define LOOKUP_DES_K_1D_ lookup_des_k_1d_r4
+
+#undef  LOOKUP_ES_K_1D_
+#define LOOKUP_ES_K_1D_ lookup_es_k_1d_r4
+
+#undef  LOOKUP_DES_K_1D_
+#define LOOKUP_DES_K_1D_ lookup_des_k_1d_r4
+
+#undef  LOOKUP_ES_K_0D_
+#define LOOKUP_ES_K_0D_ lookup_es_k_0d_r4
+
+#undef  LOOKUP_DES_K_0D_
+#define LOOKUP_DES_K_0D_ lookup_des_k_0d_r4
+
+#undef  LOOKUP_ES2_DES2_K_3D_
+#define LOOKUP_ES2_DES2_K_3D_ lookup_es2_des2_k_3d_r4
+
+#undef  LOOKUP_ES2_DES2_K_2D_
+#define LOOKUP_ES2_DES2_K_2D_ lookup_es2_des2_k_2d_r4
+
+#undef  LOOKUP_ES2_DES2_K_1D_
+#define LOOKUP_ES2_DES2_K_1D_ lookup_es2_des2_k_1d_r4
+
+#undef  LOOKUP_ES2_DES2_K_0D_
+#define LOOKUP_ES2_DES2_K_0D_ lookup_es2_des2_k_0d_r4
+
+#undef  LOOKUP_ES2_K_3D_
+#define LOOKUP_ES2_K_3D_ lookup_es2_k_3d_r4
+
+#undef  LOOKUP_DES2_K_3D_
+#define LOOKUP_DES2_K_3D_ lookup_des2_k_3d_r4
+
+#undef  LOOKUP_DES2_K_2D_
+#define LOOKUP_DES2_K_2D_ lookup_des2_k_2d_r4
+
+#undef  LOOKUP_ES2_K_2D_
+#define LOOKUP_ES2_K_2D_ lookup_es2_k_2d_r4
+
+#undef  LOOKUP_DES2_K_1D_
+#define LOOKUP_DES2_K_1D_ lookup_des2_k_1d_r4
+
+#undef  LOOKUP_ES2_K_1D_
+#define LOOKUP_ES2_K_1D_ lookup_es2_k_1d_r4
+
+#undef  LOOKUP_DES2_K_0D_
+#define LOOKUP_DES2_K_0D_ lookup_des2_k_0d_r4
+
+#undef  LOOKUP_ES2_K_0D_
+#define LOOKUP_ES2_K_0D_ lookup_es2_k_0d_r4
+
+#undef  LOOKUP_ES3_DES3_K_3D_
+#define LOOKUP_ES3_DES3_K_3D_ lookup_es3_des3_k_3d_r4
+
+#undef  LOOKUP_ES3_DES3_K_2D_
+#define LOOKUP_ES3_DES3_K_2D_ lookup_es3_des3_k_2d_r4
+
+#undef  LOOKUP_ES3_DES3_K_1D_
+#define LOOKUP_ES3_DES3_K_1D_ lookup_es3_des3_k_1d_r4
+
+#undef  LOOKUP_ES3_DES3_K_0D_
+#define LOOKUP_ES3_DES3_K_0D_ lookup_es3_des3_k_0d_r4
+
+#undef  LOOKUP_ES3_K_3D_
+#define LOOKUP_ES3_K_3D_ lookup_es3_k_3d_r4
+
+#undef  LOOKUP_DES3_K_3D_
+#define LOOKUP_DES3_K_3D_ lookup_des3_k_3d_r4
+
+#undef  LOOKUP_DES3_K_2D_
+#define LOOKUP_DES3_K_2D_ lookup_des3_k_2d_r4
+
+#undef  LOOKUP_ES3_K_2D_
+#define LOOKUP_ES3_K_2D_ lookup_es3_k_2d_r4
+
+#undef  LOOKUP_DES3_K_1D_
+#define LOOKUP_DES3_K_1D_ lookup_des3_k_1d_r4
+
+#undef  LOOKUP_ES3_K_1D_
+#define LOOKUP_ES3_K_1D_ lookup_es3_k_1d_r4
+
+#undef  LOOKUP_DES3_K_0D_
+#define LOOKUP_DES3_K_0D_ lookup_des3_k_0d_r4
+
+#undef  LOOKUP_ES3_K_0D_
+#define LOOKUP_ES3_K_0D_ lookup_es3_k_0d_r4
+
+#include "sat_vapor_pres_k.inc"
+
+!> @}
