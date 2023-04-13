@@ -33,7 +33,8 @@ use fms_diag_axis_object_mod, only: fms_diag_axis_object_init, fmsDiagAxis_type,
                                    &diagDomain_t, get_domain_and_domain_type, diagDomain2d_t, &
                                    &fmsDiagAxisContainer_type, fms_diag_axis_object_end, fmsDiagFullAxis_type, &
                                    &parse_compress_att, get_axis_id_from_name
-use fms_diag_output_buffer_mod, only: fmsDiagOutputBuffer_class, fmsDiagOutputBufferContainer_type
+use fms_diag_output_buffer_mod, only: fmsDiagOutputBuffer_class, fmsDiagOutputBufferContainer_type, &
+                    fms_diag_output_buffer_create_container
 #endif
 #if defined(_OPENMP)
 use omp_lib
@@ -878,7 +879,6 @@ subroutine allocate_diag_field_output_buffers(this, field_data, field_id)
     buffer_id = this%FMS_diag_fields(field_id)%buffer_ids(i)
     ptr_diag_field_yaml => diag_yaml%get_diag_field_from_id(buffer_id)
     num_diurnal_samples = ptr_diag_field_yaml%get_n_diurnal() !< Get number of diurnal samples
-    ptr_diag_buffer_obj => this%FMS_diag_output_buffers(buffer_id)%diag_buffer_obj
 
     ! If diurnal axis exists, fill lengths of axes.
     if (num_diurnal_samples .ne. 0) then
@@ -890,28 +890,45 @@ subroutine allocate_diag_field_output_buffers(this, field_data, field_id)
       ndims = ndims + 1 !< Add one more dimension for the diurnal axis
     endif
 
-    if (allocated(ptr_diag_buffer_obj)) then
-      if (allocated(ptr_diag_buffer_obj%buffer)) cycle !< If allocated, loop back
-      if (ndims .eq. 0) then
+    ! Allocate diag_buffer_obj, if it is not allocated.
+    if (.not. allocated(this%FMS_diag_output_buffers(buffer_id)%diag_buffer_obj)) then
+      this%FMS_diag_output_buffers(buffer_id)%diag_buffer_obj = fms_diag_output_buffer_create_container(ndims)
+    end if
+
+    ptr_diag_buffer_obj => this%FMS_diag_output_buffers(buffer_id)%diag_buffer_obj
+    
+    select type (ptr_diag_buffer_obj)
+      type is (outputBuffer0d_type) !< Scalar buffer
+        if (allocated(ptr_diag_buffer_obj%buffer)) cycle !< If allocated, loop back
         ptr_diag_buffer_obj%allocate_buffer(field_data(1, 1, 1, 1), & !< If scalar field variable
           this%FMS_diag_fields(field_id)%varname)
-      else
+      type is (outputBuffer1d_type) !< 1D buffer
+        if (allocated(ptr_diag_buffer_obj%buffer)) cycle !< If allocated, loop back
         ptr_diag_buffer_obj%allocate_buffer(field_data(1, 1, 1, 1), axes_length, &
           this%FMS_diag_fields(field_id)%varname, num_diurnal_samples)
-      endif
-    else
-      ptr_diag_buffer_obj = fms_diag_output_buffer_create_container(ndims)
-      if (ndims .eq. 0) then
-        ptr_diag_buffer_obj%allocate_buffer(field_data(1, 1, 1, 1), & !< If scalar field variable
-          this%FMS_diag_fields(field_id)%varname)
-      else
+      type is (outputBuffer2d_type) !< 2D buffer
+        if (allocated(ptr_diag_buffer_obj%buffer)) cycle !< If allocated, loop back
         ptr_diag_buffer_obj%allocate_buffer(field_data(1, 1, 1, 1), axes_length, &
           this%FMS_diag_fields(field_id)%varname, num_diurnal_samples)
-      endif
-    endif
+      type is (outputBuffer3d_type) !< 3D buffer
+        if (allocated(ptr_diag_buffer_obj%buffer)) cycle !< If allocated, loop back
+        ptr_diag_buffer_obj%allocate_buffer(field_data(1, 1, 1, 1), axes_length, &
+          this%FMS_diag_fields(field_id)%varname, num_diurnal_samples)
+      type is (outputBuffer4d_type) !< 4D buffer
+        if (allocated(ptr_diag_buffer_obj%buffer)) cycle !< If allocated, loop back
+        ptr_diag_buffer_obj%allocate_buffer(field_data(1, 1, 1, 1), axes_length, &
+          this%FMS_diag_fields(field_id)%varname, num_diurnal_samples)
+      type is (outputBuffer5d_type) !< 5D buffer
+        if (allocated(ptr_diag_buffer_obj%buffer)) cycle !< If allocated, loop back
+        ptr_diag_buffer_obj%allocate_buffer(field_data(1, 1, 1, 1), axes_length, &
+          this%FMS_diag_fields(field_id)%varname, num_diurnal_samples)
+      class default
+        call mpp_error( FATAL, 'allocate_diag_field_output_buffers: invalid buffer type')
+    end select
   enddo
 #else
-  call mpp_error( FATAL, "You can not use the modern diag manager without compiling with -Duse_yaml")
+  call mpp_error( FATAL, "allocate_diag_field_output_buffers: "//&
+    "you can not use the modern diag manager without compiling with -Duse_yaml")
 #endif
 end subroutine allocate_diag_field_output_buffers
 
