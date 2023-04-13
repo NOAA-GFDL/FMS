@@ -20,10 +20,6 @@
 !> @brief  This programs tests calls to get_mosaic_ntiles, get_mosaic_ncontacts,
 !! get_mosaic_grid_sizes, get_mosaic_contact
 
-!> TODO:  unit test for calc_mosaic_grid_area
-!> TODO:  unit test for calc_mosaic_grid_great_circle_area
-!> TODO   unit test for is_inside_polygon
-
 program test_mosaic
 
 use mosaic2_mod, only : get_mosaic_ntiles, get_mosaic_ncontacts
@@ -45,9 +41,6 @@ call write_all()
 
 !< fms_init calls grid_init which reads in the grid_spec file
 !! In this case, the grid_version is VERSION_OCN_MOSAIC_FILE.
-!! During the initialization, call open_component_mosaics
-!! will read in the 'atm', 'ocn', and 'lnd' mosaic files via  call open_mosaic_file.
-!! Call open_mosaic_file will call open_grid_file and read in the grid files.
 call fms_init()
 
 call test_get_mosaic_grid_sizes()
@@ -55,13 +48,15 @@ call test_get_mosaic_contact()
 call test_get_grid_great_circle_area()
 call test_get_grid_area()
 call test_get_mosaic_xgrid()
-!call test_is_inside_polygon()
+call test_is_inside_polygon()
 
 call fms_end()
 
 contains
 !------------------------------------------------------!
 subroutine test_get_mosaic_grid_sizes
+
+  !> test get_mosaic_grid_sizes
 
   integer              :: ntiles         !< Number of tiles
   integer              :: n              !< For do loops
@@ -336,32 +331,41 @@ subroutine test_is_inside_polygon
 
   integer, parameter :: n=5
   integer :: i
-  real :: lat1, lon1
-  real, dimension(n) :: lon2, lat2
-
+  real :: lat1, lon1, x1, y1, z1, r
+  real, dimension(n) :: lon2, lat2, x2, y2, z2
   logical :: answer, is_inside
-  lat2(1)=35.0 ; lat2(2)=45.0 ; lat2(3)=45.0 ; lat2(4)=35.0
-  lon2(1)=12.0 ; lon2(2)=12.0 ; lon2(3)=15.0 ; lon2(4)=15.0
 
-  lon2=lon2/DEG_TO_RAD
-  lat2=lat2/DEG_TO_RAD
+  !> polygon
+  x2=0.0
+  y2(1)=1.0 ; y2(2)=1.0 ; y2(3)=4.0 ; y2(4)=4.0 ; y2(5)=1.0
+  z2(1)=2.0 ; z2(2)=4.0 ; z2(3)=4.0 ; z2(4)=2.0 ; z2(5)=2.0
+  do i=1, n
+     r = sqrt( x2(i)**2 + y2(i)**2 + z2(i)**2 )
+     lon2(i)=atan(y2(i), x2(i))
+     lat2(i)=asin(z2(i)/r)
+  end do
 
-  !> outside the polygon
-  lat1=90.0/DEG_TO_RAD
-  lon1=17.0/DEG_TO_RAD
+  !> point outside of the polygon
+  x1=2.0
+  y1=5.0
+  z1=4.2
+  r = sqrt(x1**2+y1**2+z1**2)
+  lon1=atan(y1,x1)
+  lat1=asin(z1/r)
 
   answer=.false.
   is_inside=is_inside_polygon(lon1, lat1, lon2, lat2)
-  call check_answer(answer, is_inside, 'is_inside_polygon')
 
-  !> inside the polygon
-  lat1=40.0/DEG_TO_RAD
-  lon1=13.0/DEG_TO_RAD
+  !> point inside the polygon
+  x1=0.0
+  y1=3.0
+  z1=2.5
+  r = sqrt(x1**2+y1**2+z1**2)
+  lon1=atan(y1,x1)
+  lat1=asin(z1/r)
 
   answer=.true.
   is_inside=is_inside_polygon(lon1, lat1, lon2, lat2)
-  call check_answer(answer, is_inside, 'is_inside_polygon')
-
 
 end subroutine test_is_inside_polygon
 !------------------------------------------------------!
