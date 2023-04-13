@@ -19,127 +19,406 @@
 
 !> @brief  This programs tests calls to get_mosaic_ntiles, get_mosaic_ncontacts,
 !! get_mosaic_grid_sizes, get_mosaic_contact
+
+!> TODO:  unit test for calc_mosaic_grid_area
+!> TODO:  unit test for calc_mosaic_grid_great_circle_area
+!> TODO   unit test for is_inside_polygon
+
 program test_mosaic
 
 use mosaic2_mod, only : get_mosaic_ntiles, get_mosaic_ncontacts
-use mosaic2_mod, only : get_mosaic_grid_sizes, get_mosaic_contact
+use mosaic2_mod, only : get_mosaic_grid_sizes, get_mosaic_contact, get_mosaic_xgrid
+use mosaic2_mod, only : calc_mosaic_grid_area, calc_mosaic_grid_great_circle_area, is_inside_polygon
+use grid2_mod,   only : get_grid_cell_vertices
 use mpp_mod,     only : mpp_init, mpp_error, FATAL, mpp_sync, mpp_npes, mpp_get_current_pelist
-use fms2_io_mod, only : open_file, close_file, FmsNetcdfFile_t
-use fms2_io_mod, only : register_axis, register_field, write_data
+use fms2_io_mod, only : open_file, close_file, FmsNetcdfFile_t, fms2_io_init, read_data
 use fms_mod,     only : fms_init, fms_end
+use constants_mod, only : DEG_TO_RAD
+use write_files !< use all of it
+use platform_mod, only : r4_kind, r8_kind
 
 implicit none
 
-integer              :: ntiles         !< Number of tiles
-integer              :: ncontacts      !< Number of contacts
-integer              :: n              !< For do loops
-integer, allocatable :: tile1(:)       !< tile number for first contact
-integer, allocatable :: tile2(:)       !< tile number of the second contact
-integer, allocatable :: nx(:), ny(:)   !< Number of x/y points for each tile
-integer, allocatable :: istart1(:), iend1(:), jstart1(:), jend1(:) !< Indexes of first contact point
-integer, allocatable :: istart2(:), iend2(:), jstart2(:), jend2(:) !< Indexes of second contact point
-character(len=128)   :: mosaic_file    !< Mosaic filename
-type(FmsNetcdfFile_t):: mosaic_fileobj !< Fileobj for the file read by the test
-integer              :: answers(2, 8)  !< Expected results
-integer, allocatable :: pes(:)         !< List of pes in the current pelist
+!> create mosaic and grid files
+call fms2_io_init()
+call write_all()
 
-call mpp_init()
+!< fms_init calls grid_init which reads in the grid_spec file
+!! In this case, the grid_version is VERSION_OCN_MOSAIC_FILE.
+!! During the initialization, call open_component_mosaics
+!! will read in the 'atm', 'ocn', and 'lnd' mosaic files via  call open_mosaic_file.
+!! Call open_mosaic_file will call open_grid_file and read in the grid files.
 call fms_init()
 
-mosaic_file = "INPUT/ocean_mosaic.nc"
-answers(1,:) = (/1440, 1440, 1, 1080, 1, 1, 1, 1080 /)
-answers(2,:) = (/1, 720, 1080, 1080, 1440, 721, 1080, 1080 /)
+call test_get_mosaic_grid_sizes()
+call test_get_mosaic_contact()
+call test_get_grid_great_circle_area()
+call test_get_grid_area()
+call test_get_mosaic_xgrid()
+!call test_is_inside_polygon()
 
-allocate(pes(mpp_npes()))
-call mpp_get_current_pelist(pes)
-
-call create_files(pes)
-
-!< Open the mosaic file
-if(.not. open_file(mosaic_fileobj, mosaic_file, 'read', pelist=pes)) then
-  call mpp_error(FATAL, 'test_mosaic: error in opening file '//trim(mosaic_file))
-endif
-
-ntiles = get_mosaic_ntiles(mosaic_fileobj)
-ncontacts = get_mosaic_ncontacts(mosaic_fileobj)
-allocate(nx(ntiles), ny(ntiles))
-allocate(tile1(ncontacts), tile2(ncontacts) )
-allocate(istart1(ncontacts), iend1(ncontacts), jstart1(ncontacts), jend1(ncontacts) )
-allocate(istart2(ncontacts), iend2(ncontacts), jstart2(ncontacts), jend2(ncontacts) )
-
-call get_mosaic_grid_sizes(mosaic_fileobj, nx, ny )
-call get_mosaic_contact(mosaic_fileobj, tile1, tile2, istart1, iend1, jstart1, jend1, istart2, iend2, jstart2, jend2)
-
-!< Compare with expected results:
-if (ntiles .ne. 1) call mpp_error(FATAL, "ntiles is not equal to 1")
-
-do n = 1, ntiles
-   if (nx(n) .ne. 2880/2)  call mpp_error(FATAL, "nx is not the expected result")
-   if (ny(n) .ne. 2160/2)  call mpp_error(FATAL, "ny is not the expected result")
-end do
-
-if (ncontacts .ne. 2) call mpp_error(FATAL, "ncontacts is not the expected result")
-do n = 1, ncontacts
-   if (istart1(n) .ne. answers(n,1)) call mpp_error(FATAL, "istart1 is not the expected result")
-   if (iend1(n)   .ne. answers(n,2)) call mpp_error(FATAL, "iend1 is not the expected result")
-
-   if (jstart1(n) .ne. answers(n,3)) call mpp_error(FATAL, "jstart1 is not the expected result")
-   if (jend1(n)   .ne. answers(n,4)) call mpp_error(FATAL, "jend1 is not the expected result")
-
-   if (istart2(n) .ne. answers(n,5)) call mpp_error(FATAL, "istart2 is not the expected result")
-   if (iend2(n)   .ne. answers(n,6)) call mpp_error(FATAL, "iend2 is not the expected result")
-
-   if (jstart2(n) .ne. answers(n,7)) call mpp_error(FATAL, "jstart2 is not the expected result")
-   if (jend2(n)   .ne. answers(n,8)) call mpp_error(FATAL, "jend2 is not the expected result")
-end do
-
-deallocate(tile1, tile2, nx, ny)
-deallocate(istart1, iend1, jstart1, jend1)
-deallocate(istart2, iend2, jstart2, jend2)
-
-call close_file(mosaic_fileobj)
 call fms_end()
 
 contains
+!------------------------------------------------------!
+subroutine test_get_mosaic_grid_sizes
 
-subroutine create_files(pes)
-   integer, intent(in)  :: pes(:)         !< List of pes
+  integer              :: ntiles         !< Number of tiles
+  integer              :: n              !< For do loops
+  integer, allocatable :: nx_out(:), ny_out(:)   !< Number of x/y points for each tile
 
-   type(FmsNetcdfFile_t):: fileobj        !< Fileobj for the files written by the test
-   character(len=255)     :: str_array(2)   !< Array of strings because GNU
+  type(FmsNetcdfFile_t):: ocn_fileobj
+  integer, allocatable :: pes(:)
 
-   if( open_file(fileobj, mosaic_file, 'overwrite', pelist=pes)) then
-      call register_axis(fileobj, "ntiles", 1)
-      call register_axis(fileobj, "ncontact", 2)
-      call register_axis(fileobj, "string", 255)
+  allocate(pes(mpp_npes()))
+  call mpp_get_current_pelist(pes)
+  if( .not. open_file(ocn_fileobj, 'INPUT/'//trim(ocn_mosaic_file), 'read', pelist=pes) ) &
+       call mpp_error(FATAL, 'test_mosaic: error in opening file '//'INPUT/'//trim(ocn_mosaic_file))
 
-      str_array(1) = "string"
-      str_array(2) = "ncontact"
-      call register_field(fileobj, "contacts", "char",  dimensions=str_array)
-      call register_field(fileobj, "contact_index", "char",  dimensions=str_array)
-      call register_field(fileobj, "gridfiles", "char", dimensions=(/"string", "ntiles"/))
-      call register_field(fileobj, "gridtiles", "char", dimensions=(/"string", "ntiles"/))
+  !> get the number of tiles
+  ntiles = get_mosaic_ntiles(ocn_fileobj)
+  allocate( nx_out(ntiles), ny_out(ntiles) )
 
-      call write_data(fileobj, "gridfiles", (/"ocean_hgrid.nc"/))
-      call write_data(fileobj, "gridtiles", (/"tile1"/))
+  !> get_mosaic_grid_sizes reads in the grid file
+  call get_mosaic_grid_sizes(ocn_fileobj, nx_out, ny_out )
+  do n=1, ntiles
+     if (nx_out(n) .ne. ocn_nx/2)  call mpp_error(FATAL, "nx is not the expected result")
+     if (ny_out(n) .ne. ocn_ny/2)  call mpp_error(FATAL, "ny is not the expected result")
+  end do
 
-      str_array(1) = "2880:2880,1:2160::1:1,1:2160"
-      str_array(2) = "1:1440,2160:2160::2880:1441,2160:2160"
-      call write_data(fileobj, "contact_index", str_array)
-      call write_data(fileobj, "contacts", &
-         & (/"ocean_mosaic:tile1::ocean_mosaic:tile1", "ocean_mosaic:tile1::ocean_mosaic:tile1" /))
+end subroutine test_get_mosaic_grid_sizes
+!------------------------------------------------------!
+subroutine test_get_mosaic_contact
 
-      call close_file(fileobj)
-   endif
-   call mpp_sync()
+  !< @uriel.ramirez
 
-   if( open_file(fileobj, "INPUT/ocean_hgrid.nc", "overwrite", pelist=pes)) then
-      call register_axis(fileobj, "nx", 2880)
-      call register_axis(fileobj, "ny", 2160)
+  integer              :: ntiles         !< Number of tiles
+  integer              :: ncontacts      !< Number of contacts
+  integer              :: n              !< For do loops
+  integer, allocatable :: tile1(:)       !< tile number for first contact
+  integer, allocatable :: tile2(:)       !< tile number of the second contact
+  integer, allocatable :: nx(:), ny(:)   !< Number of x/y points for each tile
+  integer, allocatable :: istart1(:), iend1(:), jstart1(:), jend1(:) !< Indexes of first contact point
+  integer, allocatable :: istart2(:), iend2(:), jstart2(:), jend2(:) !< Indexes of second contact point
 
-      call close_file(fileobj)
-   endif
-   call mpp_sync()
-end subroutine create_files
+  integer              :: answers(2, 8)  !< Expected results
 
+  type(FmsNetcdfFile_t):: ocn_fileobj
+  integer, allocatable :: pes(:)
+
+  allocate(pes(mpp_npes()))
+  call mpp_get_current_pelist(pes)
+  if( .not. open_file(ocn_fileobj, 'INPUT/'//trim(ocn_mosaic_file), 'read', pelist=pes) ) &
+       call mpp_error(FATAL, 'test_mosaic: error in opening file '//'INPUT/'//trim(ocn_mosaic_file))
+
+  answers(1,:) = (/1440, 1440, 1, 1080, 1, 1, 1, 1080 /)
+  answers(2,:) = (/1, 720, 1080, 1080, 1440, 721, 1080, 1080 /)
+
+  ntiles = get_mosaic_ntiles(ocn_fileobj)
+  ncontacts = get_mosaic_ncontacts(ocn_fileobj)
+
+  allocate(nx(ntiles), ny(ntiles))
+  allocate(tile1(ncontacts), tile2(ncontacts) )
+  allocate(istart1(ncontacts), iend1(ncontacts), jstart1(ncontacts), jend1(ncontacts) )
+  allocate(istart2(ncontacts), iend2(ncontacts), jstart2(ncontacts), jend2(ncontacts) )
+
+  call get_mosaic_contact(ocn_fileobj, tile1, tile2, istart1, iend1, jstart1, jend1, istart2, iend2, jstart2, jend2)
+
+  !< Compare with expected results:
+  if (ntiles .ne. 1)    call mpp_error(FATAL, "ntiles is not equal to 1")
+  if (ncontacts .ne. 2) call mpp_error(FATAL, "ncontacts is not the expected result")
+  do n = 1, ncontacts
+     if (istart1(n) .ne. answers(n,1)) call mpp_error(FATAL, "istart1 is not the expected result")
+     if (iend1(n)   .ne. answers(n,2)) call mpp_error(FATAL, "iend1 is not the expected result")
+
+     if (jstart1(n) .ne. answers(n,3)) call mpp_error(FATAL, "jstart1 is not the expected result")
+     if (jend1(n)   .ne. answers(n,4)) call mpp_error(FATAL, "jend1 is not the expected result")
+
+     if (istart2(n) .ne. answers(n,5)) call mpp_error(FATAL, "istart2 is not the expected result")
+     if (iend2(n)   .ne. answers(n,6)) call mpp_error(FATAL, "iend2 is not the expected result")
+
+     if (jstart2(n) .ne. answers(n,7)) call mpp_error(FATAL, "jstart2 is not the expected result")
+     if (jend2(n)   .ne. answers(n,8)) call mpp_error(FATAL, "jend2 is not the expected result")
+  end do
+
+  deallocate(tile1, tile2, nx, ny)
+  deallocate(istart1, iend1, jstart1, jend1)
+  deallocate(istart2, iend2, jstart2, jend2)
+
+end subroutine test_get_mosaic_contact
+!------------------------------------------------------!
+subroutine test_get_grid_area
+
+  !> This subroutine tests calc_mosaic_grid_great_circl_area
+  !! This subroutine only checks the consistency of the the tested subroutine
+
+  implicit none
+
+  type(FmsNetcdfFile_t):: c1_fileobj
+  integer, allocatable :: pes(:)
+
+  real :: x_rad(c1_nxp, c1_nyp), y_rad(c1_nxp, c1_nyp)
+  real :: area_out(c1_nx,c1_ny), area_answer(c1_nx, c1_ny), area_w_pole_answer(c1_nx, c1_ny)
+
+  integer :: i,j
+
+  !> get answers.  Tile 1 will be the reference/benchmark data
+  x_rad = x1 * DEG_TO_RAD
+  y_rad = y1 * DEG_TO_RAD
+  call calc_mosaic_grid_area(x_rad, y_rad, area_answer)
+
+  !> Tile 2 area should be the same as tile 1 area
+  x_rad = x2 * DEG_TO_RAD
+  y_rad = y2 * DEG_TO_RAD
+  call calc_mosaic_grid_area(x_rad, y_rad, area_out)
+  !> check answers
+  do j=1, c1_ny
+     do i=1, c1_nx
+        call check_answer_w_tol(area_answer(i,j), area_out(i,j), 'test_grid_area tile 2 ')
+     end do
+  end do
+
+  x_rad = x3 * DEG_TO_RAD
+  y_rad = y3 * DEG_TO_RAD
+  call calc_mosaic_grid_area(x_rad, y_rad, area_w_pole_answer)
+  !> Tile 3 area should be the same as tile 1 area
+  do j=1, c1_ny
+     do i=1, c1_nx
+        call check_answer_w_tol(area_answer(i,j), area_out(i,j), 'test_grid_area tile 3')
+     end do
+  end do
+
+  !> Tile 4 area should be the same as tile 1 area
+  x_rad = x4 * DEG_TO_RAD
+  y_rad = y4 * DEG_TO_RAD
+  call calc_mosaic_grid_area(x_rad, y_rad, area_out)
+  do j=1, c1_ny
+     do i=1, c1_nx
+        call check_answer_w_tol(area_answer(i,j), area_out(i,j), 'test_grid_area tile 4')
+     end do
+  end do
+
+  !> Tile 5 area should be the same as tile 1 area
+  x_rad = x5 * DEG_TO_RAD
+  y_rad = y5 * DEG_TO_RAD
+  call calc_mosaic_grid_area(x_rad, y_rad, area_out)
+  do j=1, c1_ny
+     do i=1, c1_nx
+        call check_answer_w_tol(area_answer(i,j), area_out(i,j), 'test_grid_area tile 5')
+     end do
+  end do
+
+  !> Tile 6 area should be the same as tile 1 area
+  x_rad = x6 * DEG_TO_RAD
+  y_rad = y6 * DEG_TO_RAD
+  call calc_mosaic_grid_area(x_rad, y_rad, area_out)
+  !> check answers
+  do j=1, c1_ny
+     do i=1, c1_nx
+        call check_answer_w_tol(area_w_pole_answer(i,j), area_out(i,j), 'test_grid_area tile 6')
+     end do
+  end do
+
+end subroutine test_get_grid_area
+!------------------------------------------------------!
+subroutine test_get_grid_great_circle_area
+
+  !> This subroutine tests calc_mosaic_grid_great_circl_area
+  !! This subroutine only checks the consistency of the the tested subroutine
+
+  implicit none
+
+  type(FmsNetcdfFile_t):: c1_fileobj
+  integer, allocatable :: pes(:)
+
+  real :: x_rad(c1_nxp, c1_nyp), y_rad(c1_nxp, c1_nyp)
+  real :: area_out(c1_nx,c1_ny), area_answer(c1_nx, c1_ny)
+
+  integer :: i,j
+
+  !> get answers.  Tile 1 will be the reference/benchmark data
+  x_rad = x1 * DEG_TO_RAD
+  y_rad = y1 * DEG_TO_RAD
+  call calc_mosaic_grid_great_circle_area(x_rad, y_rad, area_answer)
+
+  !> Tile 2 area should be the same as tile 1 area
+  x_rad = x2 * DEG_TO_RAD
+  y_rad = y2 * DEG_TO_RAD
+  call calc_mosaic_grid_great_circle_area(x_rad, y_rad, area_out)
+  !> check answers
+  do j=1, c1_ny-1
+     do i=1, c1_nx-1
+        call check_answer_w_tol(area_answer(i,j), area_out(i,j), 'test_grid_area tile 2 ')
+     end do
+  end do
+
+  x_rad = x3 * DEG_TO_RAD
+  y_rad = y3 * DEG_TO_RAD
+  call calc_mosaic_grid_great_circle_area(x_rad, y_rad, area_out)
+  !> Tile 3 area should be the same as tile 1 area
+  do j=1, c1_ny-1
+     do i=1, c1_nx-1
+        call check_answer_w_tol(area_answer(i,j), area_out(i,j), 'test_grid_area tile 3')
+     end do
+  end do
+
+  !> Tile 4 area should be the same as tile 1 area
+  x_rad = x4 * DEG_TO_RAD
+  y_rad = y4 * DEG_TO_RAD
+  call calc_mosaic_grid_great_circle_area(x_rad, y_rad, area_out)
+  do j=1, c1_ny-1
+     do i=1, c1_nx-1
+        call check_answer_w_tol(area_answer(i,j), area_out(i,j), 'test_grid_area tile 4')
+     end do
+  end do
+
+  !> Tile 5 area should be the same as tile 1 area
+  x_rad = x5 * DEG_TO_RAD
+  y_rad = y5 * DEG_TO_RAD
+  call calc_mosaic_grid_great_circle_area(x_rad, y_rad, area_out)
+  do j=1, c1_ny-1
+     do i=1, c1_nx-1
+        call check_answer_w_tol(area_answer(i,j), area_out(i,j), 'test_grid_area tile 5')
+     end do
+  end do
+
+  !> Tile 6 area should be the same as tile 1 area
+  x_rad = x6 * DEG_TO_RAD
+  y_rad = y6 * DEG_TO_RAD
+  call calc_mosaic_grid_great_circle_area(x_rad, y_rad, area_out)
+  !> check answers
+  do j=1, c1_ny-1
+     do i=1, c1_nx-1
+        call check_answer_w_tol(area_answer(i,j), area_out(i,j), 'test_grid_area tile 6')
+     end do
+  end do
+
+end subroutine test_get_grid_great_circle_area
+!------------------------------------------------------!
+subroutine test_get_mosaic_xgrid
+
+  implicit none
+
+  integer, dimension(ncells) :: i1, j1, i2, j2
+  real, dimension(ncells) :: area
+
+  integer :: i
+  real :: garea, get_global_area
+
+  integer, allocatable :: pes(:)
+  type(FmsNetcdfFile_t) x_fileobj
+
+  garea = get_global_area()
+
+  allocate(pes(mpp_npes()))
+  call mpp_get_current_pelist(pes)
+  if( .not. open_file(x_fileobj, 'INPUT/'//trim(exchange_file), 'read', pelist=pes)) &
+       call mpp_error(FATAL, 'test_mosaic: error in opening file '//'INPUT/'//trim(exchange_file))
+
+  call get_mosaic_xgrid(x_fileobj, i1, j1, i2, j2, area)
+
+  !> check answers
+  do i=1, ncells
+     call check_answer( xgrid_area(i)/garea, area(i),"TEST_GET_MOSAIC_XGRID area")
+  end do
+
+  call close_file(x_fileobj)
+
+  !> TODO:  check i1, j1, i2, j2
+
+end subroutine test_get_mosaic_xgrid
+!------------------------------------------------------!
+subroutine test_is_inside_polygon
+
+  !> cheating a little.  starting with xyz coordinates (cause easier to understand)
+
+  implicit none
+
+  integer, parameter :: n=5
+  integer :: i
+  real :: lat1, lon1
+  real, dimension(n) :: lon2, lat2
+
+  logical :: answer, is_inside
+  lat2(1)=35.0 ; lat2(2)=45.0 ; lat2(3)=45.0 ; lat2(4)=35.0
+  lon2(1)=12.0 ; lon2(2)=12.0 ; lon2(3)=15.0 ; lon2(4)=15.0
+
+  lon2=lon2/DEG_TO_RAD
+  lat2=lat2/DEG_TO_RAD
+
+  !> outside the polygon
+  lat1=90.0/DEG_TO_RAD
+  lon1=17.0/DEG_TO_RAD
+
+  answer=.false.
+  is_inside=is_inside_polygon(lon1, lat1, lon2, lat2)
+  call check_answer(answer, is_inside, 'is_inside_polygon')
+
+  !> inside the polygon
+  lat1=40.0/DEG_TO_RAD
+  lon1=13.0/DEG_TO_RAD
+
+  answer=.true.
+  is_inside=is_inside_polygon(lon1, lat1, lon2, lat2)
+  call check_answer(answer, is_inside, 'is_inside_polygon')
+
+
+end subroutine test_is_inside_polygon
+!------------------------------------------------------!
+subroutine check_answer(answer, myvalue, whoami)
+
+  implicit none
+  class(*) :: answer
+  class(*) :: myvalue
+  character(*) :: whoami
+
+  select type(answer)
+  type is ( logical )
+     select type(myvalue)
+     type is( logical )
+        if( answer .neqv. myvalue ) then
+           write(*,*) '*************************************'
+           write(*,*) 'EXPECTED ', answer, 'but got ', myvalue
+           call mpp_error( FATAL,'failed'//trim(whoami) )
+        end if
+     end select
+  type is( real(r4_kind) )
+     select type( myvalue)
+        type is(real(r4_kind) )
+           if( answer .ne. myvalue ) then
+              write(*,*) '*************************************'
+              write(*,*) 'EXPECTED ', answer, 'but got ', myvalue
+              call mpp_error( FATAL,'failed'//trim(whoami) )
+           end if
+        end select
+  type is( real(r8_kind) )
+     select type( myvalue)
+        type is(real(r4_kind) )
+           if( answer .ne. myvalue ) then
+              write(*,*) '*************************************'
+              write(*,*) 'EXPECTED ', answer, 'but got ', myvalue
+              call mpp_error( FATAL,'failed'//trim(whoami) )
+           end if
+        end select
+  end select
+
+end subroutine check_answer
+!------------------------------------------------------!
+subroutine check_answer_w_tol(answer, myvalue, whoami)
+
+  implicit none
+
+  real, parameter :: tol=1.e-6
+  real :: answer
+  real :: myvalue
+  character(*) :: whoami
+
+  if( abs(answer-myvalue) .gt. myvalue ) then
+     write(*,*) '*************************************'
+     write(*,*) 'EXPECTED ', answer, 'but got ', myvalue
+     call mpp_error( FATAL,'failed'//trim(whoami) )
+  end if
+
+end subroutine check_answer_w_tol
+!------------------------------------------------------!
 end program test_mosaic
