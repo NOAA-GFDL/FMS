@@ -896,7 +896,7 @@ subroutine allocate_diag_field_output_buffers(this, field_data, field_id)
     end if
 
     ptr_diag_buffer_obj => this%FMS_diag_output_buffers(buffer_id)%diag_buffer_obj
-    
+
     select type (ptr_diag_buffer_obj)
       type is (outputBuffer0d_type) !< Scalar buffer
         if (allocated(ptr_diag_buffer_obj%buffer)) cycle !< If allocated, loop back
