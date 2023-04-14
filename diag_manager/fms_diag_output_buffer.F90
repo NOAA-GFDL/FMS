@@ -143,6 +143,7 @@ public :: fmsDiagOutputBufferContainer_type
 
 ! public routines
 public :: fms_diag_output_buffer_init
+public :: fms_diag_output_buffer_create_container
 
 contains
 
