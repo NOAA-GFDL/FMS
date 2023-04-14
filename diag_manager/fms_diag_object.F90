@@ -35,7 +35,8 @@ use fms_diag_axis_object_mod, only: fms_diag_axis_object_init, fmsDiagAxis_type,
                                    &parse_compress_att, get_axis_id_from_name
 use fms_diag_output_buffer_mod, only: fmsDiagOutputBuffer_class, fmsDiagOutputBufferContainer_type, &
                     fms_diag_output_buffer_create_container, outputBuffer0d_type, outputBuffer1d_type, &
-                    outputBuffer2d_type, outputBuffer3d_type, outputBuffer4d_type, outputBuffer5d_type
+                    outputBuffer2d_type, outputBuffer3d_type, outputBuffer4d_type, outputBuffer5d_type, &
+                    fms_diag_output_buffer_init
 #endif
 #if defined(_OPENMP)
 use omp_lib
@@ -854,8 +855,9 @@ subroutine dump_diag_obj( filename )
 end subroutine
 
 !> @brief Allocates the output buffers of the fields corresponding to the registered variable
+!! Input arguments are the field and its ID passed to routine fms_diag_accept_data()
 subroutine allocate_diag_field_output_buffers(this, field_data, field_id)
-  class(fmsDiagObject_type), intent(inout) :: this !< diag object
+  class(fmsDiagObject_type), target, intent(inout) :: this !< diag object
   class(*), dimension(:,:,:,:), intent(in) :: field_data !< field data
   integer, intent(in) :: field_id !< Id of the field data
 #ifdef use_yaml
