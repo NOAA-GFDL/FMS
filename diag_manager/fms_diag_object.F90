@@ -903,7 +903,7 @@ subroutine allocate_diag_field_output_buffers(this, field_data, field_id)
     select type (ptr_diag_buffer_obj)
       type is (outputBuffer0d_type) !< Scalar buffer
         if (allocated(ptr_diag_buffer_obj%buffer)) cycle !< If allocated, loop back
-        ptr_diag_buffer_obj%allocate_buffer(field_data(1, 1, 1, 1), & !< If scalar field variable
+        this%FMS_diag_output_buffers(buffer_id)%diag_buffer_obj%allocate_buffer(field_data(1, 1, 1, 1), & !< If scalar field variable
           this%FMS_diag_fields(field_id)%get_varname())
       type is (outputBuffer1d_type) !< 1D buffer
         if (allocated(ptr_diag_buffer_obj%buffer)) cycle !< If allocated, loop back
