@@ -28,7 +28,7 @@ use diag_data_mod,  only: diag_null, diag_not_found, diag_not_registered, diag_r
 use fms_diag_file_object_mod, only: fmsDiagFileContainer_type, fmsDiagFile_type, fms_diag_files_object_init
 use fms_diag_field_object_mod, only: fmsDiagField_type, fms_diag_fields_object_init
 use fms_diag_yaml_mod, only: diag_yaml_object_init, diag_yaml_object_end, find_diag_field, &
-                            & get_diag_files_id, diag_yaml
+                            & get_diag_files_id, diag_yaml, DiagYamlFilesVar_type
 use fms_diag_axis_object_mod, only: fms_diag_axis_object_init, fmsDiagAxis_type, fmsDiagSubAxis_type, &
                                    &diagDomain_t, get_domain_and_domain_type, diagDomain2d_t, &
                                    &fmsDiagAxisContainer_type, fms_diag_axis_object_end, fmsDiagFullAxis_type, &
@@ -79,6 +79,7 @@ private
     procedure :: fms_diag_accept_data
     procedure :: fms_diag_send_complete
     procedure :: fms_diag_do_io
+    procedure :: allocate_diag_field_output_buffers
 #ifdef use_yaml
     procedure :: get_diag_buffer
 #endif
@@ -849,4 +850,85 @@ subroutine dump_diag_obj( filename )
   call mpp_error( FATAL, "You can not use the modern diag manager without compiling with -Duse_yaml")
 #endif
 end subroutine
+
+!> @brief Allocates the output buffers of the fields corresponding to the registered variable
+!! Input arguments are the field and its ID passed to routine fms_diag_accept_data()
+subroutine allocate_diag_field_output_buffers(this, field_data, field_id)
+  class(fmsDiagObject_type), target, intent(inout) :: this !< diag object
+  class(*), dimension(:,:,:,:), intent(in) :: field_data !< field data
+  integer, intent(in) :: field_id !< Id of the field data
+#ifdef use_yaml
+  integer :: ndims !< Number of dimensions in the input field data
+  integer :: buffer_id !< Buffer index of FMS_diag_buffers
+  integer :: num_diurnal_samples !< Number of diurnal samples from diag_yaml
+  integer, allocatable :: axes_length(:) !< Length of each axis
+  integer :: i, j !< For looping
+  class(fmsDiagOutputBuffer_class), pointer :: ptr_diag_buffer_obj !< Pointer to the buffer class
+  class(DiagYamlFilesVar_type), pointer :: ptr_diag_field_yaml !< Pointer to a field from yaml fields
+  integer, pointer :: axis_ids(:) !< Pointer to indices of axes of the field variable
+
+  ! Determine dimensions of the field
+  ndims = 0
+  if (this%FMS_diag_fields(field_id)%has_axis_ids()) then
+    axis_ids => this%FMS_diag_fields(field_id)%get_axis_id() !< Get ids of axes of the variable
+    ndims = size(axis_ids) !< Dimensions of the field
+  endif
+
+  ! Loop over a number of fields/buffers where this variable occurs
+  do i = 1, size(this%FMS_diag_fields(field_id)%buffer_ids)
+    buffer_id = this%FMS_diag_fields(field_id)%buffer_ids(i)
+    ptr_diag_field_yaml => diag_yaml%get_diag_field_from_id(buffer_id)
+    num_diurnal_samples = ptr_diag_field_yaml%get_n_diurnal() !< Get number of diurnal samples
+
+    ! If diurnal axis exists, fill lengths of axes.
+    if (num_diurnal_samples .ne. 0) then
+      allocate(axes_length(ndims + 1)) !< Include extra length for the diurnal axis
+      do j = 1, ndims
+        axes_length(j) = this%fms_get_axis_length(axis_ids(j))
+      enddo
+      axes_length(ndims + 1) = num_diurnal_samples
+      ndims = ndims + 1 !< Add one more dimension for the diurnal axis
+    endif
+
+    ! Allocate diag_buffer_obj, if it is not allocated.
+    if (.not. allocated(this%FMS_diag_output_buffers(buffer_id)%diag_buffer_obj)) then
+      this%FMS_diag_output_buffers(buffer_id) = fms_diag_output_buffer_create_container(ndims)
+    end if
+
+    ptr_diag_buffer_obj => this%FMS_diag_output_buffers(buffer_id)%diag_buffer_obj
+
+    select type (ptr_diag_buffer_obj)
+      type is (outputBuffer0d_type) !< Scalar buffer
+        if (allocated(ptr_diag_buffer_obj%buffer)) cycle !< If allocated, loop back
+        call ptr_diag_buffer_obj%allocate_buffer(field_data(1, 1, 1, 1), & !< If scalar field variable
+          this%FMS_diag_fields(field_id)%get_varname())
+      type is (outputBuffer1d_type) !< 1D buffer
+        if (allocated(ptr_diag_buffer_obj%buffer)) cycle !< If allocated, loop back
+        call ptr_diag_buffer_obj%allocate_buffer(field_data(1, 1, 1, 1), axes_length(1), &
+          this%FMS_diag_fields(field_id)%get_varname(), num_diurnal_samples)
+      type is (outputBuffer2d_type) !< 2D buffer
+        if (allocated(ptr_diag_buffer_obj%buffer)) cycle !< If allocated, loop back
+        call ptr_diag_buffer_obj%allocate_buffer(field_data(1, 1, 1, 1), axes_length(2), &
+          this%FMS_diag_fields(field_id)%get_varname(), num_diurnal_samples)
+      type is (outputBuffer3d_type) !< 3D buffer
+        if (allocated(ptr_diag_buffer_obj%buffer)) cycle !< If allocated, loop back
+        call ptr_diag_buffer_obj%allocate_buffer(field_data(1, 1, 1, 1), axes_length(3), &
+          this%FMS_diag_fields(field_id)%get_varname(), num_diurnal_samples)
+      type is (outputBuffer4d_type) !< 4D buffer
+        if (allocated(ptr_diag_buffer_obj%buffer)) cycle !< If allocated, loop back
+        call ptr_diag_buffer_obj%allocate_buffer(field_data(1, 1, 1, 1), axes_length(4), &
+          this%FMS_diag_fields(field_id)%get_varname(), num_diurnal_samples)
+      type is (outputBuffer5d_type) !< 5D buffer
+        if (allocated(ptr_diag_buffer_obj%buffer)) cycle !< If allocated, loop back
+        call ptr_diag_buffer_obj%allocate_buffer(field_data(1, 1, 1, 1), axes_length(5), &
+          this%FMS_diag_fields(field_id)%get_varname(), num_diurnal_samples)
+      class default
+        call mpp_error( FATAL, 'allocate_diag_field_output_buffers: invalid buffer type')
+    end select
+  enddo
+#else
+  call mpp_error( FATAL, "allocate_diag_field_output_buffers: "//&
+    "you can not use the modern diag manager without compiling with -Duse_yaml")
+#endif
+end subroutine allocate_diag_field_output_buffers
 end module fms_diag_object_mod
