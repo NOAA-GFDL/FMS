@@ -907,23 +907,23 @@ subroutine allocate_diag_field_output_buffers(this, field_data, field_id)
           this%FMS_diag_fields(field_id)%get_varname())
       type is (outputBuffer1d_type) !< 1D buffer
         if (allocated(ptr_diag_buffer_obj%buffer)) cycle !< If allocated, loop back
-        call ptr_diag_buffer_obj%allocate_buffer(field_data(1, 1, 1, 1), axes_length, &
+        call ptr_diag_buffer_obj%allocate_buffer(field_data(1, 1, 1, 1), axes_length(1), &
           this%FMS_diag_fields(field_id)%get_varname(), num_diurnal_samples)
       type is (outputBuffer2d_type) !< 2D buffer
         if (allocated(ptr_diag_buffer_obj%buffer)) cycle !< If allocated, loop back
-        call ptr_diag_buffer_obj%allocate_buffer(field_data(1, 1, 1, 1), axes_length, &
+        call ptr_diag_buffer_obj%allocate_buffer(field_data(1, 1, 1, 1), axes_length(2), &
           this%FMS_diag_fields(field_id)%get_varname(), num_diurnal_samples)
       type is (outputBuffer3d_type) !< 3D buffer
         if (allocated(ptr_diag_buffer_obj%buffer)) cycle !< If allocated, loop back
-        call ptr_diag_buffer_obj%allocate_buffer(field_data(1, 1, 1, 1), axes_length, &
+        call ptr_diag_buffer_obj%allocate_buffer(field_data(1, 1, 1, 1), axes_length(3), &
           this%FMS_diag_fields(field_id)%get_varname(), num_diurnal_samples)
       type is (outputBuffer4d_type) !< 4D buffer
         if (allocated(ptr_diag_buffer_obj%buffer)) cycle !< If allocated, loop back
-        call ptr_diag_buffer_obj%allocate_buffer(field_data(1, 1, 1, 1), axes_length, &
+        call ptr_diag_buffer_obj%allocate_buffer(field_data(1, 1, 1, 1), axes_length(4), &
           this%FMS_diag_fields(field_id)%get_varname(), num_diurnal_samples)
       type is (outputBuffer5d_type) !< 5D buffer
         if (allocated(ptr_diag_buffer_obj%buffer)) cycle !< If allocated, loop back
-        call ptr_diag_buffer_obj%allocate_buffer(field_data(1, 1, 1, 1), axes_length, &
+        call ptr_diag_buffer_obj%allocate_buffer(field_data(1, 1, 1, 1), axes_length(5), &
           this%FMS_diag_fields(field_id)%get_varname(), num_diurnal_samples)
       class default
         call mpp_error( FATAL, 'allocate_diag_field_output_buffers: invalid buffer type')
