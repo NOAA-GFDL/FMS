@@ -16,196 +16,66 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
-!> @defgroup sat_vapor_pres_k_mod sat_vapor_pres_k_mod
-!> @ingroup sat_vapor_pres
-!> @brief Kernel module to be used by @ref sat_vapor_pres_mod for
-!! table lookups and calculations
-
- module sat_vapor_pres_k_mod
-
-! This module is what I (pjp) think a kernel should be.
-! There have been many proposals as to what a kernel should look like.
-! If fact, so many different ideas have been expressed that the lack
-! of agreement has greatly hampered progress.
-! The only way to move forward is to limit the requirments for a kernel
-! to only what is widely agreeded upon.
-! I believe that there are only two things widely agreeded upon.
-
-! 1) A kernel should be independent of the rest of FMS so that it can
-!    easily be ported into another programming system.
-!    This requires that a kernel does not access anything by use association.
-!    The one exception is this kernel, because it is not practical for physics
-!    modules to avoid using a module that computes the saturation vapor
-!    pressure of water vapor.
-
-! 2) For the sake of thread safety, module globals should be written only at initialization.
-!    In this case, the module globals are the tables and a handful of scalars.
-
-! 3) A kernel should not read from an external file.
-
-! One of the things that was not widely agreeded upon is that a kernel should
-! not be a fortran module. This complicates things greatly for questionable
-! benefit and could be done as a second step anyway, if necessary.
-
- implicit none
- private
-
-! Include variable "version" to be written to log file.
-#include<file_version.h>
-
- public :: sat_vapor_pres_init_k
- public :: lookup_es_k
- public :: lookup_des_k
- public :: lookup_es_des_k
- public :: lookup_es2_k
- public :: lookup_des2_k
- public :: lookup_es2_des2_k
- public :: lookup_es3_k
- public :: lookup_des3_k
- public :: lookup_es3_des3_k
- public :: compute_qs_k
- public :: compute_mrs_k
-
- !> @ingroup sat_vapor_pres_k_mod
- interface lookup_es_k
-   module procedure lookup_es_k_0d
-   module procedure lookup_es_k_1d
-   module procedure lookup_es_k_2d
-   module procedure lookup_es_k_3d
- end interface
-
- !> @ingroup sat_vapor_pres_k_mod
- interface lookup_des_k
-   module procedure lookup_des_k_0d
-   module procedure lookup_des_k_1d
-   module procedure lookup_des_k_2d
-   module procedure lookup_des_k_3d
- end interface
-
- !> @ingroup sat_vapor_pres_k_mod
- interface lookup_es_des_k
-   module procedure lookup_es_des_k_0d
-   module procedure lookup_es_des_k_1d
-   module procedure lookup_es_des_k_2d
-   module procedure lookup_es_des_k_3d
- end interface
-
- !> @ingroup sat_vapor_pres_k_mod
- interface lookup_es2_k
-   module procedure lookup_es2_k_0d
-   module procedure lookup_es2_k_1d
-   module procedure lookup_es2_k_2d
-   module procedure lookup_es2_k_3d
- end interface
-
- !> @ingroup sat_vapor_pres_k_mod
- interface lookup_des2_k
-   module procedure lookup_des2_k_0d
-   module procedure lookup_des2_k_1d
-   module procedure lookup_des2_k_2d
-   module procedure lookup_des2_k_3d
- end interface
-
- !> @ingroup sat_vapor_pres_k_mod
- interface lookup_es2_des2_k
-   module procedure lookup_es2_des2_k_0d
-   module procedure lookup_es2_des2_k_1d
-   module procedure lookup_es2_des2_k_2d
-   module procedure lookup_es2_des2_k_3d
- end interface
-
- !> @ingroup sat_vapor_pres_k_mod
- interface lookup_es3_k
-   module procedure lookup_es3_k_0d
-   module procedure lookup_es3_k_1d
-   module procedure lookup_es3_k_2d
-   module procedure lookup_es3_k_3d
- end interface
-
- !> @ingroup sat_vapor_pres_k_mod
- interface lookup_des3_k
-   module procedure lookup_des3_k_0d
-   module procedure lookup_des3_k_1d
-   module procedure lookup_des3_k_2d
-   module procedure lookup_des3_k_3d
- end interface
-
- !> @ingroup sat_vapor_pres_k_mod
- interface lookup_es3_des3_k
-   module procedure lookup_es3_des3_k_0d
-   module procedure lookup_es3_des3_k_1d
-   module procedure lookup_es3_des3_k_2d
-   module procedure lookup_es3_des3_k_3d
- end interface
-
- !> @ingroup sat_vapor_pres_k_mod
- interface compute_qs_k
-   module procedure compute_qs_k_0d
-   module procedure compute_qs_k_1d
-   module procedure compute_qs_k_2d
-   module procedure compute_qs_k_3d
- end interface
- !> @ingroup sat_vapor_pres_k_mod
- interface compute_mrs_k
-   module procedure compute_mrs_k_0d
-   module procedure compute_mrs_k_1d
-   module procedure compute_mrs_k_2d
-   module procedure compute_mrs_k_3d
- end interface
-
 !> @addtogroup sat_vapor_pres_k_mod
+!> @brief Kernel module to be used by @ref sat_vapor_pres_mod for
 !> @{
 
- real :: dtres, tepsl, tminl, dtinvl
- integer :: table_siz
- real, dimension(:), allocatable :: TABLE   !  sat vapor pres (es)
- real, dimension(:), allocatable :: DTABLE  !  first derivative of es
- real, dimension(:), allocatable :: D2TABLE ! second derivative of es
- real, dimension(:), allocatable :: TABLE2  !  sat vapor pres (es)
- real, dimension(:), allocatable :: DTABLE2 !  first derivative of es
- real, dimension(:), allocatable :: D2TABLE2 ! second derivative of es
- real, dimension(:), allocatable :: TABLE3  !  sat vapor pres (es)
- real, dimension(:), allocatable :: DTABLE3 !  first derivative of es
- real, dimension(:), allocatable :: D2TABLE3 ! second derivative of es
+!! table lookups and calculations
 
- logical  :: use_exact_qs
- logical  :: module_is_initialized = .false.
-
- contains
-
- subroutine sat_vapor_pres_init_k(table_size, tcmin, tcmax, TFREEZE, HLV, RVGAS, ES0, err_msg, &
+!> This routine has been generalized to return tables for any temperature range and resolution
+!! The TABLEs for saturation vapor pressure are computed  with r8_kind precision since
+!! these TABLES are module level variables that are decared as r8_kind.
+!! The subroutines compute_es_k, compute_es_k, compute_es_liq_k, and compute_es_liq_ice_k
+!! seem to be mostly used to compute the TABLE values (and thus all variables within them can be declared
+!! as r8_kind).  However, these compute* subroutines have been modified to accept both r4_kind and r8_kind arguments
+!! for general usage and the math can be conducted in either r4_kind and r8_kind.
+!! In this initialization routine, r8_kind arguments are passed to these compute* subroutines.
+!! This routine does not assume the passed in arguments are in r8_precision.
+!! Thus all variables used for the computation of the TABLES (e.g. TABLE, DTABLE*, D2TABLE*) are promoted
+!! to r8_kind precision.  All local variables used for computation are in r8_kind precision
+!! Thus the TABLEs are constructed as accurately as possible and are promoted down to r4_kind when users
+!! pass in r4_kind arguments to the LOOKUP* subroutines.
+ subroutine SAT_VAPOR_PRES_INIT_K_(table_size, tcmin, tcmax, TFREEZE, HLV, RVGAS, ES0, err_msg, &
                                   use_exact_qs_input, do_simple,  &
                                   construct_table_wrt_liq, &
                                   construct_table_wrt_liq_and_ice, &
                                   teps, tmin, dtinv)
 
-! This routine has been generalized to return tables for any temperature range and resolution
-
  integer, intent(in) :: table_size
- real, intent(in) :: tcmin ! TABLE(1)          = sat vapor pressure at temperature tcmin (deg C)
- real, intent(in) :: tcmax ! TABLE(table_size) = sat vapor pressure at temperature tcmax (deg C)
- real, intent(in) :: TFREEZE, HLV, RVGAS, ES0
- logical, intent(in)  :: use_exact_qs_input, do_simple
+ real(kind=FMS_SVP_KIND_), intent(in) :: tcmin   !< TABLE(1) = sat vapor pressure at temperature tcmin (deg C)
+ real(kind=FMS_SVP_KIND_), intent(in) :: tcmax   !< TABLE(table_size) = sat vapor pressure at temperature tcmax (deg C)
+ real(kind=FMS_SVP_KIND_), intent(in) :: TFREEZE !< Conversion to Kelvin
+ real(kind=FMS_SVP_KIND_), intent(in) :: HLV     !< Latent heat of evaporation [J/kg]
+ real(kind=FMS_SVP_KIND_), intent(in) :: RVGAS   !< Gas constant for water vapor
+ real(kind=FMS_SVP_KIND_), intent(in) :: ES0     !< Humidity factor [dimensionless]
+ logical, intent(in)  :: use_exact_qs_input
+ logical, intent(in)  :: do_simple
  logical, intent(in)  :: construct_table_wrt_liq
  logical, intent(in)  :: construct_table_wrt_liq_and_ice
  character(len=*), intent(out) :: err_msg
- real, intent(out), optional :: teps, tmin, dtinv
+ real(kind=FMS_SVP_KIND_), intent(out), optional :: teps
+ real(kind=FMS_SVP_KIND_), intent(out), optional :: tmin
+ real(kind=FMS_SVP_KIND_), intent(out), optional :: dtinv
 
-! increment used to generate derivative table
-  real, dimension(3) :: tem(3), es(3)
-  real :: hdtinv, tinrc, tfact
+
+!> increment used to generate derivative table
+!! the following variables are used in the computation
+!! of the *TABLES* (which is defined in r8_kind in sat_vapor_pres_mod)
+!! Thus these variables are declared with r8_kind
+  real(kind=r8_kind), dimension(3) :: tem(3), es(3)
+  real(kind=r8_kind) :: hdtinv, tinrc, tfact
   integer :: i
 
-      err_msg = ''
+   err_msg = ''
 
-      if (module_is_initialized) return
+   if (module_is_initialized) return
 
-      if(allocated(TABLE) .or. allocated(DTABLE) .or. allocated(D2TABLE)) then
-        err_msg = 'Attempt to allocate sat vapor pressure tables when already allocated'
-        return
-      else
-        allocate(TABLE(table_size), DTABLE(table_size), D2TABLE(table_size))
-      endif
+   if(allocated(TABLE) .or. allocated(DTABLE) .or. allocated(D2TABLE)) then
+      err_msg = 'Attempt to allocate sat vapor pressure tables when already allocated'
+      return
+   else
+      allocate(TABLE(table_size), DTABLE(table_size), D2TABLE(table_size))
+   endif
 
    if (construct_table_wrt_liq) then
       if(allocated(TABLE2) .or. allocated(DTABLE2) .or. allocated(D2TABLE2)) then
@@ -226,271 +96,327 @@
    endif
 
       table_siz = table_size
-      dtres = (tcmax - tcmin)/real(table_size-1)
-      tminl = real(tcmin)+TFREEZE  ! minimum valid temp in table
-      dtinvl = 1./dtres
-      tepsl = .5*dtres
-      tinrc = .1*dtres
-      if(present(teps )) teps =tepsl
-      if(present(tmin )) tmin =tminl
-      if(present(dtinv)) dtinv=dtinvl
+      dtres  = (real(tcmax,r8_kind)-real(tcmin,r8_kind))/real(table_size-1,r8_kind)
+      tminl  = real(tcmin,r8_kind)+real(TFREEZE,r8_kind)  ! minimum valid temp in table
+      dtinvl = 1.0_r8_kind/dtres
+      tepsl  = 0.5_r8_kind*dtres
+      tinrc  = 0.1_r8_kind*dtres
+      if(present(teps )) teps =real(tepsl,  FMS_SVP_KIND_)
+      if(present(tmin )) tmin =real(tminl,  FMS_SVP_KIND_)
+      if(present(dtinv)) dtinv=real(dtinvl, FMS_SVP_KIND_)
 
-! To be able to compute tables for any temperature range and resolution,
-! and at the same time exactly reproduce answers from memphis revision,
-! it is necessary to compute ftact differently than it is in memphis.
-      tfact = 5.0*dtinvl
+!> To be able to compute tables for any temperature range and resolution,
+!! and at the same time exactly reproduce answers from memphis revision,
+!! it is necessary to compute ftact differently than it is in memphis.
+      tfact = 5.0_r8_kind*dtinvl
 
-      hdtinv = dtinvl*0.5
+      hdtinv = 0._r8_kind*dtinvl
 
-! compute es tables from tcmin to tcmax
-! estimate es derivative with small +/- difference
+!> compute es tables from tcmin to tcmax
+!> estimate es derivative with small +/- difference
 
       if (do_simple) then
 
+        !> TABLE = 610.78ES0*exp(-HLV/RGAS[1/tem - 1.TFREEZE])
+        !> DTABLE = HLV(TABLE/RVGAS)^2
         do i = 1, table_size
-          tem(1) = tminl + dtres*real(i-1)
-          TABLE(i) = ES0*610.78*exp(-hlv/rvgas*(1./tem(1) - 1./tfreeze))
-          DTABLE(i) = hlv*TABLE(i)/rvgas/tem(1)**2.
+          tem(1) = tminl + dtres*real(i-1,r8_kind)
+          TABLE(i) = real(ES0,r8_kind)*610.78_r8_kind* &
+               exp( -real(HLV,r8_kind)/real(RVGAS,r8_kind) * (1.0_r8_kind/tem(1) - 1._r8_kind/real(TFREEZE,r8_kind)) )
+          DTABLE(i) = real(HLV,r8_kind)*TABLE(i)/real(RVGAS,r8_kind)/tem(1)**2._r8_kind
         enddo
 
       else
 
         do i = 1, table_size
-          tem(1) = tminl + dtres*real(i-1)
+          tem(1) = tminl + dtres*real(i-1,r8_kind)
           tem(2) = tem(1)-tinrc
           tem(3) = tem(1)+tinrc
-          es = compute_es_k (tem, TFREEZE)
+          es = compute_es_k (tem, real(TFREEZE,r8_kind))
           TABLE(i) = es(1)
           DTABLE(i) = (es(3)-es(2))*tfact
         enddo
 
       endif !if (do_simple)
 
-! compute one-half second derivative using centered differences
-! differencing des values in the table
+!> compute one-half second derivative using centered differences
+!! differencing des values in the table
 
       do i = 2, table_size-1
-         D2TABLE(i) = 0.25*dtinvl*(DTABLE(i+1)-DTABLE(i-1))
+         D2TABLE(i) = 0.25_r8_kind*dtinvl*(DTABLE(i+1)-DTABLE(i-1))
       enddo
-    ! one-sided derivatives at boundaries
+!> one-sided derivatives at boundaries
 
-         D2TABLE(1) = 0.50*dtinvl*(DTABLE(2)-DTABLE(1))
+         D2TABLE(1) = 0.50_r8_kind*dtinvl*(DTABLE(2)-DTABLE(1))
 
-         D2TABLE(table_size) = 0.50*dtinvl*&
-              (DTABLE(table_size)-DTABLE(table_size-1))
+         D2TABLE(table_size) = 0.50_r8_kind*dtinvl*(DTABLE(table_size)-DTABLE(table_size-1))
 
    if (construct_table_wrt_liq) then
-! compute es tables from tcmin to tcmax
-! estimate es derivative with small +/- difference
+!> compute es tables from tcmin to tcmax
+!> estimate es derivative with small +/- difference
 
       do i = 1, table_size
-        tem(1) = tminl + dtres*real(i-1)
+        tem(1) = tminl + dtres*real(i-1,r8_kind)
         tem(2) = tem(1)-tinrc
         tem(3) = tem(1)+tinrc
-!   pass in flag to force all values to be wrt liquid
-        es = compute_es_liq_k (tem, TFREEZE)
+!>   pass in flag to force all values to be wrt liquid
+        es = compute_es_liq_k (tem, real(TFREEZE,r8_kind))
         TABLE2(i) = es(1)
         DTABLE2(i) = (es(3)-es(2))*tfact
       enddo
 
-! compute one-half second derivative using centered differences
-! differencing des values in the table
+!> compute one-half second derivative using centered differences
+!! differencing des values in the table
 
      do i = 2, table_size-1
-       D2TABLE2(i) = 0.25*dtinvl*(DTABLE2(i+1)-DTABLE2(i-1))
+       D2TABLE2(i) = 0.25_r8_kind*dtinvl*(DTABLE2(i+1)-DTABLE2(i-1))
      enddo
-! one-sided derivatives at boundaries
+!> one-sided derivatives at boundaries
 
-     D2TABLE2(1) = 0.50*dtinvl*(DTABLE2(2)-DTABLE2(1))
+     D2TABLE2(1) = 0.50_r8_kind*dtinvl*(DTABLE2(2)-DTABLE2(1))
 
-     D2TABLE2(table_size) = 0.50*dtinvl*&
-          (DTABLE2(table_size)-DTABLE2(table_size-1))
+     D2TABLE2(table_size) = 0.50_r8_kind*dtinvl*(DTABLE2(table_size)-DTABLE2(table_size-1))
    endif
 
 
    if (construct_table_wrt_liq_and_ice) then
-! compute es tables from tcmin to tcmax
-! estimate es derivative with small +/- difference
+!> compute es tables from tcmin to tcmax
+!> estimate es derivative with small +/- difference
 
       do i = 1, table_size
-        tem(1) = tminl + dtres*real(i-1)
+        tem(1) = tminl + dtres*real(i-1,r8_kind)
         tem(2) = tem(1)-tinrc
         tem(3) = tem(1)+tinrc
-!   pass in flag to force all values to be wrt liquid
-        es = compute_es_liq_ice_k (tem, TFREEZE)
+!>   pass in flag to force all values to be wrt liquid
+        es = compute_es_liq_ice_k (tem, real(TFREEZE,r8_kind))
         TABLE3(i) = es(1)
         DTABLE3(i) = (es(3)-es(2))*tfact
       enddo
 
-! compute one-half second derivative using centered differences
-! differencing des values in the table
+!> compute one-half second derivative using centered differences
+!! differencing des values in the table
 
      do i = 2, table_size-1
-       D2TABLE3(i) = 0.25*dtinvl*(DTABLE3(i+1)-DTABLE3(i-1))
+       D2TABLE3(i) = 0.25_r8_kind*dtinvl*(DTABLE3(i+1)-DTABLE3(i-1))
      enddo
-! one-sided derivatives at boundaries
+!> one-sided derivatives at boundaries
 
-     D2TABLE3(1) = 0.50*dtinvl*(DTABLE3(2)-DTABLE3(1))
+     D2TABLE3(1) = 0.50_r8_kind*dtinvl*(DTABLE3(2)-DTABLE3(1))
 
-     D2TABLE3(table_size) = 0.50*dtinvl*&
-          (DTABLE3(table_size)-DTABLE3(table_size-1))
+     D2TABLE3(table_size) = 0.50_r8_kind*dtinvl*(DTABLE3(table_size)-DTABLE3(table_size-1))
    endif
 
       use_exact_qs = use_exact_qs_input
       module_is_initialized = .true.
 
- end subroutine sat_vapor_pres_init_k
+  end subroutine SAT_VAPOR_PRES_INIT_K_
 
 !#######################################################################
 
- function compute_es_k(tem, TFREEZE) result (es)
- real, intent(in) :: tem(:), TFREEZE
- real :: es(size(tem,1))
+ function COMPUTE_ES_K_(tem, TFREEZE) result (es)
+ real(kind=FMS_SVP_KIND_), intent(in) :: tem(:)  !< temperature
+ real(kind=FMS_SVP_KIND_), intent(in) :: TFREEZE !< conversion to Kelvin
+ real(kind=FMS_SVP_KIND_) :: es(size(tem,1))     !< saturation vapor pressure
 
- real    :: x, esice, esh2o, TBASW, TBASI
+ real(kind=FMS_SVP_KIND_) :: x
+ real(kind=FMS_SVP_KIND_) :: esice
+ real(kind=FMS_SVP_KIND_) :: esh2o
+ real(kind=FMS_SVP_KIND_) :: TBASW
+ real(kind=FMS_SVP_KIND_) :: TBASI
  integer :: i
- real, parameter :: ESBASW = 101324.60
- real, parameter :: ESBASI =    610.71
 
-   TBASW = TFREEZE+100.
+ integer, parameter :: lkind=FMS_SVP_KIND_ !< local kind parameter
+
+ real(kind=FMS_SVP_KIND_), parameter :: ESBASW = 101324.60_lkind
+ real(kind=FMS_SVP_KIND_), parameter :: ESBASI = 610.71_lkind
+
+ !> one and ten are declared for code readability.  For example, one is easier to read
+ !! then 1.0_lkind where lkind=FMS_SVP_KIND_ throughout the code
+ real(FMS_SVP_KIND_), parameter :: one=1.0_lkind
+ real(FMS_SVP_KIND_), parameter :: ten=10.0_lkind
+
+   TBASW = TFREEZE+100.0_lkind !to Kelvin
    TBASI = TFREEZE
 
    do i = 1, size(tem)
 
-!  compute es over ice
+!>  compute es over ice
 
+     !> x = -9.09718(TBASI/tem-1) - 3.56654log(TBASI/tem) + 0.876793(1-tem/TBASI) + log(ESBASI)
+     !! the coded equation below is the commented equation above
      if (tem(i) < TBASI) then
-         x = -9.09718*(TBASI/tem(i)-1.0) - 3.56654*log10(TBASI/tem(i)) &
-             +0.876793*(1.0-tem(i)/TBASI) + log10(ESBASI)
-         esice =10.**(x)
+         x = -9.09718_lkind*(TBASI/tem(i)-one)   &
+             -3.56654_lkind*log10(TBASI/tem(i)) &
+             +0.876793_lkind*(one-tem(i)/TBASI) + log10(ESBASI)
+         esice =ten**(x)
      else
-         esice = 0.
+         esice = 0.0_lkind
      endif
 
-!  compute es over water greater than -20 c.
-!  values over 100 c may not be valid
-!  see smithsonian meteorological tables page 350.
+!>  compute es over water greater than -20 c.
+!!  values over 100 c may not be valid
+!!  see smithsonian meteorological tables page 350.
 
-     if (tem(i) > -20.+TBASI) then
-         x = -7.90298*(TBASW/tem(i)-1.0) + 5.02808*log10(TBASW/tem(i)) &
-             -1.3816e-07*(10.0**((1.0-tem(i)/TBASW)*11.344)-1.0)        &
-             +8.1328e-03*(10.0**((TBASW/tem(i)-1.0)*(-3.49149))-1.0)    &
+     !> x = -7.90298(TBASW/tem-1) + 5.02808log(TBASW/tem)
+     !!     -1.3816d-07*10^[11.344(1-tem/TBASW)-1]
+     !!     +8.1328d-03*10^[-3.49149(TBASW/tem-1)-1] + log(ESBASW)
+     !! the coded equation below is the commented equation above
+     if (tem(i) > -20.0_lkind+TBASI) then
+         x = -7.90298_lkind*(TBASW/tem(i)-one)   &
+             +5.02808_lkind*log10(TBASW/tem(i)) &
+             -1.3816e-07_lkind*(ten**((one-tem(i)/TBASW)*11.344_lkind)-one) &
+             +8.1328e-03_lkind*(ten**((TBASW/tem(i)-one)*(-3.49149_lkind))-one) &
              +log10(ESBASW)
-         esh2o = 10.**(x)
+         esh2o = ten**(x)
      else
-         esh2o = 0.
+         esh2o = 0.0_lkind
      endif
 
-!  derive blended es over ice and supercooled water between -20c and 0c
+!>  derive blended es over ice and supercooled water between -20c and 0c
 
-     if (tem(i) <= -20.+TBASI) then
+     !> es = 0.05*[esice*(TBASI-10)+esh2o*(tem-TBASI+20)]
+     !! the coded equation below is the commented equation above
+     if (tem(i) <= -20.0_lkind+TBASI) then
          es(i) = esice
      else if (tem(i) >= TBASI) then
          es(i) = esh2o
      else
-         es(i) = 0.05*((TBASI-tem(i))*esice + (tem(i)-TBASI+20.)*esh2o)
+         es(i) = 0.05_lkind*((TBASI-tem(i))*esice + (tem(i)-TBASI+20.0_lkind)*esh2o)
      endif
 
    enddo
 
- end function compute_es_k
+ end function COMPUTE_ES_K_
 
 !#######################################################################
 
- function compute_es_liq_k(tem, TFREEZE) result (es)
- real, intent(in) :: tem(:), TFREEZE
- real :: es(size(tem,1))
+ function COMPUTE_ES_LIQ_K_(tem, TFREEZE) result (es)
+ real(kind=FMS_SVP_KIND_), intent(in) :: tem(:)  !< temperature
+ real(kind=FMS_SVP_KIND_), intent(in) :: TFREEZE !< conversion to Kelvin
+ real(kind=FMS_SVP_KIND_) :: es(size(tem,1))     !< saturation vapor pressure
 
- real    :: x, esh2o, TBASW
+ real(kind=FMS_SVP_KIND_) :: x
+ real(kind=FMS_SVP_KIND_) :: esh2o
+ real(kind=FMS_SVP_KIND_) :: TBASW
  integer :: i
- real, parameter :: ESBASW = 101324.60
 
-   TBASW = TFREEZE+100.
+ !> local kind variable
+ !! one and ten are declared for code readability.  For example, one is easier to read
+ !! then 1.0_lkind where lkind=FMS_SVP_KIND_ throughout the code
+ integer, parameter :: lkind=FMS_SVP_KIND_
+ real(kind=FMS_SVP_KIND_), parameter :: one=1.0_lkind
+ real(kind=FMS_SVP_KIND_), parameter :: ten=10.0_lkind
+ real(kind=FMS_SVP_KIND_), parameter :: ESBASW = 101324.60_lkind
+
+   TBASW = TFREEZE+100.0_lkind
 
    do i = 1, size(tem)
 
+!>  compute es over water for all temps.
+!!  values over 100 c may not be valid
+!!  see smithsonian meteorological tables page 350.
 
-!  compute es over water for all temps.
-!  values over 100 c may not be valid
-!  see smithsonian meteorological tables page 350.
-
-         x = -7.90298*(TBASW/tem(i)-1.0) + 5.02808*log10(TBASW/tem(i)) &
-             -1.3816e-07*(10.0**((1.0-tem(i)/TBASW)*11.344)-1.0)        &
-             +8.1328e-03*(10.0**((TBASW/tem(i)-1.0)*(-3.49149))-1.0)    &
+      !> x = -7.90298(TBASW/tem-1) + 5.02808log(TBASW/tem)
+      !!     -1.3816d-07*10^[11.344(1-tem/TBASW)-1]
+      !!     +8.1328d-03*10^[-3.49149(TBASW/tem-1)-1] + log(ESBASW)
+      !! the coded equation below is the commented equation above
+         x = -7.90298_lkind*(TBASW/tem(i)-one)  &
+             +5.02808_lkind*log10(TBASW/tem(i)) &
+             -1.3816e-07_lkind*(ten**((one-tem(i)/TBASW)*11.344_lkind)-one)   &
+             +8.1328e-03_lkind*(ten**((TBASW/tem(i)-one)*(-3.49149_lkind))-one)&
              +log10(ESBASW)
-         esh2o = 10.**(x)
-
+         esh2o = ten**(x)
 
          es(i) = esh2o
 
    enddo
 
- end function compute_es_liq_k
+ end function COMPUTE_ES_LIQ_K_
 
 !#######################################################################
 
- function compute_es_liq_ice_k(tem, TFREEZE) result (es)
- real, intent(in) :: tem(:), TFREEZE
- real :: es(size(tem,1))
+ function COMPUTE_ES_LIQ_ICE_K_(tem, TFREEZE) result (es)
+ real(kind=FMS_SVP_KIND_), intent(in) :: tem(:)  !< temperature
+ real(kind=FMS_SVP_KIND_), intent(in) :: TFREEZE !< conversion to Kelvin
+ real(kind=FMS_SVP_KIND_) :: es(size(tem,1))     !< saturation vapor pressure
 
- real    :: x, TBASW, TBASI
+ real(kind=FMS_SVP_KIND_) :: x
+ real(kind=FMS_SVP_KIND_) :: TBASW
+ real(kind=FMS_SVP_KIND_) :: TBASI
  integer :: i
- real, parameter :: ESBASW = 101324.60
- real, parameter :: ESBASI =    610.71
 
-   TBASW = TFREEZE+100.
+ integer, parameter :: lkind=FMS_SVP_KIND_
+ real(kind=FMS_SVP_KIND_), parameter :: ESBASW = 101324.60_lkind
+ real(kind=FMS_SVP_KIND_), parameter :: ESBASI = 610.71_lkind
+ !> one and ten are declared for code readability.  For example, one is easier to read
+ !! then 1.0_lkind where lkind=FMS_SVP_KIND_ throughout the code
+ real(kind=FMS_SVP_KIND_), parameter :: one=1.0_lkind
+ real(kind=FMS_SVP_KIND_), parameter :: ten=10.0_lkind
+
+   TBASW = TFREEZE+100.0_lkind
    TBASI = TFREEZE
 
    do i = 1, size(tem)
 
      if (tem(i) < TBASI) then
 
-!  compute es over ice
-
-         x = -9.09718*(TBASI/tem(i)-1.0) - 3.56654*log10(TBASI/tem(i)) &
-             +0.876793*(1.0-tem(i)/TBASI) + log10(ESBASI)
-         es(i) =10.**(x)
+!>  compute es over ice
+        !> x= -9.09718(TBASI/tem-1) -3.56654log(TBASI/tem) +0.87679(1-tem/TBASI)+log(EBASI)
+        !! the coded equation below is the commented equation above
+         x = -9.09718_lkind*(TBASI/tem(i)-one)   &
+             -3.56654_lkind*log10(TBASI/tem(i)) &
+             +0.876793_lkind*(one-tem(i)/TBASI) + log10(ESBASI)
+         es(i) =ten**(x)
      else
 
-!  compute es over water
-!  values over 100 c may not be valid
-!  see smithsonian meteorological tables page 350.
-
-         x = -7.90298*(TBASW/tem(i)-1.0) + 5.02808*log10(TBASW/tem(i)) &
-             -1.3816e-07*(10.0**((1.0-tem(i)/TBASW)*11.344)-1.0)        &
-             +8.1328e-03*(10.0**((TBASW/tem(i)-1.0)*(-3.49149))-1.0)    &
+!>  compute es over water
+!!  values over 100 c may not be valid
+!!  see smithsonian meteorological tables page 350.
+        !> x = -7.90298(TBASW/tem-1) + 5.02808log(TBASW/tem)
+        !!     -1.3816d-07*10^[11.344(1-tem/TBASW)-1]
+        !!     +8.1328d-03*10^[-3.49149(TBASW/tem-1)-1] + log(ESBASW)
+        !! the coded equation below is the commented equation above
+          x = -7.90298_lkind*(TBASW/tem(i)-one) &
+              +5.02808_lkind*log10(TBASW/tem(i)) &
+              -1.3816e-07_lkind*(ten**((one-tem(i)/TBASW)*11.344_lkind)-one)      &
+              +8.1328e-03_lkind*(ten**((TBASW/tem(i)-one)*(-3.49149_lkind))-one) &
              +log10(ESBASW)
-         es(i) = 10.**(x)
+         es(i) = ten**(x)
      endif
-
    enddo
 
- end function compute_es_liq_ice_k
+ end function COMPUTE_ES_LIQ_ICE_K_
 
 !#######################################################################
 
- subroutine compute_qs_k_3d (temp, press, eps, zvir, qs, nbad, q, hc, &
+ subroutine COMPUTE_QS_K_3D_ (temp, press, eps, zvir, qs, nbad, q, hc, &
                           dqsdT, esat, es_over_liq, es_over_liq_and_ice)
 
- real, intent(in),  dimension(:,:,:)           :: temp, press
- real, intent(in)                              :: eps, zvir
- real, intent(out), dimension(:,:,:)           :: qs
- integer, intent(out)                          :: nbad
- real, intent(in),  dimension(:,:,:), optional :: q
- real, intent(in),                    optional :: hc
- real, intent(out), dimension(:,:,:), optional :: dqsdT, esat
- logical,intent(in),                  optional :: es_over_liq
+ real(kind=FMS_SVP_KIND_), intent(in),  dimension(:,:,:) :: temp  !< temperature
+ real(kind=FMS_SVP_KIND_), intent(in),  dimension(:,:,:) :: press !< pressure
+ real(kind=FMS_SVP_KIND_), intent(in)                    :: eps   !< EPSILO
+ real(kind=FMS_SVP_KIND_), intent(in)                    :: zvir  !< ZVIR
+ real(kind=FMS_SVP_KIND_), intent(out), dimension(:,:,:) :: qs    !< specific humidity
+ integer, intent(out)                                    :: nbad  !< if temperature is out of range
+ real(kind=FMS_SVP_KIND_), intent(in),  dimension(:,:,:), optional :: q     !< vapor relative humidity
+ real(kind=FMS_SVP_KIND_), intent(in),                    optional :: hc    !< relative humidity
+ real(kind=FMS_SVP_KIND_), intent(out), dimension(:,:,:), optional :: dqsdT !< d(qs)/dT
+ real(kind=FMS_SVP_KIND_), intent(out), dimension(:,:,:), optional :: esat  !< saturation vapor pressure
+ logical,intent(in),                  optional :: es_over_liq !< use es table wrt liquid only
  logical,intent(in),                  optional :: es_over_liq_and_ice
 
- real, dimension(size(temp,1), size(temp,2), size(temp,3)) ::   &
-                                                  esloc, desat, denom
+ integer, parameter :: lkind=FMS_SVP_KIND_ !< local FMS_SVP_KIND_, either r4_kind or r8_kind
+
+ real(kind=FMS_SVP_KIND_), dimension(size(temp,1), size(temp,2), size(temp,3)) :: esloc
+ real(kind=FMS_SVP_KIND_), dimension(size(temp,1), size(temp,2), size(temp,3)) :: desat
+ real(kind=FMS_SVP_KIND_), dimension(size(temp,1), size(temp,2), size(temp,3)) :: denom
  integer :: i, j, k
- real    :: hc_loc
+ real(kind=FMS_SVP_KIND_) :: hc_loc
 
    if (present(hc)) then
      hc_loc = hc
    else
-     hc_loc = 1.0
+     hc_loc = 1.0_lkind
    endif
  if (present(es_over_liq)) then
    if (present (dqsdT)) then
@@ -520,16 +446,16 @@
    endif
    if (nbad == 0) then
      if (present (q) .and. use_exact_qs) then
-       qs = (1.0 + zvir*q)*eps*esloc/press
+       qs = (1.0_lkind + zvir*q)*eps*esloc/press
        if (present (dqsdT)) then
-         dqsdT = (1.0 + zvir*q)*eps*desat/press
+         dqsdT = (1.0_lkind + zvir*q)*eps*desat/press
        endif
      else  ! (present(q))
-       denom = press - (1.0 - eps)*esloc
+       denom = press - (1.0_lkind - eps)*esloc
        do k=1,size(qs,3)
          do j=1,size(qs,2)
            do i=1,size(qs,1)
-             if (denom(i,j,k) > 0.0) then
+             if (denom(i,j,k) > 0.0_lkind) then
                qs(i,j,k) = eps*esloc(i,j,k)/denom(i,j,k)
              else
                qs(i,j,k) = eps
@@ -542,41 +468,48 @@
        endif
      endif ! (present(q))
    else ! (nbad = 0)
-     qs = -999.
+     qs = -999.0_lkind
      if (present (dqsdT)) then
-       dqsdT = -999.
+       dqsdT = -999.0_lkind
      endif
      if (present (esat)) then
-       esat = -999.
+       esat = -999.0_lkind
      endif
    endif ! (nbad = 0)
 
 
- end subroutine compute_qs_k_3d
+ end subroutine COMPUTE_QS_K_3D_
 
 !#######################################################################
 
- subroutine compute_qs_k_2d (temp, press, eps, zvir, qs, nbad, q, hc, &
+ subroutine COMPUTE_QS_K_2D_ (temp, press, eps, zvir, qs, nbad, q, hc, &
                           dqsdT, esat, es_over_liq, es_over_liq_and_ice)
 
- real, intent(in),  dimension(:,:)           :: temp, press
- real, intent(in)                            :: eps, zvir
- real, intent(out), dimension(:,:)           :: qs
- integer, intent(out)                        :: nbad
- real, intent(in),  dimension(:,:), optional :: q
- real, intent(in),                  optional :: hc
- real, intent(out), dimension(:,:), optional :: dqsdT, esat
- logical,intent(in),                optional :: es_over_liq
- logical,intent(in),                  optional :: es_over_liq_and_ice
+ real(kind=FMS_SVP_KIND_), intent(in),  dimension(:,:) :: temp  !< temperature
+ real(kind=FMS_SVP_KIND_), intent(in),  dimension(:,:) :: press !< pressure
+ real(kind=FMS_SVP_KIND_), intent(in)                  :: eps   !< EPSILO
+ real(kind=FMS_SVP_KIND_), intent(in)                  :: zvir  !< ZVIR
+ real(kind=FMS_SVP_KIND_), intent(out), dimension(:,:) :: qs    !< specific humidity
+ integer, intent(out)                                  :: nbad  !< if temperature is out of range
+ real(kind=FMS_SVP_KIND_), intent(in),  dimension(:,:), optional :: q     !< vapor specific humidty
+ real(kind=FMS_SVP_KIND_), intent(in),                  optional :: hc    !< relative humidity
+ real(kind=FMS_SVP_KIND_), intent(out), dimension(:,:), optional :: dqsdT !< d(qs)/dT
+ real(kind=FMS_SVP_KIND_), intent(out), dimension(:,:), optional :: esat  !<saturation vapor pressure
+ logical,intent(in), optional :: es_over_liq
+ logical,intent(in), optional :: es_over_liq_and_ice
 
- real, dimension(size(temp,1), size(temp,2)) :: esloc, desat, denom
+ integer, parameter :: lkind=FMS_SVP_KIND_ !< local FMS_SVP_KIND_
+
+ real(kind=FMS_SVP_KIND_), dimension(size(temp,1), size(temp,2)) :: esloc
+ real(kind=FMS_SVP_KIND_), dimension(size(temp,1), size(temp,2)) :: desat
+ real(kind=FMS_SVP_KIND_), dimension(size(temp,1), size(temp,2)) :: denom
  integer :: i, j
- real    :: hc_loc
+ real(kind=FMS_SVP_KIND_)  :: hc_loc
 
    if (present(hc)) then
      hc_loc = hc
    else
-     hc_loc = 1.0
+     hc_loc = 1.0_lkind
    endif
 
  if (present(es_over_liq)) then
@@ -607,15 +540,15 @@
    endif
    if (nbad == 0) then
      if (present (q) .and. use_exact_qs) then
-       qs = (1.0 + zvir*q)*eps*esloc/press
+       qs = (1.0_lkind + zvir*q)*eps*esloc/press
        if (present (dqsdT)) then
-         dqsdT = (1.0 + zvir*q)*eps*desat/press
+         dqsdT = (1.0_lkind + zvir*q)*eps*desat/press
        endif
      else  ! (present(q))
-       denom = press - (1.0 - eps)*esloc
+       denom = press - (1.0_lkind - eps)*esloc
       do j=1,size(qs,2)
         do i=1,size(qs,1)
-          if (denom(i,j) > 0.0) then
+          if (denom(i,j) > 0.0_lkind) then
             qs(i,j) = eps*esloc(i,j)/denom(i,j)
           else
             qs(i,j) = eps
@@ -627,41 +560,48 @@
       endif
     endif ! (present(q))
    else ! (nbad = 0)
-     qs = -999.
+     qs = -999.0_lkind
      if (present (dqsdT)) then
-       dqsdT = -999.
+       dqsdT = -999.0_lkind
      endif
      if (present (esat)) then
-       esat = -999.
+       esat = -999.0_lkind
      endif
    endif ! (nbad = 0)
 
 
- end subroutine compute_qs_k_2d
+ end subroutine COMPUTE_QS_K_2D_
 
 !#######################################################################
 
- subroutine compute_qs_k_1d (temp, press, eps, zvir, qs, nbad, q, hc, &
+ subroutine COMPUTE_QS_K_1D_ (temp, press, eps, zvir, qs, nbad, q, hc, &
                           dqsdT, esat, es_over_liq, es_over_liq_and_ice)
 
- real, intent(in),  dimension(:)           :: temp, press
- real, intent(in)                          :: eps, zvir
- real, intent(out), dimension(:)           :: qs
- integer, intent(out)                      :: nbad
- real, intent(in),  dimension(:), optional :: q
- real, intent(in),                optional :: hc
- real, intent(out), dimension(:), optional :: dqsdT, esat
- logical,intent(in),              optional :: es_over_liq
- logical,intent(in),                  optional :: es_over_liq_and_ice
+ real(kind=FMS_SVP_KIND_), intent(in),  dimension(:) :: temp  !< temperature
+ real(kind=FMS_SVP_KIND_), intent(in),  dimension(:) :: press !< pressure
+ real(kind=FMS_SVP_KIND_), intent(in)                :: eps   !< EPSILO
+ real(kind=FMS_SVP_KIND_), intent(in)                :: zvir  !< ZVIR
+ real(kind=FMS_SVP_KIND_), intent(out), dimension(:) :: qs    !< specific humidity
+ integer, intent(out)                                :: nbad !< if temperature is out of range
+ real(kind=FMS_SVP_KIND_), intent(in),  dimension(:), optional :: q     !< vapor specific humidity
+ real(kind=FMS_SVP_KIND_), intent(in),                optional :: hc    !< relative humidity
+ real(kind=FMS_SVP_KIND_), intent(out), dimension(:), optional :: dqsdT !< d(qs)/dt
+ real(kind=FMS_SVP_KIND_), intent(out), dimension(:), optional :: esat  !< saturation vapor pressure
+ logical,intent(in), optional :: es_over_liq
+ logical,intent(in), optional :: es_over_liq_and_ice
 
- real, dimension(size(temp,1)) :: esloc, desat, denom
+ integer, parameter :: lkind=FMS_SVP_KIND_
+
+ real(kind=FMS_SVP_KIND_), dimension(size(temp,1)) :: esloc
+ real(kind=FMS_SVP_KIND_), dimension(size(temp,1)) :: desat
+ real(kind=FMS_SVP_KIND_), dimension(size(temp,1)) :: denom
  integer :: i
- real    :: hc_loc
+ real(kind=FMS_SVP_KIND_)    :: hc_loc
 
    if (present(hc)) then
      hc_loc = hc
    else
-     hc_loc = 1.0
+     hc_loc = 1.0_lkind
    endif
 
  if (present(es_over_liq)) then
@@ -692,14 +632,14 @@
    endif
    if (nbad == 0) then
      if (present (q) .and. use_exact_qs) then
-       qs = (1.0 + zvir*q)*eps*esloc/press
+       qs = (1.0_lkind + zvir*q)*eps*esloc/press
        if (present (dqsdT)) then
-         dqsdT = (1.0 + zvir*q)*eps*desat/press
+         dqsdT = (1.0_lkind + zvir*q)*eps*desat/press
        endif
      else  ! (present(q))
-       denom = press - (1.0 - eps)*esloc
+       denom = press - (1.0_lkind - eps)*esloc
        do i=1,size(qs,1)
-         if (denom(i) >  0.0) then
+         if (denom(i) >  0.0_lkind) then
            qs(i) = eps*esloc(i)/denom(i)
          else
            qs(i) = eps
@@ -710,40 +650,47 @@
        endif
      endif ! (present(q))
    else ! (nbad = 0)
-     qs = -999.
+     qs = -999.0_lkind
      if (present (dqsdT)) then
-       dqsdT = -999.
+       dqsdT = -999.0_lkind
      endif
      if (present (esat)) then
-       esat = -999.
+       esat = -999.0_lkind
      endif
    endif ! (nbad = 0)
 
 
- end subroutine compute_qs_k_1d
+ end subroutine COMPUTE_QS_K_1D_
 
 !#######################################################################
 
- subroutine compute_qs_k_0d (temp, press, eps, zvir, qs, nbad, q, hc, &
+ subroutine COMPUTE_QS_K_0D_ (temp, press, eps, zvir, qs, nbad, q, hc, &
                           dqsdT, esat, es_over_liq, es_over_liq_and_ice)
 
- real, intent(in)                :: temp, press
- real, intent(in)                :: eps, zvir
- real, intent(out)               :: qs
- integer, intent(out)            :: nbad
- real, intent(in),      optional :: q
- real, intent(in),      optional :: hc
- real, intent(out),     optional :: dqsdT, esat
- logical,intent(in),    optional :: es_over_liq
- logical,intent(in),                  optional :: es_over_liq_and_ice
+ real(kind=FMS_SVP_KIND_), intent(in)  :: temp  !< temperature
+ real(kind=FMS_SVP_KIND_), intent(in)  :: press !< pressure
+ real(kind=FMS_SVP_KIND_), intent(in)  :: eps   !< EPSILO
+ real(kind=FMS_SVP_KIND_), intent(in)  :: zvir  !< ZVIR
+ real(kind=FMS_SVP_KIND_), intent(out) :: qs    !< specific humidity
+ integer, intent(out)                  :: nbad  !< if temperature is out of range
+ real(kind=FMS_SVP_KIND_), intent(in),  optional :: q     !< vapor specific humidity
+ real(kind=FMS_SVP_KIND_), intent(in),  optional :: hc    !< relative humidity
+ real(kind=FMS_SVP_KIND_), intent(out), optional :: dqsdT !< d(qs)/dT
+ real(kind=FMS_SVP_KIND_), intent(out), optional :: esat  !< saturation vapor pressure
+ logical,intent(in), optional :: es_over_liq
+ logical,intent(in), optional :: es_over_liq_and_ice
 
- real    :: esloc, desat, denom
- real    :: hc_loc
+ integer, parameter :: lkind=FMS_SVP_KIND_ !< local FMS_SVP_KIND_
+
+ real(kind=FMS_SVP_KIND_) :: esloc
+ real(kind=FMS_SVP_KIND_) :: desat
+ real(kind=FMS_SVP_KIND_) :: denom
+ real(kind=FMS_SVP_KIND_) :: hc_loc
 
    if (present(hc)) then
      hc_loc = hc
    else
-     hc_loc = 1.0
+     hc_loc = 1.0_lkind
    endif
 
  if (present(es_over_liq)) then
@@ -774,13 +721,13 @@
    endif
    if (nbad == 0) then
      if (present (q) .and. use_exact_qs) then
-       qs = (1.0 + zvir*q)*eps*esloc/press
+       qs = (1.0_lkind + zvir*q)*eps*esloc/press
        if (present (dqsdT)) then
-         dqsdT = (1.0 + zvir*q)*eps*desat/press
+         dqsdT = (1.0_lkind + zvir*q)*eps*desat/press
        endif
      else  ! (present(q))
-       denom = press - (1.0 - eps)*esloc
-       if (denom > 0.0) then
+       denom = press - (1.0_lkind - eps)*esloc
+       if (denom > 0.0_lkind) then
          qs = eps*esloc/denom
        else
          qs = eps
@@ -790,44 +737,49 @@
        endif
      endif ! (present(q))
    else ! (nbad = 0)
-     qs = -999.
+     qs = -999.0_lkind
      if (present (dqsdT)) then
-       dqsdT = -999.
+       dqsdT = -999.0_lkind
      endif
      if (present (esat)) then
-       esat = -999.
+       esat = -999.0_lkind
      endif
    endif ! (nbad = 0)
 
 
- end subroutine compute_qs_k_0d
+ end subroutine COMPUTE_QS_K_0D_
 
 !#######################################################################
 
-!#######################################################################
-
- subroutine compute_mrs_k_3d (temp, press, eps, zvir, mrs, nbad,   &
+ subroutine COMPUTE_MRS_K_3D_ (temp, press, eps, zvir, mrs, nbad,   &
                  mr, hc, dmrsdT, esat,es_over_liq, es_over_liq_and_ice)
 
- real, intent(in),  dimension(:,:,:)           :: temp, press
- real, intent(in)                              :: eps, zvir
- real, intent(out), dimension(:,:,:)           :: mrs
- integer, intent(out)                          :: nbad
- real, intent(in),  dimension(:,:,:), optional :: mr
- real, intent(in),                    optional :: hc
- real, intent(out), dimension(:,:,:), optional :: dmrsdT, esat
- logical,intent(in),                  optional :: es_over_liq
- logical,intent(in),                  optional :: es_over_liq_and_ice
+ real(kind=FMS_SVP_KIND_), intent(in),  dimension(:,:,:) :: temp  !< temperature
+ real(kind=FMS_SVP_KIND_), intent(in),  dimension(:,:,:) :: press !< pressure
+ real(kind=FMS_SVP_KIND_), intent(in)                    :: eps   !< EPSILO
+ real(kind=FMS_SVP_KIND_), intent(in)                    :: zvir  !< ZVIR
+ real(kind=FMS_SVP_KIND_), intent(out), dimension(:,:,:) :: mrs   !< mixing ratio at relative humidity
+ integer, intent(out)                                    :: nbad  !< if temperature is out of range
+ real(kind=FMS_SVP_KIND_), intent(in),  dimension(:,:,:), optional :: mr !< vapor mixing ratio
+ real(kind=FMS_SVP_KIND_), intent(in),                    optional :: hc !< relative humidity
+ real(kind=FMS_SVP_KIND_), intent(out), dimension(:,:,:), optional :: dmrsdT !< d(mrs)/dT
+ real(kind=FMS_SVP_KIND_), intent(out), dimension(:,:,:), optional :: esat   !< saturation vapor pressure
+ logical,intent(in), optional :: es_over_liq
+ logical,intent(in), optional :: es_over_liq_and_ice
 
- real, dimension(size(temp,1), size(temp,2), size(temp,3)) ::    &
-                                                    esloc, desat, denom
+ real(FMS_SVP_KIND_), dimension(size(temp,1), size(temp,2), size(temp,3)) :: esloc
+ real(FMS_SVP_KIND_), dimension(size(temp,1), size(temp,2), size(temp,3)) :: desat
+ real(FMS_SVP_KIND_), dimension(size(temp,1), size(temp,2), size(temp,3)) :: denom
+
+ integer, parameter :: lkind=FMS_SVP_KIND_ !< local FMS_SVP_KIND_
+
  integer :: i, j, k
- real    :: hc_loc
+ real(FMS_SVP_KIND_) :: hc_loc
 
    if (present(hc)) then
      hc_loc = hc
    else
-     hc_loc = 1.0
+     hc_loc = 1.0_lkind
    endif
 
  if (present (es_over_liq)) then
@@ -867,7 +819,7 @@
        do k=1,size(mrs,3)
          do j=1,size(mrs,2)
            do i=1,size(mrs,1)
-             if (denom(i,j,k) > 0.0) then
+             if (denom(i,j,k) > 0.0_lkind) then
                mrs(i,j,k) = eps*esloc(i,j,k)/denom(i,j,k)
              else
                mrs(i,j,k) = eps
@@ -880,41 +832,47 @@
        endif
      endif !(present (mr))
    else
-     mrs = -999.
+     mrs = -999.0_lkind
      if (present (dmrsdT)) then
-       dmrsdT = -999.
+       dmrsdT = -999.0_lkind
      endif
      if (present (esat)) then
-       esat = -999.
+       esat = -999.0_lkind
      endif
    endif
 
-
- end subroutine compute_mrs_k_3d
+ end subroutine COMPUTE_MRS_K_3D_
 
 !#######################################################################
 
- subroutine compute_mrs_k_2d (temp, press, eps, zvir, mrs, nbad,  &
+ subroutine COMPUTE_MRS_K_2D_ (temp, press, eps, zvir, mrs, nbad,  &
                  mr, hc, dmrsdT, esat,es_over_liq, es_over_liq_and_ice)
 
- real, intent(in),  dimension(:,:)           :: temp, press
- real, intent(in)                            :: eps, zvir
- real, intent(out), dimension(:,:)           :: mrs
- integer, intent(out)                        :: nbad
- real, intent(in), dimension(:,:), optional  :: mr
- real, intent(in),                 optional :: hc
- real, intent(out), dimension(:,:), optional :: dmrsdT, esat
- logical,intent(in),               optional :: es_over_liq
- logical,intent(in),                  optional :: es_over_liq_and_ice
+ real(kind=FMS_SVP_KIND_), intent(in),  dimension(:,:) :: temp  !< temperature
+ real(kind=FMS_SVP_KIND_), intent(in),  dimension(:,:) :: press !< pressure
+ real(kind=FMS_SVP_KIND_), intent(in)                  :: eps   !< EPSILO
+ real(kind=FMS_SVP_KIND_), intent(in)                  :: zvir  !< ZVIR
+ real(kind=FMS_SVP_KIND_), intent(out), dimension(:,:) :: mrs   !< mixing ratio at relative humidity
+ integer, intent(out)                                  :: nbad  !< if temperature is out of range
+ real(kind=FMS_SVP_KIND_), intent(in), dimension(:,:), optional  :: mr !< vapor mixing ratio
+ real(kind=FMS_SVP_KIND_), intent(in),                 optional  :: hc !< relative humidity
+ real(kind=FMS_SVP_KIND_), intent(out), dimension(:,:), optional :: dmrsdT !< d(mrs)/dT
+ real(kind=FMS_SVP_KIND_), intent(out), dimension(:,:), optional :: esat   !< saturation vapor pressure
+ logical,intent(in), optional :: es_over_liq
+ logical,intent(in), optional :: es_over_liq_and_ice
 
- real, dimension(size(temp,1), size(temp,2)) :: esloc, desat, denom
+ integer, parameter :: lkind=FMS_SVP_KIND_ !< local FMS_SVP_KIND_
+
+ real(kind=FMS_SVP_KIND_), dimension(size(temp,1), size(temp,2)) :: esloc
+ real(kind=FMS_SVP_KIND_), dimension(size(temp,1), size(temp,2)) :: desat
+ real(kind=FMS_SVP_KIND_), dimension(size(temp,1), size(temp,2)) :: denom
  integer :: i, j
- real    :: hc_loc
+ real(kind=FMS_SVP_KIND_)    :: hc_loc
 
    if (present(hc)) then
      hc_loc = hc
    else
-     hc_loc = 1.0
+     hc_loc = 1.0_lkind
    endif
 
  if (present (es_over_liq)) then
@@ -953,7 +911,7 @@
        denom = press - esloc
        do j=1,size(mrs,2)
          do i=1,size(mrs,1)
-           if (denom(i,j) > 0.0) then
+           if (denom(i,j) > 0.0_lkind) then
              mrs(i,j) = eps*esloc(i,j)/denom(i,j)
            else
              mrs(i,j) = eps
@@ -965,41 +923,48 @@
        endif
      endif !(present (mr))
    else
-     mrs = -999.
+     mrs = -999.0_lkind
      if (present (dmrsdT)) then
-       dmrsdT = -999.
+       dmrsdT = -999.0_lkind
      endif
      if (present (esat)) then
-       esat = -999.
+       esat = -999.0_lkind
      endif
    endif
 
 
- end subroutine compute_mrs_k_2d
+ end subroutine COMPUTE_MRS_K_2D_
 
 !#######################################################################
 
- subroutine compute_mrs_k_1d (temp, press, eps, zvir, mrs, nbad,  &
+ subroutine COMPUTE_MRS_K_1D_ (temp, press, eps, zvir, mrs, nbad,  &
                  mr, hc, dmrsdT, esat,es_over_liq, es_over_liq_and_ice)
 
- real, intent(in),  dimension(:)           :: temp, press
- real, intent(in)                          :: eps, zvir
- real, intent(out), dimension(:)           :: mrs
- integer, intent(out)                      :: nbad
- real, intent(in),  dimension(:), optional :: mr
- real, intent(in),                optional :: hc
- real, intent(out), dimension(:), optional :: dmrsdT, esat
+ real(kind=FMS_SVP_KIND_), intent(in),  dimension(:)           :: temp   !< temperature
+ real(kind=FMS_SVP_KIND_), intent(in),  dimension(:)           :: press  !< pressure
+ real(kind=FMS_SVP_KIND_), intent(in)                          :: eps    !< EPSILO
+ real(kind=FMS_SVP_KIND_), intent(in)                          :: zvir   !< ZVIR
+ real(kind=FMS_SVP_KIND_), intent(out), dimension(:)           :: mrs    !< mixing ratio at relative humidity
+ integer, intent(out)                                          :: nbad   !< if temperature is out of range
+ real(kind=FMS_SVP_KIND_), intent(in),  dimension(:), optional :: mr     !< vapor mixing ratio
+ real(kind=FMS_SVP_KIND_), intent(in),                optional :: hc     !< relative humidity
+ real(kind=FMS_SVP_KIND_), intent(out), dimension(:), optional :: dmrsdT !< d(mrs)/dT
+ real(kind=FMS_SVP_KIND_), intent(out), dimension(:), optional :: esat   !< saturation vapor pressure
  logical,intent(in),              optional :: es_over_liq
- logical,intent(in),                  optional :: es_over_liq_and_ice
+ logical,intent(in),              optional :: es_over_liq_and_ice
 
- real, dimension(size(temp,1)) :: esloc, desat, denom
+ integer, parameter :: lkind=FMS_SVP_KIND_ !< local FMS_SVP_KIND_
+
+ real(kind=FMS_SVP_KIND_), dimension(size(temp,1)) :: esloc
+ real(kind=FMS_SVP_KIND_), dimension(size(temp,1)) :: desat
+ real(kind=FMS_SVP_KIND_), dimension(size(temp,1)) :: denom
  integer :: i
- real    :: hc_loc
+ real(kind=FMS_SVP_KIND_) :: hc_loc
 
    if (present(hc)) then
      hc_loc = hc
    else
-     hc_loc = 1.0
+     hc_loc = 1.0_lkind
    endif
 
  if (present (es_over_liq)) then
@@ -1037,7 +1002,7 @@
      else ! (present (mr))
        denom = press - esloc
        do i=1,size(mrs,1)
-         if (denom(i) > 0.0) then
+         if (denom(i) > 0.0_lkind) then
            mrs(i) = eps*esloc(i)/denom(i)
          else
            mrs(i) = eps
@@ -1048,40 +1013,47 @@
        endif
      endif !(present (mr))
    else
-     mrs = -999.
+     mrs = -999.0_lkind
      if (present (dmrsdT)) then
-       dmrsdT = -999.
+       dmrsdT = -999.0_lkind
      endif
      if (present (esat)) then
-       esat = -999.
+       esat = -999.0_lkind
      endif
    endif
 
 
- end subroutine compute_mrs_k_1d
+ end subroutine COMPUTE_MRS_K_1D_
 
 !#######################################################################
 
- subroutine compute_mrs_k_0d (temp, press, eps, zvir, mrs, nbad,   &
+ subroutine COMPUTE_MRS_K_0D_ (temp, press, eps, zvir, mrs, nbad,   &
                  mr, hc, dmrsdT, esat,es_over_liq, es_over_liq_and_ice)
 
- real, intent(in)                              :: temp, press
- real, intent(in)                              :: eps, zvir
- real, intent(out)                             :: mrs
- integer, intent(out)                          :: nbad
- real, intent(in),                    optional :: mr
- real, intent(in),                    optional :: hc
- real, intent(out),                   optional :: dmrsdT, esat
- logical,intent(in),                  optional :: es_over_liq
- logical,intent(in),                  optional :: es_over_liq_and_ice
+ real(kind=FMS_SVP_KIND_), intent(in)  :: temp  !< temperature
+ real(kind=FMS_SVP_KIND_), intent(in)  :: press !< pressure
+ real(kind=FMS_SVP_KIND_), intent(in)  :: eps   !< EPSILO
+ real(kind=FMS_SVP_KIND_), intent(in)  :: zvir  !< ZVIR
+ real(kind=FMS_SVP_KIND_), intent(out) :: mrs   !< mixing ratio at relative humidity
+ integer, intent(out)                  :: nbad  !< if temperature is out of range
+ real(kind=FMS_SVP_KIND_), intent(in),  optional  :: mr     !< vapor mixing ratio
+ real(kind=FMS_SVP_KIND_), intent(in),  optional  :: hc     !< relative humidity
+ real(kind=FMS_SVP_KIND_), intent(out), optional  :: dmrsdT !< d(mrs)/dT
+ real(kind=FMS_SVP_KIND_), intent(out), optional  :: esat   !<  saturation vapor pressure
+ logical,intent(in), optional :: es_over_liq
+ logical,intent(in), optional :: es_over_liq_and_ice
 
- real    :: esloc, desat, denom
- real    :: hc_loc
+ integer, parameter :: lkind=FMS_SVP_KIND_ !< local FMS_SVP_KIND_
+
+ real(kind=FMS_SVP_KIND_) :: esloc
+ real(kind=FMS_SVP_KIND_) :: desat
+ real(kind=FMS_SVP_KIND_) :: denom
+ real(kind=FMS_SVP_KIND_) :: hc_loc
 
    if (present(hc)) then
      hc_loc = hc
    else
-     hc_loc = 1.0
+     hc_loc = 1.0_lkind
    endif
 
  if (present (es_over_liq)) then
@@ -1118,7 +1090,7 @@
        endif
      else ! (present (mr))
        denom = press - esloc
-       if (denom > 0.0) then
+       if (denom > 0.0_lkind) then
          mrs = eps*esloc/denom
        else
          mrs = eps
@@ -1128,893 +1100,1548 @@
        endif
      endif !(present (mr))
    else
-     mrs = -999.
+     mrs = -999.0_lkind
      if (present (dmrsdT)) then
-       dmrsdT = -999.
+       dmrsdT = -999.0_lkind
      endif
      if (present (esat)) then
-       esat = -999.
+       esat = -999.0_lkind
      endif
    endif
 
 
- end subroutine compute_mrs_k_0d
-
+ end subroutine COMPUTE_MRS_K_0D_
 
 
 !#######################################################################
 
- subroutine lookup_es_des_k_3d (temp, esat, desat, nbad)
- real, intent(in),  dimension(:,:,:)  :: temp
- real, intent(out), dimension(:,:,:)  :: esat, desat
- integer, intent(out)                 :: nbad
+ subroutine LOOKUP_ES_DES_K_3D_ (temp, esat, desat, nbad)
+ real(kind=FMS_SVP_KIND_), intent(in),  dimension(:,:,:)  :: temp  !< temperature
+ real(kind=FMS_SVP_KIND_), intent(out), dimension(:,:,:)  :: esat  !<saturation vapor pressure
+ real(kind=FMS_SVP_KIND_), intent(out), dimension(:,:,:)  :: desat !< derivative of saturation vapor pressure
+ integer, intent(out)                                     :: nbad  !< if temperature is out of range
 
- real    :: tmp, del
+ real(kind=FMS_SVP_KIND_) :: tmp !< temp-TMIN
+ real(kind=FMS_SVP_KIND_) :: del !< delta T
  integer :: ind, i, j, k
+ !> dtres, tminl, tepsl, dtinvl are module level variables declared in r8_kind precision
+ !! for precision consistency and for code readability, the *ll variables are declared
+ !! and used
+ real(kind=FMS_SVP_KIND_) :: dtresl
+ real(kind=FMS_SVP_KIND_) :: tepsll
+ real(kind=FMS_SVP_KIND_) :: tminll
+ real(kind=FMS_SVP_KIND_) :: dtinvll
+ integer, parameter :: lkind=FMS_SVP_KIND_ !< local FMS_SVP_KIND_
+
+   dtresl=real(dtres, FMS_SVP_KIND_)
+   tminll=real(tminl, FMS_SVP_KIND_)
+   tepsll=real(tepsl, FMS_SVP_KIND_)
+   dtinvll=real(dtinvl, FMS_SVP_KIND_)
 
    nbad = 0
    do k = 1, size(temp,3)
    do j = 1, size(temp,2)
    do i = 1, size(temp,1)
-     tmp = temp(i,j,k)-tminl
-     ind = int(dtinvl*(tmp+tepsl))
+     tmp = temp(i,j,k)-tminll
+     ind = int(dtinvll*(tmp+tepsll))
      if (ind < 0 .or. ind >= table_siz) then
        nbad = nbad+1
      else
-       del = tmp-dtres*real(ind)
-       esat(i,j,k) = TABLE(ind+1) +  &
-                     del*(DTABLE(ind+1) + del*D2TABLE(ind+1))
-       desat(i,j,k) = DTABLE(ind+1) + 2.*del*D2TABLE(ind+1)
+       del = tmp-real(dtresl,FMS_SVP_KIND_)*real(ind,FMS_SVP_KIND_)
+       !> esat = TABLE + del*(TABLE + del*D2TABLE)
+       !! the coded equation below is the commented equation above
+       esat(i,j,k) = real(TABLE(ind+1),FMS_SVP_KIND_)              &
+                         + del*( real(DTABLE(ind+1),FMS_SVP_KIND_) &
+                                    + del*real(D2TABLE(ind+1),FMS_SVP_KIND_) )
+       !> desat = DTABLE + 2del*D2TABLE
+       !! the coded equation below is the commented equation above
+       desat(i,j,k) = real(DTABLE(ind+1), FMS_SVP_KIND_) &
+                        + 2.0_lkind*del*real(D2TABLE(ind+1),FMS_SVP_KIND_)
      endif
    enddo
    enddo
    enddo
 
- end subroutine lookup_es_des_k_3d
+ end subroutine LOOKUP_ES_DES_K_3D_
 
 !#######################################################################
 
- subroutine lookup_es_des_k_2d (temp, esat, desat, nbad)
- real, intent(in),  dimension(:,:)  :: temp
- real, intent(out), dimension(:,:)  :: esat, desat
- integer, intent(out)               :: nbad
-
- real    :: tmp, del
+ subroutine LOOKUP_ES_DES_K_2D_ (temp, esat, desat, nbad)
+ real(kind=FMS_SVP_KIND_), intent(in),  dimension(:,:) :: temp  !<  temperature
+ real(kind=FMS_SVP_KIND_), intent(out), dimension(:,:) :: esat  !< saturation vapor pressure
+ real(kind=FMS_SVP_KIND_), intent(out), dimension(:,:) :: desat !< derivative of the saturation vapor pressure
+ integer, intent(out)     :: nbad !< if temperature is out of range
+ real(kind=FMS_SVP_KIND_) :: tmp  !< temp-TMINLL
+ real(kind=FMS_SVP_KIND_) :: del  !< delta T
  integer :: ind, i, j
+ !> dtres, tminl, tepsl, dtinvl are module level variables declared in r8_kind precision
+ !! for precision consistency and for code readability, the *ll variables are declared
+ !! and used
+ real(kind=FMS_SVP_KIND_) :: dtresl
+ real(kind=FMS_SVP_KIND_) :: tepsll
+ real(kind=FMS_SVP_KIND_) :: tminll
+ real(kind=FMS_SVP_KIND_) :: dtinvll
+ integer, parameter :: lkind=FMS_SVP_KIND_ !< local FMS_SVP_KIND_
+
+   dtresl=real(dtres, FMS_SVP_KIND_)
+   tminll=real(tminl, FMS_SVP_KIND_)
+   tepsll=real(tepsl, FMS_SVP_KIND_)
+   dtinvll=real(dtinvl, FMS_SVP_KIND_)
+
 
    nbad = 0
    do j = 1, size(temp,2)
    do i = 1, size(temp,1)
-     tmp = temp(i,j)-tminl
-     ind = int(dtinvl*(tmp+tepsl))
+     tmp = temp(i,j)-tminll
+     ind = int(dtinvll*(tmp+tepsll))
      if (ind < 0 .or. ind >= table_siz)  then
        nbad = nbad+1
      else
-       del = tmp-dtres*real(ind)
-       esat(i,j) = TABLE(ind+1) + &
-                   del*(DTABLE(ind+1) + del*D2TABLE(ind+1))
-       desat(i,j) = DTABLE(ind+1) + 2.*del*D2TABLE(ind+1)
+       del = tmp-dtresl*real(ind,FMS_SVP_KIND_)
+       !> esat = TABLE + del*(TABLE + del*D2TABLE)
+       !! the coded equation below is the commented equation above
+       esat(i,j) = real(TABLE(ind+1),FMS_SVP_KIND_) &
+                 + del*( real(DTABLE(ind+1),FMS_SVP_KIND_) &
+                 + del*real(D2TABLE(ind+1),FMS_SVP_KIND_) )
+       !> desat = DTABLE + 2del*D2TABLE
+       !! the coded equation below is the commented equation above
+       desat(i,j) = real(DTABLE(ind+1),FMS_SVP_KIND_) &
+                  + 2.0_lkind*del*real(D2TABLE(ind+1),FMS_SVP_KIND_)
      endif
    enddo
    enddo
 
- end subroutine lookup_es_des_k_2d
+ end subroutine LOOKUP_ES_DES_K_2D_
 
 !#######################################################################
 
- subroutine lookup_es_des_k_1d (temp, esat, desat, nbad)
- real, intent(in),  dimension(:)  :: temp
- real, intent(out), dimension(:)  :: esat, desat
- integer, intent(out)             :: nbad
+ subroutine LOOKUP_ES_DES_K_1D_ (temp, esat, desat, nbad)
+ real(kind=FMS_SVP_KIND_), intent(in),  dimension(:) :: temp  !< temperature
+ real(kind=FMS_SVP_KIND_), intent(out), dimension(:) :: esat  !< saturation vapor pressure
+ real(kind=FMS_SVP_KIND_), intent(out), dimension(:) :: desat !< derivative of the saturation vapor pressure
+ integer, intent(out)     :: nbad !< if temperature is out of range
 
- real    :: tmp, del
+ real(kind=FMS_SVP_KIND_) :: tmp !< temp-TMINLL
+ real(kind=FMS_SVP_KIND_) :: del !< delta T
  integer :: ind, i
+ !> dtres, tminl, tepsl, dtinvl are module level variables declared in r8_kind precision
+ !! for precision consistency and for code readability, the *ll variables are declared
+ !! and used
+ real(kind=FMS_SVP_KIND_) :: dtresl
+ real(kind=FMS_SVP_KIND_) :: tepsll
+ real(kind=FMS_SVP_KIND_) :: tminll
+ real(kind=FMS_SVP_KIND_) :: dtinvll
+ integer, parameter :: lkind=FMS_SVP_KIND_ !< local FMS_SVP_KIND_
+
+   dtresl=real(dtres, FMS_SVP_KIND_)
+   tminll=real(tminl, FMS_SVP_KIND_)
+   tepsll=real(tepsl, FMS_SVP_KIND_)
+   dtinvll=real(dtinvl, FMS_SVP_KIND_)
+
 
    nbad = 0
    do i = 1, size(temp,1)
-     tmp = temp(i)-tminl
-     ind = int(dtinvl*(tmp+tepsl))
+     tmp = temp(i)-tminll
+     ind = int(dtinvll*(tmp+tepsll))
      if (ind < 0 .or. ind >= table_siz)  then
        nbad = nbad+1
      else
-       del = tmp-dtres*real(ind)
-       esat(i) = TABLE(ind+1) + &
-                   del*(DTABLE(ind+1) + del*D2TABLE(ind+1))
-       desat(i) = DTABLE(ind+1) + 2.*del*D2TABLE(ind+1)
+        del = tmp-dtresl*real(ind,FMS_SVP_KIND_)
+        !> esat = TABLE + del*(TABLE + del*D2TABLE)
+        !! the coded equation below is the commented equation above
+        esat(i) = real(TABLE(ind+1),FMS_SVP_KIND_) &
+               + del*( real(DTABLE(ind+1),FMS_SVP_KIND_) &
+                                + del*real(D2TABLE(ind+1),FMS_SVP_KIND_) )
+        !> desat = DTABLE + 2del*D2TABLE
+        !! the coded equation below is the commented equation above
+        desat(i) = real(DTABLE(ind+1),FMS_SVP_KIND_) &
+             + 2.0_lkind*del*real(D2TABLE(ind+1),FMS_SVP_KIND_)
      endif
    enddo
 
- end subroutine lookup_es_des_k_1d
+ end subroutine LOOKUP_ES_DES_K_1D_
 
 !#######################################################################
 
- subroutine lookup_es_des_k_0d (temp, esat, desat, nbad)
- real, intent(in)     :: temp
- real, intent(out)    :: esat, desat
- integer, intent(out) :: nbad
+ subroutine LOOKUP_ES_DES_K_0D_ (temp, esat, desat, nbad)
+ real(kind=FMS_SVP_KIND_), intent(in)  :: temp  !< temperature
+ real(kind=FMS_SVP_KIND_), intent(out) :: esat  !< saturation vapor pressure
+ real(kind=FMS_SVP_KIND_), intent(out) :: desat !< derivative of the saturation vapor pressure
+ integer, intent(out) :: nbad !< if temperature is out of range
 
- real    :: tmp, del
+ real(kind=FMS_SVP_KIND_) :: tmp !< temp-TMINLL
+ real(kind=FMS_SVP_KIND_) :: del !< delta T
  integer :: ind
+ !> dtres, tminl, tepsl, dtinvl are module level variables declared in r8_kind precision
+ !! for precision consistency and for code readability, the *ll variables are declared
+ !! and used
+ real(kind=FMS_SVP_KIND_) :: dtresl
+ real(kind=FMS_SVP_KIND_) :: tepsll
+ real(kind=FMS_SVP_KIND_) :: tminll
+ real(kind=FMS_SVP_KIND_) :: dtinvll
+ integer, parameter :: lkind=FMS_SVP_KIND_ !< local FMS_SVP_KIND_
+
+   dtresl=real(dtres, FMS_SVP_KIND_)
+   tminll=real(tminl, FMS_SVP_KIND_)
+   tepsll=real(tepsl, FMS_SVP_KIND_)
+   dtinvll=real(dtinvl, FMS_SVP_KIND_)
 
    nbad = 0
-   tmp = temp-tminl
-   ind = int(dtinvl*(tmp+tepsl))
+   tmp = temp-tminll
+   ind = int(dtinvll*(tmp+tepsll))
    if (ind < 0 .or. ind >= table_siz)  then
      nbad = nbad+1
    else
-     del = tmp-dtres*real(ind)
-     esat = TABLE(ind+1) + &
-            del*(DTABLE(ind+1) + del*D2TABLE(ind+1))
-     desat = DTABLE(ind+1) + 2.*del*D2TABLE(ind+1)
+     del = tmp-dtresl*real(ind,FMS_SVP_KIND_)
+     !> esat = TABLE + del*(TABLE + del*D2TABLE)
+     !! the coded equation below is the commented equation above
+     esat = real(TABLE(ind+1),FMS_SVP_KIND_) &
+            + del*( real(DTABLE(ind+1),FMS_SVP_KIND_) &
+                          + del*real(D2TABLE(ind+1),FMS_SVP_KIND_) )
+     !> desat = DTABLE + 2del*D2TABLE
+     !! the coded equation below is the commented equation above
+     desat = real(DTABLE(ind+1),FMS_SVP_KIND_) &
+             + 2.0_lkind*del*real(D2TABLE(ind+1),FMS_SVP_KIND_)
    endif
 
- end subroutine lookup_es_des_k_0d
+ end subroutine LOOKUP_ES_DES_K_0D_
 
 !#######################################################################
 
- subroutine lookup_es_k_3d(temp, esat, nbad)
- real, intent(in),  dimension(:,:,:)  :: temp
- real, intent(out), dimension(:,:,:)  :: esat
- integer, intent(out) :: nbad
- real    :: tmp, del
+ subroutine LOOKUP_ES_K_3D_(temp, esat, nbad)
+ real(kind=FMS_SVP_KIND_), intent(in),  dimension(:,:,:)  :: temp !< temperature
+ real(kind=FMS_SVP_KIND_), intent(out), dimension(:,:,:)  :: esat !< saturavation vapor pressure
+ integer, intent(out)     :: nbad !< if temperature is out of range
+ real(kind=FMS_SVP_KIND_) :: tmp  !< temp - TMINLL
+ real(kind=FMS_SVP_KIND_) :: del  !< delta T
  integer :: ind, i, j, k
+ !> dtres, tminl, tepsl, dtinvl are module level variables declared in r8_kind precision
+ !! for precision consistency and for code readability, the *ll variables are declared
+ !! and used
+ real(kind=FMS_SVP_KIND_) :: dtresl
+ real(kind=FMS_SVP_KIND_) :: tepsll
+ real(kind=FMS_SVP_KIND_) :: tminll
+ real(kind=FMS_SVP_KIND_) :: dtinvll
+
+   dtresl=real(dtres, FMS_SVP_KIND_)
+   tminll=real(tminl, FMS_SVP_KIND_)
+   tepsll=real(tepsl, FMS_SVP_KIND_)
+   dtinvll=real(dtinvl, FMS_SVP_KIND_)
 
    nbad = 0
    do k = 1, size(temp,3)
    do j = 1, size(temp,2)
    do i = 1, size(temp,1)
-     tmp = temp(i,j,k)-tminl
-     ind = int(dtinvl*(tmp+tepsl))
+     tmp = temp(i,j,k)-tminll
+     ind = int(dtinvll*(tmp+tepsll))
      if (ind < 0 .or. ind >= table_siz)  then
        nbad = nbad+1
      else
-       del = tmp-dtres*real(ind)
-       esat(i,j,k) = TABLE(ind+1) + &
-                     del*(DTABLE(ind+1) + del*D2TABLE(ind+1))
+       del = tmp-dtresl*real(ind,FMS_SVP_KIND_)
+       !> esat = TABLE + del*(TABLE + del*D2TABLE)
+       !! the coded equation below is the commented equation above
+       esat(i,j,k) = real(TABLE(ind+1),FMS_SVP_KIND_) &
+                     + del*( real(DTABLE(ind+1),FMS_SVP_KIND_) &
+                                    + del*real(D2TABLE(ind+1),FMS_SVP_KIND_) )
      endif
    enddo
    enddo
    enddo
 
- end subroutine lookup_es_k_3d
+ end subroutine LOOKUP_ES_K_3D_
 
 !#######################################################################
 
- subroutine lookup_des_k_3d(temp, desat, nbad)
- real, intent(in),  dimension(:,:,:)  :: temp
- real, intent(out), dimension(:,:,:)  :: desat
- integer, intent(out) :: nbad
- real    :: tmp, del
+ subroutine LOOKUP_DES_K_3D_(temp, desat, nbad)
+ real(kind=FMS_SVP_KIND_), intent(in),  dimension(:,:,:)  :: temp  !< temperature
+ real(kind=FMS_SVP_KIND_), intent(out), dimension(:,:,:)  :: desat !< derivative of sat vapor pressure
+ integer, intent(out)     :: nbad !< if temperature is out of range
+ real(kind=FMS_SVP_KIND_) :: tmp  !< temp-TMINLL
+ real(kind=FMS_SVP_KIND_) :: del  !< delta T
  integer :: ind, i, j, k
+ !> dtres, tminl, tepsl, dtinvl are module level variables declared in r8_kind precision
+ !! for precision consistency and for code readability, the *ll variables are declared
+ !! and used
+ real(kind=FMS_SVP_KIND_) :: dtresl
+ real(kind=FMS_SVP_KIND_) :: tepsll
+ real(kind=FMS_SVP_KIND_) :: tminll
+ real(kind=FMS_SVP_KIND_) :: dtinvll
+ integer, parameter :: lkind=FMS_SVP_KIND_ !< local FMS_SVP_KIND_
+
+   dtresl=real(dtres, FMS_SVP_KIND_)
+   tminll=real(tminl, FMS_SVP_KIND_)
+   tepsll=real(tepsl, FMS_SVP_KIND_)
+   dtinvll=real(dtinvl, FMS_SVP_KIND_)
 
    nbad = 0
    do k = 1, size(temp,3)
    do j = 1, size(temp,2)
    do i = 1, size(temp,1)
-     tmp = temp(i,j,k)-tminl
-     ind = int(dtinvl*(tmp+tepsl))
+     tmp = temp(i,j,k)-tminll
+     ind = int(dtinvll*(tmp+tepsll))
      if (ind < 0 .or. ind >= table_siz)  then
        nbad = nbad+1
      else
-       del = tmp-dtres*real(ind)
-       desat(i,j,k) = DTABLE(ind+1) + 2.*del*D2TABLE(ind+1)
+        del = tmp-dtresl*real(ind,FMS_SVP_KIND_)
+        !> desat = DTABLE + 2del*D2TABLE
+        !! the coded equation below is the commented equation above
+       desat(i,j,k) = real(DTABLE(ind+1),FMS_SVP_KIND_) &
+                      + 2.0_lkind*del*real(D2TABLE(ind+1),FMS_SVP_KIND_)
      endif
    enddo
    enddo
    enddo
 
- end subroutine lookup_des_k_3d
+ end subroutine LOOKUP_DES_K_3D_
 
 !#######################################################################
- subroutine lookup_des_k_2d(temp, desat, nbad)
- real, intent(in),  dimension(:,:)  :: temp
- real, intent(out), dimension(:,:)  :: desat
- integer, intent(out) :: nbad
- real    :: tmp, del
+ subroutine LOOKUP_DES_K_2D_(temp, desat, nbad)
+ real(kind=FMS_SVP_KIND_), intent(in),  dimension(:,:)  :: temp  !< temperature
+ real(kind=FMS_SVP_KIND_), intent(out), dimension(:,:)  :: desat !< derivative of sat vapor pressure
+ integer, intent(out)     :: nbad !< if temperature is out of range
+ real(kind=FMS_SVP_KIND_) :: tmp  !< temp-TMINLL
+ real(kind=FMS_SVP_KIND_) :: del  !< delta T
  integer :: ind, i, j
+
+ !> dtres, tminl, tepsl, dtinvl are module level variables declared in r8_kind precision
+ !! for precision consistency and for code readability, the *ll variables are declared
+ !! and used
+ real(kind=FMS_SVP_KIND_) :: dtresl
+ real(kind=FMS_SVP_KIND_) :: tepsll
+ real(kind=FMS_SVP_KIND_) :: tminll
+ real(kind=FMS_SVP_KIND_) :: dtinvll
+ integer, parameter :: lkind=FMS_SVP_KIND_ !< local FMS_SVP_KIND_
+
+   dtresl=real(dtres, FMS_SVP_KIND_)
+   tminll=real(tminl, FMS_SVP_KIND_)
+   tepsll=real(tepsl, FMS_SVP_KIND_)
+   dtinvll=real(dtinvl, FMS_SVP_KIND_)
 
    nbad = 0
    do j = 1, size(temp,2)
    do i = 1, size(temp,1)
-     tmp = temp(i,j)-tminl
-     ind = int(dtinvl*(tmp+tepsl))
+     tmp = temp(i,j)-tminll
+     ind = int(dtinvll*(tmp+tepsll))
      if (ind < 0 .or. ind >= table_siz)  then
        nbad = nbad+1
      else
-       del = tmp-dtres*real(ind)
-       desat(i,j) = DTABLE(ind+1) + 2.*del*D2TABLE(ind+1)
+        del = tmp-dtresl*real(ind,FMS_SVP_KIND_)
+        !> desat = DTABLE + 2del*D2TABLE
+        !! the coded equation below is the commented equation above
+        desat(i,j) = real(DTABLE(ind+1),FMS_SVP_KIND_) &
+             + 2.0_lkind*del*real(D2TABLE(ind+1),FMS_SVP_KIND_)
      endif
    enddo
    enddo
 
- end subroutine lookup_des_k_2d
+ end subroutine LOOKUP_DES_K_2D_
 !#######################################################################
- subroutine lookup_es_k_2d(temp, esat, nbad)
- real, intent(in),  dimension(:,:)  :: temp
- real, intent(out), dimension(:,:)  :: esat
- integer, intent(out) :: nbad
- real    :: tmp, del
+ subroutine LOOKUP_ES_K_2D_(temp, esat, nbad)
+ real(kind=FMS_SVP_KIND_), intent(in),  dimension(:,:)  :: temp !< temperature
+ real(kind=FMS_SVP_KIND_), intent(out), dimension(:,:)  :: esat !< saturation vapor pressure
+ integer, intent(out)     :: nbad !< if temperature is out of range
+ real(kind=FMS_SVP_KIND_) :: tmp  !< temp-TMINLL
+ real(kind=FMS_SVP_KIND_) :: del  !< delta T
  integer :: ind, i, j
+ !> dtres, tminl, tepsl, dtinvl are module level variables declared in r8_kind precision
+ !! for precision consistency and for code readability, the *ll variables are declared
+ !! and used
+ real(kind=FMS_SVP_KIND_) :: dtresl
+ real(kind=FMS_SVP_KIND_) :: tepsll
+ real(kind=FMS_SVP_KIND_) :: tminll
+ real(kind=FMS_SVP_KIND_) :: dtinvll
+
+   dtresl=real(dtres, FMS_SVP_KIND_)
+   tminll=real(tminl, FMS_SVP_KIND_)
+   tepsll=real(tepsl, FMS_SVP_KIND_)
+   dtinvll=real(dtinvl, FMS_SVP_KIND_)
+
 
    nbad = 0
    do j = 1, size(temp,2)
    do i = 1, size(temp,1)
-     tmp = temp(i,j)-tminl
-     ind = int(dtinvl*(tmp+tepsl))
+     tmp = temp(i,j)-tminll
+     ind = int(dtinvll*(tmp+tepsll))
      if (ind < 0 .or. ind >= table_siz)  then
        nbad = nbad+1
      else
-       del = tmp-dtres*real(ind)
-       esat(i,j) = TABLE(ind+1) + del*(DTABLE(ind+1) +   &
-                                                  del*D2TABLE(ind+1))
+       del = tmp-dtresl*real(ind,FMS_SVP_KIND_)
+       !> esat = TABLE + del*(TABLE + del*D2TABLE)
+       !! the coded equation below is the commented equation above
+       esat(i,j) = real(TABLE(ind+1),FMS_SVP_KIND_) &
+                   + del*(real(DTABLE(ind+1),FMS_SVP_KIND_) &
+                                  + del*real(D2TABLE(ind+1),FMS_SVP_KIND_)  )
      endif
    enddo
    enddo
 
- end subroutine lookup_es_k_2d
+ end subroutine LOOKUP_ES_K_2D_
 !#######################################################################
- subroutine lookup_des_k_1d(temp, desat, nbad)
- real, intent(in),  dimension(:)  :: temp
- real, intent(out), dimension(:)  :: desat
- integer, intent(out) :: nbad
- real    :: tmp, del
+ subroutine LOOKUP_DES_K_1D_(temp, desat, nbad)
+ real(kind=FMS_SVP_KIND_), intent(in),  dimension(:)  :: temp  !< temperature
+ real(kind=FMS_SVP_KIND_), intent(out), dimension(:)  :: desat !< derivative of sat vapor pressure
+ integer, intent(out)     :: nbad !< if temperature is out of range
+ real(kind=FMS_SVP_KIND_) :: tmp  !< temp-TMINLL
+ real(kind=FMS_SVP_KIND_) :: del  !< delta T
  integer :: ind, i
+ !> dtres, tminl, tepsl, dtinvl are module level variables declared in r8_kind precision
+ !! for precision consistency and for code readability, the *ll variables are declared
+ !! and used
+ real(kind=FMS_SVP_KIND_) :: dtresl
+ real(kind=FMS_SVP_KIND_) :: tepsll
+ real(kind=FMS_SVP_KIND_) :: tminll
+ real(kind=FMS_SVP_KIND_) :: dtinvll
+ integer, parameter :: lkind=FMS_SVP_KIND_ !< local FMS_SVP_KIND_
+
+   dtresl=real(dtres, FMS_SVP_KIND_)
+   tminll=real(tminl, FMS_SVP_KIND_)
+   tepsll=real(tepsl, FMS_SVP_KIND_)
+   dtinvll=real(dtinvl, FMS_SVP_KIND_)
 
    nbad = 0
    do i = 1, size(temp,1)
-     tmp = temp(i)-tminl
-     ind = int(dtinvl*(tmp+tepsl))
+     tmp = temp(i)-tminll
+     ind = int(dtinvll*(tmp+tepsll))
      if (ind < 0 .or. ind >= table_siz)  then
        nbad = nbad+1
      else
-       del = tmp-dtres*real(ind)
-       desat(i) = DTABLE(ind+1) + 2.*del*D2TABLE(ind+1)
+        del = tmp-dtresl*real(ind,FMS_SVP_KIND_)
+        !> desat = DTABLE + 2del*D2TABLE
+        !! the coded equation below is the commented equation above
+        desat(i) = real(DTABLE(ind+1),FMS_SVP_KIND_) &
+                  + 2.0_lkind*del*real(D2TABLE(ind+1),FMS_SVP_KIND_)
      endif
    enddo
 
- end subroutine lookup_des_k_1d
+ end subroutine LOOKUP_DES_K_1D_
 !#######################################################################
- subroutine lookup_es_k_1d(temp, esat, nbad)
- real, intent(in),  dimension(:)  :: temp
- real, intent(out), dimension(:)  :: esat
- integer, intent(out) :: nbad
- real    :: tmp, del
+ subroutine LOOKUP_ES_K_1D_(temp, esat, nbad)
+ real(kind=FMS_SVP_KIND_), intent(in),  dimension(:)  :: temp !< temperature
+ real(kind=FMS_SVP_KIND_), intent(out), dimension(:)  :: esat !< saturation vapor pressure
+ integer, intent(out)     :: nbad !< if temperature is out of range
+ real(kind=FMS_SVP_KIND_) :: tmp  !< temp-TMINLL
+ real(kind=FMS_SVP_KIND_) :: del  !< delta T
  integer :: ind, i
+ !> dtres, tminl, tepsl, dtinvl are module level variables declared in r8_kind precision
+ !! for precision consistency and for code readability, the *ll variables are declared
+ !! and used
+ real(kind=FMS_SVP_KIND_) :: dtresl
+ real(kind=FMS_SVP_KIND_) :: tepsll
+ real(kind=FMS_SVP_KIND_) :: tminll
+ real(kind=FMS_SVP_KIND_) :: dtinvll
+
+   dtresl=real(dtres, FMS_SVP_KIND_)
+   tminll=real(tminl, FMS_SVP_KIND_)
+   tepsll=real(tepsl, FMS_SVP_KIND_)
+   dtinvll=real(dtinvl, FMS_SVP_KIND_)
 
    nbad = 0
    do i = 1, size(temp,1)
-     tmp = temp(i)-tminl
-     ind = int(dtinvl*(tmp+tepsl))
+     tmp = temp(i)-tminll
+     ind = int(dtinvll*(tmp+tepsll))
      if (ind < 0 .or. ind >= table_siz)  then
        nbad = nbad+1
      else
-       del = tmp-dtres*real(ind)
-       esat(i) = TABLE(ind+1) + del*(DTABLE(ind+1) + del*D2TABLE(ind+1))
+       del = tmp-dtresl*real(ind,FMS_SVP_KIND_)
+       !> esat = TABLE + del*(TABLE + del*D2TABLE)
+       !! the coded equation below is the commented equation above
+       esat(i) = real(TABLE(ind+1),FMS_SVP_KIND_) &
+                 + del*(real(DTABLE(ind+1),FMS_SVP_KIND_) &
+                                + del*real(D2TABLE(ind+1),FMS_SVP_KIND_) )
      endif
    enddo
 
- end subroutine lookup_es_k_1d
+ end subroutine LOOKUP_ES_K_1D_
 !#######################################################################
- subroutine lookup_des_k_0d(temp, desat, nbad)
- real, intent(in)     :: temp
- real, intent(out)    :: desat
- integer, intent(out) :: nbad
- real    :: tmp, del
+ subroutine LOOKUP_DES_K_0D_(temp, desat, nbad)
+ real(kind=FMS_SVP_KIND_), intent(in)  :: temp  !< temperature
+ real(kind=FMS_SVP_KIND_), intent(out) :: desat !< derivative of sat vapor pressure
+ integer, intent(out)     :: nbad !< if temperature is out of range
+ real(kind=FMS_SVP_KIND_) :: tmp  !< temp - TMINLL
+ real(kind=FMS_SVP_KIND_) :: del  !< delta T
  integer :: ind
+ !> dtres, tminl, tepsl, dtinvl are module level variables declared in r8_kind precision
+ !! for precision consistency and for code readability, the *ll variables are declared
+ !! and used
+ real(kind=FMS_SVP_KIND_) :: dtresl
+ real(kind=FMS_SVP_KIND_) :: tepsll
+ real(kind=FMS_SVP_KIND_) :: tminll
+ real(kind=FMS_SVP_KIND_) :: dtinvll
+ integer, parameter :: lkind=FMS_SVP_KIND_ !< local FMS_SVP_KIND_
+
+   dtresl=real(dtres, FMS_SVP_KIND_)
+   tminll=real(tminl, FMS_SVP_KIND_)
+   tepsll=real(tepsl, FMS_SVP_KIND_)
+   dtinvll=real(dtinvl, FMS_SVP_KIND_)
 
    nbad = 0
-   tmp = temp-tminl
-   ind = int(dtinvl*(tmp+tepsl))
+   tmp = temp-tminll
+   ind = int(dtinvll*(tmp+tepsll))
    if (ind < 0 .or. ind >= table_siz)  then
      nbad = nbad+1
    else
-     del = tmp-dtres*real(ind)
-     desat = DTABLE(ind+1) + 2.*del*D2TABLE(ind+1)
+      del = tmp-dtresl*real(ind,FMS_SVP_KIND_)
+      !> desat = DTABLE + 2del*D2TABLE
+      !! the coded equation below is the commented equation above
+      desat = real(DTABLE(ind+1),FMS_SVP_KIND_) &
+           + 2.0_lkind*del*real(D2TABLE(ind+1),FMS_SVP_KIND_)
    endif
 
- end subroutine lookup_des_k_0d
+ end subroutine LOOKUP_DES_K_0D_
 !#######################################################################
- subroutine lookup_es_k_0d(temp, esat, nbad)
- real, intent(in)     :: temp
- real, intent(out)    :: esat
- integer, intent(out) :: nbad
- real    :: tmp, del
+ subroutine LOOKUP_ES_K_0D_(temp, esat, nbad)
+ real(kind=FMS_SVP_KIND_), intent(in)     :: temp !< temperature
+ real(kind=FMS_SVP_KIND_), intent(out)    :: esat !< saturation vapor pressure
+ integer, intent(out)     :: nbad !< if temperature is out of range
+ real(kind=FMS_SVP_KIND_) :: tmp  !< temp - TMINLL
+ real(kind=FMS_SVP_KIND_) :: del  !<  delta T
  integer :: ind
+ !> dtres, tminl, tepsl, dtinvl are module level variables declared in r8_kind precision
+ !! for precision consistency and for code readability, the *ll variables are declared
+ !! and used
+ real(kind=FMS_SVP_KIND_) :: dtresl
+ real(kind=FMS_SVP_KIND_) :: tepsll
+ real(kind=FMS_SVP_KIND_) :: tminll
+ real(kind=FMS_SVP_KIND_) :: dtinvll
+
+   dtresl=real(dtres, FMS_SVP_KIND_)
+   tminll=real(tminl, FMS_SVP_KIND_)
+   tepsll=real(tepsl, FMS_SVP_KIND_)
+   dtinvll=real(dtinvl, FMS_SVP_KIND_)
 
    nbad = 0
-   tmp = temp-tminl
-   ind = int(dtinvl*(tmp+tepsl))
+   tmp = temp-tminll
+   ind = int(dtinvll*(tmp+tepsll))
    if (ind < 0 .or. ind >= table_siz)  then
      nbad = nbad+1
    else
-     del = tmp-dtres*real(ind)
-     esat = TABLE(ind+1) + del*(DTABLE(ind+1) + del*D2TABLE(ind+1))
+      del = tmp-dtresl*real(ind,FMS_SVP_KIND_)
+      !> esat = TABLE + del*(TABLE + del*D2TABLE)
+      !! the coded equation below is the commented equation above
+      esat = real(TABLE(ind+1),FMS_SVP_KIND_) &
+            + del*( real(DTABLE(ind+1),FMS_SVP_KIND_) &
+                             + del*real(D2TABLE(ind+1),FMS_SVP_KIND_) )
    endif
 
- end subroutine lookup_es_k_0d
+ end subroutine LOOKUP_ES_K_0D_
 !#######################################################################
 
- subroutine lookup_es2_des2_k_3d (temp, esat, desat, nbad)
- real, intent(in),  dimension(:,:,:)  :: temp
- real, intent(out), dimension(:,:,:)  :: esat, desat
- integer, intent(out)                 :: nbad
+ subroutine LOOKUP_ES2_DES2_K_3D_ (temp, esat, desat, nbad)
+ real(kind=FMS_SVP_KIND_), intent(in),  dimension(:,:,:) :: temp  !< temperature
+ real(kind=FMS_SVP_KIND_), intent(out), dimension(:,:,:) :: esat  !< saturation vapor pressure
+ real(kind=FMS_SVP_KIND_), intent(out), dimension(:,:,:) :: desat !< derivative of sat vapor pressure
+ integer, intent(out)                                    :: nbad  !< if temperature is out of range
 
- real    :: tmp, del
+ real(kind=FMS_SVP_KIND_) :: tmp !< temp-TMINLL
+ real(kind=FMS_SVP_KIND_) :: del !< delta T
  integer :: ind, i, j, k
+ !> dtres, tminl, tepsl, dtinvl are module level variables declared in r8_kind precision
+ !! for precision consistency and for code readability, the *ll variables are declared
+ !! and used
+ real(kind=FMS_SVP_KIND_) :: dtresl
+ real(kind=FMS_SVP_KIND_) :: tepsll
+ real(kind=FMS_SVP_KIND_) :: tminll
+ real(kind=FMS_SVP_KIND_) :: dtinvll
+ integer, parameter :: lkind=FMS_SVP_KIND_ !< local FMS_SVP_KIND_
+
+   dtresl=real(dtres, FMS_SVP_KIND_)
+   tminll=real(tminl, FMS_SVP_KIND_)
+   tepsll=real(tepsl, FMS_SVP_KIND_)
+   dtinvll=real(dtinvl, FMS_SVP_KIND_)
 
    nbad = 0
    do k = 1, size(temp,3)
    do j = 1, size(temp,2)
    do i = 1, size(temp,1)
-     tmp = temp(i,j,k)-tminl
-     ind = int(dtinvl*(tmp+tepsl))
+     tmp = temp(i,j,k)-tminll
+     ind = int(dtinvll*(tmp+tepsll))
      if (ind < 0 .or. ind >= table_siz) then
        nbad = nbad+1
      else
-       del = tmp-dtres*real(ind)
-       esat(i,j,k) = TABLE2(ind+1) +  &
-                     del*(DTABLE2(ind+1) + del*D2TABLE2(ind+1))
-       desat(i,j,k) = DTABLE2(ind+1) + 2.*del*D2TABLE2(ind+1)
+        del = tmp-dtresl*real(ind,FMS_SVP_KIND_)
+        !> esat = TABLE + del*(TABLE + del*D2TABLE)
+        !! the coded equation below is the commented equation above
+        esat(i,j,k) = real(TABLE2(ind+1),FMS_SVP_KIND_) &
+                     + del*( real(DTABLE2(ind+1),FMS_SVP_KIND_) &
+                                + del*real(D2TABLE2(ind+1),FMS_SVP_KIND_) )
+        !> desat = DTABLE + 2del*D2TABLE
+        !! the coded equation below is the commented equation above
+        desat(i,j,k) = real(DTABLE2(ind+1),FMS_SVP_KIND_) &
+                      + 2.0_lkind*del*real(D2TABLE2(ind+1),FMS_SVP_KIND_)
      endif
    enddo
    enddo
    enddo
 
- end subroutine lookup_es2_des2_k_3d
+ end subroutine LOOKUP_ES2_DES2_K_3D_
 
 !#######################################################################
 
- subroutine lookup_es2_des2_k_2d (temp, esat, desat, nbad)
- real, intent(in),  dimension(:,:)  :: temp
- real, intent(out), dimension(:,:)  :: esat, desat
- integer, intent(out)               :: nbad
+ subroutine LOOKUP_ES2_DES2_K_2D_ (temp, esat, desat, nbad)
+ real(kind=FMS_SVP_KIND_), intent(in),  dimension(:,:)  :: temp  !< temperature
+ real(kind=FMS_SVP_KIND_), intent(out), dimension(:,:)  :: esat  !< saturation vapor pressure
+ real(kind=FMS_SVP_KIND_), intent(out), dimension(:,:)  :: desat !< derivative of sat vapor pressure
+ integer, intent(out)     :: nbad !< if temperature is out of range
 
- real    :: tmp, del
+ real(kind=FMS_SVP_KIND_) :: tmp  !< temp-TMINLL
+ real(kind=FMS_SVP_KIND_) :: del  !< delta T
  integer :: ind, i, j
+ !> dtres, tminl, tepsl, dtinvl are module level variables declared in r8_kind precision
+ !! for precision consistency and for code readability, the *ll variables are declared
+ !! and used
+ real(kind=FMS_SVP_KIND_) :: dtresl
+ real(kind=FMS_SVP_KIND_) :: tepsll
+ real(kind=FMS_SVP_KIND_) :: tminll
+ real(kind=FMS_SVP_KIND_) :: dtinvll
+ integer, parameter :: lkind=FMS_SVP_KIND_ !< local FMS_SVP_KIND_
+
+   dtresl=real(dtres, FMS_SVP_KIND_)
+   tminll=real(tminl, FMS_SVP_KIND_)
+   tepsll=real(tepsl, FMS_SVP_KIND_)
+   dtinvll=real(dtinvl, FMS_SVP_KIND_)
 
    nbad = 0
    do j = 1, size(temp,2)
    do i = 1, size(temp,1)
-     tmp = temp(i,j)-tminl
-     ind = int(dtinvl*(tmp+tepsl))
+     tmp = temp(i,j)-tminll
+     ind = int(dtinvll*(tmp+tepsll))
      if (ind < 0 .or. ind >= table_siz)  then
        nbad = nbad+1
      else
-       del = tmp-dtres*real(ind)
-       esat(i,j) = TABLE2(ind+1) + &
-                   del*(DTABLE2(ind+1) + del*D2TABLE2(ind+1))
-       desat(i,j) = DTABLE2(ind+1) + 2.*del*D2TABLE2(ind+1)
+        del = tmp-dtresl*real(ind,FMS_SVP_KIND_)
+        !> esat = TABLE + del*(TABLE + del*D2TABLE)
+        !! the coded equation below is the commented equation above
+        esat(i,j) = real(TABLE2(ind+1),FMS_SVP_KIND_) &
+                   + del*( real(DTABLE2(ind+1),FMS_SVP_KIND_) &
+                                 + del*real(D2TABLE2(ind+1),FMS_SVP_KIND_) )
+        !> desat = DTABLE + 2del*D2TABLE
+        !! the coded equation below is the commented equation above
+        desat(i,j) = real(DTABLE2(ind+1),FMS_SVP_KIND_) &
+                   + 2.0_lkind*del*real(D2TABLE2(ind+1),FMS_SVP_KIND_)
      endif
    enddo
    enddo
 
- end subroutine lookup_es2_des2_k_2d
+ end subroutine LOOKUP_ES2_DES2_K_2D_
 
 !#######################################################################
 
- subroutine lookup_es2_des2_k_1d (temp, esat, desat, nbad)
- real, intent(in),  dimension(:)  :: temp
- real, intent(out), dimension(:)  :: esat, desat
- integer, intent(out)             :: nbad
+ subroutine LOOKUP_ES2_DES2_K_1D_ (temp, esat, desat, nbad)
+ real(kind=FMS_SVP_KIND_), intent(in),  dimension(:)  :: temp  !< temperature
+ real(kind=FMS_SVP_KIND_), intent(out), dimension(:)  :: esat  !< saturation vapor pressure
+ real(kind=FMS_SVP_KIND_), intent(out), dimension(:)  :: desat !< derivative of sat vapor pressure
+ integer, intent(out)     :: nbad !< if temperature is out of range
 
- real    :: tmp, del
+ real(kind=FMS_SVP_KIND_) :: tmp  !< temp - TMINLL
+ real(kind=FMS_SVP_KIND_) :: del  !< delta T
  integer :: ind, i
+ !> dtres, tminl, tepsl, dtinvl are module level variables declared in r8_kind precision
+ !! for precision consistency and for code readability, the *ll variables are declared
+ !! and used
+ real(kind=FMS_SVP_KIND_) :: dtresl
+ real(kind=FMS_SVP_KIND_) :: tepsll
+ real(kind=FMS_SVP_KIND_) :: tminll
+ real(kind=FMS_SVP_KIND_) :: dtinvll
+ integer, parameter :: lkind=FMS_SVP_KIND_ !< local FMS_SVP_KIND_
+
+   dtresl=real(dtres, FMS_SVP_KIND_)
+   tminll=real(tminl, FMS_SVP_KIND_)
+   tepsll=real(tepsl, FMS_SVP_KIND_)
+   dtinvll=real(dtinvl, FMS_SVP_KIND_)
 
    nbad = 0
    do i = 1, size(temp,1)
-     tmp = temp(i)-tminl
-     ind = int(dtinvl*(tmp+tepsl))
+     tmp = temp(i)-tminll
+     ind = int(dtinvll*(tmp+tepsll))
      if (ind < 0 .or. ind >= table_siz)  then
        nbad = nbad+1
      else
-       del = tmp-dtres*real(ind)
-       esat(i) = TABLE2(ind+1) + &
-                   del*(DTABLE2(ind+1) + del*D2TABLE2(ind+1))
-       desat(i) = DTABLE2(ind+1) + 2.*del*D2TABLE2(ind+1)
+        del = tmp-dtresl*real(ind,FMS_SVP_KIND_)
+        !> esat = TABLE + del*(TABLE + del*D2TABLE)
+        !! the coded equation below is the commented equation above
+        esat(i) = real(TABLE2(ind+1),FMS_SVP_KIND_) &
+                 + del*( real(DTABLE2(ind+1),FMS_SVP_KIND_) &
+                 + del*real(D2TABLE2(ind+1),FMS_SVP_KIND_) )
+        !> desat = DTABLE + 2del*D2TABLE
+        desat(i) = real(DTABLE2(ind+1),FMS_SVP_KIND_) &
+                 + 2.0_lkind*del*real(D2TABLE2(ind+1),FMS_SVP_KIND_)
      endif
    enddo
 
- end subroutine lookup_es2_des2_k_1d
+ end subroutine LOOKUP_ES2_DES2_K_1D_
 
 !#######################################################################
 
- subroutine lookup_es2_des2_k_0d (temp, esat, desat, nbad)
- real, intent(in)     :: temp
- real, intent(out)    :: esat, desat
- integer, intent(out) :: nbad
+ subroutine LOOKUP_ES2_DES2_K_0D_ (temp, esat, desat, nbad)
+ real(kind=FMS_SVP_KIND_), intent(in)     :: temp  !< temperature
+ real(kind=FMS_SVP_KIND_), intent(out)    :: esat  !< saturation vapor pressure
+ real(kind=FMS_SVP_KIND_), intent(out)    :: desat !< derivative of sat vapor pressure
+ integer, intent(out) :: nbad    !< if temperature is out of range
 
- real    :: tmp, del
+ real(kind=FMS_SVP_KIND_) :: tmp !< temp-TMINLL
+ real(kind=FMS_SVP_KIND_) :: del !< delta T
  integer :: ind
+ !> dtres, tminl, tepsl, dtinvl are module level variables declared in r8_kind precision
+ !! for precision consistency and for code readability, the *ll variables are declared
+ !! and used
+ real(kind=FMS_SVP_KIND_) :: dtresl
+ real(kind=FMS_SVP_KIND_) :: tepsll
+ real(kind=FMS_SVP_KIND_) :: tminll
+ real(kind=FMS_SVP_KIND_) :: dtinvll
+ integer, parameter :: lkind=FMS_SVP_KIND_ !< local FMS_SVP_KIND_
+
+   dtresl=real(dtres, FMS_SVP_KIND_)
+   tminll=real(tminl, FMS_SVP_KIND_)
+   tepsll=real(tepsl, FMS_SVP_KIND_)
+   dtinvll=real(dtinvl, FMS_SVP_KIND_)
+
 
    nbad = 0
-   tmp = temp-tminl
-   ind = int(dtinvl*(tmp+tepsl))
+   tmp = temp-tminll
+   ind = int(dtinvll*(tmp+tepsll))
    if (ind < 0 .or. ind >= table_siz)  then
      nbad = nbad+1
    else
-     del = tmp-dtres*real(ind)
-     esat = TABLE2(ind+1) + &
-            del*(DTABLE2(ind+1) + del*D2TABLE2(ind+1))
-     desat = DTABLE2(ind+1) + 2.*del*D2TABLE2(ind+1)
+      del = tmp-dtresl*real(ind,FMS_SVP_KIND_)
+      !> esat = TABLE + del*(TABLE + del*D2TABLE)
+      !! the coded equation below is the commented equation above
+      esat = real(TABLE2(ind+1),FMS_SVP_KIND_) &
+            + del*( real(DTABLE2(ind+1),FMS_SVP_KIND_) &
+                          + del*real(D2TABLE2(ind+1),FMS_SVP_KIND_) )
+      !> desat = DTABLE + 2del*D2TABLE
+      !! the coded equation below is the commented equation above
+      desat = real(DTABLE2(ind+1),FMS_SVP_KIND_) &
+             + 2.0_lkind*del*real(D2TABLE2(ind+1),FMS_SVP_KIND_)
    endif
 
- end subroutine lookup_es2_des2_k_0d
+ end subroutine LOOKUP_ES2_DES2_K_0D_
 
 !#######################################################################
 
- subroutine lookup_es2_k_3d(temp, esat, nbad)
- real, intent(in),  dimension(:,:,:)  :: temp
- real, intent(out), dimension(:,:,:)  :: esat
- integer, intent(out) :: nbad
- real    :: tmp, del
+ subroutine LOOKUP_ES2_K_3D_(temp, esat, nbad)
+ real(kind=FMS_SVP_KIND_), intent(in),  dimension(:,:,:)  :: temp !< temperature
+ real(kind=FMS_SVP_KIND_), intent(out), dimension(:,:,:)  :: esat !< saturation vapor pressure
+ integer, intent(out)     :: nbad !< if temperature is out of range
+ real(kind=FMS_SVP_KIND_) :: tmp  !< temp-TMINLL
+ real(kind=FMS_SVP_KIND_) :: del  !< delta T
  integer :: ind, i, j, k
+ !> dtres, tminl, tepsl, dtinvl are module level variables declared in r8_kind precision
+ !! for precision consistency and for code readability, the *ll variables are declared
+ !! and used
+ real(kind=FMS_SVP_KIND_) :: dtresl
+ real(kind=FMS_SVP_KIND_) :: tepsll
+ real(kind=FMS_SVP_KIND_) :: tminll
+ real(kind=FMS_SVP_KIND_) :: dtinvll
+
+   dtresl=real(dtres, FMS_SVP_KIND_)
+   tminll=real(tminl, FMS_SVP_KIND_)
+   tepsll=real(tepsl, FMS_SVP_KIND_)
+   dtinvll=real(dtinvl, FMS_SVP_KIND_)
 
    nbad = 0
    do k = 1, size(temp,3)
    do j = 1, size(temp,2)
    do i = 1, size(temp,1)
-     tmp = temp(i,j,k)-tminl
-     ind = int(dtinvl*(tmp+tepsl))
+     tmp = temp(i,j,k)-tminll
+     ind = int(dtinvll*(tmp+tepsll))
      if (ind < 0 .or. ind >= table_siz)  then
        nbad = nbad+1
      else
-       del = tmp-dtres*real(ind)
-       esat(i,j,k) = TABLE2(ind+1) + &
-                     del*(DTABLE2(ind+1) + del*D2TABLE2(ind+1))
+       del = tmp-dtresl*real(ind,FMS_SVP_KIND_)
+       !> esat = TABLE + del*(TABLE + del*D2TABLE)
+       !! the coded equation below is the commented equation above
+       esat(i,j,k) = real(TABLE2(ind+1),FMS_SVP_KIND_) &
+                     + del*( real(DTABLE2(ind+1),FMS_SVP_KIND_) &
+                                  + del*real(D2TABLE2(ind+1),FMS_SVP_KIND_) )
      endif
    enddo
    enddo
    enddo
 
- end subroutine lookup_es2_k_3d
+ end subroutine LOOKUP_ES2_K_3D_
 
 !#######################################################################
 
- subroutine lookup_des2_k_3d(temp, desat, nbad)
- real, intent(in),  dimension(:,:,:)  :: temp
- real, intent(out), dimension(:,:,:)  :: desat
- integer, intent(out) :: nbad
- real    :: tmp, del
+ subroutine LOOKUP_DES2_K_3D_(temp, desat, nbad)
+ real(kind=FMS_SVP_KIND_), intent(in),  dimension(:,:,:)  :: temp  !< temperature
+ real(kind=FMS_SVP_KIND_), intent(out), dimension(:,:,:)  :: desat !< derivative of sat vapor pressure
+ integer, intent(out)     :: nbad !< if temperature is out of range
+ real(kind=FMS_SVP_KIND_) :: tmp  !< temp-TMINLL
+ real(kind=FMS_SVP_KIND_) :: del  !< delta T
  integer :: ind, i, j, k
+ !> dtres, tminl, tepsl, dtinvl are module level variables declared in r8_kind precision
+ !! for precision consistency and for code readability, the *ll variables are declared
+ !! and used
+ real(kind=FMS_SVP_KIND_) :: dtresl
+ real(kind=FMS_SVP_KIND_) :: tepsll
+ real(kind=FMS_SVP_KIND_) :: tminll
+ real(kind=FMS_SVP_KIND_) :: dtinvll
+ integer, parameter :: lkind=FMS_SVP_KIND_ !< local FMS_SVP_KIND_
+
+   dtresl=real(dtres, FMS_SVP_KIND_)
+   tminll=real(tminl, FMS_SVP_KIND_)
+   tepsll=real(tepsl, FMS_SVP_KIND_)
+   dtinvll=real(dtinvl, FMS_SVP_KIND_)
 
    nbad = 0
    do k = 1, size(temp,3)
    do j = 1, size(temp,2)
    do i = 1, size(temp,1)
-     tmp = temp(i,j,k)-tminl
-     ind = int(dtinvl*(tmp+tepsl))
+     tmp = temp(i,j,k)-tminll
+     ind = int(dtinvll*(tmp+tepsll))
      if (ind < 0 .or. ind >= table_siz)  then
        nbad = nbad+1
      else
-       del = tmp-dtres*real(ind)
-       desat(i,j,k) = DTABLE2(ind+1) + 2.*del*D2TABLE2(ind+1)
+       del = tmp-dtresl*real(ind,FMS_SVP_KIND_)
+       !> desat = DTABLE + 2del*D2TABLE
+       !! the coded equation below is the commented equation above
+       desat(i,j,k) = real(DTABLE2(ind+1),FMS_SVP_KIND_) &
+                      + 2.0_lkind*del*real(D2TABLE2(ind+1),FMS_SVP_KIND_)
      endif
    enddo
    enddo
    enddo
 
- end subroutine lookup_des2_k_3d
+ end subroutine LOOKUP_DES2_K_3D_
 
 !#######################################################################
- subroutine lookup_des2_k_2d(temp, desat, nbad)
- real, intent(in),  dimension(:,:)  :: temp
- real, intent(out), dimension(:,:)  :: desat
- integer, intent(out) :: nbad
- real    :: tmp, del
+ subroutine LOOKUP_DES2_K_2D_(temp, desat, nbad)
+ real(kind=FMS_SVP_KIND_), intent(in),  dimension(:,:)  :: temp  !< temperature
+ real(kind=FMS_SVP_KIND_), intent(out), dimension(:,:)  :: desat !< derivative of sat vapor pressure
+ integer, intent(out)     :: nbad !< if temperature is out of range
+ real(kind=FMS_SVP_KIND_) :: tmp  !< temp-TMINLL
+ real(kind=FMS_SVP_KIND_) :: del  !< delta T
  integer :: ind, i, j
+ !> dtres, tminl, tepsl, dtinvl are module level variables declared in r8_kind precision
+ !! for precision consistency and for code readability, the *ll variables are declared
+ !! and used
+ real(kind=FMS_SVP_KIND_) :: dtresl
+ real(kind=FMS_SVP_KIND_) :: tepsll
+ real(kind=FMS_SVP_KIND_) :: tminll
+ real(kind=FMS_SVP_KIND_) :: dtinvll
+ integer, parameter :: lkind=FMS_SVP_KIND_ !< local FMS_SVP_KIND_
+
+   dtresl=real(dtres, FMS_SVP_KIND_)
+   tminll=real(tminl, FMS_SVP_KIND_)
+   tepsll=real(tepsl, FMS_SVP_KIND_)
+   dtinvll=real(dtinvl, FMS_SVP_KIND_)
 
    nbad = 0
    do j = 1, size(temp,2)
    do i = 1, size(temp,1)
-     tmp = temp(i,j)-tminl
-     ind = int(dtinvl*(tmp+tepsl))
+     tmp = temp(i,j)-tminll
+     ind = int(dtinvll*(tmp+tepsll))
      if (ind < 0 .or. ind >= table_siz)  then
        nbad = nbad+1
      else
-       del = tmp-dtres*real(ind)
-       desat(i,j) = DTABLE2(ind+1) + 2.*del*D2TABLE2(ind+1)
+       del = tmp-dtresl*real(ind,FMS_SVP_KIND_)
+       !> desat = DTABLE + 2del*D2TABLE
+       !! the coded equation below is the commented equation above
+       desat(i,j) = real(DTABLE2(ind+1),FMS_SVP_KIND_) &
+                    + 2.0_lkind*del*real(D2TABLE2(ind+1),FMS_SVP_KIND_)
      endif
    enddo
    enddo
 
- end subroutine lookup_des2_k_2d
+ end subroutine LOOKUP_DES2_K_2D_
 !#######################################################################
- subroutine lookup_es2_k_2d(temp, esat, nbad)
- real, intent(in),  dimension(:,:)  :: temp
- real, intent(out), dimension(:,:)  :: esat
- integer, intent(out) :: nbad
- real    :: tmp, del
+ subroutine LOOKUP_ES2_K_2D_(temp, esat, nbad)
+ real(kind=FMS_SVP_KIND_), intent(in),  dimension(:,:)  :: temp !< temperature
+ real(kind=FMS_SVP_KIND_), intent(out), dimension(:,:)  :: esat !< saturation vapor pressure
+ integer, intent(out)     :: nbad !< if temperature is out of range
+ real(kind=FMS_SVP_KIND_) :: tmp  !< temp-TMINLL
+ real(kind=FMS_SVP_KIND_) :: del  !< delta T
  integer :: ind, i, j
+ !> dtres, tminl, tepsl, dtinvl are module level variables declared in r8_kind precision
+ !! for precision consistency and for code readability, the *ll variables are declared
+ !! and used
+ real(kind=FMS_SVP_KIND_) :: dtresl
+ real(kind=FMS_SVP_KIND_) :: tepsll
+ real(kind=FMS_SVP_KIND_) :: tminll
+ real(kind=FMS_SVP_KIND_) :: dtinvll
+
+   dtresl=real(dtres, FMS_SVP_KIND_)
+   tminll=real(tminl, FMS_SVP_KIND_)
+   tepsll=real(tepsl, FMS_SVP_KIND_)
+   dtinvll=real(dtinvl, FMS_SVP_KIND_)
 
    nbad = 0
    do j = 1, size(temp,2)
    do i = 1, size(temp,1)
-     tmp = temp(i,j)-tminl
-     ind = int(dtinvl*(tmp+tepsl))
+     tmp = temp(i,j)-tminll
+     ind = int(dtinvll*(tmp+tepsll))
      if (ind < 0 .or. ind >= table_siz)  then
        nbad = nbad+1
      else
-       del = tmp-dtres*real(ind)
-       esat(i,j) = TABLE2(ind+1) + del*(DTABLE2(ind+1) +   &
-                                                  del*D2TABLE2(ind+1))
+        del = tmp-dtresl*real(ind,kind=FMS_SVP_KIND_)
+        !> esat = TABLE + del*(TABLE + del*D2TABLE)
+        !! the coded equation below is the commented equation above
+        esat(i,j) = real(TABLE2(ind+1),FMS_SVP_KIND_) &
+                   + del*( real(DTABLE2(ind+1),FMS_SVP_KIND_) &
+                                   + del*real(D2TABLE2(ind+1),FMS_SVP_KIND_) )
      endif
    enddo
    enddo
 
- end subroutine lookup_es2_k_2d
+ end subroutine LOOKUP_ES2_K_2D_
 !#######################################################################
- subroutine lookup_des2_k_1d(temp, desat, nbad)
- real, intent(in),  dimension(:)  :: temp
- real, intent(out), dimension(:)  :: desat
- integer, intent(out) :: nbad
- real    :: tmp, del
+ subroutine LOOKUP_DES2_K_1D_(temp, desat, nbad)
+ real(kind=FMS_SVP_KIND_), intent(in),  dimension(:)  :: temp  !< temperature
+ real(kind=FMS_SVP_KIND_), intent(out), dimension(:)  :: desat !< derivative of sat vapor pressure
+ integer, intent(out)     :: nbad !< if temperature is out of range
+ real(kind=FMS_SVP_KIND_) :: tmp  !< temp-TMINLL
+ real(kind=FMS_SVP_KIND_) :: del  !< delta T
  integer :: ind, i
+ !> dtres, tminl, tepsl, dtinvl are module level variables declared in r8_kind precision
+ !! for precision consistency and for code readability, the *ll variables are declared
+ !! and used
+ real(kind=FMS_SVP_KIND_) :: dtresl
+ real(kind=FMS_SVP_KIND_) :: tepsll
+ real(kind=FMS_SVP_KIND_) :: tminll
+ real(kind=FMS_SVP_KIND_) :: dtinvll
+ integer, parameter :: lkind=FMS_SVP_KIND_ !< local FMS_SVP_KIND_
+
+   dtresl=real(dtres, FMS_SVP_KIND_)
+   tminll=real(tminl, FMS_SVP_KIND_)
+   tepsll=real(tepsl, FMS_SVP_KIND_)
+   dtinvll=real(dtinvl, FMS_SVP_KIND_)
 
    nbad = 0
    do i = 1, size(temp,1)
-     tmp = temp(i)-tminl
-     ind = int(dtinvl*(tmp+tepsl))
+     tmp = temp(i)-tminll
+     ind = int(dtinvll*(tmp+tepsll))
      if (ind < 0 .or. ind >= table_siz)  then
        nbad = nbad+1
      else
-       del = tmp-dtres*real(ind)
-       desat(i) = DTABLE2(ind+1) + 2.*del*D2TABLE2(ind+1)
+        del = tmp-dtresl*real(ind,FMS_SVP_KIND_)
+        !> desat = DTABLE + 2del*D2TABLE
+        !! the coded equation below is the commented equation above
+        desat(i) = real(DTABLE2(ind+1),FMS_SVP_KIND_) &
+                  + 2.0_lkind*del*real(D2TABLE2(ind+1),FMS_SVP_KIND_)
      endif
    enddo
 
- end subroutine lookup_des2_k_1d
+ end subroutine LOOKUP_DES2_K_1D_
 !#######################################################################
- subroutine lookup_es2_k_1d(temp, esat, nbad)
- real, intent(in),  dimension(:)  :: temp
- real, intent(out), dimension(:)  :: esat
- integer, intent(out) :: nbad
- real    :: tmp, del
+ subroutine LOOKUP_ES2_K_1D_(temp, esat, nbad)
+ real(kind=FMS_SVP_KIND_), intent(in),  dimension(:)  :: temp !< temperature
+ real(kind=FMS_SVP_KIND_), intent(out), dimension(:)  :: esat !< saturation vapor pressure
+ integer, intent(out)     :: nbad !< if temperature is out of range
+ real(kind=FMS_SVP_KIND_) :: tmp  !< temp-TMINLL
+ real(kind=FMS_SVP_KIND_) :: del  !< delta T
  integer :: ind, i
+ !> dtres, tminl, tepsl, dtinvl are module level variables declared in r8_kind precision
+ !! for precision consistency and for code readability, the *ll variables are declared
+ !! and used
+ real(kind=FMS_SVP_KIND_) :: dtresl
+ real(kind=FMS_SVP_KIND_) :: tepsll
+ real(kind=FMS_SVP_KIND_) :: tminll
+ real(kind=FMS_SVP_KIND_) :: dtinvll
+
+   dtresl=real(dtres, FMS_SVP_KIND_)
+   tminll=real(tminl, FMS_SVP_KIND_)
+   tepsll=real(tepsl, FMS_SVP_KIND_)
+   dtinvll=real(dtinvl, FMS_SVP_KIND_)
 
    nbad = 0
    do i = 1, size(temp,1)
-     tmp = temp(i)-tminl
-     ind = int(dtinvl*(tmp+tepsl))
+     tmp = temp(i)-tminll
+     ind = int(dtinvll*(tmp+tepsll))
      if (ind < 0 .or. ind >= table_siz)  then
        nbad = nbad+1
      else
-       del = tmp-dtres*real(ind)
-       esat(i) = TABLE2(ind+1) + del*(DTABLE2(ind+1) + del*D2TABLE2(ind+1))
+        del = tmp-dtresl*real(ind,FMS_SVP_KIND_)
+        !> esat = TABLE + del*(TABLE + del*D2TABLE)
+        !! the coded equation below is the commented equation above
+        esat(i) = real(TABLE2(ind+1),FMS_SVP_KIND_) &
+                 + del*( real(DTABLE2(ind+1),FMS_SVP_KIND_) &
+                               + del*real(D2TABLE2(ind+1),FMS_SVP_KIND_) )
      endif
    enddo
 
- end subroutine lookup_es2_k_1d
+ end subroutine LOOKUP_ES2_K_1D_
 !#######################################################################
- subroutine lookup_des2_k_0d(temp, desat, nbad)
- real, intent(in)     :: temp
- real, intent(out)    :: desat
- integer, intent(out) :: nbad
- real    :: tmp, del
+ subroutine LOOKUP_DES2_K_0D_(temp, desat, nbad)
+ real(kind=FMS_SVP_KIND_), intent(in)     :: temp  !< temperature
+ real(kind=FMS_SVP_KIND_), intent(out)    :: desat !< derivative of sat vapor pressure
+ integer, intent(out)        :: nbad !< if temperature is out of range
+ real(kind=FMS_SVP_KIND_)    :: tmp  !< temp-TMINLL
+ real(kind=FMS_SVP_KIND_)    :: del  !< delta T
  integer :: ind
+ !> dtres, tminl, tepsl, dtinvl are module level variables declared in r8_kind precision
+ !! for precision consistency and for code readability, the *ll variables are declared
+ !! and used
+ real(kind=FMS_SVP_KIND_) :: dtresl
+ real(kind=FMS_SVP_KIND_) :: tepsll
+ real(kind=FMS_SVP_KIND_) :: tminll
+ real(kind=FMS_SVP_KIND_) :: dtinvll
+ integer, parameter :: lkind=FMS_SVP_KIND_ !< local FMS_SVP_KIND_
+
+   dtresl=real(dtres, FMS_SVP_KIND_)
+   tminll=real(tminl, FMS_SVP_KIND_)
+   tepsll=real(tepsl, FMS_SVP_KIND_)
+   dtinvll=real(dtinvl, FMS_SVP_KIND_)
 
    nbad = 0
-   tmp = temp-tminl
-   ind = int(dtinvl*(tmp+tepsl))
+   tmp = temp-tminll
+   ind = int(dtinvll*(tmp+tepsll))
    if (ind < 0 .or. ind >= table_siz)  then
      nbad = nbad+1
    else
-     del = tmp-dtres*real(ind)
-     desat = DTABLE2(ind+1) + 2.*del*D2TABLE2(ind+1)
+      del = tmp-dtresl*real(ind,FMS_SVP_KIND_)
+      !> desat = DTABLE + 2del*D2TABLE
+      !! the coded equation below is the commented equation above
+      desat = real(DTABLE2(ind+1),FMS_SVP_KIND_) &
+            + 2.0_lkind*del*real(D2TABLE2(ind+1),FMS_SVP_KIND_)
    endif
 
- end subroutine lookup_des2_k_0d
+ end subroutine LOOKUP_DES2_K_0D_
 !#######################################################################
- subroutine lookup_es2_k_0d(temp, esat, nbad)
- real, intent(in)     :: temp
- real, intent(out)    :: esat
- integer, intent(out) :: nbad
- real    :: tmp, del
+ subroutine LOOKUP_ES2_K_0D_(temp, esat, nbad)
+ real(kind=FMS_SVP_KIND_), intent(in)     :: temp !< temperature
+ real(kind=FMS_SVP_KIND_), intent(out)    :: esat !< saturation vapor pressure
+ integer, intent(out)     :: nbad !< if temperature is out of range
+ real(kind=FMS_SVP_KIND_) :: tmp  !< temp-TMINLL
+ real(kind=FMS_SVP_KIND_) :: del  !< delta T
  integer :: ind
+ !> dtres, tminl, tepsl, dtinvl are module level variables declared in r8_kind precision
+ !! for precision consistency and for code readability, the *ll variables are declared
+ !! and used
+ real(kind=FMS_SVP_KIND_) :: dtresl
+ real(kind=FMS_SVP_KIND_) :: tepsll
+ real(kind=FMS_SVP_KIND_) :: tminll
+ real(kind=FMS_SVP_KIND_) :: dtinvll
+
+   dtresl=real(dtres, FMS_SVP_KIND_)
+   tminll=real(tminl, FMS_SVP_KIND_)
+   tepsll=real(tepsl, FMS_SVP_KIND_)
+   dtinvll=real(dtinvl, FMS_SVP_KIND_)
 
    nbad = 0
-   tmp = temp-tminl
-   ind = int(dtinvl*(tmp+tepsl))
+   tmp = temp-tminll
+   ind = int(dtinvll*(tmp+tepsll))
    if (ind < 0 .or. ind >= table_siz)  then
      nbad = nbad+1
    else
-     del = tmp-dtres*real(ind)
-     esat = TABLE2(ind+1) + del*(DTABLE2(ind+1) + del*D2TABLE2(ind+1))
+      del = tmp-dtresl*real(ind,FMS_SVP_KIND_)
+      !> esat = TABLE + del*(TABLE + del*D2TABLE)
+      !! the coded equation below is the commented equation above
+      esat = real(TABLE2(ind+1),FMS_SVP_KIND_) &
+            + del*( real(DTABLE2(ind+1),FMS_SVP_KIND_) &
+                       + del*real(D2TABLE2(ind+1),FMS_SVP_KIND_) )
    endif
 
- end subroutine lookup_es2_k_0d
+ end subroutine LOOKUP_ES2_K_0D_
 !#######################################################################
 
 !#######################################################################
 
- subroutine lookup_es3_des3_k_3d (temp, esat, desat, nbad)
- real, intent(in),  dimension(:,:,:)  :: temp
- real, intent(out), dimension(:,:,:)  :: esat, desat
- integer, intent(out)                 :: nbad
+ subroutine LOOKUP_ES3_DES3_K_3D_ (temp, esat, desat, nbad)
+ real(kind=FMS_SVP_KIND_), intent(in),  dimension(:,:,:)  :: temp  !< temperature
+ real(kind=FMS_SVP_KIND_), intent(out), dimension(:,:,:)  :: esat  !< saturation vapor pressure
+ real(kind=FMS_SVP_KIND_), intent(out), dimension(:,:,:)  :: desat !< derivative of esat
+ integer, intent(out)     :: nbad !< if temperature is out of range
 
- real    :: tmp, del
+ real(kind=FMS_SVP_KIND_) :: tmp  !< temp-TMINLL
+ real(kind=FMS_SVP_KIND_) :: del  !<  delta T
  integer :: ind, i, j, k
+ !> dtres, tminl, tepsl, dtinvl are module level variables declared in r8_kind precision
+ !! for precision consistency and for code readability, the *ll variables are declared
+ !! and used
+ real(kind=FMS_SVP_KIND_) :: dtresl
+ real(kind=FMS_SVP_KIND_) :: tepsll
+ real(kind=FMS_SVP_KIND_) :: tminll
+ real(kind=FMS_SVP_KIND_) :: dtinvll
+ integer, parameter :: lkind=FMS_SVP_KIND_ !< local FMS_SVP_KIND_
+
+   dtresl=real(dtres, FMS_SVP_KIND_)
+   tminll=real(tminl, FMS_SVP_KIND_)
+   tepsll=real(tepsl, FMS_SVP_KIND_)
+   dtinvll=real(dtinvl, FMS_SVP_KIND_)
 
    nbad = 0
    do k = 1, size(temp,3)
    do j = 1, size(temp,2)
    do i = 1, size(temp,1)
-     tmp = temp(i,j,k)-tminl
-     ind = int(dtinvl*(tmp+tepsl))
+     tmp = temp(i,j,k)-tminll
+     ind = int(dtinvll*(tmp+tepsll))
      if (ind < 0 .or. ind >= table_siz) then
        nbad = nbad+1
      else
-       del = tmp-dtres*real(ind)
-       esat(i,j,k) = TABLE3(ind+1) +  &
-                     del*(DTABLE3(ind+1) + del*D2TABLE3(ind+1))
-       desat(i,j,k) = DTABLE3(ind+1) + 2.*del*D2TABLE3(ind+1)
+        del = tmp-dtresl*real(ind,FMS_SVP_KIND_)
+        !> esat = TABLE + del*(TABLE + del*D2TABLE)
+        !! the coded equation below is the commented equation above
+        esat(i,j,k) = real(TABLE3(ind+1),FMS_SVP_KIND_) &
+                     + del*( real(DTABLE3(ind+1),FMS_SVP_KIND_) &
+                                  + del*real(D2TABLE3(ind+1),FMS_SVP_KIND_) )
+        !> desat = DTABLE + 2del*D2TABLE
+        !! the coded equation below is the commented equation above
+        desat(i,j,k) = real(DTABLE3(ind+1),FMS_SVP_KIND_) &
+                      + 2.0_lkind*del*real(D2TABLE3(ind+1),FMS_SVP_KIND_)
      endif
    enddo
    enddo
    enddo
 
- end subroutine lookup_es3_des3_k_3d
+ end subroutine LOOKUP_ES3_DES3_K_3D_
 
 !#######################################################################
 
- subroutine lookup_es3_des3_k_2d (temp, esat, desat, nbad)
- real, intent(in),  dimension(:,:)  :: temp
- real, intent(out), dimension(:,:)  :: esat, desat
- integer, intent(out)               :: nbad
+ subroutine LOOKUP_ES3_DES3_K_2D_ (temp, esat, desat, nbad)
+ real(kind=FMS_SVP_KIND_), intent(in),  dimension(:,:)  :: temp  !< temperature
+ real(kind=FMS_SVP_KIND_), intent(out), dimension(:,:)  :: esat  !< saturation vapor pressure
+ real(kind=FMS_SVP_KIND_), intent(out), dimension(:,:)  :: desat !< derivative of desat
+ integer, intent(out)     :: nbad !< if temperature is out of range
 
- real    :: tmp, del
+ real(kind=FMS_SVP_KIND_) :: tmp  !< temp-TMINLL
+ real(kind=FMS_SVP_KIND_) :: del  !< delta T
  integer :: ind, i, j
+ !> dtres, tminl, tepsl, dtinvl are module level variables declared in r8_kind precision
+ !! for precision consistency and for code readability, the *ll variables are declared
+ !! and used
+ real(kind=FMS_SVP_KIND_) :: dtresl
+ real(kind=FMS_SVP_KIND_) :: tepsll
+ real(kind=FMS_SVP_KIND_) :: tminll
+ real(kind=FMS_SVP_KIND_) :: dtinvll
+ integer, parameter :: lkind=FMS_SVP_KIND_ !< local FMS_SVP_KIND_
+
+   dtresl=real(dtres, FMS_SVP_KIND_)
+   tminll=real(tminl, FMS_SVP_KIND_)
+   tepsll=real(tepsl, FMS_SVP_KIND_)
+   dtinvll=real(dtinvl, FMS_SVP_KIND_)
 
    nbad = 0
    do j = 1, size(temp,2)
    do i = 1, size(temp,1)
-     tmp = temp(i,j)-tminl
-     ind = int(dtinvl*(tmp+tepsl))
+     tmp = temp(i,j)-tminll
+     ind = int(dtinvll*(tmp+tepsll))
      if (ind < 0 .or. ind >= table_siz)  then
        nbad = nbad+1
      else
-       del = tmp-dtres*real(ind)
-       esat(i,j) = TABLE3(ind+1) + &
-                   del*(DTABLE3(ind+1) + del*D2TABLE3(ind+1))
-       desat(i,j) = DTABLE3(ind+1) + 2.*del*D2TABLE3(ind+1)
+       del = tmp-dtresl*real(ind,FMS_SVP_KIND_)
+       !> esat = TABLE + del*(TABLE + del*D2TABLE)
+       !! the coded equation below is the commented equation above
+       esat(i,j) = real(TABLE3(ind+1),FMS_SVP_KIND_) &
+                   + del*( real(DTABLE3(ind+1),FMS_SVP_KIND_) &
+                   + del*real(D2TABLE3(ind+1),FMS_SVP_KIND_) )
+       !> desat = DTABLE + 2del*D2TABLE
+       !! the coded equation below is the commented equation above
+       desat(i,j) = real(DTABLE3(ind+1),FMS_SVP_KIND_) &
+                    + 2.0_lkind*del*real(D2TABLE3(ind+1),FMS_SVP_KIND_)
      endif
    enddo
    enddo
 
- end subroutine lookup_es3_des3_k_2d
+ end subroutine LOOKUP_ES3_DES3_K_2D_
 
 !#######################################################################
 
- subroutine lookup_es3_des3_k_1d (temp, esat, desat, nbad)
- real, intent(in),  dimension(:)  :: temp
- real, intent(out), dimension(:)  :: esat, desat
- integer, intent(out)             :: nbad
+ subroutine LOOKUP_ES3_DES3_K_1D_ (temp, esat, desat, nbad)
+ real(kind=FMS_SVP_KIND_), intent(in),  dimension(:)  :: temp  !< temperature
+ real(kind=FMS_SVP_KIND_), intent(out), dimension(:)  :: esat  !< saturation vapor pressure
+ real(kind=FMS_SVP_KIND_), intent(out), dimension(:)  :: desat !< derivative of esat
+ integer, intent(out)     :: nbad !< if temperature is out of range
 
- real    :: tmp, del
+ real(kind=FMS_SVP_KIND_) :: tmp  !< temp-TMINLL
+ real(kind=FMS_SVP_KIND_) :: del  !< delta T
  integer :: ind, i
+ !> dtres, tminl, tepsl, dtinvl are module level variables declared in r8_kind precision
+ !! for precision consistency and for code readability, the *ll variables are declared
+ !! and used
+ real(kind=FMS_SVP_KIND_) :: dtresl
+ real(kind=FMS_SVP_KIND_) :: tepsll
+ real(kind=FMS_SVP_KIND_) :: tminll
+ real(kind=FMS_SVP_KIND_) :: dtinvll
+ integer, parameter :: lkind=FMS_SVP_KIND_ !< local FMS_SVP_KIND_
+
+   dtresl=real(dtres, FMS_SVP_KIND_)
+   tminll=real(tminl, FMS_SVP_KIND_)
+   tepsll=real(tepsl, FMS_SVP_KIND_)
+   dtinvll=real(dtinvl, FMS_SVP_KIND_)
 
    nbad = 0
    do i = 1, size(temp,1)
-     tmp = temp(i)-tminl
-     ind = int(dtinvl*(tmp+tepsl))
+     tmp = temp(i)-tminll
+     ind = int(dtinvll*(tmp+tepsll))
      if (ind < 0 .or. ind >= table_siz)  then
        nbad = nbad+1
      else
-       del = tmp-dtres*real(ind)
-       esat(i) = TABLE3(ind+1) + &
-                   del*(DTABLE3(ind+1) + del*D2TABLE3(ind+1))
-       desat(i) = DTABLE3(ind+1) + 2.*del*D2TABLE3(ind+1)
+        del = tmp-dtresl*real(ind,FMS_SVP_KIND_)
+        !> esat = TABLE + del*(TABLE + del*D2TABLE)
+        !! the coded equation below is the commented equation above
+        esat(i) = real(TABLE3(ind+1),FMS_SVP_KIND_) &
+                 + del*( real(DTABLE3(ind+1),FMS_SVP_KIND_) &
+                 + del*real(D2TABLE3(ind+1),FMS_SVP_KIND_) )
+        !> desat = DTABLE + 2del*D2TABLE
+        !! the coded equation below is the commented equation above
+        desat(i) = real(DTABLE3(ind+1),FMS_SVP_KIND_) &
+                  + 2.0_lkind*del*real(D2TABLE3(ind+1),FMS_SVP_KIND_)
      endif
    enddo
 
- end subroutine lookup_es3_des3_k_1d
+ end subroutine LOOKUP_ES3_DES3_K_1D_
 
 !#######################################################################
 
- subroutine lookup_es3_des3_k_0d (temp, esat, desat, nbad)
- real, intent(in)     :: temp
- real, intent(out)    :: esat, desat
- integer, intent(out) :: nbad
+ subroutine LOOKUP_ES3_DES3_K_0D_ (temp, esat, desat, nbad)
+ real(kind=FMS_SVP_KIND_), intent(in)  :: temp  !< temperature
+ real(kind=FMS_SVP_KIND_), intent(out) :: esat  !< saturation vapor pressure
+ real(kind=FMS_SVP_KIND_), intent(out) :: desat !< derivative of esat
+ integer, intent(out)     :: nbad !< if temperature is out of range
 
- real    :: tmp, del
+ real(kind=FMS_SVP_KIND_) :: tmp  !< temp-TMINLL
+ real(kind=FMS_SVP_KIND_) :: del  !< delta T
  integer :: ind
+ !> dtres, tminl, tepsl, dtinvl are module level variables declared in r8_kind precision
+ !! for precision consistency and for code readability, the *ll variables are declared
+ !! and used
+ real(kind=FMS_SVP_KIND_) :: dtresl
+ real(kind=FMS_SVP_KIND_) :: tepsll
+ real(kind=FMS_SVP_KIND_) :: tminll
+ real(kind=FMS_SVP_KIND_) :: dtinvll
+ integer, parameter :: lkind=FMS_SVP_KIND_ !< local FMS_SVP_KIND_
+
+   dtresl=real(dtres, FMS_SVP_KIND_)
+   tminll=real(tminl, FMS_SVP_KIND_)
+   tepsll=real(tepsl, FMS_SVP_KIND_)
+   dtinvll=real(dtinvl, FMS_SVP_KIND_)
 
    nbad = 0
-   tmp = temp-tminl
-   ind = int(dtinvl*(tmp+tepsl))
+   tmp = temp-tminll
+   ind = int(dtinvll*(tmp+tepsll))
    if (ind < 0 .or. ind >= table_siz)  then
      nbad = nbad+1
    else
-     del = tmp-dtres*real(ind)
-     esat = TABLE3(ind+1) + &
-            del*(DTABLE3(ind+1) + del*D2TABLE3(ind+1))
-     desat = DTABLE3(ind+1) + 2.*del*D2TABLE3(ind+1)
+      del = tmp-dtresl*real(ind,FMS_SVP_KIND_)
+      !> esat = TABLE + del*(TABLE + del*D2TABLE)
+      !! the coded equation below is the commented equation above
+      esat = real(TABLE3(ind+1),FMS_SVP_KIND_) &
+            + del*( real(DTABLE3(ind+1),FMS_SVP_KIND_) &
+                           + del*real(D2TABLE3(ind+1),FMS_SVP_KIND_) )
+      !> desat = DTABLE + 2del*D2TABLE
+      !! the coded equation below is the commented equation above
+      desat = real(DTABLE3(ind+1),FMS_SVP_KIND_) &
+             + 2.0_lkind*del*real(D2TABLE3(ind+1),FMS_SVP_KIND_)
    endif
 
- end subroutine lookup_es3_des3_k_0d
+ end subroutine LOOKUP_ES3_DES3_K_0D_
 
 !#######################################################################
 
- subroutine lookup_es3_k_3d(temp, esat, nbad)
- real, intent(in),  dimension(:,:,:)  :: temp
- real, intent(out), dimension(:,:,:)  :: esat
- integer, intent(out) :: nbad
- real    :: tmp, del
+ subroutine LOOKUP_ES3_K_3D_(temp, esat, nbad)
+ real(kind=FMS_SVP_KIND_), intent(in),  dimension(:,:,:)  :: temp !< temperature
+ real(kind=FMS_SVP_KIND_), intent(out), dimension(:,:,:)  :: esat !< saturation vapor pressure
+ integer, intent(out)     :: nbad !< if temperature is out of range
+ real(kind=FMS_SVP_KIND_) :: tmp  !< temp-TMINLL
+ real(kind=FMS_SVP_KIND_) :: del  !< delta T
  integer :: ind, i, j, k
+ !> dtres, tminl, tepsl, dtinvl are module level variables declared in r8_kind precision
+ !! for precision consistency and for code readability, the *ll variables are declared
+ !! and used
+ real(kind=FMS_SVP_KIND_) :: dtresl
+ real(kind=FMS_SVP_KIND_) :: tepsll
+ real(kind=FMS_SVP_KIND_) :: tminll
+ real(kind=FMS_SVP_KIND_) :: dtinvll
+
+   dtresl=real(dtres, FMS_SVP_KIND_)
+   tminll=real(tminl, FMS_SVP_KIND_)
+   tepsll=real(tepsl, FMS_SVP_KIND_)
+   dtinvll=real(dtinvl, FMS_SVP_KIND_)
 
    nbad = 0
    do k = 1, size(temp,3)
    do j = 1, size(temp,2)
    do i = 1, size(temp,1)
-     tmp = temp(i,j,k)-tminl
-     ind = int(dtinvl*(tmp+tepsl))
+     tmp = temp(i,j,k)-tminll
+     ind = int(dtinvll*(tmp+tepsll))
      if (ind < 0 .or. ind >= table_siz)  then
        nbad = nbad+1
      else
-       del = tmp-dtres*real(ind)
-       esat(i,j,k) = TABLE3(ind+1) + &
-                     del*(DTABLE3(ind+1) + del*D2TABLE3(ind+1))
+       del = tmp-dtresl*real(ind,FMS_SVP_KIND_)
+       !> esat = TABLE + del*(TABLE + del*D2TABLE)
+       !! the coded equation below is the commented equation above
+       esat(i,j,k) = real(TABLE3(ind+1),FMS_SVP_KIND_) &
+                     + del*( real(DTABLE3(ind+1),FMS_SVP_KIND_) &
+                                    + del*real(D2TABLE3(ind+1),FMS_SVP_KIND_) )
      endif
    enddo
    enddo
    enddo
 
- end subroutine lookup_es3_k_3d
+ end subroutine LOOKUP_ES3_K_3D_
 
 !#######################################################################
 
- subroutine lookup_des3_k_3d(temp, desat, nbad)
- real, intent(in),  dimension(:,:,:)  :: temp
- real, intent(out), dimension(:,:,:)  :: desat
- integer, intent(out) :: nbad
- real    :: tmp, del
+ subroutine LOOKUP_DES3_K_3D_(temp, desat, nbad)
+ real(kind=FMS_SVP_KIND_), intent(in),  dimension(:,:,:)  :: temp !< temperature
+ real(kind=FMS_SVP_KIND_), intent(out), dimension(:,:,:)  :: desat!< derivatove of saturation vap pressure
+ integer, intent(out)     :: nbad !< if temperature is out of range
+ real(kind=FMS_SVP_KIND_) :: tmp  !< temp-TMINLL
+ real(kind=FMS_SVP_KIND_) :: del  !< delta T
  integer :: ind, i, j, k
+ !> dtres, tminl, tepsl, dtinvl are module level variables declared in r8_kind precision
+ !! for precision consistency and for code readability, the *ll variables are declared
+ !! and used
+ real(kind=FMS_SVP_KIND_) :: dtresl
+ real(kind=FMS_SVP_KIND_) :: tepsll
+ real(kind=FMS_SVP_KIND_) :: tminll
+ real(kind=FMS_SVP_KIND_) :: dtinvll
+ integer, parameter :: lkind=FMS_SVP_KIND_ !< local FMS_SVP_KIND_
+
+   dtresl=real(dtres, FMS_SVP_KIND_)
+   tminll=real(tminl, FMS_SVP_KIND_)
+   tepsll=real(tepsl, FMS_SVP_KIND_)
+   dtinvll=real(dtinvl, FMS_SVP_KIND_)
 
    nbad = 0
    do k = 1, size(temp,3)
    do j = 1, size(temp,2)
    do i = 1, size(temp,1)
-     tmp = temp(i,j,k)-tminl
-     ind = int(dtinvl*(tmp+tepsl))
+     tmp = temp(i,j,k)-tminll
+     ind = int(dtinvll*(tmp+tepsll))
      if (ind < 0 .or. ind >= table_siz)  then
        nbad = nbad+1
      else
-       del = tmp-dtres*real(ind)
-       desat(i,j,k) = DTABLE3(ind+1) + 2.*del*D2TABLE3(ind+1)
+        del = tmp-dtresl*real(ind,FMS_SVP_KIND_)
+        !> desat = DTABLE + 2del*D2TABLE
+        !! the coded equation below is the commented equation above
+        desat(i,j,k) = real(DTABLE3(ind+1),FMS_SVP_KIND_) &
+                      + 2.0_lkind*del*real(D2TABLE3(ind+1),FMS_SVP_KIND_)
      endif
    enddo
    enddo
    enddo
 
- end subroutine lookup_des3_k_3d
+ end subroutine LOOKUP_DES3_K_3D_
 
 !#######################################################################
- subroutine lookup_des3_k_2d(temp, desat, nbad)
- real, intent(in),  dimension(:,:)  :: temp
- real, intent(out), dimension(:,:)  :: desat
- integer, intent(out) :: nbad
- real    :: tmp, del
+ subroutine LOOKUP_DES3_K_2D_(temp, desat, nbad)
+ real(kind=FMS_SVP_KIND_), intent(in),  dimension(:,:)  :: temp  !< temperature
+ real(kind=FMS_SVP_KIND_), intent(out), dimension(:,:)  :: desat !< derivative of sat vapor pressure
+ integer, intent(out)     :: nbad !< if temperature is out of range
+ real(kind=FMS_SVP_KIND_) :: tmp  !< temp-TMINLL
+ real(kind=FMS_SVP_KIND_) :: del  !< delta T
  integer :: ind, i, j
+ !> dtres, tminl, tepsl, dtinvl are module level variables declared in r8_kind precision
+ !! for precision consistency and for code readability, the *ll variables are declared
+ !! and used
+ real(kind=FMS_SVP_KIND_) :: dtresl
+ real(kind=FMS_SVP_KIND_) :: tepsll
+ real(kind=FMS_SVP_KIND_) :: tminll
+ real(kind=FMS_SVP_KIND_) :: dtinvll
+ integer, parameter :: lkind=FMS_SVP_KIND_ !< local FMS_SVP_KIND_
+
+   dtresl=real(dtres, FMS_SVP_KIND_)
+   tminll=real(tminl, FMS_SVP_KIND_)
+   tepsll=real(tepsl, FMS_SVP_KIND_)
+   dtinvll=real(dtinvl, FMS_SVP_KIND_)
 
    nbad = 0
    do j = 1, size(temp,2)
    do i = 1, size(temp,1)
-     tmp = temp(i,j)-tminl
-     ind = int(dtinvl*(tmp+tepsl))
+     tmp = temp(i,j)-tminll
+     ind = int(dtinvll*(tmp+tepsll))
      if (ind < 0 .or. ind >= table_siz)  then
        nbad = nbad+1
      else
-       del = tmp-dtres*real(ind)
-       desat(i,j) = DTABLE3(ind+1) + 2.*del*D2TABLE3(ind+1)
+        del = tmp-dtresl*real(ind,FMS_SVP_KIND_)
+        !> desat = DTABLE + 2del*D2TABLE
+        !! the coded equation below is the commented equation above
+        desat(i,j) = real(DTABLE3(ind+1),FMS_SVP_KIND_) &
+                    + 2.0_lkind*del*real(D2TABLE3(ind+1),FMS_SVP_KIND_)
      endif
    enddo
    enddo
 
- end subroutine lookup_des3_k_2d
+ end subroutine LOOKUP_DES3_K_2D_
 !#######################################################################
- subroutine lookup_es3_k_2d(temp, esat, nbad)
- real, intent(in),  dimension(:,:)  :: temp
- real, intent(out), dimension(:,:)  :: esat
- integer, intent(out) :: nbad
- real    :: tmp, del
+ subroutine LOOKUP_ES3_K_2D_(temp, esat, nbad)
+ real(kind=FMS_SVP_KIND_), intent(in),  dimension(:,:)  :: temp !< temperature
+ real(kind=FMS_SVP_KIND_), intent(out), dimension(:,:)  :: esat !< saturation vapor pressure
+ integer, intent(out)     :: nbad !< if temperature is out of range
+ real(kind=FMS_SVP_KIND_) :: tmp  !< temp-TMINLL
+ real(kind=FMS_SVP_KIND_) :: del  !< delta T
  integer :: ind, i, j
+ !> dtres, tminl, tepsl, dtinvl are module level variables declared in r8_kind precision
+ !! for precision consistency and for code readability, the *ll variables are declared
+ !! and used
+ real(kind=FMS_SVP_KIND_) :: dtresl
+ real(kind=FMS_SVP_KIND_) :: tepsll
+ real(kind=FMS_SVP_KIND_) :: tminll
+ real(kind=FMS_SVP_KIND_) :: dtinvll
+
+   dtresl=real(dtres, FMS_SVP_KIND_)
+   tminll=real(tminl, FMS_SVP_KIND_)
+   tepsll=real(tepsl, FMS_SVP_KIND_)
+   dtinvll=real(dtinvl, FMS_SVP_KIND_)
 
    nbad = 0
    do j = 1, size(temp,2)
    do i = 1, size(temp,1)
-     tmp = temp(i,j)-tminl
-     ind = int(dtinvl*(tmp+tepsl))
+     tmp = temp(i,j)-tminll
+     ind = int(dtinvll*(tmp+tepsll))
      if (ind < 0 .or. ind >= table_siz)  then
        nbad = nbad+1
      else
-       del = tmp-dtres*real(ind)
-       esat(i,j) = TABLE3(ind+1) + del*(DTABLE3(ind+1) +   &
-                                                  del*D2TABLE3(ind+1))
+        del = tmp-dtresl*real(ind,FMS_SVP_KIND_)
+        !> esat = TABLE + del*(TABLE + del*D2TABLE)
+        !! the coded equation below is the commented equation above
+        esat(i,j) = real(TABLE3(ind+1),FMS_SVP_KIND_) &
+                   + del*( real(DTABLE3(ind+1),FMS_SVP_KIND_) &
+                                 + del*real(D2TABLE3(ind+1),FMS_SVP_KIND_) )
      endif
    enddo
    enddo
 
- end subroutine lookup_es3_k_2d
+ end subroutine LOOKUP_ES3_K_2D_
 !#######################################################################
- subroutine lookup_des3_k_1d(temp, desat, nbad)
- real, intent(in),  dimension(:)  :: temp
- real, intent(out), dimension(:)  :: desat
- integer, intent(out) :: nbad
- real    :: tmp, del
+ subroutine LOOKUP_DES3_K_1D_(temp, desat, nbad)
+ real(kind=FMS_SVP_KIND_), intent(in),  dimension(:)  :: temp  !< temperature
+ real(kind=FMS_SVP_KIND_), intent(out), dimension(:)  :: desat !< derivative of sat vapor pressure
+ integer, intent(out)     :: nbad !< if temperature is out of range
+ real(kind=FMS_SVP_KIND_) :: tmp  !< temp-TMINLL
+ real(kind=FMS_SVP_KIND_) :: del  !< delta T
  integer :: ind, i
+ !> dtres, tminl, tepsl, dtinvl are module level variables declared in r8_kind precision
+ !! for precision consistency and for code readability, the *ll variables are declared
+ !! and used
+ real(kind=FMS_SVP_KIND_) :: dtresl
+ real(kind=FMS_SVP_KIND_) :: tepsll
+ real(kind=FMS_SVP_KIND_) :: tminll
+ real(kind=FMS_SVP_KIND_) :: dtinvll
+ integer, parameter :: lkind=FMS_SVP_KIND_ !< local FMS_SVP_KIND_
+
+   dtresl=real(dtres, FMS_SVP_KIND_)
+   tminll=real(tminl, FMS_SVP_KIND_)
+   tepsll=real(tepsl, FMS_SVP_KIND_)
+   dtinvll=real(dtinvl, FMS_SVP_KIND_)
 
    nbad = 0
    do i = 1, size(temp,1)
-     tmp = temp(i)-tminl
-     ind = int(dtinvl*(tmp+tepsl))
+     tmp = temp(i)-tminll
+     ind = int(dtinvll*(tmp+tepsll))
      if (ind < 0 .or. ind >= table_siz)  then
        nbad = nbad+1
      else
-       del = tmp-dtres*real(ind)
-       desat(i) = DTABLE3(ind+1) + 2.*del*D2TABLE3(ind+1)
+        del = tmp-dtresl*real(ind,FMS_SVP_KIND_)
+        !> desat = DTABLE + 2del*D2TABLE
+        !! the coded equation below is the commented equation above
+        desat(i) = real(DTABLE3(ind+1),FMS_SVP_KIND_) &
+                  + 2.0_lkind*del*real(D2TABLE3(ind+1),FMS_SVP_KIND_)
      endif
    enddo
 
- end subroutine lookup_des3_k_1d
+ end subroutine LOOKUP_DES3_K_1D_
 !#######################################################################
- subroutine lookup_es3_k_1d(temp, esat, nbad)
- real, intent(in),  dimension(:)  :: temp
- real, intent(out), dimension(:)  :: esat
- integer, intent(out) :: nbad
- real    :: tmp, del
+ subroutine LOOKUP_ES3_K_1D_(temp, esat, nbad)
+ real(kind=FMS_SVP_KIND_), intent(in),  dimension(:)  :: temp !< temperature
+ real(kind=FMS_SVP_KIND_), intent(out), dimension(:)  :: esat !< saturation vapor pressure
+ integer, intent(out)     :: nbad !< if temperature is out of range
+ real(kind=FMS_SVP_KIND_) :: tmp  !< temp-TMINLL
+ real(kind=FMS_SVP_KIND_) :: del  !< delta T
  integer :: ind, i
+ !> dtres, tminl, tepsl, dtinvl are module level variables declared in r8_kind precision
+ !! for precision consistency and for code readability, the *ll variables are declared
+ !! and used
+ real(kind=FMS_SVP_KIND_) :: dtresl
+ real(kind=FMS_SVP_KIND_) :: tepsll
+ real(kind=FMS_SVP_KIND_) :: tminll
+ real(kind=FMS_SVP_KIND_) :: dtinvll
+
+   dtresl=real(dtres, FMS_SVP_KIND_)
+   tminll=real(tminl, FMS_SVP_KIND_)
+   tepsll=real(tepsl, FMS_SVP_KIND_)
+   dtinvll=real(dtinvl, FMS_SVP_KIND_)
 
    nbad = 0
    do i = 1, size(temp,1)
-     tmp = temp(i)-tminl
-     ind = int(dtinvl*(tmp+tepsl))
+     tmp = temp(i)-tminll
+     ind = int(dtinvll*(tmp+tepsll))
      if (ind < 0 .or. ind >= table_siz)  then
        nbad = nbad+1
      else
-       del = tmp-dtres*real(ind)
-       esat(i) = TABLE3(ind+1) + del*(DTABLE3(ind+1) + del*D2TABLE3(ind+1))
+        del = tmp-dtresl*real(ind,FMS_SVP_KIND_)
+        !> esat = TABLE + del*(TABLE + del*D2TABLE)
+        !! the coded equation below is the commented equation above
+        esat(i) = real(TABLE3(ind+1),FMS_SVP_KIND_) &
+                 + del*( real(DTABLE3(ind+1),FMS_SVP_KIND_) &
+                                + del*real(D2TABLE3(ind+1),FMS_SVP_KIND_) )
      endif
    enddo
 
- end subroutine lookup_es3_k_1d
+ end subroutine LOOKUP_ES3_K_1D_
 !#######################################################################
- subroutine lookup_des3_k_0d(temp, desat, nbad)
- real, intent(in)     :: temp
- real, intent(out)    :: desat
- integer, intent(out) :: nbad
- real    :: tmp, del
+ subroutine LOOKUP_DES3_K_0D_(temp, desat, nbad)
+ real(kind=FMS_SVP_KIND_), intent(in)  :: temp  !< temperature
+ real(kind=FMS_SVP_KIND_), intent(out) :: desat !< derivative of sat vapor pressure
+ integer, intent(out)     :: nbad !< if temperature is out of range
+ real(kind=FMS_SVP_KIND_) :: tmp  !< temp-TMINLL
+ real(kind=FMS_SVP_KIND_) :: del  !< delta T
  integer :: ind
+ !> dtres, tminl, tepsl, dtinvl are module level variables declared in r8_kind precision
+ !! for precision consistency and for code readability, the *ll variables are declared
+ !! and used
+ real(kind=FMS_SVP_KIND_) :: dtresl
+ real(kind=FMS_SVP_KIND_) :: tepsll
+ real(kind=FMS_SVP_KIND_) :: tminll
+ real(kind=FMS_SVP_KIND_) :: dtinvll
+ integer, parameter :: lkind=FMS_SVP_KIND_ !< local FMS_SVP_KIND_
+
+   dtresl=real(dtres, FMS_SVP_KIND_)
+   tminll=real(tminl, FMS_SVP_KIND_)
+   tepsll=real(tepsl, FMS_SVP_KIND_)
+   dtinvll=real(dtinvl, FMS_SVP_KIND_)
 
    nbad = 0
-   tmp = temp-tminl
-   ind = int(dtinvl*(tmp+tepsl))
+   tmp = temp-tminll
+   ind = int(dtinvll*(tmp+tepsll))
    if (ind < 0 .or. ind >= table_siz)  then
      nbad = nbad+1
    else
-     del = tmp-dtres*real(ind)
-     desat = DTABLE3(ind+1) + 2.*del*D2TABLE3(ind+1)
+      del = tmp-dtresl*real(ind,FMS_SVP_KIND_)
+      !> desat = DTABLE + 2del*D2TABLE
+      !! the coded equation below is the commented equation above
+      desat = real(DTABLE3(ind+1),FMS_SVP_KIND_) &
+             + 2.0_lkind*del*real(D2TABLE3(ind+1),FMS_SVP_KIND_)
    endif
 
- end subroutine lookup_des3_k_0d
+ end subroutine LOOKUP_DES3_K_0D_
 !#######################################################################
- subroutine lookup_es3_k_0d(temp, esat, nbad)
- real, intent(in)     :: temp
- real, intent(out)    :: esat
- integer, intent(out) :: nbad
- real    :: tmp, del
+ subroutine LOOKUP_ES3_K_0D_(temp, esat, nbad)
+ real(kind=FMS_SVP_KIND_), intent(in)     :: temp !< temperature
+ real(kind=FMS_SVP_KIND_), intent(out)    :: esat !< saturation vapor pressure
+ integer, intent(out)     :: nbad !< if temperature is out of range
+ real(kind=FMS_SVP_KIND_) :: tmp  !< temp-TMINLL
+ real(kind=FMS_SVP_KIND_) :: del  !< delta T
  integer :: ind
+ !> dtres, tminl, tepsl, dtinvl are module level variables declared in r8_kind precision
+ !! for precision consistency and for code readability, the *ll variables are declared
+ !! and used
+ real(kind=FMS_SVP_KIND_) :: dtresl
+ real(kind=FMS_SVP_KIND_) :: tepsll
+ real(kind=FMS_SVP_KIND_) :: tminll
+ real(kind=FMS_SVP_KIND_) :: dtinvll
+
+   dtresl=real(dtres, FMS_SVP_KIND_)
+   tminll=real(tminl, FMS_SVP_KIND_)
+   tepsll=real(tepsl, FMS_SVP_KIND_)
+   dtinvll=real(dtinvl, FMS_SVP_KIND_)
 
    nbad = 0
-   tmp = temp-tminl
-   ind = int(dtinvl*(tmp+tepsl))
+   tmp = temp-tminll
+   ind = int(dtinvll*(tmp+tepsll))
    if (ind < 0 .or. ind >= table_siz)  then
      nbad = nbad+1
    else
-     del = tmp-dtres*real(ind)
-     esat = TABLE3(ind+1) + del*(DTABLE3(ind+1) + del*D2TABLE3(ind+1))
+      del = tmp-dtresl*real(ind,FMS_SVP_KIND_)
+      !> esat = TABLE + del*(TABLE + del*D2TABLE)
+      !! the coded equation below is the commented equation above
+      esat = real(TABLE3(ind+1),FMS_SVP_KIND_) &
+            + del*( real(DTABLE3(ind+1),FMS_SVP_KIND_) &
+                          + del*real(D2TABLE3(ind+1),FMS_SVP_KIND_) )
    endif
 
- end subroutine lookup_es3_k_0d
+ end subroutine LOOKUP_ES3_K_0D_
 !#######################################################################
- end module sat_vapor_pres_k_mod
 !> @}
 ! close documentation grouping
