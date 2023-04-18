@@ -20,7 +20,7 @@ module fms_diag_object_mod
 use mpp_mod, only: fatal, note, warning, mpp_error, mpp_pe, mpp_root_pe, stdout
 use diag_data_mod,  only: diag_null, diag_not_found, diag_not_registered, diag_registered_id, &
                          &DIAG_FIELD_NOT_FOUND, diag_not_registered, max_axes, TWO_D_DOMAIN, &
-                         &get_base_time
+                         &get_base_time, NULL_AXIS_ID
   USE time_manager_mod, ONLY: set_time, set_date, get_time, time_type, OPERATOR(>=), OPERATOR(>),&
        & OPERATOR(<), OPERATOR(==), OPERATOR(/=), OPERATOR(/), OPERATOR(+), ASSIGNMENT(=), get_date, &
        & get_ticks_per_second
@@ -28,7 +28,7 @@ use diag_data_mod,  only: diag_null, diag_not_found, diag_not_registered, diag_r
 use fms_diag_file_object_mod, only: fmsDiagFileContainer_type, fmsDiagFile_type, fms_diag_files_object_init
 use fms_diag_field_object_mod, only: fmsDiagField_type, fms_diag_fields_object_init
 use fms_diag_yaml_mod, only: diag_yaml_object_init, diag_yaml_object_end, find_diag_field, &
-                            & get_diag_files_id, diag_yaml
+                           & get_diag_files_id, diag_yaml
 use fms_diag_axis_object_mod, only: fms_diag_axis_object_init, fmsDiagAxis_type, fmsDiagSubAxis_type, &
                                    &diagDomain_t, get_domain_and_domain_type, diagDomain2d_t, &
                                    &fmsDiagAxisContainer_type, fms_diag_axis_object_end, fmsDiagFullAxis_type, &
@@ -789,7 +789,15 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
 axis_name=" "
 #else
     if (axis_id < 0 .and. axis_id > this%registered_axis) &
-    call mpp_error(FATAL, "fms_get_axis_length: The axis_id is not valid")
+      call mpp_error(FATAL, "fms_get_axis_length: The axis_id is not valid")
+
+    !! if its a scalar (null axis id) just returns the old default axes name for scalars
+    if (axis_id .eq. NULL_AXIS_ID) then
+      allocate(character(len=11) :: axis_name)
+      axis_name = "scalar_axis"
+      return
+    endif
+
 
     select type (axis => this%diag_axis(axis_id)%axis)
     type is (fmsDiagFullAxis_type)
