@@ -360,7 +360,8 @@ function get_calendar_time_wrap(time_increment, units, calendar, permit_calendar
   logical, intent(in), optional :: permit_calendar_conversion
   type(time_type)               :: get_calendar_time_wrap
 
-  get_calendar_time_wrap = get_cal_time( real(time_increment, r8_kind), units, calendar, permit_calendar_conversion=permit_calendar_conversion)
+  get_calendar_time_wrap = get_cal_time( real(time_increment, r8_kind), units, calendar, &
+                                         permit_calendar_conversion=permit_calendar_conversion)
 end function
 
 !------------------------------------------------------------------------
