@@ -34,7 +34,7 @@ use time_manager_mod, only: time_type, operator(+), operator(-), set_time, get_t
                             set_calendar_type, get_calendar_type, set_date, &
                             get_date, days_in_month, valid_calendar_types
 use mpp_mod,          only: input_nml_file
-use platform_mod,     only: r8_kind
+use platform_mod,     only: r8_kind, r4_kind
 
 implicit none
 private
@@ -59,6 +59,14 @@ namelist / get_cal_time_nml / allow_calendar_conversion
 
 ! Include variable "version" to be written to log file.
 #include<file_version.h>
+
+!> Added for mixed precision support.
+!! Updates force time_manager math to be done with kind=8 reals
+!! _wrap just casts a passed in r4 to r8 and calls r8 version
+interface get_cal_time
+  module procedure get_calendar_time
+  module procedure get_calendar_time_wrap
+end interface
 
 contains
 !> @brief Calculates what a given calendar time would be after a interval of time
@@ -151,12 +159,12 @@ contains
 !!
 !! @note This option was originally coded to allow noleap calendar as input when
 !! the julian calendar was in effect by the time_manager.
-function get_cal_time(time_increment, units, calendar, permit_calendar_conversion)
+function get_calendar_time(time_increment, units, calendar, permit_calendar_conversion)
 real(r8_kind), intent(in) :: time_increment
 character(len=*), intent(in) :: units
 character(len=*), intent(in) :: calendar
 logical, intent(in), optional :: permit_calendar_conversion
-type(time_type) :: get_cal_time
+type(time_type) :: get_calendar_time
 integer :: year, month, day, hour, minute, second
 integer :: i1, increment_seconds, increment_days, increment_years, increment_months
 real(r8_kind)    :: month_fraction
@@ -172,7 +180,7 @@ if(.not.module_is_initialized) then
   read (input_nml_file, get_cal_time_nml, iostat=io)
   ierr = check_nml_error (io, 'get_cal_time_nml')
 
-  call write_version_number("GET_CAL_TIME_MOD", version)
+  call write_version_number("get_cal_time_MOD", version)
   logunit = stdlog()
   if(mpp_pe() == mpp_root_pe()) write (logunit, nml=get_cal_time_nml)
   module_is_initialized = .true.
@@ -193,7 +201,7 @@ correct_form = (trim(calendar_in_c)) == 'noleap'     .or. (trim(calendar_in_c)) 
                (trim(calendar_in_c)) == 'gregorian'
 
 if(.not.correct_form) then
-  call error_mesg('get_cal_time','"'//trim(calendar_in_c)//'"'// &
+  call error_mesg('get_calendar_time','"'//trim(calendar_in_c)//'"'// &
    ' is not an acceptable calendar attribute. acceptable calendars are: '// &
    ' noleap, 365_day, 365_days, 360_day, julian, no_calendar, thirty_day_months, gregorian',FATAL)
 endif
@@ -210,7 +218,7 @@ if(.not.permit_conversion_local) then
                  (trim(calendar_in_c) == 'no_calendar'       .and. calendar_tm_i == NO_CALENDAR)       .or. &
                  (trim(calendar_in_c) == 'gregorian'         .and. calendar_tm_i == GREGORIAN)
   if(.not.correct_form) then
-    call error_mesg('get_cal_time','calendar not consistent with calendar type in use by time_manager.'// &
+    call error_mesg('get_calendar_time','calendar not consistent with calendar type in use by time_manager.'// &
          ' calendar='//trim(calendar_in_c)//'. Type in use by time_manager='// &
                           & valid_calendar_types(calendar_tm_i),FATAL)
   endif
@@ -235,8 +243,8 @@ if (permit_conversion_local) then
     case ('gregorian')
         calendar_in_i = GREGORIAN
     case default
-        call error_mesg('get_cal_time', &
-                 trim(calendar_in_c)//' is an invalid calendar type (specified in call to get_cal_time)',FATAL)
+        call error_mesg('get_calendar_time', &
+                 trim(calendar_in_c)//' is an invalid calendar type (specified in call to get_calendar_time)',FATAL)
     end select
 else
     calendar_in_i = calendar_tm_i
@@ -254,7 +262,7 @@ if(calendar_in_i /= NO_CALENDAR) then
 endif
 
 if(.not.correct_form) then
-  call error_mesg('get_cal_time',trim(units)//' is an invalid string for units.' // &
+  call error_mesg('get_calendar_time',trim(units)//' is an invalid string for units.' // &
         ' units must begin with a time unit then the word "since"' // &
         ' Valid time units are: "seconds" "minutes", "hours", "days", and, ' // &
         ' except when NO_CALENDAR is in effect, "months" and "years"',FATAL)
@@ -314,34 +322,49 @@ else if(lowercase(units(1:12)) == 'months since') then
   increment_days = floor(dt/86400)
   increment_seconds = int(dt - increment_days*86400)
 else
-  call error_mesg('get_cal_time','"'//trim(units)//'" is not an acceptable units attribute of time.'// &
+  call error_mesg('get_calendar_time','"'//trim(units)//'" is not an acceptable units attribute of time.'// &
             & ' It must begin with: "years since", "months since", "days since", "hours since", "minutes since",'// &
             & ' or "seconds since"',FATAL)
 endif
 
 if (calendar_in_i /= calendar_tm_i) then
     if(calendar_in_i == NO_CALENDAR .or. calendar_tm_i == NO_CALENDAR) then
-      call error_mesg('get_cal_time','Cannot do calendar conversion because input calendar is '// &
+      call error_mesg('get_calendar_time','Cannot do calendar conversion because input calendar is '// &
        trim(valid_calendar_types(calendar_in_i))//' and time_manager is using '// &
        trim(valid_calendar_types(calendar_tm_i))// &
        ' Conversion cannot be done if either is NO_CALENDAR',FATAL)
     endif
     call get_date(base_time,year, month, day, hour, minute, second)
-    get_cal_time = set_date(year,month,day,hour,minute,second) + set_time(increment_seconds, increment_days)
-    call get_date(get_cal_time,year,month,day,hour,minute,second)
+    get_calendar_time = set_date(year,month,day,hour,minute,second) + set_time(increment_seconds, increment_days)
+    call get_date(get_calendar_time,year,month,day,hour,minute,second)
     call set_calendar_type(calendar_tm_i)
-    get_cal_time = set_date(year,month,day,hour,minute,second, err_msg=err_msg)
+    get_calendar_time = set_date(year,month,day,hour,minute,second, err_msg=err_msg)
     if(err_msg /= '') then
-      call error_mesg('get_cal_time','Error in function get_cal_time: '//trim(err_msg)// &
+      call error_mesg('get_calendar_time','Error in function get_calendar_time: '//trim(err_msg)// &
                ' Note that the time_manager is using the '//trim(valid_calendar_types(calendar_tm_i))//' calendar '// &
-               'while the calendar type passed to function get_cal_time is '//calendar_in_c,FATAL)
+               'while the calendar type passed to function get_calendar_time is '//calendar_in_c,FATAL)
     endif
 else
-    get_cal_time = base_time + set_time(increment_seconds, increment_days)
+    get_calendar_time = base_time + set_time(increment_seconds, increment_days)
 endif
 
-end function get_cal_time
+end function get_calendar_time
+
 !------------------------------------------------------------------------
+
+!> For mixed precision support, just casts to passed in increment to r8
+function get_calendar_time_wrap(time_increment, units, calendar, permit_calendar_conversion)
+  real(r4_kind), intent(in)     :: time_increment
+  character(len=*), intent(in)  :: units
+  character(len=*), intent(in)  :: calendar
+  logical, intent(in), optional :: permit_calendar_conversion
+  type(time_type)               :: get_calendar_time_wrap
+
+  get_calendar_time_wrap = get_cal_time( real(time_increment, r8_kind), units, calendar, permit_calendar_conversion=permit_calendar_conversion)
+end function
+
+!------------------------------------------------------------------------
+
 function cut0(string)
 character(len=256) :: cut0
 character(len=*), intent(in) :: string
