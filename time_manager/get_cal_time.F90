@@ -34,6 +34,7 @@ use time_manager_mod, only: time_type, operator(+), operator(-), set_time, get_t
                             set_calendar_type, get_calendar_type, set_date, &
                             get_date, days_in_month, valid_calendar_types
 use mpp_mod,          only: input_nml_file
+use platform_mod,     only: r8_kind
 
 implicit none
 private

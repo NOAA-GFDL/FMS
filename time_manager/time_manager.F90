@@ -812,8 +812,10 @@ real(r8_kind)               :: d1, d2
 if(.not.module_is_initialized) call time_manager_init
 
 ! Convert time intervals to floating point days; risky for general performance?
-d1 = time1%days * real(seconds_per_day, r8_kind) + real(time1%seconds, r8_kind) + time1%ticks/real(ticks_per_second, r8_kind)
-d2 = time2%days * real(seconds_per_day, r8_kind) + real(time2%seconds, r8_kind) + time2%ticks/real(ticks_per_second, r8_kind)
+d1 = time1%days * real(seconds_per_day, r8_kind) + real(time1%seconds, r8_kind) &
+     + time1%ticks/real(ticks_per_second, r8_kind)
+d2 = time2%days * real(seconds_per_day, r8_kind) + real(time2%seconds, r8_kind) &
+     + time2%ticks/real(ticks_per_second, r8_kind)
 
 ! Get integer quotient of this, check carefully to avoid round-off problems.
 time_divide = int(d1 / d2)
@@ -835,8 +837,10 @@ real(r8_kind) :: d1, d2
 if(.not.module_is_initialized) call time_manager_init
 
 ! Convert time intervals to floating point seconds; risky for general performance?
-d1 = time1%days * real(seconds_per_day, r8_kind) + real(time1%seconds, r8_kind) + real(time1%ticks, r8_kind)/real(ticks_per_second, r8_kind)
-d2 = time2%days * real(seconds_per_day, r8_kind) + real(time2%seconds, r8_kind) + real(time2%ticks, r8_kind)/real(ticks_per_second, r8_kind)
+d1 = time1%days * real(seconds_per_day, r8_kind) + real(time1%seconds, r8_kind) + &
+     real(time1%ticks, r8_kind)/real(ticks_per_second, r8_kind)
+d2 = time2%days * real(seconds_per_day, r8_kind) + real(time2%seconds, r8_kind) + &
+     real(time2%ticks, r8_kind)/real(ticks_per_second, r8_kind)
 
 time_real_divide = d1 / d2
 
@@ -935,7 +939,8 @@ logical :: ltmp
 ! Convert time interval to floating point days; risky for general performance?
 dseconds_per_day  = real(seconds_per_day, r8_kind)
 dticks_per_second = real(ticks_per_second, r8_kind)
-d = time%days*dseconds_per_day*dticks_per_second + real(time%seconds, r8_kind)*dticks_per_second + real(time%ticks, r8_kind)
+d = time%days*dseconds_per_day*dticks_per_second + real(time%seconds, r8_kind)*dticks_per_second + &
+    real(time%ticks, r8_kind)
 div = d/real(n, r8_kind)
 
 days = int(div/(dseconds_per_day*dticks_per_second))
