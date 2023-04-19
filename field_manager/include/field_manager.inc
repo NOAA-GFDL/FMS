@@ -16,31 +16,26 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
-!> @defgroup field_manager_mod field_manager_mod
-!> @ingroup field_manager
-!> @brief Reads entries from a field table and stores this
-!! information along with the type  of field it belongs to.
-
 !> @returns The number of values that have been decoded. This allows
 !! a user to define a large array and fill it partially with
 !! values from a list. This should be the size of the value array.
 function PARSE_REALS_ ( text, label, values ) result (parse)
-character(len=*),   intent(in)  :: text !< The text string from which the values will be parsed.
-character(len=*),   intent(in)  :: label !< A label which describes the values being decoded.
-real(FMS_FM_KIND_), intent(out) :: values(:) !< The value or values that have been decoded.
+character(len=*), intent(in)  :: text !< The text string from which the values will be parsed.
+character(len=*), intent(in)  :: label !< A label which describes the values being decoded.
+real,             intent(out) :: values(:) !< The value or values that have been decoded.
 
 include 'parse.inc'
 end function PARSE_REALS_
 
 function PARSE_REAL_ ( text, label, value ) result (parse)
-character(len=*),   intent(in)  :: text !< The text string from which the values will be parsed.
-character(len=*),   intent(in)  :: label !< A label which describes the values being decoded.
-real(FMS_FM_KIND_), intent(out) :: value !< The value or values that have been decoded.
+character(len=*), intent(in)  :: text !< The text string from which the values will be parsed.
+character(len=*), intent(in)  :: label !< A label which describes the values being decoded.
+real,             intent(out) :: value !< The value or values that have been decoded.
 integer :: parse
 
-real(FMS_FM_KIND_) :: values(1)
+real :: values(1)
 
-   parse = PARSE_REALS_( text, label, values )
+   parse = parse_reals ( text, label, values )
    if (parse > 0) value = values(1)
  end function PARSE_REAL_
 
@@ -49,15 +44,13 @@ real(FMS_FM_KIND_) :: values(1)
 function  FM_GET_VALUE_REAL_(name, value, index)                 &
           result (success)
 logical                                :: success
-character(len=*),   intent(in)           :: name !< The name of a field that the user wishes to get a value for.
-real(FMS_FM_KIND_), intent(out)          :: value !< The value associated with the named field
-integer,            intent(in), optional :: index !< An optional index to retrieve a single value from an array.
+character(len=*), intent(in)           :: name !< The name of a field that the user wishes to get a value for.
+real,             intent(out)          :: value !< The value associated with the named field
+integer,          intent(in), optional :: index !< An optional index to retrieve a single value from an array.
 
 integer                         :: index_t
 type (field_def), pointer, save :: temp_field_p
 integer                         :: out_unit
-
-integer, parameter :: lkind=FMS_FM_KIND_
 
 out_unit = stdout()
 !        Initialize the field manager if needed
@@ -66,7 +59,7 @@ if (.not. module_is_initialized) then
 endif
 !        Must supply a field field name
 if (name .eq. ' ') then
-  value = 0.0_lkind
+  value = 0.0
   success = .false.
   return
 endif
@@ -84,24 +77,23 @@ if (associated(temp_field_p)) then
   if (temp_field_p%field_type .eq. real_type) then
     if (index_t .lt. 1 .or. index_t .gt. temp_field_p%max_index) then
 !        Index is not positive or is too large
-      value = 0.0_lkind
+      value = 0.0
       success = .false.
     else
 !        extract the value
-      value = temp_field_p%FMS_FM_TYPE_%r_value(index_t)
+      value = temp_field_p%r_value(index_t)
       success = .true.
     endif
   else
-    value = 0.0_lkind
+    value = 0.0
     success = .false.
   endif
 else
-  value = 0.0_lkind
+  value = 0.0
   success = .false.
 endif
 
 end function  FM_GET_VALUE_REAL_
-
 
 !> @brief Assigns a given value to a given field
 !> @returns An index for the named field
@@ -110,7 +102,7 @@ function  FM_NEW_VALUE_REAL_(name, value, create, index, append) &
 integer                                :: field_index
 character(len=*), intent(in)           :: name !< The name of a field that the user wishes to create
                                                !! a value for.
-real(FMS_FM_KIND_), intent(in)         :: value !< The value that the user wishes to apply to the
+real,             intent(in)           :: value !< The value that the user wishes to apply to the
                                                 !! named field.
 logical,          intent(in), optional :: create !< If present and .true., then a value for this
                                                  !! field will be created.
@@ -122,7 +114,7 @@ logical,          intent(in), optional :: append !< If present and .true., then 
 logical                          :: create_t
 integer                          :: i
 integer                          :: index_t
-real(FMS_FM_KIND_), allocatable, dimension(:) :: temp_r_value
+real, pointer, dimension(:)      :: temp_r_value
 character(len=fm_path_name_len)  :: path
 character(len=fm_field_name_len) :: base
 type (field_def), pointer, save  :: temp_list_p
@@ -179,10 +171,9 @@ if (associated(temp_list_p)) then
 !        If not then reset max_index to 0
     if (temp_field_p%field_type == integer_type) then
        ! promote integer field to real
-       allocate(temp_field_p%FMS_FM_TYPE_)
-       allocate(temp_field_p%FMS_FM_TYPE_%r_value(size(temp_field_p%i_value)))
+       allocate(temp_field_p%r_value(size(temp_field_p%i_value)))
        do i = 1, size(temp_field_p%i_value)
-          temp_field_p%FMS_FM_TYPE_%r_value(i) = real(temp_field_p%i_value(i), FMS_FM_KIND_)
+          temp_field_p%r_value(i) = temp_field_p%i_value(i)
        enddo
        temp_field_p%field_type = real_type
        deallocate(temp_field_p%i_value)
@@ -205,15 +196,15 @@ if (associated(temp_list_p)) then
 !        Index too large
       field_index = NO_FIELD
       return
-    elseif (index_t .eq. 0 .and. temp_field_p%max_index .gt. 0) then
+    elseif (index_t .eq. 0 .and.                                &
+            temp_field_p%max_index .gt. 0) then
 !        Can't set non-null field to null
       field_index = NO_FIELD
       return
-   elseif (.not. (allocated(temp_field_p%FMS_FM_TYPE_).or.allocated(temp_field_p%FMS_FM_TYPE_%r_value)) &
-           .and. index_t .gt. 0) then
-       !        Array undefined, so allocate the array
-      if(.not.allocated(temp_field_p%FMS_FM_TYPE_)) allocate(temp_field_p%FMS_FM_TYPE_)
-      allocate(temp_field_p%FMS_FM_TYPE_%r_value(1))
+    elseif (.not. allocated(temp_field_p%r_value) .and.        &
+            index_t .gt. 0) then
+!        Array undefined, so allocate the array
+      allocate(temp_field_p%r_value(1))
       temp_field_p%max_index = 1
       temp_field_p%array_dim = 1
     elseif (index_t .gt. temp_field_p%array_dim) then
@@ -222,19 +213,16 @@ if (associated(temp_list_p)) then
       temp_field_p%array_dim = temp_field_p%array_dim + array_increment
       allocate (temp_r_value(temp_field_p%array_dim))
       do i = 1, temp_field_p%max_index
-        temp_r_value(i) = temp_field_p%FMS_FM_TYPE_%r_value(i)
+        temp_r_value(i) = temp_field_p%r_value(i)
       enddo
-      if (allocated(temp_field_p%FMS_FM_TYPE_%r_value)) then
-         deallocate(temp_field_p%FMS_FM_TYPE_%r_value)
-         deallocate(temp_field_p%FMS_FM_TYPE_)
-      end if
-      temp_field_p%FMS_FM_TYPE_%r_value = temp_r_value
+      if (allocated(temp_field_p%r_value)) deallocate(temp_field_p%r_value)
+      temp_field_p%r_value => temp_r_value
       temp_field_p%max_index = index_t
     endif
 !        Assign the value and set the field_index for return
 !        for non-null fields (index_t > 0)
     if (index_t .gt. 0) then
-      temp_field_p%FMS_FM_TYPE_%r_value(index_t) = value
+      temp_field_p%r_value(index_t) = value
       if (index_t .gt. temp_field_p%max_index) then
         temp_field_p%max_index = index_t
       endif
