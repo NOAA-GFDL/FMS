@@ -151,20 +151,20 @@ contains
 !! @note This option was originally coded to allow noleap calendar as input when
 !! the julian calendar was in effect by the time_manager.
 function get_cal_time(time_increment, units, calendar, permit_calendar_conversion)
-real, intent(in) :: time_increment
+real(r8_kind), intent(in) :: time_increment
 character(len=*), intent(in) :: units
 character(len=*), intent(in) :: calendar
 logical, intent(in), optional :: permit_calendar_conversion
 type(time_type) :: get_cal_time
 integer :: year, month, day, hour, minute, second
 integer :: i1, increment_seconds, increment_days, increment_years, increment_months
-real    :: month_fraction
+real(r8_kind)    :: month_fraction
 integer :: calendar_tm_i, calendar_in_i, ierr, io, logunit
 logical :: correct_form
 character(len=32) :: calendar_in_c
 character(len=64) :: err_msg
 type(time_type) :: base_time, base_time_plus_one_yr
-real :: dt
+real(r8_kind) :: dt
 logical :: permit_conversion_local
 
 if(.not.module_is_initialized) then

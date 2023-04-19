@@ -18,7 +18,6 @@
 !***********************************************************************
 !> @defgroup time_manager_mod time_manager_mod
 !> @ingroup time_manager
-!> @link http://www.gfdl.noaa.gov/fms-cgi-bin/cvsweb.cgi/FMS/
 !> @brief A software package that provides a set of simple interfaces for
 !!   modelers to perform computations related to time and dates.
 !!
@@ -222,7 +221,7 @@ end interface
 !! <br> Integer input
 !! @code{.F90} time = set_date(year, month, day, hours, minute, second, tick, err_msg) @endcode
 !! <br> String input
-!! @code{.F90} time = set_date_c(time_string, zero_year_warning, err_msg, allow_rounding) @endcode
+!! @code{.F90} time = set_date(time_string, zero_year_warning, err_msg, allow_rounding) @endcode
 !!
 !! @param time_string A character string containing a date formatted
 !! according to CF conventions. e.g. '1980-12-31 23:59:59.9'
@@ -298,9 +297,9 @@ contains
  character(len=*), intent(out) :: err_msg
  integer            :: seconds_new, days_new, ticks_new
 
- seconds_new = seconds + floor(ticks/real(ticks_per_second))
+ seconds_new = seconds + floor(ticks/real(ticks_per_second, r8_kind))
  ticks_new = modulo(ticks,ticks_per_second)
- days_new = days + floor(seconds_new/real(seconds_per_day))
+ days_new = days + floor(seconds_new/real(seconds_per_day, r8_kind))
  seconds_new = modulo(seconds_new,seconds_per_day)
 
  if ( seconds_new < 0 .or. ticks_new < 0) then
@@ -456,7 +455,7 @@ contains
      magnitude = 10**nspf
      tpsfrac = ticks_per_second*fraction
      if(allow_rounding) then
-       tick = nint((real(tpsfrac)/magnitude))
+       tick = nint((real(tpsfrac, r8_kind)/magnitude))
      else
        if(modulo(tpsfrac,magnitude) == 0) then
          tick = tpsfrac/magnitude
@@ -627,32 +626,13 @@ endif
 end function decrement_time
 
 !--------------------------------------------------------------------------
-! <FUNCTION NAME="time_gt  operator(>)">
-
-!   <OVERVIEW>
-!      Returns true if time1 > time2.
-!   </OVERVIEW>
-!   <DESCRIPTION>
-!      Returns true if time1 > time2.
-!   </DESCRIPTION>
-!   <IN NAME="time1" UNITS="" TYPE="time_type" DIM="">
-!      A time interval.
-!   </IN>
-!   <IN NAME="time2" UNITS="" TYPE="time_type" DIM="">
-!      A time interval.
-!   </IN>
-!   <OUT NAME="" UNITS="" TYPE="logical" DIM="" DEFAULT="">
-!       Returns true if time1 > time2
-!   </OUT>
-!   <TEMPLATE>
-!     time_gt(time1, time2)
-!   </TEMPLATE>
 
 !> @brief Returns true if time1 > time2
 function time_gt(time1, time2)
 
 logical :: time_gt
-type(time_type), intent(in) :: time1, time2
+type(time_type), intent(in) :: time1 !< time interval to compare
+type(time_type), intent(in) :: time2 !< time interval to compare
 
 time_gt = (time1%days > time2%days)
 if(time1%days == time2%days) then
@@ -664,72 +644,26 @@ if(time1%days == time2%days) then
 endif
 
 end function time_gt
-! </FUNCTION>
 
 !--------------------------------------------------------------------------
-! <FUNCTION NAME="time_ge; operator(>=)">
 
-!   <OVERVIEW>
-!      Returns true if time1 >= time2.
-!   </OVERVIEW>
-!   <DESCRIPTION>
-!      Returns true if time1 >= time2.
-!   </DESCRIPTION>
-!   <TEMPLATE>
-!     time_ge(time1, time2)
-!   </TEMPLATE>
-
-!   <IN NAME="time1" UNITS="" TYPE="time_type" DIM="">
-!      A time interval.
-!   </IN>
-!   <IN NAME="time2" UNITS="" TYPE="time_type" DIM="">
-!      A time interval.
-!   </IN>
-!   <OUT NAME="" UNITS="" TYPE="logical" DIM="" DEFAULT="">
-!       Returns true if time1 >= time2
-!   </OUT>
-
+!> Returns true if time1 >= time2.
 function time_ge(time1, time2)
-
-! Returns true if time1 >= time2
-
 logical :: time_ge
-type(time_type), intent(in) :: time1, time2
+type(time_type), intent(in) :: time1 !< time interval to compare
+type(time_type), intent(in) :: time2 !< time interval to compare
 
 time_ge = (time_gt(time1, time2) .or. time_eq(time1, time2))
 
 end function time_ge
-! </FUNCTION>
 
 !--------------------------------------------------------------------------
-! <FUNCTION NAME="time_lt; operator(<)">
 
-!   <OVERVIEW>
-!      Returns true if time1 < time2.
-!   </OVERVIEW>
-!   <DESCRIPTION>
-!      Returns true if time1 < time2.
-!   </DESCRIPTION>
-!   <TEMPLATE>
-!     time_lt(time1, time2)
-!   </TEMPLATE>
-
-!   <IN NAME="time1" UNITS="" TYPE="time_type" DIM="">
-!      A time interval.
-!   </IN>
-!   <IN NAME="time2" UNITS="" TYPE="time_type" DIM="">
-!      A time interval.
-!   </IN>
-!   <OUT NAME="" UNITS="" TYPE="logical" DIM="" DEFAULT="">
-!       Returns true if time1 < time2
-!   </OUT>
-
+!> Returns true if time1 < time2
 function time_lt(time1, time2)
-
-! Returns true if time1 < time2
-
 logical :: time_lt
-type(time_type), intent(in) :: time1, time2
+type(time_type), intent(in) :: time1 !< time interval to compare
+type(time_type), intent(in) :: time2 !< time interval to compare
 
 time_lt = (time1%days < time2%days)
 if(time1%days == time2%days)then
@@ -740,72 +674,26 @@ if(time1%days == time2%days)then
    endif
 endif
 end function time_lt
-! </FUNCTION>
 
 !--------------------------------------------------------------------------
-! <FUNCTION NAME="time_le; operator(<=)">
-
-!   <OVERVIEW>
-!      Returns true if time1 <= time2.
-!   </OVERVIEW>
-!   <DESCRIPTION>
-!      Returns true if time1 <= time2.
-!   </DESCRIPTION>
-!   <TEMPLATE>
-!     time_le(time1, time2)
-!   </TEMPLATE>
-
-!   <IN NAME="time1" UNITS="" TYPE="time_type" DIM="">
-!      A time interval.
-!   </IN>
-!   <IN NAME="time2" UNITS="" TYPE="time_type" DIM="">
-!      A time interval.
-!   </IN>
-!   <OUT NAME="" UNITS="" TYPE="logical" DIM="" DEFAULT="">
-!       Returns true if time1 <= time2
-!   </OUT>
 
 !> Returns true if time1 <= time2
 function time_le(time1, time2)
-
-
 logical :: time_le
-type(time_type), intent(in) :: time1, time2
+type(time_type), intent(in) :: time1 !< time interval to compare
+type(time_type), intent(in) :: time2 !< time interval to compare
 
 time_le = (time_lt(time1, time2) .or. time_eq(time1, time2))
 
 end function time_le
-! </FUNCTION>
 
 !--------------------------------------------------------------------------
-! <FUNCTION NAME="time_eq; operator(==)">
 
-!   <OVERVIEW>
-!      Returns true if time1 == time2.
-!   </OVERVIEW>
-!   <DESCRIPTION>
-!      Returns true if time1 == time2.
-!   </DESCRIPTION>
-!   <TEMPLATE>
-!     time_eq(time1, time2)
-!   </TEMPLATE>
-
-!   <IN NAME="time1" UNITS="" TYPE="time_type" DIM="">
-!      A time interval.
-!   </IN>
-!   <IN NAME="time2" UNITS="" TYPE="time_type" DIM="">
-!      A time interval.
-!   </IN>
-!   <OUT NAME="" UNITS="" TYPE="logical" DIM="" DEFAULT="">
-!       Returns true if time1 == time2
-!   </OUT>
-
+!> Returns true if time1 == time2
 function time_eq(time1, time2)
-
-! Returns true if time1 == time2
-
 logical :: time_eq
-type(time_type), intent(in) :: time1, time2
+type(time_type), intent(in) :: time1 !< time interval to compare
+type(time_type), intent(in) :: time2 !< time interval to compare
 
 if(.not.module_is_initialized) call time_manager_init
 
@@ -813,113 +701,41 @@ time_eq = (time1%seconds == time2%seconds .and. time1%days == time2%days &
      .and. time1%ticks == time2%ticks)
 
 end function time_eq
-! </FUNCTION>
 
 !--------------------------------------------------------------------------
-! <FUNCTION NAME="time_ne; operator(/=)">
-
-!   <OVERVIEW>
-!      Returns true if time1 /= time2.
-!   </OVERVIEW>
-!   <DESCRIPTION>
-!      Returns true if time1 /= time2.
-!   </DESCRIPTION>
-!   <TEMPLATE>
-!     time_ne(time1, time2)
-!   </TEMPLATE>
-
-!   <IN NAME="time1" UNITS="" TYPE="time_type" DIM="">
-!      A time interval.
-!   </IN>
-!   <IN NAME="time2" UNITS="" TYPE="time_type" DIM="">
-!      A time interval.
-!   </IN>
-!   <OUT NAME="" UNITS="" TYPE="logical" DIM="" DEFAULT="">
-!       Returns true if time1 /= time2
-!   </OUT>
 
 !> Returns true if time1 /= time2
 function time_ne(time1, time2)
-
 logical :: time_ne
-type(time_type), intent(in) :: time1, time2
+type(time_type), intent(in) :: time1 !< time interval to compare
+type(time_type), intent(in) :: time2 !< time interval to compare
 
 time_ne = (.not. time_eq(time1, time2))
 
 end function time_ne
-! </FUNCTION>
 
 !-------------------------------------------------------------------------
-! <FUNCTION NAME="time_plus; operator(+)">
-
-!   <OVERVIEW>
-!       Returns sum of two time_types.
-!   </OVERVIEW>
-!   <TEMPLATE>
-!     time1 + time2
-!   </TEMPLATE>
-!   <DESCRIPTION>
-!       Returns sum of two time_types.
-!   </DESCRIPTION>
-
-!   <IN NAME="time1" UNITS="" TYPE="time_type" DIM="">
-!      A time interval.
-!   </IN>
-!   <IN NAME="time2" UNITS="" TYPE="time_type" DIM="">
-!      A time interval.
-!   </IN>
-!   <OUT NAME="" UNITS="" TYPE="time_type" DIM="" DEFAULT="">
-!       Returns sum of two time_types.
-!   </OUT>
 
 !> Returns sum of two time_types
 function time_plus(time1, time2)
-
-
 type(time_type) :: time_plus
-type(time_type), intent(in) :: time1, time2
+type(time_type), intent(in) :: time1 !< time interval to add 
+type(time_type), intent(in) :: time2 !< time interval to add 
 
 if(.not.module_is_initialized) call time_manager_init
 
 time_plus = increment_time(time1, time2%seconds, time2%days, time2%ticks)
 
 end function time_plus
-! </FUNCTION>
 
 !-------------------------------------------------------------------------
-! <FUNCTION NAME="time_minus; operator(-)">
-
-!   <OVERVIEW>
-!       Returns difference of two time_types.
-!   </OVERVIEW>
-!   <DESCRIPTION>
-!       Returns difference of two time_types. WARNING: a time type is positive
-!       so by definition time1 - time2  is the same as time2 - time1.
-!   </DESCRIPTION>
-!   <TEMPLATE>
-!     time_minus(time1, time2)
-!   </TEMPLATE>
-!   <TEMPLATE>
-!     time1 - time2
-!   </TEMPLATE>
-
-!   <IN NAME="time1" UNITS="" TYPE="time_type" DIM="">
-!      A time interval.
-!   </IN>
-!   <IN NAME="time2" UNITS="" TYPE="time_type" DIM="">
-!      A time interval.
-!   </IN>
-!   <OUT NAME="" UNITS="" TYPE="time_type" DIM="" DEFAULT="">
-!       Returns difference of two time_types.
-!   </OUT>
 
 !> Returns difference of two time_types. WARNING: a time type is positive
 !! so by definition time1 - time2  is the same as time2 - time1.
 function time_minus(time1, time2)
-
-
 type(time_type) :: time_minus
-type(time_type), intent(in) :: time1, time2
+type(time_type), intent(in) :: time1 !< time interval to subtract
+type(time_type), intent(in) :: time2 !< time interval to subtract
 
 if(.not.module_is_initialized) call time_manager_init
 
@@ -930,139 +746,74 @@ else
 endif
 
 end function time_minus
-! </FUNCTION>
 
 !--------------------------------------------------------------------------
-! <FUNCTION NAME="time_scalar_mult; operator(*)">
-
-!   <OVERVIEW>
-!       Returns time multiplied by integer factor n.
-!   </OVERVIEW>
-!   <DESCRIPTION>
-!       Returns time multiplied by integer factor n.
-!   </DESCRIPTION>
-!   <TEMPLATE>
-!     time_scalar_mult(time, n)
-!   </TEMPLATE>
-
-!   <IN NAME="time" UNITS="" TYPE="time_type" DIM="">
-!      A time interval.
-!   </IN>
-!   <IN NAME="n" UNITS="" TYPE="integer" DIM="">
-!      A time interval.
-!   </IN>
-!   <OUT NAME="" UNITS="" TYPE="time_type" DIM="" DEFAULT="">
-!       Returns time multiplied by integer factor n.
-!   </OUT>
 
 !> Returns time multiplied by integer factor n
 function time_scalar_mult(time, n)
-
-
 type(time_type)             :: time_scalar_mult
-type(time_type), intent(in) :: time
-integer, intent(in)         :: n
+type(time_type), intent(in) :: time !< time interval to multply
+integer, intent(in)         :: n !< factor to multiply by
 integer                     :: days, seconds, ticks, num_sec
-double precision            :: sec_prod, tick_prod
+real(r8_kind)               :: sec_prod, tick_prod
 
 if(.not.module_is_initialized) call time_manager_init
 
-! Multiplying here in a reasonable fashion to avoid overflow is tricky
-! Could multiply by some large factor n, and seconds could be up to 86399
-! Need to avoid overflowing integers and wrapping around to negatives
-! ticks could be up to ticks_per_second-1
+!! Multiplying here in a reasonable fashion to avoid overflow is tricky
+!! Could multiply by some large factor n, and seconds could be up to 86399
+!! Need to avoid overflowing integers and wrapping around to negatives
+!! ticks could be up to ticks_per_second-1
 
-tick_prod = dble(time%ticks) * dble(n)
-num_sec   = int(tick_prod/dble(ticks_per_second))
-sec_prod  = dble(time%seconds) * dble(n) + num_sec
+tick_prod = real(time%ticks, r8_kind) * real(n, r8_kind)
+num_sec   = int(tick_prod/real(ticks_per_second, r8_kind))
+sec_prod  = real(time%seconds, r8_kind) * real(n, r8_kind) + num_sec
 ticks     = int(tick_prod - num_sec * ticks_per_second)
 
-! If sec_prod is large compared to precision of double precision, things
-! can go bad.  Need to warn and abort on this.
-! The same is true of tick_prod but is is more likely to happen to sec_prod,
-! so let's just test sec_prod. (A test of tick_prod would be necessary only
-! if ticks_per_second were greater than seconds_per_day)
-if(sec_prod /= 0.0) then
+!! If sec_prod is large compared to precision of double precision, things
+!! can go bad.  Need to warn and abort on this.
+!! The same is true of tick_prod but is is more likely to happen to sec_prod,
+!! so let's just test sec_prod. (A test of tick_prod would be necessary only
+!! if ticks_per_second were greater than seconds_per_day)
+if(sec_prod /= 0.0_r8_kind) then
    if(log10(sec_prod) > precision(sec_prod) - 3) call error_mesg('time_scalar_mult', &
       'Insufficient precision to handle scalar product in time_scalar_mult; contact developer',FATAL)
 end if
 
-days = int(sec_prod / dble(seconds_per_day))
-seconds = int(sec_prod - dble(days) * dble(seconds_per_day))
+days = int(sec_prod / real(seconds_per_day, r8_kind))
+seconds = int(sec_prod - real(days, r8_kind) * real(seconds_per_day, r8_kind))
 
 time_scalar_mult = set_time(seconds, time%days * n + days, ticks)
 
 end function time_scalar_mult
-! </FUNCTION>
 
 !-------------------------------------------------------------------------
-! <FUNCTION NAME="scalar_time_mult; operator(*)">
-
-!   <OVERVIEW>
-!       Returns time multiplied by integer factor n.
-!   </OVERVIEW>
-!   <DESCRIPTION>
-!       Returns time multiplied by integer factor n.
-!   </DESCRIPTION>
-!   <TEMPLATE>
-!     n * time
-!     scalar_time_mult(n, time)
-!   </TEMPLATE>
-
-!   <IN NAME="time" UNITS="" TYPE="time_type" DIM="">A time interval.</IN>
-!   <IN NAME="n" UNITS="" TYPE="integer" DIM=""> An integer. </IN>
-!   <OUT NAME="" UNITS="" TYPE="time_type" DIM="" DEFAULT="">
-!       Returns time multiplied by integer factor n.
-!   </OUT>
 
 !> Returns time multipled by integer factor n
 function scalar_time_mult(n, time)
 
 type(time_type) :: scalar_time_mult
-type(time_type), intent(in) :: time
-integer, intent(in) :: n
+type(time_type), intent(in) :: time !< a time interval
+integer, intent(in) :: n !< factor to mulitply by
 
 scalar_time_mult = time_scalar_mult(time, n)
 
 end function scalar_time_mult
-! </FUNCTION>
 
 !-------------------------------------------------------------------------
-! <FUNCTION NAME="time_divide; operator(/)">
-
-!   <OVERVIEW>
-!       Returns the largest integer, n, for which time1 >= time2 * n.
-!   </OVERVIEW>
-!   <DESCRIPTION>
-!       Returns the largest integer, n, for which time1 >= time2 * n.
-!   </DESCRIPTION>
-!   <TEMPLATE>
-!     n = time1 / time2
-!     time_divide(time1, time2)
-!   </TEMPLATE>
-
-!   <IN NAME="time1" UNITS="" TYPE="time_type" DIM="">
-!      A time interval.
-!   </IN>
-!   <IN NAME="time2" UNITS="" TYPE="time_type" DIM="">
-!      A time interval.
-!   </IN>
-!   <OUT NAME="" UNITS="" TYPE="integer" DIM="" DEFAULT="">
-!       Returns the largest integer, n, for which time1 >= time2 * n.
-!   </OUT>
 
 !> Returns the largest integer, n, for which time1 >= time2 * n.
 function time_divide(time1, time2)
 
 integer                     :: time_divide
-type(time_type), intent(in) :: time1, time2
-double precision            :: d1, d2
+type(time_type), intent(in) :: time1 !< a time interval (dividend)
+type(time_type), intent(in) :: time2 !< a time interval (divisor)
+real(r8_kind)               :: d1, d2
 
 if(.not.module_is_initialized) call time_manager_init
 
 ! Convert time intervals to floating point days; risky for general performance?
-d1 = time1%days * dble(seconds_per_day) + dble(time1%seconds) + time1%ticks/dble(ticks_per_second)
-d2 = time2%days * dble(seconds_per_day) + dble(time2%seconds) + time2%ticks/dble(ticks_per_second)
+d1 = time1%days * real(seconds_per_day, r8_kind) + real(time1%seconds, r8_kind) + time1%ticks/real(ticks_per_second, r8_kind)
+d2 = time2%days * real(seconds_per_day, r8_kind) + real(time2%seconds, r8_kind) + time2%ticks/real(ticks_per_second, r8_kind)
 
 ! Get integer quotient of this, check carefully to avoid round-off problems.
 time_divide = int(d1 / d2)
@@ -1072,71 +823,26 @@ if(time_divide * time2 > time1 .or. (time_divide + 1) * time2 <= time1) &
    call error_mesg('time_divide',' quotient error :: notify developer',FATAL)
 
 end function time_divide
-! </FUNCTION>
-
-!-------------------------------------------------------------------------
-! <FUNCTION NAME="time_real_divide; operator(//)">
-
-!   <OVERVIEW>
-!       Returns the double precision quotient of two times.
-!   </OVERVIEW>
-!   <DESCRIPTION>
-!       Returns the double precision quotient of two times.
-!   </DESCRIPTION>
-!   <TEMPLATE>
-!     time1 // time2
-!     time_real_divide(time1, time2)
-!   </TEMPLATE>
-
-!   <IN NAME="time1" UNITS="" TYPE="time_type" DIM="">
-!      A time interval.
-!   </IN>
-!   <IN NAME="time2" UNITS="" TYPE="time_type" DIM="">
-!      A time interval.
-!   </IN>
-!   <OUT NAME="" UNITS="" TYPE="integer" DIM="double precision" DEFAULT="">
-!       Returns the double precision quotient of two times
-!   </OUT>
 
 !> Returns the double precision quotient of two times
 function time_real_divide(time1, time2)
 
-double precision :: time_real_divide
-type(time_type), intent(in) :: time1, time2
-double precision :: d1, d2
+real(r8_kind) :: time_real_divide
+type(time_type), intent(in) :: time1 !< a time interval (dividend)
+type(time_type), intent(in) :: time2 !< a time interval (divisor)
+real(r8_kind) :: d1, d2
 
 if(.not.module_is_initialized) call time_manager_init
 
 ! Convert time intervals to floating point seconds; risky for general performance?
-d1 = time1%days * dble(seconds_per_day) + dble(time1%seconds) + dble(time1%ticks)/dble(ticks_per_second)
-d2 = time2%days * dble(seconds_per_day) + dble(time2%seconds) + dble(time2%ticks)/dble(ticks_per_second)
+d1 = time1%days * real(seconds_per_day, r8_kind) + real(time1%seconds, r8_kind) + real(time1%ticks, r8_kind)/real(ticks_per_second, r8_kind)
+d2 = time2%days * real(seconds_per_day, r8_kind) + real(time2%seconds, r8_kind) + real(time2%ticks, r8_kind)/real(ticks_per_second, r8_kind)
 
 time_real_divide = d1 / d2
 
 end function time_real_divide
-! </FUNCTION>
 
 !-------------------------------------------------------------------------
-! <SUBROUTINE NAME="time_assignment; assignment(=)">
-
-!   <OVERVIEW>
-!       Assigns all components of the time_type variable on
-!       RHS to same components of time_type variable on LHS.
-!   </OVERVIEW>
-!   <DESCRIPTION>
-!       Assigns all components of the time_type variable on
-!       RHS to same components of time_type variable on LHS.
-!   </DESCRIPTION>
-!   <TEMPLATE>
-!     time1 = time2
-!   </TEMPLATE>
-
-!   <OUT NAME="time1" UNITS="" TYPE="time_type" DIM="">
-!      A time type variable.
-!   </OUT>
-!   <IN NAME="time2" UNITS="" TYPE="time_type" DIM="">
-!      A time type variable.
-!   </IN>
 
 !> Assigns all components of the time_type variable on
 !! RHS to same components of time_type variable on LHS.
@@ -1147,23 +853,8 @@ type(time_type), intent(in)  :: time2
    time1%days    = time2%days
    time1%ticks   = time2%ticks
 end subroutine time_assignment
-! </SUBROUTINE>
 
-!-------------------------------------------------------------------------
-! <FUNCTION NAME="time_type_to_real">
-!   <OVERVIEW>
-!       Converts time to seconds and returns it as a real number
-!   </OVERVIEW>
-!   <DESCRIPTION>
-!       Converts time to seconds and returns it as a real number
-!   </DESCRIPTION>
-!   <TEMPLATE>
-!     time_type_to_real(time)
-!   </TEMPLATE>
-!   <IN NAME="time" UNITS="" TYPE="time_type" DIM="">
-!      A time interval.
-!   </IN>
-
+!> Converts time to seconds and returns it as a real number
 function time_type_to_real(time)
 
 real(kind=r8_kind)           :: time_type_to_real
@@ -1171,8 +862,8 @@ type(time_type), intent(in) :: time
 
 if(.not.module_is_initialized) call time_manager_init
 
-time_type_to_real = real(dble(time%days) * 86400.d0 + dble(time%seconds) + &
-     dble(time%ticks)/dble(ticks_per_second), kind=r8_kind)
+time_type_to_real = real(time%days, r8_kind) * 86400.e0_r8_kind + real(time%seconds, r8_kind) + &
+                    real(time%ticks, r8_kind)/real(ticks_per_second, r8_kind)
 
 end function time_type_to_real
 
@@ -1180,22 +871,22 @@ end function time_type_to_real
 !! @return A filled time type variable, and an error message if an
 !!         error occurs.
 function real_to_time_type(x,err_msg) result(t)
-  real,intent(in) :: x !< Number of seconds.
+  real(r8_kind),intent(in) :: x !< Number of seconds.
   character(len=*),intent(out),optional :: err_msg !< Error message.
   type(time_type) :: t
   integer :: days
   integer :: seconds
   integer :: ticks
   character(len=128) :: err_msg_local
-  real,parameter :: spd = real(86400)
-  real :: tps
-  real :: a
-  tps = real(ticks_per_second)
+  real(r8_kind),parameter :: spd = 86400_r8_kind
+  real(r8_kind) :: tps
+  real(r8_kind) :: a
+  tps = real(ticks_per_second, r8_kind)
   a = x/spd
   days = safe_rtoi(a,do_floor)
-  a = x - real(days)*spd
+  a = x - real(days, r8_kind)*spd
   seconds = safe_rtoi(a,do_floor)
-  a = (a - real(seconds))*tps
+  a = (a - real(seconds, r8_kind))*tps
   ticks = safe_rtoi(a,do_nearest)
   if (.not. set_time_private(seconds,days,ticks,t,err_msg_local)) then
     if (error_handler('function real_to_time_type',err_msg_local,err_msg)) then
@@ -1207,13 +898,13 @@ end function real_to_time_type
 !> @brief Convert a floating point value to an integer value.
 !! @return The integer value, using the input rounding mode.
 function safe_rtoi(rval,mode) result(ival)
-  real,intent(in) :: rval !< A floating point value.
+  real(r8_kind),intent(in) :: rval !< A floating point value.
   integer,intent(in) :: mode !< A rouding mode (either "do_floor" or
                              !! "do_nearest")
   integer :: ival
-  real :: big
-  big = real(huge(ival))
-  if (rval .le. big .and. -1.*rval .ge. -1.*big) then
+  real(r8_kind) :: big
+  big = real(huge(ival), r8_kind)
+  if (rval .le. big .and. -1.0_r8_kind*rval .ge. -1.0_r8_kind*big) then
     if (mode .eq. do_floor) then
       ival = floor(rval)
     elseif (mode .eq. do_nearest) then
@@ -1229,51 +920,27 @@ function safe_rtoi(rval,mode) result(ival)
 end function safe_rtoi
 
 !-------------------------------------------------------------------------
-! <FUNCTION NAME="time_scalar_divide; operator(/)">
-
-!   <OVERVIEW>
-!       Returns the largest time, t, for which n * t <= time.
-!   </OVERVIEW>
-!   <DESCRIPTION>
-!       Returns the largest time, t, for which n * t <= time.
-!   </DESCRIPTION>
-!   <TEMPLATE>
-!     time_scalar_divide(time, n)
-!   </TEMPLATE>
-
-!   <IN NAME="time" UNITS="" TYPE="time_type" DIM="">
-!      A time interval.
-!   </IN>
-!   <IN NAME="n" UNITS="" TYPE="integer" DIM="">
-!      An integer factor.
-!   </IN>
-!   <OUT NAME="" UNITS="" TYPE="integer" DIM="double precision" DEFAULT="">
-!       Returns the largest time, t, for which n * t <= time.
-!   </OUT>
 
 !> Returns the largest time, t, for which n * t <= time.
 function time_scalar_divide(time, n)
-
-! Returns the largest time, t, for which n * t <= time
-
 type(time_type) :: time_scalar_divide
-type(time_type), intent(in) :: time
-integer, intent(in) :: n
-double precision :: d, div, dseconds_per_day, dticks_per_second
+type(time_type), intent(in) :: time !< time interval to divide
+integer, intent(in) :: n !< divisor
+real(r8_kind) :: d, div, dseconds_per_day, dticks_per_second
 integer :: days, seconds, ticks
 type(time_type) :: prod1, prod2
 character(len=128) tmp1,tmp2
 logical :: ltmp
 
 ! Convert time interval to floating point days; risky for general performance?
-dseconds_per_day  = dble(seconds_per_day)
-dticks_per_second = dble(ticks_per_second)
-d = time%days*dseconds_per_day*dticks_per_second + dble(time%seconds)*dticks_per_second + dble(time%ticks)
-div = d/dble(n)
+dseconds_per_day  = real(seconds_per_day, r8_kind)
+dticks_per_second = real(ticks_per_second, r8_kind)
+d = time%days*dseconds_per_day*dticks_per_second + real(time%seconds, r8_kind)*dticks_per_second + real(time%ticks, r8_kind)
+div = d/real(n, r8_kind)
 
 days = int(div/(dseconds_per_day*dticks_per_second))
 seconds = int(div/dticks_per_second - days*dseconds_per_day)
-ticks = int(div - (days*dseconds_per_day + dble(seconds))*dticks_per_second)
+ticks = int(div - (days*dseconds_per_day + real(seconds, r8_kind))*dticks_per_second)
 time_scalar_divide = set_time(seconds, days, ticks)
 
 ! Need to make sure that roundoff isn't killing this
@@ -1290,43 +957,6 @@ if(prod1 > time .or. prod2 <= time) then
 endif
 
 end function time_scalar_divide
-! </FUNCTION>
-
-!-------------------------------------------------------------------------
-! <FUNCTION NAME="interval_alarm">
-
-!   <OVERVIEW>
-!     Given a time, and a time interval, this function returns true
-!     if this is the closest time step to the alarm time.
-!   </OVERVIEW>
-!   <DESCRIPTION>
-!      This is a specialized operation that is frequently performed in models.
-!      Given a time, and a time interval, this function is true if this is the
-!      closest time step to the alarm time. The actual computation is:
-!
-!             if((alarm_time - time) &#60;&#61; (time_interval / 2))
-!
-!      If the function is true, the alarm time is incremented by the
-!      alarm_interval; WARNING, this is a featured side effect. Otherwise, the
-!      function is false and there are no other effects. CAUTION: if the
-!      alarm_interval is smaller than the time_interval, the alarm may fail to
-!      return true ever again.  Watch
-!      for problems if the new alarm time is less than time + time_interval
-!   </DESCRIPTION>
-!   <TEMPLATE>
-!      interval_alarm(time, time_interval, alarm, alarm_interval)
-!   </TEMPLATE>
-
-!   <IN NAME="time" TYPE="time_type"> Current time.  </IN>
-!   <IN NAME="time_interval" TYPE="time_type"> A time interval.  </IN>
-!   <IN NAME="alarm_interval" TYPE="time_type"> A time interval. </IN>
-!   <OUT NAME="interval_alarm" TYPE="logical">
-!     Returns either True or false.
-!   </OUT>
-!   <INOUT NAME="alarm" TYPE="time_type">
-!     An alarm time, which is incremented by the alarm_interval
-!                   if the function is true.
-!   </INOUT>
 
 !> Supports a commonly used type of test on times for models.  Given the
 !! current time, and a time for an alarm, determines if this is the closest
@@ -1334,11 +964,26 @@ end function time_scalar_divide
 !! is the closest time (alarm - time <= time_interval/2), the function
 !! returns true and the alarm is incremented by the alarm_interval.  Watch
 !! for problems if the new alarm time is less than time + time_interval
+!!
+!! This is a specialized operation that is frequently performed in models.
+!! Given a time, and a time interval, this function is true if this is the
+!! closest time step to the alarm time. The actual computation is:
+!!
+!! if((alarm_time - time) &#60;&#61; (time_interval / 2))
+!!
+!! If the function is true, the alarm time is incremented by the
+!! alarm_interval; WARNING, this is a featured side effect. Otherwise, the
+!! function is false and there are no other effects. CAUTION: if the
+!! alarm_interval is smaller than the time_interval, the alarm may fail to
+!! return true ever again.  Watch
+!! for problems if the new alarm time is less than time + time_interval
 function interval_alarm(time, time_interval, alarm, alarm_interval)
-
 logical :: interval_alarm
-type(time_type), intent(in) :: time, time_interval, alarm_interval
-type(time_type), intent(inout) :: alarm
+type(time_type), intent(in) :: time !< current time
+type(time_type), intent(in) :: time_interval !< a time interval
+type(time_type), intent(in) :: alarm_interval !< a time interval
+type(time_type), intent(inout) :: alarm !< An alarm time, which is incremented by the alarm_interval if
+                               !! the function is true.
 
 if((alarm - time) <= (time_interval / 2)) then
    interval_alarm = .TRUE.
@@ -1348,37 +993,8 @@ else
 end if
 
 end function interval_alarm
-! </FUNCTION>
 
 !--------------------------------------------------------------------------
-! <FUNCTION NAME="repeat_alarm">
-
-!   <OVERVIEW>
-!      Repeat_alarm supports an alarm that goes off with
-!      alarm_frequency and lasts for alarm_length.
-!   </OVERVIEW>
-!   <DESCRIPTION>
-!      Repeat_alarm supports an alarm that goes off with alarm_frequency and
-!      lasts for alarm_length.  If the nearest occurence of an alarm time
-!      is less than half an alarm_length from the input time, repeat_alarm
-!      is true.  For instance, if the alarm_frequency is 1 day, and the
-!      alarm_length is 2 hours, then repeat_alarm is true from time 2300 on
-!      day n to time 0100 on day n + 1 for all n.
-!   </DESCRIPTION>
-!   <TEMPLATE>
-!      repeat_alarm(time, alarm_frequency, alarm_length)
-!   </TEMPLATE>
-
-!   <IN NAME="time" TYPE="time_type"> Current time.  </IN>
-!   <IN NAME="alarm_frequency" TYPE="time_type">
-!     A time interval for alarm_frequency.
-!   </IN>
-!   <IN NAME="alarm_length" TYPE="time_type">
-!     A time interval for alarm_length.
-!   </IN>
-!   <OUT NAME="repeat_alarm" TYPE="logical">
-!     Returns either True or false.
-!   </OUT>
 
 !> Repeat_alarm supports an alarm that goes off with alarm_frequency and
 !! lasts for alarm_length.  If the nearest occurence of an alarm time
@@ -1389,7 +1005,9 @@ end function interval_alarm
 function repeat_alarm(time, alarm_frequency, alarm_length)
 
 logical :: repeat_alarm
-type(time_type), intent(in) :: time, alarm_frequency, alarm_length
+type(time_type), intent(in) :: time !< current time
+type(time_type), intent(in) :: alarm_interval !< a time interval
+type(time_type), intent(in) :: alarm_time !< a time interval
 type(time_type) :: prev, next
 
 prev = (time / alarm_frequency) * alarm_frequency
@@ -1401,7 +1019,6 @@ else
 endif
 
 end function repeat_alarm
-! </FUNCTION>
 
 !--------------------------------------------------------------------------
 
@@ -1431,7 +1048,7 @@ end function repeat_alarm
 !     if(err_msg /= '') call error_mesg('my_routine','additional info: '//trim(err_msg),FATAL)
 !   </OUT>
 
-!> @brief Sets calendar_type.
+!> @brief Sets calendar_type for mapping an interval to a date.
 !! For the Gregorian calendar, negative years and the proleptic calendar are not used;
 !! and the discontinuity of days in October 1582 (when the Gregorian calendar was adopted by select groups in Europe)
 !! is also not taken into account.
@@ -1439,7 +1056,7 @@ subroutine set_calendar_type(type, err_msg)
 
 ! Selects calendar for default mapping from time to date.
 
-integer, intent(in) :: type
+integer, intent(in) :: type !< constant parameter value (ie. one NO_CALENDAR, )
 character(len=*), intent(out), optional :: err_msg
 character(len=256) :: err_msg_local
 
@@ -1462,22 +1079,8 @@ endif
 calendar_type = type
 
 end subroutine set_calendar_type
-! </SUBROUTINE>
 
 !------------------------------------------------------------------------
-! <FUNCTION NAME="get_calendar_type">
-
-!   <OVERVIEW>
-!      Returns the value of the default calendar type for mapping
-!      from time to date.
-!   </OVERVIEW>
-!   <DESCRIPTION>
-!     There are no arguments in this function. It returns the value of
-!     the default calendar type for mapping from time to date.
-!   </DESCRIPTION>
-!   <TEMPLATE>
-!     get_calendar_type()
-!   </TEMPLATE>
 
 !> Returns default calendar type for mapping from time to date.
 function get_calendar_type()
@@ -1487,19 +1090,8 @@ integer :: get_calendar_type
 get_calendar_type = calendar_type
 
 end function get_calendar_type
-! </FUNCTION>
 
 !------------------------------------------------------------------------
-! <SUBROUTINE NAME="set_ticks_per_second">
-
-!   <OVERVIEW>
-!     Sets the number of ticks per second.
-!   </OVERVIEW>
-!   <DESCRIPTION>
-!     Sets the number of ticks per second.
-!   </DESCRIPTION>
-!   <TEMPLATE> call set_ticks_per_second(ticks_per_second) </TEMPLATE>
-!   <IN NAME="type" TYPE="integer" DIM="(scalar)" DEFAULT="1"> </IN>
 
 !> Sets the number of ticks per second.
 subroutine set_ticks_per_second(tps)
@@ -1509,20 +1101,7 @@ ticks_per_second = tps
 
 end subroutine set_ticks_per_second
 
-! </SUBROUTINE>
-
 !------------------------------------------------------------------------
-! <FUNCTION NAME="get_ticks_per_second">
-
-!   <OVERVIEW>
-!      Returns the number of ticks per second.
-!   </OVERVIEW>
-!   <DESCRIPTION>
-!      Returns the number of ticks per second.
-!   </DESCRIPTION>
-!   <TEMPLATE>
-!     ticks_per_second = get_ticks_per_second()
-!   </TEMPLATE>
 
 !> Returns the number of ticks per second.
 function get_ticks_per_second()
@@ -1532,42 +1111,18 @@ get_ticks_per_second = ticks_per_second
 
 end function get_ticks_per_second
 
-! </FUNCTION>
 !------------------------------------------------------------------------
 
-!========================================================================
-! START OF get_date BLOCK
-! <SUBROUTINE NAME="get_date">
-
-!   <OVERVIEW>
-!      Given a time_interval, returns the corresponding date under
-!      the selected calendar.
-!   </OVERVIEW>
-!   <DESCRIPTION>
-!      Given a time_interval, returns the corresponding date under
-!      the selected calendar.
-!   </DESCRIPTION>
-!   <TEMPLATE>
-!     get_date(time, year, month, day, hour, minute, second, tick, err_msg)
-!   </TEMPLATE>
-!   <IN NAME="time"    TYPE="time_type"> A time interval.</IN>
-!   <OUT NAME="year"   TYPE="integer"></OUT>
-!   <OUT NAME="month"  TYPE="integer"></OUT>
-!   <OUT NAME="day"    TYPE="integer"></OUT>
-!   <OUT NAME="hour"   TYPE="integer"></OUT>
-!   <OUT NAME="minute" TYPE="integer"></OUT>
-!   <OUT NAME="second" TYPE="integer"></OUT>
-!   <OUT NAME="tick"   TYPE="integer, optional"></OUT>
-!   <OUT NAME="err_msg" TYPE="character, optional" DIM="(scalar)">
-!     When present, and when non-blank, a fatal error condition as been detected.
-!     The string itself is an error message.
-!     It is recommended that, when err_msg is present in the call
-!     to this routine, the next line of code should be something
-!     similar to this:
-!     if(err_msg /= '') call error_mesg('my_routine','additional info: '//trim(err_msg),FATAL)
-!   </OUT>
-
  !> @brief Gets the date for different calendar types.
+ !! Given a time_interval, returns the corresponding date under
+ !! the selected calendar.
+ !! When err_msg present, and when non-blank, a fatal error condition as been detected.
+ !! The string itself is an error message.
+ !! It is recommended that, when err_msg is present in the call
+ !! to this routine, the next line of code should be something
+ !! similar to this: <br>
+ !!
+ !!         if(err_msg /= '') call error_mesg('my_routine','additional info: '//trim(err_msg),FATAL)
  subroutine get_date(time, year, month, day, hour, minute, second, tick, err_msg)
 
 ! Given a time, computes the corresponding date given the selected calendar
@@ -1609,7 +1164,7 @@ end function get_ticks_per_second
  endif
 
  end subroutine get_date
-! </SUBROUTINE>
+
 !------------------------------------------------------------------------
 
 !> @brief Gets the date on a Gregorian calendar.
@@ -1772,10 +1327,10 @@ end function get_ticks_per_second
 
 !------------------------------------------------------------------------
 
+ !> Computes date corresponding to time interval for 30 day months, 12
+ !! month years.
  subroutine get_date_thirty(time, year, month, day, hour, minute, second, tick)
 
-! Computes date corresponding to time interval for 30 day months, 12
-! month years.
 
  type(time_type), intent(in) :: time
  integer, intent(out) :: second, minute, hour, day, month, year
@@ -1845,70 +1400,22 @@ end function get_ticks_per_second
  end subroutine get_date_no_leap
 !------------------------------------------------------------------------
 
-! END OF get_date BLOCK
-!========================================================================
-! START OF set_date BLOCK
-! <FUNCTION NAME="set_date">
-
-!   <OVERVIEW>
-!      Given an input date in year, month, days, etc., creates a
-!      time_type that represents this time interval from the
-!      internally defined base date.
-!   </OVERVIEW>
-!   <DESCRIPTION>
-!      Given a date, computes the corresponding time given the selected
-!      date time mapping algorithm. Note that it is possible to specify
-!      any number of illegal dates; these should be checked for and generate
-!      errors as appropriate.
-!   </DESCRIPTION>
-!   <TEMPLATE>
-!     1. set_date(year, month, day, hours, minute, second, tick, err_msg)
-!   </TEMPLATE>
-!   <TEMPLATE>
-!     2. set_date_c(time_string, zero_year_warning, err_msg, allow_rounding)
-!      time_string is a character string containing a date formatted
-!      according to CF conventions. e.g. '1980-12-31 23:59:59.9'
-!   </TEMPLATE>
-!   <IN NAME="time"   TYPE="time_type"> A time interval.</IN>
-!   <IN NAME="year"   TYPE="integer"></IN>
-!   <IN NAME="month"  TYPE="integer"></IN>
-!   <IN NAME="day"    TYPE="integer"></IN>
-!   <IN NAME="hour"   TYPE="integer"></IN>
-!   <IN NAME="minute" TYPE="integer"></IN>
-!   <IN NAME="second" TYPE="integer"></IN>
-!   <IN NAME="tick"   TYPE="integer"></IN>
-!   <IN NAME="zero_year_warning"   TYPE="logical">
-!     If the year number is zero, it will be silently changed to one,
-!     unless zero_year_warning=.true., in which case a WARNING message
-!     will also be issued.
-!   </IN>
-!   <IN NAME="allow_rounding"   TYPE="logical, optional" DEFAULT=".true.">
-!     When .true., any fractions of a second will be rounded off to the nearest tick.
-!     When .false., it is a fatal error if the second fraction cannot be exactly
-!     represented by a number of ticks.
-!   </IN>
-!   <OUT NAME="err_msg" TYPE="character, optional" DIM="(scalar)">
-!     When present, and when non-blank, a fatal error condition as been detected.
-!     The string itself is an error message.
-!     It is recommended that, when err_msg is present in the call
-!     to this routine, the next line of code should be something
-!     similar to this:
-!     if(err_msg /= '') call error_mesg('my_routine','additional info: '//trim(err_msg),FATAL)
-!   </OUT>
-!   <OUT NAME="set_date" TYPE="time_type"> A time interval.</OUT>
-
-!> @brief Sets days for different calendar types.
+ !> @brief Sets days for different calendar types.
+ !! Given an input date in year, month, days, etc., creates a
+ !! time_type that represents this time interval from the
+ !! internally defined base date.
+ !!
+ !! @note that it is possible to specify
+ !! any number of illegal dates; these are checked for and generate
+ !! errors as appropriate.
  function set_date_private(year, month, day, hour, minute, second, tick, Time_out, err_msg)
 
 ! Given a date, computes the corresponding time given the selected
-! date time mapping algorithm.  Note that it is possible to specify
-! any number of illegal dates; these are checked for and generate
-! errors as appropriate.
-
+! date time mapping algorithm.  
  logical :: set_date_private
  integer, intent(in) :: year, month, day, hour, minute, second, tick
  type(time_type) :: Time_out
- character(len=*), intent(out) :: err_msg
+ character(len=*), intent(out) :: err_msg !< error message, if non-empty an error has occured
 
  if(.not.module_is_initialized) call time_manager_init
 
@@ -1932,7 +1439,6 @@ end function get_ticks_per_second
  end select
 
  end function set_date_private
-! </FUNCTION>
 
 !------------------------------------------------------------------------
 
@@ -1962,27 +1468,25 @@ end function get_ticks_per_second
 !------------------------------------------------------------------------
 
  !> @brief Calls set_date_private for different calendar types when given a string input.
+ !! Examples of acceptable forms of string:
+ !!
+ !! 1980-01-01 00:00:00
+ !! 1980-01-01 00:00:00.50
+ !! 1980-1-1 0:0:0
+ !! 1980-1-1
+ !!
+ !! year number must occupy 4 spaces.
+ !! months, days, hours, minutes, seconds may occupy 1 or 2 spaces
+ !! year, month and day must be separated by a '-'
+ !! hour, minute, second must be separated by a ':'
+ !! hour, minute, second are optional. If not present then zero is assumed.
+ !! second may be a real number.
+ !!
+ !! zero_year_warning:
+ !! If the year number is zero, it will be silently changed to one,
+ !! unless zero_year_warning=.true., in which case a WARNING message
+ !! will also be issued
  function set_date_c(string, zero_year_warning, err_msg, allow_rounding)
-
- ! Examples of acceptable forms of string:
-
- ! 1980-01-01 00:00:00
- ! 1980-01-01 00:00:00.50
- ! 1980-1-1 0:0:0
- ! 1980-1-1
-
- ! year number must occupy 4 spaces.
- ! months, days, hours, minutes, seconds may occupy 1 or 2 spaces
- ! year, month and day must be separated by a '-'
- ! hour, minute, second must be separated by a ':'
- ! hour, minute, second are optional. If not present then zero is assumed.
- ! second may be a real number.
-
- ! zero_year_warning:
- ! If the year number is zero, it will be silently changed to one,
- ! unless zero_year_warning=.true., in which case a WARNING message
- ! will also be issued
-
  type(time_type) :: set_date_c
  character(len=*), intent(in) :: string
  logical,          intent(in),  optional :: zero_year_warning
@@ -2553,58 +2057,24 @@ end function get_ticks_per_second
  end function increment_date_private
 
 !=========================================================================
-! <FUNCTION NAME="decrement_date">
 
-!   <OVERVIEW>
-!      Decrements the date represented by a time interval and the
-!      default calendar type by a number of seconds, etc.
-!   </OVERVIEW>
-!   <DESCRIPTION>
-!      Given a time and some date decrement, computes a new time.  Depending
-!      on the mapping algorithm from date to time, it may be possible to specify
-!      undefined decrements (i.e. if one decrements by 68 days and 3 months in
-!      a Julian calendar, it matters which order these operations are done and
-!      we don't want to deal with stuff like that, make it an error).
-!   </DESCRIPTION>
-!   <TEMPLATE>
-!      decrement_date(time, years, months, days, hours, minutes, seconds, ticks, err_msg))
-!   </TEMPLATE>
-!   <IN NAME="time"    TYPE="time_type"> A time interval.</IN>
-!   <IN NAME="years"   TYPE="integer">An decrement of years.</IN>
-!   <IN NAME="months"  TYPE="integer">An decrement of months.</IN>
-!   <IN NAME="days"    TYPE="integer">An decrement of days.</IN>
-!   <IN NAME="hours"   TYPE="integer">An decrement of hours.</IN>
-!   <IN NAME="minutes" TYPE="integer">An decrement of minutes.</IN>
-!   <IN NAME="seconds" TYPE="integer">An decrement of seconds.</IN>
-!   <IN NAME="ticks"   TYPE="integer">An decrement of ticks.</IN>
-!   <OUT NAME="err_msg" TYPE="character, optional" DIM="(scalar)">
-!     When present, and when non-blank, a fatal error condition as been detected.
-!     The string itself is an error message.
-!     It is recommended that, when err_msg is present in the call
-!     to this routine, the next line of code should be something
-!     similar to this:
-!     if(err_msg /= '') call error_mesg('my_routine','additional info: '//trim(err_msg),FATAL)
-!   </OUT>
-!   <OUT NAME="decrement_date" TYPE="time_type"> A new time based on the input
-!         time interval and the calendar type.
-!   </OUT>
-!   <IN NAME="allow_neg_inc" TYPE="logical, optional" DIM="(scalar)" DEFAULT=".true.">
-!     When .false., it is a fatal error if any of the input time increments are negative.
-!     This mimics the behavior of lima and earlier revisions.
-!   </IN>
-!   <NOTE>
-!     For all but the thirty_day_months calendar, decrements to months
-!     and years must be made separately from other units because of the
-!     non-associative nature of addition.
-!     If the result is a negative time (i.e. date before the base date)
-!     it is considered a fatal error.
-!   </NOTE>
-
+ !> Given a time and some date decrement, computes a new time.  Depending
+ !! on the mapping algorithm from date to time, it may be possible to specify
+ !! undefined decrements (i.e. if one decrements by 68 days and 3 months in
+ !! a Julian calendar, it matters which order these operations are done and
+ !! we don't want to deal with stuff like that, make it an error).
+ !!
+ !! @note For all but the thirty_day_months calendar, decrements to months
+ !! and years must be made separately from other units because of the
+ !! non-associative nature of addition.
+ !! If the result is a negative time (i.e. date before the base date)
+ !! it is considered a fatal error.
  function decrement_date(Time, years, months, days, hours, minutes, seconds, ticks, err_msg, allow_neg_inc)
 
- type(time_type) :: decrement_date
- type(time_type), intent(in) :: Time
- integer, intent(in), optional :: seconds, minutes, hours, days, months, years, ticks
+ type(time_type) :: decrement_date !< Time after the given decrement is applied
+ type(time_type), intent(in) :: Time !< time interval to decrement
+ integer, intent(in), optional :: seconds, minutes, hours, days, months, years, ticks !< amount of time to decrement by
+                                                     !! units should not exceed next largest unit (ie. 61 seconds should be 1 min 1 sec )
  character(len=*), intent(out), optional :: err_msg
  logical, intent(in), optional :: allow_neg_inc
 
@@ -2640,35 +2110,14 @@ end function get_ticks_per_second
  endif
 
  end function decrement_date
- ! </FUNCTION>
 
-!=========================================================================
-! START days_in_month BLOCK
-! <FUNCTION NAME="days_in_month">
+!--------------------------------------------------------------------------
 
-!   <OVERVIEW>
-!       Given a time interval, gives the number of days in the
-!       month corresponding to the default calendar.
-!   </OVERVIEW>
-!   <DESCRIPTION>
-!       Given a time, computes the corresponding date given the selected
-!       date time mapping algorithm.
-!   </DESCRIPTION>
-!   <TEMPLATE> days_in_month(time) </TEMPLATE>
-
-!   <IN NAME="time" UNITS="" TYPE="time_type" DIM="">A time interval.</IN>
-!   <OUT NAME="days_in_month" UNITS="" TYPE="integer" DIM="" DEFAULT="">
-!       The number of days in the month given the selected time
-!       mapping algorithm.
-!   </OUT>
-
+!> Given a time, computes the corresponding date given the selected
+!! date time mapping algorithm
 function days_in_month(Time, err_msg)
-
-! Given a time, computes the corresponding date given the selected
-! date time mapping algorithm
-
-integer :: days_in_month
-type(time_type), intent(in) :: Time
+integer :: days_in_month !< number of days in month given the current selected calendar type
+type(time_type), intent(in) :: Time !< a time interval
 character(len=*), intent(out), optional :: err_msg
 
 if(.not.module_is_initialized) call time_manager_init
@@ -2690,14 +2139,11 @@ case default
    if(error_handler('function days_in_month', 'Invalid calendar type', err_msg)) return
 end select
 end function days_in_month
-! </FUNCTION>
 
 !--------------------------------------------------------------------------
 
+!> Returns the number of days in a gregorian month.
 function days_in_month_gregorian(Time)
-
-! Returns the number of days in a gregorian month.
-
 integer :: days_in_month_gregorian
 type(time_type), intent(in) :: Time
 integer :: year, month, day, hour, minute, second, ticks
@@ -2709,10 +2155,9 @@ if(leap_year_gregorian_int(year) .and. month == 2) days_in_month_gregorian = 29
 end function days_in_month_gregorian
 
 !--------------------------------------------------------------------------
+
+!> Returns the number of days in a julian month.
 function days_in_month_julian(Time)
-
-! Returns the number of days in a julian month.
-
 integer :: days_in_month_julian
 type(time_type), intent(in) :: Time
 integer :: year, month, day, hour, minute, second, ticks
@@ -2724,11 +2169,10 @@ if(leap_year_julian(Time) .and. month == 2) days_in_month_julian = 29
 end function days_in_month_julian
 
 !--------------------------------------------------------------------------
+
+!> Returns the number of days in a thirty day month (needed for transparent
+!! changes to calendar type).
 function days_in_month_thirty(Time)
-
-! Returns the number of days in a thirty day month (needed for transparent
-! changes to calendar type).
-
 integer :: days_in_month_thirty
 type(time_type), intent(in) :: Time
 
@@ -2737,10 +2181,9 @@ days_in_month_thirty = 30
 end function days_in_month_thirty
 
 !--------------------------------------------------------------------------
+
+!> Returns the number of days in a 365 day year month.
 function days_in_month_no_leap(Time)
-
-! Returns the number of days in a 365 day year month.
-
 integer :: days_in_month_no_leap
 type(time_type), intent(in) :: Time
 integer :: year, month, day, hour, minute, second, ticks
@@ -2750,32 +2193,11 @@ days_in_month_no_leap= days_per_month(month)
 
 end function days_in_month_no_leap
 
-! END OF days_in_month BLOCK
-!==========================================================================
-! START OF leap_year BLOCK
-! <FUNCTION NAME="leap_year">
-
-!   <OVERVIEW>
-!      Returns true if the year corresponding to the input time is
-!      a leap year. Always returns false for THIRTY_DAY_MONTHS and NOLEAP.
-!   </OVERVIEW>
-!   <DESCRIPTION>
-!      Returns true if the year corresponding to the input time is
-!      a leap year. Always returns false for THIRTY_DAY_MONTHS and NOLEAP.
-!   </DESCRIPTION>
-!   <TEMPLATE> leap_year(time) </TEMPLATE>
-
-!   <IN NAME="time" UNITS="" TYPE="time_type" DIM="">A time interval.</IN>
-!   <OUT NAME="leap_year" UNITS="" TYPE="calendar_type" DIM="" DEFAULT="">
-!      true if the year corresponding to the input time is a leap year.
-!   </OUT>
-
+!> Returns true if the year corresponding to the input time is
+!! a leap year (for default calendar). Always returns false for THIRTY_DAY_MONTHS and NOLEAP.
 function leap_year(Time, err_msg)
-
-! Is this date in a leap year for default calendar?
-
 logical :: leap_year
-type(time_type), intent(in) :: Time
+type(time_type), intent(in) :: Time !< a time interval to check if leap year
 character(len=*), intent(out), optional :: err_msg
 
 if(.not.module_is_initialized) call time_manager_init
@@ -2794,7 +2216,6 @@ case default
    if(error_handler('function leap_year', 'Invalid calendar type in leap_year', err_msg)) return
 end select
 end function leap_year
-! </FUNCTION>
 
 !--------------------------------------------------------------------------
 
@@ -2825,10 +2246,8 @@ end function leap_year_gregorian_int
 
 !--------------------------------------------------------------------------
 
+!> Returns the number of days in a julian month.
 function leap_year_julian(Time)
-
-! Returns the number of days in a julian month.
-
 logical :: leap_year_julian
 type(time_type), intent(in) :: Time
 integer :: seconds, minutes, hours, day, month, year
@@ -2840,10 +2259,8 @@ end function leap_year_julian
 
 !--------------------------------------------------------------------------
 
+!> No leap years in thirty day months, included for transparency.
 function leap_year_thirty(Time)
-
-! No leap years in thirty day months, included for transparency.
-
 logical :: leap_year_thirty
 type(time_type), intent(in) :: Time
 
@@ -2853,10 +2270,8 @@ end function leap_year_thirty
 
 !--------------------------------------------------------------------------
 
+!> Another tough one; no leap year returns false for leap year inquiry.
 function leap_year_no_leap(Time)
-
-! Another tough one; no leap year returns false for leap year inquiry.
-
 logical :: leap_year_no_leap
 type(time_type), intent(in) :: Time
 
@@ -2864,15 +2279,11 @@ leap_year_no_leap = .FALSE.
 
 end function leap_year_no_leap
 
-!END OF leap_year BLOCK
-!==========================================================================
-
 !> @brief Returns the mean length of the year in the default calendar setting.
 !!
 !> There are no arguments in this function. It returns the mean
 !! length of the year for the default calendar.
 function length_of_year()
-
 ! What is the length of the year for the default calendar type
 
 type(time_type) :: length_of_year
@@ -2892,7 +2303,6 @@ case default
    call error_mesg('length_of_year','Invalid calendar type in length_of_year',FATAL)
 end select
 end function length_of_year
-! </FUNCTION>
 
 !--------------------------------------------------------------------------
 
@@ -2936,10 +2346,6 @@ end function length_of_year_no_leap
 
 !--------------------------------------------------------------------------
 
-! END OF length_of_year BLOCK
-!==========================================================================
-
-!==========================================================================
 !> Returns number of day in year for given time. Jan 1st is day 1, not zero!
 function day_of_year(time)
   integer :: day_of_year
@@ -2952,9 +2358,6 @@ function day_of_year(time)
   t = time-set_date(year,1,1,0,0,0)
   day_of_year = t%days + 1
 end
-
-! START OF days_in_year BLOCK
-! <FUNCTION NAME="days_in_year">
 
 !> @brief Returns the number of days in the calendar year corresponding to the date represented by
 !! time for the default calendar.
@@ -2981,7 +2384,6 @@ case default
    call error_mesg('days_in_year','Invalid calendar type in days_in_year',FATAL)
 end select
 end function days_in_year
-! </FUNCTION>
 
 !--------------------------------------------------------------------------
 
@@ -3035,8 +2437,6 @@ days_in_year_no_leap = 365
 end function days_in_year_no_leap
 
 !--------------------------------------------------------------------------
-
-! END OF days_in_year BLOCK
 
 !> @brief Returns a character string containing the name of the
 !! month corresponding to month number n.
@@ -3193,11 +2593,11 @@ else
   if(error_handler('function valid_calendar_types', err_msg_local, err_msg)) return
 endif
 end function valid_calendar_types
-! </FUNCTION>
+
 !------------------------------------------------------------------------
 
-!--- get the a character string that represents the time. The format will be
-!--- yyyymmdd.hhmmss
+!> Get the a character string that represents the time. The format will be
+!! yyyymmdd.hhmmss
 function date_to_string(time, err_msg)
   type(time_type),  intent(in)            :: time
   character(len=*), intent(out), optional :: err_msg
@@ -3227,115 +2627,4 @@ subroutine time_list_error (T,Terr)
   write (terr,'(I0)') t%days
 end subroutine time_list_error
 
-
 end module time_manager_mod
-
-! <INFO>
-
-!   <TESTPROGRAM NAME="time_main2">
-!    <PRE>
-!        use time_manager_mod
-!        implicit none
-!        type(time_type) :: dt, init_date, astro_base_date, time, final_date
-!        type(time_type) :: next_rad_time, mid_date
-!        type(time_type) :: repeat_alarm_freq, repeat_alarm_length
-!        integer :: num_steps, i, days, months, years, seconds, minutes, hours
-!        integer :: months2, length
-!        real :: astro_days
-!
-!   !Set calendar type
-!   !    call set_calendar_type(THIRTY_DAY_MONTHS)
-!        call set_calendar_type(JULIAN)
-!   !    call set_calendar_type(NOLEAP)
-!
-!   ! Set timestep
-!        dt = set_time(1100, 0)
-!
-!   ! Set initial date
-!        init_date = set_date(1992, 1, 1)
-!
-!   ! Set date for astronomy delta calculation
-!        astro_base_date = set_date(1970, 1, 1, 12, 0, 0)
-!
-!   ! Copy initial time to model current time
-!        time = init_date
-!
-!   ! Determine how many steps to do to run one year
-!        final_date = increment_date(init_date, years = 1)
-!        num_steps = (final_date - init_date) / dt
-!        write(*, *) 'Number of steps is' , num_steps
-!
-!   ! Want to compute radiation at initial step, then every two hours
-!        next_rad_time = time + set_time(7200, 0)
-!
-!   ! Test repeat alarm
-!        repeat_alarm_freq = set_time(0, 1)
-!        repeat_alarm_length = set_time(7200, 0)
-!
-!   ! Loop through a year
-!        do i = 1, num_steps
-!
-!   ! Increment time
-!        time = time + dt
-!
-!   ! Test repeat alarm
-!        if(repeat_alarm(time, repeat_alarm_freq, repeat_alarm_length)) &
-!        write(*, *) 'REPEAT ALARM IS TRUE'
-!
-!   ! Should radiation be computed? Three possible tests.
-!   ! First test assumes exact interval; just ask if times are equal
-!   !     if(time == next_rad_time) then
-!   ! Second test computes rad on last time step that is <= radiation time
-!   !     if((next_rad_time - time) < dt .and. time < next_rad) then
-!   ! Third test computes rad on time step closest to radiation time
-!         if(interval_alarm(time, dt, next_rad_time, set_time(7200, 0))) then
-!           call get_date(time, years, months, days, hours, minutes, seconds)
-!           write(*, *) days, month_name(months), years, hours, minutes, seconds
-!
-!   ! Need to compute real number of days between current time and astro_base
-!           call get_time(time - astro_base_date, seconds, days)
-!           astro_days = days + seconds / 86400.
-!   !       write(*, *) 'astro offset ', astro_days
-!        end if
-!
-!   ! Can compute daily, monthly, yearly, hourly, etc. diagnostics as for rad
-!
-!   ! Example: do diagnostics on last time step of this month
-!        call get_date(time + dt, years, months2, days, hours, minutes, seconds)
-!        call get_date(time, years, months, days, hours, minutes, seconds)
-!        if(months /= months2) then
-!           write(*, *) 'last timestep of month'
-!           write(*, *) days, months, years, hours, minutes, seconds
-!        endif
-!
-!   ! Example: mid-month diagnostics; inefficient to make things clear
-!        length = days_in_month(time)
-!        call get_date(time, years, months, days, hours, minutes, seconds)
-!        mid_date = set_date(years, months, 1) + set_time(0, length) / 2
-!
-!        if(time < mid_date .and. (mid_date - time) < dt) then
-!           write(*, *) 'mid-month time'
-!           write(*, *) days, months, years, hours, minutes, seconds
-!        endif
-!
-!        end do
-!
-!    </PRE>
-!   end program time_main2
-
-!   </TESTPROGRAM>
-!   <NOTE>
-!     The <a name="base date">base date</a> is implicitly defined so users don't
-!     need to be concerned with it. For the curious, the base date is defined as
-!     0 seconds, 0 minutes, 0 hours, day 1, month 1, year 1
-!   </NOTE>
-!   <NOTE>
-!     Please note that a time is a positive definite quantity.
-!   </NOTE>
-!   <NOTE>
-!     See the <LINK SRC="TEST PROGRAM">Test Program </LINK> for a simple program
-!     that shows some of the capabilities of the time manager.
-!   </NOTE>
-! </INFO>
-!> @}
-! close documentation grouping
