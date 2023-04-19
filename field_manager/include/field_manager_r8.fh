@@ -22,8 +22,8 @@
 #undef  FMS_FM_KIND_
 #define FMS_FM_KIND_ r8_kind
 
-#undef  FMS_FM_TYPE_
-#define FMS_FM_TYPE_ r8_type
+#undef  R_VALUE_
+#define R_VALUE_ r8_value
 
 #undef  PARSE_REALS_
 #define PARSE_REALS_ parse_reals_r8

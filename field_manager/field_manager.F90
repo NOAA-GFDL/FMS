@@ -235,7 +235,8 @@ public :: fm_new_list          !< (list [, create] [, keep]) return index
 public :: fm_new_value         !< (entry, value [, create] [, index]) return index !! generic
 public :: fm_new_value_integer !<   as above (overloaded function)
 public :: fm_new_value_logical !<   as above (overloaded function)
-public :: fm_new_value_real    !<   as above (overloaded function)
+public :: fm_new_value_real_r4 !<   as above (overloaded function)
+public :: fm_new_value_real_r8 !<   as above (overloaded function)
 public :: fm_new_value_string  !<   as above (overloaded function)
 public :: fm_reset_loop        !< ()
 public :: fm_return_root       !< () return success
@@ -500,7 +501,8 @@ type, private :: field_def
   type (field_def), pointer                           :: last_field => NULL()
   integer, allocatable, dimension(:)                  :: i_value
   logical, allocatable, dimension(:)                  :: l_value
-  real, allocatable, dimension(:)                     :: r_value
+  real(r4_kind), allocatable, dimension(:)            :: r4_value
+  real(r8_kind), allocatable, dimension(:)            :: r8_value
   character(len=fm_string_len), allocatable, dimension(:) :: s_value
   type (field_def), pointer                           :: next => NULL()
   type (field_def), pointer                           :: prev => NULL()
@@ -711,7 +713,7 @@ integer                            :: val_int !< value when converted to integer
 integer                            :: val_type !< value type represented as integer for use in select case
 logical                            :: append_new !< whether or not to append to existing list structure
 logical                            :: val_logic !< value when converted to logical
-real                               :: val_real !< value when converted to real
+real(r8_kind)                      :: val_real !< value when converted to real
 
 call strip_front_blanks(val_name_in)
 method_name = trim(method_name_in)
@@ -1199,7 +1201,7 @@ integer                        :: val_int
 integer                        :: val_type
 logical                        :: append_new
 logical                        :: val_logic
-real                           :: val_real
+real(r8_kind)                  :: val_real
 integer                        :: length
 
 call strip_front_blanks(val_name_in)
@@ -1578,7 +1580,8 @@ list_p%max_index = 0
 list_p%array_dim = 0
 if (allocated(list_p%i_value)) deallocate(list_p%i_value)
 if (allocated(list_p%l_value)) deallocate(list_p%l_value)
-if (allocated(list_p%r_value)) deallocate(list_p%r_value)
+if (allocated(list_p%r4_value)) deallocate(list_p%r4_value)
+if (allocated(list_p%r8_value)) deallocate(list_p%r8_value)
 if (allocated(list_p%s_value)) deallocate(list_p%s_value)
 !        If this is the first field in the parent, then set the pointer
 !        to it, otherwise, update the "next" pointer for the last list
@@ -1694,12 +1697,14 @@ logical recursive function dump_list(list_p, recursive, depth, out_unit) result(
          if (this_field_p%max_index .eq. 0) then
             write (out_unit,'(a,a,a)') blank(1:depthp1),  trim(this_field_p%name), ' = NULL'
          elseif (this_field_p%max_index .eq. 1) then
-            write (scratch,*) this_field_p%r_value(1)
+            if(allocated(this_field_p%r4_value)) write (scratch,*) this_field_p%r4_value(1)
+            if(allocated(this_field_p%r8_value)) write (scratch,*) this_field_p%r8_value(1)
             write (out_unit,'(a,a,a,a)') blank(1:depthp1), trim(this_field_p%name), ' = ', &
                    trim(adjustl(scratch))
          else  ! Write out the array of values for this field.
             do j = 1, this_field_p%max_index
-               write (scratch,*) this_field_p%r_value(j)
+               if(allocated(this_field_p%r4_value)) write (scratch,*) this_field_p%r4_value(j)
+               if(allocated(this_field_p%r8_value)) write (scratch,*) this_field_p%r8_value(j)
                write (num,*) j
                write (out_unit,'(a,a,a,a,a,a)') blank(1:depthp1), trim(this_field_p%name), &
                       '[', trim(adjustl(num)), '] = ', trim(adjustl(scratch))
@@ -2694,7 +2699,7 @@ if (associated(temp_list_p)) then
 !        If not then reset max_index to 0
     if (temp_field_p%field_type == real_type ) then
        ! promote integer input to real
-       field_index = fm_new_value_real(name, real(value), create, index, append)
+       field_index = fm_new_value(name, real(value,r8_kind), create, index, append)
        return
     else if (temp_field_p%field_type /= integer_type ) then
       !  slm: why would we reset index? Is it not an error to have a "list" defined
@@ -2854,7 +2859,7 @@ if (associated(temp_list_p)) then
       field_index = NO_FIELD
       return
 
-    elseif (.not. associated(temp_field_p%l_value) .and.        &
+    elseif (.not. allocated(temp_field_p%l_value) .and.        &
             index_t .gt. 0) then
 !        Array undefined, so allocate the array
       allocate(temp_field_p%l_value(1))
@@ -2869,8 +2874,8 @@ if (associated(temp_list_p)) then
       do i = 1, temp_field_p%max_index
         temp_l_value(i) = temp_field_p%l_value(i)
       enddo
-      if (associated(temp_field_p%l_value)) deallocate(temp_field_p%l_value)
-      temp_field_p%l_value => temp_l_value
+      if (allocated(temp_field_p%l_value)) deallocate(temp_field_p%l_value)
+      temp_field_p%l_value = temp_l_value
       temp_field_p%max_index = index_t
 
     endif
@@ -2987,7 +2992,7 @@ if (associated(temp_list_p)) then
       field_index = NO_FIELD
       return
 
-    elseif (.not. associated(temp_field_p%s_value) .and.        &
+    elseif (.not.allocated(temp_field_p%s_value) .and.        &
             index_t .gt. 0) then
 !        Array undefined, so allocate the array
       allocate(temp_field_p%s_value(1))
@@ -3002,8 +3007,8 @@ if (associated(temp_list_p)) then
       do i = 1, temp_field_p%max_index
         temp_s_value(i) = temp_field_p%s_value(i)
       enddo
-      if (associated(temp_field_p%s_value)) deallocate(temp_field_p%s_value)
-      temp_field_p%s_value => temp_s_value
+      if (allocated(temp_field_p%s_value)) deallocate(temp_field_p%s_value)
+      temp_field_p%s_value = temp_s_value
       temp_field_p%max_index = index_t
 
     endif
@@ -3163,7 +3168,8 @@ if (.not. module_is_initialized) then
   root%array_dim = 0
   if (allocated(root%i_value)) deallocate(root%i_value)
   if (allocated(root%l_value)) deallocate(root%l_value)
-  if (allocated(root%r_value)) deallocate(root%r_value)
+  if (allocated(root%r4_value)) deallocate(root%r4_value)
+  if (allocated(root%r8_value)) deallocate(root%r8_value)
   if (allocated(root%s_value)) deallocate(root%s_value)
 
   nullify(root%next)
@@ -3219,7 +3225,8 @@ list_p%length = 0
 list_p%field_type = list_type
 if (allocated(list_p%i_value)) deallocate(list_p%i_value)
 if (allocated(list_p%l_value)) deallocate(list_p%l_value)
-if (allocated(list_p%r_value)) deallocate(list_p%r_value)
+if (allocated(list_p%r4_value)) deallocate(list_p%r4_value)
+if (allocated(list_p%r8_value)) deallocate(list_p%r8_value)
 if (allocated(list_p%s_value)) deallocate(list_p%s_value)
 
 end function  make_list
@@ -3344,7 +3351,8 @@ else
         call concat_strings(method_control, comma//trim(this_field_p%name)//' = '//trim(adjustl(scratch)))
 
     case(real_type)
-        write (scratch,*) this_field_p%r_value
+        if(allocated(this_field_p%r4_value)) write (scratch,*) this_field_p%r4_value
+        if(allocated(this_field_p%r8_value)) write (scratch,*) this_field_p%r8_value
         call concat_strings(method_control, comma//trim(this_field_p%name)//' = '//trim(adjustl(scratch)))
 
     case(string_type)
@@ -3410,7 +3418,8 @@ logical                                                    :: got_value
 logical                                                    :: recursive_t
 logical                                                    :: success
 logical                                                    :: val_logical
-real                                                       :: val_real
+real(r4_kind)                                              :: val_real4
+real(r8_kind)                                              :: val_real8
 type (field_def), pointer, save                            :: temp_field_p
 type (field_def), pointer, save                            :: temp_list_p
 integer                                                    :: out_unit
@@ -3464,12 +3473,20 @@ if (success) then
             call mpp_error(FATAL, trim(error_header)//'Could not set the '//trim(method(n))//&
                                   ' for '//trim(list_name)//trim(suffix))
 
-        case (real_type)
-          got_value = fm_get_value( trim(list_name)//list_sep//method(n), val_real)
-          if ( fm_new_value( trim(list_name_new)//list_sep//method(n), val_real, &
-                             create = create, append = .true.) < 0 ) &
-            call mpp_error(FATAL, trim(error_header)//'Could not set the '//trim(method(n))//&
-                                  ' for '//trim(list_name)//trim(suffix))
+       case (real_type)
+          if(allocated(temp_field_p%r4_value)) then
+             got_value = fm_get_value( trim(list_name)//list_sep//method(n), val_real4)
+             if ( fm_new_value( trim(list_name_new)//list_sep//method(n), val_real4, &
+                  create = create, append = .true.) < 0 ) &
+                  call mpp_error(FATAL, trim(error_header)//'Could not set the '//trim(method(n))//&
+                  ' for '//trim(list_name)//trim(suffix))
+          else if(allocated(temp_field_p%r8_value)) then
+             got_value = fm_get_value( trim(list_name)//list_sep//method(n), val_real8)
+             if ( fm_new_value( trim(list_name_new)//list_sep//method(n), val_real8, &
+                  create = create, append = .true.) < 0 ) &
+                  call mpp_error(FATAL, trim(error_header)//'Could not set the '//trim(method(n))//&
+                  ' for '//trim(list_name)//trim(suffix))
+          end if
 
         case (string_type)
           got_value = fm_get_value( trim(list_name)//list_sep//method(n), val_str)
@@ -3600,7 +3617,8 @@ else
 
     case(real_type)
 
-        write (scratch,*) this_field_p%r_value
+       if(allocated(this_field_p%r4_value)) write (scratch,*) this_field_p%r4_value
+       if(allocated(this_field_p%r8_value)) write (scratch,*) this_field_p%r8_value
         call strip_front_blanks(scratch)
         write (method(num_meth),'(a,a)') trim(method(num_meth)), &
                 trim(this_field_p%name)
