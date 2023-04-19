@@ -250,7 +250,7 @@ end interface
 
 !> Wrapper for the real to time interface
 !! Takes seconds as reals to convert to a time_type representation of an interval
-!! r4 versions just casts to r8 
+!! r4 versions just casts to r8
 interface real_to_time_type
   module procedure real4_to_time_type
   module procedure real8_to_time_type
