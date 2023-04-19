@@ -719,8 +719,8 @@ end function time_ne
 !> Returns sum of two time_types
 function time_plus(time1, time2)
 type(time_type) :: time_plus
-type(time_type), intent(in) :: time1 !< time interval to add 
-type(time_type), intent(in) :: time2 !< time interval to add 
+type(time_type), intent(in) :: time1 !< time interval to add
+type(time_type), intent(in) :: time2 !< time interval to add
 
 if(.not.module_is_initialized) call time_manager_init
 
@@ -1003,11 +1003,10 @@ end function interval_alarm
 !! alarm_length is 2 hours, then repeat_alarm is true from time 2300 on
 !! day n to time 0100 on day n + 1 for all n.
 function repeat_alarm(time, alarm_frequency, alarm_length)
-
 logical :: repeat_alarm
 type(time_type), intent(in) :: time !< current time
-type(time_type), intent(in) :: alarm_interval !< a time interval
-type(time_type), intent(in) :: alarm_time !< a time interval
+type(time_type), intent(in) :: alarm_frequency !< a time interval for time in between alarm activations
+type(time_type), intent(in) :: alarm_length !< a time interval for amount of time alarm is active for
 type(time_type) :: prev, next
 
 prev = (time / alarm_frequency) * alarm_frequency
@@ -1411,7 +1410,7 @@ end function get_ticks_per_second
  function set_date_private(year, month, day, hour, minute, second, tick, Time_out, err_msg)
 
 ! Given a date, computes the corresponding time given the selected
-! date time mapping algorithm.  
+! date time mapping algorithm.
  logical :: set_date_private
  integer, intent(in) :: year, month, day, hour, minute, second, tick
  type(time_type) :: Time_out
@@ -2072,7 +2071,8 @@ end function get_ticks_per_second
  type(time_type) :: decrement_date !< Time after the given decrement is applied
  type(time_type), intent(in) :: Time !< time interval to decrement
  integer, intent(in), optional :: seconds, minutes, hours, days, months, years, ticks !< amount of time to decrement by
-                                                     !! units should not exceed next largest unit (ie. 61 seconds should be 1 min 1 sec )
+                                                     !! units should not exceed next largest unit (ie. 61 seconds
+                                                     !! should be 1 min 1 sec )
  character(len=*), intent(out), optional :: err_msg
  logical, intent(in), optional :: allow_neg_inc
 
