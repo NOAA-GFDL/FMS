@@ -1958,23 +1958,21 @@ end function get_ticks_per_second
 
  end function increment_date
 
-! </FUNCTION>
-
 !=======================================================================
 
+ !> Given a time and some date increment, computes a new time.  Depending
+ !! on the mapping algorithm from date to time, it may be possible to specify
+ !! undefined increments (i.e. if one increments by 68 days and 3 months in
+ !! a Julian calendar, it matters which order these operations are done and
+ !! we don't want to deal with stuff like that, make it an error).
+ !!
+ !! This routine operates in one of two modes.
+ !! 1. days, hours, minutes, seconds, ticks are incremented, years and months must be zero or absent arguments.
+ !! 2. years and/or months are incremented, other time increments must be zero or absent arguments.
+ !!
+ !! Negative increments are always allowed in the private version of this routine.
  function increment_date_private(Time, years, months, days, hours, minutes, seconds, ticks, Time_out, err_msg)
 
-! Given a time and some date increment, computes a new time.  Depending
-! on the mapping algorithm from date to time, it may be possible to specify
-! undefined increments (i.e. if one increments by 68 days and 3 months in
-! a Julian calendar, it matters which order these operations are done and
-! we don't want to deal with stuff like that, make it an error).
-
-! This routine operates in one of two modes.
-! 1. days, hours, minutes, seconds, ticks are incremented, years and months must be zero or absent arguments.
-! 2. years and/or months are incremented, other time increments must be zero or absent arguments.
-
-! Negative increments are always allowed in the private version of this routine.
 
  logical :: increment_date_private
  type(time_type),  intent(in)  :: Time
@@ -2032,7 +2030,7 @@ end function get_ticks_per_second
    cmonth = cmonth + months
 
  ! Adjust year and month number when cmonth falls outside the range 1 to 12
-   cyear = cyear + floor((cmonth-1)/12.)
+   cyear = cyear + floor((cmonth-1)/12.0_r8_kind)
    cmonth = modulo((cmonth-1),12) + 1
 
  ! Add year increment
