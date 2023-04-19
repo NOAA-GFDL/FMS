@@ -62,7 +62,7 @@
 module time_manager_mod
 
 
-use platform_mod, only: r8_kind
+use platform_mod, only: r8_kind, r4_kind
 use constants_mod, only: rseconds_per_day=>seconds_per_day
 use fms_mod, only: error_mesg, FATAL, WARNING, write_version_number, stdout
 
@@ -246,6 +246,14 @@ end interface
 !> @ingroup time_manager_mod
 interface set_date
   module procedure set_date_i, set_date_c
+end interface
+
+!> Wrapper for the real to time interface
+!! Takes seconds as reals to convert to a time_type representation of an interval
+!! r4 versions just casts to r8 
+interface real_to_time_type
+  module procedure real4_to_time_type
+  module procedure real8_to_time_type
 end interface
 
 !> @addtogroup time_manager_mod
@@ -874,7 +882,7 @@ end function time_type_to_real
 !> @brief Convert a real number of seconds into a time_type variable.
 !! @return A filled time type variable, and an error message if an
 !!         error occurs.
-function real_to_time_type(x,err_msg) result(t)
+function real8_to_time_type(x,err_msg) result(t)
   real(r8_kind),intent(in) :: x !< Number of seconds.
   character(len=*),intent(out),optional :: err_msg !< Error message.
   type(time_type) :: t
@@ -882,7 +890,7 @@ function real_to_time_type(x,err_msg) result(t)
   integer :: seconds
   integer :: ticks
   character(len=128) :: err_msg_local
-  real(r8_kind),parameter :: spd = 86400_r8_kind
+  real(r8_kind),parameter :: spd = 86400.0_r8_kind
   real(r8_kind) :: tps
   real(r8_kind) :: a
   tps = real(ticks_per_second, r8_kind)
@@ -893,11 +901,18 @@ function real_to_time_type(x,err_msg) result(t)
   a = (a - real(seconds, r8_kind))*tps
   ticks = safe_rtoi(a,do_nearest)
   if (.not. set_time_private(seconds,days,ticks,t,err_msg_local)) then
-    if (error_handler('function real_to_time_type',err_msg_local,err_msg)) then
+    if (error_handler('function real8_to_time_type',err_msg_local,err_msg)) then
       return
     endif
   endif
-end function real_to_time_type
+end function real8_to_time_type
+
+function real4_to_time_type(x, err_msg) result(t)
+  real(r4_kind), intent(in) :: x !< number of seconds
+  character(len=*),intent(out),optional :: err_msg !< Error message.
+  type(time_type) :: t
+  t = real_to_time_type(real(x, r8_kind), err_msg)
+end function
 
 !> @brief Convert a floating point value to an integer value.
 !! @return The integer value, using the input rounding mode.
