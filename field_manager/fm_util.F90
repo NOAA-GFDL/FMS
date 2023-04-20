@@ -1543,7 +1543,7 @@ else if (fm_type .eq. 'integer') then
   if (.not. fm_get_value(name, ivalue, index = index_t)) then
     call mpp_error(FATAL, trim(error_header) // ' Problem getting ' // trim(name))
   endif
-  value = ivalue
+  value = real(ivalue,r4_kind)
 elseif (fm_type .eq. ' ' .and. present(default_value)) then  !}{
   value = default_value
 elseif (fm_type .eq. ' ') then  !}{
@@ -1664,7 +1664,7 @@ else if (fm_type .eq. 'integer') then
   if (.not. fm_get_value(name, ivalue, index = index_t)) then
     call mpp_error(FATAL, trim(error_header) // ' Problem getting ' // trim(name))
   endif
-  value = ivalue
+  value = real(ivalue,r8_kind)
 elseif (fm_type .eq. ' ' .and. present(default_value)) then  !}{
   value = default_value
 elseif (fm_type .eq. ' ') then  !}{
