@@ -886,11 +886,14 @@ subroutine allocate_diag_field_output_buffers(this, field_data, field_id)
       do j = 1, ndims
         axes_length(j) = this%fms_get_axis_length(axis_ids(j))
       enddo
+      !TODO This is going to require more work for when we have subRegion variables
       axes_length(ndims + 1) = num_diurnal_samples
       ndims = ndims + 1 !< Add one more dimension for the diurnal axis
     endif
-
-    ! Allocate diag_buffer_obj, if it is not allocated.
+    
+    ! Allocates diag_buffer_obj to the correct outputBuffer type based on the dimension:
+    ! outputBuffer0d_type, outputBuffer1d_type, outputBuffer2d_type, outputBuffer3d_type,
+    ! outputBuffer4d_type or outputBuffer5d_type.
     if (.not. allocated(this%FMS_diag_output_buffers(buffer_id)%diag_buffer_obj)) then
       this%FMS_diag_output_buffers(buffer_id) = fms_diag_output_buffer_create_container(ndims)
     end if
