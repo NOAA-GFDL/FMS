@@ -476,7 +476,7 @@ end type field_mgr_type
 type, private :: field_names_type
   character(len=fm_field_name_len)                    :: fld_type
   character(len=fm_field_name_len)                    :: mod_name
-  character(len=fm_string_len)                    :: fld_name
+  character(len=fm_string_len)                        :: fld_name
 end  type field_names_type
 
 !> @brief Private type for internal use
@@ -713,7 +713,8 @@ integer                            :: val_int !< value when converted to integer
 integer                            :: val_type !< value type represented as integer for use in select case
 logical                            :: append_new !< whether or not to append to existing list structure
 logical                            :: val_logic !< value when converted to logical
-real(r8_kind)                      :: val_real !< value when converted to real
+real(r8_kind)                      :: val_real !< value when converted to real.
+                                               !! All strings will be converted to r8_kind reals.
 
 call strip_front_blanks(val_name_in)
 method_name = trim(method_name_in)
@@ -1201,7 +1202,7 @@ integer                        :: val_int
 integer                        :: val_type
 logical                        :: append_new
 logical                        :: val_logic
-real(r8_kind)                  :: val_real
+real(r8_kind)                  :: val_real !< all reals converted from string will be in r8_kind precision
 integer                        :: length
 
 call strip_front_blanks(val_name_in)
@@ -1578,11 +1579,11 @@ list_p%length = 0
 list_p%field_type = null_type
 list_p%max_index = 0
 list_p%array_dim = 0
-if (allocated(list_p%i_value)) deallocate(list_p%i_value)
-if (allocated(list_p%l_value)) deallocate(list_p%l_value)
+if (allocated(list_p%i_value))  deallocate(list_p%i_value)
+if (allocated(list_p%l_value))  deallocate(list_p%l_value)
 if (allocated(list_p%r4_value)) deallocate(list_p%r4_value)
 if (allocated(list_p%r8_value)) deallocate(list_p%r8_value)
-if (allocated(list_p%s_value)) deallocate(list_p%s_value)
+if (allocated(list_p%s_value))  deallocate(list_p%s_value)
 !        If this is the first field in the parent, then set the pointer
 !        to it, otherwise, update the "next" pointer for the last list
 if (parent_p%length .le. 0) then
@@ -1702,13 +1703,21 @@ logical recursive function dump_list(list_p, recursive, depth, out_unit) result(
             write (out_unit,'(a,a,a,a)') blank(1:depthp1), trim(this_field_p%name), ' = ', &
                    trim(adjustl(scratch))
          else  ! Write out the array of values for this field.
-            do j = 1, this_field_p%max_index
-               if(allocated(this_field_p%r4_value)) write (scratch,*) this_field_p%r4_value(j)
-               if(allocated(this_field_p%r8_value)) write (scratch,*) this_field_p%r8_value(j)
-               write (num,*) j
-               write (out_unit,'(a,a,a,a,a,a)') blank(1:depthp1), trim(this_field_p%name), &
-                      '[', trim(adjustl(num)), '] = ', trim(adjustl(scratch))
-            enddo
+            if(allocated(this_field_p%r4_value)) then
+               do j = 1, this_field_p%max_index
+                  write (scratch,*) this_field_p%r4_value(j)
+                  write (num,*) j
+                  write (out_unit,'(a,a,a,a,a,a)') blank(1:depthp1), trim(this_field_p%name), &
+                       '[', trim(adjustl(num)), '] = ', trim(adjustl(scratch))
+               end do
+            else if(allocated(this_field_p%r8_value)) then
+               do j = 1, this_field_p%max_index
+                  write (scratch,*) this_field_p%r8_value(j)
+                  write (num,*) j
+                  write (out_unit,'(a,a,a,a,a,a)') blank(1:depthp1), trim(this_field_p%name), &
+                       '[', trim(adjustl(num)), '] = ', trim(adjustl(scratch))
+               end do
+            end if
          endif
 
      case(string_type)
@@ -3223,11 +3232,11 @@ endif
 !        Initialize the new list
 list_p%length = 0
 list_p%field_type = list_type
-if (allocated(list_p%i_value)) deallocate(list_p%i_value)
-if (allocated(list_p%l_value)) deallocate(list_p%l_value)
+if (allocated(list_p%i_value))  deallocate(list_p%i_value)
+if (allocated(list_p%l_value))  deallocate(list_p%l_value)
 if (allocated(list_p%r4_value)) deallocate(list_p%r4_value)
 if (allocated(list_p%r8_value)) deallocate(list_p%r8_value)
-if (allocated(list_p%s_value)) deallocate(list_p%s_value)
+if (allocated(list_p%s_value))  deallocate(list_p%s_value)
 
 end function  make_list
 

@@ -44,8 +44,8 @@ real(FMS_FM_KIND_) :: values(1)
 function  FM_GET_VALUE_REAL_(name, value, index)                 &
           result (success)
 logical                                :: success
-character(len=*), intent(in)           :: name !< The name of a field that the user wishes to get a value for.
-real(FMS_FM_KIND_), intent(out)          :: value !< The value associated with the named field
+character(len=*), intent(in)           :: name  !< The name of a field that the user wishes to get a value for.
+real(FMS_FM_KIND_), intent(out)        :: value !< The value associated with the named field
 integer,          intent(in), optional :: index !< An optional index to retrieve a single value from an array.
 
 integer                         :: index_t
@@ -104,7 +104,7 @@ function  FM_NEW_VALUE_REAL_(name, value, create, index, append) &
 integer                                :: field_index
 character(len=*), intent(in)           :: name !< The name of a field that the user wishes to create
                                                !! a value for.
-real(FMS_FM_KIND_),    intent(in)           :: value !< The value that the user wishes to apply to the
+real(FMS_FM_KIND_),    intent(in)      :: value !< The value that the user wishes to apply to the
                                                 !! named field.
 logical,          intent(in), optional :: create !< If present and .true., then a value for this
                                                  !! field will be created.
@@ -175,7 +175,7 @@ if (associated(temp_list_p)) then
        ! promote integer field to real
        allocate(temp_field_p%R_VALUE_(size(temp_field_p%i_value)))
        do i = 1, size(temp_field_p%i_value)
-          temp_field_p%R_VALUE_(i) = temp_field_p%i_value(i)
+          temp_field_p%R_VALUE_(i) = real(temp_field_p%i_value(i),FMS_FM_KIND_)
        enddo
        temp_field_p%field_type = real_type
        deallocate(temp_field_p%i_value)
