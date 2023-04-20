@@ -42,8 +42,10 @@ libfield_manager_la_SOURCES = \
 	include/fm_util_r4.fh \
 	include/fm_util_r8.fh
 
-field_manager_mod.$(FC_MODEXT): parse.inc fm_yaml_mod.$(FC_MODEXT) include/field_manager.inc
-fm_util_mod.$(FC_MODEXT): field_manager_mod.$(FC_MODEXT) include/fm_util.inc
+field_manager_mod.$(FC_MODEXT): parse.inc fm_yaml_mod.$(FC_MODEXT) \
+	include/field_manager.inc include/field_manager_r4.fh include/field_manager_r8.fh
+fm_util_mod.$(FC_MODEXT): field_manager_mod.$(FC_MODEXT) \
+	include/fm_util.inc include/fm_util_r4.fh include/fm_util_r8.fh
 
 # Mod files are built and then installed as headers.
 MODFILES = \
