@@ -654,7 +654,11 @@ contains
       ! Save the params.
       !> the following has been commented out because the code will not compile
       ! with mixedmode update to field_manager.  Coupler needs to be updated too
-      !gas_fluxes%bc(n)%param => fm_util_get_real_array_r8('param')
+      if(kind(epsln).eq.r4_kind) then
+         gas_fluxes%bc(n)%param4 => fm_util_get_real_array_r4('param')
+      else
+         gas_fluxes%bc(n)%param8 => fm_util_get_real_array_r8('param')
+      end if
 
       ! Save the flags.
       gas_fluxes%bc(n)%flag => fm_util_get_logical_array('flag')
@@ -663,20 +667,31 @@ contains
       num_parameters = fm_util_get_integer(trim(flux_list) // 'implementation/' //&
           & trim(gas_fluxes%bc(n)%implementation) // '/num_parameters', scalar = .true.)
       if (num_parameters .gt. 0) then
-        if (.not. associated(gas_fluxes%bc(n)%param)) then
+        !> r4 version, temporary fix.  need to modify during mixedmode update for coupler
+        if (.not.associated(gas_fluxes%bc(n)%param4) .or. .not.associated(gas_fluxes%bc(n)%param8)) then
           write (error_string,'(a,i2)') ': need ', num_parameters
           call mpp_error(FATAL, trim(error_header) // ' No param for ' // trim(name) // trim(error_string))
-        elseif (size(gas_fluxes%bc(n)%param(:)) .ne. num_parameters) then
-          write (error_string,'(a,i2,a,i2)') ': ', size(gas_fluxes%bc(n)%param(:)), ' given, need ', num_parameters
+        elseif (size(gas_fluxes%bc(n)%param4(:)) .ne. num_parameters .or. &
+                size(gas_fluxes%bc(n)%param8(:)) .ne. num_parameters) then
+           if(associated(gas_fluxes%bc(n)%param4)) write (error_string,'(a,i2,a,i2)') &
+                ': ', size(gas_fluxes%bc(n)%param4(:)), ' given, need ', num_parameters
+           if(associated(gas_fluxes%bc(n)%param8)) write (error_string,'(a,i2,a,i2)') &
+                ': ', size(gas_fluxes%bc(n)%param8(:)), ' given, need ', num_parameters
           call mpp_error(FATAL, trim(error_header) // &
                          &  ' Wrong number of param for ' // trim(name) // trim(error_string))
         endif
+
       elseif (num_parameters .eq. 0) then
-        if (associated(gas_fluxes%bc(n)%param)) then
-          write (error_string,'(a,i3)') ' but has size of ', size(gas_fluxes%bc(n)%param(:))
+        !> r4_version, temporarly fix.  need to modify during mixedmode update for coupler
+        if (associated(gas_fluxes%bc(n)%param4) .or. associated(gas_fluxes%bc(n)%param8)) then
+          if(associated(gas_fluxes%bc(n)%param4)) &
+                write (error_string,'(a,i3)') ' but has size of ', size(gas_fluxes%bc(n)%param4(:))
+          if(associated(gas_fluxes%bc(n)%param8)) &
+                write (error_string,'(a,i3)') ' but has size of ', size(gas_fluxes%bc(n)%param8(:))
           call mpp_error(FATAL, trim(error_header) // ' No params needed for ' // trim(name) // trim(error_string))
         endif
-      else
+
+     else
         write (error_string,'(a,i2)') ': ', num_parameters
         call mpp_error(FATAL, trim(error_header) // &
                        &  'Num_parameters is negative for ' // trim(name) // trim(error_string))

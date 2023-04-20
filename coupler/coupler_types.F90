@@ -39,6 +39,8 @@ module coupler_types_mod
   use mpp_domains_mod,   only: domain2D, mpp_redistribute
   use mpp_mod,           only: mpp_error, FATAL, mpp_chksum
 
+  use platform_mod,      only: r4_kind, r8_kind
+
   use iso_fortran_env, only : int32, int64  !To get mpp_chksum value
 
   implicit none
@@ -193,7 +195,8 @@ module coupler_types_mod
     type(coupler_1d_values_type), pointer, dimension(:)   :: field => NULL() !< field
     character(len=128)             :: flux_type = ' ' !< flux_type
     character(len=128)             :: implementation = ' ' !< implementation
-    real, pointer, dimension(:)    :: param => NULL() !< param
+    real(r4_kind), pointer, dimension(:) :: param4 => NULL() !< param
+    real(r8_kind), pointer, dimension(:) :: param8 => NULL() !< param
     logical, pointer, dimension(:) :: flag => NULL() !< flag
     integer                        :: atm_tr_index = 0 !< atm_tr_index
     character(len=128)             :: ice_restart_file = ' ' !< ice_restart_file
