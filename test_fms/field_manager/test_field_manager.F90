@@ -43,10 +43,13 @@ implicit none
 integer :: i, j, nfields, num_methods, model
 character(len=fm_string_len) :: field_type, field_name, str, name_field_type, path
 character(len=512) :: method_name, method_control
-real :: param
+real(TEST_FM_KIND_) :: param
 integer :: flag, index
 logical :: success
 type(method_type), dimension(20) :: methods
+
+real(TEST_FM_KIND_) :: slope_value
+integer, parameter :: lkind=TEST_FM_KIND_
 
 call mpp_init
 call field_manager_init(nfields)
@@ -146,9 +149,10 @@ write(*,*) 'The value for /ocean_mod/tracer/biotic1/diff_horiz/linear/slope is (
 
 write(*,*) '+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+'
 
+slope_value=0.95_lkind
 write(*,*) "MODIFYING BIOTIC1 FIELD slope ATTRIBUTE TO slope = 0.95 "
 if ( fm_change_list('/ocean_mod/tracer/biotic1/diff_horiz/linear')) &
-   index = fm_new_value('slope',0.95, index = 1)
+   index = fm_new_value('slope',slope_value, index = 1)
 
 ! Dump the listing of the modified ocean model tracer attribute
 success = fm_dump_list("/ocean_mod/tracer/biotic1", .true.)
