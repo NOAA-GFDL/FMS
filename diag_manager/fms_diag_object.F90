@@ -890,7 +890,7 @@ subroutine allocate_diag_field_output_buffers(this, field_data, field_id)
       axes_length(ndims + 1) = num_diurnal_samples
       ndims = ndims + 1 !< Add one more dimension for the diurnal axis
     endif
-    
+
     ! Allocates diag_buffer_obj to the correct outputBuffer type based on the dimension:
     ! outputBuffer0d_type, outputBuffer1d_type, outputBuffer2d_type, outputBuffer3d_type,
     ! outputBuffer4d_type or outputBuffer5d_type.
