@@ -633,8 +633,10 @@ contains
 
       ! Save the molecular weight.
       !> the following calls to fm_util_get_real_r4/8 need to be fixed in the mixed mode project
-      !if(kind(gas_fluxes%bc(n)%mol_wt).eq.r4_kind) gas_fluxes%bc(n)%mol_wt = fm_util_get_real_r4('mol_wt', scalar = .true.)
-      if(kind(gas_fluxes%bc(n)%mol_wt).eq.r8_kind) gas_fluxes%bc(n)%mol_wt = fm_util_get_real_r8('mol_wt', scalar = .true.)
+      !if(kind(gas_fluxes%bc(n)%mol_wt).eq.r4_kind) &
+      !gas_fluxes%bc(n)%mol_wt = fm_util_get_real_r4('mol_wt', scalar = .true.)
+      if(kind(gas_fluxes%bc(n)%mol_wt).eq.r8_kind) &
+           gas_fluxes%bc(n)%mol_wt = fm_util_get_real_r8('mol_wt', scalar = .true.)
       gas_fields_atm%bc(n)%mol_wt = gas_fluxes%bc(n)%mol_wt
       gas_fields_ice%bc(n)%mol_wt = gas_fluxes%bc(n)%mol_wt
 
@@ -650,8 +652,10 @@ contains
 
       ! Save the params.
       !> the following calls to fm_util_get_real_r4/8 need to be fixed in the mixed mode project
-      !if(kind(gas_fluxes%bc(n)%param).eq.r4_kind) gas_fluxes%bc(n)%param => fm_util_get_real_array_r4('param')
-      if(kind(gas_fluxes%bc(n)%param).eq.r8_kind) gas_fluxes%bc(n)%param => fm_util_get_real_array_r8('param')
+      !if(kind(gas_fluxes%bc(n)%param).eq.r4_kind) &
+      !gas_fluxes%bc(n)%param => fm_util_get_real_array_r4('param')
+      if(kind(gas_fluxes%bc(n)%param).eq.r8_kind) &
+           gas_fluxes%bc(n)%param => fm_util_get_real_array_r8('param')
 
       ! Save the flags.
       gas_fluxes%bc(n)%flag => fm_util_get_logical_array('flag')
