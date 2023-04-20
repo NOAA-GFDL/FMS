@@ -173,8 +173,8 @@ write(*,*) '+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+'
 ! repeat using fm_util
 slope_value=1.0_lkind
 if ( fm_change_list('/ocean_mod/tracer/biotic1/diff_horiz/linear')) call fm_util_set_value('slope',slope_value)
-if(lkind==r4_kind) param=fm_util_get_real_r4_kind('slope')
-if(lkind==r8_kind) param=fm_util_get_real_r8_kind('slope')
+if(lkind==r4_kind) param = fm_util_get_real_r4('slope')
+if(lkind==r8_kind) param = fm_util_get_real_r8('slope')
 write(*,*) 'fm_util The value for /ocean_mod/tracer/biotic1/diff_horiz/linear/slope is (real) ',param
 write(*,*) '+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+'
 
