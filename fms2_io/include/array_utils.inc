@@ -23,11 +23,10 @@
 !> @{
 
 !> @brief Allocate arrays using an input array of sizes.
-subroutine allocate_array_i4_kind_1d(buf, sizes, initialize)
+subroutine allocate_array_i4_kind_1d(buf, sizes)
 
   integer(kind=i4_kind), dimension(:), allocatable, intent(inout) :: buf !< Array that will be allocated.
   integer, dimension(1), intent(in) :: sizes !< Array of dimension sizes.
-  logical, intent(in), optional :: initialize !< Optional argument when true will initialize a blank string Not Used
 
   if (allocated(buf)) then
     deallocate(buf)
@@ -61,11 +60,10 @@ end subroutine get_array_section_i4_kind_1d
 
 
 !> @brief Allocate arrays using an input array of sizes.
-subroutine allocate_array_i4_kind_2d(buf, sizes, initialize)
+subroutine allocate_array_i4_kind_2d(buf, sizes)
 
   integer(kind=i4_kind), dimension(:,:), allocatable, intent(inout) :: buf !< Array that will be allocated.
   integer, dimension(2), intent(in) :: sizes !< Array of dimension sizes.
-  logical, intent(in), optional :: initialize !< Optional argument when true will initialize a blank string Not Used
 
   if (allocated(buf)) then
     deallocate(buf)
@@ -99,11 +97,10 @@ end subroutine get_array_section_i4_kind_2d
 
 
 !> @brief Allocate arrays using an input array of sizes.
-subroutine allocate_array_i4_kind_3d(buf, sizes, initialize)
+subroutine allocate_array_i4_kind_3d(buf, sizes)
 
   integer(kind=i4_kind), dimension(:,:,:), allocatable, intent(inout) :: buf !< Array that will be allocated.
   integer, dimension(3), intent(in) :: sizes !< Array of dimension sizes.
-  logical, intent(in), optional :: initialize !< Optional argument when true will initialize a blank string Not Used
 
   if (allocated(buf)) then
     deallocate(buf)
@@ -137,11 +134,10 @@ end subroutine get_array_section_i4_kind_3d
 
 
 !> @brief Allocate arrays using an input array of sizes.
-subroutine allocate_array_i4_kind_4d(buf, sizes, initialize)
+subroutine allocate_array_i4_kind_4d(buf, sizes)
 
   integer(kind=i4_kind), dimension(:,:,:,:), allocatable, intent(inout) :: buf !< Array that will be allocated.
   integer, dimension(4), intent(in) :: sizes !< Array of dimension sizes.
-  logical, intent(in), optional :: initialize !< Optional argument when true will initialize a blank string Not Used
 
   if (allocated(buf)) then
     deallocate(buf)
@@ -175,11 +171,10 @@ end subroutine get_array_section_i4_kind_4d
 
 
 !> @brief Allocate arrays using an input array of sizes.
-subroutine allocate_array_i4_kind_5d(buf, sizes, initialize)
+subroutine allocate_array_i4_kind_5d(buf, sizes)
 
   integer(kind=i4_kind), dimension(:,:,:,:,:), allocatable, intent(inout) :: buf !< Array that will be allocated.
   integer, dimension(5), intent(in) :: sizes !< Array of dimension sizes.
-  logical, intent(in), optional :: initialize !< Optional argument when true will initialize a blank string Not Used
 
   if (allocated(buf)) then
     deallocate(buf)
@@ -213,11 +208,10 @@ end subroutine get_array_section_i4_kind_5d
 
 
 !> @brief Allocate arrays using an input array of sizes.
-subroutine allocate_array_i8_kind_1d(buf, sizes, initialize)
+subroutine allocate_array_i8_kind_1d(buf, sizes)
 
   integer(kind=i8_kind), dimension(:), allocatable, intent(inout) :: buf !< Array that will be allocated.
   integer, dimension(1), intent(in) :: sizes !< Array of dimension sizes.
-  logical, intent(in), optional :: initialize !< Optional argument when true will initialize a blank string Not Used
 
   if (allocated(buf)) then
     deallocate(buf)
@@ -251,11 +245,10 @@ end subroutine get_array_section_i8_kind_1d
 
 
 !> @brief Allocate arrays using an input array of sizes.
-subroutine allocate_array_i8_kind_2d(buf, sizes, initialize)
+subroutine allocate_array_i8_kind_2d(buf, sizes)
 
   integer(kind=i8_kind), dimension(:,:), allocatable, intent(inout) :: buf !< Array that will be allocated.
   integer, dimension(2), intent(in) :: sizes !< Array of dimension sizes.
-  logical, intent(in), optional :: initialize !< Optional argument when true will initialize a blank string Not Used
 
   if (allocated(buf)) then
     deallocate(buf)
@@ -289,11 +282,10 @@ end subroutine get_array_section_i8_kind_2d
 
 
 !> @brief Allocate arrays using an input array of sizes.
-subroutine allocate_array_i8_kind_3d(buf, sizes, initialize)
+subroutine allocate_array_i8_kind_3d(buf, sizes)
 
   integer(kind=i8_kind), dimension(:,:,:), allocatable, intent(inout) :: buf !< Array that will be allocated.
   integer, dimension(3), intent(in) :: sizes !< Array of dimension sizes.
-  logical, intent(in), optional :: initialize !< Optional argument when true will initialize a blank string Not Used
 
   if (allocated(buf)) then
     deallocate(buf)
@@ -327,11 +319,10 @@ end subroutine get_array_section_i8_kind_3d
 
 
 !> @brief Allocate arrays using an input array of sizes.
-subroutine allocate_array_i8_kind_4d(buf, sizes, initialize)
+subroutine allocate_array_i8_kind_4d(buf, sizes)
 
   integer(kind=i8_kind), dimension(:,:,:,:), allocatable, intent(inout) :: buf !< Array that will be allocated.
   integer, dimension(4), intent(in) :: sizes !< Array of dimension sizes.
-  logical, intent(in), optional :: initialize !< Optional argument when true will initialize a blank string Not Used
 
   if (allocated(buf)) then
     deallocate(buf)
@@ -365,11 +356,10 @@ end subroutine get_array_section_i8_kind_4d
 
 
 !> @brief Allocate arrays using an input array of sizes.
-subroutine allocate_array_i8_kind_5d(buf, sizes, initialize)
+subroutine allocate_array_i8_kind_5d(buf, sizes)
 
   integer(kind=i8_kind), dimension(:,:,:,:,:), allocatable, intent(inout) :: buf !< Array that will be allocated.
   integer, dimension(5), intent(in) :: sizes !< Array of dimension sizes.
-  logical, intent(in), optional :: initialize !< Optional argument when true will initialize a blank string Not Used
 
   if (allocated(buf)) then
     deallocate(buf)
@@ -403,11 +393,10 @@ end subroutine get_array_section_i8_kind_5d
 
 
 !> @brief Allocate arrays using an input array of sizes.
-subroutine allocate_array_r4_kind_1d(buf, sizes, initialize)
+subroutine allocate_array_r4_kind_1d(buf, sizes)
 
   real(kind=r4_kind), dimension(:), allocatable, intent(inout) :: buf !< Array that will be allocated.
   integer, dimension(1), intent(in) :: sizes !< Array of dimension sizes.
-  logical, intent(in), optional :: initialize !< Optional argument when true will initialize a blank string Not Used
 
   if (allocated(buf)) then
     deallocate(buf)
@@ -441,11 +430,10 @@ end subroutine get_array_section_r4_kind_1d
 
 
 !> @brief Allocate arrays using an input array of sizes.
-subroutine allocate_array_r4_kind_2d(buf, sizes, initialize)
+subroutine allocate_array_r4_kind_2d(buf, sizes)
 
   real(kind=r4_kind), dimension(:,:), allocatable, intent(inout) :: buf !< Array that will be allocated.
   integer, dimension(2), intent(in) :: sizes !< Array of dimension sizes.
-  logical, intent(in), optional :: initialize !< Optional argument when true will initialize a blank string Not Used
 
   if (allocated(buf)) then
     deallocate(buf)
@@ -479,11 +467,10 @@ end subroutine get_array_section_r4_kind_2d
 
 
 !> @brief Allocate arrays using an input array of sizes.
-subroutine allocate_array_r4_kind_3d(buf, sizes, initialize)
+subroutine allocate_array_r4_kind_3d(buf, sizes)
 
   real(kind=r4_kind), dimension(:,:,:), allocatable, intent(inout) :: buf !< Array that will be allocated.
   integer, dimension(3), intent(in) :: sizes !< Array of dimension sizes.
-  logical, intent(in), optional :: initialize !< Optional argument when true will initialize a blank string Not Used
 
   if (allocated(buf)) then
     deallocate(buf)
@@ -517,11 +504,10 @@ end subroutine get_array_section_r4_kind_3d
 
 
 !> @brief Allocate arrays using an input array of sizes.
-subroutine allocate_array_r4_kind_4d(buf, sizes, initialize)
+subroutine allocate_array_r4_kind_4d(buf, sizes)
 
   real(kind=r4_kind), dimension(:,:,:,:), allocatable, intent(inout) :: buf !< Array that will be allocated.
   integer, dimension(4), intent(in) :: sizes !< Array of dimension sizes.
-  logical, intent(in), optional :: initialize !< Optional argument when true will initialize a blank string Not Used
 
   if (allocated(buf)) then
     deallocate(buf)
@@ -555,11 +541,10 @@ end subroutine get_array_section_r4_kind_4d
 
 
 !> @brief Allocate arrays using an input array of sizes.
-subroutine allocate_array_r4_kind_5d(buf, sizes, initialize)
+subroutine allocate_array_r4_kind_5d(buf, sizes)
 
   real(kind=r4_kind), dimension(:,:,:,:,:), allocatable, intent(inout) :: buf !< Array that will be allocated.
   integer, dimension(5), intent(in) :: sizes !< Array of dimension sizes.
-  logical, intent(in), optional :: initialize !< Optional argument when true will initialize a blank string Not Used
 
   if (allocated(buf)) then
     deallocate(buf)
@@ -593,11 +578,10 @@ end subroutine get_array_section_r4_kind_5d
 
 
 !> @brief Allocate arrays using an input array of sizes.
-subroutine allocate_array_r8_kind_1d(buf, sizes, initialize)
+subroutine allocate_array_r8_kind_1d(buf, sizes)
 
   real(kind=r8_kind), dimension(:), allocatable, intent(inout) :: buf !< Array that will be allocated.
   integer, dimension(1), intent(in) :: sizes !< Array of dimension sizes.
-  logical, intent(in), optional :: initialize !< Optional argument when true will initialize a blank string Not Used
 
   if (allocated(buf)) then
     deallocate(buf)
@@ -631,11 +615,10 @@ end subroutine get_array_section_r8_kind_1d
 
 
 !> @brief Allocate arrays using an input array of sizes.
-subroutine allocate_array_r8_kind_2d(buf, sizes, initialize)
+subroutine allocate_array_r8_kind_2d(buf, sizes)
 
   real(kind=r8_kind), dimension(:,:), allocatable, intent(inout) :: buf !< Array that will be allocated.
   integer, dimension(2), intent(in) :: sizes !< Array of dimension sizes.
-  logical, intent(in), optional :: initialize !< Optional argument when true will initialize a blank string Not Used
 
   if (allocated(buf)) then
     deallocate(buf)
@@ -669,11 +652,10 @@ end subroutine get_array_section_r8_kind_2d
 
 
 !> @brief Allocate arrays using an input array of sizes.
-subroutine allocate_array_r8_kind_3d(buf, sizes, initialize)
+subroutine allocate_array_r8_kind_3d(buf, sizes)
 
   real(kind=r8_kind), dimension(:,:,:), allocatable, intent(inout) :: buf !< Array that will be allocated.
   integer, dimension(3), intent(in) :: sizes !< Array of dimension sizes.
-  logical, intent(in), optional :: initialize !< Optional argument when true will initialize a blank string Not Used
 
   if (allocated(buf)) then
     deallocate(buf)
@@ -707,11 +689,10 @@ end subroutine get_array_section_r8_kind_3d
 
 
 !> @brief Allocate arrays using an input array of sizes.
-subroutine allocate_array_r8_kind_4d(buf, sizes, initialize)
+subroutine allocate_array_r8_kind_4d(buf, sizes)
 
   real(kind=r8_kind), dimension(:,:,:,:), allocatable, intent(inout) :: buf !< Array that will be allocated.
   integer, dimension(4), intent(in) :: sizes !< Array of dimension sizes.
-  logical, intent(in), optional :: initialize !< Optional argument when true will initialize a blank string Not Used
 
   if (allocated(buf)) then
     deallocate(buf)
@@ -745,11 +726,10 @@ end subroutine get_array_section_r8_kind_4d
 
 
 !> @brief Allocate arrays using an input array of sizes.
-subroutine allocate_array_r8_kind_5d(buf, sizes, initialize)
+subroutine allocate_array_r8_kind_5d(buf, sizes)
 
   real(kind=r8_kind), dimension(:,:,:,:,:), allocatable, intent(inout) :: buf !< Array that will be allocated.
   integer, dimension(5), intent(in) :: sizes !< Array of dimension sizes.
-  logical, intent(in), optional :: initialize !< Optional argument when true will initialize a blank string Not Used
 
   if (allocated(buf)) then
     deallocate(buf)
