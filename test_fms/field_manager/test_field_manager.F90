@@ -35,7 +35,9 @@
 program test_field_manager
 
 use field_manager_mod
+use fm_util_mod
 use mpp_mod, only : mpp_init, mpp_exit, mpp_pe, mpp_root_pe, mpp_error, NOTE, FATAL
+use platform_mod, only : r4_kind, r8_kind
 
 implicit none
 
@@ -49,6 +51,7 @@ logical :: success
 type(method_type), dimension(20) :: methods
 
 real(TEST_FM_KIND_) :: slope_value
+real(TEST_FM_KIND_) :: slope_value_array(2)
 integer, parameter :: lkind=TEST_FM_KIND_
 
 call mpp_init
@@ -165,6 +168,16 @@ success =  fm_get_value('/ocean_mod/tracer/biotic1/diff_horiz/linear/slope',para
 if (.not. success) call mpp_error(FATAL, "Unable to get the value of biotic1 slope")
 write(*,*) 'The value for /ocean_mod/tracer/biotic1/diff_horiz/linear/slope is (real) ',param
 write(*,*) '+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+'
+
+
+! repeat using fm_util
+slope_value=1.0_lkind
+if ( fm_change_list('/ocean_mod/tracer/biotic1/diff_horiz/linear')) call fm_util_set_value('slope',slope_value)
+if(lkind==r4_kind) param=fm_util_get_real_r4_kind('slope')
+if(lkind==r8_kind) param=fm_util_get_real_r8_kind('slope')
+write(*,*) 'fm_util The value for /ocean_mod/tracer/biotic1/diff_horiz/linear/slope is (real) ',param
+write(*,*) '+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+'
+
 
 write(*,*) 'Changing the name of biotic1 to biotic_control'
 success = fm_modify_name('/ocean_mod/tracer/biotic1', 'biotic_control')
