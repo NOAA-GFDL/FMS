@@ -881,9 +881,9 @@ subroutine allocate_diag_field_output_buffers(this, field_data, field_id)
   class(fmsDiagOutputBuffer_class), pointer :: ptr_diag_buffer_obj !< Pointer to the buffer class
   class(DiagYamlFilesVar_type), pointer :: ptr_diag_field_yaml !< Pointer to a field from yaml fields
   integer, pointer :: axis_ids(:) !< Pointer to indices of axes of the field variable
-  class(*) :: var_type !< Stores type of the field data (r4, r8, i4, i8, and string) represented as an integer.
-  class(*) :: missing_value !< Fill value to initialize output buffers
-  character(len:*), allocatable :: var_name !< Field name to initialize output buffers
+  class(*), allocatable :: var_type !< Stores type of the field data (r4, r8, i4, i8, and string) represented as an integer.
+  class(*), allocatable :: missing_value !< Fill value to initialize output buffers
+  class(*), allocatable :: var_name !< Field name to initialize output buffers
 
   ! Determine the type of the field data
   var_type = get_var_type(field_data(1, 1, 1, 1))
