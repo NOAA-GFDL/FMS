@@ -791,7 +791,7 @@ axis_name=" "
     if (axis_id < 0 .and. axis_id > this%registered_axis) &
       call mpp_error(FATAL, "fms_get_axis_length: The axis_id is not valid")
 
-    !! if its a scalar (null axis id) just returns n/a since no axis is defined 
+    !! if its a scalar (null axis id) just returns n/a since no axis is defined
     if (axis_id .eq. NULL_AXIS_ID) then
       allocate(character(len=3) :: axis_name)
       axis_name = "n/a"
