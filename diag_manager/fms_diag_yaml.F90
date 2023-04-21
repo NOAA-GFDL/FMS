@@ -1459,7 +1459,7 @@ function get_diag_fields_entries(indices) &
 end function get_diag_fields_entries
 
 !> @brief Gets field indices corresponding to the indices (input argument) in the sorted variable_list
-!! @return Array of field indices
+!! @return Copy of array of field indices
 function get_diag_field_ids(indices) result(field_ids)
 
   integer, intent(in) :: indices(:) !< Indices of the fields in the sorted variable_list array
