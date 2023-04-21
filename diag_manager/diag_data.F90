@@ -610,7 +610,7 @@ CONTAINS
       var_type = string
     class default
       call mpp_error(FATAL, "get_var_type:: The variable does not have a supported type. "&
-                           &"The supported types are r4, r8, i4, i8.")
+                           &"The supported types are r4, r8, i4, i8 and string.")
     end select
   end function get_var_type
 END MODULE diag_data_mod
