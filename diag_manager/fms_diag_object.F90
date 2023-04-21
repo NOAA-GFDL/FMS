@@ -880,6 +880,22 @@ subroutine allocate_diag_field_output_buffers(this, field_data, field_id)
   class(fmsDiagOutputBuffer_class), pointer :: ptr_diag_buffer_obj !< Pointer to the buffer class
   class(DiagYamlFilesVar_type), pointer :: ptr_diag_field_yaml !< Pointer to a field from yaml fields
   integer, pointer :: axis_ids(:) !< Pointer to indices of axes of the field variable
+  integer :: var_type !< Stores type of the field data (r4, r8, i4, i8, and string) represented as an integer.
+  real :: missing_value !< Fill value to initialize output buffers
+  character(len:), allocatable :: var_name !< Field name to initialize output buffers
+
+  ! Determine the type of the field data
+  var_type = get_var_type(field_data(1, 1, 1, 1))
+
+  ! Get variable/field name
+  var_name = this%Fms_diag_fields(field_id)%get_varname()
+
+  ! Get missing value for the field
+  if (this%FMS_diag_fields(field_id)%has_missing_value()) then
+    missing_value = this%FMS_diag_fields(field_id)%get_missing_value(var_type)
+  else
+    missing_value = get_default_missing_value(var_type)
+  endif
 
   ! Determine dimensions of the field
   ndims = 0
@@ -919,26 +935,32 @@ subroutine allocate_diag_field_output_buffers(this, field_data, field_id)
         if (allocated(ptr_diag_buffer_obj%buffer)) cycle !< If allocated, loop back
         call ptr_diag_buffer_obj%allocate_buffer(field_data(1, 1, 1, 1), & !< If scalar field variable
           this%FMS_diag_fields(field_id)%get_varname())
+        call ptr_diag_buffer_obj%initialize_buffer(missing_value, var_name)
       type is (outputBuffer1d_type) !< 1D buffer
         if (allocated(ptr_diag_buffer_obj%buffer)) cycle !< If allocated, loop back
         call ptr_diag_buffer_obj%allocate_buffer(field_data(1, 1, 1, 1), axes_length(1), &
           this%FMS_diag_fields(field_id)%get_varname(), num_diurnal_samples)
+        call ptr_diag_buffer_obj%initialize_buffer(missing_value, var_name)
       type is (outputBuffer2d_type) !< 2D buffer
         if (allocated(ptr_diag_buffer_obj%buffer)) cycle !< If allocated, loop back
         call ptr_diag_buffer_obj%allocate_buffer(field_data(1, 1, 1, 1), axes_length(1:2), &
           this%FMS_diag_fields(field_id)%get_varname(), num_diurnal_samples)
+        call ptr_diag_buffer_obj%initialize_buffer(missing_value, var_name)
       type is (outputBuffer3d_type) !< 3D buffer
         if (allocated(ptr_diag_buffer_obj%buffer)) cycle !< If allocated, loop back
         call ptr_diag_buffer_obj%allocate_buffer(field_data(1, 1, 1, 1), axes_length(1:3), &
           this%FMS_diag_fields(field_id)%get_varname(), num_diurnal_samples)
+        call ptr_diag_buffer_obj%initialize_buffer(missing_value, var_name)
       type is (outputBuffer4d_type) !< 4D buffer
         if (allocated(ptr_diag_buffer_obj%buffer)) cycle !< If allocated, loop back
         call ptr_diag_buffer_obj%allocate_buffer(field_data(1, 1, 1, 1), axes_length(1:4), &
           this%FMS_diag_fields(field_id)%get_varname(), num_diurnal_samples)
+        call ptr_diag_buffer_obj%initialize_buffer(missing_value, var_name)
       type is (outputBuffer5d_type) !< 5D buffer
         if (allocated(ptr_diag_buffer_obj%buffer)) cycle !< If allocated, loop back
         call ptr_diag_buffer_obj%allocate_buffer(field_data(1, 1, 1, 1), axes_length(1:5), &
           this%FMS_diag_fields(field_id)%get_varname(), num_diurnal_samples)
+        call ptr_diag_buffer_obj%initialize_buffer(missing_value, var_name)
       class default
         call mpp_error( FATAL, 'allocate_diag_field_output_buffers: invalid buffer type')
     end select
