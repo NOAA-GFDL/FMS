@@ -80,6 +80,7 @@ private
     procedure :: fms_diag_send_complete
     procedure :: fms_diag_do_io
     procedure :: allocate_diag_field_output_buffers
+    procedure :: fms_diag_field_add_cell_measures
 #ifdef use_yaml
     procedure :: get_diag_buffer
 #endif
