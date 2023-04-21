@@ -406,6 +406,15 @@ CONTAINS
        END IF
     END IF
     if (use_modern_diag) then
+      if( do_diag_field_log) then
+         if ( PRESENT(do_not_log) ) THEN
+             if(.not. do_not_log) call log_diag_field_info(module_name, field_name, (/NULL_AXIS_ID/), long_name,&
+                           & units, missing_value, range, dynamic=.true.)
+         else
+             call log_diag_field_info(module_name, field_name, (/NULL_AXIS_ID/), long_name, units,&
+                           & missing_value, range, dynamic=.true.)
+         endif
+     endif
       register_diag_field_scalar = fms_diag_object%fms_register_diag_field_scalar( &
       & module_name, field_name, init_time, long_name=long_name, units=units, &
       & missing_value=missing_value, var_range=range, standard_name=standard_name, &
@@ -445,6 +454,15 @@ CONTAINS
     CHARACTER(len=*), OPTIONAL, INTENT(in) :: realm         !< String to set as the modeling_realm attribute
 
     if (use_modern_diag) then
+      if( do_diag_field_log) then
+         if ( PRESENT(do_not_log) ) THEN
+             if(.not. do_not_log) call log_diag_field_info(module_name, field_name, axes, long_name,&
+                           & units, missing_value, range, dynamic=.true.)
+         else
+             call log_diag_field_info(module_name, field_name, axes, long_name, units,&
+                           & missing_value, range, dynamic=.true.)
+         endif
+     endif
       register_diag_field_array = fms_diag_object%fms_register_diag_field_array( &
        & module_name, field_name, axes, init_time, long_name=long_name, &
        & units=units, missing_value=missing_value, var_range=range, mask_variant=mask_variant, &
@@ -494,6 +512,15 @@ end function register_diag_field_array
     END IF
 
     if (use_modern_diag) then
+      if( do_diag_field_log) then
+         if ( PRESENT(do_not_log) ) THEN
+             if(.not. do_not_log) call log_diag_field_info(module_name, field_name, axes, long_name,&
+                           & units, missing_value, range, dynamic=.false.)
+         else
+             call log_diag_field_info(module_name, field_name, axes, long_name, units,&
+                           & missing_value, range, dynamic=.false.)
+         endif
+     endif
       register_static_field = fms_diag_object%fms_register_static_field(module_name, field_name, axes, &
        & long_name=long_name, units=units, missing_value=missing_value, range=range, mask_variant=mask_variant, &
        & standard_name=standard_name, dynamic=DYNAMIC, do_not_log=do_not_log, interp_method=interp_method,&
@@ -4432,6 +4459,11 @@ END FUNCTION register_static_field
           CALL ERROR_MESG('diag_manager_mod::diag_field_add_cell_measures', &
                & 'either area or volume arguments must be present', FATAL )
        END IF
+
+       if (use_modern_diag) then
+         call fms_diag_object%fms_diag_field_add_cell_measures(diag_field_id, area, volume)
+         return
+       ENDIF
 
        DO j=1, input_fields(diag_field_id)%num_output_fields
           ind = input_fields(diag_field_id)%output_fields(j)

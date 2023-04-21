@@ -20,7 +20,7 @@ module fms_diag_object_mod
 use mpp_mod, only: fatal, note, warning, mpp_error, mpp_pe, mpp_root_pe, stdout
 use diag_data_mod,  only: diag_null, diag_not_found, diag_not_registered, diag_registered_id, &
                          &DIAG_FIELD_NOT_FOUND, diag_not_registered, max_axes, TWO_D_DOMAIN, &
-                         &get_base_time
+                         &get_base_time, NULL_AXIS_ID
   USE time_manager_mod, ONLY: set_time, set_date, get_time, time_type, OPERATOR(>=), OPERATOR(>),&
        & OPERATOR(<), OPERATOR(==), OPERATOR(/=), OPERATOR(/), OPERATOR(+), ASSIGNMENT(=), get_date, &
        & get_ticks_per_second
@@ -427,7 +427,7 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
       select type (edges_axis => this%diag_axis(edges)%axis)
       type is (fmsDiagFullAxis_type)
         edges_name = edges_axis%get_axis_name()
-        call axis%set_edges_name(edges_name)
+        call axis%set_edges(edges_name, edges)
       end select
     endif
     call axis%register(axis_name, axis_data, units, cart_name, long_name=long_name, &
@@ -618,6 +618,20 @@ subroutine fms_diag_do_io(this, is_end_of_run)
   enddo
 #endif
 end subroutine fms_diag_do_io
+
+!> @brief Adds the diag ids of the Area and or Volume of the diag_field_object
+subroutine fms_diag_field_add_cell_measures(this, diag_field_id, area, volume)
+  class(fmsDiagObject_type), intent (inout) :: this          !< The diag object
+  integer,                   intent(in)     :: diag_field_id !< diag_field to add the are and volume to
+  INTEGER, optional,         INTENT(in)     :: area          !< diag ids of area
+  INTEGER, optional,         INTENT(in)     :: volume        !< diag ids of volume
+
+#ifndef use_yaml
+  CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling with -Duse_yaml")
+#else
+  call this%FMS_diag_fields(diag_field_id)%add_area_volume(area, volume)
+#endif
+end subroutine fms_diag_field_add_cell_measures
 
 !> @brief Add a attribute to the diag_obj using the diag_field_id
 subroutine fms_diag_field_add_attribute(this, diag_field_id, att_name, att_value)
