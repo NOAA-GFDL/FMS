@@ -1213,27 +1213,42 @@ subroutine write_axis_metadata(this, diag_axis)
   integer                              :: i,k            !< For do loops
   integer                              :: parent_axis_id !< Id of the parent_axis
   integer                              :: structured_ids(2) !< Ids of the uncompress axis
+  integer                              :: edges_id       !< Id of the axis edge
 
-  class(fmsDiagAxisContainer_type), pointer :: axis_ptr !< pointer to the axis object currently writing
+  class(fmsDiagAxisContainer_type), pointer :: axis_ptr      !< pointer to the axis object currently writing
+  logical                                   :: edges_in_file !< .true. if the edges are already in the file
 
   diag_file => this%FMS_diag_file
   fileobj => diag_file%fileobj
 
   do i = 1, diag_file%number_of_axis
+    edges_in_file = .false.
     axis_ptr => diag_axis(diag_file%axis_ids(i))
     parent_axis_id = axis_ptr%axis%get_parent_axis_id()
+
+    edges_id = axis_ptr%axis%get_edges_id()
+    if (edges_id .ne. diag_null) then
+      !< write the edges if is not in the list of axis in the file, otherwrise ignore
+      if (any(diag_file%axis_ids(1:diag_file%number_of_axis) .eq. edges_id)) then
+        edges_in_file = .true.
+     else
+        call diag_axis(edges_id)%axis%write_axis_metadata(fileobj, .true.)
+      endif
+    endif
+
     if (parent_axis_id .eq. DIAG_NULL) then
-      call axis_ptr%axis%write_axis_metadata(fileobj)
+      call axis_ptr%axis%write_axis_metadata(fileobj, edges_in_file)
     else
-      call axis_ptr%axis%write_axis_metadata(fileobj, diag_axis(parent_axis_id)%axis)
+      call axis_ptr%axis%write_axis_metadata(fileobj, edges_in_file, diag_axis(parent_axis_id)%axis)
     endif
 
     if (axis_ptr%axis%is_unstructured_grid()) then
       structured_ids = axis_ptr%axis%get_structured_axis()
       do k = 1, size(structured_ids)
-        call diag_axis(structured_ids(k))%axis%write_axis_metadata(fileobj)
+        call diag_axis(structured_ids(k))%axis%write_axis_metadata(fileobj, .false.)
       enddo
     endif
+
   enddo
 
 end subroutine write_axis_metadata
@@ -1265,11 +1280,11 @@ subroutine write_field_metadata(this, diag_field, diag_axis)
     !the file that the fields are in needs to be added
     cell_measures = ""
     if (field_ptr%has_area()) then
-      cell_measures = "area:"//diag_field(field_ptr%get_area())%get_varname()
+      cell_measures = "area: "//diag_field(field_ptr%get_area())%get_varname(to_write=.true.)
     endif
 
     if (field_ptr%has_volume()) then
-      cell_measures = trim(cell_measures)//" volume:"//diag_field(field_ptr%get_volume())%get_varname()
+      cell_measures = trim(cell_measures)//" volume: "//diag_field(field_ptr%get_volume())%get_varname(to_write=.true.)
     endif
 
     call field_ptr%write_field_metadata(fileobj, diag_file%id, diag_file%yaml_ids(i), diag_axis, &
