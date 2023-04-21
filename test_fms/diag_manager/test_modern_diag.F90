@@ -26,7 +26,8 @@ use   mpp_domains_mod,  only: domain2d, mpp_domains_set_stack_size, mpp_define_d
                               mpp_get_UG_compute_domain
 use   diag_manager_mod, only: diag_manager_init, diag_manager_end, diag_axis_init, register_diag_field, &
                               diag_axis_add_attribute, diag_field_add_attribute, diag_send_complete, &
-                              diag_manager_set_time_end, send_data, register_static_field
+                              diag_manager_set_time_end, send_data, register_static_field, &
+                              diag_field_add_cell_measures
 use   platform_mod,     only: r8_kind, r4_kind
 use   fms_mod,          only: fms_init, fms_end
 use   mpp_mod,          only: FATAL, mpp_error, mpp_npes, mpp_pe, mpp_root_pe, mpp_broadcast, input_nml_file
@@ -178,12 +179,15 @@ if (.not. debug) then
   if (id_var8  .ne. 8) call mpp_error(FATAL, "var8 does not have the expected id")
 endif
 
+call diag_field_add_cell_measures(id_var6, area=id_var8, volume=id_var8)
+
 call diag_field_add_attribute (id_var1, "some string", "this is a string")
 call diag_field_add_attribute (id_var1, "integer", 10)
 call diag_field_add_attribute (id_var1, "1d_integer", (/10, 10/))
 call diag_field_add_attribute (id_var1, "real", 10.)
 call diag_field_add_attribute (id_var2, '1d_real', (/10./))
 call diag_field_add_attribute (id_var2, 'formula', 'p(n,k,j,i) = ap(k) + b(k)*ps(n,j,i)')
+call diag_field_add_attribute (id_var2, 'cell_methods', 'area: mullions')
 
 !! test dump routines
 !! prints fields from objects for debugging to log if name is provided, othwerise goes to stdout

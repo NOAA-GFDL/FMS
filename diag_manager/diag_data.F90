@@ -335,6 +335,7 @@ use platform_mod
     character(len=:), allocatable :: att_name     !< Name of the attribute
     contains
       procedure :: add => fms_add_attribute
+      procedure :: write_metadata
   end type fmsDiagAttribute_type
 ! Include variable "version" to be written to log file.
 #include<file_version.h>
@@ -562,8 +563,9 @@ CONTAINS
     res = base_second
   end function get_base_second
 
+  !> @brief Adds an attribute to the attribute type
   subroutine fms_add_attribute(this, att_name, att_value)
-    class(fmsDiagAttribute_type), intent(inout) :: this          !< Diag attribute type
+    class(fmsDiagAttribute_type), intent(inout) :: this         !< Diag attribute type
     character(len=*),             intent(in)    :: att_name     !< Name of the attribute
     class(*),                     intent(in)    :: att_value(:) !< The attribute value to add
 
@@ -589,6 +591,38 @@ CONTAINS
       this%att_value = att_value
     end select
   end subroutine fms_add_attribute
+
+  !> @brief Writes out the attributes from an fmsDiagAttribute_type
+  subroutine write_metadata(this, fileobj, var_name, cell_methods)
+    class(fmsDiagAttribute_type),      intent(inout) :: this          !< Diag attribute type
+    class(FmsNetcdfFile_t),            INTENT(INOUT) :: fileobj       !< Fms2_io fileobj to write to
+    character(len=*),                  intent(in)    :: var_name      !< The name of the variable to write to
+    character(len=*),        optional, intent(inout) :: cell_methods  !< The cell methods attribute
+
+    select type (att_value =>this%att_value)
+    type is (character(len=*))
+      !< If the attribute is cell methods append to the current cell_methods attribute value
+      !! This will be writen once all of the cell_methods attributes are gathered ...
+      if (present(cell_methods)) then
+        if (trim(this%att_name) .eq. "cell_methods") then
+          cell_methods = trim(cell_methods)//" "//trim(att_value(1))
+          return
+        endif
+      endif
+
+      call register_variable_attribute(fileobj, var_name, this%att_name, trim(att_value(1)), &
+                                       str_len=len_trim(att_value(1)))
+    type is (real(kind=r8_kind))
+      call register_variable_attribute(fileobj, var_name, this%att_name, real(att_value, kind=r8_kind))
+    type is (real(kind=r4_kind))
+      call register_variable_attribute(fileobj, var_name, this%att_name, real(att_value, kind=r4_kind))
+    type is (integer(kind=i4_kind))
+      call register_variable_attribute(fileobj, var_name, this%att_name, int(att_value, kind=i4_kind))
+    type is (integer(kind=i8_kind))
+      call register_variable_attribute(fileobj, var_name, this%att_name, int(att_value, kind=i8_kind))
+    end select
+
+  end subroutine write_metadata
 END MODULE diag_data_mod
 !> @}
 ! close documentation grouping

@@ -149,6 +149,8 @@ type fmsDiagField_type
      procedure :: get_longname_to_write
      procedure :: write_field_metadata
      procedure :: get_math_needs_to_be_done
+     procedure :: add_area_volume
+     procedure :: append_time_cell_methods
 end type fmsDiagField_type
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! variables !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 type(fmsDiagField_type) :: null_ob
@@ -683,11 +685,21 @@ end function get_vartype
 
 !> @brief Gets varname
 !! @return copy of the variable name
-pure function get_varname (this) &
+pure function get_varname (this, to_write) &
 result(rslt)
-     class (fmsDiagField_type), intent(in) :: this !< diag object
-     character(len=:), allocatable :: rslt
-     rslt = this%varname
+  class (fmsDiagField_type), intent(in) :: this     !< diag object
+  logical, optional,         intent(in) :: to_write !< .true. if getting the varname that will be writen to the file
+  character(len=:), allocatable :: rslt
+  rslt = this%varname
+
+  !< If writing the varname can be the outname which is defined in the yaml
+  if (present(to_write)) then
+    if (to_write) then
+    !TODO this is wrong
+    rslt = this%diag_field(1)%get_var_outname()
+    endif
+  endif
+
 end function get_varname
 
 !> @brief Gets longname
@@ -1010,6 +1022,12 @@ result(rslt)
   if (rslt .eq. "") then !! If the long name is not defined in the yaml, use the long name in the
                          !! register_diag_field
     rslt = this%get_longname()
+  else
+    return
+  endif
+  if (rslt .eq. "") then !! If the long name is not defined in the yaml and in the register_diag_field
+                         !! use the variable name
+    rslt = field_yaml%get_var_outname()
   endif
 end function get_longname_to_write
 
@@ -1094,13 +1112,15 @@ subroutine write_field_metadata(this, fileobj, file_id, yaml_id, diag_axis, unli
   class(fmsDiagAxisContainer_type),  intent(in)    :: diag_axis(:)  !< Diag_axis object
   character(len=*),                  intent(in)    :: unlim_dimname !< The name of the unlimited dimension
   logical,                           intent(in)    :: is_regional   !< Flag indicating if the field is regional
-  character(len=*),                  intent(inout) :: cell_measures
+  character(len=*),                  intent(in)    :: cell_measures !< The cell measures attribute to write
 
   type(diagYamlFilesVar_type), pointer     :: field_yaml  !< pointer to the yaml entry
   character(len=:),            allocatable :: var_name    !< Variable name
   character(len=:),            allocatable :: long_name   !< Longname to write
   character(len=:),            allocatable :: units       !< Units of the field to write
   character(len=120),          allocatable :: dimnames(:) !< Dimension names of the field
+  character(len=120)                       :: cell_methods!< Cell methods attribute to write
+  integer                                  :: i           !< For do loops
 
   field_yaml => diag_yaml%get_diag_field_from_id(yaml_id)
   var_name = field_yaml%get_var_outname()
@@ -1118,7 +1138,6 @@ subroutine write_field_metadata(this, fileobj, file_id, yaml_id, diag_axis, unli
     endif
   endif
 
-  !TODO Not sure what the old diag_manager did if long_name was never defined
   long_name = this%get_longname_to_write(field_yaml)
   call register_variable_attribute(fileobj, var_name, "long_name", long_name, str_len=len_trim(long_name))
 
@@ -1148,16 +1167,34 @@ subroutine write_field_metadata(this, fileobj, file_id, yaml_id, diag_axis, unli
       str_len=len_trim(this%get_interp_method()))
   endif
 
-  select case (field_yaml%get_var_reduction())
-  case (time_average, time_max, time_min)
-    call register_variable_attribute(fileobj, var_name, "time_avg_info", &
-      trim(avg_name)//'_T1,'//trim(avg_name)//'_T2,'//trim(avg_name)//'_DT', &
-      str_len=len(trim(avg_name)//'_T1,'//trim(avg_name)//'_T2,'//trim(avg_name)//'_DT'))
-  end select
+  if (.not. this%static) then
+    select case (field_yaml%get_var_reduction())
+    case (time_average, time_max, time_min, time_diurnal, time_power, time_rms, time_sum)
+      call register_variable_attribute(fileobj, var_name, "time_avg_info", &
+        trim(avg_name)//'_T1,'//trim(avg_name)//'_T2,'//trim(avg_name)//'_DT', &
+        str_len=len(trim(avg_name)//'_T1,'//trim(avg_name)//'_T2,'//trim(avg_name)//'_DT'))
+    end select
+  endif
 
-  call append_time_cell_measure(cell_measures, field_yaml)
-  if (trim(cell_measures) .ne. "") &
+  cell_methods = ""
+  !< Check if any of the attributes defined via a "diag_field_add_attribute" call
+  !! are the cell_methods, if so add to the "cell_methods" variable:
+  do i = 1, this%num_attributes
+    call this%attributes(i)%write_metadata(fileobj, var_name, &
+      cell_methods=cell_methods)
+  enddo
+
+  !< Append the time cell methods based on the variable's reduction
+  call this%append_time_cell_methods(cell_methods, field_yaml)
+  if (trim(cell_methods) .ne. "") &
     call register_variable_attribute(fileobj, var_name, "cell_methods", &
+      trim(adjustl(cell_methods)), str_len=len_trim(adjustl(cell_methods)))
+
+  !< Write out the cell_measures attribute (i.e Area, Volume)
+  !! The diag field ids for the Area and Volume are sent in the register call
+  !! This was defined in file object and passed in here
+  if (trim(cell_measures) .ne. "") &
+    call register_variable_attribute(fileobj, var_name, "cell_measures", &
       trim(adjustl(cell_measures)), str_len=len_trim(adjustl(cell_measures)))
 
 end subroutine write_field_metadata
@@ -1417,30 +1454,65 @@ PURE FUNCTION diag_field_id_from_name(this, module_name, field_name) &
   endif
 end function diag_field_id_from_name
 
-!> @brief Append the time cell measured based on the variable's reduction
-subroutine append_time_cell_measure(cell_measures, field_yaml)
-  character(len=*),            intent(inout) :: cell_measures !< The cell measures to append to
-  type(diagYamlFilesVar_type), intent(in)    :: field_yaml    !< The field's yaml
+!> @brief Adds the area and volume id to a field object
+subroutine add_area_volume(this, area, volume)
+  CLASS(fmsDiagField_type),          intent(inout) :: this   !< The field object
+  INTEGER,                 optional, INTENT(in)    :: area   !< diag ids of area
+  INTEGER,                 optional, INTENT(in)    :: volume !< diag ids of volume
+
+  if (present(area)) then
+    if (area > 0) then
+      this%area = area
+    else
+      call mpp_error(FATAL, "diag_field_add_cell_measures: the area id is not valid. "&
+                           &"Verify that the area_id passed in to the field:"//this%varname//&
+                           &" is valid and that the field is registered and in the diag_table.yaml")
+    endif
+  endif
+
+  if (present(volume)) then
+    if (volume > 0) then
+      this%volume = volume
+    else
+      call mpp_error(FATAL, "diag_field_add_cell_measures: the volume id is not valid. "&
+                           &"Verify that the volume_id passed in to the field:"//this%varname//&
+                           &" is valid and that the field is registered and in the diag_table.yaml")
+    endif
+  endif
+
+end subroutine add_area_volume
+
+!> @brief Append the time cell meathods based on the variable's reduction
+subroutine append_time_cell_methods(this, cell_methods, field_yaml)
+  class (fmsDiagField_type),   target, intent(inout) :: this          !< diag field
+  character(len=*),                    intent(inout) :: cell_methods  !< The cell methods var to append to
+  type(diagYamlFilesVar_type),         intent(in)    :: field_yaml    !< The field's yaml
+
+  if (this%static) then
+    cell_methods = trim(cell_methods)//" time: point "
+    return
+  endif
 
   select case (field_yaml%get_var_reduction())
   case (time_none)
-    cell_measures = trim(cell_measures)//" time: point "
+    cell_methods = trim(cell_methods)//" time: point "
   case (time_diurnal)
-    cell_measures = trim(cell_measures)//" time: mean"
+    cell_methods = trim(cell_methods)//" time: mean"
   case (time_power)
-    cell_measures = trim(cell_measures)//" time: mean_pow"//int2str(field_yaml%get_pow_value())
+    cell_methods = trim(cell_methods)//" time: mean_pow"//int2str(field_yaml%get_pow_value())
   case (time_rms)
-    cell_measures = trim(cell_measures)//" time: root_mean_square"
+    cell_methods = trim(cell_methods)//" time: root_mean_square"
   case (time_max)
-    cell_measures = trim(cell_measures)//" time: max"
+    cell_methods = trim(cell_methods)//" time: max"
   case (time_min)
-    cell_measures = trim(cell_measures)//" time: min"
+    cell_methods = trim(cell_methods)//" time: min"
   case (time_average)
-    cell_measures = trim(cell_measures)//" time: mean"
+    cell_methods = trim(cell_methods)//" time: mean"
   case (time_sum)
-    cell_measures = trim(cell_measures)//" time: sum"
+    cell_methods = trim(cell_methods)//" time: sum"
   end select
-end subroutine append_time_cell_measure
+end subroutine append_time_cell_methods
+
 !> Dumps any data from a given fmsDiagField_type object
 subroutine dump_field_obj (this, unit_num)
   class(fmsDiagField_type), intent(in) :: this

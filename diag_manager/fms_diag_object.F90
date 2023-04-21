@@ -28,7 +28,7 @@ use diag_data_mod,  only: diag_null, diag_not_found, diag_not_registered, diag_r
 use fms_diag_file_object_mod, only: fmsDiagFileContainer_type, fmsDiagFile_type, fms_diag_files_object_init
 use fms_diag_field_object_mod, only: fmsDiagField_type, fms_diag_fields_object_init
 use fms_diag_yaml_mod, only: diag_yaml_object_init, diag_yaml_object_end, find_diag_field, &
-                            & get_diag_files_id, diag_yaml
+                           & get_diag_files_id, diag_yaml
 use fms_diag_axis_object_mod, only: fms_diag_axis_object_init, fmsDiagAxis_type, fmsDiagSubAxis_type, &
                                    &diagDomain_t, get_domain_and_domain_type, diagDomain2d_t, &
                                    &fmsDiagAxisContainer_type, fms_diag_axis_object_end, fmsDiagFullAxis_type, &
@@ -79,6 +79,7 @@ private
     procedure :: fms_diag_accept_data
     procedure :: fms_diag_send_complete
     procedure :: fms_diag_do_io
+    procedure :: fms_diag_field_add_cell_measures
 #ifdef use_yaml
     procedure :: get_diag_buffer
 #endif
@@ -437,7 +438,7 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
       select type (edges_axis => this%diag_axis(edges)%axis)
       type is (fmsDiagFullAxis_type)
         edges_name = edges_axis%get_axis_name()
-        call axis%set_edges_name(edges_name)
+        call axis%set_edges(edges_name, edges)
       end select
     endif
     call axis%register(axis_name, axis_data, units, cart_name, long_name=long_name, &
@@ -631,6 +632,20 @@ subroutine fms_diag_do_io(this, is_end_of_run)
 #endif
 end subroutine fms_diag_do_io
 
+!> @brief Adds the diag ids of the Area and or Volume of the diag_field_object
+subroutine fms_diag_field_add_cell_measures(this, diag_field_id, area, volume)
+  class(fmsDiagObject_type), intent (inout) :: this          !< The diag object
+  integer,                   intent(in)     :: diag_field_id !< diag_field to add the are and volume to
+  INTEGER, optional,         INTENT(in)     :: area          !< diag ids of area
+  INTEGER, optional,         INTENT(in)     :: volume        !< diag ids of volume
+
+#ifndef use_yaml
+  CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling with -Duse_yaml")
+#else
+  call this%FMS_diag_fields(diag_field_id)%add_area_volume(area, volume)
+#endif
+end subroutine fms_diag_field_add_cell_measures
+
 !> @brief Add a attribute to the diag_obj using the diag_field_id
 subroutine fms_diag_field_add_attribute(this, diag_field_id, att_name, att_value)
   class(fmsDiagObject_type), intent (inout) :: this !< The diag object
@@ -801,7 +816,15 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
 axis_name=" "
 #else
     if (axis_id < 0 .and. axis_id > this%registered_axis) &
-    call mpp_error(FATAL, "fms_get_axis_length: The axis_id is not valid")
+      call mpp_error(FATAL, "fms_get_axis_length: The axis_id is not valid")
+
+    !! if its a scalar (null axis id) just returns n/a since no axis is defined
+    if (axis_id .eq. NULL_AXIS_ID) then
+      allocate(character(len=3) :: axis_name)
+      axis_name = "n/a"
+      return
+    endif
+
 
     select type (axis => this%diag_axis(axis_id)%axis)
     type is (fmsDiagFullAxis_type)
