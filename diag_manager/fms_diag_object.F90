@@ -20,7 +20,7 @@ module fms_diag_object_mod
 use mpp_mod, only: fatal, note, warning, mpp_error, mpp_pe, mpp_root_pe, stdout
 use diag_data_mod,  only: diag_null, diag_not_found, diag_not_registered, diag_registered_id, &
                          &DIAG_FIELD_NOT_FOUND, diag_not_registered, max_axes, TWO_D_DOMAIN, &
-                         &get_base_time, NULL_AXIS_ID
+                         &get_base_time, NULL_AXIS_ID, get_var_type
   USE time_manager_mod, ONLY: set_time, set_date, get_time, time_type, OPERATOR(>=), OPERATOR(>),&
        & OPERATOR(<), OPERATOR(==), OPERATOR(/=), OPERATOR(/), OPERATOR(+), ASSIGNMENT(=), get_date, &
        & get_ticks_per_second
@@ -886,7 +886,7 @@ subroutine allocate_diag_field_output_buffers(this, field_data, field_id)
   character(*), allocatable :: var_name !< Field name to initialize output buffers
 
   ! Determine the type of the field data
-  var_type = get_var_type(field_data(1, 1, 1, 1))
+  var_type = get_var_type(field_data(1, 1, 1, 1)
 
   ! Get variable/field name
   var_name = this%Fms_diag_fields(field_id)%get_varname()
