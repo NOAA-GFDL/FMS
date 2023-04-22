@@ -886,7 +886,7 @@ subroutine allocate_diag_field_output_buffers(this, field_data, field_id)
   character(*), allocatable :: var_name !< Field name to initialize output buffers
 
   ! Determine the type of the field data
-  var_type = get_var_type(field_data(1, 1, 1, 1)
+  var_type = get_var_type(field_data(1, 1, 1, 1))
 
   ! Get variable/field name
   var_name = this%Fms_diag_fields(field_id)%get_varname()
