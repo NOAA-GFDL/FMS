@@ -903,10 +903,7 @@ subroutine allocate_diag_field_output_buffers(this, field_data, field_id)
   if (this%FMS_diag_fields(field_id)%has_missing_value()) then
     select type (my_type => this%FMS_diag_fields(field_id)%get_missing_value(var_type))
       type is (real(kind=r4_kind))
-        select type (missing_value)
-          type is (real(kind=r4_kind))
-            missing_value = real(my_type, kind=r4_kind)
-        end select
+        missing_value = my_type
       type is (real(kind=r8_kind))
         missing_value = real(my_type)
       class default
