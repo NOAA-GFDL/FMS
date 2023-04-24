@@ -890,7 +890,7 @@ subroutine allocate_diag_field_output_buffers(this, field_data, field_id)
   class(DiagYamlFilesVar_type), pointer :: ptr_diag_field_yaml !< Pointer to a field from yaml fields
   integer, pointer :: axis_ids(:) !< Pointer to indices of axes of the field variable
   integer :: var_type !< Stores type of the field data (r4, r8, i4, i8, and string) represented as an integer.
-  class(*) :: missing_value !< Fill value to initialize output buffers
+  real(*) :: missing_value !< Fill value to initialize output buffers
   character(len=128), allocatable :: var_name !< Field name to initialize output buffers
 
   ! Determine the type of the field data
