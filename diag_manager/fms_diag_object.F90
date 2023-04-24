@@ -39,6 +39,7 @@ use fms_diag_output_buffer_mod
 use omp_lib
 #endif
 use mpp_domains_mod, only: domain1d, domain2d, domainUG, null_domain2d
+use platform_mod
 implicit none
 private
 
