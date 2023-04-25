@@ -52,6 +52,7 @@ public :: diag_yaml_object_init, diag_yaml_object_end
 public :: diagYamlObject_type, get_diag_yaml_obj, subRegion_type
 public :: diagYamlFiles_type, diagYamlFilesVar_type
 public :: get_num_unique_fields, find_diag_field, get_diag_fields_entries, get_diag_files_id
+public :: get_diag_field_ids
 public :: dump_diag_yaml_obj
 !> @}
 
@@ -1460,6 +1461,22 @@ function get_diag_fields_entries(indices) &
   end do
 
 end function get_diag_fields_entries
+
+!> @brief Gets field indices corresponding to the indices (input argument) in the sorted variable_list
+!! @return Copy of array of field indices
+function get_diag_field_ids(indices) result(field_ids)
+
+  integer, intent(in) :: indices(:) !< Indices of the fields in the sorted variable_list array
+  integer, allocatable :: field_ids(:)
+  integer :: i !< For do loop
+
+  allocate(field_ids(size(indices)))
+
+  do i = 1, size(indices)
+    field_ids(i) = variable_list%diag_field_indices(indices(i))
+  end do
+
+end function get_diag_field_ids
 
 !> @brief Finds the indices of the diag_yaml%diag_files(:) corresponding to fields in variable_list(indices)
 !! @return indices of the diag_yaml%diag_files(:)
