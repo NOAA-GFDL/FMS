@@ -90,7 +90,7 @@ type :: fmsDiagFile_type
   integer, dimension(:), allocatable :: buffer_ids !< array of buffer ids associated with the file
   integer :: number_of_axis !< Number of axis in the file
   logical :: time_ops !< .True. if file contains variables that are time_min, time_max, time_average or time_sum
-  integer :: unlimited_dimension !< The unlimited dimension currently being written
+  integer :: unlim_dimension_level !< The unlimited dimension level currently being written
   logical :: is_static !< .True. if the frequency is -1
 
  contains
@@ -166,8 +166,8 @@ type fmsDiagFileContainer_type
   procedure :: write_time_data
   procedure :: update_next_write
   procedure :: update_current_new_file_freq_index
-  procedure :: increase_unlimited_dimension
-  procedure :: get_unlimited_dimension
+  procedure :: increase_unlim_dimension_level
+  procedure :: get_unlim_dimension_level
   procedure :: close_diag_file
 end type fmsDiagFileContainer_type
 
@@ -246,7 +246,7 @@ logical function fms_diag_files_object_init (files_array)
      endif
 
      obj%time_ops = .false.
-     obj%unlimited_dimension = 0
+     obj%unlim_dimension_level = 0
      obj%is_static = obj%get_file_freq() .eq. -1
 
      nullify(obj)
@@ -1136,20 +1136,20 @@ subroutine write_time_data(this)
   endif
 
   call write_data(fileobj, diag_file%get_file_unlimdim(), dif, &
-    unlim_dim_level=diag_file%unlimited_dimension)
+    unlim_dim_level=diag_file%unlim_dimension_level)
 
   if (diag_file%time_ops) then
     T1 = get_date_dif(diag_file%last_output, get_base_time(), diag_file%get_file_timeunit())
     T2 = get_date_dif(diag_file%next_output, get_base_time(), diag_file%get_file_timeunit())
     DT = T2 - T1
 
-    call write_data(fileobj, avg_name//"_T1", T1, unlim_dim_level=diag_file%unlimited_dimension)
-    call write_data(fileobj, avg_name//"_T2", T2, unlim_dim_level=diag_file%unlimited_dimension)
-    call write_data(fileobj, avg_name//"_DT", DT, unlim_dim_level=diag_file%unlimited_dimension)
+    call write_data(fileobj, avg_name//"_T1", T1, unlim_dim_level=diag_file%unlim_dimension_level)
+    call write_data(fileobj, avg_name//"_T2", T2, unlim_dim_level=diag_file%unlim_dimension_level)
+    call write_data(fileobj, avg_name//"_DT", DT, unlim_dim_level=diag_file%unlim_dimension_level)
     call write_data(fileobj, trim(diag_file%get_file_unlimdim())//"_bnds", &
-                    (/T1, T2/), unlim_dim_level=diag_file%unlimited_dimension)
+                    (/T1, T2/), unlim_dim_level=diag_file%unlim_dimension_level)
 
-    if (diag_file%unlimited_dimension .eq. 1) then
+    if (diag_file%unlim_dimension_level .eq. 1) then
       call write_data(fileobj, "nv", (/1, 2/))
     endif
   endif
@@ -1204,21 +1204,21 @@ subroutine update_next_write(this, time_step)
 
 end subroutine update_next_write
 
-!> \brief Increase the unlimited dimension variable that the file is currently being written to
-subroutine increase_unlimited_dimension(this)
+!> \brief Increase the unlimited dimension level that the file is currently being written to
+subroutine increase_unlim_dimension_level(this)
   class(fmsDiagFileContainer_type), intent(inout), target   :: this            !< The file object
 
-  this%FMS_diag_file%unlimited_dimension = this%FMS_diag_file%unlimited_dimension + 1
-end subroutine increase_unlimited_dimension
+  this%FMS_diag_file%unlim_dimension_level = this%FMS_diag_file%unlim_dimension_level + 1
+end subroutine increase_unlim_dimension_level
 
-!> \brief Get the unlimited dimension that is in the file
+!> \brief Get the unlimited dimension level that is in the file
 !! \return The unlimited dimension
-pure function get_unlimited_dimension(this) &
+pure function get_unlim_dimension_level(this) &
 result(res)
   class(fmsDiagFileContainer_type), intent(in), target   :: this            !< The file object
   integer :: res
 
-  res = this%FMS_diag_file%unlimited_dimension
+  res = this%FMS_diag_file%unlim_dimension_level
 end function
 
 !< @brief Writes the axis metadata for the file
@@ -1362,8 +1362,8 @@ subroutine close_diag_file(this)
     call close_file(fileobj)
   end select
 
-  !< Reset the unlimited dimension back to 0, in case the fileobj is re-used
-  this%FMS_diag_file%unlimited_dimension = 0
+  !< Reset the unlimited dimension level back to 0, in case the fileobj is re-used
+  this%FMS_diag_file%unlim_dimension_level = 0
   this%FMS_diag_file%is_file_open = .false.
 
   if (this%FMS_diag_file%has_file_new_file_freq()) then

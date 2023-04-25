@@ -615,15 +615,15 @@ subroutine fms_diag_do_io(this, is_end_of_run)
     endif
 
     if (diag_file%is_time_to_write(model_time)) then
-      call diag_file%increase_unlimited_dimension()
+      call diag_file%increase_unlim_dimension_level()
       call diag_file%write_time_data()
       !TODO call diag_file%add_variable_data()
       call diag_file%update_next_write(model_time)
       call diag_file%update_current_new_file_freq_index(model_time)
       if (diag_file%is_time_to_close_file(model_time)) call diag_file%close_diag_file()
     else if (force_write) then
-      if (diag_file%get_unlimited_dimension() .eq. 0) then
-        call diag_file%increase_unlimited_dimension()
+      if (diag_file%get_unlim_dimension_level() .eq. 0) then
+        call diag_file%increase_unlim_dimension_level()
         call diag_file%write_time_data()
       endif
       call diag_file%close_diag_file()
