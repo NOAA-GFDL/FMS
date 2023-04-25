@@ -41,6 +41,7 @@ use mpp_mod,         only: mpp_error, FATAL, mpp_pe, mpp_root_pe, stdout
 use, intrinsic :: iso_c_binding, only : c_ptr, c_null_char
 use fms_string_utils_mod, only: fms_array_to_pointer, fms_find_my_string, fms_sort_this, fms_find_unique
 use platform_mod, only: r4_kind, i4_kind
+use fms_mod, only: lowercase
 
 implicit none
 
@@ -413,7 +414,8 @@ subroutine diag_yaml_object_init(diag_subset_output)
     call fill_in_diag_files(diag_yaml_id, diag_file_ids(i), diag_yaml%diag_files(file_count))
 
     !> Save the file name in the file_list
-    file_list%file_name(file_count) = trim(diag_yaml%diag_files(file_count)%file_fname)//c_null_char
+    !! The diag_table is not case sensitive (so we are saving it as lowercase)
+    file_list%file_name(file_count) = lowercase(trim(diag_yaml%diag_files(file_count)%file_fname)//c_null_char)
     file_list%diag_file_indices(file_count) = file_count
 
     nvars = 0
@@ -441,6 +443,8 @@ subroutine diag_yaml_object_init(diag_subset_output)
       !> Save the variable name and the module name in the variable_list
       variable_list%var_name(var_count) = trim(diag_yaml%diag_fields(var_count)%var_varname)//&
                                         ":"//trim(diag_yaml%diag_fields(var_count)%var_module)//c_null_char
+      !! The diag_table is not case sensitive (so we are saving it as lowercase)
+      variable_list%var_name(var_count) = lowercase(variable_list%var_name(var_count))
       variable_list%diag_field_indices(var_count) = var_count
     enddo nvars_loop
     deallocate(var_ids)
@@ -1433,7 +1437,7 @@ result(indices)
   integer, allocatable :: indices(:)
 
   indices = fms_find_my_string(variable_list%var_pointer, size(variable_list%var_pointer), &
-                               & trim(diag_field_name)//":"//trim(module_name)//c_null_char)
+                               & lowercase(trim(diag_field_name))//":"//lowercase(trim(module_name)//c_null_char))
 end function find_diag_field
 
 !> @brief Gets the diag_field entries corresponding to the indices of the sorted variable_list
