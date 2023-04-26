@@ -62,12 +62,8 @@ module  atmos_ocean_fluxes_mod
   use fm_util_mod,       only: fm_util_reset_good_name_list, fm_util_reset_no_overwrite
   use fm_util_mod,       only: fm_util_reset_caller, fm_util_get_string_array
   use fm_util_mod,       only: fm_util_check_for_bad_fields, fm_util_get_string
-  use fm_util_mod,       only: fm_util_get_real_array_r4, fm_util_get_real_array_r8
-  use fm_util_mod,       only: fm_util_get_real_r4, fm_util_get_real_r8
-  use fm_util_mod,       only: fm_util_get_integer
+  use fm_util_mod,       only: fm_util_get_real_array, fm_util_get_real, fm_util_get_integer
   use fm_util_mod,       only: fm_util_get_logical, fm_util_get_logical_array
-
-  use platform_mod,      only: r4_kind, r8_kind
 
   implicit none
   private
@@ -632,12 +628,7 @@ contains
       gas_fluxes%bc(n)%atm_tr_index = fm_util_get_integer('atm_tr_index', scalar = .true.)
 
       ! Save the molecular weight.
-      !> the following is a workaround to mixedmode update in field_manager
-      !! The following needs to be fixed with mixedmode update to coupler
-      if(kind(gas_fluxes%bc(n)%mol_wt).eq.r4_kind) &
-           gas_fluxes%bc(n)%mol_wt = fm_util_get_real_r4('mol_wt', scalar = .true.)
-      if(kind(gas_fluxes%bc(n)%mol_wt).eq.r8_kind) &
-           gas_fluxes%bc(n)%mol_wt = fm_util_get_real_r8('mol_wt', scalar = .true.)
+      gas_fluxes%bc(n)%mol_wt = fm_util_get_real('mol_wt', scalar = .true.)
       gas_fields_atm%bc(n)%mol_wt = gas_fluxes%bc(n)%mol_wt
       gas_fields_ice%bc(n)%mol_wt = gas_fluxes%bc(n)%mol_wt
 
@@ -652,9 +643,7 @@ contains
       gas_fields_ice%bc(n)%ocean_restart_file = gas_fluxes%bc(n)%ocean_restart_file
 
       ! Save the params.
-      !> the following has been commented out because the code will not compile
-      ! with mixedmode update to field_manager.  Coupler needs to be updated too
-      !gas_fluxes%bc(n)%param => fm_util_get_real_array_r8('param')
+      gas_fluxes%bc(n)%param => fm_util_get_real_array('param')
 
       ! Save the flags.
       gas_fluxes%bc(n)%flag => fm_util_get_logical_array('flag')

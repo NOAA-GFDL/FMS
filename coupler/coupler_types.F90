@@ -38,7 +38,6 @@ module coupler_types_mod
   use data_override_mod, only: data_override
   use mpp_domains_mod,   only: domain2D, mpp_redistribute
   use mpp_mod,           only: mpp_error, FATAL, mpp_chksum
-
   use platform_mod,      only: r4_kind, r8_kind
 
   use iso_fortran_env, only : int32, int64  !To get mpp_chksum value
@@ -195,8 +194,11 @@ module coupler_types_mod
     type(coupler_1d_values_type), pointer, dimension(:)   :: field => NULL() !< field
     character(len=128)             :: flux_type = ' ' !< flux_type
     character(len=128)             :: implementation = ' ' !< implementation
-    real(r4_kind), pointer, dimension(:) :: param4 => NULL() !< param
-    real(r8_kind), pointer, dimension(:) :: param8 => NULL() !< param
+    real(r8_kind), pointer, dimension(:) :: param => NULL() !< param
+                                                            !! precision has been explicitly defined
+                                                            !! to be r8_kind during mixedmode update to field_manager
+                                                            !! this explicit definition can be removed during the coupler update
+                                                            !! and be made into FMS_CP_KIND_
     logical, pointer, dimension(:) :: flag => NULL() !< flag
     integer                        :: atm_tr_index = 0 !< atm_tr_index
     character(len=128)             :: ice_restart_file = ' ' !< ice_restart_file
@@ -204,7 +206,11 @@ module coupler_types_mod
     logical                        :: use_atm_pressure !< use_atm_pressure
     logical                        :: use_10m_wind_speed !< use_10m_wind_speed
     logical                        :: pass_through_ice !< pass_through_ice
-    real                           :: mol_wt = 0.0 !< mol_wt
+    real(r8_kind)                  :: mol_wt = 0.0 !< mol_wt
+                                                   !! precision has been explicitly defined
+                                                   !! to be r8_kind during mixedmode update to field_manager.
+                                                   !! this explicit definition can be removed during the coupler update
+                                                   !! and be made into FMS_CP_KIND_
   end type coupler_1d_field_type
 
   !> Coupler data for 1D boundary conditions
