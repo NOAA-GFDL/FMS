@@ -2521,7 +2521,7 @@ END SUBROUTINE check_bounds_are_exact_dynamic
 
     rslt = .false. !< If no error occurs.
 
-    err_module_name = 'fms_diag_object_mod:fms_diag_check_indices_order'
+    err_module_name = 'diag_util_mod:check_indices_order'
 
     IF ( PRESENT(ie_in) ) THEN
       IF ( .NOT.PRESENT(is_in) ) THEN
@@ -2530,19 +2530,19 @@ END SUBROUTINE check_bounds_are_exact_dynamic
       END IF
       IF ( PRESENT(js_in) .AND. .NOT.PRESENT(je_in) ) THEN
         rslt = fms_error_handler(trim(err_module_name),&
-          & 'is_in and ie_in present, but js_in present without je_in', err_msg)
+          & 'is_in and ie_in present, but js_in present without je_in', error_msg)
         IF (rslt) return
       END IF
     END IF
 
     IF ( PRESENT(je_in) ) THEN
       IF ( .NOT.PRESENT(js_in) ) THEN
-        rslt = fms_error_handler(trim(err_module_name), 'je_in present without js_in', err_msg)
+        rslt = fms_error_handler(trim(err_module_name), 'je_in present without js_in', error_msg)
         IF (rslt) return
       END IF
       IF ( PRESENT(is_in) .AND. .NOT.PRESENT(ie_in) ) THEN
         rslt = fms_error_handler(trim(err_module_name),&
-          & 'js_in and je_in present, but is_in present without ie_in', err_msg)
+          & 'js_in and je_in present, but is_in present without ie_in', error_msg)
         IF (rslt) return
       END IF
     END IF
