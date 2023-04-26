@@ -20,7 +20,8 @@ module fms_diag_object_mod
 use mpp_mod, only: fatal, note, warning, mpp_error, mpp_pe, mpp_root_pe, stdout
 use diag_data_mod,  only: diag_null, diag_not_found, diag_not_registered, diag_registered_id, &
                          &DIAG_FIELD_NOT_FOUND, diag_not_registered, max_axes, TWO_D_DOMAIN, &
-                         &get_base_time, NULL_AXIS_ID, get_var_type
+                         &get_base_time, NULL_AXIS_ID, get_var_type, diag_not_registered
+
   USE time_manager_mod, ONLY: set_time, set_date, get_time, time_type, OPERATOR(>=), OPERATOR(>),&
        & OPERATOR(<), OPERATOR(==), OPERATOR(/=), OPERATOR(/), OPERATOR(+), ASSIGNMENT(=), get_date, &
        & get_ticks_per_second
@@ -370,13 +371,24 @@ INTEGER FUNCTION fms_register_static_field(this, module_name, field_name, axes, 
 fms_register_static_field=diag_null
 CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling with -Duse_yaml")
 #else
-! Include static as optional variable to register here
-  fms_register_static_field = this%register( &
+  !TODO The register_static_field interface does not have the capabiliy to register a variable as a "scalar"
+  !     since the axes argument is required, this forced model code to pass in a null_axis_id as an argument
+  if (size(axes) .eq. 1 .and. axes(1) .eq. null_axis_id) then
+    ! If they are passing in the null_axis_ids, ignore the `axes` argument
+    fms_register_static_field = this%register( &
+      & module_name, field_name, &
+      & longname=long_name, units=units, missing_value=missing_value, varrange=range, &
+      & mask_variant=mask_variant, do_not_log=do_not_log, interp_method=interp_method, tile_count=tile_count, &
+      & standname=standard_name, area=area, volume=volume, realm=realm, &
+      & static=.true.)
+  else
+    fms_register_static_field = this%register( &
       & module_name, field_name, axes=axes, &
       & longname=long_name, units=units, missing_value=missing_value, varrange=range, &
       & mask_variant=mask_variant, do_not_log=do_not_log, interp_method=interp_method, tile_count=tile_count, &
       & standname=standard_name, area=area, volume=volume, realm=realm, &
       & static=.true.)
+  endif
 #endif
 end function fms_register_static_field
 
@@ -599,22 +611,24 @@ subroutine fms_diag_do_io(this, is_end_of_run)
 
     call diag_file%open_diag_file(model_time, file_is_opened_this_time_step)
     if (file_is_opened_this_time_step) then
-      call diag_file%write_time_metadata()
       call diag_file%write_axis_metadata(this%diag_axis)
+      call diag_file%write_time_metadata()
       call diag_file%write_field_metadata(this%FMS_diag_fields, this%diag_axis)
       call diag_file%write_axis_data(this%diag_axis)
     endif
 
     if (diag_file%is_time_to_write(model_time)) then
-      call diag_file%increase_unlimited_dimension()
+      call diag_file%increase_unlim_dimension_level()
       call diag_file%write_time_data()
       !TODO call diag_file%add_variable_data()
       call diag_file%update_next_write(model_time)
       call diag_file%update_current_new_file_freq_index(model_time)
       if (diag_file%is_time_to_close_file(model_time)) call diag_file%close_diag_file()
-    else if (force_write .and. .not. diag_file%is_file_static()) then
-      call diag_file%increase_unlimited_dimension()
-      call diag_file%write_time_data()
+    else if (force_write) then
+      if (diag_file%get_unlim_dimension_level() .eq. 0) then
+        call diag_file%increase_unlim_dimension_level()
+        call diag_file%write_time_data()
+      endif
       call diag_file%close_diag_file()
     endif
   enddo
@@ -696,41 +710,40 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
 #endif
 end subroutine fms_diag_axis_add_attribute
 
-#ifdef use_yaml
 !> \brief Gets the diag field ID from the module name and field name.
 !> \returns a copy of the ID of the diag field or DIAG_FIELD_NOT_FOUND if the field is not registered
-PURE FUNCTION fms_get_diag_field_id_from_name(this, module_name, field_name) &
+FUNCTION fms_get_diag_field_id_from_name(this, module_name, field_name) &
   result(diag_field_id)
   class(fmsDiagObject_type), intent (in) :: this !< The diag object, the caller
   CHARACTER(len=*), INTENT(in) :: module_name !< Module name that registered the variable
   CHARACTER(len=*), INTENT(in) :: field_name !< Variable name
   integer :: diag_field_id
-  integer :: i !< For looping
-!> Initialize to not found
-  diag_field_id = DIAG_FIELD_NOT_FOUND
-!> Loop through fields to find it.
-  if (this%registered_variables < 1) return
-  do i=1, this%registered_variables
-   diag_field_id = this%FMS_diag_fields(i)%id_from_name(module_name, field_name)
-   if(diag_field_id .ne. DIAG_FIELD_NOT_FOUND) return
-  enddo
-END FUNCTION fms_get_diag_field_id_from_name
-#else
-!> \brief This replaces the pure function when not compiled with yaml so that an error can be called
-!> \returns Error
-FUNCTION fms_get_diag_field_id_from_name(fms_diag_object, module_name, field_name) &
-  result(diag_field_id)
-  class(fmsDiagObject_type), intent (in) :: fms_diag_object !< The diag object
-  CHARACTER(len=*), INTENT(in) :: module_name !< Module name that registered the variable
-  CHARACTER(len=*), INTENT(in) :: field_name !< Variable name
-  integer :: diag_field_id
-  integer :: i !< For looping
-!> Initialize to not found
-  diag_field_id = DIAG_FIELD_NOT_FOUND
-CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling with -Duse_yaml")
-END FUNCTION fms_get_diag_field_id_from_name
-#endif
 
+#ifdef use_yaml
+  integer              :: i                     !< For looping
+  integer, allocatable :: diag_field_indices(:) !< indices where the field was found in the yaml
+
+  diag_field_id = DIAG_FIELD_NOT_FOUND
+
+  !> Loop through fields to find it.
+  do i=1, this%registered_variables
+    !< Check if the field was registered, if it was return the diag_field_id
+    diag_field_id = this%FMS_diag_fields(i)%id_from_name(module_name, field_name)
+    if(diag_field_id .ne. DIAG_FIELD_NOT_FOUND) return
+  enddo
+
+  !< Check if the field is in the diag_table.yaml. If it is, return DIAG_FIELD_NOT_REGISTERED
+  !! Otherwsie it will return DIAG_FIELD_NOT_FOUND
+  diag_field_indices = find_diag_field(field_name, module_name)
+  if (diag_field_indices(1) .ne. diag_null) then
+    diag_field_id = DIAG_NOT_REGISTERED
+  endif
+  deallocate(diag_field_indices)
+#else
+  diag_field_id = DIAG_FIELD_NOT_FOUND
+  CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling with -Duse_yaml")
+#endif
+END FUNCTION fms_get_diag_field_id_from_name
 
 #ifdef use_yaml
 !> returns the buffer object for the given id
