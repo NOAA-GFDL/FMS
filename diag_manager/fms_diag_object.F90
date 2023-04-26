@@ -98,7 +98,6 @@ public :: fms_diag_object
 public :: fmsDiagObject_type
 integer, private :: registered_variables !< Number of registered variables
 public :: dump_diag_obj
-public :: fms_diag_check_indices_order
 
 contains
 
