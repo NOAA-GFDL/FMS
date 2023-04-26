@@ -169,36 +169,40 @@ contains
         if(allocated(Interp%horizInterpReals8_type%area_src)) deallocate(Interp%horizInterpReals8_type%area_src)
         if(allocated(Interp%horizInterpReals8_type%area_dst)) deallocate(Interp%horizInterpReals8_type%area_dst)
         if(allocated(Interp%horizInterpReals8_type%facj))     deallocate(Interp%horizInterpReals8_type%facj)
-        if(allocated(Interp%jlat))                 deallocate(Interp%jlat)
         if(allocated(Interp%horizInterpReals8_type%faci))     deallocate(Interp%horizInterpReals8_type%faci)
-        if(allocated(Interp%ilon))                 deallocate(Interp%ilon)
-        deallocate(Interp%horizInterpReals8_type)
+        !! double checks still allocated for bug
+        if(allocated(Interp%horizInterpReals8_type))          deallocate(Interp%horizInterpReals8_type)
+        if(allocated(Interp%ilon))                            deallocate(Interp%ilon)
+        if(allocated(Interp%jlat))                            deallocate(Interp%jlat)
       else if( allocated( Interp%horizInterpReals4_type)) then
         if(allocated(Interp%horizInterpReals4_type%area_src)) deallocate(Interp%horizInterpReals4_type%area_src)
         if(allocated(Interp%horizInterpReals4_type%area_dst)) deallocate(Interp%horizInterpReals4_type%area_dst)
         if(allocated(Interp%horizInterpReals4_type%facj))     deallocate(Interp%horizInterpReals4_type%facj)
-        if(allocated(Interp%jlat))                 deallocate(Interp%jlat)
         if(allocated(Interp%horizInterpReals4_type%faci))     deallocate(Interp%horizInterpReals4_type%faci)
-        if(allocated(Interp%ilon))                 deallocate(Interp%ilon)
-        deallocate(Interp%horizInterpReals4_type)
+        !! double checks still allocated for bug
+        if(allocated(Interp%horizInterpReals4_type))          deallocate(Interp%horizInterpReals4_type)
+        if(allocated(Interp%jlat))                            deallocate(Interp%jlat)
+        if(allocated(Interp%ilon))                            deallocate(Interp%ilon)
       endif
     case (2)
       if( allocated( Interp%horizInterpReals8_type)) then
-        if(allocated(Interp%i_src)) deallocate(Interp%i_src)
-        if(allocated(Interp%j_src)) deallocate(Interp%j_src)
-        if(allocated(Interp%i_dst)) deallocate(Interp%i_dst)
-        if(allocated(Interp%j_dst)) deallocate(Interp%j_dst)
+        if(allocated(Interp%i_src))                           deallocate(Interp%i_src)
+        if(allocated(Interp%j_src))                           deallocate(Interp%j_src)
+        if(allocated(Interp%i_dst))                           deallocate(Interp%i_dst)
+        if(allocated(Interp%j_dst))                           deallocate(Interp%j_dst)
+        !! double checks still allocated for bug
+        if(allocated(Interp%horizInterpReals8_type))          deallocate(Interp%horizInterpReals8_type)
         if(allocated(Interp%horizInterpReals8_type%area_frac_dst)) &
             deallocate(Interp%horizInterpReals8_type%area_frac_dst)
-        deallocate(Interp%horizInterpReals8_type)
       else if( allocated( Interp%horizInterpReals4_type)) then
-        if(allocated(Interp%i_src)) deallocate(Interp%i_src)
-        if(allocated(Interp%j_src)) deallocate(Interp%j_src)
-        if(allocated(Interp%i_dst)) deallocate(Interp%i_dst)
-        if(allocated(Interp%j_dst)) deallocate(Interp%j_dst)
+        if(allocated(Interp%i_src))                           deallocate(Interp%i_src)
+        if(allocated(Interp%j_src))                           deallocate(Interp%j_src)
+        if(allocated(Interp%i_dst))                           deallocate(Interp%i_dst)
+        if(allocated(Interp%j_dst))                           deallocate(Interp%j_dst)
+        !! double checks still allocated for bug
+        if(allocated(Interp%horizInterpReals4_type))          deallocate(Interp%horizInterpReals8_type)
         if(allocated(Interp%horizInterpReals4_type%area_frac_dst)) &
             deallocate(Interp%horizInterpReals4_type%area_frac_dst)
-        deallocate(Interp%horizInterpReals4_type)
        endif
     end select
 

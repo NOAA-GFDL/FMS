@@ -135,10 +135,12 @@ contains
 
     if(allocated(Interp%horizInterpReals4_type)) then
       if(allocated(Interp%horizInterpReals4_type%src_dist)) deallocate(Interp%horizInterpReals4_type%src_dist)
-      deallocate(Interp%horizInterpReals4_type)
+      !! double check allocated for bug
+      if(allocated(Interp%horizInterpReals4_type))          deallocate(Interp%horizInterpReals4_type)
     else if (allocated(Interp%horizInterpReals8_type)) then
       if(allocated(Interp%horizInterpReals8_type%src_dist)) deallocate(Interp%horizInterpReals8_type%src_dist)
-      deallocate(Interp%horizInterpReals8_type)
+      !! double check allocated for bug
+      if(allocated(Interp%horizInterpReals8_type))          deallocate(Interp%horizInterpReals8_type)
     endif
     if(allocated(Interp%num_found)) deallocate(Interp%num_found)
     if(allocated(Interp%i_lon))     deallocate(Interp%i_lon)

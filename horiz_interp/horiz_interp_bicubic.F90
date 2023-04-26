@@ -151,14 +151,16 @@ module horiz_interp_bicubic_mod
       if(allocated(Interp%horizInterpReals8_type%lon_in)) deallocate ( Interp%horizInterpReals8_type%lon_in )
       if(allocated(Interp%horizInterpReals8_type%lat_in)) deallocate ( Interp%horizInterpReals8_type%lat_in )
       if(allocated(Interp%horizInterpReals8_type%wti))    deallocate ( Interp%horizInterpReals8_type%wti )
-      deallocate(Interp%horizInterpReals8_type)
+      !! double check allocated for bug
+      if(allocated(Interp%horizInterpReals8_type))        deallocate (Interp%horizInterpReals8_type)
     else if(allocated(Interp%horizInterpReals4_type)) then
       if(allocated(Interp%horizInterpReals4_type%rat_x))  deallocate ( Interp%horizInterpReals4_type%rat_x )
       if(allocated(Interp%horizInterpReals4_type%rat_y))  deallocate ( Interp%horizInterpReals4_type%rat_y )
       if(allocated(Interp%horizInterpReals4_type%lon_in)) deallocate ( Interp%horizInterpReals4_type%lon_in )
       if(allocated(Interp%horizInterpReals4_type%lat_in)) deallocate ( Interp%horizInterpReals4_type%lat_in )
       if(allocated(Interp%horizInterpReals4_type%wti))    deallocate ( Interp%horizInterpReals4_type%wti )
-      deallocate(Interp%horizInterpReals4_type)
+      !! double check allocated for bug
+      if(allocated(Interp%horizInterpReals4_type))        deallocate (Interp%horizInterpReals4_type)
     endif
     if( allocated(Interp%i_lon) ) deallocate( Interp%i_lon )
     if( allocated(Interp%j_lat) ) deallocate( Interp%j_lat )
