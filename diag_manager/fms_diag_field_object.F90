@@ -1130,7 +1130,13 @@ subroutine write_field_metadata(this, fileobj, file_id, yaml_id, diag_axis, unli
     call this%get_dimnames(diag_axis, field_yaml, unlim_dimname, dimnames, is_regional)
     call register_field_wrap(fileobj, var_name, this%get_var_skind(field_yaml), dimnames)
   else
-    call register_field_wrap(fileobj, var_name, this%get_var_skind(field_yaml))
+    if (this%is_static()) then
+      call register_field_wrap(fileobj, var_name, this%get_var_skind(field_yaml))
+    else
+      !< In this case, the scalar variable is a function of time, so we need to pass in the
+      !! unlimited dimension as a dimension
+      call register_field_wrap(fileobj, var_name, this%get_var_skind(field_yaml), (/unlim_dimname/))
+    endif
   endif
 
   long_name = this%get_longname_to_write(field_yaml)
