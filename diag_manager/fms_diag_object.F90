@@ -880,27 +880,4 @@ subroutine dump_diag_obj( filename )
   call mpp_error( FATAL, "You can not use the modern diag manager without compiling with -Duse_yaml")
 #endif
 end subroutine
-
-!> @brief Copies input data to output data with proper type if the input data is present
-!! else sets the output data to a given value val if it is present.
-!! If the value val and the input data are not present, the output data is untouched.
-subroutine real_copy_set(out_data, in_data, val)
-  real, intent(out) :: out_data !< Proper type copy of in_data
-  class(*), intent(in), optional :: in_data !< Data to copy to out_data
-  real, intent(in), optional :: val !< Default value to assign to out_data if in_data absent
-
-  IF ( PRESENT(in_data) ) THEN
-    SELECT TYPE (in_data)
-    TYPE IS (real(kind=r4_kind))
-      out_data = in_data
-    TYPE IS (real(kind=r8_kind))
-      out_data = real(in_data)
-    CLASS DEFAULT
-      CALL mpp_error('fms_diag_object_mod:real_copy_set',&
-        & 'The weight is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)
-    END SELECT
-  ELSE
-    if (present(val)) out_data = val
-  END IF
-end subroutine real_copy_set
 end module fms_diag_object_mod
