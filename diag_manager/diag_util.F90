@@ -2502,10 +2502,13 @@ END SUBROUTINE check_bounds_are_exact_dynamic
   !> @brief Copies input data to output data with proper type if the input data is present
   !! else sets the output data to a given value val if it is present.
   !! If the value val and the input data are not present, the output data is untouched.
-  subroutine real_copy_set(out_data, in_data, val)
+  subroutine real_copy_set(out_data, in_data, val, err_msg)
     real, intent(out) :: out_data !< Proper type copy of in_data
     class(*), intent(in), optional :: in_data !< Data to copy to out_data
     real, intent(in), optional :: val !< Default value to assign to out_data if in_data is absent
+    character(len=*), intent(out), optional :: err_msg !< Error message to pass back to caller
+
+    IF ( PRESENT(err_msg) ) err_msg = ''
 
     IF ( PRESENT(in_data) ) THEN
       SELECT TYPE (in_data)
@@ -2514,8 +2517,10 @@ END SUBROUTINE check_bounds_are_exact_dynamic
       TYPE IS (real(kind=r8_kind))
         out_data = real(in_data)
       CLASS DEFAULT
-        CALL mpp_error('diag_util_mod:real_copy_set',&
-          & 'The in_data is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)
+        if (fms_error_handler('diag_util_mod:real_copy_set',&
+          & 'The in_data is not one of the supported types of real(kind=4) or real(kind=8)', err_msg)) THEN
+          return
+        end if
       END SELECT
     ELSE
       if (present(val)) out_data = val
