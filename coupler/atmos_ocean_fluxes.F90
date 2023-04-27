@@ -628,7 +628,8 @@ contains
       gas_fluxes%bc(n)%atm_tr_index = fm_util_get_integer('atm_tr_index', scalar = .true.)
 
       ! Save the molecular weight.
-      gas_fluxes%bc(n)%mol_wt = fm_util_get_real_r8('mol_wt', scalar = .true.)
+      gas_fluxes%bc(n)%mol_wt = fm_util_get_real_r8('mol_wt', scalar = .true.) !< change goes along with changes
+                                                                               !! mol_wt precision in coupler_type
       gas_fields_atm%bc(n)%mol_wt = gas_fluxes%bc(n)%mol_wt
       gas_fields_ice%bc(n)%mol_wt = gas_fluxes%bc(n)%mol_wt
 
@@ -643,8 +644,8 @@ contains
       gas_fields_ice%bc(n)%ocean_restart_file = gas_fluxes%bc(n)%ocean_restart_file
 
       ! Save the params.
-      gas_fluxes%bc(n)%param => fm_util_get_real_array_r8('param')
-
+      gas_fluxes%bc(n)%param => fm_util_get_real_array_r8('param')!< change goes along with changes
+                                                                  !! mol_wt precision in coupler_type
       ! Save the flags.
       gas_fluxes%bc(n)%flag => fm_util_get_logical_array('flag')
 

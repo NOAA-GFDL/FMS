@@ -194,11 +194,10 @@ module coupler_types_mod
     type(coupler_1d_values_type), pointer, dimension(:)   :: field => NULL() !< field
     character(len=128)             :: flux_type = ' ' !< flux_type
     character(len=128)             :: implementation = ' ' !< implementation
+    !> precision has been explicitly defined
+    !! to be r8_kind during mixedmode update to field_manager
+    !! this explicit definition can be removed during the coupler update and be made into FMS_CP_KIND_
     real(r8_kind), pointer, dimension(:) :: param => NULL() !< param
-                                                            !! precision has been explicitly defined
-                                                            !! to be r8_kind during mixedmode update to field_manager
-                                                            !! this explicit definition can be removed during the coupler update
-                                                            !! and be made into FMS_CP_KIND_
     logical, pointer, dimension(:) :: flag => NULL() !< flag
     integer                        :: atm_tr_index = 0 !< atm_tr_index
     character(len=128)             :: ice_restart_file = ' ' !< ice_restart_file
@@ -206,12 +205,12 @@ module coupler_types_mod
     logical                        :: use_atm_pressure !< use_atm_pressure
     logical                        :: use_10m_wind_speed !< use_10m_wind_speed
     logical                        :: pass_through_ice !< pass_through_ice
+    !> precision has been explicitly defined
+    !! to be r8_kind during mixedmode update to field_manager
+    !! this explicit definition can be removed during the coupler update and be made into FMS_CP_KIND_
     real(r8_kind)                  :: mol_wt = 0.0 !< mol_wt
-                                                   !! precision has been explicitly defined
-                                                   !! to be r8_kind during mixedmode update to field_manager.
-                                                   !! this explicit definition can be removed during the coupler update
-                                                   !! and be made into FMS_CP_KIND_
-  end type coupler_1d_field_type
+
+ end type coupler_1d_field_type
 
   !> Coupler data for 1D boundary conditions
   !> @ingroup coupler_types_mod

@@ -170,7 +170,8 @@ write(*,*) 'Now the type for /ocean_mod/tracer/biotic1/diff_horiz/linear/slope i
 success =  fm_get_value('/ocean_mod/tracer/biotic1/diff_horiz/linear/slope', param_out)
 if (.not. success) call mpp_error(FATAL, "Unable to get the value of biotic1 slope")
 write(*,*) 'The value for /ocean_mod/tracer/biotic1/diff_horiz/linear/slope is (real) ',param_out
-if(slope_value .ne. param_out) call mpp_error(FATAL, '/ocean_mod/tracer/biotic1/diff_horiz/linear/slope value retrieval failed')
+if(slope_value .ne. param_out) &
+     call mpp_error(FATAL, '/ocean_mod/tracer/biotic1/diff_horiz/linear/slope value retrieval failed')
 write(*,*) '+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+'
 
 ! create new real field with fm_new_value
