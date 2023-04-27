@@ -39,7 +39,6 @@ use fms_diag_output_buffer_mod
 use omp_lib
 #endif
 use mpp_domains_mod, only: domain1d, domain2d, domainUG, null_domain2d
-use platform_mod
 implicit none
 private
 
@@ -98,7 +97,6 @@ public :: fms_diag_object
 public :: fmsDiagObject_type
 integer, private :: registered_variables !< Number of registered variables
 public :: dump_diag_obj
-public :: fms_diag_init_mask_3d
 
 contains
 
@@ -874,48 +872,4 @@ subroutine dump_diag_obj( filename )
   call mpp_error( FATAL, "You can not use the modern diag manager without compiling with -Duse_yaml")
 #endif
 end subroutine
-
-!> @brief Allocates outmask(second argument) with sizes of first three dimensions of field(first argument).
-!! Initializes the outmask depending on presence/absence of inmask and rmask.
-!! Uses and sets rmask_threshold.
-subroutine fms_diag_init_mask_3d(field, outmask, rmask_threshold, inmask, rmask)
-  class(*), intent(in) :: field(:,:,:,:) !< Dummy variable whose sizes only in the first three dimensions are important
-  logical, allocatable, intent(inout) :: outmask(:,:,:) !< Output logical mask
-  real, intent(inout) :: rmask_threshold !< Holds the values 0.5_r4_kind or 0.5_r8_kind, or related threhold values
-                                         !! needed to be passed to the math/buffer update functions.
-  logical, intent(in), optional :: inmask(:,:,:) !< Input logical mask
-  class(*), intent(in), optional :: rmask(:,:,:) !< Floating point input mask value
-
-  character(len=256) :: err_msg_local !< Stores locally generated error message
-  integer :: status !< Stores status of memory allocation call
-
-  ! Check if outmask is allocated
-  if (allocated(outmask)) deallocate(outmask)
-  ALLOCATE(outmask(SIZE(field, 1), SIZE(field, 2), SIZE(field, 3)), STAT=status)
-  IF ( status .NE. 0 ) THEN
-    WRITE (err_msg_local, FMT='("Unable to allocate outmask(",I5,",",I5,",",I5,"). (STAT: ",I5,")")')&
-          & SIZE(field, 1), SIZE(field, 2), SIZE(field, 3), status
-    call mpp_error('fms_diag_object_mod:fms_diag_init_mask_3d', trim(err_msg_local), FATAL)
-  END IF
-
-  IF ( PRESENT(inmask) ) THEN
-    outmask = inmask
-  ELSE
-    outmask = .TRUE.
-  END IF
-
-  IF ( PRESENT(rmask) ) THEN
-    SELECT TYPE (rmask)
-      TYPE IS (real(kind=r4_kind))
-          WHERE (rmask < real(rmask_threshold, kind=r4_kind)) outmask = .FALSE.
-          rmask_threshold = real(rmask_threshold, kind=r4_kind)
-       TYPE IS (real(kind=r8_kind))
-          WHERE ( rmask < real(rmask_threshold, kind=r8_kind) ) outmask = .FALSE.
-          rmask_threshold = real(rmask_threshold, kind=r8_kind)
-      CLASS DEFAULT
-        CALL mpp_error('fms_diag_object_mod:fms_diag_init_mask_3d',&
-            & 'The rmask is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)
-    END SELECT
-  END IF
-end subroutine fms_diag_init_mask_3d
 end module fms_diag_object_mod
