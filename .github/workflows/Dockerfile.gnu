@@ -1,3 +1,21 @@
+#***********************************************************************
+#*                   GNU Lesser General Public License
+#*
+#* This file is part of the GFDL Flexible Modeling System (FMS).
+#*
+#* FMS is free software: you can redistribute it and/or modify it under
+#* the terms of the GNU Lesser General Public License as published by
+#* the Free Software Foundation, either version 3 of the License, or (at
+#* your option) any later version.
+#*
+#* FMS is distributed in the hope that it will be useful, but WITHOUT
+#* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+#* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+#* for more details.
+#*
+#* You should have received a copy of the GNU Lesser General Public
+#* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+#***********************************************************************
 # FMS CI image recipefile for GNU
 # Runs on centos stream (builder has same base from redhat registry)
 #
@@ -22,7 +40,7 @@ RUN spack install gcc@${gcc_version}                          && \
     sed -i "s/LIBYAML_VERSION/$libyaml_version/" spack.yaml   && \
     sed -i "s/MPI_LIB/mpich@$mpich_version/" spack.yaml       && \
     spack env activate -d .                                   && \
-    spack -e . concretize -f > deps.log                       && \
+    spack -e . concretize -f > /opt/deps/deps.log             && \
     spack install --fail-fast
 
 RUN find -L /opt/view/* -type f -exec readlink -f '{}' \; | \
@@ -37,9 +55,7 @@ FROM quay.io/centos/centos:stream
 COPY --from=builder /opt/deps/ /opt/deps/
 COPY --from=builder /opt/spack/opt/spack/linux-centos8-haswell/gcc-8.5.0/  /opt/spack/opt/spack/linux-centos8-haswell/gcc-8.5.0/
 
-# wasn't able to get the shell option working with the other RUN syntax
-# just needs to extend the glob for exceptions
-#RUN ["bash", "-O", "extglob", "ln -s /opt/deps/linux-centos8-haswell/gcc-12.2.0/*/lib/!(pkgconfig|cmake) /usr/local/lib"]
+# extends glob patterns for exceptions
 SHELL ["/bin/bash", "-O", "extglob", "-c"]
 
 RUN ln -s /opt/deps/linux-centos8-haswell/gcc-12.2.0/*/lib/!(pkgconfig|cmake) /usr/local/lib && \
