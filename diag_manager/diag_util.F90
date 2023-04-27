@@ -2504,12 +2504,12 @@ END SUBROUTINE check_bounds_are_exact_dynamic
   ! This routine is intended to be used in diag manager.
   !> @return .false. if there is no error else .true.
   function recondition_indices(indices, data, is_in, js_in, ks_in, &
-    ie_in, je_in, ke_in, error_msg) result(ierr)
+    ie_in, je_in, ke_in, err_msg) result(ierr)
     integer, intent(inout) :: indices(12) !< Stores indices in order:
                                               !! /(is, js, ks, ie, je, ke, hi, fis, fie, hj, fjs, fje)/
     class(*), intent(in) :: data(:,:,:,:) !< Dummy variable; only the sizes of the first 3 dimensions are used
     integer, intent(in), optional :: is_in, js_in, ks_in, ie_in, je_in, ke_in !< User input indices
-    character(len=*), intent(out), optional :: error_msg !< Error message to pass back to caller
+    character(len=*), intent(out), optional :: err_msg !< Error message to pass back to caller
     logical :: ierr !< Error flag
 
     integer :: is, js, ks, ie, je, ke !< Local indices to update
