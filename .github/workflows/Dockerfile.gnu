@@ -57,7 +57,7 @@ COPY --from=builder /opt/spack/opt/spack/linux-centos8-haswell/gcc-8.5.0/  /opt/
 
 # input files used with --enable-input-tests
 # need to be on the dev boxes if building
-COPY /home/fms_test_input /home/fms_test_input
+COPY ./fms_test_input /home/fms_test_input
 
 # extends glob patterns for exceptions
 SHELL ["/bin/bash", "-O", "extglob", "-c"]
@@ -65,7 +65,7 @@ SHELL ["/bin/bash", "-O", "extglob", "-c"]
 RUN ln -s /opt/deps/linux-centos8-haswell/gcc-12.2.0/*/lib/!(pkgconfig|cmake) /usr/local/lib && \
     ln -s /opt/deps/linux-centos8-haswell/gcc-12.2.0/*/bin/* /usr/local/bin && \
     ln -s /opt/deps/linux-centos8-haswell/gcc-12.2.0/*/include/* /usr/local/include && \
-    dnf install -y autoconf automake make cmake binutils glibc-devel
+    dnf install -y autoconf automake make cmake binutils glibc-devel m4 libtool pkg-config
 
 ENV FC="mpifort"
 ENV CC="mpicc"
