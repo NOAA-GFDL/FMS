@@ -466,15 +466,9 @@ logical function fms_diag_accept_data (this, diag_field_id, field_data, time, is
   integer :: omp_level !< The openmp active level
   logical :: buffer_the_data !< True if the user selects to buffer the data and run the calculations
                              !! later.  \note This is experimental
-  real :: l_weight !< Local copy of input weight
-
 #ifndef use_yaml
 CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling with -Duse_yaml")
 #else
-
-  ! weight is for time averaging where each time level may have a different weight
-  call real_copy_set(l_weight, weight, 1.0)
-
 !> Does the user want to push off calculations until send_diag_complete?
   buffer_the_data = .false.
 !> initialize the number of threads and level to be 0
