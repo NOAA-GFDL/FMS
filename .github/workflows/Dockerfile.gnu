@@ -34,16 +34,16 @@ RUN find -L /opt/view/* -type f -exec readlink -f '{}' \; | \
 # copy built software to base from first image
 FROM quay.io/centos/centos:stream
 
-
 COPY --from=builder /opt/deps/ /opt/deps/
 COPY --from=builder /opt/spack/opt/spack/linux-centos8-haswell/gcc-8.5.0/  /opt/spack/opt/spack/linux-centos8-haswell/gcc-8.5.0/
 
 # wasn't able to get the shell option working with the other RUN syntax
 # just needs to extend the glob for exceptions
 #RUN ["bash", "-O", "extglob", "ln -s /opt/deps/linux-centos8-haswell/gcc-12.2.0/*/lib/!(pkgconfig|cmake) /usr/local/lib"]
-SHELL ["/bin/bash", "-o", "extglob", "-c"]
+SHELL ["/bin/bash", "-O", "extglob", "-c"]
 
-RUN ln -s /opt/deps/linux-centos8-haswell/gcc-12.2.0/*/bin/* /usr/local/bin && \
+RUN ln -s /opt/deps/linux-centos8-haswell/gcc-12.2.0/*/lib/!(pkgconfig|cmake) /usr/local/lib && \
+    ln -s /opt/deps/linux-centos8-haswell/gcc-12.2.0/*/bin/* /usr/local/bin && \
     ln -s /opt/deps/linux-centos8-haswell/gcc-12.2.0/*/include/* /usr/local/include && \
     dnf install -y autoconf automake make cmake binutils glibc-devel
 
