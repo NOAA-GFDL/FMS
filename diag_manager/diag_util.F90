@@ -86,7 +86,7 @@ use,intrinsic :: iso_c_binding, only: c_double,c_float,c_int64_t, &
        & prepend_attribute, attribute_init, diag_util_init,&
        & fms_diag_check_out_of_bounds, &
        & fms_diag_check_bounds_are_exact_dynamic, fms_diag_check_bounds_are_exact_static,&
-       & get_time_string
+       & get_time_string, recondition_indices
 
 
   !> @brief Prepend a value to a string attribute in the output field or output file.
@@ -2498,6 +2498,86 @@ END SUBROUTINE check_bounds_are_exact_dynamic
        out_file%attributes(this_attribute)%len = length
     END IF
   END SUBROUTINE prepend_attribute_file
+
+  !> @brief Updates indices based on presence/absence of input indices is, js, ks, ie, je, and ke.
+  ! Computes halo sizes in x and y directions.
+  ! This routine is intended to be used in diag manager.
+  !> @return .false. if there is no error else .true.
+  function recondition_indices(indices, data, is_in, js_in, ks_in, &
+    ie_in, je_in, ke_in, error_msg) result(ierr)
+    integer, intent(inout) :: indices(12) !< Stores indices in order:
+                                              !! /(is, js, ks, ie, je, ke, hi, fis, fie, hj, fjs, fje)/
+    class(*), intent(in) :: data(:,:,:,:) !< Dummy variable; only the sizes of the first 3 dimensions are used
+    integer, intent(in), optional :: is_in, js_in, ks_in, ie_in, je_in, ke_in !< User input indices
+    character(len=*), intent(out), optional :: error_msg !< Error message to pass back to caller
+    logical :: ierr !< Error flag
+
+    integer :: is, js, ks, ie, je, ke !< Local indices to update
+    integer   :: hi !< halo size in x direction
+    integer   :: hj !< halo size in y direction
+    integer   :: twohi, twohj
+    integer   :: fis, fie, fjs, fje !< ! Used for field, mask and rmask bounds
+    integer :: n1, n2, n3 !< Sizes of the first 3 dimenstions indicies of the data
+
+    ierr = .false.
+    if (present(err_msg)) err_msg = ''
+
+    ! If is, js, or ks not present default them to 1
+    is = 1
+    js = 1
+    ks = 1
+
+    IF ( PRESENT(is_in) ) is = is_in
+    IF ( PRESENT(js_in) ) js = js_in
+    IF ( PRESENT(ks_in) ) ks = ks_in
+
+    n1 = SIZE(data, 1)
+    n2 = SIZE(data, 2)
+    n3 = SIZE(data, 3)
+
+    ie = is + n1 - 1
+    je = js + n2 - 1
+    ke = ks + n3 - 1
+
+    IF ( PRESENT(ie_in) ) ie = ie_in
+    IF ( PRESENT(je_in) ) je = je_in
+    IF ( PRESENT(ke_in) ) ke = ke_in
+
+    twohi = n1 - (ie - is + 1)
+    IF ( MOD(twohi, 2) /= 0 ) THEN
+      ierr = fms_error_handler('diag_util_mod:recondition_indices', &
+        'non-symmetric halos in first dimension', err_msg)
+      IF (ierr) RETURN
+    END IF
+
+    twohj = n2 - (je - js + 1)
+    IF ( MOD(twohj, 2) /= 0 ) THEN
+      ierr = fms_error_handler('diag_util_mod:recondition_indices', &
+        'non-symmetric halos in second dimension', err_msg)
+      IF (ierr) RETURN
+    END IF
+
+    hi = twohi/2
+    hj = twohj/2
+
+    ! The next line is necessary to ensure that is, ie, js, ie are relative to field(1:,1:)
+    ! But this works only when there is no windowing.
+    IF ( PRESENT(ie_in) .AND. PRESENT(je_in) ) THEN
+      is = 1 + hi
+      ie = n1 - hi
+      js = 1 + hj
+      je = n2 - hj
+    END IF
+
+    ! Used for field, mask and rmask bounds
+    fis = 1 + hi
+    fie = n1 - hi
+    fjs = 1 + hj
+    fje = n2 - hj
+
+    ! Update indices
+    indices = /(is, js, ks, ie, je, ke, hi, fis, fie, hj, fjs, fje)/
+  end function recondition_indices
 
 END MODULE diag_util_mod
 !> @}
