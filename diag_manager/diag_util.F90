@@ -2506,7 +2506,7 @@ END SUBROUTINE check_bounds_are_exact_dynamic
   function recondition_indices(indices, data, is_in, js_in, ks_in, &
     ie_in, je_in, ke_in, err_msg) result(ierr)
     integer, intent(inout) :: indices(12) !< Stores indices in order:
-                                              !! /(is, js, ks, ie, je, ke, hi, fis, fie, hj, fjs, fje)/
+                                              !! (/is, js, ks, ie, je, ke, hi, fis, fie, hj, fjs, fje/)
     class(*), intent(in) :: data(:,:,:,:) !< Dummy variable; only the sizes of the first 3 dimensions are used
     integer, intent(in), optional :: is_in, js_in, ks_in, ie_in, je_in, ke_in !< User input indices
     character(len=*), intent(out), optional :: err_msg !< Error message to pass back to caller
@@ -2576,7 +2576,7 @@ END SUBROUTINE check_bounds_are_exact_dynamic
     fje = n2 - hj
 
     ! Update indices
-    indices = /(is, js, ks, ie, je, ke, hi, fis, fie, hj, fjs, fje)/
+    indices = (/is, js, ks, ie, je, ke, hi, fis, fie, hj, fjs, fje/)
   end function recondition_indices
 
 END MODULE diag_util_mod
