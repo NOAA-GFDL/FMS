@@ -55,6 +55,10 @@ FROM quay.io/centos/centos:stream
 COPY --from=builder /opt/deps/ /opt/deps/
 COPY --from=builder /opt/spack/opt/spack/linux-centos8-haswell/gcc-8.5.0/  /opt/spack/opt/spack/linux-centos8-haswell/gcc-8.5.0/
 
+# input files used with --enable-input-tests
+# need to be on the dev boxes if building
+COPY /home/fms_test_input /home/fms_test_input
+
 # extends glob patterns for exceptions
 SHELL ["/bin/bash", "-O", "extglob", "-c"]
 

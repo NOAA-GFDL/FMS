@@ -13,7 +13,7 @@ jobs:
     strategy:
       matrix:
         conf-flags: [--disable-openmp, --enable-mixed-mode, --disable-setting-flags, --with-mpi=no]
-        input-flag:  [--with-yaml, --enable-test-input=/home/unit_tests_input]
+        input-flag:  [--with-yaml, --enable-test-input=/home/fms_test_input]
     container:
       image: ryanmulhall/fms-ci-centos-gnu:12.2.0
       env:
