@@ -2151,7 +2151,7 @@ end function get_nest_contact_fms2_io
 
 !#######################################################################
 subroutine set_comm_get1_repro(xmap)
-  type (xmap_type), intent(inout) :: xmap
+  type (xmap_type), intent(inout), target :: xmap
   integer, dimension(xmap%npes) :: pe_ind, cnt
   integer, dimension(0:xmap%npes-1) :: send_ind, pl
   integer :: npes, nsend, nrecv, mypos
