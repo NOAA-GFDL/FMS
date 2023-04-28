@@ -287,17 +287,17 @@ end type xcell_type
 !> Type to hold pointers for grid boxes
 !> @ingroup xgrid_mod
 type grid_box_type
-   real(r8_kind), dimension(:,:),   pointer :: dx     => NULL()
-   real(r8_kind), dimension(:,:),   pointer :: dy     => NULL()
-   real(r8_kind), dimension(:,:),   pointer :: area   => NULL()
-   real(r8_kind), dimension(:),     pointer :: edge_w => NULL()
-   real(r8_kind), dimension(:),     pointer :: edge_e => NULL()
-   real(r8_kind), dimension(:),     pointer :: edge_s => NULL()
-   real(r8_kind), dimension(:),     pointer :: edge_n => NULL()
-   real(r8_kind), dimension(:,:,:), pointer :: en1    => NULL()
-   real(r8_kind), dimension(:,:,:), pointer :: en2    => NULL()
-   real(r8_kind), dimension(:,:,:), pointer :: vlon   => NULL()
-   real(r8_kind), dimension(:,:,:), pointer :: vlat   => NULL()
+   real(r8_kind), dimension(:,:),   allocatable :: dx
+   real(r8_kind), dimension(:,:),   allocatable :: dy
+   real(r8_kind), dimension(:,:),   allocatable :: area
+   real(r8_kind), dimension(:),     allocatable :: edge_w
+   real(r8_kind), dimension(:),     allocatable :: edge_e
+   real(r8_kind), dimension(:),     allocatable :: edge_s
+   real(r8_kind), dimension(:),     allocatable :: edge_n
+   real(r8_kind), dimension(:,:,:), allocatable :: en1
+   real(r8_kind), dimension(:,:,:), allocatable :: en2
+   real(r8_kind), dimension(:,:,:), allocatable :: vlon
+   real(r8_kind), dimension(:,:,:), allocatable :: vlat
 end type grid_box_type
 
 !> Private type to hold all data needed from given grid for an exchange grid
@@ -307,15 +307,15 @@ type grid_type
   integer                         :: npes                             !< number of processor on this grid.
   logical                         :: on_this_pe                       !< indicate the domain is defined on this pe
   integer                         :: root_pe                          !< indicate the root pe of the domain
-  integer, pointer, dimension(:)  :: pelist                           !< pelist of the domain
+  integer, allocatable, dimension(:)  :: pelist                       !< pelist of the domain
   integer                         :: ntile                            !< number of tiles in mosaic
   integer                         :: ni !< max of global size of all the tiles
   integer                         :: nj !< max of global size of all the tiles
-  integer, pointer, dimension(:)  :: tile =>NULL()                    !< tile id ( pe index )
-  integer, pointer, dimension(:)  :: is =>NULL() !< domain - i-range (pe index)
-  integer, pointer, dimension(:)  :: ie =>NULL() !< domain - i-range (pe index)
-  integer, pointer, dimension(:)  :: js =>NULL() !< domain - j-range (pe index)
-  integer, pointer, dimension(:)  :: je =>NULL() !< domain - j-range (pe index)
+  integer, allocatable, dimension(:)  :: tile !< tile id ( pe index )
+  integer, allocatable, dimension(:)  :: is !< domain - i-range (pe index)
+  integer, allocatable, dimension(:)  :: ie !< domain - i-range (pe index)
+  integer, allocatable, dimension(:)  :: js !< domain - j-range (pe index)
+  integer, allocatable, dimension(:)  :: je !< domain - j-range (pe index)
   integer, pointer                :: is_me =>NULL() !< my domain - i-range
   integer, pointer                :: ie_me =>NULL() !< my domain - i-range
   integer, pointer                :: js_me =>NULL() !< my domain - j-range
@@ -332,21 +332,21 @@ type grid_type
   integer                         :: im                     !< global domain range
   integer                         :: jm                     !< global domain range
   integer                         :: km                     !< global domain range
-  real(r8_kind), pointer, dimension(:)     :: lon =>NULL()       !< center of global grids
-  real(r8_kind), pointer, dimension(:)     :: lat =>NULL()       !< center of global grids
-  real(r8_kind), pointer, dimension(:,:)   :: geolon=>NULL()   !< geographical grid center
-  real(r8_kind), pointer, dimension(:,:)   :: geolat=>NULL()   !< geographical grid center
-  real(r8_kind), pointer, dimension(:,:,:) :: frac_area =>NULL()               !< partition fractions
-  real(r8_kind), pointer, dimension(:,:)   :: area =>NULL()                    !< cell area
-  real(r8_kind), pointer, dimension(:,:)   :: area_inv =>NULL()                !< 1 / area for normalization
+  real(r8_kind), allocatable, dimension(:) :: lon       !< center of global grids
+  real(r8_kind), allocatable, dimension(:) :: lat       !< center of global grids
+  real(r8_kind), allocatable, dimension(:,:)   :: geolon   !< geographical grid center
+  real(r8_kind), allocatable, dimension(:,:)   :: geolat   !< geographical grid center
+  real(r8_kind), allocatable, dimension(:,:,:) :: frac_area     !< partition fractions
+  real(r8_kind), allocatable, dimension(:,:)   :: area          !< cell area
+  real(r8_kind), allocatable, dimension(:,:)   :: area_inv      !< 1 / area for normalization
   integer                         :: first                      !< xgrid index range
   integer                         :: last                       !< xgrid index range
   integer                         :: first_get              !< xgrid index range for get_2_from_xgrid
   integer                         :: last_get               !< xgrid index range for get_2_from_xgrid
   integer                         :: size                             !< # xcell patterns
-  type(xcell_type), pointer       :: x(:) =>NULL()                    !< xcell patterns
+  type(xcell_type), allocatable   :: x(:)                             !< xcell patterns
   integer                         :: size_repro                       !< # side 1 patterns for repro
-  type(xcell_type), pointer       :: x_repro(:) =>NULL()              !< side 1 patterns for repro
+  type(xcell_type), allocatable   :: x_repro(:)                       !< side 1 patterns for repro
   type(Domain2d)                  :: domain                           !< used for conservation checks
   type(Domain2d)                  :: domain_with_halo                 !< used for second order remapping
   logical                         :: is_latlon                        !< indicate if the grid is lat-lon grid or not.
@@ -356,10 +356,10 @@ type grid_type
   integer                         :: nxl_me
   integer, pointer                :: ls_me =>NULL()  !< unstruct domain
   integer, pointer                :: le_me =>NULL()  !< unstruct domain
-  integer, pointer, dimension(:)  :: ls =>NULL(), le =>NULL()
+  integer, allocatable, dimension(:)  :: ls, le
   integer, pointer                :: gs_me =>NULL(),  ge_me =>NULL()
-  integer, pointer, dimension(:)  :: gs =>NULL(), ge =>NULL()
-  integer, pointer, dimension(:)  :: l_index =>NULL()
+  integer, allocatable, dimension(:)  :: gs, ge
+  integer, allocatable, dimension(:)  :: l_index
   type(DomainUG)                  :: ug_domain
 
 end type grid_type
@@ -404,9 +404,9 @@ end type overlap_type
 type comm_type
   integer                         :: nsend, nrecv
   integer                         :: sendsize, recvsize
-  integer,            pointer, dimension(:) :: unpack_ind=>NULL()
-  type(overlap_type), pointer, dimension(:) :: send=>NULL()
-  type(overlap_type), pointer, dimension(:) :: recv=>NULL()
+  integer,            allocatable, dimension(:) :: unpack_ind
+  type(overlap_type), allocatable, dimension(:) :: send
+  type(overlap_type), allocatable, dimension(:) :: recv
 end type comm_type
 
 !> @brief Type for an exchange grid, holds pointers to included grids and any necessary data.
@@ -417,38 +417,38 @@ type xmap_type
   integer :: size_put1       !< # of exchange grid cells for put_1_to_xgrid
   integer :: size_get2       !< # of exchange grid cells for get_2_to_xgrid
   integer :: me, npes, root_pe
-  logical, pointer, dimension(:) :: your1my2  =>NULL()!< true if side 1 domain on
+  logical, allocatable, dimension(:) :: your1my2      !< true if side 1 domain on
                                                       !! indexed pe overlaps side 2
                                                       !! domain on this pe
-  logical, pointer, dimension(:) :: your2my1 =>NULL() !< true if a side 2 domain on
+  logical, allocatable, dimension(:) :: your2my1      !< true if a side 2 domain on
                                                       !! indexed pe overlaps side 1
                                                       !! domain on this pe
-  integer, pointer, dimension(:) :: your2my1_size=>NULL() !< number of exchange grid of
+  integer, allocatable, dimension(:) :: your2my1_size     !< number of exchange grid of
                                                           !! a side 2 domain on
                                                           !! indexed pe overlaps side 1
                                                           !! domain on this pe
 
-  type (grid_type), pointer, dimension(:) :: grids =>NULL() !< 1st grid is side 1;
+  type (grid_type), allocatable, dimension(:) :: grids      !< 1st grid is side 1;
                                                             !! rest on side 2
   !
   ! Description of the individual exchange grid cells (index is cell #)
   !
-  type(x1_type), pointer, dimension(:) :: x1 =>NULL() !< side 1 info
-  type(x1_type), pointer, dimension(:) :: x1_put =>NULL() !< side 1 info
-  type(x2_type), pointer, dimension(:) :: x2 =>NULL() !< side 2 info
-  type(x2_type), pointer, dimension(:) :: x2_get =>NULL() !< side 2 info
+  type(x1_type), allocatable, dimension(:) :: x1     !< side 1 info
+  type(x1_type), allocatable, dimension(:) :: x1_put !< side 1 info
+  type(x2_type), allocatable, dimension(:) :: x2     !< side 2 info
+  type(x2_type), allocatable, dimension(:) :: x2_get !< side 2 info
 
-  integer, pointer, dimension(:) :: send_count_repro =>NULL()
-  integer, pointer, dimension(:) :: recv_count_repro  =>NULL()
+  integer, allocatable, dimension(:) :: send_count_repro
+  integer, allocatable, dimension(:) :: recv_count_repro
   integer                        :: send_count_repro_tot !< sum(send_count_repro)
   integer                        :: recv_count_repro_tot !< sum(recv_count_repro)
   integer :: version                                  !< version of xgrids. version=VERSION! is for grid_spec file
                                                       !! and version=VERSION2 is for mosaic grid.
-  integer, pointer, dimension(:) :: ind_get1 =>NULL() !< indx for side1 get and side2 put.
-  integer, pointer, dimension(:) :: ind_put1 =>NULL() !< indx for side1 put and side 2get.
-  type(comm_type), pointer       :: put1 =>NULL()      !< for put_1_to_xgrid
-  type(comm_type), pointer       :: get1 =>NULL()      !< for get_1_from_xgrid
-  type(comm_type), pointer       :: get1_repro =>NULL()!< for get_1_from_xgrid_repro
+  integer, allocatable, dimension(:) :: ind_get1   !< indx for side1 get and side2 put.
+  integer, allocatable, dimension(:) :: ind_put1   !< indx for side1 put and side 2get.
+  type(comm_type), allocatable       :: put1       !< for put_1_to_xgrid
+  type(comm_type), allocatable       :: get1       !< for get_1_from_xgrid
+  type(comm_type), allocatable       :: get1_repro !< for get_1_from_xgrid_repro
 end type xmap_type
 
 !> @addtogroup stock_constants_mod
@@ -599,18 +599,18 @@ character(len=3), intent(in)           :: grid1_id, grid_id
 integer,          intent(in)           :: tile1, tile2
 logical,        intent(in)             :: use_higher_order
 
-  integer, pointer,       dimension(:)   :: i1=>NULL(), j1=>NULL()
-  integer, pointer,       dimension(:)   :: i2=>NULL(), j2=>NULL()
-  real(r8_kind),    pointer,       dimension(:)   :: di=>NULL(), dj=>NULL()
-  real(r8_kind),    pointer,       dimension(:)   :: area =>NULL()
-  integer, pointer,       dimension(:)   :: i1_tmp=>NULL(), j1_tmp=>NULL()
-  integer, pointer,       dimension(:)   :: i2_tmp=>NULL(), j2_tmp=>NULL()
-  real(r8_kind),    pointer,       dimension(:)   :: di_tmp=>NULL(), dj_tmp=>NULL()
-  real(r8_kind),    pointer,       dimension(:)   :: area_tmp =>NULL()
-  integer, pointer,       dimension(:)   :: i1_side1=>NULL(), j1_side1=>NULL()
-  integer, pointer,       dimension(:)   :: i2_side1=>NULL(), j2_side1=>NULL()
-  real(r8_kind),    pointer,       dimension(:)   :: di_side1=>NULL(), dj_side1=>NULL()
-  real(r8_kind),    pointer,       dimension(:)   :: area_side1 =>NULL()
+  integer, allocatable,       dimension(:)   :: i1, j1
+  integer, allocatable,       dimension(:)   :: i2, j2
+  real(r8_kind), allocatable, dimension(:)   :: di, dj
+  real(r8_kind), allocatable, dimension(:)   :: area
+  integer, allocatable,       dimension(:)   :: i1_tmp, j1_tmp
+  integer, allocatable,       dimension(:)   :: i2_tmp, j2_tmp
+  real(r8_kind), allocatable, dimension(:)   :: di_tmp, dj_tmp
+  real(r8_kind), allocatable, dimension(:)   :: area_tmp
+  integer, allocatable,       dimension(:)   :: i1_side1, j1_side1
+  integer, allocatable,       dimension(:)   :: i2_side1, j2_side1
+  real(r8_kind), allocatable, dimension(:)   :: di_side1, dj_side1
+  real(r8_kind), allocatable, dimension(:)   :: area_side1
 
   real(r8_kind),    allocatable, dimension(:,:) :: tmp
   real(r8_kind),    allocatable, dimension(:)   :: send_buffer, recv_buffer
@@ -637,7 +637,7 @@ logical,        intent(in)             :: use_higher_order
   integer, dimension(2*xmap%npes)      :: ibuf1, ibuf2
   integer, dimension(0:xmap%npes-1)    :: pos_x, y2m1_size
   integer, allocatable,   dimension(:) :: y2m1_pe
-  integer, pointer, save               :: iarray(:), jarray(:)
+  integer, allocatable, save           :: iarray(:), jarray(:)
   integer, allocatable, save           :: pos_s(:)
   integer, pointer,       dimension(:) :: iarray2(:)=>NULL(), jarray2(:)=>NULL()
   logical                              :: last_grid
@@ -1243,7 +1243,7 @@ logical,        intent(in)             :: use_higher_order
      if(ll_repro > 0) then  ! extend data
         allocate(x_local(ll_repro))
         x_local = grid%x_repro
-        if(ASSOCIATED(grid%x_repro)) deallocate(grid%x_repro)
+        if(allocated(grid%x_repro)) deallocate(grid%x_repro)
         allocate( grid%x_repro(grid%size_repro ) )
         grid%x_repro(1:ll_repro) = x_local
         deallocate(x_local)
@@ -1758,10 +1758,10 @@ subroutine setup_xmap(xmap, grid_ids, grid_domains, grid_file, atm_grid, lnd_ug_
                    grid%js_me-grid%jsd_me .NE. 1 .or. grid%jed_me-grid%je_me .NE. 1 ) &
                        & call error_mesg('xgrid_mod', 'for non-latlon grid (cubic grid), '//&
                                        & 'the halo size should be 1 in all four direction', FATAL)
-              if(.NOT.( ASSOCIATED(atm_grid%dx) .AND. ASSOCIATED(atm_grid%dy) .AND. ASSOCIATED(atm_grid%edge_w) .AND. &
-                   ASSOCIATED(atm_grid%edge_e) .AND. ASSOCIATED(atm_grid%edge_s) .AND.ASSOCIATED(atm_grid%edge_n).AND.&
-                   ASSOCIATED(atm_grid%en1) .AND. ASSOCIATED(atm_grid%en2) .AND. ASSOCIATED(atm_grid%vlon) .AND.      &
-                   ASSOCIATED(atm_grid%vlat) ) )  call error_mesg( 'xgrid_mod', &
+              if(.NOT.( allocated(atm_grid%dx) .AND. allocated(atm_grid%dy) .AND. allocated(atm_grid%edge_w) .AND. &
+                   allocated(atm_grid%edge_e) .AND. allocated(atm_grid%edge_s) .AND.allocated(atm_grid%edge_n).AND.&
+                   allocated(atm_grid%en1) .AND. allocated(atm_grid%en2) .AND. allocated(atm_grid%vlon) .AND.      &
+                   allocated(atm_grid%vlat) ) )  call error_mesg( 'xgrid_mod', &
                    'for non-latlon grid (cubic grid), all the fields in atm_grid data type should be allocated', FATAL)
               nxc = grid%ie_me  - grid%is_me  + 1
               nyc = grid%je_me  - grid%js_me  + 1
@@ -4395,7 +4395,7 @@ subroutine stock_move_3d(from, to, grid_index, data, xmap, &
      return
   endif
 
-  if(.not. associated(xmap%grids) ) then
+  if(.not. allocated(xmap%grids) ) then
      ier = 2
      return
   endif
@@ -4449,7 +4449,7 @@ subroutine stock_move_2d(from, to, grid_index, data, xmap, &
 
   ier = 0
 
-  if(.not. associated(xmap%grids) ) then
+  if(.not. allocated(xmap%grids) ) then
      ier = 3
      return
   endif
@@ -4520,7 +4520,7 @@ subroutine stock_move_ug_3d(from, to, grid_index, data, xmap, &
      return
   endif
 
-  if(.not. associated(xmap%grids) ) then
+  if(.not. allocated(xmap%grids) ) then
      ier = 2
      return
   endif
@@ -4566,7 +4566,7 @@ subroutine stock_integrate_2d(data, xmap, delta_t, radius, res, ier)
   ier = 0
   res = 0.0
 
-  if(.not. associated(xmap%grids) ) then
+  if(.not. allocated(xmap%grids) ) then
      ier = 6
      return
   endif
