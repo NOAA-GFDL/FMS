@@ -838,8 +838,10 @@ logical,        intent(in)             :: use_higher_order
         endif
      enddo
 
-     deallocate(i1_tmp, i2_tmp, j1_tmp, j2_tmp, area_tmp)
-     if(use_higher_order) deallocate( di_tmp, dj_tmp)
+     if (allocated(i1_tmp, i2_tmp, j1_tmp, j2_tmp, area_tmp)) deallocate(i1_tmp, i2_tmp, j1_tmp, j2_tmp, area_tmp)
+     if(use_higher_order) then
+       if (allocated(di_tmp, dj_tmp)) deallocate( di_tmp, dj_tmp)
+     end if
      iec = pos
      if(iec .GE. isc) then
         nxgrid_local = iec - isc + 1
@@ -983,7 +985,7 @@ logical,        intent(in)             :: use_higher_order
      call mpp_clock_end(id_load_xgrid4)
      !--- unpack buffer.
      if( nxgrid_local>0) then
-        deallocate(i1,j1,i2,j2,area)
+        if (allocated(i1,j1,i2,j2,area)) deallocate(i1,j1,i2,j2,area)
      endif
 
      allocate(i1(nxgrid2), j1(nxgrid2))
@@ -993,7 +995,9 @@ logical,        intent(in)             :: use_higher_order
      allocate(i2_side1(nxgrid1), j2_side1(nxgrid1))
      allocate(area_side1(nxgrid1))
      if(use_higher_order) then
-        if(nxgrid_local>0) deallocate(di,dj)
+        if(nxgrid_local>0) then
+          if (allocated(di, dj)) deallocate(di,dj)
+        end if
         allocate(di      (nxgrid2), dj      (nxgrid2))
         allocate(di_side1(nxgrid1), dj_side1(nxgrid1))
      endif
@@ -1232,9 +1236,9 @@ logical,        intent(in)             :: use_higher_order
         endif
      end do
      xmap%your2my1_size(:) =  y2m1_size(:)
-     deallocate(y2m1_pe)
+     if (allocated(y2m1_pe)) deallocate(y2m1_pe)
      if(last_grid) then
-        deallocate(iarray, jarray)
+        if (allocated(iarray, jarray)) deallocate(iarray, jarray)
         if(allocated(pos_s)) deallocate(pos_s)
      end if
   end if
