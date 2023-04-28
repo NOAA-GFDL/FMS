@@ -592,7 +592,7 @@ end subroutine xgrid_init
 !#######################################################################
 
 subroutine load_xgrid (xmap, grid, grid_file, grid1_id, grid_id, tile1, tile2, use_higher_order)
-type(xmap_type), intent(inout)         :: xmap
+type(xmap_type), intent(inout), target :: xmap
 type(grid_type), intent(inout)         :: grid
 character(len=*), intent(in)           :: grid_file
 character(len=3), intent(in)           :: grid1_id, grid_id
@@ -637,7 +637,7 @@ logical,        intent(in)             :: use_higher_order
   integer, dimension(2*xmap%npes)      :: ibuf1, ibuf2
   integer, dimension(0:xmap%npes-1)    :: pos_x, y2m1_size
   integer, allocatable,   dimension(:) :: y2m1_pe
-  integer, allocatable, save           :: iarray(:), jarray(:)
+  integer, allocatable, save, target   :: iarray(:), jarray(:)
   integer, allocatable, save           :: pos_s(:)
   integer, pointer,       dimension(:) :: iarray2(:)=>NULL(), jarray2(:)=>NULL()
   logical                              :: last_grid
@@ -1039,12 +1039,12 @@ logical,        intent(in)             :: use_higher_order
   else
      nxgrid1 = nxgrid
      nxgrid2 = nxgrid
-     i1_side1 => i1; j1_side1 => j1
-     i2_side1 => i2; j2_side1 => j2
-     area_side1 => area
+     i1_side1 = i1; j1_side1 = j1
+     i2_side1 = i2; j2_side1 = j2
+     area_side1 = area
      if(use_higher_order) then
-        di_side1 => di
-        dj_side1 => dj
+        di_side1 = di
+        dj_side1 = dj
      endif
   endif
 
@@ -1082,7 +1082,7 @@ logical,        intent(in)             :: use_higher_order
      if(size_prev > 0) then ! need to extend data
         allocate(x_local(size_prev))
         x_local = grid%x
-        if(ASSOCIATED(grid%x)) deallocate(grid%x)
+        if(allocated(grid%x)) deallocate(grid%x)
         allocate( grid%x( grid%size ) )
         grid%x(1:size_prev) = x_local
         deallocate(x_local)
@@ -1139,7 +1139,7 @@ logical,        intent(in)             :: use_higher_order
 
   size_repro = 0
   if(grid1%tile_me == tile1) then
-     if(associated(iarray)) then
+     if(allocated(iarray)) then
         nxgrid1_old = size(iarray(:))
      else
         nxgrid1_old = 0
@@ -1288,7 +1288,6 @@ logical,        intent(in)             :: use_higher_order
      if(use_higher_order) deallocate(di_side1, dj_side1)
   endif
 
-  i1=>NULL(); j1=>NULL(); i2=>NULL(); j2=>NULL()
   call mpp_clock_end(id_load_xgrid5)
 
 
@@ -1508,7 +1507,7 @@ end subroutine get_ocean_model_area_elements
 !> @brief Sets up exchange grid connectivity using grid specification file and
 !!      processor domain decomposition.
 subroutine setup_xmap(xmap, grid_ids, grid_domains, grid_file, atm_grid, lnd_ug_domain)
-  type (xmap_type),                        intent(inout) :: xmap
+  type (xmap_type), target,                  intent(inout) :: xmap
   character(len=3), dimension(:),            intent(in ) :: grid_ids
   type(Domain2d), dimension(:),              intent(in ) :: grid_domains
   character(len=*),                          intent(in ) :: grid_file
@@ -2257,7 +2256,7 @@ end subroutine set_comm_get1_repro
 
 !#######################################################################
 subroutine set_comm_get1(xmap)
-  type (xmap_type), intent(inout) :: xmap
+  type (xmap_type), intent(inout), target :: xmap
   type (grid_type), pointer, save :: grid1 =>NULL()
   integer, allocatable :: send_size(:)
   integer, allocatable :: recv_size(:)
@@ -2556,7 +2555,7 @@ end subroutine set_comm_get1
 
 !###############################################################################
 subroutine set_comm_put1(xmap)
-  type (xmap_type), intent(inout) :: xmap
+  type (xmap_type), intent(inout), target :: xmap
   type (grid_type), pointer, save :: grid1 =>NULL()
   integer, allocatable :: send_size(:)
   integer, allocatable :: recv_size(:)
@@ -2578,9 +2577,9 @@ subroutine set_comm_put1(xmap)
      comm%nrecv    = xmap%get1%nsend
      comm%sendsize = xmap%get1%recvsize
      comm%recvsize = xmap%get1%sendsize
-     comm%send     => xmap%get1%recv
-     comm%recv     => xmap%get1%send
-     xmap%ind_put1 => xmap%ind_get1
+     comm%send     = xmap%get1%recv
+     comm%recv     = xmap%get1%send
+     xmap%ind_put1 = xmap%ind_get1
     return
   endif
 
@@ -3056,7 +3055,7 @@ end subroutine regen
 subroutine set_frac_area_sg(f, grid_id, xmap)
 real(r8_kind), dimension(:,:,:), intent(in   ) :: f !< fraction area to be set
 character(len=3),       intent(in   ) :: grid_id !< 3 character grid ID
-type (xmap_type),       intent(inout) :: xmap !< exchange grid with given grid ID
+type (xmap_type), target, intent(inout) :: xmap !< exchange grid with given grid ID
 
   integer :: g
   type(grid_type), pointer, save :: grid =>NULL()
@@ -3088,7 +3087,7 @@ end subroutine  set_frac_area_sg
 subroutine set_frac_area_ug(f, grid_id, xmap)
 real(r8_kind), dimension(:,:),   intent(in   ) :: f !< fractional area to set
 character(len=3),       intent(in   ) :: grid_id !< 3 character grid ID
-type (xmap_type),       intent(inout) :: xmap !< exchange grid with given grid ID
+type (xmap_type), target, intent(inout) :: xmap !< exchange grid with given grid ID
 
   integer :: g
   type(grid_type), pointer, save :: grid =>NULL()
@@ -3433,7 +3432,7 @@ end subroutine get_2_from_xgrid
 subroutine put_1_to_xgrid_order_1(d_addrs, x_addrs, xmap, isize, jsize, xsize, lsize)
   integer(i8_kind), dimension(:), intent(in) :: d_addrs
   integer(i8_kind), dimension(:), intent(in) :: x_addrs
-  type (xmap_type),              intent(inout) :: xmap
+  type (xmap_type), target,    intent(inout) :: xmap
   integer,                          intent(in) :: isize, jsize, xsize, lsize
 
   integer                         :: i, j, p, buffer_pos, msgsize
@@ -3522,7 +3521,7 @@ end subroutine put_1_to_xgrid_order_1
 subroutine put_1_to_xgrid_order_2(d_addrs, x_addrs, xmap, isize, jsize, xsize, lsize)
   integer(i8_kind), dimension(:), intent(in) :: d_addrs
   integer(i8_kind), dimension(:), intent(in) :: x_addrs
-  type (xmap_type),              intent(inout) :: xmap
+  type (xmap_type), target,    intent(inout) :: xmap
   integer,                          intent(in) :: isize, jsize, xsize, lsize
 
   !: NOTE: halo size is assumed to be 1 in setup_xmap
@@ -3760,7 +3759,7 @@ end subroutine put_1_to_xgrid_order_2
 subroutine get_1_from_xgrid(d_addrs, x_addrs, xmap, isize, jsize, xsize, lsize)
   integer(i8_kind), dimension(:), intent(in) :: d_addrs
   integer(i8_kind), dimension(:), intent(in) :: x_addrs
-  type (xmap_type),              intent(inout) :: xmap
+  type (xmap_type), target,    intent(inout) :: xmap
   integer,                          intent(in) :: isize, jsize, xsize, lsize
 
   real(r8_kind), dimension(xmap%size), target :: dg(xmap%size, lsize)
@@ -3892,7 +3891,7 @@ end subroutine get_1_from_xgrid
 subroutine get_1_from_xgrid_repro(d_addrs, x_addrs, xmap, xsize, lsize)
   integer(i8_kind), dimension(:), intent(in) :: d_addrs
   integer(i8_kind), dimension(:), intent(in) :: x_addrs
-  type (xmap_type),              intent(inout) :: xmap
+  type (xmap_type), target,    intent(inout) :: xmap
   integer,                          intent(in) :: xsize, lsize
 
   integer                            :: g, i, j, k, p, l, n, l2, l3
@@ -3994,7 +3993,7 @@ end subroutine get_1_from_xgrid_repro
 function conservation_check_side1(d, grid_id, xmap,remap_method) ! this one for 1->2->1
 real(r8_kind), dimension(:,:),    intent(in   ) :: d !< model data to check
 character(len=3),        intent(in   ) :: grid_id !< 3 character grid id
-type (xmap_type),        intent(inout) :: xmap !< exchange grid
+type (xmap_type), target, intent(inout) :: xmap !< exchange grid
 real(r8_kind), dimension(3)                     :: conservation_check_side1
 integer, intent(in), optional :: remap_method
 
@@ -4041,7 +4040,7 @@ end function conservation_check_side1
 function conservation_check_side2(d, grid_id, xmap,remap_method) ! this one for 2->1->2
 real(r8_kind), dimension(:,:,:), intent(in   )  :: d !< model data to check
 character(len=3),       intent(in   )  :: grid_id !< 3 character grid ID
-type (xmap_type),       intent(inout)  :: xmap !< exchange grid
+type (xmap_type), target, intent(inout)  :: xmap !< exchange grid
 real(r8_kind), dimension(3)                     :: conservation_check_side2
 integer, intent(in), optional :: remap_method
 
@@ -4097,7 +4096,7 @@ end function conservation_check_side2
 function conservation_check_ug_side1(d, grid_id, xmap,remap_method) ! this one for 1->2->1
 real(r8_kind), dimension(:,:),    intent(in   ) :: d !< model data to check
 character(len=3),        intent(in   ) :: grid_id !< 3 character grid ID
-type (xmap_type),        intent(inout) :: xmap !< exchange grid
+type (xmap_type), target, intent(inout) :: xmap !< exchange grid
 real(r8_kind), dimension(3)                     :: conservation_check_ug_side1
 integer, intent(in), optional :: remap_method
 
@@ -4170,7 +4169,7 @@ end function conservation_check_ug_side1
 function conservation_check_ug_side2(d, grid_id, xmap,remap_method) ! this one for 2->1->2
 real(r8_kind), dimension(:,:,:), intent(in   )  :: d !< model data to check
 character(len=3),       intent(in   )  :: grid_id !< 3 character grid ID
-type (xmap_type),       intent(inout)  :: xmap !< exchange grid
+type (xmap_type), target, intent(inout)  :: xmap !< exchange grid
 real(r8_kind), dimension(3)                     :: conservation_check_ug_side2
 integer, intent(in),   optional :: remap_method
 
@@ -4948,7 +4947,7 @@ end subroutine get_side2_from_xgrid_ug
 subroutine put_1_to_xgrid_ug_order_1(d_addrs, x_addrs, xmap, dsize, xsize, lsize)
   integer(i8_kind), dimension(:), intent(in) :: d_addrs
   integer(i8_kind), dimension(:), intent(in) :: x_addrs
-  type (xmap_type),              intent(inout) :: xmap
+  type (xmap_type), target,       intent(inout) :: xmap
   integer,                          intent(in) :: dsize, xsize, lsize
 
   integer                         :: i, p, buffer_pos, msgsize
@@ -5053,7 +5052,7 @@ end subroutine put_2_to_xgrid_ug
 subroutine get_1_from_xgrid_ug(d_addrs, x_addrs, xmap, isize, xsize, lsize)
   integer(i8_kind), dimension(:), intent(in) :: d_addrs
   integer(i8_kind), dimension(:), intent(in) :: x_addrs
-  type (xmap_type),              intent(inout) :: xmap
+  type (xmap_type), target,    intent(inout) :: xmap
   integer,                          intent(in) :: isize, xsize, lsize
 
   real(r8_kind), dimension(xmap%size), target :: dg(xmap%size, lsize)
@@ -5183,7 +5182,7 @@ end subroutine get_1_from_xgrid_ug
 subroutine get_1_from_xgrid_ug_repro(d_addrs, x_addrs, xmap, xsize, lsize)
   integer(i8_kind), dimension(:), intent(in) :: d_addrs
   integer(i8_kind), dimension(:), intent(in) :: x_addrs
-  type (xmap_type),              intent(inout) :: xmap
+  type (xmap_type), target,    intent(inout) :: xmap
   integer,                          intent(in) :: xsize, lsize
 
   integer                            :: g, i, j, k, p, l, n, l2, l3
