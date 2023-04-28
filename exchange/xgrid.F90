@@ -1187,6 +1187,8 @@ logical,        intent(in)             :: use_higher_order
         y2m1_size(:) = xmap%your2my1_size(:)
         iarray2 => iarray
         jarray2 => jarray
+        if (allocated(iarray)) deallocate(iarray)
+        if (allocated(jarray)) deallocate(jarray)
         allocate(iarray(nxgrid1+nxgrid1_old), jarray(nxgrid1+nxgrid1_old))
         ! copy the i-j index
         do p=0,xmap%npes-1
