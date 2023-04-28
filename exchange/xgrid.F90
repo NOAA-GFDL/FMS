@@ -838,15 +838,8 @@ logical,        intent(in)             :: use_higher_order
         endif
      enddo
 
-     if (allocated(i1_tmp)) deallocate(i1_tmp)
-     if (allocated(i2_tmp)) deallocate(i2_tmp)
-     if (allocated(j1_tmp)) deallocate(j1_tmp)
-     if (allocated(j2_tmp)) deallocate(j2_tmp)
-     if (allocated(area_tmp)) deallocate(area_tmp)
-     if(use_higher_order) then
-       if (allocated(di_tmp)) deallocate(di_tmp)
-       if (allocated(dj_tmp)) deallocate(dj_tmp)
-     end if
+     deallocate(i1_tmp, i2_tmp, j1_tmp, j2_tmp, area_tmp)
+     if(use_higher_order) deallocate(di_tmp, dj_tmp)
      iec = pos
      if(iec .GE. isc) then
         nxgrid_local = iec - isc + 1
@@ -989,13 +982,7 @@ logical,        intent(in)             :: use_higher_order
      end if
      call mpp_clock_end(id_load_xgrid4)
      !--- unpack buffer.
-     if( nxgrid_local>0) then
-        if (allocated(i1)) deallocate(i1)
-        if (allocated(j1)) deallocate(j1)
-        if (allocated(i2)) deallocate(i2)
-        if (allocated(j2)) deallocate(j2)
-        if (allocated(area)) deallocate(area)
-     endif
+     if( nxgrid_local>0) deallocate(i1, j1, i2, j2, area)
 
      allocate(i1(nxgrid2), j1(nxgrid2))
      allocate(i2(nxgrid2), j2(nxgrid2))
@@ -1004,10 +991,7 @@ logical,        intent(in)             :: use_higher_order
      allocate(i2_side1(nxgrid1), j2_side1(nxgrid1))
      allocate(area_side1(nxgrid1))
      if(use_higher_order) then
-        if(nxgrid_local>0) then
-          if (allocated(di)) deallocate(di)
-          if (allocated(dj)) deallocate(dj)
-        end if
+        if(nxgrid_local>0) deallocate(di, dj)
         allocate(di      (nxgrid2), dj      (nxgrid2))
         allocate(di_side1(nxgrid1), dj_side1(nxgrid1))
      endif
@@ -1249,8 +1233,7 @@ logical,        intent(in)             :: use_higher_order
      xmap%your2my1_size(:) =  y2m1_size(:)
      if (allocated(y2m1_pe)) deallocate(y2m1_pe)
      if(last_grid) then
-        if (allocated(iarray)) deallocate(iarray)
-        if (allocated(jarray)) deallocate(jarray)
+        deallocate(iarray, jarray)
         if(allocated(pos_s)) deallocate(pos_s)
      end if
   end if
