@@ -1211,7 +1211,8 @@ logical,        intent(in)             :: use_higher_order
               jarray(pos_x(p)+n) = jarray2(pos_s(p)+n)
            enddo
         enddo
-        deallocate(iarray2, jarray2)
+        if (associated(iarray2)) deallocate(iarray2)
+        if (associated(jarray2)) deallocate(jarray2)
      else
         allocate(iarray(nxgrid1), jarray(nxgrid1))
         iarray(:) = 0
