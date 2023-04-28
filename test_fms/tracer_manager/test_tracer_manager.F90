@@ -2,7 +2,7 @@ program test_tracer_manager
 
   use fms_mod, only: fms_init
   use mpp_mod, only: mpp_error, FATAL
-  use field_manager_mod, only: field_manager_init, MODEL_ATMOS, MODEL_OCEAN, MODEL_LAND, fm_dump_list, fm_get_value
+  use field_manager_mod, only: field_manager_init, MODEL_ATMOS, MODEL_OCEAN, MODEL_LAND, fm_change_list, fm_get_value, fm_get_current_list
   use tracer_manager_mod
   use platform_mod, only: r4_kind, r8_kind
 
@@ -37,34 +37,13 @@ contains
   !> check results
   if(tracer_out1(1,1,1).ne.answer1(1,1,1)) call mpp_error(FATAL,'ATM tracer field value should be 0.0')
 
-
-  !-- OCEAN profile_type=profile --!
-
-  tracer_index=get_tracer_index(MODEL_OCEAN, 'immadeup2')
-  call set_tracer_profile(MODEL_OCEAN,tracer_index,tracer_out2,err_message)
-  !> answer
-  success=fm_get_value("/ocean_mod/tracer/immadeup2/profile_type/profile/bottom_value", bottom_value)
-  success=fm_get_value("/ocean_mod/tracer/immadeup2/profile_type/profile/surface_value", surf_value)
-  multiplier = exp( log (bottom_value/surf_value) /real(numlevels-1,r8_kind))
-  answer2(:,:,numlevels)=surf_value
-  do i=numlevels-1, 1, -1
-     answer2(:,:,i) = answer2(:,:,i+1)*multiplier
-  end do
-  !> check results
-  do k=1, numlevels
-     do j=1, npoints
-        do i=1, npoints
-           if( tracer_out2(i,j,k) .ne. answer2(i,j,k)) &
-                call mpp_error(FATAL, 'OCEAN tracer field value error for profile_type=profile')
-        end do
-     end do
-  end do
-
   !-- ATM profile_type=profile --!
   tracer_index=get_tracer_index(MODEL_ATMOS, 'immadeup')
   call set_tracer_profile(MODEL_ATMOS,tracer_index,tracer_out2,err_message)
   !> answer
+  success=fm_change_list('/atmos_mod/tracer/immadeup/profile_type/profile/')
   success=fm_get_value("/atmos_mod/tracer/immadeup/profile_type/profile/top_value", top_value)
+  success=fm_change_list('/atmos_mod/tracer/immadeup/profile_type/profile/')
   success=fm_get_value("/atmos_mod/tracer/immadeup/profile_type/profile/surface_value", surf_value)
   multiplier = exp( log (top_value/surf_value) /real(numlevels-1,r8_kind))
   answer2(:,:,1)=surf_value
@@ -77,6 +56,29 @@ contains
         do i=1, npoints
            if( tracer_out2(i,j,k) .ne. answer2(i,j,k)) &
                 call mpp_error(FATAL, 'ATM tracer field value error for profile_type=profile')
+        end do
+     end do
+  end do
+
+  !-- OCEAN profile_type=profile --!
+  tracer_index=get_tracer_index(MODEL_OCEAN, 'immadeup2')
+  call set_tracer_profile(MODEL_OCEAN,tracer_index,tracer_out2,err_message)
+  !> answer
+  success=fm_change_list('/ocean_mod/tracer/immadeup2/profile_type/profile/')
+  success=fm_get_value("/ocean_mod/tracer/immadeup2/profile_type/profile/bottom_value", bottom_value)
+  success=fm_change_list('/ocean_mod/tracer/immadeup2/profile_type/profile/')
+  success=fm_get_value("/ocean_mod/tracer/immadeup2/profile_type/profile/surface_value", surf_value)
+  multiplier = exp( log (bottom_value/surf_value) /real(numlevels-1,r8_kind))
+  answer2(:,:,numlevels)=surf_value
+  do i=numlevels-1, 1, -1
+     answer2(:,:,i) = answer2(:,:,i+1)*multiplier
+  end do
+  !> check results
+  do k=1, numlevels
+     do j=1, npoints
+        do i=1, npoints
+           if( tracer_out2(i,j,k) .ne. answer2(i,j,k)) &
+                call mpp_error(FATAL, 'OCEAN tracer field value error for profile_type=profile')
         end do
      end do
   end do

@@ -63,7 +63,7 @@ field_table:
       units: VMR*1E21
       profile_type: fixed
       subparams:
-      - surface_value: 0.0E+00
+      - surface_value: 0.0e+00
       convection: all
   - model_type: atmos_mod
     varlist:
@@ -72,8 +72,8 @@ field_table:
       units: hbar
       profile_type: profile
       subparams:
-      - surface_value: 1.0E-12
-      - top_value: 1.0E-15
+      - surface_value: 1.02e-12
+        top_value: 1.0e-15
   - model_type: ocean_mod
     varlist:
     - variable: biotic1
@@ -89,8 +89,8 @@ field_table:
       units: hbar
       profile_type: profile
       subparams:
-      - surface_value: 1.0E-12
-      - bottom_value: 1.0E-9
+      - surface_value: 1.0e-12
+        bottom_value: 1.0e-9
   - model_type: land_mod
     varlist:
     - variable: sphum
@@ -104,6 +104,6 @@ cat <<_EOF > input.nml
 /
 _EOF
 
-test_expect_success "tracer_manager" 'mpirun -n 2 ./test_tracer_manager'
+test_expect_success "tracer_manager" 'mpirun -n 1 ./test_tracer_manager'
 
 test_done
