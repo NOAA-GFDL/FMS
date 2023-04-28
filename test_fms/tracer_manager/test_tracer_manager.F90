@@ -17,7 +17,7 @@ contains
   integer, parameter :: npoints=5
 
   integer :: tracer_index, success, i, j, k
-  real(r8_kind) :: top_value, bottom_value, surf_value, multiplier
+  real :: top_value, bottom_value, surf_value, multiplier
   real :: tracer_out1(1,1,1), tracer_out2(npoints,npoints,numlevels)
   real :: answer1(1,1,1), answer2(npoints,npoints,numlevels)
 
