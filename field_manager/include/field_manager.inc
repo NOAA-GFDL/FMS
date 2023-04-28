@@ -173,9 +173,9 @@ if (associated(temp_list_p)) then
 !        If not then reset max_index to 0
     if (temp_field_p%field_type == integer_type) then
        ! promote integer field to real
-       allocate(temp_field_p%r_value_(size(temp_field_p%i_value)))
+       allocate(temp_field_p%r_value(size(temp_field_p%i_value)))
        do i = 1, size(temp_field_p%i_value)
-          temp_field_p%r_value_(i) = real(temp_field_p%i_value(i),r8_kind)
+          temp_field_p%r_value(i) = real(temp_field_p%i_value(i),r8_kind)
        enddo
        temp_field_p%field_type = real_type
        deallocate(temp_field_p%i_value)
