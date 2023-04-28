@@ -191,6 +191,7 @@ use    mpp_mod, only : mpp_error,   &
 use    fms_mod, only : lowercase,   &
                        write_version_number
 use fms2_io_mod, only: file_exists
+use platform_mod, only: r4_kind, r8_kind
 #ifdef use_yaml
 use fm_yaml_mod
 #endif
@@ -224,7 +225,8 @@ public :: fm_get_type          !< (field) return string
 public :: fm_get_value         !< (entry, value [, index]) return success !! generic
 public :: fm_get_value_integer !<   as above (overloaded function)
 public :: fm_get_value_logical !<   as above (overloaded function)
-public :: fm_get_value_real    !<   as above (overloaded function)
+public :: fm_get_value_real_r4 !<   as above (overloaded function)
+public :: fm_get_value_real_r8 !<   as above (overloaded function)
 public :: fm_get_value_string  !<   as above (overloaded function)
 public :: fm_init_loop         !< (list, iter)
 public :: fm_loop_over_list    !< (list, name, type, index) return success
@@ -233,7 +235,8 @@ public :: fm_new_list          !< (list [, create] [, keep]) return index
 public :: fm_new_value         !< (entry, value [, create] [, index]) return index !! generic
 public :: fm_new_value_integer !<   as above (overloaded function)
 public :: fm_new_value_logical !<   as above (overloaded function)
-public :: fm_new_value_real    !<   as above (overloaded function)
+public :: fm_new_value_real_r4 !<   as above (overloaded function)
+public :: fm_new_value_real_r8 !<   as above (overloaded function)
 public :: fm_new_value_string  !<   as above (overloaded function)
 public :: fm_reset_loop        !< ()
 public :: fm_return_root       !< () return success
@@ -362,8 +365,10 @@ end interface
 !! @endcode
 !> @ingroup field_manager_mod
 interface parse
-  module procedure  parse_real
-  module procedure  parse_reals
+  module procedure  parse_real_r4
+  module procedure  parse_real_r8
+  module procedure  parse_reals_r4
+  module procedure  parse_reals_r8
   module procedure  parse_integer
   module procedure  parse_integers
   module procedure  parse_string
@@ -389,7 +394,8 @@ end interface
 interface  fm_new_value
   module procedure  fm_new_value_integer
   module procedure  fm_new_value_logical
-  module procedure  fm_new_value_real
+  module procedure  fm_new_value_real_r4
+  module procedure  fm_new_value_real_r8
   module procedure  fm_new_value_string
 end interface
 
@@ -407,7 +413,8 @@ end interface
 interface  fm_get_value
   module procedure  fm_get_value_integer
   module procedure  fm_get_value_logical
-  module procedure  fm_get_value_real
+  module procedure  fm_get_value_real_r4
+  module procedure  fm_get_value_real_r8
   module procedure  fm_get_value_string
 end interface
 
@@ -469,7 +476,7 @@ end type field_mgr_type
 type, private :: field_names_type
   character(len=fm_field_name_len)                    :: fld_type
   character(len=fm_field_name_len)                    :: mod_name
-  character(len=fm_string_len)                    :: fld_name
+  character(len=fm_string_len)                        :: fld_name
 end  type field_names_type
 
 !> @brief Private type for internal use
@@ -492,10 +499,11 @@ type, private :: field_def
   integer                                             :: max_index
   type (field_def), pointer                           :: first_field => NULL()
   type (field_def), pointer                           :: last_field => NULL()
-  integer, pointer, dimension(:)                      :: i_value => NULL()
-  logical, pointer, dimension(:)                      :: l_value => NULL()
-  real, pointer, dimension(:)                         :: r_value => NULL()
-  character(len=fm_string_len), pointer, dimension(:) :: s_value => NULL()
+  integer, allocatable, dimension(:)                  :: i_value
+  logical, allocatable, dimension(:)                  :: l_value
+  real(r4_kind), allocatable, dimension(:)            :: r4_value
+  real(r8_kind), allocatable, dimension(:)            :: r8_value
+  character(len=fm_string_len), allocatable, dimension(:) :: s_value
   type (field_def), pointer                           :: next => NULL()
   type (field_def), pointer                           :: prev => NULL()
 end type field_def
@@ -705,7 +713,8 @@ integer                            :: val_int !< value when converted to integer
 integer                            :: val_type !< value type represented as integer for use in select case
 logical                            :: append_new !< whether or not to append to existing list structure
 logical                            :: val_logic !< value when converted to logical
-real                               :: val_real !< value when converted to real
+real(r8_kind)                      :: val_real !< value when converted to real.
+                                               !! All strings will be converted to r8_kind reals.
 
 call strip_front_blanks(val_name_in)
 method_name = trim(method_name_in)
@@ -1193,7 +1202,7 @@ integer                        :: val_int
 integer                        :: val_type
 logical                        :: append_new
 logical                        :: val_logic
-real                           :: val_real
+real(r8_kind)                  :: val_real !< all reals converted from string will be in r8_kind precision
 integer                        :: length
 
 call strip_front_blanks(val_name_in)
@@ -1487,14 +1496,6 @@ end subroutine get_field_methods
 !> @returns The number of values that have been decoded. This allows
 !! a user to define a large array and fill it partially with
 !! values from a list. This should be the size of the value array.
-function parse_reals ( text, label, values ) result (parse)
-character(len=*), intent(in)  :: text !< The text string from which the values will be parsed.
-character(len=*), intent(in)  :: label !< A label which describes the values being decoded.
-real,             intent(out) :: values(:) !< The value or values that have been decoded.
-
-include 'parse.inc'
-end function parse_reals
-
 function parse_integers ( text, label, values ) result (parse)
 character(len=*), intent(in)  :: text !< The text string from which the values will be parsed.
 character(len=*), intent(in)  :: label !< A label which describes the values being decoded.
@@ -1510,18 +1511,6 @@ character(len=*), intent(out) :: values(:) !< The value or values that have been
 
 include 'parse.inc'
 end function parse_strings
-
-function parse_real ( text, label, value ) result (parse)
-character(len=*), intent(in)  :: text !< The text string from which the values will be parsed.
-character(len=*), intent(in)  :: label !< A label which describes the values being decoded.
-real,             intent(out) :: value !< The value or values that have been decoded.
-integer :: parse
-
-real :: values(1)
-
-   parse = parse_reals ( text, label, values )
-   if (parse > 0) value = values(1)
-end function parse_real
 
 function parse_integer ( text, label, value ) result (parse)
 character(len=*), intent(in)  :: text !< The text string from which the values will be parsed.
@@ -1590,10 +1579,11 @@ list_p%length = 0
 list_p%field_type = null_type
 list_p%max_index = 0
 list_p%array_dim = 0
-if (associated(list_p%i_value)) deallocate(list_p%i_value)
-if (associated(list_p%l_value)) deallocate(list_p%l_value)
-if (associated(list_p%r_value)) deallocate(list_p%r_value)
-if (associated(list_p%s_value)) deallocate(list_p%s_value)
+if (allocated(list_p%i_value))  deallocate(list_p%i_value)
+if (allocated(list_p%l_value))  deallocate(list_p%l_value)
+if (allocated(list_p%r4_value)) deallocate(list_p%r4_value)
+if (allocated(list_p%r8_value)) deallocate(list_p%r8_value)
+if (allocated(list_p%s_value))  deallocate(list_p%s_value)
 !        If this is the first field in the parent, then set the pointer
 !        to it, otherwise, update the "next" pointer for the last list
 if (parent_p%length .le. 0) then
@@ -1708,16 +1698,26 @@ logical recursive function dump_list(list_p, recursive, depth, out_unit) result(
          if (this_field_p%max_index .eq. 0) then
             write (out_unit,'(a,a,a)') blank(1:depthp1),  trim(this_field_p%name), ' = NULL'
          elseif (this_field_p%max_index .eq. 1) then
-            write (scratch,*) this_field_p%r_value(1)
+            if(allocated(this_field_p%r4_value)) write (scratch,*) this_field_p%r4_value(1)
+            if(allocated(this_field_p%r8_value)) write (scratch,*) this_field_p%r8_value(1)
             write (out_unit,'(a,a,a,a)') blank(1:depthp1), trim(this_field_p%name), ' = ', &
                    trim(adjustl(scratch))
          else  ! Write out the array of values for this field.
-            do j = 1, this_field_p%max_index
-               write (scratch,*) this_field_p%r_value(j)
-               write (num,*) j
-               write (out_unit,'(a,a,a,a,a,a)') blank(1:depthp1), trim(this_field_p%name), &
-                      '[', trim(adjustl(num)), '] = ', trim(adjustl(scratch))
-            enddo
+            if(allocated(this_field_p%r4_value)) then
+               do j = 1, this_field_p%max_index
+                  write (scratch,*) this_field_p%r4_value(j)
+                  write (num,*) j
+                  write (out_unit,'(a,a,a,a,a,a)') blank(1:depthp1), trim(this_field_p%name), &
+                       '[', trim(adjustl(num)), '] = ', trim(adjustl(scratch))
+               end do
+            else if(allocated(this_field_p%r8_value)) then
+               do j = 1, this_field_p%max_index
+                  write (scratch,*) this_field_p%r8_value(j)
+                  write (num,*) j
+                  write (out_unit,'(a,a,a,a,a,a)') blank(1:depthp1), trim(this_field_p%name), &
+                       '[', trim(adjustl(num)), '] = ', trim(adjustl(scratch))
+               end do
+            end if
          endif
 
      case(string_type)
@@ -2403,62 +2403,6 @@ end function  fm_get_value_logical
 
 !> @returns A flag to indicate whether the function operated with (false) or without
 !! (true) errors.
-function  fm_get_value_real(name, value, index)                 &
-          result (success)
-logical                                :: success
-character(len=*), intent(in)           :: name !< The name of a field that the user wishes to get a value for.
-real,             intent(out)          :: value !< The value associated with the named field
-integer,          intent(in), optional :: index !< An optional index to retrieve a single value from an array.
-
-integer                         :: index_t
-type (field_def), pointer, save :: temp_field_p
-integer                         :: out_unit
-
-out_unit = stdout()
-!        Initialize the field manager if needed
-if (.not. module_is_initialized) then
-  call initialize
-endif
-!        Must supply a field field name
-if (name .eq. ' ') then
-  value = 0.0
-  success = .false.
-  return
-endif
-!        Set index to retrieve
-if (present(index)) then
-  index_t = index
-else
-  index_t = 1
-endif
-!        Get a pointer to the field
-temp_field_p => get_field(name, current_list_p)
-
-if (associated(temp_field_p)) then
-!        check that the field is the correct type
-  if (temp_field_p%field_type .eq. real_type) then
-    if (index_t .lt. 1 .or. index_t .gt. temp_field_p%max_index) then
-!        Index is not positive or is too large
-      value = 0.0
-      success = .false.
-    else
-!        extract the value
-      value = temp_field_p%r_value(index_t)
-      success = .true.
-    endif
-  else
-    value = 0.0
-    success = .false.
-  endif
-else
-  value = 0.0
-  success = .false.
-endif
-
-end function  fm_get_value_real
-
-!> @returns A flag to indicate whether the function operated with (false) or without
-!! (true) errors.
 function  fm_get_value_string(name, value, index)                 &
           result (success)
 logical                                :: success
@@ -2764,7 +2708,7 @@ if (associated(temp_list_p)) then
 !        If not then reset max_index to 0
     if (temp_field_p%field_type == real_type ) then
        ! promote integer input to real
-       field_index = fm_new_value_real(name, real(value), create, index, append)
+       field_index = fm_new_value(name, real(value,r8_kind), create, index, append)
        return
     else if (temp_field_p%field_type /= integer_type ) then
       !  slm: why would we reset index? Is it not an error to have a "list" defined
@@ -2791,7 +2735,7 @@ if (associated(temp_list_p)) then
       field_index = NO_FIELD
       return
 
-    elseif (.not. associated(temp_field_p%i_value) .and.        &
+    elseif (.not. allocated(temp_field_p%i_value) .and.        &
             index_t .gt. 0) then
 !        Array undefined, so allocate the array
       allocate(temp_field_p%i_value(1))
@@ -2805,8 +2749,8 @@ if (associated(temp_list_p)) then
       do i = 1, temp_field_p%max_index
         temp_i_value(i) = temp_field_p%i_value(i)
       enddo
-      if (associated (temp_field_p%i_value)) deallocate(temp_field_p%i_value)
-      temp_field_p%i_value => temp_i_value
+      if (allocated(temp_field_p%i_value)) deallocate(temp_field_p%i_value)
+      temp_field_p%i_value = temp_i_value
       temp_field_p%max_index = index_t
     endif
 !        Assign the value and set the field_index for return
@@ -2924,7 +2868,7 @@ if (associated(temp_list_p)) then
       field_index = NO_FIELD
       return
 
-    elseif (.not. associated(temp_field_p%l_value) .and.        &
+    elseif (.not. allocated(temp_field_p%l_value) .and.        &
             index_t .gt. 0) then
 !        Array undefined, so allocate the array
       allocate(temp_field_p%l_value(1))
@@ -2939,8 +2883,8 @@ if (associated(temp_list_p)) then
       do i = 1, temp_field_p%max_index
         temp_l_value(i) = temp_field_p%l_value(i)
       enddo
-      if (associated(temp_field_p%l_value)) deallocate(temp_field_p%l_value)
-      temp_field_p%l_value => temp_l_value
+      if (allocated(temp_field_p%l_value)) deallocate(temp_field_p%l_value)
+      temp_field_p%l_value = temp_l_value
       temp_field_p%max_index = index_t
 
     endif
@@ -2961,150 +2905,6 @@ else
 endif
 
 end function  fm_new_value_logical
-
-!> @brief Assigns a given value to a given field
-!> @returns An index for the named field
-function  fm_new_value_real(name, value, create, index, append) &
-          result (field_index)
-integer                                :: field_index
-character(len=*), intent(in)           :: name !< The name of a field that the user wishes to create
-                                               !! a value for.
-real,             intent(in)           :: value !< The value that the user wishes to apply to the
-                                                !! named field.
-logical,          intent(in), optional :: create !< If present and .true., then a value for this
-                                                 !! field will be created.
-integer,          intent(in), optional :: index !< The index to an array of values that the user
-                                                !! wishes to apply a new value.
-logical,          intent(in), optional :: append !< If present and .true., then append the value to
-      !! an array of the present values. If present and .true., then index cannot be greater than 0.
-
-logical                          :: create_t
-integer                          :: i
-integer                          :: index_t
-real, pointer, dimension(:)      :: temp_r_value
-character(len=fm_path_name_len)  :: path
-character(len=fm_field_name_len) :: base
-type (field_def), pointer, save  :: temp_list_p
-type (field_def), pointer, save  :: temp_field_p
-integer                          :: out_unit
-
-out_unit = stdout()
-!        Initialize the field manager if needed
-if (.not. module_is_initialized) then
-  call initialize
-endif
-!        Must supply a field name
-if (name .eq. ' ') then
-  field_index = NO_FIELD
-  return
-endif
-!        Check for optional arguments
-if (present(create)) then
-  create_t = create
-else
-  create_t = .false.
-endif
-!        Check that append is not true and index greater than 0
-if (present(index) .and. present(append)) then
-  if (append .and. index .gt. 0) then
-    field_index = NO_FIELD
-    return
-  endif
-endif
-!        Set index to define
-if (present(index)) then
-  index_t = index
-  if (index_t .lt. 0) then
-!        Index is negative
-    field_index = NO_FIELD
-    return
-  endif
-else
-  index_t = 1
-endif
-
-!        Get a pointer to the parent list
-call find_base(name, path, base)
-temp_list_p => find_list(path, current_list_p, create_t)
-
-if (associated(temp_list_p)) then
-  temp_field_p => find_field(base, temp_list_p)
-  if (.not. associated(temp_field_p)) then
-!        Create the field if it doesn't exist
-    temp_field_p => create_field(temp_list_p, base)
-  endif
-  if (associated(temp_field_p)) then
-!        Check if the field_type is the same as previously
-!        If not then reset max_index to 0
-    if (temp_field_p%field_type == integer_type) then
-       ! promote integer field to real
-       allocate(temp_field_p%r_value(size(temp_field_p%i_value)))
-       do i = 1, size(temp_field_p%i_value)
-          temp_field_p%r_value(i) = temp_field_p%i_value(i)
-       enddo
-       temp_field_p%field_type = real_type
-       deallocate(temp_field_p%i_value)
-    else if (temp_field_p%field_type /= real_type ) then
-      ! slm: why reset index to 0? does it make any sense? It sounds like this is the
-      ! case where the values in the array have different types, so is it not an error?
-      ! Or, alternatively, if string follows a real value, should not be the entire
-      ! array converted to string type?
-      temp_field_p%max_index = 0
-    endif
-!        Assign the type
-    temp_field_p%field_type = real_type
-!        Set the index if appending
-    if (present(append)) then
-      if (append) then
-        index_t = temp_field_p%max_index + 1
-      endif
-    endif
-    if (index_t .gt. temp_field_p%max_index + 1) then
-!        Index too large
-      field_index = NO_FIELD
-      return
-    elseif (index_t .eq. 0 .and.                                &
-            temp_field_p%max_index .gt. 0) then
-!        Can't set non-null field to null
-      field_index = NO_FIELD
-      return
-    elseif (.not. associated(temp_field_p%r_value) .and.        &
-            index_t .gt. 0) then
-!        Array undefined, so allocate the array
-      allocate(temp_field_p%r_value(1))
-      temp_field_p%max_index = 1
-      temp_field_p%array_dim = 1
-    elseif (index_t .gt. temp_field_p%array_dim) then
-!        Array is too small, so allocate new array and copy over
-!        old values
-      temp_field_p%array_dim = temp_field_p%array_dim + array_increment
-      allocate (temp_r_value(temp_field_p%array_dim))
-      do i = 1, temp_field_p%max_index
-        temp_r_value(i) = temp_field_p%r_value(i)
-      enddo
-      if (associated(temp_field_p%r_value)) deallocate(temp_field_p%r_value)
-      temp_field_p%r_value => temp_r_value
-      temp_field_p%max_index = index_t
-    endif
-!        Assign the value and set the field_index for return
-!        for non-null fields (index_t > 0)
-    if (index_t .gt. 0) then
-      temp_field_p%r_value(index_t) = value
-      if (index_t .gt. temp_field_p%max_index) then
-        temp_field_p%max_index = index_t
-      endif
-    endif
-    field_index = temp_field_p%index
-  else
-!        Error in making the field
-    field_index = NO_FIELD
-  endif
-else
-!        Error following the path
-  field_index = NO_FIELD
-endif
-
-end function  fm_new_value_real
 
 !> @brief Assigns a given value to a given field
 !> @returns An index for the named field
@@ -3201,7 +3001,7 @@ if (associated(temp_list_p)) then
       field_index = NO_FIELD
       return
 
-    elseif (.not. associated(temp_field_p%s_value) .and.        &
+    elseif (.not.allocated(temp_field_p%s_value) .and.        &
             index_t .gt. 0) then
 !        Array undefined, so allocate the array
       allocate(temp_field_p%s_value(1))
@@ -3216,8 +3016,8 @@ if (associated(temp_list_p)) then
       do i = 1, temp_field_p%max_index
         temp_s_value(i) = temp_field_p%s_value(i)
       enddo
-      if (associated(temp_field_p%s_value)) deallocate(temp_field_p%s_value)
-      temp_field_p%s_value => temp_s_value
+      if (allocated(temp_field_p%s_value)) deallocate(temp_field_p%s_value)
+      temp_field_p%s_value = temp_s_value
       temp_field_p%max_index = index_t
 
     endif
@@ -3375,10 +3175,11 @@ if (.not. module_is_initialized) then
   nullify(root%last_field)
   root%max_index = 0
   root%array_dim = 0
-  if (associated(root%i_value)) deallocate(root%i_value)
-  if (associated(root%l_value)) deallocate(root%l_value)
-  if (associated(root%r_value)) deallocate(root%r_value)
-  if (associated(root%s_value)) deallocate(root%s_value)
+  if (allocated(root%i_value)) deallocate(root%i_value)
+  if (allocated(root%l_value)) deallocate(root%l_value)
+  if (allocated(root%r4_value)) deallocate(root%r4_value)
+  if (allocated(root%r8_value)) deallocate(root%r8_value)
+  if (allocated(root%s_value)) deallocate(root%s_value)
 
   nullify(root%next)
   nullify(root%prev)
@@ -3431,10 +3232,11 @@ endif
 !        Initialize the new list
 list_p%length = 0
 list_p%field_type = list_type
-if (associated(list_p%i_value)) deallocate(list_p%i_value)
-if (associated(list_p%l_value)) deallocate(list_p%l_value)
-if (associated(list_p%r_value)) deallocate(list_p%r_value)
-if (associated(list_p%s_value)) deallocate(list_p%s_value)
+if (allocated(list_p%i_value))  deallocate(list_p%i_value)
+if (allocated(list_p%l_value))  deallocate(list_p%l_value)
+if (allocated(list_p%r4_value)) deallocate(list_p%r4_value)
+if (allocated(list_p%r8_value)) deallocate(list_p%r8_value)
+if (allocated(list_p%s_value))  deallocate(list_p%s_value)
 
 end function  make_list
 
@@ -3558,7 +3360,8 @@ else
         call concat_strings(method_control, comma//trim(this_field_p%name)//' = '//trim(adjustl(scratch)))
 
     case(real_type)
-        write (scratch,*) this_field_p%r_value
+        if(allocated(this_field_p%r4_value)) write (scratch,*) this_field_p%r4_value
+        if(allocated(this_field_p%r8_value)) write (scratch,*) this_field_p%r8_value
         call concat_strings(method_control, comma//trim(this_field_p%name)//' = '//trim(adjustl(scratch)))
 
     case(string_type)
@@ -3624,7 +3427,8 @@ logical                                                    :: got_value
 logical                                                    :: recursive_t
 logical                                                    :: success
 logical                                                    :: val_logical
-real                                                       :: val_real
+real(r4_kind)                                              :: val_real4
+real(r8_kind)                                              :: val_real8
 type (field_def), pointer, save                            :: temp_field_p
 type (field_def), pointer, save                            :: temp_list_p
 integer                                                    :: out_unit
@@ -3678,12 +3482,20 @@ if (success) then
             call mpp_error(FATAL, trim(error_header)//'Could not set the '//trim(method(n))//&
                                   ' for '//trim(list_name)//trim(suffix))
 
-        case (real_type)
-          got_value = fm_get_value( trim(list_name)//list_sep//method(n), val_real)
-          if ( fm_new_value( trim(list_name_new)//list_sep//method(n), val_real, &
-                             create = create, append = .true.) < 0 ) &
-            call mpp_error(FATAL, trim(error_header)//'Could not set the '//trim(method(n))//&
-                                  ' for '//trim(list_name)//trim(suffix))
+       case (real_type)
+          if(allocated(temp_field_p%r4_value)) then
+             got_value = fm_get_value( trim(list_name)//list_sep//method(n), val_real4)
+             if ( fm_new_value( trim(list_name_new)//list_sep//method(n), val_real4, &
+                  create = create, append = .true.) < 0 ) &
+                  call mpp_error(FATAL, trim(error_header)//'Could not set the '//trim(method(n))//&
+                  ' for '//trim(list_name)//trim(suffix))
+          else if(allocated(temp_field_p%r8_value)) then
+             got_value = fm_get_value( trim(list_name)//list_sep//method(n), val_real8)
+             if ( fm_new_value( trim(list_name_new)//list_sep//method(n), val_real8, &
+                  create = create, append = .true.) < 0 ) &
+                  call mpp_error(FATAL, trim(error_header)//'Could not set the '//trim(method(n))//&
+                  ' for '//trim(list_name)//trim(suffix))
+          end if
 
         case (string_type)
           got_value = fm_get_value( trim(list_name)//list_sep//method(n), val_str)
@@ -3814,7 +3626,8 @@ else
 
     case(real_type)
 
-        write (scratch,*) this_field_p%r_value
+       if(allocated(this_field_p%r4_value)) write (scratch,*) this_field_p%r4_value
+       if(allocated(this_field_p%r8_value)) write (scratch,*) this_field_p%r8_value
         call strip_front_blanks(scratch)
         write (method(num_meth),'(a,a)') trim(method(num_meth)), &
                 trim(this_field_p%name)
@@ -3845,6 +3658,9 @@ else
 endif
 
 end function find_method
+
+#include "field_manager_r4.fh"
+#include "field_manager_r8.fh"
 
 end module field_manager_mod
 !> @}
