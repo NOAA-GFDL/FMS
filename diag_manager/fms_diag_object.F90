@@ -28,7 +28,7 @@ use diag_data_mod,  only: diag_null, diag_not_found, diag_not_registered, diag_r
 use fms_diag_file_object_mod, only: fmsDiagFileContainer_type, fmsDiagFile_type, fms_diag_files_object_init
 use fms_diag_field_object_mod, only: fmsDiagField_type, fms_diag_fields_object_init
 use fms_diag_yaml_mod, only: diag_yaml_object_init, diag_yaml_object_end, find_diag_field, &
-                           & get_diag_files_id, diag_yaml
+                           & get_diag_files_id, diag_yaml, get_diag_field_ids
 use fms_diag_axis_object_mod, only: fms_diag_axis_object_init, fmsDiagAxis_type, fmsDiagSubAxis_type, &
                                    &diagDomain_t, get_domain_and_domain_type, diagDomain2d_t, &
                                    &fmsDiagAxisContainer_type, fms_diag_axis_object_end, fmsDiagFullAxis_type, &
@@ -214,6 +214,15 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
 
 !> Use pointers for convenience
   fieldptr => this%FMS_diag_fields(this%registered_variables)
+
+!> Initialize buffer_ids of this field with the diag_field_indices(diag_field_indices)
+!! of the sorted variable list
+  fieldptr%buffer_ids = get_diag_field_ids(diag_field_indices)
+
+!> Allocate and initialize member buffer_allocated of this field
+  allocate(fieldptr%buffer_allocated(size(diag_field_indices)))
+  fieldptr%buffer_allocated = .false.
+
 !> Register the data for the field
   call fieldptr%register(modname, varname, diag_field_indices, this%diag_axis, &
        axes=axes, longname=longname, units=units, missing_value=missing_value, varRange= varRange, &
