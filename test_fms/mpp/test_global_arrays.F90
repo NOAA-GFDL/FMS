@@ -32,7 +32,7 @@ program test_global_arrays
   use mpp_domains_mod, only: mpp_domains_init, mpp_define_domains, domain2d, CYCLIC_GLOBAL_DOMAIN
   use mpp_domains_mod, only: mpp_define_layout, mpp_domains_set_stack_size, CENTER, CORNER, EAST, WEST, NORTH, SOUTH
   use mpp_domains_mod, only: mpp_get_global_domain, mpp_global_max, BITWISE_EXACT_SUM, BITWISE_EFP_SUM
-  use mpp_domains_mod, only: mpp_global_min, mpp_get_data_domain,mpp_get_compute_domain 
+  use mpp_domains_mod, only: mpp_global_min, mpp_get_data_domain,mpp_get_compute_domain
   use mpp_domains_mod, only: mpp_domains_exit, mpp_update_domains
   use mpp_domains_mod, only: mpp_get_domain_shift, mpp_global_sum
   use mpp_mod,         only: MPP_CLOCK_SYNC, MPP_CLOCK_DETAILED, mpp_clock_id, mpp_clock_begin, mpp_clock_end
@@ -61,10 +61,10 @@ program test_global_arrays
 
   ! namelist variables - just logicals to enable individual tests
   ! simple just does normal max/min + sums across a domain
-  ! full does max/min+sums with halos and symmetry 
+  ! full does max/min+sums with halos and symmetry
   logical :: test_simple= .false. , test_full = .false.
   namelist / test_global_arrays_nml / test_simple, test_full
-  
+
   call mpp_init()
   call mpp_domains_init()
   !call mpp_set_stack_size(3145746)
@@ -78,6 +78,8 @@ program test_global_arrays
   root = mpp_root_pe()
   if( test_simple) then
     call test_mpp_global_simple()
+    deallocate(dataI4, dataI8, dataR4, dataR8, rands)
+    deallocate(dataR4_shuf, dataR8_shuf,dataI4_shuf, dataI8_shuf)
   else if(test_full) then
     call test_global_reduce( 'Simple')
     call test_global_reduce( 'Simple symmetry center')
@@ -93,8 +95,6 @@ program test_global_arrays
   endif
   call mpp_sync()
 
-  deallocate(dataI4, dataI8, dataR4, dataR8, rands)
-  deallocate(dataR4_shuf, dataR8_shuf,dataI4_shuf, dataI8_shuf)
   call mpp_domains_exit()
   call MPI_FINALIZE(ierr)
 
@@ -206,7 +206,7 @@ subroutine test_mpp_global_simple()
                                NEW_LINE('a')//"Sum: "// strTmp1 )
   endif
 
-  !> moves the data into different pe's and checks the sum still matches 
+  !> moves the data into different pe's and checks the sum still matches
   dataR4_shuf = dataR4 ; dataR8_shuf = dataR8
   dataI4_shuf = dataI4 ; dataI8_shuf = dataI8
   !! swap data with neighboring pe
@@ -403,7 +403,6 @@ function checkSumReal4(gsum)
   real(r4_kind),intent(in)  :: gsum
   real(r4_kind),allocatable :: recv(:) !> pe's local sum at 1, global sum at 2
   real(r4_kind)             :: nsum
-  integer                   :: i
 
   allocate(recv(2))
   ! root receives and sums local sums from each pe
@@ -437,7 +436,6 @@ function checkSumReal8(gsum)
   real(r8_kind),intent(in)  :: gsum
   real(r8_kind),allocatable :: recv(:) !> pe's local sum at 1, global sum at 2
   real(r8_kind)             :: nsum
-  integer                   :: i
 
   allocate(recv(2))
   ! root receives and sums local sums from each pe
@@ -471,7 +469,6 @@ function checkSumInt4(gsum)
   integer(i4_kind),intent(in)  :: gsum
   integer(i4_kind),allocatable :: recv(:) !> pe's local sum at 1, global sum at 2
   integer(i4_kind)             :: nsum
-  integer                      :: i
 
   allocate(recv(2))
   ! root receives and sums local sums from each pe
@@ -531,20 +528,17 @@ function checkSumInt8(gsum)
   deallocate(recv)
 end function checkSumInt8
 
-subroutine test_global_reduce (type)
+   !--- test mpp_global_sum, mpp_global_min and mpp_global_max
+  subroutine test_global_reduce (type)
     character(len=*), intent(in) :: type
     real    :: lsum, gsum, lmax, gmax, lmin, gmin
-    integer :: ni, nj, ishift, jshift, position
-    integer              :: is, ie, js, je, k
+    integer :: ni, nj, ishift, jshift, position, k
+    integer :: is, ie, js, je !, isd, ied, jsd, jed
+    integer :: nx=128, ny=128, nz=40, stackmax=4000000
+    integer :: layout(2)
+    integer :: whalo = 2, ehalo = 2, shalo = 2, nhalo = 2
     real, allocatable, dimension(:,:,:) :: global1, x
     real, allocatable, dimension(:,:)   :: global2D
-    integer :: ehalo, whalo, nhalo, shalo
-    integer :: layout(2)
-    integer :: nx=64, ny=64, nz=10
-    real    :: tol  
-    tol = 0.1e-8
-    ehalo = 2; whalo = 2
-    nhalo = 2; shalo = 2
     !--- set up domain
     call mpp_define_layout( (/1,nx,1,ny/), npes, layout )
     select case(type)
@@ -564,9 +558,6 @@ subroutine test_global_reduce (type)
     call mpp_get_compute_domain( domain, is,  ie,  js,  je  )
     call mpp_get_data_domain   ( domain, isd, ied, jsd, jed )
 
-    print * ,nx, ny, npes, layout, whalo, shalo, nhalo, ehalo
-    print * , is, ie, isd, ied, pe
-    print * , js, je, jsd, jed, pe
     !--- determine if an extra point is needed
     ishift = 0; jshift = 0; position = CENTER
     select case(type)
@@ -613,12 +604,7 @@ subroutine test_global_reduce (type)
     call mpp_clock_begin(id)
     lsum = mpp_global_sum( domain, x, position = position  )
     call mpp_clock_end  (id)
-    !! not exact, tests with tolerance
-    if(abs(lmin - gmin) .gt. tol) then
-        print *, ' on pe ', mpp_pe(),' lsum = ', lsum, ', gsum = ', gsum, &
-              ', lsum-gsum =', lsum-gsum
-        call mpp_error( FATAL, 'test_mpp_global_sum: data comparison are not OK.' )
-    end if
+    if( pe.EQ.mpp_root_pe() )print '(a,2es15.8,a,es12.4)', type//' Fast sum=', lsum, gsum
 
     !test exact mpp_global_sum
     id = mpp_clock_id( type//' exact sum', flags=MPP_CLOCK_SYNC+MPP_CLOCK_DETAILED )
@@ -627,11 +613,7 @@ subroutine test_global_reduce (type)
     call mpp_clock_end  (id)
     !--- The following check will fail on altix in normal mode, but it is ok
     !--- in debugging mode. It is ok on irix.
-    if( lmin .NE. gmin) then
-        print *, ' on pe ', mpp_pe(),' lsum = ', lsum, ', gsum = ', gsum, &
-              ', lsum-gsum =', lsum-gsum
-        call mpp_error( FATAL, 'test_mpp_global_sum: bitwise exact data comparison are not OK.' )
-    end if
+    call compare_data_scalar(lsum, gsum, FATAL, type//' mpp_global_exact_sum')
 
     !test mpp_global_min
     gmin = minval(global1(1:ni, 1:nj, :))
@@ -639,11 +621,7 @@ subroutine test_global_reduce (type)
     call mpp_clock_begin(id)
     lmin = mpp_global_min( domain, x, position = position )
     call mpp_clock_end  (id)
-    if(lmin .NE. gmin)then
-        print *, ' on pe ', mpp_pe(),' lmin = ', lmin, ', gmin = ', gmin, &
-              ', lmin-gmin =', lmin-gmin 
-        call mpp_error( FATAL, 'test_mpp_global_min: data comparison are not OK.' )
-    end if
+    call compare_data_scalar(lmin, gmin, FATAL, type//' mpp_global_min')
 
     !test mpp_global_max
     gmax = maxval(global1(1:ni, 1:nj, :))
@@ -651,15 +629,22 @@ subroutine test_global_reduce (type)
     call mpp_clock_begin(id)
     lmax = mpp_global_max( domain, x, position = position )
     call mpp_clock_end  (id)
-    if(lmin .NE. gmin) then
-        print *, ' on pe ', mpp_pe(),' lmax = ', lmax, ', gmax = ', gmax, &
-              ', lmax-gmax =', lmax-gmax 
-        call mpp_error( FATAL, 'test_mpp_global_max: data comparison are not OK.' )
-    end if
-    call mpp_sync()
+    call compare_data_scalar(lmax, gmax, FATAL, type//' mpp_global_max' )
 
     deallocate(global1, x)
 
   end subroutine test_global_reduce
+
+  subroutine compare_data_scalar( a, b, action, string )
+    real,             intent(in) :: a, b
+    integer,          intent(in) :: action
+    character(len=*), intent(in) :: string
+    if( a .EQ. b)then
+        if( pe.EQ.mpp_root_pe() )call mpp_error( NOTE, trim(string)//': data comparison are OK.' )
+    else
+        call mpp_error( action, trim(string)//': data comparison are not OK.' )
+    end if
+
+  end subroutine compare_data_scalar
 
 end program test_global_arrays
