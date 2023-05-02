@@ -637,7 +637,7 @@ logical,        intent(in)             :: use_higher_order
   integer, dimension(2*xmap%npes)      :: ibuf1, ibuf2
   integer, dimension(0:xmap%npes-1)    :: pos_x, y2m1_size
   integer, allocatable,   dimension(:) :: y2m1_pe
-  integer, allocatable, save, target   :: iarray(:), jarray(:)
+  integer, pointer, save               :: iarray(:), jarray(:)
   integer, allocatable, save           :: pos_s(:)
   integer, pointer,       dimension(:) :: iarray2(:)=>NULL(), jarray2(:)=>NULL()
   logical                              :: last_grid
@@ -1137,7 +1137,7 @@ logical,        intent(in)             :: use_higher_order
 
   size_repro = 0
   if(grid1%tile_me == tile1) then
-     if(allocated(iarray)) then
+     if(associated(iarray)) then
         nxgrid1_old = size(iarray(:))
      else
         nxgrid1_old = 0
@@ -1185,8 +1185,6 @@ logical,        intent(in)             :: use_higher_order
         y2m1_size(:) = xmap%your2my1_size(:)
         iarray2 => iarray
         jarray2 => jarray
-        if (allocated(iarray)) deallocate(iarray)
-        if (allocated(jarray)) deallocate(jarray)
         allocate(iarray(nxgrid1+nxgrid1_old), jarray(nxgrid1+nxgrid1_old))
         ! copy the i-j index
         do p=0,xmap%npes-1
