@@ -41,6 +41,7 @@ use mpp_mod,         only: mpp_error, FATAL, mpp_pe, mpp_root_pe, stdout
 use, intrinsic :: iso_c_binding, only : c_ptr, c_null_char
 use fms_string_utils_mod, only: fms_array_to_pointer, fms_find_my_string, fms_sort_this, fms_find_unique
 use platform_mod, only: r4_kind, i4_kind
+use fms_mod, only: lowercase
 
 implicit none
 
@@ -51,6 +52,7 @@ public :: diag_yaml_object_init, diag_yaml_object_end
 public :: diagYamlObject_type, get_diag_yaml_obj, subRegion_type
 public :: diagYamlFiles_type, diagYamlFilesVar_type
 public :: get_num_unique_fields, find_diag_field, get_diag_fields_entries, get_diag_files_id
+public :: get_diag_field_ids
 public :: dump_diag_yaml_obj
 !> @}
 
@@ -413,7 +415,8 @@ subroutine diag_yaml_object_init(diag_subset_output)
     call fill_in_diag_files(diag_yaml_id, diag_file_ids(i), diag_yaml%diag_files(file_count))
 
     !> Save the file name in the file_list
-    file_list%file_name(file_count) = trim(diag_yaml%diag_files(file_count)%file_fname)//c_null_char
+    !! The diag_table is not case sensitive (so we are saving it as lowercase)
+    file_list%file_name(file_count) = lowercase(trim(diag_yaml%diag_files(file_count)%file_fname)//c_null_char)
     file_list%diag_file_indices(file_count) = file_count
 
     nvars = 0
@@ -441,6 +444,8 @@ subroutine diag_yaml_object_init(diag_subset_output)
       !> Save the variable name and the module name in the variable_list
       variable_list%var_name(var_count) = trim(diag_yaml%diag_fields(var_count)%var_varname)//&
                                         ":"//trim(diag_yaml%diag_fields(var_count)%var_module)//c_null_char
+      !! The diag_table is not case sensitive (so we are saving it as lowercase)
+      variable_list%var_name(var_count) = lowercase(variable_list%var_name(var_count))
       variable_list%diag_field_indices(var_count) = var_count
     enddo nvars_loop
     deallocate(var_ids)
@@ -1434,7 +1439,7 @@ result(indices)
   integer, allocatable :: indices(:)
 
   indices = fms_find_my_string(variable_list%var_pointer, size(variable_list%var_pointer), &
-                               & trim(diag_field_name)//":"//trim(module_name)//c_null_char)
+                               & lowercase(trim(diag_field_name))//":"//lowercase(trim(module_name)//c_null_char))
 end function find_diag_field
 
 !> @brief Gets the diag_field entries corresponding to the indices of the sorted variable_list
@@ -1456,6 +1461,22 @@ function get_diag_fields_entries(indices) &
   end do
 
 end function get_diag_fields_entries
+
+!> @brief Gets field indices corresponding to the indices (input argument) in the sorted variable_list
+!! @return Copy of array of field indices
+function get_diag_field_ids(indices) result(field_ids)
+
+  integer, intent(in) :: indices(:) !< Indices of the fields in the sorted variable_list array
+  integer, allocatable :: field_ids(:)
+  integer :: i !< For do loop
+
+  allocate(field_ids(size(indices)))
+
+  do i = 1, size(indices)
+    field_ids(i) = variable_list%diag_field_indices(indices(i))
+  end do
+
+end function get_diag_field_ids
 
 !> @brief Finds the indices of the diag_yaml%diag_files(:) corresponding to fields in variable_list(indices)
 !! @return indices of the diag_yaml%diag_files(:)
