@@ -83,7 +83,8 @@ use,intrinsic :: iso_c_binding, only: c_double,c_float,c_int64_t, &
        & prepend_attribute, attribute_init, diag_util_init,&
        & update_bounds, check_out_of_bounds, check_bounds_are_exact_dynamic, check_bounds_are_exact_static,&
        & fms_diag_check_out_of_bounds, &
-       & fms_diag_check_bounds_are_exact_dynamic, fms_diag_check_bounds_are_exact_static, get_file_start_time
+       & fms_diag_check_bounds_are_exact_dynamic, fms_diag_check_bounds_are_exact_static,&
+       & get_time_string, check_indices_order
 
 
   !> @brief Prepend a value to a string attribute in the output field or output file.
@@ -2494,16 +2495,55 @@ END SUBROUTINE check_bounds_are_exact_dynamic
     END IF
   END SUBROUTINE prepend_attribute_file
 
-  !> @brief Get the a diag_file's start_time as it is defined in the diag_table
-  !! @return the start_time for the file
-  function get_file_start_time(file_num) &
-   result (start_time)
-   integer,         intent(in)  :: file_num   !< File number of the file to get the start_time from
+  !> @brief Checks improper combinations of is, ie, js, and je.
+  !> @return Returns .false. if there is no error else .true.
+  !> @note send_data works in either one or another of two modes.
+  ! 1. Input field is a window (e.g. FMS physics)
+  ! 2. Input field includes halo data
+  ! It cannot handle a window of data that has halos.
+  ! (A field with no windows or halos can be thought of as a special case of either mode.)
+  ! The logic for indexing is quite different for these two modes, but is not clearly separated.
+  ! If both the beggining and ending indices are present, then field is assumed to have halos.
+  ! If only beggining indices are present, then field is assumed to be a window.
+  !> @par
+  ! There are a number of ways a user could mess up this logic, depending on the combination
+  ! of presence/absence of is,ie,js,je. The checks below should catch improper combinations.
+  function check_indices_order(is_in, ie_in, js_in, je_in, error_msg) result(rslt)
+    integer, intent(in), optional :: is_in, ie_in, js_in, je_in !< Indices passed to fms_diag_accept_data()
+    character(len=*), intent(inout), optional :: error_msg !< An error message used only for testing purpose!!!
 
-   TYPE(time_type) :: start_time !< The start_time to return
+    character(len=128) :: err_module_name !< Stores the module name to be used in error calls
+    logical :: rslt !< Return value
 
-   start_time = files(file_num)%start_time
-  end function get_file_start_time
+    rslt = .false. !< If no error occurs.
+
+    err_module_name = 'diag_util_mod:check_indices_order'
+
+    IF ( PRESENT(ie_in) ) THEN
+      IF ( .NOT.PRESENT(is_in) ) THEN
+        rslt = fms_error_handler(trim(err_module_name), 'ie_in present without is_in', error_msg)
+        IF (rslt) return
+      END IF
+      IF ( PRESENT(js_in) .AND. .NOT.PRESENT(je_in) ) THEN
+        rslt = fms_error_handler(trim(err_module_name),&
+          & 'is_in and ie_in present, but js_in present without je_in', error_msg)
+        IF (rslt) return
+      END IF
+    END IF
+
+    IF ( PRESENT(je_in) ) THEN
+      IF ( .NOT.PRESENT(js_in) ) THEN
+        rslt = fms_error_handler(trim(err_module_name), 'je_in present without js_in', error_msg)
+        IF (rslt) return
+      END IF
+      IF ( PRESENT(is_in) .AND. .NOT.PRESENT(ie_in) ) THEN
+        rslt = fms_error_handler(trim(err_module_name),&
+          & 'js_in and je_in present, but is_in present without ie_in', error_msg)
+        IF (rslt) return
+      END IF
+    END IF
+  end function check_indices_order
+
 END MODULE diag_util_mod
 !> @}
 ! close documentation grouping
