@@ -86,7 +86,7 @@ use,intrinsic :: iso_c_binding, only: c_double,c_float,c_int64_t, &
        & prepend_attribute, attribute_init, diag_util_init,&
        & fms_diag_check_out_of_bounds, &
        & fms_diag_check_bounds_are_exact_dynamic, fms_diag_check_bounds_are_exact_static,&
-       & get_time_string, init_mask_3d, check_indices_order
+       & get_time_string, init_mask_3d, real_copy_set, check_indices_order
 
 
   !> @brief Prepend a value to a string attribute in the output field or output file.
@@ -2550,6 +2550,34 @@ END SUBROUTINE check_bounds_are_exact_dynamic
      END SELECT
    END IF
  end subroutine init_mask_3d
+
+  !> @brief Copies input data to output data with proper type if the input data is present
+  !! else sets the output data to a given value val if it is present.
+  !! If the value val and the input data are not present, the output data is untouched.
+  subroutine real_copy_set(out_data, in_data, val, err_msg)
+    real, intent(out) :: out_data !< Proper type copy of in_data
+    class(*), intent(in), optional :: in_data !< Data to copy to out_data
+    real, intent(in), optional :: val !< Default value to assign to out_data if in_data is absent
+    character(len=*), intent(out), optional :: err_msg !< Error message to pass back to caller
+
+    IF ( PRESENT(err_msg) ) err_msg = ''
+
+    IF ( PRESENT(in_data) ) THEN
+      SELECT TYPE (in_data)
+      TYPE IS (real(kind=r4_kind))
+        out_data = in_data
+      TYPE IS (real(kind=r8_kind))
+        out_data = real(in_data)
+      CLASS DEFAULT
+        if (fms_error_handler('diag_util_mod:real_copy_set',&
+          & 'The in_data is not one of the supported types of real(kind=4) or real(kind=8)', err_msg)) THEN
+          return
+        end if
+      END SELECT
+    ELSE
+      if (present(val)) out_data = val
+    END IF
+  end subroutine real_copy_set
 
   !> @brief Checks improper combinations of is, ie, js, and je.
   !> @return Returns .false. if there is no error else .true.
