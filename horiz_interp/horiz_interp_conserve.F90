@@ -162,7 +162,7 @@ contains
     type (horiz_interp_type), intent(inout) :: Interp !< A derived-type variable returned by
                          !! previous call to horiz_interp_new. The input variable must have
                          !! allocated arrays. The returned variable will contain deallocated arrays.
-
+    !$OMP SINGLE
     select case(Interp%version)
     case (1)
       if( allocated( Interp%horizInterpReals8_type)) then
@@ -199,12 +199,13 @@ contains
         if(allocated(Interp%j_src))                           deallocate(Interp%j_src)
         if(allocated(Interp%i_dst))                           deallocate(Interp%i_dst)
         if(allocated(Interp%j_dst))                           deallocate(Interp%j_dst)
-        !! double checks still allocated for bug
-        if(allocated(Interp%horizInterpReals4_type))          deallocate(Interp%horizInterpReals8_type)
         if(allocated(Interp%horizInterpReals4_type%area_frac_dst)) &
             deallocate(Interp%horizInterpReals4_type%area_frac_dst)
+        !! double checks still allocated for bug
+        if(allocated(Interp%horizInterpReals4_type))          deallocate(Interp%horizInterpReals4_type)
        endif
     end select
+    !$OMP END SINGLE
 
   end subroutine horiz_interp_conserve_del
 
