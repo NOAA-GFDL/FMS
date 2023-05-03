@@ -2,7 +2,8 @@ program test_tracer_manager
 
   use fms_mod, only: fms_init
   use mpp_mod, only: mpp_error, FATAL
-  use field_manager_mod, only: field_manager_init, MODEL_ATMOS, MODEL_OCEAN, MODEL_LAND, fm_change_list, fm_get_value, fm_get_current_list
+  use field_manager_mod, only: field_manager_init, MODEL_ATMOS, MODEL_OCEAN, MODEL_LAND, &
+                               fm_change_list, fm_get_value, fm_get_current_list
   use tracer_manager_mod
   use platform_mod, only: r4_kind, r8_kind
 
@@ -41,9 +42,9 @@ contains
   tracer_index=get_tracer_index(MODEL_ATMOS, 'immadeup')
   call set_tracer_profile(MODEL_ATMOS,tracer_index,tracer_out2,err_message)
   !> answer
-  success=fm_change_list('/atmos_mod/tracer/immadeup/profile_type/profile/')
+  !success=fm_change_list('/atmos_mod/tracer/immadeup/profile_type/profile/') !<not needed
   success=fm_get_value("/atmos_mod/tracer/immadeup/profile_type/profile/top_value", top_value)
-  success=fm_change_list('/atmos_mod/tracer/immadeup/profile_type/profile/')
+  !success=fm_change_list('/atmos_mod/tracer/immadeup/profile_type/profile/') !<not needed
   success=fm_get_value("/atmos_mod/tracer/immadeup/profile_type/profile/surface_value", surf_value)
   multiplier = exp( log (top_value/surf_value) /real(numlevels-1) )
   answer2(:,:,1)=surf_value
