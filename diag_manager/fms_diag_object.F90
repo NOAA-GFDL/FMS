@@ -35,6 +35,7 @@ use fms_diag_axis_object_mod, only: fms_diag_axis_object_init, fmsDiagAxis_type,
                                    &fmsDiagAxisContainer_type, fms_diag_axis_object_end, fmsDiagFullAxis_type, &
                                    &parse_compress_att, get_axis_id_from_name
 use fms_diag_output_buffer_mod
+use fms_mod, only: fms_error_handler
 #endif
 #if defined(_OPENMP)
 use omp_lib
@@ -479,9 +480,19 @@ logical function fms_diag_accept_data (this, diag_field_id, field_data, time, is
   integer :: omp_level !< The openmp active level
   logical :: buffer_the_data !< True if the user selects to buffer the data and run the calculations
                              !! later.  \note This is experimental
+  !TODO logical, allocatable, dimension(:,:,:) :: oor_mask !< Out of range mask
 #ifndef use_yaml
 CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling with -Duse_yaml")
 #else
+  !TODO: weight is for time averaging where each time level may have a different weight
+  ! call real_copy_set()
+
+  !TODO: oor_mask is only used for checking out of range values.
+  ! call init_mask_3d()
+
+  !TODO: Check improper combinations of is, ie, js, and je.
+  ! if (check_indices_order()) deallocate(oor_mask)
+
 !> Does the user want to push off calculations until send_diag_complete?
   buffer_the_data = .false.
 !> initialize the number of threads and level to be 0
