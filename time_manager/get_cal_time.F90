@@ -291,16 +291,16 @@ endif
 
 if(lowercase(units(1:10)) == 'days since') then
   increment_days = floor(time_increment)
-  increment_seconds = int(86400.0_r8_kind*(time_increment - increment_days))
+  increment_seconds = int(86400.0_r8_kind*(time_increment - real(increment_days, r8_kind)))
 else if(lowercase(units(1:11)) == 'hours since') then
   increment_days = floor(time_increment/24)
-  increment_seconds = int(86400.0_r8_kind*(time_increment/24.0_r8_kind - increment_days))
+  increment_seconds = int(86400.0_r8_kind*(time_increment/24.0_r8_kind - real(increment_days, r8_kind)))
 else if(lowercase(units(1:13)) == 'minutes since') then
   increment_days = floor(time_increment/1440)
-  increment_seconds = int(86400.0_r8_kind*(time_increment/1440.0_r8_kind - increment_days))
+  increment_seconds = int(86400.0_r8_kind*(time_increment/1440.0_r8_kind - real(increment_days, r8_kind)))
 else if(lowercase(units(1:13)) == 'seconds since') then
   increment_days = floor(time_increment/86400)
-  increment_seconds = int(86400.0_r8_kind*(time_increment/86400.0_r8_kind - increment_days))
+  increment_seconds = int(86400.0_r8_kind*(time_increment/86400.0_r8_kind - real(increment_days, r8_kind)))
 else if(lowercase(units(1:11)) == 'years since') then
 ! The time period between between (base_time + time_increment) and
 ! (base_time + time_increment + 1 year) may be 360, 365, or 366 days.
@@ -309,18 +309,18 @@ else if(lowercase(units(1:11)) == 'years since') then
   base_time             = set_date(year+floor(time_increment)  ,month,day,hour,minute,second)
   base_time_plus_one_yr = set_date(year+floor(time_increment)+1,month,day,hour,minute,second)
   call get_time(base_time_plus_one_yr - base_time, second, day)
-  dt = real(day*86400+second, r8_kind)*(time_increment-floor(time_increment))
+  dt = real(day*86400+second, r8_kind)*(time_increment-real(floor(time_increment), r8_kind))
   increment_days = floor(dt/86400.0_r8_kind)
   increment_seconds = int(dt - real(increment_days*86400, r8_kind))
 else if(lowercase(units(1:12)) == 'months since') then
-  month_fraction = time_increment - floor(time_increment)
+  month_fraction = time_increment - real(floor(time_increment), r8_kind)
   increment_years  = floor(time_increment/12)
   increment_months = floor(time_increment) - 12*increment_years
   call get_date(base_time, year,month,day,hour,minute,second)
   base_time = set_date(year+increment_years,month+increment_months  ,day,hour,minute,second)
-  dt = 86400*days_in_month(base_time) * month_fraction
+  dt = real( 86400*days_in_month(base_time), r8_kind) * month_fraction
   increment_days = floor(dt/86400)
-  increment_seconds = int(dt - increment_days*86400)
+  increment_seconds = int(dt - real(increment_days, r8_kind)*86400.0_r8_kind)
 else
   call error_mesg('get_calendar_time','"'//trim(units)//'" is not an acceptable units attribute of time.'// &
             & ' It must begin with: "years since", "months since", "days since", "hours since", "minutes since",'// &

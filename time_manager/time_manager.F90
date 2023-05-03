@@ -305,9 +305,9 @@ contains
  character(len=*), intent(out) :: err_msg
  integer            :: seconds_new, days_new, ticks_new
 
- seconds_new = seconds + floor(ticks/real(ticks_per_second, r8_kind))
+ seconds_new = seconds + floor(real(ticks, r8_kind)/real(ticks_per_second, r8_kind))
  ticks_new = modulo(ticks,ticks_per_second)
- days_new = days + floor(seconds_new/real(seconds_per_day, r8_kind))
+ days_new = days + floor(real(seconds_new, r8_kind)/real(seconds_per_day, r8_kind))
  seconds_new = modulo(seconds_new,seconds_per_day)
 
  if ( seconds_new < 0 .or. ticks_new < 0) then
@@ -463,7 +463,7 @@ contains
      magnitude = 10**nspf
      tpsfrac = ticks_per_second*fraction
      if(allow_rounding) then
-       tick = nint((real(tpsfrac, r8_kind)/magnitude))
+       tick = nint((real(tpsfrac, r8_kind)/real(magnitude, r8_kind)))
      else
        if(modulo(tpsfrac,magnitude) == 0) then
          tick = tpsfrac/magnitude
@@ -774,8 +774,8 @@ if(.not.module_is_initialized) call time_manager_init
 
 tick_prod = real(time%ticks, r8_kind) * real(n, r8_kind)
 num_sec   = int(tick_prod/real(ticks_per_second, r8_kind))
-sec_prod  = real(time%seconds, r8_kind) * real(n, r8_kind) + num_sec
-ticks     = int(tick_prod - num_sec * ticks_per_second)
+sec_prod  = real(time%seconds, r8_kind) * real(n, r8_kind) + real(num_sec, r8_kind)
+ticks     = int(tick_prod) - (num_sec * ticks_per_second)
 
 !! If sec_prod is large compared to precision of double precision, things
 !! can go bad.  Need to warn and abort on this.
@@ -960,7 +960,7 @@ div = d/real(n, r8_kind)
 
 days = int(div/(dseconds_per_day*dticks_per_second))
 seconds = int(div/dticks_per_second - real(days, r8_kind)*dseconds_per_day)
-ticks = int(div - (days*dseconds_per_day + real(seconds, r8_kind))*dticks_per_second)
+ticks = int(div - (real(days, r8_kind)*dseconds_per_day + real(seconds, r8_kind))*dticks_per_second)
 time_scalar_divide = set_time(seconds, days, ticks)
 
 ! Need to make sure that roundoff isn't killing this
