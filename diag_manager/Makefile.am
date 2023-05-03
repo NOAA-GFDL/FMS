@@ -85,7 +85,10 @@ diag_manager_mod.$(FC_MODEXT): diag_axis_mod.$(FC_MODEXT) diag_data_mod.$(FC_MOD
                                diag_output_mod.$(FC_MODEXT) diag_grid_mod.$(FC_MODEXT) diag_table_mod.$(FC_MODEXT) \
                                fms_diag_object_mod.$(FC_MODEXT) fms_diag_file_object_mod.$(FC_MODEXT) \
 			                         fms_diag_yaml_mod.$(FC_MODEXT) fms_diag_time_utils_mod.$(FC_MODEXT) \
-                               fms_diag_object_container_mod.$(FC_MODEXT) fms_diag_axis_object_mod.$(FC_MODEXT)
+                               fms_diag_object_container_mod.$(FC_MODEXT) fms_diag_axis_object_mod.$(FC_MODEXT) \
+                               fms_diag_time_reduction_mod.$(FC_MODEXT) fms_diag_outfield_mod.$(FC_MODEXT) \
+                               fms_diag_fieldbuff_update_mod.$(FC_MODEXT)
+fms_diag_output_buffer_mod.$(FC_MODEXT): diag_data_mod.$(FC_MODEXT)
 
 # Mod files are built and then installed as headers.
 MODFILES = \
