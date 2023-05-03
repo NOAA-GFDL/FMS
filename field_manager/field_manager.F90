@@ -501,7 +501,8 @@ type, private :: field_def
   type (field_def), pointer                           :: last_field => NULL()
   integer, allocatable, dimension(:)                  :: i_value
   logical, allocatable, dimension(:)                  :: l_value
-  real(r8_kind), allocatable, dimension(:)            :: r_value
+  real(r8_kind), allocatable, dimension(:)            :: r_value !< string to real conversion will be done at r8;
+                                                                 !! all real values will be stored as r8_kind.
   character(len=fm_string_len), allocatable, dimension(:) :: s_value
   type (field_def), pointer                           :: next => NULL()
   type (field_def), pointer                           :: prev => NULL()
@@ -1580,7 +1581,7 @@ list_p%max_index = 0
 list_p%array_dim = 0
 if (allocated(list_p%i_value))  deallocate(list_p%i_value)
 if (allocated(list_p%l_value))  deallocate(list_p%l_value)
-if (allocated(list_p%r_value)) deallocate(list_p%r_value)
+if (allocated(list_p%r_value))  deallocate(list_p%r_value)
 if (allocated(list_p%s_value))  deallocate(list_p%s_value)
 !        If this is the first field in the parent, then set the pointer
 !        to it, otherwise, update the "next" pointer for the last list
@@ -2696,6 +2697,7 @@ if (associated(temp_list_p)) then
 !        If not then reset max_index to 0
     if (temp_field_p%field_type == real_type ) then
        ! promote integer input to real
+       ! all real field values are stored as r8_kind
        field_index = fm_new_value(name, real(value,r8_kind), create, index, append)
        return
     else if (temp_field_p%field_type /= integer_type ) then
@@ -3221,7 +3223,7 @@ list_p%length = 0
 list_p%field_type = list_type
 if (allocated(list_p%i_value))  deallocate(list_p%i_value)
 if (allocated(list_p%l_value))  deallocate(list_p%l_value)
-if (allocated(list_p%r_value)) deallocate(list_p%r_value)
+if (allocated(list_p%r_value))  deallocate(list_p%r_value)
 if (allocated(list_p%s_value))  deallocate(list_p%s_value)
 
 end function  make_list

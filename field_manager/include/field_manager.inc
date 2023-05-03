@@ -82,7 +82,7 @@ if (associated(temp_field_p)) then
        value = 0.0_lkind
       success = .false.
     else
-!        extract the value
+!        extract the value; the value is stored as r8_kind
       value = real(temp_field_p%r_value(index_t),lkind)
       success = .true.
     endif
@@ -175,6 +175,7 @@ if (associated(temp_list_p)) then
        ! promote integer field to real
        allocate(temp_field_p%r_value(size(temp_field_p%i_value)))
        do i = 1, size(temp_field_p%i_value)
+          ! all real field values are stored as r8_kind
           temp_field_p%r_value(i) = real(temp_field_p%i_value(i),r8_kind)
        enddo
        temp_field_p%field_type = real_type
@@ -224,6 +225,7 @@ if (associated(temp_list_p)) then
 !        Assign the value and set the field_index for return
 !        for non-null fields (index_t > 0)
     if (index_t .gt. 0) then
+       ! all real field values are stored as r8_kind
       temp_field_p%r_value(index_t) = real(value,r8_kind)
       if (index_t .gt. temp_field_p%max_index) then
         temp_field_p%max_index = index_t

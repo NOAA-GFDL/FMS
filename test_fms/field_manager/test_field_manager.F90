@@ -35,7 +35,9 @@
 program test_field_manager
 
 use field_manager_mod
+use fm_util_mod
 use mpp_mod, only : mpp_init, mpp_exit, mpp_pe, mpp_root_pe, mpp_error, NOTE, FATAL
+use platform_mod, only : r4_kind, r8_kind
 
 implicit none
 
@@ -43,10 +45,17 @@ implicit none
 integer :: i, j, nfields, num_methods, model
 character(len=fm_string_len) :: field_type, field_name, str, name_field_type, path
 character(len=512) :: method_name, method_control
-real :: param
+real(TEST_FM_KIND_) :: param, param_out
 integer :: flag, index
 logical :: success
 type(method_type), dimension(20) :: methods
+
+real(TEST_FM_KIND_) :: slope_value
+real(TEST_FM_KIND_) :: slope_value_array(2)
+integer, parameter :: lkind=TEST_FM_KIND_
+
+integer, parameter :: array_size=4
+real(TEST_FM_KIND_) :: array_values(array_size), array_out(array_size)
 
 call mpp_init
 call field_manager_init(nfields)
@@ -146,9 +155,10 @@ write(*,*) 'The value for /ocean_mod/tracer/biotic1/diff_horiz/linear/slope is (
 
 write(*,*) '+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+'
 
+slope_value=0.95_lkind
 write(*,*) "MODIFYING BIOTIC1 FIELD slope ATTRIBUTE TO slope = 0.95 "
 if ( fm_change_list('/ocean_mod/tracer/biotic1/diff_horiz/linear')) &
-   index = fm_new_value('slope',0.95, index = 1)
+   index = fm_new_value('slope',slope_value, index = 1)
 
 ! Dump the listing of the modified ocean model tracer attribute
 success = fm_dump_list("/ocean_mod/tracer/biotic1", .true.)
@@ -157,10 +167,39 @@ write(*,*) '+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+'
 
 name_field_type = fm_get_type('/ocean_mod/tracer/biotic1/diff_horiz/linear/slope')
 write(*,*) 'Now the type for /ocean_mod/tracer/biotic1/diff_horiz/linear/slope is ',name_field_type
-success =  fm_get_value('/ocean_mod/tracer/biotic1/diff_horiz/linear/slope',param)
+success =  fm_get_value('/ocean_mod/tracer/biotic1/diff_horiz/linear/slope', param_out)
 if (.not. success) call mpp_error(FATAL, "Unable to get the value of biotic1 slope")
-write(*,*) 'The value for /ocean_mod/tracer/biotic1/diff_horiz/linear/slope is (real) ',param
+write(*,*) 'The value for /ocean_mod/tracer/biotic1/diff_horiz/linear/slope is (real) ',param_out
+if(slope_value .ne. param_out) &
+     call mpp_error(FATAL, '/ocean_mod/tracer/biotic1/diff_horiz/linear/slope value retrieval failed')
 write(*,*) '+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+'
+
+! create new real field with fm_new_value
+param=1.54_lkind
+index=fm_new_value('/ocean_mod/tracer/biotic1/diff_horiz/made_up', param, create=.true.)
+if(kind(param)==r4_kind) param_out = fm_util_get_real_r4('/ocean_mod/tracer/biotic1/diff_horiz/made_up')
+if(kind(param)==r8_kind) param_out = fm_util_get_real_r8('/ocean_mod/tracer/biotic1/diff_horiz/made_up')
+write(*,*) 'fm_util The value for /ocean_mod/tracer/biotic1/diff_horiz/made_up is (real) ',param_out
+if(param_out.ne.param) call mpp_error(FATAL,'ocean_mod/tracer/biotic1/diff_horiz/made_up value retrieval failed')
+write(*,*) '+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+'
+
+! create new field with fm_util_set_value_real
+param=2.44_lkind
+call fm_util_set_value('/ocean_mod/tracer/biotic1/diff_horiz/made_up2', param)
+success=fm_get_value('/ocean_mod/tracer/biotic1/diff_horiz/made_up2', param_out)
+write(*,*) 'fm_util The value for /ocean_mod/tracer/biotic1/diff_horiz/made_up2 is (real) ',param_out
+if(param_out.ne.param) call mpp_error(FATAL,'ocean_mod/tracer/biotic1/diff_horiz/made_up2 value retrieval failed')
+
+!create new array field with fm_util_set_value_array
+array_values=(/1.0_lkind, 2.0_lkind, 3.0_lkind, 4.0_lkind/)
+call fm_util_set_value('/ocean_mod/tracer/biotic1/diff_horiz/made_up3', array_values, array_size)
+if(kind(array_out).eq.r4_kind) array_out=fm_util_get_real_array_r4('/ocean_mod/tracer/biotic1/diff_horiz/made_up3')
+if(kind(array_out).eq.r8_kind) array_out=fm_util_get_real_array_r8('/ocean_mod/tracer/biotic1/diff_horiz/made_up3')
+write(*,*) 'fm_util The value for /ocean_mod/tracer/biotic1/diff_horiz/made_up3 is (real array) ', array_out
+do i=1, array_size
+   if(array_out(i).ne.array_values(i)) &
+        call mpp_error(FATAL, '/ocean_mod/tracer/biotic1/diff_horiz/made_up3 array retrieval failed')
+end do
 
 write(*,*) 'Changing the name of biotic1 to biotic_control'
 success = fm_modify_name('/ocean_mod/tracer/biotic1', 'biotic_control')

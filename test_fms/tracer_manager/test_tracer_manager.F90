@@ -45,7 +45,7 @@ contains
   success=fm_get_value("/atmos_mod/tracer/immadeup/profile_type/profile/top_value", top_value)
   success=fm_change_list('/atmos_mod/tracer/immadeup/profile_type/profile/')
   success=fm_get_value("/atmos_mod/tracer/immadeup/profile_type/profile/surface_value", surf_value)
-  multiplier = exp( log (top_value/surf_value) /real(numlevelse) )
+  multiplier = exp( log (top_value/surf_value) /real(numlevels-1) )
   answer2(:,:,1)=surf_value
   do i=2,numlevels
      answer2(:,:,i) = answer2(:,:,i-1)*multiplier
@@ -68,7 +68,7 @@ contains
   success=fm_get_value("/ocean_mod/tracer/immadeup2/profile_type/profile/bottom_value", bottom_value)
   success=fm_change_list('/ocean_mod/tracer/immadeup2/profile_type/profile/')
   success=fm_get_value("/ocean_mod/tracer/immadeup2/profile_type/profile/surface_value", surf_value)
-  multiplier = exp( log (bottom_value/surf_value) /real(numlevels-1,r8_kind))
+  multiplier = exp( log (bottom_value/surf_value) /real(numlevels-1))
   answer2(:,:,numlevels)=surf_value
   do i=numlevels-1, 1, -1
      answer2(:,:,i) = answer2(:,:,i+1)*multiplier

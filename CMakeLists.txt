@@ -299,12 +299,17 @@ foreach(kind ${kinds})
                                                  mpp/include
                                                  sat_vapor_pres/include
                                                  horiz_interp/include
+                                                 field_manager/include
                                                  diag_manager/include
                                                  constants4
                                                  constants
                                                  axis_utils/include
+<<<<<<< HEAD
                                                  field_manager/include
                                                  tracer_manager/include)
+=======
+                                                 field_manager/include)
+>>>>>>> mkl/mixedmode-fm
   target_compile_definitions(${libTgt}_f PRIVATE "${fms_defs}")
   target_compile_definitions(${libTgt}_f PRIVATE "${${kind}_defs}")
 
@@ -341,12 +346,17 @@ foreach(kind ${kinds})
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/fms/include>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/fms2_io/include>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/sat_vapor_pres/include>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/field_manager/include>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/horiz_interp/include>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/string_utils/include>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/mpp/include>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/diag_manager/include>
+<<<<<<< HEAD
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/field_manager/include>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/tracer_manager/include>)
+=======
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/field_manager/include>)
+>>>>>>> mkl/mixedmode-fm
 
   target_include_directories(${libTgt} INTERFACE
     $<BUILD_INTERFACE:${moduleDir}>
