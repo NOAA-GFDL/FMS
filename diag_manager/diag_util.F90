@@ -86,7 +86,7 @@ use,intrinsic :: iso_c_binding, only: c_double,c_float,c_int64_t, &
        & prepend_attribute, attribute_init, diag_util_init,&
        & fms_diag_check_out_of_bounds, &
        & fms_diag_check_bounds_are_exact_dynamic, fms_diag_check_bounds_are_exact_static,&
-       & get_time_string, init_mask_3d, check_indices_orde
+       & get_time_string, init_mask_3d, check_indices_order
 
 
   !> @brief Prepend a value to a string attribute in the output field or output file.
