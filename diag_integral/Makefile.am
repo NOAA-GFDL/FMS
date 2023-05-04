@@ -35,6 +35,11 @@ libdiag_integral_la_SOURCES = diag_integral.F90\
 															include/diag_integral_r4.fh\
 															include/diag_integral_r8.fh
 
+diag_integral_mod.$(FC_MODEXT): include/diag_integral.inc\
+																include/diag_integral_r4.fh\
+																include/diag_integral_r8.fh
+
+
 nodist_include_HEADERS = diag_integral_mod.$(FC_MODEXT)
 BUILT_SOURCES = diag_integral_mod.$(FC_MODEXT)
 
