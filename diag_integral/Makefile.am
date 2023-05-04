@@ -31,9 +31,9 @@ noinst_LTLIBRARIES = libdiag_integral.la
 
 # The convenience library depends on its source.
 libdiag_integral_la_SOURCES = diag_integral.F90\
-															diag_integral.inc\
-															diag_integral_r4.fh\
-															diag_integral_r8.fh
+															include/diag_integral.inc\
+															include/diag_integral_r4.fh\
+															include/diag_integral_r8.fh
 
 diag_integral_mod.$(FC_MODEXT): diag_integral.F90 include/diag_integral.inc \
 																include/diag_integral_r4.fh include/diag_integral_r8.fh
