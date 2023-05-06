@@ -28,7 +28,7 @@ use diag_data_mod,  only: diag_null, diag_not_found, diag_not_registered, diag_r
        & get_ticks_per_second
 #ifdef use_yaml
 use fms_diag_file_object_mod, only: fmsDiagFileContainer_type, fmsDiagFile_type, fms_diag_files_object_init
-use fms_diag_field_object_mod, only: fmsDiagField_type, fms_diag_fields_object_init, get_default_missing_value &
+use fms_diag_field_object_mod, only: fmsDiagField_type, fms_diag_fields_object_init, get_default_missing_value, &
                                     & has_missing_value
 use fms_diag_yaml_mod, only: diag_yaml_object_init, diag_yaml_object_end, find_diag_field, &
                            & get_diag_files_id, diag_yaml, DiagYamlFilesVar_type
@@ -86,9 +86,9 @@ private
     procedure :: fms_diag_do_io
     procedure :: fms_diag_field_add_cell_measures
     procedure :: allocate_diag_field_output_buffers
+    procedure :: fms_diag_check_out_of_range_value
 #ifdef use_yaml
     procedure :: get_diag_buffer
-    procedure :: fms_diag_check_out_of_range_value
 #endif
 end type fmsDiagObject_type
 
@@ -1100,12 +1100,12 @@ subroutine fms_diag_check_out_of_range_value(this, field_data, field_id, oor_mas
   IF ( this%FMS_diag_fields(field_id)%has_data_RANGE() ) THEN
     IF ( ISSUE_OOR_WARNINGS .OR. OOR_WARNINGS_FATAL ) THEN
       select type (l_data_range)
-        type is (real*)
+        type is (real)
           WRITE (error_string, '("[",ES14.5E3,",",ES14.5E3,"]")') l_data_range
           WRITE (error_string2, '("(Min: ",ES14.5E3,", Max: ",ES14.5E3, ")")')&
             & MINVAL(field_data(fis:fie, fjs:fje, ks:ke, 1:1),MASK=oor_mask(fis:fie, fjs:fje, ks:ke)),&
             & MAXVAL(field_data(fis:fie, fjs:fje, ks:ke, 1:1),MASK=oor_mask(fis:fie, fjs:fje, ks:ke))
-        type is (integer*)
+        type is (integer)
           WRITE (error_string, '("[",ES14,",",ES14,"]")') l_data_range
           WRITE (error_string2, '("(Min: ",ES14,", Max: ",ES14, ")")')&
             & MINVAL(field_data(fis:fie, fjs:fje, ks:ke, 1:1),MASK=oor_mask(fis:fie, fjs:fje, ks:ke)),&
