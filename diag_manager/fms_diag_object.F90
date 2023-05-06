@@ -1094,12 +1094,12 @@ subroutine fms_diag_check_out_of_range_value(this, field_data, field_id, oor_mas
   IF ( this%FMS_diag_fields(field_id)%has_data_RANGE() ) THEN
     IF ( ISSUE_OOR_WARNINGS .OR. OOR_WARNINGS_FATAL ) THEN
       select type (l_data_range)
-        type is (real)
+        type is (real(kind=r4_kind) .or. real(kind=r8_kind))
           WRITE (error_string, '("[",ES14.5E3,",",ES14.5E3,"]")') l_data_range
           WRITE (error_string2, '("(Min: ",ES14.5E3,", Max: ",ES14.5E3, ")")')&
             & MINVAL(field_data(fis:fie, fjs:fje, ks:ke, 1:1),MASK=oor_mask(fis:fie, fjs:fje, ks:ke)),&
             & MAXVAL(field_data(fis:fie, fjs:fje, ks:ke, 1:1),MASK=oor_mask(fis:fie, fjs:fje, ks:ke))
-        type is (integer)
+        type is (integer(kind=i4_kind) .or. integer(kind=i8_kind))
           WRITE (error_string, '("[",I14,",",I14,"]")') l_data_range
           WRITE (error_string2, '("(Min: ",I14,", Max: ",I14, ")")')&
             & MINVAL(field_data(fis:fie, fjs:fje, ks:ke, 1:1),MASK=oor_mask(fis:fie, fjs:fje, ks:ke)),&
