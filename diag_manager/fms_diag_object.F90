@@ -486,11 +486,6 @@ logical function fms_diag_accept_data (this, diag_field_id, field_data, time, is
 #ifndef use_yaml
 CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling with -Duse_yaml")
 #else
-  ! Check if the field variable type is set
-  if (.not.this%FMS_diag_fields(diag_field_id)%has_vartype()) then
-    this%FMS_diag_fields(diag_field_id)%set_vartype(field_data(1, 1, 1, 1))
-  end if
-
   !TODO: weight is for time averaging where each time level may have a different weight
   ! call real_copy_set()
 
