@@ -28,8 +28,7 @@ use diag_data_mod,  only: diag_null, diag_not_found, diag_not_registered, diag_r
        & get_ticks_per_second
 #ifdef use_yaml
 use fms_diag_file_object_mod, only: fmsDiagFileContainer_type, fmsDiagFile_type, fms_diag_files_object_init
-use fms_diag_field_object_mod, only: fmsDiagField_type, fms_diag_fields_object_init, get_default_missing_value, &
-                                    & has_missing_value
+use fms_diag_field_object_mod, only: fmsDiagField_type, fms_diag_fields_object_init, get_default_missing_value
 use fms_diag_yaml_mod, only: diag_yaml_object_init, diag_yaml_object_end, find_diag_field, &
                            & get_diag_files_id, diag_yaml, DiagYamlFilesVar_type
 use fms_diag_axis_object_mod, only: fms_diag_axis_object_init, fmsDiagAxis_type, fmsDiagSubAxis_type, &
@@ -1106,8 +1105,8 @@ subroutine fms_diag_check_out_of_range_value(this, field_data, field_id, oor_mas
             & MINVAL(field_data(fis:fie, fjs:fje, ks:ke, 1:1),MASK=oor_mask(fis:fie, fjs:fje, ks:ke)),&
             & MAXVAL(field_data(fis:fie, fjs:fje, ks:ke, 1:1),MASK=oor_mask(fis:fie, fjs:fje, ks:ke))
         type is (integer)
-          WRITE (error_string, '("[",ES14,",",ES14,"]")') l_data_range
-          WRITE (error_string2, '("(Min: ",ES14,", Max: ",ES14, ")")')&
+          WRITE (error_string, '("[",I14,",",I14,"]")') l_data_range
+          WRITE (error_string2, '("(Min: ",I14,", Max: ",I14, ")")')&
             & MINVAL(field_data(fis:fie, fjs:fje, ks:ke, 1:1),MASK=oor_mask(fis:fie, fjs:fje, ks:ke)),&
             & MAXVAL(field_data(fis:fie, fjs:fje, ks:ke, 1:1),MASK=oor_mask(fis:fie, fjs:fje, ks:ke))
         class default
@@ -1124,8 +1123,8 @@ subroutine fms_diag_check_out_of_range_value(this, field_data, field_id, oor_mas
             !   value.
             ! </ERROR>
             CALL error_mesg(err_module_name, 'A value for '//&
-                &TRIM(this%FMS_diag_fields(diag_field_id)%get_modname())//' in field '//&
-                &TRIM(this%FMS_diag_fields(diag_field_id)%get_varname())//' '&  !< Make sure the modern diag manager
+                &TRIM(this%FMS_diag_fields(field_id)%get_modname())//' in field '//&
+                &TRIM(this%FMS_diag_fields(field_id)%get_varname())//' '&  !< Make sure the modern diag manager
                                                                             ! 'varname' is same as
                                                                             ! the legacy 'field_name'
                 &//TRIM(error_string2)//&
@@ -1141,8 +1140,8 @@ subroutine fms_diag_check_out_of_range_value(this, field_data, field_id, oor_mas
               !   is outside the range [<lower_val>,<upper_val>].
               ! </ERROR>
               CALL error_mesg(err_module_name, 'A value for '//&
-                  &TRIM(this%FMS_diag_fields(diag_field_id)%get_modname())//' in field '//&
-                  &TRIM(this%FMS_diag_fields(diag_field_id)%get_varname())//' '& !< Make sure the modern diag manager
+                  &TRIM(this%FMS_diag_fields(field_id)%get_modname())//' in field '//&
+                  &TRIM(this%FMS_diag_fields(field_id)%get_varname())//' '& !< Make sure the modern diag manager
                                                                             ! 'varname' is same as
                                                                             ! the legacy 'field_name'
 
