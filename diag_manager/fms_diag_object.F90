@@ -36,7 +36,7 @@ use fms_diag_axis_object_mod, only: fms_diag_axis_object_init, fmsDiagAxis_type,
                                    &fmsDiagAxisContainer_type, fms_diag_axis_object_end, fmsDiagFullAxis_type, &
                                    &parse_compress_att, get_axis_id_from_name
 use fms_diag_output_buffer_mod
-use fms_mod, only: fms_error_handler
+use fms_mod, only: fms_error_handler, error_mesg
 #endif
 #if defined(_OPENMP)
 use omp_lib
