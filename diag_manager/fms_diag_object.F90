@@ -1054,16 +1054,16 @@ subroutine fms_diag_check_out_of_range_value(this, field_data, field_id, oor_mas
   field_var_type = this%FMS_diag_fields(field_id)%get_vartype()
 
   ! Copy field data to proper type variables
-  select case (field_var_type)
-  case (r4)
+  select type (field_data(1,1,1,1))
+  type is (real(kind=r4_kind))
     real_field = real(field_data, kind=r4_kind)
-  case (r8)
+  type is (real(kind=r8_kind))
     real_field = real(field_data, kind=r8_kind)
-  case (i4)
+  type is (integer(kind=i4_kind))
     int_field = int(field_data, kind=i4_kind)
-  case (i8)
+  type is (integer(kind=i8_kind))
     int_field = int(field_data, kind=i8_kind)
-  case default
+  class default
     call mpp_error( FATAL, err_module_name//' Invalid type')
   end select
 
