@@ -1033,42 +1033,60 @@ subroutine fms_diag_check_out_of_range_value(this, field_data, field_id, oor_mas
   integer, intent(in) :: fie, fje, ke !< End indices
 #ifdef use_yaml
   logical :: has_missvalue !< .true. if the field has missing value
-  class(*), allocatable :: l_missing_value !< Local copy of missing value
+  real :: real_missing_value
+  integer :: int_missing_value
   integer :: field_var_type !< Type of field data
   character(len=128) :: error_string, error_string2
-  class(*), allocatable :: l_data_range(:)
+  real, allocatable :: real_data_range(:)
+  integer, allocatable :: int_data_range(:)
   character(len=128) :: err_module_name !< Stores the module name to be used in error calls
+  real, allocatable :: real_field(:,:,:,:)
+  integer, allocatable :: int_field(:,:,:,:)
 
   err_module_name = 'fms_diag_object_mod:fms_diag_check_out_of_range_value'
 
   ! Get field variable type and store locally.
   field_var_type = this%FMS_diag_fields(field_id)%get_vartype()
 
+  ! Copy field data to proper type variables
+  select case (field_var_type)
+  case (r4)
+    real_field = real(field_data, kind=r4_kind)
+  case (r8)
+    real_field = real(field_data, kind=r8_kind)
+  case (i4)
+    int_field = int(field_data, kind=i4_kind)
+  case (i8)
+    int_field = int(field_data, kind=i8_kind)
+  case default
+    call mpp_error( FATAL, err_module_name//' Invalid type')
+  end select
+
   ! Is there a missing_value?
   has_missvalue = this%FMS_diag_fields(field_id)%has_missing_value()
   if (has_missvalue) then
     select type (my_type => this%FMS_diag_fields(field_id)%get_missing_value(field_var_type))
       type is (real(kind=r4_kind))
-        l_missing_value = real(my_type, kind=r4_kind)
+        real_missing_value = real(my_type, kind=r4_kind)
       type is (real(kind=r8_kind))
-        l_missing_value = real(my_type, kind=r8_kind)
+        real_missing_value = real(my_type, kind=r8_kind)
       type is (integer(kind=i4_kind))
-        l_missing_value = int(my_type, kind=i4_kind)
+        int_missing_value = int(my_type, kind=i4_kind)
       type is (integer(kind=i8_kind))
-        l_missing_value = int(my_type, kind=i8_kind)
+        int_missing_value = int(my_type, kind=i8_kind)
       class default
         call mpp_error( FATAL, err_module_name//' Invalid type')
     end select
   else
     select type (my_type => get_default_missing_value(field_var_type))
       type is (real(kind=r4_kind))
-        l_missing_value = real(my_type, kind=r4_kind)
+        real_missing_value = real(my_type, kind=r4_kind)
       type is (real(kind=r8_kind))
-        l_missing_value = real(my_type, kind=r8_kind)
+        real_missing_value = real(my_type, kind=r8_kind)
       type is (integer(kind=i4_kind))
-        l_missing_value = int(my_type, kind=i4_kind)
+        int_missing_value = int(my_type, kind=i4_kind)
       type is (integer(kind=i8_kind))
-        l_missing_value = int(my_type, kind=i8_kind)
+        int_missing_value = int(my_type, kind=i8_kind)
       class default
         call mpp_error( FATAL, err_module_name//' Invalid type')
     end select
@@ -1078,13 +1096,13 @@ subroutine fms_diag_check_out_of_range_value(this, field_data, field_id, oor_mas
   if (this%FMS_diag_fields(field_id)%has_data_RANGE()) then
     select type (data_type => this%FMS_diag_fields(field_id)%get_data_RANGE(field_var_type))
     type is (real(kind=r4_kind))
-        l_data_range = real(data_type, kind=r4_kind)
+        real_data_range = real(data_type, kind=r4_kind)
       type is (real(kind=r8_kind))
-        l_data_range = real(data_type, kind=r8_kind)
+        real_data_range = real(data_type, kind=r8_kind)
       type is (integer(kind=i4_kind))
-        l_data_range = int(data_type, kind=i4_kind)
+        int_data_range = int(data_type, kind=i4_kind)
       type is (integer(kind=i8_kind))
-        l_data_range = int(data_type, kind=i8_kind)
+        int_data_range = int(data_type, kind=i8_kind)
       class default
         call mpp_error( FATAL, err_module_name//' Invalid type')
     end select
@@ -1093,21 +1111,16 @@ subroutine fms_diag_check_out_of_range_value(this, field_data, field_id, oor_mas
   ! Issue a warning if any value in field is outside the valid range
   IF ( this%FMS_diag_fields(field_id)%has_data_RANGE() ) THEN
     IF ( ISSUE_OOR_WARNINGS .OR. OOR_WARNINGS_FATAL ) THEN
-      select type (l_data_range)
-        type is (real(kind=r4_kind))
-          WRITE (error_string, '("[",ES14.5E3,",",ES14.5E3,"]")') l_data_range
-          WRITE (error_string2, '("(Min: ",ES14.5E3,", Max: ",ES14.5E3, ")")')&
-            & MINVAL(field_data(fis:fie, fjs:fje, ks:ke, 1:1),MASK=oor_mask(fis:fie, fjs:fje, ks:ke)),&
-            & MAXVAL(field_data(fis:fie, fjs:fje, ks:ke, 1:1),MASK=oor_mask(fis:fie, fjs:fje, ks:ke))
-          WRITE (error_string, '("[",I14,",",I14,"]")') l_data_range
-          WRITE (error_string2, '("(Min: ",I14,", Max: ",I14, ")")')&
-            & MINVAL(field_data(fis:fie, fjs:fje, ks:ke, 1:1),MASK=oor_mask(fis:fie, fjs:fje, ks:ke)),&
-            & MAXVAL(field_data(fis:fie, fjs:fje, ks:ke, 1:1),MASK=oor_mask(fis:fie, fjs:fje, ks:ke))
-          IF ( has_missvalue ) THEN
-            IF ( ANY(oor_mask(fis:fie, fjs:fje, ks:ke) .AND.&
-              & ((field_data(fis:fie, fjs:fje, ks:ke, 1:1) < l_data_range(1) .OR.&
-              &   field_data(fis:fie, fjs:fje, ks:ke, 1:1) > l_data_range(2)).AND.&
-              &   field_data(fis:fie, fjs:fje, ks:ke, 1:1) .NE. l_missing_value)) ) THEN
+      if (field_var_type .eq. r4 .or. field_var_type .eq. r8) then
+        WRITE (error_string, '("[",ES14.5E3,",",ES14.5E3,"]")') real_data_range
+        WRITE (error_string2, '("(Min: ",ES14.5E3,", Max: ",ES14.5E3, ")")')&
+          & MINVAL(real_field(fis:fie, fjs:fje, ks:ke, 1:1),MASK=oor_mask(fis:fie, fjs:fje, ks:ke)),&
+          & MAXVAL(real_field(fis:fie, fjs:fje, ks:ke, 1:1),MASK=oor_mask(fis:fie, fjs:fje, ks:ke))
+        IF ( has_missvalue ) THEN
+          IF ( ANY(oor_mask(fis:fie, fjs:fje, ks:ke) .AND.&
+            & ((real_field(fis:fie, fjs:fje, ks:ke, 1:1) < real_data_range(1) .OR.&
+            &   real_field(fis:fie, fjs:fje, ks:ke, 1:1) > real_data_range(2)).AND.&
+            &   real_field(fis:fie, fjs:fje, ks:ke, 1:1) .NE. real_missing_value)) ) THEN
             ! <ERROR STATUS="WARNING/FATAL">
             !   A value for <module_name> in field <field_name> (Min: <min_val>, Max: <max_val>)
             !   is outside the range [<lower_val>,<upper_val>] and not equal to the missing
@@ -1124,30 +1137,72 @@ subroutine fms_diag_check_out_of_range_value(this, field_data, field_id, oor_mas
           END IF
         ELSE
           IF ( ANY(oor_mask(fis:fie, fjs:fje, ks:ke) .AND.&
-              & (field_data(fis:fie, fjs:fje, ks:ke, 1:1) < l_data_range(1) .OR.&
-              &  field_data(fis:fie, fjs:fje, ks:ke, 1:1) > l_data_range(2))) ) THEN
+            & (real_field(fis:fie, fjs:fje, ks:ke, 1:1) < real_data_range(1) .OR.&
+            &  real_field(fis:fie, fjs:fje, ks:ke, 1:1) > real_data_range(2))) ) THEN
+            ! <ERROR STATUS="WARNING/FATAL">
+            !   A value for <module_name> in field <field_name> (Min: <min_val>, Max: <max_val>)
+            !   is outside the range [<lower_val>,<upper_val>].
+            ! </ERROR>
+            CALL error_mesg(err_module_name, 'A value for '//&
+              &TRIM(this%FMS_diag_fields(field_id)%get_modname())//' in field '//&
+              &TRIM(this%FMS_diag_fields(field_id)%get_varname())//' '& !< Make sure the modern diag manager
+                                                                        ! 'varname' is same as
+                                                                        ! the legacy 'field_name'
+              &//TRIM(error_string2)//&
+              &' is outside the range '//TRIM(error_string)//'.', WARNING)
+          END IF
+        END IF
+      else
+        if (field_var_type .eq. i4 .or. field_var_type .eq. i8) then
+          WRITE (error_string, '("[",I14,",",I14,"]")') real_data_range
+          WRITE (error_string2, '("(Min: ",I14,", Max: ",I14, ")")')&
+            & MINVAL(int_field(fis:fie, fjs:fje, ks:ke, 1:1),MASK=oor_mask(fis:fie, fjs:fje, ks:ke)),&
+            & MAXVAL(int_field(fis:fie, fjs:fje, ks:ke, 1:1),MASK=oor_mask(fis:fie, fjs:fje, ks:ke))
+          IF ( has_missvalue ) THEN
+            IF ( ANY(oor_mask(fis:fie, fjs:fje, ks:ke) .AND.&
+              & ((int_field(fis:fie, fjs:fje, ks:ke, 1:1) < int_data_range(1) .OR.&
+              &   int_field(fis:fie, fjs:fje, ks:ke, 1:1) > int_data_range(2)).AND.&
+              &   int_field(fis:fie, fjs:fje, ks:ke, 1:1) .NE. int_missing_value)) ) THEN
+              ! <ERROR STATUS="WARNING/FATAL">
+              !   A value for <module_name> in field <field_name> (Min: <min_val>, Max: <max_val>)
+              !   is outside the range [<lower_val>,<upper_val>] and not equal to the missing
+              !   value.
+              ! </ERROR>
+              CALL error_mesg(err_module_name, 'A value for '//&
+                &TRIM(this%FMS_diag_fields(field_id)%get_modname())//' in field '//&
+                &TRIM(this%FMS_diag_fields(field_id)%get_varname())//' '&  !< Make sure the modern diag manager
+                                                                           ! 'varname' is same as
+                                                                           ! the legacy 'field_name'
+                &//TRIM(error_string2)//&
+                &' is outside the range '//TRIM(error_string)//',&
+                & and not equal to the missing value.', WARNING)
+            END IF
+          ELSE
+            IF ( ANY(oor_mask(fis:fie, fjs:fje, ks:ke) .AND.&
+              & (int_field(fis:fie, fjs:fje, ks:ke, 1:1) < int_data_range(1) .OR.&
+              &  int_field(fis:fie, fjs:fje, ks:ke, 1:1) > int_data_range(2))) ) THEN
               ! <ERROR STATUS="WARNING/FATAL">
               !   A value for <module_name> in field <field_name> (Min: <min_val>, Max: <max_val>)
               !   is outside the range [<lower_val>,<upper_val>].
               ! </ERROR>
               CALL error_mesg(err_module_name, 'A value for '//&
-                  &TRIM(this%FMS_diag_fields(field_id)%get_modname())//' in field '//&
-                  &TRIM(this%FMS_diag_fields(field_id)%get_varname())//' '& !< Make sure the modern diag manager
-                                                                            ! 'varname' is same as
-                                                                            ! the legacy 'field_name'
-
-                  &//TRIM(error_string2)//&
-                  &' is outside the range '//TRIM(error_string)//'.', WARNING)
+                &TRIM(this%FMS_diag_fields(field_id)%get_modname())//' in field '//&
+                &TRIM(this%FMS_diag_fields(field_id)%get_varname())//' '& !< Make sure the modern diag manager
+                                                                          ! 'varname' is same as
+                                                                          ! the legacy 'field_name'
+                &//TRIM(error_string2)//&
+                &' is outside the range '//TRIM(error_string)//'.', WARNING)
+            END IF
           END IF
-        END IF
-        class default
+        else
           call mpp_error( FATAL, err_module_name//' Invalid type')
-        end select
-    END IF
-  END IF
+        end if
+      end if
+    end if
+  end if
 #else
-    call mpp_error( FATAL, "fms_diag_object_mod:fms_diag_check_out_of_range_value "//&
-      "you can not use the modern diag manager without compiling with -Duse_yaml")
+  call mpp_error( FATAL, "fms_diag_object_mod:fms_diag_check_out_of_range_value "//&
+    "you can not use the modern diag manager without compiling with -Duse_yaml")
 #endif
 end subroutine fms_diag_check_out_of_range_value
 
