@@ -21,7 +21,7 @@ use mpp_mod, only: fatal, note, warning, mpp_error, mpp_pe, mpp_root_pe, stdout
 use diag_data_mod,  only: diag_null, diag_not_found, diag_not_registered, diag_registered_id, &
                          &DIAG_FIELD_NOT_FOUND, diag_not_registered, max_axes, TWO_D_DOMAIN, &
                          &get_base_time, NULL_AXIS_ID, get_var_type, diag_not_registered, &
-                         &oor_warnings_fatal, issue_oor_warnings
+                         &oor_warnings_fatal, issue_oor_warnings, i4, i4, r4, r8
 
   USE time_manager_mod, ONLY: set_time, set_date, get_time, time_type, OPERATOR(>=), OPERATOR(>),&
        & OPERATOR(<), OPERATOR(==), OPERATOR(/=), OPERATOR(/), OPERATOR(+), ASSIGNMENT(=), get_date, &
@@ -1042,8 +1042,13 @@ subroutine fms_diag_check_out_of_range_value(this, field_data, field_id, oor_mas
   character(len=128) :: err_module_name !< Stores the module name to be used in error calls
   real, allocatable :: real_field(:,:,:,:)
   integer, allocatable :: int_field(:,:,:,:)
+  logical, allocatable :: oor_mask_4d(:,:,:,:) !< Copy of the input out of range mask to remove incompatibility
+                                               !! in ranks when masking with the input field data (4d)
 
   err_module_name = 'fms_diag_object_mod:fms_diag_check_out_of_range_value'
+  
+  ! Remap the input out of range mask to 4d mask
+  oor_mask_4d = reshape(oor_mask, (/shape(oor_mask), 1/))
 
   ! Get field variable type and store locally.
   field_var_type = this%FMS_diag_fields(field_id)%get_vartype()
@@ -1114,10 +1119,10 @@ subroutine fms_diag_check_out_of_range_value(this, field_data, field_id, oor_mas
       if (field_var_type .eq. r4 .or. field_var_type .eq. r8) then
         WRITE (error_string, '("[",ES14.5E3,",",ES14.5E3,"]")') real_data_range
         WRITE (error_string2, '("(Min: ",ES14.5E3,", Max: ",ES14.5E3, ")")')&
-          & MINVAL(real_field(fis:fie, fjs:fje, ks:ke, 1:1),MASK=oor_mask(fis:fie, fjs:fje, ks:ke)),&
-          & MAXVAL(real_field(fis:fie, fjs:fje, ks:ke, 1:1),MASK=oor_mask(fis:fie, fjs:fje, ks:ke))
+          & MINVAL(real_field(fis:fie, fjs:fje, ks:ke, 1:1),MASK=oor_mask_4d(fis:fie, fjs:fje, ks:ke, 1:1)),&
+          & MAXVAL(real_field(fis:fie, fjs:fje, ks:ke, 1:1),MASK=oor_mask_4d(fis:fie, fjs:fje, ks:ke, 1:1))
         IF ( has_missvalue ) THEN
-          IF ( ANY(oor_mask(fis:fie, fjs:fje, ks:ke) .AND.&
+          IF ( ANY(oor_mask_4d(fis:fie, fjs:fje, ks:ke, 1:1) .AND.&
             & ((real_field(fis:fie, fjs:fje, ks:ke, 1:1) < real_data_range(1) .OR.&
             &   real_field(fis:fie, fjs:fje, ks:ke, 1:1) > real_data_range(2)).AND.&
             &   real_field(fis:fie, fjs:fje, ks:ke, 1:1) .NE. real_missing_value)) ) THEN
@@ -1136,7 +1141,7 @@ subroutine fms_diag_check_out_of_range_value(this, field_data, field_id, oor_mas
                 & and not equal to the missing value.', WARNING)
           END IF
         ELSE
-          IF ( ANY(oor_mask(fis:fie, fjs:fje, ks:ke) .AND.&
+          IF ( ANY(oor_mask_4d(fis:fie, fjs:fje, ks:ke, 1:1) .AND.&
             & (real_field(fis:fie, fjs:fje, ks:ke, 1:1) < real_data_range(1) .OR.&
             &  real_field(fis:fie, fjs:fje, ks:ke, 1:1) > real_data_range(2))) ) THEN
             ! <ERROR STATUS="WARNING/FATAL">
@@ -1156,10 +1161,10 @@ subroutine fms_diag_check_out_of_range_value(this, field_data, field_id, oor_mas
         if (field_var_type .eq. i4 .or. field_var_type .eq. i8) then
           WRITE (error_string, '("[",I14,",",I14,"]")') real_data_range
           WRITE (error_string2, '("(Min: ",I14,", Max: ",I14, ")")')&
-            & MINVAL(int_field(fis:fie, fjs:fje, ks:ke, 1:1),MASK=oor_mask(fis:fie, fjs:fje, ks:ke)),&
-            & MAXVAL(int_field(fis:fie, fjs:fje, ks:ke, 1:1),MASK=oor_mask(fis:fie, fjs:fje, ks:ke))
+            & MINVAL(int_field(fis:fie, fjs:fje, ks:ke, 1:1),MASK=oor_mask_4d(fis:fie, fjs:fje, ks:ke, 1:1)),&
+            & MAXVAL(int_field(fis:fie, fjs:fje, ks:ke, 1:1),MASK=oor_mask_4d(fis:fie, fjs:fje, ks:ke, 1:1))
           IF ( has_missvalue ) THEN
-            IF ( ANY(oor_mask(fis:fie, fjs:fje, ks:ke) .AND.&
+            IF ( ANY(oor_mask_4d(fis:fie, fjs:fje, ks:ke, 1:1) .AND.&
               & ((int_field(fis:fie, fjs:fje, ks:ke, 1:1) < int_data_range(1) .OR.&
               &   int_field(fis:fie, fjs:fje, ks:ke, 1:1) > int_data_range(2)).AND.&
               &   int_field(fis:fie, fjs:fje, ks:ke, 1:1) .NE. int_missing_value)) ) THEN
@@ -1178,7 +1183,7 @@ subroutine fms_diag_check_out_of_range_value(this, field_data, field_id, oor_mas
                 & and not equal to the missing value.', WARNING)
             END IF
           ELSE
-            IF ( ANY(oor_mask(fis:fie, fjs:fje, ks:ke) .AND.&
+            IF ( ANY(oor_mask_4d(fis:fie, fjs:fje, ks:ke, 1:1) .AND.&
               & (int_field(fis:fie, fjs:fje, ks:ke, 1:1) < int_data_range(1) .OR.&
               &  int_field(fis:fie, fjs:fje, ks:ke, 1:1) > int_data_range(2))) ) THEN
               ! <ERROR STATUS="WARNING/FATAL">
