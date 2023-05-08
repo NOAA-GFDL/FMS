@@ -1094,21 +1094,17 @@ subroutine fms_diag_check_out_of_range_value(this, field_data, field_id, oor_mas
   IF ( this%FMS_diag_fields(field_id)%has_data_RANGE() ) THEN
     IF ( ISSUE_OOR_WARNINGS .OR. OOR_WARNINGS_FATAL ) THEN
       select type (l_data_range)
-        type is (real(kind=r4_kind) .or. real(kind=r8_kind))
+        type is (real(kind=r4_kind))
           WRITE (error_string, '("[",ES14.5E3,",",ES14.5E3,"]")') l_data_range
           WRITE (error_string2, '("(Min: ",ES14.5E3,", Max: ",ES14.5E3, ")")')&
             & MINVAL(field_data(fis:fie, fjs:fje, ks:ke, 1:1),MASK=oor_mask(fis:fie, fjs:fje, ks:ke)),&
-            & MAXVAL(field_data(fis:fie, fjs:fje, ks:ke, 1:1),MASK=oor_mask(fis:fie, fjs:fje, ks:ke))
-        type is (integer(kind=i4_kind) .or. integer(kind=i8_kind))
+            & MAXVAL(field_data(fis:fie, fjs:fje, ks:ke, 1:1),MASK=oor_mask(fis:fie, fjs:fje, ks:ke)
           WRITE (error_string, '("[",I14,",",I14,"]")') l_data_range
           WRITE (error_string2, '("(Min: ",I14,", Max: ",I14, ")")')&
             & MINVAL(field_data(fis:fie, fjs:fje, ks:ke, 1:1),MASK=oor_mask(fis:fie, fjs:fje, ks:ke)),&
             & MAXVAL(field_data(fis:fie, fjs:fje, ks:ke, 1:1),MASK=oor_mask(fis:fie, fjs:fje, ks:ke))
-        class default
-          call mpp_error( FATAL, err_module_name//' Invalid type')
-      end select
-        IF ( has_missvalue ) THEN
-          IF ( ANY(oor_mask(fis:fie, fjs:fje, ks:ke) .AND.&
+          IF ( has_missvalue ) THEN
+            IF ( ANY(oor_mask(fis:fie, fjs:fje, ks:ke) .AND.&
               & ((field_data(fis:fie, fjs:fje, ks:ke, 1:1) < l_data_range(1) .OR.&
               &   field_data(fis:fie, fjs:fje, ks:ke, 1:1) > l_data_range(2)).AND.&
               &   field_data(fis:fie, fjs:fje, ks:ke, 1:1) .NE. l_missing_value)) ) THEN
@@ -1144,6 +1140,9 @@ subroutine fms_diag_check_out_of_range_value(this, field_data, field_id, oor_mas
                   &' is outside the range '//TRIM(error_string)//'.', WARNING)
           END IF
         END IF
+        class default
+          call mpp_error( FATAL, err_module_name//' Invalid type')
+        end select
     END IF
   END IF
 #else
