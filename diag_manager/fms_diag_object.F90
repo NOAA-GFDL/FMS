@@ -1098,7 +1098,7 @@ subroutine fms_diag_check_out_of_range_value(this, field_data, field_id, oor_mas
           WRITE (error_string, '("[",ES14.5E3,",",ES14.5E3,"]")') l_data_range
           WRITE (error_string2, '("(Min: ",ES14.5E3,", Max: ",ES14.5E3, ")")')&
             & MINVAL(field_data(fis:fie, fjs:fje, ks:ke, 1:1),MASK=oor_mask(fis:fie, fjs:fje, ks:ke)),&
-            & MAXVAL(field_data(fis:fie, fjs:fje, ks:ke, 1:1),MASK=oor_mask(fis:fie, fjs:fje, ks:ke)
+            & MAXVAL(field_data(fis:fie, fjs:fje, ks:ke, 1:1),MASK=oor_mask(fis:fie, fjs:fje, ks:ke))
           WRITE (error_string, '("[",I14,",",I14,"]")') l_data_range
           WRITE (error_string2, '("(Min: ",I14,", Max: ",I14, ")")')&
             & MINVAL(field_data(fis:fie, fjs:fje, ks:ke, 1:1),MASK=oor_mask(fis:fie, fjs:fje, ks:ke)),&
