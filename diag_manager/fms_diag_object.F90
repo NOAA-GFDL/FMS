@@ -21,7 +21,7 @@ use mpp_mod, only: fatal, note, warning, mpp_error, mpp_pe, mpp_root_pe, stdout
 use diag_data_mod,  only: diag_null, diag_not_found, diag_not_registered, diag_registered_id, &
                          &DIAG_FIELD_NOT_FOUND, diag_not_registered, max_axes, TWO_D_DOMAIN, &
                          &get_base_time, NULL_AXIS_ID, get_var_type, diag_not_registered, &
-                         &oor_warnings_fatal, issue_oor_warnings, i4, i4, r4, r8
+                         &oor_warnings_fatal, issue_oor_warnings, i4, i8, r4, r8
 
   USE time_manager_mod, ONLY: set_time, set_date, get_time, time_type, OPERATOR(>=), OPERATOR(>),&
        & OPERATOR(<), OPERATOR(==), OPERATOR(/=), OPERATOR(/), OPERATOR(+), ASSIGNMENT(=), get_date, &
