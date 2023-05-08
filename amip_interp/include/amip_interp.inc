@@ -277,8 +277,7 @@ end interface
 type amip_interp_type
    private
    type (horiz_interp_type) :: Hintrp, Hintrp2 ! add by JHC
-   real, pointer            ::    data1(:,:) =>NULL(), &
-                                  data2(:,:) =>NULL()
+   real, allocatable        ::    data1(:,:),  data2(:,:)
    type (date_type)         ::    Date1,       Date2
    logical                  :: use_climo, use_annual
    logical                  :: I_am_initialized=.false.
@@ -1003,8 +1002,8 @@ endif
 !! when calling get_amip_sst and get_amip_ice.
    subroutine amip_interp_del (Interp)
    type (amip_interp_type), intent(inout) :: Interp
-     if(associated(Interp%data1)) deallocate(Interp%data1)
-     if(associated(Interp%data2)) deallocate(Interp%data2)
+     if(allocated(Interp%data1)) deallocate(Interp%data1)
+     if(allocated(Interp%data2)) deallocate(Interp%data2)
      if(allocated(lon_bnd))       deallocate(lon_bnd)
      if(allocated(lat_bnd))       deallocate(lat_bnd)
      call horiz_interp_del ( Interp%Hintrp )
@@ -1536,8 +1535,9 @@ subroutine amip_interp_type_eq(amip_interp_out, amip_interp_in)
     endif
 
     amip_interp_out%Hintrp     =  amip_interp_in%Hintrp
-    amip_interp_out%data1      => amip_interp_in%data1
-    amip_interp_out%data2      => amip_interp_in%data2
+    amip_interp_out%Hintrp2    =  amip_interp_in%Hintrp2 !< missing assignment statement; added by GPP
+    amip_interp_out%data1      =  amip_interp_in%data1
+    amip_interp_out%data2      =  amip_interp_in%data2
     amip_interp_out%Date1      =  amip_interp_in%Date1
     amip_interp_out%Date2      =  amip_interp_in%Date2
     amip_interp_out%Date1      =  amip_interp_in%Date1
