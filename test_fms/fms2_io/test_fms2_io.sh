@@ -48,7 +48,44 @@ test_expect_success "FMS2 IO Test" '
   mpirun -n 6 ../test_fms2_io
 '
 
-test_expect_success "Domain Read Write Tests" '
+cat <<_EOF > input.nml
+&test_domain_io_nml
+  layout = 1, 6
+  io_layout = 1, 1
+  filename = "test_simple_layout.nc"
+/
+_EOF
+test_expect_success "Domain Read Write Tests with simple layout" '
   mpirun -n 6 ../test_domain_io
 '
+
+cat <<_EOF > input.nml
+&test_domain_io_nml
+  layout = 2, 8
+  io_layout = 1, 2
+  filename = "test_dist_layout.nc"
+/
+_EOF
+test_expect_success "Domain Read Write Tests with 2 distributed files" '
+  mpirun -n 16 ../test_domain_io
+'
+
+cat <<_EOF > input.nml
+&test_domain_io_nml
+  layout = 3, 6
+  io_layout = 1, 2
+  mask_table = "mask_table"
+  filename = "test_io_mask.nc"
+/
+_EOF
+
+cat <<_EOF > mask_table
+1
+3,6
+1,1
+_EOF
+test_expect_success "Domain Read Write Tests with a ocean mask" '
+  mpirun -n 17 ../test_domain_io
+'
+
 test_done
