@@ -1056,15 +1056,15 @@ subroutine fms_diag_check_out_of_range_value(this, field_data, field_id, oor_mas
   field_var_type = this%FMS_diag_fields(field_id)%get_vartype()
 
   ! Copy field data to proper type variables
-  select type (ftype => field_data(1,1,1,1))
+  select type (field_data)
   type is (real(kind=r4_kind))
-    real_field = real(ftype, kind=r4_kind)
+    real_field = real(field_data, kind=r4_kind)
   type is (real(kind=r8_kind))
-    real_field = real(ftype, kind=r8_kind)
+    real_field = real(field_data, kind=r8_kind)
   type is (integer(kind=i4_kind))
-    int_field = int(ftype, kind=i4_kind)
+    int_field = int(field_data, kind=i4_kind)
   type is (integer(kind=i8_kind))
-    int_field = int(ftype, kind=i8_kind)
+    int_field = int(field_data, kind=i8_kind)
   class default
     call mpp_error( FATAL, err_module_name//' Invalid type')
   end select
@@ -1119,7 +1119,7 @@ subroutine fms_diag_check_out_of_range_value(this, field_data, field_id, oor_mas
   IF ( this%FMS_diag_fields(field_id)%has_data_RANGE() ) THEN
     IF ( ISSUE_OOR_WARNINGS .OR. OOR_WARNINGS_FATAL ) THEN
       if ((field_var_type .eq. r4) .or. (field_var_type .eq. r8)) then
-        WRITE (error_string, '("[",ES14.5E3,",",ES14.5E3,"]")') real_test(1:2) !real_data_range(1:2)
+        WRITE (error_string, '("[",ES14.5E3,",",ES14.5E3,"]")') real_data_range(1:2)
         WRITE (error_string2, '("(Min: ",ES14.5E3,", Max: ",ES14.5E3, ")")')&
           & MINVAL(real_field(fis:fie, fjs:fje, ks:ke, 1:1),MASK=oor_mask_4d(fis:fie, fjs:fje, ks:ke, 1:1)),&
           & MAXVAL(real_field(fis:fie, fjs:fje, ks:ke, 1:1),MASK=oor_mask_4d(fis:fie, fjs:fje, ks:ke, 1:1))
@@ -1161,7 +1161,7 @@ subroutine fms_diag_check_out_of_range_value(this, field_data, field_id, oor_mas
         END IF
       else
         if ((field_var_type .eq. i4) .or. (field_var_type .eq. i8)) then
-          WRITE (error_string, '("[",I14,",",I14,"]")') int_test(1:2) !int_data_range(1:2)
+          WRITE (error_string, '("[",I14,",",I14,"]")') int_data_range(1:2)
           WRITE (error_string2, '("(Min: ",I14,", Max: ",I14, ")")')&
             & MINVAL(int_field(fis:fie, fjs:fje, ks:ke, 1:1),MASK=oor_mask_4d(fis:fie, fjs:fje, ks:ke, 1:1)),&
             & MAXVAL(int_field(fis:fie, fjs:fje, ks:ke, 1:1),MASK=oor_mask_4d(fis:fie, fjs:fje, ks:ke, 1:1))
