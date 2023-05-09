@@ -1044,6 +1044,8 @@ subroutine fms_diag_check_out_of_range_value(this, field_data, field_id, oor_mas
   integer, allocatable :: int_field(:,:,:,:)
   logical, allocatable :: oor_mask_4d(:,:,:,:) !< Copy of the input out of range mask to remove incompatibility
                                                !! in ranks when masking with the input field data (4d)
+  integer :: int_test(2)
+  real :: real_test(2)
 
   err_module_name = 'fms_diag_object_mod:fms_diag_check_out_of_range_value'
 
@@ -1117,7 +1119,7 @@ subroutine fms_diag_check_out_of_range_value(this, field_data, field_id, oor_mas
   IF ( this%FMS_diag_fields(field_id)%has_data_RANGE() ) THEN
     IF ( ISSUE_OOR_WARNINGS .OR. OOR_WARNINGS_FATAL ) THEN
       if ((field_var_type .eq. r4) .or. (field_var_type .eq. r8)) then
-        WRITE (error_string, '("[",ES14.5E3,",",ES14.5E3,"]")') real_data_range(1:2)
+        WRITE (error_string, '("[",ES14.5E3,",",ES14.5E3,"]")') real_test(1:2) !real_data_range(1:2)
         WRITE (error_string2, '("(Min: ",ES14.5E3,", Max: ",ES14.5E3, ")")')&
           & MINVAL(real_field(fis:fie, fjs:fje, ks:ke, 1:1),MASK=oor_mask_4d(fis:fie, fjs:fje, ks:ke, 1:1)),&
           & MAXVAL(real_field(fis:fie, fjs:fje, ks:ke, 1:1),MASK=oor_mask_4d(fis:fie, fjs:fje, ks:ke, 1:1))
@@ -1159,7 +1161,7 @@ subroutine fms_diag_check_out_of_range_value(this, field_data, field_id, oor_mas
         END IF
       else
         if ((field_var_type .eq. i4) .or. (field_var_type .eq. i8)) then
-          WRITE (error_string, '("[",I14,",",I14,"]")') int_data_range(1:2)
+          WRITE (error_string, '("[",I14,",",I14,"]")') int_test(1:2) !int_data_range(1:2)
           WRITE (error_string2, '("(Min: ",I14,", Max: ",I14, ")")')&
             & MINVAL(int_field(fis:fie, fjs:fje, ks:ke, 1:1),MASK=oor_mask_4d(fis:fie, fjs:fje, ks:ke, 1:1)),&
             & MAXVAL(int_field(fis:fie, fjs:fje, ks:ke, 1:1),MASK=oor_mask_4d(fis:fie, fjs:fje, ks:ke, 1:1))
