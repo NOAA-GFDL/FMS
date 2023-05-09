@@ -1159,7 +1159,7 @@ subroutine fms_diag_check_out_of_range_value(this, field_data, field_id, oor_mas
         END IF
       else
         if (field_var_type .eq. i4 .or. field_var_type .eq. i8) then
-          WRITE (error_string, '("[",I14,",",I14,"]")') real_data_range
+          WRITE (error_string, '("[",I14,",",I14,"]")') int_data_range
           WRITE (error_string2, '("(Min: ",I14,", Max: ",I14, ")")')&
             & MINVAL(int_field(fis:fie, fjs:fje, ks:ke, 1:1),MASK=oor_mask_4d(fis:fie, fjs:fje, ks:ke, 1:1)),&
             & MAXVAL(int_field(fis:fie, fjs:fje, ks:ke, 1:1),MASK=oor_mask_4d(fis:fie, fjs:fje, ks:ke, 1:1))
