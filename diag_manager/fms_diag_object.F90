@@ -1044,8 +1044,6 @@ subroutine fms_diag_check_out_of_range_value(this, field_data, field_id, oor_mas
   integer, allocatable :: int_field(:,:,:,:)
   logical, allocatable :: oor_mask_4d(:,:,:,:) !< Copy of the input out of range mask to remove incompatibility
                                                !! in ranks when masking with the input field data (4d)
-  integer :: int_test(2)
-  real :: real_test(2)
 
   err_module_name = 'fms_diag_object_mod:fms_diag_check_out_of_range_value'
 
