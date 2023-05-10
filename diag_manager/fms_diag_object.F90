@@ -1033,8 +1033,8 @@ subroutine fms_diag_check_out_of_range_value(this, field_data, field_id, oor_mas
   integer, intent(in) :: fie, fje, ke !< End indices
 #ifdef use_yaml
   logical :: has_missvalue !< .true. if the field has missing value
-  real :: real_missing_value
-  integer :: int_missing_value
+  real, allocatable :: real_missing_value
+  integer, allocatable :: int_missing_value
   integer :: field_var_type !< Type of field data
   character(len=128) :: error_string, error_string2
   real, allocatable :: real_data_range(:)
