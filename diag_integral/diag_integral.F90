@@ -341,8 +341,6 @@ class(*),dimension(:,:), intent(in), optional :: area_in
          class default ; call error_mesg('diag_inetgral_mod::diag_integral_init', 'unknown area_in type', FATAL)
       end select
 
-
-
       sum_area_local = sum(area)
       sum_area = sum_area_local
       call mpp_sum (sum_area)
@@ -497,7 +495,6 @@ type (time_type), intent(in) :: Time
 !    see if integral output is desired at this time.
 !-------------------------------------------------------------------------------
       if ( diag_integral_alarm(Time) ) then
-
 !-------------------------------------------------------------------------------
 !    write the integrals by calling write_field_averages. upon return
 !    reset the alarm to the next diagnostics time.

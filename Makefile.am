@@ -34,43 +34,43 @@ endif
 
 # Make targets will be run in each subdirectory. Order is significant.
 SUBDIRS = \
-  platform \
-  tridiagonal \
-  mpp \
-  constants \
-  memutils \
-  string_utils \
-  fms2_io \
-  mosaic2 \
-  fms \
-  parser \
-  affinity \
-  mosaic \
-  time_manager \
-  axis_utils \
-  diag_manager \
-  drifters \
-  horiz_interp \
-  time_interp \
-  column_diagnostics \
-  block_control \
-  data_override \
-  astronomy \
-  field_manager \
-  coupler \
-  diag_integral \
-  monin_obukhov \
-  interpolator \
-  amip_interp \
-  exchange \
-  topography \
-  tracer_manager \
-  sat_vapor_pres \
-  random_numbers \
-  . \
-  libFMS \
-  test_fms \
-  ${DOCS}
+	platform \
+	tridiagonal \
+	mpp \
+	constants \
+	memutils \
+	string_utils \
+	fms2_io \
+	mosaic2 \
+	fms \
+	parser \
+	affinity \
+	mosaic \
+	time_manager \
+	axis_utils \
+	diag_manager \
+	drifters \
+	horiz_interp \
+	time_interp \
+	column_diagnostics \
+	block_control \
+	data_override \
+	astronomy \
+	field_manager \
+	coupler \
+	diag_integral \
+	monin_obukhov \
+	interpolator \
+	amip_interp \
+	exchange \
+	topography \
+	tracer_manager \
+	sat_vapor_pres \
+	random_numbers \
+	. \
+	libFMS \
+	test_fms \
+	${DOCS}
 
 include_HEADERS = include/file_version.h include/fms_platform.h
 
