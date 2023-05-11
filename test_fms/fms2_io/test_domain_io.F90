@@ -243,7 +243,7 @@ program test_domain_read
       call compare_var_data(mpp_chksum(var_data%var_i4(:,:,1,1,1)), mpp_chksum(ref_data%var_i4(:,:,1,1,1)), "var2_i4")
 
       call read_data(fileobj, trim(var_name)//"_i8", var_data%var_i8(:,:,1,1,1))
-      call compare_var_data(mpp_chksum(var_data%var_i4(:,:,1,1,1)), mpp_chksum(ref_data%var_i8(:,:,1,1,1)), "var2_i8")
+      call compare_var_data(mpp_chksum(var_data%var_i8(:,:,1,1,1)), mpp_chksum(ref_data%var_i8(:,:,1,1,1)), "var2_i8")
     case(3)
       call var_data_init(var_data)
       call read_data(fileobj, trim(var_name)//"_r4", var_data%var_r4(:,:,:,1,1))
@@ -256,7 +256,7 @@ program test_domain_read
       call compare_var_data(mpp_chksum(var_data%var_i4(:,:,:,1,1)), mpp_chksum(ref_data%var_i4(:,:,:,1,1)), "var3_i4")
 
       call read_data(fileobj, trim(var_name)//"_i8", var_data%var_i8(:,:,:,1,1))
-      call compare_var_data(mpp_chksum(var_data%var_i4(:,:,:,1,1)), mpp_chksum(ref_data%var_i8(:,:,:,1,1)), "var3_i8")
+      call compare_var_data(mpp_chksum(var_data%var_i8(:,:,:,1,1)), mpp_chksum(ref_data%var_i8(:,:,:,1,1)), "var3_i8")
     case(4)
       call var_data_init(var_data)
       call read_data(fileobj, trim(var_name)//"_r4", var_data%var_r4(:,:,:,:,1))
@@ -269,7 +269,7 @@ program test_domain_read
       call compare_var_data(mpp_chksum(var_data%var_i4(:,:,:,:,1)), mpp_chksum(ref_data%var_i4(:,:,:,:,1)), "var4_i4")
 
       call read_data(fileobj, trim(var_name)//"_i8", var_data%var_i8(:,:,:,:,1))
-      call compare_var_data(mpp_chksum(var_data%var_i4(:,:,:,:,1)), mpp_chksum(ref_data%var_i8(:,:,:,:,1)), "var4_i8")
+      call compare_var_data(mpp_chksum(var_data%var_i8(:,:,:,:,1)), mpp_chksum(ref_data%var_i8(:,:,:,:,1)), "var4_i8")
     case(5)
       call var_data_init(var_data)
       call read_data(fileobj, trim(var_name)//"_r4", var_data%var_r4(:,:,:,:,:))
@@ -282,7 +282,7 @@ program test_domain_read
       call compare_var_data(mpp_chksum(var_data%var_i4(:,:,:,:,:)), mpp_chksum(ref_data%var_i4(:,:,:,:,:)), "var5_i4")
 
       call read_data(fileobj, trim(var_name)//"_i8", var_data%var_i8(:,:,:,:,:))
-      call compare_var_data(mpp_chksum(var_data%var_i4(:,:,:,:,:)), mpp_chksum(ref_data%var_i8(:,:,:,:,:)), "var5_i8")
+      call compare_var_data(mpp_chksum(var_data%var_i8(:,:,:,:,:)), mpp_chksum(ref_data%var_i8(:,:,:,:,:)), "var5_i8")
     end select
 
   end subroutine read_data_wrapper
