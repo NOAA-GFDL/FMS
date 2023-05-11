@@ -44,7 +44,4 @@
 #undef  SET_AXIS_TIME_
 #define SET_AXIS_TIME_ set_axis_time_r4
 
-#undef  VERT_DIAG_INTEGRAL_
-#define VERT_DIAG_INTEGRAL_ vert_diag_integral_r4
-
 #include "diag_integral.inc"

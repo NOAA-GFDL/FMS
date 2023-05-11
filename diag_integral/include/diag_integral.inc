@@ -194,7 +194,7 @@ integer, optional, intent(in) :: js !< starting i,j indices over which summation
 !$OMP CRITICAL
       field_count (field) = field_count (field) +   &
                             size(data,1)*size(data,2)
-      data2 = real( sum(data,3), r8_kind)
+      data2 = sum(real(data,r8_kind),3)
       field_sum   (field) = field_sum   (field) +  &
                             sum (data2 * area(i1:i2,j1:j2))
 
@@ -289,7 +289,7 @@ integer, optional,  intent(in) :: js !< starting j indices over which summation 
 !$OMP CRITICAL
       field_count (field) = field_count (field) +   &
                             size(data,1)*size(data,2)
-      data2 = real( vert_diag_integral (data, wt), r8_kind )
+      data2 = vert_diag_integral (real(data,r8_kind), real(wt,r8_kind))
       field_sum(field) = field_sum   (field) +  &
                          sum (data2 * area(i1:i2,j1:j2))
 
@@ -465,50 +465,6 @@ integer, parameter :: lkind=FMS_DI_KIND_
       Time = set_time (sec, day)
 
 end function SET_AXIS_TIME_
-
-
-!###############################################################################
-!> @brief Function to perform a weighted integral in the vertical
-!!        direction of a 3d data field
-!!
-!! <b> Template: </b>
-!!
-!! @code{.f90}
-!! data2 = vert_diag_integral (data, wt)
-!! @endcode
-!!
-!! <b> Parameters: </b>
-!!
-!! @code{.f90}
-!! real, dimension (:,:,:),         intent(in) :: data, wt
-!! real, dimension (size(data,1),size(data,2)) :: data2
-!! @endcode
-!!
-!! @param [in] <data> integral field data arrays
-!! @param [in] <wt> integral field weighting functions
-!! @param [out] <data2>
-!! @return real array data2
-function VERT_DIAG_INTEGRAL_ (data, wt) result (data2)
-
-real(FMS_DI_KIND_), dimension (:,:,:),         intent(in) :: data !< integral field data arrays
-real(FMS_DI_KIND_), dimension (:,:,:),         intent(in) :: wt !< integral field weighting functions
-real(FMS_DI_KIND_), dimension (size(data,1),size(data,2)) :: data2
-
-!-------------------------------------------------------------------------------
-! local variables:
-!       wt2
-!-------------------------------------------------------------------------------
-      real(r8_kind), dimension(size(data,1),size(data,2)) :: wt2
-
-!-------------------------------------------------------------------------------
-      wt2 = sum(real(wt,r8_kind),3)
-      if (count(wt2 == 0._r8_kind) > 0)  then
-        call error_mesg ('diag_integral_mod',  &
-                             'vert sum of weights equals zero', FATAL)
-      endif
-      data2 = sum( real(data,r8_kind)*wt,3) / wt2
-
-end function VERT_DIAG_INTEGRAL_
 
 !> @}
 ! close documentation grouping

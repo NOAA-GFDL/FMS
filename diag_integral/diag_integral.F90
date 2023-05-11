@@ -112,11 +112,6 @@ interface set_axis_time
    module procedure set_axis_time_r8
 end interface set_axis_time
 
-interface vert_diag_integral
-   module procedure vert_diag_integral_r4
-   module procedure vert_diag_integral_r8
-end interface vert_diag_integral
-
 !> @addtogroup diag_integral_mod
 !> @{
 
@@ -990,6 +985,49 @@ logical                      :: answer
 
 end function diag_integral_alarm
 
+
+
+!###############################################################################
+!> @brief Function to perform a weighted integral in the vertical
+!!        direction of a 3d data field
+!!
+!! <b> Template: </b>
+!!
+!! @code{.f90}
+!! data2 = vert_diag_integral (data, wt)
+!! @endcode
+!!
+!! <b> Parameters: </b>
+!!
+!! @code{.f90}
+!! real, dimension (:,:,:),         intent(in) :: data, wt
+!! real, dimension (size(data,1),size(data,2)) :: data2
+!! @endcode
+!!
+!! @param [in] <data> integral field data arrays
+!! @param [in] <wt> integral field weighting functions
+!! @param [out] <data2>
+!! @return real array data2
+function vert_diag_integral (data, wt) result (data2)
+real(r8_kind), dimension (:,:,:),         intent(in) :: data !< integral field data arrays
+real(r8_kind), dimension (:,:,:),         intent(in) :: wt !< integral field weighting functions
+real(r8_kind), dimension (size(data,1),size(data,2)) :: data2
+
+!-------------------------------------------------------------------------------
+! local variables:
+!       wt2
+!-------------------------------------------------------------------------------
+      real, dimension(size(data,1),size(data,2)) :: wt2
+
+!-------------------------------------------------------------------------------
+      wt2 = sum(wt,3)
+      if (count(wt2 == 0._r8_kind) > 0)  then
+        call error_mesg ('diag_integral_mod',  &
+                             'vert sum of weights equals zero', FATAL)
+      endif
+      data2 = sum(data*wt,3) / wt2
+
+end function vert_diag_integral
 
 !> @brief Adds .ens_## to the diag_integral.out file name
 !! @return character array updated_file_name
