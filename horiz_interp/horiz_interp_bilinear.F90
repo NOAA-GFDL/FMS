@@ -109,7 +109,7 @@ contains
     endif
     if(allocated(Interp%i_lon)) deallocate(Interp%i_lon)
     if(allocated(Interp%j_lat)) deallocate(Interp%j_lat)
-    
+
     Interp%horizInterpReals4_type%is_allocated = .false.
     Interp%horizInterpReals8_type%is_allocated = .false.
 
