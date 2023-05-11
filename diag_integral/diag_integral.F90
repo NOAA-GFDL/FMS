@@ -357,7 +357,7 @@ class(*),dimension(:,:), intent(in), optional :: area_in
 !-------------------------------------------------------------------------------
       Zero_time = set_time (0,0)
       if (output_interval >= -0.01_r8_kind) then
-        Alarm_interval = set_axis_time (output_interval, time_units)
+         Alarm_interval = set_axis_time (output_interval, time_units)
         Next_alarm_time = Time + Alarm_interval
       else
         Alarm_interval = Zero_time
@@ -583,7 +583,7 @@ end subroutine diag_integral_end
 !!
 function set_axis_time (atime, units) result (Time)
 
-real,             intent(in) :: atime !< integral time stamp at the current time
+real(r8_kind),    intent(in) :: atime !< integral time stamp at the current time
 character(len=*), intent(in) :: units !< input units, not used
 type(time_type)  :: Time
 
@@ -959,10 +959,6 @@ end subroutine format_data_init
 !!
 !! <b> Template: </b>
 !!
-!! @code{.f90}
-!! atime = get_axis_time (Time, units)
-!! @endcode
-!! atime = get_axis_time (Time, units)
 !! @code{.f90}
 !! atime = get_axis_time (Time, units)
 !! @endcode
