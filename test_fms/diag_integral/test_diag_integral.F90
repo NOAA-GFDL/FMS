@@ -11,9 +11,10 @@ program test_diag_integral
 
   implicit none
 
-  integer, parameter :: nxy=20 !< supergrid
+  integer, parameter :: nxy=20
   integer, parameter :: nxyp=nxy+1
   real(r8_kind) :: lat(nxyp,nxyp), lon(nxyp,nxyp), area(nxy,nxy)
+  !> test arrays
   real(TEST_DI_KIND_) :: immadeup2(nxy,nxy), immadeup3(nxy,nxy,nxy), weight(nxy,nxy,nxy)
 
   type(FmsNetcdfFile_t):: fileobj        !< Fileobj for the files written by the test
@@ -31,7 +32,7 @@ program test_diag_integral
   integer, parameter :: lkind=TEST_DI_KIND_
 
   call fms_init
-  call write_netcdf_file
+  call write_netcdf_file !< initializes arrays
 
   !> set time; made up time
   Time_init=set_time(0,1,0)
@@ -144,7 +145,6 @@ contains
           tmp=0.0_r8_kind
           do k=1, nxy
              tmp=tmp+real(immadeup3(i,j,k),r8_kind)
-             !tmp=tmp+immadeup3(i,j,k)
           end do
           answer3 = answer3 + tmp*area(i,j)
        end do
@@ -180,7 +180,7 @@ contains
           wght=0.0_r8_kind
           do k=1, nxy
              wght=wght+real(weight(i,j,k),r8_kind)
-             tmp=tmp+real(tmp3(i,j,k),r8_kind)
+             tmp=tmp+tmp3(i,j,k)
           end do
           answer3 = answer3 + tmp*area(i,j)/wght
        end do
