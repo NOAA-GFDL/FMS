@@ -21,17 +21,14 @@ program test_diag_integral
   character(100), parameter :: ncfile='INPUT/sample.tile1.nc'
   character(9), parameter :: field_name2='immadeup2'
   character(9), parameter :: field_name3='immadeup3'
-  character(8), parameter :: std_digits   = 'e23.15e3' !'e13.6e2' !
+  character(8), parameter :: std_digits   = 'e23.15e3' !'e13.6e2'
 
   type(time_type) :: Time_init, Time !< current time
 
-  !testing
+  !testing and generating answers
   integer :: i, j, k
-  real(TEST_DI_KIND_) :: tmp
-  real(r8_kind) :: answer2, answer3, area_sum
-  real(r8_kind) :: readtime, field_avg2, field_avg3
-  character(100) :: iline1, iline2, iline3, iline4
-
+  real(r8_kind) :: area_sum, itime, field_avg2, field_avg3
+  integer, parameter :: lkind=TEST_DI_KIND_
 
   call fms_init
   call write_netcdf_file
@@ -42,19 +39,12 @@ program test_diag_integral
 
   call test_diag_integral_init
   call test_diag_integral_field_init
-  call test_sum_diag_integral_field
 
-  Time=set_time(0,3,5)
+  call test_call_diag_integral_field
   call diag_integral_end(Time)
   call fms_end
 
-  !> read in computed values
-  open(unit=100,file='diag_integral.out')
-  read(100,*) iline1, iline2, iline3, iline4
-  read(100,*) readtime, field_avg2, field_avg3
-  close(100)
-
-  !compute answers
+  !> compute total area
   area_sum=0.0_r8_kind
   do j=1, nxy
      do i=1, nxy
@@ -62,29 +52,9 @@ program test_diag_integral
      end do
   end do
 
-  answer2=0.0_r8_kind
-  do j=1, nxy
-     do i=1, nxy
-        answer2 = answer2 + real(immadeup2(i,j),r8_kind)*area(i,j)
-     end do
-  end do
-  answer2=answer2/area_sum
-  call check_answers(answer2, field_avg2, 'sum_diag_integral_field failed for 2d')
-
-
-  answer3=0.0_r8_kind
-  do j=1, nxy
-     do i=1, nxy
-        tmp=0.0
-        do k=1, nxy
-           !tmp=tmp+real(immadeup3(i,j,k),r8_kind)
-           tmp=tmp+immadeup3(i,j,k)
-        end do
-        answer3 = answer3 + real(tmp,r8_kind)*area(i,j)
-     end do
-  end do
-  answer3=answer3/area_sum
-  call check_answers(answer3,field_avg3,'sum_diag_integral_field failed for 3d')
+  call read_diag_integral_file
+  call test_sum_diag_integral_field_2d
+  call test_sum_diag_integral_field_3d
 
 contains
   !-------------------------------------
@@ -114,7 +84,7 @@ contains
   end subroutine test_diag_integral_field_init
   !-------------------------------------
   !-------------------------------------
-  subroutine test_sum_diag_integral_field
+  subroutine test_call_diag_integral_field
 
     implicit none
 
@@ -123,20 +93,83 @@ contains
     call sum_diag_integral_field(field_name3, immadeup3)
     call diag_integral_output(Time)
 
-  end subroutine test_sum_diag_integral_field
+  end subroutine test_call_diag_integral_field
+  !-------------------------------------
+  !-------------------------------------
+  subroutine test_sum_diag_integral_field_2d
+
+    implicit none
+
+    real(r8_kind) :: answer2
+
+    !> compute answer for 2d
+    answer2=0.0_r8_kind
+    do j=1, nxy
+       do i=1, nxy
+          answer2 = answer2 + real(immadeup2(i,j),r8_kind)*area(i,j)
+       end do
+    end do
+
+    answer2=answer2/area_sum
+
+    call check_answers(answer2, field_avg2, 'sum_diag_integral_field failed for 2d')
+
+  end subroutine test_sum_diag_integral_field_2d
+  !-------------------------------------
+  !-------------------------------------
+  subroutine test_sum_diag_integral_field_3d
+
+    implicit none
+
+    real(r8_kind) :: answer3
+    real(TEST_DI_KIND_) tmp
+
+    !> compute answer for 3d
+    answer3=0.0_r8_kind
+    do j=1, nxy
+       do i=1, nxy
+          tmp=0.0_lkind
+          do k=1, nxy
+             !tmp=tmp+real(immadeup3(i,j,k),r8_kind)
+             tmp=tmp+immadeup3(i,j,k)
+          end do
+          answer3 = answer3 + real(tmp,r8_kind)*area(i,j)
+       end do
+    end do
+
+    answer3=answer3/area_sum
+    call check_answers(answer3,field_avg3,'sum_diag_integral_field failed for 3d')
+
+  end subroutine test_sum_diag_integral_field_3d
+  !-------------------------------------
+  !-------------------------------------
+  subroutine read_diag_integral_file
+
+    character(17), parameter :: di_file='diag_integral.out'
+    integer, parameter  :: iunit=100
+
+    character(100) :: iline1, iline2, iline3, iline4
+
+    !> read in computed values
+    open(unit=iunit,file=trim(di_file))
+    read(iunit,*) iline1, iline2, iline3, iline4
+    read(iunit,*) itime, field_avg2, field_avg3
+    close(iunit)
+
+  end subroutine read_diag_integral_file
   !-------------------------------------
   !-------------------------------------
   subroutine check_answers(answer, outresult, whoami)
 
     implicit none
     real(r8_kind), intent(in) :: answer, outresult
-    character(*), intent(in) :: whoami
+    character(len=*), intent(in) :: whoami
 
-    real, parameter :: tol=1.e-3
+    real(r8_kind), parameter :: tol=1.e-3_r8_kind
 
     if( abs(answer-outresult)>tol ) then
        write(*,*) 'expected', answer, 'but computed',  outresult
-       call mpp_error(FATAL,whoami)
+       call mpp_error(FATAL,'ERROR: '//trim(whoami))
     end if
 
   end subroutine check_answers
