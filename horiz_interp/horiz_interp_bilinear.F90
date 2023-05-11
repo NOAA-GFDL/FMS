@@ -100,17 +100,18 @@ contains
                                    !! have allocated arrays. The returned variable will contain
                                    !! deallocated arrays
 
-    if( allocated(Interp%horizInterpReals4_type)) then
+    if( Interp%horizInterpReals4_type%is_allocated) then
       if(allocated(Interp%horizInterpReals4_type%wti))   deallocate(Interp%horizInterpReals4_type%wti)
       if(allocated(Interp%horizInterpReals4_type%wtj))   deallocate(Interp%horizInterpReals4_type%wtj)
-      deallocate(Interp%horizInterpReals4_type)
-    else if (allocated(Interp%horizInterpReals8_type)) then
+    else if (Interp%horizInterpReals8_type%is_allocated) then
       if(allocated(Interp%horizInterpReals8_type%wti))   deallocate(Interp%horizInterpReals8_type%wti)
       if(allocated(Interp%horizInterpReals8_type%wtj))   deallocate(Interp%horizInterpReals8_type%wtj)
-      deallocate(Interp%horizInterpReals8_type)
     endif
     if(allocated(Interp%i_lon)) deallocate(Interp%i_lon)
     if(allocated(Interp%j_lat)) deallocate(Interp%j_lat)
+    
+    Interp%horizInterpReals4_type%is_allocated = .false.
+    Interp%horizInterpReals8_type%is_allocated = .false.
 
   end subroutine horiz_interp_bilinear_del
 

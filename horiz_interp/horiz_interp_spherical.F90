@@ -133,16 +133,17 @@ contains
                                            !! must have allocated arrays. The returned variable will
                                            !! contain deallocated arrays.
 
-    if(allocated(Interp%horizInterpReals4_type)) then
+    if(Interp%horizInterpReals4_type%is_allocated) then
       if(allocated(Interp%horizInterpReals4_type%src_dist)) deallocate(Interp%horizInterpReals4_type%src_dist)
-      deallocate(Interp%horizInterpReals4_type)
-    else if (allocated(Interp%horizInterpReals8_type)) then
+    else if (Interp%horizInterpReals8_type%is_allocated) then
       if(allocated(Interp%horizInterpReals8_type%src_dist)) deallocate(Interp%horizInterpReals8_type%src_dist)
-      deallocate(Interp%horizInterpReals8_type)
     endif
     if(allocated(Interp%num_found)) deallocate(Interp%num_found)
     if(allocated(Interp%i_lon))     deallocate(Interp%i_lon)
     if(allocated(Interp%j_lat))     deallocate(Interp%j_lat)
+
+    Interp%horizInterpReals4_type%is_allocated = .false.
+    Interp%horizInterpReals8_type%is_allocated = .false.
 
   end subroutine horiz_interp_spherical_del
 
