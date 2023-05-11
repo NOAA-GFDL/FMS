@@ -41,7 +41,4 @@
 #undef  SUM_FIELD_2D_HEMI_
 #define SUM_FIELD_2D_HEMI_ sum_field_2d_hemi_r8
 
-#undef  SET_AXIS_TIME_
-#define SET_AXIS_TIME_ set_axis_time_r8
-
 #include "diag_integral.inc"

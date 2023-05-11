@@ -107,11 +107,6 @@ interface sum_diag_integral_field
    module procedure sum_field_wght_3d_r4, sum_field_wght_3d_r8
 end interface sum_diag_integral_field
 
-interface set_axis_time
-   module procedure set_axis_time_r4
-   module procedure set_axis_time_r8
-end interface set_axis_time
-
 !> @addtogroup diag_integral_mod
 !> @{
 
@@ -563,6 +558,64 @@ end subroutine diag_integral_end
 !
 !###############################################################################
 
+
+
+!###############################################################################
+!> @brief Function to convert input time to a time_type
+!!
+!! <b> Template: </b>
+!!
+!! @code{.f90}
+!! time = set_axis_time (atime, units)
+!! @endcode
+!!
+!! <b> Parameters: </b>
+!!
+!! @code{.f90}
+!! real,             intent(in) :: atime
+!! character(len=*), intent(in) :: units
+!! type(time_type)  :: Time
+!! @endcode
+!!
+!! @param [in] <atime> integral time stamp at the current time
+!! @param [in] <units> input units, not used
+!! @param [out] <Time>
+!!
+function set_axis_time (atime, units) result (Time)
+
+real,             intent(in) :: atime !< integral time stamp at the current time
+character(len=*), intent(in) :: units !< input units, not used
+type(time_type)  :: Time
+
+!-------------------------------------------------------------------------------
+! local variables:
+!-------------------------------------------------------------------------------
+      integer          :: sec     !< seconds corresponding to the input
+                                  !! variable atime
+      integer          :: day = 0 !< day component of time_type variable
+
+!-------------------------------------------------------------------------------
+!    convert the input time to seconds, regardless of input units.
+!-------------------------------------------------------------------------------
+      if (units(1:3) == 'sec') then
+         sec = int(atime + 0.5)
+      else if (units(1:3) == 'min') then
+         sec = int(atime*60. + 0.5)
+      else if (units(1:3) == 'hou') then
+         sec = int(atime*3600. + 0.5)
+      else if (units(1:3) == 'day') then
+         sec = int(atime*86400. + 0.5)
+      else
+         call error_mesg('diag_integral_mod', &
+                         'Invalid units sent to set_axis_time', FATAL)
+      endif
+
+!-------------------------------------------------------------------------------
+!    convert the time in seconds to a time_type variable.
+!-------------------------------------------------------------------------------
+      Time = set_time (sec, day)
+
+end function set_axis_time
 
 
 
