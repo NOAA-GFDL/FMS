@@ -14,7 +14,7 @@ program test_diag_integral
   integer, parameter :: nxy=20 !< supergrid
   integer, parameter :: nxyp=nxy+1
   real(r8_kind) :: lat(nxyp,nxyp), lon(nxyp,nxyp), area(nxy,nxy)
-  real(TEST_DI_KIND_) :: immadeup2(nxy,nxy), immadeup3(nxy,nxy,nxy)
+  real(TEST_DI_KIND_) :: immadeup2(nxy,nxy), immadeup3(nxy,nxy,nxy), weight(nxy,nxy,nxy)
 
   type(FmsNetcdfFile_t):: fileobj        !< Fileobj for the files written by the test
 
@@ -27,7 +27,7 @@ program test_diag_integral
 
   !testing and generating answers
   integer :: i, j, k
-  real(r8_kind) :: area_sum, itime, field_avg2, field_avg3
+  real(r8_kind) :: area_sum, itime, field_avg2, field_avg3, field_wght_avg3
   integer, parameter :: lkind=TEST_DI_KIND_
 
   call fms_init
@@ -41,6 +41,7 @@ program test_diag_integral
   call test_diag_integral_field_init
 
   call test_call_diag_integral_field
+  call test_call_sum_diag_integral_field
   call diag_integral_end(Time)
   call fms_end
 
@@ -55,6 +56,7 @@ program test_diag_integral
   call read_diag_integral_file
   call test_sum_diag_integral_field_2d
   call test_sum_diag_integral_field_3d
+  call test_sum_field_wght_3d
 
 contains
   !-------------------------------------
@@ -96,6 +98,18 @@ contains
   end subroutine test_call_diag_integral_field
   !-------------------------------------
   !-------------------------------------
+  subroutine test_call_sum_diag_integral_field
+
+    implicit none
+
+    Time=set_time(0,4,0)
+    call sum_diag_integral_field(field_name2, immadeup2)
+    call sum_diag_integral_field(field_name3, immadeup3, weight)
+    call diag_integral_output(Time)
+
+  end subroutine test_call_sum_diag_integral_field
+  !-------------------------------------
+  !-------------------------------------
   subroutine test_sum_diag_integral_field_2d
 
     implicit none
@@ -121,19 +135,18 @@ contains
 
     implicit none
 
-    real(r8_kind) :: answer3
-    real(TEST_DI_KIND_) tmp
+    real(r8_kind) :: answer3, tmp
 
     !> compute answer for 3d
     answer3=0.0_r8_kind
     do j=1, nxy
        do i=1, nxy
-          tmp=0.0_lkind
+          tmp=0.0_r8_kind
           do k=1, nxy
-             !tmp=tmp+real(immadeup3(i,j,k),r8_kind)
-             tmp=tmp+immadeup3(i,j,k)
+             tmp=tmp+real(immadeup3(i,j,k),r8_kind)
+             !tmp=tmp+immadeup3(i,j,k)
           end do
-          answer3 = answer3 + real(tmp,r8_kind)*area(i,j)
+          answer3 = answer3 + tmp*area(i,j)
        end do
     end do
 
@@ -141,6 +154,42 @@ contains
     call check_answers(answer3,field_avg3,'sum_diag_integral_field failed for 3d')
 
   end subroutine test_sum_diag_integral_field_3d
+  !-------------------------------------
+  !-------------------------------------
+  subroutine test_sum_field_wght_3d
+
+    implicit none
+
+    real(r8_kind) :: tmp3(nxy,nxy,nxy)
+    real(r8_kind) :: answer3, tmp, wght
+
+    !> adding onto it with weights
+    tmp3=0.0_r8_kind
+    do k=1, nxy
+       do j=1, nxy
+          do i=1, nxy
+             tmp3(i,j,k)=real(immadeup3(i,j,k),r8_kind)*real(weight(i,j,k),r8_kind)
+          end do
+       end do
+    end do
+
+    answer3=0.0_r8_kind
+    do j=1, nxy
+       do i=1, nxy
+          tmp=0.0_r8_kind
+          wght=0.0_r8_kind
+          do k=1, nxy
+             wght=wght+real(weight(i,j,k),r8_kind)
+             tmp=tmp+real(tmp3(i,j,k),r8_kind)
+          end do
+          answer3 = answer3 + tmp*area(i,j)/wght
+       end do
+    end do
+
+    answer3 = answer3/area_sum
+    call check_answers(answer3,field_wght_avg3,'sum_diag_field_wght failed for 3d')
+
+  end subroutine test_sum_field_wght_3d
   !-------------------------------------
   !-------------------------------------
   subroutine read_diag_integral_file
@@ -154,6 +203,8 @@ contains
     open(unit=iunit,file=trim(di_file))
     read(iunit,*) iline1, iline2, iline3, iline4
     read(iunit,*) itime, field_avg2, field_avg3
+    read(iunit,*) iline1, iline2, iline3, iline4
+    read(iunit,*) iline1, field_avg2, field_wght_avg3
     close(iunit)
 
   end subroutine read_diag_integral_file
@@ -168,6 +219,7 @@ contains
     real(r8_kind), parameter :: tol=1.e-3_r8_kind
 
     if( abs(answer-outresult)>tol ) then
+       write(*,*) '*******************************************'
        write(*,*) 'expected', answer, 'but computed',  outresult
        call mpp_error(FATAL,'ERROR: '//trim(whoami))
     end if
@@ -201,14 +253,15 @@ contains
 
     do j=1, nxy
        do i=1, nxy
-          immadeup2(i,j)=100.0_r8_kind*real(j-1,r8_kind)+real(i,r8_kind)*PI
+          immadeup2(i,j)=100.0_lkind*real(j-1,lkind)+real(i,lkind)*real(PI,lkind)
        end do
     end do
 
     do k=1, nxy
        do j=1, nxy
           do i=1, nxy
-             immadeup3(i,j,k)=real(k-1,r8_kind)*PI + 150_r8_kind*real(j-1,r8_kind) + real(i,r8_kind)*PI
+             immadeup3(i,j,k)=real(k-1,lkind) + 150_lkind*real(j-1,lkind) + real(i,lkind)*real(PI,lkind)
+             weight(i,j,k)=real(i*k, lkind)/real(j,lkind)*real(PI,lkind)
           end do
        end do
     end do
