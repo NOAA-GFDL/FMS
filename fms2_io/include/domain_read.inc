@@ -251,45 +251,48 @@ subroutine domain_read_3d(fileobj, variable_name, vdata, unlim_dim_level, &
   type(FmsNetcdfDomainFile_t), intent(in) :: fileobj !< File object.
   character(len=*), intent(in) :: variable_name !< Variable name.
   class(*), dimension(:,:,:), intent(inout) :: vdata !< Data that will
-                                                     !! be written out
-                                                     !! to the netcdf file.
+                                                   !! be written out
+                                                   !! to the netcdf file.
   integer, intent(in), optional :: unlim_dim_level !< Level for the unlimited
                                                    !! dimension.
-  integer, dimension(3), intent(in), optional :: corner !< Array of starting
+  integer, dimension(2), intent(in), optional :: corner !< Array of starting
                                                         !! indices describing
                                                         !! where the data
                                                         !! will be written to.
-  integer, dimension(3), intent(in), optional :: edge_lengths !< The number of
+  integer, dimension(2), intent(in), optional :: edge_lengths !< The number of
                                                               !! elements that
                                                               !! will be written
                                                               !! in each dimension.
 
-  integer :: xdim_index
-  integer :: ydim_index
-  type(domain2d), pointer :: io_domain
-  integer :: xpos
-  integer :: ypos
-  integer :: i
-  integer :: isd
-  integer :: isc
-  integer :: xc_size
-  integer :: jsd
-  integer :: jsc
-  integer :: yc_size
-  integer, dimension(:), allocatable :: pe_isc
-  integer, dimension(:), allocatable :: pe_icsize
-  integer, dimension(:), allocatable :: pe_jsc
-  integer, dimension(:), allocatable :: pe_jcsize
-  integer, dimension(3) :: c
-  integer, dimension(3) :: e
-  integer(kind=i4_kind), dimension(:,:,:), allocatable :: buf_i4_kind
-  integer(kind=i8_kind), dimension(:,:,:), allocatable :: buf_i8_kind
-  real(kind=r4_kind), dimension(:,:,:), allocatable :: buf_r4_kind
-  real(kind=r8_kind), dimension(:,:,:), allocatable :: buf_r8_kind
+  integer :: xdim_index !< The index of the variable that is the x dimension
+  integer :: ydim_index !< The index of the variable that is the y dimension
+  type(domain2d), pointer :: io_domain !< poitner to the io_domain
+  integer :: xpos !< The position of the x axis
+  integer :: ypos !< The position of the y axis
+  integer :: i !< For do loops
+  integer :: isd !< The starting x position of the data io_domain
+  integer :: isc !< The starting y position of the data io_domain
+  integer :: xc_size !< The size of the x compute io_domain
+  integer :: yc_size !< The size of the y compute io_domain
+  integer :: jsd !< The ending x position of the data io_domain
+  integer :: jsc !< The ending y position of the data io_domain
+  integer, dimension(3) :: c !< The corners of the data you want
+  integer, dimension(3) :: e !< The number of points (edges) you want
+  integer(kind=i4_kind), dimension(:,:,:), allocatable :: buf_i4_kind_pe
+  integer(kind=i8_kind), dimension(:,:,:), allocatable :: buf_i8_kind_pe
+  real(kind=r4_kind), dimension(:,:,:), allocatable :: buf_r4_kind_pe
+  real(kind=r8_kind), dimension(:,:,:), allocatable :: buf_r8_kind_pe
+  integer(kind=i4_kind), dimension(:,:,:), target, allocatable :: buf_i4_kind
+  integer(kind=i8_kind), dimension(:,:,:), target, allocatable :: buf_i8_kind
+  real(kind=r4_kind), dimension(:,:,:), target, allocatable :: buf_r4_kind
+  real(kind=r8_kind), dimension(:,:,:), target, allocatable :: buf_r8_kind
   logical :: buffer_includes_halos
-  integer :: xgmin !< Starting x index of global io domain
-  integer :: ygmin !< Starting y index of global io domain
+  integer :: xgbegin !< Starting x index of global io domain
+  integer :: xgsize  !< Ending x index of global io domain
+  integer :: ygbegin !< Starting y index of global io domain
+  integer :: ygszie   !< Ending y index of global io domain
 
+  write(mpp_pe()+100, *) "I am reading the data: ", trim(variable_name)
   if (.not. is_variable_domain_decomposed(fileobj, variable_name, .true., &
                                           xdim_index, ydim_index, xpos, ypos)) then
     call netcdf_read_data(fileobj, variable_name, vdata, &
@@ -304,160 +307,108 @@ subroutine domain_read_3d(fileobj, variable_name, vdata, unlim_dim_level, &
   c(:) = 1
   e(:) = shape(vdata)
 
+  call mpp_get_global_domain(io_domain, xbegin=xgbegin, xsize=xgsize, position=xpos)
+  call mpp_get_global_domain(io_domain, ybegin=ygbegin, ysize=ygszie, position=ypos)
+
   !I/O root reads in the data and scatters it.
   if (fileobj%is_root) then
-    allocate(pe_isc(size(fileobj%pelist)))
-    allocate(pe_icsize(size(fileobj%pelist)))
-    allocate(pe_jsc(size(fileobj%pelist)))
-    allocate(pe_jcsize(size(fileobj%pelist)))
-    call mpp_get_compute_domains(io_domain, xbegin=pe_isc, xsize=pe_icsize, position=xpos)
-    call mpp_get_compute_domains(io_domain, ybegin=pe_jsc, ysize=pe_jcsize, position=ypos)
-    call mpp_get_global_domain(io_domain, xbegin=xgmin, position=xpos)
-    call mpp_get_global_domain(io_domain, ybegin=ygmin, position=ypos)
-    do i = 1, size(fileobj%pelist)
-      c(xdim_index) = pe_isc(i)
-      c(ydim_index) = pe_jsc(i)
-      if (fileobj%adjust_indices) then
-        c(xdim_index) = c(xdim_index) - xgmin + 1
-        c(ydim_index) = c(ydim_index) - ygmin + 1
-      endif
-      e(xdim_index) = pe_icsize(i)
-      e(ydim_index) = pe_jcsize(i)
-      select type(vdata)
-        type is (integer(kind=i4_kind))
-          !Read in the data for fileobj%pelist(i)'s portion of the compute domain.
-          call allocate_array(buf_i4_kind, e)
-          call netcdf_read_data(fileobj, variable_name, buf_i4_kind, &
-                                unlim_dim_level=unlim_dim_level, &
-                                corner=c, edge_lengths=e, broadcast=.false.)
-          if (i .eq. 1) then
-            !Root rank stores data directly.
-            if (buffer_includes_halos) then
-              !Adjust if the input buffer has room for halos.
-              c(xdim_index) = isc - isd + 1
-              c(ydim_index) = jsc - jsd + 1
-            else
-              c(xdim_index) = 1
-              c(ydim_index) = 1
-            endif
-            call put_array_section(buf_i4_kind, vdata, c, e)
-          else
-            !Send data to non-root ranks.
-            call mpp_send(buf_i4_kind, size(buf_i4_kind), fileobj%pelist(i))
-            call mpp_sync_self(check=EVENT_SEND)
-          endif
-          deallocate(buf_i4_kind)
-        type is (integer(kind=i8_kind))
-          !Read in the data for fileobj%pelist(i)'s portion of the compute domain.
-          call allocate_array(buf_i8_kind, e)
-          call netcdf_read_data(fileobj, variable_name, buf_i8_kind, &
-                                unlim_dim_level=unlim_dim_level, &
-                                corner=c, edge_lengths=e, broadcast=.false.)
-          if (i .eq. 1) then
-            !Root rank stores data directly.
-            if (buffer_includes_halos) then
-              !Adjust if the input buffer has room for halos.
-              c(xdim_index) = isc - isd + 1
-              c(ydim_index) = jsc - jsd + 1
-            else
-              c(xdim_index) = 1
-              c(ydim_index) = 1
-            endif
-            call put_array_section(buf_i8_kind, vdata, c, e)
-          else
-            !Send data to non-root ranks.
-            call mpp_send(buf_i8_kind, size(buf_i8_kind), fileobj%pelist(i))
-            call mpp_sync_self(check=EVENT_SEND)
-          endif
-          deallocate(buf_i8_kind)
-        type is (real(kind=r4_kind))
-          !Read in the data for fileobj%pelist(i)'s portion of the compute domain.
-          call allocate_array(buf_r4_kind, e)
-          call netcdf_read_data(fileobj, variable_name, buf_r4_kind, &
-                                unlim_dim_level=unlim_dim_level, &
-                                corner=c, edge_lengths=e, broadcast=.false.)
-          if (i .eq. 1) then
-            !Root rank stores data directly.
-            if (buffer_includes_halos) then
-              !Adjust if the input buffer has room for halos.
-              c(xdim_index) = isc - isd + 1
-              c(ydim_index) = jsc - jsd + 1
-            else
-              c(xdim_index) = 1
-              c(ydim_index) = 1
-            endif
-            call put_array_section(buf_r4_kind, vdata, c, e)
-          else
-            !Send data to non-root ranks.
-            call mpp_send(buf_r4_kind, size(buf_r4_kind), fileobj%pelist(i))
-            call mpp_sync_self(check=EVENT_SEND)
-          endif
-          deallocate(buf_r4_kind)
-        type is (real(kind=r8_kind))
-          !Read in the data for fileobj%pelist(i)'s portion of the compute domain.
-          call allocate_array(buf_r8_kind, e)
-          call netcdf_read_data(fileobj, variable_name, buf_r8_kind, &
-                                unlim_dim_level=unlim_dim_level, &
-                                corner=c, edge_lengths=e, broadcast=.false.)
-          if (i .eq. 1) then
-            !Root rank stores data directly.
-            if (buffer_includes_halos) then
-              !Adjust if the input buffer has room for halos.
-              c(xdim_index) = isc - isd + 1
-              c(ydim_index) = jsc - jsd + 1
-            else
-              c(xdim_index) = 1
-              c(ydim_index) = 1
-            endif
-            call put_array_section(buf_r8_kind, vdata, c, e)
-          else
-            !Send data to non-root ranks.
-            call mpp_send(buf_r8_kind, size(buf_r8_kind), fileobj%pelist(i))
-            call mpp_sync_self(check=EVENT_SEND)
-          endif
-          deallocate(buf_r8_kind)
-        class default
-          call error("unsupported variable type: domain_read_3d: file: "//trim(fileobj%path)//" variable:"// &
-                   & trim(variable_name))
-      end select
-    enddo
-    deallocate(pe_isc)
-    deallocate(pe_icsize)
-    deallocate(pe_jsc)
-    deallocate(pe_jcsize)
-  else
-    if (buffer_includes_halos) then
-      c(xdim_index) = isc - isd + 1
-      c(ydim_index) = jsc - jsd + 1
+
+    if (fileobj%adjust_indices) then
+      !< If the file is distributed, the file only contains the io global domain
+      c(xdim_index) = 1
+      c(ydim_index) = 1
+    else
+      !< If the file is not distributed read, the file contains the global domain,
+      !! so you only need to read the global io domain
+      c(xdim_index) = xgbegin
+      c(ydim_index) = ygbegin
     endif
-    e(xdim_index) = xc_size
-    e(ydim_index) = yc_size
+
+    e(xdim_index) = xgsize
+    e(ydim_index) = ygszie
+
+    !Read in the global io domain
     select type(vdata)
       type is (integer(kind=i4_kind))
         call allocate_array(buf_i4_kind, e)
-        call mpp_recv(buf_i4_kind, size(buf_i4_kind), fileobj%io_root, block=.true.)
-        call put_array_section(buf_i4_kind, vdata, c, e)
-        deallocate(buf_i4_kind)
+        call netcdf_read_data(fileobj, variable_name, buf_i4_kind, &
+                              unlim_dim_level=unlim_dim_level, &
+                              corner=c, edge_lengths=e, broadcast=.false.)
       type is (integer(kind=i8_kind))
         call allocate_array(buf_i8_kind, e)
-        call mpp_recv(buf_i8_kind, size(buf_i8_kind), fileobj%io_root, block=.true.)
-        call put_array_section(buf_i8_kind, vdata, c, e)
-        deallocate(buf_i8_kind)
+        call netcdf_read_data(fileobj, variable_name, buf_i8_kind, &
+                              unlim_dim_level=unlim_dim_level, &
+                              corner=c, edge_lengths=e, broadcast=.false.)
       type is (real(kind=r4_kind))
         call allocate_array(buf_r4_kind, e)
-        call mpp_recv(buf_r4_kind, size(buf_r4_kind), fileobj%io_root, block=.true.)
-        call put_array_section(buf_r4_kind, vdata, c, e)
-        deallocate(buf_r4_kind)
+        call netcdf_read_data(fileobj, variable_name, buf_r4_kind, &
+                              unlim_dim_level=unlim_dim_level, &
+                              corner=c, edge_lengths=e, broadcast=.false.)
       type is (real(kind=r8_kind))
         call allocate_array(buf_r8_kind, e)
-        call mpp_recv(buf_r8_kind, size(buf_r8_kind), fileobj%io_root, block=.true.)
-        call put_array_section(buf_r8_kind, vdata, c, e)
-        deallocate(buf_r8_kind)
+        call netcdf_read_data(fileobj, variable_name, buf_r8_kind, &
+                              unlim_dim_level=unlim_dim_level, &
+                              corner=c, edge_lengths=e, broadcast=.false.)
       class default
-        call error("unsupported variable type: domain_read_3d: file: "//trim(fileobj%path)//" variable:"// &
-                 & trim(variable_name))
+        call error("unsupported variable type: domain_read_2d: file: "//trim(fileobj%path)//" variable:"// &
+                  & trim(variable_name))
     end select
+
+    write(mpp_pe()+100, *) "I am read the data: ", trim(variable_name)
   endif
+
+  c = 1
+  e = shape(vdata)
+
+  if (buffer_includes_halos) then
+    !Adjust if the input buffer has room for halos.
+    c(xdim_index) = isc - isd + 1
+    c(ydim_index) = jsc - jsd + 1
+  else
+    c(xdim_index) = 1
+    c(ydim_index) = 1
+  endif
+
+  e(xdim_index) = xc_size
+  e(ydim_index) = yc_size
+
+  write(mpp_pe()+100, *) "I am scattering the data: ", trim(variable_name)
+  select type(vdata)
+  type is (integer(kind=i4_kind))
+    call allocate_array(buf_i4_kind_pe, e)
+    call mpp_scatter(isc-xgbegin+1, isc+xc_size-xgbegin, jsc-ygbegin+1, jsc+yc_size-ygbegin, e(3), fileobj%pelist, &
+                     buf_i4_kind_pe, buf_i4_kind, fileobj%is_root)
+    call put_array_section(buf_i4_kind_pe, vdata, c, e)
+    deallocate(buf_i4_kind_pe)
+  type is (integer(kind=i8_kind))
+    call allocate_array(buf_i8_kind_pe, e)
+    call mpp_scatter(isc-xgbegin+1, isc+xc_size-xgbegin, jsc-ygbegin+1, jsc+yc_size-ygbegin, e(3), fileobj%pelist, &
+                     buf_i8_kind_pe, buf_i8_kind, fileobj%is_root)
+    call put_array_section(buf_i8_kind_pe, vdata, c, e)
+    deallocate(buf_i8_kind_pe)
+  type is (real(kind=r4_kind))
+    write(mpp_pe()+100, *) "I am allocating the data buffer: ", trim(variable_name)
+    call allocate_array(buf_r4_kind_pe, e)
+    write(mpp_pe()+100, *) "Indices:", isc-xgbegin+1, isc+xc_size-xgbegin, jsc-ygbegin+1, jsc+yc_size-ygbegin, e(3)
+
+    call mpp_scatter(isc-xgbegin+1, isc+xc_size-xgbegin, jsc-ygbegin+1, jsc+yc_size-ygbegin, e(3), fileobj%pelist, &
+                     buf_r4_kind_pe, buf_r4_kind, fileobj%is_root)
+    write(mpp_pe()+100, *) "I am scattered the data: ", trim(variable_name)
+    call put_array_section(buf_r4_kind_pe, vdata, c, e)
+    write(mpp_pe()+100, *) "I am putting the data back: ", trim(variable_name)
+    deallocate(buf_r4_kind_pe)
+  type is (real(kind=r8_kind))
+    call allocate_array(buf_r8_kind_pe, e)
+    write(mpp_pe()+100, *) "Indices:WUT", isc-xgbegin+1, isc+xc_size-xgbegin, jsc-ygbegin+1, jsc+yc_size-ygbegin, e(3)
+    if (fileobj%is_root) print *, "SHAPE of the thing:", shape(buf_r8_kind)
+    call mpp_scatter(isc-xgbegin+1, isc+xc_size-xgbegin, jsc-ygbegin+1, jsc+yc_size-ygbegin, e(3), fileobj%pelist, &
+                     buf_r8_kind_pe, buf_r8_kind, fileobj%is_root)
+    call put_array_section(buf_r8_kind_pe, vdata, c, e)
+    deallocate(buf_r8_kind_pe)
+  class default
+    call error("unsupported variable type: domain_read_2d: file: "//trim(fileobj%path)//" variable:"// &
+               & trim(variable_name))
+  end select
 end subroutine domain_read_3d
 
 
