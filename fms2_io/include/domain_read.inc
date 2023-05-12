@@ -292,7 +292,6 @@ subroutine domain_read_3d(fileobj, variable_name, vdata, unlim_dim_level, &
   integer :: ygbegin !< Starting y index of global io domain
   integer :: ygszie   !< Ending y index of global io domain
 
-  write(mpp_pe()+100, *) "I am reading the data: ", trim(variable_name)
   if (.not. is_variable_domain_decomposed(fileobj, variable_name, .true., &
                                           xdim_index, ydim_index, xpos, ypos)) then
     call netcdf_read_data(fileobj, variable_name, vdata, &
@@ -354,7 +353,6 @@ subroutine domain_read_3d(fileobj, variable_name, vdata, unlim_dim_level, &
                   & trim(variable_name))
     end select
 
-    write(mpp_pe()+100, *) "I am read the data: ", trim(variable_name)
   endif
 
   c = 1
@@ -372,7 +370,6 @@ subroutine domain_read_3d(fileobj, variable_name, vdata, unlim_dim_level, &
   e(xdim_index) = xc_size
   e(ydim_index) = yc_size
 
-  write(mpp_pe()+100, *) "I am scattering the data: ", trim(variable_name)
   select type(vdata)
   type is (integer(kind=i4_kind))
     call allocate_array(buf_i4_kind_pe, e)
@@ -387,20 +384,13 @@ subroutine domain_read_3d(fileobj, variable_name, vdata, unlim_dim_level, &
     call put_array_section(buf_i8_kind_pe, vdata, c, e)
     deallocate(buf_i8_kind_pe)
   type is (real(kind=r4_kind))
-    write(mpp_pe()+100, *) "I am allocating the data buffer: ", trim(variable_name)
     call allocate_array(buf_r4_kind_pe, e)
-    write(mpp_pe()+100, *) "Indices:", isc-xgbegin+1, isc+xc_size-xgbegin, jsc-ygbegin+1, jsc+yc_size-ygbegin, e(3)
-
     call mpp_scatter(isc-xgbegin+1, isc+xc_size-xgbegin, jsc-ygbegin+1, jsc+yc_size-ygbegin, e(3), fileobj%pelist, &
                      buf_r4_kind_pe, buf_r4_kind, fileobj%is_root)
-    write(mpp_pe()+100, *) "I am scattered the data: ", trim(variable_name)
     call put_array_section(buf_r4_kind_pe, vdata, c, e)
-    write(mpp_pe()+100, *) "I am putting the data back: ", trim(variable_name)
     deallocate(buf_r4_kind_pe)
   type is (real(kind=r8_kind))
     call allocate_array(buf_r8_kind_pe, e)
-    write(mpp_pe()+100, *) "Indices:WUT", isc-xgbegin+1, isc+xc_size-xgbegin, jsc-ygbegin+1, jsc+yc_size-ygbegin, e(3)
-    if (fileobj%is_root) print *, "SHAPE of the thing:", shape(buf_r8_kind)
     call mpp_scatter(isc-xgbegin+1, isc+xc_size-xgbegin, jsc-ygbegin+1, jsc+yc_size-ygbegin, e(3), fileobj%pelist, &
                      buf_r8_kind_pe, buf_r8_kind, fileobj%is_root)
     call put_array_section(buf_r8_kind_pe, vdata, c, e)
