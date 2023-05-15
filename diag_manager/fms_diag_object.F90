@@ -29,7 +29,7 @@ use diag_data_mod,  only: diag_null, diag_not_found, diag_not_registered, diag_r
 use fms_diag_file_object_mod, only: fmsDiagFileContainer_type, fmsDiagFile_type, fms_diag_files_object_init
 use fms_diag_field_object_mod, only: fmsDiagField_type, fms_diag_fields_object_init, get_default_missing_value
 use fms_diag_yaml_mod, only: diag_yaml_object_init, diag_yaml_object_end, find_diag_field, &
-                           & get_diag_files_id, diag_yaml, DiagYamlFilesVar_type
+                           & get_diag_files_id, diag_yaml, DiagYamlFilesVar_type, get_diag_field_ids
 use fms_diag_axis_object_mod, only: fms_diag_axis_object_init, fmsDiagAxis_type, fmsDiagSubAxis_type, &
                                    &diagDomain_t, get_domain_and_domain_type, diagDomain2d_t, &
                                    &fmsDiagAxisContainer_type, fms_diag_axis_object_end, fmsDiagFullAxis_type, &
@@ -224,6 +224,8 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
        mask_variant= mask_variant, standname=standname, do_not_log=do_not_log, err_msg=err_msg, &
        interp_method=interp_method, tile_count=tile_count, area=area, volume=volume, realm=realm, &
        static=static)
+!> Get the field IDs from the field indices in variable list
+  fieldptr%buffer_ids = get_diag_field_ids(diag_field_indices)
 !> Get the file IDs from the field indicies from the yaml
   file_ids = get_diag_files_id(diag_field_indices)
   call fieldptr%set_file_ids(file_ids)
@@ -484,6 +486,11 @@ logical function fms_diag_accept_data (this, diag_field_id, field_data, time, is
 #ifndef use_yaml
 CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling with -Duse_yaml")
 #else
+  !TODO Check if the field variable type is set
+  !if (.not.this%FMS_diag_fields(diag_field_id)%has_vartype()) then
+  !  this%FMS_diag_fields(diag_field_id)%set_type(field_data(1, 1, 1, 1))
+  !end if
+
   !TODO: weight is for time averaging where each time level may have a different weight
   ! call real_copy_set()
 
@@ -492,6 +499,9 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
 
   !TODO: Check improper combinations of is, ie, js, and je.
   ! if (check_indices_order()) deallocate(oor_mask)
+
+  !TODO Issue a warning if any value in field is outside the valid range
+  ! call fms_diag_check_out_of_range_value()
 
 !> Does the user want to push off calculations until send_diag_complete?
   buffer_the_data = .false.
