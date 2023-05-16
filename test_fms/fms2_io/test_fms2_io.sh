@@ -48,4 +48,8 @@ test_expect_success "FMS2 IO Test" '
   mpirun -n 6 ../test_fms2_io
 '
 
+test_expect_success "Compressed writes tests" '
+  mpirun -n 5 ../test_compressed_writes
+'
+
 test_done
