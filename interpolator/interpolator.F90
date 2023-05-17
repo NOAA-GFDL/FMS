@@ -323,9 +323,10 @@ integer :: verbose = 0                              !< No description
 logical :: conservative_interp = .true.          !< No description
 logical :: retain_cm3_bug = .false.               !< No description
 logical :: use_mpp_io = .false. !< Set to true to use mpp_io, otherwise fms2io is used
+integer :: ngroup = -1
 
 namelist /interpolator_nml/    &
-                             read_all_on_init, verbose, conservative_interp, retain_cm3_bug, use_mpp_io
+                             read_all_on_init, verbose, conservative_interp, retain_cm3_bug, use_mpp_io, ngroup
 
 contains
 
@@ -445,6 +446,9 @@ if (.not. module_is_initialized) then
   read (input_nml_file, nml=interpolator_nml, iostat=io)
   ierr = check_nml_error(io,'interpolator_nml')
 
+  !< If the ngroup was not set in the namelist, set it to the number of pes to reproduce old behavior
+  if (ngroup .eq. -1 ) ngroup = mpp_npes()
+
   ! retain_cm3_bug is no longer supported.
   if (retain_cm3_bug) then
     call mpp_error(FATAL, "interpolator_init: You have overridden the default value of " // &
@@ -510,6 +514,8 @@ real, allocatable :: time_in(:)
 real, allocatable, save :: agrid_mod(:,:,:)
 integer :: nx, ny
 type(FmsNetcdfFile_t) :: fileobj
+integer, dimension(:), allocatable :: global_pes !> Current pelist
+integer, dimension(:), allocatable :: pes !> Current pelist
 
 clim_type%separate_time_vary_calc = .false.
 
@@ -520,8 +526,14 @@ num_fields = 0
 !--------------------------------------------------------------------
 src_file = 'INPUT/'//trim(file_name)
 
+
+allocate(global_pes(mpp_npes()))
+call mpp_get_current_pelist(global_pes)
+
+pes = mpp_set_pes_group(global_pes, ngroup)
+
 if(fms2_io_file_exist(trim(src_file))) then
-   if(.not. open_file(clim_type%fileobj, trim(src_file), 'read')) &
+   if(.not. open_file(clim_type%fileobj, trim(src_file), 'read', pelist=pes)) &
         call mpp_error(FATAL, 'Interpolator_init: Error in opening file '//trim(src_file))
    fileobj = clim_type%fileobj
 else
@@ -3853,6 +3865,27 @@ if (size(grdout(:)).ne. (size(datout(:))+1)) &
 end subroutine interp_linear
 !
 !########################################################################
+
+  function mpp_set_pes_group(gpelist, n) &
+  result(pelist)
+    integer, intent(in) :: gpelist(:)
+    integer, intent(in) :: n
+
+    integer, allocatable :: pelist(:)
+    integer :: i, pe_begin, pe_end
+
+    if (mod(size(gpelist), n) .ne. 0) call mpp_error(FATAL, "The global pelist is not divisible by ngroup")
+    allocate(pelist(int(size(gpelist)/n)))
+
+    do i = 1, n
+        pe_begin = int(size(gpelist)/n) * (i-1)
+        pe_end = pe_begin + int(size(gpelist)/n) -1
+        if (mpp_pe() .ge. pe_begin .and. mpp_pe() .le. pe_end) then
+            pelist=gpelist(pe_begin+1:pe_end+1)
+            return
+        endif
+    enddo
+  end function
 
 end module interpolator_mod
 
