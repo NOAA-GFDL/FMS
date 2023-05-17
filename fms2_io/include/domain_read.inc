@@ -86,21 +86,21 @@ end subroutine domain_read_1d
 !!        decomposed".
 subroutine domain_read_2d(fileobj, variable_name, vdata, unlim_dim_level, &
                           corner, edge_lengths)
-  type(FmsNetcdfDomainFile_t),intent(in)           :: fileobj         !< File object.
-  character(len=*),           intent(in)           :: variable_name   !< Variable name.
-  class(*), dimension(:,:),   intent(inout),target :: vdata           !< Data that will
-                                                                      !! be written out
-                                                                      !! to the netcdf file.
-  integer,                    intent(in), optional :: unlim_dim_level !< Level for the unlimited
-                                                                      !! dimension.
-  integer, dimension(2),      intent(in), optional :: corner          !< Array of starting
-                                                                      !! indices describing
-                                                                      !! where the data
-                                                                      !! will be written to.
-  integer, dimension(2),      intent(in), optional :: edge_lengths    !< The number of
-                                                                      !! elements that
-                                                                      !! will be written
-                                                                      !! in each dimension.
+  type(FmsNetcdfDomainFile_t),  intent(in)           :: fileobj         !< File object.
+  character(len=*),             intent(in)           :: variable_name   !< Variable name.
+  class(*), contiguous, target, intent(inout)        :: vdata(:,:)      !< Data that will
+                                                                        !! be written out
+                                                                        !! to the netcdf file.
+  integer,                      intent(in), optional :: unlim_dim_level !< Level for the unlimited
+                                                                        !! dimension.
+  integer, dimension(2),        intent(in), optional :: corner          !< Array of starting
+                                                                        !! indices describing
+                                                                        !! where the data
+                                                                        !! will be written to.
+  integer, dimension(2),        intent(in), optional :: edge_lengths    !< The number of
+                                                                        !! elements that
+                                                                        !! will be written
+                                                                        !! in each dimension.
 
   integer                 :: xdim_index            !< The index of the variable that is the x dimension
   integer                 :: ydim_index            !< The index of the variable that is the y dimension
@@ -268,21 +268,21 @@ end subroutine domain_read_2d
 !!        decomposed".
 subroutine domain_read_3d(fileobj, variable_name, vdata, unlim_dim_level, &
                           corner, edge_lengths)
-  type(FmsNetcdfDomainFile_t),intent(in)           :: fileobj         !< File object.
-  character(len=*),           intent(in)           :: variable_name   !< Variable name.
-  class(*), dimension(:,:,:), intent(inout),target :: vdata           !< Data that will
-                                                                      !! be written out
-                                                                      !! to the netcdf file.
-  integer,                    intent(in), optional :: unlim_dim_level !< Level for the unlimited
-                                                                      !! dimension.
-  integer, dimension(2),      intent(in), optional :: corner          !< Array of starting
-                                                                      !! indices describing
-                                                                      !! where the data
-                                                                      !! will be written to.
-  integer, dimension(2),      intent(in), optional :: edge_lengths    !< The number of
-                                                                      !! elements that
-                                                                      !! will be written
-                                                                      !! in each dimension.
+  type(FmsNetcdfDomainFile_t),  intent(in)           :: fileobj         !< File object.
+  character(len=*),             intent(in)           :: variable_name   !< Variable name.
+  class(*), contiguous, target, intent(inout)        :: vdata(:,:,:)    !< Data that will
+                                                                        !! be written out
+                                                                        !! to the netcdf file.
+  integer,                      intent(in), optional :: unlim_dim_level !< Level for the unlimited
+                                                                        !! dimension.
+  integer, dimension(3),        intent(in), optional :: corner          !< Array of starting
+                                                                        !! indices describing
+                                                                        !! where the data
+                                                                        !! will be written to.
+  integer, dimension(3),        intent(in), optional :: edge_lengths    !< The number of
+                                                                        !! elements that
+                                                                        !! will be written
+                                                                        !! in each dimension.
 
   integer                 :: xdim_index            !< The index of the variable that is the x dimension
   integer                 :: ydim_index            !< The index of the variable that is the y dimension
