@@ -31,7 +31,8 @@ use mpp_mod,           only : mpp_error, &
                               mpp_npes,  &
                               WARNING,   &
                               NOTE,      &
-                              input_nml_file
+                              input_nml_file, &
+                              mpp_get_current_pelist
 use mpp_domains_mod,   only : mpp_domains_init,      &
                               mpp_update_domains,    &
                               mpp_define_domains,    &
