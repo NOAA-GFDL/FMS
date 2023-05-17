@@ -86,56 +86,76 @@ end subroutine domain_read_1d
 !!        decomposed".
 subroutine domain_read_2d(fileobj, variable_name, vdata, unlim_dim_level, &
                           corner, edge_lengths)
+  type(FmsNetcdfDomainFile_t),intent(in)           :: fileobj         !< File object.
+  character(len=*),           intent(in)           :: variable_name   !< Variable name.
+  class(*), dimension(:,:),   intent(inout),target :: vdata           !< Data that will
+                                                                      !! be written out
+                                                                      !! to the netcdf file.
+  integer,                    intent(in), optional :: unlim_dim_level !< Level for the unlimited
+                                                                      !! dimension.
+  integer, dimension(2),      intent(in), optional :: corner          !< Array of starting
+                                                                      !! indices describing
+                                                                      !! where the data
+                                                                      !! will be written to.
+  integer, dimension(2),      intent(in), optional :: edge_lengths    !< The number of
+                                                                      !! elements that
+                                                                      !! will be written
+                                                                      !! in each dimension.
 
-  type(FmsNetcdfDomainFile_t), intent(in) :: fileobj !< File object.
-  character(len=*), intent(in) :: variable_name !< Variable name.
-  class(*), dimension(:,:), intent(inout) :: vdata !< Data that will
-                                                   !! be written out
-                                                   !! to the netcdf file.
-  integer, intent(in), optional :: unlim_dim_level !< Level for the unlimited
-                                                   !! dimension.
-  integer, dimension(2), intent(in), optional :: corner !< Array of starting
-                                                        !! indices describing
-                                                        !! where the data
-                                                        !! will be written to.
-  integer, dimension(2), intent(in), optional :: edge_lengths !< The number of
-                                                              !! elements that
-                                                              !! will be written
-                                                              !! in each dimension.
+  integer                 :: xdim_index            !< The index of the variable that is the x dimension
+  integer                 :: ydim_index            !< The index of the variable that is the y dimension
+  integer                 :: xpos                  !< The position of the x axis
+  integer                 :: ypos                  !< The position of the y axis
+  integer                 :: i                     !< For do loops
+  integer                 :: isd                   !< The starting x position of the data io_domain
+  integer                 :: isc                   !< The starting y position of the data io_domain
+  integer                 :: xc_size               !< The size of the x compute io_domain
+  integer                 :: yc_size               !< The size of the y compute io_domain
+  integer                 :: jsd                   !< The ending x position of the data io_domain
+  integer                 :: jsc                   !< The ending y position of the data io_domain
+  integer                 :: c(2)                  !< The corners of the data
+  integer                 :: e(2)                  !< The number of points (edges)
+  logical                 :: buffer_includes_halos !< .True. if vdata includes halo points
+  integer                 :: xgbegin               !< Starting x index of global io domain
+  integer                 :: xgsize                !< Size of global io domain
+  integer                 :: ygbegin               !< Starting y index of global io domain
+  integer                 :: ygsize                !< Ending y index of global io domain
+  type(domain2d), pointer :: io_domain             !< pointer to the io_domain
 
-  integer :: xdim_index !< The index of the variable that is the x dimension
-  integer :: ydim_index !< The index of the variable that is the y dimension
-  type(domain2d), pointer :: io_domain !< poitner to the io_domain
-  integer :: xpos !< The position of the x axis
-  integer :: ypos !< The position of the y axis
-  integer :: i !< For do loops
-  integer :: isd !< The starting x position of the data io_domain
-  integer :: isc !< The starting y position of the data io_domain
-  integer :: xc_size !< The size of the x compute io_domain
-  integer :: yc_size !< The size of the y compute io_domain
-  integer :: jsd !< The ending x position of the data io_domain
-  integer :: jsc !< The ending y position of the data io_domain
-  integer, dimension(2) :: c !< The corners of the data you want
-  integer, dimension(2) :: e !< The number of points (edges) you want
-  integer(kind=i4_kind), dimension(:,:), allocatable :: buf_i4_kind_pe
-  integer(kind=i8_kind), dimension(:,:), allocatable :: buf_i8_kind_pe
-  real(kind=r4_kind), dimension(:,:), allocatable :: buf_r4_kind_pe
-  real(kind=r8_kind), dimension(:,:), allocatable :: buf_r8_kind_pe
-  integer(kind=i4_kind), dimension(:,:), target, allocatable :: buf_i4_kind
-  integer(kind=i8_kind), dimension(:,:), target, allocatable :: buf_i8_kind
-  real(kind=r4_kind), dimension(:,:), target, allocatable :: buf_r4_kind
-  real(kind=r8_kind), dimension(:,:), target, allocatable :: buf_r8_kind
-  logical :: buffer_includes_halos
-  integer :: xgbegin !< Starting x index of global io domain
-  integer :: xgsize  !< Ending x index of global io domain
-  integer :: ygbegin !< Starting y index of global io domain
-  integer :: ygszie   !< Ending y index of global io domain
+  !< The global data is only allocated by the io root PEs
+  integer(kind=i4_kind), dimension(:,:),     allocatable :: buf_i4_kind_pe !< PES section of the data
+  integer(kind=i8_kind), dimension(:,:),     allocatable :: buf_i8_kind_pe !< PES section of the data
+  real(kind=r4_kind),    dimension(:,:),     allocatable :: buf_r4_kind_pe !< PES section of the data
+  real(kind=r8_kind),    dimension(:,:),     allocatable :: buf_r8_kind_pe !< PES section of the data
+  integer(kind=i4_kind), dimension(:,:),     allocatable :: buf_i4_kind    !< Global section of the data
+  integer(kind=i8_kind), dimension(:,:),     allocatable :: buf_i8_kind    !< Global section of the data
+  real(kind=r4_kind),    dimension(:,:),     allocatable :: buf_r4_kind    !< Global section of the data
+  real(kind=r8_kind),    dimension(:,:),     allocatable :: buf_r8_kind    !< Global section of the data
+  class(*),              dimension(:,:,:,:), pointer     :: vdata_dummy    !< Vdata remapped as 4D
 
   if (.not. is_variable_domain_decomposed(fileobj, variable_name, .true., &
                                           xdim_index, ydim_index, xpos, ypos)) then
     call netcdf_read_data(fileobj, variable_name, vdata, &
                           unlim_dim_level=unlim_dim_level, corner=corner, &
                           edge_lengths=edge_lengths, broadcast=.true.)
+    return
+  endif
+
+  if (xdim_index .ne. 1 .or. ydim_index .ne. 2) then
+    ! This is a KLUDGE
+    ! mpp_scatter assumes that the variable is (x,y), if that is not the case it remaps the data
+    ! to a 4D array and calls domain_read_4d which does not use mpp_scatter yet
+    select type(vdata)
+    type is (real(kind=r8_kind))
+      vdata_dummy(1:size(vdata,1),1:size(vdata,2), 1:1, 1:1) => vdata(:,:)
+    type is (real(kind=r4_kind))
+      vdata_dummy(1:size(vdata,1),1:size(vdata,2), 1:1, 1:1) => vdata(:,:)
+    type is (integer(kind=i8_kind))
+      vdata_dummy(1:size(vdata,1),1:size(vdata,2), 1:1, 1:1) => vdata(:,:)
+    type is (integer(kind=i4_kind))
+      vdata_dummy(1:size(vdata,1),1:size(vdata,2), 1:1, 1:1) => vdata(:,:)
+    end select
+    call domain_read_4d(fileobj, variable_name, vdata_dummy, unlim_dim_level)
     return
   endif
   io_domain => mpp_get_io_domain(fileobj%domain)
@@ -146,7 +166,7 @@ subroutine domain_read_2d(fileobj, variable_name, vdata, unlim_dim_level, &
   e(:) = shape(vdata)
 
   call mpp_get_global_domain(io_domain, xbegin=xgbegin, xsize=xgsize, position=xpos)
-  call mpp_get_global_domain(io_domain, ybegin=ygbegin, ysize=ygszie, position=ypos)
+  call mpp_get_global_domain(io_domain, ybegin=ygbegin, ysize=ygsize, position=ypos)
 
   !I/O root reads in the data and scatters it.
   if (fileobj%is_root) then
@@ -163,7 +183,7 @@ subroutine domain_read_2d(fileobj, variable_name, vdata, unlim_dim_level, &
     endif
 
     e(xdim_index) = xgsize
-    e(ydim_index) = ygszie
+    e(ydim_index) = ygsize
 
     !Read in the global io domain
     select type(vdata)
@@ -191,10 +211,11 @@ subroutine domain_read_2d(fileobj, variable_name, vdata, unlim_dim_level, &
         call error("unsupported variable type: domain_read_2d: file: "//trim(fileobj%path)//" variable:"// &
                   & trim(variable_name))
     end select
+
   endif
 
   c = 1
-  e = size(vdata)
+  e = shape(vdata)
 
   if (buffer_includes_halos) then
     !Adjust if the input buffer has room for halos.
@@ -247,56 +268,76 @@ end subroutine domain_read_2d
 !!        decomposed".
 subroutine domain_read_3d(fileobj, variable_name, vdata, unlim_dim_level, &
                           corner, edge_lengths)
+  type(FmsNetcdfDomainFile_t),intent(in)           :: fileobj         !< File object.
+  character(len=*),           intent(in)           :: variable_name   !< Variable name.
+  class(*), dimension(:,:,:), intent(inout),target :: vdata           !< Data that will
+                                                                      !! be written out
+                                                                      !! to the netcdf file.
+  integer,                    intent(in), optional :: unlim_dim_level !< Level for the unlimited
+                                                                      !! dimension.
+  integer, dimension(2),      intent(in), optional :: corner          !< Array of starting
+                                                                      !! indices describing
+                                                                      !! where the data
+                                                                      !! will be written to.
+  integer, dimension(2),      intent(in), optional :: edge_lengths    !< The number of
+                                                                      !! elements that
+                                                                      !! will be written
+                                                                      !! in each dimension.
 
-  type(FmsNetcdfDomainFile_t), intent(in) :: fileobj !< File object.
-  character(len=*), intent(in) :: variable_name !< Variable name.
-  class(*), dimension(:,:,:), intent(inout) :: vdata !< Data that will
-                                                   !! be written out
-                                                   !! to the netcdf file.
-  integer, intent(in), optional :: unlim_dim_level !< Level for the unlimited
-                                                   !! dimension.
-  integer, dimension(2), intent(in), optional :: corner !< Array of starting
-                                                        !! indices describing
-                                                        !! where the data
-                                                        !! will be written to.
-  integer, dimension(2), intent(in), optional :: edge_lengths !< The number of
-                                                              !! elements that
-                                                              !! will be written
-                                                              !! in each dimension.
+  integer                 :: xdim_index            !< The index of the variable that is the x dimension
+  integer                 :: ydim_index            !< The index of the variable that is the y dimension
+  integer                 :: xpos                  !< The position of the x axis
+  integer                 :: ypos                  !< The position of the y axis
+  integer                 :: i                     !< For do loops
+  integer                 :: isd                   !< The starting x position of the data io_domain
+  integer                 :: isc                   !< The starting y position of the data io_domain
+  integer                 :: xc_size               !< The size of the x compute io_domain
+  integer                 :: yc_size               !< The size of the y compute io_domain
+  integer                 :: jsd                   !< The ending x position of the data io_domain
+  integer                 :: jsc                   !< The ending y position of the data io_domain
+  integer                 :: c(3)                  !< The corners of the data
+  integer                 :: e(3)                  !< The number of points (edges)
+  logical                 :: buffer_includes_halos !< .True. if vdata includes halo points
+  integer                 :: xgbegin               !< Starting x index of global io domain
+  integer                 :: xgsize                !< Size of global io domain
+  integer                 :: ygbegin               !< Starting y index of global io domain
+  integer                 :: ygsize                !< Ending y index of global io domain
+  type(domain2d), pointer :: io_domain             !< pointer to the io_domain
 
-  integer :: xdim_index !< The index of the variable that is the x dimension
-  integer :: ydim_index !< The index of the variable that is the y dimension
-  type(domain2d), pointer :: io_domain !< poitner to the io_domain
-  integer :: xpos !< The position of the x axis
-  integer :: ypos !< The position of the y axis
-  integer :: i !< For do loops
-  integer :: isd !< The starting x position of the data io_domain
-  integer :: isc !< The starting y position of the data io_domain
-  integer :: xc_size !< The size of the x compute io_domain
-  integer :: yc_size !< The size of the y compute io_domain
-  integer :: jsd !< The ending x position of the data io_domain
-  integer :: jsc !< The ending y position of the data io_domain
-  integer, dimension(3) :: c !< The corners of the data you want
-  integer, dimension(3) :: e !< The number of points (edges) you want
-  integer(kind=i4_kind), dimension(:,:,:), allocatable :: buf_i4_kind_pe
-  integer(kind=i8_kind), dimension(:,:,:), allocatable :: buf_i8_kind_pe
-  real(kind=r4_kind), dimension(:,:,:), allocatable :: buf_r4_kind_pe
-  real(kind=r8_kind), dimension(:,:,:), allocatable :: buf_r8_kind_pe
-  integer(kind=i4_kind), dimension(:,:,:), target, allocatable :: buf_i4_kind
-  integer(kind=i8_kind), dimension(:,:,:), target, allocatable :: buf_i8_kind
-  real(kind=r4_kind), dimension(:,:,:), target, allocatable :: buf_r4_kind
-  real(kind=r8_kind), dimension(:,:,:), target, allocatable :: buf_r8_kind
-  logical :: buffer_includes_halos
-  integer :: xgbegin !< Starting x index of global io domain
-  integer :: xgsize  !< Ending x index of global io domain
-  integer :: ygbegin !< Starting y index of global io domain
-  integer :: ygszie   !< Ending y index of global io domain
+  !< The global data is only allocated by the io root PEs
+  integer(kind=i4_kind), dimension(:,:,:),   allocatable :: buf_i4_kind_pe !< PES section of the data
+  integer(kind=i8_kind), dimension(:,:,:),   allocatable :: buf_i8_kind_pe !< PES section of the data
+  real(kind=r4_kind),    dimension(:,:,:),   allocatable :: buf_r4_kind_pe !< PES section of the data
+  real(kind=r8_kind),    dimension(:,:,:),   allocatable :: buf_r8_kind_pe !< PES section of the data
+  integer(kind=i4_kind), dimension(:,:,:),   allocatable :: buf_i4_kind    !< Global section of the data
+  integer(kind=i8_kind), dimension(:,:,:),   allocatable :: buf_i8_kind    !< Global section of the data
+  real(kind=r4_kind),    dimension(:,:,:),   allocatable :: buf_r4_kind    !< Global section of the data
+  real(kind=r8_kind),    dimension(:,:,:),   allocatable :: buf_r8_kind    !< Global section of the data
+  class(*),              dimension(:,:,:,:), pointer     :: vdata_dummy    !< Vdata remapped as 4D
 
   if (.not. is_variable_domain_decomposed(fileobj, variable_name, .true., &
                                           xdim_index, ydim_index, xpos, ypos)) then
     call netcdf_read_data(fileobj, variable_name, vdata, &
                           unlim_dim_level=unlim_dim_level, corner=corner, &
                           edge_lengths=edge_lengths, broadcast=.true.)
+    return
+  endif
+
+  if (xdim_index .ne. 1 .or. ydim_index .ne. 2) then
+    ! This is a KLUDGE
+    ! mpp_scatter assumes that the variable is (x,y), if that is not the case it remaps the data
+    ! to a 4D array and calls domain_read_4d which does not use mpp_scatter yet
+    select type(vdata)
+    type is (real(kind=r8_kind))
+      vdata_dummy(1:size(vdata,1),1:size(vdata,2), 1:size(vdata,3), 1:1) => vdata(:,:,:)
+    type is (real(kind=r4_kind))
+      vdata_dummy(1:size(vdata,1),1:size(vdata,2), 1:size(vdata,3), 1:1) => vdata(:,:,:)
+    type is (integer(kind=i8_kind))
+      vdata_dummy(1:size(vdata,1),1:size(vdata,2), 1:size(vdata,3), 1:1) => vdata(:,:,:)
+    type is (integer(kind=i4_kind))
+      vdata_dummy(1:size(vdata,1),1:size(vdata,2), 1:size(vdata,3), 1:1) => vdata(:,:,:)
+    end select
+    call domain_read_4d(fileobj, variable_name, vdata_dummy, unlim_dim_level)
     return
   endif
   io_domain => mpp_get_io_domain(fileobj%domain)
@@ -307,7 +348,7 @@ subroutine domain_read_3d(fileobj, variable_name, vdata, unlim_dim_level, &
   e(:) = shape(vdata)
 
   call mpp_get_global_domain(io_domain, xbegin=xgbegin, xsize=xgsize, position=xpos)
-  call mpp_get_global_domain(io_domain, ybegin=ygbegin, ysize=ygszie, position=ypos)
+  call mpp_get_global_domain(io_domain, ybegin=ygbegin, ysize=ygsize, position=ypos)
 
   !I/O root reads in the data and scatters it.
   if (fileobj%is_root) then
@@ -324,7 +365,7 @@ subroutine domain_read_3d(fileobj, variable_name, vdata, unlim_dim_level, &
     endif
 
     e(xdim_index) = xgsize
-    e(ydim_index) = ygszie
+    e(ydim_index) = ygsize
 
     !Read in the global io domain
     select type(vdata)
