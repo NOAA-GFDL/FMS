@@ -145,16 +145,7 @@ subroutine domain_read_2d(fileobj, variable_name, vdata, unlim_dim_level, &
     ! This is a KLUDGE
     ! mpp_scatter assumes that the variable is (x,y), if that is not the case it remaps the data
     ! to a 4D array and calls domain_read_4d which does not use mpp_scatter yet
-    select type(vdata)
-    type is (real(kind=r8_kind))
-      vdata_dummy(1:size(vdata,1),1:size(vdata,2), 1:1, 1:1) => vdata(:,:)
-    type is (real(kind=r4_kind))
-      vdata_dummy(1:size(vdata,1),1:size(vdata,2), 1:1, 1:1) => vdata(:,:)
-    type is (integer(kind=i8_kind))
-      vdata_dummy(1:size(vdata,1),1:size(vdata,2), 1:1, 1:1) => vdata(:,:)
-    type is (integer(kind=i4_kind))
-      vdata_dummy(1:size(vdata,1),1:size(vdata,2), 1:1, 1:1) => vdata(:,:)
-    end select
+    vdata_dummy(1:size(vdata,1),1:size(vdata,2), 1:1, 1:1) => vdata(:,:)
     call domain_read_4d(fileobj, variable_name, vdata_dummy, unlim_dim_level)
     return
   endif
@@ -327,16 +318,7 @@ subroutine domain_read_3d(fileobj, variable_name, vdata, unlim_dim_level, &
     ! This is a KLUDGE
     ! mpp_scatter assumes that the variable is (x,y), if that is not the case it remaps the data
     ! to a 4D array and calls domain_read_4d which does not use mpp_scatter yet
-    select type(vdata)
-    type is (real(kind=r8_kind))
-      vdata_dummy(1:size(vdata,1),1:size(vdata,2), 1:size(vdata,3), 1:1) => vdata(:,:,:)
-    type is (real(kind=r4_kind))
-      vdata_dummy(1:size(vdata,1),1:size(vdata,2), 1:size(vdata,3), 1:1) => vdata(:,:,:)
-    type is (integer(kind=i8_kind))
-      vdata_dummy(1:size(vdata,1),1:size(vdata,2), 1:size(vdata,3), 1:1) => vdata(:,:,:)
-    type is (integer(kind=i4_kind))
-      vdata_dummy(1:size(vdata,1),1:size(vdata,2), 1:size(vdata,3), 1:1) => vdata(:,:,:)
-    end select
+    vdata_dummy(1:size(vdata,1),1:size(vdata,2), 1:size(vdata,3), 1:1) => vdata(:,:,:)
     call domain_read_4d(fileobj, variable_name, vdata_dummy, unlim_dim_level)
     return
   endif
