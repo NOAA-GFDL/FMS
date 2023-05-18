@@ -283,6 +283,13 @@ subroutine compressed_write_2d(fileobj, variable_name, cdata, unlim_dim_level, &
     class default
       call error("unsupported variable type: "//trim(append_error_msg))
   end select
+
+  if (fileobj%is_root) then
+    if (allocated(buf_i4_kind)) deallocate(buf_i4_kind)
+    if (allocated(buf_i8_kind)) deallocate(buf_i8_kind)
+    if (allocated(buf_r4_kind)) deallocate(buf_r4_kind)
+    if (allocated(buf_r8_kind)) deallocate(buf_r8_kind)
+  endif
 end subroutine compressed_write_2d
 
 
@@ -405,6 +412,13 @@ subroutine compressed_write_3d(fileobj, variable_name, cdata, unlim_dim_level, &
     class default
       call error("unsupported variable type: "//trim(append_error_msg))
   end select
+
+  if (fileobj%is_root) then
+    if (allocated(buf_i4_kind)) deallocate(buf_i4_kind)
+    if (allocated(buf_i8_kind)) deallocate(buf_i8_kind)
+    if (allocated(buf_r4_kind)) deallocate(buf_r4_kind)
+    if (allocated(buf_r8_kind)) deallocate(buf_r8_kind)
+  endif
 end subroutine compressed_write_3d
 
 
