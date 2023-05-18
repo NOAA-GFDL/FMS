@@ -211,7 +211,7 @@ subroutine compressed_write_2d(fileobj, variable_name, cdata, unlim_dim_level, &
   character(len=200) :: append_error_msg !< Msg to be appended to FATAL error message
 
   integer :: index(1) !< index of the PE in the pelist
-  
+
   integer :: is !< Starting index of the first dimension
   integer :: js !< Ending index of the first dimension
   integer :: ie !< Starting index of the second dimension
@@ -262,7 +262,7 @@ subroutine compressed_write_2d(fileobj, variable_name, cdata, unlim_dim_level, &
     is = 1
     ie = size(cdata,2)
   endif
-  
+
   select type(cdata)
     type is (integer(kind=i4_kind))
       call mpp_gather(is, ie, js, je, fileobj%pelist, cdata, buf_i4_kind, fileobj%is_root)
@@ -332,7 +332,7 @@ subroutine compressed_write_3d(fileobj, variable_name, cdata, unlim_dim_level, &
   class(*), pointer :: cdata_dummy(:,:,:,:)
 
   integer :: index(1) !< index of the PE in the pelist
-  
+
   integer :: is !< Starting index of the first dimension
   integer :: js !< Ending index of the first dimension
   integer :: ie !< Starting index of the second dimension
@@ -348,8 +348,7 @@ subroutine compressed_write_3d(fileobj, variable_name, cdata, unlim_dim_level, &
     return
   else if (compressed_dim_index(1) .eq. 3) then
     cdata_dummy(1:size(cdata,1), 1:size(cdata,2), 1:size(cdata,3), 1:1) => cdata(:,:,:)
-    call compressed_write_4d(fileobj, variable_name, cdata_dummy, unlim_dim_level, &
-      (/ corner, 1/), (/edge_lengths, 1/))
+    call compressed_write_4d(fileobj, variable_name, cdata_dummy, unlim_dim_level)
   endif
 
   e(:) = shape(cdata)
