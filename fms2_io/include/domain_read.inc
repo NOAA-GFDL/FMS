@@ -249,6 +249,13 @@ subroutine domain_read_2d(fileobj, variable_name, vdata, unlim_dim_level, &
     call error("unsupported variable type: domain_read_2d: file: "//trim(fileobj%path)//" variable:"// &
                & trim(variable_name))
   end select
+
+  if (fileobj%is_root) then
+    if (allocated(buf_i4_kind)) deallocate(buf_i4_kind)
+    if (allocated(buf_i8_kind)) deallocate(buf_i8_kind)
+    if (allocated(buf_r4_kind)) deallocate(buf_r4_kind)
+    if (allocated(buf_r8_kind)) deallocate(buf_r8_kind)
+  endif
 end subroutine domain_read_2d
 
 
@@ -422,6 +429,14 @@ subroutine domain_read_3d(fileobj, variable_name, vdata, unlim_dim_level, &
     call error("unsupported variable type: domain_read_2d: file: "//trim(fileobj%path)//" variable:"// &
                & trim(variable_name))
   end select
+
+  if (fileobj%is_root) then
+    if (allocated(buf_i4_kind)) deallocate(buf_i4_kind)
+    if (allocated(buf_i8_kind)) deallocate(buf_i8_kind)
+    if (allocated(buf_r4_kind)) deallocate(buf_r4_kind)
+    if (allocated(buf_r8_kind)) deallocate(buf_r8_kind)
+  endif
+
 end subroutine domain_read_3d
 
 
