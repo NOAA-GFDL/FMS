@@ -43,6 +43,7 @@ program test_compressed_writes
     call register_axis(fileobj, "dim4", ndim4)
     call register_axis(fileobj, "dim5", ndim5)
 
+    call register_field_wrapper(fileobj, "var1", names, 1)
     call register_field_wrapper(fileobj, "var2", names, 2)
     call register_field_wrapper(fileobj, "var3", names, 3)
     call register_field_wrapper(fileobj, "var4", names, 4)
@@ -67,11 +68,12 @@ program test_compressed_writes
       call var_data_alloc(var_data_ref, ndim2, ndim3, ndim4, ndim5, sum(pes)+mpp_npes())
       call var_data_set_ref(var_data_ref)
 
+      call read_data_wrapper(fileobj, "var2", 1, var_data_out, var_data_ref)
       call read_data_wrapper(fileobj, "var2", 2, var_data_out, var_data_ref)
       call read_data_wrapper(fileobj, "var3", 3, var_data_out, var_data_ref)
       call read_data_wrapper(fileobj, "var4", 4, var_data_out, var_data_ref)
       call read_data_wrapper(fileobj, "var5", 5, var_data_out, var_data_ref)
-  
+
       call close_file(fileobj)
     endif
   endif
@@ -89,10 +91,10 @@ program test_compressed_writes
 
     call register_field(fileob, trim(var_name)//"_r8", "double", names(1:ndim))
     call register_field(fileob, trim(var_name)//"_r4", "float",  names(1:ndim))
-    call register_field(fileob, trim(var_name)//"_i8", "int",    names(1:ndim))
-    call register_field(fileob, trim(var_name)//"_i4", "int64",  names(1:ndim))
+    call register_field(fileob, trim(var_name)//"_i8", "int64",  names(1:ndim))
+    call register_field(fileob, trim(var_name)//"_i4", "int",    names(1:ndim))
   end subroutine register_field_wrapper
-  
+
 !> @brief Allocates the variable to be the size of data compute domain for x and y
   !! and for a given size for the 3rd 4th and 5th dimension
   subroutine var_data_alloc(var_data, dim2, dim3, dim4, dim5, compressed_dim)
@@ -127,6 +129,7 @@ program test_compressed_writes
     character(len=*),            intent(in)    :: var_kind            !< The kind of the variable
     class(*),                    intent(in)    :: var_data(:,:,:,:,:) !< Variable data
 
+    call write_data(fileob, "var1_"//trim(var_kind), var_data(:,1,1,1,1))
     call write_data(fileob, "var2_"//trim(var_kind), var_data(:,:,1,1,1))
     call write_data(fileob, "var3_"//trim(var_kind), var_data(:,:,:,1,1))
     call write_data(fileob, "var4_"//trim(var_kind), var_data(:,:,:,:,1))
@@ -141,11 +144,28 @@ program test_compressed_writes
     type(data_type),             intent(inout) :: var_data
     type(data_type),             intent(in)    :: ref_data
 
-    integer :: i,j 
+    integer :: i,j
     select case(dim)
+    case(1)
+      call var_data_set(var_data, -999)
+      call read_data(fileob, trim(var_name)//"_r4", var_data%var_r4(:,1,1,1,1))
+      call compare_var_data(mpp_chksum(var_data%var_r4(:,1,1,1,1), (/mpp_pe()/)), &
+        mpp_chksum(ref_data%var_r4(:,1,1,1,1), (/mpp_pe()/)), "var2_r4")
+
+      call read_data(fileob, trim(var_name)//"_r8", var_data%var_r8(:,1,1,1,1))
+      call compare_var_data(mpp_chksum(var_data%var_r8(:,1,1,1,1), (/mpp_pe()/)), &
+        mpp_chksum(ref_data%var_r8(:,1,1,1,1), (/mpp_pe()/)), "var2_r8")
+
+      call read_data(fileob, trim(var_name)//"_i4", var_data%var_i4(:,1,1,1,1))
+      call compare_var_data(mpp_chksum(var_data%var_i4(:,1,1,1,1), (/mpp_pe()/)), &
+        mpp_chksum(ref_data%var_i4(:,1,1,1,1), (/mpp_pe()/)), "var2_i4")
+
+      call read_data(fileob, trim(var_name)//"_i8", var_data%var_i8(:,1,1,1,1))
+      call compare_var_data(mpp_chksum(var_data%var_i8(:,1,1,1,1), (/mpp_pe()/)), &
+        mpp_chksum(ref_data%var_i8(:,1,1,1,1), (/mpp_pe()/)), "var2_i8")
     case(2)
       call var_data_set(var_data, -999)
-      call read_data(fileob, trim(var_name)//"_r4", var_data%var_r4(:,:,1,1,1))      
+      call read_data(fileob, trim(var_name)//"_r4", var_data%var_r4(:,:,1,1,1))
       call compare_var_data(mpp_chksum(var_data%var_r4(:,:,1,1,1), (/mpp_pe()/)), &
         mpp_chksum(ref_data%var_r4(:,:,1,1,1), (/mpp_pe()/)), "var2_r4")
 
@@ -161,58 +181,58 @@ program test_compressed_writes
       call compare_var_data(mpp_chksum(var_data%var_i8(:,:,1,1,1), (/mpp_pe()/)), &
         mpp_chksum(ref_data%var_i8(:,:,1,1,1), (/mpp_pe()/)), "var2_i8")
     case(3)
-        call var_data_set(var_data, -999)
-        call read_data(fileob, trim(var_name)//"_r4", var_data%var_r4(:,:,:,1,1))      
-        call compare_var_data(mpp_chksum(var_data%var_r4(:,:,:,1,1), (/mpp_pe()/)), &
-          mpp_chksum(ref_data%var_r4(:,:,:,1,1), (/mpp_pe()/)), "var3_r4")
-  
-        call read_data(fileob, trim(var_name)//"_r8", var_data%var_r8(:,:,:,1,1))
-        call compare_var_data(mpp_chksum(var_data%var_r8(:,:,:,1,1), (/mpp_pe()/)), &
-          mpp_chksum(ref_data%var_r8(:,:,:,1,1), (/mpp_pe()/)), "var3_r8")
-  
-        call read_data(fileob, trim(var_name)//"_i4", var_data%var_i4(:,:,:,1,1))
-        call compare_var_data(mpp_chksum(var_data%var_i4(:,:,:,1,1), (/mpp_pe()/)), &
-          mpp_chksum(ref_data%var_i4(:,:,:,1,1), (/mpp_pe()/)), "var3_i4")
-  
-        call read_data(fileob, trim(var_name)//"_i8", var_data%var_i8(:,:,:,1,1))
-        call compare_var_data(mpp_chksum(var_data%var_i8(:,:,:,1,1), (/mpp_pe()/)), &
-          mpp_chksum(ref_data%var_i8(:,:,:,1,1), (/mpp_pe()/)), "var3_i8")
+      call var_data_set(var_data, -999)
+      call read_data(fileob, trim(var_name)//"_r4", var_data%var_r4(:,:,:,1,1))
+      call compare_var_data(mpp_chksum(var_data%var_r4(:,:,:,1,1), (/mpp_pe()/)), &
+        mpp_chksum(ref_data%var_r4(:,:,:,1,1), (/mpp_pe()/)), "var3_r4")
+
+      call read_data(fileob, trim(var_name)//"_r8", var_data%var_r8(:,:,:,1,1))
+      call compare_var_data(mpp_chksum(var_data%var_r8(:,:,:,1,1), (/mpp_pe()/)), &
+        mpp_chksum(ref_data%var_r8(:,:,:,1,1), (/mpp_pe()/)), "var3_r8")
+
+      call read_data(fileob, trim(var_name)//"_i4", var_data%var_i4(:,:,:,1,1))
+      call compare_var_data(mpp_chksum(var_data%var_i4(:,:,:,1,1), (/mpp_pe()/)), &
+        mpp_chksum(ref_data%var_i4(:,:,:,1,1), (/mpp_pe()/)), "var3_i4")
+
+      call read_data(fileob, trim(var_name)//"_i8", var_data%var_i8(:,:,:,1,1))
+      call compare_var_data(mpp_chksum(var_data%var_i8(:,:,:,1,1), (/mpp_pe()/)), &
+        mpp_chksum(ref_data%var_i8(:,:,:,1,1), (/mpp_pe()/)), "var3_i8")
     case(4)
-        call var_data_set(var_data, -999)
-        call read_data(fileob, trim(var_name)//"_r4", var_data%var_r4(:,:,:,:,1))      
-        call compare_var_data(mpp_chksum(var_data%var_r4(:,:,:,:,1), (/mpp_pe()/)), &
-          mpp_chksum(ref_data%var_r4(:,:,:,:,1), (/mpp_pe()/)), "var4_r4")
-  
-        call read_data(fileob, trim(var_name)//"_r8", var_data%var_r8(:,:,:,:,1))
-        call compare_var_data(mpp_chksum(var_data%var_r8(:,:,:,:,1), (/mpp_pe()/)), &
-          mpp_chksum(ref_data%var_r8(:,:,:,:,1), (/mpp_pe()/)), "var4_r8")
-  
-        call read_data(fileob, trim(var_name)//"_i4", var_data%var_i4(:,:,:,:,1))
-        call compare_var_data(mpp_chksum(var_data%var_i4(:,:,:,:,1), (/mpp_pe()/)), &
-          mpp_chksum(ref_data%var_i4(:,:,:,:,1), (/mpp_pe()/)), "var4_i4")
-  
-        call read_data(fileob, trim(var_name)//"_i8", var_data%var_i8(:,:,:,:,1))
-        call compare_var_data(mpp_chksum(var_data%var_i8(:,:,:,:,1), (/mpp_pe()/)), &
-          mpp_chksum(ref_data%var_i8(:,:,:,:,1), (/mpp_pe()/)), "var4_i8")
+      call var_data_set(var_data, -999)
+      call read_data(fileob, trim(var_name)//"_r4", var_data%var_r4(:,:,:,:,1))
+      call compare_var_data(mpp_chksum(var_data%var_r4(:,:,:,:,1), (/mpp_pe()/)), &
+        mpp_chksum(ref_data%var_r4(:,:,:,:,1), (/mpp_pe()/)), "var4_r4")
+
+      call read_data(fileob, trim(var_name)//"_r8", var_data%var_r8(:,:,:,:,1))
+      call compare_var_data(mpp_chksum(var_data%var_r8(:,:,:,:,1), (/mpp_pe()/)), &
+        mpp_chksum(ref_data%var_r8(:,:,:,:,1), (/mpp_pe()/)), "var4_r8")
+
+      call read_data(fileob, trim(var_name)//"_i4", var_data%var_i4(:,:,:,:,1))
+      call compare_var_data(mpp_chksum(var_data%var_i4(:,:,:,:,1), (/mpp_pe()/)), &
+        mpp_chksum(ref_data%var_i4(:,:,:,:,1), (/mpp_pe()/)), "var4_i4")
+
+      call read_data(fileob, trim(var_name)//"_i8", var_data%var_i8(:,:,:,:,1))
+      call compare_var_data(mpp_chksum(var_data%var_i8(:,:,:,:,1), (/mpp_pe()/)), &
+        mpp_chksum(ref_data%var_i8(:,:,:,:,1), (/mpp_pe()/)), "var4_i8")
     case(5)
-        call var_data_set(var_data, -999)
-        call read_data(fileob, trim(var_name)//"_r4", var_data%var_r4(:,:,:,:,:))      
-        call compare_var_data(mpp_chksum(var_data%var_r4(:,:,:,:,:), (/mpp_pe()/)), &
-          mpp_chksum(ref_data%var_r4(:,:,:,:,:), (/mpp_pe()/)), "var5_r4")
-  
-        call read_data(fileob, trim(var_name)//"_r8", var_data%var_r8(:,:,:,:,:))
-        call compare_var_data(mpp_chksum(var_data%var_r8(:,:,:,:,:), (/mpp_pe()/)), &
-          mpp_chksum(ref_data%var_r8(:,:,:,:,:), (/mpp_pe()/)), "var5_r8")
-  
-        call read_data(fileob, trim(var_name)//"_i4", var_data%var_i4(:,:,:,:,:))
-        call compare_var_data(mpp_chksum(var_data%var_i4(:,:,:,:,:), (/mpp_pe()/)), &
-          mpp_chksum(ref_data%var_i4(:,:,:,:,:), (/mpp_pe()/)), "var5_i4")
-  
-        call read_data(fileob, trim(var_name)//"_i8", var_data%var_i8(:,:,:,:,:))
-        call compare_var_data(mpp_chksum(var_data%var_i8(:,:,:,:,:), (/mpp_pe()/)), &
-          mpp_chksum(ref_data%var_i8(:,:,:,:,:), (/mpp_pe()/)), "var5_i8")
+      call var_data_set(var_data, -999)
+      call read_data(fileob, trim(var_name)//"_r4", var_data%var_r4(:,:,:,:,:))
+      call compare_var_data(mpp_chksum(var_data%var_r4(:,:,:,:,:), (/mpp_pe()/)), &
+        mpp_chksum(ref_data%var_r4(:,:,:,:,:), (/mpp_pe()/)), "var5_r4")
+
+      call read_data(fileob, trim(var_name)//"_r8", var_data%var_r8(:,:,:,:,:))
+      call compare_var_data(mpp_chksum(var_data%var_r8(:,:,:,:,:), (/mpp_pe()/)), &
+        mpp_chksum(ref_data%var_r8(:,:,:,:,:), (/mpp_pe()/)), "var5_r8")
+
+      call read_data(fileob, trim(var_name)//"_i4", var_data%var_i4(:,:,:,:,:))
+      call compare_var_data(mpp_chksum(var_data%var_i4(:,:,:,:,:), (/mpp_pe()/)), &
+        mpp_chksum(ref_data%var_i4(:,:,:,:,:), (/mpp_pe()/)), "var5_i4")
+
+      call read_data(fileob, trim(var_name)//"_i8", var_data%var_i8(:,:,:,:,:))
+      call compare_var_data(mpp_chksum(var_data%var_i8(:,:,:,:,:), (/mpp_pe()/)), &
+        mpp_chksum(ref_data%var_i8(:,:,:,:,:), (/mpp_pe()/)), "var5_i8")
     end select
-  end subroutine 
+  end subroutine
 
   subroutine var_data_set_ref(var_data)
     type(data_type),             intent(inout) :: var_data
