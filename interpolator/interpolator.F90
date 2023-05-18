@@ -324,7 +324,8 @@ integer :: verbose = 0                              !< No description
 logical :: conservative_interp = .true.          !< No description
 logical :: retain_cm3_bug = .false.               !< No description
 logical :: use_mpp_io = .false. !< Set to true to use mpp_io, otherwise fms2io is used
-integer :: ngroup = -1
+integer :: ngroup = -1 !< Number of groups to divide the current pelist. Each pelist group has a "root" pe that reads
+                       !! and broadcasts the data. The default is to have all ranks reading.
 
 namelist /interpolator_nml/    &
                              read_all_on_init, verbose, conservative_interp, retain_cm3_bug, use_mpp_io, ngroup
@@ -3867,26 +3868,30 @@ end subroutine interp_linear
 !
 !########################################################################
 
-  function mpp_set_pes_group(gpelist, n) &
-  result(pelist)
-    integer, intent(in) :: gpelist(:)
-    integer, intent(in) :: n
+!> @brief Divide the global pelist into n groups
+!! @return Current PEs section of the global pelist
+function mpp_set_pes_group(gpelist, n) &
+result(pelist)
+  integer, intent(in) :: gpelist(:) !< Global pelist
+  integer, intent(in) :: n          !< Number of groups to dive the pelist to
 
-    integer, allocatable :: pelist(:)
-    integer :: i, pe_begin, pe_end
+  integer, allocatable :: pelist(:)
+  integer :: i        !< For do loops
+  integer :: pe_begin !< The begining pe for the group
+  integer :: pe_end   !< The ending pe for the group
 
-    if (mod(size(gpelist), n) .ne. 0) call mpp_error(FATAL, "The global pelist is not divisible by ngroup")
-    allocate(pelist(int(size(gpelist)/n)))
+  if (mod(size(gpelist), n) .ne. 0) call mpp_error(FATAL, "The global pelist is not divisible by ngroup")
+  allocate(pelist(int(size(gpelist)/n)))
 
-    do i = 1, n
-        pe_begin = int(size(gpelist)/n) * (i-1)
-        pe_end = pe_begin + int(size(gpelist)/n) -1
-        if (mpp_pe() .ge. pe_begin .and. mpp_pe() .le. pe_end) then
-            pelist=gpelist(pe_begin+1:pe_end+1)
-            return
-        endif
-    enddo
-  end function
+  do i = 1, n
+      pe_begin = int(size(gpelist)/n) * (i-1)
+      pe_end = pe_begin + int(size(gpelist)/n) -1
+      if (mpp_pe() .ge. pe_begin .and. mpp_pe() .le. pe_end) then
+          pelist=gpelist(pe_begin+1:pe_end+1)
+          return
+      endif
+  enddo
+end function
 
 end module interpolator_mod
 
