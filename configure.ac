@@ -479,6 +479,7 @@ AC_CONFIG_FILES([
   test_fms/coupler/Makefile
   test_fms/parser/Makefile
   test_fms/string_utils/Makefile
+  test_fms/random_numbers/Makefile
   FMS.pc
   ])
 
