@@ -17,14 +17,19 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 
-#define KIND_ r4_kind
+#undef RN_KIND_
+#undef GET_RANDOM_NUMBER_0D_
+#undef GET_RANDOM_NUMBER_1D_
+#undef GET_RANDOM_NUMBER_2D_
+
+#define RN_KIND_ r4_kind
 #define GET_RANDOM_NUMBER_0D_ get_random_number_0d_r4
 #define GET_RANDOM_NUMBER_1D_ get_random_number_1d_r4
 #define GET_RANDOM_NUMBER_2D_ get_random_number_2d_r4
 
 #include "random_numbers.inc"
 
-#undef KIND_
+#undef RN_KIND_
 #undef GET_RANDOM_NUMBER_0D_
 #undef GET_RANDOM_NUMBER_1D_
 #undef GET_RANDOM_NUMBER_2D_
