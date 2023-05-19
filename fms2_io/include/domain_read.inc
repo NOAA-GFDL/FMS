@@ -108,18 +108,18 @@ subroutine domain_read_2d(fileobj, variable_name, vdata, unlim_dim_level, &
   integer                 :: ypos                  !< The position of the y axis
   integer                 :: i                     !< For do loops
   integer                 :: isd                   !< The starting x position of the data io_domain
-  integer                 :: isc                   !< The starting y position of the data io_domain
+  integer                 :: isc                   !< The starting x position of the compute io_domain
   integer                 :: xc_size               !< The size of the x compute io_domain
   integer                 :: yc_size               !< The size of the y compute io_domain
   integer                 :: jsd                   !< The ending x position of the data io_domain
-  integer                 :: jsc                   !< The ending y position of the data io_domain
+  integer                 :: jsc                   !< The ending y position of the compute io_domain
   integer                 :: c(2)                  !< The corners of the data
   integer                 :: e(2)                  !< The number of points (edges)
   logical                 :: buffer_includes_halos !< .True. if vdata includes halo points
   integer                 :: xgbegin               !< Starting x index of global io domain
-  integer                 :: xgsize                !< Size of global io domain
+  integer                 :: xgsize                !< Size of global x io domain
   integer                 :: ygbegin               !< Starting y index of global io domain
-  integer                 :: ygsize                !< Ending y index of global io domain
+  integer                 :: ygsize                !< Size of global y io domain
   type(domain2d), pointer :: io_domain             !< pointer to the io_domain
 
   !< The global data is only allocated by the io root PEs
@@ -288,18 +288,18 @@ subroutine domain_read_3d(fileobj, variable_name, vdata, unlim_dim_level, &
   integer                 :: ypos                  !< The position of the y axis
   integer                 :: i                     !< For do loops
   integer                 :: isd                   !< The starting x position of the data io_domain
-  integer                 :: isc                   !< The starting y position of the data io_domain
+  integer                 :: isc                   !< The starting x position of the compute io_domain
   integer                 :: xc_size               !< The size of the x compute io_domain
   integer                 :: yc_size               !< The size of the y compute io_domain
   integer                 :: jsd                   !< The ending x position of the data io_domain
-  integer                 :: jsc                   !< The ending y position of the data io_domain
+  integer                 :: jsc                   !< The ending y position of the compute io_domain
   integer                 :: c(3)                  !< The corners of the data
   integer                 :: e(3)                  !< The number of points (edges)
   logical                 :: buffer_includes_halos !< .True. if vdata includes halo points
   integer                 :: xgbegin               !< Starting x index of global io domain
-  integer                 :: xgsize                !< Size of global io domain
+  integer                 :: xgsize                !< Size of global x io domain
   integer                 :: ygbegin               !< Starting y index of global io domain
-  integer                 :: ygsize                !< Ending y index of global io domain
+  integer                 :: ygsize                !< Size of global y io domain
   type(domain2d), pointer :: io_domain             !< pointer to the io_domain
 
   !< The global data is only allocated by the io root PEs
