@@ -96,7 +96,7 @@ module fms_mod
 !
 !  uppercase           Convert character strings to all upper case
 !
-!  monotonic_array     Determines if the real input array has
+!  monotonic_array     Determines if the real input array has strictly
 !                      monotonically increasing or decreasing values.
 !
 !  string_array_index  Match the input character string to a string
@@ -162,6 +162,7 @@ use fms2_io_mod, only: fms2_io_init
 use memutils_mod, only: print_memuse_stats, memutils_init
 use grid2_mod, only: grid_init, grid_end
 use fms_string_utils_mod, only: fms_c2f_string, fms_cstring2cpointer, string
+use platform_mod, only: r4_kind, r8_kind
 
 use, intrinsic :: iso_c_binding
 
@@ -213,6 +214,10 @@ public :: string
 
 ! public mpp-io interfaces
 public :: do_cf_compliance
+
+interface monotonic_array
+  module procedure :: monotonic_array_r4, monotonic_array_r8
+end interface monotonic_array
 
 !Balaji
 !this is published by fms and applied to any initialized clocks
@@ -721,51 +726,6 @@ integer :: i
 end function string_array_index
 
 !#######################################################################
-
-!> @brief Determines if a real input array has monotonically increasing or
-!!     decreasing values.
-!! @return If the input array of real values either increases or decreases monotonically then true
-!! is returned, otherwise false is returned.
-function monotonic_array ( array, direction )
-real,    intent(in)            :: array(:) !< An array of real values. If the size(array) < 2 this function
-                                           !! assumes the array is not monotonic, no fatal error will occur.
-integer, intent(out), optional :: direction !< If the input array is:
-                                            !! >> monotonic (small to large) then direction = +1.
-                                            !! >> monotonic (large to small) then direction = -1.
-                                            !! >> not monotonic then direction = 0.
-logical :: monotonic_array !< If the input array of real values either increases or decreases monotonically
-                           !! then TRUE is returned, otherwise FALSE is returned.
-integer :: i
-
-! initialize
-  monotonic_array = .false.
-  if (present(direction)) direction = 0
-
-! array too short
-  if ( size(array(:)) < 2 ) return
-
-! ascending
-  if ( array(1) < array(size(array(:))) ) then
-     do i = 2, size(array(:))
-       if (array(i-1) < array(i)) cycle
-       return
-     enddo
-     monotonic_array = .true.
-     if (present(direction)) direction = +1
-
-! descending
-  else
-     do i = 2, size(array(:))
-       if (array(i-1) > array(i)) cycle
-       return
-     enddo
-     monotonic_array = .true.
-     if (present(direction)) direction = -1
-  endif
-
-end function monotonic_array
-
-!#######################################################################
 !> @brief Prints to the log file (or a specified unit) the version id string and
 !!  tag name.
 subroutine write_version_number (version, tag, unit)
@@ -793,6 +753,9 @@ subroutine write_version_number (version, tag, unit)
   endif
 
 end subroutine write_version_number
+
+#include "fms_r4.fh"
+#include "fms_r8.fh"
 
 end module fms_mod
 ! <INFO>
