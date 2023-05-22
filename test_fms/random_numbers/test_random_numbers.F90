@@ -117,13 +117,6 @@ subroutine test_getRandomNumbers
   end select
 end subroutine test_getRandomNumbers
 
-subroutine test_getRandomNumbers_dispatch(stream)
-  type(randomNumberStream), intent(inout) :: stream !< Random number stream
-
-  call test_samples_iter(stream, test_sample_1d, n0_1d)
-  call test_samples_iter(stream, test_sample_2d, n0_2d)
-end subroutine test_getRandomNumbers_dispatch
-
 subroutine test_samples_iter(stream, test, n0)
   integer, parameter :: required_passes = 10 !< Number of samples that must pass for each seed value
 
@@ -190,6 +183,13 @@ function test_sample_2d(stream, n)
 
   test_sample_2d = compare_sample_moments(reshape(arr, [size(arr)]))
 end function test_sample_2d
+
+subroutine test_getRandomNumbers_dispatch(stream)
+  type(randomNumberStream), intent(inout) :: stream !< Random number stream
+
+  call test_samples_iter(stream, test_sample_1d, n0_1d)
+  call test_samples_iter(stream, test_sample_2d, n0_2d)
+end subroutine test_getRandomNumbers_dispatch
 
 ! Check that the first 1,000 moments are within one standard deviation of their expected values.
 function compare_sample_moments(v)
