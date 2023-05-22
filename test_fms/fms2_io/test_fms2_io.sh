@@ -72,6 +72,31 @@ test_expect_success "Domain Read Write Tests with 2 distributed files" '
 
 cat <<_EOF > input.nml
 &test_domain_io_nml
+  layout = 2, 8
+  io_layout = 1, 2
+  filename = "test_dist_layout.nc"
+  use_edges = .true.
+/
+_EOF
+test_expect_success "Domain Read Write Tests with 2 distributed files and EAST and NORTH axis" '
+  mpirun -n 16 ../test_domain_io
+'
+
+cat <<_EOF > input.nml
+&test_domain_io_nml
+  nx = 33
+  ny = 43
+  layout = 4, 6
+  io_layout = 2, 3
+  filename = "test_non_uniform.nc"
+/
+_EOF
+test_expect_success "Domain Read Write Tests with non uniform layouts" '
+  mpirun -n 24 ../test_domain_io
+'
+
+cat <<_EOF > input.nml
+&test_domain_io_nml
   layout = 3, 6
   io_layout = 1, 2
   mask_table = "mask_table"

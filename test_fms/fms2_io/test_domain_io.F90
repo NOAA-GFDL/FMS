@@ -19,7 +19,7 @@
 
 program test_domain_read
   use   mpp_domains_mod, only: mpp_domains_set_stack_size, mpp_define_domains, mpp_define_io_domain, &
-                               mpp_get_compute_domain, mpp_get_data_domain, domain2d
+                               mpp_get_compute_domain, mpp_get_data_domain, domain2d, EAST, NORTH, CENTER
   use   mpp_mod,         only: mpp_chksum, mpp_pe, mpp_root_pe, mpp_error, FATAL, input_nml_file
   use   fms2_io_mod,     only: open_file, register_axis, register_variable_attribute, close_file, &
                                FmsNetcdfDomainFile_t, write_data, register_field, read_data, &
@@ -47,6 +47,7 @@ program test_domain_read
   integer                               :: yhalo = 2           !< Number of halo points in Y
   integer                               :: nz = 2              !< Number of points in the z dimension
   character(len=20)                     :: filename="test.nc"  !< Name of the file
+  logical                               :: use_edges=.false.   !< Use North and East domain positions
 
   integer                               :: ndim4               !< Number of points in dim4
   integer                               :: ndim5               !< Number of points in dim5
@@ -58,8 +59,10 @@ program test_domain_read
   logical, allocatable, dimension(:,:)  :: parsed_mask         !< Parsed masked
   integer                               :: io                  !< Error code when reading namelist
   integer                               :: ierr                !< Error code when reading namelist
+  integer                               :: xposition           !< position in the x dimension ("EAST" or "CENTER")
+  integer                               :: yposition           !< position in the y dimension ("NORTH" or "CENTER")
 
-  namelist /test_domain_io_nml/ layout, io_layout, nx, ny, nz, mask_table, xhalo, yhalo, nz, filename
+  namelist /test_domain_io_nml/ layout, io_layout, nx, ny, nz, mask_table, xhalo, yhalo, nz, filename, use_edges
 
   call fms_init
 
@@ -68,6 +71,14 @@ program test_domain_read
 
   ndim4 = 2
   ndim5 = 2
+
+  if (use_edges) then
+    xposition = EAST
+    yposition = NORTH
+  else
+    xposition = CENTER
+    yposition = CENTER
+  endif
 
   !< Parse the mask table
   allocate(parsed_mask(layout(1), layout(2)))
@@ -88,8 +99,8 @@ program test_domain_read
     names(4) = "dim4"
     names(5) = "dim5"
 
-    call register_axis(fileobj, "dim1", "x")
-    call register_axis(fileobj, "dim2", "y")
+    call register_axis(fileobj, "dim1", "x", domain_position=xposition )
+    call register_axis(fileobj, "dim2", "y", domain_position=yposition )
     call register_axis(fileobj, "dim3", nz)
     call register_axis(fileobj, "dim4", ndim4)
     call register_axis(fileobj, "dim5", ndim5)
