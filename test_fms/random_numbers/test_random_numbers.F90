@@ -117,39 +117,6 @@ subroutine test_getRandomNumbers
   end select
 end subroutine test_getRandomNumbers
 
-subroutine test_samples_iter(stream, test, n0)
-  integer, parameter :: required_passes = 10 !< Number of samples that must pass for each seed value
-
-  type(randomNumberStream), intent(inout) :: stream !< Random number stream
-  procedure(test_sample_1d) :: test !< Procedure to draw a random sample and test it
-  integer, intent(in) :: n0 !< Initial sample size to test
-
-  real(k) :: x !< Sample for 0D test
-  integer :: n !< Sample size for 1D or 2D test
-  integer :: pass_counter !< Number of test passes
-
-  ! 0D case
-  ! Get a scalar and check that it's within [0,1]
-  call getRandomNumbers(stream, x)
-  call check_bounds(x)
-
-  ! 1D and 2D cases
-  ! Attempt to draw ten samples for which the first 1,000 moments are within
-  ! one standard deviation of the expected values for the uniform distribution
-  ! on [0,1]
-
-  n = n0
-  pass_counter = 0
-
-  do while (pass_counter .lt. required_passes)
-    if (test(stream, n)) then
-      pass_counter = pass_counter + 1
-    endif
-
-    n = n * 11 / 10
-  enddo
-end subroutine test_samples_iter
-
 ! Draw a random sample and test its moments (1D)
 function test_sample_1d(stream, n)
   type(randomNumberStream), intent(inout) :: stream
@@ -183,6 +150,39 @@ function test_sample_2d(stream, n)
 
   test_sample_2d = compare_sample_moments(reshape(arr, [size(arr)]))
 end function test_sample_2d
+
+subroutine test_samples_iter(stream, test, n0)
+  integer, parameter :: required_passes = 10 !< Number of samples that must pass for each seed value
+
+  type(randomNumberStream), intent(inout) :: stream !< Random number stream
+  procedure(test_sample_1d) :: test !< Procedure to draw a random sample and test it
+  integer, intent(in) :: n0 !< Initial sample size to test
+
+  real(k) :: x !< Sample for 0D test
+  integer :: n !< Sample size for 1D or 2D test
+  integer :: pass_counter !< Number of test passes
+
+  ! 0D case
+  ! Get a scalar and check that it's within [0,1]
+  call getRandomNumbers(stream, x)
+  call check_bounds(x)
+
+  ! 1D and 2D cases
+  ! Attempt to draw ten samples for which the first 1,000 moments are within
+  ! one standard deviation of the expected values for the uniform distribution
+  ! on [0,1]
+
+  n = n0
+  pass_counter = 0
+
+  do while (pass_counter .lt. required_passes)
+    if (test(stream, n)) then
+      pass_counter = pass_counter + 1
+    endif
+
+    n = n * 11 / 10
+  enddo
+end subroutine test_samples_iter
 
 subroutine test_getRandomNumbers_dispatch(stream)
   type(randomNumberStream), intent(inout) :: stream !< Random number stream
