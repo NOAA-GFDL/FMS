@@ -35,18 +35,6 @@ call fms_end
 
 contains
 
-#define CALC_MOMENT_(i) (1._k / real(i + 1, k))
-
-subroutine calc_ideal_moments
-  integer :: i !< Moment order
-  integer, parameter :: n = n0_1d !< Sample size for which to calculate moment standard deviations
-
-  do i=1, n_moments
-    moment_mu(i) = CALC_MOMENT_(i)
-    moment_sigma(i) = sqrt((CALC_MOMENT_(2*i) - moment_mu(i)**2) / n)
-  enddo
-end subroutine calc_ideal_moments
-
 subroutine set_time
   integer :: now_values(8) !< Values returned by the date_and_time() intrinsic
 
@@ -117,6 +105,67 @@ subroutine test_getRandomNumbers
   end select
 end subroutine test_getRandomNumbers
 
+#define CALC_MOMENT_(i) (1._k / real(i + 1, k))
+
+subroutine calc_ideal_moments
+  integer :: i !< Moment order
+  integer, parameter :: n = n0_1d !< Sample size for which to calculate moment standard deviations
+
+  do i=1, n_moments
+    moment_mu(i) = CALC_MOMENT_(i)
+    moment_sigma(i) = sqrt((CALC_MOMENT_(2*i) - moment_mu(i)**2) / n)
+  enddo
+end subroutine calc_ideal_moments
+
+subroutine test_getRandomNumbers_dispatch(stream)
+  type(randomNumberStream), intent(inout) :: stream !< Random number stream
+
+  call test_samples_iter(stream, test_sample_1d, n0_1d)
+  call test_samples_iter(stream, test_sample_2d, n0_2d)
+end subroutine test_getRandomNumbers_dispatch
+
+subroutine test_samples_iter(stream, test, n0)
+  abstract interface
+    function test_sample(stream, n)
+      import
+      type(randomNumberStream), intent(inout) :: stream
+      integer, intent(in) :: n
+      logical :: test_sample
+    end function
+  end interface
+
+  integer, parameter :: required_passes = 10 !< Number of samples that must pass for each seed value
+
+  type(randomNumberStream), intent(inout) :: stream !< Random number stream
+  procedure(test_sample) :: test !< Procedure to draw a random sample and test it
+  integer, intent(in) :: n0 !< Initial sample size to test
+
+  real(k) :: x !< Sample for 0D test
+  integer :: n !< Sample size for 1D or 2D test
+  integer :: pass_counter !< Number of test passes
+
+  ! 0D case
+  ! Get a scalar and check that it's within [0,1]
+  call getRandomNumbers(stream, x)
+  call check_bounds(x)
+
+  ! 1D and 2D cases
+  ! Attempt to draw ten samples for which the first 1,000 moments are within
+  ! one standard deviation of the expected values for the uniform distribution
+  ! on [0,1]
+
+  n = n0
+  pass_counter = 0
+
+  do while (pass_counter .lt. required_passes)
+    if (test(stream, n)) then
+      pass_counter = pass_counter + 1
+    endif
+
+    n = n * 11 / 10
+  enddo
+end subroutine test_samples_iter
+
 ! Draw a random sample and test its moments (1D)
 function test_sample_1d(stream, n)
   type(randomNumberStream), intent(inout) :: stream
@@ -150,46 +199,6 @@ function test_sample_2d(stream, n)
 
   test_sample_2d = compare_sample_moments(reshape(arr, [size(arr)]))
 end function test_sample_2d
-
-subroutine test_samples_iter(stream, test, n0)
-  integer, parameter :: required_passes = 10 !< Number of samples that must pass for each seed value
-
-  type(randomNumberStream), intent(inout) :: stream !< Random number stream
-  procedure(test_sample_1d) :: test !< Procedure to draw a random sample and test it
-  integer, intent(in) :: n0 !< Initial sample size to test
-
-  real(k) :: x !< Sample for 0D test
-  integer :: n !< Sample size for 1D or 2D test
-  integer :: pass_counter !< Number of test passes
-
-  ! 0D case
-  ! Get a scalar and check that it's within [0,1]
-  call getRandomNumbers(stream, x)
-  call check_bounds(x)
-
-  ! 1D and 2D cases
-  ! Attempt to draw ten samples for which the first 1,000 moments are within
-  ! one standard deviation of the expected values for the uniform distribution
-  ! on [0,1]
-
-  n = n0
-  pass_counter = 0
-
-  do while (pass_counter .lt. required_passes)
-    if (test(stream, n)) then
-      pass_counter = pass_counter + 1
-    endif
-
-    n = n * 11 / 10
-  enddo
-end subroutine test_samples_iter
-
-subroutine test_getRandomNumbers_dispatch(stream)
-  type(randomNumberStream), intent(inout) :: stream !< Random number stream
-
-  call test_samples_iter(stream, test_sample_1d, n0_1d)
-  call test_samples_iter(stream, test_sample_2d, n0_2d)
-end subroutine test_getRandomNumbers_dispatch
 
 ! Check that the first 1,000 moments are within one standard deviation of their expected values.
 function compare_sample_moments(v)
