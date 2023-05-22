@@ -36,6 +36,7 @@ use fms_diag_axis_object_mod, only: fms_diag_axis_object_init, fmsDiagAxis_type,
                                    &parse_compress_att, get_axis_id_from_name
 use fms_diag_output_buffer_mod
 use fms_mod, only: fms_error_handler
+use constants_mod, only: SECONDS_PER_DAY
 #endif
 #if defined(_OPENMP)
 use omp_lib
@@ -489,6 +490,7 @@ logical function fms_diag_accept_data (this, diag_field_id, field_data, time, is
   integer :: buffer_id !< Index of a buffer
   !TODO: logical :: phys_window
   character(len=128) :: error_string !< Store error text
+  integer :: i !< For looping
 #ifndef use_yaml
 CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling with -Duse_yaml")
 #else
