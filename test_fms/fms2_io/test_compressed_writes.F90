@@ -1,11 +1,34 @@
+!***********************************************************************
+!*                   GNU Lesser General Public License
+!*
+!* This file is part of the GFDL Flexible Modeling System (FMS).
+!*
+!* FMS is free software: you can redistribute it and/or modify it under
+!* the terms of the GNU Lesser General Public License as published by
+!* the Free Software Foundation, either version 3 of the License, or (at
+!* your option) any later version.
+!*
+!* FMS is distributed in the hope that it will be useful, but WITHOUT
+!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+!* for more details.
+!*
+!* You should have received a copy of the GNU Lesser General Public
+!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!***********************************************************************
+
+!> @brief  This programs tests the compressed writes in fms2_io
 program test_compressed_writes
-  use fms_mod, only: fms_init, fms_end
-  use fms2_io_mod
-  use mpp_mod
+  use fms_mod,           only: fms_init, fms_end
+  use fms2_io_mod,       only: open_file, close_file, FmsNetcdfFile_t, register_axis, write_data, &
+                               register_field, read_data
+  use mpp_mod,           only: mpp_pe, mpp_root_pe, mpp_get_current_pelist, FATAL, mpp_npes, mpp_chksum, &
+                               mpp_error
   use   platform_mod,    only: r4_kind, r8_kind, i4_kind, i8_kind
 
   implicit none
 
+  !> @brief Dummy type to hold variable data
   type data_type
     real(kind=r4_kind),    allocatable   :: var_r4(:,:,:,:,:)
     real(kind=r8_kind),    allocatable   :: var_r8(:,:,:,:,:)
@@ -16,13 +39,13 @@ program test_compressed_writes
   type(FmsNetcdfFile_t)                 :: fileobj             !< fms2io fileobj for domain decomposed
   character(len=6), dimension(5)        :: names               !< Dimensions names
   type(data_type)                       :: var_data_in         !< Variable data written in
-  type(data_type)                       :: var_data_out         !< Variable data read
-  type(data_type)                       :: var_data_ref         !< Variable data read
-  integer :: ndim2 = 2
-  integer :: ndim3 = 3
-  integer :: ndim4 = 4
-  integer :: ndim5 = 1
-  integer, allocatable :: pes(:)
+  type(data_type)                       :: var_data_out        !< Variable data read
+  type(data_type)                       :: var_data_ref        !< Variable data read
+  integer                               :: ndim2 = 2           !< The size of the second dimension
+  integer                               :: ndim3 = 3           !< The size of the third dimension
+  integer                               :: ndim4 = 4           !< The size of the fourth dimension
+  integer                               :: ndim5 = 1           !< The size of the fifth dimension
+  integer, allocatable                  :: pes(:)              !< The pelist
 
   call fms_init
 
@@ -137,14 +160,14 @@ program test_compressed_writes
 
   end subroutine
 
+  !> @brief Reads the data and compares it with reference data
   subroutine read_data_wrapper(fileob, var_name, dim, var_data, ref_data)
-    type(FmsNetcdfFile_t),        intent(inout):: fileob              !< fms2io fileobj for domain decomposed
+    type(FmsNetcdfFile_t),       intent(inout) :: fileob              !< fms2io fileobj for domain decomposed
     character(len=*),            intent(in)    :: var_name            !< The kind of the variable
-    integer,                     intent(in)    :: dim
-    type(data_type),             intent(inout) :: var_data
-    type(data_type),             intent(in)    :: ref_data
+    integer,                     intent(in)    :: dim                 !< The dimension of the variable
+    type(data_type),             intent(inout) :: var_data            !< Variable data to read to
+    type(data_type),             intent(in)    :: ref_data            !< Variable data to compare to
 
-    integer :: i,j
     select case(dim)
     case(1)
       call var_data_set(var_data, -999)
@@ -234,9 +257,12 @@ program test_compressed_writes
     end select
   end subroutine
 
+  !> @brief Sets the data to the expected answer
   subroutine var_data_set_ref(var_data)
-    type(data_type),             intent(inout) :: var_data
-    integer :: starting_index, ending_index, i,j
+    type(data_type),             intent(inout) :: var_data !< Variable data to set
+    integer                                    :: starting_index !< Starting index of the current pes data
+    integer                                    :: ending_index   !< Ending index of the current pes data
+    integer                                    :: i              !< for do loops
 
     ending_index = 0
     do i = 1, size(pes)
@@ -253,9 +279,9 @@ program test_compressed_writes
 
   !> @brief Compares two checksums and crashes if they are not the same
   subroutine compare_var_data(check_sum_in, check_sum_ref, varname)
-    integer(kind=i8_kind), intent(in) :: check_sum_in
-    integer(kind=i8_kind), intent(in) :: check_sum_ref
-    character(len=*), intent(in) :: varname
+    integer(kind=i8_kind), intent(in) :: check_sum_in  !< The checksum calculated from the data read
+    integer(kind=i8_kind), intent(in) :: check_sum_ref !< The checksum to compare to
+    character(len=*),      intent(in) :: varname       !< Variable name for reference
 
    if (check_sum_ref .ne. check_sum_in) call mpp_error(FATAL, &
      "Checksums do not match for variable: "//trim(varname))

@@ -213,8 +213,8 @@ subroutine compressed_write_2d(fileobj, variable_name, cdata, unlim_dim_level, &
   integer :: index(1) !< index of the PE in the pelist
 
   integer :: is !< Starting index of the first dimension
-  integer :: js !< Ending index of the first dimension
-  integer :: ie !< Starting index of the second dimension
+  integer :: ie !< Ending index of the first dimension
+  integer :: js !< Starting index of the second dimension
   integer :: je !< Ending index of the second dimension
 
   append_error_msg = "compressed_write_2d: file:"//trim(fileobj%path)//" variable:"//trim(variable_name)
@@ -334,8 +334,8 @@ subroutine compressed_write_3d(fileobj, variable_name, cdata, unlim_dim_level, &
   integer :: index(1) !< index of the PE in the pelist
 
   integer :: is !< Starting index of the first dimension
-  integer :: js !< Ending index of the first dimension
-  integer :: ie !< Starting index of the second dimension
+  integer :: ie !< Ending index of the first dimension
+  integer :: js !< Starting index of the second dimension
   integer :: je !< Ending index of the second dimension
 
   append_error_msg = "compressed_write_3d: file:"//trim(fileobj%path)//" variable:"//trim(variable_name)
