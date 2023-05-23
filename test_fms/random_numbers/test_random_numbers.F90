@@ -136,7 +136,7 @@ subroutine test_samples_iter(stream, test, n0)
   abstract interface
     !> Abstract interface for test_sample_1d and test_sample_2d
     function test_sample(stream, n)
-      import :: randomNumbersStream
+      import :: randomNumberStream
       type(randomNumberStream), intent(inout) :: stream
       integer, intent(in) :: n
       logical :: test_sample
