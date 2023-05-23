@@ -41,7 +41,7 @@ program test_packed_reads
 
   integer(2)            :: packed_data_r8(10, 1, 1, 1, 1) !< Packed data calculated from r8
   integer(2)            :: packed_data_r4(10, 1, 1, 1, 1) !< Packed data calculated from r4
-  
+
   integer :: ncid                                                   !< netcdf file id
   integer :: varid1_r8, varid2_r8, varid3_r8, varid4_r8, varid5_r8  !< Variable ids
   integer :: varid1_r4, varid2_r4, varid3_r4, varid4_r4, varid5_r4  !< variable ids
@@ -102,7 +102,7 @@ program test_packed_reads
   call check(nf90_put_var(ncid, varid5_r4, packed_data_r4(:,:,:,:,:)))
 
   call check(nf90_close(ncid))
-  
+
   if (open_file(fileobj, "short_file.nc", "read")) then
     var_r8_out2 = -999_r8_kind
     call read_data(fileobj, "var_1d_r8", var_r8_out2(:,1,1,1,1))
@@ -188,11 +188,11 @@ program test_packed_reads
   !> @brief Check the netcdf error code
   subroutine check(status)
     integer, intent ( in) :: status !< netcdf error code
-    
-    if(status /= nf90_noerr) then 
+
+    if(status /= nf90_noerr) then
       print *, trim(nf90_strerror(status))
       stop "Stopped"
     end if
-  end subroutine check  
+  end subroutine check
 
 end program test_packed_reads
