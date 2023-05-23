@@ -477,7 +477,7 @@
     layout(1) = size(domain%x(1)%list(:))
     layout(2) = size(domain%y(1)%list(:))
 
-    if(ASSOCIATED(domain%io_domain)) call mpp_error(FATAL, &
+    if(ALLOCATED(domain%io_domain)) call mpp_error(FATAL, &
        "mpp_domains_define.inc(mpp_define_io_domain): io_domain is already defined")
 
     if(mod(layout(1), io_layout(1)) .NE. 0) call mpp_error(FATAL, &
@@ -492,7 +492,7 @@
 
     allocate(domain%io_domain)
     domain%io_layout = io_layout
-    io_domain => domain%io_domain
+    io_domain = domain%io_domain
     ! Find how many processors are in the group with the consideration that some of the region maybe masked out.
     npes_x = layout(1)/io_layout(1)
     npes_y = layout(2)/io_layout(2)
@@ -605,7 +605,7 @@
          whalo, ehalo, shalo, nhalo, is_mosaic, tile_count, tile_id, complete, x_cyclic_offset, y_cyclic_offset )
     integer,          intent(in)           :: global_indices(:) !<(/ isg, ieg, jsg, jeg /)
     integer,          intent(in)           :: layout(:) !< pe layout
-    type(domain2D),   intent(inout)        :: domain !< 2D domain decomposition to define
+    type(domain2D),   intent(inout), target        :: domain !< 2D domain decomposition to define
     integer,          intent(in), optional :: pelist(0:) !< current pelist to run on
     integer,          intent(in), optional :: xflags, yflags !< directional flag
     integer,          intent(in), optional :: xhalo, yhalo !< halo sizes for x and y indices
@@ -649,7 +649,7 @@
     integer              :: ibegin(0:layout(1)-1), iend(0:layout(1)-1)
     integer              :: jbegin(0:layout(2)-1), jend(0:layout(2)-1)
     character(len=8)     :: text
-    type(overlapSpec), pointer :: check_T => NULL()
+    type(overlapSpec), allocatable :: check_T
     integer              :: outunit
     logical              :: send(8), recv(8)
 
@@ -779,7 +779,7 @@
     !--- set up 2-D domain decomposition for T, E, C, N and computing overlapping
     !--- when current tile is the last tile in the mosaic.
     nlist = size(pesall(:))
-    if( .NOT. Associated(domain%x) ) then
+    if( .NOT. allocated(domain%x) ) then
        allocate(domain%tileList(1))
        domain%tileList(1)%xbegin = global_indices(1)
        domain%tileList(1)%xend   = global_indices(2)
@@ -1011,10 +1011,10 @@
        domain%whalo = whalosz; domain%ehalo = ehalosz
        domain%shalo = shalosz; domain%nhalo = nhalosz
        allocate(domain%update_T, domain%update_E, domain%update_C, domain%update_N)
-       domain%update_T%next => NULL()
-       domain%update_E%next => NULL()
-       domain%update_C%next => NULL()
-       domain%update_N%next => NULL()
+       !domain%update_T%next => NULL()
+       !domain%update_E%next => NULL()
+       !domain%update_C%next => NULL()
+       !domain%update_N%next => NULL()
        allocate(domain%check_E,  domain%check_C,  domain%check_N )
        domain%update_T%nsend = 0
        domain%update_T%nrecv = 0
@@ -1561,8 +1561,8 @@ end subroutine check_message_size
   subroutine compute_overlaps( domain, position, update, check, ishift, jshift, x_cyclic_offset, y_cyclic_offset, &
                                whalo, ehalo, shalo, nhalo )
     type(domain2D), intent(inout) :: domain
-    type(overlapSpec), intent(inout), pointer :: update
-    type(overlapSpec), intent(inout), pointer :: check
+    type(overlapSpec), intent(inout), allocatable :: update
+    type(overlapSpec), intent(inout), allocatable :: check
     integer, intent(in)           :: position, ishift, jshift
     integer, intent(in)           :: x_cyclic_offset, y_cyclic_offset
     integer, intent(in)           :: whalo, ehalo, shalo, nhalo
@@ -1578,8 +1578,8 @@ end subroutine check_message_size
     integer                          :: isd2, ied2, jsd2, jed2
     logical                          :: folded, need_adjust_1, need_adjust_2, need_adjust_3, folded_north
     type(overlap_type)               :: overlap
-    type(overlap_type),  pointer     :: overlapList(:)=>NULL()
-    type(overlap_type),  pointer     :: checkList(:)=>NULL()
+    type(overlap_type),  allocatable :: overlapList(:)
+    type(overlap_type),  allocatable :: checkList(:)
     integer                          :: nsend, nrecv
     integer                          :: nsend_check, nrecv_check
     integer                          :: unit
@@ -1596,7 +1596,7 @@ end subroutine check_message_size
     !--- when there is only one tile, n will equal to np
     nlist = size(domain%list(:))
     set_check = .false.
-    if(ASSOCIATED(check)) set_check = .true.
+    if(ALLOCATED(check)) set_check = .true.
     allocate(overlapList(MAXLIST) )
     if(set_check) allocate(checkList(MAXLIST)   )
 
@@ -2972,7 +2972,7 @@ end subroutine check_message_size
   !! assumes only one in each direction
   !! will calculate the overlapping for T,E,C,N-cell seperately.
   subroutine compute_overlaps_fold_south( domain, position, ishift, jshift)
-    type(domain2D), intent(inout) :: domain
+    type(domain2D), intent(inout), target :: domain
     integer, intent(in)           :: position, ishift, jshift
 
     integer                          :: i, m, n, nlist, tMe, tNbr, dir
@@ -2983,8 +2983,8 @@ end subroutine check_message_size
     logical                          :: folded
     type(overlap_type)               :: overlap
     type(overlapSpec),   pointer     :: update=>NULL()
-    type(overlap_type),  pointer     :: overlapList(:)=>NULL()
-    type(overlap_type),  pointer     :: checkList(:)=>NULL()
+    type(overlap_type),  allocatable :: overlapList(:)
+    type(overlap_type),  allocatable :: checkList(:)
     type(overlapSpec),   pointer     :: check =>NULL()
     integer                          :: nsend, nrecv
     integer                          :: nsend_check, nrecv_check
@@ -3613,7 +3613,7 @@ end subroutine check_message_size
   !! assumes only one in each direction
   !! will calculate the overlapping for T,E,C,N-cell seperately.
   subroutine compute_overlaps_fold_west( domain, position, ishift, jshift)
-    type(domain2D), intent(inout) :: domain
+    type(domain2D), intent(inout), target :: domain
     integer, intent(in)           :: position, ishift, jshift
 
     integer                          :: j, m, n, nlist, tMe, tNbr, dir
@@ -4233,7 +4233,7 @@ end subroutine check_message_size
   !! will calculate the overlapping for T,E,C,N-cell seperately.
   !! here assume fold-east and y-cyclic boundary condition
   subroutine compute_overlaps_fold_east( domain, position, ishift, jshift )
-    type(domain2D), intent(inout) :: domain
+    type(domain2D), intent(inout), target :: domain
     integer, intent(in)           :: position, ishift, jshift
 
     integer                          :: j, m, n, nlist, tMe, tNbr, dir
@@ -4945,7 +4945,7 @@ end subroutine check_message_size
   !! But will return back to solve this problem in the future.
   subroutine set_overlaps(domain, overlap_in, overlap_out, whalo_out, ehalo_out, shalo_out, nhalo_out)
     type(domain2d),    intent(in)    :: domain
-    type(overlapSpec), intent(in)    :: overlap_in
+    type(overlapSpec), intent(in), target    :: overlap_in
     type(overlapSpec), intent(inout) :: overlap_out
     integer,           intent(in)    :: whalo_out, ehalo_out, shalo_out, nhalo_out
     integer                          :: nlist, m, n, isoff, ieoff, jsoff, jeoff, rotation
@@ -5585,7 +5585,7 @@ end subroutine check_message_size
                    is = max(isc1,isc2); ie = min(iec1,iec2)
                    js = max(jsc1,jsc2); je = min(jec1,jec2)
                    if(ie.GE.is .AND. je.GE.js )then
-                      if(.not. associated(overlapSend(m)%tileMe)) call allocate_update_overlap(overlapSend(m), &
+                      if(.not. allocated(overlapSend(m)%tileMe)) call allocate_update_overlap(overlapSend(m), &
                         &  MAXOVERLAP)
                     call insert_overlap_type(overlapSend(m), domain%list(m)%pe, tMe, tNbr, &
                          is, ie, js, je, dir, rotateSend(n), .true. )
@@ -5689,7 +5689,7 @@ end subroutine check_message_size
                    is = max(isd1,isd2); ie = min(ied1,ied2)
                    js = max(jsd1,jsd2); je = min(jed1,jed2)
                    if(ie.GE.is .AND. je.GE.js )then
-                      if(.not. associated(overlapRecv(m)%tileMe)) call allocate_update_overlap(overlapRecv(m), &
+                      if(.not. allocated(overlapRecv(m)%tileMe)) call allocate_update_overlap(overlapRecv(m), &
                         &  MAXOVERLAP)
                     call insert_overlap_type(overlapRecv(m), domain%list(m)%pe, tMe, tNbr, &
                          is, ie, js, je, dir, rotateRecv(n), .true.)
@@ -5728,7 +5728,7 @@ end subroutine check_message_size
 
     ! copy the overlap information into domain.
     if(nsend >0) then
-       if(associated(domain%update_T%send)) then
+       if(allocated(domain%update_T%send)) then
           do m = 1, domain%update_T%nsend
              call deallocate_overlap_type(domain%update_T%send(m))
           enddo
@@ -5794,7 +5794,7 @@ end subroutine check_message_size
     endif
 
     if(nrecv >0) then
-       if(associated(domain%update_T%recv)) then
+       if(allocated(domain%update_T%recv)) then
           do m = 1, domain%update_T%nrecv
              call deallocate_overlap_type(domain%update_T%recv(m))
           enddo
@@ -5913,7 +5913,7 @@ end subroutine fill_contact
 !############################################################################
 !> this routine sets the overlapping between tiles for E,C,N-cell based on T-cell overlapping
 subroutine set_contact_point(domain, position)
-  type(domain2d), intent(inout) :: domain
+  type(domain2d), intent(inout), target :: domain
   integer,           intent(in) :: position
 
   integer                         :: ishift, jshift, nlist, list, m, n
@@ -5957,7 +5957,7 @@ subroutine set_contact_point(domain, position)
      call add_update_overlap(overlapList(pos), update_out%send(m))
      call deallocate_overlap_type(update_out%send(m))
   enddo
-  if(ASSOCIATED(update_out%send) )deallocate(update_out%send)
+  if(ALLOCATED(update_out%send) )deallocate(update_out%send)
 
   !--- loop over the list of overlapping.
   nsend = update_in%nsend
@@ -6078,7 +6078,7 @@ subroutine set_contact_point(domain, position)
      call add_update_overlap(overlapList(pos), update_out%recv(m))
      call deallocate_overlap_type(update_out%recv(m))
   enddo
-  if(ASSOCIATED(update_out%recv) )deallocate(update_out%recv)
+  if(ALLOCATED(update_out%recv) )deallocate(update_out%recv)
 
   !--- loop over the list of overlapping.
   nrecv = update_in%nrecv
@@ -6159,7 +6159,7 @@ end subroutine set_contact_point
 !! done on current pe for east boundary for E-cell, north boundary for N-cell,
 !! East and North boundary for C-cell
 subroutine set_check_overlap( domain, position )
-type(domain2d),    intent(in) :: domain
+type(domain2d),    intent(in), target :: domain
 integer,           intent(in) :: position
 integer                       :: nlist, m, n
 integer, parameter            :: MAXCOUNT = 100
@@ -6321,7 +6321,7 @@ end subroutine set_check_overlap
 !#############################################################################
 !> set up the overlapping for boundary if the domain is symmetry.
 subroutine set_bound_overlap( domain, position )
-  type(domain2d), intent(inout) :: domain
+  type(domain2d), intent(inout), target :: domain
   integer,        intent(in)    :: position
   integer                       :: m, n, l, count, dr, tMe
   integer, parameter            :: MAXCOUNT = 100
@@ -7580,7 +7580,7 @@ end subroutine mpp_define_null_domain2D
 subroutine mpp_deallocate_domain1D(domain)
   type(domain1D), intent(inout) :: domain
 
-  if(ASSOCIATED(domain%list)) deallocate(domain%list)
+  if(ALLOCATED(domain%list)) deallocate(domain%list)
 
 end subroutine mpp_deallocate_domain1D
 
@@ -7590,7 +7590,7 @@ subroutine mpp_deallocate_domain2D(domain)
   type(domain2D), intent(inout) :: domain
 
   call deallocate_domain2D_local(domain)
-  if(ASSOCIATED(domain%io_domain) ) then
+  if(ALLOCATED(domain%io_domain) ) then
      call deallocate_domain2D_local(domain%io_domain)
      deallocate(domain%io_domain)
   endif
@@ -7605,7 +7605,7 @@ integer :: i, ntileMe
 
 ntileMe = size(domain%x(:))
 
-if(ASSOCIATED(domain%pearray))deallocate(domain%pearray)
+if(ALLOCATED(domain%pearray))deallocate(domain%pearray)
 do i = 1, ntileMe
    call mpp_deallocate_domain1D(domain%x(i))
    call mpp_deallocate_domain1D(domain%y(i))
@@ -7613,62 +7613,62 @@ enddo
 deallocate(domain%x, domain%y, domain%tile_id)
 
 ! TODO: Check if these are always allocated
-if(ASSOCIATED(domain%tileList)) deallocate(domain%tileList)
-if(ASSOCIATED(domain%tile_id_all)) deallocate(domain%tile_id_all)
+if(ALLOCATED(domain%tileList)) deallocate(domain%tileList)
+if(ALLOCATED(domain%tile_id_all)) deallocate(domain%tile_id_all)
 
-if(ASSOCIATED(domain%list)) then
+if(ALLOCATED(domain%list)) then
  do i = 0, size(domain%list(:))-1
     deallocate(domain%list(i)%x, domain%list(i)%y, domain%list(i)%tile_id)
  enddo
  deallocate(domain%list)
 endif
 
-if(ASSOCIATED(domain%check_C)) then
+if(ALLOCATED(domain%check_C)) then
   call deallocate_overlapSpec(domain%check_C)
   deallocate(domain%check_C)
 endif
 
-if(ASSOCIATED(domain%check_E)) then
+if(ALLOCATED(domain%check_E)) then
   call deallocate_overlapSpec(domain%check_E)
   deallocate(domain%check_E)
 endif
 
-if(ASSOCIATED(domain%check_N)) then
+if(ALLOCATED(domain%check_N)) then
   call deallocate_overlapSpec(domain%check_N)
   deallocate(domain%check_N)
 endif
 
-if(ASSOCIATED(domain%bound_C)) then
+if(ALLOCATED(domain%bound_C)) then
   call deallocate_overlapSpec(domain%bound_C)
   deallocate(domain%bound_C)
 endif
 
-if(ASSOCIATED(domain%bound_E)) then
+if(ALLOCATED(domain%bound_E)) then
   call deallocate_overlapSpec(domain%bound_E)
   deallocate(domain%bound_E)
 endif
 
-if(ASSOCIATED(domain%bound_N)) then
+if(ALLOCATED(domain%bound_N)) then
   call deallocate_overlapSpec(domain%bound_N)
   deallocate(domain%bound_N)
 endif
 
-if(ASSOCIATED(domain%update_T)) then
+if(ALLOCATED(domain%update_T)) then
   call deallocate_overlapSpec(domain%update_T)
   deallocate(domain%update_T)
 endif
 
-if(ASSOCIATED(domain%update_E)) then
+if(ALLOCATED(domain%update_E)) then
   call deallocate_overlapSpec(domain%update_E)
   deallocate(domain%update_E)
 endif
 
-if(ASSOCIATED(domain%update_C)) then
+if(ALLOCATED(domain%update_C)) then
   call deallocate_overlapSpec(domain%update_C)
   deallocate(domain%update_C)
 endif
 
-if(ASSOCIATED(domain%update_N)) then
+if(ALLOCATED(domain%update_N)) then
   call deallocate_overlapSpec(domain%update_N)
   deallocate(domain%update_N)
 endif
@@ -7683,7 +7683,7 @@ subroutine allocate_check_overlap(overlap, count)
 
   overlap%count = 0
   overlap%pe    = NULL_PE
-  if(associated(overlap%tileMe)) call mpp_error(FATAL, &
+  if(allocated(overlap%tileMe)) call mpp_error(FATAL, &
        "allocate_check_overlap(mpp_domains_define): overlap is already been allocated")
   if(count < 1)  call mpp_error(FATAL, &
        "allocate_check_overlap(mpp_domains_define): count should be a positive integer")
@@ -7705,7 +7705,7 @@ subroutine insert_check_overlap(overlap, pe, tileMe, dir, rotation, is, ie, js, 
 
   overlap%count = overlap%count + 1
   count = overlap%count
-  if(.NOT. associated(overlap%tileMe)) call mpp_error(FATAL, &
+  if(.NOT. allocated(overlap%tileMe)) call mpp_error(FATAL, &
      "mpp_domains_define.inc(insert_check_overlap): overlap is not assigned any memory")
   if(count > size(overlap%tileMe(:)) ) call mpp_error(FATAL, &
      "mpp_domains_define.inc(insert_check_overlap): overlap%count is greater than size(overlap%tileMe)")
@@ -7741,7 +7741,7 @@ subroutine add_check_overlap( overlap_out, overlap_in)
        "add_check_overlap(mpp_domains_define): overlap_in%count is zero")
 
   if(count_out == 0) then
-     if(associated(overlap_out%tileMe)) call mpp_error(FATAL, &
+     if(allocated(overlap_out%tileMe)) call mpp_error(FATAL, &
           "add_check_overlap(mpp_domains_define): overlap is already been allocated but count=0")
      call allocate_check_overlap(overlap_out, count_in)
      overlap_out%pe  = overlap_in%pe
@@ -7795,7 +7795,7 @@ subroutine allocate_update_overlap( overlap, count)
 
   overlap%count = 0
   overlap%pe    = NULL_PE
-  if(associated(overlap%tileMe)) call mpp_error(FATAL, &
+  if(allocated(overlap%tileMe)) call mpp_error(FATAL, &
        "allocate_update_overlap(mpp_domains_define): overlap is already been allocated")
   if(count < 1)  call mpp_error(FATAL, &
        "allocate_update_overlap(mpp_domains_define): count should be a positive integer")
@@ -7903,22 +7903,22 @@ subroutine deallocate_overlap_type( overlap)
   type(overlap_type), intent(inout) :: overlap
 
   if(overlap%count == 0) then
-     if( .NOT. associated(overlap%tileMe)) return
+     if( .NOT. allocated(overlap%tileMe)) return
   else
-     if( .NOT. associated(overlap%tileMe)) call mpp_error(FATAL, &
+     if( .NOT. allocated(overlap%tileMe)) call mpp_error(FATAL, &
           "deallocate_overlap_type(mpp_domains_define): overlap is not been allocated")
   endif
-  if(ASSOCIATED(overlap%tileMe)) deallocate(overlap%tileMe)
-  if(ASSOCIATED(overlap%tileNbr)) deallocate(overlap%tileNbr)
-  if(ASSOCIATED(overlap%is)) deallocate(overlap%is)
-  if(ASSOCIATED(overlap%ie)) deallocate(overlap%ie)
-  if(ASSOCIATED(overlap%js)) deallocate(overlap%js)
-  if(ASSOCIATED(overlap%je)) deallocate(overlap%je)
-  if(ASSOCIATED(overlap%dir)) deallocate(overlap%dir)
-  if(ASSOCIATED(overlap%index)) deallocate(overlap%index)
-  if(ASSOCIATED(overlap%rotation)) deallocate(overlap%rotation)
-  if(ASSOCIATED(overlap%from_contact)) deallocate(overlap%from_contact)
-  if(ASSOCIATED(overlap%msgsize)) deallocate(overlap%msgsize)
+  if(ALLOCATED(overlap%tileMe)) deallocate(overlap%tileMe)
+  if(ALLOCATED(overlap%tileNbr)) deallocate(overlap%tileNbr)
+  if(ALLOCATED(overlap%is)) deallocate(overlap%is)
+  if(ALLOCATED(overlap%ie)) deallocate(overlap%ie)
+  if(ALLOCATED(overlap%js)) deallocate(overlap%js)
+  if(ALLOCATED(overlap%je)) deallocate(overlap%je)
+  if(ALLOCATED(overlap%dir)) deallocate(overlap%dir)
+  if(ALLOCATED(overlap%index)) deallocate(overlap%index)
+  if(ALLOCATED(overlap%rotation)) deallocate(overlap%rotation)
+  if(ALLOCATED(overlap%from_contact)) deallocate(overlap%from_contact)
+  if(ALLOCATED(overlap%msgsize)) deallocate(overlap%msgsize)
   overlap%count = 0
 
 end subroutine deallocate_overlap_type
@@ -7928,13 +7928,13 @@ subroutine deallocate_overlapSpec(overlap)
 type(overlapSpec), intent(inout) :: overlap
 integer                          :: n
 
-   if(ASSOCIATED(overlap%send)) then
+   if(ALLOCATED(overlap%send)) then
       do n = 1, size(overlap%send(:))
          call deallocate_overlap_type(overlap%send(n))
       enddo
       deallocate(overlap%send)
    endif
-   if(ASSOCIATED(overlap%recv)) then
+   if(ALLOCATED(overlap%recv)) then
       do n = 1, size(overlap%recv(:))
          call deallocate_overlap_type(overlap%recv(n))
       enddo
@@ -7960,7 +7960,7 @@ subroutine add_update_overlap( overlap_out, overlap_in)
        "mpp_domains_define.inc(add_update_overlap): overlap_in%count is zero")
 
   if(count_out == 0) then
-     if(associated(overlap_out%tileMe)) call mpp_error(FATAL, &
+     if(allocated(overlap_out%tileMe)) call mpp_error(FATAL, &
           "mpp_domains_define.inc(add_update_overlap): overlap is already been allocated but count=0")
      call allocate_update_overlap(overlap_out, count_in)
      overlap_out%pe  = overlap_in%pe
@@ -8013,9 +8013,9 @@ end subroutine add_update_overlap
 
 !##############################################################################
 subroutine expand_update_overlap_list(overlapList, npes)
-  type(overlap_type), pointer :: overlapList(:)
+  type(overlap_type), allocatable, intent(inout) :: overlapList(:)
   integer,      intent(in   ) :: npes
-  type(overlap_type), pointer,save           :: newlist(:) => NULL()
+  type(overlap_type), allocatable, save      :: newlist(:)
   integer                                    :: nlist_old, nlist, m
 
   nlist_old = size(overlaplist(:))
@@ -8029,8 +8029,8 @@ subroutine expand_update_overlap_list(overlapList, npes)
   enddo
 
   deallocate(overlapList)
-  overlaplist => newlist
-  newlist => NULL()
+  overlaplist = newlist
+  if (allocated(newlist)) deallocate(newlist) !newlist => NULL()
 
   return
 
@@ -8038,9 +8038,9 @@ end subroutine expand_update_overlap_list
 
 !##################################################################################
 subroutine expand_check_overlap_list(overlaplist, npes)
-  type(overlap_type), pointer :: overlaplist(:)
+  type(overlap_type), allocatable, intent(inout) :: overlaplist(:)
   integer,         intent(in) :: npes
-  type(overlap_type), pointer,save           :: newlist(:) => NULL()
+  type(overlap_type), allocatable,save           :: newlist(:)
   integer                                    :: nlist_old, nlist, m
 
   nlist_old = size(overlaplist(:))
@@ -8053,7 +8053,8 @@ subroutine expand_check_overlap_list(overlaplist, npes)
      call deallocate_overlap_type(overlapList(m))
   enddo
   deallocate(overlapList)
-  overlaplist => newlist
+  overlaplist = newlist
+  if (allocated(newlist)) deallocate(newlist)
 
 
   return

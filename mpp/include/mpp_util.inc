@@ -1082,7 +1082,7 @@ end function rarray_to_char
         peset_old(n)%start      = peset(n)%start
         peset_old(n)%log2stride = peset(n)%log2stride
 
-        if( ASSOCIATED(peset(n)%list) ) then
+        if( ALLOCATED(peset(n)%list) ) then
            allocate(peset_old(n)%list(size(peset(n)%list(:))) )
            peset_old(n)%list(:) = peset(n)%list(:)
            deallocate(peset(n)%list)
@@ -1107,7 +1107,7 @@ end function rarray_to_char
         peset(n)%start      = peset_old(n)%start
         peset(n)%log2stride = peset_old(n)%log2stride
 
-        if( ASSOCIATED(peset_old(n)%list) ) then
+        if( ALLOCATED(peset_old(n)%list) ) then
            allocate(peset(n)%list(size(peset_old(n)%list(:))) )
            peset(n)%list(:) = peset_old(n)%list(:)
            deallocate(peset_old(n)%list)

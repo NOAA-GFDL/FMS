@@ -383,9 +383,9 @@ return
 
      !--- UG2SG is the reverse of SG2UG
      UG_domain%UG2SG%nsend = UG_domain%SG2UG%nrecv
-     UG_domain%UG2SG%send => UG_domain%SG2UG%recv
+     UG_domain%UG2SG%send = UG_domain%SG2UG%recv
      UG_domain%UG2SG%nrecv = UG_domain%SG2UG%nsend
-     UG_domain%UG2SG%recv => UG_domain%SG2UG%send
+     UG_domain%UG2SG%recv = UG_domain%SG2UG%send
 
      return
 
@@ -404,10 +404,10 @@ return
 
   !####################################################################
   function mpp_get_UG_io_domain(domain)
-     type(domainUG), intent(in) :: domain
+     type(domainUG), intent(in), target :: domain
      type(domainUG), pointer    :: mpp_get_UG_io_domain
 
-     if(ASSOCIATED(domain%io_domain)) then
+     if(ALLOCATED(domain%io_domain)) then
         mpp_get_UG_io_domain => domain%io_domain
      else
         call mpp_error(FATAL, "mpp_get_UG_io_domain: io_domain is not defined, contact developer")
@@ -598,7 +598,7 @@ return
       call mpp_get_current_pelist(pes)
 
 !am I part of this domain?
-      native = ASSOCIATED(domain%list)
+      native = ALLOCATED(domain%list)
 
 !set local list size
       if( native )then
@@ -689,8 +689,8 @@ end function
 subroutine deallocate_unstruct_overlap_type(overlap)
   type(unstruct_overlap_type), intent(inout) :: overlap
 
-  if(associated(overlap%i)) deallocate(overlap%i)
-  if(associated(overlap%j)) deallocate(overlap%j)
+  if(allocated(overlap%i)) deallocate(overlap%i)
+  if(allocated(overlap%j)) deallocate(overlap%j)
 
 end subroutine deallocate_unstruct_overlap_type
 
@@ -709,15 +709,15 @@ subroutine deallocate_unstruct_pass_type(domain)
   ! SG2UG%{send,recv} point to the same memory as UG2SG%{send,recv}
   ! respectively.  Thus, we only need to `deallocate` one, and nullify
   ! the other set.
-  if(associated(domain%UG2SG%send)) then
+  if(allocated(domain%UG2SG%send)) then
     deallocate(domain%UG2SG%send)
-    nullify(domain%UG2SG%send)
-    nullify(domain%SG2UG%recv)
+    !nullify(domain%UG2SG%send)
+    !nullify(domain%SG2UG%recv)
   end if
-  if(associated(domain%UG2SG%recv)) then
+  if(allocated(domain%UG2SG%recv)) then
     deallocate(domain%UG2SG%recv)
-    nullify(domain%UG2SG%recv)
-    nullify(domain%SG2UG%send)
+    !nullify(domain%UG2SG%recv)
+    !nullify(domain%SG2UG%send)
   end if
 end subroutine deallocate_unstruct_pass_type
 
@@ -727,25 +727,25 @@ subroutine mpp_deallocate_domainUG(domain)
    !<Inputs/Outputs
     type(domainUG),intent(inout) :: domain
 
-    if (associated(domain%list)) then
+    if (allocated(domain%list)) then
         deallocate(domain%list)
-        domain%list => null()
+        !domain%list => null()
     endif
 
-    if (associated(domain%io_domain)) then
-        if (associated(domain%io_domain%list)) then
+    if (allocated(domain%io_domain)) then
+        if (allocated(domain%io_domain%list)) then
             deallocate(domain%io_domain%list)
-            domain%io_domain%list => null()
+            !domain%io_domain%list => null()
         endif
         deallocate(domain%io_domain)
-        domain%io_domain => null()
+        !domain%io_domain => null()
     endif
 
     call deallocate_unstruct_pass_type(domain)
 
-    if (associated(domain%grid_index)) then
+    if (allocated(domain%grid_index)) then
         deallocate(domain%grid_index)
-        domain%grid_index => null()
+        !domain%grid_index => null()
     endif
 
     if (associated(domain%SG_domain)) then

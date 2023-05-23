@@ -61,8 +61,8 @@
       integer, save    :: isize=0, jsize=0, ke=0, l_size=0, list=0
       integer, save    :: pos, whalosz, ehalosz, shalosz, nhalosz
       MPP_TYPE_        :: d_type
-      type(overlapSpec), pointer :: update => NULL()
-      type(overlapSpec), pointer :: check  => NULL()
+      type(overlapSpec), allocatable :: update
+      type(overlapSpec), allocatable :: check
 
       if(present(whalo)) then
          update_whalo = whalo
@@ -151,12 +151,12 @@
       if(do_update )then
          if( domain_update_is_needed(domain, update_whalo, update_ehalo, update_shalo, update_nhalo) )then
             if(debug_update_level .NE. NO_CHECK) then
-               check => search_check_overlap(domain, update_position)
-               if(ASSOCIATED(check) ) then
+               check = search_check_overlap(domain, update_position)
+               if(ALLOCATED(check) ) then
                   call mpp_do_check(f_addrs(1:l_size,1:ntile), domain, check, d_type, ke, flags, name )
                endif
             endif
-            update => search_update_overlap(domain, update_whalo, update_ehalo, update_shalo, update_nhalo, &
+            update = search_update_overlap(domain, update_whalo, update_ehalo, update_shalo, update_nhalo, &
                                            &  update_position)
 
             !call mpp_do_update( f_addrs(1:l_size,1:ntile), domain, update, d_type, ke, &
@@ -443,10 +443,10 @@
       logical          :: set_mismatch
       character(len=3) :: text
       MPP_TYPE_        :: d_type
-      type(overlapSpec),  pointer :: updatex => NULL()
-      type(overlapSpec),  pointer :: updatey => NULL()
-      type(overlapSpec),  pointer :: checkx  => NULL()
-      type(overlapSpec),  pointer :: checky  => NULL()
+      type(overlapSpec),  allocatable :: updatex
+      type(overlapSpec),  allocatable :: updatey
+      type(overlapSpec),  allocatable :: checkx
+      type(overlapSpec),  allocatable :: checky
 
       if(present(whalo)) then
          update_whalo = whalo
@@ -562,9 +562,9 @@
             end select
 
             if(debug_update_level .NE. NO_CHECK) then
-                checkx => search_check_overlap(domain, position_x)
-                checky => search_check_overlap(domain, position_y)
-                if(ASSOCIATED(checkx)) then
+                checkx = search_check_overlap(domain, position_x)
+                checky = search_check_overlap(domain, position_y)
+                if(ALLOCATED(checkx)) then
                    if(exchange_uv) then
                       call mpp_do_check(f_addrsx(1:l_size,1:ntile),f_addrsy(1:l_size,1:ntile), domain,        &
                            checky, checkx, d_type, ke, flags, name)
@@ -574,9 +574,9 @@
                    end if
                 endif
             endif
-            updatex => search_update_overlap(domain, update_whalo, update_ehalo, update_shalo, update_nhalo, &
+            updatex = search_update_overlap(domain, update_whalo, update_ehalo, update_shalo, update_nhalo, &
                                             &  position_x)
-            updatey => search_update_overlap(domain, update_whalo, update_ehalo, update_shalo, update_nhalo, &
+            updatey = search_update_overlap(domain, update_whalo, update_ehalo, update_shalo, update_nhalo, &
                                             &  position_y)
             if(exchange_uv) then
                call mpp_do_update(f_addrsx(1:l_size,1:ntile),f_addrsy(1:l_size,1:ntile), domain, updatey, updatex, &

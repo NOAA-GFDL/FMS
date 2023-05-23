@@ -359,10 +359,10 @@ subroutine mpp_define_nest_domains(nest_domain, domain, num_nest, nest_level, ti
             call mpp_error(FATAL, "mpp_define_nest_domains.inc:pos .NE. nest_domain%nest(l)%num_nest")
 
         if(is_nest_fine(l)) then
-           nest_domain%nest(l)%domain_fine=>domain
+           nest_domain%nest(l)%domain_fine = domain
            allocate(nest_domain%nest(l)%domain_coarse)
         else if(is_nest_coarse(l)) then
-           nest_domain%nest(l)%domain_coarse=>domain
+           nest_domain%nest(l)%domain_coarse=domain
            allocate(nest_domain%nest(l)%domain_fine)
         endif
 !!!! DEBUG CODE ! has problems on coarse domain
@@ -382,7 +382,7 @@ end subroutine mpp_define_nest_domains
 !!    Computes new overlaps of nest PEs on parent PEs
 !!    Ramstrom/HRD Moving Nest
 subroutine mpp_shift_nest_domains(nest_domain, domain, delta_i_coarse, delta_j_coarse, extra_halo)
-  type(nest_domain_type),     intent(inout) :: nest_domain !< holds the information to pass data
+  type(nest_domain_type), target, intent(inout) :: nest_domain !< holds the information to pass data
                                                            !! between nest and parent grids.
   type(domain2D), target,     intent(in   ) :: domain !< domain for the grid defined in the current pelist
   integer,                    intent(in   ) :: delta_i_coarse(:) !< Array of deltas of coarse grid in y direction
@@ -565,10 +565,10 @@ subroutine define_nest_level_type(nest_domain, x_refine, y_refine, extra_halo)
   nest_domain%y_refine = y_refine
 
   allocate( nest_domain%C2F_T, nest_domain%C2F_C, nest_domain%C2F_E, nest_domain%C2F_N )
-  nest_domain%C2F_T%next => NULL()
-  nest_domain%C2F_C%next => NULL()
-  nest_domain%C2F_N%next => NULL()
-  nest_domain%C2F_E%next => NULL()
+  !nest_domain%C2F_T%next => NULL()
+  !nest_domain%C2F_C%next => NULL()
+  !nest_domain%C2F_N%next => NULL()
+  !nest_domain%C2F_E%next => NULL()
   allocate( nest_domain%F2C_T, nest_domain%F2C_C, nest_domain%F2C_E, nest_domain%F2C_N )
 
   call compute_overlap_fine_to_coarse(nest_domain, nest_domain%F2C_T, CENTER, "F2C T-cell")
@@ -589,7 +589,7 @@ end subroutine define_nest_level_type
 
 !###############################################################################
 subroutine compute_overlap_coarse_to_fine(nest_domain, overlap, extra_halo, position, name)
-  type(nest_level_type),  intent(inout) :: nest_domain
+  type(nest_level_type),  intent(inout), target :: nest_domain
   type(nestSpec),         intent(inout) :: overlap
   integer,                intent(in   ) :: extra_halo
   integer,                intent(in   ) :: position
@@ -1093,7 +1093,7 @@ end subroutine compute_overlap_coarse_to_fine
 !> This routine will compute the send and recv information between overlapped nesting
 !! region. The data is assumed on T-cell center.
 subroutine compute_overlap_fine_to_coarse(nest_domain, overlap, position, name)
-  type(nest_level_type),  intent(inout) :: nest_domain
+  type(nest_level_type),  intent(inout), target :: nest_domain
   type(nestSpec),         intent(inout) :: overlap
   integer,                intent(in   ) :: position
   character(len=*),       intent(in   ) :: name
@@ -1430,7 +1430,7 @@ subroutine allocate_nest_overlap(overlap, count)
 
   overlap%count = 0
   overlap%pe    = NULL_PE
-  if( ASSOCIATED(overlap%is) ) call mpp_error(FATAL, &
+  if( ALLOCATED(overlap%is) ) call mpp_error(FATAL, &
        "mpp_define_nest_domains.inc: overlap is already been allocated")
 
   allocate(overlap%is          (count) )
@@ -1509,7 +1509,7 @@ subroutine copy_nest_overlap(overlap_out, overlap_in)
   if(overlap_in%count == 0) call mpp_error(FATAL, &
     "mpp_define_nest_domains.inc: overlap_in%count is 0")
 
-  if(associated(overlap_out%is)) call mpp_error(FATAL, &
+  if(allocated(overlap_out%is)) call mpp_error(FATAL, &
     "mpp_define_nest_domains.inc: overlap_out is already been allocated")
 
   call allocate_nest_overlap(overlap_out, overlap_in%count)
@@ -1533,7 +1533,7 @@ end subroutine copy_nest_overlap
   ! this routine found the domain has the same halo size with the input
   ! whalo, ehalo,
 function search_C2F_nest_overlap(nest_domain, nest_level, extra_halo, position)
-    type(nest_domain_type), intent(inout) :: nest_domain
+    type(nest_domain_type), intent(inout), target :: nest_domain
     integer,                intent(in)    :: extra_halo
     integer,                intent(in)    :: position, nest_level
     type(nestSpec),         pointer       :: search_C2F_nest_overlap
@@ -1565,7 +1565,7 @@ function search_C2F_nest_overlap(nest_domain, nest_level, extra_halo, position)
             exit ! found domain
        endif
        !--- if not found, switch to next
-       if(.NOT. ASSOCIATED(search_C2F_nest_overlap%next)) then
+       if(.NOT. ALLOCATED(search_C2F_nest_overlap%next)) then
           allocate(search_C2F_nest_overlap%next)
           search_C2F_nest_overlap => search_C2F_nest_overlap%next
           call compute_overlap_coarse_to_fine(nest_domain%nest(nest_level), search_C2F_nest_overlap, &
@@ -1585,7 +1585,7 @@ function search_C2F_nest_overlap(nest_domain, nest_level, extra_halo, position)
   ! this routine found the domain has the same halo size with the input
   ! whalo, ehalo,
   function search_F2C_nest_overlap(nest_domain, nest_level, position)
-    type(nest_domain_type), intent(inout) :: nest_domain
+    type(nest_domain_type), intent(inout), target :: nest_domain
     integer,                intent(in)    :: position, nest_level
     type(nestSpec),         pointer       :: search_F2C_nest_overlap
 
@@ -1622,7 +1622,7 @@ function search_C2F_nest_overlap(nest_domain, nest_level, extra_halo, position)
   subroutine mpp_get_C2F_index(nest_domain, is_fine, ie_fine, js_fine, je_fine, &
                 is_coarse, ie_coarse, js_coarse, je_coarse, dir, nest_level, position)
 
-     type(nest_domain_type), intent(in ) :: nest_domain !< holds the information to pass data
+     type(nest_domain_type), intent(in ), target :: nest_domain !< holds the information to pass data
                                                         !! between fine and coarse grids
      integer,                intent(out) :: is_fine, ie_fine, js_fine, je_fine !< index in the fine
                                             !! grid of the nested region
@@ -1703,7 +1703,7 @@ function search_C2F_nest_overlap(nest_domain, nest_level, extra_halo, position)
   subroutine mpp_get_F2C_index_fine(nest_domain, is_coarse, ie_coarse, js_coarse, je_coarse, &
                 is_fine, ie_fine, js_fine, je_fine, nest_level, position)
 
-     type(nest_domain_type), intent(in ) :: nest_domain !< Holds the information to pass data
+     type(nest_domain_type), intent(in ), target :: nest_domain !< Holds the information to pass data
                                                         !! between fine and coarse grid.
      integer,                intent(out) :: is_fine, ie_fine, js_fine, je_fine !< index in the fine
                                             !! grid of the nested region
@@ -1751,7 +1751,7 @@ function search_C2F_nest_overlap(nest_domain, nest_level, extra_halo, position)
   !################################################################
   subroutine mpp_get_F2C_index_coarse(nest_domain, is_coarse, ie_coarse, js_coarse, je_coarse, nest_level, position)
 
-     type(nest_domain_type), intent(in ) :: nest_domain !< Holds the information to pass data
+     type(nest_domain_type), intent(in ), target :: nest_domain !< Holds the information to pass data
                                                         !! between fine and coarse grid.
      integer,                intent(out) :: is_coarse, ie_coarse, js_coarse, je_coarse !< index in the fine
                                             !! grid of the nested region
@@ -2451,7 +2451,7 @@ function search_C2F_nest_overlap(nest_domain, nest_level, extra_halo, position)
   end subroutine check_data_size_2d
 
   function mpp_get_nest_coarse_domain(nest_domain, nest_level)
-     type(nest_domain_type), intent(in) :: nest_domain
+     type(nest_domain_type), intent(in), target :: nest_domain
      integer,                intent(in) :: nest_level
      type(domain2d), pointer :: mpp_get_nest_coarse_domain
 
@@ -2466,7 +2466,7 @@ function search_C2F_nest_overlap(nest_domain, nest_level, extra_halo, position)
   end function mpp_get_nest_coarse_domain
 
   function mpp_get_nest_fine_domain(nest_domain, nest_level)
-     type(nest_domain_type), intent(in) :: nest_domain
+     type(nest_domain_type), intent(in), target :: nest_domain
      integer,                intent(in) :: nest_level
      type(domain2d), pointer :: mpp_get_nest_fine_domain
 
