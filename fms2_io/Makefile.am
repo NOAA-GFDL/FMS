@@ -54,7 +54,8 @@ libfms2_io_la_SOURCES = \
   include/register_variable_attribute.inc \
   include/unstructured_domain_write.inc \
   include/gather_data_bc.inc \
-  include/scatter_data_bc.inc
+  include/scatter_data_bc.inc \
+  include/unpack_data.inc
 
 # Some mods are dependant on other mods in this dir.
 fms2_io_mod.$(FC_MODEXT): fms_io_utils_mod.$(FC_MODEXT) netcdf_io_mod.$(FC_MODEXT) fms_netcdf_domain_io_mod.$(FC_MODEXT) \
