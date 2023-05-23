@@ -455,7 +455,7 @@
   !################################################################################
   !> Define the layout for IO pe's for the given domain
   subroutine mpp_define_io_domain(domain, io_layout)
-    type(domain2D), intent(inout) :: domain !< Input 2D domain
+    type(domain2D), intent(inout), target :: domain !< Input 2D domain
     integer,        intent(in   ) :: io_layout(2) !< 2 value io pe layout to define
     integer                       :: layout(2)
     integer                       :: npes_in_group
