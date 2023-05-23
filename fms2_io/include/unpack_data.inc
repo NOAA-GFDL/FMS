@@ -18,18 +18,18 @@ subroutine unpack_data_0d(fileobj, varid, varname, var_data)
 
     select type(var_data)
     type is (real(kind=r4_kind))
-	  err = nf90_get_att(fileobj%ncid, varid, "scale_factor", buf_r4_kind )
+      err = nf90_get_att(fileobj%ncid, varid, "scale_factor", buf_r4_kind )
       call check_netcdf_code(err, msg)
-	  var_data = var_data * buf_r4_kind
+      var_data = var_data * buf_r4_kind
 
       err = nf90_get_att(fileobj%ncid, varid, "add_offset", buf_r4_kind )
       call check_netcdf_code(err, msg)
       var_data = var_data + buf_r4_kind
 
     type is (real(kind=r8_kind))
-	  err = nf90_get_att(fileobj%ncid, varid, "scale_factor", buf_r8_kind )
+      err = nf90_get_att(fileobj%ncid, varid, "scale_factor", buf_r8_kind )
       call check_netcdf_code(err, msg)
-	  var_data = var_data * buf_r8_kind
+      var_data = var_data * buf_r8_kind
 
       err = nf90_get_att(fileobj%ncid, varid, "add_offset", buf_r8_kind )
       call check_netcdf_code(err, msg)
