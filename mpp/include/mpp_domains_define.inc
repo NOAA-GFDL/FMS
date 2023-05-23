@@ -492,7 +492,7 @@
 
     allocate(domain%io_domain)
     domain%io_layout = io_layout
-    io_domain = domain%io_domain
+    io_domain => domain%io_domain
     ! Find how many processors are in the group with the consideration that some of the region maybe masked out.
     npes_x = layout(1)/io_layout(1)
     npes_y = layout(2)/io_layout(2)
