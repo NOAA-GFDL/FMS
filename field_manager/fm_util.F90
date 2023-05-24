@@ -54,12 +54,12 @@ public  fm_util_get_length
 public  fm_util_get_integer
 public  fm_util_get_logical
 public  fm_util_get_real_r4
-public  fm_util_get_real_r8
+public  fm_util_get_real
 public  fm_util_get_string
 public  fm_util_get_integer_array
 public  fm_util_get_logical_array
 public  fm_util_get_real_array_r4
-public  fm_util_get_real_array_r8
+public  fm_util_get_real_array
 public  fm_util_get_string_array
 public  fm_util_set_value
 public  fm_util_set_value_integer_array
@@ -1029,7 +1029,7 @@ end function fm_util_get_real_array_r4  !}
 !#######################################################################
 
 !> Get a real value from the Field Manager tree.
-function fm_util_get_real_array_r8(name, caller)            &
+function fm_util_get_real_array(name, caller)            &
          result (array)  !{
 
 implicit none
@@ -1116,7 +1116,7 @@ endif  !}
 
 return
 
-end function fm_util_get_real_array_r8  !}
+end function fm_util_get_real_array  !}
 
 !#######################################################################
 
@@ -1561,7 +1561,7 @@ end function fm_util_get_real_r4  !}
 
 
 !> Get a real value from the Field Manager tree.
-function fm_util_get_real_r8(name, caller, index, default_value, scalar)           &
+function fm_util_get_real(name, caller, index, default_value, scalar)           &
          result (value)  !{
 
 implicit none
@@ -1675,7 +1675,7 @@ endif  !}
 
 return
 
-end function fm_util_get_real_r8  !}
+end function fm_util_get_real  !}
 
 
 !#######################################################################
