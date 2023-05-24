@@ -629,7 +629,6 @@ contains
 
       ! Save the molecular weight.
       gas_fluxes%bc(n)%mol_wt = fm_util_get_real('mol_wt', scalar = .true.)
-
       gas_fields_atm%bc(n)%mol_wt = gas_fluxes%bc(n)%mol_wt
       gas_fields_ice%bc(n)%mol_wt = gas_fluxes%bc(n)%mol_wt
 
