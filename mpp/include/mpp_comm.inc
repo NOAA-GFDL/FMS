@@ -448,6 +448,14 @@
 #undef  MPP_SCATTER_PELIST_2D_
 #undef  MPP_SCATTER_PELIST_3D_
 #undef MPP_TYPE_
+#define MPP_TYPE_ integer(i8_kind)
+#define MPP_SCATTER_PELIST_2D_ mpp_scatter_pelist_int8_2d
+#define MPP_SCATTER_PELIST_3D_ mpp_scatter_pelist_int8_3d
+#include <mpp_scatter.fh>
+
+#undef  MPP_SCATTER_PELIST_2D_
+#undef  MPP_SCATTER_PELIST_3D_
+#undef MPP_TYPE_
 #define MPP_TYPE_ real(r4_kind)
 #define MPP_SCATTER_PELIST_2D_ mpp_scatter_pelist_real4_2d
 #define MPP_SCATTER_PELIST_3D_ mpp_scatter_pelist_real4_3d
