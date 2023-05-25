@@ -1015,6 +1015,7 @@ function get_variable_compressed_dimension_index(fileobj, variable_name, broadca
     endif
   endif
   call mpp_broadcast(compressed_dimension_index(1), fileobj%io_root, pelist=fileobj%pelist)
+  call mpp_broadcast(compressed_dimension_index(2), fileobj%io_root, pelist=fileobj%pelist)
 end function get_variable_compressed_dimension_index
 
 

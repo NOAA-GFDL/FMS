@@ -698,16 +698,20 @@ private
   interface mpp_gather
      module procedure mpp_gather_logical_1d
      module procedure mpp_gather_int4_1d
+     module procedure mpp_gather_int8_1d
      module procedure mpp_gather_real4_1d
      module procedure mpp_gather_real8_1d
      module procedure mpp_gather_logical_1dv
      module procedure mpp_gather_int4_1dv
+     module procedure mpp_gather_int8_1dv
      module procedure mpp_gather_real4_1dv
      module procedure mpp_gather_real8_1dv
      module procedure mpp_gather_pelist_logical_2d
      module procedure mpp_gather_pelist_logical_3d
      module procedure mpp_gather_pelist_int4_2d
      module procedure mpp_gather_pelist_int4_3d
+     module procedure mpp_gather_pelist_int8_2d
+     module procedure mpp_gather_pelist_int8_3d
      module procedure mpp_gather_pelist_real4_2d
      module procedure mpp_gather_pelist_real4_3d
      module procedure mpp_gather_pelist_real8_2d
