@@ -1,0 +1,40 @@
+!***********************************************************************
+!*                   GNU Lesser General Public License
+!*
+!* This file is part of the GFDL Flexible Modeling System (FMS).
+!*
+!* FMS is free software: you can redistribute it and/or modify it under
+!* the terms of the GNU Lesser General Public License as published by
+!* the Free Software Foundation, either version 3 of the License, or (at
+!* your option) any later version.
+!*
+!* FMS is distributed in the hope that it will be useful, but WITHOUT
+!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+!* for more details.
+!*
+!* You should have received a copy of the GNU Lesser General Public
+!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!***********************************************************************
+#undef FMS_TI_KIND_
+#define FMS_TI_KIND_ r8_kind
+
+#undef GET_EXTERNAL_FILEOBJ_
+#define GET_EXTERNAL_FILEOBJ_ get_external_fileobj_r8
+
+#undef TIME_INTERP_EXTERNAL_0D_
+#define TIME_INTERP_EXTERNAL_0D_ time_interp_external_0d_r8
+
+#undef TIME_INTERP_EXTERNAL_2D_
+#define TIME_INTERP_EXTERNAL_2D_ time_interp_external_2d_r8
+
+#undef TIME_INTERP_EXTERNAL_3D_
+#define TIME_INTERP_EXTERNAL_3D_ time_interp_external_3d_r8
+
+#undef SET_TIME_MODULO_
+#define SET_TIME_MODULO_ set_time_modulo_r8
+
+#undef GET_EXTERNAL_FIELD_MISSING_
+#define GET_EXTERNAL_FIELD_MISSING_ get_external_field_missing_r8
+
+#include "include/time_interp_external2.inc"

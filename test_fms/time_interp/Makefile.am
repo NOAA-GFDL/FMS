@@ -29,11 +29,20 @@ AM_CPPFLAGS = -I$(MODDIR)
 LDADD = $(top_builddir)/libFMS/libFMS.la
 
 # Build these test programs.
-check_PROGRAMS = test_time_interp test_time_interp_external
+check_PROGRAMS = test_time_interp_r4 test_time_interp_r8 test_time_interp_external_r4 test_time_interp_external_r8
 
 # These are the sources for the tests.
-test_time_interp_SOURCES = test_time_interp.F90
-test_time_interp_external_SOURCES = test_time_interp_external.F90
+test_time_interp_r4_SOURCES = test_time_interp.F90
+test_time_interp_external_r4_SOURCES = test_time_interp_external.F90
+test_time_interp_r8_SOURCES = test_time_interp.F90
+test_time_interp_external_r8_SOURCES = test_time_interp_external.F90
+
+# filter out any added precision flags
+# adds r8 flag, otherwise no-flag default is 4
+test_time_interp_r8.$(OBJEXT): FCFLAGS:=  $(filter-out -r4 -fdefault-real-4,$(FCFLAGS)) $(FC_DEFAULT_REAL_KIND8_FLAG)
+test_time_interp_r4.$(OBJEXT): FCFLAGS:=  $(filter-out -r8 -fdefault-real-8,$(FCFLAGS))
+test_time_interp_r8.$(OBJEXT): FCFLAGS:=  $(filter-out -r4 -fdefault-real-4,$(FCFLAGS)) $(FC_DEFAULT_REAL_KIND8_FLAG)
+test_time_interp_r4.$(OBJEXT): FCFLAGS:=  $(filter-out -r8 -fdefault-real-8,$(FCFLAGS))
 
 # Run the test programs.
 TESTS = test_time_interp2.sh

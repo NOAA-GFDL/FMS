@@ -42,7 +42,7 @@ module time_interp_external2_mod
 ! </DATA>
 !</NAMELIST>
 
-  use platform_mod, only : DOUBLE_KIND => r8_kind
+  use platform_mod, only : r8_kind, r4_kind
   use fms_mod, only : write_version_number
   use mpp_mod, only : mpp_error,FATAL,WARNING,mpp_pe, stdout, stdlog, NOTE
   use mpp_mod, only : input_nml_file, mpp_npes, mpp_root_pe, mpp_broadcast, mpp_get_current_pelist
@@ -73,7 +73,7 @@ module time_interp_external2_mod
   integer, parameter, private :: modulo_year= 0001
   integer, parameter, private :: LINEAR_TIME_INTERP = 1 ! not used currently
   integer, parameter, public  :: SUCCESS = 0, ERR_FIELD_NOT_FOUND = 1
-  real,    parameter, private :: DEFAULT_MISSING_VALUE = -1e20
+  real,    parameter, private :: DEFAULT_MISSING_VALUE = -1e20 ! r8?
   integer,            private :: max_fields = 100, max_files= 40
   integer, private :: num_fields = 0, num_files=0
   ! denotes time intervals in file (interpreted from metadata)
@@ -93,41 +93,41 @@ module time_interp_external2_mod
   !> Represents external fields
   !> @ingroup time_interp_external2_mod
   type, private :: ext_fieldtype
-     type(FmsNetcdfFile_t), pointer :: fileobj=>NULL() !< keep unit open when not reading all records
-     character(len=128) :: name, units
-     integer :: siz(4), ndim
-     character(len=32) :: axisname(4)
-     type(domain2d) :: domain
-     type(time_type), dimension(:), pointer :: time =>NULL() !< midpoint of time interval
-     type(time_type), dimension(:), pointer :: start_time =>NULL(), end_time =>NULL()
-     type(time_type), dimension(:), pointer :: period =>NULL()
-     logical :: modulo_time !< denote climatological time axis
-     real, dimension(:,:,:,:), pointer :: data =>NULL() !< defined over data domain or global domain
-     logical, dimension(:,:,:,:), pointer :: mask =>NULL() !< defined over data domain or global domain
-     integer, dimension(:), pointer :: ibuf  =>NULL() !< record numbers associated with buffers
-     real, dimension(:,:,:,:), pointer :: src_data  =>NULL() !< input data buffer
-     type(valid_t) :: valid ! data validator
-     integer :: nbuf
-     logical :: domain_present
-     real(DOUBLE_KIND) :: slope, intercept
-     integer :: isc,iec,jsc,jec
-     type(time_type) :: modulo_time_beg, modulo_time_end
-     logical :: have_modulo_times, correct_leap_year_inconsistency
-     integer :: region_type
-     integer :: is_region, ie_region, js_region, je_region
-     integer :: is_src, ie_src, js_src, je_src
-     integer :: tdim
-     integer :: numwindows
-     logical, dimension(:,:), pointer :: need_compute=>NULL()
-     real    :: missing ! missing value
-  end type ext_fieldtype
+        type(FmsNetcdfFile_t), pointer :: fileobj=>NULL() !< keep unit open when not reading all records
+        character(len=128) :: name, units
+        integer :: siz(4), ndim
+        character(len=32) :: axisname(4)
+        type(domain2d) :: domain
+        type(time_type), dimension(:), pointer :: time =>NULL() !< midpoint of time interval
+        type(time_type), dimension(:), pointer :: start_time =>NULL(), end_time =>NULL()
+        type(time_type), dimension(:), pointer :: period =>NULL()
+        logical :: modulo_time !< denote climatological time axis
+        real, dimension(:,:,:,:), pointer :: data =>NULL() !< defined over data domain or global domain
+        logical, dimension(:,:,:,:), pointer :: mask =>NULL() !< defined over data domain or global domain
+        integer, dimension(:), pointer :: ibuf  =>NULL() !< record numbers associated with buffers
+        real, dimension(:,:,:,:), pointer :: src_data  =>NULL() !< input data buffer
+        type(valid_t) :: valid ! data validator
+        integer :: nbuf
+        logical :: domain_present
+        real(r8_kind) :: slope, intercept
+        integer :: isc,iec,jsc,jec
+        type(time_type) :: modulo_time_beg, modulo_time_end
+        logical :: have_modulo_times, correct_leap_year_inconsistency
+        integer :: region_type
+        integer :: is_region, ie_region, js_region, je_region
+        integer :: is_src, ie_src, js_src, je_src
+        integer :: tdim
+        integer :: numwindows
+        logical, dimension(:,:), pointer :: need_compute=>NULL()
+        real    :: missing ! missing value
+    end type ext_fieldtype
 
-  !> Holds filename and file object
-  !> @ingroup time_interp_external2_mod
-  type, private :: filetype
-     character(len=128) :: filename = ''
-     type(FmsNetcdfFile_t), pointer :: fileobj => NULL()
-  end type filetype
+    !> Holds filename and file object
+    !> @ingroup time_interp_external2_mod
+    type, private :: filetype
+        character(len=128) :: filename = ''
+        type(FmsNetcdfFile_t), pointer :: fileobj => NULL()
+    end type filetype
 
   !> Provide data from external file interpolated to current model time.
   !! Data may be local to current processor or global, depending on
@@ -142,9 +142,12 @@ module time_interp_external2_mod
   !!
   !> @ingroup time_interp_external2_mod
   interface time_interp_external
-     module procedure time_interp_external_0d
-     module procedure time_interp_external_2d
-     module procedure time_interp_external_3d
+      module procedure time_interp_external_0d_r4
+      module procedure time_interp_external_2d_r4
+      module procedure time_interp_external_3d_r4
+      module procedure time_interp_external_0d_r8
+      module procedure time_interp_external_2d_r8
+      module procedure time_interp_external_3d_r8
   end interface
 
   !> @addtogroup time_interp_external2_mod
@@ -155,9 +158,9 @@ module time_interp_external2_mod
   type(ext_fieldtype), save, private, pointer :: field(:) => NULL()
   type(filetype),      save, private, pointer :: opened_files(:) => NULL()
 !Balaji: really should use field%missing
-  integer, private, parameter :: dk = DOUBLE_KIND ! ensures that time_interp_missing is in range for mixed-mode
+  integer, private, parameter :: dk = r8_kind ! ensures that time_interp_missing is in range for mixed-mode
                                                   ! compiling
-  real(DOUBLE_KIND), private, parameter :: time_interp_missing=-1e99_dk
+  real(r8_kind), private, parameter :: time_interp_missing=-1e99_dk
   contains
 
 ! <SUBROUTINE NAME="time_interp_external_init">
@@ -196,7 +199,6 @@ module time_interp_external2_mod
       return
 
     end  subroutine time_interp_external_init
-! </SUBROUTINE> NAME="time_interp_external_init"
 
 
 !<FUNCTION NAME="init_external_field" TYPE="integer">
@@ -278,7 +280,7 @@ module time_interp_external2_mod
 
       integer :: init_external_field
 
-      real(DOUBLE_KIND) :: slope, intercept
+      real(r8_kind) :: slope, intercept
       integer :: ndim,ntime,i,j
       integer :: iscomp,iecomp,jscomp,jecomp,isglobal,ieglobal,jsglobal,jeglobal
       integer :: isdata,iedata,jsdata,jedata, dxsize, dysize,dxsize_max,dysize_max
@@ -699,35 +701,6 @@ module time_interp_external2_mod
 
     end function init_external_field
 
-!</FUNCTION> NAME="init_external_field"
-
-
-    !> @brief 2D interpolation for @ref time_interp_external
-    subroutine time_interp_external_2d(index, time, data_in, interp, verbose,horz_interp, mask_out, &
-               is_in, ie_in, js_in, je_in, window_id)
-
-      integer, intent(in) :: index
-      type(time_type), intent(in) :: time
-      real, dimension(:,:), intent(inout) :: data_in
-      integer, intent(in), optional :: interp
-      logical, intent(in), optional :: verbose
-      type(horiz_interp_type),intent(in), optional :: horz_interp
-      logical, dimension(:,:), intent(out), optional :: mask_out !< set to true where output data is valid
-      integer,                  intent(in), optional :: is_in, ie_in, js_in, je_in
-      integer,                  intent(in), optional :: window_id
-
-      real   , dimension(size(data_in,1), size(data_in,2), 1) :: data_out
-      logical, dimension(size(data_in,1), size(data_in,2), 1) :: mask3d
-
-      data_out(:,:,1) = data_in(:,:) ! fill initial values for the portions of array that are not touched by 3d routine
-      call time_interp_external_3d(index, time, data_out, interp, verbose, horz_interp, mask3d, &
-                                   is_in=is_in,ie_in=ie_in,js_in=js_in,je_in=je_in,window_id=window_id)
-      data_in(:,:) = data_out(:,:,1)
-      if (PRESENT(mask_out)) mask_out(:,:) = mask3d(:,:,1)
-
-      return
-    end subroutine time_interp_external_2d
-
 
     function get_external_fileobj(filename, fileobj)
        character(len=*),             intent(in) :: filename
@@ -1029,6 +1002,7 @@ module time_interp_external2_mod
 
 ! ============================================================================
 !> load specified record from file
+!! TODO can check if horiz_interp_type is r4/r8 to determine kind size to use
 subroutine load_record(field, rec, interp, is_in, ie_in, js_in, je_in, window_id_in)
   type(ext_fieldtype),     intent(inout)        :: field
   integer            ,     intent(in)           :: rec    ! record number
@@ -1283,38 +1257,38 @@ subroutine realloc_fields(n)
 end subroutine realloc_fields
 
 
-    function find_buf_index(indx,buf)
-      integer :: indx
-      integer, dimension(:) :: buf
-      integer :: find_buf_index
+function find_buf_index(indx,buf)
+   integer :: indx
+   integer, dimension(:) :: buf
+   integer :: find_buf_index
 
-      integer :: nbuf, i
+   integer :: nbuf, i
 
-      nbuf = size(buf(:))
+   nbuf = size(buf(:))
 
-      find_buf_index = -1
+   find_buf_index = -1
 
-      do i=1,nbuf
-         if (buf(i) == indx) then
-            find_buf_index = i
-            exit
-         endif
-      enddo
+   do i=1,nbuf
+      if (buf(i) == indx) then
+         find_buf_index = i
+         exit
+      endif
+   enddo
 
-    end function find_buf_index
+end function find_buf_index
 
 !<FUNCTION NAME="get_external_field_size" TYPE="integer" DIM="(4)">
 !
 !<DESCRIPTION>
-! return size of field after call to init_external_field.
-! Ordering is X/Y/Z/T.
-! This call only makes sense for non-distributed reads.
 !</DESCRIPTION>
 !
 !<IN NAME="index" TYPE="integer">
 ! returned from previous call to init_external_field.
 !</IN>
 
+    !> Returns size of field after call to init_external_field.
+    !! Ordering is X/Y/Z/T.
+    !! This call only makes sense for non-distributed reads.
     function get_external_field_size(index)
 
       integer :: index
@@ -1410,6 +1384,9 @@ end subroutine
 
     end subroutine time_interp_external_exit
 !</SUBROUTINE> NAME="time_interp_external_exit"
+
+#include "time_interp_external_r4.fh"
+#include "time_interp_external_r8.fh"
 
 end module time_interp_external2_mod
 !> @}

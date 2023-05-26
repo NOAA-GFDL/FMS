@@ -1,0 +1,43 @@
+!***********************************************************************
+!*                   GNU Lesser General Public License
+!*
+!* This file is part of the GFDL Flexible Modeling System (FMS).
+!*
+!* FMS is free software: you can redistribute it and/or modify it under
+!* the terms of the GNU Lesser General Public License as published by
+!* the Free Software Foundation, either version 3 of the License, or (at
+!* your option) any later version.
+!*
+!* FMS is distributed in the hope that it will be useful, but WITHOUT
+!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+!* for more details.
+!*
+!* You should have received a copy of the GNU Lesser General Public
+!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!***********************************************************************
+#undef FMS_TI_KIND_
+#define FMS_TI_KIND_ r4_kind
+
+#undef TIME_INTERP_FRAC_
+#define TIME_INTERP_FRAC_ time_interp_frac_r4
+
+#undef TIME_INTERP_DAY_
+#define TIME_INTERP_DAY_ time_interp_day_r4
+
+#undef TIME_INTERP_MONTH_
+#define TIME_INTERP_MONTH_ time_interp_month_r4
+
+#undef TIME_INTERP_YEAR_
+#define TIME_INTERP_YEAR_ time_interp_year_r4
+
+#undef TIME_INTERP_LIST_
+#define TIME_INTERP_LIST_ time_interp_list_r4
+
+#undef TIME_INTERP_MODULO_
+#define TIME_INTERP_MODULO_ time_interp_modulo_r4
+
+#undef FRACTION_OF_YEAR_
+#define FRACTION_OF_YEAR_ fraction_of_year_r4
+
+#include "include/time_interp.inc"
