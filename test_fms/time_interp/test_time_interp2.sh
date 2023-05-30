@@ -33,14 +33,21 @@ touch input.nml
 rm -rf INPUT
 mkdir INPUT
 # Run the test.
-test_expect_success "test time interpolation" '
-  mpirun -n 2 ./test_time_interp
+test_expect_success "test time interpolation with r8_kind" '
+  mpirun -n 2 ./test_time_interp_r8
 '
+test_expect_success "test time interpolation with r4_kind" '
+  mpirun -n 2 ./test_time_interp_r4
+'
+
 rm -rf INPUT
 mkdir INPUT
 
-test_expect_success "test time interpolation external" '
-  mpirun -n 2 ./test_time_interp_external
+test_expect_success "test time interpolation external with r8_kind" '
+  mpirun -n 2 ./test_time_interp_external_r8
+'
+test_expect_success "test time interpolation external with r4_kind" '
+  mpirun -n 2 ./test_time_interp_external_r4
 '
 
 test_done

@@ -30,7 +30,7 @@ program test_time_interp
  type(time_type) :: Time_beg, Time_end, Time(num_Time)
  type(time_type), allocatable, dimension(:) :: Timelist
  integer :: index1, index2, mo, yr, timelist_len, outunit, ntest, nline
- real :: weight
+ real(TI_TEST_KIND_) :: weight
 
  integer :: nmin, nmax
 

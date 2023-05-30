@@ -39,10 +39,10 @@ test_time_interp_external_r8_SOURCES = test_time_interp_external.F90
 
 # filter out any added precision flags
 # adds r8 flag, otherwise no-flag default is 4
-test_time_interp_r8.$(OBJEXT): FCFLAGS:=  $(filter-out -r4 -fdefault-real-4,$(FCFLAGS)) $(FC_DEFAULT_REAL_KIND8_FLAG)
-test_time_interp_r4.$(OBJEXT): FCFLAGS:=  $(filter-out -r8 -fdefault-real-8,$(FCFLAGS))
-test_time_interp_r8.$(OBJEXT): FCFLAGS:=  $(filter-out -r4 -fdefault-real-4,$(FCFLAGS)) $(FC_DEFAULT_REAL_KIND8_FLAG)
-test_time_interp_r4.$(OBJEXT): FCFLAGS:=  $(filter-out -r8 -fdefault-real-8,$(FCFLAGS))
+test_time_interp_r4_CPPFLAGS=-DTI_TEST_KIND_=4 -I$(MODDIR)
+test_time_interp_r8_CPPFLAGS=-DTI_TEST_KIND_=8 -I$(MODDIR)
+test_time_interp_external_r4_CPPFLAGS=-DTI_TEST_KIND_=4 -I$(MODDIR)
+test_time_interp_external_r8_CPPFLAGS=-DTI_TEST_KIND_=8 -I$(MODDIR)
 
 # Run the test programs.
 TESTS = test_time_interp2.sh
