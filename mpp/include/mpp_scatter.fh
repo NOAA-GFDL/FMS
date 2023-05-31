@@ -110,7 +110,7 @@ subroutine MPP_SCATTER_PELIST_3D_(is, ie, js, je, nk, pelist, array_seg, data, i
   my_ind(4) = je
 
   ! Gather indices from all processes in the group at the root pe
-  call MPI_GATHER(my_ind, 4, MPI_INTEGER, gind, 4, MPI_INTEGER, root_pe, peset(n)%id, ierr)
+  call MPI_GATHER(my_ind, 4, MPI_TYPE_, gind, 4, MPI_TYPE_, root_pe, peset(n)%id, ierr)
   if (ierr /= MPI_SUCCESS) call mpp_error(FATAL, "mpp_scatter_pelist:MPI_GATHER")
 
   ! Compute my message size
