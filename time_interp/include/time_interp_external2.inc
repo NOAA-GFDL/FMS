@@ -34,7 +34,7 @@
       integer,                  intent(in), optional :: is_in, ie_in, js_in, je_in
       integer,                  intent(in), optional :: window_id
 
-      real   , dimension(size(data_in,1), size(data_in,2), 1) :: data_out
+      real(FMS_TI_KIND_), dimension(size(data_in,1), size(data_in,2), 1) :: data_out
       logical, dimension(size(data_in,1), size(data_in,2), 1) :: mask3d
 
       data_out(:,:,1) = data_in(:,:) ! fill initial values for the portions of array that are not touched by 3d routine
@@ -76,7 +76,7 @@
             ! fileds from respective input field, to center the updated portion
             ! in the output array
 
-        real :: w1,w2
+        real(FMS_TI_KIND_) :: w1,w2
         logical :: verb
         character(len=16) :: message1, message2
 
@@ -94,16 +94,16 @@
             call mpp_error(FATAL, &
                         & 'invalid index in call to time_interp_ext -- field was not initialized or failed to initialize')
 
-        isc=field(index)%isc;iec=field(index)%iec
-        jsc=field(index)%jsc;jec=field(index)%jec
+        isc=field_ptr(index)%isc;iec=field_ptr(index)%iec
+        jsc=field_ptr(index)%jsc;jec=field_ptr(index)%jec
 
-        if( field(index)%numwindows == 1 ) then
+        if( field_ptr(index)%numwindows == 1 ) then
             nxw = iec-isc+1
             nyw = jec-jsc+1
         else
             if( .not. present(is_in) .or. .not. present(ie_in) .or. .not. present(js_in) .or. .not. present(je_in) ) then
                 call mpp_error(FATAL, 'time_interp_external: is_in, ie_in, js_in and je_in must be present ' // &
-                                    'when numwindows > 1, field='//trim(field(index)%name))
+                                    'when numwindows > 1, field='//trim(field_ptr(index)%name))
             endif
             nxw = ie_in - is_in + 1
             nyw = je_in - js_in + 1
@@ -116,59 +116,59 @@
         isw = (nx-nxw)/2+1; iew = isw+nxw-1
         jsw = (ny-nyw)/2+1; jew = jsw+nyw-1
 
-        if (nx < nxw .or. ny < nyw .or. nz < field(index)%siz(3)) then
+        if (nx < nxw .or. ny < nyw .or. nz < field_ptr(index)%siz(3)) then
             write(message1,'(i6,2i5)') nx,ny,nz
-            call mpp_error(FATAL,'field '//trim(field(index)%name)//' Array size mismatch in time_interp_external.'// &
+            call mpp_error(FATAL,'field '//trim(field_ptr(index)%name)//' Array size mismatch in time_interp_external.'// &
             ' Array "data" is too small. shape(data)='//message1)
         endif
         if(PRESENT(mask_out)) then
             if (size(mask_out,1) /= nx .or. size(mask_out,2) /= ny .or. size(mask_out,3) /= nz) then
             write(message1,'(i6,2i5)') nx,ny,nz
             write(message2,'(i6,2i5)') size(mask_out,1),size(mask_out,2),size(mask_out,3)
-            call mpp_error(FATAL,'field '//trim(field(index)%name)//' array size mismatch in time_interp_external.'// &
+            call mpp_error(FATAL,'field '//trim(field_ptr(index)%name)//' array size mismatch in time_interp_external.'// &
             ' Shape of array "mask_out" does not match that of array "data".'// &
             ' shape(data)='//message1//' shape(mask_out)='//message2)
             endif
         endif
 
-        if (field(index)%siz(4) == 1) then
+        if (field_ptr(index)%siz(4) == 1) then
             ! only one record in the file => time-independent field
-            call load_record(field(index),1,horz_interp, is_in, ie_in ,js_in, je_in,window_id)
-            i1 = find_buf_index(1,field(index)%ibuf)
-            if( field(index)%region_type == NO_REGION ) then
-                where(field(index)%mask(isc:iec,jsc:jec,:,i1))
-                data(isw:iew,jsw:jew,:) = field(index)%data(isc:iec,jsc:jec,:,i1)
+            call load_record(field_ptr(index),1,horz_interp, is_in, ie_in ,js_in, je_in,window_id)
+            i1 = find_buf_index(1,field_ptr(index)%ibuf)
+            if( field_ptr(index)%region_type == NO_REGION ) then
+                where(field_ptr(index)%mask(isc:iec,jsc:jec,:,i1))
+                data(isw:iew,jsw:jew,:) = field_ptr(index)%data(isc:iec,jsc:jec,:,i1)
                 elsewhere
     !               data(isw:iew,jsw:jew,:) = time_interp_missing !field(index)%missing? Balaji
-                data(isw:iew,jsw:jew,:) = field(index)%missing
+                data(isw:iew,jsw:jew,:) = field_ptr(index)%missing
                 end where
             else
-                where(field(index)%mask(isc:iec,jsc:jec,:,i1))
-                data(isw:iew,jsw:jew,:) = field(index)%data(isc:iec,jsc:jec,:,i1)
+                where(field_ptr(index)%mask(isc:iec,jsc:jec,:,i1))
+                data(isw:iew,jsw:jew,:) = field_ptr(index)%data(isc:iec,jsc:jec,:,i1)
                 end where
             endif
             if(PRESENT(mask_out)) &
-                mask_out(isw:iew,jsw:jew,:) = field(index)%mask(isc:iec,jsc:jec,:,i1)
+                mask_out(isw:iew,jsw:jew,:) = field_ptr(index)%mask(isc:iec,jsc:jec,:,i1)
         else
-            if(field(index)%have_modulo_times) then
-            call time_interp(time,field(index)%modulo_time_beg, field(index)%modulo_time_end, field(index)%time(:), &
-                            w2, t1, t2, field(index)%correct_leap_year_inconsistency, err_msg=err_msg)
+            if(field_ptr(index)%have_modulo_times) then
+            call time_interp(time,field_ptr(index)%modulo_time_beg, field_ptr(index)%modulo_time_end, field_ptr(index)%time(:), &
+                            w2, t1, t2, field_ptr(index)%correct_leap_year_inconsistency, err_msg=err_msg)
             if(err_msg .NE. '') then
-                filename = trim(field(index)%fileobj%path)
+                filename = trim(field_ptr(index)%fileobj%path)
                 call mpp_error(FATAL,"time_interp_external 1: "//trim(err_msg)//&
-                        ",file="//trim(filename)//",field="//trim(field(index)%name) )
+                        ",file="//trim(filename)//",field="//trim(field_ptr(index)%name) )
             endif
             else
-            if(field(index)%modulo_time) then
+            if(field_ptr(index)%modulo_time) then
                 mod_time=1
             else
                 mod_time=0
             endif
-            call time_interp(time,field(index)%time(:),w2,t1,t2,modtime=mod_time, err_msg=err_msg)
+            call time_interp(time,field_ptr(index)%time(:),w2,t1,t2,modtime=mod_time, err_msg=err_msg)
             if(err_msg .NE. '') then
-                filename = trim(field(index)%fileobj%path)
+                filename = trim(field_ptr(index)%fileobj%path)
                 call mpp_error(FATAL,"time_interp_external 2: "//trim(err_msg)//&
-                        ",file="//trim(filename)//",field="//trim(field(index)%name) )
+                        ",file="//trim(filename)//",field="//trim(field_ptr(index)%name) )
             endif
             endif
             w1 = 1.0-w2
@@ -179,36 +179,36 @@
                 write(outunit,*) 't1, t2, w1, w2= ', t1, t2, w1, w2
             endif
 
-            call load_record(field(index),t1,horz_interp, is_in, ie_in ,js_in, je_in, window_id)
-            call load_record(field(index),t2,horz_interp, is_in, ie_in ,js_in, je_in, window_id)
-            i1 = find_buf_index(t1,field(index)%ibuf)
-            i2 = find_buf_index(t2,field(index)%ibuf)
+            call load_record(field_ptr(index),t1,horz_interp, is_in, ie_in ,js_in, je_in, window_id)
+            call load_record(field_ptr(index),t2,horz_interp, is_in, ie_in ,js_in, je_in, window_id)
+            i1 = find_buf_index(t1,field_ptr(index)%ibuf)
+            i2 = find_buf_index(t2,field_ptr(index)%ibuf)
             if(i1<0.or.i2<0) &
                 call mpp_error(FATAL,'time_interp_external : records were not loaded correctly in memory')
 
             if (verb) then
-                write(outunit,*) 'ibuf= ',field(index)%ibuf
+                write(outunit,*) 'ibuf= ',field_ptr(index)%ibuf
                 write(outunit,*) 'i1,i2= ',i1, i2
             endif
 
-            if( field(index)%region_type == NO_REGION ) then
-                where(field(index)%mask(isc:iec,jsc:jec,:,i1).and.field(index)%mask(isc:iec,jsc:jec,:,i2))
-                data(isw:iew,jsw:jew,:) = field(index)%data(isc:iec,jsc:jec,:,i1)*w1 + &
-                        field(index)%data(isc:iec,jsc:jec,:,i2)*w2
+            if( field_ptr(index)%region_type == NO_REGION ) then
+                where(field_ptr(index)%mask(isc:iec,jsc:jec,:,i1).and.field_ptr(index)%mask(isc:iec,jsc:jec,:,i2))
+                data(isw:iew,jsw:jew,:) = field_ptr(index)%data(isc:iec,jsc:jec,:,i1)*w1 + &
+                        field_ptr(index)%data(isc:iec,jsc:jec,:,i2)*w2
                 elsewhere
-    !               data(isw:iew,jsw:jew,:) = time_interp_missing !field(index)%missing? Balaji
-                data(isw:iew,jsw:jew,:) = field(index)%missing
+    !               data(isw:iew,jsw:jew,:) = time_interp_missing !field_ptr(index)%missing? Balaji
+                data(isw:iew,jsw:jew,:) = field_ptr(index)%missing
                 end where
             else
-                where(field(index)%mask(isc:iec,jsc:jec,:,i1).and.field(index)%mask(isc:iec,jsc:jec,:,i2))
-                data(isw:iew,jsw:jew,:) = field(index)%data(isc:iec,jsc:jec,:,i1)*w1 + &
-                        field(index)%data(isc:iec,jsc:jec,:,i2)*w2
+                where(field_ptr(index)%mask(isc:iec,jsc:jec,:,i1).and.field_ptr(index)%mask(isc:iec,jsc:jec,:,i2))
+                data(isw:iew,jsw:jew,:) = field_ptr(index)%data(isc:iec,jsc:jec,:,i1)*w1 + &
+                        field_ptr(index)%data(isc:iec,jsc:jec,:,i2)*w2
                 end where
             endif
             if(PRESENT(mask_out)) &
                 mask_out(isw:iew,jsw:jew,:) = &
-                                            field(index)%mask(isc:iec,jsc:jec,:,i1).and.&
-                                            field(index)%mask(isc:iec,jsc:jec,:,i2)
+                                            field_ptr(index)%mask(isc:iec,jsc:jec,:,i1).and.&
+                                            field_ptr(index)%mask(isc:iec,jsc:jec,:,i2)
         endif
 
     end subroutine TIME_INTERP_EXTERNAL_3D_
@@ -238,31 +238,31 @@
            call mpp_error(FATAL, &
                      & 'invalid index in call to time_interp_ext -- field was not initialized or failed to initialize')
 
-      if (field(index)%siz(4) == 1) then
-         ! only one record in the file => time-independent field
-         call load_record_0d(field(index),1)
-         i1 = find_buf_index(1,field(index)%ibuf)
-         data = field(index)%data(1,1,1,i1)
+      if (field_ptr(index)%siz(4) == 1) then
+         ! only one record in the file => time-independent field_ptr
+         call load_record_0d(field_ptr(index),1)
+         i1 = find_buf_index(1,field_ptr(index)%ibuf)
+         data = field_ptr(index)%data(1,1,1,i1)
       else
-        if(field(index)%have_modulo_times) then
-          call time_interp(time,field(index)%modulo_time_beg, field(index)%modulo_time_end, field(index)%time(:), &
-                          w2, t1, t2, field(index)%correct_leap_year_inconsistency, err_msg=err_msg)
+        if(field_ptr(index)%have_modulo_times) then
+          call time_interp(time,field_ptr(index)%modulo_time_beg, field_ptr(index)%modulo_time_end, field_ptr(index)%time(:), &
+                          w2, t1, t2, field_ptr(index)%correct_leap_year_inconsistency, err_msg=err_msg)
           if(err_msg .NE. '') then
-             filename = trim(field(index)%fileobj%path)
+             filename = trim(field_ptr(index)%fileobj%path)
              call mpp_error(FATAL,"time_interp_external 3:"//trim(err_msg)//&
-                    ",file="//trim(filename)//",field="//trim(field(index)%name) )
+                    ",file="//trim(filename)//",field="//trim(field_ptr(index)%name) )
           endif
         else
-          if(field(index)%modulo_time) then
+          if(field_ptr(index)%modulo_time) then
             mod_time=1
           else
             mod_time=0
           endif
-          call time_interp(time,field(index)%time(:),w2,t1,t2,modtime=mod_time, err_msg=err_msg)
+          call time_interp(time,field_ptr(index)%time(:),w2,t1,t2,modtime=mod_time, err_msg=err_msg)
           if(err_msg .NE. '') then
-             filename = trim(field(index)%fileobj%path)
+             filename = trim(field_ptr(index)%fileobj%path)
              call mpp_error(FATAL,"time_interp_external 4:"//trim(err_msg)// &
-                    ",file="//trim(filename)//",field="//trim(field(index)%name) )
+                    ",file="//trim(filename)//",field="//trim(field_ptr(index)%name) )
           endif
         endif
          w1 = 1.0-w2
@@ -272,16 +272,16 @@
                  'target time yyyy/mm/dd hh:mm:ss= ',yy,'/',mm,'/',dd,hh,':',min,':',ss
             write(outunit,*) 't1, t2, w1, w2= ', t1, t2, w1, w2
          endif
-         call load_record_0d(field(index),t1)
-         call load_record_0d(field(index),t2)
-         i1 = find_buf_index(t1,field(index)%ibuf)
-         i2 = find_buf_index(t2,field(index)%ibuf)
+         call load_record_0d(field_ptr(index),t1)
+         call load_record_0d(field_ptr(index),t2)
+         i1 = find_buf_index(t1,field_ptr(index)%ibuf)
+         i2 = find_buf_index(t2,field_ptr(index)%ibuf)
 
          if(i1<0.or.i2<0) &
               call mpp_error(FATAL,'time_interp_external : records were not loaded correctly in memory')
-         data = field(index)%data(1,1,1,i1)*w1 + field(index)%data(1,1,1,i2)*w2
+         data = field_ptr(index)%data(1,1,1,i1)*w1 + field_ptr(index)%data(1,1,1,i2)*w2
          if (verb) then
-            write(outunit,*) 'ibuf= ',field(index)%ibuf
+            write(outunit,*) 'ibuf= ',field_ptr(index)%ibuf
             write(outunit,*) 'i1,i2= ',i1, i2
          endif
       endif

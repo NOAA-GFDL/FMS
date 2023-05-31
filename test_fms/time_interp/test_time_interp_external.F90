@@ -46,28 +46,28 @@ integer            :: i  !< Index for loops
 character(len=128) :: filename='INPUT/aerosol.climatology.nc'
 character(len=128) :: fieldname='so4_anthro'
 type(time_type)    :: time !< "model" time
-real, allocatable  :: data_d(:,:,:) !< interpolated data in compute domain
-real, allocatable  :: data_g(:,:,:) !< interpolated global data
+real(TI_TEST_KIND_), allocatable  :: data_d(:,:,:) !< interpolated data in compute domain
+real(TI_TEST_KIND_), allocatable  :: data_g(:,:,:) !< interpolated global data
 type(domain2d)     :: domain !<Domain to interpolate data to
 integer            :: layout(2) !< Domain layout
 integer            :: fld_size(4) !< Size of fieldname
 integer            :: isc, iec, jsc, jec !< starting (s)/ending (e) x/y indexes of the compute domain
 integer            :: isd, ied, jsd, jed !< starting (s)/ending (e) x/y indexes of the data domain
-real               :: sm !< Sum of a data array
-real               :: mx !< Max value of a data array
-real               :: mn !< Min value of a data_array
+real(TI_TEST_KIND_)               :: sm !< Sum of a data array
+real(TI_TEST_KIND_)               :: mx !< Max value of a data array
+real(TI_TEST_KIND_)               :: mn !< Min value of a data_array
 character(len=12)  :: cal_type="julian" !< Calendar type
 type(horiz_interp_type) :: Hinterp !< horix interp type
-real               :: lon_out(180,89) !< lat grid to interpolate to (global)
-real               :: lat_out(180,89) !< lon grid to interpolate to (global)
-real, allocatable  :: lon_local_out(:,:) !< lat grid to interpolate to (compute)
-real, allocatable  :: lat_local_out(:,:) !< lon grid to interpolate to (compute)
-real, allocatable  :: lon_in(:) !< lat grid in file
-real, allocatable  :: lat_in(:) !< lat grid in file
+real(TI_TEST_KIND_)               :: lon_out(180,89) !< lat grid to interpolate to (global)
+real(TI_TEST_KIND_)               :: lat_out(180,89) !< lon grid to interpolate to (global)
+real(TI_TEST_KIND_), allocatable  :: lon_local_out(:,:) !< lat grid to interpolate to (compute)
+real(TI_TEST_KIND_), allocatable  :: lat_local_out(:,:) !< lon grid to interpolate to (compute)
+real(TI_TEST_KIND_), allocatable  :: lon_in(:) !< lat grid in file
+real(TI_TEST_KIND_), allocatable  :: lat_in(:) !< lat grid in file
 integer            :: outunit !< stdout unit number
 type(FmsNetcdfFile_t) :: fileobj !< fileobj
 character(len=12)  :: axis_names(4) !< axis_names
-real, allocatable  :: data_in(:,:)  !< data added to file
+real(TI_TEST_KIND_), allocatable  :: data_in(:,:)  !< data added to file
 
 call mpp_init
 call constants_init
@@ -104,7 +104,7 @@ if (mpp_pe() .eq. mpp_root_pe()) then
 
         allocate(data_in(179, 89))
         do i=0, 2
-            data_in = real(1+i*2)
+            data_in = real((1+i*2), TI_TEST_KIND_)
             call write_data(fileobj, fieldname, data_in, unlim_dim_level=i+1)
 
             call random_number(data_in)
