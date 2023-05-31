@@ -177,10 +177,12 @@ write(*,*) '+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+'
 ! create new real field with fm_new_value
 param=1.54_lkind
 index=fm_new_value('/ocean_mod/tracer/biotic1/diff_horiz/made_up', param, create=.true.)
-if(kind(param)==r4_kind) param_out = fm_util_get_real_r4('/ocean_mod/tracer/biotic1/diff_horiz/made_up')
-if(kind(param)==r8_kind) param_out = fm_util_get_real_r8('/ocean_mod/tracer/biotic1/diff_horiz/made_up')
-write(*,*) 'fm_util The value for /ocean_mod/tracer/biotic1/diff_horiz/made_up is (real) ',param_out
-if(param_out.ne.param) call mpp_error(FATAL,'ocean_mod/tracer/biotic1/diff_horiz/made_up value retrieval failed')
+! fm_util_get_real only returns r8_kind values
+if(kind(param)==r8_kind) then
+   param_out = fm_util_get_real('/ocean_mod/tracer/biotic1/diff_horiz/made_up')
+   write(*,*) 'fm_util The value for /ocean_mod/tracer/biotic1/diff_horiz/made_up is (real) ',param_out
+   if(param_out.ne.param) call mpp_error(FATAL,'ocean_mod/tracer/biotic1/diff_horiz/made_up value retrieval failed')
+end if
 write(*,*) '+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+'
 
 ! create new field with fm_util_set_value_real
@@ -193,13 +195,15 @@ if(param_out.ne.param) call mpp_error(FATAL,'ocean_mod/tracer/biotic1/diff_horiz
 !create new array field with fm_util_set_value_array
 array_values=(/1.0_lkind, 2.0_lkind, 3.0_lkind, 4.0_lkind/)
 call fm_util_set_value('/ocean_mod/tracer/biotic1/diff_horiz/made_up3', array_values, array_size)
-if(kind(array_out).eq.r4_kind) array_out=fm_util_get_real_array_r4('/ocean_mod/tracer/biotic1/diff_horiz/made_up3')
-if(kind(array_out).eq.r8_kind) array_out=fm_util_get_real_array_r8('/ocean_mod/tracer/biotic1/diff_horiz/made_up3')
-write(*,*) 'fm_util The value for /ocean_mod/tracer/biotic1/diff_horiz/made_up3 is (real array) ', array_out
-do i=1, array_size
-   if(array_out(i).ne.array_values(i)) &
-        call mpp_error(FATAL, '/ocean_mod/tracer/biotic1/diff_horiz/made_up3 array retrieval failed')
-end do
+!fm_util_get_real_array only returns r8_kind
+if(kind(array_out).eq.r8_kind) then
+   array_out=fm_util_get_real_array('/ocean_mod/tracer/biotic1/diff_horiz/made_up3')
+   write(*,*) 'fm_util The value for /ocean_mod/tracer/biotic1/diff_horiz/made_up3 is (real array) ', array_out
+   do i=1, array_size
+      if(array_out(i).ne.array_values(i)) &
+           call mpp_error(FATAL, '/ocean_mod/tracer/biotic1/diff_horiz/made_up3 array retrieval failed')
+   end do
+end if
 
 write(*,*) 'Changing the name of biotic1 to biotic_control'
 success = fm_modify_name('/ocean_mod/tracer/biotic1', 'biotic_control')

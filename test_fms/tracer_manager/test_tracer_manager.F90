@@ -70,9 +70,7 @@ contains
   tracer_index=get_tracer_index(MODEL_ATMOS, 'immadeup')
   call set_tracer_profile(MODEL_ATMOS,tracer_index,tracer_out2,err_message)
   !> answer
-  !success=fm_change_list('/atmos_mod/tracer/immadeup/profile_type/profile/') !<not needed
   success=fm_get_value("/atmos_mod/tracer/immadeup/profile_type/profile/top_value", top_value)
-  !success=fm_change_list('/atmos_mod/tracer/immadeup/profile_type/profile/') !<not needed
   success=fm_get_value("/atmos_mod/tracer/immadeup/profile_type/profile/surface_value", surf_value)
   multiplier = exp( log (top_value/surf_value) /real(numlevels-1,lkind) )
   answer2(:,:,1)=surf_value
@@ -93,9 +91,7 @@ contains
   tracer_index=get_tracer_index(MODEL_OCEAN, 'immadeup2')
   call set_tracer_profile(MODEL_OCEAN,tracer_index,tracer_out2,err_message)
   !> answer
-  !success=fm_change_list('/ocean_mod/tracer/immadeup2/profile_type/profile/') !<not needed
   success=fm_get_value("/ocean_mod/tracer/immadeup2/profile_type/profile/bottom_value", bottom_value)
-  !success=fm_change_list('/ocean_mod/tracer/immadeup2/profile_type/profile/') !<not needed
   success=fm_get_value("/ocean_mod/tracer/immadeup2/profile_type/profile/surface_value", surf_value)
   multiplier = exp( log (bottom_value/surf_value) /real(numlevels-1,lkind))
   answer2(:,:,numlevels)=surf_value
