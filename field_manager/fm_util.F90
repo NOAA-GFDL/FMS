@@ -53,13 +53,11 @@ public  fm_util_reset_good_name_list
 public  fm_util_get_length
 public  fm_util_get_integer
 public  fm_util_get_logical
-public  fm_util_get_real_r4
-public  fm_util_get_real_r8
+public  fm_util_get_real
 public  fm_util_get_string
 public  fm_util_get_integer_array
 public  fm_util_get_logical_array
-public  fm_util_get_real_array_r4
-public  fm_util_get_real_array_r8
+public  fm_util_get_real_array
 public  fm_util_get_string_array
 public  fm_util_set_value
 public  fm_util_set_value_integer_array
@@ -937,99 +935,7 @@ end function fm_util_get_logical_array  !}
 !#######################################################################
 
 !> Get a real value from the Field Manager tree.
-function fm_util_get_real_array_r4(name, caller)            &
-         result (array)  !{
-
-implicit none
-
-!
-!       Return type
-!
-
-real(r4_kind), pointer, dimension(:) :: array
-
-!
-!       arguments
-!
-
-character(len=*), intent(in)            :: name
-character(len=*), intent(in), optional  :: caller
-
-!
-!       Local parameters
-!
-
-character(len=48), parameter  :: sub_name = 'fm_util_get_real_array'
-
-!
-!       Local variables
-!
-
-character(len=256)              :: error_header
-character(len=256)              :: warn_header
-character(len=256)              :: note_header
-character(len=128)              :: caller_str
-character(len=32)               :: index_str
-character(len=fm_type_name_len) :: fm_type
-integer                         :: i
-integer                         :: length
-
-nullify(array)
-
-!
-!       set the caller string and headers
-!
-
-if (present(caller)) then  !{
-  caller_str = '[' // trim(caller) // ']'
-else  !}{
-  caller_str = fm_util_default_caller
-endif  !}
-
-error_header = '==>Error from ' // trim(mod_name) //   &
-               '(' // trim(sub_name) // ')' // trim(caller_str) // ':'
-warn_header = '==>Warning from ' // trim(mod_name) //  &
-              '(' // trim(sub_name) // ')' // trim(caller_str) // ':'
-note_header = '==>Note from ' // trim(mod_name) //     &
-              '(' // trim(sub_name) // ')' // trim(caller_str) // ':'
-
-!
-!       check that a name is given (fatal if not)
-!
-
-if (name .eq. ' ') then  !{
-  call mpp_error(FATAL, trim(error_header) // ' Empty name given')
-endif  !}
-
-fm_type = fm_get_type(name)
-if (fm_type .eq. 'real') then  !{
-  length = fm_get_length(name)
-  if (length .lt. 0) then  !{
-    call mpp_error(FATAL, trim(error_header) // ' Problem getting length of ' // trim(name))
-  endif  !}
-  if (length .gt. 0) then  !{
-    allocate(array(length))
-    do i = 1, length  !{
-      if (.not. fm_get_value(name, array(i), index = i)) then  !{
-        write (index_str,*) '(', i, ')'
-        call mpp_error(FATAL, trim(error_header) // ' Problem getting ' // trim(name) // trim(index_str))
-      endif  !}
-    enddo  !} i
-  endif  !}
-elseif (fm_type .eq. ' ') then  !}{
-  call mpp_error(FATAL, trim(error_header) // ' Array does not exist: ' // trim(name))
-else  !}{
- call mpp_error(FATAL, trim(error_header) // ' Wrong type for ' // trim(name) // ', found (' // trim(fm_type) // ')')
-endif  !}
-
-return
-
-end function fm_util_get_real_array_r4  !}
-
-!#######################################################################
-
-!> Get a real value from the Field Manager tree.
-function fm_util_get_real_array_r8(name, caller)            &
+function fm_util_get_real_array(name, caller)            &
          result (array)  !{
 
 implicit none
@@ -1116,7 +1022,7 @@ endif  !}
 
 return
 
-end function fm_util_get_real_array_r8  !}
+end function fm_util_get_real_array  !}
 
 !#######################################################################
 
@@ -1439,129 +1345,9 @@ end function fm_util_get_logical  !}
 
 !#######################################################################
 
-!> Get a real value from the Field Manager tree.
-function fm_util_get_real_r4(name, caller, index, default_value, scalar)            &
-         result (value)  !{
-
-implicit none
-
-!
-!       Return type
-!
-
-real(r4_kind) :: value
-
-!
-!       arguments
-!
-
-character(len=*), intent(in)            :: name
-character(len=*), intent(in), optional  :: caller
-integer, intent(in), optional           :: index
-real(r4_kind), intent(in), optional     :: default_value
-logical, intent(in), optional           :: scalar
-
-!
-!       Local parameters
-!
-
-character(len=48), parameter  :: sub_name = 'fm_util_get_real'
-
-!
-!       Local variables
-!
-
-character(len=256)              :: error_header
-character(len=256)              :: warn_header
-character(len=256)              :: note_header
-character(len=128)              :: caller_str
-integer                         :: index_t
-character(len=fm_type_name_len) :: fm_type
-integer                         :: field_length
-integer :: ivalue
-
-!
-!       set the caller string and headers
-!
-
-if (present(caller)) then  !{
-  caller_str = '[' // trim(caller) // ']'
-else  !}{
-  caller_str = fm_util_default_caller
-endif  !}
-
-error_header = '==>Error from ' // trim(mod_name) //   &
-               '(' // trim(sub_name) // ')' // trim(caller_str) // ':'
-warn_header = '==>Warning from ' // trim(mod_name) //  &
-              '(' // trim(sub_name) // ')' // trim(caller_str) // ':'
-note_header = '==>Note from ' // trim(mod_name) //     &
-              '(' // trim(sub_name) // ')' // trim(caller_str) // ':'
-
-!
-!       check that a name is given (fatal if not)
-!
-
-if (name .eq. ' ') then  !{
-  call mpp_error(FATAL, trim(error_header) // ' Empty name given')
-endif  !}
-
-!
-!       Check whether we require a scalar (length=1) and return
-!       an error if we do, and it isn't
-!
-
-if (present(scalar)) then  !{
-  if (scalar) then  !{
-    field_length = fm_get_length(name)
-    if (field_length .lt. 0) then  !{
-      call mpp_error(FATAL, trim(error_header) // ' Problem getting length of ' // trim(name))
-    elseif (field_length .gt. 1) then  !}{
-      call mpp_error(FATAL, trim(error_header) // trim(name) // ' not scalar')
-    endif  !}
-  endif  !}
-endif  !}
-
-!
-!       set the index
-!
-
-if (present(index)) then  !{
-  index_t = index
-  if (index .le. 0) then  !{
-    call mpp_error(FATAL, trim(error_header) // ' Index not positive')
-  endif  !}
-else  !}{
-  index_t = 1
-endif  !}
-
-fm_type = fm_get_type(name)
-if (fm_type .eq. 'real') then  !{
-  if (.not. fm_get_value(name, value, index = index_t)) then  !{
-    call mpp_error(FATAL, trim(error_header) // ' Problem getting ' // trim(name))
-  endif  !}
-else if (fm_type .eq. 'integer') then
-  if (.not. fm_get_value(name, ivalue, index = index_t)) then
-    call mpp_error(FATAL, trim(error_header) // ' Problem getting ' // trim(name))
-  endif
-  value = real(ivalue,r4_kind)
-elseif (fm_type .eq. ' ' .and. present(default_value)) then  !}{
-  value = default_value
-elseif (fm_type .eq. ' ') then  !}{
-  call mpp_error(FATAL, trim(error_header) // ' Field does not exist: ' // trim(name))
-else  !}{
- call mpp_error(FATAL, trim(error_header) // ' Wrong type for ' // trim(name) // ', found (' // trim(fm_type) // ')')
-endif  !}
-
-return
-
-end function fm_util_get_real_r4  !}
-
-
-!#######################################################################
-
 
 !> Get a real value from the Field Manager tree.
-function fm_util_get_real_r8(name, caller, index, default_value, scalar)           &
+function fm_util_get_real(name, caller, index, default_value, scalar)           &
          result (value)  !{
 
 implicit none
@@ -1675,7 +1461,7 @@ endif  !}
 
 return
 
-end function fm_util_get_real_r8  !}
+end function fm_util_get_real  !}
 
 
 !#######################################################################
