@@ -102,12 +102,12 @@ module MersenneTwister_mod
   ! Period parameters
   integer, parameter :: blockSize = 624,         &
                         M         = 397,         &
-                        MATRIX_A  = -1727483681, & !< constant vector a         (0x9908b0dfUL)
-                        UMASK     = -2147483648, & !< most significant w-r bits (0x80000000UL)
-                        LMASK     =  2147483647    !< least significant r bits  (0x7fffffffUL)
+                        MATRIX_A  = Z'9908b0df', & !< constant vector a
+                        UMASK     = Z'80000000', & !< most significant w-r bits
+                        LMASK     = Z'7fffffff'    !< least significant r bits
   !> Tempering parameters
-  integer, parameter :: TMASKB= -1658038656, & !< (0x9d2c5680UL)
-                        TMASKC= -272236544     !< (0xefc60000UL)
+  integer, parameter :: TMASKB= Z'9d2c5680', &
+                        TMASKC= Z'efc60000'
   ! -------
   !> @}
 
