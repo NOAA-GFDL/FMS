@@ -20,15 +20,15 @@
   !> Draws random scalar
   subroutine GET_RANDOM_NUMBER_0D_(stream, number)
     type(randomNumberStream), intent(inout) :: stream
-    real(RN_KIND_),           intent(  out) :: number
+    real(FMS_RN_KIND_),       intent(  out) :: number
 
-    number = real(getRandomReal(stream%theNumbers), RN_KIND_)
+    number = real(getRandomReal(stream%theNumbers), FMS_RN_KIND_)
   end subroutine
 
   !> Draws random 1D array
   subroutine GET_RANDOM_NUMBER_1D_(stream, numbers)
-    type(randomNumberStream),     intent(inout) :: stream
-    real(RN_KIND_), dimension(:), intent(  out) :: numbers
+    type(randomNumberStream),         intent(inout) :: stream
+    real(FMS_RN_KIND_), dimension(:), intent(  out) :: numbers
 
     ! Local variables
     integer :: i
@@ -40,8 +40,8 @@
 
   !> Draws random 2D array
   subroutine GET_RANDOM_NUMBER_2D_(stream, numbers)
-    type(randomNumberStream),        intent(inout) :: stream
-    real(RN_KIND_), dimension(:, :), intent(  out) :: numbers
+    type(randomNumberStream),            intent(inout) :: stream
+    real(FMS_RN_KIND_), dimension(:, :), intent(  out) :: numbers
 
     ! Local variables
     integer :: i
