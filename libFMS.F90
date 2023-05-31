@@ -173,10 +173,10 @@ module fms
                          fm_util_reset_no_overwrite, fm_util_set_good_name_list, &
                          fm_util_reset_good_name_list, fm_util_get_length, &
                          fm_util_get_integer, fm_util_get_logical, &
-                         fm_util_get_real_r4, fm_util_get_real_r8, &
+                         fm_util_get_real, &
                          fm_util_get_string, fm_util_get_integer_array, &
                          fm_util_get_logical_array, &
-                         fm_util_get_real_array_r4, fm_util_get_real_array_r8, &
+                         fm_util_get_real_array, &
                          fm_util_get_string_array, fm_util_set_value, &
                          fm_util_set_value_integer_array, fm_util_set_value_logical_array, &
                          fm_util_set_value_real_array_r4, fm_util_set_value_real_array_r8, &
