@@ -100,14 +100,14 @@ module MersenneTwister_mod
   ! Algorithm parameters
   ! -------
   ! Period parameters
-  integer, parameter :: blockSize = 624,         &
-                        M         = 397,         &
-                        MATRIX_A  = Z'9908b0df', & !< constant vector a
-                        UMASK     = Z'80000000', & !< most significant w-r bits
-                        LMASK     = Z'7fffffff'    !< least significant r bits
+  integer, parameter :: blockSize = 624,              &
+                        M         = 397,              &
+                        MATRIX_A  = int(Z'9908b0df'), & !< constant vector a
+                        UMASK     = int(Z'80000000'), & !< most significant w-r bits
+                        LMASK     = int(Z'7fffffff')    !< least significant r bits
   !> Tempering parameters
-  integer, parameter :: TMASKB= Z'9d2c5680', &
-                        TMASKC= Z'efc60000'
+  integer, parameter :: TMASKB= int(Z'9d2c5680'), &
+                        TMASKC= int(Z'efc60000')
   ! -------
   !> @}
 
