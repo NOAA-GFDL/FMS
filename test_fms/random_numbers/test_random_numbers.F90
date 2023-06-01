@@ -13,7 +13,7 @@ integer, parameter :: n_moments = 1000 !> Highest-order moment to test
 integer, parameter :: n0_1d = 2500 !> Initial length of 1D random sample vector
 integer, parameter :: n0_2d = 50 !> Initial dimensions of 2D random sample array
 
-integer, parameter :: seeds(0:*) = [0, -5, 3] !> Seed constants
+integer, parameter :: seeds(*) = [0, -5, 3] !> Seed constants
 integer, parameter :: k = TEST_RN_KIND_ !> Either r4_kind or r8_kind
 
 real(k), dimension(n_moments) :: moment_mu !> Expected moment values
@@ -49,23 +49,23 @@ end subroutine set_time
 !> Test random_numbers_mod's constructSeed()
 subroutine test_constructSeed
   if (mpp_pe() .eq. 0) then
-    call constructSeed_assert(seeds(0), seeds(0), now)
-    call constructSeed_assert(seeds(0), seeds(0), now, 0)
+    call constructSeed_assert(seeds(1), seeds(1), now)
+    call constructSeed_assert(seeds(1), seeds(1), now, 0)
 
-    call constructSeed_assert(seeds(1), seeds(2), now)
-    call constructSeed_assert(seeds(1), seeds(2), now, 0)
+    call constructSeed_assert(seeds(2), seeds(3), now)
+    call constructSeed_assert(seeds(2), seeds(3), now, 0)
 
-    call constructSeed_assert(seeds(0), seeds(0), now,  10)
-    call constructSeed_assert(seeds(0), seeds(0), now, -10)
+    call constructSeed_assert(seeds(1), seeds(1), now,  10)
+    call constructSeed_assert(seeds(1), seeds(1), now, -10)
 
-    call constructSeed_assert(seeds(1), seeds(2), now,  10)
-    call constructSeed_assert(seeds(1), seeds(2), now, -10)
+    call constructSeed_assert(seeds(2), seeds(3), now,  10)
+    call constructSeed_assert(seeds(2), seeds(3), now, -10)
 
-    call constructSeed_assert(seeds(0), seeds(0), now,  20)
-    call constructSeed_assert(seeds(0), seeds(0), now, -20)
+    call constructSeed_assert(seeds(1), seeds(1), now,  20)
+    call constructSeed_assert(seeds(1), seeds(1), now, -20)
 
-    call constructSeed_assert(seeds(1), seeds(2), now,  20)
-    call constructSeed_assert(seeds(1), seeds(2), now, -20)
+    call constructSeed_assert(seeds(2), seeds(3), now,  20)
+    call constructSeed_assert(seeds(2), seeds(3), now, -20)
   endif
 end subroutine test_constructSeed
 
@@ -92,16 +92,16 @@ subroutine test_getRandomNumbers
 
   select case (mpp_pe())
     case (0)
-      stream = initializeRandomNumberStream(seeds(0))
+      stream = initializeRandomNumberStream(seeds(1))
       call test_getRandomNumbers_dispatch(stream)
     case (1)
-      stream = initializeRandomNumberStream(seeds(1))
+      stream = initializeRandomNumberStream(seeds(2))
       call test_getRandomNumbers_dispatch(stream)
     case (2)
       stream = initializeRandomNumberStream(seeds)
       call test_getRandomNumbers_dispatch(stream)
     case (3)
-      stream = initializeRandomNumberStream(constructSeed(seeds(1), seeds(2), now))
+      stream = initializeRandomNumberStream(constructSeed(seeds(2), seeds(3), now))
       call test_getRandomNumbers_dispatch(stream)
     case default
       call mpp_error(fatal, "Unexpected PE: " // string(mpp_pe()))
