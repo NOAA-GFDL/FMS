@@ -92,7 +92,7 @@
 !> @{
 module MersenneTwister_mod
 ! -------------------------------------------------------------
-  use platform_mod, only: r8_kind
+  use platform_mod, only: r8_kind, i8_kind
 
   implicit none
   private
@@ -100,14 +100,14 @@ module MersenneTwister_mod
   ! Algorithm parameters
   ! -------
   ! Period parameters
-  integer, parameter :: blockSize = 624,              &
-                        M         = 397,              &
-                        MATRIX_A  = int(Z'9908b0df'), & !< constant vector a
-                        UMASK     = int(Z'80000000'), & !< most significant w-r bits
-                        LMASK     = int(Z'7fffffff')    !< least significant r bits
+  integer, parameter :: blockSize = 624,                 &
+                        M         = 397,                 &
+                        MATRIX_A  = -1727483681,         & !< constant vector a         (0x9908b0dfUL)
+                        UMASK     = -2147483648_i8_kind, & !< most significant w-r bits (0x80000000UL)
+                        LMASK     =  2147483647            !< least significant r bits  (0x7fffffffUL)
   !> Tempering parameters
-  integer, parameter :: TMASKB= int(Z'9d2c5680'), &
-                        TMASKC= int(Z'efc60000')
+  integer, parameter :: TMASKB= -1658038656, & !< (0x9d2c5680UL)
+                        TMASKC= -272236544     !< (0xefc60000UL)
   ! -------
   !> @}
 
