@@ -722,6 +722,42 @@ end subroutine mpp_exit
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !                                                                             !
+!            MPP_SCATTER: MPI_SCATTERV, MPI_GATHER                            !
+!                                                                             !
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+#undef MPP_SCATTER_PELIST_2D_
+#undef MPP_SCATTER_PELIST_3D_
+#undef MPP_TYPE_
+#undef MPI_TYPE_
+#define MPP_SCATTER_PELIST_2D_ mpp_scatter_pelist_int4_2d
+#define MPP_SCATTER_PELIST_3D_ mpp_scatter_pelist_int4_3d
+#define MPP_TYPE_ integer(i4_kind)
+#define MPI_TYPE_ MPI_INTEGER4
+#include <mpp_scatter_nocomm.fh>
+
+#undef MPP_SCATTER_PELIST_2D_
+#undef MPP_SCATTER_PELIST_3D_
+#undef MPP_TYPE_
+#undef MPI_TYPE_
+#define MPP_SCATTER_PELIST_2D_ mpp_scatter_pelist_real4_2d
+#define MPP_SCATTER_PELIST_3D_ mpp_scatter_pelist_real4_3d
+#define MPP_TYPE_ real(r4_kind)
+#define MPI_TYPE_ MPI_REAL4
+#include <mpp_scatter_nocomm.fh>
+
+#undef MPP_SCATTER_PELIST_2D_
+#undef MPP_SCATTER_PELIST_3D_
+#undef MPP_TYPE_
+#undef MPI_TYPE_
+#define MPP_SCATTER_PELIST_2D_ mpp_scatter_pelist_real8_2d
+#define MPP_SCATTER_PELIST_3D_ mpp_scatter_pelist_real8_3d
+#define MPP_TYPE_ real(r8_kind)
+#define MPI_TYPE_ MPI_REAL8
+#include <mpp_scatter_nocomm.fh>
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!                                                                             !
 !            GLOBAL REDUCTION ROUTINES: mpp_max, mpp_sum, mpp_min             !
 !                                                                             !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
