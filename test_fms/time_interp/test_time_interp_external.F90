@@ -68,6 +68,7 @@ integer            :: outunit !< stdout unit number
 type(FmsNetcdfFile_t) :: fileobj !< fileobj
 character(len=12)  :: axis_names(4) !< axis_names
 real(TI_TEST_KIND_), allocatable  :: data_in(:,:)  !< data added to file
+integer, parameter :: kindl = TI_TEST_KIND_
 
 call mpp_init
 call constants_init
@@ -98,8 +99,8 @@ if (mpp_pe() .eq. mpp_root_pe()) then
         call register_variable_attribute(fileobj, "time", "units", "days since 1800-01-01 00:00:00", str_len=30)
         call register_variable_attribute(fileobj, "time", "calendar", "julian", str_len=6)
 
-        call write_data(fileobj, "lat", (/(-90+i*2.0,i=1,89)/))
-        call write_data(fileobj, "lon", (/(-180+i*2.0,i=1,179)/))
+        call write_data(fileobj, "lat", (/(-90.0_kindl+i*2.0_kindl,i=1,89)/))
+        call write_data(fileobj, "lon", (/(-180.0_kindl+i*2.0_kindl,i=1,179)/))
         call write_data(fileobj, "time", (/(1+i*2, i=0,2)/))
 
         allocate(data_in(179, 89))
@@ -198,11 +199,11 @@ write(outunit,*) '======================================'
 
 ! define a global 2 degree output grid
 do i=1,180
-   lon_out(i,:) = 2.0*i*atan(1.0)/45.0
+   lon_out(i,:) = 2.0_kindl*real(i,kindl)*atan(1.0_kindl)/45.0_kindl
 enddo
 
 do i=1,89
-   lat_out(:,i) = (i-45)*2.0*atan(1.0)/45.0
+   lat_out(:,i) = (i-45)*2.0_kindl*atan(1.0_kindl)/45.0_kindl
 enddo
 
 id = init_external_field(filename,trim(fieldname)//"_random",domain=domain,axis_names=axis_names,&
@@ -224,8 +225,8 @@ allocate(lat_in(fld_size(2)+1))
 call axis_edges(fileobj, axis_names(1), lon_in)
 call axis_edges(fileobj, axis_names(2), lat_in)
 
-lon_in = lon_in*atan(1.0)/45
-lat_in = lat_in*atan(1.0)/45
+lon_in = lon_in*atan(1.0_kindl)/45.0_kindl
+lat_in = lat_in*atan(1.0_kindl)/45.0_kindl
 
 call horiz_interp_new(Hinterp,lon_in,lat_in, lon_local_out, lat_local_out, &
      interp_method='bilinear')
@@ -234,7 +235,7 @@ deallocate(data_d)
 allocate(data_d(isc:iec,jsc:jec,fld_size(3)))
 
 time = set_date(1800,1,3,0,0,0)
-data_d = 0
+data_d = 0.0_kindl
 call time_interp_external(id,time,data_d,verbose=.true.,horz_interp=Hinterp)
 sm = mpp_global_sum(domain,data_d,flags=BITWISE_EXACT_SUM)
 mx = mpp_global_max(domain,data_d)

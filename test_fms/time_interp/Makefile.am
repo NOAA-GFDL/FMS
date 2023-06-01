@@ -33,8 +33,8 @@ check_PROGRAMS = test_time_interp_r4 test_time_interp_r8 test_time_interp_extern
 
 # These are the sources for the tests.
 test_time_interp_r4_SOURCES = test_time_interp.F90
-test_time_interp_external_r4_SOURCES = test_time_interp_external.F90
 test_time_interp_r8_SOURCES = test_time_interp.F90
+test_time_interp_external_r4_SOURCES = test_time_interp_external.F90
 test_time_interp_external_r8_SOURCES = test_time_interp_external.F90
 
 # filter out any added precision flags

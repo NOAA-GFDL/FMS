@@ -37,9 +37,9 @@ libtime_interp_la_SOURCES = \
   include/time_interp_r4.fh \
   include/time_interp_r8.fh \
   include/time_interp.inc \
-  include/time_interp_external_r4.fh \
-  include/time_interp_external_r8.fh \
-  include/time_interp_external.inc
+  include/time_interp_external2_r4.fh \
+  include/time_interp_external2_r8.fh \
+  include/time_interp_external2.inc
 
 # Some mods are dependant on other mods in this dir.
 time_interp_external_mod.$(FC_MODEXT): time_interp_mod.$(FC_MODEXT)

@@ -55,11 +55,11 @@
     subroutine TIME_INTERP_EXTERNAL_3D_(index, time, data, interp,verbose,horz_interp, mask_out, is_in, ie_in, &
                                       &  js_in, je_in, window_id)
 
-        integer,                    intent(in)           :: index !> index of external field from previous call to init_external_field
-        type(time_type),            intent(in)           :: time !> target time for data
-        real(FMS_TI_KIND_), dimension(:,:,:),  intent(inout)           :: data !> global or local data array
+        integer,                    intent(in)           :: index !< index of external field from previous call to init_external_field
+        type(time_type),            intent(in)           :: time !< target time for data
+        real(FMS_TI_KIND_), dimension(:,:,:),  intent(inout)           :: data !< global or local data array
         integer,                    intent(in), optional :: interp
-        logical,                    intent(in), optional :: verbose
+        logical,                    intent(in), optional :: verbose !< flag for debugging
         type(horiz_interp_type),    intent(in), optional :: horz_interp
         logical, dimension(:,:,:), intent(out), optional :: mask_out !< set to true where output data is valid
         integer,                    intent(in), optional :: is_in, ie_in, js_in, je_in

@@ -723,26 +723,6 @@ module time_interp_external2_mod
 !<SUBROUTINE NAME="time_interp_external" >
 !
 !<DESCRIPTION>
-! Provide data from external file interpolated to current model time.
-! Data may be local to current processor or global, depending on
-! "init_external_field" flags.
-!</DESCRIPTION>
-!
-!<IN NAME="index" TYPE="integer">
-! index of external field from previous call to init_external_field
-!</IN>
-!<IN NAME="time" TYPE="time_manager_mod:time_type">
-! target time for data
-!</IN>
-!<INOUT NAME="data" TYPE="real" DIM="(:,:),(:,:,:)">
-! global or local data array
-!</INOUT>
-!<IN NAME="interp" TYPE="integer">
-! time_interp_external defined interpolation method (optional).  Currently this module only supports
-! LINEAR_TIME_INTERP.
-!</IN>
-!<IN NAME="verbose" TYPE="logical">
-! verbose flag for debugging (optional).
 !</IN>
 
     !> 3D interpolation for @ref time_interp_external
@@ -1002,7 +982,6 @@ module time_interp_external2_mod
 
 ! ============================================================================
 !> load specified record from file
-!! TODO can check if horiz_interp_type is r4/r8 to determine kind size to use
 subroutine load_record(field, rec, interp, is_in, ie_in, js_in, je_in, window_id_in)
   type(ext_fieldtype),     intent(inout)        :: field
   integer            ,     intent(in)           :: rec    ! record number
@@ -1019,6 +998,8 @@ subroutine load_record(field, rec, interp, is_in, ie_in, js_in, je_in, window_id
   integer :: window_id
   real(r8_kind)    :: mask_in(size(field%src_data,1),size(field%src_data,2),size(field%src_data,3))
   real(r8_kind), allocatable :: mask_out(:,:,:)
+  real(r4_kind), allocatable :: hi_tmp_out(:,:,:,:) !< used to hold a copy of field%data if using r4_kind
+  real(r4_kind), allocatable :: hi_tmp_msk_out(:,:,:) !< used return the field mask if using r4_kind
 
   window_id = 1
   if( PRESENT(window_id_in) ) window_id = window_id_in
@@ -1068,34 +1049,47 @@ subroutine load_record(field, rec, interp, is_in, ie_in, js_in, je_in, window_id
      if(PRESENT(interp)) then
         is_region = field%is_region; ie_region = field%ie_region
         js_region = field%js_region; je_region = field%je_region
-        mask_in = 0.0
+        mask_in = 0.0_r8_kind
         where (is_valid(field%src_data(:,:,:,ib), field%valid)) mask_in = 1.0_r8_kind
         if ( field%region_type .NE. NO_REGION ) then
-           if( ANY(mask_in == 0.0) ) then
+           if( ANY(mask_in == 0.0_r8_kind) ) then
               call mpp_error(FATAL, "time_interp_external: mask_in should be all 1 when region_type is not NO_REGION")
            endif
            if( field%region_type == OUTSIDE_REGION) then
               do j = js_region, je_region
                  do i = is_region, ie_region
-                    mask_in(i,j,:) = 0.0
+                    mask_in(i,j,:) = 0.0_r8_kind
                  enddo
               enddo
            else  ! field%region_choice == INSIDE_REGION
               do j = 1, size(mask_in,2)
                  do i = 1, size(mask_in,1)
-                    if( j<js_region .OR. j>je_region .OR. i<is_region .OR. i>ie_region ) mask_in(i,j,:) = 0.0
+                    if( j<js_region .OR. j>je_region .OR. i<is_region .OR. i>ie_region ) mask_in(i,j,:) = 0.0_r8_kind
                  enddo
               enddo
            endif
         endif
         allocate(mask_out(isw:iew,jsw:jew, size(field%src_data,3)))
-        !! TODO might need to check which kind is allocated before passing
-        !! need to bring in update first
-        call horiz_interp(interp,field%src_data(:,:,:,ib),field%data(isw:iew,jsw:jew,:,ib), &
-             mask_in=mask_in, &
-             mask_out=mask_out)
+        !! added for mixed mode. if existing horiz_interp_type was initialized in r4, needs to cast down in order 
+        !! to match up with saved values in horiz_interp_type.
+        !! creates some temporary arrays since intent(out) vars can't get passed in diretory
+        if (interp%horizInterpReals4_type%is_allocated) then
+            allocate(hi_tmp_out(size(field%data,1),size(field%data,2),size(field%data,3), size(field%data,4)))
+            allocate(hi_tmp_msk_out(size(mask_out,1),size(mask_out,2),size(mask_out,3)))
+            !hi_tmp_in = real(field%src_data(:,:,:,ib), r4_kind)
+            hi_tmp_out = real(field%data, r4_kind)
+            call horiz_interp(interp, real(field%src_data(:,:,:,ib), r4_kind), hi_tmp_out(isw:iew,jsw:jew,:,ib), & 
+                              mask_in=real(mask_in,r4_kind), mask_out=hi_tmp_msk_out)
+            field%data = real(hi_tmp_out, r8_kind)
+            field%mask(isw:iew,jsw:jew,:,ib) = hi_tmp_msk_out(isw:iew,jsw:jew,:) > 0.0_r4_kind
+            deallocate(hi_tmp_out, hi_tmp_msk_out)
+        else
+            call horiz_interp(interp, field%src_data(:,:,:,ib),field%data(isw:iew,jsw:jew,:,ib), &
+                              mask_in=mask_in, &
+                              mask_out=mask_out)
+            field%mask(isw:iew,jsw:jew,:,ib) = mask_out(isw:iew,jsw:jew,:) > 0.0_r8_kind
+        endif
 
-        field%mask(isw:iew,jsw:jew,:,ib) = mask_out(isw:iew,jsw:jew,:) > 0
         deallocate(mask_out)
      else
         if ( field%region_type .NE. NO_REGION ) then
@@ -1387,8 +1381,8 @@ end subroutine
     end subroutine time_interp_external_exit
 !</SUBROUTINE> NAME="time_interp_external_exit"
 
-#include "time_interp_external_r4.fh"
-#include "time_interp_external_r8.fh"
+#include "time_interp_external2_r4.fh"
+#include "time_interp_external2_r8.fh"
 
 end module time_interp_external2_mod
 !> @}
