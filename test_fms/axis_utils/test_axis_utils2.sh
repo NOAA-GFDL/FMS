@@ -27,7 +27,7 @@
 # Prepare the directory to run the tests.
 touch input.nml
 
-TESTS_SUCCESS='--get-axis-modulo --get-axis-modulo-times --get-axis-cart --lon-in-range --frac-index --nearest-index --axis-edges --tranlon --interp-1d-1d --interp-1d-2d --interp-1d-3d'
+TESTS_SUCCESS='--get-axis-modulo --get-axis-modulo-times --get-axis-cart --lon-in-range --frac-index --nearest-index-increasing --nearest-index-decreasing --axis-edges --tranlon --interp-1d-1d --interp-1d-2d --interp-1d-3d'
 TESTS_FAIL='--frac-index-fail --nearest-index-fail'
 
 # TODO: Enable these tests after tranlon's memory corruption bug is fixed.
