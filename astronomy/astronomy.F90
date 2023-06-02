@@ -654,7 +654,7 @@ real(kind=r8_kind) :: d1, d2, d3, d4, d5, dt, norm
 ! wfc moving to astronomy_init
 !     allocate ( orb_angle(0:num_angles) )
 orb_angle(0) = 0.0_r8_kind
-dt = twopi/float(num_angles)
+dt = twopi/real(num_angles, r8_kind)
 norm = sqrt(1.0_r8_kind - real(ecc, r8_kind)**2)
 dt = dt*norm
 
