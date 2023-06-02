@@ -1527,7 +1527,7 @@ real(kind=FMS_AST_KIND_), dimension (size(latitude,1),size(latitude,2)):: &
                                                   cos_half_day, & !< Cosine of half-day length [dimensionless]
                                                   lat !< Model latitude, adjusted so that it is never 0.5*pi or -0.5*pi
 real(kind=FMS_AST_KIND_) :: tan_dec !< tangent of solar declination [dimensionless]
-real(kind=FMS_AST_KIND_) :: eps = real(1.0E-05, FMS_AST_KIND_) !< small increment
+real(kind=FMS_AST_KIND_) :: eps = 1.0E-05_lkind !< small increment
 integer, parameter       :: lkind = FMS_AST_KIND_
 
 !--------------------------------------------------------------------
