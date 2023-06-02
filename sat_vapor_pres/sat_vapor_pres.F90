@@ -202,7 +202,6 @@ private
 !public :: compute_es
  public :: escomp, descomp ! for backward compatibility
                            ! use lookup_es, lookup_des instead
- public :: check_1d, check_2d, temp_check, show_all_bad
 
 !-----------------------------------------------------------------------
 
