@@ -214,9 +214,9 @@ integer, parameter                                           :: lkind = FMS_AST_
 !>    define local time. force it to be between -pi and pi.
 !--------------------------------------------------------------------
 
-    t = gmt + lon - PI
-    where(t >= PI) t = real(t, FMS_AST_KIND_) - real(twopi, FMS_AST_KIND_)
-    where(t < -PI) t = real(t, FMS_AST_KIND_) + real(twopi, FMS_AST_KIND_)
+    t = gmt + lon - real(PI, FMS_AST_KIND_)
+    where(t >= real(PI, FMS_AST_KIND_)) t = real(t, FMS_AST_KIND_) - real(twopi, FMS_AST_KIND_)
+    where(t < real(-PI,FMS_AST_KIND_))  t = real(t, FMS_AST_KIND_) + real(twopi, FMS_AST_KIND_)
 
     Lallow_negative = .false.
     if (present(allow_negative_cosz)) then
@@ -573,7 +573,7 @@ integer, parameter       :: lkind = FMS_AST_KIND_
 
     if (present(dt_time))  then
         dt = universal_time(dt_time)
-        if (dt > PI) then
+        if (dt > real(PI, FMS_AST_KIND_)) then
            call error_mesg('astronomy_mod', 'radiation time step must be no longer than 12 hrs', FATAL)
         endif
     if (dt == 0.0_lkind) then
@@ -803,7 +803,7 @@ integer, parameter       :: lkind = FMS_AST_KIND_
     elsewhere
           cosz = sin(lat)*sin(dec) + cos(lat)*cos(dec)*sin(h)/h
     end where
-      h_out    = h/PI
+      h_out    = h/real(PI, FMS_AST_KIND_)
       rr_out   = rr
 
 end subroutine DAILY_MEAN_SOLAR_2D_
@@ -1541,8 +1541,8 @@ integer, parameter       :: lkind = FMS_AST_KIND_
 !--------------------------------------------------------------------
 
     lat = latitude
-    where (latitude == 0.5_lkind*PI)  lat = latitude - eps
-    where (latitude == -0.5_lkind*PI) lat = latitude + eps
+    where (latitude == 0.5_lkind*real(PI, FMS_AST_KIND_))  lat = latitude - eps
+    where (latitude == -0.5_lkind*real(PI, FMS_AST_KIND_)) lat = latitude + eps
 
 !--------------------------------------------------------------------
 !>    define the cosine of the half-day length. adjust for cases of
@@ -1550,7 +1550,7 @@ integer, parameter       :: lkind = FMS_AST_KIND_
 !--------------------------------------------------------------------
 
     cos_half_day = -tan(lat)*tan_dec
-    where (cos_half_day <= -1.0_lkind) h = PI
+    where (cos_half_day <= -1.0_lkind) h = real(PI, FMS_AST_KIND_)
     where (cos_half_day >=  1.0_lkind) h = 0.0_lkind
     where (cos_half_day >  -1.0_lkind .and.  &
            cos_half_day <   1.0_lkind) h = acos(cos_half_day)
