@@ -64,4 +64,5 @@
   enddo
   return
 
+99 continue
    call mpp_error (FATAL,'in parse, error decoding "'//trim(label)//'" in text "'//text//'"')
