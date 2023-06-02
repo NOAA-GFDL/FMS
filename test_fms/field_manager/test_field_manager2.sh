@@ -74,11 +74,10 @@ _EOF
 
 cat <<_EOF > input.nml
 &test_field_manager
-
 /
 _EOF
 
-test_expect_success "field manager functional r4" 'mpirun -n 1 ./test_field_manager_r4'
-test_expect_success "field manager functional r8" 'mpirun -n 1 ./test_field_manager_r8'
+test_expect_success "field manager functional r4" 'mpirun -n 2 ./test_field_manager_r4'
+test_expect_success "field manager functional r8" 'mpirun -n 2 ./test_field_manager_r8'
 
 test_done
