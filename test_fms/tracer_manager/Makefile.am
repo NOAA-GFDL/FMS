@@ -39,7 +39,7 @@ test_tracer_manager_r4_CPPFLAGS=-DTEST_TM_KIND_=4 -I$(MODDIR)
 test_tracer_manager_r8_CPPFLAGS=-DTEST_TM_KIND_=8 -I$(MODDIR)
 
 TEST_EXTENSIONS = .sh
-SH_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) (abs_top_srcdir)/test_fms/tap-driver.sh
+SH_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) $(abs_top_srcdir)/test_fms/tap-driver.sh
 
 # Run the test program.
 TESTS = test_tracer_manager2.sh
