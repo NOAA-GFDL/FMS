@@ -1,0 +1,49 @@
+!***********************************************************************
+!*                   GNU Lesser General Public License
+!*
+!* This file is part of the GFDL Flexible Modeling System (FMS).
+!*
+!* FMS is free software: you can redistribute it and/or modify it under
+!* the terms of the GNU Lesser General Public License as published by
+!* the Free Software Foundation, either version 3 of the License, or (at
+!* your option) any later version.
+!*
+!* FMS is distributed in the hope that it will be useful, but WITHOUT
+!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+!* for more details.
+!*
+!* You should have received a copy of the GNU Lesser General Public
+!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!***********************************************************************
+!> @addtogroup horiz_interp_spherical
+!> @{
+#undef FMS_HI_KIND_
+#define FMS_HI_KIND_ r8_kind
+
+#undef HI_KIND_TYPE_
+#define HI_KIND_TYPE_ horizInterpReals8_type
+
+#undef HORIZ_INTERP_SPHERICAL_
+#define HORIZ_INTERP_SPHERICAL_ horiz_interp_spherical_r8
+
+#undef HORIZ_INTERP_SPHERICAL_NEW_
+#define HORIZ_INTERP_SPHERICAL_NEW_ horiz_interp_spherical_new_r8
+
+#undef HORIZ_INTERP_SPHERICAL_WGHT_
+#define HORIZ_INTERP_SPHERICAL_WGHT_ horiz_interp_spherical_wght_r8
+
+#undef RADIAL_SEARCH_
+#define RADIAL_SEARCH_ radial_search_r8
+
+#undef UPDATE_DEST_NEIGHBORS_
+#define UPDATE_DEST_NEIGHBORS_ update_dest_neighbors_r8
+
+#undef HORIZ_INTERP_SPHERICAL_DISTANCE_
+#define HORIZ_INTERP_SPHERICAL_DISTANCE_ spherical_distance_r8
+
+#undef FULL_SEARCH_
+#define FULL_SEARCH_ full_search_r8
+
+#include "horiz_interp_spherical.inc"
+!> @}

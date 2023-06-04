@@ -16,98 +16,44 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
-!> @defgroup horiz_interp_bilinear_mod horiz_interp_bilinear_mod
-!> @ingroup horiz_interp
-!> @brief Performs spatial interpolation between grids using bilinear interpolation
-!!
-!> @author Zhi Liang <Zhi.Liang@noaa.gov>
-!> This module can interpolate data from regular rectangular grid
-!! to rectangular/tripolar grid. The interpolation scheme is bilinear interpolation.
-!! There is an optional mask field for missing input data.
-!! An optional output mask field may be used in conjunction with
-!! the input mask to show where output data exists.
-
-module horiz_interp_bilinear_mod
-
-  use mpp_mod,               only: mpp_error, FATAL, stdout, mpp_pe, mpp_root_pe
-  use fms_mod,               only: write_version_number
-  use constants_mod,         only: PI
-  use horiz_interp_type_mod, only: horiz_interp_type, stats
-
-  implicit none
-  private
-
-
-  public :: horiz_interp_bilinear_new, horiz_interp_bilinear, horiz_interp_bilinear_del
-  public :: horiz_interp_bilinear_init
-
-  !> Creates a @ref horiz_interp_type for bilinear interpolation.
-  !> @ingroup horiz_interp_bilinear_mod
-  interface horiz_interp_bilinear_new
-    module procedure horiz_interp_bilinear_new_1d
-    module procedure horiz_interp_bilinear_new_2d
-  end interface
-
 !> @addtogroup horiz_interp_bilinear_mod
 !> @{
-
-  real, parameter :: epsln=1.e-10
-  integer, parameter :: DUMMY = -999
-
-  !-----------------------------------------------------------------------
-! Include variable "version" to be written to log file.
-#include<file_version.h>
-  logical            :: module_is_initialized = .FALSE.
-
-contains
-
-  !> Initialize this module and writes version number to logfile.
-  subroutine horiz_interp_bilinear_init
-
-    if(module_is_initialized) return
-    call write_version_number("HORIZ_INTERP_BILINEAR_MOD", version)
-    module_is_initialized = .true.
-
-  end subroutine horiz_interp_bilinear_init
-
-
-  !########################################################################
-
-  subroutine horiz_interp_bilinear_new_1d ( Interp, lon_in, lat_in, lon_out, lat_out, &
+  subroutine HORIZ_INTERP_BILINEAR_NEW_1D_ ( Interp, lon_in, lat_in, lon_out, lat_out, &
        verbose, src_modulo )
 
     !-----------------------------------------------------------------------
     type(horiz_interp_type), intent(inout) :: Interp
-    real, intent(in),  dimension(:)        :: lon_in , lat_in
-    real, intent(in),  dimension(:,:)      :: lon_out, lat_out
+    real(FMS_HI_KIND_), intent(in),  dimension(:)        :: lon_in , lat_in
+    real(FMS_HI_KIND_), intent(in),  dimension(:,:)      :: lon_out, lat_out
     integer, intent(in),          optional :: verbose
     logical, intent(in),          optional :: src_modulo
 
     logical :: src_is_modulo
     integer :: nlon_in, nlat_in, nlon_out, nlat_out, n, m
     integer :: ie, is, je, js, ln_err, lt_err, warns, unit
-    real    :: wtw, wte, wts, wtn, lon, lat, tpi, hpi
-    real    :: glt_min, glt_max, gln_min, gln_max, min_lon, max_lon
+    real(FMS_HI_KIND_)    :: wtw, wte, wts, wtn, lon, lat, tpi, hpi
+    real(FMS_HI_KIND_)    :: glt_min, glt_max, gln_min, gln_max, min_lon, max_lon
+    integer,parameter     :: kindl = FMS_HI_KIND_
 
     warns = 0
     if(present(verbose)) warns = verbose
     src_is_modulo = .true.
     if (present(src_modulo)) src_is_modulo = src_modulo
 
-    hpi = 0.5*pi
-    tpi = 4.0*hpi
+    hpi = 0.5_kindl * real(pi, FMS_HI_KIND_)
+    tpi = 4.0_kindl * hpi
     glt_min = hpi
     glt_max = -hpi
     gln_min = tpi
     gln_max = -tpi
-    min_lon = 0.0
+    min_lon = 0.0_kindl
     max_lon = tpi
     ln_err = 0
     lt_err = 0
     !-----------------------------------------------------------------------
 
-    allocate ( Interp % wti (size(lon_out,1),size(lon_out,2),2),   &
-               Interp % wtj (size(lon_out,1),size(lon_out,2),2),   &
+    allocate ( Interp % HI_KIND_TYPE_ % wti (size(lon_out,1),size(lon_out,2),2),   &
+               Interp % HI_KIND_TYPE_ % wtj (size(lon_out,1),size(lon_out,2),2),   &
                Interp % i_lon (size(lon_out,1),size(lon_out,2),2), &
                Interp % j_lat (size(lon_out,1),size(lon_out,2),2))
     !-----------------------------------------------------------------------
@@ -118,11 +64,11 @@ contains
     Interp%nlon_dst = nlon_out; Interp%nlat_dst = nlat_out
 
     if(src_is_modulo) then
-       if(lon_in(nlon_in) - lon_in(1) .gt. tpi + epsln) &
+       if(lon_in(nlon_in) - lon_in(1) .gt. tpi + real(epsln, FMS_HI_KIND_)) &
             call mpp_error(FATAL,'horiz_interp_bilinear_mod: '// &
             'The range of source grid longitude should be no larger than tpi')
 
-       if(lon_in(1) .lt. 0.0 .OR. lon_in(nlon_in) > tpi ) then
+       if(lon_in(1) .lt. 0.0_kindl .OR. lon_in(nlon_in) > tpi ) then
           min_lon = lon_in(1)
           max_lon = lon_in(nlon_in)
        endif
@@ -162,12 +108,12 @@ contains
              ie = 1
              is = nlon_in
              if (lon_in(ie) .ge. lon ) then
-                wtw = (lon_in(ie) -lon)/(lon_in(ie)-lon_in(is)+tpi+epsln)
+                wtw = (lon_in(ie) -lon)/(lon_in(ie)-lon_in(is)+tpi+real(epsln,FMS_HI_KIND_))
              else
-                wtw = (lon_in(ie) -lon+tpi+epsln)/(lon_in(ie)-lon_in(is)+tpi+epsln)
+                wtw = (lon_in(ie)-lon+tpi+real(epsln,FMS_HI_KIND_))/(lon_in(ie)-lon_in(is)+tpi+real(epsln,FMS_HI_KIND_))
              endif
           endif
-          wte = 1. - wtw
+          wte = 1.0_kindl - wtw
 
           js = indp(lat, lat_in )
 
@@ -182,17 +128,17 @@ contains
              !     pole is not included in the data set or the dataset is too small.
              !     in either case extrapolate north or south
              lt_err = 1
-             wts = 1.
+             wts = 1.0_kindl
           endif
 
-          wtn = 1. - wts
+          wtn = 1.0_kindl - wts
 
           Interp % i_lon (m,n,1) = is; Interp % i_lon (m,n,2) = ie
           Interp % j_lat (m,n,1) = js; Interp % j_lat (m,n,2) = je
-          Interp % wti   (m,n,1) = wtw
-          Interp % wti   (m,n,2) = wte
-          Interp % wtj   (m,n,1) = wts
-          Interp % wtj   (m,n,2) = wtn
+          Interp % HI_KIND_TYPE_ % wti   (m,n,1) = wtw
+          Interp % HI_KIND_TYPE_ % wti   (m,n,2) = wte
+          Interp % HI_KIND_TYPE_ % wtj   (m,n,1) = wts
+          Interp % HI_KIND_TYPE_ % wtj   (m,n,2) = wtn
 
        enddo
     enddo
@@ -223,7 +169,7 @@ contains
 
     return
 
-  end subroutine horiz_interp_bilinear_new_1d
+  end subroutine HORIZ_INTERP_BILINEAR_NEW_1D_
 
   !#######################################################################
 
@@ -231,7 +177,7 @@ contains
   !!
   !> Allocates space and initializes a derived-type variable
   !! that contains pre-computed interpolation indices and weights.
-  subroutine horiz_interp_bilinear_new_2d ( Interp, lon_in, lat_in, lon_out, lat_out, &
+  subroutine HORIZ_INTERP_BILINEAR_NEW_2D_ ( Interp, lon_in, lat_in, lon_out, lat_out, &
        verbose, src_modulo, new_search, no_crash_when_not_found )
 
     !-----------------------------------------------------------------------
@@ -239,10 +185,10 @@ contains
                                           !! and weights for subsequent interpolations. To
                                           !! reinitialize for different grid-to-grid interpolation
                                           !! @ref horiz_interp_del must be used first.
-    real, intent(in),  dimension(:,:)      :: lon_in !< Latitude (radians) for source data grid
-    real, intent(in),  dimension(:,:)      :: lat_in !< Longitude (radians) for source data grid
-    real, intent(in),  dimension(:,:)      :: lon_out !< Longitude (radians) for output data grid
-    real, intent(in),  dimension(:,:)      :: lat_out !< Latitude (radians) for output data grid
+    real(FMS_HI_KIND_), intent(in),  dimension(:,:)      :: lon_in !< Latitude (radians) for source data grid
+    real(FMS_HI_KIND_), intent(in),  dimension(:,:)      :: lat_in !< Longitude (radians) for source data grid
+    real(FMS_HI_KIND_), intent(in),  dimension(:,:)      :: lon_out !< Longitude (radians) for output data grid
+    real(FMS_HI_KIND_), intent(in),  dimension(:,:)      :: lat_out !< Latitude (radians) for output data grid
     integer, intent(in),          optional :: verbose !< flag for amount of print output
     logical, intent(in),          optional :: src_modulo !< indicates if the boundary condition
                                           !! along zonal boundary is cyclic or not. Cyclic when true
@@ -252,14 +198,16 @@ contains
     logical                                :: src_is_modulo
     integer                                :: nlon_in, nlat_in, nlon_out, nlat_out
     integer                                :: m, n, is, ie, js, je, num_solution
-    real                                   :: lon, lat, quadra, x, y, y1, y2
-    real                                   :: a1, b1, c1, d1, a2, b2, c2, d2, a, b, c
-    real                                   :: lon1, lat1, lon2, lat2, lon3, lat3, lon4, lat4
-    real                                   :: tpi, lon_min, lon_max
-    real                                   :: epsln2
+    real(FMS_HI_KIND_)                                   :: lon, lat, quadra, x, y, y1, y2
+    real(FMS_HI_KIND_)                                   :: a1, b1, c1, d1, a2, b2, c2, d2, a, b, c
+    real(FMS_HI_KIND_)                                   :: lon1, lat1, lon2, lat2, lon3, lat3, lon4, lat4
+    real(FMS_HI_KIND_)                                   :: tpi, lon_min, lon_max
+    real(FMS_HI_KIND_)                                   :: epsln2
     logical                                :: use_new_search, no_crash
 
-    tpi = 2.0*pi
+    integer, parameter :: kindl=FMS_HI_KIND_
+
+    tpi = 2.0_kindl * real(pi, FMS_HI_KIND_)
 
     warns = 0
     if(present(verbose)) warns = verbose
@@ -285,18 +233,18 @@ contains
     Interp%nlon_src = nlon_in;  Interp%nlat_src = nlat_in
     Interp%nlon_dst = nlon_out; Interp%nlat_dst = nlat_out
 
-    allocate ( Interp % wti (size(lon_out,1),size(lon_out,2),2),   &
-               Interp % wtj (size(lon_out,1),size(lon_out,2),2),   &
+    allocate ( Interp % HI_KIND_TYPE_ % wti (size(lon_out,1),size(lon_out,2),2),   &
+               Interp % HI_KIND_TYPE_ % wtj (size(lon_out,1),size(lon_out,2),2),   &
                Interp % i_lon (size(lon_out,1),size(lon_out,2),2), &
                Interp % j_lat (size(lon_out,1),size(lon_out,2),2))
 
     !--- first fine the neighbor points for the destination points.
     if(use_new_search) then
-       epsln2 = epsln*1e5
-       call find_neighbor_new(Interp, lon_in, lat_in, lon_out, lat_out, src_is_modulo, no_crash)
+       epsln2 = real(epsln,FMS_HI_KIND_)* 1.0e5_kindl
+       call FIND_NEIGHBOR_NEW_(Interp, lon_in, lat_in, lon_out, lat_out, src_is_modulo, no_crash)
     else
-       epsln2 = epsln
-       call find_neighbor(Interp, lon_in, lat_in, lon_out, lat_out, src_is_modulo)
+       epsln2 = real(epsln,FMS_HI_KIND_)
+       call FIND_NEIGHBOR_(Interp, lon_in, lat_in, lon_out, lat_out, src_is_modulo)
     endif
 
     !***************************************************************************
@@ -369,27 +317,27 @@ contains
           a  = b2*c1-b1*c2
           b  = a1*b2-a2*b1+c1*d2-c2*d1+c2*lon-c1*lat
           c  = a2*lon-a1*lat+a1*d2-a2*d1
-          quadra = b*b-4.*a*c
-          if(abs(quadra) < epsln) quadra = 0.0
-          if(quadra < 0.0) call mpp_error(FATAL, &
+          quadra = b*b-4._kindl*a*c
+          if(abs(quadra) < real(epsln, FMS_HI_KIND_)) quadra = 0.0_kindl
+          if(quadra < 0.0_kindl) call mpp_error(FATAL, &
                "horiz_interp_bilinear_mod: No solution existed for this quadratic equation")
           if ( abs(a) .lt. epsln2) then  ! a = 0 is a linear equation
-             if( abs(b) .lt. epsln) call mpp_error(FATAL, &
+             if( abs(b) .lt. real(epsln,FMS_HI_KIND_)) call mpp_error(FATAL, &
                   "horiz_interp_bilinear_mod: no unique solution existed for this linear equation")
              y = -c/b
           else
-             y1 = 0.5*(-b+sqrt(quadra))/a
-             y2 = 0.5*(-b-sqrt(quadra))/a
-             if(abs(y1) < epsln2) y1 = 0.0
-             if(abs(y2) < epsln2) y2 = 0.0
-             if(abs(1.0-y1) < epsln2) y1 = 1.0
-             if(abs(1.0-y2) < epsln2) y2 = 1.0
+             y1 = 0.5_kindl*(-b+sqrt(quadra))/a
+             y2 = 0.5_kindl*(-b-sqrt(quadra))/a
+             if(abs(y1) < epsln2) y1 = 0.0_kindl
+             if(abs(y2) < epsln2) y2 = 0.0_kindl
+             if(abs(1.0_kindl-y1) < epsln2) y1 = 1.0_kindl
+             if(abs(1.0_kindl-y2) < epsln2) y2 = 1.0_kindl
              num_solution = 0
-             if(y1 >= 0.0 .and. y1 <= 1.0) then
+             if(y1 >= 0.0_kindl .and. y1 <= 1.0_kindl) then
                 y = y1
                 num_solution = num_solution +1
              endif
-             if(y2 >= 0.0 .and. y2 <= 1.0) then
+             if(y2 >= 0.0_kindl .and. y2 <= 1.0_kindl) then
                 y = y2
                 num_solution = num_solution + 1
              endif
@@ -399,47 +347,51 @@ contains
                 call mpp_error(FATAL, "horiz_interp_bilinear_mod: Two solutions found")
              endif
            endif
-           if(abs(a1+c1*y) < epsln) call mpp_error(FATAL, &
+           if(abs(a1+c1*y) < real(epsln,FMS_HI_KIND_)) call mpp_error(FATAL, &
                "horiz_interp_bilinear_mod: the denomenator is 0")
-           if(abs(y) < epsln2) y = 0.0
-           if(abs(1.0-y) < epsln2) y = 1.0
+           if(abs(y) < epsln2) y = 0.0_kindl
+           if(abs(1.0_kindl-y) < epsln2) y = 1.0_kindl
            x = (lon-b1*y-d1)/(a1+c1*y)
-           if(abs(x) < epsln2) x = 0.0
-           if(abs(1.0-x) < epsln2) x = 1.0
+           if(abs(x) < epsln2) x = 0.0_kindl
+           if(abs(1.0_kindl-x) < epsln2) x = 1.0_kindl
            ! x and y should be between 0 and 1.
            !! Added for ECDA
            if(use_new_search) then
-             if (x < 0.0) x = 0.0 ! snz
-             if (y < 0.0) y = 0.0 ! snz
-             if (x > 1.0) x = 1.0
-             if (y > 1.0) y = 1.0
+             if (x < 0.0_kindl) x = 0.0_kindl ! snz
+             if (y < 0.0_kindl) y = 0.0_kindl ! snz
+             if (x > 1.0_kindl) x = 1.0_kindl
+             if (y > 1.0_kindl) y = 1.0_kindl
            endif
-           if( x>1. .or. x<0. .or. y>1. .or. y < 0.) call mpp_error(FATAL, &
-                "horiz_interp_bilinear_mod: weight should be between 0 and 1")
-           Interp % wti(m,n,1)=1.0-x; Interp % wti(m,n,2)=x
-           Interp % wtj(m,n,1)=1.0-y; Interp % wtj(m,n,2)=y
+           if( x>1.0_kindl .or. x<0.0_kindl .or. y>1.0_kindl .or. y < 0.0_kindl) &
+                  call mpp_error(FATAL, "horiz_interp_bilinear_mod: weight should be between 0 and 1")
+           Interp % HI_KIND_TYPE_ % wti(m,n,1)=1.0_kindl-x
+           Interp % HI_KIND_TYPE_ % wti(m,n,2)=x
+           Interp % HI_KIND_TYPE_ % wtj(m,n,1)=1.0_kindl-y
+           Interp % HI_KIND_TYPE_ % wtj(m,n,2)=y
        enddo
     enddo
 
-  end subroutine horiz_interp_bilinear_new_2d
+  end subroutine
 
   !#######################################################################
   !> this routine will search the source grid to fine the grid box that encloses
   !! each destination grid.
-  subroutine find_neighbor( Interp, lon_in, lat_in, lon_out, lat_out, src_modulo )
+  subroutine FIND_NEIGHBOR_ ( Interp, lon_in, lat_in, lon_out, lat_out, src_modulo )
     type(horiz_interp_type), intent(inout) :: Interp
-    real, intent(in),       dimension(:,:) :: lon_in , lat_in
-    real, intent(in),       dimension(:,:) :: lon_out, lat_out
+    real(FMS_HI_KIND_), intent(in),       dimension(:,:) :: lon_in , lat_in
+    real(FMS_HI_KIND_), intent(in),       dimension(:,:) :: lon_out, lat_out
     logical,                 intent(in)    :: src_modulo
     integer                                :: nlon_in, nlat_in, nlon_out, nlat_out
     integer                                :: max_step, n, m, l, i, j, ip1, jp1, step
     integer                                :: is, js, jstart, jend, istart, iend, npts
     integer, allocatable, dimension(:)     :: ilon, jlat
-    real                                   :: lon_min, lon_max, lon, lat, tpi
+    real(FMS_HI_KIND_)                     :: lon_min, lon_max, lon, lat, tpi
     logical                                :: found
-    real                                   :: lon1, lat1, lon2, lat2, lon3, lat3, lon4, lat4
+    real(FMS_HI_KIND_)                     :: lon1, lat1, lon2, lat2, lon3, lat3, lon4, lat4
 
-    tpi = 2.0*pi
+    integer, parameter :: kindl=FMS_HI_KIND_
+
+    tpi = 2.0_kindl*real(pi, FMS_HI_KIND_)
     nlon_in  = size(lon_in,1) ; nlat_in  = size(lat_in,2)
     nlon_out = size(lon_out,1); nlat_out = size(lon_out,2)
 
@@ -644,52 +596,52 @@ contains
              enddo
           endif
           if(.not.found) then
-              print *,'lon,lat=',lon*180./PI,lat*180./PI
+              print *,'lon,lat=',lon*180.0_kindl/real(PI,FMS_HI_KIND_),lat*180.0_kindl/real(PI,FMS_HI_KIND_)
               print *,'npts=',npts
               print *,'is,ie= ',istart,iend
               print *,'js,je= ',jstart,jend
-              print *,'lon_in(is,js)=',lon_in(istart,jstart)*180./PI
-              print *,'lon_in(ie,js)=',lon_in(iend,jstart)*180./PI
-              print *,'lat_in(is,js)=',lat_in(istart,jstart)*180./PI
-              print *,'lat_in(ie,js)=',lat_in(iend,jstart)*180./PI
-              print *,'lon_in(is,je)=',lon_in(istart,jend)*180./PI
-              print *,'lon_in(ie,je)=',lon_in(iend,jend)*180./PI
-              print *,'lat_in(is,je)=',lat_in(istart,jend)*180./PI
-              print *,'lat_in(ie,je)=',lat_in(iend,jend)*180./PI
+              print *,'lon_in(is,js)=',lon_in(istart,jstart)*180.0_kindl/real(PI,FMS_HI_KIND_)
+              print *,'lon_in(ie,js)=',lon_in(iend,jstart)*180.0_kindl/real(PI,FMS_HI_KIND_)
+              print *,'lat_in(is,js)=',lat_in(istart,jstart)*180.0_kindl/real(PI,FMS_HI_KIND_)
+              print *,'lat_in(ie,js)=',lat_in(iend,jstart)*180.0_kindl/real(PI,FMS_HI_KIND_)
+              print *,'lon_in(is,je)=',lon_in(istart,jend)*180.0_kindl/real(PI,FMS_HI_KIND_)
+              print *,'lon_in(ie,je)=',lon_in(iend,jend)*180.0_kindl/real(PI,FMS_HI_KIND_)
+              print *,'lat_in(is,je)=',lat_in(istart,jend)*180.0_kindl/real(PI,FMS_HI_KIND_)
+              print *,'lat_in(ie,je)=',lat_in(iend,jend)*180.0_kindl/real(PI,FMS_HI_KIND_)
 
              call mpp_error(FATAL, &
-                  'find_neighbor: the destination point is not inside the source grid' )
+                  'FIND_NEIGHBOR_: the destination point is not inside the source grid' )
           endif
        enddo
     enddo
 
-  end subroutine find_neighbor
+  end subroutine
 
   !#######################################################################
 
   !> The function will return true if the point x,y is inside a polygon, or
   !! false if it is not.  If the point is exactly on the edge of a polygon,
   !! the function will return .true.
-  function inside_polygon(polyx, polyy, x, y)
-     real, dimension(:), intent(in) :: polyx !< longitude coordinates of corners
-     real, dimension(:), intent(in) :: polyy !< latitude coordinates of corners
-     real,               intent(in) :: x !< x coordinate of point to be tested
-     real,               intent(in) :: y !< y coordinate of point to be tested
-     logical                        :: inside_polygon
+  function INSIDE_POLYGON_(polyx, polyy, x, y)
+     real(FMS_HI_KIND_), dimension(:), intent(in) :: polyx !< longitude coordinates of corners
+     real(FMS_HI_KIND_), dimension(:), intent(in) :: polyy !< latitude coordinates of corners
+     real(FMS_HI_KIND_),               intent(in) :: x !< x coordinate of point to be tested
+     real(FMS_HI_KIND_),               intent(in) :: y !< y coordinate of point to be tested
+     logical                        :: INSIDE_POLYGON_
      integer                        :: i, j, nedges
-     real                           :: xx
+     real(FMS_HI_KIND_)                           :: xx
 
-     inside_polygon = .false.
+     INSIDE_POLYGON_ = .false.
      nedges = size(polyx(:))
      j = nedges
      do i = 1, nedges
         if( (polyy(i) < y .AND. polyy(j) >= y) .OR. (polyy(j) < y .AND. polyy(i) >= y) ) then
            xx = polyx(i)+(y-polyy(i))/(polyy(j)-polyy(i))*(polyx(j)-polyx(i))
            if( xx == x ) then
-             inside_polygon = .true.
+             INSIDE_POLYGON_ = .true.
              return
            else if( xx < x ) then
-             inside_polygon = .not. inside_polygon
+             INSIDE_POLYGON_ = .not. INSIDE_POLYGON_
            endif
         endif
         j = i
@@ -697,28 +649,28 @@ contains
 
      return
 
-  end function inside_polygon
+  end function
 
   !#######################################################################
   !> this routine will search the source grid to fine the grid box that encloses
   !! each destination grid.
-  subroutine find_neighbor_new( Interp, lon_in, lat_in, lon_out, lat_out, src_modulo, no_crash )
+  subroutine FIND_NEIGHBOR_NEW_( Interp, lon_in, lat_in, lon_out, lat_out, src_modulo, no_crash )
     type(horiz_interp_type), intent(inout) :: Interp
-    real, intent(in),       dimension(:,:) :: lon_in , lat_in
-    real, intent(in),       dimension(:,:) :: lon_out, lat_out
+    real(FMS_HI_KIND_), intent(in),       dimension(:,:) :: lon_in , lat_in
+    real(FMS_HI_KIND_), intent(in),       dimension(:,:) :: lon_out, lat_out
     logical,                 intent(in)    :: src_modulo, no_crash
     integer                                :: nlon_in, nlat_in, nlon_out, nlat_out
     integer                                :: max_step, n, m, l, i, j, ip1, jp1, step
     integer                                :: is, js, jstart, jend, istart, iend, npts
     integer, allocatable, dimension(:)     :: ilon, jlat
-    real                                   :: lon_min, lon_max, lon, lat, tpi
+    real(FMS_HI_KIND_)                                   :: lon_min, lon_max, lon, lat, tpi
     logical                                :: found
-    real                                   :: polyx(4), polyy(4)
-    real                                   :: min_lon, min_lat, max_lon, max_lat
+    real(FMS_HI_KIND_)                                   :: polyx(4), polyy(4)
+    real(FMS_HI_KIND_)                                   :: min_lon, min_lat, max_lon, max_lat
 
-    integer, parameter :: step_div=8
+    integer, parameter :: step_div=8, kindl = FMS_HI_KIND_
 
-    tpi = 2.0*pi
+    tpi = 2.0_kindl * real(pi, FMS_HI_KIND_)
     nlon_in  = size(lon_in,1) ; nlat_in  = size(lat_in,2)
     nlon_out = size(lon_out,1); nlat_out = size(lon_out,2)
 
@@ -786,7 +738,7 @@ contains
 !                      print '(5f15.11)', lat, polyy
 !                   endif
 
-                   if(inside_polygon(polyx, polyy, lon, lat)) then
+                   if(INSIDE_POLYGON_(polyx, polyy, lon, lat)) then
                       found = .true.
 !                      print*, " found ", i, j
                       Interp % i_lon (m,n,1) = i; Interp % i_lon (m,n,2) = ip1
@@ -878,7 +830,7 @@ contains
                    polyx(2) = lon_in(ip1,j);   polyy(2) = lat_in(ip1,j)
                    polyx(3) = lon_in(ip1,jp1); polyy(3) = lat_in(ip1,jp1)
                    polyx(4) = lon_in(i,  jp1); polyy(4) = lat_in(i,  jp1)
-                   if(inside_polygon(polyx, polyy, lon, lat)) then
+                   if(INSIDE_POLYGON_(polyx, polyy, lon, lat)) then
                       found = .true.
                       Interp % i_lon (m,n,1) = i; Interp % i_lon (m,n,2) = ip1
                       Interp % j_lat (m,n,1) = j; Interp % j_lat (m,n,2) = jp1
@@ -901,52 +853,53 @@ contains
        enddo
     enddo
 
-  end subroutine find_neighbor_new
+  end subroutine
 
   !#######################################################################
-  function intersect(x1, y1, x2, y2, x)
-     real, intent(in) :: x1, y1, x2, y2, x
-     real             :: intersect
+  function INTERSECT_(x1, y1, x2, y2, x)
+     real(FMS_HI_KIND_), intent(in) :: x1, y1, x2, y2, x
+     real(FMS_HI_KIND_)             :: INTERSECT_
 
-     intersect = (y2-y1)*(x-x1)/(x2-x1) + y1
+     INTERSECT_ = (y2-y1)*(x-x1)/(x2-x1) + y1
 
   return
 
-  end function intersect
+  end function INTERSECT_
 
   !#######################################################################
 
   !> Subroutine for performing the horizontal interpolation between two grids
   !!
   !! @ref horiz_interp_bilinear_new must be called before calling this routine.
-  subroutine horiz_interp_bilinear ( Interp, data_in, data_out, verbose, mask_in,mask_out, &
+  subroutine HORIZ_INTERP_BILINEAR_ ( Interp, data_in, data_out, verbose, mask_in,mask_out, &
        missing_value, missing_permit, new_handle_missing )
     !-----------------------------------------------------------------------
     type (horiz_interp_type), intent(in)        :: Interp !< Derived type variable containing
                                                !! interpolation indices and weights. Returned by a
                                                !! previous call to horiz_interp_bilinear_new
-    real, intent(in),  dimension(:,:)           :: data_in !< input data on source grid
-    real, intent(out), dimension(:,:)           :: data_out !< output data on source grid
+    real(FMS_HI_KIND_), intent(in),  dimension(:,:)           :: data_in !< input data on source grid
+    real(FMS_HI_KIND_), intent(out), dimension(:,:)           :: data_out !< output data on source grid
     integer, intent(in),               optional :: verbose !< 0 = no output; 1 = min,max,means; 2 =
                                                            !! all output
-    real, intent(in), dimension(:,:),  optional :: mask_in !< Input mask, must be the same size as
-                                    !! the input data. The real value of mask_in must be in the
+    real(FMS_HI_KIND_), intent(in), dimension(:,:),  optional :: mask_in !< Input mask, must be the same size as
+                                    !! the input data. The real(FMS_HI_KIND_) value of mask_in must be in the
                                     !! range (0.,1.). Set mask_in=0.0 for data points
                                     !! that should not be used or have missing data
-    real, intent(out), dimension(:,:), optional :: mask_out !< output mask that specifies whether
+    real(FMS_HI_KIND_), intent(out), dimension(:,:), optional :: mask_out !< output mask that specifies whether
                                                             !! data was computed
-    real, intent(in),                  optional :: missing_value
+    real(FMS_HI_KIND_), intent(in),                  optional :: missing_value
     integer, intent(in),               optional :: missing_permit
     logical, intent(in),               optional :: new_handle_missing
     !-----------------------------------------------------------------------
     integer :: nlon_in, nlat_in, nlon_out, nlat_out, n, m,         &
          is, ie, js, je, iverbose, max_missing, num_missing, &
          miss_in, miss_out, unit
-    real    :: dwtsum, wtsum, min_in, max_in, avg_in, &
+    real(FMS_HI_KIND_)    :: dwtsum, wtsum, min_in, max_in, avg_in, &
          min_out, max_out, avg_out, wtw, wte, wts, wtn
-    real    :: mask(size(data_in,1), size(data_in,2) )
+    real(FMS_HI_KIND_)    :: mask(size(data_in,1), size(data_in,2) )
     logical :: set_to_missing, is_missing(4), new_handler
-    real    :: f1, f2, f3, f4, middle, w, s
+    real(FMS_HI_KIND_)    :: f1, f2, f3, f4, middle, w, s
+    integer, parameter    :: kindl = FMS_HI_KIND_
 
     num_missing = 0
 
@@ -956,7 +909,7 @@ contains
     if(present(mask_in)) then
        mask = mask_in
     else
-       mask = 1.0
+       mask = 1.0_kindl
     endif
 
     if (present(verbose)) then
@@ -995,10 +948,10 @@ contains
           do m = 1, nlon_out
              is = Interp % i_lon (m,n,1); ie = Interp % i_lon (m,n,2)
              js = Interp % j_lat (m,n,1); je = Interp % j_lat (m,n,2)
-             wtw = Interp % wti   (m,n,1)
-             wte = Interp % wti   (m,n,2)
-             wts = Interp % wtj   (m,n,1)
-             wtn = Interp % wtj   (m,n,2)
+             wtw = Interp % HI_KIND_TYPE_ % wti   (m,n,1)
+             wte = Interp % HI_KIND_TYPE_ % wti   (m,n,2)
+             wts = Interp % HI_KIND_TYPE_ % wtj   (m,n,1)
+             wtn = Interp % HI_KIND_TYPE_ % wtj   (m,n,2)
 
              is_missing = .false.
              num_missing = 0
@@ -1006,28 +959,28 @@ contains
              if(data_in(is,js) == missing_value) then
                 num_missing = num_missing+1
                 is_missing(1) = .true.
-                if(wtw .GE. 0.5 .AND. wts .GE. 0.5) set_to_missing = .true.
+                if(wtw .GE. 0.5_kindl .AND. wts .GE. 0.5_kindl) set_to_missing = .true.
              endif
 
              if(data_in(ie,js) == missing_value) then
                 num_missing = num_missing+1
                 is_missing(2) = .true.
-                if(wte .GE. 0.5 .AND. wts .GE. 0.5) set_to_missing = .true.
+                if(wte .GE. 0.5_kindl .AND. wts .GE. 0.5_kindl ) set_to_missing = .true.
              endif
              if(data_in(ie,je) == missing_value) then
                 num_missing = num_missing+1
                 is_missing(3) = .true.
-                if(wte .GE. 0.5 .AND. wtn .GE. 0.5) set_to_missing = .true.
+                if(wte .GE. 0.5_kindl .AND. wtn .GE. 0.5_kindl ) set_to_missing = .true.
              endif
              if(data_in(is,je) == missing_value) then
                 num_missing = num_missing+1
                 is_missing(4) = .true.
-                if(wtw .GE. 0.5 .AND. wtn .GE. 0.5) set_to_missing = .true.
+                if(wtw .GE. 0.5_kindl .AND. wtn .GE. 0.5_kindl) set_to_missing = .true.
              endif
 
              if( num_missing == 4 .OR. set_to_missing ) then
                 data_out(m,n) = missing_value
-                if(present(mask_out)) mask_out(m,n) = 0.0
+                if(present(mask_out)) mask_out(m,n) = 0.0_kindl
                  cycle
              else if(num_missing == 0) then
                 f1 = data_in(is,js)
@@ -1046,90 +999,90 @@ contains
                 else if(.not. is_missing(4) ) then
                    data_out(m,n) = data_in(is,je)
                 endif
-                if(present(mask_out) ) mask_out(m,n) = 1.0
+                if(present(mask_out) ) mask_out(m,n) = 1.0_kindl
                 cycle
              else   !--- one or two missing value
                 if( num_missing == 1) then
                    if( is_missing(1) .OR. is_missing(3) ) then
-                      middle = 0.5*(data_in(ie,js)+data_in(is,je))
+                      middle = 0.5_kindl *(data_in(ie,js)+data_in(is,je))
                    else
-                      middle = 0.5*(data_in(is,js)+data_in(ie,je))
+                      middle = 0.5_kindl *(data_in(is,js)+data_in(ie,je))
                    endif
                 else ! num_missing = 2
                    if( is_missing(1) .AND. is_missing(2) ) then
-                      middle = 0.5*(data_in(ie,je)+data_in(is,je))
+                      middle = 0.5_kindl *(data_in(ie,je)+data_in(is,je))
                    else if( is_missing(1) .AND. is_missing(3) ) then
-                      middle = 0.5*(data_in(ie,js)+data_in(is,je))
+                      middle = 0.5_kindl *(data_in(ie,js)+data_in(is,je))
                    else if( is_missing(1) .AND. is_missing(4) ) then
-                      middle = 0.5*(data_in(ie,js)+data_in(ie,je))
+                      middle = 0.5_kindl *(data_in(ie,js)+data_in(ie,je))
                    else if( is_missing(2) .AND. is_missing(3) ) then
-                      middle = 0.5*(data_in(is,js)+data_in(is,je))
+                      middle = 0.5_kindl *(data_in(is,js)+data_in(is,je))
                    else if( is_missing(2) .AND. is_missing(4) ) then
-                      middle = 0.5*(data_in(is,js)+data_in(ie,je))
+                      middle = 0.5_kindl*(data_in(is,js)+data_in(ie,je))
                    else if( is_missing(3) .AND. is_missing(4) ) then
-                      middle = 0.5*(data_in(is,js)+data_in(ie,js))
+                      middle = 0.5_kindl*(data_in(is,js)+data_in(ie,js))
                    endif
                 endif
 
-                if( wtw .GE. 0.5 .AND. wts .GE. 0.5 ) then  ! zone 1
-                   w = 2.0*(wtw-0.5)
-                   s = 2.0*(wts-0.5)
+                if( wtw .GE. 0.5_kindl .AND. wts .GE. 0.5_kindl ) then  ! zone 1
+                   w = 2.0_kindl*(wtw-0.5_kindl)
+                   s = 2.0_kindl*(wts-0.5_kindl)
                    f1 = data_in(is,js)
                    if(is_missing(2)) then
                       f2 = f1
                    else
-                      f2 = 0.5*(data_in(is,js)+data_in(ie,js))
+                      f2 = 0.5_kindl*(data_in(is,js)+data_in(ie,js))
                    endif
                    f3 = middle
                    if(is_missing(4)) then
                       f4 = f1
                    else
-                      f4 = 0.5*(data_in(is,js)+data_in(is,je))
+                      f4 = 0.5_kindl*(data_in(is,js)+data_in(is,je))
                    endif
-                else if( wte .GE. 0.5 .AND. wts .GE. 0.5 ) then  ! zone 2
-                   w = 2.0*(1.0-wte)
-                   s = 2.0*(wts-0.5)
+                else if( wte .GE. 0.5_kindl .AND. wts .GE. 0.5_kindl ) then  ! zone 2
+                   w = 2.0_kindl*(1.0_kindl-wte)
+                   s = 2.0_kindl*(wts-0.5_kindl)
                    f2 = data_in(ie,js)
                    if(is_missing(1)) then
                       f1 = f2
                    else
-                      f1 = 0.5*(data_in(is,js)+data_in(ie,js))
+                      f1 = 0.5_kindl*(data_in(is,js)+data_in(ie,js))
                    endif
                    f4 = middle
                    if(is_missing(3)) then
                       f3 = f2
                    else
-                      f3 = 0.5*(data_in(ie,js)+data_in(ie,je))
+                      f3 = 0.5_kindl*(data_in(ie,js)+data_in(ie,je))
                    endif
-                else if( wte .GE. 0.5 .AND. wtn .GE. 0.5 ) then  ! zone 3
-                   w = 2.0*(1.0-wte)
-                   s = 2.0*(1.0-wtn)
+                else if( wte .GE. 0.5_kindl .AND. wtn .GE. 0.5_kindl ) then  ! zone 3
+                   w = 2.0_kindl*(1.0_kindl-wte)
+                   s = 2.0_kindl*(1.0_kindl-wtn)
                    f3 = data_in(ie,je)
                    if(is_missing(2)) then
                       f2 = f3
                    else
-                      f2 = 0.5*(data_in(ie,js)+data_in(ie,je))
+                      f2 = 0.5_kindl*(data_in(ie,js)+data_in(ie,je))
                    endif
                    f1 = middle
                    if(is_missing(4)) then
                       f4 = f3
                    else
-                      f4 = 0.5*(data_in(ie,je)+data_in(is,je))
+                      f4 = 0.5_kindl*(data_in(ie,je)+data_in(is,je))
                    endif
-                else if( wtw .GE. 0.5 .AND. wtn .GE. 0.5 ) then  ! zone 4
-                   w = 2.0*(wtw-0.5)
-                   s = 2.0*(1.0-wtn)
+                else if( wtw .GE. 0.5_kindl .AND. wtn .GE. 0.5_kindl ) then  ! zone 4
+                   w = 2.0_kindl*(wtw-0.5_kindl)
+                   s = 2.0_kindl*(1.0_kindl-wtn)
                    f4 = data_in(is,je)
                    if(is_missing(1)) then
                       f1 = f4
                    else
-                      f1 = 0.5*(data_in(is,js)+data_in(is,je))
+                      f1 = 0.5_kindl*(data_in(is,js)+data_in(is,je))
                    endif
                    f2 = middle
                    if(is_missing(3)) then
                       f3 = f4
                    else
-                      f3 = 0.5*(data_in(ie,je)+data_in(is,je))
+                      f3 = 0.5_kindl*(data_in(ie,je)+data_in(is,je))
                    endif
                 else
                    call mpp_error(FATAL, &
@@ -1138,7 +1091,7 @@ contains
              endif
 
              data_out(m,n) = f3 + (f4-f3)*w + (f2-f3)*s + ((f1-f2)+(f3-f4))*w*s
-            if(present(mask_out)) mask_out(m,n) = 1.0
+            if(present(mask_out)) mask_out(m,n) = 1.0_kindl
           enddo
        enddo
     else
@@ -1146,28 +1099,28 @@ contains
           do m = 1, nlon_out
              is = Interp % i_lon (m,n,1); ie = Interp % i_lon (m,n,2)
              js = Interp % j_lat (m,n,1); je = Interp % j_lat (m,n,2)
-             wtw = Interp % wti   (m,n,1)
-             wte = Interp % wti   (m,n,2)
-             wts = Interp % wtj   (m,n,1)
-             wtn = Interp % wtj   (m,n,2)
+             wtw = Interp % HI_KIND_TYPE_ % wti   (m,n,1)
+             wte = Interp % HI_KIND_TYPE_ % wti   (m,n,2)
+             wts = Interp % HI_KIND_TYPE_ % wtj   (m,n,1)
+             wtn = Interp % HI_KIND_TYPE_ % wtj   (m,n,2)
 
              if(present(missing_value) ) then
                 num_missing = 0
                 if(data_in(is,js) == missing_value) then
                    num_missing = num_missing+1
-                   mask(is,js) = 0.0
+                   mask(is,js) = 0.0_kindl
                 endif
                 if(data_in(ie,js) == missing_value) then
                    num_missing = num_missing+1
-                   mask(ie,js) = 0.0
+                   mask(ie,js) = 0.0_kindl
                 endif
                 if(data_in(ie,je) == missing_value) then
                    num_missing = num_missing+1
-                   mask(ie,je) = 0.0
+                   mask(ie,je) = 0.0_kindl
                 endif
                 if(data_in(is,je) == missing_value) then
                    num_missing = num_missing+1
-                   mask(is,je) = 0.0
+                   mask(is,je) = 0.0_kindl
                 endif
              endif
 
@@ -1178,18 +1131,18 @@ contains
              wtsum  = mask(is,js)*wtw*wts + mask(ie,js)*wte*wts  &
                   + mask(ie,je)*wte*wtn + mask(is,je)*wtw*wtn
 
-             if(.not. present(mask_in) .and. .not. present(missing_value)) wtsum = 1.0
+             if(.not. present(mask_in) .and. .not. present(missing_value)) wtsum = 1.0_kindl
 
              if(num_missing .gt. max_missing ) then
                 data_out(m,n) = missing_value
-                if(present(mask_out)) mask_out(m,n) = 0.0
-             else if(wtsum .lt. epsln) then
+                if(present(mask_out)) mask_out(m,n) = 0.0_kindl
+             else if(wtsum .lt. real(epsln, FMS_HI_KIND_)) then
                 if(present(missing_value)) then
                    data_out(m,n) = missing_value
                 else
-                   data_out(m,n) = 0.0
+                   data_out(m,n) = 0.0_kindl
                 endif
-                if(present(mask_out)) mask_out(m,n) = 0.0
+                if(present(mask_out)) mask_out(m,n) = 0.0_kindl
              else
                 data_out(m,n) = dwtsum/wtsum
                 if(present(mask_out)) mask_out(m,n) = wtsum
@@ -1226,37 +1179,19 @@ contains
 
     return
 
-  end subroutine horiz_interp_bilinear
+  end subroutine
 
-  !#######################################################################
-
-  !> @brief Deallocates memory used by "horiz_interp_type" variables.
-  !!
-  !> Must be called before reinitializing with horiz_interp_bilinear_new.
-  subroutine horiz_interp_bilinear_del( Interp )
-
-    type (horiz_interp_type), intent(inout) :: Interp!< A derived-type variable returned by previous
-                                   !! call to horiz_interp_bilinear_new. The input variable must
-                                   !! have allocated arrays. The returned variable will contain
-                                   !! deallocated arrays
-
-    if(allocated(Interp%wti))   deallocate(Interp%wti)
-    if(allocated(Interp%wtj))   deallocate(Interp%wtj)
-    if(allocated(Interp%i_lon)) deallocate(Interp%i_lon)
-    if(allocated(Interp%j_lat)) deallocate(Interp%j_lat)
-
-  end subroutine horiz_interp_bilinear_del
 
   !#######################################################################
   !> @returns index of nearest data point to "value"
-  !! if "value" is outside the domain of "array" then indp = 1
+  !! if "value" is outside the domain of "array" then INDP_ = 1
   !! or "ia" depending on whether array(1) or array(ia) is
   !! closest to "value"
-  function indp (value, array)
-    integer                        :: indp !< index of nearest data point within "array"
+  function INDP_ (value, array)
+    integer                        :: INDP_ !< index of nearest data point within "array"
                                            !! corresponding to "value".
-    real, dimension(:), intent(in) :: array !< array of data points (must be monotonically increasing)
-    real, intent(in)               :: value !< arbitrary data, same units as elements in 'array'
+    real(FMS_HI_KIND_), dimension(:), intent(in) :: array !< array of data points (must be monotonically increasing)
+    real(FMS_HI_KIND_), intent(in)               :: value !< arbitrary data, same units as elements in 'array'
 
     !=======================================================================
 
@@ -1268,7 +1203,7 @@ contains
        if (array(i) .lt. array(i-1)) then
           unit = stdout()
           write (unit,*) &
-               ' => Error: array must be monotonically increasing in "indp"' , &
+               ' => Error: array must be monotonically increasing in "INDP_"' , &
                '           when searching for nearest element to value=',value
           write (unit,*) '           array(i) < array(i-1) for i=',i
           write (unit,*) '           array(i) for i=1..ia follows:'
@@ -1276,25 +1211,20 @@ contains
        endif
     enddo
     if (value .lt. array(1) .or. value .gt. array(ia)) then
-       if (value .lt. array(1))  indp = 1
-       if (value .gt. array(ia)) indp = ia
+       if (value .lt. array(1))  INDP_ = 1
+       if (value .gt. array(ia)) INDP_ = ia
     else
        i=1
        keep_going = .true.
        do while (i .le. ia .and. keep_going)
           i = i+1
           if (value .le. array(i)) then
-             indp = i
-             if (array(i)-value .gt. value-array(i-1)) indp = i-1
+             INDP_ = i
+             if (array(i)-value .gt. value-array(i-1)) INDP_ = i-1
              keep_going = .false.
           endif
        enddo
     endif
     return
-  end function indp
-
-  !######################################################################
-
-end module horiz_interp_bilinear_mod
+  end function INDP_
 !> @}
-! close documentation grouping
