@@ -34,7 +34,6 @@ real(kind=FMS_MO_KIND_), parameter                   :: error=real(1.d-04, FMS_M
                                                         zeta_min=real(1.d-06, FMS_MO_KIND_), &
                                                         small=real(1.d-04, FMS_MO_KIND_)
 
-! #include "monin_obukhov_interfaces.h"
 
 if(.not.module_is_initialized) call error_mesg('mo_drag_1d in monin_obukhov_mod', &
      'monin_obukhov_init has not been called', FATAL)
@@ -79,7 +78,6 @@ logical, intent(in) , optional, dimension(:)          :: avail
 logical                                               :: dummy_avail(1)
 integer                                               :: n, ier
 
-! #include "monin_obukhov_interfaces.h"
 
 if(.not.module_is_initialized) call error_mesg('mo_profile_1d in monin_obukhov_mod', &
      'monin_obukhov_init has not been called', FATAL)
