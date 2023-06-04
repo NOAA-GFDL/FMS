@@ -16,9 +16,6 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
-!> @defgroup monin_obukhov_inter monin_obukhov_inter
-!> @ingroup monin_obukhov
-!> @brief Utility routines to be used in @ref monin_obukhov_mod
 
 !> @addtogroup monin_obukhov_inter
 !> @{
