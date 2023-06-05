@@ -1181,14 +1181,14 @@ integer, parameter                                           :: lkind = FMS_AST_
         solar   = 0.0_lkind
         cosz    = 0.0_lkind
         do n =1, num_angles
-          t     = real(float(n-1), FMS_AST_KIND_)*real(twopi, FMS_AST_KIND_)/real(float(num_angles), FMS_AST_KIND_)
+          t     = real((n-1), FMS_AST_KIND_)*real(twopi, FMS_AST_KIND_)/real(num_angles, FMS_AST_KIND_)
           call daily_mean_solar(lat,t, z, fracday, rrsun)
           s     = z*rrsun*fracday
           solar = solar + s
           cosz  = cosz  + z*s
         end do
-        solar   = solar/float(num_angles)
-        cosz    = cosz/float(num_angles)
+        solar   = solar/real(num_angles, FMS_AST_KIND_)
+        cosz    = cosz/real(num_angles, FMS_AST_KIND_)
 
 !--------------------------------------------------------------------
 !>   define the flux-weighted annual mean cosine of the zenith angle.
@@ -1459,7 +1459,7 @@ integer, parameter       :: lkind = FMS_AST_KIND_
 !!    angle to be within the range 0 to 2*pi.
 !--------------------------------------------------------------------
 
-    norm_time = real(t, FMS_AST_KIND_)*real(float(num_angles), FMS_AST_KIND_)/real(twopi, FMS_AST_KIND_)
+    norm_time = real(t, FMS_AST_KIND_)*rea(num_angles, FMS_AST_KIND_)/real(twopi, FMS_AST_KIND_)
     int       = floor(norm_time)
     int       = modulo(int,num_angles)
     int_1     = int+1
