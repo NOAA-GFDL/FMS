@@ -139,7 +139,8 @@ module astronomy_mod
     !! @param [in] <dt> OPTIONAL: Time interval after gmt over which the astronomical variables are to be
     !!                  averaged. this produces averaged output rather than instantaneous. [radians], (1 day = 2 * pi)
     !! @param [in] <dt_time> OPTIONAL: Time interval after gmt over which the astronomical variables are to be
-    !!                       averaged. this produces averaged output rather than instantaneous. time_type, [days, seconds]
+    !!                       averaged. this produces averaged output rather than instantaneous. time_type, 
+    !!                       [days, seconds]
     !! @param [in] <allow_negative_cosz> Allow negative values for cosz?
     !! @param [out] <half_day_out> half_day_out
     !> @ingroup astronomy_mod
