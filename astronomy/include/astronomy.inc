@@ -290,11 +290,8 @@ integer, parameter                                           :: lkind = FMS_AST_
 
         where (real(twopi, FMS_AST_KIND_) - h < tt .and. &
             (tt+h-real(twopi, FMS_AST_KIND_)) /= 0.0_lkind .and. t <= h ) &
-            cosz = (real(cosz*(h - t), FMS_AST_KIND_) + (real(aa, FMS_AST_KIND_)*(real(tt, FMS_AST_KIND_) &
-                   + real(h, FMS_AST_KIND_) - real(twopi, FMS_AST_KIND_)) + real(bb, FMS_AST_KIND_) &
-                   * (real(stt, FMS_AST_KIND_) + real(sh, FMS_AST_KIND_)))) / ((real(h, FMS_AST_KIND_) &
-                   - real(t, FMS_AST_KIND_)) + (real(tt, FMS_AST_KIND_) + real(h, FMS_AST_KIND_) &
-                   - real(twopi, FMS_AST_KIND_)))
+            cosz = (cosz*(h - t) + (real(aa, FMS_AST_KIND_)*(tt + h - real(twopi, FMS_AST_KIND_)) + bb &
+                   * (stt + sh))) / ((h - t) + (tt + h - real(twopi, FMS_AST_KIND_)))
 
 !-------------------------------------------------------------------
 !    case 7: averaging period begins after sunset and ends before the
@@ -312,9 +309,7 @@ integer, parameter                                           :: lkind = FMS_AST_
 !-----------------------------------------------------------------
 
         where (h <  t .and. real(twopi, FMS_AST_KIND_) - h < tt)
-            cosz = real(aa, FMS_AST_KIND_) + real(bb, FMS_AST_KIND_)&
-                   *(real(stt, FMS_AST_KIND_) + real(sh,FMS_AST_KIND_)) &
-                   / (real(tt, FMS_AST_KIND_) + real(h, FMS_AST_KIND_) - real(twopi, FMS_AST_KIND_))
+            cosz = aa + bb*(stt + sh) / (tt + h - real(twopi, FMS_AST_KIND_))
         end where
 
         else
@@ -335,9 +330,7 @@ integer, parameter                                           :: lkind = FMS_AST_
     where (abs(t) <= h .and. h < tt)       fracday = ( h - t )/dt
     where (h <  t)                         fracday = 0.0_lkind
     where (real(twopi, FMS_AST_KIND_) - h < tt)  &
-                                           fracday = real(fracday, FMS_AST_KIND_) + &
-                                                    (real(tt, FMS_AST_KIND_) + real(h, FMS_AST_KIND_) &
-                                                    - real(twopi, FMS_AST_KIND_))/real(dt, FMS_AST_KIND_)
+                                           fracday = fracday + (tt + h - real(twopi, FMS_AST_KIND_))/dt
 !----------------------------------------------------------------------
 !>    if instantaneous values are desired, define cosz at time t.
 !----------------------------------------------------------------------
