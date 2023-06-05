@@ -215,8 +215,8 @@ integer, parameter                                           :: lkind = FMS_AST_
 !--------------------------------------------------------------------
 
     t = gmt + lon - real(PI, FMS_AST_KIND_)
-    where(t >= real(PI, FMS_AST_KIND_)) t = real(t, FMS_AST_KIND_) - real(twopi, FMS_AST_KIND_)
-    where(t < real(-PI,FMS_AST_KIND_))  t = real(t, FMS_AST_KIND_) + real(twopi, FMS_AST_KIND_)
+    where(t >= real(PI, FMS_AST_KIND_)) t = t - real(twopi, FMS_AST_KIND_)
+    where(t < real(-PI,FMS_AST_KIND_))  t = t + real(twopi, FMS_AST_KIND_)
 
     Lallow_negative = .false.
     if (present(allow_negative_cosz)) then
