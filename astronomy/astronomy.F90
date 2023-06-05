@@ -43,29 +43,29 @@ module astronomy_mod
     use constants_mod,     only: constants_init, PI
     use mpp_mod,           only: input_nml_file
     use platform_mod,      only: r4_kind, r8_kind
-    
+
     !--------------------------------------------------------------------
-    
+
     implicit none
     private
-    
+
     !---------------------------------------------------------------------
     !----------- version number for this module --------------------------
-    
+
     ! Include variable "version" to be written to log file.
     #include<file_version.h>
-    
-    
+
+
     !---------------------------------------------------------------------
     !-------  interfaces --------
-    
+
     public       &
                   astronomy_init, get_period, set_period, &
                   set_orbital_parameters, get_orbital_parameters, &
                   set_ref_date_of_ae, get_ref_date_of_ae,  &
                   diurnal_solar, daily_mean_solar, annual_mean_solar,  &
                   astronomy_end, universal_time, orbital_time
-    
+
     interface set_orbital_parameters
       module procedure set_orbital_parameters_r4, set_orbital_parameters_r8
     end interface set_orbital_parameters
@@ -73,9 +73,9 @@ module astronomy_mod
     interface get_orbital_parameters
         module procedure get_orbital_parameters_r4, get_orbital_parameters_r8
     end interface get_orbital_parameters
-    
+
     !> @}
-    
+
     !> @brief Calculates solar information for the given location(lat & lon) and time
     !!
     !> ~~~~~~~~~~{.f90}
@@ -151,7 +151,7 @@ module astronomy_mod
       module procedure diurnal_solar_cal_1d_r4, diurnal_solar_cal_1d_r8
       module procedure diurnal_solar_cal_0d_r4, diurnal_solar_cal_0d_r8
     end interface diurnal_solar
-    
+
     !> @brief Calculates the daily mean solar information for a given time and latitude.
     !!
     !> ~~~~~~~~~~{.f90}
@@ -211,7 +211,7 @@ module astronomy_mod
       module procedure daily_mean_solar_cal_2level_r4, daily_mean_solar_cal_2level_r8
       module procedure daily_mean_solar_cal_0d_r4, daily_mean_solar_cal_0d_r8
     end interface daily_mean_solar
-    
+
     !> Calculates the annual mean of solar information for a given latitude and time.
     !!
     !> ~~~~~~~~~~{.f90}
@@ -253,7 +253,7 @@ module astronomy_mod
       module procedure annual_mean_solar_1d_r4, annual_mean_solar_1d_r8
       module procedure annual_mean_solar_2level_r4, annual_mean_solar_2level_r8
     end interface annual_mean_solar
-    
+
     !> Gets the length of year for current calendar
     !!
     !> ~~~~~~~~~~{.f90}
@@ -273,7 +273,7 @@ module astronomy_mod
     interface get_period
        module procedure get_period_time_type, get_period_integer
     end interface
-    
+
     !> Sets the length of a year for the calendar in use
     !!
     !> ~~~~~~~~~~{.f90}
@@ -293,8 +293,8 @@ module astronomy_mod
     interface set_period
        module procedure set_period_time_type, set_period_integer
     end interface
-    
-    
+
+
     private &
                   orbit,  & ! Called from astronomy_init and set_orbital_parameters
                   r_inv_squared, & ! Called from diurnal_solar, daily_mean_solar and orbit
@@ -305,15 +305,15 @@ module astronomy_mod
     interface r_inv_squared
       module procedure r_inv_squared_r4, r_inv_squared_r8
     end interface r_inv_squared
-              
+
     interface angle
       module procedure angle_r4, angle_r8
     end interface angle
-              
+
     interface declination
       module procedure declination_r4, declination_r8
     end interface declination
-    
+
     !> Private interface for internal use by dirunal_solar and daily_mean_solar.
     !!
     !> Example usage:
