@@ -231,7 +231,7 @@ end interface half_day
 !---------------------------------------------------------------------
 !-------- namelist  ---------
 
-real(r8_kind)   :: ecc   = 0.01671_r8_kind    !< Eccentricity of Earth's orbit [dimensionless]
+real(r8_kind)   :: ecc   = 0.01671_r8_kind  !< Eccentricity of Earth's orbit [dimensionless]
 real(r8_kind)   :: obliq = 23.439_r8_kind   !< Obliquity [degrees]
 real(r8_kind)   :: per   = 102.932_r8_kind  !< Longitude of perihelion with respect
                                               !! to autumnal equinox in NH [degrees]
@@ -348,13 +348,13 @@ integer :: unit, ierr, io, seconds, days, jd, id
 !>    Be sure input values are within valid ranges.
 !    QUESTION : ARE THESE THE RIGHT LIMITS ???
 !---------------------------------------------------------------------
-    if (real(ecc, r8_kind) < 0.0_r8_kind .or. real(ecc, r8_kind) > 0.99_r8_kind) &
+    if (ecc < 0.0_r8_kind .or. ecc > 0.99_r8_kind) &
        call error_mesg ('astronomy_mod', &
             'ecc must be between 0 and 0.99', FATAL)
-    if (real(obliq, r8_kind) < -90.0_r8_kind .or. real(obliq, r8_kind) > 90.0_r8_kind) &
+    if (obliq < -90.0_r8_kind .or. obliq > 90.0_r8_kind) &
         call error_mesg ('astronomy_mod', &
              'obliquity must be between -90 and 90 degrees', FATAL)
-    if (real(per, r8_kind) < 0.0_r8_kind .or. real(per, r8_kind) > 360.0_r8_kind) &
+    if (per < 0.0_r8_kind .or. per > 360.0_r8_kind) &
         call error_mesg ('astronomy_mod', &
              'perihelion must be between 0 and 360 degrees', FATAL)
 
@@ -655,7 +655,7 @@ real(kind=r8_kind) :: d1, d2, d3, d4, d5, dt, norm
 !     allocate ( orb_angle(0:num_angles) )
 orb_angle(0) = 0.0_r8_kind
 dt = twopi/real(num_angles, r8_kind)
-norm = sqrt(1.0_r8_kind - real(ecc, r8_kind)**2)
+norm = sqrt(1.0_r8_kind - ecc**2)
 dt = dt*norm
 
 !---------------------------------------------------------------------
