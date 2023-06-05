@@ -182,8 +182,7 @@ module fms
                          fm_util_set_value_real_array_r4, fm_util_set_value_real_array_r8, &
                          fm_util_set_value_string_array, &
                          fm_util_set_value_integer, fm_util_set_value_logical, &
-                         fm_util_set_value_real_r4, fm_util_set_value_real_r8, &
-                         fm_util_set_value_string, &
+                         fm_util_set_value_real, fm_util_set_value_string, &
                          fm_util_get_index_list, fm_util_get_index_string, &
                          fm_util_default_caller
 
