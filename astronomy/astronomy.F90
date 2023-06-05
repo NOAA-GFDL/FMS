@@ -688,8 +688,8 @@ type(time_type), intent(in) :: time !< time (1 year = 2*pi) since autumnal equin
 real(kind=r8_kind)    :: t
 
     t = (time - autumnal_eq_ref)//period_time_type
-    t = real(twopi, r8_kind)*(t - floor(t))
-    if (time < autumnal_eq_ref) t = real(twopi, r8_kind) - t
+    t = twopi*(t - floor(t))
+    if (time < autumnal_eq_ref) t = twopi - t
 
 end function orbital_time
 
@@ -707,7 +707,7 @@ real(kind=r8_kind)    :: t
     integer ::  seconds, days
 
     call get_time(time, seconds, days)
-        t = real(twopi, r8_kind)* seconds/real(seconds_per_day, r8_kind)
+        t = twopi* seconds/real(seconds_per_day, r8_kind)
 
 end function universal_time
 
