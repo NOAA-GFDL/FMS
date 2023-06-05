@@ -663,12 +663,12 @@ dt = dt*norm
 !!    the orbit.
 !---------------------------------------------------------------------
     do n = 1, num_angles
-       d1 = dt*r_inv_squared(real(orb_angle(n-1), r8_kind))
-       d2 = dt*r_inv_squared(real(orb_angle(n-1), r8_kind) + 0.5_r8_kind * d1)
-       d3 = dt*r_inv_squared(real(orb_angle(n-1), r8_kind) + 0.5_r8_kind * d2)
-       d4 = dt*r_inv_squared(real(orb_angle(n-1), r8_kind) + d3)
+       d1 = dt*r_inv_squared(orb_angle(n-1))
+       d2 = dt*r_inv_squared(orb_angle(n-1) + 0.5_r8_kind * d1)
+       d3 = dt*r_inv_squared(orb_angle(n-1) + 0.5_r8_kind * d2)
+       d4 = dt*r_inv_squared(orb_angle(n-1) + d3)
        d5 = d1/6.0_r8_kind + d2/3.0_r8_kind + d3/3.0_r8_kind + d4/6.0_r8_kind
-        orb_angle(n) = real(orb_angle(n-1), r8_kind) + d5
+        orb_angle(n) = orb_angle(n-1) + d5
     end do
 
 end subroutine orbit
