@@ -220,6 +220,15 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
 
 !> Use pointers for convenience
   fieldptr => this%FMS_diag_fields(this%registered_variables)
+
+!> Initialize buffer_ids of this field with the diag_field_indices(diag_field_indices)
+!! of the sorted variable list
+  fieldptr%buffer_ids = get_diag_field_ids(diag_field_indices)
+
+!> Allocate and initialize member buffer_allocated of this field
+  allocate(fieldptr%buffer_allocated(size(diag_field_indices)))
+  fieldptr%buffer_allocated = .false.
+
 !> Register the data for the field
   call fieldptr%register(modname, varname, diag_field_indices, this%diag_axis, &
        axes=axes, longname=longname, units=units, missing_value=missing_value, varRange= varRange, &
