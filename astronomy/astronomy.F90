@@ -29,200 +29,319 @@
 module astronomy_mod
 
 
-use fms_mod,           only: fms_init, mpp_pe, mpp_root_pe, stdlog, write_version_number, &
-                             check_nml_error, error_mesg, FATAL, NOTE, WARNING
-use time_manager_mod,  only: time_type, set_time, get_time, get_date_julian, set_date_julian, &
-                              set_date, length_of_year, time_manager_init, &
-                              operator(-), operator(+), operator( // ), operator(<)
-use constants_mod,     only: constants_init, PI
-use mpp_mod,           only: input_nml_file
-use platform_mod,      only: r4_kind, r8_kind
+    use fms_mod,           only: fms_init, &
+                                 mpp_pe, mpp_root_pe, stdlog, &
+                                 write_version_number, &
+                                 check_nml_error, error_mesg, &
+                                 FATAL, NOTE, WARNING
+    use time_manager_mod,  only: time_type, set_time, get_time, &
+                                 get_date_julian, set_date_julian, &
+                                 set_date, length_of_year, &
+                                 time_manager_init, &
+                                 operator(-), operator(+), &
+                                 operator( // ), operator(<)
+    use constants_mod,     only: constants_init, PI
+    use mpp_mod,           only: input_nml_file
+    use platform_mod,      only: r4_kind, r8_kind
 
-!--------------------------------------------------------------------
+    !--------------------------------------------------------------------
 
-implicit none
-private
+    implicit none
+    private
 
-!---------------------------------------------------------------------
-!----------- version number for this module --------------------------
+    !---------------------------------------------------------------------
+    !----------- version number for this module --------------------------
 
 ! Include variable "version" to be written to log file.
 #include<file_version.h>
 
 
-!---------------------------------------------------------------------
-!-----------------------------  interfaces ---------------------------
+    !---------------------------------------------------------------------
+    !-------  interfaces --------
 
-public :: astronomy_init
-public :: set_orbital_parameters, get_orbital_parameters
-public :: set_ref_date_of_ae, get_ref_date_of_ae
-public :: diurnal_solar, daily_mean_solar, annual_mean_solar
-public :: astronomy_end
+    public       &
+                  astronomy_init, get_period, set_period, &
+                  set_orbital_parameters, get_orbital_parameters, &
+                  set_ref_date_of_ae, get_ref_date_of_ae,  &
+                  diurnal_solar, daily_mean_solar, annual_mean_solar,  &
+                  astronomy_end, universal_time, orbital_time
 
-!> @}
+    interface set_orbital_parameters
+      module procedure set_orbital_parameters_r4, set_orbital_parameters_r8
+    end interface set_orbital_parameters
+
+    interface get_orbital_parameters
+        module procedure get_orbital_parameters_r4, get_orbital_parameters_r8
+    end interface get_orbital_parameters
+
+    !> @}
+
+    !> @brief Calculates solar information for the given location(lat & lon) and time
+    !!
+    !> ~~~~~~~~~~{.f90}
+    !! call diurnal_solar (lat, lon, time, cosz, fracday, rrsun, dt_time)
+    !! call diurnal_solar (lat, lon, gmt, time_since_ae, cosz, fracday, rrsun, dt)
+    !! ~~~~~~~~~~
+    !!
+    !! The first option (used in conjunction with time_manager_mod)
+    !! generates the real variables gmt and time_since_ae from the
+    !! time_type input, and then calls diurnal_solar with these real inputs.
+    !!
+    !! The time of day is set by
+    !! ~~~~~~~~~~{.f90}
+    !! real, intent(in) :: gmt
+    !! ~~~~~~~~~~
+    !! The time of year is set by
+    !! ~~~~~~~~~~{.f90}
+    !! real, intent(in) :: time_since_ae
+    !! ~~~~~~~~~~
+    !! with time_type input, both of these are extracted from
+    !! ~~~~~~~~~~{.f90}
+    !! type(time_type), intent(in) :: time
+    !! ~~~~~~~~~~
+    !!
+    !! Separate routines exist within this interface for scalar,
+    !! 1D or 2D input and output fields:
+    !!
+    !! ~~~~~~~~~~{.f90}
+    !! real, intent(in), dimension(:,:) :: lat, lon
+    !! real, intent(in), dimension(:)   :: lat, lon
+    !! real, intent(in)                 :: lat, lon
+    !!
+    !! real, intent(out), dimension(:,:) :: cosz, fracday
+    !! real, intent(out), dimension(:)   :: cosz, fracday
+    !! real, intent(out)                 :: cosz, fracday
+    !! ~~~~~~~~~~
+    !!
+    !! One may also average the output fields over the time interval
+    !! between gmt and gmt + dt by including the optional argument dt (or
+    !! dt_time). dt is measured in radians and must be less than pi
+    !! (1/2 day). This average is computed analytically, and should be
+    !! exact except for the fact that changes in earth-sun distance over
+    !! the time interval dt are ignored. In the context of a diurnal GCM,
+    !! this option should always be employed to insure that the total flux
+    !! at the top of the atmosphere is not modified by time truncation error.
+    !!
+    !! ~~~~~~~~~~{.f90}
+    !! real, intent(in), optional :: dt
+    !! type(time_type), optional :: dt_time
+    !! ~~~~~~~~~~
+    !!
+    !! @param [in] <lat> Latitudes of model grid points [radians]
+    !! @param [in] <lon> Longitudes of model grid points [radians]
+    !! @param [in] <gmt> Time of day at longitude 0.0; midnight = 0.0, one day = 2 * pi [radians]
+    !! @param [in] <time_since_ae> Time of year; autumnal equinox = 0.0, one year = 2 * pi [radians]
+    !! @param [in] <time> Time at which astronomical values are desired (time_type variable) [seconds, days]
+    !! @param [out] <cosz> Cosine of solar zenith angle, set to zero when entire period is in darkness [dimensionless]
+    !! @param [out] <fracday> Daylight fraction of time interval [dimensionless]
+    !! @param [out] <rrsun> Earth-Sun distance (r) relative to semi-major axis of orbital ellipse
+    !! (a):(a/r)**2 [dimensionless]
+    !! @param [in] <dt> OPTIONAL: Time interval after gmt over which the astronomical variables are to be
+    !!                  averaged. this produces averaged output rather than instantaneous. [radians], (1 day = 2 * pi)
+    !! @param [in] <dt_time> OPTIONAL: Time interval after gmt over which the astronomical variables are to be
+    !!                       averaged. this produces averaged output rather than instantaneous. time_type,
+    !!                       [days, seconds]
+    !! @param [in] <allow_negative_cosz> Allow negative values for cosz?
+    !! @param [out] <half_day_out> half_day_out
+    !> @ingroup astronomy_mod
+    interface diurnal_solar
+      module procedure diurnal_solar_2d_r4, diurnal_solar_2d_r8
+      module procedure diurnal_solar_1d_r4, diurnal_solar_1d_r8
+      module procedure diurnal_solar_0d_r4, diurnal_solar_0d_r8
+      module procedure diurnal_solar_cal_2d_r4, diurnal_solar_cal_2d_r8
+      module procedure diurnal_solar_cal_1d_r4, diurnal_solar_cal_1d_r8
+      module procedure diurnal_solar_cal_0d_r4, diurnal_solar_cal_0d_r8
+    end interface diurnal_solar
+
+    !> @brief Calculates the daily mean solar information for a given time and latitude.
+    !!
+    !> ~~~~~~~~~~{.f90}
+    !! call daily_mean_solar (lat, time, cosz, fracday, rrsun)
+    !! call daily_mean_solar (lat, time_since_ae, cosz, fracday, rrsun)
+    !! call daily_mean_solar (lat, time, cosz, solar)
+    !! call daily_mean_solar (lat, time_since_ae, cosz, solar)
+    !! ~~~~~~~~~~
+    !!
+    !! The first option (used in conjunction with time_manager_mod)
+    !! generates the real variable time_since_ae from the time_type
+    !! input time, and then calls daily_mean_solar with this real input
+    !! (option 2). The third and fourth options correspond to the first
+    !! and second and are used with then spectral 2-layer model, where
+    !! only cosz and solar are desired as output. These routines generate
+    !! dummy arguments and then call option 2, where the calculation is done.
+    !!
+    !! The time of year is set by
+    !! ~~~~~~~~~~{.f90}
+    !!    real, intent(in) :: time_since_ae
+    !! ~~~~~~~~~~
+    !! With time_type input, the time of year is extracted from
+    !! ~~~~~~~~~~{.f90}
+    !!    type(time_type), intent(in) :: time
+    !! ~~~~~~~~~~
+    !!
+    !! Separate routines exist within this interface for scalar,
+    !! 1D or 2D input and output fields:
+    !!
+    !! ~~~~~~~~~~{.f90}
+    !! real, intent(in), dimension(:,:) :: lat
+    !! real, intent(in), dimension(:)   :: lat
+    !! real, intent(in)                 :: lat
+    !!
+    !! real, intent(out), dimension(:,:) :: cosz, fracday
+    !! real, intent(out), dimension(:)   :: cosz, fracday
+    !! real, intent(out)                 :: cosz, fracday
+    !! ~~~~~~~~~~
+    !!
+    !! @param [in] <lat> Latitudes of model grid points [radians]
+    !! @param [in] <time_since_ae> Time of year; autumnal equinox = 0.0, one year = 2 * pi [radians]
+    !! @param [in] <time> Time at which astronomical values are desired (time_type variable) [seconds, days]
+    !! @param [out] <cosz> Cosine of solar zenith angle, set to zero when entire period is in darkness [dimensionless]
+    !! @param [out] <fracday> Daylight fraction of time interval [dimensionless]
+    !! @param [out] <rrsun> Earth-Sun distance (r) relative to semi-major axis of orbital ellipse
+    !! (a):(a/r)**2 [dimensionless]
+    !! @param [out] <solar> shortwave flux factor: cosine of zenith angle * daylight fraction /
+    !! (earth-sun distance squared) [dimensionless]
+    !> @ingroup astronomy_mod
+    interface daily_mean_solar
+      module procedure daily_mean_solar_2d_r4, daily_mean_solar_2d_r8
+      module procedure daily_mean_solar_1d_r4, daily_mean_solar_1d_r8
+      module procedure daily_mean_solar_2level_r4, daily_mean_solar_2level_r8
+      module procedure daily_mean_solar_0d_r4, daily_mean_solar_0d_r8
+      module procedure daily_mean_solar_cal_2d_r4, daily_mean_solar_cal_2d_r8
+      module procedure daily_mean_solar_cal_1d_r4, daily_mean_solar_cal_1d_r8
+      module procedure daily_mean_solar_cal_2level_r4, daily_mean_solar_cal_2level_r8
+      module procedure daily_mean_solar_cal_0d_r4, daily_mean_solar_cal_0d_r8
+    end interface daily_mean_solar
+
+    !> Calculates the annual mean of solar information for a given latitude and time.
+    !!
+    !> ~~~~~~~~~~{.f90}
+    !! call annual_mean_solar (js, je, lat, cosz, solar, fracday, rrsun)
+    !! call annual_mean_solar (lat, cosz, solar)
+    !! ~~~~~~~~~~
+    !!
+    !! The second interface above is used by the spectral 2-layer model,
+    !! which requires only cosz and solar as output arguments, and which
+    !! makes this call during the initialization phase of the model.
+    !! Separate routines exist within this interface for 1D or 2D input
+    !! and output fields:
+    !!
+    !! ~~~~~~~~~~{.f90}
+    !! real, intent(in), dimension(:,:) :: lat
+    !! real, intent(in), dimension(:)   :: lat
+    !!
+    !! real, intent(out), dimension(:,:) :: cosz, solar, fracday
+    !! real, intent(out), dimension(:)   :: cosz, solar, fracday
+    !! ~~~~~~~~~~
+    !!
+    !! @param [in] <jst> Starting subdomain j indices of data in the physics wiondow being integrated
+    !! @param [in] <jnd> Ending subdomain j indices of data in the physics wiondow being integrated
+    !! @param [in] <lat> Latitudes of model grid points [radians]
+    !! @param [out] <cosz> cosz is the average over the year of the cosine of an effective zenith angle
+    !!                     that would produce the correct daily solar flux if the sun were fixed at that
+    !!                     single position for the period of daylight on the given day. in this average,
+    !!                     the daily mean effective cosz is weighted by the daily mean solar flux. [dimensionless]
+    !! @param [out] <solar> Normalized solar flux, averaged over the year, equal to the product of
+    !!                      fracday*cosz*rrsun [dimensionless]
+    !! @param [out] <fracday> Daylight fraction calculated so as to make the average flux (solar) equal to the
+    !!                        product of the flux-weighted avg cosz * this fracday * assumed annual mean avg
+    !!                        Earth-Sun distance of 1.0. [dimensionless]
+    !! @param [out] <rrsun> Annual mean Earth-Sun distance (r) relative to semi-major axis of orbital ellipse
+    !!                      (a):(a/r)**2 [dimensionless]
+    !> @ingroup astronomy_mod
+    interface annual_mean_solar
+      module procedure annual_mean_solar_2d_r4, annual_mean_solar_2d_r8
+      module procedure annual_mean_solar_1d_r4, annual_mean_solar_1d_r8
+      module procedure annual_mean_solar_2level_r4, annual_mean_solar_2level_r8
+    end interface annual_mean_solar
+
+    !> Gets the length of year for current calendar
+    !!
+    !> ~~~~~~~~~~{.f90}
+    !! call get_period (period)
+    !! ~~~~~~~~~~
+    !!
+    !! Separate routines exist within this interface for integer
+    !! and time_type output:
+    !!
+    !! ~~~~~~~~~~{.f90}
+    !! integer, intent(out)         :: period
+    !! type(time_type), intent(out) :: period
+    !! ~~~~~~~~~~
+    !!
+    !! @param [out] <period_out> Length of year for calendar in use
+    !> @ingroup astronomy_mod
+    interface get_period
+       module procedure get_period_time_type, get_period_integer
+    end interface
+
+    !> Sets the length of a year for the calendar in use
+    !!
+    !> ~~~~~~~~~~{.f90}
+    !! call set_period (period_in)
+    !! ~~~~~~~~~~
+    !!
+    !! Separate routines exist within this interface for integer
+    !! and time_type output:
+    !!
+    !! ~~~~~~~~~~{.f90}
+    !! integer, intent(out)         :: period_in
+    !! type(time_type), intent(out) :: period_in
+    !! ~~~~~~~~~~
+    !!
+    !! @param [in] <period_in> Length of year for calendar in use
+    !> @ingroup astronomy_mod
+    interface set_period
+       module procedure set_period_time_type, set_period_integer
+    end interface
 
 
-interface diurnal_solar
-   module procedure diurnal_solar_2d_r4, diurnal_solar_2d_r8
-   module procedure diurnal_solar_1d_r4, diurnal_solar_1d_r8
-   module procedure diurnal_solar_0d_r4, diurnal_solar_0d_r8
-   module procedure diurnal_solar_cal_2d_r4, diurnal_solar_cal_2d_r8
-   module procedure diurnal_solar_cal_1d_r4, diurnal_solar_cal_1d_r8
-   module procedure diurnal_solar_cal_0d_r4, diurnal_solar_cal_0d_r8
-end interface diurnal_solar
+    private &
+                  orbit,  & ! Called from astronomy_init and set_orbital_parameters
+                  r_inv_squared, & ! Called from diurnal_solar, daily_mean_solar and orbit
+                  angle,  declination, half_day ! called from  diurnal_solar and daily_mean_solar
+    !             half_day, orbital_time, & ! called from  diurnal_solar and daily_mean_solar
+    !             universal_time ! called from  diurnal_solar:
 
+    interface r_inv_squared
+      module procedure r_inv_squared_r4, r_inv_squared_r8
+    end interface r_inv_squared
 
-interface daily_mean_solar
-   module procedure daily_mean_solar_2d_r4, daily_mean_solar_2d_r8
-   module procedure daily_mean_solar_1d_r4, daily_mean_solar_1d_r8
-   module procedure daily_mean_solar_2level_r4, daily_mean_solar_2level_r8
-   module procedure daily_mean_solar_0d_r4, daily_mean_solar_0d_r8
-   module procedure daily_mean_solar_cal_2d_r4, daily_mean_solar_cal_2d_r8
-   module procedure daily_mean_solar_cal_1d_r4, daily_mean_solar_cal_1d_r8
-   module procedure daily_mean_solar_cal_2level_r4, daily_mean_solar_cal_2level_r8
-   module procedure daily_mean_solar_cal_0d_r4, daily_mean_solar_cal_0d_r8
-end interface daily_mean_solar
+    interface angle
+      module procedure angle_r4, angle_r8
+    end interface angle
 
-!> Calculates the annual mean of solar information for a given latitude and time.
-!!
-!> ~~~~~~~~~~{.f90}
-!! call annual_mean_solar (js, je, lat, cosz, solar, fracday, rrsun)
-!! call annual_mean_solar (lat, cosz, solar)
-!! ~~~~~~~~~~
-!!
-!! The second interface above is used by the spectral 2-layer model,
-!! which requires only cosz and solar as output arguments, and which
-!! makes this call during the initialization phase of the model.
-!! Separate routines exist within this interface for 1D or 2D input
-!! and output fields:
-!!
-!! ~~~~~~~~~~{.f90}
-!! real, intent(in), dimension(:,:) :: lat
-!! real, intent(in), dimension(:)   :: lat
-!!deg_to_rad
-!! real, intent(out), dimension(:,:) :: cosz, solar, fracday
-!! real, intent(out), dimension(:)   :: cosz, solar, fracday
-!! ~~~~~~~~~~
-!!
-!! @param [in] <jst> Starting subdomain j indices of data in the physics wiondow being integrated
-!! @param [in] <jnd> Ending subdomain j indices of data in the physics wiondow being integrated
-!! @param [in] <lat> Latitudes of model grid points [radians]
-!! @param [out] <cosz> cosz is the average over the year of the cosine of an effective zenith angle
-!!                     that would produce the correct daily solar flux if the sun were fixed at that
-!!                     single position for the period of daylight on the given day. in this average,
-!!                     the daily mean effective cosz is weighted by the daily mean solar flux. [dimensionless]
-!! @param [out] <solar> Normalized solar flux, averaged over the year, equal to the product of
-!!                      fracday*cosz*rrsun [dimensionless]
-!! @param [out] <fracday> Daylight fraction calculated so as to make the average flux (solar) equal to the
-!!                        product of the flux-weighted avg cosz * this fracday * assumed annual mean avg
-!!                        Earth-Sun distance of 1.0. [dimensionless]
-!! @param [out] <rrsun> Annual mean Earth-Sun distance (r) relative to semi-major axis of orbital ellipse
-!!                      (a):(a/r)**2 [dimensionless]
-!> @ingroup astronomy_mod
-interface annual_mean_solar
-   module procedure annual_mean_solar_2d_r4, annual_mean_solar_2d_r8
-   module procedure annual_mean_solar_1d_r4, annual_mean_solar_1d_r8
-   module procedure annual_mean_solar_2level_r4, annual_mean_solar_2level_r8
-end interface annual_mean_solar
+    interface declination
+      module procedure declination_r4, declination_r8
+    end interface declination
 
-!> Gets the length of year for current calendar
-!!
-!> ~~~~~~~~~~{.f90}
-!! call get_period (period)
-!! ~~~~~~~~~~
-!!
-!! Separate routines exist within this interface for integer
-!! and time_type output:
-!!
-!! ~~~~~~~~~~{.f90}
-!! integer, intent(out)         :: period
-!! type(time_type), intent(out) :: period
-!! ~~~~~~~~~~
-!!
-!! @param [out] <period_out> Length of year for calendar in use
-!> @ingroup astronomy_mod
-!interface get_period
-!   module procedure get_period_time_type_r4, get_period_time_type_r8
-!   module procedure get_period_integer_r4, get_period_integer_r8
-!end interface get_period
-
-!> Sets the length of a year for the calendar in use
-!!
-!> ~~~~~~~~~~{.f90}
-!! call set_period (period_in)
-!! ~~~~~~~~~~
-!!
-!! Separate routines exist within this interface for integer
-!! and time_type output:
-!!
-!! ~~~~~~~~~~{.f90}
-!! integer, intent(out)         :: period_in
-!! type(time_type), intent(out) :: period_in
-!! ~~~~~~~~~~
-!!
-!! @param [in] <period_in> Length of year for calendar in use
-!> @ingroup astronomy_mod
-!interface set_period
-!   module procedure set_period_time_type_r4, set_period_time_type_r8
-!   module procedure set_period_integer_r4, set_period_integer_r8
-!end interface set_period
-
-
-
-
-private :: orbit         ! Called from astronomy_init and set_orbital_parameters
-private :: r_inv_squared ! Called from diurnal_solar, daily_mean_solar and orbit
-private :: angle,  declination, half_day ! called from  diurnal_solar and daily_mean_solar
-!             half_day, orbital_time, & ! called from  diurnal_solar and daily_mean_solar
-!             universal_time ! called from  diurnal_solar:
-
-!> Private interface for internal use by dirunal_solar and daily_mean_solar.
-!!
-!> Example usage:
-!! ~~~~~~~~~~{.f90}
-!! half_day (latitude, dec) result (h)
-!! ~~~~~~~~~~
-!!
-!! Separate routines exist within this interface for scalar,
-!! or 2D input and output fields:
-!!
-!! ~~~~~~~~~~{.f90}
-!! real, intent(in), dimension(:,:) :: latitude
-!! real, intent(in)                 :: latitude
-!!
-!! real, dimension(size(latitude,1),size(latitude,2))  :: h
-!! real                                                :: h
-!! ~~~~~~~~~~
-!!
-!! @param [in] <latitude> Latitudes of model grid points [radians]
-!! @param [in] <dec> Solar declination [radians]
-!! @param [out] <h> Half of the length of daylight at the given latitude and orbital position (dec); value
-!!                  ranges between 0 (all darkness) and pi (all daylight) [dimensionless]
-!> @ingroup astronomy_mod
-interface get_orbital_parameters
-    module procedure get_orbital_parameters_r4, get_orbital_parameters_r8
-end interface get_orbital_parameters
-
-interface set_orbital_parameters
-    module procedure set_orbital_parameters_r4, set_orbital_parameters_r8
-end interface set_orbital_parameters
-
-interface r_inv_squared
-    module procedure r_inv_squared_r4, r_inv_squared_r8
-end interface r_inv_squared
-
-interface angle
-    module procedure angle_r4, angle_r8
-end interface angle
-
-interface declination
-    module procedure declination_r4, declination_r8
-end interface declination
-
-interface half_day
-   module procedure half_day_2d_r4, half_day_2d_r8
-   module procedure half_day_0d_r4, half_day_0d_r8
-end interface half_day
+    !> Private interface for internal use by dirunal_solar and daily_mean_solar.
+    !!
+    !> Example usage:
+    !! ~~~~~~~~~~{.f90}
+    !! half_day (latitude, dec) result (h)
+    !! ~~~~~~~~~~
+    !!
+    !! Separate routines exist within this interface for scalar,
+    !! or 2D input and output fields:
+    !!
+    !! ~~~~~~~~~~{.f90}
+    !! real, intent(in), dimension(:,:) :: latitude
+    !! real, intent(in)                 :: latitude
+    !!
+    !! real, dimension(size(latitude,1),size(latitude,2))  :: h
+    !! real                                                :: h
+    !! ~~~~~~~~~~
+    !!
+    !! @param [in] <latitude> Latitudes of model grid points [radians]
+    !! @param [in] <dec> Solar declination [radians]
+    !! @param [out] <h> Half of the length of daylight at the given latitude and orbital position (dec); value
+    !!                  ranges between 0 (all darkness) and pi (all daylight) [dimensionless]
+    !> @ingroup astronomy_mod
+    interface half_day
+      module procedure half_day_2d_r4, half_day_2d_r8
+      module procedure half_day_0d_r4, half_day_0d_r8
+    end interface half_day
 
 
 !> @addtogroup astronomy_mod
@@ -231,10 +350,10 @@ end interface half_day
 !---------------------------------------------------------------------
 !-------- namelist  ---------
 
-real(r8_kind)   :: ecc   = real(0.01671d0, r8_kind)!< Eccentricity of Earth's orbit [dimensionless]
-real(r8_kind)   :: obliq = real(23.439d0, r8_kind)    !< Obliquity [degrees]
-real(r8_kind)   :: per   = real(102.932d0, r8_kind)   !< Longitude of perihelion with respect
-                                     !! to autumnal equinox in NH [degrees]
+real(r8_kind)   :: ecc   = 0.01671_r8_kind  !< Eccentricity of Earth's orbit [dimensionless]
+real(r8_kind)   :: obliq = 23.439_r8_kind   !< Obliquity [degrees]
+real(r8_kind)   :: per   = 102.932_r8_kind  !< Longitude of perihelion with respect
+                                              !! to autumnal equinox in NH [degrees]
 integer         :: period = 0        !< Specified length of year [seconds];
                                      !! must be specified to override default
                                      !! value given by length_of_year in
@@ -273,10 +392,10 @@ real(r8_kind), dimension(:), allocatable :: orb_angle !< table of orbital positi
                                              !! to find actual orbital position
                                              !! via interpolation
 
-real(r8_kind)    :: seconds_per_day = real(86400.0d0, r8_kind) !< seconds in a day
-real(r8_kind)    :: deg_to_rad               !< conversion from degrees to radians
-real(r8_kind)    :: twopi                    !< 2 *PI
-logical          :: module_is_initialized=.false. !< has the module been initialized ?
+real(r8_kind)    :: seconds_per_day = 86400.0_r8_kind !< seconds in a day
+real(r8_kind)    :: deg_to_rad                        !< conversion from degrees to radians
+real(r8_kind)    :: twopi                             !< 2 *PI
+logical          :: module_is_initialized=.false.     !< has the module been initialized ?
 
 real(r8_kind), dimension(:,:), allocatable ::       &
                        cosz_ann, &  !< annual mean cos of zenith angle
@@ -348,13 +467,13 @@ integer :: unit, ierr, io, seconds, days, jd, id
 !>    Be sure input values are within valid ranges.
 !    QUESTION : ARE THESE THE RIGHT LIMITS ???
 !---------------------------------------------------------------------
-    if (ecc < real(0.0,kind=r8_kind) .or. ecc > real(0.99,kind=r8_kind)) &
+    if (ecc < 0.0_r8_kind .or. ecc > 0.99_r8_kind) &
        call error_mesg ('astronomy_mod', &
             'ecc must be between 0 and 0.99', FATAL)
-    if (obliq < real(-90.0,kind=r8_kind) .or. obliq > real(90.0,kind=r8_kind)) &
+    if (obliq < -90.0_r8_kind .or. obliq > 90.0_r8_kind) &
         call error_mesg ('astronomy_mod', &
              'obliquity must be between -90 and 90 degrees', FATAL)
-    if (per < real(0.0,kind=r8_kind) .or. per > real(360.0,kind=r8_kind)) &
+    if (per < 0.0_r8_kind .or. per > 360.0_r8_kind) &
         call error_mesg ('astronomy_mod', &
              'perihelion must be between 0 and 360 degrees', FATAL)
 
@@ -370,7 +489,7 @@ integer :: unit, ierr, io, seconds, days, jd, id
     if (period == 0) then
         period_time_type = length_of_year()
         call get_time (period_time_type, seconds, days)
-            period = int(seconds_per_day*days + seconds)
+            period = int(real(seconds_per_day, r8_kind)*days + seconds)
     else
         period_time_type = set_time(period,0)
     endif
@@ -378,8 +497,8 @@ integer :: unit, ierr, io, seconds, days, jd, id
 !---------------------------------------------------------------------
 !>    Define useful module variables.
 !----------------------------------------------------------------------
-    twopi = real(2.0,kind=r8_kind)*PI
-    deg_to_rad = twopi/real(360.0,kind=r8_kind)
+    twopi = 2.0_r8_kind * PI
+    deg_to_rad = twopi/360.0_r8_kind
 
 !---------------------------------------------------------------------
 !>    Call orbit to define table of orbital angles as function of
@@ -436,7 +555,7 @@ integer :: seconds, days
 !    define length of year in seconds.
 !--------------------------------------------------------------------
     call get_time (period_time_type, seconds, days)
-    period_out = int(seconds_per_day*days + seconds)
+    period_out = int(real(seconds_per_day, r8_kind)*days + seconds)
 
 
 end subroutine get_period_integer
@@ -653,9 +772,9 @@ real(kind=r8_kind) :: d1, d2, d3, d4, d5, dt, norm
 !--------------------------------------------------------------------
 ! wfc moving to astronomy_init
 !     allocate ( orb_angle(0:num_angles) )
-orb_angle(0) = real(0.0,kind=r8_kind)
-dt = twopi/float(num_angles)
-norm = sqrt(real(1.0,kind=r8_kind) - ecc**2)
+orb_angle(0) = 0.0_r8_kind
+dt = twopi/real(num_angles, r8_kind)
+norm = sqrt(1.0_r8_kind - ecc**2)
 dt = dt*norm
 
 !---------------------------------------------------------------------
@@ -663,13 +782,12 @@ dt = dt*norm
 !!    the orbit.
 !---------------------------------------------------------------------
     do n = 1, num_angles
-       d1 = dt*r_inv_squared(real(orb_angle(n-1),kind=r8_kind))
-       d2 = dt*r_inv_squared(real(orb_angle(n-1),kind=r8_kind) + real(0.5,kind=r8_kind)*d1)
-       d3 = dt*r_inv_squared(real(orb_angle(n-1),kind=r8_kind) + real(0.5,kind=r8_kind)*d2)
-       d4 = dt*r_inv_squared(real(orb_angle(n-1),kind=r8_kind) + d3)
-       d5 = d1/real(6.0,kind=r8_kind) + d2/real(3.0,kind=r8_kind) &
-            + d3/real(3.0,kind=r8_kind) + d4/real(6.0,kind=r8_kind)
-        orb_angle(n) = real(orb_angle(n-1),kind=r8_kind) + d5
+       d1 = dt*r_inv_squared(orb_angle(n-1))
+       d2 = dt*r_inv_squared(orb_angle(n-1) + 0.5_r8_kind * d1)
+       d3 = dt*r_inv_squared(orb_angle(n-1) + 0.5_r8_kind * d2)
+       d4 = dt*r_inv_squared(orb_angle(n-1) + d3)
+       d5 = d1/6.0_r8_kind + d2/3.0_r8_kind + d3/3.0_r8_kind + d4/6.0_r8_kind
+        orb_angle(n) = orb_angle(n-1) + d5
     end do
 
 end subroutine orbit
@@ -688,9 +806,9 @@ function orbital_time(time) result(t)
 type(time_type), intent(in) :: time !< time (1 year = 2*pi) since autumnal equinox
 real(kind=r8_kind)    :: t
 
-    t = real ( (time - autumnal_eq_ref)//period_time_type)
-    t = real(twopi,kind=r8_kind)*(t - floor(t))
-    if (time < autumnal_eq_ref) t = real(twopi,kind=r8_kind) - t
+    t = (time - autumnal_eq_ref)//period_time_type
+    t = twopi*(t - floor(t))
+    if (time < autumnal_eq_ref) t = twopi - t
 
 end function orbital_time
 
@@ -708,7 +826,7 @@ real(kind=r8_kind)    :: t
     integer ::  seconds, days
 
     call get_time(time, seconds, days)
-        t = real(twopi,kind=r8_kind)*real(seconds,kind=r8_kind)/real(seconds_per_day,kind=r8_kind)
+        t = twopi* seconds/real(seconds_per_day, r8_kind)
 
 end function universal_time
 

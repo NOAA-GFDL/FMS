@@ -381,7 +381,7 @@ module fms
                                 lookup_es2, lookup_des2, lookup_es2_des2, &
                                 lookup_es3, lookup_des3, lookup_es3_des3, &
                                 lookup_es_des, compute_qs, compute_mrs, &
-                                escomp, descomp, check_1d, check_2d, temp_check, show_all_bad
+                                escomp, descomp
   !> string_utils
   use fms_string_utils_mod, only: string, fms_array_to_pointer, fms_pointer_to_array, fms_sort_this, &
                                   fms_find_my_string, fms_find_unique, fms_c2f_string, fms_cstring2cpointer, &

@@ -214,9 +214,9 @@ integer, parameter                                           :: lkind = FMS_AST_
 !>    define local time. force it to be between -pi and pi.
 !--------------------------------------------------------------------
 
-    t = gmt + lon - PI
-    where(t >= PI) t = real(t, FMS_AST_KIND_) - real(twopi, FMS_AST_KIND_)
-    where(t < -PI) t = real(t, FMS_AST_KIND_) + real(twopi, FMS_AST_KIND_)
+    t = gmt + lon - real(PI, FMS_AST_KIND_)
+    where(t >= real(PI, FMS_AST_KIND_)) t = t - real(twopi, FMS_AST_KIND_)
+    where(t < real(-PI,FMS_AST_KIND_))  t = t + real(twopi, FMS_AST_KIND_)
 
     Lallow_negative = .false.
     if (present(allow_negative_cosz)) then
@@ -290,11 +290,8 @@ integer, parameter                                           :: lkind = FMS_AST_
 
         where (real(twopi, FMS_AST_KIND_) - h < tt .and. &
             (tt+h-real(twopi, FMS_AST_KIND_)) /= 0.0_lkind .and. t <= h ) &
-            cosz = (real(cosz*(h - t), FMS_AST_KIND_) + (real(aa, FMS_AST_KIND_)*(real(tt, FMS_AST_KIND_) &
-                   + real(h, FMS_AST_KIND_) - real(twopi, FMS_AST_KIND_)) + real(bb, FMS_AST_KIND_) &
-                   * (real(stt, FMS_AST_KIND_) + real(sh, FMS_AST_KIND_)))) / ((real(h, FMS_AST_KIND_) &
-                   - real(t, FMS_AST_KIND_)) + (real(tt, FMS_AST_KIND_) + real(h, FMS_AST_KIND_) &
-                   - real(twopi, FMS_AST_KIND_)))
+            cosz = (cosz*(h - t) + (real(aa, FMS_AST_KIND_)*(tt + h - real(twopi, FMS_AST_KIND_)) + bb &
+                   * (stt + sh))) / ((h - t) + (tt + h - real(twopi, FMS_AST_KIND_)))
 
 !-------------------------------------------------------------------
 !    case 7: averaging period begins after sunset and ends before the
@@ -312,9 +309,7 @@ integer, parameter                                           :: lkind = FMS_AST_
 !-----------------------------------------------------------------
 
         where (h <  t .and. real(twopi, FMS_AST_KIND_) - h < tt)
-            cosz = real(aa, FMS_AST_KIND_) + real(bb, FMS_AST_KIND_)&
-                   *(real(stt, FMS_AST_KIND_) + real(sh,FMS_AST_KIND_)) &
-                   / (real(tt, FMS_AST_KIND_) + real(h, FMS_AST_KIND_) - real(twopi, FMS_AST_KIND_))
+            cosz = aa + bb*(stt + sh) / (tt + h - real(twopi, FMS_AST_KIND_))
         end where
 
         else
@@ -335,9 +330,7 @@ integer, parameter                                           :: lkind = FMS_AST_
     where (abs(t) <= h .and. h < tt)       fracday = ( h - t )/dt
     where (h <  t)                         fracday = 0.0_lkind
     where (real(twopi, FMS_AST_KIND_) - h < tt)  &
-                                           fracday = real(fracday, FMS_AST_KIND_) + &
-                                                    (real(tt, FMS_AST_KIND_) + real(h, FMS_AST_KIND_) &
-                                                    - real(twopi, FMS_AST_KIND_))/real(dt, FMS_AST_KIND_)
+                                           fracday = fracday + (tt + h - real(twopi, FMS_AST_KIND_))/dt
 !----------------------------------------------------------------------
 !>    if instantaneous values are desired, define cosz at time t.
 !----------------------------------------------------------------------
@@ -389,7 +382,6 @@ end subroutine DIURNAL_SOLAR_2D_
 !! @param [out] <half_day_out> half_day_out
 
 subroutine DIURNAL_SOLAR_1D_(lat, lon, gmt, time_since_ae, cosz, &
-
                              fracday, rrsun, dt, allow_negative_cosz, &
                              half_day_out)
 
@@ -574,7 +566,7 @@ integer, parameter       :: lkind = FMS_AST_KIND_
 
     if (present(dt_time))  then
         dt = universal_time(dt_time)
-        if (dt > PI) then
+        if (dt > real(PI, FMS_AST_KIND_)) then
            call error_mesg('astronomy_mod', 'radiation time step must be no longer than 12 hrs', FATAL)
         endif
     if (dt == 0.0_lkind) then
@@ -779,7 +771,7 @@ integer, parameter       :: lkind = FMS_AST_KIND_
 !    be sure the time in the annual cycle is legitimate.
 !---------------------------------------------------------------------
 
-    if (time_since_ae < 0.0_lkind .or. time_since_ae > real(twopi, r8_kind)) &
+    if (time_since_ae < 0.0_lkind .or. time_since_ae > real(twopi, FMS_AST_KIND_)) &
         call error_mesg('astronomy_mod', 'time_since_ae not between 0 and 2pi', FATAL)
 
 !---------------------------------------------------------------------
@@ -804,7 +796,7 @@ integer, parameter       :: lkind = FMS_AST_KIND_
     elsewhere
           cosz = sin(lat)*sin(dec) + cos(lat)*cos(dec)*sin(h)/h
     end where
-      h_out    = h/PI
+      h_out    = h/real(PI, FMS_AST_KIND_)
       rr_out   = rr
 
 end subroutine DAILY_MEAN_SOLAR_2D_
@@ -1189,14 +1181,14 @@ integer, parameter                                           :: lkind = FMS_AST_
         solar   = 0.0_lkind
         cosz    = 0.0_lkind
         do n =1, num_angles
-          t     = real(float(n-1), FMS_AST_KIND_)*real(twopi, FMS_AST_KIND_)/real(float(num_angles), FMS_AST_KIND_)
+          t     = real((n-1), FMS_AST_KIND_)*real(twopi, FMS_AST_KIND_)/real(num_angles, FMS_AST_KIND_)
           call daily_mean_solar(lat,t, z, fracday, rrsun)
           s     = z*rrsun*fracday
           solar = solar + s
           cosz  = cosz  + z*s
         end do
-        solar   = solar/float(num_angles)
-        cosz    = cosz/float(num_angles)
+        solar   = solar/real(num_angles, FMS_AST_KIND_)
+        cosz    = cosz/real(num_angles, FMS_AST_KIND_)
 
 !--------------------------------------------------------------------
 !>   define the flux-weighted annual mean cosine of the zenith angle.
@@ -1467,14 +1459,14 @@ integer, parameter       :: lkind = FMS_AST_KIND_
 !!    angle to be within the range 0 to 2*pi.
 !--------------------------------------------------------------------
 
-    norm_time = real(t, FMS_AST_KIND_)*real(float(num_angles), FMS_AST_KIND_)/real(twopi, FMS_AST_KIND_)
+    norm_time = t * real(num_angles, FMS_AST_KIND_)/real(twopi, FMS_AST_KIND_)
     int       = floor(norm_time)
     int       = modulo(int,num_angles)
     int_1     = int+1
     x         = norm_time - floor(norm_time)
-    ANGLE_    = (1.0_lkind - real(x, FMS_AST_KIND_))*real(orb_angle(int), FMS_AST_KIND_) &
-                + real(x, FMS_AST_KIND_)*real(orb_angle(int_1), FMS_AST_KIND_)
-    ANGLE_    = modulo(real(ANGLE_, FMS_AST_KIND_), real(twopi, FMS_AST_KIND_))
+    ANGLE_    = (1.0_lkind - x) * real(orb_angle(int), FMS_AST_KIND_) &
+                + x * real(orb_angle(int_1), FMS_AST_KIND_)
+    ANGLE_    = modulo(ANGLE_, real(twopi, FMS_AST_KIND_))
 
 end function ANGLE_
 
@@ -1528,8 +1520,9 @@ real(kind=FMS_AST_KIND_), dimension (size(latitude,1),size(latitude,2)):: &
                                                   cos_half_day, & !< Cosine of half-day length [dimensionless]
                                                   lat !< Model latitude, adjusted so that it is never 0.5*pi or -0.5*pi
 real(kind=FMS_AST_KIND_) :: tan_dec !< tangent of solar declination [dimensionless]
-real(kind=FMS_AST_KIND_) :: eps = real(1.0E-05, FMS_AST_KIND_) !< small increment
 integer, parameter       :: lkind = FMS_AST_KIND_
+real(kind=FMS_AST_KIND_) :: eps = 1.0E-05_lkind !< small increment
+
 
 !--------------------------------------------------------------------
 !>    define tangent of the declination.
@@ -1542,8 +1535,8 @@ integer, parameter       :: lkind = FMS_AST_KIND_
 !--------------------------------------------------------------------
 
     lat = latitude
-    where (latitude == 0.5_lkind*PI)  lat = latitude - eps
-    where (latitude == -0.5_lkind*PI) lat = latitude + eps
+    where (latitude == 0.5_lkind*real(PI, FMS_AST_KIND_))  lat = latitude - eps
+    where (latitude == -0.5_lkind*real(PI, FMS_AST_KIND_)) lat = latitude + eps
 
 !--------------------------------------------------------------------
 !>    define the cosine of the half-day length. adjust for cases of
@@ -1551,7 +1544,7 @@ integer, parameter       :: lkind = FMS_AST_KIND_
 !--------------------------------------------------------------------
 
     cos_half_day = -tan(lat)*tan_dec
-    where (cos_half_day <= -1.0_lkind) h = PI
+    where (cos_half_day <= -1.0_lkind) h = real(PI, FMS_AST_KIND_)
     where (cos_half_day >=  1.0_lkind) h = 0.0_lkind
     where (cos_half_day >  -1.0_lkind .and.  &
            cos_half_day <   1.0_lkind) h = acos(cos_half_day)
