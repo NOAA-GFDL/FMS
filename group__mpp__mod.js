@@ -186,10 +186,14 @@ var group__mpp__mod =
     [ "mpp_gather", "group__mpp__mod.html#interfacempp__mod_1_1mpp__gather", [
       [ "mpp_gather_int4_1d", "group__mpp__mod.html#a5bd91eaebf6a624a2f235ec76618a927", null ],
       [ "mpp_gather_int4_1dv", "group__mpp__mod.html#a7626d5ff37f73dceb367b4eb90541e96", null ],
+      [ "mpp_gather_int8_1d", "group__mpp__mod.html#a2754d3ae44066996ea301328439ae5ff", null ],
+      [ "mpp_gather_int8_1dv", "group__mpp__mod.html#a94fafc90a9bd016efb0f7595826daf00", null ],
       [ "mpp_gather_logical_1d", "group__mpp__mod.html#a90f0228b5c1b7077797b828419abbde8", null ],
       [ "mpp_gather_logical_1dv", "group__mpp__mod.html#a59bcf4cea44830da1abbbe260d79e16b", null ],
       [ "mpp_gather_pelist_int4_2d", "group__mpp__mod.html#af4b5642c77cb475825b772eab56fca84", null ],
       [ "mpp_gather_pelist_int4_3d", "group__mpp__mod.html#ad94d56f8f8c60b60a20c0669d5f4216b", null ],
+      [ "mpp_gather_pelist_int8_2d", "group__mpp__mod.html#a2b109a9a571b9f091e5a870d1ea55a69", null ],
+      [ "mpp_gather_pelist_int8_3d", "group__mpp__mod.html#a79fbebcdfeaecd4892e8872c76edd64a", null ],
       [ "mpp_gather_pelist_logical_2d", "group__mpp__mod.html#a795140e8f47c0299e1a695706022c432", null ],
       [ "mpp_gather_pelist_logical_3d", "group__mpp__mod.html#a193a76f8685f14774d7505880172ffb5", null ],
       [ "mpp_gather_pelist_real4_2d", "group__mpp__mod.html#a40e0e760354984637beba77a81c59609", null ],
@@ -262,6 +266,8 @@ var group__mpp__mod =
     [ "mpp_scatter", "group__mpp__mod.html#interfacempp__mod_1_1mpp__scatter", [
       [ "mpp_scatter_pelist_int4_2d", "group__mpp__mod.html#a25b9710766d7dff922ac717a2ddd5b8c", null ],
       [ "mpp_scatter_pelist_int4_3d", "group__mpp__mod.html#a1171089bebc2e00cffa5175a05b85255", null ],
+      [ "mpp_scatter_pelist_int8_2d", "group__mpp__mod.html#a737b4450bccac7f1959e1b0652ed525e", null ],
+      [ "mpp_scatter_pelist_int8_3d", "group__mpp__mod.html#aeda9aee755510cf563542342d1a4d429", null ],
       [ "mpp_scatter_pelist_real4_2d", "group__mpp__mod.html#a4ef40b7aa61f0b6004e468bd06964756", null ],
       [ "mpp_scatter_pelist_real4_3d", "group__mpp__mod.html#a98b8b325557ae60e7bf9478ea7a34089", null ],
       [ "mpp_scatter_pelist_real8_2d", "group__mpp__mod.html#a2583d80a3d0941a2d2817aa500e6f893", null ],
