@@ -513,13 +513,15 @@ integer :: unit, ierr, io, seconds, days, jd, id
 !!    allocate arrays to hold the needed astronomical factors. define
 !!    the total number of points that the processor is responsible for.
 !--------------------------------------------------------------------
-    if (present(latb)) then
+    if (present(latb) .and. present(lonb)) then
         jd = size(latb,2) - 1
         id = size(lonb,1) - 1
         allocate (cosz_ann(id, jd))
         allocate (solar_ann(id, jd))
         allocate (fracday_ann(id, jd))
         total_pts = jd*id
+    else
+        call mpp_error(FATAL, "astronomy_mod: lat and lon must both be present")
     endif
 
 !---------------------------------------------------------------------
