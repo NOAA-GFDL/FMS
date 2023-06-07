@@ -162,8 +162,8 @@ end subroutine read_namelist
 
 !#######################################################################
 
-#include "guassian_topog_r4.fh"
-#include "guassian_topog_r8.fh"
+#include "gaussian_topog_r4.fh"
+#include "gaussian_topog_r8.fh"
 
 end module gaussian_topog_mod
 
