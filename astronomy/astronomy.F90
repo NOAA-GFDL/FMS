@@ -521,7 +521,8 @@ integer :: unit, ierr, io, seconds, days, jd, id
         allocate (fracday_ann(id, jd))
         total_pts = jd*id
     else
-        call mpp_error(FATAL, "astronomy_mod: lat and lon must both be present")
+        call error_mesg ('astronomy_mod', &
+            'lat and lon must both be present', FATAL)
     endif
 
 !---------------------------------------------------------------------
