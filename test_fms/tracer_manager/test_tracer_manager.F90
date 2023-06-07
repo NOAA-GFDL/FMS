@@ -26,7 +26,7 @@
 
 program test_tracer_manager
 
-  use fms_mod, only: fms_init
+  use fms_mod, only: fms_init, fms_end
   use mpp_mod, only: mpp_error, FATAL
   use field_manager_mod, only: field_manager_init, MODEL_ATMOS, MODEL_OCEAN, MODEL_LAND, &
                                fm_change_list, fm_get_value, fm_get_current_list
@@ -35,7 +35,9 @@ program test_tracer_manager
 
   implicit none
 
+  call fms_init
   call test_set_tracer_profile
+  call fms_end
 
 contains
 
