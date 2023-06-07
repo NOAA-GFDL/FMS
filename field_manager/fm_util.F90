@@ -61,14 +61,12 @@ public  fm_util_get_real_array
 public  fm_util_get_string_array
 public  fm_util_set_value
 public  fm_util_set_value_integer_array
+public  fm_util_set_value_real_array
 public  fm_util_set_value_logical_array
-public  fm_util_set_value_real_array_r4
-public  fm_util_set_value_real_array_r8
 public  fm_util_set_value_string_array
 public  fm_util_set_value_integer
 public  fm_util_set_value_logical
-public  fm_util_set_value_real_r4
-public  fm_util_set_value_real_r8
+public  fm_util_set_value_real
 public  fm_util_set_value_string
 !public  fm_util_get_index
 public  fm_util_get_index_list
@@ -118,17 +116,27 @@ character(len=fm_path_name_len) :: save_name
 
 !> @}
 
+interface fm_util_set_value_real
+  module procedure  fm_util_set_value_real_r4
+  module procedure  fm_util_set_value_real_r8
+end interface fm_util_set_value_real
+
+interface fm_util_set_value_real_array
+  module procedure  fm_util_set_value_real_array_r4
+  module procedure  fm_util_set_value_real_array_r8
+end interface fm_util_set_value_real_array
+
 !> @ingroup fm_util_mod
 interface  fm_util_set_value  !{
   module procedure  fm_util_set_value_integer_array
-  module procedure  fm_util_set_value_logical_array
   module procedure  fm_util_set_value_real_array_r4
   module procedure  fm_util_set_value_real_array_r8
+  module procedure  fm_util_set_value_logical_array
   module procedure  fm_util_set_value_string_array
-  module procedure  fm_util_set_value_integer
-  module procedure  fm_util_set_value_logical
   module procedure  fm_util_set_value_real_r4
   module procedure  fm_util_set_value_real_r8
+  module procedure  fm_util_set_value_integer
+  module procedure  fm_util_set_value_logical
   module procedure  fm_util_set_value_string
 end interface  !}
 
