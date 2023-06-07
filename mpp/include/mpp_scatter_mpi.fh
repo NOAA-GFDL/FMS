@@ -140,8 +140,6 @@ subroutine MPP_SCATTER_PELIST_3D_(is, ie, js, je, nk, pelist, array_seg, data, i
         msgsize, MPI_TYPE_, root_pe, peset(n)%id, ierr)
   if (ierr /= MPI_SUCCESS) call mpp_error(FATAL, "mpp_scatter_pelist:MPI_SCATTERV")
 
-  call mpp_sync_self()
-
   ! Unpack received data
   array_seg(is:ie,js:je,1:nk) = reshape(recv_buf, (/shape(array_seg(is:ie,js:je,1:nk))/))
 
