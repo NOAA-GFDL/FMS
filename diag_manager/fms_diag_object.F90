@@ -20,7 +20,7 @@ module fms_diag_object_mod
 use mpp_mod, only: fatal, note, warning, mpp_error, mpp_pe, mpp_root_pe, stdout
 use diag_data_mod,  only: diag_null, diag_not_found, diag_not_registered, diag_registered_id, &
                          &DIAG_FIELD_NOT_FOUND, diag_not_registered, max_axes, TWO_D_DOMAIN, &
-                         &get_base_time, NULL_AXIS_ID, get_var_type, diag_not_registered
+                         &get_base_time, NULL_AXIS_ID, get_var_type, diag_not_registered, EVERY_TIME
 
   USE time_manager_mod, ONLY: set_time, set_date, get_time, time_type, OPERATOR(>=), OPERATOR(>),&
        & OPERATOR(<), OPERATOR(==), OPERATOR(/=), OPERATOR(/), OPERATOR(+), ASSIGNMENT(=), get_date, &
@@ -37,6 +37,8 @@ use fms_diag_axis_object_mod, only: fms_diag_axis_object_init, fmsDiagAxis_type,
 use fms_diag_output_buffer_mod
 use fms_mod, only: fms_error_handler
 use constants_mod, only: SECONDS_PER_DAY
+use fms_diag_time_reduction_mod, only: time_none, time_average, time_min, time_max, time_rms, &
+                                      time_sum, time_diurnal, time_power
 #endif
 #if defined(_OPENMP)
 use omp_lib
@@ -497,13 +499,16 @@ logical function fms_diag_accept_data (this, diag_field_id, field_data, time, is
   integer :: second !< Number of seconds
   integer :: tick   !< Number of ticks representing fractional second
   integer :: buffer_id !< Index of a buffer
-  !TODO: logical :: phys_window
   character(len=128) :: error_string !< Store error text
   integer :: i !< For looping
 #ifndef use_yaml
 CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling with -Duse_yaml")
 #else
   class(diagYamlFilesVar_type), pointer :: ptr_diag_field_yaml !< Pointer to a field from yaml fields
+  logical :: phys_window
+  integer :: freq !< Output frequency
+  integer :: file_id !< File id where the field/buffer is in
+  integer :: reduction_method !< Integer representing a reduction method: none, average, min, max, ... etc.
 
   !TODO: weight is for time averaging where each time level may have a different weight
   ! call real_copy_set()
@@ -513,6 +518,9 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
 
   !TODO: Check improper combinations of is, ie, js, and je.
   ! if (check_indices_order()) deallocate(oor_mask)
+
+  !! TODO: Allocate buffers
+  ! call allocate_diag_field_output_buffers(field_data, diag_field_id)
 
 !> Does the user want to push off calculations until send_diag_complete?
   buffer_the_data = .false.
@@ -553,9 +561,13 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
 !!TODO: Loop through fields and do averages/math functions
     do i = 1, size(this%FMS_diag_fields(diag_field_id)%buffer_ids)
       buffer_id = this%FMS_diag_fields(diag_field_id)%buffer_ids(i)
+      file_id = this%FMS_diag_fields(diag_field_id)%file_ids(i)
+      freq = this%FMS_diag_fields(diag_field_id)%get_frequency()
+      reduction_method = this%FMS_diag_fields(diag_field_id)%diag_field(i)%get_var_reduction()
 
-      !!TODO: Check if the field is a physics window
-      !! phys_window = fms_diag_compare_window()
+      !> Check if the field is a physics window
+      phys_window = fms_diag_compare_window(field_data, diag_field_id, is_in, ie_in, &
+        js_in, je_in, ks_in, ke_in)
 
       !!TODO: Get local start and end indices on 3 axes for regional output
 
@@ -570,7 +582,20 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
 
       !!TODO: Get the vertical layer start and end indices
 
-      !!TODO: Initialize output time for fields output every time step
+      !> Check if time is not present for fields output every time step
+      if (freq = EVERY_TIME .and. .not.this%FMS_diag_fields(diag_field_id)%is_static()) then
+        if (this%FMS_diag_files(file_id)%FMS_diag_file%next_output == &
+          this%FMS_diag_files(file_id)%FMS_diag_file%last_output) then
+          if (.not.preset(time)) then
+            write (error_string,'(a,"/",a)') trim(this%FMS_diag_fields(diag_field_id)%get_modname()),&
+              trim(this%FMS_diag_fields(diag_field_id)%diag_field(i)%get_var_outname())
+            if (fms_error_handler('fms_diag_object_mod::fms_diag_accept_data', 'module/output_name: '&
+              &//trim(error_string)//', time must be present when output frequency = EVERY_TIME', err_msg)) then
+              !!TODO: deallocate local pointers/allocatables if needed
+            end if
+          end if
+        end if
+      end if
 
       !< Check if time should be present for this field
       if (.not.this%FMS_diag_fields(diag_field_id)%is_static() .and. .not.present(time)) then
@@ -583,13 +608,33 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
         end if
       end if
 
-      !!TODO: Is it time to output for this field? CAREFUL ABOUT > vs >= HERE
-      !--- The fields send out within openmp parallel region will be written out in
-      !--- diag_send_complete.
-
       !!TODO: Is check to bounds of current field necessary?
 
       !!TODO: Take care of submitted field data
+      Reduction: select case (reduction_method)
+      case (time_none)
+        !! TODO: just copy field data to buffer
+      case (time_average)
+        !! TODO: average data over time
+        !! call fms_diag_sum(time_average, weight=weight, pow_val=power_val, .......)
+      case (time_rms)
+        !! TODO: root-mean-square error
+      case (time_max)
+        !! TODO: maximum value
+        !! call fms_diag_update_extremum(time_max, .....)
+      case (time_min)
+        !! TODO: minimum value
+        !! call fms_diag_update_extremum(time_min, .....)
+      case (time_sum)
+        !! TODO: sum for the interval
+        !! call fms_diag_sum(time_sum, .......)
+      case (time_diurnal)
+        !! TODO: diurnal calculation
+      case (time_power)
+        !! TODO: reduction is power
+      case default
+        call mpp_error(FATAL, "fms_diag_object_mod:fms_diag_accept_data reduction method not supported!")
+      end select Reduction
 
     enddo
     call this%FMS_diag_fields(diag_field_id)%set_math_needs_to_be_done(.FALSE.)
@@ -1016,6 +1061,7 @@ subroutine allocate_diag_field_output_buffers(this, field_data, field_id)
 
   ! Loop over a number of fields/buffers where this variable occurs
   do i = 1, size(this%FMS_diag_fields(field_id)%buffer_ids)
+    if (this%FMS_diag_fields(field_id)%buffer_allocated(i)) return !< The buffer is allocated before
     buffer_id = this%FMS_diag_fields(field_id)%buffer_ids(i)
     ptr_diag_field_yaml => diag_yaml%get_diag_field_from_id(buffer_id)
     num_diurnal_samples = ptr_diag_field_yaml%get_n_diurnal() !< Get number of diurnal samples
@@ -1074,6 +1120,7 @@ subroutine allocate_diag_field_output_buffers(this, field_data, field_id)
       class default
         call mpp_error( FATAL, 'allocate_diag_field_output_buffers: invalid buffer type')
     end select
+    this%FMS_diag_fields(field_id)%buffer_allocated(i) = .true. !< The buffer is allocated.
   enddo
 #else
   call mpp_error( FATAL, "allocate_diag_field_output_buffers: "//&
