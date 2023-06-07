@@ -103,7 +103,7 @@ cat <<_EOF > input.nml
 /
 _EOF
 
-test_expect_success "tracer_manager r4" 'mpirun -n 2 ./test_tracer_manager_r4'
-test_expect_success "tracer_manager r8" 'mpirun -n 2 ./test_tracer_manager_r8'
+test_expect_success "tracer_manager r4" 'mpirun -n 1 ./test_tracer_manager_r4'
+test_expect_success "tracer_manager r8" 'mpirun -n 1 ./test_tracer_manager_r8'
 
 test_done
