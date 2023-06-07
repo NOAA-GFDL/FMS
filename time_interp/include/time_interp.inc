@@ -17,6 +17,9 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 
+!> @addtogroup time_interp_mod
+!> @{
+
  !> @brief Calculates the fractional time into the current year
  subroutine TIME_INTERP_FRAC_ ( Time, weight )
 
@@ -174,9 +177,13 @@
  !> Part of the time_interp interface, calculates for cyclical data
  !! Time_beg and Time_end mark a repeating period
  !! 
+ !! Finds mid points and fractional weight for a time perioid  
 subroutine TIME_INTERP_MODULO_(Time, Time_beg, Time_end, Timelist, weight, index1, index2, &
                               correct_leap_year_inconsistency, err_msg)
-type(time_type), intent(in)  :: Time, Time_beg, Time_end, Timelist(:)
+type(time_type), intent(in)  :: Time !< a specific time value 
+type(time_type), intent(in)  :: Time_beg !< begining of period to search with
+type(time_type), intent(in)  :: Time_end !< end of period to search with
+type(time_type), intent(in)  :: Timelist(:) !< 
 real(FMS_TI_KIND_)           , intent(out) :: weight
 integer        , intent(out) :: index1, index2
 logical, intent(in), optional :: correct_leap_year_inconsistency!< When true turns on a kluge for an
@@ -198,6 +205,7 @@ character(len=*), intent(out), optional :: err_msg
   integer :: n                   ! size of Timelist
   integer :: stdoutunit
   logical :: correct_lyr, calendar_has_leap_years, do_the_lyr_correction
+  integer, parameter :: kindl = FMS_TI_KIND_
 
   if ( .not. module_is_initialized ) call time_interp_init
   if( present(err_msg) ) err_msg = ''
@@ -331,23 +339,13 @@ character(len=*), intent(out), optional :: err_msg
   else if (T<Timelist(is)) then
      ! time is before the beginning of the portion of the time list within the requested period
      index1 = ie;   index2 = is
-     weight = real( 1.0-((Timelist(is)-T)//(Period-(Timelist(ie)-Timelist(is)))), FMS_TI_KIND_ )
+     weight = real( 1.0_kindl -((Timelist(is)-T)//(Period-(Timelist(ie)-Timelist(is)))), FMS_TI_KIND_ )
   else
      call bisect(Timelist,T,index1,index2)
      weight = real((T-Timelist(index1)) // (Timelist(index2)-Timelist(index1)), FMS_TI_KIND_ )
   endif
 
 end subroutine TIME_INTERP_MODULO_
-
-!#######################################################################
-! <SUBROUTINE NAME="time_interp_list" INTERFACE="time_interp">
-!   <IN NAME="Time" TYPE="time_type" > </IN>
-!   <IN NAME="Timelist" TYPE="time_type" DIM="(:)"> </IN>
-!   <OUT NAME="weight" TYPE="real(FMS_TI_KIND_)"> </OUT>
-!   <OUT NAME="index1" TYPE="real(FMS_TI_KIND_)"> </OUT>
-!   <OUT NAME="index2" TYPE="real(FMS_TI_KIND_)"> </OUT>
-!   <IN NAME="modtime" TYPE="integer" > </IN>
-! </SUBROUTINE>
 
 subroutine TIME_INTERP_LIST_ ( Time, Timelist, weight, index1, index2, modtime, err_msg )
 type(time_type)  , intent(in)  :: Time, Timelist(:)
@@ -359,12 +357,13 @@ character(len=*), intent(out), optional :: err_msg
 integer :: n, hr, mn, se, mtime
 type(time_type) :: T, Ts, Te, Td, Period, Time_mod
 character(len=:),allocatable :: terr, tserr, teerr
+integer, parameter :: kindl = FMS_TI_KIND_
 
   if ( .not. module_is_initialized ) call time_interp_init
 
   if( present(err_msg) ) err_msg = ''
 
-  weight = 0.; index1 = 0; index2 = 0
+  weight = 0.0_kindl; index1 = 0; index2 = 0
   n = size(Timelist(:))
 
 ! setup modular time axis?
@@ -434,18 +433,18 @@ character(len=:),allocatable :: terr, tserr, teerr
         deallocate(terr,tserr,teerr)
      endif
      Td = Te-Ts
-     weight = real(1. - ((Ts-T) // (Period-Td)), FMS_TI_KIND_ )
+     weight = real(1.0_kindl - ((Ts-T) // (Period-Td)), FMS_TI_KIND_ )
      index1 = n
      index2 = 1
 
 ! time falls on ending list value
   else if ( T == Te ) then
     if(perthlike_behavior) then
-       weight = 1.0
+       weight = 1.0_kindl
        index1 = n-1
        index2 = n
     else
-       weight = 0.
+       weight = 0.0_kindl
        index1 = n
        if (mtime == NONE) then
          index2 = n
@@ -473,3 +472,4 @@ character(len=:),allocatable :: terr, tserr, teerr
   endif
 
 end subroutine TIME_INTERP_LIST_
+!> }

@@ -178,7 +178,7 @@ contains
 
 
 !> @brief Wrapper function to return the fractional time into the current year
-!! Always returns an r8_kind, conversion will be done implicitly if needed
+!! Always returns an r8_kind, conversion to r4 will be done implicitly if needed
 !> @param Time time to calculate fraction with
 !> @return real(kind=8) fraction of time passed in current year
  function fraction_of_year (Time)

@@ -79,6 +79,7 @@
         real(FMS_TI_KIND_) :: w1,w2
         logical :: verb
         character(len=16) :: message1, message2
+        integer, parameter :: kindl = FMS_TI_KIND_
 
         nx = size(data,1)
         ny = size(data,2)
@@ -137,14 +138,14 @@
             i1 = find_buf_index(1,field_ptr(index)%ibuf)
             if( field_ptr(index)%region_type == NO_REGION ) then
                 where(field_ptr(index)%mask(isc:iec,jsc:jec,:,i1))
-                data(isw:iew,jsw:jew,:) = field_ptr(index)%data(isc:iec,jsc:jec,:,i1)
+                data(isw:iew,jsw:jew,:) = real( field_ptr(index)%data(isc:iec,jsc:jec,:,i1), FMS_TI_KIND_)
                 elsewhere
     !               data(isw:iew,jsw:jew,:) = time_interp_missing !field(index)%missing? Balaji
-                data(isw:iew,jsw:jew,:) = field_ptr(index)%missing
+                data(isw:iew,jsw:jew,:) = real(field_ptr(index)%missing, FMS_TI_KIND_)
                 end where
             else
                 where(field_ptr(index)%mask(isc:iec,jsc:jec,:,i1))
-                data(isw:iew,jsw:jew,:) = field_ptr(index)%data(isc:iec,jsc:jec,:,i1)
+                data(isw:iew,jsw:jew,:) = real(field_ptr(index)%data(isc:iec,jsc:jec,:,i1), FMS_TI_KIND_)
                 end where
             endif
             if(PRESENT(mask_out)) &
@@ -171,7 +172,7 @@
                         ",file="//trim(filename)//",field="//trim(field_ptr(index)%name) )
             endif
             endif
-            w1 = 1.0-w2
+            w1 = 1.0_kindl -w2
             if (verb) then
                 call get_date(time,yy,mm,dd,hh,min,ss)
                 write(outunit,'(a,i4,a,i2,a,i2,1x,i2,a,i2,a,i2)') &
@@ -193,16 +194,16 @@
 
             if( field_ptr(index)%region_type == NO_REGION ) then
                 where(field_ptr(index)%mask(isc:iec,jsc:jec,:,i1).and.field_ptr(index)%mask(isc:iec,jsc:jec,:,i2))
-                data(isw:iew,jsw:jew,:) = field_ptr(index)%data(isc:iec,jsc:jec,:,i1)*w1 + &
-                        field_ptr(index)%data(isc:iec,jsc:jec,:,i2)*w2
+                data(isw:iew,jsw:jew,:) = real(field_ptr(index)%data(isc:iec,jsc:jec,:,i1), kindl) * w1 + &
+                        real(field_ptr(index)%data(isc:iec,jsc:jec,:,i2), kindl) * w2
                 elsewhere
     !               data(isw:iew,jsw:jew,:) = time_interp_missing !field_ptr(index)%missing? Balaji
-                data(isw:iew,jsw:jew,:) = field_ptr(index)%missing
+                data(isw:iew,jsw:jew,:) = real(field_ptr(index)%missing, kindl)
                 end where
             else
                 where(field_ptr(index)%mask(isc:iec,jsc:jec,:,i1).and.field_ptr(index)%mask(isc:iec,jsc:jec,:,i2))
-                data(isw:iew,jsw:jew,:) = field_ptr(index)%data(isc:iec,jsc:jec,:,i1)*w1 + &
-                        field_ptr(index)%data(isc:iec,jsc:jec,:,i2)*w2
+                data(isw:iew,jsw:jew,:) = real( field_ptr(index)%data(isc:iec,jsc:jec,:,i1), kindl) * w1 + &
+                        real(field_ptr(index)%data(isc:iec,jsc:jec,:,i2), kindl) * w2
                 end where
             endif
             if(PRESENT(mask_out)) &
@@ -229,6 +230,7 @@
 
       real(FMS_TI_KIND_) :: w1,w2
       logical :: verb
+      integer, parameter :: kindl = FMS_TI_KIND_
 
       verb=.false.
       if (PRESENT(verbose)) verb=verbose
@@ -242,7 +244,7 @@
          ! only one record in the file => time-independent field_ptr
          call load_record_0d(field_ptr(index),1)
          i1 = find_buf_index(1,field_ptr(index)%ibuf)
-         data = field_ptr(index)%data(1,1,1,i1)
+         data = real(field_ptr(index)%data(1,1,1,i1), FMS_TI_KIND_)
       else
         if(field_ptr(index)%have_modulo_times) then
           call time_interp(time,field_ptr(index)%modulo_time_beg, field_ptr(index)%modulo_time_end, field_ptr(index)%time(:), &
@@ -265,7 +267,7 @@
                     ",file="//trim(filename)//",field="//trim(field_ptr(index)%name) )
           endif
         endif
-         w1 = 1.0-w2
+         w1 = 1.0_kindl-w2
          if (verb) then
             call get_date(time,yy,mm,dd,hh,min,ss)
             write(outunit,'(a,i4,a,i2,a,i2,1x,i2,a,i2,a,i2)') &
@@ -279,7 +281,7 @@
 
          if(i1<0.or.i2<0) &
               call mpp_error(FATAL,'time_interp_external : records were not loaded correctly in memory')
-         data = field_ptr(index)%data(1,1,1,i1)*w1 + field_ptr(index)%data(1,1,1,i2)*w2
+         data = real(field_ptr(index)%data(1,1,1,i1), FMS_TI_KIND_)*w1 + real(field_ptr(index)%data(1,1,1,i2), FMS_TI_KIND_)*w2
          if (verb) then
             write(outunit,*) 'ibuf= ',field_ptr(index)%ibuf
             write(outunit,*) 'i1,i2= ',i1, i2

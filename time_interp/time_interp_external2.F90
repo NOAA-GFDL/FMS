@@ -982,6 +982,7 @@ module time_interp_external2_mod
 
 ! ============================================================================
 !> load specified record from file
+!> Always loads in r8, casts down for horiz_interp if interp argument is already allocated for r4's.
 subroutine load_record(field, rec, interp, is_in, ie_in, js_in, je_in, window_id_in)
   type(ext_fieldtype),     intent(inout)        :: field
   integer            ,     intent(in)           :: rec    ! record number
