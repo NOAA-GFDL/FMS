@@ -720,248 +720,6 @@ module time_interp_external2_mod
     end function get_external_fileobj
 
 
-!<SUBROUTINE NAME="time_interp_external" >
-!
-!<DESCRIPTION>
-!</IN>
-
-    !> 3D interpolation for @ref time_interp_external
-    subroutine time_interp_external_3d(index, time, data, interp,verbose,horz_interp, mask_out, is_in, ie_in, &
-                                      &  js_in, je_in, window_id)
-
-      integer,                    intent(in)           :: index
-      type(time_type),            intent(in)           :: time
-      real(r8_kind), dimension(:,:,:),  intent(inout)           :: data
-      integer,                    intent(in), optional :: interp
-      logical,                    intent(in), optional :: verbose
-      type(horiz_interp_type),    intent(in), optional :: horz_interp
-      logical, dimension(:,:,:), intent(out), optional :: mask_out ! set to true where output data is valid
-      integer,                    intent(in), optional :: is_in, ie_in, js_in, je_in
-      integer,                    intent(in), optional :: window_id
-
-      integer :: nx, ny, nz, interp_method, t1, t2
-      integer :: i1, i2, isc, iec, jsc, jec, mod_time
-      integer :: yy, mm, dd, hh, min, ss
-      character(len=256) :: err_msg, filename
-
-      integer :: isw, iew, jsw, jew, nxw, nyw
-          ! these are boundaries of the updated portion of the "data" argument
-          ! they are calculated using sizes of the "data" and isc,iec,jsc,jsc
-          ! fileds from respective input field, to center the updated portion
-          ! in the output array
-
-      real(r8_kind) :: w1,w2
-      logical :: verb
-      character(len=16) :: message1, message2
-
-      nx = size(data,1)
-      ny = size(data,2)
-      nz = size(data,3)
-
-      interp_method = LINEAR_TIME_INTERP
-      if (PRESENT(interp)) interp_method = interp
-      verb=.false.
-      if (PRESENT(verbose)) verb=verbose
-      if (debug_this_module) verb = .true.
-
-      if (index < 1.or.index > num_fields) &
-           call mpp_error(FATAL, &
-                     & 'invalid index in call to time_interp_ext -- field was not initialized or failed to initialize')
-
-      isc=field_ptr(index)%isc;iec=field_ptr(index)%iec
-      jsc=field_ptr(index)%jsc;jec=field_ptr(index)%jec
-
-      if( field_ptr(index)%numwindows == 1 ) then
-         nxw = iec-isc+1
-         nyw = jec-jsc+1
-      else
-         if( .not. present(is_in) .or. .not. present(ie_in) .or. .not. present(js_in) .or. .not. present(je_in) ) then
-            call mpp_error(FATAL, 'time_interp_external: is_in, ie_in, js_in and je_in must be present ' // &
-                                  'when numwindows > 1, field='//trim(field_ptr(index)%name))
-         endif
-         nxw = ie_in - is_in + 1
-         nyw = je_in - js_in + 1
-         isc = isc + is_in - 1
-         iec = isc + ie_in - is_in
-         jsc = jsc + js_in - 1
-         jec = jsc + je_in - js_in
-      endif
-
-      isw = (nx-nxw)/2+1; iew = isw+nxw-1
-      jsw = (ny-nyw)/2+1; jew = jsw+nyw-1
-
-      if (nx < nxw .or. ny < nyw .or. nz < field_ptr(index)%siz(3)) then
-         write(message1,'(i6,2i5)') nx,ny,nz
-         call mpp_error(FATAL,'field '//trim(field_ptr(index)%name)//' Array size mismatch in time_interp_external.'// &
-         ' Array "data" is too small. shape(data)='//message1)
-      endif
-      if(PRESENT(mask_out)) then
-        if (size(mask_out,1) /= nx .or. size(mask_out,2) /= ny .or. size(mask_out,3) /= nz) then
-          write(message1,'(i6,2i5)') nx,ny,nz
-          write(message2,'(i6,2i5)') size(mask_out,1),size(mask_out,2),size(mask_out,3)
-          call mpp_error(FATAL,'field '//trim(field_ptr(index)%name)//' array size mismatch in time_interp_external.'// &
-          ' Shape of array "mask_out" does not match that of array "data".'// &
-          ' shape(data)='//message1//' shape(mask_out)='//message2)
-        endif
-      endif
-
-      if (field_ptr(index)%siz(4) == 1) then
-         ! only one record in the file => time-independent field
-         call load_record(field_ptr(index),1,horz_interp, is_in, ie_in ,js_in, je_in,window_id)
-         i1 = find_buf_index(1,field_ptr(index)%ibuf)
-         if( field_ptr(index)%region_type == NO_REGION ) then
-            where(field_ptr(index)%mask(isc:iec,jsc:jec,:,i1))
-               data(isw:iew,jsw:jew,:) = field_ptr(index)%data(isc:iec,jsc:jec,:,i1)
-            elsewhere
-!               data(isw:iew,jsw:jew,:) = time_interp_missing !field(index)%missing? Balaji
-               data(isw:iew,jsw:jew,:) = field_ptr(index)%missing
-            end where
-         else
-            where(field_ptr(index)%mask(isc:iec,jsc:jec,:,i1))
-               data(isw:iew,jsw:jew,:) = field_ptr(index)%data(isc:iec,jsc:jec,:,i1)
-            end where
-         endif
-         if(PRESENT(mask_out)) &
-              mask_out(isw:iew,jsw:jew,:) = field_ptr(index)%mask(isc:iec,jsc:jec,:,i1)
-      else
-        if(field_ptr(index)%have_modulo_times) then
-          call time_interp(time,field_ptr(index)%modulo_time_beg, field_ptr(index)%modulo_time_end, field_ptr(index)%time(:), &
-                          w2, t1, t2, field_ptr(index)%correct_leap_year_inconsistency, err_msg=err_msg)
-          if(err_msg .NE. '') then
-             filename = trim(field_ptr(index)%fileobj%path)
-             call mpp_error(FATAL,"time_interp_external 1: "//trim(err_msg)//&
-                    ",file="//trim(filename)//",field="//trim(field_ptr(index)%name) )
-          endif
-        else
-          if(field_ptr(index)%modulo_time) then
-            mod_time=1
-          else
-            mod_time=0
-          endif
-          call time_interp(time,field_ptr(index)%time(:),w2,t1,t2,modtime=mod_time, err_msg=err_msg)
-          if(err_msg .NE. '') then
-             filename = trim(field_ptr(index)%fileobj%path)
-             call mpp_error(FATAL,"time_interp_external 2: "//trim(err_msg)//&
-                    ",file="//trim(filename)//",field="//trim(field_ptr(index)%name) )
-          endif
-        endif
-         w1 = 1.0-w2
-         if (verb) then
-            call get_date(time,yy,mm,dd,hh,min,ss)
-            write(outunit,'(a,i4,a,i2,a,i2,1x,i2,a,i2,a,i2)') &
-                 'target time yyyy/mm/dd hh:mm:ss= ',yy,'/',mm,'/',dd,hh,':',min,':',ss
-            write(outunit,*) 't1, t2, w1, w2= ', t1, t2, w1, w2
-         endif
-
-         call load_record(field_ptr(index),t1,horz_interp, is_in, ie_in ,js_in, je_in, window_id)
-         call load_record(field_ptr(index),t2,horz_interp, is_in, ie_in ,js_in, je_in, window_id)
-         i1 = find_buf_index(t1,field_ptr(index)%ibuf)
-         i2 = find_buf_index(t2,field_ptr(index)%ibuf)
-         if(i1<0.or.i2<0) &
-              call mpp_error(FATAL,'time_interp_external : records were not loaded correctly in memory')
-
-         if (verb) then
-            write(outunit,*) 'ibuf= ',field_ptr(index)%ibuf
-            write(outunit,*) 'i1,i2= ',i1, i2
-         endif
-
-         if( field_ptr(index)%region_type == NO_REGION ) then
-            where(field_ptr(index)%mask(isc:iec,jsc:jec,:,i1).and.field_ptr(index)%mask(isc:iec,jsc:jec,:,i2))
-               data(isw:iew,jsw:jew,:) = field_ptr(index)%data(isc:iec,jsc:jec,:,i1)*w1 + &
-                    field_ptr(index)%data(isc:iec,jsc:jec,:,i2)*w2
-            elsewhere
-!               data(isw:iew,jsw:jew,:) = time_interp_missing !field(index)%missing? Balaji
-               data(isw:iew,jsw:jew,:) = field_ptr(index)%missing
-            end where
-         else
-            where(field_ptr(index)%mask(isc:iec,jsc:jec,:,i1).and.field_ptr(index)%mask(isc:iec,jsc:jec,:,i2))
-               data(isw:iew,jsw:jew,:) = field_ptr(index)%data(isc:iec,jsc:jec,:,i1)*w1 + &
-                    field_ptr(index)%data(isc:iec,jsc:jec,:,i2)*w2
-            end where
-         endif
-         if(PRESENT(mask_out)) &
-              mask_out(isw:iew,jsw:jew,:) = &
-                                        field_ptr(index)%mask(isc:iec,jsc:jec,:,i1).and.&
-                                        field_ptr(index)%mask(isc:iec,jsc:jec,:,i2)
-      endif
-
-    end subroutine time_interp_external_3d
-!</SUBROUTINE> NAME="time_interp_external"
-
-    !> @brief Scalar interpolation for @ref time_interp_external
-    subroutine time_interp_external_0d(index, time, data, verbose)
-
-      integer, intent(in) :: index
-      type(time_type), intent(in) :: time
-      real(r8_kind), intent(inout) :: data
-      logical, intent(in), optional :: verbose
-
-      integer :: t1, t2
-      integer :: i1, i2, mod_time
-      integer :: yy, mm, dd, hh, min, ss
-      character(len=256) :: err_msg, filename
-
-      real(r8_kind) :: w1,w2
-      logical :: verb
-
-      verb=.false.
-      if (PRESENT(verbose)) verb=verbose
-      if (debug_this_module) verb = .true.
-
-      if (index < 1.or.index > num_fields) &
-           call mpp_error(FATAL, &
-                     & 'invalid index in call to time_interp_ext -- field was not initialized or failed to initialize')
-
-      if (field_ptr(index)%siz(4) == 1) then
-         ! only one record in the file => time-independent field
-         call load_record_0d(field_ptr(index),1)
-         i1 = find_buf_index(1,field_ptr(index)%ibuf)
-         data = field_ptr(index)%data(1,1,1,i1)
-      else
-        if(field_ptr(index)%have_modulo_times) then
-          call time_interp(time,field_ptr(index)%modulo_time_beg, field_ptr(index)%modulo_time_end, field_ptr(index)%time(:), &
-                          w2, t1, t2, field_ptr(index)%correct_leap_year_inconsistency, err_msg=err_msg)
-          if(err_msg .NE. '') then
-             filename = trim(field_ptr(index)%fileobj%path)
-             call mpp_error(FATAL,"time_interp_external 3:"//trim(err_msg)//&
-                    ",file="//trim(filename)//",field="//trim(field_ptr(index)%name) )
-          endif
-        else
-          if(field_ptr(index)%modulo_time) then
-            mod_time=1
-          else
-            mod_time=0
-          endif
-          call time_interp(time,field_ptr(index)%time(:),w2,t1,t2,modtime=mod_time, err_msg=err_msg)
-          if(err_msg .NE. '') then
-             filename = trim(field_ptr(index)%fileobj%path)
-             call mpp_error(FATAL,"time_interp_external 4:"//trim(err_msg)// &
-                    ",file="//trim(filename)//",field="//trim(field_ptr(index)%name) )
-          endif
-        endif
-         w1 = 1.0-w2
-         if (verb) then
-            call get_date(time,yy,mm,dd,hh,min,ss)
-            write(outunit,'(a,i4,a,i2,a,i2,1x,i2,a,i2,a,i2)') &
-                 'target time yyyy/mm/dd hh:mm:ss= ',yy,'/',mm,'/',dd,hh,':',min,':',ss
-            write(outunit,*) 't1, t2, w1, w2= ', t1, t2, w1, w2
-         endif
-         call load_record_0d(field_ptr(index),t1)
-         call load_record_0d(field_ptr(index),t2)
-         i1 = find_buf_index(t1,field_ptr(index)%ibuf)
-         i2 = find_buf_index(t2,field_ptr(index)%ibuf)
-
-         if(i1<0.or.i2<0) &
-              call mpp_error(FATAL,'time_interp_external : records were not loaded correctly in memory')
-         data = field_ptr(index)%data(1,1,1,i1)*w1 + field_ptr(index)%data(1,1,1,i2)*w2
-         if (verb) then
-            write(outunit,*) 'ibuf= ',field_ptr(index)%ibuf
-            write(outunit,*) 'i1,i2= ',i1, i2
-         endif
-      endif
-
-    end subroutine time_interp_external_0d
-
     subroutine set_time_modulo(Time)
 
       type(time_type), intent(inout), dimension(:) :: Time
@@ -1108,6 +866,7 @@ subroutine load_record(field, rec, interp, is_in, ie_in, js_in, je_in, window_id
 end subroutine load_record
 
 
+!> Given a initialized ext_fieldtype and record number, loads the given scalar record into field%src_data
 subroutine load_record_0d(field, rec)
   type(ext_fieldtype),     intent(inout)        :: field
   integer            ,     intent(in)           :: rec    ! record number
@@ -1143,7 +902,7 @@ subroutine load_record_0d(field, rec)
 
 end subroutine load_record_0d
 
-! ============================================================================
+!> Reallocates src_data for field from module level field_ptr array 
 subroutine reset_src_data_region(index, is, ie, js, je)
    integer, intent(in) :: index
    integer, intent(in) :: is, ie, js, je
@@ -1166,7 +925,6 @@ subroutine reset_src_data_region(index, is, ie, js, je)
 
 end subroutine reset_src_data_region
 
-! ============================================================================
 subroutine set_override_region(index, region_type, is_region, ie_region, js_region, je_region)
    integer, intent(in) :: index, region_type
    integer, intent(in) :: is_region, ie_region, js_region, je_region
@@ -1181,8 +939,7 @@ subroutine set_override_region(index, region_type, is_region, ie_region, js_regi
 
 end subroutine set_override_region
 
-! ============================================================================
-! reallocates array of fields, increasing its size
+!> reallocates array of fields, increasing its size
 subroutine realloc_files(n)
   integer, intent(in) :: n ! new size
 
@@ -1210,8 +967,7 @@ subroutine realloc_files(n)
 
 end subroutine realloc_files
 
-! ============================================================================
-! reallocates array of fields,increasing its size
+!> reallocates array of fields,increasing its size
 subroutine realloc_fields(n)
   integer, intent(in) :: n ! new size
 
@@ -1253,7 +1009,8 @@ subroutine realloc_fields(n)
 
 end subroutine realloc_fields
 
-
+!> simple linear search for given value in given list
+!! TODO should use better search if this list is bigger
 function find_buf_index(indx,buf)
    integer :: indx
    integer, dimension(:) :: buf
@@ -1274,66 +1031,44 @@ function find_buf_index(indx,buf)
 
 end function find_buf_index
 
-!<FUNCTION NAME="get_external_field_size" TYPE="integer" DIM="(4)">
-!
-!<DESCRIPTION>
-!</DESCRIPTION>
-!
-!<IN NAME="index" TYPE="integer">
-! returned from previous call to init_external_field.
-!</IN>
+!> Returns size of field after call to init_external_field.
+!! Ordering is X/Y/Z/T.
+!! This call only makes sense for non-distributed reads.
+function get_external_field_size(index)
 
-    !> Returns size of field after call to init_external_field.
-    !! Ordering is X/Y/Z/T.
-    !! This call only makes sense for non-distributed reads.
-    function get_external_field_size(index)
+    integer :: index !< returned from previous call to init_external_field.
+    integer :: get_external_field_size(4)
 
-      integer :: index
-      integer :: get_external_field_size(4)
-
-      if (index .lt. 1 .or. index .gt. num_fields) &
-           call mpp_error(FATAL,'invalid index in call to get_external_field_size')
+    if (index .lt. 1 .or. index .gt. num_fields) &
+        call mpp_error(FATAL,'invalid index in call to get_external_field_size')
 
 
-      get_external_field_size(1) = field_ptr(index)%siz(1)
-      get_external_field_size(2) = field_ptr(index)%siz(2)
-      get_external_field_size(3) = field_ptr(index)%siz(3)
-      get_external_field_size(4) = field_ptr(index)%siz(4)
+    get_external_field_size(1) = field_ptr(index)%siz(1)
+    get_external_field_size(2) = field_ptr(index)%siz(2)
+    get_external_field_size(3) = field_ptr(index)%siz(3)
+    get_external_field_size(4) = field_ptr(index)%siz(4)
 
-    end function get_external_field_size
-!</FUNCTION> NAME="get_external_field_size"
+end function get_external_field_size
 
+!> return missing value
+function get_external_field_missing(index)
 
-!<FUNCTION NAME="get_external_field_missing" TYPE="real">
-!
-!<DESCRIPTION>
-! return missing value
-!</DESCRIPTION>
-!
-!<IN NAME="index" TYPE="integer">
-! returned from previous call to init_external_field.
-!</IN>
+    integer :: index !< returned from previous call to init_external_field.
+    real(r8_kind) :: get_external_field_missing
 
-    function get_external_field_missing(index)
-
-      integer :: index
-      real(r8_kind) :: get_external_field_missing
-
-      if (index .lt. 1 .or. index .gt. num_fields) &
-           call mpp_error(FATAL,'invalid index in call to get_external_field_size')
+    if (index .lt. 1 .or. index .gt. num_fields) &
+        call mpp_error(FATAL,'invalid index in call to get_external_field_size')
 
 
-      get_external_field_missing = field_ptr(index)%missing
+    get_external_field_missing = field_ptr(index)%missing
 
-    end function get_external_field_missing
-!</FUNCTION> NAME="get_external_field_missing"
+end function get_external_field_missing
 
-! ===========================================================================
 subroutine get_time_axis(index, time)
-  integer        , intent(in)  :: index   ! field id
-  type(time_type), intent(out) :: time(:) ! array of time values to be filled
+  integer        , intent(in)  :: index   !< field id
+  type(time_type), intent(out) :: time(:) !< array of time values to be filled
 
-  integer :: n ! size of the data to be assigned
+  integer :: n !< size of the data to be assigned
 
   if (index < 1.or.index > num_fields) &
        call mpp_error(FATAL,'invalid index in call to get_time_axis')
@@ -1343,44 +1078,39 @@ subroutine get_time_axis(index, time)
   time(1:n) = field_ptr(index)%time(1:n)
 end subroutine
 
-!<SUBROUTINE NAME="time_interp_external_exit">
-!
-!<DESCRIPTION>
-! exit time_interp_external_mod.  Close all open files and
-! release storage
-!</DESCRIPTION>
 
-    subroutine time_interp_external_exit()
+!> exit time_interp_external_mod.  Close all open files and
+!! release storage
+subroutine time_interp_external_exit()
 
-      integer :: i
-!
-! release storage arrays
-!
-      do i=1,num_fields
-         deallocate(field_ptr(i)%time,field_ptr(i)%start_time,field_ptr(i)%end_time,&
-              field_ptr(i)%period,field_ptr(i)%data,field_ptr(i)%mask,field_ptr(i)%ibuf)
-         if (ASSOCIATED(field_ptr(i)%src_data)) deallocate(field_ptr(i)%src_data)
-         field_ptr(i)%domain = NULL_DOMAIN2D
-         field_ptr(i)%nbuf = 0
-         field_ptr(i)%slope = 0.
-         field_ptr(i)%intercept = 0.
-      enddo
+    integer :: i
+    !
+    ! release storage arrays
+    !
+    do i=1,num_fields
+        deallocate(field_ptr(i)%time,field_ptr(i)%start_time,field_ptr(i)%end_time,&
+                   field_ptr(i)%period,field_ptr(i)%data,field_ptr(i)%mask,field_ptr(i)%ibuf)
+        if (ASSOCIATED(field_ptr(i)%src_data)) deallocate(field_ptr(i)%src_data)
+        field_ptr(i)%domain = NULL_DOMAIN2D
+        field_ptr(i)%nbuf = 0
+        field_ptr(i)%slope = 0.
+        field_ptr(i)%intercept = 0.
+    enddo
 
-      !-- close all the files opended
-      do i = 1, num_files
-         call close_file(opened_files(i)%fileobj)
-         deallocate(opened_files(i)%fileobj)
-      enddo
+    !-- close all the files opended
+    do i = 1, num_files
+        call close_file(opened_files(i)%fileobj)
+        deallocate(opened_files(i)%fileobj)
+    enddo
 
-      deallocate(field_ptr)
-      deallocate(opened_files)
+    deallocate(field_ptr)
+    deallocate(opened_files)
 
-      num_fields = 0
+    num_fields = 0
 
-      module_initialized = .false.
+    module_initialized = .false.
 
-    end subroutine time_interp_external_exit
-!</SUBROUTINE> NAME="time_interp_external_exit"
+end subroutine time_interp_external_exit
 
 #include "time_interp_external2_r4.fh"
 #include "time_interp_external2_r8.fh"
