@@ -506,7 +506,7 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
 #else
   class(diagYamlFilesVar_type), pointer :: ptr_diag_field_yaml !< Pointer to a field from yaml fields
   logical :: phys_window
-  integer :: freq !< Output frequency
+  integer, allocatable :: freq(:) !< Output frequency
   integer :: file_id !< File id where the field/buffer is in
   integer :: reduction_method !< Integer representing a reduction method: none, average, min, max, ... etc.
 
@@ -566,7 +566,7 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
       reduction_method = this%FMS_diag_fields(diag_field_id)%diag_field(i)%get_var_reduction()
 
       !> Check if the field is a physics window
-      phys_window = fms_diag_compare_window(field_data, diag_field_id, is_in, ie_in, &
+      phys_window = this%fms_diag_compare_window(field_data, diag_field_id, is_in, ie_in, &
         js_in, je_in, ks_in, ke_in)
 
       !!TODO: Get local start and end indices on 3 axes for regional output
@@ -583,10 +583,10 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
       !!TODO: Get the vertical layer start and end indices
 
       !> Check if time is not present for fields output every time step
-      if (freq = EVERY_TIME .and. .not.this%FMS_diag_fields(diag_field_id)%is_static()) then
+      if (freq == EVERY_TIME .and. .not.this%FMS_diag_fields(diag_field_id)%is_static()) then
         if (this%FMS_diag_files(file_id)%FMS_diag_file%next_output == &
           this%FMS_diag_files(file_id)%FMS_diag_file%last_output) then
-          if (.not.preset(time)) then
+          if (.not.present(time)) then
             write (error_string,'(a,"/",a)') trim(this%FMS_diag_fields(diag_field_id)%get_modname()),&
               trim(this%FMS_diag_fields(diag_field_id)%diag_field(i)%get_var_outname())
             if (fms_error_handler('fms_diag_object_mod::fms_diag_accept_data', 'module/output_name: '&
