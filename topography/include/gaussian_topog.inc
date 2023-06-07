@@ -94,13 +94,13 @@ real(kind=FMS_TOP_KIND_)    :: tpi, dtr, dx, dy, xx, yy
 
 ! compute gaussian-shaped mountain
     do j=1,size(lat(:))
-      dy = abs(lat(j) - olat)   ! dist from y origin
-      yy = max(real(0.0,kind=FMS_TOP_KIND_), dy-rlat)/wlat
+      dy = abs(lat(j) - real(olat, FMS_TOP_KIND_))   ! dist from y origin
+      yy = max(0.0_lkind, dy-real(rlat, FMS_TOP_KIND_))/real(wlat, FMS_TOP_KIND_)
       do i=1,size(lon(:))
-        dx = abs(lon(i) - olon) ! dist from x origin
+        dx = abs(lon(i) - real(olon, FMS_TOP_KIND_)) ! dist from x origin
         dx = min(dx, abs(dx-tpi))  ! To ensure that: -pi <= dx <= pi
-        xx = max(real(0.0,kind=FMS_TOP_KIND_), dx-rlon)/wlon
-        zsurf(i,j) = height*exp(-xx**2 - yy**2)
+        xx = max(0.0_lkind, dx-real(rlon, FMS_TOP_KIND_))/real(wlon, FMS_TOP_KIND_)
+        zsurf(i,j) = real(height, FMS_TOP_KIND_)*exp(-xx**2 - yy**2)
       enddo
     enddo
 

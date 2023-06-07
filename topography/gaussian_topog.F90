@@ -76,13 +76,13 @@ end interface get_gaussian_topog
 
    integer, parameter :: maxmts = 10
 
-   real(kind=r8_kind), dimension(maxmts) :: height = 0.0
-   real(kind=r8_kind), dimension(maxmts) ::  olon  = 0.0
-   real(kind=r8_kind), dimension(maxmts) ::  olat  = 0.0
-   real(kind=r8_kind), dimension(maxmts) ::  wlon  = 0.0
-   real(kind=r8_kind), dimension(maxmts) ::  wlat  = 0.0
-   real(kind=r8_kind), dimension(maxmts) ::  rlon  = 0.0
-   real(kind=r8_kind), dimension(maxmts) ::  rlat  = 0.0
+   real(kind=r8_kind), dimension(maxmts) :: height = 0.0_r8_kind
+   real(kind=r8_kind), dimension(maxmts) ::  olon  = 0.0_r8_kind
+   real(kind=r8_kind), dimension(maxmts) ::  olat  = 0.0_r8_kind
+   real(kind=r8_kind), dimension(maxmts) ::  wlon  = 0.0_r8_kind
+   real(kind=r8_kind), dimension(maxmts) ::  wlat  = 0.0_r8_kind
+   real(kind=r8_kind), dimension(maxmts) ::  rlon  = 0.0_r8_kind
+   real(kind=r8_kind), dimension(maxmts) ::  rlat  = 0.0_r8_kind
 
    namelist /gaussian_topog_nml/ height, olon, olat, wlon, wlat, rlon, rlat
 ! </NAMELIST>
