@@ -72,25 +72,26 @@ real(kind=FMS_TOP_KIND_) :: zsurf(size(lon,1),size(lat,1))
 integer :: i, j
 real(kind=FMS_TOP_KIND_)    :: olon, olat, wlon, wlat, rlon, rlat
 real(kind=FMS_TOP_KIND_)    :: tpi, dtr, dx, dy, xx, yy
+integer, parameter     :: lkind = FMS_TOP_KIND_
 
   if (do_nml) call read_namelist
 
 ! no need to compute mountain if height=0
-  if ( height == real(0.0,kind=FMS_TOP_KIND_)) then
-       zsurf(:,:) = real(0.0,kind=FMS_TOP_KIND_)
+  if ( height == 0.0_lkind) then
+       zsurf(:,:) = 0.0_lkind
        return
   endif
 
-  tpi = real(2.0,kind=FMS_TOP_KIND_)*pi
-  dtr = tpi/real(360.0,kind=FMS_TOP_KIND_)
+  tpi = 2.0_lkind*real(pi, FMS_TOP_KIND_)
+  dtr = tpi/360.0_lkind
 
 ! defaults and convert degrees to radians (dtr)
-  olon = real(90.0,kind=FMS_TOP_KIND_)*dtr;  if (present(olond)) olon=olond*dtr
-  olat = real(45.0,kind=FMS_TOP_KIND_)*dtr;  if (present(olatd)) olat=olatd*dtr
-  wlon = real(15.0,kind=FMS_TOP_KIND_)*dtr;  if (present(wlond)) wlon=wlond*dtr
-  wlat = real(15.0,kind=FMS_TOP_KIND_)*dtr;  if (present(wlatd)) wlat=wlatd*dtr
-  rlon = real(0.0,kind=FMS_TOP_KIND_)     ;  if (present(rlond)) rlon=rlond*dtr
-  rlat = real(0.0,kind=FMS_TOP_KIND_)     ;  if (present(rlatd)) rlat=rlatd*dtr
+  olon = 90.0_lkind*dtr;  if (present(olond)) olon=olond*dtr
+  olat = 45.0_lkind*dtr;  if (present(olatd)) olat=olatd*dtr
+  wlon = 15.0_lkind*dtr;  if (present(wlond)) wlon=wlond*dtr
+  wlat = 15.0_lkind*dtr;  if (present(wlatd)) wlat=wlatd*dtr
+  rlon = 0.0_lkind     ;  if (present(rlond)) rlon=rlond*dtr
+  rlat = 0.0_lkind     ;  if (present(rlatd)) rlat=rlatd*dtr
 
 ! compute gaussian-shaped mountain
     do j=1,size(lat(:))
@@ -104,7 +105,7 @@ real(kind=FMS_TOP_KIND_)    :: tpi, dtr, dx, dy, xx, yy
       enddo
     enddo
 
-end function GET_GUASSIAN_TOPOG_
+end function GET_GAUSSIAN_TOPOG_
 
 !> @}
 ! close documentation grouping

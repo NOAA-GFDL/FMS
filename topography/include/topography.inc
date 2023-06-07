@@ -56,18 +56,19 @@
    real(kind=FMS_TOP_KIND_), intent(in),  dimension(:)   :: blat !< Latitude (radians) at grid box boundaries
    real(kind=FMS_TOP_KIND_), intent(out), dimension(:,:) :: zmean !< Mean surface height(meters). Size must be
                                               !! size(blon)-1 by size(blat)-1
-   logical :: get_topog_mean_1d
+   logical :: GET_TOPOG_MEAN_1D_
+   integer, parameter :: lkind = FMS_TOP_KIND_
 
 !-----------------------------------------------------------------------
    if (.not. module_is_initialized) call topography_init()
 
-   if ( any(shape(zmean(:,:)) /= (/size(blon(:))-1,size(blat(:))-1/)) ) &
+   if ( any(shape(zmean(:,:)) /= (/size(blon(:))-1.0_lkind,size(blat(:))-1.0_lkind/)) ) &
         call error_mesg('get_topog_mean_1d','shape(zmean) is not&
             & equal to (/size(blon)-1,size(blat)-1/))', FATAL)
 
-   get_topog_mean_1d = open_topog_file()
+   GET_TOPOG_MEAN_1D_ = open_topog_file()
 
-   if ( get_topog_mean_1d ) call interp_topog_1d ( blon, blat, zmean)
+   if (GET_TOPOG_MEAN_1D_) call interp_topog(blon, blat, zmean)
 
 !-----------------------------------------------------------------------
 
@@ -79,18 +80,19 @@
 
    real(kind=FMS_TOP_KIND_), intent(in),  dimension(:,:) :: blon, blat
    real(kind=FMS_TOP_KIND_), intent(out), dimension(:,:) :: zmean
-   logical :: get_topog_mean_2d
+   logical :: GET_TOPOG_MEAN_2D_
+   integer, parameter :: lkind = FMS_TOP_KIND_
 !-----------------------------------------------------------------------
    if (.not. module_is_initialized) call topography_init()
 
-   if ( any(shape(zmean(:,:)) /= (/size(blon,1)-1,size(blon,2)-1/)) .or. &
-        any(shape(zmean(:,:)) /= (/size(blat,1)-1,size(blat,2)-1/)) ) &
+   if ( any(shape(zmean(:,:)) /= (/size(blon,1)-1.0_lkind,size(blon,2)-1.0_lkind/)) .or. &
+        any(shape(zmean(:,:)) /= (/size(blat,1)-1.0_lkind,size(blat,2)-1.0_lkind/)) ) &
         call error_mesg('get_topog_mean_2d','shape(zmean) is not&
             & equal to (/size(blon,1)-1,size(blon,2)-1/))', FATAL)
 
-   get_topog_mean_2d = open_topog_file()
+   GET_TOPOG_MEAN_2D_ = open_topog_file()
 
-   if ( get_topog_mean_2d ) call interp_topog_2d ( blon, blat, zmean)
+   if (GET_TOPOG_MEAN_2D_) call interp_topog(blon, blat, zmean)
 !-----------------------------------------------------------------------
 
  end function GET_TOPOG_MEAN_2D_
@@ -113,17 +115,18 @@
    real(kind=FMS_TOP_KIND_), intent(out), dimension(:,:) :: stdev !< The standard deviation of surface height (in
                                      !! meters) within given input model grid boxes. Size must be
                                      !! size(blon)-1 by size(blat)-1
-   logical :: get_topog_stdev_1d
+   logical :: GET_TOPOG_STDEV_1D_
+   integer, parameter :: lkind = FMS_TOP_KIND_
 !-----------------------------------------------------------------------
    if (.not. module_is_initialized) call topography_init()
 
-   if ( any(shape(stdev(:,:)) /= (/size(blon(:))-1,size(blat(:))-1/)) ) &
+   if ( any(shape(stdev(:,:)) /= (/size(blon(:))-1.0_lkind,size(blat(:))-1.0_lkind/)) ) &
        call error_mesg('get_topog_stdev','shape(stdev) is not&
             & equal to (/size(blon)-1,size(blat)-1/))', FATAL)
 
-   get_topog_stdev_1d = open_topog_file()
+   GET_TOPOG_STDEV_1D_ = open_topog_file()
 
-   if ( get_topog_stdev_1d ) call interp_topog_1d ( blon, blat, &
+   if (GET_TOPOG_STDEV_1D_) call interp_topog(blon, blat, &
               stdev, flag=COMPUTE_STDEV)
 
 !-----------------------------------------------------------------------
@@ -134,20 +137,21 @@
 
  function GET_TOPOG_STDEV_2D_(blon, blat, stdev)
 
-   real(kind=FMS_TOP_KIND_), intent(in),  dimension(:,:) :: blon, blat
-   real(kind=FMS_TOP_KIND_), intent(out), dimension(:,:) :: stdev
-   logical :: get_topog_stdev_2d
+   real(FMS_TOP_KIND_), intent(in),  dimension(:,:) :: blon, blat
+   real(FMS_TOP_KIND_), intent(out), dimension(:,:) :: stdev
+   logical :: GET_TOPOG_STDEV_2D_
+   integer, parameter :: lkind = FMS_TOP_KIND_
 !-----------------------------------------------------------------------
    if (.not. module_is_initialized) call topography_init()
 
-   if ( any(shape(stdev(:,:)) /= (/size(blon,1)-1,size(blon,2)-1/)) .or. &
-        any(shape(stdev(:,:)) /= (/size(blat,1)-1,size(blat,2)-1/)) ) &
+   if ( any(shape(stdev(:,:)) /= (/size(blon,1)-1.0_lkind,size(blon,2)-1.0_lkind/)) .or. &
+        any(shape(stdev(:,:)) /= (/size(blat,1)-1.0_lkind,size(blat,2)-1.0_lkind/)) ) &
         call error_mesg('get_topog_stdev_2d','shape(stdev) is not&
             & equal to (/size(blon,1)-1,size(blon,2)-1/))', FATAL)
 
-   get_topog_stdev_2d = open_topog_file()
+   GET_TOPOG_STDEV_2D_ = open_topog_file()
 
-   if ( get_topog_stdev_2d ) call interp_topog_2d ( blon, blat, &
+   if (GET_TOPOG_STDEV_2D_) call interp_topog(blon, blat, &
               stdev, flag=COMPUTE_STDEV)
 !-----------------------------------------------------------------------
 
@@ -160,20 +164,21 @@
  !! may be returned if the Navy 1/6 degree percent water data set was not readable.
  function GET_OCEAN_FRAC_1D_(blon, blat, ocean_frac)
 
- real(kind=FMS_TOP_KIND_), intent(in),  dimension(:)   :: blon !< Longitude (radians) at grid box boundaries
- real(kind=FMS_TOP_KIND_), intent(in),  dimension(:)   :: blat !< Latitude (radians) at grid box boundaries
- real(kind=FMS_TOP_KIND_), intent(out), dimension(:,:) :: ocean_frac !< The fractional amount (0-1) of ocean in a grid
+ real(FMS_TOP_KIND_), intent(in),  dimension(:)   :: blon !< Longitude (radians) at grid box boundaries
+ real(FMS_TOP_KIND_), intent(in),  dimension(:)   :: blat !< Latitude (radians) at grid box boundaries
+ real(FMS_TOP_KIND_), intent(out), dimension(:,:) :: ocean_frac !< The fractional amount (0-1) of ocean in a grid
                                      !! box. The size must be size(blon)-1 by size(blat)-1
- logical :: get_ocean_frac_1d
+ logical :: GET_OCEAN_FRAC_1D_
+ integer, parameter :: lkind = FMS_TOP_KIND_
 !-----------------------------------------------------------------------
    if (.not. module_is_initialized) call topography_init()
 
-   if ( any(shape(ocean_frac(:,:)) /= (/size(blon(:))-1,size(blat(:))-1/)) ) &
+   if ( any(shape(ocean_frac(:,:)) /= (/size(blon(:))-1.0_lkind,size(blat(:))-1.0_lkind/)) ) &
         call error_mesg('get_ocean_frac','shape(ocean_frac) is not&
                  & equal to (/size(blon)-1,size(blat)-1/))', FATAL)
 
-   get_ocean_frac_1d = open_water_file()
-   if( get_ocean_frac_1d )  call interp_water_1d ( blon, blat, &
+   GET_OCEAN_FRAC_1D_ = open_water_file()
+   if(GET_OCEAN_FRAC_1D_)  call interp_water( blon, blat, &
                 ocean_frac, do_ocean=.true. )
 
 !-----------------------------------------------------------------------
@@ -186,17 +191,18 @@
 
  real(kind=FMS_TOP_KIND_), intent(in),  dimension(:,:) :: blon, blat
  real(kind=FMS_TOP_KIND_), intent(out), dimension(:,:) :: ocean_frac
- logical :: get_ocean_frac_2d
+ logical :: GET_OCEAN_FRAC_2D_
+ integer, parameter :: lkind = FMS_TOP_KIND_
 !-----------------------------------------------------------------------
    if (.not. module_is_initialized) call topography_init()
 
-   if ( any(shape(ocean_frac(:,:)) /= (/size(blon,1)-1,size(blon,2)-1/)) .or. &
-        any(shape(ocean_frac(:,:)) /= (/size(blat,1)-1,size(blat,2)-1/)) ) &
+   if ( any(shape(ocean_frac(:,:)) /= (/size(blon,1)-1.0_lkind,size(blon,2)-1.0_lkind/)) .or. &
+        any(shape(ocean_frac(:,:)) /= (/size(blat,1)-1.0_lkind,size(blat,2)-1.0_lkind/)) ) &
         call error_mesg('get_ocean_frac_2d','shape(ocean_frac) is not&
             & equal to (/size(blon,1)-1,size(blon,2)-1/))', FATAL)
 
-   get_ocean_frac_2d = open_water_file()
-   if( get_ocean_frac_2d )  call interp_water_2d ( blon, blat, &
+   GET_OCEAN_FRAC_2D_ = open_water_file()
+   if(GET_OCEAN_FRAC_2D_)  call interp_water( blon, blat, &
                 ocean_frac, do_ocean=.true. )
 
 !-----------------------------------------------------------------------
@@ -214,20 +220,21 @@
  real(kind=FMS_TOP_KIND_), intent(in),  dimension(:)   :: blat !< Latitude (radians) at grid box boundaries
  logical, intent(out), dimension(:,:) :: ocean_mask !< Mask for ocean in a grid box.
                                                  !! The size must be size(blon)-1 by size(blat)-1
- logical :: get_ocean_mask_1d
+ logical :: GET_OCEAN_MASK_1D_
  real(kind=FMS_TOP_KIND_), dimension(size(ocean_mask,1),size(ocean_mask,2)) :: ocean_frac
+ integer, parameter :: lkind = FMS_TOP_KIND_
 !-----------------------------------------------------------------------
    if (.not. module_is_initialized) call topography_init()
 
-   if ( get_ocean_frac_1d(blon, blat, ocean_frac) ) then
-     where (ocean_frac > real(0.50,kind=FMS_TOP_KIND_))
+   if (get_ocean_frac(blon, blat, ocean_frac) ) then
+     where (ocean_frac > 0.50_lkind)
        ocean_mask = .true.
      elsewhere
        ocean_mask = .false.
      end where
-     get_ocean_mask_1d = .true.
+     GET_OCEAN_MASK_1D_ = .true.
    else
-     get_ocean_mask_1d = .false.
+    GET_OCEAN_MASK_1D_ = .false.
    endif
 !-----------------------------------------------------------------------
 
@@ -239,20 +246,21 @@
 
  real(kind=FMS_TOP_KIND_), intent(in),  dimension(:,:) :: blon, blat
  logical, intent(out), dimension(:,:) :: ocean_mask
- logical :: get_ocean_mask_2d
+ logical :: GET_OCEAN_MASK_2D_
  real(kind=FMS_TOP_KIND_), dimension(size(ocean_mask,1),size(ocean_mask,2)) :: ocean_frac
+ integer, parameter :: lkind = FMS_TOP_KIND_
 !-----------------------------------------------------------------------
    if (.not. module_is_initialized) call topography_init()
 
-   if ( get_ocean_frac_2d(blon, blat, ocean_frac) ) then
-     where (ocean_frac > real(0.50,kind=FMS_TOP_KIND_))
+   if (get_ocean_frac(blon, blat, ocean_frac) ) then
+     where (ocean_frac > 0.50_lkind)
        ocean_mask = .true.
      elsewhere
        ocean_mask = .false.
      end where
-     get_ocean_mask_2d = .true.
+     GET_OCEAN_MASK_2D_ = .true.
    else
-     get_ocean_mask_2d = .false.
+     GET_OCEAN_MASK_2D_ = .false.
    endif
 
 !-----------------------------------------------------------------------
@@ -270,17 +278,18 @@
  real(kind=FMS_TOP_KIND_), intent(in),  dimension(:)   :: blat !< The latitude (in radians) at grid box boundaries.
  real(kind=FMS_TOP_KIND_), intent(out), dimension(:,:) :: water_frac !< The fractional amount (0 to 1) of water in a
                           !! grid box. The size of this field must be size(blon)-1 by size(blat)-1.
- logical :: get_water_frac_1d
+ logical :: GET_WATER_FRAC_1D_
+ integer, parameter :: lkind = FMS_TOP_KIND_
 
 !-----------------------------------------------------------------------
    if (.not. module_is_initialized) call topography_init()
 
-   if ( any(shape(water_frac(:,:)) /= (/size(blon(:))-1,size(blat(:))-1/)) ) &
+   if ( any(shape(water_frac(:,:)) /= (/size(blon(:))-1.0_lkind,size(blat(:))-1.0_lkind/)) ) &
         call error_mesg('get_water_frac_1d','shape(water_frac) is not&
                  & equal to (/size(blon)-1,size(blat)-1/))', FATAL)
 
-   get_water_frac_1d = open_water_file()
-   if(get_water_frac_1d) call interp_water_1d ( blon, blat, water_frac )
+   GET_WATER_FRAC_1D_ = open_water_file()
+   if(GET_WATER_FRAC_1D_) call interp_water( blon, blat, water_frac )
 
 !-----------------------------------------------------------------------
 
@@ -294,18 +303,19 @@
  real(kind=FMS_TOP_KIND_), intent(in),  dimension(:,:)   :: blat !< The latitude (in radians) at grid box boundaries.
  real(kind=FMS_TOP_KIND_), intent(out), dimension(:,:) :: water_frac !< The fractional amount (0 to 1) of water in a
                           !! grid box. The size of this field must be size(blon)-1 by size(blat)-1.
- logical :: get_water_frac_2d
+ logical :: GET_WATER_FRAC_2D_
+ integer, parameter :: lkind = FMS_TOP_KIND_
 
 !-----------------------------------------------------------------------
    if (.not. module_is_initialized) call topography_init()
 
-   if ( any(shape(water_frac(:,:)) /= (/size(blon,1)-1,size(blon,2)-1/)) .or. &
-        any(shape(water_frac(:,:)) /= (/size(blat,1)-1,size(blat,2)-1/)) ) &
+   if ( any(shape(water_frac(:,:)) /= (/size(blon,1)-1.0_lkind,size(blon,2)-1.0_lkind/)) .or. &
+        any(shape(water_frac(:,:)) /= (/size(blat,1)-1.0_lkind,size(blat,2)-1.0_lkind/)) ) &
         call error_mesg('get_water_frac_2d','shape(water_frac) is not&
             & equal to (/size(blon,1)-1,size(blon,2)-1/))', FATAL)
 
-   get_water_frac_2d = open_water_file()
-   if(get_water_frac_2d) call interp_water_2d ( blon, blat, water_frac )
+   GET_WATER_FRAC_2D_ = open_water_file()
+   if(GET_WATER_FRAC_2D_) call interp_water( blon, blat, water_frac )
 
 !-----------------------------------------------------------------------
 
@@ -323,21 +333,22 @@
  real(kind=FMS_TOP_KIND_), intent(in),  dimension(:)   :: blat !< The latitude (in radians) at grid box boundaries.
  logical, intent(out), dimension(:,:) :: water_mask !< A binary mask for water (true) or land (false).
                                      !! The size of this field must be size(blon)-1 by size(blat)-1.
- logical :: get_water_mask_1d
+ logical :: GET_WATER_MASK_1D_
 
  real(kind=FMS_TOP_KIND_), dimension(size(water_mask,1),size(water_mask,2)) :: water_frac
+ integer, parameter :: lkind = FMS_TOP_KIND_
 !-----------------------------------------------------------------------
    if (.not. module_is_initialized) call topography_init()
 
-   if ( get_water_frac_1d(blon, blat, water_frac) ) then
-     where (water_frac > real(0.50,kind=FMS_TOP_KIND_))
+   if (get_water_frac(blon, blat, water_frac) ) then
+     where (water_frac > 0.50_lkind)
        water_mask = .true.
      elsewhere
        water_mask = .false.
      end where
-     get_water_mask_1d = .true.
+     GET_WATER_MASK_1D_ = .true.
    else
-     get_water_mask_1d = .false.
+    GET_WATER_MASK_1D_ = .false.
    endif
 !-----------------------------------------------------------------------
 
@@ -351,20 +362,21 @@
  real(kind=FMS_TOP_KIND_), intent(in),  dimension(:,:)   :: blat !< The latitude (in radians) at grid box boundaries.
  logical, intent(out), dimension(:,:) :: water_mask !< A binary mask for water (true) or land (false).
                                      !! The size of this field must be size(blon)-1 by size(blat)-1.
- logical :: get_water_mask_2d
+ logical :: GET_WATER_MASK_2D_
  real(kind=FMS_TOP_KIND_), dimension(size(water_mask,1),size(water_mask,2)) :: water_frac
+ integer, parameter :: lkind = FMS_TOP_KIND_
 !-----------------------------------------------------------------------
    if (.not. module_is_initialized) call topography_init()
 
-   if ( get_water_frac_2d(blon, blat, water_frac) ) then
-     where (water_frac > real(0.50,kind=FMS_TOP_KIND_))
+   if (get_water_frac(blon, blat, water_frac) ) then
+     where (water_frac > 0.50_lkind)
        water_mask = .true.
      elsewhere
        water_mask = .false.
      end where
-     get_water_mask_2d = .true.
+     GET_WATER_MASK_2D_ = .true.
    else
-     get_water_mask_2d = .false.
+     GET_WATER_MASK_2D_ = .false.
    endif
 
 !-----------------------------------------------------------------------
@@ -381,21 +393,22 @@ integer, intent(in), optional :: flag
 real(kind=FMS_TOP_KIND_) :: xdat(ipts+1), ydat(jpts+1)
 real(kind=FMS_TOP_KIND_) :: zdat(ipts,jpts)
 real(kind=FMS_TOP_KIND_) :: zout2(size(zout,1),size(zout,2))
+integer, parameter       :: lkind = FMS_TOP_KIND_
 
    call input_data(TOPOG_INDEX, xdat, ydat, zdat)
 
    call horiz_interp( zdat, xdat, ydat, blon, blat, zout )
 
-! compute standard deviation if necessary
+! compute standard deviation if necessary.
    if (present(flag)) then
       if (flag == COMPUTE_STDEV) then
           zdat = zdat*zdat
           call horiz_interp ( zdat, xdat, ydat, blon, blat, zout2 )
           zout = zout2 - zout*zout
-           where (zout > real(0.0,kind=FMS_TOP_KIND_))
+           where (zout > 0.0_lkind)
              zout = sqrt ( zout )
            elsewhere
-             zout = real(0.0,kind=FMS_TOP_KIND_)
+             zout = 0.0_lkind
            endwhere
        endif
     endif
@@ -412,12 +425,13 @@ integer, intent(in), optional :: flag
 real(kind=FMS_TOP_KIND_) :: xdat(ipts+1), ydat(jpts+1)
 real(kind=FMS_TOP_KIND_) :: zdat(ipts,jpts)
 real(kind=FMS_TOP_KIND_) :: zout2(size(zout,1),size(zout,2))
+integer, parameter       :: lkind = FMS_TOP_KIND_
 integer :: js, je
 type (horiz_interp_type) :: Interp
 
-    call input_data( TOPOG_INDEX, xdat, ydat, zdat)
+    call input_data(TOPOG_INDEX, xdat, ydat, zdat)
 
-    call find_indices ( minval(blat), maxval(blat), ydat, js, je )
+    call find_indices( minval(blat), maxval(blat), ydat, js, je )
 
     call horiz_interp_new ( Interp, xdat, ydat(js:je+1), blon, blat )
     call horiz_interp     ( Interp, zdat(:,js:je), zout )
@@ -428,15 +442,15 @@ type (horiz_interp_type) :: Interp
            zdat = zdat*zdat
            call horiz_interp ( Interp, zdat(:,js:je), zout2 )
            zout = zout2 - zout*zout
-           where (zout > real(0.0,kind=FMS_TOP_KIND_))
+           where (zout > 0.0_lkind)
              zout = sqrt ( zout )
            elsewhere
-             zout = real(0.0,kind=FMS_TOP_KIND_)
+             zout = 0.0_lkind
            endwhere
        endif
     endif
 
-    call horiz_interp_del ( Interp )
+    call horiz_interp_del( Interp )
 
 end subroutine INTERP_TOPOG_2D_
 
@@ -446,18 +460,19 @@ subroutine FIND_INDICES_( ybeg, yend, ydat, js, je )
 real(kind=FMS_TOP_KIND_),    intent(in)  :: ybeg, yend, ydat(:)
 integer, intent(out) :: js, je
 integer :: j
+integer, parameter :: lkind = FMS_TOP_KIND_
 
    js = 1
-   do j = 1, size(ydat(:))-1
-      if (ybeg >= ydat(j) .and. ybeg <= ydat(j+1)) then
+   do j = 1, size(ydat(:))-1.0_lkind
+      if (ybeg >= ydat(j) .and. ybeg <= ydat(j+1.0_lkind)) then
          js = j
          exit
       endif
    enddo
 
-   je = size(ydat(:))-1
-   do j = js, size(ydat(:))-1
-      if (yend >= ydat(j) .and. yend <= ydat(j+1)) then
+   je = size(ydat(:))-1.0_lkind
+   do j = js, size(ydat(:))-1.0_lkind
+      if (yend >= ydat(j) .and. yend <= ydat(j+1.0_lkind)) then
          je = j
          exit
       endif
@@ -525,8 +540,9 @@ subroutine DETERMINE_OCEAN_POINTS_(pctwater)
 real(kind=FMS_TOP_KIND_), intent(inout) :: pctwater(:,:)
 logical :: ocean(size(pctwater,1),size(pctwater,2))
 integer :: i, j, m, n, im, ip, jm, jp, new
+integer, parameter :: lkind = FMS_TOP_KIND_
+real(kind=FMS_TOP_KIND_) :: ocean_pct_crit = real(0.500_lkind)
 
-real(kind=FMS_TOP_KIND_) :: ocean_pct_crit = real(0.500,kind=FMS_TOP_KIND_)
 
 ! resolution of the grid
 m = size(pctwater,1)
@@ -537,7 +553,7 @@ n = size(pctwater,2)
 ! all other grid boxes have <= 99 percent water
 
 ! set a mask for ocean grid boxes
-ocean = (pctwater > real(0.999,kind=FMS_TOP_KIND_))
+ocean = (pctwater > 0.999_lkind)
 new = count(ocean)
 
 ! set land grid boxes that have sufficient amount of water
@@ -569,7 +585,7 @@ do
 enddo
 
 ! final step is to elimate water percentage if land
-where (.not.ocean) pctwater = real(0.0,kind=FMS_TOP_KIND_)
+where (.not.ocean) pctwater = 0.0_lkind
 
 end subroutine DETERMINE_OCEAN_POINTS_
 

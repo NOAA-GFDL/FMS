@@ -128,9 +128,9 @@ integer :: n
   if (do_nml) call read_namelist
 
 ! compute sum of all non-zero mountains
-  zsurf(:,:) = real(0.0,kind=r8_kind)
+  zsurf(:,:) = 0.0_r8_kind
   do n = 1, maxmts
-    if ( height(n) == real(0.0,kind=r8_kind) ) cycle
+    if ( height(n) == 0.0_r8_kind ) cycle
     zsurf = zsurf + get_gaussian_topog ( lon, lat, height(n), &
                 olon(n), olat(n), wlon(n), wlat(n), rlon(n), rlat(n))
   enddo
