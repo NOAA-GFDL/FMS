@@ -155,7 +155,7 @@ module time_interp_external2_mod
 
   integer :: outunit
 
-  type(ext_fieldtype), save, private, pointer :: field_ptr(:) => NULL()
+  type(ext_fieldtype), save, private, pointer :: loaded_fields(:) => NULL()
   type(filetype),      save, private, pointer :: opened_files(:) => NULL()
 !Balaji: really should use field%missing
   integer, private, parameter :: dk = r8_kind ! ensures that time_interp_missing is in range for mixed-mode
@@ -410,7 +410,7 @@ module time_interp_external2_mod
       init_external_field = -1
       nfields_orig = num_fields
 
-      tavg = -1.0
+      tavg = -1.0_r8_kind
       tstart = tstamp
       tend = tstamp
       if(variable_att_exists(fileobj, fieldname, 'time_avg_info')) then
@@ -443,43 +443,43 @@ module time_interp_external2_mod
       call get_variable_units(fileobj, fieldname, fld_units)
 
       init_external_field = num_fields
-      field_ptr(num_fields)%fileobj => fileobj
-      field_ptr(num_fields)%name = trim(fieldname)
-      field_ptr(num_fields)%units = trim(fld_units)
-      field_ptr(num_fields)%isc = 1
-      field_ptr(num_fields)%iec = 1
-      field_ptr(num_fields)%jsc = 1
-      field_ptr(num_fields)%jec = 1
-      field_ptr(num_fields)%region_type = NO_REGION
-      field_ptr(num_fields)%is_region   = 0
-      field_ptr(num_fields)%ie_region   = -1
-      field_ptr(num_fields)%js_region   = 0
-      field_ptr(num_fields)%je_region   = -1
+      loaded_fields(num_fields)%fileobj => fileobj
+      loaded_fields(num_fields)%name = trim(fieldname)
+      loaded_fields(num_fields)%units = trim(fld_units)
+      loaded_fields(num_fields)%isc = 1
+      loaded_fields(num_fields)%iec = 1
+      loaded_fields(num_fields)%jsc = 1
+      loaded_fields(num_fields)%jec = 1
+      loaded_fields(num_fields)%region_type = NO_REGION
+      loaded_fields(num_fields)%is_region   = 0
+      loaded_fields(num_fields)%ie_region   = -1
+      loaded_fields(num_fields)%js_region   = 0
+      loaded_fields(num_fields)%je_region   = -1
       if (PRESENT(domain)) then
-         field_ptr(num_fields)%domain_present = .true.
-         field_ptr(num_fields)%domain = domain
-         field_ptr(num_fields)%isc=iscomp;field_ptr(num_fields)%iec = iecomp
-         field_ptr(num_fields)%jsc=jscomp;field_ptr(num_fields)%jec = jecomp
+         loaded_fields(num_fields)%domain_present = .true.
+         loaded_fields(num_fields)%domain = domain
+         loaded_fields(num_fields)%isc=iscomp;loaded_fields(num_fields)%iec = iecomp
+         loaded_fields(num_fields)%jsc=jscomp;loaded_fields(num_fields)%jec = jecomp
       else
-         field_ptr(num_fields)%domain_present = .false.
+         loaded_fields(num_fields)%domain_present = .false.
       endif
 
-      field_ptr(num_fields)%valid = get_valid(fileobj, fieldname)
+      loaded_fields(num_fields)%valid = get_valid(fileobj, fieldname)
       ndim = get_variable_num_dimensions(fileobj, fieldname)
       if (ndim > 4) call mpp_error(FATAL, &
            'invalid array rank <=4d fields supported')
 
-      field_ptr(num_fields)%siz = 1
-      field_ptr(num_fields)%ndim = ndim
-      field_ptr(num_fields)%tdim = 4
+      loaded_fields(num_fields)%siz = 1
+      loaded_fields(num_fields)%ndim = ndim
+      loaded_fields(num_fields)%tdim = 4
       !--- get field missing value
-      field_ptr(num_fields)%missing = get_variable_missing(fileobj, fieldname)
+      loaded_fields(num_fields)%missing = get_variable_missing(fileobj, fieldname)
 
       allocate(axisname(ndim), axislen(ndim))
 
       call get_variable_dimension_names(fileobj, fieldname, axisname)
       call get_variable_size(fileobj, fieldname, axislen)
-      do j=1,field_ptr(num_fields)%ndim
+      do j=1,loaded_fields(num_fields)%ndim
          call get_axis_cart(fileobj, axisname(j), cart)
          len = axislen(j)
          if (cart == 'N' .and. .not. ignore_axatts) then
@@ -497,198 +497,198 @@ module time_interp_external2_mod
                iscomp=1;iecomp=len
                gxsize = len
                dxsize = len
-               field_ptr(num_fields)%isc=iscomp;field_ptr(num_fields)%iec=iecomp
+               loaded_fields(num_fields)%isc=iscomp;loaded_fields(num_fields)%iec=iecomp
             elseif (PRESENT(override)) then
                gxsize = len
                if (PRESENT(axis_sizes)) axis_sizes(1) = len
             endif
-            field_ptr(num_fields)%axisname(1) = axisname(j)
+            loaded_fields(num_fields)%axisname(1) = axisname(j)
             if(use_comp_domain1) then
-               field_ptr(num_fields)%siz(1) = nx
+               loaded_fields(num_fields)%siz(1) = nx
             else
-               field_ptr(num_fields)%siz(1) = dxsize
+               loaded_fields(num_fields)%siz(1) = dxsize
             endif
             if (len /= gxsize) then
                write(msg,'(a,"/",a)')  trim(file),trim(fieldname)
                call mpp_error(FATAL,'time_interp_ext, file/field '//trim(msg)//' x dim doesnt match model')
             endif
          case ('Y')
-            field_ptr(num_fields)%axisname(2) = axisname(j)
+            loaded_fields(num_fields)%axisname(2) = axisname(j)
             if (.not.PRESENT(domain) .and. .not.PRESENT(override)) then
                jsdata=1;jedata=len
                jscomp=1;jecomp=len
                gysize = len
                dysize = len
-               field_ptr(num_fields)%jsc=jscomp;field_ptr(num_fields)%jec=jecomp
+               loaded_fields(num_fields)%jsc=jscomp;loaded_fields(num_fields)%jec=jecomp
             elseif (PRESENT(override)) then
                gysize = len
                if (PRESENT(axis_sizes)) axis_sizes(2) = len
             endif
             if(use_comp_domain1) then
-               field_ptr(num_fields)%siz(2) = ny
+               loaded_fields(num_fields)%siz(2) = ny
             else
-               field_ptr(num_fields)%siz(2) = dysize
+               loaded_fields(num_fields)%siz(2) = dysize
             endif
             if (len /= gysize) then
                write(msg,'(a,"/",a)')  trim(file),trim(fieldname)
                call mpp_error(FATAL,'time_interp_ext, file/field '//trim(msg)//' y dim doesnt match model')
             endif
          case ('Z')
-            field_ptr(num_fields)%axisname(3) = axisname(j)
-            field_ptr(num_fields)%siz(3) = len
+            loaded_fields(num_fields)%axisname(3) = axisname(j)
+            loaded_fields(num_fields)%siz(3) = len
          case ('T')
-            field_ptr(num_fields)%axisname(4) = axisname(j)
-            field_ptr(num_fields)%siz(4) = ntime
-            field_ptr(num_fields)%tdim   = j
+            loaded_fields(num_fields)%axisname(4) = axisname(j)
+            loaded_fields(num_fields)%siz(4) = ntime
+            loaded_fields(num_fields)%tdim   = j
          end select
       enddo
-      siz = field_ptr(num_fields)%siz
-      if(PRESENT(axis_names)) axis_names = field_ptr(num_fields)%axisname
+      siz = loaded_fields(num_fields)%siz
+      if(PRESENT(axis_names)) axis_names = loaded_fields(num_fields)%axisname
       if (PRESENT(axis_sizes) .and. .not.PRESENT(override)) then
-         axis_sizes = field_ptr(num_fields)%siz
+         axis_sizes = loaded_fields(num_fields)%siz
       endif
 
       if (verb) write(outunit,'(a,4i6)') 'field x,y,z,t local size= ',siz
-      if (verb) write(outunit,*) 'field contains data in units = ',trim(field_ptr(num_fields)%units)
+      if (verb) write(outunit,*) 'field contains data in units = ',trim(loaded_fields(num_fields)%units)
       if (transpose_xy) call mpp_error(FATAL,'axis ordering not supported')
       if (num_io_buffers .le. 1) call mpp_error(FATAL,'time_interp_ext:num_io_buffers should be at least 2')
       nbuf = min(num_io_buffers,siz(4))
 
-      field_ptr(num_fields)%numwindows = numwindows
-      allocate(field_ptr(num_fields)%need_compute(nbuf, numwindows))
-      field_ptr(num_fields)%need_compute = .true.
+      loaded_fields(num_fields)%numwindows = numwindows
+      allocate(loaded_fields(num_fields)%need_compute(nbuf, numwindows))
+      loaded_fields(num_fields)%need_compute = .true.
 
-      allocate(field_ptr(num_fields)%data(isdata:iedata,jsdata:jedata,siz(3),nbuf),&
-               field_ptr(num_fields)%mask(isdata:iedata,jsdata:jedata,siz(3),nbuf) )
-      field_ptr(num_fields)%mask = .false.
-      field_ptr(num_fields)%data = 0.0
-         slope=1.0;intercept=0.0
+      allocate(loaded_fields(num_fields)%data(isdata:iedata,jsdata:jedata,siz(3),nbuf),&
+               loaded_fields(num_fields)%mask(isdata:iedata,jsdata:jedata,siz(3),nbuf) )
+      loaded_fields(num_fields)%mask = .false.
+      loaded_fields(num_fields)%data = 0.0_r8_kind
+         slope=1.0_r8_kind;intercept=0.0_r8_kind
 !             if (units /= 'same') call convert_units(trim(field(num_fields)%units),trim(units),slope,intercept)
 !             if (verb.and.units /= 'same') then
 !                 write(outunit,*) 'attempting to convert data to units = ',trim(units)
 !                 write(outunit,'(a,f8.3,a,f8.3)') 'factor = ',slope,' offset= ',intercept
 !             endif
-      field_ptr(num_fields)%slope = slope
-      field_ptr(num_fields)%intercept = intercept
-      allocate(field_ptr(num_fields)%ibuf(nbuf))
-      field_ptr(num_fields)%ibuf = -1
-      field_ptr(num_fields)%nbuf =  0 ! initialize buffer number so that first reading fills data(:,:,:,1)
+      loaded_fields(num_fields)%slope = slope
+      loaded_fields(num_fields)%intercept = intercept
+      allocate(loaded_fields(num_fields)%ibuf(nbuf))
+      loaded_fields(num_fields)%ibuf = -1
+      loaded_fields(num_fields)%nbuf =  0 ! initialize buffer number so that first reading fills data(:,:,:,1)
       if(PRESENT(override)) then
-         field_ptr(num_fields)%is_src = 1
-         field_ptr(num_fields)%ie_src = gxsize
-         field_ptr(num_fields)%js_src = 1
-         field_ptr(num_fields)%je_src = gysize
-         allocate(field_ptr(num_fields)%src_data(gxsize,gysize,siz(3),nbuf))
+         loaded_fields(num_fields)%is_src = 1
+         loaded_fields(num_fields)%ie_src = gxsize
+         loaded_fields(num_fields)%js_src = 1
+         loaded_fields(num_fields)%je_src = gysize
+         allocate(loaded_fields(num_fields)%src_data(gxsize,gysize,siz(3),nbuf))
       else
-         field_ptr(num_fields)%is_src = isdata
-         field_ptr(num_fields)%ie_src = iedata
-         field_ptr(num_fields)%js_src = jsdata
-         field_ptr(num_fields)%je_src = jedata
-         allocate(field_ptr(num_fields)%src_data(isdata:iedata,jsdata:jedata,siz(3),nbuf))
+         loaded_fields(num_fields)%is_src = isdata
+         loaded_fields(num_fields)%ie_src = iedata
+         loaded_fields(num_fields)%js_src = jsdata
+         loaded_fields(num_fields)%je_src = jedata
+         allocate(loaded_fields(num_fields)%src_data(isdata:iedata,jsdata:jedata,siz(3),nbuf))
       endif
 
-      allocate(field_ptr(num_fields)%time(ntime))
-      allocate(field_ptr(num_fields)%period(ntime))
-      allocate(field_ptr(num_fields)%start_time(ntime))
-      allocate(field_ptr(num_fields)%end_time(ntime))
+      allocate(loaded_fields(num_fields)%time(ntime))
+      allocate(loaded_fields(num_fields)%period(ntime))
+      allocate(loaded_fields(num_fields)%start_time(ntime))
+      allocate(loaded_fields(num_fields)%end_time(ntime))
 
       do j=1,ntime
-         field_ptr(num_fields)%time(j)       = get_cal_time(tstamp(j),trim(timeunits),trim(calendar_type), &
+         loaded_fields(num_fields)%time(j)       = get_cal_time(tstamp(j),trim(timeunits),trim(calendar_type), &
               & permit_calendar_conversion)
-         field_ptr(num_fields)%start_time(j) = get_cal_time(tstart(j),trim(timeunits),trim(calendar_type), &
+         loaded_fields(num_fields)%start_time(j) = get_cal_time(tstart(j),trim(timeunits),trim(calendar_type), &
               & permit_calendar_conversion)
-         field_ptr(num_fields)%end_time(j)   = get_cal_time(  tend(j),trim(timeunits),trim(calendar_type), &
+         loaded_fields(num_fields)%end_time(j)   = get_cal_time(  tend(j),trim(timeunits),trim(calendar_type), &
               & permit_calendar_conversion)
       enddo
 
-      if (field_ptr(num_fields)%modulo_time) then
-         call set_time_modulo(field_ptr(num_fields)%Time)
-         call set_time_modulo(field_ptr(num_fields)%start_time)
-         call set_time_modulo(field_ptr(num_fields)%end_time)
+      if (loaded_fields(num_fields)%modulo_time) then
+         call set_time_modulo(loaded_fields(num_fields)%Time)
+         call set_time_modulo(loaded_fields(num_fields)%start_time)
+         call set_time_modulo(loaded_fields(num_fields)%end_time)
       endif
 
       if(present(correct_leap_year_inconsistency)) then
-        field_ptr(num_fields)%correct_leap_year_inconsistency = correct_leap_year_inconsistency
+        loaded_fields(num_fields)%correct_leap_year_inconsistency = correct_leap_year_inconsistency
       else
-        field_ptr(num_fields)%correct_leap_year_inconsistency = .false.
+        loaded_fields(num_fields)%correct_leap_year_inconsistency = .false.
       endif
 
       if(have_modulo_time) then
          if(get_calendar_type() == NO_CALENDAR) then
-            field_ptr(num_fields)%modulo_time_beg = set_time(timebeg)
-            field_ptr(num_fields)%modulo_time_end = set_time(timeend)
+            loaded_fields(num_fields)%modulo_time_beg = set_time(timebeg)
+            loaded_fields(num_fields)%modulo_time_end = set_time(timeend)
          else
-            field_ptr(num_fields)%modulo_time_beg = set_date(timebeg)
-            field_ptr(num_fields)%modulo_time_end = set_date(timeend)
+            loaded_fields(num_fields)%modulo_time_beg = set_date(timebeg)
+            loaded_fields(num_fields)%modulo_time_end = set_date(timeend)
          endif
-         field_ptr(num_fields)%have_modulo_times = .true.
+         loaded_fields(num_fields)%have_modulo_times = .true.
       else
-         field_ptr(num_fields)%have_modulo_times = .false.
+         loaded_fields(num_fields)%have_modulo_times = .false.
       endif
       if(ntime == 1) then
          call mpp_error(NOTE, 'time_interp_external_mod: file '//trim(file)//'  has only one time level')
       else
          do j= 1, ntime
-            field_ptr(num_fields)%period(j) = field_ptr(num_fields)%end_time(j)-field_ptr(num_fields)%start_time(j)
-            if (field_ptr(num_fields)%period(j) > set_time(0,0)) then
-               call get_time(field_ptr(num_fields)%period(j), sec, day)
+            loaded_fields(num_fields)%period(j) = loaded_fields(num_fields)%end_time(j)-loaded_fields(num_fields)%start_time(j)
+            if (loaded_fields(num_fields)%period(j) > set_time(0,0)) then
+               call get_time(loaded_fields(num_fields)%period(j), sec, day)
                sec = sec/2+mod(day,2)*43200
                day = day/2
-               field_ptr(num_fields)%time(j) = field_ptr(num_fields)%start_time(j)+&
+               loaded_fields(num_fields)%time(j) = loaded_fields(num_fields)%start_time(j)+&
                     set_time(sec,day)
             else
                if (j > 1 .and. j < ntime) then
-                  tdiff = field_ptr(num_fields)%time(j+1) -  field_ptr(num_fields)%time(j-1)
+                  tdiff = loaded_fields(num_fields)%time(j+1) -  loaded_fields(num_fields)%time(j-1)
                   call get_time(tdiff, sec, day)
                   sec = sec/2+mod(day,2)*43200
                   day = day/2
-                  field_ptr(num_fields)%period(j) = set_time(sec,day)
+                  loaded_fields(num_fields)%period(j) = set_time(sec,day)
                   sec = sec/2+mod(day,2)*43200
                   day = day/2
-                  field_ptr(num_fields)%start_time(j) = field_ptr(num_fields)%time(j) - set_time(sec,day)
-                  field_ptr(num_fields)%end_time(j) = field_ptr(num_fields)%time(j) + set_time(sec,day)
+                  loaded_fields(num_fields)%start_time(j) = loaded_fields(num_fields)%time(j) - set_time(sec,day)
+                  loaded_fields(num_fields)%end_time(j) = loaded_fields(num_fields)%time(j) + set_time(sec,day)
                elseif ( j == 1) then
-                  tdiff = field_ptr(num_fields)%time(2) -  field_ptr(num_fields)%time(1)
+                  tdiff = loaded_fields(num_fields)%time(2) -  loaded_fields(num_fields)%time(1)
                   call get_time(tdiff, sec, day)
-                  field_ptr(num_fields)%period(j) = set_time(sec,day)
+                  loaded_fields(num_fields)%period(j) = set_time(sec,day)
                   sec = sec/2+mod(day,2)*43200
                   day = day/2
-                  field_ptr(num_fields)%start_time(j) = field_ptr(num_fields)%time(j) - set_time(sec,day)
-                  field_ptr(num_fields)%end_time(j) = field_ptr(num_fields)%time(j) + set_time(sec,day)
+                  loaded_fields(num_fields)%start_time(j) = loaded_fields(num_fields)%time(j) - set_time(sec,day)
+                  loaded_fields(num_fields)%end_time(j) = loaded_fields(num_fields)%time(j) + set_time(sec,day)
                else
-                  tdiff = field_ptr(num_fields)%time(ntime) -  field_ptr(num_fields)%time(ntime-1)
+                  tdiff = loaded_fields(num_fields)%time(ntime) -  loaded_fields(num_fields)%time(ntime-1)
                   call get_time(tdiff, sec, day)
-                  field_ptr(num_fields)%period(j) = set_time(sec,day)
+                  loaded_fields(num_fields)%period(j) = set_time(sec,day)
                   sec = sec/2+mod(day,2)*43200
                   day = day/2
-                  field_ptr(num_fields)%start_time(j) = field_ptr(num_fields)%time(j) - set_time(sec,day)
-                  field_ptr(num_fields)%end_time(j) = field_ptr(num_fields)%time(j) + set_time(sec,day)
+                  loaded_fields(num_fields)%start_time(j) = loaded_fields(num_fields)%time(j) - set_time(sec,day)
+                  loaded_fields(num_fields)%end_time(j) = loaded_fields(num_fields)%time(j) + set_time(sec,day)
                endif
             endif
          enddo
       endif
 
       do j=1,ntime-1
-         if (field_ptr(num_fields)%time(j) >= field_ptr(num_fields)%time(j+1)) then
+         if (loaded_fields(num_fields)%time(j) >= loaded_fields(num_fields)%time(j+1)) then
             write(msg,'(A,i20)') "times not monotonically increasing. Filename: " &
                  //TRIM(file)//"  field:  "//TRIM(fieldname)//" timeslice: ", j
             call mpp_error(FATAL, TRIM(msg))
          endif
       enddo
 
-      field_ptr(num_fields)%modulo_time = get_axis_modulo(fileobj, timename)
+      loaded_fields(num_fields)%modulo_time = get_axis_modulo(fileobj, timename)
 
       if (verb) then
-         if (field_ptr(num_fields)%modulo_time) write(outunit,*) 'data are being treated as modulo in time'
+         if (loaded_fields(num_fields)%modulo_time) write(outunit,*) 'data are being treated as modulo in time'
          do j= 1, ntime
             write(outunit,*) 'time index,  ', j
-            call get_date(field_ptr(num_fields)%start_time(j),yr,mon,day,hr,minu,sec)
+            call get_date(loaded_fields(num_fields)%start_time(j),yr,mon,day,hr,minu,sec)
             write(outunit,'(a,i4,a,i2,a,i2,1x,i2,a,i2,a,i2)') &
                  'start time: yyyy/mm/dd hh:mm:ss= ',yr,'/',mon,'/',day,hr,':',minu,':',sec
-            call get_date(field_ptr(num_fields)%time(j),yr,mon,day,hr,minu,sec)
+            call get_date(loaded_fields(num_fields)%time(j),yr,mon,day,hr,minu,sec)
             write(outunit,'(a,i4,a,i2,a,i2,1x,i2,a,i2,a,i2)') &
                  'mid time: yyyy/mm/dd hh:mm:ss= ',yr,'/',mon,'/',day,hr,':',minu,':',sec
-            call get_date(field_ptr(num_fields)%end_time(j),yr,mon,day,hr,minu,sec)
+            call get_date(loaded_fields(num_fields)%end_time(j),yr,mon,day,hr,minu,sec)
             write(outunit,'(a,i4,a,i2,a,i2,1x,i2,a,i2,a,i2)') &
                  'end time: yyyy/mm/dd hh:mm:ss= ',yr,'/',mon,'/',day,hr,':',minu,':',sec
          enddo
@@ -865,8 +865,7 @@ subroutine load_record(field, rec, interp, is_in, ie_in, js_in, je_in, window_id
 
 end subroutine load_record
 
-
-!> Given a initialized ext_fieldtype and record number, loads the given scalar record into field%src_data
+!> Given a initialized ext_fieldtype and record number, loads the given index into field%src_data
 subroutine load_record_0d(field, rec)
   type(ext_fieldtype),     intent(inout)        :: field
   integer            ,     intent(in)           :: rec    ! record number
@@ -902,25 +901,25 @@ subroutine load_record_0d(field, rec)
 
 end subroutine load_record_0d
 
-!> Reallocates src_data for field from module level field_ptr array 
+!> Reallocates src_data for field from module level loaded_fields array 
 subroutine reset_src_data_region(index, is, ie, js, je)
    integer, intent(in) :: index
    integer, intent(in) :: is, ie, js, je
    integer             :: nk, nbuf
 
-   if( is == field_ptr(index)%is_src .AND. ie == field_ptr(index)%ie_src .AND. &
-       js == field_ptr(index)%js_src .AND. ie == field_ptr(index)%je_src ) return
+   if( is == loaded_fields(index)%is_src .AND. ie == loaded_fields(index)%ie_src .AND. &
+       js == loaded_fields(index)%js_src .AND. ie == loaded_fields(index)%je_src ) return
 
-   if( .NOT. ASSOCIATED(field_ptr(index)%src_data) ) call mpp_error(FATAL, &
+   if( .NOT. ASSOCIATED(loaded_fields(index)%src_data) ) call mpp_error(FATAL, &
        "time_interp_external: field(index)%src_data is not associated")
-   nk = size(field_ptr(index)%src_data,3)
-   nbuf = size(field_ptr(index)%src_data,4)
-   deallocate(field_ptr(index)%src_data)
-   allocate(field_ptr(index)%src_data(is:ie,js:je,nk,nbuf))
-   field_ptr(index)%is_src = is
-   field_ptr(index)%ie_src = ie
-   field_ptr(index)%js_src = js
-   field_ptr(index)%je_src = je
+   nk = size(loaded_fields(index)%src_data,3)
+   nbuf = size(loaded_fields(index)%src_data,4)
+   deallocate(loaded_fields(index)%src_data)
+   allocate(loaded_fields(index)%src_data(is:ie,js:je,nk,nbuf))
+   loaded_fields(index)%is_src = is
+   loaded_fields(index)%ie_src = ie
+   loaded_fields(index)%js_src = js
+   loaded_fields(index)%je_src = je
 
 
 end subroutine reset_src_data_region
@@ -929,11 +928,11 @@ subroutine set_override_region(index, region_type, is_region, ie_region, js_regi
    integer, intent(in) :: index, region_type
    integer, intent(in) :: is_region, ie_region, js_region, je_region
 
-   field_ptr(index)%region_type = region_type
-   field_ptr(index)%is_region   = is_region
-   field_ptr(index)%ie_region   = ie_region
-   field_ptr(index)%js_region   = js_region
-   field_ptr(index)%je_region   = je_region
+   loaded_fields(index)%region_type = region_type
+   loaded_fields(index)%is_region   = is_region
+   loaded_fields(index)%ie_region   = ie_region
+   loaded_fields(index)%js_region   = js_region
+   loaded_fields(index)%je_region   = je_region
 
    return
 
@@ -974,8 +973,8 @@ subroutine realloc_fields(n)
   type(ext_fieldtype), pointer :: ptr(:)
   integer :: i, ier
 
-  if (associated(field_ptr)) then
-     if (n <= size(field_ptr)) return ! do nothing if requested size no more then current
+  if (associated(loaded_fields)) then
+     if (n <= size(loaded_fields)) return ! do nothing if requested size no more then current
   endif
 
   allocate(ptr(n))
@@ -996,16 +995,16 @@ subroutine realloc_fields(n)
      if (ASSOCIATED(ptr(i)%src_data)) DEALLOCATE(ptr(i)%src_data, stat=ier)
      ptr(i)%nbuf=-1
      ptr(i)%domain_present=.false.
-     ptr(i)%slope=1.0
-     ptr(i)%intercept=0.0
+     ptr(i)%slope=1.0_r8_kind
+     ptr(i)%intercept=0.0_r8_kind
      ptr(i)%isc=-1;ptr(i)%iec=-1
      ptr(i)%jsc=-1;ptr(i)%jec=-1
   enddo
-  if (associated(field_ptr)) then
-     ptr(1:size(field_ptr)) = field_ptr(:)
-     deallocate(field_ptr)
+  if (associated(loaded_fields)) then
+     ptr(1:size(loaded_fields)) = loaded_fields(:)
+     deallocate(loaded_fields)
   endif
-  field_ptr=>ptr
+  loaded_fields=>ptr
 
 end subroutine realloc_fields
 
@@ -1043,10 +1042,10 @@ function get_external_field_size(index)
         call mpp_error(FATAL,'invalid index in call to get_external_field_size')
 
 
-    get_external_field_size(1) = field_ptr(index)%siz(1)
-    get_external_field_size(2) = field_ptr(index)%siz(2)
-    get_external_field_size(3) = field_ptr(index)%siz(3)
-    get_external_field_size(4) = field_ptr(index)%siz(4)
+    get_external_field_size(1) = loaded_fields(index)%siz(1)
+    get_external_field_size(2) = loaded_fields(index)%siz(2)
+    get_external_field_size(3) = loaded_fields(index)%siz(3)
+    get_external_field_size(4) = loaded_fields(index)%siz(4)
 
 end function get_external_field_size
 
@@ -1060,7 +1059,7 @@ function get_external_field_missing(index)
         call mpp_error(FATAL,'invalid index in call to get_external_field_size')
 
 
-    get_external_field_missing = field_ptr(index)%missing
+    get_external_field_missing = loaded_fields(index)%missing
 
 end function get_external_field_missing
 
@@ -1073,9 +1072,9 @@ subroutine get_time_axis(index, time)
   if (index < 1.or.index > num_fields) &
        call mpp_error(FATAL,'invalid index in call to get_time_axis')
 
-  n = min(size(time),size(field_ptr(index)%time))
+  n = min(size(time),size(loaded_fields(index)%time))
 
-  time(1:n) = field_ptr(index)%time(1:n)
+  time(1:n) = loaded_fields(index)%time(1:n)
 end subroutine
 
 
@@ -1088,13 +1087,13 @@ subroutine time_interp_external_exit()
     ! release storage arrays
     !
     do i=1,num_fields
-        deallocate(field_ptr(i)%time,field_ptr(i)%start_time,field_ptr(i)%end_time,&
-                   field_ptr(i)%period,field_ptr(i)%data,field_ptr(i)%mask,field_ptr(i)%ibuf)
-        if (ASSOCIATED(field_ptr(i)%src_data)) deallocate(field_ptr(i)%src_data)
-        field_ptr(i)%domain = NULL_DOMAIN2D
-        field_ptr(i)%nbuf = 0
-        field_ptr(i)%slope = 0.
-        field_ptr(i)%intercept = 0.
+        deallocate(loaded_fields(i)%time,loaded_fields(i)%start_time,loaded_fields(i)%end_time,&
+                   loaded_fields(i)%period,loaded_fields(i)%data,loaded_fields(i)%mask,loaded_fields(i)%ibuf)
+        if (ASSOCIATED(loaded_fields(i)%src_data)) deallocate(loaded_fields(i)%src_data)
+        loaded_fields(i)%domain = NULL_DOMAIN2D
+        loaded_fields(i)%nbuf = 0
+        loaded_fields(i)%slope = 0.0_r8_kind
+        loaded_fields(i)%intercept = 0.0_r8_kind
     enddo
 
     !-- close all the files opended
@@ -1103,7 +1102,7 @@ subroutine time_interp_external_exit()
         deallocate(opened_files(i)%fileobj)
     enddo
 
-    deallocate(field_ptr)
+    deallocate(loaded_fields)
     deallocate(opened_files)
 
     num_fields = 0
