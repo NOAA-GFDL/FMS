@@ -518,6 +518,9 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
 
   !TODO: Check improper combinations of is, ie, js, and je.
   ! if (check_indices_order()) deallocate(oor_mask)
+  
+  !! TODO: Recondition the input indices
+  ! call recondition_indices(bounds, field_data, is_in, js_in, ks_in, ie_in, je_in, ke_in, err_msg) 
 
   !! TODO: Allocate buffers
   ! call allocate_diag_field_output_buffers(field_data, diag_field_id)
@@ -565,9 +568,10 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
       freq = this%FMS_diag_fields(diag_field_id)%get_frequency()
       reduction_method = this%FMS_diag_fields(diag_field_id)%diag_field(i)%get_var_reduction()
 
-      !> Check if the field is a physics window
-      phys_window = this%fms_diag_compare_window(field_data, diag_field_id, is, ie, &
-        js, je, ks, ke)
+      !!TODO: Check if the field is a physics window
+      ! Pass fis, fie, fjs, fje, ks, and ke indices obtained from call to
+      ! recondition_indices() above as components of an array of indices output.
+      !phys_window = this%fms_diag_compare_window(field_data, diag_field_id, fis, fie, fjs, fje, ks, ke)
 
       !!TODO: Get local start and end indices on 3 axes for regional output
 
