@@ -566,8 +566,8 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
       reduction_method = this%FMS_diag_fields(diag_field_id)%diag_field(i)%get_var_reduction()
 
       !> Check if the field is a physics window
-      phys_window = this%fms_diag_compare_window(field_data, diag_field_id, is_in, ie_in, &
-        js_in, je_in, ks_in, ke_in)
+      phys_window = this%fms_diag_compare_window(field_data, diag_field_id, is, ie, &
+        js, je, ks, ke)
 
       !!TODO: Get local start and end indices on 3 axes for regional output
 
