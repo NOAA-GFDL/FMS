@@ -126,7 +126,7 @@ type :: fmsDiagFile_type
  procedure, public :: get_file_duration_units
  procedure, public :: get_file_varlist
  procedure, public :: get_file_global_meta
- procedure, public :: get_last_outout
+ procedure, public :: get_last_output
  procedure, public :: get_next_output
  procedure, public :: get_next_next_output
  procedure, public :: get_no_more_data
