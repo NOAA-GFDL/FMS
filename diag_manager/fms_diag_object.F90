@@ -520,7 +520,7 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
   ! if (check_indices_order()) deallocate(oor_mask)
 
   !! TODO: Recondition the input indices
-  ! call recondition_indices(bounds, field_data, is_in, js_in, ks_in, ie_in, je_in, ke_in, err_msg) 
+  ! call recondition_indices(bounds, field_data, is_in, js_in, ks_in, ie_in, je_in, ke_in, err_msg)
 
   !! TODO: Allocate buffers
   ! call allocate_diag_field_output_buffers(field_data, diag_field_id)
