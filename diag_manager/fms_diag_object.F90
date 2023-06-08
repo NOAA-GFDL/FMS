@@ -26,8 +26,7 @@ use diag_data_mod,  only: diag_null, diag_not_found, diag_not_registered, diag_r
        & OPERATOR(<), OPERATOR(==), OPERATOR(/=), OPERATOR(/), OPERATOR(+), ASSIGNMENT(=), get_date, &
        & get_ticks_per_second
 #ifdef use_yaml
-use fms_diag_file_object_mod, only: fmsDiagFileContainer_type, fmsDiagFile_type, fms_diag_files_object_init, &
-                            & get_last_output, get_next_output, get_next_next_output, get_no_more_data
+use fms_diag_file_object_mod, only: fmsDiagFileContainer_type, fmsDiagFile_type, fms_diag_files_object_init
 use fms_diag_field_object_mod, only: fmsDiagField_type, fms_diag_fields_object_init, get_default_missing_value
 use fms_diag_yaml_mod, only: diag_yaml_object_init, diag_yaml_object_end, find_diag_field, &
                            & get_diag_files_id, diag_yaml, diagYamlFilesVar_type, get_diag_field_ids
