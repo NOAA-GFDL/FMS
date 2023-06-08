@@ -547,7 +547,7 @@ end function get_file_global_meta
 
 !> \brief Returns a copy of last_output time
 !! \return Copy of last_output time
-pure function get_last_outout (this) result(res)
+function get_last_outout (this) result(res)
  class(fmsDiagFile_type), intent(in) :: this !< The file object
   type(time_type) :: res
   res = this%last_output
@@ -555,7 +555,7 @@ end function get_last_outout
 
 !> \brief Returns a copy of next_output time
 !! \return Copy of next_output time
-pure function get_next_outout (this) result(res)
+function get_next_outout (this) result(res)
  class(fmsDiagFile_type), intent(in) :: this !< The file object
   type(time_type) :: res
   res = this%next_output
@@ -563,7 +563,7 @@ end function get_next_outout
 
 !> \brief Returns a copy of next_next_output time
 !! \return Copy of next_next_output time
-pure function get_next_next_outout (this) result(res)
+function get_next_next_outout (this) result(res)
  class(fmsDiagFile_type), intent(in) :: this !< The file object
   type(time_type) :: res
   res = this%next_next_output
@@ -571,7 +571,7 @@ end function get_next_next_outout
 
 !> \brief Returns a copy of no_more_data time
 !! \return Copy of no_more_data time
-pure function get_no_more_data (this) result(res)
+function get_no_more_data (this) result(res)
  class(fmsDiagFile_type), intent(in) :: this !< The file object
   type(time_type) :: res
   res = this%no_more_data
