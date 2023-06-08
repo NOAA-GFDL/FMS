@@ -1142,7 +1142,6 @@ function fms_diag_compare_window(this, field, field_id, &
                                       !< pass reconditioned indices fie and fje
                                       !< which are computed elsewhere.
   integer, intent(in) :: ks_in, ke_in !< Starting and ending indices of the field in 3rd dimension
-  logical :: is_phys_win !< Return flag
 #ifdef use_yaml
   integer, pointer :: axis_ids(:)
   integer :: total_elements
@@ -1150,6 +1149,7 @@ function fms_diag_compare_window(this, field, field_id, &
   integer :: field_size
   integer, allocatable :: field_shape(:) !< Shape of the field data
   integer :: window_size
+  logical :: is_phys_win !< Return flag
 
   !> Determine shape of the field defined by the input bounds
   field_shape = shape(field(is_in:ie_in, js_in:je_in, ks_in:ke_in, :))
@@ -1168,7 +1168,6 @@ function fms_diag_compare_window(this, field, field_id, &
     is_phys_win = .false.
   end if
 #else
-  is_phys_win = .false.
   call mpp_error( FATAL, "fms_diag_compare_window: "//&
     "you can not use the modern diag manager without compiling with -Duse_yaml")
 #endif
