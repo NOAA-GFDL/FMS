@@ -549,7 +549,7 @@ end function get_file_global_meta
 !! \return Copy of last_output time
 pure function get_last_outout (this) result(res)
  class(fmsDiagFile_type), intent(in) :: this !< The file object
-  type(time_type), allocatable :: res
+  type(time_type) :: res
   res = this%last_output
 end function get_last_outout
 
@@ -557,7 +557,7 @@ end function get_last_outout
 !! \return Copy of next_output time
 pure function get_next_outout (this) result(res)
  class(fmsDiagFile_type), intent(in) :: this !< The file object
-  type(time_type), allocatable :: res
+  type(time_type) :: res
   res = this%next_output
 end function get_next_outout
 
@@ -565,7 +565,7 @@ end function get_next_outout
 !! \return Copy of next_next_output time
 pure function get_next_next_outout (this) result(res)
  class(fmsDiagFile_type), intent(in) :: this !< The file object
-  type(time_type), allocatable :: res
+  type(time_type) :: res
   res = this%next_next_output
 end function get_next_next_outout
 
@@ -573,7 +573,7 @@ end function get_next_next_outout
 !! \return Copy of no_more_data time
 pure function get_no_more_data (this) result(res)
  class(fmsDiagFile_type), intent(in) :: this !< The file object
-  type(time_type), allocatable :: res
+  type(time_type) :: res
   res = this%no_more_data
 end function get_no_more_data
 
