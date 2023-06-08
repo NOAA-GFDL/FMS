@@ -126,10 +126,10 @@ type :: fmsDiagFile_type
  procedure, public :: get_file_duration_units
  procedure, public :: get_file_varlist
  procedure, public :: get_file_global_meta
- procedure :: get_last_outout
- procedure :: get_next_output
- procedure :: get_next_next_output
- procedure :: get_no_more_data
+ procedure, public :: get_last_outout
+ procedure, public :: get_next_output
+ procedure, public :: get_next_next_output
+ procedure, public :: get_no_more_data
  procedure, public :: has_file_fname
  procedure, public :: has_file_frequnit
  procedure, public :: has_file_freq
