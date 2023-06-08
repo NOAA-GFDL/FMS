@@ -518,7 +518,7 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
 
   !TODO: Check improper combinations of is, ie, js, and je.
   ! if (check_indices_order()) deallocate(oor_mask)
-  
+
   !! TODO: Recondition the input indices
   ! call recondition_indices(bounds, field_data, is_in, js_in, ks_in, ie_in, je_in, ke_in, err_msg) 
 
