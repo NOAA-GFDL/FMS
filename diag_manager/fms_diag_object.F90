@@ -583,7 +583,7 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
       !!TODO: Get the vertical layer start and end indices
 
       !> Check if time is not present for fields output every time step
-      if (freq(:) == EVERY_TIME .and. .not.this%FMS_diag_fields(diag_field_id)%is_static()) then
+      if (all(freq(:) == EVERY_TIME) .and. .not.this%FMS_diag_fields(diag_field_id)%is_static()) then
         if (this%FMS_diag_files(file_id)%FMS_diag_file%get_next_output() == &
           this%FMS_diag_files(file_id)%FMS_diag_file%get_last_output()) then
           if (.not.present(time)) then
