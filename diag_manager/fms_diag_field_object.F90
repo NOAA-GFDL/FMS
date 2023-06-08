@@ -75,6 +75,9 @@ type fmsDiagField_type
                                                                            !! been allocated
      logical, allocatable, private                    :: math_needs_to_be_done !< If true, do math
                                                                            !! functions. False when done.
+     logical, allocatable, dimension(:)               :: buffer_allocated  !< True if a buffer pointed by
+                                                                           !! the corresponding index in
+                                                                           !! buffer_ids(:) is allocated.
   contains
 !     procedure :: send_data => fms_send_data  !!TODO
 ! Get ID functions
@@ -164,6 +167,7 @@ public :: fmsDiagField_type
 public :: fms_diag_fields_object_init
 public :: null_ob
 public :: fms_diag_field_object_end
+public :: get_default_missing_value
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
  CONTAINS
