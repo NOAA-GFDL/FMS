@@ -83,6 +83,9 @@ subroutine MPP_SCATTER_PELIST_3D_(is, ie, js, je, nk, pelist, array_seg, data, i
     end if
   endif
 
+  if( .NOT.ANY(mpp_pe().EQ.peset(n)%list) ) &
+    call mpp_error( FATAL, 'MPP_SCATTER: scattering from invalid PE.' )
+
   if( debug ) then
     call SYSTEM_CLOCK(tick)
     write( stdout_unit,'(a,i18,a,i6,a,2i6)' )&
