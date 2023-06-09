@@ -112,7 +112,16 @@ subroutine MPP_SCATTER_PELIST_3D_(is, ie, js, je, nk, pelist, array_seg, data, i
   if (ierr /= MPI_SUCCESS) call mpp_error(FATAL, "mpp_scatter_pelist:MPI_GATHER")
 
   ! Unpack gindx1D(:) to gind(:,:)
-  gind = reshape(gindx1D, (/4, size(pelist)/))
+  !gind = reshape(gindx1D, (/4, size(pelist)/))
+  if (is_root_pe) then
+    allocate(gind(4, size(pelist)))
+    do i = 1, size(pelist)
+      gind(1, i) = gindx1D((i-1)*4 + 1)
+      gind(2, i) = gindx1D((i-1)*4 + 2)
+      gind(3, i) = gindx1D((i-1)*4 + 3)
+      gind(4, i) = gindx1D((i-1)*4 + 4)
+    enddo
+  end if
 
   ! Compute my message size
   msgsize = (my_ind(2)-my_ind(1)+1) * (my_ind(4)-my_ind(3)+1) * nk
