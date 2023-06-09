@@ -58,7 +58,7 @@ subroutine MPP_SCATTER_PELIST_3D_(is, ie, js, je, nk, pelist, array_seg, data, i
   integer :: i2, j2 !< Ending indices of i and j
   integer :: ioff, joff !< Offsets to i and j
   integer :: my_ind(4) !< My starting and ending indices of i and j
-  integer :: gind(4,size(pelist)) !< Starting and ending indices of all processes in the group
+  integer, allocatable :: gind(:,:) !< Starting and ending indices of all processes in the group
   integer :: n !< Peset number
   integer :: ierr !< MPI error state
   MPP_TYPE_, allocatable :: send_buf(:) !< Packed data to be scattered; only relevant to the root pe
@@ -67,6 +67,7 @@ subroutine MPP_SCATTER_PELIST_3D_(is, ie, js, je, nk, pelist, array_seg, data, i
   integer :: displ(size(pelist)) !< Displacements for data segments
   integer :: total_msgsize
   integer :: stdout_unit
+  integer :: gindx1D(4 * size(pelist)) !< Packed version of gind
 
   if (.not.ANY(mpp_pe().eq.pelist(:))) return
 
@@ -107,8 +108,11 @@ subroutine MPP_SCATTER_PELIST_3D_(is, ie, js, je, nk, pelist, array_seg, data, i
   my_ind(4) = je
 
   ! Gather indices from all processes in the group at the root pe
-  call MPI_GATHER(my_ind, 4, MPI_TYPE_, gind, 4, MPI_TYPE_, root_pe, peset(n)%id, ierr)
+  call MPI_GATHER(my_ind, 4, MPI_TYPE_, gindx1D, 4, MPI_TYPE_, root_pe, peset(n)%id, ierr)
   if (ierr /= MPI_SUCCESS) call mpp_error(FATAL, "mpp_scatter_pelist:MPI_GATHER")
+
+  ! Unpack gindx1D(:) to gind(:,:)
+  gind = reshape(gindx1D, (/4, size(pelist)/))
 
   ! Compute my message size
   msgsize = (my_ind(2)-my_ind(1)+1) * (my_ind(4)-my_ind(3)+1) * nk
