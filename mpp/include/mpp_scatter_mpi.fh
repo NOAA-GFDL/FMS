@@ -66,11 +66,13 @@ subroutine MPP_SCATTER_PELIST_3D_(is, ie, js, je, nk, pelist, array_seg, data, i
   integer :: send_count(size(pelist)) !< Stores message sizes for all processes in the group
   integer :: displ(size(pelist)) !< Displacements for data segments
   integer :: total_msgsize
+  integer :: stdout_unit
 
   if (.not.ANY(mpp_pe().eq.pelist(:))) return
 
   ! Get peset number
-  n = get_peset(pelist); if( peset(n)%count.EQ.1 )return
+  n = get_peset(pelist)
+  if( peset(n)%count.EQ.1 )return
 
   if (is_root_pe) then
     root_pe = mpp_pe()
@@ -78,10 +80,16 @@ subroutine MPP_SCATTER_PELIST_3D_(is, ie, js, je, nk, pelist, array_seg, data, i
       "fms_io(mpp_scatter_pelist): root_pe not a member of pelist")
     if (root_pe /= pelist(1)) then
       call mpp_error(FATAL, "fms_io(mpp_scatter_pelist): root_pe is not the first pe of pelist")
-    else
-      print *, 'XXXX', root_pe, pelist(1)
     end if
   endif
+
+  if( debug ) then
+    call SYSTEM_CLOCK(tick)
+    write( stdout_unit,'(a,i18,a,i6,a,2i6)' )&
+         'T=',tick, ' PE=',pe, ' MPP_SCATTER begin: from_pe, length=', root_pe
+  end if
+
+  if( debug .and. (current_clock.NE.0) ) call SYSTEM_CLOCK(start_tick)
 
   send_count = 0
   total_msgsize = 0
@@ -103,8 +111,8 @@ subroutine MPP_SCATTER_PELIST_3D_(is, ie, js, je, nk, pelist, array_seg, data, i
   msgsize = (my_ind(2)-my_ind(1)+1) * (my_ind(4)-my_ind(3)+1) * nk
   allocate(recv_buf(msgsize))
 
-  ! Update group indices
   if (is_root_pe) then
+    ! Update group indices
     gind(1,:)=gind(1,:)+ioff
     gind(2,:)=gind(2,:)+ioff
     gind(3,:)=gind(3,:)+joff
@@ -113,9 +121,7 @@ subroutine MPP_SCATTER_PELIST_3D_(is, ie, js, je, nk, pelist, array_seg, data, i
     if ((minval(gind).lt.1) .OR. (maxval(gind(1:2,:)).gt.size(data,1)) .OR. (maxval(gind(3:4,:)).gt.size(data,2))) &
       call mpp_error(FATAL,"fms_io(mpp_scatter_pelist): specified indices (with shift) are outside &
         of the range of the receiving array")
-  end if
 
-  if (is_root_pe) then
     do i = 1, size(pelist)
       i1 = gind(1,i)
       i2 = gind(2,i)
@@ -123,15 +129,25 @@ subroutine MPP_SCATTER_PELIST_3D_(is, ie, js, je, nk, pelist, array_seg, data, i
       j2 = gind(4,i)
       ! Pack message sizes
       send_count(i) = (i2-i1+1)*(j2-j1+1)*nk
+      ! Compute total message size to scatter
       total_msgsize = total_msgsize + send_count(i)
       ! Compute data displacements
       displ(i) = total_msgsize - send_count(i)
+    enddo
+
+    ! Allocate send buffer
+    allocate(send_buf(total_msgsize))
+
+    total_msgsize = 0
+
+    do i = 1, size(pelist)
+      i1 = gind(1,i)
+      i2 = gind(2,i)
+      j1 = gind(3,i)
+      j2 = gind(4,i)
+      total_msgsize = total_msgsize + send_count(i)
       ! Pack data segments
-      if (i == 1) then
-        send_buf = reshape(data(i1:i2,j1:j2,1:nk), (/size(data(i1:i2,j1:j2,1:nk))/))
-      else
-        send_buf = reshape(send_buf, (/size(send_buf)+size(data(i1:i2,j1:j2,1:nk))/), data(i1:i2,j1:j2,1:nk))
-      end if
+      send_buf(displ(i)+1:total_msgsize) = reshape(data(i1:i2,j1:j2,1:nk), (/size(data(i1:i2,j1:j2,1:nk))/))
     enddo
   end if
 
@@ -143,7 +159,9 @@ subroutine MPP_SCATTER_PELIST_3D_(is, ie, js, je, nk, pelist, array_seg, data, i
   ! Unpack received data
   array_seg(is:ie,js:je,1:nk) = reshape(recv_buf, (/shape(array_seg(is:ie,js:je,1:nk))/))
 
-  return
+  if( debug .and. (current_clock.NE.0) ) &
+    call increment_current_clock( EVENT_BROADCAST, total_msgsize * MPP_TYPE_BYTELEN_ )
 
+  return
 end subroutine MPP_SCATTER_PELIST_3D_
 !> @}
